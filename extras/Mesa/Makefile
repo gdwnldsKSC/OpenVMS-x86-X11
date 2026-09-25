@@ -124,7 +124,7 @@ DEMO_NAME = MesaDemos-6.2.1
 LIB_FILES =	\
 	$(DIRECTORY)/Makefile*						\
 	$(DIRECTORY)/descrip.mms					\
-	$(DIRECTORY)/mms-config.					\
+	$(DIRECTORY)/mms-config					\
 	$(DIRECTORY)/Mesa.dsw						\
 	$(DIRECTORY)/bin/mklib						\
 	$(DIRECTORY)/bin/installmesa					\

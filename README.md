@@ -8,6 +8,7 @@ As parts become buildable, they will be updated and documented here.
   
 XAU. Produces `XAU.OLB` - all eight standard Xau modules; optional Kerberos support excluded.
 XDMCP. Produces `XDMCP.OLB` - all 38 standard Xdmcp modules; optional `HASXDMAUTH` wrapping excluded.
+ZLIB. Produces `Z.OLB` - all 14 modules of the bundled zlib 1.1.4.
  
 ## Notes  
 
@@ -15,6 +16,7 @@ $ @[.VMS-SUPPORT]BUILD HEADERS
 $ @[.VMS-SUPPORT]BUILD XAU
 $ @[.VMS-SUPPORT]BUILD XDMCP_CODEC
 $ @[.VMS-SUPPORT]BUILD XDMCP
+$ @[.VMS-SUPPORT]BUILD ZLIB
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

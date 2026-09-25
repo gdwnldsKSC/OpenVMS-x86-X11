@@ -8,12 +8,18 @@ As parts become buildable, they will be updated and documented here.
   
 - `lib/Xau/AuRead.c` - `XauReadAuth`.  
 - `lib/Xau/AuDispose.c` - `XauDisposeAuth`.  
-- `XAU_READ.OLB` - the two modules above, not the complete Xau library.  
+- `lib/Xau/AuWrite.c` - `XauWriteAuth`.
+- `lib/Xau/AuFileName.c` - `XauFileName`.
+- `lib/Xau/AuGetAddr.c` - `XauGetAuthByAddr`.
+- `lib/Xau/AuGetBest.c` - `XauGetBestAuthByAddr`.
+- `lib/Xau/AuLock.c` - `XauLockAuth`.
+- `lib/Xau/AuUnlock.c` - `XauUnlockAuth`.
+- `XAU.OLB` - all eight standard Xau modules; optional Kerberos support excluded.
   
 ## Notes  
 
 $ @[.VMS-SUPPORT]BUILD HEADERS
-$ @[.VMS-SUPPORT]BUILD XAU_READ
+$ @[.VMS-SUPPORT]BUILD XAU
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

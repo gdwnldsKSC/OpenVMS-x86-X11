@@ -6,7 +6,7 @@ $ result = 2
 $ scoped = 0
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ IF (P4 .NES. "") .AND. (P4 .NES. "ZLIB") .AND. (P4 .NES. "FONTENC") .AND. -
-     (P4 .NES. "EXPAT") THEN GOTO done
+     (P4 .NES. "EXPAT") .AND. (P4 .NES. "LBX_IMAGE") THEN GOTO done
 $ IF (P5 .NES. "") .OR. (P6 .NES. "") .OR. -
      (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
 $ rtl_headers = F$SEARCH("SYS$LIBRARY:DECC$RTLDEF.TLB")
@@ -19,6 +19,9 @@ $ IF F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOT
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]"
 $ IF P4 .EQS. "EXPAT" THEN include_directory = include_directory + -
     ",[.EXTRAS.EXPAT.LIB],[.LIB.EXPAT]"
+$ IF P4 .EQS. "LBX_IMAGE" THEN include_directory = include_directory + -
+    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
+    "[.VMS-SUPPORT._BUILD.P64.LIB.LBX_IMAGE],[.LIB.LBXUTIL.IMAGE]"
 $ header = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]XFUNCPROTO.H")
 $ IF header .EQS. "" THEN GOTO done
 $ headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")

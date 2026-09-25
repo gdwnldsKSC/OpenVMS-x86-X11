@@ -12,7 +12,8 @@ $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR.
 $ IF (target .NES. "ALL") .AND. (target .NES. "HEADERS") .AND. -
      (target .NES. "XAU") .AND. (target .NES. "XDMCP_CODEC") .AND. -
      (target .NES. "XDMCP") .AND. (target .NES. "ZLIB") .AND. -
-     (target .NES. "FONTENC") .AND. (target .NES. "EXPAT") THEN GOTO usage
+     (target .NES. "FONTENC") .AND. (target .NES. "EXPAT") .AND. -
+     (target .NES. "LBX_IMAGE") THEN GOTO usage
 $ IF F$EDIT(F$GETSYI("ARCH_NAME"),"TRIM") .NES. "x86_64" THEN GOTO unsupported
 $ procedure = F$ENVIRONMENT("PROCEDURE")
 $ step = "locate source tree"
@@ -31,6 +32,8 @@ $ directory = profile + ".INCLUDE.X11]"
 $ IF F$SEARCH(profile + ".INCLUDE]X11.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11.FONTS]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]FONTS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".INCLUDE.X11.EXTENSIONS]"
+$ IF F$SEARCH(profile + ".INCLUDE.X11]EXTENSIONS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB]"
 $ IF F$SEARCH(profile + "]LIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XAU]"
@@ -43,13 +46,15 @@ $ directory = profile + ".LIB.FONTENC]"
 $ IF F$SEARCH(profile + ".LIB]FONTENC.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.EXPAT]"
 $ IF F$SEARCH(profile + ".LIB]EXPAT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.LBX_IMAGE]"
+$ IF F$SEARCH(profile + ".LIB]LBX_IMAGE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ WRITE SYS$OUTPUT "X11 component build: " + target + ", native x86-64, pointer64"
 $ step = "MMS " + target
 $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS
 $ GOTO done
 $usage:
-$ WRITE SYS$ERROR "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP_CODEC|XDMCP|ZLIB|FONTENC|EXPAT]"
+$ WRITE SYS$ERROR "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP_CODEC|XDMCP|ZLIB|FONTENC|EXPAT|LBX_IMAGE]"
 $ GOTO done
 $unsupported:
 $ WRITE SYS$ERROR "This initial build profile supports OpenVMS x86-64 only."

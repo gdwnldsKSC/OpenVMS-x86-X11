@@ -1,0 +1,25 @@
+/.cvsignore/1.2/Fri Apr 23 18:42:42 2004//TXORG-6_8_2
+/aclocal.m4/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/config.guess/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/config.sub/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/configure/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/configure.ac/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/detect.mk/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/freetype-config.in/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/freetype2.in/1.2/Fri Apr 23 18:42:42 2004//TXORG-6_8_2
+/freetype2.m4/1.2/Fri Apr 23 18:42:42 2004//TXORG-6_8_2
+/ft-munmap.m4/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/ft2unix.h/1.2/Fri Apr 23 18:42:42 2004//TXORG-6_8_2
+/ftconfig.in/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/ftsystem.c/1.2/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/install-sh/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/install.mk/1.2/Fri Apr 23 18:42:42 2004//TXORG-6_8_2
+/ltmain.sh/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/mkinstalldirs/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/unix-cc.in/1.2/Fri Apr 23 18:42:42 2004//TXORG-6_8_2
+/unix-def.in/1.3/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/unix-dev.mk/1.2/Fri Apr 23 18:42:42 2004//TXORG-6_8_2
+/unix-lcc.mk/1.2/Fri Apr 23 18:42:42 2004//TXORG-6_8_2
+/unix.mk/1.2/Wed Apr 28 10:38:58 2004//TXORG-6_8_2
+/unixddef.mk/1.2/Fri Apr 23 18:42:42 2004//TXORG-6_8_2
+D

@@ -1,0 +1,22 @@
+/Makefile/1.1.1.1.4.1/Wed Dec 15 01:50:57 2004//TXORG-6_8_2
+/i810_3d_reg.h/1.1.1.1/Wed Jun 16 09:18:04 2004//TXORG-6_8_2
+/i810context.c/1.1.1.1/Wed Jun 16 09:18:04 2004//TXORG-6_8_2
+/i810context.h/1.1.1.1/Wed Jun 16 09:18:04 2004//TXORG-6_8_2
+/i810ioctl.c/1.1.1.1/Wed Jun 16 09:18:03 2004//TXORG-6_8_2
+/i810ioctl.h/1.1.1.1/Wed Jun 16 09:18:04 2004//TXORG-6_8_2
+/i810render.c/1.1.1.1/Wed Jun 16 09:18:04 2004//TXORG-6_8_2
+/i810screen.c/1.1.1.2/Thu Jul 22 06:51:33 2004//TXORG-6_8_2
+/i810screen.h/1.1.1.1/Wed Jun 16 09:18:04 2004//TXORG-6_8_2
+/i810span.c/1.1.1.1/Wed Jun 16 09:18:04 2004//TXORG-6_8_2
+/i810span.h/1.1.1.1/Wed Jun 16 09:18:04 2004//TXORG-6_8_2
+/i810state.c/1.1.1.1/Wed Jun 16 09:18:04 2004//TXORG-6_8_2
+/i810state.h/1.1.1.1/Wed Jun 16 09:18:04 2004//TXORG-6_8_2
+/i810tex.c/1.1.1.1/Wed Jun 16 09:18:05 2004//TXORG-6_8_2
+/i810tex.h/1.1.1.1/Wed Jun 16 09:18:05 2004//TXORG-6_8_2
+/i810texmem.c/1.1.1.1/Wed Jun 16 09:18:05 2004//TXORG-6_8_2
+/i810texstate.c/1.1.1.1/Wed Jun 16 09:18:05 2004//TXORG-6_8_2
+/i810tris.c/1.1.1.2/Thu Jul 22 06:51:33 2004//TXORG-6_8_2
+/i810tris.h/1.1.1.1/Wed Jun 16 09:18:05 2004//TXORG-6_8_2
+/i810vb.c/1.1.1.2/Thu Jul 22 06:51:35 2004//TXORG-6_8_2
+/i810vb.h/1.1.1.1/Wed Jun 16 09:18:05 2004//TXORG-6_8_2
+D

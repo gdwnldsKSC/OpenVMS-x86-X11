@@ -1,0 +1,25 @@
+/ddlog.c/1.1.1.1/Wed Jun 16 09:18:51 2004//TXORG-6_8_2
+/ddlog.h/1.1.1.1/Wed Jun 16 09:18:51 2004//TXORG-6_8_2
+/dglcontext.c/1.1.1.1/Wed Jun 16 09:18:52 2004//TXORG-6_8_2
+/dglcontext.h/1.1.1.1/Wed Jun 16 09:18:52 2004//TXORG-6_8_2
+/dglglobals.c/1.1.1.1/Wed Jun 16 09:18:52 2004//TXORG-6_8_2
+/dglglobals.h/1.1.1.1/Wed Jun 16 09:18:52 2004//TXORG-6_8_2
+/dglmacros.h/1.1.1.1/Wed Jun 16 09:18:52 2004//TXORG-6_8_2
+/dglpf.c/1.1.1.1/Wed Jun 16 09:18:52 2004//TXORG-6_8_2
+/dglpf.h/1.1.1.1/Wed Jun 16 09:18:52 2004//TXORG-6_8_2
+/dglwgl.c/1.1.1.1/Wed Jun 16 09:18:53 2004//TXORG-6_8_2
+/dglwgl.h/1.1.1.1/Wed Jun 16 09:18:53 2004//TXORG-6_8_2
+/dll_main.c/1.1.1.1/Wed Jun 16 09:18:53 2004//TXORG-6_8_2
+/dllmain.h/1.1.1.1/Wed Jun 16 09:18:53 2004//TXORG-6_8_2
+/gld_debug_clip.c/1.1.1.1/Wed Jun 16 09:18:53 2004//TXORG-6_8_2
+/gld_debug_norm.c/1.1.1.1/Wed Jun 16 09:18:53 2004//TXORG-6_8_2
+/gld_debug_xform.c/1.1.1.1/Wed Jun 16 09:18:53 2004//TXORG-6_8_2
+/gld_dispatch.c/1.1.1.1/Wed Jun 16 09:18:53 2004//TXORG-6_8_2
+/gld_driver.c/1.1.1.1/Wed Jun 16 09:18:53 2004//TXORG-6_8_2
+/gld_driver.h/1.1.1.1/Wed Jun 16 09:18:54 2004//TXORG-6_8_2
+/gldirect.rc/1.1.1.1/Wed Jun 16 09:18:54 2004//TXORG-6_8_2
+/gldlame8.c/1.1.1.1/Wed Jun 16 09:18:54 2004//TXORG-6_8_2
+/opengl32.def/1.1.1.1/Wed Jun 16 09:18:54 2004//TXORG-6_8_2
+/opengl32.ref/1.1.1.1/Wed Jun 16 09:18:54 2004//TXORG-6_8_2
+/pixpack.h/1.1.1.1/Wed Jun 16 09:18:54 2004//TXORG-6_8_2
+D

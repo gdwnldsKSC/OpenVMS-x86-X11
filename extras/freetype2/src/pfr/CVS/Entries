@@ -1,0 +1,20 @@
+/Jamfile/1.2/Fri Apr 23 18:42:50 2004//TXORG-6_8_2
+/descrip.mms/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/module.mk/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/pfr.c/1.1.1.2/Tue Nov 25 19:27:22 2003//TXORG-6_8_2
+/pfrcmap.c/1.1.1.2/Tue Nov 25 19:27:22 2003//TXORG-6_8_2
+/pfrcmap.h/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/pfrdrivr.c/1.3/Wed Apr 28 10:39:05 2004//TXORG-6_8_2
+/pfrdrivr.h/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/pfrerror.h/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/pfrgload.c/1.2/Wed Apr 28 10:39:05 2004//TXORG-6_8_2
+/pfrgload.h/1.1.1.2/Tue Nov 25 19:27:22 2003//TXORG-6_8_2
+/pfrload.c/1.3/Wed Apr 28 10:39:05 2004//TXORG-6_8_2
+/pfrload.h/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/pfrobjs.c/1.3/Wed Apr 28 10:39:05 2004//TXORG-6_8_2
+/pfrobjs.h/1.2/Fri Apr 23 18:42:50 2004//TXORG-6_8_2
+/pfrsbit.c/1.3/Wed Apr 28 10:39:05 2004//TXORG-6_8_2
+/pfrsbit.h/1.1.1.1/Tue Nov 25 19:27:22 2003//TXORG-6_8_2
+/pfrtypes.h/1.2/Fri Apr 23 18:42:50 2004//TXORG-6_8_2
+/rules.mk/1.2/Fri Apr 23 18:42:50 2004//TXORG-6_8_2
+D

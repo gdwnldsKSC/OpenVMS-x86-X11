@@ -1,0 +1,6 @@
+#define XORG_VERSION_MAJOR  6
+#define XORG_VERSION_MINOR  8
+#define XORG_VERSION_PATCH  2
+#define XORG_VERSION_SNAP   0
+
+#define XORG_DATE "9 February 2005"

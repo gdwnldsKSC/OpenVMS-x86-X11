@@ -1,0 +1,19 @@
+/DMX.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXAddInput.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXAddScreen.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXChangeDesktopAttributes.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXChangeScreensAttributes.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXForceWindowCreation.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXGetDesktopAttributes.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXGetInputAttributes.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXGetInputCount.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXGetScreenAttributes.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXGetScreenCount.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXGetWindowAttributes.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXQueryExtension.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXQueryVersion.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXRemoveInput.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXRemoveScreen.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/DMXSync.man/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+/Imakefile/1.1/Wed Jun 30 20:06:51 2004//TXORG-6_8_2
+D

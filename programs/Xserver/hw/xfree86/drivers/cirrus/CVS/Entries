@@ -1,0 +1,21 @@
+/CirrusClk.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/Imakefile/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/README.multihead/1.1.1.1/Fri Nov 14 16:48:55 2003//TXORG-6_8_2
+/alp.h/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/alp_driver.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/alp_hwcurs.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/alp_i2c.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/alp_xaa.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/alp_xaam.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/cir.h/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/cir_dga.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/cir_driver.c/1.3/Fri Jul 30 20:30:52 2004//TXORG-6_8_2
+/cir_shadow.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/cirrus.man/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/lg.h/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/lg_driver.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/lg_hwcurs.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/lg_i2c.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/lg_xaa.c/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+/lg_xaa.h/1.2/Fri Apr 23 19:28:21 2004//TXORG-6_8_2
+D

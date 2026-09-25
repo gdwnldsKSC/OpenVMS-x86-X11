@@ -1,0 +1,24 @@
+/Imakefile/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/XKBbells.h/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/XKBconfig.h/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/XKBfile.h/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/XKBfileInt.h/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/XKBrules.h/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/XKM.h/1.1.1.1/Fri Nov 14 16:48:50 2003//TXORG-6_8_2
+/XKMformat.h/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/cout.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/magic/1.1.1.1/Fri Nov 14 16:48:50 2003//TXORG-6_8_2
+/maprules.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/srvmisc.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/xkbatom.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/xkbbells.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/xkbconfig.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/xkbdraw.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/xkberrs.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/xkbfile-def.cpp/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/xkbmisc.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/xkbout.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/xkbtext.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/xkmout.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+/xkmread.c/1.2/Fri Apr 23 18:44:26 2004//TXORG-6_8_2
+D

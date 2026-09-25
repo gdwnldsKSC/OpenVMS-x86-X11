@@ -1,0 +1,239 @@
+2005-01-10  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winkeybd.h
+	* winkeyhook.c
+	* winwndproc.c:
+	Make keyhook feature work in multiwindowmode too
+	Hook windows keys
+
+2005-01-06  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowclass.c:
+	* winmultiwindowwm.c:
+	Fix crash with non-nullterminated strings (reported by Øyvind Harboe)
+
+2004-12-27  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwindow.c:
+	Bug #1945: Stop unnecessary reordering. (Kensuke Matsuzaki)
+
+2004-12-14  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* InitOutput.c:
+	* winprocarg.c:
+	EnumDisplayMonitors is not available on Window NT4 and 95. Resolve
+	the function dynamicly
+
+2004-12-08  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* InitOutput.c:
+	* winprocarg.c:
+	Added support for placing the main window with the @<monitor#>.
+	Patch by Mark Fisher, small changes by Alexander Gottwald
+	
+2004-12-04  Earle Philhower
+
+	* InitOutput.c:
+	* win.h:
+	* wincreatewnd.c:
+	* winprocarg.c:
+	Optional position -screen parameter (-screen n WxH+X+Y or 
+	-screen n W H X Y)
+	
+2004-11-24  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwm.c:
+	Finally the multiwindow mode defines a default cursor
+
+2004-11-11  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winconfig.c:
+	added keyboard layout "French (Switzerland)"
+
+2004-10-28  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* win.h:
+	add fRetryCreateSurface
+	* winshaddnl.c (winBltExposedRegionsShadowDDNL):
+	try to recreate the primary surface if it was lost
+	* winshaddnl.c (winCreatePrimarySurfaceShadowDDNL):
+	mark screen to retry creating the primary surface if it failed
+
+2004-10-23  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winconfig (winConfigFiles):
+	Simplify /etc/X11/font-dirs parsing
+
+2004-10-20  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* XWin.rc, winresource.h, winwndproc.c:
+	Add ShowCursor entry to tray menu 
+
+2004-10-20  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* Imakefile:
+	Add ETCX11DIR to DEFINES
+	* InitOutput.c (InitOutput):
+	* winconfig.c (winConfigFiles) :
+	Add entries from /etc/X11/font-dirs to default fontpath
+
+2004-10-16  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winprocarg.c (winInitializeDefaultScreens, ddxProcessArgument):
+	* win.h:
+	Make multiple monitors default for -multiwindow and -mwextwm.
+	Added a flag to indicate if the user has overridden the multimonitor
+	settings. (Øyvind Harboe, Alexander Gottwald)
+
+2004-10-05  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* XWin.rc:
+	Set the dialogstyle to DS_CENTERMOUSE. Dialogs will now popup on the
+	monitor where the mouse is and not on the center of the whole desktop.
+
+2004-10-02  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmouse.c (winMouseProc):
+	Make sure buttons 1-3 are mouse buttons and wheel events are 4-5
+	Document code
+	Replace ErrorF with appropriate winMsg
+	use a symbolic name for the wheel event offset
+	
+2004-10-01  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* wincreatewnd.c (winCreateBoundingWindowWindowed):
+	Do not adjust workarea if native windowmanager is used
+
+2004-09-22  Kensuke Matsuzaki
+
+	* winclipboardthread.c (winClipboardErrorHandler):
+	* winclipboardwndproc.c (winClipboardWindowProc):
+	* winclipboardxevents.c (winClipboardFlushXEvents):
+	Fix clipboard bug with unicode applications.
+	
+2004-09-16  Alexander Gottwald <ago at freedesktop dot org>
+
+	* wincreatewnd.c (winCreateBoundingWindowWindowed):
+	Remove code which prevented the use from specifying the window
+	size in nodecoration mode. 	
+
+2004-08-26  Chris B  <news at sempermax dot com>
+
+	* win.h, winmessages.h:
+	Add defines for WM_XBUTTON
+	* winmouse.c (winMouseProc):
+	Query number of mouse buttons from windows. 
+	* winmultiwindowwndproc.c (winTopLevelWindowProc):
+	* winwin32rootlesswndproc.c (winMWExtWMWindowProc):
+	* winwndproc.c (winWindowProc):
+	Handle WM_XBUTTON messages.  
+
+2004-08-02  Kensuke Matsuzaki
+
+	* winclipboardthread.c winclipboardwndproc.c: 
+	* winclipboardxevents.c winwin32rootlesswndproc.c:
+	Fix the bug that we can't copy & paste multi-byte string to
+	Unicode-base Windows application.  Rename fUnicodeSupport to
+	fUseUnicode, because it don't mean wheather Windows support
+	Unicode or not.
+	
+2004-07-31  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* win.h:
+	adjust prototype for winInitCmapPrivates to match Egberts change.	
+
+2004-07-30  Egbert Eich  <eich at freedesktop dot org>
+
+	* winallpriv.c: (winInitCmapPrivates):
+	test if colormap with index really exists in the list of
+	installed maps before using it.
+
+2004-07-09  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winconfig.c: Add entry for irish layout (ie)
+	* InitOutput.c, winerror.c, winglobals.c: rename g_fUseMsg to 
+	g_fSilentFatalError
+	* InitOutput.c, winglobals.c, winprocarg.c: added commandline option 
+	-silent-dup-error to allow silent termination if another instance of
+	XWin was found running
+
+2004-06-27  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winconfig.c: Add entry for us layout. This changes not much but 
+	removes a strange error message about the unknown us layout. 
+
+2004-06-24  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* InitOutput.c: Check for textmode mounted /tmp and print a warning
+
+2004-06-15  Harold Hunt  <huntharo at msu dot edu>
+
+	* windialogs.c: Fix path to locally installed changelog for the About 
+	dialog box.
+
+2004-05-27  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winpriv.c: Create win32 window if not already created
+	* winmultiwindowwindow.c: Export winCreateWindowWindow
+
+2004-05-27  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* win.h: Allow CYGDEBUG to defined in the Makefile
+	* winwindow.h: Allow CYGWINDOWING_DEBUG to defined in the Makefile
+
+2004-05-19  Alexander Gottwald  <ago at freedesktop dot org>
+	
+	* winmultiwindowicons.c (winInitGlobalIcons): Load the small default
+	icon too
+	* winprefs.h, winprefs.c (winOverrideDefaultIcon): Takes the iconsize
+	as parameter
+
+2004-05-19  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* win.h, winmultiwindowicons.c (winXIconToHICON): Takes iconsize
+	as parameter 
+	* winglobals.c, winmultiwindowicons.c: Rename g_hiconX to g_hIconX.
+	Added new variable g_hSmallIconX for 16x16 icon.
+	* winwindow.h, winmultiwindowicons.c (winInitGlobalIcons): Inits the 
+	global g_hIconX handles.
+	* winwindow.h, winmultiwindowicons.c (winDestroyIcon): Free the icon
+	without messing with the global icon handle. 
+	* winmultiwindowicons.c (winSelectIcons): Generate a custom icon from
+	window settigns or set them to globals.
+	* winmultiwindowshape.c, winmultiwindowwindow.c, winwin32rootless.c,
+	  winwin32rootlesswindow.c, winwin32rootlesswndproc.c: Remove 
+	declaration of g_hiconX;
+	* winmultiwindowwindow.c (winCreateWindowsWindow),
+	  winwin32rootless.c (winMWExtWMCreateFrame): Use winSelectIcons 
+	to get the window icons. Set the small icon too.
+	* winmultiwindowwindow.c (winDestroyWindowsWindow),
+	  winmultiwindowicons.c (winUpdateIcon), 
+	  winprefs.c (ReloadEnumWindowsProc),
+	  winwin32rootlesswindow.c (winMWExtWMUpdateIcon),
+	  winwin32rootless.c (winMWExtWMDestroyFrame): Use winDestroyIcon
+	to free the icon without destroying the global icon.  
+	  
+2004-05-17  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* windialogs.c (winExitDlgProc, winAboutDlgProc),
+	  winmultiwindowwndproc.c (winTopLevelWindowProc),
+	  winwndproc.c (winWindowProc): Check if g_fSoftwareCursor is set 
+	before calling ShowCursor.  
+
+2004-05-09  Dan Wilks  <Dan_Wilks at intuit dot com>
+    
+	* winclipboard.h: Add extern prototypes for winDebug, winErrorFVerb
+	copied from winmsg.h.
+	* winclipboardinit.c (winFixClipboardChain): Post rather than send the
+	reinit message to the clipboard window.  Sending the message caused,
+	or possibly just exacerbated an existing, race condition that would
+	cause the X server to hang when coming back from a remote desktop
+	session.
+	* winclipboardwndproc.c (winProcessXEventsTimeout): switch to new
+	logging api's.
+	* winclipboardwindproc.c (winClipboardWindowProc): switch to new 
+	logging api's.  Add some additional debug logging.  Make best effort 
+	to prevent our window appearing twice in the clipboard chain.  Also 
+	detect loops when they occur and try to behave in a reasonable way.
+
+# vim:ts=8:noexpandtab        

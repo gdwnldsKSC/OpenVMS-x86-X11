@@ -1,0 +1,15 @@
+/Jamfile/1.2/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/descrip.mms/1.2/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/ftcache.c/1.2/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/ftcbasic.c/1.1/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/ftccache.c/1.3/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/ftccback.h/1.1/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/ftccmap.c/1.3/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/ftcerror.h/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/ftcglyph.c/1.2/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/ftcimage.c/1.2/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/ftcmanag.c/1.2/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/ftcmru.c/1.1/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/ftcsbits.c/1.3/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+/rules.mk/1.3/Wed Apr 28 10:39:04 2004//TXORG-6_8_2
+D

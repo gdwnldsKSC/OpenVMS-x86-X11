@@ -1,0 +1,21 @@
+/Makefile/1.1.1.1.2.1/Wed Dec 15 01:50:59 2004//TXORG-6_8_2
+/savage_3d_reg.h/1.1.1.1/Wed Jun 16 09:18:34 2004//TXORG-6_8_2
+/savage_bci.h/1.1.1.1/Wed Jun 16 09:18:34 2004//TXORG-6_8_2
+/savage_init.h/1.1.1.1/Wed Jun 16 09:18:34 2004//TXORG-6_8_2
+/savage_xmesa.c/1.1.1.1.4.1/Wed Dec 15 01:50:59 2004//TXORG-6_8_2
+/savagecontext.h/1.1.1.1.4.1/Wed Dec 15 01:50:59 2004//TXORG-6_8_2
+/savagedd.c/1.1.1.1/Wed Jun 16 09:18:35 2004//TXORG-6_8_2
+/savagedd.h/1.1.1.1/Wed Jun 16 09:18:35 2004//TXORG-6_8_2
+/savagedma.c/1.1.1.1/Wed Jun 16 09:18:35 2004//TXORG-6_8_2
+/savagedma.h/1.1.1.1/Wed Jun 16 09:18:35 2004//TXORG-6_8_2
+/savageioctl.c/1.1.1.1/Wed Jun 16 09:18:35 2004//TXORG-6_8_2
+/savageioctl.h/1.1.1.1/Wed Jun 16 09:18:35 2004//TXORG-6_8_2
+/savagespan.c/1.1.1.1/Wed Jun 16 09:18:35 2004//TXORG-6_8_2
+/savagespan.h/1.1.1.1/Wed Jun 16 09:18:35 2004//TXORG-6_8_2
+/savagestate.c/1.1.1.1/Wed Jun 16 09:18:36 2004//TXORG-6_8_2
+/savagestate.h/1.1.1.1/Wed Jun 16 09:18:36 2004//TXORG-6_8_2
+/savagetex.c/1.1.1.1/Wed Jun 16 09:18:36 2004//TXORG-6_8_2
+/savagetex.h/1.1.1.1/Wed Jun 16 09:18:36 2004//TXORG-6_8_2
+/savagetris.c/1.1.1.2/Thu Jul 22 06:52:09 2004//TXORG-6_8_2
+/savagetris.h/1.1.1.1/Wed Jun 16 09:18:36 2004//TXORG-6_8_2
+D

@@ -1,0 +1,20 @@
+/460gxPCI.c/1.1.1.2.6.2/Fri Dec 17 00:53:09 2004//TXORG-6_8_2
+/460gxPCI.h/1.1.1.1.6.1/Wed Dec 15 15:24:45 2004//TXORG-6_8_2
+/Imakefile/1.4.2.1/Wed Dec 15 15:24:45 2004//TXORG-6_8_2
+/Pci.c/1.3.2.1/Wed Dec 15 05:52:16 2004//TXORG-6_8_2
+/Pci.h/1.4/Wed Aug 11 21:14:17 2004//TXORG-6_8_2
+/Sbus.c/1.2/Fri Apr 23 19:54:08 2004//TXORG-6_8_2
+/axpPci.c/1.2/Fri Apr 23 19:54:08 2004//TXORG-6_8_2
+/e8870PCI.c/1.1.1.2.6.1/Wed Dec 15 15:24:45 2004//TXORG-6_8_2
+/e8870PCI.h/1.1.1.1.6.1/Wed Dec 15 15:24:45 2004//TXORG-6_8_2
+/freebsdPci.c/1.2/Fri Apr 23 19:54:08 2004//TXORG-6_8_2
+/ix86Pci.c/1.2.4.1/Wed Dec 15 05:14:44 2004//TXORG-6_8_2
+/linuxPci.c/1.3.4.1/Wed Dec 15 05:48:20 2004//TXORG-6_8_2
+/netbsdPci.c/1.1.1.2/Tue Nov 25 19:28:50 2003//TXORG-6_8_2
+/ppcPci.c/1.2/Fri Apr 23 19:54:08 2004//TXORG-6_8_2
+/sparcPci.c/1.1.1.2/Tue Nov 25 19:28:50 2003//TXORG-6_8_2
+/xf86Pci.h/1.1.1.2/Tue Nov 25 19:28:50 2003//TXORG-6_8_2
+/xf86Sbus.h/1.2.4.1/Wed Feb  2 00:59:25 2005//TXORG-6_8_2
+/zx1PCI.c/1.1.1.4.6.1/Wed Dec 15 15:24:45 2004//TXORG-6_8_2
+/zx1PCI.h/1.1.1.1.6.1/Wed Dec 15 15:24:45 2004//TXORG-6_8_2
+D

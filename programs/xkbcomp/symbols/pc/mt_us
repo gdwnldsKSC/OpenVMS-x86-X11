@@ -1,0 +1,22 @@
+// Maltese keyboard map (based on MSA Standard DMS100, annex A)
+// by Ramon Casha (ramon.casha@linux.org.mt)
+//
+// $XFree86$
+
+partial default alphanumeric_keys
+xkb_symbols "basic" {
+
+    include "pc/mt"
+
+    // Describes the differences between the mt
+    // keyboard and a US-based physical keyboard
+
+    name[Group1]="Maltese (US layout)";
+
+    key <BKSL>	{ [ zabovedot,  Zabovedot,    backslash,          bar ]	};
+
+    key <TLDE>	{ [ cabovedot,  Cabovedot,        grave,   asciitilde ]	};
+
+    key <AE03>	{ [         3,   EuroSign,   numbersign               ]	};
+
+};

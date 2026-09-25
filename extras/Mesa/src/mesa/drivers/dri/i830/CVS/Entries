@@ -1,0 +1,22 @@
+/Makefile/1.1.1.1/Wed Jun 16 09:18:08 2004//TXORG-6_8_2
+/i830_3d_reg.h/1.1.1.1/Wed Jun 16 09:18:06 2004//TXORG-6_8_2
+/i830_context.c/1.1.1.1/Wed Jun 16 09:18:06 2004//TXORG-6_8_2
+/i830_context.h/1.1.1.1/Wed Jun 16 09:18:06 2004//TXORG-6_8_2
+/i830_debug.c/1.1.1.1/Wed Jun 16 09:18:06 2004//TXORG-6_8_2
+/i830_debug.h/1.1.1.1/Wed Jun 16 09:18:06 2004//TXORG-6_8_2
+/i830_ioctl.c/1.1.1.1/Wed Jun 16 09:18:07 2004//TXORG-6_8_2
+/i830_ioctl.h/1.1.1.1/Wed Jun 16 09:18:07 2004//TXORG-6_8_2
+/i830_render.c/1.1.1.1/Wed Jun 16 09:18:07 2004//TXORG-6_8_2
+/i830_screen.c/1.1.1.2/Thu Jul 22 06:51:36 2004//TXORG-6_8_2
+/i830_screen.h/1.1.1.1/Wed Jun 16 09:18:07 2004//TXORG-6_8_2
+/i830_span.c/1.1.1.1/Wed Jun 16 09:18:07 2004//TXORG-6_8_2
+/i830_span.h/1.1.1.1/Wed Jun 16 09:18:07 2004//TXORG-6_8_2
+/i830_state.c/1.1.1.1/Wed Jun 16 09:18:07 2004//TXORG-6_8_2
+/i830_state.h/1.1.1.1/Wed Jun 16 09:18:07 2004//TXORG-6_8_2
+/i830_tex.c/1.1.1.1/Wed Jun 16 09:18:08 2004//TXORG-6_8_2
+/i830_tex.h/1.1.1.1/Wed Jun 16 09:18:08 2004//TXORG-6_8_2
+/i830_texmem.c/1.1.1.2/Thu Jul 22 06:51:38 2004//TXORG-6_8_2
+/i830_texstate.c/1.1.1.2/Thu Jul 22 06:51:37 2004//TXORG-6_8_2
+/i830_tris.c/1.1.1.2/Thu Jul 22 06:51:38 2004//TXORG-6_8_2
+/i830_tris.h/1.1.1.1/Wed Jun 16 09:18:08 2004//TXORG-6_8_2
+D

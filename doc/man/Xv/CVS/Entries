@@ -1,0 +1,22 @@
+/Imakefile/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/Xv.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvFreeAdaptorInfo.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvFreeEncodingInfo.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvGetPortAttribute.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvGetStill.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvGetVideo.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvGrabPort.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvPortNotify.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvPutStill.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvPutVideo.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvQueryAdaptors.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvQueryBestSize.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvQueryEncodings.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvQueryExtension.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvSelectPortNotify.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvSelectVideoNotify.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvSetPortAttribute.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvStopVideo.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvUngrabPort.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+/XvVideoNotify.man/1.2/Fri Apr 23 18:42:14 2004//TXORG-6_8_2
+D

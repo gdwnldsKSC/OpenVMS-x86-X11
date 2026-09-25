@@ -1,0 +1,13 @@
+/.cvsignore/1.1.1.1/Wed Jun 16 09:18:45 2004//TXORG-6_8_2
+/genkgi.conf.in/1.1.1.1/Wed Jun 16 09:18:45 2004//TXORG-6_8_2
+/genkgi.h/1.1.1.1/Wed Jun 16 09:18:45 2004//TXORG-6_8_2
+/genkgi_mode.c/1.1.1.1/Wed Jun 16 09:18:45 2004//TXORG-6_8_2
+/genkgi_visual.c/1.1.1.1/Wed Jun 16 09:18:45 2004//TXORG-6_8_2
+/linear.c/1.1.1.1.4.1/Wed Dec 15 01:51:00 2004//TXORG-6_8_2
+/linear_15.c/1.1.1.1/Wed Jun 16 09:18:45 2004//TXORG-6_8_2
+/linear_16.c/1.1.1.1/Wed Jun 16 09:18:45 2004//TXORG-6_8_2
+/linear_24.c/1.1.1.1/Wed Jun 16 09:18:45 2004//TXORG-6_8_2
+/linear_32.c/1.1.1.1/Wed Jun 16 09:18:45 2004//TXORG-6_8_2
+/linear_8.c/1.1.1.1/Wed Jun 16 09:18:45 2004//TXORG-6_8_2
+/stubs.c/1.1.1.1/Wed Jun 16 09:18:45 2004//TXORG-6_8_2
+D

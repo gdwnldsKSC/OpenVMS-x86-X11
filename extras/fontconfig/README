@@ -1,0 +1,35 @@
+			Fontconfig
+	Font configuration and customization library
+		      Version 2.2.2
+		         2004-3-10
+
+This is the third public release of fontconfig, a font configuration and
+customization library.  Fontconfig is designed to locate fonts within the
+system and select them according to requirements specified by applications.
+
+Fontconfig is not a rasterization library, nor does it impose a particular
+rasterization library on the application.  The X-specific library
+'Xft' uses fontconfig along with freetype to specify and rasterize fonts.
+
+Version 2.2.2
+
+Update #includes for newer versions of FreeType
+
+Version 2.2.1
+
+Allows executable names for autotools to be specified in environment
+variables.
+
+Close some SGML tags in the documentation.
+
+Fix a catastrophic bug in pattern editing code
+
+Fix a typo "bitsteam" -> "bitstream"
+
+Let FreeType compute slant for type1 fonts instead of poking at the
+italic_angle value.
+
+Fix language comparison function.
+
+Keith Packard
+keithp@keithp.com

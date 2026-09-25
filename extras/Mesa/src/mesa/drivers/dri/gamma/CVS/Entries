@@ -1,0 +1,25 @@
+/Makefile/1.1.1.1/Wed Jun 16 09:18:03 2004//TXORG-6_8_2
+/gamma_client.h/1.1.1.1/Wed Jun 16 09:18:02 2004//TXORG-6_8_2
+/gamma_context.c/1.1.1.1/Wed Jun 16 09:18:02 2004//TXORG-6_8_2
+/gamma_context.h/1.1.1.1/Wed Jun 16 09:18:00 2004//TXORG-6_8_2
+/gamma_dd.c/1.1.1.1/Wed Jun 16 09:18:02 2004//TXORG-6_8_2
+/gamma_inithw.c/1.1.1.1/Wed Jun 16 09:18:02 2004//TXORG-6_8_2
+/gamma_lock.c/1.1.1.1/Wed Jun 16 09:18:02 2004//TXORG-6_8_2
+/gamma_lock.h/1.1.1.1/Wed Jun 16 09:18:02 2004//TXORG-6_8_2
+/gamma_macros.h/1.1.1.1/Wed Jun 16 09:18:02 2004//TXORG-6_8_2
+/gamma_regs.h/1.1.1.1/Wed Jun 16 09:18:02 2004//TXORG-6_8_2
+/gamma_render.c/1.1.1.2/Thu Jul 22 06:51:31 2004//TXORG-6_8_2
+/gamma_screen.c/1.1.1.1/Wed Jun 16 09:18:02 2004//TXORG-6_8_2
+/gamma_screen.h/1.1.1.1/Wed Jun 16 09:18:02 2004//TXORG-6_8_2
+/gamma_span.c/1.1.1.1/Wed Jun 16 09:18:02 2004//TXORG-6_8_2
+/gamma_state.c/1.1.1.1/Wed Jun 16 09:18:03 2004//TXORG-6_8_2
+/gamma_tex.c/1.1.1.1/Wed Jun 16 09:18:03 2004//TXORG-6_8_2
+/gamma_texmem.c/1.1.1.1/Wed Jun 16 09:18:03 2004//TXORG-6_8_2
+/gamma_texstate.c/1.1.1.1/Wed Jun 16 09:18:03 2004//TXORG-6_8_2
+/gamma_tris.c/1.1.1.2/Thu Jul 22 06:51:32 2004//TXORG-6_8_2
+/gamma_tris.h/1.1.1.1/Wed Jun 16 09:18:03 2004//TXORG-6_8_2
+/gamma_tritmp.h/1.1.1.1/Wed Jun 16 09:18:03 2004//TXORG-6_8_2
+/gamma_vb.c/1.1.1.2/Thu Jul 22 06:51:32 2004//TXORG-6_8_2
+/gamma_vb.h/1.1.1.1/Wed Jun 16 09:18:03 2004//TXORG-6_8_2
+/gamma_xmesa.c/1.1.1.2/Thu Jul 22 06:51:31 2004//TXORG-6_8_2
+D

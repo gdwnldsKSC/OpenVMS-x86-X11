@@ -1,0 +1,21 @@
+/AttrValid.c/1.2/Fri Apr 23 18:57:32 2004//TXORG-6_8_2
+/AttrValid.h/1.2/Fri Apr 23 18:57:32 2004//TXORG-6_8_2
+/DiPrint.h/1.2/Fri Apr 23 18:57:32 2004//TXORG-6_8_2
+/Imakefile/1.3.4.1/Wed Dec 15 07:38:28 2004//TXORG-6_8_2
+/Init.c/1.6.4.2/Mon Dec 13 05:12:12 2004//TXORG-6_8_2
+/Oid.c/1.2.4.1/Mon Dec 13 05:30:48 2004//TXORG-6_8_2
+/Oid.h/1.2/Fri Apr 23 18:57:32 2004//TXORG-6_8_2
+/OidDefs.h/1.2/Fri Apr 23 18:57:32 2004//TXORG-6_8_2
+/OidStrs.h/1.2/Fri Apr 23 18:57:32 2004//TXORG-6_8_2
+/Util.c/1.2.4.1/Mon Jan 24 03:39:28 2005//TXORG-6_8_2
+/ValTree.c/1.2/Fri Apr 23 18:57:32 2004//TXORG-6_8_2
+/Xprt.html/1.2.2.1/Wed Dec 15 07:38:29 2004//TXORG-6_8_2
+/Xprt.man/1.1.4.1/Wed Dec 15 07:38:29 2004//TXORG-6_8_2
+/Xprt.sgml/1.1.4.1/Wed Dec 15 07:38:29 2004//TXORG-6_8_2
+/attributes.c/1.5.4.3/Mon Jan 24 03:39:28 2005//TXORG-6_8_2
+/attributes.h/1.2.4.1/Mon Jan 24 03:39:28 2005//TXORG-6_8_2
+/ddxInit.c/1.4/Tue Jul 27 20:26:47 2004//TXORG-6_8_2
+/mediaSizes.c/1.2/Fri Apr 23 18:57:32 2004//TXORG-6_8_2
+/spooler.c/1.3.4.1/Mon Jan 24 04:20:45 2005//TXORG-6_8_2
+/spooler.h/1.2/Fri Apr 23 18:57:32 2004//TXORG-6_8_2
+D

@@ -1,0 +1,8 @@
+XCOMM $XFree86$
+
+#include <Server.tmpl>
+#include <lnxdoc.rules>
+
+all::
+
+LinuxDocTarget(dmx)

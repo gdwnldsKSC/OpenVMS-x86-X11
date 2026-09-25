@@ -1,0 +1,32 @@
+XCOMM $XFree86$
+
+FONTCONFIGDIR = $(TOP)/extras/fontconfig
+
+INCLUDES=$(FREETYPE2INCLUDES) -I$(FONTCONFIGDIR)
+
+LOCAL_LIBRARIES=FontconfigClientLibs
+        DEPLIBS=FontconfigClientDepLibs
+
+SRCS=fc-cache.c
+OBJS=fc-cache.o
+
+#if !InstallFontconfigLibrary
+#undef InstallProgram
+#define InstallProgram(x,y)
+#undef InstallManPage
+#define InstallManPage(x,y)
+#endif
+
+ComplexProgramTarget(fc-cache)
+LinkBuildBinary(ProgramTargetName(fc-cache))
+
+#if InstallFontconfigLibrary
+install::
+	if [ x$${DESTDIR} = x ]; then \
+		$(FCCACHE) -v -f;\
+	fi
+#endif
+
+LinkSourceFile(fc-cache.c,$(FONTCONFIGDIR)/fc-cache)
+LinkSourceFile(fc-cache.man,$(FONTCONFIGDIR)/fc-cache)
+

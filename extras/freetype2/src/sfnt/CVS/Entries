@@ -1,0 +1,19 @@
+/Jamfile/1.2/Wed Apr 28 10:39:06 2004//TXORG-6_8_2
+/descrip.mms/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/module.mk/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/rules.mk/1.3/Wed Apr 28 10:39:06 2004//TXORG-6_8_2
+/sfdriver.c/1.3/Wed Apr 28 10:39:06 2004//TXORG-6_8_2
+/sfdriver.h/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/sferrors.h/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/sfnt.c/1.2/Wed Apr 28 10:39:06 2004//TXORG-6_8_2
+/sfobjs.c/1.3/Wed Apr 28 10:39:06 2004//TXORG-6_8_2
+/sfobjs.h/1.1.1.2/Tue Nov 25 19:27:23 2003//TXORG-6_8_2
+/ttcmap0.c/1.3/Wed Apr 28 10:39:06 2004//TXORG-6_8_2
+/ttcmap0.h/1.2/Wed Apr 28 10:39:06 2004//TXORG-6_8_2
+/ttload.c/1.3/Wed Apr 28 10:39:06 2004//TXORG-6_8_2
+/ttload.h/1.1.1.2/Tue Nov 25 19:27:23 2003//TXORG-6_8_2
+/ttpost.c/1.2/Fri Apr 23 18:42:51 2004//TXORG-6_8_2
+/ttpost.h/1.1.1.2/Tue Nov 25 19:27:23 2003//TXORG-6_8_2
+/ttsbit.c/1.3/Wed Apr 28 10:39:06 2004//TXORG-6_8_2
+/ttsbit.h/1.2/Wed Apr 28 10:39:06 2004//TXORG-6_8_2
+D

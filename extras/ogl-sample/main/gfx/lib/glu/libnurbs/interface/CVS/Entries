@@ -1,0 +1,21 @@
+/GNUmakefile/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/Imakefile/1.1.1.1/Fri Nov 14 16:48:24 2003//TXORG-6_8_2
+/bezierEval.cc/1.2/Fri Apr 23 18:42:55 2004//TXORG-6_8_2
+/bezierEval.h/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/bezierPatch.cc/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/bezierPatch.h/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/bezierPatchMesh.cc/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/bezierPatchMesh.h/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/glcurveval.cc/1.2/Fri Apr 23 18:42:55 2004//TXORG-6_8_2
+/glcurveval.h/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/glimports.h/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/glinterface.cc/1.2/Fri Apr 23 18:42:55 2004//TXORG-6_8_2
+/glrenderer.cc/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/glrenderer.h/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/glsurfeval.cc/1.2/Fri Apr 23 18:42:55 2004//TXORG-6_8_2
+/glsurfeval.h/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/incurveeval.cc/1.2/Fri Apr 23 18:42:55 2004//TXORG-6_8_2
+/insurfeval.cc/1.2/Fri Apr 23 18:42:55 2004//TXORG-6_8_2
+/mystdio.h/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+/mystdlib.h/1.1.1.4/Sun Mar 14 08:29:10 2004//TXORG-6_8_2
+D

@@ -1,0 +1,20 @@
+/Imakefile/1.2/Fri Apr 23 18:42:00 2004//TXORG-6_8_2
+/lexer.l/1.2/Fri Apr 23 18:42:00 2004//TXORG-6_8_2
+/main.c/1.2/Fri Apr 23 18:42:00 2004//TXORG-6_8_2
+/psw.c/1.2/Fri Apr 23 18:42:00 2004//TXORG-6_8_2
+/psw.h/1.1.1.1/Fri Nov 14 16:48:20 2003//TXORG-6_8_2
+/pswdict.c/1.1.1.1/Fri Nov 14 16:48:20 2003//TXORG-6_8_2
+/pswdict.h/1.1.1.1/Fri Nov 14 16:48:20 2003//TXORG-6_8_2
+/pswfile.c/1.2/Fri Apr 23 18:42:00 2004//TXORG-6_8_2
+/pswparser.y/1.2/Fri Apr 23 18:42:00 2004//TXORG-6_8_2
+/pswpriv.h/1.2/Fri Apr 23 18:42:00 2004//TXORG-6_8_2
+/pswrap.man/1.1.1.1/Fri Nov 14 16:48:20 2003//TXORG-6_8_2
+/pswsemantics.c/1.1.1.1/Fri Nov 14 16:48:20 2003//TXORG-6_8_2
+/pswsemantics.h/1.1.1.1/Fri Nov 14 16:48:20 2003//TXORG-6_8_2
+/pswstring.c/1.2/Fri Apr 23 18:42:00 2004//TXORG-6_8_2
+/pswtypes.h/1.2/Fri Apr 23 18:42:00 2004//TXORG-6_8_2
+/pswversion.h/1.2/Fri Apr 23 18:42:00 2004//TXORG-6_8_2
+/sysname_gen.c/1.1.1.1/Fri Nov 14 16:48:20 2003//TXORG-6_8_2
+/systemnames.c/1.1.1.1/Fri Nov 14 16:48:20 2003//TXORG-6_8_2
+/yyerror.c/1.1.1.1/Fri Nov 14 16:48:20 2003//TXORG-6_8_2
+D

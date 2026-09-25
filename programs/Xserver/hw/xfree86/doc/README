@@ -1,0 +1,147 @@
+                            README for X11R6.8.2
+
+                            The X.Org Foundation
+
+                               9 February 2005
+
+                                  Abstract
+
+     X11R6.8.2 is an Open Source version of the X Window System that
+     supports many UNIX(R) and UNIX-like operating systems (such as
+     Linux, FreeBSD, NetBSD, OpenBSD and Solaris x86) on Intel and other
+     platforms.  This version is compatible with X11R6.8.1 and other X
+     window system implementations which support the X11R6 standard.
+
+1.  What is X11R6.8.2?
+
+X11R6.8.2 is the eighth full release in the X11R6 series.
+
+X11R6.8.2 is the current X.Org Foundation release series.  The core of
+X11R6.8.2 is a modular X server.  The 6.8.2 version is a new release that
+includes additional hardware support, functional enhancements and bug fixes.
+Specific release enhancements can be viewed in the Release Notes.
+
+Most modern PC video hardware is supported in X11R6.8.2, and most PC video
+hardware that isn't supported explicitly can be used with the "vesa" driver.
+The Release Notes has a table showing the drivers provided with X11R6.8.2,
+and links to related documentation.
+
+The X.Org Foundation X releases are produced by the X.Org Foundation.  The
+X.Org Foundation has been formed as a Delaware corporation organized to oper-
+ate as a scientific charity under IRS code 501(c)(3) to chartered to develop
+and execute effective strategies which provide world-wide stewardship of the
+X Window System technology and standards. Membership in the X.Org Foundation
+is free to all participants.  Applications for Membership are now being
+accepted, and active participants in the further development of the X Window
+Technology are invited to complete a membership application
+<URL:http://www.x.org/XOrg_Foundation_Membership.html>.  The X11R6.8.2 code-
+base forms the fourth X window system release since the formation of the
+X.org foundataion and includes code from the X Consortium, the Open Group and
+the XFree86[tm] project.  This release is dedicated to the greater X commu-
+nity, developers and users alike.
+
+2.  Licensing
+
+X Window System source code is covered by many licenses.  All of these
+licenses have in common the fact that they do not impose significant condi-
+tions on the modification or redistribution or either source code or binaries
+beyond requiring one or more of the following:
+
+  1.  Copyright and/or license notices are left intact.
+
+  2.  Copyright and/or license notices are reproduced verbatim in documenta-
+      tion accompanying binary distributions.
+
+  3.  Attributions are included with documentation accompanying binaries.
+
+Most of these licenses are based on the MIT, X Consortium, or BSD (original
+and revised) licenses.  All of them are consistent with the Open Source Defi-
+nition, and most are consistent with the Free Software Foundation's Free
+Software Definition.
+
+Copyright and Licensing information for X, including the reproduction of
+copyright and/or license notices and attributions required by some of the
+licenses for binary distributions, can be found in the License Document.  If
+you find any omissions in that document, please contact us with details at
+<xf_board@x.org>.  While the current licenses are all open source licenses,
+the X.Org Foundation is attempting, with time, to bring as much as possible
+of the code's licenses in the distribution into compliance with the Debian
+Free Software Guidelines.
+
+3.  Pointers to additional information
+
+The documentation for this release can be found online at the X.Org web site
+<URL:http://wiki.x.org/>.  Information about binary distributions and the
+attendant installation instructions can be found in the Installation Docu-
+ment.
+
+The X11 version numbering system (including historical information) can be
+found in the Versions Document.
+
+Additional information may be available at the X.Org Foundation Wiki
+<URL:http://wiki.x.org/>.
+
+4.  The Public Mailing Lists
+
+Current information about the X.Org Foundation public mailing lists is avail-
+able on the X.Org mailing list page <URL:http://www.x.org/XOrg_Founda-
+tion_Join_OpenLists.html> and related desktop technology mailing lists can be
+found on Freedesktop.org's mailing list page <URL:http://freedesk-
+top.org/mailman/listinfo>.
+
+5.  Contributing to the X.Org Foundation's X efforts.
+
+If you have any new work or enhancements/bug fixes for existing work, please
+send them to <xorg@freedesktop.org> or to our bug tracking system
+<URL:http://bugzilla.freedesktop.org/> using the xorg component.  This will
+ensure that they are included in future releases.
+
+6.  How to get X11R6.8.2
+
+X11R6.8.2 can be found from the X.Org Foundation wiki at
+<URL:http://wiki.x.org>, and at mirrors of this server.  Information about
+obtaining and installing binary distributions of this release can be found in
+the Installation Document.  Information about obtaining the release in source
+form is given below.
+
+The source for version 6.8.2 is split into seven tarballs:
+
+     X11R6.8.2-src1.tar.gz
+     X11R6.8.2-src2.tar.gz
+     X11R6.8.2-src3.tar.gz
+     X11R6.8.2-src4.tar.gz
+     X11R6.8.2-src5.tar.gz
+     X11R6.8.2-src6.tar.gz
+     X11R6.8.2-src7.tar.gz
+
+The first three contain everything except the fonts and general X11 documen-
+tation.  Those three are sufficient for building X11R6.8.2 if you already
+have a set of fonts.  The fourth and fifth contain the fonts.  The sixth con-
+tains the source for the general X11 documentation.  The seventh contains the
+general X11 documentation in hardcopy format.
+
+To format the X11R6.8.2 documentation use the latest version of our doctools
+package available from the Xorg CVS repository's "doctools" module.
+
+The X source code for this and all releases/snapshots as well as development
+versions can also be accessed via the Freedesktop.org CVS repository.  It's
+also possible to browse the freedesktop CVS repository
+<URL:http://cvs.freedesktop.org/>.  The CVS tag for this version is
+"XORG-6_8_2".  The CVS tag for the stable branch for this release is
+"XORG-6_8-branch".  To check out the latest development version, don't spec-
+ify any tag.
+
+7.  Reporting Bugs
+
+Bugs should be reported to bug tracking system <URL:http://bugzilla.freedesk-
+top.org/> using the xorg compoent.   Before reporting bugs, please check the
+server log file, which can be found at /var/log/Xorg.0.log on most platforms.
+If you can't resolve the problem yourself, send the entire log file with your
+bug report but not the operating system core dump.  Do not edit  the log file
+as our developers use it to reproduce and debug your problem.  Please attach
+it to your bug report.
+
+     $Id$.
+
+
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README,v 1.3.2.4 2005/02/08 23:54:04 kem Exp $

@@ -1,0 +1,52 @@
+XCOMM $XdotOrg: xc/lib/GL/dri/drm/Imakefile,v 1.4 2004/08/27 03:22:12 kem Exp $
+XCOMM $XFree86: xc/lib/GL/dri/drm/Imakefile,v 1.22 2003/09/28 20:15:00 alanh Exp $
+
+#define DoNormalLib (NormalLibGlx || SharedLibGlxWithoutPIC)
+#define DoSharedLib (SharedLibGlx && !SharedLibGlxWithoutPIC)
+#define DoExtraLib SharedLibGlx
+#define DoDebugLib DebugLibGlx
+#define DoProfileLib ProfileLibGlx
+
+#if Malloc0ReturnsNull
+ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
+#endif
+
+      DEFINES = $(ALLOC_DEFINES)
+     INCLUDES = -I$(XINCLUDESRC) -I$(EXTINCSRC) \
+		-I$(XF86OSSRC)/$(OS_SUBDIR)/drm \
+		-I$(DRMSRCDIR)/$(OS_SUBDIR) \
+		-I$(DRMSRCDIR)/$(OS_SUBDIR2) \
+		-I$(XF86OSSRC) -I$(DRMSRCDIR)/shared
+         SRCS = xf86drm.c xf86drmHash.c xf86drmRandom.c xf86drmSL.c
+         OBJS = xf86drm.o xf86drmHash.o xf86drmRandom.o xf86drmSL.o
+
+#if defined(LinuxArchitecture)
+OS_SUBDIR = linux
+OS_SUBDIR2 = linux
+OS_SUBDIR3 = shared
+#endif
+#if defined(FreeBSDArchitecture) || defined(BSDOSArchitecture) || \
+    defined(NetBSDArchitecture) || defined(OpenBSDArchitecture)
+OS_SUBDIR = bsd
+OS_SUBDIR2 = linux
+OS_SUBDIR3 = shared
+#endif
+
+LinkSourceFile(xf86drm.c,$(XF86OSSRC)/$(OS_SUBDIR2)/drm)
+
+LinkSourceFile(xf86drmHash.c,$(XF86OSSRC)/$(OS_SUBDIR2)/drm)
+LinkSourceFile(xf86drmRandom.c,$(XF86OSSRC)/$(OS_SUBDIR2)/drm)
+LinkSourceFile(xf86drmSL.c,$(XF86OSSRC)/$(OS_SUBDIR2)/drm)
+
+LinkSourceFile(drm.h,$(DRMSRCDIR)/$(OS_SUBDIR3))
+
+#include <Library.tmpl>
+
+LibraryObjectRule()
+
+SubdirLibraryRule($(OBJS))
+NormalLintTarget($(SRCS))
+
+DependTarget()
+
+InstallDriverSDKNonExecFile(drm.h,$(DRIVERSDKINCLUDEDIR))

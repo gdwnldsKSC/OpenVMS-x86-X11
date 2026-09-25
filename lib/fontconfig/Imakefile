@@ -1,0 +1,192 @@
+XCOMM $XdotOrg: xc/lib/fontconfig/Imakefile,v 1.2 2004/04/23 18:44:24 eich Exp $
+XCOMM $XFree86: xc/lib/fontconfig/Imakefile,v 1.17 2003/11/19 20:57:37 dawes Exp $
+
+#define DoNormalLib NormalLibFontconfig
+#define DoSharedLib SharedLibFontconfig
+#define DoExtraLib SharedLibFontconfig
+#define DoDebugLib DebugLibFontconfig
+#define DoProfileLib ProfileLibFontconfig
+#define HasSharedData YES
+#define LibName fontconfig
+#define SoRev SOFONTCONFIGREV
+#define LibInstall InstallFontconfigLibrary
+#define LibHeaders InstallFontconfigLibrary
+
+#define IncSubdir fontconfig
+
+HEADERS=fcfreetype.h fcprivate.h fontconfig.h
+
+BuildIncludes($(HEADERS),IncSubdir,..)
+#if InstallFontconfigLibrary
+InstallMultipleFlags($(HEADERS),$(INCDIR)/IncSubdir,$(INSTINCFLAGS))
+#endif
+
+#include <Threads.tmpl>
+
+FONTCONFIGSRC=$(TOP)/extras/fontconfig
+
+INCLUDES= $(EXPATINCLUDES) $(FREETYPE2INCLUDES) -I$(FONTCONFIGSRC)/src \
+	-I$(FONTCONFIGSRC) -I$(XBUILDINCDIR)
+
+DEFINES=-DFC_DEFAULT_FONTS='"$(FC_DEFAULT_FONTS)"' -DHAVE_EXPAT -DXFREE86_FT2 \
+	-DFONTCONFIG_PATH='"$(FONTCONFIGFONTSCONFDIR)"'
+
+REQUIREDLIBS=$(LDPRELIBS) $(FREETYPE2LIB) $(EXPATLIB)
+
+SRCS=fcatomic.c fcblanks.c fccache.c fccfg.c fccharset.c fcdbg.c \
+     fcdefault.c fcdir.c fcfreetype.c fcfs.c fcinit.c fclang.c fclist.c \
+     fcmatch.c fcmatrix.c fcname.c fcpat.c fcstr.c fcxml.c
+
+OBJS=fcatomic.o fcblanks.o fccache.o fccfg.o fccharset.o fcdbg.o \
+     fcdefault.o fcdir.o fcfreetype.o fcfs.o fcinit.o fclang.o fclist.o \
+     fcmatch.o fcmatrix.o fcname.o fcpat.o fcstr.o fcxml.o
+
+#include <Library.tmpl>
+
+#if DoSharedLib && SharedDataSeparation
+SpecialCObjectRule(sharedlib,NullParameter,$(SHLIBDEF))
+#endif
+
+#if 0
+MANSUFFIX = $(LIBMANSUFFIX)
+#if InstallFontconfigLibrary
+InstallManPage(fontconfig,$(LIBMANDIR))
+#endif
+#endif
+
+DependTarget()
+
+FONTCONFIG_VERSION=2.2.2
+
+#ifndef FontconfigFontsConfDir
+#if NothingOutsideProjectRoot
+#define FontconfigFontsConfDir $(PROJECTROOT)/etc/fonts
+#else
+#define FontconfigFontsConfDir /etc/fonts
+#endif
+#endif
+
+FONTCONFIGFONTSCONFDIR=FontconfigFontsConfDir
+
+#ifdef DarwinArchitecture
+MACFONTDIRS = ~/Library/Fonts /Library/Fonts /Network/Library/Fonts \
+              /System/Library/Fonts
+#endif
+
+#if NothingOutsideProjectRoot
+FONTDIRS=$(FONTDIR)
+#else
+DEFAULTFONTDIRS=/usr/share/fonts
+FONTDIRS=$(FONTDIR) $(MACFONTDIRS)
+#endif
+
+RPATH_CFLAG = HardCodeLibdirFlag
+
+SUBSTVARS=prefix=$(PROJECTROOT) \
+          exec_prefix=$(BINDIR) \
+          libdir=$(USRLIBDIR) \
+	  hardcode_libdir_flag_spec=$(RPATH_CFLAG) \
+          includedir=$(INCROOT) \
+          VERSION=$(FONTCONFIG_VERSION)
+
+CONFIG_SUBST_PROG=sh ./config-subst
+
+#if (defined(SunArchitecture) && defined(SVR4Architecture)) && !(HasGnuMake)
+XCOMM Required for the config-subst rules to work with Solaris make
+SHELL=/bin/ksh
+#endif
+
+#if InstallFontconfigLibrary
+# ifndef InstallNamedTargetBackup
+#  define InstallNamedTargetBackup(step,srcname,flags,dest,dstname)	@@\
+step:: srcname								@@\
+	MakeDir($(DESTDIR)dest)						@@\
+	MoveToBakFile($(DESTDIR)dest/dstname)				@@\
+	$(INSTALL) $(INSTALLFLAGS) flags srcname $(DESTDIR)dest/dstname
+# endif /* InstallNamedTargetBackup */
+
+# ifndef InstallNonExecFileBackup
+#  define InstallNonExecFileBackup(file,dest)				@@\
+InstallNamedTargetBackup(install,file,$(INSTDATFLAGS),dest,file)
+# endif /* InstallNonExecFileBackup */
+
+InstallNonExecFileBackup(fonts.conf,$(FONTCONFIGFONTSCONFDIR))
+InstallNonExecFile(fonts.dtd,$(FONTCONFIGFONTSCONFDIR))
+#endif
+
+all:: fonts.conf
+
+fonts.conf: fonts.conf.in
+	RemoveFile($@)
+	DEFAULTFONTDIR=FC_DEFAULT_FONTS=$(DEFAULTFONTDIRS); \
+	FONTDIR=FC_FONTPATH=`for i in  $(FONTDIRS); \
+		do echo -n '<dir>'$$i'</dir> '; done;`; \
+	FONTDIRDATE=FC_FONTDATE=`date;`;\
+	$(CONFIG_SUBST_PROG) "$$DEFAULTFONTDIR" "$$FONTDIR" "$$FONTDIRDATE" \
+		< fonts.conf.in > $@;
+
+clean::
+	RemoveFile(fonts.conf)
+
+#if SharedLibFontconfig
+all:: fontconfig-def.cpp 
+
+fontconfig-def.cpp: fontconfig.def.in
+	RemoveFile($@)
+	MAJ=`expr "$(SOFONTCONFIGREV)" : "\([^\.]*\)\..*"`; \
+	MIN=`expr "$(SOFONTCONFIGREV)" : "[^\.]*\.\([^\.]*\)\.*.*"` || true;\
+	TEEN=`expr "$(SOFONTCONFIGREV)" : "[^\.]*\.[^\.]*\.*\(.*\)"` || true;\
+	CUR=LT_CURRENT=`expr $$MAJ + $$MIN`;\
+	REV=LT_REVISION=$$TEEN;\
+	$(CONFIG_SUBST_PROG) $$CUR $$REV < fontconfig.def.in > $@
+
+clean::
+	RemoveFile(fontconfig-def.cpp)
+#endif
+
+all:: fontconfig.pc
+
+fontconfig.pc: fontconfig.pc.in
+	RemoveFile($@)
+	$(CONFIG_SUBST_PROG) $(SUBSTVARS) < fontconfig.pc.in > $@
+
+#if InstallFontconfigLibrary
+InstallNonExecFile(fontconfig.pc,$(USRLIBDIR)/pkgconfig)
+#endif
+
+clean::
+	RemoveFile(fontconfig.pc)
+
+/* config stuff */
+LinkSourceFile(fontconfig.pc.in,$(FONTCONFIGSRC))
+LinkSourceFile(fonts.conf.in,$(FONTCONFIGSRC))
+LinkSourceFile(fonts.dtd,$(FONTCONFIGSRC))
+
+/* Source */
+LinkSourceFile(fcatomic.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcblanks.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fccache.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fccfg.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fccharset.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcdbg.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcdefault.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcdir.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcfreetype.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcfs.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcinit.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fclang.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fclist.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcmatch.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcmatrix.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcname.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcpat.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcstr.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fcxml.c,$(FONTCONFIGSRC)/src)
+LinkSourceFile(fontconfig.def.in,$(FONTCONFIGSRC)/src)
+/*LinkSourceFile(fontconfig.man,$(FONTCONFIGSRC)/src)*/
+
+/* Public headers */
+LinkSourceFile(fcfreetype.h,$(FONTCONFIGSRC)/fontconfig)
+LinkSourceFile(fcprivate.h,$(FONTCONFIGSRC)/fontconfig)
+LinkSourceFile(fontconfig.h,$(FONTCONFIGSRC)/fontconfig)
+

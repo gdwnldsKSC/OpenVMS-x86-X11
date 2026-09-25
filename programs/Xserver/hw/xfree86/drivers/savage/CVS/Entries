@@ -1,0 +1,24 @@
+/Imakefile/1.2/Fri Jul 30 21:25:26 2004//TXORG-6_8_2
+/savage.man/1.2/Fri Apr 23 19:44:35 2004//TXORG-6_8_2
+/savage_accel.c/1.4/Fri Jul 30 21:25:26 2004//TXORG-6_8_2
+/savage_bci.h/1.3/Fri Jul 30 21:25:26 2004//TXORG-6_8_2
+/savage_cursor.c/1.3/Fri Jul 30 21:25:26 2004//TXORG-6_8_2
+/savage_dga.c/1.1.1.1/Fri Nov 14 16:48:55 2003//TXORG-6_8_2
+/savage_dri.c/1.2/Fri Jul 30 20:30:54 2004//TXORG-6_8_2
+/savage_dri.h/1.1.3.1/Wed Jun 16 09:26:53 2004//TXORG-6_8_2
+/savage_dripriv.h/1.1.3.1/Wed Jun 16 09:26:53 2004//TXORG-6_8_2
+/savage_driver.c/1.6/Mon Aug 16 09:13:14 2004//TXORG-6_8_2
+/savage_driver.h/1.3/Fri Jul 30 21:25:26 2004//TXORG-6_8_2
+/savage_drm.h/1.1.3.1/Wed Jun 16 09:26:53 2004//TXORG-6_8_2
+/savage_hwmc.c/1.1.3.1/Wed Jun 16 09:26:53 2004//TXORG-6_8_2
+/savage_i2c.c/1.1.1.1/Fri Nov 14 16:48:55 2003//TXORG-6_8_2
+/savage_image.c/1.4/Fri Jul 30 21:25:26 2004//TXORG-6_8_2
+/savage_regs.h/1.3/Fri Jul 30 21:25:26 2004//TXORG-6_8_2
+/savage_sarea.h/1.1.3.1/Wed Jun 16 09:26:53 2004//TXORG-6_8_2
+/savage_shadow.c/1.2/Fri Apr 23 19:44:35 2004//TXORG-6_8_2
+/savage_streams.c/1.1/Fri Jul 30 21:25:26 2004//TXORG-6_8_2
+/savage_streams.h/1.1/Fri Jul 30 21:25:26 2004//TXORG-6_8_2
+/savage_vbe.c/1.3/Fri Jul 30 21:25:26 2004//TXORG-6_8_2
+/savage_vbe.h/1.2/Fri Apr 23 19:44:35 2004//TXORG-6_8_2
+/savage_video.c/1.3/Fri Jul 30 21:25:26 2004//TXORG-6_8_2
+D

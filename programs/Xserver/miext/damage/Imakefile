@@ -1,0 +1,36 @@
+#define IHaveModules
+#include <Server.tmpl>
+
+#ifdef XFree86Version
+#if DoLoadableServer
+XFMODSRC = damage.c
+XFMODOBJ = damage.o
+#endif
+#endif
+
+#if BuildRootless
+DEFINES = -DROOTLESS_WORKAROUND
+#endif
+
+SRCS = damage.c
+
+OBJS = damage.o
+
+   INCLUDES = -I. -I../shadow -I../../mi -I../../fb -I../../include -I$(XINCLUDESRC) \
+	      -I$(FONTINCSRC) -I$(XF86SRC)/common $(EXTRAINCLUDES) \
+	      -I../../render -I../cw -I$(EXTINCSRC)
+   LINTLIBS = ../../dix/llib-ldix.ln ../../os/llib-los.ln \
+	     ../../mi/llib-lmi.ln
+
+NormalLibraryObjectRule()
+LibraryModuleTarget(damage,$(OBJS))
+LintLibraryTarget(damage,$(SRCS))
+
+NormalLintTarget($(SRCS))
+
+InstallLibraryModule(damage,$(MODULEDIR),.)
+
+DependTarget()
+
+InstallDriverSDKLibraryModule(damage,$(DRIVERSDKMODULEDIR),.)
+InstallDriverSDKNonExecFile(damage.h,$(DRIVERSDKINCLUDEDIR))

@@ -1,0 +1,20 @@
+/Imakefile/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/cauthgen.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/csignal.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/delfntcid.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/errorf.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/fatalerror.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/findoldfnt.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/getcres.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/getdefptsize.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/getnewfntcid.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/gettime.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/initfshdl.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/regfpefunc.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/rmfshdl.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/servclient.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/setfntauth.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/stfntcfnt.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/stubs.h/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+/xpstubs.c/1.2/Fri Apr 23 18:44:23 2004//TXORG-6_8_2
+D

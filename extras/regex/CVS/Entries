@@ -1,0 +1,21 @@
+/COPYRIGHT/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/Makefile/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/README/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/WHATSNEW/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/cclass.h/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/cname.h/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/debug.c/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/engine.c/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/main.c/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/mkh/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/regcomp.c/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/regerror.c/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/regex.3/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/regex.7/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/regex2.h/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/regexec.c/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/regfree.c/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/split.c/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/tests/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+/utils.h/1.1.1.1/Fri Nov 14 16:48:25 2003//TXORG-6_8_2
+D

@@ -1,0 +1,23 @@
+/Imakefile/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shadow.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shadow.h/1.4/Tue Aug  3 09:33:54 2004//TXORG-6_8_2
+/shalloc.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shmodule.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shpacked.c/1.4/Tue Aug  3 09:33:54 2004//TXORG-6_8_2
+/shplanar.c/1.4/Tue Aug  3 09:33:54 2004//TXORG-6_8_2
+/shplanar8.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot16pack.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot16pack_180.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot16pack_270.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot16pack_90.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot32pack.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot32pack_180.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot32pack_270.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot32pack_90.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot8pack.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot8pack_180.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot8pack_270.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrot8pack_90.c/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+/shrotate.c/1.4/Tue Aug  3 09:33:54 2004//TXORG-6_8_2
+/shrotpack.h/1.2/Fri Apr 23 19:54:28 2004//TXORG-6_8_2
+D

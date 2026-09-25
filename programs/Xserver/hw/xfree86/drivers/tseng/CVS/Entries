@@ -1,0 +1,17 @@
+/Imakefile/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/README/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng.h/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng.man/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng_accel.c/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng_acl.c/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng_acl.h/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng_bank.c/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng_clock.c/1.1.1.2/Tue Nov 25 19:28:43 2003//TXORG-6_8_2
+/tseng_colexp.c/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng_cursor.c/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng_dga.c/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng_dpms.c/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng_driver.c/1.3/Wed May 26 16:24:09 2004//TXORG-6_8_2
+/tseng_inline.h/1.2/Fri Apr 23 19:52:24 2004//TXORG-6_8_2
+/tseng_ramdac.c/1.1.1.2/Tue Nov 25 19:28:43 2003//TXORG-6_8_2
+D

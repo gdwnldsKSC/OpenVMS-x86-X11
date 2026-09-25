@@ -1,0 +1,20 @@
+/Imakefile/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/blade_accel.c/1.3/Fri Jul 30 20:30:55 2004//TXORG-6_8_2
+/image_accel.c/1.3/Fri Jul 30 20:30:55 2004//TXORG-6_8_2
+/trident.h/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/trident.man/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/trident_accel.c/1.3/Fri Jul 30 20:30:55 2004//TXORG-6_8_2
+/trident_bank.c/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/trident_dac.c/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/trident_dga.c/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/trident_driver.c/1.5/Mon Aug 16 09:13:15 2004//TXORG-6_8_2
+/trident_i2c.c/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/trident_regs.h/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/trident_shadow.c/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/trident_tv.c/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/trident_video.c/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/tridenthelper.c/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/tridentramdac.c/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/tvga_dac.c/1.2/Fri Apr 23 19:52:01 2004//TXORG-6_8_2
+/xp_accel.c/1.3/Fri Jul 30 20:30:55 2004//TXORG-6_8_2
+D

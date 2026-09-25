@@ -1,0 +1,14 @@
+/Imakefile/1.2/Fri Apr 23 19:25:03 2004//TXORG-6_8_2
+/README/1.2/Fri Apr 23 19:25:03 2004//TXORG-6_8_2
+/apm.h/1.2/Fri Apr 23 19:25:03 2004//TXORG-6_8_2
+/apm.man/1.2/Fri Apr 23 19:25:03 2004//TXORG-6_8_2
+/apm_accel.c/1.4/Tue Aug  3 02:44:20 2004//TXORG-6_8_2
+/apm_cursor.c/1.2/Fri Apr 23 19:25:03 2004//TXORG-6_8_2
+/apm_dga.c/1.2/Fri Apr 23 19:25:03 2004//TXORG-6_8_2
+/apm_driver.c/1.2/Fri Apr 23 19:25:03 2004//TXORG-6_8_2
+/apm_funcs.c/1.4/Tue Aug  3 02:44:20 2004//TXORG-6_8_2
+/apm_i2c.c/1.2/Fri Apr 23 19:25:03 2004//TXORG-6_8_2
+/apm_regs.h/1.2/Fri Apr 23 19:25:03 2004//TXORG-6_8_2
+/apm_rush.c/1.2/Fri Apr 23 19:25:03 2004//TXORG-6_8_2
+/apm_video.c/1.2/Fri Apr 23 19:25:03 2004//TXORG-6_8_2
+D

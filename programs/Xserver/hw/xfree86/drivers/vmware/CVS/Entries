@@ -1,0 +1,19 @@
+/Imakefile/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/README/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/bits2pixels.c/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/bits2pixels.h/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/guest_os.h/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/includeCheck.h/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/offscreen_manager.c/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/offscreen_manager.h/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/svga_limits.h/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/svga_reg.h/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/svga_struct.h/1.1.1.1/Fri Nov 14 16:48:55 2003//TXORG-6_8_2
+/vm_basic_types.h/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/vm_device_version.h/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/vmware.c/1.4/Sat Aug 14 01:03:55 2004//TXORG-6_8_2
+/vmware.h/1.3/Tue Jun 29 02:20:25 2004//TXORG-6_8_2
+/vmware.man/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+/vmwarecurs.c/1.3/Tue Jun 29 02:20:25 2004//TXORG-6_8_2
+/vmwarexaa.c/1.2/Fri Apr 23 19:53:57 2004//TXORG-6_8_2
+D

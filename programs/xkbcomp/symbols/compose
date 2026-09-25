@@ -1,0 +1,17 @@
+// $XFree86$
+    
+partial modifier_keys
+xkb_symbols "ralt" {
+    key <RALT>	{	[	 Multi_key,	Multi_key	]	};
+};
+
+partial modifier_keys
+xkb_symbols "rwin" {
+    key <RWIN>	{	[	 Multi_key,	Multi_key	]	};
+};
+
+partial modifier_keys
+xkb_symbols "menu" {
+    key <MENU>	{	[	 Multi_key,	Multi_key	]	};
+};
+

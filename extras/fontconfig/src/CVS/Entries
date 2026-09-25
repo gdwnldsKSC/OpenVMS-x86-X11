@@ -1,0 +1,25 @@
+/Makefile.am/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/Makefile.in/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcatomic.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcblanks.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fccache.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fccfg.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fccharset.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcdbg.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcdefault.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcdir.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcfreetype.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcfs.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcinit.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcint.h/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcknownsets.h/1.1.1.1/Tue Nov 25 19:27:17 2003//TXORG-6_8_2
+/fclang.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fclist.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcmatch.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcmatrix.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcname.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcpat.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcstr.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fcxml.c/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+/fontconfig.def.in/1.2/Fri Apr 23 18:42:40 2004//TXORG-6_8_2
+D

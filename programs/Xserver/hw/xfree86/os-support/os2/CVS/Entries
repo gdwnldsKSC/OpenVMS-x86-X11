@@ -1,0 +1,17 @@
+/Imakefile/1.2/Fri Apr 23 19:54:11 2004//TXORG-6_8_2
+/README/1.2/Fri Apr 23 19:54:11 2004//TXORG-6_8_2
+/os2_VTsw.c/1.2/Fri Apr 23 19:54:11 2004//TXORG-6_8_2
+/os2_bios.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_diag.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_init.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_io.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_ioperm.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_kbd.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_kbdEv.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_mouse.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_select.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_select.h/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_serial.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_stubs.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+/os2_video.c/1.2/Fri Apr 23 19:54:12 2004//TXORG-6_8_2
+D

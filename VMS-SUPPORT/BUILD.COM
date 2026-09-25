@@ -10,7 +10,8 @@ $ IF target .EQS. "" THEN target = "ALL"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF (target .NES. "ALL") .AND. (target .NES. "HEADERS") .AND. -
-     (target .NES. "XAU") .AND. (target .NES. "XDMCP_CODEC") THEN GOTO usage
+     (target .NES. "XAU") .AND. (target .NES. "XDMCP_CODEC") .AND. -
+     (target .NES. "XDMCP") THEN GOTO usage
 $ IF F$EDIT(F$GETSYI("ARCH_NAME"),"TRIM") .NES. "x86_64" THEN GOTO unsupported
 $ procedure = F$ENVIRONMENT("PROCEDURE")
 $ step = "locate source tree"
@@ -39,7 +40,7 @@ $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS
 $ GOTO done
 $usage:
-$ WRITE SYS$ERROR "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP_CODEC]"
+$ WRITE SYS$ERROR "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP_CODEC|XDMCP]"
 $ GOTO done
 $unsupported:
 $ WRITE SYS$ERROR "This initial build profile supports OpenVMS x86-64 only."

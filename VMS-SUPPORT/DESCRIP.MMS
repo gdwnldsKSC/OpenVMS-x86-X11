@@ -1,7 +1,7 @@
 ! Original native make entry point; invoke through BUILD.COM from any directory.
 .INCLUDE [.VMS-SUPPORT]CONFIG.MMS
 
-ALL : XAU, XDMCP_CODEC
+ALL : XAU, XDMCP
 	CONTINUE
 
 .INCLUDE [.VMS-SUPPORT]HEADERS.MMS

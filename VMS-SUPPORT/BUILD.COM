@@ -11,7 +11,8 @@ $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR.
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF (target .NES. "ALL") .AND. (target .NES. "HEADERS") .AND. -
      (target .NES. "XAU") .AND. (target .NES. "XDMCP_CODEC") .AND. -
-     (target .NES. "XDMCP") .AND. (target .NES. "ZLIB") THEN GOTO usage
+     (target .NES. "XDMCP") .AND. (target .NES. "ZLIB") .AND. -
+     (target .NES. "FONTENC") THEN GOTO usage
 $ IF F$EDIT(F$GETSYI("ARCH_NAME"),"TRIM") .NES. "x86_64" THEN GOTO unsupported
 $ procedure = F$ENVIRONMENT("PROCEDURE")
 $ step = "locate source tree"
@@ -28,6 +29,8 @@ $ directory = profile + ".INCLUDE]"
 $ IF F$SEARCH(profile + "]INCLUDE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11]"
 $ IF F$SEARCH(profile + ".INCLUDE]X11.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".INCLUDE.X11.FONTS]"
+$ IF F$SEARCH(profile + ".INCLUDE.X11]FONTS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB]"
 $ IF F$SEARCH(profile + "]LIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XAU]"
@@ -36,13 +39,15 @@ $ directory = profile + ".LIB.XDMCP]"
 $ IF F$SEARCH(profile + ".LIB]XDMCP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.ZLIB]"
 $ IF F$SEARCH(profile + ".LIB]ZLIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.FONTENC]"
+$ IF F$SEARCH(profile + ".LIB]FONTENC.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ WRITE SYS$OUTPUT "X11 component build: " + target + ", native x86-64, pointer64"
 $ step = "MMS " + target
 $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS
 $ GOTO done
 $usage:
-$ WRITE SYS$ERROR "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP_CODEC|XDMCP|ZLIB]"
+$ WRITE SYS$ERROR "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP_CODEC|XDMCP|ZLIB|FONTENC]"
 $ GOTO done
 $unsupported:
 $ WRITE SYS$ERROR "This initial build profile supports OpenVMS x86-64 only."

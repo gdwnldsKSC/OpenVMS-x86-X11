@@ -10,15 +10,14 @@ $ IF target .EQS. "" THEN target = "ALL"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF (target .NES. "ALL") .AND. (target .NES. "HEADERS") .AND. -
-     (target .NES. "XAU") THEN GOTO usage
+     (target .NES. "XAU") .AND. (target .NES. "XDMCP_CODEC") THEN GOTO usage
 $ IF F$EDIT(F$GETSYI("ARCH_NAME"),"TRIM") .NES. "x86_64" THEN GOTO unsupported
 $ procedure = F$ENVIRONMENT("PROCEDURE")
 $ step = "locate source tree"
 $ support_directory = F$PARSE(procedure,,,"DEVICE") + F$PARSE(procedure,,,"DIRECTORY")
 $ SET DEFAULT 'support_directory'
 $ SET DEFAULT [-]
-$ IF F$SEARCH("[.LIB.XAU]AUREAD.C") .EQS. "" THEN GOTO missing_source
-$ IF F$SEARCH("[.LIB.XAU]AUDISPOSE.C") .EQS. "" THEN GOTO missing_source
+$ IF F$SEARCH("[.INCLUDE]XFUNCPROTO.H") .EQS. "" THEN GOTO missing_source
 $ step = "create output directories"
 $ IF F$SEARCH("[.VMS-SUPPORT]_BUILD.DIR") .EQS. "" THEN CREATE/DIRECTORY [.VMS-SUPPORT._BUILD]
 $ profile = "[.VMS-SUPPORT._BUILD.P64"
@@ -32,13 +31,15 @@ $ directory = profile + ".LIB]"
 $ IF F$SEARCH(profile + "]LIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XAU]"
 $ IF F$SEARCH(profile + ".LIB]XAU.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ WRITE SYS$OUTPUT "X11 component build: XAU, native x86-64, pointer64"
+$ directory = profile + ".LIB.XDMCP]"
+$ IF F$SEARCH(profile + ".LIB]XDMCP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ WRITE SYS$OUTPUT "X11 component build: " + target + ", native x86-64, pointer64"
 $ step = "MMS " + target
 $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS
 $ GOTO done
 $usage:
-$ WRITE SYS$ERROR "Usage: @BUILD [ALL|HEADERS|XAU]"
+$ WRITE SYS$ERROR "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP_CODEC]"
 $ GOTO done
 $unsupported:
 $ WRITE SYS$ERROR "This initial build profile supports OpenVMS x86-64 only."

@@ -244,14 +244,14 @@ PlainWrite(struct ZlibInfo *comp,
 	while (lenleft) {
 	    int outlen, written;
 	    if ((outlen = iov[1].iov_len)) {
-		iov[1].iov_base = (caddr_t) buffer;
+		iov[1].iov_base = (char *) buffer;
 	    }
 	    else {
 		outlen = MIN(lenleft, ZLIB_MAX_DATALEN);
 		ZLIB_PUT_PKTHDR(comp->header, outlen, FALSE);
-		iov[0].iov_base = (caddr_t) comp->header;
+		iov[0].iov_base = (char *) comp->header;
 		iov[0].iov_len = ZLIB_PACKET_HDRLEN;
-		iov[1].iov_base = (caddr_t) buffer;
+		iov[1].iov_base = (char *) buffer;
 		iov[1].iov_len = outlen;
 		stream_out_uncompressed += ZLIB_PACKET_HDRLEN;
 	    }

@@ -1,5 +1,5 @@
 ! Complete lib/font/stubs/Imakefile fntstubs library for standalone font tools.
-FNTSTUBS_HEADERS = $(FONTUTIL_HEADERS)
+FNTSTUBS_HEADERS = $(FONT_UTIL_HEADERS)
 FNTSTUBS_PRIVATE_HEADERS = [.LIB.FONT.STUBS]STUBS.H, -
                            [.LIB.FONT.INCLUDE]FONTMISC.H, -
                            [.LIB.FONT.INCLUDE]FONTXLFD.H, -

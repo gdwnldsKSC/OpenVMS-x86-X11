@@ -12,11 +12,9 @@ ZLIB. Produces `Z.OLB` - all 14 modules of the bundled zlib 1.1.4.
 FONTENC. Produces `FONTENC.OLB` - `fontenc.c` and `encparse.c`, using `Z.OLB`; upstream reverse-map cleanup and parser-growth defects remain.  
 EXPAT. Produces `EXPAT.OLB` - `xmlparse.c`, `xmltok.c`, and `xmlrole.c` from bundled Expat 1.95.6.  
 LBXUTIL. Produces `LBXUTIL.OLB` - all nine standard LBX utility modules, using `Z.OLB`; consumers supply `Xalloc`/`Xfree`.  
-FONTUTIL. Produces `FONTUTIL.OLB` - all ten unchanged modules from `lib/font/util`; not the complete Xfont library.  
-BITMAP. Produces `BITMAP.OLB` - all ten modules from `lib/font/bitmap`; BDF, PCF, SNF, and bitmap scaling.  
-FONTFILE. Produces `FONTFILE.OLB` - all 17 standard modules from `lib/font/fontfile`, with gzip; optional `fontencc` compatibility excluded.  
+XFONT. Produces `XFONT.OLB` - all 41 standard bitmap, fontfile, fc, and util modules, with gzip and TCP font-server transport; optional renderers and caches excluded.  
 FNTSTUBS. Produces `FNTSTUBS.OLB` - all 17 unchanged modules from `lib/font/stubs`, for standalone font tools.  
-BDFTOPCF. Produces `BDFTOPCF.EXE` - the upstream BDF-to-PCF font converter, using the required Xfont objects; not the complete Xfont library; upstream `-p8` defect remains.  
+BDFTOPCF. Produces `BDFTOPCF.EXE` - the upstream BDF-to-PCF font converter, using `XFONT.OLB` and `Z.OLB`; upstream `-p8` defect remains.  
   
 ## Notes  
   
@@ -27,9 +25,7 @@ $ @[.VMS-SUPPORT]BUILD ZLIB
 $ @[.VMS-SUPPORT]BUILD FONTENC  
 $ @[.VMS-SUPPORT]BUILD EXPAT  
 $ @[.VMS-SUPPORT]BUILD LBXUTIL  
-$ @[.VMS-SUPPORT]BUILD FONTUTIL  
-$ @[.VMS-SUPPORT]BUILD BITMAP  
-$ @[.VMS-SUPPORT]BUILD FONTFILE  
+$ @[.VMS-SUPPORT]BUILD XFONT  
 $ @[.VMS-SUPPORT]BUILD FNTSTUBS  
 $ @[.VMS-SUPPORT]BUILD BDFTOPCF  
   

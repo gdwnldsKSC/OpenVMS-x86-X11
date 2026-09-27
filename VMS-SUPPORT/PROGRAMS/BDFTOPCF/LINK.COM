@@ -1,4 +1,4 @@
-$! Link the unchanged upstream converter with the native font sections.
+$! Link the unchanged upstream converter with the native Xfont library.
 $ SET NOON
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
@@ -14,9 +14,7 @@ $ IF index .LE. 999 THEN GOTO check_libraries
 $ base = "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.BDFTOPCF]"
 $ LINK/NOTRACEBACK/FULL/MAP='base'BDFTOPCF.MAP/EXE='base'BDFTOPCF.EXE -
     'base'BDFTOPCF.OBJ, -
-    [.VMS-SUPPORT._BUILD.P64.LIB.FONT.BITMAP]BITMAP.OLB/LIBRARY, -
-    [.VMS-SUPPORT._BUILD.P64.LIB.FONT.FONTFILE]FONTFILE.OLB/LIBRARY, -
-    [.VMS-SUPPORT._BUILD.P64.LIB.FONTUTIL]FONTUTIL.OLB/LIBRARY, -
+    [.VMS-SUPPORT._BUILD.P64.LIB.FONT]XFONT.OLB/LIBRARY, -
     [.VMS-SUPPORT._BUILD.P64.LIB.ZLIB]Z.OLB/LIBRARY
 $ result = $STATUS
 $ GOTO done

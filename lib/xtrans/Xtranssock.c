@@ -2089,7 +2089,19 @@ TRANS(SocketBytesReadable) (XtransConnInfo ciptr, BytesReadable_t *pend)
 #if defined(__UNIXOS2__)
     return ioctl (ciptr->fd, FIONREAD, (char*) pend, sizeof(int));
 #else
+#if defined(__VMS) && defined(__INITIAL_POINTER_SIZE) && __INITIAL_POINTER_SIZE == 64
+    {
+        /* The RTL ioctl argument remains a 32-bit pointer in P64 code. */
+        int readable = 0;
+        int result = ioctl (ciptr->fd, FIONREAD, &readable);
+
+        if (result >= 0)
+            *pend = readable;
+        return result;
+    }
+#else
     return ioctl (ciptr->fd, FIONREAD, (char *) pend);
+#endif
 #endif /* __UNIXOS2__ */
 #endif /* i386 && SYSV || _SEQUENT_ && _SOCKET_VERSION == 1 */
 #endif /* WIN32 */

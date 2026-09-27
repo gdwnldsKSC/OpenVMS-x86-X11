@@ -7,7 +7,7 @@ $ scoped = 0
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ IF (P4 .NES. "") .AND. (P4 .NES. "ZLIB") .AND. (P4 .NES. "FONTENC") .AND. -
      (P4 .NES. "EXPAT") .AND. (P4 .NES. "LBX_IMAGE") .AND. (P4 .NES. "LBXUTIL") .AND. -
-     (P4 .NES. "FONTUTIL") THEN GOTO done
+     (P4 .NES. "FONTUTIL") .AND. (P4 .NES. "FONTIO") THEN GOTO done
 $ IF (P5 .NES. "") .OR. (P6 .NES. "") .OR. -
      (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
 $ rtl_headers = F$SEARCH("SYS$LIBRARY:DECC$RTLDEF.TLB")
@@ -29,6 +29,7 @@ $ IF P4 .EQS. "LBXUTIL" THEN include_directory = include_directory + -
     "[.PROGRAMS.XSERVER.INCLUDE],[.LIB.LBXUTIL.LBX_ZLIB]"
 $ IF P4 .EQS. "FONTUTIL" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS],[.LIB.FONT.INCLUDE]"
+$ IF P4 .EQS. "FONTIO" THEN include_directory = include_directory + ",[.LIB.FONT.INCLUDE]"
 $ header = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]XFUNCPROTO.H")
 $ IF header .EQS. "" THEN GOTO done
 $ headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")

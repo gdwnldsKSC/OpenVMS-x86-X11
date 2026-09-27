@@ -14,6 +14,7 @@ EXPAT. Produces `EXPAT.OLB` - `xmlparse.c`, `xmltok.c`, and `xmlrole.c` from bun
 LBX_IMAGE. Produces `LBX_IMAGE.OLB` - all five image-codec modules from `lbxutil/image`; not the complete LBX utility library.  
 LBXUTIL. Produces `LBXUTIL.OLB` - all nine standard LBX utility modules, using `Z.OLB`; consumers supply `Xalloc`/`Xfree`.  
 FONTUTIL. Produces `FONTUTIL.OLB` - all ten unchanged modules from `lib/font/util`; not the complete Xfont library.  
+FONTIO. Produces `FONTIO.OLB` - `bufio.c`, `fileio.c`, `filewr.c`, `decompress.c`, and `gunzip.c`, using `FONTUTIL.OLB` and `Z.OLB`.  
   
 ## Notes  
   
@@ -27,6 +28,7 @@ $ @[.VMS-SUPPORT]BUILD EXPAT
 $ @[.VMS-SUPPORT]BUILD LBX_IMAGE  
 $ @[.VMS-SUPPORT]BUILD LBXUTIL  
 $ @[.VMS-SUPPORT]BUILD FONTUTIL  
+$ @[.VMS-SUPPORT]BUILD FONTIO  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

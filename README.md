@@ -14,6 +14,7 @@ EXPAT. Produces `EXPAT.OLB` - `xmlparse.c`, `xmltok.c`, and `xmlrole.c` from bun
 LBXUTIL. Produces `LBXUTIL.OLB` - all nine standard LBX utility modules, using `Z.OLB`; consumers supply `Xalloc`/`Xfree`.  
 XFONT. Produces `XFONT.OLB` - all 41 standard bitmap, fontfile, fc, and util modules, with gzip and TCP font-server transport; optional renderers and caches excluded.  
 FNTSTUBS. Produces `FNTSTUBS.OLB` - all 17 unchanged modules from `lib/font/stubs`, for standalone font tools.  
+FS. Produces `FS.OLB` - all 25 standard font-server client library modules, with TCP transport.  
 BDFTOPCF. Produces `BDFTOPCF.EXE` - the upstream BDF-to-PCF font converter, using `XFONT.OLB` and `Z.OLB`; upstream `-p8` defect remains.  
   
 ## Notes  
@@ -27,6 +28,7 @@ $ @[.VMS-SUPPORT]BUILD EXPAT
 $ @[.VMS-SUPPORT]BUILD LBXUTIL  
 $ @[.VMS-SUPPORT]BUILD XFONT  
 $ @[.VMS-SUPPORT]BUILD FNTSTUBS  
+$ @[.VMS-SUPPORT]BUILD FS  
 $ @[.VMS-SUPPORT]BUILD BDFTOPCF  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  

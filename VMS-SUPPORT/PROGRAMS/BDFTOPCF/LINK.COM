@@ -1,4 +1,4 @@
-$! Link the unchanged upstream converter with its explicit native font objects.
+$! Link the unchanged upstream converter with the native font sections.
 $ SET NOON
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
@@ -12,13 +12,10 @@ $ IF F$TRNLNM("LNK$LIBRARY_" + F$STRING(index)) .NES. "" THEN GOTO libraries
 $ index = index + 1
 $ IF index .LE. 999 THEN GOTO check_libraries
 $ base = "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.BDFTOPCF]"
-$ bitmap = "[.VMS-SUPPORT._BUILD.P64.LIB.FONT.BITMAP]"
 $ LINK/NOTRACEBACK/FULL/MAP='base'BDFTOPCF.MAP/EXE='base'BDFTOPCF.EXE -
     'base'BDFTOPCF.OBJ, -
-    'bitmap'BDFREAD.OBJ,'bitmap'BDFUTILS.OBJ,'bitmap'BITMAP.OBJ, -
-    'bitmap'BITMAPUTIL.OBJ,'bitmap'FONTINK.OBJ,'bitmap'PCFREAD.OBJ, -
-    'bitmap'PCFWRITE.OBJ,[.VMS-SUPPORT._BUILD.P64.LIB.FONT.FONTFILE]DEFAULTS.OBJ, -
-    [.VMS-SUPPORT._BUILD.P64.LIB.FONTIO]FONTIO.OLB/LIBRARY, -
+    [.VMS-SUPPORT._BUILD.P64.LIB.FONT.BITMAP]BITMAP.OLB/LIBRARY, -
+    [.VMS-SUPPORT._BUILD.P64.LIB.FONT.FONTFILE]FONTFILE.OLB/LIBRARY, -
     [.VMS-SUPPORT._BUILD.P64.LIB.FONTUTIL]FONTUTIL.OLB/LIBRARY, -
     [.VMS-SUPPORT._BUILD.P64.LIB.ZLIB]Z.OLB/LIBRARY
 $ result = $STATUS

@@ -9,7 +9,7 @@ $ target = F$EDIT(P1,"UPCASE,TRIM")
 $ IF target .EQS. "" THEN target = "ALL"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
-$ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|FONTUTIL|FONTIO|FNTSTUBS|"
+$ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|FONTUTIL|FONTIO|FNTSTUBS|BDFTOPCF|"
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
 $ IF F$LOCATE("|" + target + "|",targets) .EQ. F$LENGTH(targets) THEN GOTO usage
 $ IF F$EDIT(F$GETSYI("ARCH_NAME"),"TRIM") .NES. "x86_64" THEN GOTO unsupported
@@ -54,13 +54,23 @@ $ directory = profile + ".LIB.FONTIO]"
 $ IF F$SEARCH(profile + ".LIB]FONTIO.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FNTSTUBS]"
 $ IF F$SEARCH(profile + ".LIB]FNTSTUBS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.FONT]"
+$ IF F$SEARCH(profile + ".LIB]FONT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.FONT.BITMAP]"
+$ IF F$SEARCH(profile + ".LIB.FONT]BITMAP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.FONT.FONTFILE]"
+$ IF F$SEARCH(profile + ".LIB.FONT]FONTFILE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS]"
+$ IF F$SEARCH(profile + "]PROGRAMS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.BDFTOPCF]"
+$ IF F$SEARCH(profile + ".PROGRAMS]BDFTOPCF.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ WRITE SYS$OUTPUT "X11 component build: " + target + ", native x86-64, pointer64"
 $ step = "MMS " + target
 $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS
 $ GOTO done
 $usage:
-$ WRITE SYS$OUTPUT "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|FONTUTIL|FONTIO|FNTSTUBS]"
+$ WRITE SYS$OUTPUT "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|FONTUTIL|FONTIO|FNTSTUBS|BDFTOPCF]"
 $ GOTO done
 $unsupported:
 $ WRITE SYS$OUTPUT "This initial build profile supports OpenVMS x86-64 only."

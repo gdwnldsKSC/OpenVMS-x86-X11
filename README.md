@@ -15,6 +15,7 @@ LBXUTIL. Produces `LBXUTIL.OLB` - all nine standard LBX utility modules, using `
 FONTUTIL. Produces `FONTUTIL.OLB` - all ten unchanged modules from `lib/font/util`; not the complete Xfont library.  
 FONTIO. Produces `FONTIO.OLB` - `bufio.c`, `fileio.c`, `filewr.c`, `decompress.c`, and `gunzip.c`, using `FONTUTIL.OLB` and `Z.OLB`.  
 FNTSTUBS. Produces `FNTSTUBS.OLB` - all 17 unchanged modules from `lib/font/stubs`, for standalone font tools.  
+BDFTOPCF. Produces `BDFTOPCF.EXE` - the upstream BDF-to-PCF font converter, using the required Xfont objects; not the complete Xfont library; upstream `-p8` defect remains.  
   
 ## Notes  
   
@@ -28,6 +29,7 @@ $ @[.VMS-SUPPORT]BUILD LBXUTIL
 $ @[.VMS-SUPPORT]BUILD FONTUTIL  
 $ @[.VMS-SUPPORT]BUILD FONTIO  
 $ @[.VMS-SUPPORT]BUILD FNTSTUBS  
+$ @[.VMS-SUPPORT]BUILD BDFTOPCF  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

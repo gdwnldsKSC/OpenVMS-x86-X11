@@ -1,6 +1,8 @@
 ! Full upstream lbxutil: delta, zlib transport and the existing five image codecs.
 ! Optional LBXREQSTATS is disabled, as in the ordinary upstream build.
-LBXUTIL_HEADERS = $(LBX_IMAGE_HEADERS), $(ZLIB_HEADERS), -
+.INCLUDE [.VMS-SUPPORT.LIB.LBXUTIL.IMAGE]DESCRIP.MMS
+
+LBXUTIL_HEADERS = $(LBXUTIL_IMAGE_HEADERS), $(ZLIB_HEADERS), -
                   $(OUT).INCLUDE.X11]X.H, $(OUT).INCLUDE.X11]XMD.H, -
                   $(OUT).INCLUDE.X11]XPROTO.H, -
                   $(OUT).INCLUDE.X11]XPROTOSTR.H, -
@@ -25,7 +27,7 @@ LBXUTIL_IO_CFLAGS = $(CFLAGS)/WARNINGS=(ENABLE=LEVEL4,DISABLE=(MAYLOSEDATA3,PTRM
 LBXUTIL_OBJECTS = $(OUT).LIB.LBXUTIL]LBXDELTA.OBJ, -
                   $(OUT).LIB.LBXUTIL]LBX_ZLIB.OBJ, -
                   $(OUT).LIB.LBXUTIL]LBX_ZLIB_IO.OBJ, -
-                  $(OUT).LIB.LBXUTIL]REQSTATS.OBJ, $(LBX_IMAGE_OBJECTS)
+                  $(OUT).LIB.LBXUTIL]REQSTATS.OBJ, $(LBXUTIL_IMAGE_OBJECTS)
 
 LBXUTIL : $(OUT).LIB.LBXUTIL]LBXUTIL.OLB, $(OUT).LIB.ZLIB]Z.OLB
 	CONTINUE

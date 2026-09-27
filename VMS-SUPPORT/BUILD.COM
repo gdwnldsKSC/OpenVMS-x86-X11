@@ -9,12 +9,9 @@ $ target = F$EDIT(P1,"UPCASE,TRIM")
 $ IF target .EQS. "" THEN target = "ALL"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
-$ IF (target .NES. "ALL") .AND. (target .NES. "HEADERS") .AND. -
-     (target .NES. "XAU") .AND. (target .NES. "XDMCP_CODEC") .AND. -
-     (target .NES. "XDMCP") .AND. (target .NES. "ZLIB") .AND. -
-     (target .NES. "FONTENC") .AND. (target .NES. "EXPAT") .AND. -
-     (target .NES. "LBX_IMAGE") .AND. (target .NES. "LBXUTIL") .AND. -
-     (target .NES. "FONTUTIL") .AND. (target .NES. "FONTIO") THEN GOTO usage
+$ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|FONTUTIL|FONTIO|FNTSTUBS|"
+$ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
+$ IF F$LOCATE("|" + target + "|",targets) .EQ. F$LENGTH(targets) THEN GOTO usage
 $ IF F$EDIT(F$GETSYI("ARCH_NAME"),"TRIM") .NES. "x86_64" THEN GOTO unsupported
 $ procedure = F$ENVIRONMENT("PROCEDURE")
 $ step = "locate source tree"
@@ -47,27 +44,29 @@ $ directory = profile + ".LIB.FONTENC]"
 $ IF F$SEARCH(profile + ".LIB]FONTENC.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.EXPAT]"
 $ IF F$SEARCH(profile + ".LIB]EXPAT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".LIB.LBX_IMAGE]"
-$ IF F$SEARCH(profile + ".LIB]LBX_IMAGE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.LBXUTIL]"
 $ IF F$SEARCH(profile + ".LIB]LBXUTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.LBXUTIL.IMAGE]"
+$ IF F$SEARCH(profile + ".LIB.LBXUTIL]IMAGE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONTUTIL]"
 $ IF F$SEARCH(profile + ".LIB]FONTUTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONTIO]"
 $ IF F$SEARCH(profile + ".LIB]FONTIO.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.FNTSTUBS]"
+$ IF F$SEARCH(profile + ".LIB]FNTSTUBS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ WRITE SYS$OUTPUT "X11 component build: " + target + ", native x86-64, pointer64"
 $ step = "MMS " + target
 $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS
 $ GOTO done
 $usage:
-$ WRITE SYS$ERROR "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP_CODEC|XDMCP|ZLIB|FONTENC|EXPAT|LBX_IMAGE|LBXUTIL|FONTUTIL|FONTIO]"
+$ WRITE SYS$OUTPUT "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|FONTUTIL|FONTIO|FNTSTUBS]"
 $ GOTO done
 $unsupported:
-$ WRITE SYS$ERROR "This initial build profile supports OpenVMS x86-64 only."
+$ WRITE SYS$OUTPUT "This initial build profile supports OpenVMS x86-64 only."
 $ GOTO done
 $missing_source:
-$ WRITE SYS$ERROR "Run this procedure from its original VMS-SUPPORT location in the source tree."
+$ WRITE SYS$OUTPUT "Run this procedure from its original VMS-SUPPORT location in the source tree."
 $ GOTO done
 $interrupted:
 $ result = 2
@@ -75,7 +74,7 @@ $ GOTO done
 $failed:
 $ result = $STATUS
 $ IF result .AND. 1 THEN result = 2
-$ WRITE SYS$ERROR "X11 build failed at " + step + ": " + F$MESSAGE(result)
+$ WRITE SYS$OUTPUT "X11 build failed at " + step + ": " + F$MESSAGE(result)
 $done:
 $ SET NOON
 $ SET DEFAULT 'saved_default'

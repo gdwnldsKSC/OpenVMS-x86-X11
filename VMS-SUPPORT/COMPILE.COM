@@ -5,9 +5,9 @@ $ ON CONTROL_Y THEN GOTO interrupted
 $ result = 2
 $ scoped = 0
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
-$ IF (P4 .NES. "") .AND. (P4 .NES. "ZLIB") .AND. (P4 .NES. "FONTENC") .AND. -
-     (P4 .NES. "EXPAT") .AND. (P4 .NES. "LBX_IMAGE") .AND. (P4 .NES. "LBXUTIL") .AND. -
-     (P4 .NES. "FONTUTIL") .AND. (P4 .NES. "FONTIO") THEN GOTO done
+$ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONTUTIL|FONTIO|FNTSTUBS|"
+$ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
+$ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P5 .NES. "") .OR. (P6 .NES. "") .OR. -
      (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
 $ rtl_headers = F$SEARCH("SYS$LIBRARY:DECC$RTLDEF.TLB")
@@ -20,9 +20,9 @@ $ IF F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOT
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]"
 $ IF P4 .EQS. "EXPAT" THEN include_directory = include_directory + -
     ",[.EXTRAS.EXPAT.LIB],[.LIB.EXPAT]"
-$ IF P4 .EQS. "LBX_IMAGE" THEN include_directory = include_directory + -
+$ IF P4 .EQS. "LBXUTIL_IMAGE" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
-    "[.VMS-SUPPORT._BUILD.P64.LIB.LBX_IMAGE],[.LIB.LBXUTIL.IMAGE]"
+    "[.VMS-SUPPORT._BUILD.P64.LIB.LBXUTIL.IMAGE],[.LIB.LBXUTIL.IMAGE]"
 $ IF P4 .EQS. "LBXUTIL" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
@@ -30,6 +30,9 @@ $ IF P4 .EQS. "LBXUTIL" THEN include_directory = include_directory + -
 $ IF P4 .EQS. "FONTUTIL" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS],[.LIB.FONT.INCLUDE]"
 $ IF P4 .EQS. "FONTIO" THEN include_directory = include_directory + ",[.LIB.FONT.INCLUDE]"
+$ IF P4 .EQS. "FNTSTUBS" THEN include_directory = include_directory + -
+    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
+    "[.LIB.FONT.INCLUDE],[.LIB.FONT.STUBS]"
 $ header = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]XFUNCPROTO.H")
 $ IF header .EQS. "" THEN GOTO done
 $ headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")
@@ -68,5 +71,5 @@ $done:
 $ SET NOON
 $ IF scoped .AND. (F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER") -
      THEN DEASSIGN/USER_MODE/TABLE=LNM$PROCESS X11
-$ IF .NOT. result THEN WRITE SYS$ERROR "X11 component compile failed: " + P1
+$ IF .NOT. result THEN WRITE SYS$OUTPUT "X11 component compile failed: " + P1
 $ EXIT result

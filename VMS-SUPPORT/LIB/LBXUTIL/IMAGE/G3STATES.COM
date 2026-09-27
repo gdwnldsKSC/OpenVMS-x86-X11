@@ -13,7 +13,7 @@ $ IF F$TRNLNM("LNK$LIBRARY_" + F$STRING(index)) .NES. "" THEN GOTO libraries
 $ index = index + 1
 $ IF index .LE. 999 THEN GOTO check_libraries
 $ IF F$TRNLNM("SYS$OUTPUT","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
-$ base = "[.VMS-SUPPORT._BUILD.P64.LIB.LBX_IMAGE]"
+$ base = "[.VMS-SUPPORT._BUILD.P64.LIB.LBXUTIL.IMAGE]"
 $ LINK/NOTRACEBACK/FULL/MAP='base'MKG3STATES.MAP/EXE='base'MKG3STATES.EXE -
     'base'MKG3STATES.OBJ
 $ temporary = base + "G3STATES_" + F$GETJPI("","PID") + ".TMP"
@@ -26,7 +26,7 @@ $ RENAME/NOLOG 'temporary' 'base'G3STATES.H
 $ result = $STATUS
 $ GOTO done
 $libraries:
-$ WRITE SYS$ERROR "LBX table generator requires no LNK$LIBRARY search-list overrides."
+$ WRITE SYS$OUTPUT "LBX table generator requires no LNK$LIBRARY search-list overrides."
 $ GOTO done
 $interrupted:
 $ result = 2

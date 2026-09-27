@@ -16,6 +16,9 @@ XFONT. Produces `XFONT.OLB` - all 41 standard bitmap, fontfile, fc, and util mod
 FNTSTUBS. Produces `FNTSTUBS.OLB` - all 17 unchanged modules from `lib/font/stubs`, for standalone font tools.  
 FS. Produces `FS.OLB` - all 25 standard font-server client library modules, with TCP transport.  
 BDFTOPCF. Produces `BDFTOPCF.EXE` - the upstream BDF-to-PCF font converter, using `XFONT.OLB` and `Z.OLB`; upstream `-p8` defect remains.  
+FSLSFONTS. Produces `FSLSFONTS.EXE` - the upstream font-server font listing tool, using `FS.OLB`.  
+SHOWFONT. Produces `SHOWFONT.EXE` - the upstream font-server glyph and metrics viewer, using `FS.OLB`.  
+XFSINFO. Produces `XFSINFO.EXE` - the upstream font-server information tool, using `FS.OLB`.  
   
 ## Notes  
   
@@ -30,6 +33,9 @@ $ @[.VMS-SUPPORT]BUILD XFONT
 $ @[.VMS-SUPPORT]BUILD FNTSTUBS  
 $ @[.VMS-SUPPORT]BUILD FS  
 $ @[.VMS-SUPPORT]BUILD BDFTOPCF  
+$ @[.VMS-SUPPORT]BUILD FSLSFONTS  
+$ @[.VMS-SUPPORT]BUILD SHOWFONT  
+$ @[.VMS-SUPPORT]BUILD XFSINFO  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

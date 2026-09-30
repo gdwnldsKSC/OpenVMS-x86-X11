@@ -23,6 +23,7 @@ BDFTOPCF. Produces `BDFTOPCF.EXE` - the upstream BDF-to-PCF font converter, usin
 FSLSFONTS. Produces `FSLSFONTS.EXE` - the upstream font-server font listing tool, using `FS.OLB`.  
 SHOWFONT. Produces `SHOWFONT.EXE` - the upstream font-server glyph and metrics viewer, using `FS.OLB`.  
 XFSINFO. Produces `XFSINFO.EXE` - the upstream font-server information tool, using `FS.OLB`.  
+ICEAUTH. Produces `ICEAUTH.EXE` - the upstream ICE authority-file tool, using `ICE.OLB`; VMS file-version cleanup and permission-inheritance limitations remain.  
   
 ## Notes  
   
@@ -44,6 +45,7 @@ $ @[.VMS-SUPPORT]BUILD BDFTOPCF
 $ @[.VMS-SUPPORT]BUILD FSLSFONTS  
 $ @[.VMS-SUPPORT]BUILD SHOWFONT  
 $ @[.VMS-SUPPORT]BUILD XFSINFO  
+$ @[.VMS-SUPPORT]BUILD ICEAUTH  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

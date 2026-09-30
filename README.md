@@ -26,6 +26,8 @@ XFSINFO. Produces `XFSINFO.EXE` - the upstream font-server information tool, usi
 ICEAUTH. Produces `ICEAUTH.EXE` - the upstream ICE authority-file tool, using `ICE.OLB`; VMS file-version cleanup and permission-inheritance limitations remain.  
 MAKEPSRES. Produces `MAKEPSRES.EXE` - the upstream PostScript resource-directory generator; use Unix-style paths with `DECC$EFS_CASE_PRESERVE` enabled; backups require hard links (or `-nb`); upstream `-f -` limitation remains.  
 SHOWRGB. Produces `SHOWRGB.EXE` - the upstream text color-database viewer (`USE_RGB_TXT`), reading `programs/rgb/rgb.txt` by default when run from the repository root.  
+MAKESTRS. Produces `MAKESTRS.EXE` - the upstream string-table generator from `config/util`.  
+MAKEDEPEND. Produces `MAKEDEPEND.EXE` - all six upstream C dependency-generator modules from `config/makedepend`, emitting `.obj` targets.  
   
 ## Notes  
   
@@ -50,6 +52,8 @@ $ @[.VMS-SUPPORT]BUILD XFSINFO
 $ @[.VMS-SUPPORT]BUILD ICEAUTH  
 $ @[.VMS-SUPPORT]BUILD MAKEPSRES  
 $ @[.VMS-SUPPORT]BUILD SHOWRGB  
+$ @[.VMS-SUPPORT]BUILD MAKESTRS  
+$ @[.VMS-SUPPORT]BUILD MAKEDEPEND  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

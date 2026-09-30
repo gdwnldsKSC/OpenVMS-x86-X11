@@ -17,6 +17,7 @@ FNTSTUBS. Produces `FNTSTUBS.OLB` - all 17 unchanged modules from `lib/font/stub
 FS. Produces `FS.OLB` - all 25 standard font-server client library modules, with TCP transport.  
 PSRES. Produces `PSRES.OLB` - the complete upstream PostScript resource library; requires case-preserving Unix-style filenames (`DECC$EFS_CASE_PRESERVE` and `DECC$FILENAME_UNIX_REPORT` enabled); upstream cache defects remain.  
 REGEX. Produces `REGEX.OLB` - all four upstream regular-expression modules by Henry Spencer, with native generation of their public and private headers.  
+ICE. Produces `ICE.OLB` - all 19 standard Inter-Client Exchange library modules, with TCP client and server transport.  
 BDFTOPCF. Produces `BDFTOPCF.EXE` - the upstream BDF-to-PCF font converter, using `XFONT.OLB` and `Z.OLB`; upstream `-p8` defect remains.  
 FSLSFONTS. Produces `FSLSFONTS.EXE` - the upstream font-server font listing tool, using `FS.OLB`.  
 SHOWFONT. Produces `SHOWFONT.EXE` - the upstream font-server glyph and metrics viewer, using `FS.OLB`.  
@@ -36,6 +37,7 @@ $ @[.VMS-SUPPORT]BUILD FNTSTUBS
 $ @[.VMS-SUPPORT]BUILD FS  
 $ @[.VMS-SUPPORT]BUILD PSRES  
 $ @[.VMS-SUPPORT]BUILD REGEX  
+$ @[.VMS-SUPPORT]BUILD ICE  
 $ @[.VMS-SUPPORT]BUILD BDFTOPCF  
 $ @[.VMS-SUPPORT]BUILD FSLSFONTS  
 $ @[.VMS-SUPPORT]BUILD SHOWFONT  

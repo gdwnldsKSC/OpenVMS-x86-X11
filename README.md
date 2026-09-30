@@ -28,6 +28,7 @@ MAKEPSRES. Produces `MAKEPSRES.EXE` - the upstream PostScript resource-directory
 SHOWRGB. Produces `SHOWRGB.EXE` - the upstream text color-database viewer (`USE_RGB_TXT`), reading `programs/rgb/rgb.txt` by default when run from the repository root.  
 MAKESTRS. Produces `MAKESTRS.EXE` - the upstream string-table generator from `config/util`.  
 MAKEDEPEND. Produces `MAKEDEPEND.EXE` - all six upstream C dependency-generator modules from `config/makedepend`, emitting `.obj` targets.  
+LNDIR. Produces `LNDIR.EXE` - the shadow symbolic-link tree generator from `config/util`, with OpenVMS directory traversal and case-preserving names; requires symbolic-link support and Unix-style paths.  
   
 ## Notes  
   
@@ -54,6 +55,7 @@ $ @[.VMS-SUPPORT]BUILD MAKEPSRES
 $ @[.VMS-SUPPORT]BUILD SHOWRGB  
 $ @[.VMS-SUPPORT]BUILD MAKESTRS  
 $ @[.VMS-SUPPORT]BUILD MAKEDEPEND  
+$ @[.VMS-SUPPORT]BUILD LNDIR  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

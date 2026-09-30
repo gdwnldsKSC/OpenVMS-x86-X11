@@ -52,6 +52,9 @@ in this Software without prior written authorization from The Open Group.
 #include <sys/param.h>
 #endif
 #include <errno.h>
+#ifdef __VMS
+#include <unixlib.h>
+#endif
 
 #ifndef X_NOT_POSIX
 #include <dirent.h>
@@ -99,6 +102,18 @@ quiterr (int code, char *s)
     perror (s);
     exit (code);
 }
+
+#ifdef __VMS
+static void
+set_vms_feature (const char *name, int value)
+{
+    int feature = decc$feature_get_index (name);
+
+    if (feature < 0 || decc$feature_set_value (feature, 1, value) < 0 ||
+	decc$feature_get_value (feature, 1) != value)
+	quit (1, "lndir: Cannot set %s", name);
+}
+#endif
 
 static void
 msg (char * fmt, ...)
@@ -157,7 +172,9 @@ dodir (char *fn,		/* name of "from" directory, either absolute or
     char symbuf[MAXPATHLEN + 1];
     char basesym[MAXPATHLEN + 1];
     struct stat sb, sc;
+#ifndef __VMS
     int n_dirs;
+#endif
     int symlen;
     int basesymlen = -1;
     char *ocurdir;
@@ -181,7 +198,10 @@ dodir (char *fn,		/* name of "from" directory, either absolute or
     p = buf + strlen (buf);
     if (*(p - 1) != '/')
 	*p++ = '/';
+    /* OpenVMS directory link counts cannot determine the child count. */
+#ifndef __VMS
     n_dirs = fs->st_nlink;
+#endif
     while ((dp = readdir (df))) {
 	if (dp->d_name[strlen(dp->d_name) - 1] == '~')
 	    continue;
@@ -193,7 +213,10 @@ dodir (char *fn,		/* name of "from" directory, either absolute or
 #endif
 	strcpy (p, dp->d_name);
 
-	if (n_dirs > 0) {
+#ifndef __VMS
+	if (n_dirs > 0)
+#endif
+	{
 	    if (lstat (buf, &sb) < 0) {
 		mperror (buf);
 		continue;
@@ -206,7 +229,9 @@ dodir (char *fn,		/* name of "from" directory, either absolute or
 #endif
 	    {
 		/* directory */
+#ifndef __VMS
 		n_dirs--;
+#endif
 		if (dp->d_name[0] == '.' &&
 		    (dp->d_name[1] == '\0' || (dp->d_name[1] == '.' &&
 					       dp->d_name[2] == '\0')))
@@ -339,6 +364,13 @@ main (int ac, char *av[])
     char *prog_name = av[0];
     char *fn, *tn;
     struct stat fs, ts;
+
+#ifdef __VMS
+    /* Preserve names used by the upstream revision-directory exclusions. */
+    set_vms_feature ("DECC$EFS_CASE_PRESERVE", 1);
+    set_vms_feature ("DECC$EFS_CASE_SPECIAL", 0);
+    set_vms_feature ("DECC$READDIR_KEEPDOTDIR", 0);
+#endif
 
     while (++av, --ac) {
 	if (strcmp(*av, "-silent") == 0)

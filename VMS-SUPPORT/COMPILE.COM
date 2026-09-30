@@ -6,7 +6,7 @@ $ result = 2
 $ scoped = 0
 $ dps_scoped = 0
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
-$ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|BDFTOPCF|"
+$ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|REGEX|REGEX_MKH|BDFTOPCF|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P5 .NES. "") .OR. (P6 .NES. "") .OR. -
@@ -15,6 +15,7 @@ $ rtl_headers = F$SEARCH("SYS$LIBRARY:DECC$RTLDEF.TLB")
 $ IF rtl_headers .EQS. "" THEN GOTO done
 $ IF P4 .EQS. "ZLIB" THEN GOTO zlib_headers
 $ IF P4 .EQS. "FONTENC" THEN GOTO fontenc_headers
+$ IF (P4 .EQS. "REGEX") .OR. (P4 .EQS. "REGEX_MKH") THEN GOTO regex_headers
 $ inherited_x11 = F$TRNLNM("X11")
 $ inherited_table = F$TRNLNM("X11",,,,,"TABLE_NAME")
 $ IF F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
@@ -73,6 +74,12 @@ $fontenc_headers:
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]FONTENC.H") .EQS. "" THEN GOTO done
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS],[.LIB.FONT.FONTFILE]"
+$ GOTO compile
+$regex_headers:
+$ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]," + -
+    "[.VMS-SUPPORT._BUILD.P64.LIB.REGEX],[.EXTRAS.REGEX]"
+$ IF (P4 .EQS. "REGEX") .AND. -
+    (F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]REGEX.H") .EQS. "") THEN GOTO done
 $compile:
 $ CC 'P3' /NOFIRST_INCLUDE/NESTED_INCLUDE_DIRECTORY=NONE -
     /INCLUDE_DIRECTORY=('include_directory',"") -

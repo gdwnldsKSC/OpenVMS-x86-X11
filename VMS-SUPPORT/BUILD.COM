@@ -9,7 +9,7 @@ $ target = F$EDIT(P1,"UPCASE,TRIM")
 $ IF target .EQS. "" THEN target = "ALL"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
-$ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|XFONT|FNTSTUBS|FS|PSRES|REGEX|ICE|BDFTOPCF|FSLSFONTS|SHOWFONT|XFSINFO|"
+$ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|XFONT|FNTSTUBS|FS|PSRES|REGEX|ICE|SM|BDFTOPCF|FSLSFONTS|SHOWFONT|XFSINFO|"
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
 $ IF F$LOCATE("|" + target + "|",targets) .EQ. F$LENGTH(targets) THEN GOTO usage
 $ IF F$EDIT(F$GETSYI("ARCH_NAME"),"TRIM") .NES. "x86_64" THEN GOTO unsupported
@@ -36,6 +36,8 @@ $ directory = profile + ".INCLUDE.X11.EXTENSIONS]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]EXTENSIONS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11.ICE]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]ICE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".INCLUDE.X11.SM]"
+$ IF F$SEARCH(profile + ".INCLUDE.X11]SM.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB]"
 $ IF F$SEARCH(profile + "]LIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XAU]"
@@ -62,6 +64,8 @@ $ directory = profile + ".LIB.REGEX]"
 $ IF F$SEARCH(profile + ".LIB]REGEX.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.ICE]"
 $ IF F$SEARCH(profile + ".LIB]ICE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.SM]"
+$ IF F$SEARCH(profile + ".LIB]SM.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT]"
 $ IF F$SEARCH(profile + ".LIB]FONT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT.UTIL]"
@@ -88,7 +92,7 @@ $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS
 $ GOTO done
 $usage:
-$ WRITE SYS$OUTPUT "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|XFONT|FNTSTUBS|FS|PSRES|REGEX|ICE|BDFTOPCF|FSLSFONTS|SHOWFONT|XFSINFO]"
+$ WRITE SYS$OUTPUT "Usage: @BUILD [ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|XFONT|FNTSTUBS|FS|PSRES|REGEX|ICE|SM|BDFTOPCF|FSLSFONTS|SHOWFONT|XFSINFO]"
 $ GOTO done
 $unsupported:
 $ WRITE SYS$OUTPUT "This initial build profile supports OpenVMS x86-64 only."

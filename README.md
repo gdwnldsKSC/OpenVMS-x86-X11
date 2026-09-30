@@ -24,6 +24,7 @@ FSLSFONTS. Produces `FSLSFONTS.EXE` - the upstream font-server font listing tool
 SHOWFONT. Produces `SHOWFONT.EXE` - the upstream font-server glyph and metrics viewer, using `FS.OLB`.  
 XFSINFO. Produces `XFSINFO.EXE` - the upstream font-server information tool, using `FS.OLB`.  
 ICEAUTH. Produces `ICEAUTH.EXE` - the upstream ICE authority-file tool, using `ICE.OLB`; VMS file-version cleanup and permission-inheritance limitations remain.  
+MAKEPSRES. Produces `MAKEPSRES.EXE` - the upstream PostScript resource-directory generator; use Unix-style paths with `DECC$EFS_CASE_PRESERVE` enabled; backups require hard links (or `-nb`); upstream `-f -` limitation remains.  
   
 ## Notes  
   
@@ -46,6 +47,7 @@ $ @[.VMS-SUPPORT]BUILD FSLSFONTS
 $ @[.VMS-SUPPORT]BUILD SHOWFONT  
 $ @[.VMS-SUPPORT]BUILD XFSINFO  
 $ @[.VMS-SUPPORT]BUILD ICEAUTH  
+$ @[.VMS-SUPPORT]BUILD MAKEPSRES  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

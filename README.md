@@ -15,6 +15,7 @@ LBXUTIL. Produces `LBXUTIL.OLB` - all nine standard LBX utility modules, using `
 XFONT. Produces `XFONT.OLB` - all 41 standard bitmap, fontfile, fc, and util modules, with gzip and TCP font-server transport; optional renderers and caches excluded.  
 FNTSTUBS. Produces `FNTSTUBS.OLB` - all 17 unchanged modules from `lib/font/stubs`, for standalone font tools.  
 FS. Produces `FS.OLB` - all 25 standard font-server client library modules, with TCP transport.  
+PSRES. Produces `PSRES.OLB` - the complete upstream PostScript resource library; requires case-preserving Unix-style filenames (`DECC$EFS_CASE_PRESERVE` and `DECC$FILENAME_UNIX_REPORT` enabled); upstream cache defects remain.  
 BDFTOPCF. Produces `BDFTOPCF.EXE` - the upstream BDF-to-PCF font converter, using `XFONT.OLB` and `Z.OLB`; upstream `-p8` defect remains.  
 FSLSFONTS. Produces `FSLSFONTS.EXE` - the upstream font-server font listing tool, using `FS.OLB`.  
 SHOWFONT. Produces `SHOWFONT.EXE` - the upstream font-server glyph and metrics viewer, using `FS.OLB`.  
@@ -32,6 +33,7 @@ $ @[.VMS-SUPPORT]BUILD LBXUTIL
 $ @[.VMS-SUPPORT]BUILD XFONT  
 $ @[.VMS-SUPPORT]BUILD FNTSTUBS  
 $ @[.VMS-SUPPORT]BUILD FS  
+$ @[.VMS-SUPPORT]BUILD PSRES  
 $ @[.VMS-SUPPORT]BUILD BDFTOPCF  
 $ @[.VMS-SUPPORT]BUILD FSLSFONTS  
 $ @[.VMS-SUPPORT]BUILD SHOWFONT  

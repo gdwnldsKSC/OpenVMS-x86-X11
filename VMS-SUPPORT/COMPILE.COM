@@ -4,8 +4,9 @@ $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
 $ result = 2
 $ scoped = 0
+$ dps_scoped = 0
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
-$ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|BDFTOPCF|"
+$ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|BDFTOPCF|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P5 .NES. "") .OR. (P6 .NES. "") .OR. -
@@ -50,6 +51,18 @@ $ headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")
 $ DEFINE/USER_MODE/TABLE=LNM$PROCESS X11 'headers'
 $ scoped = 1
 $ IF F$TRNLNM("X11","LNM$FILE_DEV") .NES. headers THEN GOTO done
+$ IF P4 .EQS. "PSRES" THEN GOTO psres_headers
+$ GOTO compile
+$psres_headers:
+$ inherited_dps = F$TRNLNM("DPS")
+$ inherited_dps_table = F$TRNLNM("DPS",,,,,"TABLE_NAME")
+$ IF F$TRNLNM("DPS","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
+$ header = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.DPS]PSRES.H")
+$ IF header .EQS. "" THEN GOTO done
+$ dps_headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")
+$ DEFINE/USER_MODE/TABLE=LNM$PROCESS DPS 'dps_headers'
+$ dps_scoped = 1
+$ IF F$TRNLNM("DPS","LNM$FILE_DEV") .NES. dps_headers THEN GOTO done
 $ GOTO compile
 $zlib_headers:
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]ZLIB.H") .EQS. "" THEN GOTO done
@@ -71,6 +84,9 @@ $ IF .NOT. result THEN GOTO done
 $ IF .NOT. scoped THEN GOTO done
 $ IF F$TRNLNM("X11") .NES. inherited_x11 THEN result = 2
 $ IF F$TRNLNM("X11",,,,,"TABLE_NAME") .NES. inherited_table THEN result = 2
+$ IF .NOT. dps_scoped THEN GOTO done
+$ IF F$TRNLNM("DPS") .NES. inherited_dps THEN result = 2
+$ IF F$TRNLNM("DPS",,,,,"TABLE_NAME") .NES. inherited_dps_table THEN result = 2
 $ GOTO done
 $interrupted:
 $ result = 2
@@ -80,6 +96,8 @@ $ result = $STATUS
 $ IF result .AND. 1 THEN result = 2
 $done:
 $ SET NOON
+$ IF dps_scoped .AND. (F$TRNLNM("DPS","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER") -
+     THEN DEASSIGN/USER_MODE/TABLE=LNM$PROCESS DPS
 $ IF scoped .AND. (F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER") -
      THEN DEASSIGN/USER_MODE/TABLE=LNM$PROCESS X11
 $ IF .NOT. result THEN WRITE SYS$OUTPUT "X11 component compile failed: " + P1

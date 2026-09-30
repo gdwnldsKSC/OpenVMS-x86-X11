@@ -30,6 +30,7 @@ MAKESTRS. Produces `MAKESTRS.EXE` - the upstream string-table generator from `co
 MAKEDEPEND. Produces `MAKEDEPEND.EXE` - all six upstream C dependency-generator modules from `config/makedepend`, emitting `.obj` targets.  
 LNDIR. Produces `LNDIR.EXE` - the shadow symbolic-link tree generator from `config/util`, with OpenVMS directory traversal and case-preserving names; requires symbolic-link support and Unix-style paths.  
 ATOBM. Produces `ATOBM.EXE` - the upstream ASCII-to-bitmap converter from `programs/bitmap`.  
+GTF. Produces `GTF.EXE` - the upstream Generalized Timing Formula calculator from `programs/Xserver/hw/xfree86/etc`.  
   
 ## Notes  
   
@@ -58,6 +59,7 @@ $ @[.VMS-SUPPORT]BUILD MAKESTRS
 $ @[.VMS-SUPPORT]BUILD MAKEDEPEND  
 $ @[.VMS-SUPPORT]BUILD LNDIR  
 $ @[.VMS-SUPPORT]BUILD ATOBM  
+$ @[.VMS-SUPPORT]BUILD GTF  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

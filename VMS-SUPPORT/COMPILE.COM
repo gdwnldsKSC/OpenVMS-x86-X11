@@ -6,13 +6,14 @@ $ result = 2
 $ scoped = 0
 $ dps_scoped = 0
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
-$ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|REGEX|REGEX_MKH|ICE|SM|BDFTOPCF|ICEAUTH|MAKEPSRES|SHOWRGB|MAKEDEPEND|"
+$ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|REGEX|REGEX_MKH|ICE|SM|BDFTOPCF|ICEAUTH|MAKEPSRES|SHOWRGB|MAKEDEPEND|GTF|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P5 .NES. "") .OR. (P6 .NES. "") .OR. -
      (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
 $ rtl_headers = F$SEARCH("SYS$LIBRARY:DECC$RTLDEF.TLB")
 $ IF rtl_headers .EQS. "" THEN GOTO done
+$ IF P4 .EQS. "GTF" THEN GOTO gtf_headers
 $ IF P4 .EQS. "ZLIB" THEN GOTO zlib_headers
 $ IF P4 .EQS. "FONTENC" THEN GOTO fontenc_headers
 $ IF (P4 .EQS. "REGEX") .OR. (P4 .EQS. "REGEX_MKH") THEN GOTO regex_headers
@@ -65,6 +66,10 @@ $ DEFINE/USER_MODE/TABLE=LNM$PROCESS X11 'headers'
 $ scoped = 1
 $ IF F$TRNLNM("X11","LNM$FILE_DEV") .NES. headers THEN GOTO done
 $ IF P4 .EQS. "PSRES" THEN GOTO psres_headers
+$ GOTO compile
+$gtf_headers:
+$! This utility needs only the explicit native RTL header library, not X11.
+$ include_directory = """"""
 $ GOTO compile
 $psres_headers:
 $ inherited_dps = F$TRNLNM("DPS")

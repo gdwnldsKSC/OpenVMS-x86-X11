@@ -20,6 +20,8 @@
 #include FT_INTERNAL_POSTSCRIPT_AUX_H
 #include FT_INTERNAL_DEBUG_H
 
+#include <stdint.h>
+
 #include "psobjs.h"
 
 #include "psauxerr.h"
@@ -87,7 +89,6 @@
   shift_elements( PS_Table  table,
                   FT_Byte*  old_base )
   {
-    FT_Long    delta  = (FT_Long)( table->block - old_base );
     FT_Byte**  offset = table->elements;
     FT_Byte**  limit  = offset + table->max_elems;
 
@@ -95,7 +96,8 @@
     for ( ; offset < limit; offset++ )
     {
       if ( offset[0] )
-        offset[0] += delta;
+        /* Keep the old-buffer offset, not a narrowed address delta. */
+        offset[0] = table->block + ( offset[0] - old_base );
     }
   }
 
@@ -172,9 +174,12 @@
       FT_Long    in_offset;
 
 
-      in_offset = (FT_Long)((FT_Byte*)object - table->block);
-      if ( (FT_ULong)in_offset >= table->capacity )
-        in_offset = -1;
+      /* Check address membership before computing a bounded offset. */
+      in_offset = -1;
+      if ( table->block &&
+           (uintptr_t)object >= (uintptr_t)table->block &&
+           (uintptr_t)object - (uintptr_t)table->block < table->capacity )
+        in_offset = (FT_Long)( (FT_Byte*)object - table->block );
 
       while ( new_size < table->cursor + length )
       {

@@ -50,6 +50,7 @@ DBE. Produces `DBE.OLB` - both unchanged upstream Double Buffer Extension module
 RECORD. Produces `RECORD.OLB` - both unchanged upstream protocol-recording extension modules from `programs/Xserver/record`; static profile with the range-set implementation, excluding loadable hooks.  
 LAYER. Produces `LAYER.OLB` - all four unchanged upstream screen-layer modules from `programs/Xserver/miext/layer`, with native internal-symbol aliases; static Render-enabled profile excluding loadable hooks; upstream window-loop defects remain.  
 XFIXES. Produces `XFIXES.OLB` - all five unchanged upstream X Fixes extension modules from `programs/Xserver/xfixes`; static Render-enabled profile; linking requires an XFIXES-enabled server core.  
+COMPOSITE. Produces `COMPOSITE.OLB` - all four unchanged upstream Composite extension modules from `programs/Xserver/composite`; static Render-enabled profile; linking requires matching COMPOSITE/XFIXES server layouts and Damage extension support.  
   
 ## Notes  
   
@@ -98,6 +99,7 @@ $ @[.VMS-SUPPORT]BUILD DBE
 $ @[.VMS-SUPPORT]BUILD RECORD  
 $ @[.VMS-SUPPORT]BUILD LAYER  
 $ @[.VMS-SUPPORT]BUILD XFIXES  
+$ @[.VMS-SUPPORT]BUILD COMPOSITE  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

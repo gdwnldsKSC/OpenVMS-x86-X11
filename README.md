@@ -34,6 +34,8 @@ GTF. Produces `GTF.EXE` - the upstream Generalized Timing Formula calculator fro
 FREETYPE2. Produces `FREETYPE.OLB` - the complete 34-object upstream Unix profile of bundled FreeType 2.1.8, with an essential P64 PostScript-table relocation adaptation; based in part on the work of the FreeType Team and Catharon Productions, Inc.  
 MKFONTSCALE. Produces `MKFONTSCALE.EXE` - all four upstream font-index generator modules, using `FONTENC.OLB`, `FREETYPE.OLB`, and `Z.OLB`.  
 FONTTOSFNT. Produces `FONTTOSFNT.EXE` - all five upstream bitmap-to-sfnt converter modules, with essential fixed-field initializer and C99 varargs retry adaptations, using `FREETYPE.OLB`, `FONTENC.OLB`, and `Z.OLB`.  
+REVPATH. Produces `REVPATH.EXE` - the unchanged upstream relative-path helper from `config/util`.  
+RMAN. Produces `RMAN.EXE` - the unchanged upstream PolyglotMan manual-page converter from `extras/rman`, using the `config/util` build definitions; bundled upstream license notices apply.  
   
 ## Notes  
   
@@ -66,6 +68,8 @@ $ @[.VMS-SUPPORT]BUILD GTF
 $ @[.VMS-SUPPORT]BUILD FREETYPE2  
 $ @[.VMS-SUPPORT]BUILD MKFONTSCALE  
 $ @[.VMS-SUPPORT]BUILD FONTTOSFNT  
+$ @[.VMS-SUPPORT]BUILD REVPATH  
+$ @[.VMS-SUPPORT]BUILD RMAN  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

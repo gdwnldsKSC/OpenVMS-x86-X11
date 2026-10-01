@@ -45,6 +45,7 @@ RENDER. Produces `RENDER.OLB` - all 12 unchanged upstream Render extension modul
 DIX. Produces `DIX.OLB` - all 23 unchanged upstream device-independent server modules from `programs/Xserver/dix`, plus a native entry adapter for the 64-bit environment-vector boundary; static Render-enabled profile excluding optional extension hooks.  
 XPSTUBS. Produces `XPSTUBS.OLB` - the separate unchanged upstream non-Xprint server auxiliary from `programs/Xserver/dix`.  
 SHADOW. Produces `SHADOW.OLB` - all 15 unchanged upstream shadow-framebuffer modules from `programs/Xserver/miext/shadow`; static Render-enabled profile with packed, planar, and rotation paths, excluding loadable hooks.  
+RANDR. Produces `RANDR.OLB` - both unchanged upstream Resize and Rotate extension modules from `programs/Xserver/randr`; static Render-enabled profile; MI fallback does not change display modes, and the upstream rate-array cleanup defect remains.  
   
 ## Notes  
   
@@ -88,6 +89,7 @@ $ @[.VMS-SUPPORT]BUILD RENDER
 $ @[.VMS-SUPPORT]BUILD DIX  
 $ @[.VMS-SUPPORT]BUILD XPSTUBS  
 $ @[.VMS-SUPPORT]BUILD SHADOW  
+$ @[.VMS-SUPPORT]BUILD RANDR  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

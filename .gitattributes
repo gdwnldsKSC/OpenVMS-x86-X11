@@ -1,2 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Native DCL stream-LF procedures must not acquire trailing carriage returns.
+VMS-SUPPORT/**/*.COM text eol=lf
+VMS-SUPPORT/**/*.MMS text eol=lf
+VMS-SUPPORT/**/*.H text eol=lf

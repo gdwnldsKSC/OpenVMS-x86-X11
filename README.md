@@ -48,6 +48,7 @@ SHADOW. Produces `SHADOW.OLB` - all 15 unchanged upstream shadow-framebuffer mod
 RANDR. Produces `RANDR.OLB` - both unchanged upstream Resize and Rotate extension modules from `programs/Xserver/randr`; static Render-enabled profile; MI fallback does not change display modes, and the upstream rate-array cleanup defect remains.  
 DBE. Produces `DBE.OLB` - both unchanged upstream Double Buffer Extension modules from `programs/Xserver/dbe`; static profile with the machine-independent implementation, excluding loadable hooks.  
 RECORD. Produces `RECORD.OLB` - both unchanged upstream protocol-recording extension modules from `programs/Xserver/record`; static profile with the range-set implementation, excluding loadable hooks.  
+LAYER. Produces `LAYER.OLB` - all four unchanged upstream screen-layer modules from `programs/Xserver/miext/layer`, with native internal-symbol aliases; static Render-enabled profile excluding loadable hooks; upstream window-loop defects remain.  
   
 ## Notes  
   
@@ -94,6 +95,7 @@ $ @[.VMS-SUPPORT]BUILD SHADOW
 $ @[.VMS-SUPPORT]BUILD RANDR  
 $ @[.VMS-SUPPORT]BUILD DBE  
 $ @[.VMS-SUPPORT]BUILD RECORD  
+$ @[.VMS-SUPPORT]BUILD LAYER  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

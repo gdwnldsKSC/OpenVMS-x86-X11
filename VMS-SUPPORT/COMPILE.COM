@@ -7,9 +7,10 @@ $ saved_default = F$ENVIRONMENT("DEFAULT")
 $ default_scoped = 0
 $ scoped = 0
 $ dps_scoped = 0
+$ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|REGEX|REGEX_MKH|ICE|SM|BDFTOPCF|ICEAUTH|MAKEPSRES|SHOWRGB|MAKEDEPEND|GTF|RTL|"
-$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|"
+$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -58,7 +59,8 @@ $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
 $ IF (P4 .EQS. "DAMAGE") .OR. (P4 .EQS. "MI") .OR. (P4 .EQS. "FB") .OR. -
     (P4 .EQS. "RENDER") .OR. (P4 .EQS. "DIX") .OR. -
     (P4 .EQS. "SHADOW") .OR. (P4 .EQS. "RANDR") .OR. -
-    (P4 .EQS. "DBE") .OR. (P4 .EQS. "RECORD") THEN include_directory = include_directory + -
+    (P4 .EQS. "DBE") .OR. (P4 .EQS. "RECORD") .OR. -
+    (P4 .EQS. "LAYER") THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
@@ -68,10 +70,14 @@ $ IF P4 .EQS. "MI" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.MFB],[.PROGRAMS.XSERVER.XEXT]," + -
     "[.PROGRAMS.XSERVER.XFIXES],[.PROGRAMS.XSERVER.DAMAGEEXT]"
 $ IF (P4 .EQS. "FB") .OR. (P4 .EQS. "RENDER") .OR. -
-    (P4 .EQS. "SHADOW") THEN include_directory = include_directory + -
+    (P4 .EQS. "SHADOW") .OR. (P4 .EQS. "LAYER") THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.FB],[.PROGRAMS.XSERVER.XEXT]"
-$ IF P4 .EQS. "SHADOW" THEN include_directory = include_directory + -
+$ IF (P4 .EQS. "SHADOW") .OR. (P4 .EQS. "LAYER") THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.MIEXT.SHADOW]"
+$ IF P4 .EQS. "LAYER" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.MIEXT.LAYER]"
+$ IF P4 .EQS. "LAYER" THEN GOSUB layer_names
+$ IF (P4 .EQS. "LAYER") .AND. (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
 $ IF P4 .EQS. "RANDR" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.RANDR]"
 $ IF P4 .EQS. "DBE" THEN include_directory = include_directory + -
@@ -127,7 +133,7 @@ $ IF (P4 .EQS. "REGEX") .AND. -
     (F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]REGEX.H") .EQS. "") THEN GOTO done
 $compile:
 $ IF P4 .EQS. "MI" THEN GOSUB mi_context
-$ CC 'P3' 'P5' /NOFIRST_INCLUDE/NESTED_INCLUDE_DIRECTORY=NONE -
+$ CC 'P3' 'P5' 'first_include' /NESTED_INCLUDE_DIRECTORY=NONE -
     /INCLUDE_DIRECTORY=('include_directory',"") -
     /LIST='P2'.LIS/SHOW=INCLUDE -
     /MMS_DEPENDENCIES=(FILE='P2'.MMS,SYSTEM_INCLUDE_FILES) -
@@ -141,6 +147,10 @@ $ IF .NOT. dps_scoped THEN GOTO done
 $ IF F$TRNLNM("DPS") .NES. inherited_dps THEN result = 2
 $ IF F$TRNLNM("DPS",,,,,"TABLE_NAME") .NES. inherited_dps_table THEN result = 2
 $ GOTO done
+$layer_names:
+$ layer_names_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.MIEXT.LAYER]VMS_LAYER_NAMES.H")
+$ IF layer_names_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + layer_names_header
+$ RETURN
 $mi_context:
 $! Match the Unix module working directory for ../mfb/maskbits.h.
 $! Root every explicit input/output/include before changing the default.

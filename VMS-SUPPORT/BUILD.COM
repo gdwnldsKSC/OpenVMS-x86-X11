@@ -8,7 +8,7 @@ $ step = "arguments"
 $ target = F$EDIT(P1,"UPCASE,TRIM")
 $ IF target .EQS. "" THEN target = "ALL"
 $ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|XFONT|FNTSTUBS|FS|PSRES|REGEX|ICE|SM|BDFTOPCF|FSLSFONTS|SHOWFONT|XFSINFO|ICEAUTH|MAKEPSRES|SHOWRGB|MAKESTRS|MAKEDEPEND|LNDIR|ATOBM|GTF|FREETYPE2|MKFONTSCALE|FONTTOSFNT|REVPATH|RMAN|"
-$ targets = targets + "UCS2ANY|"
+$ targets = targets + "UCS2ANY|DAMAGE|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -125,6 +125,10 @@ $ directory = profile + ".PROGRAMS.FONTTOSFNT]"
 $ IF F$SEARCH(profile + ".PROGRAMS]FONTTOSFNT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER]"
 $ IF F$SEARCH(profile + ".PROGRAMS]XSERVER.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XSERVER.MIEXT]"
+$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER]MIEXT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XSERVER.MIEXT.DAMAGE]"
+$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.MIEXT]DAMAGE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.HW]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER]HW.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86]"

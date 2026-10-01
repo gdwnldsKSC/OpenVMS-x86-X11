@@ -37,6 +37,7 @@ FONTTOSFNT. Produces `FONTTOSFNT.EXE` - all five upstream bitmap-to-sfnt convert
 REVPATH. Produces `REVPATH.EXE` - the unchanged upstream relative-path helper from `config/util`.  
 RMAN. Produces `RMAN.EXE` - the unchanged upstream PolyglotMan manual-page converter from `extras/rman`, using the `config/util` build definitions.  
 UCS2ANY. Produces `UCS2ANY.EXE` - the unchanged upstream BDF character-encoding converter from `fonts/util`; use one mapping per invocation because of an upstream multi-mapping cleanup defect.  
+DAMAGE. Produces `DAMAGE.OLB` - the unchanged internal server damage-tracking library from `programs/Xserver/miext/damage`; static profile with pixmap privates, excluding Render, Composite, and rootless hooks.  
   
 ## Notes  
   
@@ -72,6 +73,7 @@ $ @[.VMS-SUPPORT]BUILD FONTTOSFNT
 $ @[.VMS-SUPPORT]BUILD REVPATH  
 $ @[.VMS-SUPPORT]BUILD RMAN  
 $ @[.VMS-SUPPORT]BUILD UCS2ANY  
+$ @[.VMS-SUPPORT]BUILD DAMAGE  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

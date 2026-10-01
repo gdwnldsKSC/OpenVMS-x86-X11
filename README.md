@@ -44,6 +44,7 @@ FB. Produces `FB.OLB` - all 35 unchanged upstream framebuffer modules from `prog
 RENDER. Produces `RENDER.OLB` - all 12 unchanged upstream Render extension modules from `programs/Xserver/render`; static profile excluding optional extension hooks; upstream triangle-strip/fan allocation and sampling/edge-stepping defects remain.  
 DIX. Produces `DIX.OLB` - all 23 unchanged upstream device-independent server modules from `programs/Xserver/dix`, plus a native entry adapter for the 64-bit environment-vector boundary; static Render-enabled profile excluding optional extension hooks.  
 XPSTUBS. Produces `XPSTUBS.OLB` - the separate unchanged upstream non-Xprint server auxiliary from `programs/Xserver/dix`.  
+SHADOW. Produces `SHADOW.OLB` - all 15 unchanged upstream shadow-framebuffer modules from `programs/Xserver/miext/shadow`; static Render-enabled profile with packed, planar, and rotation paths, excluding loadable hooks.  
   
 ## Notes  
   
@@ -86,6 +87,7 @@ $ @[.VMS-SUPPORT]BUILD FB
 $ @[.VMS-SUPPORT]BUILD RENDER  
 $ @[.VMS-SUPPORT]BUILD DIX  
 $ @[.VMS-SUPPORT]BUILD XPSTUBS  
+$ @[.VMS-SUPPORT]BUILD SHADOW  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

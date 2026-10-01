@@ -41,6 +41,7 @@ DAMAGE. Produces `DAMAGE.OLB` - the unchanged internal server damage-tracking li
 MI. Produces `MI.OLB` - all 38 unchanged machine-independent server modules from `programs/Xserver/mi`; static core profile with pixmap privates and native CRTL cube roots, excluding optional extensions and loadable hooks; upstream bank-separation limits remain.  
 CBRT. Produces `CBRT.OLB` - the separate unchanged upstream cube-root fallback from `programs/Xserver/mi`.  
 FB. Produces `FB.OLB` - all 35 unchanged upstream framebuffer modules from `programs/Xserver/fb`; static Render-enabled profile including 24-bit and 24/32 conversion paths, excluding loadable hooks and GCC MMX.  
+RENDER. Produces `RENDER.OLB` - all 12 unchanged upstream Render extension modules from `programs/Xserver/render`; static profile excluding optional extension hooks; upstream triangle-strip/fan allocation and sampling/edge-stepping defects remain.  
   
 ## Notes  
   
@@ -80,6 +81,7 @@ $ @[.VMS-SUPPORT]BUILD DAMAGE
 $ @[.VMS-SUPPORT]BUILD MI  
 $ @[.VMS-SUPPORT]BUILD CBRT  
 $ @[.VMS-SUPPORT]BUILD FB  
+$ @[.VMS-SUPPORT]BUILD RENDER  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

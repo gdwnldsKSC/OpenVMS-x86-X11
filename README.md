@@ -16,7 +16,7 @@ XFONT. Produces `XFONT.OLB` - all 41 standard bitmap, fontfile, fc, and util mod
 FNTSTUBS. Produces `FNTSTUBS.OLB` - all 17 unchanged modules from `lib/font/stubs`, for standalone font tools.  
 FS. Produces `FS.OLB` - all 25 standard font-server client library modules, with TCP transport.  
 PSRES. Produces `PSRES.OLB` - the complete upstream PostScript resource library; requires case-preserving Unix-style filenames (`DECC$EFS_CASE_PRESERVE` and `DECC$FILENAME_UNIX_REPORT` enabled); upstream cache defects remain.  
-REGEX. Produces `REGEX.OLB` - all four upstream regular-expression modules by Henry Spencer, with native generation of their public and private headers.  
+REGEX. Produces `REGEX.OLB` - all four upstream regular-expression modules, with native generation of their public and private headers.  
 ICE. Produces `ICE.OLB` - all 19 standard Inter-Client Exchange library modules, with TCP client and server transport.  
 SM. Produces `SM.OLB` - all seven standard Session Management library modules, using `ICE.OLB`.  
 BDFTOPCF. Produces `BDFTOPCF.EXE` - the upstream BDF-to-PCF font converter, using `XFONT.OLB` and `Z.OLB`; upstream `-p8` defect remains.  
@@ -31,11 +31,12 @@ MAKEDEPEND. Produces `MAKEDEPEND.EXE` - all six upstream C dependency-generator 
 LNDIR. Produces `LNDIR.EXE` - the shadow symbolic-link tree generator from `config/util`, with OpenVMS directory traversal and case-preserving names; requires symbolic-link support and Unix-style paths.  
 ATOBM. Produces `ATOBM.EXE` - the upstream ASCII-to-bitmap converter from `programs/bitmap`.  
 GTF. Produces `GTF.EXE` - the upstream Generalized Timing Formula calculator from `programs/Xserver/hw/xfree86/etc`.  
-FREETYPE2. Produces `FREETYPE.OLB` - the complete 34-object upstream Unix profile of bundled FreeType 2.1.8, with an essential P64 PostScript-table relocation adaptation; based in part on the work of the FreeType Team and Catharon Productions, Inc.  
+FREETYPE2. Produces `FREETYPE.OLB` - the complete 34-object upstream Unix profile of bundled FreeType 2.1.8, with an essential P64 PostScript-table relocation adaptation.  
 MKFONTSCALE. Produces `MKFONTSCALE.EXE` - all four upstream font-index generator modules, using `FONTENC.OLB`, `FREETYPE.OLB`, and `Z.OLB`.  
 FONTTOSFNT. Produces `FONTTOSFNT.EXE` - all five upstream bitmap-to-sfnt converter modules, with essential fixed-field initializer and C99 varargs retry adaptations, using `FREETYPE.OLB`, `FONTENC.OLB`, and `Z.OLB`.  
 REVPATH. Produces `REVPATH.EXE` - the unchanged upstream relative-path helper from `config/util`.  
-RMAN. Produces `RMAN.EXE` - the unchanged upstream PolyglotMan manual-page converter from `extras/rman`, using the `config/util` build definitions; bundled upstream license notices apply.  
+RMAN. Produces `RMAN.EXE` - the unchanged upstream PolyglotMan manual-page converter from `extras/rman`, using the `config/util` build definitions.  
+UCS2ANY. Produces `UCS2ANY.EXE` - the unchanged upstream BDF character-encoding converter from `fonts/util`; use one mapping per invocation because of an upstream multi-mapping cleanup defect.  
   
 ## Notes  
   
@@ -70,6 +71,7 @@ $ @[.VMS-SUPPORT]BUILD MKFONTSCALE
 $ @[.VMS-SUPPORT]BUILD FONTTOSFNT  
 $ @[.VMS-SUPPORT]BUILD REVPATH  
 $ @[.VMS-SUPPORT]BUILD RMAN  
+$ @[.VMS-SUPPORT]BUILD UCS2ANY  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

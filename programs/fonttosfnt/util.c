@@ -86,12 +86,15 @@ vsprintf_reliable(char *f, va_list args)
     int n, size = 12;
     char *string;
     while(1) {
+        va_list args_copy;
         if(size > 4096)
             return NULL;
         string = malloc(size);
         if(!string)
             return NULL;
-        n = vsnprintf(string, size, f, args);
+        va_copy(args_copy, args);
+        n = vsnprintf(string, size, f, args_copy);
+        va_end(args_copy);
         if(n >= 0 && n < size)
             return string;
         else if(n >= size)

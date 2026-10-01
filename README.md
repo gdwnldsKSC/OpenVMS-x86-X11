@@ -42,6 +42,8 @@ MI. Produces `MI.OLB` - all 38 unchanged machine-independent server modules from
 CBRT. Produces `CBRT.OLB` - the separate unchanged upstream cube-root fallback from `programs/Xserver/mi`.  
 FB. Produces `FB.OLB` - all 35 unchanged upstream framebuffer modules from `programs/Xserver/fb`; static Render-enabled profile including 24-bit and 24/32 conversion paths, excluding loadable hooks and GCC MMX.  
 RENDER. Produces `RENDER.OLB` - all 12 unchanged upstream Render extension modules from `programs/Xserver/render`; static profile excluding optional extension hooks; upstream triangle-strip/fan allocation and sampling/edge-stepping defects remain.  
+DIX. Produces `DIX.OLB` - all 23 unchanged upstream device-independent server modules from `programs/Xserver/dix`, plus a native entry adapter for the 64-bit environment-vector boundary; static Render-enabled profile excluding optional extension hooks.  
+XPSTUBS. Produces `XPSTUBS.OLB` - the separate unchanged upstream non-Xprint server auxiliary from `programs/Xserver/dix`.  
   
 ## Notes  
   
@@ -82,6 +84,8 @@ $ @[.VMS-SUPPORT]BUILD MI
 $ @[.VMS-SUPPORT]BUILD CBRT  
 $ @[.VMS-SUPPORT]BUILD FB  
 $ @[.VMS-SUPPORT]BUILD RENDER  
+$ @[.VMS-SUPPORT]BUILD DIX  
+$ @[.VMS-SUPPORT]BUILD XPSTUBS  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

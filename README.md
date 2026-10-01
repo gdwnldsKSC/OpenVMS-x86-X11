@@ -46,6 +46,7 @@ DIX. Produces `DIX.OLB` - all 23 unchanged upstream device-independent server mo
 XPSTUBS. Produces `XPSTUBS.OLB` - the separate unchanged upstream non-Xprint server auxiliary from `programs/Xserver/dix`.  
 SHADOW. Produces `SHADOW.OLB` - all 15 unchanged upstream shadow-framebuffer modules from `programs/Xserver/miext/shadow`; static Render-enabled profile with packed, planar, and rotation paths, excluding loadable hooks.  
 RANDR. Produces `RANDR.OLB` - both unchanged upstream Resize and Rotate extension modules from `programs/Xserver/randr`; static Render-enabled profile; MI fallback does not change display modes, and the upstream rate-array cleanup defect remains.  
+DBE. Produces `DBE.OLB` - both unchanged upstream Double Buffer Extension modules from `programs/Xserver/dbe`; static profile with the machine-independent implementation, excluding loadable hooks.  
   
 ## Notes  
   
@@ -90,6 +91,7 @@ $ @[.VMS-SUPPORT]BUILD DIX
 $ @[.VMS-SUPPORT]BUILD XPSTUBS  
 $ @[.VMS-SUPPORT]BUILD SHADOW  
 $ @[.VMS-SUPPORT]BUILD RANDR  
+$ @[.VMS-SUPPORT]BUILD DBE  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

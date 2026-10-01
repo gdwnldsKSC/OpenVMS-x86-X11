@@ -9,7 +9,7 @@ $ scoped = 0
 $ dps_scoped = 0
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|REGEX|REGEX_MKH|ICE|SM|BDFTOPCF|ICEAUTH|MAKEPSRES|SHOWRGB|MAKEDEPEND|GTF|RTL|"
-$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|"
+$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -57,7 +57,8 @@ $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.CONFIG.MAKEDEPEND],[.CONFIG.IMAKE]"
 $ IF (P4 .EQS. "DAMAGE") .OR. (P4 .EQS. "MI") .OR. (P4 .EQS. "FB") .OR. -
     (P4 .EQS. "RENDER") .OR. (P4 .EQS. "DIX") .OR. -
-    (P4 .EQS. "SHADOW") .OR. (P4 .EQS. "RANDR") THEN include_directory = include_directory + -
+    (P4 .EQS. "SHADOW") .OR. (P4 .EQS. "RANDR") .OR. -
+    (P4 .EQS. "DBE") THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
@@ -73,6 +74,8 @@ $ IF P4 .EQS. "SHADOW" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.MIEXT.SHADOW]"
 $ IF P4 .EQS. "RANDR" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.RANDR]"
+$ IF P4 .EQS. "DBE" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.DBE]"
 $ IF P4 .EQS. "DIX" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.DIX],[.PROGRAMS.XSERVER.XEXT],[.PROGRAMS.XSERVER.LBX]"
 $ IF P4 .EQS. "FONT_FONTFILE" THEN include_directory = include_directory + -

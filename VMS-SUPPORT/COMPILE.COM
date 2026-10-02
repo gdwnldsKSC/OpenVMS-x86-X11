@@ -10,7 +10,7 @@ $ dps_scoped = 0
 $ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|REGEX|REGEX_MKH|ICE|SM|BDFTOPCF|ICEAUTH|MAKEPSRES|SHOWRGB|MAKEDEPEND|GTF|RTL|"
-$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|"
+$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -56,12 +56,9 @@ $ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.INCLUDE]"
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.CONFIG.MAKEDEPEND],[.CONFIG.IMAKE]"
-$ IF (P4 .EQS. "DAMAGE") .OR. (P4 .EQS. "MI") .OR. (P4 .EQS. "FB") .OR. -
-    (P4 .EQS. "RENDER") .OR. (P4 .EQS. "DIX") .OR. -
-    (P4 .EQS. "SHADOW") .OR. (P4 .EQS. "RANDR") .OR. -
-    (P4 .EQS. "DBE") .OR. (P4 .EQS. "RECORD") .OR. -
-    (P4 .EQS. "LAYER") .OR. (P4 .EQS. "XFIXES") .OR. -
-    (P4 .EQS. "COMPOSITE") THEN include_directory = include_directory + -
+$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|"
+$ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
+    THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
@@ -92,6 +89,15 @@ $ IF P4 .EQS. "COMPOSITE" THEN include_directory = include_directory + -
     "[.PROGRAMS.XSERVER.DAMAGEEXT],[.PROGRAMS.XSERVER.XEXT]"
 $ IF P4 .EQS. "DIX" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.DIX],[.PROGRAMS.XSERVER.XEXT],[.PROGRAMS.XSERVER.LBX]"
+$ IF P4 .EQS. "CW" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.MIEXT.CW],[.PROGRAMS.XSERVER.FB]," + -
+    "[.PROGRAMS.XSERVER.COMPOSITE],[.PROGRAMS.XSERVER.XEXT]"
+$ IF P4 .EQS. "DAMAGEEXT" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.DAMAGEEXT],[.PROGRAMS.XSERVER.XFIXES],[.PROGRAMS.XSERVER.XEXT]"
+$ IF P4 .EQS. "EXT" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.XEXT],[.PROGRAMS.XSERVER.XEXT.EXTMOD],[.PROGRAMS.XSERVER.XPRINT]"
+$ IF P4 .EQS. "XINPUT" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.XI],[.PROGRAMS.XSERVER.XEXT]"
 $ IF P4 .EQS. "FONT_FONTFILE" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.LIB.FONT.INCLUDE],[.LIB.FONT.FONTFILE]"
@@ -138,7 +144,7 @@ $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]," + -
 $ IF (P4 .EQS. "REGEX") .AND. -
     (F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]REGEX.H") .EQS. "") THEN GOTO done
 $compile:
-$ IF P4 .EQS. "MI" THEN GOSUB mi_context
+$ IF (P4 .EQS. "MI") .OR. (P4 .EQS. "EXT") THEN GOSUB mi_context
 $ CC 'P3' 'P5' 'first_include' /NESTED_INCLUDE_DIRECTORY=NONE -
     /INCLUDE_DIRECTORY=('include_directory',"") -
     /LIST='P2'.LIS/SHOW=INCLUDE -

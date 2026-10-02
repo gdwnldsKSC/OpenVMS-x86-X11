@@ -51,6 +51,10 @@ RECORD. Produces `RECORD.OLB` - both unchanged upstream protocol-recording exten
 LAYER. Produces `LAYER.OLB` - all four unchanged upstream screen-layer modules from `programs/Xserver/miext/layer`, with native internal-symbol aliases; static Render-enabled profile excluding loadable hooks; upstream window-loop defects remain.  
 XFIXES. Produces `XFIXES.OLB` - all five unchanged upstream X Fixes extension modules from `programs/Xserver/xfixes`; static Render-enabled profile; linking requires an XFIXES-enabled server core.  
 COMPOSITE. Produces `COMPOSITE.OLB` - all four unchanged upstream Composite extension modules from `programs/Xserver/composite`; static Render-enabled profile; linking requires matching COMPOSITE/XFIXES server layouts and Damage extension support.  
+CW. Produces `CW.OLB` - all three unchanged upstream Composite wrapper modules from `programs/Xserver/miext/cw`; static Render-enabled profile with native C99 assertion-name mapping; requires matching Composite server layouts and screen initialization.  
+DAMAGEEXT. Produces `DAMAGE.OLB` in the separate damageext output directory - the unchanged upstream Damage protocol extension module; requires internal Damage tracking and matching server layouts.  
+EXT. Produces `EXT.OLB` - all 11 modules of the selected upstream static Xext profile, including ScreenSaver; optional platform and loadable extensions excluded.  
+XINPUT. Produces `XINPUT.OLB` - all 37 upstream Unix X Input library modules; requires an XINPUT-enabled server core and device-dependent hooks; upstream lint-only stubs excluded.  
   
 ## Notes  
   
@@ -100,6 +104,10 @@ $ @[.VMS-SUPPORT]BUILD RECORD
 $ @[.VMS-SUPPORT]BUILD LAYER  
 $ @[.VMS-SUPPORT]BUILD XFIXES  
 $ @[.VMS-SUPPORT]BUILD COMPOSITE  
+$ @[.VMS-SUPPORT]BUILD CW  
+$ @[.VMS-SUPPORT]BUILD DAMAGEEXT  
+$ @[.VMS-SUPPORT]BUILD EXT  
+$ @[.VMS-SUPPORT]BUILD XINPUT  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

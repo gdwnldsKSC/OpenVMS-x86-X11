@@ -10,7 +10,7 @@ $ dps_scoped = 0
 $ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|REGEX|REGEX_MKH|ICE|SM|BDFTOPCF|ICEAUTH|MAKEPSRES|SHOWRGB|MAKEDEPEND|GTF|RTL|"
-$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|"
+$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -27,6 +27,8 @@ $ inherited_x11 = F$TRNLNM("X11")
 $ inherited_table = F$TRNLNM("X11",,,,,"TABLE_NAME")
 $ IF F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]"
+$ IF P4 .EQS. "XKB" THEN include_directory = -
+    "[.PROGRAMS.XSERVER.XKB]," + include_directory
 $ IF P4 .EQS. "EXPAT" THEN include_directory = include_directory + -
     ",[.EXTRAS.EXPAT.LIB],[.LIB.EXPAT]"
 $ IF P4 .EQS. "LBXUTIL_IMAGE" THEN include_directory = include_directory + -
@@ -58,7 +60,7 @@ $ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.INCLUDE]"
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.CONFIG.MAKEDEPEND],[.CONFIG.IMAKE]"
-$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|"
+$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|"
 $ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
     THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
@@ -103,6 +105,20 @@ $ IF P4 .EQS. "XINPUT" THEN include_directory = include_directory + -
 $ IF P4 .EQS. "OS" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.OS],[.PROGRAMS.XSERVER.XEXT],[.PROGRAMS.XSERVER.LBX]," + -
     "[.LIB.FONT.INCLUDE],[.LIB.XAU],[.LIB.XTRANS]"
+$ IF P4 .EQS. "MFB" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.MFB]"
+$ IF P4 .EQS. "VFB" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.HW.VFB],[.PROGRAMS.XSERVER.FB]," + -
+    "[.PROGRAMS.XSERVER.MFB],[.PROGRAMS.XSERVER.XEXT],[.PROGRAMS.XSERVER.XI]"
+$ IF P4 .EQS. "XKB" THEN include_directory = include_directory + -
+    ",[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XSERVER.XKB]," + -
+    "[.PROGRAMS.XSERVER.XKB],[.PROGRAMS.XSERVER.XEXT.EXTMOD]," + -
+    "[.PROGRAMS.XSERVER.XEXT],[.LIB.XKBFILE],[.LIB.X11],[.PROGRAMS.XSERVER.XI]"
+$! Slash-bearing upstream includes require a Unix-style search directory.
+$ IF P4 .EQS. "XKB" THEN include_directory = include_directory + -
+    ",""./VMS-SUPPORT/_BUILD/P64/INCLUDE/X11"""
+$ IF P4 .EQS. "LBX" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.LBX],[.PROGRAMS.XSERVER.XEXT],[.LIB.FONT.INCLUDE]"
 $ IF P4 .EQS. "FONT_FONTFILE" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.LIB.FONT.INCLUDE],[.LIB.FONT.FONTFILE]"

@@ -56,6 +56,10 @@ DAMAGEEXT. Produces `DAMAGE.OLB` in the separate damageext output directory - th
 EXT. Produces `EXT.OLB` - all 11 modules of the selected upstream static Xext profile, including ScreenSaver; optional platform and loadable extensions excluded.  
 XINPUT. Produces `XINPUT.OLB` - all 37 upstream Unix X Input library modules; requires an XINPUT-enabled server core and device-dependent hooks; upstream lint-only stubs excluded.  
 OS. Produces `OS.OLB` - all 15 modules of the upstream TCP/XDMCP, MIT-cookie and text-RGB profile, with minimal VMS/P64 fixes and one native process adapter; process helpers use DCL and reject images installed with added privileges or rights.  
+MFB. Produces `MFB.OLB` - all 47 standard monochrome framebuffer objects from unchanged upstream sources, including specialized drawing variants; static profile excluding banked and loadable hooks.  
+VFB. Produces `VFB.OLB` - all four upstream virtual-framebuffer DDx objects from unchanged sources; malloc framebuffer with Render, excluding SHM, MMAP, and DPMS; not a standalone Xvfb executable.  
+XKB. Produces `XKB.OLB` - all 35 upstream keyboard-extension objects from unchanged sources, including generic DDx hooks and X Input event support; requires matching XKB/XINPUT server layouts, keymaps, and xkbcomp for runtime use.  
+LBX. Produces `LBX.OLB` - all 12 upstream Low Bandwidth X server extension objects from unchanged sources; requires matching LBX server layouts, `LBXUTIL.OLB`, and `Z.OLB`.  
   
 ## Notes  
   
@@ -110,6 +114,10 @@ $ @[.VMS-SUPPORT]BUILD DAMAGEEXT
 $ @[.VMS-SUPPORT]BUILD EXT  
 $ @[.VMS-SUPPORT]BUILD XINPUT  
 $ @[.VMS-SUPPORT]BUILD OS  
+$ @[.VMS-SUPPORT]BUILD MFB  
+$ @[.VMS-SUPPORT]BUILD VFB  
+$ @[.VMS-SUPPORT]BUILD XKB  
+$ @[.VMS-SUPPORT]BUILD LBX  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

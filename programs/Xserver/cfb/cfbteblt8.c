@@ -300,7 +300,7 @@ extern CfbBits endtab[];
 #define StorePixels(o,p)    dst[o] = p
 #define Loop		    dst += widthDst;
 #else
-#define StorePixels(o,p)    *dst++ = (p)
+#define StorePixels(o,p)    do { *dst = (p); dst++; } while (0)
 #define Loop		    dst += widthLeft;
 #endif
 

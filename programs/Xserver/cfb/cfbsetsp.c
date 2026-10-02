@@ -48,6 +48,7 @@ SOFTWARE.
 /* $XFree86: xc/programs/Xserver/cfb/cfbsetsp.c,v 3.5tsi Exp $ */
 
 #include "X.h"
+#include <stdint.h>
 #include "Xmd.h"
 #include "servermd.h"
 
@@ -116,9 +117,9 @@ cfbSetScanline(y, xOrigin, xStart, xEnd, psrc, alu, pdstBase, widthDst, planemas
 #if PSZ == 24
     nl = w;
     while (nl--){
-      psrc = (unsigned int *)((unsigned long)psrcb & ~0x03);
+      psrc = (unsigned int *)((uintptr_t)psrcb & ~(uintptr_t)0x03);
       getbits24(psrc, tmpSrc, offSrc);
-      pdst = (int *)((unsigned long)pdstb & ~0x03);
+      pdst = (int *)((uintptr_t)pdstb & ~(uintptr_t)0x03);
       DoMergeRop24(tmpSrc, pdst, xIndex);
       offSrc++;
       psrcb += 3;

@@ -60,6 +60,10 @@ MFB. Produces `MFB.OLB` - all 47 standard monochrome framebuffer objects from un
 VFB. Produces `VFB.OLB` - all four upstream virtual-framebuffer DDx objects from unchanged sources; malloc framebuffer with Render, excluding SHM, MMAP, and DPMS; not a standalone Xvfb executable.  
 XKB. Produces `XKB.OLB` - all 35 upstream keyboard-extension objects from unchanged sources, including generic DDx hooks and X Input event support; requires matching XKB/XINPUT server layouts, keymaps, and xkbcomp for runtime use.  
 LBX. Produces `LBX.OLB` - all 12 upstream Low Bandwidth X server extension objects from unchanged sources; requires matching LBX server layouts, `LBXUTIL.OLB`, and `Z.OLB`.  
+CFB. Produces `CFB.OLB` - all 57 standard 8-bit color-framebuffer objects, with minimal P64 address-alignment and glyph-store sequencing fixes; static profile excluding banked, assembly, and loadable hooks.  
+CFB16. Produces `CFB16.OLB` - all 52 standard 16-bit color-framebuffer objects, with minimal P64 address-alignment fixes; the same static profile as CFB.  
+CFB24. Produces `CFB24.OLB` - all 52 standard 24-bit color-framebuffer objects, with minimal P64 address-alignment fixes; the same static profile as CFB.  
+CFB32. Produces `CFB32.OLB` - all 52 standard 32-bit color-framebuffer objects, with minimal P64 address-alignment fixes; the same static profile as CFB.  
   
 ## Notes  
   
@@ -118,6 +122,10 @@ $ @[.VMS-SUPPORT]BUILD MFB
 $ @[.VMS-SUPPORT]BUILD VFB  
 $ @[.VMS-SUPPORT]BUILD XKB  
 $ @[.VMS-SUPPORT]BUILD LBX  
+$ @[.VMS-SUPPORT]BUILD CFB  
+$ @[.VMS-SUPPORT]BUILD CFB16  
+$ @[.VMS-SUPPORT]BUILD CFB24  
+$ @[.VMS-SUPPORT]BUILD CFB32  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

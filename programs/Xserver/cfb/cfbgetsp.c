@@ -48,6 +48,7 @@ SOFTWARE.
 /* $XFree86: xc/programs/Xserver/cfb/cfbgetsp.c,v 3.9tsi Exp $ */
 
 #include "X.h"
+#include <stdint.h>
 #include "Xmd.h"
 #include "servermd.h"
 
@@ -157,9 +158,9 @@ cfbGetSpans(pDrawable, wMax, ppt, pwidth, nspans, pchardstStart)
 	  FatalError("cfb24GetSpans: Internal error (w < 0)\n");
 	nl = w;
 	while (nl--){ 
-	  psrc = (PixelGroup *)((unsigned long)psrcb & ~0x03);
+	  psrc = (PixelGroup *)((uintptr_t)psrcb & ~(uintptr_t)0x03);
 	  getbits24(psrc, tmpSrc, srcBit);
-	  pdst = (PixelGroup *)((unsigned long)pdstb & ~0x03);
+	  pdst = (PixelGroup *)((uintptr_t)pdstb & ~(uintptr_t)0x03);
 	  putbits24(tmpSrc, PPW, pdst, ~((CfbBits)0), xIndex);
 	  srcBit++;
 	  psrcb += 3;

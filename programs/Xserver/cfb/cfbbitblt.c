@@ -34,6 +34,7 @@ Author: Keith Packard
 /* $Xorg: cfbbitblt.c,v 1.4 2001/02/09 02:04:37 xorgcvs Exp $ */
 
 #include	"X.h"
+#include <stdint.h>
 #include	"Xmd.h"
 #include	"Xproto.h"
 #include	"gcstruct.h"
@@ -1141,7 +1142,7 @@ cfbCopyPlane1to32
 		     * I've thrown in some optimization to at least write
 		     * some aligned 32-bit words instead of 16-bit shorts.
 		     */
-		    if ((unsigned long)psrc & 2) {
+		    if ((uintptr_t)psrc & 2) {
 		        /* Write unaligned 16-bit word at left edge. */
 		        if (tmp & 0x01)
 		            *pdst = fgpixel;

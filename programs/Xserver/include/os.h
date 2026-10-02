@@ -291,6 +291,14 @@ void OsBlockSignals (void);
 void OsReleaseSignals (void);
 
 #if !defined(WIN32) && !defined(__UNIXOS2__)
+#ifdef __VMS
+/* Keep server wrappers distinct from the case-folded C RTL entry points. */
+#define System XserverSystem
+#define Popen XserverPopen
+#define Pclose XserverPclose
+#define Fopen XserverFopen
+#define Fclose XserverFclose
+#endif
 extern int System(char *);
 extern pointer Popen(char *, char *);
 extern int Pclose(pointer);

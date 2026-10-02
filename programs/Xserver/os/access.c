@@ -365,6 +365,13 @@ ifioctl (int fd, int cmd, char *arg)
 #define ifioctl ioctl
 #endif /* ((SVR4 && !DGUX !sun !SCO325 !NCR) || ISC) && SIOCGIFCONF */
 
+#ifdef __VMS
+/* Preserve the native short address of these automatic ioctl arguments. */
+#define IF_IOCTL_ARG(value) (&(value))
+#else
+#define IF_IOCTL_ARG(value) ((pointer) &(value))
+#endif
+
 /*
  * DefineSelf (fd):
  *
@@ -781,7 +788,11 @@ DefineSelf (int fd)
 
 #else /* Use SIOCGIFCONF */
     ifc.ifc_len = len;
+#ifdef __VMS
+    ifc.ifc_buf = buf;
+#else
     ifc.ifc_buf = bufptr;
+#endif
 
 #define IFC_IOCTL_REQ SIOCGIFCONF
 #ifdef ISC
@@ -794,7 +805,7 @@ DefineSelf (int fd)
 #define IFR_IFR_NAME ifr->ifr_name
 #endif
 
-    if (ifioctl (fd, IFC_IOCTL_REQ, (pointer) &ifc) < 0)
+    if (ifioctl (fd, IFC_IOCTL_REQ, IF_IOCTL_ARG(ifc)) < 0)
         Error ("Getting interface configuration (4)");
 
     cplim = (char *) IFC_IFC_REQ + IFC_IFC_LEN;
@@ -925,13 +936,13 @@ DefineSelf (int fd)
 	    	struct ifreq    broad_req;
     
 	    	broad_req = *ifr;
-		if (ifioctl (fd, SIOCGIFFLAGS, (pointer) &broad_req) != -1 &&
+		if (ifioctl (fd, SIOCGIFFLAGS, IF_IOCTL_ARG(broad_req)) != -1 &&
 		    (broad_req.ifr_flags & IFF_BROADCAST) &&
 		    (broad_req.ifr_flags & IFF_UP)
 		    )
 		{
 		    broad_req = *ifr;
-		    if (ifioctl (fd, SIOCGIFBRDADDR, (pointer) &broad_req) != -1)
+		    if (ifioctl (fd, SIOCGIFBRDADDR, IF_IOCTL_ARG(broad_req)) != -1)
 			broad_addr = broad_req.ifr_addr;
 		    else
 			continue;
@@ -1336,11 +1347,11 @@ ResetHosts (char *display)
     		if ((family = ConvertAddr (&saddr.sa, &len, (pointer *)&addr)) != -1)
 		{
 #ifdef h_addr				/* new 4.3bsd version of gethostent */
-		    char **list;
+		    int address_index;
 
 		    /* iterate over the addresses */
-		    for (list = hp->h_addr_list; *list; list++)
-			(void) NewHost (family, (pointer)*list, len, FALSE);
+		    for (address_index = 0; hp->h_addr_list[address_index]; address_index++)
+			(void) NewHost (family, (pointer)hp->h_addr_list[address_index], len, FALSE);
 #else
     		    (void) NewHost (family, (pointer)hp->h_addr, len, FALSE);
 #endif
@@ -2122,7 +2133,10 @@ siHostnameAddrMatch(int family, pointer addr, int len,
 	char hostname[SI_HOSTNAME_MAXLEN];
 	int f, hostaddrlen;
 	pointer hostaddr;
-	const char **addrlist;
+	const char *address;
+#ifdef h_addr
+	int address_index;
+#endif
 
 	if (siAddrLen >= sizeof(hostname)) 
 	    return FALSE;
@@ -2133,15 +2147,16 @@ siHostnameAddrMatch(int family, pointer addr, int len,
 	if ((hp = _XGethostbyname(hostname, hparams)) != NULL) {
 #ifdef h_addr				/* new 4.3bsd version of gethostent */
 	    /* iterate over the addresses */
-	    for (addrlist = hp->h_addr_list; *addrlist; addrlist++)
+	    for (address_index = 0;
+		 (address = hp->h_addr_list[address_index]) != NULL; address_index++)
 #else
-	    addrlist = &hp->h_addr;
+	    address = hp->h_addr;
 #endif
 	    {
 		struct  sockaddr_in  sin;
 
     		sin.sin_family = hp->h_addrtype;
-		acopy ( *addrlist, &(sin.sin_addr), hp->h_length);
+		acopy ( address, &(sin.sin_addr), hp->h_length);
 		hostaddrlen = sizeof(sin);
     		f = ConvertAddr ((struct sockaddr *)&sin, 
 		  &hostaddrlen, &hostaddr);

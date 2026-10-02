@@ -37,6 +37,7 @@ from The Open Group.
 #include "extensions/security.h"
 #endif
 
+#ifdef XCSECURITY
 static char InvalidPolicyReason[] = "invalid policy specification";
 static char PolicyViolationReason[] = "policy violation";
 
@@ -110,6 +111,8 @@ AuthCheckSitePolicy(
     *dataP = (char *)policy;
     return TRUE;
 }
+
+#endif /* XCSECURITY */
 
 XID
 AuthSecurityCheck (

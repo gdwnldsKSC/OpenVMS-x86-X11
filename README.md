@@ -55,6 +55,7 @@ CW. Produces `CW.OLB` - all three unchanged upstream Composite wrapper modules f
 DAMAGEEXT. Produces `DAMAGE.OLB` in the separate damageext output directory - the unchanged upstream Damage protocol extension module; requires internal Damage tracking and matching server layouts.  
 EXT. Produces `EXT.OLB` - all 11 modules of the selected upstream static Xext profile, including ScreenSaver; optional platform and loadable extensions excluded.  
 XINPUT. Produces `XINPUT.OLB` - all 37 upstream Unix X Input library modules; requires an XINPUT-enabled server core and device-dependent hooks; upstream lint-only stubs excluded.  
+OS. Produces `OS.OLB` - all 15 modules of the upstream TCP/XDMCP, MIT-cookie and text-RGB profile, with minimal VMS/P64 fixes and one native process adapter; process helpers use DCL and reject images installed with added privileges or rights.  
   
 ## Notes  
   
@@ -108,6 +109,7 @@ $ @[.VMS-SUPPORT]BUILD CW
 $ @[.VMS-SUPPORT]BUILD DAMAGEEXT  
 $ @[.VMS-SUPPORT]BUILD EXT  
 $ @[.VMS-SUPPORT]BUILD XINPUT  
+$ @[.VMS-SUPPORT]BUILD OS  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

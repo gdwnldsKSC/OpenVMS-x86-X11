@@ -10,12 +10,14 @@ $ dps_scoped = 0
 $ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|REGEX|REGEX_MKH|ICE|SM|BDFTOPCF|ICEAUTH|MAKEPSRES|SHOWRGB|MAKEDEPEND|GTF|RTL|"
-$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|"
+$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
      (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
 $ rtl_headers = F$SEARCH("SYS$LIBRARY:DECC$RTLDEF.TLB")
+$ IF rtl_headers .EQS. "" THEN GOTO done
+$ IF P4 .EQS. "OS" THEN GOSUB os_native_headers
 $ IF rtl_headers .EQS. "" THEN GOTO done
 $ IF (P4 .EQS. "GTF") .OR. (P4 .EQS. "RTL") THEN GOTO rtl_headers
 $ IF P4 .EQS. "ZLIB" THEN GOTO zlib_headers
@@ -56,7 +58,7 @@ $ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.INCLUDE]"
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.CONFIG.MAKEDEPEND],[.CONFIG.IMAKE]"
-$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|"
+$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|"
 $ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
     THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
@@ -98,6 +100,9 @@ $ IF P4 .EQS. "EXT" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.XEXT],[.PROGRAMS.XSERVER.XEXT.EXTMOD],[.PROGRAMS.XSERVER.XPRINT]"
 $ IF P4 .EQS. "XINPUT" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.XI],[.PROGRAMS.XSERVER.XEXT]"
+$ IF P4 .EQS. "OS" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.OS],[.PROGRAMS.XSERVER.XEXT],[.PROGRAMS.XSERVER.LBX]," + -
+    "[.LIB.FONT.INCLUDE],[.LIB.XAU],[.LIB.XTRANS]"
 $ IF P4 .EQS. "FONT_FONTFILE" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.LIB.FONT.INCLUDE],[.LIB.FONT.FONTFILE]"
@@ -162,6 +167,11 @@ $ GOTO done
 $layer_names:
 $ layer_names_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.MIEXT.LAYER]VMS_LAYER_NAMES.H")
 $ IF layer_names_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + layer_names_header
+$ RETURN
+$os_native_headers:
+$ starlet_headers = F$SEARCH("SYS$LIBRARY:SYS$STARLET_C.TLB")
+$ IF starlet_headers .EQS. "" THEN rtl_headers = ""
+$ IF starlet_headers .NES. "" THEN rtl_headers = rtl_headers + "/LIBRARY+" + starlet_headers
 $ RETURN
 $mi_context:
 $! Match the Unix module working directory for ../mfb/maskbits.h.

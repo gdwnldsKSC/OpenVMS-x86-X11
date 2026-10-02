@@ -1672,7 +1672,7 @@ OsReleaseSignals (void)
 #endif
 }
 
-#if !defined(WIN32) && !defined(__UNIXOS2__)
+#if !defined(WIN32) && !defined(__UNIXOS2__) && !defined(__VMS)
 /*
  * "safer" versions of system(3), popen(3) and pclose(3) which give up
  * all privs before running a command.
@@ -1941,7 +1941,7 @@ Fclose(pointer iop)
 #endif
 }
 
-#endif /* !WIN32 && !__UNIXOS2__ */
+#endif /* !WIN32 && !__UNIXOS2__ && !__VMS */
 
 
 /*

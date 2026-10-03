@@ -11,7 +11,7 @@ $ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|REGEX|REGEX_MKH|ICE|SM|BDFTOPCF|ICEAUTH|MAKEPSRES|SHOWRGB|MAKEDEPEND|GTF|RTL|"
 $ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|"
-$ profiles = profiles + "CFB|XKBFILE|XKBUI|ROOTLESS|XTRAP|"
+$ profiles = profiles + "CFB|XKBFILE|XKBUI|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -60,6 +60,27 @@ $ IF (P4 .EQS. "XKBFILE") .OR. (P4 .EQS. "XKBUI") THEN -
     "[.LIB.XKBFILE]"
 $ IF P4 .EQS. "XKBUI" THEN include_directory = include_directory + -
     ",[.LIB.XKBUI]"
+$ client_extensions = "|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
+$ IF F$LOCATE("|" + P4 + "|",client_extensions) .LT. F$LENGTH(client_extensions) -
+    THEN include_directory = include_directory + -
+    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
+    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS],[.LIB.X11]"
+$ IF P4 .EQS. "XEXT" THEN include_directory = include_directory + -
+    ",[.LIB.XEXT]"
+$ IF P4 .EQS. "XRENDER" THEN include_directory = include_directory + -
+    ",[.LIB.XRENDER]"
+$ IF P4 .EQS. "XRANDR" THEN include_directory = include_directory + -
+    ",[.LIB.XRANDR]"
+$ IF P4 .EQS. "XINERAMA" THEN include_directory = include_directory + -
+    ",[.LIB.XINERAMA]"
+$ IF P4 .EQS. "XI" THEN include_directory = include_directory + -
+    ",[.LIB.XI]"
+$ IF P4 .EQS. "XTST" THEN include_directory = include_directory + -
+    ",[.LIB.XTST]"
+$ IF P4 .EQS. "XV" THEN include_directory = include_directory + -
+    ",[.LIB.XV]"
+$ IF P4 .EQS. "XRES" THEN include_directory = include_directory + -
+    ",[.LIB.XRES]"
 $ IF P4 .EQS. "ICEAUTH" THEN include_directory = include_directory + -
     ",[.PROGRAMS.ICEAUTH]"
 $ IF P4 .EQS. "MAKEPSRES" THEN include_directory = include_directory + -

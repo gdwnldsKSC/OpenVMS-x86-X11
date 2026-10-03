@@ -68,6 +68,14 @@ XKBFILE. Produces `XKBFILE.OLB` - all 13 unchanged upstream keyboard-file librar
 XKBUI. Produces `XKBUI.OLB` - the unchanged upstream keyboard user-interface library module; requires native Xlib and `XKBFILE.OLB` when linked.  
 ROOTLESS. Produces `ROOTLESS.OLB` - all five upstream rootless modules, with minimal C99/P64 header fixes; generic opaque Render/SHAPE profile without acceleration; requires matching SHAPE server layouts and device-dependent frame hooks.  
 XTRAP. Produces `XTRAP.OLB` - all four unchanged upstream XTrap server extension modules; static profile excluding PC, X Input, and loadable hooks; requires server initialization and device-dependent hooks.  
+XEXT. Produces `XEXT.OLB` - all 14 unchanged upstream ordinary X Extension client library modules, excluding XShm; requires matching native 64-bit Xlib when linked.  
+XRENDER. Produces `XRENDER.OLB` - all 13 unchanged upstream Render client library modules; requires matching native 64-bit Xlib when linked.  
+XRANDR. Produces `XRANDR.OLB` - the unchanged upstream Resize and Rotate client library module; requires matching native 64-bit Xlib, `XEXT.OLB`, and `XRENDER.OLB` when linked.  
+XINERAMA. Produces `XINERAMA.OLB` - the unchanged upstream Xinerama client library module; requires matching native 64-bit Xlib and `XEXT.OLB` when linked.  
+XI. Produces `XI.OLB` - all 37 upstream X Input client library modules; requires matching native 64-bit Xlib and `XEXT.OLB` when linked.  
+XTST. Produces `XTST.OLB` - both upstream X Test and Record client library modules; requires matching native 64-bit Xlib and `XEXT.OLB` when linked.  
+XV. Produces `XV.OLB` - the upstream X Video client library module; requires matching native 64-bit Xlib and `XEXT.OLB` when linked; shared-memory requests still require a compatible transport and server.  
+XRES. Produces `XRES.OLB` - the upstream X Resource client library module; requires matching native 64-bit Xlib and `XEXT.OLB` when linked.  
   
 ## Notes  
   
@@ -134,6 +142,14 @@ $ @[.VMS-SUPPORT]BUILD XKBFILE
 $ @[.VMS-SUPPORT]BUILD XKBUI  
 $ @[.VMS-SUPPORT]BUILD ROOTLESS  
 $ @[.VMS-SUPPORT]BUILD XTRAP  
+$ @[.VMS-SUPPORT]BUILD XEXT  
+$ @[.VMS-SUPPORT]BUILD XRENDER  
+$ @[.VMS-SUPPORT]BUILD XRANDR  
+$ @[.VMS-SUPPORT]BUILD XINERAMA  
+$ @[.VMS-SUPPORT]BUILD XI  
+$ @[.VMS-SUPPORT]BUILD XTST  
+$ @[.VMS-SUPPORT]BUILD XV  
+$ @[.VMS-SUPPORT]BUILD XRES  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

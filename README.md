@@ -80,6 +80,10 @@ XFIXESLIB. Produces `XFIXES.OLB` in the client-library output directory - all fi
 XDAMAGE. Produces `XDAMAGE.OLB` - the unchanged upstream Damage client library module; requires matching native 64-bit Xlib and the Xfixes client library when linked.  
 XCOMPOSITE. Produces `XCOMPOSITE.OLB` - the unchanged upstream Composite client library module; uses the upstream Xlib, Xfixes, and Xdamage client dependency profile.  
 XCURSOR. Produces `XCURSOR.OLB` - all five unchanged upstream cursor library modules; requires matching native 64-bit Xlib and `XRENDER.OLB` when linked; optional Xfixes naming hooks excluded, Unix-style theme paths and upstream cursor/theme-parser defects remain.  
+XSS. Produces `XSS.OLB` - the unchanged upstream ScreenSaver client library module; requires matching native 64-bit Xlib and `XEXT.OLB` when linked; upstream event root/window assignment defect remains.  
+XVMC. Produces `XVMC.OLB` - the unchanged upstream hardware-independent X Video Motion Compensation client library module, excluding the Linux/DRI i810 backend; requires matching native 64-bit Xlib and `XEXT.OLB` when linked; hardware rendering needs a separate backend.  
+XXF86VM. Produces `XXF86VM.OLB` - the unchanged upstream XFree86 Video Mode client library module; requires matching native 64-bit Xlib and `XEXT.OLB` when linked, plus corresponding server support; upstream allocation-failure lock defects remain.  
+XXF86MISC. Produces `XXF86MISC.OLB` - the unchanged upstream XFree86 Misc client library module; requires matching native 64-bit Xlib and `XEXT.OLB` when linked, plus corresponding server support; upstream allocation-failure lock and null-device defects remain.  
   
 ## Notes  
   
@@ -158,6 +162,10 @@ $ @[.VMS-SUPPORT]BUILD XFIXESLIB
 $ @[.VMS-SUPPORT]BUILD XDAMAGE  
 $ @[.VMS-SUPPORT]BUILD XCOMPOSITE  
 $ @[.VMS-SUPPORT]BUILD XCURSOR  
+$ @[.VMS-SUPPORT]BUILD XSS  
+$ @[.VMS-SUPPORT]BUILD XVMC  
+$ @[.VMS-SUPPORT]BUILD XXF86VM  
+$ @[.VMS-SUPPORT]BUILD XXF86MISC  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

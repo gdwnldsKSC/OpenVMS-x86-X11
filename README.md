@@ -76,6 +76,10 @@ XI. Produces `XI.OLB` - all 37 upstream X Input client library modules; requires
 XTST. Produces `XTST.OLB` - both upstream X Test and Record client library modules; requires matching native 64-bit Xlib and `XEXT.OLB` when linked.  
 XV. Produces `XV.OLB` - the upstream X Video client library module; requires matching native 64-bit Xlib and `XEXT.OLB` when linked; shared-memory requests still require a compatible transport and server.  
 XRES. Produces `XRES.OLB` - the upstream X Resource client library module; requires matching native 64-bit Xlib and `XEXT.OLB` when linked.  
+XFIXESLIB. Produces `XFIXES.OLB` in the client-library output directory - all five unchanged upstream X Fixes client modules; requires matching native 64-bit Xlib when linked; distinct from the `XFIXES` server target.  
+XDAMAGE. Produces `XDAMAGE.OLB` - the unchanged upstream Damage client library module; requires matching native 64-bit Xlib and the Xfixes client library when linked.  
+XCOMPOSITE. Produces `XCOMPOSITE.OLB` - the unchanged upstream Composite client library module; uses the upstream Xlib, Xfixes, and Xdamage client dependency profile.  
+XCURSOR. Produces `XCURSOR.OLB` - all five unchanged upstream cursor library modules; requires matching native 64-bit Xlib and `XRENDER.OLB` when linked; optional Xfixes naming hooks excluded, Unix-style theme paths and upstream cursor/theme-parser defects remain.  
   
 ## Notes  
   
@@ -150,6 +154,10 @@ $ @[.VMS-SUPPORT]BUILD XI
 $ @[.VMS-SUPPORT]BUILD XTST  
 $ @[.VMS-SUPPORT]BUILD XV  
 $ @[.VMS-SUPPORT]BUILD XRES  
+$ @[.VMS-SUPPORT]BUILD XFIXESLIB  
+$ @[.VMS-SUPPORT]BUILD XDAMAGE  
+$ @[.VMS-SUPPORT]BUILD XCOMPOSITE  
+$ @[.VMS-SUPPORT]BUILD XCURSOR  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

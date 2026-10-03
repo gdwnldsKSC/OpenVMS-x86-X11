@@ -10,6 +10,7 @@ $ IF target .EQS. "" THEN target = "ALL"
 $ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|XFONT|FNTSTUBS|FS|PSRES|REGEX|ICE|SM|BDFTOPCF|FSLSFONTS|SHOWFONT|XFSINFO|ICEAUTH|MAKEPSRES|SHOWRGB|MAKESTRS|MAKEDEPEND|LNDIR|ATOBM|GTF|FREETYPE2|MKFONTSCALE|FONTTOSFNT|REVPATH|RMAN|"
 $ targets = targets + "UCS2ANY|DAMAGE|MI|CBRT|FB|RENDER|DIX|XPSTUBS|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|"
 $ targets = targets + "CFB|CFB16|CFB24|CFB32|XKBFILE|XKBUI|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
+$ targets = targets + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -52,6 +53,8 @@ $ directory = profile + ".INCLUDE.X11.ICE]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]ICE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11.SM]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]SM.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".INCLUDE.X11.XCURSOR]"
+$ IF F$SEARCH(profile + ".INCLUDE.X11]XCURSOR.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB]"
 $ IF F$SEARCH(profile + "]LIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XAU]"
@@ -102,6 +105,14 @@ $ directory = profile + ".LIB.XV]"
 $ IF F$SEARCH(profile + ".LIB]XV.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XRES]"
 $ IF F$SEARCH(profile + ".LIB]XRES.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XFIXES]"
+$ IF F$SEARCH(profile + ".LIB]XFIXES.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XDAMAGE]"
+$ IF F$SEARCH(profile + ".LIB]XDAMAGE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XCOMPOSITE]"
+$ IF F$SEARCH(profile + ".LIB]XCOMPOSITE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XCURSOR]"
+$ IF F$SEARCH(profile + ".LIB]XCURSOR.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT]"
 $ IF F$SEARCH(profile + ".LIB]FONT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT.UTIL]"

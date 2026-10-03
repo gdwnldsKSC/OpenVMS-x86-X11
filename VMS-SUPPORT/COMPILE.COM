@@ -123,6 +123,8 @@ $ IF P4 .EQS. "LBX" THEN include_directory = include_directory + -
 $ IF P4 .EQS. "CFB" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.CFB],[.PROGRAMS.XSERVER.CFB24]," + -
     "[.PROGRAMS.XSERVER.MFB],[.PROGRAMS.XSERVER.XEXT]"
+$ IF P4 .EQS. "CFB" THEN GOSUB cfb_native
+$ IF (P4 .EQS. "CFB") .AND. (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
 $ IF P4 .EQS. "FONT_FONTFILE" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.LIB.FONT.INCLUDE],[.LIB.FONT.FONTFILE]"
@@ -187,6 +189,10 @@ $ GOTO done
 $layer_names:
 $ layer_names_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.MIEXT.LAYER]VMS_LAYER_NAMES.H")
 $ IF layer_names_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + layer_names_header
+$ RETURN
+$cfb_native:
+$ cfb_native_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.CFB]VMS_CFB_NATIVE.H")
+$ IF cfb_native_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + cfb_native_header
 $ RETURN
 $os_native_headers:
 $ starlet_headers = F$SEARCH("SYS$LIBRARY:SYS$STARLET_C.TLB")

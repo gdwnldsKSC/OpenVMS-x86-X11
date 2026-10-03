@@ -9,7 +9,7 @@ $ target = F$EDIT(P1,"UPCASE,TRIM")
 $ IF target .EQS. "" THEN target = "ALL"
 $ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|XFONT|FNTSTUBS|FS|PSRES|REGEX|ICE|SM|BDFTOPCF|FSLSFONTS|SHOWFONT|XFSINFO|ICEAUTH|MAKEPSRES|SHOWRGB|MAKESTRS|MAKEDEPEND|LNDIR|ATOBM|GTF|FREETYPE2|MKFONTSCALE|FONTTOSFNT|REVPATH|RMAN|"
 $ targets = targets + "UCS2ANY|DAMAGE|MI|CBRT|FB|RENDER|DIX|XPSTUBS|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|"
-$ targets = targets + "CFB|CFB16|CFB24|CFB32|"
+$ targets = targets + "CFB|CFB16|CFB24|CFB32|XKBFILE|XKBUI|ROOTLESS|XTRAP|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -82,6 +82,10 @@ $ directory = profile + ".LIB.ICE]"
 $ IF F$SEARCH(profile + ".LIB]ICE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.SM]"
 $ IF F$SEARCH(profile + ".LIB]SM.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XKBFILE]"
+$ IF F$SEARCH(profile + ".LIB]XKBFILE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XKBUI]"
+$ IF F$SEARCH(profile + ".LIB]XKBUI.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT]"
 $ IF F$SEARCH(profile + ".LIB]FONT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT.UTIL]"
@@ -185,6 +189,10 @@ $ directory = profile + ".PROGRAMS.XSERVER.CFB24]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER]CFB24.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.CFB32]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER]CFB32.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XSERVER.MIEXT.ROOTLESS]"
+$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.MIEXT]ROOTLESS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XSERVER.XTRAP]"
+$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER]XTRAP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ step = "MMS " + target
 $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS

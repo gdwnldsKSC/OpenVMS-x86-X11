@@ -11,7 +11,7 @@ $ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|REGEX|REGEX_MKH|ICE|SM|BDFTOPCF|ICEAUTH|MAKEPSRES|SHOWRGB|MAKEDEPEND|GTF|RTL|"
 $ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|"
-$ profiles = profiles + "CFB|"
+$ profiles = profiles + "CFB|XKBFILE|XKBUI|ROOTLESS|XTRAP|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -53,6 +53,13 @@ $ IF P4 .EQS. "ICE" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.ICE],[.LIB.ICE],[.LIB.XTRANS]"
 $ IF P4 .EQS. "SM" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.SM],[.LIB.SM]"
+$ IF (P4 .EQS. "XKBFILE") .OR. (P4 .EQS. "XKBUI") THEN -
+    include_directory = include_directory + -
+    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
+    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
+    "[.LIB.XKBFILE]"
+$ IF P4 .EQS. "XKBUI" THEN include_directory = include_directory + -
+    ",[.LIB.XKBUI]"
 $ IF P4 .EQS. "ICEAUTH" THEN include_directory = include_directory + -
     ",[.PROGRAMS.ICEAUTH]"
 $ IF P4 .EQS. "MAKEPSRES" THEN include_directory = include_directory + -
@@ -61,7 +68,7 @@ $ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XSERVER.INCLUDE]"
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.CONFIG.MAKEDEPEND],[.CONFIG.IMAKE]"
-$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|CFB|"
+$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|CFB|ROOTLESS|XTRAP|"
 $ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
     THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
@@ -125,6 +132,13 @@ $ IF P4 .EQS. "CFB" THEN include_directory = include_directory + -
     "[.PROGRAMS.XSERVER.MFB],[.PROGRAMS.XSERVER.XEXT]"
 $ IF P4 .EQS. "CFB" THEN GOSUB cfb_native
 $ IF (P4 .EQS. "CFB") .AND. (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
+$ IF P4 .EQS. "ROOTLESS" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.MIEXT.ROOTLESS],[.PROGRAMS.XSERVER.FB]," + -
+    "[.PROGRAMS.XSERVER.XEXT]"
+$ IF P4 .EQS. "ROOTLESS" THEN GOSUB rootless_config
+$ IF (P4 .EQS. "ROOTLESS") .AND. (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
+$ IF P4 .EQS. "XTRAP" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XSERVER.XTRAP],[.PROGRAMS.XSERVER.XEXT]"
 $ IF P4 .EQS. "FONT_FONTFILE" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.LIB.FONT.INCLUDE],[.LIB.FONT.FONTFILE]"
@@ -193,6 +207,10 @@ $ RETURN
 $cfb_native:
 $ cfb_native_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.CFB]VMS_CFB_NATIVE.H")
 $ IF cfb_native_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + cfb_native_header
+$ RETURN
+$rootless_config:
+$ rootless_config_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.MIEXT.ROOTLESS]VMS_ROOTLESS_CONFIG.H")
+$ IF rootless_config_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + rootless_config_header
 $ RETURN
 $os_native_headers:
 $ starlet_headers = F$SEARCH("SYS$LIBRARY:SYS$STARLET_C.TLB")

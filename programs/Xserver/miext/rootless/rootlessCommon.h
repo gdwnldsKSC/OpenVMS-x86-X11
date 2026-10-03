@@ -32,6 +32,7 @@
 #ifndef _ROOTLESSCOMMON_H
 #define _ROOTLESSCOMMON_H
 
+#include <stdint.h>
 #include "rootless.h"
 #include "fb.h"
 
@@ -44,7 +45,7 @@
 #ifdef ROOTLESSDEBUG
 #define RL_DEBUG_MSG ErrorF
 #else
-#define RL_DEBUG_MSG(a, ...)
+#define RL_DEBUG_MSG(...)
 #endif
 
 
@@ -223,8 +224,8 @@ extern RegionRec rootlessHugeRoot;
                             ((int)(_x) * _pPix->drawable.bitsPerPixel/8 +   \
                              (int)(_y) * _pPix->devKind);                   \
     if (_pPix->drawable.bitsPerPixel != FB_UNIT) {                          \
-        unsigned _diff = ((unsigned) _pPix->devPrivate.ptr) &               \
-                         (FB_UNIT / CHAR_BIT - 1);                          \
+        unsigned _diff = (unsigned) ((uintptr_t) _pPix->devPrivate.ptr &    \
+                                    (FB_UNIT / CHAR_BIT - 1));             \
         _pPix->devPrivate.ptr = (char *) (_pPix->devPrivate.ptr) -          \
                                 _diff;                                      \
         _pPix->drawable.x = _diff /                                         \

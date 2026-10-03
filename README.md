@@ -64,6 +64,10 @@ CFB. Produces `CFB.OLB` - all 57 standard 8-bit color-framebuffer objects, with 
 CFB16. Produces `CFB16.OLB` - all 52 standard 16-bit color-framebuffer objects, with minimal P64 address-alignment fixes; the same static profile and native support as CFB.  
 CFB24. Produces `CFB24.OLB` - all 52 standard 24-bit color-framebuffer objects, with minimal P64 address-alignment fixes; the same static profile and native support as CFB.  
 CFB32. Produces `CFB32.OLB` - all 52 standard 32-bit color-framebuffer objects, with minimal P64 address-alignment fixes; the same static profile and native support as CFB.  
+XKBFILE. Produces `XKBFILE.OLB` - all 13 unchanged upstream keyboard-file library modules; client profile requiring native Xlib when linked.  
+XKBUI. Produces `XKBUI.OLB` - the unchanged upstream keyboard user-interface library module; requires native Xlib and `XKBFILE.OLB` when linked.  
+ROOTLESS. Produces `ROOTLESS.OLB` - all five upstream rootless modules, with minimal C99/P64 header fixes; generic opaque Render/SHAPE profile without acceleration; requires matching SHAPE server layouts and device-dependent frame hooks.  
+XTRAP. Produces `XTRAP.OLB` - all four unchanged upstream XTrap server extension modules; static profile excluding PC, X Input, and loadable hooks; requires server initialization and device-dependent hooks.  
   
 ## Notes  
   
@@ -126,6 +130,10 @@ $ @[.VMS-SUPPORT]BUILD CFB
 $ @[.VMS-SUPPORT]BUILD CFB16  
 $ @[.VMS-SUPPORT]BUILD CFB24  
 $ @[.VMS-SUPPORT]BUILD CFB32  
+$ @[.VMS-SUPPORT]BUILD XKBFILE  
+$ @[.VMS-SUPPORT]BUILD XKBUI  
+$ @[.VMS-SUPPORT]BUILD ROOTLESS  
+$ @[.VMS-SUPPORT]BUILD XTRAP  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

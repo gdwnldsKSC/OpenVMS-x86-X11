@@ -14,6 +14,7 @@ $ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|X
 $ profiles = profiles + "CFB|XKBFILE|XKBUI|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ profiles = profiles + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ profiles = profiles + "XSS|XVMC|XXF86VM|XXF86MISC|"
+$ profiles = profiles + "XEVIE|XFONTCACHE|DMX|XP|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -65,6 +66,7 @@ $ IF P4 .EQS. "XKBUI" THEN include_directory = include_directory + -
 $ client_extensions = "|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ client_extensions = client_extensions + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ client_extensions = client_extensions + "XSS|XVMC|XXF86VM|XXF86MISC|"
+$ client_extensions = client_extensions + "XEVIE|XFONTCACHE|DMX|XP|"
 $ IF F$LOCATE("|" + P4 + "|",client_extensions) .LT. F$LENGTH(client_extensions) -
     THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
@@ -101,6 +103,14 @@ $ IF P4 .EQS. "XXF86VM" THEN include_directory = include_directory + -
     ",[.LIB.XXF86VM]"
 $ IF P4 .EQS. "XXF86MISC" THEN include_directory = include_directory + -
     ",[.LIB.XXF86MISC]"
+$ IF P4 .EQS. "XEVIE" THEN include_directory = include_directory + -
+    ",[.LIB.XEVIE]"
+$ IF P4 .EQS. "XFONTCACHE" THEN include_directory = include_directory + -
+    ",[.LIB.XFONTCACHE]"
+$ IF P4 .EQS. "DMX" THEN include_directory = include_directory + -
+    ",[.LIB.DMX]"
+$ IF P4 .EQS. "XP" THEN include_directory = include_directory + -
+    ",[.LIB.XP]"
 $ IF P4 .EQS. "ICEAUTH" THEN include_directory = include_directory + -
     ",[.PROGRAMS.ICEAUTH]"
 $ IF P4 .EQS. "MAKEPSRES" THEN include_directory = include_directory + -

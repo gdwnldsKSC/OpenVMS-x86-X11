@@ -84,6 +84,10 @@ XSS. Produces `XSS.OLB` - the unchanged upstream ScreenSaver client library modu
 XVMC. Produces `XVMC.OLB` - the unchanged upstream hardware-independent X Video Motion Compensation client library module, excluding the Linux/DRI i810 backend; requires matching native 64-bit Xlib and `XEXT.OLB` when linked; hardware rendering needs a separate backend.  
 XXF86VM. Produces `XXF86VM.OLB` - the unchanged upstream XFree86 Video Mode client library module; requires matching native 64-bit Xlib and `XEXT.OLB` when linked, plus corresponding server support; upstream allocation-failure lock defects remain.  
 XXF86MISC. Produces `XXF86MISC.OLB` - the unchanged upstream XFree86 Misc client library module; requires matching native 64-bit Xlib and `XEXT.OLB` when linked, plus corresponding server support; upstream allocation-failure lock and null-device defects remain.  
+XEVIE. Produces `XEVIE.OLB` - the unchanged upstream event-interception client library module; requires matching native 64-bit Xlib, `XEXT.OLB`, and corresponding server support.  
+XFONTCACHE. Produces `XFONTCACHE.OLB` - the unchanged upstream font-cache client library module; requires matching native 64-bit Xlib, `XEXT.OLB`, and corresponding server support.  
+DMX. Produces `DMX.OLB` - the unchanged upstream distributed multihead client library module; requires matching native 64-bit Xlib, `XEXT.OLB`, and a DMX server.  
+XP. Produces `XP.OLB` - all 16 unchanged upstream Xprint client library modules; requires matching native 64-bit Xlib, `XEXT.OLB`, `XAU.OLB`, and an Xprint server; does not build a print server.  
   
 ## Notes  
   
@@ -166,6 +170,10 @@ $ @[.VMS-SUPPORT]BUILD XSS
 $ @[.VMS-SUPPORT]BUILD XVMC  
 $ @[.VMS-SUPPORT]BUILD XXF86VM  
 $ @[.VMS-SUPPORT]BUILD XXF86MISC  
+$ @[.VMS-SUPPORT]BUILD XEVIE  
+$ @[.VMS-SUPPORT]BUILD XFONTCACHE  
+$ @[.VMS-SUPPORT]BUILD DMX  
+$ @[.VMS-SUPPORT]BUILD XP  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

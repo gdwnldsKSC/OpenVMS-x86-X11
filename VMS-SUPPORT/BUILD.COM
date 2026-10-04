@@ -13,6 +13,7 @@ $ targets = targets + "CFB|CFB16|CFB24|CFB32|XKBFILE|XKBUI|ROOTLESS|XTRAP|XEXT|X
 $ targets = targets + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ targets = targets + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ targets = targets + "XEVIE|XFONTCACHE|DMX|XP|"
+$ targets = targets + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -57,6 +58,12 @@ $ directory = profile + ".INCLUDE.X11.SM]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]SM.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11.XCURSOR]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]XCURSOR.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".INCLUDE.X11.XMU]"
+$ IF F$SEARCH(profile + ".INCLUDE.X11]XMU.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".INCLUDE.X11.XPRINTUTIL]"
+$ IF F$SEARCH(profile + ".INCLUDE.X11]XPRINTUTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".INCLUDE.X11.XPRINTAPPUTIL]"
+$ IF F$SEARCH(profile + ".INCLUDE.X11]XPRINTAPPUTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB]"
 $ IF F$SEARCH(profile + "]LIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XAU]"
@@ -131,6 +138,14 @@ $ directory = profile + ".LIB.DMX]"
 $ IF F$SEARCH(profile + ".LIB]DMX.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XP]"
 $ IF F$SEARCH(profile + ".LIB]XP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.OLDX]"
+$ IF F$SEARCH(profile + ".LIB]OLDX.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XMUU]"
+$ IF F$SEARCH(profile + ".LIB]XMUU.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XPM]"
+$ IF F$SEARCH(profile + ".LIB]XPM.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XPRINTAPPUTIL]"
+$ IF F$SEARCH(profile + ".LIB]XPRINTAPPUTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT]"
 $ IF F$SEARCH(profile + ".LIB]FONT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT.UTIL]"

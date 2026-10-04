@@ -15,6 +15,7 @@ $ profiles = profiles + "CFB|XKBFILE|XKBUI|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XI
 $ profiles = profiles + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ profiles = profiles + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ profiles = profiles + "XEVIE|XFONTCACHE|DMX|XP|"
+$ profiles = profiles + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -67,6 +68,7 @@ $ client_extensions = "|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ client_extensions = client_extensions + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ client_extensions = client_extensions + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ client_extensions = client_extensions + "XEVIE|XFONTCACHE|DMX|XP|"
+$ client_extensions = client_extensions + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
 $ IF F$LOCATE("|" + P4 + "|",client_extensions) .LT. F$LENGTH(client_extensions) -
     THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
@@ -111,6 +113,16 @@ $ IF P4 .EQS. "DMX" THEN include_directory = include_directory + -
     ",[.LIB.DMX]"
 $ IF P4 .EQS. "XP" THEN include_directory = include_directory + -
     ",[.LIB.XP]"
+$ IF P4 .EQS. "OLDX" THEN include_directory = include_directory + -
+    ",[.LIB.OLDX]"
+$ IF P4 .EQS. "XMUU" THEN include_directory = include_directory + -
+    ",[.LIB.XMU]"
+$ IF P4 .EQS. "XPM" THEN include_directory = include_directory + -
+    ",[.EXTRAS.XPM.LIB]"
+$ IF P4 .EQS. "XPRINTAPPUTIL" THEN include_directory = include_directory + -
+    ",[.LIB.XPRINTAPPUTIL]"
+$ IF P4 .EQS. "XPRINTAPPUTIL" THEN GOSUB xprintapputil_native
+$ IF (P4 .EQS. "XPRINTAPPUTIL") .AND. (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
 $ IF P4 .EQS. "ICEAUTH" THEN include_directory = include_directory + -
     ",[.PROGRAMS.ICEAUTH]"
 $ IF P4 .EQS. "MAKEPSRES" THEN include_directory = include_directory + -
@@ -262,6 +274,10 @@ $ RETURN
 $rootless_config:
 $ rootless_config_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.MIEXT.ROOTLESS]VMS_ROOTLESS_CONFIG.H")
 $ IF rootless_config_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + rootless_config_header
+$ RETURN
+$xprintapputil_native:
+$ xprintapputil_native_header = F$SEARCH("[.VMS-SUPPORT.LIB.XPRINTAPPUTIL]VMS_XPRINTAPPUTIL_NATIVE.H")
+$ IF xprintapputil_native_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + xprintapputil_native_header
 $ RETURN
 $os_native_headers:
 $ starlet_headers = F$SEARCH("SYS$LIBRARY:SYS$STARLET_C.TLB")

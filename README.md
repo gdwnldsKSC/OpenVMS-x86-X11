@@ -88,6 +88,10 @@ XEVIE. Produces `XEVIE.OLB` - the unchanged upstream event-interception client l
 XFONTCACHE. Produces `XFONTCACHE.OLB` - the unchanged upstream font-cache client library module; requires matching native 64-bit Xlib, `XEXT.OLB`, and corresponding server support.  
 DMX. Produces `DMX.OLB` - the unchanged upstream distributed multihead client library module; requires matching native 64-bit Xlib, `XEXT.OLB`, and a DMX server.  
 XP. Produces `XP.OLB` - all 16 unchanged upstream Xprint client library modules; requires matching native 64-bit Xlib, `XEXT.OLB`, `XAU.OLB`, and an Xprint server; does not build a print server.  
+OLDX. Produces `OLDX.OLB` - all six unchanged upstream X10 compatibility library modules; requires matching native 64-bit Xlib when linked.  
+XMUU. Produces `XMUU.OLB` - all five unchanged upstream mini-Xmu library modules, using native snprintf; requires matching native 64-bit Xlib when linked; remains a separate upstream library from Xmu.  
+XPM. Produces `XPM.OLB` - all 28 unchanged upstream X PixMap library modules, using native snprintf, upstream string helpers, and plain-file I/O without compressed-file subprocesses; retains upstream 32-bit count fields; requires matching native 64-bit Xlib when linked.  
+XPRINTAPPUTIL. Produces `XPRINTAPPUTIL.OLB` - the unchanged upstream Xprint application utility module; requires XprintUtil, `XP.OLB`, and matching native 64-bit Xlib when linked; upstream license grant remains unresolved.  
   
 ## Notes  
   
@@ -174,6 +178,10 @@ $ @[.VMS-SUPPORT]BUILD XEVIE
 $ @[.VMS-SUPPORT]BUILD XFONTCACHE  
 $ @[.VMS-SUPPORT]BUILD DMX  
 $ @[.VMS-SUPPORT]BUILD XP  
+$ @[.VMS-SUPPORT]BUILD OLDX  
+$ @[.VMS-SUPPORT]BUILD XMUU  
+$ @[.VMS-SUPPORT]BUILD XPM  
+$ @[.VMS-SUPPORT]BUILD XPRINTAPPUTIL  
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  

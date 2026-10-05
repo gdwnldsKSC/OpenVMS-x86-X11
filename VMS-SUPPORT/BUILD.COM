@@ -14,6 +14,7 @@ $ targets = targets + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ targets = targets + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ targets = targets + "XEVIE|XFONTCACHE|DMX|XP|"
 $ targets = targets + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
+$ targets = targets + "X11|XAUTH|XDPYINFO|XWININFO|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -66,6 +67,8 @@ $ directory = profile + ".INCLUDE.X11.XPRINTAPPUTIL]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]XPRINTAPPUTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB]"
 $ IF F$SEARCH(profile + "]LIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.X11]"
+$ IF F$SEARCH(profile + ".LIB]X11.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XAU]"
 $ IF F$SEARCH(profile + ".LIB]XAU.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XDMCP]"
@@ -184,6 +187,12 @@ $ directory = profile + ".PROGRAMS.SHOWFONT]"
 $ IF F$SEARCH(profile + ".PROGRAMS]SHOWFONT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XFSINFO]"
 $ IF F$SEARCH(profile + ".PROGRAMS]XFSINFO.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XAUTH]"
+$ IF F$SEARCH(profile + ".PROGRAMS]XAUTH.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XDPYINFO]"
+$ IF F$SEARCH(profile + ".PROGRAMS]XDPYINFO.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XWININFO]"
+$ IF F$SEARCH(profile + ".PROGRAMS]XWININFO.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.ICEAUTH]"
 $ IF F$SEARCH(profile + ".PROGRAMS]ICEAUTH.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.MAKEPSRES]"

@@ -92,6 +92,10 @@ OLDX. Produces `OLDX.OLB` - all six unchanged upstream X10 compatibility library
 XMUU. Produces `XMUU.OLB` - all five unchanged upstream mini-Xmu library modules, using native snprintf; requires matching native 64-bit Xlib when linked; remains a separate upstream library from Xmu.  
 XPM. Produces `XPM.OLB` - all 28 unchanged upstream X PixMap library modules, using native snprintf, upstream string helpers, and plain-file I/O without compressed-file subprocesses; retains upstream 32-bit count fields; requires matching native 64-bit Xlib when linked.  
 XPRINTAPPUTIL. Produces `XPRINTAPPUTIL.OLB` - the unchanged upstream Xprint application utility module; requires XprintUtil, `XP.OLB`, and matching native 64-bit Xlib when linked; upstream license grant remains unresolved.  
+X11. Produces `X11.OLB` - static Xlib with XKB and TCP.  
+XAUTH. Produces `XAUTH.EXE`.  
+XDPYINFO. Produces `XDPYINFO.EXE`.  
+XWININFO. Produces `XWININFO.EXE`.  
   
 ## Notes  
   

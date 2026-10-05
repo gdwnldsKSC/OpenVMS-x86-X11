@@ -20,6 +20,8 @@ $ profiles = profiles + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ profiles = profiles + "XEVIE|XFONTCACHE|DMX|XP|"
 $ profiles = profiles + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
 $ profiles = profiles + "FONT_BUILTINS|FONT_FONTCACHE|FONT_FREETYPE|FONT_SPEEDO|"
+$ profiles = profiles + "X11|X11_MAKEKEYS|"
+$ profiles = profiles + "XAUTH|XDPYINFO|XWININFO|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -36,6 +38,12 @@ $ inherited_x11 = F$TRNLNM("X11")
 $ inherited_table = F$TRNLNM("X11",,,,,"TABLE_NAME")
 $ IF F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]"
+$ IF (P4 .EQS. "X11") .OR. (P4 .EQS. "X11_MAKEKEYS") THEN -
+    include_directory = include_directory + ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]"
+$ IF P4 .EQS. "X11" THEN include_directory = include_directory + -
+    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS],[.LIB.X11]," + -
+    "[.VMS-SUPPORT._BUILD.P64.LIB.X11],[.LIB.XAU],[.LIB.XTRANS]," + -
+    """./lib/X11"""
 $ IF P4 .EQS. "XKB" THEN include_directory = -
     "[.PROGRAMS.XSERVER.XKB]," + include_directory
 $ IF P4 .EQS. "EXPAT" THEN include_directory = include_directory + -
@@ -87,6 +95,7 @@ $ client_extensions = client_extensions + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|
 $ client_extensions = client_extensions + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ client_extensions = client_extensions + "XEVIE|XFONTCACHE|DMX|XP|"
 $ client_extensions = client_extensions + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
+$ client_extensions = client_extensions + "XAUTH|XDPYINFO|XWININFO|"
 $ IF F$LOCATE("|" + P4 + "|",client_extensions) .LT. F$LENGTH(client_extensions) -
     THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
@@ -143,6 +152,10 @@ $ IF P4 .EQS. "XPRINTAPPUTIL" THEN GOSUB xprintapputil_native
 $ IF (P4 .EQS. "XPRINTAPPUTIL") .AND. (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
 $ IF P4 .EQS. "ICEAUTH" THEN include_directory = include_directory + -
     ",[.PROGRAMS.ICEAUTH]"
+$ IF P4 .EQS. "XAUTH" THEN include_directory = -
+    "[.PROGRAMS.XAUTH]," + include_directory
+$ IF P4 .EQS. "XWININFO" THEN include_directory = include_directory + -
+    ",[.PROGRAMS.XWININFO],[.PROGRAMS.XLSFONTS]"
 $ IF P4 .EQS. "MAKEPSRES" THEN include_directory = include_directory + -
     ",[.PROGRAMS.MAKEPSRES]"
 $ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -

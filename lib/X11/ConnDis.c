@@ -537,7 +537,7 @@ _XSendClientPrefix (dpy, client, auth_proto, auth_string, prefix)
 #define add_to_iov(b,l) \
   { iov->iov_base = (b); iov->iov_len = (l); iov++, niov++; len += (l); }
 
-    add_to_iov ((caddr_t) client, SIZEOF(xConnClientPrefix));
+    add_to_iov ((char *) client, SIZEOF(xConnClientPrefix));
 
     /*
      * write authorization protocol name and data

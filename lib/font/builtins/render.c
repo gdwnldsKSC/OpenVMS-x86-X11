@@ -26,8 +26,11 @@
 
 #include    "fntfilst.h"
 #include    "builtin.h"
+#include    "fontutil.h"
+#include    "pcf.h"
 
-BuiltinOpenBitmap (fpe, ppFont, flags, entry, fileName, format, fmask)
+BuiltinOpenBitmap (fpe, ppFont, flags, entry, fileName, format, fmask,
+                   non_cachable_font)
     FontPathElementPtr	fpe;
     FontPtr		*ppFont;
     int			flags;
@@ -35,6 +38,7 @@ BuiltinOpenBitmap (fpe, ppFont, flags, entry, fileName, format, fmask)
     char		*fileName;
     fsBitmapFormat	format;
     fsBitmapFormatMask	fmask;
+    FontPtr             non_cachable_font;
 {
     FontFilePtr	file;
     FontPtr     pFont;

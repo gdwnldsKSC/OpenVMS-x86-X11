@@ -7,6 +7,9 @@ $ saved_default = F$ENVIRONMENT("DEFAULT")
 $ default_scoped = 0
 $ scoped = 0
 $ dps_scoped = 0
+$ freetype_scoped = 0
+$ inherited_freetype = ""
+$ inherited_freetype_table = ""
 $ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|PSRES|REGEX|REGEX_MKH|ICE|SM|BDFTOPCF|ICEAUTH|MAKEPSRES|SHOWRGB|MAKEDEPEND|GTF|RTL|"
@@ -16,6 +19,7 @@ $ profiles = profiles + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ profiles = profiles + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ profiles = profiles + "XEVIE|XFONTCACHE|DMX|XP|"
 $ profiles = profiles + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
+$ profiles = profiles + "FONT_BUILTINS|FONT_FONTCACHE|FONT_FREETYPE|FONT_SPEEDO|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -45,6 +49,20 @@ $ IF P4 .EQS. "LBXUTIL" THEN include_directory = include_directory + -
     "[.PROGRAMS.XSERVER.INCLUDE],[.LIB.LBXUTIL.LBX_ZLIB]"
 $ IF P4 .EQS. "FONT_UTIL" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS],[.LIB.FONT.INCLUDE]"
+$ font_renderers = "|FONT_BUILTINS|FONT_FONTCACHE|FONT_FREETYPE|FONT_SPEEDO|"
+$ IF F$LOCATE("|" + P4 + "|",font_renderers) .LT. F$LENGTH(font_renderers) -
+    THEN include_directory = include_directory + -
+    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
+    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.LIB.FONT.INCLUDE]"
+$ IF P4 .EQS. "FONT_BUILTINS" THEN include_directory = include_directory + -
+    ",[.LIB.FONT.BUILTINS],[.LIB.FONT.BITMAP]"
+$ IF P4 .EQS. "FONT_FONTCACHE" THEN include_directory = include_directory + -
+    ",[.LIB.FONT.FONTCACHE]"
+$ IF P4 .EQS. "FONT_SPEEDO" THEN include_directory = include_directory + -
+    ",[.LIB.FONT.SPEEDO]"
+$ IF P4 .EQS. "FONT_FREETYPE" THEN include_directory = include_directory + -
+    ",[.LIB.FONT.FREETYPE],[.VMS-SUPPORT._BUILD.P64.INCLUDE.FREETYPE2]," + -
+    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.FREETYPE2.FREETYPE.CONFIG]"
 $ IF P4 .EQS. "FNTSTUBS" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.LIB.FONT.INCLUDE],[.LIB.FONT.STUBS]"
@@ -216,6 +234,18 @@ $ DEFINE/USER_MODE/TABLE=LNM$PROCESS X11 'headers'
 $ scoped = 1
 $ IF F$TRNLNM("X11","LNM$FILE_DEV") .NES. headers THEN GOTO done
 $ IF P4 .EQS. "PSRES" THEN GOTO psres_headers
+$ IF P4 .EQS. "FONT_FREETYPE" THEN GOTO freetype_headers
+$ GOTO compile
+$freetype_headers:
+$ inherited_freetype = F$TRNLNM("FREETYPE")
+$ inherited_freetype_table = F$TRNLNM("FREETYPE",,,,,"TABLE_NAME")
+$ IF F$TRNLNM("FREETYPE","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
+$ header = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.FREETYPE2.FREETYPE]FREETYPE.H")
+$ IF header .EQS. "" THEN GOTO done
+$ freetype_headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")
+$ DEFINE/USER_MODE/TABLE=LNM$PROCESS FREETYPE 'freetype_headers'
+$ freetype_scoped = 1
+$ IF F$TRNLNM("FREETYPE","LNM$FILE_DEV") .NES. freetype_headers THEN GOTO done
 $ GOTO compile
 $rtl_headers:
 $! These utilities need only the explicit native RTL header library, not X11.
@@ -259,6 +289,9 @@ $ IF .NOT. result THEN GOTO done
 $ IF .NOT. scoped THEN GOTO done
 $ IF F$TRNLNM("X11") .NES. inherited_x11 THEN result = 2
 $ IF F$TRNLNM("X11",,,,,"TABLE_NAME") .NES. inherited_table THEN result = 2
+$ IF freetype_scoped .AND. (F$TRNLNM("FREETYPE") .NES. inherited_freetype) THEN result = 2
+$ IF freetype_scoped .AND. -
+    (F$TRNLNM("FREETYPE",,,,,"TABLE_NAME") .NES. inherited_freetype_table) THEN result = 2
 $ IF .NOT. dps_scoped THEN GOTO done
 $ IF F$TRNLNM("DPS") .NES. inherited_dps THEN result = 2
 $ IF F$TRNLNM("DPS",,,,,"TABLE_NAME") .NES. inherited_dps_table THEN result = 2
@@ -314,6 +347,8 @@ $ IF result .AND. 1 THEN result = 2
 $done:
 $ SET NOON
 $ IF default_scoped THEN SET DEFAULT 'saved_default'
+$ IF freetype_scoped .AND. (F$TRNLNM("FREETYPE","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER") -
+     THEN DEASSIGN/USER_MODE/TABLE=LNM$PROCESS FREETYPE
 $ IF dps_scoped .AND. (F$TRNLNM("DPS","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER") -
      THEN DEASSIGN/USER_MODE/TABLE=LNM$PROCESS DPS
 $ IF scoped .AND. (F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER") -

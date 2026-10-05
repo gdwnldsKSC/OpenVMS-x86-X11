@@ -152,6 +152,14 @@ $ directory = profile + ".LIB.FONT.UTIL]"
 $ IF F$SEARCH(profile + ".LIB.FONT]UTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT.FC]"
 $ IF F$SEARCH(profile + ".LIB.FONT]FC.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.FONT.BUILTINS]"
+$ IF F$SEARCH(profile + ".LIB.FONT]BUILTINS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.FONT.FONTCACHE]"
+$ IF F$SEARCH(profile + ".LIB.FONT]FONTCACHE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.FONT.FREETYPE]"
+$ IF F$SEARCH(profile + ".LIB.FONT]FREETYPE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.FONT.SPEEDO]"
+$ IF F$SEARCH(profile + ".LIB.FONT]SPEEDO.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT.BITMAP]"
 $ IF F$SEARCH(profile + ".LIB.FONT]BITMAP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT.FONTFILE]"

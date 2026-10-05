@@ -12,7 +12,7 @@ ZLIB. Produces `Z.OLB` - all 14 modules of the bundled zlib 1.1.4.
 FONTENC. Produces `FONTENC.OLB` - `fontenc.c` and `encparse.c`, using `Z.OLB`; upstream reverse-map cleanup and parser-growth defects remain.  
 EXPAT. Produces `EXPAT.OLB` - `xmlparse.c`, `xmltok.c`, and `xmlrole.c` from bundled Expat 1.95.6.  
 LBXUTIL. Produces `LBXUTIL.OLB` - all nine standard LBX utility modules, using `Z.OLB`; consumers supply `Xalloc`/`Xfree`.  
-XFONT. Produces `XFONT.OLB` - all 41 standard bitmap, fontfile, fc, and util modules, with gzip and TCP font-server transport; optional renderers and caches excluded.  
+XFONT. Produces `XFONT.OLB` - 68 objects across bitmap, fontfile, fc, util, builtins, fontcache, FreeType, and Speedo; gzip and TCP font-server transport included. Builds `Z.OLB` and `FREETYPE.OLB` dependencies; Type1/CID and fontencc excluded. Builtins and fontcache APIs require server-side activation.  
 FNTSTUBS. Produces `FNTSTUBS.OLB` - all 17 unchanged modules from `lib/font/stubs`, for standalone font tools.  
 FS. Produces `FS.OLB` - all 25 standard font-server client library modules, with TCP transport.  
 PSRES. Produces `PSRES.OLB` - the complete upstream PostScript resource library; requires case-preserving Unix-style filenames (`DECC$EFS_CASE_PRESERVE` and `DECC$FILENAME_UNIX_REPORT` enabled); upstream cache defects remain.  

@@ -37,6 +37,9 @@ from The Open Group.
 #include    "fontstruct.h"
 #include    "FSproto.h"
 #include    "fontutil.h"
+#ifdef NEED_STRCASECMP
+#include    <ctype.h>
+#endif
 
 /* Define global here...  doesn't hurt the servers, and avoids
    unresolved references in font clients.  */

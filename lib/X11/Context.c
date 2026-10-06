@@ -73,7 +73,7 @@ from The Open Group.
 #define INITHASHMASK 63 /* Number of entries originally in the hash table. */
 
 typedef struct _TableEntryRec {	/* Stores one entry. */
-    XID 			rid;
+    XContextID			rid;
     XContext			context;
     XPointer			data;
     struct _TableEntryRec	*next;
@@ -157,7 +157,7 @@ static void _XFreeContextDB(Display *display)
 
 int XSaveContext(
     Display *display,
-    register XID rid,
+    register XContextID rid,
     register XContext context,
     _Xconst char* data)
 {
@@ -234,7 +234,7 @@ int XSaveContext(
 
 int XFindContext(display, rid, context, data)
     Display *display;
-    register XID rid;
+    register XContextID rid;
     register XContext context;
     XPointer *data;		/* RETURN */
 {
@@ -273,7 +273,7 @@ int XFindContext(display, rid, context, data)
 
 int XDeleteContext(display, rid, context)
     Display *display;
-    register XID rid;
+    register XContextID rid;
     register XContext context;
 {
     register DB db;

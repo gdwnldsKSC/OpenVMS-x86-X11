@@ -22,6 +22,8 @@ $ profiles = profiles + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
 $ profiles = profiles + "FONT_BUILTINS|FONT_FONTCACHE|FONT_FREETYPE|FONT_SPEEDO|"
 $ profiles = profiles + "X11|X11_MAKEKEYS|"
 $ profiles = profiles + "XAUTH|XDPYINFO|XWININFO|"
+$ profiles = profiles + "XSET|XMODMAP|XEV|XKBCOMP|"
+$ profiles = profiles + "XT|XMU|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -90,12 +92,18 @@ $ IF (P4 .EQS. "XKBFILE") .OR. (P4 .EQS. "XKBUI") THEN -
     "[.LIB.XKBFILE]"
 $ IF P4 .EQS. "XKBUI" THEN include_directory = include_directory + -
     ",[.LIB.XKBUI]"
+$ IF P4 .EQS. "XT" THEN include_directory = -
+    "[.VMS-SUPPORT._BUILD.P64.LIB.XT],[.LIB.XT]," + include_directory
+$ IF P4 .EQS. "XMU" THEN include_directory = -
+    "[.LIB.XMU],[.VMS-SUPPORT._BUILD.P64.LIB.XT]," + include_directory
 $ client_extensions = "|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ client_extensions = client_extensions + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ client_extensions = client_extensions + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ client_extensions = client_extensions + "XEVIE|XFONTCACHE|DMX|XP|"
 $ client_extensions = client_extensions + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
 $ client_extensions = client_extensions + "XAUTH|XDPYINFO|XWININFO|"
+$ client_extensions = client_extensions + "XSET|XMODMAP|XEV|XKBCOMP|"
+$ client_extensions = client_extensions + "XT|XMU|"
 $ IF F$LOCATE("|" + P4 + "|",client_extensions) .LT. F$LENGTH(client_extensions) -
     THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
@@ -156,6 +164,11 @@ $ IF P4 .EQS. "XAUTH" THEN include_directory = -
     "[.PROGRAMS.XAUTH]," + include_directory
 $ IF P4 .EQS. "XWININFO" THEN include_directory = include_directory + -
     ",[.PROGRAMS.XWININFO],[.PROGRAMS.XLSFONTS]"
+$ IF P4 .EQS. "XSET" THEN include_directory = include_directory + ",[.PROGRAMS.XSET]"
+$ IF P4 .EQS. "XMODMAP" THEN include_directory = include_directory + ",[.PROGRAMS.XMODMAP]"
+$ IF P4 .EQS. "XEV" THEN include_directory = include_directory + ",[.PROGRAMS.XEV]"
+$ IF P4 .EQS. "XKBCOMP" THEN include_directory = -
+    "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XKBCOMP],[.PROGRAMS.XKBCOMP]," + include_directory
 $ IF P4 .EQS. "MAKEPSRES" THEN include_directory = include_directory + -
     ",[.PROGRAMS.MAKEPSRES]"
 $ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -

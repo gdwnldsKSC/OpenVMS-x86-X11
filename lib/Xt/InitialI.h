@@ -82,6 +82,9 @@ SOFTWARE.
 #endif
 
 #include <X11/Xos.h>
+#ifdef __VMS
+#include <sys/socket.h>
+#endif
 #include <X11/Xpoll.h>
 
 typedef struct _TimerEventRec {

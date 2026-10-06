@@ -348,6 +348,12 @@ typedef struct {
 #define XCNOENT   2    /* No entry in table */
 
 typedef int XContext;
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#include <stdint.h>
+typedef uintptr_t XContextID;
+#else
+typedef XID XContextID;
+#endif
 
 #define XUniqueContext()       ((XContext) XrmUniqueQuark())
 #define XStringToContext(string)   ((XContext) XrmStringToQuark(string))
@@ -389,7 +395,7 @@ extern const char *XDefaultString (void);
 
 extern int XDeleteContext(
     Display*		/* display */,
-    XID			/* rid */,
+    XContextID		/* rid */,
     XContext		/* context */
 );
 
@@ -408,7 +414,7 @@ extern int XEqualRegion(
 
 extern int XFindContext(
     Display*		/* display */,
-    XID			/* rid */,
+    XContextID		/* rid */,
     XContext		/* context */,
     XPointer*		/* data_return */
 );
@@ -568,7 +574,7 @@ extern int XRectInRegion(
 
 extern int XSaveContext(
     Display*		/* display */,
-    XID			/* rid */,
+    XContextID		/* rid */,
     XContext		/* context */,
     _Xconst char*	/* data */
 );

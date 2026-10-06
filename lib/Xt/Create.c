@@ -316,7 +316,7 @@ CompileCallbacks(
     offsets = (CallbackTable)
 	widget->core.widget_class->core_class.callback_private;
 
-    for (i = (int)(long) *(offsets++); --i >= 0; offsets++) {
+    for (i = (int)(XtArgVal) *(offsets++); --i >= 0; offsets++) {
 	cl = (InternalCallbackList *)
 	    ((char *) widget - (*offsets)->xrm_offset - 1);
 	if (*cl)

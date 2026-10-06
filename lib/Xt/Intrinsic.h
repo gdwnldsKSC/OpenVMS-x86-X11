@@ -91,6 +91,9 @@ typedef char *String;
 #endif /* NeedWidePrototypes */
 
 #include <stddef.h>
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#include <stdint.h>
+#endif
 
 #ifdef VMS
 #define externalref globalref
@@ -116,10 +119,17 @@ typedef struct _XtEventRec *XtEventTable;
 
 typedef struct _XtAppStruct *XtAppContext;
 typedef unsigned long	XtValueMask;
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+typedef uintptr_t	XtIntervalId;
+typedef uintptr_t	XtInputId;
+typedef uintptr_t	XtWorkProcId;
+typedef uintptr_t	XtSignalId;
+#else
 typedef unsigned long	XtIntervalId;
 typedef unsigned long	XtInputId;
 typedef unsigned long	XtWorkProcId;
 typedef unsigned long	XtSignalId;
+#endif
 typedef unsigned int	XtGeometryMask;
 typedef unsigned long	XtGCMask;   /* Mask of values that are used by widget*/
 typedef unsigned long	Pixel;	    /* Index into colormap		*/
@@ -156,7 +166,11 @@ typedef char*		XtArgVal;
 typedef long		XtEnum;
 #else
 typedef char		Boolean;
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+typedef intptr_t	XtArgVal;
+#else
 typedef long		XtArgVal;
+#endif
 typedef unsigned char	XtEnum;
 #endif
 
@@ -269,7 +283,11 @@ typedef void (*XtActionHookProc)(
     Cardinal*		/* num_params */
 );
 
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+typedef uintptr_t XtBlockHookId;
+#else
 typedef unsigned long XtBlockHookId;
+#endif
 
 typedef void (*XtBlockHookProc)(
     XtPointer		/* client_data */

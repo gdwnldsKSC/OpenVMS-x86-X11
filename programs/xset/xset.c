@@ -136,7 +136,7 @@ static void set_led(Display *dpy, int led, int led_mode);
 static void set_mouse(Display *dpy, int acc_num, int acc_denom, int threshold);
 static void set_saver(Display *dpy, int mask, int value);
 static void set_repeat(Display *dpy, int key, int auto_repeat_mode);
-static void set_pixels(Display *dpy, unsigned long *pixels, caddr_t *colors, 
+static void set_pixels(Display *dpy, unsigned long *pixels, char **colors, 
 		       int numpixels);
 static void set_lock(Display *dpy, Bool onoff);
 static char * on_or_off(int val, int onval, char *onstr, 
@@ -166,7 +166,7 @@ int key, auto_repeat_mode;
 XKeyboardControl values;
 #define MAX_PIXEL_COUNT 512
 unsigned long pixels[MAX_PIXEL_COUNT];
-caddr_t colors[MAX_PIXEL_COUNT];
+char *colors[MAX_PIXEL_COUNT];
 int numpixels = 0;
 char *disp = NULL;
 Display *dpy;
@@ -1117,7 +1117,7 @@ xkbset_repeatrate(Display *dpy, int delay, int interval)
 #endif
 
 static void
-set_pixels(Display *dpy, unsigned long *pixels, caddr_t *colors, int numpixels)
+set_pixels(Display *dpy, unsigned long *pixels, char **colors, int numpixels)
 {
   XColor def;
   int scr = DefaultScreen (dpy);

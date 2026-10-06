@@ -905,7 +905,7 @@ static String ParseImmed(str, closure, event,error)
     register EventPtr event;
     Boolean* error;
 {
-    event->event.eventCode = (unsigned long)closure;
+    event->event.eventCode = (unsigned long)(XtArgVal)closure;
     event->event.eventCodeMask = (unsigned long)~0L;
 
     return BROKEN_OPTIMIZER_HACK(str);
@@ -918,7 +918,7 @@ static String ParseAddModifier(str, closure, event, error)
     register EventPtr event;
     Boolean* error;
 {
-    register unsigned long modval = (unsigned long)closure;
+    register unsigned long modval = (unsigned long)(XtArgVal)closure;
     event->event.modifiers |= modval;
     if (modval != AnyButtonMask) /* AnyButtonMask is don't-care mask */
 	event->event.modifierMask |= modval;
@@ -934,13 +934,13 @@ static String ParseKeyAndModifiers(str, closure, event,error)
     Boolean* error;
 {
     str = ParseKeySym(str, closure, event,error);
-    if ((unsigned long) closure == 0) {
+    if ((XtArgVal) closure == 0) {
 	Value metaMask; /* unused */
 	(void) _XtLookupModifier(QMeta, &event->event.lateModifiers, FALSE,
 				 &metaMask, FALSE);
     } else {
-	event->event.modifiers |= (unsigned long) closure;
-	event->event.modifierMask |= (unsigned long) closure;
+	event->event.modifiers |= (unsigned long)(XtArgVal) closure;
+	event->event.modifierMask |= (unsigned long)(XtArgVal) closure;
     }
     return str;
 }

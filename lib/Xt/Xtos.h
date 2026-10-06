@@ -61,7 +61,7 @@ SOFTWARE.
 #define WORD64
 #endif
 
-#if defined (_LP64) || \
+#if !defined(__VMS) && (defined (_LP64) || \
     defined(__alpha) || defined(__alpha__) || \
     defined(__ia64__) || defined(ia64) || \
     defined(__sparc64__) || \
@@ -69,7 +69,7 @@ SOFTWARE.
     (defined(__hppa__) && defined(__LP64__)) || \
     defined(__amd64__) || defined(amd64) || \
     defined(__powerpc64__) || \
-    (defined(sgi) && (_MIPS_SZLONG == 64))
+    (defined(sgi) && (_MIPS_SZLONG == 64)))
 #define LONG64
 #endif
 

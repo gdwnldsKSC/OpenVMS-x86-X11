@@ -561,7 +561,7 @@ static void ComputeArgs(widget, convert_args, num_args, args)
 
 	case XtBaseOffset:
 	    args[i].addr =
-		(XPointer)((char *)widget + (long)convert_args[i].address_id);
+		(XPointer)((char *)widget + (XtArgVal)convert_args[i].address_id);
 	    break;
 
 	case XtWidgetBaseOffset:
@@ -573,7 +573,7 @@ static void ComputeArgs(widget, convert_args, num_args, args)
 	    }
 
 	    args[i].addr =
-		(XPointer)((char *)ancestor + (long)convert_args[i].address_id);
+		(XPointer)((char *)ancestor + (XtArgVal)convert_args[i].address_id);
 	    break;
 
 	case XtImmediate:
@@ -589,14 +589,14 @@ static void ComputeArgs(widget, convert_args, num_args, args)
 	    /* Convert in place for next usage */
 	    convert_args[i].address_mode = XtResourceQuark;
 	    convert_args[i].address_id =
-	       (XtPointer)(long)XrmStringToQuark((String)convert_args[i].address_id);
+	       (XtPointer)(XtArgVal)XrmStringToQuark((String)convert_args[i].address_id);
 	    /* Fall through */
 
 	case XtResourceQuark:
 	    if (! ResourceQuarkToOffset(widget->core.widget_class,
-		    (XrmQuark)(long) convert_args[i].address_id, &offset)) {
+		    (XrmQuark)(XtArgVal) convert_args[i].address_id, &offset)) {
 		params[0]=
-                  XrmQuarkToString((XrmQuark)(long) convert_args[i].address_id);
+                  XrmQuarkToString((XrmQuark)(XtArgVal) convert_args[i].address_id);
                XtAppWarningMsg(XtWidgetToApplicationContext(widget),
 		    "invalidResourceName","computeArgs",XtCXtToolkitError,
 		    "Cannot find resource name %s as argument to conversion",
@@ -630,7 +630,7 @@ void XtDirectConvert(converter, args, num_args, from, to)
 
     LOCK_PROCESS;
     /* Try to find cache entry for conversion */
-    hash = ((long) converter >> 2) + from->size + *((char *) from->addr);
+    hash = (int)(((XtArgVal) converter >> 2) + from->size + *((char *) from->addr));
     if (from->size > 1) hash += ((char *) from->addr)[1];
     
     for (p = cacheHashTable[hash & CACHEHASHMASK]; p; p = p->next) {
@@ -728,7 +728,7 @@ CallConverter(dpy, converter,
 
     LOCK_PROCESS;
     /* Try to find cache entry for conversion */
-    hash = ((long)(converter) >> 2) + from->size + *((char *) from->addr);
+    hash = (int)(((XtArgVal) converter >> 2) + from->size + *((char *) from->addr));
     if (from->size > 1) hash += ((char *) from->addr)[1];
     
     if (cP->cache_type != XtCacheNone) {

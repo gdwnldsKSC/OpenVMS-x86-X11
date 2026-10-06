@@ -223,7 +223,7 @@ char* _XtHeapAlloc(heap, bytes)
 	heap->current = heap_loc + sizeof(char*);
 	heap->bytes_remaining = HEAP_SEGMENT_SIZE - sizeof(char*);
     }
-    bytes = (bytes + (sizeof(long) - 1)) & (~(sizeof(long) - 1));
+    bytes = (bytes + (sizeof(XtArgVal) - 1)) & (~(sizeof(XtArgVal) - 1));
     heap_loc = heap->current;
     heap->current += bytes;
     heap->bytes_remaining -= bytes; /* can be negative, if rounded */

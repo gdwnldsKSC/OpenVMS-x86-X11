@@ -15,6 +15,10 @@ $ targets = targets + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ targets = targets + "XEVIE|XFONTCACHE|DMX|XP|"
 $ targets = targets + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
 $ targets = targets + "X11|XAUTH|XDPYINFO|XWININFO|"
+$ targets = targets + "XSET|XMODMAP|XEV|XKBCOMP|XVFB|"
+$ targets = targets + "XT|XMU|MKFONTDIR|FONTS|FONTS_BDF|FONTS_MISC|FONTS_75DPI|FONTS_100DPI|FONTS_CYRILLIC|"
+$ targets = targets + "FONTS_ENCODINGS|FONTS_SCALED|FONTS_SPEEDO|FONTS_TYPE1|FONTS_TTF|FONTS_OTF|FONTS_CID|"
+$ targets = targets + "NLS|NLS_XLC_LOCALE|NLS_COMPOSE|X11_DATA|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -271,6 +275,51 @@ $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.MIEXT]ROOTLESS.DIR") .EQS. "" THEN CR
 $ directory = profile + ".PROGRAMS.XSERVER.XTRAP]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER]XTRAP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ step = "MMS " + target
+$ directory = profile + ".PROGRAMS.XSET]"
+$ IF F$SEARCH(profile + ".PROGRAMS]XSET.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XMODMAP]"
+$ IF F$SEARCH(profile + ".PROGRAMS]XMODMAP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XEV]"
+$ IF F$SEARCH(profile + ".PROGRAMS]XEV.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XKBCOMP]"
+$ IF F$SEARCH(profile + ".PROGRAMS]XKBCOMP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ server_base = profile + ".PROGRAMS.XSERVER.HW.VFB.SERVER"
+$ directory = server_base + "]"
+$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.VFB]SERVER.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ server_directories = "DIX|OS|HW|HW.VFB|MI|MIEXT|MIEXT.DAMAGE|FB|RENDER|XKB|XI"
+$ server_index = 0
+$server_directory_loop:
+$ server_directory = F$ELEMENT(server_index,"|",server_directories)
+$ IF server_directory .EQS. "|" THEN GOTO server_directories_done
+$ directory = server_base + "." + server_directory + "]"
+$ check_directory = server_base + "]" + server_directory + ".DIR"
+$ IF server_directory .EQS. "HW.VFB" THEN check_directory = server_base + ".HW]VFB.DIR"
+$ IF server_directory .EQS. "MIEXT.DAMAGE" THEN check_directory = server_base + ".MIEXT]DAMAGE.DIR"
+$ IF F$SEARCH(check_directory) .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ server_index = server_index + 1
+$ GOTO server_directory_loop
+$server_directories_done:
+$ directory = profile + ".LIB.XT]"
+$ IF F$SEARCH(profile + ".LIB]XT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XMU]"
+$ IF F$SEARCH(profile + ".LIB]XMU.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.MKFONTDIR]"
+$ IF F$SEARCH(profile + ".PROGRAMS]MKFONTDIR.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ font_directories = "MISC|75DPI|100DPI|CYRILLIC|ENCODINGS|ENCODINGS.LARGE|SPEEDO|TYPE1|TTF|OTF|CID"
+$ font_index = 0
+$font_directory_loop:
+$ font_directory = F$ELEMENT(font_index,"|",font_directories)
+$ IF font_directory .EQS. "|" THEN GOTO font_directories_done
+$ directory = profile + ".FONTS." + font_directory + "]"
+$ check_directory = profile + ".FONTS]" + font_directory + ".DIR"
+$ IF font_directory .EQS. "ENCODINGS.LARGE" THEN -
+    check_directory = profile + ".FONTS.ENCODINGS]LARGE.DIR"
+$ IF F$SEARCH(check_directory) .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ font_index = font_index + 1
+$ GOTO font_directory_loop
+$font_directories_done:
+$ directory = profile + ".NLS]"
+$ IF F$SEARCH(profile + "]NLS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS
 $ GOTO done

@@ -96,6 +96,17 @@ X11. Produces `X11.OLB` - static Xlib with XKB and TCP.
 XAUTH. Produces `XAUTH.EXE`.  
 XDPYINFO. Produces `XDPYINFO.EXE`.  
 XWININFO. Produces `XWININFO.EXE`.  
+XSET. Produces `XSET.EXE`.  
+XMODMAP. Produces `XMODMAP.EXE`.  
+XEV. Produces `XEV.EXE`.  
+XKBCOMP. Produces `XKBCOMP.EXE`; requires a native BISON foreign command.  
+XT. Produces `XT.OLB` — complete static Xt, with P64 host types and generated string tables.  
+XMU. Produces `XMU.OLB` — complete static Xmu.  
+XVFB. Produces `XVFB.EXE` — headless core/Render/XKB/X Input server.  
+MKFONTDIR. Produces the native font-index launcher.  
+FONTS. Builds BDF fonts and scalable-font/encoding indexes.  
+NLS. Builds locale and Compose data.  
+X11_DATA. Copies XErrorDB and XKeysymDB.  
   
 ## Notes  
   
@@ -187,5 +198,17 @@ $ @[.VMS-SUPPORT]BUILD XMUU
 $ @[.VMS-SUPPORT]BUILD XPM  
 $ @[.VMS-SUPPORT]BUILD XPRINTAPPUTIL  
   
+$ @[.VMS-SUPPORT]BUILD XSET  
+$ @[.VMS-SUPPORT]BUILD XMODMAP  
+$ @[.VMS-SUPPORT]BUILD XEV  
+$ @[.VMS-SUPPORT]BUILD XKBCOMP  
+$ @[.VMS-SUPPORT]BUILD XT  
+$ @[.VMS-SUPPORT]BUILD XMU  
+$ @[.VMS-SUPPORT]BUILD XVFB  
+$ @[.VMS-SUPPORT]BUILD FONTS  
+$ @[.VMS-SUPPORT]BUILD NLS  
+$ @[.VMS-SUPPORT]BUILD X11_DATA  
+  
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  
+For XKBCOMP, build separately acquired GNU Bison 1.35 with `@[.VMS-SUPPORT.TOOLS.BISON]BUILD source-directory output-directory`, then define `BISON :== $output-directoryBISON.EXE`.

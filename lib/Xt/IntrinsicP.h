@@ -55,16 +55,16 @@ SOFTWARE.
 
 /*
  * Field sizes and offsets of XrmResource must match those of XtResource.
- * Type long is used instead of XrmQuark here because XrmQuark and String
+ * XtArgVal is used instead of XrmQuark here because XrmQuark and String
  * are not the same size on all systems.
  */
 typedef struct {
-    long	xrm_name;	  /* Resource name quark		*/
-    long	xrm_class;	  /* Resource class quark		*/
-    long	xrm_type;	  /* Resource representation type quark */
+    XtArgVal	xrm_name;	  /* Resource name quark		*/
+    XtArgVal	xrm_class;	  /* Resource class quark		*/
+    XtArgVal	xrm_type;	  /* Resource representation type quark */
     Cardinal	xrm_size;	  /* Size in bytes of representation	*/
     int		xrm_offset;	  /* -offset-1				*/
-    long	xrm_default_type; /* Default representation type quark	*/
+    XtArgVal	xrm_default_type; /* Default representation type quark	*/
     XtPointer	xrm_default_addr; /* Default resource address		*/
 } XrmResource, *XrmResourceList;
 

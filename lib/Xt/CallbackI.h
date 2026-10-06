@@ -62,7 +62,7 @@ typedef struct internalCallbackRec {
     unsigned short count;
     char	   is_padded;	/* contains NULL padding for external form */
     char	   call_state;  /* combination of _XtCB{FreeAfter}Calling */
-#ifdef LONG64
+#if defined(LONG64) || (defined(__VMS) && __INITIAL_POINTER_SIZE == 64)
     unsigned int   align_pad;	/* padding to align callback list */
 #endif
     /* XtCallbackList */

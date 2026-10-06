@@ -319,9 +319,16 @@ typedef enum {
   ProtocolMismatch = 2
 } EditResError;
 
+#if defined(__VMS) && __INITIAL_POINTER_SIZE == 64
+#define _XMU_P64_WIDGET_IDS 1
+typedef uintptr_t _XmuWidgetId;
+#else
+typedef unsigned long _XmuWidgetId;
+#endif
+
 typedef struct _WidgetInfo {
     unsigned short num_widgets;
-  unsigned long *ids;
+  _XmuWidgetId *ids;
     Widget real_widget;
 } WidgetInfo;
 

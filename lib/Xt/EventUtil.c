@@ -74,7 +74,7 @@ void _XtFreePerWidgetInput(w, pwi)
 {
     LOCK_PROCESS;
     XDeleteContext(XtDisplay(w), 
-		   (Window)w,
+		   (XContextID)w,
 		   perWidgetInputContext);
     
     XtFree((char *)pwi);
@@ -97,7 +97,7 @@ XtPerWidgetInput _XtGetPerWidgetInput(
       perWidgetInputContext = XUniqueContext();
     
     if (XFindContext(dpy, 
-		     (Window)widget, 
+		     (XContextID)widget, 
 		     perWidgetInputContext, 
 		     (XPointer *)&pwi) &&
 	create) 
@@ -120,7 +120,7 @@ XtPerWidgetInput _XtGetPerWidgetInput(
 			_XtDestroyServerGrabs, (XtPointer)pwi);
 
 	  (void) XSaveContext(dpy, 
-			      (Window)widget, 
+			      (XContextID)widget, 
 			      perWidgetInputContext, 
 			      (char *) pwi);
       }

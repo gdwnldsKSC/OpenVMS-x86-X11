@@ -973,7 +973,7 @@ XtInputId XtAppAddInput(app, source, Condition, proc, closure)
 	XtPointer closure;
 {
 	InputEvent* sptr;
-	XtInputMask condition = (XtInputMask) Condition;
+	XtInputMask condition = (XtInputMask)(XtArgVal) Condition;
 
 	LOCK_APP(app);
 	if (!condition ||

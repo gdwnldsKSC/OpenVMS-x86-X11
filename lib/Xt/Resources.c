@@ -876,16 +876,16 @@ static XtCacheRef *GetResources(widget, base, names, classes,
 			if (xrm_type == QString) {
 			    value.addr = rx->xrm_default_addr;
 			} else if (rx->xrm_size == sizeof(int)) {
-			    int_val = (int)(long)rx->xrm_default_addr;
+			    int_val = (int)(XtArgVal)rx->xrm_default_addr;
 			    value.addr = (XPointer) &int_val;
 			} else if (rx->xrm_size == sizeof(short)) {
-			    short_val = (short)(long)rx->xrm_default_addr;
+			    short_val = (short)(XtArgVal)rx->xrm_default_addr;
 			    value.addr = (XPointer) &short_val;
 			} else if (rx->xrm_size == sizeof(char)) {
-			    char_val = (char)(long)rx->xrm_default_addr;
+			    char_val = (char)(XtArgVal)rx->xrm_default_addr;
 			    value.addr = (XPointer) &char_val;
 			} else if (rx->xrm_size == sizeof(long)) {
-			    long_val = (long)rx->xrm_default_addr;
+			    long_val = (long)(XtArgVal)rx->xrm_default_addr;
 			    value.addr = (XPointer) &long_val;
 			} else if (rx->xrm_size == sizeof(char*)) {
 			    char_ptr = (char*)rx->xrm_default_addr;

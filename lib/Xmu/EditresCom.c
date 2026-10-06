@@ -120,8 +120,8 @@ typedef struct _Globals {
     SVErrorInfo error_info;
     ProtocolStream stream;
   ProtocolStream *command_stream;	/* command stream */
-#if defined(LONG64) || defined(WORD64)
-    unsigned long base_address;
+#if defined(LONG64) || defined(WORD64) || defined(_XMU_P64_WIDGET_IDS)
+    _XmuWidgetId base_address;
 #endif
 } Globals;
 
@@ -449,7 +449,7 @@ static void
 GetCommand(Widget w, XtPointer data, Atom *selection, Atom *type,
 	   XtPointer value, unsigned long *length, int *format)
 {
-  ResIdent ident = (ResIdent)(long)data;
+  ResIdent ident = (ResIdent)(XtArgVal)data;
   EditresEvent *event;
 
   if (*type != res_editor_protocol || *format != EDITRES_FORMAT)
@@ -498,8 +498,8 @@ ExecuteCommand(Widget w, Atom sel, ResIdent ident, EditresEvent *event)
   switch(event->any_event.type)
     {
     case SendWidgetTree:
-#if defined(LONG64) || defined(WORD64)
-	globals.base_address = (unsigned long)w & 0xFFFFFFFF00000000;
+#if defined(LONG64) || defined(WORD64) || defined(_XMU_P64_WIDGET_IDS)
+	globals.base_address = (_XmuWidgetId)w & ~(_XmuWidgetId)0xFFFFFFFFUL;
 #endif
 	func = DumpWidgets;
 	break;
@@ -696,7 +696,9 @@ SendCommand(Widget w, Atom sel, ResIdent ident, EditResError error,
 static int
 qcmp_widget_list(register _Xconst void *left, register _Xconst void *right)
 { 
-  return (char *)*(Widget **)left - (char *)*(Widget **)right;
+  _XmuWidgetId l = (_XmuWidgetId)*(Widget *)left;
+  _XmuWidgetId r = (_XmuWidgetId)*(Widget *)right;
+  return (l > r) - (l < r);
 }
 
 /*
@@ -893,7 +895,7 @@ VerifyWidget(Widget w, WidgetInfo *info)
     Widget top;
     register int count;
     register Widget parent;
-  register unsigned long *child;
+  register _XmuWidgetId *child;
 
   for (top = w; XtParent(top) != NULL; top = XtParent(top))
     ;
@@ -1605,25 +1607,25 @@ static void
 InsertWidget(ProtocolStream *stream, Widget w)
 {
     Widget temp;
-  unsigned long *widget_list;
+  _XmuWidgetId *widget_list;
     register int i, num_widgets;
 
   for (temp = w, i = 0; temp != 0; temp = XtParent(temp), i++)
     ;
 
     num_widgets = i;
-  widget_list = (unsigned long *)XtMalloc(sizeof(unsigned long) * num_widgets);
+  widget_list = (_XmuWidgetId *)XtMalloc(sizeof(_XmuWidgetId) * num_widgets);
 
     /*
    * Put the widgets into the list
    * make sure that they are inserted in the list from parent -> child
      */
     for (i--, temp = w; temp != NULL; temp = XtParent(temp), i--) 
-    widget_list[i] = (unsigned long)temp;
+    widget_list[i] = (_XmuWidgetId)temp;
 	
   _XEditResPut16(stream, num_widgets);		/* insert number of widgets */
   for (i = 0; i < num_widgets; i++)		/* insert Widgets themselves */
-	_XEditResPut32(stream, widget_list[i]);
+	_XEditResPut32(stream, (unsigned long)widget_list[i]);
     
     XtFree((char *)widget_list);
 }
@@ -1738,7 +1740,7 @@ _XEditResPutWidgetInfo(ProtocolStream *stream, WidgetInfo *info)
 
     _XEditResPut16(stream, info->num_widgets);
     for (i = 0; i < info->num_widgets; i++) 
-	_XEditResPut32(stream, info->ids[i]);
+	_XEditResPut32(stream, (unsigned long)info->ids[i]);
 }
 
 /************************************************************
@@ -1793,7 +1795,8 @@ _XEditResResetStream(ProtocolStream *stream)
 Bool
 _XEditResGet8(ProtocolStream *stream, unsigned char *value)
 {
-  if (stream->size < (unsigned long)(stream->current - stream->top))
+  if (stream->size < ((_XmuWidgetId)stream->current -
+                     (_XmuWidgetId)stream->top))
     return (False);
 
   *value = *((stream->current)++);
@@ -1947,17 +1950,19 @@ _XEditResGetWidgetInfo(ProtocolStream *stream, WidgetInfo *info)
   if (!_XEditResGet16(stream, &info->num_widgets))
     return (False);
 
-  info->ids = (unsigned long *)XtMalloc(sizeof(long) * info->num_widgets);
+  info->ids = (_XmuWidgetId *)XtMalloc(sizeof(_XmuWidgetId) * info->num_widgets);
 
   for (i = 0; i < info->num_widgets; i++)
     {
-      if (!_XEditResGet32(stream, info->ids + i))
+      unsigned long wire_id;
+      if (!_XEditResGet32(stream, &wire_id))
 	{
 	    XtFree((char *)info->ids);
 	    info->ids = NULL;
 	  return (False);
 	}
-#if defined(LONG64) || defined(WORD64)
+      info->ids[i] = wire_id;
+#if defined(LONG64) || defined(WORD64) || defined(_XMU_P64_WIDGET_IDS)
 	info->ids[i] |= globals.base_address;
 #endif
     }
@@ -2079,7 +2084,7 @@ _XEditresGetStringValues(Widget w, Arg *warg, int numargs)
   XtResourceList res_list;
   Cardinal num_res;
   XtResource *res = NULL;
-  long value;
+  XtArgVal value;
   Cardinal i;
   char *string = "";
   Arg args[1];
@@ -2120,8 +2125,8 @@ _XEditresGetStringValues(Widget w, Arg *warg, int numargs)
   /* try to get the value in the proper size */
   switch (res->resource_size)
     {
-#ifdef LONG_64
-      long v8;
+#if defined(LONG_64) || defined(_XMU_P64_WIDGET_IDS)
+      XtArgVal v8;
 #endif
       int v4;
       short v2;
@@ -2142,11 +2147,11 @@ _XEditresGetStringValues(Widget w, Arg *warg, int numargs)
       XtGetValues(w, args, 1);
       value = (int)v4;
       break;
-#ifdef LONG_64
+#if defined(LONG_64) || defined(_XMU_P64_WIDGET_IDS)
     case 8:
       XtSetArg(args[0], res->resource_name, &v8);
       XtGetValues(w, args, 1);
-      value = (long)v8;
+      value = (XtArgVal)v8;
       break;
 #endif
     default:
@@ -2194,7 +2199,12 @@ _XEditresGetStringValues(Widget w, Arg *warg, int numargs)
 	    case sizeof(int):
 	      XmuSnprintf(buffer, sizeof(buffer), "0x%08x", (int)value);
 	      break;
-#ifdef LONG_64
+#ifdef _XMU_P64_WIDGET_IDS
+	    case sizeof(XtArgVal):
+	      XmuSnprintf(buffer, sizeof(buffer), "0x%016llx",
+	                  (unsigned long long)value);
+	      break;
+#elif defined(LONG_64)
 	    case sizeof(long):
 	      XmuSnprintf(buffer, sizeof(buffer), "0x%016lx", value);
 	      break;

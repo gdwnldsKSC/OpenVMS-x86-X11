@@ -99,7 +99,8 @@ XWININFO. Produces `XWININFO.EXE`.
 XSET. Produces `XSET.EXE`.  
 XMODMAP. Produces `XMODMAP.EXE`.  
 XEV. Produces `XEV.EXE`.  
-XKBCOMP. Produces `XKBCOMP.EXE`; requires a native BISON foreign command.  
+BISON. Produces `BISON.EXE` from bundled, unchanged GNU Bison 1.35.  
+XKBCOMP. Produces `XKBCOMP.EXE`; builds and uses bundled native Bison automatically.  
 XT. Produces `XT.OLB` — complete static Xt, with P64 host types and generated string tables.  
 XMU. Produces `XMU.OLB` — complete static Xmu.  
 XVFB. Produces `XVFB.EXE` — headless core/Render/XKB/X Input server.  
@@ -201,6 +202,7 @@ $ @[.VMS-SUPPORT]BUILD XPRINTAPPUTIL
 $ @[.VMS-SUPPORT]BUILD XSET  
 $ @[.VMS-SUPPORT]BUILD XMODMAP  
 $ @[.VMS-SUPPORT]BUILD XEV  
+$ @[.VMS-SUPPORT]BUILD BISON  
 $ @[.VMS-SUPPORT]BUILD XKBCOMP  
 $ @[.VMS-SUPPORT]BUILD XT  
 $ @[.VMS-SUPPORT]BUILD XMU  
@@ -211,4 +213,4 @@ $ @[.VMS-SUPPORT]BUILD X11_DATA
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  
-For XKBCOMP, build separately acquired GNU Bison 1.35 with `@[.VMS-SUPPORT.TOOLS.BISON]BUILD source-directory output-directory`, then define `BISON :== $output-directoryBISON.EXE`.
+XKBCOMP builds bundled GNU Bison 1.35 automatically; no separate download or BISON command setup is required.

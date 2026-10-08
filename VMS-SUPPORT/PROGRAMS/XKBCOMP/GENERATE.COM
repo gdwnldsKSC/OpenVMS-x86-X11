@@ -1,4 +1,4 @@
-$! Generate the upstream yacc grammar with a caller-configured GNU Bison.
+$! Generate the upstream yacc grammar with the bundled native GNU Bison.
 $ SET NOON
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
@@ -7,14 +7,16 @@ $ grammar_open = 0
 $ notice_open = 0
 $ IF (P1 .NES. "") .OR. (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. -
      (P5 .NES. "") .OR. (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
-$ IF F$TYPE(BISON) .EQS. "" THEN GOTO missing
+$ bison_image = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.TOOLS.BISON]BISON.EXE")
+$ IF bison_image .EQS. "" THEN GOTO missing
+$ native_bison = "$" + bison_image
 $ base = "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XKBCOMP]"
 $ target = base + "XKBPARSE.C"
 $ raw = base + "XKBPARSE_RAW.C"
 $ notice = base + "XKBPARSE_NOTICE.C"
 $ grammar = "[.PROGRAMS.XKBCOMP]XKBPARSE.Y"
 $ IF F$SEARCH(grammar) .EQS. "" THEN GOTO done
-$ BISON "-l" "-o" 'raw' 'grammar'
+$ native_bison "-l" "-o" 'raw' 'grammar'
 $ result = $STATUS
 $ IF .NOT. (result .AND. 1) THEN GOTO done
 $ result = 2
@@ -41,7 +43,7 @@ $ result = $STATUS
 $ IF F$SEARCH(target) .EQS. "" THEN result = 2
 $ GOTO done
 $missing:
-$ WRITE SYS$OUTPUT "XKBCOMP parser generation requires a BISON foreign command."
+$ WRITE SYS$OUTPUT "Build the bundled Bison first with @[.VMS-SUPPORT]BUILD XKBCOMP."
 $ GOTO done
 $interrupted:
 $ result = 2

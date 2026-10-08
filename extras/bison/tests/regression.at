@@ -1,0 +1,898 @@
+# Bison Regressions.                               -*- Autotest -*-
+# Copyright 2001 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+# 02111-1307, USA.
+
+AT_BANNER([[Regression tests.]])
+
+
+## ------------------- ##
+## %nonassoc and eof.  ##
+## ------------------- ##
+
+AT_SETUP([%nonassoc and eof])
+
+AT_DATA([input.y],
+[[
+%{
+#include <stdio.h>
+
+#define YYERROR_VERBOSE 1
+#define yyerror(Msg) \
+do { \
+  fprintf (stderr, "%s\n", Msg); \
+  exit (1); \
+} while (0)
+
+/* The current argument. */
+static const char *input = NULL;
+
+static int
+yylex (void)
+{
+  /* No token stands for end of file. */
+  if (input && *input)
+    return *input++;
+  else
+    return 0;
+}
+
+%}
+
+%nonassoc '<' '>'
+
+%%
+expr: expr '<' expr
+    | expr '>' expr
+    | '0'
+    ;
+%%
+int
+main (int argc, const char *argv[])
+{
+  if (argc > 1)
+    input = argv[1];
+  return yyparse ();
+}
+]])
+
+# Specify the output files to avoid problems on different file systems.
+AT_CHECK([bison input.y -o input.c])
+AT_CHECK([$CC $CFLAGS $CPPFLAGS input.c -o input], 0, [], [ignore])
+
+AT_CHECK([./input '0<0'])
+# FIXME: This is an actual bug, but a new one, in the sense that
+# no one has ever spotted it!  The messages are *wrong*: there should
+# be nothing there, it should be expected eof.
+AT_CHECK([./input '0<0<0'], [1], [],
+         [parse error, unexpected '<', expecting '<' or '>'
+])
+
+AT_CHECK([./input '0>0'])
+AT_CHECK([./input '0>0>0'], [1], [],
+         [parse error, unexpected '>', expecting '<' or '>'
+])
+
+AT_CHECK([./input '0<0>0'], [1], [],
+         [parse error, unexpected '>', expecting '<' or '>'
+])
+
+AT_CLEANUP
+
+## ---------------- ##
+## Braces parsing.  ##
+## ---------------- ##
+
+
+AT_SETUP([braces parsing])
+
+AT_DATA([input.y],
+[[/* Bison used to swallow the character after `}'. */
+
+%%
+exp: { tests = {{{{{{{{{{}}}}}}}}}}; };
+%%
+]])
+
+AT_CHECK([bison -v input.y -o input.c], 0, ignore, ignore)
+
+AT_CHECK([fgrep 'tests = {{{{{{{{{{}}}}}}}}}};' input.c], 0, [ignore])
+
+AT_CLEANUP
+
+
+## ------------------ ##
+## Duplicate string.  ##
+## ------------------ ##
+
+
+AT_SETUP([Duplicate string])
+
+AT_DATA([duplicate.y],
+[[/* `Bison -v' used to dump core when two tokens are defined with the same
+   string, as LE and GE below. */
+
+%token NUM
+%token LE "<="
+%token GE "<="
+
+%%
+exp: '(' exp ')' | NUM ;
+%%
+]])
+
+AT_CHECK([bison -v duplicate.y -o duplicate.c], 0, ignore, ignore)
+
+AT_CLEANUP
+
+
+## ------------------------- ##
+## Unresolved SR Conflicts.  ##
+## ------------------------- ##
+
+AT_SETUP([Unresolved SR Conflicts])
+
+AT_DATA([input.y],
+[[%token NUM OP
+%%
+exp: exp OP exp | NUM;
+]])
+
+AT_CHECK([bison input.y -o input.c -v], 0, [],
+[input.y contains 1 shift/reduce conflict.
+])
+
+# Check the contents of the report.
+AT_CHECK([cat input.output], [],
+[[State 4 contains 1 shift/reduce conflict.
+
+
+Grammar
+
+  Number, Line, Rule
+    1   3 exp -> exp OP exp
+    2   3 exp -> NUM
+
+
+Terminals, with rules where they appear
+
+$ (-1)
+error (256)
+NUM (257) 2
+OP (258) 1
+
+
+Nonterminals, with rules where they appear
+
+exp (5)
+    on left: 1 2, on right: 1
+
+
+state 0
+
+    NUM 	shift, and go to state 1
+
+    exp 	go to state 2
+
+
+
+state 1
+
+    exp  ->  NUM .   (rule 2)
+
+    $default	reduce using rule 2 (exp)
+
+
+
+state 2
+
+    exp  ->  exp . OP exp   (rule 1)
+
+    $   	go to state 5
+    OP  	shift, and go to state 3
+
+
+
+state 3
+
+    exp  ->  exp OP . exp   (rule 1)
+
+    NUM 	shift, and go to state 1
+
+    exp 	go to state 4
+
+
+
+state 4
+
+    exp  ->  exp . OP exp   (rule 1)
+    exp  ->  exp OP exp .   (rule 1)
+
+    OP  	shift, and go to state 3
+
+    OP  	[reduce using rule 1 (exp)]
+    $default	reduce using rule 1 (exp)
+
+
+
+state 5
+
+    $   	go to state 6
+
+
+
+state 6
+
+    $default	accept
+
+
+]])
+
+AT_CLEANUP
+
+
+## --------------------- ##
+## Solved SR Conflicts.  ##
+## --------------------- ##
+
+AT_SETUP([Solved SR Conflicts])
+
+AT_DATA([input.y],
+[[%token NUM OP
+%right OP
+%%
+exp: exp OP exp | NUM;
+]])
+
+AT_CHECK([bison input.y -o input.c -v], 0, [], [])
+
+# Check the contents of the report.
+AT_CHECK([cat input.output], [],
+[[Conflict in state 4 between rule 1 and token OP resolved as shift.
+
+
+Grammar
+
+  Number, Line, Rule
+    1   4 exp -> exp OP exp
+    2   4 exp -> NUM
+
+
+Terminals, with rules where they appear
+
+$ (-1)
+error (256)
+NUM (257) 2
+OP (258) 1
+
+
+Nonterminals, with rules where they appear
+
+exp (5)
+    on left: 1 2, on right: 1
+
+
+state 0
+
+    NUM 	shift, and go to state 1
+
+    exp 	go to state 2
+
+
+
+state 1
+
+    exp  ->  NUM .   (rule 2)
+
+    $default	reduce using rule 2 (exp)
+
+
+
+state 2
+
+    exp  ->  exp . OP exp   (rule 1)
+
+    $   	go to state 5
+    OP  	shift, and go to state 3
+
+
+
+state 3
+
+    exp  ->  exp OP . exp   (rule 1)
+
+    NUM 	shift, and go to state 1
+
+    exp 	go to state 4
+
+
+
+state 4
+
+    exp  ->  exp . OP exp   (rule 1)
+    exp  ->  exp OP exp .   (rule 1)
+
+    OP  	shift, and go to state 3
+
+    $default	reduce using rule 1 (exp)
+
+
+
+state 5
+
+    $   	go to state 6
+
+
+
+state 6
+
+    $default	accept
+
+
+]])
+
+AT_CLEANUP
+
+
+
+
+## ------------------- ##
+## Rule Line Numbers.  ##
+## ------------------- ##
+
+AT_SETUP([Rule Line Numbers])
+
+AT_DATA([input.y],
+[[%%
+expr:
+'a'
+
+{
+
+}
+
+'b'
+
+{
+
+}
+
+|
+
+
+{
+
+
+}
+
+'c'
+
+{
+
+};
+]])
+
+AT_CHECK([bison input.y -o input.c -v], 0, [], [])
+
+# Check the contents of the report.
+AT_CHECK([cat input.output], [],
+[[Grammar
+
+  Number, Line, Rule
+    1   2 @1 -> /* empty */
+    2   2 expr -> 'a' @1 'b'
+    3  15 @2 -> /* empty */
+    4  15 expr -> @2 'c'
+
+
+Terminals, with rules where they appear
+
+$ (-1)
+'a' (97) 2
+'b' (98) 2
+'c' (99) 4
+error (256)
+
+
+Nonterminals, with rules where they appear
+
+expr (6)
+    on left: 2 4
+@1 (7)
+    on left: 1, on right: 2
+@2 (8)
+    on left: 3, on right: 4
+
+
+state 0
+
+    'a' 	shift, and go to state 1
+
+    $default	reduce using rule 3 (@2)
+
+    expr	go to state 6
+    @2  	go to state 2
+
+
+
+state 1
+
+    expr  ->  'a' . @1 'b'   (rule 2)
+
+    $default	reduce using rule 1 (@1)
+
+    @1  	go to state 3
+
+
+
+state 2
+
+    expr  ->  @2 . 'c'   (rule 4)
+
+    'c' 	shift, and go to state 4
+
+
+
+state 3
+
+    expr  ->  'a' @1 . 'b'   (rule 2)
+
+    'b' 	shift, and go to state 5
+
+
+
+state 4
+
+    expr  ->  @2 'c' .   (rule 4)
+
+    $default	reduce using rule 4 (expr)
+
+
+
+state 5
+
+    expr  ->  'a' @1 'b' .   (rule 2)
+
+    $default	reduce using rule 2 (expr)
+
+
+
+state 6
+
+    $   	go to state 7
+
+
+
+state 7
+
+    $   	go to state 8
+
+
+
+state 8
+
+    $default	accept
+
+
+]])
+
+AT_CLEANUP
+
+
+
+## -------------------- ##
+## %expect not enough.  ##
+## -------------------- ##
+
+AT_SETUP([%expect not enough])
+
+AT_DATA([input.y],
+[[%token NUM OP
+%expect 0
+%%
+exp: exp OP exp | NUM;
+]])
+
+AT_CHECK([bison input.y -o input.c], 1, [],
+[input.y contains 1 shift/reduce conflict.
+expected 0 shift/reduce conflicts
+])
+AT_CLEANUP
+
+
+## --------------- ##
+## %expect right.  ##
+## --------------- ##
+
+AT_SETUP([%expect right])
+
+AT_DATA([input.y],
+[[%token NUM OP
+%expect 1
+%%
+exp: exp OP exp | NUM;
+]])
+
+AT_CHECK([bison input.y -o input.c], 0)
+AT_CLEANUP
+
+
+## ------------------ ##
+## %expect too much.  ##
+## ------------------ ##
+
+AT_SETUP([%expect too much])
+
+AT_DATA([input.y],
+[[%token NUM OP
+%expect 2
+%%
+exp: exp OP exp | NUM;
+]])
+
+AT_CHECK([bison input.y -o input.c], 1, [],
+[input.y contains 1 shift/reduce conflict.
+expected 2 shift/reduce conflicts
+])
+AT_CLEANUP
+
+
+## ---------------------- ##
+## Mixing %token styles.  ##
+## ---------------------- ##
+
+
+AT_SETUP([Mixing %token styles])
+
+# Taken from the documentation.
+AT_DATA([input.y],
+[[%token  <operator>  OR      "||"
+%token  <operator>  LE 134  "<="
+%left  OR  "<="
+%%
+exp: ;
+%%
+]])
+
+AT_CHECK([bison -v input.y -o input.c], 0, ignore, ignore)
+
+AT_CLEANUP
+
+
+
+## ---------------------- ##
+## %union and --defines.  ##
+## ---------------------- ##
+
+
+AT_SETUP([%union and --defines])
+
+AT_DATA([union.y],
+[%union
+{
+  int   integer;
+  char *string ;
+}
+%%
+exp: {};
+])
+
+AT_CHECK([bison --defines union.y])
+
+AT_CLEANUP
+
+
+## --------------------------------------- ##
+## Duplicate '/' in C comments in %union   ##
+## --------------------------------------- ##
+
+
+AT_SETUP([%union and C comments])
+
+AT_DATA([union-comment.y],
+[%union
+{
+  /* The int.  */	int   integer;
+  /* The string.  */	char *string ;
+}
+%%
+exp: {};
+])
+
+AT_CHECK([bison union-comment.y])
+AT_CHECK([fgrep '//*' union-comment.tab.c], [1], [])
+
+AT_CLEANUP
+
+
+## ---------------- ##
+## Invalid inputs.  ##
+## ---------------- ##
+
+
+AT_SETUP([Invalid inputs])
+
+AT_DATA([input.y],
+[[%%
+?
+default: 'a' }
+%{
+%&
+%a
+%-
+]])
+
+AT_CHECK([bison input.y], [1], [],
+[[input.y:2: invalid input: `?'
+input.y:3: invalid input: `}'
+input.y:4: invalid input: `%{'
+input.y:5: invalid input: `%&'
+input.y:6: invalid input: `%a'
+input.y:7: invalid input: `%-'
+]])
+
+AT_CLEANUP
+
+
+
+## -------------------- ##
+## Invalid %directive.  ##
+## -------------------- ##
+
+
+AT_SETUP([Invalid %directive])
+
+AT_DATA([input.y],
+[[%invalid
+]])
+
+AT_CHECK([bison input.y], [1], [],
+[[input.y:1: unrecognized: %invalid
+input.y:1:    Skipping to next %
+input.y:2: fatal error: no input grammar
+]])
+
+AT_CLEANUP
+
+
+
+## -------------- ##
+## Web2c Report.  ##
+## -------------- ##
+
+# The generation of the reduction was once wrong in Bison, and made it
+# miss some reductions.  In the following test case, the reduction on
+# `undef_id_tok' in state 1 was missing.  This is stripped down from
+# the actual web2c.y.
+
+AT_SETUP([Web2c Report])
+
+AT_DATA([input.y],
+[[%token	undef_id_tok const_id_tok
+
+%start CONST_DEC_PART
+
+%%
+CONST_DEC_PART:
+         CONST_DEC_LIST
+        ;
+
+CONST_DEC_LIST:
+	  CONST_DEC
+        | CONST_DEC_LIST CONST_DEC
+        ;
+
+CONST_DEC:
+	  { } undef_id_tok '=' const_id_tok ';'
+        ;
+%%
+
+]])
+
+AT_CHECK([bison -v input.y])
+
+AT_CHECK([sed -n 's/  *$//;/^$/!p' input.output], 0,
+[[Grammar
+  Number, Line, Rule
+    1   6 CONST_DEC_PART -> CONST_DEC_LIST
+    2  10 CONST_DEC_LIST -> CONST_DEC
+    3  12 CONST_DEC_LIST -> CONST_DEC_LIST CONST_DEC
+    4  15 @1 -> /* empty */
+    5  15 CONST_DEC -> @1 undef_id_tok '=' const_id_tok ';'
+Terminals, with rules where they appear
+$ (-1)
+';' (59) 5
+'=' (61) 5
+error (256)
+undef_id_tok (257) 5
+const_id_tok (258) 5
+Nonterminals, with rules where they appear
+CONST_DEC_PART (7)
+    on left: 1
+CONST_DEC_LIST (8)
+    on left: 2 3, on right: 1 3
+CONST_DEC (9)
+    on left: 5, on right: 2 3
+@1 (10)
+    on left: 4, on right: 5
+state 0
+    $default	reduce using rule 4 (@1)
+    CONST_DEC_PART	go to state 9
+    CONST_DEC_LIST	go to state 1
+    CONST_DEC	go to state 2
+    @1  	go to state 3
+state 1
+    CONST_DEC_PART  ->  CONST_DEC_LIST .   (rule 1)
+    CONST_DEC_LIST  ->  CONST_DEC_LIST . CONST_DEC   (rule 3)
+    undef_id_tok	reduce using rule 4 (@1)
+    $default	reduce using rule 1 (CONST_DEC_PART)
+    CONST_DEC	go to state 4
+    @1  	go to state 3
+state 2
+    CONST_DEC_LIST  ->  CONST_DEC .   (rule 2)
+    $default	reduce using rule 2 (CONST_DEC_LIST)
+state 3
+    CONST_DEC  ->  @1 . undef_id_tok '=' const_id_tok ';'   (rule 5)
+    undef_id_tok	shift, and go to state 5
+state 4
+    CONST_DEC_LIST  ->  CONST_DEC_LIST CONST_DEC .   (rule 3)
+    $default	reduce using rule 3 (CONST_DEC_LIST)
+state 5
+    CONST_DEC  ->  @1 undef_id_tok . '=' const_id_tok ';'   (rule 5)
+    '=' 	shift, and go to state 6
+state 6
+    CONST_DEC  ->  @1 undef_id_tok '=' . const_id_tok ';'   (rule 5)
+    const_id_tok	shift, and go to state 7
+state 7
+    CONST_DEC  ->  @1 undef_id_tok '=' const_id_tok . ';'   (rule 5)
+    ';' 	shift, and go to state 8
+state 8
+    CONST_DEC  ->  @1 undef_id_tok '=' const_id_tok ';' .   (rule 5)
+    $default	reduce using rule 5 (CONST_DEC)
+state 9
+    $   	go to state 10
+state 10
+    $   	go to state 11
+state 11
+    $default	accept
+]])
+
+AT_CLEANUP
+
+
+## --------------- ##
+## Web2c Actions.  ##
+## --------------- ##
+
+# The generation of the mapping `state -> action' was once wrong in
+# extremely specific situations.  web2c.y exhibits this situation.
+# Below is a stripped version of the grammar.  It looks like one can
+# simplify it further, but just don't: it is tuned to exhibit a bug,
+# which disapears when applying sane grammar transformations.
+#
+# It used to be wrong on yydefact only:
+#
+# static const short yydefact[] =
+#  {
+# -       2,     0,     1,     0,     0,     2,     3,     2,     5,     4,
+# +       2,     0,     1,     0,     0,     0,     3,     2,     5,     4,
+#         0,     0
+#  };
+#
+# but let's check all the tables.
+
+
+AT_SETUP([Web2c Actions])
+
+AT_DATA([input.y],
+[[%%
+statement:  struct_stat;
+struct_stat:  /* empty. */ | if else;
+if: "if" "const" "then" statement;
+else: "else" statement;
+%%
+]])
+
+AT_CHECK([bison -v input.y -o input.c])
+
+# Check only the tables.  We don't use --no-parser, because it is
+# still to be implemented in the experimental branch of Bison.
+AT_CHECK([[sed -n 's/  *$//;/^static const.*\[\] =/,/^}/p' input.c]], 0,
+[[static const char yytranslate[] =
+{
+       0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     1,     3,     4,     5,
+       6
+};
+static const short yyprhs[] =
+{
+       0,     0,     2,     3,     6,    11
+};
+static const short yyrhs[] =
+{
+       8,     0,     0,     9,    10,     0,     3,     4,     5,     7,
+       0,     6,     7,     0
+};
+static const short yyrline[] =
+{
+       0,     2,     3,     3,     4,     5
+};
+static const char *const yytname[] =
+{
+  "$", "error", "$undefined.", "\"if\"", "\"const\"", "\"then\"",
+  "\"else\"", "statement", "struct_stat", "if", "else", 0
+};
+static const short yyr1[] =
+{
+       0,     7,     8,     8,     9,    10
+};
+static const short yyr2[] =
+{
+       0,     1,     0,     2,     4,     2
+};
+static const short yydefact[] =
+{
+       2,     0,     1,     0,     0,     2,     3,     2,     5,     4,
+       0,     0,     0
+};
+static const short yydefgoto[] =
+{
+       8,     2,     3,     6
+};
+static const short yypact[] =
+{
+      -2,    -1,-32768,    -4,     1,    -2,-32768,    -2,-32768,-32768,
+       4,     5,-32768
+};
+static const short yypgoto[] =
+{
+       0,-32768,-32768,-32768
+};
+static const short yytable[] =
+{
+      10,     1,     5,     4,    11,    12,     7,     9
+};
+static const short yycheck[] =
+{
+       0,     3,     6,     4,     0,     0,     5,     7
+};
+]])
+
+AT_CLEANUP

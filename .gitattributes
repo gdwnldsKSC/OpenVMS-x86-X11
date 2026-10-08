@@ -1,6 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# Preserve the independently acquired GNU Bison distribution byte-for-byte.
+extras/bison/** -text
+
 # Native DCL stream-LF procedures must not acquire trailing carriage returns.
 VMS-SUPPORT/**/*.COM text eol=lf
 VMS-SUPPORT/**/*.MMS text eol=lf

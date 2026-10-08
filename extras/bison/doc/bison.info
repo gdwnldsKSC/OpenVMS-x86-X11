@@ -1,0 +1,147 @@
+Ceci est le fichier Info bison.info, produit par Makeinfo version 4.0j
+à partir bison.texinfo.
+
+START-INFO-DIR-ENTRY
+* bison: (bison).	GNU Project parser generator (yacc replacement).
+END-INFO-DIR-ENTRY
+
+   This file documents the Bison parser generator.
+
+   Copyright (C) 1988, 1989, 1990, 1991, 1992, 1993, 1995, 1998, 1999,
+2000, 2001 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the sections entitled "GNU General Public License" and "Conditions
+for Using Bison" are included exactly as in the original, and provided
+that the entire resulting derived work is distributed under the terms
+of a permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the sections entitled "GNU General Public
+License", "Conditions for Using Bison" and this permission notice may be
+included in translations approved by the Free Software Foundation
+instead of in the original English.
+
+
+Indirect:
+bison.info-1: 1313
+bison.info-2: 51174
+bison.info-3: 100937
+bison.info-4: 147975
+bison.info-5: 197423
+bison.info-6: 235018
+
+Tag Table:
+(Indirect)
+Node: Top1313
+Node: Introduction9105
+Node: Conditions10379
+Node: Copying11843
+Node: Concepts31046
+Node: Language and Grammar32125
+Node: Grammar in Bison37083
+Node: Semantic Values39007
+Node: Semantic Actions41108
+Node: Locations Overview42297
+Node: Bison Parser43744
+Node: Stages46462
+Node: Grammar Layout47745
+Node: Examples49002
+Node: RPN Calc50200
+Node: Rpcalc Decls51174
+Node: Rpcalc Rules52761
+Node: Rpcalc Input54561
+Node: Rpcalc Line56022
+Node: Rpcalc Expr57137
+Node: Rpcalc Lexer59082
+Node: Rpcalc Main61654
+Node: Rpcalc Error62052
+Node: Rpcalc Gen63060
+Node: Rpcalc Compile64209
+Node: Infix Calc65084
+Node: Simple Error Recovery67791
+Node: Location Tracking Calc69680
+Node: Ltcalc Decls70362
+Node: Ltcalc Rules71255
+Node: Ltcalc Lexer73265
+Node: Multi-function Calc75591
+Node: Mfcalc Decl77158
+Node: Mfcalc Rules79181
+Node: Mfcalc Symtab80561
+Node: Exercises86934
+Node: Grammar File87440
+Node: Grammar Outline88288
+Node: C Declarations89022
+Node: Bison Declarations89602
+Node: Grammar Rules90014
+Node: C Code90474
+Node: Symbols91404
+Node: Rules96485
+Node: Recursion98124
+Node: Semantics99843
+Node: Value Type100937
+Node: Multiple Types101609
+Node: Actions102626
+Node: Action Types105411
+Node: Mid-Rule Actions106714
+Node: Locations112284
+Node: Location Type112932
+Node: Actions and Locations113490
+Node: Location Default Action115646
+Node: Declarations117109
+Node: Token Decl118428
+Node: Precedence Decl120441
+Node: Union Decl121992
+Node: Type Decl122836
+Node: Expect Decl123742
+Node: Start Decl125310
+Node: Pure Decl125688
+Node: Decl Summary127365
+Node: Multiple Parsers133509
+Node: Interface135003
+Node: Parser Function135875
+Node: Lexical136710
+Node: Calling Convention138116
+Node: Token Values140887
+Node: Token Positions142036
+Node: Pure Calling142921
+Node: Error Reporting145853
+Node: Action Features147975
+Node: Algorithm151270
+Node: Look-Ahead153563
+Node: Shift/Reduce155695
+Node: Precedence158607
+Node: Why Precedence159258
+Node: Using Precedence161123
+Node: Precedence Examples162091
+Node: How Precedence162792
+Node: Contextual Precedence163941
+Node: Parser States165732
+Node: Reduce/Reduce166975
+Node: Mystery Conflicts170536
+Node: Stack Overflow173922
+Node: Error Recovery175295
+Node: Context Dependency180431
+Node: Semantic Tokens181279
+Node: Lexical Tie-ins184296
+Node: Tie-in Recovery185844
+Node: Debugging188016
+Node: Invocation191620
+Node: Bison Options193009
+Node: Environment Variables196575
+Node: Option Cross Key197423
+Node: Extension Limitations Under DOS198318
+Node: VMS Invocation199873
+Node: Table of Symbols200672
+Node: Glossary208640
+Node: Copying This Manual214944
+Node: GNU Free Documentation License215153
+Node: Index235018
+
+End Tag Table

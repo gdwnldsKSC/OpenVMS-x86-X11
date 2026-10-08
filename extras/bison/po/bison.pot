@@ -1,0 +1,706 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2002-03-20 09:33+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: src/LR0.c:189
+#, c-format
+msgid "too many states (max %d)"
+msgstr ""
+
+#: src/complain.c:99 lib/error.c:128 lib/error.c:156
+msgid "Unknown system error"
+msgstr ""
+
+#: src/complain.c:150
+msgid "warning: "
+msgstr ""
+
+#: src/complain.c:238
+msgid "fatal error: "
+msgstr ""
+
+#: src/conflicts.c:44
+#, c-format
+msgid "Conflict in state %d between rule %d and token %s resolved as %s.\n"
+msgstr ""
+
+#: src/conflicts.c:94 src/conflicts.c:119
+msgid "reduce"
+msgstr ""
+
+#: src/conflicts.c:101 src/conflicts.c:115
+msgid "shift"
+msgstr ""
+
+#: src/conflicts.c:123
+msgid "an error"
+msgstr ""
+
+#: src/conflicts.c:302
+#, c-format
+msgid "%d shift/reduce conflict"
+msgid_plural "%d shift/reduce conflicts"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/conflicts.c:309
+msgid "and"
+msgstr ""
+
+#: src/conflicts.c:315
+#, c-format
+msgid "%d reduce/reduce conflict"
+msgid_plural "%d reduce/reduce conflicts"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/conflicts.c:340
+#, c-format
+msgid "State %d contains "
+msgstr ""
+
+#: src/conflicts.c:387
+msgid "conflicts: "
+msgstr ""
+
+#: src/conflicts.c:389
+#, c-format
+msgid " %d shift/reduce"
+msgstr ""
+
+#: src/conflicts.c:393
+#, c-format
+msgid " %d reduce/reduce"
+msgstr ""
+
+#: src/conflicts.c:398 src/reduce.c:508
+#, c-format
+msgid "%s contains "
+msgstr ""
+
+#: src/conflicts.c:412
+#, c-format
+msgid "expected %d shift/reduce conflict\n"
+msgid_plural "expected %d shift/reduce conflicts\n"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/conflicts.c:463 src/conflicts.c:540
+#, c-format
+msgid "    %-4s\t[reduce using rule %d (%s)]\n"
+msgstr ""
+
+#: src/conflicts.c:467 src/print.c:154
+#, c-format
+msgid ""
+"    $default\treduce using rule %d (%s)\n"
+"\n"
+msgstr ""
+
+#: src/conflicts.c:521 src/conflicts.c:534
+#, c-format
+msgid "    %-4s\treduce using rule %d (%s)\n"
+msgstr ""
+
+#: src/conflicts.c:550
+#, c-format
+msgid "    $default\treduce using rule %d (%s)\n"
+msgstr ""
+
+#: src/files.c:151
+#, c-format
+msgid "cannot open file `%s'"
+msgstr ""
+
+#: src/files.c:170
+msgid "cannot close file"
+msgstr ""
+
+#: src/getargs.c:84
+msgid "GNU bison generates parsers for LALR(1) grammars.\n"
+msgstr ""
+
+#: src/getargs.c:88
+#, c-format
+msgid "Usage: %s [OPTION]... FILE\n"
+msgstr ""
+
+#: src/getargs.c:92
+msgid ""
+"If a long option shows an argument as mandatory, then it is mandatory\n"
+"for the equivalent short option also.  Similarly for optional arguments.\n"
+msgstr ""
+
+#: src/getargs.c:98
+msgid ""
+"Operation modes:\n"
+"  -h, --help      display this help and exit\n"
+"  -V, --version   output version information and exit\n"
+"  -y, --yacc      emulate POSIX yacc\n"
+msgstr ""
+
+#: src/getargs.c:105
+msgid ""
+"Parser:\n"
+"  -S, --skeleton=FILE        specify the skeleton to use\n"
+"  -t, --debug                instrument the parser for debugging\n"
+"      --locations            enable locations computation\n"
+"  -p, --name-prefix=PREFIX   prepend PREFIX to the external symbols\n"
+"  -l, --no-lines             don't generate `#line' directives\n"
+"  -n, --no-parser            generate the tables only\n"
+"  -k, --token-table          include a table of token names\n"
+msgstr ""
+
+#: src/getargs.c:117
+msgid ""
+"Output:\n"
+"  -d, --defines              also produce a header file\n"
+"  -v, --verbose              also produce an explanation of the automaton\n"
+"  -b, --file-prefix=PREFIX   specify a PREFIX for output files\n"
+"  -o, --output=FILE          leave output to FILE\n"
+"  -g, --graph                also produce a VCG description of the "
+"automaton\n"
+msgstr ""
+
+#: src/getargs.c:127
+msgid "Report bugs to <bug-bison@gnu.org>.\n"
+msgstr ""
+
+#: src/getargs.c:141
+#, c-format
+msgid "bison (GNU Bison) %s"
+msgstr ""
+
+#: src/getargs.c:146
+msgid ""
+"Copyright 1984, 1986, 1989, 1992, 2000, 2001, 2002\n"
+"Free Software Foundation, Inc.\n"
+msgstr ""
+
+#: src/getargs.c:151
+msgid ""
+"This is free software; see the source for copying conditions.  There is NO\n"
+"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
+msgstr ""
+
+#: src/getargs.c:230 src/lex.c:705
+#, c-format
+msgid "`%s' is no longer supported"
+msgstr ""
+
+#: src/getargs.c:254
+#, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr ""
+
+#: src/getargs.c:261
+#, c-format
+msgid "%s: no grammar file given\n"
+msgstr ""
+
+#: src/getargs.c:265
+#, c-format
+msgid "%s: extra arguments ignored after `%s'\n"
+msgstr ""
+
+#: src/lalr.c:256
+#, c-format
+msgid "too many gotos (max %d)"
+msgstr ""
+
+#: src/lex.c:76
+msgid "unexpected `/' found and ignored"
+msgstr ""
+
+#: src/lex.c:105 src/reader.c:280
+msgid "unterminated comment"
+msgstr ""
+
+#: src/lex.c:137
+msgid "unexpected end of file"
+msgstr ""
+
+#: src/lex.c:166
+msgid "unescaped newline in constant"
+msgstr ""
+
+#: src/lex.c:208
+#, c-format
+msgid "octal value outside range 0...255: `\\%o'"
+msgstr ""
+
+#: src/lex.c:233
+#, c-format
+msgid "hexadecimal value above 255: `\\x%x'"
+msgstr ""
+
+#: src/lex.c:245
+#, c-format
+msgid "unknown escape sequence: `\\' followed by `%s'"
+msgstr ""
+
+#: src/lex.c:342
+msgid "unterminated type name at end of file"
+msgstr ""
+
+#: src/lex.c:345
+msgid "unterminated type name"
+msgstr ""
+
+#: src/lex.c:438
+msgid "use \"...\" for multi-character literal tokens"
+msgstr ""
+
+#: src/lex.c:678
+#, c-format
+msgid "`%s' supports no argument: %s"
+msgstr ""
+
+#: src/lex.c:694
+#, c-format
+msgid "`%s' requires an argument"
+msgstr ""
+
+#: src/output.c:951
+#, c-format
+msgid "maximum table size (%d) exceeded"
+msgstr ""
+
+#: src/print.c:39
+#, c-format
+msgid " type %d is %s\n"
+msgstr ""
+
+#: src/print.c:88
+#, c-format
+msgid "   (rule %d)"
+msgstr ""
+
+#: src/print.c:108
+msgid "    $default\taccept\n"
+msgstr ""
+
+#: src/print.c:110
+msgid "    NO ACTIONS\n"
+msgstr ""
+
+#: src/print.c:124
+#, c-format
+msgid "    $   \tgo to state %d\n"
+msgstr ""
+
+#: src/print.c:127
+#, c-format
+msgid "    %-4s\tshift, and go to state %d\n"
+msgstr ""
+
+#: src/print.c:142
+#, c-format
+msgid "    %-4s\terror (nonassociative)\n"
+msgstr ""
+
+#: src/print.c:169
+#, c-format
+msgid "    %-4s\tgo to state %d\n"
+msgstr ""
+
+#: src/print.c:180
+#, c-format
+msgid "state %d"
+msgstr ""
+
+#: src/print.c:211
+msgid "Grammar"
+msgstr ""
+
+#: src/print.c:212
+msgid "Number, Line, Rule"
+msgstr ""
+
+#: src/print.c:217
+#, c-format
+msgid "  %3d %3d %s ->"
+msgstr ""
+
+#: src/print.c:224
+msgid "empty"
+msgstr ""
+
+#: src/print.c:231
+msgid "Terminals, with rules where they appear"
+msgstr ""
+
+#: src/print.c:256
+msgid "Nonterminals, with rules where they appear"
+msgstr ""
+
+#: src/print.c:282
+msgid " on left:"
+msgstr ""
+
+#: src/print.c:297
+msgid " on right:"
+msgstr ""
+
+#: src/print_graph.c:146
+#, c-format
+msgid "%-4s\terror (nonassociative)"
+msgstr ""
+
+#: src/print_graph.c:161
+#, c-format
+msgid "$default\treduce using rule %d (%s)"
+msgstr ""
+
+#: src/reader.c:89
+msgid "   Skipping to next \\n"
+msgstr ""
+
+#: src/reader.c:91
+#, c-format
+msgid "   Skipping to next %c"
+msgstr ""
+
+#: src/reader.c:142 src/reader.c:154
+msgid "invalid $ value"
+msgstr ""
+
+#: src/reader.c:180 src/reader.c:195
+msgid "unterminated string at end of file"
+msgstr ""
+
+#: src/reader.c:183
+msgid "unterminated string"
+msgstr ""
+
+#: src/reader.c:339
+msgid "invalid @ value"
+msgstr ""
+
+#: src/reader.c:352 src/reader.c:416
+#, c-format
+msgid "%s is invalid"
+msgstr ""
+
+#: src/reader.c:392
+#, c-format
+msgid "$$ of `%s' has no declared type"
+msgstr ""
+
+#: src/reader.c:409
+#, c-format
+msgid "$%d of `%s' has no declared type"
+msgstr ""
+
+#: src/reader.c:463
+msgid "unterminated `%{' definition"
+msgstr ""
+
+#: src/reader.c:508 src/reader.c:623 src/reader.c:673
+#, c-format
+msgid "Premature EOF after %s"
+msgstr ""
+
+#: src/reader.c:525
+#, c-format
+msgid "symbol `%s' used more than once as a literal string"
+msgstr ""
+
+#: src/reader.c:528
+#, c-format
+msgid "symbol `%s' given more than one literal string"
+msgstr ""
+
+#: src/reader.c:549 src/reader.c:692
+#, c-format
+msgid "symbol %s redefined"
+msgstr ""
+
+#: src/reader.c:559 src/reader.c:638 src/reader.c:699 src/reader.c:1315
+#, c-format
+msgid "type redeclaration for %s"
+msgstr ""
+
+#: src/reader.c:568
+#, c-format
+msgid "`%s' is invalid in %s"
+msgstr ""
+
+#: src/reader.c:586 src/reader.c:752
+#, c-format
+msgid "multiple %s declarations"
+msgstr ""
+
+#: src/reader.c:588 src/reader.c:931 src/reader.c:956 src/reader.c:1293
+#, c-format
+msgid "invalid %s declaration"
+msgstr ""
+
+#: src/reader.c:608
+msgid "%type declaration has no <typename>"
+msgstr ""
+
+#: src/reader.c:643
+#, c-format
+msgid "invalid %%type declaration due to item: %s"
+msgstr ""
+
+#: src/reader.c:688
+#, c-format
+msgid "redefining precedence of %s"
+msgstr ""
+
+#: src/reader.c:711
+#, c-format
+msgid "invalid text (%s) - number should be after identifier"
+msgstr ""
+
+#: src/reader.c:721
+#, c-format
+msgid "unexpected item: %s"
+msgstr ""
+
+#: src/reader.c:795 src/reader.c:1127 src/reader.c:1204
+#, c-format
+msgid "unmatched %s"
+msgstr ""
+
+#: src/reader.c:827
+#, c-format
+msgid "argument of %%expect is not an integer"
+msgstr ""
+
+#: src/reader.c:873
+#, c-format
+msgid "unrecognized item %s, expected an identifier"
+msgstr ""
+
+#: src/reader.c:895
+#, c-format
+msgid "expected string constant instead of %s"
+msgstr ""
+
+#: src/reader.c:1043
+#, c-format
+msgid "unrecognized: %s"
+msgstr ""
+
+#: src/reader.c:1048
+msgid "no input grammar"
+msgstr ""
+
+#: src/reader.c:1053
+#, c-format
+msgid "unknown character: %s"
+msgstr ""
+
+#: src/reader.c:1227
+#, c-format
+msgid "unterminated %guard clause"
+msgstr ""
+
+#: src/reader.c:1380
+msgid "ill-formed rule: initial symbol not followed by colon"
+msgstr ""
+
+#: src/reader.c:1387
+msgid "grammar starts with vertical bar"
+msgstr ""
+
+#: src/reader.c:1415
+#, c-format
+msgid "rule given for %s, which is a token"
+msgstr ""
+
+#: src/reader.c:1445 src/reader.c:1557
+msgid "previous rule lacks an ending `;'"
+msgstr ""
+
+#: src/reader.c:1518
+msgid "two @prec's in a row"
+msgstr ""
+
+#: src/reader.c:1526
+#, c-format
+msgid "%%guard present but %%semantic_parser not specified"
+msgstr ""
+
+#: src/reader.c:1535
+msgid "two actions at end of one rule"
+msgstr ""
+
+#: src/reader.c:1549
+#, c-format
+msgid "type clash (`%s' `%s') on default action"
+msgstr ""
+
+#: src/reader.c:1555
+msgid "empty rule for typed nonterminal, and no action"
+msgstr ""
+
+#: src/reader.c:1601
+#, c-format
+msgid "invalid input: %s"
+msgstr ""
+
+#: src/reader.c:1609
+#, c-format
+msgid "too many symbols (tokens plus nonterminals); maximum %d"
+msgstr ""
+
+#: src/reader.c:1612
+msgid "no rules in the input grammar"
+msgstr ""
+
+#: src/reader.c:1640
+#, c-format
+msgid "symbol %s is used, but is not defined as a token and has no rules"
+msgstr ""
+
+#: src/reader.c:1775
+#, c-format
+msgid "tokens %s and %s both assigned number %d"
+msgstr ""
+
+#: src/reader.c:1828
+#, c-format
+msgid "conflicting precedences for %s and %s"
+msgstr ""
+
+#: src/reader.c:1840
+#, c-format
+msgid "conflicting assoc values for %s and %s"
+msgstr ""
+
+#: src/reader.c:1879
+#, c-format
+msgid "the start symbol %s is undefined"
+msgstr ""
+
+#: src/reader.c:1881
+#, c-format
+msgid "the start symbol %s is a token"
+msgstr ""
+
+#: src/reduce.c:409
+msgid "Useless nonterminals:"
+msgstr ""
+
+#: src/reduce.c:422
+msgid "Terminals which are not used:"
+msgstr ""
+
+#: src/reduce.c:433
+msgid "Useless rules:"
+msgstr ""
+
+#: src/reduce.c:503
+#, c-format
+msgid "%d rule never reduced\n"
+msgid_plural "%d rules never reduced\n"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/reduce.c:511
+#, c-format
+msgid "%d useless nonterminal"
+msgid_plural "%d useless nonterminals"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/reduce.c:517
+msgid " and "
+msgstr ""
+
+#: src/reduce.c:520
+#, c-format
+msgid "%d useless rule"
+msgid_plural "%d useless rules"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/reduce.c:551
+#, c-format
+msgid "Start symbol %s does not derive any sentence"
+msgstr ""
+
+#: lib/getopt.c:694
+#, c-format
+msgid "%s: option `%s' is ambiguous\n"
+msgstr ""
+
+#: lib/getopt.c:719
+#, c-format
+msgid "%s: option `--%s' doesn't allow an argument\n"
+msgstr ""
+
+#: lib/getopt.c:724
+#, c-format
+msgid "%s: option `%c%s' doesn't allow an argument\n"
+msgstr ""
+
+#: lib/getopt.c:742 lib/getopt.c:915
+#, c-format
+msgid "%s: option `%s' requires an argument\n"
+msgstr ""
+
+#: lib/getopt.c:771
+#, c-format
+msgid "%s: unrecognized option `--%s'\n"
+msgstr ""
+
+#: lib/getopt.c:775
+#, c-format
+msgid "%s: unrecognized option `%c%s'\n"
+msgstr ""
+
+#: lib/getopt.c:801
+#, c-format
+msgid "%s: illegal option -- %c\n"
+msgstr ""
+
+#: lib/getopt.c:804
+#, c-format
+msgid "%s: invalid option -- %c\n"
+msgstr ""
+
+#: lib/getopt.c:834 lib/getopt.c:964
+#, c-format
+msgid "%s: option requires an argument -- %c\n"
+msgstr ""
+
+#: lib/getopt.c:881
+#, c-format
+msgid "%s: option `-W %s' is ambiguous\n"
+msgstr ""
+
+#: lib/getopt.c:899
+#, c-format
+msgid "%s: option `-W %s' doesn't allow an argument\n"
+msgstr ""
+
+#: lib/obstack.c:494 lib/obstack.c:497 lib/xmalloc.c:66
+msgid "memory exhausted"
+msgstr ""
+
+#: lib/quotearg.c:274
+msgid "`"
+msgstr ""
+
+#: lib/quotearg.c:275
+msgid "'"
+msgstr ""

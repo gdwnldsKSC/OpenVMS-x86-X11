@@ -1,0 +1,264 @@
+Bison News
+----------
+
+Changes in version 1.35, 2002-03-25:
+
+* C Skeleton
+  Some projects use Bison's C parser with C++ compilers, and define
+  YYSTYPE as a class.  The recent adjustment of C parsers for data
+  alignment and 64 bit architectures made this impossible.
+
+  Because for the time being no real solution for C++ parser
+  generation exists, kludges were implemented in the parser to
+  maintain this use.  In the future, when Bison has C++ parsers, this
+  kludge will be disabled.
+
+  This kludge also addresses some C++ problems when the stack was
+  extended.
+
+
+Changes in version 1.34, 2002-03-12:
+
+* File name clashes are detected
+  $ bison foo.y -d -o foo.x
+  fatal error: header and parser would both be named `foo.x'
+
+* A missing `;' at the end of a rule triggers a warning
+  In accordance with POSIX, and in agreement with other
+  Yacc implementations, Bison will mandate this semicolon in the near
+  future.  This eases the implementation of a Bison parser of Bison
+  grammars by making this grammar LALR(1) instead of LR(2).  To
+  facilitate the transition, this release introduces a warning.
+
+* Revert the C++ namespace changes introduced in 1.31, as they caused too
+  many portability hassles.
+
+* DJGPP support added.
+
+* Fix test suite portability problems.
+
+Changes in version 1.33, 2002-02-07:
+
+* Fix C++ issues
+  Groff could not be compiled for the definition of size_t was lacking
+  under some conditions.
+
+* Catch invalid @n
+  As is done with $n.
+
+Changes in version 1.32, 2002-01-23:
+
+* Fix Yacc output file names
+
+* Portability fixes
+
+* Italian, Dutch translations
+
+Changes in version 1.31, 2002-01-14:
+
+* Many Bug Fixes
+
+* GNU Gettext and %expect
+  GNU Gettext asserts 10 s/r conflicts, but there are 7.  Now that
+  Bison dies on incorrect %expectations, we fear there will be
+  too many bug reports for Gettext, so _for the time being_, %expect
+  does not trigger an error when the input file is named `plural.y'.
+
+* Use of alloca in parsers
+  If YYSTACK_USE_ALLOCA is defined to 0, then the parsers will use
+  malloc exclusively.  Since 1.29, but was not NEWS'ed.
+
+  alloca is used only when compiled with GCC, to avoid portability
+  problems as on AIX.
+
+* When the generated parser lacks debugging code, YYDEBUG is now 0
+  (as POSIX requires) instead of being undefined.
+
+* User Actions
+  Bison has always permitted actions such as { $$ = $1 }: it adds the
+  ending semicolon.  Now if in Yacc compatibility mode, the semicolon
+  is no longer output: one has to write { $$ = $1; }.
+
+* Better C++ compliance
+  The output parsers try to respect C++ namespaces.
+  [This turned out to be a failed experiment, and it was reverted later.]
+
+* Reduced Grammars
+  Fixed bugs when reporting useless nonterminals.
+
+* 64 bit hosts
+  The parsers work properly on 64 bit hosts.
+
+* Error messages
+  Some calls to strerror resulted in scrambled or missing error messages.
+
+* %expect
+  When the number of shift/reduce conflicts is correct, don't issue
+  any warning.
+
+* The verbose report includes the rule line numbers.
+
+* Rule line numbers are fixed in traces.
+
+* Swedish translation
+
+* Parse errors
+  Verbose parse error messages from the parsers are better looking.
+  Before: parse error: unexpected `'/'', expecting `"number"' or `'-'' or `'(''
+     Now: parse error: unexpected '/', expecting "number" or '-' or '('
+
+* Fixed parser memory leaks.
+  When the generated parser was using malloc to extend its stacks, the
+  previous allocations were not freed.
+
+* Fixed verbose output file.
+  Some newlines were missing.
+  Some conflicts in state descriptions were missing.
+
+* Fixed conflict report.
+  Option -v was needed to get the result.
+
+* %expect
+  Was not used.
+  Mismatches are errors, not warnings.
+
+* Fixed incorrect processing of some invalid input.
+
+* Fixed CPP guards: 9foo.h uses BISON_9FOO_H instead of 9FOO_H.
+
+* Fixed some typos in the documentation.
+
+* %token MY_EOF 0 is supported.
+  Before, MY_EOF was silently renumbered as 257.
+
+* doc/refcard.tex is updated.
+
+* %output, %file-prefix, %name-prefix.
+  New.
+
+* --output
+  New, aliasing `--output-file'.
+
+Changes in version 1.30, 2001-10-26:
+
+* `--defines' and `--graph' have now an optionnal argument which is the
+  output file name. `-d' and `-g' do not change, they do not take any
+  argument.
+
+* `%source_extension' and `%header_extension' are removed, failed
+  experiment.
+
+* Portability fixes.
+
+Changes in version 1.29, 2001-09-07:
+
+* The output file does not define const, as this caused problems when used
+  with common autoconfiguration schemes.  If you still use ancient compilers
+  that lack const, compile with the equivalent of the C compiler option
+  `-Dconst='.  autoconf's AC_C_CONST macro provides one way to do this.
+
+* Added `-g' and `--graph'.
+
+* The Bison manual is now distributed under the terms of the GNU FDL.
+
+* The input and the output files has automatically a similar extension.
+
+* Russian translation added.
+
+* NLS support updated; should hopefully be less troublesome.
+
+* Added the old Bison reference card.
+
+* Added `--locations' and `%locations'.
+
+* Added `-S' and `--skeleton'.
+
+* `%raw', `-r', `--raw' is disabled.
+
+* Special characters are escaped when output.  This solves the problems
+  of the #line lines with path names including backslashes.
+
+* New directives.
+  `%yacc', `%fixed_output_files', `%defines', `%no_parser', `%verbose',
+  `%debug', `%source_extension' and `%header_extension'.
+
+* @$
+  Automatic location tracking.
+
+Changes in version 1.28, 1999-07-06:
+
+* Should compile better now with K&R compilers.
+
+* Added NLS.
+
+* Fixed a problem with escaping the double quote character.
+
+* There is now a FAQ.
+
+Changes in version 1.27:
+
+* The make rule which prevented bison.simple from being created on
+  some systems has been fixed.
+
+Changes in version 1.26:
+
+* Bison now uses automake.
+
+* New mailing lists: <bug-bison@gnu.org> and <help-bison@gnu.org>.
+
+* Token numbers now start at 257 as previously documented, not 258.
+
+* Bison honors the TMPDIR environment variable.
+
+* A couple of buffer overruns have been fixed.
+
+* Problems when closing files should now be reported.
+
+* Generated parsers should now work even on operating systems which do
+  not provide alloca().
+
+Changes in version 1.25, 1995-10-16:
+
+* Errors in the input grammar are not fatal; Bison keeps reading
+the grammar file, and reports all the errors found in it.
+
+* Tokens can now be specified as multiple-character strings: for
+example, you could use "<=" for a token which looks like <=, instead
+of chosing a name like LESSEQ.
+
+* The %token_table declaration says to write a table of tokens (names
+and numbers) into the parser file.  The yylex function can use this
+table to recognize multiple-character string tokens, or for other
+purposes.
+
+* The %no_lines declaration says not to generate any #line preprocessor
+directives in the parser file.
+
+* The %raw declaration says to use internal Bison token numbers, not
+Yacc-compatible token numbers, when token names are defined as macros.
+
+* The --no-parser option produces the parser tables without including
+the parser engine; a project can now use its own parser engine.
+The actions go into a separate file called NAME.act, in the form of
+a switch statement body.
+
+Changes in version 1.23:
+
+The user can define YYPARSE_PARAM as the name of an argument to be
+passed into yyparse.  The argument should have type void *.  It should
+actually point to an object.  Grammar actions can access the variable
+by casting it to the proper pointer type.
+
+Line numbers in output file corrected.
+
+Changes in version 1.22:
+
+--help option added.
+
+Changes in version 1.20:
+
+Output file does not redefine const for C++.
+
+Local Variables:
+mode: outline
+End:

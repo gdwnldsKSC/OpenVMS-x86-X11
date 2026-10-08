@@ -15,7 +15,7 @@ $ targets = targets + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ targets = targets + "XEVIE|XFONTCACHE|DMX|XP|"
 $ targets = targets + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
 $ targets = targets + "X11|XAUTH|XDPYINFO|XWININFO|"
-$ targets = targets + "XSET|XMODMAP|XEV|XKBCOMP|XVFB|"
+$ targets = targets + "XSET|XMODMAP|XEV|BISON|XKBCOMP|XVFB|"
 $ targets = targets + "XT|XMU|MKFONTDIR|FONTS|FONTS_BDF|FONTS_MISC|FONTS_75DPI|FONTS_100DPI|FONTS_CYRILLIC|"
 $ targets = targets + "FONTS_ENCODINGS|FONTS_SCALED|FONTS_SPEEDO|FONTS_TYPE1|FONTS_TTF|FONTS_OTF|FONTS_CID|"
 $ targets = targets + "NLS|NLS_XLC_LOCALE|NLS_COMPOSE|X11_DATA|"
@@ -320,6 +320,10 @@ $ GOTO font_directory_loop
 $font_directories_done:
 $ directory = profile + ".NLS]"
 $ IF F$SEARCH(profile + "]NLS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".TOOLS]"
+$ IF F$SEARCH(profile + "]TOOLS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".TOOLS.BISON]"
+$ IF F$SEARCH(profile + ".TOOLS]BISON.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS
 $ GOTO done

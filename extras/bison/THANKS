@@ -1,0 +1,51 @@
+Bison was originally written by Robert Corbett.  It would not be what
+it is today without the invaluable help of these people:
+
+Airy Andre              Airy.Andre@edf.fr
+Akim Demaille           akim@freefriends.org
+Albert Chin-A-Young     china@thewrittenword.com
+Alexander Belopolsky    alexb@rentec.com
+Andreas Schwab          schwab@suse.de
+Arnold Robbins		arnold@skeeve.com
+Bruce Lilly             blilly@erols.com
+Cris van Pelt           cris@amf03054.office.wxs.nl
+Daniel Hagerty          hag@gnu.org
+David J. MacKenzie      djm@gnu.org
+Dick Streefland		dick.streefland@altium.nl
+Enrico Scholz           enrico.scholz@informatik.tu-chemnitz.de
+Evgeny Stambulchik	fnevgeny@plasma-gate.weizmann.ac.il
+Fabrice Bauzac          noon@cote-dazur.com
+Florian Krohm           florian@edamail.fishkill.ibm.com
+H. Merijn Brand         h.m.brand@hccnet.nl
+Hans Aberg              haberg@matematik.su.se
+Jesse Thilo             jthilo@gnu.org
+Jim Meyering            meyering@gnu.org
+Juan Manuel Guerrero    ST001906@HRZ1.HRZ.TU-Darmstadt.De
+Kees Zeelenberg         kzlg@users.sourceforge.net
+Keith Browne            kbrowne@legato.com
+Laurent Mascherpa       laurent.mascherpa@epita.fr
+Marc Autret             autret_m@epita.fr
+Mike Castle             dalgoda@ix.netcom.com
+Neil Booth              NeilB@earthling.net
+Nelson H. F. Beebe      beebe@math.utah.edu
+Noah Friedman           friedman@gnu.org
+Pascal Bart             pascal.bart@epita.fr
+Paul Eggert             eggert@twinsun.com
+Per Allansson           per@appgate.com
+Peter Hámorský          hamo@upjs.sk
+Piotr Gackiewicz        gacek@intertel.com.pl
+Richard Stallman        rms@gnu.org
+Robert Anisko           anisko_r@epita.fr
+Shura                   debil_urod@ngs.ru
+Tom Lane                tgl@sss.pgh.pa.us
+Tom Tromey              tromey@cygnus.com
+Wayne Green             wayne@infosavvy.com
+Wolfram Wagner          ww@mpi-sb.mpg.de
+Wwp                     subscript@free.fr
+
+Many people are not named here because we lost track of them.  We
+thank them!  Please, help us keeping this list up to date.
+
+Local Variables:
+mode: text
+End:

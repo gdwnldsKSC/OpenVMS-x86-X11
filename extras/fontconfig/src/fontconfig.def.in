@@ -53,7 +53,6 @@ EXPORTS
 	FcDirSave
 	FcDirScan
 	FcFileScan
-	FcFini
 	FcFontList
 	FcFontMatch
 	FcFontRenderPrepare
@@ -159,5 +158,5 @@ EXPORTS
 	FcValueEqual
 	FcValuePrint
 	FcValueSave
-LIBRARY libfontconfig-@LT_CURRENT_MINUS_AGE@.dll
+LIBRARY fontconfig
 VERSION @LT_CURRENT@.@LT_REVISION@

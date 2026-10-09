@@ -28,7 +28,7 @@ $ support = F$PARSE(procedure,,,"DEVICE") + F$PARSE(procedure,,,"DIRECTORY")
 $ SET DEFAULT 'support'
 $ SET DEFAULT [-]
 $ SET DEFAULT [-]
-$ IF F$SEARCH("[.INCLUDE]XFUNCPROTO.H") .EQS. "" THEN GOTO usage
+$ IF F$SEARCH("[.PROTO.XPROTO]XFUNCPROTO.H") .EQS. "" THEN GOTO usage
 $ root = F$PARSE(P1,,,"DEVICE","SYNTAX_ONLY") + F$PARSE(P1,,,"DIRECTORY","SYNTAX_ONLY")
 $ root_directory = F$PARSE(root,,,"DIRECTORY","SYNTAX_ONLY")
 $ IF root_directory .EQS. "[000000]" THEN GOTO usage
@@ -87,9 +87,6 @@ $ GOTO font_next
 $font_files_done:
 $ IF font_count .EQ. 0 THEN GOTO missing
 $ notices = "FONTS.ALIAS"
-$ IF (section .EQS. "75DPI") .OR. (section .EQS. "100DPI") THEN notices = notices + "|LU_LEGALNOTICE."
-$ IF section .EQS. "CYRILLIC" THEN notices = notices + "|COPYRIGHT."
-$ IF section .EQS. "MISC" THEN notices = notices + "|README.MISC|README.CLEARLYU|README.ARABIC24"
 $ notice_index = 0
 $notice_next:
 $ notice = F$ELEMENT(notice_index,"|",notices)
@@ -101,6 +98,23 @@ $ IF .NOT. (result .AND. 1) THEN GOTO done
 $ notice_index = notice_index + 1
 $ GOTO notice_next
 $notices_done:
+$ notice_patterns = "COPY*.*;0|README*.*;0|*LEGALNOTICE.*;0"
+$ pattern_index = 0
+$package_notice_pattern:
+$ notice_pattern = F$ELEMENT(pattern_index,"|",notice_patterns)
+$ IF notice_pattern .EQS. "|" THEN GOTO package_notices_done
+$ ignored = F$SEARCH("",3)
+$package_notice_next:
+$ input = F$SEARCH(source_directory + notice_pattern,3)
+$ IF input .EQS. "" THEN GOTO package_notice_next_pattern
+$ output = target_directory + F$PARSE(input,,,"NAME") + F$PARSE(input,,,"TYPE")
+$ GOSUB copy_file
+$ IF .NOT. (result .AND. 1) THEN GOTO done
+$ GOTO package_notice_next
+$package_notice_next_pattern:
+$ pattern_index = pattern_index + 1
+$ GOTO package_notice_pattern
+$package_notices_done:
 $ font_path = unix_root + "/FONTS/" + section + "/"
 $ ignored = F$SEARCH("",2)
 $ previous_index = F$SEARCH(target_directory + "FONTS.DIR;0",2)
@@ -133,7 +147,7 @@ $ IF .NOT. (result .AND. 1) THEN GOTO done
 $ database_index = database_index + 1
 $ GOTO database_next
 $databases_done:
-$ input = "[.PROGRAMS.RGB]RGB.TXT"
+$ input = "[.APP.RGB]RGB.TXT"
 $ output = xlib + "RGB.TXT"
 $ GOSUB copy_file
 $ IF .NOT. (result .AND. 1) THEN GOTO done

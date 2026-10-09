@@ -1,0 +1,71 @@
+2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version for X11R7 release.
+
+2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for final X11R7 release candidate.
+
+2005-12-06  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* man/Makefile.am:
+	Change *man_SOURCES ==> *man_PRE to fix autotools warnings.
+
+2005-12-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC3 release.
+
+2005-12-01  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Remove extraneous AC_MSG_RESULT.
+
+2005-11-30  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump libdrm dep to 2.0.
+
+2005-11-29  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Only build dlloader modules by default.
+
+2005-11-26  Thomas Hellstrom  <unichrome-at-shipmail-dot-org>
+
+	* src/xvmc/unichrome/Makefile.am:
+	* src/xvmc/unichromeProA/Makefile.am:
+	Bug #5067 <https://bugs.freedesktop.org/show_bug.cgi?id=5067>
+	Link libdrm to the via XvMC libraries. (Cedric Berger)
+
+2005-11-19  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update dependencies to work with separate build roots.
+
+2005-11-14  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/xvmc/Makefile.am:
+	Bug #5024: Move EXTRA_DIST outside the ifdef. (Juerg Billeter)
+
+	* configure.ac:
+	Bug #5048: Fix x86 check. (Cedric Berger)
+
+2005-11-09  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/xvmc/Makefile.am:
+	Don't build XvMC support on anything but x86 and amd64; require
+	libdrm 1.0.5 for DRI or XvMC support.
+
+2005-11-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC2 release.
+
+2005-11-01  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update pkgcheck dependencies to work with separate build roots.

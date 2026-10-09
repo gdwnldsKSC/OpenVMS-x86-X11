@@ -14,29 +14,6 @@
 
 @SET_MAKE@
 
-#
-# $Id: Makefile.in,v 1.3 2005/06/28 01:01:03 alanc Exp $
-#
-# Copyright © 2003 Keith Packard
-#
-# Permission to use, copy, modify, distribute, and sell this software and its
-# documentation for any purpose is hereby granted without fee, provided that
-# the above copyright notice appear in all copies and that both that
-# copyright notice and this permission notice appear in supporting
-# documentation, and that the name of Keith Packard not be used in
-# advertising or publicity pertaining to distribution of the software without
-# specific, written prior permission.  Keith Packard makes no
-# representations about the suitability of this software for any purpose.  It
-# is provided "as is" without express or implied warranty.
-#
-# KEITH PACKARD DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
-# INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
-# EVENT SHALL KEITH PACKARD BE LIABLE FOR ANY SPECIAL, INDIRECT OR
-# CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-# DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
-# TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-# PERFORMANCE OF THIS SOFTWARE.
-
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -69,16 +46,12 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-
-CC = @CC_FOR_BUILD@
+CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CC_FOR_BUILD = @CC_FOR_BUILD@
 CFLAGS = @CFLAGS@
 CONFDIR = @CONFDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CROSS_COMPILING_FALSE = @CROSS_COMPILING_FALSE@
-CROSS_COMPILING_TRUE = @CROSS_COMPILING_TRUE@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -87,9 +60,8 @@ CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
+
 DOCDIR = @DOCDIR@
-DOCMAN3 = @DOCMAN3@
-DOCSRC = @DOCSRC@
 ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -97,8 +69,7 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ENABLE_DOCS_FALSE = @ENABLE_DOCS_FALSE@
 ENABLE_DOCS_TRUE = @ENABLE_DOCS_TRUE@
-EXEEXT = @EXEEXT_FOR_BUILD@
-EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
+EXEEXT = @EXEEXT@
 EXPAT_CFLAGS = @EXPAT_CFLAGS@
 EXPAT_LIBS = @EXPAT_LIBS@
 F77 = @F77@
@@ -148,10 +119,7 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
-USEDOCBOOK_FALSE = @USEDOCBOOK_FALSE@
-USEDOCBOOK_TRUE = @USEDOCBOOK_TRUE@
 VERSION = @VERSION@
-WARN_CFLAGS = @WARN_CFLAGS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_AS = @ac_ct_AS@
 ac_ct_CC = @ac_ct_CC@
@@ -198,19 +166,15 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-
 DOC_SRC = $(srcdir)
 DOC_MODULE = fontconfig
 DOC2HTML = docbook2html
 DOC2TXT = docbook2txt
 DOC2MAN = docbook2man
-DOC2PDF = docbook2pdf
 
 TXT = fontconfig-user.txt fontconfig-devel.txt
-PDF = fontconfig-user.pdf fontconfig-devel.pdf
 HTML_FILES = fontconfig-user.html
-HTML_DIR = fontconfig-devel
+HTML_DIRS = fontconfig-devel
 SGML = fontconfig-user.sgml fontconfig-devel.sgml
 FNCS_TMPL = ${DOC_SRC}/func.sgml
 
@@ -252,30 +216,58 @@ DOC_FUNCS_SGML = \
 	fcvalue.sgml
 
 
-man5_MANS = fonts-conf.5 
-man3_MANS = $(DOCMAN3)
+man_MANS = fonts-conf.5 \
+FcAtomicCreate.3 FcAtomicDeleteNew.3 FcAtomicDestroy.3 FcAtomicLock.3 \
+FcAtomicNewFile.3 FcAtomicOrigFile.3 FcAtomicReplaceOrig.3 FcAtomicUnlock.3 \
+FcBlanksAdd.3 FcBlanksCreate.3 FcBlanksDestroy.3 FcBlanksIsMember.3 \
+FcCharSetAddChar.3 FcCharSetCopy.3 FcCharSetCount.3 FcCharSetCreate.3 \
+FcCharSetDestroy.3 FcCharSetEqual.3 FcCharSetFirstPage.3 FcCharSetHasChar.3 \
+FcCharSetIntersect.3 FcCharSetIntersectCount.3 FcCharSetIsSubset.3 \
+FcCharSetNextPage.3 FcCharSetSubtract.3 FcCharSetSubtractCount.3 \
+FcCharSetUnion.3 FcConfigAppFontAddDir.3 FcConfigAppFontAddFile.3 \
+FcConfigAppFontClear.3 FcConfigBuildFonts.3 FcConfigCreate.3 \
+FcConfigDestroy.3 FcConfigFilename.3 FcConfigGetBlanks.3 FcConfigGetCache.3 \
+FcConfigGetConfigDirs.3 FcConfigGetConfigFiles.3 FcConfigGetCurrent.3 \
+FcConfigGetFontDirs.3 FcConfigGetFonts.3 FcConfigGetRescanInverval.3 \
+FcConfigParseAndLoad.3 FcConfigSetCurrent.3 FcConfigSetRescanInverval.3 \
+FcConfigSubstitute.3 FcConfigSubstituteWithPat.3 FcConfigUptoDate.3 \
+FcDefaultSubstitute.3 FcDirCacheValid.3 FcDirSave.3 FcDirScan.3 FcFileScan.3 \
+FcFontList.3 FcFontMatch.3 FcFontRenderPrepare.3 FcFontSetAdd.3 \
+FcFontSetCreate.3 FcFontSetDestroy.3 FcFontSort.3 FcFreeTypeCharIndex.3 \
+FcFreeTypeCharSet.3 FcFreeTypeQuery.3 FcGetVersion.3 FcInit.3 \
+FcInitBringUptoDate.3 FcInitLoadConfig.3 FcInitLoadConfigAndFonts.3 \
+FcInitReinitialize.3 FcMatrixCopy.3 FcMatrixEqual.3 FcMatrixInit.3 \
+FcMatrixMultiply.3 FcMatrixRotate.3 FcMatrixScale.3 FcMatrixShear.3 \
+FcNameConstant.3 FcNameGetConstant.3 FcNameGetObjectType.3 FcNameParse.3 \
+FcNameRegisterConstants.3 FcNameRegisterObjectTypes.3 FcNameUnparse.3 \
+FcNameUnregisterConstants.3 FcNameUnregisterObjectTypes.3 FcObjectSetAdd.3 \
+FcObjectSetBuild.3 FcObjectSetCreate.3 FcObjectSetDestroy.3 \
+FcPatternAdd-Type.3 FcPatternAdd.3 FcPatternAddWeak.3 FcPatternBuild.3 \
+FcPatternCreate.3 FcPatternDel.3 FcPatternDestroy.3 FcPatternEqual.3 \
+FcPatternEqualSubset.3 FcPatternGet-Type.3 FcPatternGet.3 FcPatternHash.3 \
+FcPatternPrint.3 FcStrBasename.3 FcStrCmpIgnoreCase.3 FcStrCopy.3 \
+FcStrCopyFilename.3 FcStrDirname.3 FcStrListCreate.3 FcStrListDone.3 \
+FcStrListNext.3 FcStrSetAdd.3 FcStrSetAddFilename.3 FcStrSetCreate.3 \
+FcStrSetDel.3 FcStrSetDestroy.3 FcStrSetMember.3 FcUcs4ToUtf8.3 FcUtf16Len.3 \
+FcUtf16ToUcs4.3 FcUtf8Len.3 FcUtf8ToUcs4.3 FcValueDestroy.3 FcValueSave.3
+
 
 noinst_PROGRAMS = edit-sgml
 edit_sgml_SOURCES = edit-sgml.c
 
-docdir = @DOCDIR@
+DOC_FILES = $(TXT) $(HTML_FILES)
+DOC_DIRS = $(HTML_DIRS)
+LOCAL_DOCS = $(man_MANS) $(DOC_FILES) $(DOC_DIRS)
 
-DOC_FILES = $(TXT) $(PDF) $(HTML_FILES)
-LOCAL_DOCS = $(man3_MANS) $(man5_MANS) $(DOC_FILES) $(HTML_DIR)/*
-
-EXTRA_DIST = $(LOCAL_DOCS) $(SGML) $(DOC_FUNCS_FNCS) $(FNCS_TMPL) confdir.sgml.in
+EXTRA_DIST = $(LOCAL_DOCS) $(SGML) $(DOC_FUNCS_FNCS) $(FNCS_TMPL)
 
 SUFFIXES = .fncs .sgml .txt .html
 
-@USEDOCBOOK_TRUE@STRIPNL = awk '{ if (NR > 1) printf ("\n"); printf ("%s", $$0); }'
+@ENABLE_DOCS_TRUE@CLEANFILES = confdir.sgml local-fontconfig-user.sgml local-fontconfig-devel.sgml
 
-@USEDOCBOOK_TRUE@CLEANFILES = confdir.sgml local-fontconfig-user.sgml local-fontconfig-devel.sgml
+@ENABLE_DOCS_TRUE@BUILT_DOC_DIR = .
 
-htmldocdir = $(docdir)/$(HTML_DIR)
-
-doc_DATA = $(DOC_FILES)
-
-htmldoc_DATA = $(HTML_DIR)/*
+@ENABLE_DOCS_FALSE@BUILT_DOC_DIR = ${srcdir}
 subdir = doc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -299,19 +291,19 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 	$(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(edit_sgml_SOURCES)
 
 NROFF = nroff
-MANS = $(man3_MANS) $(man5_MANS)
-DATA = $(doc_DATA) $(htmldoc_DATA)
-
+MANS = $(man_MANS)
 DIST_COMMON = $(srcdir)/Makefile.in Makefile.am version.sgml.in
 SOURCES = $(edit_sgml_SOURCES)
 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .fncs .sgml .txt .html .c .lo .o .obj .pdf
+.SUFFIXES: .fncs .sgml .txt .html .c .lo .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  doc/Makefile
@@ -474,42 +466,6 @@ uninstall-man5:
 	  echo " rm -f $(DESTDIR)$(man5dir)/$$inst"; \
 	  rm -f $(DESTDIR)$(man5dir)/$$inst; \
 	done
-docDATA_INSTALL = $(INSTALL_DATA)
-install-docDATA: $(doc_DATA)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(docdir)
-	@list='$(doc_DATA)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(docDATA_INSTALL) $$d$$p $(DESTDIR)$(docdir)/$$f"; \
-	  $(docDATA_INSTALL) $$d$$p $(DESTDIR)$(docdir)/$$f; \
-	done
-
-uninstall-docDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(doc_DATA)'; for p in $$list; do \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(docdir)/$$f"; \
-	  rm -f $(DESTDIR)$(docdir)/$$f; \
-	done
-htmldocDATA_INSTALL = $(INSTALL_DATA)
-install-htmldocDATA: $(htmldoc_DATA)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(htmldocdir)
-	@list='$(htmldoc_DATA)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(htmldocDATA_INSTALL) $$d$$p $(DESTDIR)$(htmldocdir)/$$f"; \
-	  $(htmldocDATA_INSTALL) $$d$$p $(DESTDIR)$(htmldocdir)/$$f; \
-	done
-
-uninstall-htmldocDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(htmldoc_DATA)'; for p in $$list; do \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(htmldocdir)/$$f"; \
-	  rm -f $(DESTDIR)$(htmldocdir)/$$f; \
-	done
 
 ETAGS = etags
 ETAGSFLAGS =
@@ -570,7 +526,7 @@ top_distdir = ..
 distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 
 distdir: $(DISTFILES)
-	$(mkinstalldirs) $(distdir)/$(HTML_DIR) $(distdir)/${DOC_SRC}
+	$(mkinstalldirs) $(distdir)/${DOC_SRC}
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -599,10 +555,10 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) $(MANS) $(DATA) all-local
+all-am: Makefile $(PROGRAMS) $(MANS) all-local
 
 installdirs:
-	$(mkinstalldirs) $(DESTDIR)$(man3dir) $(DESTDIR)$(man5dir) $(DESTDIR)$(docdir) $(DESTDIR)$(htmldocdir)
+	$(mkinstalldirs) $(DESTDIR)$(man3dir) $(DESTDIR)$(man5dir)
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -647,7 +603,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-docDATA install-htmldocDATA install-man
+install-data-am: install-data-local install-man
 
 install-exec-am:
 
@@ -675,8 +631,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-docDATA uninstall-htmldocDATA uninstall-info-am \
-	uninstall-man
+uninstall-am: uninstall-info-am uninstall-man
 
 uninstall-man: uninstall-man3 uninstall-man5
 
@@ -685,93 +640,88 @@ uninstall-man: uninstall-man3 uninstall-man5
 	ctags distclean distclean-compile distclean-generic \
 	distclean-libtool distclean-tags distdir dvi dvi-am info \
 	info-am install install-am install-data install-data-am \
-	install-docDATA install-exec install-exec-am \
-	install-htmldocDATA install-info install-info-am install-man \
-	install-man3 install-man5 install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-docDATA \
-	uninstall-htmldocDATA uninstall-info-am uninstall-man \
-	uninstall-man3 uninstall-man5
+	install-data-local install-exec install-exec-am install-info \
+	install-info-am install-man install-man3 install-man5 \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool pdf \
+	pdf-am ps ps-am tags uninstall uninstall-am uninstall-info-am \
+	uninstall-man uninstall-man3 uninstall-man5
 
 
-@USEDOCBOOK_TRUE@.fncs.sgml:
-@USEDOCBOOK_TRUE@	$(RM) $@
-@USEDOCBOOK_TRUE@	./edit-sgml$(EXEEXT) $(FNCS_TMPL) < '$<' > $*.sgml
+@ENABLE_DOCS_TRUE@.fncs.sgml:
+@ENABLE_DOCS_TRUE@	$(RM) $@
+@ENABLE_DOCS_TRUE@	./edit-sgml $(FNCS_TMPL) < '$<' > $*.sgml
 
-@USEDOCBOOK_TRUE@.sgml.txt:
-@USEDOCBOOK_TRUE@	$(RM) $@
-@USEDOCBOOK_TRUE@	$(DOC2TXT) $<
+@ENABLE_DOCS_TRUE@.sgml.txt:
+@ENABLE_DOCS_TRUE@	$(RM) $@
+@ENABLE_DOCS_TRUE@	$(DOC2TXT) $<
 
-@USEDOCBOOK_TRUE@.sgml.pdf:
-@USEDOCBOOK_TRUE@	$(RM) $@
-@USEDOCBOOK_TRUE@	$(DOC2PDF) $<
+@ENABLE_DOCS_TRUE@$(man_MANS): func.refs
 
-@USEDOCBOOK_TRUE@$(man3_MANS): func.refs
+@ENABLE_DOCS_TRUE@func.refs: local-fontconfig-devel.sgml $(DOC_FUNCS_SGML) version.sgml
+@ENABLE_DOCS_TRUE@	$(RM) func.refs
+@ENABLE_DOCS_TRUE@	$(DOC2MAN) local-fontconfig-devel.sgml
+@ENABLE_DOCS_TRUE@	mv manpage.refs func.refs
+@ENABLE_DOCS_TRUE@	$(RM) manpage.links
 
-@USEDOCBOOK_TRUE@func.refs: local-fontconfig-devel.sgml $(DOC_FUNCS_SGML) version.sgml confdir.sgml
-@USEDOCBOOK_TRUE@	$(RM) func.refs
-@USEDOCBOOK_TRUE@	$(DOC2MAN) local-fontconfig-devel.sgml
-@USEDOCBOOK_TRUE@	mv manpage.refs func.refs
-@USEDOCBOOK_TRUE@	$(RM) manpage.links
+@ENABLE_DOCS_TRUE@$(DOC_FUNCS_SGML): edit-sgml $(FNCS_TMPL)
 
-@USEDOCBOOK_TRUE@local-fontconfig-devel.sgml: fontconfig-devel.sgml
-@USEDOCBOOK_TRUE@	$(LN_S) $< $@
+@ENABLE_DOCS_TRUE@fonts-conf.5: local-fontconfig-user.sgml version.sgml
+@ENABLE_DOCS_TRUE@	$(RM) file.refs
+@ENABLE_DOCS_TRUE@	$(DOC2MAN) local-fontconfig-user.sgml
+@ENABLE_DOCS_TRUE@	$(RM) manpage.refs manpage.links
 
-@USEDOCBOOK_TRUE@$(DOC_FUNCS_SGML): edit-sgml$(EXEEXT) $(FNCS_TMPL)
+@ENABLE_DOCS_TRUE@local-fontconfig-user.sgml: fontconfig-user.sgml
+@ENABLE_DOCS_TRUE@	$(LN_S) $< $@
 
-@USEDOCBOOK_TRUE@fonts-conf.5: local-fontconfig-user.sgml version.sgml confdir.sgml
-@USEDOCBOOK_TRUE@	$(RM) $@
-@USEDOCBOOK_TRUE@	$(DOC2MAN) local-fontconfig-user.sgml
-@USEDOCBOOK_TRUE@	$(RM) manpage.refs manpage.links
+@ENABLE_DOCS_TRUE@all-local: $(LOCAL_DOCS)
 
-@USEDOCBOOK_TRUE@local-fontconfig-user.sgml: fontconfig-user.sgml
-@USEDOCBOOK_TRUE@	$(LN_S) $< $@
+@ENABLE_DOCS_TRUE@clean-local:
+@ENABLE_DOCS_TRUE@	$(RM) $(man_MANS) $(DOC_FILES) $(DOC_FUNCS_SGML) func.refs
+@ENABLE_DOCS_TRUE@	$(RM) -r $(DOC_DIRS)
 
-@USEDOCBOOK_TRUE@all-local: $(LOCAL_DOCS)
+@ENABLE_DOCS_TRUE@fontconfig-devel: local-fontconfig-devel.sgml $(DOCS_FUNCS_SGML) version.sgml
+@ENABLE_DOCS_TRUE@	$(RM) -r fontconfig-devel
+@ENABLE_DOCS_TRUE@	$(DOC2HTML) -o fontconfig-devel local-fontconfig-devel.sgml
 
-@USEDOCBOOK_TRUE@clean-local:
-@USEDOCBOOK_TRUE@	$(RM) $(man3_MANS) $(man5_MANS) $(DOC_FILES) $(DOC_FUNCS_SGML) func.refs
-@USEDOCBOOK_TRUE@	$(RM) -r $(HTML_DIR)
+@ENABLE_DOCS_TRUE@local-fontconfig-devel.sgml: fontconfig-devel.sgml
+@ENABLE_DOCS_TRUE@	$(LN_S) $< $@
 
-@USEDOCBOOK_TRUE@$(HTML_DIR): local-fontconfig-devel.sgml $(DOC_FUNCS_SGML) version.sgml confdir.sgml
-@USEDOCBOOK_TRUE@	$(RM) -r $(HTML_DIR)
-@USEDOCBOOK_TRUE@	$(DOC2HTML) -o $(HTML_DIR) local-fontconfig-devel.sgml
+@ENABLE_DOCS_TRUE@fontconfig-devel.txt: local-fontconfig-devel.sgml version.sgml
+@ENABLE_DOCS_TRUE@	$(RM) $@
+@ENABLE_DOCS_TRUE@	$(DOC2TXT) local-fontconfig-devel.sgml
+@ENABLE_DOCS_TRUE@	mv local-fontconfig-devel.txt $@
 
-@USEDOCBOOK_TRUE@fontconfig-devel.txt: local-fontconfig-devel.sgml $(DOC_FUNCS_SGML) version.sgml confdir.sgml
-@USEDOCBOOK_TRUE@	$(RM) $@
-@USEDOCBOOK_TRUE@	$(DOC2TXT) local-fontconfig-devel.sgml
-@USEDOCBOOK_TRUE@	mv local-fontconfig-devel.txt $@
+@ENABLE_DOCS_TRUE@fontconfig-user.html: local-fontconfig-user.sgml version.sgml
+@ENABLE_DOCS_TRUE@	$(RM) $@ local-$@ $@.tmp
+@ENABLE_DOCS_TRUE@	$(DOC2HTML) -u local-fontconfig-user.sgml > $@.tmp
+@ENABLE_DOCS_TRUE@	-test -f local-$@ && mv local-$@ $@
+@ENABLE_DOCS_TRUE@	-test -f $@ || mv $@.tmp $@
+@ENABLE_DOCS_TRUE@	-test -f $@.tmp && $(RM) $@.tmp
 
-@USEDOCBOOK_TRUE@fontconfig-devel.pdf: local-fontconfig-devel.sgml $(DOC_FUNCS_SGML) version.sgml confdir.sgml
-@USEDOCBOOK_TRUE@	$(RM) $@
-@USEDOCBOOK_TRUE@	$(DOC2PDF) local-fontconfig-devel.sgml
-@USEDOCBOOK_TRUE@	mv local-fontconfig-devel.pdf $@
+@ENABLE_DOCS_TRUE@fontconfig-user.txt:  local-fontconfig-user.sgml version.sgml
+@ENABLE_DOCS_TRUE@	$(RM) $@
+@ENABLE_DOCS_TRUE@	$(DOC2TXT) local-fontconfig-user.sgml
+@ENABLE_DOCS_TRUE@	mv local-fontconfig-user.txt $@
 
-@USEDOCBOOK_TRUE@fontconfig-user.html: local-fontconfig-user.sgml version.sgml confdir.sgml
-@USEDOCBOOK_TRUE@	$(RM) $@ local-$@ $@.tmp
-@USEDOCBOOK_TRUE@	$(DOC2HTML) -u local-fontconfig-user.sgml > $@.tmp
-@USEDOCBOOK_TRUE@	-test -f local-$@ && mv local-$@ $@
-@USEDOCBOOK_TRUE@	-test -f $@ || mv $@.tmp $@
-@USEDOCBOOK_TRUE@	-test -f $@.tmp && $(RM) $@.tmp
+@ENABLE_DOCS_FALSE@all-local:
+@ENABLE_DOCS_FALSE@clean-local:
 
-@USEDOCBOOK_TRUE@fontconfig-user.txt: local-fontconfig-user.sgml version.sgml confdir.sgml
-@USEDOCBOOK_TRUE@	$(RM) $@
-@USEDOCBOOK_TRUE@	$(DOC2TXT) local-fontconfig-user.sgml
-@USEDOCBOOK_TRUE@	mv local-fontconfig-user.txt $@
-
-@USEDOCBOOK_TRUE@fontconfig-user.pdf: local-fontconfig-user.sgml version.sgml confdir.sgml
-@USEDOCBOOK_TRUE@	$(RM) $@
-@USEDOCBOOK_TRUE@	$(DOC2PDF) local-fontconfig-user.sgml
-@USEDOCBOOK_TRUE@	mv local-fontconfig-user.pdf $@
-@USEDOCBOOK_TRUE@confdir.sgml: ${DOC_SRC}/confdir.sgml.in
-@USEDOCBOOK_TRUE@	sed "s,@CONFDIR\@,${CONFDIR}," < ${DOC_SRC}/confdir.sgml.in | $(STRIPNL) > confdir.sgml
-
-@USEDOCBOOK_FALSE@all-local:
-@USEDOCBOOK_FALSE@clean-local:
-
-$(HTML_DIR)/*: $(HTML_DIR)
+install-data-local:
+	$(mkinstalldirs) $(DESTDIR)$(DOCDIR)
+	for i in $(DOC_FILES); do \
+	  echo '-- Installing '$$i ; \
+	  $(INSTALL_DATA) $(BUILT_DOC_DIR)/$$i $(DESTDIR)$(DOCDIR)/$$i; \
+	done
+	for i in $(DOC_DIRS); do \
+	  $(mkinstalldirs) $(DESTDIR)$(DOCDIR)/$$i ; \
+	  for f in $(BUILT_DOC_DIR)/$$i/*; do \
+	    g=`echo $$f | sed 's;$(BUILT_DOC_DIR)/;;'`; \
+	    echo '-- Installing '$$g ; \
+	    $(INSTALL_DATA) $$f $(DESTDIR)$(DOCDIR)/$$g; \
+	  done \
+	done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

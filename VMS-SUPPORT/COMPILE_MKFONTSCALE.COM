@@ -11,7 +11,7 @@ $ IF (P4 .NES. "") .OR. (P5 .NES. "") .OR. (P6 .NES. "") .OR. -
 $ sources = "|MKFONTSCALE|LIST|HASH|IDENT|"
 $ module = F$EDIT(F$PARSE(P1,,,"NAME"),"UPCASE")
 $ IF F$LOCATE("|" + module + "|",sources) .EQ. F$LENGTH(sources) THEN GOTO done
-$ source_directory = "[.PROGRAMS.MKFONTSCALE]"
+$ source_directory = "[.APP.MKFONTSCALE]"
 $ IF F$EDIT(F$PARSE(P1,,,"DEVICE"),"UPCASE") .NES. -
      F$EDIT(F$PARSE(source_directory,,,"DEVICE"),"UPCASE") THEN GOTO done
 $ IF F$EDIT(F$PARSE(P1,,,"DIRECTORY"),"UPCASE") .NES. -

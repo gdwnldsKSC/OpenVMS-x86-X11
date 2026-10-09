@@ -1,7 +1,7 @@
 /*
  * $RCSId: xc/lib/fontconfig/src/fclang.c,v 1.7 2002/08/26 23:34:31 keithp Exp $
  *
- * Copyright Â© 2002 Keith Packard
+ * Copyright © 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -144,32 +144,28 @@ FcLangCompare (const FcChar8 *s1, const FcChar8 *s2)
 }
 
 /*
- * Return FcTrue when super contains sub. 
+ * Return FcTrue when s1 contains s2. 
  *
- * super contains sub if super and sub have the same
- * language and either the same country or one
- * is missing the country
+ * s1 contains s2 if s1 equals s2 or if s1 is a
+ * language with a country and s2 is just a language
  */
 
 static FcBool
-FcLangContains (const FcChar8 *super, const FcChar8 *sub)
+FcLangContains (const FcChar8 *s1, const FcChar8 *s2)
 {
     FcChar8	    c1, c2;
 
     for (;;)
     {
-	c1 = *super++;
-	c2 = *sub++;
+	c1 = *s1++;
+	c2 = *s2++;
 	
 	c1 = FcToLower (c1);
 	c2 = FcToLower (c2);
 	if (c1 != c2)
 	{
-	    /* see if super has a country while sub is mising one */
+	    /* see if s1 has a country while s2 is mising one */
 	    if (c1 == '-' && c2 == '\0')
-		return FcTrue;
-	    /* see if sub has a country while super is mising one */
-	    if (c1 == '\0' && c2 == '-')
 		return FcTrue;
 	    return FcFalse;
 	}

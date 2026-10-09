@@ -1,4 +1,4 @@
-! fonts/scaled/Imakefile sections; Ethiopic joins TTF/OTF and Meltho joins OTF.
+! Modular scalable font packages; Ethiopic joins TTF/OTF and Meltho joins OTF.
 ! Fontconfig caches are not required by the core X font path.
 FONTS_SCALED : FONTS_SPEEDO, FONTS_TYPE1, FONTS_TTF, FONTS_OTF, FONTS_CID
 	CONTINUE

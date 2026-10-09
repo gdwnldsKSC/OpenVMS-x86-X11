@@ -10,46 +10,35 @@ import zipfile
 
 
 def input_mappings(root):
-    """Follow this release's native (not cross-compile) Imake data install rules."""
-    base = root / "programs" / "xkbcomp"
+    """Follow the modular xkbdata distributed-data installation rules."""
+    base = root / "data" / "xkbdata"
     mappings = []
-    imakefiles = []
+    makefiles = []
     visited = set()
+
+    def words(value, filename):
+        result = value.split()
+        if any(not re.fullmatch(r"[A-Za-z0-9_.-]+", word) or word in (".", "..")
+               for word in result):
+            raise ValueError("Unsupported Automake input: " + str(filename))
+        return result
 
     def visit(relative):
         if relative in visited:
             raise ValueError("Repeated XKB data directory: " + relative)
         visited.add(relative)
         directory = base / relative
-        filename = directory / "Imakefile"
-        imakefiles.append(filename.relative_to(root).as_posix())
+        filename = directory / "Makefile.am"
+        makefiles.append(filename.relative_to(root).as_posix())
         text = filename.read_text(encoding="ascii").replace("\\\n", " ")
-        values = {"CROSS": "", "TESTDATA": ""}
-        for name in ("DATAFILES", "LISTFILES", "SUBDIRS"):
-            found = re.findall(r"^\s*" + name + r"\s*=([^\n]*)", text, re.M)
-            if len(found) > 1:
-                raise ValueError("Ambiguous Imake assignment: " + str(filename))
-            value = found[0].strip() if found else ""
-            value = re.sub(r"\$\((CROSS|TESTDATA)\)", lambda m: values[m[1]], value)
-            words = value.split()
-            if any(not re.fullmatch(r"[A-Za-z0-9_.-]+", word) or word in (".", "..") for word in words):
-                raise ValueError("Unsupported Imake input: " + value)
-            values[name] = words
-        for kind in ("DATAFILES", "LISTFILES"):
-            if values[kind] and "InstallMultiple($(" + kind + ")," not in text:
-                raise ValueError("Missing data install rule: " + str(filename))
-            for leaf in values[kind]:
+        for match in re.finditer(r"^dist_[A-Za-z0-9_]+_DATA\s*=([^\n]*)", text, re.M):
+            for leaf in words(match[1], filename):
                 path = (Path(relative) / leaf).as_posix()
                 mappings.append((path, path))
-        links = re.findall(r"InstallCreateLink\(\$\(LIBDIR\)/xkb/([^,]+),([^,]+),([^\)]+)\)", text)
-        for target_directory, source, destination in links:
-            if target_directory != relative:
-                raise ValueError("Unexpected link directory")
-            for leaf in (source, destination):
-                if not re.fullmatch(r"[A-Za-z0-9_.-]+", leaf) or leaf in (".", ".."):
-                    raise ValueError("Unsupported link name")
-            mappings.append((relative + "/" + source, relative + "/" + destination))
-        for child in values["SUBDIRS"]:
+        subdirs = re.findall(r"^SUBDIRS\s*=([^\n]*)", text, re.M)
+        if len(subdirs) > 1:
+            raise ValueError("Ambiguous SUBDIRS: " + str(filename))
+        for child in words(subdirs[0] if subdirs else "", filename):
             visit((Path(relative) / child).as_posix())
 
     visit("")
@@ -61,21 +50,21 @@ def input_mappings(root):
         filename = base / source
         if not filename.resolve(strict=True).is_relative_to(base.resolve()):
             raise ValueError("Source escapes XKB tree: " + source)
-    return mappings, sorted(imakefiles)
+    return mappings, sorted(makefiles)
 
 
 def listing(mappings):
-    return "! Upstream xkbcomp Imakefile installation: source|destination\n" + "".join(
+    return "! Upstream xkbdata Makefile.am distributed-data installation: source|destination\n" + "".join(
         source + "|" + destination + "\n" for source, destination in mappings)
 
 
 def package(root):
-    mappings, imakefiles = input_mappings(root)
+    mappings, makefiles = input_mappings(root)
     controls = ["DATA.MMS", "DATA.LIST", "STAGE_DATA.COM", "PREPARE_SOURCE.py"]
     support = "VMS-SUPPORT/PROGRAMS/XKBCOMP/"
     if (root / support / "DATA.LIST").read_text(encoding="ascii") != listing(mappings):
-        raise ValueError("DATA.LIST does not match the upstream Imakefiles")
-    files = sorted(set(imakefiles + ["programs/xkbcomp/" + source for source, _ in mappings]
+        raise ValueError("DATA.LIST does not match the upstream Makefile.am files")
+    files = sorted(set(makefiles + ["data/xkbdata/" + source for source, _ in mappings]
                        + [support + name for name in controls]))
     payload = io.BytesIO()
     manifest = []
@@ -101,7 +90,7 @@ def main():
     parser = argparse.ArgumentParser(description=
         "Package upstream-installed XKB data and native staging controls. Extract into "
         "the native source root, then build XKB_DATA. It uses the upstream install layout "
-        "with byte-identical copies for the four xfree86 rule aliases; no upstream source "
+        "for its distributed data; no upstream source "
         "is modified and no generated component .dir file collides with its directory.")
     parser.add_argument("output", type=Path, help="New ZIP output; never overwrite")
     parser.add_argument("--source-root", type=Path, default=Path(__file__).resolve().parents[3])

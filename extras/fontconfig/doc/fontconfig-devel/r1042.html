@@ -1,21 +1,23 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML
 ><HEAD
 ><TITLE
->FcValueDestroy</TITLE
+>FcCharSetCreate</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
 REL="HOME"
+TITLE="Fontconfig Developers Reference, Version 2.2.3
+ "
 HREF="index.html"><LINK
 REL="UP"
-TITLE="FcValue"
-HREF="x93.html#AEN1038"><LINK
+TITLE="FcCharSet"
+HREF="x93.html#AEN1039"><LINK
 REL="PREVIOUS"
 TITLE="FUNCTIONS"
 HREF="x93.html"><LINK
 REL="NEXT"
-TITLE="FcValueSave"
+TITLE="FcCharSetDestroy"
 HREF="r1064.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
@@ -36,7 +38,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
-></TH
+>Fontconfig Developers Reference, Version 2.2.3</TH
 ></TR
 ><TR
 ><TD
@@ -69,9 +71,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCVALUEDESTROY"
+NAME="FCCHARSETCREATE"
 ></A
->FcValueDestroy</H1
+>FcCharSetCreate</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -79,7 +81,7 @@ NAME="AEN1046"
 ></A
 ><H2
 >Name</H2
->FcValueDestroy&nbsp;--&nbsp;Free a value</DIV
+>FcCharSetCreate&nbsp;--&nbsp;Create an empty character set</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -102,8 +104,8 @@ CLASS="FUNCSYNOPSISINFO"
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->void FcValueDestroy</CODE
->(FcValuev);</CODE
+>FcCharSet * FcCharSetCreate</CODE
+>(void);</CODE
 ></P
 ><P
 ></P
@@ -117,11 +119,11 @@ NAME="AEN1057"
 ><H2
 >Description</H2
 ><P
->Frees any memory referenced by <CODE
-CLASS="PARAMETER"
->v</CODE
->.  Values of type FcTypeString,
-FcTypeMatrix and FcTypeCharSet reference memory, the other types do not.
+><CODE
+CLASS="FUNCTION"
+>FcCharSetCreate</CODE
+> allocates and initializes a new empty
+character set object.
 	    </P
 ></DIV
 ><DIV
@@ -132,7 +134,7 @@ NAME="AEN1061"
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.3.2
+>Fontconfig version 2.2.3
 
 	    </P
 ></DIV
@@ -186,7 +188,7 @@ WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN1038"
+HREF="x93.html#AEN1039"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -194,7 +196,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->FcValueSave</TD
+>FcCharSetDestroy</TD
 ></TR
 ></TABLE
 ></DIV

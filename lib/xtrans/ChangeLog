@@ -1,0 +1,80 @@
+2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for final X11R7 release candidate.
+
+2005-11-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC2 release.
+
+2005-10-18  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for RC1 release.
+
+2005-08-17  Charlie &  <anholt@FreeBSD.org>
+
+	* xtrans.m4:
+	On FreeBSD, some of the symbols necessary for secure RPC support are in
+	librpcsvc, so check for their presence in rpcsvc so that the library
+	will be added.
+
+2005-07-14  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* xtrans.m4: 
+	Split out TCP library/IPv6 support checks into XTRANS_TCP_FLAGS for
+	sharing with code like xdm that doesn't use Xtrans but accesses TCP
+	sockets directly.
+	Clean up --enable flags and report settings in configure output.
+
+2005-07-08  Keith Packard  <keithp@keithp.com>
+
+	* .cvsignore:
+	Add .cvsignore files
+
+2005-07-03  Daniel Stone  <daniel@freedesktop.org>
+
+	* xtrans.pc.in:
+	Change ${includedir} to @includedir@, removing /X11/Xtrans.
+
+2005-06-22  Theo van Klaveren <t.vanklaveren@student.utwente.nl>
+
+	Fix make distcheck.
+
+	* Makefile.am: Add xtrans.m4 to EXTRA_DIST. Revert installation
+	of xtrans.m4 outside of prefix.
+	* configure.ac: Remove check for aclocal include dir.
+
+2005-06-09  Alexander Gottwald <ago@freedesktop.org>
+
+	* Makefile.am:
+	Use $(includedir)/X11/Xtrans for Xtransincludedir
+
+Wed May 25 15:40:19 2005  Søren Sandmann  <sandmann@redhat.com>
+
+	* xtrans.pc.in (Cflags): Go back to having the includedir be
+	X11/Xtrans.
+
+2005-05-21  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* Makefile.am:
+	* xtrans.m4:
+	Create autoconf macro XTRANS_CONNECTION_FLAGS to provide 
+	standard set of --enable flags for which transports to
+	support and common place to update for required libraries
+	for platforms that need certain libs for certain transports.
+
+Fri May 13 11:15:48 2005  Søren Sandmann  <sandmann@redhat.com>
+
+	* ChangeLog, configure.ac: Dummy changes to see if that fixes
+	group permissions.
+
+Thu May 12 11:49:10 2005  Søren Sandmann  <sandmann@redhat.com>
+
+	* Makefile.am, configure.ac: Remove references to Xtransdef.h.
+
+2005-05-12  Daniel Stone  <daniel@freedesktop.org>
+
+	* configure.ac:
+	Add Xtransdef.h.in as an AM_CONFIG_HEADER, so it gets generated.

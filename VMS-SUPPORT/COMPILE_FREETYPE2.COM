@@ -12,7 +12,7 @@ $ group = F$EDIT(P4,"UPCASE")
 $ module = F$EDIT(F$PARSE(P1,,,"NAME"),"UPCASE")
 $ key = "|" + group + "/" + module + "|"
 $ IF F$LOCATE(key,sources) .EQ. F$LENGTH(sources) THEN GOTO done
-$ source_directory = "[.EXTRAS.FREETYPE2.SRC." + group + "]"
+$ source_directory = "[.EXTRAS.FREETYPE.SRC." + group + "]"
 $ IF F$EDIT(F$PARSE(P1,,,"DEVICE"),"UPCASE") .NES. -
      F$EDIT(F$PARSE(source_directory,,,"DEVICE"),"UPCASE") THEN GOTO done
 $ IF F$EDIT(F$PARSE(P1,,,"DIRECTORY"),"UPCASE") .NES. -
@@ -31,7 +31,7 @@ $! Group headers/bodies precede exports, including gzip's modified zlib headers.
 $ include_directory = source_directory + "," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.FREETYPE2]," + -
-    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.FREETYPE2.FREETYPE.CONFIG],[.EXTRAS.FREETYPE2.SRC]"
+    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.FREETYPE2.FREETYPE.CONFIG],[.EXTRAS.FREETYPE.SRC]"
 $ DEFINE/USER_MODE/TABLE=LNM$PROCESS FREETYPE 'headers'
 $ scoped = 1
 $ IF F$TRNLNM("FREETYPE","LNM$FILE_DEV") .NES. headers THEN GOTO done

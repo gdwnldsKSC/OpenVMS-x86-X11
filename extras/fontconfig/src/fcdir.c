@@ -1,7 +1,7 @@
 /*
  * $RCSId: xc/lib/fontconfig/src/fcdir.c,v 1.9 2002/08/31 22:17:32 keithp Exp $
  *
- * Copyright Â© 2000 Keith Packard
+ * Copyright © 2000 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -25,7 +25,7 @@
 #include "fcint.h"
 #include <dirent.h>
 
-FcBool
+static FcBool
 FcFileIsDir (const FcChar8 *file)
 {
     struct stat	    statb;
@@ -36,13 +36,12 @@ FcFileIsDir (const FcChar8 *file)
 }
 
 FcBool
-FcFileScanConfig (FcFontSet	*set,
-		  FcStrSet	*dirs,
-		  FcGlobalCache *cache,
-		  FcBlanks	*blanks,
-		  const FcChar8	*file,
-		  FcBool	force,
-		  FcConfig	*config)
+FcFileScan (FcFontSet	    *set,
+	    FcStrSet	    *dirs,
+	    FcGlobalCache   *cache,
+	    FcBlanks	    *blanks,
+	    const FcChar8   *file,
+	    FcBool	    force)
 {
     int			id;
     FcChar8		*name;
@@ -54,9 +53,6 @@ FcFileScanConfig (FcFontSet	*set,
     FcGlobalCacheDir	*cache_dir;
     FcBool		need_scan;
     
-    if (config && !FcConfigAcceptFilename (config, file))
-	return FcTrue;
-
     if (force)
 	cache = 0;
     id = 0;
@@ -141,7 +137,7 @@ FcFileScanConfig (FcFontSet	*set,
 	/*
 	 * Add the font
 	 */
-	if (font && (!config || FcConfigAcceptFont (config, font)))
+	if (font)
 	{
 	    if (!FcFontSetAdd (set, font))
 	    {
@@ -150,23 +146,12 @@ FcFileScanConfig (FcFontSet	*set,
 		ret = FcFalse;
 	    }
 	}
-	else if (font)
-	    FcPatternDestroy (font);
 	id++;
     } while (font && ret && id < count);
     return ret;
 }
 
-FcBool
-FcFileScan (FcFontSet	    *set,
-	    FcStrSet	    *dirs,
-	    FcGlobalCache   *cache,
-	    FcBlanks	    *blanks,
-	    const FcChar8   *file,
-	    FcBool	    force)
-{
-    return FcFileScanConfig (set, dirs, cache, blanks, file, force, 0);
-}
+#define FC_MAX_FILE_LEN	    4096
 
 /*
  * Scan 'dir', adding font files to 'set' and
@@ -174,13 +159,12 @@ FcFileScan (FcFontSet	    *set,
  */
 
 FcBool
-FcDirScanConfig (FcFontSet	*set,
-		 FcStrSet	*dirs,
-		 FcGlobalCache  *cache,
-		 FcBlanks	*blanks,
-		 const FcChar8  *dir,
-		 FcBool		force,
-		 FcConfig	*config)
+FcDirScan (FcFontSet	    *set,
+	   FcStrSet	    *dirs,
+	   FcGlobalCache    *cache,
+	   FcBlanks	    *blanks,
+	   const FcChar8    *dir,
+	   FcBool	    force)
 {
     DIR			*d;
     struct dirent	*e;
@@ -188,15 +172,12 @@ FcDirScanConfig (FcFontSet	*set,
     FcChar8		*base;
     FcBool		ret = FcTrue;
 
-    if (config && !FcConfigAcceptFilename (config, dir))
-	return FcTrue;
-
     if (!force)
     {
 	/*
 	 * Check fonts.cache-<version> file
 	 */
-	if (FcDirCacheReadDir (set, dirs, dir, config))
+	if (FcDirCacheReadDir (set, dirs, dir))
 	{
 	    if (cache)
 		FcGlobalCacheReferenceSubdir (cache, dir);
@@ -206,7 +187,7 @@ FcDirScanConfig (FcFontSet	*set,
 	/*
 	 * Check ~/.fonts.cache-<version> file
 	 */
-	if (cache && FcGlobalCacheScanDir (set, dirs, cache, dir, config))
+	if (cache && FcGlobalCacheScanDir (set, dirs, cache, dir))
 	    return FcTrue;
     }
     
@@ -237,7 +218,7 @@ FcDirScanConfig (FcFontSet	*set,
 	if (e->d_name[0] != '.' && strlen (e->d_name) < FC_MAX_FILE_LEN)
 	{
 	    strcpy ((char *) base, (char *) e->d_name);
-	    ret = FcFileScanConfig (set, dirs, cache, blanks, file, force, config);
+	    ret = FcFileScan (set, dirs, cache, blanks, file, force);
 	}
     }
     free (file);
@@ -250,17 +231,6 @@ FcDirScanConfig (FcFontSet	*set,
 	FcGlobalCacheUpdate (cache, dir, 0, 0);
 	
     return ret;
-}
-
-FcBool
-FcDirScan (FcFontSet	    *set,
-	   FcStrSet	    *dirs,
-	   FcGlobalCache    *cache,
-	   FcBlanks	    *blanks,
-	   const FcChar8    *dir,
-	   FcBool	    force)
-{
-    return FcDirScanConfig (set, dirs, cache, blanks, dir, force, 0);
 }
 
 FcBool

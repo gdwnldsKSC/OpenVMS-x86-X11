@@ -1,8 +1,0 @@
-XCOMM $XFree86$
-
-     DATAFILES = thinkpad
-
-all::
-
-InstallMultiple($(DATAFILES),$(LIBDIR)/xkb/geometry/ibm)
-DependTarget()

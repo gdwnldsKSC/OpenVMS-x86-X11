@@ -1,4 +1,4 @@
-"""Package native NLS inputs without the Compose/compose.dir name collision."""
+"""Package the exact modular libX11 NLS and runtime-data build inputs."""
 
 import argparse
 import hashlib
@@ -11,15 +11,15 @@ import zipfile
 
 def inputs(root):
     files = [
-        "nls/Imakefile",
-        "nls/XLC_LOCALE/Imakefile",
-        "nls/Compose/Imakefile",
-        "nls/locale.alias",
-        "nls/locale.dir",
-        "nls/compose.dir",
-        "lib/X11/XErrorDB",
-        "lib/X11/XKeysymDB",
-        "lib/X11/Xcms.txt",
+        "lib/libX11/nls/Makefile.am",
+        "lib/libX11/nls/localerules.in",
+        "lib/libX11/cpprules.in",
+        "lib/libX11/nls/locale.alias.pre",
+        "lib/libX11/nls/locale.dir.pre",
+        "lib/libX11/nls/compose.dir.pre",
+        "lib/libX11/src/XErrorDB",
+        "lib/libX11/src/XKeysymDB",
+        "lib/libX11/src/xcms/Xcms.txt",
         "VMS-SUPPORT/CONFIG.MMS",
         "VMS-SUPPORT/COMPILE.COM",
         "VMS-SUPPORT/LIB/X11/DATA.MMS",
@@ -31,12 +31,12 @@ def inputs(root):
         "VMS-SUPPORT/NLS/XLC_LOCALE.LIST",
         "VMS-SUPPORT/NLS/COMPOSE.LIST",
     ]
-    for kind, directory in (("XLC_LOCALE", "XLC_LOCALE"), ("COMPOSE", "Compose")):
+    for kind, filename in (("XLC_LOCALE", "XLC_LOCALE.pre"), ("COMPOSE", "Compose.pre")):
         listing = root / "VMS-SUPPORT" / "NLS" / (kind + ".LIST")
         for name in listing.read_text(encoding="ascii").splitlines():
             if not re.fullmatch(r"[A-Za-z0-9_.-]+", name) or name in (".", ".."):
                 raise ValueError("Invalid locale source name: " + repr(name))
-            files.append("nls/" + directory + "/" + name)
+            files.append("lib/libX11/nls/" + name + "/" + filename)
     if len(files) != len(set(files)):
         raise ValueError("Duplicate source input")
     return sorted(files)
@@ -52,7 +52,7 @@ def package(root):
             if not source.resolve().is_relative_to(root):
                 raise ValueError("Source escapes tree: " + relative)
             data = source.read_bytes()
-            destination = "nls/compose_dir.in" if relative == "nls/compose.dir" else relative
+            destination = relative
             if destination.casefold() in destinations:
                 raise ValueError("Duplicate native input: " + destination)
             destinations.add(destination.casefold())
@@ -73,9 +73,8 @@ def package(root):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Create an exact-byte NLS/Xlib-data source overlay ZIP for a native build tree. "
-                    "The full-tree transfer must omit nls/compose.dir; this overlay supplies its "
-                    "bytes as nls/compose_dir.in. Extract into the native source root, then use "
+        description="Create an exact-byte NLS/Xlib-data source ZIP for a native build tree. "
+                    "Extract into the native source root, then use "
                     "the NLS and X11_DATA build targets. No runtime data or executable is installed.")
     parser.add_argument("output", type=Path, help="New ZIP file; existing files are never replaced")
     parser.add_argument("--source-root", type=Path, default=Path(__file__).resolve().parents[2])

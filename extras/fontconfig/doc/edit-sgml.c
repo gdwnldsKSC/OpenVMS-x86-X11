@@ -1,7 +1,7 @@
 /*
- * $Id: edit-sgml.c,v 1.3 2005/06/28 01:01:03 alanc Exp $
+ * $Id: edit-sgml.c,v 1.4 2003/04/17 17:43:04 walters Exp $
  *
- * Copyright Â© 2003 Keith Packard
+ * Copyright © 2003 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -27,15 +27,6 @@
 #include <string.h>
 #include <ctype.h>
 
-static void *
-New (int size);
-
-static void *
-Reallocate (void *p, int size);
-
-static void
-Dispose (void *p);
-
 typedef enum { False, True } Bool;
 
 typedef struct {
@@ -44,107 +35,9 @@ typedef struct {
     int	    len;
 } String;
 
-static String *
-StringNew (void);
-
-static void
-StringAdd (String *s, char c);
-
-static void
-StringAddString (String *s, char *buf);
-
-static String *
-StringMake (char *buf);
-
-static void
-StringDel (String *s);
-
-static void
-StringPut (FILE *f, String *s);
-
-static void
-StringDispose (String *s);
-
-typedef struct {
-    String  *tag;
-    String  *text;
-} Replace;
-
-static Replace *
-ReplaceNew (void);
-
-static void
-ReplaceDispose (Replace *r);
-
-static void
-Bail (char *format, char *arg);
-
-static Replace *
-ReplaceRead (FILE *f);
-
-typedef struct _replaceList {
-    struct _replaceList	*next;
-    Replace		*r;
-} ReplaceList;
-
-static ReplaceList *
-ReplaceListNew (Replace *r, ReplaceList *next);
-
-static void
-ReplaceListDispose (ReplaceList *l);
-
-typedef struct {
-    ReplaceList	*head;
-} ReplaceSet;
-
-static ReplaceSet *
-ReplaceSetNew (void);
-
-static void
-ReplaceSetDispose (ReplaceSet *s);
-
-static void
-ReplaceSetAdd (ReplaceSet *s, Replace *r);
-
-static Replace *
-ReplaceSetFind (ReplaceSet *s, char *tag);
-
-static ReplaceSet *
-ReplaceSetRead (FILE *f);
-
-typedef struct _skipStack {
-    struct _skipStack	*prev;
-    int			skipping;
-} SkipStack;
-
-static SkipStack *
-SkipStackPush (SkipStack *prev, int skipping);
-
-static SkipStack *
-SkipStackPop (SkipStack *prev);
-
-typedef struct _loopStack {
-    struct _loopStack	*prev;
-    String		*tag;
-    String		*extra;
-    long		pos;
-} LoopStack;
-
-static LoopStack *
-LoopStackPush (LoopStack *prev, FILE *f, char *tag);
-
-static LoopStack *
-LoopStackLoop (ReplaceSet *rs, LoopStack *ls, FILE *f);
-
-static void
-LineSkip (FILE *f);
-
-static void
-DoReplace (FILE *f, ReplaceSet *s);
-
 #define STRING_INIT 128
 
-static void *
+void *
 New (int size)
 {
     void    *m = malloc (size);
@@ -153,7 +46,7 @@ New (int size)
     return m;
 }
 
-static void *
+void *
 Reallocate (void *p, int size)
 {
     void    *r = realloc (p, size);
@@ -163,13 +56,13 @@ Reallocate (void *p, int size)
     return r;
 }
 
-static void
+void
 Dispose (void *p)
 {
     free (p);
 }
 
-static String *
+String *
 StringNew (void)
 {
     String  *s;
@@ -182,7 +75,7 @@ StringNew (void)
     return s;
 }
 
-static void
+void
 StringAdd (String *s, char c)
 {
     if (s->len == s->size)
@@ -191,14 +84,14 @@ StringAdd (String *s, char c)
     s->buf[s->len] = '\0';
 }
 
-static void
+void
 StringAddString (String *s, char *buf)
 {
     while (*buf)
 	StringAdd (s, *buf++);
 }
 
-static String *
+String *
 StringMake (char *buf)
 {
     String  *s = StringNew ();
@@ -206,14 +99,14 @@ StringMake (char *buf)
     return s;
 }
 
-static void
+void
 StringDel (String *s)
 {
     if (s->len)
 	s->buf[--s->len] = '\0';
 }
 
-static void
+void
 StringPut (FILE *f, String *s)
 {
     char    *b = s->buf;
@@ -224,14 +117,19 @@ StringPut (FILE *f, String *s)
 
 #define StringLast(s)	((s)->len ? (s)->buf[(s)->len - 1] : '\0')
 
-static void
+void
 StringDispose (String *s)
 {
     Dispose (s->buf);
     Dispose (s);
 }
 
-static Replace *
+typedef struct {
+    String  *tag;
+    String  *text;
+} Replace;
+
+Replace *
 ReplaceNew (void)
 {
     Replace *r = New (sizeof (Replace));
@@ -240,7 +138,7 @@ ReplaceNew (void)
     return r;
 }
 
-static void
+void
 ReplaceDispose (Replace *r)
 {
     StringDispose (r->tag);
@@ -248,7 +146,7 @@ ReplaceDispose (Replace *r)
     Dispose (r);
 }
 
-static void
+void
 Bail (char *format, char *arg)
 {
     fprintf (stderr, "fatal: ");
@@ -257,7 +155,7 @@ Bail (char *format, char *arg)
     exit (1);
 }
 
-static Replace *
+Replace *
 ReplaceRead (FILE *f)
 {
     int	    c;
@@ -297,7 +195,12 @@ ReplaceRead (FILE *f)
     return r;
 }
 
-static ReplaceList *
+typedef struct _replaceList {
+    struct _replaceList	*next;
+    Replace		*r;
+} ReplaceList;
+
+ReplaceList *
 ReplaceListNew (Replace *r, ReplaceList *next)
 {
     ReplaceList	*l = New (sizeof (ReplaceList));
@@ -306,7 +209,7 @@ ReplaceListNew (Replace *r, ReplaceList *next)
     return l;
 }
 
-static void
+void
 ReplaceListDispose (ReplaceList *l)
 {
     if (l)
@@ -317,7 +220,11 @@ ReplaceListDispose (ReplaceList *l)
     }
 }
 
-static ReplaceSet *
+typedef struct {
+    ReplaceList	*head;
+} ReplaceSet;
+
+ReplaceSet *
 ReplaceSetNew (void)
 {
     ReplaceSet	*s = New (sizeof (ReplaceSet));
@@ -325,20 +232,20 @@ ReplaceSetNew (void)
     return s;
 }
 
-static void
+void
 ReplaceSetDispose (ReplaceSet *s)
 {
     ReplaceListDispose (s->head);
     Dispose (s);
 }
 
-static void
+void
 ReplaceSetAdd (ReplaceSet *s, Replace *r)
 {
     s->head = ReplaceListNew (r, s->head);
 }
 
-static Replace *
+Replace *
 ReplaceSetFind (ReplaceSet *s, char *tag)
 {
     ReplaceList	*l;
@@ -349,7 +256,7 @@ ReplaceSetFind (ReplaceSet *s, char *tag)
     return 0;
 }
 
-static ReplaceSet *
+ReplaceSet *
 ReplaceSetRead (FILE *f)
 {
     ReplaceSet	*s = ReplaceSetNew ();
@@ -369,7 +276,12 @@ ReplaceSetRead (FILE *f)
     return s;
 }
 
-static SkipStack *
+typedef struct _skipStack {
+    struct _skipStack	*prev;
+    int			skipping;
+} SkipStack;
+
+SkipStack *
 SkipStackPush (SkipStack *prev, int skipping)
 {
     SkipStack	*ss = New (sizeof (SkipStack));
@@ -378,7 +290,7 @@ SkipStackPush (SkipStack *prev, int skipping)
     return ss;
 }
 
-static SkipStack *
+SkipStack *
 SkipStackPop (SkipStack *prev)
 {
     SkipStack	*ss = prev->prev;
@@ -386,7 +298,14 @@ SkipStackPop (SkipStack *prev)
     return ss;
 }
 
-static LoopStack *
+typedef struct _loopStack {
+    struct _loopStack	*prev;
+    String		*tag;
+    String		*extra;
+    long		pos;
+} LoopStack;
+
+LoopStack *
 LoopStackPush (LoopStack *prev, FILE *f, char *tag)
 {
     LoopStack	*ls = New (sizeof (LoopStack));
@@ -397,7 +316,7 @@ LoopStackPush (LoopStack *prev, FILE *f, char *tag)
     return ls;
 }
 
-static LoopStack *
+LoopStack *
 LoopStackLoop (ReplaceSet *rs, LoopStack *ls, FILE *f)
 {
     String	*s = StringMake (ls->tag->buf);
@@ -420,7 +339,7 @@ LoopStackLoop (ReplaceSet *rs, LoopStack *ls, FILE *f)
     return ret;
 }
 
-static void
+void
 LineSkip (FILE *f)
 {
     int	c;
@@ -430,7 +349,7 @@ LineSkip (FILE *f)
     ungetc (c, f);
 }
 
-static void
+void
 DoReplace (FILE *f, ReplaceSet *s)
 {
     int		c;

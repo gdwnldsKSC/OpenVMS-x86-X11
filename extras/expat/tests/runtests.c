@@ -1,5 +1,20 @@
-#include <assert.h>
+/* Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
+   See the file COPYING for copying permission.
+
+   runtest.c : run the Expat test suite
+*/
+
+#ifdef HAVE_EXPAT_CONFIG_H
+#include <expat_config.h>
+#endif
+
+#ifdef HAVE_CHECK_H
 #include <check.h>
+#else
+#include "minicheck.h"
+#endif
+
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -65,7 +80,7 @@ _expect_failure(char *text, enum XML_Error errorCode, char *errorMessage,
    but it doesn't need to do anything.
 */
 
-static void
+static void XMLCALL
 dummy_start_doctype_handler(void           *userData,
                             const XML_Char *doctypeName,
                             const XML_Char *sysid,
@@ -73,11 +88,11 @@ dummy_start_doctype_handler(void           *userData,
                             int            has_internal_subset)
 {}
 
-static void
+static void XMLCALL
 dummy_end_doctype_handler(void *userData)
 {}
 
-static void
+static void XMLCALL
 dummy_entity_decl_handler(void           *userData,
                           const XML_Char *entityName,
                           int            is_parameter_entity,
@@ -89,7 +104,7 @@ dummy_entity_decl_handler(void           *userData,
                           const XML_Char *notationName)
 {}
 
-static void
+static void XMLCALL
 dummy_notation_decl_handler(void *userData,
                             const XML_Char *notationName,
                             const XML_Char *base,
@@ -97,13 +112,13 @@ dummy_notation_decl_handler(void *userData,
                             const XML_Char *publicId)
 {}
 
-static void
+static void XMLCALL
 dummy_element_decl_handler(void *userData,
                            const XML_Char *name,
                            XML_Content *model)
 {}
 
-static void
+static void XMLCALL
 dummy_attlist_decl_handler(void           *userData,
                            const XML_Char *elname,
                            const XML_Char *attname,
@@ -112,15 +127,15 @@ dummy_attlist_decl_handler(void           *userData,
                            int            isrequired)
 {}
 
-static void
+static void XMLCALL
 dummy_comment_handler(void *userData, const XML_Char *data)
 {}
 
-static void
+static void XMLCALL
 dummy_pi_handler(void *userData, const XML_Char *target, const XML_Char *data)
 {}
 
-static void
+static void XMLCALL
 dummy_start_element(void *userData,
                     const XML_Char *name, const XML_Char **atts)
 {}
@@ -180,13 +195,13 @@ START_TEST(test_bom_utf16_le)
 }
 END_TEST
 
-static void
+static void XMLCALL
 accumulate_characters(void *userData, const XML_Char *s, int len)
 {
     CharData_AppendXMLChars((CharData *)userData, s, len);
 }
 
-static void
+static void XMLCALL
 accumulate_attribute(void *userData, const XML_Char *name,
                      const XML_Char **atts)
 {
@@ -363,17 +378,17 @@ START_TEST(test_utf16_le_epilog_newline)
 }
 END_TEST
 
-/* Regression test for SF bug #481609. */
+/* Regression test for SF bug #481609, #774028. */
 START_TEST(test_latin1_umlauts)
 {
     char *text =
         "<?xml version='1.0' encoding='iso-8859-1'?>\n"
-        "<e a='ä ö ü &#228; &#246; &#252; &#x00E4; &#x0F6; &#xFC;'\n"
-        "  >ä ö ü &#228; &#246; &#252; &#x00E4; &#x0F6; &#xFC;</e>";
+        "<e a='ä ö ü &#228; &#246; &#252; &#x00E4; &#x0F6; &#xFC; >'\n"
+        "  >ä ö ü &#228; &#246; &#252; &#x00E4; &#x0F6; &#xFC; ></e>";
     char *utf8 =
         "\xC3\xA4 \xC3\xB6 \xC3\xBC "
         "\xC3\xA4 \xC3\xB6 \xC3\xBC "
-        "\xC3\xA4 \xC3\xB6 \xC3\xBC";
+        "\xC3\xA4 \xC3\xB6 \xC3\xBC >";
     run_character_check(text, utf8);
     XML_ParserReset(parser, NULL);
     run_attribute_check(text, utf8);
@@ -417,7 +432,7 @@ START_TEST(test_column_number_after_parse)
 }
 END_TEST
 
-static void
+static void XMLCALL
 start_element_event_handler2(void *userData, const XML_Char *name,
 			     const XML_Char **attr)
 {
@@ -430,7 +445,7 @@ start_element_event_handler2(void *userData, const XML_Char *name,
     CharData_AppendString(storage, buffer);
 }
 
-static void
+static void XMLCALL
 end_element_event_handler2(void *userData, const XML_Char *name)
 {
     CharData *storage = (CharData *) userData;
@@ -558,7 +573,7 @@ END_TEST
  * Element event tests.
  */
 
-static void
+static void XMLCALL
 end_element_event_handler(void *userData, const XML_Char *name)
 {
     CharData *storage = (CharData *) userData;
@@ -648,7 +663,7 @@ testhelper_is_whitespace_normalized(void)
     assert(!is_whitespace_normalized("abc\t def", 1));
 }
 
-static void
+static void XMLCALL
 check_attr_contains_normalized_whitespace(void *userData,
                                           const XML_Char *name,
                                           const XML_Char **atts)
@@ -709,7 +724,7 @@ START_TEST(test_xmldecl_misplaced)
 END_TEST
 
 /* Regression test for SF bug #584832. */
-static int
+static int XMLCALL
 UnknownEncodingHandler(void *data,const XML_Char *encoding,XML_Encoding *info)
 {
     if (strcmp(encoding,"unsupported-encoding") == 0) {
@@ -738,7 +753,7 @@ START_TEST(test_unknown_encoding_internal_entity)
 END_TEST
 
 /* Regression test for SF bug #620106. */
-static int
+static int XMLCALL
 external_entity_loader_set_encoding(XML_Parser parser,
                                     const XML_Char *context,
                                     const XML_Char *base,
@@ -818,7 +833,7 @@ START_TEST(test_wfc_undeclared_entity_standalone) {
 }
 END_TEST
 
-static int
+static int XMLCALL
 external_entity_loader(XML_Parser parser,
                        const XML_Char *context,
                        const XML_Char *base,
@@ -937,6 +952,24 @@ START_TEST(test_empty_ns_without_namespaces)
 }
 END_TEST
 
+/* Regression test for SF bug #824420.
+   Checks that an xmlns:prefix attribute set in an attribute's default
+   value isn't misinterpreted.
+*/
+START_TEST(test_ns_in_attribute_default_without_namespaces)
+{
+    char *text =
+        "<!DOCTYPE e:element [\n"
+        "  <!ATTLIST e:element\n"
+        "    xmlns:e CDATA 'http://example.com/'>\n"
+        "      ]>\n"
+        "<e:element/>";
+
+    if (XML_Parse(parser, text, strlen(text), XML_TRUE) == XML_STATUS_ERROR)
+        xml_failure(parser);
+}
+END_TEST
+
 
 /*
  * Namespaces tests.
@@ -961,7 +994,7 @@ namespace_teardown(void)
    provided as the userData argument; the first is the expected
    element name, and the second is the expected attribute name.
 */
-static void
+static void XMLCALL
 triplet_start_checker(void *userData, const XML_Char *name,
                       const XML_Char **atts)
 {
@@ -981,7 +1014,7 @@ triplet_start_checker(void *userData, const XML_Char *name,
    the expected value.  The expected value is passed as the first element
    in an array of strings passed as the userData argument.
 */
-static void
+static void XMLCALL
 triplet_end_checker(void *userData, const XML_Char *name)
 {
     char **elemstr = (char **)userData;
@@ -1009,7 +1042,7 @@ START_TEST(test_return_ns_triplet)
 }
 END_TEST
 
-static void
+static void XMLCALL
 overwrite_start_checker(void *userData, const XML_Char *name,
                         const XML_Char **atts)
 {
@@ -1024,7 +1057,7 @@ overwrite_start_checker(void *userData, const XML_Char *name,
     CharData_AppendString(storage, "\n");
 }
 
-static void
+static void XMLCALL
 overwrite_end_checker(void *userData, const XML_Char *name)
 {
     CharData *storage = (CharData *) userData;
@@ -1091,7 +1124,7 @@ END_TEST
 
 
 /* Regression test for SF bug #620343. */
-static void
+static void XMLCALL
 start_element_fail(void *userData,
                    const XML_Char *name, const XML_Char **atts)
 {
@@ -1099,7 +1132,7 @@ start_element_fail(void *userData,
     fail("should never reach start_element_fail()");
 }
 
-static void
+static void XMLCALL
 start_ns_clearing_start_element(void *userData,
                                 const XML_Char *prefix,
                                 const XML_Char *uri)
@@ -1124,7 +1157,7 @@ START_TEST(test_start_ns_clears_start_element)
 END_TEST
 
 /* Regression test for SF bug #616863. */
-static int
+static int XMLCALL
 external_entity_handler(XML_Parser parser,
                         const XML_Char *context,
                         const XML_Char *base,
@@ -1183,7 +1216,7 @@ START_TEST(test_ns_prefix_with_empty_uri_1)
         "</doc>";
 
     expect_failure(text,
-                   XML_ERROR_SYNTAX,
+                   XML_ERROR_UNDECLARING_PREFIX,
                    "Did not report re-setting namespace"
                    " URI with prefix to ''.");
 }
@@ -1197,7 +1230,7 @@ START_TEST(test_ns_prefix_with_empty_uri_2)
         "<docelem xmlns:pre=''/>";
 
     expect_failure(text,
-                   XML_ERROR_SYNTAX,
+                   XML_ERROR_UNDECLARING_PREFIX,
                    "Did not report setting namespace URI with prefix to ''.");
 }
 END_TEST
@@ -1214,7 +1247,7 @@ START_TEST(test_ns_prefix_with_empty_uri_3)
         "<doc/>";
 
     expect_failure(text,
-                   XML_ERROR_SYNTAX,
+                   XML_ERROR_UNDECLARING_PREFIX,
                    "Didn't report attr default setting NS w/ prefix to ''.");
 }
 END_TEST
@@ -1254,8 +1287,41 @@ START_TEST(test_ns_default_with_empty_uri)
 }
 END_TEST
 
+/* Regression test for SF bug #692964: two prefixes for one namespace. */
+START_TEST(test_ns_duplicate_attrs_diff_prefixes)
+{
+    char *text =
+        "<doc xmlns:a='http://xml.libexpat.org/a'\n"
+        "     xmlns:b='http://xml.libexpat.org/a'\n"
+        "     a:a='v' b:a='v' />";
+    expect_failure(text,
+                   XML_ERROR_DUPLICATE_ATTRIBUTE,
+                   "did not report multiple attributes with same URI+name");
+}
+END_TEST
+
+/* Regression test for SF bug #695401: unbound prefix. */
+START_TEST(test_ns_unbound_prefix_on_attribute)
+{
+    char *text = "<doc a:attr=''/>";
+    expect_failure(text,
+                   XML_ERROR_UNBOUND_PREFIX,
+                   "did not report unbound prefix on attribute");
+}
+END_TEST
+
+/* Regression test for SF bug #695401: unbound prefix. */
+START_TEST(test_ns_unbound_prefix_on_element)
+{
+    char *text = "<a:doc/>";
+    expect_failure(text,
+                   XML_ERROR_UNBOUND_PREFIX,
+                   "did not report unbound prefix on element");
+}
+END_TEST
+
 static Suite *
-make_basic_suite(void)
+make_suite(void)
 {
     Suite *s = suite_create("basic");
     TCase *tc_basic = tcase_create("basic tests");
@@ -1301,6 +1367,7 @@ make_basic_suite(void)
     tcase_add_test(tc_basic, test_ext_entity_set_encoding);
     tcase_add_test(tc_basic, test_dtd_default_handling);
     tcase_add_test(tc_basic, test_empty_ns_without_namespaces);
+    tcase_add_test(tc_basic, test_ns_in_attribute_default_without_namespaces);
 
     suite_add_tcase(s, tc_namespace);
     tcase_add_checked_fixture(tc_namespace,
@@ -1315,6 +1382,9 @@ make_basic_suite(void)
     tcase_add_test(tc_namespace, test_ns_prefix_with_empty_uri_3);
     tcase_add_test(tc_namespace, test_ns_prefix_with_empty_uri_4);
     tcase_add_test(tc_namespace, test_ns_default_with_empty_uri);
+    tcase_add_test(tc_namespace, test_ns_duplicate_attrs_diff_prefixes);
+    tcase_add_test(tc_namespace, test_ns_unbound_prefix_on_attribute);
+    tcase_add_test(tc_namespace, test_ns_unbound_prefix_on_element);
 
     return s;
 }
@@ -1326,7 +1396,7 @@ main(int argc, char *argv[])
     int i, nf;
     int forking = 0, forking_set = 0;
     int verbosity = CK_NORMAL;
-    Suite *s = make_basic_suite();
+    Suite *s = make_suite();
     SRunner *sr = srunner_create(s);
 
     /* run the tests for internal helper functions */
@@ -1358,7 +1428,6 @@ main(int argc, char *argv[])
     srunner_run_all(sr, verbosity);
     nf = srunner_ntests_failed(sr);
     srunner_free(sr);
-    suite_free(s);
 
     return (nf == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

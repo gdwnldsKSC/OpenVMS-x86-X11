@@ -1,0 +1,102 @@
+2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for final X11R7 release candidate.
+
+2005-12-06  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* man/Makefile.am:
+	Change *man_SOURCES ==> *man_PRE to fix autotools warnings.
+
+2005-12-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC3 release.
+
+2005-12-02  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	* src/Makefile.am:
+	Add check and cflags for malloc(0) returning NULL.
+
+2005-11-19  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* xres.pc.in:
+	Update pkgconfig files to separate library build-time dependencies
+	from application build-time dependencies.
+	* configure.ac:
+	Update dependencies to work with separate build roots.
+
+2005-11-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC2 release.
+
+2005-11-01  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	* src/Makefile.am:
+	Update pkgcheck dependencies to work with separate build roots.
+
+2005-10-18  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for RC1 release.
+
+2005-10-12  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* man/Makefile.am: 
+	* configure.ac:
+	Use sed to fill in variables in man page
+	Add shadow man pages for man pages that document multiple functions.
+
+2005-07-08  Keith Packard  <keithp@keithp.com>
+
+	* .cvsignore:
+	* man/.cvsignore:
+	* src/.cvsignore:
+	* src/Makefile.am:
+	Add .cvsignore files
+	Switch _la_CFLAGS for AM_CFLAGS to clean up directory
+
+2005-06-22  Theo van Klaveren  <t.vanklaveren@student.utwente.nl>
+
+	Fix make distcheck.
+
+	* configure.ac: Also subst RESOURCEEXT_LIBS and XRES_LIBS.
+	* src/Makefile.am: Add missing CFLAGS substitution.
+
+2004-05-10  Eric Anholt  <anholt@FreeBSD.org>
+
+	* Makefile.am:
+	* configure.ac:
+	* xres.pc.in:
+	Properly include LIBS/CFLAGS in .pc and linking.
+	Don't include warning CFLAGS in .pc file.
+	Bump to version 1.0.2.
+
+2004-02-03  Jim Gettys  <jg@freedesktop.org>
+
+	* AUTHORS: Get an author file in place.
+
+2004-01-15  Daniel Stone  <daniel@fooishbar.org>
+	* Tag release 1.0.1 for first freedesktop.org clientside lib release.
+
+2003-11-09  Eric Anholt  <anholt@FreeBSD.org>
+
+	* configure.ac:
+	Make bzip2 distribution.
+
+2003-10-28  Keith Packard  <keithp@keithp.com>
+
+	* Makefile.am:
+	* configure.ac:
+	Add GCC warnings.
+	Gratuitously change X_CFLAGS to XRES_CFLAGS to make things look more
+	like other packages
+
+2003-10-28  Keith Packard  <keithp@keithp.com>
+
+	* XRes.c:
+	Use "XRes.h" instead of <X11/extensions/XRes.h> to build before
+	install

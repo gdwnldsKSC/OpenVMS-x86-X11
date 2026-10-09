@@ -1,0 +1,132 @@
+2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for final X11R7 release candidate.
+
+2005-12-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC3 release.
+
+2005-11-19  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* ice.pc.in:
+	Update pkgconfig files to separate library build-time dependencies
+	from application build-time dependencies.
+
+2005-11-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC2 release.
+
+2005-07-08  Keith Packard  <keithp@keithp.com>
+
+	* .cvsignore:
+	* src/.cvsignore:
+	Add .cvsignore files
+
+2005-06-09  Alexander Gottwald <ago@freedesktop.org>
+
+	* src/icetrans.c:
+	Replace <X11/transport.c> with <X11/Xtrans/transport.c>
+
+2005-05-21  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* configure.ac: 
+	Add ICE_t #define required by Xtrans headers. Replace static defines 
+	of LOCALCONN & UNIXCONN with new XTRANS_CONNECTION_FLAGS macro.
+
+2005-01-29  Daniel Stone  <daniel@freedesktop.org>
+	
+	* misc.c:
+	* ICElibint.h:
+	* include/X11/ICE/ICElib.h:
+	Move _IceGetPeerName into the public API as IceGetPeerName, since it is
+	used by libSM.
+
+	* Makefile.am:
+	* configure.ac:
+	Bump soversion to 6.4.1 per above (adding function into ABI).  Bump
+	version to 6.3.5.
+
+2005-01-18  Daniel Stone  <daniel@freedesktop.org>
+
+	* configure.ac:
+	Remove AC_CONFIG_AUX_DIR.
+
+2004-07-05  Daniel Stone  <daniel@freedesktop.org>
+	
+	* configure.ac:
+	xtrans fix - define LOCALCONN and UNIXCONN.
+
+2004-05-10  Eric Anholt  <anholt@FreeBSD.org>
+
+	* configure.ac:
+	libICE doesn't require libX11, remove linking.
+	Don't include warning CFLAGS in .pc file.
+	Bump to version 6.3.4.
+
+2004-04-12  Daniel Stone  <daniel@freedesktop.org>
+
+	* authutils.c: (read_string)
+	* process.c:
+	Sync up with the X11R6.7 tree - add extra parameter to
+	CHECK_SIZE_MATCH macro, minor change to read_string semantics.
+
+	* Tag release 6.3.3 for xlibs 1.0.1.
+
+2004-02-03  Jim Gettys  <jg@freedesktop.org>
+
+	* Get a first approximation authors file
+
+2004-01-17  Daniel Stone  <daniel@fooishbar.org>
+	* Tag release 6.3.2 for first freedesktop.org clientside lib release.
+
+2004-01-15  Harold L Hunt II <huntharo@msu.edu>
+	* Makefile.am: Pass -no-undefined to libtool via LDFLAGS.
+
+2003-10-29  Jim Gettys  <Jim.Gettys@hp.com>
+
+	* Makefile.am:
+	Get rid of obsolete icetrans.h file
+
+2003-10-28  Keith Packard  <keithp@keithp.com>
+
+	* ICElibint.h:
+	* Makefile.am:
+	* accept.c:
+	* connect.c:
+	* icetrans.h:
+	* include/X11/ICE/ICElib.h:
+	* include/X11/ICE/ICEtrans.h:
+	* listen.c:
+	* listenwk.c:
+	* misc.c:
+	* shutdown.c:
+	Ah, the joys of secret interfaces.  SM used some non-public
+	ICE interfaces, these are now public.  One of those was
+	an Xtrans interface in ICE clothing, so ICEtrans.h is now
+	a published header file.
+
+2003-10-28  Keith Packard  <keithp@keithp.com>
+
+	* ICElibint.h:
+	* Makefile.am:
+	* authutil.c: (read_short), (read_string), (read_counted_string),
+	(write_short), (write_string), (write_counted_string):
+	* configure.ac:
+	* connect.c:
+	* error.c: (_IceDefaultErrorHandler), (_IceDefaultIOErrorHandler):
+	* getauth.c: (auth_valid):
+	* globals.h:
+	* iceauth.c: (_IcePoMagicCookie1Proc), (_IcePaMagicCookie1Proc),
+	(binaryEqual):
+	* process.c: (AuthRequired), (AuthReply), (AuthNextPhase),
+	(AcceptConnection), (AcceptProtocol), (PingReply), (ProcessError),
+	(ProcessConnectionSetup), (ProcessAuthRequired),
+	(ProcessAuthReply), (ProcessAuthNextPhase),
+	(ProcessConnectionReply), (ProcessProtocolSetup),
+	(ProcessProtocolReply), (ProcessPing), (ProcessPingReply),
+	(ProcessWantToClose), (ProcessNoClose), (_IceProcessCoreMessage):
+	Prototypes.  Add icetrans.h to SOURCES. Add GCC warnings.
+	No functional changes (I hope)

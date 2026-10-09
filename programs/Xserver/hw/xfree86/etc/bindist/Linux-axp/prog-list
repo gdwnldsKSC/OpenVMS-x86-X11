@@ -1,4 +1,0 @@
-lib/pkgconfig
-lib/lib*.a
-include
-lib/X11/config

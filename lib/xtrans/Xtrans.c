@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/lib/xtrans/Xtrans.c,v 1.6 2005/11/08 06:33:26 jkj Exp $ */
+/* $XdotOrg: xc/lib/xtrans/Xtrans.c,v 1.4 2004/11/15 15:06:56 ago Exp $ */
 /* $Xorg: Xtrans.c,v 1.4 2001/02/09 02:04:06 xorgcvs Exp $ */
 /*
 

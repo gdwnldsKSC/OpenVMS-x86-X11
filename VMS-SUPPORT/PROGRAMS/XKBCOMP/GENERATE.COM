@@ -14,7 +14,7 @@ $ base = "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XKBCOMP]"
 $ target = base + "XKBPARSE.C"
 $ raw = base + "XKBPARSE_RAW.C"
 $ notice = base + "XKBPARSE_NOTICE.C"
-$ grammar = "[.PROGRAMS.XKBCOMP]XKBPARSE.Y"
+$ grammar = "[.APP.XKBCOMP]XKBPARSE.Y"
 $ IF F$SEARCH(grammar) .EQS. "" THEN GOTO done
 $ native_bison "-l" "-o" 'raw' 'grammar'
 $ result = $STATUS

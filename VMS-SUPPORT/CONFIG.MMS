@@ -5,9 +5,8 @@ RTL = SYS$LIBRARY:DECC$RTLDEF.TLB
 ! Override these Unix-style paths with MMS /MACRO for an installed Xlib.
 X11_LIBDIR = lib/X11
 X11_LOCALEDIR = nls
-! Native staging preserves compose.dir bytes under a non-directory filename.
-NLS_COMPOSE_INDEX = [.NLS]COMPOSE_DIR.IN
-! Upstream R6.9 uses separate compiled paths for XKB data and xkbcomp.
+NLS_COMPOSE_INDEX = [.LIB.LIBX11.NLS]COMPOSE^.DIR.PRE
+! Upstream uses separate compiled paths for XKB data and xkbcomp.
 ! RUN_SERVER sets the default to the runtime root; -xkbdir changes only data.
 ! Direct build-tree launches override XKB_BIN_DIRECTORY with XKB_CONFIG_ROOT.
 ! Use absolute Unix paths for a fixed install; XKM_OUTPUT_DIR ends in /.

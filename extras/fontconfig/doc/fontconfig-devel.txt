@@ -1,5 +1,5 @@
 
-Fontconfig Developers Reference, Version 2.3.2
+Fontconfig Developers Reference, Version 2.2.3
 
 Keith Packard
 
@@ -42,7 +42,6 @@ Keith Packard
                       font data
 
               FcInit -- initialize fontconfig library
-              FcFini -- finalize fonconfig library
               FcGetVersion -- library version number
               FcInitReinitialize -- re-initialize library
               FcInitBringUptoDate -- reload configuration files
@@ -68,9 +67,6 @@ Keith Packard
 
               FcPatternBuild -- Create patterns from arguments
               FcPatternDel -- Delete a property from a pattern
-              FcPatternRemove -- Remove one object of the
-                      specified type from the pattern
-
               FcPatternPrint -- Print a pattern for debugging
               FcDefaultSubstitute -- Perform default
                       substitutions in a pattern
@@ -247,15 +243,8 @@ Keith Packard
               FcUtf16ToUcs4 -- convert UTF-16 to UCS4
               FcUtf16Len -- count UTF-16 encoded chars
               FcStrCopy -- duplicate a string
-              FcStrDowncase -- create a lower case translation of
-                      a string
-
               FcStrCopyFilename -- copy a string, expanding '~'
               FcStrCmpIgnoreCase -- compare UTF-8 strings
-                      ignoring ASCII case
-
-              FcStrStr -- locate UTF-8 substring
-              FcStrStrIgnoreCase -- locate UTF-8 substring
                       ignoring ASCII case
 
               FcStrDirname -- directory part of filename
@@ -315,48 +304,31 @@ Keith Packard
    applications rendering mechanism.
                  Property Definitions
 
-    Property       CPP Symbol           Type    Description
+    Property    CPP Symbol      Type    Description
     ----------------------------------------------------
-    family         FC_FAMILY            String  Font family names
-    familylang     FC_FAMILYLANG        String  Language cooresponding
-to
-                                                each family name
+    family         FC_FAMILY            String  Font family name
     style          FC_STYLE             String  Font style. Overrides w
 eight
                                                 and slant
-    stylelang      FC_STYLELANG         String  Language cooresponding
-to
-                                                each style name
-    fullname       FC_FULLNAME          String  Font face full name whe
-re
-                                                different from family a
-nd
-                                                family + style
-    fullnamelang   FC_FULLNAMELANG      String  Language cooresponding
-to
-                                                each fullname
     slant          FC_SLANT             Int     Italic, oblique or roma
 n
     weight         FC_WEIGHT            Int     Light, medium, demibold
 ,
                                                 bold or black
     size           FC_SIZE              Double  Point size
-    width          FC_WIDTH             Int     Condensed, normal or ex
-panded
     aspect         FC_ASPECT            Double  Stretches glyphs horizo
 ntally
                                                 before hinting
     pixelsize      FC_PIXEL_SIZE        Double  Pixel size
-    spacing        FC_SPACING           Int     Proportional, dual-widt
-h,
-                                                monospace or charcell
+    spacing        FC_SPACING           Int     Proportional, monospace
+ or
+                                                charcell
     foundry        FC_FOUNDRY           String  Font foundry name
     antialias      FC_ANTIALIAS         Bool    Whether glyphs can be
                                                 antialiased
     hinting        FC_HINTING           Bool    Whether the rasterizer
 should
                                                 use hinting
-    hintstyle      FC_HINT_STYLE        Int     Automatic hinting style
     verticallayout FC_VERTICAL_LAYOUT   Bool    Use vertical layout
     autohint       FC_AUTOHINT          Bool    Use autohinter instead
 of
@@ -394,14 +366,6 @@ y
     lang           FC_LANG              String  List of RFC-3066-style
                                                 languages this font sup
 ports
-    fontversion    FC_FONTVERSION       Int     Version number of the f
-ont
-    capability     FC_CAPABILITY        String  List of layout capabili
-ties in
-                                                the font
-    embolden       FC_EMBOLDEN          Bool    Rasterizer should
-                                                synthetically embolden
-the font
 
      _________________________________________________________
 
@@ -601,7 +565,6 @@ the font
 ch
         FcResultNoId            Object exists, but has fewer values
                                 than specified
-        FcResultOutOfMemory     Malloc failed
 
      _________________________________________________________
 
@@ -623,7 +586,6 @@ ch
    FcInitLoadConfig -- load configuration
    FcInitLoadConfigAndFonts -- load configuration and font data
    FcInit -- initialize fontconfig library
-   FcFini -- finalize fonconfig library
    FcGetVersion -- library version number
    FcInitReinitialize -- re-initialize library
    FcInitBringUptoDate -- reload configuration files if needed
@@ -650,7 +612,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcInitLoadConfigAndFonts
 
@@ -672,7 +634,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcInit
 
@@ -696,30 +658,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
-
-FcFini
-
-Name
-
-   FcFini -- finalize fonconfig library
-
-Synopsis
-
-#include <fontconfig.h>
-
-   void FcFini(void);
-
-Description
-
-   Frees all data structures allocated by previous calls to
-   fontconfig functions. Fontconfig returns to an uninitialized
-   state, requiring a new call to one of the FcInit functions
-   before any other fontconfig function may be called.
-
-Version
-
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcGetVersion
 
@@ -739,7 +678,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcInitReinitialize
 
@@ -760,7 +699,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcInitBringUptoDate
 
@@ -782,7 +721,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.2. FcPattern
@@ -800,9 +739,6 @@ Version
    FcPatternGet-Type -- Return a typed value from a pattern
    FcPatternBuild -- Create patterns from arguments
    FcPatternDel -- Delete a property from a pattern
-   FcPatternRemove -- Remove one object of the specified type
-          from the pattern
-
    FcPatternPrint -- Print a pattern for debugging
    FcDefaultSubstitute -- Perform default substitutions in a
           pattern
@@ -834,7 +770,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternDestroy
 
@@ -855,7 +791,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternEqual
 
@@ -876,7 +812,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternEqualSubset
 
@@ -898,7 +834,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternHash
 
@@ -919,7 +855,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternAdd
 
@@ -945,7 +881,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternAddWeak
 
@@ -968,7 +904,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternAdd-Type
 
@@ -1009,7 +945,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternGet
 
@@ -1026,14 +962,14 @@ Synopsis
 
 Description
 
-   Returns in v the id'th value associated with the property
-   object. The value returned is not a copy, but rather refers to
-   the data stored within the pattern directly. Applications must
-   not free this value.
+   Returns in `v the `idth value associated with the property
+   `object'. The value returned is not a copy, but rather refers
+   to the data stored within the pattern directly. Applications
+   must not free this value.
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternGet-Type
 
@@ -1077,7 +1013,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternBuild
 
@@ -1118,7 +1054,7 @@ pattern = FcPatternBuild (0, FC_FAMILY, FtTypeString, "Times", (char *)
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternDel
 
@@ -1139,31 +1075,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
-
-FcPatternRemove
-
-Name
-
-   FcPatternRemove -- Remove one object of the specified type
-   from the pattern
-
-Synopsis
-
-#include <fontconfig.h>
-
-   FcBool FcPatternRemove(FcPattern *p, const char *object,
-   intid);
-
-Description
-
-   Removes the value associated with the property `object' at
-   position `id', returning whether the property existed and had
-   a value at that position or not.
-
-Version
-
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcPatternPrint
 
@@ -1185,7 +1097,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcDefaultSubstitute
 
@@ -1214,7 +1126,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcNameParse
 
@@ -1235,7 +1147,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcNameUnparse
 
@@ -1259,7 +1171,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.3. FcFontSet
@@ -1290,7 +1202,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcFontSetDestroy
 
@@ -1311,7 +1223,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcFontSetAdd
 
@@ -1332,7 +1244,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.4. FcObjectSet
@@ -1365,7 +1277,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcObjectSetAdd
 
@@ -1385,7 +1297,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcObjectSetDestroy
 
@@ -1405,7 +1317,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcObjectSetBuild
 
@@ -1430,7 +1342,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.5. FreeType specific functions
@@ -1468,7 +1380,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcFreeTypeCharSet
 
@@ -1493,7 +1405,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcFreeTypeQuery
 
@@ -1516,7 +1428,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.6. FcValue
@@ -1550,7 +1462,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcValueSave
 
@@ -1571,7 +1483,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.7. FcCharSet
@@ -1619,7 +1531,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetDestroy
 
@@ -1640,7 +1552,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetAddChar
 
@@ -1662,7 +1574,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetCopy
 
@@ -1683,7 +1595,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetEqual
 
@@ -1703,7 +1615,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetIntersect
 
@@ -1725,7 +1637,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetUnion
 
@@ -1747,7 +1659,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetSubtract
 
@@ -1768,7 +1680,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetHasChar
 
@@ -1788,7 +1700,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetCount
 
@@ -1808,7 +1720,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetIntersectCount
 
@@ -1829,7 +1741,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetSubtractCount
 
@@ -1850,7 +1762,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetIsSubset
 
@@ -1871,7 +1783,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetFirstPage
 
@@ -1894,7 +1806,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcCharSetNextPage
 
@@ -1917,7 +1829,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.8. FcMatrix
@@ -1952,7 +1864,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcMatrixCopy
 
@@ -1972,7 +1884,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcMatrixEqual
 
@@ -1994,7 +1906,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcMatrixMultiply
 
@@ -2016,7 +1928,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcMatrixRotate
 
@@ -2039,7 +1951,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcMatrixScale
 
@@ -2062,7 +1974,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcMatrixShear
 
@@ -2085,7 +1997,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.9. FcConfig
@@ -2144,7 +2056,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigDestroy
 
@@ -2167,7 +2079,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigSetCurrent
 
@@ -2189,7 +2101,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigGetCurrent
 
@@ -2209,7 +2121,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigUptoDate
 
@@ -2230,7 +2142,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigBuildFonts
 
@@ -2253,7 +2165,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigGetConfigDirs
 
@@ -2275,7 +2187,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigGetFontDirs
 
@@ -2297,7 +2209,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigGetConfigFiles
 
@@ -2319,7 +2231,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigGetCache
 
@@ -2340,7 +2252,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigGetFonts
 
@@ -2361,7 +2273,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigGetBlanks
 
@@ -2383,7 +2295,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigGetRescanInverval
 
@@ -2406,7 +2318,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigSetRescanInverval
 
@@ -2428,7 +2340,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigAppFontAddFile
 
@@ -2449,7 +2361,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigAppFontAddDir
 
@@ -2471,7 +2383,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigAppFontClear
 
@@ -2492,7 +2404,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigSubstituteWithPat
 
@@ -2517,7 +2429,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigSubstitute
 
@@ -2538,7 +2450,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcFontMatch
 
@@ -2562,7 +2474,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcFontSort
 
@@ -2599,7 +2511,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcFontRenderPrepare
 
@@ -2624,7 +2536,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcFontList
 
@@ -2647,7 +2559,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigFilename
 
@@ -2679,7 +2591,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcConfigParseAndLoad
 
@@ -2704,7 +2616,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.10. FcObjectType
@@ -2736,7 +2648,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcNameUnregisterObjectTypes
 
@@ -2757,7 +2669,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcNameGetObjectType
 
@@ -2777,7 +2689,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.11. FcConstant
@@ -2810,7 +2722,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcNameUnregisterConstants
 
@@ -2831,7 +2743,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcNameGetConstant
 
@@ -2852,7 +2764,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcNameConstant
 
@@ -2874,7 +2786,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.12. FcBlanks
@@ -2910,7 +2822,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcBlanksDestroy
 
@@ -2930,7 +2842,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcBlanksAdd
 
@@ -2951,7 +2863,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcBlanksIsMember
 
@@ -2972,7 +2884,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.13. FcAtomic
@@ -3015,7 +2927,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcAtomicLock
 
@@ -3037,7 +2949,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcAtomicNewFile
 
@@ -3058,7 +2970,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcAtomicOrigFile
 
@@ -3078,7 +2990,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcAtomicReplaceOrig
 
@@ -3099,7 +3011,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcAtomicDeleteNew
 
@@ -3120,7 +3032,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcAtomicUnlock
 
@@ -3140,7 +3052,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcAtomicDestroy
 
@@ -3160,7 +3072,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.14. File and Directory routines
@@ -3196,7 +3108,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcDirScan
 
@@ -3221,7 +3133,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcDirSave
 
@@ -3243,7 +3155,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcDirCacheValid
 
@@ -3264,7 +3176,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.15. FcStrSet and FcStrList
@@ -3302,7 +3214,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrSetMember
 
@@ -3322,7 +3234,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrSetAdd
 
@@ -3342,7 +3254,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrSetAddFilename
 
@@ -3364,7 +3276,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrSetDel
 
@@ -3385,7 +3297,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrSetDestroy
 
@@ -3405,7 +3317,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrListCreate
 
@@ -3425,7 +3337,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrListNext
 
@@ -3445,7 +3357,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrListDone
 
@@ -3465,7 +3377,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
      _________________________________________________________
 
 4.16. String utilities
@@ -3477,13 +3389,8 @@ Version
    FcUtf16ToUcs4 -- convert UTF-16 to UCS4
    FcUtf16Len -- count UTF-16 encoded chars
    FcStrCopy -- duplicate a string
-   FcStrDowncase -- create a lower case translation of a string
    FcStrCopyFilename -- copy a string, expanding '~'
    FcStrCmpIgnoreCase -- compare UTF-8 strings ignoring ASCII
-          case
-
-   FcStrStr -- locate UTF-8 substring
-   FcStrStrIgnoreCase -- locate UTF-8 substring ignoring ASCII
           case
 
    FcStrDirname -- directory part of filename
@@ -3513,7 +3420,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcUcs4ToUtf8
 
@@ -3534,7 +3441,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcUtf8Len
 
@@ -3559,7 +3466,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcUtf16ToUcs4
 
@@ -3583,7 +3490,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcUtf16Len
 
@@ -3609,7 +3516,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrCopy
 
@@ -3631,28 +3538,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
-
-FcStrDowncase
-
-Name
-
-   FcStrDowncase -- create a lower case translation of a string
-
-Synopsis
-
-#include <fontconfig.h>
-
-   FcChar8 * FcStrDowncase(const FcChar8 *s);
-
-Description
-
-   Allocates memory, copies s, converting upper case letters to
-   lower case and returns the allocated buffer.
-
-Version
-
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrCopyFilename
 
@@ -3674,7 +3560,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrCmpIgnoreCase
 
@@ -3687,7 +3573,7 @@ Synopsis
 
 #include <fontconfig.h>
 
-   int FcStrCmpIgnoreCase(const FcChar8 *s1, const FcChar8 *s2);
+   int FcStrCmpIgnoreCase(const char *s1, const char *s2);
 
 Description
 
@@ -3698,54 +3584,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
-
-FcStrStr
-
-Name
-
-   FcStrStr -- locate UTF-8 substring
-
-Synopsis
-
-#include <fontconfig.h>
-
-   FcChar8 * FcStrStr(const char *s1, const char *s2);
-
-Description
-
-   Returns the location of s2 in s1. Returns NULL if s2 is not
-   present in s1. This test will operate properly with UTF8
-   encoded strings, although it does not check for well formed
-   strings.
-
-Version
-
-   Fontconfig version 2.3.2
-
-FcStrStrIgnoreCase
-
-Name
-
-   FcStrStrIgnoreCase -- locate UTF-8 substring ignoring ASCII
-   case
-
-Synopsis
-
-#include <fontconfig.h>
-
-   FcChar8 * FcStrStrIgnoreCase(const char *s1, const char *s2);
-
-Description
-
-   Returns the location of s2 in s1, ignoring ASCII case. Returns
-   NULL if s2 is not present in s1. This test is case-insensitive
-   in the ASCII range and will operate properly with UTF8 encoded
-   strings, although it does not check for well formed strings.
-
-Version
-
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrDirname
 
@@ -3767,7 +3606,7 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3
 
 FcStrBasename
 
@@ -3789,4 +3628,4 @@ Description
 
 Version
 
-   Fontconfig version 2.3.2
+   Fontconfig version 2.2.3

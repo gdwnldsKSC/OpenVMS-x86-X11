@@ -1,0 +1,53 @@
+2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version for X11R7 release.
+
+2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for final X11R7 release candidate.
+
+2005-12-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	* src/Makefile.am:
+	Bug #5175: Make encodingsdir configurable (David Coulthart and
+	Kevin E. Martin)
+
+2005-12-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC3 release.
+
+2005-11-19  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* fontenc.pc.in:
+	Update pkgconfig files to separate library build-time dependencies
+	from application build-time dependencies.
+
+2005-11-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC2 release.
+
+2005-10-18  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for RC1 release.
+
+2005-07-09  Keith Packard  <keithp@keithp.com>
+
+	* .cvsignore:
+	* encodings/.cvsignore:
+	* encodings/large/.cvsignore:
+	* src/.cvsignore:
+	Add .cvsignore files
+	
+	* configure.ac:
+	Depend on xproto, not x11 so we do not link against -X11
+
+2005-06-30  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* configure.ac:
+	Check for zlib

@@ -11,7 +11,7 @@ $ IF (P4 .NES. "") .OR. (P5 .NES. "") .OR. (P6 .NES. "") .OR. -
 $ sources = "|FONTTOSFNT|READ|WRITE|STRUCT|UTIL|"
 $ module = F$EDIT(F$PARSE(P1,,,"NAME"),"UPCASE")
 $ IF F$LOCATE("|" + module + "|",sources) .EQ. F$LENGTH(sources) THEN GOTO done
-$ source_directory = "[.PROGRAMS.FONTTOSFNT]"
+$ source_directory = "[.APP.FONTTOSFNT]"
 $ IF F$EDIT(F$PARSE(P1,,,"DEVICE"),"UPCASE") .NES. -
      F$EDIT(F$PARSE(source_directory,,,"DEVICE"),"UPCASE") THEN GOTO done
 $ IF F$EDIT(F$PARSE(P1,,,"DIRECTORY"),"UPCASE") .NES. -

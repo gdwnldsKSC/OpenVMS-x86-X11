@@ -1,0 +1,45 @@
+2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version for X11R7 release.
+
+2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for final X11R7 release candidate.
+
+2005-12-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* xorg-macros.m4:
+	Better macro to check whether any of malloc(0), realloc(ptr,0) or
+	calloc(0) return NULL since Xlib expects all three to return a
+	valid pointer.
+
+2005-12-08  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* xorg-macros.m4:
+	Add support for building other formats from sgml docs.
+
+2005-12-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC3 release.
+
+2005-12-02  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* xorg-macros.m4:
+	Add macro to detect when malloc(0) returns NULL for use in
+	libraries.
+
+2005-11-28  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* macros/xorg-macros.m4: 
+	Bug #5167 <https://bugs.freedesktop.org/show_bug.cgi?id=5167>
+	Linux prefers *.1x man pages in man1 subdirectory.
+	Also allow builders to override man page suffixes & directories
+	to match their environments via configure-time environment variables.
+	
+2005-10-17  Kristian Høgsberg  <krh@redhat.com>
+
+	* macros/xorgversion.m4: Add missing comma in AC_HELP_STRING call.
+

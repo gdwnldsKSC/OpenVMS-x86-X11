@@ -48,7 +48,11 @@ SOFTWARE.
 ******************************************************************/
 /* $XConsortium: afbline.c,v 5.18 94/04/17 20:28:26 dpw Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "gcstruct.h"
 #include "windowstr.h"
@@ -401,13 +405,13 @@ afbLineSS(pDrawable, pGC, mode, npt, pptInit)
 
 					switch(rrops[d]) {
 						case RROP_BLACK:
-							*addrl &= rmask[x2 & PIM];
+							*addrl &= mfbGetrmask(x2 & PIM);
 							break;
 						case RROP_WHITE:
-							*addrl |= mask[x2 & PIM];
+							*addrl |= mfbGetmask(x2 & PIM);
 							break;
 						case RROP_INVERT:
-							*addrl ^= mask[x2 & PIM];
+							*addrl ^= mfbGetmask(x2 & PIM);
 							break;
 						case RROP_NOP:
 							break;
@@ -679,14 +683,14 @@ dontStep:		;
 
 					switch (rop) {
 						case RROP_BLACK:
-							*addrl &= rmask[x2 & PIM];
+							*addrl &= mfbGetrmask(x2 & PIM);
 							break;
 						case RROP_WHITE:
-							*addrl |= mask[x2 & PIM];
+							*addrl |= mfbGetmask(x2 & PIM);
 							break;
 
 						case RROP_INVERT:
-							*addrl ^= mask[x2 & PIM];
+							*addrl ^= mfbGetmask(x2 & PIM);
 							break;
 
 						case RROP_NOP:

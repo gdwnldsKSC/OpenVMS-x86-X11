@@ -119,7 +119,7 @@ Default: off
 Enable or disable the HW cursor.  Default: on.
 .TP
 .BI "Option \*qSWCursor\*q \*q" boolean \*q
-Enable or disable the HW cursor.  Default: off.
+Enable or disable the SW cursor.  Default: off.
 .TP
 .BI "Option \*qSTN\*q \*q" boolean \*q
 Force detection of STN screen type. Default: off.

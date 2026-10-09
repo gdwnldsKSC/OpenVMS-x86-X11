@@ -37,10 +37,16 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/Xaw/List.h>
 #include <X11/Xaw/Command.h>
 #include <X11/Xaw/AsciiText.h> 
+#include <X11/Xaw/Cardinals.h>
 
 #include "xmore.h"
+
+#ifdef USE_XPRINT
+
 #include "printdialog.h"
 #include "print.h"
+
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -65,8 +71,10 @@ static const char   *viewFileName; /* file to browse (from argv[1]) */
 /* prototypes */
 static void quitAction(Widget w,  XEvent *event, String *params, Cardinal *num_params);
 static void quitXtProc(Widget w, XtPointer client_data, XtPointer callData);
+#ifdef USE_XPRINT
 static void printAction(Widget w, XEvent *event, String *params, Cardinal *num_params);
 static void printXtProc(Widget w, XtPointer client_data, XtPointer callData);
+#endif
 
 static XrmOptionDescRec options[] = {
 {
@@ -76,7 +84,9 @@ static XrmOptionDescRec options[] = {
 
 static XtActionsRec actions[] = {
     { "quit",          quitAction      },
+#ifdef USE_XPRINT
     { "print",         printAction     }
+#endif
 };
 
 /* See xmore.h */
@@ -143,6 +153,8 @@ printshellDestroyXtProc(Widget w, XtPointer client_data, XtPointer callData)
     XawPrintDialogClosePrinterConnection(printdialog, False);
 }
 
+#ifdef USE_XPRINT
+
 static void
 printOKXtProc(Widget w, XtPointer client_data, XtPointer callData)
 {
@@ -166,7 +178,8 @@ printOKXtProc(Widget w, XtPointer client_data, XtPointer callData)
 
     DoPrintTextSource(ProgramName,
                       textsource, toplevel,
-                      pdcs->pdpy, pdcs->pcontext, printshellDestroyXtProc,
+                      pdcs->pdpy, pdcs->pcontext, pdcs->colorspace,
+                      printshellDestroyXtProc,
                       printJobNameBuffer,
                       pdcs->printToFile?pdcs->printToFileName:NULL);
 
@@ -235,6 +248,7 @@ printAction(Widget w,  XEvent *event, String *params, Cardinal *num_params)
   XtPopup(printdialog_shell, XtGrabNonexclusive);
 }
 
+#endif
 
 int main( int argc, char *argv[] )
 {
@@ -278,13 +292,15 @@ int main( int argc, char *argv[] )
   XtSetArg(args[n], XtNfontSet,          userOptions.textfont);    n++;
   text = XtCreateManagedWidget("text", asciiTextWidgetClass, form, args, n);
 
+#ifdef USE_XPRINT
   n = 0;
   XtSetArg(args[n], XtNfromHoriz,       NULL);            n++;
   XtSetArg(args[n], XtNfromVert,        text);            n++;
   XtSetArg(args[n], XtNlabel,           "Print...");      n++;
   printbutton = XtCreateManagedWidget("print", commandWidgetClass, form, args, n);
   XtAddCallback(printbutton, XtNcallback, printXtProc, 0);        
-
+#endif
+  
   n = 0;
   XtSetArg(args[n], XtNfromHoriz,       printbutton);            n++;
   XtSetArg(args[n], XtNfromVert,        text);                   n++;

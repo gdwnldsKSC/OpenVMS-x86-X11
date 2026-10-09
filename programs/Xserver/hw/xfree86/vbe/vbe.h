@@ -7,7 +7,7 @@
  * The mode query/save/set/restore functions from the vesa driver 
  * have been moved here.
  * Copyright (c) 2000 by Conectiva S.A. (http://www.conectiva.com)
- * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br> 
+ * Authors: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br> 
  */
 
 #ifndef _VBE_H
@@ -60,8 +60,7 @@ typedef struct vbeControllerInfoBlock {
     CARD8  OemData[256];
 } vbeControllerInfoRec, *vbeControllerInfoPtr;
 
-#if defined(__GNUC__) || defined(SCO) || defined(__USLC__) || \
-	defined(__SUNPRO_C)
+#if defined(__GNUC__) || defined(__USLC__) || defined(__SUNPRO_C)
 #pragma pack()	/* All GCC versions recognise this syntax */
 #else
 #pragma pack(0)

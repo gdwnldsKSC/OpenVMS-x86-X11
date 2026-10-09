@@ -70,12 +70,17 @@
  *
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #define HASH_MAIN 0
 
 #if HASH_MAIN
 # include <stdio.h>
 # include <stdlib.h>
 #else
+# include "drm.h"
 # include "xf86drm.h"
 # ifdef XFree86LOADER
 #  include "xf86.h"

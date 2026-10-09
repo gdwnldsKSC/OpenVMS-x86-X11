@@ -4,7 +4,7 @@
 /**************************************************************************
 
 Copyright (c) 2002 Apple Computer, Inc. All Rights Reserved.
-Copyright (c) 2003 Torrey T. Lyons. All Rights Reserved.
+Copyright (c) 2003-2004 Torrey T. Lyons. All Rights Reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
@@ -59,8 +59,6 @@ typedef struct _AppleWMProcs {
     FrameDrawProc FrameDraw;
 } AppleWMProcsRec, *AppleWMProcsPtr;
 
-extern AppleWMProcsPtr appleWMProcs;
-
 void AppleWMExtensionInit(
     AppleWMProcsPtr procsPtr
 );
@@ -69,11 +67,15 @@ void AppleWMSetScreenOrigin(
     WindowPtr pWin
 );
 
+Bool AppleWMDoReorderWindow(
+    WindowPtr pWin
+);
+
 void AppleWMSendEvent(
-    int			/* type */,
-    unsigned int	/* mask */,
-    int			/* which */,
-    int			/* arg */
+    int             /* type */,
+    unsigned int    /* mask */,
+    int             /* which */,
+    int             /* arg */
 );
 
 unsigned int AppleWMSelectedEvents(

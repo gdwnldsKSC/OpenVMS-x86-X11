@@ -48,6 +48,9 @@ SOFTWARE.
 ******************************************************************/
 /* $XFree86: xc/lib/Xaw/Label.c,v 1.12 2001/01/17 19:42:27 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <X11/IntrinsicP.h>

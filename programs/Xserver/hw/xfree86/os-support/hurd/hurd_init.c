@@ -22,7 +22,11 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/os-support/hurd/hurd_init.c,v 1.1 1998/08/16 10:25:48 dawes Exp $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "input.h"
 #include "scrnintstr.h"

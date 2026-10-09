@@ -38,11 +38,13 @@ typedef struct savage_texture_object_t *savageTextureObjectPtr;
 #include "drm.h"
 #include "savage_drm.h"
 #include "savage_init.h"
+#include "savage_3d_reg.h"
 #include "mm.h"
 #include "tnl/t_vertex.h"
 
-#include "savagetex.h"
-#include "savagedma.h"
+#include "texmem.h"
+
+#include "xmlconfig.h"
 
 /* Reasons to fallback on all primitives.
  */
@@ -50,16 +52,16 @@ typedef struct savage_texture_object_t *savageTextureObjectPtr;
 #define SAVAGE_FALLBACK_DRAW_BUFFER    0x2
 #define SAVAGE_FALLBACK_READ_BUFFER    0x4
 #define SAVAGE_FALLBACK_COLORMASK      0x8  
-#define SAVAGE_FALLBACK_STIPPLE        0x10  
-#define SAVAGE_FALLBACK_SPECULAR       0x20 
-#define SAVAGE_FALLBACK_LOGICOP        0x40
+#define SAVAGE_FALLBACK_SPECULAR       0x10 
+#define SAVAGE_FALLBACK_LOGICOP        0x20
 /*frank 2001/11/12 add the stencil fallbak*/
-#define SAVAGE_FALLBACK_STENCIL        0x80
-#define SAVAGE_FALLBACK_RENDERMODE     0x100
-#define SAVAGE_FALLBACK_BLEND_EQ       0x200
+#define SAVAGE_FALLBACK_STENCIL        0x40
+#define SAVAGE_FALLBACK_RENDERMODE     0x80
+#define SAVAGE_FALLBACK_BLEND_EQ       0x100
+#define SAVAGE_FALLBACK_NORAST         0x200
+#define SAVAGE_FALLBACK_PROJ_TEXTURE   0x400
 
 
-#define HW_STENCIL 1
 #define HW_CULL    1
 
 /* for savagectx.new_state - manage GL->driver state changes
@@ -67,9 +69,23 @@ typedef struct savage_texture_object_t *savageTextureObjectPtr;
 #define SAVAGE_NEW_TEXTURE 0x1
 #define SAVAGE_NEW_CULL    0x2
 
+/* What needs to be changed for the current vertex dma buffer?
+ * This will go away!
+ */
+#define SAVAGE_UPLOAD_LOCAL	0x1  /* DrawLocalCtrl (S4) or 
+					DrawCtrl and ZBufCtrl (S3D) */
+#define SAVAGE_UPLOAD_TEX0	0x2  /* texture unit 0 */
+#define SAVAGE_UPLOAD_TEX1	0x4  /* texture unit 1 (S4 only) */
+#define SAVAGE_UPLOAD_FOGTBL	0x8  /* fog table */
+#define SAVAGE_UPLOAD_GLOBAL	0x10 /* most global regs */
+#define SAVAGE_UPLOAD_TEXGLOBAL 0x20 /* TexBlendColor (S4 only) */
 
 /*define the max numer of vertex in vertex buf*/
 #define SAVAGE_MAX_VERTEXS 0x10000
+
+/* Don't make it too big. We don't want to buffer up a whole frame
+ * that would force the application to wait later. */
+#define SAVAGE_CMDBUF_SIZE 1024
 
 /* Use the templated vertex formats:
  */
@@ -111,6 +127,23 @@ typedef void (*savage_point_func)( savageContextPtr, savageVertex * );
 			imesa->savageScreen->deviceID == CHIP_S3TRISTAR64CDDR )
 
 
+struct savage_vtxbuf_t {
+    GLuint total, used, flushed; /* in 32 bit units */
+    GLuint idx;		/* for DMA buffers */
+    u_int32_t *buf;
+};
+
+struct savage_cmdbuf_t {
+    GLuint size; /* size in qwords */
+    drm_savage_cmd_header_t *base;  /* initial state starts here */
+    drm_savage_cmd_header_t *start; /* drawing/state commands start here */
+    drm_savage_cmd_header_t *write; /* append stuff here */
+};
+
+struct savage_elt_t {
+    GLuint n;				/* number of elts currently allocated */
+    drm_savage_cmd_header_t *cmd;	/* the indexed drawing command */
+};
 
 
 struct savage_context_t {
@@ -119,18 +152,11 @@ struct savage_context_t {
     GLcontext *glCtx;
 
     int lastTexHeap;
-    savageTextureObjectPtr CurrentTexObj[2];
-   
-    struct savage_texture_object_t TexObjList[SAVAGE_NR_TEX_HEAPS];
-    struct savage_texture_object_t SwappedOut; 
-  
-    GLuint c_texupload;
-    GLuint c_texusage;
-    GLuint tex_thrash;
-   
-    GLuint TextureMode;
-   
-    
+    driTexHeap *textureHeaps[SAVAGE_NR_TEX_HEAPS];
+    driTextureObject swapped;
+
+    driTextureObject *CurrentTexObj[2];
+
     /* Hardware state
      */
 
@@ -139,25 +165,31 @@ struct savage_context_t {
     /* Manage our own state */
     GLuint new_state; 
     GLuint new_gl_state;
+    GLboolean ptexHack;
 
-    GLuint BCIBase;  
-    GLuint MMIO_BASE;
+    /* Command buffer */
+    struct savage_cmdbuf_t cmdBuf;
 
-    /* DMA command buffer */
-    DMABuffer_t DMABuf;
+    /* Elt book-keeping */
+    struct savage_elt_t elts;
+    GLint firstElt;
+
+    /* Vertex buffers */
+    struct savage_vtxbuf_t dmaVtxBuf, clientVtxBuf;
+    struct savage_vtxbuf_t *vtxBuf;
 
     /* aperture base */
-    GLuint apertureBase[5];
+    GLubyte *apertureBase[5];
     GLuint aperturePitch;
     /* Manage hardware state */
     GLuint dirty;
     GLboolean lostContext;
-    memHeap_t *texHeap[SAVAGE_NR_TEX_HEAPS];
     GLuint bTexEn1;
     /* One of the few bits of hardware state that can't be calculated
      * completely on the fly:
      */
     GLuint LcsCullMode;
+    GLuint texEnvColor;
 
    /* Vertex state 
     */
@@ -176,7 +208,9 @@ struct savage_context_t {
    GLenum raster_primitive;
    GLenum render_primitive;
 
-   GLuint DrawPrimitiveCmd;
+   GLuint skip;
+   GLubyte HwPrim;
+   GLuint HwVertexSize;
 
    /* Fallback rasterization functions 
     */
@@ -190,8 +224,8 @@ struct savage_context_t {
     GLuint ClearColor;
     GLfloat depth_scale;
     GLfloat hw_viewport[16];
-    /* DRI stuff */  
-    drmBufPtr  vertex_dma_buffer;
+    /* DRI stuff */
+    GLuint bufferSize;
 
     GLframebuffer *glBuffer;
    
@@ -202,8 +236,8 @@ struct savage_context_t {
 
     /* These refer to the current draw (front vs. back) buffer:
      */
-    char *drawMap;		/* draw buffer address in virtual mem */
-    char *readMap;	
+    GLubyte *drawMap;		/* draw buffer address in virtual mem */
+    GLubyte *readMap;	
     int drawX;   		/* origin of drawable in draw buffer */
     int drawY;
     GLuint numClipRects;		/* cliprects for that buffer */
@@ -221,19 +255,20 @@ struct savage_context_t {
     GLuint backup_streamFIFO;
     GLuint NotFirstFrame;
    
+    GLboolean inSwap;
     GLuint lastSwap;
-    GLuint secondLastSwap;
     GLuint ctxAge;
     GLuint dirtyAge;
     GLuint any_contend;		/* throttle me harder */
 
-    GLuint scissor;
-    GLboolean scissorChanged;
-    drm_clip_rect_t draw_rect;
-    drm_clip_rect_t scissor_rect;
-    drm_clip_rect_t tmp_boxes[2][SAVAGE_NR_SAREA_CLIPRECTS];
-    /*Texture aging and DMA based aging*/
-    unsigned int texAge[SAVAGE_NR_TEX_HEAPS]; 
+    /* Scissor state needs to be mirrored so buffered commands can be
+     * emitted with the old scissor state when scissor state changes.
+     */
+    struct {
+	GLboolean enabled;
+	GLint x, y;
+	GLsizei w, h;
+    } scissor;
 
     drm_context_t hHWContext;
     drm_hw_lock_t *driHwLock;
@@ -255,11 +290,19 @@ struct savage_context_t {
 
     GLboolean hw_stencil;
 
-    /*shadow pointer*/
-    volatile GLuint  *shadowPointer;
-    volatile GLuint *eventTag1;
-    GLuint shadowCounter;
-    GLboolean shadowStatus;
+    /* Performance counters
+     */
+    GLuint c_textureSwaps;
+
+    /* Configuration cache
+     */
+    driOptionCache optionCache;
+    GLint texture_depth;
+    GLboolean no_rast;
+    GLboolean float_depth;
+    GLboolean enable_fastpath;
+    GLboolean enable_vdma;
+    GLboolean sync_frames;
 };
 
 #define SAVAGE_CONTEXT(ctx) ((savageContextPtr)(ctx->DriverCtx))
@@ -267,37 +310,20 @@ struct savage_context_t {
 /* To remove all debugging, make sure SAVAGE_DEBUG is defined as a
  * preprocessor symbol, and equal to zero.  
  */
-#define SAVAGE_DEBUG 0   
 #ifndef SAVAGE_DEBUG
-#warning "Debugging enabled - expect reduced performance"
 extern int SAVAGE_DEBUG;
 #endif
 
-#define DEBUG_VERBOSE_2D     0x1
-#define DEBUG_VERBOSE_RING   0x8
-#define DEBUG_VERBOSE_OUTREG 0x10
-#define DEBUG_ALWAYS_SYNC    0x40
-#define DEBUG_VERBOSE_MSG    0x80
-#define DEBUG_NO_OUTRING     0x100
-#define DEBUG_NO_OUTREG      0x200
-#define DEBUG_VERBOSE_API    0x400
-#define DEBUG_VALIDATE_RING  0x800
-#define DEBUG_VERBOSE_LRU    0x1000
-#define DEBUG_VERBOSE_DRI    0x2000
-#define DEBUG_VERBOSE_IOCTL  0x4000
+#define DEBUG_FALLBACKS      0x001
+#define DEBUG_VERBOSE_API    0x002
+#define DEBUG_VERBOSE_TEX    0x004
+#define DEBUG_VERBOSE_MSG    0x008
+#define DEBUG_DMA            0x010
+#define DEBUG_STATE          0x020
 
 #define TARGET_FRONT    0x0
 #define TARGET_BACK     0x1
 #define TARGET_DEPTH    0x2
-
-#define SAVAGEDEBUG 0
-#define _SAVAGE_DEBUG
-/*frank remove the least debug information*/
-#ifdef _SAVAGE_DEBUG
-#define fprintf fprintf
-#else
-#define fprintf(...) 
-#endif
 
 #define SUBPIXEL_X -0.5
 #define SUBPIXEL_Y -0.375

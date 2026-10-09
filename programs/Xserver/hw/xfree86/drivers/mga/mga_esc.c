@@ -7,6 +7,10 @@
 * (C) Matrox Graphics, Inc.
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef USEMGAHAL
 
 /* All drivers should typically include these */

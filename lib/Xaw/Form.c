@@ -49,6 +49,9 @@ SOFTWARE.
 
 /* $XFree86: xc/lib/Xaw/Form.c,v 1.20 2001/02/05 22:38:04 paulo Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xmu/CharSet.h>

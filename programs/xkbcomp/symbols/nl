@@ -37,7 +37,7 @@ xkb_symbols "basic" {
     key <AE12> {	[    degree,	dead_tilde	],
 			[ dead_cedilla			]	};
     key <AD03> {	[         e,	E        	],
-			[    eacute,	Eacute   	]	};
+			[    EuroSign,	cent    	]	};
     key <AD04> {	[         r,	R        	],
 			[ paragraph,	registered	]	};
     key <AD05> {	[         t,	T        	],
@@ -52,7 +52,7 @@ xkb_symbols "basic" {
 			[    ograve,	Ograve   	]	};
     key <AD10> {	[         p,	P        	],
 			[ paragraph			]	};
-    key <AD11> {	[ dead_diaeresis,	dead_tilde	],
+    key <AD11> {	[ dead_diaeresis,	dead_circumflex	],
 			[ asciitilde,	asciicircum	]	};
     key <AD12> {	[  asterisk,	bar      	]	};
     key <AC01> {	[         a,	A        	],
@@ -85,7 +85,7 @@ xkb_symbols "basic" {
 			[ periodcentered,	guillemotright	]	};
     key <AB10> {	[     minus,	equal    	],
 			[    hyphen			]	};
-    key <LSGT> {	[ bracketleft,	bracketright	],
+    key <LSGT> {	[ bracketright,	bracketleft	],
 			[       bar			]	};
 
     // End alphanumeric section

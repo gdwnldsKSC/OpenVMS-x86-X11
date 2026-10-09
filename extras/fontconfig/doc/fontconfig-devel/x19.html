@@ -1,18 +1,14 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >FUNCTIONAL OVERVIEW</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
 REL="HOME"
-TITLE="Fontconfig Developers Reference, Version 2.2.2
- "
 HREF="index.html"><LINK
 REL="PREVIOUS"
-TITLE="Fontconfig Developers Reference, Version 2.2.2
- "
 HREF="index.html"><LINK
 REL="NEXT"
 TITLE="Datatypes"
@@ -36,7 +32,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
->Fontconfig Developers Reference, Version 2.2.2</TH
+></TH
 ></TR
 ><TR
 ><TD
@@ -134,25 +130,36 @@ convenience for the applications rendering mechanism.
 CLASS="PROGRAMLISTING"
 >                 Property Definitions
 
-    Property    CPP Symbol      Type    Description
+    Property       CPP Symbol           Type    Description
     ----------------------------------------------------
-    family         FC_FAMILY            String  Font family name
+    family         FC_FAMILY            String  Font family names
+    familylang     FC_FAMILYLANG        String  Language cooresponding to
+                                                each family name
     style          FC_STYLE             String  Font style. Overrides weight
                                                 and slant
+    stylelang      FC_STYLELANG         String  Language cooresponding to
+                                                each style name
+    fullname       FC_FULLNAME          String  Font face full name where
+                                                different from family and
+                                                family + style
+    fullnamelang   FC_FULLNAMELANG      String  Language cooresponding to
+                                                each fullname
     slant          FC_SLANT             Int     Italic, oblique or roman
     weight         FC_WEIGHT            Int     Light, medium, demibold,
                                                 bold or black
     size           FC_SIZE              Double  Point size
+    width          FC_WIDTH             Int     Condensed, normal or expanded
     aspect         FC_ASPECT            Double  Stretches glyphs horizontally
                                                 before hinting
     pixelsize      FC_PIXEL_SIZE        Double  Pixel size
-    spacing        FC_SPACING           Int     Proportional, monospace or
-                                                charcell
+    spacing        FC_SPACING           Int     Proportional, dual-width,
+                                                monospace or charcell
     foundry        FC_FOUNDRY           String  Font foundry name
     antialias      FC_ANTIALIAS         Bool    Whether glyphs can be
                                                 antialiased
     hinting        FC_HINTING           Bool    Whether the rasterizer should
                                                 use hinting
+    hintstyle      FC_HINT_STYLE        Int     Automatic hinting style
     verticallayout FC_VERTICAL_LAYOUT   Bool    Use vertical layout
     autohint       FC_AUTOHINT          Bool    Use autohinter instead of
                                                 normal hinter
@@ -176,6 +183,11 @@ CLASS="PROGRAMLISTING"
                                                 the font
     lang           FC_LANG              String  List of RFC-3066-style
                                                 languages this font supports
+    fontversion    FC_FONTVERSION       Int     Version number of the font
+    capability     FC_CAPABILITY        String  List of layout capabilities in
+                                                the font
+    embolden       FC_EMBOLDEN          Bool    Rasterizer should
+                                                synthetically embolden the font
     </PRE
 ></DIV
 ></DIV
@@ -223,7 +235,7 @@ ACCESSKEY="N"
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->Fontconfig Developers Reference, Version 2.2.2</TD
+></TD
 ><TD
 WIDTH="34%"
 ALIGN="center"

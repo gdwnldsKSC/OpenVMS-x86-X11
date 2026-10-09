@@ -1,5 +1,5 @@
 /* $Xorg: verify.c,v 1.4 2001/02/09 02:05:41 xorgcvs Exp $ */
-/* $XdotOrg: xc/programs/xdm/greeter/verify.c,v 1.3 2004/04/24 23:28:17 alanc Exp $ */
+/* $XdotOrg: xc/programs/xdm/greeter/verify.c,v 1.6 2005/11/08 06:33:32 jkj Exp $ */
 /*
 
 Copyright 1988, 1998  The Open Group
@@ -53,6 +53,9 @@ from The Open Group.
 # include	<login_cap.h>
 # include	<varargs.h>
 # include	<bsd_auth.h>
+#elif defined(USESECUREWARE)
+# include       <sys/types.h>
+# include       <prot.h>
 #endif
 
 # include	"greet.h"
@@ -84,7 +87,7 @@ static char *envvars[] = {
 #include <sys/param.h>
 #include <kerberosIV/krb.h>
 /* OpenBSD 2.8 needs this. */
-#ifdef OpenBSD && OpenBSD <= 200012
+#if defined(OpenBSD) && (OpenBSD <= 200012)
 #include <kerberosIV/kafs.h>
 #endif
 static char krbtkfile[MAXPATHLEN];
@@ -240,7 +243,7 @@ Verify (struct display *d, struct greet_info *greet, struct verify_info *verify)
 	/* Build path of the auth script and call it */
 	snprintf(path, sizeof(path), _PATH_AUTHPROG "%s", style);
 	auth_call(as, path, style, "-s", "response", greet->name, 
-		  (void *)NULL);
+		  lc->lc_class, (void *)NULL);
 	authok = auth_getstate(as);
 
 	if ((authok & AUTH_ALLOW) == 0) {
@@ -291,7 +294,98 @@ Verify (struct display *d, struct greet_info *greet, struct verify_info *verify)
 			break;
 		}
 	} 
-#else /* !USE_BSDAUTH */
+#elif defined(USESECUREWARE) /* !USE_BSDAUTH */
+/*
+ * This is a global variable and will be referenced in at least session.c
+ */
+struct smp_user_info *userp = 0;
+
+int
+Verify (struct display *d, struct greet_info *greet, struct verify_info *verify)
+{
+  int ret, pwtries = 0, nis, delay;
+  char *reason = 0;
+  struct passwd	*p;
+  char *shell, *home, **argv;
+
+  Debug ("Verify %s ...\n", greet->name);
+
+  p = getpwnam (greet->name);
+  endpwent();
+
+  if (!p || strlen (greet->name) == 0) {
+    LogError ("getpwnam() failed.\n");
+    bzero(greet->password, strlen(greet->password));
+    return 0;
+  }
+
+  ret = smp_check_user (SMP_LOGIN, greet->name, 0, 0, &userp, &pwtries,
+    &reason, &nis, &delay);
+  if (ret != SMP_RETIRED && userp->retired)
+    ret = userp->result = SMP_RETIRED;
+  Debug ("smp_check_user returns %d\n", ret);
+
+  switch (ret) {
+    case SMP_FAIL:
+      Debug ("Out of memory in smp_check_user\n");
+      goto smp_fail;
+    case SMP_EXTFAIL:
+      Debug ("SMP_EXTFAIL: %s", reason);
+      goto smp_fail;
+    case SMP_NOTAUTH:
+      Debug ("Not authorized\n");
+      goto smp_fail;
+    case SMP_TERMLOCK:
+      Debug ("Terminal is locked!\n");
+      goto smp_fail;
+    case SMP_ACCTLOCK:
+      Debug ("Account is locked\n");
+      goto smp_fail;
+    case SMP_RETIRED:
+      Debug ("Account is retired\n");
+      goto smp_fail;
+    case SMP_OVERRIDE:
+      Debug ("On override device ... proceeding\n");
+      break;
+    case SMP_NULLPW:
+      Debug ("NULL password entry\n");
+      if (!greet->allow_null_passwd) {
+        goto smp_fail;
+      }
+      break;
+    case SMP_BADUSER:
+      Debug ("User not found in protected password database\n");
+      goto smp_fail;
+    case SMP_PWREQ:
+      Debug ("Password change required\n");
+      goto smp_fail;
+    case SMP_HASPW:
+      break;
+    default:
+      Debug ("Unhandled smp_check_user return %d\n", ret);
+smp_fail:
+      sleep(delay);
+      smp_audit_fail (userp, 0);
+      bzero(greet->password, strlen(greet->password));
+      return 0;
+      break;
+  }
+
+  if (ret != SMP_NULLPW) {
+    /*
+     * If we require a password, check it.
+     */
+    ret = smp_check_pw (greet->password, userp, &reason);
+    switch (ret) {
+      case SMP_CANCHANGE:
+      case SMP_CANTCHANGE:
+      case SMP_OVERRIDE:
+        break;
+      default:
+        goto smp_fail;
+    }
+  }
+#else /* !USE_BSDAUTH && !USESECUREWARE */
 int
 Verify (struct display *d, struct greet_info *greet, struct verify_info *verify)
 {

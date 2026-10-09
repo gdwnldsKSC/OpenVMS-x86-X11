@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/GL/dri/drimodule.c,v 1.2 2004/04/23 18:44:36 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/GL/dri/drimodule.c,v 1.6 2005/11/02 15:53:57 kem Exp $ */
 /**************************************************************************
 
 Copyright 1999 Precision Insight, Inc., Cedar Park, Texas.
@@ -34,7 +34,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "xf86Module.h"
+#include "globals.h"
 
 static MODULESETUPPROTO(driSetup);
 
@@ -60,7 +65,7 @@ ExtensionModule XF86DRIExt =
 {
     XFree86DRIExtensionInit,
     XF86DRINAME,
-    NULL,
+    &noXFree86DRIExtension,
     NULL,
     NULL
 };

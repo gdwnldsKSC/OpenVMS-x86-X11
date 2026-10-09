@@ -36,6 +36,10 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *   1998, 1999 by Egbert Eich (Egbert.Eich@Physik.TU-Darmstadt.DE)
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define PSZ 8
 
 /* All drivers should typically include these */

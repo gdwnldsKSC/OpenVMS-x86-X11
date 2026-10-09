@@ -6,6 +6,17 @@
 #ifndef __NEWPORT_H__
 #define __NEWPORT_H__
 
+/* use 32bpp shadow framebuffer surface instead of 24bpp */
+#define NEWPORT_USE32BPP
+/* enable accel patch */
+#define NEWPORT_ACCEL
+
+#ifdef NEWPORT_ACCEL
+#ifndef NEWPORT_USE32BPP
+#define NEWPORT_USE32BPP
+#endif
+#endif
+
 /*
  * All drivers should include these:
  */
@@ -19,6 +30,7 @@
 
 /* xaa & hardware cursor */
 #include "xaa.h"
+#include "xaalocal.h"
 #include "xf86Cursor.h"
 
 /* register definitions of the Newport card */
@@ -45,6 +57,7 @@
 typedef struct {
 	unsigned busID;
 	int bitplanes; 
+	Bool NoAccel;
 	/* revision numbers of the various pieces of silicon */
 	unsigned int board_rev, cmap_rev, rex3_rev, xmap9_rev, bt445_rev;
 	/* shadow copies of frequently used registers */
@@ -88,6 +101,43 @@ typedef struct {
 
 	LOCO txt_colormap[256];
 
+	/* XAA stuff */
+	XAAInfoRecPtr pXAAInfoRec;
+        /* writing to these regs causes pipeline stall
+	   so be smart and check the shadow before writing it */		
+	unsigned int shadow_drawmode1;
+	unsigned int shadow_colorvram;
+	unsigned int shadow_colorback;
+	unsigned int shadow_xymove;
+	unsigned int shadow_wrmask;
+	unsigned int shadow_clipmode;
+	unsigned int fifoleft; /* number of slots left in fifo */
+	
+	unsigned int shadow_drawmode0;
+	unsigned int shadow_colori;
+	unsigned int shadow_smask0x;
+	unsigned int shadow_smask0y;
+	
+	unsigned int setup_drawmode0;
+	unsigned int setup_drawmode1;
+	unsigned char dashline_pat[2048/8];
+	unsigned int dashline_patlen;
+	
+	int clipsx, clipex, clipsy, clipey;
+	int skipleft;
+	
+	unsigned int pat8x8[8][8];
+	
+	unsigned int (*Color2Planes)(unsigned int color);
+	
+#ifdef RENDER
+	unsigned int uTextureWidth;
+	unsigned int uTextureHeight;
+	unsigned int uTextureSize;
+	unsigned int *pTexture;
+	unsigned int uTextureFlags;
+#endif
+	
 	OptionInfoPtr Options;
 } NewportRec, *NewportPtr;
 

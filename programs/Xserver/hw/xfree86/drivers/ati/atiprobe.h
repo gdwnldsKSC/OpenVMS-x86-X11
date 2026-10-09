@@ -24,10 +24,8 @@
 #ifndef ___ATIPROBE_H___
 #define ___ATIPROBE_H___ 1
 
-#include "atiproto.h"
-
 #include "xf86str.h"
 
-extern Bool ATIProbe FunctionPrototype((DriverPtr, int));
+extern Bool ATIProbe(DriverPtr, int);
 
 #endif /* ___ATIPROBE_H___ */

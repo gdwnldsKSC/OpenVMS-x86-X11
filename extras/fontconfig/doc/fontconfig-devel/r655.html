@@ -1,24 +1,22 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
->FcPatternPrint</TITLE
+>FcPatternDel</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
 REL="HOME"
-TITLE="Fontconfig Developers Reference, Version 2.2.2
- "
 HREF="index.html"><LINK
 REL="UP"
 TITLE="FcPattern"
-HREF="x93.html#AEN225"><LINK
+HREF="x93.html#AEN246"><LINK
 REL="PREVIOUS"
-TITLE="FcPatternDel"
-HREF="r632.html"><LINK
+TITLE="FcPatternBuild"
+HREF="r614.html"><LINK
 REL="NEXT"
-TITLE="FcDefaultSubstitute"
-HREF="r676.html"></HEAD
+TITLE="FcPatternRemove"
+HREF="r678.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -38,7 +36,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
->Fontconfig Developers Reference, Version 2.2.2</TH
+></TH
 ></TR
 ><TR
 ><TD
@@ -46,7 +44,7 @@ WIDTH="10%"
 ALIGN="left"
 VALIGN="bottom"
 ><A
-HREF="r632.html"
+HREF="r614.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -60,7 +58,7 @@ WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
 ><A
-HREF="r676.html"
+HREF="r678.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -71,9 +69,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCPATTERNPRINT"
+NAME="FCPATTERNDEL"
 ></A
->FcPatternPrint</H1
+>FcPatternDel</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -81,7 +79,7 @@ NAME="AEN659"
 ></A
 ><H2
 >Name</H2
->FcPatternPrint&nbsp;--&nbsp;Print a pattern for debugging</DIV
+>FcPatternDel&nbsp;--&nbsp;Delete a property from a pattern</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -98,14 +96,14 @@ NAME="AEN663"
 ></A
 ><PRE
 CLASS="FUNCSYNOPSISINFO"
->#include &#60;fontconfig.h&#62;
+>#include &lt;fontconfig.h&gt;
 	</PRE
 ><P
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->void FcPatternPrint</CODE
->(const FcPattern *p);</CODE
+>FcBool FcPatternDel</CODE
+>(FcPattern *p, const char *object);</CODE
 ></P
 ><P
 ></P
@@ -114,25 +112,24 @@ CLASS="FUNCDEF"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN670"
+NAME="AEN672"
 ></A
 ><H2
 >Description</H2
 ><P
->Prints an easily readable version of the pattern to stdout.  There is
-no provision for reparsing data in this format, it's just for diagnostics
-and debugging.
+>Deletes all values associated with the property `object', returning 
+whether the property existed or not.
 	    </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN673"
+NAME="AEN675"
 ></A
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.2.2
+>Fontconfig version 2.3.2
 
 	    </P
 ></DIV
@@ -152,7 +149,7 @@ WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
 ><A
-HREF="r632.html"
+HREF="r614.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -170,7 +167,7 @@ WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
 ><A
-HREF="r676.html"
+HREF="r678.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -180,13 +177,13 @@ ACCESSKEY="N"
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FcPatternDel</TD
+>FcPatternBuild</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN225"
+HREF="x93.html#AEN246"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -194,7 +191,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->FcDefaultSubstitute</TD
+>FcPatternRemove</TD
 ></TR
 ></TABLE
 ></DIV

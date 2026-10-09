@@ -913,9 +913,9 @@ main(int argc, char *argv[])
 		fprintf(fout_fp, "%s",
 			"COMMENT from an ISO10646-1 encoded source BDF font.\n");
 		fprintf(fout_fp, "%s",
-			"COMMENT ucs2any by Ben Collver <collver1@attbi.com>, 2003.\n");
+			"COMMENT ucs2any by Ben Collver <collver1@attbi.com>, 2003, based on\n");
 		fprintf(fout_fp, "%s",
-			"COMMENT based on ucs2any.pl by Markus Kuhn <mkuhn@acm.org>, 2000.\n");
+			"COMMENT ucs2any.pl by Markus Kuhn <http://www.cl.cam.ac.uk/~mgk25/>, 2000.\n");
 
 		for (i = 0; i <= nextheader; i++) {
 			if (i == default_char_index)

@@ -1,5 +1,5 @@
 /*
- * $Id: damage.h,v 1.3 2003/11/07 23:29:29 keithp Exp $
+ * $Id: damage.h,v 1.4 2005/07/03 07:02:01 daniels Exp $
  *
  * Copyright © 2003 Keith Packard
  *
@@ -21,6 +21,10 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #ifndef _DAMAGE_H_
 #define _DAMAGE_H_

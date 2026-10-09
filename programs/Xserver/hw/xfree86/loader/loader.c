@@ -48,6 +48,10 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -186,9 +190,24 @@ sparcUseHWMulDiv(void)
     while (fgets(buffer, 1024, f) != NULL) {
 	if (!strncmp(buffer, "type", 4)) {
 	    p = strstr(buffer, "sun4");
-	    if (p && (p[4] == 'u' || p[4] == 'd' || p[4] == 'm')) {
+	    if (p && (p[4] == 'u' || p[4] == 'd')) {
 		fclose(f);
 		return 1;
+	    } else if (p && p[4] == 'm') {
+		fclose(f);
+		f = fopen("/proc/cpuinfo","r");
+		if (!f) return 0;
+		while (fgets(buffer, 1024, f) != NULL) {
+		    if (!strncmp (buffer, "MMU type", 8)) {
+		      p = strstr (buffer, "Cypress");
+		      if (p) {
+			fclose(f);
+			return 1;
+		      }
+		    }
+		}
+	        fclose(f);
+	        return 0;
 	    }
 	}
     }
@@ -383,6 +402,26 @@ LoaderInit(void)
      */
     mallopt(M_MMAP_MAX, 0);
 #endif
+#if defined(__UNIXWARE__) && !defined(__GNUC__)
+    /* For UnixWare we need to load the C Runtime libraries which are
+     * normally auto-linked by the compiler. Otherwise we are bound to
+     * see unresolved symbols when trying to use the type "long long".
+     * Obviously, this does not apply if the GNU C compiler is used.
+     */
+    {
+	int errmaj, errmin, wasLoaded; /* place holders */
+	char *xcrtpath = DEFAULT_MODULE_PATH "/libcrt.a";
+	char *uwcrtpath = "/usr/ccs/lib/libcrt.a";
+	char *path;
+	struct stat st;
+
+	if(stat(xcrtpath, &st) < 0)
+	    path = uwcrtpath; /* fallback: try to get libcrt.a from the uccs */
+	else
+	    path = xcrtpath; /* get the libcrt.a we compiled with */
+	LoaderOpen (path, "libcrt", 0, &errmaj, &errmin, &wasLoaded);
+    }
+#endif
 }
 
 /*
@@ -552,8 +591,8 @@ _LoaderFileToMem(int fd, unsigned long offset, int size, char *label)
 	FatalError("\n_LoaderFileToMem() read() failed: %s\n",
 		   strerror(errno));
 
-# if (defined(linux) || defined(__NetBSD__) || defined(__OpenBSD__)) \
-    && defined(__powerpc__)
+# if (defined(linux) || defined(__NetBSD__) || defined(__OpenBSD__) \
+    || defined(__FreeBSD__)) && defined(__powerpc__)
     /*
      * Keep the instruction cache in sync with changes in the
      * main memory.
@@ -1146,7 +1185,9 @@ ARCHIVELoadModule(loaderPtr modrec, int arfd, LOOKUP ** ppLookup)
 	    lseek(arfd, 1, SEEK_CUR);	/* make it an even boundary */
 
 	if (tmp->private == (void *)-1L) {
-	    ErrorF("Skipping \"%s\":  No symbols found\n", tmp->name);
+	    xf86Msg(X_INFO, "Skipping \"%s\":  "
+		    "object file contains no symbols\n",
+		    tmp->name);
 	    continue;
 	} else
 	    ret = tmp->private;

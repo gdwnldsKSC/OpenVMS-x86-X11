@@ -3,13 +3,16 @@ XCOMM
 XCOMM 
 XCOMM Id: Imakefile,v 1.1 1999/11/02 03:54:44 keithp Exp $
 
-#if defined(i386Architecture) && defined(HasGcc34) && HasGcc34
-MMXOPTIONS= -mmmx -Winline --param inline-unit-growth=10000 \
-	--param large-function-growth=10000 -DUSE_GCC34_MMX
-
+#if defined(HasGcc34) && HasGcc34
+MMXOPTIONS= -mmmx -msse -Winline --param inline-unit-growth=10000 \
+	--param large-function-growth=10000 -DUSE_MMX
+USEMMXOPTIONS= -DUSE_MMX
+#if defined(i386Architecture) || defined(AMD64Architecture)
 SpecialCObjectRule(fbmmx,fbmmx.c,$(MMXOPTIONS))
-SpecialCObjectRule(fbpict,fbpict.c,$(MMXOPTIONS))
-SpecialCObjectRule(fbfill,fbfill.c,$(MMXOPTIONS))
+SpecialCObjectRule(fbpict,fbpict.c,$(USEMMXOPTIONS))
+SpecialCObjectRule(fbfill,fbfill.c,$(USEMMXOPTIONS))
+SpecialCObjectRule(fbcopy,fbcopy.c,$(USEMMXOPTIONS))
+#endif
 
 #endif
 

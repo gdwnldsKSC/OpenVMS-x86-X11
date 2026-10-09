@@ -72,11 +72,8 @@ partial default xkb_types "default" {
 // It makes it possible to use all three forms of latin letters 
 // present in Unicode that are made up of two separate letters 
 // (forms like LJ, Lj, and lj; NJ, Nj, and nj; etc)
-//
-// Could probably prove useful for other languages too, so it
-// better be renamed
 
-    type "SERBIAN_CAPS" {
+    type "SEPARATE_CAPS_AND_SHIFT_ALPHABETIC" {
         modifiers = Shift+Lock+LevelThree;
         map[None] = Level1;
         map[Shift] = Level2;

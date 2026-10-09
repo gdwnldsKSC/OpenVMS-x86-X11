@@ -25,7 +25,6 @@
 #define ___ATII2C_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
@@ -36,15 +35,15 @@ typedef struct _ATII2CRec ATII2CRec, *ATII2CPtr;
 struct _ATII2CRec
 {
     ATIPtr pATI;
-    void   (*I2CSetBits) FunctionPrototype((ATII2CPtr, ATIPtr, CARD32));
-    CARD32 (*I2CGetBits) FunctionPrototype((ATIPtr));
+    void   (*I2CSetBits) (ATII2CPtr, ATIPtr, CARD32);
+    CARD32 (*I2CGetBits) (ATIPtr);
     CARD32 SCLDir, SCLGet, SCLSet;
     CARD32 SDADir, SDAGet, SDASet;
     CARD32 I2CCur;
 };
 
-extern void      ATII2CPreInit       FunctionPrototype((ScrnInfoPtr, ATIPtr));
-extern I2CBusPtr ATICreateI2CBusRec  FunctionPrototype((int, ATIPtr, char *));
-extern void      ATII2CFreeScreen    FunctionPrototype((int));
+extern void      ATII2CPreInit(ScrnInfoPtr, ATIPtr);
+extern I2CBusPtr ATICreateI2CBusRec(int, ATIPtr, char *);
+extern void      ATII2CFreeScreen(int);
 
 #endif /* ___ATII2C_H___ */

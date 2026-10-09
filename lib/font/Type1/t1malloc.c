@@ -38,7 +38,12 @@ routines (malloc/free).
  
 */
 
-#ifdef FONTMODULE
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#ifndef FONTMODULE
+#include <stdio.h>
+#else
 #include "Xdefs.h"	/* Bool declaration */
 #include "Xmd.h"	/* INT32 declaration */
 #include "os.h"

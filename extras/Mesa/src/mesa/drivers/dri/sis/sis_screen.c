@@ -34,16 +34,19 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "context.h"
 #include "utils.h"
 #include "imports.h"
+#include "framebuffer.h"
+#include "renderbuffer.h"
 
 #include "sis_context.h"
 #include "sis_dri.h"
 #include "sis_lock.h"
+#include "sis_span.h"
 
 #include "xmlpool.h"
 
 #include "GL/internal/dri_interface.h"
 
-const char __driConfigOptions[] =
+PUBLIC const char __driConfigOptions[] =
 DRI_CONF_BEGIN
 	DRI_CONF_SECTION_DEBUG
 		DRI_CONF_OPT_BEGIN(agp_disable,bool,false)
@@ -56,11 +59,8 @@ DRI_CONF_BEGIN
 DRI_CONF_END;
 static const GLuint __driNConfigOptions = 2;
 
-#ifdef USE_NEW_INTERFACE
-static PFNGLXCREATECONTEXTMODES create_context_modes = NULL;
-#endif /* USE_NEW_INTERFACE */
+extern const struct dri_extension card_extensions[];
 
-#ifdef USE_NEW_INTERFACE
 static __GLcontextModes *
 sisFillInModes(int bpp)
 {
@@ -74,8 +74,8 @@ sisFillInModes(int bpp)
    static const GLenum back_buffer_modes[] = {
       GLX_NONE, GLX_SWAP_UNDEFINED_OML
    };
-   uint8_t depth_bits_array[4];
-   uint8_t stencil_bits_array[4];
+   u_int8_t depth_bits_array[4];
+   u_int8_t stencil_bits_array[4];
 
    depth_bits_array[0] = 0;
    stencil_bits_array[0] = 0;
@@ -100,7 +100,7 @@ sisFillInModes(int bpp)
       fb_type = GL_UNSIGNED_INT_8_8_8_8_REV;
    }
 
-   modes = (*create_context_modes)(num_modes, sizeof(__GLcontextModes));
+   modes = (*dri_interface->createContextModes)(num_modes, sizeof(__GLcontextModes));
    m = modes;
    if (!driFillInModes(&m, fb_format, fb_type, depth_bits_array,
 		       stencil_bits_array, depth_buffer_factor,
@@ -120,7 +120,7 @@ sisFillInModes(int bpp)
 
    return modes;
 }
-#endif /* USE_NEW_INTERFACE */
+
 
 /* Create the device specific screen private data struct.
  */
@@ -130,11 +130,10 @@ sisCreateScreen( __DRIscreenPrivate *sPriv )
    sisScreenPtr sisScreen;
    SISDRIPtr sisDRIPriv = (SISDRIPtr)sPriv->pDevPriv;
 
-#ifndef USE_NEW_INTERFACE
-   /* XXX Should this still be around for the old interface? */
-   if ( !driCheckDriDdxDrmVersions( sPriv, "SiS", 4, 0, 0, 1, 1, 0 ) )
-      return NULL;
-#endif
+   if (sPriv->devPrivSize != sizeof(SISDRIRec)) {
+      fprintf(stderr,"\nERROR!  sizeof(SISDRIRec) does not match passed size from device driver\n");
+      return GL_FALSE;
+   }
 
    /* Allocate the private area */
    sisScreen = (sisScreenPtr)CALLOC( sizeof(*sisScreen) );
@@ -196,6 +195,7 @@ sisDestroyScreen( __DRIscreenPrivate *sPriv )
    sPriv->private = NULL;
 }
 
+
 /* Create and initialize the Mesa and driver specific pixmap buffer
  * data.
  */
@@ -205,15 +205,80 @@ sisCreateBuffer( __DRIscreenPrivate *driScrnPriv,
                  const __GLcontextModes *mesaVis,
                  GLboolean isPixmap )
 {
+   sisScreenPtr screen = (sisScreenPtr) driScrnPriv->private;
+   struct gl_framebuffer *fb;
+
    if (isPixmap)
       return GL_FALSE; /* not implemented */
 
+#if 0
    driDrawPriv->driverPrivate = (void *)_mesa_create_framebuffer(
 				 mesaVis,
 				 GL_FALSE,  /* software depth buffer? */
 				 mesaVis->stencilBits > 0,
 				 mesaVis->accumRedBits > 0,
 				 mesaVis->alphaBits > 0 ); /* XXX */
+#else
+      fb = _mesa_create_framebuffer(mesaVis);
+
+      /* XXX double-check the Offset/Pitch parameters! */
+      {
+         driRenderbuffer *frontRb
+            = driNewRenderbuffer(GL_RGBA, screen->cpp,
+                                 0, driScrnPriv->fbStride);
+         sisSetSpanFunctions(frontRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_FRONT_LEFT, &frontRb->Base);
+      }
+
+      if (mesaVis->doubleBufferMode) {
+         driRenderbuffer *backRb
+            = driNewRenderbuffer(GL_RGBA, screen->cpp,
+                                 0, driScrnPriv->fbStride);
+         sisSetSpanFunctions(backRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_BACK_LEFT, &backRb->Base);
+      }
+
+      if (mesaVis->depthBits == 16) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT16, screen->cpp,
+                                 0, driScrnPriv->fbStride);
+         sisSetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+      else if (mesaVis->depthBits == 24) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT24, screen->cpp,
+                                 0, driScrnPriv->fbStride);
+         sisSetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+      else if (mesaVis->depthBits == 32) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT32, screen->cpp,
+                                 0, driScrnPriv->fbStride);
+         sisSetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+
+      /* no h/w stencil?
+      if (mesaVis->stencilBits > 0) {
+         driRenderbuffer *stencilRb
+            = driNewRenderbuffer(GL_STENCIL_INDEX8_EXT);
+         sisSetSpanFunctions(stencilRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_STENCIL, &stencilRb->Base);
+      }
+      */
+
+      _mesa_add_soft_renderbuffers(fb,
+                                   GL_FALSE, /* color */
+                                   GL_FALSE, /* depth */
+                                   mesaVis->stencilBits > 0,
+                                   mesaVis->accumRedBits > 0,
+                                   GL_FALSE, /* alpha */
+                                   GL_FALSE /* aux */);
+      driDrawPriv->driverPrivate = (void *) fb;
+#endif
+
    return (driDrawPriv->driverPrivate != NULL);
 }
 
@@ -248,6 +313,8 @@ static void sisCopyBuffer( __DRIdrawablePrivate *dPriv )
    int i;
    ENGPACKET stEngPacket;
   
+   memset(&stEngPacket, 0, sizeof(ENGPACKET));
+
    while ((*smesa->FrameCountPtr) - MMIO_READ(0x8a2c) > SIS_MAX_FRAME_LENGTH)
       ;
 
@@ -340,20 +407,6 @@ static struct __DriverAPIRec sisAPI = {
 
 };
 
-/*
- * This is the bootstrap function for the driver.
- * The __driCreateScreen name is the symbol that libGL.so fetches.
- * Return:  pointer to a __DRIscreenPrivate.
- */
-#if !defined(DRI_NEW_INTERFACE_ONLY)
-void *__driCreateScreen(Display *dpy, int scrn, __DRIscreen *psc,
-                        int numConfigs, __GLXvisualConfig *config)
-{
-   __DRIscreenPrivate *psp;
-   psp = __driUtilCreateScreen(dpy, scrn, psc, numConfigs, config, &sisAPI);
-   return (void *)psp;
-}
-#endif /* !defined(DRI_NEW_INTERFACE_ONLY) */
 
 /**
  * This is the bootstrap function for the driver.  libGL supplies all of the
@@ -365,8 +418,8 @@ void *__driCreateScreen(Display *dpy, int scrn, __DRIscreen *psc,
  * \return A pointer to a \c __DRIscreenPrivate on success, or \c NULL on 
  *         failure.
  */
-#ifdef USE_NEW_INTERFACE
-void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn,
+PUBLIC
+void * __driCreateNewScreen_20050727( __DRInativeDisplay *dpy, int scrn,
 			     __DRIscreen *psc,
 			     const __GLcontextModes *modes,
 			     const __DRIversion *ddx_version,
@@ -375,13 +428,16 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn,
 			     const __DRIframebuffer *frame_buffer,
 			     drmAddress pSAREA, int fd,
 			     int internal_api_version,
+			     const __DRIinterfaceMethods * interface,
 			     __GLcontextModes **driver_modes )
 
 {
    __DRIscreenPrivate *psp;
-   static const __DRIversion ddx_expected = {0, 1, 0};
+   static const __DRIversion ddx_expected = {0, 8, 0};
    static const __DRIversion dri_expected = {4, 0, 0};
    static const __DRIversion drm_expected = {1, 0, 0};
+
+   dri_interface = interface;
 
    if (!driCheckDriDdxDrmVersions2("SiS", dri_version, &dri_expected,
 				   ddx_version, &ddx_expected,
@@ -394,14 +450,19 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn,
 				  frame_buffer, pSAREA, fd,
 				  internal_api_version, &sisAPI);
    if (psp != NULL) {
-      create_context_modes = (PFNGLXCREATECONTEXTMODES)
-	 glXGetProcAddress((const GLubyte *)"__glXCreateContextModes");
-      if (create_context_modes != NULL) {
-	 SISDRIPtr dri_priv = (SISDRIPtr)psp->pDevPriv;
-	 *driver_modes = sisFillInModes(dri_priv->bytesPerPixel * 8);
-      }
+      SISDRIPtr dri_priv = (SISDRIPtr)psp->pDevPriv;
+      *driver_modes = sisFillInModes(dri_priv->bytesPerPixel * 8);
+
+      /* Calling driInitExtensions here, with a NULL context pointer, does not actually
+       * enable the extensions.  It just makes sure that all the dispatch offsets for all
+       * the extensions that *might* be enables are known.  This is needed because the
+       * dispatch offsets need to be known when _mesa_context_create is called, but we can't
+       * enable the extensions until we have a context pointer.
+       *
+       * Hello chicken.  Hello egg.  How are you two today?
+       */
+      driInitExtensions( NULL, card_extensions, GL_FALSE );
    }
 
    return (void *)psp;
 }
-#endif /* USE_NEW_INTERFACE */

@@ -21,6 +21,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ati.h"
 #include "atiaccel.h"
 #include "atichip.h"
@@ -28,7 +32,7 @@
 #include "atimach64io.h"
 #include "atimach64xv.h"
 
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #include "fourcc.h"
 
 #define MAKE_ATOM(string) MakeAtom(string, strlen(string), TRUE)
@@ -150,8 +154,8 @@ typedef struct _ATIMach64Attribute
 {
     Atom  AttributeID;
     INT32 MaxValue;             /* ... for the hardware */
-    void  (*SetAttribute) NestedPrototype((ATIPtr, INT32));
-    INT32 (*GetAttribute) NestedPrototype((ATIPtr));
+    void  (*SetAttribute) (ATIPtr, INT32);
+    INT32 (*GetAttribute) (ATIPtr);
 } ATIMach64AttributeRec, *ATIMach64AttributePtr;
 
 /* Functions to get/set XVideo adaptor attributes */

@@ -1,4 +1,4 @@
-/* $Id: http-rman.c,v 1.2 1994/05/15 14:55:12 fredrik Exp $
+/* $Id: http-rman.c,v 1.1.1.4 2004/03/14 08:29:12 eich Exp $
  *
  * Name:
  *	http-rman.c -- a rudimentary man-page HTTP server

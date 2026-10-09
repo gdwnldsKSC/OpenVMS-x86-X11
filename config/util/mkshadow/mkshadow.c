@@ -350,7 +350,7 @@ DoCopy(master, current, depth)
 	    if (!in_current)
 		MakeLink(master, current, depth);
 	    else if (!S_ISLNK(stat_current.st_mode)) {
-		fprintf(stderr, "Existing file %s is not a symbolc link.\n",
+		fprintf(stderr, "Existing file %s is not a symbolic link.\n",
 			current);
 	    } else {
 		if (stat(current, &stat_current) || stat(master, &stat_master))

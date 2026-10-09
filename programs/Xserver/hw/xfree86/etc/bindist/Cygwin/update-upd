@@ -29,4 +29,8 @@ lib/libXaw.a
 lib/libXfont.a
 lib/libXft.a
 lib/libfreetype.a
+lib/libXcomposite.a
+lib/libXdamage.a
+lib/libXevie.a
+lib/libXfixes.a
 man/man1/XWin.1x

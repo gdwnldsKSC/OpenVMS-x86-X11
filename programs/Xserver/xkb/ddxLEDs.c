@@ -26,6 +26,10 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $XFree86$ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
 #define	NEED_EVENTS 1
 #include <X11/X.h>
@@ -34,8 +38,8 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "inputstr.h"
 #include "scrnintstr.h"
 #include "windowstr.h"
-#include "XKBsrv.h"
-#include "XI.h"
+#include <X11/extensions/XKBsrv.h>
+#include <X11/extensions/XI.h>
 
 void
 XkbDDXUpdateIndicators(DeviceIntPtr dev,CARD32 new)

@@ -61,14 +61,11 @@ Austin, Tx 78765
 copyright:
 	STRING("Copyright 8/9/1993 by Glenn G. Lai")
 
-	ALIGNDATA4
-tmp:	D_LONG	0
-
 	SEG_TEXT
 	ALIGNTEXT4
 GLNAME(xf86BusToMem):
 	CLD
-	MOV_L	(ESI, CONTENT(tmp))
+	PUSH_L	(ESI)
 	MOV_L	(EDI, EDX)
 	
 	MOV_L	(src, ESI)
@@ -105,7 +102,7 @@ quickBM:
 	REP
 	MOVS_B
 return:
-	MOV_L	(CONTENT(tmp), ESI)
+	POP_L	(ESI)
 	MOV_L	(EDX, EDI)
 	RET
 /************************/
@@ -113,7 +110,7 @@ return:
 	ALIGNTEXT4
 GLNAME(xf86MemToBus):
 	CLD
-	MOV_L	(ESI, CONTENT(tmp))
+	PUSH_L	(ESI)
 	MOV_L	(EDI, EDX)
 	
 	MOV_L	(src, ESI)
@@ -150,7 +147,7 @@ quickMB:
 	REP
 	MOVS_B
 
-	MOV_L	(CONTENT(tmp), ESI)
+	POP_L	(ESI)
 	MOV_L	(EDX, EDI)
 	RET
 

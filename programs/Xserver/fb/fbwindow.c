@@ -1,8 +1,8 @@
-/* $XdotOrg: xc/programs/Xserver/fb/fbwindow.c,v 1.4.2.1 2004/12/17 00:38:21 gisburn Exp $ */
+/* $XdotOrg: xc/programs/Xserver/fb/fbwindow.c,v 1.9 2005/10/02 08:28:26 anholt Exp $ */
 /*
  * Id: fbwindow.c,v 1.1 1999/11/02 03:54:45 keithp Exp $
  *
- * Copyright © 1998 Keith Packard
+ * Copyright Â© 1998 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -23,6 +23,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 /* $XFree86: xc/programs/Xserver/fb/fbwindow.c,v 1.10tsi Exp $ */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #include "fb.h"
 #ifdef IN_MODULE
@@ -287,7 +291,7 @@ fbFillRegionTiled (DrawablePtr	pDrawable,
 		FB_ALLONES,
 		dstBpp,
 		xRot * dstBpp,
-		yRot - pbox->y1);
+		yRot - (pbox->y1 + dstYoff));
 	pbox++;
     }
 }

@@ -35,6 +35,9 @@
 
 /* October 2004, source code review by Thomas Biege <thomas@suse.de> */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "XpmI.h"
 #ifndef NO_ZPIPE
 #include <fcntl.h>
@@ -151,7 +154,7 @@ xpmPipeThrough(fd, cmd, arg1, mode)
 	    goto err;
 	if ( 0 == pid )
 	{
-	    execlp(cmd, cmd, arg1, NULL);
+	    execlp(cmd, cmd, arg1, (char *)NULL);
 	    perror(cmd);
 	    goto err;
 	}

@@ -39,12 +39,21 @@
 #define _RADEON_H_
 
 #include "xf86str.h"
+#include "xf86_ansic.h"
+#include "compiler.h"
 
 				/* PCI support */
 #include "xf86Pci.h"
 
-				/* XAA and Cursor Support */
+#ifdef USE_EXA
+#include "exa.h"
+#endif
+#ifdef USE_XAA
 #include "xaa.h"
+#include "xf86fbman.h"
+#endif
+
+				/* Exa and Cursor Support */
 #include "vbe.h"
 #include "xf86Cursor.h"
 
@@ -73,7 +82,7 @@
 #define NEED_REPLIES  		/* ? */
 #define EXTENSION_PROC_ARGS void *
 #include "extnsionst.h"  	/* required */
-#include "panoramiXproto.h"  	/* required */
+#include <X11/extensions/panoramiXproto.h>  	/* required */
 #define RADEON_XINERAMA_MAJOR_VERSION  1
 #define RADEON_XINERAMA_MINOR_VERSION  1
 
@@ -87,6 +96,10 @@ typedef enum {
    radeonClone
 } RADEONScrn2Rel;
 
+typedef struct _region {
+    int x0,x1,y0,y1;
+} region;
+
 /* ------------------------------------- */
 
 #define RADEON_DEBUG            0 /* Turn off debugging output               */
@@ -94,6 +107,8 @@ typedef enum {
 #define RADEON_TIMEOUT    2000000 /* Fall out of wait loops after this count */
 #define RADEON_MMIOSIZE   0x80000
 
+/* Buffer are aligned on 4096 byte boundaries */
+#define RADEON_BUFFER_ALIGN 0x00000fff
 #define RADEON_VBIOS_SIZE 0x00010000
 #define RADEON_USE_RMX 0x80000000 /* mode flag for using RMX
 				   * Need to comfirm this is not used
@@ -115,6 +130,7 @@ do {									\
 #define RADEON_ARRAY_SIZE(x)  (sizeof(x)/sizeof(x[0]))
 #define RADEON_ALIGN(x,bytes) (((x) + ((bytes) - 1)) & ~((bytes) - 1))
 #define RADEONPTR(pScrn)      ((RADEONInfoPtr)(pScrn)->driverPrivate)
+
 
 typedef struct {
 				/* Common registers */
@@ -142,6 +158,8 @@ typedef struct {
     CARD32            clock_cntl_index;
     CARD32            amcgpio_en_reg;
     CARD32            amcgpio_mask;
+    
+    CARD32            surfaces[8][3];
 
 				/* CRTC registers */
     CARD32            crtc_gen_cntl;
@@ -233,6 +251,7 @@ typedef struct {
     int               bitsPerPixel;
     int               depth;
     int               displayWidth;
+    int               displayHeight;
     int               pixel_code;
     int               pixel_bytes;
     DisplayModePtr    mode;
@@ -273,6 +292,20 @@ typedef enum {
         (info->ChipFamily == CHIP_FAMILY_RV380) ||  \
         (info->ChipFamily == CHIP_FAMILY_R420))
 
+/*
+ * Errata workarounds
+ */
+typedef enum {
+       CHIP_ERRATA_R300_CG             = 0x00000001,
+       CHIP_ERRATA_PLL_DUMMYREADS      = 0x00000002,
+       CHIP_ERRATA_PLL_DELAY           = 0x00000004
+} RADEONErrata;
+
+typedef enum {
+	CARD_PCI,
+	CARD_AGP,
+	CARD_PCIE
+} RADEONCardType;
 
 typedef struct {
     CARD32 freq;
@@ -285,6 +318,7 @@ typedef struct {
     PCITAG            PciTag;
     int               Chipset;
     RADEONChipFamily  ChipFamily;
+    RADEONErrata      ChipErrata;
 
     Bool              FBDev;
 
@@ -304,6 +338,7 @@ typedef struct {
     CARD32            MemCntl;
     CARD32            BusCntl;
     unsigned long     FbMapSize;        /* Size of frame buffer, in bytes    */
+    unsigned long     FbSecureSize;     /* Size of secured fb area at end of framebuffer */
     int               Flags;            /* Saved copy of mode flags          */
 
 				/* VE/M6 support */
@@ -315,6 +350,7 @@ typedef struct {
     Bool              IsIGP;            /* IGP chips */
     Bool              HasSingleDAC;     /* only TVDAC on chip */
     Bool              IsSecondary;      /* Second Screen                     */
+    Bool	      IsPrimary;        /* Primary Screen */
     Bool              IsSwitching;      /* Flag for switching mode           */
     Bool              OverlayOnCRTC2;
     Bool              PanelOff;         /* Force panel (LCD/DFP) off         */
@@ -361,22 +397,40 @@ typedef struct {
 
     Bool              PaletteSavedOnVT; /* Palette saved on last VT switch   */
 
+#ifdef USE_EXA
+    ExaDriverRec      exa;
+#endif
+#ifdef USE_XAA
     XAAInfoRecPtr     accel;
+    int               engineMode;
+#define EXA_ENGINEMODE_UNKNOWN 0
+#define EXA_ENGINEMODE_2D      1
+#define EXA_ENGINEMODE_3D      2
+#endif
     Bool              accelOn;
     xf86CursorInfoPtr cursor;
-    unsigned long     cursor_start;
+#ifdef USE_EXA
+    ExaOffscreenArea   *cursorArea;
+#endif
+    unsigned long     cursor_offset;
+#ifdef USE_XAA
     unsigned long     cursor_end;
+#endif
+    Bool              allowColorTiling;
+    Bool              tilingEnabled; /* mirror of sarea->tiling_enabled */
 #ifdef ARGB_CURSOR
     Bool	      cursor_argb;
 #endif
     int               cursor_fg;
     int               cursor_bg;
 
+#ifdef USE_XAA
     /*
      * XAAForceTransBlit is used to change the behavior of the XAA
      * SetupForScreenToScreenCopy function, to make it DGA-friendly.
      */
     Bool              XAAForceTransBlit;
+#endif
 
     int               fifo_slots;       /* Free slots in the FIFO (64 max)   */
     int               pix24bpp;         /* Depth of pixmap for 24bpp fb      */
@@ -393,6 +447,7 @@ typedef struct {
     int               xdir;
     int               ydir;
 
+#ifdef USE_XAA
 				/* ScanlineScreenToScreenColorExpand support */
     unsigned char     *scratch_buffer[1];
     unsigned char     *scratch_save;
@@ -409,7 +464,7 @@ typedef struct {
     int               scanline_hpass;
     int               scanline_x1clip;
     int               scanline_x2clip;
-
+#endif
 				/* Saved values for DashedTwoPointLine */
     int               dashLen;
     CARD32            dashPattern;
@@ -423,6 +478,7 @@ typedef struct {
     DGAFunctionRec    DGAFuncs;
 
     RADEONFBLayout    CurrentLayout;
+    CARD32            dst_pitch_offset;
 #ifdef XF86DRI
     Bool              noBackBuffer;
     Bool              directRenderingEnabled;
@@ -437,7 +493,7 @@ typedef struct {
     drmSize           registerSize;
     drm_handle_t         registerHandle;
 
-    Bool              IsPCI;            /* Current card is a PCI card */
+    RADEONCardType    cardType;            /* Current card is a PCI card */
     drmSize           pciSize;
     drm_handle_t         pciMemHandle;
     unsigned char     *PCI;             /* Map */
@@ -515,17 +571,20 @@ typedef struct {
     int               textureSize;
     int               log2TexGran;
 
+    int               pciGartSize;
+    CARD32            pciGartOffset;
+
+#ifdef USE_XAA
     CARD32            frontPitchOffset;
     CARD32            backPitchOffset;
     CARD32            depthPitchOffset;
-
-    CARD32            dst_pitch_offset;
 
 				/* offscreen memory management */
     int               backLines;
     FBAreaPtr         backArea;
     int               depthTexLines;
     FBAreaPtr         depthTexArea;
+#endif
 
 				/* Saved scissor values */
     CARD32            sc_left;
@@ -540,31 +599,68 @@ typedef struct {
 
     int               irq;
 
+    Bool              DMAForXv;
+
 #ifdef PER_CONTEXT_SAREA
     int               perctx_sarea_size;
 #endif
-#endif
+
+    /* Debugging info for BEGIN_RING/ADVANCE_RING pairs. */
+    int               dma_begin_count;
+    char              *dma_debug_func;
+    int               dma_debug_lineno;
+#endif /* XF86DRI */
 
 				/* XVideo */
     XF86VideoAdaptorPtr adaptor;
     void              (*VideoTimerCallback)(ScrnInfoPtr, Time);
-    FBLinearPtr       videoLinear;
     int               videoKey;
+    int		      RageTheatreCrystal;
+    int               RageTheatreTunerPort;
+    int               RageTheatreCompositePort;
+    int               RageTheatreSVideoPort;
+    int               tunerType;
+	char*			RageTheatreMicrocPath;
+	char*			RageTheatreMicrocType;
+    Bool               MM_TABLE_valid;
+    struct {
+    	CARD8 table_revision;
+	CARD8 table_size;
+        CARD8 tuner_type;
+        CARD8 audio_chip;
+        CARD8 product_id;
+        CARD8 tuner_voltage_teletext_fm;
+        CARD8 i2s_config; /* configuration of the sound chip */
+        CARD8 video_decoder_type;
+        CARD8 video_decoder_host_config;
+        CARD8 input[5];
+    	} MM_TABLE;
+    CARD16 video_decoder_type;
 
-				/* Render */
+    /* Render */
     Bool              RenderAccel;
-    Bool              RenderInited3D;
+#ifdef USE_XAA
     FBLinearPtr       RenderTex;
-    Bool              RenderTexValidR100;
     void              (*RenderCallback)(ScrnInfoPtr);
     Time              RenderTimeout;
+#endif
 
-				/* general */
+    /* general */
     Bool              showCache;
     OptionInfoPtr     Options;
+
+    Bool              useEXA;
 #ifdef XFree86LOADER
+#ifdef USE_EXA
+    XF86ModReqInfo    exaReq;
+#endif
+#ifdef USE_XAA
     XF86ModReqInfo    xaaReq;
 #endif
+#endif
+
+    /* X itself has the 3D context */
+    Bool              XInited3D;
 
     /* merged fb stuff, also covers clone modes */
     Bool		MergedFB;
@@ -593,11 +689,23 @@ typedef struct {
     Bool		AtLeastOneNonClone;
     int			MergedFBXDPI, MergedFBYDPI;
     Bool		NoVirtual;
+    int                 CRT1XOffs, CRT1YOffs, CRT2XOffs, CRT2YOffs;
+    int                 MBXNR1XMAX, MBXNR1YMAX, MBXNR2XMAX, MBXNR2YMAX;
+    Bool                NonRect, HaveNonRect, HaveOffsRegions, MouseRestrictions;
+    region              NonRectDead, OffDead1, OffDead2;
 
     /* special handlings for DELL triple-head server */
     Bool		IsDellServer; 
-} RADEONInfoRec, *RADEONInfoPtr;
 
+    /* enable bios hotkey output switching */
+    Bool		BiosHotkeys;
+
+    Bool               VGAAccess;
+
+    int                MaxSurfaceWidth;
+    int                MaxLines;
+
+} RADEONInfoRec, *RADEONInfoPtr;
 
 #define RADEONWaitForFifo(pScrn, entries)				\
 do {									\
@@ -621,16 +729,29 @@ extern void        RADEONEngineFlush(ScrnInfoPtr pScrn);
 extern void        RADEONEngineRestore(ScrnInfoPtr pScrn);
 
 extern unsigned    RADEONINPLL(ScrnInfoPtr pScrn, int addr);
+extern void        RADEONOUTPLL(ScrnInfoPtr pScrn, int addr, CARD32 data);
+
 extern void        RADEONWaitForVerticalSync(ScrnInfoPtr pScrn);
 extern void        RADEONWaitForVerticalSync2(ScrnInfoPtr pScrn);
 
-extern void        RADEONSelectBuffer(ScrnInfoPtr pScrn, int buffer);
+extern void        RADEONChangeSurfaces(ScrnInfoPtr pScrn);
 
 extern Bool        RADEONAccelInit(ScreenPtr pScreen);
+#ifdef USE_EXA
+extern Bool        RADEONSetupMemEXA (ScreenPtr pScreen);
+extern Bool        RADEONDrawInitMMIO(ScreenPtr pScreen);
+#ifdef XF86DRI
+extern Bool        RADEONDrawInitCP(ScreenPtr pScreen);
+#endif
+#endif
+#ifdef USE_XAA
 extern void        RADEONAccelInitMMIO(ScreenPtr pScreen, XAAInfoRecPtr a);
+#endif
 extern void        RADEONEngineInit(ScrnInfoPtr pScrn);
 extern Bool        RADEONCursorInit(ScreenPtr pScreen);
 extern Bool        RADEONDGAInit(ScreenPtr pScreen);
+
+extern void        RADEONInit3DEngine(ScrnInfoPtr pScrn);
 
 extern int         RADEONMinBits(int val);
 
@@ -638,17 +759,36 @@ extern void        RADEONInitVideo(ScreenPtr pScreen);
 extern void        RADEONResetVideo(ScrnInfoPtr pScrn);
 extern void        R300CGWorkaround(ScrnInfoPtr pScrn);
 
+extern void        RADEONPllErrataAfterIndex(RADEONInfoPtr info);
+extern void        RADEONPllErrataAfterData(RADEONInfoPtr info);
+
 #ifdef XF86DRI
+#ifdef USE_XAA
 extern void        RADEONAccelInitCP(ScreenPtr pScreen, XAAInfoRecPtr a);
+#endif
 extern Bool        RADEONDRIScreenInit(ScreenPtr pScreen);
 extern void        RADEONDRICloseScreen(ScreenPtr pScreen);
 extern void        RADEONDRIResume(ScreenPtr pScreen);
 extern Bool        RADEONDRIFinishScreenInit(ScreenPtr pScreen);
+extern void        RADEONDRIAllocatePCIGARTTable(ScreenPtr pScreen);
 
 extern drmBufPtr   RADEONCPGetBuffer(ScrnInfoPtr pScrn);
 extern void        RADEONCPFlushIndirect(ScrnInfoPtr pScrn, int discard);
 extern void        RADEONCPReleaseIndirect(ScrnInfoPtr pScrn);
 extern int         RADEONCPStop(ScrnInfoPtr pScrn,  RADEONInfoPtr info);
+
+extern CARD8*      RADEONHostDataBlit(ScrnInfoPtr pScrn, unsigned int bpp,
+				      unsigned int w, CARD32 dstPitch,
+				      CARD32 *bufPitch, CARD8 **dst,
+				      unsigned int *h, unsigned int *hpass);
+extern void        RADEONHostDataBlitCopyPass(ScrnInfoPtr pScrn,
+					      unsigned int bpp,
+					      CARD8 *dst, CARD8 *src,
+					      unsigned int hpass,
+					      unsigned int dstPitch,
+					      unsigned int srcPitch);
+extern void        RADEONCopySwap(CARD8 *dst, CARD8 *src, unsigned int size,
+				  int swap);
 
 extern Bool        RADEONGetBIOSInfo(ScrnInfoPtr pScrn, xf86Int10InfoPtr pInt10);
 extern Bool        RADEONGetConnectorInfoFromBIOS (ScrnInfoPtr pScrn);
@@ -719,13 +859,21 @@ do {									\
 
 #define RADEON_VERBOSE	0
 
-#define RING_LOCALS	CARD32 *__head = NULL; int __count = 0
+#define RING_LOCALS	CARD32 *__head = NULL; int __expected; int __count = 0
 
 #define BEGIN_RING(n) do {						\
     if (RADEON_VERBOSE) {						\
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,				\
 		   "BEGIN_RING(%d) in %s\n", n, __FUNCTION__);		\
     }									\
+    if (++info->dma_begin_count != 1) {					\
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,				\
+		   "BEGIN_RING without end at %s:%d\n",			\
+		   info->dma_debug_func, info->dma_debug_lineno);	\
+	info->dma_begin_count = 1;					\
+    }									\
+    info->dma_debug_func = __FILE__;					\
+    info->dma_debug_lineno = __LINE__;					\
     if (!info->indirectBuffer) {					\
 	info->indirectBuffer = RADEONCPGetBuffer(pScrn);		\
 	info->indirectStart = 0;					\
@@ -733,12 +881,24 @@ do {									\
 	       info->indirectBuffer->total) {				\
 	RADEONCPFlushIndirect(pScrn, 1);				\
     }									\
+    __expected = n;							\
     __head = (pointer)((char *)info->indirectBuffer->address +		\
 		       info->indirectBuffer->used);			\
     __count = 0;							\
 } while (0)
 
 #define ADVANCE_RING() do {						\
+    if (info->dma_begin_count-- != 1) {					\
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,				\
+		   "ADVANCE_RING without begin at %s:%d\n",		\
+		   __FILE__, __LINE__);					\
+	info->dma_begin_count = 0;					\
+    }									\
+    if (__count != __expected) {					\
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,				\
+		   "ADVANCE_RING count != expected (%d vs %d) at %s:%d\n", \
+		   __count, __expected, __FILE__, __LINE__);		\
+    }									\
     if (RADEON_VERBOSE) {						\
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,				\
 		   "ADVANCE_RING() start: %d used: %d count: %d\n",	\
@@ -809,19 +969,43 @@ do {									\
 #define RADEON_FLUSH_CACHE()						\
 do {									\
     BEGIN_RING(2);							\
-    OUT_RING(CP_PACKET0(RADEON_RB2D_DSTCACHE_CTLSTAT, 0));		\
-    OUT_RING(RADEON_RB2D_DC_FLUSH);					\
+    OUT_RING(CP_PACKET0(RADEON_RB3D_DSTCACHE_CTLSTAT, 0));		\
+    OUT_RING(RADEON_RB3D_DC_FLUSH);					\
     ADVANCE_RING();							\
 } while (0)
 
 #define RADEON_PURGE_CACHE()						\
 do {									\
     BEGIN_RING(2);							\
-    OUT_RING(CP_PACKET0(RADEON_RB2D_DSTCACHE_CTLSTAT, 0));		\
-    OUT_RING(RADEON_RB2D_DC_FLUSH_ALL);					\
+    OUT_RING(CP_PACKET0(RADEON_RB3D_DSTCACHE_CTLSTAT, 0));		\
+    OUT_RING(RADEON_RB3D_DC_FLUSH_ALL);					\
     ADVANCE_RING();							\
 } while (0)
 
 #endif /* XF86DRI */
+
+static __inline__ void RADEON_MARK_SYNC(RADEONInfoPtr info, ScrnInfoPtr pScrn)
+{
+#ifdef USE_EXA
+    if (info->useEXA)
+	exaMarkSync(pScrn->pScreen);
+#endif
+#ifdef USE_XAA
+    if (!info->useEXA)
+	SET_SYNC_FLAG(info->accel);
+#endif
+}
+
+static __inline__ void RADEON_SYNC(RADEONInfoPtr info, ScrnInfoPtr pScrn)
+{
+#ifdef USE_EXA
+    if (info->useEXA)
+	exaWaitSync(pScrn->pScreen);
+#endif
+#ifdef USE_XAA
+    if (!info->useEXA && info->accel)
+	info->accel->Sync(pScrn);
+#endif
+}
 
 #endif /* _RADEON_H_ */

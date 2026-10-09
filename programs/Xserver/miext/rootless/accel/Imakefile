@@ -2,7 +2,8 @@ XCOMM $XFree86: xc/programs/Xserver/miext/rootless/safeAlpha/Imakefile,v 1.1 200
 
 #include <Server.tmpl>
 
-SRCS =  rlBlt.c \
+SRCS =  rlAccel.c \
+        rlBlt.c \
         rlCopy.c \
         rlFill.c \
         rlFillRect.c \
@@ -10,7 +11,8 @@ SRCS =  rlBlt.c \
         rlGlyph.c \
         rlSolid.c
 
-OBJS =  rlBlt.o \
+OBJS =  rlAccel.o \
+        rlBlt.o \
         rlCopy.o \
         rlFill.o \
         rlFillRect.o \

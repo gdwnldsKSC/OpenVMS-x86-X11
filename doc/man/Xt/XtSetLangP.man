@@ -1,4 +1,5 @@
 .\" $Xorg: XtSetLangP.man,v 1.3 2000/08/17 19:42:03 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtSetLangP.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright 1993 X Consortium
 .\"
@@ -143,7 +144,7 @@ is to be used, or NULL.
 Specifies the language procedure, or NULL.
 .LP
 .IP \fIclient_data\fP 1i
-Specifes addional client data to be passed to the language procedure
+Specifies additional client data to be passed to the language procedure
 when it is called.
 .SH DESCRIPTION
 .ZN XtSetLanguageProc
@@ -183,7 +184,7 @@ specifying the empty string.
 .IP \(bu 5
 Returns the value of the current locale. On ANSI C-based systems this
 is the return value from a final call to
-.ZN setlocal (
+.ZN setlocale (
 .ZN LC_ALL ,
 NULL ).
 .LP

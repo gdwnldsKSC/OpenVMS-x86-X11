@@ -17,7 +17,7 @@ Matthieu Herrb
 <sect>What and Where is X11R&relvers;?
 
 <p>
-The X.org Foundation X11R&relvers; is an Open Source version of 
+The X.Org Foundation X11R&relvers; is an Open Source version of 
 the X Window System that supports
 several UNIX(R) and UNIX-like operating systems (such as Linux, the BSDs
 and Solaris x86) on Intel and other platforms.
@@ -38,7 +38,7 @@ X11R&relvers; builds on most architectures supported by OpenBSD. See section
 <sect>Bug Reports for This Document
 
 <p>
-Use the X.org Bugzilla at <htmlurl
+Use the X.Org Bugzilla at <htmlurl
 url="http://bugs.freedesktop.org" name="http://bugs.freedesktop.org"> 
 to submit comments or suggestions about this file, using the xorg product.
 

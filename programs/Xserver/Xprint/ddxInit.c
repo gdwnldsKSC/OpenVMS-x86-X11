@@ -31,9 +31,13 @@ dealings in this Software without prior written authorization from said
 copyright holders.
 */
 
-#include "X.h"
-#include "Xos.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xos.h>
+#include <X11/Xproto.h>
 #include "windowstr.h"
 #include "servermd.h"
 #include "DiPrint.h"
@@ -81,9 +85,6 @@ InitOutput(
 
     pScreenInfo->numPixmapFormats = 0; /* get them in PrinterInitOutput */
     screenInfo.numVideoScreens = 0;
-#ifdef PRINT_ONLY_SERVER
-    PrinterInitOutput(pScreenInfo, argc, argv);
-#endif
 }
 
 static void
@@ -253,7 +254,7 @@ GetTimeInMillis(void)
 /* ddxInitGlobals - called by |InitGlobals| from os/util.c */
 void ddxInitGlobals(void)
 {
-    XprintInitGlobals();
+    PrinterInitGlobals();
 }
 
 /****************************************
@@ -265,11 +266,6 @@ void ddxInitGlobals(void)
 
 void ddxUseMsg(void)
 {
-/* Enable |XprintUseMsg()| only if |XprintOptions()| is called
- * by |ddxProcessArgument|, too (see below...) */
-#ifdef PRINT_ONLY_SERVER
-    XprintUseMsg();
-#endif /* PRINT_ONLY_SERVER */
 }
 
 void AbortDDX (void)
@@ -286,17 +282,13 @@ ddxProcessArgument (
     char *argv[],
     int i)
 {
-#ifdef PRINT_ONLY_SERVER
-    return XprintOptions(argc, argv, i) - i;
-#else
     return(0);
-#endif
 }
 
 #ifdef XINPUT
 
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 #include "XIstubs.h"
 
 extern  int     BadDevice;

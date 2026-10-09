@@ -1,4 +1,4 @@
-.\" $Xorg: X11.keysyms,v 1.3 2000/08/17 19:42:23 cpqbld Exp $
+.\" $Xorg: $
 \&
 .sp 1
 .ps 11
@@ -12,45 +12,81 @@ Appendix A \- KEYSYM Encoding
 \s+1\fBKEYSYM Encoding\fP\s-1
 .sp 2
 .LP
-For convenience, KEYSYM values are viewed as split into four bytes: 
+KEYSYM values are 32-bit integers that encode the symbols on the
+keycaps of a keyboard. The three most significant bits are always
+zero, which leaves a 29-bit number space. For convenience, KEYSYM
+values can be viewed as split into four bytes:
 .IP \(bu 5
-Byte 1 (for the purposes of this encoding) is the most-significant 5 bits
-(because of the 29-bit effective values)
+Byte 1 is the most significant eight bits (three zero bits and
+the most-significant five bits of the 29-bit effective value)
 .IP \(bu 5
-Byte 2 is the next most-significant 8 bits 
+Byte 2 is the next most-significant eight bits
 .IP \(bu 5
-Byte 3 is the next most-significant 8 bits
+Byte 3 is the next most-significant eight bits
 .IP \(bu 5
-Byte 4 is the least-significant 8 bits
+Byte 4 is the least-significant eight bits
 .LP
-There are two special KEYSYM values: 
+There are six categories of KEYSYM values.
+.SH
+A.1  Special KEYSYMs
+.LP
+There are two special values:
 .PN NoSymbol 
 and 
 .PN VoidSymbol .
 They are used to indicate the absence of symbols (see section 5).
 .TS
-l l l l lw(1i)
-n n n n lw(1i).
+l l l l l lw(1i)
+n n n n l lw(1i).
 _
 .sp 6p
 .B
-Byte 1	Byte 2	Byte 3	Byte 4	Name
+Byte 1	Byte 2	Byte 3	Byte 4	Hex. value	Name
 .sp 6p
 _
 .sp 6p
 .R
-0	0	0	0	T{
+0	0	0	0	#x00000000	T{
 .PN NoSymbol
 T}
-0	255	255	255	T{
+0	255	255	255	#x00FFFFFF	T{
 .PN VoidSymbol
 T}
 .sp 6p
 _
 .TE
-All other standard KEYSYM values have zero values for bytes 1 and 2.
-Byte 3 indicates a character code set,
-and byte 4 indicates a particular character within that set.
+.SH
+A.2  Latin-1 KEYSYMs
+.LP
+The Latin-1 KEYSYMs occupy the range #x0020 to #x007E and #x00A0 to
+#00FF and represent the ISO 10646 / Unicode characters U+0020 to
+U+007E and U+00A0 to U+00FF, respectively.
+.SH
+A.3  Unicode KEYSYMs
+.LP
+These occupy the range #x01000100 to #x0110FFFF and represent the ISO
+10646 / Unicode characters U+0100 to U+10FFFF, respectively. The
+numeric value of a Unicode KEYSYM is the Unicode position of the
+corresponding character plus #x01000000. In the interest of backwards
+compatibility, clients should be able to process both the Unicode
+KEYSYM and the Legacy KEYSYM for those characters where both exist.
+.LP
+Dead keys, which place an accent on the next character entered, shall
+be encoded as Function KEYSYMs, and not as the Unicode KEYSYM
+corresponding to an equivalent combining character. Where a keycap
+indicates a specific function with a graphical symbol that is also
+available in Unicode (e.g., an upwards arrow for the cursor up
+function), the appropriate Function KEYSYM should be used, and not
+the Unicode KEYSYM corresponding to the depicted symbol.
+.SH
+A.4  Function KEYSYMs
+.LP
+These represent keycap symbols that do not directly represent elements
+of a coded character set. Instead, they typically identify a software
+function, mode, or operation (e.g., cursor up, caps lock, insert) that
+can be activated using a dedicated key. Function KEYSYMs have zero
+values for bytes 1 and 2. Byte 3 distinguishes between several 8-bit
+sets within which byte 4 identifies the individual function key.
 .TS
 l l
 n l.
@@ -62,1349 +98,1185 @@ Byte 3	Byte 4
 _
 .sp 6p
 .R
-0	Latin-1
-1	Latin-2
-2	Latin-3
-3	Latin-4
-4	Kana
-5	Arabic
-6	Cyrillic
-7	Greek
-8	Technical
-9	Special
-10	Publishing
-11	APL
-12	Hebrew
-13	Thai
-14	Korean
-15	Latin-5
-16	Latin-6
-17	Latin-7
-18	Latin-8
-19	Latin-9
-32	Currency
-253	3270
-254	Keyboard (XKB) Extension
 255	Keyboard
+254	Keyboard (XKB) Extension
+253	3270
 .sp 6p
 _
 .TE
-Each character set contains gaps where codes have been removed that were
-duplicates with codes in previous character sets
-(that is, character sets with lesser byte 3 value).
+Within a national market, keyboards tend to be comparatively standard
+with respect to the character keys, but they can differ significantly
+on the miscellaneous function keys. Some have function keys left over
+from early timesharing days, others were designed for a specific
+application, such as text processing, web browsing, or accessing
+audiovisual data. The symbols on the keycaps can differ significantly
+between manufacturers and national markets, even where they denote the
+same software function (e.g., Ctrl in the U.S. versus Strg in Germany)
 .LP
-The 94 and 96 character code sets have been moved to occupy the right-hand
-quadrant (decimal 129 through 256), so the ASCII subset has a unique encoding across
-byte 4, which corresponds to the ASCII character code.
-However, this cannot be guaranteed with future registrations 
-and does not apply to all of the Keyboard set.
-.LP
-To the best of our knowledge, 
-the Latin, Kana, Arabic, Cyrillic, Greek, APL, 
-and Hebrew sets are from the appropriate ISO and/or ECMA international 
-standards. 
-There are no Technical, Special, or Publishing international standards,
-so these sets are based on Digital Equipment Corporation standards.
-.LP
-The ordering between the sets (byte 3) is essentially arbitrary.
-National and international standards bodies were commencing 
-deliberations regarding international 2-byte and 4-byte character sets
-at the time these keysyms were developed, but
-we did not know of any proposed layouts.
-.LP
-The order may be arbitrary, 
-but it is important in dealing with duplicate coding.
-As far as possible,
-keysym values (byte 4) follow the character set encoding standards,
-except for the Greek and Cyrillic keysyms which are based on early
-draft standards.
-In the Latin-1 to Latin-4 sets,
-all duplicate glyphs occupy the same code position.
-However, duplicates between Greek and Technical do not occupy the same code
-position.  
-Applications that wish to use the Latin-2, Latin-3, Latin-4, Greek, Cyrillic,
-or Technical sets may find it convenient to use arrays to transform the keysyms.
-.LP
-There is a difference between European and US usage of the names Pilcrow,
-Paragraph, and Section, as follows:
-.TS
-l l l.
-_
-.sp 6p
-.B
-US name	European name	code position in Latin-1
-.sp 6p
-_
-.R
-.sp 6p
-Section sign	Paragraph sign	10/07
-Paragraph sign	Pilcrow sign	11/06
-.sp 6p
-_
-.TE
-.LP
-We have adopted the US names (by accident rather than by design).
-.LP
-The Keyboard set is a miscellaneous collection of commonly occurring keys on
-keyboards.  
-Within this set, 
-the keypad symbols are generally duplicates of symbols found on keys 
-on the main part of the keyboard, but they are distinguished here 
-because they often have a distinguishable semantics associated with them.
-.LP
-Keyboards tend to be comparatively standard with respect to the alphanumeric
-keys, but they differ radically on the miscellaneous function keys.
-Many function keys are left over from early timesharing days 
-or are designed for a specific application.
-Keyboard layouts from large manufacturers tend to have
-lots of keys for every conceivable purpose, 
-whereas small workstation manufacturers often add keys that are solely 
-for support of some of their unique functionality.
-There are two ways of thinking about how to define keysyms for such a world:  
+There are two ways of thinking about how to define KEYSYMs for such a
+world:
 .IP \(bu 5
 The Engraving approach
 .IP \(bu 5
 The Common approach
 .LP
-The Engraving approach is to create a keysym for every unique key engraving.
-This is effectively taking the union of all key engravings on all keyboards.
-For example, some keyboards label function keys across the top as F1 through
-Fn, and others label them as PF1 through PFn.
-These would be different keys under the Engraving approach.
-Likewise, Lock would differ from Shift Lock, 
-which is different from the up-arrow symbol that has the effect of changing
-lowercase to uppercase.
-There are lots of other aliases such as Del, DEL, Delete, Remove, and so forth.
-The Engraving approach makes it easy to decide if a new entry should be added 
-to the keysym set:  if it does not exactly match an existing one, 
-then a new one is created.
-One estimate is that there would be on the order of 300\-500 Keyboard keysyms 
-using this approach, without counting foreign translations and variations.
+The Engraving approach is to create a KEYSYM for every unique key
+engraving. This is effectively taking the union of all key engravings
+on all keyboards. For example, some keyboards label function keys
+across the top as F1 through Fn, and others label them as PF1 through
+PFn. These would be different keys under the Engraving
+approach. Likewise, Lock would differ from Shift Lock, which is
+different from the up-arrow symbol that has the effect of changing
+lowercase to uppercase. There are lots of other aliases such as Del,
+DEL, Delete, Remove, and so forth. The Engraving approach makes it
+easy to decide if a new entry should be added to the KEYSYM set: if it
+does not exactly match an existing one, then a new one is created.
 .LP
-The Common approach tries to capture all of the keys present on an interesting
-number of keyboards, folding likely aliases into the same keysym.
-For example,
-Del, DEL, and Delete are all merged into a single keysym.
-Vendors would be expected to augment the keysym set 
-(using the vendor-specific encoding space) to include all of their unique keys 
-that were not included in the standard set.
-Each vendor decides which of its keys map into the standard keysyms, 
-which presumably can be overridden by a user.
-It is more difficult to implement this approach, 
-because judgment is required about when a sufficient set
-of keyboards implements an engraving to justify making it a keysym in the
-standard set and about which engravings should be merged into a single keysym.
-Under this scheme there are an estimated 100\-150 keysyms.
+The Common approach tries to capture all of the keys present on an
+interesting number of keyboards, folding likely aliases into the same
+KEYSYM. For example, Del, DEL, and Delete are all merged into a single
+KEYSYM. Vendors can augment the KEYSYM set (using the vendor-specific
+encoding space) to include all of their unique keys that were not
+included in the standard set. Each vendor decides which of its keys
+map into the standard KEYSYMs, which presumably can be overridden by a
+user. It is more difficult to implement this approach, because
+judgment is required about when a sufficient set of keyboards
+implements an engraving to justify making it a KEYSYM in the standard
+set and about which engravings should be merged into a single
+KEYSYM.
 .LP
-Although neither scheme is perfect or elegant, 
-the Common approach has been selected because it makes it easier to write 
-a portable application.
-Having the Delete functionality merged into a single keysym allows 
-an application to implement a deletion function and expect reasonable bindings 
-on a wide set of workstations.
-Under the Common approach, 
-application writers are still free to look for and interpret vendor-specific 
-keysyms, but because they are in the extended set, 
-the application developer is more conscious that they are writing
-the application in a nonportable fashion.
+Although neither scheme is perfect or elegant, the Common approach has
+been selected because it makes it easier to write a portable
+application. Having the Delete functionality merged into a single
+KEYSYM allows an application to implement a deletion function and
+expect reasonable bindings on a wide set of workstations. Under the
+Common approach, application writers are still free to look for and
+interpret vendor-specific KEYSYMs, but because they are in the
+extended set, the application developer is more conscious that they
+are writing the application in a nonportable fashion.
 .LP
-In the listings below, 
-Code Pos is a representation of byte 4 of the KEYSYM value, 
-expressed as most-significant/least-significant 4-bit values.
-The Code Pos numbers are for reference only 
-and do not affect the KEYSYM value.
-In all cases, the KEYSYM value is:
+The Keyboard set is a miscellaneous collection of commonly occurring
+keys on keyboards. Within this set, the numeric keypad symbols are
+generally duplicates of symbols found on keys on the main part of the
+keyboard, but they are distinguished here because they often have a
+distinguishable semantics associated with them.
 .LP
-.DS
-byte3 * 256 + byte4
-.DE
 .ps 9
 .nr PS 9
 .vs 10
 .nr VS 10
 .TS H
-lw(.25i) lw(.25i) lw(.5i) lw(3.75i) lw(.6i).
+lw(.25i) lw(4i) lw(.6i).
 _
 .sp 6p
 .B
-Byte	Byte	Code	Name	Set
- 3 	 4 	Pos
+KEYSYM	Name	Set
+value
 .sp 6p
 _
 .sp 6p
 .TH
 .R
-000	032	02/00	SPACE	Latin-1
-000	033	02/01	EXCLAMATION POINT	Latin-1
-000	034	02/02	QUOTATION MARK	Latin-1
-000	035	02/03	NUMBER SIGN	Latin-1
-000	036	02/04	DOLLAR SIGN	Latin-1
-000	037	02/05	PERCENT SIGN	Latin-1
-000	038	02/06	AMPERSAND	Latin-1
-000	039	02/07	APOSTROPHE	Latin-1
-000	040	02/08	LEFT PARENTHESIS	Latin-1
-000	041	02/09	RIGHT PARENTHESIS	Latin-1
-000	042	02/10	ASTERISK	Latin-1
-000	043	02/11	PLUS SIGN	Latin-1
-000	044	02/12	COMMA	Latin-1
-000	045	02/13	MINUS SIGN	Latin-1
-000	046	02/14	FULL STOP	Latin-1
-000	047	02/15	SOLIDUS	Latin-1
-000	048	03/00	DIGIT ZERO	Latin-1
-000	049	03/01	DIGIT ONE	Latin-1
-000	050	03/02	DIGIT TWO	Latin-1
-000	051	03/03	DIGIT THREE	Latin-1
-000	052	03/04	DIGIT FOUR	Latin-1
-000	053	03/05	DIGIT FIVE	Latin-1
-000	054	03/06	DIGIT SIX	Latin-1
-000	055	03/07	DIGIT SEVEN	Latin-1
-000	056	03/08	DIGIT EIGHT	Latin-1
-000	057	03/09	DIGIT NINE	Latin-1
-000	058	03/10	COLON	Latin-1
-000	059	03/11	SEMICOLON	Latin-1
-000	060	03/12	LESS THAN SIGN	Latin-1
-000	061	03/13	EQUALS SIGN	Latin-1
-000	062	03/14	GREATER THAN SIGN	Latin-1
-000	063	03/15	QUESTION MARK	Latin-1
-000	064	04/00	COMMERCIAL AT	Latin-1
-000	065	04/01	LATIN CAPITAL LETTER A	Latin-1
-000	066	04/02	LATIN CAPITAL LETTER B	Latin-1
-000	067	04/03	LATIN CAPITAL LETTER C	Latin-1
-000	068	04/04	LATIN CAPITAL LETTER D	Latin-1
-000	069	04/05	LATIN CAPITAL LETTER E	Latin-1
-000	070	04/06	LATIN CAPITAL LETTER F	Latin-1
-000	071	04/07	LATIN CAPITAL LETTER G	Latin-1
-000	072	04/08	LATIN CAPITAL LETTER H	Latin-1
-000	073	04/09	LATIN CAPITAL LETTER I	Latin-1
-000	074	04/10	LATIN CAPITAL LETTER J	Latin-1
-000	075	04/11	LATIN CAPITAL LETTER K	Latin-1
-000	076	04/12	LATIN CAPITAL LETTER L	Latin-1
-000	077	04/13	LATIN CAPITAL LETTER M	Latin-1
-000	078	04/14	LATIN CAPITAL LETTER N	Latin-1
-000	079	04/15	LATIN CAPITAL LETTER O	Latin-1
-000	080	05/00	LATIN CAPITAL LETTER P	Latin-1
-000	081	05/01	LATIN CAPITAL LETTER Q	Latin-1
-000	082	05/02	LATIN CAPITAL LETTER R	Latin-1
-000	083	05/03	LATIN CAPITAL LETTER S	Latin-1
-000	084	05/04	LATIN CAPITAL LETTER T	Latin-1
-000	085	05/05	LATIN CAPITAL LETTER U	Latin-1
-000	086	05/06	LATIN CAPITAL LETTER V	Latin-1
-000	087	05/07	LATIN CAPITAL LETTER W	Latin-1
-000	088	05/08	LATIN CAPITAL LETTER X	Latin-1
-000	089	05/09	LATIN CAPITAL LETTER Y	Latin-1
-000	090	05/10	LATIN CAPITAL LETTER Z	Latin-1
-000	091	05/11	LEFT SQUARE BRACKET	Latin-1
-000	092	05/12	REVERSE SOLIDUS	Latin-1
-000	093	05/13	RIGHT SQUARE BRACKET	Latin-1
-000	094	05/14	CIRCUMFLEX ACCENT	Latin-1
-000	095	05/15	LOW LINE	Latin-1
-000	096	06/00	GRAVE ACCENT	Latin-1
-000	097	06/01	LATIN SMALL LETTER a	Latin-1
-000	098	06/02	LATIN SMALL LETTER b	Latin-1
-000	099	06/03	LATIN SMALL LETTER c	Latin-1
-000	100	06/04	LATIN SMALL LETTER d	Latin-1
-000	101	06/05	LATIN SMALL LETTER e	Latin-1
-000	102	06/06	LATIN SMALL LETTER f	Latin-1
-000	103	06/07	LATIN SMALL LETTER g	Latin-1
-000	104	06/08	LATIN SMALL LETTER h	Latin-1
-000	105	06/09	LATIN SMALL LETTER i	Latin-1
-000	106	06/10	LATIN SMALL LETTER j	Latin-1
-000	107	06/11	LATIN SMALL LETTER k	Latin-1
-000	108	06/12	LATIN SMALL LETTER l	Latin-1
-000	109	06/13	LATIN SMALL LETTER m	Latin-1
-000	110	06/14	LATIN SMALL LETTER n	Latin-1
-000	111	06/15	LATIN SMALL LETTER o	Latin-1
-000	112	07/00	LATIN SMALL LETTER p	Latin-1
-000	113	07/01	LATIN SMALL LETTER q	Latin-1
-000	114	07/02	LATIN SMALL LETTER r	Latin-1
-000	115	07/03	LATIN SMALL LETTER s	Latin-1
-000	116	07/04	LATIN SMALL LETTER t	Latin-1
-000	117	07/05	LATIN SMALL LETTER u	Latin-1
-000	118	07/06	LATIN SMALL LETTER v	Latin-1
-000	119	07/07	LATIN SMALL LETTER w	Latin-1
-000	120	07/08	LATIN SMALL LETTER x	Latin-1
-000	121	07/09	LATIN SMALL LETTER y	Latin-1
-000	122	07/10	LATIN SMALL LETTER z	Latin-1
-000	123	07/11	LEFT CURLY BRACKET	Latin-1
-000	124	07/12	VERTICAL LINE	Latin-1
-000	125	07/13	RIGHT CURLY BRACKET	Latin-1
-000	126	07/14	TILDE	Latin-1
-000	160	10/00	NO-BREAK SPACE	Latin-1
-000	161	10/01	INVERTED EXCLAMATION MARK	Latin-1
-000	162	10/02	CENT SIGN	Latin-1
-000	163	10/03	POUND SIGN	Latin-1
-000	164	10/04	CURRENCY SIGN	Latin-1
-000	165	10/05	YEN SIGN	Latin-1
-000	166	10/06	BROKEN VERTICAL BAR	Latin-1
-000	167	10/07	SECTION SIGN	Latin-1
-000	168	10/08	DIAERESIS	Latin-1
-000	169	10/09	COPYRIGHT SIGN	Latin-1
-000	170	10/10	FEMININE ORDINAL INDICATOR	Latin-1
-000	171	10/11	LEFT ANGLE QUOTATION MARK	Latin-1
-000	172	10/12	NOT SIGN	Latin-1
-000	173	10/13	HYPHEN	Latin-1
-000	174	10/14	REGISTERED TRADEMARK SIGN	Latin-1
-000	175	10/15	MACRON	Latin-1
-000	176	11/00	DEGREE SIGN, RING ABOVE	Latin-1
-000	177	11/01	PLUS-MINUS SIGN	Latin-1
-000	178	11/02	SUPERSCRIPT TWO	Latin-1
-000	179	11/03	SUPERSCRIPT THREE	Latin-1
-000	180	11/04	ACUTE ACCENT	Latin-1
-000	181	11/05	MICRO SIGN	Latin-1
-000	182	11/06	PARAGRAPH SIGN	Latin-1
-000	183	11/07	MIDDLE DOT	Latin-1
-000	184	11/08	CEDILLA	Latin-1
-000	185	11/09	SUPERSCRIPT ONE	Latin-1
-000	186	11/10	MASCULINE ORDINAL INDICATOR	Latin-1
-000	187	11/11	RIGHT ANGLE QUOTATION MARK	Latin-1
-000	188	11/12	VULGAR FRACTION ONE QUARTER	Latin-1
-000	189	11/13	VULGAR FRACTION ONE HALF	Latin-1
-000	190	11/14	VULGAR FRACTION THREE QUARTERS	Latin-1
-000	191	11/15	INVERTED QUESTION MARK	Latin-1
-000	192	12/00	LATIN CAPITAL LETTER A WITH GRAVE ACCENT	Latin-1
-000	193	12/01	LATIN CAPITAL LETTER A WITH ACUTE ACCENT	Latin-1
-000	194	12/02	LATIN CAPITAL LETTER A WITH CIRCUMFLEX ACCENT	Latin-1
-000	195	12/03	LATIN CAPITAL LETTER A WITH TILDE	Latin-1
-000	196	12/04	LATIN CAPITAL LETTER A WITH DIAERESIS	Latin-1
-000	197	12/05	LATIN CAPITAL LETTER A WITH RING ABOVE	Latin-1
-000	198	12/06	LATIN CAPITAL DIPHTHONG AE	Latin-1
-000	199	12/07	LATIN CAPITAL LETTER C WITH CEDILLA	Latin-1
-000	200	12/08	LATIN CAPITAL LETTER E WITH GRAVE ACCENT	Latin-1
-000	201	12/09	LATIN CAPITAL LETTER E WITH ACUTE ACCENT	Latin-1
-000	202	12/10	LATIN CAPITAL LETTER E WITH CIRCUMFLEX ACCENT	Latin-1
-000	203	12/11	LATIN CAPITAL LETTER E WITH DIAERESIS	Latin-1
-000	204	12/12	LATIN CAPITAL LETTER I WITH GRAVE ACCENT	Latin-1
-000	205	12/13	LATIN CAPITAL LETTER I WITH ACUTE ACCENT	Latin-1
-000	206	12/14	LATIN CAPITAL LETTER I WITH CIRCUMFLEX ACCENT	Latin-1
-000	207	12/15	LATIN CAPITAL LETTER I WITH DIAERESIS	Latin-1
-000	208	13/00	ICELANDIC CAPITAL LETTER ETH	Latin-1
-000	209	13/01	LATIN CAPITAL LETTER N WITH TILDE	Latin-1
-000	210	13/02	LATIN CAPITAL LETTER O WITH GRAVE ACCENT	Latin-1
-000	211	13/03	LATIN CAPITAL LETTER O WITH ACUTE ACCENT	Latin-1
-000	212	13/04	LATIN CAPITAL LETTER O WITH CIRCUMFLEX ACCENT	Latin-1
-000	213	13/05	LATIN CAPITAL LETTER O WITH TILDE	Latin-1
-000	214	13/06	LATIN CAPITAL LETTER O WITH DIAERESIS	Latin-1
-000	215	13/07	MULTIPLICATION SIGN	Latin-1
-000	216	13/08	LATIN CAPITAL LETTER O WITH OBLIQUE STROKE	Latin-1
-000	217	13/09	LATIN CAPITAL LETTER U WITH GRAVE ACCENT	Latin-1
-000	218	13/10	LATIN CAPITAL LETTER U WITH ACUTE ACCENT	Latin-1
-000	219	13/11	LATIN CAPITAL LETTER U WITH CIRCUMFLEX ACCENT	Latin-1
-000	220	13/12	LATIN CAPITAL LETTER U WITH DIAERESIS	Latin-1
-000	221	13/13	LATIN CAPITAL LETTER Y WITH ACUTE ACCENT	Latin-1
-000	222	13/14	ICELANDIC CAPITAL LETTER THORN	Latin-1
-000	223	13/15	GERMAN SMALL LETTER SHARP s	Latin-1
-000	224	14/00	LATIN SMALL LETTER a WITH GRAVE ACCENT	Latin-1
-000	225	14/01	LATIN SMALL LETTER a WITH ACUTE ACCENT	Latin-1
-000	226	14/02	LATIN SMALL LETTER a WITH CIRCUMFLEX ACCENT	Latin-1
-000	227	14/03	LATIN SMALL LETTER a WITH TILDE	Latin-1
-000	228	14/04	LATIN SMALL LETTER a WITH DIAERESIS	Latin-1
-000	229	14/05	LATIN SMALL LETTER a WITH RING ABOVE	Latin-1
-000	230	14/06	LATIN SMALL DIPHTHONG ae	Latin-1
-000	231	14/07	LATIN SMALL LETTER c WITH CEDILLA	Latin-1
-000	232	14/08	LATIN SMALL LETTER e WITH GRAVE ACCENT	Latin-1
-000	233	14/09	LATIN SMALL LETTER e WITH ACUTE ACCENT	Latin-1
-000	234	14/10	LATIN SMALL LETTER e WITH CIRCUMFLEX ACCENT	Latin-1
-000	235	14/11	LATIN SMALL LETTER e WITH DIAERESIS	Latin-1
-000	236	14/12	LATIN SMALL LETTER i WITH GRAVE ACCENT	Latin-1
-000	237	14/13	LATIN SMALL LETTER i WITH ACUTE ACCENT	Latin-1
-000	238	14/14	LATIN SMALL LETTER i WITH CIRCUMFLEX ACCENT	Latin-1
-000	239	14/15	LATIN SMALL LETTER i WITH DIAERESIS	Latin-1
-000	240	15/00	ICELANDIC SMALL LETTER ETH	Latin-1
-000	241	15/01	LATIN SMALL LETTER n WITH TILDE	Latin-1
-000	242	15/02	LATIN SMALL LETTER o WITH GRAVE ACCENT	Latin-1
-000	243	15/03	LATIN SMALL LETTER o WITH ACUTE ACCENT	Latin-1
-000	244	15/04	LATIN SMALL LETTER o WITH CIRCUMFLEX ACCENT	Latin-1
-000	245	15/05	LATIN SMALL LETTER o WITH TILDE	Latin-1
-000	246	15/06	LATIN SMALL LETTER o WITH DIAERESIS	Latin-1
-000	247	15/07	DIVISION SIGN	Latin-1
-000	248	15/08	LATIN SMALL LETTER o WITH OBLIQUE STROKE	Latin-1
-000	249	15/09	LATIN SMALL LETTER u WITH GRAVE ACCENT	Latin-1
-000	250	15/10	LATIN SMALL LETTER u WITH ACUTE ACCENT	Latin-1
-000	251	15/11	LATIN SMALL LETTER u WITH CIRCUMFLEX ACCENT	Latin-1
-000	252	15/12	LATIN SMALL LETTER u WITH DIAERESIS	Latin-1
-000	253	15/13	LATIN SMALL LETTER y WITH ACUTE ACCENT	Latin-1
-000	254	15/14	ICELANDIC SMALL LETTER THORN	Latin-1
-000	255	15/15	LATIN SMALL LETTER y WITH DIAERESIS	Latin-1
+#xFF08	BACKSPACE, BACK SPACE, BACK CHAR	Keyboard
+#xFF09	TAB	Keyboard
+#xFF0A	LINEFEED, LF	Keyboard
+#xFF0B	CLEAR	Keyboard
+#xFF0D	RETURN, ENTER	Keyboard
+#xFF13	PAUSE, HOLD	Keyboard
+#xFF14	SCROLL LOCK	Keyboard
+#xFF15	SYS REQ, SYSTEM REQUEST	Keyboard
+#xFF1B	ESCAPE	Keyboard
+#xFF20	MULTI-KEY CHARACTER PREFACE	Keyboard
+#xFF21	KANJI, KANJI CONVERT	Keyboard
+#xFF22	MUHENKAN	Keyboard
+#xFF23	HENKAN MODE	Keyboard
+#xFF24	ROMAJI	Keyboard
+#xFF25	HIRAGANA	Keyboard
+#xFF26	KATAKANA	Keyboard
+#xFF27	HIRAGANA/KATAKANA TOGGLE	Keyboard
+#xFF28	ZENKAKU	Keyboard
+#xFF29	HANKAKU	Keyboard
+#xFF2A	ZENKAKU/HANKAKU TOGGLE	Keyboard
+#xFF2B	TOUROKU	Keyboard
+#xFF2C	MASSYO	Keyboard
+#xFF2D	KANA LOCK	Keyboard
+#xFF2E	KANA SHIFT	Keyboard
+#xFF2F	EISU SHIFT	Keyboard
+#xFF30	EISU TOGGLE	Keyboard
+#xFF31	HANGUL START/STOP (TOGGLE)	Keyboard
+#xFF32	HANGUL START	Keyboard
+#xFF33	HANGUL END, ENGLISH START	Keyboard
+#xFF34	START HANGUL/HANJA CONVERSION	Keyboard
+#xFF35	HANGUL JAMO MODE	Keyboard
+#xFF36	HANGUL ROMAJA MODE	Keyboard
+#xFF37	HANGUL CODE INPUT	Keyboard
+#xFF38	HANGUL JEONJA MODE	Keyboard
+#xFF39	HANGUL BANJA MODE	Keyboard
+#xFF3A	HANGUL PREHANJA CONVERSION	Keyboard
+#xFF3B	HANGUL POSTHANJA CONVERSION	Keyboard
+#xFF3C	HANGUL SINGLE CANDIDATE	Keyboard
+#xFF3D	HANGUL MULTIPLE CANDIDATE	Keyboard
+#xFF3E	HANGUL PREVIOUS CANDIDATE	Keyboard
+#xFF3F	HANGUL SPECIAL SYMBOLS	Keyboard
+#xFF50	HOME	Keyboard
+#xFF51	LEFT, MOVE LEFT, LEFT ARROW	Keyboard
+#xFF52	UP, MOVE UP, UP ARROW	Keyboard
+#xFF53	RIGHT, MOVE RIGHT, RIGHT ARROW	Keyboard
+#xFF54	DOWN, MOVE DOWN, DOWN ARROW	Keyboard
+#xFF55	PRIOR, PREVIOUS, PAGE UP	Keyboard
+#xFF56	NEXT, PAGE DOWN	Keyboard
+#xFF57	END, EOL	Keyboard
+#xFF58	BEGIN, BOL	Keyboard
+#xFF60	SELECT, MARK	Keyboard
+#xFF61	PRINT	Keyboard
+#xFF62	EXECUTE, RUN, DO	Keyboard
+#xFF63	INSERT, INSERT HERE	Keyboard
+#xFF65	UNDO, OOPS	Keyboard
+#xFF66	REDO, AGAIN	Keyboard
+#xFF67	MENU	Keyboard
+#xFF68	FIND, SEARCH	Keyboard
+#xFF69	CANCEL, STOP, ABORT, EXIT	Keyboard
+#xFF6A	HELP	Keyboard
+#xFF6B	BREAK	Keyboard
+#xFF7E	MODE SWITCH, SCRIPT SWITCH, CHARACTER SET SWITCH	Keyboard
+#xFF7F	NUM LOCK	Keyboard
+#xFF80	KEYPAD SPACE	Keyboard
+#xFF89	KEYPAD TAB	Keyboard
+#xFF8D	KEYPAD ENTER	Keyboard
+#xFF91	KEYPAD F1, PF1, A	Keyboard
+#xFF92	KEYPAD F2, PF2, B	Keyboard
+#xFF93	KEYPAD F3, PF3, C	Keyboard
+#xFF94	KEYPAD F4, PF4, D	Keyboard
+#xFF95	KEYPAD HOME	Keyboard
+#xFF96	KEYPAD LEFT	Keyboard
+#xFF97	KEYPAD UP	Keyboard
+#xFF98	KEYPAD RIGHT	Keyboard
+#xFF99	KEYPAD DOWN	Keyboard
+#xFF9A	KEYPAD PRIOR, PAGE UP	Keyboard
+#xFF9B	KEYPAD NEXT, PAGE DOWN	Keyboard
+#xFF9C	KEYPAD END	Keyboard
+#xFF9D	KEYPAD BEGIN	Keyboard
+#xFF9E	KEYPAD INSERT	Keyboard
+#xFF9F	KEYPAD DELETE	Keyboard
+#xFFAA	KEYPAD MULTIPLICATION SIGN, ASTERISK	Keyboard
+#xFFAB	KEYPAD PLUS SIGN	Keyboard
+#xFFAC	KEYPAD SEPARATOR, COMMA	Keyboard
+#xFFAD	KEYPAD MINUS SIGN, HYPHEN	Keyboard
+#xFFAE	KEYPAD DECIMAL POINT, FULL STOP	Keyboard
+#xFFAF	KEYPAD DIVISION SIGN, SOLIDUS	Keyboard
+#xFFB0	KEYPAD DIGIT ZERO	Keyboard
+#xFFB1	KEYPAD DIGIT ONE	Keyboard
+#xFFB2	KEYPAD DIGIT TWO	Keyboard
+#xFFB3	KEYPAD DIGIT THREE	Keyboard
+#xFFB4	KEYPAD DIGIT FOUR	Keyboard
+#xFFB5	KEYPAD DIGIT FIVE	Keyboard
+#xFFB6	KEYPAD DIGIT SIX	Keyboard
+#xFFB7	KEYPAD DIGIT SEVEN	Keyboard
+#xFFB8	KEYPAD DIGIT EIGHT	Keyboard
+#xFFB9	KEYPAD DIGIT NINE	Keyboard
+#xFFBD	KEYPAD EQUALS SIGN	Keyboard
+#xFFBE	F1	Keyboard
+#xFFBF	F2	Keyboard
+#xFFC0	F3	Keyboard
+#xFFC1	F4	Keyboard
+#xFFC2	F5	Keyboard
+#xFFC3	F6	Keyboard
+#xFFC4	F7	Keyboard
+#xFFC5	F8	Keyboard
+#xFFC6	F9	Keyboard
+#xFFC7	F10	Keyboard
+#xFFC8	F11, L1	Keyboard
+#xFFC9	F12, L2	Keyboard
+#xFFCA	F13, L3	Keyboard
+#xFFCB	F14, L4	Keyboard
+#xFFCC	F15, L5	Keyboard
+#xFFCD	F16, L6	Keyboard
+#xFFCE	F17, L7	Keyboard
+#xFFCF	F18, L8	Keyboard
+#xFFD0	F19, L9	Keyboard
+#xFFD1	F20, L10	Keyboard
+#xFFD2	F21, R1	Keyboard
+#xFFD3	F22, R2	Keyboard
+#xFFD4	F23, R3	Keyboard
+#xFFD5	F24, R4	Keyboard
+#xFFD6	F25, R5	Keyboard
+#xFFD7	F26, R6	Keyboard
+#xFFD8	F27, R7	Keyboard
+#xFFD9	F28, R8	Keyboard
+#xFFDA	F29, R9	Keyboard
+#xFFDB	F30, R10	Keyboard
+#xFFDC	F31, R11	Keyboard
+#xFFDD	F32, R12	Keyboard
+#xFFDE	F33, R13	Keyboard
+#xFFDF	F34, R14	Keyboard
+#xFFE0	F35, R15	Keyboard
+#xFFE1	LEFT SHIFT	Keyboard
+#xFFE2	RIGHT SHIFT	Keyboard
+#xFFE3	LEFT CONTROL	Keyboard
+#xFFE4	RIGHT CONTROL	Keyboard
+#xFFE5	CAPS LOCK	Keyboard
+#xFFE6	SHIFT LOCK	Keyboard
+#xFFE7	LEFT META	Keyboard
+#xFFE8	RIGHT META	Keyboard
+#xFFE9	LEFT ALT	Keyboard
+#xFFEA	RIGHT ALT	Keyboard
+#xFFEB	LEFT SUPER	Keyboard
+#xFFEC	RIGHT SUPER	Keyboard
+#xFFED	LEFT HYPER	Keyboard
+#xFFEE	RIGHT HYPER	Keyboard
+#xFFFF	DELETE, RUBOUT	Keyboard
+.sp 6p
+_
+.TE
+.LP
+.ps 11
+.nr PS 11
+.vs 12
+.nr VS 12
+.LP
+The Keyboard (XKB) Extension set, which provides among other things
+a range of dead keys, is defined in ``The X Keyboard Extension:
+Protocol Specification'', Appendix C.
+.LP
+The 3270 set defines additional keys that are specific to IBM 3270
+terminals.
+.LP
+.ps 9
+.nr PS 9
+.vs 10
+.nr VS 10
+.TS H
+lw(.25i) lw(4i) lw(.6i).
+_
+.sp 6p
+.B
+KEYSYM	Name	Set
+value
+.sp 6p
+_
+.sp 6p
+.TH
+.R
+#xFD01	3270 DUPLICATE	3270
+#xFD02	3270 FIELDMARK	3270
+#xFD03	3270 RIGHT2	3270
+#xFD04	3270 LEFT2	3270
+#xFD05	3270 BACKTAB	3270
+#xFD06	3270 ERASEEOF	3270
+#xFD07	3270 ERASEINPUT	3270
+#xFD08	3270 RESET	3270
+#xFD09	3270 QUIT	3270
+#xFD0A	3270 PA1	3270
+#xFD0B	3270 PA2	3270
+#xFD0C	3270 PA3	3270
+#xFD0D	3270 TEST	3270
+#xFD0E	3270 ATTN	3270
+#xFD0F	3270 CURSORBLINK	3270
+#xFD10	3270 ALTCURSOR	3270
+#xFD11	3270 KEYCLICK	3270
+#xFD12	3270 JUMP	3270
+#xFD13	3270 IDENT	3270
+#xFD14	3270 RULE	3270
+#xFD15	3270 COPY	3270
+#xFD16	3270 PLAY	3270
+#xFD17	3270 SETUP	3270
+#xFD18	3270 RECORD	3270
+#xFD19	3270 CHANGESCREEN	3270
+#xFD1A	3270 DELETEWORD	3270
+#xFD1B	3270 EXSELECT	3270
+#xFD1C	3270 CURSORSELECT	3270
+#xFD1D	3270 PRINTSCREEN	3270
+#xFD1E	3270 ENTER	3270
+.sp 6p
+_
+.TE
+.LP
+.ps 11
+.nr PS 11
+.vs 12
+.nr VS 12
+.LP
+.SH
+A.5  Vendor KEYSYMs
+.LP
+The KEYSYM number range #x10000000 to #x1FFFFFFF is available for
+vendor-specific extentions. Among these, the range #x11000000 to
+#x1100FFFF is designated for keypad KEYSYMs.
+.SH
+A.6  Legacy KEYSYMs
+.LP
+These date from the time before ISO 10646 / Unicode was
+available. They represent characters from a number of different older
+8-bit coded character sets and have zero values for bytes 1 and
+2. Byte 3 indicates a coded character set and byte 4 is the 8-bit
+value of the particular character within that set.
+.TS
+l lw(1.5i) l lw(1i) 
+n lw(1.5i) n lw(1i).
+_
+.sp 6p
+.B
+Byte 3	Byte 4	Byte 3	Byte 4
+.sp 6p
+_
+.sp 6p
+.R
+1	Latin-2	11	APL
+2	Latin-3	12	Hebrew
+3	Latin-4	13	Thai
+4	Kana	14	Korean
+5	Arabic	15	Latin-5
+6	Cyrillic	16	Latin-6
+7	Greek	17	Latin-7
+8	Technical	18	Latin-8
+9	Special	19	Latin-9
+10	Publishing	32	Currency	
+.sp 6p
+_
+.TE
+Each character set contains gaps where codes have been removed that
+were duplicates with codes in previous character sets (that is,
+character sets with lesser byte 3 value).
+.LP
+The Latin, Arabic, Cyrillic, Greek, Hebrew, and Thai sets were taken
+from the early drafts of the relevant ISO 8859 parts available at the
+time. However, in the case of the Cyrillic and Greek sets, these
+turned out differently in the final versions of the ISO standard. The
+Technical, Special, and Publishing sets are based on Digital Equipment
+Corporation standards, as no equivalent international standards were
+available at the time.
+.LP
+The table below lists all standardized Legacy KEYSYMs, along with the
+name used in the source document. Where there exists an unambiguous
+equivalent in Unicode, as it is the case with all ISO 8859 characters,
+it is given in the second column as a cross reference. Where there is
+no Unicode number provided, the exact semantics of the KEYSYM may have
+been lost and a Unicode KEYSYM should be used instead, if available.
+.LP
+As support of Unicode KEYSYMs increases, some or all of the Legacy
+KEYSYMs may be phased out and withdrawn in future versions of this
+standard. Most KEYSYMs in the sets Technical, Special, Publishing, APL
+and Currency (with the exception of #x20AC) were probably never used
+in practice, and were not supported by pre-Unicode fonts. In
+particular, the Currency set, which was copied from Unicode, has
+already been deprecated by the introduction of the Unicode KEYSYMs.
+.LP
+.ps 9
+.nr PS 9
+.vs 10
+.nr VS 10
+.TS H
+lw(.25i) lw(.25i) lw(3.5i) lw(.6i).
+_
+.sp 6p
+.B
+KEYSYM	Unicode	Name	Set
+value	value
+.sp 6p
+_
+.sp 6p
+.TH
+.R
+#x01A1	U+0104	LATIN CAPITAL LETTER A WITH OGONEK	Latin-2
+#x01A2	U+02D8	BREVE	Latin-2
+#x01A3	U+0141	LATIN CAPITAL LETTER L WITH STROKE	Latin-2
+#x01A5	U+013D	LATIN CAPITAL LETTER L WITH CARON	Latin-2
+#x01A6	U+015A	LATIN CAPITAL LETTER S WITH ACUTE	Latin-2
+#x01A9	U+0160	LATIN CAPITAL LETTER S WITH CARON	Latin-2
+#x01AA	U+015E	LATIN CAPITAL LETTER S WITH CEDILLA	Latin-2
+#x01AB	U+0164	LATIN CAPITAL LETTER T WITH CARON	Latin-2
+#x01AC	U+0179	LATIN CAPITAL LETTER Z WITH ACUTE	Latin-2
+#x01AE	U+017D	LATIN CAPITAL LETTER Z WITH CARON	Latin-2
+#x01AF	U+017B	LATIN CAPITAL LETTER Z WITH DOT ABOVE	Latin-2
+#x01B1	U+0105	LATIN SMALL LETTER A WITH OGONEK	Latin-2
+#x01B2	U+02DB	OGONEK	Latin-2
+#x01B3	U+0142	LATIN SMALL LETTER L WITH STROKE	Latin-2
+#x01B5	U+013E	LATIN SMALL LETTER L WITH CARON	Latin-2
+#x01B6	U+015B	LATIN SMALL LETTER S WITH ACUTE	Latin-2
+#x01B7	U+02C7	CARON	Latin-2
+#x01B9	U+0161	LATIN SMALL LETTER S WITH CARON	Latin-2
+#x01BA	U+015F	LATIN SMALL LETTER S WITH CEDILLA	Latin-2
+#x01BB	U+0165	LATIN SMALL LETTER T WITH CARON	Latin-2
+#x01BC	U+017A	LATIN SMALL LETTER Z WITH ACUTE	Latin-2
+#x01BD	U+02DD	DOUBLE ACUTE ACCENT	Latin-2
+#x01BE	U+017E	LATIN SMALL LETTER Z WITH CARON	Latin-2
+#x01BF	U+017C	LATIN SMALL LETTER Z WITH DOT ABOVE	Latin-2
+#x01C0	U+0154	LATIN CAPITAL LETTER R WITH ACUTE	Latin-2
+#x01C3	U+0102	LATIN CAPITAL LETTER A WITH BREVE	Latin-2
+#x01C5	U+0139	LATIN CAPITAL LETTER L WITH ACUTE	Latin-2
+#x01C6	U+0106	LATIN CAPITAL LETTER C WITH ACUTE	Latin-2
+#x01C8	U+010C	LATIN CAPITAL LETTER C WITH CARON	Latin-2
+#x01CA	U+0118	LATIN CAPITAL LETTER E WITH OGONEK	Latin-2
+#x01CC	U+011A	LATIN CAPITAL LETTER E WITH CARON	Latin-2
+#x01CF	U+010E	LATIN CAPITAL LETTER D WITH CARON	Latin-2
+#x01D0	U+0110	LATIN CAPITAL LETTER D WITH STROKE	Latin-2
+#x01D1	U+0143	LATIN CAPITAL LETTER N WITH ACUTE	Latin-2
+#x01D2	U+0147	LATIN CAPITAL LETTER N WITH CARON	Latin-2
+#x01D5	U+0150	LATIN CAPITAL LETTER O WITH DOUBLE ACUTE	Latin-2
+#x01D8	U+0158	LATIN CAPITAL LETTER R WITH CARON	Latin-2
+#x01D9	U+016E	LATIN CAPITAL LETTER U WITH RING ABOVE	Latin-2
+#x01DB	U+0170	LATIN CAPITAL LETTER U WITH DOUBLE ACUTE	Latin-2
+#x01DE	U+0162	LATIN CAPITAL LETTER T WITH CEDILLA	Latin-2
+#x01E0	U+0155	LATIN SMALL LETTER R WITH ACUTE	Latin-2
+#x01E3	U+0103	LATIN SMALL LETTER A WITH BREVE	Latin-2
+#x01E5	U+013A	LATIN SMALL LETTER L WITH ACUTE	Latin-2
+#x01E6	U+0107	LATIN SMALL LETTER C WITH ACUTE	Latin-2
+#x01E8	U+010D	LATIN SMALL LETTER C WITH CARON	Latin-2
+#x01EA	U+0119	LATIN SMALL LETTER E WITH OGONEK	Latin-2
+#x01EC	U+011B	LATIN SMALL LETTER E WITH CARON	Latin-2
+#x01EF	U+010F	LATIN SMALL LETTER D WITH CARON	Latin-2
+#x01F0	U+0111	LATIN SMALL LETTER D WITH STROKE	Latin-2
+#x01F1	U+0144	LATIN SMALL LETTER N WITH ACUTE	Latin-2
+#x01F2	U+0148	LATIN SMALL LETTER N WITH CARON	Latin-2
+#x01F5	U+0151	LATIN SMALL LETTER O WITH DOUBLE ACUTE	Latin-2
+#x01F8	U+0159	LATIN SMALL LETTER R WITH CARON	Latin-2
+#x01F9	U+016F	LATIN SMALL LETTER U WITH RING ABOVE	Latin-2
+#x01FB	U+0171	LATIN SMALL LETTER U WITH DOUBLE ACUTE	Latin-2
+#x01FE	U+0163	LATIN SMALL LETTER T WITH CEDILLA	Latin-2
+#x01FF	U+02D9	DOT ABOVE	Latin-2
 .sp 2
-001	161	10/01	LATIN CAPITAL LETTER A WITH OGONEK	Latin-2
-001	162	10/02	BREVE	Latin-2
-001	163	10/03	LATIN CAPITAL LETTER L WITH STROKE	Latin-2
-001	165	10/05	LATIN CAPITAL LETTER L WITH CARON	Latin-2
-001	166	10/06	LATIN CAPITAL LETTER S WITH ACUTE ACCENT	Latin-2
-001	169	10/09	LATIN CAPITAL LETTER S WITH CARON	Latin-2
-001	170	10/10	LATIN CAPITAL LETTER S WITH CEDILLA	Latin-2
-001	171	10/11	LATIN CAPITAL LETTER T WITH CARON	Latin-2
-001	172	10/12	LATIN CAPITAL LETTER Z WITH ACUTE ACCENT	Latin-2
-001	174	10/14	LATIN CAPITAL LETTER Z WITH CARON	Latin-2
-001	175	10/15	LATIN CAPITAL LETTER Z WITH DOT ABOVE	Latin-2
-001	177	11/01	LATIN SMALL LETTER a WITH OGONEK	Latin-2
-001	178	11/02	OGONEK	Latin-2
-001	179	11/03	LATIN SMALL LETTER l WITH STROKE	Latin-2
-001	181	11/05	LATIN SMALL LETTER l WITH CARON	Latin-2
-001	182	11/06	LATIN SMALL LETTER s WITH ACUTE ACCENT	Latin-2
-001	183	11/07	CARON	Latin-2
-001	185	11/09	LATIN SMALL LETTER s WITH CARON	Latin-2
-001	186	11/10	LATIN SMALL LETTER s WITH CEDILLA	Latin-2
-001	187	11/11	LATIN SMALL LETTER t WITH CARON	Latin-2
-001	188	11/12	LATIN SMALL LETTER z WITH ACUTE ACCENT	Latin-2
-001	189	11/13	DOUBLE ACUTE ACCENT	Latin-2
-001	190	11/14	LATIN SMALL LETTER z WITH CARON	Latin-2
-001	191	11/15	LATIN SMALL LETTER z WITH DOT ABOVE	Latin-2
-001	192	12/00	LATIN CAPITAL LETTER R WITH ACUTE ACCENT	Latin-2
-001	195	12/03	LATIN CAPITAL LETTER A WITH BREVE	Latin-2
-001	197	12/05	LATIN CAPITAL LETTER L WITH ACUTE ACCENT	Latin-2
-001	198	12/06	LATIN CAPITAL LETTER C WITH ACUTE ACCENT	Latin-2
-001	200	12/08	LATIN CAPITAL LETTER C WITH CARON	Latin-2
-001	202	12/10	LATIN CAPITAL LETTER E WITH OGONEK	Latin-2
-001	204	12/12	LATIN CAPITAL LETTER E WITH CARON	Latin-2
-001	207	12/15	LATIN CAPITAL LETTER D WITH CARON	Latin-2
-001	208	13/00	LATIN CAPITAL LETTER D WITH STROKE	Latin-2
-001	209	13/01	LATIN CAPITAL LETTER N WITH ACUTE ACCENT	Latin-2
-001	210	13/02	LATIN CAPITAL LETTER N WITH CARON	Latin-2
-001	213	13/05	LATIN CAPITAL LETTER O WITH DOUBLE ACUTE ACCENT	Latin-2
-001	216	13/08	LATIN CAPITAL LETTER R WITH CARON	Latin-2
-001	217	13/09	LATIN CAPITAL LETTER U WITH RING ABOVE	Latin-2
-001	219	13/11	LATIN CAPITAL LETTER U WITH DOUBLE ACUTE ACCENT	Latin-2
-001	222	13/14	LATIN CAPITAL LETTER T WITH CEDILLA	Latin-2
-001	224	14/00	LATIN SMALL LETTER r WITH ACUTE ACCENT	Latin-2
-001	227	14/03	LATIN SMALL LETTER a WITH BREVE	Latin-2
-001	229	14/05	LATIN SMALL LETTER l WITH ACUTE ACCENT	Latin-2
-001	230	14/06	LATIN SMALL LETTER c WITH ACUTE ACCENT	Latin-2
-001	232	14/08	LATIN SMALL LETTER c WITH CARON	Latin-2
-001	234	14/10	LATIN SMALL LETTER e WITH OGONEK	Latin-2
-001	236	14/12	LATIN SMALL LETTER e WITH CARON	Latin-2
-001	239	14/15	LATIN SMALL LETTER d WITH CARON	Latin-2
-001	240	15/00	LATIN SMALL LETTER d WITH STROKE	Latin-2
-001	241	15/01	LATIN SMALL LETTER n WITH ACUTE ACCENT	Latin-2
-001	242	15/02	LATIN SMALL LETTER n WITH CARON	Latin-2
-001	245	15/05	LATIN SMALL LETTER o WITH DOUBLE ACUTE ACCENT	Latin-2
-001	248	15/08	LATIN SMALL LETTER r WITH CARON	Latin-2
-001	249	15/09	LATIN SMALL LETTER u WITH RING ABOVE	Latin-2
-001	251	15/11	LATIN SMALL LETTER u WITH DOUBLE ACUTE ACCENT	Latin-2
-001	254	15/14	LATIN SMALL LETTER t WITH CEDILLA	Latin-2
-001	255	15/15	DOT ABOVE	Latin-2
+#x02A1	U+0126	LATIN CAPITAL LETTER H WITH STROKE	Latin-3
+#x02A6	U+0124	LATIN CAPITAL LETTER H WITH CIRCUMFLEX	Latin-3
+#x02A9	U+0130	LATIN CAPITAL LETTER I WITH DOT ABOVE	Latin-3
+#x02AB	U+011E	LATIN CAPITAL LETTER G WITH BREVE	Latin-3
+#x02AC	U+0134	LATIN CAPITAL LETTER J WITH CIRCUMFLEX	Latin-3
+#x02B1	U+0127	LATIN SMALL LETTER H WITH STROKE	Latin-3
+#x02B6	U+0125	LATIN SMALL LETTER H WITH CIRCUMFLEX	Latin-3
+#x02B9	U+0131	LATIN SMALL LETTER DOTLESS I	Latin-3
+#x02BB	U+011F	LATIN SMALL LETTER G WITH BREVE	Latin-3
+#x02BC	U+0135	LATIN SMALL LETTER J WITH CIRCUMFLEX	Latin-3
+#x02C5	U+010A	LATIN CAPITAL LETTER C WITH DOT ABOVE	Latin-3
+#x02C6	U+0108	LATIN CAPITAL LETTER C WITH CIRCUMFLEX	Latin-3
+#x02D5	U+0120	LATIN CAPITAL LETTER G WITH DOT ABOVE	Latin-3
+#x02D8	U+011C	LATIN CAPITAL LETTER G WITH CIRCUMFLEX	Latin-3
+#x02DD	U+016C	LATIN CAPITAL LETTER U WITH BREVE	Latin-3
+#x02DE	U+015C	LATIN CAPITAL LETTER S WITH CIRCUMFLEX	Latin-3
+#x02E5	U+010B	LATIN SMALL LETTER C WITH DOT ABOVE	Latin-3
+#x02E6	U+0109	LATIN SMALL LETTER C WITH CIRCUMFLEX	Latin-3
+#x02F5	U+0121	LATIN SMALL LETTER G WITH DOT ABOVE	Latin-3
+#x02F8	U+011D	LATIN SMALL LETTER G WITH CIRCUMFLEX	Latin-3
+#x02FD	U+016D	LATIN SMALL LETTER U WITH BREVE	Latin-3
+#x02FE	U+015D	LATIN SMALL LETTER S WITH CIRCUMFLEX	Latin-3
 .sp 2
-002	161	10/01	LATIN CAPITAL LETTER H WITH STROKE	Latin-3
-002	166	10/06	LATIN CAPITAL LETTER H WITH CIRCUMFLEX ACCENT	Latin-3
-002	169	10/09	LATIN CAPITAL LETTER I WITH DOT ABOVE	Latin-3
-002	171	10/11	LATIN CAPITAL LETTER G WITH BREVE	Latin-3
-002	172	10/12	LATIN CAPITAL LETTER J WITH CIRCUMFLEX ACCENT	Latin-3
-002	177	11/01	LATIN SMALL LETTER h WITH STROKE	Latin-3
-002	182	11/06	LATIN SMALL LETTER h WITH CIRCUMFLEX ACCENT	Latin-3
-002	185	11/09	SMALL DOTLESS LETTER i	Latin-3
-002	187	11/11	LATIN SMALL LETTER g WITH BREVE	Latin-3
-002	188	11/12	LATIN SMALL LETTER j WITH CIRCUMFLEX ACCENT	Latin-3
-002	197	12/05	LATIN CAPITAL LETTER C WITH DOT ABOVE	Latin-3
-002	198	12/06	LATIN CAPITAL LETTER C WITH CIRCUMFLEX ACCENT	Latin-3
-002	213	13/05	LATIN CAPITAL LETTER G WITH DOT ABOVE	Latin-3
-002	216	13/08	LATIN CAPITAL LETTER G WITH CIRCUMFLEX ACCENT	Latin-3
-002	221	13/13	LATIN CAPITAL LETTER U WITH BREVE	Latin-3
-002	222	13/14	LATIN CAPITAL LETTER S WITH CIRCUMFLEX ACCENT	Latin-3
-002	229	14/05	LATIN SMALL LETTER c WITH DOT ABOVE	Latin-3
-002	230	14/06	LATIN SMALL LETTER c WITH CIRCUMFLEX ACCENT	Latin-3
-002	245	15/05	LATIN SMALL LETTER g WITH DOT ABOVE	Latin-3
-002	248	15/08	LATIN SMALL LETTER g WITH CIRCUMFLEX ACCENT	Latin-3
-002	253	15/13	LATIN SMALL LETTER u WITH BREVE	Latin-3
-002	254	15/14	LATIN SMALL LETTER s WITH CIRCUMFLEX ACCENT	Latin-3
+#x03A2	U+0138	LATIN SMALL LETTER KRA	Latin-4
+#x03A3	U+0156	LATIN CAPITAL LETTER R WITH CEDILLA	Latin-4
+#x03A5	U+0128	LATIN CAPITAL LETTER I WITH TILDE	Latin-4
+#x03A6	U+013B	LATIN CAPITAL LETTER L WITH CEDILLA	Latin-4
+#x03AA	U+0112	LATIN CAPITAL LETTER E WITH MACRON	Latin-4
+#x03AB	U+0122	LATIN CAPITAL LETTER G WITH CEDILLA	Latin-4
+#x03AC	U+0166	LATIN CAPITAL LETTER T WITH STROKE	Latin-4
+#x03B3	U+0157	LATIN SMALL LETTER R WITH CEDILLA	Latin-4
+#x03B5	U+0129	LATIN SMALL LETTER I WITH TILDE	Latin-4
+#x03B6	U+013C	LATIN SMALL LETTER L WITH CEDILLA	Latin-4
+#x03BA	U+0113	LATIN SMALL LETTER E WITH MACRON	Latin-4
+#x03BB	U+0123	LATIN SMALL LETTER G WITH CEDILLA	Latin-4
+#x03BC	U+0167	LATIN SMALL LETTER T WITH STROKE	Latin-4
+#x03BD	U+014A	LATIN CAPITAL LETTER ENG	Latin-4
+#x03BF	U+014B	LATIN SMALL LETTER ENG	Latin-4
+#x03C0	U+0100	LATIN CAPITAL LETTER A WITH MACRON	Latin-4
+#x03C7	U+012E	LATIN CAPITAL LETTER I WITH OGONEK	Latin-4
+#x03CC	U+0116	LATIN CAPITAL LETTER E WITH DOT ABOVE	Latin-4
+#x03CF	U+012A	LATIN CAPITAL LETTER I WITH MACRON	Latin-4
+#x03D1	U+0145	LATIN CAPITAL LETTER N WITH CEDILLA	Latin-4
+#x03D2	U+014C	LATIN CAPITAL LETTER O WITH MACRON	Latin-4
+#x03D3	U+0136	LATIN CAPITAL LETTER K WITH CEDILLA	Latin-4
+#x03D9	U+0172	LATIN CAPITAL LETTER U WITH OGONEK	Latin-4
+#x03DD	U+0168	LATIN CAPITAL LETTER U WITH TILDE	Latin-4
+#x03DE	U+016A	LATIN CAPITAL LETTER U WITH MACRON	Latin-4
+#x03E0	U+0101	LATIN SMALL LETTER A WITH MACRON	Latin-4
+#x03E7	U+012F	LATIN SMALL LETTER I WITH OGONEK	Latin-4
+#x03EC	U+0117	LATIN SMALL LETTER E WITH DOT ABOVE	Latin-4
+#x03EF	U+012B	LATIN SMALL LETTER I WITH MACRON	Latin-4
+#x03F1	U+0146	LATIN SMALL LETTER N WITH CEDILLA	Latin-4
+#x03F2	U+014D	LATIN SMALL LETTER O WITH MACRON	Latin-4
+#x03F3	U+0137	LATIN SMALL LETTER K WITH CEDILLA	Latin-4
+#x03F9	U+0173	LATIN SMALL LETTER U WITH OGONEK	Latin-4
+#x03FD	U+0169	LATIN SMALL LETTER U WITH TILDE	Latin-4
+#x03FE	U+016B	LATIN SMALL LETTER U WITH MACRON	Latin-4
 .sp 2
-003	162	10/02	SMALL GREENLANDIC LETTER KRA	Latin-4
-003	163	10/03	LATIN CAPITAL LETTER R WITH CEDILLA	Latin-4
-003	165	10/05	LATIN CAPITAL LETTER I WITH TILDE	Latin-4
-003	166	10/06	LATIN CAPITAL LETTER L WITH CEDILLA	Latin-4
-003	170	10/10	LATIN CAPITAL LETTER E WITH MACRON	Latin-4
-003	171	10/11	LATIN CAPITAL LETTER G WITH CEDILLA	Latin-4
-003	172	10/12	LATIN CAPITAL LETTER T WITH OBLIQUE STROKE	Latin-4
-003	179	11/03	LATIN SMALL LETTER r WITH CEDILLA	Latin-4
-003	181	11/05	LATIN SMALL LETTER i WITH TILDE	Latin-4
-003	182	11/06	LATIN SMALL LETTER l WITH CEDILLA	Latin-4
-003	186	11/10	LATIN SMALL LETTER e WITH MACRON	Latin-4
-003	187	11/11	LATIN SMALL LETTER g WITH CEDILLA ABOVE	Latin-4
-003	188	11/12	LATIN SMALL LETTER t WITH OBLIQUE STROKE	Latin-4
-003	189	11/13	LAPPISH CAPITAL LETTER ENG	Latin-4
-003	191	11/15	LAPPISH SMALL LETTER ENG	Latin-4
-003	192	12/00	LATIN CAPITAL LETTER A WITH MACRON	Latin-4
-003	199	12/07	LATIN CAPITAL LETTER I WITH OGONEK	Latin-4
-003	204	12/12	LATIN CAPITAL LETTER E WITH DOT ABOVE	Latin-4
-003	207	12/15	LATIN CAPITAL LETTER I WITH MACRON	Latin-4
-003	209	13/01	LATIN CAPITAL LETTER N WITH CEDILLA	Latin-4
-003	210	13/02	LATIN CAPITAL LETTER O WITH MACRON	Latin-4
-003	211	13/03	LATIN CAPITAL LETTER K WITH CEDILLA	Latin-4
-003	217	13/09	LATIN CAPITAL LETTER U WITH OGONEK	Latin-4
-003	221	13/13	LATIN CAPITAL LETTER U WITH TILDE	Latin-4
-003	222	13/14	LATIN CAPITAL LETTER U WITH MACRON	Latin-4
-003	224	14/00	LATIN SMALL LETTER a WITH MACRON	Latin-4
-003	231	14/07	LATIN SMALL LETTER i WITH OGONEK	Latin-4
-003	236	14/12	LATIN SMALL LETTER e WITH DOT ABOVE	Latin-4
-003	239	14/15	LATIN SMALL LETTER i WITH MACRON	Latin-4
-003	241	15/01	LATIN SMALL LETTER n WITH CEDILLA	Latin-4
-003	242	15/02	LATIN SMALL LETTER o WITH MACRON	Latin-4
-003	243	15/03	LATIN SMALL LETTER k WITH CEDILLA	Latin-4
-003	249	15/09	LATIN SMALL LETTER u WITH OGONEK	Latin-4
-003	253	15/13	LATIN SMALL LETTER u WITH TILDE	Latin-4
-003	254	15/14	LATIN SMALL LETTER u WITH MACRON	Latin-4
+#x047E	U+203E	OVERLINE	Kana
+#x04A1	U+3002	KANA FULL STOP	Kana
+#x04A2	U+300C	KANA OPENING BRACKET	Kana
+#x04A3	U+300D	KANA CLOSING BRACKET	Kana
+#x04A4	U+3001	KANA COMMA	Kana
+#x04A5	U+30FB	KANA CONJUNCTIVE	Kana
+#x04A6	U+30F2	KANA LETTER WO	Kana
+#x04A7	U+30A1	KANA LETTER SMALL A	Kana
+#x04A8	U+30A3	KANA LETTER SMALL I	Kana
+#x04A9	U+30A5	KANA LETTER SMALL U	Kana
+#x04AA	U+30A7	KANA LETTER SMALL E	Kana
+#x04AB	U+30A9	KANA LETTER SMALL O	Kana
+#x04AC	U+30E3	KANA LETTER SMALL YA	Kana
+#x04AD	U+30E5	KANA LETTER SMALL YU	Kana
+#x04AE	U+30E7	KANA LETTER SMALL YO	Kana
+#x04AF	U+30C3	KANA LETTER SMALL TSU	Kana
+#x04B0	U+30FC	PROLONGED SOUND SYMBOL	Kana
+#x04B1	U+30A2	KANA LETTER A	Kana
+#x04B2	U+30A4	KANA LETTER I	Kana
+#x04B3	U+30A6	KANA LETTER U	Kana
+#x04B4	U+30A8	KANA LETTER E	Kana
+#x04B5	U+30AA	KANA LETTER O	Kana
+#x04B6	U+30AB	KANA LETTER KA	Kana
+#x04B7	U+30AD	KANA LETTER KI	Kana
+#x04B8	U+30AF	KANA LETTER KU	Kana
+#x04B9	U+30B1	KANA LETTER KE	Kana
+#x04BA	U+30B3	KANA LETTER KO	Kana
+#x04BB	U+30B5	KANA LETTER SA	Kana
+#x04BC	U+30B7	KANA LETTER SHI	Kana
+#x04BD	U+30B9	KANA LETTER SU	Kana
+#x04BE	U+30BB	KANA LETTER SE	Kana
+#x04BF	U+30BD	KANA LETTER SO	Kana
+#x04C0	U+30BF	KANA LETTER TA	Kana
+#x04C1	U+30C1	KANA LETTER CHI	Kana
+#x04C2	U+30C4	KANA LETTER TSU	Kana
+#x04C3	U+30C6	KANA LETTER TE	Kana
+#x04C4	U+30C8	KANA LETTER TO	Kana
+#x04C5	U+30CA	KANA LETTER NA	Kana
+#x04C6	U+30CB	KANA LETTER NI	Kana
+#x04C7	U+30CC	KANA LETTER NU	Kana
+#x04C8	U+30CD	KANA LETTER NE	Kana
+#x04C9	U+30CE	KANA LETTER NO	Kana
+#x04CA	U+30CF	KANA LETTER HA	Kana
+#x04CB	U+30D2	KANA LETTER HI	Kana
+#x04CC	U+30D5	KANA LETTER FU	Kana
+#x04CD	U+30D8	KANA LETTER HE	Kana
+#x04CE	U+30DB	KANA LETTER HO	Kana
+#x04CF	U+30DE	KANA LETTER MA	Kana
+#x04D0	U+30DF	KANA LETTER MI	Kana
+#x04D1	U+30E0	KANA LETTER MU	Kana
+#x04D2	U+30E1	KANA LETTER ME	Kana
+#x04D3	U+30E2	KANA LETTER MO	Kana
+#x04D4	U+30E4	KANA LETTER YA	Kana
+#x04D5	U+30E6	KANA LETTER YU	Kana
+#x04D6	U+30E8	KANA LETTER YO	Kana
+#x04D7	U+30E9	KANA LETTER RA	Kana
+#x04D8	U+30EA	KANA LETTER RI	Kana
+#x04D9	U+30EB	KANA LETTER RU	Kana
+#x04DA	U+30EC	KANA LETTER RE	Kana
+#x04DB	U+30ED	KANA LETTER RO	Kana
+#x04DC	U+30EF	KANA LETTER WA	Kana
+#x04DD	U+30F3	KANA LETTER N	Kana
+#x04DE	U+309B	VOICED SOUND SYMBOL	Kana
+#x04DF	U+309C	SEMIVOICED SOUND SYMBOL	Kana
 .sp 2
-004	126	07/14	OVERLINE	Kana
-004	161	10/01	KANA FULL STOP	Kana
-004	162	10/02	KANA OPENING BRACKET	Kana
-004	163	10/03	KANA CLOSING BRACKET	Kana
-004	164	10/04	KANA COMMA	Kana
-004	165	10/05	KANA CONJUNCTIVE	Kana
-004	166	10/06	KANA LETTER WO	Kana
-004	167	10/07	KANA LETTER SMALL A	Kana
-004	168	10/08	KANA LETTER SMALL I	Kana
-004	169	10/09	KANA LETTER SMALL U	Kana
-004	170	10/10	KANA LETTER SMALL E	Kana
-004	171	10/11	KANA LETTER SMALL O	Kana
-004	172	10/12	KANA LETTER SMALL YA	Kana
-004	173	10/13	KANA LETTER SMALL YU	Kana
-004	174	10/14	KANA LETTER SMALL YO	Kana
-004	175	10/15	KANA LETTER SMALL TSU	Kana
-004	176	11/00	PROLONGED SOUND SYMBOL	Kana
-004	177	11/01	KANA LETTER A	Kana
-004	178	11/02	KANA LETTER I	Kana
-004	179	11/03	KANA LETTER U	Kana
-004	180	11/04	KANA LETTER E	Kana
-004	181	11/05	KANA LETTER O	Kana
-004	182	11/06	KANA LETTER KA	Kana
-004	183	11/07	KANA LETTER KI	Kana
-004	184	11/08	KANA LETTER KU	Kana
-004	185	11/09	KANA LETTER KE	Kana
-004	186	11/10	KANA LETTER KO	Kana
-004	187	11/11	KANA LETTER SA	Kana
-004	188	11/12	KANA LETTER SHI	Kana
-004	189	11/13	KANA LETTER SU	Kana
-004	190	11/14	KANA LETTER SE	Kana
-004	191	11/15	KANA LETTER SO	Kana
-004	192	12/00	KANA LETTER TA	Kana
-004	193	12/01	KANA LETTER CHI	Kana
-004	194	12/02	KANA LETTER TSU	Kana
-004	195	12/03	KANA LETTER TE	Kana
-004	196	12/04	KANA LETTER TO	Kana
-004	197	12/05	KANA LETTER NA	Kana
-004	198	12/06	KANA LETTER NI	Kana
-004	199	12/07	KANA LETTER NU	Kana
-004	200	12/08	KANA LETTER NE	Kana
-004	201	12/09	KANA LETTER NO	Kana
-004	202	12/10	KANA LETTER HA	Kana
-004	203	12/11	KANA LETTER HI	Kana
-004	204	12/12	KANA LETTER FU	Kana
-004	205	12/13	KANA LETTER HE	Kana
-004	206	12/14	KANA LETTER HO	Kana
-004	207	12/15	KANA LETTER MA	Kana
-004	208	13/00	KANA LETTER MI	Kana
-004	209	13/01	KANA LETTER MU	Kana
-004	210	13/02	KANA LETTER ME	Kana
-004	211	13/03	KANA LETTER MO	Kana
-004	212	13/04	KANA LETTER YA	Kana
-004	213	13/05	KANA LETTER YU	Kana
-004	214	13/06	KANA LETTER YO	Kana
-004	215	13/07	KANA LETTER RA	Kana
-004	216	13/08	KANA LETTER RI	Kana
-004	217	13/09	KANA LETTER RU	Kana
-004	218	13/10	KANA LETTER RE	Kana
-004	219	13/11	KANA LETTER RO	Kana
-004	220	13/12	KANA LETTER WA	Kana
-004	221	13/13	KANA LETTER N	Kana
-004	222	13/14	VOICED SOUND SYMBOL	Kana
-004	223	13/15	SEMIVOICED SOUND SYMBOL	Kana
+#x05AC	U+060C	ARABIC COMMA	Arabic
+#x05BB	U+061B	ARABIC SEMICOLON	Arabic
+#x05BF	U+061F	ARABIC QUESTION MARK	Arabic
+#x05C1	U+0621	ARABIC LETTER HAMZA	Arabic
+#x05C2	U+0622	ARABIC LETTER ALEF WITH MADDA ABOVE	Arabic
+#x05C3	U+0623	ARABIC LETTER ALEF WITH HAMZA ABOVE	Arabic
+#x05C4	U+0624	ARABIC LETTER WAW WITH HAMZA ABOVE	Arabic
+#x05C5	U+0625	ARABIC LETTER ALEF WITH HAMZA BELOW	Arabic
+#x05C6	U+0626	ARABIC LETTER YEH WITH HAMZA ABOVE	Arabic
+#x05C7	U+0627	ARABIC LETTER ALEF	Arabic
+#x05C8	U+0628	ARABIC LETTER BEH	Arabic
+#x05C9	U+0629	ARABIC LETTER TEH MARBUTA	Arabic
+#x05CA	U+062A	ARABIC LETTER TEH	Arabic
+#x05CB	U+062B	ARABIC LETTER THEH	Arabic
+#x05CC	U+062C	ARABIC LETTER JEEM	Arabic
+#x05CD	U+062D	ARABIC LETTER HAH	Arabic
+#x05CE	U+062E	ARABIC LETTER KHAH	Arabic
+#x05CF	U+062F	ARABIC LETTER DAL	Arabic
+#x05D0	U+0630	ARABIC LETTER THAL	Arabic
+#x05D1	U+0631	ARABIC LETTER REH	Arabic
+#x05D2	U+0632	ARABIC LETTER ZAIN	Arabic
+#x05D3	U+0633	ARABIC LETTER SEEN	Arabic
+#x05D4	U+0634	ARABIC LETTER SHEEN	Arabic
+#x05D5	U+0635	ARABIC LETTER SAD	Arabic
+#x05D6	U+0636	ARABIC LETTER DAD	Arabic
+#x05D7	U+0637	ARABIC LETTER TAH	Arabic
+#x05D8	U+0638	ARABIC LETTER ZAH	Arabic
+#x05D9	U+0639	ARABIC LETTER AIN	Arabic
+#x05DA	U+063A	ARABIC LETTER GHAIN	Arabic
+#x05E0	U+0640	ARABIC TATWEEL	Arabic
+#x05E1	U+0641	ARABIC LETTER FEH	Arabic
+#x05E2	U+0642	ARABIC LETTER QAF	Arabic
+#x05E3	U+0643	ARABIC LETTER KAF	Arabic
+#x05E4	U+0644	ARABIC LETTER LAM	Arabic
+#x05E5	U+0645	ARABIC LETTER MEEM	Arabic
+#x05E6	U+0646	ARABIC LETTER NOON	Arabic
+#x05E7	U+0647	ARABIC LETTER HEH	Arabic
+#x05E8	U+0648	ARABIC LETTER WAW	Arabic
+#x05E9	U+0649	ARABIC LETTER ALEF MAKSURA	Arabic
+#x05EA	U+064A	ARABIC LETTER YEH	Arabic
+#x05EB	U+064B	ARABIC FATHATAN	Arabic
+#x05EC	U+064C	ARABIC DAMMATAN	Arabic
+#x05ED	U+064D	ARABIC KASRATAN	Arabic
+#x05EE	U+064E	ARABIC FATHA	Arabic
+#x05EF	U+064F	ARABIC DAMMA	Arabic
+#x05F0	U+0650	ARABIC KASRA	Arabic
+#x05F1	U+0651	ARABIC SHADDA	Arabic
+#x05F2	U+0652	ARABIC SUKUN	Arabic
 .sp 2
-005	172	10/12	ARABIC COMMA	Arabic
-005	187	11/11	ARABIC SEMICOLON	Arabic
-005	191	11/15	ARABIC QUESTION MARK	Arabic
-005	193	12/01	ARABIC LETTER HAMZA	Arabic
-005	194	12/02	ARABIC LETTER MADDA ON ALEF	Arabic
-005	195	12/03	ARABIC LETTER HAMZA ON ALEF	Arabic
-005	196	12/04	ARABIC LETTER HAMZA ON WAW	Arabic
-005	197	12/05	ARABIC LETTER HAMZA UNDER ALEF	Arabic
-005	198	12/06	ARABIC LETTER HAMZA ON YEH	Arabic
-005	199	12/07	ARABIC LETTER ALEF	Arabic
-005	200	12/08	ARABIC LETTER BEH	Arabic
-005	201	12/09	ARABIC LETTER TEH MARBUTA	Arabic
-005	202	12/10	ARABIC LETTER TEH	Arabic
-005	203	12/11	ARABIC LETTER THEH	Arabic
-005	204	12/12	ARABIC LETTER JEEM	Arabic
-005	205	12/13	ARABIC LETTER HAH	Arabic
-005	206	12/14	ARABIC LETTER KHAH	Arabic
-005	207	12/15	ARABIC LETTER DAL	Arabic
-005	208	13/00	ARABIC LETTER THAL	Arabic
-005	209	13/01	ARABIC LETTER RA	Arabic
-005	210	13/02	ARABIC LETTER ZAIN	Arabic
-005	211	13/03	ARABIC LETTER SEEN	Arabic
-005	212	13/04	ARABIC LETTER SHEEN	Arabic
-005	213	13/05	ARABIC LETTER SAD	Arabic
-005	214	13/06	ARABIC LETTER DAD	Arabic
-005	215	13/07	ARABIC LETTER TAH	Arabic
-005	216	13/08	ARABIC LETTER ZAH	Arabic
-005	217	13/09	ARABIC LETTER AIN	Arabic
-005	218	13/10	ARABIC LETTER GHAIN	Arabic
-005	224	14/00	ARABIC LETTER TATWEEL	Arabic
-005	225	14/01	ARABIC LETTER FEH	Arabic
-005	226	14/02	ARABIC LETTER QAF	Arabic
-005	227	14/03	ARABIC LETTER KAF	Arabic
-005	228	14/04	ARABIC LETTER LAM	Arabic
-005	229	14/05	ARABIC LETTER MEEM	Arabic
-005	230	14/06	ARABIC LETTER NOON	Arabic
-005	231	14/07	ARABIC LETTER HA	Arabic
-005	232	14/08	ARABIC LETTER WAW	Arabic
-005	233	14/09	ARABIC LETTER ALEF MAKSURA	Arabic
-005	234	14/10	ARABIC LETTER YEH	Arabic
-005	235	14/11	ARABIC LETTER FATHATAN	Arabic
-005	236	14/12	ARABIC LETTER DAMMATAN	Arabic
-005	237	14/13	ARABIC LETTER KASRATAN	Arabic
-005	238	14/14	ARABIC LETTER FATHA	Arabic
-005	239	14/15	ARABIC LETTER DAMMA	Arabic
-005	240	15/00	ARABIC LETTER KASRA	Arabic
-005	241	15/01	ARABIC LETTER SHADDA	Arabic
-005	242	15/02	ARABIC LETTER SUKUN	Arabic
+#x06A1	U+0452	CYRILLIC SMALL LETTER DJE	Cyrillic
+#x06A2	U+0453	CYRILLIC SMALL LETTER GJE	Cyrillic
+#x06A3	U+0451	CYRILLIC SMALL LETTER IO	Cyrillic
+#x06A4	U+0454	CYRILLIC SMALL LETTER UKRAINIAN IE	Cyrillic
+#x06A5	U+0455	CYRILLIC SMALL LETTER DZE	Cyrillic
+#x06A6	U+0456	CYRILLIC SMALL LETTER BYELORUSSIAN-UKRAINIAN I	Cyrillic
+#x06A7	U+0457	CYRILLIC SMALL LETTER YI	Cyrillic
+#x06A8	U+0458	CYRILLIC SMALL LETTER JE	Cyrillic
+#x06A9	U+0459	CYRILLIC SMALL LETTER LJE	Cyrillic
+#x06AA	U+045A	CYRILLIC SMALL LETTER NJE	Cyrillic
+#x06AB	U+045B	CYRILLIC SMALL LETTER TSHE	Cyrillic
+#x06AC	U+045C	CYRILLIC SMALL LETTER KJE	Cyrillic
+#x06AD	U+0491	CYRILLIC SMALL LETTER GHE WITH UPTURN	Cyrillic
+#x06AE	U+045E	CYRILLIC SMALL LETTER SHORT U	Cyrillic
+#x06AF	U+045F	CYRILLIC SMALL LETTER DZHE	Cyrillic
+#x06B0	U+2116	NUMERO SIGN	Cyrillic
+#x06B1	U+0402	CYRILLIC CAPITAL LETTER DJE	Cyrillic
+#x06B2	U+0403	CYRILLIC CAPITAL LETTER GJE	Cyrillic
+#x06B3	U+0401	CYRILLIC CAPITAL LETTER IO	Cyrillic
+#x06B4	U+0404	CYRILLIC CAPITAL LETTER UKRAINIAN IE	Cyrillic
+#x06B5	U+0405	CYRILLIC CAPITAL LETTER DZE	Cyrillic
+#x06B6	U+0406	CYRILLIC CAPITAL LETTER BYELORUSSIAN-UKRAINIAN I	Cyrillic
+#x06B7	U+0407	CYRILLIC CAPITAL LETTER YI	Cyrillic
+#x06B8	U+0408	CYRILLIC CAPITAL LETTER JE	Cyrillic
+#x06B9	U+0409	CYRILLIC CAPITAL LETTER LJE	Cyrillic
+#x06BA	U+040A	CYRILLIC CAPITAL LETTER NJE	Cyrillic
+#x06BB	U+040B	CYRILLIC CAPITAL LETTER TSHE	Cyrillic
+#x06BC	U+040C	CYRILLIC CAPITAL LETTER KJE	Cyrillic
+#x06BD	U+0490	CYRILLIC CAPITAL LETTER GHE WITH UPTURN	Cyrillic
+#x06BE	U+040E	CYRILLIC CAPITAL LETTER SHORT U	Cyrillic
+#x06BF	U+040F	CYRILLIC CAPITAL LETTER DZHE	Cyrillic
+#x06C0	U+044E	CYRILLIC SMALL LETTER YU	Cyrillic
+#x06C1	U+0430	CYRILLIC SMALL LETTER A	Cyrillic
+#x06C2	U+0431	CYRILLIC SMALL LETTER BE	Cyrillic
+#x06C3	U+0446	CYRILLIC SMALL LETTER TSE	Cyrillic
+#x06C4	U+0434	CYRILLIC SMALL LETTER DE	Cyrillic
+#x06C5	U+0435	CYRILLIC SMALL LETTER IE	Cyrillic
+#x06C6	U+0444	CYRILLIC SMALL LETTER EF	Cyrillic
+#x06C7	U+0433	CYRILLIC SMALL LETTER GHE	Cyrillic
+#x06C8	U+0445	CYRILLIC SMALL LETTER HA	Cyrillic
+#x06C9	U+0438	CYRILLIC SMALL LETTER I	Cyrillic
+#x06CA	U+0439	CYRILLIC SMALL LETTER SHORT I	Cyrillic
+#x06CB	U+043A	CYRILLIC SMALL LETTER KA	Cyrillic
+#x06CC	U+043B	CYRILLIC SMALL LETTER EL	Cyrillic
+#x06CD	U+043C	CYRILLIC SMALL LETTER EM	Cyrillic
+#x06CE	U+043D	CYRILLIC SMALL LETTER EN	Cyrillic
+#x06CF	U+043E	CYRILLIC SMALL LETTER O	Cyrillic
+#x06D0	U+043F	CYRILLIC SMALL LETTER PE	Cyrillic
+#x06D1	U+044F	CYRILLIC SMALL LETTER YA	Cyrillic
+#x06D2	U+0440	CYRILLIC SMALL LETTER ER	Cyrillic
+#x06D3	U+0441	CYRILLIC SMALL LETTER ES	Cyrillic
+#x06D4	U+0442	CYRILLIC SMALL LETTER TE	Cyrillic
+#x06D5	U+0443	CYRILLIC SMALL LETTER U	Cyrillic
+#x06D6	U+0436	CYRILLIC SMALL LETTER ZHE	Cyrillic
+#x06D7	U+0432	CYRILLIC SMALL LETTER VE	Cyrillic
+#x06D8	U+044C	CYRILLIC SMALL LETTER SOFT SIGN	Cyrillic
+#x06D9	U+044B	CYRILLIC SMALL LETTER YERU	Cyrillic
+#x06DA	U+0437	CYRILLIC SMALL LETTER ZE	Cyrillic
+#x06DB	U+0448	CYRILLIC SMALL LETTER SHA	Cyrillic
+#x06DC	U+044D	CYRILLIC SMALL LETTER E	Cyrillic
+#x06DD	U+0449	CYRILLIC SMALL LETTER SHCHA	Cyrillic
+#x06DE	U+0447	CYRILLIC SMALL LETTER CHE	Cyrillic
+#x06DF	U+044A	CYRILLIC SMALL LETTER HARD SIGN	Cyrillic
+#x06E0	U+042E	CYRILLIC CAPITAL LETTER YU	Cyrillic
+#x06E1	U+0410	CYRILLIC CAPITAL LETTER A	Cyrillic
+#x06E2	U+0411	CYRILLIC CAPITAL LETTER BE	Cyrillic
+#x06E3	U+0426	CYRILLIC CAPITAL LETTER TSE	Cyrillic
+#x06E4	U+0414	CYRILLIC CAPITAL LETTER DE	Cyrillic
+#x06E5	U+0415	CYRILLIC CAPITAL LETTER IE	Cyrillic
+#x06E6	U+0424	CYRILLIC CAPITAL LETTER EF	Cyrillic
+#x06E7	U+0413	CYRILLIC CAPITAL LETTER GHE	Cyrillic
+#x06E8	U+0425	CYRILLIC CAPITAL LETTER HA	Cyrillic
+#x06E9	U+0418	CYRILLIC CAPITAL LETTER I	Cyrillic
+#x06EA	U+0419	CYRILLIC CAPITAL LETTER SHORT I	Cyrillic
+#x06EB	U+041A	CYRILLIC CAPITAL LETTER KA	Cyrillic
+#x06EC	U+041B	CYRILLIC CAPITAL LETTER EL	Cyrillic
+#x06ED	U+041C	CYRILLIC CAPITAL LETTER EM	Cyrillic
+#x06EE	U+041D	CYRILLIC CAPITAL LETTER EN	Cyrillic
+#x06EF	U+041E	CYRILLIC CAPITAL LETTER O	Cyrillic
+#x06F0	U+041F	CYRILLIC CAPITAL LETTER PE	Cyrillic
+#x06F1	U+042F	CYRILLIC CAPITAL LETTER YA	Cyrillic
+#x06F2	U+0420	CYRILLIC CAPITAL LETTER ER	Cyrillic
+#x06F3	U+0421	CYRILLIC CAPITAL LETTER ES	Cyrillic
+#x06F4	U+0422	CYRILLIC CAPITAL LETTER TE	Cyrillic
+#x06F5	U+0423	CYRILLIC CAPITAL LETTER U	Cyrillic
+#x06F6	U+0416	CYRILLIC CAPITAL LETTER ZHE	Cyrillic
+#x06F7	U+0412	CYRILLIC CAPITAL LETTER VE	Cyrillic
+#x06F8	U+042C	CYRILLIC CAPITAL LETTER SOFT SIGN	Cyrillic
+#x06F9	U+042B	CYRILLIC CAPITAL LETTER YERU	Cyrillic
+#x06FA	U+0417	CYRILLIC CAPITAL LETTER ZE	Cyrillic
+#x06FB	U+0428	CYRILLIC CAPITAL LETTER SHA	Cyrillic
+#x06FC	U+042D	CYRILLIC CAPITAL LETTER E	Cyrillic
+#x06FD	U+0429	CYRILLIC CAPITAL LETTER SHCHA	Cyrillic
+#x06FE	U+0427	CYRILLIC CAPITAL LETTER CHE	Cyrillic
+#x06FF	U+042A	CYRILLIC CAPITAL LETTER HARD SIGN	Cyrillic
 .sp 2
-006	161	10/01	SERBOCROATION CYRILLIC SMALL LETTER DJE	Cyrillic
-006	162	10/02	MACEDONIAN CYRILLIC SMALL LETTER GJE	Cyrillic
-006	163	10/03	CYRILLIC SMALL LETTER IO	Cyrillic
-006	164	10/04	UKRAINIAN CYRILLIC SMALL LETTER IE	Cyrillic
-006	165	10/05	MACEDONIAN SMALL LETTER DSE	Cyrillic
-006	166	10/06	BYELORUSSIAN/UKRAINIAN CYRILLIC SMALL LETTER I	Cyrillic
-006	167	10/07	UKRAINIAN SMALL LETTER YI	Cyrillic
-006	168	10/08	CYRILLIC SMALL LETTER JE	Cyrillic
-006	169	10/09	CYRILLIC SMALL LETTER LJE	Cyrillic
-006	170	10/10	CYRILLIC SMALL LETTER NJE	Cyrillic
-006	171	10/11	SERBIAN SMALL LETTER TSHE	Cyrillic
-006	172	10/12	MACEDONIAN CYRILLIC SMALL LETTER KJE	Cyrillic
-006	174	10/14	BYELORUSSIAN SMALL LETTER SHORT U	Cyrillic
-006	175	10/15	CYRILLIC SMALL LETTER DZHE	Cyrillic
-006	176	11/00	NUMERO SIGN	Cyrillic
-006	177	11/01	SERBOCROATIAN CYRILLIC CAPITAL LETTER DJE	Cyrillic
-006	178	11/02	MACEDONIAN CYRILLIC CAPITAL LETTER GJE	Cyrillic
-006	179	11/03	CYRILLIC CAPITAL LETTER IO	Cyrillic
-006	180	11/04	UKRAINIAN CYRILLIC CAPITAL LETTER IE	Cyrillic
-006	181	11/05	MACEDONIAN CAPITAL LETTER DSE	Cyrillic
-006	182	11/06	BYELORUSSIAN/UKRAINIAN CYRILLIC CAPITAL LETTER I	Cyrillic
-006	183	11/07	UKRAINIAN CAPITAL LETTER YI	Cyrillic
-006	184	11/08	CYRILLIC CAPITAL LETTER JE	Cyrillic
-006	185	11/09	CYRILLIC CAPITAL LETTER LJE	Cyrillic
-006	186	11/10	CYRILLIC CAPITAL LETTER NJE	Cyrillic
-006	187	11/11	SERBIAN CAPITAL LETTER TSHE	Cyrillic
-006	188	11/12	MACEDONIAN CYRILLIC CAPITAL LETTER KJE	Cyrillic
-006	190	11/14	BYELORUSSIAN CAPITAL LETTER SHORT U	Cyrillic
-006	191	11/15	CYRILLIC CAPITAL LETTER DZHE	Cyrillic
-006	192	12/00	CYRILLIC SMALL LETTER YU	Cyrillic
-006	193	12/01	CYRILLIC SMALL LETTER A	Cyrillic
-006	194	12/02	CYRILLIC SMALL LETTER BE	Cyrillic
-006	195	12/03	CYRILLIC SMALL LETTER TSE	Cyrillic
-006	196	12/04	CYRILLIC SMALL LETTER DE	Cyrillic
-006	197	12/05	CYRILLIC SMALL LETTER IE	Cyrillic
-006	198	12/06	CYRILLIC SMALL LETTER EF	Cyrillic
-006	199	12/07	CYRILLIC SMALL LETTER GHE	Cyrillic
-006	200	12/08	CYRILLIC SMALL LETTER HA	Cyrillic
-006	201	12/09	CYRILLIC SMALL LETTER I	Cyrillic
-006	202	12/10	CYRILLIC SMALL LETTER SHORT I	Cyrillic
-006	203	12/11	CYRILLIC SMALL LETTER KA	Cyrillic
-006	204	12/12	CYRILLIC SMALL LETTER EL	Cyrillic
-006	205	12/13	CYRILLIC SMALL LETTER EM	Cyrillic
-006	206	12/14	CYRILLIC SMALL LETTER EN	Cyrillic
-006	207	12/15	CYRILLIC SMALL LETTER O	Cyrillic
-006	208	13/00	CYRILLIC SMALL LETTER PE	Cyrillic
-006	209	13/01	CYRILLIC SMALL LETTER YA	Cyrillic
-006	210	13/02	CYRILLIC SMALL LETTER ER	Cyrillic
-006	211	13/03	CYRILLIC SMALL LETTER ES	Cyrillic
-006	212	13/04	CYRILLIC SMALL LETTER TE	Cyrillic
-006	213	13/05	CYRILLIC SMALL LETTER U	Cyrillic
-006	214	13/06	CYRILLIC SMALL LETTER ZHE	Cyrillic
-006	215	13/07	CYRILLIC SMALL LETTER VE	Cyrillic
-006	216	13/08	CYRILLIC SMALL SOFT SIGN	Cyrillic
-006	217	13/09	CYRILLIC SMALL LETTER YERU	Cyrillic
-006	218	13/10	CYRILLIC SMALL LETTER ZE	Cyrillic
-006	219	13/11	CYRILLIC SMALL LETTER SHA	Cyrillic
-006	220	13/12	CYRILLIC SMALL LETTER E	Cyrillic
-006	221	13/13	CYRILLIC SMALL LETTER SHCHA	Cyrillic
-006	222	13/14	CYRILLIC SMALL LETTER CHE	Cyrillic
-006	223	13/15	CYRILLIC SMALL HARD SIGN	Cyrillic
-006	224	14/00	CYRILLIC CAPITAL LETTER YU	Cyrillic
-006	225	14/01	CYRILLIC CAPITAL LETTER A	Cyrillic
-006	226	14/02	CYRILLIC CAPITAL LETTER BE	Cyrillic
-006	227	14/03	CYRILLIC CAPITAL LETTER TSE	Cyrillic
-006	228	14/04	CYRILLIC CAPITAL LETTER DE	Cyrillic
-006	229	14/05	CYRILLIC CAPITAL LETTER IE	Cyrillic
-006	230	14/06	CYRILLIC CAPITAL LETTER EF	Cyrillic
-006	231	14/07	CYRILLIC CAPITAL LETTER GHE	Cyrillic
-006	232	14/08	CYRILLIC CAPITAL LETTER HA	Cyrillic
-006	233	14/09	CYRILLIC CAPITAL LETTER I	Cyrillic
-006	234	14/10	CYRILLIC CAPITAL LETTER SHORT I	Cyrillic
-006	235	14/11	CYRILLIC CAPITAL LETTER KA	Cyrillic
-006	236	14/12	CYRILLIC CAPITAL LETTER EL	Cyrillic
-006	237	14/13	CYRILLIC CAPITAL LETTER EM	Cyrillic
-006	238	14/14	CYRILLIC CAPITAL LETTER EN	Cyrillic
-006	239	14/15	CYRILLIC CAPITAL LETTER O	Cyrillic
-006	240	15/00	CYRILLIC CAPITAL LETTER PE	Cyrillic
-006	241	15/01	CYRILLIC CAPITAL LETTER YA	Cyrillic
-006	242	15/02	CYRILLIC CAPITAL LETTER ER	Cyrillic
-006	243	15/03	CYRILLIC CAPITAL LETTER ES	Cyrillic
-006	244	15/04	CYRILLIC CAPITAL LETTER TE	Cyrillic
-006	245	15/05	CYRILLIC CAPITAL LETTER U	Cyrillic
-006	246	15/06	CYRILLIC CAPITAL LETTER ZHE	Cyrillic
-006	247	15/07	CYRILLIC CAPITAL LETTER VE	Cyrillic
-006	248	15/08	CYRILLIC CAPITAL SOFT SIGN	Cyrillic
-006	249	15/09	CYRILLIC CAPITAL LETTER YERU	Cyrillic
-006	250	15/10	CYRILLIC CAPITAL LETTER ZE	Cyrillic
-006	251	15/11	CYRILLIC CAPITAL LETTER SHA	Cyrillic
-006	252	15/12	CYRILLIC CAPITAL LETTER E	Cyrillic
-006	253	15/13	CYRILLIC CAPITAL LETTER SHCHA	Cyrillic
-006	254	15/14	CYRILLIC CAPITAL LETTER CHE	Cyrillic
-006	255	15/15	CYRILLIC CAPITAL HARD SIGN	Cyrillic
+#x07A1	U+0386	GREEK CAPITAL LETTER ALPHA WITH TONOS	Greek
+#x07A2	U+0388	GREEK CAPITAL LETTER EPSILON WITH TONOS	Greek
+#x07A3	U+0389	GREEK CAPITAL LETTER ETA WITH TONOS	Greek
+#x07A4	U+038A	GREEK CAPITAL LETTER IOTA WITH TONOS	Greek
+#x07A5	U+03AA	GREEK CAPITAL LETTER IOTA WITH DIALYTIKA	Greek
+#x07A7	U+038C	GREEK CAPITAL LETTER OMICRON WITH TONOS	Greek
+#x07A8	U+038E	GREEK CAPITAL LETTER UPSILON WITH TONOS	Greek
+#x07A9	U+03AB	GREEK CAPITAL LETTER UPSILON WITH DIALYTIKA	Greek
+#x07AB	U+038F	GREEK CAPITAL LETTER OMEGA WITH TONOS	Greek
+#x07AE	U+0385	GREEK DIALYTIKA TONOS	Greek
+#x07AF	U+2015	HORIZONTAL BAR	Greek
+#x07B1	U+03AC	GREEK SMALL LETTER ALPHA WITH TONOS	Greek
+#x07B2	U+03AD	GREEK SMALL LETTER EPSILON WITH TONOS	Greek
+#x07B3	U+03AE	GREEK SMALL LETTER ETA WITH TONOS	Greek
+#x07B4	U+03AF	GREEK SMALL LETTER IOTA WITH TONOS	Greek
+#x07B5	U+03CA	GREEK SMALL LETTER IOTA WITH DIALYTIKA	Greek
+#x07B6	U+0390	GREEK SMALL LETTER IOTA WITH DIALYTIKA AND TONOS	Greek
+#x07B7	U+03CC	GREEK SMALL LETTER OMICRON WITH TONOS	Greek
+#x07B8	U+03CD	GREEK SMALL LETTER UPSILON WITH TONOS	Greek
+#x07B9	U+03CB	GREEK SMALL LETTER UPSILON WITH DIALYTIKA	Greek
+#x07BA	U+03B0	GREEK SMALL LETTER UPSILON WITH DIALYTIKA AND TONOS	Greek
+#x07BB	U+03CE	GREEK SMALL LETTER OMEGA WITH TONOS	Greek
+#x07C1	U+0391	GREEK CAPITAL LETTER ALPHA	Greek
+#x07C2	U+0392	GREEK CAPITAL LETTER BETA	Greek
+#x07C3	U+0393	GREEK CAPITAL LETTER GAMMA	Greek
+#x07C4	U+0394	GREEK CAPITAL LETTER DELTA	Greek
+#x07C5	U+0395	GREEK CAPITAL LETTER EPSILON	Greek
+#x07C6	U+0396	GREEK CAPITAL LETTER ZETA	Greek
+#x07C7	U+0397	GREEK CAPITAL LETTER ETA	Greek
+#x07C8	U+0398	GREEK CAPITAL LETTER THETA	Greek
+#x07C9	U+0399	GREEK CAPITAL LETTER IOTA	Greek
+#x07CA	U+039A	GREEK CAPITAL LETTER KAPPA	Greek
+#x07CB	U+039B	GREEK CAPITAL LETTER LAMDA	Greek
+#x07CC	U+039C	GREEK CAPITAL LETTER MU	Greek
+#x07CD	U+039D	GREEK CAPITAL LETTER NU	Greek
+#x07CE	U+039E	GREEK CAPITAL LETTER XI	Greek
+#x07CF	U+039F	GREEK CAPITAL LETTER OMICRON	Greek
+#x07D0	U+03A0	GREEK CAPITAL LETTER PI	Greek
+#x07D1	U+03A1	GREEK CAPITAL LETTER RHO	Greek
+#x07D2	U+03A3	GREEK CAPITAL LETTER SIGMA	Greek
+#x07D4	U+03A4	GREEK CAPITAL LETTER TAU	Greek
+#x07D5	U+03A5	GREEK CAPITAL LETTER UPSILON	Greek
+#x07D6	U+03A6	GREEK CAPITAL LETTER PHI	Greek
+#x07D7	U+03A7	GREEK CAPITAL LETTER CHI	Greek
+#x07D8	U+03A8	GREEK CAPITAL LETTER PSI	Greek
+#x07D9	U+03A9	GREEK CAPITAL LETTER OMEGA	Greek
+#x07E1	U+03B1	GREEK SMALL LETTER ALPHA	Greek
+#x07E2	U+03B2	GREEK SMALL LETTER BETA	Greek
+#x07E3	U+03B3	GREEK SMALL LETTER GAMMA	Greek
+#x07E4	U+03B4	GREEK SMALL LETTER DELTA	Greek
+#x07E5	U+03B5	GREEK SMALL LETTER EPSILON	Greek
+#x07E6	U+03B6	GREEK SMALL LETTER ZETA	Greek
+#x07E7	U+03B7	GREEK SMALL LETTER ETA	Greek
+#x07E8	U+03B8	GREEK SMALL LETTER THETA	Greek
+#x07E9	U+03B9	GREEK SMALL LETTER IOTA	Greek
+#x07EA	U+03BA	GREEK SMALL LETTER KAPPA	Greek
+#x07EB	U+03BB	GREEK SMALL LETTER LAMDA	Greek
+#x07EC	U+03BC	GREEK SMALL LETTER MU	Greek
+#x07ED	U+03BD	GREEK SMALL LETTER NU	Greek
+#x07EE	U+03BE	GREEK SMALL LETTER XI	Greek
+#x07EF	U+03BF	GREEK SMALL LETTER OMICRON	Greek
+#x07F0	U+03C0	GREEK SMALL LETTER PI	Greek
+#x07F1	U+03C1	GREEK SMALL LETTER RHO	Greek
+#x07F2	U+03C3	GREEK SMALL LETTER SIGMA	Greek
+#x07F3	U+03C2	GREEK SMALL LETTER FINAL SIGMA	Greek
+#x07F4	U+03C4	GREEK SMALL LETTER TAU	Greek
+#x07F5	U+03C5	GREEK SMALL LETTER UPSILON	Greek
+#x07F6	U+03C6	GREEK SMALL LETTER PHI	Greek
+#x07F7	U+03C7	GREEK SMALL LETTER CHI	Greek
+#x07F8	U+03C8	GREEK SMALL LETTER PSI	Greek
+#x07F9	U+03C9	GREEK SMALL LETTER OMEGA	Greek
 .sp 2
-007	161	10/01	GREEK CAPITAL LETTER ALPHA WITH ACCENT	Greek
-007	162	10/02	GREEK CAPITAL LETTER EPSILON WITH ACCENT	Greek
-007	163	10/03	GREEK CAPITAL LETTER ETA WITH ACCENT	Greek
-007	164	10/04	GREEK CAPITAL LETTER IOTA WITH ACCENT	Greek
-007	165	10/05	GREEK CAPITAL LETTER IOTA WITH DIAERESIS	Greek
-007	167	10/07	GREEK CAPITAL LETTER OMICRON WITH ACCENT	Greek
-007	168	10/08	GREEK CAPITAL LETTER UPSILON WITH ACCENT	Greek
-007	169	10/09	GREEK CAPITAL LETTER UPSILON WITH DIAERESIS	Greek
-007	171	10/11	GREEK CAPITAL LETTER OMEGA WITH ACCENT	Greek
-007	174	10/14	DIAERESIS AND ACCENT	Greek
-007	175	10/15	HORIZONTAL BAR	Greek
-007	177	11/01	GREEK SMALL LETTER ALPHA WITH ACCENT	Greek
-007	178	11/02	GREEK SMALL LETTER EPSILON WITH ACCENT	Greek
-007	179	11/03	GREEK SMALL LETTER ETA WITH ACCENT	Greek
-007	180	11/04	GREEK SMALL LETTER IOTA WITH ACCENT	Greek
-007	181	11/05	GREEK SMALL LETTER IOTA WITH DIAERESIS	Greek
-007	182	11/06	GREEK SMALL LETTER IOTA WITH ACCENT+DIAERESIS	Greek
-007	183	11/07	GREEK SMALL LETTER OMICRON WITH ACCENT	Greek
-007	184	11/08	GREEK SMALL LETTER UPSILON WITH ACCENT	Greek
-007	185	11/09	GREEK SMALL LETTER UPSILON WITH DIAERESIS	Greek
-007	186	11/10	GREEK SMALL LETTER UPSILON WITH ACCENT+DIAERESIS	Greek
-007	187	11/11	GREEK SMALL LETTER OMEGA WITH ACCENT	Greek
-007	193	12/01	GREEK CAPITAL LETTER ALPHA	Greek
-007	194	12/02	GREEK CAPITAL LETTER BETA	Greek
-007	195	12/03	GREEK CAPITAL LETTER GAMMA	Greek
-007	196	12/04	GREEK CAPITAL LETTER DELTA	Greek
-007	197	12/05	GREEK CAPITAL LETTER EPSILON	Greek
-007	198	12/06	GREEK CAPITAL LETTER ZETA	Greek
-007	199	12/07	GREEK CAPITAL LETTER ETA	Greek
-007	200	12/08	GREEK CAPITAL LETTER THETA	Greek
-007	201	12/09	GREEK CAPITAL LETTER IOTA	Greek
-007	202	12/10	GREEK CAPITAL LETTER KAPPA	Greek
-007	203	12/11	GREEK CAPITAL LETTER LAMDA	Greek
-007	204	12/12	GREEK CAPITAL LETTER MU	Greek
-007	205	12/13	GREEK CAPITAL LETTER NU	Greek
-007	206	12/14	GREEK CAPITAL LETTER XI	Greek
-007	207	12/15	GREEK CAPITAL LETTER OMICRON	Greek
-007	208	13/00	GREEK CAPITAL LETTER PI	Greek
-007	209	13/01	GREEK CAPITAL LETTER RHO	Greek
-007	210	13/02	GREEK CAPITAL LETTER SIGMA	Greek
-007	212	13/04	GREEK CAPITAL LETTER TAU	Greek
-007	213	13/05	GREEK CAPITAL LETTER UPSILON	Greek
-007	214	13/06	GREEK CAPITAL LETTER PHI	Greek
-007	215	13/07	GREEK CAPITAL LETTER CHI	Greek
-007	216	13/08	GREEK CAPITAL LETTER PSI	Greek
-007	217	13/09	GREEK CAPITAL LETTER OMEGA	Greek
-007	225	14/01	GREEK SMALL LETTER ALPHA	Greek
-007	226	14/02	GREEK SMALL LETTER BETA	Greek
-007	227	14/03	GREEK SMALL LETTER GAMMA	Greek
-007	228	14/04	GREEK SMALL LETTER DELTA	Greek
-007	229	14/05	GREEK SMALL LETTER EPSILON	Greek
-007	230	14/06	GREEK SMALL LETTER ZETA	Greek
-007	231	14/07	GREEK SMALL LETTER ETA	Greek
-007	232	14/08	GREEK SMALL LETTER THETA	Greek
-007	233	14/09	GREEK SMALL LETTER IOTA	Greek
-007	234	14/10	GREEK SMALL LETTER KAPPA	Greek
-007	235	14/11	GREEK SMALL LETTER LAMDA	Greek
-007	236	14/12	GREEK SMALL LETTER MU	Greek
-007	237	14/13	GREEK SMALL LETTER NU	Greek
-007	238	14/14	GREEK SMALL LETTER XI	Greek
-007	239	14/15	GREEK SMALL LETTER OMICRON	Greek
-007	240	15/00	GREEK SMALL LETTER PI	Greek
-007	241	15/01	GREEK SMALL LETTER RHO	Greek
-007	242	15/02	GREEK SMALL LETTER SIGMA	Greek
-007	243	15/03	GREEK SMALL LETTER FINAL SMALL SIGMA	Greek
-007	244	15/04	GREEK SMALL LETTER TAU	Greek
-007	245	15/05	GREEK SMALL LETTER UPSILON	Greek
-007	246	15/06	GREEK SMALL LETTER PHI	Greek
-007	247	15/07	GREEK SMALL LETTER CHI	Greek
-007	248	15/08	GREEK SMALL LETTER PSI	Greek
-007	249	15/09	GREEK SMALL LETTER OMEGA	Greek
+#x08A1	U+23B7	LEFT RADICAL	Technical
+#x08A2	\-	TOP LEFT RADICAL	Technical
+#x08A3	\-	HORIZONTAL CONNECTOR	Technical
+#x08A4	U+2320	TOP INTEGRAL	Technical
+#x08A5	U+2321	BOTTOM INTEGRAL	Technical
+#x08A6	\-	VERTICAL CONNECTOR	Technical
+#x08A7	U+23A1	TOP LEFT SQUARE BRACKET	Technical
+#x08A8	U+23A3	BOTTOM LEFT SQUARE BRACKET	Technical
+#x08A9	U+23A4	TOP RIGHT SQUARE BRACKET	Technical
+#x08AA	U+23A6	BOTTOM RIGHT SQUARE BRACKET	Technical
+#x08AB	U+239B	TOP LEFT PARENTHESIS	Technical
+#x08AC	U+239D	BOTTOM LEFT PARENTHESIS	Technical
+#x08AD	U+239E	TOP RIGHT PARENTHESIS	Technical
+#x08AE	U+23A0	BOTTOM RIGHT PARENTHESIS	Technical
+#x08AF	U+23A8	LEFT MIDDLE CURLY BRACE	Technical
+#x08B0	U+23AC	RIGHT MIDDLE CURLY BRACE	Technical
+#x08B1	\-	TOP LEFT SUMMATION	Technical
+#x08B2	\-	BOTTOM LEFT SUMMATION	Technical
+#x08B3	\-	TOP VERTICAL SUMMATION CONNECTOR	Technical
+#x08B4	\-	BOTTOM VERTICAL SUMMATION CONNECTOR	Technical
+#x08B5	\-	TOP RIGHT SUMMATION	Technical
+#x08B6	\-	BOTTOM RIGHT SUMMATION	Technical
+#x08B7	\-	RIGHT MIDDLE SUMMATION	Technical
+#x08BC	U+2264	LESS THAN OR EQUAL SIGN	Technical
+#x08BD	U+2260	NOT EQUAL SIGN	Technical
+#x08BE	U+2265	GREATER THAN OR EQUAL SIGN	Technical
+#x08BF	U+222B	INTEGRAL	Technical
+#x08C0	U+2234	THEREFORE	Technical
+#x08C1	U+221D	VARIATION, PROPORTIONAL TO	Technical
+#x08C2	U+221E	INFINITY	Technical
+#x08C5	U+2207	NABLA, DEL	Technical
+#x08C8	U+223C	IS APPROXIMATE TO	Technical
+#x08C9	U+2243	SIMILAR OR EQUAL TO	Technical
+#x08CD	U+21D4	IF AND ONLY IF	Technical
+#x08CE	U+21D2	IMPLIES	Technical
+#x08CF	U+2261	IDENTICAL TO	Technical
+#x08D6	U+221A	RADICAL	Technical
+#x08DA	U+2282	IS INCLUDED IN	Technical
+#x08DB	U+2283	INCLUDES	Technical
+#x08DC	U+2229	INTERSECTION	Technical
+#x08DD	U+222A	UNION	Technical
+#x08DE	U+2227	LOGICAL AND	Technical
+#x08DF	U+2228	LOGICAL OR	Technical
+#x08EF	U+2202	PARTIAL DERIVATIVE	Technical
+#x08F6	U+0192	FUNCTION	Technical
+#x08FB	U+2190	LEFT ARROW	Technical
+#x08FC	U+2191	UPWARD ARROW	Technical
+#x08FD	U+2192	RIGHT ARROW	Technical
+#x08FE	U+2193	DOWNWARD ARROW	Technical
 .sp 2
-008	161	10/01	LEFT RADICAL	Technical
-008	162	10/02	TOP LEFT RADICAL	Technical
-008	163	10/03	HORIZONTAL CONNECTOR	Technical
-008	164	10/04	TOP INTEGRAL	Technical
-008	165	10/05	BOTTOM INTEGRAL	Technical
-008	166	10/06	VERTICAL CONNECTOR	Technical
-008	167	10/07	TOP LEFT SQUARE BRACKET	Technical
-008	168	10/08	BOTTOM LEFT SQUARE BRACKET	Technical
-008	169	10/09	TOP RIGHT SQUARE BRACKET	Technical
-008	170	10/10	BOTTOM RIGHT SQUARE BRACKET	Technical
-008	171	10/11	TOP LEFT PARENTHESIS	Technical
-008	172	10/12	BOTTOM LEFT PARENTHESIS	Technical
-008	173	10/13	TOP RIGHT PARENTHESIS	Technical
-008	174	10/14	BOTTOM RIGHT PARENTHESIS	Technical
-008	175	10/15	LEFT MIDDLE CURLY BRACE	Technical
-008	176	11/00	RIGHT MIDDLE CURLY BRACE	Technical
-008	177	11/01	TOP LEFT SUMMATION	Technical
-008	178	11/02	BOTTOM LEFT SUMMATION	Technical
-008	179	11/03	TOP VERTICAL SUMMATION CONNECTOR	Technical
-008	180	11/04	BOTTOM VERTICAL SUMMATION CONNECTOR	Technical
-008	181	11/05	TOP RIGHT SUMMATION	Technical
-008	182	11/06	BOTTOM RIGHT SUMMATION	Technical
-008	183	11/07	RIGHT MIDDLE SUMMATION	Technical
-008	188	11/12	LESS THAN OR EQUAL SIGN	Technical
-008	189	11/13	NOT EQUAL SIGN	Technical
-008	190	11/14	GREATER THAN OR EQUAL SIGN	Technical
-008	191	11/15	INTEGRAL	Technical
-008	192	12/00	THEREFORE	Technical
-008	193	12/01	VARIATION, PROPORTIONAL TO	Technical
-008	194	12/02	INFINITY	Technical
-008	197	12/05	NABLA, DEL	Technical
-008	200	12/08	IS APPROXIMATE TO	Technical
-008	201	12/09	SIMILAR OR EQUAL TO	Technical
-008	205	12/13	IF AND ONLY IF	Technical
-008	206	12/14	IMPLIES	Technical
-008	207	12/15	IDENTICAL TO	Technical
-008	214	13/06	RADICAL	Technical
-008	218	13/10	IS INCLUDED IN	Technical
-008	219	13/11	INCLUDES	Technical
-008	220	13/12	INTERSECTION	Technical
-008	221	13/13	UNION	Technical
-008	222	13/14	LOGICAL AND	Technical
-008	223	13/15	LOGICAL OR	Technical
-008	239	14/15	PARTIAL DERIVATIVE	Technical
-008	246	15/06	FUNCTION	Technical
-008	251	15/11	LEFT ARROW	Technical
-008	252	15/12	UPWARD ARROW	Technical
-008	253	15/13	RIGHT ARROW	Technical
-008	254	15/14	DOWNWARD ARROW	Technical
+#x09DF	\-	BLANK	Special
+#x09E0	U+25C6	SOLID DIAMOND	Special
+#x09E1	U+2592	CHECKERBOARD	Special
+#x09E2	U+2409	``HT''	Special
+#x09E3	U+240C	``FF''	Special
+#x09E4	U+240D	``CR''	Special
+#x09E5	U+240A	``LF''	Special
+#x09E8	U+2424	``NL''	Special
+#x09E9	U+240B	``VT''	Special
+#x09EA	U+2518	LOWER-RIGHT CORNER	Special
+#x09EB	U+2510	UPPER-RIGHT CORNER	Special
+#x09EC	U+250C	UPPER-LEFT CORNER	Special
+#x09ED	U+2514	LOWER-LEFT CORNER	Special
+#x09EE	U+253C	CROSSING-LINES	Special
+#x09EF	U+23BA	HORIZONTAL LINE, SCAN 1	Special
+#x09F0	U+23BB	HORIZONTAL LINE, SCAN 3	Special
+#x09F1	U+2500	HORIZONTAL LINE, SCAN 5	Special
+#x09F2	U+23BC	HORIZONTAL LINE, SCAN 7	Special
+#x09F3	U+23BD	HORIZONTAL LINE, SCAN 9	Special
+#x09F4	U+251C	LEFT ``T''	Special
+#x09F5	U+2524	RIGHT ``T''	Special
+#x09F6	U+2534	BOTTOM ``T''	Special
+#x09F7	U+252C	TOP ``T''	Special
+#x09F8	U+2502	VERTICAL BAR	Special
 .sp 2
-009	223	13/15	BLANK	Special
-009	224	14/00	SOLID DIAMOND	Special
-009	225	14/01	CHECKERBOARD	Special
-009	226	14/02	``HT''	Special
-009	227	14/03	``FF''	Special
-009	228	14/04	``CR''	Special
-009	229	14/05	``LF''	Special
-009	232	14/08	``NL''	Special
-009	233	14/09	``VT''	Special
-009	234	14/10	LOWER-RIGHT CORNER	Special
-009	235	14/11	UPPER-RIGHT CORNER	Special
-009	236	14/12	UPPER-LEFT CORNER	Special
-009	237	14/13	LOWER-LEFT CORNER	Special
-009	238	14/14	CROSSING-LINES	Special
-009	239	14/15	HORIZONTAL LINE, SCAN 1	Special
-009	240	15/00	HORIZONTAL LINE, SCAN 3	Special
-009	241	15/01	HORIZONTAL LINE, SCAN 5	Special
-009	242	15/02	HORIZONTAL LINE, SCAN 7	Special
-009	243	15/03	HORIZONTAL LINE, SCAN 9	Special
-009	244	15/04	LEFT ``T''	Special
-009	245	15/05	RIGHT ``T''	Special
-009	246	15/06	BOTTOM ``T''	Special
-009	247	15/07	TOP ``T''	Special
-009	248	15/08	VERTICAL BAR	Special
+#x0AA1	U+2003	EM SPACE	Publish
+#x0AA2	U+2002	EN SPACE	Publish
+#x0AA3	U+2004	3/EM SPACE	Publish
+#x0AA4	U+2005	4/EM SPACE	Publish
+#x0AA5	U+2007	DIGIT SPACE	Publish
+#x0AA6	U+2008	PUNCTUATION SPACE	Publish
+#x0AA7	U+2009	THIN SPACE	Publish
+#x0AA8	U+200A	HAIR SPACE	Publish
+#x0AA9	U+2014	EM DASH	Publish
+#x0AAA	U+2013	EN DASH	Publish
+#x0AAC	\-	SIGNIFICANT BLANK SYMBOL	Publish
+#x0AAE	U+2026	ELLIPSIS	Publish
+#x0AAF	U+2025	DOUBLE BASELINE DOT	Publish
+#x0AB0	U+2153	VULGAR FRACTION ONE THIRD	Publish
+#x0AB1	U+2154	VULGAR FRACTION TWO THIRDS	Publish
+#x0AB2	U+2155	VULGAR FRACTION ONE FIFTH	Publish
+#x0AB3	U+2156	VULGAR FRACTION TWO FIFTHS	Publish
+#x0AB4	U+2157	VULGAR FRACTION THREE FIFTHS	Publish
+#x0AB5	U+2158	VULGAR FRACTION FOUR FIFTHS	Publish
+#x0AB6	U+2159	VULGAR FRACTION ONE SIXTH	Publish
+#x0AB7	U+215A	VULGAR FRACTION FIVE SIXTHS	Publish
+#x0AB8	U+2105	CARE OF	Publish
+#x0ABB	U+2012	FIGURE DASH	Publish
+#x0ABC	\-	LEFT ANGLE BRACKET	Publish
+#x0ABD	\-	DECIMAL POINT	Publish
+#x0ABE	\-	RIGHT ANGLE BRACKET	Publish
+#x0ABF	\-	MARKER	Publish
+#x0AC3	U+215B	VULGAR FRACTION ONE EIGHTH	Publish
+#x0AC4	U+215C	VULGAR FRACTION THREE EIGHTHS	Publish
+#x0AC5	U+215D	VULGAR FRACTION FIVE EIGHTHS	Publish
+#x0AC6	U+215E	VULGAR FRACTION SEVEN EIGHTHS	Publish
+#x0AC9	U+2122	TRADEMARK SIGN	Publish
+#x0ACA	\-	SIGNATURE MARK	Publish
+#x0ACB	\-	TRADEMARK SIGN IN CIRCLE	Publish
+#x0ACC	\-	LEFT OPEN TRIANGLE	Publish
+#x0ACD	\-	RIGHT OPEN TRIANGLE	Publish
+#x0ACE	\-	EM OPEN CIRCLE	Publish
+#x0ACF	\-	EM OPEN RECTANGLE	Publish
+#x0AD0	U+2018	LEFT SINGLE QUOTATION MARK	Publish
+#x0AD1	U+2019	RIGHT SINGLE QUOTATION MARK	Publish
+#x0AD2	U+201C	LEFT DOUBLE QUOTATION MARK	Publish
+#x0AD3	U+201D	RIGHT DOUBLE QUOTATION MARK	Publish
+#x0AD4	U+211E	PRESCRIPTION, TAKE, RECIPE	Publish
+#x0AD6	U+2032	MINUTES	Publish
+#x0AD7	U+2033	SECONDS	Publish
+#x0AD9	U+271D	LATIN CROSS	Publish
+#x0ADA	\-	HEXAGRAM	Publish
+#x0ADB	\-	FILLED RECTANGLE BULLET	Publish
+#x0ADC	\-	FILLED LEFT TRIANGLE BULLET	Publish
+#x0ADD	\-	FILLED RIGHT TRIANGLE BULLET	Publish
+#x0ADE	\-	EM FILLED CIRCLE	Publish
+#x0ADF	\-	EM FILLED RECTANGLE	Publish
+#x0AE0	\-	EN OPEN CIRCLE BULLET	Publish
+#x0AE1	\-	EN OPEN SQUARE BULLET	Publish
+#x0AE2	\-	OPEN RECTANGULAR BULLET	Publish
+#x0AE3	\-	OPEN TRIANGULAR BULLET UP	Publish
+#x0AE4	\-	OPEN TRIANGULAR BULLET DOWN	Publish
+#x0AE5	\-	OPEN STAR	Publish
+#x0AE6	\-	EN FILLED CIRCLE BULLET	Publish
+#x0AE7	\-	EN FILLED SQUARE BULLET	Publish
+#x0AE8	\-	FILLED TRIANGULAR BULLET UP	Publish
+#x0AE9	\-	FILLED TRIANGULAR BULLET DOWN	Publish
+#x0AEA	\-	LEFT POINTER	Publish
+#x0AEB	\-	RIGHT POINTER	Publish
+#x0AEC	U+2663	CLUB	Publish
+#x0AED	U+2666	DIAMOND	Publish
+#x0AEE	U+2665	HEART	Publish
+#x0AF0	U+2720	MALTESE CROSS	Publish
+#x0AF1	U+2020	DAGGER	Publish
+#x0AF2	U+2021	DOUBLE DAGGER	Publish
+#x0AF3	U+2713	CHECK MARK, TICK	Publish
+#x0AF4	U+2717	BALLOT CROSS	Publish
+#x0AF5	U+266F	MUSICAL SHARP	Publish
+#x0AF6	U+266D	MUSICAL FLAT	Publish
+#x0AF7	U+2642	MALE SYMBOL	Publish
+#x0AF8	U+2640	FEMALE SYMBOL	Publish
+#x0AF9	U+260E	TELEPHONE SYMBOL	Publish
+#x0AFA	U+2315	TELEPHONE RECORDER SYMBOL	Publish
+#x0AFB	U+2117	PHONOGRAPH COPYRIGHT SIGN	Publish
+#x0AFC	U+2038	CARET	Publish
+#x0AFD	U+201A	SINGLE LOW QUOTATION MARK	Publish
+#x0AFE	U+201E	DOUBLE LOW QUOTATION MARK	Publish
+#x0AFF	\-	CURSOR	Publish
 .sp 2
-010	161	10/01	EM SPACE	Publish
-010	162	10/02	EN SPACE	Publish
-010	163	10/03	3/EM SPACE	Publish
-010	164	10/04	4/EM SPACE	Publish
-010	165	10/05	DIGIT SPACE	Publish
-010	166	10/06	PUNCTUATION SPACE	Publish
-010	167	10/07	THIN SPACE	Publish
-010	168	10/08	HAIR SPACE	Publish
-010	169	10/09	EM DASH	Publish
-010	170	10/10	EN DASH	Publish
-010	172	10/12	SIGNIFICANT BLANK SYMBOL	Publish
-010	174	10/14	ELLIPSIS	Publish
-010	175	10/15	DOUBLE BASELINE DOT	Publish
-010	176	11/00	VULGAR FRACTION ONE THIRD	Publish
-010	177	11/01	VULGAR FRACTION TWO THIRDS	Publish
-010	178	11/02	VULGAR FRACTION ONE FIFTH	Publish
-010	179	11/03	VULGAR FRACTION TWO FIFTHS	Publish
-010	180	11/04	VULGAR FRACTION THREE FIFTHS	Publish
-010	181	11/05	VULGAR FRACTION FOUR FIFTHS	Publish
-010	182	11/06	VULGAR FRACTION ONE SIXTH	Publish
-010	183	11/07	VULGAR FRACTION FIVE SIXTHS	Publish
-010	184	11/08	CARE OF	Publish
-010	187	11/11	FIGURE DASH	Publish
-010	188	11/12	LEFT ANGLE BRACKET	Publish
-010	189	11/13	DECIMAL POINT	Publish
-010	190	11/14	RIGHT ANGLE BRACKET	Publish
-010	191	11/15	MARKER	Publish
-010	195	12/03	VULGAR FRACTION ONE EIGHTH	Publish
-010	196	12/04	VULGAR FRACTION THREE EIGHTHS	Publish
-010	197	12/05	VULGAR FRACTION FIVE EIGHTHS	Publish
-010	198	12/06	VULGAR FRACTION SEVEN EIGHTHS	Publish
-010	201	12/09	TRADEMARK SIGN	Publish
-010	202	12/10	SIGNATURE MARK	Publish
-010	203	12/11	TRADEMARK SIGN IN CIRCLE	Publish
-010	204	12/12	LEFT OPEN TRIANGLE	Publish
-010	205	12/13	RIGHT OPEN TRIANGLE	Publish
-010	206	12/14	EM OPEN CIRCLE	Publish
-010	207	12/15	EM OPEN RECTANGLE	Publish
-010	208	13/00	LEFT SINGLE QUOTATION MARK	Publish
-010	209	13/01	RIGHT SINGLE QUOTATION MARK	Publish
-010	210	13/02	LEFT DOUBLE QUOTATION MARK	Publish
-010	211	13/03	RIGHT DOUBLE QUOTATION MARK	Publish
-010	212	13/04	PRESCRIPTION, TAKE, RECIPE	Publish
-010	214	13/06	MINUTES	Publish
-010	215	13/07	SECONDS	Publish
-010	217	13/09	LATIN CROSS	Publish
-010	218	13/10	HEXAGRAM	Publish
-010	219	13/11	FILLED RECTANGLE BULLET	Publish
-010	220	13/12	FILLED LEFT TRIANGLE BULLET	Publish
-010	221	13/13	FILLED RIGHT TRIANGLE BULLET	Publish
-010	222	13/14	EM FILLED CIRCLE	Publish
-010	223	13/15	EM FILLED RECTANGLE	Publish
-010	224	14/00	EN OPEN CIRCLE BULLET	Publish
-010	225	14/01	EN OPEN SQUARE BULLET	Publish
-010	226	14/02	OPEN RECTANGULAR BULLET	Publish
-010	227	14/03	OPEN TRIANGULAR BULLET UP	Publish
-010	228	14/04	OPEN TRIANGULAR BULLET DOWN	Publish
-010	229	14/05	OPEN STAR	Publish
-010	230	14/06	EN FILLED CIRCLE BULLET	Publish
-010	231	14/07	EN FILLED SQUARE BULLET	Publish
-010	232	14/08	FILLED TRIANGULAR BULLET UP	Publish
-010	233	14/09	FILLED TRIANGULAR BULLET DOWN	Publish
-010	234	14/10	LEFT POINTER	Publish
-010	235	14/11	RIGHT POINTER	Publish
-010	236	14/12	CLUB	Publish
-010	237	14/13	DIAMOND	Publish
-010	238	14/14	HEART	Publish
-010	240	15/00	MALTESE CROSS	Publish
-010	241	15/01	DAGGER	Publish
-010	242	15/02	DOUBLE DAGGER	Publish
-010	243	15/03	CHECK MARK, TICK	Publish
-010	244	15/04	BALLOT CROSS	Publish
-010	245	15/05	MUSICAL SHARP	Publish
-010	246	15/06	MUSICAL FLAT	Publish
-010	247	15/07	MALE SYMBOL	Publish
-010	248	15/08	FEMALE SYMBOL	Publish
-010	249	15/09	TELEPHONE SYMBOL	Publish
-010	250	15/10	TELEPHONE RECORDER SYMBOL	Publish
-010	251	15/11	PHONOGRAPH COPYRIGHT SIGN	Publish
-010	252	15/12	CARET	Publish
-010	253	15/13	SINGLE LOW QUOTATION MARK	Publish
-010	254	15/14	DOUBLE LOW QUOTATION MARK	Publish
-010	255	15/15	CURSOR	Publish
+#x0BA3	\-	LEFT CARET	APL
+#x0BA6	\-	RIGHT CARET	APL
+#x0BA8	\-	DOWN CARET	APL
+#x0BA9	\-	UP CARET	APL
+#x0BC0	\-	OVERBAR	APL
+#x0BC2	U+22A5	DOWN TACK	APL
+#x0BC3	\-	UP SHOE (CAP)	APL
+#x0BC4	U+230A	DOWN STILE	APL
+#x0BC6	\-	UNDERBAR	APL
+#x0BCA	U+2218	JOT	APL
+#x0BCC	U+2395	QUAD	APL
+#x0BCE	U+22A4	UP TACK	APL
+#x0BCF	U+25CB	CIRCLE	APL
+#x0BD3	U+2308	UP STILE	APL
+#x0BD6	\-	DOWN SHOE (CUP)	APL
+#x0BD8	\-	RIGHT SHOE	APL
+#x0BDA	\-	LEFT SHOE	APL
+#x0BDC	U+22A2	LEFT TACK	APL
+#x0BFC	U+22A3	RIGHT TACK	APL
 .sp 2
-011	163	10/03	LEFT CARET	APL
-011	166	10/06	RIGHT CARET	APL
-011	168	10/08	DOWN CARET	APL
-011	169	10/09	UP CARET	APL
-011	192	12/00	OVERBAR	APL
-011	194	12/02	DOWN TACK	APL
-011	195	12/03	UP SHOE (CAP)	APL
-011	196	12/04	DOWN STILE	APL
-011	198	12/06	UNDERBAR	APL
-011	202	12/10	JOT	APL
-011	204	12/12	QUAD	APL
-011	206	12/14	UP TACK	APL
-011	207	12/15	CIRCLE	APL
-011	211	13/03	UP STILE	APL
-011	214	13/06	DOWN SHOE (CUP)	APL
-011	216	13/08	RIGHT SHOE	APL
-011	218	13/10	LEFT SHOE	APL
-011	220	13/12	LEFT TACK	APL
-011	252	15/12	RIGHT TACK	APL
+#x0CDF	U+2017	DOUBLE LOW LINE	Hebrew
+#x0CE0	U+05D0	HEBREW LETTER ALEF	Hebrew
+#x0CE1	U+05D1	HEBREW LETTER BET	Hebrew
+#x0CE2	U+05D2	HEBREW LETTER GIMEL	Hebrew
+#x0CE3	U+05D3	HEBREW LETTER DALET	Hebrew
+#x0CE4	U+05D4	HEBREW LETTER HE	Hebrew
+#x0CE5	U+05D5	HEBREW LETTER VAV	Hebrew
+#x0CE6	U+05D6	HEBREW LETTER ZAYIN	Hebrew
+#x0CE7	U+05D7	HEBREW LETTER HET	Hebrew
+#x0CE8	U+05D8	HEBREW LETTER TET	Hebrew
+#x0CE9	U+05D9	HEBREW LETTER YOD	Hebrew
+#x0CEA	U+05DA	HEBREW LETTER FINAL KAF	Hebrew
+#x0CEB	U+05DB	HEBREW LETTER KAF	Hebrew
+#x0CEC	U+05DC	HEBREW LETTER LAMED	Hebrew
+#x0CED	U+05DD	HEBREW LETTER FINAL MEM	Hebrew
+#x0CEE	U+05DE	HEBREW LETTER MEM	Hebrew
+#x0CEF	U+05DF	HEBREW LETTER FINAL NUN	Hebrew
+#x0CF0	U+05E0	HEBREW LETTER NUN	Hebrew
+#x0CF1	U+05E1	HEBREW LETTER SAMEKH	Hebrew
+#x0CF2	U+05E2	HEBREW LETTER AYIN	Hebrew
+#x0CF3	U+05E3	HEBREW LETTER FINAL PE	Hebrew
+#x0CF4	U+05E4	HEBREW LETTER PE	Hebrew
+#x0CF5	U+05E5	HEBREW LETTER FINAL TSADI	Hebrew
+#x0CF6	U+05E6	HEBREW LETTER TSADI	Hebrew
+#x0CF7	U+05E7	HEBREW LETTER QOF	Hebrew
+#x0CF8	U+05E8	HEBREW LETTER RESH	Hebrew
+#x0CF9	U+05E9	HEBREW LETTER SHIN	Hebrew
+#x0CFA	U+05EA	HEBREW LETTER TAV	Hebrew
 .sp 2
-012	223	13/15	DOUBLE LOW LINE	Hebrew
-012	224	14/00	HEBREW LETTER ALEPH	Hebrew
-012	225	14/01	HEBREW LETTER BET	Hebrew
-012	226	14/02	HEBREW LETTER GIMEL	Hebrew
-012	227	14/03	HEBREW LETTER DALET	Hebrew
-012	228	14/04	HEBREW LETTER HE	Hebrew
-012	229	14/05	HEBREW LETTER WAW	Hebrew
-012	230	14/06	HEBREW LETTER ZAIN	Hebrew
-012	231	14/07	HEBREW LETTER CHET	Hebrew
-012	232	14/08	HEBREW LETTER TET	Hebrew
-012	233	14/09	HEBREW LETTER YOD	Hebrew
-012	234	14/10	HEBREW LETTER FINAL KAPH	Hebrew
-012	235	14/11	HEBREW LETTER KAPH	Hebrew
-012	236	14/12	HEBREW LETTER LAMED	Hebrew
-012	237	14/13	HEBREW LETTER FINAL MEM	Hebrew
-012	238	14/14	HEBREW LETTER MEM	Hebrew
-012	239	14/15	HEBREW LETTER FINAL NUN	Hebrew
-012	240	15/00	HEBREW LETTER NUN	Hebrew
-012	241	15/01	HEBREW LETTER SAMECH	Hebrew
-012	242	15/02	HEBREW LETTER A'YIN	Hebrew
-012	243	15/03	HEBREW LETTER FINAL PE	Hebrew
-012	244	15/04	HEBREW LETTER PE	Hebrew
-012	245	15/05	HEBREW LETTER FINAL ZADE	Hebrew
-012	246	15/06	HEBREW LETTER ZADE	Hebrew
-012	247	15/07	HEBREW QOPH	Hebrew
-012	248	15/08	HEBREW RESH	Hebrew
-012	249	15/09	HEBREW SHIN	Hebrew
-012	250	15/10	HEBREW TAW	Hebrew
+#x0DA1	U+0E01	THAI CHARACTER KO KAI	Thai
+#x0DA2	U+0E02	THAI CHARACTER KHO KHAI	Thai
+#x0DA3	U+0E03	THAI CHARACTER KHO KHUAT	Thai
+#x0DA4	U+0E04	THAI CHARACTER KHO KHWAI	Thai
+#x0DA5	U+0E05	THAI CHARACTER KHO KHON	Thai
+#x0DA6	U+0E06	THAI CHARACTER KHO RAKHANG	Thai
+#x0DA7	U+0E07	THAI CHARACTER NGO NGU	Thai
+#x0DA8	U+0E08	THAI CHARACTER CHO CHAN	Thai
+#x0DA9	U+0E09	THAI CHARACTER CHO CHING	Thai
+#x0DAA	U+0E0A	THAI CHARACTER CHO CHANG	Thai
+#x0DAB	U+0E0B	THAI CHARACTER SO SO	Thai
+#x0DAC	U+0E0C	THAI CHARACTER CHO CHOE	Thai
+#x0DAD	U+0E0D	THAI CHARACTER YO YING	Thai
+#x0DAE	U+0E0E	THAI CHARACTER DO CHADA	Thai
+#x0DAF	U+0E0F	THAI CHARACTER TO PATAK	Thai
+#x0DB0	U+0E10	THAI CHARACTER THO THAN	Thai
+#x0DB1	U+0E11	THAI CHARACTER THO NANGMONTHO	Thai
+#x0DB2	U+0E12	THAI CHARACTER THO PHUTHAO	Thai
+#x0DB3	U+0E13	THAI CHARACTER NO NEN	Thai
+#x0DB4	U+0E14	THAI CHARACTER DO DEK	Thai
+#x0DB5	U+0E15	THAI CHARACTER TO TAO	Thai
+#x0DB6	U+0E16	THAI CHARACTER THO THUNG	Thai
+#x0DB7	U+0E17	THAI CHARACTER THO THAHAN	Thai
+#x0DB8	U+0E18	THAI CHARACTER THO THONG	Thai
+#x0DB9	U+0E19	THAI CHARACTER NO NU	Thai
+#x0DBA	U+0E1A	THAI CHARACTER BO BAIMAI	Thai
+#x0DBB	U+0E1B	THAI CHARACTER PO PLA	Thai
+#x0DBC	U+0E1C	THAI CHARACTER PHO PHUNG	Thai
+#x0DBD	U+0E1D	THAI CHARACTER FO FA	Thai
+#x0DBE	U+0E1E	THAI CHARACTER PHO PHAN	Thai
+#x0DBF	U+0E1F	THAI CHARACTER FO FAN	Thai
+#x0DC0	U+0E20	THAI CHARACTER PHO SAMPHAO	Thai
+#x0DC1	U+0E21	THAI CHARACTER MO MA	Thai
+#x0DC2	U+0E22	THAI CHARACTER YO YAK	Thai
+#x0DC3	U+0E23	THAI CHARACTER RO RUA	Thai
+#x0DC4	U+0E24	THAI CHARACTER RU	Thai
+#x0DC5	U+0E25	THAI CHARACTER LO LING	Thai
+#x0DC6	U+0E26	THAI CHARACTER LU	Thai
+#x0DC7	U+0E27	THAI CHARACTER WO WAEN	Thai
+#x0DC8	U+0E28	THAI CHARACTER SO SALA	Thai
+#x0DC9	U+0E29	THAI CHARACTER SO RUSI	Thai
+#x0DCA	U+0E2A	THAI CHARACTER SO SUA	Thai
+#x0DCB	U+0E2B	THAI CHARACTER HO HIP	Thai
+#x0DCC	U+0E2C	THAI CHARACTER LO CHULA	Thai
+#x0DCD	U+0E2D	THAI CHARACTER O ANG	Thai
+#x0DCE	U+0E2E	THAI CHARACTER HO NOKHUK	Thai
+#x0DCF	U+0E2F	THAI CHARACTER PAIYANNOI	Thai
+#x0DD0	U+0E30	THAI CHARACTER SARA A	Thai
+#x0DD1	U+0E31	THAI CHARACTER MAI HAN-AKAT	Thai
+#x0DD2	U+0E32	THAI CHARACTER SARA AA	Thai
+#x0DD3	U+0E33	THAI CHARACTER SARA AM	Thai
+#x0DD4	U+0E34	THAI CHARACTER SARA I	Thai
+#x0DD5	U+0E35	THAI CHARACTER SARA II	Thai
+#x0DD6	U+0E36	THAI CHARACTER SARA UE	Thai
+#x0DD7	U+0E37	THAI CHARACTER SARA UEE	Thai
+#x0DD8	U+0E38	THAI CHARACTER SARA U	Thai
+#x0DD9	U+0E39	THAI CHARACTER SARA UU	Thai
+#x0DDA	U+0E3A	THAI CHARACTER PHINTHU	Thai
+#x0DDF	U+0E3F	THAI CURRENCY SYMBOL BAHT	Thai
+#x0DE0	U+0E40	THAI CHARACTER SARA E	Thai
+#x0DE1	U+0E41	THAI CHARACTER SARA AE	Thai
+#x0DE2	U+0E42	THAI CHARACTER SARA O	Thai
+#x0DE3	U+0E43	THAI CHARACTER SARA AI MAIMUAN	Thai
+#x0DE4	U+0E44	THAI CHARACTER SARA AI MAIMALAI	Thai
+#x0DE5	U+0E45	THAI CHARACTER LAKKHANGYAO	Thai
+#x0DE6	U+0E46	THAI CHARACTER MAIYAMOK	Thai
+#x0DE7	U+0E47	THAI CHARACTER MAITAIKHU	Thai
+#x0DE8	U+0E48	THAI CHARACTER MAI EK	Thai
+#x0DE9	U+0E49	THAI CHARACTER MAI THO	Thai
+#x0DEA	U+0E4A	THAI CHARACTER MAI TRI	Thai
+#x0DEB	U+0E4B	THAI CHARACTER MAI CHATTAWA	Thai
+#x0DEC	U+0E4C	THAI CHARACTER THANTHAKHAT	Thai
+#x0DED	U+0E4D	THAI CHARACTER NIKHAHIT	Thai
+#x0DF0	U+0E50	THAI DIGIT ZERO	Thai
+#x0DF1	U+0E51	THAI DIGIT ONE	Thai
+#x0DF2	U+0E52	THAI DIGIT TWO	Thai
+#x0DF3	U+0E53	THAI DIGIT THREE	Thai
+#x0DF4	U+0E54	THAI DIGIT FOUR	Thai
+#x0DF5	U+0E55	THAI DIGIT FIVE	Thai
+#x0DF6	U+0E56	THAI DIGIT SIX	Thai
+#x0DF7	U+0E57	THAI DIGIT SEVEN	Thai
+#x0DF8	U+0E58	THAI DIGIT EIGHT	Thai
+#x0DF9	U+0E59	THAI DIGIT NINE	Thai
 .sp 2
-013	161	10/01	THAI KOKAI	Thai
-013	162	10/02	THAI KHOKHAI	Thai
-013	163	10/03	THAI KHOKHUAT	Thai
-013	164	10/04	THAI KHOKHWAI	Thai
-013	165	10/05	THAI KHOKHON	Thai
-013	166	10/06	THAI KHORAKHANG	Thai
-013	167	10/07	THAI NGONGU	Thai
-013	168	10/08	THAI CHOCHAN	Thai
-013	169	10/09	THAI CHOCHING	Thai
-013	170	10/10	THAI CHOCHANG	Thai
-013	171	10/11	THAI SOSO	Thai
-013	172	10/12	THAI CHOCHOE	Thai
-013	173	10/13	THAI YOYING	Thai
-013	174	10/14	THAI DOCHADA	Thai
-013	175	10/15	THAI TOPATAK	Thai
-013	176	11/00	THAI THOTHAN	Thai
-013	177	11/01	THAI THONANGMONTHO	Thai
-013	178	11/02	THAI THOPHUTHAO	Thai
-013	179	11/03	THAI NONEN	Thai
-013	180	11/04	THAI DODEK	Thai
-013	181	11/05	THAI TOTAO	Thai
-013	182	11/06	THAI THOTHUNG	Thai
-013	183	11/07	THAI THOTHAHAN	Thai
-013	184	11/08	THAI THOTHONG	Thai
-013	185	11/09	THAI NONU	Thai
-013	186	11/10	THAI BOBAIMAI	Thai
-013	187	11/11	THAI POPLA	Thai
-013	188	11/12	THAI PHOPHUNG	Thai
-013	189	11/13	THAI FOFA	Thai
-013	190	11/14	THAI PHOPHAN	Thai
-013	191	11/15	THAI FOFAN	Thai
-013	192	12/00	THAI PHOSAMPHAO	Thai
-013	193	12/01	THAI MOMA	Thai
-013	194	12/02	THAI YOYAK	Thai
-013	195	12/03	THAI RORUA	Thai
-013	196	12/04	THAI RU	Thai
-013	197	12/05	THAI LOLING	Thai
-013	198	12/06	THAI LU	Thai
-013	199	12/07	THAI WOWAEN	Thai
-013	200	12/08	THAI SOSALA	Thai
-013	201	12/09	THAI SORUSI	Thai
-013	202	12/10	THAI SOSUA	Thai
-013	203	12/11	THAI HOHIP	Thai
-013	204	12/12	THAI LOCHULA	Thai
-013	205	12/13	THAI OANG	Thai
-013	206	12/14	THAI HONOKHUK	Thai
-013	207	12/15	THAI PAIYANNOI	Thai
-013	208	13/00	THAI SARAA	Thai
-013	209	13/01	THAI MAIHANAKAT	Thai
-013	210	13/02	THAI SARAAA	Thai
-013	211	13/03	THAI SARAAM	Thai
-013	212	13/04	THAI SARAI	Thai
-013	213	13/05	THAI SARAII	Thai
-013	214	13/06	THAI SARAUE	Thai
-013	215	13/07	THAI SARAUEE	Thai
-013	216	13/08	THAI SARAU	Thai
-013	217	13/09	THAI SARAUU	Thai
-013	218	13/10	THAI PHINTHU	Thai
-013	222	13/14	THAI MAIHANAKAT	Thai
-013	223	13/15	THAI BAHT	Thai
-013	224	14/00	THAI SARAE	Thai
-013	225	14/01	THAI SARAAE	Thai
-013	226	14/02	THAI SARAO	Thai
-013	227	14/03	THAI SARAAIMAIMUAN	Thai
-013	228	14/04	THAI SARAAIMAIMALAI	Thai
-013	229	14/05	THAI LAKKHANGYAO	Thai
-013	230	14/06	THAI MAIYAMOK	Thai
-013	231	14/07	THAI MAITAIKHU	Thai
-013	232	14/08	THAI MAIEK	Thai
-013	233	14/09	THAI MAITHO	Thai
-013	234	14/10	THAI MAITRI	Thai
-013	235	14/11	THAI MAICHATTAWA	Thai
-013	236	14/12	THAI THANTHAKHAT	Thai
-013	237	14/13	THAI NIKHAHIT	Thai
-013	240	15/00	THAI LEKSUN	Thai
-013	241	15/01	THAI LEKNUNG	Thai
-013	242	15/02	THAI LEKSONG	Thai
-013	243	15/03	THAI LEKSAM	Thai
-013	244	15/04	THAI LEKSI	Thai
-013	245	15/05	THAI LEKHA	Thai
-013	246	15/06	THAI LEKHOK	Thai
-013	247	15/07	THAI LEKCHET	Thai
-013	248	15/08	THAI LEKPAET	Thai
-013	249	15/09	THAI LEKKAO	Thai
+#x0EA1	\-	HANGUL KIYEOG	Korean
+#x0EA2	\-	HANGUL SSANG KIYEOG	Korean
+#x0EA3	\-	HANGUL KIYEOG SIOS	Korean
+#x0EA4	\-	HANGUL NIEUN	Korean
+#x0EA5	\-	HANGUL NIEUN JIEUJ	Korean
+#x0EA6	\-	HANGUL NIEUN HIEUH	Korean
+#x0EA7	\-	HANGUL DIKEUD	Korean
+#x0EA8	\-	HANGUL SSANG DIKEUD	Korean
+#x0EA9	\-	HANGUL RIEUL	Korean
+#x0EAA	\-	HANGUL RIEUL KIYEOG	Korean
+#x0EAB	\-	HANGUL RIEUL MIEUM	Korean
+#x0EAC	\-	HANGUL RIEUL PIEUB	Korean
+#x0EAD	\-	HANGUL RIEUL SIOS	Korean
+#x0EAE	\-	HANGUL RIEUL TIEUT	Korean
+#x0EAF	\-	HANGUL RIEUL PHIEUF	Korean
+#x0EB0	\-	HANGUL RIEUL HIEUH	Korean
+#x0EB1	\-	HANGUL MIEUM	Korean
+#x0EB2	\-	HANGUL PIEUB	Korean
+#x0EB3	\-	HANGUL SSANG PIEUB	Korean
+#x0EB4	\-	HANGUL PIEUB SIOS	Korean
+#x0EB5	\-	HANGUL SIOS	Korean
+#x0EB6	\-	HANGUL SSANG SIOS	Korean
+#x0EB7	\-	HANGUL IEUNG	Korean
+#x0EB8	\-	HANGUL JIEUJ	Korean
+#x0EB9	\-	HANGUL SSANG JIEUJ	Korean
+#x0EBA	\-	HANGUL CIEUC	Korean
+#x0EBB	\-	HANGUL KHIEUQ	Korean
+#x0EBC	\-	HANGUL TIEUT	Korean
+#x0EBD	\-	HANGUL PHIEUF	Korean
+#x0EBE	\-	HANGUL HIEUH	Korean
+#x0EBF	\-	HANGUL A	Korean
+#x0EC0	\-	HANGUL AE	Korean
+#x0EC1	\-	HANGUL YA	Korean
+#x0EC2	\-	HANGUL YAE	Korean
+#x0EC3	\-	HANGUL EO	Korean
+#x0EC4	\-	HANGUL E	Korean
+#x0EC5	\-	HANGUL YEO	Korean
+#x0EC6	\-	HANGUL YE	Korean
+#x0EC7	\-	HANGUL O	Korean
+#x0EC8	\-	HANGUL WA	Korean
+#x0EC9	\-	HANGUL WAE	Korean
+#x0ECA	\-	HANGUL OE	Korean
+#x0ECB	\-	HANGUL YO	Korean
+#x0ECC	\-	HANGUL U	Korean
+#x0ECD	\-	HANGUL WEO	Korean
+#x0ECE	\-	HANGUL WE	Korean
+#x0ECF	\-	HANGUL WI	Korean
+#x0ED0	\-	HANGUL YU	Korean
+#x0ED1	\-	HANGUL EU	Korean
+#x0ED2	\-	HANGUL YI	Korean
+#x0ED3	\-	HANGUL I	Korean
+#x0ED4	\-	HANGUL JONG SEONG KIYEOG	Korean
+#x0ED5	\-	HANGUL JONG SEONG SSANG KIYEOG	Korean
+#x0ED6	\-	HANGUL JONG SEONG KIYEOG SIOS	Korean
+#x0ED7	\-	HANGUL JONG SEONG NIEUN	Korean
+#x0ED8	\-	HANGUL JONG SEONG NIEUN JIEUJ	Korean
+#x0ED9	\-	HANGUL JONG SEONG NIEUN HIEUH	Korean
+#x0EDA	\-	HANGUL JONG SEONG DIKEUD	Korean
+#x0EDB	\-	HANGUL JONG SEONG RIEUL	Korean
+#x0EDC	\-	HANGUL JONG SEONG RIEUL KIYEOG	Korean
+#x0EDD	\-	HANGUL JONG SEONG RIEUL MIEUM	Korean
+#x0EDE	\-	HANGUL JONG SEONG RIEUL PIEUB	Korean
+#x0EDF	\-	HANGUL JONG SEONG RIEUL SIOS	Korean
+#x0EE0	\-	HANGUL JONG SEONG RIEUL TIEUT	Korean
+#x0EE1	\-	HANGUL JONG SEONG RIEUL PHIEUF	Korean
+#x0EE2	\-	HANGUL JONG SEONG RIEUL HIEUH	Korean
+#x0EE3	\-	HANGUL JONG SEONG MIEUM	Korean
+#x0EE4	\-	HANGUL JONG SEONG PIEUB	Korean
+#x0EE5	\-	HANGUL JONG SEONG PIEUB SIOS	Korean
+#x0EE6	\-	HANGUL JONG SEONG SIOS	Korean
+#x0EE7	\-	HANGUL JONG SEONG SSANG SIOS	Korean
+#x0EE8	\-	HANGUL JONG SEONG IEUNG	Korean
+#x0EE9	\-	HANGUL JONG SEONG JIEUJ	Korean
+#x0EEA	\-	HANGUL JONG SEONG CIEUC	Korean
+#x0EEB	\-	HANGUL JONG SEONG KHIEUQ	Korean
+#x0EEC	\-	HANGUL JONG SEONG TIEUT	Korean
+#x0EED	\-	HANGUL JONG SEONG PHIEUF	Korean
+#x0EEE	\-	HANGUL JONG SEONG HIEUH	Korean
+#x0EEF	\-	HANGUL RIEUL YEORIN HIEUH	Korean
+#x0EF0	\-	HANGUL SUNKYEONGEUM MIEUM	Korean
+#x0EF1	\-	HANGUL SUNKYEONGEUM PIEUB	Korean
+#x0EF2	\-	HANGUL PAN SIOS	Korean
+#x0EF3	\-	HANGUL KKOGJI DALRIN IEUNG	Korean
+#x0EF4	\-	HANGUL SUNKYEONGEUM PHIEUF	Korean
+#x0EF5	\-	HANGUL YEORIN HIEUH	Korean
+#x0EF6	\-	HANGUL ARAE A	Korean
+#x0EF7	\-	HANGUL ARAE AE	Korean
+#x0EF8	\-	HANGUL JONG SEONG PAN SIOS	Korean
+#x0EF9	\-	HANGUL JONG SEONG KKOGJI DALRIN IEUNG	Korean
+#x0EFA	\-	HANGUL JONG SEONG YEORIN HIEUH	Korean
+#x0EFF	\-	KOREAN WON	Korean
 .sp 2
-014	161	10/01	HANGUL KIYEOG	Korean
-014	162	10/02	HANGUL SSANG KIYEOG	Korean
-014	163	10/03	HANGUL KIYEOG SIOS	Korean
-014	164	10/04	HANGUL NIEUN	Korean
-014	165	10/05	HANGUL NIEUN JIEUJ	Korean
-014	166	10/06	HANGUL NIEUN HIEUH	Korean
-014	167	10/07	HANGUL DIKEUD	Korean
-014	168	10/08	HANGUL SSANG DIKEUD	Korean
-014	169	10/09	HANGUL RIEUL	Korean
-014	170	10/10	HANGUL RIEUL KIYEOG	Korean
-014	171	10/11	HANGUL RIEUL MIEUM	Korean
-014	172	10/12	HANGUL RIEUL PIEUB	Korean
-014	173	10/13	HANGUL RIEUL SIOS	Korean
-014	174	10/14	HANGUL RIEUL TIEUT	Korean
-014	175	10/15	HANGUL RIEUL PHIEUF	Korean
-014	176	11/00	HANGUL RIEUL HIEUH	Korean
-014	177	11/01	HANGUL MIEUM	Korean
-014	178	11/02	HANGUL PIEUB	Korean
-014	179	11/03	HANGUL SSANG PIEUB	Korean
-014	180	11/04	HANGUL PIEUB SIOS	Korean
-014	181	11/05	HANGUL SIOS	Korean
-014	182	11/06	HANGUL SSANG SIOS	Korean
-014	183	11/07	HANGUL IEUNG	Korean
-014	184	11/08	HANGUL JIEUJ	Korean
-014	185	11/09	HANGUL SSANG JIEUJ	Korean
-014	186	11/10	HANGUL CIEUC	Korean
-014	187	11/11	HANGUL KHIEUQ	Korean
-014	188	11/12	HANGUL TIEUT	Korean
-014	189	11/13	HANGUL PHIEUF	Korean
-014	190	11/14	HANGUL HIEUH	Korean
-014	191	11/15	HANGUL A	Korean
-014	192	12/00	HANGUL AE	Korean
-014	193	12/01	HANGUL YA	Korean
-014	194	12/02	HANGUL YAE	Korean
-014	195	12/03	HANGUL EO	Korean
-014	196	12/04	HANGUL E	Korean
-014	197	12/05	HANGUL YEO	Korean
-014	198	12/06	HANGUL YE	Korean
-014	199	12/07	HANGUL O	Korean
-014	200	12/08	HANGUL WA	Korean
-014	201	12/09	HANGUL WAE	Korean
-014	202	12/10	HANGUL OE	Korean
-014	203	12/11	HANGUL YO	Korean
-014	204	12/12	HANGUL U	Korean
-014	205	12/13	HANGUL WEO	Korean
-014	206	12/14	HANGUL WE	Korean
-014	207	12/15	HANGUL WI	Korean
-014	208	13/00	HANGUL YU	Korean
-014	209	13/01	HANGUL EU	Korean
-014	210	13/02	HANGUL YI	Korean
-014	211	13/03	HANGUL I	Korean
-014	212	13/04	HANGUL JONG SEONG KIYEOG	Korean
-014	213	13/05	HANGUL JONG SEONG SSANG KIYEOG	Korean
-014	214	13/06	HANGUL JONG SEONG KIYEOG SIOS	Korean
-014	215	13/07	HANGUL JONG SEONG NIEUN	Korean
-014	216	13/08	HANGUL JONG SEONG NIEUN JIEUJ	Korean
-014	217	13/09	HANGUL JONG SEONG NIEUN HIEUH	Korean
-014	218	13/10	HANGUL JONG SEONG DIKEUD	Korean
-014	219	13/11	HANGUL JONG SEONG RIEUL	Korean
-014	220	13/12	HANGUL JONG SEONG RIEUL KIYEOG	Korean
-014	221	13/13	HANGUL JONG SEONG RIEUL MIEUM	Korean
-014	222	13/14	HANGUL JONG SEONG RIEUL PIEUB	Korean
-014	223	13/15	HANGUL JONG SEONG RIEUL SIOS	Korean
-014	224	14/00	HANGUL JONG SEONG RIEUL TIEUT	Korean
-014	225	14/01	HANGUL JONG SEONG RIEUL PHIEUF	Korean
-014	226	14/02	HANGUL JONG SEONG RIEUL HIEUH	Korean
-014	227	14/03	HANGUL JONG SEONG MIEUM	Korean
-014	228	14/04	HANGUL JONG SEONG PIEUB	Korean
-014	229	14/05	HANGUL JONG SEONG PIEUB SIOS	Korean
-014	230	14/06	HANGUL JONG SEONG SIOS	Korean
-014	231	14/07	HANGUL JONG SEONG SSANG SIOS	Korean
-014	232	14/08	HANGUL JONG SEONG IEUNG	Korean
-014	233	14/09	HANGUL JONG SEONG JIEUJ	Korean
-014	234	14/10	HANGUL JONG SEONG CIEUC	Korean
-014	235	14/11	HANGUL JONG SEONG KHIEUQ	Korean
-014	236	14/12	HANGUL JONG SEONG TIEUT	Korean
-014	237	14/13	HANGUL JONG SEONG PHIEUF	Korean
-014	238	14/14	HANGUL JONG SEONG HIEUH	Korean
-014	239	14/15	HANGUL RIEUL YEORIN HIEUH	Korean
-014	240	15/00	HANGUL SUNKYEONGEUM MIEUM	Korean
-014	241	15/01	HANGUL SUNKYEONGEUM PIEUB	Korean
-014	242	15/02	HANGUL PAN SIOS	Korean
-014	243	15/03	HANGUL KKOGJI DALRIN IEUNG	Korean
-014	244	15/04	HANGUL SUNKYEONGEUM PHIEUF	Korean
-014	245	15/05	HANGUL YEORIN HIEUH	Korean
-014	246	15/06	HANGUL ARAE A	Korean
-014	247	15/07	HANGUL ARAE AE	Korean
-014	248	15/08	HANGUL JONG SEONG PAN SIOS	Korean
-014	249	15/09	HANGUL JONG SEONG KKOGJI DALRIN IEUNG	Korean
-014	250	15/10	HANGUL JONG SEONG YEORIN HIEUH	Korean
-014	255	15/15	KOREAN WON	Korean
+#x13BC	U+0152	LATIN CAPITAL LIGATURE OE	Latin-9
+#x13BD	U+0153	LATIN SMALL LIGATURE OE	Latin-9
+#x13BE	U+0178	LATIN CAPITAL LETTER Y WITH DIAERESIS	Latin-9
 .sp 2
-019	188	11/12	LATIN CAPITAL DIPHTHONG OE 	Latin-9
-019	189	11/13	LATIN SMALL DIPHTHONG oe 	Latin-9
-019	190	11/14	LATIN CAPITAL LETTER Y WITH DIAERESIS	Latin-9
-.sp 2
-032	160	10/00	CURRENCY ECU SIGN	Currency
-032	161	10/01	CURRENCY COLON SIGN	Currency
-032	162	10/02	CURRENCY CRUZEIRO SIGN	Currency
-032	163	10/03	CURRENCY FRENCH FRANC SIGN	Currency
-032	164	10/04	CURRENCY LIRA SIGN	Currency
-032	165	10/05	CURRENCY MILL SIGN	Currency
-032	166	10/06	CURRENCY NAIRA SIGN	Currency
-032	167	10/07	CURRENCY PESETA SIGN	Currency
-032	168	10/08	CURRENCY RUPEE SIGN	Currency
-032	169	10/09	CURRENCY WON SIGN	Currency
-032	170	10/10	CURRENCY NEW SHEQEL SIGN	Currency
-032	171	10/11	CURRENCY DONG SIGN	Currency
-032	172	10/12	CURRENCY EURO SIGN	Currency
-.sp 2
-253	001	00/01	3270 DUPLICATE	3270
-253	002	00/02	3270 FIELDMARK	3270
-253	003	00/03	3270 RIGHT2	3270
-253	004	00/04	3270 LEFT2	3270
-253	005	00/05	3270 BACKTAB	3270
-253	006	00/06	3270 ERASEEOF	3270
-253	007	00/07	3270 ERASEINPUT	3270
-253	008	00/08	3270 RESET	3270
-253	009	00/09	3270 QUIT	3270
-253	010	00/10	3270 PA1	3270
-253	011	00/11	3270 PA2	3270
-253	012	00/12	3270 PA3	3270
-253	013	00/13	3270 TEST	3270
-253	014	00/14	3270 ATTN	3270
-253	015	00/15	3270 CURSORBLINK	3270
-253	016	01/01	3270 ALTCURSOR	3270
-253	017	01/02	3270 KEYCLICK	3270
-253	018	01/03	3270 JUMP	3270
-253	019	01/04	3270 IDENT	3270
-253	020	01/05	3270 RULE	3270
-253	021	01/06	3270 COPY	3270
-253	022	01/07	3270 PLAY	3270
-253	023	01/08	3270 SETUP	3270
-253	024	01/09	3270 RECORD	3270
-253	025	01/10	3270 CHANGESCREEN	3270
-253	026	01/11	3270 DELETEWORD	3270
-253	027	01/12	3270 EXSELECT	3270
-253	028	01/13	3270 CURSORSELECT	3270
-253	029	01/14	3270 PRINTSCREEN	3270
-253	030	01/15	3270 ENTER	3270
-.sp 2
-255	008	00/08	BACKSPACE, BACK SPACE, BACK CHAR	Keyboard
-255	009	00/09	TAB	Keyboard
-255	010	00/10	LINEFEED, LF	Keyboard
-255	011	00/11	CLEAR	Keyboard
-255	013	00/13	RETURN, ENTER	Keyboard
-255	019	01/03	PAUSE, HOLD	Keyboard
-255	020	01/04	SCROLL LOCK	Keyboard
-255	021	01/05	SYS REQ, SYSTEM REQUEST	Keyboard
-255	027	01/11	ESCAPE	Keyboard
-255	032	02/00	MULTI-KEY CHARACTER PREFACE	Keyboard
-255	033	02/01	KANJI, KANJI CONVERT	Keyboard
-255	034	02/02	MUHENKAN	Keyboard
-255	035	02/03	HENKAN MODE	Keyboard
-255	036	02/04	ROMAJI	Keyboard
-255	037	02/05	HIRAGANA	Keyboard
-255	038	02/06	KATAKANA	Keyboard
-255	039	02/07	HIRAGANA/KATAKANA TOGGLE	Keyboard
-255	040	02/08	ZENKAKU	Keyboard
-255	041	02/09	HANKAKU	Keyboard
-255	042	02/10	ZENKAKU/HANKAKU TOGGLE	Keyboard
-255	043	02/11	TOUROKU	Keyboard
-255	044	02/12	MASSYO	Keyboard
-255	045	02/13	KANA LOCK	Keyboard
-255	046	02/14	KANA SHIFT	Keyboard
-255	047	02/15	EISU SHIFT	Keyboard
-255	048	03/00	EISU TOGGLE	Keyboard
-255	049	03/01	HANGUL START/STOP (TOGGLE)	Keyboard
-255	050	03/02	HANGUL START	Keyboard
-255	051	03/03	HANGUL END, ENGLISH START	Keyboard
-255	052	03/04	START HANGUL/HANJA CONVERSION	Keyboard
-255	053	03/05	HANGUL JAMO MODE	Keyboard
-255	054	03/06	HANGUL ROMAJA MODE	Keyboard
-255	055	03/07	HANGUL CODE INPUT	Keyboard
-255	056	03/08	HANGUL JEONJA MODE	Keyboard
-255	057	03/09	HANGUL BANJA MODE	Keyboard
-255	058	03/10	HANGUL PREHANJA CONVERSION	Keyboard
-255	059	03/11	HANGUL POSTHANJA CONVERSION	Keyboard
-255	060	03/12	HANGUL SINGLE CANDIDATE	Keyboard
-255	061	03/13	HANGUL MULTIPLE CANDIDATE	Keyboard
-255	062	03/14	HANGUL PREVIOUS CANDIDATE	Keyboard
-255	063	03/15	HANGUL SPECIAL SYMBOLS	Keyboard
-255	080	05/00	HOME	Keyboard
-255	081	05/01	LEFT, MOVE LEFT, LEFT ARROW	Keyboard
-255	082	05/02	UP, MOVE UP, UP ARROW	Keyboard
-255	083	05/03	RIGHT, MOVE RIGHT, RIGHT ARROW	Keyboard
-255	084	05/04	DOWN, MOVE DOWN, DOWN ARROW	Keyboard
-255	085	05/05	PRIOR, PREVIOUS, PAGE UP	Keyboard
-255	086	05/06	NEXT, PAGE DOWN	Keyboard
-255	087	05/07	END, EOL	Keyboard
-255	088	05/08	BEGIN, BOL	Keyboard
-255	096	06/00	SELECT, MARK	Keyboard
-255	097	06/01	PRINT	Keyboard
-255	098	06/02	EXECUTE, RUN, DO	Keyboard
-255	099	06/03	INSERT, INSERT HERE	Keyboard
-255	101	06/05	UNDO, OOPS	Keyboard
-255	102	06/06	REDO, AGAIN	Keyboard
-255	103	06/07	MENU	Keyboard
-255	104	06/08	FIND, SEARCH	Keyboard
-255	105	06/09	CANCEL, STOP, ABORT, EXIT	Keyboard
-255	106	06/10	HELP	Keyboard
-255	107	06/11	BREAK	Keyboard
-255	126	07/14	MODE SWITCH, SCRIPT SWITCH, CHARACTER SET SWITCH	Keyboard
-255	127	07/15	NUM LOCK	Keyboard
-255	128	08/00	KEYPAD SPACE	Keyboard
-255	137	08/09	KEYPAD TAB	Keyboard
-255	141	08/13	KEYPAD ENTER	Keyboard
-255	145	09/01	KEYPAD F1, PF1, A	Keyboard
-255	146	09/02	KEYPAD F2, PF2, B	Keyboard
-255	147	09/03	KEYPAD F3, PF3, C	Keyboard
-255	148	09/04	KEYPAD F4, PF4, D	Keyboard
-255	149	09/05	KEYPAD HOME	Keyboard
-255	150	09/06	KEYPAD LEFT	Keyboard
-255	151	09/07	KEYPAD UP	Keyboard
-255	152	09/08	KEYPAD RIGHT	Keyboard
-255	153	09/09	KEYPAD DOWN	Keyboard
-255	154	09/10	KEYPAD PRIOR, PAGE UP	Keyboard
-255	155	09/11	KEYPAD NEXT, PAGE DOWN	Keyboard
-255	156	09/12	KEYPAD END	Keyboard
-255	157	09/13	KEYPAD BEGIN	Keyboard
-255	158	09/14	KEYPAD INSERT	Keyboard
-255	159	09/15	KEYPAD DELETE	Keyboard
-255	170	10/10	KEYPAD MULTIPLICATION SIGN, ASTERISK	Keyboard
-255	171	10/11	KEYPAD PLUS SIGN	Keyboard
-255	172	10/12	KEYPAD SEPARATOR, COMMA	Keyboard
-255	173	10/13	KEYPAD MINUS SIGN, HYPHEN	Keyboard
-255	174	10/14	KEYPAD DECIMAL POINT, FULL STOP	Keyboard
-255	175	10/15	KEYPAD DIVISION SIGN, SOLIDUS	Keyboard
-255	176	11/00	KEYPAD DIGIT ZERO	Keyboard
-255	177	11/01	KEYPAD DIGIT ONE	Keyboard
-255	178	11/02	KEYPAD DIGIT TWO	Keyboard
-255	179	11/03	KEYPAD DIGIT THREE	Keyboard
-255	180	11/04	KEYPAD DIGIT FOUR	Keyboard
-255	181	11/05	KEYPAD DIGIT FIVE	Keyboard
-255	182	11/06	KEYPAD DIGIT SIX	Keyboard
-255	183	11/07	KEYPAD DIGIT SEVEN	Keyboard
-255	184	11/08	KEYPAD DIGIT EIGHT	Keyboard
-255	185	11/09	KEYPAD DIGIT NINE	Keyboard
-255	189	11/13	KEYPAD EQUALS SIGN	Keyboard
-255	190	11/14	F1	Keyboard
-255	191	11/15	F2	Keyboard
-255	192	12/00	F3	Keyboard
-255	193	12/01	F4	Keyboard
-255	194	12/02	F5	Keyboard
-255	195	12/03	F6	Keyboard
-255	196	12/04	F7	Keyboard
-255	197	12/05	F8	Keyboard
-255	198	12/06	F9	Keyboard
-255	199	12/07	F10	Keyboard
-255	200	12/08	F11, L1	Keyboard
-255	201	12/09	F12, L2	Keyboard
-255	202	12/10	F13, L3	Keyboard
-255	203	12/11	F14, L4	Keyboard
-255	204	12/12	F15, L5	Keyboard
-255	205	12/13	F16, L6	Keyboard
-255	206	12/14	F17, L7	Keyboard
-255	207	12/15	F18, L8	Keyboard
-255	208	13/00	F19, L9	Keyboard
-255	209	13/01	F20, L10	Keyboard
-255	210	13/02	F21, R1	Keyboard
-255	211	13/03	F22, R2	Keyboard
-255	212	13/04	F23, R3	Keyboard
-255	213	13/05	F24, R4	Keyboard
-255	214	13/06	F25, R5	Keyboard
-255	215	13/07	F26, R6	Keyboard
-255	216	13/08	F27, R7	Keyboard
-255	217	13/09	F28, R8	Keyboard
-255	218	13/10	F29, R9	Keyboard
-255	219	13/11	F30, R10	Keyboard
-255	220	13/12	F31, R11	Keyboard
-255	221	13/13	F32, R12	Keyboard
-255	222	13/14	F33, R13	Keyboard
-255	223	13/15	F34, R14	Keyboard
-255	224	14/00	F35, R15	Keyboard
-255	225	14/01	LEFT SHIFT	Keyboard
-255	226	14/02	RIGHT SHIFT	Keyboard
-255	227	14/03	LEFT CONTROL	Keyboard
-255	228	14/04	RIGHT CONTROL	Keyboard
-255	229	14/05	CAPS LOCK	Keyboard
-255	230	14/06	SHIFT LOCK	Keyboard
-255	231	14/07	LEFT META	Keyboard
-255	232	14/08	RIGHT META	Keyboard
-255	233	14/09	LEFT ALT	Keyboard
-255	234	14/10	RIGHT ALT	Keyboard
-255	235	14/11	LEFT SUPER	Keyboard
-255	236	14/12	RIGHT SUPER	Keyboard
-255	237	14/13	LEFT HYPER	Keyboard
-255	238	14/14	RIGHT HYPER	Keyboard
-255	255	15/15	DELETE, RUBOUT	Keyboard
+#x20A0	\-	CURRENCY ECU SIGN	Currency
+#x20A1	\-	CURRENCY COLON SIGN	Currency
+#x20A2	\-	CURRENCY CRUZEIRO SIGN	Currency
+#x20A3	\-	CURRENCY FRENCH FRANC SIGN	Currency
+#x20A4	\-	CURRENCY LIRA SIGN	Currency
+#x20A5	\-	CURRENCY MILL SIGN	Currency
+#x20A6	\-	CURRENCY NAIRA SIGN	Currency
+#x20A7	\-	CURRENCY PESETA SIGN	Currency
+#x20A8	\-	CURRENCY RUPEE SIGN	Currency
+#x20A9	\-	CURRENCY WON SIGN	Currency
+#x20AA	\-	CURRENCY NEW SHEQEL SIGN	Currency
+#x20AB	\-	CURRENCY DONG SIGN	Currency
+#x20AC	U+20AC	CURRENCY EURO SIGN	Currency
 .sp 6p
 _
 .TE

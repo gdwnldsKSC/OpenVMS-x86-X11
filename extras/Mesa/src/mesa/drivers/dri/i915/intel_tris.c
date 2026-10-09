@@ -63,9 +63,9 @@ do {								\
 #else
 #define COPY_DWORDS( j, vb, vertsize, v )	\
 do {						\
-   if (1) fprintf(stderr, "\n");	\
+   if (0) fprintf(stderr, "\n");	\
    for ( j = 0 ; j < vertsize ; j++ ) {		\
-      if (1) fprintf(stderr, "   -- v(%d): %x/%f\n",j,	\
+      if (0) fprintf(stderr, "   -- v(%d): %x/%f\n",j,	\
 	      ((GLuint *)v)[j],			\
 	      ((GLfloat *)v)[j]);		\
       vb[j] = ((GLuint *)v)[j];			\
@@ -642,7 +642,7 @@ void intelChooseRenderState(GLcontext *ctx)
    TNLcontext *tnl = TNL_CONTEXT(ctx);
    intelContextPtr intel = INTEL_CONTEXT(ctx);
    GLuint flags = ctx->_TriangleCaps;
-   struct fragment_program *program = ctx->FragmentProgram.Current;
+   struct fragment_program *program = ctx->FragmentProgram._Current;
    GLboolean have_wpos = (program && (program->InputsRead & FRAG_BIT_WPOS));
    GLuint index = 0;
 

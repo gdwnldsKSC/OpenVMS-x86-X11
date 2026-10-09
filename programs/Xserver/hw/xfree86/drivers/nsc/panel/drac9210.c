@@ -1,7 +1,7 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/panel/drac9210.c,v 1.1 2002/12/10 15:12:28 alanh Exp $ */
 /*
  * $Workfile: drac9210.c $
- * $Revision$
+ * $Revision: 1.3 $
  *
  * File Contents: This file contains the panel library files to the 
  *                platforms with 9210, and 9211 support.

@@ -15,9 +15,9 @@
 @SET_MAKE@
 
 # 
-#  $Id$
+#  $Id: Makefile.in,v 1.3 2005/06/28 01:01:02 alanc Exp $
 # 
-#  Copyright © 2003 Keith Packard
+#  Copyright Â© 2003 Keith Packard
 # 
 #  Permission to use, copy, modify, distribute, and sell this software and its
 #  documentation for any purpose is hereby granted without fee, provided that
@@ -71,10 +71,13 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
+CC_FOR_BUILD = @CC_FOR_BUILD@
 CFLAGS = @CFLAGS@
 CONFDIR = @CONFDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CROSS_COMPILING_FALSE = @CROSS_COMPILING_FALSE@
+CROSS_COMPILING_TRUE = @CROSS_COMPILING_TRUE@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -84,6 +87,9 @@ DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
 DOCDIR = @DOCDIR@
+DOCMAN3 = @DOCMAN3@
+
+DOCSRC = @DOCSRC@
 ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -92,6 +98,7 @@ EGREP = @EGREP@
 ENABLE_DOCS_FALSE = @ENABLE_DOCS_FALSE@
 ENABLE_DOCS_TRUE = @ENABLE_DOCS_TRUE@
 EXEEXT = @EXEEXT@
+EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
 EXPAT_CFLAGS = @EXPAT_CFLAGS@
 EXPAT_LIBS = @EXPAT_LIBS@
 F77 = @F77@
@@ -119,6 +126,9 @@ LT_CURRENT = @LT_CURRENT@
 LT_CURRENT_MINUS_AGE = @LT_CURRENT_MINUS_AGE@
 LT_REVISION = @LT_REVISION@
 LT_VERSION_INFO = @LT_VERSION_INFO@
+MAINT = @MAINT@
+MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
+MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
 MS_LIB_AVAILABLE_FALSE = @MS_LIB_AVAILABLE_FALSE@
 MS_LIB_AVAILABLE_TRUE = @MS_LIB_AVAILABLE_TRUE@
@@ -138,7 +148,10 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USEDOCBOOK_FALSE = @USEDOCBOOK_FALSE@
+USEDOCBOOK_TRUE = @USEDOCBOOK_TRUE@
 VERSION = @VERSION@
+WARN_CFLAGS = @WARN_CFLAGS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_AS = @ac_ct_AS@
 ac_ct_CC = @ac_ct_CC@
@@ -185,24 +198,61 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+SUBDIRS = fontconfig fc-case fc-lang fc-glyphname src \
+	fc-cache fc-list fc-match conf.d $(DOCSRC) test
 
-SUBDIRS = fontconfig fc-lang src fc-cache fc-list doc test
+
+DEBIAN = \
+	debian/changelog \
+	debian/compat \
+	debian/control \
+	debian/copyright \
+	debian/fontconfig.config \
+	debian/fontconfig.defoma \
+	debian/fontconfig.dirs \
+	debian/fontconfig.install \
+	debian/fontconfig.postinst \
+	debian/fontconfig.postrm \
+	debian/fontconfig.templates \
+	debian/fontconfig-udeb.install \
+	debian/libfontconfig1-dev.install \
+	debian/libfontconfig1.install \
+	debian/local.conf.md5sum \
+	debian/README.Debian \
+	debian/rules \
+	debian/po/POTFILES.in \
+	debian/po/templates.pot \
+	debian/po/cs.po \
+	debian/po/da.po \
+	debian/po/de.po \
+	debian/po/es.po \
+	debian/po/fr.po \
+	debian/po/ja.po \
+	debian/po/nl.po \
+	debian/po/pt_BR.po \
+	debian/po/pt.po \
+	debian/po/tr.po \
+	debian/po/zh_CN.po
+
 
 EXTRA_DIST = \
         fontconfig.pc.in \
         fonts.conf.in \
 	fonts.dtd \
-	local.conf \
         fontconfig.spec.in \
         fontconfig.spec \
-	fontconfig-zip.in
+	fontconfig-zip.in \
+	$(DEBIAN)
 
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = fontconfig.pc
 
 configdir = $(CONFDIR)
-config_DATA = fonts.conf fonts.dtd
+config_DATA = fonts.dtd
+
+@CROSS_COMPILING_TRUE@RUN_FC_CACHE_TEST = false
+@CROSS_COMPILING_FALSE@RUN_FC_CACHE_TEST = test -z "$(DESTDIR)"
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -231,18 +281,18 @@ all: config.h
 
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno
-$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  Makefile
-Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)
 
 $(top_builddir)/config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
-$(srcdir)/configure:  $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
+$(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
 	cd $(srcdir) && $(AUTOCONF)
 
-$(ACLOCAL_M4):  configure.in 
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ configure.in 
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 
 config.h: stamp-h1
@@ -255,7 +305,7 @@ stamp-h1: $(srcdir)/config.h.in $(top_builddir)/config.status
 	@rm -f stamp-h1
 	cd $(top_builddir) && $(SHELL) ./config.status config.h
 
-$(srcdir)/config.h.in:  $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+$(srcdir)/config.h.in: @MAINTAINER_MODE_TRUE@ $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOHEADER)
 	touch $(srcdir)/config.h.in
 
@@ -456,7 +506,7 @@ distcleancheck_listfiles = find . -type f -print
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkinstalldirs) $(distdir)/. $(distdir)/doc $(distdir)/src
+	$(mkinstalldirs) $(distdir)/. $(distdir)/debian $(distdir)/debian/po $(distdir)/doc $(distdir)/src
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -643,7 +693,7 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-configDATA uninstall-info-am \
+uninstall-am: uninstall-configDATA uninstall-info-am uninstall-local \
 	uninstall-pkgconfigDATA
 
 uninstall-info: uninstall-info-recursive
@@ -666,21 +716,58 @@ uninstall-info: uninstall-info-recursive
 	mostlyclean-libtool mostlyclean-recursive pdf pdf-am \
 	pdf-recursive ps ps-am ps-recursive tags tags-recursive \
 	uninstall uninstall-am uninstall-configDATA uninstall-info-am \
-	uninstall-info-recursive uninstall-pkgconfigDATA \
-	uninstall-recursive
+	uninstall-info-recursive uninstall-local \
+	uninstall-pkgconfigDATA uninstall-recursive
 
 
 install-data-local:
-	if [ -f $(DESTDIR)$(configdir)/local.conf ]; then \
-	  echo "not overwriting existing $(DESTDIR)$(configdir)/local.conf"; \
-	else if [ -f $(srcdir)/local.conf ]; then \
-	  echo " $(INSTALL_DATA) $(srcdir)/local.conf $(DESTDIR)$(configdir)/local.conf"; \
-	  $(INSTALL_DATA) $(srcdir)/local.conf $(DESTDIR)$(configdir)/local.conf; \
-	else if [ -f local.conf ]; then \
-	  echo " $(INSTALL_DATA) local.conf $(DESTDIR)$(configdir)/local.conf"; \
-	  $(INSTALL_DATA) local.conf $(DESTDIR)$(configdir)/local.conf; \
-	fi; fi; fi
-	if [ x$(DESTDIR) = x ]; then fc-cache/fc-cache -f -v; fi
+	$(mkinstalldirs) $(DESTDIR)$(configdir)
+	if [ -f $(DESTDIR)$(configdir)/fonts.conf ]; then \
+	  echo "backing up existing $(DESTDIR)$(configdir)/fonts.conf"; \
+	  mv $(DESTDIR)$(configdir)/fonts.conf $(DESTDIR)$(configdir)/fonts.conf.bak; \
+	fi
+	if [ -f $(srcdir)/fonts.conf ]; then \
+	  echo " $(INSTALL_DATA) $(srcdir)/fonts.conf $(DESTDIR)$(configdir)/fonts.conf"; \
+	  $(INSTALL_DATA) $(srcdir)/fonts.conf $(DESTDIR)$(configdir)/fonts.conf; \
+	else if [ -f fonts.conf ]; then \
+	  echo " $(INSTALL_DATA) fonts.conf $(DESTDIR)$(configdir)/fonts.conf"; \
+	  $(INSTALL_DATA) fonts.conf $(DESTDIR)$(configdir)/fonts.conf; \
+	fi; fi
+	if $(RUN_FC_CACHE_TEST); then \
+	    echo " fc-cache/fc-cache -f -v"; \
+	    fc-cache/fc-cache -f -v; \
+	else \
+	    echo "***"; \
+	    echo "*** Warning: fonts.cache not built"; \
+	    echo "***"; \
+	    echo "*** Generate this file manually on host system using fc-cache"; \
+	    echo "***"; \
+	fi
+
+uninstall-local:
+	if [ -f $(srcdir)/fonts.conf ]; then \
+	  if cmp -s $(srcdir)/fonts.conf $(DESTDIR)$(configdir)/fonts.conf; then \
+	     echo " uninstall standard $(DESTDIR)$(configdir)/fonts.conf"; \
+	     rm -f $(DESTDIR)$(configdir)/fonts.conf; \
+	  fi; \
+	else if [ -f fonts.conf ]; then \
+	  if cmp -s fonts.conf $(DESTDIR)$(configdir)/fonts.conf; then \
+	     echo " uninstall standard $(DESTDIR)$(configdir)/fonts.conf"; \
+	     rm -f $(DESTDIR)$(configdir)/fonts.conf; \
+	  fi; \
+	fi; fi
+
+debuild debuild-signed: debuild-dirs
+	(cd $(distdir)/debian && debuild)
+
+debuild-unsigned: debuild-dirs
+	(cd $(distdir)/debian && debuild -us -uc)
+
+debuild-dirs: distdir
+	rm -f $(PACKAGE)_$(VERSION).orig.tar.gz
+	rm -rf $(distdir).orig
+	cp -a $(distdir) $(distdir).orig
+	rm -rf $(distdir).orig/debian
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

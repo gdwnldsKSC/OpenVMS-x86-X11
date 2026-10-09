@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xaw/TextAction.c,v 3.46tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <X11/Xos.h>		/* for select() and struct timeval */

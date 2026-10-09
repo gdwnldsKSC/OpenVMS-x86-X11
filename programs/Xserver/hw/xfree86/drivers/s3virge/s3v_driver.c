@@ -24,6 +24,11 @@ Except as contained in this notice, the name of the XFree86 Project shall not
 be used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from the XFree86 Project.
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86Resources.h"
 /* Needed by Resources Access Control (RAC) */
 #include "xf86RAC.h"
@@ -54,7 +59,7 @@ in this Software without prior written authorization from the XFree86 Project.
 
 #include "globals.h"
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 #ifndef USE_INT10
 #define USE_INT10 0
@@ -132,7 +137,7 @@ static int pix24bpp = 0;
  * this DriverRec be an upper-case version of the driver name.
  */
 
-DriverRec S3VIRGE =
+_X_EXPORT DriverRec S3VIRGE =
 {
     S3VIRGE_DRIVER_VERSION,
     S3VIRGE_DRIVER_NAME,
@@ -344,18 +349,6 @@ static const char *int10Symbols[] = {
 #endif
 
 #ifdef XFree86LOADER
-static const char *cfbSymbols[] = {
-    "cfbScreenInit",
-    "cfb16ScreenInit",
-    "cfb24ScreenInit",
-    "cfb24_32ScreenInit",
-    "cfb32ScreenInit",
-    "cfBresS",
-    "cfb16BresS",
-    "cfb24BresS",
-    "cfb32BresS",
-    NULL
-};
 
 static MODULESETUPPROTO(s3virgeSetup);
 
@@ -379,7 +372,11 @@ static XF86ModuleVersionInfo S3VVersRec =
  *
  * Its name has to be the driver name followed by ModuleData.
  */
-XF86ModuleData s3virgeModuleData = { &S3VVersRec, s3virgeSetup, NULL };
+_X_EXPORT XF86ModuleData s3virgeModuleData = {
+    &S3VVersRec,
+    s3virgeSetup,
+    NULL
+};
 
 static pointer
 s3virgeSetup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -399,13 +396,12 @@ s3virgeSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 	 * Tell the loader about symbols from other modules that this module
 	 * might refer to.
 	 */
-	LoaderRefSymLists(vgahwSymbols, cfbSymbols, xaaSymbols,
-			  ramdacSymbols, ddcSymbols, i2cSymbols,
+	LoaderRefSymLists(vgahwSymbols, xaaSymbols, ramdacSymbols,
+			  ddcSymbols, i2cSymbols,
 #if USE_INT10
 			  int10Symbols,
 #endif
-			  vbeSymbols, shadowSymbols, 
-			  fbSymbols, NULL);
+			  vbeSymbols, shadowSymbols, fbSymbols, NULL);
 			  
 	/*
 	 * The return value must be non-NULL on success even though there
@@ -872,17 +868,11 @@ S3VPreInit(ScrnInfoPtr pScrn, int flags)
 	ps3v->hwcursor = FALSE;
     }
 
+    ps3v->UseFB = TRUE;
+    xf86DrvMsg(pScrn->scrnIndex, X_DEFAULT, "Using fb.\n");
     if (xf86IsOptionSet(ps3v->Options, OPTION_FB_DRAW)) 
-      {
-	if (xf86GetOptValBool(ps3v->Options, OPTION_FB_DRAW ,&ps3v->UseFB))
-	  xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Using %s.\n",
-		     ps3v->UseFB ? "fb (not cfb)" : "cfb (not fb)");
-      }
-    else
-      {
-	ps3v->UseFB = TRUE;
-	xf86DrvMsg(pScrn->scrnIndex, X_DEFAULT, "Using fb.\n");
-      }
+        xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
+	           "UseFB option is deprecated.\n");
 
     if (xf86IsOptionSet(ps3v->Options, OPTION_MX_CR3A_FIX)) 
       {
@@ -1511,38 +1501,6 @@ S3VPreInit(ScrnInfoPtr pScrn, int flags)
 	      return FALSE;
 	  }	       
 	xf86LoaderReqSymLists(fbSymbols, NULL);       
-      }
-    else
-      {
-	switch (pScrn->bitsPerPixel) {
-	case 8:
-	  mod = "cfb";
-	  reqSym = "cfbScreenInit";
-	  break;
-	case 16:
-	  mod = "cfb16";
-	  reqSym = "cfb16ScreenInit";
-	  break;
-	case 24:
-	  if (pix24bpp == 24) {
-	    mod = "cfb24";
-	    reqSym = "cfb24ScreenInit";
-	  } else {
-	    mod = "xf24_32bpp";
-	    reqSym = "cfb24_32ScreenInit";
-	  }
-	  break;
-	case 32:
-	  mod = "cfb32";
-	  reqSym = "cfb32ScreenInit";
-	  break;
-	}
-	if (mod && xf86LoadSubModule(pScrn, mod) == NULL) {
-	    S3VFreeRec(pScrn);
-	    return FALSE;
-	}	       
-    
-	xf86LoaderReqSymbols(reqSym, NULL);
       }
 
     /* Load XAA if needed */
@@ -2529,7 +2487,7 @@ S3VScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
      * function.  If not, the visuals will need to be setup before calling
      * a fb ScreenInit() function and fixed up after.
      *
-     * For most PC hardware at depths >= 8, the defaults that cfb uses
+     * For most PC hardware at depths >= 8, the defaults that fb uses
      * are not appropriate.  In this driver, we fixup the visuals after.
      */
 
@@ -2742,49 +2700,6 @@ S3VInternalScreenInit( int scrnIndex, ScreenPtr pScreen)
 	  break;
 	}
     }
-  else
-    {
-      xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Using CFB\n");
-      switch (pScrn->bitsPerPixel) {
-      case 8:
-	ret = cfbScreenInit(pScreen, FBStart,
-			    width,height,
-			    pScrn->xDpi, pScrn->yDpi,
-			    displayWidth);
-	break;
-      case 16:
-	ret = cfb16ScreenInit(pScreen, FBStart,
-			      width,height,
-			      pScrn->xDpi, pScrn->yDpi,
-			      displayWidth);
-	break;
-      case 24:
-	if (pix24bpp ==24) {
-	  ret = cfb24ScreenInit(pScreen, FBStart,
-			    width,height,
-				  pScrn->xDpi, pScrn->yDpi,
-				  displayWidth);
-	} else {
-	  ret = cfb24_32ScreenInit(pScreen, FBStart,
-				     width,height,
-				     pScrn->xDpi, pScrn->yDpi,
-				     displayWidth);
-	}
-	break;
-      case 32:
-	ret = cfb32ScreenInit(pScreen, FBStart,
-			      width,height,
-			      pScrn->xDpi, pScrn->yDpi,
-			      displayWidth);
-	break;
-      default:
-	xf86DrvMsg(scrnIndex, X_ERROR,
-		   "Internal error: invalid bpp (%d) in S3VScreenInit\n",
-		   pScrn->bitsPerPixel);
-	ret = FALSE;
-	break;
-      } /*switch*/
-    } /*if(fb)*/
   return ret;
 }
 
@@ -3775,7 +3690,7 @@ S3VEnableMmio(ScrnInfoPtr pScrn)
 #if 1
   /*
    * set linear base register to the PCI register values
-   * some DX chipsets don´t seem to do it automatically
+   * some DX chipsets don't seem to do it automatically
    * (EE 06/03/99)
    */
   outb(vgaCRIndex, 0x59);         /*@@@EE*/

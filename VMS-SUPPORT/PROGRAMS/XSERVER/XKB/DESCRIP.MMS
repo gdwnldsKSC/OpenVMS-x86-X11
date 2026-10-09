@@ -1,7 +1,7 @@
 ! Complete ordinary static xkb library, including the X Input event source.
 ! Upstream linked sources are copied byte-for-byte into the module output.
 ! Generic DDX objects are used; optional XFree86 action variants are excluded.
-XKB_HEADERS = $(DIX_HEADERS), $(OUT).INCLUDE.X11]KEYSYM.H, -
+XKB_HEADERS = $(DIX_HEADERS), $(XTRANS_HEADERS), $(OUT).INCLUDE.X11]KEYSYM.H, -
     $(OUT).INCLUDE.X11]KEYSYMDEF.H, -
     $(OUT).INCLUDE.X11]XOS_R.H, -
     $(OUT).INCLUDE.X11.EXTENSIONS]XI.H, -
@@ -30,6 +30,7 @@ XKB_CFLAGS = $(CFLAGS)/WARN=(ENABLE=LEVEL4,DISABLE=EMBEDCOMMENT)
 ! Same-buffer lengths and array indices retain upstream int-sized counts.
 XKB_COUNT_CFLAGS = $(CFLAGS)/WARN=(ENABLE=LEVEL4,DISABLE=(EMBEDCOMMENT,MAYLOSEDATA3))
 XKB_PATH_DEFINES = XKB_BASE_DIRECTORY=""""""$(XKB_CONFIG_ROOT)"""""", -
+    XKB_BIN_DIRECTORY=""""""$(XKB_BIN_DIRECTORY)"""""", -
     XKB_DFLT_RULES_FILE=""""""$(XKB_RULES)"""""",XKB_DFLT_KB_MODEL=""""""$(XKB_MODEL)"""""", -
     XKB_DFLT_KB_LAYOUT=""""""$(XKB_LAYOUT)"""""",XKM_OUTPUT_DIR=""""""$(XKM_OUTPUT_DIR)"""""", -
     _PATH_VARTMP=""""""$(XKM_OUTPUT_DIR)""""""

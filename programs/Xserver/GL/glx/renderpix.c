@@ -35,6 +35,10 @@
 */
 
 #define NEED_REPLIES
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "glxserver.h"
 #include "unpack.h"
 #include "g_disptab.h"
@@ -297,8 +301,9 @@ void __glXDisp_SeparableFilter2D(GLbyte *pc)
     /* XXX check this usage - internal code called
     ** a version without the packing parameters
     */
-    image1len = __glXImageSize(hdr->format, hdr->type, hdr->width, 1,
-			       hdr->rowLength, hdr->skipRows, hdr->alignment);
+    image1len = __glXImageSize(hdr->format, hdr->type, 0, hdr->width, 1, 1,
+			       0, hdr->rowLength, 0, hdr->skipRows,
+			       hdr->alignment);
     image1len = __GLX_PAD(image1len);
 
     glSeparableFilter2D(hdr->target, hdr->internalformat,

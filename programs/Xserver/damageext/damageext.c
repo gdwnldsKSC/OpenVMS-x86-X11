@@ -1,7 +1,7 @@
 /*
- * $Id: damageext.c,v 1.6 2003/12/02 01:59:38 keithp Exp $
+ * $Id: damageext.c,v 1.6 2005/07/03 07:37:35 daniels Exp $
  *
- * Copyright © 2002 Keith Packard
+ * Copyright Â© 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -22,9 +22,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
 #endif
+
 #include "damageextint.h"
 
 unsigned char	DamageReqCode;

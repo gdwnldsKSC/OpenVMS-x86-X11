@@ -1,11 +1,15 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/os-support/linux/lnx_axp.c,v 1.3 2001/02/15 11:03:56 alanh Exp $ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <stdio.h>
-#include "X.h"
+#include <X11/X.h>
 #include "os.h"
 #include "xf86.h"
 #include "xf86Priv.h"
-#include "xf86Axp.h"
+#include "shared/xf86Axp.h"
 
 axpDevice lnxGetAXP(void);
 

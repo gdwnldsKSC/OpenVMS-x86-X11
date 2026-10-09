@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/Xext/security.c,v 1.2 2004/04/23 18:44:41 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/Xext/security.c,v 1.5 2005/07/03 07:01:04 daniels Exp $ */
 /* $Xorg: security.c,v 1.4 2001/02/09 02:04:32 xorgcvs Exp $ */
 /*
 
@@ -27,6 +27,10 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/programs/Xserver/Xext/security.c,v 1.16tsi Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "dixstruct.h"
 #include "extnsionst.h"
 #include "windowstr.h"
@@ -36,19 +40,19 @@ in this Software without prior written authorization from The Open Group.
 #include "colormapst.h"
 #include "propertyst.h"
 #define _SECURITY_SERVER
-#include "securstr.h"
+#include <X11/extensions/securstr.h>
 #include <assert.h>
 #include <stdarg.h>
 #ifdef LBX
 #define _XLBX_SERVER_
-#include "XLbx.h"
+#include <X11/extensions/XLbx.h>
 extern unsigned char LbxReqCode;
 #endif
 #ifdef XAPPGROUP
-#include "Xagsrv.h"
+#include <X11/extensions/Xagsrv.h>
 #endif
 #include <stdio.h>  /* for file reading operations */
-#include "Xatom.h"  /* for XA_STRING */
+#include <X11/Xatom.h>  /* for XA_STRING */
 
 #ifndef DEFAULTPOLICYFILE
 # define DEFAULTPOLICYFILE NULL

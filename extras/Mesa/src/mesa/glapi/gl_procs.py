@@ -1,6 +1,6 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 
-# (C) Copyright IBM Corporation 2004
+# (C) Copyright IBM Corporation 2004, 2005
 # All Rights Reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,20 +25,16 @@
 # Authors:
 #    Ian Romanick <idr@us.ibm.com>
 
-from xml.sax import saxutils
-from xml.sax import make_parser
-from xml.sax.handler import feature_namespaces
-
 import license
 import gl_XML
 import sys, getopt
 
-class PrintGlProcs(gl_XML.FilterGLAPISpecBase):
-	name = "gl_procs.py (from Mesa)"
-
+class PrintGlProcs(gl_XML.gl_print_base):
 	def __init__(self, long_strings):
+		gl_XML.gl_print_base.__init__(self)
+
 		self.long_strings = long_strings
-		gl_XML.FilterGLAPISpecBase.__init__(self)
+		self.name = "gl_procs.py (from Mesa)"
 		self.license = license.bsd_license_template % ( \
 """Copyright (C) 1999-2001  Brian Paul   All Rights Reserved.
 (C) Copyright IBM Corporation 2004""", "BRIAN PAUL, IBM")
@@ -70,37 +66,43 @@ class PrintGlProcs(gl_XML.FilterGLAPISpecBase):
 		print '#undef NAME_FUNC_OFFSET'
 		return
 
-	def printFunctionString(self, f):
+	def printFunctionString(self, name):
 		if self.long_strings:
-			print '    "gl%s\\0"' % (f.name)
+			print '    "gl%s\\0"' % (name)
 		else:
 			print "    'g','l',",
-			for c in f.name:
+			for c in name:
 				print "'%s'," % (c),
 			
 			print "'\\0',"
 
-	def printFunctionOffset(self, f, offset_of_name):
-		print '    NAME_FUNC_OFFSET( % 5u, gl%s, _gloffset_%s ),' % (offset_of_name, f.name, f.real_name)
 
-
-	def printFunctions(self):
+	def printBody(self, api):
 		print ''
 		if self.long_strings:
 			print 'static const char gl_string_table[] ='
 		else:
 			print 'static const char gl_string_table[] = {'
 
-		keys = self.functions.keys()
-		keys.sort()
-		for k in keys:
-			if k < 0: continue
-			self.printFunctionString(self.functions[k])
+		base_offset = 0
+		table = []
+		for func in api.functionIterateByOffset():
+			self.printFunctionString( func.name )
+			table.append((base_offset, func.name, func.name))
 
-		keys.reverse()
-		for k in keys:
-			if k >= -1: continue
-			self.printFunctionString(self.functions[k])
+			# The length of the function's name, plus 2 for "gl",
+			# plus 1 for the NUL.
+
+			base_offset += len(func.name) + 3
+
+
+		for func in api.functionIterateByOffset():
+			for n in func.entry_points:
+				if n != func.name:
+					self.printFunctionString( n )
+					table.append((base_offset, n, func.name))
+					base_offset += len(n) + 3
+
 
 		if self.long_strings:
 			print '    ;'
@@ -110,27 +112,8 @@ class PrintGlProcs(gl_XML.FilterGLAPISpecBase):
 		print ''
 		print 'static const glprocs_table_t static_functions[] = {'
 
-		keys = self.functions.keys()
-		keys.sort()
-		base_offset = 0
-		for k in keys:
-			if k < 0: continue
-			self.printFunctionOffset(self.functions[k], base_offset)
-
-			# The length of the function's name, plus 2 for "gl",
-			# plus 1 for the NUL.
-
-			base_offset += len(self.functions[k].name) + 3
-
-		keys.reverse()
-		for k in keys:
-			if k >= -1: continue
-			self.printFunctionOffset(self.functions[k], base_offset)
-
-			# The length of the function's name, plus 2 for "gl",
-			# plus 1 for the NUL.
-
-			base_offset += len(self.functions[k].name) + 3
+		for (offset, disp_name, real_name) in table:
+			print '    NAME_FUNC_OFFSET( % 5u, gl%s, _gloffset_%s ),' % (offset, disp_name, real_name)
 
 		print '    NAME_FUNC_OFFSET( -1, NULL, 0 )'
 		print '};'
@@ -148,7 +131,7 @@ def show_usage():
 
 if __name__ == '__main__':
 	file_name = "gl_API.xml"
-    
+
 	try:
 		(args, trail) = getopt.getopt(sys.argv[1:], "f:m:")
 	except Exception,e:
@@ -166,14 +149,7 @@ if __name__ == '__main__':
 			else:
 				show_usage()
 
-	dh = PrintGlProcs( long_string )
+	api = gl_XML.parse_GL_API( file_name )
 
-	parser = make_parser()
-	parser.setFeature(feature_namespaces, 0)
-	parser.setContentHandler(dh)
-
-	f = open(file_name)
-
-	dh.printHeader()
-	parser.parse(f)
-	dh.printFooter()
+	printer = PrintGlProcs( long_string )
+	printer.Print( api )

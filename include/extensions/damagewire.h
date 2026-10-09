@@ -1,5 +1,5 @@
 /*
- * $Id: damagewire.h,v 1.1 2003/10/24 06:16:46 keithp Exp $
+ * $Id: damagewire.h,v 1.2 2004/07/29 19:29:55 stukreit Exp $
  *
  * Copyright © 2003 Keith Packard
  *

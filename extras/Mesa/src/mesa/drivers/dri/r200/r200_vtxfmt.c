@@ -58,6 +58,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "tnl/t_context.h"
 #include "tnl/t_array_api.h"
 
+#include "dispatch.h"
+
 static void r200VtxFmtFlushVertices( GLcontext *, GLuint );
 
 static void count_func( const char *name,  struct dynfn *l )
@@ -100,6 +102,8 @@ static void count_funcs( r200ContextPtr rmesa )
    count_func( "MultiTexCoord2fvARB", &rmesa->vb.dfn_cache.MultiTexCoord2fvARB );
    count_func( "MultiTexCoord1fARB", &rmesa->vb.dfn_cache.MultiTexCoord1fARB );
    count_func( "MultiTexCoord1fvARB", &rmesa->vb.dfn_cache.MultiTexCoord1fvARB );
+/*   count_func( "FogCoordfEXT", &rmesa->vb.dfn_cache.FogCoordfEXT );
+   count_func( "FogCoordfvEXT", &rmesa->vb.dfn_cache.FogCoordfvEXT );*/
 }
 
 
@@ -117,6 +121,10 @@ void r200_copy_to_current( GLcontext *ctx )
       ctx->Current.Attrib[VERT_ATTRIB_NORMAL][0] = rmesa->vb.normalptr[0];
       ctx->Current.Attrib[VERT_ATTRIB_NORMAL][1] = rmesa->vb.normalptr[1];
       ctx->Current.Attrib[VERT_ATTRIB_NORMAL][2] = rmesa->vb.normalptr[2];
+   }
+
+   if (rmesa->vb.vtxfmt_0 & R200_VTX_DISCRETE_FOG) {
+      ctx->Current.Attrib[VERT_ATTRIB_FOG][0] = rmesa->vb.fogptr[0];
    }
 
    switch( VTX_COLOR(rmesa->vb.vtxfmt_0, 0) ) {
@@ -208,7 +216,7 @@ static void flush_prims( r200ContextPtr rmesa )
    rmesa->tcl.vertex_format = rmesa->vb.vtxfmt_0;
    rmesa->tcl.aos_components[0] = &tmp;
    rmesa->tcl.nr_aos_components = 1;
-   rmesa->dma.flush = 0;
+   rmesa->dma.flush = NULL;
 
    /* Optimize the primitive list:
     */
@@ -401,35 +409,17 @@ static void VFMT_FALLBACK_OUTSIDE_BEGIN_END( const char *caller )
  * to look-up the table, and a specialized version of GL_CALL that used the
  * offset number instead of the name.
  */
-static void dispatch_texcoord( GLuint count, GLfloat * f )
-{
-   switch( count ) {
-   case 3:
-      GL_CALL(TexCoord3fv)( f );
-      break;
-   case 2:
-      GL_CALL(TexCoord2fv)( f );
-      break;
-   case 1:
-      GL_CALL(TexCoord1fv)( f );
-      break;
-   default:
-      assert( count == 0 );
-      break;
-   }
-}
-
 static void dispatch_multitexcoord( GLuint count, GLuint unit, GLfloat * f )
 {
    switch( count ) {
    case 3:
-      GL_CALL(MultiTexCoord3fvARB)( GL_TEXTURE0+unit, f );
+      CALL_MultiTexCoord3fvARB(GET_DISPATCH(), (GL_TEXTURE0+unit, f));
       break;
    case 2:
-      GL_CALL(MultiTexCoord2fvARB)( GL_TEXTURE0+unit, f );
+      CALL_MultiTexCoord2fvARB(GET_DISPATCH(), (GL_TEXTURE0+unit, f));
       break;
    case 1:
-      GL_CALL(MultiTexCoord1fvARB)( GL_TEXTURE0+unit, f );
+      CALL_MultiTexCoord1fvARB(GET_DISPATCH(), (GL_TEXTURE0+unit, f));
       break;
    default:
       assert( count == 0 );
@@ -437,7 +427,7 @@ static void dispatch_multitexcoord( GLuint count, GLuint unit, GLfloat * f )
    }
 }
 
-static void VFMT_FALLBACK( const char *caller )
+void VFMT_FALLBACK( const char *caller )
 {
    GET_CURRENT_CONTEXT(ctx);
    r200ContextPtr rmesa = R200_CONTEXT(ctx);
@@ -477,7 +467,7 @@ static void VFMT_FALLBACK( const char *caller )
    assert(rmesa->dma.flush == 0);
    rmesa->vb.fell_back = GL_TRUE;
    rmesa->vb.installed = GL_FALSE;
-   GL_CALL(Begin)( prim );
+   CALL_Begin(GET_DISPATCH(), (prim));
 
    if (rmesa->vb.installed_color_3f_sz == 4)
       alpha = ctx->Current.Attrib[VERT_ATTRIB_COLOR0][3];
@@ -488,25 +478,30 @@ static void VFMT_FALLBACK( const char *caller )
       GLuint offset = 3;
 
       if (ind0 & R200_VTX_N0) {
-	 GL_CALL(Normal3fv)( &tmp[i][offset] ); 
+	 CALL_Normal3fv(GET_DISPATCH(), (&tmp[i][offset]));
 	 offset += 3;
       }
 
+      if (ind0 & R200_VTX_DISCRETE_FOG) {
+	 CALL_FogCoordfvEXT(GET_DISPATCH(), (&tmp[i][offset]));
+	 offset++;
+      }
+
       if (VTX_COLOR(ind0, 0) == R200_VTX_PK_RGBA) {
-	 GL_CALL(Color4ubv)( (GLubyte *)&tmp[i][offset] ); 
+	 CALL_Color4ubv(GET_DISPATCH(), ((GLubyte *)&tmp[i][offset]));
 	 offset++;
       }
       else if (VTX_COLOR(ind0, 0) == R200_VTX_FP_RGBA) {
-	 GL_CALL(Color4fv)( &tmp[i][offset] ); 
+	 CALL_Color4fv(GET_DISPATCH(), (&tmp[i][offset]));
 	 offset+=4;
       } 
       else if (VTX_COLOR(ind0, 0) == R200_VTX_FP_RGB) {
-	 GL_CALL(Color3fv)( &tmp[i][offset] ); 
+	 CALL_Color3fv(GET_DISPATCH(), (&tmp[i][offset]));
 	 offset+=3;
       }
 
       if (VTX_COLOR(ind0, 1) == R200_VTX_PK_RGBA) {
-	 GL_CALL(SecondaryColor3ubvEXT)( (GLubyte *)&tmp[i][offset] ); 
+	 CALL_SecondaryColor3ubvEXT(GET_DISPATCH(), ((GLubyte *)&tmp[i][offset]));
 	 offset++;
       }
 
@@ -516,39 +511,42 @@ static void VFMT_FALLBACK( const char *caller )
 	 offset += count;
       }
 
-      GL_CALL(Vertex3fv)( &tmp[i][0] );
+      CALL_Vertex3fv(GET_DISPATCH(), (&tmp[i][0]));
    }
 
    /* Replay current vertex
     */
    if (ind0 & R200_VTX_N0) 
-       GL_CALL(Normal3fv)( rmesa->vb.normalptr );
+      CALL_Normal3fv(GET_DISPATCH(), (rmesa->vb.normalptr));
+   if (ind0 & R200_VTX_DISCRETE_FOG) {
+      CALL_FogCoordfvEXT(GET_DISPATCH(), (rmesa->vb.fogptr));
+   }
 
    if (VTX_COLOR(ind0, 0) == R200_VTX_PK_RGBA) {
-      GL_CALL(Color4ub)( rmesa->vb.colorptr->red,
-			 rmesa->vb.colorptr->green,
-			 rmesa->vb.colorptr->blue,
-			 rmesa->vb.colorptr->alpha );
+      CALL_Color4ub(GET_DISPATCH(), (rmesa->vb.colorptr->red,
+				     rmesa->vb.colorptr->green,
+				     rmesa->vb.colorptr->blue,
+				     rmesa->vb.colorptr->alpha));
    }
    else if (VTX_COLOR(ind0, 0) == R200_VTX_FP_RGBA) {
-      GL_CALL(Color4fv)( rmesa->vb.floatcolorptr );
+      CALL_Color4fv(GET_DISPATCH(), (rmesa->vb.floatcolorptr));
    }
    else if (VTX_COLOR(ind0, 0) == R200_VTX_FP_RGB) {
       if (rmesa->vb.installed_color_3f_sz == 4 && alpha != 1.0) {
-	 GL_CALL(Color4f)( rmesa->vb.floatcolorptr[0],
-			   rmesa->vb.floatcolorptr[1],
-			   rmesa->vb.floatcolorptr[2],
-			   alpha );
+	 CALL_Color4f(GET_DISPATCH(), (rmesa->vb.floatcolorptr[0],
+				       rmesa->vb.floatcolorptr[1],
+				       rmesa->vb.floatcolorptr[2],
+				       alpha));
       }
       else {
-	 GL_CALL(Color3fv)( rmesa->vb.floatcolorptr );
+	 CALL_Color3fv(GET_DISPATCH(), (rmesa->vb.floatcolorptr));
       }
    }
 
    if (VTX_COLOR(ind0, 1) == R200_VTX_PK_RGBA) 
-       GL_CALL(SecondaryColor3ubEXT)( rmesa->vb.specptr->red, 
-				      rmesa->vb.specptr->green,
-				      rmesa->vb.specptr->blue ); 
+       CALL_SecondaryColor3ubEXT(GET_DISPATCH(), (rmesa->vb.specptr->red, 
+						  rmesa->vb.specptr->green,
+						  rmesa->vb.specptr->blue));
 
    for ( unit = 0 ; unit < ctx->Const.MaxTextureUnits ; unit++ ) {
       count = VTX_TEXn_COUNT( ind1, unit );
@@ -663,8 +661,6 @@ static GLboolean check_vtx_fmt( GLcontext *ctx )
    GLuint ind1 = 0;
    GLuint i;
    GLuint count[R200_MAX_TEXTURE_UNITS];
-   GLuint re_cntl;
-
 
    if (rmesa->TclFallback || rmesa->vb.fell_back || ctx->CompileFlag)
       return GL_FALSE;
@@ -692,26 +688,20 @@ static GLboolean check_vtx_fmt( GLcontext *ctx )
       }
    }
 
-   re_cntl = rmesa->hw.set.cmd[SET_RE_CNTL] & ~(R200_VTX_STQ0_D3D |
-						R200_VTX_STQ1_D3D |
-						R200_VTX_STQ2_D3D |
-						R200_VTX_STQ3_D3D |
-						R200_VTX_STQ4_D3D |
-						R200_VTX_STQ5_D3D );
+   if ( ctx->Fog.FogCoordinateSource == GL_FOG_COORD ) {
+      ind0 |= R200_VTX_DISCRETE_FOG;
+   }
+
    for ( i = 0 ; i < ctx->Const.MaxTextureUnits ; i++ ) {
       count[i] = 0;
 
       if (ctx->Texture.Unit[i]._ReallyEnabled) {
-	 if (ctx->Texture.Unit[i].TexGenEnabled) {
-	    if (rmesa->TexGenNeedNormals[i]) {
-	       ind0 |= R200_VTX_N0;
-	    }
+	 if (rmesa->TexGenNeedNormals[i]) {
+	    ind0 |= R200_VTX_N0;
 	 }
 	 else {
 	    switch( ctx->Texture.Unit[i]._ReallyEnabled ) {
 	    case TEXTURE_CUBE_BIT:
-	       re_cntl |= R200_VTX_STQ0_D3D << (2 * i);
-	       /* FALLTHROUGH */
 	    case TEXTURE_3D_BIT:
 	       count[i] = 3;
 	       break;
@@ -729,11 +719,6 @@ static GLboolean check_vtx_fmt( GLcontext *ctx )
       }
    }
 
-   if ( re_cntl != rmesa->hw.set.cmd[SET_RE_CNTL] ) {
-      R200_STATECHANGE( rmesa, set );
-      rmesa->hw.set.cmd[SET_RE_CNTL] = re_cntl;
-   }
-
    if (R200_DEBUG & (DEBUG_VFMT|DEBUG_STATE))
       fprintf(stderr, "%s: format: 0x%x, 0x%x\n", __FUNCTION__, ind0, ind1 );
 
@@ -746,6 +731,7 @@ static GLboolean check_vtx_fmt( GLcontext *ctx )
    rmesa->vb.normalptr = ctx->Current.Attrib[VERT_ATTRIB_NORMAL];
    rmesa->vb.colorptr = NULL;
    rmesa->vb.floatcolorptr = ctx->Current.Attrib[VERT_ATTRIB_COLOR0];
+   rmesa->vb.fogptr = ctx->Current.Attrib[VERT_ATTRIB_FOG];
    rmesa->vb.specptr = NULL;
    rmesa->vb.floatspecptr = ctx->Current.Attrib[VERT_ATTRIB_COLOR1];
    rmesa->vb.texcoordptr[0] = ctx->Current.Attrib[VERT_ATTRIB_TEX0];
@@ -766,6 +752,12 @@ static GLboolean check_vtx_fmt( GLcontext *ctx )
       rmesa->vb.normalptr[0] = ctx->Current.Attrib[VERT_ATTRIB_NORMAL][0];
       rmesa->vb.normalptr[1] = ctx->Current.Attrib[VERT_ATTRIB_NORMAL][1];
       rmesa->vb.normalptr[2] = ctx->Current.Attrib[VERT_ATTRIB_NORMAL][2];
+   }
+
+   if (ind0 & R200_VTX_DISCRETE_FOG) {
+      rmesa->vb.fogptr = &rmesa->vb.vertex[rmesa->vb.vertex_size].f;
+      rmesa->vb.vertex_size += 1;
+      rmesa->vb.fogptr[0] = ctx->Current.Attrib[VERT_ATTRIB_FOG][0];
    }
 
    if (VTX_COLOR(ind0, 0) == R200_VTX_PK_RGBA) {
@@ -892,7 +884,7 @@ static void r200_Materialfv( GLenum face, GLenum pname,
 
    if (rmesa->vb.prim[0] != GL_POLYGON+1) {
       VFMT_FALLBACK( __FUNCTION__ );
-      GL_CALL(Materialfv)( face, pname, params );
+      CALL_Materialfv(GET_DISPATCH(), (face, pname, params));
       return;
    }
    _mesa_noop_Materialfv( face, pname, params );
@@ -931,7 +923,7 @@ static void r200_Begin( GLenum mode )
       r200VtxfmtValidate( ctx );
 
    if (!rmesa->vb.installed) {
-      GL_CALL(Begin)( mode );
+      CALL_Begin(GET_DISPATCH(), (mode));
       return;
    }
 
@@ -1095,8 +1087,6 @@ void r200VtxfmtInit( GLcontext *ctx, GLboolean useCodegen )
 
    /* Not active in supported states; just keep ctx->Current uptodate:
     */
-   vfmt->FogCoordfvEXT = _mesa_noop_FogCoordfvEXT;
-   vfmt->FogCoordfEXT = _mesa_noop_FogCoordfEXT;
    vfmt->EdgeFlag = _mesa_noop_EdgeFlag;
    vfmt->EdgeFlagv = _mesa_noop_EdgeFlagv;
    vfmt->Indexf = _mesa_noop_Indexf;
@@ -1129,7 +1119,9 @@ void r200VtxfmtInit( GLcontext *ctx, GLboolean useCodegen )
    vfmt->VertexAttrib3fvNV = r200_fallback_VertexAttrib3fvNV;
    vfmt->VertexAttrib4fNV  = r200_fallback_VertexAttrib4fNV;
    vfmt->VertexAttrib4fvNV = r200_fallback_VertexAttrib4fvNV;
-
+   vfmt->FogCoordfEXT = r200_fallback_FogCoordfEXT;
+   vfmt->FogCoordfvEXT = r200_fallback_FogCoordfvEXT;
+   
    (void)r200_fallback_vtxfmt;
 
    TNL_CONTEXT(ctx)->Driver.NotifyBegin = r200NotifyBegin;
@@ -1168,6 +1160,8 @@ void r200VtxfmtInit( GLcontext *ctx, GLboolean useCodegen )
    make_empty_list( &rmesa->vb.dfn_cache.MultiTexCoord2fvARB );
    make_empty_list( &rmesa->vb.dfn_cache.MultiTexCoord1fARB );
    make_empty_list( &rmesa->vb.dfn_cache.MultiTexCoord1fvARB );
+/*   make_empty_list( &rmesa->vb.dfn_cache.FogCoordfEXT );
+   make_empty_list( &rmesa->vb.dfn_cache.FogCoordfvEXT );*/
 
    r200InitCodegen( &rmesa->vb.codegen, useCodegen );
 }
@@ -1177,8 +1171,8 @@ static void free_funcs( struct dynfn *l )
    struct dynfn *f, *tmp;
    foreach_s (f, tmp, l) {
       remove_from_list( f );
-      ALIGN_FREE( f->code );
-      FREE( f );
+      _mesa_exec_free( f->code );
+      _mesa_free( f );
    }
 }
 
@@ -1227,5 +1221,7 @@ void r200VtxfmtDestroy( GLcontext *ctx )
    free_funcs( &rmesa->vb.dfn_cache.MultiTexCoord2fvARB );
    free_funcs( &rmesa->vb.dfn_cache.MultiTexCoord1fARB );
    free_funcs( &rmesa->vb.dfn_cache.MultiTexCoord1fvARB );
+/*   free_funcs( &rmesa->vb.dfn_cache.FogCoordfEXT );
+   free_funcs( &rmesa->vb.dfn_cache.FogCoordfvEXT );*/
 }
 

@@ -54,12 +54,11 @@
 
 #define RADEON_DEFAULT_CP_TIMEOUT     10000  /* usecs */
 
-#define RADEON_AGP_MAX_MODE           4
+#define RADEON_PCIGART_TABLE_SIZE     32768
+
+#define RADEON_AGP_MAX_MODE           8
 
 #define RADEON_CARD_TYPE_RADEON       1
-
-/* Buffer are aligned on 4096 byte boundaries */
-#define RADEON_BUFFER_ALIGN           0x00000fff
 
 #define RADEONCP_USE_RING_BUFFER(m)					\
     (((m) == RADEON_CSQ_PRIBM_INDDIS) ||				\

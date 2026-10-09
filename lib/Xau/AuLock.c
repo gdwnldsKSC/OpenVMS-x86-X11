@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xau/AuLock.c,v 3.6 2002/05/31 18:45:43 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xauth.h>
 #include <X11/Xos.h>
 #include <sys/stat.h>
@@ -39,6 +42,7 @@ in this Software without prior written authorization from The Open Group.
 #ifndef WIN32
 extern unsigned	sleep ();
 #else
+#include <X11/Xwindows.h>
 #define link rename
 #endif
 #endif

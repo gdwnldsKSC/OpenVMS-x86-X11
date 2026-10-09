@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/record/record.c,v 1.2 2004/04/23 19:54:28 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/record/record.c,v 1.5 2005/07/03 07:02:08 daniels Exp $ */
 /* $Xorg: record.c,v 1.4 2001/02/09 02:05:27 xorgcvs Exp $ */
 
 /*
@@ -36,10 +36,14 @@ and Jim Haggerty of Metheus.
 /* $XFree86: xc/programs/Xserver/record/record.c,v 1.11 2003/11/03 05:12:01 tsi Exp $ */
 
 #define NEED_EVENTS
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "dixstruct.h"
 #include "extnsionst.h"
 #define _XRECORD_SERVER_
-#include "recordstr.h"
+#include <X11/extensions/recordstr.h>
 #include "set.h"
 
 #ifndef XFree86LOADER

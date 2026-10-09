@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/programs/xlogo/RenderLogo.c,v 1.3tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 
 #include <X11/Xlib.h>  

@@ -29,8 +29,12 @@
 /* $XConsortium: os2_stubs.c /main/3 1996/10/27 11:48:58 kaleb $ */
 
 #define I_NEED_OS2_H
-#include "X11/X.h"
-#include "X11/Xpoll.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xpoll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

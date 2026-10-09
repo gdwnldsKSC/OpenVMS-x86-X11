@@ -14,6 +14,10 @@ is" without express or implied warranty.
 */
 /* $XFree86: xc/programs/Xserver/hw/xnest/TestExt.c,v 3.5 2001/08/27 17:41:00 dawes Exp $ */
 
+#ifdef HAVE_XNEST_CONFIG_H
+#include <xnest-config.h>
+#endif
+
 #include <X11/X.h>
 #include <X11/Xproto.h>
 #include <X11/Xlib.h>
@@ -25,7 +29,7 @@ is" without express or implied warranty.
 #include "servermd.h"
 #include "mipointer.h"
 #define XTestSERVER_SIDE
-#include "xtestext1.h"
+#include <X11/extensions/xtestext1.h>
 #include "xtest1dd.h"
 
 extern CARD32 lastEventTime;

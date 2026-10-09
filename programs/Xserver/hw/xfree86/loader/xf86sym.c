@@ -51,6 +51,10 @@
 
 #define INCLUDE_DEPRECATED 1
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <fcntl.h>
 #include <setjmp.h>
 #include "sym.h"
@@ -235,12 +239,6 @@ extern unsigned long ldl_brx(volatile unsigned char *, int);
 extern unsigned short ldw_brx(volatile unsigned char *, int);
 #endif
 
-#ifdef __SSP__
-/* Propolice! */
-extern long __guard[];
-extern void __stack_smash_handler(char [], int);
-#endif
-
 /* XFree86 things */
 
 LOOKUP xfree86LookupTab[] = {
@@ -291,6 +289,7 @@ LOOKUP xfree86LookupTab[] = {
     SYMFUNC(xf86AcquireGART)
     SYMFUNC(xf86ReleaseGART)
     SYMFUNC(xf86AllocateGARTMemory)
+    SYMFUNC(xf86DeallocateGARTMemory)
     SYMFUNC(xf86BindGARTMemory)
     SYMFUNC(xf86UnbindGARTMemory)
     SYMFUNC(xf86EnableAGP)
@@ -386,6 +385,7 @@ LOOKUP xfree86LookupTab[] = {
     /* xf86DGA.c */
     /* For drivers */
     SYMFUNC(DGAInit)
+    SYMFUNC(DGAReInitModes)
     /* For extmod */
     SYMFUNC(DGAAvailable)
     SYMFUNC(DGAActive)
@@ -419,6 +419,7 @@ LOOKUP xfree86LookupTab[] = {
     SYMFUNC(xf86AddEnabledDevice)
     SYMFUNC(xf86RemoveEnabledDevice)
     SYMFUNC(xf86InterceptSignals)
+    SYMFUNC(xf86InterceptSigIll)
     SYMFUNC(xf86EnableVTSwitch)
 
     /* xf86Helper.c */
@@ -474,6 +475,7 @@ LOOKUP xfree86LookupTab[] = {
     SYMFUNC(xf86CommonSpecialKey)
     SYMFUNC(xf86IsPc98)
     SYMFUNC(xf86DisableRandR)
+    SYMFUNC(xf86GetRotation)
     SYMFUNC(xf86GetVersion)
     SYMFUNC(xf86GetModuleVersion)
     SYMFUNC(xf86GetClocks)
@@ -608,6 +610,14 @@ LOOKUP xfree86LookupTab[] = {
 
     /* xf86cmap.c */
     SYMFUNC(xf86HandleColormaps)
+    SYMFUNC(xf86GetGammaRampSize)
+    SYMFUNC(xf86GetGammaRamp)
+    SYMFUNC(xf86ChangeGammaRamp)
+
+    /* xf86RandR.c */
+#ifdef RANDR
+    SYMFUNC(xf86RandRSetNewVirtualAndDimensions)
+#endif
 
     /* xf86xv.c */
     SYMFUNC(xf86XVScreenInit)
@@ -924,7 +934,7 @@ LOOKUP xfree86LookupTab[] = {
 #endif
 #else
     SYMFUNCALIAS("xf86setjmp", setjmp)
-    SYMFUNCALIAS("xf86setjmp0", setjmp)
+    SYMFUNC(xf86setjmp0)
     SYMFUNC(xf86setjmp1)
 #endif
     SYMFUNCALIAS("xf86longjmp", longjmp)
@@ -1089,12 +1099,12 @@ LOOKUP xfree86LookupTab[] = {
 #endif
 #endif
 #if defined(__ia64__)
-    SYMFUNC(_outw)
-    SYMFUNC(_outb)
-    SYMFUNC(_outl)
-    SYMFUNC(_inb)
-    SYMFUNC(_inw)
-    SYMFUNC(_inl)
+    SYMFUNC(outw)
+    SYMFUNC(outb)
+    SYMFUNC(outl)
+    SYMFUNC(inb)
+    SYMFUNC(inw)
+    SYMFUNC(inl)
 #endif
 #if defined(__arm__)
     SYMFUNC(outw)
@@ -1113,12 +1123,6 @@ LOOKUP xfree86LookupTab[] = {
     SYMFUNC(_Qp_uitoq)
     SYMFUNC(_Qp_dtoq)
 #endif
-#endif
-
-#ifdef __SSP__
-    /* propolice */
-    SYMFUNC(__stack_smash_handler)
-    SYMVAR(__guard)
 #endif
 
     /* Some variables. */

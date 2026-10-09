@@ -71,7 +71,7 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Sunkeysym.h"
 #include "osdep.h"
 
-#include "Xpoll.h"
+#include <X11/Xpoll.h>
 
 #ifdef XKB
 #include <X11/extensions/XKB.h>

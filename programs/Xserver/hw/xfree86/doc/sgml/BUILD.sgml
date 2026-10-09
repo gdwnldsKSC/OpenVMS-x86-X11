@@ -5,13 +5,13 @@
 <article>
 <title>Building the X Window System 
 from the 
-X.org Source Distribution
+X.Org Monolithic Source Distribution
 <author>Jim Gettys and Keith Packard (for X11R&relvers;)
 <and>David Dawes and Matthieu Herrb (for XFree86 4.4 RC2)
 <Date>&reldate;
 
 <ident>
-$Id$ 
+$Id: BUILD.sgml,v 1.10 2005/12/21 00:45:27 alanc Exp $ 
 </ident>
 
 <abstract>
@@ -25,7 +25,7 @@ be used in conjunction with the operating system (OS) specific README files.
 
 <p>
 <quote>
-<bf/NOTE:/  Refer to the appropriate OS-specific README file before attempting
+<bf/NOTE:/  Refer to the appropriate OS-specific README file in xc/programs/Xserver/hw/xfree86/doc before attempting
        to build the X distribution.  These files often contain additional information that 
        you need to successfully build for your OS.
 </quote>
@@ -33,9 +33,76 @@ be used in conjunction with the operating system (OS) specific README files.
 We highly recommend using gcc to build the X distribution, but X also
 generally builds with the native compiler for each OS platform; 
 The build tools known to be required include: gcc, make, C library development
-package, bison, flex, zlib (development package), ncurses (development
-package), fontconfig (development package), expat (development package),
-and Perl.
+package, bison, flex, ncurses (development package), and Perl.
+
+<p>
+The monolithic tree also includes copies of some packages maintained outside 
+the X.Org project for convenience in building on machines that do not already
+have them installed.   These include FreeType 2, fontconfig, expat, xterm,
+and zlib.   For most uses however, it is recommended that you install the
+latest version directly from the main distribution site, or use the packages
+provided in your operating system, as they are more likely to be up to date
+with the latest bug fixes and security patches.   Depending on your platform,
+use of the bundled versions may be enabled or disabled by default, check the
+Imake configuration files for your platform in xc/config/cf to find out.
+To override the defaults for your platform or to set the path to the 
+installation location, see the instructions below on configuring the source
+via xorgsite.def and host.def.
+
+<p>
+
+X11R&relvers; depends on the following external packages:
+
+<table border=1 align="center">
+<tabular ca="|l|l|l|">
+   <tabrow>Package Name<colsep>Version<colsep>Included?</tabrow>
+   <hline>
+   <tabrow>expat<colsep>1.95.8<colsep>Yes</tabrow>
+   <tabrow>fontconfig<colsep>2.2 or newer<colsep>Yes</tabrow>
+   <tabrow>FreeType<colsep>2.1.8 or 2.1.9<colsep>Yes</tabrow>
+   <tabrow>libdrm<colsep>2.0<colsep>Yes</tabrow>
+   <tabrow>libpng<colsep>1.2.8<colsep>No</tabrow>
+   <tabrow>Mesa<colsep>6.4.1<colsep>Yes</tabrow>
+   <tabrow>xterm<colsep>Patch 207<colsep>Yes</tabrow>
+   <tabrow>zlib<colsep>1.1.4 or 1.2.3<colsep>Yes</tabrow>
+</tabular>
+</table>
+
+You can find more information and/or the original sources for these packages
+at their project websites at these URL's:
+
+<table border=1 align="center">
+<tabular ca="|l|l|">
+   <tabrow>Package Name<colsep>Website</tabrow>
+   <hline>
+   <tabrow>expat<colsep><htmlurl
+    name="http://expat.sourceforge.net/" url="http://expat.sourceforge.net/">
+    </tabrow>
+   <tabrow>fontconfig<colsep><htmlurl
+    name="http://www.fontconfig.org/" url="http://www.fontconfig.org/">
+    </tabrow>
+   <tabrow>FreeType<colsep><htmlurl
+    name="http://www.freetype.org/" url="http://www.freetype.org/">
+    </tabrow>
+   <tabrow>libdrm<colsep><htmlurl name="http://dri.freedesktop.org/libdrm/"
+    url="http://dri.freedesktop.org/libdrm/">
+    </tabrow>
+   <tabrow>libpng<colsep><htmlurl
+    name="http://www.libpng.com/pub/png/libpng.html" 
+    url="http://www.libpng.com/pub/png/libpng.html">
+    <colsep>No</tabrow>
+   <tabrow>Mesa<colsep><htmlurl
+    name="http://www.mesa3d.org/" url="http://www.mesa3d.org/">
+    </tabrow>
+   <tabrow>xterm<colsep><htmlurl name="http://dickey.his.com/xterm/xterm.html"
+    url="http://dickey.his.com/xterm/xterm.html">
+    </tabrow>
+   <tabrow>zlib<colsep><htmlurl
+    name="http://www.zlib.net/" url="http://www.zlib.net/">
+    </tabrow>
+</tabular>
+</table>
+
 
 <sect>How to get the X11R&relvers; distribution source
 <p>
@@ -44,7 +111,7 @@ One way of getting the X11R&relvers; source is to
 obtain it directly from the X.Org CVS repository.  There are several
 ways of doing that, and they are described in the CVS section of our <url
 name="wiki"
-url="http://wiki.x.org"> The CVS tag for this release is
+url="http://wiki.x.org/"> The CVS tag for this release is
 "<tt>&reltag;</tt>".  <![ %fullrel; [ The tag for the maintenance branch
 for this release is "<tt>&relbranchtag;</tt>".]]>
 
@@ -68,12 +135,12 @@ using either ftp or http.  The procedure for this is as follows:
 	</tt></quote>
 
 	These can be found at <htmlurl
-	name="ftp://ftp.freedesktop.org/xorg/X11R&relvers;/src/"
-	url="ftp://ftp.freedesktop.org/xorg/X11R&relvers;/src/">
+	name="ftp://ftp.freedesktop.org/xorg/releases/X11R&relvers;/src/"
+	url="ftp://ftp.freedesktop.org/xorg/releases/X11R&relvers;/src/">
 	or <htmlurl
-	name="http://freedesktop.org/~xorg/X11R&relvers;/src/"
-	url="http://freedesktop.org/~xorg/X11R&relvers;/src/">	
-	and similar locations on X.org mirror sites.
+	name="http://xorg.freedesktop.org/releases/X11R&relvers;/src/"
+	url="http://xorg.freedesktop.org/releases/X11R&relvers;/src/">	
+	and similar locations on X.Org mirror sites.
 	<tt>X11R&fullrelvers;-src4.tgz</tt> and
 	<tt>X11R&fullrelvers;-src5.tar.gz</tt> contains the fonts.
 	<tt>X11R&fullrelvers;-src6.tar.gz</tt> contains the documentation
@@ -104,11 +171,11 @@ using either ftp or http.  The procedure for this is as follows:
 <![ %updaterel; [
   <item>A patch relative to &fullrelvers is available at
 	<htmlurl
-	name="ftp://ftp.freedesktop.org/xorg/R&relvers;/patches/"
-	url="ftp://ftp.freedesktop.org/xorg/R&relvers;/patches/">.
+	name="ftp://ftp.freedesktop.org/xorg/releases/X11R&relvers;/patches/"
+	url="ftp://ftp.freedesktop.org/xorg/releases/X11R&relvers;/patches/">.
 	and <htmlurl
-	name="http://freedesktop.org/~xorg/R&relvers;/patches/"
-	url="http://freedesktop.org/~xorg/R&relvers;/patches/">.
+	name="http://xorg.freedesktop.org/releases/X11R&relvers;/patches/"
+	url="http://xorg.freedesktop.org/releases/X11R&relvers;/patches/">.
 	The patch file is <tt>&fullrelvers;-src&relvers;.diff.gz</tt>.
 
 	The patch can be applied by running:
@@ -127,11 +194,11 @@ using either ftp or http.  The procedure for this is as follows:
 <p>
 Alternatively you can download the source for the X11R&relvers; &relvers;
 snapshot as a tarball from <htmlurl
-name="ftp://ftp.freedesktop.org/xorg/R&relvers;/src/X11R&fullrelvers;.tar.gz"
-url="ftp://ftp.freedesktop.org/xorg/R&relvers;/src/X11R&fullrelvers;.tar.gz">
+name="ftp://ftp.freedesktop.org/xorg/releases/X11R&relvers;/src/X11R&fullrelvers;.tar.gz"
+url="ftp://ftp.freedesktop.org/xorg/releases/X11R&relvers;/src/X11R&fullrelvers;.tar.gz">
 and  <htmlurl
-name="http://freedesktop.org/~xorg/R&relvers;/src/X11R&fullrelvers;.tar.gz"
-url="http://freedesktop.org/~xorg/R&relvers;/src/X11R&fullrelvers;.tar.gz">.
+name="http://xorg.freedesktop.org/releases/X11R&relvers;/src/X11R&fullrelvers;.tar.gz"
+url="http://xorg.freedesktop.org/releases/X11R&relvers;/src/X11R&fullrelvers;.tar.gz">.
 This can be extracted by running:
 
 	<quote><tt>
@@ -156,7 +223,7 @@ the default settings by checking the <tt>.cf</tt> file(s) relevant to your OS.
 
 A good rule to follow is only to change things that you understand
 as it's  easy to create build problems by changing the default configuration.  
-Check the configuration parameters specified in the <tt>xc/config/cf/README</tt>.
+Many of the configuration parameters are described in the <tt>xc/config/cf/README</tt>.
 
 <!--
 Another spot to check is a section <ref name="below" id="config_params">
@@ -204,7 +271,7 @@ Note that you can refer to the <tt>xc</tt> directory with an absolute
 path if needed. 
 <p>
 See the <htmlurl name="lndir(1)"
-url="http://freedesktop.org/~xorg/&relvers;/lndir.1.html"> manual page for
+url="http://xorg.freedesktop.org/X11R&relvers;/doc/lndir.1.html"> manual page for
 details.
 </itemize>
 If <tt>lndir</tt> is not already installed on your system, you can
@@ -235,7 +302,7 @@ build directory
 run "<tt/make World/" with the <bf/BOOTSTRAPCFLAGS/ 
 set as described in the OS-specific README (if necessary, but most
 systems supported by X11R&relvers; don't need <bf/BOOTSTRAPCFLAGS/).  It is
-advisable to redirect stdout and stderr to <tt/World.Log/ so that you
+advisable to redirect stdout and stderr to <tt/World.log/ so that you
 can track down problems that might occur during the build.
 <p> 
 With Bourne-like shells (Bash, the Korn shell, <tt>zsh</tt>, etc.) use
@@ -283,7 +350,7 @@ installing.
 To install the tree into a different directory than <tt>/usr/X11R6</tt>
 you can specify <tt>DESTDIR</tt>:
 <quote><tt>
-make install DESTDIR=&lt;install_target_dir&gt;
+make install DESTDIR=&lt;install_target_dir&gt;<newline>
 make install.man DESTDIR=&lt;install_target_dir&gt;
 </tt></quote>
 
@@ -291,11 +358,12 @@ make install.man DESTDIR=&lt;install_target_dir&gt;
 Cross compiling is supported if the appropriate config files for your
 target platforms exist. You must have the compiler toolchain installed
 for your target platform and the C-compiler must know where those tools
-exist. To inform the build system where your cross compiler is located use
-<bf/BOOTSTRAPCFLAGS/ to set the make variable <tt/CROSSCOMPILEDIR/.
+exist. To inform the build system where your cross compiler is located 
+set the make variable <tt/CROSSCOMPILEDIR/ to the directory where the
+toolchain binaries are installed.
 <quote><tt>
-make World BOOTSTRAPCFLAGS="CROSSCOMPILEDIR=&lt;cross compiler dir&gt";
-</tt></quote>
+make World CROSSCOMPILEDIR="&lt;cross compiler dir&gt";
+</tt></quote>.
 
 <sect>Reconfiguring the server (source distribution)
 <p>
@@ -360,7 +428,9 @@ produced by <tt>make includes</tt>.
 <item><bf/VerifyOS/ displays the detected operating system version. If
 the numbers shown do not match your system, you probably need to set
 them manually in <tt>host.def</tt> and report the problem to
-<email>xorg@freedesktop.org</email>.
+Xorg via our bug database at <url name="X.Org Bug Database"
+url="https://bugs.freedesktop.org/enter_bug.cgi?product=xorg"> or via
+email at <email>xorg@lists.freedesktop.org</email>.
 </itemize>
 
 <!--

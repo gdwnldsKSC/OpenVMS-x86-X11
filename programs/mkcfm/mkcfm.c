@@ -1,4 +1,4 @@
-/* From: Header: xc/programs/mkcfm/RCS/mkcfm.c,v 1.3 1996/05/08 21:38:21 ib Exp $ */
+;/* From: Header: xc/programs/mkcfm/RCS/mkcfm.c,v 1.3 1996/05/08 21:38:21 ib Exp $ */
 /* Copyright (c) 1994-1999 Silicon Graphics, Inc. All Rights Reserved.
  *
  * The contents of this file are subject to the CID Font Code Public Licence
@@ -25,36 +25,43 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#include "os.h"
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/FSproto.h>
+#include <X11/fonts/FS.h>
+#include <X11/fonts/font.h>
+#include <X11/fonts/fontenc.h>
+#include <X11/fonts/fontstruct.h>
+#include <X11/fonts/fsmasks.h>
+#include <X11/fonts/fontutil.h>
 
-#include "fntfilst.h"
-#include "FSproto.h"
-#include "FS.h"
-#include "font.h"
-#include "fontenc.h"
-#include "fontstruct.h"
-#include "fsmasks.h"
-#include "range.h"
-#include "objects.h"
-#include "spaces.h"
-
-#include "fontutil.h"
-#include "util.h"
-#include "fontfcn.h"
-#include "blues.h"
-#include "t1intf.h"
-#include "t1unicode.h"
- 
 static void CIDFillVals(FontScalablePtr);
 static Bool DoDirectory(char *dirName);
  
+#ifndef DEFAULTCID
 #define DEFAULTCID "/usr/X11R6/lib/X11/fonts/CID"
+#endif
 #define DECIPOINTSPERINCH 722.7
 #define DEFAULTRES 75
 #define DEFAULTPOINTSIZE 120
 
+/* From range.h */
+#define CID_NAME_MAX 255
+
+/* From t1intf.h */
+extern int CIDOpenScalable ( FontPathElementPtr fpe, FontPtr *ppFont,
+                             int flags, FontEntryPtr entry, char *fileName,
+                             FontScalablePtr vals, fsBitmapFormat format,
+                             fsBitmapFormatMask fmask,
+                             FontPtr non_cachable_font );
+
+/* char *unicodetoPSname(unsigned short code); */
+extern char *unicodetoPSname(unsigned short code);
+
 FontScalableRec vals;
 FontEntryRec entry;
+
+void FatalError(const char *f, ...);
+void ErrorF(const char *f, ...);
 
 int 
 main(int argc, char **argv)

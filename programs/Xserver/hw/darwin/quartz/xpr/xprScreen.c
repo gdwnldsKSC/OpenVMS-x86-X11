@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/darwin/quartz/xpr/xprScreen.c,v 1.4 2004/08/12 20:24:36 torrey Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/darwin/quartz/xpr/xprScreen.c,v 1.6 2005/07/01 22:43:08 daniels Exp $ */
 /*
  * Xplugin rootless implementation screen functions
  */
@@ -324,6 +324,10 @@ xprSetupScreen(int index, ScreenPtr pScreen)
         ps->Composite = SafeAlphaComposite;
     }
 #endif /* RENDER */
+
+    // Initialize accelerated rootless drawing
+    // Note that this must be done before DamageSetup().
+    RootlessAccelInit(pScreen);
 
 #ifdef DAMAGE
     // The Damage extension needs to wrap underneath the

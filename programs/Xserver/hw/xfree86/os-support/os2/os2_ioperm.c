@@ -30,6 +30,10 @@
 #define INCL_32
 #define INCL_DOS
 #define INCL_DOSFILEMGR
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSlib.h"
@@ -48,7 +52,7 @@ char *ioDrvPath = "/dev/fastio$";
 USHORT callgate[3]={0,0,0};
 
 
-void xf86EnableIO()
+Bool xf86EnableIO()
 {
 
 HFILE hfd;
@@ -56,7 +60,7 @@ HFILE hfd;
 	APIRET rc;
 
 	/* no need to call multiple times */
-	if (ioEnabled) return;
+	if (ioEnabled) return TRUE;
 	
 	if (DosOpen((PSZ)ioDrvPath, (PHFILE)&hfd, (PULONG)&action,
 	   (ULONG)0, FILE_SYSTEM, FILE_OPEN,
@@ -64,7 +68,7 @@ HFILE hfd;
 	   (ULONG)0) != 0) {
 		xf86Msg(X_ERROR,"Error opening fastio$ driver...\n");
 		xf86Msg(X_ERROR,"Please install xf86sup.sys in config.sys!\n");
-		exit(42);
+		return FALSE;
 	}
 	callgate[0] = callgate[1] = 0;
 
@@ -78,7 +82,7 @@ HFILE hfd;
 			"EnableIOPorts failed, rc=%d, dlen=%d; emergency exit\n",
 			rc,dlen);
 		DosClose(hfd);
-		exit(42);
+		return FALSE;
 	}
 
 /* Calling callgate with function 13 sets IOPL for the program */
@@ -90,7 +94,7 @@ HFILE hfd;
 
 	ioEnabled = TRUE;
         DosClose(hfd);
-	return;
+	return TRUE;
 }
 
 void xf86DisableIO()

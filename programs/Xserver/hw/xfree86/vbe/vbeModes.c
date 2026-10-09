@@ -1,6 +1,6 @@
 #define DEBUG_VERB 2
 /*
- * Copyright © 2002 David Dawes
+ * Copyright Â© 2002 David Dawes
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,6 +29,10 @@
  *
  * $XFree86: xc/programs/Xserver/hw/xfree86/vbe/vbeModes.c,v 1.3tsi Exp $
  */
+
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
 
 #include "xf86.h"
 #include "xf86_ansic.h"

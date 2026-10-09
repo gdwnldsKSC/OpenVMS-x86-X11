@@ -74,7 +74,7 @@ static void gamma_emit( GLcontext *ctx, GLuint start, GLuint end)
 	    WRITEF(gmesa->buf, Tr4, tc0[i][2]);
 	    WRITEF(gmesa->buf, Tt4, tc0[i][0]);
 	    WRITEF(gmesa->buf, Ts4, tc0[i][1]);
-	    WRITE(gmesa->buf, PackedColor4, *(uint32_t*)col[i]);
+	    WRITE(gmesa->buf, PackedColor4, *(u_int32_t*)col[i]);
 	    WRITEF(gmesa->buf, Vw, coord[i][3]);
 	    WRITEF(gmesa->buf, Vz, coord[i][2]);
 	    WRITEF(gmesa->buf, Vy, coord[i][1]);
@@ -85,7 +85,7 @@ static void gamma_emit( GLcontext *ctx, GLuint start, GLuint end)
 	    CHECK_DMA_BUFFER(gmesa, 7);
 	    WRITEF(gmesa->buf, Tt2, tc0[i][0]);
 	    WRITEF(gmesa->buf, Ts2, tc0[i][1]);
-	    WRITE(gmesa->buf, PackedColor4, *(uint32_t*)col[i]);
+	    WRITE(gmesa->buf, PackedColor4, *(u_int32_t*)col[i]);
 	    WRITEF(gmesa->buf, Vw, coord[i][3]);
 	    WRITEF(gmesa->buf, Vz, coord[i][2]);
 	    WRITEF(gmesa->buf, Vy, coord[i][1]);
@@ -94,7 +94,7 @@ static void gamma_emit( GLcontext *ctx, GLuint start, GLuint end)
    } else {
       for (i=start; i < end; i++) {
 	    CHECK_DMA_BUFFER(gmesa, 4);
-	    WRITE(gmesa->buf, PackedColor4, *(uint32_t*)col[i]);
+	    WRITE(gmesa->buf, PackedColor4, *(u_int32_t*)col[i]);
 	    WRITEF(gmesa->buf, Vz, coord[i][2]);
 	    WRITEF(gmesa->buf, Vy, coord[i][1]);
 	    WRITEF(gmesa->buf, Vx3, coord[i][0]);
@@ -209,31 +209,12 @@ static GLboolean gamma_run_render( GLcontext *ctx,
 }
 
 
-static void gamma_check_render( GLcontext *ctx,
-				 struct tnl_pipeline_stage *stage )
-{
-   stage->inputs = TNL_CONTEXT(ctx)->render_inputs;
-}
-
-
-static void dtr( struct tnl_pipeline_stage *stage )
-{
-   (void)stage;
-}
-
-
 const struct tnl_pipeline_stage _gamma_render_stage =
 {
    "gamma render",
-   (_DD_NEW_SEPARATE_SPECULAR |
-    _NEW_TEXTURE|
-    _NEW_FOG|
-    _NEW_RENDERMODE),		/* re-check (new inputs) */
-   0,				/* re-run (always runs) */
-   GL_TRUE,			/* active */
-   0, 0,			/* inputs (set in check_render), outputs */
-   0, 0,			/* changed_inputs, private */
-   dtr,				/* destructor */
-   gamma_check_render,		/* check - initially set to alloc data */
+   NULL,
+   NULL,
+   NULL,
+   NULL,
    gamma_run_render		/* run */
 };

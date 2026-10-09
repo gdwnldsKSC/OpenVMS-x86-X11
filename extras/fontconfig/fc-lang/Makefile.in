@@ -17,7 +17,7 @@
 #
 # $Id $
 #
-# Copyright © 2003 Keith Packard
+# Copyright Â© 2003 Keith Packard
 #
 # Permission to use, copy, modify, distribute, and sell this software and its
 # documentation for any purpose is hereby granted without fee, provided that
@@ -70,12 +70,16 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-CC = @CC@
+
+CC = @CC_FOR_BUILD@
 CCDEPMODE = @CCDEPMODE@
+CC_FOR_BUILD = @CC_FOR_BUILD@
 CFLAGS = @CFLAGS@
 CONFDIR = @CONFDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CROSS_COMPILING_FALSE = @CROSS_COMPILING_FALSE@
+CROSS_COMPILING_TRUE = @CROSS_COMPILING_TRUE@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -85,6 +89,8 @@ DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
 DOCDIR = @DOCDIR@
+DOCMAN3 = @DOCMAN3@
+DOCSRC = @DOCSRC@
 ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -92,7 +98,8 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ENABLE_DOCS_FALSE = @ENABLE_DOCS_FALSE@
 ENABLE_DOCS_TRUE = @ENABLE_DOCS_TRUE@
-EXEEXT = @EXEEXT@
+EXEEXT = @EXEEXT_FOR_BUILD@
+EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
 EXPAT_CFLAGS = @EXPAT_CFLAGS@
 EXPAT_LIBS = @EXPAT_LIBS@
 F77 = @F77@
@@ -120,6 +127,9 @@ LT_CURRENT = @LT_CURRENT@
 LT_CURRENT_MINUS_AGE = @LT_CURRENT_MINUS_AGE@
 LT_REVISION = @LT_REVISION@
 LT_VERSION_INFO = @LT_VERSION_INFO@
+MAINT = @MAINT@
+MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
+MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
 MS_LIB_AVAILABLE_FALSE = @MS_LIB_AVAILABLE_FALSE@
 MS_LIB_AVAILABLE_TRUE = @MS_LIB_AVAILABLE_TRUE@
@@ -139,7 +149,10 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USEDOCBOOK_FALSE = @USEDOCBOOK_FALSE@
+USEDOCBOOK_TRUE = @USEDOCBOOK_TRUE@
 VERSION = @VERSION@
+WARN_CFLAGS = @WARN_CFLAGS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_AS = @ac_ct_AS@
 ac_ct_CC = @ac_ct_CC@
@@ -186,8 +199,9 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
-INCLUDES = -I${top_srcdir}/src -I${top_srcdir} $(FREETYPE_CFLAGS)
+INCLUDES = -I${top_srcdir}/src -I${top_srcdir} $(FREETYPE_CFLAGS) $(WARN_CFLAGS)
 
 TMPL = fclang.tmpl.h
 STMPL = ${top_srcdir}/fc-lang/fclang.tmpl.h
@@ -227,8 +241,6 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 	$(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = fc-lang.c
 HEADERS = $(noinst_HEADERS)
 
@@ -239,10 +251,10 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  fc-lang/Makefile
-Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 
 clean-noinstPROGRAMS:
@@ -482,9 +494,9 @@ uninstall-am: uninstall-info-am
 	pdf-am ps ps-am tags uninstall uninstall-am uninstall-info-am
 
 
-$(TARG): $(STMPL) fc-lang $(ORTH)
+$(TARG):$(ORTH) fc-lang${EXEEXT} $(STMPL)
 	rm -f $(TARG)
-	dir=`pwd`; (cd ${srcdir} && $${dir}/fc-lang $(ORTH)) < $(STMPL) > $(TARG)
+	./fc-lang${EXEEXT} -d ${srcdir} $(ORTH) < $(STMPL) > $(TARG)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

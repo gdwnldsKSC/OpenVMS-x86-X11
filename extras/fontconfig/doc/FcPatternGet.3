@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "FcPatternGet" "3" "10 March 2004" "" ""
+.TH "FcPatternGet" "3" "27 April 2005" "" ""
 
 .SH NAME
 FcPatternGet \- Return a value from a pattern
@@ -15,9 +15,10 @@ FcResult FcPatternGet (FcPattern *\fIp\fB, const char *\fIobject\fB, int\fIid\fB
 \fR
 .SH "DESCRIPTION"
 .PP
-Returns in `v\fI the `id\fRth value associated with the property `object'.
+Returns in \fIv\fR the \fIid\fR\&'th value
+associated with the property \fIobject\fR\&.
 The value returned is not a copy, but rather refers to the data stored
 within the pattern directly.  Applications must not free this value.
 .SH "VERSION"
 .PP
-Fontconfig version 2.2.2
+Fontconfig version 2.3.2

@@ -53,11 +53,11 @@ in this Software without prior written authorization from The Open Group.
 
 #include <X11/Xos.h>
 #include "misc.h"
-#include "fontstruct.h"
-#include "fontutil.h"
+#include <X11/fonts/fontstruct.h>
+#include <X11/fonts/fontutil.h>
 #include "clientstr.h"
 #define FSMD_H
-#include "FSproto.h"
+#include <X11/fonts/FSproto.h>
 #include "difs.h"
 
 extern void TwoByteSwap(unsigned char *, int);

@@ -33,14 +33,19 @@
 /* $XFree86: xc/programs/Xserver/hw/xwin/winkeybd.c,v 1.12 2002/10/17 08:18:22 alanh Exp $ */
 
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 #include "winkeybd.h"
 #include "winconfig.h"
 #include "winmsg.h"
 
 #ifdef XKB
+#ifndef XKB_IN_SERVER
 #define XKB_IN_SERVER
-#include "XKBsrv.h"
+#endif
+#include <X11/extensions/XKBsrv.h>
 #endif
 
 static Bool g_winKeyState[NUM_KEYCODES];
@@ -78,14 +83,28 @@ winTranslateKey (WPARAM wParam, LPARAM lParam, int *piScanCode)
 {
   int		iKeyFixup = g_iKeyMap[wParam * WIN_KEYMAP_COLS + 1];
   int		iKeyFixupEx = g_iKeyMap[wParam * WIN_KEYMAP_COLS + 2];
+  int		iParamScanCode = LOBYTE (HIWORD (lParam));
 
   /* Branch on special extended, special non-extended, or normal key */
   if ((HIWORD (lParam) & KF_EXTENDED) && iKeyFixupEx)
     *piScanCode = iKeyFixupEx;
   else if (iKeyFixup)
     *piScanCode = iKeyFixup;
+  else if (wParam == 0 && iParamScanCode == 0x70)
+    *piScanCode = KEY_HKTG;
   else
-    *piScanCode = LOBYTE (HIWORD (lParam));
+    switch (iParamScanCode)
+    {
+      case 0x70:
+        *piScanCode = KEY_HKTG;
+        break;
+      case 0x73:
+        *piScanCode = KEY_BSlash2;
+        break;
+      default: 
+        *piScanCode = iParamScanCode;
+        break;
+    }
 }
 
 
@@ -434,7 +453,7 @@ winIsFakeCtrl_L (UINT message, WPARAM wParam, LPARAM lParam)
    * Fake Ctrl_L presses will be followed by an Alt_R keypress
    * with the same timestamp as the Ctrl_L press.
    */
-  if (message == WM_KEYDOWN
+  if ((message == WM_KEYDOWN || message == WM_SYSKEYDOWN)
       && wParam == VK_CONTROL
       && (HIWORD (lParam) & KF_EXTENDED) == 0)
     {
@@ -445,7 +464,7 @@ winIsFakeCtrl_L (UINT message, WPARAM wParam, LPARAM lParam)
 
       /* Look for fake Ctrl_L preceeding an Alt_R press. */
       fReturn = PeekMessage (&msgNext, NULL,
-			     WM_KEYDOWN, WM_KEYDOWN,
+			     WM_KEYDOWN, WM_SYSKEYDOWN,
 			     PM_NOREMOVE);
 
       /*
@@ -459,9 +478,11 @@ winIsFakeCtrl_L (UINT message, WPARAM wParam, LPARAM lParam)
 
 	  /* Look for fake Ctrl_L preceeding an Alt_R press. */
 	  fReturn = PeekMessage (&msgNext, NULL,
-				 WM_KEYDOWN, WM_KEYDOWN,
+				 WM_KEYDOWN, WM_SYSKEYDOWN,
 				 PM_NOREMOVE);
 	}
+      if (msgNext.message != WM_KEYDOWN && msgNext.message != WM_SYSKEYDOWN)
+          fReturn = 0;
 
       /* Is next press an Alt_R with the same timestamp? */
       if (fReturn && msgNext.wParam == VK_MENU
@@ -510,6 +531,9 @@ winIsFakeCtrl_L (UINT message, WPARAM wParam, LPARAM lParam)
 				 PM_NOREMOVE);
 	}
 
+      if (msgNext.message != WM_KEYUP && msgNext.message != WM_SYSKEYUP)
+          fReturn = 0;
+      
       /* Is next press an Alt_R with the same timestamp? */
       if (fReturn
 	  && (msgNext.message == WM_KEYUP
@@ -541,9 +565,11 @@ winKeybdReleaseKeys ()
 {
   int				i;
 
+#ifdef HAS_DEVWINDOWS
   /* Verify that the mi input system has been initialized */
   if (g_fdMessageQueue == WIN_FD_INVALID)
     return;
+#endif
 
   /* Loop through all keys */
   for (i = 0; i < NUM_KEYCODES; ++i)
@@ -585,4 +611,40 @@ winSendKeyEvent (DWORD dwKey, Bool fDown)
     g_c32LastInputEventTime = GetTickCount ();
   xCurrentEvent.u.u.detail = dwKey + MIN_KEYCODE;
   mieqEnqueue (&xCurrentEvent);
+}
+
+BOOL winCheckKeyPressed(WPARAM wParam, LPARAM lParam)
+{
+  switch (wParam)
+  {
+    case VK_CONTROL:
+      if ((lParam & 0x1ff0000) == 0x11d0000 && g_winKeyState[KEY_RCtrl])
+        return TRUE;
+      if ((lParam & 0x1ff0000) == 0x01d0000 && g_winKeyState[KEY_LCtrl])
+        return TRUE;
+      break;
+    case VK_SHIFT:
+      if ((lParam & 0x1ff0000) == 0x0360000 && g_winKeyState[KEY_ShiftR])
+        return TRUE;
+      if ((lParam & 0x1ff0000) == 0x02a0000 && g_winKeyState[KEY_ShiftL])
+        return TRUE;
+      break;
+    default:
+      return TRUE;
+  }
+  return FALSE;
+}
+
+/* Only on shift release message is sent even if both are pressed.
+ * Fix this here 
+ */
+void winFixShiftKeys (int iScanCode)
+{
+  if (GetKeyState (VK_SHIFT) & 0x8000)
+    return;
+
+  if (iScanCode == KEY_ShiftL && g_winKeyState[KEY_ShiftR])
+    winSendKeyEvent (KEY_ShiftR, FALSE);
+  if (iScanCode == KEY_ShiftR && g_winKeyState[KEY_ShiftL])
+    winSendKeyEvent (KEY_ShiftL, FALSE);
 }

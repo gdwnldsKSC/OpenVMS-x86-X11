@@ -24,8 +24,6 @@
 #ifndef ___ATIUTIL_H___
 #define ___ATIUTIL_H___ 1
 
-#include "atiproto.h"
-
 /*
  * Prevent the C standard's insistence on unsigned long sizeof's from causing
  * counter-intuitive results.
@@ -64,7 +62,7 @@
 #define GetWord(_Value, _Word)  GetBits(_Value, _WordMask(_Word))
 #define SetWord(_Value, _Word)  SetBits(_Value, _WordMask(_Word))
 
-extern void ATIReduceRatio FunctionPrototype((int *, int *));
-extern int  ATIDivide      FunctionPrototype((int, int, int, const int));
+extern void ATIReduceRatio(int *, int *);
+extern int  ATIDivide(int, int, int, const int);
 
 #endif /* ___ATIUTIL_H___ */

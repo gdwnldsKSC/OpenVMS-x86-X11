@@ -34,7 +34,7 @@
 
 #define CXPMPROG
 
-#include "../lib/XpmI.h"
+#include "XpmI.h"
 
 #undef xpmGetC
 #define xpmGetC(data) sGetc(data, data->stream.file)
@@ -77,13 +77,13 @@ sUngetc(data, c, file)
 }
 
 /* include all the code we need (yeah, I know, quite ugly...) */
-#include "../lib/data.c"
-#include "../lib/parse.c"
-#include "../lib/RdFToI.c"	/* only for OpenReadFile and xpmDataClose */
-#include "../lib/hashtab.c"
-#include "../lib/misc.c"
-#include "../lib/Attrib.c"
-#include "../lib/Image.c"
+#include "data.c"
+#include "parse.c"
+#include "RdFToI.c"	/* only for OpenReadFile and xpmDataClose */
+#include "hashtab.c"
+#include "misc.c"
+#include "Attrib.c"
+#include "Image.c"
 
 void
 ErrorMessage(ErrorStatus, data)

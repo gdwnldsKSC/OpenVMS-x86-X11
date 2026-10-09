@@ -31,7 +31,6 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#define __NO_VERSION__
 #include "drmP.h"
 
 #if PAGE_SIZE == 65536
@@ -158,7 +157,7 @@ int DRM(ati_pcigart_init)( drm_device_t *dev,
 
 	ret = 1;
 
-#if defined(__i386__) || defined(__AMD64__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__)
 	asm volatile ( "wbinvd" ::: "memory" );
 #else
 	mb();

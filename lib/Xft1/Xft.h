@@ -1,7 +1,7 @@
 /*
  * $XFree86: xc/lib/Xft/Xft.h,v 1.19 2001/04/29 03:21:17 keithp Exp $
  *
- * Copyright © 2000 Keith Packard, member of The XFree86 Project, Inc.
+ * Copyright Â© 2000 Keith Packard, member of The XFree86 Project, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that

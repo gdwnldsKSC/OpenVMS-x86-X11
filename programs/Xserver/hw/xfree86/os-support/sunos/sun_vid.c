@@ -23,7 +23,13 @@
  *
  */
 
-#ifdef i386
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <sys/types.h> /* get __x86 definition if not set by compiler */
+
+#if defined(i386) || defined(__x86)
 #define _NEED_SYSI86
 #endif
 #include "xf86.h"
@@ -143,28 +149,30 @@ xf86UnMapVidMem(int ScreenNum, pointer Base, unsigned long Size)
 /* I/O Permissions section						   */
 /***************************************************************************/
 
-#ifdef i386
+#if defined(i386) || defined(__x86)
 static Bool ExtendedEnabled = FALSE;
 #endif
 
-void
+Bool
 xf86EnableIO(void)
 {
-#ifdef i386
+#if defined(i386) || defined(__x86)
 	if (ExtendedEnabled)
-		return;
+		return TRUE;
 
-	if (sysi86(SI86V86, V86SC_IOPL, PS_IOPL) < 0)
-		FatalError("xf86EnableIOPorts: Failed to set IOPL for I/O\n");
-
+	if (sysi86(SI86V86, V86SC_IOPL, PS_IOPL) < 0) {
+		xf86Msg(X_WARNING,"xf86EnableIOPorts: Failed to set IOPL for I/O\n");
+		return FALSE;
+	}
 	ExtendedEnabled = TRUE;
 #endif /* i386 */
+	return TRUE;
 }
 
 void
 xf86DisableIO(void)
 {
-#ifdef i386
+#if defined(i386) || defined(__x86)
 	if(!ExtendedEnabled)
 		return;
 
@@ -181,7 +189,7 @@ xf86DisableIO(void)
 
 Bool xf86DisableInterrupts(void)
 {
-#ifdef i386
+#if defined(i386) || defined(__x86)
 	if (!ExtendedEnabled && (sysi86(SI86V86, V86SC_IOPL, PS_IOPL) < 0))
 		return FALSE;
 
@@ -200,7 +208,7 @@ Bool xf86DisableInterrupts(void)
 
 void xf86EnableInterrupts(void)
 {
-#ifdef i386
+#if defined(i386) || defined(__x86)
 	if (!ExtendedEnabled && (sysi86(SI86V86, V86SC_IOPL, PS_IOPL) < 0))
 		return;
 

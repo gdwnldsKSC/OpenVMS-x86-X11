@@ -76,6 +76,9 @@ SOFTWARE.
 
 /* $XFree86: xc/lib/Xaw/Text.c,v 3.53tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>

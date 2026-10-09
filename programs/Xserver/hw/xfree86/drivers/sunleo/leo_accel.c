@@ -22,27 +22,25 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/sunleo/leo_accel.c,v 1.2tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define	PSZ	32
 
 #include	"scrnintstr.h"
 #include	"pixmapstr.h"
 #include	"regionstr.h"
 #include	"mistruct.h"
-#include	"fontstruct.h"
+#include	<X11/fonts/fontstruct.h>
 #include	"dixfontstr.h"
-#include	"cfb.h"
-#include	"cfbmskbits.h"
-#include	"cfb8bit.h"
+#include	"fb.h"
 #include	"mibstore.h"
 #include	"mifillarc.h"
 #include	"miwideline.h"
-#include	"fastblt.h"
-#include	"mergerop.h"
-#include	"migc.h"
 #include	"mi.h"
 
 #include	"leo.h"
-#include	"leo_gc.h"
 
 int	LeoScreenPrivateIndex;
 int	LeoGCPrivateIndex;
@@ -67,49 +65,6 @@ int	leoRopTable[16] = {
 	LEO_ATTR_RGBE_ENABLE|LEO_ROP_NNEW_OR_NOLD,	/* GXnand */
 	LEO_ATTR_RGBE_ENABLE|LEO_ROP_ONES		/* GXset */
 };
-
-static void
-LeoCopyWindow(WindowPtr pWin, DDXPointRec ptOldOrg, RegionPtr prgnSrc)
-{
-	ScreenPtr pScreen = pWin->drawable.pScreen;
-	LeoPtr pLeo = LeoGetScreenPrivate (pScreen);
-	DDXPointPtr pptSrc;
-	DDXPointPtr ppt;
-	RegionPtr prgnDst;
-	BoxPtr pbox;
-	int dx, dy;
-	int i, nbox;
-	WindowPtr pwinRoot;
-
-	if (pLeo->vtSema)
-		return;
-
-	dx = ptOldOrg.x - pWin->drawable.x;
-	dy = ptOldOrg.y - pWin->drawable.y;
-
-	pwinRoot = WindowTable[pWin->drawable.pScreen->myNum];
-
-	prgnDst = REGION_CREATE(pWin->drawable.pScreen, NULL, 1);
-
-	REGION_TRANSLATE(pWin->drawable.pScreen, prgnSrc, -dx, -dy);
-	REGION_INTERSECT(pWin->drawable.pScreen, prgnDst, &pWin->borderClip, prgnSrc);
-
-	pbox = REGION_RECTS(prgnDst);
-	nbox = REGION_NUM_RECTS(prgnDst);
-	if(!(pptSrc = (DDXPointPtr )ALLOCATE_LOCAL(nbox * sizeof(DDXPointRec))))
-		return;
-	ppt = pptSrc;
-
-	for (i = nbox; --i >= 0; ppt++, pbox++) {
-		ppt->x = pbox->x1 + dx;
-		ppt->y = pbox->y1 + dy;
-	}
-
-	LeoDoBitblt ((DrawablePtr)pwinRoot, (DrawablePtr)pwinRoot,
-		     GXcopy, prgnDst, pptSrc, ~0L);
-	DEALLOCATE_LOCAL(pptSrc);
-	REGION_DESTROY(pWin->drawable.pScreen, prgnDst);
-}
 
 void LeoVtChange (ScreenPtr pScreen, int enter)
 {
@@ -161,11 +116,7 @@ Bool LeoAccelInit (ScreenPtr pScreen, LeoPtr pLeo)
 	pLeo->lc0 = lc0 = (LeoCommand0 *) ((char *)pLeo->fb + LEO_LC0_VOFF);
 	pLeo->ld0 = ld0 = (LeoDraw *) ((char *)pLeo->fb + LEO_LD0_VOFF);
 
-	if (!pLeo->NoAccel) {
-		/* Replace various screen functions. */
-		pScreen->CreateGC = LeoCreateGC;
-		pScreen->CopyWindow = LeoCopyWindow;
-	}
+	if (!pLeo->NoAccel) /* XXX do nothing */ ;
 
 	/* We will now clear the screen: we'll draw a rectangle covering all the
 	 * viewscreen, using a 'blackness' ROP.

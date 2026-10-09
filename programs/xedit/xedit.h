@@ -106,7 +106,7 @@ extern Boolean line_edit;
 void Feep(void);
 
 /*	externals in util.c 	*/
-void XeditPrintf(char*);
+void XeditPrintf(const char *format, ...);
 Widget MakeCommandButton(Widget, char*, XtCallbackProc);
 Widget MakeStringBox(Widget, String, String);
 String GetString(Widget);

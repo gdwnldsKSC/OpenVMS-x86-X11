@@ -51,6 +51,9 @@ SOFTWARE.
 ******************************************************************/
 /* $XFree86: xc/lib/Xmu/GrayPixmap.c,v 1.5 2001/01/17 19:42:55 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <X11/Intrinsic.h>
 #include <X11/Xmu/Drawing.h>

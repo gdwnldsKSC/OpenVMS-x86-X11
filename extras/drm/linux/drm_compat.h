@@ -1,6 +1,6 @@
 /**
- * \file drmP.h 
- * Private header for Direct Rendering Manager
+ * \file drm_compat.h 
+ * Backward compatability definitions for Direct Rendering Manager
  * 
  * \author Rickard E. (Rik) Faith <faith@valinux.com>
  * \author Gareth Hughes <gareth@valinux.com>
@@ -34,10 +34,6 @@
 #ifndef _DRM_COMPAT_H_
 #define _DRM_COMPAT_H_
 
-/***********************************************************************/
-/** \name Backward compatibility section */
-/*@{*/
-
 #ifndef minor
 #define minor(x) MINOR((x))
 #endif
@@ -54,6 +50,10 @@
 #ifndef pte_offset_map 
 #define pte_offset_map pte_offset
 #define pte_unmap(pte)
+#endif
+
+#ifndef module_param
+#define module_param(name, type, perm)
 #endif
 
 #ifndef list_for_each_safe
@@ -104,6 +104,17 @@ static inline struct page * vmalloc_to_page(void * vmalloc_addr)
 }
 #endif
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,4,2)
+#define down_write down
+#define up_write up
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#define DRM_PCI_DEV(pdev) &pdev->dev
+#else
+#define DRM_PCI_DEV(pdev) NULL
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 static inline unsigned iminor(struct inode *inode)
 {
@@ -112,23 +123,29 @@ static inline unsigned iminor(struct inode *inode)
 
 #define old_encode_dev(x) (x)
 
+struct drm_sysfs_class;
 struct class_simple;
 struct device;
 
 #define pci_dev_put(x) do {} while (0)
+#define pci_dev_get(x) do {} while (0)
 #define pci_get_subsys pci_find_subsys
 
-#define class_simple_device_add(...) do {} while (0)
+static inline struct class_device *DRM(sysfs_device_add)(struct drm_sysfs_class *cs, dev_t dev, struct device *device, const char *fmt, ...){return NULL;}
 
-static inline void class_simple_device_remove(dev_t dev){};
+static inline void DRM(sysfs_device_remove)(dev_t dev){}
 
-static inline void class_simple_destroy(struct class_simple *cs){};
+static inline void DRM(sysfs_destroy)(struct drm_sysfs_class *cs){}
 
-static inline struct class_simple *class_simple_create(struct module *owner, char *name) { return (struct class_simple *)owner; }
+static inline struct drm_sysfs_class *DRM(sysfs_create)(struct module *owner, char *name) { return NULL; }
 
 #ifndef pci_pretty_name
 #define pci_pretty_name(x) x->name
 #endif
+
+struct drm_device;
+static inline int radeon_create_i2c_busses(struct drm_device *dev){return 0;};
+static inline void radeon_delete_i2c_busses(struct drm_device *dev){};
 
 #endif
 
@@ -148,6 +165,9 @@ static inline struct class_simple *class_simple_create(struct module *owner, cha
 
 #define VM_OFFSET(vma) ((vma)->vm_pgoff << PAGE_SHIFT)
 
-/*@}*/
+/* old architectures */
+#ifdef __AMD64__
+#define __x86_64__
+#endif
 
 #endif

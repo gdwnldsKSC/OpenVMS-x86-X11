@@ -1,6 +1,7 @@
 /*
+ * $Id: xlib.c,v 1.5 2005/07/03 07:00:56 daniels Exp $
  *
- * Copyright © 2002 Keith Packard
+ * Copyright Â© 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -35,6 +36,9 @@ _XcursorFontIsCursor (Display *dpy, Font font)
     XFontStruct		*fs;
     int			n;
     Atom		cursor;
+
+    if (!dpy || !font)
+        return XcursorFalse;
 
     if (font == dpy->cursor_font)
 	return XcursorTrue;
@@ -86,6 +90,9 @@ XcursorTryShapeCursor (Display	    *dpy,
 		       XColor _Xconst *background)
 {
     Cursor  cursor = None;
+
+    if (!dpy || !source_font || !mask_font || !foreground || !background)
+        return 0;
     
     if (!XcursorSupportsARGB (dpy) && !XcursorGetThemeCore (dpy))
 	return None;
@@ -119,6 +126,9 @@ XcursorNoticeCreateBitmap (Display	*dpy,
     int			i;
     int			replace = 0;
     XcursorBitmapInfo	*bmi;
+
+    if (!dpy)
+        return;
 
     if (!XcursorSupportsARGB (dpy) && !XcursorGetThemeCore (dpy))
 	return;
@@ -160,8 +170,13 @@ XcursorNoticeCreateBitmap (Display	*dpy,
 static XcursorBitmapInfo *
 _XcursorGetBitmap (Display *dpy, Pixmap bitmap)
 {
-    XcursorDisplayInfo	*info = _XcursorGetDisplayInfo (dpy);
+    XcursorDisplayInfo	*info;
     int			i;
+
+    if (!dpy || !bitmap)
+        return NULL;
+    
+    info = _XcursorGetDisplayInfo (dpy);
 
     if (!info)
 	return 0;
@@ -233,6 +248,9 @@ XcursorImageHash (XImage	  *image,
     int		    low_addr;
     Bool	    bit_swap;
 
+    if (!image)
+        return;
+
     for (i = 0; i < XCURSOR_BITMAP_HASH_SIZE; i++)
 	hash[i] = 0;
     /*
@@ -302,6 +320,9 @@ XcursorNoticePutBitmap (Display	    *dpy,
 			XImage	    *image)
 {
     XcursorBitmapInfo	*bmi;
+
+    if (!dpy || !image)
+        return;
     
     if (!XcursorSupportsARGB (dpy) && !XcursorGetThemeCore (dpy))
 	return;
@@ -382,6 +403,9 @@ XcursorTryShapeBitmapCursor (Display		*dpy,
     char		name[8 * XCURSOR_BITMAP_HASH_SIZE];
     int			i;
     Cursor		cursor;
+
+    if (!dpy || !foreground || !background)
+        return 0;
 
     if (!XcursorSupportsARGB (dpy) && !XcursorGetThemeCore (dpy))
 	return None;

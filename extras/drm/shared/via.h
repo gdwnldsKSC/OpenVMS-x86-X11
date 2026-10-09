@@ -24,32 +24,31 @@
 #ifndef __VIA_H__
 #define __VIA_H__
 
-
 #define DRM(x) viadrv_##x
 
+#define DRIVER_AUTHOR	"VIA"
 
-#define __HAVE_AGP		1
-#define __MUST_HAVE_AGP		0
-#define __HAVE_MTRR		1
-#define __HAVE_CTX_BITMAP	1
+#define DRIVER_NAME		"via"
+#define DRIVER_DESC		"VIA Unichrome / Pro"
+#define DRIVER_DATE		"20050814"
 
-/* BEAM: Have enabled DMA,DMA_IRQ and VBL_IRQ needed to do this to get standard
- * support for VBL_IRQ.
- */
+#define DRIVER_MAJOR		2
+#define DRIVER_MINOR		6
+#define DRIVER_PATCHLEVEL	7
 
-#define __HAVE_IRQ              1
-#define __HAVE_SHARED_IRQ	1
-#define __HAVE_VBL_IRQ		1
+#define DRIVER_IOCTLS							\
+        [DRM_IOCTL_NR(DRM_IOCTL_VIA_ALLOCMEM)]  = { via_mem_alloc,  1, 0 }, \
+	[DRM_IOCTL_NR(DRM_IOCTL_VIA_FREEMEM)]   = { via_mem_free,   1, 0 }, \
+	[DRM_IOCTL_NR(DRM_IOCTL_VIA_AGP_INIT)]   = { via_agp_init,  1, 1 }, \
+	[DRM_IOCTL_NR(DRM_IOCTL_VIA_FB_INIT)]   = { via_fb_init,    1, 1 }, \
+	[DRM_IOCTL_NR(DRM_IOCTL_VIA_MAP_INIT)]   = { via_map_init,  1, 1 }, \
+	[DRM_IOCTL_NR(DRM_IOCTL_VIA_DEC_FUTEX)] = { via_decoder_futex, 1, 0}, \
+	[DRM_IOCTL_NR(DRM_IOCTL_VIA_DMA_INIT)] = { via_dma_init, 1, 0}, \
+	[DRM_IOCTL_NR(DRM_IOCTL_VIA_CMDBUFFER)] = { via_cmdbuffer, 1, 0}, \
+	[DRM_IOCTL_NR(DRM_IOCTL_VIA_FLUSH)] = { via_flush_ioctl, 1, 0}, \
+	[DRM_IOCTL_NR(DRM_IOCTL_VIA_PCICMD)] = {via_pci_cmdbuffer, 1, 0}, \
+	[DRM_IOCTL_NR(DRM_IOCTL_VIA_CMDBUF_SIZE)] = {via_cmdbuf_size, 1, 0}, \
+	[DRM_IOCTL_NR(DRM_IOCTL_VIA_WAIT_IRQ)] = {via_wait_irq, 1, 0}
 
-
-
-#define DRIVER_AGP_BUFFERS_MAP( dev )				\
-    ((drm_via_private_t *)((dev)->dev_private))->buffers
-
-extern int via_init_context(int context);
-extern int via_final_context(int context);
-
-#define DRIVER_CTX_CTOR via_init_context
-#define DRIVER_CTX_DTOR via_final_context
 
 #endif

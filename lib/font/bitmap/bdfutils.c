@@ -51,17 +51,21 @@ from The Open Group.
 */
 /* $XFree86: xc/lib/font/bitmap/bdfutils.c,v 1.10 2001/12/14 19:56:45 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifndef FONTMODULE
 #include <ctype.h>
 #include <stdio.h>
 #include <stdarg.h>
 #endif
 
-#include "fntfilst.h"
-#include "fontstruct.h"
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/fontstruct.h>
 /* use bitmap structure */
-#include "bitmap.h"
-#include "bdfint.h"
+#include <X11/fonts/bitmap.h>
+#include <X11/fonts/bdfint.h>
 
 int bdfFileLineNum;
 

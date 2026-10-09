@@ -1,4 +1,4 @@
-/* $Id: sparc.h,v 1.3 2001/06/06 22:55:28 davem69 Exp $ */
+/* $Id: sparc.h,v 1.1.1.1 2004/06/16 09:19:24 anholt Exp $ */
 
 /*
  * Mesa 3-D graphics library

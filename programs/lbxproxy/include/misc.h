@@ -1,4 +1,5 @@
 /* $Xorg: misc.h,v 1.4 2001/02/09 02:05:32 xorgcvs Exp $ */
+/* $XdotOrg: xc/programs/lbxproxy/include/misc.h,v 1.5 2005/08/27 01:45:27 alanc Exp $ */
 
 /*
 
@@ -37,13 +38,13 @@ from The Open Group.
 #include <X11/X.h>
 #include <X11/Xproto.h>
 #include <X11/Xmd.h>
-#include "Xos.h"
+#include <X11/Xos.h>
 #define ALLOCATE_LOCAL_FALLBACK(_size) Xalloc(_size)
 #define DEALLOCATE_LOCAL_FALLBACK(_ptr) Xfree(_ptr)
-#include "Xalloca.h"
-#include "Xfuncs.h"
-#include "Xfuncproto.h"
-#include "lbxstr.h"
+#include <X11/Xalloca.h>
+#include <X11/Xfuncs.h>
+#include <X11/Xfuncproto.h>
+#include <X11/extensions/lbxstr.h>
 
 #ifndef TRUE
 #define FALSE 0
@@ -60,8 +61,8 @@ typedef struct _XServer *XServerPtr;
 extern int nextFreeClientID; 
 extern int nClients;
 extern char *display_name;
-extern char dispatchException;
-extern char isItTimeToYield;
+extern volatile char dispatchException;
+extern volatile char isItTimeToYield;
 extern int MaxClients;
 
 /* The following byte swapping tools are duplicated in several places.
@@ -110,5 +111,9 @@ extern int MaxClients;
 
 #define REQUEST(type) \
 	register type *stuff = (type *)client->requestBuffer
+
+#define REQUEST_SIZE_MATCH(req) \
+    if ((sizeof(req) >> 2) != client->req_len) \
+	return (BadLength)
 
 #endif

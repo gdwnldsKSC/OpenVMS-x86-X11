@@ -51,10 +51,7 @@ static IconEntry * prevIconEntry ( IconEntry *ie, IconRegion *ir );
 static void mergeEntries ( IconEntry *old, IconEntry *ie );
 
 static void
-splitEntry (ie, grav1, grav2, w, h)
-    IconEntry   *ie;
-    int         grav1, grav2;
-    int         w, h;
+splitEntry (IconEntry *ie, int grav1, int grav2, int w, int h)
 {
     IconEntry	*new;
 
@@ -111,10 +108,7 @@ roundUp (int v, int multiple)
 }
 
 void
-PlaceIcon(tmp_win, def_x, def_y, final_x, final_y)
-    TwmWindow *tmp_win;
-    int def_x, def_y;
-    int *final_x, *final_y;
+PlaceIcon(TwmWindow *tmp_win, int def_x, int def_y, int *final_x, int *final_y)
 {
     IconRegion	*ir;
     IconEntry	*ie;
@@ -147,9 +141,7 @@ PlaceIcon(tmp_win, def_x, def_y, final_x, final_y)
 }
 
 static IconEntry *
-FindIconEntry (tmp_win, irp)
-    TwmWindow   *tmp_win;
-    IconRegion	**irp;
+FindIconEntry (TwmWindow *tmp_win, IconRegion **irp)
 {
     IconRegion	*ir;
     IconEntry	*ie;
@@ -166,8 +158,7 @@ FindIconEntry (tmp_win, irp)
 }
 
 void
-IconUp (tmp_win)
-    TwmWindow   *tmp_win;
+IconUp (TwmWindow *tmp_win)
 {
     int		x, y;
     int		defx, defy;
@@ -207,9 +198,7 @@ IconUp (tmp_win)
 }
 
 static IconEntry *
-prevIconEntry (ie, ir)
-    IconEntry	*ie;
-    IconRegion	*ir;
+prevIconEntry (IconEntry *ie, IconRegion *ir)
 {
     IconEntry	*ip;
 
@@ -220,13 +209,12 @@ prevIconEntry (ie, ir)
     return ip;
 }
 
-/* old is being freed; and is adjacent to ie.  Merge
+/**
+ * old is being freed; and is adjacent to ie.  Merge
  * regions together
  */
-
 static void
-mergeEntries (old, ie)
-    IconEntry	*old, *ie;
+mergeEntries (IconEntry *old, IconEntry *ie)
 {
     if (old->y == ie->y) {
 	ie->w = old->w + ie->w;
@@ -240,8 +228,7 @@ mergeEntries (old, ie)
 }
 
 void
-IconDown (tmp_win)
-    TwmWindow   *tmp_win;
+IconDown (TwmWindow *tmp_win)
 {
     IconEntry	*ie, *ip, *in;
     IconRegion	*ir;
@@ -277,10 +264,7 @@ IconDown (tmp_win)
 }
 
 void
-AddIconRegion(geom, grav1, grav2, stepx, stepy)
-char *geom;
-int grav1, grav2;
-int stepx, stepy;
+AddIconRegion(char *geom, int grav1, int grav2, int stepx, int stepy)
 {
     IconRegion *ir;
     int mask;
@@ -323,8 +307,7 @@ int stepx, stepy;
 
 #ifdef comment
 void
-FreeIconEntries (ir)
-    IconRegion	*ir;
+FreeIconEntries (IconRegion *ir)
 {
     IconEntry	*ie, *tmp;
 
@@ -353,9 +336,7 @@ FreeIconRegions()
 #endif
 
 void
-CreateIconWindow(tmp_win, def_x, def_y)
-    TwmWindow *tmp_win;
-    int def_x, def_y;
+CreateIconWindow(TwmWindow *tmp_win, int def_x, int def_y)
 {
     unsigned long event_mask;
     unsigned long valuemask;		/* mask for create windows */

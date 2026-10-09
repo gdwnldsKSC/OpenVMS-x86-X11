@@ -1,4 +1,4 @@
-XCOMM!/bin/sh
+XCOMM!SHELL_CMD
 
 XCOMM $Xorg: startx.cpp,v 1.3 2000/08/17 19:54:29 cpqbld Exp $
 XCOMM
@@ -13,28 +13,36 @@ XCOMM Site administrators are STRONGLY urged to write nicer versions.
 XCOMM
 XCOMM $XFree86: xc/programs/xinit/startx.cpp,v 3.16tsi Exp $
 
-#ifdef SCO
+#if defined(__SCO__) || defined(__UNIXWARE__)
 
 XCOMM Check for /usr/bin/X11 and BINDIR in the path, if not add them.
 XCOMM This allows startx to be placed in a place like /usr/bin or /usr/local/bin
-XCOMM and people may use X without changing their PATH
+XCOMM and people may use X without changing their PATH.
+XCOMM Note that we put our own bin directory at the front of the path, and
+XCOMM the standard SCO path at the back, since if you are using the Xorg
+XCOMM server theres a pretty good chance you want to bias the Xorg clients
+XCOMM over the old SCO X11R5 clients.
 
 XCOMM First our compiled path
 
 bindir=BINDIR
-if expr $PATH : ".*`echo $bindir | sed 's?/?\\/?g'`.*" > /dev/null 2>&1; then
-	:
-else
-	PATH=$PATH:BINDIR
-fi
+scobindir=/usr/bin/X11
+
+case $PATH in
+  *:$bindir | *:$bindir:* | $bindir:*) ;;
+  *) PATH=$bindir:$PATH ;;
+esac
 
 XCOMM Now the "SCO" compiled path
 
-if expr $PATH : '.*\/usr\/bin\/X11.*' > /dev/null 2>&1; then
-	:
-else
-	PATH=$PATH:/usr/bin/X11
-fi
+case $PATH in
+  *:$scobindir | *:$scobindir:* | $scobindir:*) ;;
+  *) PATH=$PATH:$scobindir ;;
+esac
+
+XCOMM Bourne shell doesn't automatically export modified environment variables
+XCOMM so export the new PATH just in case the user changes the shell
+export PATH
 
 XCOMM Set up the XMERGE env var so that dos merge is happy under X
 
@@ -45,32 +53,49 @@ elif [ -f /usr/lib/merge/console.disp ]; then
 	export XMERGE
 fi
 
-scoclientrc=$HOME/.startxrc
+userclientrc=$HOME/.startxrc
+sysclientrc=LIBDIR/sys.startxrc
+scouserclientrc=$HOME/.xinitrc
+scosysclientrc=XINITDIR/xinitrc
+#else
+userclientrc=$HOME/.xinitrc
+sysclientrc=XINITDIR/xinitrc
 #endif
 
-userclientrc=$HOME/.xinitrc
 userserverrc=$HOME/.xserverrc
-sysclientrc=XINITDIR/xinitrc
 sysserverrc=XINITDIR/xserverrc
-defaultclient=BINDIR/xterm
-defaultserver=BINDIR/X
+defaultclient=XTERM
+defaultserver=XSERVER
 defaultclientargs=""
 defaultserverargs=""
 clientargs=""
 serverargs=""
 
-#ifdef SCO
-if [ -f $scoclientrc ]; then
-    defaultclientargs=$scoclientrc
-else
-#endif
 if [ -f $userclientrc ]; then
     defaultclientargs=$userclientrc
 elif [ -f $sysclientrc ]; then
     defaultclientargs=$sysclientrc
+#if defined(__SCO__) || defined(__UNIXWARE__)
+elif [ -f $scouserclientrc ]; then
+    defaultclientargs=$scouserclientrc
+elif [ -f $scosysclientrc ]; then
+    defaultclientargs=$scosysclientrc
+#endif
 fi
-#ifdef SCO
-fi
+
+#if defined(__SCO__) || defined(__UNIXWARE__)
+
+XCOMM SCO -t option: do not start an X server
+case $1 in
+  -t)   if [ -n "$DISPLAY" ]; then
+                REMOTE_SERVER=TRUE
+                shift
+        else
+                echo "DISPLAY environment variable not set"
+                exit 1
+        fi
+        ;;
+esac
 #endif
 
 if [ -f $userserverrc ]; then
@@ -162,22 +187,53 @@ esac
 
 authdisplay=${display:-:0}
 mcookie=`MK_COOKIE`
+dummy=0
+
+XCOMM create a file with auth information for the server. ':0' is a dummy.
+xserverauthfile=$HOME/.serverauth.$$
+xauth -q -f $xserverauthfile << EOF
+add :$dummy . $mcookie
+EOF
+serverargs=${serverargs}" -auth "${xserverauthfile}
+
+XCOMM now add the same credentials to the client authority file
+XCOMM if '$displayname' already exists don't overwrite it as another
+XCOMM server man need it. Add them to the '$xserverauthfile' instead.
 for displayname in $authdisplay $hostname$authdisplay; do
-    if ! xauth list "$displayname" | grep "$displayname " >/dev/null 2>&1; then
-        xauth -q << EOF 
+     authcookie=`XAUTH list "$displayname" @@
+       | sed -n "s/.*$displayname[[:space:]*].*[[:space:]*]//p"` 2>/dev/null;
+    if [ "z${authcookie}" = "z" ] ; then
+        XAUTH -q << EOF 
 add $displayname . $mcookie
 EOF
 	removelist="$displayname $removelist"
+    else
+        dummy=$((dummy+1));
+        XAUTH -q -f $xserverauthfile << EOF
+add :$dummy . $authcookie
+EOF
     fi
 done
+
 #endif
 
-xinit $client $clientargs -- $server $display $serverargs
+#if defined(__SCO__) || defined(__UNIXWARE__)
+if [ "$REMOTE_SERVER" = "TRUE" ]; then
+        exec SHELL_CMD ${client}
+else
+        XINIT $client $clientargs -- $server $display $serverargs
+fi
+#else
+XINIT $client $clientargs -- $server $display $serverargs
+#endif
 
 if [ x"$removelist" != x ]; then
-    xauth remove $removelist
+    XAUTH remove $removelist
 fi
-
+if [ x"$xserverauthfile" != x ]; then
+    rm -f $xserverauthfile
+fi
+    
 /*
  * various machines need special cleaning up
  */
@@ -192,6 +248,6 @@ Xrepair
 screenrestore
 #endif
 
-#if defined(sun) && !defined(i386)
+#if defined(sun)
 kbd_mode -a
 #endif

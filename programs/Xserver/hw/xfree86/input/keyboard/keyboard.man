@@ -1,3 +1,4 @@
+.\" $XdotOrg: xc/programs/Xserver/hw/xfree86/input/keyboard/keyboard.man,v 1.4 2005/12/19 07:56:56 alanc Exp $
 .\" $XFree86: xc/programs/Xserver/hw/xfree86/input/keyboard/keyboard.man,v 1.2 2001/01/27 18:20:57 dawes Exp $ 
 .\" shorthand for double quote that works everywhere.
 .ds q \N'34'
@@ -15,14 +16,19 @@ keyboard \- Keyboard input driver
 .SH DESCRIPTION
 .B keyboard 
 is an __xservername__ input driver for keyboards.  The driver supports the standard
-OS-provided keyboard interface.  This driver is currently built-in to
-the core X server.
+OS-provided keyboard interface. 
 .PP
 The
 .B keyboard
 driver functions as a keyboard input device, and may be used as the
-X server's core keyboard.  This driver is currently built-in to the core
-X server, and multiple instances are not yet supported.
+X server's core keyboard.  
+.PP
+This driver is built-in to the core X server, and multiple instances are not 
+supported.   A loadable driver,
+.BR kbd ,
+is available, and is planned to replace the
+.B keyboard
+driver in a future release of the __xservername__ server.
 .SH CONFIGURATION DETAILS
 Please refer to __xconfigfile__(__filemansuffix__) for general configuration
 details and for options that can be used with all input drivers.  This
@@ -75,13 +81,12 @@ specifies which XKB rules file to use for interpreting the
 .BR XkbVariant ,
 and
 .B XkbOptions
-settings.  Default: "xfree86" for most platforms, but "xfree98" for the
+settings.  Default: "xorg" for most platforms, but "xfree98" for the
 Japanese PC-98 platforms.
 .TP 7
 .BI "Option \*qXkbModel\*q \*q" modelname \*q
-specifies the XKB keyboard model name.  Default: "pc101" for most platforms,
-but "pc98" for the Japanese PC-98 platforms, and "pc101_sol8x86" for
-Solaris 8 on x86.
+specifies the XKB keyboard model name.  Default: "pc105" for most platforms,
+but "pc98" for the Japanese PC-98 platforms.
 .TP 7
 .BI "Option \*qXkbLayout\*q \*q" layoutname \*q
 specifies the XKB keyboard layout name.  This is usually the country or

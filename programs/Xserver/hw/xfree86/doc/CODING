@@ -24,7 +24,7 @@
 -sob  swallow optional blank lines
 -ss   on one-line `for' and `while' statments, force a blank before the semicolo
 n
--ce   cuddle else and preceeding `}'
+-ce   cuddle else and preceding `}'
 -sc   put the `*' character at the left of comments
 -br   formats braces like this:
 

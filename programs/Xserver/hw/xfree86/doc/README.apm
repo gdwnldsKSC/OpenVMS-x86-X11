@@ -1,6 +1,6 @@
                Information for Alliance Promotion chipset users
 
- Loïc Grenié (<grenie@math.jussieu.fr>),       Henrik Harmsen (<Henrik.Harm-
+ Loc Greni (<grenie@math.jussieu.fr>),       Henrik Harmsen (<Henrik.Harm-
                             sen@erv.ericsson.se>)
 
                                  6 March 2000
@@ -105,10 +105,10 @@ There is support for the XF86Rush extension for use with the glide2x library.
 
 8.  Questions
 
-Any questions regarding this driver should be sent to Loïc Grenié. It should
+Any questions regarding this driver should be sent to Loc Greni. It should
 be possible to add support for the 3210 chipset if someone needs it.
 
-     $Id$
+     Generated from Id: apm.sgml,v 1.2 eich Exp $
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.apm,v 1.3 2004/09/03 23:41:21 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.apm,v 1.5 2005/12/21 05:39:05 kem Exp $

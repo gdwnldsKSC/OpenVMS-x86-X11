@@ -1,8 +1,8 @@
 /*
  * $XFree86: xc/programs/Xserver/randr/randr.c,v 1.21tsi Exp $
  *
- * Copyright © 2000, Compaq Computer Corporation, 
- * Copyright © 2002, Hewlett Packard, Inc.
+ * Copyright Â© 2000, Compaq Computer Corporation, 
+ * Copyright Â© 2002, Hewlett Packard, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -27,8 +27,12 @@
 
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "os.h"
 #include "dixstruct.h"
@@ -38,14 +42,14 @@
 #include "pixmapstr.h"
 #include "extnsionst.h"
 #include "servermd.h"
-#include "randr.h"
-#include "randrproto.h"
+#include <X11/extensions/randr.h>
+#include <X11/extensions/randrproto.h>
 #include "randrstr.h"
 #ifdef RENDER
-#include "render.h" 	/* we share subpixel order information */
+#include <X11/extensions/render.h> 	/* we share subpixel order information */
 #include "picturestr.h"
 #endif
-#include "Xfuncproto.h"
+#include <X11/Xfuncproto.h>
 #ifdef EXTMODULE
 #include "xf86_ansic.h"
 #endif

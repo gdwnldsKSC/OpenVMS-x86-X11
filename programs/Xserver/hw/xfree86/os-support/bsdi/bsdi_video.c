@@ -25,7 +25,11 @@
  */
 /* $XConsortium: bsdi_video.c /main/4 1996/02/21 17:51:22 kaleb $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "input.h"
 #include "scrnintstr.h"
 
@@ -86,18 +90,20 @@ xf86LinearVidMem()
 
 static Bool ExtendedEnabled = FALSE;
 
-void
+Bool
 xf86EnableIO()
 {
 	if (ExtendedEnabled)
-		return;
+		return TRUE;
 
 	if (ioctl(xf86Info.consoleFd, PCCONENABIOPL, 0) < 0)
 	{
-		FatalError("%s: Failed to set IOPL for extended I/O\n",
+		xf86Msg(X_WARNING,"%s: Failed to set IOPL for extended I/O\n",
 			   "xf86EnableIOPorts");
+		return FALSE;
 	}
 	ExtendedEnabled = TRUE;
+	return TRUE;
 }
 
 void

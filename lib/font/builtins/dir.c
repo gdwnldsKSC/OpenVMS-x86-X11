@@ -24,6 +24,9 @@
  */
 /* $XFree86: xc/lib/font/builtins/dir.c,v 1.3 1999/12/30 02:29:49 robin Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "builtin.h"
 
 int

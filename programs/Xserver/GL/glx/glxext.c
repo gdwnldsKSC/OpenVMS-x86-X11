@@ -19,6 +19,10 @@
 */
 
 #define NEED_REPLIES
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "glxserver.h"
 #include <windowstr.h>
 #include <propertyst.h>
@@ -176,6 +180,18 @@ GLboolean __glXFreeContext(__GLXcontext *cx)
     return GL_TRUE;
 }
 
+extern RESTYPE __glXSwapBarrierRes;
+
+static int SwapBarrierGone(int screen, XID drawable)
+{
+    if (__glXSwapBarrierFuncs &&
+        __glXSwapBarrierFuncs[screen].bindSwapBarrierFunc != NULL) {
+        __glXSwapBarrierFuncs[screen].bindSwapBarrierFunc(screen, drawable, 0);
+    }
+    FreeResourceByType(drawable, __glXSwapBarrierRes, FALSE);
+    return True;
+}
+
 /************************************************************************/
 
 /*
@@ -221,15 +237,9 @@ void GlxExtensionInit(void)
     ExtensionEntry *extEntry;
     int i;
     
-#ifdef X11R5
-    __glXContextRes = CreateNewResourceType(ContextGone);
-    __glXClientRes = CreateNewResourceType(ClientGone);
-    __glXPixmapRes = CreateNewResourceType(PixmapGone);
-#else
     __glXContextRes = CreateNewResourceType((DeleteType)ContextGone);
     __glXClientRes = CreateNewResourceType((DeleteType)ClientGone);
     __glXPixmapRes = CreateNewResourceType((DeleteType)PixmapGone);
-#endif 
 
     /*
     ** Add extension to server extensions.
@@ -257,6 +267,8 @@ void GlxExtensionInit(void)
     __glXBadLargeRequest = extEntry->errorBase + GLXBadLargeRequest;
     __glXUnsupportedPrivateRequest = extEntry->errorBase +
       			GLXUnsupportedPrivateRequest;
+
+    __glXSwapBarrierRes = CreateNewResourceType((DeleteType)SwapBarrierGone);
 
     /*
     ** Initialize table of client state.  There is never a client 0.

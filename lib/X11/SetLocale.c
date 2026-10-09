@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/lib/X11/SetLocale.c,v 1.2 2004/04/23 18:43:24 eich Exp $ */
+/* $XdotOrg: xc/lib/X11/SetLocale.c,v 1.4 2005/07/03 07:00:55 daniels Exp $ */
 /* $Xorg: SetLocale.c,v 1.4 2001/02/09 02:03:36 xorgcvs Exp $ */
 
 /*
@@ -58,6 +58,9 @@ from The Open Group.
 */
 /* $XFree86: xc/lib/X11/SetLocale.c,v 3.20 2003/11/17 22:20:08 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "Xlibint.h"
 #include "Xlcint.h"
 #include <X11/Xlocale.h>

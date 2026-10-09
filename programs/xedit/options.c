@@ -24,7 +24,7 @@
  * dealings in this Software without prior written authorization from the
  * XFree86 Project.
  *
- * Author: Paulo César Pereira de Andrade
+ * Author: Paulo CÃ©sar Pereira de Andrade
  */
 
 /* $XFree86: xc/programs/xedit/options.c,v 1.13 2002/09/22 07:09:05 paulo Exp $ */
@@ -349,11 +349,11 @@ CreateColumnsShell(void)
     XtCreateManagedWidget("leftLabel", labelWidgetClass, form, NULL, 0);
     left_text		= XtVaCreateManagedWidget("left", asciiTextWidgetClass,
 						  form, XtNeditType, XawtextEdit,
-						  NULL, 0);
+						  NULL);
     XtCreateManagedWidget("rightLabel", labelWidgetClass, form, NULL, 0);
     right_text		= XtVaCreateManagedWidget("right", asciiTextWidgetClass,
 						  form, XtNeditType, XawtextEdit,
-						  NULL, 0);
+						  NULL);
     ok			= XtCreateManagedWidget("ok", commandWidgetClass,
 						form, NULL, 0);
     XtAddCallback(ok, XtNcallback, ProcessColumnsCallback, (XtPointer)True);

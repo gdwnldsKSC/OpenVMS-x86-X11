@@ -38,6 +38,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "matrix.h"
 #include "simple_list.h"
 #include "extensions.h"
+#include "framebuffer.h"
 #include "imports.h"
 
 #include "swrast/swrast.h"
@@ -60,20 +61,42 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "i810ioctl.h"
 
 #include "utils.h"
+
+#define need_GL_ARB_multisample
+#define need_GL_ARB_texture_compression
+#include "extension_helper.h"
+
 #ifndef I810_DEBUG
 int I810_DEBUG = (0);
 #endif
 
-const char __driConfigOptions[] = { 0 };
+PUBLIC const char __driConfigOptions[] = { 0 };
 const GLuint __driNConfigOptions = 0;
+
+#define DRIVER_DATE                     "20050818"
 
 static const GLubyte *i810GetString( GLcontext *ctx, GLenum name )
 {
+   static char buffer[128];
+
    switch (name) {
    case GL_VENDOR:
       return (GLubyte *)"Keith Whitwell";
-   case GL_RENDERER:
-      return (GLubyte *)"Mesa DRI I810 20021125";
+   case GL_RENDERER: {
+      i810ContextPtr imesa = I810_CONTEXT(ctx);
+      const char * chipset;
+      
+      switch (imesa->i810Screen->deviceID) {
+      case PCI_CHIP_I810:       chipset = "i810"; break;
+      case PCI_CHIP_I810_DC100: chipset = "i810 DC-100"; break;
+      case PCI_CHIP_I810_E:     chipset = "i810E"; break;
+      case PCI_CHIP_I815:       chipset = "i815"; break;
+      default:                  chipset = "Unknown i810-class Chipset"; break;
+      }
+
+      (void) driGetRendererString( buffer, chipset, DRIVER_DATE, 0 );
+      return (GLubyte *) buffer;
+   }
    default:
       return 0;
    }
@@ -96,17 +119,20 @@ static void i810BufferSize(GLframebuffer *buffer, GLuint *width, GLuint *height)
 
 /* Extension strings exported by the i810 driver.
  */
-static const char * const card_extensions[] =
+const struct dri_extension card_extensions[] =
 {
-   "GL_ARB_multitexture",
-   "GL_ARB_texture_env_add",
-   "GL_ARB_texture_mirrored_repeat",
-   "GL_EXT_stencil_wrap",
-   "GL_EXT_texture_edge_clamp",
-   "GL_EXT_texture_lod_bias",
-   "GL_MESA_ycbcr_texture",
-   "GL_SGIS_generate_mipmap",
-   NULL
+    { "GL_ARB_multisample",                GL_ARB_multisample_functions },
+    { "GL_ARB_multitexture",               NULL },
+    { "GL_ARB_texture_compression",        GL_ARB_texture_compression_functions },
+    { "GL_ARB_texture_env_add",            NULL },
+    { "GL_ARB_texture_mirrored_repeat",    NULL },
+    { "GL_EXT_stencil_wrap",               NULL },
+    { "GL_EXT_texture_edge_clamp",         NULL },
+    { "GL_EXT_texture_lod_bias",           NULL },
+    { "GL_MESA_ycbcr_texture",             NULL },
+    { "GL_NV_blend_square",                NULL },
+    { "GL_SGIS_generate_mipmap",           NULL },
+    { NULL,                                NULL }
 };
 
 extern const struct tnl_pipeline_stage _i810_render_stage;
@@ -245,7 +271,7 @@ i810CreateContext( const __GLcontextModes *mesaVis,
    ctx->Const.PointSizeGranularity = 1.0;
 
    ctx->Driver.GetBufferSize = i810BufferSize;
-   ctx->Driver.ResizeBuffers = _swrast_alloc_buffers;
+   ctx->Driver.ResizeBuffers = _mesa_resize_framebuffer;
    ctx->Driver.GetString = i810GetString;
 
    /* Who owns who?
@@ -331,7 +357,7 @@ i810DestroyContext(__DRIcontextPrivate *driContextPriv)
  	 /* This share group is about to go away, free our private
           * texture object data.
           */
-         int i;
+	 unsigned int i;
 
          for ( i = 0 ; i < imesa->nr_heaps ; i++ ) {
 	    driDestroyTextureHeap( imesa->texture_heaps[ i ] );
@@ -384,11 +410,12 @@ void i810XMesaSetBackClipRects( i810ContextPtr imesa )
 
 static void i810XMesaWindowMoved( i810ContextPtr imesa )
 {
-   switch (imesa->glCtx->Color._DrawDestMask) {
-   case DD_FRONT_LEFT_BIT:
+   /* Determine current color drawing buffer */
+   switch (imesa->glCtx->DrawBuffer->_ColorDrawBufferMask[0]) {
+   case BUFFER_BIT_FRONT_LEFT:
       i810XMesaSetFrontClipRects( imesa );
       break;
-   case DD_BACK_LEFT_BIT:
+   case BUFFER_BIT_BACK_LEFT:
       i810XMesaSetBackClipRects( imesa );
       break;
    default:
@@ -424,19 +451,16 @@ i810MakeCurrent(__DRIcontextPrivate *driContextPriv,
        */
       imesa->driDrawable = driDrawPriv;
 
-      _mesa_make_current2(imesa->glCtx,
-                          (GLframebuffer *) driDrawPriv->driverPrivate,
-                          (GLframebuffer *) driReadPriv->driverPrivate);
+      _mesa_make_current(imesa->glCtx,
+                         (GLframebuffer *) driDrawPriv->driverPrivate,
+                         (GLframebuffer *) driReadPriv->driverPrivate);
 
       /* Are these necessary?
        */
       i810XMesaWindowMoved( imesa );
-      if (!imesa->glCtx->Viewport.Width)
-	 _mesa_set_viewport(imesa->glCtx, 0, 0,
-                            driDrawPriv->w, driDrawPriv->h);
    }
    else {
-      _mesa_make_current(0,0);
+      _mesa_make_current(NULL, NULL, NULL);
    }
 
    return GL_TRUE;
@@ -448,11 +472,12 @@ i810UpdatePageFlipping( i810ContextPtr imesa )
    GLcontext *ctx = imesa->glCtx;
    int front = 0;
 
-   switch (ctx->Color._DrawDestMask) {
-   case DD_FRONT_LEFT_BIT:
+   /* Determine current color drawing buffer */
+   switch (ctx->DrawBuffer->_ColorDrawBufferMask[0]) {
+   case BUFFER_BIT_FRONT_LEFT:
       front = 1;
       break;
-   case DD_BACK_LEFT_BIT:
+   case BUFFER_BIT_BACK_LEFT:
       front = 0;
       break;
    default:

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright © 2000, 2003 by The XFree86 Project, Inc
+# Copyright Â© 2000, 2003 by The XFree86 Project, Inc
 # 
 # Remove dangling symlinks and empty directories from a shadow link tree
 # (created with lndir).

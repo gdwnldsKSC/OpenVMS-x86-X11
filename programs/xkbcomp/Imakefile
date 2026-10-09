@@ -8,7 +8,7 @@ XCOMM $XFree86: xc/programs/xkbcomp/Imakefile,v 3.21tsi Exp $
 #define IHaveSubdirs
 #define PassCDebugFlags 'CDEBUGFLAGS=$(CDEBUGFLAGS)'
 
-#if CrossCompiling
+#if CrossCompiling && !UseInstalledOnCrossCompile
          CROSS = cross
 #endif
           SRCS = xkbcomp.c xkbscan.c expr.c vmod.c indicators.c misc.c \

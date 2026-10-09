@@ -15,9 +15,9 @@
 @SET_MAKE@
 
 # 
-#  $Id$
+#  $Id: Makefile.in,v 1.3 2005/06/28 01:01:10 alanc Exp $
 # 
-#  Copyright © 2003 Keith Packard
+#  Copyright Â© 2003 Keith Packard
 # 
 #  Permission to use, copy, modify, distribute, and sell this software and its
 #  documentation for any purpose is hereby granted without fee, provided that
@@ -71,10 +71,13 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
+CC_FOR_BUILD = @CC_FOR_BUILD@
 CFLAGS = @CFLAGS@
 CONFDIR = @CONFDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CROSS_COMPILING_FALSE = @CROSS_COMPILING_FALSE@
+CROSS_COMPILING_TRUE = @CROSS_COMPILING_TRUE@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -84,6 +87,8 @@ DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
 DOCDIR = @DOCDIR@
+DOCMAN3 = @DOCMAN3@
+DOCSRC = @DOCSRC@
 ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -92,6 +97,7 @@ EGREP = @EGREP@
 ENABLE_DOCS_FALSE = @ENABLE_DOCS_FALSE@
 ENABLE_DOCS_TRUE = @ENABLE_DOCS_TRUE@
 EXEEXT = @EXEEXT@
+EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
 EXPAT_CFLAGS = @EXPAT_CFLAGS@
 EXPAT_LIBS = @EXPAT_LIBS@
 F77 = @F77@
@@ -119,6 +125,9 @@ LT_CURRENT = @LT_CURRENT@
 LT_CURRENT_MINUS_AGE = @LT_CURRENT_MINUS_AGE@
 LT_REVISION = @LT_REVISION@
 LT_VERSION_INFO = @LT_VERSION_INFO@
+MAINT = @MAINT@
+MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
+MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
 MS_LIB_AVAILABLE_FALSE = @MS_LIB_AVAILABLE_FALSE@
 MS_LIB_AVAILABLE_TRUE = @MS_LIB_AVAILABLE_TRUE@
@@ -138,7 +147,10 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USEDOCBOOK_FALSE = @USEDOCBOOK_FALSE@
+USEDOCBOOK_TRUE = @USEDOCBOOK_TRUE@
 VERSION = @VERSION@
+WARN_CFLAGS = @WARN_CFLAGS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_AS = @ac_ct_AS@
 ac_ct_CC = @ac_ct_CC@
@@ -186,15 +198,21 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 
-INCLUDES = $(FREETYPE_CFLAGS)
+DOC2MAN = docbook2man
 
-man1_MANS = fc-cache.man
+FC_CACHE_SRC = ${top_srcdir}/fc-cache
+
+SGML = ${FC_CACHE_SRC}/fc-cache.sgml
+
+INCLUDES = -I${top_srcdir} $(FREETYPE_CFLAGS)
 
 bin_PROGRAMS = fc-cache
 
-EXTRA_DIST = $(man1_MANS)
+EXTRA_DIST = $(SGML)
 
-fc_cache_LDADD = ../src/libfontconfig.la
+fc_cache_LDADD = ${top_builddir}/src/libfontconfig.la
+
+@USEDOCBOOK_TRUE@man_MANS = fc-cache.1
 subdir = fc-cache
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -205,7 +223,7 @@ PROGRAMS = $(bin_PROGRAMS)
 
 fc_cache_SOURCES = fc-cache.c
 fc_cache_OBJECTS = fc-cache.$(OBJEXT)
-fc_cache_DEPENDENCIES = ../src/libfontconfig.la
+fc_cache_DEPENDENCIES = ${top_builddir}/src/libfontconfig.la
 fc_cache_LDFLAGS =
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
@@ -222,7 +240,7 @@ LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 DIST_SOURCES = fc-cache.c
 
 NROFF = nroff
-MANS = $(man1_MANS)
+MANS = $(man_MANS)
 DIST_COMMON = $(srcdir)/Makefile.in Makefile.am
 SOURCES = fc-cache.c
 
@@ -230,10 +248,10 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  fc-cache/Makefile
-Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 install-binPROGRAMS: $(bin_PROGRAMS)
@@ -425,6 +443,7 @@ top_distdir = ..
 distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 
 distdir: $(DISTFILES)
+	$(mkinstalldirs) $(distdir)/${FC_CACHE_SRC}
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -453,7 +472,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) $(MANS)
+all-am: Makefile $(PROGRAMS) $(MANS) all-local
 
 installdirs:
 	$(mkinstalldirs) $(DESTDIR)$(bindir) $(DESTDIR)$(man1dir)
@@ -483,7 +502,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-binPROGRAMS clean-generic clean-libtool mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libtool clean-local \
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -531,19 +551,32 @@ uninstall-am: uninstall-binPROGRAMS uninstall-info-am uninstall-man
 
 uninstall-man: uninstall-man1
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
-	clean-generic clean-libtool ctags distclean distclean-compile \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am info info-am install install-am install-binPROGRAMS \
-	install-data install-data-am install-exec install-exec-am \
-	install-info install-info-am install-man install-man1 \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool pdf \
-	pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-binPROGRAMS uninstall-info-am uninstall-man \
-	uninstall-man1
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-binPROGRAMS clean-generic clean-libtool clean-local ctags \
+	distclean distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am info info-am install \
+	install-am install-binPROGRAMS install-data install-data-am \
+	install-exec install-exec-am install-info install-info-am \
+	install-man install-man1 install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags uninstall uninstall-am uninstall-binPROGRAMS \
+	uninstall-info-am uninstall-man uninstall-man1
 
+
+@USEDOCBOOK_TRUE@${man_MANS}: ${SGML}	
+@USEDOCBOOK_TRUE@	$(RM) $@
+@USEDOCBOOK_TRUE@	$(DOC2MAN) ${SGML}
+@USEDOCBOOK_TRUE@	$(RM) manpage.refs manpage.links
+
+@USEDOCBOOK_TRUE@all-local: $(man_MANS)
+
+@USEDOCBOOK_TRUE@clean-local:
+@USEDOCBOOK_TRUE@	$(RM) $(man_MANS)
+
+@USEDOCBOOK_FALSE@all-local:
+@USEDOCBOOK_FALSE@clean-local:
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

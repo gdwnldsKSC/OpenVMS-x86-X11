@@ -1,5 +1,5 @@
 .\" $Xorg: protocol.ms,v 1.3 2000/08/17 19:42:40 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/Xi/protocol.ms,v 1.3 2004/09/03 16:18:22 kem Exp $
+.\" $XdotOrg: xc/doc/specs/Xi/protocol.ms,v 1.4 2005/12/20 16:04:41 kem Exp $
 .\" Input Extension
 .EH ''''
 .OH ''''
@@ -18,7 +18,7 @@ Version 1.0
 .sp 1
 X Consortium Standard
 .sp 1
-X Version 11, Release 6.8
+X Version 11, Release 6.9/7.0
 .sp 16
 .ps 15
 \fBMark Patrick\0\0\0\0Ardent Computer
@@ -67,8 +67,8 @@ in this Software without prior written authorization from the X Consortium.
 .ps
 .vs
 .bp 1
-.EH '\fBX Input Extension Protocol Specification\fP''\fBX11, Release 6.8\fP'
-.OH '\fBX Input Extension Protocol Specification\fP''\fBX11, Release 6.8\fP'
+.EH '\fBX Input Extension Protocol Specification\fP''\fBX11, Release 6.9/7.0\fP'
+.OH '\fBX Input Extension Protocol Specification\fP''\fBX11, Release 6.9/7.0\fP'
 .EF ''\fB\\\\n(PN\fP''
 .OF ''\fB\\\\n(PN\fP''
 .\"  Force the heading counter for level 1 to one

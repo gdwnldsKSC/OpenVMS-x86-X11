@@ -24,7 +24,7 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Author: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
+ * Author: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br>
  *
  * $XFree86: xc/programs/Xserver/hw/xfree86/xf86cfg/cards.c,v 1.14 2002/09/12 15:19:07 tsi Exp $
  */
@@ -488,6 +488,9 @@ CardsEntry *
 LookupCard(char *name)
 {
     CardsEntry **ptr;
+
+    if (NumCardsEntry == 0 || CardsDB == 0)
+	return NULL;
 
     ptr = (CardsEntry**)bsearch(name, CardsDB, NumCardsEntry,
 				sizeof(CardsEntry*), BCompareCards);

@@ -23,7 +23,7 @@
  *           Dirk Hohndel, <hohndel@suse.de>
  *           Stefan Dirsch, <sndirsch@suse.de>
  *           Mark Vojkovich, <mvojkovi@ucsd.edu>
- *           Michel Dänzer, <michdaen@iiic.ethz.ch>
+ *           Michel DÃ¤nzer, <michdaen@iiic.ethz.ch>
  *
  * this work is sponsored by S.u.S.E. GmbH, Fuerth, Elsa GmbH, Aachen and
  * Siemens Nixdorf Informationssysteme
@@ -32,7 +32,11 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/glint/pm2_accel.c,v 1.30 2001/05/30 11:41:53 alanh Exp $ */
 
-#include "Xarch.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <X11/Xarch.h>
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"

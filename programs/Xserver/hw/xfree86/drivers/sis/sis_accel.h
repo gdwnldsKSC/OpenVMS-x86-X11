@@ -1,11 +1,11 @@
 /* $XFree86$ */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/sis/sis_accel.h,v 1.3 2004/06/17 13:20:13 twini Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/sis/sis_accel.h,v 1.8 2005/07/04 10:57:08 twini Exp $ */
 /*
  * 2D acceleration for 5597/5598 and 6326
  * Definitions for the SIS engine communication
  *
  * Copyright (C) 1998, 1999 by Alan Hourihane, Wigan, England.
- * Parts Copyright (C) 2001-2004 Thomas Winischhofer, Vienna, Austria.
+ * Parts Copyright (C) 2001-2005 Thomas Winischhofer, Vienna, Austria.
  *
  * Licensed under the following terms:
  *
@@ -89,7 +89,7 @@ const int sisReg32MMIO[] = {
 /* Macros to do useful things with the SIS BitBLT engine */
 
 #define sisBLTSync \
-  while(MMIO_IN16(pSiS->IOBase, BR(10) + 2) & 0x4000) {}
+  while(SIS_MMIO_IN16(pSiS->IOBase, BR(10) + 2) & 0x4000) {}
 
 /* According to SiS 6326 2D programming guide, 16 bits position at   */
 /* 0x82A8 returns queue free. But this don't work, so don't wait     */
@@ -102,95 +102,95 @@ const int sisReg32MMIO[] = {
 
 #define sisBLTWAIT \
   if(!pSiS->TurboQueue) { \
-    while(MMIO_IN16(pSiS->IOBase, BR(10) + 2) & 0x4000) {} \
+    while(SIS_MMIO_IN16(pSiS->IOBase, BR(10) + 2) & 0x4000) {} \
   } else { \
     sisBLTSync \
   }
 
 #define sisSETPATREG() \
-   ((unsigned char *)(pSiS->IOBase + BR(11)))
+   ((UChar *)(pSiS->IOBase + BR(11)))
 
 #define sisSETPATREGL() \
-   ((unsigned long *)(pSiS->IOBase + BR(11)))
+   ((ULong *)(pSiS->IOBase + BR(11)))
 
 /* trigger command */
 #define sisSETCMD(op) \
   { \
-  unsigned long temp; \
-  MMIO_OUT16(pSiS->IOBase, BR(10) + 2, op); \
-  temp = MMIO_IN32(pSiS->IOBase, BR(10)); \
+  ULong temp; \
+  SIS_MMIO_OUT16(pSiS->IOBase, BR(10) + 2, op); \
+  temp = SIS_MMIO_IN32(pSiS->IOBase, BR(10)); \
   (void)temp; \
   }
 
 /* set foreground color and fg ROP */
 #define sisSETFGROPCOL(rop, color) \
-   MMIO_OUT32(pSiS->IOBase, BR(4), ((rop << 24) | (color & 0xFFFFFF)));
+   SIS_MMIO_OUT32(pSiS->IOBase, BR(4), ((rop << 24) | (color & 0xFFFFFF)));
 
 /* set background color and bg ROP */
 #define sisSETBGROPCOL(rop, color) \
-   MMIO_OUT32(pSiS->IOBase, BR(5), ((rop << 24) | (color & 0xFFFFFF)));
+   SIS_MMIO_OUT32(pSiS->IOBase, BR(5), ((rop << 24) | (color & 0xFFFFFF)));
 
 /* background color */
 #define sisSETBGCOLOR(bgColor) \
-   MMIO_OUT32(pSiS->IOBase, BR(5), (bgColor));
+   SIS_MMIO_OUT32(pSiS->IOBase, BR(5), (bgColor));
 
 /* foreground color */
 #define sisSETFGCOLOR(fgColor) \
-   MMIO_OUT32(pSiS->IOBase, BR(4), (fgcolor));
+   SIS_MMIO_OUT32(pSiS->IOBase, BR(4), (fgcolor));
 
 /* ROP */
 #define sisSETROPFG(op) \
-   MMIO_OUT8(pSiS->IOBase, BR(4) + 3, op);
+   SIS_MMIO_OUT8(pSiS->IOBase, BR(4) + 3, op);
 
 #define sisSETROPBG(op) \
-  MMIO_OUT8(pSiS->IOBase, BR(5) + 3, op);
+  SIS_MMIO_OUT8(pSiS->IOBase, BR(5) + 3, op);
 
 #define sisSETROP(op) \
    sisSETROPFG(op); sisSETROPBG(op);
 
 /* source and dest address */
 #define sisSETSRCADDR(srcAddr) \
-  MMIO_OUT32(pSiS->IOBase, BR(0), (srcAddr & 0x3FFFFFL));
+  SIS_MMIO_OUT32(pSiS->IOBase, BR(0), (srcAddr & 0x3FFFFFL));
 
 #define sisSETDSTADDR(dstAddr) \
-  MMIO_OUT32(pSiS->IOBase, BR(1), (dstAddr & 0x3FFFFFL));
+  SIS_MMIO_OUT32(pSiS->IOBase, BR(1), (dstAddr & 0x3FFFFFL));
 
 /* pitch */
 #define sisSETPITCH(srcPitch,dstPitch) \
-  MMIO_OUT32(pSiS->IOBase, BR(2), ((((dstPitch) & 0xFFFF) << 16) | ((srcPitch) & 0xFFFF)));
+  SIS_MMIO_OUT32(pSiS->IOBase, BR(2), ((((dstPitch) & 0xFFFF) << 16) | ((srcPitch) & 0xFFFF)));
 
 #define sisSETSRCPITCH(srcPitch) \
-  MMIO_OUT16(pSiS->IOBase, BR(2), ((srcPitch) & 0xFFFF));
+  SIS_MMIO_OUT16(pSiS->IOBase, BR(2), ((srcPitch) & 0xFFFF));
 
 #define sisSETDSTPITCH(dstPitch) \
-  MMIO_OUT16(pSiS->IOBase, BR(2) + 2, ((dstPitch) & 0xFFFF));
+  SIS_MMIO_OUT16(pSiS->IOBase, BR(2) + 2, ((dstPitch) & 0xFFFF));
 
 /* Height and width
  * According to SIS 2D Engine Programming Guide
  * height -1, width - 1 independant of Bpp
  */
 #define sisSETHEIGHTWIDTH(Height, Width) \
-  MMIO_OUT32(pSiS->IOBase, BR(3), ((((Height) & 0xFFFF) << 16) | ((Width) & 0xFFFF)));
+  SIS_MMIO_OUT32(pSiS->IOBase, BR(3), ((((Height) & 0xFFFF) << 16) | ((Width) & 0xFFFF)));
 
 /* Clipping */
 #define sisSETCLIPTOP(x, y) \
-   MMIO_OUT32(pSiS->IOBase, BR(8), ((((y) & 0xFFFF) << 16) | ((x) & 0xFFFF)));
+   SIS_MMIO_OUT32(pSiS->IOBase, BR(8), ((((y) & 0xFFFF) << 16) | ((x) & 0xFFFF)));
 
 #define sisSETCLIPBOTTOM(x, y) \
-   MMIO_OUT32(pSiS->IOBase, BR(9), ((((y) & 0xFFFF) << 16) | ((x) & 0xFFFF)));
+   SIS_MMIO_OUT32(pSiS->IOBase, BR(9), ((((y) & 0xFFFF) << 16) | ((x) & 0xFFFF)));
 
 /* Line drawing */
 #define sisSETXStart(XStart) \
-  MMIO_OUT32(pSiS->IOBase, BR(0), ((XStart) & 0xFFFF));
+  SIS_MMIO_OUT32(pSiS->IOBase, BR(0), ((XStart) & 0xFFFF));
 
 #define sisSETYStart(YStart) \
-  MMIO_OUT32(pSiS->IOBase, BR(1), ((YStart) & 0xFFFF));
+  SIS_MMIO_OUT32(pSiS->IOBase, BR(1), ((YStart) & 0xFFFF));
 
 #define sisSETLineMajorCount(MajorAxisCount) \
-   MMIO_OUT32(pSiS->IOBase, BR(3), ((MajorAxisCount) & 0xFFFF));
+   SIS_MMIO_OUT32(pSiS->IOBase, BR(3), ((MajorAxisCount) & 0xFFFF));
 
 #define sisSETLineSteps(K1,K2) \
-   MMIO_OUT32(pSiS->IOBase, BR(6), ((((K1) & 0xFFFF) << 16) | ((K2) & 0xFFFF)));
+   SIS_MMIO_OUT32(pSiS->IOBase, BR(6), ((((K1) & 0xFFFF) << 16) | ((K2) & 0xFFFF)));
 
 #define sisSETLineErrorTerm(ErrorTerm) \
-   MMIO_OUT16(pSiS->IOBase, BR(7), (ErrorTerm));
+   SIS_MMIO_OUT16(pSiS->IOBase, BR(7), (ErrorTerm));

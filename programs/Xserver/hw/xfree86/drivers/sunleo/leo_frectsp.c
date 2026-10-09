@@ -22,6 +22,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/sunleo/leo_frectsp.c,v 1.1 2000/05/18 23:21:39 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define PSZ 32
 
 #include "leo.h"
@@ -30,8 +34,7 @@
 #include "pixmapstr.h"
 #include "scrnintstr.h"
 
-#include "cfb.h"
-#include "cfbmskbits.h"
+#include "fb.h"
 
 void
 LeoPolyFillStippledRect(DrawablePtr pDrawable, GCPtr pGC, int nrectFill, xRectangle *prectInit)
@@ -53,7 +56,7 @@ LeoPolyFillStippledRect(DrawablePtr pDrawable, GCPtr pGC, int nrectFill, xRectan
 	if(nrectFill <= 0)
 		return;
 
-	prgnClip = cfbGetCompositeClip(pGC);
+	prgnClip = fbGetCompositeClip(pGC);
 
 	prect = prectInit;
 	xorg = pDrawable->x;

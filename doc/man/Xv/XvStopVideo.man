@@ -1,4 +1,4 @@
-.TH XvStopVideo 3X __vendorversion__
+.TH XvStopVideo __libmansuffix__ __vendorversion__
 .\" $XFree86: xc/doc/man/Xv/XvStopVideo.man,v 1.5 2001/01/27 18:20:36 dawes Exp $
 .SH Name
 XvStopVideo \- stop active video 
@@ -31,19 +31,19 @@ Specifies the port for which video is to be stopped.
 Specifies the drawable associated with the named port.
 .SH Description
 .\"
-XvStopVideo(3X) stops active video for the specified port and
+XvStopVideo(__libmansuffix__) stops active video for the specified port and
 drawable.  If the port is not processing video, or if it is processing
 video in a different drawable, the request is ignored.  When video is
-stopped a XvVideoNotify(3X) event with detail XvStopped is generated
+stopped a XvVideoNotify(__libmansuffix__) event with detail XvStopped is generated
 for the associated drawable.
 .\"
 .SH Returned Values
 .IP [Success] 8
-Returned if XvStopVideo(3X) completed successfully.
+Returned if XvStopVideo(__libmansuffix__) completed successfully.
 .IP [XvBadExtension] 8
 Returned if the Xv extension is unavailable.
 .IP [XvBadAlloc] 8
-Returned if XvStopVideo(3X) failed to allocate memory to process
+Returned if XvStopVideo(__libmansuffix__) failed to allocate memory to process
 the request.
 .SH Diagnostics
 .IP [XvBadPort] 8
@@ -52,5 +52,5 @@ Generated if the requested port does not exist.
 Generated if the requested drawable does not exist.
 .\"
 .SH See Also
-XvGetVideo(3X), XvPutVideo(3X), XvVideoNotifyEvent(3X)
+XvGetVideo(__libmansuffix__), XvPutVideo(__libmansuffix__), XvVideoNotifyEvent(__libmansuffix__)
 .br

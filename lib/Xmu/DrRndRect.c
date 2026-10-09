@@ -35,6 +35,9 @@ in this Software without prior written authorization from The Open Group.
  * that the corners are drawn inside of.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xlib.h>
 #include <X11/Xmu/Drawing.h>
 

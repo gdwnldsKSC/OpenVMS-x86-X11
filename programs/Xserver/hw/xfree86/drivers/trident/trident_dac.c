@@ -23,6 +23,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/trident/trident_dac.c,v 1.79 2003/11/03 05:11:42 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -107,14 +111,6 @@ TridentFindMode(int xres, int yres, int depth)
     biosMode *mode;
 
     switch (depth) {
-    case 1:
-	size = sizeof(bios1) / sizeof(biosMode);
-	mode = bios1;
-	break;
-    case 4:
-	size = sizeof(bios4) / sizeof(biosMode);
-	mode = bios4;
-	break;
     case 8:
 	size = sizeof(bios8) / sizeof(biosMode);
 	mode = bios8;
@@ -524,10 +520,7 @@ TridentInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	case IMAGE975:
 	case IMAGE985:
 	case CYBER9388:
-	    if (pScrn->bitsPerPixel >= 8)
     	    	pReg->tridentRegs3CE[MiscExtFunc] |= 0x10;
-	    else
-    	    	pReg->tridentRegs3CE[MiscExtFunc] &= ~0x10;
 	    if (!pReg->tridentRegs3x4[PreEndControl])
 	    	pReg->tridentRegs3x4[PreEndControl] = 0x01;
 	    if (!pReg->tridentRegs3x4[PreEndFetch])
@@ -555,10 +548,6 @@ TridentInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 
     /* Defaults for all trident chipsets follows */
     switch (pScrn->bitsPerPixel) {
-	case 1:
-	case 4:
-    	    offset = pScrn->displayWidth >> 4;
-	    break;
 	case 8:
 	    pReg->tridentRegs3CE[MiscExtFunc] |= 0x02;
     	    offset = pScrn->displayWidth >> 3;

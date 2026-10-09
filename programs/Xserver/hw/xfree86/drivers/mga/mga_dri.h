@@ -31,6 +31,7 @@
 #ifndef __MGA_DRI_H__
 #define __MGA_DRI_H__
 
+#include <X11/Xfuncproto.h>
 #include "xf86drm.h"
 
 #define MGA_DEFAULT_AGP_MODE     1
@@ -41,15 +42,6 @@
 #define MGA_BUFFER_ALIGN	0x00000fff
 
 typedef struct {
-   int reserved_map_agpstart;
-   int reserved_map_idx;
-   int buffer_map_idx;
-   int sarea_priv_offset;
-   int primary_size;
-   int warp_ucode_size;
-   int chipset;
-   int sgram;
-
    unsigned int frontOffset;
    unsigned int frontPitch;
 
@@ -77,13 +69,33 @@ typedef struct {
 
    drmBufMapPtr drmBuffers;
 
+   int drm_version_major;
+   int drm_version_minor;
 } MGADRIServerPrivateRec, *MGADRIServerPrivatePtr;
+
+/**
+ * Hardware information sent from server to client-side DRI driver.
+ *
+ * \todo
+ * Several of these fields are no longer used (and will never be used
+ * again) on the client-side.  At some point when it is safe to do so
+ * (probably for the X.org 6.9 / 7.0 release), these fields should be removed.
+ */
+#if 1
+typedef struct _mgaDrmRegion {
+    drm_handle_t     handle;
+    unsigned int  offset;
+    drmSize       size;
+} mgaDrmRegion, *mgaDrmRegionPtr;
+#else
+#define mgaDrmRegion drmRegion
+#endif
 
 typedef struct {
    int chipset;
    int width;
    int height;
-   int mem;
+   int mem _X_DEPRECATED;           /**< Unused client-side since forever. */
    int cpp;
 
    int agpMode;
@@ -99,22 +111,26 @@ typedef struct {
 
    unsigned int textureOffset;
    unsigned int textureSize;
-   int logTextureGranularity;
+   int logTextureGranularity;    /**< Unused client-side since 2003-Aug-06 */
 
-   /* Allow calculation of setup dma addresses.
-    */
-   unsigned int agpBufferOffset;
+   unsigned int agpBufferOffset _X_DEPRECATED; /**< Unused client-side since forever. */
 
    unsigned int agpTextureOffset;
    unsigned int agpTextureSize;
-   int logAgpTextureGranularity;
+   int logAgpTextureGranularity; /**< Unused client-side since 2003-Aug-06 */
 
-   unsigned int mAccess;
+   unsigned int mAccess _X_DEPRECATED; /**< Unused client-side since forever. */
 
-   drmRegion registers;
-   drmRegion status;
-   drmRegion primary;
-   drmRegion buffers;
+   /**
+    * \name DRM memory regions.
+    */
+   /*@{*/
+   mgaDrmRegion registers;            /**< MMIO registers. */
+   mgaDrmRegion status;               /**< Unused client-side since forever. */
+   mgaDrmRegion primary;              /**< Primary DMA region. */
+   mgaDrmRegion buffers;              /**< Unused client-side since forever. */
+   /*@}*/
+
    unsigned int sarea_priv_offset;
 } MGADRIRec, *MGADRIPtr;
 

@@ -12,7 +12,7 @@
 
 <abstract>
 This document describes how to configure X11R&relvers; XKB from a user's point
-a few. It converts basic configuration syntax and gives also a few examples.
+of view. It covers basic configuration syntax and gives also a few examples.
 </abstract>
 
 <toc>
@@ -21,15 +21,15 @@ a few. It converts basic configuration syntax and gives also a few examples.
 <sect>Overview
 <p>
 The XKB configuration is decomposed into a number of components. Selecting
-proper parts and combining them back you can achieve most of configurations
+proper parts and combining them back you can achieve most of the configurations
 you might need. Unless you have a completely atypical keyboard you really don't
-need to touch any of xkb configuration files.
+need to touch any of the xkb configuration files.
 
 <sect>Selecting XKB Configuration
 <p>
-The easiest and the most natural way how to specify a keyboard mapping is
-to use <tt>rules</tt> component. As its name suggests it describes a number of general
-rules how to combine all bits and pieces into a valid and useful keyboard 
+The easiest and the most natural way to specify a keyboard mapping is to use
+the <tt>rules</tt> component. As its name suggests it describes a number of 
+general rules to combine all bits and pieces into a valid and useful keyboard 
 mapping. All you need to do is to select a suitable rules file and then to
 feed it with a few parameters that will adjust the keyboard behaviour to
 fulfill your needs.
@@ -38,23 +38,23 @@ The parameters are:
 <itemize>
 <item><tt>XkbRules </tt>- files of rules to be used for keyboard mapping 
 composition
-<item><tt>XkbModel </tt>- name of model of your keyboard type
+<item><tt>XkbModel </tt>- name of the model of your keyboard type
 <item><tt>XkbLayout </tt>- layout(s) you intend to use
-<item><tt>XkbVariant </tt>- variant(s) of layout you intend to use
+<item><tt>XkbVariant </tt>- variant(s) of the layout you intend to use
 <item><tt>XkbOptions </tt>- extra xkb configuration options
 </itemize>
 <p>
 The proper rules file depends on your vendor. In reality, the commonest
 file of rules is <tt>xorg</tt>. For each rules file there is a description
 file named <tt>&lt;vendor-rules&gt;.lst</tt>, for instance <tt>xorg.lst</tt> 
-which is located in xkb configuration subdirectory <tt>rules</tt> (for example 
-<tt>/etc/X11/xkb/rules</tt>).
+which is located in the xkb configuration subdirectory <tt>rules</tt> 
+(for example <tt>/etc/X11/xkb/rules</tt>).
 
 <sect1>Basic Configuration
 <p>
-Let's say you want to configure a PC style America keyboard with 104
-keys as described in <tt>xorg.lst</tt>. It can be done by simply writing
-several lines from below to you xorg.conf configuration file (previously known
+Let's say you want to configure a PC-style American keyboard with 104
+keys as described in <tt>xorg.lst</tt>.  This can be done by simply writing
+several lines from below to your xorg.conf configuration file (previously known
 as <tt>/etc/X11/XF86Config-4</tt> or <tt>/etc/X11/XF86Config</tt>):
 <tscreen><verb>
 Section "InputDevice"
@@ -66,17 +66,17 @@ Section "InputDevice"
     Option "XKbOptions" ""
 EndSection
 </verb></tscreen>
-The values of parameters <tt>XkbModel</tt> and <tt>XkbLayout</tt> are really 
-not surprising. The parameters <tt>XkbOptions</tt> has been explicitly set to 
-empty set of parameters. The parameter <tt>XkbVariant</tt> has been left out. 
+The values of <tt>XkbModel</tt> and <tt>XkbLayout</tt> are really 
+not surprising. The <tt>XkbOptions</tt> has been explicitly set to 
+the empty set of parameters. The <tt>XkbVariant</tt> option has been left out. 
 That means the default variant named <tt>basic</tt> is loaded.
 <p>
-Of course, this can be also done at runtime using utility setxkbmap.
-Shell command loading the same keyboard mapping would look like:
+Of course, this can be also done at runtime using the utility setxkbmap.
+The shell command loading the same keyboard mapping would look like:
 <tscreen><verb>
 setxkbmap -rules xorg -model pc104 -layout us -option ""
 </verb></tscreen>
-The configuration and the shell command would be very analogical
+The configuration and the shell command would be very analogous
 for most other layouts (internationalized mappings). 
 
 <sect1>Advanced Configuration
@@ -103,8 +103,8 @@ Section "InputDevice"
     Option "XKbOptions" "grp:alt_shift_toggle"
 EndSection
 </verb></tscreen>
-Of course, this can be also done at runtime using utility setxkbmap.
-Shell command loading the same keyboard mapping would look like:
+Of course, this can be also done at runtime using the utility setxkbmap.
+The shell command loading the same keyboard mapping would look like:
 <tscreen><verb>
 setxkbmap -rules xorg -model logicordless -layout "us,cz,de" \
          -option "grp:alt_shift_toggle"
@@ -128,15 +128,15 @@ Section "InputDevice"
     Option "XKbOptions" "grp:alt_shift_toggle"
 EndSection
 </verb></tscreen>
-That's seems tricky but it is not. The logic for settings of variants
+That seems tricky but it is not. The logic for settings of variants
 is the same as for layouts, that means the first and the third variant
 settings are left out (set to <tt>basic</tt>), the second is set to 
 <tt>bksl</tt> (a special variant with an enhanced definition of the backslash 
 key).
 <p>
-Analogically, the loading runtime will change to:
+Analogously, the loading runtime will change to:
 <tscreen><verb>
-setxkmap -rules xorg -model logicordless -layout "us,cz,de" \
+setxkbmap -rules xorg -model logicordless -layout "us,cz,de" \
          -variant ",bksl," -option "grp:alt_shift_toggle"
 </verb></tscreen>
 
@@ -145,7 +145,7 @@ setxkmap -rules xorg -model logicordless -layout "us,cz,de" \
 See rules/*.lst files.
 
 <!-- 
-  TODO: More detailed descriptions of options. User's often get confused.
+  TODO: More detailed descriptions of options. Users often get confused.
 -->
 
 <sect>Direct XKB Configuration
@@ -194,8 +194,8 @@ Section "InputDevice"
 EndSection
 </verb></tscreen>
 
-This configuration sets the standard X server default interpretation of keyboard 
-keycodes, sets the default modificator types. The
+This configuration sets the standard X server default interpretation of keyboard
+keycodes, and sets the default modifier types. The
 symbol table is composed of extended US keyboard layout in its
 variant for pc keyboards with 104 keys plus all keys
 for german layout are redefined respectively. Also the logical
@@ -212,11 +212,12 @@ to allow iso9995 group shifting.
 
 <sect>Keymap XKB Configuration
 <p>
-It is the formerly used way to configure xkb. The user included a special
-keymap file which specified the direct xkb configuration. This method
-has been obsoleted by previously described rules files which are far
-more flexible and allow simpler and more intuitive syntax. It is
-preserved merely for compatibility reasons. Avoid using it if it is possible.
+Keymap configuration is the way formerly used to configure xkb. The
+user included a special keymap file which specified the direct xkb
+configuration. This method has been obsoleted by previously described
+rules files which are far more flexible and allow simpler and more
+intuitive syntax. It is preserved merely for compatibility reasons and
+should be avoided if possible.
 <p>
 
 </article>

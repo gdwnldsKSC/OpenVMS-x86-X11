@@ -1,4 +1,4 @@
-.\" $XdotOrg: xc/doc/man/Xp/XpGetDocumentData.man,v 1.1 2004/05/22 06:27:25 alanc Exp $
+.\" $XdotOrg: xc/doc/man/Xp/XpGetDocumentData.man,v 1.2 2005/10/12 23:45:05 alanc Exp $
 .\"
 .\" Copyright 1996 Hewlett-Packard Company
 .\" Copyright 1996 International Business Machines Corp.
@@ -175,9 +175,9 @@ returns, status gives the completion status of the job and is defined in
 <X11/extensions/Print.h> as:
 .LP
 .nf
-	#define XPGetDocFinished        0       /* normal termination */
-	#define XPGetDocSecondConsumer  1       /* setup error */
-	#define XPGetDocError           2       /* progress error */
+	#define XPGetDocFinished        0       /\(** normal termination */
+	#define XPGetDocSecondConsumer  1       /\(** setup error */
+	#define XPGetDocError           2       /\(** progress error */
 .fi
 .LP
 XPGetDocFinished indicates that all intended document data has been delivered by 

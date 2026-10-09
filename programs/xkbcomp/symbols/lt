@@ -1,9 +1,9 @@
 // $XFree86$
-// Lithuanian keyboard map by Rièardas Èepas <rch@richard.eu.org>
+// Lithuanian keyboard map by RiÄardas ÄŒepas <rch@richard.eu.org>
 
 // Describes popular Lithuanian keymap 'Baltic' aka querty/numeric
 // Don't rename this file because it includes 'lt'
-// Extensions:  „ “ instead of 9 0 in Lithuanian mode, endash/Euro on 102nd key
+// Extensions:  â€ â€œ instead of 9 0 in Lithuanian mode, endash/Euro on 102nd key
 //  Usage:  setxkbmap -option grp:shift_toggle 'lt'
 //   # +lt(left_switch) turns key between left ctrl and shift on "German" keyboards into AltGr
 // Option	"XkbModel"	"pc105"

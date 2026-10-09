@@ -100,7 +100,7 @@ copy_to_scratch(char *s, int len)
 static void
 badheader(void)
 {
-    fprintf (stderr, "%s:  %s:%d:  bad ", ProgramName, inputFilename, lineno);
+    fprintf (stderr, "%s:  %s:%d:  bad ", ProgramName, inputFilename, lineno+1);
     parse_errors++;
 }
 
@@ -179,7 +179,7 @@ handle_line(char *line,		/* string to parse */
     }
 
     fprintf (stderr, "%s:  unknown command on line %s:%d\n",
-	     ProgramName, inputFilename, lineno);
+	     ProgramName, inputFilename, lineno+1);
     parse_errors++;
 }
 

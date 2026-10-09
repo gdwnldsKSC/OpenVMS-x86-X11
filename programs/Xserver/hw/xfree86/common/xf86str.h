@@ -134,9 +134,9 @@ typedef struct _DisplayModeRec {
     char *			name;		/* identifier for the mode */
     ModeStatus			status;
     int				type;
-    
+
     /* These are the values that the user sees/provides */
-    int				Clock;		/* pixel clock freq */
+    int				Clock;		/* pixel clock freq (kHz) */
     int				HDisplay;	/* horizontal timing */
     int				HSyncStart;
     int				HSyncEnd;
@@ -152,7 +152,7 @@ typedef struct _DisplayModeRec {
   /* These are the values the hardware uses */
     int				ClockIndex;
     int				SynthClock;	/* Actual clock freq to
-					  	 * be programmed */
+					  	 * be programmed  (kHz) */
     int				CrtcHDisplay;
     int				CrtcHBlankStart;
     int				CrtcHSyncStart;
@@ -211,8 +211,8 @@ typedef struct {
 /* the list of clock ranges */
 typedef struct x_ClockRange {
     struct x_ClockRange *next;
-    int			minClock;
-    int			maxClock;
+    int			minClock;	/* (kHz) */
+    int			maxClock;	/* (kHz) */
     int			clockIndex;	/* -1 for programmable clocks */
     Bool		interlaceAllowed;
     Bool		doubleScanAllowed;
@@ -236,9 +236,69 @@ typedef struct x_ClockRanges {
 } ClockRanges, *ClockRangesPtr;
 
 /*
+ * The driverFunc. xorgDriverFuncOp specifies the action driver should
+ * perform. If requested option is not supported function should return
+ * FALSE. pointer can be used to pass arguments to the function or
+ * to return data to the caller.
+ */
+typedef struct _ScrnInfoRec *ScrnInfoPtr;
+
+/* do not change order */
+typedef enum {
+    RR_GET_INFO,
+    RR_SET_CONFIG,
+    RR_GET_MODE_MM,
+    GET_REQUIRED_HW_INTERFACES = 10
+} xorgDriverFuncOp;
+
+typedef Bool xorgDriverFuncProc		  (ScrnInfoPtr, xorgDriverFuncOp,
+					   pointer);
+
+/* RR_GET_INFO, RR_SET_CONFIG */
+typedef struct {
+    int rotation;
+    int rate;
+    int width;
+    int height;
+} xorgRRConfig;
+
+typedef union {
+    short RRRotations;
+    xorgRRConfig RRConfig;
+} xorgRRRotation, *xorgRRRotationPtr;
+
+/* RR_GET_MODE_MM */
+typedef struct {
+    DisplayModePtr mode;
+    int virtX;
+    int virtY;
+    int mmWidth;
+    int mmHeight;
+} xorgRRModeMM, *xorgRRModeMMPtr;
+
+/* GET_REQUIRED_HW_INTERFACES */
+#define HW_IO 1
+#define HW_MMIO 2
+#define NEED_IO_ENABLED(x) (x & HW_IO)
+
+typedef CARD32 xorgHWFlags;
+
+/*
  * The driver list struct.  This contains the information required for each
  * driver before a ScrnInfoRec has been allocated.
  */
+struct _DriverRec;
+
+typedef struct {
+    int			driverVersion;
+    char *		driverName;
+    void		(*Identify)(int flags);
+    Bool		(*Probe)(struct _DriverRec *drv, int flags);
+    const OptionInfoRec * (*AvailableOptions)(int chipid, int bustype);
+    pointer		module;
+    int			refCount;
+} DriverRec1;
+
 typedef struct _DriverRec {
     int			driverVersion;
     char *		driverName;
@@ -247,7 +307,14 @@ typedef struct _DriverRec {
     const OptionInfoRec * (*AvailableOptions)(int chipid, int bustype);
     pointer		module;
     int			refCount;
+    xorgDriverFuncProc  *driverFunc;
 } DriverRec, *DriverPtr;
+
+/*
+ *  AddDriver flags
+ */
+#define HaveDriverFuncs 1
+
 
 #ifdef XFree86LOADER
 /*
@@ -293,7 +360,7 @@ typedef struct {
     int		device;
     int		func;
 } PciBusId;
-    
+
 typedef struct {
     unsigned int dummy;
 } IsaBusId;
@@ -319,7 +386,7 @@ typedef enum {
     DAC_BPP32,
     MAXDACSPEEDS
 } DacSpeedIndex;
- 
+
 typedef struct {
    char *			identifier;
    char *			vendor;
@@ -472,7 +539,7 @@ typedef struct _confdrirec {
     int                 bufs_count;
     confDRIBufferRec    *bufs;
 } confDRIRec, *confDRIPtr;
-    
+
 /* These values should be adjusted when new fields are added to ScrnInfoRec */
 #define NUM_RESERVED_INTS		16
 #define NUM_RESERVED_POINTERS		15
@@ -515,7 +582,7 @@ typedef enum {
 } pmWait;
 
 /*
- * The IO access enabler struct. This contains the address for 
+ * The IO access enabler struct. This contains the address for
  * the IOEnable/IODisable funcs for their specific bus along
  * with a pointer to data needed by them
  */
@@ -663,7 +730,7 @@ typedef struct {
     resRange *resList;
 } IsaChipsets;
 
-typedef struct { 
+typedef struct {
     int numChipset;
     int PCIid;
     resRange *resList;
@@ -711,9 +778,9 @@ typedef struct {
    int imageHeight;
    int pixmapWidth;	/* Xlib accessible portion (pixels) */
    int pixmapHeight;	/* both fields ignored if no concurrent access */
-   int bytesPerScanline; 
+   int bytesPerScanline;
    int byteOrder;	/* MSBFirst, LSBFirst */
-   int depth;		
+   int depth;
    int bitsPerPixel;
    unsigned long red_mask;
    unsigned long green_mask;
@@ -737,24 +804,6 @@ typedef struct {
    PixmapPtr pPix;
 } DGADeviceRec, *DGADevicePtr;
 
-typedef enum {
-    RR_GET_INFO,
-    RR_SET_CONFIG
-} xorgRRFuncFlags;
-
-typedef struct {
-    int rotation;
-    int rate;
-    int width;
-    int height;
-} xorgRRConfig;
-
-typedef union {
-    short RRRotations;
-    xorgRRConfig RRConfig;
-} xorgRRRotation, *xorgRRRotationPtr;
-
-
 /*
  * Flags for driver Probe() functions.
  */
@@ -765,7 +814,6 @@ typedef union {
 /*
  * Driver entry point types
  */
-typedef struct _ScrnInfoRec *ScrnInfoPtr;
 
 typedef Bool xf86ProbeProc                (DriverPtr, int);
 typedef Bool xf86PreInitProc              (ScrnInfoPtr, int);
@@ -785,8 +833,6 @@ typedef int  xf86HandleMessageProc     (int, const char*, const char*, char**);
 typedef void xf86DPMSSetProc		  (ScrnInfoPtr, int, int);
 typedef void xf86LoadPaletteProc   (ScrnInfoPtr, int, int *, LOCO *, VisualPtr);
 typedef void xf86SetOverscanProc          (ScrnInfoPtr, int);
-typedef Bool xorgRRFuncProc		  (ScrnInfoPtr, xorgRRFuncFlags,
-					   xorgRRRotationPtr);
 
 
 /*
@@ -804,10 +850,10 @@ typedef Bool xorgRRFuncProc		  (ScrnInfoPtr, xorgRRFuncFlags,
 typedef struct _ScrnInfoRec {
     int			driverVersion;
     char *		driverName;		/* canonical name used in */
-						/* the config file */   
+						/* the config file */
     ScreenPtr		pScreen;		/* Pointer to the ScreenRec */
     int			scrnIndex;		/* Number of this screen */
-    Bool		configured;		/* Is this screen valid */ 
+    Bool		configured;		/* Is this screen valid */
     int			origIndex;		/* initial number assigned to
 						 * this screen before
 						 * finalising the number of
@@ -901,14 +947,14 @@ typedef struct _ScrnInfoRec {
     /* Allow screens to be enabled/disabled individually */
     Bool		vtSema;
     DevUnion		pixmapPrivate;		/* saved devPrivate from pixmap */
-    
+
     /* hw cursor moves at SIGIO time */
     Bool		silkenMouse;
 
     /* Storage for clockRanges and adjustFlags for use with the VidMode ext */
     ClockRangesPtr	clockRanges;
     int			adjustFlags;
-  
+
     /*
      * These can be used when the minor ABI version is incremented.
      * The NUM_* parameters must be reduced appropriately to keep the
@@ -942,8 +988,8 @@ typedef struct _ScrnInfoRec {
     xf86DPMSSetProc			*DPMSSet;
     xf86LoadPaletteProc			*LoadPalette;
     xf86SetOverscanProc			*SetOverscan;
-    xorgRRFuncProc			*RRFunc;
-    
+    xorgDriverFuncProc			*DriverFunc;
+
     /*
      * This can be used when the minor ABI version is incremented.
      * The NUM_* parameter must be reduced appropriately to keep the
@@ -956,9 +1002,9 @@ typedef struct _ScrnInfoRec {
 
 typedef struct {
    Bool (*OpenFramebuffer)(
-	ScrnInfoPtr pScrn, 
+	ScrnInfoPtr pScrn,
 	char **name,
-	unsigned char **mem, 
+	unsigned char **mem,
 	int *size,
 	int *offset,
         int *extra
@@ -969,20 +1015,20 @@ typedef struct {
    int  (*GetViewport)(ScrnInfoPtr pScrn);
    void (*Sync)(ScrnInfoPtr);
    void (*FillRect)(
-	ScrnInfoPtr pScrn, 
-	int x, int y, int w, int h, 
+	ScrnInfoPtr pScrn,
+	int x, int y, int w, int h,
 	unsigned long color
    );
    void (*BlitRect)(
-	ScrnInfoPtr pScrn, 
-	int srcx, int srcy, 
-	int w, int h, 
+	ScrnInfoPtr pScrn,
+	int srcx, int srcy,
+	int w, int h,
 	int dstx, int dsty
    );
    void (*BlitTransRect)(
-	ScrnInfoPtr pScrn, 
-	int srcx, int srcy, 
-	int w, int h, 
+	ScrnInfoPtr pScrn,
+	int srcx, int srcy,
+	int w, int h,
 	int dstx, int dsty,
 	unsigned long color
    );
@@ -1022,7 +1068,7 @@ typedef void (*InputHandlerProc)(int fd, pointer data);
 #define CLK_REG_SAVE		-1
 #define CLK_REG_RESTORE		-2
 
-/* xf86Debug.c */ 
+/* xf86Debug.c */
 #ifdef BUILDDEBUG
 typedef struct {
     long sec;
@@ -1044,7 +1090,7 @@ typedef struct {
 #define OVERLAY_8_32_PLANAR	0x00000008
 
 #if 0
-#define LD_RESOLV_IFDONE		0	/* only check if no more 
+#define LD_RESOLV_IFDONE		0	/* only check if no more
 						   delays pending */
 #define LD_RESOLV_NOW			1	/* finish one delay step */
 #define LD_RESOLV_FORCE			2	/* force checking... */

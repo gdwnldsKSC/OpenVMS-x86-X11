@@ -26,6 +26,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/trident/tridentramdac.c,v 1.4 2000/12/07 16:48:06 alanh Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"

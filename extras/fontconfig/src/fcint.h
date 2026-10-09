@@ -1,6 +1,7 @@
 /*
+ * $RCSId: xc/lib/fontconfig/src/fcint.h,v 1.27 2002/08/31 22:17:32 keithp Exp $
  *
- * Copyright � 2000 Keith Packard
+ * Copyright © 2000 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -68,6 +69,7 @@ typedef struct _FcSymbolic {
 #define FC_DBG_SCAN	128
 #define FC_DBG_SCANV	256
 #define FC_DBG_MEMORY	512
+#define FC_DBG_CONFIG	1024
 
 #define FC_MEM_CHARSET	    0
 #define FC_MEM_CHARLEAF	    1
@@ -98,8 +100,9 @@ typedef struct _FcSymbolic {
 #define FC_MEM_VSTACK	    26
 #define FC_MEM_ATTR	    27
 #define FC_MEM_PSTACK	    28
+#define FC_MEM_STATICSTR    29
 
-#define FC_MEM_NUM	    29
+#define FC_MEM_NUM	    30
 
 typedef enum _FcValueBinding {
     FcValueBindingWeak, FcValueBindingStrong, FcValueBindingSame
@@ -131,7 +134,8 @@ typedef enum _FcOp {
     FcOpAssign, FcOpAssignReplace, 
     FcOpPrependFirst, FcOpPrepend, FcOpAppend, FcOpAppendLast,
     FcOpQuest,
-    FcOpOr, FcOpAnd, FcOpEqual, FcOpNotEqual, FcOpContains, FcOpNotContains,
+    FcOpOr, FcOpAnd, FcOpEqual, FcOpNotEqual, 
+    FcOpContains, FcOpListing, FcOpNotContains,
     FcOpLess, FcOpLessEqual, FcOpMore, FcOpMoreEqual,
     FcOpPlus, FcOpMinus, FcOpTimes, FcOpDivide,
     FcOpNot, FcOpComma, FcOpFloor, FcOpCeil, FcOpRound, FcOpTrunc,
@@ -216,6 +220,49 @@ typedef struct _FcStrBuf {
     int	    len;
     int	    size;
 } FcStrBuf;
+
+/*
+ * To map adobe glyph names to unicode values, a precomputed hash
+ * table is used
+ */
+
+typedef struct _FcGlyphName {
+    FcChar32	ucs;		/* unicode value */
+    FcChar8	name[1];	/* name extends beyond struct */
+} FcGlyphName;
+
+/*
+ * To perform case-insensitive string comparisons, a table
+ * is used which holds three different kinds of folding data.
+ * 
+ * The first is a range of upper case values mapping to a range
+ * of their lower case equivalents.  Within each range, the offset
+ * between upper and lower case is constant.
+ *
+ * The second is a range of upper case values which are interleaved
+ * with their lower case equivalents.
+ * 
+ * The third is a set of raw unicode values mapping to a list
+ * of unicode values for comparison purposes.  This allows conversion
+ * of ß to "ss" so that SS, ss and ß all match.  A separate array
+ * holds the list of unicode values for each entry.
+ *
+ * These are packed into a single table.  Using a binary search,
+ * the appropriate entry can be located.
+ */
+
+#define FC_CASE_FOLD_RANGE	    0
+#define FC_CASE_FOLD_EVEN_ODD	    1
+#define FC_CASE_FOLD_FULL	    2
+
+typedef struct _FcCaseFold {
+    FcChar32	upper;
+    FcChar16	method : 2;
+    FcChar16	count : 14;
+    short    	offset;	    /* lower - upper for RANGE, table id for FULL */
+} FcCaseFold;
+
+#define FC_MAX_FILE_LEN	    4096
 
 /*
  * The per-user ~/.fonts.cache-<version> file is loaded into
@@ -313,6 +360,13 @@ struct _FcConfig {
     FcSubst	*substFont;	    /* substitutions for fonts */
     int		maxObjects;	    /* maximum number of tests in all substs */
     /*
+     * List of patterns used to control font file selection
+     */
+    FcStrSet	*acceptGlobs;
+    FcStrSet	*rejectGlobs;
+    FcFontSet	*acceptPatterns;
+    FcFontSet	*rejectPatterns;
+    /*
      * The set of fonts loaded from the listed directories; the
      * order within the set does not determine the font selection,
      * except in the case of identical matches in which case earlier fonts
@@ -364,7 +418,8 @@ FcBool
 FcGlobalCacheScanDir (FcFontSet		*set,
 		      FcStrSet		*dirs,
 		      FcGlobalCache	*cache,
-		      const FcChar8	*dir);
+		      const FcChar8	*dir,
+		      FcConfig		*config);
 
 FcGlobalCacheFile *
 FcGlobalCacheFileGet (FcGlobalCache *cache,
@@ -388,7 +443,10 @@ FcGlobalCacheSave (FcGlobalCache    *cache,
 		   const FcChar8    *cache_file);
 
 FcBool
-FcDirCacheReadDir (FcFontSet *set, FcStrSet *dirs, const FcChar8 *dir);
+FcDirCacheReadDir (FcFontSet	    *set, 
+		   FcStrSet	    *dirs,
+		   const FcChar8    *dir,
+		   FcConfig	    *config);
 
 FcBool
 FcDirCacheWriteDir (FcFontSet *set, FcStrSet *dirs, const FcChar8 *dir);
@@ -435,9 +493,30 @@ FcConfigCompareValue (const FcValue m,
 		      FcOp	    op,
 		      const FcValue v);
 
+FcBool
+FcConfigGlobAdd (FcConfig	*config,
+		 const FcChar8	*glob,
+		 FcBool		accept);
+
+FcBool
+FcConfigAcceptFilename (FcConfig	*config,
+			const FcChar8	*filename);
+
+FcBool
+FcConfigPatternsAdd (FcConfig	*config,
+		     FcPattern	*pattern,
+		     FcBool	accept);
+
+FcBool
+FcConfigAcceptFont (FcConfig	    *config,
+		    const FcPattern *font);
+
 /* fccharset.c */
 FcCharSet *
 FcCharSetFreeze (FcCharSet *cs);
+
+void
+FcCharSetThawAll (void);
 
 FcBool
 FcNameUnparseCharSet (FcStrBuf *buf, const FcCharSet *c);
@@ -475,6 +554,27 @@ FcDebug (void);
 
 /* fcdir.c */
 
+FcBool
+FcFileIsDir (const FcChar8 *file);
+
+FcBool
+FcFileScanConfig (FcFontSet	*set,
+		  FcStrSet	*dirs,
+		  FcFileCache	*cache,
+		  FcBlanks	*blanks,
+		  const FcChar8 *file,
+		  FcBool	force,
+		  FcConfig	*config);
+
+FcBool
+FcDirScanConfig (FcFontSet	*set,
+		 FcStrSet	*dirs,
+		 FcFileCache	*cache,
+		 FcBlanks	*blanks,
+		 const FcChar8  *dir,
+		 FcBool		force,
+		 FcConfig	*config);
+
 /* fcfont.c */
 int
 FcFontDebug (void);
@@ -509,13 +609,6 @@ FcConfigerror (char *fmt, ...);
 char *
 FcConfigSaveField (const char *field);
 
-FcTest *
-FcTestCreate (FcMatchKind   kind,
-	      FcQual	    qual,
-	      const FcChar8 *field,
-	      FcOp	    compare,
-	      FcExpr	    *expr);
-
 void
 FcTestDestroy (FcTest *test);
 
@@ -548,9 +641,6 @@ FcExprCreateOp (FcExpr *left, FcOp op, FcExpr *right);
 
 void
 FcExprDestroy (FcExpr *e);
-
-FcEdit *
-FcEditCreate (const char *field, FcOp op, FcExpr *expr, FcValueBinding binding);
 
 void
 FcEditDestroy (FcEdit *e);
@@ -588,12 +678,16 @@ FcNameUnparseLangSet (FcStrBuf *buf, const FcLangSet *ls);
 
 /* fclist.c */
 
+FcBool
+FcListPatternMatchAny (const FcPattern *p,
+		       const FcPattern *font);
+
 /* fcmatch.c */
 
 /* fcname.c */
 
 FcBool
-FcNameBool (FcChar8 *v, FcBool *result);
+FcNameBool (const FcChar8 *v, FcBool *result);
 
 /* fcpat.c */
 void
@@ -614,6 +708,15 @@ FcPatternAddWithBinding  (FcPattern	    *p,
 
 FcPattern *
 FcPatternFreeze (FcPattern *p);
+
+void
+FcPatternThawAll (void);
+
+FcBool
+FcPatternAppend (FcPattern *p, FcPattern *s);
+
+const char *
+FcObjectStaticName (const char *name);
 
 /* fcrender.c */
 
@@ -652,10 +755,19 @@ FcStrBufData (FcStrBuf *buf, const FcChar8 *s, int len);
 int
 FcStrCmpIgnoreBlanksAndCase (const FcChar8 *s1, const FcChar8 *s2);
 
+const FcChar8 *
+FcStrContainsIgnoreBlanksAndCase (const FcChar8 *s1, const FcChar8 *s2);
+
+const FcChar8 *
+FcStrContainsIgnoreCase (const FcChar8 *s1, const FcChar8 *s2);
+
 FcBool
 FcStrUsesHome (const FcChar8 *s);
 
 FcChar8 *
 FcStrLastSlash (const FcChar8  *path);
+
+FcChar32
+FcStrHashIgnoreCase (const FcChar8 *s);
 
 #endif /* _FC_INT_H_ */

@@ -38,6 +38,10 @@
  * Provide expected functions for initialization from the ddx layer and
  * global variables for the DMX server. */
 
+#ifdef HAVE_DMX_CONFIG_H
+#include <dmx-config.h>
+#endif
+
 #include "dmx.h"
 #include "dmxinit.h"
 #include "dmxsync.h"
@@ -54,7 +58,7 @@
 #include "dmxpict.h"
 #endif
 
-#include "Xos.h"                /* For gettimeofday */
+#include <X11/Xos.h>                /* For gettimeofday */
 #include "dixstruct.h"
 #include "panoramiXsrv.h"
 
@@ -64,8 +68,8 @@
 #include <GL/glx.h>
 #include <GL/glxint.h>
 #include "dmx_glxvisuals.h"
-#include "Xext.h"
-#include "extutil.h"
+#include <X11/extensions/Xext.h>
+#include <X11/extensions/extutil.h>
 
 extern void GlxSetVisualConfigs(
     int               nconfigs,

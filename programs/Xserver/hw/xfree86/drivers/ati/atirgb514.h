@@ -25,14 +25,12 @@
 #define ___ATIRGB514_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
-extern void ATIRGB514PreInit   FunctionPrototype((ATIPtr, ATIHWPtr));
-extern void ATIRGB514Save      FunctionPrototype((ATIPtr, ATIHWPtr));
-extern void ATIRGB514Calculate FunctionPrototype((ATIPtr, ATIHWPtr,
-                                                  DisplayModePtr));
-extern void ATIRGB514Set       FunctionPrototype((ATIPtr, ATIHWPtr));
+extern void ATIRGB514PreInit(ATIPtr, ATIHWPtr);
+extern void ATIRGB514Save(ATIPtr, ATIHWPtr);
+extern void ATIRGB514Calculate(ATIPtr, ATIHWPtr, DisplayModePtr);
+extern void ATIRGB514Set(ATIPtr, ATIHWPtr);
 
 #endif /* ___ATIRGB514_H___ */

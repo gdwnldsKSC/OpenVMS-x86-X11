@@ -31,10 +31,14 @@
  */
 #define INCLUDE_DEPRECATED 1
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "X.h"
+#include <X11/X.h>
 #include "os.h"
 #include "Pci.h"
 #include "xf86.h"
@@ -105,11 +109,11 @@ static PciBusPtr xf86PciBus = NULL;
 #define PCI_MEM32_LENGTH_MAX 0xFFFFFFFF
 
 #define B2M(tag,base) pciBusAddrToHostAddr(tag,PCI_MEM,base)
-#define B2I(tag,base) (base)
+#define B2I(tag,base) pciBusAddrToHostAddr(tag,PCI_IO,base)
 #define B2H(tag,base,type) (((type & ResPhysMask) == ResMem) ? \
 			B2M(tag, base) : B2I(tag, base))
-#define M2B(tag,base) pciHostAddrToBusAddr(tag,PCI_IO,base)
-#define I2B(tag,base) (base)
+#define M2B(tag,base) pciHostAddrToBusAddr(tag,PCI_MEM,base)
+#define I2B(tag,base) pciHostAddrToBusAddr(tag,PCI_IO,base)
 #define H2B(tag,base,type) (((type & ResPhysMask) == ResMem) ? \
 			M2B(tag, base) : I2B(tag, base))
 #define TAG(pvp) (pciTag(pvp->bus,pvp->device,pvp->func))
@@ -172,6 +176,17 @@ IsBaseUnassigned(CARD32 base)
     return (!base || (base == mask));
 }
 
+static Bool
+IsBaseUnassigned64(CARD32 base0, CARD32 base1)
+{
+    base0 &= ~PCI_MAP_MEMORY_ATTR_MASK;
+    base1 &= 0xffffffff;
+    
+    return ((!base0 && !base1)
+	    || ((base0 == ~PCI_MAP_MEMORY_ATTR_MASK)
+		&& (base1 == 0xffffffff)));
+}
+
 static void
 FindPCIVideoInfo(void)
 {
@@ -179,8 +194,10 @@ FindPCIVideoInfo(void)
     int i = 0, j, k;
     int num = 0;
     pciVideoPtr info;
-    Bool mem64 = FALSE;
+    int DoIsolateDeviceCheck = 0;
 
+    if (xf86IsolateDevice.bus || xf86IsolateDevice.device || xf86IsolateDevice.func)
+        DoIsolateDeviceCheck = 1;
     pcrpp = xf86PciInfo = xf86scanpci(0);
     getPciClassFlags(pcrpp);
     
@@ -202,7 +219,11 @@ FindPCIVideoInfo(void)
 	    subclass = pcrp->pci_sub_class;
 	}
 	
-	if (PCIINFOCLASSES(baseclass, subclass)) {
+	if (PCIINFOCLASSES(baseclass, subclass) &&
+	    (DoIsolateDeviceCheck ?
+	    (xf86IsolateDevice.bus == pcrp->busnum &&
+	     xf86IsolateDevice.device == pcrp->devnum &&
+	     xf86IsolateDevice.func == pcrp->funcnum) : 1)) {
 	    num++;
 	    xf86PciVideoInfo = xnfrealloc(xf86PciVideoInfo,
 					  sizeof(pciVideoPtr) * (num + 1));
@@ -275,138 +296,67 @@ FindPCIVideoInfo(void)
 	    }
 
 	    if (PCINONSYSTEMCLASSES(baseclass, subclass)) {
-		if (info->size[0] && IsBaseUnassigned(pcrp->pci_base0))
-		    pcrp->pci_base0 = pciCheckForBrokenBase(pcrp->tag, 0);
-		if (info->size[1] && IsBaseUnassigned(pcrp->pci_base1))
-		    pcrp->pci_base1 = pciCheckForBrokenBase(pcrp->tag, 1);
-		if (info->size[2] && IsBaseUnassigned(pcrp->pci_base2))
-		    pcrp->pci_base2 = pciCheckForBrokenBase(pcrp->tag, 2);
-		if (info->size[3] && IsBaseUnassigned(pcrp->pci_base3))
-		    pcrp->pci_base3 = pciCheckForBrokenBase(pcrp->tag, 3);
-		if (info->size[4] && IsBaseUnassigned(pcrp->pci_base4))
-		    pcrp->pci_base4 = pciCheckForBrokenBase(pcrp->tag, 4);
-		if (info->size[5] && IsBaseUnassigned(pcrp->pci_base5))
-		    pcrp->pci_base5 = pciCheckForBrokenBase(pcrp->tag, 5);
+		/*
+		 * Check of a PCI base is unassigned. If so
+		 * attempt to fix it. Validation will determine
+		 * if the value was correct later on.
+		 */
+		CARD32 *base = &pcrp->pci_base0;
+
+		for (j = 0; j < 6; j++) {
+		    if (!PCI_MAP_IS64BITMEM(base[j])) {
+			if (info->size[j] && IsBaseUnassigned(base[j])) 
+			    base[j] = pciCheckForBrokenBase(pcrp->tag, j);
+		    } else {
+			if (j == 5) /* bail out */
+			    break;
+			if (info->size[j]
+			    && IsBaseUnassigned64(base[j],base[j+1])) {
+			    base[j] = pciCheckForBrokenBase(pcrp->tag, j);
+			    j++;
+			    base[j] = pciCheckForBrokenBase(pcrp->tag, j);
+			}
+		    }
+		}
 	    }
 	    
 	    /*
 	     * 64-bit base addresses are checked for and avoided on 32-bit
 	     * platforms.
 	     */
-	    if (pcrp->pci_base0) {
-		if (pcrp->pci_base0 & PCI_MAP_IO) {
-		    info->ioBase[0] = (memType)PCIGETIO(pcrp->pci_base0);
-		    info->type[0] = pcrp->pci_base0 & PCI_MAP_IO_ATTR_MASK;
-		} else {
-		    info->type[0] = pcrp->pci_base0 & PCI_MAP_MEMORY_ATTR_MASK;
-		    info->memBase[0] = (memType)PCIGETMEMORY(pcrp->pci_base0);
-		    if (PCI_MAP_IS64BITMEM(pcrp->pci_base0)) {
-			mem64 = TRUE;
+	    for (j = 0; j < 6; ++j) {
+		CARD32  bar = (&pcrp->pci_base0)[j];
+
+		if (bar != 0) {
+		    if (bar & PCI_MAP_IO) {
+			info->ioBase[j] = (memType)PCIGETIO(bar);
+			info->type[j] = bar & PCI_MAP_IO_ATTR_MASK;
+		    } else {
+			info->type[j] = bar & PCI_MAP_MEMORY_ATTR_MASK;
+			info->memBase[j] = (memType)PCIGETMEMORY(bar);
+			if (PCI_MAP_IS64BITMEM(bar)) {
+			    if (j == 5) {
+				xf86MsgVerb(X_WARNING, 0,
+				    "****BAR5 specified as 64-bit wide, "
+				    "which is not possible. "
+				    "Ignoring BAR5.****\n");
+				info->memBase[j] = 0;
+			    } else {
+				CARD32  bar_hi = PCIGETMEMORY64HIGH((&pcrp->pci_base0)[j]);
 #if defined(LONG64) || defined(WORD64)
-			  info->memBase[0] |= 
-			    (memType)PCIGETMEMORY64HIGH(pcrp->pci_base0) << 32;
+				    /* 64 bit architecture */
+				    info->memBase[j] |=
+					(memType)bar_hi << 32;
 #else
-			if (pcrp->pci_base1)
-			    info->memBase[0] = 0;
+				    if (bar_hi != 0)
+					info->memBase[j] = 0;
 #endif
-		    } 
+				    ++j;    /* Step over the next BAR */
+			    }
+			}
+		    }
 		}
 	    }
-
-	    if (pcrp->pci_base1 && !mem64) {
-		if (pcrp->pci_base1 & PCI_MAP_IO) {
-		    info->ioBase[1] = (memType)PCIGETIO(pcrp->pci_base1);
-		    info->type[1] = pcrp->pci_base1 & PCI_MAP_IO_ATTR_MASK;
-		} else {
-		    info->type[1] = pcrp->pci_base1 & PCI_MAP_MEMORY_ATTR_MASK;
-		    info->memBase[1] = (memType)PCIGETMEMORY(pcrp->pci_base1);
-		    if (PCI_MAP_IS64BITMEM(pcrp->pci_base1)) {
-			mem64 = TRUE;
-#if defined(LONG64) || defined(WORD64)
-			  info->memBase[1] |= 
-			    (memType)PCIGETMEMORY64HIGH(pcrp->pci_base1) << 32;
-#else
-			if (pcrp->pci_base2)
-			  info->memBase[1] = 0;
-#endif
-		    }
-		}
-	    } else
-		mem64 = FALSE;
-
-	    if (pcrp->pci_base2 && !mem64) {
-		if (pcrp->pci_base2 & PCI_MAP_IO) {
-		    info->ioBase[2] = (memType)PCIGETIO(pcrp->pci_base2);
-		    info->type[2] = pcrp->pci_base2 & PCI_MAP_IO_ATTR_MASK;
-		} else {
-		    info->type[2] = pcrp->pci_base2 & PCI_MAP_MEMORY_ATTR_MASK;
-		    info->memBase[2] = (memType)PCIGETMEMORY(pcrp->pci_base2);
-		    if (PCI_MAP_IS64BITMEM(pcrp->pci_base2)) {
-			mem64 = TRUE;
-#if defined(LONG64) || defined(WORD64)
-			info->memBase[2] |= 
-			    (memType)PCIGETMEMORY64HIGH(pcrp->pci_base2) << 32;
-#else
-			if (pcrp->pci_base3)
-			  info->memBase[2] = 0;
-#endif
-		    }
-		}
-	    } else
-		mem64 = FALSE;
-
-	    if (pcrp->pci_base3 && !mem64) {
-		if (pcrp->pci_base3 & PCI_MAP_IO) {
-		    info->ioBase[3] = (memType)PCIGETIO(pcrp->pci_base3);
-		    info->type[3] = pcrp->pci_base3 & PCI_MAP_IO_ATTR_MASK;
-		} else {
-		    info->type[3] = pcrp->pci_base3 & PCI_MAP_MEMORY_ATTR_MASK;
-		    info->memBase[3] = (memType)PCIGETMEMORY(pcrp->pci_base3);
-		    if (PCI_MAP_IS64BITMEM(pcrp->pci_base3)) {
-			mem64 = TRUE;
-#if defined(LONG64) || defined(WORD64)
-			  info->memBase[3] |= 
-			    (memType)PCIGETMEMORY64HIGH(pcrp->pci_base3) << 32;
-#else
-			if (pcrp->pci_base4)
-			  info->memBase[3] = 0;
-#endif
-		    }
-		}
-	    } else
-		mem64 = FALSE;
-
-	    if (pcrp->pci_base4 && !mem64) {
-		if (pcrp->pci_base4 & PCI_MAP_IO) {
-		    info->ioBase[4] = (memType)PCIGETIO(pcrp->pci_base4);
-		    info->type[4] = pcrp->pci_base4 & PCI_MAP_IO_ATTR_MASK;
-		} else {
-		    info->type[4] = pcrp->pci_base4 & PCI_MAP_MEMORY_ATTR_MASK;
-		    info->memBase[4] = (memType)PCIGETMEMORY(pcrp->pci_base4);
-		    if (PCI_MAP_IS64BITMEM(pcrp->pci_base4)) {
-			mem64 = TRUE;
-#if defined(LONG64) || defined(WORD64)
-			  info->memBase[4] |= 
-			    (memType)PCIGETMEMORY64HIGH(pcrp->pci_base4) << 32;
-#else
-			if (pcrp->pci_base5)
-			  info->memBase[4] = 0;
-#endif
-		    }
-		}
-	    } else
-		mem64 = FALSE;
-
-	    if (pcrp->pci_base5 && !mem64) {
-		if (pcrp->pci_base5 & PCI_MAP_IO) {
-		    info->ioBase[5] = (memType)PCIGETIO(pcrp->pci_base5);
-		    info->type[5] = pcrp->pci_base5 & PCI_MAP_IO_ATTR_MASK;
-		} else {
-		    info->type[5] = pcrp->pci_base5 & PCI_MAP_MEMORY_ATTR_MASK;
-		    info->memBase[5] = (memType)PCIGETMEMORY(pcrp->pci_base5);
-		}
-	    } else
-		mem64 = FALSE;
 	    info->listed_class = pcrp->listed_class;
 	}
 	i++;
@@ -1682,10 +1632,12 @@ getValidBIOSBase(PCITAG tag, int num)
 	    m = m->next;
 	}
     } else {
+#if !defined(__ia64__) /* on ia64, trust the kernel, don't look for overlaps */
 	if (!xf86IsSubsetOf(range, m) || 
 	    ChkConflict(&range, avoid, SETUP) 
 	    || (mem && ChkConflict(&range, mem, SETUP))) 
 	    ret = 0;
+#endif 
     }
 
     xf86FreeResList(avoid);
@@ -1835,7 +1787,7 @@ xf86GetPciBridgeInfo(void)
 				primary, secondary);
 		    break;
 		}
-
+		
 		*pnPciBus = PciBus = xnfcalloc(1, sizeof(PciBusRec));
 		pnPciBus = &PciBus->next;
 
@@ -2120,42 +2072,38 @@ xf86GetPciBridgeInfo(void)
 	    case PCI_SUBCLASS_BRIDGE_HOST:
 		/* Is this the correct bridge?  If not, ignore bus info */
 		pBusInfo = pcrp->businfo;
-		if (pBusInfo == HOST_NO_BUS)
+
+		if (!pBusInfo || pBusInfo == HOST_NO_BUS)
 		    break;
 
 		secondary = 0;
-		if (pBusInfo) {
-		    /* Find "secondary" bus segment */
-		    while (pBusInfo != pciBusInfo[secondary])
+		/* Find "secondary" bus segment */
+		while (pBusInfo != pciBusInfo[secondary])
 			secondary++;
-		    if (pcrp != pBusInfo->bridge) {
-			xf86MsgVerb(X_WARNING, 3, "Host bridge mismatch for"
-				    " bus %x: %x:%x:%x and %x:%x:%x\n",
-				    pBusInfo->primary_bus,
-				    pcrp->busnum, pcrp->devnum, pcrp->funcnum,
-				    pBusInfo->bridge->busnum,
-				    pBusInfo->bridge->devnum,
-				    pBusInfo->bridge->funcnum);
-			pBusInfo = NULL;
-		    }
+		if (pcrp != pBusInfo->bridge) {
+		    xf86MsgVerb(X_WARNING, 3, "Host bridge mismatch for"
+				" bus %x: %x:%x:%x and %x:%x:%x\n",
+				pBusInfo->primary_bus,
+				pcrp->busnum, pcrp->devnum, pcrp->funcnum,
+				pBusInfo->bridge->busnum,
+				pBusInfo->bridge->devnum,
+				pBusInfo->bridge->funcnum);
+		    pBusInfo = NULL;
 		}
 
 		*pnPciBus = PciBus = xnfcalloc(1, sizeof(PciBusRec));
 		pnPciBus = &PciBus->next;
 
-		PciBus->primary = -1;
-		PciBus->secondary = -1; /* to be set below */
+
+		PciBus->primary = PciBus->secondary = secondary;
 		PciBus->subordinate = pciNumBuses - 1;
 
-		if (pBusInfo) {
-		    PciBus->primary = PciBus->secondary = secondary;
-		    if (pBusInfo->funcs->pciGetBridgeBuses)
-			(*pBusInfo->funcs->pciGetBridgeBuses)
-			    (secondary,
-			     &PciBus->primary,
-			     &PciBus->secondary,
-			     &PciBus->subordinate);
-		}
+		if (pBusInfo->funcs->pciGetBridgeBuses)
+		    (*pBusInfo->funcs->pciGetBridgeBuses)
+		        (secondary,
+			   &PciBus->primary,
+			   &PciBus->secondary,
+			   &PciBus->subordinate);
 
 		PciBus->brbus = pcrp->busnum;
 		PciBus->brdev = pcrp->devnum;

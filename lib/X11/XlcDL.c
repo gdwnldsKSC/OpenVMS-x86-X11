@@ -42,14 +42,28 @@ Sun Microsystems, Inc. or its licensors is granted.
 
 */
 /* $XFree86: xc/lib/X11/XlcDL.c,v 1.12 2003/04/13 19:22:19 dawes Exp $ */
-/* $XdotOrg: xc/lib/X11/XlcDL.c,v 1.2 2004/04/23 18:43:24 eich Exp $ */
+/* $XdotOrg: xc/lib/X11/XlcDL.c,v 1.6 2005/07/11 15:24:32 lars Exp $ */
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#else
+# if defined(hpux)
+#  define HAVE_DL_H
+# else
+#  define HAVE_DLFCN_H
+# endif
+#endif
 
 #include <stdio.h>
-#if defined(hpux)
+
+#ifdef HAVE_DL_H
 #include <dl.h>
-#else
+#endif
+
+#ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
+
 #include <ctype.h>
 
 #include "Xlibint.h"

@@ -46,6 +46,10 @@ copyright holders.
 */
 /* $XFree86: xc/programs/Xserver/Xprint/pcl/PclText.c,v 1.10tsi Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifdef DO_TWO_BYTE_PCL
 #include "iconv.h"
 #endif /* DO_TWO_BYTE_PCL */
@@ -54,7 +58,7 @@ copyright holders.
 
 #include "Pcl.h"
 #include "migc.h"
-#include "Xatom.h"
+#include <X11/Xatom.h>
 
 #include "PclSFonts.h"
 

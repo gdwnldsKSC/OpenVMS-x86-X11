@@ -25,14 +25,13 @@
 #define ___ATIMACH64ACCEL_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xaa.h"
 
 #define ATIMach64MaxX  8191
 #define ATIMach64MaxY 32767
 
-extern int  ATIMach64AccelInit FunctionPrototype((ATIPtr, XAAInfoRecPtr));
-extern void ATIMach64Sync      FunctionPrototype((ScrnInfoPtr));
+extern int  ATIMach64AccelInit(ATIPtr, XAAInfoRecPtr);
+extern void ATIMach64Sync(ScrnInfoPtr);
 
 #endif /* ___ATIMACH64ACCEL_H___ */

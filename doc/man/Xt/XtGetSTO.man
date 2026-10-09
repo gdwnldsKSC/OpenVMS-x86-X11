@@ -1,4 +1,5 @@
 .\" $Xorg: XtGetSTO.man,v 1.3 2000/08/17 19:42:00 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtGetSTO.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright (c) 1993, 1994  X Consortium
 .\" 
@@ -148,6 +149,7 @@ The
 function has been superceded by
 .ZN XtAppSetSelectionTimeout .
 .SH "SEE ALSO"
+.BR XtAppGetSelectionTimeout (3Xt)
 .br
 \fI\*(xT\fP
 .br

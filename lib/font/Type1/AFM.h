@@ -16,6 +16,10 @@
  * Graphics, Inc.
  */
 #ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
+#if XFONT_CID
 #ifndef AFM_H
 #define AFM_H
 

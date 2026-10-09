@@ -31,6 +31,10 @@ dealings in this Software without prior written authorization from said
 copyright holders.
 */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "attributes.h"
 
 /*
@@ -750,7 +754,7 @@ XpOidLinkedListFirstOid(XpOidLinkedList* me)
 XpOid
 XpOidLinkedListNextOid(XpOidLinkedList* me)
 {
-    if(me->current ? me->current = me->current->next : xFalse)
+    if(me->current ? (me->current = me->current->next) : xFalse)
 	return me->current->oid;
     else
 	return xpoid_none;
@@ -1712,6 +1716,7 @@ TrayMediumListValidate(XpOidTrayMediumList* me,
 	 * list
 	 */
 	if(tray_ds == (XpOidMediumDiscreteSizeList*)NULL)
+	{
 	    if(unspecified_tray_ds == (XpOidMediumDiscreteSizeList*)NULL)
 	    {
 		/*
@@ -1723,6 +1728,7 @@ TrayMediumListValidate(XpOidTrayMediumList* me,
 	    }
 	    else
 		tray_ds = unspecified_tray_ds;
+	}
 	/*
 	 * loop through the discrete sizes list, looking for a size that
 	 * matches the medium for the current input tray
@@ -2550,10 +2556,12 @@ XpOidDocFmtListHasFmt(const XpOidDocFmtList* list,
 	     * variants must both be NULL or match
 	     */
 	    if(fmt->variant == (char*)NULL)
+	    {
 		if(list->list[i].variant == (char*)NULL)
 		    return xTrue;
 		else
 		    continue;
+	    }
 	    if(list->list[i].variant == (char*)NULL)
 		continue;
 	    if(strcmp(fmt->variant, list->list[i].variant) != 0)
@@ -2562,10 +2570,12 @@ XpOidDocFmtListHasFmt(const XpOidDocFmtList* list,
 	     * versions must both be NULL or match
 	     */
 	    if(fmt->version == (char*)NULL)
+	    {
 		if(list->list[i].version == (char*)NULL)
 		    return xTrue;
 		else
 		    continue;
+	    }
 	    if(list->list[i].version == (char*)NULL)
 		continue;
 	    if(strcmp(fmt->version, list->list[i].version) == 0)

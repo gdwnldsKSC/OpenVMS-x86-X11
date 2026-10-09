@@ -49,6 +49,9 @@ from The Open Group.
 */
 /* $XFree86: xc/lib/font/Speedo/spencode.c,v 1.6 2001/01/17 19:43:18 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include	"spint.h"
 
 /* No longer needed with new encoding code */

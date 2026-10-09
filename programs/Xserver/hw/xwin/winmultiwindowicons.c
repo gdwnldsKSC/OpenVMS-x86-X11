@@ -29,6 +29,9 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xwin/winwindow.c,v 1.5 2002/11/07 10:31:32 alanh Exp $ */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 #include "dixevents.h"
 #include "winmultiwindowclass.h"
@@ -359,6 +362,7 @@ winXIconToHICON (WindowPtr pWin, int iconSize)
  * Change the Windows window icon 
  */
 
+#ifdef XWIN_MULTIWINDOW
 void
 winUpdateIcon (Window id)
 {
@@ -471,3 +475,4 @@ void winDestroyIcon(HICON hIcon)
       !winIconIsOverride((unsigned long)hIcon))
     DestroyIcon (hIcon);
 }
+#endif

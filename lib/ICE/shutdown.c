@@ -28,9 +28,12 @@ Author: Ralph Mor, X Consortium
 ******************************************************************************/
 /* $XFree86: xc/lib/ICE/shutdown.c,v 3.3 2001/08/01 00:44:37 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/ICE/ICElib.h>
 #include "ICElibint.h"
-#include <X11/Xtrans.h>
+#include <X11/Xtrans/Xtrans.h>
 
 
 Status

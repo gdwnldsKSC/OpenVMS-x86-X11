@@ -36,6 +36,10 @@
  * Marc Aurele La France <tsi@xfree86.org>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -90,7 +94,7 @@ static Bool                 GenericMapMem(ScrnInfoPtr scrp);
 static ModeStatus GenericValidMode(int, DisplayModePtr, Bool, int);
 
 /* The root of all evil... */
-DriverRec VGA =
+_X_EXPORT DriverRec VGA =
 {
     VGA_VERSION_CURRENT,
     VGA_DRIVER_NAME,
@@ -190,7 +194,11 @@ static XF86ModuleVersionInfo GenericVersionRec =
  * This data is accessed by the loader.  The name must be the module name
  * followed by "ModuleData".
  */
-XF86ModuleData vgaModuleData = { &GenericVersionRec, GenericSetup, NULL };
+_X_EXPORT XF86ModuleData vgaModuleData = {
+    &GenericVersionRec,
+    GenericSetup,
+    NULL
+};
 
 static pointer
 GenericSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)

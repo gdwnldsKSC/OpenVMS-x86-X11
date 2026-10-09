@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/os/xdmcp.c,v 1.3 2004/07/20 15:15:13 ago Exp $ */
+/* $XdotOrg: xc/programs/Xserver/os/xdmcp.c,v 1.10 2005/07/03 08:53:52 daniels Exp $ */
 /* $Xorg: xdmcp.c,v 1.4 2001/01/31 13:37:19 pookie Exp $ */
 /*
  * Copyright 1989 Network Computing Devices, Inc., Mountain View, California.
@@ -16,21 +16,15 @@
  */
 /* $XFree86: xc/programs/Xserver/os/xdmcp.c,v 3.31 2003/12/30 21:24:32 herrb Exp $ */
 
-#ifdef WIN32
-/* avoid conflicting definitions */
-#define BOOL wBOOL
-#define ATOM wATOM
-#define FreeResource wFreeResource
-#include <winsock.h>
-#undef BOOL
-#undef ATOM
-#undef FreeResource
-#undef CreateWindowA
-#undef RT_FONT
-#undef RT_CURSOR
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
 #endif
 
-#include "Xos.h"
+#ifdef WIN32
+#include <X11/Xwinsock.h>
+#endif
+
+#include <X11/Xos.h>
 
 #if !defined(WIN32)
 #ifndef Lynx
@@ -45,10 +39,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "X.h"
-#include "Xmd.h"
+#include <X11/X.h>
+#include <X11/Xmd.h>
 #include "misc.h"
-#include "Xpoll.h"
+#include <X11/Xpoll.h>
 #include "osdep.h"
 #include "input.h"
 #include "dixstruct.h"
@@ -165,7 +159,7 @@ static void get_xdmcp_sock(void);
 static void send_query_msg(void);
 
 static void recv_willing_msg(
-    struct sockaddr */*from*/,
+    struct sockaddr * /*from*/,
     int /*fromlen*/,
     unsigned /*length*/);
 
@@ -186,27 +180,27 @@ static void send_keepalive_msg(void);
 static void recv_alive_msg(unsigned /*length*/);
 
 static void XdmcpFatal(
-    char */*type*/,
+    char * /*type*/,
     ARRAY8Ptr /*status*/);
  
-static void XdmcpWarning(char */*str*/);
+static void XdmcpWarning(char * /*str*/);
 
 static void get_manager_by_name(
     int /*argc*/,
-    char **/*argv*/,
+    char ** /*argv*/,
     int /*i*/);
 
-static void get_fromaddr_by_name(int /*argc*/, char **/*argv*/, int /*i*/);
+static void get_fromaddr_by_name(int /*argc*/, char ** /*argv*/, int /*i*/);
 
 #if defined(IPv6) && defined(AF_INET6)
-static int get_mcast_options(int /*argc*/, char **/*argv*/, int /*i*/);
+static int get_mcast_options(int /*argc*/, char ** /*argv*/, int /*i*/);
 #endif
 
 static void receive_packet(int /*socketfd*/);
 
 static void send_packet(void);
 
-extern void XdmcpDeadSession(char */*reason*/);
+extern void XdmcpDeadSession(char * /*reason*/);
 
 static void timeout(void);
 
@@ -214,7 +208,7 @@ static void restart(void);
 
 static void XdmcpBlockHandler(
     pointer /*data*/,
-    struct timeval **/*wt*/,
+    struct timeval ** /*wt*/,
     pointer /*LastSelectMask*/);
 
 static void XdmcpWakeupHandler(
@@ -1469,7 +1463,7 @@ recv_alive_msg (unsigned length)
     	}
 	else
     	{
-	    XdmcpDeadSession ("Alive respose indicates session dead");
+	    XdmcpDeadSession ("Alive response indicates session dead");
     	}
     }
 }
@@ -1548,7 +1542,9 @@ get_addr_by_name(
 #ifdef XTHREADS_NEEDS_BYNAMEPARAMS
     _Xgethostbynameparams hparams;
 #endif
-
+#if defined(WIN32) && (defined(TCPCONN) || defined(DNETCONN))
+    _XSERVTransWSAStartup(); 
+#endif
     if (!(hep = _XGethostbyname(namestr, hparams)))
     {
 	FatalError("Xserver: %s unknown host: %s\n", argtype, namestr);

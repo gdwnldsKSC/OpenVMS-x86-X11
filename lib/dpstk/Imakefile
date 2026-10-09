@@ -60,7 +60,7 @@ includes:: $(SRCS)
 includes:: $(MOTIFSRCS)
 
 #if DoSharedLib
-SharedLibraryTarget(dpstkXm,$(SODPSREV),$(MOTIFOBJS),.,.)
+SharedDepLibraryTarget(dpstkXm,$(SODPSREV),$(MOTIFOBJS),$(MOTIFOBJS) $(MOTIFLIB) $(DPSTKLIB) $(PSRESLIB),.,.)
 InstallSharedLibrary(dpstkXm,$(SODPSREV),$(USRLIBDIR))
 #endif
 #if DoNormalLib

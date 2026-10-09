@@ -1,5 +1,5 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/via/via_i2c.c,v 1.3 2003/08/27 15:16:09 tsi Exp $ */
 /*
+ * Copyright 2004 The Unichrome Project  [unichrome.sf.net]
  * Copyright 1998-2003 VIA Technologies, Inc. All Rights Reserved.
  * Copyright 2001-2003 S3 Graphics, Inc. All Rights Reserved.
  *
@@ -17,398 +17,406 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- * VIA, S3 GRAPHICS, AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+/*
+ * Implements three i2c busses through registers SR26, SR2c and SR31
+ */
 
-
-#include "xf86.h"
-#include "xf86_OSproc.h"
-#include "xf86_ansic.h"
-#include "compiler.h"
-
-#include "xf86Pci.h"
-#include "xf86PciInfo.h"
-
-#include "vgaHW.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "via_driver.h"
+#include "via_vgahw.h"
+
+#define SDA_READ  0x04
+#define SCL_READ  0x08
+#define SDA_WRITE 0x10
+#define SCL_WRITE 0x20
 
 /*
- * DDC2 support requires DDC_SDA_MASK and DDC_SCL_MASK
+ *
+ * CRT I2C
+ *
  */
-#define DDC_SDA_READ_MASK  (1 << 2)
-#define DDC_SCL_READ_MASK  (1 << 3)
-#define DDC_SDA_WRITE_MASK (1 << 4)
-#define DDC_SCL_WRITE_MASK (1 << 5)
-
-/* I2C Function for DDC2 */
+/*
+ *
+ */
 static void
-VIAI2C1PutBits(I2CBusPtr b, int clock,  int data)
+ViaI2C1PutBits(I2CBusPtr Bus, int clock,  int data)
 {
-    CARD8 reg;
-
-    outb(0x3c4, 0x26);
-    reg = inb(0x3c5);
-    reg &= 0xF0;
-    reg |= 0x01;                    /* Enable DDC */
-
+    vgaHWPtr hwp = VGAHWPTR(xf86Screens[Bus->scrnIndex]);
+    CARD8 value = 0x01; /* Enable */
+    
     if (clock)
-        reg |= DDC_SCL_WRITE_MASK;
-    else
-        reg &= ~DDC_SCL_WRITE_MASK;
-
+        value |= SCL_WRITE;
+    
     if (data)
-        reg |= DDC_SDA_WRITE_MASK;
-    else
-        reg &= ~DDC_SDA_WRITE_MASK;
+        value |= SDA_WRITE;
 
-    outb(0x3c4, 0x26);
-    outb(0x3c5, reg);
+    ViaSeqMask(hwp, 0x26, value, 0x01 | SCL_WRITE | SDA_WRITE);
 }
 
+/*
+ *
+ */
 static void
-VIAI2C1GetBits(I2CBusPtr b, int *clock, int *data)
+ViaI2C1GetBits(I2CBusPtr Bus, int *clock, int *data)
 {
-    CARD8 reg;
-
-    outb(0x3c4, 0x26);
-    reg = inb(0x3c5);
-
-    *clock = (reg & DDC_SCL_READ_MASK) != 0;
-    *data  = (reg & DDC_SDA_READ_MASK) != 0;
+    vgaHWPtr hwp = VGAHWPTR(xf86Screens[Bus->scrnIndex]);
+    CARD8 value = hwp->readSeq(hwp, 0x26);
+    
+    *clock = (value & SCL_READ) != 0;
+    *data  = (value & SDA_READ) != 0;
 }
 
-/* Function for DVI DDC2. Also used for the tuner and TV IC's */
-
-static void
-VIAI2C2PutBits(I2CBusPtr b, int clock,  int data)
+/*
+ *
+ */
+static I2CBusPtr
+ViaI2CBus1Init(int scrnIndex)
 {
-    CARD8 reg;
+    I2CBusPtr pI2CBus = xf86CreateI2CBusRec();
+    
+    DEBUG(xf86DrvMsg(scrnIndex, X_INFO, "ViaI2CBus1Init\n"));
 
-    outb(0x3c4, 0x31);
-    reg = inb(0x3c5);
-    reg &= 0xF0;
-    reg |= 0x01;                    /* Enable DDC */
+    if (!pI2CBus)
+	return NULL;
+    
+    pI2CBus->BusName    = "I2C bus 1";
+    pI2CBus->scrnIndex  = scrnIndex;
+    pI2CBus->I2CPutBits = ViaI2C1PutBits;
+    pI2CBus->I2CGetBits = ViaI2C1GetBits;
 
+    if (!xf86I2CBusInit(pI2CBus)) {
+        xf86DestroyI2CBusRec(pI2CBus, TRUE, FALSE);
+        return NULL;
+    }
+
+    return pI2CBus;
+}
+
+/*
+ *
+ * First data bus I2C: tends to have TV-encoders
+ *
+ */
+/*
+ *
+ */
+static void
+ViaI2C2PutBits(I2CBusPtr Bus, int clock,  int data)
+{
+    vgaHWPtr hwp = VGAHWPTR(xf86Screens[Bus->scrnIndex]);
+    CARD8 value = 0x01; /* Enable */
+    
     if (clock)
-        reg |= DDC_SCL_WRITE_MASK;
-    else
-        reg &= ~DDC_SCL_WRITE_MASK;
-
+        value |= SCL_WRITE;
+    
     if (data)
-        reg |= DDC_SDA_WRITE_MASK;
-    else
-        reg &= ~DDC_SDA_WRITE_MASK;
+        value |= SDA_WRITE;
 
-    outb(0x3c4, 0x31);
-    outb(0x3c5, reg);
+    ViaSeqMask(hwp, 0x31, value, 0x01 | SCL_WRITE | SDA_WRITE);
 }
 
+/*
+ *
+ */
 static void
-VIAI2C2GetBits(I2CBusPtr b, int *clock, int *data)
+ViaI2C2GetBits(I2CBusPtr Bus, int *clock, int *data)
 {
-    CARD8 reg;
-
-    outb(0x3c4, 0x31);
-    reg = inb(0x3c5);
-
-    *clock = (reg & DDC_SCL_READ_MASK) != 0;
-    *data  = (reg & DDC_SDA_READ_MASK) != 0;
+    vgaHWPtr hwp = VGAHWPTR(xf86Screens[Bus->scrnIndex]);
+    CARD8 value = hwp->readSeq(hwp, 0x31);
+    
+    *clock = (value & SCL_READ) != 0;
+    *data  = (value & SDA_READ) != 0;
 }
 
-
-Bool
-VIAI2CInit(ScrnInfoPtr pScrn)
+/*
+ *
+ */
+static I2CBusPtr
+ViaI2CBus2Init(int scrnIndex)
 {
-    VIAPtr pVia = VIAPTR(pScrn);
-    I2CBusPtr I2CPtr1, I2CPtr2;
+    I2CBusPtr pI2CBus = xf86CreateI2CBusRec();
+    
+    DEBUG(xf86DrvMsg(scrnIndex, X_INFO, "ViaI2cBus2Init\n"));
 
-    I2CPtr1 = xf86CreateI2CBusRec();
-    I2CPtr2 = xf86CreateI2CBusRec();
-    if (!I2CPtr1 || !I2CPtr2)
-        return FALSE;
+    if (!pI2CBus)
+	return NULL;
+    
+    pI2CBus->BusName    = "I2C bus 2";
+    pI2CBus->scrnIndex  = scrnIndex;
+    pI2CBus->I2CPutBits = ViaI2C2PutBits;
+    pI2CBus->I2CGetBits = ViaI2C2GetBits;
 
-    I2CPtr1->BusName    = "I2C bus 1";
-    I2CPtr1->scrnIndex  = pScrn->scrnIndex;
-    I2CPtr1->I2CPutBits = VIAI2C1PutBits;
-    I2CPtr1->I2CGetBits = VIAI2C1GetBits;
+    if (!xf86I2CBusInit(pI2CBus)) {
+        xf86DestroyI2CBusRec(pI2CBus, TRUE, FALSE);
+        return NULL;
+    }
 
-    I2CPtr2->BusName    = "I2C bus 2";
-    I2CPtr2->scrnIndex  = pScrn->scrnIndex;
-    I2CPtr2->I2CPutBits = VIAI2C2PutBits;
-    I2CPtr2->I2CGetBits = VIAI2C2GetBits;
+    return pI2CBus;
+}
 
-    if (!xf86I2CBusInit(I2CPtr1) || !xf86I2CBusInit(I2CPtr2))
-        return FALSE;
+/*
+ * A third I2C bus implemented by a few IO pins.
+ * Requires higher level functions to be used properly.
+ * Former via_gpioi2c.
+ *
+ */
+/*
+ *
+ */
+static Bool
+ViaI2C3Start(I2CBusPtr b, int timeout)
+{
+    vgaHWPtr hwp = VGAHWPTR(xf86Screens[b->scrnIndex]);
 
-    pVia->I2C_Port1 = I2CPtr1;
-    pVia->I2C_Port2 = I2CPtr2;
+    ViaSeqMask(hwp, 0x2C, 0xF0, 0xF0);
+    b->I2CUDelay(b, b->RiseFallTime);
+
+    ViaSeqMask(hwp, 0x2C, 0x00, 0x10);
+    b->I2CUDelay(b, b->HoldTime);
+    ViaSeqMask(hwp, 0x2C, 0x00, 0x20);
+    b->I2CUDelay(b, b->HoldTime);
 
     return TRUE;
 }
 
-#ifdef _MY_I2C_
-/*------------------------------------------------
-   I2C Module
-  ------------------------------------------------*/
-
-static int pcI2CIndex   = 0x3c4;
-static int pcI2Cport    = 0x3c5;
 /*
-static int pcIndexReg   = 0x31;
-static int pcSDAReadBack= 0x31;
-*/
-
-static int gSDA=0;
-
-
-#if 0
-static void I2CUDelay(int usec)
+ *
+ */
+static Bool
+ViaI2C3Address(I2CDevPtr d, I2CSlaveAddr addr)
 {
-  long b_secs, b_usecs;
-  long a_secs, a_usecs;
-  long d_secs, d_usecs;
-  long diff;
+    I2CBusPtr b = d->pI2CBus;
 
-  if (usec > 0) {
-    xf86getsecs(&b_secs, &b_usecs);
-    do {
-      /* It would be nice to use {xf86}usleep,
-       * but usleep (1) takes >10000 usec !
-       */
-      xf86getsecs(&a_secs, &a_usecs);
-      d_secs  = (a_secs - b_secs);
-      d_usecs = (a_usecs - b_usecs);
-      diff = d_secs*1000000 + d_usecs;
-    } while (diff>0 && diff< (usec + 1));
-  }
+    if (b->I2CStart(d->pI2CBus, d->StartTimeout)) {
+        if (b->I2CPutByte(d, addr & 0xFF)) {
+            if ((addr & 0xF8) != 0xF0 &&
+                (addr & 0xFE) != 0x00)
+                return TRUE;
+
+            if (b->I2CPutByte(d, (addr >> 8) & 0xFF))
+                return TRUE;
+        }
+
+        b->I2CStop(d);
+    }
+
+    return FALSE;
+}
+
+/*
+ *
+ */
+static void
+ViaI2C3Stop(I2CDevPtr d)
+{
+    I2CBusPtr b = d->pI2CBus;
+    vgaHWPtr hwp = VGAHWPTR(xf86Screens[b->scrnIndex]);
+
+    ViaSeqMask(hwp, 0x2C, 0xC0, 0xF0);
+    b->I2CUDelay(b, b->RiseFallTime);
+
+    ViaSeqMask(hwp, 0x2C, 0x20, 0x20);
+    b->I2CUDelay(b, b->HoldTime);
+    
+    ViaSeqMask(hwp, 0x2C, 0x10, 0x10);
+    b->I2CUDelay(b, b->HoldTime);
+
+    ViaSeqMask(hwp, 0x2C, 0x00, 0x20);
+    b->I2CUDelay(b, b->HoldTime);
+}
+
+/*
+ *
+ */
+static void
+ViaI2C3PutBit(I2CBusPtr b, Bool sda, int timeout)
+{
+    vgaHWPtr hwp = VGAHWPTR(xf86Screens[b->scrnIndex]);
+
+    if (sda)
+        ViaSeqMask(hwp, 0x2C, 0x50, 0x50);
+    else
+        ViaSeqMask(hwp, 0x2C, 0x40, 0x50);
+    b->I2CUDelay(b, b->RiseFallTime/5);
+
+    ViaSeqMask(hwp, 0x2C, 0xA0, 0xA0);
+    b->I2CUDelay(b, b->HoldTime);
+    b->I2CUDelay(b, timeout);
+
+    ViaSeqMask(hwp, 0x2C, 0x80, 0xA0);
+    b->I2CUDelay(b, b->RiseFallTime/5);
+}
+
+/*
+ *
+ */
+static Bool
+ViaI2C3PutByte(I2CDevPtr d, I2CByte data)
+{
+    I2CBusPtr b = d->pI2CBus;
+    vgaHWPtr hwp = VGAHWPTR(xf86Screens[b->scrnIndex]);
+    Bool ret;
+    int     i;
+
+    for (i = 7; i >= 0; i--)
+        ViaI2C3PutBit(b, (data >> i) & 0x01, b->BitTimeout);
+
+    /* raise first to avoid false positives */
+    ViaSeqMask(hwp, 0x2C, 0x50, 0x50);
+    ViaSeqMask(hwp, 0x2C, 0x00, 0x40);
+    b->I2CUDelay(b, b->RiseFallTime);
+    ViaSeqMask(hwp, 0x2C, 0xA0, 0xA0);
+
+    if (hwp->readSeq(hwp, 0x2C) & 0x04)
+        ret = FALSE;
+    else
+        ret = TRUE;
+
+    ViaSeqMask(hwp, 0x2C, 0x80, 0xA0);
+    b->I2CUDelay(b, b->RiseFallTime);
+
+    return ret;
+}
+
+/*
+ *
+ */
+static Bool
+ViaI2C3GetBit(I2CBusPtr b, int timeout)
+{
+    vgaHWPtr hwp = VGAHWPTR(xf86Screens[b->scrnIndex]);
+    Bool ret;
+
+    ViaSeqMask(hwp, 0x2c, 0x80, 0xC0);
+    b->I2CUDelay(b, b->RiseFallTime/5);
+    ViaSeqMask(hwp, 0x2c, 0xA0, 0xA0);    
+    b->I2CUDelay(b, 3*b->HoldTime);
+    b->I2CUDelay(b, timeout);
+
+    if (hwp->readSeq(hwp, 0x2C) & 0x04)
+        ret = TRUE;
+    else
+        ret = FALSE;
+
+    ViaSeqMask(hwp, 0x2C, 0x80, 0xA0);
+    b->I2CUDelay(b, b->HoldTime);
+    b->I2CUDelay(b, b->RiseFallTime/5);
+
+    return ret;
+}
+
+/*
+ *
+ */
+static Bool
+ViaI2C3GetByte(I2CDevPtr d, I2CByte *data, Bool last)
+{
+    I2CBusPtr b = d->pI2CBus;
+    vgaHWPtr hwp = VGAHWPTR(xf86Screens[b->scrnIndex]);
+    int     i;
+
+    *data = 0x00;
+
+    for (i = 7; i >= 0; i--)
+        if (ViaI2C3GetBit(b, b->BitTimeout))
+            *data |= 0x01 << i;
+
+    if (last) /* send NACK */
+	ViaSeqMask(hwp, 0x2C, 0x50, 0x50);
+    else /* send ACK */
+	ViaSeqMask(hwp, 0x2C, 0x40, 0x50);
+
+    ViaSeqMask(hwp, 0x2C, 0xA0, 0xA0);
+    b->I2CUDelay(b, b->HoldTime);
+    
+    ViaSeqMask(hwp, 0x2C, 0x80, 0xA0);
+
+    return TRUE;
+}
+
+/*
+ *
+ */
+static I2CBusPtr
+ViaI2CBus3Init(int scrnIndex)
+{
+    I2CBusPtr pI2CBus = xf86CreateI2CBusRec();
+    
+    DEBUG(xf86DrvMsg(scrnIndex, X_INFO, "ViaI2CBus3Init\n"));
+    
+    if (!pI2CBus)
+	return NULL;
+    
+    pI2CBus->BusName    = "I2C bus 3";
+    pI2CBus->scrnIndex  = scrnIndex;
+    pI2CBus->I2CAddress = ViaI2C3Address;
+    pI2CBus->I2CStart = ViaI2C3Start;
+    pI2CBus->I2CStop = ViaI2C3Stop;
+    pI2CBus->I2CPutByte = ViaI2C3PutByte;
+    pI2CBus->I2CGetByte = ViaI2C3GetByte;
+    
+    pI2CBus->HoldTime = 10;
+    pI2CBus->BitTimeout = 10;
+    pI2CBus->ByteTimeout = 10;
+    pI2CBus->StartTimeout = 10;
+    
+    if (!xf86I2CBusInit(pI2CBus)) {
+	xf86DestroyI2CBusRec(pI2CBus, TRUE, FALSE);
+	return NULL;
+    }
+    
+    return pI2CBus;
+}
+
+#ifdef HAVE_DEBUG
+/*
+ *
+ */
+static void
+ViaI2CScan(I2CBusPtr Bus)
+{
+    CARD8 i;
+
+    xf86DrvMsg(Bus->scrnIndex, X_INFO, "ViaI2CScan: Scanning %s\n",
+	       Bus->BusName);
+
+    for (i = 0x10; i < 0xF0; i += 2)
+	if (xf86I2CProbeAddress(Bus, i))
+	    xf86DrvMsg(Bus->scrnIndex, X_PROBED, "Found slave on %s "
+		       "- 0x%02X\n", Bus->BusName, i);
 }
 #endif
 
-/* Enable I2C */
-void I2C_Enable(int pcIndexReg)
+/*
+ *
+ *
+ *
+ */
+void
+ViaI2CInit(ScrnInfoPtr pScrn)
 {
-    int tempI2Cdata, Reg3C4H;
+    VIAPtr pVia = VIAPTR(pScrn);
 
-    /* save 3c4H */
-    Reg3C4H = inb(pcI2CIndex);
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "ViaI2CInit\n"));
 
-    outb(pcI2CIndex, pcIndexReg);
-    tempI2Cdata = inb(pcI2Cport);
+    pVia->pI2CBus1 = ViaI2CBus1Init(pScrn->scrnIndex);
+    pVia->pI2CBus2 = ViaI2CBus2Init(pScrn->scrnIndex);
+    pVia->pI2CBus3 = ViaI2CBus3Init(pScrn->scrnIndex);
 
-    tempI2Cdata |= 0x01; /* Bit 0:I2C Serial Port Enable */
-    outb(pcI2Cport, tempI2Cdata);
-
-    /* restore 3c4H */
-    outb(pcI2CIndex, Reg3C4H);
-
-} /* I2C_enable */
-
-
-
-/* reverse data */
-long I2C_reverk(register unsigned data)
-{
-    unsigned long rdata = 0;
-    int i;
-
-    for ( i = 0; i < 16 ; i++ ) {
-        rdata |= ( data & 1 ); /* strip off LSBIT */
-        data >>= 1;
-        rdata <<= 1;
+#ifdef HAVE_DEBUG
+    if (pVia->I2CScan) {
+	if (pVia->pI2CBus2)
+	    ViaI2CScan(pVia->pI2CBus2);
+	if (pVia->pI2CBus3)
+	    ViaI2CScan(pVia->pI2CBus3);
     }
-    return(rdata >> 1);
-
-} /* I2C_reverk */
-
-
-
-/* get an acknowledge back from a slave device */
-int I2C_ack_pc(int pcIndexReg)
-{
-    int ack;
-
-    I2C_regwrit_pc(pcIndexReg, I2C_SDA, 1);
-    I2C_regwrit_pc(pcIndexReg, I2C_SCL, HICLK);
-    ack = I2C_regread_pc(pcIndexReg, I2C_SDA);
-    I2C_regwrit_pc(pcIndexReg, I2C_SCL, LOCLK);
-
-    return (ack);
-
-}  /* I2C_ack_pc */
-
-
-
-/* send a start condition */
-void I2C_start_pc(int pcIndexReg)
-{
-    I2C_regwrit_pc(pcIndexReg, I2C_SDA, 1);
-    I2C_regwrit_pc(pcIndexReg, I2C_SCL, HICLK);
-    I2C_regwrit_pc(pcIndexReg, I2C_SDA, 0);
-    I2C_regwrit_pc(pcIndexReg, I2C_SCL, LOCLK);
-
-} /* I2C_start_pc */
-
-
-
-/* send a stop condition */
-void I2C_stop_pc(int pcIndexReg)
-{
-    I2C_regwrit_pc(pcIndexReg, I2C_SDA, 0);
-    I2C_regwrit_pc(pcIndexReg, I2C_SCL, HICLK);
-    I2C_regwrit_pc(pcIndexReg, I2C_SDA, 1);
-
-} /* I2C_stop_pc */
-
-
-
-/*  write I2C data */
-int I2C_wdata_pc(int pcIndexReg, unsigned type , unsigned data)
-{
-    int i;
-
-    data = (unsigned int)(I2C_reverk(data) >> 8);  /* MSBIT goes out first */
-
-    if ( type == I2C_ADR )
-        I2C_start_pc(pcIndexReg);
-
-    for ( i = 0; i < 8; data >>=1, i++ ) {
-        I2C_regwrit_pc(pcIndexReg, I2C_SDA, data);
-        I2C_regwrit_pc(pcIndexReg, I2C_SCL, HICLK);
-        I2C_regwrit_pc(pcIndexReg, I2C_SCL, LOCLK);
-    }
-
-    return I2C_ack_pc(pcIndexReg);  /* wait for acknowledge */
-
-} /* I2C_wdata_pc */
-
-
-/* Write SCL/SDA bit */
-void I2C_regwrit_pc(int pcIndexReg, unsigned type, unsigned data )
-{
-    int tempI2Cdata, Reg3C4H;
-
-    /* save 3c4H */
-    Reg3C4H = inb(pcI2CIndex);
-
-    outb(pcI2CIndex, pcIndexReg);
-    tempI2Cdata = inb(pcI2Cport);
-
-
-    switch (type) {
-        case I2C_SCL:
-            tempI2Cdata &= 0xcf;  /* bit5 SPCLCK, bit4 SDATA */
-            tempI2Cdata |= gSDA | ( (data & 1)<< 5);
-            outb(pcI2Cport, tempI2Cdata);
-            break;
-
-        case I2C_SDA:
-            tempI2Cdata &= 0xef;
-            tempI2Cdata |= ( (data & 1) << 4);
-            outb(pcI2Cport, tempI2Cdata);
-
-            gSDA = 0;
-            gSDA = ( (data & 1) << 4);
-
-            break;
-    }
-
-    /* restore 3c4H */
-    outb(pcI2CIndex, Reg3C4H);
-
-} /* I2C_regwrit_pc */
-
-
-
-/* Read SDA bit */
-int I2C_regread_pc(int pcIndexReg, unsigned type)
-{
-    int temp=0,Reg3C4H;
-
-    /* save 3c4H */
-    Reg3C4H = inb(pcI2CIndex);
-
-    switch (type) {
-        case I2C_SCL :
-            break;
-
-        case I2C_SDA:
-            outb(pcI2CIndex, pcIndexReg);
-            temp = ( inb(pcI2Cport) >> 2) & 0x01;
-            break;
-    }
-
-    /* restore 3c4H */
-    outb(pcI2CIndex, Reg3C4H);
-
-    return(temp);
-
-} /* I2C_regread_pc */
-
-
-void  I2C_wdata(int pcIndexReg, int addr, int subAddr, int data)
-{
-     int ack = 1;
-
-     ack = I2C_wdata_pc(pcIndexReg, I2C_ADR, addr);
-     ack = I2C_wdata_pc(pcIndexReg, I2C_DAT, subAddr);
-     ack = I2C_wdata_pc(pcIndexReg, I2C_DAT, data);
-
-     I2C_stop_pc(pcIndexReg);
-}
-
-
-int  I2C_rdata(int pcIndexReg, int addr, unsigned subAddr)
-{
-    int StatusData =0, data, i;
-
-    I2C_wdata_pc(pcIndexReg, I2C_ADR, addr);
-    I2C_wdata_pc(pcIndexReg, I2C_DAT, subAddr);
-    I2C_stop_pc(pcIndexReg);
-
-    I2C_wdata_pc(pcIndexReg, I2C_ADR, addr+1);
-
-
-    /*  pull SDA High */
-    I2C_regwrit_pc(pcIndexReg, I2C_SDA, 1);
-
-    /* Read Register */
-    for ( i = 0; i <= 7 ; i++ ) {
-
-        I2C_regwrit_pc(pcIndexReg, I2C_SCL, HICLK);
-        data = I2C_regread_pc(pcIndexReg, I2C_SDA);
-        I2C_regwrit_pc(pcIndexReg, I2C_SCL, LOCLK);
-
-        data &=  0x01; /* Keep SDA only */
-        StatusData <<=   1;
-        StatusData |= data;
-    }
-
-    I2C_stop_pc(pcIndexReg);
-    return(StatusData);
-}
-
-Bool I2C_Write(int pcIndexReg, int addr, unsigned char *WriteBuffer, int nWrite)
-{
-    int s = 0;
-    int ack = 1;
-
-    ack = I2C_wdata_pc(pcIndexReg, I2C_ADR, addr);
-
-    if (nWrite > 0) {
-        for (; nWrite > 0; WriteBuffer++, nWrite--)
-            ack = I2C_wdata_pc(pcIndexReg, I2C_DAT, *WriteBuffer);
-        s++;
-    }
-    else {
-        I2C_stop_pc(pcIndexReg);
-        return (s);
-    }
-
-    I2C_stop_pc(pcIndexReg);
-    return (s);
-}
 #endif
+}

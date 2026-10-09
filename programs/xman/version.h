@@ -29,4 +29,4 @@ from the X Consortium.
 
 */
 
-#define XMAN_VERSION "Xman Version 3.2.0 - X11R6.8"
+#define XMAN_VERSION "Xman Version 3.2.0 - X11R6.9"

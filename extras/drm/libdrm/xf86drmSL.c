@@ -40,6 +40,10 @@
  *
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #define SL_MAIN 0
 
 #if SL_MAIN
@@ -47,6 +51,7 @@
 # include <stdlib.h>
 #  include <sys/time.h>
 #else
+# include "drm.h"
 # include "xf86drm.h"
 # ifdef XFree86LOADER
 #  include "xf86.h"

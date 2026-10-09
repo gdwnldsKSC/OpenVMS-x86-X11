@@ -25,7 +25,7 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/etc/scanpci.c,v 3.91tsi Exp $ */
 
-#include "X.h"
+#include <X11/X.h>
 #include "os.h"
 #include "xf86.h"
 #include "xf86Priv.h"
@@ -195,7 +195,6 @@ main(int argc, char *argv[])
 	    break;
 	}
 
-    xf86EnableIO();
     pcrpp = xf86scanpci(0);
 
     if (!pcrpp) {
@@ -217,7 +216,7 @@ identify_card(pciConfigPtr pcr, int verbose)
     int i, j;
     int foundit = 0;
     int foundvendor = 0;
-    const char *vname, *dname, *svname, *sname;
+    const char *vname = NULL, *dname = NULL, *svname = NULL, *sname = NULL;
 
     pciVendorDevFuncInfo *vdf = vendorDeviceFuncInfo;
 
@@ -264,6 +263,8 @@ identify_card(pciConfigPtr pcr, int verbose)
 
     if (verbose && !(pcr->pci_header_type & 0x7f) &&
 	(pcr->pci_subsys_vendor != 0 || pcr->pci_subsys_card != 0) &&
+	((pcr->pci_subsys_vendor != NOVENDOR)
+	 || (pcr->pci_subsys_card != NOSUBSYS)) &&
 	(pcr->pci_vendor != pcr->pci_subsys_vendor ||
 	 pcr->pci_device != pcr->pci_subsys_card)) {
 	foundit = 0;

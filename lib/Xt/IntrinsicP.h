@@ -29,13 +29,13 @@ Copyright 1987, 1988 by Digital Equipment Corporation, Maynard, Massachusetts.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the name of Digital not be
 used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
+software without specific, written prior permission.
 
 DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
 ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
@@ -212,30 +212,37 @@ typedef struct _XtTMRec {
 #define XtParent(widget)	((widget)->core.parent)
 
 #undef XtIsRectObj
+extern Boolean XtIsRectObj(Widget);
 #define XtIsRectObj(obj) \
     (((Object)(obj))->object.widget_class->core_class.class_inited & 0x02)
 
 #undef XtIsWidget
+extern Boolean XtIsWidget(Widget);
 #define XtIsWidget(obj) \
     (((Object)(obj))->object.widget_class->core_class.class_inited & 0x04)
 
 #undef XtIsComposite
+extern Boolean XtIsComposite(Widget);
 #define XtIsComposite(obj) \
     (((Object)(obj))->object.widget_class->core_class.class_inited & 0x08)
 
 #undef XtIsConstraint
+extern Boolean XtIsConstraint(Widget);
 #define XtIsConstraint(obj) \
     (((Object)(obj))->object.widget_class->core_class.class_inited & 0x10)
 
 #undef XtIsShell
+extern Boolean XtIsShell(Widget);
 #define XtIsShell(obj) \
     (((Object)(obj))->object.widget_class->core_class.class_inited & 0x20)
 
 #undef XtIsWMShell
+extern Boolean XtIsWMShell(Widget);
 #define XtIsWMShell(obj) \
     (((Object)(obj))->object.widget_class->core_class.class_inited & 0x40)
 
 #undef XtIsTopLevelShell
+extern Boolean XtIsTopLevelShell(Widget);
 #define XtIsTopLevelShell(obj) \
     (((Object)(obj))->object.widget_class->core_class.class_inited & 0x80)
 
@@ -265,6 +272,12 @@ extern Widget _XtWindowedAncestor( /* internal; implementation-dependent */
 extern void _XtInherit(
     void
 );
+
+extern void _XtHandleFocus(
+    Widget		/* widget */,
+    XtPointer		/* client_data */,
+    XEvent *		/* event */,
+    Boolean *		/* cont */);
 
 extern void XtCreateWindow(
     Widget 		/* widget */,

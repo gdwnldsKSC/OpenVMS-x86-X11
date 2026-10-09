@@ -1,7 +1,7 @@
 /*
  * $RCSId: xc/lib/fontconfig/fc-list/fc-list.c,v 1.5 2002/06/30 23:45:40 keithp Exp $
  *
- * Copyright © 2002 Keith Packard
+ * Copyright Â© 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -61,13 +61,24 @@ extern int optind, opterr, optopt;
 
 static void usage (char *program)
 {
+#if HAVE_GETOPT_LONG
     fprintf (stderr, "usage: %s [-vV?] [--verbose] [--version] [--help] [pattern] {element ...} \n",
 	     program);
+#else
+    fprintf (stderr, "usage: %s [-vV?] [pattern] {element ...} \n",
+	     program);
+#endif
     fprintf (stderr, "List fonts matching [pattern]\n");
     fprintf (stderr, "\n");
+#if HAVE_GETOPT_LONG
     fprintf (stderr, "  -v, --verbose        display status information while busy\n");
     fprintf (stderr, "  -V, --version        display font config version and exit\n");
     fprintf (stderr, "  -?, --help           display this help and exit\n");
+#else
+    fprintf (stderr, "  -v         (verbose) display status information while busy\n");
+    fprintf (stderr, "  -V         (version) display font config version and exit\n");
+    fprintf (stderr, "  -?         (help)    display this help and exit\n");
+#endif
     exit (1);
 }
 
@@ -124,8 +135,9 @@ main (int argc, char **argv)
 	pat = FcPatternCreate ();
     
     if (!os)
-	os = FcObjectSetBuild (FC_FAMILY, FC_STYLE, 0);
+	os = FcObjectSetBuild (FC_FAMILY, FC_STYLE, (char *) 0);
     fs = FcFontList (0, pat, os);
+    FcObjectSetDestroy (os);
     if (pat)
 	FcPatternDestroy (pat);
 
@@ -146,5 +158,8 @@ main (int argc, char **argv)
 	}
 	FcFontSetDestroy (fs);
     }
+
+    FcFini ();
+
     return 0;
 }

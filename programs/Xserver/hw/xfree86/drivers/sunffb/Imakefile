@@ -10,7 +10,7 @@ XCOMM $XFree86: xc/programs/Xserver/hw/xfree86/drivers/sunffb/Imakefile,v 1.5 20
 DRISRCS = ffb_dri.c
 DRIOBJS = ffb_dri.o
 DRIINCLUDES = -I$(SERVERSRC)/GL/dri -I$(LIBSRC)/GL/dri -I$(TOP)/include \
-              -I$(DRMSRCDIR)/shared
+              -I$(DRMSRCDIR)/shared-core
 DRIDEFINES = $(GLX_DEFINES)
 #endif
 
@@ -78,11 +78,13 @@ INCLUDES = -I. -I../../include
 INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86OSSRC) \
            -I$(SERVERSRC)/mfb -I$(SERVERSRC)/mi \
            -I$(SERVERSRC)/Xext -I$(SERVERSRC)/cfb \
-	   -I$(SERVERSRC)/dbe \
+	   -I$(SERVERSRC)/dbe -I$(SERVERSRC)/fb \
+	   -I$(SERVERSRC)/render \
 	   -I$(XF86SRC)/xf8_32wid \
 	   -I$(XF86SRC)/ramdac \
 	   -I$(XF86SRC)/ddc \
 	   -I$(XF86SRC)/i2c \
+	   -I$(XF86SRC)/xaa \
            -I$(FONTINCSRC) -I$(SERVERSRC)/include -I$(XINCLUDESRC) \
 	   -I$(EXTINCSRC) \
 	   $(DRIINCLUDES)
@@ -96,7 +98,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(sunffb,$(OBJS))
 
-InstallObjectModule(sunffb,$(MODULEDIR),drivers)
+InstallVideoObjectModule(sunffb,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(sunffb)

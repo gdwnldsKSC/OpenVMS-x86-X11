@@ -146,24 +146,40 @@ static XrmOptionDescRec options[] = {
 #include <os2.h>
 #endif
 
-#ifndef USE_FILE
-#include <sys/ioctl.h>
-#ifdef hpux
-#include <termios.h>
-#endif
-#ifdef SVR4
-#include <termios.h>
-#include <sys/stropts.h>		/* for I_PUSH */
-#ifdef sun
-#include <sys/strredir.h>
-#endif
+#ifdef linux
+#define USE_FILE
+#define FILE_NAME	"/dev/xconsole"
+# if defined (__GLIBC__) && ((__GLIBC__ > 2) || (__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 1))
+/*
+ * Linux distribution based on glibc 2.1 and higher should use
+ * devpts. This is the fallback if open file FILE_NAME fails.
+ * <werner@suse.de>
+ */
+#  define USE_PTS 
+# endif
 #endif
 
-#if defined(TIOCCONS) || defined(SRIOCSREDIR) || defined(Lynx)
-#define USE_PTY
+#if defined(_AIX)
+#  define USE_PTS
+#endif
+
+#if !defined (USE_FILE) || defined (linux)
+# include <sys/ioctl.h>
+# ifdef hpux
+#  include <termios.h>
+# endif
+# if defined (SVR4) || defined (USE_PTS)
+#  include <termios.h>
+#  include <sys/stropts.h>		/* for I_PUSH */
+#  ifdef sun
+#   include <sys/strredir.h>
+#  endif
+# endif
+# if defined(TIOCCONS) || defined(SRIOCSREDIR) || defined(Lynx)
+#  define USE_PTY
 static int  tty_fd, pty_fd;
 static char ttydev[64], ptydev[64];
-#endif
+# endif
 #endif
 
 #if (defined(SVR4) && !defined(sun)) || (defined(SYSV) && defined(i386))
@@ -174,10 +190,36 @@ static char ttydev[64], ptydev[64];
 #ifdef USE_PTY
 static int get_pty(int *pty, int *tty, char *ttydev, char *ptydev);
 #endif
+
 #ifdef USE_OSM
 static FILE *osm_pipe(void);
 static int child_pid;
 #endif
+
+/* Copied from xterm/ptyx.h */
+#ifndef PTYCHAR1
+#ifdef __hpux
+#define PTYCHAR1        "zyxwvutsrqp"
+#else   /* !__hpux */
+#ifdef __UNIXOS2__
+#define PTYCHAR1        "pq"
+#else
+#define PTYCHAR1        "pqrstuvwxyzPQRSTUVWXYZ"
+#endif  /* !__UNIXOS2__ */
+#endif  /* !__hpux */
+#endif  /* !PTYCHAR1 */
+
+#ifndef PTYCHAR2
+#ifdef __hpux
+#define PTYCHAR2        "fedcba9876543210"
+#else   /* !__hpux */
+#ifdef __FreeBSD__
+#define PTYCHAR2        "0123456789abcdefghijklmnopqrstuv"
+#else /* !__FreeBSD__ */
+#define PTYCHAR2        "0123456789abcdef"
+#endif /* !__FreeBSD__ */
+#endif  /* !__hpux */
+#endif  /* !PTYCHAR2 */
 
 #ifdef Lynx
 static void
@@ -200,15 +242,19 @@ OpenConsole(void)
 	    /* must be owner and have read/write permission */
 #if !defined(__NetBSD__) && !defined(__OpenBSD__) && !defined(Lynx) && !defined(__UNIXOS2__)
 	    struct stat sbuf;
-
+# if !defined (linux)
 	    if (!stat("/dev/console", &sbuf) &&
 		(sbuf.st_uid == getuid()) &&
 		!access("/dev/console", R_OK|W_OK))
+# endif
 #endif
 	    {
 #ifdef USE_FILE
+# ifdef linux
+		if (!stat(FILE_NAME, &sbuf))
+# endif
 		input = fopen (FILE_NAME, "r");
-#ifdef __UNIXOS2__
+# ifdef __UNIXOS2__
 		if (input)
 		{
 		    ULONG arg = 1,arglen;
@@ -221,17 +267,18 @@ OpenConsole(void)
 			input = 0;
 		    }
 		}
+# endif
 #endif
-#endif
+		
 #ifdef USE_PTY
-		if (get_pty (&pty_fd, &tty_fd, ttydev, ptydev) == 0)
+		if (!input && get_pty (&pty_fd, &tty_fd, ttydev, ptydev) == 0)
 		{
-#ifdef TIOCCONS
+# ifdef TIOCCONS
 		    int on = 1;
 		    if (ioctl (tty_fd, TIOCCONS, (char *) &on) != -1)
 			input = fdopen (pty_fd, "r");
-#else
-#ifndef Lynx
+# else
+#  ifndef Lynx
 		    int consfd = open("/dev/console", O_RDONLY);
 		    if (consfd >= 0)
 		    {
@@ -239,7 +286,7 @@ OpenConsole(void)
 			    input = fdopen (pty_fd, "r");
 			close(consfd);
 		    }
-#else
+#  else
 		    if (newconsole(tty_fd) < 0)
 			perror("newconsole");
 		    else
@@ -247,10 +294,10 @@ OpenConsole(void)
 			input = fdopen (pty_fd, "r");
 			atexit(RestoreConsole);
 		    }
-#endif
-#endif
+#  endif
+# endif
 		}
-#endif
+#endif /* USE_PTY */
 	    }
 #ifdef USE_OSM
 	    /* Don't have to be owner of /dev/console when using /dev/osm. */
@@ -599,6 +646,7 @@ main(int argc, char *argv[])
     Arg arglist[10];
     Cardinal num_args;
 
+    XtSetLanguageProc(NULL,NULL,NULL);
     top = XtInitialize ("xconsole", "XConsole", options, XtNumber (options),
 			&argc, argv);
     XtGetApplicationResources (top, (XtPointer)&app_resources, resources,
@@ -771,12 +819,15 @@ ScrollLine(Widget w)
  * has problems, we can re-enter this function and get another one.
  */
 
-#include    "../xterm/ptyx.h"
 static int
 get_pty(int *pty, int *tty, char *ttydev, char *ptydev)
 {
-#ifdef SVR4
+#if defined (SVR4) || defined (USE_PTS)
+#if defined (_AIX)
+	if ((*pty = open ("/dev/ptc", O_RDWR)) < 0)
+#else
 	if ((*pty = open ("/dev/ptmx", O_RDWR)) < 0)
+#endif
 	    return 1;
 	grantpt(*pty);
 	unlockpt(*pty);
@@ -889,10 +940,10 @@ get_pty(int *pty, int *tty, char *ttydev, char *ptydev)
  * sends the output to xconsole.
  */
 
-#ifdef SCO
+#ifdef SCO325
 #define	OSM_DEVICE	"/dev/error"
 #else
-#ifdef USL
+#ifdef __UNIXWARE__
 #define OSM_DEVICE	"/dev/osm2"
 #define NO_READAHEAD
 #else
@@ -912,7 +963,11 @@ osm_pipe(void)
 
     if (access(OSM_DEVICE, R_OK) < 0)
 	return NULL;
+#if defined (_AIX)
+    if ((tty = open("/dev/ptc", O_RDWR)) < 0)
+#else	    
     if ((tty = open("/dev/ptmx", O_RDWR)) < 0)
+#endif
 	return NULL;
 
     grantpt(tty);

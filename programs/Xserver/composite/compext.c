@@ -1,5 +1,5 @@
 /*
- * $Id: compext.c,v 1.6 2004/07/08 07:38:12 keithp Exp $
+ * $Id: compext.c,v 1.5 2005/07/03 07:37:34 daniels Exp $
  *
  * Copyright © 2003 Keith Packard
  *
@@ -22,9 +22,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
 #endif
+
 #include "compint.h"
 
 static CARD8	CompositeReqCode;

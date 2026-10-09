@@ -34,6 +34,7 @@ The Open Group.
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <sys/stat.h>
 #include <limits.h>		/* for MAXHOSTNAMELEN */
 /* and in case we didn't get it from the headers above */

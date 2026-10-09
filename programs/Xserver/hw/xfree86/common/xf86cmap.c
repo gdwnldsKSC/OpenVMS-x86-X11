@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86cmap.c,v 1.3 2004/07/30 21:10:46 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86cmap.c,v 1.9 2005/09/05 07:43:51 daniels Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/common/xf86cmap.c,v 1.25 2003/10/17 20:02:12 alanh Exp $ */
 /*
  * Copyright (c) 1998-2001 by The XFree86 Project, Inc.
@@ -27,6 +27,10 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #if defined(_XOPEN_SOURCE) || defined(__QNXNTO__) \
 	|| (defined(sun) && defined(__SVR4))
 #include <math.h>
@@ -36,9 +40,9 @@
 #undef _XOPEN_SOURCE
 #endif
 
-#include "X.h"
+#include <X11/X.h>
 #include "misc.h"
-#include "Xproto.h"
+#include <X11/Xproto.h>
 #include "colormapst.h"
 #include "scrnintstr.h"
 
@@ -51,7 +55,7 @@
 
 #ifdef XFreeXDGA
 #define _XF86DGA_SERVER_
-#include "extensions/xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
 #include "dgaproc.h"
 #endif
 
@@ -242,6 +246,14 @@ CMapCloseScreen (int i, ScreenPtr pScreen)
 }
 
 static Bool
+CMapColormapUseMax(VisualPtr pVisual, CMapScreenPtr pScreenPriv)
+{
+    if (pVisual->nplanes > 16)
+        return TRUE;
+    return ((1 << pVisual->nplanes) > pScreenPriv->maxColors);
+}
+
+static Bool
 CMapAllocateColormapPrivate(ColormapPtr pmap)
 {
     CMapScreenPtr pScreenPriv = 
@@ -251,7 +263,7 @@ CMapAllocateColormapPrivate(ColormapPtr pmap)
     int numColors;
     LOCO *colors;
 
-    if((1 << pmap->pVisual->nplanes) > pScreenPriv->maxColors)
+    if (CMapColormapUseMax(pmap->pVisual, pScreenPriv))
 	numColors = pmap->pVisual->ColormapEntries;
     else 
 	numColors = 1 << pmap->pVisual->nplanes; 
@@ -367,7 +379,7 @@ CMapStoreColors(
 	   (CMapColormapPtr) pmap->devPrivates[CMapColormapIndex].ptr;
 	int i;
 
-        if((1 << pVisual->nplanes) > pScreenPriv->maxColors) {
+	if (CMapColormapUseMax(pVisual, pScreenPriv)) {
 	    int index;
 
 	    num = 0;
@@ -436,10 +448,10 @@ CMapInstallColormap(ColormapPtr pmap)
     if (miInstalledMaps[index])
 	pmap = miInstalledMaps[index];
 
-    if(!(pScreenPriv->flags & CMAP_PALETTED_TRUECOLOR) &&
-	(pmap->pVisual->class == TrueColor) &&
-	((1 << pmap->pVisual->nplanes) > pScreenPriv->maxColors))
-		return;
+    if (!(pScreenPriv->flags & CMAP_PALETTED_TRUECOLOR) &&
+	 (pmap->pVisual->class == TrueColor) &&
+	 CMapColormapUseMax(pmap->pVisual, pScreenPriv))
+	return;
 
     if(LOAD_PALETTE(pmap, index))
 	CMapReinstallMap(pmap);
@@ -568,7 +580,7 @@ CMapRefreshColors(ColormapPtr pmap, int defs, int* indices)
 	}
 	break;
     case TrueColor:
-	if((1 << pVisual->nplanes) > pScreenPriv->maxColors) {
+        if (CMapColormapUseMax(pVisual, pScreenPriv)) {
 	    for(i = 0; i <= reds; i++) 
 		colors[i].red   = gamma[i * maxValue / reds].red;
 	    for(i = 0; i <= greens; i++) 
@@ -611,7 +623,7 @@ CMapRefreshColors(ColormapPtr pmap, int defs, int* indices)
 	}
 	break;
     case DirectColor:
-	if((1 << pVisual->nplanes) > pScreenPriv->maxColors) {
+        if (CMapColormapUseMax(pVisual, pScreenPriv)) {
 	    for(i = 0; i < defs; i++) { 
 		index = indices[i];
 		if(index <= reds)
@@ -689,7 +701,7 @@ CMapSetOverscan(ColormapPtr pmap, int defs, int *indices)
     /*
      * Search for a new overscan index in the following cases:
      *
-     *   - The index hasn't yet been initialised.  In this case search
+     *   - The index hasn't yet been initialised.Â  In this case search
      *     for an index that is black or a close match to black.
      *
      *   - The colour of the old index is changed.  In this case search
@@ -926,9 +938,9 @@ CMapChangeGamma(
 	pScrn->vtSema || pScreenPriv->isDGAmode)) {
 	ColormapPtr pMap = miInstalledMaps[pScreen->myNum];
 
-	if(!(pScreenPriv->flags & CMAP_PALETTED_TRUECOLOR) &&
+	if (!(pScreenPriv->flags & CMAP_PALETTED_TRUECOLOR) &&
 	    (pMap->pVisual->class == TrueColor) &&
-	    ((1 << pMap->pVisual->nplanes) > pScreenPriv->maxColors)) {
+	    CMapColormapUseMax(pMap->pVisual, pScreenPriv)) {
 
 	    /* if the current map doesn't have a palette look
 		for another map to change the gamma on. */
@@ -1013,9 +1025,9 @@ xf86ChangeGammaRamp(
         pScrn->vtSema || pScreenPriv->isDGAmode)) {
         ColormapPtr pMap = miInstalledMaps[pScreen->myNum];
 
-        if(!(pScreenPriv->flags & CMAP_PALETTED_TRUECOLOR) &&
+        if (!(pScreenPriv->flags & CMAP_PALETTED_TRUECOLOR) &&
             (pMap->pVisual->class == TrueColor) &&
-            ((1 << pMap->pVisual->nplanes) > pScreenPriv->maxColors)) {
+	    CMapColormapUseMax(pMap->pVisual, pScreenPriv)) {
 
             /* if the current map doesn't have a palette look
                 for another map to change the gamma on. */

@@ -16,14 +16,14 @@ ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
 #endif
 
 #if BuildXF86DRI
-  DRI_DEFINES = GlxDefines -DX_BYTE_ORDER=ByteOrder
+  DRI_DEFINES = GlxDefines -DX_BYTE_ORDER=ByteOrder -DIN_DRI_DRIVER
  DRI_INCLUDES = -I$(GLXLIBSRC)/dri \
 		-I$(XINCLUDESRC) \
 		-I$(GLXLIBSRC)/glx \
 		-I$(GLXLIBSRC)/include \
 		-I$(SERVERSRC)/GL/dri \
 		-I$(XF86OSSRC) \
-		-I$(DRMSRCDIR)/shared \
+		-I$(DRMSRCDIR)/shared-core \
 		-I$(GLXLIBSRC)/dri/drm
 #endif
 

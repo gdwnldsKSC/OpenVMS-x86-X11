@@ -37,7 +37,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(apm,$(OBJS))
 
-InstallObjectModule(apm,$(MODULEDIR),drivers)
+InstallVideoObjectModule(apm,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(apm)

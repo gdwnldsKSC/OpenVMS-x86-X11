@@ -7,7 +7,7 @@ Instructions for importing a tagged Mesa release X.Y.
 
 1. Check out the release version from the Mesa CVS repository:
 
-  % cvs -d :pserver:anonymous@cvs.mesa3d.sourceforge.net:/cvsroot/mesa3d \
+  % cvs -d :pserver:anonymous@cvs.freedesktop.org:/cvsroot/mesa \
 		co -r mesa_X_Y Mesa
 
 2. Remove the CVSROOT directory:
@@ -38,7 +38,7 @@ Instructions for importing a tagged Mesa release X.Y.
 When importing a snapshot of a Mesa (stable) branch, do everything as above,
 except check out the branch with:
 
-  % cvs -d :pserver:anonymous@cvs.mesa3d.sourceforge.net:/cvsroot/mesa3d \
+  % cvs -d :pserver:anonymous@cvs.freedesktop.org:/cvsroot/mesa \
 		co -r mesa_X_Y_branch Mesa
 
 and import with the tag MESA-X_Y-yyyymmdd indicating the date of the snapshot.

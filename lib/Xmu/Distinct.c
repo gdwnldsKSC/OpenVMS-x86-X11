@@ -31,6 +31,9 @@ in this Software without prior written authorization from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xlib.h>
 #include <stdlib.h>
 #include <X11/Xutil.h>

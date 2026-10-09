@@ -17,7 +17,14 @@
  */
 /* $XFree86: xc/lib/font/Type1/cidchar.c,v 1.9tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
+#if XFONT_CID
 #ifndef FONTMODULE
 #include <stdio.h>
 #include <string.h>
@@ -42,7 +49,7 @@
 #undef _XOPEN_SOURCE
 #endif
 #endif
-#include "fntfilst.h"
+#include <X11/fonts/fntfilst.h>
 #include "objects.h"
 #include "spaces.h"
 #include "range.h"

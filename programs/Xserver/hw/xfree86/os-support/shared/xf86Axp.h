@@ -1,5 +1,9 @@
 /* $XFree86$ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifndef _XF86_AXP_H_
 #define _XF86_AXP_H_
 

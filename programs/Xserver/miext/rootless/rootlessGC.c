@@ -30,6 +30,10 @@
  */
 /* $XFree86: xc/programs/Xserver/miext/rootless/rootlessGC.c,v 1.1 2003/04/15 01:05:44 torrey Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "mi.h"
 #include "scrnintstr.h"
 #include "gcstruct.h"
@@ -44,10 +48,6 @@
 #include <fcntl.h>
 
 #include "rootlessCommon.h"
-
-#if ROOTLESS_ACCEL
-#include "rlAccel.h"
-#endif
 
 
 // GC functions
@@ -165,7 +165,7 @@ static GCOps rootlessGCOps = {
 
        ...
 
-       if (can_accel_xxx(..) && otherwise-suitable)
+       if (canAccelxxx(..) && otherwise-suitable)
             GC_UNSET_PM(gc, dst);
 
        gc->funcs->OP(gc, ...);
@@ -282,13 +282,6 @@ RootlessCreateGC(GCPtr pGC)
     s = (RootlessScreenRec *) pGC->pScreen->
             devPrivates[rootlessScreenPrivateIndex].ptr;
     result = s->CreateGC(pGC);
-
-#if ROOTLESS_ACCEL
-    pGC->ops->FillSpans = rlFillSpans;
-    pGC->ops->CopyArea = rlCopyArea;
-    pGC->ops->PolyFillRect = rlPolyFillRect;
-    pGC->ops->ImageGlyphBlt = rlImageGlyphBlt;
-#endif
 
     gcrec = (RootlessGCRec *) pGC->devPrivates[rootlessGCPrivateIndex].ptr;
     gcrec->originalOps = NULL; // don't wrap ops yet

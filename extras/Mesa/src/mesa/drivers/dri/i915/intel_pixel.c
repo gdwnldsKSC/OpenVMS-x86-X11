@@ -145,7 +145,7 @@ intelTryReadPixels( GLcontext *ctx,
 		  GLvoid *pixels )
 {
    intelContextPtr intel = INTEL_CONTEXT(ctx);
-   GLint size;
+   GLint size = 0;
    GLint pitch = pack->RowLength ? pack->RowLength : width;
 
    if (INTEL_DEBUG & DEBUG_PIXEL)
@@ -286,6 +286,7 @@ static void do_draw_pix( GLcontext *ctx,
 
    intelFlush( &intel->ctx );
    LOCK_HARDWARE( intel );
+   if (ctx->DrawBuffer)
    {
       y -= height;			/* cope with pixel zoom */
    

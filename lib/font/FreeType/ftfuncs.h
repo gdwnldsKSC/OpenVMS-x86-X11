@@ -152,6 +152,8 @@ typedef struct _FTFont{
     fsRange *ranges;
 } FTFontRec, *FTFontPtr;
 
+#ifndef NOT_IN_FTFUNCS
+
 /* Prototypes for some local functions */
 
 static int FreeTypeOpenFace(FTFacePtr *facep, char *FTFileName, char *realFileName, int faceNumber);
@@ -183,3 +185,5 @@ FreeTypeLoadFont(FTFontPtr font, FontInfoPtr info, FTFacePtr face,
                  FontBitmapFormatPtr bmfmt, FT_Int32 load_flags, 
 		 struct TTCapInfo *tmp_ttcap, char *dynStrTTCapCodeRange,
 		 int ttcap_spacing );
+
+#endif /* NOT_IN_FTFUNCS */

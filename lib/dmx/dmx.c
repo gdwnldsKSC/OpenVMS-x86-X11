@@ -41,11 +41,11 @@
 
 #define NEED_REPLIES
 #include <X11/Xlibint.h>
-#include "Xext.h"
+#include <X11/extensions/Xext.h>
 #define EXTENSION_PROC_ARGS void *
-#include "extutil.h"
-#include "dmxproto.h"
-#include "dmxext.h"
+#include <X11/extensions/extutil.h>
+#include <X11/extensions/dmxproto.h>
+#include <X11/extensions/dmxext.h>
 
 static XExtensionInfo dmx_extension_info_data;
 static XExtensionInfo *dmx_extension_info = &dmx_extension_info_data;

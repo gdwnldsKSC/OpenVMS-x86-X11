@@ -46,7 +46,11 @@ SOFTWARE.
 
 ******************************************************************/
 /* $Xorg: mizerline.c,v 1.4 2001/02/09 02:05:22 xorgcvs Exp $ */
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "misc.h"
 #include "scrnintstr.h"

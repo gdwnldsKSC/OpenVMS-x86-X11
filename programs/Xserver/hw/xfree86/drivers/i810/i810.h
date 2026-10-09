@@ -2,7 +2,7 @@
 /**************************************************************************
 
 Copyright 1998-1999 Precision Insight, Inc., Cedar Park, Texas.
-Copyright © 2002 David Dawes
+Copyright Â© 2002 David Dawes
 
 All Rights Reserved.
 
@@ -55,7 +55,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "xf86drm.h"
 #include "sarea.h"
 #define _XF86DRI_SERVER_
-#include "xf86dri.h"
 #include "dri.h"
 #include "GL/glxint.h"
 #include "i810_dri.h"
@@ -67,8 +66,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define I810_NAME "I810"
 #define I810_DRIVER_NAME "i810"
 #define I810_MAJOR_VERSION 1
-#define I810_MINOR_VERSION 3
-#define I810_PATCHLEVEL 0
+#define I810_MINOR_VERSION 4
+#define I810_PATCHLEVEL 1
 
 
 /* HWMC Surfaces */

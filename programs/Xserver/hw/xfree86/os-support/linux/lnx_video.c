@@ -1,3 +1,4 @@
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/linux/lnx_video.c,v 1.10 2005/09/19 18:38:26 alanc Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/os-support/linux/lnx_video.c,v 3.67 2003/06/25 18:27:07 eich Exp $ */
 /*
  * Copyright 1992 by Orest Zborowski <obz@Kodak.com>
@@ -25,7 +26,14 @@
  */
 /* $XConsortium: lnx_video.c /main/9 1996/10/19 18:06:34 kaleb $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <errno.h>
+#include <string.h>
+
+#include <X11/X.h>
 #include "input.h"
 #include "scrnintstr.h"
 
@@ -35,7 +43,7 @@
 #include "xf86OSpriv.h"
 #include "lnx.h"
 #ifdef __alpha__
-#include "xf86Axp.h"
+#include "shared/xf86Axp.h"
 #endif
 
 #ifdef HAS_MTRR_SUPPORT
@@ -178,6 +186,7 @@ struct mtrr_wc_region {
 	struct mtrr_wc_region *	next;
 };
 
+
 static struct mtrr_wc_region *
 mtrr_cull_wc_region(int screenNum, unsigned long base, unsigned long size,
 		      MessageType from)
@@ -187,8 +196,8 @@ mtrr_cull_wc_region(int screenNum, unsigned long base, unsigned long size,
 	   it. */
 
 	struct mtrr_gentry gent;
-	char buf[20];
 	struct mtrr_wc_region *wcreturn = NULL, *wcr;
+	int count, ret=0;
 
 	/* Linux 2.0 users should not get a warning without -verbose */
 	if (!mtrr_open(2))
@@ -212,23 +221,24 @@ mtrr_cull_wc_region(int screenNum, unsigned long base, unsigned long size,
 		wcr->sentry.type = MTRR_TYPE_WRCOMB;
 		wcr->added = FALSE;
 		
-		/* There is now a nicer ioctl-based way to do this,
-		   but it isn't in current kernels. */
-		snprintf(buf, sizeof(buf), "disable=%u\n", gent.regnum);
-
-		if (write(mtrr_fd, buf, strlen(buf)) >= 0) {
+		count = 3;
+		while (count-- && 
+		       (ret = ioctl(mtrr_fd, MTRRIOC_KILL_ENTRY, &(wcr->sentry))) < 0);
+		
+		if (ret >= 0) {
 			xf86DrvMsg(screenNum, from,
 				   "Removed MMIO write-combining range "
 				   "(0x%lx,0x%lx)\n",
-				   gent.base, gent.size);
+				   (unsigned long) gent.base, (unsigned long) gent.size);
 			wcr->next = wcreturn;
 			wcreturn = wcr;
+			gent.regnum--;
 		} else {
 			xfree(wcr);
 			xf86DrvMsgVerb(screenNum, X_WARNING, 0,
 				   "Failed to remove MMIO "
 				   "write-combining range (0x%lx,0x%lx)\n",
-				   gent.base, gent.size);
+				       gent.base, (unsigned long) gent.size);
 		}
 	}
 	return wcreturn;
@@ -236,25 +246,63 @@ mtrr_cull_wc_region(int screenNum, unsigned long base, unsigned long size,
 
 
 static struct mtrr_wc_region *
+mtrr_remove_offending(int screenNum, unsigned long base, unsigned long size,
+		      MessageType from)
+{
+    struct mtrr_gentry gent;
+    struct mtrr_wc_region *wcreturn = NULL, **wcr;
+
+    if (!mtrr_open(2))
+	return NULL;
+
+    wcr = &wcreturn;
+    for (gent.regnum = 0; 
+	 ioctl(mtrr_fd, MTRRIOC_GET_ENTRY, &gent) >= 0; gent.regnum++ ) {
+	if (gent.type == MTRR_TYPE_WRCOMB
+	    && ((gent.base >= base && gent.base + gent.size < base + size) || 
+		(gent.base >  base && gent.base + gent.size <= base + size))) {
+	    *wcr = mtrr_cull_wc_region(screenNum, gent.base, gent.size, from);
+	    if (*wcr) gent.regnum--;
+	    while(*wcr) {
+		wcr = &((*wcr)->next);
+	    }
+	}
+    }
+    return wcreturn;
+}
+
+
+static struct mtrr_wc_region *
 mtrr_add_wc_region(int screenNum, unsigned long base, unsigned long size,
 		   MessageType from)
 {
-	struct mtrr_wc_region *wcr;
+        struct mtrr_wc_region **wcr, *wcreturn, *curwcr;
+
+       /*
+        * There can be only one....
+        */
+
+	wcreturn = mtrr_remove_offending(screenNum, base, size, from);
+	wcr = &wcreturn;
+	while (*wcr) {
+	    wcr = &((*wcr)->next);
+	} 
 
 	/* Linux 2.0 should not warn, unless the user explicitly asks for
 	   WC. */
+
 	if (!mtrr_open(from == X_CONFIG ? 0 : 2))
-		return NULL;
+		return wcreturn;
 
-	wcr = xalloc(sizeof(*wcr));
-	if (!wcr)
-		return NULL;
+	*wcr = curwcr = xalloc(sizeof(**wcr));
+	if (!curwcr)
+	    return wcreturn;
 
-	wcr->sentry.base = base;
-	wcr->sentry.size = size;
-	wcr->sentry.type = MTRR_TYPE_WRCOMB;
-	wcr->added = TRUE;
-	wcr->next = NULL;
+	curwcr->sentry.base = base;
+	curwcr->sentry.size = size;
+	curwcr->sentry.type = MTRR_TYPE_WRCOMB;
+	curwcr->added = TRUE;
+	curwcr->next = NULL;
 
 #if SPLIT_WC_REGIONS
 	/*
@@ -279,25 +327,26 @@ mtrr_add_wc_region(int screenNum, unsigned long base, unsigned long size,
 	    if (n_size) {
 		xf86DrvMsgVerb(screenNum,X_INFO,3,"Splitting WC range: "
 			       "base: 0x%lx, size: 0x%lx\n",base,size);
-		wcr->next = mtrr_add_wc_region(screenNum, n_base, n_size,from);
+		curwcr->next = mtrr_add_wc_region(screenNum, n_base, n_size,from);
 	    }
-	    wcr->sentry.size = d_size;
+	    curwcr->sentry.size = d_size;
 	} 
 	
 	/*****************************************************************/
 #endif /* SPLIT_WC_REGIONS */
 
-	if (ioctl(mtrr_fd, MTRRIOC_ADD_ENTRY, &wcr->sentry) >= 0) {
+	if (ioctl(mtrr_fd, MTRRIOC_ADD_ENTRY, &curwcr->sentry) >= 0) {
 		/* Avoid printing on every VT switch */
 		if (xf86ServerIsInitialising()) {
 			xf86DrvMsg(screenNum, from,
 				   "Write-combining range (0x%lx,0x%lx)\n",
 				   base, size);
 		}
-		return wcr;
+		return wcreturn;
 	}
 	else {
-		xfree(wcr);
+	        *wcr = curwcr->next;
+		xfree(curwcr);
 		
 		/* Don't complain about the VGA region: MTRR fixed
 		   regions aren't currently supported, but might be in
@@ -307,7 +356,7 @@ mtrr_add_wc_region(int screenNum, unsigned long base, unsigned long size,
 				"Failed to set up write-combining range "
 				"(0x%lx,0x%lx)\n", base, size);
 		}
-		return NULL;
+		return wcreturn;
 	}
 }
 
@@ -490,7 +539,7 @@ volatile unsigned char *ioBase = NULL;
 
 #endif
 
-void
+Bool
 xf86EnableIO(void)
 {
 #if defined(__powerpc__)
@@ -499,7 +548,7 @@ xf86EnableIO(void)
 #endif
 
 	if (ExtendedEnabled)
-		return;
+		return TRUE;
 
 #if defined(__powerpc__)
 	ioBase_phys = syscall(__NR_pciconfig_iobase, 2, 0, 0);
@@ -512,16 +561,23 @@ xf86EnableIO(void)
 /* Should this be fatal or just a warning? */
 #if 0
 		if (ioBase == MAP_FAILED) {
-			FatalError(
+		    xf86Msg(X_WARNING,
 			    "xf86EnableIOPorts: Failed to map iobase (%s)\n",
 			    strerror(errno));
+		    return FALSE;
 		}
 #endif
 	}
 	close(fd);
 #elif !defined(__mc68000__) && !defined(__sparc__) && !defined(__mips__) && !defined(__sh__) && !defined(__hppa__)
-	if (ioperm(0, 1024, 1) || iopl(3))
-		FatalError("xf86EnableIOPorts: Failed to set IOPL for I/O\n");
+        if (ioperm(0, 1024, 1) || iopl(3)) {
+                if (errno == ENODEV)
+                        ErrorF("xf86EnableIOPorts: no I/O ports found\n");
+                else
+                        FatalError("xf86EnableIOPorts: failed to set IOPL"
+                                   " for I/O (%s)\n", strerror(errno));
+		return FALSE;
+        }
 # if !defined(__alpha__)
 	ioperm(0x40,4,0); /* trap access to the timer chip */
 	ioperm(0x60,4,0); /* trap access to the keyboard controller */
@@ -529,7 +585,7 @@ xf86EnableIO(void)
 #endif
 	ExtendedEnabled = TRUE;
 
-	return;
+	return TRUE;
 }
 
 void

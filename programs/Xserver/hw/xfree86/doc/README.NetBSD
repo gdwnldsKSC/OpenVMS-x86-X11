@@ -1,10 +1,10 @@
-                       README for X11R6.8.2 on NetBSD
+                        README for X11R6.9 on NetBSD
 
 Rich  Murphey, David Dawes, Marc  Wandschneider, Mark  Weaver, Matthieu Herrb
 
-1.  What and Where is X11R6.8.2?
+1.  What and Where is X11R6.9?
 
-X11R6.8.2 is an Open Source version of the X Window System that supports sev-
+X11R6.9 is an Open Source version of the X Window System that supports sev-
 eral UNIX(R) and UNIX-like operating systems (such as Linux, the BSDs and
 Solaris x86) on Intel and other platforms.  This version is compatible with
 X11R6.6, and is based on the XFree86 4.4.0RC2 code base, which, in turn was
@@ -12,16 +12,16 @@ based on the X consortium sample implementation.
 
 See the Copyright Notice.
 
-The sources for X11R6.8.2 are available from:
+The sources for X11R6.9 are available from:
 
 http://wiki.x.org
 
-X11R6.8.2 also builds on other NetBSD architectures. See section Building on
+X11R6.9 also builds on other NetBSD architectures. See section Building on
 other architectures (section 7.4, page 1) for details.
 
 2.  New OS dependent features
 
-See the Release Notes for non-OS dependent new features in X11R6.8.2.
+See the Release Notes for non-OS dependent new features in X11R6.9.
 
 2.1  New OS dependent features in 4.2.0
 
@@ -94,7 +94,7 @@ the xvidtune utility.
 
 4.1  About mouse configuration
 
-X11R6.8.2 has support for the mouse driver included in the wscons console
+X11R6.9 has support for the mouse driver included in the wscons console
 driver introduced by NetBSD 1.4. Specify ``wsmouse'' as the protocol and
 ``/dev/wsmouse0'' as the device in /etc/X11/xorg.conf if you're using NetBSD
 1.4 or later with a PS/2 mouse.
@@ -206,18 +206,18 @@ wscons into the kernel.
 6.2  Aperture Driver
 
 By default NetBSD include the BSD 4.4 kernel security feature that disable
-access to the /dev/mem device when in multi-users mode. But X.org foundation
+access to the /dev/mem device when in multi-users mode. But X.Org foundation
 X servers can take advantage (or require) linear access to the display mem-
 ory.
 
-Most X11R6.8.2 card drivers require linear memory access.  There are two ways
+Most X11R6.9 card drivers require linear memory access.  There are two ways
 to allow X to access linear memory:
 
 The first way is to disable the kernel security feature by adding ``option
 INSECURE'' in the kernel configuration file and build a new kernel.
 
 The second way is to install the aperture driver, included in source form in
-xc/programs/Xserver/hw/xfree86/etc/apNetBSD.shar in the X11R6.8.2 source dis-
+xc/programs/Xserver/hw/xfree86/etc/apNetBSD.shar in the X11R6.9 source dis-
 tribution. Unpack it in a new directory of your choice by running:
 
        sh apNetBSD.shar
@@ -359,4 +359,4 @@ Hasty, Christoph Robitschko, Matthias Scheler, Michael Smith, Ignatios Sou-
 vatzis, Jack Velte, Nate Williams and Pace Willison.
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.NetBSD,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.NetBSD,v 1.4 2005/12/21 05:39:05 kem Exp $

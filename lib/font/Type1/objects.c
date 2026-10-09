@@ -45,6 +45,9 @@ object type.
  
 The included files are:
 */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #define   GLOBALS  1         /* see :hdref refid=debugvar.                   */
 /*
 The following two includes are C standards; we include them because we
@@ -58,6 +61,7 @@ you do do not need to include these header files.
 #include  <string.h>
 #include  <ctype.h>
 #include  <stdarg.h>
+#include  <stdio.h>
 #else
 #include "Xdefs.h"	/* Bool declaration */
 #include "Xmd.h"	/* INT32 declaration */

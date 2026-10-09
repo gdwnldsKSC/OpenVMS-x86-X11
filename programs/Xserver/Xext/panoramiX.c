@@ -25,11 +25,19 @@ Equipment Corporation.
 ******************************************************************/
 /* $XFree86: xc/programs/Xserver/Xext/panoramiX.c,v 3.37tsi Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#ifdef HAVE_DMX_CONFIG_H
+#include <dmx-config.h>
+#endif
+
 #define NEED_REPLIES
 #include <stdio.h>
-#include "X.h"
-#include "Xproto.h"
-#include "Xarch.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
+#include <X11/Xarch.h>
 #include "misc.h"
 #include "cursor.h"
 #include "cursorstr.h"
@@ -42,7 +50,7 @@ Equipment Corporation.
 #include "windowstr.h"
 #include "pixmapstr.h"
 #include "panoramiX.h"
-#include "panoramiXproto.h"
+#include <X11/extensions/panoramiXproto.h>
 #include "panoramiXsrv.h"
 #include "globals.h"
 #include "servermd.h"
@@ -1037,7 +1045,16 @@ ProcXineramaIsActive(ClientPtr client)
     rep.type = X_Reply;
     rep.length = 0;
     rep.sequenceNumber = client->sequence;
+#if 1
+    {
+	/* The following hack fools clients into thinking that Xinerama
+	 * is disabled even though it is not. */
+	extern Bool PanoramiXExtensionDisabledHack;
+	rep.state = !noPanoramiXExtension && !PanoramiXExtensionDisabledHack;
+    }
+#else
     rep.state = !noPanoramiXExtension;
+#endif
     if (client->swapped) {
 	register int n;
 	swaps (&rep.sequenceNumber, n);

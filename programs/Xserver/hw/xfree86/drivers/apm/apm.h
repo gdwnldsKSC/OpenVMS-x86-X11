@@ -54,7 +54,7 @@
 #include "xf86DDC.h"
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 #ifdef TRUE
 #undef TRUE

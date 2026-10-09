@@ -5,14 +5,14 @@
 // Adds suport for dead-keys in I18N applications
 // by Conectiva  (http://www.conectiva.com.br)"
 //
-// $XdotOrg: xc/programs/xkbcomp/symbols/pc/br,v 1.2 2004/04/23 19:54:55 eich Exp $
+// $XdotOrg: xc/programs/xkbcomp/symbols/pc/br,v 1.3 2005/08/12 11:08:49 pascal Exp $
 // $XFree86: xc/programs/xkbcomp/symbols/pc/br,v 1.3 2003/04/19 12:22:11 pascal Exp $
 
 xkb_symbols "abnt2" {
 
     include "pc/latin"
 
-    name[Group1]="Brazilian";
+    name[Group1]="Brazil";
 
     key <AE02>	{ [         2,         at,  twosuperior,      onehalf ]	};
     key <AE03>	{ [         3, numbersign, threesuperior, threequarters ] };
@@ -41,16 +41,18 @@ xkb_symbols "abnt2" {
 
     key <AB11>	{ [     slash,   question,       degree, questiondown ]	};
 
-    key <KPPT>	{ [KP_Decimal ]	};
-    key <KPDL>	{ [ KP_Delete,      comma ]	};
+    key <KPPT>	{ [ KP_Decimal ]	};
 
-    include "level3(ralt_switch_multikey)"
+    include "keypad(comma)"
+
+    include "level3(ralt_switch)"
 };
 
 partial alphanumeric_keys
 xkb_symbols "nodeadkeys" {
 
     include "pc/br(abnt2)" // for consistent naming
+    name[Group1]="Brazil - Eliminate dead keys";
 
     key <AE06>	{ [         6,  diaeresis,      notsign,      notsign ]	};
     key <AD11>	{ [apostrophe,      grave ]	};

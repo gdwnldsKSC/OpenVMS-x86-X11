@@ -27,6 +27,9 @@
 
 /* $XFree86: xc/lib/Xaw/Actions.c,v 3.17 2003/03/25 04:18:10 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>

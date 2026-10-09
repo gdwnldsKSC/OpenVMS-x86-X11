@@ -1,4 +1,5 @@
 .\" $Xorg: XtConvSt.man,v 1.3 2000/08/17 19:41:59 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtConvSt.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright (c) 1993, 1994  X Consortium
 .\" 
@@ -216,7 +217,7 @@ modifier and if the value returned in in \fIcache_ref_return\fP is
 non-NULL, then the call should store the \fIcache_ref_return\fP value
 in order to decrement the reference count when the converted value
 is no longer required. The \fIcache_ref_return\fP argument should be
-ULL if the caller is unwilling or unable to store the value.
+NULL if the caller is unwilling or unable to store the value.
 .SH "SEE ALSO"
 XtAppReleaseCacheRefs(3Xt)
 .br

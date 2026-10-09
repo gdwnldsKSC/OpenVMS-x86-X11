@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/dix/main.c,v 1.3.4.1 2004/12/08 06:02:34 gisburn Exp $ */
+/* $XdotOrg: xc/programs/Xserver/dix/main.c,v 1.14 2005/07/03 08:53:38 daniels Exp $ */
 /* $XFree86: xc/programs/Xserver/dix/main.c,v 3.43 2003/10/30 21:21:02 herrb Exp $ */
 /***********************************************************
 
@@ -80,9 +80,13 @@ Equipment Corporation.
 /* $TOG: main.c /main/86 1998/02/09 14:20:03 kaleb $ */
 
 #define NEED_EVENTS
-#include "X.h"
-#include "Xos.h"   /* for unistd.h  */
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xos.h>   /* for unistd.h  */
+#include <X11/Xproto.h>
 #include "scrnintstr.h"
 #include "misc.h"
 #include "os.h"
@@ -94,12 +98,15 @@ Equipment Corporation.
 #include "colormap.h"
 #include "colormapst.h"
 #include "cursorstr.h"
-#include "font.h"
+#include <X11/fonts/font.h>
 #include "opaque.h"
 #include "servermd.h"
 #include "site.h"
 #include "dixfont.h"
 #include "extnsionst.h"
+#ifdef XPRINT
+#include "DiPrint.h"
+#endif
 #ifdef PANORAMIX
 #include "panoramiXsrv.h"
 #else
@@ -109,17 +116,13 @@ Equipment Corporation.
 
 #ifdef DPMSExtension
 #define DPMS_SERVER
-#include "dpms.h"
+#include <X11/extensions/dpms.h>
 #include "dpmsproc.h"
 #endif
 
-extern int InitClientPrivates(
-    ClientPtr /*client*/
-);
+extern int InitClientPrivates(ClientPtr client);
 
-extern void Dispatch(
-    void
-);
+extern void Dispatch(void);
 
 char *ConnectionInfo;
 xConnSetupPrefix connSetupPrefix;
@@ -152,7 +155,7 @@ NotImplemented(xEvent *from, xEvent *to)
 /*
  * Dummy entry for ReplySwapVector[]
  */
-/*ARGSUSED*/
+
 void
 ReplyNotSwappd(
 	ClientPtr pClient ,
@@ -252,6 +255,9 @@ main(int argc, char *argv[], char *envp[])
     display = "0";
 
     InitGlobals();
+#ifdef XPRINT
+    PrinterInitGlobals();
+#endif
 
     /* Quartz support on Mac OS X requires that the Cocoa event loop be in
      * the main thread. This allows the X server main to be called again
@@ -360,16 +366,18 @@ main(int argc, char *argv[], char *envp[])
 #endif
 	ResetColormapPrivates();
 	ResetFontPrivateIndex();
+	ResetDevicePrivateIndex();
 	InitCallbackManager();
 	InitVisualWrap();
 	InitOutput(&screenInfo, argc, argv);
+#ifdef XPRINT
+	PrinterInitOutput(&screenInfo, argc, argv);
+#endif
+
 	if (screenInfo.numScreens < 1)
 	    FatalError("no screens found");
 	if (screenInfo.numVideoScreens < 0)
 	    screenInfo.numVideoScreens = screenInfo.numScreens;
-#ifdef XPRINT
-	PrinterInitOutput(&screenInfo, argc, argv);
-#endif
 	InitExtensions(argc, argv);
 	if (!InitClientPrivates(serverClient))
 	    FatalError("failed to allocate serverClient devprivates");
@@ -780,8 +788,7 @@ AddScreen(
 }
 
 static void
-FreeScreen(pScreen)
-    ScreenPtr pScreen;
+FreeScreen(ScreenPtr pScreen)
 {
     xfree(pScreen->WindowPrivateSizes);
     xfree(pScreen->GCPrivateSizes);

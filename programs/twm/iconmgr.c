@@ -55,21 +55,9 @@ WList *DownIconManager = NULL;
 int iconifybox_width = siconify_width;
 int iconifybox_height = siconify_height;
 
-/***********************************************************************
- *
- *  Procedure:
- *	CreateIconManagers - creat all the icon manager windows
- *		for this screen.
- *
- *  Returned Value:
- *	none
- *
- *  Inputs:
- *	none
- *
- ***********************************************************************
+/**
+ * create all the icon manager windows for this screen.
  */
-
 void CreateIconManagers()
 {
     IconMgr *p;
@@ -128,25 +116,15 @@ void CreateIconManagers()
     }
 }
 
-/***********************************************************************
+/**
+ * allocate a new icon manager
  *
- *  Procedure:
- *	AllocateIconManager - allocate a new icon manager
- *
- *  Inputs:
- *	name	- the name of this icon manager
- *	icon_name - the name of the associated icon
- *	geom	- a geometry string to eventually parse
- *	columns	- the number of columns this icon manager has
- *
- ***********************************************************************
+ *  \param name     the name of this icon manager
+ *  \param con_name the name of the associated icon
+ *  \param geom	    a geometry string to eventually parse
+ *	\param columns  the number of columns this icon manager has
  */
-
-IconMgr *AllocateIconManager(name, icon_name, geom, columns)
-    char *name;
-    char *geom;
-    char *icon_name;
-    int columns;
+IconMgr *AllocateIconManager(char *name, char *icon_name, char *geom, int columns)
 {
     IconMgr *p;
 
@@ -182,28 +160,18 @@ IconMgr *AllocateIconManager(name, icon_name, geom, columns)
     return(p);
 }
 
-/***********************************************************************
+/**
+ * move the pointer around in an icon manager
  *
- *  Procedure:
- *	MoveIconManager - move the pointer around in an icon manager
- *
- *  Inputs:
- *	dir	- one of the following:
- *			F_FORWICONMGR	- forward in the window list
- *			F_BACKICONMGR	- backward in the window list
- *			F_UPICONMGR	- up one row
- *			F_DOWNICONMGR	- down one row
- *			F_LEFTICONMGR	- left one column
- *			F_RIGHTICONMGR	- right one column
- *
- *  Special Considerations:
- *	none
- *
- ***********************************************************************
+ *  \param dir one of the following:
+ *    - F_FORWICONMGR:  forward in the window list
+ *    - F_BACKICONMGR:  backward in the window list
+ *    - F_UPICONMGR:    up one row
+ *    - F_DOWNICONMG:   down one row
+ *    - F_LEFTICONMGR:  left one column
+ *    - F_RIGHTICONMGR: right one column
  */
-
-void MoveIconManager(dir)
-    int dir;
+void MoveIconManager(int dir)
 {
     IconMgr *ip;
     WList *tmp = NULL;
@@ -313,22 +281,14 @@ void MoveIconManager(dir)
     }
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *	JumpIconManager - jump from one icon manager to another,
- *		possibly even on another screen
- *
- *  Inputs:
- *	dir	- one of the following:
- *			F_NEXTICONMGR	- go to the next icon manager 
- *			F_PREVICONMGR	- go to the previous one
- *
- ***********************************************************************
+/**
+ * jump from one icon manager to another, possibly even on another screen
+ *  \param dir one of the following:
+ *    - F_NEXTICONMGR - go to the next icon manager 
+ *    - F_PREVICONMGR - go to the previous one
  */
 
-void JumpIconManager(dir)
-    register int dir;
+void JumpIconManager(int dir)
 {
     IconMgr *ip, *tmp_ip = NULL;
     int got_it = FALSE;
@@ -385,19 +345,12 @@ void JumpIconManager(dir)
 	XWarpPointer(dpy, None, tmp_ip->w, 0,0,0,0, 5, 5);
 }
 
-/***********************************************************************
+/**
+ * add a window to an icon manager
  *
- *  Procedure:
- *	AddIconManager - add a window to an icon manager
- *
- *  Inputs:
- *	tmp_win	- the TwmWindow structure
- *
- ***********************************************************************
+ *  \param tmp_win the TwmWindow structure
  */
-
-WList *AddIconManager(tmp_win)
-    TwmWindow *tmp_win;
+WList *AddIconManager(TwmWindow *tmp_win)
 {
     WList *tmp;
     int h;
@@ -498,23 +451,13 @@ WList *AddIconManager(tmp_win)
     return (tmp);
 }
 
-/***********************************************************************
+/**
+ * put an allocated entry into an icon manager
  *
- *  Procedure:
- *	InsertInIconManager - put an allocated entry into an icon 
- *		manager
- *
- *  Inputs:
- *	ip	- the icon manager pointer
- *	tmp	- the entry to insert
- *
- ***********************************************************************
+ *  \param ip  the icon manager pointer
+ *  \param tmp the entry to insert
  */
-
-void InsertInIconManager(ip, tmp, tmp_win)
-    IconMgr *ip;
-    WList *tmp;
-    TwmWindow *tmp_win;
+void InsertInIconManager(IconMgr *ip, WList *tmp, TwmWindow *tmp_win)
 {
     WList *tmp1;
     int added;
@@ -556,9 +499,7 @@ void InsertInIconManager(ip, tmp, tmp_win)
     }
 }
 
-void RemoveFromIconManager(ip, tmp)
-    IconMgr *ip;
-    WList *tmp;
+void RemoveFromIconManager(IconMgr *ip, WList *tmp)
 {
     if (tmp->prev == NULL)
 	ip->first = tmp->next;
@@ -571,19 +512,11 @@ void RemoveFromIconManager(ip, tmp)
 	tmp->next->prev = tmp->prev;
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *	RemoveIconManager - remove a window from the icon manager
- *
- *  Inputs:
- *	tmp_win	- the TwmWindow structure
- *
- ***********************************************************************
+/**
+ * remove a window from the icon manager
+ *  \param tmp_win the TwmWindow structure
  */
-
-void RemoveIconManager(tmp_win)
-    TwmWindow *tmp_win;
+void RemoveIconManager(TwmWindow *tmp_win)
 {
     IconMgr *ip;
     WList *tmp;
@@ -616,8 +549,7 @@ void RemoveIconManager(tmp_win)
 
 }
 
-void ActiveIconManager(active)
-    WList *active;
+void ActiveIconManager(WList *active)
 {
     active->active = TRUE;
     Active = active;
@@ -625,15 +557,13 @@ void ActiveIconManager(active)
     DrawIconManagerBorder(active);
 }
 
-void NotActiveIconManager(active)
-    WList *active;
+void NotActiveIconManager(WList *active)
 {
     active->active = FALSE;
     DrawIconManagerBorder(active);
 }
 
-void DrawIconManagerBorder(tmp)
-    WList *tmp;
+void DrawIconManagerBorder(WList *tmp)
 {
     {
 	XSetForeground(dpy, Scr->NormalGC, tmp->fore);
@@ -652,19 +582,12 @@ void DrawIconManagerBorder(tmp)
     }
 }
 
-/***********************************************************************
+/**
+ * sort The Dude
  *
- *  Procedure:
- *	SortIconManager - sort the dude
- *
- *  Inputs:
- *	ip	- a pointer to the icon manager struture
- *
- ***********************************************************************
+ *  \param ip a pointer to the icon manager struture
  */
-
-void SortIconManager(ip)
-    IconMgr *ip;
+void SortIconManager(IconMgr *ip)
 {
     WList *tmp1, *tmp2;
     int done;
@@ -697,20 +620,13 @@ void SortIconManager(ip)
     PackIconManager(ip);
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *	PackIconManager - pack the icon manager windows following
+/**
+ * pack the icon manager windows following 
  *		an addition or deletion
  *
- *  Inputs:
- *	ip	- a pointer to the icon manager struture
- *
- ***********************************************************************
+ *  \param ip a pointer to the icon manager struture
  */
-
-void PackIconManager(ip)
-    IconMgr *ip;
+void PackIconManager(IconMgr *ip)
 {
     int newwidth, i, row, col, maxcol,  colinc, rowinc, wheight, wwidth;
     int new_x, new_y;

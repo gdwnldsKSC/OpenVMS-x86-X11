@@ -52,7 +52,11 @@ SOFTWARE.
    on a monchrome device, a pixmap is a bitmap.
 */
 
-#include "Xmd.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/Xmd.h>
 #include "scrnintstr.h"
 #include "pixmapstr.h"
 #include "maskbits.h"
@@ -62,7 +66,6 @@ SOFTWARE.
 
 #include "servermd.h"
 
-#ifndef LOWMEMFTPT
 
 PixmapPtr
 mfbCreatePixmap (pScreen, width, height, depth)
@@ -72,12 +75,14 @@ mfbCreatePixmap (pScreen, width, height, depth)
     int		depth;
 {
     PixmapPtr pPixmap;
-    int datasize;
-    int paddedWidth;
+    size_t datasize;
+    size_t paddedWidth;
 
     if (depth != 1)
 	return NullPixmap;
     paddedWidth = BitmapBytePad(width);
+    if (paddedWidth / 4 > 32767 || height > 32767)
+	return NullPixmap;
     datasize = height * paddedWidth;
     pPixmap = AllocatePixmap(pScreen, datasize);
     if (!pPixmap)
@@ -104,7 +109,6 @@ mfbCreatePixmap (pScreen, width, height, depth)
     return pPixmap;
 }
 
-#endif /* ifndef LOWMEMFTPT */
 
 Bool
 mfbDestroyPixmap(pPixmap)

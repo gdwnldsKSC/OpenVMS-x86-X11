@@ -54,6 +54,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xaw/XawIm.c,v 1.14tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xos.h>
@@ -731,7 +734,7 @@ SizeNegotiation(XawIcTableList p, unsigned int width, unsigned int height)
     ic_a[ic_cnt] = (XPointer) NULL;
 
     if (ic_cnt > 0) {
-	XGetICValues(p->xic, ic_a[0], ic_a[1], ic_a[2], ic_a[3], ic_a[4]);
+	XGetICValues(p->xic, ic_a[0], ic_a[1], ic_a[2], ic_a[3], NULL);
 	if (pe_attr) XFree(pe_attr);
 	if (st_attr) XFree(st_attr);
 	if (p->xic == NULL) {
@@ -771,7 +774,7 @@ SizeNegotiation(XawIcTableList p, unsigned int width, unsigned int height)
 	    ic_a[ic_cnt] = (XPointer) pe_attr; ic_cnt++;
 	}
 	ic_a[ic_cnt] = (XPointer) NULL;
-	XSetICValues(p->xic, ic_a[0], ic_a[1], ic_a[2], ic_a[3], ic_a[4]);
+	XSetICValues(p->xic, ic_a[0], ic_a[1], ic_a[2], ic_a[3], NULL);
 	if (pe_attr) XFree(pe_attr);
 	if (st_attr) XFree(st_attr);
 	if (p->xic == NULL) {
@@ -889,7 +892,7 @@ CreateIC(Widget w, XawVendorShellExtPart *ve)
 				   pe_a[4], pe_a[5], pe_a[6], pe_a[7], pe_a[8],
 				   pe_a[9], pe_a[10], pe_a[11], pe_a[12],
 				   pe_a[13], pe_a[14], pe_a[15], pe_a[16],
-				   pe_a[17], pe_a[18],  pe_a[19]);
+				   pe_a[17], pe_a[18],  NULL);
 	ic_a[ic_cnt] = (XPointer) XNPreeditAttributes; ic_cnt++;
 	ic_a[ic_cnt] = (XPointer) pe_attr; ic_cnt++;
     }
@@ -900,7 +903,7 @@ CreateIC(Widget w, XawVendorShellExtPart *ve)
 				   st_a[4], st_a[5], st_a[6], st_a[7], st_a[8],
 				   st_a[9], st_a[10], st_a[11], st_a[12],
 				   st_a[13], st_a[14], st_a[15], st_a[16],
-				   st_a[17], st_a[18],  st_a[19]);
+				   st_a[17], st_a[18],  NULL);
 	ic_a[ic_cnt] = (XPointer) XNStatusAttributes; ic_cnt++;
 	ic_a[ic_cnt] = (XPointer) st_attr; ic_cnt++;
     }
@@ -909,7 +912,7 @@ CreateIC(Widget w, XawVendorShellExtPart *ve)
     p->xic = XCreateIC(ve->im.xim, ic_a[0], ic_a[1], ic_a[2], ic_a[3],
 		       ic_a[4], ic_a[5], ic_a[6], ic_a[7], ic_a[8], ic_a[9],
 		       ic_a[10], ic_a[11], ic_a[12], ic_a[13], ic_a[14],
-		       ic_a[15], ic_a[16], ic_a[17], ic_a[18], ic_a[19]);
+		       ic_a[15], ic_a[16], ic_a[17], ic_a[18], NULL);
     if (pe_attr) XtFree(pe_attr);
     if (st_attr) XtFree(st_attr);
 
@@ -1027,7 +1030,7 @@ SetICValues(Widget w, XawVendorShellExtPart *ve, Bool focus)
 				      pe_a[4], pe_a[5], pe_a[6], pe_a[7],
 				      pe_a[8], pe_a[9], pe_a[10], pe_a[11],
 				      pe_a[12], pe_a[13], pe_a[14], pe_a[15],
-				      pe_a[16], pe_a[17], pe_a[18],  pe_a[19]);
+				      pe_a[16], pe_a[17], pe_a[18],  NULL);
 	ic_a[ic_cnt] = (XPointer) XNPreeditAttributes; ic_cnt++;
 	ic_a[ic_cnt] = (XPointer) pe_attr; ic_cnt++;
     }
@@ -1037,7 +1040,7 @@ SetICValues(Widget w, XawVendorShellExtPart *ve, Bool focus)
 				      st_a[4], st_a[5], st_a[6], st_a[7],
 				      st_a[8], st_a[9], st_a[10], st_a[11],
 				      st_a[12], st_a[13], st_a[14], st_a[15],
-				      st_a[16], st_a[17], st_a[18],  st_a[19]);
+				      st_a[16], st_a[17], st_a[18],  NULL);
 	ic_a[ic_cnt] = (XPointer) XNStatusAttributes; ic_cnt++;
 	ic_a[ic_cnt] = (XPointer) st_attr; ic_cnt++;
     }
@@ -1050,7 +1053,7 @@ SetICValues(Widget w, XawVendorShellExtPart *ve, Bool focus)
 	XSetICValues(p->xic, ic_a[0], ic_a[1], ic_a[2], ic_a[3], ic_a[4],
 		     ic_a[5], ic_a[6], ic_a[7], ic_a[8], ic_a[9], ic_a[10],
 		     ic_a[11], ic_a[12], ic_a[13], ic_a[14], ic_a[15],
-		     ic_a[16], ic_a[17], ic_a[18], ic_a[19]);
+		     ic_a[16], ic_a[17], ic_a[18], NULL);
 	if (pe_attr) XtFree(pe_attr);
 	if (st_attr) XtFree(st_attr);
     }

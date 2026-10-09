@@ -346,10 +346,6 @@ install.man:: 								@@\
 olor */
 #endif
 
-#ifndef       BuildPexExt
-#define       BuildPexExt     (XsunServer || Xsun24Server)
-#endif
-
 #ifndef NeedConstPrototypes
 #define NeedConstPrototypes YES
 #endif
@@ -359,8 +355,6 @@ olor */
 #ifndef NeedVarargsPrototypes
 #define NeedVarargsPrototypes YES
 #endif
-
-#define PexCCOptions DefaultCCOptions
 
 #ifndef       BuildXKB
 #define       BuildXKB        YES

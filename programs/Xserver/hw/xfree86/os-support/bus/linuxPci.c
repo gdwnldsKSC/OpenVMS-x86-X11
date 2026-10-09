@@ -45,6 +45,10 @@
  * SOFTWARE.
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <stdio.h>
 #include "compiler.h"
 #include "xf86.h"
@@ -59,13 +63,38 @@
 static CARD32 linuxPciCfgRead(PCITAG tag, int off);
 static void linuxPciCfgWrite(PCITAG, int off, CARD32 val);
 static void linuxPciCfgSetBits(PCITAG tag, int off, CARD32 mask, CARD32 bits);
+static ADDRESS linuxTransAddrBusToHost(PCITAG tag, PciAddrType type, ADDRESS addr);
+#if defined(__powerpc__)
+static ADDRESS linuxPpcBusAddrToHostAddr(PCITAG, PciAddrType, ADDRESS);
+static ADDRESS linuxPpcHostAddrToBusAddr(PCITAG, PciAddrType, ADDRESS);
+#endif
+
+static CARD8 linuxPciCfgReadByte(PCITAG tag, int off);
+static void linuxPciCfgWriteByte(PCITAG tag, int off, CARD8 val);
+static CARD16 linuxPciCfgReadWord(PCITAG tag, int off);
+static void linuxPciCfgWriteWord(PCITAG tag, int off, CARD16 val);
 
 static pciBusFuncs_t linuxFuncs0 = {
 /* pciReadLong      */	linuxPciCfgRead,
 /* pciWriteLong     */	linuxPciCfgWrite,
 /* pciSetBitsLong   */	linuxPciCfgSetBits,
+#if defined(__powerpc__)
+/* pciAddrHostToBus */	linuxPpcHostAddrToBusAddr,
+/* pciAddrBusToHost */	linuxPpcBusAddrToHostAddr,
+#else
 /* pciAddrHostToBus */	pciAddrNOOP,
-/* pciAddrBusToHost */	pciAddrNOOP
+/* pciAddrBusToHost */	linuxTransAddrBusToHost,
+#endif
+
+/* pciControlBridge */		NULL,
+/* pciGetBridgeBuses */		NULL,
+/* pciGetBridgeResources */	NULL,
+
+/* pciReadByte */	linuxPciCfgReadByte,
+/* pciWriteByte */	linuxPciCfgWriteByte,
+
+/* pciReadWord */	linuxPciCfgReadWord,
+/* pciWriteWord */	linuxPciCfgWriteWord,
 };
 
 static pciBusInfo_t linuxPci0 = {
@@ -99,9 +128,9 @@ linuxPciInit()
 }
 
 static int
-linuxPciOpenFile(PCITAG tag)
+linuxPciOpenFile(PCITAG tag, Bool write)
 {
-	static int	lbus,ldev,lfunc,fd = -1;
+	static int	lbus,ldev,lfunc,fd = -1,is_write = 0;
 	int		bus, dev, func;
 	char		file[32];
 	struct stat	ignored;
@@ -109,7 +138,8 @@ linuxPciOpenFile(PCITAG tag)
 	bus  = PCI_BUS_FROM_TAG(tag);
 	dev  = PCI_DEV_FROM_TAG(tag);
 	func = PCI_FUNC_FROM_TAG(tag);
-	if (fd == -1 || bus != lbus || dev != ldev || func != lfunc) {
+	if (fd == -1 || (write && (!is_write))
+	    || bus != lbus || dev != ldev || func != lfunc) {
 		if (fd != -1)
 			close(fd);
 		if (bus < 256) {
@@ -129,7 +159,19 @@ linuxPciOpenFile(PCITAG tag)
 				sprintf(file, "/proc/bus/pci/%04x/%02x.%1x",
 					bus, dev, func);
 		}
-		fd = open(file,O_RDWR);
+		if (write) {
+		    fd = open(file,O_RDWR);
+		    if (fd != -1) is_write = TRUE;
+		} else switch (is_write) {
+			case TRUE:
+			    fd = open(file,O_RDWR);
+			    if (fd > -1)
+				break;
+			default:
+			    fd = open(file,O_RDONLY);
+			    is_write = FALSE;
+		}
+		
 		lbus  = bus;
 		ldev  = dev;
 		lfunc = func;
@@ -143,7 +185,7 @@ linuxPciCfgRead(PCITAG tag, int off)
 	int	fd;
 	CARD32	val = 0xffffffff;
 
-	if (-1 != (fd = linuxPciOpenFile(tag))) {
+	if (-1 != (fd = linuxPciOpenFile(tag,FALSE))) {
 		lseek(fd,off,SEEK_SET);
 		read(fd,&val,4);
 	}
@@ -155,7 +197,7 @@ linuxPciCfgWrite(PCITAG tag, int off, CARD32 val)
 {
 	int	fd;
 
-	if (-1 != (fd = linuxPciOpenFile(tag))) {
+	if (-1 != (fd = linuxPciOpenFile(tag,TRUE))) {
 		lseek(fd,off,SEEK_SET);
 		val = PCI_CPU(val);
 		write(fd,&val,4);
@@ -168,7 +210,7 @@ linuxPciCfgSetBits(PCITAG tag, int off, CARD32 mask, CARD32 bits)
 	int	fd;
 	CARD32	val = 0xffffffff;
 
-	if (-1 != (fd = linuxPciOpenFile(tag))) {
+	if (-1 != (fd = linuxPciOpenFile(tag,TRUE))) {
 		lseek(fd,off,SEEK_SET);
 		read(fd,&val,4);
 		val = PCI_CPU(val);
@@ -176,6 +218,121 @@ linuxPciCfgSetBits(PCITAG tag, int off, CARD32 mask, CARD32 bits)
 		val = PCI_CPU(val);
 		lseek(fd,off,SEEK_SET);
 		write(fd,&val,4);
+	}
+}
+
+/*
+ * This function will convert a BAR address into a host address
+ * suitable for passing into the mmap function of a /proc/bus
+ * device.
+ */
+ADDRESS linuxTransAddrBusToHost(PCITAG tag, PciAddrType type, ADDRESS addr)
+{
+    ADDRESS ret = xf86GetOSOffsetFromPCI(tag, PCI_MEM|PCI_IO, addr);
+
+    if (ret)
+	return ret;
+
+    /*
+     * if it is not a BAR address, it must be legacy, (or wrong)
+     * return it as is..
+     */
+    return addr;
+}
+
+
+#if defined(__powerpc__)
+
+#ifndef __NR_pciconfig_iobase
+#define __NR_pciconfig_iobase   200
+#endif
+
+static ADDRESS
+linuxPpcBusAddrToHostAddr(PCITAG tag, PciAddrType type, ADDRESS addr)
+{
+    if (type == PCI_MEM)
+    {
+	ADDRESS membase = syscall(__NR_pciconfig_iobase, 1,
+		    PCI_BUS_FROM_TAG(tag), PCI_DFN_FROM_TAG(tag));
+	return (addr + membase);
+    }
+    else if (type == PCI_IO)
+    {
+	ADDRESS iobase = syscall(__NR_pciconfig_iobase, 2,
+		    PCI_BUS_FROM_TAG(tag), PCI_DFN_FROM_TAG(tag));
+	return (addr + iobase);
+    }
+    else return addr;
+}
+
+static ADDRESS
+linuxPpcHostAddrToBusAddr(PCITAG tag, PciAddrType type, ADDRESS addr)
+{
+    if (type == PCI_MEM)
+    {
+	ADDRESS membase = syscall(__NR_pciconfig_iobase, 1,
+		    PCI_BUS_FROM_TAG(tag), PCI_DFN_FROM_TAG(tag));
+	return (addr - membase);
+    }
+    else if (type == PCI_IO)
+    {
+	ADDRESS iobase = syscall(__NR_pciconfig_iobase, 2,
+		    PCI_BUS_FROM_TAG(tag), PCI_DFN_FROM_TAG(tag));
+	return (addr - iobase);
+    }
+    else return addr;
+}
+
+#endif /* __powerpc__ */
+
+static CARD8
+linuxPciCfgReadByte(PCITAG tag, int off)
+{
+	int	fd;
+	CARD8	val = 0xff;
+
+	if (-1 != (fd = linuxPciOpenFile(tag,FALSE))) {
+		lseek(fd,off,SEEK_SET);
+		read(fd,&val,1);
+	}
+
+	return val;
+}
+
+static void
+linuxPciCfgWriteByte(PCITAG tag, int off, CARD8 val)
+{
+	int	fd;
+
+	if (-1 != (fd = linuxPciOpenFile(tag,TRUE))) {
+		lseek(fd,off,SEEK_SET);
+		write(fd, &val, 1);
+	}
+}
+
+static CARD16
+linuxPciCfgReadWord(PCITAG tag, int off)
+{
+	int	fd;
+	CARD16	val = 0xff;
+
+	if (-1 != (fd = linuxPciOpenFile(tag,FALSE))) {
+		lseek(fd, off, SEEK_SET);
+		read(fd, &val, 2);
+	}
+
+	return PCI_CPU16(val);
+}
+
+static void
+linuxPciCfgWriteWord(PCITAG tag, int off, CARD16 val)
+{
+	int	fd;
+
+	if (-1 != (fd = linuxPciOpenFile(tag,TRUE))) {
+		lseek(fd, off, SEEK_SET);
+		val = PCI_CPU16(val);
+		write(fd, &val, 2);
 	}
 }
 
@@ -336,7 +493,10 @@ xf86GetPciDomain(PCITAG Tag)
     if (pPCI && (result = PCI_DOM_FROM_BUS(pPCI->busnum)))
 	return result;
 
-    if ((fd = linuxPciOpenFile(pPCI ? pPCI->tag : 0)) < 0)
+    if (!pPCI || pPCI->fakeDevice)
+	return 1;		/* Domain 0 is reserved */
+
+    if ((fd = linuxPciOpenFile(pPCI ? pPCI->tag : 0,FALSE)) < 0)
 	return 0;
 
     if ((result = ioctl(fd, PCIIOC_CONTROLLER, 0)) < 0)
@@ -359,7 +519,7 @@ linuxMapPci(int ScreenNum, int Flags, PCITAG Tag,
 
 	pPCI = xf86GetPciHostConfigFromTag(Tag);
 
-	if (((fd = linuxPciOpenFile(pPCI ? pPCI->tag : 0)) < 0) ||
+	if (((fd = linuxPciOpenFile(pPCI ? pPCI->tag : 0,FALSE)) < 0) ||
 	    (ioctl(fd, mmap_ioctl, 0) < 0))
 	    break;
 
@@ -376,7 +536,7 @@ linuxMapPci(int ScreenNum, int Flags, PCITAG Tag,
 	if (Flags & VIDMEM_FRAMEBUFFER)
 	    mmapflags = MAP_SHARED | MAP_WRITECOMBINED;
 	else
-	    mmapflags = MAP_SHARED | MAP_NONCACHED
+	    mmapflags = MAP_SHARED | MAP_NONCACHED;
 
 #else /* !__ia64__ */
 
@@ -401,7 +561,7 @@ linuxMapPci(int ScreenNum, int Flags, PCITAG Tag,
 	result = mmap(NULL, Size + Offset, prot, mmapflags, fd, realBase);
 
 	if (!result || ((pointer)result == MAP_FAILED))
-	    FatalError("linuxMapPci() mmap failure:  %s\n", strerror(errno));
+	    return NULL;
 
 	xf86MakeNewMapping(ScreenNum, Flags, realBase, Size + Offset, result);
 
@@ -414,38 +574,142 @@ linuxMapPci(int ScreenNum, int Flags, PCITAG Tag,
     return NULL;
 }
 
+#define MAX_DOMAINS 257
+static pointer DomainMmappedIO[MAX_DOMAINS];
+static pointer DomainMmappedMem[MAX_DOMAINS];
+
+static int
+linuxOpenLegacy(PCITAG Tag, char *name)
+{
+#define PREFIX "/sys/class/pci_bus/%04x:%02x/%s"
+    char *path;
+    int domain, bus;
+    pciBusInfo_t *pBusInfo;
+    pciConfigPtr bridge = NULL;
+    int fd;
+
+    path = xalloc(strlen(PREFIX) + strlen(name));
+    if (!path)
+	return -1;
+
+    for (;;) {
+	domain = xf86GetPciDomain(Tag);
+	bus = PCI_BUS_NO_DOMAIN(PCI_BUS_FROM_TAG(Tag));
+
+	/* Domain 0 is reserved -- see xf86GetPciDomain() */
+	if ((domain <= 0) || (domain >= MAX_DOMAINS))
+	    FatalError("linuxOpenLegacy():  domain out of range\n");
+
+	sprintf(path, PREFIX, domain - 1, bus, name);
+	fd = open(path, O_RDWR);
+	if (fd >= 0) {
+	    xfree(path);
+	    return fd;
+	}
+
+	pBusInfo = pciBusInfo[bus];
+	if (!pBusInfo || (bridge == pBusInfo->bridge) ||
+		!(bridge = pBusInfo->bridge)) {
+	    xfree(path);
+	    return -1;
+	}
+
+	Tag = bridge->tag;
+    }
+
+    xfree(path);
+    return fd;
+}
+
+/*
+ * xf86MapDomainMemory - memory map PCI domain memory
+ *
+ * This routine maps the memory region in the domain specified by Tag and
+ * returns a pointer to it.  The pointer is saved for future use if it's in
+ * the legacy ISA memory space (memory in a domain between 0 and 1MB).
+ */
 pointer
 xf86MapDomainMemory(int ScreenNum, int Flags, PCITAG Tag,
 		    ADDRESS Base, unsigned long Size)
 {
-    return linuxMapPci(ScreenNum, Flags, Tag, Base, Size, PCIIOC_MMAP_IS_MEM);
+    int domain = xf86GetPciDomain(Tag);
+    int fd;
+
+    /*
+     * We use /proc/bus/pci on non-legacy addresses or if the Linux sysfs
+     * legacy_mem interface is unavailable.
+     */
+    if (Base > 1024*1024)
+	return linuxMapPci(ScreenNum, Flags, Tag, Base, Size,
+			   PCIIOC_MMAP_IS_MEM);
+
+    if ((fd = linuxOpenLegacy(Tag, "legacy_mem")) < 0)
+	return linuxMapPci(ScreenNum, Flags, Tag, Base, Size,
+			   PCIIOC_MMAP_IS_MEM);
+
+
+    /* If we haven't already mapped this legacy space, try to. */
+    if (!DomainMmappedMem[domain]) {
+	DomainMmappedMem[domain] = mmap(NULL, 1024*1024, PROT_READ|PROT_WRITE,
+					MAP_SHARED, fd, 0);
+	if (DomainMmappedMem[domain] == MAP_FAILED) {
+	    close(fd);
+	    perror("mmap failure");
+	    FatalError("xf86MapDomainMem():  mmap() failure\n");
+	}
+    }
+
+    close(fd);
+    return (pointer)((char *)DomainMmappedMem[domain] + Base);
 }
 
-#define MAX_DOMAINS 257
-static pointer DomainMmappedIO[MAX_DOMAINS];
-
-/* This has no means of returning failure, so all errors are fatal */
+/*
+ * xf86MapDomainIO - map I/O space in this domain
+ *
+ * Each domain has a legacy ISA I/O space.  This routine will try to
+ * map it using the Linux sysfs legacy_io interface.  If that fails,
+ * it'll fall back to using /proc/bus/pci.
+ *
+ * If the legacy_io interface *does* exist, the file descriptor (fd below)
+ * will be saved in the DomainMmappedIO array in the upper bits of the
+ * pointer.  Callers will do I/O with small port numbers (<64k values), so
+ * the platform I/O code can extract the port number and the fd, lseek to
+ * the port number in the legacy_io file, and issue the read or write.
+ *
+ * This has no means of returning failure, so all errors are fatal
+ */
 IOADDRESS
 xf86MapDomainIO(int ScreenNum, int Flags, PCITAG Tag,
 		IOADDRESS Base, unsigned long Size)
 {
     int domain = xf86GetPciDomain(Tag);
+    int fd;
 
     if ((domain <= 0) || (domain >= MAX_DOMAINS))
 	FatalError("xf86MapDomainIO():  domain out of range\n");
 
+    if (DomainMmappedIO[domain])
+	return (IOADDRESS)DomainMmappedIO[domain] + Base;
+
     /* Permanently map all of I/O space */
-    if (!DomainMmappedIO[domain]) {
-	DomainMmappedIO[domain] = linuxMapPci(ScreenNum, Flags, Tag,
-					      0, linuxGetIOSize(Tag),
-					      PCIIOC_MMAP_IS_IO);
-	if (!DomainMmappedIO[domain])
-	    FatalError("xf86MapDomainIO():  mmap() failure\n");
+    if ((fd = linuxOpenLegacy(Tag, "legacy_io")) < 0) {
+	    DomainMmappedIO[domain] = linuxMapPci(ScreenNum, Flags, Tag,
+						  0, linuxGetIOSize(Tag),
+						  PCIIOC_MMAP_IS_IO);
+	    /* ia64 can't mmap legacy IO port space */
+	    if (!DomainMmappedIO[domain])
+		return Base;
+    }
+    else { /* legacy_io file exists, encode fd */
+	DomainMmappedIO[domain] = (pointer)(fd << 24);
     }
 
     return (IOADDRESS)DomainMmappedIO[domain] + Base;
 }
 
+/*
+ * xf86ReadDomainMemory - copy from domain memory into a caller supplied buffer
+ */
 int
 xf86ReadDomainMemory(PCITAG Tag, ADDRESS Base, int Len, unsigned char *Buf)
 {
@@ -453,6 +717,40 @@ xf86ReadDomainMemory(PCITAG Tag, ADDRESS Base, int Len, unsigned char *Buf)
     ADDRESS offset;
     unsigned long size;
     int len, pagemask = getpagesize() - 1;
+
+    unsigned int i, dom, bus, dev, func;
+    unsigned int fd;
+    char file[256];
+    struct stat st;
+
+    dom  = PCI_DOM_FROM_TAG(Tag);
+    bus  = PCI_BUS_FROM_TAG(Tag);
+    dev  = PCI_DEV_FROM_TAG(Tag);
+    func = PCI_FUNC_FROM_TAG(Tag);
+    sprintf(file, "/sys/devices/pci%04x:%02x/%04x:%02x:%02x.%1x/rom",
+	    dom, bus, dom, bus, dev, func);
+
+    /*
+     * If the caller wants the ROM and the sysfs rom interface exists,
+     * try to use it instead of reading it from /proc/bus/pci.
+     */
+    if (((Base & 0xfffff) == 0xC0000) && (stat(file, &st) == 0)) {
+        if ((fd = open(file, O_RDWR)))
+            Base = 0x0;
+
+	/* enable the ROM first */
+	write(fd, "1", 2);
+	lseek(fd, 0, SEEK_SET);
+
+        /* copy the ROM until we hit Len, EOF or read error */
+        for (i = 0; i < Len && read(fd, Buf, 1) > 0; Buf++, i++)
+            ;
+
+	write(fd, "0", 2);
+	close(fd);
+
+	return Len;
+    }
 
     /* Ensure page boundaries */
     offset = Base & ~pagemask;

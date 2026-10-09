@@ -65,7 +65,7 @@ critical is only EMX/gcc and GNU make. Note that the second GCC implementation
 which might still be available from some archives is NOT compatible.
 
 Furthermore, you need the X11R&relvers; sources. These are available from 
-the common X.org repositories. Look into a directory which is 
+the common X.Org repositories. Look into a directory which is 
 often named /pub/R&relvers;.
 
 <sect>Compiling and Installing

@@ -2,7 +2,9 @@
 
 <TITLE>Development Notes</TITLE>
 
-<BODY text="#000000" bgcolor="#55bbff" link="#111188">
+<link rel="stylesheet" type="text/css" href="mesa.css"></head>
+
+<BODY>
 
 <H1>Development Notes</H1>
 
@@ -39,7 +41,7 @@ To add a new GL extension to Mesa you have to do at least the following.
    extension is rather large, try to implement it in a new source file.
 </li>
 <li>
-   If hew extension adds new GL state, the functions in get.c, enable.c
+   If the new extension adds new GL state, the functions in get.c, enable.c
    and attrib.c will most likely require new code.
 </li>
 </ul>
@@ -94,7 +96,7 @@ Constants and macros are ALL_UPPERCASE, with _ between words
 </p>
 
 <p>
-Global vars not allowed.
+Global variables are not allowed.
 </p>
 
 <p>
@@ -109,110 +111,85 @@ Function name examples:
 </pre>
 
 
-<H2>Writing a Device Driver</H2>
-
-<p>
-XXX to do
-</p>
-
-
-
 <H2>Making a New Mesa Release</H2>
 
 <p>
 These are the instructions for making a new Mesa release.
 </p>
 
+<H3>Get latest source files</H3>
 <p>
-Prerequisites (later versions may work):
-</p>
-<ul>
-<li>	autoconf 2.50
-<li>	automake 1.4-p2
-<li>	libtool 1.4
-</ul>
-
-<p>
-Be sure to do a "cvs update -d ." in the Mesa directory to
-get all the latest files.
+Use "cvs update -dAP " to get the latest Mesa files from CVS.
 </p>
 
-<p>
-Update the version definitions in src/version.h
-</p>
 
+<H3>Verify and update version info</H3>
 <p>
 Create/edit the docs/RELNOTES-X.Y file to document what's new in the release.
-Edit the docs/VERSIONS file too.
+Add the new RELNOTES-X.Y file to <a href="relnotes.html">relnotes.html</a>.
+Update the docs/VERSIONS file too.
 </p>
 
 <p>
-Edit Make-config and change the MESA_MAJOR and/or MESA_MINOR versions.
+Edit configs/default and change the MESA_MAJOR, MESA_MINOR and MESA_TINY
+version numbers.
 </p>
 
 <p>
-Edit the GNU configure stuff to change versions numbers as needed:
-Update the version string (second argument) in the line
-"AM_INIT_AUTOMAKE(Mesa, 3.3)" in the configure.in file.
+Make sure the values in src/mesa/main/version.h is correct.
 </p>
 
 <p>
-Remove the leading `dnl' from the line "dnl AM_MAINTAINER_MODE".
+Edit the top-level Makefile and verify that DIRECTORY, LIB_NAME and
+DEMO_NAME are correct.
 </p>
 
 <p>
-Verify the version numbers near the top of configure.in
+Update the docs/news.html file and docs/contents.html files.
 </p>
 
 <p>
-Run "fixam -f" to disable automatic dependency tracking.
+Check in all updates to CVS.
 </p>
 
 <p>
-Run the bootstrap script to generate the configure script.
+Tag the CVS files with the release name (in the form <b>mesa_X_Y</b>).
 </p>
 
-<p>
-Edit Makefile.X11 and verify DIRECTORY is set correctly.  The Mesa
-sources must be in that directory (or there must be a symbolic link).
-</p>
 
+<H3>Make the tarballs</H3>
 <p>
-Edit Makefile.X11 and verify that LIB_NAME and DEMO_NAME are correct.
-If it's a beta release, be sure the bump up the beta release number.
-</p>
-
-<p>
-cp Makefile.X11 to Makefile so that the old-style Mesa makefiles
-still work.  ./configure will overwrite it if that's what the user runs.
-</p>
-
-<p>
-Make a symbolic link from $(DIRECTORY) to Mesa.  For example,
-ln -s Mesa Mesa-3.3    This is needed in order to make a correct
-tar file in the next step.
+Make a symbolic link from $(DIRECTORY) to 'Mesa'.  For example,
+ln -s Mesa Mesa-6.3
+This is needed in order to make a correct tar file in the next step.
 </p>
 
 <p>
 Make the distribution files.  From inside the Mesa directory:
 <pre>
-	make -f Makefile.X11 lib_tar
-	make -f Makefile.X11 demo_tar
-	make -f Makefile.X11 lib_zip
-	make -f Makefile.X11 demo_zip
+	make tarballs
 </pre>
+
+<p>
+After the tarballs are created, the md5 checksums for the files will
+be computed.
+Add them to the docs/news.html file.
+</p>
 
 <p>
 Copy the distribution files to a temporary directory, unpack them,
 compile everything, and run some demos to be sure everything works.
 </p>
 
+<H3>Update the website and announce the release</H3>
 <p>
-Upload the *.tar.gz and *.zip files to ftp.mesa3d.org
+Follow the directions on SourceForge for creating a new "release" and
+uploading the tarballs.
 </p>
 
 <p>
-Update the web site.
+Update the web site by copying the docs/ directory's files to 
+/home/users/b/br/brianp/mesa-www/htdocs/
 </p>
 
 <p>
@@ -223,17 +200,6 @@ and
 <em>m</em><em>e</em><em>s</em><em>a</em><em>3</em><em>d</em><em>-</em><em>a</em><em>n</em><em>n</em><em>o</em><em>u</em><em>n</em><em>c</em><em>e</em><em>@</em><em>l</em><em>i</em><em>s</em><em>t</em><em>s</em><em>.</em><em>s</em><em>f</em><em>.</em><em>n</em><em>e</em><em>t</em>
 </p>
 
-
-<H2>Autoconf info</H2>
-
-<p>
-In order to run the bootstrap script you'll need:
-<p>
-<pre>
-autoconf 2.50
-automake 1.4-p5
-libtool 1.4
-</pre>
 
 
 </body>

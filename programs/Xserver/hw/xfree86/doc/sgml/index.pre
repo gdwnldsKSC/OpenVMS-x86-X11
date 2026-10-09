@@ -6,7 +6,7 @@
 <article>
 
 <!-- Title information -->
-<title>Documentation for the X Window System Version 11 Release &relvers; (X11R&relvers;)
+<title>Documentation for the X Window System Version 11 Release &relvers; and &modvers; (X11R&relvers;/X11R&modvers;)
 <author>The X.Org Foundation
 <date>&reldate;
 

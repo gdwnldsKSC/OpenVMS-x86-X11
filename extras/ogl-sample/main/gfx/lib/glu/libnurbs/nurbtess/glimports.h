@@ -35,8 +35,8 @@
 /*
  * glimports.h
  *
- * $Date$ $Revision$
- * $Header: //depot/main/gfx/lib/glu/include/glimports.h#1 $
+ * $Date: 2004/03/14 08:29:11 $ $Revision: 1.1.1.4 $
+ * $Header: /cvs/xorg/xc/extras/ogl-sample/main/gfx/lib/glu/libnurbs/nurbtess/glimports.h,v 1.1.1.4 2004/03/14 08:29:11 eich Exp $
  */
 
 #ifndef __gluimports_h_

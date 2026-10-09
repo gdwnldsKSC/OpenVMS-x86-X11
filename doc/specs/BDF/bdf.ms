@@ -8,7 +8,7 @@
 
 X Window System Standard
 
-X Version 11, Release 6.8
+X Version 11, Release 6.9/7.0
 .sp 3
 Copyright 1984, 1987, 1988 Adobe Systems, Inc.
 .sp 1

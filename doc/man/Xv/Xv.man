@@ -1,4 +1,4 @@
-.TH Xv 3X __vendorversion__
+.TH Xv __libmansuffix__ __vendorversion__
 .\"
 .\" $XFree86: xc/doc/man/Xv/Xv.man,v 1.5 2000/03/21 23:17:19 dawes Exp $
 .SH Name
@@ -15,10 +15,10 @@ PAL, SECAM, etc...) and drawable format (depth and visual-id pair). An
 adaptor may support multiple video encodings and/or multiple drawable
 formats.
 .PP
-Clients use Xv(3X) to gain access and manage sharing of a display's
-video resources.  Typically, a client will use XvQueryExtension(3X) to
-determine the status of the extension, XvQueryAdaptors(3X) to get a
-description of what video adaptors exist, and XvQueryEncodings(3X) to
+Clients use Xv(__libmansuffix__) to gain access and manage sharing of a display's
+video resources.  Typically, a client will use XvQueryExtension(__libmansuffix__) to
+determine the status of the extension, XvQueryAdaptors(__libmansuffix__) to get a
+description of what video adaptors exist, and XvQueryEncodings(__libmansuffix__) to
 get a description of what video encodings an adaptor supports.
 .PP
 Once a client has determined what video resources are available, it is
@@ -29,39 +29,39 @@ attributes have changed.
 .SH Summary of Library Functions
 The following is a summary of Xv library functions:
 .sp 1l
-XvGetPortAttribute(3X) \- return current port attribute value
+XvGetPortAttribute(__libmansuffix__) \- return current port attribute value
 .sp 1l
-XvGetStill(3X) \- capture a single frame of video from a drawable
+XvGetStill(__libmansuffix__) \- capture a single frame of video from a drawable
 .sp 1l
-XvGetVideo(3X) \- capture video from a drawable
+XvGetVideo(__libmansuffix__) \- capture video from a drawable
 .sp 1l
-XvGrabPort(3X) \- lock port for exclusive use by client
+XvGrabPort(__libmansuffix__) \- lock port for exclusive use by client
 .sp 1l
-XvPortNotify(3X) \- event generated when port attributes change
+XvPortNotify(__libmansuffix__) \- event generated when port attributes change
 .sp 1l
-XvPutStill(3X) \- write a single frame of video to a drawable
+XvPutStill(__libmansuffix__) \- write a single frame of video to a drawable
 .sp 1l
-XvPutVideo(3X) \- write video into a drawable
+XvPutVideo(__libmansuffix__) \- write video into a drawable
 .sp 1l
-XvQueryAdaptors(3X) \- return adaptor information for a screen
+XvQueryAdaptors(__libmansuffix__) \- return adaptor information for a screen
 .sp 1l
-XvQueryBestSize(3X) \- determine the optimum drawable region size
+XvQueryBestSize(__libmansuffix__) \- determine the optimum drawable region size
 .sp 1l
-XvQueryEncodings(3X) \- return list of encodings for an adaptor
+XvQueryEncodings(__libmansuffix__) \- return list of encodings for an adaptor
 .sp 1l
-XvQueryExtension(3X) \- return version and revision of extension
+XvQueryExtension(__libmansuffix__) \- return version and revision of extension
 .sp 1l
-XvSelectPortNotify(3X) \- enable or disable XvPortNotify events
+XvSelectPortNotify(__libmansuffix__) \- enable or disable XvPortNotify events
 .sp 1l
-XvSelectVideoNotify(3X) \- enable or disable XvVideoNotify events
+XvSelectVideoNotify(__libmansuffix__) \- enable or disable XvVideoNotify events
 .sp 1l
-XvSetPortAttribute(3X) \- set an attribute for a port 
+XvSetPortAttribute(__libmansuffix__) \- set an attribute for a port 
 .sp 1l
-XvStopVideo(3X) \- stop active video 
+XvStopVideo(__libmansuffix__) \- stop active video 
 .sp 1l
-XvUngrabPort(3X) \- release a grabbed port
+XvUngrabPort(__libmansuffix__) \- release a grabbed port
 .sp 1l
-XvVideoNotify(3X) \- event generated for video processing
+XvVideoNotify(__libmansuffix__) \- event generated for video processing
 .sp 1l
 .PP
 Each of these functions is described in its own Xv man page.

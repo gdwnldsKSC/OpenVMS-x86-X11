@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id$
+dnl  $Id: configure.ac,v 1.3 2005/06/24 22:43:20 alanc Exp $
 dnl 
 dnl  Copyright © 2003 Keith Packard, Noah Levitt
 dnl 
@@ -32,13 +32,13 @@ dnl Yes, it is a pain to synchronize version numbers.  Unfortunately, it's
 dnl not possible to extract the version number here from Xft.h
 dnl Please bump the minor library number at each release as well.
 dnl
-AC_INIT(libXft, 2.1.6, [keithp@keithp.com], libXft)
+AC_INIT(libXft, 2.1.7, [keithp@keithp.com], libXft)
+AC_CONFIG_AUX_DIR(.)
 
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
 AM_CONFIG_HEADER(config.h)
-AC_CONFIG_AUX_DIR(.)
 
 # checks for progs
 AC_PROG_CC
@@ -100,7 +100,7 @@ fontconfig_save_libs="$LIBS"
 fontconfig_save_cflags="$CFLAGS"
 LIBS="$LIBS $FREETYPE_LIBS"
 CFLAGS="$CFLAGS $FREETYPE_CFLAGS"
-AC_CHECK_FUNCS(FT_Get_Next_Char FT_Get_BDF_Property FT_Get_PS_Font_Info FT_Has_PS_Glyph_Names)
+AC_CHECK_FUNCS(FT_Get_Next_Char FT_Get_BDF_Property FT_Get_PS_Font_Info FT_Has_PS_Glyph_Names FT_GlyphSlot_Embolden)
 AC_CHECK_MEMBER(FT_Bitmap_Size.y_ppem,
 		HAVE_FT_BITMAP_SIZE_Y_PPEM=1,
 		HAVE_FT_BITMAP_SIZE_Y_PPEM=0,
@@ -116,8 +116,18 @@ if test "$VERSION" = "" ; then
        VERSION=$PACKAGE_VERSION;
 fi
 
+WARN_CFLAGS=""
+
+if test "x$GCC" = "xyes"; then
+	WARN_CFLAGS="-Wall -Wpointer-arith -Wstrict-prototypes \
+	-Wmissing-prototypes -Wmissing-declarations \
+	-Wnested-externs -fno-strict-aliasing"
+fi
+AC_SUBST(WARN_CFLAGS)
+
 AC_OUTPUT([Makefile
 	   xft.pc
 	   xft-config
+	   xft-config.1
 	   Xft.3])
 

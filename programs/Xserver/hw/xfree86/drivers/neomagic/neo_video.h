@@ -31,7 +31,7 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "vgaHW.h"
 #include "fourcc.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 #define NEO_VIDEO_VIDEO		0
 #define NEO_VIDEO_IMAGE		1

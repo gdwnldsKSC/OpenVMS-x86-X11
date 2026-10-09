@@ -29,6 +29,10 @@
 */
 
 #define NEED_REPLIES
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "glxserver.h"
 #include "glxext.h"
 #include "g_disptab.h"
@@ -3335,7 +3339,7 @@ void __glXDispSwap_PointParameterfvARB(GLbyte *pc)
 
 	__GLX_SWAP_INT(pc + 0);
 	pname = *(GLenum *)(pc + 0);
-	compsize = __glPointParameterfvARB_size(pname);
+	compsize = __glPointParameterfvEXT_size(pname);
 	if (compsize < 0) compsize = 0;
 	__GLX_SWAP_FLOAT_ARRAY(pc + 4, compsize);
 

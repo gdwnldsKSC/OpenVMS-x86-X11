@@ -30,7 +30,7 @@ OS_DEFINES =
 
 ETCDIR = EtcDir
 
-MakeScriptFromCpp(xprint, -DDEF_XPCUSTOMGLUE=$(XPCUSTOMGLUE) $(OS_DEFINES))
+MakeScriptFromCpp(xprint, -DDEF_XPCUSTOMGLUE=$(XPCUSTOMGLUE) $(OS_DEFINES) -DProjectRoot=$(PROJECTROOT))
 
 #if defined(FreeBSDArchitecture)
 InstallNamedProg(xprint,xprint,$(PROJECTROOT)/etc/rc.d)
@@ -55,7 +55,7 @@ install::
 #endif /* defined(SunArchitecture) && (OSMajorVersion > 4) */
 
 XCOMM Create startup/shutdown links in /etc/init.d/ for Linux
-#if defined(LinuxArchitecture)
+#if defined(LinuxDistribution)
 # if (LinuxDistribution == LinuxSuSE) || \
      (LinuxDistribution == LinuxDebian) || \
      (LinuxDistribution == LinuxUnknown)

@@ -47,8 +47,12 @@ SOFTWARE.
 
 ******************************************************************/
 /* $Xorg: mfbbitblt.c,v 1.4 2001/02/09 02:05:18 xorgcvs Exp $ */
-#include "X.h"
-#include "Xprotostr.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xprotostr.h>
 
 #include "regionstr.h"
 #include "gcstruct.h"
@@ -93,7 +97,6 @@ destination.  this is a simple translation.
  ** and much less overhead.  Nice for drawing lots of small pixmaps.
  */
  
-#ifndef LOWMEMFTPT
 
 void
 mfbDoBitblt (pSrc, pDst, alu, prgnDst, pptSrc)
@@ -388,7 +391,6 @@ int dstx, dsty;
     return prgnExposed;
 }
 
-#endif /* ifndef LOWMEMFTPT */
 
 /*
  * Devices which use mfb for 1-bit pixmap support
@@ -437,7 +439,6 @@ CopyArea().
 
 */
 
-#ifndef LOWMEMFTPT
 
 RegionPtr
 mfbCopyPlane(pSrcDrawable, pDstDrawable,
@@ -507,4 +508,3 @@ unsigned long plane;
     return prgnExposed;
 }
 
-#endif /* ifndef LOWMEMFTPT */

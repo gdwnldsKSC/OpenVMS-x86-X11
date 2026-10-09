@@ -34,6 +34,10 @@
  *		http://www.magnatune.com
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "fb.h"
 #include "mibank.h"
 #include "micmap.h"
@@ -54,11 +58,11 @@
 
 #include "voodoo.h"
 
-#include "extensions/xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
 
 #include "opaque.h"
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 #include "mipict.h"
 #include "dixstruct.h"
 

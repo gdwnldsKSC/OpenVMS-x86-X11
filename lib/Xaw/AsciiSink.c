@@ -48,6 +48,9 @@ SOFTWARE.
 ******************************************************************/
 /* $XFree86: xc/lib/Xaw/AsciiSink.c,v 1.26 2001/12/14 19:54:38 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <X11/IntrinsicP.h>

@@ -32,7 +32,6 @@
  *****************************************************************************/
 /* $XFree86$ */
 
-
 #ifndef DBE_STRUCT_H
 #define DBE_STRUCT_H
 
@@ -40,7 +39,7 @@
 /* INCLUDES */
 
 #define NEED_DBE_PROTOCOL
-#include "Xdbeproto.h"
+#include <X11/extensions/Xdbeproto.h>
 #include "windowstr.h"
 
 

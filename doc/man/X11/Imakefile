@@ -1,4 +1,5 @@
 XCOMM $XFree86: xc/doc/man/X11/Imakefile,v 1.4 2001/12/17 03:04:40 dawes Exp $
+XCOMM $XdotOrg: xc/doc/man/X11/Imakefile,v 1.4 2005/07/04 23:01:48 clee Exp $
 
 MANDIR = $(LIBMANDIR)
 MANSUFFIX = $(LIBMANSUFFIX)
@@ -15,7 +16,7 @@ InstallManPageAliases(DisplayOfCCC,$(MANDIR),VisualOfCCC ScreenNumberOfCCC Scree
 InstallManPageLong(ImageOrd,$(MANDIR),ImageByteOrder)
 InstallManPageAliases(ImageByteOrder,$(MANDIR),BitmapBitOrder BitmapPad BitmapUnit DisplayHeight DisplayHeightMM DisplayWidth DisplayWidthMM XListPixmapFormats XPixmapFormatValues)
 InstallManPageLong(IsCKey,$(MANDIR),IsCursorKey)
-InstallManPageAliases(IsCursorKey,$(MANDIR),IsFunctionKey IsKeypadKey IsMiscFunctionKey IsModiferKey IsPFKey IsPrivateKeypadKey)
+InstallManPageAliases(IsCursorKey,$(MANDIR),IsFunctionKey IsKeypadKey IsMiscFunctionKey IsModifierKey IsPFKey IsPrivateKeypadKey)
 InstallManPageLong(XACHints,$(MANDIR),XAllocClassHint)
 InstallManPageAliases(XAllocClassHint,$(MANDIR),XSetClassHint XGetClassHint XClassHint)
 InstallManPageLong(XAIcSize,$(MANDIR),XAllocIconSize)
@@ -188,6 +189,8 @@ InstallManPageLong(XQBSize,$(MANDIR),XQueryBestSize)
 InstallManPageAliases(XQueryBestSize,$(MANDIR),XQueryBestTile XQueryBestStipple)
 InstallManPageLong(XQColor,$(MANDIR),XQueryColor)
 InstallManPageAliases(XQueryColor,$(MANDIR),XQueryColors XLookupColor XParseColor)
+InstallManPageLong(XQExtension,$(MANDIR),XQueryExtension)
+InstallManPageAliases(XQueryExtension,$(MANDIR),XListExtensions XFreeExtensionList)
 InstallManPageLong(XQPointer,$(MANDIR),XQueryPointer)
 InstallManPageLong(XQTree,$(MANDIR),XQueryTree)
 InstallManPageLong(XREvent,$(MANDIR),XReparentEvent)

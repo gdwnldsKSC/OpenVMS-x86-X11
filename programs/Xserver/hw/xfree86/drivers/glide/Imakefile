@@ -28,7 +28,7 @@ INCLUDES = -I. -I$(GLIDE2INCDIR) -I$(XF86COMSRC) -I$(XF86OSSRC) \
            -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c \
            -I$(SERVERSRC)/Xext -I$(XF86SRC)/xf8_32bpp\
            -I$(FONTINCSRC) -I$(SERVERSRC)/include -I$(XINCLUDESRC) \
-           -I$(XF86SRC)/xf24_32bpp -I$(XF86SRC)/shadowfb \
+           -I$(XF86SRC)/shadowfb \
            -I$(EXTINCSRC) -I$(SERVERSRC)/render
 #endif
 
@@ -40,7 +40,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(glide,$(OBJS))
 
-InstallObjectModule(glide,$(MODULEDIR),drivers)
+InstallVideoObjectModule(glide,$(MODULEDIR))
 
 InstallModuleManPage(glide)
 

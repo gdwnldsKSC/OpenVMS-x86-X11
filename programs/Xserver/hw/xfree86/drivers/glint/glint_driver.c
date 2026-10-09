@@ -22,7 +22,7 @@
  * Authors:  Alan Hourihane, <alanh@fairlite.demon.co.uk>
  *           Dirk Hohndel, <hohndel@suse.de>
  *	     Stefan Dirsch, <sndirsch@suse.de>
- *	     Michel Dänzer, <michdaen@iiic.ethz.ch>
+ *	     Michel DÃ¤nzer, <michdaen@iiic.ethz.ch>
  *	     Sven Luther, <luther@dpt-info.u-strasbg.fr>
  *
  * this work is sponsored by S.u.S.E. GmbH, Fuerth, Elsa GmbH, Aachen, 
@@ -30,8 +30,11 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/glint/glint_driver.c,v 1.162 2003/11/03 05:11:11 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "fb.h"
-#include "cfb8_32.h"
 #include "micmap.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -59,12 +62,14 @@
 #include "TI.h"
 #include "glint.h"
 
+#ifdef XFreeXDGA
 #define _XF86DGA_SERVER_
-#include "extensions/xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
+#endif
 
 #include "globals.h"
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 #define DEBUG 0
 
@@ -117,7 +122,7 @@ static Bool FBDevProbed = FALSE;
  * an upper-case version of the driver name.
  */
 
-DriverRec GLINT = {
+_X_EXPORT DriverRec GLINT = {
     VERSION,
     GLINT_DRIVER_NAME,
     GLINTIdentify,
@@ -396,7 +401,7 @@ static XF86ModuleVersionInfo glintVersRec =
 	{0,0,0,0}
 };
 
-XF86ModuleData glintModuleData = { &glintVersRec, glintSetup, NULL };
+_X_EXPORT XF86ModuleData glintModuleData = { &glintVersRec, glintSetup, NULL };
 
 pointer
 glintSetup(pointer module, pointer opts, int *errmaj, int *errmin)

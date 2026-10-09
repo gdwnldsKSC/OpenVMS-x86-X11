@@ -15,6 +15,10 @@
  * on PIO.
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -23,10 +27,12 @@
 #include "int10Defines.h"
 #include "xf86int10.h"
 
-#if !defined (_PC) && !defined (_PC_PCI)
 static int pciCfg1in(CARD16 addr, CARD32 *val);
 static int pciCfg1out(CARD16 addr, CARD32 val);
-#endif
+static int pciCfg1inw(CARD16 addr, CARD16 *val);
+static int pciCfg1outw(CARD16 addr, CARD16 val);
+static int pciCfg1inb(CARD16 addr, CARD8 *val);
+static int pciCfg1outb(CARD16 addr, CARD8 val);
 #if defined (_PC)
 static void SetResetBIOSVars(xf86Int10InfoPtr pInt, Bool set);
 #endif
@@ -321,7 +327,8 @@ x_inb(CARD16 port)
 	}
 #endif /* __NOT_YET__ */
     } else {
-	val = inb(Int10Current->ioBase + port);
+	if (!pciCfg1inb(port, &val))
+	    val = inb(Int10Current->ioBase + port);
 #ifdef PRINT_PORT
 	ErrorF(" inb(%#x) = %2.2x\n", port, val);
 #endif
@@ -343,7 +350,8 @@ x_inw(CARD16 port)
 	(void)getsecs(&sec, &usec);
 	val = (CARD16)(usec / 3);
     } else {
-	val = inw(Int10Current->ioBase + port);
+	if (!pciCfg1inw(port, &val))
+	    val = inw(Int10Current->ioBase + port);
     }
 #ifdef PRINT_PORT
     ErrorF(" inw(%#x) = %4.4x\n", port, val);
@@ -380,7 +388,8 @@ x_outb(CARD16 port, CARD8 val)
 #ifdef PRINT_PORT
 	ErrorF(" outb(%#x, %2.2x)\n", port, val);
 #endif
-	outb(Int10Current->ioBase + port, val);
+	if (!pciCfg1outb(port, val))
+	    outb(Int10Current->ioBase + port, val);
     }
 }
 
@@ -391,7 +400,8 @@ x_outw(CARD16 port, CARD16 val)
     ErrorF(" outw(%#x, %4.4x)\n", port, val);
 #endif
 
-    outw(Int10Current->ioBase + port, val);
+    if (!pciCfg1outw(port, val))
+	outw(Int10Current->ioBase + port, val);
 }
 
 CARD32
@@ -399,10 +409,8 @@ x_inl(CARD16 port)
 {
     CARD32 val;
 
-#if !defined(_PC) && !defined(_PC_PCI)
     if (!pciCfg1in(port, &val))
-#endif
-    val = inl(Int10Current->ioBase + port);
+	val = inl(Int10Current->ioBase + port);
 
 #ifdef PRINT_PORT
     ErrorF(" inl(%#x) = %8.8x\n", port, val);
@@ -417,10 +425,8 @@ x_outl(CARD16 port, CARD32 val)
     ErrorF(" outl(%#x, %8.8x)\n", port, val);
 #endif
 
-#if !defined(_PC) && !defined(_PC_PCI)
     if (!pciCfg1out(port, val))
-#endif
-    outl(Int10Current->ioBase + port, val);
+	outl(Int10Current->ioBase + port, val);
 }
 
 CARD8
@@ -459,7 +465,6 @@ Mem_wl(CARD32 addr, CARD32 val)
     (*Int10Current->mem->wl)(Int10Current, addr, val);
 }
 
-#if !defined(_PC) && !defined(_PC_PCI)
 static CARD32 PciCfg1Addr = 0;
 
 #define TAG(Cfg1Addr) (Cfg1Addr & 0xffff00)
@@ -487,12 +492,85 @@ pciCfg1out(CARD16 addr, CARD32 val)
 	return 1;
     }
     if (addr == 0xCFC) {
-	pciWriteLong(TAG(PciCfg1Addr), OFFSET(PciCfg1Addr),val);
+	pciWriteLong(TAG(PciCfg1Addr), OFFSET(PciCfg1Addr), val);
 	return 1;
     }
     return 0;
 }
-#endif
+
+static int
+pciCfg1inw(CARD16 addr, CARD16 *val)
+{
+    int offset, shift;
+
+    if ((addr >= 0xCF8) && (addr <= 0xCFB)) {
+	shift = (addr - 0xCF8) * 8;
+	*val = (PciCfg1Addr >> shift) & 0xffff;
+	return 1;
+    }
+    if ((addr >= 0xCFC) && (addr <= 0xCFF)) {
+	offset = addr - 0xCFC;
+	*val = pciReadWord(TAG(PciCfg1Addr), OFFSET(PciCfg1Addr) + offset);
+	return 1;
+    }
+    return 0;
+}
+
+static int
+pciCfg1outw(CARD16 addr, CARD16 val)
+{
+    int offset, shift;
+
+    if ((addr >= 0xCF8) && (addr <= 0xCFB)) {
+	shift = (addr - 0xCF8) * 8;
+	PciCfg1Addr &= ~(0xffff << shift);
+	PciCfg1Addr |= ((CARD32) val) << shift;
+	return 1;
+    }
+    if ((addr >= 0xCFC) && (addr <= 0xCFF)) {
+	offset = addr - 0xCFC;
+	pciWriteWord(TAG(PciCfg1Addr), OFFSET(PciCfg1Addr) + offset, val);
+	return 1;
+    }
+    return 0;
+}
+
+static int
+pciCfg1inb(CARD16 addr, CARD8 *val)
+{
+    int offset, shift;
+
+    if ((addr >= 0xCF8) && (addr <= 0xCFB)) {
+	shift = (addr - 0xCF8) * 8;
+	*val = (PciCfg1Addr >> shift) & 0xff;
+	return 1;
+    }
+    if ((addr >= 0xCFC) && (addr <= 0xCFF)) {
+	offset = addr - 0xCFC;
+	*val = pciReadByte(TAG(PciCfg1Addr), OFFSET(PciCfg1Addr) + offset);
+	return 1;
+    }
+    return 0;
+}
+
+static int
+pciCfg1outb(CARD16 addr, CARD8 val)
+{
+    int offset, shift;
+
+    if ((addr >= 0xCF8) && (addr <= 0xCFB)) {
+	shift = (addr - 0xCF8) * 8;
+	PciCfg1Addr &= ~(0xff << shift);
+	PciCfg1Addr |= ((CARD32) val) << shift;
+	return 1;
+    }
+    if ((addr >= 0xCFC) && (addr <= 0xCFF)) {
+	offset = addr - 0xCFC;
+	pciWriteByte(TAG(PciCfg1Addr), OFFSET(PciCfg1Addr) + offset, val);
+	return 1;
+    }
+    return 0;
+}
 
 CARD8
 bios_checksum(CARD8 *start, int size)

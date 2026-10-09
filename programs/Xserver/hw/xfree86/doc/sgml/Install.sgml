@@ -9,7 +9,7 @@
 <date>&reldate;
 
 <ident>
-$Id$  
+$Id: Install.sgml,v 1.4 2005/12/19 07:56:55 alanc Exp $  
 </ident>
 
 <abstract>
@@ -23,7 +23,7 @@ X11R&relvers;.
 
 <sect>Introduction
 <p>
-At this time, the X.org Foundation is not making binary releases; this
+At this time, the X.Org Foundation is not making binary releases; this
 will likely change in the future as our tinderbox system reaches its
 full potential.
 <p>

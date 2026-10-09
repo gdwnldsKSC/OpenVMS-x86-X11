@@ -28,7 +28,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(suncg3,$(OBJS))
 
-InstallObjectModule(suncg3,$(MODULEDIR),drivers)
+InstallVideoObjectModule(suncg3,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(suncg3)

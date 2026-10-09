@@ -6,5 +6,19 @@ all::
 
 DEFINES = $(FAILDEFINES)
 
+# Since xtrans source is #include'd into software that uses it, we install
+# the .c files as if they were headers.
+HEADERS = \
+	Xtrans.h \
+	Xtrans.c \
+	Xtransdnet.c \
+	Xtransint.h \
+	Xtranslcl.c \
+	Xtransos2.c \
+	Xtranssock.c \
+	Xtranstli.c \
+	Xtransutil.c \
+	transport.c
+
 DependTarget()
-BuildIncludes(Xtrans.h,IncSubdir,..)
+BuildIncludes($(HEADERS),IncSubdir/Xtrans,../..)

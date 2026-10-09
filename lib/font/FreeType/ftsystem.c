@@ -30,6 +30,9 @@
   /*************************************************************************/
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <ft2build.h>
 #include FT_CONFIG_CONFIG_H
 #include FT_INTERNAL_DEBUG_H

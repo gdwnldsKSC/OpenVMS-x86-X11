@@ -1,3 +1,33 @@
+/*
+ * Mesa 3-D graphics library
+ * Version:  6.2
+ *
+ * Copyright (C) 1999-2004  Brian Paul   All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * BRIAN PAUL BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+ * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+ 
+ /**
+ * \file arbprogram.syn
+ * ARB_fragment/vertex_program syntax
+ * \author Michal Krol
+ */
+ 
 .syntax program;
 
 /*
@@ -6,7 +36,7 @@
    compares the value with its REVISION value. If they do not match, the loader is not up
    to date.
 */
-.emtcode REVISION                                   0x07
+.emtcode REVISION                                   0x09
 
 /* program type */
 .emtcode FRAGMENT_PROGRAM                           0x01
@@ -18,18 +48,21 @@
 .emtcode DECLARATION                                0x03
 .emtcode END                                        0x04
 
-/* GL_ARB_fragment_program option flags */
-.emtcode ARB_PRECISION_HINT_FASTEST                 0x01
-.emtcode ARB_PRECISION_HINT_NICEST                  0x02
-.emtcode ARB_FOG_EXP                                0x04
-.emtcode ARB_FOG_EXP2                               0x08
-.emtcode ARB_FOG_LINEAR                             0x10
+/* GL_ARB_fragment_program option */
+.emtcode ARB_PRECISION_HINT_FASTEST                 0x00
+.emtcode ARB_PRECISION_HINT_NICEST                  0x01
+.emtcode ARB_FOG_EXP                                0x02
+.emtcode ARB_FOG_EXP2                               0x03
+.emtcode ARB_FOG_LINEAR                             0x04
 
-/* GL_ARB_vertex_program option flags */
-.emtcode ARB_POSITION_INVARIANT                     0x20
+/* GL_ARB_vertex_program option */
+.emtcode ARB_POSITION_INVARIANT                     0x05
 
-/* GL_ARB_fragment_program_shadow option flags */
-.emtcode ARB_FRAGMENT_PROGRAM_SHADOW                0x40
+/* GL_ARB_fragment_program_shadow option */
+.emtcode ARB_FRAGMENT_PROGRAM_SHADOW                0x06
+
+/* GL_ARB_draw_buffers option */
+.emtcode ARB_DRAW_BUFFERS                           0x07
 
 /* GL_ARB_fragment_program instruction class */
 .emtcode OP_ALU_INST                                0x00
@@ -400,6 +433,9 @@
 /* GL_ARB_fragment_program_shadow */
 .regbyte fragment_program_shadow                    0x00
 
+/* GL_ARB_draw_buffers */
+.regbyte draw_buffers                               0x00
+
 /* option presence condition registers */
 /* they are all initially set to zero - when a particular OPTION is encountered, the appropriate */
 /* register is set to 1 to indicate that the OPTION was specified. */
@@ -416,6 +452,9 @@
 
 /* GL_ARB_fragment_program_shadow */
 .regbyte ARB_fragment_program_shadow                0x00
+
+/* GL_ARB_draw_buffers */
+.regbyte ARB_draw_buffers                           0x00
 
 /* program target condition register */
 /* this syntax script deals with two program targets - VERTEX_PROGRAM and FRAGMENT_PROGRAM. */
@@ -482,7 +521,9 @@ fp_optionString
     fp_ARB_fog_exp2 .emit ARB_FOG_EXP2 .load ARB_fog_exp2 0x01 .or
     fp_ARB_fog_linear .emit ARB_FOG_LINEAR .load ARB_fog_linear 0x01 .or
     .if (fragment_program_shadow != 0x00) "ARB_fragment_program_shadow"
-        .emit ARB_FRAGMENT_PROGRAM_SHADOW .load ARB_fragment_program_shadow 0x01;
+        .emit ARB_FRAGMENT_PROGRAM_SHADOW .load ARB_fragment_program_shadow 0x01 .or
+    .if (draw_buffers != 0x00) "ARB_draw_buffers" .emit ARB_DRAW_BUFFERS
+        .load ARB_draw_buffers 0x01;
 vp_optionString
     "ARB_position_invariant" .emit ARB_POSITION_INVARIANT .load ARB_position_invariant 0x01;
 fp_ARB_fog_exp
@@ -1952,7 +1993,7 @@ stateClipPlaneNum
 
 /*
 vertex program
-    <statePointItem>       ::= "point" . <statePointProperty>
+    <statePointItem>       ::= "point" "." <statePointProperty>
 */
 statePointItem
     "point" .and dot .and statePointProperty .error INVALID_POINT_PROPERTY;
@@ -1992,7 +2033,7 @@ optMatrixRows_1
     stateMatrixRowNum .and dotdot .and stateMatrixRowNum .and rbracket;
 
 /*
-    <stateMatrixItem>      ::= "matrix" . <stateMatrixName> 
+    <stateMatrixItem>      ::= "matrix" "." <stateMatrixName> 
                                <stateOptMatModifier>
 */
 stateMatrixItem
@@ -2307,6 +2348,7 @@ vp_OUTPUT_statement
 /*
 fragment program
     <resultBinding>        ::= "result" "." "color"
+                             | "result" "." "color" <optOutputColorNum> (if option ARB_draw_buffers present)
                              | "result" "." "depth"
 
 vertex program
@@ -2321,8 +2363,10 @@ fp_resultBinding
 vp_resultBinding
     "result" .and dot .and vp_resultBinding_1 .error INVALID_RESULT_PROPERTY;
 fp_resultBinding_1
-    "color" .emit FRAGMENT_RESULT_COLOR .or
+    fp_resultBinding_2 .emit FRAGMENT_RESULT_COLOR .or
     "depth" .emit FRAGMENT_RESULT_DEPTH;
+fp_resultBinding_2
+    "color" .and optOutputColorNum;
 vp_resultBinding_1
     .if (ARB_position_invariant == 0x00) "position" .emit VERTEX_RESULT_POSITION .or
     resultColBinding .emit VERTEX_RESULT_COLOR .or
@@ -2331,6 +2375,23 @@ vp_resultBinding_1
     vp_resultBinding_2 .emit VERTEX_RESULT_TEXCOORD;
 vp_resultBinding_2
     "texcoord" .and optTexCoordNum;
+
+/*
+GL_ARB_draw_buffers
+    <optOutputColorNum>    ::= ""
+                             | "[" <outputColorNum> "]"
+*/
+optOutputColorNum
+    .if (ARB_draw_buffers != 0x00) optOutputColorNum_1 .or .true .emit 0x00;
+optOutputColorNum_1
+    lbracket_ne .and outputColorNum .and rbracket;
+
+/*
+GL_ARB_draw_buffers
+    <outputColorNum>       ::= <integer> from 0 to MAX_DRAW_BUFFERS_ARB-1
+*/
+outputColorNum
+    integer;
 
 /*
 vertex program

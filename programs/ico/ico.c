@@ -1,4 +1,5 @@
 /* $XConsortium: ico.c,v 1.47 94/04/17 20:45:15 gildea Exp $ */
+/* $XdotOrg: xc/programs/ico/ico.c,v 1.4 2005/11/08 06:33:31 jkj Exp $ */
 /***********************************************************
 
 Copyright (c) 1987  X Consortium
@@ -72,6 +73,16 @@ SOFTWARE.
  *  support for ICCCM delete window message
  *  better thread support - mutex and condition to control termination
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+
+#include <X11/XlibConf.h>
+#ifdef XTHREADS
+# define MULTITHREAD
+#endif
+#endif /* HAVE_CONFIG_H / autoconf */
+
 #include <math.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -227,6 +238,7 @@ const char *ico_geom = NULL;	/* -size: size of object in window */
 const char *delta_geom = NULL;	/* -delta: amount by which to move object */
 Polyinfo *poly;			/* -obj: the poly to draw */
 int dsync = 0;			/* -dsync */
+int xsync = 0;			/* -sync */
 int msleepcount = 0;		/* -sleep value in milliseconds*/
 #ifdef MULTITHREAD
 int thread_count;
@@ -250,9 +262,7 @@ xcondition_rec count_cond;	/* Xthreads doesn't define an equivalent to
 void icoFatal (const char *fmt, const char *a0) __attribute__((__noreturn__));
 #endif
 void
-icoFatal(fmt,a0)
-    const char *fmt;
-    const char *a0;
+icoFatal(const char *fmt, const char *a0)
 {
 	fprintf(stderr, "%s: ", ProgramName);
 	fprintf(stderr, fmt, a0);
@@ -1259,7 +1269,7 @@ int main(argc, argv)
 		} else if (!strcmp(*argv, "-dsync"))
 			dsync = 1;
 		else if (!strncmp(*argv, "-sync",  5)) 
-			_Xdebug = 1;
+			xsync = 1;
 		else if (!strcmp(*argv, "-objhelp")) {
 			giveObjHelp();
 			exit(1);
@@ -1284,6 +1294,8 @@ int main(argc, argv)
 	if (!(dpy = XOpenDisplay(display)))
 	    icoFatal("cannot open display \"%s\"", XDisplayName(display));
     	wm_delete_window = XInternAtom (dpy, "WM_DELETE_WINDOW", False);
+	if (xsync)
+	    XSynchronize(dpy, True);
 
 #ifdef MULTIBUFFER
 	if (multibufext && !XmbufQueryExtension (dpy, &mbevbase, &mberrbase)) {

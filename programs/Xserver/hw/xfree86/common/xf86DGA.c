@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86DGA.c,v 1.2 2004/04/23 19:20:32 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86DGA.c,v 1.7 2005/11/08 03:12:43 alanc Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/common/xf86DGA.c,v 1.46 2002/12/03 18:17:40 tsi Exp $ */
 /*
  * Copyright (c) 1998-2002 by The XFree86 Project, Inc.
@@ -29,11 +29,15 @@
  * Written by Mark Vojkovich
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "xf86.h"
 #include "xf86str.h"
 #include "xf86Priv.h"
 #include "dgaproc.h"
-#include "xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
 #include "colormapst.h"
 #include "pixmapstr.h"
 #include "inputstr.h"
@@ -41,7 +45,7 @@
 #include "servermd.h"
 #include "micmap.h"
 #ifdef XKB
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 #endif
 #include "xf86Xinput.h"
 
@@ -166,6 +170,57 @@ DGAInit(
     return TRUE;
 }
 
+/* DGAReInitModes allows the driver to re-initialize
+ * the DGA mode list.
+ */
+
+Bool
+DGAReInitModes(
+   ScreenPtr pScreen,
+   DGAModePtr modes,
+   int num
+){
+    DGAScreenPtr pScreenPriv;
+    int i;
+
+    /* No DGA? Ignore call (but don't make it look like it failed) */
+    if(DGAScreenIndex < 0)
+	return TRUE;
+	
+    pScreenPriv = DGA_GET_SCREEN_PRIV(pScreen);
+
+    /* Same as above */
+    if(!pScreenPriv)
+	return TRUE;
+
+    /* Can't do this while DGA is active */
+    if(pScreenPriv->current)
+	return FALSE;
+
+    /* Quick sanity check */
+    if(!num) 
+	modes = NULL;
+    else if(!modes) 
+	num = 0;
+
+    pScreenPriv->numModes = num;
+    pScreenPriv->modes = modes;
+
+    /* This practically disables DGA. So be it. */
+    if(!num)
+	return TRUE;
+
+    for(i = 0; i < num; i++)
+	modes[i].num = i + 1;
+
+#ifdef PANORAMIX
+     if(!noPanoramiXExtension)
+	for(i = 0; i < num; i++)
+	    modes[i].flags &= ~DGA_PIXMAP_AVAILABLE;
+#endif
+
+     return TRUE;
+}
 
 static void
 FreeMarkedVisuals(ScreenPtr pScreen)
@@ -974,7 +1029,11 @@ DGAProcessKeyboardEvent (ScreenPtr pScreen, dgaEvent *de, DeviceIntPtr keybd)
 	inputInfo.pointer->valuator->motionHintWindow = NullWindow;
 	*kptr |= bit;
 	keyc->prev_state = keyc->state;
-	if (noXkbExtension) {
+#ifdef XKB
+	if (noXkbExtension)
+#endif
+	{
+	    
 	    for (i = 0, mask = 1; modifiers; i++, mask <<= 1)
 	    {
 		if (mask & modifiers)
@@ -991,7 +1050,10 @@ DGAProcessKeyboardEvent (ScreenPtr pScreen, dgaEvent *de, DeviceIntPtr keybd)
 	inputInfo.pointer->valuator->motionHintWindow = NullWindow;
 	*kptr &= ~bit;
 	keyc->prev_state = keyc->state;
-	if (noXkbExtension) {
+#ifdef XKB
+	if (noXkbExtension)
+#endif
+	{
 	    for (i = 0, mask = 1; modifiers; i++, mask <<= 1)
 	    {
 		if (mask & modifiers) {

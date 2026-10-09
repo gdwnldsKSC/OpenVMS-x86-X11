@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_regacc.c,v 1.1 2002/12/10 15:12:25 alanh Exp $ */
 /*
  * $Workfile: nsc_regacc.c $
- * $Revision$
- * $Author$
+ * $Revision: 1.4 $
+ * $Author: ajax $
  *
  * This is the main file used to add Durango graphics support to a software 
  * project.  The main reason to have a single file include the other files
@@ -141,6 +141,10 @@
  * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  *
  * END_NSC_LIC_GPL */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 void gfx_write_reg8(unsigned long offset, unsigned char value);
 void gfx_write_reg16(unsigned long offset, unsigned short value);

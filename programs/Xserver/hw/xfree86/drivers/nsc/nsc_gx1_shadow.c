@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_gx1_shadow.c,v 1.1 2002/12/10 15:12:23 alanh Exp $ */
 /*
  * $Workfile: nsc_gx1_shadow.c $
- * $Revision$
- * $Author$
+ * $Revision: 1.4 $
+ * $Author: ajax $
  *
  * File Contents: Direct graphics display routines are implemented and 
  *                graphics rendering are all done in memory.
@@ -140,6 +140,10 @@
  * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  *
  * END_NSC_LIC_GPL */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "xf86.h"
 #include "xf86_OSproc.h"

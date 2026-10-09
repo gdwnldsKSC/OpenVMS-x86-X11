@@ -37,6 +37,9 @@ in this Software without prior written authorization from The Open Group.
  * about that later.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <krb5/krb5.h>
 /* 9/93: krb5.h leaks some symbols */
 #undef BITS32

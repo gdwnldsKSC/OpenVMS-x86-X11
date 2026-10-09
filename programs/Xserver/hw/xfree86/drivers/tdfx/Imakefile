@@ -13,7 +13,7 @@ XCOMM
 DRISRCS = tdfx_dri.c
 DRIOBJS = tdfx_dri.o
 DRIINCLUDES = -I$(SERVERSRC)/GL/dri -I$(LIBSRC)/GL/dri -I$(TOP)/include \
-              -I$(DRMSRCDIR)/shared
+              -I$(DRMSRCDIR)/shared-core
 DRIDEFINES = $(GLX_DEFINES)
 #endif
 
@@ -52,7 +52,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(tdfx,$(OBJS))
 
-InstallObjectModule(tdfx,$(MODULEDIR),drivers)
+InstallVideoObjectModule(tdfx,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(tdfx)

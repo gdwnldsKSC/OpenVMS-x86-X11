@@ -48,7 +48,11 @@ SOFTWARE.
 ******************************************************************/
 /* $XConsortium: afbclip.c,v 5.6 94/04/17 20:28:19 dpw Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "regionstr.h"
 #include "pixmapstr.h"
 #include "scrnintstr.h"
@@ -102,7 +106,7 @@ afbPixmapToRegion(pPix)
 	register BoxPtr		prectO, prectN;
 	BoxPtr			FirstRect, rects, prectLineStart;
 	Bool			fInBox, fSame;
-	register PixelType	mask0 = mask[0];
+	register PixelType	mask0 = mfbGetmask(0);
 	PixelType		*pwLine;
 	int			nWidth;
 

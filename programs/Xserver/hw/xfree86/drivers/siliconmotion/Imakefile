@@ -17,10 +17,10 @@ INCLUDES = -I. -I../../include
 #else
 INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86OSSRC) \
            -I$(SERVERSRC)/mfb -I$(SERVERSRC)/mi \
-           -I$(SERVERSRC)/cfb -I$(XF86SRC)/xaa -I$(XF86SRC)/rac \
+           -I$(XF86SRC)/xaa -I$(XF86SRC)/rac \
            -I$(XF86SRC)/vgahw -I$(XF86SRC)/fbdevhw \
            -I$(XF86SRC)/ramdac -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c \
-		   -I$(SERVERSRC)/Xext -I$(XF86SRC)/int10 \
+	   -I$(SERVERSRC)/Xext -I$(XF86SRC)/int10 \
            -I$(FONTINCSRC) -I$(SERVERSRC)/include -I$(XINCLUDESRC) \
            -I$(XF86SRC)/shadowfb -I$(EXTINCSRC) -I$(SERVERSRC)/fb \
            -I$(SERVERSRC)/render -I$(XF86SRC)/vbe
@@ -35,7 +35,7 @@ NormalAsmObjectRule()
 ModuleObjectRule()
 ObjectModuleTarget(siliconmotion, $(OBJS))
 
-InstallObjectModule(siliconmotion,$(MODULEDIR),drivers)
+InstallVideoObjectModule(siliconmotion,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(siliconmotion)

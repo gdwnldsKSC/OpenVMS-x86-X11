@@ -40,6 +40,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "enums.h"
 #include "colormac.h"
 #include "light.h"
+#include "buffers.h"
 
 #include "swrast/swrast.h"
 #include "array_cache/acache.h"
@@ -273,7 +274,7 @@ static void r200_set_blend_state( GLcontext * ctx )
 
    default:
       fprintf( stderr, "[%s:%u] Invalid RGB blend equation (0x%04x).\n",
-         __func__, __LINE__, ctx->Color.BlendEquationRGB );
+         __FUNCTION__, __LINE__, ctx->Color.BlendEquationRGB );
       return;
    }
 
@@ -312,7 +313,7 @@ static void r200_set_blend_state( GLcontext * ctx )
 
    default:
       fprintf( stderr, "[%s:%u] Invalid A blend equation (0x%04x).\n",
-         __func__, __LINE__, ctx->Color.BlendEquationA );
+         __FUNCTION__, __LINE__, ctx->Color.BlendEquationA );
       return;
    }
 
@@ -374,6 +375,21 @@ static void r200DepthFunc( GLcontext *ctx, GLenum func )
    }
 }
 
+static void r200ClearDepth( GLcontext *ctx, GLclampd d )
+{
+   r200ContextPtr rmesa = R200_CONTEXT(ctx);
+   GLuint format = (rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] &
+		    R200_DEPTH_FORMAT_MASK);
+
+   switch ( format ) {
+   case R200_DEPTH_FORMAT_16BIT_INT_Z:
+      rmesa->state.depth.clear = d * 0x0000ffff;
+      break;
+   case R200_DEPTH_FORMAT_24BIT_INT_Z:
+      rmesa->state.depth.clear = d * 0x00ffffff;
+      break;
+   }
+}
 
 static void r200DepthMask( GLcontext *ctx, GLboolean flag )
 {
@@ -468,10 +484,37 @@ static void r200Fogfv( GLcontext *ctx, GLenum pname, const GLfloat *param )
       rmesa->hw.ctx.cmd[CTX_PP_FOG_COLOR] &= ~R200_FOG_COLOR_MASK;
       rmesa->hw.ctx.cmd[CTX_PP_FOG_COLOR] |= i;
       break;
-   case GL_FOG_COORDINATE_SOURCE_EXT: 
-      /* What to do?
-       */
+   case GL_FOG_COORD_SRC: {
+      GLuint fmt_0 = rmesa->hw.vtx.cmd[VTX_VTXFMT_0];
+      GLuint out_0 = rmesa->hw.vtx.cmd[VTX_TCL_OUTPUT_VTXFMT_0];
+      GLuint fog   = rmesa->hw.ctx.cmd[CTX_PP_FOG_COLOR];
+
+      fog &= ~R200_FOG_USE_MASK;
+      if ( ctx->Fog.FogCoordinateSource == GL_FOG_COORD ) {
+	 fog   |= R200_FOG_USE_VTX_FOG;
+	 fmt_0 |= R200_VTX_DISCRETE_FOG;
+	 out_0 |= R200_VTX_DISCRETE_FOG;
+      }
+      else {
+	 fog   |=  R200_FOG_USE_SPEC_ALPHA;
+	 fmt_0 &= ~R200_VTX_DISCRETE_FOG;
+	 out_0 &= ~R200_VTX_DISCRETE_FOG;
+      }
+
+      if ( fog != rmesa->hw.ctx.cmd[CTX_PP_FOG_COLOR] ) {
+	 R200_STATECHANGE( rmesa, ctx );
+	 rmesa->hw.ctx.cmd[CTX_PP_FOG_COLOR] = fog;
+      }
+
+      if ( (fmt_0 != rmesa->hw.vtx.cmd[VTX_VTXFMT_0])
+	   || (out_0 != rmesa->hw.vtx.cmd[VTX_TCL_OUTPUT_VTXFMT_0])) {
+	 R200_STATECHANGE( rmesa, vtx );
+	 rmesa->hw.vtx.cmd[VTX_VTXFMT_0] = fmt_0;
+	 rmesa->hw.vtx.cmd[VTX_TCL_OUTPUT_VTXFMT_0] = out_0;	 
+      }
+
       break;
+   }
    default:
       return;
    }
@@ -787,7 +830,7 @@ static void r200PolygonMode( GLcontext *ctx, GLenum face, GLenum mode )
 static void r200UpdateSpecular( GLcontext *ctx )
 {
    r200ContextPtr rmesa = R200_CONTEXT(ctx);
-   uint32_t p = rmesa->hw.ctx.cmd[CTX_PP_CNTL];
+   u_int32_t p = rmesa->hw.ctx.cmd[CTX_PP_CNTL];
 
    R200_STATECHANGE( rmesa, tcl );
    R200_STATECHANGE( rmesa, vtx );
@@ -1589,6 +1632,8 @@ void r200UpdateWindow( GLcontext *ctx )
 static void r200Viewport( GLcontext *ctx, GLint x, GLint y,
 			    GLsizei width, GLsizei height )
 {
+   /* update size of Mesa/software ancillary buffers */
+   _mesa_ResizeBuffersMESA();
    /* Don't pipeline viewport changes, conflict with window offset
     * setting below.  Could apply deltas to rescue pipelined viewport
     * values, or keep the originals hanging around.
@@ -1611,8 +1656,8 @@ void r200UpdateViewportOffset( GLcontext *ctx )
    GLfloat yoffset = (GLfloat)dPriv->y + dPriv->h;
    const GLfloat *v = ctx->Viewport._WindowMap.m;
 
-   GLfloat tx = v[MAT_TX] + xoffset;
-   GLfloat ty = (- v[MAT_TY]) + yoffset;
+   GLfloat tx = v[MAT_TX] + xoffset + SUBPIXEL_X;
+   GLfloat ty = (- v[MAT_TY]) + yoffset + SUBPIXEL_Y;
 
    if ( rmesa->hw.vpt.cmd[VPT_SE_VPORT_XOFFSET] != *(GLuint *)&tx ||
 	rmesa->hw.vpt.cmd[VPT_SE_VPORT_YOFFSET] != *(GLuint *)&ty )
@@ -1751,12 +1796,12 @@ static void r200DrawBuffer( GLcontext *ctx, GLenum mode )
    /*
     * _DrawDestMask is easier to cope with than <mode>.
     */
-   switch ( ctx->Color._DrawDestMask ) {
-   case DD_FRONT_LEFT_BIT:
+   switch ( ctx->DrawBuffer->_ColorDrawBufferMask[0] ) {
+   case BUFFER_BIT_FRONT_LEFT:
       FALLBACK( rmesa, R200_FALLBACK_DRAW_BUFFER, GL_FALSE );
       r200SetCliprects( rmesa, GL_FRONT_LEFT );
       break;
-   case DD_BACK_LEFT_BIT:
+   case BUFFER_BIT_BACK_LEFT:
       FALLBACK( rmesa, R200_FALLBACK_DRAW_BUFFER, GL_FALSE );
       r200SetCliprects( rmesa, GL_BACK_LEFT );
       break;
@@ -1776,6 +1821,9 @@ static void r200DrawBuffer( GLcontext *ctx, GLenum mode )
 					       rmesa->r200Screen->fbLocation)
 					      & R200_COLOROFFSET_MASK);
    rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] = rmesa->state.color.drawPitch;
+   if (rmesa->sarea->tiling_enabled) {
+      rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] |= R200_COLOR_TILE_ENABLE;
+   }
 }
 
 
@@ -1870,7 +1918,7 @@ static void r200Enable( GLcontext *ctx, GLenum cap, GLboolean state )
       R200_STATECHANGE(rmesa, ctx );
       if ( state ) {
 	 rmesa->hw.ctx.cmd[CTX_PP_CNTL] |= R200_FOG_ENABLE;
-	 r200Fogfv( ctx, GL_FOG_MODE, 0 );
+	 r200Fogfv( ctx, GL_FOG_MODE, NULL );
       } else {
 	 rmesa->hw.ctx.cmd[CTX_PP_CNTL] &= ~R200_FOG_ENABLE;
 	 R200_STATECHANGE(rmesa, tcl);
@@ -2044,7 +2092,7 @@ static void r200Enable( GLcontext *ctx, GLenum cap, GLboolean state )
       break;
 
    case GL_VERTEX_PROGRAM_ARB:
-      TCL_FALLBACK(rmesa->glCtx, R200_TCL_FALLBACK_TCL_DISABLE, state);
+      TCL_FALLBACK(rmesa->glCtx, R200_TCL_FALLBACK_VERTEX_PROGRAM, state);
       break;
 
    default:
@@ -2138,9 +2186,9 @@ static void update_texturematrix( GLcontext *ctx )
 	    /* Need to preconcatenate any active texgen 
 	     * obj/eyeplane matrices:
 	     */
-	    _math_matrix_mul_matrix( &rmesa->tmpmat, 
-				     &rmesa->TexGenMatrix[unit],
-				     ctx->TextureMatrixStack[unit].Top );
+	    _math_matrix_mul_matrix( &rmesa->tmpmat,
+				     ctx->TextureMatrixStack[unit].Top, 
+				     &rmesa->TexGenMatrix[unit] );
 	    upload_matrix( rmesa, rmesa->tmpmat.m, R200_MTX_TEX0+unit );
 	 } 
 	 else {
@@ -2155,11 +2203,9 @@ static void update_texturematrix( GLcontext *ctx )
    }
 
    tpc = (rmesa->TexMatEnabled | rmesa->TexGenEnabled);
-   if (tpc != rmesa->hw.tcg.cmd[TCG_TEX_PROC_CTL_0] ||
-       rmesa->TexGenInputs != rmesa->hw.tcg.cmd[TCG_TEX_PROC_CTL_1]) {
+   if (tpc != rmesa->hw.tcg.cmd[TCG_TEX_PROC_CTL_0]) {
       R200_STATECHANGE(rmesa, tcg);
       rmesa->hw.tcg.cmd[TCG_TEX_PROC_CTL_0] = tpc;
-      rmesa->hw.tcg.cmd[TCG_TEX_PROC_CTL_1] = rmesa->TexGenInputs;
    }
 
    compsel &= ~R200_OUTPUT_TEX_MASK;
@@ -2290,7 +2336,7 @@ void r200InitStateFuncs( struct dd_function_table *functions )
    functions->BlendEquationSeparate	= r200BlendEquationSeparate;
    functions->BlendFuncSeparate		= r200BlendFuncSeparate;
    functions->ClearColor		= r200ClearColor;
-   functions->ClearDepth		= NULL;
+   functions->ClearDepth		= r200ClearDepth;
    functions->ClearIndex		= NULL;
    functions->ClearStencil		= r200ClearStencil;
    functions->ClipPlane			= r200ClipPlane;

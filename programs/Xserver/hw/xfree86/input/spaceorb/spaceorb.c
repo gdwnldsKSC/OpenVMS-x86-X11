@@ -26,6 +26,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/spaceorb/spaceorb.c,v 1.12 2001/10/28 03:33:58 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _SPACEORB_C_
 /*****************************************************************************
  *	Standard Headers
@@ -54,7 +58,7 @@
  *	Local Variables
  ****************************************************************************/
 /** @added by Guido Heumer */
-InputDriverRec SPACEORB = {
+_X_EXPORT InputDriverRec SPACEORB = {
         1,
         "spaceorb",
         NULL,
@@ -153,7 +157,11 @@ TearDownProc( pointer p )
 }
 
 /* was before: XF86ModuleData spaceorbModuleData = { &VersionRec, SetupProc, TearDownProc }; */
-XF86ModuleData spaceorbModuleData = { &VersionRec, SPACEORBSetupProc, TearDownProc };
+_X_EXPORT XF86ModuleData spaceorbModuleData = {
+    &VersionRec,
+    SPACEORBSetupProc,
+    TearDownProc
+};
 
 #endif /* XFree86LOADER */
 

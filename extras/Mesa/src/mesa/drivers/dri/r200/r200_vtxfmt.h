@@ -36,8 +36,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __R200_VTXFMT_H__
 #define __R200_VTXFMT_H__
 
-#ifdef GLX_DIRECT_RENDERING
-
 #include "r200_context.h"
 
 
@@ -52,16 +50,17 @@ extern void r200VtxfmtMakeCurrent( GLcontext *ctx );
 extern void r200VtxfmtUnbindContext( GLcontext *ctx );
 
 extern void r200_copy_to_current( GLcontext *ctx );
+extern void VFMT_FALLBACK( const char *caller );
 
 #define DFN( FUNC, CACHE)				\
 do {							\
    char *start = (char *)&FUNC;				\
    char *end = (char *)&FUNC##_end;			\
    insert_at_head( &CACHE, dfn );			\
-   dfn->key[0] = key[0];					\
-   dfn->key[1] = key[1];					\
-   dfn->code = ALIGN_MALLOC( end - start, 16 );		\
-   memcpy (dfn->code, start, end - start);		\
+   dfn->key[0] = key[0];				\
+   dfn->key[1] = key[1];				\
+   dfn->code = _mesa_exec_malloc(end - start);		\
+   _mesa_memcpy(dfn->code, start, end - start);		\
 }							\
 while ( 0 )
 
@@ -121,6 +120,4 @@ struct dynfn *r200_makeX86MultiTexCoord2fvARB( GLcontext *, const int * );
 struct dynfn *r200_makeX86MultiTexCoord1fARB( GLcontext *, const int * );
 struct dynfn *r200_makeX86MultiTexCoord1fvARB( GLcontext *, const int * );
 
-
-#endif
 #endif

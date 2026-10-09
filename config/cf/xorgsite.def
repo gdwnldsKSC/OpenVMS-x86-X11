@@ -2,7 +2,7 @@ XCOMM $XFree86: xc/config/cf/xf86site.def,v 3.186 2003/06/25 18:06:22 eich Exp $
 /******************************************************************************/
 /*
  * This file is to provide a quick method for most people to change the
- * behaviour of their XFree86 installation without having to fully
+ * behaviour of their Xorg installation without having to fully
  * understand the workings of site.def and all the various '.cf' files.
  *
  * In the vast majority of cases, it should not be necessary to use this
@@ -183,9 +183,10 @@ XCOMM $XFree86: xc/config/cf/xf86site.def,v 3.186 2003/06/25 18:06:22 eich Exp $
  */
 
 /*
- * To disable support for Speedo fonts, uncomment this.
+ * Speedo fonts have been disabled by default in this release.
+ * To re-enable support for Speedo fonts, uncomment this.
  *
-#define BuildSpeedo		NO
+#define BuildSpeedo		YES
  */
 
 /*
@@ -238,9 +239,10 @@ XCOMM $XFree86: xc/config/cf/xf86site.def,v 3.186 2003/06/25 18:06:22 eich Exp $
  */
 
 /*
- * To not build/install the Speedo fonts, uncomment the following
+ * To build/install the Speedo fonts, uncomment the following
+ * (see setting above about Speedo support as well)
  *
-#define BuildSpeedoFonts	NO
+#define BuildSpeedoFonts	YES
  */
 
 /*
@@ -445,14 +447,12 @@ XCOMM $XFree86: xc/config/cf/xf86site.def,v 3.186 2003/06/25 18:06:22 eich Exp $
  */
 
 /*
- * Build dlopen() style modules instead of the standard loader modules.
- * Don't enable this unless you have specific development reasons for
- * doing so and understand how to deal with the problems you'll run in to.
+ * This release defaults to building dlopen() style modules instead of the 
+ * previously standard loader modules.
+ * 
+ * Uncomment the following to return to the XFree86 custom loader modules.
  *
- * Enabling this for regular use is NOT supported, and will almost
- * certainly cause you problems.
- *
-#define MakeDllModules		YES
+#define MakeDllModules		NO
  */
 
 /*
@@ -569,7 +569,7 @@ XCOMM $XFree86: xc/config/cf/xf86site.def,v 3.186 2003/06/25 18:06:22 eich Exp $
 
 /*
  * If you are using an SVR3 (like ISC 4.x) which supports long file names,
- * you can * uncomment this to have manual pages installed under their
+ * you can uncomment this to have manual pages installed under their
  * full names
  *
 #define ExpandManNames		YES
@@ -682,7 +682,7 @@ XCOMM $XFree86: xc/config/cf/xf86site.def,v 3.186 2003/06/25 18:06:22 eich Exp $
  * the docs that XFree86 has changed or added.
  *
 #define BuildSpecsDocs		YES
-#define SpecsDocDirs		CTEXT GL ICCCM X11 Xext Xmu Xv XvMC i18n xterm
+#define SpecsDocDirs		CTEXT GL ICCCM X11 Xext Xmu Xv XvMC i18n
  */
 
 /*
@@ -699,4 +699,70 @@ XCOMM $XFree86: xc/config/cf/xf86site.def,v 3.186 2003/06/25 18:06:22 eich Exp $
 #define X86EMU_LIBPATH /usr/local/lib
  */ 
 
+/*
+ * Most platforms default to using an already installed FreeType 2 library.
+ * To use the one included in this release instead, uncomment the following.
+ *
+#define HasFreetype2 NO
+ */
 
+/* 
+ * To use a FreeType library already installed outside the default search
+ * paths, uncomment the following and set the path as needed.
+ *
+#define HasFreetype2 YES
+#define Freetype2Dir /usr/local
+ */
+
+
+/*
+ * Most platforms default to using an already installed Fontconfig library.
+ * To use the one included in this release instead, uncomment the following.
+ *
+#define HasFontconfig NO
+ */
+
+/* 
+ * To use a Fontconfig library already installed outside the default search
+ * paths, uncomment the following and set the path as needed.
+#define HasFontconfig YES
+#define FontconfigDir /usr/local
+ */
+
+
+/*
+ * Most platforms default to using an already installed Expat library.
+ * To use the one included in this release instead, uncomment the following.
+ *
+#define HasExpat NO
+ */
+
+/* 
+ * To use a Expat library already installed outside the default search
+ * paths, uncomment the following and set the path as needed.
+#define HasExpat YES
+#define ExpatDir /usr/local
+ */
+
+
+/*
+ * Most platforms default to using an already installed PNG library.
+ * To use the one included in this release instead, uncomment the following.
+ *
+#define HasLibpng NO
+ */
+
+/* 
+ * To use a PNG library already installed outside the default search
+ * paths, uncomment the following and set the path as needed.
+#define HasLibpng YES
+#define LibpngDir /usr/local
+ */
+
+
+/*
+ * Most platforms default to using an already installed xterm program.
+ * To use the one included in this release instead, uncomment the following.
+ *
+#define BuildXterm YES
+ */

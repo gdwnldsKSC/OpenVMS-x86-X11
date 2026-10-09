@@ -57,15 +57,20 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "tnl/tnl.h"
 #include "tnl/t_pipeline.h"
 
+#define need_GL_ARB_multisample
+#include "extension_helper.h"
+
 int GlobalCurrentHwcx = -1;
 int GlobalHwcxCountBase = 1;
 int GlobalCmdQueueLen = 0;
 
-static const char * const card_extensions[] =
+struct dri_extension card_extensions[] =
 {
-   "GL_ARB_multitexture",
-   "GL_EXT_texture_lod_bias",
-   NULL
+    { "GL_ARB_multisample",                GL_ARB_multisample_functions },
+    { "GL_ARB_multitexture",               NULL },
+    { "GL_EXT_texture_lod_bias",           NULL },
+    { "GL_NV_blend_square",                NULL },
+    { NULL,                                NULL }
 };
 
 void
@@ -305,19 +310,14 @@ sisMakeCurrent( __DRIcontextPrivate *driContextPriv,
 
       newSisCtx->driDrawable = driDrawPriv;
 
-      _mesa_make_current2( newSisCtx->glCtx,
-                         (GLframebuffer *) driDrawPriv->driverPrivate,
-                         (GLframebuffer *) driReadPriv->driverPrivate );
+      _mesa_make_current( newSisCtx->glCtx,
+                          (GLframebuffer *) driDrawPriv->driverPrivate,
+                          (GLframebuffer *) driReadPriv->driverPrivate );
 
       sisUpdateBufferSize( newSisCtx );
       sisUpdateClipping( newSisCtx->glCtx );
-
-      if ( newSisCtx->glCtx->Viewport.Width == 0 ) {
-         _mesa_set_viewport(newSisCtx->glCtx, 0, 0,
-                            driDrawPriv->w, driDrawPriv->h);
-      }
    } else {
-      _mesa_make_current( 0, 0 );
+      _mesa_make_current( NULL, NULL, NULL );
    }
 
    return GL_TRUE;

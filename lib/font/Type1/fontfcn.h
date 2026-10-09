@@ -48,6 +48,15 @@
 
 
 #ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
+/* modular config.h defines VERSION as libXfont version */
+#ifdef VERSION
+#undef VERSION
+#endif
+
+#if XFONT_CID
 /* Definition of a PostScript CIDFont resource */
 typedef struct cid_font {
             char               *vm_start;
@@ -89,7 +98,7 @@ struct blues_struct *BluesP;
 /***================================================================***/
 
 extern boolean Init_BuiltInEncoding ( void );
-#ifdef BUILDCID
+#if XFONT_CID
 extern int scan_cidfont ( cidfont *CIDFontP, cmapres *CMapP );
 extern int scan_cidtype1font ( psfont *FontP );
 #endif
@@ -106,7 +115,7 @@ extern int scan_font ( psfont *FontP );
 #define SCAN_FALSE           -6
 #define SCAN_END             -7
 
-#ifdef BUILDCID
+#if XFONT_CID
 /***================================================================***/
 /*  Name of CID FontInfo fields                                       */
 /***================================================================***/
@@ -183,7 +192,7 @@ extern int scan_font ( psfont *FontP );
 #define RNDSTEMUP 15
 #define EXPANSIONFACTOR 16
 
-#ifdef BUILDCID
+#if XFONT_CID
 /***================================================================***/
 /*  Name of CID Type 1 Private values                                 */
 /***================================================================***/
@@ -210,29 +219,29 @@ extern int scan_font ( psfont *FontP );
 
 #define CID_BITMAP_UNDEFINED       0
 extern int SearchDictName ( psdict *dictP, psobj *keyP );
-#ifdef BUILDCID
+#if XFONT_CID
 extern boolean initCIDType1Font ( void );
 #endif
 extern boolean initFont ( int cnt );
-#ifdef BUILDCID
+#if XFONT_CID
 extern int readCIDFont ( char *cidfontname, char *cmapfile );
 extern int readCIDType1Font ( void );
 #endif
 extern int readFont ( char *env );
 extern struct xobject *fontfcnB ( struct XYspace *S, unsigned char *code, 
 				  int *lenP, int *mode );
-#ifdef BUILDCID
+#if XFONT_CID
 extern Bool CIDfontfcnA ( char *cidfontname, char *cmapfile, int *mode );
 extern Bool CIDType1fontfcnA ( int *mode );
 #endif
 extern Bool fontfcnA ( char *env, int *mode );
-#ifdef BUILDCID
+#if XFONT_CID
 extern void CIDQueryFontLib ( char *cidfontname, char *cmapfile, 
 			      char *infoName, pointer infoValue, int *rcodeP );
 #endif
 extern void QueryFontLib ( char *env, char *infoName, pointer infoValue, 
 			   int *rcodeP );
-#ifdef BUILDCID
+#if XFONT_CID
 extern struct xobject *CIDfontfcnC ( struct XYspace *S, psobj *theStringP, 
 				     psobj *SubrsArrayP,
 				     struct blues_struct *BluesP, int *lenP, 

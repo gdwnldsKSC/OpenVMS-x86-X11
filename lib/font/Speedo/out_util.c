@@ -24,6 +24,9 @@ WITH THE SPEEDO SOFTWARE OR THE BITSTREAM CHARTER OUTLINE FONT.
 /* $XFree86: xc/lib/font/Speedo/out_util.c,v 1.2 1999/02/07 06:18:17 dawes Exp $ */
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #define	DEBUG	0
 
 /*************************** O U T _ U T I L . C *****************************

@@ -25,6 +25,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/sunffb/ffb_stip.c,v 1.1 2000/05/18 23:21:38 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ffb.h"
 #include "ffb_regs.h"
 #include "ffb_rcache.h"

@@ -27,6 +27,10 @@ from The Open Group.
 */
 /* $XFree86: xc/programs/proxymngr/pmint.h,v 1.5 2001/12/14 20:01:02 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+# include "xconfig.h"
+#endif
+
 #include <stdio.h>
 #include <X11/Xos.h>
 #include <X11/Xfuncs.h>

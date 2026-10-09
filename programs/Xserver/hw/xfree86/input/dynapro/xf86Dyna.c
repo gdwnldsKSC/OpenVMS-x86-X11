@@ -29,6 +29,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/dynapro/xf86Dyna.c,v 1.3 2000/08/11 19:10:43 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _DYNAPRO_C_
 
 #include <misc.h>
@@ -42,7 +46,7 @@
 
 #include "xf86Dyna.h"
 
-InputDriverRec DYNAPRO = {
+_X_EXPORT InputDriverRec DYNAPRO = {
         1,
         "dynapro",
         NULL,
@@ -127,8 +131,11 @@ DynaproSetupProc(	pointer module,
 	return (pointer) 1;
 }
 
-XF86ModuleData dynaproModuleData = { &VersionRec, DynaproSetupProc, NULL };
-
+_X_EXPORT XF86ModuleData dynaproModuleData = {
+    &VersionRec,
+    DynaproSetupProc,
+    NULL
+};
 
 #endif /* XFree86LOADER */
 

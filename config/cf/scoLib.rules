@@ -1,13 +1,9 @@
-XCOMM $XdotOrg: xc/config/cf/scoLib.rules,v 1.2 2004/04/23 18:41:58 eich Exp $
+XCOMM $XdotOrg: xc/config/cf/scoLib.rules,v 1.3 2005/11/08 06:33:24 jkj Exp $
 XCOMM $Xorg: scoLib.rules,v 1.3 2000/08/17 19:41:48 cpqbld Exp $
 XCOMM $XFree86: xc/config/cf/scoLib.rules,v 1.10 2003/12/18 16:38:34 dawes Exp $
 
 #ifndef UseExportLists
-# define UseExportLists NO
-#endif
-
-#ifndef ExtraLoadFlags
-#define ExtraLoadFlags -R $(USRLIBDIRPATH)
+# define UseExportLists	YES
 #endif
 
 #ifndef SCOAbsShlibPath
@@ -17,7 +13,10 @@ XCOMM $XFree86: xc/config/cf/scoLib.rules,v 1.10 2003/12/18 16:38:34 dawes Exp $
 #if SCOAbsShlibPath
 # define SCOShlibFlags -h $(SHLIBDIR)/$@
 #else
-# define SCOShlibFlags -R $(DESTDIR)$(SHLIBDIR) -h $@
+# ifndef ExtraLoadFlags
+#  define ExtraLoadFlags -R $(USRLIBDIRPATH)
+#  endif
+# define SCOShlibFlags -R $(SHLIBDIR) -h $@
 #endif
 
 /*

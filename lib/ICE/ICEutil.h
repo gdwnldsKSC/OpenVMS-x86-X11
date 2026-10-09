@@ -34,7 +34,6 @@ Author: Ralph Mor, X Consortium
 #include <X11/Xfuncproto.h>
 
 #include <stdio.h>
-#include <X11/Xlib.h>
 
 _XFUNCPROTOBEGIN
 

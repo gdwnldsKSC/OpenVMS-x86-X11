@@ -37,10 +37,13 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "r128_context.h"
 #include "r128_ioctl.h"
+#include "r128_span.h"
 #include "r128_tris.h"
 
 #include "context.h"
 #include "imports.h"
+#include "framebuffer.h"
+#include "renderbuffer.h"
 
 #include "utils.h"
 #include "vblank.h"
@@ -51,7 +54,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #include "xmlpool.h"
 
-const char __driConfigOptions[] =
+PUBLIC const char __driConfigOptions[] =
 DRI_CONF_BEGIN
     DRI_CONF_SECTION_PERFORMANCE
         DRI_CONF_VBLANK_MODE(DRI_CONF_VBLANK_DEF_INTERVAL_0)
@@ -59,17 +62,20 @@ DRI_CONF_BEGIN
     DRI_CONF_SECTION_QUALITY
         DRI_CONF_TEXTURE_DEPTH(DRI_CONF_TEXTURE_DEPTH_FB)
     DRI_CONF_SECTION_END
-#if ENABLE_PERF_BOXES
     DRI_CONF_SECTION_DEBUG
+        DRI_CONF_NO_RAST(false)
+#if ENABLE_PERF_BOXES
         DRI_CONF_PERFORMANCE_BOXES(false)
-    DRI_CONF_SECTION_END
 #endif
+    DRI_CONF_SECTION_END
 DRI_CONF_END;
 #if ENABLE_PERF_BOXES
-static const GLuint __driNConfigOptions = 3;
+static const GLuint __driNConfigOptions = 4;
 #else
-static const GLuint __driNConfigOptions = 2;
+static const GLuint __driNConfigOptions = 3;
 #endif
+
+extern const struct dri_extension card_extensions[];
 
 #if 1
 /* Including xf86PciInfo.h introduces a bunch of errors...
@@ -84,9 +90,6 @@ static const GLuint __driNConfigOptions = 2;
 #define PCI_CHIP_RAGE128RL	0x524C
 #endif
 
-#ifdef USE_NEW_INTERFACE
-static PFNGLXCREATECONTEXTMODES create_context_modes = NULL;
-#endif /* USE_NEW_INTERFACE */
 
 /* Create the device specific screen private data struct.
  */
@@ -95,7 +98,14 @@ r128CreateScreen( __DRIscreenPrivate *sPriv )
 {
    r128ScreenPtr r128Screen;
    R128DRIPtr r128DRIPriv = (R128DRIPtr)sPriv->pDevPriv;
+   PFNGLXSCRENABLEEXTENSIONPROC glx_enable_extension =
+     (PFNGLXSCRENABLEEXTENSIONPROC) (*dri_interface->getProcAddress("glxEnableExtension"));
+   void * const psc = sPriv->psc->screenConfigs;
 
+   if (sPriv->devPrivSize != sizeof(R128DRIRec)) {
+      fprintf(stderr,"\nERROR!  sizeof(R128DRIRec) does not match passed size from device driver\n");
+      return GL_FALSE;
+   }
 
    /* Allocate the private area */
    r128Screen = (r128ScreenPtr) CALLOC( sizeof(*r128Screen) );
@@ -188,11 +198,19 @@ r128CreateScreen( __DRIscreenPrivate *sPriv )
    r128Screen->depthPitch	= r128DRIPriv->depthPitch;
    r128Screen->spanOffset	= r128DRIPriv->spanOffset;
 
-   r128Screen->texOffset[R128_LOCAL_TEX_HEAP] = r128DRIPriv->textureOffset;
-   r128Screen->texSize[R128_LOCAL_TEX_HEAP] = r128DRIPriv->textureSize;
-   r128Screen->logTexGranularity[R128_LOCAL_TEX_HEAP] = r128DRIPriv->log2TexGran;
+   if ( r128DRIPriv->textureSize == 0 ) {
+      r128Screen->texOffset[R128_LOCAL_TEX_HEAP] =
+	 r128DRIPriv->agpTexOffset + R128_AGP_TEX_OFFSET;
+      r128Screen->texSize[R128_LOCAL_TEX_HEAP] = r128DRIPriv->agpTexMapSize;
+      r128Screen->logTexGranularity[R128_LOCAL_TEX_HEAP] =
+	 r128DRIPriv->log2AGPTexGran;
+   } else {
+      r128Screen->texOffset[R128_LOCAL_TEX_HEAP] = r128DRIPriv->textureOffset;
+      r128Screen->texSize[R128_LOCAL_TEX_HEAP] = r128DRIPriv->textureSize;
+      r128Screen->logTexGranularity[R128_LOCAL_TEX_HEAP] = r128DRIPriv->log2TexGran;
+   }
 
-   if ( r128Screen->IsPCI ) {
+   if ( !r128Screen->agpTextures.map || r128DRIPriv->textureSize == 0 ) {
       r128Screen->numTexHeaps = R128_NR_TEX_HEAPS - 1;
       r128Screen->texOffset[R128_AGP_TEX_HEAP] = 0;
       r128Screen->texSize[R128_AGP_TEX_HEAP] = 0;
@@ -207,21 +225,17 @@ r128CreateScreen( __DRIscreenPrivate *sPriv )
    }
 
    r128Screen->driScreen = sPriv;
-   if ( driCompareGLXAPIVersion( 20030813 ) >= 0 ) {
-      PFNGLXSCRENABLEEXTENSIONPROC glx_enable_extension =
-          (PFNGLXSCRENABLEEXTENSIONPROC) glXGetProcAddress( (const GLubyte *) "__glXScrEnableExtension" );
-      void * const psc = sPriv->psc->screenConfigs;
 
-      if ( glx_enable_extension != NULL ) {
-	 if ( r128Screen->irq != 0 ) {
-	    (*glx_enable_extension)( psc, "GLX_SGI_swap_control" );
-	    (*glx_enable_extension)( psc, "GLX_SGI_video_sync" );
-	    (*glx_enable_extension)( psc, "GLX_MESA_swap_control" );
-	 }
-
-	 (*glx_enable_extension)( psc, "GLX_MESA_swap_frame_usage" );
+   if ( glx_enable_extension != NULL ) {
+      if ( r128Screen->irq != 0 ) {
+	 (*glx_enable_extension)( psc, "GLX_SGI_swap_control" );
+	 (*glx_enable_extension)( psc, "GLX_SGI_video_sync" );
+	 (*glx_enable_extension)( psc, "GLX_MESA_swap_control" );
       }
+
+      (*glx_enable_extension)( psc, "GLX_MESA_swap_frame_usage" );
    }
+
    return r128Screen;
 }
 
@@ -259,16 +273,62 @@ r128CreateBuffer( __DRIscreenPrivate *driScrnPriv,
                   const __GLcontextModes *mesaVis,
                   GLboolean isPixmap )
 {
+   r128ScreenPtr screen = (r128ScreenPtr) driScrnPriv->private;
+
    if (isPixmap) {
       return GL_FALSE; /* not implemented */
    }
    else {
+#if 0
       driDrawPriv->driverPrivate = (void *) 
          _mesa_create_framebuffer( mesaVis,
                                    GL_FALSE,  /* software depth buffer? */
                                    mesaVis->stencilBits > 0,
                                    mesaVis->accumRedBits > 0,
                                    mesaVis->alphaBits > 0 );
+#else
+      struct gl_framebuffer *fb = _mesa_create_framebuffer(mesaVis);
+
+      {
+         driRenderbuffer *frontRb
+            = driNewRenderbuffer(GL_RGBA, screen->cpp,
+                                 screen->frontOffset, screen->frontPitch);
+         r128SetSpanFunctions(frontRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_FRONT_LEFT, &frontRb->Base);
+      }
+
+      if (mesaVis->doubleBufferMode) {
+         driRenderbuffer *backRb
+            = driNewRenderbuffer(GL_RGBA, screen->cpp,
+                                 screen->backOffset, screen->backPitch);
+         r128SetSpanFunctions(backRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_BACK_LEFT, &backRb->Base);
+      }
+
+      if (mesaVis->depthBits == 16) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT16, screen->cpp,
+                                 screen->depthOffset, screen->depthPitch);
+         r128SetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+      else if (mesaVis->depthBits == 24) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT24, screen->cpp,
+                                 screen->depthOffset, screen->depthPitch);
+         r128SetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+
+      _mesa_add_soft_renderbuffers(fb,
+                                   GL_FALSE, /* color */
+                                   GL_FALSE, /* depth */
+                                   mesaVis->stencilBits > 0,
+                                   mesaVis->accumRedBits > 0,
+                                   GL_FALSE, /* alpha */
+                                   GL_FALSE /* aux */);
+      driDrawPriv->driverPrivate = (void *) fb;
+#endif
       return (driDrawPriv->driverPrivate != NULL);
    }
 }
@@ -342,23 +402,6 @@ static struct __DriverAPIRec r128API = {
 };
 
 
-#ifndef DRI_NEW_INTERFACE_ONLY
-/*
- * This is the bootstrap function for the driver.
- * The __driCreateScreen name is the symbol that libGL.so fetches.
- * Return:  pointer to a __DRIscreenPrivate.
- */
-void *__driCreateScreen(Display *dpy, int scrn, __DRIscreen *psc,
-                        int numConfigs, __GLXvisualConfig *config)
-{
-   __DRIscreenPrivate *psp;
-   psp = __driUtilCreateScreen(dpy, scrn, psc, numConfigs, config, &r128API);
-   return (void *) psp;
-}
-#endif /* DRI_NEW_INTERFACE_ONLY */
-
-
-#ifdef USE_NEW_INTERFACE
 static __GLcontextModes *
 r128FillInModes( unsigned pixel_bits, unsigned depth_bits,
 		 unsigned stencil_bits, GLboolean have_back_buffer )
@@ -380,8 +423,8 @@ r128FillInModes( unsigned pixel_bits, unsigned depth_bits,
 	GLX_NONE, GLX_SWAP_UNDEFINED_OML /*, GLX_SWAP_COPY_OML */
     };
 
-    uint8_t depth_bits_array[2];
-    uint8_t stencil_bits_array[2];
+    u_int8_t depth_bits_array[2];
+    u_int8_t stencil_bits_array[2];
 
 
     depth_bits_array[0] = depth_bits;
@@ -408,7 +451,7 @@ r128FillInModes( unsigned pixel_bits, unsigned depth_bits,
         fb_type = GL_UNSIGNED_INT_8_8_8_8_REV;
     }
 
-    modes = (*create_context_modes)( num_modes, sizeof( __GLcontextModes ) );
+    modes = (*dri_interface->createContextModes)( num_modes, sizeof( __GLcontextModes ) );
     m = modes;
     if ( ! driFillInModes( & m, fb_format, fb_type,
 			   depth_bits_array, stencil_bits_array, depth_buffer_factor,
@@ -450,7 +493,8 @@ r128FillInModes( unsigned pixel_bits, unsigned depth_bits,
  * \return A pointer to a \c __DRIscreenPrivate on success, or \c NULL on 
  *         failure.
  */
-void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc,
+PUBLIC
+void * __driCreateNewScreen_20050727( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc,
 			     const __GLcontextModes * modes,
 			     const __DRIversion * ddx_version,
 			     const __DRIversion * dri_version,
@@ -458,6 +502,7 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
 			     const __DRIframebuffer * frame_buffer,
 			     drmAddress pSAREA, int fd, 
 			     int internal_api_version,
+			     const __DRIinterfaceMethods * interface,
 			     __GLcontextModes ** driver_modes )
 			     
 {
@@ -466,6 +511,8 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
    static const __DRIversion dri_expected = { 4, 0, 0 };
    static const __DRIversion drm_expected = { 2, 2, 0 };
 
+
+   dri_interface = interface;
 
    if ( ! driCheckDriDdxDrmVersions2( "Rage128",
 				      dri_version, & dri_expected,
@@ -479,17 +526,22 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
 				  frame_buffer, pSAREA, fd,
 				  internal_api_version, &r128API);
    if ( psp != NULL ) {
-      create_context_modes = (PFNGLXCREATECONTEXTMODES)
-	  glXGetProcAddress( (const GLubyte *) "__glXCreateContextModes" );
-      if ( create_context_modes != NULL ) {
-	 R128DRIPtr dri_priv = (R128DRIPtr) psp->pDevPriv;
-	 *driver_modes = r128FillInModes( dri_priv->bpp,
-					  (dri_priv->bpp == 16) ? 16 : 24,
-					  (dri_priv->bpp == 16) ? 0  : 8,
-					  (dri_priv->backOffset != dri_priv->depthOffset) );
-      }
+      R128DRIPtr dri_priv = (R128DRIPtr) psp->pDevPriv;
+      *driver_modes = r128FillInModes( dri_priv->bpp,
+				       (dri_priv->bpp == 16) ? 16 : 24,
+				       (dri_priv->bpp == 16) ? 0  : 8,
+				       (dri_priv->backOffset != dri_priv->depthOffset) );
+
+      /* Calling driInitExtensions here, with a NULL context pointer, does not actually
+       * enable the extensions.  It just makes sure that all the dispatch offsets for all
+       * the extensions that *might* be enables are known.  This is needed because the
+       * dispatch offsets need to be known when _mesa_context_create is called, but we can't
+       * enable the extensions until we have a context pointer.
+       *
+       * Hello chicken.  Hello egg.  How are you two today?
+       */
+      driInitExtensions( NULL, card_extensions, GL_FALSE );
    }
 
    return (void *) psp;
 }
-#endif /* USE_NEW_INTERFACE */

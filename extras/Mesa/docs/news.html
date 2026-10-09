@@ -2,9 +2,182 @@
 
 <TITLE>Mesa News</TITLE>
 
-<BODY text="#000000" bgcolor="#55bbff">
+<head><link rel="stylesheet" type="text/css" href="mesa.css"></head>
+
+<BODY>
+
+<body bgcolor="#eeeeee">
 
 <H1>News</H1>
+
+
+<h2>November 29, 2005</h2>
+<p>
+Mesa 6.4.1 has been released.  This is a stable, bug-fix release.
+</p>
+<pre>
+    Bug fixes:
+	- redefining a vertex program string didn't take effect in TNL module
+	- fixed occasional segfault upon vertex/fragment parsing error
+	- vertex program LIT instruction didn't handle 0^0=1 correctly
+	- fragment program fog option didn't work with glDrawPixels, glBitmap
+	- USE_MGL_NAMESPACE didn't work for x86-64
+	- OSMesa demos were missing from previous release tarballs
+	- fixed problem with float->ushort conversion in glClear (bug 4992)
+	- popping of GL_EYE_PLANE texgen state was broken (bug 4996)
+	- popping of GL_SPOT_DIRECTION light state was broken (bug 5005)
+	- fixed occasional triangle color interpolation problem on VMS
+	- work around invalid free() call (bug 5131)
+	- fixed BSD X server compilation problem by including stdint.h
+</pre>
+<p>
+The MD5 checksums are:
+</p>
+<pre>
+TBD
+</pre>
+
+
+
+
+<h2>October 24, 2005</h2>
+<p>
+Mesa 6.4 has been released.  This is a stable, bug-fix release.
+</p>
+<pre>
+    New:
+	- Added a fast XOR line drawing function in Xlib driver
+	- Added support for GL_ARB_texture_mirrored_repeat to savage
+	  driver (supported only on Savage4 hardware).
+    Changes:
+	- Mesa now packaged in three parts: Library, Demos and GLUT
+    Bug fixes:
+	- GLX_X_RENDERABLE token wasn't accepted by glXChooseFBConfig
+	- Some files were present multiple times in the 6.3.2 tarballs
+	- r200_vtxtmp_x86.S file was missing from 6.3.2 tarball (bug 4207)
+	- glxgears_fbconfig demo didn't work (bug 4237)
+	- fixed bug when bilinear sampling 2d textures with borders
+	- glXCreatePbuffer() could segfault instead of returning 0 (bug 4235)
+	- fixed undefined frexp and rand in X.org libGLcore.a (bug 4242)
+	- fixed a few problems with proxy color tables (bug 4270)
+	- fixed precision problem in Z clearing (bug 4395)
+	- glBitmap, glDraw/CopyPixels mistakenly generated selection hits
+	- fixed potential segfault caused by reading pixels outside
+	  of renderbuffer bounds
+	- glGetTexLevelParameter didn't accept GL_TEXTURE_DEPTH_SIZE_ARB
+	- fixed memory corruption bug involving software alpha buffers
+	- glReadPixels clipped by window bounds was sometimes broken
+	- glDraw/CopyPixels of stencil data ignored the stencil write mask
+	- glReadPixels from a texture bound to a framebuffer object didn't work
+	- glIsRender/FramebufferEXT weren't totally correct
+	- fixed a number of point size attenuation/fade bugs
+	- fixed glFogCoord bug 4729
+	- GLX encoding for transpose matrix functions was broken
+	- fixed broken fragment program KIL and SWZ instructions
+</pre>
+<p>
+The MD5 checksums are:
+</p>
+<pre>
+1cce0c1eb4fd15e9dfe837a1ce0c9812  MesaLib-6.4.tar.gz
+85a84e47a3f718f752f306b9e0954ef6  MesaLib-6.4.tar.bz2
+b976fea4f3ee06354c53f91b6e3f2ffc  MesaLib-6.4.zip
+d8734f2c69bcf7ef9f5ae454a85743ba  MesaDemos-6.4.tar.gz
+1a8c4d4fc699233f5fdb902b8753099e  MesaDemos-6.4.tar.bz2
+607ab7c7a7de0cc5febbdde2bfa03098  MesaDemos-6.4.zip
+3260156f66174322a092be0767962d34  MesaGLUT-6.4.tar.gz
+0465d053f83775f44a12dec4050dfd78  MesaGLUT-6.4.tar.bz2
+02abfcdcdf72ba938ae00f6e3b70fbe0  MesaGLUT-6.4.zip
+</pre>
+
+
+<h2>August 19, 2005</h2>
+<p>
+Mesa 6.3.2 has been released.
+Note: there was no public release of version 6.3.1.
+</p>
+<pre>
+    New:
+	- The distribution now includes the DRI drivers and GLX code
+    Changes:
+	- Made the DRI "new" driver interface standard, remove old code
+    Bug fixes:
+	- GL_ARB_vertex/fragment_shader were mistakenly listed in the
+	  extensions string
+	- negative relative addressing in vertex programs was broken
+	- update/fix SPARC assembly code for vertex transformation
+	- fixed memory leak when freeing GLX drawables/renderbuffers
+	- fixed display list memory leak
+	- the GL_PIXEL_MAP_I_TO_I table is now floating point, not integer
+	- wglGetProcAddress() didn't handle wgl-functions
+	- fixed glxext.h cross-compile issue (Colin Harrison)
+	- assorted DRI driver fixes
+</pre>
+<p>
+The MD5 checksums are:
+</p>
+<pre>
+98192e45ed8d69113688f89f90869346  MesaLib-6.3.2.tar.gz
+0df27701df0924d17ddf41185efa8ce1  MesaLib-6.3.2.tar.bz2
+ccb2423aab77fc7e81ce628734586140  MesaLib-6.3.2.zip
+9d0fca0a7d051c34a0b485423fb3e85d  MesaDemos-6.3.2.tar.gz
+96708868450c188205e42229b5d813c4  MesaDemos-6.3.2.tar.bz2
+c5102501e609aa8996d832fafacb8ab9  MesaDemos-6.3.2.zip
+</pre>
+
+
+<h2>July 20, 2005</h2>
+<p>
+Mesa 6.3 has been released.
+This is a development release with new features, changes and bug fixes.
+</p>
+<pre>
+    New:
+	- GL_EXT_framebuffer_object extension
+	- GL_ARB_draw_buffers extension
+	- GL_ARB_pixel_buffer_object extension
+	- GL_OES_read_format extension (Ian Romanick)
+	- DirectFB driver (Claudio Ciccani)
+	- x86_64 vertex transformation code (Mikko T.)
+    Changes:
+	- added -stereo option for glxgears demo (Jacek Rosik)
+	- updated the PBuffer demo code in xdemos/ directory
+	- glDeleteTextures/Programs/Buffers() now makes the object ID
+	  available for immediate re-use
+	- assorted 64-bit clean-ups fixes (x86_64 and Win64)
+	- lots of internal changes for GL_EXT_framebuffer_object
+    Bug fixes:
+	- some functions didn't support PBO functionality
+	- glGetTexImage didn't convert color index images to RGBA as required
+	- fragment program texcoords were sometimes wrong for points and lines
+	- fixed problem with negative dot product in arbfplight, fplight demos
+	- fixed bug in perspective correction of antialiased, textured lines
+	- querying GL_POST_CONVOLUTION_ALPHA_BIAS_EXT returned wrong value
+	- fixed a couple per-pixel fog bugs (Soju Matsumoto)
+	- glGetBooleanv(GL_FRAGMENT_PROGRAM_BINDING_NV) was broken
+	- fixed float parsing bug in ARB frag/vert programs (bug 2520)
+	- XMesaGetDepthBuffer() returned incorrect value for bytesPerValue
+	- GL_COLOR_MATERIAL with glColor3 didn't properly set diffuse alpha
+	- glXChooseFBConfig() crashed if attribList pointer was NULL
+	- program state.light[n].spot.direction.w was wrong value (bug 3083)
+	- fragment program fog option required glEnable(GL_FOG) - wrong.
+	- glColorTable() could produce a Mesa implementation error (bug 3135)
+	- RasterPos could get corrupted by color index rendering path
+	- Removed bad XTranslateCoordinates call when rendering to Pixmaps
+	- glPopAttrib() didn't properly restore GL_TEXTURE_GEN enable state
+	- fixed a few Darwin compilation problems
+</pre>
+<p>
+The MD5 checksums are:
+</p>
+<pre>
+0236f552d37514776945d5a013e5bb7b  MesaLib-6.3.tar.gz
+60e1a8f78c4a8c7750a1e95753190986  MesaLib-6.3.tar.bz2
+ca7c950fbace68c70caa822322db7223  MesaLib-6.3.zip
+25ea801645b376c014051804fe4974b2  MesaDemos-6.3.tar.gz
+9248e74872ea88c57ec25c900c295057  MesaDemos-6.3.tar.bz2
+8537dfa734ef258dcc7272097558d434  MesaDemos-6.3.zip
+</pre>
 
 
 <h2>December 9, 2004</h2>
@@ -23,7 +196,7 @@ This is a stable release which just fixes bugs since the 6.2 release.
 	- glReadPixels from a clipped front color buffer didn't always work
 	- glTexImage didn't accept GL_RED/GREEN/BLUE as the format
 	- Attempting queries/accesses of VBO 0 weren't detected as errors
-	- paletted textures failed if the palette had fewer that 256 entries
+	- paletted textures failed if the palette had fewer than 256 entries
     Changes:
 	- fixed a bunch of compiler warnings found with gcc 3.4
 	- bug reports should to go bugzilla.freedesktop.org
@@ -32,7 +205,12 @@ This is a stable release which just fixes bugs since the 6.2 release.
 The MD5 checksums are:
 </p>
 <pre>
-tbd
+80008a92f6e055d3bfdde2cf331ec3fa  MesaLib-6.2.1.tar.gz
+f43228cd2bf70f583ef3275c1c545421  MesaLib-6.2.1.tar.bz2
+dec26cfd40116ad021020fea2d94f652  MesaLib-6.2.1.zip
+2c7af3c986a7571c8713c8bfee7e49e3  MesaDemos-6.2.1.tar.gz
+3cac74667b50bcbd4f67f594fb4224a2  MesaDemos-6.2.1.tar.bz2
+75b3edd12eb2b370caf05f29b99e508a  MesaDemos-6.2.1.zip
 </pre>
 
 
@@ -953,6 +1131,6 @@ source code</a>.</p>
 
 
 <hr>
-$Id: news.html,v 3.15.2.3 2004/12/09 23:09:20 brianp Exp $
+$Id: news.html,v 1.1.1.8 2005/12/01 03:11:30 kem Exp $
 </body>
 </html>

@@ -1,5 +1,5 @@
 /* dri_dispatch.h -- built automatically, DO NOT EDIT
-   $Id$
+   $Id: dri_dispatch.h,v 1.6 2005/07/03 07:00:55 daniels Exp $
    $XFree86: $ */
 /*
    Actually, this file has been edited to add necessary

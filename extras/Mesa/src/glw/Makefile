@@ -27,14 +27,15 @@ default: $(LIB_DIR)/$(GLW_LIB_NAME)
 
 
 clean:
-	-rm depend
+	-rm depend depend.bak
 	-rm -f *.o *~
 
 
 # Make the library
 $(LIB_DIR)/$(GLW_LIB_NAME): $(OBJECTS)
-	CC=$(CC) CXX=$(CXX) $(TOP)/bin/mklib -o $(GLW_LIB) -major $(MAJOR) -minor $(MINOR) \
-		-patch $(TINY) $(MKLIB_OPTIONS) -install $(LIB_DIR) \
+	$(TOP)/bin/mklib -o $(GLW_LIB) -linker '$(CC)' \
+		-major $(MAJOR) -minor $(MINOR) -patch $(TINY) \
+		$(MKLIB_OPTIONS) -install $(LIB_DIR) \
 		$(GLW_LIB_DEPS) $(OBJECTS)
 
 
@@ -45,7 +46,7 @@ $(LIB_DIR)/$(GLW_LIB_NAME): $(OBJECTS)
 depend: $(GLW_SOURCES)
 	touch depend
 	$(MKDEP) $(MKDEP_OPTIONS) -I$(TOP)/include $(GLW_SOURCES) \
-		> /dev/null 2>&1
+		> /dev/null 
 
 
 include depend

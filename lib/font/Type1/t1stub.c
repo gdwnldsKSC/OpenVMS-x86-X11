@@ -29,6 +29,9 @@
  */
 /* $XFree86: xc/lib/font/Type1/t1stub.c,v 1.8 2001/01/17 19:43:24 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #ifdef FONTMODULE
 #include "Xdefs.h"	/* Bool declaration */
 #include "Xmd.h"	/* INT32 declaration */

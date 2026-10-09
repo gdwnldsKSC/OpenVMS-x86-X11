@@ -51,7 +51,7 @@ in this Software without prior written authorization from The Open Group.
 #ifndef _GLOBALS_H_
 #define _GLOBALS_H_
 
-#include	"FSproto.h"	/* for fsResolution */
+#include	<X11/fonts/FSproto.h>	/* for fsResolution */
 
 extern long TimeOutValue;
 extern long ReapClientTime;
@@ -60,8 +60,8 @@ extern int  currentMaxClients;
 extern long MaxClients;
 extern int  serverGeneration;
 
-extern char isItTimeToYield;
-extern char dispatchException;
+extern volatile char isItTimeToYield;
+extern volatile char dispatchException;
 
 extern int  argcGlobal;
 extern char **argvGlobal;

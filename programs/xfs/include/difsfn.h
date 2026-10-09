@@ -49,7 +49,7 @@ in this Software without prior written authorization from The Open Group.
 #ifndef _DIFSFONT_H_
 #define _DIFSFONT_H_
 #include	"misc.h"
-#include	"font.h"
+#include	<X11/fonts/font.h>
 
 typedef struct _ClientFont *ClientFontPtr;
 typedef struct _FontIDList *FontIDListPtr;

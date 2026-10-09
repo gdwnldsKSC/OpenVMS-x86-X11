@@ -51,7 +51,11 @@
 
 /* XXX This is including a lot of stuff that modules should not include! */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "os.h"
 #include "xf86.h"
 #include "xf86Priv.h"

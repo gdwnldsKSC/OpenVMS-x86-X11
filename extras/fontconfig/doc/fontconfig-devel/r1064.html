@@ -1,24 +1,19 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
->FcCharSetDestroy</TITLE
+>FcValueSave</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
 REL="HOME"
-TITLE="Fontconfig Developers Reference, Version 2.2.2
- "
 HREF="index.html"><LINK
 REL="UP"
-TITLE="FcCharSet"
-HREF="x93.html#AEN1039"><LINK
+TITLE="FcValue"
+HREF="x93.html#AEN1038"><LINK
 REL="PREVIOUS"
-TITLE="FcCharSetCreate"
-HREF="r1042.html"><LINK
-REL="NEXT"
-TITLE="FcCharSetAddChar"
-HREF="r1087.html"></HEAD
+TITLE="FcValueDestroy"
+HREF="r1042.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -38,7 +33,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
->Fontconfig Developers Reference, Version 2.2.2</TH
+></TH
 ></TR
 ><TR
 ><TD
@@ -59,11 +54,7 @@ VALIGN="bottom"
 WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
-><A
-HREF="r1087.html"
-ACCESSKEY="N"
->Next</A
-></TD
+>&nbsp;</TD
 ></TR
 ></TABLE
 ><HR
@@ -71,9 +62,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCCHARSETDESTROY"
+NAME="FCVALUESAVE"
 ></A
->FcCharSetDestroy</H1
+>FcValueSave</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -81,7 +72,7 @@ NAME="AEN1068"
 ></A
 ><H2
 >Name</H2
->FcCharSetDestroy&nbsp;--&nbsp;Destroy a character set</DIV
+>FcValueSave&nbsp;--&nbsp;Copy a value</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -98,14 +89,14 @@ NAME="AEN1072"
 ></A
 ><PRE
 CLASS="FUNCSYNOPSISINFO"
->#include &#60;fontconfig.h&#62;
+>#include &lt;fontconfig.h&gt;
 	</PRE
 ><P
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->void FcCharSetDestroy</CODE
->(FcCharSet *fcs);</CODE
+>FcValue FcValueSave</CODE
+>(FcValuev);</CODE
 ></P
 ><P
 ></P
@@ -119,15 +110,14 @@ NAME="AEN1079"
 ><H2
 >Description</H2
 ><P
-><CODE
-CLASS="FUNCTION"
->FcCharSetDestroy</CODE
-> decrements the reference count 
-<VAR
+>Returns a copy of <CODE
 CLASS="PARAMETER"
->fcs</VAR
->.  If the reference count becomes zero, all
-memory referenced is freed.
+>v</CODE
+> duplicating any object referenced by it so that <CODE
+CLASS="PARAMETER"
+>v</CODE
+>
+may be safely destroyed without harming the new value.
 	    </P
 ></DIV
 ><DIV
@@ -138,7 +128,7 @@ NAME="AEN1084"
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.2.2
+>Fontconfig version 2.3.2
 
 	    </P
 ></DIV
@@ -175,24 +165,20 @@ ACCESSKEY="H"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
-><A
-HREF="r1087.html"
-ACCESSKEY="N"
->Next</A
-></TD
+>&nbsp;</TD
 ></TR
 ><TR
 ><TD
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FcCharSetCreate</TD
+>FcValueDestroy</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN1039"
+HREF="x93.html#AEN1038"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -200,7 +186,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->FcCharSetAddChar</TD
+>&nbsp;</TD
 ></TR
 ></TABLE
 ></DIV

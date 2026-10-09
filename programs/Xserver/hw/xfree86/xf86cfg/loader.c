@@ -24,9 +24,9 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Author: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
+ * Author: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br>
  *
- * $XdotOrg: xc/programs/Xserver/hw/xfree86/xf86cfg/loader.c,v 1.2 2004/04/23 19:54:18 eich Exp $
+ * $XdotOrg: xc/programs/Xserver/hw/xfree86/xf86cfg/loader.c,v 1.5 2005/12/08 17:54:40 kem Exp $
  * $XFree86: xc/programs/Xserver/hw/xfree86/xf86cfg/loader.c,v 1.19 2002/06/06 21:03:32 paulo Exp $
  */
 
@@ -53,6 +53,10 @@
 #include <ctype.h>
 
 #include <stdarg.h>
+
+#ifndef OPTIONSPATH
+#define OPTIONSPATH "/usr/X11R6/lib/X11"
+#endif
 
 #ifndef SIGNALRETURNSINT
 void sig_handler(int);
@@ -188,7 +192,7 @@ LoaderInitializeOptions(void)
 	first = 0;
 
 	checkerLegend[CHECKER_OPTIONS_FILE_MISSING] =
-	"The Options file, normally /usr/X11R6/lib/X11/Options was not found.\n";
+	"The Options file, normally " OPTIONSPATH "/Options was not found.\n";
 	checkerLegend[CHECKER_OPTION_DESCRIPTION_MISSING] =
 	"No description for the module option. The description should be in\n"
 	"in the Options file, and using the sintax:\n"

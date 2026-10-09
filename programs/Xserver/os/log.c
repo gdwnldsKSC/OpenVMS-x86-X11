@@ -78,7 +78,11 @@ OR PERFORMANCE OF THIS SOFTWARE.
 
 /* $XFree86: xc/programs/Xserver/os/log.c,v 1.6 2003/11/07 13:45:27 tsi Exp $ */
 
-#include "Xos.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/Xos.h>
 #include <stdio.h>
 #include <time.h>
 #include <sys/stat.h>
@@ -88,6 +92,11 @@ OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "site.h"
 #include "opaque.h"
+
+#ifdef WIN32
+#include <process.h>
+#define getpid(x) _getpid(x)
+#endif
 
 
 #ifdef DDXOSVERRORF
@@ -191,7 +200,9 @@ LogInit(const char *fname, const char *backup)
 	if (saveBuffer && bufferSize > 0) {
 	    fwrite(saveBuffer, bufferPos, 1, logFile);
 	    fflush(logFile);
+#ifndef WIN32
 	    fsync(fileno(logFile));
+#endif
 	}
     }
 
@@ -263,8 +274,10 @@ LogVWrite(int verb, const char *f, va_list args)
 	    fwrite(tmpBuffer, len, 1, logFile);
 	    if (logFlush) {
 		fflush(logFile);
+#ifndef WIN32
 		if (logSync)
 		    fsync(fileno(logFile));
+#endif
 	    }
 	} else if (needBuffer) {
 	    /*

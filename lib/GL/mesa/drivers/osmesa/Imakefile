@@ -17,6 +17,8 @@ XCOMM $XFree86: xc/lib/GL/mesa/src/OSmesa/Imakefile,v 1.16 2002/11/25 14:04:50 e
 #include "../../math/Imakefile.inc"
 #include "../../main/Imakefile.inc"
 #include "../../shader/Imakefile.inc"
+#include "../../shader/grammar/Imakefile.inc"
+#include "../../shader/slang/Imakefile.inc"
 #include "../../swrast/Imakefile.inc"
 #include "../../swrast_setup/Imakefile.inc"
 #include "../../tnl/Imakefile.inc"
@@ -67,7 +69,11 @@ MESA_INCLUDES = -I$(MESASRCDIR)/src/mesa \
 #endif
 
 #if !GlxUseBuiltInDRIDriver
- REQUIREDLIBS = $(LDPRELIB) $(XLIB) $(GLXLIB)
+# ifdef SharedOSMesaReqs
+ REQUIREDLIBS = SharedOSMesaReqs
+# else
+ REQUIREDLIBS = MathLibrary $(LDPRELIB) $(XLIB) $(GLXLIB)
+# endif
 #endif
 
 #include <Library.tmpl>

@@ -28,7 +28,11 @@ from The Open Group.
 */
 /* $XFree86: xc/programs/Xserver/dix/pixmap.c,v 3.4 2001/01/17 22:36:44 dawes Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "scrnintstr.h"
 #include "misc.h"
 #include "os.h"
@@ -48,15 +52,8 @@ from The Open Group.
 
 /* callable by ddx */
 PixmapPtr
-GetScratchPixmapHeader(pScreen, width, height, depth, bitsPerPixel, devKind,
-		       pPixData)
-    ScreenPtr   pScreen;
-    int		width;
-    int		height;
-    int		depth;
-    int		bitsPerPixel;
-    int		devKind;
-    pointer     pPixData;
+GetScratchPixmapHeader(ScreenPtr pScreen, int width, int height, int depth, 
+                       int bitsPerPixel, int devKind, pointer pPixData)
 {
     PixmapPtr pPixmap = pScreen->pScratchPixmap;
 
@@ -78,8 +75,7 @@ GetScratchPixmapHeader(pScreen, width, height, depth, bitsPerPixel, devKind,
 
 /* callable by ddx */
 void
-FreeScratchPixmapHeader(pPixmap)
-    PixmapPtr pPixmap;
+FreeScratchPixmapHeader(PixmapPtr pPixmap)
 {
     if (pPixmap)
     {
@@ -95,8 +91,7 @@ FreeScratchPixmapHeader(pPixmap)
 
 
 Bool
-CreateScratchPixmapsForScreen(scrnum)
-    int scrnum;
+CreateScratchPixmapsForScreen(int scrnum)
 {
     /* let it be created on first use */
     screenInfo.screens[scrnum]->pScratchPixmap = NULL;
@@ -105,8 +100,7 @@ CreateScratchPixmapsForScreen(scrnum)
 
 
 void
-FreeScratchPixmapsForScreen(scrnum)
-    int scrnum;
+FreeScratchPixmapsForScreen(int scrnum)
 {
     FreeScratchPixmapHeader(screenInfo.screens[scrnum]->pScratchPixmap);
 }
@@ -114,9 +108,7 @@ FreeScratchPixmapsForScreen(scrnum)
 
 /* callable by ddx */
 PixmapPtr
-AllocatePixmap(pScreen, pixDataSize)
-    ScreenPtr pScreen;
-    int pixDataSize;
+AllocatePixmap(ScreenPtr pScreen, int pixDataSize)
 {
     PixmapPtr pPixmap;
 #ifdef PIXPRIV
@@ -126,6 +118,9 @@ AllocatePixmap(pScreen, pixDataSize)
     unsigned size;
     int i;
 
+    if (pScreen->totalPixmapSize > ((size_t)-1) - pixDataSize)
+	return NullPixmap;
+    
     pPixmap = (PixmapPtr)xalloc(pScreen->totalPixmapSize + pixDataSize);
     if (!pPixmap)
 	return NullPixmap;

@@ -1,7 +1,7 @@
 /*
  * $XFree86: xc/lib/Xfixes/Selection.c,v 1.1 2002/11/30 06:21:45 keithp Exp $
  *
- * Copyright © 2002 Keith Packard, member of The XFree86 Project, Inc.
+ * Copyright Â© 2002 Keith Packard, member of The XFree86 Project, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -22,6 +22,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "Xfixesint.h"
 
 void

@@ -45,6 +45,7 @@ SOFTWARE.
 
 */
 /* $Xorg: colormapst.h,v 1.4 2001/02/09 02:05:14 xorgcvs Exp $ */
+
 #ifndef CMAPSTRUCT_H
 #define CMAPSTRUCT_H 1
 

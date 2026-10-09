@@ -26,6 +26,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/X11/StrKeysym.c,v 3.7 2003/04/13 19:22:18 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "Xlibint.h"
 #include <X11/Xresource.h>
 #include <X11/keysymdef.h>
@@ -36,7 +39,11 @@ in this Software without prior written authorization from The Open Group.
 #include "Key.h"
 
 #ifndef KEYSYMDB
+#ifndef XKEYSYMDB
 #define KEYSYMDB "/usr/lib/X11/XKeysymDB"
+#else
+#define KEYSYMDB XKEYSYMDB
+#endif
 #endif
 
 static Bool initialized;
@@ -88,9 +95,10 @@ XStringToKeysym(_Xconst char *s)
     {
 	entry = &_XkeyTable[idx];
 	if ((entry[0] == sig1) && (entry[1] == sig2) &&
-	    !strcmp(s, (char *)entry + 4))
+	    !strcmp(s, (char *)entry + 6))
 	{
-	    val = (entry[2] << 8) | entry[3];
+	    val = (entry[2] << 24) | (entry[3] << 16) |
+	          (entry[4] << 8)  | entry[5];
 	    if (!val)
 		val = XK_VoidSymbol;
 	    return val;
@@ -137,11 +145,14 @@ XStringToKeysym(_Xconst char *s)
 	    else if ('a' <= c && c <= 'f') val = (val<<4)+c-'a'+10;
 	    else if ('A' <= c && c <= 'F') val = (val<<4)+c-'A'+10;
 	    else return NoSymbol;
-
+	    if (val > 0x10ffff)
+		return NoSymbol;
 	}
-	if (val >= 0x01000000)
+	if (val < 0x20 || (val > 0x7e && val < 0xa0))
 	    return NoSymbol;
+	if (val < 0x100)
+	    return val;
         return val | 0x01000000;
     }
-    return (NoSymbol);
+    return NoSymbol;
 }

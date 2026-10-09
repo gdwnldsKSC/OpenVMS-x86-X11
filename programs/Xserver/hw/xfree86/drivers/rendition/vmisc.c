@@ -1,6 +1,10 @@
 /* Misc routines used elsewhere in driver */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/rendition/vmisc.c,v 1.3 2000/02/25 21:03:05 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "rendition.h"
 #include "vtypes.h"
 #include "vos.h"

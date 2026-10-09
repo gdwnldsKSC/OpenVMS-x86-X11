@@ -1,54 +1,54 @@
-                       README for X11R6.8.2 on LynxOS
+                        README for X11R6.9 on LynxOS
 
                                Thomas Mueller
 
                                25 August 2004
 
-1.  What and Where is X11R6.8.2?
+1.  What and Where is X11R6.9?
 
-X11R6.8.2 is a port of X11R6.4 that supports several versions of Intel-based
+X11R6.9 is a port of X11R6.4 that supports several versions of Intel-based
 Unix.  It is derived from XFree86 4.4 rc2 which was derived from X386 1.2,
 which was the X server distributed with X11R5.  This release consists of many
 new features and performance improvements as well as many bug fixes.
 
 See the Copyright Notice.
 
-Building of this X11R6.8.2 version has been tested on `LynxOS 3.1.0a i386'
-and `LynxOS 4.0.0 i386'.
+Building of this X11R6.9 version has been tested on `LynxOS 3.1.0a i386' and
+`LynxOS 4.0.0 i386'.
 
-Previous releases of X11R6.8.2 supported LynxOS on the x86 and on the PowerPC
+Previous releases of X11R6.9 supported LynxOS on the x86 and on the PowerPC
 platform. Building on PowerPC platforms has not been tested recently.
 
-2.  Installing X11R6.8.2
+2.  Installing X11R6.9
 
 Please refer to the Installation Document for detailed installation instruc-
 tions.
 
 It may be necessary to increase the process stack limit in order to build
-X11R6.8.2 and run X11R6.8.2 on your system. Edit /etc/startab and reboot your
+X11R6.9 and run X11R6.9 on your system. Edit /etc/startab and reboot your
 system to make the changes active before you begin the installation.
 
 Also, be sure to include /usr/X11R6/bin in your PATH environment variable.
 
-Refer to the next section Running X11R6.8.2 (section 3., page 1) for further
-information on necessary configuration steps before running X11R6.8.2 on
+Refer to the next section Running X11R6.9 (section 3., page 1) for further
+information on necessary configuration steps before running X11R6.9 on
 LynxOS.
 
-2.1  Accessing X11R6.8.2 manual pages
+2.1  Accessing X11R6.9 manual pages
 
 Include /usr/X11R6/man in the MANPATH environment variable or add the direc-
 tory /usr/X11R6/man to /usr/Lib/man.config
 
-3.  Running X11R6.8.2
+3.  Running X11R6.9
 
 This section describes the changes to the LynxOS environment which may be
-necessary to successfully run X11R6.8.2.
+necessary to successfully run X11R6.9.
 
 3.1  System tuning
 
 3.1.1  Tunable parameters
 
-To reasonably run X11R6.8.2 you may have to adjust a few system parameters.
+To reasonably run X11R6.9 you may have to adjust a few system parameters.
 
 On LynxOS 3.1.0 and 4.0.0 include a line
 
@@ -70,9 +70,9 @@ xterms. You may replace /sys/cfg/pty.cfg with /usr/X11R6/lib/X11/etc/pty.cfg.
 3.1.4  MTRR device driver
 
 If you're using an Intel PentiumPRO or Pentium II (or higher) class CPU you
-might want to install the MTRR device driver. This driver enables the
-X11R6.8.2 X server to manipulate the CPU memory type range registers which
-may improve performance on certain systems.
+might want to install the MTRR device driver. This driver enables the X11R6.9
+X server to manipulate the CPU memory type range registers which may improve
+performance on certain systems.
 
 To install the driver follow these steps:
 
@@ -96,12 +96,12 @@ the kernel, if not, you should rebuild the kernel now:
           # make install
           # reboot -N
 
-3.2  Mouse support in X11R6.8.2
+3.2  Mouse support in X11R6.9
 
-X11R6.8.2 includes support for PnP mice (see also Mouse Support in
-X11R6.8.2). The current LynxOS TTY device driver doesn't allow the necessary
-manipulation of the RTS line and therefore the support for PnP mice has been
-disabled for LynxOS.
+X11R6.9 includes support for PnP mice (see also Mouse Support in X11R6.9).
+The current LynxOS TTY device driver doesn't allow the necessary manipulation
+of the RTS line and therefore the support for PnP mice has been disabled for
+LynxOS.
 
 3.3  PS/2 mouse drivers
 
@@ -152,30 +152,30 @@ to
 
 3.5  X Server debug diagnostics output and other VT peculiarities
 
-Output made by the X11R6.8.2 X on its stdout or stderr will be lost after the
-server switches to graphics mode. The X11R6.8.2 server stores its output in
+Output made by the X11R6.9 X on its stdout or stderr will be lost after the
+server switches to graphics mode. The X11R6.9 server stores its output in
 /usr/adm/Xorg.n.log (where n is the screen number).
 
 When the X server is running output made to other consoles will be lost.
 After server shutdown the screen contents of other consoles may be inconsis-
 tent with what one would expect (i.e. random).
 
-4.  Compiling the X11R6.8.2 Distribution
+4.  Compiling the X11R6.9 Distribution
 
 The next sections contain LynxOS specific notes with respect to the build
 process.
 
 4.1  Disk space requirements
 
-Currently there is no support for shared libraries in the LynxOS X11R6.8.2
+Currently there is no support for shared libraries in the LynxOS X11R6.9
 port. A complete binary installation along with manual pages will require
 approximately 250 MBytes of disk space. To compile the system you will need
 at least 350 MBytes of free disk space.
 
 4.2  Changes to system environment (LynxOS x86)
 
-Before compiling the X11R6.8.2 distribution you will have to make a few lit-
-tle adjustments to your system:
+Before compiling the X11R6.9 distribution you will have to make a few little
+adjustments to your system:
 
    o If not already installed, on your `LynxOS 3.1.0a' system create a shell
      script named /lib/cpp as follows:
@@ -218,24 +218,24 @@ You may then issue a
 
           make World
 
-to compile X11R6.8.2. After some time (and hopefully a successful build of
-the X11R6.8.2 system) you can install the software using
+to compile X11R6.9. After some time (and hopefully a successful build of the
+X11R6.9 system) you can install the software using
 
           make install
 
 You must be logged in as super-user (root) when you invoke `make install'.
 
-4.4  Installing X11R6.8.2 manual pages
+4.4  Installing X11R6.9 manual pages
 
 LynxOS uses cat-able manual pages, and because a doc preparation system is
 definitely not a vital component of a real-time operating system you must
 first install groff-1.09 (or newer).
 
-X11R6.8.2 manual pages may be installed using
+X11R6.9 manual pages may be installed using
 
           make install.man
 
-The index and whatis database for the X11R6.8.2 manual pages will be created
+The index and whatis database for the X11R6.9 manual pages will be created
 automatically. If you already have a whatis database or index file in the
 destination directories you should perform a sort/uniq operation to remove
 duplicate entries:
@@ -250,4 +250,4 @@ duplicate entries:
           mv /tmp/tmpfile /usr/X11R6/man/whatis
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.LynxOS,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.LynxOS,v 1.4 2005/12/21 05:39:05 kem Exp $

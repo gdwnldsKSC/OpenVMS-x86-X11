@@ -1,4 +1,4 @@
-.\" $XdotOrg: xc/doc/man/Xp/XpStartDoc.man,v 1.1 2004/05/22 06:27:25 alanc Exp $
+.\" $XdotOrg: xc/doc/man/Xp/XpStartDoc.man,v 1.2 2005/10/12 23:45:05 alanc Exp $
 .\"
 .\" Copyright 1996 Hewlett-Packard Company
 .\" Copyright 1996 International Business Machines Corp.
@@ -95,8 +95,8 @@ The XPDocumentType values are defined in <X11/extensions/Print.h>:
 
 .nf
 
-    #define   XPDocNormal     1     /* Doc data handled by Xserver*/
-    #define   XPDocRaw        2     /* Doc data passed through Xserver*/
+    #define   XPDocNormal     1     /\(** Doc data handled by Xserver*/
+    #define   XPDocRaw        2     /\(** Doc data passed through Xserver*/
     
 .fi 
 

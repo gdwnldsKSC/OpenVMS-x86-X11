@@ -10,7 +10,6 @@
  * Copyright 1998 by Egbert Eich <Egbert.Eich@Physik.TU-Darmstadt.DE>
  */
 
-
 #ifndef XF86_DDC_H
 # define XF86_DDC_H
 

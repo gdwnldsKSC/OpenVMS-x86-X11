@@ -1,5 +1,5 @@
 .\" $Xorg: icccm.ms,v 1.3 2000/08/17 19:42:08 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/ICCCM/icccm.ms,v 1.3 2004/09/03 16:18:19 kem Exp $
+.\" $XdotOrg: xc/doc/specs/ICCCM/icccm.ms,v 1.4 2005/12/20 16:04:39 kem Exp $
 .\" Use tbl, eqn, -ms, and macros.t
 .\" @(#)icccm.ms	1.50	16 Apr 1994	14:13:55
 .EH ''''
@@ -44,7 +44,7 @@ Version 2.0
 
 X Consortium Standard
 
-X Version 11, Release 6.8
+X Version 11, Release 6.9/7.0
 .R
 .ce 0
 .sp 6
@@ -215,8 +215,8 @@ John Interrante	John Thomas
 .De
 .bp 1
 .af PN 1
-.EH '\fBInter-Client Communication Conventions\fP''\fBX11, Release 6.8\fP'
-.OH '\fBInter-Client Communication Conventions\fP''\fBX11, Release 6.8\fP'
+.EH '\fBInter-Client Communication Conventions\fP''\fBX11, Release 6.9/7.0\fP'
+.OH '\fBInter-Client Communication Conventions\fP''\fBX11, Release 6.9/7.0\fP'
 .EF ''\fB % \fP''
 .OF ''\fB % \fP''
 .nH 1 Introduction

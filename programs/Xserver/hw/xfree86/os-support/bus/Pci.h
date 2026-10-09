@@ -101,11 +101,15 @@
  * This file has the private Pci definitions.  The public ones are imported
  * from xf86Pci.h.  Drivers should not use this file.
  */
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifndef _PCI_H
 #define _PCI_H 1
 
-#include "Xarch.h"
-#include "Xfuncproto.h"
+#include <X11/Xarch.h>
+#include <X11/Xfuncproto.h>
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
 
@@ -190,8 +194,11 @@
 			 ((val >>  8) & 0x0000ff00) |	\
 			 ((val <<  8) & 0x00ff0000) |	\
 			 ((val << 24) & 0xff000000))
+#define PCI_CPU16(val)	(((val >>  8) & 0x000000ff) |	\
+			 ((val <<  8) & 0x0000ff00))
 #else
 #define PCI_CPU(val)	(val)
+#define PCI_CPU16(val)	(val)
 #endif
 
 /*
@@ -254,7 +261,6 @@
 # if defined(linux)
 #  define ARCH_PCI_INIT linuxPciInit
 #  define INCLUDE_XF86_MAP_PCI_MEM
-#  define INCLUDE_XF86_NO_DOMAIN
 # elif defined(FreeBSD)
 #  define ARCH_PCI_INIT freebsdPciInit
 #  define INCLUDE_XF86_MAP_PCI_MEM
@@ -285,7 +291,7 @@
 #  define ARCH_PCI_INIT linuxPciInit
 #  define INCLUDE_XF86_MAP_PCI_MEM
 #  define INCLUDE_XF86_NO_DOMAIN	/* Needs kernel work to remove */
-# elif defined(__OpenBSD__)
+# elif defined(__FreeBSD__) || defined(__OpenBSD__)
 #  define  ARCH_PCI_INIT freebsdPciInit
 #  define INCLUDE_XF86_MAP_PCI_MEM
 #  define INCLUDE_XF86_NO_DOMAIN
@@ -327,7 +333,7 @@
 # if !defined(__FreeBSD__)
 #  define ARCH_PCI_PCI_BRIDGE sparcPciPciBridge
 # endif
-#elif defined(__amd64__)
+#elif defined(__amd64__) || defined(__amd64)
 # if defined(__FreeBSD__)
 #  define ARCH_PCI_INIT freebsdPciInit
 # else
@@ -379,6 +385,14 @@ typedef struct pci_bus_funcs {
 	void    (*pciGetBridgeBuses)(int, int *, int *, int *);
 	/* Use pointer's to avoid #include recursion */
 	void    (*pciGetBridgeResources)(int, pointer *, pointer *, pointer *);
+
+	/* These are optional and will be implemented using read long
+	 * if not present. */
+	CARD8   (*pciReadByte)(PCITAG, int);
+	void    (*pciWriteByte)(PCITAG, int, CARD8);
+	CARD16  (*pciReadWord)(PCITAG, int);
+	void    (*pciWriteWord)(PCITAG, int, CARD16);
+
 } pciBusFuncs_t, *pciBusFuncs_p;
 
 /*

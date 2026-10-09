@@ -46,7 +46,7 @@ static void i915_render_start( intelContextPtr intel )
    GLcontext *ctx = &intel->ctx;
    i915ContextPtr i915 = I915_CONTEXT(intel);
 
-   if (ctx->FragmentProgram.Enabled && ctx->FragmentProgram.Current) 
+   if (ctx->FragmentProgram._Active) 
       i915ValidateFragmentProgram( i915 );
    else 
       i915ValidateTextureProgram( i915 );
@@ -107,6 +107,7 @@ static GLboolean i915_check_vertex_size( intelContextPtr intel,
    if (lis4 & S4_VFMT_COLOR) sz++;
    if (lis4 & S4_VFMT_DEPTH_OFFSET) sz++;
    if (lis4 & S4_VFMT_POINT_WIDTH) sz++;
+   if (lis4 & S4_VFMT_FOG_PARAM) sz++;
 	
    for (i = 0 ; i < 8 ; i++) { 
       switch (lis2 & S2_TEXCOORD_FMT0_MASK) {

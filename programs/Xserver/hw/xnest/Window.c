@@ -14,8 +14,12 @@ is" without express or implied warranty.
 */
 /* $XFree86: xc/programs/Xserver/hw/xnest/Window.c,v 3.7 2001/10/28 03:34:11 tsi Exp $ */
 
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_XNEST_CONFIG_H
+#include <xnest-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "gcstruct.h"
 #include "window.h"
 #include "windowstr.h"
@@ -449,6 +453,13 @@ xnestWindowExposures(WindowPtr pWin, RegionPtr pRgn, RegionPtr other_exposed)
 }
 
 #ifdef SHAPE
+void
+xnestSetShape(WindowPtr pWin)
+{
+  xnestShapeWindow(pWin);
+  miSetShape(pWin);
+}
+
 static Bool
 xnestRegionEqual(RegionPtr pReg1, RegionPtr pReg2)
 {

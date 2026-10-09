@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/xedit/lisp/internal.h,v 1.2 2004/04/23 19:54:44 eich Exp $ */
+/* $XdotOrg: xc/programs/xedit/lisp/internal.h,v 1.3 2004/12/04 00:43:13 kuhn Exp $ */
 /*
  * Copyright (c) 2001 by The XFree86 Project, Inc.
  *
@@ -25,7 +25,7 @@
  * dealings in this Software without prior written authorization from the
  * XFree86 Project.
  *
- * Author: Paulo César Pereira de Andrade
+ * Author: Paulo CÃ©sar Pereira de Andrade
  */
 
 /* $XFree86: xc/programs/xedit/lisp/internal.h,v 1.50tsi Exp $ */

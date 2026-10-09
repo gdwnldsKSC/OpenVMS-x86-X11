@@ -28,9 +28,12 @@ in this Software without prior written authorization from The Open Group.
 /* $XFree86: xc/lib/Xext/XShape.c,v 1.3 2002/10/16 00:37:27 dawes Exp $ */
 #define NEED_EVENTS
 #define NEED_REPLIES
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xlibint.h>
 #include <X11/Xutil.h>
-#include "region.h"			/* in Xlib sources */
+#include <X11/Xregion.h>
 #include <X11/extensions/Xext.h>
 #include <X11/extensions/extutil.h>
 #include <X11/extensions/shapestr.h>
@@ -142,9 +145,7 @@ event_to_wire (Display *dpy, XEvent *re, xEvent *event)
  *                                                                          *
  ****************************************************************************/
 
-Bool XShapeQueryExtension (dpy, event_basep, error_basep)
-    Display *dpy;
-    int *event_basep, *error_basep;
+Bool XShapeQueryExtension (Display *dpy, int *event_basep, int *error_basep)
 {
     XExtDisplayInfo *info = find_display (dpy);
 
@@ -158,9 +159,10 @@ Bool XShapeQueryExtension (dpy, event_basep, error_basep)
 }
 
 
-Status XShapeQueryVersion(dpy, major_versionp, minor_versionp)
-    Display *dpy;
-    int	    *major_versionp, *minor_versionp;
+Status XShapeQueryVersion(
+    Display *dpy,
+    int *major_versionp,
+    int *minor_versionp)
 {
     XExtDisplayInfo *info = find_display (dpy);
     xShapeQueryVersionReply	    rep;
@@ -184,11 +186,12 @@ Status XShapeQueryVersion(dpy, major_versionp, minor_versionp)
     return 1;
 }
 
-void XShapeCombineRegion(dpy, dest, destKind, xOff, yOff, r, op)
-register Display    *dpy;
-Window		    dest;
-int		    destKind, op, xOff, yOff;
-register REGION	    *r;
+void XShapeCombineRegion(
+    register Display *dpy,
+    Window dest,
+    int destKind, int xOff, int yOff,
+    register REGION *r,
+    int op)
 {
     XExtDisplayInfo *info = find_display (dpy);
     register xShapeRectanglesReq *req;
@@ -229,13 +232,13 @@ register REGION	    *r;
 }
 
 
-void XShapeCombineRectangles (dpy, dest, destKind, xOff, yOff,
-			      rects, n_rects, op, ordering)
-register Display *dpy;
-XID dest;
-int destKind, op, xOff, yOff, ordering;
-XRectangle  *rects;
-int n_rects;
+void XShapeCombineRectangles (
+    register Display *dpy,
+    XID dest,
+    int destKind, int xOff, int yOff,
+    XRectangle *rects,
+    int n_rects,
+    int op, int ordering)
 {
     XExtDisplayInfo *info = find_display (dpy);
     register xShapeRectanglesReq *req;
@@ -265,12 +268,13 @@ int n_rects;
 }
 
 
-void XShapeCombineMask (dpy, dest, destKind, xOff, yOff, src, op)
-register Display *dpy;
-int destKind;
-XID dest;
-Pixmap	src;
-int op, xOff, yOff;
+void XShapeCombineMask (
+    register Display *dpy,
+    XID dest,
+    int destKind,
+    int xOff, int yOff,
+    Pixmap src,
+    int op)
 {
     XExtDisplayInfo *info = find_display (dpy);
     register xShapeMaskReq *req;
@@ -291,13 +295,14 @@ int op, xOff, yOff;
     SyncHandle();
 }
 
-void XShapeCombineShape (dpy, dest, destKind, xOff, yOff, src, srcKind, op)
-register Display *dpy;
-int destKind;
-XID dest;
-int srcKind;
-XID src;
-int op, xOff, yOff;
+void XShapeCombineShape (
+    register Display *dpy,
+    XID dest,
+    int destKind,
+    int xOff, int yOff,
+    XID src,
+    int srcKind,
+    int op)
 {
     XExtDisplayInfo *info = find_display (dpy);
     register xShapeCombineReq *req;
@@ -319,11 +324,11 @@ int op, xOff, yOff;
     SyncHandle();
 }
 
-void XShapeOffsetShape (dpy, dest, destKind, xOff, yOff)
-register Display *dpy;
-int destKind;
-XID dest;
-int xOff, yOff;
+void XShapeOffsetShape (
+    register Display *dpy,
+    XID dest,
+    int destKind,
+    int xOff, int yOff)
 {
     XExtDisplayInfo *info = find_display (dpy);
     register xShapeOffsetReq *req;
@@ -342,14 +347,11 @@ int xOff, yOff;
     SyncHandle();
 }
 
-Status XShapeQueryExtents (dpy, window,
-			   bShaped, xbs, ybs, wbs, hbs,
-			   cShaped, xcs, ycs, wcs, hcs)    
-    register Display    *dpy;
-    Window		    window;
-    int			    *bShaped, *cShaped;	    /* RETURN */
-    int			    *xbs, *ybs, *xcs, *ycs; /* RETURN */
-    unsigned int	    *wbs, *hbs, *wcs, *hcs; /* RETURN */
+Status XShapeQueryExtents (
+    register Display *dpy,
+    Window window,
+    int *bShaped, int *xbs, int *ybs, unsigned int *wbs, unsigned int *hbs, /* RETURN */
+    int *cShaped, int *xcs, int *ycs, unsigned int *wcs, unsigned int *hcs /* RETURN */)
 {
     XExtDisplayInfo *info = find_display (dpy);
     xShapeQueryExtentsReply	    rep;
@@ -383,10 +385,10 @@ Status XShapeQueryExtents (dpy, window,
 }
 
 
-void XShapeSelectInput (dpy, window, mask)
-    register Display	*dpy;
-    Window		window;
-    unsigned long	mask;
+void XShapeSelectInput (
+    register Display *dpy,
+    Window window,
+    unsigned long mask)
 {
     XExtDisplayInfo *info = find_display (dpy);
     register xShapeSelectInputReq   *req;
@@ -406,9 +408,7 @@ void XShapeSelectInput (dpy, window, mask)
     SyncHandle ();
 }
 
-unsigned long XShapeInputSelected (dpy, window)
-    register Display	*dpy;
-    Window		window;
+unsigned long XShapeInputSelected (register Display *dpy, Window window)
 {
     XExtDisplayInfo *info = find_display (dpy);
     register xShapeInputSelectedReq *req;
@@ -432,12 +432,12 @@ unsigned long XShapeInputSelected (dpy, window)
 }
 
 
-XRectangle *XShapeGetRectangles (dpy, window, kind, count, ordering)
-    register Display	*dpy;
-    Window		window;
-    int			kind;
-    int			*count;	/* RETURN */
-    int			*ordering; /* RETURN */
+XRectangle *XShapeGetRectangles (
+    register Display *dpy,
+    Window window,
+    int kind,
+    int *count, /* RETURN */
+    int *ordering /* RETURN */)
 {
     XExtDisplayInfo *info = find_display (dpy);
     register xShapeGetRectanglesReq   *req;

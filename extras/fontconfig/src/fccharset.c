@@ -1,7 +1,7 @@
 /*
  * $RCSId: xc/lib/fontconfig/src/fccharset.c,v 1.18 2002/08/22 07:36:44 keithp Exp $
  *
- * Copyright © 2001 Keith Packard
+ * Copyright Â© 2001 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -596,6 +596,9 @@ FcCharSetIsSubset (const FcCharSet *a, const FcCharSet *b)
     {
 	an = a->numbers[ai];
 	bn = b->numbers[bi];
+	/*
+	 * Check matching pages
+	 */
 	if (an == bn)
 	{
 	    FcChar32	*am = a->leaves[ai]->map;
@@ -604,6 +607,9 @@ FcCharSetIsSubset (const FcCharSet *a, const FcCharSet *b)
 	    if (am != bm)
 	    {
 		int	i = 256/32;
+		/*
+		 * Does am have any bits not in bm?
+		 */
 		while (i--)
 		    if (*am++ & ~*bm++)
 			return FcFalse;
@@ -611,6 +617,9 @@ FcCharSetIsSubset (const FcCharSet *a, const FcCharSet *b)
 	    ai++;
 	    bi++;
 	}
+	/*
+	 * Does a have any pages not in b?
+	 */
 	else if (an < bn)
 	    return FcFalse;
 	else
@@ -618,6 +627,9 @@ FcCharSetIsSubset (const FcCharSet *a, const FcCharSet *b)
 	    int	    low = bi + 1;
 	    int	    high = b->num - 1;
 
+	    /*
+	     * Search for page 'an' in 'b'
+	     */
 	    while (low <= high)
 	    {
 		int mid = (low + high) >> 1;
@@ -637,6 +649,9 @@ FcCharSetIsSubset (const FcCharSet *a, const FcCharSet *b)
 		bi++;
 	}
     }
+    /*
+     * did we look at every page?
+     */
     return ai >= a->num;
 }
 
@@ -830,6 +845,8 @@ struct _FcCharLeafEnt {
 };
 
 #define FC_CHAR_LEAF_BLOCK	(4096 / sizeof (FcCharLeafEnt))
+static FcCharLeafEnt **FcCharLeafBlocks;
+static int FcCharLeafBlockCount;
 
 static FcCharLeafEnt *
 FcCharLeafEntCreate (void)
@@ -839,7 +856,14 @@ FcCharLeafEntCreate (void)
 
     if (!remain)
     {
-	block = malloc (FC_CHAR_LEAF_BLOCK * sizeof (FcCharLeafEnt));
+	FcCharLeafEnt **newBlocks;
+
+	FcCharLeafBlockCount++;
+	newBlocks = realloc (FcCharLeafBlocks, FcCharLeafBlockCount * sizeof (FcCharLeafEnt *));
+	if (!newBlocks)
+	    return 0;
+	FcCharLeafBlocks = newBlocks;
+	block = FcCharLeafBlocks[FcCharLeafBlockCount-1] = malloc (FC_CHAR_LEAF_BLOCK * sizeof (FcCharLeafEnt));
 	if (!block)
 	    return 0;
 	FcMemAlloc (FC_MEM_CHARLEAF, FC_CHAR_LEAF_BLOCK * sizeof (FcCharLeafEnt));
@@ -865,12 +889,13 @@ FcCharLeafHash (FcCharLeaf *leaf)
 static int	FcCharLeafTotal;
 static int	FcCharLeafUsed;
 
+static FcCharLeafEnt	*FcCharLeafHashTable[FC_CHAR_LEAF_HASH_SIZE];
+
 static FcCharLeaf *
 FcCharSetFreezeLeaf (FcCharLeaf *leaf)
 {
-    static FcCharLeafEnt	*hashTable[FC_CHAR_LEAF_HASH_SIZE];
     FcChar32			hash = FcCharLeafHash (leaf);
-    FcCharLeafEnt		**bucket = &hashTable[hash % FC_CHAR_LEAF_HASH_SIZE];
+    FcCharLeafEnt		**bucket = &FcCharLeafHashTable[hash % FC_CHAR_LEAF_HASH_SIZE];
     FcCharLeafEnt		*ent;
     
     FcCharLeafTotal++;
@@ -889,6 +914,25 @@ FcCharSetFreezeLeaf (FcCharLeaf *leaf)
     ent->next = *bucket;
     *bucket = ent;
     return &ent->leaf;
+}
+
+static void
+FcCharSetThawAllLeaf (void)
+{
+    int i;
+
+    for (i = 0; i < FC_CHAR_LEAF_HASH_SIZE; i++)
+	FcCharLeafHashTable[i] = 0;
+
+    FcCharLeafTotal = 0;
+    FcCharLeafUsed = 0;
+
+    for (i = 0; i < FcCharLeafBlockCount; i++)
+	free (FcCharLeafBlocks[i]);
+
+    free (FcCharLeafBlocks);
+    FcCharLeafBlocks = 0;
+    FcCharLeafBlockCount = 0;
 }
 
 typedef struct _FcCharSetEnt FcCharSetEnt;
@@ -922,12 +966,13 @@ static int	FcCharSetTotal;
 static int	FcCharSetUsed;
 static int	FcCharSetTotalEnts, FcCharSetUsedEnts;
 
+static FcCharSetEnt	*FcCharSetHashTable[FC_CHAR_SET_HASH_SIZE];
+
 static FcCharSet *
 FcCharSetFreezeBase (FcCharSet *fcs)
 {
-    static FcCharSetEnt	*hashTable[FC_CHAR_SET_HASH_SIZE];
     FcChar32		hash = FcCharSetHash (fcs);
-    FcCharSetEnt	**bucket = &hashTable[hash % FC_CHAR_SET_HASH_SIZE];
+    FcCharSetEnt	**bucket = &FcCharSetHashTable[hash % FC_CHAR_SET_HASH_SIZE];
     FcCharSetEnt	*ent;
     int			size;
 
@@ -975,6 +1020,30 @@ FcCharSetFreezeBase (FcCharSet *fcs)
     ent->next = *bucket;
     *bucket = ent;
     return &ent->set;
+}
+
+void
+FcCharSetThawAll (void)
+{
+    int i;
+    FcCharSetEnt	*ent, *next;
+
+    for (i = 0; i < FC_CHAR_SET_HASH_SIZE; i++)
+    {
+	for (ent = FcCharSetHashTable[i]; ent; ent = next)
+	{
+	    next = ent->next;
+	    free (ent);
+	}
+	FcCharSetHashTable[i] = 0;
+    }
+
+    FcCharSetTotal = 0;
+    FcCharSetTotalEnts = 0;
+    FcCharSetUsed = 0;
+    FcCharSetUsedEnts = 0;
+
+    FcCharSetThawAllLeaf ();
 }
 
 FcCharSet *

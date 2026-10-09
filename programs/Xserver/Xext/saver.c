@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/Xext/saver.c,v 1.2.4.2 2004/12/13 03:34:33 gisburn Exp $ */
+/* $XdotOrg: xc/programs/Xserver/Xext/saver.c,v 1.10 2005/07/03 08:53:36 daniels Exp $ */
 /*
  * $XConsortium: saver.c,v 1.12 94/04/17 20:59:36 dpw Exp $
  *
@@ -32,8 +32,12 @@ in this Software without prior written authorization from the X Consortium.
 
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "os.h"
 #include "windowstr.h"
@@ -43,7 +47,7 @@ in this Software without prior written authorization from the X Consortium.
 #include "dixstruct.h"
 #include "resource.h"
 #include "opaque.h"
-#include "saverproto.h"
+#include <X11/extensions/saverproto.h>
 #include "gcstruct.h"
 #include "cursorstr.h"
 #include "colormapst.h"
@@ -810,7 +814,7 @@ ScreenSaverSetAttributes (ClientPtr client)
     Bool			fOK;
     DepthPtr			pDepth;
     WindowOptPtr		ancwopt;
-    unsigned long		*pVlist;
+    unsigned int		*pVlist;
     unsigned long		*values = 0;
     unsigned long		tmask, imask;
     unsigned long		val;
@@ -960,7 +964,7 @@ ScreenSaverSetAttributes (ClientPtr client)
      * to them.
      */
     pAttr->mask = tmask = stuff->mask | CWOverrideRedirect;
-    pVlist = (unsigned long *) (stuff + 1);
+    pVlist = (unsigned int *) (stuff + 1);
     while (tmask) {
 	imask = lowbit (tmask);
 	tmask &= ~imask;
@@ -1166,8 +1170,8 @@ PatchUp:
     FreeAttrs (pAttr);
 bail:
     CheckScreenPrivate (pScreen);
+    if (pAttr) xfree (pAttr->values);
     xfree (pAttr);
-    xfree (values);
     return ret;
 }
 

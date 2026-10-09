@@ -1,5 +1,9 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/apm/apm_accel.c,v 1.20tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "apm.h"
 #include "miline.h"
 

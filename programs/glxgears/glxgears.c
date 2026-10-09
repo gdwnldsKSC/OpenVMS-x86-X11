@@ -24,29 +24,40 @@
  * This is a port of the infamous "gears" demo to straight GLX (i.e. no GLUT)
  * Port by Brian Paul  23 March 2001
  *
+ * Exact timing added by Behdad Esfahbod to achieve a fixed speed regardless
+ * of frame rate.  November 2003
+ *
+ * Printer support added by Roland Mainz <roland.mainz@nrubsig.org>. April 2004
+ *
  * Command line options:
- *    -info      print GL implementation information
+ *    -singletooth     Draw only one tooth for each gear (for debugging etc.).
+ *    -display         Set X11 display for output.
+ *    -print           Use printer instead of video card for output.
+ *    -printer         Printername name of printer to use.
+ *    -printfile printername  Output file for print job.
+ *    -numpages count  Number of pages to print.
+ *    -info            Print additional GLX information.
+ *    -h               Print this help page.
+ *    -v               Verbose output.
  *
  */
 
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#ifdef INCLUDE_XPRINT_SUPPORT
+#ifdef BUILD_PRINTSUPPORT
 #include <X11/XprintUtil/xprintutil.h>
-#endif /* INCLUDE_XPRINT_SUPPORT */
+#endif /* BUILD_PRINTSUPPORT */
 #include <X11/keysym.h>
 #include <GL/gl.h>
 #include <GL/glx.h>
+#include <sys/time.h>
+#include <sched.h>
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
-#include <ctype.h>
-#include <math.h>
-
-/* XXX this probably isn't very portable */
-#include <sys/time.h>
-#include <unistd.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265
@@ -55,62 +66,97 @@
 /* Turn a NULL pointer string into an empty string */
 #define NULLSTR(x) (((x)!=NULL)?(x):(""))
 #define Log(x) { if(verbose) printf x; }
+#define Msg(x) { printf x; }
 
 /* Globla vars */ 
-static const char *ProgramName;      /* program name (from argv[0]) */
-static Bool        verbose = False;  /* verbose output what the program is doing */
+static const char *ProgramName;        /* program name (from argv[0]) */
+static Bool        verbose = False;    /* verbose output what the program is doing */
  
-int                xp_event_base,      /* XpExtension even base */
+static int         xp_event_base,      /* XpExtension even base */
                    xp_error_base;      /* XpExtension error base */
+static double      degperpage = 5.0;   /* Rotate gears <deg> degree per page */
 
-static GLfloat view_rotx = 20.0, view_roty = 30.0, view_rotz = 0.0;
-static GLint gear1, gear2, gear3;
-static GLfloat angle = 0.0;
-static GLboolean printInfo = GL_FALSE;
+#define TIMING 1
+
+#ifdef TIMING
+
+/* XXX this probably isn't very portable */
+
+/* return current time (in seconds) */
+static long
+current_time(void)
+{
+   struct timeval tv;
+   struct timezone tz;
+   (void) gettimeofday(&tv, &tz);
+   return (long) tv.tv_sec * 1000000 + (long) tv.tv_usec;
+}
+
+#else /* TIMING */
+
+/* dummy */
+static long
+current_time(void)
+{
+   return 0L;
+}
+
+#endif /* TIMING */
 
 static
 void usage(void)
 {
    fprintf (stderr, "usage:  %s [options]\n", ProgramName);
    fprintf (stderr, "-display\tSet X11 display for output.\n");
-#ifdef INCLUDE_XPRINT_SUPPORT
-   fprintf (stderr, "-print\tUse printer instead of video card for output.\n");
-   fprintf (stderr, "-printer printername\tname of printer to use\n");
-   fprintf (stderr, "-printfile printername\tOutput file for print job\n");
-   fprintf (stderr, "-numpages count\tNumber of pages to print\n");
-#endif /* INCLUDE_XPRINT_SUPPORT */
-   fprintf (stderr, "-info\tPrint additional GLX information.\n");
-   fprintf (stderr, "-h\tPrint this help page.\n");
-   fprintf (stderr, "-v\tVerbose output.\n");
+#ifdef BUILD_PRINTSUPPORT
+   fprintf (stderr, "-print\t\tUse printer instead of video card for output.\n");
+   fprintf (stderr, "-printer printername\tname of printer to use.\n");
+   fprintf (stderr, "-printfile printername\tOutput file for print job.\n");
+   fprintf (stderr, "-numpages count\tNumber of pages to print.\n");
+   fprintf (stderr, "-degperpage deg\tRotate gears <deg> degree per page.\n");
+#endif /* BUILD_PRINTSUPPORT */
+   fprintf (stderr, "-info\t\tPrint additional GLX information.\n");
+   fprintf (stderr, "-singletooth\tDraw only one tooth for each gear (for debugging etc.).\n");
+   fprintf (stderr, "-h\t\tPrint this help page.\n");
+   fprintf (stderr, "-v\t\tVerbose output.\n");
    fprintf (stderr, "\n");
    exit(EXIT_FAILURE);
 }
 
-
-#define BENCHMARK
-
-#ifdef BENCHMARK
-
-/* return current time (in seconds) */
-static int
-current_time(void)
+#ifdef BUILD_PRINTSUPPORT
+static
+void PrintSpoolerCommandResults( Display *pdpy, XPContext pcontext )
 {
-   struct timeval tv;
-   struct timezone tz;
-   (void) gettimeofday(&tv, &tz);
-   return (int) tv.tv_sec;
+    char *scr;
+
+    scr = XpGetOneAttribute(pdpy, pcontext, XPJobAttr, "xp-spooler-command-results");
+    if( scr )
+    {
+      if( strlen(scr) > 0 )
+      {
+        const char *msg = XpuCompoundTextToXmb(pdpy, scr);
+        if( msg )
+        {
+          Msg(("Spooler command returned '%s'.\n", msg));
+          XpuFreeXmbString(msg);
+        }
+        else
+        {
+          Msg(("Spooler command returned '%s' (unconverted).\n", scr));
+        }
+      }
+
+      XFree((void *)scr);
+    }
 }
+#endif /* BUILD_PRINTSUPPORT */
 
-#else /* BENCHMARK */
-
-/* dummy */
-static int
-current_time(void)
-{
-   return 0;
-}
-
-#endif /* BENCHMARK */
+static GLfloat view_rotx = 20.0, view_roty = 30.0, view_rotz = 0.0;
+static GLint gear1, gear2, gear3;
+static GLfloat angle = 0.0;
+static GLint speed = 60;
+static int singletooth = 0, paused = 0;
+static GLboolean printInfo = GL_FALSE;
 
 /*
  *
@@ -128,13 +174,14 @@ gear(GLfloat inner_radius, GLfloat outer_radius, GLfloat width,
      GLint teeth, GLfloat tooth_depth)
 {
    GLint i;
-   GLfloat r0, r1, r2;
+   GLfloat r0, r1, r2, maxr2, minr2;
    GLfloat angle, da;
    GLfloat u, v, len;
 
    r0 = inner_radius;
    r1 = outer_radius - tooth_depth / 2.0;
-   r2 = outer_radius + tooth_depth / 2.0;
+   maxr2 = r2 = outer_radius + tooth_depth / 2.0;
+   minr2 = singletooth ? r1 : r2;
 
    da = 2.0 * M_PI / teeth / 4.0;
 
@@ -149,26 +196,27 @@ gear(GLfloat inner_radius, GLfloat outer_radius, GLfloat width,
       glVertex3f(r0 * cos(angle), r0 * sin(angle), width * 0.5);
       glVertex3f(r1 * cos(angle), r1 * sin(angle), width * 0.5);
       if (i < teeth) {
-	 glVertex3f(r0 * cos(angle), r0 * sin(angle), width * 0.5);
-	 glVertex3f(r1 * cos(angle + 3 * da), r1 * sin(angle + 3 * da),
-		    width * 0.5);
+         glVertex3f(r0 * cos(angle), r0 * sin(angle), width * 0.5);
+         glVertex3f(r1 * cos(angle + 3 * da), r1 * sin(angle + 3 * da),
+                    width * 0.5);
       }
    }
    glEnd();
 
    /* draw front sides of teeth */
    glBegin(GL_QUADS);
-   da = 2.0 * M_PI / teeth / 4.0;
    for (i = 0; i < teeth; i++) {
       angle = i * 2.0 * M_PI / teeth;
 
       glVertex3f(r1 * cos(angle), r1 * sin(angle), width * 0.5);
       glVertex3f(r2 * cos(angle + da), r2 * sin(angle + da), width * 0.5);
       glVertex3f(r2 * cos(angle + 2 * da), r2 * sin(angle + 2 * da),
-		 width * 0.5);
+                 width * 0.5);
       glVertex3f(r1 * cos(angle + 3 * da), r1 * sin(angle + 3 * da),
-		 width * 0.5);
+                 width * 0.5);
+      r2 = minr2;
    }
+   r2 = maxr2;
    glEnd();
 
    glNormal3f(0.0, 0.0, -1.0);
@@ -180,9 +228,9 @@ gear(GLfloat inner_radius, GLfloat outer_radius, GLfloat width,
       glVertex3f(r1 * cos(angle), r1 * sin(angle), -width * 0.5);
       glVertex3f(r0 * cos(angle), r0 * sin(angle), -width * 0.5);
       if (i < teeth) {
-	 glVertex3f(r1 * cos(angle + 3 * da), r1 * sin(angle + 3 * da),
-		    -width * 0.5);
-	 glVertex3f(r0 * cos(angle), r0 * sin(angle), -width * 0.5);
+         glVertex3f(r1 * cos(angle + 3 * da), r1 * sin(angle + 3 * da),
+                    -width * 0.5);
+         glVertex3f(r0 * cos(angle), r0 * sin(angle), -width * 0.5);
       }
    }
    glEnd();
@@ -194,12 +242,14 @@ gear(GLfloat inner_radius, GLfloat outer_radius, GLfloat width,
       angle = i * 2.0 * M_PI / teeth;
 
       glVertex3f(r1 * cos(angle + 3 * da), r1 * sin(angle + 3 * da),
-		 -width * 0.5);
+                 -width * 0.5);
       glVertex3f(r2 * cos(angle + 2 * da), r2 * sin(angle + 2 * da),
-		 -width * 0.5);
+                 -width * 0.5);
       glVertex3f(r2 * cos(angle + da), r2 * sin(angle + da), -width * 0.5);
       glVertex3f(r1 * cos(angle), r1 * sin(angle), -width * 0.5);
+      r2 = minr2;
    }
+   r2 = maxr2;
    glEnd();
 
    /* draw outward faces of teeth */
@@ -217,20 +267,22 @@ gear(GLfloat inner_radius, GLfloat outer_radius, GLfloat width,
       glNormal3f(v, -u, 0.0);
       glVertex3f(r2 * cos(angle + da), r2 * sin(angle + da), width * 0.5);
       glVertex3f(r2 * cos(angle + da), r2 * sin(angle + da), -width * 0.5);
-      glNormal3f(cos(angle), sin(angle), 0.0);
+      glNormal3f(cos(angle + 1.5 * da), sin(angle + 1.5 * da), 0.0);
       glVertex3f(r2 * cos(angle + 2 * da), r2 * sin(angle + 2 * da),
-		 width * 0.5);
+                 width * 0.5);
       glVertex3f(r2 * cos(angle + 2 * da), r2 * sin(angle + 2 * da),
-		 -width * 0.5);
+                 -width * 0.5);
       u = r1 * cos(angle + 3 * da) - r2 * cos(angle + 2 * da);
       v = r1 * sin(angle + 3 * da) - r2 * sin(angle + 2 * da);
       glNormal3f(v, -u, 0.0);
       glVertex3f(r1 * cos(angle + 3 * da), r1 * sin(angle + 3 * da),
-		 width * 0.5);
+                 width * 0.5);
       glVertex3f(r1 * cos(angle + 3 * da), r1 * sin(angle + 3 * da),
-		 -width * 0.5);
-      glNormal3f(cos(angle), sin(angle), 0.0);
+                 -width * 0.5);
+      glNormal3f(cos(angle + 3.5 * da), sin(angle + 3.5 * da), 0.0);
+      r2 = minr2;
    }
+   r2 = maxr2;
 
    glVertex3f(r1 * cos(0), r1 * sin(0), width * 0.5);
    glVertex3f(r1 * cos(0), r1 * sin(0), -width * 0.5);
@@ -292,7 +344,11 @@ reshape(int width, int height)
    glViewport(0, 0, (GLint) width, (GLint) height);
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
-   glFrustum(-1.0, 1.0, -h, h, 5.0, 60.0);
+   /* fit width and height */
+   if (h >= 1.0)
+     glFrustum(-1.0, 1.0, -h, h, 5.0, 60.0);
+   else
+     glFrustum(-1.0/h, 1.0/h, -1.0, 1.0, 5.0, 60.0);
    glMatrixMode(GL_MODELVIEW);
    glLoadIdentity();
    glTranslatef(0.0, 0.0, -40.0);
@@ -347,12 +403,12 @@ make_window( Display *dpy, Screen *scr,
              Window *winRet, GLXContext *ctxRet)
 {
    int attrib[] = { GLX_RGBA,
-		    GLX_RED_SIZE, 1,
-		    GLX_GREEN_SIZE, 1,
-		    GLX_BLUE_SIZE, 1,
-		    GLX_DOUBLEBUFFER,
-		    GLX_DEPTH_SIZE, 1,
-		    None };
+                   GLX_RED_SIZE, 1,
+                   GLX_GREEN_SIZE, 1,
+                   GLX_BLUE_SIZE, 1,
+                   GLX_DOUBLEBUFFER,
+                   GLX_DEPTH_SIZE, 1,
+                   None };
    int scrnum;
    XSetWindowAttributes attr;
    unsigned long mask;
@@ -379,8 +435,8 @@ make_window( Display *dpy, Screen *scr,
    mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
 
    win = XCreateWindow( dpy, root, x, y, width, height,
-		        0, visinfo->depth, InputOutput,
-		        visinfo->visual, mask, &attr );
+                       0, visinfo->depth, InputOutput,
+                       visinfo->visual, mask, &attr );
 
    /* set hints and properties */
    {
@@ -421,7 +477,6 @@ make_window( Display *dpy, Screen *scr,
    *ctxRet = ctx;
 }
 
-
 static void
 event_loop(Display *dpy, Window win, int numPages )
 {
@@ -432,12 +487,14 @@ event_loop(Display *dpy, Window win, int numPages )
             XEvent event;
             XNextEvent(dpy, &event);
             switch (event.type) {
-	    case Expose:
+            case Expose:
+               Log(("Event: Expose\n"));
                /* we'll redraw below */
-	       break;
-	    case ConfigureNotify:
-	       reshape(event.xconfigure.width, event.xconfigure.height);
-	       break;
+               break;
+            case ConfigureNotify:
+               Log(("Event: ConfigureNotify\n"));
+               reshape(event.xconfigure.width, event.xconfigure.height);
+               break;
             case KeyPress:
                {
                   char buffer[10];
@@ -445,22 +502,53 @@ event_loop(Display *dpy, Window win, int numPages )
                   code = XLookupKeysym(&event.xkey, 0);
                   if (code == XK_Left) {
                      view_roty += 5.0;
+                     Log(("view_roty=%g\n", (double)view_roty));
                   }
                   else if (code == XK_Right) {
                      view_roty -= 5.0;
+                     Log(("view_roty=%g\n", (double)view_roty));
                   }
                   else if (code == XK_Up) {
                      view_rotx += 5.0;
+                     Log(("view_roty=%g\n", (double)view_rotx));
                   }
                   else if (code == XK_Down) {
                      view_rotx -= 5.0;
+                     Log(("view_roty=%g\n", (double)view_rotx));
                   }
                   else {
                      (void) XLookupString(&event.xkey, buffer, sizeof(buffer),
-                                       NULL, NULL);
-                     if (buffer[0] == 27) {
-                        /* escape */
-                        return;
+                                          NULL, NULL);
+                     switch (buffer[0]) {
+                        case 27: /* escape */
+                        case 'q':
+                        case 'Q':
+                           Log(("Quitting...\n"));
+                           return;
+                        case 32: /* space */
+                           paused = 1 - paused;
+                           Log(("Pause status: %d\n", paused));
+                           break;
+                        case 'a':
+                           if (speed < 360) {
+                              speed += 5;
+                              Log(("Speed increased to %d\n", (int)speed));
+                           }
+                           break;
+                        case 'z':
+                           if (speed > -360) {
+                              speed -= 5;
+                              Log(("Speed decreased to %d\n", (int)speed));
+                           }
+                           break;
+                        default:
+#ifdef XKB
+                           XkbStdBell(XtDisplay(dpy, win, 0, XkbBI_MinorError);
+#else
+                           XBell(dpy, 0);
+#endif /* XKB */
+                           break;
+
                      }
                   }
                }
@@ -468,49 +556,85 @@ event_loop(Display *dpy, Window win, int numPages )
          }
       }
 
-      /* next frame */
-      angle += 2.0;
-
-#ifdef INCLUDE_XPRINT_SUPPORT
-      if (numPages > 0) {
-         XpStartPage(dpy, win);
-         XpuWaitForPrintNotify(dpy, xp_event_base, XPStartPageNotify);      
-      }
-#endif /* INCLUDE_XPRINT_SUPPORT */
-
-      draw();
-      glXSwapBuffers(dpy, win);
-
-#ifdef INCLUDE_XPRINT_SUPPORT
-      if (numPages > 0) {
-         XpEndPage(dpy);
-         XpuWaitForPrintNotify(dpy, xp_event_base, XPEndPageNotify);
-
-         /* Last page ? */          
-         if( --numPages == 0 )
-            return;
-      }
-#endif /* INCLUDE_XPRINT_SUPPORT */
-           
-      /* calc framerate */
       {
-         static int t0 = -1;
-         static int frames = 0;
-         int t = current_time();
+         long t = current_time();
+         {
+            /* next frame */
+            static long t0 = 0;
+            long useconds;
 
-         if (t0 < 0)
+            if (!t0)
+               t0 = t;
+
+            useconds = t - t0;
+            if (!useconds) /* assume 100FPS if we don't have timer */
+               useconds = 10000;
+
+            if (numPages > 0) {
+                angle = angle + degperpage; /* |degperpage| degrees per page */
+            }
+            else
+            {
+                if (!paused)
+                    angle = angle + ((double)speed * useconds) / 1000000.0;
+            }
+            
+            /* keep angle small so we don't lose precision! */
+            if (angle > 360.0)
+               angle = angle - 360.0;
+
+#ifdef BUILD_PRINTSUPPORT
+            if (numPages > 0) {
+               Log(("Start page.\n"));
+               XpStartPage(dpy, win);
+               XpuWaitForPrintNotify(dpy, xp_event_base, XPStartPageNotify);      
+            }
+#endif /* BUILD_PRINTSUPPORT */
+
+            draw();
+            glXSwapBuffers(dpy, win);
+
+#ifdef BUILD_PRINTSUPPORT
+            if (numPages > 0) {
+               Log(("End page.\n"));
+               XpEndPage(dpy);
+               XpuWaitForPrintNotify(dpy, xp_event_base, XPEndPageNotify);
+
+               /* Last page ? */          
+               if( --numPages == 0 )
+                  return;
+            }
+#endif /* BUILD_PRINTSUPPORT */
+
             t0 = t;
-
-         frames++;
-
-         if (t - t0 >= 5.0) {
-            GLfloat seconds = t - t0;
-            GLfloat fps = frames / seconds;
-            printf("%d frames in %3.1f seconds = %6.3f FPS\n", frames, seconds,
-                   fps);
-            t0 = t;
-            frames = 0;
          }
+
+#ifdef TIMING
+         {
+            /* calc framerate */
+            static int frames = 0;
+            static long t0 = 0;
+
+            if (!t0)
+               t0 = t;
+
+            frames++;
+
+            if (t - t0 >= 5000000L) {
+               GLfloat seconds = (t - t0) / 1000000.0;
+               GLfloat fps = frames / seconds;
+
+               printf("%d frames in %3.1f seconds = %6.3f FPS\n", frames, seconds,
+                      fps);
+               t0 = t;
+               frames = 0;
+            }
+         }
+
+         /* Need to give cpu away in order to get precise timing next cycle,
+          * otherwise, gettimeofday would return almost the same value. */
+         sched_yield();
+#endif /* TIMING */
       }
    }
 }
@@ -519,6 +643,7 @@ event_loop(Display *dpy, Window win, int numPages )
 int
 main(int argc, char *argv[])
 {
+   Bool           use_threadsafe_api = False;
    Display       *dpy;
    Window         win;
    Screen        *screen;
@@ -527,8 +652,9 @@ main(int argc, char *argv[])
    int            i;
    XRectangle     winrect;
 
-#ifdef INCLUDE_XPRINT_SUPPORT
-   long           dpi;
+#ifdef BUILD_PRINTSUPPORT
+   long           dpi_x              = 0L,
+                  dpi_y              = 0L;
    XPContext      pcontext           = None; /* Xprint context */
    void          *printtofile_handle = NULL; /* "context" when printing to file */
    Bool           doPrint            = FALSE; /* Print to printer ? */
@@ -538,7 +664,7 @@ main(int argc, char *argv[])
    XPPrinterList  plist              = NULL;  /* list of printers */
    int            plist_count;                /* number of entries in |plist|-array */
    unsigned short dummy;
-#endif /* INCLUDE_XPRINT_SUPPORT */
+#endif /* BUILD_PRINTSUPPORT */
 
    ProgramName = argv[0];
     
@@ -554,7 +680,7 @@ main(int argc, char *argv[])
       else if (strcmp(argv[i], "-info") == 0) {
          printInfo = GL_TRUE;
       }
-#ifdef INCLUDE_XPRINT_SUPPORT
+#ifdef BUILD_PRINTSUPPORT
       else if (strcmp(argv[i], "-print") == 0) {
          doPrint = True;
       }
@@ -573,17 +699,34 @@ main(int argc, char *argv[])
       else if (!strncmp("-numpages", arg, len)) {
          if (++i >= argc)
             usage();
+         errno = 0; /* reset errno to catch |atoi()|-errors */
          numPages = atoi(argv[i]);
-         doPrint = True;
-         if (numPages <= 0)
+         if ((numPages <= 0) || (errno != 0))
             usage();
+         doPrint = True;
       }
-#endif /* INCLUDE_XPRINT_SUPPORT */
+      else if (!strncmp("-degperpage", arg, len)) {
+         if (++i >= argc)
+            usage();
+         errno = 0; /* reset errno to catch |atof()|-errors */
+         degperpage = atof(argv[i]);
+         if (errno != 0)
+            usage();
+         doPrint = True;
+      }
+#endif /* BUILD_PRINTSUPPORT */
       else if (!strncmp("-v", arg, len)) {
          verbose   = True;
          printInfo = GL_TRUE;
       }
-      else if (strcmp(argv[i], "-h") == 0) {
+      else if (!strncmp("-singletooth", arg, len)) {
+         singletooth = True;
+      }
+      else if( !strncmp("-debug_use_threadsafe_api", arg, len) )
+      {
+         use_threadsafe_api = True;
+      }
+      else if (!strcmp(argv[i], "-h")) {
          usage();
       }
       else
@@ -592,8 +735,18 @@ main(int argc, char *argv[])
         usage();
       }
    }
+
+   /* Init X threading API on demand (for debugging) */
+   if( use_threadsafe_api )
+   {
+      if( !XInitThreads() )
+      {
+         fprintf(stderr, "%s: XInitThreads() failure.\n", ProgramName);
+         exit(EXIT_FAILURE);
+      }
+   }
    
-#ifdef INCLUDE_XPRINT_SUPPORT
+#ifdef BUILD_PRINTSUPPORT
    /* Display and printing at the same time not implemented */
    if (doPrint && dpyName) {
       usage();
@@ -642,7 +795,7 @@ main(int argc, char *argv[])
       XpSetContext(dpy, pcontext);
 
       /* Get default printer reolution */   
-      if (XpuGetResolution(dpy, pcontext, &dpi) != 1) {
+      if (XpuGetResolution(dpy, pcontext, &dpi_x, &dpi_y) != 1) {
          fprintf(stderr, "%s: No default resolution for printer '%s'.\n",
          ProgramName, printername);
          XpuClosePrinterDisplay(dpy, pcontext);
@@ -680,7 +833,7 @@ main(int argc, char *argv[])
       winrect.y += winrect.height / 2;
    }
    else
-#endif /* INCLUDE_XPRINT_SUPPORT */
+#endif /* BUILD_PRINTSUPPORT */
    {
       dpy = XOpenDisplay(dpyName);
       if (!dpy) {
@@ -711,15 +864,15 @@ main(int argc, char *argv[])
 
    init();
 
-#ifdef INCLUDE_XPRINT_SUPPORT
+#ifdef BUILD_PRINTSUPPORT
    event_loop(dpy, win, doPrint?numPages:0);
-#else /* !INCLUDE_XPRINT_SUPPORT */
+#else /* !BUILD_PRINTSUPPORT */
    event_loop(dpy, win, 0);
-#endif /* !INCLUDE_XPRINT_SUPPORT */
+#endif /* !BUILD_PRINTSUPPORT */
 
    glXDestroyContext(dpy, ctx);
 
-#ifdef INCLUDE_XPRINT_SUPPORT
+#ifdef BUILD_PRINTSUPPORT
    if (doPrint) {
       /* End the print job - the final results are sent by the X print
        * server to the spooler sub system.
@@ -736,13 +889,15 @@ main(int argc, char *argv[])
          }
       }
 
+      PrintSpoolerCommandResults(dpy, pcontext);    
+
       XDestroyWindow(dpy, win);
       XpuClosePrinterDisplay(dpy, pcontext);
 
       XpuFreePrinterList(plist);
    }
    else
-#endif /* INCLUDE_XPRINT_SUPPORT */
+#endif /* BUILD_PRINTSUPPORT */
    {
       XDestroyWindow(dpy, win);
       XCloseDisplay(dpy);

@@ -1,4 +1,3 @@
-/* $XFree86$ */
 /*
  * Copyright 1998-2003 VIA Technologies, Inc. All Rights Reserved.
  * Copyright 2001-2003 S3 Graphics, Inc. All Rights Reserved.
@@ -17,34 +16,27 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- * VIA, S3 GRAPHICS, AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
 
 /*************************************************************************
  *
  *  File:       via_cursor.c
- *  Content:    Hardware cursor support for VIA/S3G UniChrom
+ *  Content:    Hardware cursor support for VIA/S3G UniChrome
  *
  ************************************************************************/
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "via_driver.h"
 
 static void VIALoadCursorImage(ScrnInfoPtr pScrn, unsigned char *src);
 static void VIASetCursorPosition(ScrnInfoPtr pScrn, int x, int y);
 static void VIASetCursorColors(ScrnInfoPtr pScrn, int bg, int fg);
-
-
-/*
- * Read/write to the DAC via MMIO
- */
-
-#define inCRReg(reg)        (VGAHWPTR(pScrn))->readCrtc(VGAHWPTR(pScrn), reg)
-#define outCRReg(reg, val)  (VGAHWPTR(pScrn))->writeCrtc(VGAHWPTR(pScrn), reg, val)
-#define inStatus1()         (VGAHWPTR(pScrn))->readST01(VGAHWPTR(pScrn))
-
 
 #define MAX_CURS 32
 
@@ -82,10 +74,9 @@ VIAHWCursorInit(ScreenPtr pScreen)
     if (!pVia->CursorStart) {
         pVia->CursorStart = pVia->FBFreeEnd - VIA_CURSOR_SIZE;
         pVia->FBFreeEnd -= VIA_CURSOR_SIZE;
-
-        /* Set cursor location in frame buffer.  */
-        VIASETREG(VIA_REG_CURSOR_MODE, pVia->CursorStart);
     }
+    /* Set cursor location in frame buffer.  */
+    VIASETREG(VIA_REG_CURSOR_MODE, pVia->CursorStart);
 
     return xf86InitCursor(pScreen, infoPtr);
 }
@@ -124,7 +115,7 @@ VIALoadCursorImage(ScrnInfoPtr pScrn, unsigned char* src)
     VIAPtr pVia = VIAPTR(pScrn);
     CARD32 dwCursorMode;
 
-    WaitIdle();
+    VIAAccelSync(pScrn);
 
     dwCursorMode = VIAGETREG(VIA_REG_CURSOR_MODE);
 
@@ -188,4 +179,47 @@ VIASetCursorColors(ScrnInfoPtr pScrn, int bg, int fg)
     VIASETREG(VIA_REG_CURSOR_FG, fg);
     VIASETREG(VIA_REG_CURSOR_BG, bg);
 
+}
+
+/*
+ *
+ */
+void
+ViaCursorStore(ScrnInfoPtr pScrn)
+{
+    VIAPtr pVia = VIAPTR(pScrn);
+    
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "ViaCursorStore\n"));
+    
+    if (pVia->CursorImage) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "ViaCursorStore: stale image left.\n");
+	xfree(pVia->CursorImage);
+    }
+
+    pVia->CursorImage = xcalloc(1, 0x1000);
+    memcpy(pVia->CursorImage, pVia->FBBase + pVia->CursorStart, 0x1000);
+    pVia->CursorFG = (CARD32)VIAGETREG(VIA_REG_CURSOR_FG);
+    pVia->CursorBG = (CARD32)VIAGETREG(VIA_REG_CURSOR_BG);
+    pVia->CursorMC = (CARD32)VIAGETREG(VIA_REG_CURSOR_MODE);
+}
+
+/*
+ *
+ */
+void
+ViaCursorRestore(ScrnInfoPtr pScrn)
+{
+    VIAPtr pVia = VIAPTR(pScrn);
+
+    DEBUG(xf86DrvMsg(pScrn->scrnIndex, X_INFO, "ViaCursorRestore\n"));
+
+    if (pVia->CursorImage) {
+	memcpy(pVia->FBBase + pVia->CursorStart, pVia->CursorImage, 0x1000);
+	VIASETREG(VIA_REG_CURSOR_FG, pVia->CursorFG);
+	VIASETREG(VIA_REG_CURSOR_BG, pVia->CursorBG);
+	VIASETREG(VIA_REG_CURSOR_MODE, pVia->CursorMC);
+	xfree(pVia->CursorImage);
+	pVia->CursorImage = NULL;
+    } else
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "ViaCursorRestore: No cursor image stored.\n");
 }

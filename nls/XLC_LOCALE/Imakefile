@@ -1,5 +1,5 @@
 XCOMM $Xorg: Imakefile,v 1.3 2000/08/17 19:46:59 cpqbld Exp $
-XCOMM $XdotOrg: xc/nls/XLC_LOCALE/Imakefile,v 1.2.4.1 2005/01/25 02:03:01 gisburn Exp $
+XCOMM $XdotOrg: xc/nls/XLC_LOCALE/Imakefile,v 1.4 2005/01/19 01:53:55 gisburn Exp $
 
 
 
@@ -79,9 +79,11 @@ LTarget(vi_VN.tcvn)
 LTarget(vi_VN.viscii)
 LTarget(zh_CN)
 LTarget(zh_CN.gbk)
+LTarget(zh_CN.gb18030)
 LTarget(zh_CN.UTF-8)
 LTarget(zh_HK.big5)
 LTarget(zh_HK.big5hkscs)
+LTarget(zh_HK.UTF-8)
 LTarget(zh_TW)
 LTarget(zh_TW.big5)
 LTarget(zh_TW.UTF-8)

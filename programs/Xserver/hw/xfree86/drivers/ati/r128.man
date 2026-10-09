@@ -19,7 +19,8 @@ full support for 8, 15, 16 and 24 bit pixel depths, hardware
 acceleration of drawing primitives, hardware cursor, video modes up to
 1800x1440 @ 70Hz, doublescan modes (e.g., 320x200 and 320x240), gamma
 correction at all pixel depths, a fully programming dot clock and robust
-text mode restoration for VT switching.
+text mode restoration for VT switching.  Dualhead is supported on M3/M4
+mobile chips.
 .SH SUPPORTED HARDWARE
 The
 .B r128
@@ -108,7 +109,11 @@ are used, the system may hang.
 Enable or disable use of an OS-specific framebuffer device interface
 (which is not supported on all OSs).  See fbdevhw(__drivermansuffix__)
 for further information.
-Default: off.
+Default: 
+.BI on 
+for PowerPC, 
+.BI off 
+for other architectures.
 .TP
 .BI "Option \*qDMAForXv\*q \*q" boolean \*q
 Try or don't try to use DMA for Xv image transfers. This will reduce CPU
@@ -123,6 +128,25 @@ are supported:
 .BI "Option \*qShowCache\*q \*q" boolean \*q
 Enable or disable viewing offscreen cache memory.  A
 development debug option.  Default: off.
+.TP
+.BI "Option \*qVGAAccess\*q \*q" boolean \*q
+Tell the driver if it can do legacy VGA IOs to the card. This is
+necessary for properly resuming consoles when in VGA text mode, but
+shouldn't be if the console is using radeonfb or some other graphic
+mode driver. Some platforms like PowerPC have issues with those, and they aren't
+necessary unless you have a real text mode in console. The default is
+.B off
+on PowerPC and
+.B on
+on other architectures.
+
+.PP
+.B Dualhead Note: 
+The video BIOS on some laptops interacts strangely with dualhead.
+This can result in flickering and problems changing modes on crtc2.
+If you experience these problems try toggling your laptop's video
+output switch (e.g., fn-f7, etc.) prior to starting X or switch to
+another VT and back.
 
 .SH "SEE ALSO"
 __xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__)

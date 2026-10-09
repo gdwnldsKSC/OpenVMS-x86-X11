@@ -21,17 +21,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <ctype.h>
 #include <limits.h>
 #include <sys/stat.h>
 
 #include "regionstr.h"
-#include "fontstruct.h"
+#include <X11/fonts/fontstruct.h>
 #include "dixfontstr.h"
 #include "scrnintstr.h"
-#include "fontxlfd.h"
-#include "fntfil.h"
-#include "fntfilst.h"
+#include <X11/fonts/fontxlfd.h>
+#include <X11/fonts/fntfil.h>
+#include <X11/fonts/fntfilst.h>
 
 #include "Ps.h"
 
@@ -39,6 +43,7 @@ THE SOFTWARE.
 #include FT_FREETYPE_H
 
 #include "ft.h"
+#define NOT_IN_FTFUNCS
 #include "ftfuncs.h"
 
 char *

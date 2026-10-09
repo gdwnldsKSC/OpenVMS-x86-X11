@@ -28,7 +28,7 @@ PCFDEFS=-DPCFFORMAT
 
 
         INCLUDES = -I$(FONTINCSRC) -I../include 
-         HEADERS = 
+         HEADERS = bdfint.h pcf.h
 #ifdef FontFormatDefines
      FORMAT_DEFS = FontFormatDefines
 #endif
@@ -64,5 +64,8 @@ NormalLintTarget($(SRCS))
 MakeSubdirs($(SUBDIRS))
 DependSubdirs($(SUBDIRS))
 #endif
+
+BuildIncludes($(HEADERS),X11/fonts,../..)
+InstallMultipleFlags($(HEADERS),$(INCDIR)/X11/fonts,$(INSTINCFLAGS))
 
 DependTarget()

@@ -23,15 +23,20 @@
  */
 
 /* [JCH-96/01/21] Extended std reverse map to four buttons. */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/sunos/sun_kbdEv.c,v 1.3 2004/07/28 03:57:19 alanc Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/sunos/sun_kbdEv.c,v 1.9 2005/08/16 00:40:25 alanc Exp $ */
+
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
 
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSlib.h"
+#include "sun_kbd.h"
 
 #ifdef XINPUT
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 #include "xf86Xinput.h"
 #else
 #include "inputstr.h"
@@ -41,11 +46,8 @@
 #include "dgaproc.h"
 #endif
 
-#include <sys/vuid_event.h>
 #include <sys/kbd.h>
 #include "atKeynames.h"
-
-extern int sun_ktype;
 
 #ifdef XKB
 extern Bool noXkbExtension;
@@ -57,7 +59,7 @@ extern Bool noXkbExtension;
 #ifdef XTESTEXT1
 
 #define	XTestSERVER_SIDE
-#include "xtestext1.h"
+#include <X11/extensions/xtestext1.h>
 extern short xtest_mousex;
 extern short xtest_mousey;
 extern int   on_steal_input;
@@ -114,7 +116,7 @@ static OsTimerPtr sunTimer = NULL;
 #define KEY_Execute	0x83
 
 static unsigned char map[256] = {
-#if defined(i386) || defined(__i386) || defined(__i386__)
+#if defined(i386) || defined(__i386) || defined(__i386__) || defined(__x86)
 	KEY_NOTUSED,		/*   0 */
 	KEY_Tilde,		/*   1 */
 	KEY_1,			/*   2 */
@@ -625,6 +627,18 @@ static unsigned char usbmap[256] = {
 };
 
 #endif /* KB_USB */
+
+_X_HIDDEN const unsigned char *
+sunGetKbdMapping(int ktype) {
+#if defined(KB_USB)
+    if (ktype == KB_USB)
+        return usbmap;
+    else
+#endif
+        return map;
+}
+
+
 /*
  * sunPostKbdEvent --
  *	Translate the raw hardware Firm_event into an XEvent, and tell DIX
@@ -634,8 +648,8 @@ static unsigned char usbmap[256] = {
  * interests of simplicity - DWH 8/30/99
  */
 
-static void
-sunPostKbdEvent(Firm_event *event)
+_X_HIDDEN void
+sunPostKbdEvent(int sun_ktype, Firm_event *event)
 {
     Bool        down;
     KeyClassRec *keyc = ((DeviceIntPtr)xf86Info.pKeyboard)->key;
@@ -651,9 +665,6 @@ sunPostKbdEvent(Firm_event *event)
     else
 	down = FALSE;
 
-    /*
-     * and now get some special keysequences
-     */
 
 #if defined(KB_USB)
     if(sun_ktype == KB_USB)
@@ -662,82 +673,53 @@ sunPostKbdEvent(Firm_event *event)
 #endif
 	keycode = map[event->id];
 
-    if ((ModifierDown(ControlMask | AltMask)) ||
- 	(ModifierDown(ControlMask | AltLangMask)))
+    /*
+     * and now get some special keysequences
+     */
+    
+#ifdef XKB
+    if (((xf86Info.ddxSpecialKeys == SKWhenNeeded) &&
+	 (!xf86Info.ActionKeyBindingsSet)) ||
+	noXkbExtension || (xf86Info.ddxSpecialKeys == SKAlways))
+#endif
     {
-	switch (keycode) {
-	/*
-	 * The idea here is to pass the scancode down to a list of registered
-	 * routines.  There should be some standard conventions for processing
-	 * certain keys.
-	 */
-
-	case KEY_BackSpace:
-	    if (!xf86Info.dontZap) {
-		DGAShutdown();
-		GiveUp(0);
+	if (!(ModifierDown(ShiftMask)) &&
+	    ((ModifierDown(ControlMask | AltMask)) ||
+	     (ModifierDown(ControlMask | AltLangMask))))
+	{
+	    switch (keycode) {
+	    /*
+	     * The idea here is to pass the scancode down to a list of 
+	     * registered routines.  There should be some standard conventions
+	     * for processing certain keys.
+	     */
+	    case KEY_BackSpace:
+		xf86ProcessActionEvent(ACTION_TERMINATE, NULL);
+		break;
+		
+	    /*
+	     * Check grabs
+	     */
+	    case KEY_KP_Divide:
+		xf86ProcessActionEvent(ACTION_DISABLEGRAB, NULL);
+		break;
+	    case KEY_KP_Multiply:
+		xf86ProcessActionEvent(ACTION_CLOSECLIENT, NULL);
+		break;
+		
+	    /*
+	     * Video mode switches
+	     */
+	    case KEY_KP_Minus:   /* Keypad - */
+		if (down) xf86ProcessActionEvent(ACTION_PREV_MODE, NULL);
+		if (!xf86Info.dontZoom) return;
+		break;
+		
+	    case KEY_KP_Plus:   /* Keypad + */
+		if (down) xf86ProcessActionEvent(ACTION_NEXT_MODE, NULL);
+		if (!xf86Info.dontZoom) return;
+		break;
 	    }
-	    break;
-
-	/* Check grabs */
-	case KEY_KP_Divide:
-	    if (!xf86Info.grabInfo.disabled &&
-		xf86Info.grabInfo.allowDeactivate) {
-		if (inputInfo.pointer && inputInfo.pointer->grab != NULL &&
-		    inputInfo.pointer->DeactivateGrab)
-			(*inputInfo.pointer->DeactivateGrab)(inputInfo.pointer);
-		if (inputInfo.keyboard && inputInfo.keyboard->grab != NULL &&
-		    inputInfo.keyboard->DeactivateGrab)
-			(*inputInfo.keyboard->DeactivateGrab)(inputInfo.keyboard);
-	    }
-	    break;
-
-	case KEY_KP_Multiply:
-	    if (!xf86Info.grabInfo.disabled &&
-		xf86Info.grabInfo.allowClosedown) {
-		ClientPtr pointer, keyboard, server;
-
-		pointer = keyboard = server = NULL;
-		if (inputInfo.pointer && inputInfo.pointer->grab != NULL)
-		    pointer =
-			clients[CLIENT_ID(inputInfo.pointer->grab->resource)];
-
-		if (inputInfo.keyboard && inputInfo.keyboard->grab != NULL) {
-		    keyboard =
-			clients[CLIENT_ID(inputInfo.keyboard->grab->resource)];
-		    if (keyboard == pointer)
-			keyboard = NULL;
-		}
-
-	    if ((xf86Info.grabInfo.server.grabstate == SERVER_GRABBED) &&
-		(((server = xf86Info.grabInfo.server.client) == pointer) ||
-		 (server == keyboard)))
-		server = NULL;
-
-	    if (pointer)
-		CloseDownClient(pointer);
-	    if (keyboard)
-		CloseDownClient(keyboard);
-	    if (server)
-		CloseDownClient(server);
-	    }
-	    break;
-	
-	case KEY_KP_Minus:	/* Keypad - */
-	    if (!xf86Info.dontZoom) {
-		if (down)
-		    xf86ZoomViewport(xf86Info.currentScreen, -1);
-		return;
-	    }
-	    break;
-
-	case KEY_KP_Plus:	/* Keypad + */
-	    if (!xf86Info.dontZoom) {
-		if (down)
-		    xf86ZoomViewport(xf86Info.currentScreen,  1);
-		return;
-	    }
-	    break;
 	}
     }
 
@@ -869,25 +851,7 @@ sunPostKbdEvent(Firm_event *event)
     ENQUEUE(&kevent, keycode, (down ? KeyPress : KeyRelease), XE_KEYBOARD);
 }
 
-/*
- * Lets try reading more than one keyboard event at a time in the hopes that
- * this will be slightly more efficient.  Or we could just try the MicroSoft
- * method, and forget about efficiency. :-)
- */
-void
-xf86KbdEvents()
-{
-    Firm_event event[64];
-    int        nBytes, i;
 
-    /* I certainly hope its not possible to read partial events */
-
-    if ((nBytes = read(xf86Info.kbdFd, (char *)event, sizeof(event))) > 0)
-    {
-	for (i = 0; i < (nBytes / sizeof(Firm_event)); i++)
-	    sunPostKbdEvent(&event[i]);
-    }
-}
 
 /*
  * Autorepeat stuff

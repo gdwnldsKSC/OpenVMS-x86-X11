@@ -114,7 +114,7 @@ void process_line (buffer)
     if (i >= 0) cp[len = (i+1)] = '\0';  /* nul terminate */
 
     if (verbose) {
-	printf ("! %d:  %s\n", lineno, cp);
+	printf ("! %d:  %s\n", lineno+1, cp);
     }
 
     /* handle input */

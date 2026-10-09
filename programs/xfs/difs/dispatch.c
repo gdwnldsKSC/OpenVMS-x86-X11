@@ -53,8 +53,8 @@ in this Software without prior written authorization from The Open Group.
 #include	"swapreq.h"
 #include	"swaprep.h"
 
-#include	"FS.h"
-#include	"FSproto.h"
+#include	<X11/fonts/FS.h>
+#include	<X11/fonts/FSproto.h>
 #include	"clientstr.h"
 #include	"authstr.h"
 #include	"osstruct.h"
@@ -62,7 +62,7 @@ in this Software without prior written authorization from The Open Group.
 #include	"globals.h"
 #include	"fsresource.h"
 #include	"difsfnst.h"
-#include	"fontstruct.h"
+#include	<X11/fonts/fontstruct.h>
 #include	"site.h"
 #include	"fsevents.h"
 #include	"cache.h"
@@ -71,8 +71,8 @@ in this Software without prior written authorization from The Open Group.
 
 static void kill_all_clients(void);
 
-char        dispatchException = 0;
-char        isItTimeToYield;
+volatile char        dispatchException = 0;
+volatile char        isItTimeToYield;
 
 ClientPtr   currentClient;
 

@@ -23,15 +23,19 @@
  *
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #if defined(linux) && !defined(__GLIBC__)
 #undef __STRICT_ANSI__
 #endif
-#include <X.h>
+#include <X11/X.h>
 #ifdef __UNIXOS2__
 #define I_NEED_OS2_H
 #endif
-#include <Xmd.h>
-#include <Xos.h>
+#include <X11/Xmd.h>
+#include <X11/Xos.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #if defined(__bsdi__)
@@ -45,7 +49,7 @@
 #endif
 #include <stdarg.h>
 #include <fcntl.h>
-#include "Xfuncproto.h"
+#include <X11/Xfuncproto.h>
 #include "os.h"
 #include <ctype.h>
 #include <unistd.h>
@@ -429,6 +433,7 @@ xf86open(const char *path, int flags, ...)
     }
     va_end(ap);
     xf86errno = xf86GetErrno();
+
     return fd;
 }
 
@@ -917,9 +922,48 @@ xf86strerror(int n)
 		mapnum (ETXTBSY);	/* not POSIX 1 */
 #endif
 		mapnum (ENOTTY);
+#ifdef ENOSYS
+		mapnum (ENOSYS);
+#endif
 		mapnum (EBUSY);
 		mapnum (ENODEV);
 		mapnum (EIO);
+#ifdef ESRCH
+		mapnum (ESRCH);
+#endif
+#ifdef ENXIO
+		mapnum (ENXIO);  
+#endif
+#ifdef E2BIG
+		mapnum (E2BIG);    
+#endif
+#ifdef ENOEXEC
+		mapnum (ENOEXEC);
+#endif
+#ifdef ECHILD
+		mapnum (ECHILD);
+#endif
+#ifdef ENOTBLK
+		mapnum (ENOTBLK);
+#endif
+#ifdef EXDEV
+		mapnum (EXDEV); 
+#endif
+#ifdef EFBIG
+		mapnum (EFBIG);
+#endif
+#ifdef ESPIPE
+		mapnum (ESPIPE);
+#endif
+#ifdef EMLINK
+		mapnum (EMLINK);
+#endif
+#ifdef EDOM
+		mapnum (EDOM);
+#endif
+#ifdef ERANGE
+		mapnum (ERANGE);
+#endif
 
 		default:
 			err = 999;
@@ -1865,11 +1909,49 @@ xf86GetErrno ()
 		mapnum (ETXTBSY);	/* not POSIX 1 */
 #endif
 		mapnum (ENOTTY);
+#ifdef ENOSYS
+		mapnum (ENOSYS);
+#endif
 		mapnum (EBUSY);
 		mapnum (ENODEV);
 		mapnum (EIO);
-
-		default:
+#ifdef ESRCH
+		mapnum (ESRCH);
+#endif
+#ifdef ENXIO
+		mapnum (ENXIO);  
+#endif
+#ifdef E2BIG
+		mapnum (E2BIG);    
+#endif
+#ifdef ENOEXEC
+		mapnum (ENOEXEC);
+#endif
+#ifdef ECHILD
+		mapnum (ECHILD);
+#endif
+#ifdef ENOTBLK
+		mapnum (ENOTBLK);
+#endif
+#ifdef EXDEV
+		mapnum (EXDEV); 
+#endif
+#ifdef EFBIG
+		mapnum (EFBIG);
+#endif
+#ifdef ESPIPE
+		mapnum (ESPIPE);
+#endif
+#ifdef EMLINK
+		mapnum (EMLINK);
+#endif
+#ifdef EDOM
+		mapnum (EDOM);
+#endif
+#ifdef ERANGE
+		mapnum (ERANGE);
+#endif
+     		default:
 			return (xf86_UNKNOWN);
 	}
 }
@@ -2043,6 +2125,12 @@ int
 xf86setjmp1(xf86jmp_buf env, int arg2)
 {
     FatalError("setjmp: type 1 called instead of type %d", xf86getjmptype());
+}
+
+int 
+xf86setjmp0(xf86jmp_buf env)
+{
+  return setjmp((void *)env);
 }
 
 #endif  /* HAS_GLIBC_SIGSETJMP */

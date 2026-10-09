@@ -1,5 +1,5 @@
 /*
- * $Id: renderedge.c,v 1.1 2004/07/29 08:10:15 keithp Exp $
+ * $Id: renderedge.c,v 1.4 2005/07/03 07:02:08 daniels Exp $
  *
  * Copyright © 2004 Keith Packard
  *
@@ -21,6 +21,10 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #include "renderedge.h"
 

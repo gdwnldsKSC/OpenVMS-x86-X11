@@ -6,13 +6,13 @@ Copyright 1993 by Sun Microsystems, Inc. Mountain View CA.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Digital or Sun not be
 used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
+software without specific, written prior permission.
 
 DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
 ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
@@ -61,6 +61,9 @@ in this Software without prior written authorization from The Open Group.
 /* $XFree86: xc/lib/Xt/Constraint.c,v 1.2 2001/08/22 22:52:17 dawes Exp $ */
 
 #define CONSTRAINT
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "IntrinsicI.h"
 #include "StringDefs.h"
 
@@ -74,7 +77,7 @@ externaldef(constraintclassrec) ConstraintClassRec constraintClassRec = {
     /* class_part_initialize*/	ConstraintPartInitialize,
     /* class_inited	    */	FALSE,
     /* initialize	    */	NULL,
-    /* initialize_hook      */	NULL,		
+    /* initialize_hook      */	NULL,
     /* realize		    */	XtInheritRealize,
     /* actions		    */	NULL,
     /* num_actions	    */	0,
@@ -89,9 +92,9 @@ externaldef(constraintclassrec) ConstraintClassRec constraintClassRec = {
     /* resize		    */	NULL,
     /* expose		    */	NULL,
     /* set_values	    */	NULL,
-    /* set_values_hook      */	NULL,			
-    /* set_values_almost    */	XtInheritSetValuesAlmost,  
-    /* get_values_hook      */	NULL,			
+    /* set_values_hook      */	NULL,
+    /* set_values_almost    */	XtInheritSetValuesAlmost,
+    /* get_values_hook      */	NULL,
     /* accept_focus	    */	NULL,
     /* version		    */	XtVersion,
     /* callback_offsets     */  NULL,
@@ -120,8 +123,7 @@ externaldef(constraintwidgetclass) WidgetClass constraintWidgetClass =
 	(WidgetClass) &constraintClassRec;
 
 
-static void ConstraintPartInitialize(wc)
-    WidgetClass wc;
+static void ConstraintPartInitialize(WidgetClass wc)
 {
     ConstraintWidgetClass cwc = (ConstraintWidgetClass)wc;
     if (cwc->constraint_class.resources)

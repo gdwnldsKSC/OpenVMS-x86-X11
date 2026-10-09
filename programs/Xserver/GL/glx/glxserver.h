@@ -1,4 +1,8 @@
 /* $XFree86: xc/programs/Xserver/GL/glx/glxserver.h,v 1.5 2003/09/28 20:15:43 alanh Exp $ */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _GLX_server_h_
 #define _GLX_server_h_
 
@@ -221,13 +225,10 @@ extern void glxSwapQueryServerStringReply(ClientPtr client,
  */
 
 extern int __glXTypeSize(GLenum enm);
-extern int __glXImageSize(GLenum format, GLenum type, GLsizei w, GLsizei h,
-			  GLint rowLength, GLint skipRows, GLint alignment);
-extern int __glXImage3DSize(GLenum format, GLenum type,
-			    GLsizei w, GLsizei h, GLsizei d,
-			    GLint imageHeight, GLint rowLength,
-			    GLint skipImages, GLint skipRows,
-			    GLint alignment);
+extern int __glXImageSize(GLenum format, GLenum type,
+    GLenum target, GLsizei w, GLsizei h, GLsizei d,
+    GLint imageHeight, GLint rowLength, GLint skipImages, GLint skipRows,
+    GLint alignment);
 
 extern int __glXCallListsReqSize(GLbyte *pc, Bool swap);
 extern int __glXBitmapReqSize(GLbyte *pc, Bool swap);

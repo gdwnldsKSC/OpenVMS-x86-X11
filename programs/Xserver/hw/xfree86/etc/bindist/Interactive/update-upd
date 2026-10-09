@@ -31,6 +31,10 @@ lib/libXaw.a
 lib/libXfont.a
 lib/libXft.a
 lib/libfreetype.a
-man/man1/XFree86.1x.Z
-man/man4/XF86Config.4.Z
+lib/libXcomposite.a
+lib/libXdamage.a
+lib/libXevie.a
+lib/libXfixes.a
+man/man1/Xorg.1x.Z
+man/man4/xorg.conf.4.Z
 man/man7/nv.7.Z

@@ -37,7 +37,6 @@ XCOMM operating system: OSName (OSMajorVersion.OSMinorVersion)
 #else
 #define ModernOSF1		NO
 #define ShLibDir		/usr/shlib
-#define SharedLibPex		NO  /* losing, no shared -lm */
 #endif
 
 #define InstallXloadSetGID	NO
@@ -184,7 +183,6 @@ XCOMM operating system: OSName (OSMajorVersion.OSMinorVersion)
 #define DefaultCCOptions	-Xa
 #define XdecServer YES
 #define ServerOSDefines -DDDXTIME
-#define PexCCOptions -Xa -Wf,-XNp15000,-XNd15000
 #define NormalLibObjCompile(options) 	ClearmakeOSName			  \
 	$(RM) $@ $*.os \						@@\
 	&& $(CC) -c options $(CFLAGS) $*.c \				@@\

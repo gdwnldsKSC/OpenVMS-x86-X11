@@ -48,7 +48,7 @@ static void copy_pv( GLcontext *ctx, GLuint edst, GLuint esrc )
 }
 
 static struct {
-   tnl_emit_func	        emit;
+   void                (*emit)( GLcontext *, GLuint, GLuint, void * );
    tnl_interp_func		interp;
    tnl_copy_pv_func	        copy_pv;
    GLboolean           (*check_tex_sizes)( GLcontext *ctx );
@@ -240,7 +240,7 @@ void tdfxCheckTexSizes( GLcontext *ctx )
 }
 
 
-void tdfxBuildVertices( GLcontext *ctx, GLuint start, GLuint count,
+void tdfxBuildVertices( GLcontext *ctx, GLuint start, GLuint end,
 			GLuint newinputs )
 {
    tdfxContextPtr fxMesa = TDFX_CONTEXT( ctx );
@@ -253,7 +253,7 @@ void tdfxBuildVertices( GLcontext *ctx, GLuint start, GLuint count,
       return;
 
    if (newinputs & VERT_BIT_POS) {
-      setup_tab[fxMesa->SetupIndex].emit( ctx, start, count, v );
+      setup_tab[fxMesa->SetupIndex].emit( ctx, start, end, v );
    } else {
       GLuint ind = 0;
 
@@ -275,7 +275,7 @@ void tdfxBuildVertices( GLcontext *ctx, GLuint start, GLuint count,
       ind &= fxMesa->SetupIndex;
 
       if (ind) {
-	 setup_tab[ind].emit( ctx, start, count, v );
+	 setup_tab[ind].emit( ctx, start, end, v );
       }
    }
 }

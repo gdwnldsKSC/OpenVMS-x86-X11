@@ -22,6 +22,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/i128/i128_driver.c,v 1.34tsi Exp $ */
 
 
@@ -60,7 +64,7 @@
 #include "fb.h"
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 /* driver specific includes */
 #include "i128.h"
@@ -81,6 +85,9 @@ static Bool	I128EnterVT(int scrnIndex, int flags);
 static void	I128LeaveVT(int scrnIndex, int flags);
 static Bool	I128CloseScreen(int scrnIndex, ScreenPtr pScreen);
 static Bool	I128SaveScreen(ScreenPtr pScreen, int mode);
+
+static void I128DumpBaseRegisters(ScrnInfoPtr pScrn);
+static void I128DumpIBMDACRegisters(ScrnInfoPtr pScrn, volatile CARD32 *vrbg);
 
 /* Optional functions */
 static void	I128FreeScreen(int scrnIndex, int flags);
@@ -110,7 +117,7 @@ static unsigned int I128DDC1Read(ScrnInfoPtr pScrn);
 #define I128_NAME "I128"
 #define I128_DRIVER_NAME "i128"
 #define I128_MAJOR_VERSION 1
-#define I128_MINOR_VERSION 0
+#define I128_MINOR_VERSION 1
 #define I128_PATCHLEVEL 0
 
 /* 
@@ -121,7 +128,7 @@ static unsigned int I128DDC1Read(ScrnInfoPtr pScrn);
  * this DriverRec be an upper-case version of the driver name.
  */
 
-DriverRec I128 = {
+_X_EXPORT DriverRec I128 = {
     I128_VERSION,
     I128_DRIVER_NAME,
     I128Identify,
@@ -157,7 +164,7 @@ static XF86ModuleVersionInfo i128VersRec =
  * ModuleSetupProc() and ModuleTearDownProc() functions.
  */
 
-XF86ModuleData i128ModuleData = { &i128VersRec, i128Setup, NULL };
+_X_EXPORT XF86ModuleData i128ModuleData = { &i128VersRec, i128Setup, NULL };
 
 #endif
 
@@ -186,6 +193,14 @@ static const char *vgahwSymbols[] = {
 static const char *fbSymbols[] = {
     "fbScreenInit",
     "fbPictureInit",
+    NULL
+};
+
+static const char *exaSymbols[] = {
+    "exaDriverInit",
+    "exaDriverFini",
+    "exaGetPixmapOffset",
+    "exaGetVersion",
     NULL
 };
 
@@ -274,6 +289,7 @@ i128Setup(pointer module, pointer opts, int *errmaj, int *errmin)
 	 * might refer to.
 	 */
 	LoaderRefSymLists(fbSymbols,
+			  exaSymbols,
 			  xaaSymbols, 
 			  ramdacSymbols,
 			  ddcSymbols,
@@ -457,7 +473,8 @@ typedef enum {
     OPTION_NOACCEL,
     OPTION_SHOWCACHE,
     OPTION_DAC6BIT,
-    OPTION_DEBUG
+    OPTION_DEBUG,
+    OPTION_ACCELMETHOD
 } I128Opts;
 
 static const OptionInfoRec I128Options[] = {
@@ -469,6 +486,7 @@ static const OptionInfoRec I128Options[] = {
     { OPTION_SHOWCACHE,		"ShowCache",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_DAC6BIT,		"Dac6Bit",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_DEBUG,		"Debug",	OPTV_BOOLEAN,	{0}, FALSE },
+    { OPTION_ACCELMETHOD,       "AccelMethod",  OPTV_STRING,    {0}, FALSE },
     { -1,			NULL,		OPTV_NONE,	{0}, FALSE }
 };
 
@@ -662,7 +680,17 @@ I128PreInit(ScrnInfoPtr pScrn, int flags)
     if (xf86ReturnOptValBool(pI128->Options, OPTION_NOACCEL, FALSE)) {
 	pI128->NoAccel = TRUE;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Acceleration disabled\n");
-    } else pI128->NoAccel = FALSE;
+    } else {
+        int from = X_DEFAULT;
+        char *s = xf86GetOptValString(pI128->Options, OPTION_ACCELMETHOD);
+        pI128->NoAccel = FALSE;
+        if (!xf86NameCmp(s, "EXA")) {
+            pI128->exa = TRUE;
+            from = X_CONFIG;
+        }
+        xf86DrvMsg(pScrn->scrnIndex, from, "Using %s acceleration\n",
+                   pI128->exa ? "EXA" : "XAA");
+    }
     if (xf86ReturnOptValBool(pI128->Options, OPTION_SYNC_ON_GREEN, FALSE)) {
 	pI128->DACSyncOnGreen = TRUE;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Sync-on-Green enabled\n");
@@ -1158,13 +1186,19 @@ I128PreInit(ScrnInfoPtr pScrn, int flags)
     }
     xf86LoaderReqSymLists(fbSymbols, NULL);
 
-    /* Load XAA if needed */
+    /* Load the acceleration engine */
     if (!pI128->NoAccel) {
-	if (!xf86LoadSubModule(pScrn, "xaa")) {
-	    I128FreeRec(pScrn);
-	    return FALSE;
-	}
-	xf86LoaderReqSymLists(xaaSymbols, NULL);
+	if (pI128->exa) {
+            if (!xf86LoadSubModule(pScrn, "exa")) {
+                I128FreeRec(pScrn);
+                return FALSE;
+            } else xf86LoaderReqSymLists(exaSymbols, NULL);
+        } else {
+            if (!xf86LoadSubModule(pScrn, "xaa")) {
+	        I128FreeRec(pScrn);
+	        return FALSE;
+	    } else xf86LoaderReqSymLists(xaaSymbols, NULL);
+        }
     }
 
     /* Load ramdac if needed */
@@ -1494,7 +1528,7 @@ I128ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
      * function.  If not, the visuals will need to be setup before calling
      * a fb ScreenInit() function and fixed up after.
      *
-     * For most PC hardware at depths >= 8, the defaults that cfb uses
+     * For most PC hardware at depths >= 8, the defaults that fb uses
      * are not appropriate.  In this driver, we fixup the visuals after.
      */
 
@@ -1551,12 +1585,20 @@ I128ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     xf86SetBlackWhitePixels(pScreen);
 
-    if (!pI128->NoAccel)
-	I128DGAInit(pScreen);
+    if (!pI128->NoAccel) {
+	if (pI128->exa)
+            ret = I128ExaInit(pScreen);
+        else {
+            I128DGAInit(pScreen);
+            ret = I128XaaInit(pScreen);
+        }
+    }
 
-    if (!pI128->NoAccel)
-	I128AccelInit(pScreen);
-
+    if (!ret) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Acceleration setup failed\n");
+        return FALSE;
+    }
+    
     miInitializeBackingStore(pScreen);
     xf86SetBackingStore(pScreen);
     xf86SetSilkenMouse(pScreen);
@@ -1704,8 +1746,12 @@ I128CloseScreen(int scrnIndex, ScreenPtr pScreen)
 	I128Restore(pScrn);
 	I128UnmapMem(pScrn);
     }
-    if (pI128->AccelInfoRec)
-	XAADestroyInfoRec(pI128->AccelInfoRec);
+    if (pI128->XaaInfoRec)
+	XAADestroyInfoRec(pI128->XaaInfoRec);
+    if (pI128->ExaDriver) {
+        exaDriverFini(pScreen);
+        xfree(pI128->ExaDriver);
+    }
     if (pI128->CursorInfoRec)
     	xf86DestroyCursorInfoRec(pI128->CursorInfoRec);
     if (pI128->DGAModes)
@@ -2005,7 +2051,7 @@ I128DisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
     pI128->mem.rbase_g[CRT_1CON] = snc;					MB;
 }
 
-void
+static void
 I128DumpBaseRegisters(ScrnInfoPtr pScrn)
 {
     I128Ptr pI128 = I128PTR(pScrn);
@@ -2366,7 +2412,7 @@ I128DumpActiveRegisters(ScrnInfoPtr pScrn)
 	I128DumpIBMDACRegisters(pScrn, vrbg);
 }
 
-static unsigned char ibm52Xmask[0xA0] = {
+static const unsigned char ibm52Xmask[0xA0] = {
 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,   /* 00-07 */
 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00,   /* 08-0F */
 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00,   /* 10-17 */
@@ -2389,7 +2435,7 @@ static unsigned char ibm52Xmask[0xA0] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,   /* 98-9F */
 };
 
-void
+static void
 I128DumpIBMDACRegisters(ScrnInfoPtr pScrn, volatile CARD32 *vrbg)
 {
 	unsigned char ibmr[0x100];

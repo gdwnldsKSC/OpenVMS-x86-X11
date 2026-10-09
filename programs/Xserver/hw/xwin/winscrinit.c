@@ -33,6 +33,9 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xwin/winscrinit.c,v 1.27 2003/07/29 21:25:18 dawes Exp $ */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 #include "winmsg.h"
 #include "safeAlpha.h"	
@@ -57,6 +60,7 @@ winMWExtWMProcs = {
   winMWExtWMDamageRects,
 #endif
   winMWExtWMRootlessSwitchWindow,
+  NULL,//winWMExtWMDoReorderWindow,
   
   NULL,//winMWExtWMCopyBytes,
   NULL,//winMWExtWMFillBytes,
@@ -256,7 +260,9 @@ winFinishScreenInitFB (int index,
   winScreenInfo		*pScreenInfo = pScreenPriv->pScreenInfo;
   VisualPtr		pVisual = NULL;
   char			*pbits = NULL;
+#if defined(XWIN_CLIPBOARD) || defined(XWIN_MULTIWINDOW)
   int			iReturn;
+#endif
 
   /* Create framebuffer */
   if (!(*pScreenPriv->pwinAllocateFB) (pScreen))
@@ -364,6 +370,22 @@ winFinishScreenInitFB (int index,
   pScreen->WakeupHandler = winWakeupHandler;
   pScreen->blockData = pScreen;
   pScreen->wakeupData = pScreen;
+
+#ifdef XWIN_MULTIWINDOWEXTWM
+  /*
+   * Setup acceleration for multi-window external window manager mode.
+   * To be compatible with the Damage extension, this must be done
+   * before calling miDCInitialize, which calls DamageSetup.
+   */
+  if (pScreenInfo->fMWExtWM)
+    {
+      if (!RootlessAccelInit (pScreen))
+        {
+          ErrorF ("winFinishScreenInitFB - RootlessAccelInit () failed\n");
+          return FALSE;
+        }
+    }
+#endif
 
 #ifdef RENDER
   /* Render extension initialization, calls miPictureInit */
@@ -475,7 +497,7 @@ winFinishScreenInitFB (int index,
       pScreen->CreateWindow = winCreateWindowRootless;
       pScreen->DestroyWindow = winDestroyWindowRootless;
       pScreen->PositionWindow = winPositionWindowRootless;
-      pScreen->ChangeWindowAttributes = winChangeWindowAttributesRootless;
+      /*pScreen->ChangeWindowAttributes = winChangeWindowAttributesRootless;*/
       pScreen->RealizeWindow = winMapWindowRootless;
       pScreen->UnrealizeWindow = winUnmapWindowRootless;
 #ifdef SHAPE
@@ -520,7 +542,7 @@ winFinishScreenInitFB (int index,
       pScreen->CreateWindow = winCreateWindowMultiWindow;
       pScreen->DestroyWindow = winDestroyWindowMultiWindow;
       pScreen->PositionWindow = winPositionWindowMultiWindow;
-      pScreen->ChangeWindowAttributes = winChangeWindowAttributesMultiWindow;
+      /*pScreen->ChangeWindowAttributes = winChangeWindowAttributesMultiWindow;*/
       pScreen->RealizeWindow = winMapWindowMultiWindow;
       pScreen->UnrealizeWindow = winUnmapWindowMultiWindow;
       pScreen->ReparentWindow = winReparentWindowMultiWindow;
@@ -568,23 +590,36 @@ winFinishScreenInitFB (int index,
   pScreenPriv->fRestacking = FALSE;
 #endif
 
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
+  if (FALSE
 #ifdef XWIN_MULTIWINDOW
+      || pScreenInfo->fMultiWindow
+#endif
+#ifdef XWIN_MULTIWINDOWEXTWM
+      || pScreenInfo->fInternalWM
+#endif
+      )
+    { 
 #if CYGDEBUG || YES
-  if (pScreenInfo->fMultiWindow)
-    winDebug ("winFinishScreenInitFB - Calling winInitWM.\n");
+      winDebug ("winFinishScreenInitFB - Calling winInitWM.\n");
 #endif
 
-  /* Initialize multi window mode */
-  if (pScreenInfo->fMultiWindow
-      && !winInitWM (&pScreenPriv->pWMInfo,
-		     &pScreenPriv->ptWMProc,
-		     &pScreenPriv->ptXMsgProc,
-		     &pScreenPriv->pmServerStarted,
-		     pScreenInfo->dwScreen))
-    {
-      ErrorF ("winFinishScreenInitFB - winInitWM () failed.\n");
-      return FALSE;
-    }
+      /* Initialize multi window mode */
+      if (!winInitWM (&pScreenPriv->pWMInfo,
+		      &pScreenPriv->ptWMProc,
+		      &pScreenPriv->ptXMsgProc,
+		      &pScreenPriv->pmServerStarted,
+		      pScreenInfo->dwScreen,
+		      (HWND)&pScreenPriv->hwndScreen,
+#ifdef XWIN_MULTIWINDOWEXTWM
+		      pScreenInfo->fInternalWM ||
+#endif
+		      FALSE))
+        {
+          ErrorF ("winFinishScreenInitFB - winInitWM () failed.\n");
+          return FALSE;
+        }
+    }      
 #endif
 
   /* Tell the server that we are enabled */
@@ -685,7 +720,7 @@ winFinishScreenInitNativeGDI (int index,
   pScreen->CreateWindow = winCreateWindowNativeGDI;
   pScreen->DestroyWindow = winDestroyWindowNativeGDI;
   pScreen->PositionWindow = winPositionWindowNativeGDI;
-  pScreen->ChangeWindowAttributes = winChangeWindowAttributesNativeGDI;
+  /*pScreen->ChangeWindowAttributes = winChangeWindowAttributesNativeGDI;*/
   pScreen->RealizeWindow = winMapWindowNativeGDI;
   pScreen->UnrealizeWindow = winUnmapWindowNativeGDI;
 

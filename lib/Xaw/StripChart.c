@@ -48,6 +48,9 @@ SOFTWARE.
 ******************************************************************/
 /* $XFree86: xc/lib/Xaw/StripChart.c,v 1.7 2001/01/17 19:42:32 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>

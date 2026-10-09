@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/extras/Xpm/lib/create.c,v 1.2.4.2 2004/12/17 01:09:36 gisburn Exp $ */
+/* $XdotOrg: xc/extras/Xpm/lib/create.c,v 1.6 2005/05/19 15:02:48 sandmann Exp $ */
 /*
  * Copyright (C) 1989-95 GROUPE BULL
  *
@@ -47,6 +47,9 @@
 
 /* October 2004, source code review by Thomas Biege <thomas@suse.de> */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "XpmI.h"
 #include <ctype.h>
 
@@ -1215,10 +1218,10 @@ PutImagePixels(image, width, height, pixelindex, pixels)
     register char *src;
     register char *dst;
     register unsigned int *iptr;
-    register unsigned int x, y, i;
+    register unsigned int x, y;
     register char *data;
     Pixel pixel, px;
-    int nbytes, depth, ibu, ibpp;
+    int nbytes, depth, ibu, ibpp, i;
 
     data = image->data;
     iptr = pixelindex;

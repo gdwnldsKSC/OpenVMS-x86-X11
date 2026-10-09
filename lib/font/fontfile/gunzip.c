@@ -4,8 +4,11 @@
    intended for inclusion in X11 public releases. */
 /* $XFree86: xc/lib/font/fontfile/gunzip.c,v 1.4 2000/09/19 12:46:08 eich Exp $ */
 
-#include "fontmisc.h"
-#include <bufio.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <X11/fonts/fontmisc.h>
+#include <X11/fonts/bufio.h>
 #include <zlib.h>
 
 typedef struct _xzip_buf {

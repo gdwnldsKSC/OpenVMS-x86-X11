@@ -1,5 +1,9 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_g450pll.c,v 1.8tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -11,7 +15,6 @@
 /* Drivers that need to access the PCI config space directly need this */
 #include "xf86Pci.h"
 
-#include "mga_bios.h"
 #include "mga_reg.h"
 #include "mga.h"
 

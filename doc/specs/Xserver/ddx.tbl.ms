@@ -1,6 +1,6 @@
 .\" $Xorg: ddx.tbl.ms,v 1.3 2000/08/17 19:42:41 cpqbld Exp $
-.EF 'Porting Layer Definition'- % -'April 8, 1994'
-.OF 'Porting Layer Definition'- % -'April 8, 1994'
+.EF 'Porting Layer Definition'- % -'October 27, 2004'
+.OF 'Porting Layer Definition'- % -'October 27, 2004'
 .EH '''
 .OH '''
 .TL
@@ -34,11 +34,17 @@ Revised for Release 6 by
 David P. Wiggins
 .AI
 X Consortium
+.sp
+Minor Revisions for Release 6.8.2 by
+.AU
+Jim Gettys
+.AI
+X.org Foundation and Hewlett Packard
 .LP
 .bp
 \&
 .sp 15
-Copyright \(co 1994 X Consortium
+Copyright \(co 1994 X Consortium, Inc., 2004 X.org Foundation, Inc.
 .LP
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the ``Software''), to deal
@@ -58,6 +64,24 @@ AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 .bp
 .LP
+Note to the 2004 edition: at this time this document must be considered incomplete.
+In particular, the new Render extension is still lacking good documentation,
+and has become vital to high performance X implementations.
+A new "fb" portable frame buffer graphics library (replacing "cfb") 
+is used by most implementations
+to implement software rendering for most operations. Accelerating only a few
+of the old "core" graphics functions is now needed,
+as performance in software is "good enough" for most operations.
+Modern applications 
+and desktop environments are now
+much more sensitive to good implementation of the Render extension than in
+most operations of the old X graphics model. 
+The shadow frame buffer implementation is also very useful in many circumstances,
+and also needs documentation.
+We hope to rectify these shortcomings in our documentation
+in the future.
+Help would be greatly appreciated.
+.LP
 The following document explains the
 structure of the X Window System display server and the interfaces among the larger pieces.
 It is intended as a reference for programmers who are implementing an X Display Server
@@ -65,21 +89,17 @@ on their workstation hardware.
 It is included with the X Window System source tape,
 along with the document "Strategies for Porting the X v11 Sample Server."
 The order in which you should read these documents is:
-
 .IP 1) 
 Read the first section 
 of the "Strategies for Porting" document (Overview of Porting Process).
-
 .IP 2) 
 Skim over this document (the Definition document).
-
 .IP 3) 
 Skim over the remainder of the Strategies document.
-
 .IP 4) 
 Start planning and working, referring to the Strategies
 and Definition documents.
-
+.LP
 You may also want to look at the following documents:
 .IP \(bu 5
 "The X Window System"
@@ -96,7 +116,7 @@ LK201 and DEC are trademarks of Digital Equipment Corporation.
 Macintosh and Apple are trademarks of Apple Computer, Inc.
 PostScript is a trademark of Adobe Systems, Inc.
 Ethernet is a trademark of Xerox Corporation.
-X Window System is a trademark of X Consortium, Inc.
+X Window System is a trademark of the X.org Foundation, Inc.
 Cray is a trademark of Cray Research, Inc.
 
 .LP
@@ -114,14 +134,15 @@ and (possibly) its networking and multitasking facilities.
 This document depends a lot on the source code,
 so you should have a listing of the code handy.
 .LP
-Some source on the distribution tape is directly compilable
+Some source in the distribution is directly compilable
 on your machine.
 Some of it will require
 modification.
 Other parts may have to be completely written from scratch.
 .LP
-The tape also includes source for a sample implementation of a display
-server which runs on a variety of color and monochrome displays which you
+The distribution also includes source for a sample implementation of a display
+server which runs on a very wide variety of color and monochrome displays on
+Linux and *BSD which you
 will find useful for implementing any type of X server.
 
 
@@ -142,6 +163,8 @@ per pixel with a special graphics processor doing the work.  (In this
 document, monochrome means a black and white display with one bit per pixel.
 Even though the usual meaning of monochrome is more general, this special
 case is so common that we decided to reserve the word for this purpose.)
+In practice, monochrome displays are now almost unheard of, with 4 bit
+gray scale displays being the low end.
 
 X is designed for a networking environment where 
 users can run applications on machines other than their own workstations.
@@ -370,7 +393,7 @@ Some parts are events delivered to the client, such as keystrokes from the user.
 The processing of events and requests for different
 clients can be interleaved with one another so true multitasking
 is not needed in the server.
-
+.LP
 You must supply some of the pieces for proper scheduling between clients.
 .nf
 
@@ -391,7 +414,8 @@ you should return a count of clients stored in pClientReady
 A new client tries to connect, in which case you should create the
 client and  then continue waiting
 .LP
-Before WaitForSomething() computes the masks to pass to select, it needs to
+Before WaitForSomething() computes the masks to pass to select, poll or 
+similar operating system interface, it needs to
 see if there is anything to do on the work queue; if so, it must call a DIX
 routine called ProcessWorkQueue.
 .nf
@@ -402,7 +426,7 @@ routine called ProcessWorkQueue.
 .fi
 .LP
 If WaitForSomething() decides it is about to do something that might block
-(in the sample server,  before it calls select()) it must call a DIX
+(in the sample server,  before it calls select() or poll) it must call a DIX
 routine called BlockHandler().
 .nf
 
@@ -445,7 +469,8 @@ WakeupHandler().
 Once again,  the types are not specified by DIX.  The result is the
 success indicator for the thing that (may have) blocked,
 and the pReadmask is a mask of the descriptors that came active.
-In the sample server,  result is the result from select(),  and pReadmask is
+In the sample server,  result is the result from select() (or equivalent
+operating system function),  and pReadmask is
 the address of the select() mask for reading.
 .LP
 The DIX WakeupHandler() calls each Screen's
@@ -492,6 +517,19 @@ These registered block handlers are called after the per-screen handlers:
 		pointer	pReadmask;
 .fi
 .LP
+Sometimes block handlers need to adjust the time in a OSTimePtr structure,
+which on UNIX family systems is generally represented by a struct timeval
+consisting of seconds and microseconds in 32 bit values.
+As a convenience to reduce error prone struct timeval computations which
+require modulus arithmetic and correct overflow behavior in the face of
+millisecond wrapping throrugh 32 bits,
+.nf
+
+	void AdjustWaitForDelay(pointer /*waitTime*, unsigned long /* newdelay */)
+
+.fi
+has been provided.
+.LP
 Any wakeup handlers registered with RegisterBlockAndWakeupHandlers will
 be called before the Screen handlers:
 .nf
@@ -522,6 +560,8 @@ For instance, if your implementation always checks for client data first and doe
 report any input events until there is no client data left,
 your mouse and keyboard might get locked out by an application that constantly
 barrages the server with graphics drawing requests.
+Therefore, as a general rule, input devices should always have priority over graphics
+devices.
 .LP
 A list of indexes (client->index) for clients with data ready to be read or
 processed should be returned in pClientReady, and the count of indexes
@@ -572,6 +612,59 @@ Input Procedures that are stored in the DeviceRec (the
 routine passed to AddInputDevice()).
 The sample server implementation of AddEnabledDevice
 and RemoveEnabledDevice are in Xserver/os/connection.c.
+.NH 3
+Timer Facilities
+.XS
+Timer Facilities
+.XE
+.LP
+Similarly, the X server or an extension may need to wait for some timeout. 
+Early X releases implemented this functionality using block and wakeup handlers,
+but this has been rewritten to use a general timer facilty, and the
+internal screen saver facilties reimplemented to use Timers.
+These functions are TimerInit, TimerForce, TimerSet, TimerCheck, TimerCancel, 
+and TimerFree, as defined in Xserver/include/os.h. A callback function will be called
+when the timer fires, along with the current time, and a user provided argument.
+.nf
+	typedef	struct _OsTimerRec *OsTimerPtr;
+
+	typedef CARD32 (*OsTimerCallback)(
+		OsTimerPtr /* timer */,
+		CARD32 /* time */,
+		pointer /* arg */);
+
+	 OsTimerPtr TimerSet( OsTimerPtr /* timer */,
+		int /* flags */,
+		CARD32 /* millis */,
+		OsTimerCallback /* func */,
+		pointer /* arg */);
+
+.fi
+.LP
+TimerSet returns a pointer to a timer structure and sets a timer to the specified time
+with the specified argument.  The flags can be TimerAbsolute and TimerForceOld.
+The TimerSetOld flag controls whether if the timer is reset and the timer is pending, the
+whether the callback function will get called.
+The TimerAbsolute flag sets the callback time to an absolute time in the future rather
+than a time relative to when TimerSet is called.
+TimerFree should be called to free the memory allocated
+for the timer entry.
+.nf
+	void TimerInit(void)
+
+	Bool TimerForce(OsTimerPtr /* pTimer */)
+
+	void TimerCheck(void);
+
+	void TimerCancel(OsTimerPtr /* pTimer */)
+
+	void TimerFree(OSTimerPtr /* pTimer */)
+.fi
+TimerInit frees any exisiting timer entries. TimerForce forces a call to the timer's
+callback function and returns true if the timer entry existed, else it returns false and
+does not call the callback function. TimerCancel will cancel the specified timer.
+TimerFree calls TimerCancel and frees the specified timer.
+Calling TimerCheck will force the server to see if any timer callbacks should be called.
 .NH 2
 New Client Connections
 .XS
@@ -4734,22 +4827,19 @@ Wrapping screen functions is quite easy; each vector is individually
 wrapped.  Screen functions are not supposed to change after initialization,
 so rewrapping is technically not necessary, but causes no problems.
 .LP
-Wrapping GC functions is a bit more complicated.  GC's have two sets of
-function vectors, one hanging from gc->ops and the other from gc->funcs.
-Wrappers should modify only those values, not the internal values as they
+Wrapping GC functions is a bit more complicated.  GC's have two tables of
+function vectors, one hanging from gc->ops and the other from gc->funcs, which
+should be initially wrapped from a CreateGC wrapper.  Wrappers should modify
+only table pointers, not the contents of the tables, as they
 may be shared by more than one GC (and, in the case of funcs, are probably
-shared by all gcs).  To wrap the ops, wrap the funcs and, in each func
-wrapper, unwrap the ops and funcs, call down, and re-wrap.  In each op
-wrapper, unwrap both the funcs and ops, call down and rewrap afterwards.  The
-rule is:  if you wrap funcs+ops, you must always unwrap both before down
-calling.  If you wrap ops, you must always pull the ops value out of the GC
-in the func wrapper and save it.  If you wrap funcs, you needn't pull the
-funcs value out of the GC to rewrap as the func values are required to be
-constant.  In this way, the wrapped validation routine can change the op
-vector and not have it lost when your wrapper routine rewraps the GC.  This
-occurs when the wrapped op revalidates the GC with new entries (many mi
-routines do this for opaque stipples or double dashes).  The corollary to
-this rule is:  Never change the func vector after CreateGC.
+shared by all gcs).  Your func wrappers may change the GC funcs or ops
+pointers, and op wrappers may change the GC op pointers but not the funcs.
+
+Thus, the rule for GC wrappings is: wrap the funcs from CreateGC and, in each
+func wrapper, unwrap the ops and funcs, call down, and re-wrap.  In each op
+wrapper, unwrap the ops, call down, and rewrap afterwards.  Note that in 
+re-wrapping you must save out the pointer you're replacing again.  This way the
+chain will be maintained when wrappers adjust the funcs/ops tables they use.
 .LP
 .NH 2
 Work Queue
@@ -5039,6 +5129,7 @@ AddCallback	dix
 AddEnabledDevice	os
 AddInputDevice	dix
 AddScreen	dix
+AdjustWaitForDelay	os
 Bell	hd	Device
 ChangeClip	mi	GC func
 ChangeGC		GC func
@@ -5072,7 +5163,6 @@ DestroyPixmap	ddx	Screen
 DestroyWindow	ddx	Screen
 DisplayCursor	hd	Screen
 Error	os
-ErrorF	os
 .TE
 .bp
 .TS
@@ -5081,6 +5171,7 @@ c c c
 l c l.
 Procedure	Port	Struct
 _
+ErrorF	os
 FatalError	os
 FillPolygon	mi	GC op
 FillSpans	ddx	GC op
@@ -5131,7 +5222,6 @@ PushPixels	mi	GC op
 PutImage	mi	GC op
 QueryBestSize	hd	Screen
 ReadRequestFromClient	os	
-RealizeCursor	hd	Screen
 .TE
 .bp
 .TS
@@ -5140,6 +5230,7 @@ c c c
 l c l.
 Procedure	Port	Struct
 _
+RealizeCursor	hd	Screen
 RealizeFont	ddx	Screen
 RealizeWindow	ddx	Screen
 RecolorCursor	hd	Screen
@@ -5165,6 +5256,12 @@ SetInputCheck	dix
 SetSpans	ddx	GC op
 StoreColors	ddx	Screen
 Subtract	mi	Screen
+TimerCancel	os
+TimerCheck	os
+TimerForce	os
+TimerFree	os
+TimerInit	os
+TimerSet	os
 TimeSinceLastInputEvent	hd
 TranslateBackingStore	none	BackingStore
 TranslateRegion	mi	Screen

@@ -25,10 +25,9 @@
 #define ___ATIMACH64I2C_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
-extern void ATIMach64I2CPreInit FunctionPrototype((ScrnInfoPtr, ATIPtr));
+extern void ATIMach64I2CPreInit(ScrnInfoPtr, ATIPtr);
 
 #endif /* ___ATIMACH64I2C_H___ */

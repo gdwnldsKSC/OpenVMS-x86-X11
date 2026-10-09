@@ -25,6 +25,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/acecad/acecad.c,v 1.4 2003/10/30 00:40:45 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _ACECAD_C_
 /*****************************************************************************
  *	Standard Headers
@@ -72,7 +76,7 @@
 #define MAX_EVENTS 50
 
 
-InputDriverRec ACECAD = 
+_X_EXPORT InputDriverRec ACECAD = 
 {
 	1,
 	"acecad",
@@ -99,7 +103,11 @@ static XF86ModuleVersionInfo VersionRec =
 };
 
 
-XF86ModuleData acecadModuleData = { &VersionRec, SetupProc, TearDownProc};
+_X_EXPORT XF86ModuleData acecadModuleData = {
+	&VersionRec,
+	SetupProc,
+	TearDownProc
+};
 
 /*****************************************************************************
  *	Function Definitions
@@ -300,9 +308,6 @@ AceCadPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
   SetupProc_fail:
 	if ((local) && (local->fd))
 		xf86CloseSerial (local->fd);
-	if (local)
-		xf86DeleteInput (local, 0);
-
 	if ((priv) && (priv->buffer))
 		XisbFree (priv->buffer);
 	if (priv)
@@ -810,7 +815,7 @@ QueryHardware (AceCadPrivatePtr priv)
 	XisbBlockDuration (priv->buffer, 1000000);
 	NewPacket (priv);
 
-	/*xf86Msg(X_CONFIG, "Acecad Tablet init envoyé \n");*/
+	/*xf86Msg(X_CONFIG, "Acecad Tablet init envoyÃ© \n");*/
 
 	if ((AceCadGetPacket (priv) == Success))
 	{

@@ -1,7 +1,7 @@
 XCOMM ----------------------------------------------------------------------
 XCOMM Makefile generated from IMAKE_TEMPLATE and INCLUDE_IMAKEFILE
 XCOMM $Xorg: Imake.tmpl,v 1.4 2000/08/17 19:41:46 cpqbld Exp $
-XCOMM $XdotOrg: xc/config/cf/Imake.tmpl,v 1.6 2004/07/28 03:24:29 gisburn Exp $
+XCOMM $XdotOrg: xc/config/cf/Imake.tmpl,v 1.16 2005/11/08 06:33:24 jkj Exp $
 XCOMM
 XCOMM
 XCOMM
@@ -62,6 +62,10 @@ XCOMM the platform-specific parameters - edit site.def to change
 
 #ifndef HasClearmake
 # define HasClearmake NO
+#endif
+
+#ifndef ProPoliceSupport
+#define ProPoliceSupport NO
 #endif
 
 /*
@@ -480,6 +484,16 @@ XCOMM the platform-specific parameters - edit site.def to change
 #ifndef HasBasename
 #define HasBasename		YES
 #endif
+#ifndef HasGetopt
+# if !defined(Win32Architecture) && !defined(OS2Architecture)
+#  define HasGetopt		YES
+# else
+#  define HasGetopt		NO
+# endif
+#endif
+#ifndef HasGetoptLong
+# define HasGetoptLong		NO
+#endif
 /* byte-order defaults */
 #ifndef ByteOrder
 #if defined(VaxArchitecture)
@@ -507,6 +521,8 @@ XCOMM the platform-specific parameters - edit site.def to change
 #elif defined(s390Architecture)
 #define ByteOrder		X_BIG_ENDIAN
 #elif defined(s390xArchitecture)
+#define ByteOrder		X_BIG_ENDIAN
+#elif defined(Arm32ebArchitecture)
 #define ByteOrder		X_BIG_ENDIAN
 #elif defined(Arm32Architecture)
 #define ByteOrder		X_LITTLE_ENDIAN
@@ -569,25 +585,28 @@ X_BYTE_ORDER = ByteOrder
 #define HasFfs			YES
 #endif
 #ifndef HasZlib
-#define HasZlib			NO
+#define HasZlib			YES
 #endif
 #ifndef OsNeedZlibHeaders
 #define OsNeedZlibHeaders	!HasZlib
 #endif
 #if !HasZlib		/* if OS doesn't have it, we'll build it */
+XCOMM Building your own zlib can be a harmful security risk and is
+XCOMM deprecated; please strongly consider using vendor-supplied packages.
 #undef GzipLibrary	/* GzipLibrary was valid only if HasZlib */
 #endif
 #ifndef GzipLibrary	/* if OS config didn't define it, assume it's -lz */
 #define GzipLibrary -lz
 #endif
-/* If the system has the Freetype2 library */
+/* If the system has the Freetype2 library - if NO, the copy in extras is built */
 #ifndef HasFreetype2
-#define HasFreetype2		NO
+#define HasFreetype2		YES
 #endif
-/* If the system has the Fontconfig library */
+/* If the system has the Fontconfig library - if NO, the copy in extras is built  */
 #ifndef HasFontconfig
 #define HasFontconfig		NO
 #endif
+/* If the system has the PNG library - if NO, xcursorgen is not built */
 #ifndef HasLibpng
 #define HasLibpng		NO
 #endif
@@ -1025,7 +1044,7 @@ TCLIBDIR = TclLibDir
 #define NoRConst NO /* YES if const for structs of funcs is bad */
 #endif
 #ifndef InstPgmFlags
-# ifdef CrossCompiling
+# if CrossCompiling
 #  define InstPgmFlags
 # else
 #  define InstPgmFlags -s
@@ -1090,6 +1109,12 @@ TCLIBDIR = TclLibDir
 #endif
 #ifndef HasGcc
 #define HasGcc HasGcc2
+#endif
+#ifndef HasIntelC
+#define HasIntelC NO
+#endif
+#ifndef HasSunC
+#define HasSunC NO
 #endif
 #ifndef HasBrokenCCForLink
 #define HasBrokenCCForLink NO
@@ -1938,6 +1963,16 @@ MODLDCOMBINEFLAGS = ModuleLdCombineFlags
          SHLIBDEF = SharedLibraryDef
 #ifdef SharedLibraryLoadFlags
      SHLIBLDFLAGS = SharedLibraryLoadFlags $(SHLIBGLOBALSFLAGS)
+#if HasGcc
+         NOSTDLIB = -nostdlib
+     POSTNOSTDLIB = -Wl,-Bstatic -lgcc -Wl,-Bdynamic
+#elif HasIntelC
+         NOSTDLIB = -nostdlib
+     POSTNOSTDLIB =
+#elif HasSunC
+         NOSTDLIB = -xnolib
+     POSTNOSTDLIB =
+#endif
 #endif
 /*
  * Here we set up flags needed to produce position-independent code

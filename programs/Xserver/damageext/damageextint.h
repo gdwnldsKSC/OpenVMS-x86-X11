@@ -1,7 +1,7 @@
 /*
- * $Id: damageextint.h,v 1.3 2003/11/13 09:14:29 keithp Exp $
+ * $Id: damageextint.h,v 1.6 2005/07/03 08:53:38 daniels Exp $
  *
- * Copyright © 2002 Keith Packard
+ * Copyright Â© 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -21,6 +21,10 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #ifndef _DAMAGEEXTINT_H_
 #define _DAMAGEEXTINT_H_

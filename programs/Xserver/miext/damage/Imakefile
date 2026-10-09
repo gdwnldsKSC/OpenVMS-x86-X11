@@ -1,13 +1,6 @@
 #define IHaveModules
 #include <Server.tmpl>
 
-#ifdef XFree86Version
-#if DoLoadableServer
-XFMODSRC = damage.c
-XFMODOBJ = damage.o
-#endif
-#endif
-
 #if BuildRootless
 DEFINES = -DROOTLESS_WORKAROUND
 #endif
@@ -23,14 +16,11 @@ OBJS = damage.o
 	     ../../mi/llib-lmi.ln
 
 NormalLibraryObjectRule()
-LibraryModuleTarget(damage,$(OBJS))
+NormalLibraryTarget(damage,$(OBJS))
 LintLibraryTarget(damage,$(SRCS))
 
 NormalLintTarget($(SRCS))
 
-InstallLibraryModule(damage,$(MODULEDIR),.)
-
 DependTarget()
 
-InstallDriverSDKLibraryModule(damage,$(DRIVERSDKMODULEDIR),.)
 InstallDriverSDKNonExecFile(damage.h,$(DRIVERSDKINCLUDEDIR))

@@ -47,23 +47,26 @@ SOFTWARE.
 
 ******************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "IntrinsicI.h"
 
 /* ARGSUSED */
-void XtCallbackNone(widget, closure, call_data)
-    Widget  widget;
-    XtPointer closure;
-    XtPointer call_data;
+void XtCallbackNone(
+    Widget  widget,
+    XtPointer closure,
+    XtPointer call_data)
 {
     XtSetSensitive(widget, FALSE);
     _XtPopup((Widget) closure, XtGrabNone, FALSE);
 } /* XtCallbackNone */
 
 /* ARGSUSED */
-void XtCallbackNonexclusive(widget, closure, call_data)
-    Widget  widget;
-    XtPointer closure;
-    XtPointer call_data;
+void XtCallbackNonexclusive(
+    Widget  widget,
+    XtPointer closure,
+    XtPointer call_data)
 {
 
     XtSetSensitive(widget, FALSE);
@@ -71,10 +74,10 @@ void XtCallbackNonexclusive(widget, closure, call_data)
 } /* XtCallbackNonexclusive */
 
 /* ARGSUSED */
-void XtCallbackExclusive(widget, closure, call_data)
-    Widget  widget;
-    XtPointer closure;
-    XtPointer call_data;
+void XtCallbackExclusive(
+    Widget  widget,
+    XtPointer closure,
+    XtPointer call_data)
 {
     XtSetSensitive(widget, FALSE);
     _XtPopup((Widget) closure, XtGrabExclusive, FALSE);

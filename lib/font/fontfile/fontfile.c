@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/lib/font/fontfile/fontfile.c,v 1.2 2004/04/23 18:44:21 eich Exp $ */
+/* $XdotOrg: xc/lib/font/fontfile/fontfile.c,v 1.5 2005/07/09 06:36:13 keithp Exp $ */
 /* $Xorg: fontfile.c,v 1.4 2001/02/09 02:04:03 xorgcvs Exp $ */
 
 /*
@@ -33,7 +33,13 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $NCDXorg: @(#)fontfile.c,v 1.6 1991/07/02 17:00:46 lemke Exp $ */
 
-#include    "fntfilst.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include    <X11/fonts/fntfilst.h>
+#ifdef WIN32
+#include <ctype.h>
+#endif
 
 /*
  * Map FPE functions to renderer functions
@@ -49,9 +55,9 @@ int
 FontFileNameCheck (char *name)
 {
 #ifndef NCD
-#ifdef __UNIXOS2__
+#if defined(__UNIXOS2__) || defined(WIN32)
     /* OS/2 uses D:/... as a path name for fonts, so accept this as a valid
-     * path if it starts with a letter and a colon
+     * path if it starts with a letter and a colon. Same applies for WIN32
      */
     if (isalpha(*name) && name[1]==':')
         return TRUE;

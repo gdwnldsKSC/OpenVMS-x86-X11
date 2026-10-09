@@ -1,6 +1,7 @@
 /*
+ * $RCSId: xc/lib/fontconfig/src/fclist.c,v 1.11tsi Exp $
  *
- * Copyright © 2000 Keith Packard
+ * Copyright Â© 2000 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -66,10 +67,11 @@ FcObjectSetAdd (FcObjectSet *os, const char *object)
     low = 0;
     mid = 0;
     c = 1;
+    object = FcObjectStaticName (object);
     while (low <= high)
     {
 	mid = (low + high) >> 1;
-	c = strcmp (os->objects[mid], object);
+	c = os->objects[mid] - object;
 	if (c == 0)
 	    return FcTrue;
 	if (c < 0)
@@ -119,17 +121,33 @@ FcObjectSetBuild (const char *first, ...)
     return os;
 }
 
+/*
+ * Font must have a containing value for every value in the pattern
+ */
 static FcBool
-FcListValueListMatchAny (FcValueList *v1orig,
-			 FcValueList *v2orig)
+FcListValueListMatchAny (FcValueList *patOrig,	    /* pattern */
+			 FcValueList *fntOrig)	    /* font */
 {
-    FcValueList	    *v1, *v2;
+    FcValueList	    *pat, *fnt;
 
-    for (v1 = v1orig; v1; v1 = v1->next)
-	for (v2 = v2orig; v2; v2 = v2->next)
-	    if (FcConfigCompareValue (v1->value, FcOpContains, v2->value))
-		return FcTrue;
-    return FcFalse;
+    for (pat = patOrig; pat; pat = pat->next)
+    {
+	for (fnt = fntOrig; fnt; fnt = fnt->next)
+	{
+	    /*
+	     * make sure the font 'contains' the pattern.
+	     * (OpListing is OpContains except for strings
+	     *  where it requires an exact match)
+	     */
+	    if (FcConfigCompareValue (fnt->value,
+				      FcOpListing, 
+				      pat->value)) 
+		break;
+	}
+	if (!fnt)
+	    return FcFalse;
+    }
+    return FcTrue;
 }
 
 static FcBool
@@ -183,9 +201,9 @@ FcListPatternEqual (FcPattern	*p1,
  * FcTrue iff all objects in "p" match "font"
  */
 
-static FcBool
-FcListPatternMatchAny (FcPattern *p,
-		       FcPattern *font)
+FcBool
+FcListPatternMatchAny (const FcPattern *p,
+		       const FcPattern *font)
 {
     int		    i;
     FcPatternElt   *e;
@@ -195,24 +213,11 @@ FcListPatternMatchAny (FcPattern *p,
 	e = FcPatternFindElt (font, p->elts[i].object);
 	if (!e)
 	    return FcFalse;
-	if (!FcListValueListMatchAny (p->elts[i].values, e->values))
+	if (!FcListValueListMatchAny (p->elts[i].values,    /* pat elts */
+				      e->values))	    /* font elts */
 	    return FcFalse;
     }
     return FcTrue;
-}
-
-static FcChar32
-FcListStringHash (const FcChar8	*s)
-{
-    FcChar32	h = 0;
-    FcChar8	c;
-
-    while ((c = *s++))
-    {
-	c = FcToLower (c);
-	h = ((h << 3) ^ (h >> 3)) ^ c;
-    }
-    return h;
 }
 
 static FcChar32
@@ -237,7 +242,7 @@ FcListValueHash (FcValue    v)
     case FcTypeDouble:
 	return (FcChar32) (int) v.u.d;
     case FcTypeString:
-	return FcListStringHash (v.u.s);
+	return FcStrHashIgnoreCase (v.u.s);
     case FcTypeBool:
 	return (FcChar32) v.u.b;
     case FcTypeMatrix:
@@ -414,7 +419,8 @@ FcFontSetList (FcConfig	    *config,
 	if (!s)
 	    continue;
 	for (f = 0; f < s->nfont; f++)
-	    if (FcListPatternMatchAny (p, s->fonts[f]))
+	    if (FcListPatternMatchAny (p,		/* pattern */
+				       s->fonts[f]))	/* font */
 		if (!FcListAppend (&table, s->fonts[f], os))
 		    goto bail1;
     }

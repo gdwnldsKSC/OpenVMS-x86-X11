@@ -7,15 +7,9 @@ LIBNAME = r200_dri.so
 
 MINIGLX_SOURCES = server/radeon_dri.c 
 
-COMMON_SOURCES = \
-	../../common/driverfuncs.c \
-	../common/mm.c \
-	../common/utils.c \
-	../common/texmem.c \
-	../common/vblank.c \
-	../common/xmlconfig.c \
-	../common/dri_util.c \
-	../common/glcontextmodes.c
+ifeq ($(USING_EGL), 1)
+EGL_SOURCES = server/radeon_egl.c
+endif
 
 DRIVER_SOURCES = r200_context.c \
 		 r200_ioctl.c \
@@ -36,27 +30,33 @@ DRIVER_SOURCES = r200_context.c \
 		 r200_vtxfmt.c \
 		 r200_vtxfmt_c.c \
 		 r200_vtxfmt_sse.c \
-		 r200_vtxfmt_x86.c 
+		 r200_vtxfmt_x86.c \
+		 $(EGL_SOURCES)
 
 C_SOURCES = $(COMMON_SOURCES) $(DRIVER_SOURCES)
 
 X86_SOURCES = r200_vtxtmp_x86.S
 
 SYMLINKS = \
-	server/radeon_dri.c \
+	server/radeon_egl.c  \
+	server/radeon_dri.c  \
 	server/radeon_dri.h \
 	server/radeon.h \
 	server/radeon_macros.h \
-	server/radeon_reg.h 
+	server/radeon_reg.h
 
 ##### TARGETS #####
 
 
 include ../Makefile.template
 
-$(SYMLINKS):
+#INCLUDES += -I../radeon/server
+
+server:
 	mkdir -p server
-	for i in $(SYMLINKS) ; do rm -f $$i && test -f ../radeon/$$i && ln -s ../../radeon/$$i $$i ; done
+
+$(SYMLINKS): server
+	@[ -e $@ ] || ln -sf ../../radeon/$@ server/
 
 symlinks: $(SYMLINKS)
 

@@ -21,6 +21,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef XFree86LOADER
 
 #include "ati.h"
@@ -120,7 +124,7 @@ ATISetup
 }
 
 /* The following record must be called atiModuleData */
-XF86ModuleData atiModuleData =
+_X_EXPORT XF86ModuleData atiModuleData =
 {
     &ATIVersionRec,
     ATISetup,

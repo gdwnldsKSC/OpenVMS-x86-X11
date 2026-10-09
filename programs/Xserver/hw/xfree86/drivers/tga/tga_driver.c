@@ -24,6 +24,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/tga/tga_driver.c,v 1.60tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* everybody includes these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -62,15 +66,17 @@
 #include "BT.h"
 #include "tga.h"
 
+#ifdef XFreeXDGA
 #define _XF86DGA_SERVER_
-#include "extensions/xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
+#endif
 
 #include "globals.h"
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 static const OptionInfoRec * TGAAvailableOptions(int chipid, int busid);
 static void	TGAIdentify(int flags);
@@ -123,7 +129,7 @@ void TGASync(ScrnInfoPtr pScrn);
  * an upper-case version of the driver name.
  */
 
-DriverRec TGA = {
+_X_EXPORT DriverRec TGA = {
     VERSION,
     TGA_DRIVER_NAME,
     TGAIdentify,
@@ -218,7 +224,7 @@ static XF86ModuleVersionInfo tgaVersRec =
 	{0,0,0,0}
 };
 
-XF86ModuleData tgaModuleData = { &tgaVersRec, tgaSetup, NULL };
+_X_EXPORT XF86ModuleData tgaModuleData = { &tgaVersRec, tgaSetup, NULL };
 
 pointer
 tgaSetup(pointer module, pointer opts, int *errmaj, int *errmin)

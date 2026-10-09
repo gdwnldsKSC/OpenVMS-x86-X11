@@ -25,9 +25,8 @@
 #define ___ATIADJUST_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
-extern void ATIAdjustPreInit FunctionPrototype((ATIPtr));
-extern void ATIAdjustFrame   FunctionPrototype((int, int, int, int));
+extern void ATIAdjustPreInit(ATIPtr);
+extern void ATIAdjustFrame(int, int, int, int);
 
 #endif /* ___ATIADJUST_H___ */

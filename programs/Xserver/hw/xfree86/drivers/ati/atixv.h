@@ -25,14 +25,11 @@
 #define ___ATIXV_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
-extern void ATIXVPreInit        FunctionPrototype((ATIPtr));
-extern Bool ATIInitializeXVideo FunctionPrototype((ScreenPtr, ScrnInfoPtr,
-                                                   ATIPtr));
-extern void ATICloseXVideo      FunctionPrototype((ScreenPtr, ScrnInfoPtr,
-                                                   ATIPtr));
+extern void ATIXVPreInit(ATIPtr);
+extern Bool ATIInitializeXVideo(ScreenPtr, ScrnInfoPtr, ATIPtr);
+extern void ATICloseXVideo(ScreenPtr, ScrnInfoPtr, ATIPtr);
 
 #endif /* ___ATIXV_H___ */

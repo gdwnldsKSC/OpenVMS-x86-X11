@@ -6,7 +6,11 @@
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/xf8_16bpp/cfbwindow.c,v 1.4tsi Exp $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "scrnintstr.h"
 #include "windowstr.h"
 #define PSZ 8

@@ -25,13 +25,17 @@
  * the sale, use or other dealings in this Software without prior written
  * authorization from the copyright holder(s) and author(s).
  */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/shared/sigiostubs.c,v 1.2 2004/06/28 18:08:26 alanc Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/shared/sigiostubs.c,v 1.5 2005/07/03 07:01:35 daniels Exp $ */
+
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
 
 #ifdef XFree86Server
 #ifdef __UNIXOS2__
 # define I_NEED_OS2_H
 #endif
-# include "X.h"
+# include <X11/X.h>
 # include "xf86.h"
 # include "xf86Priv.h"
 # include "xf86_OSlib.h"

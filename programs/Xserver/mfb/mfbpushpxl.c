@@ -47,7 +47,11 @@ SOFTWARE.
 ******************************************************************/
 /* $Xorg: mfbpushpxl.c,v 1.4 2001/02/09 02:05:19 xorgcvs Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "gcstruct.h"
 #include "scrnintstr.h"
 #include "pixmapstr.h"
@@ -275,4 +279,9 @@ mfbPushPixels(pGC, pBitMap, pDrawable, dx, dy, xOrg, yOrg)
     {
 	(*pGC->ops->FillSpans)(pDrawable, pGC, ipt, pt, width, TRUE);
     }
+}
+
+mfbPushPixelsProc *mfbPushPixelsWeak(void)
+{
+   return mfbPushPixels;
 }

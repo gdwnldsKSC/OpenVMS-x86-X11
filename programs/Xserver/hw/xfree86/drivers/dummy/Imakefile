@@ -28,7 +28,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(dummy,$(OBJS))
 
-InstallObjectModule(dummy,$(MODULEDIR),drivers)
+InstallVideoObjectModule(dummy,$(MODULEDIR))
 
 DependTarget()
 

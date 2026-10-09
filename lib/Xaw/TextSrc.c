@@ -32,6 +32,9 @@ in this Software without prior written authorization from The Open Group.
  * Much code taken from X11R3 String and Disk Sources.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <X11/IntrinsicP.h>

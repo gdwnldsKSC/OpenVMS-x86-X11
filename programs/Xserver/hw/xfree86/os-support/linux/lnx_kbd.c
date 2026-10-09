@@ -10,7 +10,11 @@
  */
 
 #define NEED_EVENTS
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "compiler.h"
 
@@ -21,6 +25,9 @@
 #include "xf86Xinput.h"
 #include "xf86OSKbd.h"
 #include "atKeynames.h"
+#if defined(DO_OS_FONTRESTORE)
+#include "lnx.h"
+#endif
 #include "lnx_kbd.h"
 
 #define KBC_TIMEOUT 250        /* Timeout in ms for sending to keyboard controller */
@@ -100,7 +107,9 @@ GetKbdLeds(InputInfoPtr pInfo)
 #include <asm/kbio.h>
 #endif
 
-/* Deal with spurious kernel header change */
+/* Deal with spurious kernel header change in struct kbd_repeat.
+   We undo this define after the routine using that struct is over,
+   so as not to interfere with other 'rate' elements.  */
 #if defined(LINUX_VERSION_CODE) && defined(KERNEL_VERSION)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,42)
 #  define rate period
@@ -144,6 +153,13 @@ KDKBDREP_ioctl_ok(int rate, int delay) {
 
 #undef rate
 
+/* Undo the earlier define for the struct kbd_repeat problem. */
+#if defined(LINUX_VERSION_CODE) && defined(KERNEL_VERSION)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,42)
+#  undef rate
+# endif
+#endif
+
 static int
 KIOCSRATE_ioctl_ok(int rate, int delay) {
 #ifdef KIOCSRATE
@@ -170,6 +186,8 @@ KIOCSRATE_ioctl_ok(int rate, int delay) {
    return 0;
 #endif /* KIOCSRATE */
 }
+
+#undef rate
 
 static void
 SetKbdRepeat(InputInfoPtr pInfo, char rad)
@@ -212,6 +230,13 @@ SetKbdRepeat(InputInfoPtr pInfo, char rad)
 
 #if defined(__alpha__) || defined (__i386__) || defined(__ia64__)
 
+  if (!xorgHWAccess) {
+      if (xf86EnableIO())
+	  xorgHWAccess = TRUE;
+      else 
+	  return;
+  }
+      
   /* The ioport way */
 
   for (i = 0; i < RATE_COUNT; i++)

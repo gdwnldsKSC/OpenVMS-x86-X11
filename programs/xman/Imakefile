@@ -64,7 +64,7 @@ SNPDEFINES = -Dsnprintf=XmuSnprintf
         DEFINES = -DOSMAJORVERSION=$(OSMAJORVERSION) \
 		  -DOSMINORVERSION=$(OSMINORVERSION) \
 		  $(SNPDEFINES) $(HELPFILE) $(MANPATHS) $(MKSTEMP) $(GROFF) \
-		  $(PRINT_DEFS) $(MANCONFIGSTYLE) $(MANCONF)
+		  $(PRINT_DEFS) $(MANCONFIGSTYLE) $(MANCONF) -DXMAN
         DEPLIBS = XawClientDepLibs
 LOCAL_LIBRARIES = $(PRINT_LIBS) XawClientLibs
            SRCS = ScrollByL.c handler.c man.c buttons.c help.c \

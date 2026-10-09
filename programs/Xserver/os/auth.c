@@ -33,6 +33,10 @@ from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifdef K5AUTH
 # include   <krb5/krb5.h>
 #endif
@@ -45,10 +49,10 @@ from The Open Group.
 # include   <sys/stat.h>
 #ifdef XCSECURITY
 #define _SECURITY_SERVER
-# include   "extensions/security.h"
+# include   <X11/extensions/security.h>
 #endif
 #ifdef WIN32
-#include "Xw32defs.h"
+#include    <X11/Xw32defs.h>
 #endif
 
 struct protocol {

@@ -36,6 +36,10 @@
 
 #define NEED_REPLIES
 #define FONT_PCF
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "glxserver.h"
 #include <GL/glxtokens.h>
 #include <unpack.h>
@@ -74,6 +78,14 @@ static int __glXCreateContextWithConfigSGIX(__GLXclientState *cl, GLbyte *pc);
 static int __glXCreateGLXPixmapWithConfigSGIX(__GLXclientState *cl, GLbyte *pc);
 static int __glXMakeCurrentReadSGI(__GLXclientState *cl, GLbyte *pc);
 
+static int __glXBindSwapBarrierSGIX(__GLXclientState *cl, GLbyte *pc);
+static int __glXQueryMaxSwapBarriersSGIX(__GLXclientState *cl, GLbyte *pc);
+static int __glxQueryHyperpipeNetworkSGIX(__GLXclientState *cl, GLbyte *pc);
+static int __glxDestroyHyperpipeConfigSGIX (__GLXclientState *cl, GLbyte *pc);
+static int __glxQueryHyperpipeConfigSGIX(__GLXclientState *cl, GLbyte *pc);
+static int __glxHyperpipeConfigSGIX(__GLXclientState *cl, GLbyte *pc);
+
+
 /************************************************************************/
 
 /**
@@ -96,6 +108,8 @@ int DoCreateContext(__GLXclientState *cl, GLXContextID gcId,
     __GLXscreenInfo *pGlxScreen;
     __GLinterface *shareGC;
     GLint i;
+
+    LEGAL_NEW_RESOURCE(gcId, client);
     
     /*
     ** Check if screen exists.
@@ -999,7 +1013,7 @@ int __glXGetVisualConfigs(__GLXclientState *cl, GLbyte *pc)
 
 
 #define __GLX_TOTAL_FBCONFIG_ATTRIBS (28)
-
+#define __GLX_FBCONFIG_ATTRIBS_LENGTH (__GLX_TOTAL_FBCONFIG_ATTRIBS * 2)
 /**
  * Send the set of GLXFBConfigs to the client.  There is not currently
  * and interface into the driver on the server-side to get GLXFBConfigs,
@@ -1015,7 +1029,7 @@ int DoGetFBConfigs(__GLXclientState *cl, unsigned screen, GLboolean do_swap)
     ClientPtr client = cl->client;
     xGLXGetFBConfigsReply reply;
     __GLXscreenInfo *pGlxScreen;
-    CARD32 buf[__GLX_TOTAL_FBCONFIG_ATTRIBS * 2];
+    CARD32 buf[__GLX_FBCONFIG_ATTRIBS_LENGTH];
     int p;
     __GLcontextModes *modes;
     __GLX_DECLARE_SWAP_VARIABLES;
@@ -1031,7 +1045,7 @@ int DoGetFBConfigs(__GLXclientState *cl, unsigned screen, GLboolean do_swap)
 
     reply.numFBConfigs = pGlxScreen->numUsableVisuals;
     reply.numAttribs = __GLX_TOTAL_FBCONFIG_ATTRIBS;
-    reply.length = (reply.numAttribs * reply.numFBConfigs);
+    reply.length = (__GLX_FBCONFIG_ATTRIBS_LENGTH * reply.numFBConfigs);
     reply.type = X_Reply;
     reply.sequenceNumber = client->sequence;
 
@@ -1091,9 +1105,9 @@ int DoGetFBConfigs(__GLXclientState *cl, unsigned screen, GLboolean do_swap)
 	WRITE_PAIR( GLX_SWAP_METHOD_OML, modes->swapMethod );
 
 	if ( do_swap ) {
-	    __GLX_SWAP_INT_ARRAY(buf, __GLX_TOTAL_FBCONFIG_ATTRIBS * 2);
+	    __GLX_SWAP_INT_ARRAY(buf, __GLX_FBCONFIG_ATTRIBS_LENGTH);
 	}
-	WriteToClient(client, __GLX_SIZE_CARD32 * __GLX_TOTAL_FBCONFIG_ATTRIBS * 2,
+	WriteToClient(client, __GLX_SIZE_CARD32 * __GLX_FBCONFIG_ATTRIBS_LENGTH,
 		      (char *)buf);
     }
     return Success;
@@ -1129,6 +1143,8 @@ int DoCreateGLXPixmap(__GLXclientState *cl, VisualID visual,
     __GLcontextModes *modes;
     int i;
 
+    LEGAL_NEW_RESOURCE(glxpixmapId, client);
+    
     pDraw = (DrawablePtr) LookupDrawable(pixmapId, client);
     if (!pDraw || pDraw->type != DRAWABLE_PIXMAP) {
 	client->errorValue = pixmapId;
@@ -1711,6 +1727,231 @@ int __glXRenderLarge(__GLXclientState *cl, GLbyte *pc)
     }
 }
 
+extern RESTYPE __glXSwapBarrierRes;
+
+static int __glXBindSwapBarrierSGIX(__GLXclientState *cl, GLbyte *pc)
+{
+    ClientPtr client = cl->client;
+    xGLXBindSwapBarrierSGIXReq *req = (xGLXBindSwapBarrierSGIXReq *) pc;
+    XID drawable = req->drawable;
+    int barrier = req->barrier;
+    DrawablePtr pDraw = (DrawablePtr) LookupDrawable(drawable, client);
+    int screen = pDraw->pScreen->myNum;
+
+
+    if (pDraw && (pDraw->type == DRAWABLE_WINDOW)) {
+        if (__glXSwapBarrierFuncs &&
+            __glXSwapBarrierFuncs[screen].bindSwapBarrierFunc) {
+            int ret = __glXSwapBarrierFuncs[screen].bindSwapBarrierFunc(screen, drawable, barrier);
+            if (ret == Success) {
+                if (barrier)
+                    /* add source for cleanup when drawable is gone */
+                    AddResource(drawable, __glXSwapBarrierRes, (pointer)screen);
+                else
+                    /* delete source */
+                    FreeResourceByType(drawable, __glXSwapBarrierRes, FALSE);
+            }
+            return ret;
+        }
+    }
+    client->errorValue = drawable;
+    return __glXBadDrawable;
+}
+
+
+static int __glXQueryMaxSwapBarriersSGIX(__GLXclientState *cl, GLbyte *pc)
+{
+    ClientPtr client = cl->client;
+    xGLXQueryMaxSwapBarriersSGIXReq *req =
+                                    (xGLXQueryMaxSwapBarriersSGIXReq *) pc;
+    xGLXQueryMaxSwapBarriersSGIXReply reply;
+    int screen = req->screen;
+
+    if (__glXSwapBarrierFuncs &&
+        __glXSwapBarrierFuncs[screen].queryMaxSwapBarriersFunc)
+        reply.max = __glXSwapBarrierFuncs[screen].queryMaxSwapBarriersFunc(screen);
+    else
+        reply.max = 0;
+
+
+    reply.length = 0;
+    reply.type = X_Reply;
+    reply.sequenceNumber = client->sequence;
+
+    if (client->swapped) {
+        __GLX_DECLARE_SWAP_VARIABLES;
+        __GLX_SWAP_SHORT(&reply.sequenceNumber);
+    }
+
+    WriteToClient(client, sz_xGLXQueryMaxSwapBarriersSGIXReply,
+                        (char *) &reply);
+    return Success;
+}
+
+#define GLX_BAD_HYPERPIPE_SGIX 92
+
+static int __glxQueryHyperpipeNetworkSGIX(__GLXclientState *cl, GLbyte *pc)
+{
+    ClientPtr client = cl->client;
+    xGLXQueryHyperpipeNetworkSGIXReq * req = (xGLXQueryHyperpipeNetworkSGIXReq *) pc;
+    xGLXQueryHyperpipeNetworkSGIXReply reply;
+    int screen = req->screen;
+    void *rdata = NULL;
+
+    int length=0;
+    int npipes=0;
+
+    int n= 0;
+
+    if (__glXHyperpipeFuncs &&
+        __glXHyperpipeFuncs[screen].queryHyperpipeNetworkFunc != NULL) {
+        rdata =
+            (__glXHyperpipeFuncs[screen].queryHyperpipeNetworkFunc(screen, &npipes, &n));
+    }
+    length = __GLX_PAD(n) >> 2;
+    reply.type = X_Reply;
+    reply.sequenceNumber = client->sequence;
+    reply.length = length;
+    reply.n = n;
+    reply.npipes = npipes;
+
+    if (client->swapped) {
+        __GLX_DECLARE_SWAP_VARIABLES;
+        __GLX_SWAP_SHORT(&reply.sequenceNumber);
+        __GLX_SWAP_INT(&reply.length);
+        __GLX_SWAP_INT(&reply.n);
+        __GLX_SWAP_INT(&reply.npipes);
+    }
+    WriteToClient(client, sz_xGLXQueryHyperpipeNetworkSGIXReply,
+                  (char *) &reply);
+
+    WriteToClient(client, length << 2, (char *)rdata);
+
+    return Success;
+}
+
+static int __glxDestroyHyperpipeConfigSGIX (__GLXclientState *cl, GLbyte *pc)
+{
+    ClientPtr client = cl->client;
+    xGLXDestroyHyperpipeConfigSGIXReq * req =
+        (xGLXDestroyHyperpipeConfigSGIXReq *) pc;
+    xGLXDestroyHyperpipeConfigSGIXReply reply;
+    int screen = req->screen;
+    int  success = GLX_BAD_HYPERPIPE_SGIX;
+    int hpId ;
+
+    hpId = req->hpId;
+
+
+    if (__glXHyperpipeFuncs &&
+        __glXHyperpipeFuncs[screen].destroyHyperpipeConfigFunc != NULL) {
+        success = __glXHyperpipeFuncs[screen].destroyHyperpipeConfigFunc(screen, hpId);
+    }
+
+    reply.type = X_Reply;
+    reply.sequenceNumber = client->sequence;
+    reply.length = __GLX_PAD(0) >> 2;
+    reply.n = 0;
+    reply.success = success;
+
+
+    if (client->swapped) {
+        __GLX_DECLARE_SWAP_VARIABLES;
+        __GLX_SWAP_SHORT(&reply.sequenceNumber);
+    }
+    WriteToClient(client,
+                  sz_xGLXDestroyHyperpipeConfigSGIXReply,
+                  (char *) &reply);
+    return Success;
+}
+
+static int __glxQueryHyperpipeConfigSGIX(__GLXclientState *cl, GLbyte *pc)
+{
+    ClientPtr client = cl->client;
+    xGLXQueryHyperpipeConfigSGIXReq * req =
+        (xGLXQueryHyperpipeConfigSGIXReq *) pc;
+    xGLXQueryHyperpipeConfigSGIXReply reply;
+    int screen = req->screen;
+    void *rdata = NULL;
+    int length;
+    int npipes=0;
+    int n= 0;
+    int hpId;
+
+    hpId = req->hpId;
+
+    if (__glXHyperpipeFuncs &&
+        __glXHyperpipeFuncs[screen].queryHyperpipeConfigFunc != NULL) {
+        rdata = __glXHyperpipeFuncs[screen].queryHyperpipeConfigFunc(screen, hpId,&npipes, &n);
+    }
+
+    length = __GLX_PAD(n) >> 2;
+    reply.type = X_Reply;
+    reply.sequenceNumber = client->sequence;
+    reply.length = length;
+    reply.n = n;
+    reply.npipes = npipes;
+
+
+    if (client->swapped) {
+        __GLX_DECLARE_SWAP_VARIABLES;
+        __GLX_SWAP_SHORT(&reply.sequenceNumber);
+        __GLX_SWAP_INT(&reply.length);
+        __GLX_SWAP_INT(&reply.n);
+        __GLX_SWAP_INT(&reply.npipes);
+    }
+
+    WriteToClient(client, sz_xGLXQueryHyperpipeConfigSGIXReply,
+                  (char *) &reply);
+
+    WriteToClient(client, length << 2, (char *)rdata);
+
+    return Success;
+}
+
+static int __glxHyperpipeConfigSGIX(__GLXclientState *cl, GLbyte *pc)
+{
+    ClientPtr client = cl->client;
+    xGLXHyperpipeConfigSGIXReq * req =
+        (xGLXHyperpipeConfigSGIXReq *) pc;
+    xGLXHyperpipeConfigSGIXReply reply;
+    int screen = req->screen;
+    void *rdata;
+
+    int npipes=0, networkId;
+    int hpId=-1;
+
+    networkId = (int)req->networkId;
+    npipes = (int)req->npipes;
+    rdata = (void *)(req +1);
+
+    if (__glXHyperpipeFuncs &&
+        __glXHyperpipeFuncs[screen].hyperpipeConfigFunc != NULL) {
+        __glXHyperpipeFuncs[screen].hyperpipeConfigFunc(screen,networkId,
+                                                        &hpId, &npipes,
+                                                        (void *) rdata);
+    }
+
+    reply.type = X_Reply;
+    reply.sequenceNumber = client->sequence;
+    reply.length = __GLX_PAD(0) >> 2;
+    reply.n = 0;
+    reply.npipes = npipes;
+    reply.hpId = hpId;
+
+    if (client->swapped) {
+        __GLX_DECLARE_SWAP_VARIABLES;
+        __GLX_SWAP_SHORT(&reply.sequenceNumber);
+        __GLX_SWAP_INT(&reply.npipes);
+        __GLX_SWAP_INT(&reply.hpId);
+    }
+
+    WriteToClient(client, sz_xGLXHyperpipeConfigSGIXReply,
+                  (char *) &reply);
+
+    return Success;
+}
+
 
 /************************************************************************/
 
@@ -1736,6 +1977,8 @@ int __glXVendorPrivate(__GLXclientState *cl, GLbyte *pc)
     case X_GLvop_SamplePatternSGIS:
 	glSamplePatternSGIS( *(GLenum *)(pc + 4));
 	return Success;
+    case X_GLXvop_BindSwapBarrierSGIX:
+        return __glXBindSwapBarrierSGIX(cl, pc);
     }
 #endif
 
@@ -1765,6 +2008,16 @@ int __glXVendorPrivateWithReply(__GLXclientState *cl, GLbyte *pc)
 	return __glXQueryContextInfoEXT(cl, pc);
       case X_GLXvop_MakeCurrentReadSGI:
 	return __glXMakeCurrentReadSGI(cl, pc);
+      case X_GLXvop_QueryMaxSwapBarriersSGIX:
+        return __glXQueryMaxSwapBarriersSGIX(cl, pc);
+      case X_GLXvop_QueryHyperpipeNetworkSGIX:
+        return __glxQueryHyperpipeNetworkSGIX(cl, pc);
+      case X_GLXvop_QueryHyperpipeConfigSGIX:
+        return __glxQueryHyperpipeConfigSGIX(cl, pc);
+      case X_GLXvop_DestroyHyperpipeConfigSGIX:
+        return __glxDestroyHyperpipeConfigSGIX(cl, pc);
+      case X_GLXvop_HyperpipeConfigSGIX:
+        return __glxHyperpipeConfigSGIX(cl, pc);
       case X_GLXvop_GetFBConfigsSGIX:
 	return __glXGetFBConfigsSGIX(cl, pc);
       case X_GLXvop_CreateContextWithConfigSGIX:

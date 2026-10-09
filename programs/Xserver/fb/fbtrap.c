@@ -1,5 +1,5 @@
 /*
- * $Id: fbtrap.c,v 1.12 2004/07/29 08:10:15 keithp Exp $
+ * $Id: fbtrap.c,v 1.5 2005/07/03 07:01:23 daniels Exp $
  *
  * Copyright © 2004 Keith Packard
  *
@@ -21,6 +21,10 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #include "fb.h"
 

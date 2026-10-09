@@ -84,7 +84,7 @@ xkb_symbols "basic" {
 // and the corresponing letter we are able to generate the romanian characters
 //
 // Created by Cristian Gafton, <gafton@redhat.com> (C) 2000
-// Modified by Mi∫u Moldovan, <dumol@go.ro> (C) 2001
+// Modified by Mi»ôu Moldovan, <dumol@go.ro> (C) 2001
 // Modified by Marius Andreiana, <mandreiana@yahoo.com> (C) 2001
 // 
 // Diacriticele se scriu cu ALT-ul din dreapta si q,t,i,a,s (+shift eventual)

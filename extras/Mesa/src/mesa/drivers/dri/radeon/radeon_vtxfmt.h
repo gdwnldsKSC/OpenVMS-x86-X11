@@ -36,8 +36,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __RADEON_VTXFMT_H__
 #define __RADEON_VTXFMT_H__
 
-#ifdef GLX_DIRECT_RENDERING
-
 #include "radeon_context.h"
 
 
@@ -58,8 +56,8 @@ do {							\
    char *end = (char *)&FUNC##_end;			\
    insert_at_head( &CACHE, dfn );			\
    dfn->key = key;					\
-   dfn->code = ALIGN_MALLOC( end - start, 16 );		\
-   memcpy (dfn->code, start, end - start);		\
+   dfn->code = _mesa_exec_malloc( end - start );	\
+   _mesa_memcpy(dfn->code, start, end - start);		\
 }							\
 while ( 0 )
 
@@ -119,6 +117,4 @@ struct dynfn *radeon_makeX86MultiTexCoord2fvARB( GLcontext *, int );
 struct dynfn *radeon_makeX86MultiTexCoord1fARB( GLcontext *, int );
 struct dynfn *radeon_makeX86MultiTexCoord1fvARB( GLcontext *, int );
 
-
-#endif
 #endif

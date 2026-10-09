@@ -40,21 +40,6 @@
 
 #define LOCAL_STENCIL_VARS	LOCAL_DEPTH_VARS
 
-
-#define CLIPPIXEL( _x, _y )						\
-   ((_x >= minx) && (_x < maxx) && (_y >= miny) && (_y < maxy))
-
-
-#define CLIPSPAN( _x, _y, _n, _x1, _n1, _i )				\
-   if ( _y < miny || _y >= maxy ) {					\
-      _n1 = 0, _x1 = x;							\
-   } else {								\
-      _n1 = _n;								\
-      _x1 = _x;								\
-      if ( _x1 < minx ) _i += (minx-_x1), n1 -= (minx-_x1), _x1 = minx; \
-      if ( _x1 + _n1 >= maxx ) n1 -= (_x1 + n1 - maxx);		        \
-   }
-
 #define Y_FLIP( _y )		(height - _y - 1)
 
 #define HW_LOCK()							\
@@ -62,21 +47,6 @@
    FLUSH_DMA_BUFFER(gmesa);						\
    gammaGetLock( gmesa, DRM_LOCK_FLUSH | DRM_LOCK_QUIESCENT );		\
    GAMMAHW_LOCK( gmesa );
-
-#define HW_CLIPLOOP()							\
-   do {									\
-      __DRIdrawablePrivate *dPriv = gmesa->driDrawable;			\
-      int _nc = dPriv->numClipRects;					\
-									\
-      while ( _nc-- ) {							\
-	 int minx = dPriv->pClipRects[_nc].x1 - dPriv->x;		\
-	 int miny = dPriv->pClipRects[_nc].y1 - dPriv->y;		\
-	 int maxx = dPriv->pClipRects[_nc].x2 - dPriv->x;		\
-	 int maxy = dPriv->pClipRects[_nc].y2 - dPriv->y;
-
-#define HW_ENDCLIPLOOP()						\
-      }									\
-   } while (0)
 
 #define HW_UNLOCK() GAMMAHW_UNLOCK( gmesa )
 
@@ -147,24 +117,23 @@ do {									\
 /* 16 bit depthbuffer functions.
  */
 #define WRITE_DEPTH( _x, _y, d )	\
-   *(GLushort *)(buf + _x*2 + _y*pitch) = d;
+   *(GLushort *)(buf + (_x)*2 + (_y)*pitch) = d;
 
 #define READ_DEPTH( d, _x, _y )		\
-   d = *(GLushort *)(buf + _x*2 + _y*pitch);	
+   d = *(GLushort *)(buf + (_x)*2 + (_y)*pitch);	
 
 #define TAG(x) gamma##x##_16
 #include "depthtmp.h"
-
 
 
 #if 0 /* Unused */
 /* 32 bit depthbuffer functions.
  */
 #define WRITE_DEPTH( _x, _y, d )	\
-   *(GLuint *)(buf + _x*4 + _y*pitch) = d;
+   *(GLuint *)(buf + (_x)*4 + (_y)*pitch) = d;
 
 #define READ_DEPTH( d, _x, _y )		\
-   d = *(GLuint *)(buf + _x*4 + _y*pitch);	
+   d = *(GLuint *)(buf + (_x)*4 + (_y)*pitch);	
 
 #define TAG(x) gamma##x##_32
 #include "depthtmp.h"
@@ -174,14 +143,14 @@ do {									\
 /* 24/8 bit interleaved depth/stencil functions
  */
 #define WRITE_DEPTH( _x, _y, d ) {			\
-   GLuint tmp = *(GLuint *)(buf + _x*4 + _y*pitch);	\
+   GLuint tmp = *(GLuint *)(buf + (_x)*4 + (_y)*pitch);	\
    tmp &= 0xff;						\
    tmp |= (d) & 0xffffff00;				\
-   *(GLuint *)(buf + _x*4 + _y*pitch) = tmp;		\
+   *(GLuint *)(buf + (_x)*4 + (_y)*pitch) = tmp;		\
 }
 
 #define READ_DEPTH( d, _x, _y )		\
-   d = *(GLuint *)(buf + _x*4 + _y*pitch) & ~0xff;	
+   d = *(GLuint *)(buf + (_x)*4 + (_y)*pitch) & ~0xff;	
 
 
 #define TAG(x) gamma##x##_24_8
@@ -207,10 +176,10 @@ static void gammaReadRGBASpan8888( const GLcontext *ctx,
 {
    gammaContextPtr gmesa = GAMMA_CONTEXT(ctx);
    gammaScreenPtr gammascrn = gmesa->gammaScreen;
-   uint32_t dwords1, dwords2, i = 0;
+   u_int32_t dwords1, dwords2, i = 0;
    char *src = (char *)rgba[0];
    GLuint read = n * gammascrn->cpp; /* Number of bytes we are expecting */
-   uint32_t data;
+   u_int32_t data;
 
    FLUSH_DMA_BUFFER(gmesa);
    CHECK_DMA_BUFFER(gmesa, 16);
@@ -232,8 +201,8 @@ static void gammaReadRGBASpan8888( const GLcontext *ctx,
 
 moredata:
 
-   dwords1 = *(volatile uint32_t*)(void *)(((uint8_t*)gammascrn->regions[0].map) + (GlintOutFIFOWords));
-   dwords2 = *(volatile uint32_t*)(void *)(((uint8_t*)gammascrn->regions[2].map) + (GlintOutFIFOWords));
+   dwords1 = *(volatile u_int32_t*)(void *)(((u_int8_t*)gammascrn->regions[0].map) + (GlintOutFIFOWords));
+   dwords2 = *(volatile u_int32_t*)(void *)(((u_int8_t*)gammascrn->regions[2].map) + (GlintOutFIFOWords));
 
    if (dwords1) {
 	memcpy(src, (char*)gammascrn->regions[1].map + 0x1000, dwords1 << 2);
@@ -268,10 +237,10 @@ static void gammaSetBuffer( GLcontext *ctx,
    gammaContextPtr gmesa = GAMMA_CONTEXT(ctx);
 
    switch ( bufferBit ) {
-   case DD_FRONT_LEFT_BIT:
+   case BUFFER_BIT_FRONT_LEFT:
       gmesa->readOffset = 0;
       break;
-   case DD_BACK_LEFT_BIT:
+   case BUFFER_BIT_BACK_LEFT:
       gmesa->readOffset = gmesa->driScreen->fbHeight * gmesa->driScreen->fbWidth * gmesa->gammaScreen->cpp; 
       break;
    default:

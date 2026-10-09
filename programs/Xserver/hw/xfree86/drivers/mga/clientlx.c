@@ -2,11 +2,15 @@
 
     clientlx.c
 
-    Copyright © 1997, Matrox Graphics Inc.
+    Copyright Â© 1997, Matrox Graphics Inc.
 
     All Rights Reserved.
 
 \******************************************************************************/
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86_OSproc.h"
 #include "xf86Pci.h"
 #include "xf86_ansic.h"

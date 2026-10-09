@@ -22,7 +22,7 @@ SOFTWARE.
 
 ******************************************************************/
 /* $XFree86: xc/lib/Xv/Xv.c,v 1.17 2003/04/28 16:56:27 dawes Exp $ */
-/* $XdotOrg: xc/lib/Xv/Xv.c,v 1.2 2004/04/23 18:43:55 eich Exp $ */
+/* $XdotOrg: xc/lib/Xv/Xv.c,v 1.3 2005/07/03 07:00:57 daniels Exp $ */
 /*
 ** File: 
 **

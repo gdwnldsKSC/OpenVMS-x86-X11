@@ -24,6 +24,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/sunffb/ffb_bcopy.c,v 1.1 2000/05/18 23:21:35 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ffb.h"
 #include "ffb_regs.h"
 #include "ffb_rcache.h"
@@ -382,7 +386,6 @@ CreatorDoBitblt(DrawablePtr pSrc, DrawablePtr pDst, int alu, RegionPtr prgnDst,
 						if (use_prefetch) {
 							FFBFifo(pFfb, 1);
 							pFfb->regs->mer = FFB_MER_EDRA;
-							pFfb->regs->mer = FFB_MER_EIRA;
 							pFfb->rp_active = 1;
 						}
 						VISmoveImageRL ((psrcBase +

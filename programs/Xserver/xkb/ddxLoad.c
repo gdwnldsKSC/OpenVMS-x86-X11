@@ -26,6 +26,14 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $XFree86: xc/programs/Xserver/xkb/ddxLoad.c,v 3.35 2003/10/02 13:30:12 eich Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#ifdef HAVE_XKB_CONFIG_H
+#include <xkb-config.h>
+#endif
+
 #include <stdio.h>
 #include <ctype.h>
 #define	NEED_EVENTS 1
@@ -38,8 +46,8 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "scrnintstr.h"
 #include "windowstr.h"
 #define	XKBSRV_NEED_FILE_FUNCS
-#include "XKBsrv.h"
-#include "XI.h"
+#include <X11/extensions/XKBsrv.h>
+#include <X11/extensions/XI.h>
 #include "xkb.h"
 
 #if defined(CSRG_BASED) || defined(linux) || defined(__sgi) || defined(AIXV3) || defined(__osf__) || defined(__GNU__)
@@ -71,25 +79,137 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define	POST_ERROR_MSG1 "\"Errors from xkbcomp are not fatal to the X server\""
 #define	POST_ERROR_MSG2 "\"End of messages from xkbcomp\""
 
+#if defined(__UNIXOS2__) || defined(WIN32)
+#define PATHSEPARATOR "\\"
+#else
+#define PATHSEPARATOR "/"
+#endif
+
+#ifdef WIN32
+
+#include <X11/Xwindows.h>
+const char* 
+Win32TempDir()
+{
+    static char buffer[PATH_MAX];
+    if (GetTempPath(sizeof(buffer), buffer))
+    {
+        int len;
+        buffer[sizeof(buffer)-1] = 0;
+        len = strlen(buffer);
+        if (len > 0)
+            if (buffer[len-1] == '\\')
+                buffer[len-1] = 0;
+        return buffer;
+    }
+    if (getenv("TEMP") != NULL)
+        return getenv("TEMP");
+    else if (getenv("TMP") != NULL)
+        return getenv("TEMP");
+    else
+        return "/tmp";
+}
+
+int 
+Win32System(const char *cmdline)
+{
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+    DWORD dwExitCode;
+    char *cmd = xstrdup(cmdline);
+
+    ZeroMemory( &si, sizeof(si) );
+    si.cb = sizeof(si);
+    ZeroMemory( &pi, sizeof(pi) );
+
+    if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) 
+    {
+	LPVOID buffer;
+	if (!FormatMessage( 
+		    FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+		    FORMAT_MESSAGE_FROM_SYSTEM | 
+		    FORMAT_MESSAGE_IGNORE_INSERTS,
+		    NULL,
+		    GetLastError(),
+		    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		    (LPTSTR) &buffer,
+		    0,
+		    NULL ))
+	{
+	    ErrorF("Starting '%s' failed!\n", cmdline); 
+	}
+	else
+	{
+	    ErrorF("Starting '%s' failed: %s", cmdline, (char *)buffer); 
+	    LocalFree(buffer);
+	}
+
+	xfree(cmd);
+	return -1;
+    }
+    /* Wait until child process exits. */
+    WaitForSingleObject( pi.hProcess, INFINITE );
+
+    GetExitCodeProcess( pi.hProcess, &dwExitCode);
+    
+    /* Close process and thread handles. */
+    CloseHandle( pi.hProcess );
+    CloseHandle( pi.hThread );
+    xfree(cmd);
+
+    return dwExitCode;
+}
+#undef System
+#define System(x) Win32System(x)
+#endif
+
+#ifdef MAKE_XKM_OUTPUT_DIR
+/* Borrow trans_mkdir from Xtransutil.c to more safely make directories */
+# undef X11_t
+# define TRANS_SERVER
+# define PRMSG(lvl,x,a,b,c) \
+	if (lvl <= 1) { LogMessage(X_ERROR,x,a,b,c); } else ((void)0)
+# include <X11/Xtrans/Xtransutil.c>
+# ifndef XKM_OUTPUT_DIR_MODE
+#  define XKM_OUTPUT_DIR_MODE 0755
+# endif
+#endif
+
 static void
 OutputDirectory(
-    char* outdir)
+    char* outdir,
+    size_t size)
 {
 #ifndef WIN32
-    if (getuid() == 0) {
+    if (getuid() == 0 && (strlen(XKM_OUTPUT_DIR) < size)
+#ifdef MAKE_XKM_OUTPUT_DIR    
+	&& (trans_mkdir(XKM_OUTPUT_DIR, XKM_OUTPUT_DIR_MODE) == 0)
+#endif
+	)
+    {
 	/* if server running as root it *may* be able to write */
 	/* FIXME: check whether directory is writable at all */
 	(void) strcpy (outdir, XKM_OUTPUT_DIR);
     } else
 #endif
-    {
 #ifdef _PATH_VARTMP
+    if ((strlen(_PATH_VARTMP) + 1) < size) 
+    {
 	(void) strcpy (outdir, _PATH_VARTMP);
 	if (outdir[strlen(outdir) - 1] != '/')	/* Hi IBM, Digital */
 	    (void) strcat (outdir, "/");
-#else
-	(void) strcpy (outdir, "/tmp/");
+    } else
 #endif
+#ifdef WIN32
+    if (strlen(Win32TempDir()) + 1 < size)
+    {
+	(void) strcpy(outdir, Win32TempDir());
+	(void) strcat(outdir, "\\");
+    } else 
+#endif
+    if (strlen("/tmp/") < size)
+    {
+	(void) strcpy (outdir, "/tmp/");
     }
 }
 
@@ -99,7 +219,7 @@ XkbDDXCompileNamedKeymap(	XkbDescPtr		xkb,
 				char *			nameRtrn,
 				int			nameRtrnLen)
 {
-char 	cmd[PATH_MAX],file[PATH_MAX],xkm_output_dir[PATH_MAX],*map,*outFile;
+char 	*cmd = NULL,file[PATH_MAX],xkm_output_dir[PATH_MAX],*map,*outFile;
 
     if (names->keymap==NULL)
 	return False;
@@ -118,54 +238,33 @@ char 	cmd[PATH_MAX],file[PATH_MAX],xkm_output_dir[PATH_MAX],*map,*outFile;
 	 outFile= _XkbDupString(&outFile[1]);
     else outFile= _XkbDupString(file);
     XkbEnsureSafeMapName(outFile);
-    OutputDirectory(xkm_output_dir);
+    OutputDirectory(xkm_output_dir, sizeof(xkm_output_dir));
 
     if (XkbBaseDirectory!=NULL) {
-#ifdef __UNIXOS2__
-        char *tmpbase = (char*)__XOS2RedirRoot(XkbBaseDirectory);
-        int i;
-	if (strlen(tmpbase)*2+(xkbDebugFlags>9?2:1)
-#else
-	if (strlen(XkbBaseDirectory)*2+(xkbDebugFlags>9?2:1)
-#endif
-		+(map?strlen(map)+3:0)+strlen(PRE_ERROR_MSG)
-		+strlen(ERROR_PREFIX)+strlen(POST_ERROR_MSG1)
-		+strlen(file)+strlen(xkm_output_dir)
-		+strlen(outFile)+53 > PATH_MAX)
-	{
-	    ErrorF("compiler command for keymap (%s) exceeds max length\n",
-								names->keymap);
-	    return False;
-	}
 #ifndef __UNIXOS2__
-	sprintf(cmd,"%s/xkbcomp -w %d -R%s -xkm %s%s -em1 %s -emp %s -eml %s keymap/%s %s%s.xkm",
-		XkbBaseDirectory,
-		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:(int)xkbDebugFlags)),
-		XkbBaseDirectory,(map?"-m ":""),(map?map:""),
-		PRE_ERROR_MSG,ERROR_PREFIX,POST_ERROR_MSG1,file,
-		xkm_output_dir,outFile);
+        char *xkbbasedir = XkbBaseDirectory;
+        char *xkbbindir = XkbBinDirectory;
 #else
-	for (i=0; i<strlen(tmpbase); i++) if (tmpbase[i]=='/') tmpbase[i]='\\';
-	sprintf(cmd,"%s\\xkbcomp -w %d -R%s -xkm %s%s -em1 %s -emp %s -eml %s keymap/%s %s%s.xkm",
-		tmpbase,
+        /* relocate the basedir and replace the slashes with backslashes */
+        char *xkbbasedir = (char*)__XOS2RedirRoot(XkbBaseDirectory);
+        char *xkbbindir = (char*)__XOS2RedirRoot(XkbBinDirectory);
+        int i;
+
+	for (i=0; i<strlen(xkbbasedir); i++) 
+            if (xkbbasedir[i]=='/') xkbbasedir[i]='\\';
+	for (i=0; i<strlen(xkbbindir); i++) 
+            if (xkbbindir[i]=='/') xkbbindir[i]='\\';
+#endif
+
+	cmd = Xprintf("\"%s" PATHSEPARATOR "xkbcomp\" -w %d \"-R%s\" -xkm %s%s -em1 %s -emp %s -eml %s keymap/%s \"%s%s.xkm\"",
+		xkbbindir,
 		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:(int)xkbDebugFlags)),
-		tmpbase,(map?"-m ":""),(map?map:""),
+		xkbbasedir,(map?"-m ":""),(map?map:""),
 		PRE_ERROR_MSG,ERROR_PREFIX,POST_ERROR_MSG1,file,
 		xkm_output_dir,outFile);
-	ErrorF("Command line for XKB is %s\n",cmd);
-#endif
     }
     else {
-	if ((xkbDebugFlags>9?2:1)+(map?strlen(map)+3:0)+strlen(PRE_ERROR_MSG)
-		+strlen(ERROR_PREFIX)+strlen(POST_ERROR_MSG1)
-		+strlen(file)+strlen(xkm_output_dir)
-		+strlen(outFile)+49 > PATH_MAX)
-	{
-            ErrorF("compiler command for keymap (%s) exceeds max length\n",
-							names->keymap);
-	    return False;
-	}
-	sprintf(cmd,"xkbcomp -w %d -xkm %s%s -em1 %s -emp %s -eml %s keymap/%s %s%s.xkm",
+	cmd = Xprintf("xkbcomp -w %d -xkm %s%s -em1 %s -emp %s -eml %s keymap/%s \"%s%s.xkm\"",
 		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:(int)xkbDebugFlags)),
 		(map?"-m ":""),(map?map:""),
 		PRE_ERROR_MSG,ERROR_PREFIX,POST_ERROR_MSG1,file,
@@ -177,6 +276,9 @@ char 	cmd[PATH_MAX],file[PATH_MAX],xkm_output_dir[PATH_MAX],*map,*outFile;
 	ErrorF("    \"cmd\"\n");
     }
 #endif
+#ifdef DEBUG_CMD
+    ErrorF("xkb executes: %s\n",cmd);
+#endif
     if (System(cmd)==0) {
 	if (nameRtrn) {
 	    strncpy(nameRtrn,outFile,nameRtrnLen);
@@ -184,6 +286,8 @@ char 	cmd[PATH_MAX],file[PATH_MAX],xkm_output_dir[PATH_MAX],*map,*outFile;
 	}
 	if (outFile!=NULL)
 	    _XkbFree(outFile);
+        if (cmd!=NULL)
+            xfree(cmd);
 	return True;
     } 
 #ifdef DEBUG
@@ -191,9 +295,11 @@ char 	cmd[PATH_MAX],file[PATH_MAX],xkm_output_dir[PATH_MAX],*map,*outFile;
 #endif
     if (outFile!=NULL)
 	_XkbFree(outFile);
+    if (cmd!=NULL)
+        xfree(cmd);
     return False;
 }
-        	
+
 Bool    	
 XkbDDXCompileKeymapByNames(	XkbDescPtr		xkb,
 				XkbComponentNamesPtr	names,
@@ -203,14 +309,11 @@ XkbDDXCompileKeymapByNames(	XkbDescPtr		xkb,
 				int			nameRtrnLen)
 {
 FILE *	out;
-char	buf[PATH_MAX],keymap[PATH_MAX],xkm_output_dir[PATH_MAX];
+char	*buf = NULL, keymap[PATH_MAX],xkm_output_dir[PATH_MAX];
+
 #ifdef WIN32
-char tmpname[32];
+char tmpname[PATH_MAX];
 #endif    
-#ifdef __UNIXOS2__
-char *tmpbase;
-int i;
-#endif
     if ((names->keymap==NULL)||(names->keymap[0]=='\0')) {
 	sprintf(keymap,"server-%s",display);
     }
@@ -223,81 +326,61 @@ int i;
     }
 
     XkbEnsureSafeMapName(keymap);
-    OutputDirectory(xkm_output_dir);
+    OutputDirectory(xkm_output_dir, sizeof(xkm_output_dir));
 #ifdef WIN32
-    strcpy(tmpname, "\\temp\\xkb_XXXXXX");
+    strcpy(tmpname, Win32TempDir());
+    strcat(tmpname, "\\xkb_XXXXXX");
     (void) mktemp(tmpname);
 #endif
-#ifdef __UNIXOS2__
-    tmpbase = (char*)__XOS2RedirRoot(XkbBaseDirectory);
-#endif
     if (XkbBaseDirectory!=NULL) {
-	if (strlen(XkbBaseDirectory)*2+(xkbDebugFlags>9?2:1)
-		+strlen(PRE_ERROR_MSG)+strlen(ERROR_PREFIX)
-		+strlen(POST_ERROR_MSG1)+strlen(xkm_output_dir)
-		+strlen(keymap)+48 > PATH_MAX)
-	{
-            ErrorF("compiler command for keymap (%s) exceeds max length\n",
-							names->keymap);
-	    return False;
-	}
 #ifndef WIN32
+        char *xkmfile = "-";
+#else
+        /* WIN32 has no popen. The input must be stored in a file which is used as input
+           for xkbcomp. xkbcomp does not read from stdin. */
+        char *xkmfile = tmpname;
+#endif
 #ifndef __UNIXOS2__
-	sprintf(buf,
-	   "%s/xkbcomp -w %d -R%s -xkm - -em1 %s -emp %s -eml %s \"%s%s.xkm\"",
-		XkbBaseDirectory,
+        char *xkbbasedir = XkbBaseDirectory;
+        char *xkbbindir = XkbBinDirectory;
+#else
+        int i;
+        char *xkbbasedir = (char*)__XOS2RedirRoot(XkbBaseDirectory);
+        char *xkbbindir = (char*)__XOS2RedirRoot(XkbBinDirectory);
+	for (i=0; i<strlen(xkbbasedir); i++) 
+            if (xkbbasedir[i]=='/') xkbbasedir[i]='\\';
+	for (i=0; i<strlen(xkbbindir); i++) 
+            if (xkbbindir[i]=='/') xkbbindir[i]='\\';
+#endif
+        
+	buf = Xprintf(
+	   "\"%s" PATHSEPARATOR "xkbcomp\" -w %d \"-R%s\" -xkm \"%s\" -em1 %s -emp %s -eml %s \"%s%s.xkm\"",
+		xkbbindir,
 		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:(int)xkbDebugFlags)),
-		XkbBaseDirectory,
+		xkbbasedir, xkmfile,
 		PRE_ERROR_MSG,ERROR_PREFIX,POST_ERROR_MSG1,
 		xkm_output_dir,keymap);
-#else
-	for (i=0; i<strlen(tmpbase); i++) if (tmpbase[i]=='/') tmpbase[i]='\\';
-	sprintf(buf,
-	  "%s\\xkbcomp -w %d -R%s -xkm - -em1 %s -emp %s -eml %s \"%s%s.xkm\"",
-		tmpbase,
-		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:(int)xkbDebugFlags)),
-		tmpbase,
-		PRE_ERROR_MSG,ERROR_PREFIX,POST_ERROR_MSG1,
-		xkm_output_dir,keymap);
-#endif
-#else
-	sprintf(buf,
-      "%s/xkbcomp -w %d -R%s -xkm - -em1 %s -emp %s -eml %s \"%s%s.xkm\" < %s",
-		XkbBaseDirectory,
-		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:(int)xkbDebugFlags)),
-		XkbBaseDirectory,
-		PRE_ERROR_MSG,ERROR_PREFIX,POST_ERROR_MSG1,
-		xkm_output_dir,keymap,tmpname);
-#endif
     }
     else {
-	if ((xkbDebugFlags>9?2:1)+strlen(PRE_ERROR_MSG)
-		+strlen(ERROR_PREFIX)+strlen(POST_ERROR_MSG1)
-		+strlen(xkm_output_dir)+strlen(keymap)+44 > PATH_MAX)
-	{
-            ErrorF("compiler command for keymap (%s) exceeds max length\n",
-							names->keymap);
-	    return False;
-	}
 #ifndef WIN32
-	sprintf(buf,
-		"xkbcomp -w %d -xkm - -em1 %s -emp %s -eml %s \"%s%s.xkm\"",
+        char *xkmfile = "-";
+#else
+        char *xkmfile = tmpname;
+#endif
+	buf = Xprintf(
+		"xkbcomp -w %d -xkm \"%s\" -em1 %s -emp %s -eml %s \"%s%s.xkm\"",
 		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:(int)xkbDebugFlags)),
+                xkmfile,
 		PRE_ERROR_MSG,ERROR_PREFIX,POST_ERROR_MSG1,
 		xkm_output_dir,keymap);
-#else
-	sprintf(buf,
-	      "xkbcomp -w %d -xkm - -em1 %s -emp %s -eml %s \"%s%s.xkm\" < %s",
-		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:(int)xkbDebugFlags)),
-		PRE_ERROR_MSG,ERROR_PREFIX,POST_ERROR_MSG1,
-		xkm_output_dir,keymap,tmpname);
-#endif
     }
+    
 #ifndef WIN32
     out= Popen(buf,"w");
 #else
     out= fopen(tmpname, "w");
 #endif
+    
     if (out!=NULL) {
 #ifdef DEBUG
     if (xkbDebugFlags) {
@@ -309,13 +392,14 @@ int i;
 #ifndef WIN32
 	if (Pclose(out)==0)
 #else
-	if (fclose(out)==0)
+	if (fclose(out)==0 && System(buf) >= 0)
 #endif
 	{
-#ifdef WIN32
-	    if (System(buf) < 0)
-		ErrorF("Could not invoke keymap compiler\n");
-	    else {
+#ifdef DEBUG_CMD
+	    ErrorF("xkb executes: %s\n",buf);
+	    ErrorF("xkbcomp input:\n");
+	    XkbWriteXKBKeymapForNames(stderr,names,NULL,xkb,want,need);
+	    ErrorF("end xkbcomp input\n");
 #endif
 	    if (nameRtrn) {
 		strncpy(nameRtrn,keymap,nameRtrnLen);
@@ -345,14 +429,17 @@ int i;
 #endif
 	    }
 #endif
+            if (buf != NULL)
+                xfree (buf);
 	    return True;
-#ifdef WIN32
-	    }
-#endif
 	}
 #ifdef DEBUG
 	else
 	    ErrorF("Error compiling keymap (%s)\n",keymap);
+#endif
+#ifdef WIN32
+        /* remove the temporary file */
+        unlink(tmpname);
 #endif
     }
 #ifdef DEBUG
@@ -366,6 +453,8 @@ int i;
 #endif
     if (nameRtrn)
 	nameRtrn[0]= '\0';
+    if (buf != NULL)
+        xfree (buf);
     return False;
 }
 
@@ -377,8 +466,12 @@ FILE *	file;
 
     buf[0]= '\0';
     if (mapName!=NULL) {
-	OutputDirectory(xkm_output_dir);
-	if ((XkbBaseDirectory!=NULL)&&(xkm_output_dir[0]!='/')) {
+	OutputDirectory(xkm_output_dir, sizeof(xkm_output_dir));
+	if ((XkbBaseDirectory!=NULL)&&(xkm_output_dir[0]!='/')
+#ifdef WIN32
+                &&(!isalpha(xkm_output_dir[0]) || xkm_output_dir[1]!=':')
+#endif
+                ) {
 	    if (strlen(XkbBaseDirectory)+strlen(xkm_output_dir)
 		     +strlen(mapName)+6 <= PATH_MAX)
 	    {

@@ -50,11 +50,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 /* Apple OpenGL "driver" information. */
-static const char *__driDriverName = "apple";
-static const char __driConfigOptions[] = "";
-static const int __driDriverMajor = 1;
-static const int __driDriverMinor = 0;
-static const int __driDriverPatch = 0;
+static const char *__driAppleDriverName = "apple";
+static const int __driAppleDriverMajor = 1;
+static const int __driAppleDriverMinor = 0;
+static const int __driAppleDriverPatch = 0;
 
 
 /*
@@ -107,11 +106,11 @@ static Bool GetDriverName(Display *dpy, int scrNum, char **driverName)
         return False;
     }
 
-    *driverName = (char *) __driDriverName;
+    *driverName = (char *) __driAppleDriverName;
 
     InfoMessageF("XF86DRIGetClientDriverName: %d.%d.%d %s (screen %d)\n",
-                 __driDriverMajor, __driDriverMinor, __driDriverPatch,
-                 *driverName, scrNum);
+                 __driAppleDriverMajor, __driAppleDriverMinor,
+                 __driAppleDriverPatch, *driverName, scrNum);
 
     return True;
 }
@@ -153,11 +152,9 @@ const char *glXGetScreenDriver (Display *dpy, int scrNum) {
  * Note: In a standard GLX imlementation the driver remains opened after
  * this function returns.
  */
-const char *glXGetDriverConfig (const char *driverName) {
-    if (strcmp(driverName, __driDriverName) == 0)
-        return __driConfigOptions;
-    else
-        return NULL;
+const char *glXGetDriverConfig(const char *driverName) {
+    /* the apple stub driver does not support configuration */
+    return NULL;
 }
 
 

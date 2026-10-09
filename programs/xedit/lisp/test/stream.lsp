@@ -24,7 +24,7 @@
 ;; dealings in this Software without prior written authorization from the
 ;; XFree86 Project.
 ;;
-;; Author: Paulo César Pereira de Andrade
+;; Author: Paulo CÃ©sar Pereira de Andrade
 ;;
 ;;
 ;; $XFree86: xc/programs/xedit/lisp/test/stream.lsp,v 1.3 2002/12/06 03:25:29 paulo Exp $

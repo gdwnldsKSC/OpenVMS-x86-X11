@@ -22,10 +22,6 @@ XFMODSRC = mfbmodule.c
 XFMODOBJ = mfbmodule.o
 #endif
 
-#if BuildLowMem
-DEFINES=-ULOWMEMFTPT
-#endif
-
 SRCS1 =	 mfbgc.c mfbwindow.c mfbfont.c \
 	 mfbfillrct.c mfbpntwin.c maskbits.c mfbpixmap.c \
 	 mfbimage.c mfbline.c mfbbres.c mfbhrzvert.c mfbbresd.c \

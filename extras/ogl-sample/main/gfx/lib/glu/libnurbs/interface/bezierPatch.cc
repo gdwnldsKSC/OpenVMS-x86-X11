@@ -31,10 +31,10 @@
 ** published by SGI, but has not been independently verified as being
 ** compliant with the OpenGL(R) version 1.2.1 Specification.
 **
-** $Date$ $Revision$
+** $Date: 2004/03/14 08:29:10 $ $Revision: 1.1.1.4 $
 */
 /*
-** $Header: //depot/main/gfx/lib/glu/libnurbs/interface/bezierPatch.cc#4 $
+** $Header: /cvs/xorg/xc/extras/ogl-sample/main/gfx/lib/glu/libnurbs/interface/bezierPatch.cc,v 1.1.1.4 2004/03/14 08:29:10 eich Exp $
 */
 
 #include "gluos.h"

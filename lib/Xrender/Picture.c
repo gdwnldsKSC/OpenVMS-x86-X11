@@ -1,6 +1,6 @@
 /*
  *
- * Copyright © 2000 SuSE, Inc.
+ * Copyright Â© 2000 SuSE, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -22,8 +22,11 @@
  * Author:  Keith Packard, SuSE, Inc.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "Xrenderint.h"
-#include "region.h"
+#include <X11/Xregion.h>
 
 static void
 _XRenderProcessPictureAttributes (Display		    *dpy,
@@ -237,4 +240,127 @@ XRenderFreePicture (Display                   *dpy,
     req->picture = picture;
     UnlockDisplay(dpy);
     SyncHandle();
+}
+
+
+Picture XRenderCreateSolidFill(Display *dpy,
+                               const XRenderColor *color)
+{
+    XRenderExtDisplayInfo	    *info = XRenderFindDisplay (dpy);
+    Picture		    pid;
+    xRenderCreateSolidFillReq *req;
+
+    RenderCheckExtension (dpy, info, 0);
+    LockDisplay(dpy);
+    GetReq(RenderCreateSolidFill, req);
+    req->reqType = info->codes->major_opcode;
+    req->renderReqType = X_RenderCreateSolidFill;
+
+    req->pid = pid = XAllocID(dpy);
+    req->color.red = color->red;
+    req->color.green = color->green;
+    req->color.blue = color->blue;
+    req->color.alpha = color->alpha;
+
+    UnlockDisplay(dpy);
+    SyncHandle();
+    return pid;
+}
+
+
+Picture XRenderCreateLinearGradient(Display *dpy,
+                                    const XLinearGradient *gradient,
+                                    const XFixed *stops,
+                                    const XRenderColor *colors,
+                                    int nStops)
+{
+    XRenderExtDisplayInfo	    *info = XRenderFindDisplay (dpy);
+    Picture		    pid;
+    xRenderCreateLinearGradientReq *req;
+
+    RenderCheckExtension (dpy, info, 0);
+    LockDisplay(dpy);
+    GetReq(RenderCreateLinearGradient, req);
+    req->reqType = info->codes->major_opcode;
+    req->renderReqType = X_RenderCreateLinearGradient;
+
+    req->pid = pid = XAllocID(dpy);
+    req->p1.x = gradient->p1.x;
+    req->p1.y = gradient->p1.y;
+    req->p2.x = gradient->p2.x;
+    req->p2.y = gradient->p2.y;
+
+    req->nStops = nStops;
+    DataInt32(dpy, stops, nStops * 4);
+    Data16(dpy, colors, nStops * 8);
+    req->length += nStops*3;
+
+    UnlockDisplay(dpy);
+    SyncHandle();
+    return pid;
+}
+
+Picture XRenderCreateRadialGradient(Display *dpy,
+                                    const XRadialGradient *gradient,
+                                    const XFixed *stops,
+                                    const XRenderColor *colors,
+                                    int nStops)
+{
+    XRenderExtDisplayInfo	    *info = XRenderFindDisplay (dpy);
+    Picture		    pid;
+    xRenderCreateRadialGradientReq *req;
+
+    RenderCheckExtension (dpy, info, 0);
+    LockDisplay(dpy);
+    GetReq(RenderCreateRadialGradient, req);
+    req->reqType = info->codes->major_opcode;
+    req->renderReqType = X_RenderCreateRadialGradient;
+
+    req->pid = pid = XAllocID(dpy);
+    req->inner.x = gradient->inner.x;
+    req->inner.y = gradient->inner.y;
+    req->outer.x = gradient->outer.x;
+    req->outer.y = gradient->outer.y;
+    req->inner_radius = gradient->inner.radius;
+    req->outer_radius = gradient->outer.radius;
+
+    req->nStops = nStops;
+    DataInt32(dpy, stops, nStops * 4);
+    Data16(dpy, colors, nStops * 8);
+    req->length += nStops*3;
+
+    UnlockDisplay(dpy);
+    SyncHandle();
+    return pid;
+}
+
+Picture XRenderCreateConicalGradient(Display *dpy,
+                                     const XConicalGradient *gradient,
+                                     const XFixed *stops,
+                                     const XRenderColor *colors,
+                                     int nStops)
+{
+    XRenderExtDisplayInfo	    *info = XRenderFindDisplay (dpy);
+    Picture		    pid;
+    xRenderCreateConicalGradientReq *req;
+
+    RenderCheckExtension (dpy, info, 0);
+    LockDisplay(dpy);
+    GetReq(RenderCreateConicalGradient, req);
+    req->reqType = info->codes->major_opcode;
+    req->renderReqType = X_RenderCreateConicalGradient;
+
+    req->pid = pid = XAllocID(dpy);
+    req->center.x = gradient->center.x;
+    req->center.y = gradient->center.y;
+    req->angle = gradient->angle;
+
+    req->nStops = nStops;
+    DataInt32(dpy, stops, nStops * 4);
+    Data16(dpy, colors, nStops * 8);
+    req->length += nStops*3;
+
+    UnlockDisplay(dpy);
+    SyncHandle();
+    return pid;
 }

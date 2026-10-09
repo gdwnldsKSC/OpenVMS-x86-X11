@@ -28,6 +28,7 @@
 #include "glheader.h"
 #include "mtypes.h"
 #include "imports.h"
+#include "macros.h"
 #include "simple_list.h"
 #include "enums.h"
 #include "image.h"
@@ -509,10 +510,7 @@ intelChooseTextureFormat( GLcontext *ctx, GLint internalFormat,
    case GL_ALPHA12:
    case GL_ALPHA16:
    case GL_COMPRESSED_ALPHA:
-/*       if (1 || intel->intelScreen->deviceID == PCI_CHIP_I915_G) */
-	 return &_mesa_texformat_a8;
-/*       else */
-/* 	 return &_mesa_texformat_al88; */
+      return &_mesa_texformat_a8;
 
    case 1:
    case GL_LUMINANCE:
@@ -554,8 +552,32 @@ intelChooseTextureFormat( GLcontext *ctx, GLint internalFormat,
    case GL_COMPRESSED_RGBA_FXT1_3DFX:
      return &_mesa_texformat_rgba_fxt1;
 
+   case GL_RGB_S3TC:
+   case GL_RGB4_S3TC:
+   case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+     return &_mesa_texformat_rgb_dxt1;
+
+   case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+     return &_mesa_texformat_rgba_dxt1;
+
+   case GL_RGBA_S3TC:
+   case GL_RGBA4_S3TC:
+   case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+     return &_mesa_texformat_rgba_dxt3;
+
+   case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+      return &_mesa_texformat_rgba_dxt5;
+
+   case GL_DEPTH_COMPONENT:
+   case GL_DEPTH_COMPONENT16:
+   case GL_DEPTH_COMPONENT24:
+   case GL_DEPTH_COMPONENT32:
+      return &_mesa_texformat_depth_component16;
+
    default:
-      fprintf(stderr, "unexpected texture format in %s\n", __FUNCTION__);
+      fprintf(stderr, "unexpected texture format %s in %s\n", 
+	      _mesa_lookup_enum_by_nr(internalFormat),
+	      __FUNCTION__);
       return NULL;
    }
 
@@ -628,9 +650,22 @@ static void intelUploadTexImage( intelContextPtr intel,
 	{
 	case GL_COMPRESSED_RGB_FXT1_3DFX:
 	case GL_COMPRESSED_RGBA_FXT1_3DFX:
+	case GL_RGB_S3TC:
+	case GL_RGB4_S3TC:
+	case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+	case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
 	  for (j = 0 ; j < image->Height/4 ; j++, dst += (t->Pitch)) {
 	    __memcpy(dst, src, row_len );
 	    src += row_len;
+	  }
+	  break;
+	case GL_RGBA_S3TC:
+	case GL_RGBA4_S3TC:
+	case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+	  for (j = 0 ; j < image->Height/4 ; j++, dst += (t->Pitch)) {
+	    __memcpy(dst, src, (image->Width*4) );
+	    src += image->Width*4;
 	  }
 	  break;
 	default:

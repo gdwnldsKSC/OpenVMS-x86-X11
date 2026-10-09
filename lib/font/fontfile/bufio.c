@@ -34,9 +34,12 @@ from The Open Group.
  */
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xos.h>
-#include <fontmisc.h>
-#include <bufio.h>
+#include <X11/fonts/fontmisc.h>
+#include <X11/fonts/bufio.h>
 #include <errno.h>
 
 BufFilePtr
@@ -122,7 +125,7 @@ BufFileRawClose (BufFilePtr f, int doClose)
 BufFilePtr
 BufFileOpenRead (int fd)
 {
-#ifdef __UNIXOS2__
+#if defined(__UNIXOS2__) || defined (WIN32)
     /* hv: I'd bet WIN32 has the same effect here */
     setmode(fd,O_BINARY);
 #endif
@@ -149,7 +152,7 @@ BufFileOpenWrite (int fd)
 {
     BufFilePtr	f;
 
-#ifdef __UNIXOS2__
+#if defined(__UNIXOS2__) || defined(WIN32)
     /* hv: I'd bet WIN32 has the same effect here */
     setmode(fd,O_BINARY);
 #endif

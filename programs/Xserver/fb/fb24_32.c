@@ -1,7 +1,7 @@
 /*
  * $XFree86: xc/programs/Xserver/fb/fb24_32.c,v 1.4 2000/08/09 17:50:51 keithp Exp $
  *
- * Copyright © 2000 SuSE, Inc.
+ * Copyright Â© 2000 SuSE, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -22,6 +22,10 @@
  *
  * Author:  Keith Packard, SuSE, Inc.
  */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #ifdef XFree86LOADER
 #include "xf86.h"

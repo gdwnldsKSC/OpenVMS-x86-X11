@@ -1,8 +1,12 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/apm/apm_rush.c,v 1.2 2004/04/23 19:25:03 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/apm/apm_rush.c,v 1.7 2005/07/11 02:29:44 ajax Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/apm/apm_rush.c,v 1.11tsi Exp $ */
 /*
- * Copyright Loïc Grenié 1999
+ * Copyright LoÃ¯c GreniÃ© 1999
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "apm.h"
 #include "xaalocal.h"
@@ -309,14 +313,14 @@ Copyright (c) 1998 Daryll Strauss
 
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "dixstruct.h"
 #include "extnsionst.h"
 #include "scrnintstr.h"
 #define _XF86RUSH_SERVER_
-#include "xf86rushstr.h"
+#include <X11/extensions/xf86rushstr.h>
 
 static unsigned char RushReqCode = 0;
 static int RushErrorBase;

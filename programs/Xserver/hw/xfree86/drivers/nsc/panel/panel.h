@@ -1,7 +1,7 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/panel/panel.h,v 1.2 2002/12/11 22:51:02 dawes Exp $ */
 /*
  * $Workfile: panel.h $
- * $Revision$
+ * $Revision: 1.3 $
  *
  * File Contents: This file contains the Geode frame buffer panel 
  *                functions prototypes and it includes panel 

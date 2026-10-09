@@ -31,10 +31,14 @@
  * This file contains the interfaces to the bus-specific code
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "X.h"
+#include <X11/X.h>
 #include "os.h"
 #include "xf86.h"
 #include "xf86Priv.h"
@@ -1430,12 +1434,16 @@ xf86ResourceBrokerInit(void)
  * At resource broker initialization this is no problem as this
  * only deals with exclusive resources.
  */
+#if 0
 void
 RemoveOverlaps(resPtr target, resPtr list, Bool pow2Alignment, Bool useEstimated)
 {
     resPtr pRes;
     memType size, newsize, adjust;
 
+    if (!target)
+	return;
+    
     for (pRes = list; pRes; pRes = pRes->next) {
 	if (pRes != target
 	    && ((pRes->res_type & ResTypeMask) ==
@@ -1493,6 +1501,88 @@ RemoveOverlaps(resPtr target, resPtr list, Bool pow2Alignment, Bool useEstimated
 	}
     }
 }
+#else
+
+void
+RemoveOverlaps(resPtr target, resPtr list, Bool pow2Alignment, Bool useEstimated)
+{
+    resPtr pRes;
+    memType size, newsize, adjust;
+
+    if (!target)
+	return;
+    
+    if (!(target->res_type & ResEstimated)   /* Don't touch sure resources */
+	&& !(target->res_type & ResOverlap)) /* Unless they may overlap    */
+	return;
+
+    for (pRes = list; pRes; pRes = pRes->next) {
+	if (pRes == target
+	    || ((pRes->res_type & ResTypeMask) !=
+		(target->res_type & ResTypeMask))
+	    || pRes->block_begin > target->block_end
+	    || pRes->block_end < target->block_begin)
+	    continue;
+
+	if (pRes->block_begin <= target->block_begin) {
+	    /* Possibly ignore estimated resources */
+	    if (!useEstimated && (pRes->res_type & ResEstimated))
+		continue;
+	    
+	    /* Special cases */
+	    if (pRes->block_end >= target->block_end) {
+		/*
+		 * If pRes fully contains target, don't do anything
+		 * unless target can overlap.
+		 */
+		if (target->res_type & ResOverlap) {
+		    /* Nullify range but keep its ResOverlap bit on */
+		    target->block_end = target->block_begin - 1;
+		    return;
+		} else
+		    continue;
+	    } else {
+#if 0 /* Don't trim start address - we trust what we got */
+		/*
+		 * If !pow2Alignment trim start address: !pow2Alingment
+		 * is only set when estimated OS addresses are handled.
+		 * In cases where the target and pRes have the same
+		 * starting address, reduce the size of the target
+		 * (given it's an estimate).
+		 */
+		if (!pow2Alignment)
+		    target->block_begin = pRes->block_end + 1;
+		else 
+#endif
+		if (pRes->block_begin == target->block_begin)
+		    target->block_end = pRes->block_end;
+		else
+		    continue;
+	    }
+	} else {
+	    /* Trim target to remove the overlap */
+		target->block_end = pRes->block_begin - 1;
+	}
+	if (pow2Alignment) {
+	    /*
+	     * Align to a power of two.  This requires finding the
+	     * largest power of two that is smaller than the adjusted
+	     * size.
+	     */
+	    size = target->block_end - target->block_begin + 1;
+	    newsize = 1UL << (sizeof(memType) * 8 - 1);
+	    while (!(newsize & size))
+		newsize >>= 1;
+	    target->block_end = target->block_begin + newsize - 1;
+	} else if (target->block_end > MEM_ALIGN) {
+	    /* Align the end to MEM_ALIGN */
+	    if ((adjust = (target->block_end + 1) % MEM_ALIGN))
+		target->block_end -= adjust;
+	}
+    }
+}
+
+#endif
 
 /*
  * Resource request code
@@ -1771,7 +1861,7 @@ xf86RegisterResources(int entityIndex, resList list, unsigned long access)
 	    range.type = (range.type & ~ResAccMask) | (access & ResAccMask);
 	}
  	range.type &= ~ResEstimated;	/* Not allowed for drivers */
-#if !(defined(__alpha__) && defined(linux))
+#if !((defined(__alpha__) || (defined(__ia64__))) && defined(linux))
 	/* On Alpha Linux, do not check for conflicts, trust the kernel. */
 	if (checkConflict(&range, Acc, entityIndex, SETUP,TRUE)) 
 	    res = xf86AddResToList(res,&range,entityIndex);
@@ -2391,8 +2481,8 @@ xf86PostProbe(void)
 #endif
     }
     xf86FreeResList(acc);
-
 #if !(defined(__alpha__) && defined(linux)) && \
+    !(defined(__ia64__) && defined(linux)) && \
     !(defined(__sparc64__) && defined(__OpenBSD__))
     /* 
      * No need to validate on Alpha Linux or OpenBSD/sparc64, 
@@ -2944,7 +3034,7 @@ void
 xf86FindPrimaryDevice()
 {
     /* if no VGA device is found check for primary PCI device */
-    if (primaryBus.type == BUS_NONE)
+    if (primaryBus.type == BUS_NONE && xorgHWAccess)
         CheckGenericGA();
     if (primaryBus.type != BUS_NONE) {
 	char *bus;

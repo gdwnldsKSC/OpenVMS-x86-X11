@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xc/config/cf/darwin.cf,v 1.4.2.1 2004/12/15 04:53:05 gisburn Exp $
+XCOMM $XdotOrg: xc/config/cf/darwin.cf,v 1.8 2005/04/01 01:22:07 torrey Exp $
 XCOMM platform:  $XFree86: xc/config/cf/darwin.cf,v 1.50 2004/01/20 23:54:50 torrey Exp $
 
 /* Darwin / Mac OS X configuration by John Carmack <johnc@idsoftware.com> */
@@ -50,6 +50,15 @@ XCOMM operating system:  OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVe
 #endif
 #ifndef HasGcc3
 # define HasGcc3                NO
+#endif
+#ifndef HasFreetype2
+# define HasFreetype2           NO
+#endif
+#ifndef HasExpat
+# define HasExpat               NO
+#endif
+#ifndef HasLibpng
+# define HasLibpng              NO
 #endif
 
 /* Older versions don't really support IPv6, but #define AF_INET6. */
@@ -134,7 +143,7 @@ XCOMM operating system:  OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVe
 # endif
 
 # define BuildRootless          YES
-#define BuildAppleWMLibrary     YES
+# define BuildAppleWMLibrary    YES
 
 #endif  /* DarwinQuartzSupport */
 
@@ -157,14 +166,16 @@ XCOMM operating system:  OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVe
 
 /*
  * Our cpp isn't in /lib/cpp and early versions don't like -undef.
- * The default cpp-3.3 that ships with Panther inserts spurious #pragmas,
- * so we use the 3.1-based version.
+ * The gcc 3.3 cpp that Apple ships inserts spurious #pragmas,
+ * so we use the 3.1-based version in this case.
  */
-#if OSMajorVersion >= 7
+#if (GccMajorVersion == 3) && (GccMinorVersion == 3)
 # define CppCmd                 /usr/bin/cpp3
-# define StandardCppOptions     -traditional -D__GNUC__
 #else
 # define CppCmd                 /usr/bin/cpp
+#endif
+#if (GccMajorVersion == 3) && (GccMinorVersion == 3) || (GccMajorVersion > 3)
+# define StandardCppOptions     -traditional -D__GNUC__
 #endif
 #if HasGcc3
 # define RawCppCmd              CppCmd -undef
@@ -278,6 +289,10 @@ XCOMM operating system:  OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVe
 /* no XFree86-VidMode extension */
 #define BuildXF86VidModeExt     NO
 
+#ifndef BuildXterm
+# define BuildXterm             BuildClients    /* Not enabled by default */
+#endif
+
 #define BuildLibPathVar         DYLD_LIBRARY_PATH
 
 /* include rules to build shared libraries */
@@ -290,15 +305,15 @@ XCOMM operating system:  OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVe
 #ifndef BundleProgramTarget
 #define BundleProgramTarget(program,loader,subdirs,objs,deplib,syslib,dstdir) @@\
                                                                         @@\
-AllTarget(program)							@@\
-									@@\
-program: loader subdirs objs deplib					@@\
-	RemoveTargetProgram($@)						@@\
+AllTarget(program)                                                      @@\
+                                                                        @@\
+program: loader subdirs objs deplib                                     @@\
+	RemoveTargetProgram($@)                                             @@\
 	LinkRule($@,-bundle $(LDOPTIONS),objs,deplib $(LDLIBS) syslib -bundle_loader loader) @@\
-									@@\
-InstallProgram(program,dstdir/program.bundle/Contents/MacOS)		@@\
-									@@\
-clean::									@@\
+                                                                        @@\
+InstallProgram(program,dstdir/program.bundle/Contents/MacOS)            @@\
+                                                                        @@\
+clean::                                                                 @@\
 	RemoveFile(program)
 #endif /* BundleProgramTarget */
 
@@ -311,6 +326,5 @@ clean::									@@\
 	darwinLib.tmpl
 #endif
 
-/* include all the XFree86 rules */
+/* include all the X.Org rules */
 #include <xorg.cf>
-

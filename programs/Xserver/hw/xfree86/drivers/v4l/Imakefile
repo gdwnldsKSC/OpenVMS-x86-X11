@@ -13,11 +13,9 @@ OBJS = v4l.o
 INCLUDES = -I. -I../../include
 #else
 INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86OSSRC) -I$(SERVERSRC)/Xext \
-           -I$(SERVERSRC)/mfb -I$(SERVERSRC)/mi \
-           -I$(SERVERSRC)/cfb -I$(XF86SRC)/xaa \
+           -I$(SERVERSRC)/mi -I$(XF86SRC)/xaa \
            -I$(XF86SRC)/vgahw -I$(XF86SRC)/ramdac \
-	   -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c \
-	   -I$(XF86SRC)/xf24_32bpp -I$(FONTINCSRC) \
+	   -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c -I$(FONTINCSRC) \
 	   -I$(XF86SRC)/xf8_32bpp -I$(XF86SRC)/xf1bpp \
            -I$(XF86SRC)/xf4bpp -I$(SERVERSRC)/include -I$(XINCLUDESRC) \
 	   -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c -I$(EXTINCSRC)
@@ -30,7 +28,7 @@ SubdirLibraryRule($(OBJS))
 ModuleObjectRule()
 
 ObjectModuleTarget(v4l,$(OBJS))
-InstallObjectModule(v4l,$(MODULEDIR),drivers/linux)
+InstallVideoObjectModule(v4l,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(v4l)
@@ -42,4 +40,4 @@ InstallDriverSDKNonExecFile(Imakefile,$(DRIVERSDKDIR)/drivers/v4l)
 InstallDriverSDKNonExecFile(v4l.c,$(DRIVERSDKDIR)/drivers/v4l)
 InstallDriverSDKNonExecFile(videodev.h,$(DRIVERSDKDIR)/drivers/v4l)
 
-InstallDriverSDKObjectModule(v4l,$(DRIVERSDKMODULEDIR),drivers/linux)
+InstallDriverSDKObjectModule(v4l,$(DRIVERSDKMODULEDIR),drivers)

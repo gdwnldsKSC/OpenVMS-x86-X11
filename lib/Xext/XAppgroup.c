@@ -27,13 +27,10 @@ in this Software without prior written authorization from The Open Group.
 /* $Xorg: XAppgroup.c,v 1.5 2001/02/09 02:03:49 xorgcvs Exp $ */
 
 #ifdef WIN32
-#define BOOL wBOOL
-#undef Status
-#define Status wStatus
-#include <windows.h>
-#undef Status
-#define Status int
-#undef BOOL
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <X11/Xwindows.h>
 #endif
 
 #define NEED_EVENTS
@@ -99,10 +96,10 @@ static XEXT_GENERATE_CLOSE_DISPLAY (close_display, xag_info)
  *****************************************************************************/
 
 Bool
-XagQueryVersion(dpy, major_version_return, minor_version_return)
-    Display* dpy;
-    int* major_version_return; 
-    int* minor_version_return;
+XagQueryVersion(
+    Display *dpy,
+    int *major_version_return,
+    int *minor_version_return)
 {
     XExtDisplayInfo *info = find_display (dpy);
     xXagQueryVersionReply rep;
@@ -231,9 +228,7 @@ XagCreateNonembeddedApplicationGroup(
     return True;
 }
 
-Bool XagDestroyApplicationGroup(dpy,app_group)
-    Display* dpy;
-    XAppGroup app_group;
+Bool XagDestroyApplicationGroup(Display* dpy, XAppGroup app_group)
 {
     XExtDisplayInfo *info = find_display (dpy);
     xXagDestroyReq *req;
@@ -251,10 +246,7 @@ Bool XagDestroyApplicationGroup(dpy,app_group)
 }
 
 Bool
-XagGetApplicationGroupAttributes(
-    Display* dpy,
-    XAppGroup app_group,
-    ...)
+XagGetApplicationGroupAttributes(Display* dpy, XAppGroup app_group, ...)
 {
     va_list var;
     XExtDisplayInfo *info = find_display (dpy);
@@ -316,10 +308,10 @@ XagGetApplicationGroupAttributes(
 }
 
 Bool
-XagQueryApplicationGroup(dpy, resource, app_group_return)
-    Display* dpy;
-    XID resource;
-    XAppGroup* app_group_return;
+XagQueryApplicationGroup(
+    Display* dpy,
+    XID resource,
+    XAppGroup* app_group_return)
 {
     XExtDisplayInfo *info = find_display (dpy);
     xXagQueryReq *req;
@@ -345,10 +337,7 @@ XagQueryApplicationGroup(dpy, resource, app_group_return)
 }
 
 Bool
-XagCreateAssociation(dpy, window_return, system_window)
-    Display* dpy;
-    Window* window_return;
-    void* system_window;
+XagCreateAssociation(Display* dpy, Window* window_return, void* system_window)
 {
 #ifdef WIN32
     long tmp = *(HWND*) system_window;
@@ -381,9 +370,7 @@ XagCreateAssociation(dpy, window_return, system_window)
 }
 
 Bool
-XagDestroyAssociation(dpy, window)
-    Display* dpy;
-    Window window;
+XagDestroyAssociation(Display* dpy, Window window)
 {
 #ifdef WIN32
     XExtDisplayInfo *info = find_display (dpy);

@@ -19,7 +19,7 @@ XCOMM $XFree86: xc/programs/Xserver/hw/xfree86/common/Imakefile,v 3.154 2003/10/
 #else
 # if defined(i386BsdArchitecture) || defined(AlphaBsdArchitecture) \
 	|| defined(OpenBSDArchitecture) || defined(NetBSDArchitecture) \
-	|| defined(FreeBSDArchitecture)
+	|| defined(KFreeBSDArchitecture)
         KBD = xf86KbdBSD
 # else
 #  ifdef LinuxArchitecture
@@ -71,25 +71,10 @@ EXT_MODULES_DEFINES = $(GLX_DEFINES)
 MDEBUGDEFS = -DMEMDEBUG
 #endif
 
-#ifndef XorgExpireServer
-#define XorgExpireServer	NO
-#endif
-
-#if XorgExpireServer
-      BETASRC = xf86Beta.c
-      BETAOBJ = xf86Beta.o
-     BETADEFS = -DDO_CHECK_BETA
-#ifndef NeedXF86Beta
-#define NeedXF86Beta YES
-#endif
-#endif
-
-#ifndef NeedXF86Beta
-#define NeedXF86Beta NO
-#endif
-
-#if XorgExpireServer
-EXP_FORCE_DEFINES = -DSHOW_BETA_MESSAGE -DEXPIRE_SERVER
+#if defined(SunArchitecture) && ((OSMajorVersion == 5) && (OSMinorVersion >= 9))
+BACKTRACE_DEFS = -DHAVE_WALKCONTEXT
+#elif defined(LinuxCLibMajorVersion) && ((LinuxCLibMajorVersion == 6) && (LinuxCLibMinorVersion >= 1))
+BACKTRACE_DEFS = -DHAVE_EXECINFO_H
 #endif
 
 SRCS =	\
@@ -130,7 +115,6 @@ SRCS =	\
 	$(XF86_XINPUT_SRC) \
 	$(XINPUT_DEV_SRCS) \
 	$(XKBDDXSRC) \
-	$(BETASRC) \
 	$(SERVERSRCS) \
         $(RANDRSRC)
 
@@ -168,7 +152,6 @@ OBJS = \
 	$(SBUSOBJ) \
 	$(XF86_XINPUT_OBJ) \
 	$(XKBDDXOBJ) \
-	$(BETAOBJ) \
 	$(KBD).o \
         $(RANDROBJ)
 
@@ -190,10 +173,14 @@ OFILES = \
      OSNAME = OSName
    OSVENDOR = OSVendor
   OSNAMEDEF = -DOSNAME='" $(OSNAME)"' -DOSVENDOR='" $(OSVENDOR)"'
-#if defined(XFree86CustomVersion)
+#if defined(XorgCustomVersion) || defined(XFree86CustomVersion)
+# if defined(XorgCustomVersion)
+CUSTOMVERSION = XorgCustomVersion
+# else
 CUSTOMVERSION = XFree86CustomVersion
- CUSTOMVERDEF = -DXF86_CUSTOM_VERSION='$(CUSTOMVERSION)'
-#endif
+# endif /* XorgCustomVersion */
+ CUSTOMVERDEF = -DXORG_CUSTOM_VERSION='$(CUSTOMVERSION)'
+#endif /* XorgCustomVersion || XFree86CustomVersion */
 #if defined(BuilderString)
   BUILDERSTRING = BuilderString
   BUILDERMSG = -DBUILDERSTRING='$(BUILDERSTRING)'
@@ -218,21 +205,17 @@ XCONFIGUREDEFINES = -DXF86CONFIGFILE='"$(XF86CONFIGFILE)"'
 
     DEFINES = $(CONSDEFINES) $(KBDDEFINES) $(EXT_DEFINES) $(OS_DEFINES) \
 	      $(CONFIG_DEFINES) $(XKBDEFRULESDEFS) $(VENDORSUPPORTDEFS) \
-	      $(VENDOR_DEFINES)
+	      $(VENDOR_DEFINES) -DXF86PM
 
 AllTarget($(OFILES))
 
 SpecialCObjectRule(xf86Bus,NullParameter,$(BUGMSG) $(VGAINCLUDES))
-SpecialCObjectRule(xf86Init,$(ICONFIGFILES),$(OSNAMEDEF) $(BUILDERMSG) $(BUGMSG) $(CUSTOMVERDEF) $(XORGREL_DEF) $(XORGDATE_DEF) $(EXT_DEFINES) $(BETADEFS) $(MDEBUGDEFS) $(KEYBOARD_DEFS))
-SpecialCObjectRule(xf86Events,$(ICONFIGFILES),$(EXT_DEFINES) $(MDEBUGDEFS))
+SpecialCObjectRule(xf86Init,$(ICONFIGFILES),$(OSNAMEDEF) $(BUILDERMSG) $(BUGMSG) $(CUSTOMVERDEF) $(XORGREL_DEF) $(XORGDATE_DEF) $(EXT_DEFINES) $(MDEBUGDEFS) $(KEYBOARD_DEFS))
+SpecialCObjectRule(xf86Events,$(ICONFIGFILES),$(EXT_DEFINES) $(MDEBUGDEFS) $(BACKTRACE_DEFS))
 SpecialCObjectRule(xf86Globals,$(ICONFIGFILES),$(EXT_DEFINES) $(MODPATHDEFINES) $(LOGDEFINES))
 SpecialCObjectRule(xf86AutoConfig,$(ICONFIGFILES),$(XCONFIGDEFINES))
-SpecialCObjectRule(xf86Config,$(ICONFIGFILES),$(XCONFIGDEFINES))
+SpecialCObjectRule(xf86Config,$(ICONFIGFILES),$(XCONFIGDEFINES) $(KEYBOARD_DEFS))
 SpecialCObjectRule(xf86Configure,$(ICONFIGFILES),$(XCONFIGUREDEFINES) $(KEYBOARD_DEFS))
-
-#if NeedXF86Beta
-SpecialCObjectRule($(BETAOBJ),NullParameter,$(EXP_DEFINES))
-#endif
 
 SpecialCObjectRule(xf86IniExt,$(ICONFIGFILES),$(EXT_DEFINES) $(EXT_MODULES_DEFINES))
 
@@ -241,6 +224,7 @@ NormalLibraryTarget(xf86,$(OBJS))
 
 LinkFile(xf86IniExt.c,$(SERVERSRC)/mi/miinitext.c)
 LinkSourceFile(xf86Version.h,..)
+LinkSourceFile(xorgVersion.h,..)
 LinkSourceFile(xf86Pci.h,$(XF86OSSRC)/bus)
 #ifdef SparcArchitecture
 LinkSourceFile(xf86Sbus.h,$(XF86OSSRC)/bus)
@@ -281,6 +265,7 @@ InstallDriverSDKNonExecFile(xf86Priv.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(xf86Privstr.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(xf86Resources.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(xf86Version.h,$(DRIVERSDKINCLUDEDIR))
+InstallDriverSDKNonExecFile(xorgVersion.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(xf86Xinput.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(xf86cmap.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(xf86fbman.h,$(DRIVERSDKINCLUDEDIR))

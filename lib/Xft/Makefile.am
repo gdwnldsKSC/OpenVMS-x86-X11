@@ -1,8 +1,8 @@
-# 
-#  $Id$
-# 
+#
+#  $Id: Makefile.am,v 1.3 2005/06/24 22:43:20 alanc Exp $
+#
 #  Copyright © 2003 Keith Packard, Noah Levitt
-# 
+#
 #  Permission to use, copy, modify, distribute, and sell this software and its
 #  documentation for any purpose is hereby granted without fee, provided that
 #  the above copyright notice appear in all copies and that both that
@@ -12,7 +12,7 @@
 #  specific, written prior permission.  Keith Packard makes no
 #  representations about the suitability of this software for any purpose.  It
 #  is provided "as is" without express or implied warranty.
-# 
+#
 #  KEITH PACKARD DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
 #  INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
 #  EVENT SHALL KEITH PACKARD BE LIABLE FOR ANY SPECIAL, INDIRECT OR
@@ -23,9 +23,10 @@
 
 bin_SCRIPTS = xft-config
 
-man_MANS = Xft.3
+man_MANS = Xft.3 xft-config.1
 
-AM_CFLAGS = $(FONTCONFIG_CFLAGS) $(FREETYPE_CFLAGS) $(XRENDER_CFLAGS)
+AM_CFLAGS = $(FONTCONFIG_CFLAGS) $(FREETYPE_CFLAGS) $(XRENDER_CFLAGS) \
+            $(WARN_CFLAGS)
 
 lib_LTLIBRARIES = libXft.la
 
@@ -55,10 +56,9 @@ libXft_la_LIBADD = @FONTCONFIG_LIBS@ @FREETYPE_LIBS@ @XRENDER_LIBS@
 libXft_la_LDFLAGS = -version-number 2:1:2 -no-undefined
 
 libXftincludedir = $(includedir)/X11/Xft
-libXftinclude_HEADERS = Xft.h XftCompat.h 
+libXftinclude_HEADERS = Xft.h XftCompat.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xft.pc
 
-EXTRA_DIST = xft-config.in xft.pc.in Xft.3.in $(man_MANS) autogen.sh
-
+EXTRA_DIST = xft-config.in xft-config.1.in xft.pc.in Xft.3.in autogen.sh

@@ -1,5 +1,5 @@
 /* $Xorg: Keyboard.c,v 1.3 2000/08/17 19:53:28 cpqbld Exp $ */
-/* $XdotOrg: xc/programs/Xserver/hw/xnest/Keyboard.c,v 1.2 2004/04/23 19:54:21 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xnest/Keyboard.c,v 1.8 2005/07/14 03:36:44 kem Exp $ */
 /*
 
 Copyright 1993 by Davor Matic
@@ -16,9 +16,13 @@ is" without express or implied warranty.
 /* $XFree86: xc/programs/Xserver/hw/xnest/Keyboard.c,v 1.9 2003/09/13 21:33:09 dawes Exp $ */
 
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
-#include "keysym.h"
+#ifdef HAVE_XNEST_CONFIG_H
+#include <xnest-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
+#include <X11/keysym.h>
 #include "screenint.h"
 #include "inputstr.h"
 #include "misc.h"
@@ -31,6 +35,7 @@ is" without express or implied warranty.
 #include "Screen.h"
 #include "Keyboard.h"
 #include "Args.h"
+#include "Events.h"
 
 #ifdef XKB
 #include <X11/extensions/XKB.h>
@@ -82,6 +87,8 @@ extern	Status	XkbGetControls(
 #endif
 
 #endif
+
+DeviceIntPtr xnestKeyboardDevice = NULL;
 
 void
 xnestBell(int volume, DeviceIntPtr pDev, pointer ctrl, int cls)
@@ -135,7 +142,7 @@ xnestKeyboardProc(DeviceIntPtr pDev, int onoff)
   int mapWidth;
   int min_keycode, max_keycode;
   KeySymsRec keySyms;
-  CARD8 modmap[256];
+  CARD8 modmap[MAP_LENGTH];
   int i, j;
   XKeyboardState values;
 
@@ -165,7 +172,7 @@ xnestKeyboardProc(DeviceIntPtr pDev, int onoff)
 				   &mapWidth);
 #endif
       
-      for (i = 0; i < 256; i++)
+      for (i = 0; i < MAP_LENGTH; i++)
 	modmap[i] = 0;
       for (j = 0; j < 8; j++)
 	for(i = 0; i < modifier_keymap->max_keypermod; i++) {
@@ -281,4 +288,52 @@ Bool
 LegalModifier(unsigned int key, DevicePtr pDev)
 {
   return TRUE;
+}
+
+void
+xnestUpdateModifierState(unsigned int state)
+{
+  DeviceIntPtr pDev = xnestKeyboardDevice;
+  KeyClassPtr keyc = pDev->key;
+  int i;
+  CARD8 mask;
+
+  state = state & 0xff;
+
+  if (keyc->state == state)
+    return;
+
+  for (i = 0, mask = 1; i < 8; i++, mask <<= 1) {
+    int key;
+
+    /* Modifier is down, but shouldn't be
+     */
+    if ((keyc->state & mask) && !(state & mask)) {
+      int count = keyc->modifierKeyCount[i];
+
+      for (key = 0; key < MAP_LENGTH; key++)
+	if (keyc->modifierMap[key] & mask) {
+	  int bit;
+	  BYTE *kptr;
+
+	  kptr = &keyc->down[key >> 3];
+	  bit = 1 << (key & 7);
+
+	  if (*kptr & bit)
+	    xnestQueueKeyEvent(KeyRelease, key);
+
+	  if (--count == 0)
+	    break;
+	}
+    }
+
+    /* Modifier shoud be down, but isn't
+     */
+    if (!(keyc->state & mask) && (state & mask))
+      for (key = 0; key < MAP_LENGTH; key++)
+	if (keyc->modifierMap[key] & mask) {
+	  xnestQueueKeyEvent(KeyPress, key);
+	  break;
+	}
+  }
 }

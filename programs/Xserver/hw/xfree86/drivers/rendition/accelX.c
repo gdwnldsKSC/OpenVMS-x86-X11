@@ -5,8 +5,9 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/rendition/accelX.c,v 1.10 2001/06/15 21:22:54 dawes Exp $ */
 
-
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /*
  * includes

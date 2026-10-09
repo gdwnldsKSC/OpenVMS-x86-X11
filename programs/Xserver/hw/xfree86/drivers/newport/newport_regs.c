@@ -3,6 +3,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/newport/newport_regs.c,v 1.6 2001/12/21 15:37:23 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "newport.h"
 
 static void NewportXmap9FifoWait(NewportRegsPtr pNewportRegs, unsigned long xmapChip);

@@ -16,14 +16,14 @@ ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
 #endif
 
 #if BuildXF86DRI
-  DRI_DEFINES = GlxDefines $(VIA_DEFINES) -DX_BYTE_ORDER=$(X_BYTE_ORDER)
+  DRI_DEFINES = GlxDefines $(VIA_DEFINES) -DX_BYTE_ORDER=$(X_BYTE_ORDER) -DIN_DRI_DRIVER
  DRI_INCLUDES = -I$(GLXLIBSRC)/dri \
 		-I$(XINCLUDESRC) \
 		-I$(GLXLIBSRC)/glx \
 		-I$(GLXLIBSRC)/include \
 		-I$(SERVERSRC)/GL/dri \
 		-I$(XF86OSSRC) \
-		-I$(DRMSRCDIR)/shared \
+		-I$(DRMSRCDIR)/shared-core \
 		-I$(XF86DRIVERSRC)/via \
 		-I$(GLXLIBSRC)/dri/drm
 #endif
@@ -127,7 +127,6 @@ LinkSourceFile(via_debug.c, $(MESADRVSRCDIR)/unichrome)
 
 #ifdef NeedToLinkMesaSrc
 LinkSourceFile(via_3d_reg.h, $(MESADRVSRCDIR)/unichrome)
-LinkSourceFile(via_common.h, $(MESADRVSRCDIR)/unichrome)
 LinkSourceFile(via_context.c, $(MESADRVSRCDIR)/unichrome)
 LinkSourceFile(via_dd_tritmp.h, $(MESADRVSRCDIR)/unichrome)
 LinkSourceFile(via_dd_vbtmp.h, $(MESADRVSRCDIR)/unichrome)

@@ -1,5 +1,5 @@
 /**
- * \file drm_memory.h 
+ * \file drm_memory_debug.h 
  * Memory management wrappers for DRM.
  *
  * \author Rickard E. (Rik) Faith <faith@valinux.com>
@@ -31,7 +31,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#define __NO_VERSION__
 #include <linux/config.h>
 #include "drmP.h"
 
@@ -168,7 +167,7 @@ void *DRM(alloc)(size_t size, int area)
 	return pt;
 }
 
-void *DRM(calloc)(size_t size, size_t nmemb, int area)
+void *DRM(calloc)(size_t nmemb, size_t size, int area)
 {
 	void *addr;
 
@@ -353,7 +352,7 @@ void DRM(ioremapfree)(void *pt, unsigned long size, drm_device_t *dev)
 	}
 }
 
-#if __REALLY_HAVE_AGP
+#if __OS_HAS_AGP
 
 DRM_AGP_MEM *DRM(alloc_agp)(int pages, u32 type)
 {

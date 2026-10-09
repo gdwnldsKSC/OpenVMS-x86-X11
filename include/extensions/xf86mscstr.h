@@ -14,7 +14,7 @@
 #define XF86MISCNAME		"XFree86-Misc"
 
 #define XF86MISC_MAJOR_VERSION	0	/* current version numbers */
-#define XF86MISC_MINOR_VERSION	8
+#define XF86MISC_MINOR_VERSION	9
 
 typedef struct _XF86MiscQueryVersion {
     CARD8	reqType;		/* always XF86MiscReqCode */

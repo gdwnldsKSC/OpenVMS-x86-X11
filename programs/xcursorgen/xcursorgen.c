@@ -104,6 +104,12 @@ read_config_file (char *config, struct flist **list)
       }
 
       curr = malloc (sizeof (struct flist));
+      if (curr == NULL)
+	{
+          fprintf (stderr, "malloc() failed\n");
+	  fclose (fp);
+          return 0;
+	}
 
       curr->size = size;
       curr->xhot = xhot;
@@ -112,6 +118,13 @@ read_config_file (char *config, struct flist **list)
       curr->delay = delay;
 
       curr->pngfile = malloc (strlen (pngfile) + 1);
+      if (curr->pngfile == NULL)
+	{
+          fprintf (stderr, "malloc() failed\n");
+	  fclose (fp);
+          return 0;
+	}
+    
       strcpy (curr->pngfile, pngfile);
 
       curr->next = NULL;
@@ -191,6 +204,12 @@ load_image (struct flist *list, char *prefix)
   if (prefix)
     {
       file = malloc (strlen (prefix) + 1 + strlen (list->pngfile) + 1);
+      if (file == NULL)
+	{
+          fprintf (stderr, "malloc() failed\n");
+	  png_destroy_read_struct (&png, &info, NULL);
+          return NULL;
+	}
       strcpy (file, prefix);
       strcat (file, "/");
       strcat (file, list->pngfile);
@@ -250,6 +269,12 @@ load_image (struct flist *list, char *prefix)
   image->delay = list->delay;
 
   rows = malloc (sizeof (png_bytep) * height);
+  if (rows == NULL)
+    {
+      fclose (fp);
+      png_destroy_read_struct (&png, &info, NULL);
+      return NULL;
+    }
   
   for (i = 0; i < height; i++)
     rows[i] = (png_bytep) (image->pixels + i * width);

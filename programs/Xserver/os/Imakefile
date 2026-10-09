@@ -11,11 +11,6 @@ XCOMM $XFree86: xc/programs/Xserver/os/Imakefile,v 3.40 2003/09/09 03:20:41 dawe
  * If you have any extra files to be put into the library, define them here.
  */
 
-#ifdef HPArchitecture
-#define OtherSources hpsocket.c 
-#define OtherObjects hpsocket.o
-#endif
-
 /*
  * do not modify the following two definitions
  */
@@ -102,12 +97,12 @@ BOOTSTRAPCFLAGS =
                   osinit.c utils.c log.c auth.c mitauth.c secauth.c \
                   $(XDMAUTHSRCS) $(RPCSRCS) $(KRB5SRCS) xdmcp.c OtherSources \
                   transport.c $(SNPRINTF_SRCS) $(STRLCAT_SRCS) \
-		  $(MALLOC_SRCS) $(LBX_SRCS)
+		  $(MALLOC_SRCS) $(LBX_SRCS) xprintf.c
            OBJS = WaitFor.o access.o connection.o io.o $(COLOR_OBJS) \
                   osinit.o utils.o log.o auth.o mitauth.o secauth.o \
                   $(XDMAUTHOBJS) $(RPCOBJS) $(KRB5OBJS) xdmcp.o OtherObjects \
                   transport.o $(SNPRINTF_OBJS) $(STRLCAT_OBJS) \
-		  $(MALLOC_OBJS) $(LBX_OBJS)
+		  $(MALLOC_OBJS) $(LBX_OBJS) xprintf.o
 
 #if SpecialMalloc
      MEM_DEFINES = -DSPECIAL_MALLOC
@@ -136,7 +131,7 @@ BOOTSTRAPCFLAGS =
 		  $(RANDOM_DEFINES) $(BUGMSG) $(XTRANS_FAILDEFINES)
        INCLUDES = -I. -I../include -I$(XINCLUDESRC) -I$(EXTINCSRC) \
 		  -I$(SERVERSRC)/Xext -I$(FONTINCSRC) -I$(SERVERSRC)/render \
-		  -I$(TOP)/lib/Xau -I../lbx Krb5Includes
+		  -I$(TOP)/lib/Xau -I../lbx -I../Xprint Krb5Includes
  DEPEND_DEFINES = $(DBM_DEFINES) $(XDMCP_DEFINES) $(EXT_DEFINES) \
 		  $(TRANS_INCLUDES) $(CONNECTION_FLAGS) $(GETPEER_DEFINES) \
 		  DependDefines

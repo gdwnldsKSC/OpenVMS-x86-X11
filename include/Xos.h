@@ -1,5 +1,5 @@
 /*
- * $XdotOrg: xc/include/Xos.h,v 1.2.4.1 2005/01/12 02:55:30 gisburn Exp $
+ * $XdotOrg: xc/include/Xos.h,v 1.8 2005/11/08 06:33:25 jkj Exp $
  * $Xorg: Xos.h,v 1.6 2001/02/09 02:03:22 xorgcvs Exp $
  * 
  * 
@@ -57,12 +57,12 @@ in this Software without prior written authorization from The Open Group.
 #include <sys/types.h>
 #define _POSIX_SOURCE
 #else
-#include <sys/types.h>
+# include <sys/types.h>
 #endif
 #endif /* USG */
 
 #ifndef sgi
-#if defined(SCO325) || defined(__USLC__)
+#if defined(__SCO__) || defined(__UNIXWARE__)
 #include <stdint.h>
 #endif
 #endif
@@ -92,7 +92,7 @@ in this Software without prior written authorization from The Open Group.
 #ifndef X_NOT_STDC_ENV
 
 #include <string.h>
-#ifdef SCO325
+#if defined(__SCO__) || defined(__UNIXWARE__)
 #include <strings.h>
 #else
 #if (defined(sun) && defined(__SVR4))
@@ -211,11 +211,12 @@ struct timezone {
 #define _POSIX_SOURCE
 #elif defined(WIN32)
 #include <time.h>
-#if !defined(_WINSOCKAPI_) && !defined(_WILLWINSOCK_)
+#if !defined(_WINSOCKAPI_) && !defined(_WILLWINSOCK_) && !defined(_TIMEVAL_DEFINED) && !defined(_STRUCT_TIMEVAL)
 struct timeval {
     long    tv_sec;         /* seconds */
     long    tv_usec;        /* and microseconds */
 };
+#define _TIMEVAL_DEFINED
 #endif
 #include <sys/timeb.h>
 #define gettimeofday(t) \

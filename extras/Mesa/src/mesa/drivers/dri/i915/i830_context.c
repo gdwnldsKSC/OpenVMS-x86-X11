@@ -32,17 +32,16 @@
 #include "tnl/tnl.h"
 #include "tnl/t_vertex.h"
 #include "tnl/t_context.h"
-
+#include "utils.h"
 
 /***************************************
  * Mesa's Driver Functions
  ***************************************/
 
-static const char * const card_extensions[] =
+static const struct dri_extension i830_extensions[] =
 {
-   "GL_ARB_texture_env_crossbar",
-   "GL_NV_blend_square",
-   NULL
+    { "GL_ARB_texture_env_crossbar",       NULL },
+    { NULL,                                NULL }
 };
 
 
@@ -110,7 +109,7 @@ GLboolean i830CreateContext( const __GLcontextModes *mesaVis,
 
    intel->verts = TNL_CONTEXT(ctx)->clipspace.vertex_buf;
 
-   driInitExtensions( ctx, card_extensions, GL_FALSE );
+   driInitExtensions( ctx, i830_extensions, GL_FALSE );
 
    i830InitState( i830 );
 

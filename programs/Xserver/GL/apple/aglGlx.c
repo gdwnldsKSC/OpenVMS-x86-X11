@@ -34,6 +34,10 @@
  */
 /* $XFree86: xc/programs/Xserver/GL/apple/aglGlx.c,v 1.2 2003/09/16 00:36:11 torrey Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "quartzCommon.h"
 #include <AGL/agl.h>
 #include "cr.h"
@@ -1338,36 +1342,6 @@ static void glAquaResetExtension(void)
 
 
 // Extra goodies for glx
-
-GLint __glEvalComputeK(GLenum target)
-{
-    switch (target) {
-    case GL_MAP1_VERTEX_4:
-    case GL_MAP1_COLOR_4:
-    case GL_MAP1_TEXTURE_COORD_4:
-    case GL_MAP2_VERTEX_4:
-    case GL_MAP2_COLOR_4:
-    case GL_MAP2_TEXTURE_COORD_4:
-        return 4;
-    case GL_MAP1_VERTEX_3:
-    case GL_MAP1_TEXTURE_COORD_3:
-    case GL_MAP1_NORMAL:
-    case GL_MAP2_VERTEX_3:
-    case GL_MAP2_TEXTURE_COORD_3:
-    case GL_MAP2_NORMAL:
-        return 3;
-    case GL_MAP1_TEXTURE_COORD_2:
-    case GL_MAP2_TEXTURE_COORD_2:
-        return 2;
-    case GL_MAP1_TEXTURE_COORD_1:
-    case GL_MAP2_TEXTURE_COORD_1:
-    case GL_MAP1_INDEX:
-    case GL_MAP2_INDEX:
-        return 1;
-    default:
-        return 0;
-    }
-}
 
 GLuint __glFloorLog2(GLuint val)
 {

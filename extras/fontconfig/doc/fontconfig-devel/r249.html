@@ -1,23 +1,21 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
->FcPatternDestroy</TITLE
+>FcPatternCreate</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
 REL="HOME"
-TITLE="Fontconfig Developers Reference, Version 2.2.2
- "
 HREF="index.html"><LINK
 REL="UP"
 TITLE="FcPattern"
-HREF="x93.html#AEN225"><LINK
+HREF="x93.html#AEN246"><LINK
 REL="PREVIOUS"
-TITLE="FcPatternCreate"
-HREF="r228.html"><LINK
+TITLE="FUNCTIONS"
+HREF="x93.html"><LINK
 REL="NEXT"
-TITLE="FcPatternEqual"
+TITLE="FcPatternDestroy"
 HREF="r270.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
@@ -38,7 +36,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
->Fontconfig Developers Reference, Version 2.2.2</TH
+></TH
 ></TR
 ><TR
 ><TD
@@ -46,7 +44,7 @@ WIDTH="10%"
 ALIGN="left"
 VALIGN="bottom"
 ><A
-HREF="r228.html"
+HREF="x93.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -71,9 +69,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCPATTERNDESTROY"
+NAME="FCPATTERNCREATE"
 ></A
->FcPatternDestroy</H1
+>FcPatternCreate</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -81,7 +79,7 @@ NAME="AEN253"
 ></A
 ><H2
 >Name</H2
->FcPatternDestroy&nbsp;--&nbsp;Destroy a pattern</DIV
+>FcPatternCreate&nbsp;--&nbsp;Create a pattern</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -98,14 +96,14 @@ NAME="AEN257"
 ></A
 ><PRE
 CLASS="FUNCSYNOPSISINFO"
->#include &#60;fontconfig.h&#62;
+>#include &lt;fontconfig.h&gt;
 	</PRE
 ><P
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->void FcPatternDestroy</CODE
->(FcPattern *p);</CODE
+>FcPattern * FcPatternCreate</CODE
+>(void);</CODE
 ></P
 ><P
 ></P
@@ -119,7 +117,7 @@ NAME="AEN264"
 ><H2
 >Description</H2
 ><P
->Destroys a pattern, in the process destroying all related values.
+>Creates a pattern with no properties; used to build patterns from scratch.
 	    </P
 ></DIV
 ><DIV
@@ -130,7 +128,7 @@ NAME="AEN267"
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.2.2
+>Fontconfig version 2.3.2
 
 	    </P
 ></DIV
@@ -150,7 +148,7 @@ WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
 ><A
-HREF="r228.html"
+HREF="x93.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -178,13 +176,13 @@ ACCESSKEY="N"
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FcPatternCreate</TD
+>FUNCTIONS</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN225"
+HREF="x93.html#AEN246"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -192,7 +190,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->FcPatternEqual</TD
+>FcPatternDestroy</TD
 ></TR
 ></TABLE
 ></DIV

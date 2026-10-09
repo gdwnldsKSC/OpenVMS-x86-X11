@@ -1,5 +1,5 @@
 XCOMM $Xorg: Imakefile,v 1.1 2000/12/12 13:00:42 coskrey Exp $
-XCOMM $XdotOrg: xc/nls/XI18N_OBJS/Imakefile,v 1.2.4.1 2005/01/25 02:03:01 gisburn Exp $
+XCOMM $XdotOrg: xc/nls/XI18N_OBJS/Imakefile,v 1.4 2005/01/19 01:53:55 gisburn Exp $
 
 
 
@@ -62,7 +62,8 @@ XI18NTarget(vi_VN.tcvn)
 XI18NTarget(vi_VN.viscii)
 XI18NTarget(zh_CN)
 XI18NTarget(zh_CN.gbk)
-XI18NTarget(zh_CN.UTF-8)
+XI18NTarget(zh_CN.gb18030)
+XI18NTarget(zh_HK.big5)
 XI18NTarget(zh_HK.big5hkscs)
 XI18NTarget(zh_TW)
 XI18NTarget(zh_TW.big5)
@@ -72,6 +73,8 @@ XI18NTarget(ja_JP.UTF-8)
 XI18NTarget(ko_KR.UTF-8)
 XI18NTarget(pt_BR.UTF-8)
 XI18NTarget(th_TH.UTF-8)
+XI18NTarget(zh_CN.UTF-8)
+XI18NTarget(zh_HK.UTF-8)
 XI18NTarget(zh_TW.UTF-8)
 #ifdef UXPArchitecture
 XI18NTarget(ja.U90)

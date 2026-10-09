@@ -49,9 +49,13 @@ SOFTWARE.
 ******************************************************************/
 /* $Xorg: lbxio.c,v 1.4 2001/02/09 02:05:23 xorgcvs Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
-#include <X11/Xtrans.h>
-#include "Xmd.h"
+#include <X11/Xtrans/Xtrans.h>
+#include <X11/Xmd.h>
 #include <errno.h>
 #ifndef Lynx
 #include <sys/param.h>
@@ -61,10 +65,10 @@ SOFTWARE.
 #else
 #include <uio.h>
 #endif
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "os.h"
-#include "Xpoll.h"
+#include <X11/Xpoll.h>
 #include "osdep.h"
 #include "opaque.h"
 #include "dixstruct.h"
@@ -100,8 +104,12 @@ void
 SwitchClientInput (ClientPtr client, Bool pending)
 {
     OsCommPtr oc = (OsCommPtr)client->osPrivate;
-    
+
+#ifndef WIN32    
     ConnectionTranslation[oc->fd] = client->index;
+#else
+    SetConnectionTranslation(oc->fd, client->index);
+#endif
     if (pending)
 	FD_SET(oc->fd, &ClientsWithInput);
     else

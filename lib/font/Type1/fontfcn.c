@@ -47,6 +47,13 @@
  */
 /* $XFree86: xc/lib/font/Type1/fontfcn.c,v 1.10 2001/04/05 17:42:27 dawes Exp $ */
  
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
 #ifndef FONTMODULE
 #include <stdio.h>
 #include <string.h>
@@ -57,11 +64,11 @@
 #endif
 #include "t1imager.h"
 #include "util.h"
-#ifdef BUILDCID
+#if XFONT_CID
 #include "range.h"
-#include "Xdefs.h"
+#include <X11/Xdefs.h>
 #endif
-#include "fntfilst.h"
+#include <X11/fonts/fntfilst.h>
 #include "fontfcn.h"
 
 extern struct segment *Type1Char ( char *env, XYspace S, 
@@ -69,7 +76,7 @@ extern struct segment *Type1Char ( char *env, XYspace S,
 				   psobj *osubrsP, 
 				   struct blues_struct *bluesP, int *modeP );
 
-#ifdef BUILDCID
+#if XFONT_CID
 extern struct xobject *CIDChar ( char *env, XYspace S, 
 				 psobj *charstrP, psobj *subrsP, 
 				 psobj *osubrsP, 
@@ -85,7 +92,7 @@ char *CurFontEnv;
 char *vm_base = NULL;
 psfont *FontP = NULL;
 psfont TheCurrentFont;
-#ifdef BUILDCID
+#if XFONT_CID
 char CurCIDFontName[CID_PATH_MAX];
 char CurCMapName[CID_PATH_MAX];
 cidfont *CIDFontP = NULL;
@@ -122,7 +129,7 @@ SearchDictName(psdict *dictP, psobj *keyP)
   return(0);
 }
 
-#ifdef BUILDCID
+#if XFONT_CID
 static boolean 
 initCIDFont(int cnt)
 {
@@ -179,7 +186,7 @@ initFont(int cnt)
   vm_base = vm_next_byte();
   if (!(Init_BuiltInEncoding())) return(FALSE);
   strcpy(CurFontName, "");    /* iniitialize to none */
-#ifdef BUILDCID
+#if XFONT_CID
   /* cause a font data reset on the next CID-keyed font */
   strcpy(CurCIDFontName, "");    /* initialize to none */
 #endif
@@ -190,7 +197,7 @@ initFont(int cnt)
   return(TRUE);
 }
 /***================================================================***/
-#ifdef BUILDCID
+#if XFONT_CID
 static void 
 resetCIDFont(char *cidfontname, char *cmapfile)
 {
@@ -254,7 +261,7 @@ resetFont(char *env)
  
 }
 
-#ifdef BUILDCID
+#if XFONT_CID
 /***================================================================***/
 int 
 readCIDFont(char *cidfontname, char *cmapfile)
@@ -311,7 +318,7 @@ readFont(char *env)
   rcode = scan_font(FontP);
   if (rcode == SCAN_OUT_OF_MEMORY) {
     /* free the memory and start again */
-#ifdef BUILDCID
+#if XFONT_CID
     /* xfree(vm_base); */
 #else
     xfree(vm_base);
@@ -322,7 +329,7 @@ readFont(char *env)
       }
     resetFont(env);
     rcode = scan_font(FontP);
-#ifdef BUILDCID
+#if XFONT_CID
     /* only double the memory twice, then report error */
     if (rcode == SCAN_OUT_OF_MEMORY) {
       /* free the memory and start again */
@@ -386,7 +393,7 @@ fontfcnB(struct XYspace *S, unsigned char *code, int *lenP, int *mode)
   return(charpath);
 }
 
-#ifdef BUILDCID
+#if XFONT_CID
 /***================================================================***/
 /*   CIDfontfcnA(cidfontname, cmapfile, mode)                         */
 /*                                                                    */
@@ -469,7 +476,7 @@ fontfcnA(char *env, int *mode)
  
   /* Has the FontP initialized?  If not, then   */
   /* Initialize  */
-#ifdef BUILDCID
+#if XFONT_CID
   if (FontP == NULL || strcmp(CurFontName, "") == 0) {
 #else
   if (FontP == NULL) {
@@ -498,7 +505,7 @@ fontfcnA(char *env, int *mode)
  
 }
 
-#ifdef BUILDCID
+#if XFONT_CID
 /***================================================================***/
 /*   CIDQueryFontLib(cidfontname,cmapfile,infoName,infoValue,rcodeP)  */
 /*                                                                    */
@@ -680,7 +687,7 @@ QueryFontLib(char *env, char *infoName,
   else *rcodeP = 1;
 }
 
-#ifdef BUILDCID
+#if XFONT_CID
 struct xobject *
 CIDfontfcnC(struct XYspace *S, psobj *theStringP, 
 	    psobj *SubrsArrayP, struct blues_struct *BluesP,

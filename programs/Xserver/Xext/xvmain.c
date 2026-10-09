@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/Xext/xvmain.c,v 1.2 2004/04/23 18:44:42 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/Xext/xvmain.c,v 1.6 2005/07/03 08:53:36 daniels Exp $ */
 /***********************************************************
 Copyright 1991 by Digital Equipment Corporation, Maynard, Massachusetts,
 and the Massachusetts Institute of Technology, Cambridge, Massachusetts.
@@ -75,8 +75,12 @@ SOFTWARE.
 **
 */
 
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "os.h"
 #include "scrnintstr.h"
@@ -91,8 +95,8 @@ SOFTWARE.
 
 #define GLOBAL
 
-#include "Xv.h"
-#include "Xvproto.h"
+#include <X11/extensions/Xv.h>
+#include <X11/extensions/Xvproto.h>
 #include "xvdix.h"
 
 #ifdef EXTMODULE

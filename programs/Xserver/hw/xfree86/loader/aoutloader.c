@@ -25,6 +25,10 @@
  *
  * Modified 21/02/97 by Sebastien Marineau to support OS/2 a.out objects
  */
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -44,7 +48,7 @@
 #define Xfree(size) free(size)
 #endif
 
-#include "Xos.h"
+#include <X11/Xos.h>
 #include "os.h"
 #include "aout.h"
 

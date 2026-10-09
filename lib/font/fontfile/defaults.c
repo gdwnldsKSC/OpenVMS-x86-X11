@@ -31,6 +31,9 @@ in this Software without prior written authorization from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include    <X11/X.h>
 #include    <X11/Xproto.h>
 
@@ -62,7 +65,7 @@ in this Software without prior written authorization from The Open Group.
 #define DEFAULT_SCAN_UNIT 1
 #endif
 
-#include "fntfilst.h"
+#include <X11/fonts/fntfilst.h>
 
 void
 FontDefaultFormat (int *bit, int *byte, int *glyph, int *scan)

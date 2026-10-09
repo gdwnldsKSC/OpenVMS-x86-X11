@@ -25,11 +25,15 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
+ * Authors: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br>
  *          David Dawes <dawes@xfree86.org>
  *
  * $XFree86: xc/programs/Xserver/hw/xfree86/drivers/vesa/vesa.c,v 1.40 2003/11/03 05:11:45 tsi Exp $
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "vesa.h"
 
@@ -45,7 +49,7 @@
 
 /* DPMS */
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 /* Mandatory functions */
 static const OptionInfoRec * VESAAvailableOptions(int chipid, int busid);
@@ -97,7 +101,7 @@ static Bool VESADGAInit(ScrnInfoPtr pScrn, ScreenPtr pScreen);
  * reference to this is compiled in, and this requires that the name of
  * this DriverRec be an upper-case version of the driver name.
  */
-DriverRec VESA = {
+_X_EXPORT DriverRec VESA = {
     VESA_VERSION,
     VESA_DRIVER_NAME,
     VESAIdentify,
@@ -131,12 +135,15 @@ static IsaChipsets VESAISAchipsets[] = {
 
 typedef enum {
     OPTION_SHADOW_FB,
-    OPTION_DFLT_REFRESH
+    OPTION_DFLT_REFRESH,
+    OPTION_MODESET_CLEAR_SCREEN
 } VESAOpts;
 
 static const OptionInfoRec VESAOptions[] = {
     { OPTION_SHADOW_FB,    "ShadowFB",		OPTV_BOOLEAN,	{0},	FALSE },
     { OPTION_DFLT_REFRESH, "DefaultRefresh",	OPTV_BOOLEAN,	{0},	FALSE },
+    { OPTION_MODESET_CLEAR_SCREEN, "ModeSetClearScreen",
+						OPTV_BOOLEAN,	{0},	FALSE },
     { -1,		   NULL,		OPTV_NONE,	{0},	FALSE }
 };
 
@@ -152,7 +159,9 @@ static const OptionInfoRec VESAOptions[] = {
 static const char *miscfbSymbols[] = {
     "xf1bppScreenInit",
     "xf4bppScreenInit",
+#ifdef USE_AFB
     "afbScreenInit",
+#endif
     "mfbScreenInit",
     NULL
 };
@@ -224,7 +233,7 @@ static XF86ModuleVersionInfo vesaVersionRec =
  * This data is accessed by the loader.  The name must be the module name
  * followed by "ModuleData".
  */
-XF86ModuleData vesaModuleData = { &vesaVersionRec, vesaSetup, NULL };
+_X_EXPORT XF86ModuleData vesaModuleData = { &vesaVersionRec, vesaSetup, NULL };
 
 static pointer
 vesaSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)
@@ -638,6 +647,10 @@ VESAPreInit(ScrnInfoPtr pScrn, int flags)
     if (xf86ReturnOptValBool(pVesa->Options, OPTION_DFLT_REFRESH, FALSE))
 	pVesa->defaultRefresh = TRUE;
 
+    if (xf86ReturnOptValBool(pVesa->Options, OPTION_MODESET_CLEAR_SCREEN, 
+			     TRUE))
+	pVesa->ModeSetClearScreen = TRUE;
+
     if (!pVesa->defaultRefresh)
 	VBESetModeParameters(pScrn, pVesa->pVbe);
 
@@ -669,9 +682,14 @@ VESAPreInit(ScrnInfoPtr pScrn, int flags)
 			reqSym = "xf4bppScreenInit";
 			break;
 		    default:
+#ifdef USE_AFB
 			mod = "afb";
 			reqSym = "afbScreenInit";
 			break;
+#else
+			xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
+				   "Unsupported bpp: %d", pScrn->bitsPerPixel);
+#endif
 		}
 	    }
 	    break;
@@ -852,9 +870,11 @@ VESAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 			    return (FALSE);
 			break;
 		    default:
+#ifdef USE_AFB
 			if (!afbScreenInit(pScreen, pVesa->base,
 					   pScrn->virtualX, pScrn->virtualY,
 					   pScrn->xDpi, pScrn->yDpi, pScrn->displayWidth))
+#endif
 			    return (FALSE);
 			break;
 		}
@@ -1003,8 +1023,9 @@ VESACloseScreen(int scrnIndex, ScreenPtr pScreen)
 
     if (pScrn->vtSema) {
 	VESASaveRestore(xf86Screens[scrnIndex], MODE_RESTORE);
-	VBESetGetPaletteData(pVesa->pVbe, TRUE, 0, 256,
-			     pVesa->savedPal, FALSE, TRUE);
+	if (pVesa->savedPal)
+	    VBESetGetPaletteData(pVesa->pVbe, TRUE, 0, 256,
+				 pVesa->savedPal, FALSE, TRUE);
 	VESAUnmapVidMem(pScrn);
     }
     if (pVesa->shadowPtr) {
@@ -1025,7 +1046,16 @@ VESACloseScreen(int scrnIndex, ScreenPtr pScreen)
 static Bool
 VESASwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
 {
-    return VESASetMode(xf86Screens[scrnIndex], pMode);
+    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    VESAPtr pVesa = VESAGetRec(pScrn);
+    Bool ret;
+
+    if (pVesa->ModeSetClearScreen) 
+	pScrn->EnableDisableFBAccess(scrnIndex,FALSE);
+    ret = VESASetMode(xf86Screens[scrnIndex], pMode);
+    if (pVesa->ModeSetClearScreen) 
+	pScrn->EnableDisableFBAccess(scrnIndex,TRUE);
+    return ret;
 }
 
 /* Set a graphics mode */
@@ -1039,8 +1069,7 @@ VESASetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     pVesa = VESAGetRec(pScrn);
 
     data = (VbeModeInfoData*)pMode->Private;
-
-    mode = data->mode | (1 << 15);
+    mode = data->mode | ( pVesa->ModeSetClearScreen ?  (1U << 15)  : 0);
 
     /* enable linear addressing */
     if (pVesa->mapPhys != 0xa0000)
@@ -1071,7 +1100,7 @@ VESASetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     if (data->data->XResolution != pScrn->displayWidth)
 	VBESetLogicalScanline(pVesa->pVbe, pScrn->displayWidth);
 
-    if (pScrn->bitsPerPixel >= 8 && pVesa->vbeInfo->Capabilities[0] & 0x01)
+    if (pScrn->bitsPerPixel == 8 && pVesa->vbeInfo->Capabilities[0] & 0x01)
 	VBESetGetDACPaletteFormat(pVesa->pVbe, 8);
 
     pScrn->vtSema = TRUE;

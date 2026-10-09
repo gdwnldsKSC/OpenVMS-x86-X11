@@ -36,7 +36,7 @@ NormalAsmObjectRule()
 ModuleObjectRule()
 ObjectModuleTarget(imstt, $(OBJS))
 
-InstallObjectModule(imstt,$(MODULEDIR),drivers)
+InstallVideoObjectModule(imstt,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(imstt)

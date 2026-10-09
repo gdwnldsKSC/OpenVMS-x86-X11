@@ -25,9 +25,8 @@
 #define ___ATILOCK_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
-extern void ATIUnlock FunctionPrototype((ATIPtr));
-extern void ATILock   FunctionPrototype((ATIPtr));
+extern void ATIUnlock(ATIPtr);
+extern void ATILock(ATIPtr);
 
 #endif /* ___ATILOCK_H___ */

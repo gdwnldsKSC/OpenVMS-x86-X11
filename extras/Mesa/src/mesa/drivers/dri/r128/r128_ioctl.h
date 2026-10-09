@@ -35,13 +35,11 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __R128_IOCTL_H__
 #define __R128_IOCTL_H__
 
-#ifdef GLX_DIRECT_RENDERING
-
 #include "r128_dri.h"
 #include "r128_reg.h"
 #include "r128_lock.h"
 
-#define R128_BUFFER_MAX_DWORDS	(R128_BUFFER_SIZE / sizeof(uint32_t))
+#define R128_BUFFER_MAX_DWORDS	(R128_BUFFER_SIZE / sizeof(u_int32_t))
 
 
 extern drmBufPtr r128GetBufferLocked( r128ContextPtr rmesa );
@@ -50,7 +48,7 @@ extern void r128FlushVerticesLocked( r128ContextPtr rmesa );
 static __inline void *r128AllocDmaLow( r128ContextPtr rmesa, int count,
 				       int vert_size )
 {
-   uint32_t *head;
+   u_int32_t *head;
    int bytes = count * vert_size;
 
    if ( !rmesa->vert_buf ) {
@@ -64,7 +62,7 @@ static __inline void *r128AllocDmaLow( r128ContextPtr rmesa, int count,
       UNLOCK_HARDWARE( rmesa );
    }
 
-   head = (uint32_t *)((char *)rmesa->vert_buf->address + rmesa->vert_buf->used);
+   head = (u_int32_t *)((char *)rmesa->vert_buf->address + rmesa->vert_buf->used);
    rmesa->vert_buf->used += bytes;
    rmesa->num_verts += count;
    
@@ -143,5 +141,4 @@ do {									\
       UNLOCK_HARDWARE( rmesa );						\
    } while (0)
 
-#endif
 #endif /* __R128_IOCTL_H__ */

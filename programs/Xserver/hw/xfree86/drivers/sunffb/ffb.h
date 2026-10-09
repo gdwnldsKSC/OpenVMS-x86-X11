@@ -33,7 +33,8 @@
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
 #include "xf86RamDac.h"
-#include "Xmd.h"
+#include "xaa.h"
+#include <X11/Xmd.h>
 #include "gcstruct.h"
 #include "windowstr.h"
 #include "ffb_regs.h"
@@ -46,7 +47,7 @@
 #ifndef  DPMS_SERVER
 #define  DPMS_SERVER
 #endif   /* DPMS_SERVER */
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 
 /* Various offsets in virtual (ie. mmap()) spaces Linux and Solaris support. */
@@ -187,6 +188,19 @@ typedef struct {
 	unsigned char has_double_res;
 	unsigned char has_z_buffer;
 	unsigned char has_double_buffer;
+
+	/* XAA related info */
+	XAAInfoRecPtr pXAAInfo;
+	unsigned int xaa_fbc;
+	unsigned int xaa_wid;
+	unsigned int xaa_planemask;
+	unsigned int xaa_linepat;
+	int xaa_xdir, xaa_ydir, xaa_rop;
+	unsigned char *xaa_scanline_buffers[2];
+	int xaa_scanline_x, xaa_scanline_y, xaa_scanline_w;
+	unsigned char *xaa_tex;
+	int xaa_tex_pitch, xaa_tex_width, xaa_tex_height;
+	unsigned int xaa_tex_color;
 
 	enum ffb_resolution ffb_res;
 	BoxRec ClippedBoxBuf[64];

@@ -15,6 +15,10 @@ is" without express or implied warranty.
 /* $XFree86: xc/programs/Xserver/hw/xnest/Display.c,v 3.4 2001/10/28 03:34:10 tsi Exp $ */
 
 
+#ifdef HAVE_XNEST_CONFIG_H
+#include <xnest-config.h>
+#endif
+
 #include <X11/X.h>
 #include <X11/Xproto.h>
 #include "screenint.h"
@@ -48,7 +52,6 @@ Drawable xnestDefaultDrawables[MAXDEPTH + 1];
 Pixmap xnestIconBitmap;
 Pixmap xnestScreenSaverPixmap;
 XlibGC xnestBitmapGC;
-Window xnestConfineWindow;
 unsigned long xnestEventMask;
 
 void
@@ -135,13 +138,6 @@ xnestOpenDisplay(int argc, char *argv[])
       }
   
   xnestBitmapGC = XCreateGC(xnestDisplay, xnestDefaultDrawables[1], 0L, NULL);
-  
-  xnestConfineWindow = XCreateWindow(xnestDisplay, 
-				     DefaultRootWindow(xnestDisplay),
-				     0, 0, 1, 1, 0, 0,
-				     InputOnly,
-				     CopyFromParent,
-				     0L, NULL);
   
   if (!(xnestUserGeometry & XValue))
     xnestX = 0;

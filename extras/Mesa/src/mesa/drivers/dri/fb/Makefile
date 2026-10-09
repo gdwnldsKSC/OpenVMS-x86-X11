@@ -5,17 +5,9 @@ include $(TOP)/configs/current
 
 LIBNAME = fb_dri.so
 
-COMMON_SOURCES = \
-	../../common/driverfuncs.c \
-        ../common/mm.c \
-        ../common/utils.c \
-        ../common/texmem.c \
-        ../common/vblank.c \
-	../common/dri_util.c \
-	../common/glcontextmodes.c
-
 DRIVER_SOURCES = \
-	fb_dri.c
+	fb_dri.c \
+	fb_egl.c
 
 C_SOURCES = \
 	$(COMMON_SOURCES) \
@@ -23,6 +15,7 @@ C_SOURCES = \
 
 ASM_SOURCES = 
 
+include ../Makefile.template
 
 symlinks:
 

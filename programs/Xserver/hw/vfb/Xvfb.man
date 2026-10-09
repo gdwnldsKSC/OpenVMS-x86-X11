@@ -1,4 +1,4 @@
-.\" $XdotOrg: xc/programs/Xserver/hw/vfb/Xvfb.man,v 1.2 2004/04/23 19:19:32 eich Exp $
+.\" $XdotOrg: xc/programs/Xserver/hw/vfb/Xvfb.man,v 1.4 2005/09/08 01:15:47 anholt Exp $
 .\" $Xorg: Xvfb.man,v 1.4 2001/02/09 02:04:45 xorgcvs Exp $
 .\" Copyright 1993, 1998  The Open Group
 .\" 
@@ -39,7 +39,7 @@ and no physical input devices.  It emulates a dumb framebuffer using
 virtual memory.
 .PP
 The primary use of this server was intended to be server testing.  The
-mfb or cfb code for any depth can be exercised with this server
+fb code for any depth can be exercised with this server
 without the need for real hardware that supports the desired depths.
 The X community has found many other novel uses for \fIXvfb\fP,
 including testing clients against unusual depths and screen
@@ -62,7 +62,7 @@ manual page, \fIXvfb\fP accepts the following command line switches:
 .B "\-screen \fIscreennum\fP \fIWxHxD\fP"
 This option creates screen \fIscreennum\fP and sets its width, height,
 and depth to W, H, and D respectively.  By default, only screen 0 exists
-and has the dimensions 1280x1024x8.
+and has the dimensions 1280x1024x12.
 .TP 4
 .B "\-pixdepths \fIlist-of-depths\fP"
 This option specifies a list of pixmap depths that the server should
@@ -93,7 +93,7 @@ The value \fIn\fP is a bitmask of octants in which to prefer an axial
 step when the Bresenham error term is exactly zero.  See the file
 Xserver/mi/miline.h for more information.  This option is probably only useful
 to server developers to experiment with the range of line pixelization
-possible with the cfb and mfb code.
+possible with the fb code.
 .TP 4
 .B "\-blackpixel \fIpixel-value\fP, \-whitepixel \fIpixel-value\fP"
 These options specify the black and white pixel values the server should use.
@@ -113,12 +113,12 @@ will be depth 32 1600x1200.
 .TP 8
 Xvfb :1 -screen 1 1600x1200x16
 The server will listen for connections as server number 1, will have the
-default screen configuration (one screen, 1280x1024x8), and screen 1
+default screen configuration (one screen, 1280x1024x12), and screen 1
 will be depth 16 1600x1200.
 .TP 8
 Xvfb -pixdepths 3 27 -fbdir /usr/tmp
 The server will listen for connections as server number 0, will have the
-default screen configuration (one screen, 1280x1024x8),
+default screen configuration (one screen, 1280x1024x12),
 will also support pixmap
 depths of 3 and 27, 
 and will use memory mapped files in /usr/tmp for the framebuffer.

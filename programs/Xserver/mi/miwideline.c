@@ -35,6 +35,10 @@ from The Open Group.
  * bresenham zero-width lines, except walks an X edge
  */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
 #ifdef _XOPEN_SOURCE
 #include <math.h>
@@ -43,7 +47,7 @@ from The Open Group.
 #include <math.h>
 #undef _XOPEN_SOURCE
 #endif
-#include "X.h"
+#include <X11/X.h>
 #include "windowstr.h"
 #include "gcstruct.h"
 #include "regionstr.h"
@@ -1168,6 +1172,10 @@ miLineProjectingCap (pDrawable, pGC, pixel, spanData, face, isLeft, xorg, yorg, 
     }
     else if (dx == 0)
     {
+	if (dy < 0) {
+	    dy = -dy;
+	    isLeft = !isLeft;
+	}
 	topy = yorgi;
 	bottomy = yorgi + dy;
 	if (isLeft)

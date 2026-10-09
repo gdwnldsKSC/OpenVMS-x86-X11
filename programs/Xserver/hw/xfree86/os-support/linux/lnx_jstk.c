@@ -27,6 +27,10 @@
 
 static const char rcs_id[] = "Id: lnx_jstk.c,v 1.1 1995/12/20 14:06:09 lepied Exp";
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>

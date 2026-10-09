@@ -49,6 +49,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "r200_state.h"
 #include "r200_swtcl.h"
 #include "r200_maos.h"
+#include "r200_tcl.h"
 
 
 #if 0
@@ -175,7 +176,47 @@ do {						\
 #endif
 
 
+static void emit_vecfog( GLcontext *ctx,
+			 struct r200_dma_region *rvb,
+			 char *data,
+			 int stride,
+			 int count )
+{
+   int i;
+   GLfloat *out;
 
+   r200ContextPtr rmesa = R200_CONTEXT(ctx);
+   
+   if (R200_DEBUG & DEBUG_VERTS)
+      fprintf(stderr, "%s count %d stride %d\n",
+	      __FUNCTION__, count, stride);
+
+   assert (!rvb->buf);
+
+   if (stride == 0) {
+      r200AllocDmaRegion( rmesa, rvb, 4, 4 );
+      count = 1;
+      rvb->aos_start = GET_START(rvb);
+      rvb->aos_stride = 0;
+      rvb->aos_size = 1;
+   }
+   else {
+      r200AllocDmaRegion( rmesa, rvb, count * 4, 4 );	/* alignment? */
+      rvb->aos_start = GET_START(rvb);
+      rvb->aos_stride = 1;
+      rvb->aos_size = 1;
+   }
+
+   /* Emit the data
+    */
+   out = (GLfloat *)(rvb->address + rvb->start);
+   for (i = 0; i < count; i++) {
+      out[0] = r200ComputeFogBlendFactor( ctx, *(GLfloat *)data );
+      out++;
+      data += stride;
+   }
+
+}
 
 
 static void emit_vec4( GLcontext *ctx,
@@ -344,7 +385,6 @@ void r200EmitArrays( GLcontext *ctx, GLuint inputs )
    GLuint vfmt0 = 0, vfmt1 = 0;
    GLuint count = VB->Count;
    GLuint i;
-   GLuint re_cntl;
    
    if (1) {
       if (!rmesa->tcl.obj.buf) 
@@ -379,6 +419,18 @@ void r200EmitArrays( GLcontext *ctx, GLuint inputs )
       component[nr++] = &rmesa->tcl.norm;
    }
 
+   if (inputs & VERT_BIT_FOG) {
+      if (!rmesa->tcl.fog.buf)
+	 emit_vecfog( ctx, 
+		      &(rmesa->tcl.fog), 
+		      (char *)VB->FogCoordPtr->data,
+		      VB->FogCoordPtr->stride,
+		      count);
+
+      vfmt0 |= R200_VTX_DISCRETE_FOG;
+      component[nr++] = &rmesa->tcl.fog;
+   }
+ 
    if (inputs & VERT_BIT_COLOR0) {
       int emitsize;
 
@@ -421,12 +473,6 @@ void r200EmitArrays( GLcontext *ctx, GLuint inputs )
       component[nr++] = &rmesa->tcl.spec;
    }
       
-   re_cntl = rmesa->hw.set.cmd[SET_RE_CNTL] & ~(R200_VTX_STQ0_D3D |
-						R200_VTX_STQ1_D3D |
-						R200_VTX_STQ2_D3D |
-						R200_VTX_STQ3_D3D |
-						R200_VTX_STQ4_D3D |
-						R200_VTX_STQ5_D3D );
    for ( i = 0 ; i < ctx->Const.MaxTextureUnits ; i++ ) {
       if (inputs & (VERT_BIT_TEX0 << i)) {
 	 if (!rmesa->tcl.tex[i].buf)
@@ -437,18 +483,9 @@ void r200EmitArrays( GLcontext *ctx, GLuint inputs )
 			  VB->TexCoordPtr[i]->stride,
 			  count );
 
-	 if ( ctx->Texture.Unit[i]._ReallyEnabled == TEXTURE_CUBE_BIT ) {
-	    re_cntl |= R200_VTX_STQ0_D3D << (2 * i);
-	 }
-
 	 vfmt1 |= VB->TexCoordPtr[i]->size << (i * 3);
 	 component[nr++] = &rmesa->tcl.tex[i];
       }
-   }
-
-   if ( re_cntl != rmesa->hw.set.cmd[SET_RE_CNTL] ) {
-      R200_STATECHANGE( rmesa, set );
-      rmesa->hw.set.cmd[SET_RE_CNTL] = re_cntl;
    }
 
    if (vfmt0 != rmesa->hw.vtx.cmd[VTX_VTXFMT_0] ||
@@ -476,6 +513,9 @@ void r200ReleaseArrays( GLcontext *ctx, GLuint newinputs )
 
    if (newinputs & VERT_BIT_NORMAL) 
       r200ReleaseDmaRegion( rmesa, &rmesa->tcl.norm, __FUNCTION__ );
+      
+   if (newinputs & VERT_BIT_FOG) 
+      r200ReleaseDmaRegion( rmesa, &rmesa->tcl.fog, __FUNCTION__ );
 
    if (newinputs & VERT_BIT_COLOR0) 
       r200ReleaseDmaRegion( rmesa, &rmesa->tcl.rgba, __FUNCTION__ );

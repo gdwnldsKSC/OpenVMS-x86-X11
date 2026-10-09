@@ -26,7 +26,11 @@
 
 #define I_NEED_OS2_H
 #define NEED_EVENTS
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "input.h"
 #include "scrnintstr.h"
 

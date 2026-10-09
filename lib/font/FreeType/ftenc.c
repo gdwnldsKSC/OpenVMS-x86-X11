@@ -21,6 +21,9 @@ THE SOFTWARE.
 */
 /* $XFree86: xc/lib/font/FreeType/ftenc.c,v 1.24 2003/10/19 18:53:49 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #ifndef FONTMODULE
 #include <string.h>
 #else
@@ -29,12 +32,12 @@ THE SOFTWARE.
 #include "xf86_ansic.h"
 #endif
 
-#include "fntfilst.h"
-#include "fontutil.h"
-#include "FSproto.h"
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/fontutil.h>
+#include <X11/fonts/FSproto.h>
 
-#include "fontmisc.h"
-#include "fontenc.h"
+#include <X11/fonts/fontmisc.h>
+#include <X11/fonts/fontenc.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_TRUETYPE_IDS_H

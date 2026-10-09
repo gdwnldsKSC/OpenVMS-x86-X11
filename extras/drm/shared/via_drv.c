@@ -21,47 +21,11 @@
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+
 #include <linux/config.h>
 #include "via.h"
 #include "drmP.h"
 #include "via_drm.h"
 #include "via_drv.h"
 
-#define DRIVER_AUTHOR	"VIA"
-
-#define DRIVER_NAME		"via"
-#define DRIVER_DESC		"VIA Unichrome"
-#define DRIVER_DATE		"20040411"
-
-#define DRIVER_MAJOR		1
-#define DRIVER_MINOR		3
-#define DRIVER_PATCHLEVEL	0
-
-
-#define DRIVER_IOCTLS							\
-        [DRM_IOCTL_NR(DRM_IOCTL_VIA_ALLOCMEM)]  = { via_mem_alloc,  1, 0 }, \
-        [DRM_IOCTL_NR(DRM_IOCTL_VIA_FREEMEM)]   = { via_mem_free,   1, 0 }, \
-        [DRM_IOCTL_NR(DRM_IOCTL_VIA_AGP_INIT)]   = { via_agp_init,  1, 0 }, \
-        [DRM_IOCTL_NR(DRM_IOCTL_VIA_FB_INIT)]   = { via_fb_init,    1, 0 }, \
-        [DRM_IOCTL_NR(DRM_IOCTL_VIA_MAP_INIT)]   = { via_map_init,  1, 0 }, \
-        [DRM_IOCTL_NR(DRM_IOCTL_VIA_DEC_FUTEX)] = { via_decoder_futex, 1, 0}
-
-
-#define __HAVE_COUNTERS		0
-
-#include "drm_auth.h"
-#include "drm_agpsupport.h"
-#include "drm_bufs.h"
-#include "drm_context.h"
-#include "drm_dma.h"
-#include "drm_irq.h"
-#include "drm_drawable.h"
-#include "drm_drv.h"
-#include "drm_fops.h"
-#include "drm_init.h"
-#include "drm_ioctl.h"
-#include "drm_lock.h"
-#include "drm_memory.h"
-#include "drm_proc.h"
-#include "drm_vm.h"
-#include "drm_stub.h"
+#include "drm_core.h"

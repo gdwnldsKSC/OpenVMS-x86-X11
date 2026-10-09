@@ -32,8 +32,8 @@
 # published by SGI, but has not been independently verified as being
 # compliant with the OpenGL(R) version 1.2.1 Specification.
 #
-# $Date$ $Revision$
-# $Header: //depot/main/doc/man/tools/GNUmakefile#11 $
+# $Date: 2004/03/14 08:29:09 $ $Revision: 1.1.1.4 $
+# $Header: /cvs/xorg/xc/extras/ogl-sample/main/doc/man/tools/GNUmakefile,v 1.1.1.4 2004/03/14 08:29:09 eich Exp $
 
 COMMONPREF = standard
 include $(ROOT)/usr/include/make/commondefs

@@ -53,7 +53,7 @@ r200UpdatePageFlipping( r200ContextPtr rmesa )
    int use_back;
    rmesa->doPageFlip = rmesa->sarea->pfState;
 
-   use_back = (rmesa->glCtx->Color._DrawDestMask == DD_BACK_LEFT_BIT);
+   use_back = (rmesa->glCtx->DrawBuffer->_ColorDrawBufferMask[0] == BUFFER_BIT_BACK_LEFT);
    use_back ^= (rmesa->sarea->pfCurrentPage == 1);
    
    if (use_back) {
@@ -101,13 +101,19 @@ void r200GetLock( r200ContextPtr rmesa, GLuint flags )
 
    if ( rmesa->lastStamp != dPriv->lastStamp ) {
       r200UpdatePageFlipping( rmesa );
-      if (rmesa->glCtx->Color._DrawDestMask == DD_BACK_LEFT_BIT)
+      if (rmesa->glCtx->DrawBuffer->_ColorDrawBufferMask[0] == BUFFER_BIT_BACK_LEFT)
          r200SetCliprects( rmesa, GL_BACK_LEFT );
       else
          r200SetCliprects( rmesa, GL_FRONT_LEFT );
       r200UpdateViewportOffset( rmesa->glCtx );
       rmesa->lastStamp = dPriv->lastStamp;
    }
+
+   R200_STATECHANGE( rmesa, ctx );
+   if (rmesa->sarea->tiling_enabled) {
+      rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] |= R200_COLOR_TILE_ENABLE;
+   }
+   else rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] &= ~R200_COLOR_TILE_ENABLE;
 
    if ( sarea->ctx_owner != rmesa->dri.hwContext ) {
       sarea->ctx_owner = rmesa->dri.hwContext;

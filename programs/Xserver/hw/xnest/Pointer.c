@@ -14,8 +14,12 @@ is" without express or implied warranty.
 */
 /* $XFree86$ */
 
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_XNEST_CONFIG_H
+#include <xnest-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "screenint.h"
 #include "inputstr.h"
 #include "input.h"
@@ -30,6 +34,8 @@ is" without express or implied warranty.
 #include "Screen.h"
 #include "Pointer.h"
 #include "Args.h"
+
+DeviceIntPtr xnestPointerDevice = NULL;
 
 void
 xnestChangePointerControl(DeviceIntPtr pDev, PtrCtrl *ctrl)

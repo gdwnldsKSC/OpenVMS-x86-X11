@@ -30,10 +30,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "../../../xf86drm.h"
-#include "../xf86drmRandom.c"
-#include "../xf86drmHash.c"
-#include "../xf86drm.c"
+#include "xf86drm.h"
+#include "xf86drmRandom.c"
+#include "xf86drmHash.c"
+#include "xf86drm.c"
 
 #define DRM_VERSION 0x00000001
 #define DRM_MEMORY  0x00000002
@@ -75,11 +75,11 @@ static void getvm(int fd)
     int             i;
     const char      *typename;
     char            flagname[33];
-    drmHandle       offset;
+    drm_handle_t    offset;
     drmSize         size;
     drmMapType      type;
     drmMapFlags     flags;
-    drmHandle       handle;
+    drm_handle_t    handle;
     int             mtrr;
 
     printf("  VM map information:\n");
@@ -131,7 +131,7 @@ static void getclients(int fd)
 
     for (i = 0; !drmGetClient(fd, i, &auth, &pid, &uid, &magic, &iocs); i++) {
 	sprintf(buf, "/proc/%d/cmdline", pid);
-	memset(cmd, sizeof(cmd), 0);
+	memset(cmd, 0, sizeof(cmd));
 	if ((procfd = open(buf, O_RDONLY, 0)) >= 0) {
 	    read(procfd, cmd, sizeof(cmd)-1);
 	    close(procfd);
@@ -248,7 +248,16 @@ int main(int argc, char **argv)
 	case 'i': interval = strtol(optarg, NULL, 0); break;
 	case 'M': minor = strtol(optarg, NULL, 0);    break;
 	default:
-	    fprintf( stderr, "Usage: dristat [options]\n" );
+	    fprintf( stderr, "Usage: dristat [options]\n\n" );
+	    fprintf( stderr, "Displays DRM information. Use with no arguments to display available cards.\n\n" );
+	    fprintf( stderr, "  -a            Show all available information\n" );
+	    fprintf( stderr, "  -b            Show DRM bus ID's\n" );
+	    fprintf( stderr, "  -c            Display information about DRM clients\n" );
+	    fprintf( stderr, "  -i [interval] Continuously display statistics every [interval] seconds\n" );
+	    fprintf( stderr, "  -v            Display DRM module and card version information\n" );
+	    fprintf( stderr, "  -m            Display memory use information\n" );
+	    fprintf( stderr, "  -s            Display DRM statistics\n" );
+	    fprintf( stderr, "  -M [minor]    Select card by minor number\n" );
 	    return 1;
 	}
 

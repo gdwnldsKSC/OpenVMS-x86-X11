@@ -26,7 +26,7 @@ INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86OSSRC) \
            -I$(XF86SRC)/ramdac -I$(XF86SRC)/i2c \
            -I$(XF86SRC)/rac    -I$(XF86SRC)/int10 \
            -I$(XF86SRC)/vgahw  -I$(XF86SRC)/ddc \
-           -I$(SERVERSRC)/Xext -I$(XF86SRC)/xf24_32bpp \
+           -I$(SERVERSRC)/Xext \
            -I$(FONTINCSRC)     -I$(SERVERSRC)/include \
            -I$(XINCLUDESRC)    -I$(EXTINCSRC) \
 	   -I$(XF86OSSRC)/int10 -I$(XF86SRC)/shadowfb \
@@ -77,7 +77,7 @@ ObjectModuleTarget(cirrus,$(COBJS) $(AOBJS) $(LOBJS))
 ObjectModuleTarget(cirrus,$(COBJS))
 #endif
 
-InstallObjectModule(cirrus,$(MODULEDIR),drivers)
+InstallVideoObjectModule(cirrus,$(MODULEDIR))
 
 SubDriverObjectModuleTarget(cirrus_alpine,$(AOBJS))
 

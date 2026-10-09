@@ -1,4 +1,5 @@
 /* $Xorg: CvtStdSel.c,v 1.4 2001/02/09 02:03:52 xorgcvs Exp $ */
+/* $XdotOrg: xc/lib/Xmu/CvtStdSel.c,v 1.6 2005/07/03 07:00:57 daniels Exp $ */
 
 /*
  
@@ -34,6 +35,10 @@ in this Software without prior written authorization from The Open Group.
  *
  *	XmuConvertStandardSelection()	return a known selection
  */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #ifdef SYSVNET
 #include <interlan/il_types.h>
@@ -114,7 +119,7 @@ get_os_name(void)
 #ifdef USE_UNAME
 	struct utsname utss;
 
-	if (uname (&utss) == 0) {
+	if (uname (&utss) >= 0) {
 	    char *os_name;
 	    int len = strlen(utss.sysname) + 1;
 #ifndef hpux				/* because of hostname length crock */

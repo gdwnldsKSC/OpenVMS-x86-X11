@@ -24,6 +24,10 @@
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/joystick/xf86Jstk.c,v 1.5 2001/11/26 16:25:53 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <xf86Version.h>
 
 #if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(3,9,0,0,0)
@@ -40,7 +44,7 @@
 #include <xf86Xinput.h>
 #include <xisb.h>
 #include <exevents.h>		/* Needed for InitValuator/Proximity stuff */
-#include <keysym.h>
+#include <X11/keysym.h>
 
 #ifdef XFree86LOADER
 #include <xf86Module.h>
@@ -59,13 +63,13 @@
 #else /* pre 3.9 headers */
 
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "inputstr.h"
 #include "scrnintstr.h"
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 
 #include "compiler.h"
 
@@ -779,9 +783,11 @@ static XF86ModuleVersionInfo xf86JstkVersionRec =
 				/* a tool */
 };
 
-XF86ModuleData joystickModuleData = {&xf86JstkVersionRec,
-					 xf86JstkPlug,
-					 xf86JstkUnplug};
+_X_EXPORT XF86ModuleData joystickModuleData = {
+    &xf86JstkVersionRec,
+    xf86JstkPlug,
+    xf86JstkUnplug
+};
 #endif /* XFree86LOADER */
 
 #endif /* ! XFREE86_V4 */

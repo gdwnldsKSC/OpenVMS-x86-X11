@@ -3,22 +3,20 @@
 #ifndef _I830_DRI_H
 #define _I830_DRI_H
 
-#include "xf86dri.h"
 #include "xf86drm.h"
 #include "i830_common.h"
 
 #define I830_MAX_DRAWABLES 256
 
 #define I830_MAJOR_VERSION 1
-#define I830_MINOR_VERSION 3
-#define I830_PATCHLEVEL 0
+#define I830_MINOR_VERSION 4
+#define I830_PATCHLEVEL 1
 
 #define I830_REG_SIZE 0x80000
 
 typedef struct _I830DRIRec {
    drm_handle_t regs;
    drmSize regsSize;
-   drmAddress regsMap;
 
    drmSize backbufferSize;
    drm_handle_t backbuffer;

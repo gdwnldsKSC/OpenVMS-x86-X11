@@ -16,7 +16,7 @@ radeon \- ATI RADEON video driver
 is a __xservername__ driver for ATI RADEON based video cards.  It contains
 full support for 8, 15, 16 and 24 bit pixel depths, dual-head setup,
 flat panel, hardware 2D acceleration, hardware 3D acceleration
-(except R300 and IGP series cards), hardware cursor, XV extension, Xinerama extension.
+(except R300 and R400 series cards), hardware cursor, XV extension, Xinerama extension.
 .SH SUPPORTED HARDWARE
 The
 .B radeon
@@ -52,6 +52,9 @@ Radeon 9100 IGP
 .B RS350
 Radeon 9200 IGP
 .TP 12
+.B RS400
+Radeon XPRESS 200/200M IGP
+.TP 12
 .B RV280
 Radeon 9200PRO/9200/9200SE, M9+
 .TP 12
@@ -76,11 +79,17 @@ Radeon X300, M22 (2d only)
 .B RV380
 Radeon X600, M24 (2d only)
 .TP 12
-.B R420
-Radeon X800 (2d only)
+.B RV410
+Radeon X700, M26 PCIE (2d only)
 .TP 12
-.B R423
-Radeon X800 PCIE (2d only)
+.B R420
+Radeon X800 AGP (2d only)
+.TP 12
+.B R423/R430
+Radeon X800, M28 PCIE (2d only)
+.TP 12
+.B R480/R481
+Radeon X850 PCIE/AGP (2d only)
 
 .SH CONFIGURATION DETAILS
 Please refer to __xconfigfile__(__filemansuffix__) for general configuration
@@ -148,6 +157,8 @@ Set AGP data transfer rate.
 .br
 4      \-\- x4
 .br
+8      \-\- x8
+.br
 others \-\- invalid
 .TP
 .BI "Option \*qAGPFastWrite\*q \*q" boolean \*q
@@ -193,7 +204,7 @@ BIOS   \-\- Remain unchanged from BIOS setting.
 .br
 HIGH   \-\- Force to the highest priority.
           Use this if you have problem with above options.
-          This may affect performence slightly.
+          This may affect performance slightly.
 .br
 The default value is
 .B AUTO.
@@ -253,7 +264,7 @@ determined by the
 .B Virtual
 keyword defined on the
 .B Screen
-section of your XF86Config file.  It works just like regular virtual
+section of your __xconfigfile__ file.  It works just like regular virtual
 desktop except you have two viewports looking into it instead of one.
 .br
 For example, if you wanted a desktop composed of two 1024x768 viewports
@@ -269,7 +280,7 @@ looking into it.  In this case the linked viewports will scroll around in the
 virtual desktop.  Viewports with different sizes are also supported (e.g., one
 that is 1024x768 and one that is 640x480).  In this case the smaller viewport
 will scroll relative to the larger one such that none of the virtual desktop 
-is inaccessable.  If you do not define a virtual desktop the driver will create
+is inaccessible.  If you do not define a virtual desktop the driver will create
 one based on the orientation of the heads and size of the largest defined mode in 
 the display section that is supported on each head.
 .br
@@ -338,6 +349,16 @@ Set the relationship of CRT2 relative to CRT1. Valid options are:
 .br
 For example, Option "CRT2Position" "RightOf"
 .br
+This option also supports an offset.  This is most useful when
+.B MergedNonRectangular 
+is enabled.  For example if you want CRT2 to be offset 100 pixels down from 
+the start of CRT1, you'd type:
+.br
+Option "CRT2Position" "LeftOf 100"
+.br
+The offset is vertical for LeftOf and RightOf and horizontal for Above and 
+Below.  Offsets can be positive or negative.
+.br
 The default value is
 .B Clone.
 .TP
@@ -346,12 +367,14 @@ MetaModes are mode combinations for CRT1 and CRT2.  If you are using merged
 frame buffer mode and want to change modes (CTRL-ALT-+/-), these define which
 modes will be switched to on CRT1 and CRT2.  The MetaModes are defined as 
 CRT1Mode-CRT2Mode (800x600-1024x768).  Modes listed individually (800x600) 
-define clone modes, that way you can mix clone modes with non-clone modes.
-Also some programs require "standard" modes.  
+define clone modes, that way you can mix clone modes with non-clone modes. 
+Also some programs require "standard" modes.  If you want to add clone modes 
+of different refreshes or sizes to the mix, they are defined as CRT1Mode+CRT2Mode 
+(800x600+1024x768).
 .br
 Note:  Any mode you use in the MetaModes must be defined in the
 .B Screen 
-section of your XF86Config file.  Modes not defined there will be ignored when
+section of your __xconfigfile__ file.  Modes not defined there will be ignored when
 the MetaModes are parsed since the driver uses them to make sure the monitors can 
 handle those modes.  If you do not define a MetaMode the driver will create
 one based on the orientation of the heads and size of the largest defined mode in 
@@ -370,7 +393,7 @@ Force hardware overlay to clone head.
 The default value is
 .B off.
 .TP
-.BI "Option \*qNoMergedXinerama\*q \*q" boolean \*q
+.BI "Option \*qMergedXinerama\*q \*q" boolean \*q
 Since merged framebuffer mode does not use Xinerama, apps are not able to intelligently
 place windows.  Merged framebuffer mode provides its own pseudo-Xinerama.  This allows
 Xinerama compliant applications to place windows appropriately.  There are some caveats.
@@ -384,7 +407,7 @@ three heads), pseudo-Xinerama will be disabled.
 This option allows you turn off the driver provided pseudo-Xinerama extension.
 .br
 The default value is
-.B FALSE.
+.B TRUE.
 .TP 
 .BI "Option \*qMergedXineramaCRT2IsScreen0\*q \*q" boolean \*q
 By default the pseudo-Xinerama provided by the driver makes the left-most or bottom
@@ -403,6 +426,30 @@ For example, Option "MergedDPI" "100 100"
 .br
 The default value is
 .B undefined.
+.TP
+.BI "Option \*qMergedNonRectangular\*q \*q" boolean \*q
+If you are using MergedFB with two modes of different sizes, turn this option on to 
+keep the smaller head from scrolling within the larger virtual desktop and to keep 
+the mouse from moving into that area.  Applications that are not Xinerama aware can 
+potentially end up stranded in this area.
+.br
+The default value is
+.B FALSE.
+.TP
+.BI "Option \*qColorTiling\*q \*q" "boolean" \*q
+Frame buffer can be addressed either in linear or tiled mode. Tiled mode can provide
+significant performance benefits with 3D applications, for 2D it shouldn't matter
+much. Tiling will be disabled if the virtual x resolution exceeds 2048 (3968 for R300 
+and above), if option
+.B UseFBDev
+is used, or (if DRI is enabled) the drm module is too old.
+.br
+If this option is enabled, a new dri driver is required for direct rendering too.
+.br
+Color tiling will be automatically disabled in interlaced or doublescan screen modes.
+.br
+The default value is
+.B on.
 .TP 
 .BI "Option \*qIgnoreEDID\*q \*q" boolean \*q
 Do not use EDID data for mode validation, but DDC is still used
@@ -434,11 +481,6 @@ The default value is
 Enable page flipping for 3D acceleration. This will increase performance
 but not work correctly in some rare cases, hence the default is
 .B off.
-.br
-.B Note:
-Page flipping does not work well in certain configurations with MergedFB.  If you
-see rendering errors or other strange behavior, disable page flipping.
-
 .TP
 .BI "Option \*qForceMinDotClock\*q \*q" frequency \*q
 Override minimum dot clock. Some Radeon BIOSes report a minimum dot
@@ -458,6 +500,23 @@ Radeon series up to and including 9200 (9500/9700 and newer
 unsupported).  The default is to
 .B enable
 Render acceleration.
+.TP
+.BI "Option \*qAccelMethod\*q \*q" "string" \*q
+Chooses between available acceleration architectures.  Valid options are
+.B XAA
+and
+.B EXA.
+XAA is the traditional acceleration architecture and support for it is very
+stable.  EXA is a newer acceleration architecture with better performance for
+the Render and Composite extensions, but the rendering code for it is newer and
+possibly unstable.  The default is
+.B XAA.
+.TP
+.BI "Option \*qDMAForXv\*q \*q" boolean \*q
+Try or don't try to use DMA for Xv image transfers. This will reduce CPU
+usage when playing big videos like DVDs, but may cause instabilities.
+Default:
+.B on.
 .TP
 .BI "Option \*qSubPixelOrder\*q \*q" "string" \*q
 Force subpixel order to specified order.
@@ -490,9 +549,44 @@ for digital panels
 .BI "Option \*qDynamicClocks\*q \*q" boolean \*q
 Enable dynamic clock scaling.  The on-chip clocks will scale dynamically 
 based on usage. This can help reduce heat and increase battery 
-life by reducing power usage.  Some users report reduced 3D preformance
+life by reducing power usage.  Some users report reduced 3D performance
 with this enabled.  The default is
 .B off.
+.TP
+.BI "Option \*qBIOSHotkeys\*q \*q" boolean \*q
+Enable BIOS hotkey output switching. This allows the BIOS to toggle outputs
+using hotkeys (e.g., fn-f7, etc.).  Since the driver does not support ACPI, 
+there is no way to validate modes on an output switch and the BIOS can 
+potentially change things behind the driver's back.  The default is
+.B off.
+.TP
+.BI "Option \*qVGAAccess\*q \*q" boolean \*q
+Tell the driver if it can do legacy VGA IOs to the card. This is
+necessary for properly resuming consoles when in VGA text mode, but
+shouldn't be if the console is using radeonfb or some other graphic
+mode driver. Some platforms like PowerPC have issues with those, and they aren't
+necessary unless you have a real text mode in console. The default is
+.B off
+on PowerPC and
+.B on
+on other architectures.
+.TP
+.BI "Option \*qReverseDDC\*q \*q" boolean \*q
+When BIOS connector informations aren't available, use this option to
+reverse the mapping of the 2 main DDC ports. Use this if the X serve
+obviously detects the wrong display for each connector. This is
+typically needed on the Radeon 9600 cards bundled with Apple G5s. The
+default is
+.B off.
+.TP
+.BI "Option \*qLVDSProbePLL\*q \*q" boolean \*q
+When BIOS panel informations aren't available (like on PowerBooks), it
+may still be necessary to use the firmware provided PLL values for the
+panel or flickering will happen. This option will force probing of
+the current value programmed in the chip when X is launched in that
+case.  This is only useful for LVDS panels (laptop internal panels).
+The default is
+.B on.
 .TP
 
 .SH SEE ALSO

@@ -14,9 +14,8 @@ OBJS = i740_driver.o i740_cursor.o i740_accel.o i740_io.o i740_dga.o i740_i2c.o 
 INCLUDES = -I. -I../../include
 #else
 INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86OSSRC) \
-           -I$(SERVERSRC)/mfb -I$(SERVERSRC)/mi \
-	   -I$(XF86SRC)/xaa -I$(XF86SRC)/rac \
-           -I$(SERVERSRC)/cfb -I$(XF86SRC)/xaa -I$(XF86SRC)/ramdac \
+           -I$(SERVERSRC)/mi -I$(XF86SRC)/xaa -I$(XF86SRC)/rac \
+           -I$(XF86SRC)/xaa -I$(XF86SRC)/ramdac \
 	   -I$(XF86SRC)/vgahw -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c \
 	   -I$(SERVERSRC)/Xext -I$(XF86SRC)/vbe -I$(SERVERSRC)/fb\
            -I$(FONTINCSRC) -I$(SERVERSRC)/include -I$(XINCLUDESRC) \
@@ -31,7 +30,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(i740,$(OBJS))
 
-InstallObjectModule(i740,$(MODULEDIR),drivers)
+InstallVideoObjectModule(i740,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(i740)

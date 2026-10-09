@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/keyboard/kbd.c,v 1.6.2.1 2004/12/16 03:38:45 gisburn Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/keyboard/kbd.c,v 1.19 2005/11/09 21:31:23 kem Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/keyboard/kbd.c,v 1.8 2003/11/03 05:11:47 tsi Exp $ */
 
 /*
@@ -12,19 +12,23 @@
  * xf86Events.c and xf86Io.c which are
  * Copyright 1990,91 by Thomas Roell, Dinkelscherben, Germany.
  */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/keyboard/kbd.c,v 1.6.2.1 2004/12/16 03:38:45 gisburn Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/keyboard/kbd.c,v 1.19 2005/11/09 21:31:23 kem Exp $ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
   
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 
 #include "xf86.h"
 #include "atKeynames.h"
 #include "xf86Privstr.h"
 
 #ifdef XINPUT
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 #include "extnsionst.h"
 #include "extinit.h"
 #else
@@ -43,6 +47,9 @@
 #include <X11/extensions/XKBsrv.h>
 #endif
 
+extern int XkbDfltRepeatDelay;
+extern int XkbDfltRepeatInterval;
+
 #define CAPSFLAG	1
 #define NUMFLAG		2
 #define SCROLLFLAG	4
@@ -59,7 +66,7 @@ static void InitKBD(InputInfoPtr pInfo, Bool init);
 static void SetXkbOption(InputInfoPtr pInfo, char *name, char **option);
 static void UpdateLeds(InputInfoPtr pInfo);
 
-InputDriverRec KBD = {
+_X_EXPORT InputDriverRec KBD = {
 	1,
 	"kbd",
 	NULL,
@@ -69,7 +76,7 @@ InputDriverRec KBD = {
 	0
 };
 
-InputDriverRec KEYBOARD = {
+_X_EXPORT InputDriverRec KEYBOARD = {
 	1,
 	"keyboard",
 	NULL,
@@ -132,7 +139,11 @@ static const OptionInfoRec KeyboardOptions[] = {
 #endif
 
 static const char *kbdDefaults[] = {
+#ifdef XQUEUE 
+    "Protocol",		"Xqueue",
+#else
     "Protocol",		"standard",
+#endif
     "AutoRepeat",	"500 30",
     "XkbRules",		__XKBDEFRULES__,
     "XkbModel",		"pc105",
@@ -143,7 +154,11 @@ static const char *kbdDefaults[] = {
 };
 
 static const char *kbd98Defaults[] = {
+#ifdef XQUEUE
+    "Protocol",		"Xqueue",
+#else
     "Protocol",		"standard",
+#endif
     "AutoRepeat",	"500 30",
     "XkbRules",		"xfree98",
     "XkbModel",		"pc98",
@@ -151,6 +166,12 @@ static const char *kbd98Defaults[] = {
     "Panix106",		"off",
     "CustomKeycodes",	"off",
     NULL
+};
+
+const char *xkbSymbols[] = {
+	"XkbDfltRepeatDelay",
+	"XkbDfltRepeatInterval",
+	NULL,
 };
 
 #ifdef XKB
@@ -204,6 +225,10 @@ KbdPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     pInfo->type_name = XI_KEYBOARD;
     pInfo->flags = XI86_KEYBOARD_CAPABLE;
     pInfo->device_control = KbdProc;
+    /*
+     * We don't specify our own read_input function. We expect
+     * an OS specific readInput() function to handle this.
+     */
     pInfo->read_input = NULL;
     pInfo->motion_history_proc = NULL;
     pInfo->history_size = 0;
@@ -230,6 +255,8 @@ KbdPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     pInfo->private = pKbd;
     pKbd->PostEvent = PostKbdEvent;
 
+    xf86LoaderReqSymLists(xkbSymbols, NULL);
+
     if (!xf86OSKbdPreInit(pInfo))
         return pInfo;
 
@@ -243,7 +270,9 @@ KbdPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
             xf86Msg(X_ERROR, "\"%s\" is not a valid AutoRepeat value", s);
         } else {
             pKbd->delay = delay;
+	    XkbDfltRepeatDelay = delay;
             pKbd->rate = rate;
+	    XkbDfltRepeatInterval = 1000/rate;
         }
         xfree(s);
     }
@@ -537,9 +566,26 @@ PostKbdEvent(InputInfoPtr pInfo, unsigned int scanCode, Bool down)
   unsigned long changeLock = 0;
   static int  lockkeys = 0;
 
+#ifdef DEBUG
+  ErrorF("kbd driver rec scancode: 0x02%x %s\n", scanCode, down?"down":"up");
+#endif
+	  
   /* Disable any keyboard processing while in suspend */
   if (xf86inSuspend)
       return;
+
+  if (pKbd->sunKbd) {
+     /*
+      * XXX XXX XXX:
+      *
+      * I really don't know what's wrong here, but passing the real
+      * scanCode offsets by one from XKB's point of view.
+      *
+      * (ecd@skynet.be, 980405)
+      */
+      scanCode--;
+      goto sunKeyboards;
+  }
 
   /*
    * First do some special scancode remapping ...
@@ -596,12 +642,15 @@ PostKbdEvent(InputInfoPtr pInfo, unsigned int scanCode, Bool down)
    * they need to get the same key code as the base key on the same
    * physical keyboard key.
    */
-  if (scanCode == KEY_SysReqest)
-    scanCode = KEY_Print;
-  else if (scanCode == KEY_Break)
-    scanCode = KEY_Pause;
+  if (!xf86IsPc98()) {
+    if (ModifierDown(AltMask) && (scanCode == KEY_SysReqest))
+      scanCode = KEY_Print;
+    else if (scanCode == KEY_Break)
+      scanCode = KEY_Pause;
+  }
 #endif
 
+sunKeyboards:
   /*
    * Now map the scancodes to real X-keycodes ...
    */
@@ -784,7 +833,7 @@ static XF86ModuleVersionInfo xf86KbdVersionRec =
     MODINFOSTRING1,
     MODINFOSTRING2,
     XORG_VERSION_CURRENT,
-    1, 0, 0,
+    1, 0, 1,
     ABI_CLASS_XINPUT,
     ABI_XINPUT_VERSION,
     MOD_CLASS_XINPUT,
@@ -792,7 +841,7 @@ static XF86ModuleVersionInfo xf86KbdVersionRec =
 				/* a tool */
 };
 
-XF86ModuleData kbdModuleData = {
+_X_EXPORT XF86ModuleData kbdModuleData = {
     &xf86KbdVersionRec,
     xf86KbdPlug,
     xf86KbdUnplug
@@ -848,7 +897,7 @@ static XF86ModuleVersionInfo xf86KeyboardVersionRec =
 				/* a tool */
 };
 
-XF86ModuleData keyboardModuleData = {
+_X_EXPORT XF86ModuleData keyboardModuleData = {
     &xf86KeyboardVersionRec,
     xf86KeyboardPlug,
     xf86KbdUnplug

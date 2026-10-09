@@ -9,6 +9,7 @@ Synopsis
 
    /etc/fonts/fonts.conf
    /etc/fonts/fonts.dtd
+   /etc/fonts/conf.d
    ~/.fonts.conf
 
 Description
@@ -62,17 +63,24 @@ Font Properties
    applications rendering mechanism.
   Property        Type    Description
   --------------------------------------------------------------
-  family          String  Font family name
+  family          String  Font family names
+  familylang      String  Languages cooresponding to each family
   style           String  Font style. Overrides weight and slant
+  stylelang       String  Languages cooresponding to each style
+  fullname        String  Font full names (often includes style)
+  fullnamelang    String  Languages cooresponding to each fullname
   slant           Int     Italic, oblique or roman
   weight          Int     Light, medium, demibold, bold or black
   size            Double  Point size
+  width           Int     Condensed, normal or expanded
   aspect          Double  Stretches glyphs horizontally before hinting
   pixelsize       Double  Pixel size
-  spacing         Int     Proportional, monospace or charcell
+  spacing         Int     Proportional, dual-width, monospace or charce
+ll
   foundry         String  Font foundry name
   antialias       Bool    Whether glyphs can be antialiased
   hinting         Bool    Whether the rasterizer should use hinting
+  hintstyle       Int     Automatic hinting style
   verticallayout  Bool    Use vertical layout
   autohint        Bool    Use autohinter instead of normal hinter
   globaladvance   Bool    Use font global advance data
@@ -90,6 +98,10 @@ Font Properties
   charset         CharSet Unicode chars encoded by the font
   lang            String  List of RFC-3066-style languages this
                           font supports
+  fontversion     Int     Version number of the font
+  capability      String  List of layout capabilities in the font
+  embolden        Bool    Rasterizer should synthetically embolden the
+font
 
 
 Font Matching
@@ -186,7 +198,7 @@ Lang Tags
    supports. This is computed by comparing the Unicode coverage
    of the font with the orthography of each language. Languages
    are tagged using an RFC-3066 compatible naming and occur in
-   two parts -- the ISO639 language tag followed a hyphen and
+   two parts -- the ISO 639 language tag followed a hyphen and
    then by the ISO 3166 country code. The hyphen and country code
    may be elided.
 
@@ -195,7 +207,13 @@ Lang Tags
    aside from rebuilding the library. It currently supports 122
    of the 139 languages named in ISO 639-1, 141 of the languages
    with two-letter codes from ISO 639-2 and another 30 languages
-   with only three-letter codes.
+   with only three-letter codes. Languages with both two and
+   three letter codes are provided with only the two letter code.
+
+   For languages used in multiple territories with radically
+   different character sets, fontconfig includes per-territory
+   orthographies. This includes Azerbaijani, Kurdish, Pashto,
+   Tigrinya and Chinese.
 
 Configuration File Format
 
@@ -240,12 +258,14 @@ cache
 include ignore_missing="no"
 
    This element contains the name of an additional configuration
-   file. When the XML datatype is traversed by FcConfigParse, the
-   contents of the file will also be incorporated into the
-   configuration by passing the filename to FcConfigLoadAndParse.
-   If 'ignore_missing' is set to "yes" instead of the default
-   "no", a missing file will elicit no warning message from the
-   library.
+   file or directory. If a directory, every file within that
+   directory starting with a number will be processed in sorted
+   order. When the XML datatype is traversed by FcConfigParse,
+   the contents of the file(s) will also be incorporated into the
+   configuration by passing the filename(s) to
+   FcConfigLoadAndParse. If 'ignore_missing' is set to "yes"
+   instead of the default "no", a missing file or directory will
+   elicit no warning message from the library.
 
 config
 
@@ -270,6 +290,55 @@ rescan
    configuration files and directories and automatically rebuild
    the internal datastructures when this interval passes.
 
+selectfont
+
+   This element is used to black/white list fonts from being
+   listed or matched against. It holds acceptfont and rejectfont
+   elements.
+
+acceptfont
+
+   Fonts matched by an acceptfont element are "whitelisted"; such
+   fonts are explicitly included in the set of fonts used to
+   resolve list and match requests; including them in this list
+   protects them from being "blacklisted" by a rejectfont
+   element. Acceptfont elements include glob and pattern elements
+   which are used to match fonts.
+
+rejectfont
+
+   Fonts matched by an rejectfont element are "blacklisted"; such
+   fonts are excluded from the set of fonts used to resolve list
+   and match requests as if they didn't exist in the system.
+   Rejectfont elements include glob and pattern elements which
+   are used to match fonts.
+
+glob
+
+   Glob elements hold shell-style filename matching patterns
+   (including ? and *) which match fonts based on their complete
+   pathnames. This can be used to exclude a set of directories
+   (/usr/share/fonts/uglyfont*), or particular font file types
+   (*.pcf.gz), but the latter mechanism relies rather heavily on
+   filenaming conventions which can't be relied upon.
+
+pattern
+
+   Pattern elements perform list-style matching on incoming
+   fonts; that is, they hold a list of elements and associated
+   values. If all of those elements have a matching value, then
+   the pattern matches the font. This can be used to select fonts
+   based on attributes of the font (scalable, bold, etc), which
+   is a more reliable mechanism than using file extensions.
+   Pattern elements include patelt elements.
+
+patelt name="property"
+
+   Patelt elements hold a single pattern element and list of
+   values. They must have a 'name' attribute which indicates the
+   pattern element name. Patelt elements include int, double,
+   string, matrix, bool, charset and const elements.
+
 match target="pattern"
 
    This element holds first a (possibly empty) list of test
@@ -280,16 +349,20 @@ match target="pattern"
    resulting from a match rather than a font pattern to be
    matched.
 
-test qual="any" name="property" compare="eq"
+test qual="any" name="property" target="default" compare="eq"
 
    This element contains a single value which is compared with
-   the pattern property "property" (substitute any of the
-   property names seen above). 'compare' can be one of "eq",
-   "not_eq", "less", "less_eq", "more", or "more_eq". 'qual' may
-   either be the default, "any", in which case the match succeeds
-   if any value associated with the property matches the test
-   value, or "all", in which case all of the values associated
-   with the property must match the test value.
+   the target ('pattern', 'font' or 'default') property
+   "property" (substitute any of the property names seen above).
+   'compare' can be one of "eq", "not_eq", "less", "less_eq",
+   "more", or "more_eq". 'qual' may either be the default, "any",
+   in which case the match succeeds if any value associated with
+   the property matches the test value, or "all", in which case
+   all of the values associated with the property must match the
+   test value. When used in a <match target="font"> element, the
+   target= attribute in the <test> element selects between
+   matching the original pattern or the font. "default" selects
+   whichever target the outer <match> element has selected.
 
 edit name="property" mode="assign" binding="weak"
 
@@ -299,7 +372,9 @@ edit name="property" mode="assign" binding="weak"
    modification depends on whether "property" was matched by one
    of the associated test elements, if so, the modification may
    affect the first matched value. Any values inserted into the
-   property are given the indicated binding. 'mode' is one of:
+   property are given the indicated binding ("strong", "weak" or
+   "same") with "same" binding using the value from the matched
+   pattern element. 'mode' is one of:
   Mode                    With Match              Without Match
   ---------------------------------------------------------------------
   "assign"                Replace matching value  Replace all values
@@ -337,15 +412,34 @@ const
    serve as symbolic names for common font values:
   Constant        Property        Value
   -------------------------------------
-  light           weight          0
+  thin            weight          0
+  extralight      weight          40
+  ultralight      weight          40
+  light           weight          50
+  book            weight          75
+  regular         weight          80
+  normal          weight          80
   medium          weight          100
   demibold        weight          180
+  semibold        weight          180
   bold            weight          200
+  extrabold       weight          205
   black           weight          210
+  heavy           weight          210
   roman           slant           0
   italic          slant           100
   oblique         slant           110
+  ultracondensed  width           50
+  extracondensed  width           63
+  condensed       width           75
+  semicondensed   width           87
+  normal          width           100
+  semiexpanded    width           113
+  expanded        width           125
+  extraexpanded   width           150
+  ultraexpanded   width           200
   proportional    spacing         0
+  dual            spacing         90
   mono            spacing         100
   charcell        spacing         110
   unknown         rgba            0
@@ -354,6 +448,10 @@ const
   vrgb            rgba            3
   vbgr            rgba            4
   none            rgba            5
+  hintnone        hintstyle       0
+  hintslight      hintstyle       1
+  hintmedium      hintstyle       2
+  hintfull        hintstyle       3
 
 
 or, and, plus, minus, times, divide
@@ -407,8 +505,8 @@ System configuration file
 <!--
         Find fonts in these directories
 -->
-<dir>/usr/X11R6/lib/X11/fonts/truetype</dir>
-<dir>/usr/X11R6/lib/X11/fonts/Type1</dir>
+<dir>/usr/share/fonts</dir>
+<dir>/usr/X11R6/lib/X11/fonts</dir>
 
 <!--
         Accept deprecated 'mono' alias, replacing it with 'monospace'
@@ -437,6 +535,13 @@ dit>
 <include ignore_missing="yes">~/.fonts.conf</include>
 
 <!--
+        Load local customization files, but don't complain
+        if there aren't any
+-->
+<include ignore_missing="yes">conf.d</include>
+<include ignore_missing="yes">local.conf</include>
+
+<!--
         Alias well known font names to available TrueType fonts.
         These substitute TrueType faces for similar Type1
         faces to improve screen appearance.
@@ -448,7 +553,7 @@ dit>
 </alias>
 <alias>
         <family>Helvetica</family>
-        <prefer><family>Verdana</family></prefer>
+        <prefer><family>Arial</family></prefer>
         <default><family>sans</family></default>
 </alias>
 <alias>
@@ -468,7 +573,7 @@ dit>
 </alias>
 <alias>
         <family>sans</family>
-        <prefer><family>Verdana</family></prefer>
+        <prefer><family>Arial</family></prefer>
 </alias>
 <alias>
         <family>monospace</family>
@@ -489,7 +594,7 @@ User configuration file
 <!--
         Private font directory
 -->
-<dir>~/misc/fonts</dir>
+<dir>~/.fonts</dir>
 
 <!--
         use rgb sub-pixel ordering to improve glyph appearance on
@@ -510,6 +615,14 @@ Files
    specified font patterns before attempting to match the
    available fonts. It is in xml format.
 
+   conf.d is the conventional name for a directory of additional
+   configuration files managed by external applications or the
+   local administrator. The filenames starting with decimal
+   digits are sorted in lexicographic order and used as
+   additional configuration files. All of these files are in xml
+   format. The master fonts.conf file references this directory
+   in an <include> directive.
+
    fonts.dtd is a DTD that describes the format of the
    configuration files.
 
@@ -521,6 +634,10 @@ Files
    information that isn't found in the per-directory caches. This
    file is automatically maintained by fontconfig.
 
+See Also
+
+   fc-cache(1), fc-match(1), fc-list(1)
+
 Version
 
-   Fontconfig version 2.2.2
+   Fontconfig version 2.3.2

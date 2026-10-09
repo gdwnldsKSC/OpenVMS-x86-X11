@@ -37,9 +37,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __RADEON_SPAN_H__
 #define __RADEON_SPAN_H__
 
-#ifdef GLX_DIRECT_RENDERING
+#include "drirenderbuffer.h"
 
 extern void radeonInitSpanFuncs( GLcontext *ctx );
 
-#endif
+extern void radeonSetSpanFunctions(driRenderbuffer *rb, const GLvisual *vis);
+
 #endif

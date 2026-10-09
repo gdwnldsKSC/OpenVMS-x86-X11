@@ -1,5 +1,7 @@
 /*
- * Copyright � 2004 Red Hat, Inc.
+ * Copyright © 2004, 2005 Red Hat, Inc.
+ * Copyright © 2004 Nicholas Miell
+ * Copyright © 2005 Trolltech AS
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -11,34 +13,44 @@
  * suitability of this software for any purpose.  It is provided "as is"
  * without express or implied warranty.
  *
- * RED HAT DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL RED HAT
- * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN 
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
+ * SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS, IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+ * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
+ * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+ * SOFTWARE.
  *
- * Author:  S�ren Sandmann (sandmann@redhat.com)
- * 
+ * Author:  Søren Sandmann (sandmann@redhat.com)
+ * Minor Improvements: Nicholas Miell (nmiell@gmail.com)
+ * MMX code paths for fbcompose.c by Lars Knoll (lars@trolltech.com) 
+ *
  * Based on work by Owen Taylor
  */
 
-#include "fb.h"
 
-#ifdef USE_GCC34_MMX
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#ifdef USE_MMX
+
+#if defined(__amd64__) || defined(__x86_64__)
+#define USE_SSE
+#endif
+
+#include <mmintrin.h>
+#include <xmmintrin.h> /* for _mm_shuffle_pi16 and _MM_SHUFFLE */
 
 #ifdef RENDER
+
+#include "fb.h"
+#include "fbmmx.h"
 
 #include "picturestr.h"
 #include "mipict.h"
 #include "fbpict.h"
-
-typedef int Vector1x64 __attribute__ ((mode(DI)));
-typedef int Vector2x32 __attribute__ ((mode(V2SI)));
-typedef int Vector4x16 __attribute__ ((mode(V4HI)));
-typedef int Vector8x8  __attribute__ ((mode(V8QI)));
-
-typedef unsigned long long ullong;
 
 #define noVERBOSE
 
@@ -48,9 +60,31 @@ typedef unsigned long long ullong;
 #define CHECKPOINT()
 #endif
 
+/* Notes about writing mmx code
+ *
+ * give memory operands as the second operand. If you give it as the
+ * first, gcc will first load it into a register, then use that
+ * register
+ *
+ *   ie. use
+ *
+ *         _mm_mullo_pi16 (x, mmx_constant);
+ *
+ *   not
+ *
+ *         _mm_mullo_pi16 (mmx_constant, x);
+ *
+ * Also try to minimize dependencies. i.e. when you need a value, try
+ * to calculate it from a value that was calculated as early as
+ * possible.
+ */
+
+/* --------------- MMX primitivess ------------------------------------ */
+
+typedef unsigned long long ullong;
+
 typedef struct
 {
-    ullong mmx_zero;
     ullong mmx_4x00ff;
     ullong mmx_4x0080;
     ullong mmx_565_rgb;
@@ -70,7 +104,6 @@ typedef struct
 
 static const MMXData c =
 {
-    .mmx_zero =				0x0000000000000000ULL,
     .mmx_4x00ff =			0x00ff00ff00ff00ffULL,
     .mmx_4x0080 =			0x0080008000800080ULL,
     .mmx_565_rgb =			0x000001f0003f001fULL,
@@ -88,270 +121,740 @@ static const MMXData c =
     .mmx_000000000000ffff =		0x000000000000ffffULL,
 };
 
-static __inline__ Vector1x64
-shift (Vector1x64 v, int s)
+#define MC(x) ((__m64) c.mmx_##x)
+
+static __inline__ __m64
+shift (__m64 v, int s)
 {
     if (s > 0)
-	return __builtin_ia32_psllq (v, s);
+	return _mm_slli_si64 (v, s);
     else if (s < 0)
-	return __builtin_ia32_psrlq (v, -s);
+	return _mm_srli_si64 (v, -s);
     else
 	return v;
 }
 
-static __inline__ Vector4x16
-negate (Vector4x16 mask)
+static __inline__ __m64
+negate (__m64 mask)
 {
-    return (Vector4x16)__builtin_ia32_pxor (
-	(Vector1x64)mask,
-	(Vector1x64)c.mmx_4x00ff);
+    return _mm_xor_si64 (mask, MC(4x00ff));
 }
 
-static __inline__ Vector4x16
-pix_multiply (Vector4x16 a, Vector4x16 b)
+static __inline__ __m64
+pix_multiply (__m64 a, __m64 b)
 {
-    Vector4x16 res;
+    __m64 res;
     
-    res = __builtin_ia32_pmullw (a, b);
-    res = __builtin_ia32_paddw (res, (Vector4x16)c.mmx_4x0080);
-    res = __builtin_ia32_psrlw (res, 8);
+    res = _mm_mullo_pi16 (a, b);
+    res = _mm_adds_pu16 (res, MC(4x0080));
+    res = _mm_adds_pu16 (res, _mm_srli_pi16 (res, 8));
+    res = _mm_srli_pi16 (res, 8);
     
     return res;
 }
 
-#if 0
-#define HAVE_PSHUFW
-#endif
-
-#ifdef HAVE_PSHUFW
-
-static __inline__ Vector4x16
-expand_alpha (Vector4x16 pixel)
+static __inline__ __m64
+pix_add (__m64 a, __m64 b)
 {
-    Vector4x16 result;
-    __asm__ ("pshufw $0xFF, %1, %0\n\t" : "=y" (result) : "y" (pixel));
-    return result;
+    return  _mm_adds_pu8 (a, b);
 }
 
-static __inline__ Vector4x16
-expand_alpha_rev (Vector4x16 pixel)
+#ifdef USE_SSE
+
+static __inline__ __m64
+expand_alpha (__m64 pixel)
 {
-    Vector4x16 result;
-    __asm__ ("pshufw $0x00, %1, %0\n\t" : "=y" (result) : "y" (pixel));
-    return result;
+    return _mm_shuffle_pi16 (pixel, _MM_SHUFFLE(3, 3, 3, 3));
+}
+
+static __inline__ __m64
+expand_alpha_rev (__m64 pixel)
+{
+    return _mm_shuffle_pi16 (pixel, _MM_SHUFFLE(0, 0, 0, 0));
 }    
 
-static __inline__ Vector4x16
-invert_colors (Vector4x16 pixel)
+static __inline__ __m64
+invert_colors (__m64 pixel)
 {
-    Vector4x16 result;
-
-    /* 0xC6 = 11000110 */
-    /*         3 0 1 2 */
-    
-    __asm__ ("pshufw $0xC6, %1, %0\n\t" : "=y" (result) : "y" (pixel));
-
-    return result;
+    return _mm_shuffle_pi16 (pixel, _MM_SHUFFLE(3, 0, 1, 2));
 }
 
 #else
 
-static __inline__ Vector4x16
-expand_alpha (Vector4x16 pixel)
+static __inline__ __m64
+expand_alpha (__m64 pixel)
 {
-    Vector1x64 t1, t2;
-
-    t1 = shift ((Vector1x64)pixel, -48);
+    __m64 t1, t2;
+    
+    t1 = shift (pixel, -48);
     t2 = shift (t1, 16);
-    t1 = __builtin_ia32_por (t1, t2);
+    t1 = _mm_or_si64 (t1, t2);
     t2 = shift (t1, 32);
-    t1 = __builtin_ia32_por (t1, t2);
+    t1 = _mm_or_si64 (t1, t2);
 
-    return (Vector4x16)t1;
+    return t1;
 }
 
-static __inline__ Vector4x16
-expand_alpha_rev (Vector4x16 pixel)
+static __inline__ __m64
+expand_alpha_rev (__m64 pixel)
 {
-    Vector1x64 t1, t2;
+    __m64 t1, t2;
 
-    t1 = shift ((Vector1x64)pixel,  48);
+    /* move alpha to low 16 bits and zero the rest */
+    t1 = shift (pixel,  48);
     t1 = shift (t1, -48);
-    t2 = shift (t1, 16);
-    t1 = __builtin_ia32_por (t1, t2);
-    t2 = shift (t1, 32);
-    t1 = __builtin_ia32_por (t1, t2);
 
-    return (Vector4x16)t1;
+    t2 = shift (t1, 16);
+    t1 = _mm_or_si64 (t1, t2);
+    t2 = shift (t1, 32);
+    t1 = _mm_or_si64 (t1, t2);
+
+    return t1;
 }
 
-static __inline__ Vector4x16
-invert_colors (Vector4x16 pixel)
+static __inline__ __m64
+invert_colors (__m64 pixel)
 {
-    Vector1x64 x, y, z;
+    __m64 x, y, z;
 
-    x = y = z = (Vector1x64)pixel;
+    x = y = z = pixel;
 
-    x = __builtin_ia32_pand (x, (Vector1x64)c.mmx_ffff0000ffff0000);
-    y = __builtin_ia32_pand (y, (Vector1x64)c.mmx_000000000000ffff);
-    z = __builtin_ia32_pand (z, (Vector1x64)c.mmx_0000ffff00000000);
+    x = _mm_and_si64 (x, MC(ffff0000ffff0000));
+    y = _mm_and_si64 (y, MC(000000000000ffff));
+    z = _mm_and_si64 (z, MC(0000ffff00000000));
 
     y = shift (y, 32);
     z = shift (z, -32);
 
-    x = __builtin_ia32_por (x, y);
-    x = __builtin_ia32_por (x, z);
+    x = _mm_or_si64 (x, y);
+    x = _mm_or_si64 (x, z);
 
-    return (Vector4x16)x;
+    return x;
 }
 
 #endif
 
-/* Notes about writing mmx code
- *
- * give memory operands as the second operand. If you give it as the
- * first, gcc will first load it into a register, then use that register
- *
- *   ie. use
- *
- *         __builtin_pmullw (x, mmx_constant[8]);
- *
- *   not
- *
- *         __builtin_pmullw (mmx_constant[8], x);
- *
- * Also try to minimize dependencies. Ie. when you need a value, try to calculate
- * it from a value that was calculated as early as possible.
- */
-
-static __inline__ Vector4x16
-over (Vector4x16 src, Vector4x16 srca, Vector4x16 dest)
+static __inline__ __m64
+over (__m64 src, __m64 srca, __m64 dest)
 {
-    return (Vector4x16)__builtin_ia32_paddusb ((Vector8x8)src, (Vector8x8)pix_multiply(dest, negate(srca)));
+    return  _mm_adds_pu8 (src, pix_multiply(dest, negate(srca)));
 }
 
-static __inline__ Vector4x16
-over_rev_non_pre (Vector4x16 src, Vector4x16 dest)
+static __inline__ __m64
+over_rev_non_pre (__m64 src, __m64 dest)
 {
-    Vector4x16 srca = expand_alpha (src);
-    Vector4x16 srcfaaa = (Vector4x16)__builtin_ia32_por((Vector1x64)srca, (Vector1x64)c.mmx_full_alpha);
-
+    __m64 srca = expand_alpha (src);
+    __m64 srcfaaa = _mm_or_si64 (srca, MC(full_alpha));
+    
     return over(pix_multiply(invert_colors(src), srcfaaa), srca, dest);
 }
 
-static __inline__ Vector4x16
-in (Vector4x16 src,
-    Vector4x16 mask)
+static __inline__ __m64
+in (__m64 src,
+    __m64 mask)
 {
     return pix_multiply (src, mask);
 }
 
-static __inline__ Vector4x16
-in_over (Vector4x16 src,
-	 Vector4x16 srca,
-	 Vector4x16 mask,
-	 Vector4x16 dest)
+static __inline__ __m64
+in_over (__m64 src,
+	 __m64 srca,
+	 __m64 mask,
+	 __m64 dest)
 {
     return over(in(src, mask), pix_multiply(srca, mask), dest);
 }
 
-static __inline__ Vector8x8
-cvt32to64 (CARD32 v)
-{
-    ullong r = v;
-    return (Vector8x8)r;
-}
-
-static __inline__ Vector4x16
+static __inline__ __m64
 load8888 (CARD32 v)
 {
-    return (Vector4x16)__builtin_ia32_punpcklbw (cvt32to64 (v),
-						 (Vector8x8)c.mmx_zero);
+    return _mm_unpacklo_pi8 (_mm_cvtsi32_si64 (v), _mm_setzero_si64());
 }
 
-static __inline__ Vector8x8
-pack8888 (Vector4x16 lo, Vector4x16 hi)
+static __inline__ __m64
+pack8888 (__m64 lo, __m64 hi)
 {
-    Vector8x8 r;
-    r = __builtin_ia32_packuswb ((Vector4x16)lo, (Vector4x16)hi);
-    return r;
+    return _mm_packs_pu16 (lo, hi);
 }
 
-/* Expand 16 bits positioned at @pos (0-3) of a mmx register into 00RR00GG00BB
-   
---- Expanding 565 in the low word ---
-
-m = (m << (32 - 3)) | (m << (16 - 5)) | m;
-m = m & (01f0003f001f);
-m = m * (008404100840);
-m = m >> 8;
-
-Note the trick here - the top word is shifted by another nibble to avoid
-it bumping into the middle word
-*/
-static __inline__ Vector4x16
-expand565 (Vector4x16 pixel, int pos)
+static __inline__ CARD32
+store8888 (__m64 v)
 {
-    Vector1x64 p = (Vector1x64)pixel;
+    return _mm_cvtsi64_si32(pack8888(v, _mm_setzero_si64()));
+}
+
+/* Expand 16 bits positioned at @pos (0-3) of a mmx register into
+ *
+ *    00RR00GG00BB
+ * 
+ * --- Expanding 565 in the low word ---
+ * 
+ * m = (m << (32 - 3)) | (m << (16 - 5)) | m;
+ * m = m & (01f0003f001f);
+ * m = m * (008404100840);
+ * m = m >> 8;
+ * 
+ * Note the trick here - the top word is shifted by another nibble to
+ * avoid it bumping into the middle word
+ */
+static __inline__ __m64
+expand565 (__m64 pixel, int pos)
+{
+    __m64 p = pixel;
+    __m64 t1, t2;
     
     /* move pixel to low 16 bit and zero the rest */
     p = shift (shift (p, (3 - pos) * 16), -48); 
     
-    Vector1x64 t1 = shift (p, 36 - 11);
-    Vector1x64 t2 = shift (p, 16 - 5);
+    t1 = shift (p, 36 - 11);
+    t2 = shift (p, 16 - 5);
     
-    p = __builtin_ia32_por (t1, p);
-    p = __builtin_ia32_por (t2, p);
-    p = __builtin_ia32_pand (p, (Vector1x64)c.mmx_565_rgb);
+    p = _mm_or_si64 (t1, p);
+    p = _mm_or_si64 (t2, p);
+    p = _mm_and_si64 (p, MC(565_rgb));
     
-    pixel = __builtin_ia32_pmullw ((Vector4x16)p, (Vector4x16)c.mmx_565_unpack_multiplier);
-    return __builtin_ia32_psrlw (pixel, 8);
+    pixel = _mm_mullo_pi16 (p, MC(565_unpack_multiplier));
+    return _mm_srli_pi16 (pixel, 8);
 }
 
-static __inline__ Vector4x16
-expand8888 (Vector4x16 in, int pos)
+static __inline__ __m64
+expand8888 (__m64 in, int pos)
 {
     if (pos == 0)
-	return (Vector4x16)__builtin_ia32_punpcklbw ((Vector8x8)in, (Vector8x8)c.mmx_zero);
+	return _mm_unpacklo_pi8 (in, _mm_setzero_si64());
     else
-	return (Vector4x16)__builtin_ia32_punpckhbw ((Vector8x8)in, (Vector8x8)c.mmx_zero);
+	return _mm_unpackhi_pi8 (in, _mm_setzero_si64());
 }
 
-static __inline__ Vector4x16
-pack565 (Vector4x16 pixel, Vector4x16 target, int pos)
+static __inline__ __m64
+pack565 (__m64 pixel, __m64 target, int pos)
 {
-    Vector1x64 p = (Vector1x64)pixel;
-    Vector1x64 t = (Vector1x64)target;
-    Vector1x64 r, g, b;
+    __m64 p = pixel;
+    __m64 t = target;
+    __m64 r, g, b;
     
-    r = __builtin_ia32_pand (p, (Vector1x64)c.mmx_565_r);
-    g = __builtin_ia32_pand (p, (Vector1x64)c.mmx_565_g);
-    b = __builtin_ia32_pand (p, (Vector1x64)c.mmx_565_b);
+    r = _mm_and_si64 (p, MC(565_r));
+    g = _mm_and_si64 (p, MC(565_g));
+    b = _mm_and_si64 (p, MC(565_b));
     
     r = shift (r, - (32 - 8) + pos * 16);
     g = shift (g, - (16 - 3) + pos * 16);
     b = shift (b, - (0  + 3) + pos * 16);
-
+    
     if (pos == 0)
-	t = __builtin_ia32_pand (t, (Vector1x64)c.mmx_mask_0);
+	t = _mm_and_si64 (t, MC(mask_0));
     else if (pos == 1)
-	t = __builtin_ia32_pand (t, (Vector1x64)c.mmx_mask_1);
+	t = _mm_and_si64 (t, MC(mask_1));
     else if (pos == 2)
-	t = __builtin_ia32_pand (t, (Vector1x64)c.mmx_mask_2);
+	t = _mm_and_si64 (t, MC(mask_2));
     else if (pos == 3)
-	t = __builtin_ia32_pand (t, (Vector1x64)c.mmx_mask_3);
+	t = _mm_and_si64 (t, MC(mask_3));
     
-    p = __builtin_ia32_por (r, t);
-    p = __builtin_ia32_por (g, p);
+    p = _mm_or_si64 (r, t);
+    p = _mm_or_si64 (g, p);
     
-    return (Vector4x16)__builtin_ia32_por (b, p);
+    return _mm_or_si64 (b, p);
 }
 
-static __inline__ void
-emms (void)
+static __inline__ __m64
+pix_add_mul (__m64 x, __m64 a, __m64 y, __m64 b)
 {
-    __asm__ __volatile__ ("emms");
+    x = _mm_mullo_pi16 (x, a);                  
+    y = _mm_mullo_pi16 (y, b);                  
+    x = _mm_srli_pi16(x, 1);                    
+    y = _mm_srli_pi16(y, 1);                    
+    x = _mm_adds_pu16 (x, y);                    
+    x = _mm_adds_pu16 (x, _mm_srli_pi16 (x, 8)); 
+    x = _mm_adds_pu16 (x, MC(4x0080));
+    x = _mm_srli_pi16 (x, 7);
+
+    return x;
 }
+
+/* --------------- MMX code patch for fbcompose.c --------------------- */
+
+static FASTCALL void
+mmxCombineMaskU (CARD32 *src, const CARD32 *mask, int width)
+{
+    const CARD32 *end = mask + width;
+    while (mask < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        a = expand_alpha(a);
+        s = pix_multiply(s, a);
+        *src = store8888(s);
+        ++src;
+        ++mask;
+    }
+    _mm_empty();
+}
+
+
+static FASTCALL void
+mmxCombineOverU (CARD32 *dest, const CARD32 *src, int width)
+{
+    const CARD32 *end = dest + width;
+
+    while (dest < end) {
+        __m64 s, sa;
+	s = load8888(*src);
+	sa = expand_alpha(s);
+	*dest = store8888(over(s, sa, load8888(*dest)));
+        ++dest;
+        ++src;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineOverReverseU (CARD32 *dest, const CARD32 *src, int width)
+{
+    const CARD32 *end = dest + width;
+
+    while (dest < end) {
+	__m64 d, da;
+	d = load8888(*dest);
+	da = expand_alpha(d);
+	*dest = store8888(over (d, da, load8888(*src)));
+        ++dest;
+        ++src;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineInU (CARD32 *dest, const CARD32 *src, int width)
+{
+    const CARD32 *end = dest + width;
+
+    while (dest < end) {
+        __m64 x, a;
+        x = load8888(*src);
+        a = load8888(*dest);
+        a = expand_alpha(a);
+        x = pix_multiply(x, a);
+        *dest = store8888(x);
+        ++dest;
+        ++src;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineInReverseU (CARD32 *dest, const CARD32 *src, int width)
+{
+    const CARD32 *end = dest + width;
+
+    while (dest < end) {
+        __m64 x, a;
+        x = load8888(*dest);
+        a = load8888(*src);
+        a = expand_alpha(a);
+        x = pix_multiply(x, a);
+        *dest = store8888(x);
+        ++dest;
+        ++src;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineOutU (CARD32 *dest, const CARD32 *src, int width)
+{
+    const CARD32 *end = dest + width;
+
+    while (dest < end) {
+        __m64 x, a;
+        x = load8888(*src);
+        a = load8888(*dest);
+        a = expand_alpha(a);
+        a = negate(a);
+        x = pix_multiply(x, a);
+        *dest = store8888(x);
+        ++dest;
+        ++src;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineOutReverseU (CARD32 *dest, const CARD32 *src, int width)
+{
+    const CARD32 *end = dest + width;
+
+    while (dest < end) {
+        __m64 x, a;
+        x = load8888(*dest);
+        a = load8888(*src);
+        a = expand_alpha(a);
+        a = negate(a);
+        x = pix_multiply(x, a);
+        *dest = store8888(x);
+        ++dest;
+        ++src;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineAtopU (CARD32 *dest, const CARD32 *src, int width)
+{
+    const CARD32 *end = dest + width;
+
+    while (dest < end) {
+        __m64 s, da, d, sia;
+        s = load8888(*src);
+        d = load8888(*dest);
+        sia = expand_alpha(s);
+        sia = negate(sia);
+        da = expand_alpha(d);
+        s = pix_add_mul (s, da, d, sia);
+        *dest = store8888(s);
+        ++dest;
+        ++src;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineAtopReverseU (CARD32 *dest, const CARD32 *src, int width)
+{
+    const CARD32 *end;
+
+    end = dest + width;
+
+    while (dest < end) {
+        __m64 s, dia, d, sa;
+        s = load8888(*src);
+        d = load8888(*dest);
+        sa = expand_alpha(s);
+        dia = expand_alpha(d);
+        dia = negate(dia);
+	s = pix_add_mul (s, dia, d, sa);
+        *dest = store8888(s);
+        ++dest;
+        ++src;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineXorU (CARD32 *dest, const CARD32 *src, int width)
+{
+    const CARD32 *end = dest + width;
+
+    while (dest < end) {
+        __m64 s, dia, d, sia;
+        s = load8888(*src);
+        d = load8888(*dest);
+        sia = expand_alpha(s);
+        dia = expand_alpha(d);
+        sia = negate(sia);
+        dia = negate(dia);
+	s = pix_add_mul (s, dia, d, sia);
+        *dest = store8888(s);
+        ++dest;
+        ++src;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineAddU (CARD32 *dest, const CARD32 *src, int width)
+{
+    const CARD32 *end = dest + width;
+    while (dest < end) {
+        __m64 s, d;
+        s = load8888(*src);
+        d = load8888(*dest);
+        s = pix_add(s, d);
+        *dest = store8888(s);
+        ++dest;
+        ++src;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineSaturateU (CARD32 *dest, const CARD32 *src, int width)
+{
+    const CARD32 *end = dest + width;
+    while (dest < end) {
+        CARD32 s = *src;
+        CARD32 d = *dest;
+        __m64 ms = load8888(s);
+        __m64 md = load8888(d);
+        CARD32 sa = s >> 24;
+        CARD32 da = ~d >> 24;
+
+        if (sa > da) {
+            __m64 msa = load8888(FbIntDiv(da, sa));
+            msa = expand_alpha(msa);
+            ms = pix_multiply(ms, msa);
+        }
+        md = pix_add(md, ms);
+        *dest = store8888(md);
+        ++src;
+        ++dest;
+    }
+    _mm_empty();
+}
+
+
+static FASTCALL void
+mmxCombineSrcC (CARD32 *dest, CARD32 *src, CARD32 *mask, int width)
+{
+    const CARD32 *end = src + width;
+    while (src < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        s = pix_multiply(s, a);
+        *dest = store8888(s);
+        ++src;
+        ++mask;
+        ++dest;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineOverC (CARD32 *dest, CARD32 *src, CARD32 *mask, int width)
+{
+    const CARD32 *end = src + width;
+    while (src < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        __m64 d = load8888(*dest);
+        __m64 sa = expand_alpha(s);
+	
+	*dest = store8888(in_over (s, sa, a, d));
+	
+        ++src;
+        ++dest;
+        ++mask;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineOverReverseC (CARD32 *dest, CARD32 *src, CARD32 *mask, int width)
+{
+    const CARD32 *end = src + width;
+    while (src < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        __m64 d = load8888(*dest);
+        __m64 da = expand_alpha(d);
+
+	*dest = store8888(over (d, da, in (s, a)));
+	
+        ++src;
+        ++dest;
+        ++mask;
+    }
+    _mm_empty();
+}
+
+
+static FASTCALL void
+mmxCombineInC (CARD32 *dest, CARD32 *src, CARD32 *mask, int width)
+{
+    const CARD32 *end = src + width;
+    while (src < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        __m64 d = load8888(*dest);
+        __m64 da = expand_alpha(d);
+        s = pix_multiply(s, a);
+        s = pix_multiply(s, da);
+        *dest = store8888(s);
+        ++src;
+        ++dest;
+        ++mask;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineInReverseC (CARD32 *dest, CARD32 *src, CARD32 *mask, int width)
+{
+    const CARD32 *end = src + width;
+    while (src < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        __m64 d = load8888(*dest);
+        __m64 sa = expand_alpha(s);
+        a = pix_multiply(a, sa);
+        d = pix_multiply(d, a);
+        *dest = store8888(d);
+        ++src;
+        ++dest;
+        ++mask;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineOutC (CARD32 *dest, CARD32 *src, CARD32 *mask, int width)
+{
+    const CARD32 *end = src + width;
+    while (src < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        __m64 d = load8888(*dest);
+        __m64 da = expand_alpha(d);
+        da = negate(da);
+        s = pix_multiply(s, a);
+        s = pix_multiply(s, da);
+        *dest = store8888(s);
+        ++src;
+        ++dest;
+        ++mask;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineOutReverseC (CARD32 *dest, CARD32 *src, CARD32 *mask, int width)
+{
+    const CARD32 *end = src + width;
+    while (src < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        __m64 d = load8888(*dest);
+        __m64 sa = expand_alpha(s);
+        a = pix_multiply(a, sa);
+        a = negate(a);
+        d = pix_multiply(d, a);
+        *dest = store8888(d);
+        ++src;
+        ++dest;
+        ++mask;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineAtopC (CARD32 *dest, CARD32 *src, CARD32 *mask, int width)
+{
+    const CARD32 *end = src + width;
+    while (src < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        __m64 d = load8888(*dest);
+        __m64 da = expand_alpha(d);
+        __m64 sa = expand_alpha(s); 
+        s = pix_multiply(s, a);
+        a = pix_multiply(a, sa);
+        a = negate(a);
+	d = pix_add_mul (d, a, s, da);
+        *dest = store8888(d);
+        ++src;
+        ++dest;
+        ++mask;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineAtopReverseC (CARD32 *dest, CARD32 *src, CARD32 *mask, int width)
+{
+    const CARD32 *end = src + width;
+    while (src < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        __m64 d = load8888(*dest);
+        __m64 da = expand_alpha(d);
+        __m64 sa = expand_alpha(s);
+        s = pix_multiply(s, a);
+        a = pix_multiply(a, sa);
+        da = negate(da);
+	d = pix_add_mul (d, a, s, da);
+        *dest = store8888(d);
+        ++src;
+        ++dest;
+        ++mask;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineXorC (CARD32 *dest, CARD32 *src, CARD32 *mask, int width)
+{
+    const CARD32 *end = src + width;
+    while (src < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        __m64 d = load8888(*dest);
+        __m64 da = expand_alpha(d);
+        __m64 sa = expand_alpha(s);
+        s = pix_multiply(s, a);
+        a = pix_multiply(a, sa);
+        da = negate(da);
+        a = negate(a);
+	d = pix_add_mul (d, a, s, da);
+        *dest = store8888(d);
+        ++src;
+        ++dest;
+        ++mask;
+    }
+    _mm_empty();
+}
+
+static FASTCALL void
+mmxCombineAddC (CARD32 *dest, CARD32 *src, CARD32 *mask, int width)
+{
+    const CARD32 *end = src + width;
+    while (src < end) {
+        __m64 a = load8888(*mask);
+        __m64 s = load8888(*src);
+        __m64 d = load8888(*dest);
+        s = pix_multiply(s, a);
+        d = pix_add(s, d);
+        *dest = store8888(d);
+        ++src;
+        ++dest;
+        ++mask;
+    }
+    _mm_empty();
+}
+
+extern FbComposeFunctions composeFunctions;
+
+void fbComposeSetupMMX(void)
+{
+    /* check if we have MMX support and initialize accordingly */
+    if (fbHaveMMX()) {
+        composeFunctions.combineU[PictOpOver] = mmxCombineOverU;
+        composeFunctions.combineU[PictOpOverReverse] = mmxCombineOverReverseU;
+        composeFunctions.combineU[PictOpIn] = mmxCombineInU;
+        composeFunctions.combineU[PictOpInReverse] = mmxCombineInReverseU;
+        composeFunctions.combineU[PictOpOut] = mmxCombineOutU;
+        composeFunctions.combineU[PictOpOutReverse] = mmxCombineOutReverseU;
+        composeFunctions.combineU[PictOpAtop] = mmxCombineAtopU;
+        composeFunctions.combineU[PictOpAtopReverse] = mmxCombineAtopReverseU;
+        composeFunctions.combineU[PictOpXor] = mmxCombineXorU;
+        composeFunctions.combineU[PictOpAdd] = mmxCombineAddU;
+        composeFunctions.combineU[PictOpSaturate] = mmxCombineSaturateU;
+
+        composeFunctions.combineC[PictOpSrc] = mmxCombineSrcC;
+        composeFunctions.combineC[PictOpOver] = mmxCombineOverC;
+        composeFunctions.combineC[PictOpOverReverse] = mmxCombineOverReverseC;
+        composeFunctions.combineC[PictOpIn] = mmxCombineInC;
+        composeFunctions.combineC[PictOpInReverse] = mmxCombineInReverseC;
+        composeFunctions.combineC[PictOpOut] = mmxCombineOutC;
+        composeFunctions.combineC[PictOpOutReverse] = mmxCombineOutReverseC;
+        composeFunctions.combineC[PictOpAtop] = mmxCombineAtopC;
+        composeFunctions.combineC[PictOpAtopReverse] = mmxCombineAtopReverseC;
+        composeFunctions.combineC[PictOpXor] = mmxCombineXorC;
+        composeFunctions.combineC[PictOpAdd] = mmxCombineAddC;
+
+        composeFunctions.combineMaskU = mmxCombineMaskU;
+    } 
+}
+
+
+/* ------------------ MMX code paths called from fbpict.c ----------------------- */
 
 void
 fbCompositeSolid_nx8888mmx (CARD8	op,
@@ -371,11 +874,11 @@ fbCompositeSolid_nx8888mmx (CARD8	op,
     CARD32	*dstLine, *dst;
     CARD16	w;
     FbStride	dstStride;
-    Vector4x16	vsrc, vsrca;
-
+    __m64	vsrc, vsrca;
+    
     CHECKPOINT();
     
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
     
     if (src >> 24 == 0)
 	return;
@@ -384,51 +887,51 @@ fbCompositeSolid_nx8888mmx (CARD8	op,
     
     vsrc = load8888 (src);
     vsrca = expand_alpha (vsrc);
-
+    
     while (height--)
     {
 	dst = dstLine;
 	dstLine += dstStride;
 	w = width;
-
+	
 	CHECKPOINT();
 	
 	while (w && (unsigned long)dst & 7)
 	{
-	    *dst = (ullong) pack8888(over(vsrc, vsrca, load8888(*dst)), (Vector4x16)c.mmx_zero);
+	    *dst = store8888(over(vsrc, vsrca, load8888(*dst)));
 	    
 	    w--;
 	    dst++;
 	}
-
+	
 	while (w >= 2)
 	{
-	    Vector4x16 vdest;
-	    Vector4x16 dest0, dest1;
-
-	    vdest = *(Vector4x16 *)dst;
+	    __m64 vdest;
+	    __m64 dest0, dest1;
+	    
+	    vdest = *(__m64 *)dst;
 	    
 	    dest0 = over(vsrc, vsrca, expand8888(vdest, 0));
 	    dest1 = over(vsrc, vsrca, expand8888(vdest, 1));
 	    
-	    *(Vector8x8 *)dst = (Vector8x8)pack8888(dest0, dest1);
+	    *(__m64 *)dst = pack8888(dest0, dest1);
 	    
 	    dst += 2;
 	    w -= 2;
 	}
-
+	
 	CHECKPOINT();
 	
 	while (w)
 	{
-	    *dst = (ullong) pack8888(over(vsrc, vsrca, load8888(*dst)), (Vector4x16)c.mmx_zero);
+	    *dst = store8888(over(vsrc, vsrca, load8888(*dst)));
 	    
 	    w--;
 	    dst++;
 	}
     }
     
-    emms();
+    _mm_empty();
 }
 
 void
@@ -449,11 +952,11 @@ fbCompositeSolid_nx0565mmx (CARD8	op,
     CARD16	*dstLine, *dst;
     CARD16	w;
     FbStride	dstStride;
-    Vector4x16	vsrc, vsrca;
-
+    __m64	vsrc, vsrca;
+    
     CHECKPOINT();
     
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
     
     if (src >> 24 == 0)
 	return;
@@ -462,49 +965,49 @@ fbCompositeSolid_nx0565mmx (CARD8	op,
     
     vsrc = load8888 (src);
     vsrca = expand_alpha (vsrc);
-
+    
     while (height--)
     {
 	dst = dstLine;
 	dstLine += dstStride;
 	w = width;
-
+	
 	CHECKPOINT();
 	
 	while (w && (unsigned long)dst & 7)
 	{
 	    ullong d = *dst;
-	    Vector4x16 vdest = expand565 ((Vector4x16)d, 0);
+	    __m64 vdest = expand565 ((__m64)d, 0);
 	    vdest = pack565(over(vsrc, vsrca, vdest), vdest, 0);
 	    *dst = (ullong)vdest;
 	    
 	    w--;
 	    dst++;
 	}
-
+	
 	while (w >= 4)
 	{
-	    Vector4x16 vdest;
-
-	    vdest = *(Vector4x16 *)dst;
+	    __m64 vdest;
+	    
+	    vdest = *(__m64 *)dst;
 	    
 	    vdest = pack565 (over(vsrc, vsrca, expand565(vdest, 0)), vdest, 0);
 	    vdest = pack565 (over(vsrc, vsrca, expand565(vdest, 1)), vdest, 1);
 	    vdest = pack565 (over(vsrc, vsrca, expand565(vdest, 2)), vdest, 2);
 	    vdest = pack565 (over(vsrc, vsrca, expand565(vdest, 3)), vdest, 3);
 	    
-	    *(Vector8x8 *)dst = (Vector8x8)vdest;
+	    *(__m64 *)dst = vdest;
 	    
 	    dst += 4;
 	    w -= 4;
 	}
-
+	
 	CHECKPOINT();
 	
 	while (w)
 	{
 	    ullong d = *dst;
-	    Vector4x16 vdest = expand565 ((Vector4x16)d, 0);
+	    __m64 vdest = expand565 ((__m64)d, 0);
 	    vdest = pack565(over(vsrc, vsrca, vdest), vdest, 0);
 	    *dst = (ullong)vdest;
 	    
@@ -513,7 +1016,7 @@ fbCompositeSolid_nx0565mmx (CARD8	op,
 	}
     }
     
-    emms();
+    _mm_empty();
 }
 
 void
@@ -534,11 +1037,11 @@ fbCompositeSolidMask_nx8888x8888Cmmx (CARD8	op,
     CARD32	*dstLine;
     CARD32	*maskLine;
     FbStride	dstStride, maskStride;
-    Vector4x16	vsrc, vsrca;
-
+    __m64	vsrc, vsrca;
+    
     CHECKPOINT();
     
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
     
     srca = src >> 24;
     if (srca == 0)
@@ -562,9 +1065,9 @@ fbCompositeSolidMask_nx8888x8888Cmmx (CARD8	op,
 	    
 	    if (m)
 	    {
-		Vector4x16 vdest = load8888(*q);
+		__m64 vdest = load8888(*q);
 		vdest = in_over(vsrc, vsrca, load8888(m), vdest);
-		*q = (ullong)pack8888(vdest, (Vector4x16)c.mmx_zero);
+		*q = store8888(vdest);
 	    }
 	    
 	    twidth--;
@@ -580,15 +1083,15 @@ fbCompositeSolidMask_nx8888x8888Cmmx (CARD8	op,
 	    
 	    if (m0 | m1)
 	    {
-		Vector4x16 dest0, dest1;
-		Vector4x16 vdest = *(Vector4x16 *)q;
+		__m64 dest0, dest1;
+		__m64 vdest = *(__m64 *)q;
 		
 		dest0 = in_over(vsrc, vsrca, load8888(m0),
 				expand8888 (vdest, 0));
 		dest1 = in_over(vsrc, vsrca, load8888(m1),
 				expand8888 (vdest, 1));
 		
-		*(Vector8x8 *)q = (Vector8x8)pack8888(dest0, dest1);
+		*(__m64 *)q = pack8888(dest0, dest1);
 	    }
 	    
 	    p += 2;
@@ -602,9 +1105,9 @@ fbCompositeSolidMask_nx8888x8888Cmmx (CARD8	op,
 	    
 	    if (m)
 	    {
-		Vector4x16 vdest = load8888(*q);
+		__m64 vdest = load8888(*q);
 		vdest = in_over(vsrc, vsrca, load8888(m), vdest);
-		*q = (ullong)pack8888(vdest, (Vector4x16)c.mmx_zero);
+		*q = store8888(vdest);
 	    }
 	    
 	    twidth--;
@@ -616,7 +1119,221 @@ fbCompositeSolidMask_nx8888x8888Cmmx (CARD8	op,
 	maskLine += maskStride;
     }
     
-    emms();
+    _mm_empty();
+}
+
+void
+fbCompositeSrc_8888x8x8888mmx (CARD8	op,
+			       PicturePtr pSrc,
+			       PicturePtr pMask,
+			       PicturePtr pDst,
+			       INT16	xSrc,
+			       INT16	ySrc,
+			       INT16      xMask,
+			       INT16      yMask,
+			       INT16      xDst,
+			       INT16      yDst,
+			       CARD16     width,
+			       CARD16     height)
+{
+    CARD32	*dstLine, *dst;
+    CARD32	*srcLine, *src;
+    CARD8	*maskLine;
+    CARD32	mask;
+    __m64	vmask;
+    FbStride	dstStride, srcStride, maskStride;
+    CARD16	w;
+    __m64  srca;
+    
+    CHECKPOINT();
+    
+    fbComposeGetStart (pDst, xDst, yDst, CARD32, dstStride, dstLine, 1);
+    fbComposeGetStart (pSrc, xSrc, ySrc, CARD32, srcStride, srcLine, 1);
+    fbComposeGetStart (pMask, xMask, yMask, CARD8, maskStride, maskLine, 1);
+
+    mask = *maskLine << 24 | *maskLine << 16 | *maskLine << 8 | *maskLine;
+    vmask = load8888 (mask);
+    srca = MC(4x00ff);
+    
+    while (height--)
+    {
+	dst = dstLine;
+	dstLine += dstStride;
+	src = srcLine;
+	srcLine += srcStride;
+	w = width;
+
+	while (w && (unsigned long)dst & 7)
+	{
+	    __m64 s = load8888 (*src);
+	    __m64 d = load8888 (*dst);
+	    
+	    *dst = store8888 (in_over (s, srca, vmask, d));
+	    
+	    w--;
+	    dst++;
+	    src++;
+	}
+
+	while (w >= 16)
+	{
+	    __m64 vd0 = *(__m64 *)(dst + 0);
+	    __m64 vd1 = *(__m64 *)(dst + 2);
+	    __m64 vd2 = *(__m64 *)(dst + 4);
+	    __m64 vd3 = *(__m64 *)(dst + 6);
+	    __m64 vd4 = *(__m64 *)(dst + 8);
+	    __m64 vd5 = *(__m64 *)(dst + 10);
+	    __m64 vd6 = *(__m64 *)(dst + 12);
+	    __m64 vd7 = *(__m64 *)(dst + 14);
+
+	    __m64 vs0 = *(__m64 *)(src + 0);
+	    __m64 vs1 = *(__m64 *)(src + 2);
+	    __m64 vs2 = *(__m64 *)(src + 4);
+	    __m64 vs3 = *(__m64 *)(src + 6);
+	    __m64 vs4 = *(__m64 *)(src + 8);
+	    __m64 vs5 = *(__m64 *)(src + 10);
+	    __m64 vs6 = *(__m64 *)(src + 12);
+	    __m64 vs7 = *(__m64 *)(src + 14);
+
+	    vd0 = (__m64)pack8888 (
+		in_over (expand8888 (vs0, 0), srca, vmask, expand8888 (vd0, 0)),
+		in_over (expand8888 (vs0, 1), srca, vmask, expand8888 (vd0, 1)));
+	
+	    vd1 = (__m64)pack8888 (
+		in_over (expand8888 (vs1, 0), srca, vmask, expand8888 (vd1, 0)),
+		in_over (expand8888 (vs1, 1), srca, vmask, expand8888 (vd1, 1)));
+	
+	    vd2 = (__m64)pack8888 (
+		in_over (expand8888 (vs2, 0), srca, vmask, expand8888 (vd2, 0)),
+		in_over (expand8888 (vs2, 1), srca, vmask, expand8888 (vd2, 1)));
+	
+	    vd3 = (__m64)pack8888 (
+		in_over (expand8888 (vs3, 0), srca, vmask, expand8888 (vd3, 0)),
+		in_over (expand8888 (vs3, 1), srca, vmask, expand8888 (vd3, 1)));
+	
+	    vd4 = (__m64)pack8888 (
+		in_over (expand8888 (vs4, 0), srca, vmask, expand8888 (vd4, 0)),
+		in_over (expand8888 (vs4, 1), srca, vmask, expand8888 (vd4, 1)));
+	
+	    vd5 = (__m64)pack8888 (
+		in_over (expand8888 (vs5, 0), srca, vmask, expand8888 (vd5, 0)),
+		in_over (expand8888 (vs5, 1), srca, vmask, expand8888 (vd5, 1)));
+	
+	    vd6 = (__m64)pack8888 (
+		in_over (expand8888 (vs6, 0), srca, vmask, expand8888 (vd6, 0)),
+		in_over (expand8888 (vs6, 1), srca, vmask, expand8888 (vd6, 1)));
+	
+	    vd7 = (__m64)pack8888 (
+		in_over (expand8888 (vs7, 0), srca, vmask, expand8888 (vd7, 0)),
+		in_over (expand8888 (vs7, 1), srca, vmask, expand8888 (vd7, 1)));
+
+    	    *(__m64 *)(dst + 0) = vd0;
+	    *(__m64 *)(dst + 2) = vd1;
+	    *(__m64 *)(dst + 4) = vd2;
+	    *(__m64 *)(dst + 6) = vd3;
+	    *(__m64 *)(dst + 8) = vd4;
+	    *(__m64 *)(dst + 10) = vd5;
+	    *(__m64 *)(dst + 12) = vd6;
+	    *(__m64 *)(dst + 14) = vd7;
+	
+	    w -= 16;
+	    dst += 16;
+	    src += 16;
+	}
+	
+	while (w)
+	{
+	    __m64 s = load8888 (*src);
+	    __m64 d = load8888 (*dst);
+	    
+	    *dst = store8888 (in_over (s, srca, vmask, d));
+	    
+	    w--;
+	    dst++;
+	    src++;
+	}
+    }
+
+    _mm_empty(); 
+}
+
+void
+fbCompositeSrc_8888x8888mmx (CARD8	op,
+			     PicturePtr pSrc,
+			     PicturePtr pMask,
+			     PicturePtr pDst,
+			     INT16	xSrc,
+			     INT16	ySrc,
+			     INT16      xMask,
+			     INT16      yMask,
+			     INT16      xDst,
+			     INT16      yDst,
+			     CARD16     width,
+			     CARD16     height)
+{
+    CARD32	*dstLine, *dst;
+    CARD32	*srcLine, *src;
+    FbStride	dstStride, srcStride;
+    CARD16	w;
+    __m64  srca;
+    
+    CHECKPOINT();
+    
+    fbComposeGetStart (pDst, xDst, yDst, CARD32, dstStride, dstLine, 1);
+    fbComposeGetStart (pSrc, xSrc, ySrc, CARD32, srcStride, srcLine, 1);
+
+    srca = MC (4x00ff);
+    
+    while (height--)
+    {
+	dst = dstLine;
+	dstLine += dstStride;
+	src = srcLine;
+	srcLine += srcStride;
+	w = width;
+
+	while (w && (unsigned long)dst & 7)
+	{
+	    __m64 s = load8888 (*src);
+	    __m64 d = load8888 (*dst);
+	    
+	    *dst = store8888 (over (s, expand_alpha (s), d));
+	    
+	    w--;
+	    dst++;
+	    src++;
+	}
+
+	while (w >= 2)
+	{
+	    __m64 vd = *(__m64 *)(dst + 0);
+	    __m64 vs = *(__m64 *)(src + 0);
+	    __m64 vs0 = expand8888 (vs, 0);
+	    __m64 vs1 = expand8888 (vs, 1);
+
+	    *(__m64 *)dst = (__m64)pack8888 (
+		over (vs0, expand_alpha (vs0), expand8888 (vd, 0)),
+		over (vs1, expand_alpha (vs1), expand8888 (vd, 1)));
+	    
+	    w -= 2;
+	    dst += 2;
+	    src += 2;
+	}
+	
+	while (w)
+	{
+	    __m64 s = load8888 (*src);
+	    __m64 d = load8888 (*dst);
+	    
+	    *dst = store8888 (over (s, expand_alpha (s), d));
+	    
+	    w--;
+	    dst++;
+	    src++;
+	}
+    }
+
+    _mm_empty(); 
 }
 
 void
@@ -638,17 +1355,17 @@ fbCompositeSolidMask_nx8x8888mmx (CARD8      op,
     CARD8	*maskLine, *mask;
     FbStride	dstStride, maskStride;
     CARD16	w;
-    Vector4x16	vsrc, vsrca;
+    __m64	vsrc, vsrca;
     ullong	srcsrc;
     
     CHECKPOINT();
     
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
     
     srca = src >> 24;
     if (srca == 0)
 	return;
-
+    
     srcsrc = (unsigned long long)src << 32 | src;
     
     fbComposeGetStart (pDst, xDst, yDst, CARD32, dstStride, dstLine, 1);
@@ -664,7 +1381,7 @@ fbCompositeSolidMask_nx8x8888mmx (CARD8      op,
 	mask = maskLine;
 	maskLine += maskStride;
 	w = width;
-
+	
 	CHECKPOINT();
 	
 	while (w && (unsigned long)dst & 7)
@@ -673,15 +1390,15 @@ fbCompositeSolidMask_nx8x8888mmx (CARD8      op,
 	    
 	    if (m)
 	    {
-		Vector4x16 vdest = in_over(vsrc, vsrca, expand_alpha_rev ((Vector4x16)m), load8888(*dst));
-		*dst = (ullong)pack8888(vdest, (Vector4x16)c.mmx_zero);
+		__m64 vdest = in_over(vsrc, vsrca, expand_alpha_rev ((__m64)m), load8888(*dst));
+		*dst = store8888(vdest);
 	    }
 	    
 	    w--;
 	    mask++;
 	    dst++;
 	}
-
+	
 	CHECKPOINT();
 	
 	while (w >= 2)
@@ -689,29 +1406,29 @@ fbCompositeSolidMask_nx8x8888mmx (CARD8      op,
 	    ullong m0, m1;
 	    m0 = *mask;
 	    m1 = *(mask + 1);
-
+	    
 	    if (srca == 0xff && (m0 & m1) == 0xff)
 	    {
 		*(unsigned long long *)dst = srcsrc;
 	    }
 	    else if (m0 | m1)
 	    {
-		Vector4x16 vdest;
-		Vector4x16 dest0, dest1;
-
-		vdest = *(Vector4x16 *)dst;
+		__m64 vdest;
+		__m64 dest0, dest1;
 		
-		dest0 = in_over(vsrc, vsrca, expand_alpha_rev ((Vector4x16)m0), expand8888(vdest, 0));
-		dest1 = in_over(vsrc, vsrca, expand_alpha_rev ((Vector4x16)m1), expand8888(vdest, 1));
+		vdest = *(__m64 *)dst;
 		
-		*(Vector8x8 *)dst = (Vector8x8)pack8888(dest0, dest1);
+		dest0 = in_over(vsrc, vsrca, expand_alpha_rev ((__m64)m0), expand8888(vdest, 0));
+		dest1 = in_over(vsrc, vsrca, expand_alpha_rev ((__m64)m1), expand8888(vdest, 1));
+		
+		*(__m64 *)dst = pack8888(dest0, dest1);
 	    }
 	    
 	    mask += 2;
 	    dst += 2;
 	    w -= 2;
 	}
-
+	
 	CHECKPOINT();
 	
 	while (w)
@@ -720,9 +1437,9 @@ fbCompositeSolidMask_nx8x8888mmx (CARD8      op,
 	    
 	    if (m)
 	    {
-		Vector4x16 vdest = load8888(*dst);
-		vdest = in_over(vsrc, vsrca, expand_alpha_rev ((Vector4x16)m), vdest);
-		*dst = (ullong)pack8888(vdest, (Vector4x16)c.mmx_zero);
+		__m64 vdest = load8888(*dst);
+		vdest = in_over(vsrc, vsrca, expand_alpha_rev ((__m64)m), vdest);
+		*dst = store8888(vdest);
 	    }
 	    
 	    w--;
@@ -731,7 +1448,7 @@ fbCompositeSolidMask_nx8x8888mmx (CARD8      op,
 	}
     }
     
-    emms();
+    _mm_empty();
 }
 
 
@@ -754,12 +1471,12 @@ fbCompositeSolidMask_nx8x0565mmx (CARD8      op,
     CARD8	*maskLine, *mask;
     FbStride	dstStride, maskStride;
     CARD16	w;
-    Vector4x16	vsrc, vsrca;
+    __m64	vsrc, vsrca;
     unsigned long long srcsrcsrcsrc, src16;
     
     CHECKPOINT();
     
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
     
     srca = src >> 24;
     if (srca == 0)
@@ -770,9 +1487,9 @@ fbCompositeSolidMask_nx8x0565mmx (CARD8      op,
     
     vsrc = load8888 (src);
     vsrca = expand_alpha (vsrc);
-
-    src16 = (ullong)pack565(vsrc, (Vector4x16)c.mmx_zero, 0);
-
+    
+    src16 = (ullong)pack565(vsrc, _mm_setzero_si64(), 0);
+    
     srcsrcsrcsrc = (ullong)src16 << 48 | (ullong)src16 << 32 |
 	(ullong)src16 << 16 | (ullong)src16;
     
@@ -783,7 +1500,7 @@ fbCompositeSolidMask_nx8x0565mmx (CARD8      op,
 	mask = maskLine;
 	maskLine += maskStride;
 	w = width;
-
+	
 	CHECKPOINT();
 	
 	while (w && (unsigned long)dst & 7)
@@ -793,16 +1510,16 @@ fbCompositeSolidMask_nx8x0565mmx (CARD8      op,
 	    if (m)
 	    {
 		ullong d = *dst;
-		Vector4x16 vd = (Vector4x16)d;
-		Vector4x16 vdest = in_over(vsrc, vsrca, expand_alpha_rev ((Vector4x16)m), expand565(vd, 0));
-		*dst = (ullong)pack565(vdest, (Vector4x16)c.mmx_zero, 0);
+		__m64 vd = (__m64)d;
+		__m64 vdest = in_over(vsrc, vsrca, expand_alpha_rev ((__m64)m), expand565(vd, 0));
+		*dst = (ullong)pack565(vdest, _mm_setzero_si64(), 0);
 	    }
 	    
 	    w--;
 	    mask++;
 	    dst++;
 	}
-
+	
 	CHECKPOINT();
 	
 	while (w >= 4)
@@ -812,35 +1529,35 @@ fbCompositeSolidMask_nx8x0565mmx (CARD8      op,
 	    m1 = *(mask + 1);
 	    m2 = *(mask + 2);
 	    m3 = *(mask + 3);
-
+	    
 	    if (srca == 0xff && (m0 & m1 & m2 & m3) == 0xff)
 	    {
 		*(unsigned long long *)dst = srcsrcsrcsrc;
 	    }
 	    else if (m0 | m1 | m2 | m3)
 	    {
-		Vector4x16 vdest;
-		Vector4x16 vm0, vm1, vm2, vm3;
-
-		vdest = *(Vector4x16 *)dst;
-
-		vm0 = (Vector4x16)m0;
+		__m64 vdest;
+		__m64 vm0, vm1, vm2, vm3;
+		
+		vdest = *(__m64 *)dst;
+		
+		vm0 = (__m64)m0;
 		vdest = pack565(in_over(vsrc, vsrca, expand_alpha_rev(vm0), expand565(vdest, 0)), vdest, 0);
-		vm1 = (Vector4x16)m1;
+		vm1 = (__m64)m1;
 		vdest = pack565(in_over(vsrc, vsrca, expand_alpha_rev(vm1), expand565(vdest, 1)), vdest, 1);
-		vm2 = (Vector4x16)m2;
+		vm2 = (__m64)m2;
 		vdest = pack565(in_over(vsrc, vsrca, expand_alpha_rev(vm2), expand565(vdest, 2)), vdest, 2);
-		vm3 = (Vector4x16)m3;
+		vm3 = (__m64)m3;
 		vdest = pack565(in_over(vsrc, vsrca, expand_alpha_rev(vm3), expand565(vdest, 3)), vdest, 3);
 		
-		*(Vector4x16 *)dst = vdest;
+		*(__m64 *)dst = vdest;
 	    }
 	    
 	    w -= 4;
 	    mask += 4;
 	    dst += 4;
 	}
-
+	
 	CHECKPOINT();
 	
 	while (w)
@@ -850,9 +1567,9 @@ fbCompositeSolidMask_nx8x0565mmx (CARD8      op,
 	    if (m)
 	    {
 		ullong d = *dst;
-		Vector4x16 vd = (Vector4x16)d;
-		Vector4x16 vdest = in_over(vsrc, vsrca, expand_alpha_rev ((Vector4x16)m), expand565(vd, 0));
-		*dst = (ullong)pack565(vdest, (Vector4x16)c.mmx_zero, 0);
+		__m64 vd = (__m64)d;
+		__m64 vdest = in_over(vsrc, vsrca, expand_alpha_rev ((__m64)m), expand565(vd, 0));
+		*dst = (ullong)pack565(vdest, _mm_setzero_si64(), 0);
 	    }
 	    
 	    w--;
@@ -861,7 +1578,7 @@ fbCompositeSolidMask_nx8x0565mmx (CARD8      op,
 	}
     }
     
-    emms();
+    _mm_empty();
 }
 
 void
@@ -887,9 +1604,9 @@ fbCompositeSrc_8888RevNPx0565mmx (CARD8      op,
     
     fbComposeGetStart (pDst, xDst, yDst, CARD16, dstStride, dstLine, 1);
     fbComposeGetStart (pSrc, xSrc, ySrc, CARD32, srcStride, srcLine, 1);
-
+    
     assert (pSrc->pDrawable == pMask->pDrawable);
-
+    
     while (height--)
     {
 	dst = dstLine;
@@ -897,14 +1614,14 @@ fbCompositeSrc_8888RevNPx0565mmx (CARD8      op,
 	src = srcLine;
 	srcLine += srcStride;
 	w = width;
-
+	
 	CHECKPOINT();
 	
 	while (w && (unsigned long)dst & 7)
 	{
-	    Vector4x16 vsrc = load8888 (*src);
+	    __m64 vsrc = load8888 (*src);
 	    ullong d = *dst;
-	    Vector4x16 vdest = expand565 ((Vector4x16)d, 0);
+	    __m64 vdest = expand565 ((__m64)d, 0);
 	    
 	    vdest = pack565(over_rev_non_pre(vsrc, vdest), vdest, 0);
 	    
@@ -914,19 +1631,19 @@ fbCompositeSrc_8888RevNPx0565mmx (CARD8      op,
 	    dst++;
 	    src++;
 	}
-
+	
 	CHECKPOINT();
 	
 	while (w >= 4)
 	{
 	    CARD32 s0, s1, s2, s3;
 	    unsigned char a0, a1, a2, a3;
-
+	    
 	    s0 = *src;
 	    s1 = *(src + 1);
 	    s2 = *(src + 2);
 	    s3 = *(src + 3);
-
+	    
 	    a0 = (s0 >> 24);
 	    a1 = (s1 >> 24);
 	    a2 = (s2 >> 24);
@@ -934,38 +1651,38 @@ fbCompositeSrc_8888RevNPx0565mmx (CARD8      op,
 	    
 	    if ((a0 & a1 & a2 & a3) == 0xFF)
 	    {
-		Vector4x16 vdest;
-		vdest = pack565(invert_colors(load8888(s0)), (Vector4x16)c.mmx_zero, 0);
+		__m64 vdest;
+		vdest = pack565(invert_colors(load8888(s0)), _mm_setzero_si64(), 0);
 		vdest = pack565(invert_colors(load8888(s1)), vdest, 1);
 		vdest = pack565(invert_colors(load8888(s2)), vdest, 2);
 		vdest = pack565(invert_colors(load8888(s3)), vdest, 3);
-
-		*(Vector4x16 *)dst = vdest;
+		
+		*(__m64 *)dst = vdest;
 	    }
 	    else if (a0 | a1 | a2 | a3)
 	    {
-		Vector4x16 vdest = *(Vector4x16 *)dst;
-
+		__m64 vdest = *(__m64 *)dst;
+		
 		vdest = pack565(over_rev_non_pre(load8888(s0), expand565(vdest, 0)), vdest, 0);
 	        vdest = pack565(over_rev_non_pre(load8888(s1), expand565(vdest, 1)), vdest, 1);
 		vdest = pack565(over_rev_non_pre(load8888(s2), expand565(vdest, 2)), vdest, 2);
 		vdest = pack565(over_rev_non_pre(load8888(s3), expand565(vdest, 3)), vdest, 3);
-
-		*(Vector4x16 *)dst = vdest;
+		
+		*(__m64 *)dst = vdest;
 	    }
 	    
 	    w -= 4;
 	    dst += 4;
 	    src += 4;
 	}
-
+	
 	CHECKPOINT();
 	
 	while (w)
 	{
-	    Vector4x16 vsrc = load8888 (*src);
+	    __m64 vsrc = load8888 (*src);
 	    ullong d = *dst;
-	    Vector4x16 vdest = expand565 ((Vector4x16)d, 0);
+	    __m64 vdest = expand565 ((__m64)d, 0);
 	    
 	    vdest = pack565(over_rev_non_pre(vsrc, vdest), vdest, 0);
 	    
@@ -976,11 +1693,11 @@ fbCompositeSrc_8888RevNPx0565mmx (CARD8      op,
 	    src++;
 	}
     }
-
-    emms();
+    
+    _mm_empty();
 }
 
-/* "888RevNP" is GdkPixbuf's format: ABGR, non premultiplied */
+/* "8888RevNP" is GdkPixbuf's format: ABGR, non premultiplied */
 
 void
 fbCompositeSrc_8888RevNPx8888mmx (CARD8      op,
@@ -1005,9 +1722,9 @@ fbCompositeSrc_8888RevNPx8888mmx (CARD8      op,
     
     fbComposeGetStart (pDst, xDst, yDst, CARD32, dstStride, dstLine, 1);
     fbComposeGetStart (pSrc, xSrc, ySrc, CARD32, srcStride, srcLine, 1);
-
+    
     assert (pSrc->pDrawable == pMask->pDrawable);
-
+    
     while (height--)
     {
 	dst = dstLine;
@@ -1015,28 +1732,28 @@ fbCompositeSrc_8888RevNPx8888mmx (CARD8      op,
 	src = srcLine;
 	srcLine += srcStride;
 	w = width;
-
+	
 	while (w && (unsigned long)dst & 7)
 	{
-	    Vector4x16 s = load8888 (*src);
-	    Vector4x16 d = load8888 (*dst);
+	    __m64 s = load8888 (*src);
+	    __m64 d = load8888 (*dst);
 	    
-	    *dst = (ullong)pack8888 (over_rev_non_pre (s, d), (Vector4x16)c.mmx_zero);
+	    *dst = store8888 (over_rev_non_pre (s, d));
 	    
 	    w--;
 	    dst++;
 	    src++;
 	}
-
+	
 	while (w >= 2)
 	{
 	    ullong s0, s1;
 	    unsigned char a0, a1;
-	    Vector4x16 d0, d1;
-
+	    __m64 d0, d1;
+	    
 	    s0 = *src;
 	    s1 = *(src + 1);
-
+	    
 	    a0 = (s0 >> 24);
 	    a1 = (s1 >> 24);
 	    
@@ -1044,17 +1761,17 @@ fbCompositeSrc_8888RevNPx8888mmx (CARD8      op,
 	    {
 		d0 = invert_colors(load8888(s0));
 		d1 = invert_colors(load8888(s1));
-
-		*(Vector8x8 *)dst = pack8888 (d0, d1);
+		
+		*(__m64 *)dst = pack8888 (d0, d1);
 	    }
 	    else if (a0 | a1)
 	    {
-		Vector4x16 vdest = *(Vector4x16 *)dst;
-
+		__m64 vdest = *(__m64 *)dst;
+		
 		d0 = over_rev_non_pre (load8888(s0), expand8888 (vdest, 0));
 		d1 = over_rev_non_pre (load8888(s1), expand8888 (vdest, 1));
-	    
-		*(Vector8x8 *)dst = pack8888 (d0, d1);
+		
+		*(__m64 *)dst = pack8888 (d0, d1);
 	    }
 	    
 	    w -= 2;
@@ -1064,18 +1781,18 @@ fbCompositeSrc_8888RevNPx8888mmx (CARD8      op,
 	
 	while (w)
 	{
-	    Vector4x16 s = load8888 (*src);
-	    Vector4x16 d = load8888 (*dst);
+	    __m64 s = load8888 (*src);
+	    __m64 d = load8888 (*dst);
 	    
-	    *dst = (ullong)pack8888 (over_rev_non_pre (s, d), (Vector4x16)c.mmx_zero);
+	    *dst = store8888 (over_rev_non_pre (s, d));
 	    
 	    w--;
 	    dst++;
 	    src++;
 	}
     }
-
-    emms();
+    
+    _mm_empty();
 }
 
 void
@@ -1096,11 +1813,11 @@ fbCompositeSolidMask_nx8888x0565Cmmx (CARD8      op,
     CARD16	*dstLine;
     CARD32	*maskLine;
     FbStride	dstStride, maskStride;
-    Vector4x16  vsrc, vsrca;
+    __m64  vsrc, vsrca;
     
     CHECKPOINT();
     
-    fbComposeGetSolid(pSrc, src);
+    fbComposeGetSolid(pSrc, src, pDst->format);
     
     srca = src >> 24;
     if (srca == 0)
@@ -1125,7 +1842,7 @@ fbCompositeSolidMask_nx8888x0565Cmmx (CARD8      op,
 	    if (m)
 	    {
 		ullong d = *q;
-		Vector4x16 vdest = expand565 ((Vector4x16)d, 0);
+		__m64 vdest = expand565 ((__m64)d, 0);
 		vdest = pack565 (in_over (vsrc, vsrca, load8888 (m), vdest), vdest, 0);
 		*q = (ullong)vdest;
 	    }
@@ -1146,14 +1863,14 @@ fbCompositeSolidMask_nx8888x0565Cmmx (CARD8      op,
 	    
 	    if ((m0 | m1 | m2 | m3))
 	    {
-		Vector4x16 vdest = *(Vector4x16 *)q;
+		__m64 vdest = *(__m64 *)q;
 		
 		vdest = pack565(in_over(vsrc, vsrca, load8888(m0), expand565(vdest, 0)), vdest, 0);
 		vdest = pack565(in_over(vsrc, vsrca, load8888(m1), expand565(vdest, 1)), vdest, 1);
 		vdest = pack565(in_over(vsrc, vsrca, load8888(m2), expand565(vdest, 2)), vdest, 2);
 		vdest = pack565(in_over(vsrc, vsrca, load8888(m3), expand565(vdest, 3)), vdest, 3);
 		
-		*(Vector4x16 *)q = vdest;
+		*(__m64 *)q = vdest;
 	    }
 	    twidth -= 4;
 	    p += 4;
@@ -1168,7 +1885,7 @@ fbCompositeSolidMask_nx8888x0565Cmmx (CARD8      op,
 	    if (m)
 	    {
 		ullong d = *q;
-		Vector4x16 vdest = expand565((Vector4x16)d, 0);
+		__m64 vdest = expand565((__m64)d, 0);
 		vdest = pack565 (in_over(vsrc, vsrca, load8888(m), vdest), vdest, 0);
 		*q = (ullong)vdest;
 	    }
@@ -1182,7 +1899,7 @@ fbCompositeSolidMask_nx8888x0565Cmmx (CARD8      op,
 	dstLine += dstStride;
     }
     
-    emms ();
+    _mm_empty ();
 }
 
 void
@@ -1210,7 +1927,7 @@ fbCompositeSrcAdd_8000x8000mmx (CARD8	op,
     
     fbComposeGetStart (pSrc, xSrc, ySrc, CARD8, srcStride, srcLine, 1);
     fbComposeGetStart (pDst, xDst, yDst, CARD8, dstStride, dstLine, 1);
-
+    
     while (height--)
     {
 	dst = dstLine;
@@ -1218,7 +1935,7 @@ fbCompositeSrcAdd_8000x8000mmx (CARD8	op,
 	src = srcLine;
 	srcLine += srcStride;
 	w = width;
-
+	
 	while (w && (unsigned long)dst & 7)
 	{
 	    s = *src;
@@ -1234,13 +1951,7 @@ fbCompositeSrcAdd_8000x8000mmx (CARD8	op,
 	
 	while (w >= 8)
 	{
-	    __asm__ __volatile__ (
-		"movq (%0), %%mm2\n\t"
-		"movq (%1), %%mm3\n\t"
-		"paddusb %%mm2, %%mm3\n\t"
-		"movq %%mm3, (%1)\n\t"
-		: /* no output */ : "r" (src), "r" (dst));
-	    
+	    *(__m64*)dst = _mm_adds_pu8(*(__m64*)src, *(__m64*)dst);
 	    dst += 8;
 	    src += 8;
 	    w -= 8;
@@ -1259,8 +1970,8 @@ fbCompositeSrcAdd_8000x8000mmx (CARD8	op,
 	    w--;
 	}
     }
-
-    emms();
+    
+    _mm_empty();
 }
 
 void
@@ -1297,13 +2008,8 @@ fbCompositeSrcAdd_8888x8888mmx (CARD8		op,
 	
 	while (w && (unsigned long)dst & 7)
 	{
-	    __asm__ __volatile__ (
-		"movd %0, %%mm2\n\t"
-		"movd %1, %%mm3\n\t"
-		"paddusb %%mm2, %%mm3\n\t"
-		"movd %%mm3, %1\n\t"
-		: /* no output */ : "m" (*src), "m" (*dst));
-	    
+	    *dst = _mm_cvtsi64_si32(_mm_adds_pu8(_mm_cvtsi32_si64(*src),
+						 _mm_cvtsi32_si64(*dst)));
 	    dst++;
 	    src++;
 	    w--;
@@ -1311,13 +2017,7 @@ fbCompositeSrcAdd_8888x8888mmx (CARD8		op,
 	
 	while (w >= 2)
 	{
-	    __asm__ __volatile__ (
-		"movq (%0), %%mm2\n\t"
-		"movq (%1), %%mm3\n\t"
-		"paddusb %%mm2, %%mm3\n\t"
-		"movq %%mm3, (%1)\n\t"
-		: /* no output */ : "r" (src), "r" (dst));
-	    
+	    *(ullong*)dst = (ullong) _mm_adds_pu8(*(__m64*)src, *(__m64*)dst);
 	    dst += 2;
 	    src += 2;
 	    w -= 2;
@@ -1325,26 +2025,13 @@ fbCompositeSrcAdd_8888x8888mmx (CARD8		op,
 	
 	if (w)
 	{
-	    __asm__ __volatile__ (
-		"movd %0, %%mm2\n\t"
-		"movd %1, %%mm3\n\t"
-		"paddusb %%mm2, %%mm3\n\t"
-		"movd %%mm3, %1\n\t"
-		: /* no output */ : "m" (*src), "m" (*dst));
+	    *dst = _mm_cvtsi64_si32(_mm_adds_pu8(_mm_cvtsi32_si64(*src),
+						 _mm_cvtsi32_si64(*dst)));
+	    
 	}
     }
-
-    emms();
-}
-
-#define GetStart(drw,x,y,type,stride,line,bpp) {\
-    FbBits	*__bits__;									\
-    FbStride	__stride__;									\
-    int		__xoff__,__yoff__;								\
-												\
-    fbGetDrawable((drw),__bits__,__stride__,bpp,__xoff__,__yoff__);				\
-    (stride) = __stride__ * sizeof (FbBits) / sizeof (type);					\
-    (line) = ((type *) __bits__) + (stride) * ((y) - __yoff__) + ((x) - __xoff__);		\
+    
+    _mm_empty();
 }
 
 Bool
@@ -1358,39 +2045,39 @@ fbSolidFillmmx (DrawablePtr	pDraw,
     FbStride	stride;
     int		bpp;
     ullong	fill;
-    Vector8x8	vfill;
+    __m64	vfill;
     CARD32	byte_width;
     CARD8	*byte_line;
     FbBits      *bits;
     int		xoff, yoff;
     
     CHECKPOINT();
-
+    
     fbGetDrawable(pDraw, bits, stride, bpp, xoff, yoff);
-
+    
     if (bpp == 16 && (xor >> 16 != (xor & 0xffff)))
 	return FALSE;
-
+    
     if (bpp != 16 && bpp != 32)
 	return FALSE;
     
     if (bpp == 16)
     {
 	stride = stride * sizeof (FbBits) / 2;
-	byte_line = (CARD8 *)(((CARD16 *)bits) + stride * (y - yoff) + (x - xoff));
+	byte_line = (CARD8 *)(((CARD16 *)bits) + stride * (y + yoff) + (x + xoff));
 	byte_width = 2 * width;
 	stride *= 2;
     }
     else
     {
 	stride = stride * sizeof (FbBits) / 4;
-	byte_line = (CARD8 *)(((CARD32 *)bits) + stride * (y - yoff) + (x - xoff));
+	byte_line = (CARD8 *)(((CARD32 *)bits) + stride * (y + yoff) + (x + xoff));
 	byte_width = 4 * width;
 	stride *= 4;
     }
-
+    
     fill = ((ullong)xor << 32) | xor;
-    vfill = (Vector8x8)fill;
+    vfill = (__m64)fill;
     
     while (height--)
     {
@@ -1398,7 +2085,7 @@ fbSolidFillmmx (DrawablePtr	pDraw,
 	CARD8 *d = byte_line;
 	byte_line += stride;
 	w = byte_width;
-
+	
 	while (w >= 2 && ((unsigned long)d & 3))
 	{
 	    *(CARD16 *)d = xor;
@@ -1406,35 +2093,32 @@ fbSolidFillmmx (DrawablePtr	pDraw,
 	    d += 2;
 	}
 	
-	while (w >= 4 && ((unsigned int)d & 7))
+	while (w >= 4 && ((unsigned long)d & 7))
 	{
 	    *(CARD32 *)d = xor;
-
+	    
 	    w -= 4;
 	    d += 4;
 	}
 	
 	while (w >= 64)
 	{
-	    __asm__ __volatile  (
-		"movq %0, (%1)\n\t"
-		"movq %0, 8(%1)\n\t"
-		"movq %0, 16(%1)\n\t"
-		"movq %0, 24(%1)\n\t"
-		"movq %0, 32(%1)\n\t"
-		"movq %0, 40(%1)\n\t"
-		"movq %0, 48(%1)\n\t"
-		"movq %0, 56(%1)\n\t"
-		: /* no output */
-		: "y" (vfill), "r" (d)
-		: "memory");
+	    *(__m64*) (d +  0) = vfill;
+	    *(__m64*) (d +  8) = vfill;
+	    *(__m64*) (d + 16) = vfill;
+	    *(__m64*) (d + 24) = vfill;
+	    *(__m64*) (d + 32) = vfill;
+	    *(__m64*) (d + 40) = vfill;
+	    *(__m64*) (d + 48) = vfill;
+	    *(__m64*) (d + 56) = vfill;
+	    
 	    w -= 64;
 	    d += 64;
 	}
 	while (w >= 4)
 	{
 	    *(CARD32 *)d = xor;
-
+	    
 	    w -= 4;
 	    d += 4;
 	}
@@ -1446,69 +2130,147 @@ fbSolidFillmmx (DrawablePtr	pDraw,
 	}
     }
     
-    emms();
+    _mm_empty();
     return TRUE;
 }
 
 Bool
-fbHaveMMX (void)
+fbCopyAreammx (DrawablePtr	pSrc,
+	       DrawablePtr	pDst,
+	       int		src_x,
+	       int		src_y,
+	       int		dst_x,
+	       int		dst_y,
+	       int		width,
+	       int		height)
 {
-    static Bool initialized = FALSE;
-    static Bool mmx_present;
+    FbBits *	src_bits;
+    FbStride	src_stride;
+    int		src_bpp;
+    int		src_xoff;
+    int		src_yoff;
 
-    if (!initialized)
+    FbBits *	dst_bits;
+    FbStride	dst_stride;
+    int		dst_bpp;
+    int		dst_xoff;
+    int		dst_yoff;
+
+    CARD8 *	src_bytes;
+    CARD8 *	dst_bytes;
+    int		byte_width;
+    
+    fbGetDrawable(pSrc, src_bits, src_stride, src_bpp, src_xoff, src_yoff);
+    fbGetDrawable(pDst, dst_bits, dst_stride, dst_bpp, dst_xoff, dst_yoff);
+
+    if (src_bpp != dst_bpp)
+	return FALSE;
+    
+    if (src_bpp == 16)
     {
-	int tmp; /* static variables are accessed through %ebx,
-		  * but we mess around with the registers below,
-		  * so we need a temporary variable that can
-		  * be accessed directly.
-		  */
-	
-	__asm__ __volatile__ (
-/* Check if bit 21 in flags word is writeable */
+	src_stride = src_stride * sizeof (FbBits) / 2;
+	dst_stride = dst_stride * sizeof (FbBits) / 2;
+	src_bytes = (CARD8 *)(((CARD16 *)src_bits) + src_stride * (src_y + src_yoff) + (src_x + src_xoff));
+	dst_bytes = (CARD8 *)(((CARD16 *)dst_bits) + dst_stride * (dst_y + dst_yoff) + (dst_x + dst_xoff));
+	byte_width = 2 * width;
+	src_stride *= 2;
+	dst_stride *= 2;
+    } else if (src_bpp == 32) {
+	src_stride = src_stride * sizeof (FbBits) / 4;
+	dst_stride = dst_stride * sizeof (FbBits) / 4;
+	src_bytes = (CARD8 *)(((CARD32 *)src_bits) + src_stride * (src_y + src_yoff) + (src_x + src_xoff));
+	dst_bytes = (CARD8 *)(((CARD32 *)dst_bits) + dst_stride * (dst_y + dst_yoff) + (dst_x + dst_xoff));
+	byte_width = 4 * width;
+	src_stride *= 4;
+	dst_stride *= 4;
+    } else {
+	return FALSE;
+    }
 
-	    "pusha			        \n\t"
-	    "pushfl				\n\t"
-	    "popl	%%eax			\n\t"
-	    "movl	%%eax, %%ebx		\n\t"
-	    "xorl	$0x00200000, %%eax	\n\t"
-	    "pushl	%%eax			\n\t"
-	    "popfl				\n\t"
-	    "pushfl				\n\t"
-	    "popl	%%eax			\n\t"
-	    
-	    "cmpl	%%eax, %%ebx		\n\t"
-	    
-	    "je		.notfound		\n\t"
-	    
-/* OK, we have CPUID */
-	    
-	    "movl	$1, %%eax		\n\t"
-	    "cpuid				\n\t"
-	    
-	    "test	$0x00800000, %%edx	\n\t"
-	    "jz		.notfound		\n\t"
-	    
-	    "movl	$1, %0			\n\t"
-	    "jmp	.out			\n\t"
-	    
-	    ".notfound:				\n\t"
-	    "movl  	$0, %0			\n\t"
-	    
-	    ".out:				\n\t"
-	    "popa			        \n\t"
-	    :
-	    "=m" (tmp)
-	    : /* no input */);
+    while (height--)
+    {
+	int w;
+	CARD8 *s = src_bytes;
+	CARD8 *d = dst_bytes;
+	src_bytes += src_stride;
+	dst_bytes += dst_stride;
+	w = byte_width;
 	
-	initialized = TRUE;
+	while (w >= 2 && ((unsigned long)d & 3))
+	{
+	    *(CARD16 *)d = *(CARD16 *)s;
+	    w -= 2;
+	    s += 2;
+	    d += 2;
+	}
+	
+	while (w >= 4 && ((unsigned long)d & 7))
+	{
+	    *(CARD32 *)d = *(CARD32 *)s;
+	    
+	    w -= 4;
+	    s += 4;
+	    d += 4;
+	}
+	
+	while (w >= 64)
+	{
+	    *(__m64 *)(d + 0)  = *(__m64 *)(s + 0);
+	    *(__m64 *)(d + 8)  = *(__m64 *)(s + 8);
+	    *(__m64 *)(d + 16) = *(__m64 *)(s + 16);
+	    *(__m64 *)(d + 24) = *(__m64 *)(s + 24);
+	    *(__m64 *)(d + 32) = *(__m64 *)(s + 32);
+	    *(__m64 *)(d + 40) = *(__m64 *)(s + 40);
+	    *(__m64 *)(d + 48) = *(__m64 *)(s + 48);
+	    *(__m64 *)(d + 56) = *(__m64 *)(s + 56);
+	    w -= 64;
+	    s += 64;
+	    d += 64;
+	}
+	while (w >= 4)
+	{
+	    *(CARD32 *)d = *(CARD32 *)s;
 
-	mmx_present = tmp;
+	    w -= 4;
+	    s += 4;
+	    d += 4;
+	}
+	if (w >= 2)
+	{
+	    *(CARD16 *)d = *(CARD16 *)s;
+	    w -= 2;
+	    s += 2;
+	    d += 2;
+	}
     }
     
-    return mmx_present;
+    _mm_empty();
+    return TRUE;
+}
+
+void
+fbCompositeCopyAreammx (CARD8		op,
+			PicturePtr	pSrc,
+			PicturePtr	pMask,
+			PicturePtr	pDst,
+			INT16		xSrc,
+			INT16		ySrc,
+			INT16		xMask,
+			INT16		yMask,
+			INT16		xDst,
+			INT16		yDst,
+			CARD16		width,
+			CARD16		height)
+{
+    fbCopyAreammx (pSrc->pDrawable,
+		   pDst->pDrawable,
+		   xSrc, ySrc,
+		   xDst, yDst,
+		   width, height);
 }
 
 
+
+
 #endif /* RENDER */
-#endif /* USE_GCC34_MMX */
+#endif /* USE_MMX */

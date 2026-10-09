@@ -35,11 +35,14 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/Xaw/Cardinals.h>
 #include <X11/XprintUtil/xprintutil.h>
 
+#define PrintMsg(x) { printf("xman: "); printf x ; }
+
 /* Prototypes */
 void DoPrintManpage(const char *programname,
                     FILE *manpage,
                     Widget toplevel, 
                     Display *pdpy, XPContext pcontext,
+                    XpuColorspaceRec *colorspace,
                     XtCallbackProc printDisplayDestroyCallback,
                     const char *jobTitle,
                     const char *toFile);

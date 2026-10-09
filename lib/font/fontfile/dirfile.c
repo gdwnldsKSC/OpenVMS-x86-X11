@@ -37,7 +37,10 @@ in this Software without prior written authorization from The Open Group.
  * Read fonts.dir and fonts.alias files
  */
 
-#include "fntfilst.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <X11/fonts/fntfilst.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -55,10 +58,8 @@ FontFileReadDirectory (char *directory, FontDirectoryPtr *pdir)
     char        file_name[MAXFONTFILENAMELEN];
     char        font_name[MAXFONTNAMELEN];
     char        dir_file[MAXFONTFILENAMELEN];
-#ifdef FONTDIRATTRIB
     char	dir_path[MAXFONTFILENAMELEN];
     char	*ptr;
-#endif
     FILE       *file;
     int         count,
                 i,
@@ -71,13 +72,12 @@ FontFileReadDirectory (char *directory, FontDirectoryPtr *pdir)
     if (strlen(directory) + 1 + sizeof(FontDirFile) > sizeof(dir_file))
 	return BadFontPath;
 
-#ifdef FONTDIRATTRIB
     /* Check for font directory attributes */
-#ifndef __UNIXOS2__
+#if !defined(__UNIXOS2__) && !defined(WIN32)
     if ((ptr = strchr(directory, ':'))) {
 #else
-    /* OS/2 path might start with a drive letter, don't clip this */
-    if (ptr = strchr(directory+2, ':')) {
+    /* OS/2 and WIN32 path might start with a drive letter, don't clip this */
+    if ((ptr = strchr(directory+2, ':'))) {
 #endif
 	strncpy(dir_path, directory, ptr - directory);
 	dir_path[ptr - directory] = '\0';
@@ -85,18 +85,26 @@ FontFileReadDirectory (char *directory, FontDirectoryPtr *pdir)
 	strcpy(dir_path, directory);
     }
     strcpy(dir_file, dir_path);
-#else
-    strcpy(dir_file, directory);
-#endif
     if (dir_file[strlen(dir_file) - 1] != '/')
 	strcat(dir_file, "/");
     strcat(dir_file, FontDirFile);
+#ifdef __VMS
     file = fopen(dir_file, "r");
+#else
+    file = fopen(dir_file, "rt");
+#endif
     if (file) {
 	Bool found_font = FALSE;
-	
+
+#ifndef WIN32        
 	if (fstat (fileno(file), &statb) == -1)
+#else
+	if (stat (dir_file, &statb) == -1)
+#endif
+        {
+            fclose(file);
 	    return BadFontPath;
+        }
 	count = fscanf(file, "%d\n", &i);
 	if ((count == EOF) || (count != 1)) {
 	    fclose(file);
@@ -113,7 +121,7 @@ FontFileReadDirectory (char *directory, FontDirectoryPtr *pdir)
 		MAXFONTFILENAMELEN-1, MAXFONTNAMELEN-1);
 
 	while ((count = fscanf(file, format, file_name, font_name)) != EOF) {
-#ifdef __UNIXOS2__
+#if defined(__UNIXOS2__) || defined(WIN32)
 	    /* strip any existing trailing CR */
 	    for (i=0; i<strlen(font_name); i++) {
 		if (font_name[i]=='\r') font_name[i] = '\0';
@@ -137,11 +145,7 @@ FontFileReadDirectory (char *directory, FontDirectoryPtr *pdir)
     } else if (errno != ENOENT) {
 	return BadFontPath;
     }
-#ifdef FONTDIRATTRIB
     status = ReadFontAlias(dir_path, FALSE, &dir);
-#else
-    status = ReadFontAlias(directory, FALSE, &dir);
-#endif
     if (status != Successful) {
 	if (dir)
 	    FontFileFreeDir (dir);
@@ -275,7 +279,11 @@ ReadFontAlias(char *directory, Bool isFile, FontDirectoryPtr *pdir)
 	    strcat(alias_file, "/");
 	strcat(alias_file, FontAliasFile);
     }
+#ifdef __VMS
     file = fopen(alias_file, "r");
+#else
+    file = fopen(alias_file, "rt");
+#endif
     if (!file)
 	return ((errno == ENOENT) ? Successful : BadFontPath);
     if (!dir)
@@ -285,7 +293,11 @@ ReadFontAlias(char *directory, Bool isFile, FontDirectoryPtr *pdir)
 	fclose (file);
 	return AllocError;
     }
+#ifndef WIN32
     if (fstat (fileno (file), &statb) == -1)
+#else
+    if (stat (alias_file, &statb) == -1)
+#endif
     {
 	fclose (file);
 	return BadFontPath;

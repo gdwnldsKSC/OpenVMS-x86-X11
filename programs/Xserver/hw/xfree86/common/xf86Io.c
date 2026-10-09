@@ -49,11 +49,15 @@
  */
 
 /* $XConsortium: xf86Io.c /main/27 1996/10/19 17:58:55 kaleb $ */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86Io.c,v 1.2 2004/07/28 03:57:19 alanc Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86Io.c,v 1.5 2005/07/03 07:01:24 daniels Exp $ */
 
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "inputstr.h"
 #include "scrnintstr.h"
 
@@ -67,7 +71,7 @@
 
 #ifdef XINPUT
 #include "xf86Xinput.h"
-#include "XIproto.h"
+#include <X11/extensions/XIproto.h>
 #include "exevents.h"
 #endif
 

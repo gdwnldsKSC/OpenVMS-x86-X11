@@ -48,8 +48,12 @@ SOFTWARE.
 
 /* $Xorg: atom.c,v 1.4 2001/02/09 02:04:39 xorgcvs Exp $ */
 
-#include "X.h"
-#include "Xatom.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xatom.h>
 #include "misc.h"
 #include "resource.h"
 #include "dix.h"
@@ -71,10 +75,7 @@ static NodePtr *nodeTable;
 void FreeAtom(NodePtr patom);
 
 Atom 
-MakeAtom(string, len, makeit)
-    char *string;
-    unsigned len;
-    Bool makeit;
+MakeAtom(char *string, unsigned len, Bool makeit)
 {
     register    NodePtr * np;
     unsigned i;
@@ -151,15 +152,13 @@ MakeAtom(string, len, makeit)
 }
 
 Bool
-ValidAtom(atom)
-    Atom atom;
+ValidAtom(Atom atom)
 {
     return (atom != None) && (atom <= lastAtom);
 }
 
 char *
-NameForAtom(atom)
-    Atom atom;
+NameForAtom(Atom atom)
 {
     NodePtr node;
     if (atom > lastAtom) return 0;

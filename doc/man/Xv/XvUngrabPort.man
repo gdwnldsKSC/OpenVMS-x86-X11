@@ -1,4 +1,4 @@
-.TH XvUngrabPort 3X __vendorversion__
+.TH XvUngrabPort __libmansuffix__ __vendorversion__
 .\" $XFree86: xc/doc/man/Xv/XvUngrabPort.man,v 1.5 2001/01/27 18:20:36 dawes Exp $
 .SH Name
 XvUngrabPort \- release port grabbed for video operation
@@ -30,22 +30,22 @@ previously grabbed, the request is ignored.
 Specifies the request timestamp.
 .\"
 .SH Description
-XvUngrabPort(3X) releases a grabbed port.  If \fItime\fR specifies a
-time before the last XvGrabPort(3X) was executed, the
+XvUngrabPort(__libmansuffix__) releases a grabbed port.  If \fItime\fR specifies a
+time before the last XvGrabPort(__libmansuffix__) was executed, the
 request is ignored.
 .\"
 .SH Returned Values
 .IP [Success] 8
-Returned if XvUngrabPort(3X) completed successfully.
+Returned if XvUngrabPort(__libmansuffix__) completed successfully.
 .IP [XvBadExtension] 8
 Returned if the Xv extension is unavailable.
 .IP [XvBadAlloc] 8
-Returned if XvUngrabPort(3X) failed to allocate memory to process
+Returned if XvUngrabPort(__libmansuffix__) failed to allocate memory to process
 the request.
 .SH Diagnostics
 .IP [XvBadPort] 8
 Generated if the requested port does not exist.
 .SH See Also
 .\"
-XvGrabPort(3X)
+XvGrabPort(__libmansuffix__)
 .br

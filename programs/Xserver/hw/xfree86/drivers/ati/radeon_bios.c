@@ -26,13 +26,17 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 
 #include "radeon.h"
+#include "radeon_reg.h"
 #include "radeon_macros.h"
 #include "radeon_probe.h"
-#include "radeon_reg.h"
 #include "vbe.h"
 
 /* Read the Video BIOS block and the FP registers (if applicable). */
@@ -161,12 +165,12 @@ Bool RADEONGetConnectorInfoFromBIOS (ScrnInfoPtr pScrn)
 				pRADEONEnt->PortInfo[crtc].DDCType = DDC_CRT2;
 				break;
 			    default:
-				pRADEONEnt->PortInfo[crtc].DDCType = DDC_NONE;
+				pRADEONEnt->PortInfo[crtc].DDCType = DDC_NONE_DETECTED;
 				break;
 			    }
 
 			} else {
-			    pRADEONEnt->PortInfo[crtc].DDCType = DDC_NONE;
+			    pRADEONEnt->PortInfo[crtc].DDCType = DDC_NONE_DETECTED;
 			}
 			crtc++;
 		    } else {
@@ -212,7 +216,8 @@ Bool RADEONGetConnectorInfoFromBIOS (ScrnInfoPtr pScrn)
 	if ((tmp = RADEON_BIOS16(info->ROMHeaderStart + 0x50))) {
 	    for (i = 1; i < 4; i++) {
 
-		if (!RADEON_BIOS8(tmp + i*2) && i > 1) break; /* end of table */
+		if (!RADEON_BIOS16(tmp + i*2))
+			break; /* end of table */
 		
 		tmp0 = RADEON_BIOS16(tmp + i*2);
 		if (((tmp0 >> 12) & 0x0f) == 0) continue;     /* no connector */
@@ -268,6 +273,12 @@ Bool RADEONGetConnectorInfoFromBIOS (ScrnInfoPtr pScrn)
 	        if ((tmp0 = RADEON_BIOS16(tmp + 0x15))) {
 		    if ((tmp1 = RADEON_BIOS8(tmp0+2) & 0x07)) {	    
 			pRADEONEnt->PortInfo[0].DDCType	= tmp1;      
+			if (pRADEONEnt->PortInfo[0].DDCType > DDC_CRT2) {
+			    xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+				       "Unknown DDCType %d found\n",
+				       pRADEONEnt->PortInfo[0].DDCType);
+			    pRADEONEnt->PortInfo[0].DDCType = DDC_NONE_DETECTED;
+			}
 			xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "LCD DDC Info Table found!\n");
 		    }
 		}

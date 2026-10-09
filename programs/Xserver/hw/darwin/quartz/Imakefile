@@ -34,10 +34,14 @@ INCLUDES = -I. -I$(SERVERSRC)/fb -I$(SERVERSRC)/mi -I$(SERVERSRC)/include \
            -I$(SERVERSRC)/miext/shadow -I$(EXTINCSRC) -I$(SERVERSRC)/Xext \
            -I.. -I$(APPLEWMLIBSRC)
 
-#if defined(XFree86CustomVersion)
+#if defined(XorgCustomVersion) || defined(XFree86CustomVersion)
+# if defined(XorgCustomVersion)
+CUSTOMVERSION = XorgCustomVersion
+# else 
 CUSTOMVERSION = XFree86CustomVersion
-CUSTOMVERDEF =  -DXF86_CUSTOM_VERSION='$(CUSTOMVERSION)'
-#endif
+# endif /* XorgCustomVersion */
+CUSTOMVERDEF =  -DXORG_CUSTOM_VERSION='$(CUSTOMVERSION)'
+#endif /* XorgCustomVersion || XFree86CustomVersion */
 
 #if XFree86Devel
 BUILDSTYLE = -buildstyle Development

@@ -25,13 +25,11 @@
 #define ___ATIPRINT_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
-extern void ATIPrintBIOS      FunctionPrototype((const CARD8 *,
-                                                 const unsigned int));
-extern void ATIPrintRegisters FunctionPrototype((ATIPtr));
-extern void ATIPrintMode      FunctionPrototype((DisplayModePtr));
+extern void ATIPrintBIOS(const CARD8 *, const unsigned int);
+extern void ATIPrintRegisters(ATIPtr);
+extern void ATIPrintMode(DisplayModePtr);
 
 #endif /* ___ATIPRINT_H___ */

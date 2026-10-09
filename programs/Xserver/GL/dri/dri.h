@@ -94,14 +94,30 @@ typedef struct {
 } DRIWrappedFuncsRec, *DRIWrappedFuncsPtr;
 
 
+/*
+ * Prior to Xorg 6.8.99.8, the DRIInfoRec structure was implicitly versioned
+ * by the XF86DRI_*_VERSION defines in xf86dristr.h.  These numbers were also
+ * being used to version the XFree86-DRI protocol.  Bugs #3066 and #3163
+ * showed that this was inadequate.  The DRIInfoRec structure is now versioned
+ * by the DRIINFO_*_VERSION defines in this file. - ajax, 2005-05-18.
+ *
+ * Revision history:
+ * 4.1.0 and earlier: DRIQueryVersion returns XF86DRI_*_VERSION.
+ * 4.2.0: DRIQueryVersion begins returning DRIINFO_*_VERSION.
+ * 5.0.0: frameBufferPhysicalAddress changed from CARD32 to pointer.
+ */
 
+#define DRIINFO_MAJOR_VERSION   5
+#define DRIINFO_MINOR_VERSION   0
+#define DRIINFO_PATCH_VERSION   0
 
 typedef struct {
     /* driver call back functions
      *
-     * New fields should be added at the end for backwards compatability.
-     * Don't forget to bump the version minor number in 
-     *   xc/lib/GL/dri/xf86dristr.h
+     * New fields should be added at the end for backwards compatibility.
+     * Bump the DRIINFO patch number to indicate bugfixes.
+     * Bump the DRIINFO minor number to indicate new fields.
+     * Bump the DRIINFO major number to indicate binary-incompatible changes.
      */
     Bool	(*CreateContext)(ScreenPtr pScreen,
 				 VisualPtr visual,
@@ -141,7 +157,7 @@ typedef struct {
     int			ddxDriverMajorVersion;
     int			ddxDriverMinorVersion;
     int			ddxDriverPatchVersion;
-    CARD32		frameBufferPhysicalAddress;
+    pointer		frameBufferPhysicalAddress;
     long		frameBufferSize;
     long		frameBufferStride;
     long		SAREASize;
@@ -314,9 +330,6 @@ extern void DRIQueryVersion(int *majorVersion,
                             int *patchVersion);
 
 extern void DRIAdjustFrame(int scrnIndex, int x, int y, int flags);
-
-extern int  DRIOpenFullScreen(ScreenPtr pScreen, DrawablePtr pDrawable);
-extern int  DRICloseFullScreen(ScreenPtr pScreen, DrawablePtr pDrawable);
 
 extern void DRIMoveBuffersHelper(ScreenPtr pScreen, 
                                  int dx,

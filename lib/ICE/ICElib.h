@@ -408,6 +408,9 @@ extern IceIOErrorHandler IceSetIOErrorHandler (
     IceIOErrorHandler 	/* handler */
 );
 
+extern char *IceGetPeerName (
+    IceConn		/* iceConn */
+);
 
 /*
  * Multithread Routines

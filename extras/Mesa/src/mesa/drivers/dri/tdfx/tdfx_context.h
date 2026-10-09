@@ -40,8 +40,6 @@
 #ifndef __TDFX_CONTEXT_H__
 #define __TDFX_CONTEXT_H__
 
-#ifdef GLX_DIRECT_RENDERING
-
 #include <sys/time.h>
 #include "dri_util.h"
 #ifdef XFree86Server
@@ -56,6 +54,7 @@
 #include "drm.h"
 #include "drm_sarea.h"
 #include "tdfx_glide.h"
+#include "xmlconfig.h"
 
 #include "clip.h"
 #include "context.h"
@@ -143,6 +142,7 @@
 #define TDFX_FALLBACK_COLORMASK		0x0100
 #define TDFX_FALLBACK_BLEND		0x0200
 #define TDFX_FALLBACK_LINE_STIPPLE	0x0400
+#define TDFX_FALLBACK_DISABLE		0x0800
 
 /* Different Glide vertex layouts
  */
@@ -919,7 +919,9 @@ struct tdfx_context {
 
    tdfxStats stats;
 
-   GLboolean debugFallbacks;
+   /* Configuration cache
+    */
+   driOptionCache optionCache;
 };
 
 #define TDFX_CONTEXT(ctx)	((tdfxContextPtr)((ctx)->DriverCtx))
@@ -986,7 +988,7 @@ static __inline__ GrColor_t tdfxPackColor( GLuint cpp,
   }
 }
 
-#define DO_DEBUG		0
+#define DO_DEBUG		1
 #if DO_DEBUG
 extern int TDFX_DEBUG;
 #else
@@ -995,16 +997,11 @@ extern int TDFX_DEBUG;
 
 #define DEBUG_ALWAYS_SYNC	0x01
 #define DEBUG_VERBOSE_API	0x02
-#define DEBUG_VERBOSE_MSG	0x04
-#define DEBUG_VERBOSE_LRU	0x08
-#define DEBUG_VERBOSE_DRI	0x10
-#define DEBUG_VERBOSE_IOCTL	0x20
-#define DEBUG_VERBOSE_2D	0x40
+#define DEBUG_VERBOSE_DRI	0x04
+#define DEBUG_VERBOSE_FALL	0x08
 
 /* conf */
 #define FX_COMPRESS_S3TC_AS_FXT1_HACK 1
 #define FX_TC_NAPALM 0
-
-#endif /* GLX_DIRECT_RENDERING */
 
 #endif /* __TDFX_CONTEXT_H__ */

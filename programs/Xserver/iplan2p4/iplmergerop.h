@@ -1,4 +1,8 @@
 /* $XFree86: xc/programs/Xserver/iplan2p4/iplmergerop.h,v 3.0 1996/08/18 01:54:53 dawes Exp $ */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _IPLANMERGEROP_H_
 #define _IPLANMERGEROP_H_
 
@@ -18,7 +22,7 @@ interleaved planes */
 */
  
 #ifndef GXcopy
-#include "X.h"
+#include <X11/X.h>
 #endif
 
 typedef struct _mergeRopBits {

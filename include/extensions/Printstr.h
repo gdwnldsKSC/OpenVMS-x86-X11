@@ -764,7 +764,7 @@ typedef struct _XpContext {
 	int imageRes;
 } XpContextRec, *XpContextPtr;
 
-#include "fontstruct.h"	/* FontResolutionPtr */
+#include <X11/fonts/fontstruct.h>	/* FontResolutionPtr */
 
 extern Bool XpAllocateContextPrivate(int, unsigned);
 extern FontResolutionPtr XpGetClientResolutions(ClientPtr, int *);

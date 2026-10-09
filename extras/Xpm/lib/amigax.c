@@ -33,6 +33,9 @@
 *  Revised 4/96                                                               *
 \*****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "XpmI.h"
 #include "amigax.h"
 

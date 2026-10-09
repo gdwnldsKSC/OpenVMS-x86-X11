@@ -32,6 +32,9 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xwin/winshaddd.c,v 1.22 2002/10/17 08:18:24 alanh Exp $ */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 
 
@@ -634,7 +637,7 @@ winShadowUpdateDD (ScreenPtr pScreen,
       ErrorF ("winShadowUpdateProcDD - Memory location of the shadow "
 	      "surface has changed, trying to update the root window "
 	      "pixmap header to point to the new address.  If you get "
-	      "this message and Cygwin/X freezes or crashes "
+	      "this message and "PROJECT_NAME" freezes or crashes "
 	      "after this message then send a problem report and your "
 	      "/tmp/XWin.log file to cygwin-xfree@cygwin.com\n");
 
@@ -681,7 +684,7 @@ winCloseScreenShadowDD (int nIndex, ScreenPtr pScreen)
   pScreenPriv->fActive = FALSE;
 
   /* Call the wrapped CloseScreen procedure */
-  pScreen->CloseScreen = pScreenPriv->CloseScreen;
+  WIN_UNWRAP(CloseScreen);
   fReturn = (*pScreen->CloseScreen) (nIndex, pScreen);
 
   /* Free the screen DC */

@@ -18,9 +18,9 @@
 <!ENTITY version SYSTEM "version.sgml">
 ]>
 <!--
-    $Id$
+    $Id: fontconfig-devel.sgml,v 1.3 2005/06/28 01:01:03 alanc Exp $
    
-    Copyright © 2003 Keith Packard
+    Copyright Â© 2003 Keith Packard
    
     Permission to use, copy, modify, distribute, and sell this software and its
     documentation for any purpose is hereby granted without fee, provided that
@@ -55,7 +55,7 @@
 		<productnumber>&version;</productnumber>
 		<LegalNotice>
 			<simpara>		
-Copyright © 2002 Keith Packard
+Copyright Â© 2002 Keith Packard
 			</simpara><simpara>
 Permission to use, copy, modify, distribute, and sell this software and its
 documentation for any purpose is hereby granted without fee, provided that
@@ -127,25 +127,36 @@ convenience for the applications rendering mechanism.
     <programlisting>
                  Property Definitions
 
-    Property    CPP Symbol      Type    Description
+    Property       CPP Symbol           Type    Description
     ----------------------------------------------------
-    family         FC_FAMILY            String  Font family name
+    family         FC_FAMILY            String  Font family names
+    familylang     FC_FAMILYLANG        String  Language cooresponding to
+                                                each family name
     style          FC_STYLE             String  Font style. Overrides weight
                                                 and slant
+    stylelang      FC_STYLELANG         String  Language cooresponding to
+                                                each style name
+    fullname       FC_FULLNAME          String  Font face full name where
+                                                different from family and
+                                                family + style
+    fullnamelang   FC_FULLNAMELANG      String  Language cooresponding to
+                                                each fullname
     slant          FC_SLANT             Int     Italic, oblique or roman
     weight         FC_WEIGHT            Int     Light, medium, demibold,
                                                 bold or black
     size           FC_SIZE              Double  Point size
+    width          FC_WIDTH             Int     Condensed, normal or expanded
     aspect         FC_ASPECT            Double  Stretches glyphs horizontally
                                                 before hinting
     pixelsize      FC_PIXEL_SIZE        Double  Pixel size
-    spacing        FC_SPACING           Int     Proportional, monospace or
-                                                charcell
+    spacing        FC_SPACING           Int     Proportional, dual-width,
+                                                monospace or charcell
     foundry        FC_FOUNDRY           String  Font foundry name
     antialias      FC_ANTIALIAS         Bool    Whether glyphs can be
                                                 antialiased
     hinting        FC_HINTING           Bool    Whether the rasterizer should
                                                 use hinting
+    hintstyle      FC_HINT_STYLE        Int     Automatic hinting style
     verticallayout FC_VERTICAL_LAYOUT   Bool    Use vertical layout
     autohint       FC_AUTOHINT          Bool    Use autohinter instead of
                                                 normal hinter
@@ -169,6 +180,11 @@ convenience for the applications rendering mechanism.
                                                 the font
     lang           FC_LANG              String  List of RFC-3066-style
                                                 languages this font supports
+    fontversion    FC_FONTVERSION       Int     Version number of the font
+    capability     FC_CAPABILITY        String  List of layout capabilities in
+                                                the font
+    embolden       FC_EMBOLDEN          Bool    Rasterizer should
+                                                synthetically embolden the font
     </programlisting>
   </sect2>
 </sect1>
@@ -356,6 +372,7 @@ Used as a return type for functions manipulating FcPattern objects.
         FcResultTypeMismatch    Object exists, but the type doesn't match
         FcResultNoId            Object exists, but has fewer values
                                 than specified
+        FcResultOutOfMemory     Malloc failed
     </programlisting>
     </para>
   </sect2>

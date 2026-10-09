@@ -1,4 +1,4 @@
-.TH XvSetPortAttribute 3X  __vendorversion__
+.TH XvSetPortAttribute __libmansuffix__  __vendorversion__
 .\" $XFree86: xc/doc/man/Xv/XvSetPortAttribute.man,v 1.6 2001/01/27 18:20:36 dawes Exp $
 .SH Name
 XvSetPortAttribute \- sets an attribute of a video port 
@@ -35,7 +35,7 @@ Identifies the value to which \fIattribute\fP is to be set.
 Can be one of the table entries under the column "Type," below.
 .\"
 .SH Description
-XvSetPortAttribute(3X) permits a client to set the port attribute
+XvSetPortAttribute(__libmansuffix__) permits a client to set the port attribute
 to specified values.  This request supports the following values:
 .bp
 .PP
@@ -72,19 +72,19 @@ adaptor, otherwise an Encoding error results.
 .PP
 If the adaptor does not support the exact hue, saturation,
 brightness, and contrast levels supplied, the closest levels
-supported are assumed.  Use XvGetPortAttribute(3X) 
+supported are assumed.  Use XvGetPortAttribute(__libmansuffix__) 
 to query the resulting levels.
 .PP
-When an XvSetPortAttribute(3X) request is processed, a 
-PortControlNotify(3X) event is generated for all clients 
-that have requested for port changes using XvSelectPortNotify(3X).
+When an XvSetPortAttribute(__libmansuffix__) request is processed, a 
+PortControlNotify(__libmansuffix__) event is generated for all clients 
+that have requested for port changes using XvSelectPortNotify(__libmansuffix__).
 .SH Returned Values
 .IP [Success] 8
-Returned if XvSetPortAttribute(3X) completed successfully.
+Returned if XvSetPortAttribute(__libmansuffix__) completed successfully.
 .IP [XvBadExtension] 8
 Returned if the Xv extension is unavailable.
 .IP [XvBadAlloc] 8
-Returned if XvSelectVideoNotify(3X) failed to allocate memory to process
+Returned if XvSelectVideoNotify(__libmansuffix__) failed to allocate memory to process
 the request.
 .SH Diagnostics
 .IP [XvBadPort] 8
@@ -96,5 +96,5 @@ Generated if the requested attribute atom does not specify an attribute
 supported by the adaptor.
 .SH See Also
 .\"
-XvGetPortAttribute(3X), XvSelectPortNotify(3X), XvPortNotify(3X)
+XvGetPortAttribute(__libmansuffix__), XvSelectPortNotify(__libmansuffix__), XvPortNotify(__libmansuffix__)
 .br

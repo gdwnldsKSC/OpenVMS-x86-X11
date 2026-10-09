@@ -1,5 +1,5 @@
 XCOMM $XFree86: xc/lib/GL/mesa/src/SPARC/Imakefile,v 1.3 2002/11/22 22:55:58 tsi Exp $
-XCOMM $XdotOrg: xc/lib/GL/mesa/sparc/Imakefile,v 1.2.2.1 2004/12/13 04:12:55 gisburn Exp $
+XCOMM $XdotOrg: xc/lib/GL/mesa/sparc/Imakefile,v 1.3 2004/11/13 04:39:16 gisburn Exp $
 
 /*
  * Need both shared and unshared Mesa objects in the following cases:

@@ -22,6 +22,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/suncg6/cg6_driver.c,v 1.7 2002/12/06 16:44:38 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -72,7 +76,7 @@ void CG6Sync(ScrnInfoPtr pScrn);
  * an upper-case version of the driver name.
  */
 
-DriverRec SUNCG6 = {
+_X_EXPORT DriverRec SUNCG6 = {
     VERSION,
     CG6_DRIVER_NAME,
     CG6Identify,
@@ -113,7 +117,7 @@ static XF86ModuleVersionInfo suncg6VersRec =
 	{0,0,0,0}
 };
 
-XF86ModuleData suncg6ModuleData = { &suncg6VersRec, cg6Setup, NULL };
+_X_EXPORT XF86ModuleData suncg6ModuleData = { &suncg6VersRec, cg6Setup, NULL };
 
 pointer
 cg6Setup(pointer module, pointer opts, int *errmaj, int *errmin)

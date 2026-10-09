@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id$
+dnl  $Id: configure.ac,v 1.3 2005/06/29 18:46:53 daniels Exp $
 dnl 
 dnl  Copyright © 2003 Keith Packard
 dnl 
@@ -30,12 +30,11 @@ dnl version.  This same version number must appear in Xcursor.h
 dnl Yes, it is a pain to synchronize version numbers.  Unfortunately, it's
 dnl not possible to extract the version number here from Xcursor.h
 dnl
-AC_INIT([libXcursor],1.1.2,[keithp@keithp.com],[libXcursor])
+AC_INIT([libXcursor],1.1.4,[keithp@keithp.com],[libXcursor])
 AM_INIT_AUTOMAKE([dist-bzip2])
 AC_CONFIG_SRCDIR([Makefile.am])
 AM_MAINTAINER_MODE
 AM_CONFIG_HEADER(config.h)
-AC_CONFIG_AUX_DIR(.)
 
 dnl libtool versioning
 
@@ -101,6 +100,9 @@ then
 	        AC_MSG_ERROR([X is required, but it was either disabled or not found.])
 	fi
 fi
+
+AC_SUBST(X_CFLAGS)
+AC_SUBST(X_LIBS)
 
 PKG_CHECK_MODULES(XRENDER, xrender >= 0.8.2, [xrender_found_with_pkgconfig=yes], 
                   [xrender_found_with_pkgconfig=no])

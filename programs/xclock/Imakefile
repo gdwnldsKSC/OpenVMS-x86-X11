@@ -14,13 +14,16 @@ XCOMM $XFree86: xc/programs/xclock/Imakefile,v 1.8tsi Exp $
     XRENDERLIBS = XftClientLibs MathLibrary
     XRENDERINCS = $(XFTINCLUDES) $(XRENDERINCLUDES) -I$(XBUILDINCDIR)
 #endif
+#if HasStrlcat
+     STRLCATDEF = -DHAS_STRLCAT
+#endif
         DEPLIBS = $(XRENDERDEPS) XkbClientDepLibs XawClientDepLibs
-LOCAL_LIBRARIES = $(XRENDERLIBS) XkbClientLibs XawClientLibs
+LOCAL_LIBRARIES = $(XRENDERLIBS) XkbClientLibs XawClientLibs $(XPMLIB)
            SRCS = xclock.c Clock.c
            OBJS = xclock.o Clock.o
         HEADERS = ClockP.h Clock.h
        INCLUDES = $(XRENDERINCS)
-        DEFINES = $(XRENDERDEFS) XkbClientDefines
+        DEFINES = $(XRENDERDEFS) XkbClientDefines $(STRLCATDEF)
 
 ComplexProgramTarget(xclock)
 InstallAppDefaults(XClock)

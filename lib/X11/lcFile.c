@@ -25,6 +25,9 @@
 */
 /* $XFree86: xc/lib/X11/lcFile.c,v 3.32 2003/03/25 04:18:09 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -150,6 +153,41 @@ parse_line1(
 
     return argc;
 }
+#elif defined(WIN32)
+
+/* this is parse_line but skips drive letters at the beginning of the entry */
+static int
+parse_line1(
+    char *line,
+    char **argv,
+    int argsize)
+{
+    int argc = 0;
+    char *p = line;
+
+    while (argc < argsize) {
+	while (isspace(*p)) {
+	    ++p;
+	}
+	if (*p == '\0') {
+	    break;
+	}
+	argv[argc++] = p;
+        if (isalpha(*p) && p[1] == ':') {
+            p+= 2; /* skip drive letters */
+        }
+	while (*p != ':' && *p != '\n' && *p != '\0') {
+	    ++p;
+	}
+	if (*p == '\0') {
+	    break;
+	}
+	*p++ = '\0';
+    }
+
+    return argc;
+}
+
 #endif   /* __UNIXOS2__ */
 
 /* Splits a colon separated list of directories, and returns the constituent
@@ -164,7 +202,7 @@ _XlcParsePath(
     char *p = path;
     int n, i;
 
-#ifndef __UNIXOS2__
+#if !defined(__UNIXOS2__) && !defined(WIN32)
     n = parse_line(path, argv, argsize);
 #else
     n = parse_line1(path, argv, argsize);
@@ -200,6 +238,7 @@ xlocaledir(
     dir = getenv("XLOCALEDIR");
 
     if (dir) {
+#ifndef WIN32
 	/*
 	 * Only use the user-supplied path if the process isn't priviledged.
 	 */
@@ -235,6 +274,9 @@ xlocaledir(
 	    }
 #endif
 	}
+#else
+	priv = 0;
+#endif
 	if (!priv) {
 	    len = strlen(dir);
 	    strncpy(p, dir, buf_len);
@@ -332,6 +374,41 @@ lowercase(
     return dst;
 }
 
+/*
+ * normalize_lcname(): remove any '_' and '-' and convert any character
+ * to lower case after the <language>_<territory> part. If result is identical
+ * to argument, free result and
+ * return NULL.
+ */
+static char *
+normalize_lcname (const char *name)
+{
+    char *p, *ret;
+    const char *tmp = name;
+    
+    p = ret = Xmalloc(strlen(name) + 1);
+    if (!p)
+	return NULL;
+    
+    if (tmp) {
+	while (*tmp && *tmp != '.' && *tmp != '@')
+	    *p++ = *tmp++;
+	while (*tmp) {
+	    if (*tmp != '-')
+		*p++ = c_tolower(*tmp);
+	    tmp++;
+	}
+    }
+    *p = '\0';
+
+    if (strcmp(ret, name) == 0) {
+	Xfree(ret);
+	return NULL;
+    }
+
+    return ret;
+}
+
 /************************************************************************/
 char *
 _XlcFileName(
@@ -400,6 +477,7 @@ _XlcResolveLocaleName(
     char *args[NUM_LOCALEDIR];
     static const char locale_alias[] = LOCALE_ALIAS;
     char *tmp_siname;
+    char *nlc_name = NULL;
 
     xlocaledir (dir, PATH_MAX);
     n = _XlcParsePath(dir, args, NUM_LOCALEDIR);
@@ -408,11 +486,18 @@ _XlcResolveLocaleName(
 	    strlen (locale_alias)) < PATH_MAX) {
 	    sprintf (buf, "%s/%s", args[i], locale_alias);
 	    name = resolve_name (lc_name, buf, LtoR);
+	    if (!name) {
+		if (!nlc_name)
+		    nlc_name = normalize_lcname(lc_name);
+		if (nlc_name)
+		    name = resolve_name (nlc_name, buf, LtoR);
+	    }
 	}
 	if (name != NULL) {
 	    break;
 	}
     }
+    if (nlc_name) Xfree(nlc_name);
 
     if (name == NULL) {
 	/* vendor locale name == Xlocale name, no expansion of alias */
@@ -487,6 +572,7 @@ _XlcLocaleDirName(dir_name, dir_len, lc_name)
     static char locale_alias[] = LOCALE_ALIAS;
     char *target_name = (char*)0;
     char *target_dir = (char*)0;
+    char *nlc_name = NULL;
 
     xlocaledir (dir, PATH_MAX);
     n = _XlcParsePath(dir, args, 256);
@@ -496,6 +582,12 @@ _XlcLocaleDirName(dir_name, dir_len, lc_name)
  	     strlen(locale_alias)) < PATH_MAX) {
  	    sprintf (buf, "%s/%s", args[i], locale_alias);
  	    name = resolve_name(lc_name, buf, LtoR);
+	    if (!name) {
+		if (!nlc_name)
+		    nlc_name = normalize_lcname(lc_name);
+		if (nlc_name)
+		    name = resolve_name (nlc_name, buf, LtoR);
+	    }
  	}
   
  	/* If name is not an alias, use lc_name for locale.dir search */
@@ -529,6 +621,8 @@ _XlcLocaleDirName(dir_name, dir_len, lc_name)
  	}
  	name = NULL;
     }
+    if (nlc_name) Xfree(nlc_name);
+
     if (target_name == NULL) {
  	/* vendor locale name == Xlocale name, no expansion of alias */
  	target_dir = args[0];

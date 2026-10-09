@@ -143,7 +143,9 @@ static void fixendpath( GENTRY *ge);
 static void fdelsmall( GLYPH *g, double minlen);
 static void alloc_gex_con( GENTRY *ge);
 static double fjointsin2( GENTRY *ge1, GENTRY *ge2);
+#if 0
 static double fcvarea( GENTRY *ge);
+#endif
 static double fcvval( GENTRY *ge, int axis, double t);
 static void fsampledots( GENTRY *ge, double dots[][2], int ndots);
 static void fnormalizege( GENTRY *ge);
@@ -779,8 +781,8 @@ fixcvends(
 		dx = x2 - x1;
 		dy = y2 - y1;
 
-		if (dx == 0 && dy == 0
-		    || x2 == x3 && y2 == y3) {
+		if ((dx == 0 && dy == 0)
+		    || (x2 == x3 && y2 == y3)) {
 			/* Oops, we actually have a straight line */
 			/*
 			 * if it's small, we hope that it will get optimized
@@ -1396,7 +1398,7 @@ fclosepaths(
 			continue;
 
 		ge = xge->prev;
-		if(ge == 0 || ge->type != GE_LINE && ge->type!= GE_CURVE) {
+		if(ge == 0 || (ge->type != GE_LINE && ge->type!= GE_CURVE)) {
 			fprintf(stderr, "**! Glyph %s got empty path\n",
 				g->name);
 			exit(1);
@@ -1604,8 +1606,8 @@ smoothjoints(
 			if (abs(dx1) <= 4 && abs(dx2) <= 4
 			    && dy1 != 0 && 5 * abs(dx1) / abs(dy1) == 0
 			    && dy2 != 0 && 5 * abs(dx2) / abs(dy2) == 0
-			    && (ge->iy3 < ge->prev->iy3 && ne->iy3 < ge->iy3
-				|| ge->iy3 > ge->prev->iy3 && ne->iy3 > ge->iy3)
+			    && ((ge->iy3 < ge->prev->iy3 && ne->iy3 < ge->iy3)
+				|| (ge->iy3 > ge->prev->iy3 && ne->iy3 > ge->iy3))
 			  && (ge->ix3 - ge->prev->ix3) * (ne->ix3 - ge->ix3) < 0
 				) {
 				dir = igetcvdir(ge);
@@ -1621,8 +1623,8 @@ smoothjoints(
 			else if (abs(dy1) <= 4 && abs(dy2) <= 4
 				 && dx1 != 0 && 5 * abs(dy1) / abs(dx1) == 0
 				 && dx2 != 0 && 5 * abs(dy2) / abs(dx2) == 0
-				 && (ge->ix3 < ge->prev->ix3 && ne->ix3 < ge->ix3
-				|| ge->ix3 > ge->prev->ix3 && ne->ix3 > ge->ix3)
+				 && ((ge->ix3 < ge->prev->ix3 && ne->ix3 < ge->ix3)
+				|| (ge->ix3 > ge->prev->ix3 && ne->ix3 > ge->ix3))
 				 && (ge->iy3 - ge->prev->iy3) * (ne->iy3 - ge->iy3) < 0
 				) {
 				dir = igetcvdir(ge);
@@ -1810,16 +1812,16 @@ sortstems(
 				if( (s[i].flags & ST_UP) == (s[j].flags & ST_UP) ) {
 					if( s[i].flags & ST_UP ) {
 						if(
-						(s[i].flags & (ST_ZONE|ST_FLAT|ST_END) ^ ST_FLAT)
+						((s[i].flags & (ST_ZONE|ST_FLAT|ST_END)) ^ ST_FLAT)
 							>
-						(s[j].flags & (ST_ZONE|ST_FLAT|ST_END) ^ ST_FLAT)
+						((s[j].flags & (ST_ZONE|ST_FLAT|ST_END)) ^ ST_FLAT)
 						)
 							continue;
 					} else {
 						if(
-						(s[i].flags & (ST_ZONE|ST_FLAT|ST_END) ^ ST_FLAT)
+						((s[i].flags & (ST_ZONE|ST_FLAT|ST_END)) ^ ST_FLAT)
 							<
-						(s[j].flags & (ST_ZONE|ST_FLAT|ST_END) ^ ST_FLAT)
+						((s[j].flags & (ST_ZONE|ST_FLAT|ST_END)) ^ ST_FLAT)
 						)
 							continue;
 					}
@@ -1841,8 +1843,8 @@ stemoverlap(
 {
 	int             result;
 
-	if (s1->from <= s2->from && s1->to >= s2->from
-	    || s2->from <= s1->from && s2->to >= s1->from)
+	if ((s1->from <= s2->from && s1->to >= s2->from)
+	    || (s2->from <= s1->from && s2->to >= s1->from))
 		result = 1;
 	else
 		result = 0;
@@ -2202,7 +2204,7 @@ joinmainstems(
 				else
 					pri = 2;
 
-				if (pri < readystem && s[nnew + 1].value >= stack[j].value
+				if ((pri < readystem && s[nnew + 1].value >= stack[j].value)
 				    || !stemoverlap(&stack[j], &s[i]))
 					continue;
 
@@ -2757,8 +2759,8 @@ joinsubstems(
 					pri=2;
 
 				if(lastpri==0
-				|| pri > lastpri  
-				&& ( lastpri==1 || s[j].value-v<20 || (s[x].value-v)*2 >= s[j].value-v ) ) {
+				|| ( pri > lastpri  
+				&& ( lastpri==1 || s[j].value-v<20 || (s[x].value-v)*2 >= s[j].value-v ) ) ) {
 					lastpri=pri;
 					x=j;
 				}
@@ -2776,8 +2778,8 @@ joinsubstems(
 					pri=2;
 
 				if(lastpri==0
-				|| pri > lastpri  
-				&& ( lastpri==1 || v-s[j].value<20 || (v-s[x].value)*2 >= v-s[j].value ) ) {
+				|| ( pri > lastpri  
+				&& ( lastpri==1 || v-s[j].value<20 || (v-s[x].value)*2 >= v-s[j].value ) ) ) {
 					lastpri=pri;
 					x=j;
 				}
@@ -2930,7 +2932,7 @@ findstemat(
 			pri=0;
 		wd=abs(sp[i].value-value);
 		if( prevbest == -1 || pri >prevpri 
-		|| pri==prevpri && prevwd==0 || wd!=0 && wd<prevwd ) {
+		|| (pri==prevpri && prevwd==0) || (wd!=0 && wd<prevwd) ) {
 			prevbest=si;
 			prevpri=pri;
 			prevwd=wd;
@@ -3487,8 +3489,8 @@ buildstems(
 					continue;
 
 				/* check for vertical extremums */
-				if (ge->iy3 > ge->iy2 && ge->iy3 > ny
-				|| ge->iy3 < ge->iy2 && ge->iy3 < ny) {
+				if ((ge->iy3 > ge->iy2 && ge->iy3 > ny)
+				|| (ge->iy3 < ge->iy2 && ge->iy3 < ny)) {
 					hs[g->nhs].value = ge->iy3;
 					hs[g->nhs].from
 						= hs[g->nhs].to
@@ -3509,8 +3511,8 @@ buildstems(
 				 * vertical extremum
 				 */
 				/* check for horizontal extremums */
-				if (ge->ix3 > ge->ix2 && ge->ix3 > nx
-				|| ge->ix3 < ge->ix2 && ge->ix3 < nx) {
+				if ((ge->ix3 > ge->ix2 && ge->ix3 > nx)
+				|| (ge->ix3 < ge->ix2 && ge->ix3 < nx)) {
 					vs[g->nvs].value = ge->ix3;
 					vs[g->nvs].from
 						= vs[g->nvs].to
@@ -3679,8 +3681,8 @@ buildstems(
 				continue;
 
 			/* check for vertical extremums */
-			if (ge->iy3 > ge->prev->iy3 && ge->iy3 > ny
-			|| ge->iy3 < ge->prev->iy3 && ge->iy3 < ny) {
+			if ((ge->iy3 > ge->prev->iy3 && ge->iy3 > ny)
+			|| (ge->iy3 < ge->prev->iy3 && ge->iy3 < ny)) {
 				hs[g->nhs].value = ge->iy3;
 				hs[g->nhs].from
 					= hs[g->nhs].to
@@ -3701,8 +3703,8 @@ buildstems(
 			 * extremum
 			 */
 			/* check for horizontal extremums */
-			if (ge->ix3 > ge->prev->ix3 && ge->ix3 > nx
-			|| ge->ix3 < ge->prev->ix3 && ge->ix3 < nx) {
+			if ((ge->ix3 > ge->prev->ix3 && ge->ix3 > nx)
+			|| (ge->ix3 < ge->prev->ix3 && ge->ix3 < nx)) {
 				vs[g->nvs].value = ge->ix3;
 				vs[g->nvs].from
 					= vs[g->nvs].to
@@ -3865,7 +3867,7 @@ fstraighten(
 			|| ge->fpoints[o][2] == ge->fpoints[o][1] 
 			|| ge->fpoints[o][0] == pge->fpoints[o][2]
 			|| iln > 2.
-			|| iln > 1.  && iln/oln > 0.1 )
+			|| (iln > 1.  && iln/oln > 0.1) )
 				continue;
 
 
@@ -4228,7 +4230,7 @@ iiszigzag(
 		k2 = fabs((double) b / (double) a);
 
 	/* if the curve is not a zigzag */
-	if (k1+0.0001 >= k && k2 <= k+0.0001 || k1 <= k+0.0001 && k2+0.0001 >= k)
+	if ((k1+0.0001 >= k && k2 <= k+0.0001) || (k1 <= k+0.0001 && k2+0.0001 >= k))
 		return 0;
 	else
 		return 1;
@@ -4278,7 +4280,7 @@ fiszigzag(
 		k2 = b / a;
 
 	/* if the curve is not a zigzag */
-	if (k1+0.0001 >= k && k2 <= k+0.0001 || k1 <= k+0.0001 && k2+0.0001 >= k)
+	if ((k1+0.0001 >= k && k2 <= k+0.0001) || (k1 <= k+0.0001 && k2+0.0001 >= k))
 		return 0;
 	else
 		return 1;
@@ -6136,7 +6138,7 @@ fconcisecontour(
 			 */
 
 			if(nge->bkwd == ge 
-			|| pge != ge && (pgex->flags & GEXF_JCVMASK) <= (ngex->flags & GEXF_JCVMASK) ) {
+			|| (pge != ge && (pgex->flags & GEXF_JCVMASK) <= (ngex->flags & GEXF_JCVMASK)) ) {
 				pge = pge->frwd;
 			} else {
 				nge = nge->bkwd;
@@ -6675,7 +6677,7 @@ bestblue(
 			break;
 
 		if (physt[first] < physt[last]
-		    || physt[first] == physt[last] && j) {
+		    || (physt[first] == physt[last] && j)) {
 			if (physt[first] * 20 > w)	/* if weight is >5%,
 							 * stop */
 				break;

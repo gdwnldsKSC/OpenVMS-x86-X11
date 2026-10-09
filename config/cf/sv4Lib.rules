@@ -30,6 +30,15 @@ XCOMM $XFree86: xc/config/cf/sv4Lib.rules,v 3.8tsi Exp $
 #ifndef SharedLibraryLoadFlags
 # define SharedLibraryLoadFlags -G -z text
 #endif
+#ifndef RpathLoadFlags
+#define RpathLoadFlags /**/
+#endif
+#ifndef LibraryRpathLoadFlags
+#define LibraryRpathLoadFlags RpathLoadFlags
+#endif
+#ifndef HardCodeLibdirFlag
+#define HardCodeLibdirFlag RpathLoadFlags
+#endif
 #ifndef PositionIndependentCFlags
 # if HasGcc2
 #  define PositionIndependentCFlags -fPIC
@@ -149,6 +158,28 @@ clean::									@@\
 	$(RM) Concat(lib,libname.so.rev) Concat(lib,libname.so)
 
 #endif /* SharedDepLibraryTarget */
+
+/*
+ * SharedDepCplusplusLibraryTarget - generate rules to create a shared library.
+ */
+#ifndef SharedDepCplusplusLibraryTarget
+#define SharedDepCplusplusLibraryTarget(libname,rev,deplist,solist,down,up) @@\
+AllTarget(Concat(lib,libname.so.rev))					@@\
+									@@\
+Concat(lib,libname.so.rev):  deplist $(EXTRALIBRARYDEPS)		@@\
+	$(RM) $@~							@@\
+	(cd down; $(CXX) -o up/$@~ $(SHLIBLDFLAGS) solist $(REQUIREDLIBS)) @@\
+	$(RM) $@ 							@@\
+	$(MV) $@~ $@							@@\
+	@if $(SOSYMLINK); then (set -x; \				@@\
+	  $(RM) Concat(lib,libname.so); \				@@\
+	  $(LN) $@ Concat(lib,libname.so)); fi				@@\
+	LinkBuildLibrary($@)						@@\
+	LinkBuildLibraryMaybe(Concat(lib,libname.so),$(SOSYMLINK))	@@\
+									@@\
+clean::									@@\
+	$(RM) Concat(lib,libname.so.rev)				
+#endif /* SharedDepCplusplusLibraryTarget */
 
 
 #ifndef SharedDepModuleTarget

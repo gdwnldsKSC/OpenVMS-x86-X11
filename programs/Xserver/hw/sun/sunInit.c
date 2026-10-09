@@ -71,9 +71,6 @@ extern Bool sunBW2Init(
 #define BW2I sunBW2Init
 #endif /* } */
 
-#ifdef LOWMEMFTPT
-#define BW2I NULL
-#endif /* ifdef LOWMEMFTPT */
 
 #if SUNMAXDEPTH == 1 /* { */
 #define CG2I NULL

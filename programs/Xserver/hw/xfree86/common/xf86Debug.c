@@ -27,13 +27,17 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifdef __UNIXOS2__
 #define I_NEED_OS2_H
 #endif
 
 #include <sys/time.h>
 #include <unistd.h> 
-#include "X.h"
+#include <X11/X.h>
 #include "os.h"
 #include "xf86.h"
 #include "xf86Priv.h"

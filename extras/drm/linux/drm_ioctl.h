@@ -33,7 +33,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#define __NO_VERSION__
 #include "drmP.h"
 
 #include "linux/pci.h"
@@ -54,7 +53,7 @@ int DRM(getunique)(struct inode *inode, struct file *filp,
 {
 	drm_file_t	 *priv	 = filp->private_data;
 	drm_device_t	 *dev	 = priv->dev;
-	drm_unique_t     __user *argp = (void __user *)arg;
+	drm_unique_t	 __user *argp = (void __user *)arg;
 	drm_unique_t	 u;
 
 	if (copy_from_user(&u, argp, sizeof(u)))
@@ -93,7 +92,7 @@ int DRM(setunique)(struct inode *inode, struct file *filp,
 
 	if (dev->unique_len || dev->unique) return -EBUSY;
 
-	if (copy_from_user(&u, (drm_unique_t __user *)arg, sizeof(u))) 
+	if (copy_from_user(&u, (drm_unique_t __user *)arg, sizeof(u)))
 		return -EFAULT;
 
 	if (!u.unique_len || u.unique_len > 1024) return -EINVAL;
@@ -234,7 +233,7 @@ int DRM(getclient)( struct inode *inode, struct file *filp,
 {
 	drm_file_t   *priv = filp->private_data;
 	drm_device_t *dev  = priv->dev;
-	drm_client_t __user *argp = (void __user *)arg;	
+	drm_client_t __user *argp = (void __user *)arg;
 	drm_client_t client;
 	drm_file_t   *pt;
 	int          idx;
@@ -342,10 +341,9 @@ int DRM(setversion)(DRM_IOCTL_ARGS)
 		if (sv.drm_dd_major != DRIVER_MAJOR ||
 		    sv.drm_dd_minor < 0 || sv.drm_dd_minor > DRIVER_MINOR)
 			return EINVAL;
-#ifdef DRIVER_SETVERSION
-		DRIVER_SETVERSION(dev, &sv);
-#endif
+
+		if (dev->fn_tbl.set_version)
+			dev->fn_tbl.set_version(dev, &sv);
 	}
 	return 0;
 }
-

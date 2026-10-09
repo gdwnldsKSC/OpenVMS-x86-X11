@@ -41,18 +41,9 @@
 
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #include "fourcc.h"
 
-
-#ifndef S3_USEFB
-#define PSZ 8
-#include "cfb.h"
-#undef PSZ
-#include "cfb16.h"
-#include "cfb24.h"
-#include "cfb32.h"
-#endif
 
 typedef struct _S3RegRec {
 	unsigned char	cr31, cr32, cr33, cr34, cr3a, cr3b, cr3c;

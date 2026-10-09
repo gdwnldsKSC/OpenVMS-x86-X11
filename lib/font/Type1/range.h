@@ -16,6 +16,10 @@
  * Graphics, Inc.
  */
 #ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
+#if XFONT_CID
 #define CID_NAME_MAX 255       /* max # of characters in a file name */
 #define CID_PATH_MAX 1024      /* max # of characters in a path name */
 

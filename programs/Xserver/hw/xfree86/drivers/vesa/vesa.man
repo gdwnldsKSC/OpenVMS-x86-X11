@@ -46,6 +46,13 @@ are supported:
 Enable or disable use of the shadow framebuffer layer.  Default: on.
 
 This option is recommended for performance reasons.
+.TP
+.BI "Option \*qModeSetClearScreen\*q \*q" boolean \*q
+Clear the screen on mode set. Some BIOSes seem to be broken in the
+sense that the newly set video mode is bogus if they are asked to 
+clear the screen during mode setting. If you experience problems try
+to turn this option off. Default: on.
+
 .SH "SEE ALSO"
 __xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgcfg(__appmansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__)
 .SH AUTHORS

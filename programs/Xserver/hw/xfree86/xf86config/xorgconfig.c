@@ -90,11 +90,16 @@
  *  - Load "speedo" module.
  *  - Ready to DRI.
  *  - Load xtt module instead of freetype module.
- *  - Add font path "/fonts/TrueType/" and "/fonts/freefont/".
+ *  - Add font path "/TrueType/" and "/freefont/".
  *  Chisato Yamauchi(cyamauch@phyas.aichi-edu.ac.jp)
  */
 /* $XConsortium: xf86config.c /main/21 1996/10/28 05:43:57 kaleb $ */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/xf86config/xorgconfig.c,v 1.6.2.3 2005/02/02 03:38:05 gisburn Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/xf86config/xorgconfig.c,v 1.19 2005/11/08 06:33:30 jkj Exp $ */
+
+#ifdef HAVE_CONFIG_H
+# include "xorg-server.h"
+# include "xkb-config.h"
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -128,14 +133,6 @@ static int getuid() { return 0; }
 #define XFREE86_VERSION 400
 
 /*
- * This is the filename of the temporary XF86Config file that is written
- * when the program is told to probe clocks (which can only happen for
- * root).
- */
-#define TEMPORARY_XF86CONFIG_DIR_PREFIX "/tmp/.xf86config"
-#define TEMPORARY_XF86CONFIG_FILENAME "XF86Config.tmp"
-
-/*
  * Define this to have /etc/X11/XF86Config prompted for as the default
  * location to write the XF86Config file to.
  */
@@ -155,11 +152,6 @@ static int getuid() { return 0; }
 
 #define DUMBCONFIG2 "dumbconfig.2"
 #define DUMBCONFIG3 "dumbconfig.3"
-#ifndef __UNIXOS2__
-#define XSERVERNAME_FOR_PROBE "X"
-#else
-#define XSERVERNAME_FOR_PROBE "/usr/X11R6/bin/"__XSERVERNAME__
-#endif
 
 /* some more vars to make path names in texts more flexible. OS/2 users
  * may be more irritated than Unix users
@@ -175,12 +167,31 @@ static int getuid() { return 0; }
 #else
 # define TREEROOTDOC		TREEROOTLX "/doc"
 #endif
+#ifdef XFONTDIR
+# define TREEROOTFONT		XFONTDIR
+#else
+# define TREEROOTFONT		TREEROOTLX "/fonts"
+#endif
 #define MODULEPATH		TREEROOT "/lib/modules"
 
+#ifndef __UNIXOS2__
+#define XSERVERNAME_FOR_PROBE "X"
+#else
+#define XSERVERNAME_FOR_PROBE PROJECTROOT"/bin/"__XSERVERNAME__
+#endif
+
 #ifndef XCONFIGFILE
-#define XCONFIGFILE		"XF86Config"
+#define XCONFIGFILE		"xorg.conf"
 #endif
 #define CONFIGNAME		XCONFIGFILE
+
+/*
+ * This is the filename of the temporary XF86Config file that is written
+ * when the program is told to probe clocks (which can only happen for
+ * root).
+ */
+#define TEMPORARY_XF86CONFIG_DIR_PREFIX "/tmp/."XCONFIGFILE
+#define TEMPORARY_XF86CONFIG_FILENAME XCONFIGFILE".tmp"
 
 #ifndef XF86_VERSION_MAJOR
 #ifdef XVERSION
@@ -241,7 +252,7 @@ char *temp_dir = "";
 int card_selected;	/* Card selected from database. */
 
 
-static void write_XF86Config(char *filename);
+static int write_XF86Config(char *filename);
 
 
 /*
@@ -250,17 +261,21 @@ static void write_XF86Config(char *filename);
 
 static char *intro_text =
 "\n"
-"This program will create a basic " CONFIGNAME " file, based on menu selections you\n"
-"make.\n"
+"This program will create a basic " CONFIGNAME " file, based on menu selections\n"
+"you make.  It will ask for a pathname when it is ready to write the file.\n"
 "\n"
-"The " CONFIGNAME " file usually resides in " TREEROOTCFG " or /etc/X11. A sample\n"
-CONFIGNAME " file is supplied with "__XSERVERNAME__"; it is configured for a standard\n"
-"VGA card and monitor with 640x480 resolution. This program will ask for a\n"
-"pathname when it is ready to write the file.\n"
+"The " CONFIGNAME " file usually resides in /etc/X11 or " TREEROOTCFG ".  If\n"
+"no " CONFIGNAME " file is present there, " __XSERVERNAME__" will probe the system to\n"
+"autoconfigure itself.  You can run " __XSERVERNAME__ " -configure to generate a " CONFIGNAME "\n"
+"file based on the results of autoconfiguration, or let this program\n"
+"produce a base " CONFIGNAME " file for your configuration, and fine-tune it.\n"
+"A sample " CONFIGNAME " file is also supplied with "__XSERVERNAME__"; it is configured \n"
+"for a standard VGA card and monitor with 640x480 resolution.\n"
 "\n"
-"You can either take the sample " CONFIGNAME " as a base and edit it for your\n"
-"configuration, or let this program produce a base " CONFIGNAME " file for your\n"
-"configuration and fine-tune it.\n"
+"There are also many chipset and card-specific options and settings available,\n"
+"but this program does not know about these. On some configurations some of\n"
+"these settings must be specified. Refer to the X driver man pages and the\n"
+"chipset-specific READMEs in " TREEROOTDOC " for further details.\n"
 #if 0
 " Refer to " TREEROOTDOC "/README.Config\n"
 "for a detailed overview of the configuration process.\n"
@@ -274,19 +289,19 @@ CONFIGNAME " file is supplied with "__XSERVERNAME__"; it is configured for a sta
 "\n"
 "Before continuing with this program, make sure you know what video card\n"
 "you have, and preferably also the chipset it uses and the amount of video\n"
-"memory on your video card. SuperProbe may be able to help with this.\n"
+"memory on your video card, as well as the specifications of your monitor.\n"
 "\n"
 ;
 
 static char *finalcomment_text =
-"File has been written. Take a look at it before running 'startx'. Note that\n"
+"File has been written. Take a look at it before starting an X server. Note that\n"
 "the " CONFIGNAME " file must be in one of the directories searched by the server\n"
 "(e.g. /etc/X11) in order to be used. Within the server press\n"
 "ctrl, alt and '+' simultaneously to cycle video resolutions. Pressing ctrl,\n"
 "alt and backspace simultaneously immediately exits the server (use if\n"
 "the monitor doesn't sync for a particular mode).\n"
 "\n"
-"For further configuration, refer to the " XCONFIGFILE "(5) manual page.\n"
+"For further configuration, refer to the " XCONFIGFILE "(" FILEMANSUFFIX ") manual page.\n"
 "\n";
 
 static void *
@@ -406,7 +421,7 @@ struct {
 	},
 #ifdef sun
 	{"VUID",		&M_VUID,
-	 "Solaris VUID"
+	 "Solaris VUID protocol (SPARC, USB, or virtual mouse)"
 	},
 #endif
 	{"SysMouse",		&M_SYSMOUSE,
@@ -552,7 +567,8 @@ mouse_configuration(void) {
 		emptylines();
 		printf("%s", mouseintro_text);
 		for (j = i; j < i + 14 && j < MOUSETYPE_COUNT; j++)
-			printf("%2d.  %s\n", j + 1, mouse_info[j].name);
+			printf("%2d.  %s [%s]\n", j + 1,
+			       mouse_info[j].name, mouse_info[j].desc);
 		printf("\n");
 		printf("%s", mousecomment_text);
 		printf("Enter a protocol number: ");
@@ -635,7 +651,7 @@ mouse_configuration(void) {
 		config_emulate3buttons = 0;
 	printf("\n");
 
-#if (defined(sun) && defined(__i386))
+#if (defined(sun) && (defined(__i386) || defined(__x86)))
 	/* SPARC & USB mice (VUID or AUTO protocols) default to /dev/mouse, 
 	   but PS/2 mice default to /dev/kdmouse */
 	if ((config_mousetype != M_AUTO) && (config_mousetype != M_VUID)) {
@@ -717,6 +733,10 @@ keyboard_configuration(void)
 	}
 #endif
 
+#ifndef XKB_RULES_DIR
+# define XKB_RULES_DIR XKB_BASE_DIRECTORY "/rules"
+#endif
+	
 #ifdef XFREE98_XKB
 	config_xkbrules = "xfree98";	/* static */
         rulesfile = XKB_RULES_DIR "/xfree98";
@@ -854,8 +874,7 @@ static char *monitorintro_text =
 "which is the rate at which scanlines are displayed.\n"
 "\n"
 "The valid range for horizontal sync and vertical sync should be documented\n"
-"in the manual of your monitor. If in doubt, check the monitor database\n"
-TREEROOTDOC "/Monitors to see if your monitor is there.\n"
+"in the manual of your monitor.\n"
 "\n";
 
 static char *hsyncintro_text =
@@ -1370,7 +1389,7 @@ static int exists_dir(char *name) {
 	return S_ISDIR(sbuf.st_mode) ? 1 : 0;
 }
 
-static void 
+static int 
 screen_configuration(void) {
 	int i, c/*, np*/;
 	char s[80];
@@ -1533,8 +1552,8 @@ screen_configuration(void) {
 		config_virtualy8bpp = 400;
 	}
 	else {
-		printf("Fatal error: Invalid amount of video memory.\n");
-		exit(-1);
+		printf("Invalid amount of video memory. Please try again\n");
+		return(1);
 	}
 
 #if 0
@@ -1738,7 +1757,7 @@ skipclockprobing:
 	 * For vga driver, no further configuration is required.
 	 */
 	if (card_selected == -1 || (card[card_selected].flags & UNSUPPORTED))
-		return;
+		return (0);
 	
 	/*
 	 * Configure the modes order.
@@ -1821,6 +1840,7 @@ skipclockprobing:
 		if (answerisyes(s))
 			config_virtual = 1;
 	}
+	return(0);
 }
 
 static char *defaultdepthtext = 
@@ -1966,17 +1986,17 @@ static char *XF86Config_firstchunk_text =
 
 static char *XF86Config_fontpaths[] = 
 {
-/*	"    FontPath	\"" TREEROOTLX "/fonts/75dpi/\"\n"*/
-    "/fonts/local/",
-	"/fonts/misc/",
-	"/fonts/75dpi/:unscaled",
-	"/fonts/100dpi/:unscaled",
-	"/fonts/Speedo/",
-	"/fonts/Type1/",
-	"/fonts/TrueType/",
-	"/fonts/freefont/",
-	"/fonts/75dpi/",
-	"/fonts/100dpi/",
+/*	"    FontPath	\"" TREEROOTFONT "/75dpi/\"\n"*/
+    "/local/",
+	"/misc/",
+	"/75dpi/:unscaled",
+	"/100dpi/:unscaled",
+	"/Speedo/",
+	"/Type1/",
+	"/TrueType/",
+	"/freefont/",
+	"/75dpi/",
+	"/100dpi/",
 	0 /* end of fontpaths */
 };
 
@@ -2001,18 +2021,18 @@ static char *XF86Config_fontpathchunk_text =
 "\n"
 "#    Option \"NoTrapSignals\"\n"
 "\n"
-"# Uncomment this to disable the <Crtl><Alt><Fn> VT switch sequence\n"
+"# Uncomment this to disable the <Ctrl><Alt><Fn> VT switch sequence\n"
 "# (where n is 1 through 12).  This allows clients to receive these key\n"
 "# events.\n"
 "\n"
 "#    Option \"DontVTSwitch\"\n"
 "\n"
-"# Uncomment this to disable the <Crtl><Alt><BS> server abort sequence\n"
+"# Uncomment this to disable the <Ctrl><Alt><BS> server abort sequence\n"
 "# This allows clients to receive this key event.\n"
 "\n"
 "#    Option \"DontZap\"\n"
 "\n"
-"# Uncomment this to disable the <Crtl><Alt><KP_+>/<KP_-> mode switching\n"
+"# Uncomment this to disable the <Ctrl><Alt><KP_+>/<KP_-> mode switching\n"
 "# sequences.  This allows clients to receive these key events.\n"
 "\n"
 "#    Option \"Dont Zoom\"\n"
@@ -2114,20 +2134,29 @@ static char *pointersection_text1 =
 "\n"
 "# Identifier and driver\n"
 "\n"
+#if defined(__UNIXWARE__) || defined(XQUEUE)
+"#    Identifier	\"Mouse1\"\n"
+"#    Driver	\"mouse\"\n"
+#else
 "    Identifier	\"Mouse1\"\n"
 "    Driver	\"mouse\"\n"
+#endif
 ;
 
 static char *pointersection_text2 =
 "\n"
-"# Mouse-speed setting for PS/2 mouse.\n"
-"\n"
-"#    Option \"Resolution\"	\"256\"\n"
-"\n"
 "# When using XQUEUE, comment out the above two lines, and uncomment\n"
 "# the following line.\n"
 "\n"
+#if defined(__UNIXWARE__) || defined(XQUEUE)
+"    Option \"Protocol\"	\"Xqueue\"\n"
+#else
 "#    Option \"Protocol\"	\"Xqueue\"\n"
+#endif
+"\n"
+"# Mouse-speed setting for PS/2 mouse.\n"
+"\n"
+"#    Option \"Resolution\"	\"256\"\n"
 "\n"
 "# Baudrate and SampleRate are only for some Logitech mice. In\n"
 "# almost every case these lines should be omitted.\n"
@@ -2135,9 +2164,17 @@ static char *pointersection_text2 =
 "#    Option \"BaudRate\"	\"9600\"\n"
 "#    Option \"SampleRate\"	\"150\"\n"
 "\n"
-"# Emulate3Buttons is an option for 2-button Microsoft mice\n"
+"# Mouse wheel mapping.  Default is to map vertical wheel to buttons 4 & 5,\n"
+"# horizontal wheel to buttons 6 & 7.   Change if your mouse has more than\n"
+"# 3 buttons and you need to map the wheel to different button ids to avoid\n"
+"# conflicts.\n"
+"\n"
+"    Option \"ZAxisMapping\"   \"4 5 6 7\"\n"
+"\n"
+"# Emulate3Buttons is an option for 2-button mice\n"
 "# Emulate3Timeout is the timeout in milliseconds (default is 50ms)\n"
 "\n";
+
 
 static char *xinputsection_text =
 "# **********************************************************************\n"
@@ -2505,7 +2542,7 @@ write_fontpath_section(FILE *f)
 #endif
 
 	for (i=0; XF86Config_fontpaths[i]; i++) {
-		strcpy(cur,TREEROOTLX);
+		strcpy(cur,TREEROOTFONT);
 		strcat(cur,XF86Config_fontpaths[i]);
 		/* remove a ':' */
 		colon = strchr(cur+2,':'); /* OS/2: C:/...:scaled */
@@ -2518,12 +2555,12 @@ write_fontpath_section(FILE *f)
 		hash = exists_dir(cur) ? "" : "#";
 		fprintf(f,"%s    FontPath   \"%s%s\"\n",
 			hash,
-			TREEROOTLX,
+			TREEROOTFONT,
 			XF86Config_fontpaths[i]);
 	}
 }
 
-static void 
+static int 
 write_XF86Config(char *filename)
 {
 	FILE *f;
@@ -2539,7 +2576,7 @@ write_XF86Config(char *filename)
 		if (getuid() != 0)
 			printf("Maybe you need to be root to write to the specified directory?\n");
 #endif
-		exit(-1);
+		return(1);
 	}
 
 	fprintf(f, "%s", XF86Config_firstchunk_text);
@@ -2590,8 +2627,9 @@ write_XF86Config(char *filename)
 	 * Write pointer section.
 	 */
 	fprintf(f, "%s", pointersection_text1);
-	fprintf(f, "    Option \"Protocol\"    \"%s\"\n",
-		mouse_info[config_mousetype].name);
+	fprintf(f, "    Option \"Protocol\"    \"%s\"\t# %s\n",
+		mouse_info[config_mousetype].name,
+		mouse_info[config_mousetype].desc);
 #if !defined(__UNIXOS2__) && !defined(QNX4)
 	fprintf(f, "    Option \"Device\"      \"%s\"\n", config_pointerdevice);
 #endif
@@ -2732,6 +2770,7 @@ write_XF86Config(char *filename)
 	fprintf(f, serverlayout_section_text2);
 
         fclose(f);
+	return(0);
 }
 
 static char *
@@ -2952,7 +2991,7 @@ main(int argc, char *argv[]) {
 
 	emptylines();
 
- 	screen_configuration();
+ 	while(screen_configuration()){};
 
 	emptylines();
 
@@ -2960,7 +2999,7 @@ main(int argc, char *argv[]) {
 
 	emptylines();
 
-	write_XF86Config(ask_XF86Config_location());
+	while(write_XF86Config(ask_XF86Config_location())){};
 
 	printf("%s", finalcomment_text);
 

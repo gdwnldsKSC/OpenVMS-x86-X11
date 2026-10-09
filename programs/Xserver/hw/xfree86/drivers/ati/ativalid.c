@@ -21,6 +21,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "atiadapter.h"
 #include "atichip.h"
 #include "aticrtc.h"
@@ -34,7 +38,7 @@
  *
  * This checks for hardware-related limits on mode timings.
  */
-ModeStatus
+_X_EXPORT ModeStatus
 ATIValidMode
 (
     int iScreen,

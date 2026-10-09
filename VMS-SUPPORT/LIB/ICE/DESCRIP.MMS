@@ -1,7 +1,7 @@
 ! Mirrors lib/ICE/Imakefile's normal library with TCP client/server transport.
 ICE_HEADERS = $(COMMON_HEADERS), $(OUT).INCLUDE.X11]X.H, -
               $(OUT).INCLUDE.X11]XMD.H, $(OUT).INCLUDE.X11]XDEFS.H, -
-              $(OUT).INCLUDE.X11]XLIB.H, $(OUT).INCLUDE.X11]XTRANS.H, -
+              $(OUT).INCLUDE.X11]XLIB.H, $(XTRANS_HEADERS), -
               $(OUT).INCLUDE.X11]XPOLL.H, $(OUT).INCLUDE.X11]XOS_R.H, -
               $(OUT).INCLUDE.X11.ICE]ICE.H, -
               $(OUT).INCLUDE.X11.ICE]ICECONN.H, -

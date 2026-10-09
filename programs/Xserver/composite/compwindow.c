@@ -1,5 +1,5 @@
 /*
- * $Id: compwindow.c,v 1.12 2004/05/21 03:32:27 keithp Exp $
+ * $Id: compwindow.c,v 1.11 2005/07/03 07:37:34 daniels Exp $
  *
  * Copyright © 2003 Keith Packard
  *
@@ -22,9 +22,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
 #endif
+
 #include "compint.h"
 
 #ifdef COMPOSITE_DEBUG

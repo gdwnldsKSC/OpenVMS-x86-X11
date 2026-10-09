@@ -56,6 +56,9 @@ in this Software without prior written authorization from The Open Group.
  *	FSlibInt.c - Internal support routines for the C subroutine
  *	interface library (FSlib).
  */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include "FSlibint.h"
 #include <X11/Xos.h>

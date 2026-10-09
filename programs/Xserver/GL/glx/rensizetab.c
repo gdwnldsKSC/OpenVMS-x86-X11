@@ -34,6 +34,10 @@
 **
 */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "glxserver.h"
 #include "g_disptab_EXT.h"
 

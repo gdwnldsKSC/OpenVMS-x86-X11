@@ -27,15 +27,18 @@
  * FS data conversion
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include        <X11/X.h>
-#include 	<X11/Xtrans.h>
+#include 	<X11/Xtrans/Xtrans.h>
 #include	<X11/Xpoll.h>
-#include	"FS.h"
-#include	"FSproto.h"
-#include	"fontmisc.h"
-#include	"fontstruct.h"
+#include	<X11/fonts/FS.h>
+#include	<X11/fonts/FSproto.h>
+#include	<X11/fonts/fontmisc.h>
+#include	<X11/fonts/fontstruct.h>
 #include	"fservestr.h"
-#include	"fontutil.h"
+#include	<X11/fonts/fontutil.h>
 #include	"fslibos.h"
 
 extern char _fs_glyph_undefined;

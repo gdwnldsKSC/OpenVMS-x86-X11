@@ -1,4 +1,4 @@
-.\" $XdotOrg: xc/doc/man/Xp/XpSetLocaleHinter.man,v 1.1 2004/05/22 06:27:25 alanc Exp $
+.\" $XdotOrg: xc/doc/man/Xp/XpSetLocaleHinter.man,v 1.2 2005/10/12 23:45:05 alanc Exp $
 .\"
 .\" Copyright 1996 Hewlett-Packard Company
 .\" Copyright 1996 International Business Machines Corp.
@@ -109,7 +109,7 @@ Where my_hinter might look as follows:
 .nf
    char *my_hinter()
    {
-       /*
+       /\(**
         * Use setlocale() to retrieve the current locale.
         */
        return( my_x_strdup( setlocale(LC_CTYPE, (char *) NULL) ) );

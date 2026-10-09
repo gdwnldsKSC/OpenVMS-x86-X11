@@ -28,7 +28,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(sunbw2,$(OBJS))
 
-InstallObjectModule(sunbw2,$(MODULEDIR),drivers)
+InstallVideoObjectModule(sunbw2,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(sunbw2)

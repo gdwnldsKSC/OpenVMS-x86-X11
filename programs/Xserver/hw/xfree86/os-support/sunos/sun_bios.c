@@ -23,6 +23,10 @@
  * OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifdef i386
 #define _NEED_SYSI86
 #endif

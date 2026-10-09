@@ -1,3 +1,4 @@
+/* $XdotOrg: xc/config/makedepend/def.h,v 1.4 2005/07/29 18:42:37 kem Exp $ */
 /* $Xorg: def.h,v 1.4 2001/02/09 02:03:16 xorgcvs Exp $ */
 /*
 
@@ -26,8 +27,13 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/config/makedepend/def.h,v 3.13tsi Exp $ */
 
-#include "Xos.h"
-#include "Xfuncproto.h"
+#ifdef HAVE_CONFIG_H /* Autotooled for Xorg 7.0? */
+# include "makedepend-config.h"
+# define USING_AUTOCONF
+#endif
+
+#include <X11/Xos.h>
+#include <X11/Xfuncproto.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

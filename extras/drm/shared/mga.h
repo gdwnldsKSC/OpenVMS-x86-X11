@@ -36,10 +36,6 @@
 
 /* General customization:
  */
-#define __HAVE_AGP		1
-#define __MUST_HAVE_AGP		1
-#define __HAVE_MTRR		1
-#define __HAVE_CTX_BITMAP	1
 
 #define DRIVER_AUTHOR		"Gareth Hughes, VA Linux Systems Inc."
 
@@ -63,36 +59,5 @@
 	[DRM_IOCTL_NR(DRM_IOCTL_MGA_ILOAD)]   = { mga_dma_iload,   1, 0 }, \
 	[DRM_IOCTL_NR(DRM_IOCTL_MGA_BLIT)]    = { mga_dma_blit,    1, 0 }, \
 	[DRM_IOCTL_NR(DRM_IOCTL_MGA_GETPARAM)]= { mga_getparam,    1, 0 },
-
-#define __HAVE_COUNTERS         3
-#define __HAVE_COUNTER6         _DRM_STAT_IRQ
-#define __HAVE_COUNTER7         _DRM_STAT_PRIMARY
-#define __HAVE_COUNTER8         _DRM_STAT_SECONDARY
-
-/* Driver customization:
- */
-#define DRIVER_PRETAKEDOWN( dev ) do {					\
-	mga_do_cleanup_dma( dev );					\
-} while (0)
-
-/* DMA customization:
- */
-#define __HAVE_DMA		1
-#define __HAVE_IRQ		1
-#define __HAVE_VBL_IRQ		1
-#define __HAVE_SHARED_IRQ       1
-
-#define __HAVE_DMA_QUIESCENT	1
-#define DRIVER_DMA_QUIESCENT() do {					\
-	drm_mga_private_t *dev_priv = dev->dev_private;			\
-	return mga_do_wait_for_idle( dev_priv );			\
-} while (0)
-
-/* Buffer customization:
- */
-#define DRIVER_BUF_PRIV_T	drm_mga_buf_priv_t
-
-#define DRIVER_AGP_BUFFERS_MAP( dev )					\
-	((drm_mga_private_t *)((dev)->dev_private))->buffers
 
 #endif

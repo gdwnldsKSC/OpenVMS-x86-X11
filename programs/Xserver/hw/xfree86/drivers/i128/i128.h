@@ -14,11 +14,19 @@
 
 #include "compiler.h"
 #include "xaa.h"
+#include "exa.h"
 #include "xf86Cursor.h"
 #include "vgaHW.h"
 #include "colormapst.h"
 #include "xf86DDC.h"
 #include "i128reg.h"
+
+struct source_format {
+    int render_format;
+    int i128_format;
+    int swap_flags;
+    int ignore_alpha;
+};
 
 /* Card-specific driver information */
 
@@ -58,13 +66,28 @@ typedef struct {
     DisplayModePtr mode;
 
     /* accel specific */
+    CARD32              buf_ctrl;
     CARD32		blitdir;
+    CARD32              planemask;
     CARD32		cmd;
-    CARD32		rop;
+    CARD32		rop; /* XXX XAA only */
     CARD32		clptl;
     CARD32		clpbr;
-
+    CARD32              sorg;
+    CARD32              sptch;
+    CARD32              dorg;
+    CARD32              dptch;
+    CARD32              wh;
+    CARD32              torg;
+    CARD32              tptch;
+    CARD32              tex_ctl;
+    CARD32              threedctl;
+    CARD32              acntrl;
+    struct source_format *source;
+    /* struct dest_format *dest; */
+    
     Bool		NoAccel;
+    Bool                exa;
     Bool		FlatPanel;
     Bool		DoubleScan;
     Bool		ShowCache;
@@ -88,7 +111,8 @@ typedef struct {
     int			minClock;
 
     CloseScreenProcPtr  CloseScreen;
-    XAAInfoRecPtr	AccelInfoRec;
+    XAAInfoRecPtr	XaaInfoRec;
+    ExaDriverPtr        ExaDriver;
     xf86CursorInfoPtr	CursorInfoRec;
     I2CBusPtr		I2C;
     Bool		DGAactive;
@@ -111,7 +135,8 @@ Bool I128SwitchMode(int scrnIndex, DisplayModePtr mode, int flags);
 
 Bool I128HWCursorInit(ScreenPtr pScreen);
 
-Bool I128AccelInit(ScreenPtr pScreen);
+Bool I128XaaInit(ScreenPtr pScreen);
+Bool I128ExaInit(ScreenPtr pScreen);
 void I128EngineDone(ScrnInfoPtr pScrn);
 
 Bool I128Init(ScrnInfoPtr pScrn, DisplayModePtr mode);
@@ -135,8 +160,8 @@ Bool I128ProgramTi3025(ScrnInfoPtr pScrn, DisplayModePtr mode);
 Bool I128ProgramIBMRGB(ScrnInfoPtr pScrn, DisplayModePtr mode);
 Bool I128ProgramSilverHammer(ScrnInfoPtr pScrn, DisplayModePtr mode);
 
-void I128DumpBaseRegisters(ScrnInfoPtr pScrn);
+/* void I128DumpBaseRegisters(ScrnInfoPtr pScrn); */
 void I128DumpActiveRegisters(ScrnInfoPtr pScrn);
-void I128DumpIBMDACRegisters(ScrnInfoPtr pScrn, volatile CARD32 *vrbg);
-
+/* void I128DumpIBMDACRegisters(ScrnInfoPtr pScrn, volatile CARD32 *vrbg); */
+ 
 #endif

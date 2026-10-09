@@ -7,10 +7,9 @@
 
 1.  Introduction
 
-The Chips and Technologies driver release in X11R6.8.2 came from XFree86 4.4
+The Chips and Technologies driver release in X11R6.9 came from XFree86 4.4
 rc2; this document was originally included in that release and has been
-updated modestly to reflect differences between X11R6.8.2 and XFree86 4.4
-rc2.
+updated modestly to reflect differences between X11R6.9 and XFree86 4.4 rc2.
 
 With the release of XFree86 version 4.0, the Chips and Technologies driver
 has been extensively rewritten and contains many new features.  This driver
@@ -28,7 +27,7 @@ might make users prefer to use this version. These features include
    o Gamma correction at all depths and DirectColor visuals for depths of 15
      or greater with the HiQV series of chipsets.
 
-   o Supports PsuedoColor overlays on 16bpp TrueColor screens for HiQV.
+   o Supports PseudoColor overlays on 16bpp TrueColor screens for HiQV.
 
    o Supports YUV colour space conversion with the XVideo extension.
 
@@ -961,7 +960,7 @@ cause damage.
 
                         startx -- -depth 24 -fbbpp 32   8-8-8 RGB truecolor
 
-            however as X11R6.8.2 allows 32bpp pixmaps to be used with frame-
+            however as X11R6.9 allows 32bpp pixmaps to be used with frame-
             buffers operating in 24bpp, this mode of operating will cost per-
             formance for no gain in functionality.
 
@@ -1033,4 +1032,4 @@ We also thank the many people on the net who have contributed by reporting
 bugs and extensively testing this server.
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.chips,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.chips,v 1.4 2005/12/21 05:39:05 kem Exp $

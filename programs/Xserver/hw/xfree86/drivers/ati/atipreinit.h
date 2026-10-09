@@ -24,10 +24,8 @@
 #ifndef ___ATIPREINIT_H___
 #define ___ATIPREINIT_H___ 1
 
-#include "atiproto.h"
-
 #include "xf86str.h"
 
-extern Bool ATIPreInit FunctionPrototype((ScrnInfoPtr, int));
+extern Bool ATIPreInit(ScrnInfoPtr, int);
 
 #endif /* ___ATIPREINIT_H___ */

@@ -27,6 +27,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 **************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * Authors:
  *   Jens Owen <jens@tungstengraphics.com>
@@ -328,7 +332,7 @@ static Bool GLINTDRIAgpInit(ScreenPtr pScreen)
       return FALSE;
    }
    xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[agp] %d kB allocated with handle 0x%08lx\n",
+ 	       "[agp] %d kB allocated with handle 0x%08x\n",
 	       pGlint->agp.size/1024, pGlint->agp.handle );
 
    if ( drmAgpBind( pGlint->drmSubFD, pGlint->agp.handle, 0 ) < 0 ) {
@@ -348,7 +352,7 @@ static Bool GLINTDRIAgpInit(ScreenPtr pScreen)
       return FALSE;
    }
    xf86DrvMsg( pScreen->myNum, X_INFO,
-	       "[agp] DMA buffers handle = 0x%08lx\n",
+ 	       "[agp] DMA buffers handle = 0x%08x\n",
 	       pGlint->buffers.handle );
 
    if ( drmMap( pGlint->drmSubFD, pGlint->buffers.handle, 
@@ -446,7 +450,6 @@ GLINTDRIScreenInit(ScreenPtr pScreen)
     /* Check that the GLX, DRI, and DRM modules have been loaded by testing
        for canonical symbols in each module. */
     if (!xf86LoaderCheckSymbol("GlxSetVisualConfigs")) return FALSE;
-    if (!xf86LoaderCheckSymbol("DRIScreenInit"))       return FALSE;
     if (!xf86LoaderCheckSymbol("drmAvailable"))        return FALSE;
     if (!xf86LoaderCheckSymbol("DRIQueryVersion")) {
       xf86DrvMsg(pScreen->myNum, X_ERROR,
@@ -458,12 +461,13 @@ GLINTDRIScreenInit(ScreenPtr pScreen)
     {
        int major, minor, patch;
        DRIQueryVersion(&major, &minor, &patch);
-       if (major != 4 || minor < 0) {
+       if (major != DRIINFO_MAJOR_VERSION || minor < DRIINFO_MINOR_VERSION) {
           xf86DrvMsg(pScreen->myNum, X_ERROR,
                      "[dri] GLINTDRIScreenInit failed because of a version mismatch.\n"
-                     "[dri] libDRI version is %d.%d.%d but version 4.0.x is needed.\n"
+                     "[dri] libdri version is %d.%d.%d but version %d.%d.x is needed.\n"
                      "[dri] Disabling DRI.\n",
-                     major, minor, patch);
+                     major, minor, patch,
+                     DRIINFO_MAJOR_VERSION, DRIINFO_MINOR_VERSION);
           return FALSE;
        }
     }
@@ -648,7 +652,7 @@ GLINTDRIScreenInit(ScreenPtr pScreen)
 	return FALSE;
     }
     xf86DrvMsg(pScreen->myNum, X_INFO, 
-	       "[drm] Register handle 0 = 0x%08lx\n",
+ 	       "[drm] Register handle 0 = 0x%08x\n",
 	       pGlintDRI->registers0.handle);
 
     /* pci region 0: control regs, following region, client access */
@@ -663,7 +667,7 @@ GLINTDRIScreenInit(ScreenPtr pScreen)
 	return FALSE;
     }
     xf86DrvMsg(pScreen->myNum, X_INFO, 
-	       "[drm] Register handle 1 = 0x%08lx\n",
+ 	       "[drm] Register handle 1 = 0x%08x\n",
 	       pGlintDRI->registers1.handle);
 
     /* pci region 0: control regs, second MX, first 4k page */
@@ -678,7 +682,7 @@ GLINTDRIScreenInit(ScreenPtr pScreen)
 	return FALSE;
     }
     xf86DrvMsg(pScreen->myNum, X_INFO, 
-	       "[drm] Register handle 2 = 0x%08lx\n",
+ 	       "[drm] Register handle 2 = 0x%08x\n",
 	       pGlintDRI->registers2.handle);
 
     /* pci region 0: control regs, second MX, following region */
@@ -693,7 +697,7 @@ GLINTDRIScreenInit(ScreenPtr pScreen)
 	return FALSE;
     }
     xf86DrvMsg(pScreen->myNum, X_INFO, 
-	       "[drm] Register handle 3 = 0x%08lx\n",
+ 	       "[drm] Register handle 3 = 0x%08x\n",
 	       pGlintDRI->registers3.handle);
 
     /* setup DMA buffers */

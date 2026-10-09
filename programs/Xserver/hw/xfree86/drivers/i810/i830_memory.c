@@ -2,7 +2,7 @@
 /**************************************************************************
 
 Copyright 1998-1999 Precision Insight, Inc., Cedar Park, Texas.
-Copyright © 2002 by David Dawes.
+Copyright Â© 2002 by David Dawes.
 
 All Rights Reserved.
 
@@ -50,6 +50,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *   Alan Hourihane <alanh@tungstengraphics.com>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_ansic.h"
 #include "xf86_OSproc.h"
@@ -90,7 +94,7 @@ AllocFromPool(ScrnInfoPtr pScrn, I830MemRange *result, I830MemPool *pool,
 	    end = pool->Free.End;
 
 	 start = ROUND_DOWN_TO(end - size, alignment);
-	 needed = pool->Free.End - start;
+	 needed = end - start;
       }
    }
    if (needed > pool->Free.Size) {
@@ -123,10 +127,9 @@ AllocFromPool(ScrnInfoPtr pScrn, I830MemRange *result, I830MemPool *pool,
       pool->Free.Start += needed;
       result->End = pool->Free.Start;
    } else {
-      result->Start = ROUND_DOWN_TO(pool->Free.End - size, alignment) -
-			pool->Total.End;
-      result->End = pool->Free.End - pool->Total.End;
+      result->Start = ROUND_DOWN_TO(pool->Free.End - size, alignment);
       pool->Free.End -= needed;
+      result->End = result->Start + needed;
    }
    pool->Free.Size = pool->Free.End - pool->Free.Start;
    result->Size = result->End - result->Start;
@@ -1236,7 +1239,7 @@ SetFence(ScrnInfoPtr pScrn, int nr, unsigned int start, unsigned int pitch,
 
    i830Reg->Fence[nr] = 0;
 
-   if (IS_I915G(pI830))
+   if (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))
    	fence_mask = ~I915G_FENCE_START_MASK;
    else
    	fence_mask = ~I830_FENCE_START_MASK;
@@ -1244,7 +1247,7 @@ SetFence(ScrnInfoPtr pScrn, int nr, unsigned int start, unsigned int pitch,
    if (start & fence_mask) {
       xf86DrvMsg(X_WARNING, pScrn->scrnIndex,
 		 "SetFence: %d: start (0x%08x) is not %s aligned\n",
-		 nr, start, (IS_I915G(pI830)) ? "1MB" : "512k");
+		 nr, start, (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830)) ? "1MB" : "512k");
       return;
    }
 
@@ -1264,7 +1267,7 @@ SetFence(ScrnInfoPtr pScrn, int nr, unsigned int start, unsigned int pitch,
 
    val = (start | FENCE_X_MAJOR | FENCE_VALID);
 
-   if (IS_I915G(pI830)) {
+   if (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830)) {
    	switch (size) {
 	   case MB(1):
       		val |= I915G_FENCE_SIZE_1M;
@@ -1325,7 +1328,7 @@ SetFence(ScrnInfoPtr pScrn, int nr, unsigned int start, unsigned int pitch,
    	}
    }
 
-   if (IS_I915G(pI830))
+   if (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))
 	fence_pitch = pitch / 512;
    else
 	fence_pitch = pitch / 128;
@@ -1614,7 +1617,7 @@ long
 I830CheckAvailableMemory(ScrnInfoPtr pScrn)
 {
    AgpInfoPtr agpinf;
-   int maxPages;
+   long maxPages;
 
    if (!xf86AgpGARTSupported() ||
        !xf86AcquireGART(pScrn->scrnIndex) ||
@@ -1623,8 +1626,9 @@ I830CheckAvailableMemory(ScrnInfoPtr pScrn)
       return -1;
 
    maxPages = agpinf->totalPages - agpinf->usedPages;
-   xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 2, "%s: %d kB available\n",
-		  "I830CheckAvailableMemory", maxPages * 4);
+   xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 2, 
+   	"Checking Available AGP Memory: %ld kB available (total %ld kB, used %ld kB)\n",
+	maxPages * 4, agpinf->totalPages * 4, agpinf->usedPages * 4);
 
    return maxPages * 4;
 }

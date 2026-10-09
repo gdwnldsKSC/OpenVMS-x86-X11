@@ -1,5 +1,5 @@
 /*
- * $Id: compint.h,v 1.9 2004/05/21 03:32:27 keithp Exp $
+ * $Id: compint.h,v 1.8 2005/07/03 08:53:37 daniels Exp $
  *
  * Copyright © 2003 Keith Packard
  *
@@ -21,6 +21,10 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #ifndef _COMPINT_H_
 #define _COMPINT_H_

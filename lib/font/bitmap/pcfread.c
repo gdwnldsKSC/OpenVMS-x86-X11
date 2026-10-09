@@ -32,9 +32,13 @@ from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
-#include "fntfilst.h"
-#include "bitmap.h"
-#include "pcf.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/bitmap.h>
+#include <X11/fonts/pcf.h>
 
 #ifndef MAX
 #define   MAX(a,b)    (((a)>(b)) ? a : b)

@@ -75,47 +75,11 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define LOCAL_STENCIL_VARS	LOCAL_DEPTH_VARS
 
-
-#define CLIPPIXEL( _x, _y )						\
-   ((_x >= minx) && (_x < maxx) && (_y >= miny) && (_y < maxy))
-
-
-#define CLIPSPAN( _x, _y, _n, _x1, _n1, _i )				\
-   if ( _y < miny || _y >= maxy ) {					\
-      _n1 = 0, _x1 = x;							\
-   } else {								\
-      _n1 = _n;								\
-      _x1 = _x;								\
-      if ( _x1 < minx ) _i += (minx-_x1), n1 -= (minx-_x1), _x1 = minx; \
-      if ( _x1 + _n1 >= maxx ) n1 -= (_x1 + n1 - maxx);		        \
-   }
-
 #define Y_FLIP( _y )		(height - _y - 1)
 
+#define HW_LOCK()
 
-#define HW_LOCK()							\
-   r128ContextPtr rmesa = R128_CONTEXT(ctx);				\
-   FLUSH_BATCH( rmesa );						\
-   LOCK_HARDWARE( rmesa );						\
-   r128WaitForIdleLocked( rmesa );
-
-#define HW_CLIPLOOP()							\
-   do {									\
-      __DRIdrawablePrivate *dPriv = rmesa->driDrawable;			\
-      int _nc = dPriv->numClipRects;					\
-									\
-      while ( _nc-- ) {							\
-	 int minx = dPriv->pClipRects[_nc].x1 - dPriv->x;		\
-	 int miny = dPriv->pClipRects[_nc].y1 - dPriv->y;		\
-	 int maxx = dPriv->pClipRects[_nc].x2 - dPriv->x;		\
-	 int maxy = dPriv->pClipRects[_nc].y2 - dPriv->y;
-
-#define HW_ENDCLIPLOOP()						\
-      }									\
-   } while (0)
-
-#define HW_UNLOCK()							\
-   UNLOCK_HARDWARE( rmesa )
+#define HW_UNLOCK()
 
 
 
@@ -125,85 +89,23 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /* 16 bit, RGB565 color spanline and pixel functions
  */
-#undef INIT_MONO_PIXEL
-#define INIT_MONO_PIXEL(p, color) \
-  p = R128PACKCOLOR565( color[0], color[1], color[2] )
+#define SPANTMP_PIXEL_FMT GL_RGB
+#define SPANTMP_PIXEL_TYPE GL_UNSIGNED_SHORT_5_6_5
 
-#define WRITE_RGBA( _x, _y, r, g, b, a )				\
-   *(GLushort *)(buf + _x*2 + _y*pitch) = ((((int)r & 0xf8) << 8) |	\
-					   (((int)g & 0xfc) << 3) |	\
-					   (((int)b & 0xf8) >> 3))
+#define TAG(x)    r128##x##_RGB565
+#define TAG2(x,y) r128##x##_RGB565##y
+#include "spantmp2.h"
 
-#define WRITE_PIXEL( _x, _y, p )					\
-   *(GLushort *)(buf + _x*2 + _y*pitch) = p
-
-#define READ_RGBA( rgba, _x, _y )					\
-   do {									\
-      GLushort p = *(GLushort *)(read_buf + _x*2 + _y*pitch);		\
-      rgba[0] = (p >> 8) & 0xf8;					\
-      rgba[1] = (p >> 3) & 0xfc;					\
-      rgba[2] = (p << 3) & 0xf8;					\
-      rgba[3] = 0xff;							\
-      if ( rgba[0] & 0x08 ) rgba[0] |= 0x07;				\
-      if ( rgba[1] & 0x04 ) rgba[1] |= 0x03;				\
-      if ( rgba[2] & 0x08 ) rgba[2] |= 0x07;				\
-   } while (0)
-
-#define TAG(x) r128##x##_RGB565
-#include "spantmp.h"
-
-#define READ_DEPTH(d, _x, _y)                                                 \
-    d = *(GLushort *)(buf + _x*2 + _y*pitch)
 
 /* 32 bit, ARGB8888 color spanline and pixel functions
  */
-#undef INIT_MONO_PIXEL
-#define INIT_MONO_PIXEL(p, color) \
-  p = R128PACKCOLOR8888( color[0], color[1], color[2], color[3] )
+#define SPANTMP_PIXEL_FMT GL_BGRA
+#define SPANTMP_PIXEL_TYPE GL_UNSIGNED_INT_8_8_8_8_REV
 
-#define WRITE_RGBA( _x, _y, r, g, b, a )				\
-   *(GLuint *)(buf + _x*4 + _y*pitch) = ((b <<  0) |			\
-					 (g <<  8) |			\
-					 (r << 16) |			\
-					 (a << 24) )
+#define TAG(x)    r128##x##_ARGB8888
+#define TAG2(x,y) r128##x##_ARGB8888##y
+#include "spantmp2.h"
 
-#define WRITE_PIXEL( _x, _y, p )					\
-   *(GLuint *)(buf + _x*4 + _y*pitch) = p
-
-#define READ_RGBA( rgba, _x, _y )					\
-do {									\
-   GLuint p = *(GLuint *)(read_buf + _x*4 + _y*pitch);			\
-   rgba[0] = (p >> 16) & 0xff;						\
-   rgba[1] = (p >>  8) & 0xff;						\
-   rgba[2] = (p >>  0) & 0xff;						\
-   rgba[3] = 0xff;/*(p >> 24) & 0xff;*/						\
-} while (0)
-
-#define TAG(x) r128##x##_ARGB8888
-#include "spantmp.h"
-
-
-/* 24 bit, RGB888 color spanline and pixel functions */
-#undef INIT_MONO_PIXEL
-#define INIT_MONO_PIXEL(p, color) \
-  p = R128PACKCOLOR888( color[0], color[1], color[2] )
-
-#define WRITE_RGBA(_x, _y, r, g, b, a)                                        \
-    *(GLuint *)(buf + _x*3 + _y*pitch) = ((r << 16) |                         \
-					  (g << 8)  |                         \
-					  (b << 0))
-
-#define WRITE_PIXEL(_x, _y, p)                                                \
-    *(GLuint *)(buf + _x*3 + _y*pitch) = p
-
-#define READ_RGBA(rgba, _x, _y)                                               \
-    do {                                                                      \
-	GLuint p = *(GLuint *)(read_buf + _x*3 + _y*pitch);                   \
-	rgba[0] = (p >> 16) & 0xff;                                           \
-	rgba[1] = (p >> 8)  & 0xff;                                           \
-	rgba[2] = (p >> 0)  & 0xff;                                           \
-	rgba[3] = 0xff;                                                       \
-    } while (0)
 
 /* ================================================================
  * Depth buffer
@@ -211,6 +113,7 @@ do {									\
 
 /* 16-bit depth buffer functions
  */
+
 #define WRITE_DEPTH_SPAN()						\
    r128WriteDepthSpanLocked( rmesa, n,					\
 			     x + dPriv->x,				\
@@ -223,8 +126,6 @@ do {									\
    GLint oy[MAX_WIDTH];							\
    for ( i = 0 ; i < n ; i++ ) {					\
       ox[i] = x[i] + dPriv->x;						\
-   }									\
-   for ( i = 0 ; i < n ; i++ ) {					\
       oy[i] = Y_FLIP( y[i] ) + dPriv->y;				\
    }									\
    r128WriteDepthPixelsLocked( rmesa, n, ox, oy, depth, mask );		\
@@ -253,8 +154,8 @@ do {									\
    GLint i, remaining = n;						\
 									\
    while ( remaining > 0 ) {						\
-      GLint ox[MAX_WIDTH];						\
-      GLint oy[MAX_WIDTH];						\
+      GLint ox[128];							\
+      GLint oy[128];							\
       GLint count;							\
 									\
       if ( remaining <= 128 ) {						\
@@ -264,8 +165,6 @@ do {									\
       }									\
       for ( i = 0 ; i < count ; i++ ) {					\
 	 ox[i] = x[i] + dPriv->x;					\
-      }									\
-      for ( i = 0 ; i < count ; i++ ) {					\
 	 oy[i] = Y_FLIP( y[i] ) + dPriv->y;				\
       }									\
 									\
@@ -300,8 +199,6 @@ do {									\
    GLint oy[MAX_WIDTH];							\
    for ( i = 0 ; i < n ; i++ ) {					\
       ox[i] = x[i] + dPriv->x;						\
-   }									\
-   for ( i = 0 ; i < n ; i++ ) {					\
       oy[i] = Y_FLIP( y[i] ) + dPriv->y;				\
    }									\
    r128WriteDepthPixelsLocked( rmesa, n, ox, oy, depth, mask );		\
@@ -330,8 +227,8 @@ do {									\
    GLint i, remaining = n;						\
 									\
    while ( remaining > 0 ) {						\
-      GLint ox[MAX_WIDTH];						\
-      GLint oy[MAX_WIDTH];						\
+      GLint ox[128];							\
+      GLint oy[128];							\
       GLint count;							\
 									\
       if ( remaining <= 128 ) {						\
@@ -341,8 +238,6 @@ do {									\
       }									\
       for ( i = 0 ; i < count ; i++ ) {					\
 	 ox[i] = x[i] + dPriv->x;					\
-      }									\
-      for ( i = 0 ; i < count ; i++ ) {					\
 	 oy[i] = Y_FLIP( y[i] ) + dPriv->y;				\
       }									\
 									\
@@ -371,13 +266,6 @@ do {									\
 /* FIXME: Add support for hardware stencil buffers.
  */
 
-
-/* 32 bit depthbuffer functions */
-#define WRITE_DEPTH(_x, _y, d)                                                \
-    *(GLuint *)(buf + _x*4 + _y*pitch) = d
-
-
-
 /*
  * This function is called to specify which buffer to read and write
  * for software rasterization (swrast) fallbacks.  This doesn't necessarily
@@ -390,7 +278,7 @@ static void r128DDSetBuffer( GLcontext *ctx,
    r128ContextPtr rmesa = R128_CONTEXT(ctx);
 
    switch ( bufferBit ) {
-   case DD_FRONT_LEFT_BIT:
+   case BUFFER_BIT_FRONT_LEFT:
       if ( rmesa->sarea->pfCurrentPage == 1 ) {
          rmesa->drawOffset = rmesa->readOffset = rmesa->r128Screen->backOffset;
          rmesa->drawPitch  = rmesa->readPitch  = rmesa->r128Screen->backPitch;
@@ -399,7 +287,7 @@ static void r128DDSetBuffer( GLcontext *ctx,
          rmesa->drawPitch  = rmesa->readPitch  = rmesa->r128Screen->frontPitch;
       }
       break;
-   case DD_BACK_LEFT_BIT:
+   case BUFFER_BIT_BACK_LEFT:
       if ( rmesa->sarea->pfCurrentPage == 1 ) {
          rmesa->drawOffset = rmesa->readOffset = rmesa->r128Screen->frontOffset;
          rmesa->drawPitch  = rmesa->readPitch  = rmesa->r128Screen->frontPitch;
@@ -413,6 +301,20 @@ static void r128DDSetBuffer( GLcontext *ctx,
    }
 }
 
+void r128SpanRenderStart( GLcontext *ctx )
+{
+   r128ContextPtr rmesa = R128_CONTEXT(ctx);
+   FLUSH_BATCH(rmesa);
+   LOCK_HARDWARE(rmesa);
+   r128WaitForIdleLocked( rmesa );
+}
+
+void r128SpanRenderFinish( GLcontext *ctx )
+{
+   r128ContextPtr rmesa = R128_CONTEXT(ctx);
+   _swrast_flush( ctx );
+   UNLOCK_HARDWARE( rmesa );
+}
 
 void r128DDInitSpanFuncs( GLcontext *ctx )
 {
@@ -420,56 +322,47 @@ void r128DDInitSpanFuncs( GLcontext *ctx )
    struct swrast_device_driver *swdd = _swrast_GetDeviceDriverReference(ctx);
 
    swdd->SetBuffer = r128DDSetBuffer;
+   swdd->SpanRenderStart	= r128SpanRenderStart;
+   swdd->SpanRenderFinish	= r128SpanRenderFinish;
+}
 
-   switch ( rmesa->r128Screen->cpp ) {
-   case 2:
-      swdd->WriteRGBASpan	= r128WriteRGBASpan_RGB565;
-      swdd->WriteRGBSpan	= r128WriteRGBSpan_RGB565;
-      swdd->WriteMonoRGBASpan	= r128WriteMonoRGBASpan_RGB565;
-      swdd->WriteRGBAPixels	= r128WriteRGBAPixels_RGB565;
-      swdd->WriteMonoRGBAPixels	= r128WriteMonoRGBAPixels_RGB565;
-      swdd->ReadRGBASpan	= r128ReadRGBASpan_RGB565;
-      swdd->ReadRGBAPixels	= r128ReadRGBAPixels_RGB565;
-      break;
 
-   case 4:
-      swdd->WriteRGBASpan	= r128WriteRGBASpan_ARGB8888;
-      swdd->WriteRGBSpan	= r128WriteRGBSpan_ARGB8888;
-      swdd->WriteMonoRGBASpan	= r128WriteMonoRGBASpan_ARGB8888;
-      swdd->WriteRGBAPixels	= r128WriteRGBAPixels_ARGB8888;
-      swdd->WriteMonoRGBAPixels	= r128WriteMonoRGBAPixels_ARGB8888;
-      swdd->ReadRGBASpan	= r128ReadRGBASpan_ARGB8888;
-      swdd->ReadRGBAPixels	= r128ReadRGBAPixels_ARGB8888;
-      break;
-
-   default:
-      break;
+/**
+ * Plug in the Get/Put routines for the given driRenderbuffer.
+ */
+void
+r128SetSpanFunctions(driRenderbuffer *drb, const GLvisual *vis)
+{
+   if (drb->Base.InternalFormat == GL_RGBA) {
+      if (vis->redBits == 5 && vis->greenBits == 6 && vis->blueBits == 5) {
+         r128InitPointers_RGB565(&drb->Base);
+      }
+      else {
+         r128InitPointers_ARGB8888(&drb->Base);
+      }
    }
-
-   switch ( rmesa->glCtx->Visual.depthBits ) {
-   case 16:
-      swdd->ReadDepthSpan	= r128ReadDepthSpan_16;
-      swdd->WriteDepthSpan	= r128WriteDepthSpan_16;
-      swdd->ReadDepthPixels	= r128ReadDepthPixels_16;
-      swdd->WriteDepthPixels	= r128WriteDepthPixels_16;
-      break;
-
-   case 24:
-      swdd->ReadDepthSpan	= r128ReadDepthSpan_24_8;
-      swdd->WriteDepthSpan	= r128WriteDepthSpan_24_8;
-      swdd->ReadDepthPixels	= r128ReadDepthPixels_24_8;
-      swdd->WriteDepthPixels	= r128WriteDepthPixels_24_8;
-      break;
-
-   default:
-      break;
+   else if (drb->Base.InternalFormat == GL_DEPTH_COMPONENT16) {
+      drb->Base.GetRow        = r128ReadDepthSpan_16;
+      drb->Base.GetValues     = r128ReadDepthPixels_16;
+      drb->Base.PutRow        = r128WriteDepthSpan_16;
+      drb->Base.PutMonoRow    = r128WriteMonoDepthSpan_16;
+      drb->Base.PutValues     = r128WriteDepthPixels_16;
+      drb->Base.PutMonoValues = NULL;
    }
-
-   swdd->WriteCI8Span		= NULL;
-   swdd->WriteCI32Span		= NULL;
-   swdd->WriteMonoCISpan	= NULL;
-   swdd->WriteCI32Pixels	= NULL;
-   swdd->WriteMonoCIPixels	= NULL;
-   swdd->ReadCI32Span		= NULL;
-   swdd->ReadCI32Pixels		= NULL;
+   else if (drb->Base.InternalFormat == GL_DEPTH_COMPONENT24) {
+      drb->Base.GetRow        = r128ReadDepthSpan_24_8;
+      drb->Base.GetValues     = r128ReadDepthPixels_24_8;
+      drb->Base.PutRow        = r128WriteDepthSpan_24_8;
+      drb->Base.PutMonoRow    = r128WriteMonoDepthSpan_24_8;
+      drb->Base.PutValues     = r128WriteDepthPixels_24_8;
+      drb->Base.PutMonoValues = NULL;
+   }
+   else if (drb->Base.InternalFormat == GL_STENCIL_INDEX8_EXT) {
+      drb->Base.GetRow        = NULL;
+      drb->Base.GetValues     = NULL;
+      drb->Base.PutRow        = NULL;
+      drb->Base.PutMonoRow    = NULL;
+      drb->Base.PutValues     = NULL;
+      drb->Base.PutMonoValues = NULL;
+   }
 }

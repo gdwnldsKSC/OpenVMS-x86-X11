@@ -54,7 +54,7 @@ from The Open Group.
 #ifndef SNFSTR_H
 #define SNFSTR_H 1
 
-#include "fntfilio.h"
+#include <X11/fonts/fntfilio.h>
 
 /*-
  * This file describes the Server Natural Font format.

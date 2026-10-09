@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/lib/xtrans/Xtrans.c,v 1.3 2004/07/17 01:13:31 alanc Exp $ */
+/* $XdotOrg: xc/lib/xtrans/Xtrans.c,v 1.6 2005/11/08 06:33:26 jkj Exp $ */
 /* $Xorg: Xtrans.c,v 1.4 2001/02/09 02:04:06 xorgcvs Exp $ */
 /*
 
@@ -117,7 +117,7 @@ Xtransport_table Xtransports[] = {
     { &TRANS(NAMEDFuncs),	TRANS_LOCAL_NAMED_INDEX },
 #endif
 #ifndef sun
-#ifndef SCO325
+#if !defined(__SCO__) && !defined(__UNIXWARE__)
     { &TRANS(ISCFuncs),		TRANS_LOCAL_ISC_INDEX },
 #endif
     { &TRANS(SCOFuncs),		TRANS_LOCAL_SCO_INDEX },
@@ -712,7 +712,7 @@ TRANS(SetOption) (XtransConnInfo ciptr, int option, int arg)
 	    break;
 	case 1: /* Set to non-blocking mode */
 
-#if defined(O_NONBLOCK) && (!defined(ultrix) && !defined(hpux) && !defined(AIXV3) && !defined(uniosu) && !defined(__UNIXOS2__) && !defined(SCO)) && !defined(__QNX__)
+#if defined(O_NONBLOCK) && (!defined(ultrix) && !defined(hpux) && !defined(AIXV3) && !defined(uniosu) && !defined(__UNIXOS2__) && !defined(SCO325)) && !defined(__QNX__)
 	    ret = fcntl (fd, F_GETFL, 0);
 	    if (ret != -1)
 		ret = fcntl (fd, F_SETFL, ret | O_NONBLOCK);
@@ -726,7 +726,11 @@ TRANS(SetOption) (XtransConnInfo ciptr, int option, int arg)
 #else
 #if (defined(AIXV3) || defined(uniosu) || defined(WIN32) || defined(__UNIXOS2__) || defined(__QNX__)) && defined(FIONBIO)
 	{
+#ifdef WIN32
+	    u_long arg;
+#else
 	    int arg;
+#endif
 	    arg = 1;
 /* IBM TCP/IP understands this option too well: it causes TRANS(Read) to fail
  * eventually with EWOULDBLOCK */
@@ -1299,7 +1303,7 @@ static int TRANS(WriteV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
 
 #endif /* CRAY */
 
-#if (defined(SYSV) && defined(i386) && !defined(SCO325)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__)
+#if (defined(SYSV) && defined(i386) && !defined(__SCO__)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__)
 
 /*
  * emulate readv
@@ -1331,7 +1335,7 @@ static int TRANS(ReadV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
 
 #endif /* SYSV && i386 || WIN32 || __sxg__ */
 
-#if (defined(SYSV) && defined(i386) && !defined(SCO325)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__) || defined(__VMS)
+#if (defined(SYSV) && defined(i386) && !defined(__SCO__)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__) || defined(__VMS)
 
 /*
  * emulate writev
@@ -1364,7 +1368,7 @@ static int TRANS(WriteV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
 #endif /* SYSV && i386 || WIN32 || __sxg__ */
 
 
-#if (defined(_POSIX_SOURCE) && !defined(AIXV3) && !defined(__QNX__)) || defined(hpux) || defined(USG) || defined(SVR4) || defined(SCO)
+#if (defined(_POSIX_SOURCE) && !defined(AIXV3) && !defined(__QNX__)) || defined(hpux) || defined(USG) || defined(SVR4) || defined(__SCO__)
 #ifndef NEED_UTSNAME
 #define NEED_UTSNAME
 #endif

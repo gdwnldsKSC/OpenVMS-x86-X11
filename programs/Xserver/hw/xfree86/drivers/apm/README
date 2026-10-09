@@ -38,7 +38,7 @@ What should be done :
     - (why not) 3210 support
 
 
-       Loïc Grenié
+       LoÃ¯c GreniÃ©
 
 Authors:
 -----------------------------------------------------------------------
@@ -104,10 +104,10 @@ Modified 1999-03-14 by Henrik Harmsen
   - Added preliminary (completely untested) support for dynamic 
     loading.
 
-Modified 1999-07-07 by Loïc Grenié
+Modified 1999-07-07 by LoÃ¯c GreniÃ©
   - Converted to new RAC. Support for DGA and DGA2, I2C, Rush extension.
 
-Modified 2000-02-10 by Loïc Grenié
+Modified 2000-02-10 by LoÃ¯c GreniÃ©
   - Bug fixes
   - AP6422 (bugged !)
   - Xv driver

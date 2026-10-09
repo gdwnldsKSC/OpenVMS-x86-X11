@@ -66,19 +66,24 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 int R128_DEBUG = 0;
 #endif
 
-static const char * const card_extensions[] =
+#define need_GL_ARB_multisample
+#define need_GL_ARB_texture_compression
+#define need_GL_EXT_blend_minmax
+#include "extension_helper.h"
+
+const struct dri_extension card_extensions[] =
 {
-   "GL_ARB_multisample",
-   "GL_ARB_multitexture",
-   "GL_ARB_texture_compression",
-   "GL_ARB_texture_env_add",
-   "GL_ARB_texture_mirrored_repeat",
-   "GL_EXT_blend_subtract",
-   "GL_EXT_texture_edge_clamp",
-   "GL_MESA_ycbcr_texture",
-   "GL_NV_blend_square",
-   "GL_SGIS_generate_mipmap",
-   NULL
+    { "GL_ARB_multisample",                GL_ARB_multisample_functions },
+    { "GL_ARB_multitexture",               NULL },
+    { "GL_ARB_texture_compression",        GL_ARB_texture_compression_functions },
+    { "GL_ARB_texture_env_add",            NULL },
+    { "GL_ARB_texture_mirrored_repeat",    NULL },
+    { "GL_EXT_blend_subtract",             GL_EXT_blend_minmax_functions },
+    { "GL_EXT_texture_edge_clamp",         NULL },
+    { "GL_MESA_ycbcr_texture",             NULL },
+    { "GL_NV_blend_square",                NULL },
+    { "GL_SGIS_generate_mipmap",           NULL },
+    { NULL,                                NULL }
 };
 
 static const struct dri_debug_control debug_control[] =
@@ -89,6 +94,7 @@ static const struct dri_debug_control debug_control[] =
     { "2d",    DEBUG_VERBOSE_2D },
     { "sync",  DEBUG_ALWAYS_SYNC },
     { "api",   DEBUG_VERBOSE_API },
+    { "fall",  DEBUG_VERBOSE_FALL },
     { NULL,    0 }
 };
 
@@ -258,6 +264,11 @@ GLboolean r128CreateContext( const __GLcontextModes *glVisual,
 				     debug_control );
 #endif
 
+   if (driQueryOptionb(&rmesa->optionCache, "no_rast")) {
+      fprintf(stderr, "disabling 3D acceleration\n");
+      FALLBACK(rmesa, R128_FALLBACK_DISABLE, 1);
+   }
+
    return GL_TRUE;
 }
 
@@ -331,19 +342,13 @@ r128MakeCurrent( __DRIcontextPrivate *driContextPriv,
       driDrawableInitVBlank( driDrawPriv, newR128Ctx->vblank_flags );
       newR128Ctx->driDrawable = driDrawPriv;
 
-      _mesa_make_current2( newR128Ctx->glCtx,
-                           (GLframebuffer *) driDrawPriv->driverPrivate,
-                           (GLframebuffer *) driReadPriv->driverPrivate );
-
+      _mesa_make_current( newR128Ctx->glCtx,
+                          (GLframebuffer *) driDrawPriv->driverPrivate,
+                          (GLframebuffer *) driReadPriv->driverPrivate );
 
       newR128Ctx->new_state |= R128_NEW_WINDOW | R128_NEW_CLIP;
-
-      if ( !newR128Ctx->glCtx->Viewport.Width ) {
-	 _mesa_set_viewport(newR128Ctx->glCtx, 0, 0,
-                            driDrawPriv->w, driDrawPriv->h);
-      }
    } else {
-      _mesa_make_current( 0, 0 );
+      _mesa_make_current( NULL, NULL, NULL );
    }
 
    return GL_TRUE;

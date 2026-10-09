@@ -1,4 +1,5 @@
 .\" $Xorg: XtGetSres.man,v 1.3 2000/08/17 19:42:01 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtGetSres.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright 1993 X Consortium
 .\"
@@ -157,7 +158,7 @@ Specifies the number of arguments in the argument list.
 Specifies the number of resources in the resource list.
 .IP \fIresources\fP 1i
 Specifies the resource list for the subpart.
-.ds Wi that wants resources for a subpart
+.ds Wi that wants resources for a subpart \
 or that identifies the resource database to search
 .IP \fIw\fP 1i
 Specifies the widget \*(Wi.

@@ -23,6 +23,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/trident/trident_video.c,v 1.45 2003/11/10 18:22:34 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
@@ -35,7 +39,7 @@
 
 #include "trident.h"
 #include "trident_regs.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #include "xaa.h"
 #include "xaalocal.h"
 #include "dixstruct.h"
@@ -667,7 +671,11 @@ TRIDENTDisplayVideo(
     OUTW(vgaIOBase + 4, ((width<<1) & 0xff00)      | 0x91);
     OUTW(vgaIOBase + 4, ((offset) & 0xff) << 8     | 0x92);
     OUTW(vgaIOBase + 4, ((offset) & 0xff00)        | 0x93);
-    OUTW(vgaIOBase + 4, ((offset) & 0x070000) >> 8 | 0x94);
+    if (pTrident->Chipset >= CYBER9397) {
+    	OUTW(vgaIOBase + 4, ((offset) & 0x0f0000) >> 8 | 0x94);
+    } else {
+    	OUTW(vgaIOBase + 4, ((offset) & 0x070000) >> 8 | 0x94);
+    }
     
     /* Horizontal Zoom */
     if (pTrident->videoFlags & VID_ZOOM_INV) {

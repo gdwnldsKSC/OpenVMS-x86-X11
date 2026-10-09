@@ -30,6 +30,9 @@
 /* $XFree86: xc/lib/font/Type1/t1snap.c,v 1.3 1999/08/22 08:58:54 dawes Exp $ */
 
  
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "objects.h"
 #include "spaces.h"
 #include "paths.h"

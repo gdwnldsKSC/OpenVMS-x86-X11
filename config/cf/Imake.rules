@@ -1,7 +1,7 @@
 XCOMM ---------------------------------------------------------------------
 XCOMM Imake rules for building libraries, programs, scripts, and data files
 XCOMM rules:  $Xorg: Imake.rules,v 1.3 2000/08/17 19:41:46 cpqbld Exp $
-XCOMM rules:  $XdotOrg: xc/config/cf/Imake.rules,v 1.6 2004/08/13 17:21:43 krh Exp $
+XCOMM rules:  $XdotOrg: xc/config/cf/Imake.rules,v 1.11 2005/11/08 06:33:24 jkj Exp $
 XCOMM
 XCOMM
 XCOMM
@@ -559,7 +559,7 @@ install::								@@\
 
 #ifndef InstallCreateLink
 # define InstallCreateLink(dest,from,to)				@@\
-install:: $(DESTDIR)dest/from						@@\
+install::								@@\
 	  cd $(DESTDIR)dest && \					@@\
 	  $(LN) -sf from to
 #endif
@@ -2404,16 +2404,16 @@ clean::									@@\
 #endif
 
 #ifndef AssembleObject
-#define AssembleObject(flags) CPPOnlyAsm($*,flags)			@@\
-	RemoveFile($*.o)						@@\
-	$(AS) -o $*.o $*.i						@@\
-	RemoveFile($*.i)
+#define AssembleObject(basename,flags) CPPOnlyAsm(basename,flags)	@@\
+	RemoveFile(basename.o)						@@\
+	$(AS) -o basename.o basename.i					@@\
+	RemoveFile(basename.i)
 #endif
 
 #ifndef NormalAsmObjectRule
 #define NormalAsmObjectRule()						@@\
 .S.o:									@@\
-	AssembleObject($(_NOOP_))					@@\
+	AssembleObject($*,$(_NOOP_))					@@\
 									@@\
 .S.i:									@@\
 	CPPOnlyAsm($*,$(_NOOP_))
@@ -2426,7 +2426,7 @@ dst.S:  src.S								@@\
 	$(LN) $? $@							@@\
 									@@\
 dst.o:  dst.S								@@\
-	AssembleObject(flags)						@@\
+	AssembleObject(dst,flags)					@@\
 									@@\
 dst.i:  dst.S								@@\
 	CPPOnlyAsm(dst,flags)						@@\
@@ -2441,7 +2441,7 @@ clean::									@@\
 #define ObjectFromAsmSource(src,flags)					@@\
 									@@\
 src.o:  src.S								@@\
-	AssembleObject(flags)						@@\
+	AssembleObject(src,flags)					@@\
 									@@\
 src.i:  src.S								@@\
 	CPPOnlyAsm(src,flags)						@@\
@@ -3502,7 +3502,7 @@ AllTarget(module)							@@\
 									@@\
 module: modlist								@@\
 	RemoveFile($@)							@@\
-	$(CC) -o $@ $(SHLIBLDFLAGS) modlist				@@\
+	$(CC) -o $@ $(SHLIBLDFLAGS) $(NOSTDLIB) modlist $(POSTNOSTDLIB) @@\
 									@@\
 clean::									@@\
 	RemoveFile(module)
@@ -3517,7 +3517,7 @@ AllTarget(module)							@@\
 									@@\
 module: deplist								@@\
 	RemoveFile($@)							@@\
-	$(CC) -o $@ $(SHLIBLDFLAGS) modlist				@@\
+	$(CC) -o $@ $(SHLIBLDFLAGS) $(NOSTDLIB) modlist $(POSTNOSTDLIB) @@\
 									@@\
 clean::									@@\
 	RemoveFile(module)
@@ -3544,6 +3544,28 @@ AllTarget(module)							@@\
 install:: module							@@\
 	MakeDir($(DESTDIR)dest/subdir)					@@\
 	$(INSTALL) -c $(INSTDATFLAGS) module $(DESTDIR)dest/subdir/instname
+#endif
+
+/* Shortcuts for installing driver module, one per class */
+#ifndef InstallVideoObjectModule
+#define InstallVideoObjectModule(module,dest)                          @@\
+InstallObjectModule(module,dest,drivers)
+#endif
+#ifndef InstallInputObjectModule
+#define InstallInputObjectModule(module,dest)                          @@\
+InstallObjectModule(module,dest,input)
+#endif
+#ifndef InstallExtensionsObjectModule
+#define InstallExtensionsObjectModule(module,dest)                     @@\
+InstallObjectModule(module,dest,extensions)
+#endif
+#ifndef InstallFontsObjectModule
+#define InstallFontsObjectModule(module,dest)                          @@\
+InstallObjectModule(module,dest,fonts)
+#endif
+#ifndef InstallMultimediaObjectModule
+#define InstallMultimediaObjectModule(module,dest)                     @@\
+InstallObjectModule(module,dest,multimedia)
 #endif
 
 #ifndef InstallObjectModule

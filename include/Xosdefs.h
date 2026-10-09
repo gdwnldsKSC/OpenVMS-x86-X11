@@ -1,7 +1,7 @@
 /*
  * O/S-dependent (mis)feature macro definitions
  *
- * $XdotOrg: xc/include/Xosdefs.h,v 1.2 2004/04/23 18:43:05 eich Exp $
+ * $XdotOrg: xc/include/Xosdefs.h,v 1.7 2005/11/08 06:33:25 jkj Exp $
  * $Xorg: Xosdefs.h,v 1.5 2001/02/09 02:03:23 xorgcvs Exp $
  *
 Copyright 1991, 1998  The Open Group
@@ -81,18 +81,16 @@ in this Software without prior written authorization from The Open Group.
 #endif
 
 #ifdef _SCO_DS
-#ifndef SCO
-#define SCO
-#endif
-#ifndef SCO325
-#define SCO325
+#ifndef __SCO__
+#define __SCO__
 #endif
 #endif
 
 #ifdef i386
 #ifdef SYSV
-#if !defined(ISC) && !defined(SCO) && !defined(_SEQUENT_)
-#if !defined(_POSIX_SOURCE) && !defined(_SCO_DS)
+#if !defined(ISC) && !defined(__SCO__) && !defined(_SEQUENT_) && \
+	!defined(__UNIXWARE__) && !defined(sun)
+#if !defined(_POSIX_SOURCE)
 #define X_NOT_POSIX
 #endif
 #define X_NOT_STDC_ENV
@@ -111,7 +109,7 @@ in this Software without prior written authorization from The Open Group.
  * This check allows non-Imake configured programs to build correctly.
  */
 #if defined(__SVR4) && !defined(SVR4)
-#define SVR4
+#define SVR4 1
 #endif
 #ifdef SVR4
 /* define this to whatever it needs to be */
@@ -147,5 +145,22 @@ in this Software without prior written authorization from The Open Group.
 #define MAXPATHLEN 4096
 #endif
 #endif
+
+#if defined(__SCO__) || defined(__UNIXWARE__)
+# ifndef PATH_MAX
+#  define PATH_MAX	1024
+# endif
+# ifndef MAXPATHLEN
+#  define MAXPATHLEN	1024
+# endif
+#endif
+
+#if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) \
+	|| defined(__Darwin__) || defined(__DragonFly__)
+# ifndef CSRG_BASED
+#  define CSRG_BASED
+# endif
+#endif
+
 #endif /* _XOSDEFS_H_ */
 

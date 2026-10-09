@@ -36,6 +36,9 @@
  *****************************************************************************/
 /* $XFree86: xc/lib/Xp/XpPage.c,v 1.4 2001/12/19 21:28:44 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/extensions/Printstr.h>
 #include <X11/Xlibint.h>
 #include "XpExtUtil.h"

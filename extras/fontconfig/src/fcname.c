@@ -1,6 +1,7 @@
 /*
+ * $RCSId: xc/lib/fontconfig/src/fcname.c,v 1.15 2002/09/26 00:17:28 keithp Exp $
  *
- * Copyright © 2000 Keith Packard
+ * Copyright Â© 2000 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -29,7 +30,11 @@
 
 static const FcObjectType _FcBaseObjectTypes[] = {
     { FC_FAMILY,	FcTypeString, },
+    { FC_FAMILYLANG,	FcTypeString, },
     { FC_STYLE,		FcTypeString, },
+    { FC_STYLELANG,	FcTypeString, },
+    { FC_FULLNAME,	FcTypeString, },
+    { FC_FULLNAMELANG,	FcTypeString, },
     { FC_SLANT,		FcTypeInteger, },
     { FC_WEIGHT,	FcTypeInteger, },
     { FC_WIDTH,		FcTypeInteger, },
@@ -40,6 +45,7 @@ static const FcObjectType _FcBaseObjectTypes[] = {
     { FC_FOUNDRY,	FcTypeString, },
 /*    { FC_CORE,		FcTypeBool, }, */
     { FC_ANTIALIAS,	FcTypeBool, },
+    { FC_HINT_STYLE,    FcTypeInteger, },
     { FC_HINTING,	FcTypeBool, },
     { FC_VERTICAL_LAYOUT,   FcTypeBool, },
     { FC_AUTOHINT,	FcTypeBool, },
@@ -61,6 +67,9 @@ static const FcObjectType _FcBaseObjectTypes[] = {
     { FC_CHARSET,	FcTypeCharSet },
     { FC_LANG,		FcTypeLangSet },
     { FC_FONTVERSION,	FcTypeInteger },
+    { FC_CAPABILITY,	FcTypeString },
+    { FC_FONTFORMAT,	FcTypeString },
+    { FC_EMBOLDEN,	FcTypeBool },
 };
 
 #define NUM_OBJECT_TYPES    (sizeof _FcBaseObjectTypes / sizeof _FcBaseObjectTypes[0])
@@ -141,6 +150,7 @@ static const FcConstant _FcBaseConstants[] = {
     { (FcChar8 *) "extralight",	    "weight",   FC_WEIGHT_EXTRALIGHT, },
     { (FcChar8 *) "ultralight",	    "weight",   FC_WEIGHT_EXTRALIGHT, },
     { (FcChar8 *) "light",	    "weight",   FC_WEIGHT_LIGHT, },
+    { (FcChar8 *) "book",	    "weight",	FC_WEIGHT_BOOK, },
     { (FcChar8 *) "regular",	    "weight",   FC_WEIGHT_REGULAR, },
     { (FcChar8 *) "medium",	    "weight",   FC_WEIGHT_MEDIUM, },
     { (FcChar8 *) "demibold",	    "weight",   FC_WEIGHT_DEMIBOLD, },
@@ -165,6 +175,7 @@ static const FcConstant _FcBaseConstants[] = {
     { (FcChar8 *) "ultraexpanded",  "width",	FC_WIDTH_ULTRAEXPANDED },
     
     { (FcChar8 *) "proportional",   "spacing",  FC_PROPORTIONAL, },
+    { (FcChar8 *) "dual",	    "spacing",  FC_DUAL, },
     { (FcChar8 *) "mono",	    "spacing",  FC_MONO, },
     { (FcChar8 *) "charcell",	    "spacing",  FC_CHARCELL, },
 
@@ -174,6 +185,11 @@ static const FcConstant _FcBaseConstants[] = {
     { (FcChar8 *) "vrgb",	    "rgba",	    FC_RGBA_VRGB },
     { (FcChar8 *) "vbgr",	    "rgba",	    FC_RGBA_VBGR },
     { (FcChar8 *) "none",	    "rgba",	    FC_RGBA_NONE },
+
+    { (FcChar8 *) "hintnone",	    "hintstyle",   FC_HINT_NONE },
+    { (FcChar8 *) "hintslight",	    "hintstyle",   FC_HINT_SLIGHT },
+    { (FcChar8 *) "hintmedium",	    "hintstyle",   FC_HINT_MEDIUM },
+    { (FcChar8 *) "hintfull",	    "hintstyle",   FC_HINT_FULL },
 };
 
 #define NUM_FC_CONSTANTS   (sizeof _FcBaseConstants/sizeof _FcBaseConstants[0])
@@ -259,7 +275,7 @@ FcNameConstant (FcChar8 *string, int *result)
 }
 
 FcBool
-FcNameBool (FcChar8 *v, FcBool *result)
+FcNameBool (const FcChar8 *v, FcBool *result)
 {
     char    c0, c1;
 

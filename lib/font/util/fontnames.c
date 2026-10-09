@@ -35,8 +35,11 @@ from The Open Group.
  *	@(#)fontnames.c	3.1	91/04/10
  */
 
-#include	"fontmisc.h"
-#include	"fontstruct.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include	<X11/fonts/fontmisc.h>
+#include	<X11/fonts/fontstruct.h>
 
 void
 FreeFontNames(FontNamesPtr pFN)

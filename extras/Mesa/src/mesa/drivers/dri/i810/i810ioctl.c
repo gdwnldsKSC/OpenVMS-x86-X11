@@ -55,7 +55,7 @@ static void i810Clear( GLcontext *ctx, GLbitfield mask, GLboolean all,
    __DRIdrawablePrivate *dPriv = imesa->driDrawable;
    const GLuint colorMask = *((GLuint *) &ctx->Color.ColorMask);
    drmI810Clear clear;
-   int i;
+   unsigned int i;
 
    clear.flags = 0;
    clear.clear_color = imesa->ClearColor;
@@ -63,20 +63,20 @@ static void i810Clear( GLcontext *ctx, GLbitfield mask, GLboolean all,
 
    I810_FIREVERTICES( imesa );
 	
-   if ((mask & DD_FRONT_LEFT_BIT) && colorMask == ~0) {
+   if ((mask & BUFFER_BIT_FRONT_LEFT) && colorMask == ~0U) {
       clear.flags |= I810_FRONT;
-      mask &= ~DD_FRONT_LEFT_BIT;
+      mask &= ~BUFFER_BIT_FRONT_LEFT;
    }
 
-   if ((mask & DD_BACK_LEFT_BIT) && colorMask == ~0) {
+   if ((mask & BUFFER_BIT_BACK_LEFT) && colorMask == ~0U) {
       clear.flags |= I810_BACK;
-      mask &= ~DD_BACK_LEFT_BIT;
+      mask &= ~BUFFER_BIT_BACK_LEFT;
    }
 
-   if (mask & DD_DEPTH_BIT) {
+   if (mask & BUFFER_BIT_DEPTH) {
       if (ctx->Depth.Mask) 
 	 clear.flags |= I810_DEPTH;
-      mask &= ~DD_DEPTH_BIT;
+      mask &= ~BUFFER_BIT_DEPTH;
    }
 
    if (clear.flags) {
@@ -89,7 +89,7 @@ static void i810Clear( GLcontext *ctx, GLbitfield mask, GLboolean all,
 
       for (i = 0 ; i < imesa->numClipRects ; ) 
       { 	 
-	 int nr = MIN2(i + I810_NR_SAREA_CLIPRECTS, imesa->numClipRects);
+	 unsigned int nr = MIN2(i + I810_NR_SAREA_CLIPRECTS, imesa->numClipRects);
 	 drm_clip_rect_t *box = imesa->pClipRects;	 
 	 drm_clip_rect_t *b = (drm_clip_rect_t *)imesa->sarea->boxes;
 	 int n = 0;
@@ -225,7 +225,7 @@ void i810PageFlip( const __DRIdrawablePrivate *dPriv )
    }
 
   /*  i810SetDrawBuffer( imesa->glCtx, imesa->glCtx->Color.DriverDrawBuffer );*/
-  i810DrawBuffer( imesa->glCtx, imesa->glCtx->Color.DrawBuffer );
+  i810DrawBuffer( imesa->glCtx, imesa->glCtx->Color.DrawBuffer[0] );
   imesa->upload_cliprects = GL_TRUE;
   imesa->lastSwap = tmp;
   return;

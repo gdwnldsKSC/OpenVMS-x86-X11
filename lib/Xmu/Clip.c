@@ -26,6 +26,9 @@
  */
 /* $XFree86: xc/lib/Xmu/Clip.c,v 1.1 1998/08/16 10:25:03 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdlib.h>
 
 #include <X11/IntrinsicP.h>

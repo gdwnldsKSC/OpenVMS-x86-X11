@@ -28,6 +28,9 @@
  * Authors:	Harold L Hunt II
  */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 
 
@@ -38,7 +41,9 @@
 int		g_iNumScreens = 0;
 winScreenInfo	g_ScreenInfo[MAXSCREENS];
 int		g_iLastScreen = -1;
+#ifdef HAS_DEVWINDOWS
 int		g_fdMessageQueue = WIN_FD_INVALID;
+#endif
 int		g_iScreenPrivateIndex = -1;
 int		g_iCmapPrivateIndex = -1;
 int		g_iGCPrivateIndex = -1;
@@ -55,7 +60,12 @@ const char *	g_pszQueryHost = NULL;
 Bool		g_fXdmcpEnabled = FALSE;
 HICON		g_hIconX = NULL;
 HICON		g_hSmallIconX = NULL;
+#ifndef RELOCATE_PROJECTROOT
 char *		g_pszLogFile = "/tmp/XWin.log";
+#else
+char *		g_pszLogFile = "XWin.log";
+Bool		g_fLogFileChanged = FALSE;
+#endif
 int		g_iLogVerbose = 2;
 Bool		g_fLogInited = FALSE;
 char *		g_pszCommandLine = NULL;
@@ -99,7 +109,7 @@ Bool			g_fUnicodeClipboard = TRUE;
 Bool			g_fClipboard = FALSE;
 Bool			g_fClipboardLaunched = FALSE;
 Bool			g_fClipboardStarted = FALSE;
-pthread_t		g_ptClipboardProc = 0;
+pthread_t		g_ptClipboardProc;
 HWND			g_hwndClipboard = NULL;
 void			*g_pClipboardDisplay = NULL;
 Window			g_iClipboardWindow = None;
@@ -124,6 +134,5 @@ winInitializeGlobals (void)
   g_pClipboardDisplay = NULL;
   g_atomLastOwnedSelection = None;
   g_hwndClipboard = NULL;
-  g_ptClipboardProc = 0;
 #endif
 }

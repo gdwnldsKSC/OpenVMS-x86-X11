@@ -115,15 +115,10 @@ void print_medium_sizes( Display *pdpy, XPContext pcontext )
 static
 void print_resolutions( Display *pdpy, XPContext pcontext )
 {
-    long              dpi;
     XpuResolutionList list;
     int               list_count;
     int               i;
-
-    if( XpuGetResolution(pdpy, pcontext, &dpi) == 1 )
-    {
-      printf("\tdefault-printer-resolution=%ld\n", dpi);
-    }
+    char              *defresname; /* name of default resolution */
 
     list = XpuGetResolutionList(pdpy, pcontext, &list_count);
     if( !list )
@@ -132,10 +127,26 @@ void print_resolutions( Display *pdpy, XPContext pcontext )
       return;
     }
 
+    defresname = XpGetOneAttribute(pdpy, pcontext, XPDocAttr, "default-printer-resolution");
+    if( defresname )
+    {
+      XpuResolutionRec *res = XpuFindResolutionByName(list, list_count, defresname);
+      if( res )
+      {
+        printf("\tdefault-printer-resolution=%s (%ldx%ld)\n", res->name, res->x_dpi, res->y_dpi);
+      }
+      else
+      {
+        fprintf(stderr, "XpuFindResolutionByName() returned no match for default resolution '%s'\n",
+                defresname);
+      }
+      XFree(defresname);
+    }
+
     for( i = 0 ; i < list_count ; i++ )
     {
       XpuResolutionRec *curr = &list[i];
-      printf("\tresolution=%ld\n", curr->dpi);
+      printf("\tresolution=%s (%ldx%ld)\n", curr->name, curr->x_dpi, curr->y_dpi);
     }
   
     XpuFreeResolutionList(list);
@@ -236,10 +247,6 @@ void print_detailed_printer_info(XPPrinterRec *xp_rec, int detailLevel)
 static
 void print_printer_info(XPPrinterRec *xp_rec, int detailLevel)
 {   
-    Display    *pdpy;     /* X connection */
-    XPContext   pcontext; /* Xprint context */
-    long        dpi;
-
     printf("printer: %s\n", xp_rec->name);
     
     if( detailLevel < 1 )

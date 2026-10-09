@@ -31,8 +31,8 @@
 ** published by SGI, but has not been independently verified as being
 ** compliant with the OpenGL(R) version 1.2.1 Specification.
 **
-** $Date$ $Revision$
-** $Header: //depot/main/gfx/lib/glu/libutil/glue.c#4 $
+** $Date: 2004/03/14 08:29:11 $ $Revision: 1.1.1.4 $
+** $Header: /cvs/xorg/xc/extras/ogl-sample/main/gfx/lib/glu/libutil/glue.c,v 1.1.1.4 2004/03/14 08:29:11 eich Exp $
 */
 
 #include <stdlib.h>

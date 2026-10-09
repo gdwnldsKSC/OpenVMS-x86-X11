@@ -36,7 +36,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "glheader.h"
 #include "imports.h"
 #include "context.h"
+#include "framebuffer.h"
+#include "fbobject.h"
 #include "matrix.h"
+#include "renderbuffer.h"
 #include "simple_list.h"
 #include "utils.h"
 
@@ -51,11 +54,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "GL/internal/dri_interface.h"
 
-#ifdef USE_NEW_INTERFACE
-static PFNGLXCREATECONTEXTMODES create_context_modes = NULL;
-#endif /* USE_NEW_INTERFACE */
+extern const struct dri_extension card_extensions[];
 
-#ifdef USE_NEW_INTERFACE
 static __GLcontextModes *fill_in_modes( __GLcontextModes *modes,
 				       unsigned pixel_bits,
 				       unsigned depth_bits,
@@ -64,11 +64,11 @@ static __GLcontextModes *fill_in_modes( __GLcontextModes *modes,
 				       unsigned num_db_modes,
 				       int visType )
 {
-    static const uint8_t bits[1][4] = {
+    static const u_int8_t bits[1][4] = {
 	{          5,          6,          5,          0 }
     };
 
-    static const uint32_t masks[1][4] = {
+    static const u_int32_t masks[1][4] = {
 	{ 0x0000F800, 0x000007E0, 0x0000001F, 0x00000000 }
     };
 
@@ -119,9 +119,8 @@ static __GLcontextModes *fill_in_modes( __GLcontextModes *modes,
     return modes;
 
 }
-#endif /* USE_NEW_INTERFACE */
 
-#ifdef USE_NEW_INTERFACE
+
 static __GLcontextModes *
 i810FillInModes( unsigned pixel_bits, unsigned depth_bits,
 		 unsigned stencil_bits, GLboolean have_back_buffer )
@@ -159,7 +158,7 @@ i810FillInModes( unsigned pixel_bits, unsigned depth_bits,
 
     num_modes = depth_buffer_factor * back_buffer_factor * 4;
 
-    modes = (*create_context_modes)( num_modes, sizeof( __GLcontextModes ) );
+    modes = (*dri_interface->createContextModes)( num_modes, sizeof( __GLcontextModes ) );
     m = modes;
     for ( i = 0 ; i < depth_buffer_factor ; i++ ) {
 	m = fill_in_modes( m, pixel_bits,
@@ -186,8 +185,6 @@ i810FillInModes( unsigned pixel_bits, unsigned depth_bits,
     return modes;
 
 }
-#endif /* USE_NEW_INTERFACE */
-
 
      
 /*  static int i810_malloc_proxy_buf(drmBufMapPtr buffers) */
@@ -228,6 +225,10 @@ i810InitDriver(__DRIscreenPrivate *sPriv)
    i810ScreenPrivate *i810Screen;
    I810DRIPtr         gDRIPriv = (I810DRIPtr)sPriv->pDevPriv;
 
+   if (sPriv->devPrivSize != sizeof(I810DRIRec)) {
+      fprintf(stderr,"\nERROR!  sizeof(I810DRIRec) does not match passed size from device driver\n");
+      return GL_FALSE;
+   }
 
    /* Allocate the private area */
    i810Screen = (i810ScreenPrivate *)CALLOC(sizeof(i810ScreenPrivate));
@@ -330,22 +331,64 @@ i810DestroyScreen(__DRIscreenPrivate *sPriv)
 }
 
 
+/**
+ * Create a buffer which corresponds to the window.
+ */
 static GLboolean
 i810CreateBuffer( __DRIscreenPrivate *driScrnPriv,
                   __DRIdrawablePrivate *driDrawPriv,
                   const __GLcontextModes *mesaVis,
                   GLboolean isPixmap )
 {
+   i810ScreenPrivate *screen = (i810ScreenPrivate *) driScrnPriv->private;
+
    if (isPixmap) {
       return GL_FALSE; /* not implemented */
    }
    else {
+#if 0
       driDrawPriv->driverPrivate = (void *)
          _mesa_create_framebuffer(mesaVis,
                                   GL_FALSE,  /* software depth buffer? */
                                   mesaVis->stencilBits > 0,
                                   mesaVis->accumRedBits > 0,
                                   GL_FALSE /* s/w alpha planes */);
+#else
+      struct gl_framebuffer *fb = _mesa_create_framebuffer(mesaVis);
+
+      {
+         driRenderbuffer *frontRb
+            = driNewRenderbuffer(GL_RGBA, screen->cpp,
+                                 /*screen->frontOffset*/0, screen->backPitch);
+         i810SetSpanFunctions(frontRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_FRONT_LEFT, &frontRb->Base);
+      }
+
+      if (mesaVis->doubleBufferMode) {
+         driRenderbuffer *backRb
+            = driNewRenderbuffer(GL_RGBA, screen->cpp,
+                                 screen->backOffset, screen->backPitch);
+         i810SetSpanFunctions(backRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_BACK_LEFT, &backRb->Base);
+      }
+
+      if (mesaVis->depthBits == 16) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT16, screen->cpp,
+                                 screen->depthOffset, screen->backPitch);
+         i810SetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+
+      _mesa_add_soft_renderbuffers(fb,
+                                   GL_FALSE, /* color */
+                                   GL_FALSE, /* depth */
+                                   mesaVis->stencilBits > 0,
+                                   mesaVis->accumRedBits > 0,
+                                   GL_FALSE, /* alpha */
+                                   GL_FALSE /* aux */);
+      driDrawPriv->driverPrivate = (void *) fb;
+#endif
       return (driDrawPriv->driverPrivate != NULL);
    }
 }
@@ -376,21 +419,6 @@ static const struct __DriverAPIRec i810API = {
 };
 
 
-/*
- * This is the bootstrap function for the driver.
- * The __driCreateScreen name is the symbol that libGL.so fetches.
- * Return:  pointer to a __DRIscreenPrivate.
- */
-#if !defined(DRI_NEW_INTERFACE_ONLY)
-void *__driCreateScreen(Display *dpy, int scrn, __DRIscreen *psc,
-                        int numConfigs, __GLXvisualConfig *config)
-{
-   __DRIscreenPrivate *psp;
-   psp = __driUtilCreateScreen(dpy, scrn, psc, numConfigs, config, &i810API);
-   return (void *) psp;
-}
-#endif /* !defined(DRI_NEW_INTERFACE_ONLY) */
-
 /**
  * This is the bootstrap function for the driver.  libGL supplies all of the
  * requisite information about the system, and the driver initializes itself.
@@ -401,8 +429,8 @@ void *__driCreateScreen(Display *dpy, int scrn, __DRIscreen *psc,
  * \return A pointer to a \c __DRIscreenPrivate on success, or \c NULL on 
  *         failure.
  */
-#ifdef USE_NEW_INTERFACE
-void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc,
+PUBLIC
+void * __driCreateNewScreen_20050727( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc,
 			     const __GLcontextModes * modes,
 			     const __DRIversion * ddx_version,
 			     const __DRIversion * dri_version,
@@ -410,6 +438,7 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
 			     const __DRIframebuffer * frame_buffer,
 			     drmAddress pSAREA, int fd,
 			     int internal_api_version,
+			     const __DRIinterfaceMethods * interface,
 			     __GLcontextModes ** driver_modes )
 
 {
@@ -417,6 +446,8 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
    static const __DRIversion ddx_expected = { 1, 0, 0 };
    static const __DRIversion dri_expected = { 4, 0, 0 };
    static const __DRIversion drm_expected = { 1, 2, 0 };
+
+   dri_interface = interface;
 
    if ( ! driCheckDriDdxDrmVersions2( "i810",
 				      dri_version, & dri_expected,
@@ -430,15 +461,11 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
 				  frame_buffer, pSAREA, fd,
 				  internal_api_version, &i810API);
    if ( psp != NULL ) {
-      create_context_modes = (PFNGLXCREATECONTEXTMODES)
-	  glXGetProcAddress( (const GLubyte *) "__glXCreateContextModes" );
-      if ( create_context_modes != NULL ) {
-	 *driver_modes = i810FillInModes( 16,
-					  16, 0,
-					  1);
-      }
+      *driver_modes = i810FillInModes( 16,
+				       16, 0,
+				       1);
+      driInitExtensions( NULL, card_extensions, GL_TRUE );
    }
 
    return (void *) psp;
 }
-#endif /* USE_NEW_INTERFACE */

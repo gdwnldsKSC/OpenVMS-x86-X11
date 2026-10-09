@@ -1,4 +1,5 @@
 /* $Xorg: props.c,v 1.4 2001/02/09 02:05:32 xorgcvs Exp $ */
+/* $XdotOrg: xc/programs/lbxproxy/di/props.c,v 1.3 2005/08/27 01:45:27 alanc Exp $ */
 /*
 
 Copyright 1998  The Open Group
@@ -254,6 +255,8 @@ ProcLBXGetProperty(client)
     REQUEST(xGetPropertyReq);
     ReplyStuffPtr nr;
 
+    REQUEST_SIZE_MATCH(xGetPropertyReq);
+
     nr = NewReply(client, client->server->lbxReq, X_LbxGetProperty,
 		  GetLbxGetPropertyReply);
     if (!nr)
@@ -289,7 +292,7 @@ GetLbxGetPropertyReply(client, nr, data)
     PropertyTagDataRec ptd;
     PropertyTagDataPtr ptdp;
     pointer     pdata = NULL;
-    char	*sdata;
+    char	*sdata = NULL;
     char        n;
     xGetPropertyReply reply;
     CARD32	tag, nItems, type, bytesAfter;
@@ -387,15 +390,28 @@ GetLbxGetPropertyReply(client, nr, data)
 	len = min(len, nr->request_info.lbxgetprop.length << 2);
 	reply.bytesAfter = (ptdp->length -
 			    (len + (nr->request_info.lbxgetprop.offset << 2)));
-	sdata = sdata + (nr->request_info.lbxgetprop.offset << 2);
+	if (sdata)
+	    sdata = sdata + (nr->request_info.lbxgetprop.offset << 2);
     }
 
+    if (ptdp->length) {
+	len = ptdp->length - (nr->request_info.lbxgetprop.offset << 2);
+	len = min(len, nr->request_info.lbxgetprop.length << 2);
+	reply.bytesAfter = (ptdp->length -
+			    (len + (nr->request_info.lbxgetprop.offset << 2)));
+    } else {
+	len = 0;
+	reply.bytesAfter = rep->bytesAfter;
+    }
+    if(sdata)
+        sdata = sdata + (nr->request_info.lbxgetprop.offset << 2);
+    
     reply.type = X_Reply;
     reply.sequenceNumber = rep->sequenceNumber;
     reply.format = ptdp->format;
     reply.length = (len + 3) >> 2;
     reply.propertyType = ptdp->type;
-    if (len)
+    if (len && ptdp->format)
 	reply.nItems = len / (ptdp->format >> 3);
     else
 	reply.nItems = 0;

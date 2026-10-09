@@ -28,11 +28,15 @@ Equipment Corporation.
 
 /* $XFree86: xc/programs/Xserver/Xext/panoramiXprocs.c,v 3.36tsi Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
-#include "X.h"
+#include <X11/X.h>
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "Xproto.h"
+#include <X11/Xproto.h>
 #include "windowstr.h"
 #include "dixfontstr.h"
 #include "gcstruct.h"

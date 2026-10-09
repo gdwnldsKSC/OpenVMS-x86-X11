@@ -91,6 +91,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define R200_RB3D_DEPTHOFFSET             0x1c24
 #define R200_RB3D_DEPTHPITCH              0x1c28
 #define     R200_DEPTHPITCH_MASK         0x00001ff8
+#define     R200_DEPTH_HYPERZ            (3 << 16)
 #define     R200_DEPTH_ENDIAN_NO_SWAP    (0 << 18)
 #define     R200_DEPTH_ENDIAN_WORD_SWAP  (1 << 18)
 #define     R200_DEPTH_ENDIAN_DWORD_SWAP (2 << 18)
@@ -112,6 +113,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define     R200_Z_TEST_NEQUAL              (6  <<  4)
 #define     R200_Z_TEST_ALWAYS              (7  <<  4)
 #define     R200_Z_TEST_MASK                (7  <<  4)
+#define     R200_Z_HIERARCHY_ENABLE         (1  <<  8)
 #define     R200_STENCIL_TEST_NEVER         (0  << 12)
 #define     R200_STENCIL_TEST_LESS          (1  << 12)
 #define     R200_STENCIL_TEST_LEQUAL        (2  << 12)
@@ -148,7 +150,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define     R200_STENCIL_ZFAIL_INC_WRAP     (6  << 24)
 #define     R200_STENCIL_ZFAIL_DEC_WRAP     (7  << 24)
 #define     R200_STENCIL_ZFAIL_MASK         (0x7 << 24)
+#define     R200_Z_COMPRESSION_ENABLE       (1  << 28)
+#define     R200_FORCE_Z_DIRTY              (1  << 29)
 #define     R200_Z_WRITE_ENABLE             (1  << 30)
+#define     R200_Z_DECOMPRESSION_ENABLE     (1  << 31)
 /*gap*/
 #define R200_PP_CNTL                      0x1c38 
 #define     R200_TEX_0_ENABLE                         0x00000010
@@ -205,6 +210,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define     R200_RE_HEIGHT_SHIFT       16
 #define R200_RB3D_COLORPITCH              0x1c48 
 #define     R200_COLORPITCH_MASK         0x000001ff8
+#define     R200_COLOR_TILE_ENABLE       (1 << 16)
+#define     R200_COLOR_MICROTILE_ENABLE  (1 << 17)
 #define     R200_COLOR_ENDIAN_NO_SWAP    (0 << 18)
 #define     R200_COLOR_ENDIAN_WORD_SWAP  (1 << 18)
 #define     R200_COLOR_ENDIAN_DWORD_SWAP (2 << 18)
@@ -575,6 +582,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define     R200_LIGHT_7_SHIFT                   (16)
 /* gap */
 #define R200_SE_TCL_TEX_PROC_CTL_2        0x22a8 
+#define     R200_TEXGEN_COMP_MASK                (0xf)
+#define     R200_TEXGEN_COMP_S                   (0x1)
+#define     R200_TEXGEN_COMP_T                   (0x2)
+#define     R200_TEXGEN_COMP_R                   (0x4)
+#define     R200_TEXGEN_COMP_Q                   (0x8)
 #define     R200_TEXGEN_0_COMP_MASK_SHIFT        (0)
 #define     R200_TEXGEN_1_COMP_MASK_SHIFT        (4)
 #define     R200_TEXGEN_2_COMP_MASK_SHIFT        (8)
@@ -644,6 +656,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define     R200_CULL_FRONT                     (1<<29)
 #define     R200_CULL_BACK                      (1<<30)
 #define R200_SE_TCL_POINT_SPRITE_CNTL     0x22c4
+#define     R200_POINTSIZE_SEL_STATE            (1<<16)
 /* gap */
 #define R200_SE_VTX_ST_POS_0_X_4                   0x2300
 #define R200_SE_VTX_ST_POS_0_Y_4                   0x2304
@@ -839,8 +852,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define     R200_TXFORMAT_DXT1               (12  <<  0)
 #define     R200_TXFORMAT_DXT23              (14  <<  0)
 #define     R200_TXFORMAT_DXT45              (15  <<  0)
+#define     R200_TXFORMAT_DVDU88             (18  <<  0)
+#define     R200_TXFORMAT_LDVDU655           (19  <<  0)
+#define     R200_TXFORMAT_LDVDU8888          (20  <<  0)
+#define     R200_TXFORMAT_GR1616             (21  <<  0)
+#define     R200_TXFORMAT_ABGR8888           (22  <<  0)
+#define     R200_TXFORMAT_BGR111110          (23  <<  0)
 #define     R200_TXFORMAT_FORMAT_MASK        (31 <<  0)
 #define     R200_TXFORMAT_FORMAT_SHIFT       0
+#define     R200_TXFORMAT_APPLE_YUV          (1  <<  5)
 #define     R200_TXFORMAT_ALPHA_IN_MAP       (1  <<  6)
 #define     R200_TXFORMAT_NON_POWER2         (1  <<  7)
 #define     R200_TXFORMAT_WIDTH_MASK         (15 <<  8)
@@ -859,6 +879,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define     R200_TXFORMAT_ST_ROUTE_STQ5      (5  << 24)
 #define     R200_TXFORMAT_ST_ROUTE_MASK      (7  << 24)
 #define     R200_TXFORMAT_ST_ROUTE_SHIFT     24
+#define     R200_TXFORMAT_LOOKUP_DISABLE     (1  << 27)
 #define     R200_TXFORMAT_ALPHA_MASK_ENABLE  (1  << 28)
 #define     R200_TXFORMAT_CHROMA_KEY_ENABLE  (1  << 29)
 #define     R200_TXFORMAT_CUBIC_MAP_ENABLE   (1  << 30)
@@ -950,11 +971,16 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /* gap */
 #define R200_PP_CNTL_X             0x2cc4
 /* gap */
+#define R200_PP_TRI_PERF                  0x2cf8
+#define     R200_TRI_CUTOFF_MASK            (0x1f << 0)
+#define R200_PP_PERF_CNTL                 0x2cfc
 #define R200_PP_TXOFFSET_0                0x2d00
 #define     R200_TXO_ENDIAN_NO_SWAP     (0 << 0)
 #define     R200_TXO_ENDIAN_BYTE_SWAP   (1 << 0)
 #define     R200_TXO_ENDIAN_WORD_SWAP   (2 << 0)
 #define     R200_TXO_ENDIAN_HALFDW_SWAP (3 << 0)
+#define     R200_TXO_MACRO_TILE         (1 << 2)
+#define     R200_TXO_MICRO_TILE         (1 << 3)
 #define     R200_TXO_OFFSET_MASK        0xffffffe0
 #define     R200_TXO_OFFSET_SHIFT       5
 #define R200_PP_CUBIC_OFFSET_F1_0         0x2d04

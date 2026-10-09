@@ -26,6 +26,10 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $XFree86$ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
 #include <math.h>
 #define NEED_EVENTS 1
@@ -34,10 +38,10 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <X11/keysym.h>
 #include "misc.h"
 #include "inputstr.h"
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 
 extern	void	ProcessOtherEvent(
     xEvent *		/* xE */,

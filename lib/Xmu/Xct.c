@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xmu/Xct.c,v 1.8 2001/07/25 15:04:50 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xfuncs.h>
 #include "Xct.h"
 #include <stdio.h>

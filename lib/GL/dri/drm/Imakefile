@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xc/lib/GL/dri/drm/Imakefile,v 1.4 2004/08/27 03:22:12 kem Exp $
+XCOMM $XdotOrg: xc/lib/GL/dri/drm/Imakefile,v 1.6 2005/12/01 02:15:37 ajax Exp $
 XCOMM $XFree86: xc/lib/GL/dri/drm/Imakefile,v 1.22 2003/09/28 20:15:00 alanh Exp $
 
 #define DoNormalLib (NormalLibGlx || SharedLibGlxWithoutPIC)
@@ -14,31 +14,33 @@ ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
       DEFINES = $(ALLOC_DEFINES)
      INCLUDES = -I$(XINCLUDESRC) -I$(EXTINCSRC) \
 		-I$(XF86OSSRC)/$(OS_SUBDIR)/drm \
-		-I$(DRMSRCDIR)/$(OS_SUBDIR) \
-		-I$(DRMSRCDIR)/$(OS_SUBDIR2) \
-		-I$(XF86OSSRC) -I$(DRMSRCDIR)/shared
+		-I$(DRMSRCDIR)/$(OS_SUBDIR)-core \
+		-I$(DRMSRCDIR)/$(OS_SUBDIR2)-core \
+		-I$(XF86OSSRC) -I$(DRMSRCDIR)/shared-core
          SRCS = xf86drm.c xf86drmHash.c xf86drmRandom.c xf86drmSL.c
          OBJS = xf86drm.o xf86drmHash.o xf86drmRandom.o xf86drmSL.o
 
 #if defined(LinuxArchitecture)
 OS_SUBDIR = linux
 OS_SUBDIR2 = linux
-OS_SUBDIR3 = shared
+OS_SUBDIR3 = shared-core
 #endif
 #if defined(FreeBSDArchitecture) || defined(BSDOSArchitecture) || \
     defined(NetBSDArchitecture) || defined(OpenBSDArchitecture)
 OS_SUBDIR = bsd
 OS_SUBDIR2 = linux
-OS_SUBDIR3 = shared
+OS_SUBDIR3 = shared-core
 #endif
 
-LinkSourceFile(xf86drm.c,$(XF86OSSRC)/$(OS_SUBDIR2)/drm)
+LIBDRM_DIR = ../../../../extras/drm/libdrm
 
-LinkSourceFile(xf86drmHash.c,$(XF86OSSRC)/$(OS_SUBDIR2)/drm)
-LinkSourceFile(xf86drmRandom.c,$(XF86OSSRC)/$(OS_SUBDIR2)/drm)
-LinkSourceFile(xf86drmSL.c,$(XF86OSSRC)/$(OS_SUBDIR2)/drm)
+LinkSourceFile(xf86drm.c,$(LIBDRM_DIR))
 
-LinkSourceFile(drm.h,$(DRMSRCDIR)/$(OS_SUBDIR3))
+LinkSourceFile(xf86drmHash.c,$(LIBDRM_DIR))
+LinkSourceFile(xf86drmRandom.c,$(LIBDRM_DIR))
+LinkSourceFile(xf86drmSL.c,$(LIBDRM_DIR))
+
+LinkSourceFile(drm.h,$(LIBDRM_DIR)/../shared-core)
 
 #include <Library.tmpl>
 

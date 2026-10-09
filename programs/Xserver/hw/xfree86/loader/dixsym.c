@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/loader/dixsym.c,v 1.5.2.2 2004/12/08 05:32:54 gisburn Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/loader/dixsym.c,v 1.19 2005/10/01 17:30:58 herrb Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/loader/dixsym.c,v 1.63 2003/12/03
  * 17:11:29 tsi Exp $ */
 
@@ -51,9 +51,14 @@
  */
 
 #undef DBMALLOC
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "sym.h"
 #include "colormap.h"
 #include "cursor.h"
+#include "cursorstr.h"
 #include "dix.h"
 #include "dixevents.h"
 #include "dixfont.h"
@@ -72,7 +77,7 @@
 #include "swaprep.h"
 #include "swapreq.h"
 #include "inputstr.h"
-#include "XIproto.h"
+#include <X11/extensions/XIproto.h>
 #include "exevents.h"
 #include "extinit.h"
 #ifdef XV
@@ -86,6 +91,7 @@
 #include "selection.h"
 #ifdef XKB
 #include <X11/extensions/XKBsrv.h>
+extern int XkbDfltRepeatDelay, XkbDfltRepeatInterval;
 #endif
 
 extern Selection *CurrentSelections;
@@ -125,6 +131,9 @@ LOOKUP dixLookupTab[] = {
     SYMFUNC(InitKeyClassDeviceStruct)
     SYMFUNC(InitKeyboardDeviceStruct)
     SYMFUNC(SendMappingNotify)
+    SYMFUNC(InitPointerDeviceStruct)
+    SYMFUNC(LookupKeyboardDevice)
+    SYMFUNC(LookupPointerDevice)
     /* dispatch.c */
     SYMFUNC(SetInputCheck)
     SYMFUNC(SendErrorToClient)
@@ -168,12 +177,17 @@ LOOKUP dixLookupTab[] = {
     SYMFUNC(PointerConfinedToScreen)
     SYMFUNC(TryClientEvents)
     SYMFUNC(WriteEventsToClient)
+    SYMFUNC(GetCurrentRootWindow)
+    SYMFUNC(GetSpritePosition)
+    SYMFUNC(GetSpriteWindow)
+    SYMFUNC(GetSpriteCursor)
+    SYMFUNC(WindowsRestructured)
     SYMVAR(DeviceEventCallback)
     SYMVAR(EventCallback)
     SYMVAR(inputInfo)
-    SYMVAR(SetCriticalEvent)
+    SYMFUNC(SetCriticalEvent)
 #ifdef PANORAMIX
-    SYMVAR(XineramaGetCursorScreen)
+    SYMFUNC(XineramaGetCursorScreen)
 #endif
     /* property.c */
     SYMFUNC(ChangeWindowProperty)
@@ -184,6 +198,10 @@ LOOKUP dixLookupTab[] = {
     SYMFUNC(DeclareExtensionSecurity)
     SYMFUNC(MinorOpcodeOfRequest)
     SYMFUNC(StandardMinorOpcode)
+#ifdef XEVIE
+    SYMVAR(xeviehot)
+    SYMVAR(xeviewin)
+#endif
     /* gc.c */
     SYMFUNC(CopyGC)
     SYMFUNC(CreateGC)
@@ -199,6 +217,7 @@ LOOKUP dixLookupTab[] = {
     SYMFUNC(VerifyRectOrder)
     SYMFUNC(SetDashes)
     /* globals.c */
+    SYMVAR(ScreenSaverTime)
 #ifdef DPMSExtension
     SYMVAR(DPMSEnabled)
     SYMVAR(DPMSCapableFlag)
@@ -225,6 +244,7 @@ LOOKUP dixLookupTab[] = {
     SYMVAR(currentMaxClients)
     SYMVAR(currentTime)
     SYMVAR(defaultColorVisualClass)
+    SYMVAR(display)
     SYMVAR(globalSerialNumber)
     SYMVAR(lastDeviceEventTime)
     SYMVAR(monitorResolution)
@@ -234,11 +254,11 @@ LOOKUP dixLookupTab[] = {
     SYMVAR(serverGeneration)
     /* main.c */
     SYMFUNC(NotImplemented)
+    SYMVAR(PixmapWidthPaddingInfo)
     /* pixmap.c */
     SYMFUNC(AllocatePixmap)
     SYMFUNC(GetScratchPixmapHeader)
     SYMFUNC(FreeScratchPixmapHeader)
-    SYMVAR(PixmapWidthPaddingInfo)
     /* privates.c */
     SYMFUNC(AllocateClientPrivate)
     SYMFUNC(AllocateClientPrivateIndex)
@@ -248,6 +268,8 @@ LOOKUP dixLookupTab[] = {
     SYMFUNC(AllocateWindowPrivateIndex)
     SYMFUNC(AllocateScreenPrivateIndex)
     SYMFUNC(AllocateColormapPrivateIndex)
+    SYMFUNC(AllocateDevicePrivateIndex)
+    SYMFUNC(AllocateDevicePrivate)
 #ifdef PIXPRIV
     SYMFUNC(AllocatePixmapPrivateIndex)
     SYMFUNC(AllocatePixmapPrivate)
@@ -282,9 +304,9 @@ LOOKUP dixLookupTab[] = {
     SYMFUNC(Swap32Write)
     SYMFUNC(SwapConnSetupInfo)
     SYMFUNC(SwapConnSetupPrefix)
+    /* swapreq.c */
     SYMFUNC(SwapShorts)
     SYMFUNC(SwapLongs)
-    /* swapreq.c */
     SYMFUNC(SwapColorItem)
     /* tables.c */
     SYMVAR(EventSwapVector)
@@ -309,7 +331,6 @@ LOOKUP dixLookupTab[] = {
     SYMFUNC(TraverseTree)
     SYMFUNC(UnmapWindow)
     SYMFUNC(WalkTree)
-    SYMFUNC(WindowsRestructured)
     SYMVAR(deltaSaveUndersViewable)
     SYMVAR(numSaveUndersViewable)
     SYMVAR(savedScreenInfo)
@@ -326,9 +347,6 @@ LOOKUP dixLookupTab[] = {
     SYMVAR(noTestExtensions)
     SYMFUNC(GiveUp)
 
-#ifdef BEZIER
-    SYMVAR(noBezierExtension)
-#endif
 #ifdef BIGREQS
     SYMVAR(noBigReqExtension)
 #endif
@@ -389,9 +407,6 @@ LOOKUP dixLookupTab[] = {
 #ifdef TOGCUP
     SYMVAR(noXcupExtension)
 #endif
-#ifdef PEXEXT
-    SYMVAR(noPexExtension)
-#endif
 #ifdef RES
     SYMVAR(noResExtension)
 #endif
@@ -403,9 +418,6 @@ LOOKUP dixLookupTab[] = {
 #endif
 #ifdef XEVIE
     SYMVAR(noXevieExtension)
-#endif
-#ifdef XIE
-    SYMVAR(noXie)
 #endif
 #ifdef XF86BIGFONT
     SYMVAR(noXFree86BigfontExtension)
@@ -461,7 +473,6 @@ LOOKUP dixLookupTab[] = {
     SYMFUNC(Xfree)
     SYMFUNC(Xrealloc)
     /* WaitFor.c */
-    SYMFUNC(ScreenSaverTime)
     SYMFUNC(TimerFree)
     SYMFUNC(TimerSet)
     SYMFUNC(TimerCancel)
@@ -484,15 +495,12 @@ LOOKUP dixLookupTab[] = {
     SYMFUNC(MakeClientGrabImpervious)
     SYMVAR(GrabInProgress)
 
-    /* devices.c */
-    SYMFUNC(InitPointerDeviceStruct)
-    SYMFUNC(LookupKeyboardDevice)
-    SYMFUNC(LookupPointerDevice)
-
 #ifdef XKB
     /* xkb/xkbInit.c */
     SYMFUNC(XkbInitKeyboardDeviceStruct)
     SYMFUNC(XkbSetRulesDflts)
+    SYMVAR(XkbDfltRepeatDelay)
+    SYMVAR(XkbDfltRepeatInterval)
 #endif
 
 #ifdef XINPUT
@@ -510,17 +518,24 @@ LOOKUP dixLookupTab[] = {
 
     /* librender.a */
 #ifdef RENDER
+    /* picture.c */
     SYMFUNC(PictureInit)
-    SYMFUNC(miPictureInit)
-    SYMFUNC(miComputeCompositeRegion)
-    SYMFUNC(miGlyphs)
-    SYMFUNC(miCompositeRects)
-    SYMVAR(PictureScreenPrivateIndex)
     SYMFUNC(PictureTransformPoint)
-    SYMFUNC(PictureAddFilter)
-    SYMFUNC(PictureSetFilterAlias)
+    SYMFUNC(PictureTransformPoint3d)
     SYMFUNC(PictureGetSubpixelOrder)
     SYMFUNC(PictureSetSubpixelOrder)
+    SYMVAR(PictureScreenPrivateIndex)
+    /* mipict.c */
+    SYMFUNC(miPictureInit)
+    SYMFUNC(miComputeCompositeRegion)
+    /* miglyph.c */
+    SYMFUNC(miGlyphs)
+    /* mirect.c */
+    SYMFUNC(miCompositeRects)
+    /* filter.c */
+    SYMFUNC(PictureAddFilter)
+    SYMFUNC(PictureSetFilterAlias)
+    /* renderedge.c */
     SYMFUNC(RenderSampleCeilY)
     SYMFUNC(RenderSampleFloorY)
     SYMFUNC(RenderEdgeStep)

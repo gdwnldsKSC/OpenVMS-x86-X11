@@ -1,27 +1,27 @@
-XCOMM
+XCOMM $XdotOrg: xc/programs/xkbcomp/symbols/pc/Imakefile,v 1.4 2005/10/09 18:05:42 alanc Exp $
 XCOMM $XFree86: xc/programs/xkbcomp/symbols/pc/Imakefile,v 1.14 2003/12/09 00:10:39 dawes Exp $
 XCOMM
 
-     DATAFILES = al am ar \
-		be ben bg br by \
-		cz cz_qwerty \
-		de dev dk dvorak dz \
-		ee el en_US es \
-		fi fr fr-latin9 \
-		gb ge_la ge_ru guj gur \
-		hr \
-		ie il il_phonetic ir is it iu \
-		kan \
-		la latin lo lt lv \
-		mk ml mm mt mt_us \
+     DATAFILES = al am ara az \
+		ba bd be bg br bt by \
+		ca ch cz \
+		de dk \
+		ee es \
+		fi fo fr \
+		gb ge gr \
+		hr hu \
+		ie il in ir is it \
+		jp \
+		kg \
+		la latam latin lk lt lv \
+		mao mkd mm mn mt \
 		nl no \
-		ogham ori \
-		pc pl pl2 pt \
+		pc pk pl pt \
 		ro ru \
-		sapmi se se_FI se_NO se_SE si sk sk_qwerty sr syr syr_phonetic \
-		tel th th_tis th_pat tj tml tr \
-		ua us us_intl uz \
-		yu 
+		se si sk srp sy \
+		th tj tr \
+		ua us uz \
+		vn 
 
 all::
 

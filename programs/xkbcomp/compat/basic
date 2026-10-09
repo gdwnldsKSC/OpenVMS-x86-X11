@@ -42,18 +42,11 @@ default xkb_compatibility "basic"  {
     group 3 = AltGr;
     group 4 = AltGr;
 
-    indicator.allowExplicit= False;
-    indicator "Caps Lock" { 
-	whichModState= Locked;
-	modifiers= Lock;
-    };
-    indicator "Num Lock" {
-	whichModState= Locked;
-	modifiers= NumLock;
-    };
+    include "ledcaps"
+    include "lednum"
     indicator "Shift Lock" {
+	!allowExplicit;
 	whichModState= Locked;
 	modifiers= Shift;
     };
-    indicator.allowExplicit= True;
 };

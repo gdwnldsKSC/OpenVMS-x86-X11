@@ -1,6 +1,6 @@
 // $XFree86$
 // Lithuanian keyboard map by Gediminas Paulauskas <menesis@delfi.lt>
-// Minor modification by Rièardas Èepas according to http://sun3.mif.vu.lt/cs/TK4/lithkeyb.html
+// Minor modification by RiÄardas ÄŒepas according to http://sun3.mif.vu.lt/cs/TK4/lithkeyb.html
 
 // Describes Lithuanian keymap LST 1582:2000
 // Don't rename this file because it includes 'lt_std'

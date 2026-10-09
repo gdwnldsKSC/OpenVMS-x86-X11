@@ -6,6 +6,7 @@ LOCAL_LIBRARIES = -lXprintUtil $(XPLIB) XawClientLibs XkbClientLibs
            OBJS = xmore.o print.o printdialog.o
         HEADERS =
     CDEBUGFLAGS = -g
+        DEFINES = -DXMORE -DUSE_XPRINT
 
 ComplexProgramTarget(xmore)
 InstallAppDefaults(XMore)

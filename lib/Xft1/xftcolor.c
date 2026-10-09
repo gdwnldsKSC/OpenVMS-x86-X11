@@ -1,7 +1,7 @@
 /*
  * $XFree86: xc/lib/Xft/xftcolor.c,v 1.2 2001/05/16 17:20:06 keithp Exp $
  *
- * Copyright © 2000 Keith Packard, member of The XFree86 Project, Inc.
+ * Copyright Â© 2000 Keith Packard, member of The XFree86 Project, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that

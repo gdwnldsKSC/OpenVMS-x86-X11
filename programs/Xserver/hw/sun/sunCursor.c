@@ -99,12 +99,7 @@ sunCursorRepad (pScreen, bits, src_bits, dst_bits, ptSrc, w, h)
     box.x2 = w;
     box.y2 = h;
     REGION_INIT(pScreen, &rgnDst, &box, 1);
-#ifndef LOWMEMFTPT
     mfbDoBitblt(&src->drawable, &dst->drawable, GXcopy, &rgnDst, ptSrc);
-#else
-    cfbDoBitblt(&src->drawable, &dst->drawable, GXcopy, &rgnDst, ptSrc,
-	0xFFFFFFFF);
-#endif /* ifndef LOWMEMFTPT */
     REGION_UNINIT(pScreen, &rgnDst);
     FreeScratchPixmapHeader(src);
     FreeScratchPixmapHeader(dst);

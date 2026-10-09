@@ -1130,7 +1130,7 @@ xedit.c:
    of xedit (to enable undo actions).
  + Added a "text mode" and a "html mode". The html mode is not yet completely
    finished. It must work correctly with some html specific things like
-   converting internally "&aacute;" to "แ" and so on. I'm planning also, at
+   converting internally "&aacute;" to "รก" and so on. I'm planning also, at
    least a nroff mode too.
  + The wordChars resource is set by dictionary now.
    To set the word chars for the br dictionary, write something like:

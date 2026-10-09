@@ -1,6 +1,10 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xorgHelper.c,v 1.2 2004/04/23 19:20:32 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xorgHelper.c,v 1.6 2005/07/03 08:53:42 daniels Exp $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "os.h"
 #include "servermd.h"
 #include "pixmapstr.h"

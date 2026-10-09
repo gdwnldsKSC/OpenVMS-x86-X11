@@ -32,13 +32,13 @@ driver supports in the
 .I README.mouse
 document.  This can be found
 in __projectroot__/lib/X11/doc/, or online at
-http://www.xfree86.org/current/mouse.html.
+http://www.x.org/current/mouse.html.
 .SH CONFIGURATION DETAILS
 Please refer to __xconfigfile__(__filemansuffix__) for general configuration
 details and for options that can be used with all input drivers.  This
 section only covers configuration details specific to this driver.
 .PP
-The driver can auto-detect the mouse type on some platforms  On some
+The driver can auto-detect the mouse type on some platforms.  On some
 platforms this is limited to plug and play serial mice, and on some the
 auto-detection works for any mouse that the OS's kernel driver supports.
 On others, it is always necessary to specify the mouse protocol in the
@@ -57,7 +57,7 @@ Specify the mouse protocol.  Valid protocol types include:
 Auto, Microsoft, MouseSystems, MMSeries, Logitech, MouseMan, MMHitTab,
 GlidePoint, IntelliMouse, ThinkingMouse, ValuMouseScroll, AceCad, PS/2, ImPS/2,
 ExplorerPS/2, ThinkingMousePS/2, MouseManPlusPS/2, GlidePointPS/2,
-NetMousePS/2, NetScrollPS/2, BusMouse, SysMouse, WSMouse, USB, Xqueue.
+NetMousePS/2, NetScrollPS/2, BusMouse, SysMouse, WSMouse, USB, VUID, Xqueue.
 .RE
 .PP
 .RS 7
@@ -73,7 +73,7 @@ device.  This option is mandatory, and there is no default setting.
 .TP 7
 .BI "Option \*qButtons\*q \*q" integer \*q
 Specifies the number of mouse buttons.  In cases where the number of buttons
-cannot be auto-detected, the default value is 3.
+cannot be auto-detected, the default value is 3.  The maximum number is 24.
 .TP 7
 .BI "Option \*qEmulate3Buttons\*q \*q" boolean \*q
 Enable/disable the emulation of the third (middle) mouse button for mice
@@ -114,7 +114,15 @@ settings.  Default: 4.
 .TP 7
 .BI "Option \*qEmulateWheelInertia\*q \*q" integer \*q
 Specifies how far (in pixels) the pointer must move to generate button
-press/release events in wheel emulation mode.  Default: 50.
+press/release events in wheel emulation mode.  Default: 10.
+.TP 7
+.BI "Option \*qEmulateWheelTimeout\*q \*q" integer \*q
+Specifies the time in milliseconds the
+.BR EmulateWheelButton
+must be pressed before wheel emulation is started. If the
+.BR EmulateWheelButton
+is released before this timeout, the original button press/release event
+is sent.  Default: 200.
 .TP 7
 .BI "Option \*qXAxisMapping\*q \*q" "N1 N2" \*q
 Specifies which buttons are mapped to motion in the X direction in wheel
@@ -153,7 +161,17 @@ of the second wheel mapped respectively to buttons number
 .I N3
 and
 .IR N4 .
-Default: no mapping.
+Default: "4 5 6 7".
+.TP 7
+.BI "Option \*qButtonMapping\*q \*q" "N1 N2 [...]" \*q
+Specifies how physical mouse buttons are mapped to logical buttons.
+Physcial button 1 is mapped to logical button
+.IR N1 ,
+physical button 2 to
+.IR N2 ,
+and so forth.  This enables the use of physical buttons that are obscured by
+.IR ZAxisMapping .
+Default: 1-to-1 mapping.
 .TP 7
 .BI "Option \*qFlipXY\*q \*q" boolean \*q
 Enable/disable swapping the X and Y axes.  This transformation is applied

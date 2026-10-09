@@ -18,9 +18,12 @@ InstallNonExecFile(README,$(XPRINTDIR)/)
 
 # List of locales which should be linked to the "C" locale
 C_LOCALES= \
-	POSIX \
+        POSIX \
+        af \
         af_ZA \
         af_ZA.iso88591 \
+        af_ZA.utf8 \
+        afrikaans \
         ar \
         ar_AE \
         ar_AE.iso88596 \
@@ -83,10 +86,17 @@ C_LOCALES= \
         bg_BG.ISO8859-5 \
         bg_BG.cp1251 \
         bg_BG.utf8 \
+        bn_IN.UTF-8 \
+        bn_IN.utf8 \
         br_FR \
         br_FR.iso88591 \
+        bs \
         bs_BA \
         bs_BA.iso88592 \
+        bs_BA.ISO8859-2 \
+        bs_BA.ISO-8859-2 \
+        bs_BA.ISO_8859-2 \
+        bs_BA.UTF-8 \
         bokmal \
         ca \
         ca.ISO8859-1 \
@@ -325,6 +335,8 @@ C_LOCALES= \
         gl_ES.iso885915@euro \
         gl_ES.utf8 \
         gl_ES@euro \
+        gu_IN.UTF-8 \
+        gu_IN.utf8 \
         gv_GB \
         gv_GB.iso88591 \
         hebrew \
@@ -401,6 +413,9 @@ C_LOCALES= \
         ko_KR.utf8 \
         kw_GB \
         kw_GB.iso88591 \
+        ky_KG \
+        ky_KG.UTF-8 \
+        ky_KG.utf8 \
         lt_LT \
         lt_LT.ISO8859-13 \
         lt_LT.iso885913 \
@@ -454,8 +469,20 @@ C_LOCALES= \
         no_NO.iso88591 \
         no_NO.utf8 \
         norwegian \
+        nr \
+        nr_ZA \
+        nr_ZA.iso88591 \
+        nr_ZA.utf8 \
+        ndebele \
+        nso \
+        nso_ZA \
+        nso_ZA.iso885915 \
+        nso_ZA.utf8 \
+        sepedi \
         oc_FR \
         oc_FR.iso88591 \
+        pa_IN.UTF-8 \
+        pa_IN.utf8 \
         polish \
         pl_PL \
         pl_PL.ISO8859-2 \
@@ -507,6 +534,10 @@ C_LOCALES= \
         romanian \
         se_NO \
         se_NO.utf8 \
+        si \
+        sinhala \
+        si_LK \
+        si_LK.UTF8 \
         sk \
         sk.ISO8859-2 \
         slovak \
@@ -541,6 +572,16 @@ C_LOCALES= \
         sr_YU.iso88595@cyrillic \
         sr_YU.utf8 \
         sr_YU@cyrillic \
+        ss \
+        ss_ZA \
+        ss_ZA.iso88591 \
+        ss_ZA.utf8 \
+        siswati \
+        st \
+        st_ZA \
+        st_ZA.iso88591 \
+        st_ZA.utf8 \
+        sesotho \
         sv \
         sv.ISO8859-1 \
         sv.ISO8859-15 \
@@ -574,6 +615,11 @@ C_LOCALES= \
         th_TH.utf8 \
         tl_PH \
         tl_PH.iso88591 \
+        tn \
+        tn_ZA \
+        tn_ZA.iso885915 \
+        tn_ZA.utf8 \
+        setswana \
         tr \
         tr.ISO8859-9 \
         turkish \
@@ -582,6 +628,11 @@ C_LOCALES= \
         tr_TR.UTF-8 \
         tr_TR.iso88599 \
         tr_TR.utf8 \
+        ts \
+        ts_ZA \
+        ts_ZA.iso88591 \
+        ts_ZA.utf8 \
+        tsonga \
         uk_UA \
         uk_UA.koi8u \
         uk_UA.utf8 \
@@ -589,6 +640,10 @@ C_LOCALES= \
         ur_PK.utf8 \
         uz_UZ \
         uz_UZ.iso88591 \
+        ve \
+        ve_ZA \
+        ve_ZA.utf8 \
+        venda \
         vi_VN \
         vi_VN.tcvn \
         vi_VN.utf8 \
@@ -596,6 +651,11 @@ C_LOCALES= \
         wa_BE.iso88591 \
         wa_BE.iso885915@euro \
         wa_BE@euro \
+        xh \
+        xh_ZA \
+        xh_ZA.iso88591 \
+        xh_ZA.utf8 \
+        xhosa \
         zh \
         zh.GBK \
         zh.UTF-8 \
@@ -647,7 +707,12 @@ C_LOCALES= \
         zh_TW.UTF-8@zhuyin \
         zh_TW.big5 \
         zh_TW.euctw \
-        zh_TW.utf8
+        zh_TW.utf8 \
+        zu \
+        zu_ZA \
+        zu_ZA.iso88591 \
+        zu_ZA.utf8 \
+        zulu
 
 
 # List of locales which should be linked to the "en_US" locale,

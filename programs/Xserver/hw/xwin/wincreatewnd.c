@@ -28,6 +28,9 @@
  * Authors:	Harold L Hunt II
  */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 #include "shellapi.h"
 
@@ -148,6 +151,7 @@ winCreateBoundingWindowWindowed (ScreenPtr pScreen)
   WNDCLASS		wc;
   RECT			rcClient, rcWorkArea;
   DWORD			dwWindowStyle;
+  BOOL			fForceShowWindow = FALSE;
   char			szTitle[256];
   
   winDebug ("winCreateBoundingWindowWindowed - User w: %d h: %d\n",
@@ -169,9 +173,19 @@ winCreateBoundingWindowWindowed (ScreenPtr pScreen)
 #endif
       )
     {
-      dwWindowStyle |= WS_CAPTION;
-      if (pScreenInfo->fScrollbars)
-	dwWindowStyle |= WS_THICKFRAME | WS_MAXIMIZEBOX;
+        /* Try to handle startup via run.exe. run.exe instructs Windows to 
+         * hide all created windows. Detect this case and make sure the 
+         * window is shown nevertheless */
+        STARTUPINFO   startupInfo;
+        GetStartupInfo(&startupInfo);
+        if (startupInfo.dwFlags & STARTF_USESHOWWINDOW && 
+                startupInfo.wShowWindow == SW_HIDE)
+        {
+          fForceShowWindow = TRUE;
+        } 
+        dwWindowStyle |= WS_CAPTION;
+        if (pScreenInfo->fScrollbars)
+            dwWindowStyle |= WS_THICKFRAME | WS_MAXIMIZEBOX;
     }
   else
     dwWindowStyle |= WS_POPUP;
@@ -346,6 +360,12 @@ winCreateBoundingWindowWindowed (ScreenPtr pScreen)
   winDebug ("winCreateBoundingWindowWindowed - CreateWindowEx () returned\n");
 #endif
 
+  if (fForceShowWindow)
+  {
+      ErrorF("winCreateBoundingWindowWindowed - Setting normal windowstyle\n");
+      ShowWindow(*phwnd, SW_SHOW);      
+  }
+
   /* Get the client area coordinates */
   if (!GetClientRect (*phwnd, &rcClient))
     {
@@ -433,7 +453,9 @@ winCreateBoundingWindowWindowed (ScreenPtr pScreen)
 #endif
       )
     {
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
       pScreenPriv->fRootWindowShown = FALSE;
+#endif
       ShowWindow (*phwnd, SW_HIDE);
     }
   else

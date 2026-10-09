@@ -24,17 +24,17 @@
  * dealings in this Software without prior written authorization from the
  * XFree86 Project.
  *
- * Author: Paulo César Pereira de Andrade
+ * Author: Paulo CÃ©sar Pereira de Andrade
  */
 
 /* $XFree86: xc/programs/xedit/lisp/xedit.c,v 1.25 2003/04/27 18:17:35 tsi Exp $ */
 
-#include "xedit/xedit.h"
+#include "../xedit.h"
 #include <X11/Xaw/TextSrcP.h>	/* Needs some private definitions */
 #include <X11/Xaw/TextSinkP.h>	/* Also needs private definitions... */
 #include <X11/Xmu/Xmu.h>
 #define XEDIT_LISP_PRIVATE
-#include "lisp/xedit.h"
+#include "xedit.h"
 #include <signal.h>
 
 /* Initialize to enter lisp */
@@ -114,7 +114,7 @@ static LispObj interactive_arguments[4];
 
 static LispObj *justify_modes[4];
 static LispObj *wrap_modes[3];
-static LispObj *scan_types[5];
+static LispObj *scan_types[6];
 static LispObj *scan_directions[2];
 static LispObj execute_stream;
 static LispString execute_string;
@@ -1483,10 +1483,10 @@ Xedit_Scan(LispBuiltin *builtin)
 		    STRFUN(builtin), STROBJ(odirection));
     direction = (XawTextScanDirection)i;
 
-    for (i = 0; i < 5; i++)
+    for (i = 0; i < 6; i++)
 	if (otype == scan_types[i])
 	    break;
-    if (i >= 5)
+    if (i >= 6)
 	LispDestroy("%s: direction must be "
 		    ":POSITIONS, :WHITE-SPACE, :EOL, "
 		    ":PARAGRAPH, :ALL, or :ALPHA-NUMERIC, not %s",

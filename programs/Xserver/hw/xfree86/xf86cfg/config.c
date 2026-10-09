@@ -24,7 +24,7 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Author: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
+ * Author: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br>
  *
  * $XFree86: xc/programs/Xserver/hw/xfree86/xf86cfg/config.c,v 1.8tsi Exp $
  */
@@ -149,7 +149,7 @@ StartConfig(void)
     ident_widget = XtVaCreateManagedWidget("identifier", asciiTextWidgetClass,
 					   top,
 					   XtNeditType, XawtextEdit,
-					   NULL, 0);
+					   NULL);
     configp = XtCreateManagedWidget("work", formWidgetClass,
 				    pane, NULL, 0);
     current = XtCreateManagedWidget("wellcome", labelWidgetClass,

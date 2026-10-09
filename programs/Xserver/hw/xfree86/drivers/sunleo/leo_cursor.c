@@ -25,6 +25,10 @@
  */
 /* $XFree86$ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "leo.h"
 
 static void LeoLoadCursorImage(ScrnInfoPtr pScrn, unsigned char *src);

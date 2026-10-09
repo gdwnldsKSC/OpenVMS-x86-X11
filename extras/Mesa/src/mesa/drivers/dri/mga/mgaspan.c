@@ -35,8 +35,8 @@
 
 #define DBG 0
 
-
 #define LOCAL_VARS					\
+   mgaContextPtr mmesa = MGA_CONTEXT(ctx);				\
    __DRIdrawablePrivate *dPriv = mmesa->mesa_drawable;	\
    mgaScreenPrivate *mgaScreen = mmesa->mgaScreen;	\
    __DRIscreenPrivate *sPriv = mmesa->driScreen;	\
@@ -52,10 +52,11 @@
 			dPriv->y * pitch);		\
    GLuint p;						\
    (void) read_buf; (void) buf; (void) p
-   
+
 
 
 #define LOCAL_DEPTH_VARS						\
+   mgaContextPtr mmesa = MGA_CONTEXT(ctx);				\
    __DRIdrawablePrivate *dPriv = mmesa->mesa_drawable;			\
    mgaScreenPrivate *mgaScreen = mmesa->mgaScreen;			\
    __DRIscreenPrivate *sPriv = mmesa->driScreen;			\
@@ -68,26 +69,9 @@
 
 #define LOCAL_STENCIL_VARS LOCAL_DEPTH_VARS 
 
-#define CLIPPIXEL(_x,_y) (_x >= minx && _x < maxx && \
-			  _y >= miny && _y < maxy)
+#define HW_LOCK()
 
-#define CLIPSPAN( _x, _y, _n, _x1, _n1, _i )				\
-   if ( _y < miny || _y >= maxy ) {					\
-      _n1 = 0, _x1 = x;							\
-   } else {								\
-      _n1 = _n;								\
-      _x1 = _x;								\
-      if ( _x1 < minx ) _i += (minx-_x1), n1 -= (minx-_x1), _x1 = minx; \
-      if ( _x1 + _n1 >= maxx ) n1 -= (_x1 + n1 - maxx);		        \
-   }
-
-
-#define HW_LOCK()				\
-   mgaContextPtr mmesa = MGA_CONTEXT(ctx);	\
-   FLUSH_BATCH(mmesa);				\
-   LOCK_HARDWARE_QUIESCENT(mmesa);
-
-
+/* FIXME could/should we use dPriv->numClipRects like the other drivers? */
 #define HW_CLIPLOOP()						\
   do {								\
     int _nc = mmesa->numClipRects;				\
@@ -101,87 +85,38 @@
     }						\
   } while (0)
 
-#define HW_UNLOCK()				\
-    UNLOCK_HARDWARE(mmesa);
+#define HW_UNLOCK()
 
 
 
-
-
-
-
-/* 16 bit, 565 rgb color spanline and pixel functions
- */
 #define Y_FLIP(_y) (height - _y - 1)
 
-#undef INIT_MONO_PIXEL
-#define INIT_MONO_PIXEL(p, color) \
-  p = PACK_COLOR_565( color[0], color[1], color[2] )
-
-
-#define WRITE_RGBA( _x, _y, r, g, b, a )				\
-   *(GLushort *)(buf + _x*2 + _y*pitch)  = ( (((int)r & 0xf8) << 8) |	\
-		                             (((int)g & 0xfc) << 3) |	\
-		                             (((int)b & 0xf8) >> 3))
-
-#define WRITE_PIXEL( _x, _y, p )  \
-   *(GLushort *)(buf + _x*2 + _y*pitch) = p
-
-#define READ_RGBA( rgba, _x, _y )				\
-do {								\
-   GLushort p = *(GLushort *)(read_buf + _x*2 + _y*pitch);	\
-   rgba[0] = (((p >> 11) & 0x1f) * 255) / 31;			\
-   rgba[1] = (((p >>  5) & 0x3f) * 255) / 63;			\
-   rgba[2] = (((p >>  0) & 0x1f) * 255) / 31;			\
-   rgba[3] = 255;						\
-} while(0)
-
-#define TAG(x) mga##x##_565
-#include "spantmp.h"
-
-
-
-
-
-/* 32 bit, 8888 argb color spanline and pixel functions
+/* 16 bit, RGB565 color spanline and pixel functions
  */
+#define SPANTMP_PIXEL_FMT GL_RGB
+#define SPANTMP_PIXEL_TYPE GL_UNSIGNED_SHORT_5_6_5
 
-#undef INIT_MONO_PIXEL
-#define INIT_MONO_PIXEL(p, color) \
-  p = PACK_COLOR_8888( color[3], color[0], color[1], color[2] )
+#define TAG(x)    mga##x##_565
+#define TAG2(x,y) mga##x##_565##y
+#include "spantmp2.h"
 
+/* 32 bit, ARGB8888 color spanline and pixel functions
+ */
+#define SPANTMP_PIXEL_FMT GL_BGRA
+#define SPANTMP_PIXEL_TYPE GL_UNSIGNED_INT_8_8_8_8_REV
 
-#define WRITE_RGBA(_x, _y, r, g, b, a)			\
-    *(GLuint *)(buf + _x*4 + _y*pitch) = ((r << 16) |	\
-					  (g << 8)  |	\
-					  (b << 0)  |	\
-					  (a << 24) )
-
-#define WRITE_PIXEL(_x, _y, p)			\
-    *(GLuint *)(buf + _x*4 + _y*pitch) = p
-
-#define READ_RGBA(rgba, _x, _y)					\
-    do {							\
-	GLuint p = *(GLuint *)(read_buf + _x*4 + _y*pitch);	\
-	rgba[0] = (p >> 16) & 0xff;				\
-	rgba[1] = (p >> 8)  & 0xff;				\
-	rgba[2] = (p >> 0)  & 0xff;				\
-	rgba[3] = 0xff;						\
-    } while (0)
-
-#define TAG(x) mga##x##_8888
-#include "spantmp.h"
-
-
+#define TAG(x)    mga##x##_8888
+#define TAG2(x,y) mga##x##_8888##y
+#include "spantmp2.h"
 
 
 /* 16 bit depthbuffer functions.
  */
 #define WRITE_DEPTH( _x, _y, d )	\
-   *(GLushort *)(buf + _x*2 + _y*pitch) = d;
+   *(GLushort *)(buf + (_x)*2 + (_y)*pitch) = d;
 
 #define READ_DEPTH( d, _x, _y )		\
-   d = *(GLushort *)(buf + _x*2 + _y*pitch);
+   d = *(GLushort *)(buf + (_x)*2 + (_y)*pitch);
 
 #define TAG(x) mga##x##_16
 #include "depthtmp.h"
@@ -192,10 +127,10 @@ do {								\
 /* 32 bit depthbuffer functions.
  */
 #define WRITE_DEPTH( _x, _y, d )	\
-   *(GLuint *)(buf + _x*4 + _y*pitch) = d;
+   *(GLuint *)(buf + (_x)*4 + (_y)*pitch) = d;
 
 #define READ_DEPTH( d, _x, _y )		\
-   d = *(GLuint *)(buf + _x*4 + _y*pitch);
+   d = *(GLuint *)(buf + (_x)*4 + (_y)*pitch);
 
 #define TAG(x) mga##x##_32
 #include "depthtmp.h"
@@ -205,14 +140,14 @@ do {								\
 /* 24/8 bit interleaved depth/stencil functions
  */
 #define WRITE_DEPTH( _x, _y, d ) {			\
-   GLuint tmp = *(GLuint *)(buf + _x*4 + _y*pitch);	\
+   GLuint tmp = *(GLuint *)(buf + (_x)*4 + (_y)*pitch);	\
    tmp &= 0xff;						\
    tmp |= (d) << 8;					\
-   *(GLuint *)(buf + _x*4 + _y*pitch) = tmp;		\
+   *(GLuint *)(buf + (_x)*4 + (_y)*pitch) = tmp;		\
 }
 
 #define READ_DEPTH( d, _x, _y )	{				\
-   d = (*(GLuint *)(buf + _x*4 + _y*pitch) & ~0xff) >> 8;	\
+   d = (*(GLuint *)(buf + (_x)*4 + (_y)*pitch) & ~0xff) >> 8;	\
 }
 
 #define TAG(x) mga##x##_24_8
@@ -244,9 +179,9 @@ static void mgaDDSetBuffer(GLcontext *ctx, GLframebuffer *buffer,
    mgaContextPtr mmesa = MGA_CONTEXT(ctx);
    unsigned int   offset;
 
-   assert((bufferBit == DD_FRONT_LEFT_BIT) || (bufferBit == DD_BACK_LEFT_BIT));
+   assert((bufferBit == BUFFER_BIT_FRONT_LEFT) || (bufferBit == BUFFER_BIT_BACK_LEFT));
 
-   offset = (bufferBit == DD_FRONT_LEFT_BIT)
+   offset = (bufferBit == BUFFER_BIT_FRONT_LEFT)
        ? mmesa->mgaScreen->frontOffset
        : mmesa->mgaScreen->backOffset;
 
@@ -260,6 +195,28 @@ static void mgaDDSetBuffer(GLcontext *ctx, GLframebuffer *buffer,
        ? mmesa->driDrawable : mmesa->driReadable;
 }
 
+void mgaSpanRenderStart( GLcontext *ctx )
+{
+   mgaContextPtr mmesa = MGA_CONTEXT(ctx);
+   FLUSH_BATCH( mmesa );
+   LOCK_HARDWARE_QUIESCENT( mmesa );
+}
+
+void mgaSpanRenderFinish( GLcontext *ctx )
+{
+   mgaContextPtr mmesa = MGA_CONTEXT(ctx);
+   _swrast_flush( ctx );
+   UNLOCK_HARDWARE( mmesa );
+}
+
+/**
+ * Initialize the driver callbacks for the read / write span functions.
+ *
+ * \bug
+ * To really support RGB888 and RGBA8888 visuals, we need separate read and
+ * write routines for 888 and 8888.  We also need to determine whether or not
+ * the visual has destination alpha.
+ */
 void mgaDDInitSpanFuncs( GLcontext *ctx )
 {
    mgaContextPtr mmesa = MGA_CONTEXT(ctx);
@@ -269,29 +226,19 @@ void mgaDDInitSpanFuncs( GLcontext *ctx )
 
    switch (mmesa->mgaScreen->cpp) {
    case 2:
-      swdd->WriteRGBASpan = mgaWriteRGBASpan_565;
-      swdd->WriteRGBSpan = mgaWriteRGBSpan_565;
-      swdd->WriteMonoRGBASpan = mgaWriteMonoRGBASpan_565;
-      swdd->WriteRGBAPixels = mgaWriteRGBAPixels_565;
-      swdd->WriteMonoRGBAPixels = mgaWriteMonoRGBAPixels_565;
-      swdd->ReadRGBASpan = mgaReadRGBASpan_565;
-      swdd->ReadRGBAPixels = mgaReadRGBAPixels_565;
-
+#if 0
+      mgaInitPointers_565( swdd );
       swdd->ReadDepthSpan = mgaReadDepthSpan_16;
       swdd->WriteDepthSpan = mgaWriteDepthSpan_16;
       swdd->ReadDepthPixels = mgaReadDepthPixels_16;
       swdd->WriteDepthPixels = mgaWriteDepthPixels_16;
+#endif
       break;
 
    case 4:
-      swdd->WriteRGBASpan = mgaWriteRGBASpan_8888;
-      swdd->WriteRGBSpan = mgaWriteRGBSpan_8888;
-      swdd->WriteMonoRGBASpan = mgaWriteMonoRGBASpan_8888;
-      swdd->WriteRGBAPixels = mgaWriteRGBAPixels_8888;
-      swdd->WriteMonoRGBAPixels = mgaWriteMonoRGBAPixels_8888;
-      swdd->ReadRGBASpan = mgaReadRGBASpan_8888;
-      swdd->ReadRGBAPixels = mgaReadRGBAPixels_8888;
-      
+#if 0
+      mgaInitPointers_8888( swdd );
+
       if (!mmesa->hw_stencil) {
 	 swdd->ReadDepthSpan = mgaReadDepthSpan_32;
 	 swdd->WriteDepthSpan = mgaWriteDepthSpan_32;
@@ -308,6 +255,58 @@ void mgaDDInitSpanFuncs( GLcontext *ctx )
 	 swdd->ReadStencilPixels = mgaReadStencilPixels_24_8;
 	 swdd->WriteStencilPixels = mgaWriteStencilPixels_24_8;
       }
+#endif
       break;
+   }
+   swdd->SpanRenderStart = mgaSpanRenderStart;
+   swdd->SpanRenderFinish = mgaSpanRenderFinish;
+}
+
+
+/**
+ * Plug in the Get/Put routines for the given driRenderbuffer.
+ */
+void
+mgaSetSpanFunctions(driRenderbuffer *drb, const GLvisual *vis)
+{
+   if (drb->Base.InternalFormat == GL_RGBA) {
+      if (vis->redBits == 5 && vis->greenBits == 6 && vis->blueBits == 5) {
+         mgaInitPointers_565(&drb->Base);
+      }
+      else {
+         mgaInitPointers_8888(&drb->Base);
+      }
+   }
+   else if (drb->Base.InternalFormat == GL_DEPTH_COMPONENT16) {
+      drb->Base.GetRow        = mgaReadDepthSpan_16;
+      drb->Base.GetValues     = mgaReadDepthPixels_16;
+      drb->Base.PutRow        = mgaWriteDepthSpan_16;
+      drb->Base.PutMonoRow    = mgaWriteMonoDepthSpan_16;
+      drb->Base.PutValues     = mgaWriteDepthPixels_16;
+      drb->Base.PutMonoValues = NULL;
+   }
+   else if (drb->Base.InternalFormat == GL_DEPTH_COMPONENT24) {
+      drb->Base.GetRow        = mgaReadDepthSpan_24_8;
+      drb->Base.GetValues     = mgaReadDepthPixels_24_8;
+      drb->Base.PutRow        = mgaWriteDepthSpan_24_8;
+      drb->Base.PutMonoRow    = mgaWriteMonoDepthSpan_24_8;
+      drb->Base.PutValues     = mgaWriteDepthPixels_24_8;
+      drb->Base.PutMonoValues = NULL;
+   }
+   else if (drb->Base.InternalFormat == GL_DEPTH_COMPONENT32) {
+      drb->Base.GetRow        = mgaReadDepthSpan_32;
+      drb->Base.GetValues     = mgaReadDepthPixels_32;
+      drb->Base.PutRow        = mgaWriteDepthSpan_32;
+      drb->Base.PutMonoRow    = mgaWriteMonoDepthSpan_32;
+      drb->Base.PutValues     = mgaWriteDepthPixels_32;
+      drb->Base.PutMonoValues = NULL;
+   }
+   else if (drb->Base.InternalFormat == GL_STENCIL_INDEX8_EXT) {
+      drb->Base.GetRow        = mgaReadStencilSpan_24_8;
+      drb->Base.GetValues     = mgaReadStencilPixels_24_8;
+      drb->Base.PutRow        = mgaWriteStencilSpan_24_8;
+      drb->Base.PutMonoRow    = mgaWriteMonoStencilSpan_24_8;
+      drb->Base.PutValues     = mgaWriteStencilPixels_24_8;
+      drb->Base.PutMonoValues = NULL;
    }
 }

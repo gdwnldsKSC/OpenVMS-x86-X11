@@ -32,6 +32,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/newport/newport_driver.c,v 1.25 2003/04/23 21:51:41 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* function prototypes, common data structures & generic includes */
 #include "newport.h"
 
@@ -50,14 +54,14 @@
 
 /* Xv Extension */
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 #define VERSION			4000
 #define NEWPORT_NAME		"NEWPORT"
 #define NEWPORT_DRIVER_NAME	"newport"
 #define NEWPORT_MAJOR_VERSION	0
 #define NEWPORT_MINOR_VERSION	1	
-#define NEWPORT_PATCHLEVEL	3
+#define NEWPORT_PATCHLEVEL	4
 
 
 /* Prototypes ------------------------------------------------------- */
@@ -80,7 +84,7 @@ static void NewportUnmapRegs(ScrnInfoPtr pScrn);
 static Bool NewportProbeCardInfo(ScrnInfoPtr pScrn);
 /* ------------------------------------------------------------------ */
 
-DriverRec NEWPORT = {
+_X_EXPORT DriverRec NEWPORT = {
         VERSION,
 	NEWPORT_DRIVER_NAME,
         NewportIdentify,
@@ -117,6 +121,15 @@ static const char *shadowSymbols[] = {
 	NULL
 };
 
+static const char *xaaSymbols[] = {
+    "XAACreateInfoRec",
+    "XAADestroyInfoRec",
+    "XAAGetFallbackOps",
+    "XAAInit",
+    NULL
+};
+
+
 #ifdef XFree86LOADER
 
 static MODULESETUPPROTO(newportSetup);
@@ -128,6 +141,9 @@ static XF86ModuleVersionInfo newportVersRec =
 	MODINFOSTRING1,
 	MODINFOSTRING2,
 	XORG_VERSION_CURRENT,
+/*
+	XF86_VERSION_CURRENT,
+*/	
 	NEWPORT_MAJOR_VERSION, NEWPORT_MINOR_VERSION, NEWPORT_PATCHLEVEL,
 	ABI_CLASS_VIDEODRV,
 	ABI_VIDEODRV_VERSION,
@@ -135,7 +151,11 @@ static XF86ModuleVersionInfo newportVersRec =
 	{0,0,0,0}
 };
 
-XF86ModuleData newportModuleData = { &newportVersRec, newportSetup, NULL };
+_X_EXPORT XF86ModuleData newportModuleData = {
+	&newportVersRec,
+	newportSetup,
+	NULL
+};
 
 static pointer
 newportSetup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -156,7 +176,7 @@ newportSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 		 * might refer to.
 		 *
 		 */
-		LoaderRefSymLists( fbSymbols, ramdacSymbols, shadowSymbols, NULL);
+		LoaderRefSymLists( fbSymbols, ramdacSymbols, shadowSymbols, xaaSymbols, NULL);
 
 
 		/*
@@ -175,7 +195,8 @@ newportSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 typedef enum {
 	OPTION_BITPLANES,
 	OPTION_BUS_ID,
-	OPTION_HWCURSOR
+	OPTION_HWCURSOR,
+	OPTION_NOACCEL
 } NewportOpts;
 
 /* Supported options */
@@ -183,6 +204,7 @@ static const OptionInfoRec NewportOptions [] = {
 	{ OPTION_BITPLANES, "bitplanes", OPTV_INTEGER, {0}, FALSE },
 	{ OPTION_BUS_ID, "BusID", OPTV_INTEGER, {0}, FALSE },
 	{ OPTION_HWCURSOR, "HWCursor", OPTV_BOOLEAN, {0}, FALSE },
+	{ OPTION_NOACCEL, "NoAccel", OPTV_BOOLEAN, {0}, FALSE },
 	{ -1, NULL, OPTV_NONE, {0}, FALSE }
 };
 
@@ -297,11 +319,15 @@ NewportPreInit(ScrnInfoPtr pScrn, int flags)
 	/* Fill in the monitor field */
 	pScrn->monitor = pScrn->confScreen->monitor;
 
+#ifdef NEWPORT_USE32BPP
+	if (!xf86SetDepthBpp(pScrn, 24, 32, 32, Support32bppFb))
+		return FALSE;
+#else
 	if (!xf86SetDepthBpp(pScrn, 24, 0, 0, 
 			Support24bppFb | SupportConvert32to24 | 
 				PreferConvert32to24 ))
 		return FALSE;
-
+#endif		
 	switch( pScrn->depth ) {
 			/* check if the returned depth is one we support */
 		case 8:
@@ -322,9 +348,16 @@ NewportPreInit(ScrnInfoPtr pScrn, int flags)
 
 	/* Set Default Weight */
 	if( pScrn->depth > 8 ) {
+#ifdef NEWPORT_USE32BPP
+		rgb w = {8, 8, 8};
+		rgb m = {0x0000FF, 0x00FF00, 0xFF0000};
+		if (!xf86SetWeight(pScrn, w, m))
+			return FALSE;
+#else	
 		rgb zeros = {0, 0, 0};
 		if (!xf86SetWeight(pScrn, zeros, zeros))
 			return FALSE;
+#endif			
 	}
 	
 	if (!xf86SetDefaultVisual(pScrn, -1)) {
@@ -474,6 +507,11 @@ NewportPreInit(ScrnInfoPtr pScrn, int flags)
 	return TRUE;
 }
 
+
+Bool
+NewportXAAScreenInit(ScreenPtr pScreen);
+
+
 static Bool 
 NewportScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
 {
@@ -529,18 +567,48 @@ NewportScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
 				visual->redMask = pScrn->mask.red;
 				visual->greenMask = pScrn->mask.green;
 				visual->blueMask = pScrn->mask.blue;
+				/*
+				xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Bitplanes R:%d:%08X G:%d:%08X B:%d:%08X\n", 
+				           visual->offsetRed, visual->redMask,
+					   visual->offsetGreen, visual->greenMask,
+					   visual->offsetBlue, visual->blueMask);
+				*/
 			}
 		}
 	}
 
 	/* must be after RGB ordering fixed */
-	fbPictureInit (pScreen, 0, 0);
+	if (!fbPictureInit(pScreen, NULL, 0))
+		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+			   "RENDER extension initialisation failed.\n");
 
 	miInitializeBackingStore(pScreen);
 	xf86SetBackingStore(pScreen);
 
 	xf86SetBlackWhitePixels(pScreen);
-
+#ifdef NEWPORT_ACCEL
+	pNewport->NoAccel = FALSE;
+	if (xf86ReturnOptValBool(pNewport->Options, OPTION_NOACCEL, FALSE)) 
+	{
+	    if (!xf86LoadSubModule(pScrn, "xaa"))
+		return FALSE;
+	    xf86LoaderReqSymLists(xaaSymbols, NULL);
+	    pNewport->NoAccel = TRUE;
+	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Acceleration disabled\n");
+	}
+#if 0    
+	if (pScrn->bitsPerPixel < 24)
+	{ /* not implemented yet */
+	    pNewport->NoAccel = TRUE;
+	}
+#endif	
+	pNewport->pXAAInfoRec = NULL;
+	if (!pNewport->NoAccel)
+	{
+	    if (!NewportXAAScreenInit(pScreen))
+		return FALSE;
+	}
+#endif
 	/* Initialize software cursor */
 	if(!miDCInitialize(pScreen, xf86GetPointerScreenFuncs()))
 		return FALSE;
@@ -564,7 +632,9 @@ NewportScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
                    "Colormap initialization failed\n");
 		return FALSE;
 	}
-
+#ifdef NEWPORT_ACCEL
+	if (pNewport->NoAccel)
+#endif
 	/* Initialise shadow frame buffer */
 	if(!ShadowFBInit(pScreen, (pNewport->Bpp == 1) ? &NewportRefreshArea8 :
 				&NewportRefreshArea24)) {
@@ -617,6 +687,13 @@ NewportCloseScreen(int scrnIndex, ScreenPtr pScreen)
 {
 	ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
 	NewportPtr pNewport = NEWPORTPTR(pScrn);
+#ifdef NEWPORT_ACCEL
+	if (pNewport->pXAAInfoRec && !pNewport->NoAccel)
+	{
+	    XAADestroyInfoRec(pNewport->pXAAInfoRec);
+	    pNewport->pXAAInfoRec = NULL;
+	}
+#endif	
 
 	NewportRestore(pScrn, TRUE);
 	if (pNewport->ShadowPtr)

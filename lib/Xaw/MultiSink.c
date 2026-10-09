@@ -72,6 +72,9 @@ SOFTWARE.
 ******************************************************************/
 /* $XFree86: xc/lib/Xaw/MultiSink.c,v 1.19 2001/01/17 19:42:27 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xatom.h>

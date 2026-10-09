@@ -15,12 +15,12 @@ MOBJ = drimodule.o
 		-I$(EXTINCSRC) -I$(MESASRCDIR)/include \
 		-I$(XF86OSSRC) -I$(XF86COMSRC) \
 		-I../include -I../glx -I$(LIBSRC)/GL/include \
-		-I$(DRMSRCDIR)/shared \
+		-I$(DRMSRCDIR)/shared-core \
 		-I$(SERVERSRC)/mi -I$(FONTINCSRC)
       DEFINES = $(GLX_DEFINES)
 
-LinkSourceFile(xf86dri.h,$(LIBSRC)/GL/glx)
-LinkSourceFile(xf86dristr.h,$(LIBSRC)/GL/glx)
+LinkSourceFile(xf86dri.h,$(MESASRCDIR)/src/glx/x11)
+LinkSourceFile(xf86dristr.h,$(MESASRCDIR)/src/glx/x11)
 
 ModuleObjectRule()
 LibraryModuleTarget(dri,$(OBJS))

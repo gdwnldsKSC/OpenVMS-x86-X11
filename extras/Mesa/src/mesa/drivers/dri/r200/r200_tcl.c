@@ -62,7 +62,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define HAVE_TRI_STRIPS  1
 #define HAVE_TRI_STRIP_1 0
 #define HAVE_TRI_FANS    1
-#define HAVE_QUADS       0	/* hw quad verts in wrong order??? */
+#define HAVE_QUADS       1
 #define HAVE_QUAD_STRIPS 1
 #define HAVE_POLYGONS    1
 #define HAVE_ELTS        1
@@ -220,7 +220,7 @@ static void r200EmitPrim( GLcontext *ctx,
 
 #ifdef MESA_BIG_ENDIAN
 /* We could do without (most of) this ugliness if dest was always 32 bit word aligned... */
-#define EMIT_ELT(dest, offset, x) do {                                \
+#define EMIT_ELT(dest, offset, x) do {                          \
         int off = offset + ( ( (GLuint)dest & 0x2 ) >> 1 );     \
         GLushort *des = (GLushort *)( (GLuint)dest & ~0x2 );    \
         (des)[ off + 1 - 2 * ( off & 1 ) ] = (GLushort)(x);	\
@@ -274,6 +274,90 @@ void r200TclPrimitive( GLcontext *ctx,
 
 
 /**********************************************************************/
+/*             Fog blend factor computation for hw tcl                */
+/*             same calculation used as in t_vb_fog.c                 */
+/**********************************************************************/
+
+#define FOG_EXP_TABLE_SIZE 256
+#define FOG_MAX (10.0)
+#define EXP_FOG_MAX .0006595
+#define FOG_INCR (FOG_MAX/FOG_EXP_TABLE_SIZE)
+static GLfloat exp_table[FOG_EXP_TABLE_SIZE];
+
+#if 1
+#define NEG_EXP( result, narg )						\
+do {									\
+   GLfloat f = (GLfloat) (narg * (1.0/FOG_INCR));			\
+   GLint k = (GLint) f;							\
+   if (k > FOG_EXP_TABLE_SIZE-2) 					\
+      result = (GLfloat) EXP_FOG_MAX;					\
+   else									\
+      result = exp_table[k] + (f-k)*(exp_table[k+1]-exp_table[k]);	\
+} while (0)
+#else
+#define NEG_EXP( result, narg )					\
+do {								\
+   result = exp(-narg);						\
+} while (0)
+#endif
+
+
+/**
+ * Initialize the exp_table[] lookup table for approximating exp().
+ */
+void
+r200InitStaticFogData( void )
+{
+   GLfloat f = 0.0F;
+   GLint i = 0;
+   for ( ; i < FOG_EXP_TABLE_SIZE ; i++, f += FOG_INCR) {
+      exp_table[i] = (GLfloat) exp(-f);
+   }
+}
+
+
+/**
+ * Compute per-vertex fog blend factors from fog coordinates by
+ * evaluating the GL_LINEAR, GL_EXP or GL_EXP2 fog function.
+ * Fog coordinates are distances from the eye (typically between the
+ * near and far clip plane distances).
+ * Note the fog (eye Z) coords may be negative so we use ABS(z) below.
+ * Fog blend factors are in the range [0,1].
+ */
+float
+r200ComputeFogBlendFactor( GLcontext *ctx, GLfloat fogcoord )
+{
+   GLfloat end  = ctx->Fog.End;
+   GLfloat d, temp;
+   const GLfloat z = FABSF(fogcoord);
+
+   switch (ctx->Fog.Mode) {
+   case GL_LINEAR:
+      if (ctx->Fog.Start == ctx->Fog.End)
+         d = 1.0F;
+      else
+         d = 1.0F / (ctx->Fog.End - ctx->Fog.Start);
+      temp = (end - z) * d;
+      return CLAMP(temp, 0.0F, 1.0F);
+      break;
+   case GL_EXP:
+      d = ctx->Fog.Density;
+      NEG_EXP( temp, d * z );
+      return temp;
+      break;
+   case GL_EXP2:
+      d = ctx->Fog.Density*ctx->Fog.Density;
+      NEG_EXP( temp, d * z * z );
+      return temp;
+      break;
+   default:
+      _mesa_problem(ctx, "Bad fog mode in make_fog_coord");
+      return 0;
+   }
+}
+
+
+/**********************************************************************/
 /*                          Render pipeline stage                     */
 /**********************************************************************/
 
@@ -286,6 +370,7 @@ static GLboolean r200_run_tcl_render( GLcontext *ctx,
    r200ContextPtr rmesa = R200_CONTEXT(ctx);
    TNLcontext *tnl = TNL_CONTEXT(ctx);
    struct vertex_buffer *VB = &tnl->vb;
+   GLuint inputs = VERT_BIT_POS | VERT_BIT_COLOR0;
    GLuint i;
 
    /* TODO: separate this from the swtnl pipeline 
@@ -299,8 +384,38 @@ static GLboolean r200_run_tcl_render( GLcontext *ctx,
    if (VB->Count == 0)
       return GL_FALSE;
 
+   /* Validate state:
+    */
+   if (rmesa->NewGLState)
+      r200ValidateState( ctx );
+
+   /* NOTE: inputs != tnl->render_inputs - these are the untransformed
+    * inputs.
+    */
+   if (ctx->Light.Enabled) {
+      inputs |= VERT_BIT_NORMAL;
+      if (ctx->_TriangleCaps & DD_SEPARATE_SPECULAR) {
+	 inputs |= VERT_BIT_COLOR1;
+      }
+   }
+
+   if ( ctx->Fog.FogCoordinateSource == GL_FOG_COORD ) {
+      inputs |= VERT_BIT_FOG;
+   }
+
+   for (i = 0 ; i < ctx->Const.MaxTextureUnits; i++) {
+      if (ctx->Texture.Unit[i]._ReallyEnabled) {
+	 if (rmesa->TexGenNeedNormals[i]) {
+	    inputs |= VERT_BIT_NORMAL;
+	 }
+	 inputs |= VERT_BIT_TEX(i);
+      }
+   }
+
+   /* Do the actual work:
+    */
    r200ReleaseArrays( ctx, ~0 /* stage->changed_inputs */ );
-   r200EmitArrays( ctx, stage->inputs );
+   r200EmitArrays( ctx, inputs );
 
    rmesa->tcl.Elts = VB->Elts;
 
@@ -324,84 +439,15 @@ static GLboolean r200_run_tcl_render( GLcontext *ctx,
 
 
 
-static void r200_check_tcl_render( GLcontext *ctx,
-				   struct tnl_pipeline_stage *stage )
-{
-   r200ContextPtr rmesa = R200_CONTEXT(ctx);
-   GLuint inputs = VERT_BIT_POS;
-   GLuint unit;
-
-   /* Validate state:
-    */
-   if (rmesa->NewGLState)
-      r200ValidateState( ctx );
-
-   if (ctx->RenderMode == GL_RENDER) {
-      /* Make all this event-driven:
-       */
-      if (ctx->Light.Enabled) {
-	 inputs |= VERT_BIT_NORMAL;
-
-	 if (1 || ctx->Light.ColorMaterialEnabled) {
-	    inputs |= VERT_BIT_COLOR0;
-	 }
-      }
-      else {
-	 inputs |= VERT_BIT_COLOR0;
-	 
-	 if (ctx->_TriangleCaps & DD_SEPARATE_SPECULAR) {
-	    inputs |= VERT_BIT_COLOR1;
-	 }
-      }
-
-      for (unit = 0 ; unit < ctx->Const.MaxTextureUnits; unit++) {
-	 if (ctx->Texture.Unit[unit]._ReallyEnabled) {
-	    if (ctx->Texture.Unit[unit].TexGenEnabled) {
-	       if (rmesa->TexGenNeedNormals[unit]) {
-		  inputs |= VERT_BIT_NORMAL;
-	       }
-	    } else {
-	       inputs |= VERT_BIT_TEX(unit);
-	    }
-	 }
-      }
-
-      stage->inputs = inputs;
-      stage->active = 1;
-   }
-   else
-      stage->active = 0;
-}
-
-static void r200_init_tcl_render( GLcontext *ctx,
-				    struct tnl_pipeline_stage *stage )
-{
-   stage->check = r200_check_tcl_render;
-   stage->check( ctx, stage );
-}
-
-static void dtr( struct tnl_pipeline_stage *stage )
-{
-   (void)stage;
-}
-
-
 /* Initial state for tcl stage.  
  */
 const struct tnl_pipeline_stage _r200_tcl_stage =
 {
    "r200 render",
-   (_DD_NEW_SEPARATE_SPECULAR |
-    _NEW_LIGHT|
-    _NEW_TEXTURE|
-    _NEW_FOG|
-    _NEW_RENDERMODE),		/* re-check (new inputs) */
-   0,				/* re-run (always runs) */
-   GL_TRUE,			/* active */
-   0, 0,			/* inputs (set in check_render), outputs */
-   0, 0,			/* changed_inputs, private */
-   dtr,				/* destructor */
-   r200_init_tcl_render,	/* check - initially set to alloc data */
+   NULL,			/*  private */
+   NULL,
+   NULL,
+   NULL,
    r200_run_tcl_render	/* run */
 };
 
@@ -439,18 +485,6 @@ static void transition_to_swtnl( GLcontext *ctx )
     */
    R200_STATECHANGE( rmesa, vap );
    rmesa->hw.vap.cmd[VAP_SE_VAP_CNTL] &= ~R200_VAP_TCL_ENABLE;
-   rmesa->hw.vap.cmd[VAP_SE_VAP_CNTL] |= R200_VAP_D3D_TEX_DEFAULT;
-
-   R200_STATECHANGE( rmesa, vte );
-   rmesa->hw.vte.cmd[VTE_SE_VTE_CNTL] &= ~R200_VTX_W0_FMT;
-
-   R200_STATECHANGE( rmesa, set );
-   rmesa->hw.set.cmd[SET_RE_CNTL] |= (R200_VTX_STQ0_D3D |
-				      R200_VTX_STQ1_D3D |
-				      R200_VTX_STQ2_D3D |
-				      R200_VTX_STQ3_D3D |
-				      R200_VTX_STQ4_D3D |
-				      R200_VTX_STQ5_D3D);
 }
 
 static void transition_to_hwtnl( GLcontext *ctx )
@@ -467,7 +501,7 @@ static void transition_to_hwtnl( GLcontext *ctx )
    if ( rmesa->dma.flush )			
       rmesa->dma.flush( rmesa );	
 
-   rmesa->dma.flush = 0;
+   rmesa->dma.flush = NULL;
    
    if (rmesa->swtcl.indexed_verts.buf) 
       r200ReleaseDmaRegion( rmesa, &rmesa->swtcl.indexed_verts, 
@@ -475,21 +509,19 @@ static void transition_to_hwtnl( GLcontext *ctx )
 
    R200_STATECHANGE( rmesa, vap );
    rmesa->hw.vap.cmd[VAP_SE_VAP_CNTL] |= R200_VAP_TCL_ENABLE;
-   rmesa->hw.vap.cmd[VAP_SE_VAP_CNTL] &= ~(R200_VAP_FORCE_W_TO_ONE |
-					   R200_VAP_D3D_TEX_DEFAULT);
+   rmesa->hw.vap.cmd[VAP_SE_VAP_CNTL] &= ~R200_VAP_FORCE_W_TO_ONE;
 
+   if ( ((rmesa->hw.ctx.cmd[CTX_PP_FOG_COLOR] & R200_FOG_USE_MASK)
+      == R200_FOG_USE_SPEC_ALPHA) &&
+      (ctx->Fog.FogCoordinateSource == GL_FOG_COORD )) {
+      R200_STATECHANGE( rmesa, ctx );
+      rmesa->hw.ctx.cmd[CTX_PP_FOG_COLOR] &= ~R200_FOG_USE_MASK;
+      rmesa->hw.ctx.cmd[CTX_PP_FOG_COLOR] |= R200_FOG_USE_VTX_FOG;
+   }
+   
    R200_STATECHANGE( rmesa, vte );
    rmesa->hw.vte.cmd[VTE_SE_VTE_CNTL] &= ~(R200_VTX_XY_FMT|R200_VTX_Z_FMT);
    rmesa->hw.vte.cmd[VTE_SE_VTE_CNTL] |= R200_VTX_W0_FMT;
-
-   R200_STATECHANGE( rmesa, set );
-   rmesa->hw.set.cmd[SET_RE_CNTL] &= ~(R200_VTX_STQ0_D3D |
-				       R200_VTX_STQ1_D3D |
-				       R200_VTX_STQ2_D3D |
-				       R200_VTX_STQ3_D3D |
-				       R200_VTX_STQ4_D3D |
-				       R200_VTX_STQ5_D3D);
-
 
    if (R200_DEBUG & DEBUG_FALLBACKS) 
       fprintf(stderr, "R200 end tcl fallback\n");
@@ -508,7 +540,8 @@ static char *fallbackStrings[] = {
    "Texgen unit 4",
    "Texgen unit 5",
    "User disable",
-   "Bitmap as points"
+   "Bitmap as points",
+   "Vertex program"
 };
 
 

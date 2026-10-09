@@ -26,6 +26,12 @@
  ********************************************************/
 /* $XFree86: xc/lib/xkbfile/xkmread.c,v 1.6 2002/02/13 22:09:42 herrb Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#elif defined(HAVE_CONFIG_H)
+#include <config.h>
+#endif
+
 #include <stdio.h>
 
 #include <X11/Xos.h>
@@ -45,16 +51,16 @@
 
 #else
 
-#include "X.h"
+#include <X11/X.h>
 #define	NEED_EVENTS
-#include "Xproto.h"
+#include <X11/Xproto.h>
 #include <X11/keysym.h>
 #include "misc.h"
 #include "inputstr.h"
-#include "XKBstr.h"
+#include <X11/extensions/XKBstr.h>
 #define	 XKBSRV_NEED_FILE_FUNCS
-#include "XKBsrv.h"
-#include "XKBgeom.h"
+#include <X11/extensions/XKBsrv.h>
+#include <X11/extensions/XKBgeom.h>
 
 Atom
 XkbInternAtom(Display *dpy,char *str,Bool only_if_exists)

@@ -25,6 +25,10 @@
  */
 /* $XFree86:$ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "tcx.h"
 
 static void TCXLoadCursorImage(ScrnInfoPtr pScrn, unsigned char *src);

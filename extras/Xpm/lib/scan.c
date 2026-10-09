@@ -45,6 +45,9 @@
 
 /* October 2004, source code review by Thomas Biege <thomas@suse.de> */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "XpmI.h"
 
 #define MAXPRINTABLE 92			/* number of printable ascii chars
@@ -621,8 +624,8 @@ GetImagePixels(image, width, height, pmap)
     char *dst;
     unsigned int *iptr;
     char *data;
-    unsigned int x, y, i;
-    int bits, depth, ibu, ibpp, offset;
+    unsigned int x, y;
+    int bits, depth, ibu, ibpp, offset, i;
     unsigned long lbt;
     Pixel pixel, px;
 
@@ -632,6 +635,9 @@ GetImagePixels(image, width, height, pmap)
     lbt = low_bits_table[depth];
     ibpp = image->bits_per_pixel;
     offset = image->xoffset;
+
+    if (image->bitmap_unit < 0)
+	    return (XpmNoMemory);
 
     if ((image->bits_per_pixel | image->depth) == 1) {
 	ibu = image->bitmap_unit;

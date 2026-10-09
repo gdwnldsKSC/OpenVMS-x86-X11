@@ -31,6 +31,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/sample/sample.c,v 1.10 2002/01/02 15:09:14 herrb Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _SAMPLE_C_
 /*****************************************************************************
  *	Standard Headers
@@ -87,7 +91,11 @@ static const char *default_options[] =
 	"FlowControl", "None"
 };
 
-XF86ModuleData sampleModuleData = { &VersionRec, SetupProc, TearDownProc };
+_X_EXPORT XF86ModuleData sampleModuleData = {
+    &VersionRec,
+    SetupProc,
+    TearDownProc
+};
 
 /*****************************************************************************
  *	Function Definitions

@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define USE_INT10 1
 #define USE_PCIVGAIO 1
 
@@ -81,7 +85,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /* !!! These need to be checked !!! */
 #if 0
 #define _XF86DGA_SERVER_
-#include "extensions/xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
 #endif
 
 /* The driver's own header file: */
@@ -92,7 +96,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "dixstruct.h"
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 #ifdef XF86DRI
 #include "dri.h"
@@ -138,7 +142,7 @@ static void TDFXBlockHandler(int, pointer, pointer, pointer);
 static void TDFXDisplayPowerManagementSet(ScrnInfoPtr pScrn, 
 					int PowerManagermentMode, int flags);
 
-DriverRec TDFX = {
+_X_EXPORT DriverRec TDFX = {
   TDFX_VERSION,
   TDFX_DRIVER_NAME,
   TDFXIdentify,
@@ -288,7 +292,7 @@ static XF86ModuleVersionInfo tdfxVersRec =
   {0,0,0,0}
 };
 
-XF86ModuleData tdfxModuleData = {&tdfxVersRec, tdfxSetup, 0};
+_X_EXPORT XF86ModuleData tdfxModuleData = {&tdfxVersRec, tdfxSetup, 0};
 
 static pointer
 tdfxSetup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -2252,9 +2256,9 @@ TDFXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv) {
 	pTDFX->directRenderingEnabled = TDFXDRIFinishScreenInit(pScreen);
   }
   if (pTDFX->directRenderingEnabled) {
-	xf86DrvMsg(pScrn->scrnIndex, driFrom, "Direct rendering enabled\n");
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Direct rendering enabled\n");
   } else {
-	xf86DrvMsg(pScrn->scrnIndex, driFrom, "Direct rendering disabled\n");
+	xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Direct rendering disabled\n");
   }
 #endif
 

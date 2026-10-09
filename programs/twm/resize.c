@@ -140,24 +140,14 @@ do_auto_clamp (TwmWindow *tmp_win, XEvent *evp)
 }
 
 
-/***********************************************************************
- *
- *  Procedure:
- *      StartResize - begin a window resize operation
- *
- *  Inputs:
- *      ev      - the event structure (button press)
- *      tmp_win - the TwmWindow pointer
- *      fromtitlebar - action invoked from titlebar button
- *
- ***********************************************************************
+/**
+ * begin a window resize operation
+ *  \param ev           the event structure (button press)
+ *  \param tmp_win      the TwmWindow pointer
+ *  \param fromtitlebar action invoked from titlebar button
  */
-
 void
-StartResize(evp, tmp_win, fromtitlebar)
-XEvent *evp;
-TwmWindow *tmp_win;
-Bool fromtitlebar;
+StartResize(XEvent *evp, TwmWindow *tmp_win, Bool fromtitlebar)
 {
     Window      junkRoot;
     unsigned int junkbw, junkDepth;
@@ -202,9 +192,7 @@ Bool fromtitlebar;
 
 
 void
-MenuStartResize(tmp_win, x, y, w, h)
-TwmWindow *tmp_win;
-int x, y, w, h;
+MenuStartResize(TwmWindow *tmp_win, int x, int y, int w, int h)
 {
     XGrabServer(dpy);
     XGrabPointer(dpy, Scr->Root, True,
@@ -233,21 +221,12 @@ int x, y, w, h;
 		 tmp_win->frame_bw, tmp_win->title_height);
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *      AddStartResize - begin a windorew resize operation from AddWindow
- *
- *  Inputs:
- *      tmp_win - the TwmWindow pointer
- *
- ***********************************************************************
+/**
+ * begin a windorew resize operation from AddWindow
+ *  \param tmp_win the TwmWindow pointer
  */
-
 void
-AddStartResize(tmp_win, x, y, w, h)
-TwmWindow *tmp_win;
-int x, y, w, h;
+AddStartResize(TwmWindow *tmp_win, int x, int y, int w, int h)
 {
     XGrabServer(dpy);
     XGrabPointer(dpy, Scr->Root, True,
@@ -275,10 +254,7 @@ int x, y, w, h;
 
 
 void
-MenuDoResize(x_root, y_root, tmp_win)
-int x_root;
-int y_root;
-TwmWindow *tmp_win;
+MenuDoResize(int x_root, int y_root, TwmWindow *tmp_win)
 {
     int action;
 
@@ -379,25 +355,17 @@ TwmWindow *tmp_win;
     DisplaySize(tmp_win, dragWidth, dragHeight);
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *      DoResize - move the rubberband around.  This is called for
- *                 each motion event when we are resizing
- *
- *  Inputs:
- *      x_root  - the X corrdinate in the root window
- *      y_root  - the Y corrdinate in the root window
- *      tmp_win - the current twm window
- *
- ***********************************************************************
- */
 
+/**
+ * move the rubberband around.  This is called for each motion event when 
+ * we are resizing
+ *
+ *  \param x_root  the X corrdinate in the root window
+ *  \param y_root  the Y corrdinate in the root window
+ *  \param tmp_win the current twm window
+ */
 void
-DoResize(x_root, y_root, tmp_win)
-int x_root;
-int y_root;
-TwmWindow *tmp_win;
+DoResize(int x_root, int y_root, TwmWindow *tmp_win)
 {
     int action;
 
@@ -502,24 +470,15 @@ TwmWindow *tmp_win;
     DisplaySize(tmp_win, dragWidth, dragHeight);
 }
 
-/***********************************************************************
+/**
+ * display the size in the dimensions window.
  *
- *  Procedure:
- *      DisplaySize - display the size in the dimensions window
- *
- *  Inputs:
- *      tmp_win - the current twm window
- *      width   - the width of the rubber band
- *      height  - the height of the rubber band
- *
- ***********************************************************************
+ *  \param tmp_win the current twm window
+ *  \param width   the width of the rubber band
+ *  \param height  the height of the rubber band
  */
-
 void
-DisplaySize(tmp_win, width, height)
-TwmWindow *tmp_win;
-int width;
-int height;
+DisplaySize(TwmWindow *tmp_win, int width, int height)
 {
     char str[100];
     int dwidth;
@@ -564,14 +523,9 @@ int height;
 			    str, 13);
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *      EndResize - finish the resize operation
- *
- ***********************************************************************
+/**
+ * finish the resize operation
  */
-
 void
 EndResize()
 {
@@ -615,8 +569,7 @@ EndResize()
 }
 
 void
-MenuEndResize(tmp_win)
-TwmWindow *tmp_win;
+MenuEndResize(TwmWindow *tmp_win)
 {
     MoveOutline(Scr->Root, 0, 0, 0, 0, 0, 0);
     XUnmapWindow(dpy, Scr->SizeWindow);
@@ -630,17 +583,11 @@ TwmWindow *tmp_win;
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *      AddEndResize - finish the resize operation for AddWindo<w
- *
- ***********************************************************************
+/**
+ * finish the resize operation for AddWindo<w
  */
-
 void
-AddEndResize(tmp_win)
-TwmWindow *tmp_win;
+AddEndResize(TwmWindow *tmp_win)
 {
 
 #ifdef DEBUG
@@ -648,26 +595,21 @@ TwmWindow *tmp_win;
 #endif
 
     ConstrainSize (tmp_win, &dragWidth, &dragHeight);
-    AddingX = dragx;
-    AddingY = dragy;
+    AddingX = dragx - tmp_win->frame_bw;
+    AddingY = dragy - tmp_win->frame_bw;
     AddingW = dragWidth + (2 * tmp_win->frame_bw);
     AddingH = dragHeight + (2 * tmp_win->frame_bw);
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *      ConstrainSize - adjust the given width and height to account for the
- *              constraints imposed by size hints
+/**
+ * adjust the given width and height to account for the constraints imposed 
+ * by size hints.
  *
  *      The general algorithm, especially the aspect ratio stuff, is
  *      borrowed from uwm's CheckConsistency routine.
- * 
- ***********************************************************************/
+ */
 void
-ConstrainSize (tmp_win, widthp, heightp)
-    TwmWindow *tmp_win;
-    int *widthp, *heightp;
+ConstrainSize (TwmWindow *tmp_win, int *widthp, int *heightp)
 {
 #define makemult(a,b) ((b==1) ? (a) : (((int)((a)/(b))) * (b)) )
 #define _min(a,b) (((a) < (b)) ? (a) : (b))
@@ -789,44 +731,35 @@ ConstrainSize (tmp_win, widthp, heightp)
 }
 
 
-/***********************************************************************
- *
- *  Procedure:
- *      SetupWindow - set window sizes, this was called from either
- *              AddWindow, EndResize, or HandleConfigureNotify.
- *
- *  Inputs:
- *      tmp_win - the TwmWindow pointer
- *      x       - the x coordinate of the upper-left outer corner of the frame
- *      y       - the y coordinate of the upper-left outer corner of the frame
- *      w       - the width of the frame window w/o border
- *      h       - the height of the frame window w/o border
- *      bw      - the border width of the frame window or -1 not to change
+/**
+ * set window sizes, this was called from either AddWindow, EndResize, or 
+ * HandleConfigureNotify.
  *
  *  Special Considerations:
- *      This routine will check to make sure the window is not completely
- *      off the display, if it is, it'll bring some of it back on.
+ * This routine will check to make sure the window is not completely off the 
+ * display, if it is, it'll bring some of it back on.
  *
- *      The tmp_win->frame_XXX variables should NOT be updated with the
- *      values of x,y,w,h prior to calling this routine, since the new
- *      values are compared against the old to see whether a synthetic
- *      ConfigureNotify event should be sent.  (It should be sent if the
- *      window was moved but not resized.)
+ * The tmp_win->frame_XXX variables should NOT be updated with the values of 
+ * x,y,w,h prior to calling this routine, since the new values are compared 
+ * against the old to see whether a synthetic ConfigureNotify event should be 
+ * sent.  (It should be sent if the window was moved but not resized.)
  *
- ***********************************************************************
+ *  \param tmp_win the TwmWindow pointer
+ *  \param x       the x coordinate of the upper-left outer corner of the frame
+ *  \param y       the y coordinate of the upper-left outer corner of the frame
+ *  \param w       the width of the frame window w/o border
+ *  \param h       the height of the frame window w/o border
+ *  \param bw      the border width of the frame window or -1 not to change
  */
-
-void SetupWindow (tmp_win, x, y, w, h, bw)
-    TwmWindow *tmp_win;
-    int x, y, w, h, bw;
+void SetupWindow (TwmWindow *tmp_win, int x, int y, int w, int h, int bw)
 {
     SetupFrame (tmp_win, x, y, w, h, bw, False);
 }
 
-void SetupFrame (tmp_win, x, y, w, h, bw, sendEvent)
-    TwmWindow *tmp_win;
-    int x, y, w, h, bw;
-    Bool sendEvent;			/* whether or not to force a send */
+/**
+ *  \param sendEvent whether or not to force a send
+ */
+void SetupFrame (TwmWindow *tmp_win, int x, int y, int w, int h, int bw, Bool sendEvent)
 {
     XEvent client_event;
     XWindowChanges frame_wc, xwc;
@@ -972,25 +905,15 @@ void SetupFrame (tmp_win, x, y, w, h, bw, sendEvent)
 }
 
 
-/**********************************************************************
- *  Rutgers mod #1   - rocky.
- *  Procedure:
- *         fullzoom - zooms window to full height of screen or
- *                    to full height and width of screen. (Toggles
- *                    so that it can undo the zoom - even when switching
- *                    between fullzoom and vertical zoom.)
+/**
+ * zooms window to full height of screen or to full height and width of screen. 
+ * (Toggles so that it can undo the zoom - even when switching between fullzoom
+ * and vertical zoom.)
  *
- *  Inputs:
- *         tmp_win - the TwmWindow pointer
- *
- *
- **********************************************************************
+ *  \param tmp_win  the TwmWindow pointer
  */
-
 void
-fullzoom(tmp_win,flag)
-TwmWindow *tmp_win;
-int flag;
+fullzoom(TwmWindow *tmp_win, int flag)
 {
     Window      junkRoot;
     unsigned int junkbw, junkDepth;
@@ -1084,8 +1007,7 @@ int flag;
 }
 
 void
-SetFrameShape (tmp)
-    TwmWindow *tmp;
+SetFrameShape (TwmWindow *tmp)
 {
     /*
      * see if the titlebar needs to move

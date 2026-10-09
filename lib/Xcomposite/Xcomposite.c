@@ -1,5 +1,5 @@
 /*
- * $Id: Xcomposite.c,v 1.2 2004/07/08 07:33:23 keithp Exp $
+ * $Id: Xcomposite.c,v 1.2 2005/07/03 07:00:56 daniels Exp $
  *
  * Copyright © 2003 Keith Packard
  *

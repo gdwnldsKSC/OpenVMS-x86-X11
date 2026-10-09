@@ -51,10 +51,10 @@ in this Software without prior written authorization from The Open Group.
 #ifndef CLOSESTR_H
 #define CLOSESTR_H
 
-#include	"FSproto.h"
+#include	<X11/fonts/FSproto.h>
 #include	"closure.h"
 #include	"misc.h"
-#include	"font.h"
+#include	<X11/fonts/font.h>
 
 /* closure structures */
 

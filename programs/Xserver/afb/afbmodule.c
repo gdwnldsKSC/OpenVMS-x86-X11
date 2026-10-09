@@ -25,10 +25,16 @@
  * XFree86 Project.
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifdef XFree86LOADER
 
 #include "xf86Module.h"
 #include "afb.h"
+
+static MODULESETUPPROTO(afbSetup);
 
 static XF86ModuleVersionInfo VersRec =
 {
@@ -44,6 +50,14 @@ static XF86ModuleVersionInfo VersRec =
 	{0,0,0,0}       /* signature, to be patched into the file by a tool */
 };
 
-XF86ModuleData afbModuleData = { &VersRec, NULL, NULL };
+XF86ModuleData afbModuleData = { &VersRec, afbSetup, NULL };
+
+static pointer
+afbSetup(pointer module, pointer opts, int *errmaj, int *errmin)
+{
+    /* This modules requires mfb, so load it */
+    return LoadSubModule(module, "mfb", NULL, NULL, NULL, NULL,
+                         errmaj, errmin);
+}
 
 #endif

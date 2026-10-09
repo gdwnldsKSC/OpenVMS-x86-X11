@@ -30,6 +30,10 @@ not be used in advertising or otherwise to promote the sale, use or other
 dealings in this Software without prior written authorization from said
 copyright holders.
 */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <scrnintstr.h>
 
 #include "attributes.h"
@@ -44,7 +48,7 @@ static XpOidMediumDiscreteSizeList DefaultMediumSizeList = {
     &DefaultMediumSize, 1
 };
 static XpOidMediumSourceSize DefaultMediumSourceSize = {
-    xpoid_unspecified, XpOidMediumSS_DISCRETE, &DefaultMediumSizeList
+    xpoid_unspecified, XpOidMediumSS_DISCRETE, { &DefaultMediumSizeList }
 };
 static XpOidMediumSS DefaultMediumSS = {
     &DefaultMediumSourceSize, 1

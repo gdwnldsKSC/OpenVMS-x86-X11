@@ -36,4 +36,4 @@ The Open Group.
 #endif
 static char* __xtransname = "_HttpTrans";
 
-#include "transport.c"
+#include <X11/Xtrans/transport.c>

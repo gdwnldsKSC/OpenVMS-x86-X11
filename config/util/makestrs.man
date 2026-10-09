@@ -29,7 +29,7 @@
 .SH NAME
 makestrs \- makes string table C source and header(s)
 .SH SYNOPSIS
-.B makestrs [-f source] [-abioptions ...]
+.B makestrs [-f source] [-i includedir] [-abioptions ...]
 .SH DESCRIPTION
 The
 .I makestrs
@@ -83,6 +83,10 @@ forces the generation of the "normal" string table even
 if makestrs was compiled with -DARRAYPERSTR. Since makestrs is almost 
 never compiled with -DARRAYPERSTR this is the default behavior if 
 no abioptions are specified.
+.LP
+.I -i includedir
+forces the reading of templates from the includedir instead of the local 
+directory. This is useful to have separate source and build directories. 
 .SH SYNTAX
 The syntax for string-list file is (items in square brackets are optional):
 .RS 4

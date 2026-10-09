@@ -1,7 +1,7 @@
 /*
  * $XFree86: xc/programs/Xserver/randr/randrstr.h,v 1.5 2002/09/29 23:39:45 keithp Exp $
  *
- * Copyright © 2000 Compaq Computer Corporation
+ * Copyright Â© 2000 Compaq Computer Corporation
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -22,10 +22,14 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _RANDRSTR_H_
 #define _RANDRSTR_H_
 
-#include "randr.h"
+#include <X11/extensions/randr.h>
 
 typedef struct _rrScreenRate {
     int		    rate;

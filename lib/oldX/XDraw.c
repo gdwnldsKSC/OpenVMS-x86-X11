@@ -28,6 +28,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/oldX/XDraw.c,v 1.4 2001/07/25 15:04:57 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "X11/Xlibint.h"
 #include "X11/Xlib.h"
 #include "X10.h"

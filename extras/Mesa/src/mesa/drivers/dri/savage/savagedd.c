@@ -24,6 +24,7 @@
 
 
 #include "mtypes.h"
+#include "framebuffer.h"
 
 #include <stdio.h>
 
@@ -38,9 +39,10 @@
 #include "savagecontext.h"
 #include "extensions.h"
 
+#include "utils.h"
 
-extern int xf86VTSema;
 
+#define DRIVER_DATE "20050829"
 
 /***************************************
  * Mesa's Driver Functions
@@ -49,11 +51,33 @@ extern int xf86VTSema;
 
 static const GLubyte *savageDDGetString( GLcontext *ctx, GLenum name )
 {
+   static char *cardNames[S3_LAST] = {
+       "Unknown",
+       "Savage3D",
+       "Savage/MX/IX",
+       "Savage4",
+       "ProSavage",
+       "Twister",
+       "ProSavageDDR",
+       "SuperSavage",
+       "Savage2000"
+   };
+   static char buffer[128];
+   savageContextPtr imesa = SAVAGE_CONTEXT(ctx);
+   savageScreenPrivate *screen = imesa->savageScreen;
+   enum S3CHIPTAGS chipset = screen->chipset;
+   unsigned offset;
+
+   if (chipset < S3_SAVAGE3D || chipset >= S3_LAST)
+      chipset = S3_UNKNOWN; /* should not happen */
+
    switch (name) {
    case GL_VENDOR:
       return (GLubyte *)"S3 Graphics Inc.";
    case GL_RENDERER:
-      return (GLubyte *)"Mesa DRI SAVAGE Linux_1.1.18";
+      offset = driGetRendererString( buffer, cardNames[chipset], DRIVER_DATE,
+				     screen->agpMode );
+      return (GLubyte *)buffer;
    default:
       return 0;
    }
@@ -87,21 +111,9 @@ static void savageBufferSize(GLframebuffer *buffer, GLuint *width, GLuint *heigh
 }
 
 
-
-
-void savageDDExtensionsInit( GLcontext *ctx )
-{
-   _mesa_enable_extension( ctx, "GL_ARB_multitexture" );
-   _mesa_enable_extension( ctx, "GL_EXT_texture_lod_bias" );
-   _mesa_enable_extension( ctx, "GL_EXT_texture_env_add" );
-}
-
-
-
-
 void savageDDInitDriverFuncs( GLcontext *ctx )
 {
    ctx->Driver.GetBufferSize = savageBufferSize;
-   ctx->Driver.ResizeBuffers = _swrast_alloc_buffers;
+   ctx->Driver.ResizeBuffers = _mesa_resize_framebuffer;
    ctx->Driver.GetString = savageDDGetString;
 }

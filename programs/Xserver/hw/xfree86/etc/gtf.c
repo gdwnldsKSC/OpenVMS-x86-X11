@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/etc/gtf.c,v 1.2 2004/04/23 19:53:57 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/etc/gtf.c,v 1.4 2005/10/04 00:45:42 alanc Exp $ */
 /* gtf.c  Generate mode timings using the GTF Timing Standard
  *
  * gcc gtf.c -o gtf -lm -Wall
@@ -105,6 +105,9 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/etc/gtf.c,v 1.2 2002/11/15 17:01:53tsi Exp $ */
 
+#ifdef HAVE_XORG_CONFIG_H
+# include <xorg-config.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>

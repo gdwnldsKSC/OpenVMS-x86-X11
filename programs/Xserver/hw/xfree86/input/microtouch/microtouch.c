@@ -50,6 +50,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/microtouch/microtouch.c,v 1.11 1999/08/28 10:43:36 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _microtouch_C_
 /*****************************************************************************
  *	Standard Headers
@@ -81,7 +85,7 @@ static InputInfoPtr
 MuTouchPreInit(InputDriverPtr drv, IDevPtr dev, int flags);
 
 
-InputDriverRec MICROTOUCH = {
+_X_EXPORT InputDriverRec MICROTOUCH = {
   1,
   "microtouch",
   NULL,
@@ -173,7 +177,11 @@ SetupProc(	pointer module,
 	return (pointer) 1;
 }
 
-XF86ModuleData microtouchModuleData = {&VersionRec, &SetupProc, NULL };
+_X_EXPORT XF86ModuleData microtouchModuleData = {
+    &VersionRec, 
+    &SetupProc,
+    NULL
+};
 
 #endif /* XFree86LOADER */
 

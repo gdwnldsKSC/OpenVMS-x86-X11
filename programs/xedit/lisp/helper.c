@@ -24,7 +24,7 @@
  * dealings in this Software without prior written authorization from the
  * XFree86 Project.
  *
- * Author: Paulo César Pereira de Andrade
+ * Author: Paulo CÃ©sar Pereira de Andrade
  */
 
 /* $XFree86: xc/programs/xedit/lisp/helper.c,v 1.50 2003/05/27 22:27:03 tsi Exp $ */

@@ -23,6 +23,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xaa.h"
 #include "xaalocal.h"
 #include "xf86fbman.h"
@@ -38,24 +42,25 @@
 #include "i128.h"
 #include "i128reg.h"
 
-void I128BitBlit(ScrnInfoPtr pScrn, int x1, int y1, int x2, int y2,
+static void I128BitBlit(ScrnInfoPtr pScrn, int x1, int y1, int x2, int y2,
 	int w, int h);
-void I128SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir, int ydir,
-	int rop, unsigned planemask, int transparency_color);
-void I128SubsequentScreenToScreenCopy(ScrnInfoPtr pScrn, int x1, int y1,
+static void I128SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir,
+        int ydir, int rop, unsigned planemask, int transparency_color);
+static void I128SubsequentScreenToScreenCopy(ScrnInfoPtr pScrn, int x1, int y1,
 	int x2, int y2, int w, int h);
-void I128SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop,
+static void I128SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop,
 	unsigned planemask);
-void I128SubsequentSolidFillRect(ScrnInfoPtr pScrn, int x, int y, int w, int h);
-void I128SubsequentSolidTwoPointLine(ScrnInfoPtr pScrn, int x1, int y1, int x2,
-	int y2, int flags);
-void I128SetClippingRectangle(ScrnInfoPtr pScrn, int x1, int y1,
+static void I128SubsequentSolidFillRect(ScrnInfoPtr pScrn, int x, int y, int w,
+        int h);
+static void I128SubsequentSolidTwoPointLine(ScrnInfoPtr pScrn, int x1, int y1,
+        int x2, int y2, int flags);
+static void I128SetClippingRectangle(ScrnInfoPtr pScrn, int x1, int y1,
 	int x2, int y2);
-void I128FillSolidRects(ScrnInfoPtr pScrn, int fg, int rop,
+static void I128FillSolidRects(ScrnInfoPtr pScrn, int fg, int rop,
 	unsigned int planemask, int nBox, register BoxPtr pBoxI);
-void I128ScreenToScreenBitBlt(ScrnInfoPtr pScrn, int nbox, DDXPointPtr pptSrc,
-	BoxPtr pbox, int xdir, int ydir, int alu, unsigned planemask);
-
+static void I128ScreenToScreenBitBlt(ScrnInfoPtr pScrn, int nbox,
+        DDXPointPtr pptSrc, BoxPtr pbox, int xdir, int ydir, int alu,
+        unsigned planemask);
 
 #define ENG_PIPELINE_READY() { while (pI128->mem.rbase_a[BUSY] & BUSY_BUSY) ; }
 #define ENG_DONE() { while (pI128->mem.rbase_a[FLOW] & (FLOW_DEB | FLOW_MCB | FLOW_PRV)) ;}
@@ -63,7 +68,7 @@ void I128ScreenToScreenBitBlt(ScrnInfoPtr pScrn, int nbox, DDXPointPtr pptSrc,
 
 /* pre-shift rops and just or in as needed */
 
-static CARD32 i128alu[16] =
+static const CARD32 i128alu[16] =
 {
    CR_CLEAR<<8,
    CR_AND<<8,
@@ -82,10 +87,10 @@ static CARD32 i128alu[16] =
    CR_NAND<<8,
    CR_SET<<8
 };
-                        /*  8bpp   16bpp  32bpp unused */
-static int min_size[]   = { 0x62,  0x32,  0x1A, 0x00 };
-static int max_size[]   = { 0x80,  0x40,  0x20, 0x00 };
-static int split_size[] = { 0x20,  0x10,  0x08, 0x00 };
+                              /*  8bpp   16bpp  32bpp unused */
+static const int min_size[]   = { 0x62,  0x32,  0x1A, 0x00 };
+static const int max_size[]   = { 0x80,  0x40,  0x20, 0x00 };
+static const int split_size[] = { 0x20,  0x10,  0x08, 0x00 };
 
 
 void
@@ -96,7 +101,7 @@ I128EngineDone(ScrnInfoPtr pScrn)
 }
 
 
-void
+static void
 I128BitBlit(ScrnInfoPtr pScrn, int x1, int y1, int x2, int y2, int w, int h)
 {
 	I128Ptr pI128 = I128PTR(pScrn);
@@ -175,7 +180,7 @@ I128BitBlit(ScrnInfoPtr pScrn, int x1, int y1, int x2, int y2, int w, int h)
 	pI128->mem.rbase_a[XY1_DST] = (x2<<16) | y2;			MB;
 }
 
-void
+static void
 I128SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir, int ydir,
 	int rop, unsigned planemask, int transparency_color)
 {
@@ -230,14 +235,14 @@ I128SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir, int ydir,
 	pI128->mem.rbase_a[CMD] = pI128->cmd;
 }
 
-void
+static void
 I128SubsequentScreenToScreenCopy(ScrnInfoPtr pScrn, int x1, int y1,
 	int x2, int y2, int w, int h)
 {
 	I128BitBlit(pScrn, x1, y1, x2, y2, w, h);
 }
 
-void
+static void
 I128SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop, unsigned planemask)
 {
 	I128Ptr pI128 = I128PTR(pScrn);
@@ -280,7 +285,7 @@ I128SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop, unsigned planemask)
 	pI128->mem.rbase_a[CMD] = pI128->cmd;
 }
 
-void
+static void
 I128SubsequentSolidFillRect(ScrnInfoPtr pScrn, int x, int y, int w, int h)
 {
 #if 0
@@ -292,7 +297,7 @@ I128SubsequentSolidFillRect(ScrnInfoPtr pScrn, int x, int y, int w, int h)
 	I128BitBlit(pScrn, 0, 0, x, y, w, h);
 }
 
-void
+static void
 I128SubsequentSolidTwoPointLine(ScrnInfoPtr pScrn, int x1, int y1, int x2,
 	int y2, int flags)
 {
@@ -319,7 +324,7 @@ I128SubsequentSolidTwoPointLine(ScrnInfoPtr pScrn, int x1, int y1, int x2,
 	pI128->mem.rbase_a[XY1_DST] = (x2<<16) | y2;			MB;
 }
 
-void
+static void
 I128SetClippingRectangle(ScrnInfoPtr pScrn, int x1, int y1, int x2, int y2)
 {
 	I128Ptr pI128 = I128PTR(pScrn);
@@ -338,7 +343,7 @@ I128SetClippingRectangle(ScrnInfoPtr pScrn, int x1, int y1, int x2, int y2)
 }
 
 
-void
+static void
 I128FillSolidRects(ScrnInfoPtr pScrn, int fg, int rop, unsigned int planemask,
 	int nBox, register BoxPtr pBoxI)
 {
@@ -394,7 +399,7 @@ I128FillSolidRects(ScrnInfoPtr pScrn, int fg, int rop, unsigned int planemask,
 }
 
 
-void
+static void
 I128ScreenToScreenBitBlt(ScrnInfoPtr pScrn, int nbox, DDXPointPtr pptSrc,
 	BoxPtr pbox, int xdir, int ydir, int alu, unsigned planemask)
 {
@@ -408,7 +413,7 @@ I128ScreenToScreenBitBlt(ScrnInfoPtr pScrn, int nbox, DDXPointPtr pptSrc,
 
 
 Bool
-I128AccelInit(ScreenPtr pScreen)
+I128XaaInit(ScreenPtr pScreen)
 {
 	XAAInfoRecPtr infoPtr;
 	ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
@@ -417,7 +422,7 @@ I128AccelInit(ScreenPtr pScreen)
 	CARD32 buf_ctrl;
 	int maxlines;
 
-	pI128->AccelInfoRec = infoPtr = XAACreateInfoRec();
+	pI128->XaaInfoRec = infoPtr = XAACreateInfoRec();
 	if (!infoPtr) return FALSE;
 
 	infoPtr->Flags = 	PIXMAP_CACHE |
@@ -507,7 +512,7 @@ I128AccelInit(ScreenPtr pScreen)
 	pI128->mem.rbase_a[INTM] = 0x03;
 
 	if (pI128->Debug) {
-		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I128AccelInit done\n");
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "I128XaaInit done\n");
 		I128DumpActiveRegisters(pScrn);
 	}
 

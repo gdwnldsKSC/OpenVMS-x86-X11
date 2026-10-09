@@ -1082,6 +1082,139 @@ typedef struct {
 } xGLXQueryMaxSwapBarriersSGIXReply;
 #define sz_xGLXQueryMaxSwapBarriersSGIXReply 32
 
+/*
+** glXQueryHyperpipeNetworkSGIX request
+*/
+typedef struct GLXQueryHyperpipeNetworkSGIX {
+    CARD8       reqType;
+    CARD8       glxCode;
+    CARD16      length B16;
+    CARD32      vendorCode B32;         /* vendor-specific opcode */
+    CARD32      pad1 B32;   /* unused; corresponds to contextTag in header */
+    CARD32      screen B32;
+} xGLXQueryHyperpipeNetworkSGIXReq;
+#define sz_xGLXQueryHyperpipeNetworkSGIXReq 16
+
+/*
+** glXQueryHyperpipeNetworkSGIX reply
+*/
+typedef struct {
+    BYTE        type;                   /* X_Reply */
+    CARD8       unused;                 /* not used */
+    CARD16      sequenceNumber B16;
+    CARD32      length B32;
+    CARD32      pad1 B32;
+    CARD32      n B32;
+    CARD32      npipes B32;             /* NOTE: may hold a single value */
+    CARD32      pad4 B32;               /* NOTE: may hold half a double */
+    CARD32      pad5 B32;
+    CARD32      pad6 B32;
+} xGLXQueryHyperpipeNetworkSGIXReply;
+#define sz_xGLXQueryHyperpipeNetworkSGIXReply 32
+
+/*
+** glXDestroyHyperpipeConfigSGIX request
+*/
+typedef struct GLXDestroyHyperpipeConfigSGIX {
+    CARD8       reqType;
+    CARD8       glxCode;
+    CARD16      length B16;
+    CARD32      vendorCode B32;         /* vendor-specific opcode */
+    CARD32      pad1 B32;   /* unused; corresponds to contextTag in header */
+    CARD32      screen B32;
+    CARD32      hpId B32;
+    CARD32      pad2 B32;
+    CARD32      pad3 B32;
+    CARD32      pad4 B32;
+} xGLXDestroyHyperpipeConfigSGIXReq;
+#define sz_xGLXDestroyHyperpipeConfigSGIXReq 32
+
+/*
+** glXDestroyHyperpipeConfigSGIX reply
+*/
+typedef struct {
+    BYTE        type;                   /* X_Reply */
+    CARD8       unused;                 /* not used */
+    CARD16      sequenceNumber B16;
+    CARD32      length B32;
+    CARD32      pad1 B32;
+    CARD32      n B32;
+    CARD32      success B32;            /* NOTE: may hold a single value */
+    CARD32      pad4 B32;               /* NOTE: may hold half a double */
+    CARD32      pad5 B32;
+    CARD32      pad6 B32;
+} xGLXDestroyHyperpipeConfigSGIXReply;
+#define sz_xGLXDestroyHyperpipeConfigSGIXReply 32
+
+/*
+** glXQueryHyperpipeConfigSGIX request
+*/
+typedef struct GLXQueryHyperpipeConfigSGIX {
+    CARD8       reqType;
+    CARD8       glxCode;
+    CARD16      length B16;
+    CARD32      vendorCode B32;         /* vendor-specific opcode */
+    CARD32      pad1 B32;   /* unused; corresponds to contextTag in header */
+    CARD32      screen B32;
+    CARD32      hpId B32;
+    CARD32      pad2 B32;
+    CARD32      pad3 B32;
+    CARD32      pad4 B32;
+} xGLXQueryHyperpipeConfigSGIXReq;
+#define sz_xGLXQueryHyperpipeConfigSGIXReq 32
+
+/*
+** glXQueryHyperpipeConfigSGIX reply
+*/
+typedef struct {
+    BYTE        type;                   /* X_Reply */
+    CARD8       unused;                 /* not used */
+    CARD16      sequenceNumber B16;
+    CARD32      length B32;
+    CARD32      pad1 B32;
+    CARD32      n B32;
+    CARD32      npipes B32;
+    CARD32      pad4 B32;
+    CARD32      pad5 B32;
+    CARD32      pad6 B32;
+} xGLXQueryHyperpipeConfigSGIXReply;
+#define sz_xGLXQueryHyperpipeConfigSGIXReply 32
+
+/*
+** glXHyperpipeConfigSGIX request
+*/
+typedef struct GLXHyperpipeConfigSGIX {
+    CARD8       reqType;
+    CARD8       glxCode;
+    CARD16      length B16;
+    CARD32      vendorCode B32;         /* vendor-specific opcode */
+    CARD32      pad1 B32;   /* unused; corresponds to contextTag in header */
+    CARD32      screen B32;
+    CARD32      npipes B32;
+    CARD32      networkId B32;
+    CARD32      pad2 B32;
+    CARD32      pad3 B32;
+    /* followed by attribute list */
+} xGLXHyperpipeConfigSGIXReq;
+#define sz_xGLXHyperpipeConfigSGIXReq 32
+
+/*
+** glXHyperpipeConfigSGIX reply
+*/
+typedef struct {
+    BYTE        type;                   /* X_Reply */
+    CARD8       unused;                 /* not used */
+    CARD16      sequenceNumber B16;
+    CARD32      length B32;
+    CARD32      pad1 B32;
+    CARD32      n B32;
+    CARD32      npipes B32;
+    CARD32      hpId B32;
+    CARD32      pad5 B32;
+    CARD32      pad6 B32;
+} xGLXHyperpipeConfigSGIXReply;
+#define sz_xGLXHyperpipeConfigSGIXReply 32
+
 /************************************************************************/
 
 /*

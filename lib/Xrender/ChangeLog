@@ -1,3 +1,7 @@
+Thu May 19 15:22:19 2005  Søren Sandmann  <sandmann@redhat.com>
+
+	* *.c: Conditionallyu include config.h
+
 2004-02-03  Jim Gettys  <jg@freedesktop.org>
 
 	* AUTHORS: Get a author's list going.

@@ -42,6 +42,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "vtxfmt.h"
 
 #include "r200_vtxfmt.h"
+#include "r200_tcl.h"
+
+#include "dispatch.h"
 
 /* Fallback versions of all the entrypoints for situations where
  * codegen isn't available.  This is still a lot faster than the
@@ -512,69 +515,142 @@ static void r200_Normal3fv( const GLfloat *v )
 }
 
 
+/* FogCoord
+ */
+static void r200_FogCoordfEXT( GLfloat f )
+{
+   GET_CURRENT_CONTEXT(ctx);
+   r200ContextPtr rmesa = R200_CONTEXT(ctx);
+   GLfloat *dest = rmesa->vb.fogptr;
+   dest[0] = r200ComputeFogBlendFactor( ctx, f );
+/*   ctx->Current.Attrib[VERT_ATTRIB_FOG][0] = f;*/
+}
+
+static void r200_FogCoordfvEXT( const GLfloat *v )
+{
+   GET_CURRENT_CONTEXT(ctx);
+   r200ContextPtr rmesa = R200_CONTEXT(ctx);
+   GLfloat *dest = rmesa->vb.fogptr;
+   dest[0] = r200ComputeFogBlendFactor( ctx, v[0] );
+/*   ctx->Current.Attrib[VERT_ATTRIB_FOG][0] = v[0];*/
+}
+
+
 /* TexCoord
  */
 
-#define TEX_to_nF(N, P, S, T, R)					\
-   static void r200_TexCoord ## N P					\
-   { 									\
-      GET_CURRENT_CONTEXT(ctx); r200ContextPtr rmesa = R200_CONTEXT(ctx); \
-      GLfloat * const dest = rmesa->vb.texcoordptr[0];			\
-      switch( ctx->Texture.Unit[0]._ReallyEnabled ) {			\
-      case TEXTURE_CUBE_BIT:						\
-      case TEXTURE_3D_BIT:						\
-	 dest[2] = R; 							\
-      case TEXTURE_2D_BIT:						\
-      case TEXTURE_RECT_BIT:						\
-	 dest[1] = T; 							\
-      case TEXTURE_1D_BIT:						\
-	 dest[0] = S; 							\
-      }									\
-   }
-
-TEX_to_nF( 1f,  (GLfloat s),                       s,    0.0,  0.0 )
-TEX_to_nF( 2f,  (GLfloat s, GLfloat t),            s,    t,    0.0 )
-TEX_to_nF( 3f,  (GLfloat s, GLfloat t, GLfloat r), s,    t,    r )
-TEX_to_nF( 1fv, (const GLfloat * v),               v[0], 0.0,  0.0 )
-TEX_to_nF( 2fv, (const GLfloat * v),               v[0], v[1], 0.0 )
-TEX_to_nF( 3fv, (const GLfloat * v),               v[0], v[1], v[2] )
-
-
-/* MultiTexcoord
- * 
- * Technically speaking, these functions should subtract GL_TEXTURE0 from
- * \c target before masking and using it.  The value of GL_TEXTURE0 is 0x84C0,
- * which has the low-order 5 bits 0.  For all possible valid values of 
- * \c target.  Subtracting GL_TEXTURE0 has the net effect of masking \c target
- * with 0x1F.  Masking with 0x1F and then masking with 0x07 is redundant, so
- * the subtraction has been omitted.
- */
-
-#define MTEX_to_nF(N, P, U, S, T, R)					\
-   static void r200_MultiTexCoord ## N ## ARB P				\
-   { 									\
-      GET_CURRENT_CONTEXT(ctx); r200ContextPtr rmesa = R200_CONTEXT(ctx); \
-      GLfloat * const dest = rmesa->vb.texcoordptr[U];			\
-      switch( ctx->Texture.Unit[U]._ReallyEnabled ) {			\
-      case TEXTURE_CUBE_BIT:						\
-      case TEXTURE_3D_BIT:						\
-	 dest[2] = R; 							\
-      case TEXTURE_2D_BIT:						\
-      case TEXTURE_RECT_BIT:						\
-	 dest[1] = T; 							\
-      case TEXTURE_1D_BIT:						\
-	 dest[0] = S; 							\
-      }									\
-   }
-
 /* \todo maybe (target & 4 ? target & 5 : target & 3) is more save than (target & 7) */
-MTEX_to_nF( 1f, (GLenum target, GLfloat s), (target & 7), s, 0.0, 0.0 )
-MTEX_to_nF( 2f, (GLenum target, GLfloat s, GLfloat t), (target & 7), s, t, 0.0 )
-MTEX_to_nF( 3f, (GLenum target, GLfloat s, GLfloat t, GLfloat r), (target & 7), s, t, r )
+static void r200_MultiTexCoord1fARB(GLenum target, GLfloat s)
+{
+   GET_CURRENT_CONTEXT(ctx);
+   r200ContextPtr rmesa = R200_CONTEXT(ctx);
+   GLint unit = (target & 7);
+   GLfloat * const dest = rmesa->vb.texcoordptr[unit];
 
-MTEX_to_nF( 1fv, (GLenum target, const GLfloat *v), (target & 7), v[0], 0.0, 0.0 )
-MTEX_to_nF( 2fv, (GLenum target, const GLfloat *v), (target & 7), v[0], v[1], 0.0 )
-MTEX_to_nF( 3fv, (GLenum target, const GLfloat *v), (target & 7), v[0], v[1], v[2] )
+   switch( ctx->Texture.Unit[unit]._ReallyEnabled ) {
+   case TEXTURE_CUBE_BIT:
+   case TEXTURE_3D_BIT:
+      dest[2] = 0.0;
+      /* FALLTHROUGH */
+   case TEXTURE_2D_BIT:
+   case TEXTURE_RECT_BIT:
+      dest[1] = 0.0;
+      /* FALLTHROUGH */
+   case TEXTURE_1D_BIT:
+      dest[0] = s;
+   }
+}
+
+static void r200_MultiTexCoord2fARB(GLenum target, GLfloat s, GLfloat t)
+{
+   GET_CURRENT_CONTEXT(ctx);
+   r200ContextPtr rmesa = R200_CONTEXT(ctx);
+   GLint unit = (target & 7);
+   GLfloat * const dest = rmesa->vb.texcoordptr[unit];
+
+   switch( ctx->Texture.Unit[unit]._ReallyEnabled ) {
+   case TEXTURE_CUBE_BIT:
+   case TEXTURE_3D_BIT:
+      dest[2] = 0.0;
+      /* FALLTHROUGH */
+   case TEXTURE_2D_BIT:
+   case TEXTURE_RECT_BIT:
+      dest[1] = t;
+      dest[0] = s;
+      break;
+   default:
+      VFMT_FALLBACK(__FUNCTION__);
+      CALL_MultiTexCoord2fARB(GET_DISPATCH(), (target, s, t));
+      return;	
+   }
+}
+
+static void r200_MultiTexCoord3fARB(GLenum target, GLfloat s, GLfloat t, GLfloat r)
+{
+   GET_CURRENT_CONTEXT(ctx);
+   r200ContextPtr rmesa = R200_CONTEXT(ctx);
+   GLint unit = (target & 7);
+   GLfloat * const dest = rmesa->vb.texcoordptr[unit];
+
+   switch( ctx->Texture.Unit[unit]._ReallyEnabled ) {
+   case TEXTURE_CUBE_BIT:
+   case TEXTURE_3D_BIT:
+      dest[2] = r;
+      dest[1] = t;
+      dest[0] = s;
+      break;
+   default:
+      VFMT_FALLBACK(__FUNCTION__);
+      CALL_MultiTexCoord3fARB(GET_DISPATCH(), (target, s, t, r));
+      return;	
+   }
+}
+
+static void r200_TexCoord1f(GLfloat s)
+{
+   r200_MultiTexCoord1fARB(GL_TEXTURE0, s);
+}
+
+static void r200_TexCoord2f(GLfloat s, GLfloat t)
+{
+   r200_MultiTexCoord2fARB(GL_TEXTURE0, s, t);
+}
+
+static void r200_TexCoord3f(GLfloat s, GLfloat t, GLfloat r)
+{
+   r200_MultiTexCoord3fARB(GL_TEXTURE0, s, t, r);
+}
+
+static void r200_TexCoord1fv(const GLfloat *v)
+{
+   r200_MultiTexCoord1fARB(GL_TEXTURE0, v[0]);
+}
+
+static void r200_TexCoord2fv(const GLfloat *v)
+{
+   r200_MultiTexCoord2fARB(GL_TEXTURE0, v[0], v[1]);
+}
+
+static void r200_TexCoord3fv(const GLfloat *v)
+{
+   r200_MultiTexCoord3fARB(GL_TEXTURE0, v[0], v[1], v[2]);
+}
+
+static void r200_MultiTexCoord1fvARB(GLenum target, const GLfloat *v)
+{
+   r200_MultiTexCoord1fARB(target, v[0]);
+}
+
+static void r200_MultiTexCoord2fvARB(GLenum target, const GLfloat *v)
+{
+   r200_MultiTexCoord2fARB(target, v[0], v[1]);
+}
+
+static void r200_MultiTexCoord3fvARB(GLenum target, const GLfloat *v)
+{
+   r200_MultiTexCoord3fARB(target, v[0], v[1], v[2]);
+}
+
 
 static struct dynfn *lookup( struct dynfn *l, const int *key )
 {
@@ -585,7 +661,7 @@ static struct dynfn *lookup( struct dynfn *l, const int *key )
 	 return f;
    }
 
-   return 0;
+   return NULL;
 }
 
 /* Can't use the loopback template for this:
@@ -609,15 +685,15 @@ static void choose_##FN ARGS1						\
       fprintf(stderr, "%s -- cached codegen\n", __FUNCTION__ );		\
 									\
    if (dfn)								\
-      ctx->Exec->FN = (FNTYPE)(dfn->code);				\
+      SET_ ## FN (ctx->Exec, (FNTYPE)(dfn->code));			\
    else {								\
       if (R200_DEBUG & DEBUG_CODEGEN)					\
 	 fprintf(stderr, "%s -- generic version\n", __FUNCTION__ );	\
-      ctx->Exec->FN = r200_##FN;					\
+      SET_ ## FN (ctx->Exec, r200_##FN);				\
    }									\
 									\
    ctx->Driver.NeedFlush |= FLUSH_UPDATE_CURRENT;			\
-   ctx->Exec->FN ARGS2;							\
+   CALL_ ## FN (ctx->Exec, ARGS2);					\
 }
 
 
@@ -641,7 +717,7 @@ static void choose_##FN ARGS1						\
    key[1] = rmesa->vb.vtxfmt_1 & MASK1;					\
 									\
    if (VTX_COLOR(rmesa->vb.vtxfmt_0,0) == R200_VTX_PK_RGBA) {		\
-      ctx->Exec->FN = r200_##FN##_ub;					\
+      SET_ ## FN (ctx->Exec, r200_##FN##_ub);				\
    }									\
    else if (VTX_COLOR(rmesa->vb.vtxfmt_0,0) == R200_VTX_FP_RGB) {	\
 									\
@@ -651,15 +727,15 @@ static void choose_##FN ARGS1						\
          if (ctx->Driver.NeedFlush & FLUSH_UPDATE_CURRENT) {		\
             r200_copy_to_current( ctx );				\
             _mesa_install_exec_vtxfmt( ctx, &rmesa->vb.vtxfmt );	\
-            ctx->Exec->FN ARGS2;					\
+            CALL_ ## FN (ctx->Exec, ARGS2);				\
             return;							\
          }								\
       }									\
 									\
-      ctx->Exec->FN = r200_##FN##_3f;					\
+      SET_ ## FN (ctx->Exec, r200_##FN##_3f);				\
    }									\
    else {								\
-      ctx->Exec->FN = r200_##FN##_4f;					\
+      SET_ ## FN (ctx->Exec, r200_##FN##_4f);				\
    }									\
 									\
 									\
@@ -669,13 +745,13 @@ static void choose_##FN ARGS1						\
    if (dfn) {								\
       if (R200_DEBUG & DEBUG_CODEGEN)					\
          fprintf(stderr, "%s -- codegen version\n", __FUNCTION__ );	\
-      ctx->Exec->FN = (FNTYPE)dfn->code;				\
+      SET_ ## FN (ctx->Exec, (FNTYPE)dfn->code);			\
    }									\
    else if (R200_DEBUG & DEBUG_CODEGEN)					\
          fprintf(stderr, "%s -- 'c' version\n", __FUNCTION__ );		\
 									\
    ctx->Driver.NeedFlush |= FLUSH_UPDATE_CURRENT;			\
-   ctx->Exec->FN ARGS2;							\
+   CALL_ ## FN (ctx->Exec, ARGS2);					\
 }
 
 
@@ -704,16 +780,16 @@ static void choose_##FN ARGS1						\
       fprintf(stderr, "%s -- cached version\n", __FUNCTION__ );		\
 									\
    if (dfn)								\
-      ctx->Exec->FN = (FNTYPE)(dfn->code);			\
+      SET_ ## FN (ctx->Exec, (FNTYPE)(dfn->code));			\
    else {								\
       if (R200_DEBUG & DEBUG_CODEGEN)					\
          fprintf(stderr, "%s -- generic version\n", __FUNCTION__ );	\
-      ctx->Exec->FN = (VTX_COLOR(rmesa->vb.vtxfmt_0,1) == R200_VTX_PK_RGBA) \
-	  ? r200_##FN##_ub : r200_##FN##_3f;				\
+      SET_ ## FN (ctx->Exec, (VTX_COLOR(rmesa->vb.vtxfmt_0,1) == R200_VTX_PK_RGBA) \
+	  ? r200_##FN##_ub : r200_##FN##_3f);				\
    }									\
 									\
    ctx->Driver.NeedFlush |= FLUSH_UPDATE_CURRENT;		\
-   ctx->Exec->FN ARGS2;						\
+   CALL_ ## FN (ctx->Exec, ARGS2);					\
 }
 
 
@@ -726,7 +802,8 @@ static void choose_##FN ARGS1						\
  */
 #define MASK_XYZW  (R200_VTX_W0|R200_VTX_Z0)
 #define MASK_NORM  (MASK_XYZW|R200_VTX_N0)
-#define MASK_COLOR (MASK_NORM |(R200_VTX_COLOR_MASK<<R200_VTX_COLOR_0_SHIFT))
+#define MASK_FOG   (MASK_NORM |R200_VTX_DISCRETE_FOG)
+#define MASK_COLOR (MASK_FOG |(R200_VTX_COLOR_MASK<<R200_VTX_COLOR_0_SHIFT))
 #define MASK_SPEC  (MASK_COLOR|(R200_VTX_COLOR_MASK<<R200_VTX_COLOR_1_SHIFT))
 
 /* VTXFMT_1
@@ -819,6 +896,10 @@ CHOOSE(Vertex2f, p2f, ~0, ~0,
 CHOOSE(Vertex2fv, pfv, ~0, ~0, 
        (const GLfloat *v), (v))
 
+CHOOSE(FogCoordfEXT, p1f, MASK_FOG, ~0, 
+       (GLfloat f), (f))
+CHOOSE(FogCoordfvEXT, pfv, MASK_FOG, ~0, 
+       (const GLfloat *f), (f))
 
 
 
@@ -849,6 +930,8 @@ void r200VtxfmtInitChoosers( GLvertexformat *vfmt )
    vfmt->Vertex2fv = choose_Vertex2fv;
    vfmt->Vertex3f = choose_Vertex3f;
    vfmt->Vertex3fv = choose_Vertex3fv;
+/*   vfmt->FogCoordfEXT = choose_FogCoordfEXT;
+   vfmt->FogCoordfvEXT = choose_FogCoordfvEXT;*/
 
    /* TODO: restore ubyte colors to vtxfmt.
     */
@@ -866,7 +949,7 @@ void r200VtxfmtInitChoosers( GLvertexformat *vfmt )
 static struct dynfn *codegen_noop( GLcontext *ctx, const int *key )
 {
    (void) ctx; (void) key;
-   return 0;
+   return NULL;
 }
 
 void r200InitCodegen( struct dfn_generators *gen, GLboolean useCodegen )
@@ -891,6 +974,8 @@ void r200InitCodegen( struct dfn_generators *gen, GLboolean useCodegen )
    gen->MultiTexCoord2fvARB = codegen_noop;
    gen->MultiTexCoord1fARB = codegen_noop;
    gen->MultiTexCoord1fvARB = codegen_noop;
+/*   gen->FogCoordfEXT = codegen_noop;
+   gen->FogCoordfvEXT = codegen_noop;*/
 
    gen->Vertex2f = codegen_noop;
    gen->Vertex2fv = codegen_noop;

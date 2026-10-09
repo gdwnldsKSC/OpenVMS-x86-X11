@@ -26,6 +26,10 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $XFree86: xc/programs/Xserver/xkb/ddxList.c,v 3.8 2003/07/16 01:39:05 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
 #include <ctype.h>
 #define	NEED_EVENTS 1
@@ -38,8 +42,8 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "scrnintstr.h"
 #include "windowstr.h"
 #define	XKBSRV_NEED_FILE_FUNCS
-#include "XKBsrv.h"
-#include "XI.h"
+#include <X11/extensions/XKBsrv.h>
+#include <X11/extensions/XI.h>
 
 #ifndef PATH_MAX
 #ifdef MAXPATHLEN
@@ -48,6 +52,22 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define	PATH_MAX 1024
 #endif
 #endif
+
+#ifdef WIN32
+/* from ddxLoad.c */
+extern const char* Win32TempDir();
+extern int Win32System(const char *cmdline);
+#undef System
+#define System Win32System
+
+#define W32_tmparg " '%s'"
+#define W32_tmpfile ,tmpname
+#define W32_tmplen strlen(tmpname)+3
+#else
+#define W32_tmparg
+#define W32_tmpfile 
+#define W32_tmplen 0
+#endif 
 
 /***====================================================================***/
 
@@ -115,14 +135,14 @@ XkbDDXListComponent(	DeviceIntPtr 		dev,
 			XkbSrvListInfoPtr	list,
 			ClientPtr		client)
 {
-char 	*file,*map,*tmp,buf[PATH_MAX];
+char 	*file,*map,*tmp,*buf=NULL;
 FILE 	*in;
 Status	status;
 int	rval;
 Bool	haveDir;
 #ifdef WIN32
-char tmpname[32];
-#endif    
+char	tmpname[PATH_MAX];
+#endif
 
     if ((list->pattern[what]==NULL)||(list->pattern[what][0]=='\0'))
 	return Success;
@@ -141,73 +161,68 @@ char tmpname[32];
     in= NULL;
     haveDir= True;
 #ifdef WIN32
-    strcpy(tmpname, "\\temp\\xkb_XXXXXX");
+    strcpy(tmpname, Win32TempDir());
+    strcat(tmpname, "\\xkb_XXXXXX");
     (void) mktemp(tmpname);
 #endif
     if (XkbBaseDirectory!=NULL) {
-	if (strlen(XkbBaseDirectory)+strlen(componentDirs[what])+6 > PATH_MAX)
-	    return BadImplementation;
 	if ((list->pattern[what][0]=='*')&&(list->pattern[what][1]=='\0')) {
-	    sprintf(buf,"%s/%s.dir",XkbBaseDirectory,componentDirs[what]);
+	    buf = Xprintf("%s/%s.dir",XkbBaseDirectory,componentDirs[what]);
 	    in= fopen(buf,"r");
+	    xfree (buf);
+	    buf = NULL;
 	}
 	if (!in) {
 	    haveDir= False;
-	    if (strlen(XkbBaseDirectory)*2+strlen(componentDirs[what])
-		    +(xkbDebugFlags>9?2:1)+strlen(file)+31 > PATH_MAX)
-		return BadImplementation;
-#ifndef WIN32
-	    sprintf(buf,"%s/xkbcomp -R%s/%s -w %ld -l -vlfhpR '%s'",
-		XkbBaseDirectory,XkbBaseDirectory,componentDirs[what],(long)
+	    buf = Xprintf(
+		"'%s/xkbcomp' '-R%s/%s' -w %ld -l -vlfhpR '%s'" W32_tmparg,
+                XkbBinDirectory,XkbBaseDirectory,componentDirs[what],(long)
 		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:xkbDebugFlags)),
-		file);
-#else
-	    sprintf(buf,"%s/xkbcomp -R%s/%s -w %ld -l -vlfhpR '%s' %s",
-		XkbBaseDirectory,XkbBaseDirectory,componentDirs[what],(long)
-		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:xkbDebugFlags)),
-		file, tmpname);
-#endif
+		file W32_tmpfile
+                );
 	}
     }
     else {
-	if (strlen(XkbBaseDirectory)+strlen(componentDirs[what])+6 > PATH_MAX)
-	    return BadImplementation;
 	if ((list->pattern[what][0]=='*')&&(list->pattern[what][1]=='\0')) {
-	    sprintf(buf,"%s.dir",componentDirs[what]);
+	    buf = Xprintf("%s.dir",componentDirs[what]);
 	    in= fopen(buf,"r");
+	    xfree (buf);
+	    buf = NULL;
 	}
 	if (!in) {
 	    haveDir= False;
-	    if (strlen(componentDirs[what])
-		    +(xkbDebugFlags>9?2:1)+strlen(file)+29 > PATH_MAX)
-		return BadImplementation;
-#ifndef WIN32
-	    sprintf(buf,"xkbcomp -R%s -w %ld -l -vlfhpR '%s'",
-		componentDirs[what],(long)
+	    buf = Xprintf(
+		"xkbcomp -R%s -w %ld -l -vlfhpR '%s'" W32_tmparg,
+                componentDirs[what],(long)
 		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:xkbDebugFlags)),
-		file);
-#else
-	    sprintf(buf,"xkbcomp -R%s -w %ld -l -vlfhpR '%s' %s",
-		componentDirs[what],(long)
-		((xkbDebugFlags<2)?1:((xkbDebugFlags>10)?10:xkbDebugFlags)),
-		file, tmpname);
-#endif
+		file W32_tmpfile
+                );
 	}
     }
     status= Success;
     if (!haveDir)
+    {  
 #ifndef WIN32
 	in= Popen(buf,"r");
 #else
-    {
+#ifdef DEBUG_CMD
+	ErrorF("xkb executes: %s\n",buf);
+#endif
 	if (System(buf) < 0)
 	    ErrorF("Could not invoke keymap compiler\n");
 	else
 	    in= fopen(tmpname, "r");
-    }
 #endif
+    }
     if (!in)
+    {
+        if (buf != NULL)
+	    xfree (buf);
+#ifdef WIN32
+	unlink(tmpname);
+#endif
 	return BadImplementation;
+    }
     list->nFound[what]= 0;
     while ((status==Success)&&((tmp=fgets(buf,PATH_MAX,in))!=NULL)) {
 	unsigned flags;
@@ -259,7 +274,10 @@ char tmpname[32];
     }
 #else
     fclose(in);
+    unlink(tmpname);
 #endif
+    if (buf != NULL)
+        xfree (buf);
     return status;
 }
 

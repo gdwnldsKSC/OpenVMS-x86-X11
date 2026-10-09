@@ -46,7 +46,7 @@ DependSubdirs($(SUBDIRS))
 
 #define IHaveSpecialMakefileTarget
 
-#ifndef Win32Architecture
+#if !defined(Win32Architecture) || defined(mingwArchitecture)
 VerifyOS::
 	@echo ""
 	@echo Building on OSName "("OSMajorVersion"."OSMinorVersion"."OSTeenyVersion")."

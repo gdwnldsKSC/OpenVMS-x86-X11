@@ -29,8 +29,12 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $Xorg: cfbscrinit.c,v 1.3 2000/08/17 19:48:15 cpqbld Exp $ */
 
-#include "X.h"
-#include "Xmd.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xmd.h>
 #include "servermd.h"
 #include "scrnintstr.h"
 #include "pixmapstr.h"
@@ -99,7 +103,7 @@ cfbSetupScreen(pScreen, pbits, xsize, ysize, dpix, dpiy, width)
     pScreen->defColormap = FakeClientID(0);
     /* let CreateDefColormap do whatever it wants for pixels */ 
     pScreen->blackPixel = pScreen->whitePixel = (Pixel) 0;
-    pScreen->QueryBestSize = mfbQueryBestSize;
+    pScreen->QueryBestSize = mfbQueryBestSizeWeak();
     /* SaveScreen */
     pScreen->GetImage = cfbGetImage;
     pScreen->GetSpans = cfbGetSpans;
@@ -114,8 +118,8 @@ cfbSetupScreen(pScreen, pbits, xsize, ysize, dpix, dpiy, width)
     pScreen->CopyWindow = cfbCopyWindow;
     pScreen->CreatePixmap = cfbCreatePixmap;
     pScreen->DestroyPixmap = cfbDestroyPixmap;
-    pScreen->RealizeFont = mfbRealizeFont;
-    pScreen->UnrealizeFont = mfbUnrealizeFont;
+    pScreen->RealizeFont = mfbRealizeFontWeak();
+    pScreen->UnrealizeFont = mfbUnrealizeFontWeak();
     pScreen->CreateGC = cfbCreateGC;
     pScreen->CreateColormap = cfbInitializeColormap;
     pScreen->DestroyColormap = DestroyColormapNoop;
@@ -124,7 +128,7 @@ cfbSetupScreen(pScreen, pbits, xsize, ysize, dpix, dpiy, width)
     pScreen->ListInstalledColormaps = cfbListInstalledColormaps;
     pScreen->StoreColors = StoreColorsNoop;
     pScreen->ResolveColor = cfbResolveColor;
-    pScreen->BitmapToRegion = mfbPixmapToRegion;
+    pScreen->BitmapToRegion = mfbPixmapToRegionWeak();
 
     mfbRegisterCopyPlaneProc (pScreen, cfbCopyPlane);
     return TRUE;

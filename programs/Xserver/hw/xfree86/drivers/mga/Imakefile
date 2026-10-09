@@ -15,7 +15,7 @@ SUBDIRS=hallib
 DRISRCS = mga_dri.c
 DRIOBJS = mga_dri.o
 DRIINCLUDES = -I$(SERVERSRC)/GL/dri -I$(LIBSRC)/GL/dri \
-	-I$(TOP)/include -I$(DRMSRCDIR)/shared
+	-I$(TOP)/include -I$(DRMSRCDIR)/shared-core
 DRIDEFINES = $(GLX_DEFINES)
 #endif
 
@@ -58,11 +58,11 @@ hallib/libmga_hal.a: $(SUBDIRS)
 MGASRCS = mga_driver.c mga_hwcurs.c /* mga_cmap.c */ mga_dac3026.c mga_dacG.c \
        mga_storm8.c mga_storm16.c mga_storm24.c mga_storm32.c mga_arc.c \
        mga_dga.c mga_shadow.c mga_video.c mga_g450pll.c mga_dh.c mga_esc.c \
-       mga_merge.c $(DRISRCS)
+       mga_merge.c mga_bios.c $(DRISRCS)
 MGAOBJS = mga_driver.o mga_hwcurs.o /* mga_cmap.o */ mga_dac3026.o mga_dacG.o \
        mga_storm8.o mga_storm16.o mga_storm24.o mga_storm32.o mga_arc.o \
        mga_dga.o mga_shadow.o mga_video.o mga_g450pll.o mga_dh.o mga_esc.o \
-       mga_merge.o $(DRIOBJS)
+       mga_merge.o mga_bios.o $(DRIOBJS)
 
 SRCS = $(MGASRCS) $(MGAHALSRCS)
 OBJS = $(MGAOBJS) $(MGAHALOBJS)
@@ -78,7 +78,7 @@ INCLUDES = -I. $(MGAHALINCLUDES) -I$(XF86COMSRC) -I$(XF86OSSRC) \
            -I$(XF86SRC)/ramdac -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c \
            -I$(SERVERSRC)/Xext -I$(XF86SRC)/xf8_32bpp\
            -I$(FONTINCSRC) -I$(SERVERSRC)/include -I$(XINCLUDESRC) \
-           -I$(XF86SRC)/xf24_32bpp -I$(XF86SRC)/shadowfb -I$(EXTINCSRC) \
+           -I$(XF86SRC)/shadowfb -I$(EXTINCSRC) \
 	   -I$(SERVERSRC)/render \
 	   -I$(XF86SRC)/vbe $(DRIINCLUDES)
 #endif
@@ -105,9 +105,9 @@ ObjectFromSpecialSource(mga_storm16, mga_storm, -DPSZ=16)
 ObjectFromSpecialSource(mga_storm24, mga_storm, -DPSZ=24)
 ObjectFromSpecialSource(mga_storm32, mga_storm, -DPSZ=32)
 
-InstallObjectModule(mga,$(MODULEDIR),drivers)
+InstallVideoObjectModule(mga,$(MODULEDIR))
 #if BuildHalModule
-InstallObjectModule(mga_hal,$(MODULEDIR),drivers)
+InstallVideoObjectModule(mga_hal,$(MODULEDIR))
 #endif
 
 #if !defined(XF86DriverSDK)
@@ -119,7 +119,7 @@ DependTarget()
 InstallDriverSDKNonExecFile(Imakefile,$(DRIVERSDKDIR)/drivers/mga)
 InstallDriverSDKNonExecFile(mga.h,$(DRIVERSDKDIR)/drivers/mga)
 InstallDriverSDKNonExecFile(mga_arc.c,$(DRIVERSDKDIR)/drivers/mga)
-InstallDriverSDKNonExecFile(mga_bios.h,$(DRIVERSDKDIR)/drivers/mga)
+InstallDriverSDKNonExecFile(mga_PInS.txt,$(DRIVERSDKDIR)/drivers/mga)
 InstallDriverSDKNonExecFile(mga_dac3026.c,$(DRIVERSDKDIR)/drivers/mga)
 InstallDriverSDKNonExecFile(mga_dacG.c,$(DRIVERSDKDIR)/drivers/mga)
 InstallDriverSDKNonExecFile(mga_dga.c,$(DRIVERSDKDIR)/drivers/mga)

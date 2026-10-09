@@ -37,6 +37,10 @@
  * input and lead to the calling of low-level device drivers for
  * input. */
 
+#ifdef HAVE_DMX_CONFIG_H
+#include <dmx-config.h>
+#endif
+
 #define DMX_WINDOW_DEBUG 0
 
 #include "dmxinputinit.h"
@@ -70,8 +74,8 @@
 #include "windowstr.h"
 
 #ifdef XINPUT
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 #include "exevents.h"
 #define EXTENSION_PROC_ARGS void *
 #include "extinit.h"

@@ -1,5 +1,5 @@
 /* $Xorg: LiHosts.c,v 1.4 2001/02/09 02:03:34 xorgcvs Exp $ */
-/* $XdotOrg: xc/lib/X11/LiHosts.c,v 1.2 2004/04/23 18:43:24 eich Exp $ */
+/* $XdotOrg: xc/lib/X11/LiHosts.c,v 1.4 2005/07/03 07:00:55 daniels Exp $ */
 /*
 
 Copyright 1986, 1998  The Open Group
@@ -39,6 +39,9 @@ X Window System is a trademark of The Open Group.
 /* This can really be considered an os dependent routine */
 
 #define NEED_REPLIES
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "Xlibint.h"
 /*
  * can be freed using XFree.

@@ -19,7 +19,6 @@
 #include "xf86drm.h"
 #include "sarea.h"
 #define _XF86DRI_SERVER_
-#include "xf86dri.h"
 #include "dri.h"
 #include "GL/glxint.h"
 #include "tdfx_dri.h"
@@ -30,8 +29,8 @@
 #define TDFX_NAME "TDFX"
 #define TDFX_DRIVER_NAME "tdfx"
 #define TDFX_MAJOR_VERSION 1
-#define TDFX_MINOR_VERSION 0
-#define TDFX_PATCHLEVEL 0
+#define TDFX_MINOR_VERSION 1
+#define TDFX_PATCHLEVEL 1
 
 struct _TDFXRec;
 typedef struct _TDFXRec *TDFXPtr;

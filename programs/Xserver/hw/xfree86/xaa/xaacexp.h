@@ -1,7 +1,11 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/xaa/xaacexp.h,v 1.3 2000/01/21 02:30:06 dawes Exp $ */
 
 
-#include "Xarch.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/Xarch.h>
 
 #ifndef FIXEDBASE
 #define CHECKRETURN(b) if(width <= ((b) * 32)) return(base + (b))

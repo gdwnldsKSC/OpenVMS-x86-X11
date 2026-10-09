@@ -31,7 +31,6 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#define __NO_VERSION__
 #include <linux/config.h>
 #include <linux/vmalloc.h>
 #include "drmP.h"
@@ -73,6 +72,9 @@ int DRM(sg_alloc)( struct inode *inode, struct file *filp,
 	unsigned long pages, i, j;
 
 	DRM_DEBUG( "%s\n", __FUNCTION__ );
+
+	if (!drm_core_check_feature(dev, DRIVER_SG))
+		return -EINVAL;
 
 	if ( dev->sg )
 		return -EINVAL;
@@ -206,6 +208,9 @@ int DRM(sg_free)( struct inode *inode, struct file *filp,
 	drm_device_t *dev = priv->dev;
 	drm_scatter_gather_t request;
 	drm_sg_mem_t *entry;
+
+	if (!drm_core_check_feature(dev, DRIVER_SG))
+		return -EINVAL;
 
 	if ( copy_from_user( &request,
 			     (drm_scatter_gather_t __user *)arg,

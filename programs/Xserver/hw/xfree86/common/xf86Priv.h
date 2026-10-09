@@ -60,6 +60,7 @@ extern Bool xf86sFlag;
 extern Bool xf86bsEnableFlag;
 extern Bool xf86bsDisableFlag;
 extern Bool xf86silkenMouseDisableFlag;
+extern Bool xf86acpiDisableFlag;
 extern char *xf86LayoutName;
 extern char *xf86ScreenName;
 extern char *xf86PointerName;
@@ -76,6 +77,7 @@ extern Bool xf86BestRefresh;
 extern Gamma xf86Gamma;
 extern char *xf86ServerName;
 extern Bool xf86ShowUnresolved;
+extern PciBusId xf86IsolateDevice;
 
 /* Other parameters */
 
@@ -112,6 +114,7 @@ extern int xf86Verbose;                 /* verbosity level */
 extern int xf86LogVerbose;		/* log file verbosity level */
 extern Bool xf86ProbeOnly;
 extern Bool xf86DoProbe;
+extern Bool xorgHWAccess;
 
 extern RootWinPropPtr *xf86RegisteredPropertiesTable;
 
@@ -130,9 +133,6 @@ extern RootWinPropPtr *xf86RegisteredPropertiesTable;
 
 /* Function Prototypes */
 #ifndef _NO_XF86_PROTOTYPES
-
-/* xf86Beta.c */
-extern void xf86CheckBeta(int extraDays, char *key);
 
 /* xf86Bus.c */
 

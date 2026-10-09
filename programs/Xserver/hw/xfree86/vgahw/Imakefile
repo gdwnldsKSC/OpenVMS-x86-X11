@@ -15,6 +15,11 @@ MODSRC = vgaHWmodule.c
 MODOBJ = vgaHWmodule.o
 #endif
 
+#if DoOSFontRestore && \
+	(defined(FontRestoreCheckOsVersion) && !FontRestoreCheckOsVersion)
+FONT_DEFINES = -DSAVE_FONT1=0 -DSAVE_FONT2=0 -DSAVE_TEXT=0
+#endif
+
 SRCS =   vgaHW.c /*vgaCmap.c*/ $(MODSRC)
 
 OBJS =   vgaHW.o /*vgaCmap.o*/ $(MODOBJ)
@@ -27,7 +32,7 @@ OBJS =   vgaHW.o /*vgaCmap.o*/ $(MODOBJ)
    LINTLIBS = ../../../dix/llib-ldix.ln ../../../os/llib-los.ln \
 	     ../../mfb/llib-lmfb.ln ../../mi/llib-lmi.ln
 
-    DEFINES = 
+    DEFINES = $(FONT_DEFINES)
 
 ModuleObjectRule()
 

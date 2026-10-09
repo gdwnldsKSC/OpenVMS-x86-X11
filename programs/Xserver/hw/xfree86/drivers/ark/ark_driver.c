@@ -28,6 +28,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -76,7 +80,7 @@ static unsigned char get_daccomm(IOADDRESS);
 static unsigned char set_daccom(IOADDRESS, unsigned char comm);
 
 
-DriverRec ARK =
+_X_EXPORT DriverRec ARK =
 {
 	ARK_VERSION,
 	DRIVER_NAME,
@@ -156,7 +160,7 @@ static XF86ModuleVersionInfo ARKVersRec = {
 	{0, 0, 0, 0}
 };
 
-XF86ModuleData arkModuleData = { &ARKVersRec, ARKSetup, NULL };
+_X_EXPORT XF86ModuleData arkModuleData = { &ARKVersRec, ARKSetup, NULL };
 
 pointer ARKSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 {

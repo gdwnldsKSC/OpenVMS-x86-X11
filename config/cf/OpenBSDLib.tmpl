@@ -120,7 +120,7 @@ XCOMM
 #  define SharedXtstRev 7.0
 # endif
 # ifndef SharedICERev
-#  define SharedICERev 7.0
+#  define SharedICERev 7.1
 # endif
 # ifndef SharedSMRev
 #  define SharedSMRev 7.0
@@ -141,7 +141,7 @@ XCOMM
 #  define SharedXpmRev 5.0
 # endif
 # ifndef SharedFreetype2Rev
-#  define SharedFreetype2Rev 11.0
+#  define SharedFreetype2Rev 11.1
 # endif
 # ifndef SharedExpatRev
 #  define SharedExpatRev 4.0
@@ -172,7 +172,7 @@ XCOMM
 # endif
 
 
-# elif OSMajorVersion > 3 || OSMajorVersion == 3 && OSMinorVersion >= 6
+# elif OSMajorVersion == 3 && OSMinorVersion >= 6 && OSMinorVersion <= 7
 
 # ifndef SharedX11Rev
 #  define SharedX11Rev 8.1
@@ -270,7 +270,10 @@ XCOMM
 #  define SharedXaRev 3.0
 # endif
 # ifndef SharedXawRev
-#  define SharedXawRev 9.0
+#  define SharedXawRev 10.0
+# endif
+# ifndef SharedXaw7Rev
+#  define SharedXaw7Rev 9.0
 # endif
 # ifndef SharedXaw6Rev
 #  define SharedXaw6Rev 8.1
@@ -282,7 +285,7 @@ XCOMM
 #  define SharedXtstRev 8.0
 # endif
 # ifndef SharedICERev
-#  define SharedICERev 8.0
+#  define SharedICERev 8.1
 # endif
 # ifndef SharedSMRev
 #  define SharedSMRev 8.0
@@ -303,7 +306,7 @@ XCOMM
 #  define SharedXpmRev 6.0
 # endif
 # ifndef SharedFreetype2Rev
-#  define SharedFreetype2Rev 13.0
+#  define SharedFreetype2Rev 13.1
 # endif
 # ifndef SharedExpatRev
 #  define SharedExpatRev 5.0
@@ -340,6 +343,185 @@ XCOMM
 # endif
 # ifndef SharedXcompositeRev
 #  define SharedXcompositeRev 1.0
+# endif
+
+#elif OSMajorVersion > 3 || OSMajorVersion == 3 && OSMinorVersion == 8
+
+# ifndef SharedX11Rev
+#  define SharedX11Rev 9.0
+# endif
+# ifndef SharedXThrStubRev
+#  define SharedXThrStubRev 8.0
+# endif
+# ifndef SharedXextRev
+#  define SharedXextRev 9.0
+# endif
+# ifndef SharedXssRev
+#  define SharedXssRev 4.0
+# endif
+# ifndef SharedXxf86miscRev
+#  define SharedXxf86miscRev 4.0
+# endif
+# ifndef SharedXxf86vmRev
+#  define SharedXxf86vmRev 4.0
+# endif
+# ifndef SharedXxf86dgaRev
+#  define SharedXxf86dgaRev 4.0
+# endif
+# ifndef SharedXxf86rushRev
+#  define SharedXxf86rushRev 4.0
+# endif
+# ifndef SharedXvRev
+#  define SharedXvRev 4.0
+# endif
+# ifndef SharedXvMCRev
+#  define SharedXvMCRev 4.0
+# endif
+# ifndef SharedXineramaRev
+#  define SharedXineramaRev 4.0
+# endif
+# ifndef SharedDpsRev
+#  define SharedDpsRev 4.0
+# endif
+# ifndef SharedDpsTkRev
+#  define SharedDpsTkRev 4.0
+# endif
+# ifndef SharedPSResRev
+#  define SharedPSResRev 3.0
+# endif
+# ifndef SharedGluRev
+#  if HasGcc && GccMajorVersion >= 3
+    /* Gcc 3 changes the name mangling scheme on OpenBSD */
+#   define SharedGluRev	5.0
+#  else
+#   define SharedGluRev 4.0
+#  endif
+# endif
+# ifndef SharedGlxRev
+#  define SharedGlxRev 4.0
+# endif
+# ifndef SharedOSMesaRev
+#  define SharedOSMesaRev 7.0
+# endif
+# ifndef SharedGLwRev
+#  define SharedGLwRev 4.0
+# endif
+# ifndef SharedXrenderRev
+#  define SharedXrenderRev 4.0
+# endif
+# ifndef SharedXrandrRev
+#  define SharedXrandrRev 5.0
+# endif
+# ifndef SharedXcursorRev
+#  define SharedXcursorRev 3.0
+# endif
+# ifndef SharedXfontcacheRev
+#  define SharedXfontcacheRev 4.0
+# endif
+# ifndef SharedXauRev
+#  define SharedXauRev 9.0
+# endif
+# ifndef SharedXdmcpRev
+#  define SharedXdmcpRev 9.0
+# endif
+# ifndef SharedXmuRev
+#  define SharedXmuRev 9.0
+# endif
+# ifndef SharedXmuuRev
+#  define SharedXmuuRev 4.0
+# endif
+# ifndef SharedOldXRev
+#  define SharedOldXRev 9.0
+# endif
+# ifndef SharedXpRev
+#  define SharedXpRev 9.0
+# endif
+# ifndef SharedXtRev
+#  define SharedXtRev 9.0
+# endif
+# ifndef SharedXaRev
+#  define SharedXaRev 4.0
+# endif
+# ifndef SharedXawRev
+#  define SharedXawRev 11.0
+# endif
+# ifndef SharedXaw7Rev
+#  define SharedXaw7Rev 10.0
+# endif
+# ifndef SharedXaw6Rev
+#  define SharedXaw6Rev 9.0
+# endif
+# ifndef SharedXiRev
+#  define SharedXiRev 9.0
+# endif
+# ifndef SharedXtstRev
+#  define SharedXtstRev 9.0
+# endif
+# ifndef SharedICERev
+#  define SharedICERev 8.0
+# endif
+# ifndef SharedSMRev
+#  define SharedSMRev 8.0
+# endif
+# ifndef SharedXkeyRev
+#  define SharedXkeyRev 9.0
+# endif
+# ifndef SharedFSRev
+#  define SharedFSRev 8.0
+# endif
+# ifndef SharedFontRev
+#  define SharedFontRev 4.0
+# endif
+# ifndef SharedFontEncRev
+#  define SharedFontEncRev 3.0
+# endif
+# ifndef SharedXpmRev
+#  define SharedXpmRev 7.0
+# endif
+# ifndef SharedFreetype2Rev
+#  define SharedFreetype2Rev 13.0
+# endif
+# ifndef SharedExpatRev
+#  define SharedExpatRev 5.0
+# endif
+# ifndef SharedXft1Rev
+#  define SharedXft1Rev 4.0
+# endif
+# ifndef SharedXftRev
+#  define SharedXftRev 6.0
+# endif
+# ifndef SharedFontconfigRev
+#  define SharedFontconfigRev 2.0
+# endif
+# ifndef SharedXTrapRev
+#  define SharedXTrapRev 9.0
+# endif
+# ifndef SharedPSResRev
+#  define SharedPSResRev 3.0
+# endif
+# ifndef SharedXResRev
+#  define SharedXResRev 3.0
+# endif
+# ifndef SharedxkbfileRev
+#  define SharedxkbfileRev 3.0
+# endif
+# ifndef SharedxkbuiRev
+#  define SharedxkbuiRev 3.0
+# endif
+# ifndef SharedXfixesRev
+#  define SharedXfixesRev 4.0
+# endif
+# ifndef SharedXdamageRev
+#  define SharedXdamageRev 2.0
+# endif
+# ifndef SharedXcompositeRev
+#  define SharedXcompositeRev 2.0
+# endif
+# ifndef SharedxrxRev
+#  define SharedxrxRev 7.0
+# endif
+# ifndef SharedxrxnestRev 
+#  define SharedxrxnestRev 7.0
 # endif
 
 #endif /* OSMajorVersion .. */

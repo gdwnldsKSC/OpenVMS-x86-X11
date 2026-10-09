@@ -1,7 +1,7 @@
 .\" Record Extension Protocol, v1.13
 .\" Use tbl, -ms and macros.t
 .\" $Xorg: record.ms,v 1.3 2000/08/17 19:42:36 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/Xext/record.ms,v 1.3 2004/09/03 16:18:21 kem Exp $
+.\" $XdotOrg: xc/doc/specs/Xext/record.ms,v 1.4 2005/12/20 16:04:41 kem Exp $
 .\" -----------------------------------------------
 .de Ip
 .IP \(bu 3
@@ -39,7 +39,7 @@
 .sp
 \fBX Consortium Standard\fP
 .sp
-\fBX Version 11, Release 6.8\fP
+\fBX Version 11, Release 6.9/7.0\fP
 .sp 6
 Martha Zimet
 Network Computing Devices, Inc.
@@ -98,8 +98,8 @@ from the X Consortium.
 .nr LT 6.5i
 .nr FL 6.5i
 .ll 6.5i
-.EH '\fBRecord Extension Protocol, Version 1.13\fP''\fBX11, Release 6.8\fP'
-.OH '\fBX11, Release 6.8\fP''\fBRecord Extension Protocol, Version 1.13\fP'
+.EH '\fBRecord Extension Protocol, Version 1.13\fP''\fBX11, Release 6.9/7.0\fP'
+.OH '\fBX11, Release 6.9/7.0\fP''\fBRecord Extension Protocol, Version 1.13\fP'
 .bp 1
 .EF ''\fB\\\\n(PN\fP''
 .OF ''\fB\\\\n(PN\fP''

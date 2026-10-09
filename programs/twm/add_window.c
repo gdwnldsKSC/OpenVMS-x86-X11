@@ -97,18 +97,16 @@ static void CreateWindowTitlebarButtons ( TwmWindow *tmp_win );
 char NoName[] = "Untitled"; /* name if no name is specified */
 
 
-/************************************************************************
+/**  
+ * map gravity to (x,y) offset signs for adding to x and y when window is 
+ * mapped to get proper placement.
  *
- *  Procedure:
- *	GetGravityOffsets - map gravity to (x,y) offset signs for adding
- *		to x and y when window is mapped to get proper placement.
+ *  \param tmp    window from which to get gravity
+ *  \param xp,yp  return values
  * 
- ************************************************************************
  */
 void
-GetGravityOffsets (tmp, xp, yp)
-    TwmWindow *tmp;			/* window from which to get gravity */
-    int *xp, *yp;			/* return values */
+GetGravityOffsets (TwmWindow *tmp, int *xp, int *yp)
 {
     static struct _gravity_offset {
 	int x, y;
@@ -139,27 +137,17 @@ GetGravityOffsets (tmp, xp, yp)
 
 
 
-/***********************************************************************
+/** 
+ * add a new window to the twm list.
  *
- *  Procedure:
- *	AddWindow - add a new window to the twm list
+ *  \return  pointer to the TwmWindow structure
  *
- *  Returned Value:
- *	(TwmWindow *) - pointer to the TwmWindow structure
- *
- *  Inputs:
- *	w	- the window id of the window to add
- *	iconm	- flag to tell if this is an icon manager window
- *	iconp	- pointer to icon manager struct
- *
- ***********************************************************************
+ *	\param w      the window id of the window to add
+ *	\param iconm  flag to tell if this is an icon manager window
+ *	\param iconp  pointer to icon manager struct
  */
-
 TwmWindow *
-AddWindow(w, iconm, iconp)
-Window w;
-int iconm;
-IconMgr *iconp;
+AddWindow(Window w, int iconm, IconMgr *iconp)
 {
     TwmWindow *tmp_win;			/* new twm window structure */
     int stat;
@@ -964,25 +952,15 @@ IconMgr *iconp;
 }
 
 
-/***********************************************************************
+/**
+ * checks to see if we should really put a twm frame on the window
  *
- *  Procedure:
- *	MappedNotOverride - checks to see if we should really
- *		put a twm frame on the window
- *
- *  Returned Value:
- *	TRUE	- go ahead and frame the window
- *	FALSE	- don't frame the window
- *
- *  Inputs:
- *	w	- the window to check
- *
- ***********************************************************************
+ *  \return TRUE  - go ahead and place the window
+ *  \return FALSE - don't frame the window
+ *	\param w the window to check
  */
-
 int
-MappedNotOverride(w)
-    Window w;
+MappedNotOverride(Window w)
 {
     XWindowAttributes wa;
 
@@ -991,15 +969,11 @@ MappedNotOverride(w)
 }
 
 
-/***********************************************************************
- * 
- *  Procedure:
- *      AddDefaultBindings - attach default bindings so that naive users
- *      don't get messed up if they provide a minimal twmrc.
+/**
+ * attach default bindings so that naive users don't get messed up if they 
+ * provide a minimal twmrc.
  */
-static void do_add_binding (button, context, modifier, func)
-    int button, context, modifier;
-    int func;
+static void do_add_binding (int button, int context, int modifier, int func)
 {
     MouseButton *mb = &Scr->Mouse[button][context][modifier];
 
@@ -1033,20 +1007,13 @@ AddDefaultBindings ()
 
 
 
-/***********************************************************************
+/**
+ * grab needed buttons for the window
  *
- *  Procedure:
- *	GrabButtons - grab needed buttons for the window
- *
- *  Inputs:
- *	tmp_win - the twm window structure to use
- *
- ***********************************************************************
+ *  \param[in] tmp_win the twm window structure to use
  */
-
 void
-GrabButtons(tmp_win)
-TwmWindow *tmp_win;
+GrabButtons(TwmWindow *tmp_win)
 {
     int i, j;
 
@@ -1068,20 +1035,13 @@ TwmWindow *tmp_win;
     }
 }
 
-/***********************************************************************
+/**
+ * grab needed keys for the window
  *
- *  Procedure:
- *	GrabKeys - grab needed keys for the window
- *
- *  Inputs:
- *	tmp_win - the twm window structure to use
- *
- ***********************************************************************
+ *  \param[in] tmp_win the twm window structure to use
  */
-
 void
-GrabKeys(tmp_win)
-TwmWindow *tmp_win;
+GrabKeys(TwmWindow *tmp_win)
 {
     FuncKey *tmp;
     IconMgr *p;
@@ -1136,8 +1096,7 @@ TwmWindow *tmp_win;
     }
 }
 
-static Window CreateHighlightWindow (tmp_win)
-    TwmWindow *tmp_win;
+static Window CreateHighlightWindow (TwmWindow *tmp_win)
 {
     XSetWindowAttributes attributes;	/* attributes for create windows */
     Pixmap pm = None;
@@ -1222,10 +1181,7 @@ void ComputeCommonTitleOffsets ()
     return;
 }
 
-void ComputeWindowTitleOffsets (tmp_win, width, squeeze)
-    TwmWindow *tmp_win;
-    int width;
-    Bool squeeze;
+void ComputeWindowTitleOffsets (TwmWindow *tmp_win, int width, Bool squeeze)
 {
     tmp_win->highlightx = (Scr->TBInfo.titlex + tmp_win->name_width);
     if (tmp_win->hilite_w || Scr->TBInfo.nright > 0) 
@@ -1243,13 +1199,12 @@ void ComputeWindowTitleOffsets (tmp_win, width, squeeze)
 }
 
 
-/*
- * ComputeTitleLocation - calculate the position of the title window; we need
- * to take the frame_bw into account since we want (0,0) of the title window
- * to line up with (0,0) of the frame window.
+/**
+ * calculate the position of the title window.  We need to take the frame_bw 
+ * into account since we want (0,0) of the title window to line up with (0,0) 
+ * of the frame window.
  */
-void ComputeTitleLocation (tmp)
-    register TwmWindow *tmp;
+void ComputeTitleLocation (register TwmWindow *tmp)
 {
     tmp->title_x = -tmp->frame_bw;
     tmp->title_y = -tmp->frame_bw;
@@ -1299,8 +1254,7 @@ void ComputeTitleLocation (tmp)
 }
 
 
-static void CreateWindowTitlebarButtons (tmp_win)
-    TwmWindow *tmp_win;
+static void CreateWindowTitlebarButtons (TwmWindow *tmp_win)
 {
     unsigned long valuemask;		/* mask for create windows */
     XSetWindowAttributes attributes;	/* attributes for create windows */
@@ -1378,8 +1332,7 @@ static void CreateWindowTitlebarButtons (tmp_win)
 
 
 void
-SetHighlightPixmap (filename)
-    char *filename;
+SetHighlightPixmap (char *filename)
 {
     Pixmap pm = GetBitmap (filename);
 
@@ -1395,8 +1348,7 @@ SetHighlightPixmap (filename)
 
 
 void
-FetchWmProtocols (tmp)
-    TwmWindow *tmp;
+FetchWmProtocols (TwmWindow *tmp)
 {
     unsigned long flags = 0L;
     Atom *protocols = NULL;
@@ -1417,8 +1369,7 @@ FetchWmProtocols (tmp)
 }
 
 TwmColormap *
-CreateTwmColormap(c)
-    Colormap c;
+CreateTwmColormap(Colormap c)
 {
     TwmColormap *cmap;
     cmap = (TwmColormap *) malloc(sizeof(TwmColormap));
@@ -1436,10 +1387,7 @@ CreateTwmColormap(c)
 }
 
 ColormapWindow *
-CreateColormapWindow(w, creating_parent, property_window)
-    Window w;
-    Bool creating_parent;
-    Bool property_window;
+CreateColormapWindow(Window w, Bool creating_parent, Bool property_window)
 {
     ColormapWindow *cwin;
     TwmColormap *cmap;
@@ -1493,8 +1441,7 @@ CreateColormapWindow(w, creating_parent, property_window)
 }
 
 void		
-FetchWmColormapWindows (tmp)
-    TwmWindow *tmp;
+FetchWmColormapWindows (TwmWindow *tmp)
 {
     register int i, j;
     Window *cmap_windows = NULL;
@@ -1622,8 +1569,7 @@ FetchWmColormapWindows (tmp)
 }
 
 
-void GetWindowSizeHints (tmp)
-    TwmWindow *tmp;
+void GetWindowSizeHints (TwmWindow *tmp)
 {
     long supplied = 0;
 

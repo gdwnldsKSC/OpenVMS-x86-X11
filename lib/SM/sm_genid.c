@@ -34,6 +34,9 @@ in this Software without prior written authorization from The Open Group.
 #ifdef WIN32
 #define _WILLWINSOCK_
 #endif
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/SM/SMlib.h>
 #include "SMlibint.h"
 #ifdef XTHREADS

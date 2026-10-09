@@ -30,8 +30,12 @@
 /* $XConsortium: os2_io.c /main/9 1996/05/13 16:38:07 kaleb $ */
 
 #define I_NEED_OS2_H
-#include "X.h"
-#include "Xpoll.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xpoll.h>
 #include "compiler.h"
 #include <time.h>
 

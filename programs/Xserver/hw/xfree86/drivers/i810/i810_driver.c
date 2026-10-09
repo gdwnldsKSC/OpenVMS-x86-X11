@@ -27,6 +27,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **************************************************************************/
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/i810/i810_driver.c,v 1.101 2004/01/02 20:15:47 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * Reformatted with GNU indent (2.2.8), using the following options:
  *
@@ -74,7 +78,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "fb.h"
 #include "miscstruct.h"
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #include "vbe.h"
 
 #include "i810.h"
@@ -105,7 +109,7 @@ static ModeStatus I810ValidMode(int scrnIndex, DisplayModePtr mode,
 #endif /* I830_ONLY */
 
 
-DriverRec I810 = {
+_X_EXPORT DriverRec I810 = {
    I810_VERSION,
    I810_DRIVER_NAME,
    I810Identify,
@@ -129,6 +133,9 @@ static SymTabRec I810Chipsets[] = {
    {PCI_CHIP_I855_GM,		"852GM/855GM"},
    {PCI_CHIP_I865_G,		"865G"},
    {PCI_CHIP_I915_G,		"915G"},
+   {PCI_CHIP_E7221_G,		"E7221 (i915)"},
+   {PCI_CHIP_I915_GM,		"915GM"},
+   {PCI_CHIP_I945_G,		"945G"},
    {-1,				NULL}
 };
 
@@ -144,6 +151,9 @@ static PciChipsets I810PciChipsets[] = {
    {PCI_CHIP_I855_GM,		PCI_CHIP_I855_GM,	RES_SHARED_VGA},
    {PCI_CHIP_I865_G,		PCI_CHIP_I865_G,	RES_SHARED_VGA},
    {PCI_CHIP_I915_G,		PCI_CHIP_I915_G,	RES_SHARED_VGA},
+   {PCI_CHIP_E7221_G,		PCI_CHIP_E7221_G,	RES_SHARED_VGA},
+   {PCI_CHIP_I915_GM,		PCI_CHIP_I915_GM,	RES_SHARED_VGA},
+   {PCI_CHIP_I945_G,		PCI_CHIP_I945_G,	RES_SHARED_VGA},
    {-1,				-1, RES_UNDEFINED }
 };
 
@@ -262,6 +272,11 @@ const char *I810ramdacSymbols[] = {
    NULL
 };
 
+const char *I810shadowFBSymbols[] = {
+    "ShadowFBInit",
+    NULL
+};
+
 #ifdef XF86DRI
 const char *I810drmSymbols[] = {
    "drmAddBufs",
@@ -303,13 +318,6 @@ const char *I810driSymbols[] = {
    NULL
 };
 
-#ifdef XF86DRI
-
-static const char *driShadowFBSymbols[] = {
-    "ShadowFBInit",
-    NULL
-};
-
 const char *I810shadowSymbols[] = {
     "shadowInit",
     "shadowSetup",
@@ -317,9 +325,7 @@ const char *I810shadowSymbols[] = {
     NULL
 };
 
-#endif
-
-#endif /* I830_ONLY */
+#endif 
 
 #ifndef I810_DEBUG
 int I810_DEBUG = (0
@@ -365,7 +371,7 @@ static XF86ModuleVersionInfo i810VersRec = {
    {0, 0, 0, 0}
 };
 
-XF86ModuleData i810ModuleData = { &i810VersRec, i810Setup, 0 };
+_X_EXPORT XF86ModuleData i810ModuleData = { &i810VersRec, i810Setup, 0 };
 
 static pointer
 i810Setup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -388,7 +394,7 @@ i810Setup(pointer module, pointer opts, int *errmaj, int *errmin)
 			I810drmSymbols,
 			I810driSymbols,
 			I810shadowSymbols,
-			driShadowFBSymbols,
+			I810shadowFBSymbols,
 #endif
 			I810vbeSymbols, vbeOptionalSymbols,
 			I810ddcSymbols, I810int10Symbols, NULL);
@@ -560,6 +566,9 @@ I810Probe(DriverPtr drv, int flags)
 	    case PCI_CHIP_I830_M:
 	    case PCI_CHIP_I855_GM:
 	    case PCI_CHIP_I915_G:
+	    case PCI_CHIP_E7221_G:
+	    case PCI_CHIP_I915_GM:
+	    case PCI_CHIP_I945_G:
     	       xf86SetEntitySharable(usedChips[i]);
 
     	       /* Allocate an entity private if necessary */		
@@ -905,10 +914,13 @@ I810PreInit(ScrnInfoPtr pScrn, int flags)
     *  Changed to 8 Meg so we can have acceleration by default (Mark).
     */
    mem = I810CheckAvailableMemory(pScrn);
-   if (pI810->directRenderingDisabled || mem < 134217728)  /* < 128 MB */
+   if (pI810->directRenderingDisabled || mem < 131072)  /* < 128 MB */
        pScrn->videoRam = 8192;
+   else if (mem < 196608)
+       pScrn->videoRam = 16384;  /* < 192 MB */
    else
-       pScrn->videoRam = 16384;
+       pScrn->videoRam = 24576;
+   
    from = X_DEFAULT;
    
    if (pI810->pEnt->device->videoRam) {
@@ -1080,7 +1092,7 @@ I810PreInit(ScrnInfoPtr pScrn, int flags)
 		    "Couldn't load shadowfb module:\n");
        }
        else {
-	 xf86LoaderReqSymLists(driShadowFBSymbols, NULL);
+	 xf86LoaderReqSymLists(I810shadowFBSymbols, NULL);
        }
      }
      
@@ -1729,6 +1741,21 @@ I810SetMode(ScrnInfoPtr pScrn, DisplayModePtr mode)
    i810Reg->ExtHorizBlank = (((mode->CrtcHBlankEnd >> 3) - 1) & 0x40) >> 6;
 
    /*
+    * the KGA fix in vgaHW.c results in the first
+    * scanline and the first character clock (8 pixels)
+    * of each scanline thereafter on display with an i810
+    * to be blank. Restoring CRTC 3, 5, & 22 to their
+    * "theoretical" values corrects the problem. KAO.
+    */
+   pVga->CRTC[3] = (((mode->CrtcHBlankEnd >> 3) - 1) & 0x1F) | 0x80;
+   pVga->CRTC[5] = ((((mode->CrtcHBlankEnd >> 3) - 1) & 0x20) << 2)
+	 | (((mode->CrtcHSyncEnd >> 3)) & 0x1F);
+   pVga->CRTC[22] = (mode->CrtcVBlankEnd - 1) & 0xFF;
+
+   i810Reg->ExtHorizBlank = vgaHWHBlankKGA(mode, pVga, 7, 0);
+   vgaHWVBlankKGA(mode, pVga, 8, 0);
+
+   /*
     * The following workarounds are needed to get video overlay working
     * at 1024x768 and 1280x1024 display resolutions.
     */
@@ -1787,7 +1814,6 @@ I810ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 {
    vgaHWPtr hwp;
    I810Ptr pI810;
-   vgaRegPtr pVga;
 
    hwp = VGAHWPTR(pScrn);
    pI810 = I810PTR(pScrn);
@@ -1796,18 +1822,6 @@ I810ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 
    if (!vgaHWInit(pScrn, mode))
       return FALSE;
-   /*
-    * the KGA fix in vgaHW.c results in the first
-    * scanline and the first character clock (8 pixels)
-    * of each scanline thereafter on display with an i810
-    * to be blank. Restoring CRTC 3, 5, & 22 to their
-    * "theoretical" values corrects the problem. KAO.
-    */
-   pVga = &VGAHWPTR(pScrn)->ModeReg;
-   pVga->CRTC[3] = (((mode->CrtcHBlankEnd >> 3) - 1) & 0x1F) | 0x80;
-   pVga->CRTC[5] = ((((mode->CrtcHBlankEnd >> 3) - 1) & 0x20) << 2)
-	 | (((mode->CrtcHSyncEnd >> 3)) & 0x1F);
-   pVga->CRTC[22] = (mode->CrtcVBlankEnd - 1) & 0xFF;
 
    pScrn->vtSema = TRUE;
 
@@ -2097,8 +2111,8 @@ I810ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
 #ifdef XF86DRI
    /*
-    * Setup DRI after visuals have been established, but before cfbScreenInit
-    * is called.   cfbScreenInit will eventually call into the drivers
+    * Setup DRI after visuals have been established, but before fbScreenInit
+    * is called.   fbScreenInit will eventually call into the drivers
     * InitGLXVisuals call back.
     */
    /*
@@ -2241,7 +2255,7 @@ I810ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
 #ifdef XF86DRI
    if (pI810->directRenderingEnabled) {
-      /* Now that mi, cfb, drm and others have done their thing,
+      /* Now that mi, fb, drm and others have done their thing,
        * complete the DRI setup.
        */
       pI810->directRenderingEnabled = I810DRIFinishScreenInit(pScreen);
@@ -2255,9 +2269,9 @@ I810ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 #endif
 
    if (pI810->directRenderingEnabled) {
-      xf86DrvMsg(pScrn->scrnIndex, driFrom, "Direct rendering enabled\n");
+      xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Direct rendering enabled\n");
    } else {
-      xf86DrvMsg(pScrn->scrnIndex, driFrom, "Direct rendering disabled\n");
+      xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Direct rendering disabled\n");
    }
 
    pScreen->SaveScreen = I810SaveScreen;

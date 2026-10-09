@@ -113,7 +113,7 @@ The "HeadButton" option is currently not implemented.
 The hardware or kernel driver has some idiosyncracies. Notably on
 kernel initialization the interface occasionally gets into a state where the 
 readings rapidly cycle left-right-left-right or top-bottom-top-bottom.
-In those cases it seems to be neccessary to unload the driver, unplug,
+In those cases it seems to be necessary to unload the driver, unplug,
 replug and reload the joystick drivers. Once it initializes sanely it 
 remains sane.
 .PP

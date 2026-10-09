@@ -69,6 +69,7 @@ SOFTWARE.
 #define XK_GEORGIAN
 #define XK_VIETNAMESE
 #define XK_CURRENCY
+#define XK_MATHEMATICAL
 
 #include <X11/keysymdef.h>
 

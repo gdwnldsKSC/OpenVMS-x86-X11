@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/dbe/dbe.c,v 1.2 2004/04/23 19:03:43 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/dbe/dbe.c,v 1.5 2005/07/03 07:01:17 daniels Exp $ */
 /* $Xorg: dbe.c,v 1.3 2000/08/17 19:48:16 cpqbld Exp $ */
 /******************************************************************************
  * 
@@ -37,8 +37,12 @@
 /* INCLUDES */
 
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "scrnintstr.h"
 #include "extnsionst.h"
 #include "gcstruct.h"

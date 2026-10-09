@@ -47,15 +47,15 @@ in this Software without prior written authorization from The Open Group.
  * THIS SOFTWARE.
  */
 /*#define DEBUG*/
-#include        "FS.h"
-#include        "FSproto.h"
+#include        <X11/fonts/FS.h>
+#include        <X11/fonts/FSproto.h>
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<X11/Xos.h>
 #include	"clientstr.h"
 #include	"fsresource.h"
 #include	"difsfnst.h"
-#include	"fontstruct.h"
+#include	<X11/fonts/fontstruct.h>
 #include	"closestr.h"
 #include	"globals.h"
 #include	"difs.h"
@@ -717,8 +717,9 @@ set_font_path_elements(
 	FontPathElementPtr *ftmp = (FontPathElementPtr *)
 	    fsrealloc(fplist, sizeof(FontPathElementPtr) * validpaths);
 
-	if (!ftmp)
+	if (!ftmp && validpaths)
 	    goto bail;
+
 	fplist = ftmp;
 	npaths = validpaths;
     }

@@ -492,7 +492,7 @@ char **names, **cons_names;
 					  transientShellWidgetClass,
 					  node->widget,
 					  XtNmaxWidth, max_width,
-					  XtNmaxHeight, max_height, NULL, ZERO);
+					  XtNmaxHeight, max_height, NULL);
     XtAddCallback(res_box->shell, XtNdestroyCallback,
 		  FreeResBox, (XtPointer) node);
 

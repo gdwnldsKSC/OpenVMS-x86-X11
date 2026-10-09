@@ -1,10 +1,14 @@
 /* $XFree86: xc/programs/Xserver/ilbm/ilbmimage.c,v 3.0 1996/08/18 01:53:56 dawes Exp $ */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
 
 /* Modified jun 95 by Geert Uytterhoeven (Geert.Uytterhoeven@cs.kuleuven.ac.be)
    to use interleaved bitplanes instead of normal bitplanes */
 
-#include "X.h"
+#include <X11/X.h>
 #include "windowstr.h"
 #include "pixmapstr.h"
 #include "scrnintstr.h"

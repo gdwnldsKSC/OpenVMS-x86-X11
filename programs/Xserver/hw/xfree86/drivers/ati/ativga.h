@@ -25,20 +25,18 @@
 #define ___ATIVGA_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
 #ifndef AVOID_CPIO
 
-extern void ATIVGAPreInit     FunctionPrototype((ATIPtr, ATIHWPtr));
-extern void ATIVGASave        FunctionPrototype((ATIPtr, ATIHWPtr));
-extern void ATIVGACalculate   FunctionPrototype((ATIPtr, ATIHWPtr,
-                                                 DisplayModePtr));
-extern void ATIVGASet         FunctionPrototype((ATIPtr, ATIHWPtr));
+extern void ATIVGAPreInit(ATIPtr, ATIHWPtr);
+extern void ATIVGASave(ATIPtr, ATIHWPtr);
+extern void ATIVGACalculate(ATIPtr, ATIHWPtr, DisplayModePtr);
+extern void ATIVGASet(ATIPtr, ATIHWPtr);
 
-extern void ATIVGASaveScreen  FunctionPrototype((ATIPtr, int));
-extern void ATIVGASetDPMSMode FunctionPrototype((ATIPtr, int));
+extern void ATIVGASaveScreen(ATIPtr, int);
+extern void ATIVGASetDPMSMode(ATIPtr, int);
 
 #endif /* AVOID_CPIO */
 

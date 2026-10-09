@@ -54,13 +54,17 @@
  * V3, including OEM counterparts.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "atiident.h"
 #include "atioption.h"
 #include "atiprobe.h"
 #include "ativersion.h"
 
 /* The root of all evil... */
-DriverRec ATI =
+_X_EXPORT DriverRec ATI =
 {
     ATI_VERSION_CURRENT,
     "ati",

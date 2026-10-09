@@ -36,8 +36,8 @@
 #  Declare the language and type map to use and initialize any special tables
 #  required for processing.
 #
-#   $Date$ $Revision$
-#   $Header: //depot/main/gfx/lib/glu/exports.ls#4 $
+#   $Date: 2004/03/14 08:29:09 $ $Revision: 1.1.1.4 $
+#   $Header: /cvs/xorg/xc/extras/ogl-sample/main/gfx/lib/glu/exports.ls,v 1.1.1.4 2004/03/14 08:29:09 eich Exp $
 
 function initialize() {
 

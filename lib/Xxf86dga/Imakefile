@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xc/lib/Xxf86dga/Imakefile,v 1.2 2004/04/23 18:43:55 eich Exp $
+XCOMM $XdotOrg: xc/lib/Xxf86dga/Imakefile,v 1.3 2005/10/18 14:58:52 alanc Exp $
 XCOMM $XFree86: xc/lib/Xxf86dga/Imakefile,v 3.6 2003/05/05 20:42:30 tsi Exp $
 
 #define DoNormalLib NormalLibXxf86dga
@@ -36,10 +36,7 @@ APERTURE_DEFINES = -DHAS_APERTURE_DRV
 
 #include <Library.tmpl>
 
-MANDIR = $(LIBMANDIR)
-MANSUFFIX = $(LIBMANSUFFIX)
-
-InstallManPage(XDGA,$(MANDIR))
+InstallGenManPage(XDGA,$(LIBMANDIR),$(LIBMANSUFFIX))
 #if ExpandManNames
 DGAFUNCS = XDGAQueryExtension \
 	   XDGAQueryVersion \
@@ -60,7 +57,7 @@ DGAFUNCS = XDGAQueryExtension \
 	   XDGAChangePixmapMode \
 	   XDGAKeyEventToXKeyEvent
 
-InstallManPageAliases(XDGA,$(MANDIR),XF86DGA XFree86-DGA $(DGAFUNCS))
+InstallGenManPageAliases(XDGA,$(LIBMANDIR),$(LIBMANSUFFIX),XF86DGA XFree86-DGA $(DGAFUNCS))
 #endif
 
 DependTarget()

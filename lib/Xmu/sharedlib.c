@@ -29,6 +29,9 @@ in this Software without prior written authorization from The Open Group.
 
 #if defined(SUNSHLIB) && !defined(SHAREDCODE)
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "Atoms.h"
 
 struct _AtomRec {

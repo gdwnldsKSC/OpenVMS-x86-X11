@@ -53,8 +53,8 @@ extern int lbxDebug;
 
 #include "misc.h"
 #include "lbx.h"
-#include "lbxdeltastr.h"
-#include "lbximage.h"
+#include <X11/extensions/lbxdeltastr.h>
+#include <X11/extensions/lbximage.h>
 #include "proxyopts.h"
 #include "colormap.h"
 #include "atomcache.h"

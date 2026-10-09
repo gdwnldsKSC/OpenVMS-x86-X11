@@ -1,6 +1,6 @@
 /*
  * Mesa 3-D graphics library
- * Version:  6.1
+ * Version:  6.3
  *
  * Copyright (C) 1999-2004  Brian Paul   All Rights Reserved.
  *
@@ -451,31 +451,31 @@ _mesa_is_legal_format_and_type( GLcontext *ctx, GLenum format, GLenum type )
 
 
 /**
- * Get the address of a pixel in an image (actually a volume).
+ * Return the address of a specific pixel in an image (1D, 2D or 3D).
  *
  * Pixel unpacking/packing parameters are observed according to \p packing.
  *
- * \param image start of image data.
- * \param width image width.
- * \param height image height.
- * \param format pixel format.
- * \param type pixel data type.
- * \param packing the pixelstore attributes
- * \param img which image in the volume (0 for 1D or 2D images)
- * \param row of pixel in the image
- * \param column of pixel in the image
+ * \param dimensions either 1, 2 or 3 to indicate dimensionality of image
+ * \param image  starting address of image data
+ * \param width  the image width
+ * \param height  theimage height
+ * \param format  the pixel format
+ * \param type  the pixel data type
+ * \param packing  the pixelstore attributes
+ * \param img  which image in the volume (0 for 1D or 2D images)
+ * \param row  row of pixel in the image (0 for 1D images)
+ * \param column column of pixel in the image
  * 
  * \return address of pixel on success, or NULL on error.
- *
- * According to the \p packing information calculates the number of pixel/bytes
- * per row/image and refers it.
  *
  * \sa gl_pixelstore_attrib.
  */
 GLvoid *
-_mesa_image_address( const struct gl_pixelstore_attrib *packing,
-                     const GLvoid *image, GLsizei width,
-                     GLsizei height, GLenum format, GLenum type,
+_mesa_image_address( GLuint dimensions,
+                     const struct gl_pixelstore_attrib *packing,
+                     const GLvoid *image,
+                     GLsizei width, GLsizei height,
+                     GLenum format, GLenum type,
                      GLint img, GLint row, GLint column )
 {
    GLint alignment;        /* 1, 2 or 4 */
@@ -485,6 +485,8 @@ _mesa_image_address( const struct gl_pixelstore_attrib *packing,
    GLint skippixels;
    GLint skipimages;       /* for 3-D volume images */
    GLubyte *pixel_addr;
+
+   ASSERT(dimensions >= 1 && dimensions <= 3);
 
    alignment = packing->Alignment;
    if (packing->RowLength > 0) {
@@ -499,11 +501,14 @@ _mesa_image_address( const struct gl_pixelstore_attrib *packing,
    else {
       rows_per_image = height;
    }
-   skiprows = packing->SkipRows;
-   skippixels = packing->SkipPixels;
-   skipimages = packing->SkipImages;
 
-   if (type==GL_BITMAP) {
+   skippixels = packing->SkipPixels;
+   /* Note: SKIP_ROWS _is_ used for 1D images */
+   skiprows = packing->SkipRows;
+   /* Note: SKIP_IMAGES is only used for 3D images */
+   skipimages = (dimensions == 3) ? packing->SkipImages : 0;
+
+   if (type == GL_BITMAP) {
       /* BITMAP data */
       GLint comp_per_pixel;   /* components per pixel */
       GLint bytes_per_comp;   /* bytes per component */
@@ -512,13 +517,13 @@ _mesa_image_address( const struct gl_pixelstore_attrib *packing,
 
       /* Compute bytes per component */
       bytes_per_comp = _mesa_sizeof_packed_type( type );
-      if (bytes_per_comp<0) {
+      if (bytes_per_comp < 0) {
          return NULL;
       }
 
       /* Compute number of components per pixel */
       comp_per_pixel = _mesa_components_in_format( format );
-      if (comp_per_pixel<0 && type != GL_BITMAP) {
+      if (comp_per_pixel < 0) {
          return NULL;
       }
 
@@ -570,6 +575,43 @@ _mesa_image_address( const struct gl_pixelstore_attrib *packing,
 
    return (GLvoid *) pixel_addr;
 }
+
+
+GLvoid *
+_mesa_image_address1d( const struct gl_pixelstore_attrib *packing,
+                       const GLvoid *image,
+                       GLsizei width,
+                       GLenum format, GLenum type,
+                       GLint column )
+{
+   return _mesa_image_address(1, packing, image, width, 1,
+                              format, type, 0, 0, column);
+}
+
+
+GLvoid *
+_mesa_image_address2d( const struct gl_pixelstore_attrib *packing,
+                       const GLvoid *image,
+                       GLsizei width, GLsizei height,
+                       GLenum format, GLenum type,
+                       GLint row, GLint column )
+{
+   return _mesa_image_address(2, packing, image, width, height,
+                              format, type, 0, row, column);
+}
+
+
+GLvoid *
+_mesa_image_address3d( const struct gl_pixelstore_attrib *packing,
+                       const GLvoid *image,
+                       GLsizei width, GLsizei height,
+                       GLenum format, GLenum type,
+                       GLint img, GLint row, GLint column )
+{
+   return _mesa_image_address(3, packing, image, width, height,
+                              format, type, img, row, column);
+}
+
 
 
 /**
@@ -744,8 +786,8 @@ _mesa_unpack_bitmap( GLint width, GLint height, const GLubyte *pixels,
    dst = buffer;
    for (row = 0; row < height; row++) {
       const GLubyte *src = (const GLubyte *)
-         _mesa_image_address(packing, pixels, width, height,
-                             GL_COLOR_INDEX, GL_BITMAP, 0, row, 0);
+         _mesa_image_address2d(packing, pixels, width, height,
+                               GL_COLOR_INDEX, GL_BITMAP, row, 0);
       if (!src) {
          FREE(buffer);
          return NULL;
@@ -838,8 +880,8 @@ _mesa_pack_bitmap( GLint width, GLint height, const GLubyte *source,
    width_in_bytes = CEILING( width, 8 );
    src = source;
    for (row = 0; row < height; row++) {
-      GLubyte *dst = (GLubyte *) _mesa_image_address( packing, dest,
-                       width, height, GL_COLOR_INDEX, GL_BITMAP, 0, row, 0 );
+      GLubyte *dst = (GLubyte *) _mesa_image_address2d(packing, dest,
+                       width, height, GL_COLOR_INDEX, GL_BITMAP, row, 0);
       if (!dst)
          return;
 
@@ -922,7 +964,7 @@ _mesa_apply_rgba_transfer_ops(GLcontext *ctx, GLuint transferOps,
 {
    /* scale & bias */
    if (transferOps & IMAGE_SCALE_BIAS_BIT) {
-      _mesa_scale_and_bias_rgba(ctx, n, rgba,
+      _mesa_scale_and_bias_rgba(n, rgba,
                                 ctx->Pixel.RedScale, ctx->Pixel.GreenScale,
                                 ctx->Pixel.BlueScale, ctx->Pixel.AlphaScale,
                                 ctx->Pixel.RedBias, ctx->Pixel.GreenBias,
@@ -943,7 +985,7 @@ _mesa_apply_rgba_transfer_ops(GLcontext *ctx, GLuint transferOps,
    }
    /* GL_POST_CONVOLUTION_RED/GREEN/BLUE/ALPHA_SCALE/BIAS */
    if (transferOps & IMAGE_POST_CONVOLUTION_SCALE_BIAS) {
-      _mesa_scale_and_bias_rgba(ctx, n, rgba,
+      _mesa_scale_and_bias_rgba(n, rgba,
                                 ctx->Pixel.PostConvolutionScale[RCOMP],
                                 ctx->Pixel.PostConvolutionScale[GCOMP],
                                 ctx->Pixel.PostConvolutionScale[BCOMP],
@@ -987,10 +1029,11 @@ _mesa_apply_rgba_transfer_ops(GLcontext *ctx, GLuint transferOps,
 
 
 
-/*
- * Used to pack an array [][4] of RGBA GLchan colors as specified
+/**
+ * Used to pack an array [][4] of RGBA float colors as specified
  * by the dstFormat, dstType and dstPacking.  Used by glReadPixels,
  * glGetConvolutionFilter(), etc.
+ * NOTE: it's assumed the incoming float colors are all in [0,1].
  */
 void
 _mesa_pack_rgba_span_float( GLcontext *ctx,
@@ -1195,66 +1238,66 @@ _mesa_pack_rgba_span_float( GLcontext *ctx,
             switch (dstFormat) {
                case GL_RED:
                   for (i=0;i<n;i++)
-                     dst[i] = FLOAT_TO_USHORT(rgba[i][RCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i], rgba[i][RCOMP]);
                   break;
                case GL_GREEN:
                   for (i=0;i<n;i++)
-                     dst[i] = FLOAT_TO_USHORT(rgba[i][GCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i], rgba[i][GCOMP]);
                   break;
                case GL_BLUE:
                   for (i=0;i<n;i++)
-                     dst[i] = FLOAT_TO_USHORT(rgba[i][BCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i], rgba[i][BCOMP]);
                   break;
                case GL_ALPHA:
                   for (i=0;i<n;i++)
-                     dst[i] = FLOAT_TO_USHORT(rgba[i][ACOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i], rgba[i][ACOMP]);
                   break;
                case GL_LUMINANCE:
                   for (i=0;i<n;i++)
-                     dst[i] = FLOAT_TO_USHORT(luminance[i]);
+                     UNCLAMPED_FLOAT_TO_USHORT(dst[i], luminance[i]);
                   break;
                case GL_LUMINANCE_ALPHA:
                   for (i=0;i<n;i++) {
-                     dst[i*2+0] = FLOAT_TO_USHORT(luminance[i]);
-                     dst[i*2+1] = FLOAT_TO_USHORT(rgba[i][ACOMP]);
+                     UNCLAMPED_FLOAT_TO_USHORT(dst[i*2+0], luminance[i]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*2+1], rgba[i][ACOMP]);
                   }
                   break;
                case GL_RGB:
                   for (i=0;i<n;i++) {
-                     dst[i*3+0] = FLOAT_TO_USHORT(rgba[i][RCOMP]);
-                     dst[i*3+1] = FLOAT_TO_USHORT(rgba[i][GCOMP]);
-                     dst[i*3+2] = FLOAT_TO_USHORT(rgba[i][BCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*3+0], rgba[i][RCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*3+1], rgba[i][GCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*3+2], rgba[i][BCOMP]);
                   }
                   break;
                case GL_RGBA:
                   for (i=0;i<n;i++) {
-                     dst[i*4+0] = FLOAT_TO_USHORT(rgba[i][RCOMP]);
-                     dst[i*4+1] = FLOAT_TO_USHORT(rgba[i][GCOMP]);
-                     dst[i*4+2] = FLOAT_TO_USHORT(rgba[i][BCOMP]);
-                     dst[i*4+3] = FLOAT_TO_USHORT(rgba[i][ACOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+0], rgba[i][RCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+1], rgba[i][GCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+2], rgba[i][BCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+3], rgba[i][ACOMP]);
                   }
                   break;
                case GL_BGR:
                   for (i=0;i<n;i++) {
-                     dst[i*3+0] = FLOAT_TO_USHORT(rgba[i][BCOMP]);
-                     dst[i*3+1] = FLOAT_TO_USHORT(rgba[i][GCOMP]);
-                     dst[i*3+2] = FLOAT_TO_USHORT(rgba[i][RCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*3+0], rgba[i][BCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*3+1], rgba[i][GCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*3+2], rgba[i][RCOMP]);
                   }
                   break;
                case GL_BGRA:
                   for (i=0;i<n;i++) {
-                     dst[i*4+0] = FLOAT_TO_USHORT(rgba[i][BCOMP]);
-                     dst[i*4+1] = FLOAT_TO_USHORT(rgba[i][GCOMP]);
-                     dst[i*4+2] = FLOAT_TO_USHORT(rgba[i][RCOMP]);
-                     dst[i*4+3] = FLOAT_TO_USHORT(rgba[i][ACOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+0], rgba[i][BCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+1], rgba[i][GCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+2], rgba[i][RCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+3], rgba[i][ACOMP]);
                   }
                   break;
                case GL_ABGR_EXT:
                   for (i=0;i<n;i++) {
-                     dst[i*4+0] = FLOAT_TO_USHORT(rgba[i][ACOMP]);
-                     dst[i*4+1] = FLOAT_TO_USHORT(rgba[i][BCOMP]);
-                     dst[i*4+2] = FLOAT_TO_USHORT(rgba[i][GCOMP]);
-                     dst[i*4+3] = FLOAT_TO_USHORT(rgba[i][RCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+0], rgba[i][ACOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+1], rgba[i][BCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+2], rgba[i][GCOMP]);
+                     CLAMPED_FLOAT_TO_USHORT(dst[i*4+3], rgba[i][RCOMP]);
                   }
                   break;
                default:
@@ -3912,7 +3955,7 @@ _mesa_pack_depth_span( const GLcontext *ctx, GLuint n, GLvoid *dest,
          GLushort *dst = (GLushort *) dest;
          GLuint i;
          for (i = 0; i < n; i++) {
-            dst[i] = FLOAT_TO_USHORT( depthSpan[i] );
+            CLAMPED_FLOAT_TO_USHORT(dst[i], depthSpan[i]);
          }
          if (dstPacking->SwapBytes) {
             _mesa_swap2( (GLushort *) dst, n );
@@ -3992,7 +4035,8 @@ _mesa_pack_depth_span( const GLcontext *ctx, GLuint n, GLvoid *dest,
  * need a copy of the data in a standard format.
  */
 void *
-_mesa_unpack_image( GLsizei width, GLsizei height, GLsizei depth,
+_mesa_unpack_image( GLuint dimensions,
+                    GLsizei width, GLsizei height, GLsizei depth,
                     GLenum format, GLenum type, const GLvoid *pixels,
                     const struct gl_pixelstore_attrib *unpack )
 {
@@ -4036,7 +4080,7 @@ _mesa_unpack_image( GLsizei width, GLsizei height, GLsizei depth,
       dst = destBuffer;
       for (img = 0; img < depth; img++) {
          for (row = 0; row < height; row++) {
-            const GLvoid *src = _mesa_image_address(unpack, pixels,
+            const GLvoid *src = _mesa_image_address(dimensions, unpack, pixels,
                                width, height, format, type, img, row, 0);
             MEMCPY(dst, src, bytesPerRow);
             /* byte flipping/swapping */
@@ -4057,3 +4101,102 @@ _mesa_unpack_image( GLsizei width, GLsizei height, GLsizei depth,
 }
 
 #endif
+
+
+/**
+ * Perform clipping for glDrawPixels.  The image's window position
+ * and size, and the unpack skipPixels and skipRows are adjusted so
+ * that the image region is entirely within the window and scissor bounds.
+ * NOTE: this will only work when glPixelZoom is (1, 1).
+ *
+ * \return  GL_TRUE if image is ready for drawing or
+ *          GL_FALSE if image was completely clipped away (draw nothing)
+ */
+GLboolean
+_mesa_clip_drawpixels(const GLcontext *ctx,
+                      GLint *destX, GLint *destY,
+                      GLsizei *width, GLsizei *height,
+                      GLint *skipPixels, GLint *skipRows)
+{
+   const GLframebuffer *buffer = ctx->DrawBuffer;
+
+   ASSERT(ctx->Pixel.ZoomX == 1.0F && ctx->Pixel.ZoomY == 1.0F);
+
+   /* left clipping */
+   if (*destX < buffer->_Xmin) {
+      *skipPixels += (buffer->_Xmin - *destX);
+      *width -= (buffer->_Xmin - *destX);
+      *destX = buffer->_Xmin;
+   }
+   /* right clipping */
+   if (*destX + *width > buffer->_Xmax)
+      *width -= (*destX + *width - buffer->_Xmax);
+
+   if (*width <= 0)
+      return GL_FALSE;
+
+   /* bottom clipping */
+   if (*destY < buffer->_Ymin) {
+      *skipRows += (buffer->_Ymin - *destY);
+      *height -= (buffer->_Ymin - *destY);
+      *destY = buffer->_Ymin;
+   }
+   /* top clipping */
+   if (*destY + *height > buffer->_Ymax)
+      *height -= (*destY + *height - buffer->_Ymax);
+
+   if (*height <= 0)
+      return GL_TRUE;
+
+   return GL_TRUE;
+}
+
+
+/**
+ * Perform clipping for glReadPixels.  The image's window position
+ * and size, and the pack skipPixels and skipRows are adjusted so
+ * that the image region is entirely within the window bounds.
+ * Note: this is different from _mesa_clip_drawpixels() in that the
+ * scissor box is ignored, and we use the bounds of the current "read"
+ * surface;
+ *
+ * \return  GL_TRUE if image is ready for drawing or
+ *          GL_FALSE if image was completely clipped away (draw nothing)
+ */
+GLboolean
+_mesa_clip_readpixels(const GLcontext *ctx,
+                      GLint *srcX, GLint *srcY,
+                      GLsizei *width, GLsizei *height,
+                      GLint *skipPixels, GLint *skipRows)
+{
+   const GLframebuffer *buffer = ctx->ReadBuffer;
+
+   /* left clipping */
+   if (*srcX < 0) {
+      *skipPixels += (0 - *srcX);
+      *width -= (0 - *srcX);
+      *srcX = 0;
+   }
+   /* right clipping */
+   if (*srcX + *width > (GLsizei) buffer->Width)
+      *width -= (*srcX + *width - buffer->Width);
+
+   if (*width <= 0)
+      return GL_FALSE;
+
+   /* bottom clipping */
+   if (*srcY < 0) {
+      *skipRows += (0 - *srcY);
+      *height -= (0 - *srcY);
+      *srcY = 0;
+   }
+   /* top clipping */
+   if (*srcY + *height > (GLsizei) buffer->Height)
+      *height -= (*srcY + *height - buffer->Height);
+
+   if (*height <= 0)
+      return GL_TRUE;
+
+   return GL_TRUE;
+}
+

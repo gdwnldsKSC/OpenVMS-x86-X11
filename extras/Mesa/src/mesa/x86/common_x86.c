@@ -22,13 +22,16 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*
+/**
+ * \file common_x86.c
+ *
  * Check CPU capabilities & initialize optimized funtions for this particular
  * processor.
  *
- * Written by Holger Waechtler <holger@akaflieg.extern.tu-berlin.de>
- * Changed by Andre Werthmann <wertmann@cs.uni-potsdam.de> for using the
- * new SSE functions.
+ * Changed by Andre Werthmann for using the new SSE functions.
+ *
+ * \author Holger Waechtler <holger@akaflieg.extern.tu-berlin.de>
+ * \author Andre Werthmann <wertmann@cs.uni-potsdam.de>
  */
 
 /* XXX these includes should probably go into imports.h or glheader.h */
@@ -87,12 +90,19 @@ static void message( const char *msg )
  * loop in the signal delivery from the kernel as we can't interact with
  * the SIMD FPU state to clear the exception bits.  Either way, this is
  * not good.
+ *
+ * However, I have been told by Alan Cox that all 2.4 (and later) Linux
+ * kernels provide full SSE support on all processors that expose SSE via
+ * the CPUID mechanism.  It just so happens that this is the exact set of
+ * kernels supported DRI.  Therefore, when building for DRI the funky SSE
+ * exception test is omitted.
  */
 
 extern void _mesa_test_os_sse_support( void );
 extern void _mesa_test_os_sse_exception_support( void );
 
-#if defined(__linux__) && defined(_POSIX_SOURCE) && defined(X86_FXSR_MAGIC)
+#if defined(__linux__) && defined(_POSIX_SOURCE) && defined(X86_FXSR_MAGIC) \
+   && !defined(IN_DRI_DRIVER)
 static void sigill_handler( int signal, struct sigcontext sc )
 {
    message( "SIGILL, " );
@@ -132,6 +142,37 @@ static void sigfpe_handler( int signal, struct sigcontext sc )
 }
 #endif /* __linux__ && _POSIX_SOURCE && X86_FXSR_MAGIC */
 
+#if defined(WIN32)
+#ifndef STATUS_FLOAT_MULTIPLE_TRAPS
+# define STATUS_FLOAT_MULTIPLE_TRAPS (0xC00002B5L)
+#endif
+static LONG WINAPI ExceptionFilter(LPEXCEPTION_POINTERS exp)
+{
+   PEXCEPTION_RECORD rec = exp->ExceptionRecord;
+   PCONTEXT ctx = exp->ContextRecord;
+
+   if ( rec->ExceptionCode == EXCEPTION_ILLEGAL_INSTRUCTION ) {
+      message( "EXCEPTION_ILLEGAL_INSTRUCTION, " );
+      _mesa_x86_cpu_features &= ~(X86_FEATURE_XMM);
+   } else if ( rec->ExceptionCode == STATUS_FLOAT_MULTIPLE_TRAPS ) {
+      message( "STATUS_FLOAT_MULTIPLE_TRAPS, " );
+      /* Windows seems to clear the exception flag itself, we just have to increment Eip */
+   } else {
+      message( "UNEXPECTED EXCEPTION (0x%08x), terminating!" );
+      return EXCEPTION_EXECUTE_HANDLER;
+   }
+
+   if ( (ctx->ContextFlags & CONTEXT_CONTROL) != CONTEXT_CONTROL ) {
+      message( "Context does not contain control registers, terminating!" );
+      return EXCEPTION_EXECUTE_HANDLER;
+   }
+   ctx->Eip += 3;
+
+   return EXCEPTION_CONTINUE_EXECUTION;
+}
+#endif /* WIN32 */
+
+
 /* If we're running on a processor that can do SSE, let's see if we
  * are allowed to or not.  This will catch 2.4.0 or later kernels that
  * haven't been configured for a Pentium III but are running on one,
@@ -142,7 +183,7 @@ static void sigfpe_handler( int signal, struct sigcontext sc )
  */
 static void check_os_sse_support( void )
 {
-#if defined(__linux__)
+#if defined(__linux__) && !defined(IN_DRI_DRIVER)
 #if defined(_POSIX_SOURCE) && defined(X86_FXSR_MAGIC)
    struct sigaction saved_sigill;
    struct sigaction saved_sigfpe;
@@ -220,11 +261,50 @@ static void check_os_sse_support( void )
 #endif /* _POSIX_SOURCE && X86_FXSR_MAGIC */
 #elif defined(__FreeBSD__)
    {
-      int ret, len, enabled;
+      int ret, enabled;
+      unsigned int len;
       len = sizeof(enabled);
       ret = sysctlbyname("hw.instruction_sse", &enabled, &len, NULL, 0);
       if (ret || !enabled)
          _mesa_x86_cpu_features &= ~(X86_FEATURE_XMM);
+   }
+#elif defined(WIN32)
+   LPTOP_LEVEL_EXCEPTION_FILTER oldFilter;
+   
+   /* Install our ExceptionFilter */
+   oldFilter = SetUnhandledExceptionFilter( ExceptionFilter );
+   
+   if ( cpu_has_xmm ) {
+      message( "Testing OS support for SSE... " );
+
+      _mesa_test_os_sse_support();
+
+      if ( cpu_has_xmm ) {
+	 message( "yes.\n" );
+      } else {
+	 message( "no!\n" );
+      }
+   }
+
+   if ( cpu_has_xmm ) {
+      message( "Testing OS support for SSE unmasked exceptions... " );
+
+      _mesa_test_os_sse_exception_support();
+
+      if ( cpu_has_xmm ) {
+	 message( "yes.\n" );
+      } else {
+	 message( "no!\n" );
+      }
+   }
+
+   /* Restore previous exception filter */
+   SetUnhandledExceptionFilter( oldFilter );
+
+   if ( cpu_has_xmm ) {
+      message( "Tests of OS support for SSE passed.\n" );
+   } else {
+      message( "Tests of OS support for SSE failed!\n" );
    }
 #else
    /* Do nothing on other platforms for now.
@@ -348,15 +428,17 @@ void _mesa_init_all_x86_transform_asm( void )
 #endif
 
 #ifdef USE_SSE_ASM
-   if ( cpu_has_xmm && _mesa_getenv( "MESA_FORCE_SSE" ) == 0 ) {
-      check_os_sse_support();
-   }
    if ( cpu_has_xmm ) {
-      if (_mesa_getenv( "MESA_NO_SSE" ) == 0 ) {
+      if ( _mesa_getenv( "MESA_NO_SSE" ) == 0 ) {
          message( "SSE cpu detected.\n" );
-         _mesa_init_sse_transform_asm();
+         if ( _mesa_getenv( "MESA_FORCE_SSE" ) == 0 ) {
+            check_os_sse_support();
+         }
+         if ( cpu_has_xmm ) {
+            _mesa_init_sse_transform_asm();
+         }
       } else {
-          message( "SSE cpu detected, but switched off by user.\n" );
+         message( "SSE cpu detected, but switched off by user.\n" );
          _mesa_x86_cpu_features &= ~(X86_FEATURE_XMM);
       }
    }

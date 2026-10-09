@@ -24,7 +24,6 @@
 #ifndef ___ATIVIDMEM_H___
 #define ___ATIVIDMEM_H___ 1
 
-#include "atiproto.h"
 #include "atipriv.h"
 
 /* Memory types for 68800's and 88800GX's */
@@ -69,7 +68,7 @@ typedef enum
 } ATI264MemoryType;
 extern const char *ATIMemoryTypeNames_264xT[];
 
-extern Bool ATIMapApertures   FunctionPrototype((int, ATIPtr));
-extern void ATIUnmapApertures FunctionPrototype((int, ATIPtr));
+extern Bool ATIMapApertures(int, ATIPtr);
+extern void ATIUnmapApertures(int, ATIPtr);
 
 #endif /* ___ATIVIDMEM_H___ */

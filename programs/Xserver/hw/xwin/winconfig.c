@@ -29,14 +29,19 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xwin/winconfig.c,v 1.3 2003/10/02 13:30:10 eich Exp $ */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 #include "winconfig.h"
 #include "winmsg.h"
 #include "globals.h"
 
 #ifdef XKB
+#ifndef XKB_IN_SERVER
 #define XKB_IN_SERVER
-#include "XKBsrv.h"
+#endif
+#include <X11/extensions/XKBsrv.h>
 #endif
 
 #ifdef XWIN_XF86CONFIG
@@ -219,47 +224,10 @@ winReadConfigfile ()
 }
 #endif
 
+/* load layout definitions */
+#include "winlayouts.h"
 
 /* Set the keyboard configuration */
-
-typedef struct {
-    unsigned int winlayout;
-    int winkbtype;
-    char *xkbmodel;
-    char *xkblayout;
-    char *xkbvariant;
-    char *xkboptions;
-    char *layoutname;
-} WinKBLayoutRec, *WinKBLayoutPtr;
-
-WinKBLayoutRec winKBLayouts[] = {
-    {  0x405, -1, "pc105", "cz",      NULL, NULL, "Czech"},
-    {  0x406, -1, "pc105", "dk",      NULL, NULL, "Danish"},
-    {  0x407, -1, "pc105", "de",      NULL, NULL, "German (Germany)"},
-    {0x10407, -1, "pc105", "de",      NULL, NULL, "German (Germany, IBM)"},
-    {  0x807, -1, "pc105", "de_CH",   NULL, NULL, "German (Switzerland)"},
-    {  0x409, -1, "pc105", "us",      NULL, NULL, "English (USA)"},
-    {0x10409, -1, "pc105", "dvorak",  NULL, NULL, "English (USA, Dvorak)"}, 
-    {0x20409, -1, "pc105", "us_intl", NULL, NULL, "English (USA, International)"}, 
-    {  0x809, -1, "pc105", "gb",      NULL, NULL, "English (United Kingdom)"},
-    { 0x1809, -1, "pc105", "ie",      NULL, NULL, "Irish"},
-    {  0x40a, -1, "pc105", "es",      NULL, NULL, "Spanish (Spain, Traditional Sort)"},
-    {  0x40b, -1, "pc105", "fi",      NULL, NULL, "Finnish"},
-    {  0x40c, -1, "pc105", "fr",      NULL, NULL, "French (Standard)"},
-    {  0x80c, -1, "pc105", "be",      NULL, NULL, "French (Belgian)"},
-    { 0x100c, -1, "pc105", "fr_CH",   NULL, NULL, "French (Switzerland)"},
-    {  0x410, -1, "pc105", "it",      NULL, NULL, "Italian"},
-    {  0x411,  7, "jp106", "jp",      NULL, NULL, "Japanese"},
-    {  0x813, -1, "pc105", "be",      NULL, NULL, "Dutch (Belgian)"},  
-    {  0x414, -1, "pc105", "no",      NULL, NULL, "Norwegian"},
-    {  0x416, -1, "pc105", "br",      NULL, NULL, "Portuguese (Brazil, ABNT)"},
-    {0x10416, -1, "abnt2", "br",      NULL, NULL, "Portuguese (Brazil, ABNT2)"},
-    {  0x816, -1, "pc105", "pt",      NULL, NULL, "Portuguese (Portugal)"},
-    {  0x41d, -1, "pc105", "se",      NULL, NULL, "Swedish (Sweden)"},
-    {     -1, -1, NULL,    NULL,      NULL, NULL, NULL}
-};
-
-
 Bool
 winConfigKeyboard (DeviceIntPtr pDevice)
 {
@@ -312,7 +280,7 @@ winConfigKeyboard (DeviceIntPtr pDevice)
             default:
             case 3:  g_winInfo.keyboard.delay = 1000; break;
           }
-        g_winInfo.keyboard.rate = max(1,kbd_speed);
+        g_winInfo.keyboard.rate = (kbd_speed>0)?kbd_speed:1;
         winMsgVerb(X_PROBED, 1, "Setting autorepeat to delay=%d, rate=%d\n",
                 g_winInfo.keyboard.delay, g_winInfo.keyboard.rate);
       }
@@ -375,7 +343,7 @@ winConfigKeyboard (DeviceIntPtr pDevice)
         char                lname[256];
         DWORD               namesize = sizeof(lname);
 
-        regpath = alloca(sizeof(regtempl) + KL_NAMELENGTH + 1);
+        regpath = malloc(sizeof(regtempl) + KL_NAMELENGTH + 1);
         strcpy(regpath, regtempl);
         strcat(regpath, layoutName);
 
@@ -389,6 +357,7 @@ winConfigKeyboard (DeviceIntPtr pDevice)
 	/* Close registry key */
 	if (regkey)
 	  RegCloseKey (regkey);
+        free(regpath);
       }
   }  
   
@@ -738,117 +707,19 @@ winConfigFiles ()
   MessageType from;
 
   /* Fontpath */
-  from = X_DEFAULT;
-
   if (g_cmdline.fontPath)
     {
-      from = X_CMDLINE;
       defaultFontPath = g_cmdline.fontPath;
+      winMsg (X_CMDLINE, "FontPath set to \"%s\"\n", defaultFontPath);
     }
-  else 
+
+  /* RGBPath */
+  if (g_cmdline.rgbPath)
     {
-      /* Open fontpath configuration file */
-      FILE *fontdirs = fopen(ETCX11DIR "/font-dirs", "rt");
-      if (fontdirs != NULL)
-        {
-	  char buffer[256];
-	  int needs_sep = TRUE; 
-	  int comment_block = FALSE;
-
-	  /* get defautl fontpath */
-	  char *fontpath = xstrdup(defaultFontPath);
-	  size_t size = strlen(fontpath);
-
-	  /* read all lines */
-	  while (!feof(fontdirs))
-	    {
-	      size_t blen;
-	      char *hashchar;
-	      char *str;
-	      int has_eol = FALSE;
-
-	      /* read one line */
-	      str = fgets(buffer, sizeof(buffer), fontdirs);
-	      if (str == NULL) /* stop on error or eof */
-		break;
-
-              if (strchr(str, '\n') != NULL)
-                has_eol = TRUE;
-	     
-	      /* check if block is continued comment */
-	      if (comment_block)
-	        {
-		  /* ignore all input */
-		  *str = 0; 
-		  blen = 0; 
-		  if (has_eol) /* check if line ended in this block */
-		    comment_block = FALSE;
-		}
-	      else 
-  	        {
-		  /* find comment character. ignore all trailing input */
-		  hashchar = strchr(str, '#');
-		  if (hashchar != NULL)
-		    {
-		      *hashchar = 0;
-		      if (!has_eol) /* mark next block as continued comment */
-		        comment_block = TRUE;
-		    }
-		}
-              
-	      /* strip whitespaces from beginning */
-	      while (*str == ' ' || *str == '\t')
-		str++;
-
-	      /* get size, strip whitespaces from end */ 
-	      blen = strlen(str);
-	      while (blen > 0 && (str[blen-1] == ' ' || 
-		    str[blen-1] == '\t' || str[blen-1] == '\n'))
-		{
-		  str[--blen] = 0;
-		}
-	     
-	      /* still something left to add? */ 
-	      if (blen > 0)
-	        {
-		  size_t newsize = size + blen;
-		  /* reserve one character more for ',' */
-		  if (needs_sep)
-		    newsize++;
-
-		  /* allocate memory */
-		  if (fontpath == NULL)
-		    fontpath = malloc(newsize+1);
-		  else
-		    fontpath = realloc(fontpath, newsize+1);
-
-		  /* add separator */
-		  if (needs_sep)
-		    {
-		      fontpath[size] = ',';
-		      size++;
-		      needs_sep = FALSE;
-		    }
-
-		  /* mark next line as new entry */
-		  if (has_eol)
-		    needs_sep = TRUE;
-		  
-		  /* add block */
-		  strncpy(fontpath + size, str, blen);
-		  fontpath[newsize] = 0;
-		  size = newsize;
-		}
-	    }
-
-	  /* cleanup */
-	  fclose(fontdirs);  
-          from = X_CONFIG;
-          defaultFontPath = xstrdup(fontpath);
-          free(fontpath);
-	}
+      from = X_CMDLINE;
+      rgbPath = g_cmdline.rgbPath;
+      winMsg (X_CMDLINE, "RgbPath set to \"%s\"\n", rgbPath);
     }
-  winMsg (from, "FontPath set to \"%s\"\n", defaultFontPath);
 
   return TRUE;
 }

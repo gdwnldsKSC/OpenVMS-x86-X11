@@ -38,6 +38,10 @@
 
 /* os2_select.c: reimplementation of the xserver select(), optimized for speed */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
@@ -56,7 +60,7 @@
 #define INCL_DOSMODULEMGR
 
 
-#include "Xpoll.h"
+#include <X11/Xpoll.h>
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSlib.h"

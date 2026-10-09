@@ -1,4 +1,3 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/via/via.h,v 1.4 2003/08/27 15:16:06 tsi Exp $ */
 /*
  * Copyright 1998-2003 VIA Technologies, Inc. All Rights Reserved.
  * Copyright 2001-2003 S3 Graphics, Inc. All Rights Reserved.
@@ -17,9 +16,9 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- * VIA, S3 GRAPHICS, AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
 
@@ -28,8 +27,6 @@
 
 /* Video status flag */
 
-#define VIDEO_SHOW              0x80000000  /*Video on*/
-#define VIDEO_HIDE              0x00000000  /*Video off*/
 #define VIDEO_MPEG_INUSE        0x08000000  /*Video is used with MPEG */
 #define VIDEO_HQV_INUSE         0x04000000  /*Video is used with HQV*/
 #define VIDEO_CAPTURE0_INUSE    0x02000000  /*Video is used with CAPTURE 0*/
@@ -323,6 +320,7 @@
 #define V3_FIFO_THRESHOLD12     0x00000C00
 #define V3_FIFO_THRESHOLD16     0x00001000
 #define V3_FIFO_THRESHOLD24     0x00001800
+#define V3_FIFO_THRESHOLD29     0x00001D00
 #define V3_FIFO_THRESHOLD32     0x00002000
 #define V3_FIFO_THRESHOLD40     0x00002800  
 #define V3_FIFO_THRESHOLD48     0x00003000   
@@ -347,6 +345,8 @@
 
 #define ColorSpaceValue_1_3123C0      0x13000DED
 #define ColorSpaceValue_2_3123C0      0x13171000
+#define ColorSpaceValue_1_32045       0x13000DED
+#define ColorSpaceValue_2_32045       0x13171000
 
 /* For TV setting */
 #define ColorSpaceValue_1TV     0x140020f2
@@ -443,7 +443,9 @@
 #define V3_RGB16                0x0000000C
 #define V3_COLORSPACE_SIGN      0x00000080
 #define V3_EXPIRE_NUM           0x00040000
-#define V3_EXPIRE_NUM_F         0x000f0000 
+#define V3_EXPIRE_NUM_F         0x000f0000
+#define V3_EXPIRE_NUM_3204      0x00100000
+#define V3_EXPIRE_NUM_3205      0x00080000 
 #define V3_BOB_ENABLE           0x00400000
 #define V3_FIELD_BASE           0x00000000
 #define V3_FRAME_BASE           0x01000000
@@ -534,11 +536,18 @@
 #define HQV_H_FILTER_DEFAULT    0x00000040
 
 
+/* UNICHROME PRO GROUP A HQV1 OFFSET */
 
+#define PRO_HQV1_OFFSET 0x1000
+
+/* UNICHROME PRO GROUP A VIDEO SPECIALS */
+#define HQV_GEN_IRQ (1 << 7)
 
 /* HQV_MINI_CONTROL        0x3E8 */
 #define HQV_H_MINIFY_ENABLE 0x00000800
+#define HQV_H_MINIFY_DOWN   0x00001000
 #define HQV_V_MINIFY_ENABLE 0x08000000
+#define HQV_V_MINIFY_DOWN   0x10000000
 #define HQV_VDEBLOCK_FILTER 0x80000000
 #define HQV_HDEBLOCK_FILTER 0x00008000
 
@@ -563,8 +572,8 @@
 #define VIDOutB(port, data)     *((volatile CARD8 *)(pVia->VidMapBase + (port))) = (data)
 #define VIDOutW(port, data)     *((volatile CARD16 *)(pVia->VidMapBase + (port))) = (data)
 #define VIDOutD(port, data)     *((volatile CARD32 *)(pVia->VidMapBase + (port))) = (data)
-#define MPGOutD(port, data)     *((volatile CARD32 *)(lpMPEGMMIO +(port))) = (data)
-#define MPGInD(port)            *((volatile CARD32 *)(lpMPEGMMIO +(port)))
+#define MPGOutD(port, data)     *((volatile CARD32 *)(pVia->MpegMapBase +(port))) = (data)
+#define MPGInD(port)            *((volatile CARD32 *)(pVia->MpegMapBase +(port)))
 #endif 
 
 /*

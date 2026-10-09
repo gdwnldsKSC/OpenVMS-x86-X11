@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xmu/Lookup.c,v 3.7 2001/01/17 19:42:56 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xmu/Lookup.h>
 
 #define XK_LATIN1

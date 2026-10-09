@@ -83,13 +83,13 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/SM/SMlib.h>
 
 int RootFunction = 0;
-MenuRoot *ActiveMenu = NULL;		/* the active menu */
-MenuItem *ActiveItem = NULL;		/* the active menu item */
-int MoveFunction;			/* either F_MOVE or F_FORCEMOVE */
+MenuRoot *ActiveMenu = NULL;		/**< the active menu */
+MenuItem *ActiveItem = NULL;		/**< the active menu item */
+int MoveFunction;			/**< either F_MOVE or F_FORCEMOVE */
 int WindowMoved = FALSE;
 int menuFromFrameOrWindowOrTitlebar = FALSE;
 
-int ConstMove = FALSE;		/* constrained move variables */
+int ConstMove = FALSE;		/**< constrained move variables */
 int ConstMoveDir;
 int ConstMoveX;
 int ConstMoveY;
@@ -103,7 +103,7 @@ int ConstMoveYB;
 int ResizeOrigX;
 int ResizeOrigY;
 
-int MenuDepth = 0;		/* number of menus up */
+int MenuDepth = 0;		/**< number of menus up */
 static struct {
     int x;
     int y;
@@ -119,14 +119,9 @@ static void send_clientmessage ( Window w, Atom a, Time timestamp );
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	InitMenus - initialize menu roots
- *
- ***********************************************************************
+/**
+ * initialize menu roots
  */
-
 void
 InitMenus()
 {
@@ -160,27 +155,18 @@ InitMenus()
 
 
 
-/***********************************************************************
+/**
+ * add a function key to the list
  *
- *  Procedure:
- *	AddFuncKey - add a function key to the list
- *
- *  Inputs:
- *	name	- the name of the key
- *	cont	- the context to look for the key press in
- *	mods	- modifier keys that need to be pressed
- *	func	- the function to perform
- *	win_name- the window name (if any)
- *	action	- the action string associated with the function (if any)
- *
- ***********************************************************************
+ *  \param name     the name of the key
+ *  \param cont     the context to look for the key press in
+ *  \param mods     modifier keys that need to be pressed
+ *  \param func     the function to perform
+ *  \param win_name the window name (if any)
+ *  \param action   the action string associated with the function (if any)
  */
-
-Bool AddFuncKey (name, cont, mods, func, win_name, action)
-    char *name;
-    int cont, mods, func;
-    char *win_name;
-    char *action;
+Bool AddFuncKey (char *name, int cont, int mods, int func, char *win_name, 
+                 char *action)
 {
     FuncKey *tmp;
     KeySym keysym;
@@ -226,13 +212,8 @@ Bool AddFuncKey (name, cont, mods, func, win_name, action)
 
 
 
-int CreateTitleButton (name, func, action, menuroot, rightside, append)
-    char *name;
-    int func;
-    char *action;
-    MenuRoot *menuroot;
-    Bool rightside;
-    Bool append;
+int CreateTitleButton (char *name, int func, char *action, MenuRoot *menuroot, 
+                       Bool rightside, Bool append)
 {
     TitleButton *tb = (TitleButton *) malloc (sizeof(TitleButton));
 
@@ -296,11 +277,10 @@ int CreateTitleButton (name, func, action, menuroot, rightside, append)
 
 
 
-/*
- * InitTitlebarButtons - Do all the necessary stuff to load in a titlebar
- * button.  If we can't find the button, then put in a question; if we can't
- * find the question mark, something is wrong and we are probably going to be
- * in trouble later on.
+/**
+ * Do all the necessary stuff to load in a titlebar button.  If we can't find 
+ * the button, then put in a question; if we can't find the question mark, 
+ * something is wrong and we are probably going to be in trouble later on.
  */
 void InitTitlebarButtons ()
 {
@@ -371,11 +351,9 @@ void InitTitlebarButtons ()
 }
 
 
+
 void
-PaintEntry(mr, mi, exposure)
-MenuRoot *mr;
-MenuItem *mi;
-int exposure;
+PaintEntry(MenuRoot *mr, MenuItem *mi, int exposure)
 {
     int y_offset;
     int text_y;
@@ -468,9 +446,7 @@ int exposure;
     
 
 void
-PaintMenu(mr, e)
-MenuRoot *mr;
-XEvent *e;
+PaintMenu(MenuRoot *mr, XEvent *e)
 {
     MenuItem *mi;
 
@@ -629,23 +605,13 @@ UpdateMenu()
 
 
 
-/***********************************************************************
+/**
+ * create a new menu root
  *
- *  Procedure:
- *	NewMenuRoot - create a new menu root
- *
- *  Returned Value:
- *	(MenuRoot *)
- *
- *  Inputs:
- *	name	- the name of the menu root
- *
- ***********************************************************************
+ *  \param name  the name of the menu root
  */
-
 MenuRoot *
-NewMenuRoot(name)
-    char *name;
+NewMenuRoot(char *name)
 {
     MenuRoot *tmp;
 
@@ -692,33 +658,20 @@ NewMenuRoot(name)
 
 
 
-/***********************************************************************
+/**
+ * add an item to a root menu
  *
- *  Procedure:
- *	AddToMenu - add an item to a root menu
- *
- *  Returned Value:
- *	(MenuItem *)
- *
- *  Inputs:
- *	menu	- pointer to the root menu to add the item
- *	item	- the text to appear in the menu
- *	action	- the string to possibly execute
- *	sub	- the menu root if it is a pull-right entry
- *	func	- the numeric function
- *	fore	- foreground color string
- *	back	- background color string
- *
- ***********************************************************************
+ *  \param menu   pointer to the root menu to add the item
+ *  \param item   the text to appear in the menu
+ *  \param action the string to possibly execute
+ *  \param sub    the menu root if it is a pull-right entry
+ *  \param func   the numeric function
+ *  \param fore   foreground color string
+ *  \param back   background color string
  */
-
 MenuItem *
-AddToMenu(menu, item, action, sub, func, fore, back)
-    MenuRoot *menu;
-    char *item, *action;
-    MenuRoot *sub;
-    int func;
-    char *fore, *back;
+AddToMenu(MenuRoot *menu, char *item, char *action, MenuRoot *sub, int func, 
+          char *fore, char *back)
 {
     MenuItem *tmp;
     int width;
@@ -797,8 +750,7 @@ MakeMenus()
 
 
 void
-MakeMenu(mr)
-MenuRoot *mr;
+MakeMenu(MenuRoot *mr)
 {
     MenuItem *start, *end, *cur, *tmp;
     XColor f1, f2, f3;
@@ -989,24 +941,15 @@ MenuRoot *mr;
 
 
 
-/***********************************************************************
+/**
+ * pop up a pull down menu.
  *
- *  Procedure:
- *	PopUpMenu - pop up a pull down menu
- *
- *  Inputs:
- *	menu	- the root pointer of the menu to pop up
- *	x, y	- location of upper left of menu
- *      center	- whether or not to center horizontally over position
- *
- ***********************************************************************
+ *  \param menu   the root pointer of the menu to pop up
+ *  \param x,y    location of upper left of menu
+ *  \param center whether or not to center horizontally over position
  */
-
 Bool 
-PopUpMenu (menu, x, y, center)
-    MenuRoot *menu;
-    int x, y;
-    Bool center;
+PopUpMenu (MenuRoot *menu, int x, int y, Bool center)
 {
     int WindowNameCount;
     TwmWindow **WindowNames;
@@ -1129,13 +1072,8 @@ PopUpMenu (menu, x, y, center)
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	PopDownMenu - unhighlight the current menu selection and
- *		take down the menus
- *
- ***********************************************************************
+/**
+ * unhighlight the current menu selection and take down the menus
  */
 void
 PopDownMenu()
@@ -1171,23 +1109,15 @@ PopDownMenu()
 
 
 
-/***********************************************************************
+/**
+ * look for a menu root
  *
- *  Procedure:
- *	FindMenuRoot - look for a menu root
+ *  \return a pointer to the menu root structure
  *
- *  Returned Value:
- *	(MenuRoot *)  - a pointer to the menu root structure 
- *
- *  Inputs:
- *	name	- the name of the menu root 
- *
- ***********************************************************************
+ *  \param name the name of the menu root
  */
-
 MenuRoot *
-FindMenuRoot(name)
-    char *name;
+FindMenuRoot(char *name)
 {
     MenuRoot *tmp;
 
@@ -1202,9 +1132,7 @@ FindMenuRoot(name)
 
 
 static Bool 
-belongs_to_twm_window (t, w)
-    register TwmWindow *t;
-    register Window w;
+belongs_to_twm_window (TwmWindow *t, Window w)
 {
     if (!t) return False;
 
@@ -1223,20 +1151,8 @@ belongs_to_twm_window (t, w)
 
 
 
-
-/***********************************************************************
- *
- *  Procedure:
- *	resizeFromCenter -
- *
- ***********************************************************************
- */
-
-
 void 
-resizeFromCenter(w, tmp_win)
-     Window w;
-     TwmWindow *tmp_win;
+resizeFromCenter(Window w, TwmWindow *tmp_win)
 {
   int lastx, lasty, bw2;
   XEvent event;
@@ -1328,52 +1244,37 @@ resizeFromCenter(w, tmp_win)
 
 
 
-/***********************************************************************
+/** \fn ExecureFunction
+ * execute a twm root function.
  *
- *  Procedure:
- *	ExecuteFunction - execute a twm root function
+ *  \param func     the function to execute
+ *  \param action   the menu action to execute 
+ *  \param w        the window to execute this function on
+ *  \param tmp_win  the twm window structure
+ *  \param event    the event that caused the function
+ *  \param context  the context in which the button was pressed
+ *  \param pulldown flag indicating execution from pull down menu
  *
- *  Inputs:
- *	func	- the function to execute
- *	action	- the menu action to execute 
- *	w	- the window to execute this function on
- *	tmp_win	- the twm window structure
- *	event	- the event that caused the function
- *	context - the context in which the button was pressed
- *	pulldown- flag indicating execution from pull down menu
- *
- *  Returns:
- *	TRUE if should continue with remaining actions else FALSE to abort
- *
- ***********************************************************************
+ *  \return TRUE if should continue with remaining actions, 
+ *           else FALSE to abort
  */
 
-/* for F_WARPTO */
-#define true 1
-#define false 0
 int
-WarpThere(t) 
-    TwmWindow* t; 
+WarpThere(TwmWindow *t) 
 {
     if (Scr->WarpUnmapped || t->mapped) {
         if (!t->mapped) DeIconify (t);
         if (!Scr->NoRaiseWarp) XRaiseWindow (dpy, t->frame);
         WarpToWindow (t); 
-        return true; 
+        return 1; 
     }    
-    return false;
+    return 0;
 }
 
 
 int
-ExecuteFunction(func, action, w, tmp_win, eventp, context, pulldown)
-    int func;
-    char *action;
-    Window w;
-    TwmWindow *tmp_win;
-    XEvent *eventp;
-    int context;
-    int pulldown;
+ExecuteFunction(int func, char *action, Window w, TwmWindow *tmp_win, 
+                XEvent *eventp, int context, int pulldown)
 {
     static Time last_time = 0;
     char tmp[200];
@@ -2334,24 +2235,16 @@ ExecuteFunction(func, action, w, tmp_win, eventp, context, pulldown)
 
 
 
-/***********************************************************************
+/**
+ * defer the execution of a function to the next button press if the context 
+ *  is C_ROOT
  *
- *  Procedure:
- *	DeferExecution - defer the execution of a function to the
- *	    next button press if the context is C_ROOT
- *
- *  Inputs:
- *	context	- the context in which the mouse button was pressed
- *	func	- the function to defer
- *	cursor	- the cursor to display while waiting
- *
- ***********************************************************************
+ *  \param context the context in which the mouse button was pressed
+ *	\param func    the function to defer
+ *  \param cursor  cursor the cursor to display while waiting
  */
-
 int
-DeferExecution(context, func, cursor)
-int context, func;
-Cursor cursor;
+DeferExecution(int context, int func, Cursor cursor)
 {
   if (context == C_ROOT)
     {
@@ -2371,12 +2264,8 @@ Cursor cursor;
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	ReGrab - regrab the pointer with the LastCursor;
- *
- ***********************************************************************
+/**
+ *regrab the pointer with the LastCursor;
  */
 void
 ReGrab()
@@ -2389,20 +2278,14 @@ ReGrab()
 
 
 
-/***********************************************************************
+/**
+ * checks each function in the list to see if it is one that needs 
+ * to be deferred.
  *
- *  Procedure:
- *	NeedToDefer - checks each function in the list to see if it
- *		is one that needs to be defered.
- *
- *  Inputs:
- *	root	- the menu root to check
- *
- ***********************************************************************
+ *  \param root the menu root to check
  */
 Bool
-NeedToDefer(root)
-MenuRoot *root;
+NeedToDefer(MenuRoot *root)
 {
     MenuItem *mitem;
 
@@ -2438,21 +2321,15 @@ MenuRoot *root;
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	Execute - execute the string by /bin/sh
- *
- *  Inputs:
- *	s	- the string containing the command
- *
- ***********************************************************************
- */
-
 #if defined(sun) && defined(SVR4)
+#include <sys/wait.h>
+
+/**
+ * execute the string by /bin/sh
+ *  \param s  the string containing the command
+ */
 static int 
-System (s)
-    char *s;
+System (char *s)
 {
     int pid, status;
     if ((pid = fork ()) == 0) {
@@ -2463,12 +2340,13 @@ System (s)
     return status;
 }
 #define system(s) System(s)
+
 #endif
 
 void
-Execute(s)
-    char *s;
+Execute(char *s)
 {
+	/* FIXME: is all this stuff needed?  There could be security problems here. */
     static char buf[256];
     char *ds = DisplayString (dpy);
     char *colon, *dot1;
@@ -2509,14 +2387,9 @@ Execute(s)
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	FocusOnRoot - put input focus on the root window
- *
- ***********************************************************************
+/**
+ * put input focus on the root window.
  */
-
 void
 FocusOnRoot()
 {
@@ -2532,8 +2405,7 @@ FocusOnRoot()
 }
 
 void
-DeIconify(tmp_win)
-TwmWindow *tmp_win;
+DeIconify(TwmWindow *tmp_win)
 {
     TwmWindow *t;
 
@@ -2609,10 +2481,9 @@ TwmWindow *tmp_win;
 }
 
 
+
 void
-Iconify(tmp_win, def_x, def_y)
-TwmWindow *tmp_win;
-int def_x, def_y;
+Iconify(TwmWindow *tmp_win, int def_x, int def_y)
 {
     TwmWindow *t;
     int iconify;
@@ -2704,8 +2575,7 @@ int def_x, def_y;
 
 
 static void 
-Identify (t)
-    TwmWindow *t;
+Identify (TwmWindow *t)
 {
     int i, n, twidth, width, height;
     int x, y;
@@ -2775,9 +2645,7 @@ Identify (t)
 
 
 void
-SetMapStateProp(tmp_win, state)
-    TwmWindow *tmp_win;
-    int state;
+SetMapStateProp(TwmWindow *tmp_win, int state)
 {
     unsigned long data[2];		/* "suggested" by ICCCM version 1 */
   
@@ -2792,10 +2660,7 @@ SetMapStateProp(tmp_win, state)
 
 
 Bool 
-GetWMState (w, statep, iwp)
-    Window w;
-    int *statep;
-    Window *iwp;
+GetWMState (Window w, int *statep, Window *iwp)
 {
     Atom actual_type;
     int actual_format;
@@ -2820,8 +2685,7 @@ GetWMState (w, statep, iwp)
 
 
 void
-WarpToScreen (n, inc)
-    int n, inc;
+WarpToScreen (int n, int inc)
 {
     Window dumwin;
     int x, y, dumint;
@@ -2861,13 +2725,11 @@ WarpToScreen (n, inc)
 
 
 
-/*
- * BumpWindowColormap - rotate our internal copy of WM_COLORMAP_WINDOWS
+/**
+ * rotate our internal copy of WM_COLORMAP_WINDOWS
  */
 void
-BumpWindowColormap (tmp, inc)
-    TwmWindow *tmp;
-    int inc;
+BumpWindowColormap (TwmWindow *tmp, int inc)
 {
     int i, j, previously_installed;
     ColormapWindow **cwins;
@@ -2924,9 +2786,7 @@ HideIconManager ()
 
 
 void
-SetBorder (tmp, onoroff)
-    TwmWindow *tmp;
-    Bool onoroff;
+SetBorder (TwmWindow *tmp, Bool onoroff)
 {
     if (tmp->highlight) {
 	if (onoroff) {
@@ -2943,8 +2803,7 @@ SetBorder (tmp, onoroff)
 
 
 void
-DestroyMenu (menu)
-    MenuRoot *menu;
+DestroyMenu (MenuRoot *menu)
 {
     MenuItem *item;
 
@@ -2967,10 +2826,9 @@ DestroyMenu (menu)
 /*
  * warping routines
  */
+
 void 
-WarpAlongRing (ev, forward)
-    XButtonEvent *ev;
-    Bool forward;
+WarpAlongRing (XButtonEvent *ev, Bool forward)
 {
     TwmWindow *r, *head;
 
@@ -3016,8 +2874,7 @@ WarpAlongRing (ev, forward)
 
 
 void 
-WarpToWindow (t)
-    TwmWindow *t;
+WarpToWindow (TwmWindow *t)
 {
     int x, y;
 
@@ -3047,10 +2904,7 @@ WarpToWindow (t)
  *     data[1]		time stamp
  */
 static void 
-send_clientmessage (w, a, timestamp)
-    Window w;
-    Atom a;
-    Time timestamp;
+send_clientmessage (Window w, Atom a, Time timestamp)
 {
     XClientMessageEvent ev;
 
@@ -3064,25 +2918,19 @@ send_clientmessage (w, a, timestamp)
 }
 
 void
-SendDeleteWindowMessage (tmp, timestamp)
-    TwmWindow *tmp;
-    Time timestamp;
+SendDeleteWindowMessage (TwmWindow *tmp, Time timestamp)
 {
     send_clientmessage (tmp->w, _XA_WM_DELETE_WINDOW, timestamp);
 }
 
 void
-SendSaveYourselfMessage (tmp, timestamp)
-    TwmWindow *tmp;
-    Time timestamp;
+SendSaveYourselfMessage (TwmWindow *tmp, Time timestamp)
 {
     send_clientmessage (tmp->w, _XA_WM_SAVE_YOURSELF, timestamp);
 }
 
 void
-SendTakeFocusMessage (tmp, timestamp)
-    TwmWindow *tmp;
-    Time timestamp;
+SendTakeFocusMessage (TwmWindow *tmp, Time timestamp)
 {
     send_clientmessage (tmp->w, _XA_WM_TAKE_FOCUS, timestamp);
 }

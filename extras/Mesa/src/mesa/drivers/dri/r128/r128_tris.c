@@ -75,7 +75,6 @@ static void r128RenderPrimitive( GLcontext *ctx, GLenum prim );
 #define HAVE_POINTS 1
 #define HAVE_LE32_VERTS 1
 #define CTX_ARG r128ContextPtr rmesa
-#define CTX_ARG2 rmesa
 #define GET_VERTEX_DWORDS() rmesa->vertex_size
 #define ALLOC_VERTS( n, size ) r128AllocDmaLow( rmesa, (n), (size) * 4 )
 #undef LOCAL_VARS
@@ -350,7 +349,6 @@ r128_fallback_tri( r128ContextPtr rmesa,
    _swsetup_Translate( ctx, v0, &v[0] );
    _swsetup_Translate( ctx, v1, &v[1] );
    _swsetup_Translate( ctx, v2, &v[2] );
-   /* XXX: SpanRenderStart */
    _swrast_Triangle( ctx, &v[0], &v[1], &v[2] );
 }
 
@@ -623,23 +621,19 @@ static void r128RenderStart( GLcontext *ctx )
 #endif
    }
 
-   if ( index & _TNL_BIT_TEX(0) ) {
-      if ( VB->TexCoordPtr[0]->size > 2 )
+   if ( index & _TNL_BIT_TEX(rmesa->tmu_source[0]) ) {
+      if ( VB->TexCoordPtr[rmesa->tmu_source[0]]->size > 2 )
 	 fallback_projtex = GL_TRUE;
       EMIT_ATTR( _TNL_ATTRIB_TEX0, EMIT_2F, R128_CCE_VC_FRMT_S_T, 8 );
-      if ( index & _TNL_BIT_TEX(1) ) {
-	 if ( VB->TexCoordPtr[1]->size > 2 )
-	    fallback_projtex = GL_TRUE;
-	 EMIT_ATTR( _TNL_ATTRIB_TEX1, EMIT_2F, R128_CCE_VC_FRMT_S2_T2, 8 );
-      }
-   } else if ( index & _TNL_BIT_TEX(1) ) {
-      if ( VB->TexCoordPtr[1]->size > 2 )
+   }
+   if ( index & _TNL_BIT_TEX(rmesa->tmu_source[1]) ) {
+      if ( VB->TexCoordPtr[rmesa->tmu_source[1]]->size > 2 )
 	 fallback_projtex = GL_TRUE;
-      EMIT_ATTR( _TNL_ATTRIB_TEX1, EMIT_2F, R128_CCE_VC_FRMT_S_T, 8 );
+      EMIT_ATTR( _TNL_ATTRIB_TEX1, EMIT_2F, R128_CCE_VC_FRMT_S2_T2, 8 );
    }
 
    /* projective textures are not supported by the hardware */
-   FALLBACK( rmesa, R128_FALLBACK_TEXTURE, fallback_projtex );
+   FALLBACK( rmesa, R128_FALLBACK_PROJTEX, fallback_projtex );
 
    /* Only need to change the vertex emit code if there has been a
     * statechange to a TNL index.
@@ -670,6 +664,31 @@ static void r128RenderFinish( GLcontext *ctx )
 /*           Transition to/from hardware rasterization.               */
 /**********************************************************************/
 
+static const char * const fallbackStrings[] = {
+   "Texture mode",
+   "glDrawBuffer(GL_FRONT_AND_BACK)",
+   "glReadBuffer",
+   "glEnable(GL_STENCIL) without hw stencil buffer",
+   "glRenderMode(selection or feedback)",
+   "glLogicOp (mode != GL_COPY)",
+   "GL_SEPARATE_SPECULAR_COLOR",
+   "glBlendEquation(mode != ADD)",
+   "glBlendFunc",
+   "Projective texture",
+   "Rasterization disable",
+};
+
+
+static const char *getFallbackString(GLuint bit)
+{
+   int i = 0;
+   while (bit > 1) {
+      i++;
+      bit >>= 1;
+   }
+   return fallbackStrings[i];
+}
+
 void r128Fallback( GLcontext *ctx, GLuint bit, GLboolean mode )
 {
    TNLcontext *tnl = TNL_CONTEXT(ctx);
@@ -682,6 +701,10 @@ void r128Fallback( GLcontext *ctx, GLuint bit, GLboolean mode )
 	 FLUSH_BATCH( rmesa );
 	 _swsetup_Wakeup( ctx );
 	 rmesa->RenderIndex = ~0;
+	 if ( R128_DEBUG & DEBUG_VERBOSE_FALL ) {
+	     fprintf(stderr, "R128 begin rasterization fallback: 0x%x %s\n",
+		     bit, getFallbackString(bit));
+	 }
       }
    }
    else {
@@ -704,6 +727,10 @@ void r128Fallback( GLcontext *ctx, GLuint bit, GLboolean mode )
 			     rmesa->hw_viewport, 0 ); 
 
 	 rmesa->NewGLState |= _R128_NEW_RENDER_STATE;
+	 if ( R128_DEBUG & DEBUG_VERBOSE_FALL ) {
+	     fprintf(stderr, "R128 end rasterization fallback: 0x%x %s\n",
+		     bit, getFallbackString(bit));
+	 }
       }
    }
 }
@@ -739,6 +766,4 @@ void r128InitTriFuncs( GLcontext *ctx )
    rmesa->tnl_state = -1;
 
    rmesa->NewGLState |= _R128_NEW_RENDER_STATE;
-
-/*     r128Fallback( ctx, 0x100000, 1 ); */
 }

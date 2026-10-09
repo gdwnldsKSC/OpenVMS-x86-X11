@@ -1,6 +1,7 @@
 /*
+ * $Id: file.c,v 1.5 2005/07/03 07:00:56 daniels Exp $
  *
- * Copyright © 2002 Keith Packard
+ * Copyright Â© 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -46,7 +47,8 @@ XcursorImageCreate (int width, int height)
 void
 XcursorImageDestroy (XcursorImage *image)
 {
-    free (image);
+    if (image)
+        free (image);
 }
 
 XcursorImages *
@@ -69,6 +71,9 @@ XcursorImagesDestroy (XcursorImages *images)
 {
     int	n;
 
+    if (!images)
+        return;
+
     for (n = 0; n < images->nimage; n++)
 	XcursorImageDestroy (images->images[n]);
     if (images->name)
@@ -79,10 +84,16 @@ XcursorImagesDestroy (XcursorImages *images)
 void
 XcursorImagesSetName (XcursorImages *images, const char *name)
 {
-    char    *new = malloc (strlen (name) + 1);
+    char    *new;
+    
+    if (!images || !name)
+        return;
+    
+    new = malloc (strlen (name) + 1);
 
     if (!new)
 	return;
+
     strcpy (new, name);
     if (images->name)
 	free (images->name);
@@ -110,7 +121,8 @@ XcursorCommentCreate (XcursorUInt comment_type, int length)
 void
 XcursorCommentDestroy (XcursorComment *comment)
 {
-    free (comment);
+    if (!comment)
+        free (comment);
 }
 
 XcursorComments *
@@ -132,6 +144,9 @@ XcursorCommentsDestroy (XcursorComments *comments)
 {
     int	n;
 
+    if (!comments)
+        return;
+
     for (n = 0; n < comments->ncomment; n++)
 	XcursorCommentDestroy (comments->comments[n]);
     free (comments);
@@ -141,6 +156,9 @@ static XcursorBool
 _XcursorReadUInt (XcursorFile *file, XcursorUInt *u)
 {
     unsigned char   bytes[4];
+
+    if (!file || !u)
+        return XcursorFalse;
 
     if ((*file->read) (file, bytes, 4) != 4)
 	return XcursorFalse;
@@ -154,7 +172,7 @@ _XcursorReadUInt (XcursorFile *file, XcursorUInt *u)
 static XcursorBool
 _XcursorReadBytes (XcursorFile *file, char *bytes, int length)
 {
-    if ((*file->read) (file, (unsigned char *) bytes, length) != length)
+    if (!file || !bytes || (*file->read) (file, (unsigned char *) bytes, length) != length)
 	return XcursorFalse;
     return XcursorTrue;
 }
@@ -164,6 +182,9 @@ _XcursorWriteUInt (XcursorFile *file, XcursorUInt u)
 {
     unsigned char   bytes[4];
 
+    if (!file)
+        return XcursorFalse;
+    
     bytes[0] = u;
     bytes[1] = u >>  8;
     bytes[2] = u >> 16;
@@ -176,7 +197,7 @@ _XcursorWriteUInt (XcursorFile *file, XcursorUInt u)
 static XcursorBool
 _XcursorWriteBytes (XcursorFile *file, char *bytes, int length)
 {
-    if ((*file->write) (file, (unsigned char *) bytes, length) != length)
+    if (!file || !bytes || (*file->write) (file, (unsigned char *) bytes, length) != length)
 	return XcursorFalse;
     return XcursorTrue;
 }
@@ -184,7 +205,8 @@ _XcursorWriteBytes (XcursorFile *file, char *bytes, int length)
 static void
 _XcursorFileHeaderDestroy (XcursorFileHeader *fileHeader)
 {
-    free (fileHeader);
+    if (!fileHeader)
+        free (fileHeader);
 }
 
 static XcursorFileHeader *
@@ -212,6 +234,9 @@ _XcursorReadFileHeader (XcursorFile *file)
     XcursorFileHeader	head, *fileHeader;
     XcursorUInt		skip;
     int			n;
+
+    if (!file)
+        return NULL;
     
     if (!_XcursorReadUInt (file, &head.magic))
 	return 0;
@@ -262,6 +287,9 @@ static XcursorBool
 _XcursorWriteFileHeader (XcursorFile *file, XcursorFileHeader *fileHeader)
 {
     int	toc;
+
+    if (!file || !fileHeader)
+        return XcursorFalse;
     
     if (!_XcursorWriteUInt (file, fileHeader->magic))
 	return XcursorFalse;
@@ -288,7 +316,8 @@ _XcursorSeekToToc (XcursorFile		*file,
 		   XcursorFileHeader	*fileHeader,
 		   int			toc)
 {
-    if ((*file->seek) (file, fileHeader->tocs[toc].position, SEEK_SET) == EOF)
+    if (!file || !fileHeader || \
+        (*file->seek) (file, fileHeader->tocs[toc].position, SEEK_SET) == EOF)
 	return XcursorFalse;
     return XcursorTrue;
 }
@@ -299,6 +328,8 @@ _XcursorFileReadChunkHeader (XcursorFile	*file,
 			     int		toc,
 			     XcursorChunkHeader	*chunkHeader)
 {
+    if (!file || !fileHeader || !chunkHeader)
+        return XcursorFalse;
     if (!_XcursorSeekToToc (file, fileHeader, toc))
 	return XcursorFalse;
     if (!_XcursorReadUInt (file, &chunkHeader->header))
@@ -322,6 +353,8 @@ _XcursorFileWriteChunkHeader (XcursorFile	    *file,
 			      int		    toc,
 			      XcursorChunkHeader    *chunkHeader)
 {
+    if (!file || !fileHeader || !chunkHeader)
+        return XcursorFalse;
     if (!_XcursorSeekToToc (file, fileHeader, toc))
 	return XcursorFalse;
     if (!_XcursorWriteUInt (file, chunkHeader->header))
@@ -347,6 +380,9 @@ _XcursorFindBestSize (XcursorFileHeader *fileHeader,
     XcursorDim	bestSize = 0;
     XcursorDim	thisSize;
 
+    if (!fileHeader || !nsizesp)
+        return 0;
+
     for (n = 0; n < fileHeader->ntoc; n++)
     {
 	if (fileHeader->tocs[n].type != XCURSOR_IMAGE_TYPE)
@@ -371,6 +407,9 @@ _XcursorFindImageToc (XcursorFileHeader	*fileHeader,
 {
     int			toc;
     XcursorDim		thisSize;
+
+    if (!fileHeader)
+        return 0;
 
     for (toc = 0; toc < fileHeader->ntoc; toc++)
     {
@@ -398,6 +437,9 @@ _XcursorReadImage (XcursorFile		*file,
     XcursorImage	*image;
     int			n;
     XcursorPixel	*p;
+
+    if (!file || !fileHeader)
+        return NULL;
 
     if (!_XcursorFileReadChunkHeader (file, fileHeader, toc, &chunkHeader))
 	return 0;
@@ -444,6 +486,9 @@ _XcursorReadImage (XcursorFile		*file,
 static XcursorUInt
 _XcursorImageLength (XcursorImage   *image)
 {
+    if (!image)
+        return 0;
+
     return XCURSOR_IMAGE_HEADER_LEN + (image->width * image->height) * 4;
 }
 
@@ -456,6 +501,9 @@ _XcursorWriteImage (XcursorFile		*file,
     XcursorChunkHeader	chunkHeader;
     int			n;
     XcursorPixel	*p;
+
+    if (!file || !fileHeader || !image)
+        return XcursorFalse;
 
     /* sanity check data */
     if (image->width > XCURSOR_IMAGE_MAX_SIZE  ||
@@ -508,6 +556,9 @@ _XcursorReadComment (XcursorFile	    *file,
     XcursorUInt		length;
     XcursorComment	*comment;
 
+    if (!file || !fileHeader)
+        return NULL;
+
     /* read chunk header */
     if (!_XcursorFileReadChunkHeader (file, fileHeader, toc, &chunkHeader))
 	return 0;
@@ -540,6 +591,9 @@ _XcursorWriteComment (XcursorFile	    *file,
 {
     XcursorChunkHeader	chunkHeader;
     XcursorUInt		length;
+
+    if (!file || !fileHeader || !comment || !comment->comment)
+        return XcursorFalse;
 
     length = strlen (comment->comment);
     
@@ -600,7 +654,7 @@ XcursorXcFileLoadImages (XcursorFile *file, int size)
     int			n;
     int			toc;
     
-    if (size < 0)
+    if (!file || size < 0)
 	return 0;
     fileHeader = _XcursorReadFileHeader (file);
     if (!fileHeader)
@@ -640,6 +694,9 @@ XcursorXcFileLoadAllImages (XcursorFile *file)
     int			nimage;
     int			n;
     int			toc;
+    
+    if (!file)
+        return 0;
     
     fileHeader = _XcursorReadFileHeader (file);
     if (!fileHeader)
@@ -692,6 +749,8 @@ XcursorXcFileLoad (XcursorFile	    *file,
     XcursorComments	*comments;
     int			toc;
     
+    if (!file)
+        return 0;
     fileHeader = _XcursorReadFileHeader (file);
     if (!fileHeader)
 	return 0;
@@ -761,6 +820,9 @@ XcursorXcFileSave (XcursorFile		    *file,
     XcursorUInt		position;
     int			n;
     int			toc;
+    
+    if (!file || !comments || !images)
+        return XcursorFalse;
     
     fileHeader = _XcursorFileHeaderCreate (comments->ncomment + images->nimage);
     if (!fileHeader)
@@ -861,6 +923,9 @@ XcursorFileLoadImage (FILE *file, int size)
 {
     XcursorFile	f;
 
+    if (!file)
+        return NULL;
+
     _XcursorStdioFileInitialize (file, &f);
     return XcursorXcFileLoadImage (&f, size);
 }
@@ -870,6 +935,9 @@ XcursorFileLoadImages (FILE *file, int size)
 {
     XcursorFile	f;
 
+    if (!file)
+        return NULL;
+
     _XcursorStdioFileInitialize (file, &f);
     return XcursorXcFileLoadImages (&f, size);
 }
@@ -878,6 +946,9 @@ XcursorImages *
 XcursorFileLoadAllImages (FILE *file)
 {
     XcursorFile	f;
+
+    if (!file)
+        return NULL;
 
     _XcursorStdioFileInitialize (file, &f);
     return XcursorXcFileLoadAllImages (&f);
@@ -890,6 +961,9 @@ XcursorFileLoad (FILE		    *file,
 {
     XcursorFile	f;
 
+    if (!file || !commentsp || !imagesp)
+        return XcursorFalse;
+
     _XcursorStdioFileInitialize (file, &f);
     return XcursorXcFileLoad (&f, commentsp, imagesp);
 }
@@ -900,7 +974,7 @@ XcursorFileSaveImages (FILE *file, const XcursorImages *images)
     XcursorComments *comments = XcursorCommentsCreate (0);
     XcursorFile	    f;
     XcursorBool	    ret;
-    if (!comments)
+    if (!comments || !file || !images)
 	return 0;
     _XcursorStdioFileInitialize (file, &f);
     ret = XcursorXcFileSave (&f, comments, images) && fflush (file) != EOF;
@@ -914,6 +988,9 @@ XcursorFileSave (FILE *			file,
 		 const XcursorImages	*images)
 {
     XcursorFile	    f;
+
+    if (!file || !comments || !images)
+        return XcursorFalse;
     
     _XcursorStdioFileInitialize (file, &f);
     return XcursorXcFileSave (&f, comments, images) && fflush (file) != EOF;
@@ -924,6 +1001,9 @@ XcursorFilenameLoadImage (const char *file, int size)
 {
     FILE	    *f;
     XcursorImage    *image;
+
+    if (!file || size < 0)
+        return NULL;
 
     f = fopen (file, "r");
     if (!f)
@@ -939,6 +1019,9 @@ XcursorFilenameLoadImages (const char *file, int size)
     FILE	    *f;
     XcursorImages   *images;
 
+    if (!file || size < 0)
+        return NULL;
+    
     f = fopen (file, "r");
     if (!f)
 	return 0;
@@ -952,6 +1035,9 @@ XcursorFilenameLoadAllImages (const char *file)
 {
     FILE	    *f;
     XcursorImages   *images;
+
+    if (!file)
+        return NULL;
 
     f = fopen (file, "r");
     if (!f)
@@ -969,6 +1055,9 @@ XcursorFilenameLoad (const char		*file,
     FILE	    *f;
     XcursorBool	    ret;
 
+    if (!file)
+        return XcursorFalse;
+
     f = fopen (file, "r");
     if (!f)
 	return 0;
@@ -982,6 +1071,9 @@ XcursorFilenameSaveImages (const char *file, const XcursorImages *images)
 {
     FILE	    *f;
     XcursorBool	    ret;
+
+    if (!file || !images)
+        return XcursorFalse;
 
     f = fopen (file, "w");
     if (!f)
@@ -998,10 +1090,12 @@ XcursorFilenameSave (const char		    *file,
     FILE	    *f;
     XcursorBool	    ret;
 
+    if (!file || !comments || !images)
+        return XcursorFalse;
+
     f = fopen (file, "w");
     if (!f)
 	return 0;
     ret = XcursorFileSave (f, comments, images);
     return fclose (f) != EOF && ret;
 }
-

@@ -11,11 +11,11 @@ XCOMM $XFree86: xc/programs/xkbcomp/symbols/Imakefile,v 3.60 2003/07/07 15:34:29
      DATAFILES = README \
 		 al altwin am ar az \
 		 be ben bg br bs by \
-		 ca ca_enhanced compose ctrl \
+		 capslock ca ca_enhanced compose ctrl \
 		 czsk cz cz_qwerty \
 		 de de_CH dev dk dvorak \
-		 ee el en_US es \
-		 fi fr fr_CH \
+		 ee el en_US es eurosign\
+		 fi fo fr fr_CH \
 		 gb ge_la ge_ru group guj gur \
 		 hr hr_US hu hu_US hu_qwerty \
 		 ie il il_phonetic iso9995-3 inet ir is it iu \

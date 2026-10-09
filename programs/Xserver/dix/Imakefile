@@ -7,7 +7,7 @@ XCOMM $XFree86: xc/programs/Xserver/dix/Imakefile,v 3.17 2003/04/15 18:30:43 ala
 
 #include <Server.tmpl>
 
-#if PrintOnlyServer
+#if !BuildXprint || PrintOnlyServer
 XPSRC = xpstubs.c
 XPOBJ = xpstubs.o
 #endif
@@ -27,7 +27,7 @@ OBJS = atom.o colormap.o cursor.o devices.o dispatch.o dixutils.o events.o \
 	tables.o window.o initatoms.o dixfonts.o privates.o pixmap.o $(FFS_OBJ)
 
     INCLUDES = -I../include -I$(XINCLUDESRC) -I$(FONTINCSRC) -I$(EXTINCSRC) \
-	       -I$(SERVERSRC)/Xext -I$(SERVERSRC)/lbx
+	       -I$(SERVERSRC)/Xext -I$(SERVERSRC)/lbx -I../Xprint
     LINTLIBS = ../os/llib-los.ln
 
 /*
@@ -92,8 +92,9 @@ SpecialCObjectRule(dispatch,$(ICONFIGFILES),$(K5DEFS))
 SpecialCObjectRule(main,$(ICONFIGFILES),$(VENDOR_DEFINES))
 SpecialCObjectRule(pixmap,$(ICONFIGFILES),$(_NOOP_))
 SpecialCObjectRule(privates,$(ICONFIGFILES),$(_NOOP_))
+SpecialCObjectRule(window,$(ICONFIGFILES),$(QUARTZ_DEFINES))
 
-#if PrintOnlyServer
+#if !BuildXprint || PrintOnlyServer
 NormalLibraryTarget(xpstubs,$(XPOBJ))
 #endif
 

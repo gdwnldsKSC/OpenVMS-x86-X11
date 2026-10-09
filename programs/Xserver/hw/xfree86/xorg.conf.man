@@ -1,4 +1,4 @@
-.\" $XdotOrg: xc/programs/Xserver/hw/xfree86/xorg.conf.man,v 1.2 2004/04/23 19:20:02 eich Exp $
+.\" $XdotOrg: xc/programs/Xserver/hw/xfree86/xorg.conf.man,v 1.6 2005/12/19 16:47:11 ajax Exp $
 .\" shorthand for double quote that works everywhere.
 .ds q \N'34'
 .TH __xconfigfile__ __filemansuffix__ __vendorversion__
@@ -149,7 +149,7 @@ output devices that will be used in a session.  The input devices
 are described in the
 .B InputDevice
 sections.  Output devices usually consist of multiple independent
-components (e.g., and graphics board and a monitor).  These multiple
+components (e.g., a graphics board and a monitor).  These multiple
 components are bound together in the
 .B Screen
 sections, and it is these that are referenced by the
@@ -309,7 +309,7 @@ font path elements:
 .RS 4
 .nf
 .I __projectroot__/lib/X11/fonts/misc/
-.I __projectroot__/lib/X11/fonts/Speedo/
+.I __projectroot__/lib/X11/fonts/TTF/
 .I __projectroot__/lib/X11/fonts/Type1/
 .I __projectroot__/lib/X11/fonts/CID/
 .I __projectroot__/lib/X11/fonts/75dpi/
@@ -375,7 +375,7 @@ where
 is the display number for the __xservername__ server.
 ..
 .SH SERVERFLAGS SECTION
-The
+In addition to options specific to this section (described below), the
 .B ServerFlags
 section is used to specify some global
 __xservername__ server options.  All of the entries in this section are
@@ -1779,12 +1779,30 @@ and core keyboard devices respectively.
 .RE
 .TP 7
 .B Options
-Any option permitted in the
+In addition to the following, any option permitted in the
 .B ServerFlags
 section may also be specified here.  When the same option appears in both
 places, the value given here overrides the one given in the
 .B ServerFlags
 section.
+.TP 7
+.BI "Option \*qIsolateDevice\*q  \*q" bus\-id \*q
+Restrict device resets to the specified
+.IR bus\-id .
+See the
+.B BusID
+option (described in
+.BR "DEVICE SECTION" ,
+above) for the format of the
+.I bus\-id
+parameter.  This option overrides
+.BR SingleCard ,
+if specified.  At present, only PCI devices can be isolated in this manner.
+.TP 7
+.BI "Option \*qSingleCard\*q  \*q" boolean \*q
+As
+.BR IsolateDevice ,
+except that the bus ID of the first device in the layout is used.
 .PP
 Here is an example of a
 .B ServerLayout
@@ -1806,9 +1824,8 @@ section for a dual headed configuration with two mice:
 .SH DRI SECTION
 This optional section is used to provide some information for the
 Direct Rendering Infrastructure.  Details about the format of this section
-can be found in the README.DRI document, which is also available on-line
-at
-.IR <http://www.x.org> .
+can be found on-line at
+.IR <http://dri.freedesktop.org/> .
 .SH VENDOR SECTION
 The optional
 .B Vendor

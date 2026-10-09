@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/lib/font/fc/fserve.c,v 1.2 2004/04/23 18:44:21 eich Exp $ */
+/* $XdotOrg: xc/lib/font/fc/fserve.c,v 1.8 2005/07/09 06:36:12 keithp Exp $ */
 /* $Xorg: fserve.c,v 1.4 2001/02/09 02:04:02 xorgcvs Exp $ */
 /*
 
@@ -53,19 +53,25 @@ in this Software without prior written authorization from The Open Group.
  * font server specific font access
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef WIN32
 #define _WILLWINSOCK_
 #endif
-#include	"X11/Xtrans.h"
+#define FONT_t
+#define TRANS_CLIENT
+#include	"X11/Xtrans/Xtrans.h"
 #include	"X11/Xpoll.h"
-#include	"FS.h"
-#include	"FSproto.h"
+#include	<X11/fonts/FS.h>
+#include	<X11/fonts/FSproto.h>
 #include	<X11/X.h>
 #include	<X11/Xos.h>
-#include	"fontmisc.h"
-#include	"fontstruct.h"
+#include	<X11/fonts/fontmisc.h>
+#include	<X11/fonts/fontstruct.h>
 #include	"fservestr.h"
-#include	"fontutil.h"
+#include	<X11/fonts/fontutil.h>
 #include	<errno.h>
 
 #include	<time.h>

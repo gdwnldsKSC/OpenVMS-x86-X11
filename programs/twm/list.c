@@ -70,35 +70,25 @@ in this Software without prior written authorization from The Open Group.
 
 struct name_list_struct
 {
-    name_list *next;		/* pointer to the next name */
-    char *name;			/* the name of the window */
-    char *ptr;			/* list dependent data */
+    name_list *next;    /**< pointer to the next name */
+    char *name;         /**< the name of the window */
+    char *ptr;          /**< list dependent data */
 };
 
-/***********************************************************************
+/**
+ * add a window name to the appropriate list.
  *
- *  Procedure:
- *	AddToList - add a window name to the appropriate list
- *
- *  Inputs:
- *	list	- the address of the pointer to the head of a list
- *	name	- a pointer to the name of the window 
- *	ptr	- pointer to list dependent data
- *
- *  Special Considerations
  *	If the list does not use the ptr value, a non-null value 
  *	should be placed in it.  LookInList returns this ptr value
  *	and procedures calling LookInList will check for a non-null 
  *	return value as an indication of success.
  *
- ***********************************************************************
+ *  \param list  the address of the pointer to the head of a list
+ *  \param name  a pointer to the name of the window 
+ *  \param ptr   pointer to list dependent data
  */
-
 void
-AddToList(list_head, name, ptr)
-name_list **list_head;
-char *name;
-char *ptr;
+AddToList(name_list **list_head, char *name, char *ptr)
 {
     name_list *nptr;
 
@@ -119,28 +109,18 @@ char *ptr;
     *list_head = nptr;
 }    
 
-/***********************************************************************
+/**
+ * look through a list for a window name, or class
  *
- *  Procedure:
- *	LookInList - look through a list for a window name, or class
- *
- *  Returned Value:
- *	the ptr field of the list structure or NULL if the name 
+ *  \return the ptr field of the list structure or NULL if the name 
  *	or class was not found in the list
  *
- *  Inputs:
- *	list	- a pointer to the head of a list
- *	name	- a pointer to the name to look for
- *	class	- a pointer to the class to look for
- *
- ***********************************************************************
+ *	\param list   a pointer to the head of a list
+ *	\param name   a pointer to the name to look for
+ *  \param class  a pointer to the class to look for
  */
-
 char *
-LookInList(list_head, name, class)
-name_list *list_head;
-char *name;
-XClassHint *class;
+LookInList(name_list *list_head, char *name, XClassHint *class)
 {
     name_list *nptr;
 
@@ -165,38 +145,24 @@ XClassHint *class;
 }
 
 char *
-LookInNameList(list_head, name)
-name_list *list_head;
-char *name;
+LookInNameList(name_list *list_head, char *name)
 {
     return (LookInList(list_head, name, NULL));
 }
 
-/***********************************************************************
+/**
+ * look through a list for a window name, or class
  *
- *  Procedure:
- *	GetColorFromList - look through a list for a window name, or class
+ *  \return TRUE  if the name was found
+ *  \return FALSE if the name was not found
  *
- *  Returned Value:
- *	TRUE if the name was found
- *	FALSE if the name was not found
- *
- *  Inputs:
- *	list	- a pointer to the head of a list
- *	name	- a pointer to the name to look for
- *	class	- a pointer to the class to look for
- *
- *  Outputs:
- *	ptr	- fill in the list value if the name was found
- *
- ***********************************************************************
+ *  \param      list  a pointer to the head of a list
+ *  \param      name  a pointer to the name to look for
+ *  \param      class a pointer to the class to look for
+ *	\param[out] ptr   fill in the list value if the name was found
  */
-
-int GetColorFromList(list_head, name, class, ptr)
-name_list *list_head;
-char *name;
-XClassHint *class;
-Pixel *ptr;
+int GetColorFromList(name_list *list_head, char *name, XClassHint *class, 
+                     Pixel *ptr)
 {
     int save;
     name_list *nptr;
@@ -236,16 +202,10 @@ Pixel *ptr;
     return (FALSE);
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *	FreeList - free up a list
- *
- ***********************************************************************
+/**
+ * free up a list
  */
-
-void FreeList(list)
-name_list **list;
+void FreeList(name_list **list)
 {
     name_list *nptr;
     name_list *tmp;

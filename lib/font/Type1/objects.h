@@ -47,8 +47,12 @@
 /*SHARED*/
  
 /*END SHARED*/
-#include <Xdefs.h>
-#include <Xfuncproto.h>
+#ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
+#include <X11/Xdefs.h>
+#include <X11/Xfuncproto.h>
 #ifndef FONTMODULE
 #include <stdlib.h>
 #endif
@@ -299,7 +303,7 @@ struct xobject {
  
 extern char MustCheckArgs  INITIALIZED(TRUE);
 extern char MustTraceCalls INITIALIZED(FALSE);
-#ifdef BUILDCID
+#if XFONT_CID
 extern char MustCrash      INITIALIZED(FALSE);
 #else
 extern char MustCrash      INITIALIZED(TRUE);

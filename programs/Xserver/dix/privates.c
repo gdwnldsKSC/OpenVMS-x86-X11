@@ -1,4 +1,5 @@
 /* $Xorg: privates.c,v 1.4 2001/02/09 02:04:40 xorgcvs Exp $ */
+/* $XdotOrg: xc/programs/Xserver/dix/privates.c,v 1.10 2005/09/05 07:40:50 daniels Exp $ */
 /*
 
 Copyright 1993, 1998  The Open Group
@@ -28,7 +29,11 @@ from The Open Group.
 */
 /* $XFree86: xc/programs/Xserver/dix/privates.c,v 3.7 2001/01/17 22:36:44 dawes Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "scrnintstr.h"
 #include "misc.h"
 #include "os.h"
@@ -39,6 +44,7 @@ from The Open Group.
 #include "colormapst.h"
 #include "servermd.h"
 #include "site.h"
+#include "inputstr.h"
 
 /*
  *  See the Wrappers and devPrivates section in "Definition of the
@@ -73,9 +79,7 @@ AllocateClientPrivateIndex()
 }
 
 Bool
-AllocateClientPrivate(index2, amount)
-    int index2;
-    unsigned amount;
+AllocateClientPrivate(int index2, unsigned amount)
 {
     unsigned oldamount;
 
@@ -166,10 +170,7 @@ AllocateWindowPrivateIndex()
 }
 
 Bool
-AllocateWindowPrivate(pScreen, index2, amount)
-    register ScreenPtr pScreen;
-    int index2;
-    unsigned amount;
+AllocateWindowPrivate(register ScreenPtr pScreen, int index2, unsigned amount)
 {
     unsigned oldamount;
 
@@ -219,10 +220,7 @@ AllocateGCPrivateIndex()
 }
 
 Bool
-AllocateGCPrivate(pScreen, index2, amount)
-    register ScreenPtr pScreen;
-    int index2;
-    unsigned amount;
+AllocateGCPrivate(register ScreenPtr pScreen, int index2, unsigned amount)
 {
     unsigned oldamount;
 
@@ -272,10 +270,7 @@ AllocatePixmapPrivateIndex()
 }
 
 Bool
-AllocatePixmapPrivate(pScreen, index2, amount)
-    register ScreenPtr pScreen;
-    int index2;
-    unsigned amount;
+AllocatePixmapPrivate(register ScreenPtr pScreen, int index2, unsigned amount)
 {
     unsigned oldamount;
 
@@ -322,10 +317,7 @@ ResetColormapPrivates()
 
 
 int
-AllocateColormapPrivateIndex (initPrivFunc)
-
-InitCmapPrivFunc initPrivFunc;
-
+AllocateColormapPrivateIndex (InitCmapPrivFunc initPrivFunc)
 {
     int		index;
     int		i;
@@ -355,10 +347,13 @@ InitCmapPrivFunc initPrivFunc;
 	{
 	    privs = (DevUnion *) xrealloc (pColormap->devPrivates,
 		colormapPrivateCount * sizeof(DevUnion));
-    
+	    if (!privs) {
+		colormapPrivateCount--;
+		return -1;
+	    }
+	    bzero(&privs[index], sizeof(DevUnion));
 	    pColormap->devPrivates = privs;
-    
-	    if (!privs || !(*initPrivFunc)(pColormap,index))
+	    if (!(*initPrivFunc)(pColormap,index))
 	    {
 		colormapPrivateCount--;
 		return -1;
@@ -367,4 +362,40 @@ InitCmapPrivFunc initPrivFunc;
     }
 
     return index;
+}
+
+/*
+ *  device private machinery
+ */
+
+static int devicePrivateIndex = 0;
+
+int
+AllocateDevicePrivateIndex()
+{
+    return devicePrivateIndex++;
+}
+
+Bool
+AllocateDevicePrivate(DeviceIntPtr device, int index)
+{
+    if (device->nPrivates < ++index) {
+	DevUnion *nprivs = (DevUnion *) xrealloc(device->devPrivates,
+						 index * sizeof(DevUnion));
+	if (!nprivs)
+	    return FALSE;
+	device->devPrivates = nprivs;
+	bzero(&nprivs[device->nPrivates], sizeof(DevUnion)
+	      * (index - device->nPrivates));
+	device->nPrivates = index;
+	return TRUE;
+    } else {
+	return TRUE;
+    }
+}
+
+void
+ResetDevicePrivateIndex(void)
+{
+    devicePrivateIndex = 0;
 }

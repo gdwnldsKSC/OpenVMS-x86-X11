@@ -58,11 +58,15 @@ SOFTWARE.
 #define IsOn(ptr, bit) \
 	(((BYTE *) (ptr))[(bit)>>3] & (1 << ((bit) & 7)))
 
-#include "X.h"				/* for inputstr.h    */
-#include "Xproto.h"			/* Request macro     */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>				/* for inputstr.h    */
+#include <X11/Xproto.h>			/* Request macro     */
 #include "inputstr.h"			/* DeviceIntPtr	     */
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 #include "exevents.h"
 #include "extnsionst.h"
 #include "extinit.h"			/* LookupDeviceIntRec */

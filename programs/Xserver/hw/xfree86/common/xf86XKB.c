@@ -53,6 +53,10 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/common/xf86XKB.c,v 3.12 2003/08/24 17:36:55 dawes Exp $ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <stdio.h>
 #define	NEED_EVENTS 1
 #include <X11/X.h>
@@ -61,7 +65,7 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "inputstr.h"
 #include "scrnintstr.h"
 #include "windowstr.h"
-#include "XI.h"
+#include <X11/extensions/XI.h>
 
 #include "compiler.h"
 
@@ -70,7 +74,7 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define XF86_OS_PRIVS
 #include "xf86_OSlib.h"
 
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 
 void
 xf86InitXkb(void)

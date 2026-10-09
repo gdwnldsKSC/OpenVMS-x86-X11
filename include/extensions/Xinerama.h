@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/include/extensions/Xinerama.h,v 1.2.4.1 2004/12/13 02:56:12 gisburn Exp $ */
+/* $XdotOrg: xc/include/extensions/Xinerama.h,v 1.3 2004/12/01 19:03:46 daniels Exp $ */
 /*
 
 Copyright 2003  The Open Group

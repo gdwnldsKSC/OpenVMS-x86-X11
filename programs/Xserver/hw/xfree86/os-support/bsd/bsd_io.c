@@ -26,7 +26,12 @@
 /* $XConsortium: bsd_io.c /main/11 1996/10/19 18:06:07 kaleb $ */
 
 #define NEED_EVENTS
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
+#include <termios.h>
 
 #include "compiler.h"
 
@@ -144,7 +149,7 @@ xf86SetKbdRepeat(char rad)
 }
 
 #if defined(SYSCONS_SUPPORT) || defined(PCCONS_SUPPORT) || defined(PCVT_SUPPORT) || defined(WSCONS_SUPPORT)
-static struct termio kbdtty;
+static struct termios kbdtty;
 #endif
 
 void

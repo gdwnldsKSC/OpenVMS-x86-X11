@@ -8,6 +8,10 @@ char rcsId_vmware[] =
 #endif
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/vmware/vmware.c,v 1.18 2003/09/24 02:43:31 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * TODO: support the vmware linux kernel fb driver (Option "UseFBDev").
  */
@@ -59,13 +63,13 @@ char rcsId_vmware[] =
 #define VMWARE_NAME "VMWARE"
 #define VMWARE_DRIVER_NAME "vmware"
 #define VMWARE_MAJOR_VERSION	10
-#define VMWARE_MINOR_VERSION	10
-#define VMWARE_PATCHLEVEL	2
+#define VMWARE_MINOR_VERSION	11
+#define VMWARE_PATCHLEVEL	1
 #define VERSION (VMWARE_MAJOR_VERSION * 65536 + VMWARE_MINOR_VERSION * 256 + VMWARE_PATCHLEVEL)
 
 static const char VMWAREBuildStr[] = "VMware Guest X Server " 
     VMW_STRING(VMWARE_MAJOR_VERSION) "." VMW_STRING(VMWARE_MINOR_VERSION)
-    "." VMW_STRING(VMWARE_PATCHLEVEL) " - build=$Name$\n";
+    "." VMW_STRING(VMWARE_PATCHLEVEL) " - build=$Name: XORG-6_9_0 $\n";
 
 static SymTabRec VMWAREChipsets[] = {
     { PCI_CHIP_VMWARE0405, "vmware0405" },
@@ -253,6 +257,17 @@ vmwareSendSVGACmdUpdateFullScreen(VMWAREPtr pVMWARE)
     vmwareSendSVGACmdUpdate(pVMWARE, &BB);
 }
 
+static void
+vmwareSendSVGACmdPitchLock(VMWAREPtr pVMWARE, unsigned long fbPitch)
+{
+   CARD32 *vmwareFIFO = pVMWARE->vmwareFIFO;
+
+   if (pVMWARE->canPitchLock && vmwareFIFO[SVGA_FIFO_MIN] >=
+                                (vmwareReadReg(pVMWARE, SVGA_REG_MEM_REGS) << 2)) {
+      vmwareFIFO[SVGA_FIFO_PITCHLOCK] = fbPitch;
+   }
+}
+
 static CARD32
 vmwareCalculateWeight(CARD32 mask)
 {
@@ -327,7 +342,7 @@ VMXGetVMwareSvgaId(VMWAREPtr pVMWARE)
  *
  *  RewriteTagString --
  *
- *      Rewrites the given string, removing the $Name$, and
+ *      Rewrites the given string, removing the $Name: XORG-6_9_0 $, and
  *      replacing it with the contents.  The output string must
  *      have enough room, or else.
  *
@@ -963,6 +978,8 @@ VMWAREInitFIFO(ScrnInfoPtr pScrn)
 {
     VMWAREPtr pVMWARE = VMWAREPTR(pScrn);
     CARD32* vmwareFIFO;
+    Bool extendedFifo;
+    int min;
 
     TRACEPOINT
 
@@ -973,11 +990,18 @@ VMWAREInitFIFO(ScrnInfoPtr pScrn)
                                           pVMWARE->mmioPhysBase,
                                           pVMWARE->mmioSize);
     vmwareFIFO = pVMWARE->vmwareFIFO = (CARD32*)pVMWARE->mmioVirtBase;
-    vmwareFIFO[SVGA_FIFO_MIN] = 4 * sizeof(CARD32);
+
+    extendedFifo = pVMWARE->vmwareCapability & SVGA_CAP_EXTENDED_FIFO;
+    min = extendedFifo ? vmwareReadReg(pVMWARE, SVGA_REG_MEM_REGS) : 4;
+
+    vmwareFIFO[SVGA_FIFO_MIN] = min * sizeof(CARD32);
     vmwareFIFO[SVGA_FIFO_MAX] = pVMWARE->mmioSize;
-    vmwareFIFO[SVGA_FIFO_NEXT_CMD] = 4 * sizeof(CARD32);
-    vmwareFIFO[SVGA_FIFO_STOP] = 4 * sizeof(CARD32);
+    vmwareFIFO[SVGA_FIFO_NEXT_CMD] = min * sizeof(CARD32);
+    vmwareFIFO[SVGA_FIFO_STOP] = min * sizeof(CARD32);
     vmwareWriteReg(pVMWARE, SVGA_REG_CONFIG_DONE, 1);
+
+    pVMWARE->canPitchLock =
+        extendedFifo && (vmwareFIFO[SVGA_FIFO_CAPABILITIES] & SVGA_FIFO_CAP_PITCHLOCK);
 }
 
 static void
@@ -1008,6 +1032,8 @@ VMWARECloseScreen(int scrnIndex, ScreenPtr pScreen)
         if (pVMWARE->xaaInfo) {
             vmwareXAACloseScreen(pScreen);
         }
+
+        vmwareSendSVGACmdPitchLock(pVMWARE, 0);
 
         VMWARERestore(pScrn);
         VMWAREUnmapMem(pScrn);
@@ -1058,8 +1084,10 @@ VMWAREPreDirtyBBUpdate(ScrnInfoPtr pScrn, int nboxes, BoxPtr boxPtr)
      */
     while (nboxes--) {
         if (BOX_INTERSECT(*boxPtr, pVMWARE->hwcur.box)) {
-	    PRE_OP_HIDE_CURSOR();
-	    pVMWARE->cursorExcludedForUpdate = TRUE;
+            if (!pVMWARE->cursorExcludedForUpdate) {
+                PRE_OP_HIDE_CURSOR();
+                pVMWARE->cursorExcludedForUpdate = TRUE;
+            }
 	    break;
         }
         boxPtr++;
@@ -1135,6 +1163,8 @@ VMWAREScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     /* Initialise the first mode */
     VMWAREModeInit(pScrn, pScrn->currentMode);
+
+    vmwareSendSVGACmdPitchLock(pVMWARE, pVMWARE->fbPitch);
 
     /* Set the viewport if supported */
     VMWAREAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
@@ -1315,6 +1345,9 @@ VMWAREEnterVT(int scrnIndex, int flags)
     if (!pVMWARE->SavedReg.svga_fifo_enabled) {
         VMWAREInitFIFO(pScrn);
     }
+
+    vmwareSendSVGACmdPitchLock(pVMWARE, pVMWARE->fbPitch);
+
     return VMWAREModeInit(pScrn, pScrn->currentMode);
 }
 
@@ -1322,6 +1355,10 @@ static void
 VMWARELeaveVT(int scrnIndex, int flags)
 {
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    VMWAREPtr pVMWARE = VMWAREPTR(pScrn);
+
+    vmwareSendSVGACmdPitchLock(pVMWARE, 0);
+
     VMWARERestore(pScrn);
 }
 
@@ -1401,7 +1438,7 @@ VMWAREProbe(DriverPtr drv, int flags)
     return foundScreen;
 }
 
-DriverRec VMWARE = {
+_X_EXPORT DriverRec VMWARE = {
     VERSION,
     VMWARE_DRIVER_NAME,
     VMWAREIdentify,
@@ -1414,7 +1451,11 @@ DriverRec VMWARE = {
 #ifdef XFree86LOADER
 static MODULESETUPPROTO(vmwareSetup);
 
-XF86ModuleData vmwareModuleData = { &vmwareVersRec, vmwareSetup, NULL };
+_X_EXPORT XF86ModuleData vmwareModuleData = {
+    &vmwareVersRec,
+    vmwareSetup,
+    NULL
+};
 
 static pointer
 vmwareSetup(pointer module, pointer opts, int *errmaj, int *errmin)

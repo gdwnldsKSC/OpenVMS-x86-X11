@@ -8,7 +8,7 @@ LinkSourceFile(x-list.c,$(XPRDIR))
 LinkSourceFile(x-list.h,$(XPRDIR))
 LinkSourceFile(x-hash.c,$(XPRDIR))
 LinkSourceFile(x-hash.h,$(XPRDIR))
-LinkSourceFile(compsize.c,$(LIBSRC)/GL/glx)
+LinkSourceFile(compsize.c,$(MESASRCDIR)/src/glx/x11)
 
     BASE_SRCS = compsize.c
     BASE_OBJS = compsize.o

@@ -38,14 +38,7 @@
 #ifndef DRI_INTERFACE_H
 #define DRI_INTERFACE_H
 
-#ifndef DRI_NEW_INTERFACE_ONLY
-# include <X11/X.h>
-# include <GL/glx.h>
-# include "GL/glxint.h"
-#endif
-
 #include <GL/internal/glcore.h>
-#include <xf86drm.h>
 #include <drm.h>
 
 /**
@@ -62,6 +55,7 @@ typedef struct __DRIdrawableRec __DRIdrawable;
 typedef struct __DRIdriverRec   __DRIdriver;
 typedef struct __DRIframebufferRec __DRIframebuffer;
 typedef struct __DRIversionRec     __DRIversion;
+typedef struct __DRIinterfaceMethodsRec  __DRIinterfaceMethods;
 typedef unsigned long __DRIid;
 typedef void __DRInativeDisplay;
 /*@}*/
@@ -71,42 +65,6 @@ typedef void __DRInativeDisplay;
  * \name Functions provided by the driver loader.
  */
 /*@{*/
-extern __DRIscreen *__glXFindDRIScreen(__DRInativeDisplay *dpy, int scrn);
-
-
-/**
- * Type of a pointer to \c __glXGetInternalVersion, as returned by
- * \c glXGetProcAddress.
- *
- * \sa __glXGetInternalVersion, glXGetProcAddress
- */
-typedef int (* PFNGLXGETINTERNALVERSIONPROC) ( void );
-
-/**
- * Type of a pointer to \c __glXWindowExists, as returned by
- * \c glXGetProcAddress.
- *
- * \sa __glXWindowExists, glXGetProcAddress
- */
-typedef GLboolean (* PFNGLXWINDOWEXISTSPROC) (__DRInativeDisplay *dpy, __DRIid draw);
-
-/**
- * Type of a pointer to \c __glXGetUST, as returned by \c glXGetProcAddress.
- * 
- * \sa __glXGetUST, glXGetProcAddress
- */
-typedef int (* PFNGLXGETUSTPROC) ( int64_t * ust );
-
-/**
- * Type of pointer to \c __glXCreateContextModes, as returned by
- * \c glXGetProcAddress.
- * 
- * \sa _gl_context_modes_create, glXGetProcAddress
- */
-
-typedef __GLcontextModes * (* PFNGLXCREATECONTEXTMODES) ( unsigned count,
-    size_t minimum_bytes_per_struct );
-
 /**
  * Type of a pointer to \c glXGetScreenDriver, as returned by
  * \c glXGetProcAddress.  This function is used to get the name of the DRI
@@ -127,39 +85,11 @@ typedef const char * (* PFNGLXGETSCREENDRIVERPROC) (__DRInativeDisplay *dpy, int
 typedef const char * (* PFNGLXGETDRIVERCONFIGPROC) (const char *driverName);
 
 /**
- * Type of a pointer to \c __glXScrEnableExtension, as returned by
- * \c glXGetProcAddress.  This function is used to enable a GLX extension
- * on the specified screen.
- *
- * \sa __glXScrEnableExtension, glXGetProcAddress
+ * Type of a pointer to \c glxEnableExtension, as returned by
+ * \c __DRIinterfaceMethods::getProcAddress.  This function is used to enable
+ * a GLX extension on the specified screen.
  */
 typedef void (* PFNGLXSCRENABLEEXTENSIONPROC) ( void *psc, const char * name );
-
-/**
- * Type of a pointer to \c __glXGetDrawableInfo, as returned by
- * \c glXGetProcAddress.  This function is used to get information about the
- * position, size, and clip rects of a drawable.
- * 
- * \sa __glXGetDrawableInfo, glXGetProcAddress
- */
-typedef GLboolean (* PFNGLXGETDRAWABLEINFOPROC) ( __DRInativeDisplay *dpy, int scrn,
-    __DRIid draw, unsigned int * index, unsigned int * stamp,
-    int * x, int * y, int * width, int * height,
-    int * numClipRects, drm_clip_rect_t ** pClipRects,
-    int * backX, int * backY,
-    int * numBackClipRects, drm_clip_rect_t ** pBackClipRects );
-
-/* Test for the xf86dri.h header file */
-#ifndef _XF86DRI_H_
-extern GLboolean XF86DRIDestroyContext( __DRInativeDisplay *dpy, int screen,
-    __DRIid context_id );
-
-extern GLboolean XF86DRICreateDrawable( __DRInativeDisplay *dpy, int screen,
-    __DRIid drawable, drm_drawable_t *hHWDrawable );
-
-extern GLboolean XF86DRIDestroyDrawable( __DRInativeDisplay *dpy, int screen, 
-    __DRIid drawable);
-#endif
 /*@}*/
 
 
@@ -173,16 +103,10 @@ typedef void *(CREATENEWSCREENFUNC)(__DRInativeDisplay *dpy, int scrn,
     const __DRIversion * ddx_version, const __DRIversion * dri_version,
     const __DRIversion * drm_version, const __DRIframebuffer * frame_buffer,
     void * pSAREA, int fd, int internal_api_version,
+    const __DRIinterfaceMethods * interface,
     __GLcontextModes ** driver_modes);
 typedef CREATENEWSCREENFUNC* PFNCREATENEWSCREENFUNC;
-extern CREATENEWSCREENFUNC __driCreateNewScreen;
-
-#ifndef DRI_NEW_INTERFACE_ONLY
-
-extern void *__driCreateScreen(Display *dpy, int scrn, __DRIscreen *psc,
-    int numConfigs, __GLXvisualConfig *config);
-
-#endif /* DRI_NEW_INTERFACE_ONLY */
+extern CREATENEWSCREENFUNC __driCreateNewScreen_20050727;
 
 
 /**
@@ -209,6 +133,113 @@ struct __DRIversionRec {
     int    patch;        /**< Patch-level. */
 };
 
+
+typedef void (*__DRIfuncPtr)(void);
+
+struct __DRIinterfaceMethodsRec {
+    /**
+     * Get pointer to named function.
+     */
+    __DRIfuncPtr (*getProcAddress)( const char * proc_name );
+
+    /**
+     * Create a list of \c __GLcontextModes structures.
+     */
+    __GLcontextModes * (*createContextModes)(unsigned count,
+        size_t minimum_bytes_per_struct);
+
+    /**
+     * Destroy a list of \c __GLcontextModes structures.
+     *
+     * \todo
+     * Determine if the drivers actually need to call this.
+     */
+    void (*destroyContextModes)( __GLcontextModes * modes );
+
+    /**
+     * Get the \c __DRIscreen for a given display and screen number.
+     */
+    __DRIscreen *(*getScreen)(__DRInativeDisplay *dpy, int screenNum);
+
+
+    /**
+     * \name Client/server protocol functions.
+     *
+     * These functions implement the DRI client/server protocol for
+     * context and drawable operations.  Platforms that do not implement
+     * the wire protocol (e.g., EGL) will implement glorified no-op functions.
+     */
+    /*@{*/
+    /**
+     * Determine if the specified window ID still exists.
+     * 
+     * \note
+     * Implementations may assume that the driver will only pass an ID into
+     * this function that actually corresponds to a window.  On
+     * implementations where windows can only be destroyed by the DRI driver
+     * (e.g., EGL), this function is allowed to always return \c GL_TRUE.
+     */
+    GLboolean (*windowExists)(__DRInativeDisplay *dpy, __DRIid draw);
+
+    /**
+     * Create the server-side portion of the GL context.
+     */
+    GLboolean (* createContext)( __DRInativeDisplay *dpy, int screenNum,
+        int configID, void * contextID, drm_context_t * hw_context );
+
+    /**
+     * Destroy the server-side portion of the GL context.
+     */
+    GLboolean (* destroyContext)( __DRInativeDisplay *dpy, int screenNum,
+        __DRIid context );
+
+    /**
+     * Create the server-side portion of the drawable.
+     */
+    GLboolean (*createDrawable)( __DRInativeDisplay * ndpy, int screen,
+        __DRIid drawable, drm_drawable_t * hHWDrawable );
+
+    /**
+     * Destroy the server-side portion of the drawable.
+     */
+    GLboolean (*destroyDrawable)( __DRInativeDisplay * ndpy, int screen,
+        __DRIid drawable );
+
+    /**
+     * This function is used to get information about the position, size, and
+     * clip rects of a drawable.
+     */
+    GLboolean (* getDrawableInfo) ( __DRInativeDisplay *dpy, int scrn,
+        __DRIid draw, unsigned int * index, unsigned int * stamp,
+        int * x, int * y, int * width, int * height,
+        int * numClipRects, drm_clip_rect_t ** pClipRects,
+        int * backX, int * backY,
+        int * numBackClipRects, drm_clip_rect_t ** pBackClipRects );
+    /*@}*/
+
+
+    /**
+     * \name Timing related functions.
+     */
+    /*@{*/
+    /**
+     * Get the 64-bit unadjusted system time (UST).
+     */
+    int (*getUST)(int64_t * ust);
+
+    /**
+     * Get the media stream counter (MSC) rate.
+     * 
+     * Matching the definition in GLX_OML_sync_control, this function returns
+     * the rate of the "media stream counter".  In practical terms, this is
+     * the frame refresh rate of the display.
+     */
+    GLboolean (*getMSCRate)(__DRInativeDisplay * dpy, __DRIid drawable,
+        int32_t * numerator, int32_t * denominator);
+    /*@}*/
+};
+
+   
 /**
  * Framebuffer information record.  Used by libGL to communicate information
  * about the framebuffer to the driver's \c __driCreateNewScreen function.
@@ -246,25 +277,6 @@ struct __DRIscreenRec {
      * Method to destroy the private DRI screen data.
      */
     void (*destroyScreen)(__DRInativeDisplay *dpy, int scrn, void *screenPrivate);
-
-    /**
-     * Method to create the private DRI context data and initialize the
-     * context dependent methods.
-     *
-     * \sa __DRIscreenRec::createNewContext driCreateContext 
-     *     driCreateNewContext
-     *
-     * \deprecated
-     * This function has been replaced by \c __DRIscreenRec::createNewContext.
-     * New drivers will continue to export this method, but it will eventually
-     * (in the next XFree86 major relearse) go away.
-     */
-#ifndef DRI_NEW_INTERFACE_ONLY
-    void *(*createContext)(Display *dpy, XVisualInfo *vis, void *sharedPrivate,
-			   __DRIcontext *pctx);
-#else
-    void * createContext;
-#endif /* DRI_NEW_INTERFACE_ONLY */
 
     /**
      * Method to create the private DRI drawable data and initialize the
@@ -342,61 +354,11 @@ struct __DRIcontextRec {
     void (*destroyContext)(__DRInativeDisplay *dpy, int scrn, void *contextPrivate);
 
     /**
-     * Method to bind a DRI drawable to a DRI graphics context.
-     *
-     * \deprecated Replaced by bindContext3.
-     */
-#ifndef DRI_NEW_INTERFACE_ONLY
-    Bool (*bindContext)(Display *dpy, int scrn, GLXDrawable draw,
-			GLXContext gc);
-#else
-    void *bindContext;
-#endif /* DRI_NEW_INTERFACE_ONLY */
-
-    /**
-     * Method to unbind a DRI drawable to a DRI graphics context.
-     *
-     * \deprecated Replaced by unbindContext3.
-     */
-#ifndef DRI_NEW_INTERFACE_ONLY
-    Bool (*unbindContext)(Display *dpy, int scrn, GLXDrawable draw,
-			  GLXContext gc, int will_rebind);
-#else
-    void *unbindContext;
-#endif /* DRI_NEW_INTERFACE_ONLY */
-
-    /**
      * Opaque pointer to private per context direct rendering data.
      * \c NULL if direct rendering is not supported on the display or
      * screen used to create this context.  Never dereferenced in libGL.
      */
     void *private;
-
-    /**
-     * Method to bind a DRI drawable to a DRI graphics context.
-     *
-     * \since Internal API version 20030606.
-     * \deprecated Replaced by bindContext3.
-     */
-#ifndef DRI_NEW_INTERFACE_ONLY
-    Bool (*bindContext2)(Display *dpy, int scrn, GLXDrawable draw,
-			 GLXDrawable read, GLXContext gc);
-#else
-    void *bindContext2;
-#endif /* DRI_NEW_INTERFACE_ONLY */
-
-    /**
-     * Method to unbind a DRI drawable from a DRI graphics context.
-     *
-     * \since Internal API version 20030606.
-     * \deprecated Replaced by unbindContext3.
-     */
-#ifndef DRI_NEW_INTERFACE_ONLY
-    Bool (*unbindContext2)(Display *dpy, int scrn, GLXDrawable draw,
-			   GLXDrawable read, GLXContext gc);
-#else
-    void *unbindContext2;
-#endif /* DRI_NEW_INTERFACE_ONLY */
 
     /**
      * Pointer to the mode used to create this context.
@@ -408,17 +370,17 @@ struct __DRIcontextRec {
     /**
      * Method to bind a DRI drawable to a DRI graphics context.
      *
-     * \since Internal API version 20040415.
+     * \since Internal API version 20050727.
      */
-    GLboolean (*bindContext3)(__DRInativeDisplay *dpy, int scrn, __DRIid draw,
+    GLboolean (*bindContext)(__DRInativeDisplay *dpy, int scrn, __DRIid draw,
 			 __DRIid read, __DRIcontext *ctx);
 
     /**
      * Method to unbind a DRI drawable from a DRI graphics context.
      *
-     * \since Internal API version 20040415.
+     * \since Internal API version 20050727.
      */
-    GLboolean (*unbindContext3)(__DRInativeDisplay *dpy, int scrn, __DRIid draw,
+    GLboolean (*unbindContext)(__DRInativeDisplay *dpy, int scrn, __DRIid draw,
 			   __DRIid read, __DRIcontext *ctx);
 };
 

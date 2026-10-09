@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xc/include/extensions/Imakefile,v 1.10.2.1 2004/12/13 03:12:16 gisburn Exp $
+XCOMM $XdotOrg: xc/include/extensions/Imakefile,v 1.12 2004/11/24 02:45:33 krh Exp $
 XCOMM $Xorg: Imakefile,v 1.3 2000/08/18 04:05:44 coskrey Exp $
 
 
@@ -28,7 +28,7 @@ LBXHEADERS = XLbx.h lbxbuf.h lbxbufstr.h lbxdeltastr.h lbximage.h lbxopts.h \
 #endif
 #if BuildXvExt || BuildXvLibrary
 XVHEADERS = Xv.h Xvlib.h Xvproto.h
-XVMCHEADERS = XvMC.h XvMClib.h XvMCproto.h
+XVMCHEADERS = XvMC.h XvMClib.h XvMCproto.h vldXvMC.h
 #endif
 #if BuildXF86RushExt || BuildXF86RushLibrary
 XF86RUSHHEADERS = xf86rush.h xf86rushstr.h
@@ -121,6 +121,7 @@ InstallDriverSDKNonExecFile(xf86rushstr.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(renderproto.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(Xv.h,$(DRIVERSDKINCLUDEDIR)/extensions)
 InstallDriverSDKNonExecFile(XvMC.h,$(DRIVERSDKINCLUDEDIR))
+InstallDriverSDKNonExecFile(vldXvMC.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(Xvlib.h,$(DRIVERSDKINCLUDEDIR)/extensions)
 InstallDriverSDKNonExecFile(Xv.h,$(DRIVERSDKINCLUDEDIR)/X11/extensions)
 InstallDriverSDKNonExecFile(Xvlib.h,$(DRIVERSDKINCLUDEDIR)/X11/extensions)

@@ -55,7 +55,7 @@ in this Software without prior written authorization from The Open Group.
  * Catalogue support, alternate servers, and cloneing
  */
 
-#include <X11/Xtrans.h>
+#include <X11/Xtrans/Xtrans.h>
 #include "osstruct.h"
 #include <stdio.h>
 #include <stdlib.h>

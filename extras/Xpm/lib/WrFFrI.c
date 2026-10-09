@@ -38,6 +38,9 @@
  * Lorens Younes (d93-hyo@nada.kth.se) 4/96
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "XpmI.h"
 
 #ifndef NO_ZPIPE

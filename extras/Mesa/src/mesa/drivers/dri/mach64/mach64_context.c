@@ -57,6 +57,9 @@
 #include "utils.h"
 #include "vblank.h"
 
+#define need_GL_ARB_multisample
+#include "extension_helper.h"
+
 #ifndef MACH64_DEBUG
 int MACH64_DEBUG = (0);
 #endif
@@ -72,17 +75,18 @@ static const struct dri_debug_control debug_control[] =
     { "prims",  DEBUG_VERBOSE_PRIMS },
     { "count",  DEBUG_VERBOSE_COUNT },
     { "nowait", DEBUG_NOWAIT },
+    { "fall",   DEBUG_VERBOSE_FALLBACK },
     { NULL,    0 }
 };
 
-static const char * const card_extensions[] =
+const struct dri_extension card_extensions[] =
 {
-   "GL_ARB_multitexture",
-   "GL_EXT_texture_edge_clamp",
-   "GL_MESA_ycbcr_texture",
-   "GL_SGIS_generate_mipmap",
-   "GL_SGIS_texture_edge_clamp",
-   NULL
+    { "GL_ARB_multisample",                GL_ARB_multisample_functions },
+    { "GL_ARB_multitexture",               NULL },
+    { "GL_EXT_texture_edge_clamp",         NULL },
+    { "GL_MESA_ycbcr_texture",             NULL },
+    { "GL_SGIS_generate_mipmap",           NULL },
+    { NULL,                                NULL }
 };
 
 
@@ -230,6 +234,11 @@ GLboolean mach64CreateContext( const __GLcontextModes *glVisual,
 
    driContextPriv->driverPrivate = (void *)mmesa;
 
+   if (driQueryOptionb(&mmesa->optionCache, "no_rast")) {
+      fprintf(stderr, "disabling 3D acceleration\n");
+      FALLBACK(mmesa, MACH64_FALLBACK_DISABLE, 1);
+   }
+
    return GL_TRUE;
 }
 
@@ -306,19 +315,14 @@ mach64MakeCurrent( __DRIcontextPrivate *driContextPriv,
 	 mach64CalcViewport( newMach64Ctx->glCtx );
       }
 
-      _mesa_make_current2( newMach64Ctx->glCtx,
-                           (GLframebuffer *) driDrawPriv->driverPrivate,
-                           (GLframebuffer *) driReadPriv->driverPrivate );
+      _mesa_make_current( newMach64Ctx->glCtx,
+                          (GLframebuffer *) driDrawPriv->driverPrivate,
+                          (GLframebuffer *) driReadPriv->driverPrivate );
 
 
       newMach64Ctx->new_state |=  MACH64_NEW_CLIP;
-
-      if ( !newMach64Ctx->glCtx->Viewport.Width ) {
-	 _mesa_set_viewport(newMach64Ctx->glCtx, 0, 0,
-                            driDrawPriv->w, driDrawPriv->h);
-      }
    } else {
-      _mesa_make_current( 0, 0 );
+      _mesa_make_current( NULL, NULL, NULL );
    }
 
    return GL_TRUE;

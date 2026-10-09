@@ -32,9 +32,13 @@ Author: Keith Packard
 */
 /* $Xorg: mfbblt.c,v 1.4 2001/02/09 02:05:18 xorgcvs Exp $ */
 
-#include	"X.h"
-#include	"Xmd.h"
-#include	"Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include	<X11/X.h>
+#include	<X11/Xmd.h>
+#include	<X11/Xproto.h>
 #include	"mfb.h"
 #include	"gcstruct.h"
 #include	"windowstr.h"

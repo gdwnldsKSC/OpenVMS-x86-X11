@@ -1,9 +1,9 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_gx1_accel.c,v 1.3 2004/07/30 20:30:53 ajax Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_gx1_accel.c,v 1.5 2005/07/11 02:29:55 ajax Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_gx1_accel.c,v 1.7 2003/12/07 22:40:38 alanh Exp $ */
 /*
  * $Workfile: nsc_gx1_accel.c $
- * $Revision$
- * $Author$
+ * $Revision: 1.5 $
+ * $Author: ajax $
  *
  * File Contents: This file is consists of main Xfree
  *                acceleration supported routines like solid fill used
@@ -146,6 +146,10 @@
  * Fixes by
  * Alan Hourihane <alanh@fairlite.demon.co.uk>
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /* Xfree86 header files */
 #include "vgaHW.h"

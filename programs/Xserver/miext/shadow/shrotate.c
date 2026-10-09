@@ -1,7 +1,7 @@
 /*
  * $XFree86: xc/programs/Xserver/miext/shadow/shrotate.c,v 1.4tsi Exp $
  *
- * Copyright © 2001 Keith Packard, member of The XFree86 Project, Inc.
+ * Copyright Â© 2001 Keith Packard, member of The XFree86 Project, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -22,12 +22,16 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include    "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include    <X11/X.h>
 #include    "scrnintstr.h"
 #include    "windowstr.h"
-#include    "font.h"
+#include    <X11/fonts/font.h>
 #include    "dixfontstr.h"
-#include    "fontstruct.h"
+#include    <X11/fonts/fontstruct.h>
 #include    "mi.h"
 #include    "regionstr.h"
 #include    "globals.h"

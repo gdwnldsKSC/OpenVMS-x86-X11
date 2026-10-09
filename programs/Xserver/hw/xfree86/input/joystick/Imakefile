@@ -15,7 +15,7 @@ INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86SRC)/loader -I$(XF86OSSRC) \
         ARCH_JSTK = ../os-support/linux/lnx_jstk.o
 #endif
 
-#if defined(FreeBSDArchitecture) || defined(NetBSDArchitecture) || defined(OpenBSDArchitecture)
+#if defined(KFreeBSDArchitecture) || defined(NetBSDArchitecture) || defined(OpenBSDArchitecture)
         ARCH_JSTK = ../os-support/bsd/bsd_jstk.o
 #endif
 
@@ -27,7 +27,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget($(DRIVER),$(OBJS))
 
-InstallObjectModule($(DRIVER),$(MODULEDIR),input)
+InstallInputObjectModule($(DRIVER),$(MODULEDIR))
 
 DependTarget()
 

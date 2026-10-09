@@ -1,5 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_storm.c,v 1.99tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /* All drivers should typically include these */
 #include "xf86.h"
@@ -27,7 +30,6 @@
 #include "GL/glxtokens.h"
 #endif
 
-#include "mga_bios.h"
 #include "mga.h"
 #include "mga_reg.h"
 #include "mga_map.h"

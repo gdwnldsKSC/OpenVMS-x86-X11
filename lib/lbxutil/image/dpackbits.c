@@ -26,7 +26,7 @@
 
 #include <X11/Xos.h>
 #include <X11/Xfuncproto.h>
-#include "lbximage.h"
+#include <X11/extensions/lbximage.h>
 
 /*
  * -------------------------------------------------------------------------

@@ -30,6 +30,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/penmount/xf86PM.c,v 1.2 2000/08/11 19:10:46 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _PENMOUNT_C_
 
 #include <misc.h>
@@ -43,7 +47,7 @@
 
 #include "xf86PM.h"
 
-InputDriverRec PENMOUNT = {
+_X_EXPORT InputDriverRec PENMOUNT = {
         1,
         "penmount",
         NULL,
@@ -128,8 +132,11 @@ PenMountSetupProc(	pointer module,
 	return (pointer) 1;
 }
 
-XF86ModuleData penmountModuleData = { &VersionRec, PenMountSetupProc, NULL };
-
+_X_EXPORT XF86ModuleData penmountModuleData = { 
+    &VersionRec,
+    PenMountSetupProc,
+    NULL
+};
 
 #endif /* XFree86LOADER */
 

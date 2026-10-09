@@ -35,9 +35,13 @@ Author:  Bob Scheifler, MIT X Consortium
  * The Computer Journal, November 1967, Volume 10, Number 3, pp. 282-289
  */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <math.h>
-#include "X.h"
-#include "Xprotostr.h"
+#include <X11/X.h>
+#include <X11/Xprotostr.h>
 #include "regionstr.h"
 #include "gcstruct.h"
 #include "pixmapstr.h"

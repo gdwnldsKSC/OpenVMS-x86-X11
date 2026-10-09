@@ -26,6 +26,10 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $XFree86: xc/programs/Xserver/xkb/xkbAccessX.c,v 1.9 2001/08/23 14:33:25 alanh Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
 #include <math.h>
 #ifdef __QNX__
@@ -36,7 +40,7 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <X11/Xproto.h>
 #include <X11/keysym.h>
 #include "inputstr.h"
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 #if !defined(WIN32) && !defined(Lynx)
 #include <sys/time.h>
 #endif

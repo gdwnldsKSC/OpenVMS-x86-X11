@@ -27,352 +27,217 @@
 #include "via_context.h"
 #include "via_ioctl.h"
 #include "via_fb.h"
+#include "xf86drm.h"
+#include "imports.h"
+#include "simple_list.h"
 #include <sys/ioctl.h>
 
 GLboolean
-via_alloc_back_buffer(viaContextPtr vmesa)
+via_alloc_draw_buffer(struct via_context *vmesa, struct via_buffer *buf)
 {
-    drm_via_mem_t fb;
-    unsigned char *pFB;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
-    fb.context = vmesa->hHWContext;
-    fb.size = vmesa->back.size;
-    fb.type = VIDEO;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "context = %d, size =%d, type = %d\n", fb.context, fb.size, fb.type);
-#endif
-    if (ioctl(vmesa->driFd, DRM_IOCTL_VIA_ALLOCMEM, &fb))
-        return GL_FALSE;
-    
-    pFB = vmesa->driScreen->pFB;
-    
-    vmesa->back.offset = fb.offset;
-    vmesa->back.map = (char *)(fb.offset + (GLuint)pFB);
-    vmesa->back.index = fb.index;
-#ifdef DEBUG    
-    if (VIA_DEBUG) {
-	fprintf(stderr, "back offset = %08x\n", vmesa->back.offset);
-	fprintf(stderr, "back index = %d\n", vmesa->back.index);
-    }
+   drm_via_mem_t mem;
+   mem.context = vmesa->hHWContext;
+   mem.size = buf->size;
+   mem.type = VIA_MEM_VIDEO;
+   mem.offset = 0;
+   mem.index = 0;
 
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);
-#endif    
-    return GL_TRUE;
+   if (ioctl(vmesa->driFd, DRM_IOCTL_VIA_ALLOCMEM, &mem)) 
+      return GL_FALSE;
+    
+    
+   buf->offset = mem.offset;
+   buf->map = (char *)vmesa->driScreen->pFB + mem.offset;
+   buf->index = mem.index;
+   return GL_TRUE;
 }
+
+void
+via_free_draw_buffer(struct via_context *vmesa, struct via_buffer *buf)
+{
+   drm_via_mem_t mem;
+
+   if (!vmesa) return;
+
+   mem.context = vmesa->hHWContext;
+   mem.index = buf->index;
+   mem.type = VIA_MEM_VIDEO;
+   mem.offset = buf->offset;
+   mem.size = buf->size;
+
+   ioctl(vmesa->driFd, DRM_IOCTL_VIA_FREEMEM, &mem);
+   buf->map = NULL;
+}
+
 
 GLboolean
-via_alloc_front_buffer(viaContextPtr vmesa)
+via_alloc_dma_buffer(struct via_context *vmesa)
 {
-    drm_via_mem_t fb;
-    unsigned char *pFB;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
-    fb.context = vmesa->hHWContext;
-    fb.size = vmesa->back.size;
-    fb.type = VIDEO;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "context = %d, size =%d, type = %d\n", fb.context, fb.size, fb.type);
-#endif
-    if (ioctl(vmesa->driFd, DRM_IOCTL_VIA_ALLOCMEM, &fb))
-        return GL_FALSE;
-    
-    pFB = vmesa->driScreen->pFB;
-    
-    vmesa->front.offset = fb.offset;
-    vmesa->front.map = (char *)(fb.offset + (GLuint)pFB);
-    vmesa->front.index = fb.index;
-#ifdef DEBUG    
-    if (VIA_DEBUG) {
-	fprintf(stderr, "front offset = %08x\n", vmesa->front.offset);
-	fprintf(stderr, "front index = %d\n", vmesa->front.index);
-    }
+   drm_via_dma_init_t init;
 
+   vmesa->dma = (GLubyte *) malloc(VIA_DMA_BUFSIZ);
+    
+   /*
+    * Check whether AGP DMA has been initialized.
+    */
+   memset(&init, 0, sizeof(init));
+   init.func = VIA_DMA_INITIALIZED;
 
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);
-#endif    
-    return GL_TRUE;
+   vmesa->useAgp = 
+     ( 0 == drmCommandWrite(vmesa->driFd, DRM_VIA_DMA_INIT, 
+			     &init, sizeof(init)));
+   if (VIA_DEBUG & DEBUG_DMA) {
+      if (vmesa->useAgp) 
+         fprintf(stderr, "unichrome_dri.so: Using AGP.\n");
+      else
+         fprintf(stderr, "unichrome_dri.so: Using PCI.\n");
+   }
+      
+   return ((vmesa->dma) ? GL_TRUE : GL_FALSE);
 }
 
 void
-via_free_back_buffer(viaContextPtr vmesa)
+via_free_dma_buffer(struct via_context *vmesa)
 {
-    drm_via_mem_t fb;
-
     if (!vmesa) return;
-    fb.context = vmesa->hHWContext;
-    fb.index = vmesa->back.index;
-    fb.type = VIDEO;
-    ioctl(vmesa->driFd, DRM_IOCTL_VIA_FREEMEM, &fb);
-    vmesa->back.map = NULL;
-}
-
-void
-via_free_front_buffer(viaContextPtr vmesa)
-{
-    drm_via_mem_t fb;
-
-    if (!vmesa) return;
-    fb.context = vmesa->hHWContext;
-    fb.index = vmesa->front.index;
-    fb.type = VIDEO;
-    ioctl(vmesa->driFd, DRM_IOCTL_VIA_FREEMEM, &fb);
-    vmesa->front.map = NULL;
-}
-
-GLboolean
-via_alloc_depth_buffer(viaContextPtr vmesa)
-{
-    drm_via_mem_t fb;
-    unsigned char *pFB;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);    
-#endif	
-    fb.context = vmesa->hHWContext;
-    fb.size = vmesa->depth.size;
-    fb.type = VIDEO;
-
-    if (ioctl(vmesa->driFd, DRM_IOCTL_VIA_ALLOCMEM, &fb)) {
-	return GL_FALSE;
-    }
-
-    pFB = vmesa->driScreen->pFB;
-    
-    vmesa->depth.offset = fb.offset;
-    vmesa->depth.map = (char *)(fb.offset + (GLuint)pFB);
-    vmesa->depth.index = fb.index;
-#ifdef DEBUG    
-    if (VIA_DEBUG) {
-	fprintf(stderr, "depth offset = %08x\n", vmesa->depth.offset);
-	fprintf(stderr, "depth index = %d\n", vmesa->depth.index);    
-    }	
-
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
-    return GL_TRUE;
-}
-
-void
-via_free_depth_buffer(viaContextPtr vmesa)
-{
-    drm_via_mem_t fb;
-	
-    if (!vmesa) return;
-    fb.context = vmesa->hHWContext;
-    fb.index = vmesa->depth.index;
-    fb.type = VIDEO;
-    ioctl(vmesa->driFd, DRM_IOCTL_VIA_FREEMEM, &fb);
-    vmesa->depth.map = NULL;
-}
-
-GLboolean
-via_alloc_dma_buffer(viaContextPtr vmesa)
-{
-    drm_via_mem_t fb;
-    drmVIADMABuf dma;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
-    if (vmesa->viaScreen->agpLinearStart) {
-	/* Allocate DMA in AGP memory*/
-	fb.context = vmesa->hHWContext;
-	fb.size = vmesa->dma[0].size;
-	fb.type = AGP;
-	if (!ioctl(vmesa->driFd, DRM_IOCTL_VIA_ALLOCMEM, &fb)) {
-	    vmesa->dma[0].offset = fb.offset;
-	    vmesa->dma[0].index = fb.index;
-	    vmesa->dma[0].map = (unsigned char *)((GLuint)vmesa->viaScreen->agpLinearStart + fb.offset);
-	    if (!ioctl(vmesa->driFd, DRM_IOCTL_VIA_ALLOCMEM, &fb)) {
-		vmesa->dma[1].offset = fb.offset;
-		vmesa->dma[1].index = fb.index;
-		vmesa->dma[1].map = (unsigned char *)((GLuint)vmesa->viaScreen->agpLinearStart + fb.offset); 	
-		vmesa->useAgp = GL_TRUE;
-		
-		return GL_TRUE;
-	    } 
-	    else {
-		/* release dma[0]*/
-		return GL_FALSE;		
-	    }
-	}
-	return GL_FALSE;	
-    } 
-    else {
-	/* Allocate DMA in System memory */
-	dma.size = vmesa->dma[0].size;
-
-	if (drmVIAAllocateDMA(vmesa->driFd,&dma) < 0) {
-	    return GL_FALSE;
-	}
-
-	vmesa->dma[0].offset = 0;
-	vmesa->dma[0].map = (unsigned char *)dma.address;
-	vmesa->dma[0].index = dma.index;
-
-	drmVIAAllocateDMA(vmesa->driFd, &dma);
-
-	vmesa->dma[1].offset = 0;
-	vmesa->dma[1].map = (unsigned char *)dma.address;
-	vmesa->dma[1].index = dma.index;
-	vmesa->useAgp = GL_FALSE;
-	
-	return GL_TRUE;
-    }
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);
-#endif
-}
-
-void
-via_free_dma_buffer(viaContextPtr vmesa)
-{
-    drmVIADMABuf dma;
-    drm_via_mem_t fb;
-    
-    
-    if (!vmesa) return;
-    
-    /* Release AGP command buffer */
-    if (vmesa->useAgp) {
-	fb.context = vmesa->hHWContext;
-	fb.index = vmesa->dma[0].index;
-	fb.type = AGP;
-	ioctl(vmesa->driFd, DRM_IOCTL_VIA_FREEMEM, &fb);
-	vmesa->dma[0].map = NULL;    
-	fb.index = vmesa->dma[1].index;
-	ioctl(vmesa->driFd, DRM_IOCTL_VIA_FREEMEM, &fb);
-	vmesa->dma[1].map = NULL;    
-    }
-    /* Release System command buffer */
-    else {
-	/*=* John Sheng [2003.7.18] viewperf frames/sec *=*/
-	/*dma.address = (unsigned long *)vmesa->dma[0].offset;*/
-	dma.address = (unsigned long *)vmesa->dma[0].map;
-	/*=* John Sheng [2003.6.16] fix pci path *=*/
-	dma.size = (unsigned int)vmesa->dma[0].size;
-	drmVIAReleaseDMA(vmesa->driFd, &dma);
-	/*=* John Sheng [2003.7.18] viewperf frames/sec *=*/
-	/*dma.address = (unsigned long *)vmesa->dma[1].offset;*/
-	dma.address = (unsigned long *)vmesa->dma[1].map;
-	/*=* John Sheng [2003.6.16] fix pci path *=*/
-	dma.size = (unsigned int)vmesa->dma[1].size;
-	drmVIAReleaseDMA(vmesa->driFd, &dma);
-	/*=* John Sheng [2003.7.18] viewperf frames/sec *=*/
-	/*vmesa->dma[0].offset = 0;
-	vmesa->dma[1].offset = 0;*/
-	vmesa->dma[0].map = 0;
-	vmesa->dma[1].map = 0;
-    }
+    free(vmesa->dma);
+    vmesa->dma = 0;
 } 
 
-GLboolean
-via_alloc_texture(viaContextPtr vmesa, viaTextureObjectPtr t)
+
+/* These functions now allocate and free the via_tex_buffer struct as well:
+ */
+struct via_tex_buffer *
+via_alloc_texture(struct via_context *vmesa,
+		  GLuint size,
+		  GLuint memType)
 {
-    drm_via_mem_t fb;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
-    fb.context = vmesa->hHWContext;
-    fb.size = t->texMem.size;
-    fb.type = VIDEO;
-#ifdef DEBUG    
-    if (VIA_DEBUG) {
-	fprintf(stderr, "texture size = %d\n", fb.size);
-	fprintf(stderr, "texture type = %d\n", fb.type);
-    }
-#endif
-    if (ioctl(vmesa->driFd, DRM_IOCTL_VIA_ALLOCMEM, &fb)) {
-	fprintf(stderr, "via_alloc_texture fail\n");
-        return GL_FALSE;
-    }	
-    
-    t->texMem.offset = fb.offset;
-    t->texMem.index = fb.index;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "texture index = %d\n", (GLuint)fb.index);
-#endif
-    
-    t->bufAddr = (unsigned char *)(fb.offset + (GLuint)vmesa->driScreen->pFB);
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
-    return GL_TRUE;
+   struct via_tex_buffer *t = CALLOC_STRUCT(via_tex_buffer);
+   
+   if (!t)
+      goto cleanup;
+
+   t->size = size;
+   t->memType = memType;
+   insert_at_tail(&vmesa->tex_image_list[memType], t);
+
+   if (t->memType == VIA_MEM_AGP || 
+       t->memType == VIA_MEM_VIDEO) {
+      drm_via_mem_t fb;
+
+      fb.context = vmesa->hHWContext;
+      fb.size = t->size;
+      fb.type = t->memType;
+      fb.offset = 0;
+      fb.index = 0;
+
+      if (ioctl(vmesa->driFd, DRM_IOCTL_VIA_ALLOCMEM, &fb) != 0 || 
+	  fb.index == 0) 
+	 goto cleanup;
+
+      if (0)
+	 fprintf(stderr, "offset %lx index %lx\n", fb.offset, fb.index);
+
+      t->offset = fb.offset;
+      t->index = fb.index;
+      
+      if (t->memType == VIA_MEM_AGP) {
+	 t->bufAddr = (GLubyte *)((unsigned long)vmesa->viaScreen->agpLinearStart +
+				  fb.offset); 	
+	 t->texBase = vmesa->agpBase + fb.offset;
+      }
+      else {
+	 t->bufAddr = (GLubyte *)((unsigned long)vmesa->driScreen->pFB + fb.offset);
+	 t->texBase = fb.offset;
+      }
+
+      vmesa->total_alloc[t->memType] += t->size;
+      return t;
+   }
+   else if (t->memType == VIA_MEM_SYSTEM) {
+      
+      t->bufAddr = _mesa_malloc(t->size);      
+      if (!t->bufAddr)
+	 goto cleanup;
+
+      vmesa->total_alloc[t->memType] += t->size;
+      return t;
+   }
+
+ cleanup:
+   if (t) {
+      remove_from_list(t);
+      FREE(t);
+   }
+
+   return NULL;
 }
-/*=* John Sheng [2003.5.31]  agp tex *=*/
-GLboolean
-via_alloc_texture_agp(viaContextPtr vmesa, viaTextureObjectPtr t)
+
+
+static void
+via_do_free_texture(struct via_context *vmesa, struct via_tex_buffer *t)
 {
-    drm_via_mem_t fb;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
-    fb.context = vmesa->hHWContext;
-    fb.size = t->texMem.size;
-    fb.type = AGP;
-#ifdef DEBUG    
-    if (VIA_DEBUG) {
-	fprintf(stderr, "texture_agp size = %d\n", fb.size);
-	fprintf(stderr, "texture type = %d\n", fb.type);
-    }
-#endif
-    if (ioctl(vmesa->driFd, DRM_IOCTL_VIA_ALLOCMEM, &fb)) {
-	fprintf(stderr, "via_alloc_texture_agp fail\n");
-        return GL_FALSE;
-    }	
-    
-    t->texMem.offset = fb.offset;
-    t->texMem.index = fb.index;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "texture agp index = %d\n", (GLuint)fb.index);
-#endif
-    
-    t->bufAddr = (unsigned char *)((GLuint)vmesa->viaScreen->agpLinearStart + fb.offset); 	
-    /*=* John Sheng [2003.5.31]  agp tex *=*/
-    t->inAGP = GL_TRUE;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
-    return GL_TRUE;
+   drm_via_mem_t fb;
+
+   remove_from_list( t );
+
+   vmesa->total_alloc[t->memType] -= t->size;
+
+   fb.context = vmesa->hHWContext;
+   fb.index = t->index;
+   fb.offset = t->offset;
+   fb.type = t->memType;
+   fb.size = t->size;
+
+   if (ioctl(vmesa->driFd, DRM_IOCTL_VIA_FREEMEM, &fb)) {
+      fprintf(stderr, "via_free_texture fail\n");
+   }
+
+   FREE(t);
 }
+
+
+/* Release textures which were potentially still being referenced by
+ * hardware at the time when they were originally freed.
+ */
+void 
+via_release_pending_textures( struct via_context *vmesa )
+{
+   struct via_tex_buffer *s, *tmp;
+   
+   foreach_s( s, tmp, &vmesa->freed_tex_buffers ) {
+      if (!VIA_GEQ_WRAP(s->lastUsed, vmesa->lastBreadcrumbRead)) {
+	 if (VIA_DEBUG & DEBUG_TEXTURE)
+	    fprintf(stderr, "%s: release tex sz %d lastUsed %x\n",
+		    __FUNCTION__, s->size, s->lastUsed); 
+	 via_do_free_texture(vmesa, s);
+      }
+   }
+}
+      
+
 
 void
-via_free_texture(viaContextPtr vmesa, viaTextureObjectPtr t)
+via_free_texture(struct via_context *vmesa, struct via_tex_buffer *t)
 {
-    drm_via_mem_t fb;
-#ifdef DEBUG    	
-    if (VIA_DEBUG) {
-	fprintf(stderr, "via_free_texture: index = %d\n",
-            t->texMem.index);
-	fprintf(stderr, "via_free_texture: size = %d\n",
-            t->texMem.size);
-    }
-#endif
-    if (!vmesa) {
-	fprintf(stderr, "!mesa\n");
-	return;
-    }
-    
-    fb.context = vmesa->hHWContext;
-    fb.index = t->texMem.index;
-    
-    /*=* John Sheng [2003.5.31]  agp tex *=*/
-    if(t->inAGP)
-	fb.type = AGP;
-    else
-        fb.type = VIDEO;
-	    
-    if (ioctl(vmesa->driFd, DRM_IOCTL_VIA_FREEMEM, &fb)) {
-	if(vmesa->shareCtx) {
-	    fb.context = ((viaContextPtr)((GLcontext *)(vmesa->shareCtx)->DriverCtx))->hHWContext;
-	    if (ioctl(vmesa->driFd, DRM_IOCTL_VIA_FREEMEM, &fb)) {
-		fprintf(stderr, "via_free_texture fail\n");
-	    }
-	}
-	else
-	    fprintf(stderr, "via_free_texture fail\n");
-    }
+   if (!t) {
+      return;
+   }
+   else if (t->memType == VIA_MEM_SYSTEM) {
+      remove_from_list(t);
+      vmesa->total_alloc[t->memType] -= t->size;
+      _mesa_free(t->bufAddr);
+      _mesa_free(t);
+   }
+   else if (t->index && viaCheckBreadcrumb(vmesa, t->lastUsed)) {
+      via_do_free_texture( vmesa, t );
+   }
+   else {
+      /* Close current breadcrumb so that we can free this eventually:
+       */
+      if (t->lastUsed == vmesa->lastBreadcrumbWrite) 
+	 viaEmitBreadcrumb(vmesa);
 
-    t->bufAddr = NULL;
+      move_to_tail( &vmesa->freed_tex_buffers, t );
+   }
 }

@@ -1,9 +1,9 @@
 /* $XFree86$ */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/sis/osdef.h,v 1.4 2004/07/26 22:40:56 twini Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/sis/osdef.h,v 1.10 2005/07/04 10:57:08 twini Exp $ */
 /*
  * OS depending defines
  *
- * Copyright (C) 2001-2004 by Thomas Winischhofer, Vienna, Austria
+ * Copyright (C) 2001-2005 by Thomas Winischhofer, Vienna, Austria
  *
  * If distributed as part of the Linux kernel, the following license terms
  * apply:
@@ -51,9 +51,15 @@
  *
  */
 
+#ifndef _SIS_OSDEF_H_
+#define _SIS_OSDEF_H_
+
 /* The choices are: */
-/* #define LINUX_KERNEL	 */  	/* Kernel framebuffer */
-#define LINUX_XF86    		/* XFree86/X.org */
+#undef  SIS_LINUX_KERNEL		/* Linux kernel framebuffer */
+#define SIS_XORG_XF86			/* XFree86/X.org */
+
+#undef SIS_LINUX_KERNEL_24
+#undef SIS_LINUX_KERNEL_26
 
 #ifdef OutPortByte
 #undef OutPortByte
@@ -83,7 +89,7 @@
 /*  LINUX KERNEL                                                      */
 /**********************************************************************/
 
-#ifdef LINUX_KERNEL
+#ifdef SIS_LINUX_KERNEL
 #include <linux/config.h>
 #include <linux/version.h>
 
@@ -95,8 +101,15 @@
 #define SIS315H
 #endif
 
-#if 1
-#define SISFBACCEL	/* Include 2D acceleration */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)
+#define SIS_LINUX_KERNEL_26
+#else
+#define SIS_LINUX_KERNEL_24
+#endif
+
+#if !defined(SIS300) && !defined(SIS315H)
+#warning Neither CONFIG_FB_SIS_300 nor CONFIG_FB_SIS_315 is set
+#warning sisfb will not work!
 #endif
 
 #define OutPortByte(p,v) outb((u8)(v),(IOADDRESS)(p))
@@ -106,22 +119,26 @@
 #define InPortWord(p)    inw((IOADDRESS)(p))
 #define InPortLong(p)    inl((IOADDRESS)(p))
 #define SiS_SetMemory(MemoryAddress,MemorySize,value) memset_io(MemoryAddress, value, MemorySize)
-#endif
+
+#endif /* LINUX_KERNEL */
 
 /**********************************************************************/
 /*  XFree86/X.org                                                     */
 /**********************************************************************/
 
-#ifdef LINUX_XF86
+#ifdef SIS_XORG_XF86
+
 #define SIS300
 #define SIS315H
 
-#define OutPortByte(p,v) outb((IOADDRESS)(p),(CARD8)(v))
-#define OutPortWord(p,v) outw((IOADDRESS)(p),(CARD16)(v))
-#define OutPortLong(p,v) outl((IOADDRESS)(p),(CARD32)(v))
-#define InPortByte(p)    inb((IOADDRESS)(p))
-#define InPortWord(p)    inw((IOADDRESS)(p))
-#define InPortLong(p)    inl((IOADDRESS)(p))
+#define OutPortByte(p,v) outSISREG((IOADDRESS)(p),(CARD8)(v))
+#define OutPortWord(p,v) outSISREGW((IOADDRESS)(p),(CARD16)(v))
+#define OutPortLong(p,v) outSISREGL((IOADDRESS)(p),(CARD32)(v))
+#define InPortByte(p)    inSISREG((IOADDRESS)(p))
+#define InPortWord(p)    inSISREGW((IOADDRESS)(p))
+#define InPortLong(p)    inSISREGL((IOADDRESS)(p))
 #define SiS_SetMemory(MemoryAddress,MemorySize,value) memset(MemoryAddress, value, MemorySize)
-#endif
 
+#endif /* XF86 */
+
+#endif  /* _OSDEF_H_ */

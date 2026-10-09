@@ -56,13 +56,17 @@ SOFTWARE.
  *
  *****************************************************************/
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifdef WIN32
 #include <X11/Xwinsock.h>
 #endif
-#include "Xos.h"			/* for strings, fcntl, time */
+#include <X11/Xos.h>			/* for strings, fcntl, time */
 #include <errno.h>
 #include <stdio.h>
-#include "X.h"
+#include <X11/X.h>
 #include "misc.h"
 
 #ifdef __UNIXOS2__
@@ -74,6 +78,23 @@ SOFTWARE.
 #include "opaque.h"
 #ifdef DPMSExtension
 #include "dpmsproc.h"
+#endif
+
+#ifdef WIN32
+/* Error codes from windows sockets differ from fileio error codes  */
+#undef EINTR
+#define EINTR WSAEINTR
+#undef EINVAL
+#define EINVAL WSAEINVAL
+#undef EBADF
+#define EBADF WSAENOTSOCK
+/* Windows select does not set errno. Use GetErrno as wrapper for 
+   WSAGetLastError */
+#define GetErrno WSAGetLastError
+#else
+/* This is just a fallback to errno to hide the differences between unix and
+   Windows in the code */
+#define GetErrno() errno
 #endif
 
 /* modifications by raphael */
@@ -94,7 +115,7 @@ mffs(fd_mask mask)
 
 #ifdef DPMSExtension
 #define DPMS_SERVER
-#include "dpms.h"
+#include <X11/extensions/dpms.h>
 #endif
 
 #ifdef XTESTEXT1
@@ -222,7 +243,7 @@ WaitForSomething(int *pClientsReady)
 	{
 	    i = Select (MaxClients, &LastSelectMask, NULL, NULL, wt);
 	}
-	selecterr = errno;
+	selecterr = GetErrno();
 	WakeupHandler(i, (pointer)&LastSelectMask);
 #ifdef XTESTEXT1
 	if (playback_on) {
@@ -254,7 +275,7 @@ WaitForSomething(int *pClientsReady)
 		{
 		    FatalError("WaitForSomething(): select: errno=%d\n",
 			selecterr);
-		}
+            }
 		else if (selecterr != EINTR)
 		{
 		    ErrorF("WaitForSomething(): select: errno=%d\n",
@@ -333,6 +354,13 @@ WaitForSomething(int *pClientsReady)
 #endif
 	    if (XFD_ANYSET (&devicesReadable) || XFD_ANYSET (&clientsReadable))
 		break;
+#ifdef WIN32
+	    /* Windows keyboard and mouse events are added to the input queue
+	       in Block- and WakupHandlers. There is no device to check if  
+	       data is ready. So check here if new input is available */
+	    if (*checkForInput[0] != *checkForInput[1])
+		return 0;
+#endif
 	}
     }
 
@@ -360,7 +388,7 @@ WaitForSomething(int *pClientsReady)
 	    int client_priority, client_index;
 
 	    curclient = XFD_FD(&savedClientsReadable, i);
-	    client_index = ConnectionTranslation[curclient];
+	    client_index = GetConnectionTranslation(curclient);
 #endif
 #ifdef XSYNC
 		/*  We implement "strict" priorities.

@@ -22,6 +22,10 @@
  */
 /* $XFree86$ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define PSZ 32
 
 #include "leo.h"
@@ -29,7 +33,7 @@
 #include "pixmapstr.h"
 #include "scrnintstr.h"
 
-#include "cfb.h"
+#include "fb.h"
 #include "mi.h"
 #include "mispans.h"
 
@@ -49,7 +53,7 @@ LeoFillSpansStippled (DrawablePtr pDrawable, GCPtr pGC,
 	unsigned int *bits, msk;
 	int cx1 = 0, cy1 = 0, cx2 = 0, cy2 = 0;
 
-	clip = cfbGetCompositeClip(pGC);
+	clip = fbGetCompositeClip(pGC);
 	numRects = REGION_NUM_RECTS(clip);
 	
 	if (!numRects)

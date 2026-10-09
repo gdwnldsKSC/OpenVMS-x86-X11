@@ -24,6 +24,9 @@
  */
 /* $XFree86: xc/lib/font/builtins/file.c,v 1.3 1999/12/30 02:29:49 robin Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "builtin.h"
 
 typedef struct _BuiltinIO {
@@ -128,6 +131,7 @@ BuiltinFileOpen (name)
     return (FontFilePtr) raw;
 }
 
+int
 BuiltinFileClose (f)
     FontFilePtr	f;
 {

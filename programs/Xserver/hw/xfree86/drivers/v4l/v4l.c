@@ -4,6 +4,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/v4l/v4l.c,v 1.33 2003/12/05 03:55:32 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "videodev.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -12,7 +16,7 @@
 #include "xf86PciInfo.h"
 #include "xf86fbman.h"
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #include "regionstr.h"
 #include "dgaproc.h"
 #include "xf86str.h"
@@ -29,7 +33,7 @@ static void     V4LIdentify(int flags);
 static Bool     V4LProbe(DriverPtr drv, int flags);
 static const OptionInfoRec * V4LAvailableOptions(int chipid, int busid);
 
-DriverRec V4L = {
+_X_EXPORT DriverRec V4L = {
         40000,
         "v4l",
         V4LIdentify, /* Identify*/
@@ -58,7 +62,7 @@ static XF86ModuleVersionInfo v4lVersRec =
         {0,0,0,0}
 };
 
-XF86ModuleData v4lModuleData = { &v4lVersRec, v4lSetup, NULL };
+_X_EXPORT XF86ModuleData v4lModuleData = { &v4lVersRec, v4lSetup, NULL };
 
 static pointer
 v4lSetup(pointer module, pointer opts, int *errmaj, int *errmin)

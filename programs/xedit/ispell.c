@@ -24,10 +24,10 @@
  * dealings in this Software without prior written authorization from the
  * XFree86 Project.
  *
- * Author: Paulo César Pereira de Andrade
+ * Author: Paulo CÃ©sar Pereira de Andrade
  */
 
-/* $XdotOrg: xc/programs/xedit/ispell.c,v 1.5 2004/09/02 08:40:32 kem Exp $ */
+/* $XdotOrg: xc/programs/xedit/ispell.c,v 1.7 2005/04/04 10:17:07 eich Exp $ */
 /* $XFree86: xc/programs/xedit/ispell.c,v 1.19 2002/10/19 20:04:20 herrb Exp $ */
 
 #include "xedit.h"
@@ -833,60 +833,60 @@ IspellConvertHtmlAmp(char *buf)
 	}
 	else if (strcmp(&buf[1], "acute") == 0) {
 	    switch (*buf) {
-		case 'a': ch = 'á'; break;
-		case 'e': ch = 'é'; break;
-		case 'i': ch = 'í'; break;
-		case 'o': ch = 'ó'; break;
-		case 'u': ch = 'ú'; break;
-		case 'A': ch = 'Á'; break;
-		case 'E': ch = 'É'; break;
-		case 'I': ch = 'Í'; break;
-		case 'O': ch = 'Ó'; break;
-		case 'U': ch = 'Ú'; break;
+		case 'a': ch = 0xe1; break;
+		case 'e': ch = 0xe9; break;
+		case 'i': ch = 0xed; break;
+		case 'o': ch = 0xf3; break;
+		case 'u': ch = 0xfa; break;
+		case 'A': ch = 0xc1; break;
+		case 'E': ch = 0xc9; break;
+		case 'I': ch = 0xcd; break;
+		case 'O': ch = 0xd3; break;
+		case 'U': ch = 0xda; break;
 	    }
 	}
 	else if (strcmp(&buf[1], "grave") == 0) {
 	    switch (*buf) {
-		case 'a': ch = 'à'; break;
-		case 'e': ch = 'è'; break;
-		case 'i': ch = 'ì'; break;
-		case 'o': ch = 'ò'; break;
-		case 'u': ch = 'ù'; break;
-		case 'A': ch = 'À'; break;
-		case 'E': ch = 'È'; break;
-		case 'I': ch = 'Ì'; break;
-		case 'O': ch = 'Ò'; break;
-		case 'U': ch = 'Ù'; break;
+		case 'a': ch = 0xe0; break;
+		case 'e': ch = 0xe8; break;
+		case 'i': ch = 0xec; break;
+		case 'o': ch = 0xf2; break;
+		case 'u': ch = 0xf9; break;
+		case 'A': ch = 0xc0; break;
+		case 'E': ch = 0xc8; break;
+		case 'I': ch = 0xcc; break;
+		case 'O': ch = 0xd2; break;
+		case 'U': ch = 0xd9; break;
 	    }
 	}
 	else if (strcmp(&buf[1], "tilde") == 0) {
 	    switch (*buf) {
-		case 'a': ch = 'ã'; break;
-		case 'o': ch = 'õ'; break;
-		case 'n': ch = 'ñ'; break;
-		case 'A': ch = 'ã'; break;
-		case 'O': ch = 'Õ'; break;
-		case 'N': ch = 'Ñ'; break;
+		case 'a': ch = 0xe3; break;
+		case 'o': ch = 0xf5; break;
+		case 'n': ch = 0xf1; break;
+		case 'A': ch = 0xe3; break;
+		case 'O': ch = 0xd5; break;
+		case 'N': ch = 0xd1; break;
 	    }
 	}
 	else if (strcmp(&buf[1], "circ") == 0) {
 	    switch (*buf) {
-		case 'a': ch = 'â'; break;
-		case 'e': ch = 'ê'; break;
-		case 'i': ch = 'î'; break;
-		case 'o': ch = 'ô'; break;
-		case 'u': ch = 'û'; break;
-		case 'A': ch = 'Â'; break;
-		case 'E': ch = 'Ê'; break;
-		case 'I': ch = 'Î'; break;
-		case 'O': ch = 'Ô'; break;
-		case 'U': ch = 'Û'; break;
+		case 'a': ch = 0xe2; break;
+		case 'e': ch = 0xea; break;
+		case 'i': ch = 0xee; break;
+		case 'o': ch = 0xf4; break;
+		case 'u': ch = 0xfb; break;
+		case 'A': ch = 0xc2; break;
+		case 'E': ch = 0xca; break;
+		case 'I': ch = 0xce; break;
+		case 'O': ch = 0xd4; break;
+		case 'U': ch = 0xdb; break;
 	    }
 	}
 	else if (strcmp(&buf[1], "cedil") == 0) {
 	    switch (*buf) {
-		case 'c': ch = 'ç'; break;
-		case 'C': ch = 'Ç'; break;
+		case 'c': ch = 0xe7; break;
+		case 'C': ch = 0xc7; break;
 	    }
 	}
 	/* add more cases here */
@@ -2053,7 +2053,7 @@ InitIspell(void)
     ispell.text		= XtVaCreateManagedWidget("text", asciiTextWidgetClass,
 						ispell.form,
 						XtNeditType, XawtextEdit,
-						NULL, 0);
+						NULL);
     ispell.suggestions	= XtCreateManagedWidget("suggestions", labelWidgetClass,
 						ispell.form, NULL, 0);
     ispell.viewport	= XtCreateManagedWidget("viewport", viewportWidgetClass,
@@ -2099,7 +2099,7 @@ InitIspell(void)
     ispell.terse	= XtVaCreateManagedWidget("terse", toggleWidgetClass,
 						  ispell.commands,
 						  XtNstate, ispell.terse_mode,
-						  NULL, 0);
+						  NULL);
     XtAddCallback(ispell.terse, XtNcallback, ToggleTerseIspell, NULL);
     ispell.status	= XtCreateManagedWidget("status", labelWidgetClass,
 						ispell.form, NULL, 0);
@@ -2108,7 +2108,7 @@ InitIspell(void)
     ispell.dict		= XtVaCreateManagedWidget("dict", menuButtonWidgetClass,
 						  ispell.options,
 						  XtNmenuName, "dictionaries",
-						  NULL, 0);
+						  NULL);
     ispell.dictMenu	= XtCreatePopupShell("dictionaries", simpleMenuWidgetClass,
 					     ispell.options, NULL, 0);
     XtRealizeWidget(ispell.dictMenu);
@@ -2116,7 +2116,7 @@ InitIspell(void)
     ispell.format	= XtVaCreateManagedWidget("format", menuButtonWidgetClass,
 						  ispell.options,
 						  XtNmenuName, "formats",
-						  NULL, 0);
+						  NULL);
     ispell.formatMenu	= XtCreatePopupShell("formats", simpleMenuWidgetClass,
 					     ispell.options, NULL, 0);
     XtRealizeWidget(ispell.formatMenu);

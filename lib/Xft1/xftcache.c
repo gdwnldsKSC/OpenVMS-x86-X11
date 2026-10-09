@@ -1,7 +1,7 @@
 /*
  * $XFree86: xc/lib/Xft/xftcache.c,v 1.2 2001/06/11 22:53:30 keithp Exp $
  *
- * Copyright © 2000 Keith Packard, member of The XFree86 Project, Inc.
+ * Copyright Â© 2000 Keith Packard, member of The XFree86 Project, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that

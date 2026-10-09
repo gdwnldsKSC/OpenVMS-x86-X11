@@ -23,14 +23,18 @@
  *           Dirk Hohndel,   <hohndel@suse.de>
  *	     Stefan Dirsch,  <sndirsch@suse.de>
  *	     Helmut Fahrion, <hf@suse.de>
- *	     Michel Dänzer,  <michdaen@iiic.ethz.ch>
+ *	     Michel DÃ¤nzer,  <michdaen@iiic.ethz.ch>
  *
  * this work is sponsored by S.u.S.E. GmbH, Fuerth, Elsa GmbH, Aachen and
  * Siemens Nixdorf Informationssysteme
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/glint/pm2_dac.c,v 1.26tsi Exp $ */
 
-#include "Xarch.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <X11/Xarch.h>
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"

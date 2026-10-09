@@ -37,6 +37,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/hyperpen/xf86HyperPen.c,v 1.9 2003/09/24 03:16:59 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <xf86Version.h>
 
 #if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(3,9,0,0,0)
@@ -61,7 +65,7 @@
 #include <xf86_OSproc.h>
 #include <xf86Xinput.h>
 #include <exevents.h>		/* Needed for InitValuator/Proximity stuff */
-#include <keysym.h>
+#include <X11/keysym.h>
 #include <mipointer.h>
 
 #ifdef XFree86LOADER
@@ -104,18 +108,18 @@ static InputDriverPtr hypDrv;
 
 #else  /* pre 3.9 headers */
 
-#include "Xos.h"
+#include <X11/Xos.h>
 #include <signal.h>
 #include <stdio.h>
 
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "inputstr.h"
 #include "scrnintstr.h"
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 
 #if defined(sun) && !defined(i386)
 #define POSIX_TTY
@@ -309,7 +313,7 @@ static SymTabRec HypPointTabRec[] = {
 #define SS_CONFIG	"a"	/* Send configuration (max coords) */
 #define SS_PROMPT_MODE	"D"	/* Prompt mode */
 #define SS_STREAM_MODE	"@"	/* Stream mode */
-#define SS_RATE         "µ"     /* 19200 bps */
+#define SS_RATE         "\xb5"  /* 19200 bps */
 #define SS_ABSOLUTE     "F"     /* absolute mode */
 #define SS_RELATIVE     "E"     /* relative mode */
 #define SS_MACROKEY	"U"	/* enable F-keys */
@@ -1709,10 +1713,7 @@ xf86HypInit(InputDriverPtr	drv,
     return NULL;
 }
 
-#ifdef XFree86LOADER
-static
-#endif
-InputDriverRec HYPERPEN = {
+_X_EXPORT InputDriverRec HYPERPEN = {
     1,				/* driver version */
     "hyperpen",			/* driver name */
     NULL,			/* identify */
@@ -1775,9 +1776,11 @@ static XF86ModuleVersionInfo xf86HypVersionRec =
 				/* a tool */
 };
 
-XF86ModuleData hyperpenModuleData = {&xf86HypVersionRec,
-					xf86HypPlug,
-					xf86HypUnplug};
+_X_EXPORT XF86ModuleData hyperpenModuleData = {
+    &xf86HypVersionRec,
+    xf86HypPlug,
+    xf86HypUnplug
+};
 
 #endif /* XFree86LOADER */
 #endif /* XFREE86_V4 */

@@ -33,13 +33,20 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xwin/winwndproc.c,v 1.23 2002/10/17 08:18:25 alanh Exp $ */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 #include <commctrl.h>
 #include "winprefs.h"
 #include "winconfig.h"
-#if CYGDEBUG
-#include "winmessages.h"
+#include "winmsg.h"
+
+#ifdef XKB
+extern BOOL winCheckKeyPressed(WPARAM wParam, LPARAM lParam);
 #endif
+extern void winFixShiftKeys (int iScanCode);
+
 
 /*
  * Global variables
@@ -56,7 +63,9 @@ extern Bool			g_fClipboard;
 extern HWND			g_hDlgDepthChange;
 extern Bool			g_fKeyboardHookLL;
 extern HWND			g_hwndKeyboardFocus;
-extern Bool                     g_fSoftwareCursor;
+extern Bool			g_fSoftwareCursor;
+extern DWORD			g_dwCurrentThreadID;
+
 
 /*
  * Called by winWakeupHandler
@@ -79,16 +88,7 @@ winWindowProc (HWND hwnd, UINT message,
   int				i;
 
 #if CYGDEBUG
-  if (message >= WM_USER)
-    {
-      winDebug("winWindowProc - Message WM_USER + %d", message - WM_USER);
-      winDebug(" wParam 0x%x lParam 0x%x\n", wParam, lParam);
-    }
-  else if (message < MESSAGE_NAMES_LEN && MESSAGE_NAMES[message])
-    {  
-      winDebug("winWindowProc - Message %s", MESSAGE_NAMES[message]);
-      winDebug(" wParam 0x%x lParam 0x%x\n", wParam, lParam);
-    }
+  winDebugWin32Message("winWindowProc", hwnd, message, wParam, lParam);
 #endif
   
   /* Watch for server regeneration */
@@ -1020,11 +1020,22 @@ winWindowProc (HWND hwnd, UINT message,
        * Discard presses generated from Windows auto-repeat
        * ago: Only discard them if XKB is not disabled 
        */
-      if (!g_winInfo.xkb.disable) 
-        {  
-          if (lParam & (1<<30))
-	    return 0;
-        } 
+      if (!g_winInfo.xkb.disable && (lParam & (1<<30)))
+      {
+        switch (wParam)
+        {
+          /* ago: Pressing LControl while RControl is pressed is 
+           * Indicated as repeat. Fix this!
+           */
+          case VK_CONTROL:
+          case VK_SHIFT:
+            if (winCheckKeyPressed(wParam, lParam))
+              return 0;
+            break;
+          default:
+            return 0;
+        }
+      } 
 #endif 
       
       /* Discard fake Ctrl_L presses that precede AltGR on non-US keyboards */
@@ -1063,6 +1074,10 @@ winWindowProc (HWND hwnd, UINT message,
       /* Enqueue a keyup event */
       winTranslateKey (wParam, lParam, &iScanCode);
       winSendKeyEvent (iScanCode, FALSE);
+
+      /* Release all pressed shift keys */
+      if (wParam == VK_SHIFT) 
+        winFixShiftKeys (iScanCode);
       return 0;
 
     case WM_HOTKEY:
@@ -1131,7 +1146,7 @@ winWindowProc (HWND hwnd, UINT message,
 	  || s_pScreenInfo->fIgnoreInput)
 	break;
 
-#if CYGDEBUG
+#if CYGDEBUG || TRUE
       winDebug ("winWindowProc - WM_ACTIVATEAPP\n");
 #endif
 
@@ -1147,11 +1162,23 @@ winWindowProc (HWND hwnd, UINT message,
 	  ShowCursor (TRUE);
 	}
 
+#ifdef XWIN_CLIPBOARD
       /* Make sure the clipboard chain is ok. */
       winFixClipboardChain ();
+#endif
 
       /* Call engine specific screen activation/deactivation function */
       (*s_pScreenPriv->pwinActivateApp) (s_pScreen);
+
+#ifdef XWIN_MULTIWINDOWEXTWM
+      if (s_pScreenPriv->fActive)
+	{
+	  /* Restack all window unless using built-in wm. */
+	  if (s_pScreenInfo->fInternalWM && s_pScreenInfo->fAnotherWMRunning)
+	    winMWExtWMRestackWindows (s_pScreen);
+	}
+#endif
+
       return 0;
 
     case WM_COMMAND:
@@ -1161,9 +1188,9 @@ winWindowProc (HWND hwnd, UINT message,
 	  /* Display Exit dialog */
 	  winDisplayExitDialog (s_pScreenPriv);
 	  return 0;
-    case ID_APP_SHOWCURSOR:
-      winDebug("ShowCursor: %d\n", ShowCursor(TRUE));
-      return 0;
+	case ID_APP_SHOWCURSOR:
+	  winDebug("ShowCursor: %d\n", ShowCursor(TRUE));
+	  return 0;
 
 #ifdef XWIN_MULTIWINDOW
 	case ID_APP_HIDE_ROOT:
@@ -1209,6 +1236,30 @@ winWindowProc (HWND hwnd, UINT message,
 	  return TRUE;
 	}
       break;
+
+#ifdef XWIN_MULTIWINDOWEXTWM
+    case WM_MANAGE:
+      ErrorF ("winWindowProc - WM_MANAGE\n");
+      s_pScreenInfo->fAnotherWMRunning = FALSE;
+
+      if (s_pScreenInfo->fInternalWM)
+	{
+	  EnumThreadWindows (g_dwCurrentThreadID, winMWExtWMDecorateWindow, 0);
+	  //RootlessRepositionWindows (s_pScreen);
+	}
+      break;
+
+    case WM_UNMANAGE:
+      ErrorF ("winWindowProc - WM_UNMANAGE\n");
+      s_pScreenInfo->fAnotherWMRunning = TRUE;
+
+      if (s_pScreenInfo->fInternalWM)
+	{
+	  EnumThreadWindows (g_dwCurrentThreadID, winMWExtWMDecorateWindow, 0);
+	  winMWExtWMRestackWindows (s_pScreen);
+	}
+      break;
+#endif
 
     default:
       if(message == s_uTaskbarRestart)

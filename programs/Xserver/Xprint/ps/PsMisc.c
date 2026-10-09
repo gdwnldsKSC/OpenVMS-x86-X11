@@ -74,7 +74,11 @@ in this Software without prior written authorization from The Open Group.
 ** 
 ********************************************************************/
 
-#include "Xos.h"	/* for SIGCLD on pre-POSIX systems */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/Xos.h>	/* for SIGCLD on pre-POSIX systems */
 #include <stdio.h>
 #include "Ps.h"
 

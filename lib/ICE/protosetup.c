@@ -28,6 +28,9 @@ Author: Ralph Mor, X Consortium
 ******************************************************************************/
 /* $XFree86: xc/lib/ICE/protosetup.c,v 1.2 2001/10/28 03:32:28 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/ICE/ICElib.h>
 #include "ICElibint.h"
 

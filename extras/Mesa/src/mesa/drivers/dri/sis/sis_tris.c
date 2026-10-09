@@ -98,7 +98,6 @@ static void sisRenderPrimitive( GLcontext *ctx, GLenum prim );
 #define HAVE_LINES 1
 #define HAVE_POINTS 1
 #define CTX_ARG sisContextPtr smesa
-#define CTX_ARG2 smesa
 #define GET_VERTEX_DWORDS() smesa->vertex_size
 #define ALLOC_VERTS( n, size ) sisAllocDmaLow( smesa, n * size * sizeof(int) )
 #undef LOCAL_VARS
@@ -805,7 +804,7 @@ static void sisRenderStart( GLcontext *ctx )
    GLuint AGPParseSet = smesa->AGPParseSet;
    GLboolean tex_fallback = GL_FALSE;
 
-   if (ctx->Color._DrawDestMask == DD_FRONT_LEFT_BIT && 
+   if (ctx->DrawBuffer->_ColorDrawBufferMask[0] == BUFFER_BIT_FRONT_LEFT && 
       smesa->driDrawable->numClipRects != 0)
    {
       multipass_cliprect(ctx, 0);

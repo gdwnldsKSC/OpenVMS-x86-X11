@@ -11,6 +11,10 @@
  *	Guy DESBIEF
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/cirrus/cir_driver.c,v 1.67 2001/05/15 10:19:37 eich Exp $ */
 
 /* All drivers should typically include these */
@@ -62,7 +66,7 @@ static Bool alp_loaded = FALSE;
  * this DriverRec be an upper-case version of the driver name.
  */
 
-DriverRec CIRRUS = {
+_X_EXPORT DriverRec CIRRUS = {
 	VERSION,
 	CIR_DRIVER_NAME,
 	CIRIdentify,
@@ -155,7 +159,7 @@ static XF86ModuleVersionInfo cirVersRec =
  * This is the module init data.
  * Its name has to be the driver name followed by ModuleData.
  */
-XF86ModuleData cirrusModuleData = { &cirVersRec, cirSetup, NULL };
+_X_EXPORT XF86ModuleData cirrusModuleData = { &cirVersRec, cirSetup, NULL };
 
 static pointer
 cirSetup(pointer module, pointer opts, int *errmaj, int *errmin)

@@ -31,7 +31,11 @@
  * This file contains all the XFree86 global variables.
  */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "os.h"
 #include "windowstr.h"
 #include "propertyst.h"
@@ -212,6 +216,7 @@ Bool xf86sFlag = FALSE;
 Bool xf86bsEnableFlag = FALSE;
 Bool xf86bsDisableFlag = FALSE;
 Bool xf86silkenMouseDisableFlag = FALSE;
+Bool xf86acpiDisableFlag = FALSE;
 char *xf86LayoutName = NULL;
 char *xf86ScreenName = NULL;
 char *xf86PointerName = NULL;
@@ -238,6 +243,8 @@ Bool xf86MiscModInDevAllowNonLocal = FALSE;
 #endif
 RootWinPropPtr *xf86RegisteredPropertiesTable = NULL;
 Bool xf86inSuspend = FALSE;
+Bool xorgHWAccess = FALSE;
+PciBusId xf86IsolateDevice;
 
 #ifdef DLOPEN_HACK
 /*

@@ -41,6 +41,9 @@ This module is responsible for creating and manipulating regions.
 The included files are:
 */
  
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #ifdef FONTMODULE
 # include  "os.h"
 #endif

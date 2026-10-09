@@ -40,7 +40,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(vga,$(OBJS))
 
-InstallObjectModule(vga,$(MODULEDIR),drivers)
+InstallVideoObjectModule(vga,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(vga)

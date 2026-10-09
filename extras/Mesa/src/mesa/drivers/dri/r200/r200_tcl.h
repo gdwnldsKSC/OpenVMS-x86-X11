@@ -36,8 +36,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __R200_TCL_H__
 #define __R200_TCL_H__
 
-#ifdef GLX_DIRECT_RENDERING
-
 #include "r200_context.h"
 
 extern void r200TclPrimitive( GLcontext *ctx, GLenum prim, int hw_prim );
@@ -47,6 +45,10 @@ extern void r200EmitPrimitive( GLcontext *ctx, GLuint first, GLuint last,
 				 GLuint flags );
 
 extern void r200TclFallback( GLcontext *ctx, GLuint bit, GLboolean mode );
+
+extern void r200InitStaticFogData( void );
+
+extern float r200ComputeFogBlendFactor( GLcontext *ctx, GLfloat fogcoord );
 					      
 #define R200_TCL_FALLBACK_RASTER            0x1 /* rasterization */
 #define R200_TCL_FALLBACK_UNFILLED          0x2 /* unfilled tris */
@@ -64,6 +66,4 @@ extern void r200TclFallback( GLcontext *ctx, GLuint bit, GLboolean mode );
 
 #define TCL_FALLBACK( ctx, bit, mode )	r200TclFallback( ctx, bit, mode )
 
-
-#endif
 #endif

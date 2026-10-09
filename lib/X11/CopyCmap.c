@@ -26,13 +26,21 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/X11/CopyCmap.c,v 1.3 2001/01/17 19:41:33 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#else
+#define XCMS 1
+#endif
 #include "Xlibint.h"
+
+#if XCMS
 #include "Xcmsint.h"
 
 /* cmsCmap.c */
 extern XcmsCmapRec * _XcmsCopyCmapRecAndFree(Display *dpy,
 					     Colormap src_cmap,
 					     Colormap copy_cmap);
+#endif
 
 Colormap XCopyColormapAndFree(dpy, src_cmap)
 register Display *dpy;
@@ -50,7 +58,9 @@ Colormap src_cmap;
     UnlockDisplay(dpy);
     SyncHandle();
 
+#if XCMS
     _XcmsCopyCmapRecAndFree(dpy, src_cmap, mid);
-
+#endif
+    
     return(mid);
 }

@@ -11,7 +11,6 @@ OBJS = vesa.o
 INCLUDES = -I. -I../../include
 #else
 INCLUDES = -I. -I$(SERVERSRC)/fb -I$(XF86SRC)/xf4bpp -I$(XF86SRC)/xf1bpp \
-	   -I$(XF86SRC)/xf24_32bpp \
 	   -I$(SERVERSRC)/mfb -I$(SERVERSRC)/afb -I$(SERVERSRC)/mi \
 	   -I$(SERVERSRC)/miext/shadow -I$(SERVERSRC)/render \
 	   -I$(XF86SRC)/vgahw \
@@ -30,7 +29,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(vesa,$(OBJS))
 
-InstallObjectModule(vesa,$(MODULEDIR),drivers)
+InstallVideoObjectModule(vesa,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(vesa)

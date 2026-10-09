@@ -25,8 +25,12 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/ramdac/xf86RamDacCmap.c,v 1.6 2000/03/21 21:15:28 alanh Exp $ */
 
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "windowstr.h"
 #include "mipointer.h"
 #include "micmap.h"

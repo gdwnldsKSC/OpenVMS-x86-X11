@@ -11,7 +11,7 @@ xkb_symbols "basic" {
 
     key <TLDE> { [ abovedot,		dead_ogonek 	]	};
 
-    key <AE01> { [ 1,			excalem		],
+    key <AE01> { [ 1,			exclam		],
 		 [ asciitilde  	                	]	};
     key <AE02> { [ 2,			quotedbl	],
 		 [ dead_caron 				]	};

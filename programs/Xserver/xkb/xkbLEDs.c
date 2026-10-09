@@ -26,6 +26,10 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $XFree86: xc/programs/Xserver/xkb/xkbLEDs.c,v 3.7 2003/07/16 01:39:10 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>
@@ -35,8 +39,8 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "misc.h"
 #include "inputstr.h"
 
-#include "XI.h"
-#include "XKBsrv.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XKBsrv.h>
 #include "xkb.h"
 
 /***====================================================================***/

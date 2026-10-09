@@ -46,7 +46,11 @@ SOFTWARE.
 
 ******************************************************************/
 /* $Xorg: mfbclip.c,v 1.4 2001/02/09 02:05:18 xorgcvs Exp $ */
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "regionstr.h"
 #include "pixmapstr.h"
 #include "scrnintstr.h"
@@ -267,4 +271,10 @@ mfbPixmapToRegion(pPix)
 	FatalError("Assertion failed file %s, line %d: expr\n", __FILE__, __LINE__);
 #endif
     return(pReg);
+}
+
+mfbPixmapToRegionProc *
+mfbPixmapToRegionWeak(void)
+{
+    return mfbPixmapToRegion;
 }

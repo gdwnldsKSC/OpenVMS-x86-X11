@@ -1,5 +1,5 @@
 /* $Xorg: process.c,v 1.6 2001/02/09 02:05:38 xorgcvs Exp $ */
-/* $XdotOrg: xc/programs/xauth/process.c,v 1.3 2004/04/24 23:26:55 alanc Exp $ */
+/* $XdotOrg: xc/programs/xauth/process.c,v 1.4 2005/07/26 16:58:27 alanc Exp $ */
 /*
 
 Copyright 1989, 1998  The Open Group
@@ -32,6 +32,10 @@ from The Open Group.
 /*
  * Author:  Jim Fulton, MIT X Consortium
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "xauth.h"
 #include <ctype.h>
@@ -626,11 +630,15 @@ static Bool xauth_locked = False;     /* if has been locked */
 static char *xauth_filename = NULL;
 static volatile Bool dieing = False;
 
+#ifdef RETSIGTYPE /* autoconf AC_TYPE_SIGNAL */
+# define _signal_t RETSIGTYPE
+#else /* Imake */
 #ifdef SIGNALRETURNSINT
 #define _signal_t int
 #else
 #define _signal_t void
 #endif
+#endif /* RETSIGTYPE */
 
 /* poor man's puts(), for under signal handlers */
 #define WRITES(fd, S) (void)write((fd), (S), strlen((S)))

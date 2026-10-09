@@ -1,11 +1,15 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/apm/apm_video.c,v 1.11tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #if PSZ != 24
 #include "dixstruct.h"
 #include "fourcc.h"
 
 /*
- * Ported from mga_video.c by Loïc Grenié
+ * Ported from mga_video.c by LoÃ¯c GreniÃ©
  */
 
 #ifndef OFF_DELAY

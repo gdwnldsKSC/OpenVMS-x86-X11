@@ -19,10 +19,10 @@
 #define _SUN_H_
 
 /* X headers */
-#include "Xos.h"
+#include <X11/Xos.h>
 #undef index /* don't mangle silly Sun structure member names */
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 
 /* general system headers */
 #ifndef NOSTDHDRS

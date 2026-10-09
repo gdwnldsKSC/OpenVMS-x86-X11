@@ -1,7 +1,7 @@
 /*
  * Id: fbgc.c,v 1.1 1999/11/02 03:54:45 keithp Exp $
  *
- * Copyright © 1998 Keith Packard
+ * Copyright Â© 1998 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -21,8 +21,12 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-/* $XdotOrg: xc/programs/Xserver/fb/fbgc.c,v 1.2 2004/04/23 19:05:14 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/fb/fbgc.c,v 1.5 2005/07/03 07:01:23 daniels Exp $ */
 /* $XFree86: xc/programs/Xserver/fb/fbgc.c,v 1.14 2003/12/18 15:22:32 alanh Exp $ */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #include "fb.h"
 #ifdef IN_MODULE

@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/tek4957/xf86Tek4957.c,v 1.3 2004/04/25 23:16:59 alanc Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/tek4957/xf86Tek4957.c,v 1.9 2005/07/13 02:18:12 kem Exp $ */
 /*
  * Copyright 2002 by Olivier DANET <odanet@caramail.com>
  *
@@ -24,6 +24,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/tek4957/xf86Tek4957.c,v 1.1 2002/11/11 01:18:08 alanh Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifndef XFree86LOADER
 #include <unistd.h>
 #include <errno.h>
@@ -39,7 +43,7 @@
 #include "xf86_OSproc.h"
 #include "xf86Xinput.h"
 #include "exevents.h"
-#include "keysym.h"
+#include <X11/keysym.h>
 #include "mipointer.h"
 
 #ifdef XFree86LOADER
@@ -705,10 +709,7 @@ TekInit(InputDriverPtr	drv,
     return local;
 }
 
-#ifdef XFree86LOADER
-static
-#endif
-InputDriverRec TEK4957 = {
+_X_EXPORT InputDriverRec TEK4957 = {
     1,			/* driver version */
     "tek4957",		/* driver name */
     NULL,		/* identify */
@@ -768,9 +769,11 @@ static XF86ModuleVersionInfo TekVersionRec =
 				/* a tool */
 };
 
-XF86ModuleData tek4957ModuleData = {&TekVersionRec,
-				  TekPlug,
-				  TekUnplug};
+_X_EXPORT XF86ModuleData tek4957ModuleData = {
+    &TekVersionRec,
+    TekPlug,
+    TekUnplug
+};
 
 #endif /* XFree86LOADER */
 

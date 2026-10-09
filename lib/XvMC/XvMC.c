@@ -4,6 +4,17 @@
 
 #include <stdio.h>
 #include "XvMClibint.h"
+#ifdef HAS_SHM
+#ifndef Lynx
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#else
+#include <ipc.h>
+#include <shm.h>
+#endif /* Lynx */
+#endif /* HAS_SHM */
+#include <unistd.h>
+#include <sys/time.h>
 #include <X11/extensions/Xext.h>
 #include <X11/extensions/extutil.h>
 
@@ -463,5 +474,126 @@ Status _xvmc_destroy_subpicture(
     UnlockDisplay (dpy);
     SyncHandle ();
     return Success;
+}
+
+Status XvMCGetDRInfo(Display *dpy, XvPortID port,
+		     char **name, char **busID, 
+		     int *major, int *minor, 
+		     int *patchLevel,
+		     int *isLocal)
+{
+    XExtDisplayInfo *info = xvmc_find_display(dpy);
+    xvmcGetDRInfoReply rep;
+    xvmcGetDRInfoReq  *req;
+    char *tmpBuf = NULL;
+    CARD32 magic;
+
+#ifdef HAS_SHM
+    volatile CARD32 *shMem;
+    struct timezone here;
+    struct timeval now;
+    here.tz_minuteswest = 0;
+    here.tz_dsttime = 0;
+#endif
+
+    XvMCCheckExtension (dpy, info, BadImplementation);
+
+    LockDisplay (dpy);
+    XvMCGetReq (GetDRInfo, req);
+
+    req->port = port;
+    magic = 0;
+    req->magic = 0;
+#ifdef HAS_SHM 
+    req->shmKey = shmget(IPC_PRIVATE, 1024, IPC_CREAT | 0600);
+
+    /*
+     * We fill a shared memory page with a repetitive pattern. If the
+     * X server can read this pattern, we probably have a local connection.
+     * Note that we can trigger the remote X server to read any shared
+     * page on the remote machine, so we shouldn't be able to guess and verify
+     * any complicated data on those pages. Thats the explanation of this
+     * otherwise stupid-looking pattern algorithm.
+     */
+   
+    if (req->shmKey >= 0) {
+	shMem = (CARD32 *) shmat(req->shmKey, 0, 0);
+	shmctl( req->shmKey, IPC_RMID, 0);
+	if ( shMem ) { 
+
+	    register volatile CARD32 *shMemC = shMem;
+	    register int i;
+
+	    gettimeofday( &now, &here);
+	    magic = now.tv_usec & 0x000FFFFF;
+	    req->magic = magic;
+	    i = 1024 / sizeof(CARD32);
+	    while(i--) {
+	        *shMemC++ = magic; 
+	        magic = ~magic;
+	    }
+	} else {
+	    req->shmKey = -1;
+	}
+    }
+#else
+    req->shmKey = 0;
+#endif
+    if (!_XReply (dpy, (xReply *) &rep, 0, xFalse)) {
+        UnlockDisplay (dpy);
+        SyncHandle ();
+#ifdef HAS_SHM
+	if ( req->shmKey >= 0) {
+	    shmdt( (const void *) shMem );
+	}            
+#endif
+        return -1;
+    }
+#ifdef HAS_SHM
+    shmdt( (const void *) shMem );
+#endif
+
+    if (rep.length > 0) {
+
+        int realSize = rep.length << 2;
+
+	tmpBuf = (char *) Xmalloc(realSize);
+	if (tmpBuf) {
+	    *name = (char *) Xmalloc(rep.nameLen);
+	    if (*name) {
+		*busID = (char *) Xmalloc(rep.busIDLen);
+		if (! *busID) {
+		    XFree(*name);
+		    XFree(tmpBuf);
+		}
+	    } else {
+		XFree(tmpBuf);
+	    }	    
+	}
+
+	if (*name && *busID && tmpBuf) {
+
+	    _XRead(dpy, tmpBuf, realSize);
+	    strncpy(*name,tmpBuf,rep.nameLen);
+	    strncpy(*busID,tmpBuf+rep.nameLen,rep.busIDLen);
+	    XFree(tmpBuf);
+
+	} else {
+
+	    _XEatData(dpy, realSize);
+	    UnlockDisplay (dpy);
+	    SyncHandle ();
+	    return -1;
+
+	}
+    }
+
+    UnlockDisplay (dpy);
+    SyncHandle ();
+    *major = rep.major;
+    *minor = rep.minor;
+    *patchLevel = rep.patchLevel;
+    *isLocal = (req->shmKey > 0) ? rep.isLocal : 1;
+    return (rep.length > 0) ? Success : BadImplementation;
 }
 

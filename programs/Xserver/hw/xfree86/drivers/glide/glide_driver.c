@@ -35,7 +35,7 @@
    - Minor fixes.
 
    1999-11-22
-   - Minor change in GLIDE_FIND_FUNC by Loïc Grenié, grenie@math.jussieu.fr.
+   - Minor change in GLIDE_FIND_FUNC by LoÃ¯c GreniÃ©, grenie@math.jussieu.fr.
 
    TODO
    * Support for adjusting gamma correction.
@@ -46,6 +46,10 @@
 */
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/glide/glide_driver.c,v 1.27 2001/08/07 07:04:46 keithp Exp $ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "xaa.h"
 #include "xf86Cursor.h"
@@ -59,7 +63,7 @@
 #include "xf86DDC.h"
 #include "globals.h"
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 #include "fb.h"
 #include "xf86cmap.h"
 #include "shadowfb.h"
@@ -174,7 +178,7 @@ static int LoadGlide(void);
  * this DriverRec be an upper-case version of the driver name.
  */
 
-DriverRec GLIDE = {
+_X_EXPORT DriverRec GLIDE = {
   VERSION,
   GLIDE_DRIVER_NAME,
   GLIDEIdentify,
@@ -240,7 +244,7 @@ static XF86ModuleVersionInfo glideVersRec =
   {0,0,0,0}
 };
 
-XF86ModuleData glideModuleData = { &glideVersRec, glideSetup, NULL };
+_X_EXPORT XF86ModuleData glideModuleData = { &glideVersRec, glideSetup, NULL };
 
 static pointer
 glideSetup(pointer module, pointer opts, int *errmaj, int *errmin)

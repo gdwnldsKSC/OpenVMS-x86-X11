@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/sis/sis_common.h,v 1.3 2004/06/17 13:20:13 twini Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/sis/sis_common.h,v 1.7 2005/07/04 10:57:08 twini Exp $ */
 /*
  * Common header definitions for SiS 2D/3D/DRM suite
  *
@@ -42,22 +42,22 @@
 #define DRM_SIS_FB_INIT		0x16
 
 typedef struct {
-  	int context;
-  	unsigned long offset;
-  	unsigned long size;
-  	void *free;
+	int context;
+	unsigned long offset;
+	unsigned long size;
+	void *free;
 } drm_sis_mem_t;
 
 typedef struct {
-  	unsigned long offset, size;
+	unsigned long offset, size;
 } drm_sis_agp_t;
 
 typedef struct {
-  	unsigned long offset, size;
+	unsigned long offset, size;
 } drm_sis_fb_t;
 
 typedef struct {
-  	unsigned int left, right;
+	unsigned int left, right;
 } drm_sis_flip_t;
 
 #endif /* _SIS_COMMON_H_ */

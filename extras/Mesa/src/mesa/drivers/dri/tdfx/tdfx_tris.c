@@ -53,6 +53,19 @@
 static void tdfxRasterPrimitive( GLcontext *ctx, GLenum prim );
 static void tdfxRenderPrimitive( GLcontext *ctx, GLenum prim );
 
+static GLenum reduced_prim[GL_POLYGON+1] = {
+   GL_POINTS,
+   GL_LINES,
+   GL_LINES,
+   GL_LINES,
+   GL_TRIANGLES,
+   GL_TRIANGLES,
+   GL_TRIANGLES,
+   GL_TRIANGLES,
+   GL_TRIANGLES,
+   GL_TRIANGLES
+};
+
 /***********************************************************************
  *          Macros for t_dd_tritmp.h to draw basic primitives          *
  ***********************************************************************/
@@ -245,18 +258,6 @@ static void tdfx_print_vertex( GLcontext *ctx, const tdfxVertex *v )
  * rendering.  These functions are only used when mixed-mode rendering
  * is occurring.
  */
-static void tdfx_draw_quad( tdfxContextPtr fxMesa,
-			    tdfxVertexPtr v0,
-			    tdfxVertexPtr v1,
-			    tdfxVertexPtr v2,
-			    tdfxVertexPtr v3 )
-{
-/*     fprintf(stderr, "%s\n", __FUNCTION__); */
-   BEGIN_CLIP_LOOP_LOCKED(fxMesa) {
-      QUAD( v0, v1, v2, v3 );
-   } END_CLIP_LOOP_LOCKED(fxMesa);
-}
-
 static void tdfx_draw_triangle( tdfxContextPtr fxMesa,
 				tdfxVertexPtr v0,
 				tdfxVertexPtr v1,
@@ -364,8 +365,8 @@ do {						\
  *            Functions to draw basic unfilled primitives              *
  ***********************************************************************/
 
-#define RASTERIZE(x) if (fxMesa->raster_primitive != x) \
-                        tdfxRasterPrimitive( ctx, x )
+#define RASTERIZE(x) if (fxMesa->raster_primitive != reduced_prim[x]) \
+                        tdfxRasterPrimitive( ctx, reduced_prim[x] )
 #define RENDER_PRIMITIVE fxMesa->render_primitive
 #define IND TDFX_FALLBACK_BIT
 #define TAG(x) x
@@ -1135,20 +1136,6 @@ static void tdfxRenderStart( GLcontext *ctx )
 }
 
 
-static GLenum reduced_prim[GL_POLYGON+1] = {
-   GL_POINTS,
-   GL_LINES,
-   GL_LINES,
-   GL_LINES,
-   GL_TRIANGLES,
-   GL_TRIANGLES,
-   GL_TRIANGLES,
-   GL_TRIANGLES,
-   GL_TRIANGLES,
-   GL_TRIANGLES
-};
-
-
 
 /* Always called between RenderStart and RenderFinish --> We already
  * hold the lock.
@@ -1226,7 +1213,8 @@ static char *fallbackStrings[] = {
    "Texture border",
    "glColorMask",
    "blend mode",
-   "line stipple"
+   "line stipple",
+   "Rasterization disable"
 };
 
 
@@ -1254,7 +1242,7 @@ void tdfxFallback( GLcontext *ctx, GLuint bit, GLboolean mode )
 	 FLUSH_BATCH(fxMesa);
 	 _swsetup_Wakeup( ctx );
 	 fxMesa->RenderIndex = ~0;
-         if (fxMesa->debugFallbacks) {
+         if (TDFX_DEBUG & DEBUG_VERBOSE_FALL) {
             fprintf(stderr, "Tdfx begin software fallback: 0x%x %s\n",
                     bit, getFallbackString(bit));
          }
@@ -1271,7 +1259,7 @@ void tdfxFallback( GLcontext *ctx, GLuint bit, GLboolean mode )
 	 tnl->Driver.Render.BuildVertices = tdfxBuildVertices;
 	 fxMesa->new_gl_state |= (_TDFX_NEW_RENDERSTATE|
 				  _TDFX_NEW_RASTERSETUP);
-         if (fxMesa->debugFallbacks) {
+         if (TDFX_DEBUG & DEBUG_VERBOSE_FALL) {
             fprintf(stderr, "Tdfx end software fallback: 0x%x %s\n",
                     bit, getFallbackString(bit));
          }

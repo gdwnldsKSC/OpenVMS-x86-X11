@@ -51,7 +51,7 @@ in this Software without prior written authorization from The Open Group.
 #include	<swaprep.h>
 
 #include	"clientstr.h"
-#include	"FSproto.h"
+#include	<X11/fonts/FSproto.h>
 #include	"globals.h"
 #include	"fsevents.h"
 #include	"dispatch.h"

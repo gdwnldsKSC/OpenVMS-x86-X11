@@ -23,11 +23,19 @@
  */
 /* $XConsortium: VTsw_usl.c /main/3 1996/02/21 17:53:28 kaleb $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSlib.h"
+
+#ifdef OSHEADER
+# include OSHEADER
+#endif
 
 /*
  * Handle the VT-switching interface for OSs that use USL-style ioctl()s
@@ -62,6 +70,9 @@ xf86VTSwitchAway()
 	}
 	else
 	{
+#ifdef OSSWITCHAWAY
+	        OSSWITCHAWAY;
+#endif
 		return(TRUE);
 	}
 }

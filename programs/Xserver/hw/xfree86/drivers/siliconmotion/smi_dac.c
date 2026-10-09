@@ -28,6 +28,10 @@ authorization from the XFree86 Project and Silicon Motion.
 */
 /* $XFree86$ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "smi.h"
 
 #define BASE_FREQ	14.31818	/* MHz */

@@ -1,4 +1,5 @@
 .\" $Xorg: XtSetVal.man,v 1.3 2000/08/17 19:42:03 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtSetVal.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright (c) 1993, 1994  X Consortium
 .\" 
@@ -151,8 +152,8 @@ Cardinal \fInum_resources\fP, ArgList \fIargs\fP, Cardinal \fInum_args\fP);
 void XtVaGetSubvalues(XtPointer \fIbase\fP, XtResourceList \fIresources\fP,
 Cardinal \fInum_resources\fP, ...\^); 
 .SH ARGUMENTS
-.ds Al of name/address pairs that contain the resource name
-and either the address into which the resource value is to be stored
+.ds Al of name/address pairs that contain the resource name \
+and either the address into which the resource value is to be stored \
 or their new values
 .IP \fIargs\fP 1i
 Specifies the argument list \*(Al.
@@ -169,7 +170,7 @@ Specifies the number of resources in the resource list.
 .IP \fIw\fP 1i
 Specifies the widget.
 .IP \fI...\fP 1i
-Specifes the variable argument list \*(Al.
+Specifies the variable argument list \*(Al.
 .SH DESCRIPTION
 The
 .ZN XtSetValues

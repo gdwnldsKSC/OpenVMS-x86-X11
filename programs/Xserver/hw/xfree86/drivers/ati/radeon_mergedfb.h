@@ -44,7 +44,7 @@
 #define NEED_REPLIES  		/* ? */
 #define EXTENSION_PROC_ARGS void *
 #include "extnsionst.h"  	/* required */
-#include "panoramiXproto.h"  	/* required */
+#include <X11/extensions/panoramiXproto.h>  	/* required */
 #define RADEON_XINERAMA_MAJOR_VERSION  1
 #define RADEON_XINERAMA_MINOR_VERSION  1
 
@@ -81,10 +81,6 @@ typedef struct _MergedDisplayModeRec {
     DisplayModePtr CRT2;
     RADEONScrn2Rel    CRT2Position;
 } RADEONMergedDisplayModeRec, *RADEONMergedDisplayModePtr;
-
-typedef struct _region {
-    int x0,x1,y0,y1;
-} region;
 
 typedef struct _RADEONXineramaData {
     int x;

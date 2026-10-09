@@ -169,14 +169,16 @@ void r200InitState( r200ContextPtr rmesa )
 
    switch ( ctx->Visual.depthBits ) {
    case 16:
+      rmesa->state.depth.clear = 0x0000ffff;
       rmesa->state.depth.scale = 1.0 / (GLfloat)0xffff;
       depth_fmt = R200_DEPTH_FORMAT_16BIT_INT_Z;
       rmesa->state.stencil.clear = 0x00000000;
       break;
    case 24:
+      rmesa->state.depth.clear = 0x00ffffff;
       rmesa->state.depth.scale = 1.0 / (GLfloat)0xffffff;
       depth_fmt = R200_DEPTH_FORMAT_24BIT_INT_Z;
-      rmesa->state.stencil.clear = 0xff000000;
+      rmesa->state.stencil.clear = 0xffff0000;
       break;
    default:
       fprintf( stderr, "Error: Unsupported depth %d... exiting\n",
@@ -303,6 +305,12 @@ void r200InitState( r200ContextPtr rmesa )
    ALLOC_STATE( pix[3], tex, PIX_STATE_SIZE, "PIX/pixstage-3", 3 );
    ALLOC_STATE( pix[4], tex, PIX_STATE_SIZE, "PIX/pixstage-4", 4 );
    ALLOC_STATE( pix[5], tex, PIX_STATE_SIZE, "PIX/pixstage-5", 5 );
+   if (rmesa->r200Screen->drmSupportsTriPerf) {
+      ALLOC_STATE( prf, always, PRF_STATE_SIZE, "PRF/performance-tri", 0 );
+   }
+   else {
+      ALLOC_STATE( prf, never, PRF_STATE_SIZE, "PRF/performance-tri", 0 );
+   }
 
    r200SetUpAtomList( rmesa );
 
@@ -368,6 +376,7 @@ void r200InitState( r200ContextPtr rmesa )
    rmesa->hw.vtx.cmd[VTX_CMD_1] = cmdpkt(R200_EMIT_OUTPUT_VTX_COMP_SEL);
    rmesa->hw.vtx.cmd[VTX_CMD_2] = cmdpkt(R200_EMIT_SE_VTX_STATE_CNTL);
    rmesa->hw.vte.cmd[VTE_CMD_0] = cmdpkt(R200_EMIT_VTE_CNTL);
+   rmesa->hw.prf.cmd[PRF_CMD_0] = cmdpkt(R200_EMIT_PP_TRI_PERF_CNTL);
    rmesa->hw.mtl[0].cmd[MTL_CMD_0] = 
       cmdvec( R200_VS_MAT_0_EMISS, 1, 16 );
    rmesa->hw.mtl[0].cmd[MTL_CMD_1] = 
@@ -448,14 +457,24 @@ void r200InitState( r200ContextPtr rmesa )
       ((rmesa->r200Screen->depthPitch &
 	R200_DEPTHPITCH_MASK) |
        R200_DEPTH_ENDIAN_NO_SWAP);
+   
+   if (rmesa->using_hyperz)
+      rmesa->hw.ctx.cmd[CTX_RB3D_DEPTHPITCH] |= R200_DEPTH_HYPERZ;
 
    rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] = (depth_fmt |
-  					       R200_Z_TEST_LESS |  
+					       R200_Z_TEST_LESS |
 					       R200_STENCIL_TEST_ALWAYS |
 					       R200_STENCIL_FAIL_KEEP |
 					       R200_STENCIL_ZPASS_KEEP |
 					       R200_STENCIL_ZFAIL_KEEP |
 					       R200_Z_WRITE_ENABLE);
+
+   if (rmesa->using_hyperz) {
+      rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= R200_Z_COMPRESSION_ENABLE |
+						  R200_Z_DECOMPRESSION_ENABLE;
+/*      if (rmesa->r200Screen->chipset & R200_CHIPSET_REAL_R200)
+	 rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= RADEON_Z_HIERARCHY_ENABLE;*/
+   }
 
    rmesa->hw.ctx.cmd[CTX_PP_CNTL] = (R200_ANTI_ALIAS_NONE 
  				     | R200_TEX_BLEND_0_ENABLE);
@@ -487,6 +506,14 @@ void r200InitState( r200ContextPtr rmesa )
    rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] = ((rmesa->state.color.drawPitch &
 					      R200_COLORPITCH_MASK) |
 					     R200_COLOR_ENDIAN_NO_SWAP);
+   /* (fixed size) sarea is initialized to zero afaics so can omit version check. Phew! */
+   if (rmesa->sarea->tiling_enabled) {
+      rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] |= R200_COLOR_TILE_ENABLE;
+   }
+
+   rmesa->hw.prf.cmd[PRF_PP_TRI_PERF] = R200_TRI_CUTOFF_MASK - R200_TRI_CUTOFF_MASK * 
+			driQueryOptionf (&rmesa->optionCache,"texture_blend_quality");
+   rmesa->hw.prf.cmd[PRF_PP_PERF_CNTL] = 0;
 
    rmesa->hw.set.cmd[SET_SE_CNTL] = (R200_FFACE_CULL_CCW |
 				     R200_BFACE_SOLID |
@@ -699,7 +726,7 @@ void r200InitState( r200ContextPtr rmesa )
        R200_CULL_FRONT_IS_CCW);
 
    /* Texgen/Texmat state */
-   rmesa->hw.tcg.cmd[TCG_TEX_PROC_CTL_2] = 0x0; /* masks??? */
+   rmesa->hw.tcg.cmd[TCG_TEX_PROC_CTL_2] = 0x00ffffff;
    rmesa->hw.tcg.cmd[TCG_TEX_PROC_CTL_3] = 
       ((0 << R200_TEXGEN_0_INPUT_TEX_SHIFT) |
        (1 << R200_TEXGEN_1_INPUT_TEX_SHIFT) |
@@ -717,8 +744,6 @@ void r200InitState( r200ContextPtr rmesa )
        (5 << R200_TEXGEN_5_INPUT_SHIFT)); 
    rmesa->hw.tcg.cmd[TCG_TEX_CYL_WRAP_CTL] = 0;
 
-   rmesa->TexGenInputs = rmesa->hw.tcg.cmd[TCG_TEX_PROC_CTL_1];
-
 
    for (i = 0 ; i < 8; i++) {
       struct gl_light *l = &ctx->Light.Light[i];
@@ -728,8 +753,8 @@ void r200InitState( r200ContextPtr rmesa )
       ctx->Driver.Lightfv( ctx, p, GL_AMBIENT, l->Ambient );
       ctx->Driver.Lightfv( ctx, p, GL_DIFFUSE, l->Diffuse );
       ctx->Driver.Lightfv( ctx, p, GL_SPECULAR, l->Specular );
-      ctx->Driver.Lightfv( ctx, p, GL_POSITION, 0 );
-      ctx->Driver.Lightfv( ctx, p, GL_SPOT_DIRECTION, 0 );
+      ctx->Driver.Lightfv( ctx, p, GL_POSITION, NULL );
+      ctx->Driver.Lightfv( ctx, p, GL_SPOT_DIRECTION, NULL );
       ctx->Driver.Lightfv( ctx, p, GL_SPOT_EXPONENT, &l->SpotExponent );
       ctx->Driver.Lightfv( ctx, p, GL_SPOT_CUTOFF, &l->SpotCutoff );
       ctx->Driver.Lightfv( ctx, p, GL_CONSTANT_ATTENUATION,
@@ -750,12 +775,12 @@ void r200InitState( r200ContextPtr rmesa )
       ctx->Driver.ClipPlane( ctx, GL_CLIP_PLANE0 + i, NULL );
    }
 
-   ctx->Driver.Fogfv( ctx, GL_FOG_MODE, 0 );
+   ctx->Driver.Fogfv( ctx, GL_FOG_MODE, NULL );
    ctx->Driver.Fogfv( ctx, GL_FOG_DENSITY, &ctx->Fog.Density );
    ctx->Driver.Fogfv( ctx, GL_FOG_START, &ctx->Fog.Start );
    ctx->Driver.Fogfv( ctx, GL_FOG_END, &ctx->Fog.End );
    ctx->Driver.Fogfv( ctx, GL_FOG_COLOR, ctx->Fog.Color );
-   ctx->Driver.Fogfv( ctx, GL_FOG_COORDINATE_SOURCE_EXT, 0 );
+   ctx->Driver.Fogfv( ctx, GL_FOG_COORDINATE_SOURCE_EXT, NULL );
    
    rmesa->hw.grd.cmd[GRD_VERT_GUARD_CLIP_ADJ] = IEEE_ONE;
    rmesa->hw.grd.cmd[GRD_VERT_GUARD_DISCARD_ADJ] = IEEE_ONE;

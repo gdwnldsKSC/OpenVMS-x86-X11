@@ -27,8 +27,12 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $XFree86: xc/programs/Xserver/cfb/cfballpriv.c,v 1.11 2001/01/30 22:06:15 tsi Exp $ */
 
-#include "X.h"
-#include "Xmd.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xmd.h>
 #include "servermd.h"
 #include "scrnintstr.h"
 #include "pixmapstr.h"
@@ -42,9 +46,9 @@ in this Software without prior written authorization from The Open Group.
 #include "cfbmskbits.h"
 #include "mibstore.h"
 
-#if PSZ==8
-int cfbWindowPrivateIndex;
-int cfbGCPrivateIndex;
+#if 1 || PSZ==8
+int cfbWindowPrivateIndex = -1;
+int cfbGCPrivateIndex = -1;
 #endif
 #ifdef CFB_NEED_SCREEN_PRIVATE
 int cfbScreenPrivateIndex = -1;

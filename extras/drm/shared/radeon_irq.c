@@ -54,7 +54,7 @@
  * tied to dma at all, this is just a hangover from dri prehistory.
  */
 
-irqreturn_t DRM(irq_handler)( DRM_IRQ_ARGS )
+irqreturn_t radeon_driver_irq_handler( DRM_IRQ_ARGS )
 {
 	drm_device_t *dev = (drm_device_t *) arg;
 	drm_radeon_private_t *dev_priv = 
@@ -141,7 +141,7 @@ int radeon_emit_and_wait_irq(drm_device_t *dev)
 }
 
 
-int DRM(vblank_wait)(drm_device_t *dev, unsigned int *sequence)
+int radeon_driver_vblank_wait(drm_device_t *dev, unsigned int *sequence)
 {
   	drm_radeon_private_t *dev_priv = 
 	   (drm_radeon_private_t *)dev->dev_private;
@@ -187,7 +187,7 @@ int radeon_irq_emit( DRM_IOCTL_ARGS )
 		return DRM_ERR(EINVAL);
 	}
 
-	DRM_COPY_FROM_USER_IOCTL( emit, (drm_radeon_irq_emit_t *)data,
+	DRM_COPY_FROM_USER_IOCTL( emit, (drm_radeon_irq_emit_t __user *)data,
 				  sizeof(emit) );
 
 	result = radeon_emit_irq( dev );
@@ -214,7 +214,7 @@ int radeon_irq_wait( DRM_IOCTL_ARGS )
 		return DRM_ERR(EINVAL);
 	}
 
-	DRM_COPY_FROM_USER_IOCTL( irqwait, (drm_radeon_irq_wait_t *)data,
+	DRM_COPY_FROM_USER_IOCTL( irqwait, (drm_radeon_irq_wait_t __user*)data,
 				  sizeof(irqwait) );
 
 	return radeon_wait_irq( dev, irqwait.irq_seq );

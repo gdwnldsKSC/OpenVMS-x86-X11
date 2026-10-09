@@ -45,6 +45,10 @@
  * SOFTWARE.
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <sys/types.h>
 #include <errno.h>
 

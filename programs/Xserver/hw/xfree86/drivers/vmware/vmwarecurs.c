@@ -8,6 +8,10 @@ char rcsId_vmwarecurs[] =
 #endif
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/vmware/vmwarecurs.c,v 1.10 2003/02/04 01:39:53 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "vmware.h"
 #include "bits2pixels.h"
 

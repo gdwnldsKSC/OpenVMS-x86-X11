@@ -25,17 +25,12 @@
 #define ___ATIMODE_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
-extern void ATIModePreInit   FunctionPrototype((ScrnInfoPtr, ATIPtr,
-                                                ATIHWPtr));
-extern void ATIModeSave      FunctionPrototype((ScrnInfoPtr, ATIPtr,
-                                                ATIHWPtr));
-extern Bool ATIModeCalculate FunctionPrototype((int, ATIPtr, ATIHWPtr,
-                                                DisplayModePtr));
-extern void ATIModeSet       FunctionPrototype((ScrnInfoPtr, ATIPtr,
-                                                ATIHWPtr));
+extern void ATIModePreInit(ScrnInfoPtr, ATIPtr, ATIHWPtr);
+extern void ATIModeSave(ScrnInfoPtr, ATIPtr, ATIHWPtr);
+extern Bool ATIModeCalculate(int, ATIPtr, ATIHWPtr, DisplayModePtr);
+extern void ATIModeSet(ScrnInfoPtr, ATIPtr, ATIHWPtr);
 
 #endif /* ___ATIMODE_H___ */

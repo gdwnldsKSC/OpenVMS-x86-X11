@@ -41,7 +41,7 @@ ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
 #endif
 
 #if BuildXF86DRI
-  DRI_DEFINES = GlxDefines
+  DRI_DEFINES = GlxDefines -DIN_DRI_DRIVER
  DRI_INCLUDES = -I../../../dri -I../../../glx -I../../dri -I.. \
 		-I$(INCLUDESRC)/GL -I$(XF86OSSRC) -I$(SERVERSRC)/GL/dri
 #endif
@@ -76,6 +76,8 @@ ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
 MESA_INCLUDES = -I$(MESASRCDIR)/src/mesa/main \
 		-I$(MESASRCDIR)/src/mesa/math \
 		-I$(MESASRCDIR)/src/mesa/glapi \
+                -I$(MESASRCDIR)/src/mesa/shader/grammar \
+                -I$(MESASRCDIR)/src/mesa/shader/slang \
 		-I$(MESASRCDIR)/src/mesa \
 		-I$(MESASRCDIR)/src/mesa/$(ASM_DIR) \
 		-I$(MESASRCDIR)/include \
@@ -93,5 +95,13 @@ LibraryObjectRule()
 
 SubdirLibraryRule($(OBJS))
 NormalLintTarget($(SRCS))
+
+#define IHaveSubdirs
+#define PassCDebugFlags
+
+SUBDIRS = grammar slang
+
+MakeSubdirs($(SUBDIRS))
+DependSubdirs($(SUBDIRS))
 
 DependTarget()

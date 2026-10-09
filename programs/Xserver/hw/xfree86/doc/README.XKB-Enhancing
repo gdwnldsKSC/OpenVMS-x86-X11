@@ -506,4 +506,4 @@ rules file described above the .lst file could look like:
 And that should be it. Enjoy creating your own xkb mapping.
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.XKB-Enhancing,v 1.3.2.1 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.XKB-Enhancing,v 1.4 2005/12/21 05:39:05 kem Exp $

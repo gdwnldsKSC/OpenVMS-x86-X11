@@ -47,7 +47,11 @@ SOFTWARE.
 ******************************************************************/
 /* $Xorg: cfbimage.c,v 1.4 2001/02/09 02:04:38 xorgcvs Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "windowstr.h"
 #include "pixmapstr.h"
 #include "scrnintstr.h"
@@ -143,11 +147,7 @@ cfbGetImage(pDrawable, sx, sy, w, h, format, planeMask, pdstLine)
 	return;
     if (pDrawable->bitsPerPixel == 1)
     {
-#ifndef LOWMEMFTPT
 	mfbGetImage(pDrawable, sx, sy, w, h, format, planeMask, pdstLine);
-#else
-	miGetImage(pDrawable, sx, sy, w, h, format, planeMask, pdstLine);
-#endif /* ifndef LOWMEMFTPT */
 	return;
     }
     pScreen = pDrawable->pScreen;

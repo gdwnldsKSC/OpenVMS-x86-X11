@@ -25,7 +25,6 @@
 #define ___ATICURSOR_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "screenint.h"
 
@@ -39,6 +38,6 @@ typedef enum
     ATI_CURSOR_DAC              /* Hardware cursor provided by RAMDAC */
 } ATICursorType;
 
-extern Bool ATIInitializeCursor FunctionPrototype((ScreenPtr, ATIPtr));
+extern Bool ATIInitializeCursor(ScreenPtr, ATIPtr);
 
 #endif /* ___ATICURSOR_H___ */

@@ -23,7 +23,11 @@
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/os-support/lynxos/lynx_video.c,v 3.17 2000/10/28 01:42:27 mvojkovi Exp $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "input.h"
 #include "scrnintstr.h"
 
@@ -297,7 +301,7 @@ removeIOSmem(void)
 	ioBase = MAP_FAILED;	
 }
 
-void
+Bool
 xf86EnableIO()
 {
 	if (IOEnabled++ == 0) {
@@ -305,7 +309,8 @@ xf86EnableIO()
        			(char *)PHYS_ISA_IO_SPACE, 64*1024, SM_READ|SM_WRITE);
 	       	if (ioBase == MAP_FAILED) {
        			--IOEnabled;
-			FatalError("xf86EnableIO: Failed to map I/O\n");
+			xf86Msg(X_WARNING,"xf86EnableIO: Failed to map I/O\n");
+			return FALSE;
        		} else {
 #ifdef DEBUG
 			ErrorF("xf86EnableIO: mapped I/O at vaddr 0x%08x\n",
@@ -314,7 +319,7 @@ xf86EnableIO()
 			atexit(removeIOSmem);
 		}
 	}        
-	return;
+	return TRUE;
 }
 
 void

@@ -47,11 +47,15 @@ SOFTWARE.
 ******************************************************************/
 /* $Xorg: osinit.c,v 1.4 2001/02/09 02:05:23 xorgcvs Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
-#include "X.h"
+#include <X11/X.h>
 #include "os.h"
 #include "osdep.h"
-#include "Xos.h"
+#include <X11/Xos.h>
 
 #ifdef SMART_SCHEDULE
 #include "dixstruct.h"
@@ -65,7 +69,7 @@ SOFTWARE.
 #endif
 #endif
 
-#if defined(Lynx) || defined(SCO) || defined(SCO325)
+#if defined(Lynx) || defined(__SCO__)
 #include <sys/wait.h>
 #endif
 
@@ -110,7 +114,7 @@ OsInit(void)
 #ifdef XFree86LOADER
 	xf86WrapperInit();
 #endif
-#if !defined(SCO) && !defined(__CYGWIN__)
+#if !defined(__SCO__) && !defined(__CYGWIN__) && !defined(__UNIXWARE__)
 	fclose(stdin);
 	fclose(stdout);
 #endif

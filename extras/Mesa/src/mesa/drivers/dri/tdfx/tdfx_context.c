@@ -49,6 +49,7 @@
 #include "tdfx_span.h"
 #include "tdfx_texman.h"
 #include "extensions.h"
+#include "hash.h"
 
 #include "swrast/swrast.h"
 #include "swrast_setup/swrast_setup.h"
@@ -59,8 +60,83 @@
 
 #include "drivers/common/driverfuncs.h"
 
-const char __driConfigOptions[] = { 0 };
-const GLuint __driNConfigOptions = 0;
+#include "utils.h"
+
+#define need_GL_ARB_multisample
+/* #define need_GL_ARB_point_parameters */
+#define need_GL_ARB_texture_compression
+#define need_GL_ARB_vertex_buffer_object
+/* #define need_GL_ARB_vertex_program */
+#define need_GL_EXT_blend_equation_separate
+#define need_GL_EXT_blend_func_separate
+#define need_GL_EXT_blend_minmax
+#define need_GL_EXT_fog_coord
+#define need_GL_EXT_multi_draw_arrays
+#define need_GL_EXT_paletted_texture
+/* #define need_GL_EXT_secondary_color */
+#define need_GL_IBM_multimode_draw_arrays
+/* #define need_GL_MESA_program_debug */
+/* #define need_GL_NV_vertex_program */
+#include "extension_helper.h"
+
+
+/**
+ * Common extension strings exported by all cards
+ */
+const struct dri_extension card_extensions[] =
+{
+    { "GL_ARB_multisample",                GL_ARB_multisample_functions },
+    { "GL_ARB_texture_mirrored_repeat",    NULL },
+    { "GL_ARB_vertex_buffer_object",       GL_ARB_vertex_buffer_object_functions },
+
+    { "GL_EXT_blend_func_separate",        GL_EXT_blend_func_separate_functions },
+    { "GL_EXT_fog_coord",                  GL_EXT_fog_coord_functions },
+    { "GL_EXT_multi_draw_arrays",          GL_EXT_multi_draw_arrays_functions },
+    { "GL_EXT_paletted_texture",           GL_EXT_paletted_texture_functions },
+    { "GL_EXT_shared_texture_palette",     NULL },
+    { "GL_EXT_stencil_wrap",               NULL },
+    { "GL_EXT_texture_env_add",            NULL },
+    { "GL_EXT_texture_lod_bias",           NULL },
+    { "GL_HP_occlusion_test",              NULL },
+    { "GL_IBM_multimode_draw_arrays",      GL_IBM_multimode_draw_arrays_functions },
+
+#ifdef need_GL_ARB_point_parameters
+    { "GL_ARB_point_parameters",           GL_ARB_point_parameters_functions },
+    { "GL_ARB_point_sprite",               NULL },
+#endif
+#ifdef need_GL_EXT_secondary_color
+    { "GL_EXT_secondary_color",            GL_EXT_secondary_color_functions },
+#endif
+#ifdef need_GL_ARB_vertex_program
+    { "GL_ARB_vertex_program",             GL_ARB_vertex_program_functions }
+#endif
+#ifdef need_GL_NV_vertex_program
+    { "GL_NV_vertex_program",              GL_NV_vertex_program_functions }
+    { "GL_NV_vertex_program1_1",           NULL },
+#endif
+#ifdef need_GL_MESA_program_debug
+    { "GL_MESA_program_debug",             GL_MESA_program_debug_functions },
+#endif
+    { NULL,                                NULL }
+};
+
+/**
+ * Extension strings exported only by Naplam (e.g., Voodoo4 & Voodoo5) cards.
+ */
+const struct dri_extension napalm_extensions[] =
+{
+    { "GL_ARB_texture_compression",        GL_ARB_texture_compression_functions },
+    { "GL_ARB_texture_env_combine",        NULL },
+    { "GL_EXT_blend_equation_separate",    GL_EXT_blend_equation_separate_functions },
+    { "GL_EXT_blend_subtract",             GL_EXT_blend_minmax_functions },
+    { "GL_EXT_texture_compression_s3tc",   NULL },
+    { "GL_EXT_texture_env_combine",        NULL },
+
+    { "GL_3DFX_texture_compression_FXT1",  NULL },
+    { "GL_NV_blend_square",                NULL },
+    { "GL_S3_s3tc",                        NULL },
+    { NULL,                                NULL }
+};
 
 /*
  * Enable/Disable the extensions for this context.
@@ -69,61 +145,17 @@ static void tdfxDDInitExtensions( GLcontext *ctx )
 {
    tdfxContextPtr fxMesa = TDFX_CONTEXT(ctx);
 
-   _mesa_enable_extension( ctx, "GL_HP_occlusion_test" );
-   _mesa_enable_extension( ctx, "GL_EXT_paletted_texture" );
-   _mesa_enable_extension( ctx, "GL_EXT_shared_texture_palette" );
-   _mesa_enable_extension( ctx, "GL_EXT_texture_lod_bias" );
-   _mesa_enable_extension( ctx, "GL_EXT_blend_func_separate" );
-   _mesa_enable_extension( ctx, "GL_EXT_fog_coord" );
-   _mesa_enable_extension( ctx, "GL_EXT_texture_env_add" );
-
-#if 0
-   _mesa_enable_extension(ctx, "GL_EXT_secondary_color");
-   _mesa_enable_extension(ctx, "GL_ARB_point_sprite");
-   _mesa_enable_extension(ctx, "GL_EXT_point_parameters");
-#endif
+   driInitExtensions( ctx, card_extensions, GL_FALSE );
 
    if ( fxMesa->haveTwoTMUs ) {
       _mesa_enable_extension( ctx, "GL_ARB_multitexture" );
    }
 
    if ( TDFX_IS_NAPALM( fxMesa ) ) {
-      _mesa_enable_extension( ctx, "GL_ARB_texture_compression" );
-      _mesa_enable_extension( ctx, "GL_3DFX_texture_compression_FXT1" );
-      _mesa_enable_extension( ctx, "GL_EXT_texture_compression_s3tc" );
-      _mesa_enable_extension( ctx, "GL_S3_s3tc" );
-
-      _mesa_enable_extension( ctx, "GL_NV_blend_square" );
-      _mesa_enable_extension( ctx, "GL_EXT_blend_subtract" );
-      _mesa_enable_extension( ctx, "GL_EXT_blend_equation_separate" );
+      driInitExtensions( ctx, napalm_extensions, GL_FALSE );
    } else {
       _mesa_enable_extension( ctx, "GL_SGIS_generate_mipmap" );
    }
-
-   if (fxMesa->haveHwStencil) {
-      _mesa_enable_extension( ctx, "GL_EXT_stencil_wrap" );
-   }
-
-   if (1/*fxMesa->Glide.HaveMirrorExt - JJJ*/) {
-      _mesa_enable_extension(ctx, "GL_ARB_texture_mirrored_repeat");
-   }
-
-   if (TDFX_IS_NAPALM(fxMesa)/*fxMesa->Glide.HaveCombineExt - JJJ*/) {
-      _mesa_enable_extension( ctx, "GL_EXT_texture_env_combine" );
-      _mesa_enable_extension( ctx, "GL_ARB_texture_env_combine" );
-   }
-
-   /* core-level extensions */
-   _mesa_enable_extension(ctx, "GL_EXT_multi_draw_arrays");
-   _mesa_enable_extension(ctx, "GL_IBM_multimode_draw_arrays");
-   _mesa_enable_extension(ctx, "GL_ARB_vertex_buffer_object");
-#if 0
-   /* not just yet */
-   _mesa_enable_extension(ctx, "GL_ARB_vertex_program");
-   _mesa_enable_extension(ctx, "GL_NV_vertex_program");
-   _mesa_enable_extension(ctx, "GL_NV_vertex_program1_1");
-   _mesa_enable_extension(ctx, "GL_MESA_program_debug");
-#endif
 }
 
 
@@ -138,6 +170,7 @@ static const struct tnl_pipeline_stage *tdfx_pipeline[] = {
    &_tnl_point_attenuation_stage,
 #if 0
 #if defined(FEATURE_NV_vertex_program) || defined(FEATURE_ARB_vertex_program)
+   &_tnl_arb_vertex_program_stage,
    &_tnl_vertex_program_stage,
 #endif
 #endif
@@ -145,6 +178,14 @@ static const struct tnl_pipeline_stage *tdfx_pipeline[] = {
    0,
 };
 
+static const struct dri_debug_control debug_control[] =
+{
+    { "dri",   DEBUG_VERBOSE_DRI },
+    { "sync",  DEBUG_ALWAYS_SYNC },
+    { "api",   DEBUG_VERBOSE_API },
+    { "fall",  DEBUG_VERBOSE_FALL },
+    { NULL,    0 }
+};
 
 GLboolean tdfxCreateContext( const __GLcontextModes *mesaVis,
 			     __DRIcontextPrivate *driContextPriv,
@@ -210,6 +251,10 @@ GLboolean tdfxCreateContext( const __GLcontextModes *mesaVis,
    fxMesa->new_gl_state = ~0;
    fxMesa->new_state = ~0;
    fxMesa->dirty = ~0;
+
+   /* Parse configuration files */
+   driParseConfigFiles (&fxMesa->optionCache, &fxScreen->optionCache,
+                        fxMesa->driScreen->myNum, "tdfx");
 
    /* NOTE: This must be here before any Glide calls! */
    if (!tdfxInitGlide( fxMesa )) {
@@ -309,6 +354,15 @@ GLboolean tdfxCreateContext( const __GLcontextModes *mesaVis,
    tdfxDDInitTriFuncs( ctx );
    tdfxInitVB( ctx );
    tdfxInitState( fxMesa );
+
+#if DO_DEBUG
+   TDFX_DEBUG = driParseDebugString( getenv( "TDFX_DEBUG" ), debug_control );
+#endif
+
+   if (driQueryOptionb(&fxMesa->optionCache, "no_rast")) {
+      fprintf(stderr, "disabling 3D acceleration\n");
+      FALLBACK(fxMesa, TDFX_FALLBACK_DISABLE, 1);
+   }
 
    return GL_TRUE;
 }
@@ -519,14 +573,6 @@ tdfxInitContext( __DRIdrawablePrivate *driDrawPriv, tdfxContextPtr fxMesa )
 
    UNLOCK_HARDWARE( fxMesa );
 
-   {
-      const char *debug = getenv("LIBGL_DEBUG");
-      if (debug && strstr(debug, "fallbacks")) {
-         fxMesa->debugFallbacks = GL_TRUE;
-      }
-   }
-
-
    fxMesa->numClipRects = 0;
    fxMesa->pClipRects = NULL;
    fxMesa->scissoredClipRects = GL_FALSE;
@@ -551,11 +597,14 @@ tdfxDestroyContext( __DRIcontextPrivate *driContextPriv )
          /* This share group is about to go away, free our private
           * texture object data.
           */
-         struct gl_texture_object *tObj;
-         tObj = fxMesa->glCtx->Shared->TexObjectList;
-         while (tObj) {
+         struct _mesa_HashTable *textures = fxMesa->glCtx->Shared->TexObjects;
+         GLuint id;
+         for (id = _mesa_HashFirstEntry(textures);
+              id;
+              id = _mesa_HashNextEntry(textures, id)) {
+            struct gl_texture_object *tObj
+               = (struct gl_texture_object *) _mesa_HashLookup(textures, id);
             tdfxTMFreeTexture(fxMesa, tObj);
-            tObj = tObj->Next;
          }
       }
 
@@ -621,9 +670,9 @@ tdfxMakeCurrent( __DRIcontextPrivate *driContextPriv,
             /* Need to call _mesa_make_current2() in order to make sure API
              * dispatch is set correctly.
              */
-            _mesa_make_current2( newCtx,
-                                 (GLframebuffer *) driDrawPriv->driverPrivate,
-                                 (GLframebuffer *) driReadPriv->driverPrivate );
+            _mesa_make_current( newCtx,
+                                (GLframebuffer *) driDrawPriv->driverPrivate,
+                                (GLframebuffer *) driReadPriv->driverPrivate );
             return GL_TRUE;
 	 }
 	 /* [dBorca] tunnel2 requires this */
@@ -654,15 +703,11 @@ tdfxMakeCurrent( __DRIcontextPrivate *driContextPriv,
 	 UNLOCK_HARDWARE( newFx );
       }
 
-      _mesa_make_current2( newCtx,
-                           (GLframebuffer *) driDrawPriv->driverPrivate,
-                           (GLframebuffer *) driReadPriv->driverPrivate );
-
-      if ( !newCtx->Viewport.Width ) {
-	 _mesa_set_viewport( newCtx, 0, 0, driDrawPriv->w, driDrawPriv->h );
-      }
+      _mesa_make_current( newCtx,
+                          (GLframebuffer *) driDrawPriv->driverPrivate,
+                          (GLframebuffer *) driReadPriv->driverPrivate );
    } else {
-      _mesa_make_current( 0, 0 );
+      _mesa_make_current( NULL, NULL, NULL );
    }
 
    return GL_TRUE;

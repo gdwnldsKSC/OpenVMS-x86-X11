@@ -5,13 +5,16 @@
    Written by Mark Vojkovich <markv@valinux.com>
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
 #include "xf86_ansic.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
-#include "mga_bios.h"
 #include "mga_reg.h"
 #include "mga.h"
 #include "shadowfb.h"

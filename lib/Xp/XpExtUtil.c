@@ -38,6 +38,9 @@
 
 #define NEED_EVENTS
 #define NEED_REPLIES
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <X11/extensions/Printstr.h>
 #include <X11/Xlibint.h>
@@ -137,7 +140,7 @@ int XpCheckExtInitUnlocked(dpy, version_index)
 	 * Hang a Xp private data struct.   Use it for version
 	 * information.
 	 */
-	info->data = (caddr_t) Xmalloc (sizeof (xpPrintData));
+	info->data = (XPointer) Xmalloc (sizeof (xpPrintData));
 	if (!info->data) {
 	    return (-1);
 	}

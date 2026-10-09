@@ -7,15 +7,19 @@
  * The mode query/save/set/restore functions from the vesa driver 
  * have been moved here.
  * Copyright (c) 2000 by Conectiva S.A. (http://www.conectiva.com)
- * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br> 
+ * Authors: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br> 
  */
+
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
 
 #include "xf86.h"
 #include "xf86_ansic.h"
 #include "vbe.h"
-#include "Xarch.h"
+#include <X11/Xarch.h>
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 #define VERSION(x) VBE_VERSION_MAJOR(x),VBE_VERSION_MINOR(x)
 
@@ -469,7 +473,8 @@ VBESetVBEMode(vbeInfoPtr pVbe, int mode, VbeCRTCInfoBlock *block)
 	memcpy(pVbe->memory, block, sizeof(VbeCRTCInfoBlock));
 	pVbe->pInt10->es = SEG_ADDR(pVbe->real_mode_base);
 	pVbe->pInt10->di = SEG_OFF(pVbe->real_mode_base);
-    }
+    } else
+	pVbe->pInt10->bx &= ~(1 << 11);
 
     xf86ExecX86int10(pVbe->pInt10);
 

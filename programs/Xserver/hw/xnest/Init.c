@@ -14,8 +14,12 @@ is" without express or implied warranty.
 */
 /* $XFree86: xc/programs/Xserver/hw/xnest/Init.c,v 3.24 2003/01/15 02:34:14 torrey Exp $ */
 
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_XNEST_CONFIG_H
+#include <xnest-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "screenint.h"
 #include "input.h"
 #include "misc.h"
@@ -23,7 +27,7 @@ is" without express or implied warranty.
 #include "windowstr.h"
 #include "servermd.h"
 #include "mi.h"
-#include "fontstruct.h"
+#include <X11/fonts/fontstruct.h>
 
 #include "Xnest.h"
 
@@ -87,15 +91,13 @@ InitOutput(ScreenInfo *screenInfo, int argc, char *argv[])
 void
 InitInput(int argc, char *argv[])
 {
-  pointer ptr, kbd;
+  xnestPointerDevice = AddInputDevice(xnestPointerProc, TRUE);
+  xnestKeyboardDevice = AddInputDevice(xnestKeyboardProc, TRUE);
 
-  ptr = AddInputDevice(xnestPointerProc, TRUE);
-  kbd = AddInputDevice(xnestKeyboardProc, TRUE);
+  RegisterPointerDevice(xnestPointerDevice);
+  RegisterKeyboardDevice(xnestKeyboardDevice);
 
-  RegisterPointerDevice(ptr);
-  RegisterKeyboardDevice(kbd);
-
-  mieqInit(kbd, ptr);
+  mieqInit((DevicePtr)xnestKeyboardDevice, (DevicePtr)xnestPointerDevice);
 
   AddEnabledDevice(XConnectionNumber(xnestDisplay));
 
@@ -160,28 +162,3 @@ void ddxBeforeReset(void)
 int SelectWaitTime = 10000; /* usec */
 #endif
 
-#ifdef DPMSExtension
-/**************************************************************
- * DPMSSet(), DPMSGet(), DPMSSupported()
- *
- * stubs
- *
- ***************************************************************/
-
-void
-DPMSSet(int level)
-{
-}
-
-int
-DPMSGet(int *level)
-{
-    return -1;
-}
-
-Bool
-DPMSSupported()
-{
-    return FALSE;
-}
-#endif

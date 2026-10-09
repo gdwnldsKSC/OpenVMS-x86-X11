@@ -25,16 +25,13 @@
 #define ___ATIMACH64_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
-extern void ATIMach64PreInit     FunctionPrototype((ScrnInfoPtr, ATIPtr,
-                                                    ATIHWPtr));
-extern void ATIMach64Save        FunctionPrototype((ATIPtr, ATIHWPtr));
-extern void ATIMach64Calculate   FunctionPrototype((ATIPtr, ATIHWPtr,
-                                                    DisplayModePtr));
-extern void ATIMach64Set         FunctionPrototype((ATIPtr, ATIHWPtr));
+extern void ATIMach64PreInit(ScrnInfoPtr, ATIPtr, ATIHWPtr);
+extern void ATIMach64Save(ATIPtr, ATIHWPtr);
+extern void ATIMach64Calculate(ATIPtr, ATIHWPtr, DisplayModePtr);
+extern void ATIMach64Set(ATIPtr, ATIHWPtr);
 
-extern void ATIMach64SaveScreen  FunctionPrototype((ATIPtr, int));
-extern void ATIMach64SetDPMSMode FunctionPrototype((ScrnInfoPtr, ATIPtr, int));
+extern void ATIMach64SaveScreen(ATIPtr, int);
+extern void ATIMach64SetDPMSMode(ScrnInfoPtr, ATIPtr, int);
 
 #endif /* ___ATIMACH64_H___ */

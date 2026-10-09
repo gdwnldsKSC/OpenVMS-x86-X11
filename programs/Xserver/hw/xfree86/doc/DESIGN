@@ -1,7 +1,7 @@
                       XFree86 server 4.x Design (DRAFT)
 
                           The XFree86 Project, Inc
-                     Updates for X11R6.8.2 by Jim Gettys
+                      Updates for X11R6.9 by Jim Gettys
 
                               19 December 2003
 
@@ -2880,12 +2880,12 @@ DGAInit.
 
      void FillRect (pScrn, x, y, w, h, color)
 
-          This optional function should fill a rectangle w × h
+          This optional function should fill a rectangle w  h
           located at (x,y) in the given color.
 
      void BlitRect (pScrn, srcx, srcy, w, h, dstx, dsty)
 
-          This optional function should copy an area w × h located
+          This optional function should copy an area w  h located
           at (srcx,srcy) to location (dstx,dsty).  This function
           will need to handle copy directions as appropriate.
 
@@ -6370,4 +6370,4 @@ eScreen() function.
      Generated from XFree86: xc/programs/Xserver/hw/xfree86/doc/sgml/DESIGN.sgml,v 1.53 dawes Exp $
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/DESIGN,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/DESIGN,v 1.4 2005/12/21 05:39:04 kem Exp $

@@ -6,7 +6,7 @@
 
 1.  Supported hardware
 
-The s3virge driver in X11R6.8.2 supports the S3 ViRGE, ViRGE DX, GX, GX2, MX,
+The s3virge driver in X11R6.9 supports the S3 ViRGE, ViRGE DX, GX, GX2, MX,
 MX+, and VX chipsets.  It also supports Trio3D and Trio3D/2x chips.  A major-
 ity of testing is done on ViRGE DX chips, making them the most stable to
 date.  This release has added support for doublescan modes on DX.
@@ -45,7 +45,7 @@ options.
 
 5.  Support:
 
-For support with X11R6.8.2 video drivers please refer to our web site at
+For support with X11R6.9 video drivers please refer to our web site at
 wiki.x.org <URL:http://wiki.x.org>.
 
 6.  Authors
@@ -61,4 +61,4 @@ wiki.x.org <URL:http://wiki.x.org>.
    o Kevin Brosius <cobra@compuserve.com>
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.s3virge,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.s3virge,v 1.4 2005/12/21 05:39:05 kem Exp $

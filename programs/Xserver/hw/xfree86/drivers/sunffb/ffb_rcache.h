@@ -41,13 +41,13 @@
  * a nice idea...
  */
 #define FFB_WRITE_PPC(__fpriv, __ffb, __val, __chg_mask) \
-do {	unsigned int oldval = (__fpriv)->ppc_cache; \
+do {	unsigned int __oldval = (__fpriv)->ppc_cache; \
 	unsigned int __t; \
-	__t = (oldval & (__chg_mask)) ^ (__val); \
+	__t = (__oldval & (__chg_mask)) ^ (__val); \
 	if (__t) { \
-		unsigned int newval = oldval & ~(__chg_mask); \
-		newval |= (__val); \
-		(__fpriv)->ppc_cache = newval; \
+		unsigned int __newval = __oldval & ~(__chg_mask); \
+		__newval |= (__val); \
+		(__fpriv)->ppc_cache = __newval; \
 		FFBFifo((__fpriv), 1); \
 		(__ffb)->ppc = (__val); \
 	} \
@@ -178,22 +178,22 @@ extern void __FFB_Attr_FastfillWin(FFBPtr pFfb, WindowPtr pWin,
 #define FFB_ATTR_FFWIN(__fpriv, __pwin, __ppc, __pixel) \
 do {	CreatorPrivWinPtr __winpriv = CreatorGetWindowPrivate(__pwin);	\
 	unsigned int ___ppc = (__ppc) | FFB_PPC_XS_WID;			\
-	unsigned int fbc = (__winpriv)->fbc_base; \
-	unsigned int rop = (FFB_ROP_NEW|(FFB_ROP_NEW<<8)); \
+	unsigned int __fbc = (__winpriv)->fbc_base; \
+	unsigned int __rop = (FFB_ROP_NEW|(FFB_ROP_NEW<<8)); \
 	if((__fpriv)->has_double_buffer) { \
-		fbc &= ~FFB_FBC_WB_MASK; \
-		fbc |= FFB_FBC_WB_AB; \
+		__fbc &= ~FFB_FBC_WB_MASK; \
+		__fbc |= FFB_FBC_WB_AB; \
 	} \
-	fbc &= ~(FFB_FBC_XE_MASK | FFB_FBC_RGBE_MASK); \
-	fbc |= FFB_FBC_XE_ON | FFB_FBC_RGBE_ON; \
+	__fbc &= ~(FFB_FBC_XE_MASK | FFB_FBC_RGBE_MASK); \
+	__fbc |= FFB_FBC_XE_ON | FFB_FBC_RGBE_ON; \
 	if (pFfb->ffb_res == ffb_res_high) \
-		fbc |= FFB_FBC_WB_B; \
+		__fbc |= FFB_FBC_WB_B; \
 	if ((((__fpriv)->ppc_cache & FFB_PPC_WINMASK) != (___ppc))||	\
 	    ((__fpriv)->pmask_cache != 0x00ffffff)		||	\
-	    ((__fpriv)->rop_cache!= rop)			||	\
+	    ((__fpriv)->rop_cache!= __rop)			||	\
 	    ((__fpriv)->drawop_cache != FFB_DRAWOP_FASTFILL)	||	\
 	    ((__fpriv)->fg_cache != (__pixel))			||	\
-	    ((__fpriv)->fbc_cache != fbc)			||	\
+	    ((__fpriv)->fbc_cache != __fbc)			||	\
 	    ((__fpriv)->wid_cache != ((__winpriv)->wid)))		\
 		__FFB_Attr_FastfillWin(__fpriv, __pwin, ___ppc, __pixel);\
 } while (0)
@@ -215,29 +215,29 @@ do {	CreatorPrivWinPtr __winpriv = CreatorGetWindowPrivate(__pwin);	\
 				 FFB_FBC_ZE_OFF | FFB_FBC_YE_OFF | FFB_FBC_RGBE_ON)
 
 #define FFB_ATTR_SFB_VAR_WINCOPY(__fpriv) \
-do {	unsigned int ppc = FFB_PPC_WINCOPY; \
-	unsigned int ppc_mask = FFB_PPC_WINCOPY_MASK; \
-	unsigned int rop = FFB_ROP_NEW|(FFB_ROP_NEW<<8); \
-	unsigned int fbc = FFB_FBC_WINCOPY; \
+do {	unsigned int __ppc = FFB_PPC_WINCOPY; \
+	unsigned int __ppc_mask = FFB_PPC_WINCOPY_MASK; \
+	unsigned int __rop = FFB_ROP_NEW|(FFB_ROP_NEW<<8); \
+	unsigned int __fbc = FFB_FBC_WINCOPY; \
 	if((__fpriv)->has_double_buffer) { \
-		fbc &= ~FFB_FBC_WB_MASK; \
-		fbc |= FFB_FBC_WB_AB; \
+		__fbc &= ~FFB_FBC_WB_MASK; \
+		__fbc |= FFB_FBC_WB_AB; \
 	} \
-	if (((__fpriv)->ppc_cache & ppc_mask) != ppc || \
-	    (__fpriv)->fbc_cache != fbc || \
-	    (__fpriv)->rop_cache != rop || \
+	if (((__fpriv)->ppc_cache & __ppc_mask) != __ppc || \
+	    (__fpriv)->fbc_cache != __fbc || \
+	    (__fpriv)->rop_cache != __rop || \
 	    (__fpriv)->pmask_cache != 0xffffffff) { \
 		ffb_fbcPtr __ffb = (__fpriv)->regs; \
-		(__fpriv)->ppc_cache &= ~ppc_mask; \
-		(__fpriv)->ppc_cache |= ppc; \
-		(__fpriv)->fbc_cache = fbc; \
-		(__fpriv)->rop_cache = rop; \
+		(__fpriv)->ppc_cache &= ~__ppc_mask; \
+		(__fpriv)->ppc_cache |= __ppc; \
+		(__fpriv)->fbc_cache = __fbc; \
+		(__fpriv)->rop_cache = __rop; \
 		(__fpriv)->pmask_cache = 0xffffffff; \
 		(__fpriv)->rp_active = 1; \
 		FFBFifo(__fpriv, 4); \
-		(__ffb)->ppc = ppc; \
-		(__ffb)->fbc = fbc; \
-		(__ffb)->rop = rop; \
+		(__ffb)->ppc = __ppc; \
+		(__ffb)->fbc = __fbc; \
+		(__ffb)->rop = __rop; \
 		(__ffb)->pmask = 0xffffffff; \
 		(__fpriv)->rp_active = 1; \
 	} \
@@ -247,21 +247,21 @@ extern void __FFB_Attr_SFB_VAR(FFBPtr pFfb, unsigned int ppc, unsigned int ppc_m
 			       unsigned int wid, unsigned int rop, unsigned int pmask);
 
 #define FFB_ATTR_SFB_VAR_WIN(__fpriv, __pmask, __alu, __pwin) \
-do {	unsigned int ppc = FFB_PPC_APE_DISABLE | FFB_PPC_CS_VAR | FFB_PPC_XS_WID; \
-	unsigned int ppc_mask = FFB_PPC_APE_MASK | FFB_PPC_CS_MASK | FFB_PPC_XS_MASK; \
-	unsigned int rop = (FFB_ROP_EDIT_BIT | (__alu))|(FFB_ROP_NEW<<8); \
-	unsigned int fbc = FFB_FBC_WIN(__pwin); \
+do {	unsigned int __ppc = FFB_PPC_APE_DISABLE | FFB_PPC_CS_VAR | FFB_PPC_XS_WID; \
+	unsigned int __ppc_mask = FFB_PPC_APE_MASK | FFB_PPC_CS_MASK | FFB_PPC_XS_MASK; \
+	unsigned int __rop = (FFB_ROP_EDIT_BIT | (__alu))|(FFB_ROP_NEW<<8); \
+	unsigned int __fbc = FFB_FBC_WIN(__pwin); \
 	if((__fpriv)->has_double_buffer) { \
-		fbc &= ~FFB_FBC_WB_MASK; \
-		fbc |= FFB_FBC_WB_AB; \
+		__fbc &= ~FFB_FBC_WB_MASK; \
+		__fbc |= FFB_FBC_WB_AB; \
 	} \
-	if(((__fpriv)->ppc_cache & ppc_mask) != ppc || \
-	   (__fpriv)->fbc_cache != fbc || \
+	if(((__fpriv)->ppc_cache & __ppc_mask) != __ppc || \
+	   (__fpriv)->fbc_cache != __fbc || \
 	   (__fpriv)->wid_cache != FFB_WID_WIN(__pwin) || \
-	   (__fpriv)->rop_cache != rop || \
+	   (__fpriv)->rop_cache != __rop || \
 	   (__fpriv)->pmask_cache != (__pmask)) \
-		__FFB_Attr_SFB_VAR(__fpriv, ppc, ppc_mask, fbc, \
-				   FFB_WID_WIN(__pwin), rop, (__pmask)); \
+		__FFB_Attr_SFB_VAR(__fpriv, __ppc, __ppc_mask, __fbc, \
+				   FFB_WID_WIN(__pwin), __rop, (__pmask)); \
 } while(0)
 
 /* VSCROLL Attributes:
@@ -277,25 +277,25 @@ do {	unsigned int ppc = FFB_PPC_APE_DISABLE | FFB_PPC_CS_VAR | FFB_PPC_XS_WID; \
  * PMASK) all options allowed
  */
 #define FFB_ATTR_VSCROLL_WINCOPY(__fpriv) \
-do {	unsigned int rop = (FFB_ROP_OLD | (FFB_ROP_OLD << 8)); \
-	unsigned int fbc = FFB_FBC_WINCOPY; \
+do {	unsigned int __rop = (FFB_ROP_OLD | (FFB_ROP_OLD << 8)); \
+	unsigned int __fbc = FFB_FBC_WINCOPY; \
 	if((__fpriv)->has_double_buffer) { \
-		fbc &= ~FFB_FBC_WB_MASK; \
-		fbc |= FFB_FBC_WB_AB; \
+		__fbc &= ~FFB_FBC_WB_MASK; \
+		__fbc |= FFB_FBC_WB_AB; \
 	} \
-	if((__fpriv)->fbc_cache != fbc || \
-	   (__fpriv)->rop_cache != rop || \
+	if((__fpriv)->fbc_cache != __fbc || \
+	   (__fpriv)->rop_cache != __rop || \
 	   (__fpriv)->pmask_cache != 0xffffffff || \
 	   (__fpriv)->drawop_cache != FFB_DRAWOP_VSCROLL) { \
 		ffb_fbcPtr __ffb = (__fpriv)->regs; \
-		(__fpriv)->fbc_cache = fbc; \
-		(__fpriv)->rop_cache = rop; \
+		(__fpriv)->fbc_cache = __fbc; \
+		(__fpriv)->rop_cache = __rop; \
 		(__fpriv)->pmask_cache = 0xffffffff; \
 		(__fpriv)->drawop_cache = FFB_DRAWOP_VSCROLL; \
 		(__fpriv)->rp_active = 1; \
 		FFBFifo(__fpriv, 4); \
-		(__ffb)->fbc = fbc; \
-		(__ffb)->rop = rop; \
+		(__ffb)->fbc = __fbc; \
+		(__ffb)->rop = __rop; \
 		(__ffb)->pmask = 0xffffffff; \
 		(__ffb)->drawop = FFB_DRAWOP_VSCROLL; \
 		(__fpriv)->rp_active = 1; \
@@ -303,25 +303,25 @@ do {	unsigned int rop = (FFB_ROP_OLD | (FFB_ROP_OLD << 8)); \
 } while(0)
 
 #define FFB_ATTR_VSCROLL_WIN(__fpriv, __pmask, __pwin) \
-do {	unsigned int rop = (FFB_ROP_OLD | (FFB_ROP_OLD << 8)); \
-	unsigned int fbc = FFB_FBC_WIN(__pwin); \
+do {	unsigned int __rop = (FFB_ROP_OLD | (FFB_ROP_OLD << 8)); \
+	unsigned int __fbc = FFB_FBC_WIN(__pwin); \
 	if((__fpriv)->has_double_buffer) { \
-		fbc &= ~FFB_FBC_WB_MASK; \
-		fbc |= FFB_FBC_WB_AB; \
+		__fbc &= ~FFB_FBC_WB_MASK; \
+		__fbc |= FFB_FBC_WB_AB; \
 	} \
-	if((__fpriv)->fbc_cache != fbc || \
-	   (__fpriv)->rop_cache != rop || \
+	if((__fpriv)->fbc_cache != __fbc || \
+	   (__fpriv)->rop_cache != __rop || \
 	   (__fpriv)->pmask_cache != (__pmask) || \
 	   (__fpriv)->drawop_cache != FFB_DRAWOP_VSCROLL) { \
 		ffb_fbcPtr __ffb = (__fpriv)->regs; \
-		(__fpriv)->fbc_cache = fbc; \
-		(__fpriv)->rop_cache = rop; \
+		(__fpriv)->fbc_cache = __fbc; \
+		(__fpriv)->rop_cache = __rop; \
 		(__fpriv)->pmask_cache = (__pmask); \
 		(__fpriv)->drawop_cache = FFB_DRAWOP_VSCROLL; \
 		(__fpriv)->rp_active = 1; \
 		FFBFifo(__fpriv, 4); \
-		(__ffb)->fbc = fbc; \
-		(__ffb)->rop = rop; \
+		(__ffb)->fbc = __fbc; \
+		(__ffb)->rop = __rop; \
 		(__ffb)->pmask = (__pmask); \
 		(__ffb)->drawop = FFB_DRAWOP_VSCROLL; \
 	} \

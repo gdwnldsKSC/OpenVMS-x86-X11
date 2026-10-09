@@ -1,5 +1,5 @@
 .\" $Xorg: X11.protocol,v 1.4 $
-.\" $XdotOrg: xc/doc/specs/XProtocol/X11.protocol,v 1.3 2004/09/03 16:18:20 kem Exp $
+.\" $XdotOrg: xc/doc/specs/XProtocol/X11.protocol,v 1.4 2005/12/20 16:04:40 kem Exp $
 .\"
 .\"
 .\"
@@ -18,7 +18,7 @@
 
 \s+1\fBX Consortium Standard\fP\s-1
 
-\s+1\fBX Version 11, Release 6.8\fP\s-1
+\s+1\fBX Version 11, Release 6.9/7.0\fP\s-1
 .sp 6
 .ce 5
 \s-1Robert W. Scheifler
@@ -125,8 +125,8 @@ Robert W. Scheifler
 X Consortium, Inc.
 .De
 .bp 1
-.EH '\fBX Protocol\fP''\fBX11, Release 6.8\fP'
-.OH '\fBX Protocol\fP''\fBX11, Release 6.8\fP'
+.EH '\fBX Protocol\fP''\fBX11, Release 6.9/7.0\fP'
+.OH '\fBX Protocol\fP''\fBX11, Release 6.9/7.0\fP'
 .EF ''\fB % \fP''
 .OF ''\fB % \fP''
 .NH 1

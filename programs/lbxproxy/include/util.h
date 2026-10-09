@@ -51,11 +51,19 @@ in this Software without prior written authorization from The Open Group.
 #ifndef	_UTIL_H_
 #define	_UTIL_H_
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef RETSIGTYPE /* autoconf AC_TYPE_SIGNAL */
+# define SIGVAL RETSIGTYPE
+#else /* Imake */
 #ifdef SIGNALRETURNSINT
 #define SIGVAL int
 #else
 #define SIGVAL void
 #endif
+#endif /* RETSIGTYPE */
 
 typedef SIGVAL (*OsSigHandlerPtr)(
     int /* sig */

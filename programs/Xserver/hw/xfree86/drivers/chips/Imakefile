@@ -26,7 +26,7 @@ INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86OSSRC) -I$(XF86SRC)/fbdevhw\
 	   -I$(XF86SRC)/xf1bpp -I$(XF86SRC)/xf4bpp -I$(SERVERSRC)/Xext \
 	   -I$(XINCLUDESRC) -I$(XF86SRC)/xaa -I$(FONTINCSRC) \
 	   -I$(XF86SRC)/ramdac -I$(XF86SRC)/rac -I$(XF86SRC)/ddc \
-	   -I$(XF86SRC)/i2c -I$(XF86SRC)/xf24_32bpp -I$(XF86SRC)/shadowfb \
+	   -I$(XF86SRC)/i2c -I$(XF86SRC)/shadowfb \
 	   -I$(XF86SRC)/xf8_16bpp -I$(XF86SRC)/int10 \
 	   -I$(XF86SRC)/vbe -I$(EXTINCSRC) -I$(SERVERSRC)/render
 #endif
@@ -42,7 +42,7 @@ ObjectModuleTarget(chips,$(OBJS))
 ObjectFromSpecialSource(ct_accelmm, ct_accel, -DCHIPS_MMIO)
 ObjectFromSpecialSource(ct_accelhi, ct_accel, -DCHIPS_MMIO -DCHIPS_HIQV)
 
-InstallObjectModule(chips,$(MODULEDIR),drivers)
+InstallVideoObjectModule(chips,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(chips)

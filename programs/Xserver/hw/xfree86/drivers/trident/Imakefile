@@ -38,7 +38,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(trident,$(OBJS))
 
-InstallObjectModule(trident,$(MODULEDIR),drivers)
+InstallVideoObjectModule(trident,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(trident)

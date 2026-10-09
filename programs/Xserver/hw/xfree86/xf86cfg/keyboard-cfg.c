@@ -24,7 +24,7 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Author: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
+ * Author: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br>
  *
  * $XFree86: xc/programs/Xserver/hw/xfree86/xf86cfg/keyboard-cfg.c,v 1.21 2002/12/05 20:24:21 paulo Exp $
  */
@@ -37,6 +37,9 @@
 #include <X11/Xaw/MenuButton.h>
 #include <X11/Xaw/SimpleMenu.h>
 #include <X11/Xaw/SmeBSB.h>
+
+#define IS_KBDDRIV(X) ((strcasecmp((X),"kbd") == 0) || \
+	(strcasecmp((X), "keyboard") == 0))
 
 /*
  * Types
@@ -159,8 +162,7 @@ KeyboardConfig(XtPointer config)
 	    XF86ConfInputPtr key = XF86Config->conf_input_lst;
 
 	    while (key != NULL) {
-		if (strcasecmp(key->inp_driver, "keyboard") == 0 &&
-		    xkb_infos[i]->conf == key)
+		if (IS_KBDDRIV(key->inp_driver) && xkb_infos[i]->conf == key)
 		    break;
 		key = (XF86ConfInputPtr)(key->list.next);
 	    }
@@ -216,7 +218,7 @@ KeyboardConfig(XtPointer config)
 	int nkeyboards = 0;
 
 	while (input != NULL) {
-	    if (strcasecmp(input->inp_driver, "keyboard") == 0)
+	    if (IS_KBDDRIV(input->inp_driver))
 		++nkeyboards;
 	    input = (XF86ConfInputPtr)(input->list.next);
 	}
@@ -253,7 +255,11 @@ KeyboardConfig(XtPointer config)
 	    keyboard = XtNew(XF86ConfInputRec);
 	    keyboard->list.next = NULL;
 	    keyboard->inp_identifier = XtNewString(ident_string);
+#if defined(USE_DEPRECATED_KEYBOARD_DRIVER)
 	    keyboard->inp_driver = XtNewString("keyboard");
+#else
+	    keyboard->inp_driver = XtNewString("kbd");
+#endif
 	    keyboard->inp_option_lst = xf86newOption(XtNewString(XkbRules),
 						     XtNewString(rules));
 	    xf86addNewOption(keyboard->inp_option_lst,
@@ -493,7 +499,7 @@ InitializeKeyboard(void)
 
     /* XXX Assumes the first keyboard is the core keyboard */
     while (keyboard != NULL) {
-	if (strcasecmp(keyboard->inp_driver, "keyboard") == 0)
+	if (IS_KBDDRIV(keyboard->inp_driver))
 	    break;
 	keyboard = (XF86ConfInputPtr)(keyboard->list.next);
     }
@@ -1182,7 +1188,7 @@ UpdateRulesPopups(void)
 	sme = XtVaCreateManagedWidget(xkb_rules->model.name[i], smeBSBObjectClass,
 				      modelp,
 				      XtNlabel, xkb_rules->model.desc[i],
-				      NULL, 0);
+				      NULL);
 	XtAddCallback(sme, XtNcallback,  KeyboardModelCallback, NULL);
     }
 
@@ -1195,7 +1201,7 @@ UpdateRulesPopups(void)
 	sme = XtVaCreateManagedWidget(xkb_rules->layout.name[i], smeBSBObjectClass,
 				      layoutp,
 				      XtNlabel, xkb_rules->layout.desc[i],
-				      NULL, 0);
+				      NULL);
 	XtAddCallback(sme, XtNcallback,  KeyboardLayoutCallback, NULL);
     }
 
@@ -1207,13 +1213,13 @@ UpdateRulesPopups(void)
     sme = XtVaCreateManagedWidget("None", smeBSBObjectClass,
 				  variantp,
 				  XtNlabel, "None",
-				  NULL, 0);
+				  NULL);
     XtAddCallback(sme, XtNcallback,  KeyboardVariantCallback, NULL);
     for (i = 0; i < xkb_rules->variant.nelem; i++) {
 	sme = XtVaCreateManagedWidget(xkb_rules->variant.name[i], smeBSBObjectClass,
 				      variantp,
 				      XtNlabel, xkb_rules->variant.desc[i],
-				      NULL, 0);
+				      NULL);
 	XtAddCallback(sme, XtNcallback,  KeyboardVariantCallback, NULL);
     }
 
@@ -1225,7 +1231,7 @@ UpdateRulesPopups(void)
     sme = XtVaCreateManagedWidget("None", smeBSBObjectClass,
 				  optionsp,
 				  XtNlabel, "None",
-				  NULL, 0);
+				  NULL);
     XtAddCallback(sme, XtNcallback,  KeyboardOptionsCallback, NULL);
     optparent = optionsp;
     optname = NULL;
@@ -1239,7 +1245,7 @@ UpdateRulesPopups(void)
 					  smeBSBObjectClass,
 					  optpopup,
 					  XtNlabel, "None",
-					  NULL, 0);
+					  NULL);
 	    XtAddCallback(sme, XtNcallback,  KeyboardOptionsCallback, NULL);
 	}
 	else {
@@ -1251,7 +1257,7 @@ UpdateRulesPopups(void)
 				      XtNlabel, xkb_rules->option.desc[i],
 				      XtNmenuName, optname,
 				      XtNleftBitmap, optname ? menuPixmap : None,
-				      NULL, 0);
+				      NULL);
 	if (optparent != optionsp)
 	    XtAddCallback(sme, XtNcallback,  KeyboardOptionsCallback, NULL);
     }
@@ -1277,7 +1283,7 @@ KeyboardModelAndLayout(XF86SetupInfo *info)
 	XtCreateManagedWidget("labelR", labelWidgetClass, kbdml, NULL, 0);
 	rulesb = XtVaCreateManagedWidget("rules", menuButtonWidgetClass, kbdml,
 					 XtNmenuName, "rulesP",
-					 NULL, 0);
+					 NULL);
 	popup = XtCreatePopupShell("rulesP", simpleMenuWidgetClass,
 				   rulesb, NULL, 0);
 	{
@@ -1294,7 +1300,7 @@ KeyboardModelAndLayout(XF86SetupInfo *info)
 		    sme = XtVaCreateManagedWidget(ent->d_name, smeBSBObjectClass,
 						  popup,
 						  XtNlabel, ent->d_name,
-						  NULL, 0);
+						  NULL);
 		    XtAddCallback(sme, XtNcallback,  KeyboardRulesCallback, NULL);
 		}
 		closedir(dir);
@@ -1305,28 +1311,28 @@ KeyboardModelAndLayout(XF86SetupInfo *info)
 	XtCreateManagedWidget("labelM", labelWidgetClass, kbdml, NULL, 0);
 	modelb = XtVaCreateManagedWidget("model", menuButtonWidgetClass, kbdml,
 					 XtNmenuName, "modelP",
-					 NULL, 0);
+					 NULL);
 
 	/* LAYOUT */
 	XtCreateManagedWidget("labelL", labelWidgetClass, kbdml, NULL, 0);
 	layoutb = XtVaCreateManagedWidget("layout", menuButtonWidgetClass, kbdml,
 					  XtNmenuName, "layoutP",
 					  XtNlabel, xkb_rules->layout.desc[0],
-					  NULL, 0);
+					  NULL);
 
 	/* VARIANT */
 	XtCreateManagedWidget("labelV", labelWidgetClass, kbdml, NULL, 0);
 	variantb = XtVaCreateManagedWidget("variant", menuButtonWidgetClass, kbdml,
 					  XtNmenuName, "variantP",
 					  XtNlabel, "",
-					  NULL, 0);
+					  NULL);
 
 	/* OPTIONS */
 	XtCreateManagedWidget("labelO", labelWidgetClass, kbdml, NULL, 0);
 	optionsb = XtVaCreateManagedWidget("options", menuButtonWidgetClass, kbdml,
 					   XtNmenuName, "optionsP",
 					   XtNlabel, "",
-					   NULL, 0);
+					   NULL);
 
 	UpdateRulesPopups();
 

@@ -47,6 +47,9 @@ in this Software without prior written authorization from The Open Group.
  * void _XawTextInsertFile(w, event, params, num_params);
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <errno.h>
 #include <X11/IntrinsicP.h>

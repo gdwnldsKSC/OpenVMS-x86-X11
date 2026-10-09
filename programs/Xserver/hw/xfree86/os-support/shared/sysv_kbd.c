@@ -25,7 +25,11 @@
  */
 /* $XConsortium: sysv_kbd.c /main/3 1996/02/21 17:53:59 kaleb $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "compiler.h"
 
@@ -61,7 +65,7 @@ xf86KbdInit()
 	ioctl (xf86Info.consoleFd, KDGKBMODE, &kbdtrans);
 #endif
 	ioctl (xf86Info.consoleFd, TCGETA, &kbdtty);
-#if defined(E_TABSZ) && !defined(SCO325)
+#if defined(E_TABSZ)
 	kbdemap = xalloc(E_TABSZ);
 	if (ioctl(xf86Info.consoleFd, LDGMAP, kbdemap) < 0)
 	{

@@ -9,6 +9,10 @@
  * new server design (DHD).
  */                     
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "colormapst.h"
 
 /* All drivers should typically include these */
@@ -22,7 +26,6 @@
 /* Drivers that need to access the PCI config space directly need this */
 #include "xf86Pci.h"
 
-#include "mga_bios.h"
 #include "mga_reg.h"
 #include "mga.h"
 #include "mga_macros.h"
@@ -57,45 +60,29 @@ static Bool MGAGInit(ScrnInfoPtr, DisplayModePtr);
 static void MGAGLoadPalette(ScrnInfoPtr, int, int*, LOCO*, VisualPtr);
 static Bool MGAG_i2cInit(ScrnInfoPtr pScrn);
 
-/*
- * MGAGCalcClock - Calculate the PLL settings (m, n, p, s).
+/**
+ * Calculate the PLL settings (m, n, p, s).
  *
- * DESCRIPTION
- *   For more information, refer to the Matrox
- *   "MGA1064SG Developer Specification (document 10524-MS-0100).
- *     chapter 5.7.8. "PLLs Clocks Generators"
+ * For more information, refer to the Matrox "MGA1064SG Developer
+ * Specification" (document 10524-MS-0100).  chapter 5.7.8. "PLLs Clocks
+ * Generators"
  *
- * PARAMETERS
- *   f_out		IN	Desired clock frequency.
- *   f_max		IN	Maximum allowed clock frequency.
- *   m			OUT	Value of PLL 'm' register.
- *   n			OUT	Value of PLL 'n' register.
- *   p			OUT	Value of PLL 'p' register.
- *   s			OUT	Value of PLL 's' filter register 
- *                              (pix pll clock only).
- *
- * HISTORY
- *   August 18, 1998 - Radoslaw Kapitan
- *   Adapted for G200 DAC
- *
- *   February 28, 1997 - Guy DESBIEF 
- *   Adapted for MGA1064SG DAC.
- *   based on MGACalcClock  written by [aem] Andrew E. Mileski
+ * \param f_out   Desired clock frequency, measured in kHz.
+ * \param best_m  Value of PLL 'm' register.
+ * \param best_n  Value of PLL 'n' register.
+ * \param p       Value of PLL 'p' register.
+ * \param s       Value of PLL 's' filter register (pix pll clock only).
  */
 
-/* The following values are in kHz */
-#define MGA_MIN_VCO_FREQ     50000
-#define MGA_MAX_VCO_FREQ    310000
-
-static double
+static void
 MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 		int *best_m, int *best_n, int *p, int *s )
 {
 	MGAPtr pMga = MGAPTR(pScrn);
 	int m, n;
-	double f_pll, f_vco;
+	double f_vco;
 	double m_err, calc_f;
-	double ref_freq;
+	const double ref_freq = (double) pMga->bios.pll_ref_freq;
 	int feed_div_min, feed_div_max;
 	int in_div_min, in_div_max;
 	int post_div_max;
@@ -103,7 +90,6 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 	switch( pMga->Chipset )
 	{
 	case PCI_CHIP_MGA1064:
-		ref_freq     = 14318.18;
 		feed_div_min = 100;
 		feed_div_max = 127;
 		in_div_min   = 1;
@@ -112,7 +98,6 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 		break;
 	case PCI_CHIP_MGAG400:
 	case PCI_CHIP_MGAG550:
-		ref_freq     = 27050.5;
 		feed_div_min = 7;
 		feed_div_max = 127;
 		in_div_min   = 1;
@@ -124,10 +109,6 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 	case PCI_CHIP_MGAG200:
 	case PCI_CHIP_MGAG200_PCI:
 	default:
-		if (pMga->Bios2.PinID && (pMga->Bios2.VidCtrl & 0x20))
-			ref_freq = 14318.18;
-		else
-			ref_freq = 27050.5;
 		feed_div_min = 7;
 		feed_div_max = 127;
 		in_div_min   = 1;
@@ -137,16 +118,17 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 	}
 
 	/* Make sure that f_min <= f_out */
-	if ( f_out < ( MGA_MIN_VCO_FREQ / 8))
-		f_out = MGA_MIN_VCO_FREQ / 8;
+	if ( f_out < ( pMga->bios.pixel.min_freq / 8))
+		f_out = pMga->bios.pixel.min_freq / 8;
 
 	/*
 	 * f_pll = f_vco / (p+1)
-	 * Choose p so that MGA_MIN_VCO_FREQ   <= f_vco <= MGA_MAX_VCO_FREQ  
+	 * Choose p so that 
+	 * pMga->bios.pixel.min_freq <= f_vco <= pMga->bios.pixel.max_freq
 	 * we don't have to bother checking for this maximum limit.
 	 */
 	f_vco = ( double ) f_out;
-	for ( *p = 0; *p <= post_div_max && f_vco < MGA_MIN_VCO_FREQ;
+	for ( *p = 0; *p <= post_div_max && f_vco < pMga->bios.pixel.min_freq;
 		*p = *p * 2 + 1, f_vco *= 2.0);
 
 	/* Initial amount of error for frequency maximum */
@@ -187,14 +169,11 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 	if ( (180000.0 <= f_vco) )
 		*s = 3;	
 
-	f_pll = f_vco / ( *p + 1 );
-
 #ifdef DEBUG
-	ErrorF( "f_out_requ =%ld f_pll_real=%.1f f_vco=%.1f n=0x%x m=0x%x p=0x%x s=0x%x\n",
-		f_out, f_pll, f_vco, *best_n, *best_m, *p, *s );
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "f_out_requ =%ld f_pll_real=%.1f f_vco=%.1f n=0x%x m=0x%x p=0x%x s=0x%x\n",
+		   f_out, (f_vco / (*p + 1)), f_vco, *best_n, *best_m, *p, *s );
 #endif
-
-	return f_pll;
 }
 
 /*
@@ -215,7 +194,7 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 	}
 
 	/* Do the calculations for m, n, p and s */
-	(void) MGAGCalcClock( pScrn, f_out, &m, &n, &p, &s );
+	MGAGCalcClock( pScrn, f_out, &m, &n, &p, &s );
 
 	/* Values for the pixel clock PLL registers */
 	pReg->DacRegs[ MGA1064_PIX_PLLC_M ] = m & 0x1F;
@@ -1279,36 +1258,10 @@ MGAGRamdacInit(ScrnInfoPtr pScrn)
     MGAdac->LoadPalette 	   = MGAGLoadPalette;
     MGAdac->RestorePalette	   = MGAGRestorePalette;
 
-    if ( pMga->Bios2.PinID && pMga->Bios2.PclkMax != 0xFF )
-    {
-	MGAdac->maxPixelClock = (pMga->Bios2.PclkMax + 100) * 1000;
-	MGAdac->ClockFrom = X_PROBED;
-    }
-    else
-    {
-    	switch( pMga->Chipset )
-    	{
-    	case PCI_CHIP_MGA1064:
-	    if ( pMga->ChipRev < 3 )
-	    	MGAdac->maxPixelClock = 170000;
-	    else
-	        MGAdac->maxPixelClock = 220000;
-	    break;
-    	case PCI_CHIP_MGAG400:
-    	case PCI_CHIP_MGAG550:
-	    /* We don't know the new pins format but we know that
-	       the maxclock / 4 is where the RamdacType was in the
-	       old pins format */
-	    MGAdac->maxPixelClock = pMga->Bios2.RamdacType * 4000;
-	    if(MGAdac->maxPixelClock < 300000)
-		MGAdac->maxPixelClock = 300000;
-	    break;
-	default:
-	    MGAdac->maxPixelClock = 250000;
-	}
-	MGAdac->ClockFrom = X_DEFAULT;
-    }
-    
+
+    MGAdac->maxPixelClock = pMga->bios.pixel.max_freq;
+    MGAdac->ClockFrom = X_PROBED;
+
     /* Disable interleaving and set the rounding value */
     pMga->Interleave = FALSE;
 

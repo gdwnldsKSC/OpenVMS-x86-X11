@@ -32,6 +32,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/digitaledge/DigitalEdge.c,v 1.8 2003/09/24 03:16:58 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86Version.h"
 
 #if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(3,9,0,0,0)
@@ -56,7 +60,7 @@
 #include "xf86_OSproc.h"
 #include "xf86Xinput.h"
 #include "exevents.h"		/* Needed for InitValuator/Proximity stuff */
-#include "keysym.h"
+#include <X11/keysym.h>
 #include "mipointer.h"
 
 #ifdef XFree86LOADER
@@ -98,18 +102,18 @@ static InputDriverPtr dedgeDrv;
 
 #else  /* pre 3.9 headers */
 
-#include "Xos.h"
+#include <X11/Xos.h>
 #include <signal.h>
 #include <stdio.h>
 
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "inputstr.h"
 #include "scrnintstr.h"
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 
 #if defined(sun) && !defined(i386)
 #define POSIX_TTY
@@ -191,7 +195,7 @@ typedef struct {
 	int dedgeClickThresh;	/* Click threshold in arbitary units */
     int flags;			/* various flags */
     int dedgeIndex;		/* number of bytes read */
-    unsigned char dedgeData[5];	/* data read on the device */
+    unsigned char dedgeData[7];	/* data read on the device */
 } DigitalEdgeDeviceRec, *DigitalEdgeDevicePtr;
 
 /*
@@ -1404,10 +1408,7 @@ xf86SumInit(InputDriverPtr	drv,
     return local;
 }
 
-#ifdef XFree86LOADER
-static
-#endif
-InputDriverRec DIGITALEDGE = {
+_X_EXPORT InputDriverRec DIGITALEDGE = {
     1,				/* driver version */
     "digitaledge",		/* driver name */
     NULL,			/* identify */
@@ -1459,7 +1460,7 @@ static XF86ModuleVersionInfo xf86SumVersionRec =
     MODINFOSTRING1,
     MODINFOSTRING2,
     XORG_VERSION_CURRENT,
-    1, 0, 0,
+    1, 0, 1,
     ABI_CLASS_XINPUT,
     ABI_XINPUT_VERSION,
     MOD_CLASS_XINPUT,
@@ -1467,9 +1468,11 @@ static XF86ModuleVersionInfo xf86SumVersionRec =
 				/* a tool */
 };
 
-XF86ModuleData digitaledgeModuleData = {&xf86SumVersionRec,
-					xf86SumPlug,
-					xf86SumUnplug};
+_X_EXPORT XF86ModuleData digitaledgeModuleData = {
+    &xf86SumVersionRec,
+    xf86SumPlug,
+    xf86SumUnplug
+};
 
 #endif /* XFree86LOADER */
 #endif /* XFREE86_V4 */

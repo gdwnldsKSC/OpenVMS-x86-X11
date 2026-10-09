@@ -124,7 +124,8 @@ extern int ffs(unsigned long);
 
 #  if !defined(__arm__)
 #   if !defined(__sparc__) && !defined(__arm32__) \
-      && !(defined(__alpha__) && defined(linux))
+      && !(defined(__alpha__) && defined(linux)) \
+      && !(defined(__ia64__) && defined(linux)) \
 
 extern void outb(unsigned short, unsigned char);
 extern void outw(unsigned short, unsigned short);
@@ -162,7 +163,7 @@ extern unsigned short ldw_brx(volatile unsigned char *, int);
 
 # ifndef NO_INLINE
 #  ifdef __GNUC__
-#   if (defined(linux) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)) && defined(__alpha__)
+#   if (defined(linux) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)) && (defined(__alpha__))
 
 #    ifdef linux
 /* for Linux on Alpha, we use the LIBC _inx/_outx routines */
@@ -478,7 +479,7 @@ __ustw (unsigned long r5, unsigned short * r11)
 #    ifndef __INTEL_COMPILER
 #       define ia64_flush_cache(Addr) \
 	__asm__ __volatile__ ( \
-		"fc %0;;;" \
+		"fc.i %0;;;" \
 		"sync.i;;;" \
 		"mf;;;" \
 		"srlz.i;;;" \
@@ -494,11 +495,16 @@ __ustw (unsigned long r5, unsigned short * r11)
 #    undef outb
 #    undef outw
 #    undef outl
+#    undef inb
+#    undef inw
+#    undef inl
+extern void outb(unsigned long port, unsigned char val);
+extern void outw(unsigned long port, unsigned short val);
+extern void outl(unsigned long port, unsigned int val);
+extern unsigned int inb(unsigned long port);
+extern unsigned int inw(unsigned long port);
+extern unsigned int inl(unsigned long port);
  
-#    define outb(a,b)	_outb(b,a)
-#    define outw(a,b)	_outw(b,a)
-#    define outl(a,b)	_outl(b,a) 
-
 #   elif defined(linux) && defined(__amd64__) 
  
 #    include <inttypes.h>
@@ -1068,7 +1074,7 @@ xf86WriteMmio32Be(__volatile__ void *base, const unsigned long offset,
 #     define write_mem_barrier()	/* NOP */
 #    endif /* __arm32__ */
 
-#   elif (defined(Lynx) || defined(linux) || defined(__OpenBSD__) || defined(__NetBSD__)) && defined(__powerpc__)
+#   elif (defined(Lynx) || defined(linux) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__)) && defined(__powerpc__)
 
 #    ifndef MAP_FAILED
 #     define MAP_FAILED ((void *)-1)
@@ -1598,18 +1604,8 @@ extern void outl(unsigned int a, unsigned int l);
 #      define asm __asm
 #     endif
 #    endif
-#    ifdef SVR4
-#if 0
-#     include <sys/types.h>
-#endif
-#     ifndef __HIGHC__
-#      if !defined(__USLC__) && !defined(__SUNPRO_C)
-#       define __USLC__
-#      endif
-#     endif
-#    endif
 #    ifndef SCO325
-#     if defined(USL)
+#     if defined(__UNIXWARE__)
 #      if defined(IN_MODULE)
 #     /* avoid including <sys/types.h> for <sys/inline.h> on UnixWare */
 #       define ushort unsigned short
@@ -1621,15 +1617,15 @@ extern void outl(unsigned int a, unsigned int l);
 #      else
 #       include <sys/types.h>
 #      endif /* IN_MODULE */
-#     endif /* USL */
+#     endif /* __UNIXWARE__ */
 #     if !defined(sgi) && !defined(__SUNPRO_C)
 #      include <sys/inline.h>
 #     endif
 #    else
 #     include "scoasm.h"
 #    endif
-#    if !defined(__HIGHC__) && !defined(SCO325) && !defined(sgi) && \
-	!defined(__SUNPRO_C)
+#    if (!defined(__HIGHC__) && !defined(sgi) && !defined(__SUNPRO_C)) || \
+	defined(__USLC__)
 #     pragma asm partial_optimization outl
 #     pragma asm partial_optimization outw
 #     pragma asm partial_optimization outb
@@ -1688,7 +1684,7 @@ static __inline__ int
 xf86ReadMmio32(void *Base, unsigned long Offset)
 {
 	__asm__ __volatile__("mb"  : : : "memory");
-	return *(volatile CARD32*)((unsigned long)Base+(Offset));
+	return *(volatile unsigned int*)((unsigned long)Base+(Offset));
 }
 #  endif
 extern void (*xf86WriteMmio8)(int, void *, unsigned long);

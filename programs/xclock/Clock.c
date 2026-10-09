@@ -1,5 +1,5 @@
 /* $Xorg: Clock.c,v 1.4 2001/02/09 02:05:39 xorgcvs Exp $ */
-/* $XdotOrg: xc/programs/xclock/Clock.c,v 1.2 2004/04/23 19:54:39 eich Exp $ */
+/* $XdotOrg: xc/programs/xclock/Clock.c,v 1.5 2005/12/06 16:26:51 alanc Exp $ */
 
 /***********************************************************
 
@@ -47,7 +47,47 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 SOFTWARE.
 
 ******************************************************************/
+/*
+ * Copyright 2004 Sun Microsystems, Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of Sun Microsystems, Inc. nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * This software is provided "AS IS," without a warranty of any kind.
+ *
+ * ALL EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND WARRANTIES,
+ * INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A
+ * PARTICULAR PURPOSE OR NON-INFRINGEMENT, ARE HEREBY EXCLUDED.
+ * SUN AND ITS LICENSORS SHALL NOT BE LIABLE FOR ANY DAMAGES OR
+ * LIABILITIES  SUFFERED BY LICENSEE AS A RESULT OF  OR RELATING TO USE,
+ * MODIFICATION OR DISTRIBUTION OF THE SOFTWARE OR ITS DERIVATIVES.
+ * IN NO EVENT WILL SUN OR ITS LICENSORS BE LIABLE FOR ANY LOST REVENUE,
+ * PROFIT OR DATA, OR FOR DIRECT, INDIRECT, SPECIAL, CONSEQUENTIAL,
+ * INCIDENTAL OR PUNITIVE DAMAGES, HOWEVER CAUSED AND REGARDLESS OF THE
+ * THEORY OF LIABILITY, ARISING OUT OF THE USE OF OR INABILITY TO USE
+ * SOFTWARE, EVEN IF SUN HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+ *
+ * Authors:  I18N - Steve Swales - March 2000
+ *	     bgpixmap - Alan Coopersmith (as part of STSF project) - Sept. 2001
+ */
 /* $XFree86: xc/programs/xclock/Clock.c,v 3.25 2003/07/04 16:24:30 eich Exp $ */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include <X11/Xlib.h>
 #include <X11/StringDefs.h>
@@ -56,12 +96,25 @@ SOFTWARE.
 #include <X11/Xosdefs.h>
 #include <stdio.h>
 #include <X11/Xos.h>
+#include <X11/Xaw/XawInit.h>
+
+#if defined(XawVersion) && (XawVersion >= 7000002L)
+#define USE_XAW_PIXMAP_CVT
+#else
+#include <X11/xpm.h>
+#endif
 
 #include <time.h>
 #define Time_t time_t
 
 #ifdef XKB
 #include <X11/extensions/XKBbells.h>
+#endif
+
+#ifndef NO_I18N
+#include <stdlib.h> /* for getenv() */
+#include <locale.h>
+extern Boolean no_locale; /* if True, use old (unlocalized) behaviour */
 #endif
 
 	
@@ -122,6 +175,10 @@ static XtResource resources[] = {
         offset(padding), XtRImmediate, (XtPointer) 8},
     {XtNfont, XtCFont, XtRFontStruct, sizeof(XFontStruct *),
         offset(font), XtRString, XtDefaultFont},
+#ifndef NO_I18N
+     {XtNfontSet, XtCFontSet, XtRFontSet, sizeof(XFontSet),
+        offset(fontSet), XtRString, XtDefaultFontSet,},   
+#endif
     {XtNbackingStore, XtCBackingStore, XtRBackingStore, sizeof (int),
     	offset (backing_store), XtRString, "default"},
 #ifdef XRENDER
@@ -224,6 +281,39 @@ WidgetClass clockWidgetClass = (WidgetClass) &clockClassRec;
  * Private Procedures
  *
  ****************************************************************/
+#ifndef USE_XAW_PIXMAP_CVT
+static void CvtStringToPixmap(
+    XrmValue*           args,
+    Cardinal*           num_args,
+    XrmValuePtr         fromVal,
+    XrmValuePtr         toVal
+    )
+{
+    static Pixmap	pmap;
+    Pixmap shapemask;
+    char *name = (char *)fromVal->addr;
+    Screen *screen;
+    Display *dpy;
+
+    if (*num_args != 1)
+     XtErrorMsg("wrongParameters","cvtStringToPixmap","XtToolkitError",
+             "String to pixmap conversion needs screen argument",
+              (String *)NULL, (Cardinal *)NULL);
+
+    if (strcmp(name, "None") == 0) {
+        pmap = None;
+    } else { 
+	screen = *((Screen **) args[0].addr);
+	dpy = DisplayOfScreen(screen);
+
+	XpmReadFileToPixmap(dpy, RootWindowOfScreen(screen), name, &pmap,
+	  &shapemask, NULL);
+    }
+
+    (*toVal).size = sizeof(Pixmap); 
+    (*toVal).addr = (XPointer) &pmap ;
+}
+#endif
 
 #ifdef XRENDER
 XtConvertArgRec xftColorConvertArgs[] = {
@@ -400,6 +490,16 @@ XtConvertArgRec xftFontConvertArgs[] = {
 static void 
 ClassInitialize(void)
 {
+#ifdef USE_XAW_PIXMAP_CVT
+    XawInitializeWidgetSet();
+#else 
+    static XtConvertArgRec scrnConvertArg[] = {
+	{XtBaseOffset, (XtPointer) XtOffset(Widget, core.screen), 
+	 sizeof(Screen *)}
+    };
+    XtAddConverter( XtRString, XtRPixmap, CvtStringToPixmap, 
+	      	    scrnConvertArg, XtNumber(scrnConvertArg));
+#endif
     XtAddConverter( XtRString, XtRBackingStore, XmuCvtStringToBackingStore,
 		    NULL, 0 );
 #ifdef XRENDER
@@ -449,9 +549,12 @@ TimeString (ClockWidget w, struct tm *tm)
        error, although it is a little controversial*/
      static char ctime[STRFTIME_BUFF_SIZE+10];
      ctime[0] = ctime[STRFTIME_BUFF_SIZE] = '\0';
-     strftime (ctime, STRFTIME_BUFF_SIZE-1,w->clock.strftime, tm);
-     ctime[STRFTIME_BUFF_SIZE-1] = '\0';
-     return ctime;
+     if (0 < strftime (ctime, STRFTIME_BUFF_SIZE-1,w->clock.strftime, tm)) {
+       ctime[STRFTIME_BUFF_SIZE-1] = '\0';
+       return ctime;
+     } else {
+       return asctime (tm);
+     }
    }
    else if (w->clock.twentyfour)
       return asctime (tm);
@@ -483,31 +586,94 @@ Initialize (Widget request, Widget new, ArgList args, Cardinal *num_args)
        char *str;
        struct tm tm;
        Time_t time_value;
+       int len;
+
+#ifndef NO_I18N 
+       w->clock.utf8 = False;
+
+       if (!no_locale) {
+	   char *time_locale = setlocale(LC_TIME, NULL);
+
+	   if (strstr(time_locale, "UTF-8") || strstr(time_locale, "utf8")) {
+	       w->clock.utf8 = True;
+	   }
+
+	   /*
+	    * initialize time format from CFTIME if set, otherwise
+	    * default to "%c".  This emulates ascftime, but we use
+	    * strftime so we can limit the string buffer size to
+	    * avoid possible buffer overflow.
+	    */
+	   if ((w->clock.strftime == NULL) || (w->clock.strftime[0] == 0)) {
+	       w->clock.strftime = getenv("CFTIME");
+	       if (w->clock.strftime == NULL) {
+		   w->clock.strftime = "%c";
+	       }
+	   }
+       }
+#endif /* NO_I18N */
 
        (void) time(&time_value);
        tm = *localtime(&time_value);
        str = TimeString (w, &tm);
-       if (w->clock.font == NULL)
-          w->clock.font = XQueryFont( XtDisplay(w),
-				      XGContextFromGC(
-					   DefaultGCOfScreen(XtScreen(w))) );
+       len = strlen(str);
+       if (str[len - 1] == '\n') 
+	   str[--len] = '\0';
+
 #ifdef XRENDER
        if (w->clock.render)
        {
 	XGlyphInfo  extents;
-	XftTextExtents8 (XtDisplay (w), w->clock.face,
-			 (FcChar8 *) str, strlen (str), &extents);
+#ifndef NO_I18N
+	if (w->clock.utf8) 
+	    XftTextExtentsUtf8 (XtDisplay (w), w->clock.face,
+				(FcChar8 *) str, len, &extents);
+	else
+#endif
+	    XftTextExtents8 (XtDisplay (w), w->clock.face,
+			     (FcChar8 *) str, len, &extents);
 	min_width = extents.xOff + 2 * w->clock.padding;
 	min_height = w->clock.face->ascent + w->clock.face->descent +
 		     2 * w->clock.padding;
        }
        else
 #endif
+#ifndef NO_I18N 
+       if (!no_locale) {
+	   XFontSetExtents *fse;
+
+	   if(w->clock.fontSet == NULL) {
+	       char **missing, *default_str;
+	       int n_missing;
+	       w->clock.fontSet = XCreateFontSet( XtDisplay(w),
+		 XtDefaultFontSet,
+		 &missing,
+		 &n_missing,
+		 &default_str);
+	   }
+	   if (w->clock.fontSet != NULL)
+	   {
+	       /* don't free this... it's freed with the XFontSet. */
+	       fse = XExtentsOfFontSet(w->clock.fontSet);
+	       
+	       min_width = XmbTextEscapement(w->clock.fontSet,str,
+		 len)
+		 + 2 * w->clock.padding;
+	       min_height = fse->max_logical_extent.height +
+		 3 * w->clock.padding;
+	   }
+       }
+       else
+#endif /* NO_I18N */
        {
-       min_width = XTextWidth(w->clock.font, str, strlen(str)) +
-	  2 * w->clock.padding;
-       min_height = w->clock.font->ascent +
-	  w->clock.font->descent + 2 * w->clock.padding;
+	   if (w->clock.font == NULL)
+	       w->clock.font = XQueryFont( XtDisplay(w),
+					   XGContextFromGC(
+					    DefaultGCOfScreen(XtScreen(w))) );
+	   min_width = XTextWidth(w->clock.font, str, len) +
+	       2 * w->clock.padding;
+	   min_height = w->clock.font->ascent +
+	       w->clock.font->descent + 2 * w->clock.padding;
        }
     }
     if (w->core.width == 0)
@@ -518,16 +684,22 @@ Initialize (Widget request, Widget new, ArgList args, Cardinal *num_args)
     myXGCV.foreground = ClockFgPixel (w);
     myXGCV.background = w->core.background_pixel;
     if (w->clock.font != NULL)
-        myXGCV.font = w->clock.font->fid;
+	myXGCV.font = w->clock.font->fid;
     else
-        valuemask &= ~GCFont;	/* use server default font */
+	valuemask &= ~GCFont;	/* use server default font */
     myXGCV.line_width = 0;
     w->clock.myGC = XtGetGC((Widget)w, valuemask, &myXGCV);
 
     valuemask = GCForeground | GCLineWidth | GCGraphicsExposures;
     myXGCV.foreground = w->core.background_pixel;
+    if (w->core.background_pixmap != XtUnspecifiedPixmap) {
+	myXGCV.tile = w->core.background_pixmap;
+	myXGCV.fill_style = FillTiled;
+	valuemask |= (GCTile | GCFillStyle);
+    }
     myXGCV.graphics_exposures = False;
     w->clock.EraseGC = XtGetGC((Widget)w, valuemask, &myXGCV);
+    valuemask &= ~(GCTile | GCFillStyle);
 
     myXGCV.foreground = w->clock.Hipixel;
     w->clock.HighGC = XtGetGC((Widget)w, valuemask, &myXGCV);
@@ -627,10 +799,23 @@ RenderTextBounds (ClockWidget w, char *str, int off, int len,
     XGlyphInfo  head, tail;
     int	    x, y;
 
-    XftTextExtents8 (XtDisplay (w), w->clock.face, (FcChar8 *) str, 
-		     off, &head);
-    XftTextExtents8 (XtDisplay (w), w->clock.face, (FcChar8 *) str + off, 
-		     len - off, &tail);
+#ifndef NO_I18N
+    if (w->clock.utf8)
+    {
+	XftTextExtentsUtf8 (XtDisplay (w), w->clock.face, 
+			    (FcChar8 *) str, off, &head);
+	XftTextExtentsUtf8 (XtDisplay (w), w->clock.face, 
+			    (FcChar8 *) str + off, len - off, &tail);
+    }
+    else
+#endif
+    {
+	XftTextExtents8 (XtDisplay (w), w->clock.face, (FcChar8 *) str, 
+			 off, &head);
+	XftTextExtents8 (XtDisplay (w), w->clock.face, (FcChar8 *) str + off, 
+			 len - off, &tail);
+    }
+
     /*
      * Compute position of tail
      */
@@ -1076,7 +1261,7 @@ clock_tic(XtPointer client_data, XtIntervalId *id)
 	    }
 	}
 	if( w->clock.analog == FALSE ) {
-	    int	clear_from;
+	    int	clear_from = w->core.width;
 	    int i, len, prev_len;
 
 	    time_ptr = TimeString (w, &tm);
@@ -1109,32 +1294,74 @@ clock_tic(XtPointer client_data, XtIntervalId *id)
 		RenderTextBounds (w, time_ptr, i, len, &new_tail, &x, &y);
 		RenderClip (w);
 		RenderPrepare (w, 0);
-		XftDrawString8 (w->clock.draw,
-				&w->clock.fg_color,
-				w->clock.face,
-				x, y,
-				(FcChar8 *) time_ptr + i, len - i);
+#ifndef NO_I18N
+		if (w->clock.utf8) {
+		    XftDrawStringUtf8 (w->clock.draw,
+				    &w->clock.fg_color,
+				    w->clock.face,
+				    x, y,
+				    (FcChar8 *) time_ptr + i, len - i);
+
+		} 
+		else
+#endif 
+		{
+		    XftDrawString8 (w->clock.draw,
+				    &w->clock.fg_color,
+				    w->clock.face,
+				    x, y,
+				    (FcChar8 *) time_ptr + i, len - i);
+		}
 		RenderUpdate (w);
 		RenderResetBounds (&w->clock.damage);
 	    }
 	    else
 #endif
+#ifndef NO_I18N
+	    if(!no_locale) {
+		if(0 < len) {
+		    XFontSetExtents *fse
+		      = XExtentsOfFontSet(w->clock.fontSet);
+		    
+		    XmbDrawImageString(dpy,win,w->clock.fontSet,w->clock.myGC,
+				       (2+w->clock.padding +
+					(i?XmbTextEscapement(w->clock.fontSet,
+							     time_ptr,i):0)),
+				       2+w->clock.padding+fse->max_logical_extent.height,
+				       time_ptr+i,len-i
+			);
+		    /*		
+		     * Clear any left over bits
+		     */
+		    clear_from = XmbTextEscapement (w->clock.fontSet,time_ptr,
+						    len) + 2+w->clock.padding;
+		}
+	    } else
+#endif /* NO_I18N */
 	    {
-	    XDrawImageString (dpy, win, w->clock.myGC,
-			      (1+w->clock.padding +
-			       XTextWidth (w->clock.font, time_ptr, i)),
-			      w->clock.font->ascent+w->clock.padding,
-			      time_ptr + i, len - i);
-	    /*
-	     * Clear any left over bits
-	     */
-	    clear_from = XTextWidth (w->clock.font, time_ptr, len)
- 	    		+ 2 + w->clock.padding;
-	    if (clear_from < (int)w->core.width)
-		XFillRectangle (dpy, win, w->clock.EraseGC,
-		    clear_from, 0, w->core.width - clear_from, w->core.height);
+		XDrawImageString (dpy, win, w->clock.myGC,
+				  (1+w->clock.padding +
+				   XTextWidth (w->clock.font, time_ptr, i)),
+				  w->clock.font->ascent+w->clock.padding,
+				  time_ptr + i, len - i);
+		/*
+		 * Clear any left over bits
+		 */
+		clear_from = XTextWidth (w->clock.font, time_ptr, len)
+		    	     + 2 + w->clock.padding;
 	    }
-	    strcpy (w->clock.prev_time_string+i, time_ptr+i);
+	    if (clear_from < (int)w->core.width)
+		XClearArea (dpy, win,
+		    clear_from, 0, w->core.width - clear_from, w->core.height,
+		    False);
+#if defined(HAS_STRLCAT) || defined(HAVE_STRLCPY)
+	    strlcpy (w->clock.prev_time_string+i, time_ptr+i,
+		     sizeof(w->clock.prev_time_string)-i);
+#else
+	    strncpy (w->clock.prev_time_string+i, time_ptr+i,
+		     sizeof(w->clock.prev_time_string)-i);
+	    w->clock.prev_time_string[sizeof(w->clock.prev_time_string)-1] = 0;
+#endif
 	} else {
 			/*
 			 * The second (or minute) hand is sec (or min) 
@@ -1188,7 +1415,7 @@ clock_tic(XtPointer client_data, XtIntervalId *id)
 			    return;
 			}
 #endif
-		
+
 			erase_hands (w, &tm);
 
 		    if (w->clock.numseg == 0 ||
@@ -1742,6 +1969,11 @@ SetValues(Widget gcurrent, Widget grequest, Widget gnew,
 
        if (new->clock.font != current->clock.font)
 	   redisplay = TRUE;
+
+#ifndef NO_I18N
+       if (new->clock.fontSet != current->clock.fontSet)
+	   redisplay = TRUE;
+#endif
 
       if ((ClockFgPixel(new) != ClockFgPixel (current))
           || (new->core.background_pixel != current->core.background_pixel)) {

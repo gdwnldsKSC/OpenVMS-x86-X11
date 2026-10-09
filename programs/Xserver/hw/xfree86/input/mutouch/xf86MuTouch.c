@@ -42,6 +42,10 @@
  *******************************************************************************
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86Version.h"
 #if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(3,9,0,0,0)
 #define XFREE86_V4
@@ -63,17 +67,17 @@
 
 #else /* XFREE86_V4 */
 
-#include "Xos.h"
+#include <X11/Xos.h>
 #include <signal.h>
 #include <stdio.h>
 
 #define	 NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "inputstr.h"
 #include "scrnintstr.h"
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 
 #include "compiler.h"
 
@@ -1835,10 +1839,7 @@ xf86MuTInit(InputDriverPtr	drv,
   return NULL;
 }
 
-#ifdef XFree86LOADER
-static
-#endif
-InputDriverRec MUTOUCH = {
+_X_EXPORT InputDriverRec MUTOUCH = {
     1,				/* driver version */
     "mutouch",			/* driver name */
     NULL,			/* identify */
@@ -1884,7 +1885,7 @@ static XF86ModuleVersionInfo version_rec = {
  * is setup after the pattern <module_name>ModuleData.
  * Do not change it.
  */
-XF86ModuleData mutouchModuleData = { &version_rec, Plug, Unplug };
+_X_EXPORT XF86ModuleData mutouchModuleData = { &version_rec, Plug, Unplug };
 #endif
 
 #endif /* XFREE86_V4 */

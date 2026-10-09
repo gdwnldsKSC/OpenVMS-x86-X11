@@ -1,4 +1,51 @@
-2004-02-24  Fredrik Höglund  <fredrik@kde.org>
+2005-06-30  Daniel Stone  <daniel@freedesktop.org>
+
+	* lib/Xcursor/file.c:
+	* lib/Xcursor/library.c:
+	* lib/Xcursor/xlib.c:
+	Check arguments for validity on almost all functions.
+
+2005-06-17  Branden Robinson <branden@deadbeast.net>
+
+	Merge changes from freedesktop.org xorg CVS trunk.
+
+	* cursor.c:
+	* library.c:
+	Add preprocessor test for HAVE_XFIXES being defined before testing
+	its value.  [merged by Egbert Eich; author unknown]
+
+	* COPYING:
+	* ChangeLog:
+	* Xcursor.3:
+	* Xcursor.h:
+	* cursor.c:
+	* display.c:
+	* file.c:
+	* library.c:
+	* xcursorint.h:
+	* xlib.c:
+	Encoding of numerous files changed to UTF-8 [Markus Kuhn]
+
+	* cursor.c:
+	Bug #1043: Fix leak when creating animated cursors. [Daniel Stone]
+
+Tue Feb  8 14:26:32 2005  Owen Taylor  <otaylor@redhat.com>
+
+	* configure.ac: Remove AC_CONFIG_AUX_DIR()
+
+2004-04-13  Daniel Stone  <daniel@freedesktop.org>
+
+	* ChangeLog:
+	Tag 1.1.3, for xlibs 1.0.1.
+
+2004-04-07  Keith Packard  <keithp@keithp.com>
+
+	reviewed by: Michel DÃ¤nzer <michel@daenzer.net>
+	
+	* configure.ac:
+	Make sure X_CFLAGS/X_LIBS are substituted in the xcursor.pc file
+
+2004-02-24  Fredrik HÃ¶glund  <fredrik@kde.org>
 
 	* configure.ac:
 	* xcursorint.h:
@@ -82,7 +129,7 @@
 	* xlib.c:  941. Fix a problem where a malformed Ximage can cause
 	Xcursor to step
 	      outside the image data (#A.1636, Keith Packard, reported by
-	      Michel Dänzer).
+	      Michel DÃ¤nzer).
 
 2003-02-19 19:13  dawes
 

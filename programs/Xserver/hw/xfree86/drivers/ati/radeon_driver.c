@@ -27,6 +27,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * Authors:
  *   Kevin E. Martin <martin@xfree86.org>
@@ -64,9 +68,9 @@
 
 				/* Driver data structures */
 #include "radeon.h"
+#include "radeon_reg.h"
 #include "radeon_macros.h"
 #include "radeon_probe.h"
-#include "radeon_reg.h"
 #include "radeon_version.h"
 #include "radeon_mergedfb.h"
 
@@ -74,6 +78,7 @@
 #define _XF86DRI_SERVER_
 #include "radeon_dri.h"
 #include "radeon_sarea.h"
+#include "sarea.h"
 #endif
 
 #include "fb.h"
@@ -92,8 +97,13 @@
 #include "vbe.h"
 
 				/* fbdevhw * vgaHW definitions */
-#include "fbdevhw.h"
+#ifdef WITH_VGAHW
 #include "vgaHW.h"
+#endif
+#include "fbdevhw.h"
+
+#define DPMS_SERVER
+#include <X11/extensions/dpms.h>
 
 #include "radeon_chipset.h"
 
@@ -118,6 +128,7 @@ static void RADEONInitDispBandwidth(ScrnInfoPtr pScrn);
 static void RADEONGetMergedFBOptions(ScrnInfoPtr pScrn);
 static int RADEONValidateMergeModes(ScrnInfoPtr pScrn);
 static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode);
+static void RADEONUpdatePanelSize(ScrnInfoPtr pScrn);
 
 /* psuedo xinerama support */
 
@@ -141,30 +152,48 @@ typedef enum {
     OPTION_DEPTH_MOVE,
     OPTION_PAGE_FLIP,
     OPTION_NO_BACKBUFFER,
+    OPTION_XV_DMA,
 #endif
     OPTION_PANEL_OFF,
     OPTION_DDC_MODE,
     OPTION_MONITOR_LAYOUT,
     OPTION_IGNORE_EDID,
     OPTION_FBDEV,
-    OPTION_VIDEO_KEY,
     OPTION_MERGEDFB,
     OPTION_CRT2HSYNC,
     OPTION_CRT2VREFRESH,
     OPTION_CRT2POS,
     OPTION_METAMODES,
     OPTION_MERGEDDPI,
-    OPTION_NORADEONXINERAMA,
+    OPTION_RADEONXINERAMA,
     OPTION_CRT2ISSCRN0,
+    OPTION_MERGEDFBNONRECT,
+    OPTION_MERGEDFBMOUSER,
     OPTION_DISP_PRIORITY,
     OPTION_PANEL_SIZE,
     OPTION_MIN_DOTCLOCK,
+    OPTION_COLOR_TILING,
+#ifdef XvExtension
+    OPTION_VIDEO_KEY,
+    OPTION_RAGE_THEATRE_CRYSTAL,
+    OPTION_RAGE_THEATRE_TUNER_PORT,
+    OPTION_RAGE_THEATRE_COMPOSITE_PORT,
+    OPTION_RAGE_THEATRE_SVIDEO_PORT,
+    OPTION_TUNER_TYPE,
+    OPTION_RAGE_THEATRE_MICROC_PATH,
+    OPTION_RAGE_THEATRE_MICROC_TYPE,
+#endif
 #ifdef RENDER
     OPTION_RENDER_ACCEL,
     OPTION_SUBPIXEL_ORDER,
 #endif
     OPTION_SHOWCACHE,
-    OPTION_DYNAMIC_CLOCKS
+    OPTION_DYNAMIC_CLOCKS,
+    OPTION_BIOS_HOTKEYS,
+    OPTION_VGA_ACCESS,
+    OPTION_REVERSE_DDC,
+    OPTION_LVDS_PROBE_PLL,
+    OPTION_ACCELMETHOD
 } RADEONOpts;
 
 static const OptionInfoRec RADEONOptions[] = {
@@ -185,35 +214,54 @@ static const OptionInfoRec RADEONOptions[] = {
     { OPTION_DEPTH_MOVE,     "EnableDepthMoves", OPTV_BOOLEAN, {0}, FALSE },
     { OPTION_PAGE_FLIP,      "EnablePageFlip",   OPTV_BOOLEAN, {0}, FALSE },
     { OPTION_NO_BACKBUFFER,  "NoBackBuffer",     OPTV_BOOLEAN, {0}, FALSE },
+    { OPTION_XV_DMA,         "DMAForXv",         OPTV_BOOLEAN, {0}, FALSE },
 #endif
     { OPTION_PANEL_OFF,      "PanelOff",         OPTV_BOOLEAN, {0}, FALSE },
     { OPTION_DDC_MODE,       "DDCMode",          OPTV_BOOLEAN, {0}, FALSE },
     { OPTION_MONITOR_LAYOUT, "MonitorLayout",    OPTV_ANYSTR,  {0}, FALSE },
     { OPTION_IGNORE_EDID,    "IgnoreEDID",       OPTV_BOOLEAN, {0}, FALSE },
     { OPTION_FBDEV,          "UseFBDev",         OPTV_BOOLEAN, {0}, FALSE },
-    { OPTION_VIDEO_KEY,      "VideoKey",         OPTV_INTEGER, {0}, FALSE },
     { OPTION_MERGEDFB,	     "MergedFB",      	 OPTV_BOOLEAN, {0}, FALSE },
     { OPTION_CRT2HSYNC,	     "CRT2HSync",        OPTV_ANYSTR,  {0}, FALSE },
     { OPTION_CRT2VREFRESH,   "CRT2VRefresh",     OPTV_ANYSTR,  {0}, FALSE },
     { OPTION_CRT2POS,        "CRT2Position",	 OPTV_ANYSTR,  {0}, FALSE },
     { OPTION_METAMODES,      "MetaModes",        OPTV_ANYSTR,  {0}, FALSE },
     { OPTION_MERGEDDPI,	     "MergedDPI", 	 OPTV_ANYSTR,  {0}, FALSE },
-    { OPTION_NORADEONXINERAMA, "NoMergedXinerama", OPTV_BOOLEAN, {0}, FALSE },
+    { OPTION_RADEONXINERAMA, "MergedXinerama", OPTV_BOOLEAN, {0}, FALSE },
     { OPTION_CRT2ISSCRN0,    "MergedXineramaCRT2IsScreen0", OPTV_BOOLEAN, {0}, FALSE },
+    { OPTION_MERGEDFBNONRECT, "MergedNonRectangular", OPTV_BOOLEAN,   {0}, FALSE },
+    { OPTION_MERGEDFBMOUSER,  "MergedMouseRestriction", OPTV_BOOLEAN,   {0}, FALSE },
     { OPTION_DISP_PRIORITY,  "DisplayPriority",  OPTV_ANYSTR,  {0}, FALSE },
     { OPTION_PANEL_SIZE,     "PanelSize",        OPTV_ANYSTR,  {0}, FALSE },
     { OPTION_MIN_DOTCLOCK,   "ForceMinDotClock", OPTV_FREQ,    {0}, FALSE },
+    { OPTION_COLOR_TILING,   "ColorTiling",      OPTV_BOOLEAN, {0}, FALSE },
+#ifdef XvExtension
+    { OPTION_VIDEO_KEY,                   "VideoKey",                 OPTV_INTEGER, {0}, FALSE },
+    { OPTION_RAGE_THEATRE_CRYSTAL,        "RageTheatreCrystal",       OPTV_INTEGER, {0}, FALSE },
+    { OPTION_RAGE_THEATRE_TUNER_PORT,     "RageTheatreTunerPort",     OPTV_INTEGER, {0}, FALSE },
+    { OPTION_RAGE_THEATRE_COMPOSITE_PORT, "RageTheatreCompositePort", OPTV_INTEGER, {0}, FALSE },
+    { OPTION_RAGE_THEATRE_SVIDEO_PORT,    "RageTheatreSVideoPort",    OPTV_INTEGER, {0}, FALSE },
+    { OPTION_TUNER_TYPE,                  "TunerType",                OPTV_INTEGER, {0}, FALSE },
+	{ OPTION_RAGE_THEATRE_MICROC_PATH,	"RageTheatreMicrocPath",	 OPTV_STRING, {0}, FALSE },
+	{ OPTION_RAGE_THEATRE_MICROC_TYPE, 	"RageTheatreMicrocType",	 OPTV_STRING, {0}, FALSE },
+#endif
 #ifdef RENDER
     { OPTION_RENDER_ACCEL,   "RenderAccel",      OPTV_BOOLEAN, {0}, FALSE },
     { OPTION_SUBPIXEL_ORDER, "SubPixelOrder",    OPTV_ANYSTR,  {0}, FALSE },
 #endif
     { OPTION_SHOWCACHE,      "ShowCache",        OPTV_BOOLEAN, {0}, FALSE },
     { OPTION_DYNAMIC_CLOCKS, "DynamicClocks",    OPTV_BOOLEAN, {0}, FALSE },
+    { OPTION_BIOS_HOTKEYS,   "BIOSHotkeys",      OPTV_BOOLEAN, {0}, FALSE },
+    { OPTION_VGA_ACCESS,     "VGAAccess",        OPTV_BOOLEAN, {0}, TRUE  },
+    { OPTION_REVERSE_DDC,    "ReverseDDC",       OPTV_BOOLEAN, {0}, FALSE },
+    { OPTION_LVDS_PROBE_PLL, "LVDSProbePLL",     OPTV_BOOLEAN, {0}, FALSE },
+    { OPTION_ACCELMETHOD,    "AccelMethod",      OPTV_STRING,  {0}, FALSE },
     { -1,                    NULL,               OPTV_NONE,    {0}, FALSE }
 };
 
-const OptionInfoRec *RADEONOptionsWeak(void) { return RADEONOptions; }
+_X_EXPORT const OptionInfoRec *RADEONOptionsWeak(void) { return RADEONOptions; }
 
+#ifdef WITH_VGAHW
 static const char *vgahwSymbols[] = {
     "vgaHWFreeHWRec",
     "vgaHWGetHWRec",
@@ -225,6 +273,7 @@ static const char *vgahwSymbols[] = {
     "vgaHWGetIOBase",
     NULL
 };
+#endif
 
 static const char *fbdevHWSymbols[] = {
     "fbdevHWInit",
@@ -267,12 +316,30 @@ static const char *fbSymbols[] = {
     NULL
 };
 
+
+#ifdef USE_EXA
+static const char *exaSymbols[] = {
+    "exaDriverInit",
+    "exaDriverFini",
+    "exaOffscreenAlloc",
+    "exaOffscreenFree",
+    "exaGetPixmapOffset",
+    "exaGetPixmapPitch",
+    "exaGetPixmapSize",
+    "exaMarkSync",
+    "exaWaitSync",
+    NULL
+};
+#endif /* USE_EXA */
+
+#ifdef USE_XAA
 static const char *xaaSymbols[] = {
     "XAACreateInfoRec",
     "XAADestroyInfoRec",
     "XAAInit",
     NULL
 };
+#endif /* USE_XAA */
 
 #if 0
 static const char *xf8_32bppSymbols[] = {
@@ -381,9 +448,17 @@ void RADEONLoaderRefSymLists(void)
      * Tell the loader about symbols from other modules that this module might
      * refer to.
      */
-    xf86LoaderRefSymLists(vgahwSymbols,
+    xf86LoaderRefSymLists(
+#ifdef WITH_VGAHW
+			  vgahwSymbols,
+#endif
 			  fbSymbols,
+#ifdef USE_EXA
+			  exaSymbols,
+#endif
+#ifdef USE_XAA
 			  xaaSymbols,
+#endif
 #if 0
 			  xf8_32bppSymbols,
 #endif
@@ -446,7 +521,22 @@ static const RADEONTMDSPll default_tmds_pll[CHIP_FAMILY_LAST][4] =
     {{0xffffffff, 0xb01cb}, {0, 0}, {0, 0}, {0, 0}},		/*CHIP_FAMILY_R420*/
 };
 
-extern int getRADEONEntityIndex(void);
+#ifdef XFree86LOADER
+static int getRADEONEntityIndex(void)
+{
+    int *radeon_entity_index = LoaderSymbol("gRADEONEntityIndex");
+    if (!radeon_entity_index)
+        return -1;
+    else
+        return *radeon_entity_index;
+}
+#else
+extern int gRADEONEntityIndex;
+static int getRADEONEntityIndex(void)
+{
+    return gRADEONEntityIndex;
+}
+#endif
 
 struct RADEONInt10Save {
 	CARD32 MEM_CNTL;
@@ -684,24 +774,49 @@ static Bool RADEONUnmapMem(ScrnInfoPtr pScrn)
     return TRUE;
 }
 
-/* This function is required to workaround a hardware bug in some (all?)
- * revisions of the R300.  This workaround should be called after every
- * CLOCK_CNTL_INDEX register access.  If not, register reads afterward
- * may not be correct.
- */
-void R300CGWorkaround(ScrnInfoPtr pScrn) {
-    RADEONInfoPtr  info       = RADEONPTR(pScrn);
+void RADEONPllErrataAfterIndex(RADEONInfoPtr info)
+{
     unsigned char *RADEONMMIO = info->MMIO;
-    CARD32         save, tmp;
+	
+    if (!(info->ChipErrata & CHIP_ERRATA_PLL_DUMMYREADS))
+	return;
 
-    save = INREG(RADEON_CLOCK_CNTL_INDEX);
-    tmp = save & ~(0x3f | RADEON_PLL_WR_EN);
-    OUTREG(RADEON_CLOCK_CNTL_INDEX, tmp);
-    tmp = INREG(RADEON_CLOCK_CNTL_DATA);
-    OUTREG(RADEON_CLOCK_CNTL_INDEX, save);
+    /* This workaround is necessary on rv200 and RS200 or PLL
+     * reads may return garbage (among others...)
+     */
+    (void)INREG(RADEON_CLOCK_CNTL_DATA);
+    (void)INREG(RADEON_CRTC_GEN_CNTL);
 }
 
-/* Read PLL information */
+void RADEONPllErrataAfterData(RADEONInfoPtr info)
+{
+    unsigned char *RADEONMMIO = info->MMIO;
+
+    /* This workarounds is necessary on RV100, RS100 and RS200 chips
+     * or the chip could hang on a subsequent access
+     */
+    if (info->ChipErrata & CHIP_ERRATA_PLL_DELAY) {
+	/* we can't deal with posted writes here ... */
+	usleep(5000);
+    }
+
+    /* This function is required to workaround a hardware bug in some (all?)
+     * revisions of the R300.  This workaround should be called after every
+     * CLOCK_CNTL_INDEX register access.  If not, register reads afterward
+     * may not be correct.
+     */
+    if (info->ChipErrata & CHIP_ERRATA_R300_CG) {
+	CARD32         save, tmp;
+
+	save = INREG(RADEON_CLOCK_CNTL_INDEX);
+	tmp = save & ~(0x3f | RADEON_PLL_WR_EN);
+	OUTREG(RADEON_CLOCK_CNTL_INDEX, tmp);
+	tmp = INREG(RADEON_CLOCK_CNTL_DATA);
+	OUTREG(RADEON_CLOCK_CNTL_INDEX, save);
+    }
+}
+
+/* Read PLL register */
 unsigned RADEONINPLL(ScrnInfoPtr pScrn, int addr)
 {
     RADEONInfoPtr  info       = RADEONPTR(pScrn);
@@ -709,11 +824,26 @@ unsigned RADEONINPLL(ScrnInfoPtr pScrn, int addr)
     CARD32         data;
 
     OUTREG8(RADEON_CLOCK_CNTL_INDEX, addr & 0x3f);
+    RADEONPllErrataAfterIndex(info);
     data = INREG(RADEON_CLOCK_CNTL_DATA);
-    if (info->R300CGWorkaround) R300CGWorkaround(pScrn);
+    RADEONPllErrataAfterData(info);
 
     return data;
 }
+
+/* Write PLL information */
+void RADEONOUTPLL(ScrnInfoPtr pScrn, int addr, CARD32 data)
+{
+    RADEONInfoPtr  info       = RADEONPTR(pScrn);
+    unsigned char *RADEONMMIO = info->MMIO;
+
+    OUTREG8(RADEON_CLOCK_CNTL_INDEX, (((addr) & 0x3f) |
+				      RADEON_PLL_WR_EN));
+    RADEONPllErrataAfterIndex(info);
+    OUTREG(RADEON_CLOCK_CNTL_DATA, data);
+    RADEONPllErrataAfterData(info);
+}
+
 
 #if 0
 /* Read PAL information (only used for debugging) */
@@ -937,6 +1067,9 @@ static RADEONMonitorType RADEONDisplayDDCConnected(ScrnInfoPtr pScrn, RADEONDDCT
 	xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "DDC2/I2C is not properly initialized\n");
 	MonType = MT_NONE;
     }
+
+    OUTREG(info->DDCReg, INREG(info->DDCReg) &
+	   ~(RADEON_GPIO_EN_0 | RADEON_GPIO_EN_1));
 
     if (*MonInfo) {
 	if ((*MonInfo)->rawData[0x14] & 0x80) {
@@ -1184,41 +1317,59 @@ RADEONCrtIsPhysicallyConnected(ScrnInfoPtr pScrn, int IsCrtDac)
     return(bConnected ? MT_CRT : MT_NONE);
 }
 
-#if defined(__powerpc__)
 static Bool RADEONProbePLLParameters(ScrnInfoPtr pScrn)
 {
     RADEONInfoPtr info = RADEONPTR(pScrn);
     RADEONPLLPtr  pll  = &info->pll;
     unsigned char *RADEONMMIO = info->MMIO;
     unsigned char ppll_div_sel;
-    unsigned Nx, M;
+    unsigned mpll_fb_div, spll_fb_div, M;
     unsigned xclk, tmp, ref_div;
     int hTotal, vTotal, num, denom, m, n;
-    float hz, vclk, xtal;
+    float hz, prev_xtal, vclk, xtal, mpll, spll;
     long start_secs, start_usecs, stop_secs, stop_usecs, total_usecs;
-    int i;
+    long to1_secs, to1_usecs, to2_secs, to2_usecs;
+    unsigned int f1, f2, f3;
+    int tries = 0;
 
-    for(i=0; i<1000000; i++)
-	if (((INREG(RADEON_CRTC_VLINE_CRNT_VLINE) >> 16) & 0x3ff) == 0)
+    prev_xtal = 0;
+ again:
+    xtal = 0;
+    if (++tries > 10)
+           goto failed;
+
+    xf86getsecs(&to1_secs, &to1_usecs);
+    f1 = INREG(RADEON_CRTC_CRNT_FRAME);
+    for (;;) {
+       f2 = INREG(RADEON_CRTC_CRNT_FRAME);
+       if (f1 != f2)
 	    break;
-
+       xf86getsecs(&to2_secs, &to2_usecs);
+       if ((to2_secs - to1_secs) > 1) {
+           xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Clock not counting...\n");
+           goto failed;
+       }
+    }
     xf86getsecs(&start_secs, &start_usecs);
-
-    for(i=0; i<1000000; i++)
-	if (((INREG(RADEON_CRTC_VLINE_CRNT_VLINE) >> 16) & 0x3ff) != 0)
+    for(;;) {
+       f3 = INREG(RADEON_CRTC_CRNT_FRAME);
+       if (f3 != f2)
 	    break;
-
-    for(i=0; i<1000000; i++)
-	if (((INREG(RADEON_CRTC_VLINE_CRNT_VLINE) >> 16) & 0x3ff) == 0)
-	    break;
-
+       xf86getsecs(&to2_secs, &to2_usecs);
+       if ((to2_secs - start_secs) > 1)
+           goto failed;
+    }
     xf86getsecs(&stop_secs, &stop_usecs);
 
+    if ((stop_secs - start_secs) != 0)
+           goto again;
     total_usecs = abs(stop_usecs - start_usecs);
-    hz = 1000000/total_usecs;
+    if (total_usecs == 0)
+           goto again;
+    hz = 1000000.0/(float)total_usecs;
 
-    hTotal = ((INREG(RADEON_CRTC_H_TOTAL_DISP) & 0x1ff) + 1) * 8;
-    vTotal = ((INREG(RADEON_CRTC_V_TOTAL_DISP) & 0x3ff) + 1);
+    hTotal = ((INREG(RADEON_CRTC_H_TOTAL_DISP) & 0x3ff) + 1) * 8;
+    vTotal = ((INREG(RADEON_CRTC_V_TOTAL_DISP) & 0xfff) + 1);
     vclk = (float)(hTotal * (float)(vTotal * hz));
 
     switch((INPLL(pScrn, RADEON_PPLL_REF_DIV) & 0x30000) >> 16) {
@@ -1241,8 +1392,8 @@ static Bool RADEONProbePLLParameters(ScrnInfoPtr pScrn)
         break;
      }
 
-    OUTREG(RADEON_CLOCK_CNTL_INDEX, 1);
-    ppll_div_sel = INREG8(RADEON_CLOCK_CNTL_DATA + 1) & 0x3;
+    ppll_div_sel = INREG8(RADEON_CLOCK_CNTL_INDEX + 1) & 0x3;
+    RADEONPllErrataAfterIndex(info);
 
     n = (INPLL(pScrn, RADEON_PPLL_DIV_0 + ppll_div_sel) & 0x7ff);
     m = (INPLL(pScrn, RADEON_PPLL_REF_DIV) & 0x3ff);
@@ -1280,23 +1431,93 @@ static Bool RADEONProbePLLParameters(ScrnInfoPtr pScrn)
     else if ((xtal > 29400000) && (xtal < 29600000))
         xtal = 2950;
     else
-	return FALSE;
+       goto again;
+ failed:
+    if (xtal == 0) {
+       xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Failed to probe xtal value ! "
+                  "Using default 27Mhz\n");
+       xtal = 2700;
+    } else {
+       if (prev_xtal == 0) {
+           prev_xtal = xtal;
+           tries = 0;
+           goto again;
+       } else if (prev_xtal != xtal) {
+           prev_xtal = 0;
+           goto again;
+       }
+    }
 
     tmp = INPLL(pScrn, RADEON_X_MPLL_REF_FB_DIV);
     ref_div = INPLL(pScrn, RADEON_PPLL_REF_DIV) & 0x3ff;
 
-    Nx = (tmp & 0xff00) >> 8;
+    /* Some sanity check based on the BIOS code .... */
+    if (ref_div < 2) {
+       CARD32 tmp;
+       tmp = INPLL(pScrn, RADEON_PPLL_REF_DIV);
+       if (IS_R300_VARIANT || (info->ChipFamily == CHIP_FAMILY_RS300))
+           ref_div = (tmp & R300_PPLL_REF_DIV_ACC_MASK) >>
+                   R300_PPLL_REF_DIV_ACC_SHIFT;
+       else
+           ref_div = tmp & RADEON_PPLL_REF_DIV_MASK;
+       if (ref_div < 2)
+           ref_div = 12;
+    }
+
+    /* Calculate "base" xclk straight from MPLL, though that isn't
+     * really useful (hopefully). This isn't called XCLK anymore on
+     * radeon's...
+     */
+    mpll_fb_div = (tmp & 0xff00) >> 8;
+    spll_fb_div = (tmp & 0xff0000) >> 16;
     M = (tmp & 0xff);
-    xclk = RADEONDiv((2 * Nx * xtal), (2 * M));
+    xclk = RADEONDiv((2 * mpll_fb_div * xtal), (M));
+
+    /*
+     * Calculate MCLK based on MCLK-A
+     */
+    mpll = (2.0 * (float)mpll_fb_div * (xtal / 100.0)) / (float)M;
+    spll = (2.0 * (float)spll_fb_div * (xtal / 100.0)) / (float)M;
+
+    tmp = INPLL(pScrn, RADEON_MCLK_CNTL) & 0x7;
+    switch(tmp) {
+    case 1: info->mclk = mpll; break;
+    case 2: info->mclk = mpll / 2.0; break;
+    case 3: info->mclk = mpll / 4.0; break;
+    case 4: info->mclk = mpll / 8.0; break;
+    case 7: info->mclk = spll; break;
+    default:
+           info->mclk = 200.00;
+           xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Unsupported MCLKA source"
+                      " setting %d, can't probe MCLK value !\n", tmp);
+    }
+
+    /*
+     * Calculate SCLK
+     */
+    tmp = INPLL(pScrn, RADEON_SCLK_CNTL) & 0x7;
+    switch(tmp) {
+    case 1: info->sclk = spll; break;
+    case 2: info->sclk = spll / 2.0; break;
+    case 3: info->sclk = spll / 4.0; break;
+    case 4: info->sclk = spll / 8.0; break;
+    case 7: info->sclk = mpll;
+    default:
+           info->sclk = 200.00;
+           xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Unsupported SCLK source"
+                      " setting %d, can't probe SCLK value !\n", tmp);
+    }
 
     /* we're done, hopefully these are sane values */
     pll->reference_div = ref_div;
     pll->xclk = xclk;
     pll->reference_freq = xtal;
 
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Probed PLL values: xtal: %f Mhz, "
+              "sclk: %f Mhz, mclk: %f Mhz\n", xtal/100.0, info->sclk, info->mclk);
+
     return TRUE;
 }
-#endif
 
 static void RADEONGetPanelInfoFromReg (ScrnInfoPtr pScrn)
 {
@@ -1321,7 +1542,25 @@ static void RADEONGetPanelInfoFromReg (ScrnInfoPtr pScrn)
 	info->PanelXRes = 640;
 	info->PanelYRes = 480;
     }
-    
+
+    if (xf86ReturnOptValBool(info->Options, OPTION_LVDS_PROBE_PLL, TRUE)) {
+           CARD32 ppll_div_sel, ppll_val;
+
+           ppll_div_sel = INREG8(RADEON_CLOCK_CNTL_INDEX + 1) & 0x3;
+	   RADEONPllErrataAfterIndex(info);
+	   ppll_val = INPLL(pScrn, RADEON_PPLL_DIV_0 + ppll_div_sel);
+           if ((ppll_val & 0x000707ff) == 0x1bb)
+		   goto noprobe;
+	   info->FeedbackDivider = ppll_val & 0x7ff;
+	   info->PostDivider = (ppll_val >> 16) & 0x7;
+	   info->RefDivider = info->pll.reference_div;
+	   info->UseBiosDividers = TRUE;
+
+           xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                      "Existing panel PLL dividers will be used.\n");
+    }
+ noprobe:
+
     xf86DrvMsg(pScrn->scrnIndex, X_WARNING, 
 	       "Panel size %dx%d is derived, this may not be correct.\n"
 		   "If not, use PanelSize option to overwrite this setting\n",
@@ -1335,17 +1574,24 @@ static Bool RADEONGetLVDSInfo (ScrnInfoPtr pScrn)
     if (!RADEONGetLVDSInfoFromBIOS(pScrn))
         RADEONGetPanelInfoFromReg(pScrn);
 
+    /* The panel size we collected from BIOS may not be the
+     * maximum size supported by the panel.  If not, we update
+     * it now.  These will be used if no matching mode can be
+     * found from EDID data.
+     */
+    RADEONUpdatePanelSize(pScrn);
+
+    /* No timing information for the native mode,
+     * use whatever specified in the Modeline.
+     * If no Modeline specified, we'll just pick
+     * the VESA mode at 60Hz refresh rate which
+     * is likely to be the best for a flat panel.
+     */
     if (info->DotClock == 0) {
         RADEONEntPtr pRADEONEnt   = RADEONEntPriv(pScrn);
         DisplayModePtr  tmp_mode = NULL;
         xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
                    "No valid timing info from BIOS.\n");
-        /* No timing information for the native mode,
-           use whatever specified in the Modeline.
-           If no Modeline specified, we'll just pick
-           the VESA mode at 60Hz refresh rate which
-           is likely to be the best for a flat panel.
-	*/
         tmp_mode = pScrn->monitor->Modes;
         while(tmp_mode) {
             if ((tmp_mode->HDisplay == info->PanelXRes) &&
@@ -1416,6 +1662,8 @@ static void RADEONGetPanelInfo (ScrnInfoPtr pScrn)
             RADEONGetTMDSInfo(pScrn);
             if (!pScrn->monitor->DDC)
                 RADEONGetHardCodedEDIDFromBIOS(pScrn);
+            else if (!info->IsSecondary)
+               RADEONUpdatePanelSize(pScrn);
         }
     }
 }
@@ -1448,17 +1696,24 @@ static void RADEONGetClockInfo(ScrnInfoPtr pScrn)
 	xf86DrvMsg (pScrn->scrnIndex, X_WARNING,
 		    "Video BIOS not detected, using default clock settings!\n");
 
-#if defined(__powerpc__)
-	if (RADEONProbePLLParameters(pScrn)) return;
-#endif
+       /* Default min/max PLL values */
+       if (info->ChipFamily == CHIP_FAMILY_R420) {
+           pll->min_pll_freq = 20000;
+           pll->max_pll_freq = 50000;
+       } else {
+           pll->min_pll_freq = 12500;
+           pll->max_pll_freq = 35000;
+       }
+
+       if (RADEONProbePLLParameters(pScrn))
+            return;
+
 	if (info->IsIGP)
 	    pll->reference_freq = 1432;
 	else
 	    pll->reference_freq = 2700;
 
 	pll->reference_div = 12;
-	pll->min_pll_freq = 12500;
-	pll->max_pll_freq = 35000;
 	pll->xclk = 10300;
 
         info->sclk = 200.00;
@@ -1610,6 +1865,14 @@ static BOOL RADEONQueryConnectedMonitors(ScrnInfoPtr pScrn)
 	pRADEONEnt->PortInfo[1].DACType = DAC_PRIMARY;
 	pRADEONEnt->PortInfo[1].TMDSType = TMDS_EXT;
 	pRADEONEnt->PortInfo[1].ConnectorType = CONNECTOR_CRT;
+
+       /* Some cards have the DDC lines swapped and we have no way to
+        * detect it yet (Mac cards)
+        */
+       if (xf86ReturnOptValBool(info->Options, OPTION_REVERSE_DDC, FALSE)) {
+           pRADEONEnt->PortInfo[0].DDCType = DDC_VGA;
+           pRADEONEnt->PortInfo[1].DDCType = DDC_DVI;
+        }
     }
 
     /* always make TMDS_INT port first*/
@@ -1621,7 +1884,11 @@ static BOOL RADEONQueryConnectedMonitors(ScrnInfoPtr pScrn)
     } else if ((pRADEONEnt->PortInfo[0].TMDSType != TMDS_INT &&
                 pRADEONEnt->PortInfo[1].TMDSType != TMDS_INT)) {
         /* no TMDS_INT port, make primary DAC port first */
-        if (pRADEONEnt->PortInfo[1].DACType == DAC_PRIMARY) {
+	/* On my Inspiron 8600 both internal and external ports are
+	   marked DAC_PRIMARY in BIOS. So be extra careful - only
+	   swap when the first port is not DAC_PRIMARY */
+        if ( (pRADEONEnt->PortInfo[1].DACType == DAC_PRIMARY) &&
+	     (pRADEONEnt->PortInfo[0].DACType != DAC_PRIMARY)) {
             RADEONConnector connector;
             connector = pRADEONEnt->PortInfo[0];
             pRADEONEnt->PortInfo[0] = pRADEONEnt->PortInfo[1];
@@ -1990,10 +2257,14 @@ static void
 RADEONSetFBLocation(ScrnInfoPtr pScrn)
 {
     RADEONInfoPtr  info = RADEONPTR(pScrn);
+    RADEONEntPtr pRADEONEnt = RADEONEntPriv(pScrn);
     unsigned char *RADEONMMIO = info->MMIO;
     CARD32 mc_fb_location;
     CARD32 mc_agp_location = INREG(RADEON_MC_AGP_LOCATION);
-
+    CARD32 bus_cntl = INREG(RADEON_BUS_CNTL);
+    
+    OUTREG (RADEON_BUS_CNTL, bus_cntl | RADEON_BUS_MASTER_DIS);
+    RADEONWaitForIdleMMIO(pScrn);
 
     /* This function has many problems with newer cards.
      * Even with older cards, all registers changed here are not
@@ -2003,18 +2274,6 @@ RADEONSetFBLocation(ScrnInfoPtr pScrn)
      * we just hardcode these values for now.
      * Need to revisit this whole function!!!
      */
-    if (IS_R300_VARIANT) {
-	info->fbLocation = 0;
-	
-	if (!info->IsSecondary) {
-	    RADEONWaitForIdleMMIO(pScrn);
-	    OUTREG (RADEON_MC_FB_LOCATION, (INREG(RADEON_CONFIG_MEMSIZE) - 1) & 0xffff0000);
-	    OUTREG(RADEON_DISPLAY_BASE_ADDR, info->fbLocation);
-	    OUTREG(RADEON_DISPLAY2_BASE_ADDR, info->fbLocation);
-	    OUTREG(RADEON_OV0_BASE_ADDR, info->fbLocation);
-	}
-	return;
-    }
 
     if (info->IsIGP) {
 	mc_fb_location = INREG(RADEON_NB_TOM);
@@ -2052,6 +2311,24 @@ RADEONSetFBLocation(ScrnInfoPtr pScrn)
     if (info->HasCRTC2)
 	OUTREG(RADEON_DISPLAY2_BASE_ADDR, info->fbLocation);
     OUTREG(RADEON_OV0_BASE_ADDR, info->fbLocation);
+
+    OUTREG (RADEON_BUS_CNTL, bus_cntl);
+    RADEONWaitForIdleMMIO(pScrn);
+
+    /* Set display0/1 priority up on r3/4xx in the memory controller for 
+     * high res modes if the user specifies HIGH for displaypriority 
+     * option.
+     */
+    if ((info->DispPriority == 2) && IS_R300_VARIANT) {
+        CARD32 mc_init_misc_lat_timer = INREG(R300_MC_INIT_MISC_LAT_TIMER);
+	if (info->MergedFB || pRADEONEnt->HasSecondary) {
+	    mc_init_misc_lat_timer |= 0x1100; /* display 0 and 1 */
+	} else {
+	    mc_init_misc_lat_timer |= 0x0100; /* display 0 only */
+	}
+	OUTREG(R300_MC_INIT_MISC_LAT_TIMER, mc_init_misc_lat_timer);
+    }
+
 }
 
 static void RADEONGetVRamType(ScrnInfoPtr pScrn)
@@ -2148,6 +2425,8 @@ static Bool RADEONPreInitConfig(ScrnInfoPtr pScrn)
 
     case PCI_CHIP_RV100_QY:
     case PCI_CHIP_RV100_QZ:
+    case PCI_CHIP_RN50_515E:  /* RN50 is based on the RV100 but 3D isn't guaranteed to work.  YMMV. */
+    case PCI_CHIP_RN50_5969:
 	info->ChipFamily = CHIP_FAMILY_RV100;
 
 	/* DELL triple-head configuration. */
@@ -2231,6 +2510,7 @@ static Bool RADEONPreInitConfig(ScrnInfoPtr pScrn)
     case PCI_CHIP_RV280_5961:
     case PCI_CHIP_RV280_5962:
     case PCI_CHIP_RV280_5964:
+    case PCI_CHIP_RV280_5965:
 	info->ChipFamily = CHIP_FAMILY_RV280;
 	break;
 
@@ -2258,6 +2538,7 @@ static Bool RADEONPreInitConfig(ScrnInfoPtr pScrn)
     case PCI_CHIP_RV350_AS:
     case PCI_CHIP_RV350_AT:
     case PCI_CHIP_RV350_AV:
+    case PCI_CHIP_RV350_4155:
 	info->ChipFamily = CHIP_FAMILY_RV350;
         break;
 
@@ -2284,9 +2565,38 @@ static Bool RADEONPreInitConfig(ScrnInfoPtr pScrn)
     case PCI_CHIP_RV370_5464:
         info->IsMobility = TRUE;
     case PCI_CHIP_RV370_5B60:
+    case PCI_CHIP_RV370_5B62:
     case PCI_CHIP_RV370_5B64:
     case PCI_CHIP_RV370_5B65:
         info->ChipFamily = CHIP_FAMILY_RV380;
+        break;
+
+    case PCI_CHIP_RS400_5A42:
+    case PCI_CHIP_RC410_5A62:
+    case PCI_CHIP_RS480_5955:
+    case PCI_CHIP_RS482_5975:
+        info->IsMobility = TRUE;
+    case PCI_CHIP_RS400_5A41:
+    case PCI_CHIP_RC410_5A61:
+    case PCI_CHIP_RS480_5954:
+    case PCI_CHIP_RS482_5974:
+	info->ChipFamily = CHIP_FAMILY_RV380; /*CHIP_FAMILY_RS400*/
+	/*info->IsIGP = TRUE;*/ /* ??? */
+	/*info->HasSingleDAC = TRUE;*/ /* ??? */
+        break;
+
+    case PCI_CHIP_RV410_564A:
+    case PCI_CHIP_RV410_564B:
+    case PCI_CHIP_RV410_5652:
+    case PCI_CHIP_RV410_5653:
+        info->IsMobility = TRUE;
+    case PCI_CHIP_RV410_5E48:
+    case PCI_CHIP_RV410_5E4B:
+    case PCI_CHIP_RV410_5E4A:
+    case PCI_CHIP_RV410_5E4D:
+    case PCI_CHIP_RV410_5E4C:
+    case PCI_CHIP_RV410_5E4F:
+        info->ChipFamily = CHIP_FAMILY_R420; /* CHIP_FAMILY_RV410*/
         break;
 
     case PCI_CHIP_R420_JN:
@@ -2298,6 +2608,7 @@ static Bool RADEONPreInitConfig(ScrnInfoPtr pScrn)
     case PCI_CHIP_R420_JL:
     case PCI_CHIP_R420_JM:
     case PCI_CHIP_R420_JP:
+    case PCI_CHIP_R420_4A4F:
         info->ChipFamily = CHIP_FAMILY_R420;
         break;
 
@@ -2309,7 +2620,32 @@ static Bool RADEONPreInitConfig(ScrnInfoPtr pScrn)
     case PCI_CHIP_R423_UR:
     case PCI_CHIP_R423_UT:
     case PCI_CHIP_R423_5D57:
+    case PCI_CHIP_R423_5550:
         info->ChipFamily = CHIP_FAMILY_R420;
+        break;
+
+    case PCI_CHIP_R430_5D49:
+    case PCI_CHIP_R430_5D4A:
+    case PCI_CHIP_R430_5D48:
+        info->IsMobility = TRUE;
+    case PCI_CHIP_R430_554F:
+    case PCI_CHIP_R430_554D:
+    case PCI_CHIP_R430_554E:
+    case PCI_CHIP_R430_554C:
+        info->ChipFamily = CHIP_FAMILY_R420; /*CHIP_FAMILY_R430*/
+        break;
+
+    case PCI_CHIP_R480_5D4C:
+    case PCI_CHIP_R480_5D50:
+    case PCI_CHIP_R480_5D4E:
+    case PCI_CHIP_R480_5D4F:
+    case PCI_CHIP_R480_5D52:
+    case PCI_CHIP_R480_5D4D:
+    case PCI_CHIP_R481_4B4B:
+    case PCI_CHIP_R481_4B4A:
+    case PCI_CHIP_R481_4B49:
+    case PCI_CHIP_R481_4B4C:
+        info->ChipFamily = CHIP_FAMILY_R420; /*CHIP_FAMILY_R480*/
         break;
 
     default:
@@ -2385,25 +2721,22 @@ static Bool RADEONPreInitConfig(ScrnInfoPtr pScrn)
     /* Some production boards of m6 will return 0 if it's 8 MB */
     if (pScrn->videoRam == 0) pScrn->videoRam = 8192;
 
-    if (info->IsSecondary) {
-	/* FIXME: For now, split FB into two equal sections. This should
-	 * be able to be adjusted by user with a config option. */
-        RADEONEntPtr pRADEONEnt = RADEONEntPriv(pScrn);
-	RADEONInfoPtr  info1;
+    /* Check chip errata */
+    info->ChipErrata = 0;
 
-	pScrn->videoRam /= 2;
-	pRADEONEnt->pPrimaryScrn->videoRam = pScrn->videoRam;
+    if (info->ChipFamily == CHIP_FAMILY_R300 &&
+	(INREG(RADEON_CONFIG_CNTL) & RADEON_CFG_ATI_REV_ID_MASK)
+	== RADEON_CFG_ATI_REV_A11)
+	    info->ChipErrata |= CHIP_ERRATA_R300_CG;
 
-	info1 = RADEONPTR(pRADEONEnt->pPrimaryScrn);
-	info1->FbMapSize  = pScrn->videoRam * 1024;
-	info->LinearAddr += pScrn->videoRam * 1024;
-	info1->MergedFB = FALSE;
-    }
+    if (info->ChipFamily == CHIP_FAMILY_RV200 ||
+	info->ChipFamily == CHIP_FAMILY_RS200)
+	    info->ChipErrata |= CHIP_ERRATA_PLL_DUMMYREADS;
 
-    info->R300CGWorkaround =
-	(info->ChipFamily == CHIP_FAMILY_R300 &&
-	 (INREG(RADEON_CONFIG_CNTL) & RADEON_CFG_ATI_REV_ID_MASK)
-	 == RADEON_CFG_ATI_REV_A11);
+    if (info->ChipFamily == CHIP_FAMILY_RV100 ||
+	info->ChipFamily == CHIP_FAMILY_RS100 ||
+	info->ChipFamily == CHIP_FAMILY_RS200)
+	    info->ChipErrata |= CHIP_ERRATA_PLL_DELAY;
 
     info->MemCntl            = INREG(RADEON_SDRAM_MODE_REG);
     info->BusCntl            = INREG(RADEON_BUS_CNTL);
@@ -2418,10 +2751,32 @@ static Bool RADEONPreInitConfig(ScrnInfoPtr pScrn)
 	from             = X_CONFIG;
 	pScrn->videoRam  = dev->videoRam;
     }
-    pScrn->videoRam  &= ~1023;
-    info->FbMapSize  = pScrn->videoRam * 1024;
+
     xf86DrvMsg(pScrn->scrnIndex, from,
 	       "VideoRAM: %d kByte (%d bit %s SDRAM)\n", pScrn->videoRam, info->RamWidth, info->IsDDR?"DDR":"SDR");
+
+    /* FIXME: For now, split FB into two equal sections. This should
+     * be able to be adjusted by user with a config option. */
+    if (info->IsPrimary) {
+        pScrn->videoRam /= 2;
+	info->MergedFB = FALSE;
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, 
+		"Using %dk of videoram for primary head\n",
+		pScrn->videoRam);
+    }
+
+    if (info->IsSecondary) {  
+        pScrn->videoRam /= 2;
+        info->LinearAddr += pScrn->videoRam * 1024;
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, 
+		"Using %dk of videoram for secondary head\n",
+		pScrn->videoRam);
+    }
+
+    pScrn->videoRam  &= ~1023;
+    info->FbMapSize  = pScrn->videoRam * 1024;
+
+    info->FbSecureSize = 0;
 
 #ifdef XF86DRI
 				/* AGP/PCI */
@@ -2464,7 +2819,7 @@ static Bool RADEONPreInitConfig(ScrnInfoPtr pScrn)
      *	- AGP Interface Specification Revision 2.0, Section 6.1.5
      */
 
-    info->IsPCI = TRUE;
+    info->cardType = CARD_PCI;
 
     if (pciReadLong(info->PciTag, PCI_CMD_STAT_REG) & RADEON_CAP_LIST) {
 	CARD32 cap_ptr, cap_id;
@@ -2476,7 +2831,11 @@ static Bool RADEONPreInitConfig(ScrnInfoPtr pScrn)
 	while(cap_ptr != RADEON_CAP_ID_NULL) {
 	    cap_id = pciReadLong(info->PciTag, cap_ptr);
 	    if ((cap_id & 0xff)== RADEON_CAP_ID_AGP) {
-		info->IsPCI = FALSE;
+		info->cardType = CARD_AGP;
+		break;
+	    }
+	    if ((cap_id & 0xff)== RADEON_CAP_ID_EXP) {
+		info->cardType = CARD_PCIE;
 		break;
 	    }
 	    cap_ptr = (cap_id >> 8) & RADEON_CAP_PTR_MASK;
@@ -2484,24 +2843,28 @@ static Bool RADEONPreInitConfig(ScrnInfoPtr pScrn)
     }
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "%s card detected\n",
-	       (info->IsPCI) ? "PCI" : "AGP");
+	       (info->cardType==CARD_PCI) ? "PCI" :
+		(info->cardType==CARD_PCIE) ? "PCIE" : "AGP");
 
     if ((s = xf86GetOptValString(info->Options, OPTION_BUS_TYPE))) {
 	if (strcmp(s, "AGP") == 0) {
-	    info->IsPCI = FALSE;
+	    info->cardType = CARD_AGP;
 	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Forced into AGP mode\n");
 	} else if (strcmp(s, "PCI") == 0) {
-	    info->IsPCI = TRUE;
+	    info->cardType = CARD_PCI;
 	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Forced into PCI mode\n");
 	} else if (strcmp(s, "PCIE") == 0) {
-	    info->IsPCI = TRUE;
-	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
-		       "PCI Express not supported yet, using PCI mode\n");
+	    info->cardType = CARD_PCIE;
+	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Forced into PCI Express mode\n");
 	} else {
 	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
 		       "Invalid BusType option, using detected type\n");
 	}
     }
+
+    /* if the card is PCI Express reserve the last 32k for the gart table */
+    if (info->cardType == CARD_PCIE)
+        info->FbSecureSize = RADEON_PCIGART_TABLE_SIZE;
 #endif
     xf86GetOptValBool(info->Options, OPTION_SHOWCACHE, &info->showCache);
     if (info->showCache)
@@ -2599,16 +2962,35 @@ static void RADEONUpdatePanelSize(ScrnInfoPtr pScrn)
     xf86MonPtr      ddc  = pScrn->monitor->DDC;
     DisplayModePtr  p;
 
+    if ((info->UseBiosDividers && info->DotClock != 0) || (ddc == NULL))
+       return;
+
     /* Go thru detailed timing table first */
     for (j = 0; j < 4; j++) {
 	if (ddc->det_mon[j].type == 0) {
 	    struct detailed_timings *d_timings =
 		&ddc->det_mon[j].section.d_timings;
-	    if (info->PanelXRes <= d_timings->h_active &&
-		info->PanelYRes <= d_timings->v_active) {
+           int match = 0;
 
-		if (info->DotClock) continue; /* Timings already inited */
+           /* If we didn't get a panel clock or guessed one, try to match the
+            * mode with the panel size. We do that because we _need_ a panel
+            * clock, or ValidateFPModes will fail, even when UseBiosDividers
+            * is set.
+            */
+           if (info->DotClock == 0 &&
+               info->PanelXRes == d_timings->h_active &&
+               info->PanelYRes == d_timings->v_active)
+               match = 1;
 
+           /* If we don't have a BIOS provided panel data with fixed dividers,
+            * check for a larger panel size
+            */
+	    if (info->PanelXRes < d_timings->h_active &&
+               info->PanelYRes < d_timings->v_active &&
+               !info->UseBiosDividers)
+               match = 1;
+
+             if (match) {
 		info->PanelXRes  = d_timings->h_active;
 		info->PanelYRes  = d_timings->v_active;
 		info->DotClock   = d_timings->clock / 1000;
@@ -2618,9 +3000,23 @@ static void RADEONUpdatePanelSize(ScrnInfoPtr pScrn)
 		info->VOverPlus  = d_timings->v_sync_off;
 		info->VSyncWidth = d_timings->v_sync_width;
 		info->VBlank     = d_timings->v_blanking;
+                info->Flags      = (d_timings->interlaced ? V_INTERLACE : 0);
+                if (d_timings->sync == 3) {
+                   switch (d_timings->misc) {
+                   case 0: info->Flags |= V_NHSYNC | V_NVSYNC; break;
+                   case 1: info->Flags |= V_PHSYNC | V_NVSYNC; break;
+                   case 2: info->Flags |= V_NHSYNC | V_PVSYNC; break;
+                   case 3: info->Flags |= V_PHSYNC | V_PVSYNC; break;
+                   }
+                }
+                xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Panel infos found from DDC detailed: %dx%d\n",
+                           info->PanelXRes, info->PanelYRes);
 	    }
 	}
     }
+
+    if (info->UseBiosDividers && info->DotClock != 0)
+       return;
 
     /* Search thru standard VESA modes from EDID */
     for (j = 0; j < 8; j++) {
@@ -2643,26 +3039,14 @@ static void RADEONUpdatePanelSize(ScrnInfoPtr pScrn)
 			info->VOverPlus  = p->VSyncStart - p->VDisplay;
 			info->VSyncWidth = p->VSyncEnd - p->VSyncStart;
 			info->DotClock   = p->Clock;
-			info->Flags      =
-			    (ddc->det_mon[j].section.d_timings.interlaced
-			     ? V_INTERLACE
-			     : 0);
-			if (ddc->det_mon[j].section.d_timings.sync == 3) {
-			    switch (ddc->det_mon[j].section.d_timings.misc) {
-			    case 0: info->Flags |= V_NHSYNC | V_NVSYNC; break;
-			    case 1: info->Flags |= V_PHSYNC | V_NVSYNC; break;
-			    case 2: info->Flags |= V_NHSYNC | V_PVSYNC; break;
-			    case 3: info->Flags |= V_PHSYNC | V_PVSYNC; break;
-			    }
-			}
+                        info->Flags      = p->Flags;
+                        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Panel infos found from DDC VESA/EDID: %dx%d\n",
+                                   info->PanelXRes, info->PanelYRes);
 		    }
 		}
 	    }
 	}
     }
-
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Panel size found from DDC: %dx%d\n",
-	       info->PanelXRes, info->PanelYRes);
 }
 
 /* This function will sort all modes according to their resolution.
@@ -2709,13 +3093,20 @@ static void RADEONSortModes(DisplayModePtr *new, DisplayModePtr *first,
 static void RADEONSetPitch (ScrnInfoPtr pScrn)
 {
     int  dummy = pScrn->virtualX;
+    RADEONInfoPtr info = RADEONPTR(pScrn);
 
     /* FIXME: May need to validate line pitch here */
     switch (pScrn->depth / 8) {
-    case 1: dummy = (pScrn->virtualX + 127) & ~127; break;
-    case 2: dummy = (pScrn->virtualX +  31) &  ~31; break;
+    case 1: if (info->allowColorTiling) dummy = (pScrn->virtualX + 255) & ~255;
+	else dummy = (pScrn->virtualX + 127) & ~127;
+	break;
+    case 2: if (info->allowColorTiling) dummy = (pScrn->virtualX + 127) & ~127;
+	else dummy = (pScrn->virtualX + 31) & ~31;
+	break;
     case 3:
-    case 4: dummy = (pScrn->virtualX +  15) &  ~15; break;
+    case 4: if (info->allowColorTiling) dummy = (pScrn->virtualX + 63) & ~63;
+	else dummy = (pScrn->virtualX + 15) & ~15;
+	break;
     }
     pScrn->displayWidth = dummy;
 }
@@ -2783,6 +3174,8 @@ static DisplayModePtr RADEONDDCModes(ScrnInfoPtr pScrn)
 
     /* Search thru standard VESA modes from EDID */
     for (j = 0; j < 8; j++) {
+        if (ddc->timings2[j].hsize == 0 || ddc->timings2[j].vsize == 0)
+               continue;
 	for (p = pScrn->monitor->Modes; p && p->next; p = p->next->next) {
 	    /* Ignore all double scan modes */
 	    if ((ddc->timings2[j].hsize == p->HDisplay) &&
@@ -2872,18 +3265,9 @@ static int RADEONValidateDDCModes(ScrnInfoPtr pScrn1, char **ppModeName,
     pScrn->virtualX = pScrn1->display->virtualX;
     pScrn->virtualY = pScrn1->display->virtualY;
 
-    if (pScrn->monitor->DDC && !info->UseBiosDividers) {
+    if (pScrn->monitor->DDC) {
 	int  maxVirtX = pScrn->virtualX;
 	int  maxVirtY = pScrn->virtualY;
-
-	if ((DisplayType != MT_CRT) && (!info->IsSecondary) && (!crtc2)) {
-	    /* The panel size we collected from BIOS may not be the
-	     * maximum size supported by the panel.  If not, we update
-	     * it now.  These will be used if no matching mode can be
-	     * found from EDID data.
-	     */
-	    RADEONUpdatePanelSize(pScrn);
-	}
 
 	/* Collect all of the DDC modes */
 	first = last = ddcModes = RADEONDDCModes(pScrn);
@@ -3360,9 +3744,10 @@ static int RADEONValidateMergeModes(ScrnInfoPtr pScrn1)
 			      NULL,                  /* linePitches */
 			      8 * 64,                /* minPitch */
 			      8 * 1024,              /* maxPitch */
-			      64 * pScrn1->bitsPerPixel, /* pitchInc */
+			      info->allowColorTiling ? 2048 :
+			          64 * pScrn1->bitsPerPixel, /* pitchInc */
 			      128,                   /* minHeight */
-			      8 * 1024, /*2048,*/    /* maxHeight */
+			      info->MaxLines,        /* maxHeight */
 			      pScrn1->display->virtualX ? pScrn1->virtualX : 0,
 			      pScrn1->display->virtualY ? pScrn1->virtualY : 0,
 			      info->FbMapSize,
@@ -3422,9 +3807,10 @@ static int RADEONValidateMergeModes(ScrnInfoPtr pScrn1)
 					  NULL,                  /* linePitches */
 					  8 * 64,                /* minPitch */
 					  8 * 1024,              /* maxPitch */
-					  64 * pScrn1->bitsPerPixel, /* pitchInc */
+					  info->allowColorTiling ? 2048 :
+					      64 * pScrn1->bitsPerPixel, /* pitchInc */
 					  128,                   /* minHeight */
-					  8 * 1024, /*2048,*/    /* maxHeight */
+					  info->MaxLines,        /* maxHeight */
 					  pScrn1->display->virtualX,
 					  pScrn1->display->virtualY,
 					  info->FbMapSize,
@@ -3510,7 +3896,11 @@ static Bool RADEONPreInitModes(ScrnInfoPtr pScrn, xf86Int10InfoPtr pInt10)
     /* don't use RMX if we have a dual-tmds panels */
    if (pRADEONEnt->MonType2 == MT_DFP)
 	info->ddc_mode = TRUE;
-
+   /* don't use RMX if we are Dell Server */  
+   if (info->IsDellServer)
+   {
+       info->ddc_mode = TRUE;
+   }
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 	       "Validating modes on %s head ---------\n",
 	       info->IsSecondary ? "Secondary" : "Primary");
@@ -3576,7 +3966,8 @@ static Bool RADEONPreInitModes(ScrnInfoPtr pScrn, xf86Int10InfoPtr pInt10)
 		xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
 			   "Invalid PanelSize value: %s\n", s);
 	    }
-	}
+        } else
+            RADEONGetPanelInfo(pScrn);
     }
 
     if (pScrn->monitor->DDC) {
@@ -3618,9 +4009,10 @@ static Bool RADEONPreInitModes(ScrnInfoPtr pScrn, xf86Int10InfoPtr pInt10)
 			      NULL,                  /* linePitches */
 			      8 * 64,                /* minPitch */
 			      8 * 1024,              /* maxPitch */
-			      64 * pScrn->bitsPerPixel, /* pitchInc */
+			      info->allowColorTiling ? 2048 :
+			          64 * pScrn->bitsPerPixel, /* pitchInc */
 			      128,                   /* minHeight */
-			      2048,                  /* maxHeight */
+			      info->MaxLines,        /* maxHeight */
 			      pScrn->display->virtualX,
 			      pScrn->display->virtualY,
 			      info->FbMapSize,
@@ -3686,9 +4078,10 @@ static Bool RADEONPreInitModes(ScrnInfoPtr pScrn, xf86Int10InfoPtr pInt10)
 					  NULL,                  /* linePitches */
 					  8 * 64,                /* minPitch */
 					  8 * 1024,              /* maxPitch */
-					  64 * pScrn->bitsPerPixel, /* pitchInc */
+					  info->allowColorTiling ? 2048 :
+					      64 * pScrn->bitsPerPixel, /* pitchInc */
 					  128,                   /* minHeight */
-					  2048,                  /* maxHeight */
+					  info->MaxLines,        /* maxHeight */
 					  pScrn->display->virtualX,
 					  pScrn->display->virtualY,
 					  info->FbMapSize,
@@ -3855,31 +4248,72 @@ static Bool RADEONPreInitAccel(ScrnInfoPtr pScrn)
 {
 #ifdef XFree86LOADER
     RADEONInfoPtr  info = RADEONPTR(pScrn);
+    MessageType from;
+#if defined(USE_EXA) && defined(USE_XAA)
+    char *optstr;
+#endif
 
     if (!xf86ReturnOptValBool(info->Options, OPTION_NOACCEL, FALSE)) {
 	int errmaj = 0, errmin = 0;
 
-	info->xaaReq.majorversion = 1;
-	info->xaaReq.minorversion = 2;
+	from = X_DEFAULT;
+#if defined(USE_EXA)
+#if defined(USE_XAA)
+	optstr = (char *)xf86GetOptValString(info->Options, OPTION_ACCELMETHOD);
+	if (optstr != NULL) {
+	    if (xf86NameCmp(optstr, "EXA") == 0) {
+		from = X_CONFIG;
+		info->useEXA = TRUE;
+	    } else if (xf86NameCmp(optstr, "XAA") == 0) {
+		from = X_CONFIG;
+	    }
+	}
+#else /* USE_XAA */
+	info->useEXA = TRUE;
+#endif /* !USE_XAA */
+#endif /* USE_EXA */
+	xf86DrvMsg(pScrn->scrnIndex, from,
+	    "Using %s acceleration architecture\n",
+	    info->useEXA ? "EXA" : "XAA");
 
-	if (!LoadSubModule(pScrn->module, "xaa", NULL, NULL, NULL,
-			   &info->xaaReq, &errmaj, &errmin)) {
-	    info->xaaReq.minorversion = 1;
+#ifdef USE_EXA
+	if (info->useEXA) {
+	    info->exaReq.majorversion = 1;
+	    info->exaReq.minorversion = 0;
+
+	    if (!LoadSubModule(pScrn->module, "exa", NULL, NULL, NULL,
+			       &info->exaReq, &errmaj, &errmin)) {
+		LoaderErrorMsg(NULL, "exa", errmaj, errmin);
+		return FALSE;
+	    }
+	    xf86LoaderReqSymLists(exaSymbols, NULL);
+	}
+#endif /* USE_EXA */
+#ifdef USE_XAA
+	if (!info->useEXA) {
+	    info->xaaReq.majorversion = 1;
+	    info->xaaReq.minorversion = 2;
 
 	    if (!LoadSubModule(pScrn->module, "xaa", NULL, NULL, NULL,
-			       &info->xaaReq, &errmaj, &errmin)) {
-		info->xaaReq.minorversion = 0;
+			   &info->xaaReq, &errmaj, &errmin)) {
+		info->xaaReq.minorversion = 1;
 
 		if (!LoadSubModule(pScrn->module, "xaa", NULL, NULL, NULL,
 			       &info->xaaReq, &errmaj, &errmin)) {
-		    LoaderErrorMsg(NULL, "xaa", errmaj, errmin);
-		    return FALSE;
+		    info->xaaReq.minorversion = 0;
+
+		    if (!LoadSubModule(pScrn->module, "xaa", NULL, NULL, NULL,
+			       &info->xaaReq, &errmaj, &errmin)) {
+			LoaderErrorMsg(NULL, "xaa", errmaj, errmin);
+			return FALSE;
+		    }
 		}
 	    }
+	    xf86LoaderReqSymLists(xaaSymbols, NULL);
 	}
-	xf86LoaderReqSymLists(xaaSymbols, NULL);
+#endif /* USE_XAA */
     }
-#endif
+#endif /* XFree86Loader */
 
     return TRUE;
 }
@@ -3902,6 +4336,7 @@ static Bool RADEONPreInitInt10(ScrnInfoPtr pScrn, xf86Int10InfoPtr *ppInt10)
 static Bool RADEONPreInitDRI(ScrnInfoPtr pScrn)
 {
     RADEONInfoPtr  info = RADEONPTR(pScrn);
+    MessageType    from;
 
     if (xf86ReturnOptValBool(info->Options, OPTION_CP_PIO, FALSE)) {
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Forcing CP into PIO mode\n");
@@ -3919,16 +4354,23 @@ static Bool RADEONPreInitDRI(ScrnInfoPtr pScrn)
 
     info->CPusecTimeout = RADEON_DEFAULT_CP_TIMEOUT;
 
-    if (!info->IsPCI) {
+    if (info->cardType==CARD_AGP) {
 	if (xf86GetOptValInteger(info->Options,
 				 OPTION_AGP_MODE, &(info->agpMode))) {
 	    if (info->agpMode < 1 || info->agpMode > RADEON_AGP_MAX_MODE) {
 		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-			   "Illegal AGP Mode: %d\n", info->agpMode);
-		return FALSE;
+			   "Illegal AGP Mode: %dx, set to default %dx mode\n",
+			   info->agpMode, RADEON_DEFAULT_AGP_MODE);
+		info->agpMode = RADEON_DEFAULT_AGP_MODE;
 	    }
+
+	    /* AGP_MAX_MODE is changed to allow v3 8x mode.
+	     * At this time we don't know if the AGP bridge supports
+	     * 8x mode. This will later be verified on both 
+	     * AGP master and target sides.
+	     */
 	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
-		       "Using AGP %dx mode\n", info->agpMode);
+		       "AGP %dx mode is configured\n", info->agpMode);
 	}
 
 	if ((info->agpFastWrite = xf86ReturnOptValBool(info->Options,
@@ -4005,15 +4447,6 @@ static Bool RADEONPreInitDRI(ScrnInfoPtr pScrn)
 	/* This option checked by the RADEON DRM kernel module */
     }
 
-    /* Depth moves are disabled by default since they are extremely slow */
-    if ((info->depthMoves = xf86ReturnOptValBool(info->Options,
-						 OPTION_DEPTH_MOVE, FALSE))) {
-	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Enabling depth moves\n");
-    } else {
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-		   "Depth moves disabled by default\n");
-    }
-
     /* Two options to try and squeeze as much texture memory as possible
      * for dedicated 3d rendering boxes
      */
@@ -4033,14 +4466,100 @@ static Bool RADEONPreInitDRI(ScrnInfoPtr pScrn)
 	info->allowPageFlip = xf86ReturnOptValBool(info->Options,
 						   OPTION_PAGE_FLIP,
 						   FALSE);
+	if (info->allowPageFlip && info->useEXA) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		       "Page flipping not allowed with EXA, disabling.\n");
+	    info->allowPageFlip = FALSE;
+	}
     }
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Page flipping %sabled\n",
 	       info->allowPageFlip ? "en" : "dis");
 
+    info->DMAForXv = TRUE;
+    from = xf86GetOptValBool(info->Options, OPTION_XV_DMA, &info->DMAForXv)
+	 ? X_CONFIG : X_INFO;
+    xf86DrvMsg(pScrn->scrnIndex, from,
+	       "Will %stry to use DMA for Xv image transfers\n",
+	       info->DMAForXv ? "" : "not ");
+
     return TRUE;
 }
 #endif
+
+static Bool RADEONPreInitXv(ScrnInfoPtr pScrn)
+{
+    RADEONInfoPtr  info = RADEONPTR(pScrn);
+    CARD16 mm_table;
+    CARD16 bios_header;
+    CARD16 pll_info_block;
+
+    /* Rescue MM_TABLE before VBIOS is freed */
+    info->MM_TABLE_valid = FALSE;
+    
+    if((info->VBIOS==NULL)||(info->VBIOS[0]!=0x55)||(info->VBIOS[1]!=0xaa)){
+       xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Cannot access BIOS or it is not valid.\n"
+               "\t\tIf your card is TV-in capable you will need to specify options RageTheatreCrystal, RageTheatreTunerPort, \n"
+               "\t\tRageTheatreSVideoPort and TunerType in /etc/X11/xorg.conf.\n"
+               );
+       info->MM_TABLE_valid = FALSE;
+       return TRUE;
+       }
+
+    bios_header=info->VBIOS[0x48];
+    bios_header+=(((int)info->VBIOS[0x49]+0)<<8);           
+        
+    mm_table=info->VBIOS[bios_header+0x38];
+    if(mm_table==0)
+    {
+        xf86DrvMsg(pScrn->scrnIndex,X_INFO,"No MM_TABLE found - assuming CARD is not TV-in capable.\n");
+        info->MM_TABLE_valid = FALSE;
+        return TRUE;
+    }
+    mm_table+=(((int)info->VBIOS[bios_header+0x39]+0)<<8)-2;
+    
+    if(mm_table>0)
+    {
+        memcpy(&(info->MM_TABLE), &(info->VBIOS[mm_table]), sizeof(info->MM_TABLE));
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "MM_TABLE: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n",
+            info->MM_TABLE.table_revision,
+            info->MM_TABLE.table_size,
+            info->MM_TABLE.tuner_type,
+            info->MM_TABLE.audio_chip,
+            info->MM_TABLE.product_id,
+            info->MM_TABLE.tuner_voltage_teletext_fm,
+            info->MM_TABLE.i2s_config,
+            info->MM_TABLE.video_decoder_type,
+            info->MM_TABLE.video_decoder_host_config,
+            info->MM_TABLE.input[0],
+            info->MM_TABLE.input[1],
+            info->MM_TABLE.input[2],
+            info->MM_TABLE.input[3],
+            info->MM_TABLE.input[4]);
+	    
+	  /* Is it an MM_TABLE we know about ? */
+	  if(info->MM_TABLE.table_size != 0xc){
+	       xf86DrvMsg(pScrn->scrnIndex, X_INFO, "This card has MM_TABLE we do not recognize.\n"
+			"\t\tIf your card is TV-in capable you will need to specify options RageTheatreCrystal, RageTheatreTunerPort, \n"
+			"\t\tRageTheatreSVideoPort and TunerType in /etc/X11/xorg.conf.\n"
+			);
+		info->MM_TABLE_valid = FALSE;
+		return TRUE;
+	  	}
+        info->MM_TABLE_valid = TRUE;
+    } else {
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "No MM_TABLE found - assuming card is not TV-in capable (mm_table=%d).\n", mm_table);
+        info->MM_TABLE_valid = FALSE;
+    }
+
+    pll_info_block=info->VBIOS[bios_header+0x30];
+    pll_info_block+=(((int)info->VBIOS[bios_header+0x31]+0)<<8);
+       
+    info->video_decoder_type=info->VBIOS[pll_info_block+0x08];
+    info->video_decoder_type+=(((int)info->VBIOS[pll_info_block+0x09]+0)<<8);
+    
+    return TRUE;
+}
 
 static void
 RADEONProbeDDC(ScrnInfoPtr pScrn, int indx)
@@ -4053,13 +4572,15 @@ RADEONProbeDDC(ScrnInfoPtr pScrn, int indx)
     }
 }
 
-/* RADEONPreInit is called once at server startup */
-Bool RADEONPreInit(ScrnInfoPtr pScrn, int flags)
+_X_EXPORT Bool RADEONPreInit(ScrnInfoPtr pScrn, int flags)
 {
     RADEONInfoPtr     info;
     xf86Int10InfoPtr  pInt10 = NULL;
     void *int10_save = NULL;
     const char *s;
+	 char* microc_path = NULL;
+	 char* microc_type = NULL;
+
 
     RADEONTRACE(("RADEONPreInit\n"));
     if (pScrn->numEntities != 1) return FALSE;
@@ -4068,6 +4589,7 @@ Bool RADEONPreInit(ScrnInfoPtr pScrn, int flags)
 
     info               = RADEONPTR(pScrn);
     info->IsSecondary  = FALSE;
+    info->IsPrimary     = FALSE;
     info->MergedFB     = FALSE;
     info->IsSwitching  = FALSE;
     info->MMIO         = NULL;
@@ -4128,6 +4650,8 @@ Bool RADEONPreInit(ScrnInfoPtr pScrn, int flags)
 	} else {
 	    RADEONEntPtr pRADEONEnt = RADEONEntPriv(pScrn);
 
+	    info->IsPrimary = TRUE;
+
 	    xf86SetPrimInitDone(info->pEnt->index);
 
 	    pRADEONEnt->pPrimaryScrn        = pScrn;
@@ -4143,14 +4667,6 @@ Bool RADEONPreInit(ScrnInfoPtr pScrn, int flags)
 	return TRUE;
     }
 
-    if (!xf86LoadSubModule(pScrn, "vgahw")) return FALSE;
-    xf86LoaderReqSymLists(vgahwSymbols, NULL);
-    if (!vgaHWGetHWRec(pScrn)) {
-	RADEONFreeRec(pScrn);
-	goto fail2;
-    }
-
-    vgaHWGetIOBase(VGAHWPTR(pScrn));
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 	       "PCI bus %d card %d func %d\n",
@@ -4179,9 +4695,38 @@ Bool RADEONPreInit(ScrnInfoPtr pScrn, int flags)
     memcpy(info->Options, RADEONOptions, sizeof(RADEONOptions));
     xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, info->Options);
 
+    /* By default, don't do VGA IOs on ppc */
+#if defined(__powerpc__) || !defined(WITH_VGAHW)
+    info->VGAAccess = FALSE;
+#else
+    info->VGAAccess = TRUE;
+#endif
+
+#ifdef WITH_VGAHW
+    xf86GetOptValBool(info->Options, OPTION_VGA_ACCESS, &info->VGAAccess);
+    if (info->VGAAccess) {
+       if (!xf86LoadSubModule(pScrn, "vgahw"))
+           info->VGAAccess = FALSE;
+        else {
+           xf86LoaderReqSymLists(vgahwSymbols, NULL);
+            if (!vgaHWGetHWRec(pScrn))
+               info->VGAAccess = FALSE;
+       }
+       if (!info->VGAAccess)
+           xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "Loading VGA module failed,"
+                      " trying to run without it\n");
+    } else
+           xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VGAAccess option set to FALSE,"
+                      " VGA module load skipped\n");
+    if (info->VGAAccess)
+        vgaHWGetIOBase(VGAHWPTR(pScrn));
+#endif
+
+
     if (!RADEONPreInitWeight(pScrn))
 	goto fail;
 
+#ifdef XvExtension
     if (xf86GetOptValInteger(info->Options, OPTION_VIDEO_KEY,
 			     &(info->videoKey))) {
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "video key set to 0x%x\n",
@@ -4189,6 +4734,79 @@ Bool RADEONPreInit(ScrnInfoPtr pScrn, int flags)
     } else {
 	info->videoKey = 0x1E;
     }
+    
+    if(xf86GetOptValInteger(info->Options, OPTION_RAGE_THEATRE_CRYSTAL, &(info->RageTheatreCrystal))) {
+        xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Rage Theatre Crystal frequency was specified as %d.%d Mhz\n",
+                                info->RageTheatreCrystal/100, info->RageTheatreCrystal % 100);
+    } else {
+    	info->RageTheatreCrystal=-1;
+    }
+
+    if(xf86GetOptValInteger(info->Options, OPTION_RAGE_THEATRE_TUNER_PORT, &(info->RageTheatreTunerPort))) {
+        xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Rage Theatre tuner port was specified as %d\n",
+                                info->RageTheatreTunerPort);
+    } else {
+    	info->RageTheatreTunerPort=-1;
+    }
+    
+    if(info->RageTheatreTunerPort>5){
+         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Attempt to assign Rage Theatre tuner port to invalid value. Disabling setting\n");
+	 info->RageTheatreTunerPort=-1;
+	 }
+
+    if(xf86GetOptValInteger(info->Options, OPTION_RAGE_THEATRE_COMPOSITE_PORT, &(info->RageTheatreCompositePort))) {
+        xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Rage Theatre composite port was specified as %d\n",
+                                info->RageTheatreCompositePort);
+    } else {
+    	info->RageTheatreCompositePort=-1;
+    }
+
+    if(info->RageTheatreCompositePort>6){
+         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Attempt to assign Rage Theatre composite port to invalid value. Disabling setting\n");
+	 info->RageTheatreCompositePort=-1;
+	 }
+
+    if(xf86GetOptValInteger(info->Options, OPTION_RAGE_THEATRE_SVIDEO_PORT, &(info->RageTheatreSVideoPort))) {
+        xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Rage Theatre SVideo Port was specified as %d\n",
+                                info->RageTheatreSVideoPort);
+    } else {
+    	info->RageTheatreSVideoPort=-1;
+    }
+
+    if(info->RageTheatreSVideoPort>6){
+         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Attempt to assign Rage Theatre SVideo port to invalid value. Disabling setting\n");
+	 info->RageTheatreSVideoPort=-1;
+	 }
+
+    if(xf86GetOptValInteger(info->Options, OPTION_TUNER_TYPE, &(info->tunerType))) {
+        xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Tuner type was specified as %d\n",
+                                info->tunerType);
+    } else {
+    	info->tunerType=-1;
+    }
+
+    if(info->tunerType>31){
+         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Attempt to set tuner type to invalid value. Disabling setting\n");
+	 info->tunerType=-1;
+	 }
+
+	if((microc_path = xf86GetOptValString(info->Options, OPTION_RAGE_THEATRE_MICROC_PATH)) != NULL) 
+	{
+		xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Rage Theatre Microcode path was specified as %s\n", microc_path);
+		info->RageTheatreMicrocPath = microc_path;
+    } else {
+		info->RageTheatreMicrocPath= NULL;
+    }
+
+	if((microc_type = xf86GetOptValString(info->Options, OPTION_RAGE_THEATRE_MICROC_TYPE)) != NULL) 
+	{
+		xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Rage Theatre Microcode type was specified as %s\n", microc_type);
+		info->RageTheatreMicrocType = microc_type;
+	} else {
+		info->RageTheatreMicrocType= NULL;
+	}
+	 
+#endif
 
     info->DispPriority = 1; 
     if ((s = xf86GetOptValString(info->Options, OPTION_DISP_PRIORITY))) {
@@ -4232,12 +4850,41 @@ Bool RADEONPreInit(ScrnInfoPtr pScrn, int flags)
     if (!RADEONPreInitConfig(pScrn))
 	goto fail;
 
+    if (IS_R300_VARIANT) {
+        /* false by default on R3/4xx */
+        info->allowColorTiling = xf86ReturnOptValBool(info->Options,
+					        OPTION_COLOR_TILING, FALSE);
+	info->MaxSurfaceWidth = 3968; /* one would have thought 4096...*/
+	info->MaxLines = 4096;
+    } else {
+        info->allowColorTiling = xf86ReturnOptValBool(info->Options,
+						OPTION_COLOR_TILING, TRUE);
+	info->MaxSurfaceWidth = 2048;
+	info->MaxLines = 2048;
+    }
+
+    if ((info->allowColorTiling) && (info->IsSecondary)) {
+	/* can't have tiling on the 2nd head (as long as it can't use drm). We'd never
+	   get the surface save/restore (vt switching) right... */
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Color tiling disabled for 2nd head\n");
+	info->allowColorTiling = FALSE;
+    }
+    else if ((info->allowColorTiling) && (info->FBDev)) {
+	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+		   "Color tiling not supported with UseFBDev option\n");
+	info->allowColorTiling = FALSE;
+    }
+    else if (info->allowColorTiling) {
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Color tiling enabled by default\n");
+    } else {
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Color tiling disabled\n");
+    }
+
     RADEONPreInitDDC(pScrn);
 
     RADEONGetBIOSInfo(pScrn, pInt10);
     if (!RADEONQueryConnectedMonitors(pScrn))    goto fail;
     RADEONGetClockInfo(pScrn);
-    RADEONGetPanelInfo(pScrn);
 
     /* collect MergedFB options */
     /* only parse mergedfb options on the primary head. 
@@ -4257,6 +4904,8 @@ Bool RADEONPreInit(ScrnInfoPtr pScrn, int flags)
 #ifdef XF86DRI
     if (!RADEONPreInitDRI(pScrn))                goto fail;
 #endif
+
+    if (!RADEONPreInitXv(pScrn))                 goto fail;
 
 				/* Free the video bios (if applicable) */
     if (info->VBIOS) {
@@ -4293,7 +4942,10 @@ fail:
     if (pInt10)
 	xf86FreeInt10(pInt10);
 
-    vgaHWFreeHWRec(pScrn);
+#ifdef WITH_VGAHW
+    if (info->VGAAccess)
+           vgaHWFreeHWRec(pScrn);
+#endif
 
  fail2:
     if(info->MMIO) RADEONUnmapMMIO(pScrn);
@@ -4319,7 +4971,8 @@ static void RADEONLoadPalette(ScrnInfoPtr pScrn, int numColors,
     if (info->CPStarted) DRILock(pScrn->pScreen, 0);
 #endif
 
-    if (info->accelOn && pScrn->pScreen) info->accel->Sync(pScrn);
+    if (info->accelOn && pScrn->pScreen)
+        RADEON_SYNC(info, pScrn);
 
     if (info->FBDev) {
 	fbdevHWLoadPalette(pScrn, numColors, indices, colors, pVisual);
@@ -4442,10 +5095,13 @@ static void RADEONBlockHandler(int i, pointer blockData,
     RADEONInfoPtr  info    = RADEONPTR(pScrn);
 
 #ifdef XF86DRI
-    if (info->directRenderingEnabled)
+    if (info->directRenderingEnabled) {
 	FLUSH_RING();
+    }
 #endif
-
+#ifdef USE_EXA
+    info->engineMode = EXA_ENGINEMODE_UNKNOWN;
+#endif
     pScreen->BlockHandler = info->BlockHandler;
     (*pScreen->BlockHandler) (i, blockData, pTimeout, pReadmask);
     pScreen->BlockHandler = RADEONBlockHandler;
@@ -4453,20 +5109,337 @@ static void RADEONBlockHandler(int i, pointer blockData,
     if (info->VideoTimerCallback)
 	(*info->VideoTimerCallback)(pScrn, currentTime.milliseconds);
 
-#ifdef RENDER
+#if defined(RENDER) && defined(USE_XAA)
     if(info->RenderCallback)
 	(*info->RenderCallback)(pScrn);
 #endif
-
 }
 
-/* Called at the start of each server generation. */
-Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
+
+#ifdef USE_XAA
+#ifdef XF86DRI
+Bool RADEONSetupMemXAA_DRI(int scrnIndex, ScreenPtr pScreen)
+{
+    ScrnInfoPtr    pScrn = xf86Screens[pScreen->myNum];
+    RADEONInfoPtr  info  = RADEONPTR(pScrn);
+    int            cpp = info->CurrentLayout.pixel_bytes;
+    int            width_bytes = pScrn->displayWidth * cpp;
+    int            bufferSize;
+    int            depthSize;
+    int            l;
+    int            scanlines;
+    BoxRec         MemBox;
+    FBAreaPtr      fbarea;
+
+    info->frontOffset = 0;
+    info->frontPitch = pScrn->displayWidth;
+    info->backPitch = pScrn->displayWidth;
+
+    /* make sure we use 16 line alignment for tiling (8 might be enough).
+     * Might need that for non-XF86DRI too?
+     */
+    if (info->allowColorTiling) {
+	bufferSize = (((pScrn->virtualY + 15) & ~15) * width_bytes
+		      + RADEON_BUFFER_ALIGN) & ~RADEON_BUFFER_ALIGN;
+    } else {
+        bufferSize = (pScrn->virtualY * width_bytes
+		      + RADEON_BUFFER_ALIGN) & ~RADEON_BUFFER_ALIGN;
+    }
+
+    /* Due to tiling, the Z buffer pitch must be a multiple of 32 pixels,
+     * which is always the case if color tiling is used due to color pitch
+     * but not necessarily otherwise, and its height a multiple of 16 lines.
+     */
+    info->depthPitch = (pScrn->displayWidth + 31) & ~31;
+    depthSize = ((((pScrn->virtualY + 15) & ~15) * info->depthPitch
+		  * cpp + RADEON_BUFFER_ALIGN) & ~RADEON_BUFFER_ALIGN);
+
+    switch (info->CPMode) {
+    case RADEON_DEFAULT_CP_PIO_MODE:
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "CP in PIO mode\n");
+	break;
+    case RADEON_DEFAULT_CP_BM_MODE:
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "CP in BM mode\n");
+	break;
+    default:
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "CP in UNKNOWN mode\n");
+	break;
+    }
+
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+	       "Using %d MB GART aperture\n", info->gartSize);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+	       "Using %d MB for the ring buffer\n", info->ringSize);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+	       "Using %d MB for vertex/indirect buffers\n", info->bufSize);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+	       "Using %d MB for GART textures\n", info->gartTexSize);
+
+    /* Try for front, back, depth, and three framebuffers worth of
+     * pixmap cache.  Should be enough for a fullscreen background
+     * image plus some leftovers.
+     */
+    info->textureSize = info->FbMapSize - info->FbSecureSize - 5 * bufferSize - depthSize;
+
+    /* If that gives us less than half the available memory, let's
+     * be greedy and grab some more.  Sorry, I care more about 3D
+     * performance than playing nicely, and you'll get around a full
+     * framebuffer's worth of pixmap cache anyway.
+     */
+    if (info->textureSize < (int)info->FbMapSize / 2) {
+        info->textureSize = info->FbMapSize - 4 * bufferSize - depthSize;
+    }
+    if (info->textureSize < (int)info->FbMapSize / 2) {
+        info->textureSize = info->FbMapSize - 3 * bufferSize - depthSize;
+    }
+
+    /* If there's still no space for textures, try without pixmap cache, but
+     * never use the reserved space, the space hw cursor and PCIGART table might
+     * use.
+     */
+    if (info->textureSize < 0) {
+	info->textureSize = info->FbMapSize - 2 * bufferSize - depthSize
+ 	                    - 2 * width_bytes - 16384 - info->FbSecureSize;
+    }
+
+    /* Check to see if there is more room available after the 8192nd
+     * scanline for textures
+     */
+    /* FIXME: what's this good for? condition is pretty much impossible to meet */
+    if ((int)info->FbMapSize - 8192*width_bytes - bufferSize - depthSize
+	> info->textureSize) {
+	info->textureSize =
+		info->FbMapSize - 8192*width_bytes - bufferSize - depthSize;
+    }
+
+    /* If backbuffer is disabled, don't allocate memory for it */
+    if (info->noBackBuffer) {
+	info->textureSize += bufferSize;
+    }
+
+    /* RADEON_BUFFER_ALIGN is not sufficient for backbuffer!
+       At least for pageflip + color tiling, need to make sure it's 16 scanlines aligned,
+       otherwise the copy-from-front-to-back will fail (width_bytes * 16 will also guarantee
+       it's still 4kb aligned for tiled case). Need to round up offset (might get into cursor
+       area otherwise).
+       This might cause some space at the end of the video memory to be unused, since it
+       can't be used (?) due to that log_tex_granularity thing???
+       Could use different copyscreentoscreen function for the pageflip copies
+       (which would use different src and dst offsets) to avoid this. */   
+    if (info->allowColorTiling && !info->noBackBuffer) {
+	info->textureSize = info->FbMapSize - ((info->FbMapSize - info->textureSize +
+			  width_bytes * 16 - 1) / (width_bytes * 16)) * (width_bytes * 16);
+    }
+    if (info->textureSize > 0) {
+	l = RADEONMinBits((info->textureSize-1) / RADEON_NR_TEX_REGIONS);
+	if (l < RADEON_LOG_TEX_GRANULARITY)
+	    l = RADEON_LOG_TEX_GRANULARITY;
+	/* Round the texture size up to the nearest whole number of
+	 * texture regions.  Again, be greedy about this, don't
+	 * round down.
+	 */
+	info->log2TexGran = l;
+	info->textureSize = (info->textureSize >> l) << l;
+    } else {
+	info->textureSize = 0;
+    }
+
+    /* Set a minimum usable local texture heap size.  This will fit
+     * two 256x256x32bpp textures.
+     */
+    if (info->textureSize < 512 * 1024) {
+	info->textureOffset = 0;
+	info->textureSize = 0;
+    }
+
+    if (info->allowColorTiling && !info->noBackBuffer) {
+	info->textureOffset = ((info->FbMapSize - info->textureSize) /
+			       (width_bytes * 16)) * (width_bytes * 16);
+    }
+    else {
+	/* Reserve space for textures */
+	info->textureOffset = ((info->FbMapSize - info->textureSize +
+				RADEON_BUFFER_ALIGN) &
+			       ~(CARD32)RADEON_BUFFER_ALIGN);
+    }
+
+    /* Reserve space for the shared depth
+     * buffer.
+     */
+    info->depthOffset = ((info->textureOffset - depthSize +
+			  RADEON_BUFFER_ALIGN) &
+			 ~(CARD32)RADEON_BUFFER_ALIGN);
+
+    /* Reserve space for the shared back buffer */
+    if (info->noBackBuffer) {
+       info->backOffset = info->depthOffset;
+    } else {
+       info->backOffset = ((info->depthOffset - bufferSize +
+			    RADEON_BUFFER_ALIGN) &
+			   ~(CARD32)RADEON_BUFFER_ALIGN);
+    }
+
+    info->backY = info->backOffset / width_bytes;
+    info->backX = (info->backOffset - (info->backY * width_bytes)) / cpp;
+
+    scanlines = (info->FbMapSize-info->FbSecureSize) / width_bytes;
+    if (scanlines > 8191)
+	scanlines = 8191;
+
+    MemBox.x1 = 0;
+    MemBox.y1 = 0;
+    MemBox.x2 = pScrn->displayWidth;
+    MemBox.y2 = scanlines;
+
+    if (!xf86InitFBManager(pScreen, &MemBox)) {
+        xf86DrvMsg(scrnIndex, X_ERROR,
+		   "Memory manager initialization to "
+		   "(%d,%d) (%d,%d) failed\n",
+		   MemBox.x1, MemBox.y1, MemBox.x2, MemBox.y2);
+	return FALSE;
+    } else {
+	int  width, height;
+
+	xf86DrvMsg(scrnIndex, X_INFO,
+		   "Memory manager initialized to (%d,%d) (%d,%d)\n",
+		   MemBox.x1, MemBox.y1, MemBox.x2, MemBox.y2);
+	/* why oh why can't we just request modes which are guaranteed to be 16 lines
+	   aligned... sigh */
+	if ((fbarea = xf86AllocateOffscreenArea(pScreen,
+						pScrn->displayWidth,
+						info->allowColorTiling ? 
+						((pScrn->virtualY + 15) & ~15)
+						- pScrn->virtualY + 2 : 2,
+						0, NULL, NULL,
+						NULL))) {
+	    xf86DrvMsg(scrnIndex, X_INFO,
+		       "Reserved area from (%d,%d) to (%d,%d)\n",
+		       fbarea->box.x1, fbarea->box.y1,
+		       fbarea->box.x2, fbarea->box.y2);
+	} else {
+	    xf86DrvMsg(scrnIndex, X_ERROR, "Unable to reserve area\n");
+	}
+
+	RADEONDRIAllocatePCIGARTTable(pScreen);
+
+	if (xf86QueryLargestOffscreenArea(pScreen, &width,
+					  &height, 0, 0, 0)) {
+	    xf86DrvMsg(scrnIndex, X_INFO,
+		       "Largest offscreen area available: %d x %d\n",
+		       width, height);
+
+	    /* Lines in offscreen area needed for depth buffer and
+	     * textures
+	     */
+	    info->depthTexLines = (scanlines
+				   - info->depthOffset / width_bytes);
+	    info->backLines	    = (scanlines
+				       - info->backOffset / width_bytes
+				       - info->depthTexLines);
+	    info->backArea	    = NULL;
+	} else {
+	    xf86DrvMsg(scrnIndex, X_ERROR,
+		       "Unable to determine largest offscreen area "
+		       "available\n");
+	    return FALSE;
+	}
+    }
+
+    xf86DrvMsg(scrnIndex, X_INFO,
+	       "Will use back buffer at offset 0x%x\n",
+	       info->backOffset);
+    xf86DrvMsg(scrnIndex, X_INFO,
+	       "Will use depth buffer at offset 0x%x\n",
+	       info->depthOffset);
+    if (info->cardType==CARD_PCIE)
+    	xf86DrvMsg(scrnIndex, X_INFO,
+	           "Will use %d kb for PCI GART table at offset 0x%x\n",
+		   info->pciGartSize/1024, info->pciGartOffset);
+    xf86DrvMsg(scrnIndex, X_INFO,
+	       "Will use %d kb for textures at offset 0x%x\n",
+	       info->textureSize/1024, info->textureOffset);
+
+    info->frontPitchOffset = (((info->frontPitch * cpp / 64) << 22) |
+			      ((info->frontOffset + info->fbLocation) >> 10));
+
+    info->backPitchOffset = (((info->backPitch * cpp / 64) << 22) |
+			     ((info->backOffset + info->fbLocation) >> 10));
+
+    info->depthPitchOffset = (((info->depthPitch * cpp / 64) << 22) |
+			      ((info->depthOffset + info->fbLocation) >> 10));
+    return TRUE;
+}
+#endif /* XF86DRI */
+
+Bool RADEONSetupMemXAA(int scrnIndex, ScreenPtr pScreen)
 {
     ScrnInfoPtr    pScrn = xf86Screens[pScreen->myNum];
     RADEONInfoPtr  info  = RADEONPTR(pScrn);
     BoxRec         MemBox;
     int            y2;
+
+    int width_bytes = pScrn->displayWidth * info->CurrentLayout.pixel_bytes;
+
+    MemBox.x1 = 0;
+    MemBox.y1 = 0;
+    MemBox.x2 = pScrn->displayWidth;
+    y2 = info->FbMapSize / width_bytes;
+    if (y2 >= 32768)
+	y2 = 32767; /* because MemBox.y2 is signed short */
+    MemBox.y2 = y2;
+    
+    /* The acceleration engine uses 14 bit
+     * signed coordinates, so we can't have any
+     * drawable caches beyond this region.
+     */
+    if (MemBox.y2 > 8191)
+	MemBox.y2 = 8191;
+
+    if (!xf86InitFBManager(pScreen, &MemBox)) {
+	xf86DrvMsg(scrnIndex, X_ERROR,
+		   "Memory manager initialization to "
+		   "(%d,%d) (%d,%d) failed\n",
+		   MemBox.x1, MemBox.y1, MemBox.x2, MemBox.y2);
+	return FALSE;
+    } else {
+	int       width, height;
+	FBAreaPtr fbarea;
+
+	xf86DrvMsg(scrnIndex, X_INFO,
+		   "Memory manager initialized to (%d,%d) (%d,%d)\n",
+		   MemBox.x1, MemBox.y1, MemBox.x2, MemBox.y2);
+	if ((fbarea = xf86AllocateOffscreenArea(pScreen,
+						pScrn->displayWidth,
+						info->allowColorTiling ? 
+						((pScrn->virtualY + 15) & ~15)
+						- pScrn->virtualY + 2 : 2,
+						0, NULL, NULL,
+						NULL))) {
+	    xf86DrvMsg(scrnIndex, X_INFO,
+		       "Reserved area from (%d,%d) to (%d,%d)\n",
+		       fbarea->box.x1, fbarea->box.y1,
+		       fbarea->box.x2, fbarea->box.y2);
+	} else {
+	    xf86DrvMsg(scrnIndex, X_ERROR, "Unable to reserve area\n");
+	}
+	if (xf86QueryLargestOffscreenArea(pScreen, &width, &height,
+					      0, 0, 0)) {
+	    xf86DrvMsg(scrnIndex, X_INFO,
+		       "Largest offscreen area available: %d x %d\n",
+		       width, height);
+	}
+	return TRUE;
+    }    
+}
+#endif /* USE_XAA */
+
+/* Called at the start of each server generation. */
+_X_EXPORT Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen,
+                                int argc, char **argv)
+{
+    ScrnInfoPtr    pScrn = xf86Screens[pScreen->myNum];
+    RADEONInfoPtr  info  = RADEONPTR(pScrn);
+    int            hasDRI = 0;
 #ifdef RENDER
     int            subPixelOrder = SubPixelUnknown;
     char*          s;
@@ -4501,6 +5474,44 @@ Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         } else {
 	    RADEONSetDynamicClock(pScrn, 0);
         }
+    }
+
+#if 0
+    if (info->allowColorTiling && info->useEXA) {
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "Color tiling not supported yet with EXA, disabling\n");
+	info->allowColorTiling = FALSE;
+    }
+#endif
+    if (info->allowColorTiling && (pScrn->virtualX > info->MaxSurfaceWidth)) {
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "Color tiling not supported with virtual x resolutions larger than %d, disabling\n",
+		    info->MaxSurfaceWidth);
+	info->allowColorTiling = FALSE;
+    }
+    if (info->allowColorTiling) {
+	if (info->MergedFB) {
+	    if ((((RADEONMergedDisplayModePtr)pScrn->currentMode->Private)->CRT1->Flags &
+		(V_DBLSCAN | V_INTERLACE)) ||
+		(((RADEONMergedDisplayModePtr)pScrn->currentMode->Private)->CRT2->Flags &
+		(V_DBLSCAN | V_INTERLACE)))
+		info->tilingEnabled = FALSE;
+	    else info->tilingEnabled = TRUE;
+	}
+	else {
+            info->tilingEnabled = (pScrn->currentMode->Flags & (V_DBLSCAN | V_INTERLACE)) ? FALSE : TRUE;
+	}
+    }
+
+    if (!info->IsSecondary) {
+	/* empty the surfaces */
+	unsigned char *RADEONMMIO = info->MMIO;
+	unsigned int i;
+	for (i = 0; i < 8; i++) {
+	    OUTREG(RADEON_SURFACE0_INFO + 16 * i, 0);
+	    OUTREG(RADEON_SURFACE0_LOWER_BOUND + 16 * i, 0);
+	    OUTREG(RADEON_SURFACE0_UPPER_BOUND + 16 * i, 0);
+	}
     }
 
     if (info->FBDev) {
@@ -4552,11 +5563,15 @@ Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 		       (pScrn->displayWidth * pScrn->virtualY *
 			info->CurrentLayout.pixel_bytes * 3 + 1023) / 1024);
 	    info->directRenderingEnabled = FALSE;
-	} else if (info->ChipFamily >= CHIP_FAMILY_R300) {
-	    info->directRenderingEnabled = FALSE;
-	    xf86DrvMsg(scrnIndex, X_WARNING,
-		       "Direct rendering not yet supported on "
-		       "Radeon 9500 and newer cards\n");
+	} else if (info->ChipFamily >= CHIP_FAMILY_R300)  {
+	       xf86DrvMsg(scrnIndex, X_WARNING,
+	              "Enabling DRM support\n\n"
+                      "\t*** Direct rendering support is highly experimental for Radeon 9500\n"
+		      "\t*** and newer cards. The 3d mesa driver is not provided in this tree.\n"
+		      "\t*** A very experimental (and incomplete) version is available from Mesa CVS.\n" "\t*** Additional information can be found on http://r300.sourceforge.net\n"
+		      "\t*** This message has been last modified on 2005-08-07.\n\n"
+		      );
+               info->directRenderingEnabled = RADEONDRIScreenInit(pScreen);
 	} else if (info->IsSecondary) {
 	    info->directRenderingEnabled = FALSE;
 	} else if (xf86IsEntityShared(info->pEnt->index)) {
@@ -4568,24 +5583,26 @@ Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 			"DRI at present.\n"
 			"Please use the radeon MergedFB option if you "
 			"want Dual-head with DRI.\n");
-#if 0
-	} else if ( pScrn->virtualX > 2048 || pScrn->virtualY > 2048 ) {
-            if (info->No2048Limit) {
-	    	info->directRenderingEnabled = RADEONDRIScreenInit(pScreen);
-            	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-	    		"DRI forced on with virtual screen of greater than 2048.\n");
-            } else {
-                info->directRenderingEnabled = FALSE;
-                xf86DrvMsg(scrnIndex, X_WARNING,
-                            "Direct Rendering Disabled -- "
-                            "Virtual resolution exceeds 2048 "
-                            "(hardware limitation)\n");
-	    }
-#endif
 	} else {
 	    info->directRenderingEnabled = RADEONDRIScreenInit(pScreen);
 	}
     }
+
+    /* Depth moves are disabled by default since they are extremely slow */
+    info->depthMoves = xf86ReturnOptValBool(info->Options,
+						 OPTION_DEPTH_MOVE, FALSE);
+    if (info->depthMoves && info->allowColorTiling) {
+	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Enabling depth moves\n");
+    } else if (info->depthMoves) {
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "Depth moves don't work without color tiling, disabled\n");
+	info->depthMoves = FALSE;
+    } else {
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "Depth moves disabled by default\n");
+    }
+
+    hasDRI = info->directRenderingEnabled;
 #endif
 
     RADEONSetFBLocation(pScrn);
@@ -4636,258 +5653,25 @@ Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     }
 #endif
 				/* Memory manager setup */
-#ifdef XF86DRI
-    if (info->directRenderingEnabled) {
-	FBAreaPtr  fbarea;
-	int        width_bytes = (pScrn->displayWidth *
-				  info->CurrentLayout.pixel_bytes);
-	int        cpp         = info->CurrentLayout.pixel_bytes;
-	int        bufferSize  = ((pScrn->virtualY * width_bytes
-				   + RADEON_BUFFER_ALIGN)
-				  & ~RADEON_BUFFER_ALIGN);
-	int        depthSize;
-	int        l;
-	int        scanlines;
-
-	info->frontOffset = 0;
-	info->frontPitch = pScrn->displayWidth;
-
-	/* Due to tiling, the Z buffer pitch must be a multiple of 32 pixels,
-	 * and its height a multiple of 16 lines.
-	 */
-	info->depthPitch = (pScrn->displayWidth + 31) & ~31;
-	depthSize = ((((pScrn->virtualY+15) & ~15) * info->depthPitch
-		      * info->CurrentLayout.pixel_bytes + RADEON_BUFFER_ALIGN)
-		     & ~RADEON_BUFFER_ALIGN);
-
-	switch (info->CPMode) {
-	case RADEON_DEFAULT_CP_PIO_MODE:
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "CP in PIO mode\n");
-	    break;
-	case RADEON_DEFAULT_CP_BM_MODE:
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "CP in BM mode\n");
-	    break;
-	default:
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "CP in UNKNOWN mode\n");
-	    break;
-	}
-
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-		   "Using %d MB GART aperture\n", info->gartSize);
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-		   "Using %d MB for the ring buffer\n", info->ringSize);
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-		   "Using %d MB for vertex/indirect buffers\n", info->bufSize);
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-		   "Using %d MB for GART textures\n", info->gartTexSize);
-
-	/* Try for front, back, depth, and three framebuffers worth of
-	 * pixmap cache.  Should be enough for a fullscreen background
-	 * image plus some leftovers.
-	 */
-	info->textureSize = info->FbMapSize - 5 * bufferSize - depthSize;
-
-	/* If that gives us less than half the available memory, let's
-	 * be greedy and grab some more.  Sorry, I care more about 3D
-	 * performance than playing nicely, and you'll get around a full
-	 * framebuffer's worth of pixmap cache anyway.
-	 */
-	if (info->textureSize < (int)info->FbMapSize / 2) {
-	    info->textureSize = info->FbMapSize - 4 * bufferSize - depthSize;
-	}
-	if (info->textureSize < (int)info->FbMapSize / 2) {
-	    info->textureSize = info->FbMapSize - 3 * bufferSize - depthSize;
-	}
-	/* If there's still no space for textures, try without pixmap cache */
-	if (info->textureSize < 0) {
-	    info->textureSize = info->FbMapSize - 2 * bufferSize - depthSize
-				- 64/4*64;
-	}
-
-	/* Check to see if there is more room available after the 8192nd
-	   scanline for textures */
-	if ((int)info->FbMapSize - 8192*width_bytes - bufferSize - depthSize
-	    > info->textureSize) {
-	    info->textureSize =
-		info->FbMapSize - 8192*width_bytes - bufferSize - depthSize;
-	}
-
-	/* If backbuffer is disabled, don't allocate memory for it */
-	if (info->noBackBuffer) {
-	   info->textureSize += bufferSize;
-	}
-
-	if (info->textureSize > 0) {
-	    l = RADEONMinBits((info->textureSize-1) / RADEON_NR_TEX_REGIONS);
-	    if (l < RADEON_LOG_TEX_GRANULARITY) l = RADEON_LOG_TEX_GRANULARITY;
-
-	    /* Round the texture size up to the nearest whole number of
-	     * texture regions.  Again, be greedy about this, don't
-	     * round down.
-	     */
-	    info->log2TexGran = l;
-	    info->textureSize = (info->textureSize >> l) << l;
-	} else {
-	    info->textureSize = 0;
-	}
-
-	/* Set a minimum usable local texture heap size.  This will fit
-	 * two 256x256x32bpp textures.
-	 */
-	if (info->textureSize < 512 * 1024) {
-	    info->textureOffset = 0;
-	    info->textureSize = 0;
-	}
-
-				/* Reserve space for textures */
-	info->textureOffset = ((info->FbMapSize - info->textureSize +
-				RADEON_BUFFER_ALIGN) &
-			       ~(CARD32)RADEON_BUFFER_ALIGN);
-
-				/* Reserve space for the shared depth
-                                 * buffer.
-				 */
-	info->depthOffset = ((info->textureOffset - depthSize +
-			      RADEON_BUFFER_ALIGN) &
-			     ~(CARD32)RADEON_BUFFER_ALIGN);
-
-				/* Reserve space for the shared back buffer */
-	if (info->noBackBuffer) {
-	   info->backOffset = info->depthOffset;
-	   info->backPitch = pScrn->displayWidth;
-	} else {
-	   info->backOffset = ((info->depthOffset - bufferSize +
-				RADEON_BUFFER_ALIGN) &
-			       ~(CARD32)RADEON_BUFFER_ALIGN);
-	   info->backPitch = pScrn->displayWidth;
-	}
-
-	info->backY = info->backOffset / width_bytes;
-	info->backX = (info->backOffset - (info->backY * width_bytes)) / cpp;
-
-	scanlines = info->FbMapSize / width_bytes;
-	if (scanlines > 8191) scanlines = 8191;
-
-	MemBox.x1 = 0;
-	MemBox.y1 = 0;
-	MemBox.x2 = pScrn->displayWidth;
-	MemBox.y2 = scanlines;
-
-	if (!xf86InitFBManager(pScreen, &MemBox)) {
-	    xf86DrvMsg(scrnIndex, X_ERROR,
-		       "Memory manager initialization to "
-		       "(%d,%d) (%d,%d) failed\n",
-		       MemBox.x1, MemBox.y1, MemBox.x2, MemBox.y2);
-	    return FALSE;
-	} else {
-	    int  width, height;
-
-	    xf86DrvMsg(scrnIndex, X_INFO,
-		       "Memory manager initialized to (%d,%d) (%d,%d)\n",
-		       MemBox.x1, MemBox.y1, MemBox.x2, MemBox.y2);
-	    if ((fbarea = xf86AllocateOffscreenArea(pScreen,
-						    pScrn->displayWidth,
-						    2, 0, NULL, NULL,
-						    NULL))) {
-		xf86DrvMsg(scrnIndex, X_INFO,
-			   "Reserved area from (%d,%d) to (%d,%d)\n",
-			   fbarea->box.x1, fbarea->box.y1,
-			   fbarea->box.x2, fbarea->box.y2);
-	    } else {
-		xf86DrvMsg(scrnIndex, X_ERROR, "Unable to reserve area\n");
-	    }
-	    if (xf86QueryLargestOffscreenArea(pScreen, &width,
-					      &height, 0, 0, 0)) {
-		xf86DrvMsg(scrnIndex, X_INFO,
-			   "Largest offscreen area available: %d x %d\n",
-			   width, height);
-
-		/* Lines in offscreen area needed for depth buffer and
-		 * textures
-		 */
-		info->depthTexLines = (scanlines
-				       - info->depthOffset / width_bytes);
-		info->backLines	    = (scanlines
-				       - info->backOffset / width_bytes
-				       - info->depthTexLines);
-		info->backArea	    = NULL;
-	    } else {
-		xf86DrvMsg(scrnIndex, X_ERROR,
-			   "Unable to determine largest offscreen area "
-			   "available\n");
-		return FALSE;
-	    }
-	}
-
-	xf86DrvMsg(scrnIndex, X_INFO,
-		   "Will use back buffer at offset 0x%x\n",
-		   info->backOffset);
-	xf86DrvMsg(scrnIndex, X_INFO,
-		   "Will use depth buffer at offset 0x%x\n",
-		   info->depthOffset);
-	xf86DrvMsg(scrnIndex, X_INFO,
-		   "Will use %d kb for textures at offset 0x%x\n",
-		   info->textureSize/1024, info->textureOffset);
-
-	info->frontPitchOffset = (((info->frontPitch * cpp / 64) << 22) |
-				  ((info->frontOffset + info->fbLocation) >> 10));
-
-	info->backPitchOffset = (((info->backPitch * cpp / 64) << 22) |
-				 ((info->backOffset + info->fbLocation) >> 10));
-
-	info->depthPitchOffset = (((info->depthPitch * cpp / 64) << 22) |
-				  ((info->depthOffset + info->fbLocation) >> 10));
-    } else
+#ifdef USE_EXA
+    if (info->useEXA && !RADEONSetupMemEXA(pScreen))
+	return FALSE;
 #endif
-    {
-	MemBox.x1 = 0;
-	MemBox.y1 = 0;
-	MemBox.x2 = pScrn->displayWidth;
-	y2        = (info->FbMapSize
-		     / (pScrn->displayWidth *
-			info->CurrentLayout.pixel_bytes));
-	if (y2 >= 32768) y2 = 32767; /* because MemBox.y2 is signed short */
-	MemBox.y2 = y2;
 
-				/* The acceleration engine uses 14 bit
-				   signed coordinates, so we can't have any
-				   drawable caches beyond this region. */
-	if (MemBox.y2 > 8191) MemBox.y2 = 8191;
+#if defined(XF86DRI) && defined(USE_XAA)
+    if (!info->useEXA && hasDRI && !RADEONSetupMemXAA_DRI(scrnIndex, pScreen))
+	return FALSE;
+#endif
 
-	if (!xf86InitFBManager(pScreen, &MemBox)) {
-	    xf86DrvMsg(scrnIndex, X_ERROR,
-		       "Memory manager initialization to "
-		       "(%d,%d) (%d,%d) failed\n",
-		       MemBox.x1, MemBox.y1, MemBox.x2, MemBox.y2);
-	    return FALSE;
-	} else {
-	    int       width, height;
-	    FBAreaPtr fbarea;
+#ifdef USE_XAA
+    if (!info->useEXA && !hasDRI && !RADEONSetupMemXAA(scrnIndex, pScreen))
+	return FALSE;
+#endif
 
-	    xf86DrvMsg(scrnIndex, X_INFO,
-		       "Memory manager initialized to (%d,%d) (%d,%d)\n",
-		       MemBox.x1, MemBox.y1, MemBox.x2, MemBox.y2);
-	    if ((fbarea = xf86AllocateOffscreenArea(pScreen,
-						    pScrn->displayWidth,
-						    2, 0, NULL, NULL,
-						    NULL))) {
-		xf86DrvMsg(scrnIndex, X_INFO,
-			   "Reserved area from (%d,%d) to (%d,%d)\n",
-			   fbarea->box.x1, fbarea->box.y1,
-			   fbarea->box.x2, fbarea->box.y2);
-	    } else {
-		xf86DrvMsg(scrnIndex, X_ERROR, "Unable to reserve area\n");
-	    }
-	    if (xf86QueryLargestOffscreenArea(pScreen, &width, &height,
-					      0, 0, 0)) {
-		xf86DrvMsg(scrnIndex, X_INFO,
-			   "Largest offscreen area available: %d x %d\n",
-			   width, height);
-	    }
-	}
-    }
+    info->dst_pitch_offset = (((pScrn->displayWidth * info->CurrentLayout.pixel_bytes / 64)
+			       << 22) | ((info->fbLocation + pScrn->fbOffset) >> 10));
 
-				/* Acceleration setup */
+    /* Acceleration setup */
     if (!xf86ReturnOptValBool(info->Options, OPTION_NOACCEL, FALSE)) {
 	if (RADEONAccelInit(pScreen)) {
 	    xf86DrvMsg(scrnIndex, X_INFO, "Acceleration enabled\n");
@@ -4903,41 +5687,45 @@ Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	info->accelOn = FALSE;
     }
 
-				/* DGA setup */
+    /* DGA setup */
     RADEONDGAInit(pScreen);
 
-				/* Backing store setup */
+    /* Backing store setup */
     miInitializeBackingStore(pScreen);
     xf86SetBackingStore(pScreen);
 
-				/* Set Silken Mouse */
+    /* Set Silken Mouse */
     xf86SetSilkenMouse(pScreen);
 
-				/* Cursor setup */
+    /* Cursor setup */
     miDCInitialize(pScreen, xf86GetPointerScreenFuncs());
 
-				/* Hardware cursor setup */
+    /* Hardware cursor setup */
     if (!xf86ReturnOptValBool(info->Options, OPTION_SW_CURSOR, FALSE)) {
 	if (RADEONCursorInit(pScreen)) {
-	    int  width, height;
+#ifdef USE_XAA
+	    if (!info->useEXA) {
+		int  width, height;
 
-	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-		       "Using hardware cursor (scanline %ld)\n",
-		       info->cursor_start / pScrn->displayWidth
-		       / info->CurrentLayout.pixel_bytes);
-	    if (xf86QueryLargestOffscreenArea(pScreen, &width, &height,
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+			   "Using hardware cursor (scanline %ld)\n",
+			   info->cursor_offset / pScrn->displayWidth
+			   / info->CurrentLayout.pixel_bytes);
+		if (xf86QueryLargestOffscreenArea(pScreen, &width, &height,
 					      0, 0, 0)) {
-		xf86DrvMsg(scrnIndex, X_INFO,
-			   "Largest offscreen area available: %d x %d\n",
-			   width, height);
+		    xf86DrvMsg(scrnIndex, X_INFO,
+			       "Largest offscreen area available: %d x %d\n",
+			       width, height);
+		}
 	    }
+#endif /* USE_XAA */
 	} else {
 	    xf86DrvMsg(scrnIndex, X_ERROR,
 		       "Hardware cursor initialization failed\n");
 	    xf86DrvMsg(scrnIndex, X_INFO, "Using software cursor\n");
 	}
     } else {
-	info->cursor_start = 0;
+	info->cursor_offset = 0;
 	xf86DrvMsg(scrnIndex, X_INFO, "Using software cursor\n");
     }
 
@@ -4971,6 +5759,8 @@ Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
        if(info->UseRADEONXinerama) {
           RADEONnoPanoramiXExtension = FALSE;
           RADEONXineramaExtensionInit(pScrn);
+       } else {
+	  info->MouseRestrictions = FALSE;
        }
     }
 
@@ -4979,25 +5769,67 @@ Bool RADEONScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	xf86ShowUnusedOptions(pScrn->scrnIndex, pScrn->options);
 
 #ifdef XF86DRI
-				/* DRI finalization */
+    if (info->cardType==CARD_PCIE && info->pciGartOffset && info->drmMinor>=19)
+    {
+      drmRadeonSetParam  radeonsetparam;
+      memset(&radeonsetparam, 0, sizeof(drmRadeonSetParam));
+      radeonsetparam.param = RADEON_SETPARAM_PCIGART_LOCATION;
+      radeonsetparam.value = info->pciGartOffset;
+      if (drmCommandWrite(info->drmFD, DRM_RADEON_SETPARAM,
+			  &radeonsetparam, sizeof(drmRadeonSetParam)) < 0)
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "[drm] failed set pci gart location\n");
+    }
+
+      /* DRI finalization */
     if (info->directRenderingEnabled) {
 				/* Now that mi, fb, drm and others have
 				   done their thing, complete the DRI
 				   setup. */
 	if (!(info->directRenderingEnabled = RADEONDRIFinishScreenInit(pScreen))) {
-	    RADEONAccelInitMMIO(pScreen, info->accel);
+#ifdef USE_EXA
+	    if (info->useEXA) {
+		RADEONDrawInitMMIO(pScreen);
+	    }
+#endif /* USE_EXA */
+#ifdef USE_XAA
+	    if (!info->useEXA)
+		RADEONAccelInitMMIO(pScreen, info->accel);
+#endif /* USE_XAA */
 	}
     }
     if (info->directRenderingEnabled) {
-	if ((info->DispPriority == 1) && (!info->IsPCI)) {
+	if ((info->DispPriority == 1) && (info->cardType==CARD_AGP)) {
 	    /* we need to re-calculate bandwidth because of AGPMode difference. */ 
 	    RADEONInitDispBandwidth(pScrn);
 	}
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Direct rendering enabled\n");
+
+	/* we might already be in tiled mode, tell drm about it */
+	if (info->directRenderingEnabled && info->tilingEnabled) {
+	    drmRadeonSetParam  radeonsetparam;
+	    memset(&radeonsetparam, 0, sizeof(drmRadeonSetParam));
+	    radeonsetparam.param = RADEON_SETPARAM_SWITCH_TILING;
+	    radeonsetparam.value = info->tilingEnabled ? 1 : 0; 
+	    if (drmCommandWrite(info->drmFD, DRM_RADEON_SETPARAM,
+		&radeonsetparam, sizeof(drmRadeonSetParam)) < 0)
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		    "[drm] failed changing tiling status\n");
+	}
+
     } else {
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Direct rendering disabled\n");
+	xf86DrvMsg(pScrn->scrnIndex, X_WARNING, 
+		   "Direct rendering disabled\n");
     }
 #endif
+
+    if (!info->IsSecondary)
+	RADEONChangeSurfaces(pScrn);
+
+    if(info->MergedFB) {
+	/* need this here to fix up sarea values */
+	RADEONAdjustFrameMerged(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+    }
 
     info->BlockHandler = pScreen->BlockHandler;
     pScreen->BlockHandler = RADEONBlockHandler;
@@ -5211,7 +6043,7 @@ static void RADEONRestoreFPRegisters(ScrnInfoPtr pScrn, RADEONSavePtr restore)
 
 	if (info->IsMobility || info->IsIGP) {
 	    if (!(restore->lvds_gen_cntl & RADEON_LVDS_ON)) {
-		OUTPLL(RADEON_PIXCLKS_CNTL, tmpPixclksCntl);
+		OUTPLL(pScrn, RADEON_PIXCLKS_CNTL, tmpPixclksCntl);
 	    }
 	}
     }
@@ -5233,9 +6065,6 @@ static void RADEONPLLWaitForReadUpdateComplete(ScrnInfoPtr pScrn)
 
 static void RADEONPLLWriteUpdate(ScrnInfoPtr pScrn)
 {
-    RADEONInfoPtr  info       = RADEONPTR(pScrn);
-    unsigned char *RADEONMMIO = info->MMIO;
-
     while (INPLL(pScrn, RADEON_PPLL_REF_DIV) & RADEON_PPLL_ATOMIC_UPDATE_R);
 
     OUTPLLP(pScrn, RADEON_PPLL_REF_DIV,
@@ -5259,9 +6088,6 @@ static void RADEONPLL2WaitForReadUpdateComplete(ScrnInfoPtr pScrn)
 
 static void RADEONPLL2WriteUpdate(ScrnInfoPtr pScrn)
 {
-    RADEONInfoPtr  info       = RADEONPTR(pScrn);
-    unsigned char *RADEONMMIO = info->MMIO;
-
     while (INPLL(pScrn, RADEON_P2PLL_REF_DIV) & RADEON_P2PLL_ATOMIC_UPDATE_R);
 
     OUTPLLP(pScrn, RADEON_P2PLL_REF_DIV,
@@ -5284,8 +6110,14 @@ static void RADEONRestorePLLRegisters(ScrnInfoPtr pScrn,
            By doing this we can avoid the blanking problem with some panels.
         */
         if ((restore->ppll_ref_div == (INPLL(pScrn, RADEON_PPLL_REF_DIV) & RADEON_PPLL_REF_DIV_MASK)) &&
-	    (restore->ppll_div_3 == (INPLL(pScrn, RADEON_PPLL_DIV_3) & (RADEON_PPLL_POST3_DIV_MASK | RADEON_PPLL_FB3_DIV_MASK))))
-            return;
+	    (restore->ppll_div_3 == (INPLL(pScrn, RADEON_PPLL_DIV_3) & 
+				     (RADEON_PPLL_POST3_DIV_MASK | RADEON_PPLL_FB3_DIV_MASK)))) {
+	    OUTREGP(RADEON_CLOCK_CNTL_INDEX,
+		    RADEON_PLL_DIV_SEL,
+		    ~(RADEON_PLL_DIV_SEL));
+	    RADEONPllErrataAfterIndex(info);
+	    return;
+	}
     }
 
     OUTPLLP(pScrn, RADEON_VCLK_ECP_CNTL,
@@ -5304,6 +6136,7 @@ static void RADEONRestorePLLRegisters(ScrnInfoPtr pScrn,
     OUTREGP(RADEON_CLOCK_CNTL_INDEX,
 	    RADEON_PLL_DIV_SEL,
 	    ~(RADEON_PLL_DIV_SEL));
+    RADEONPllErrataAfterIndex(info);
 
     if (IS_R300_VARIANT ||
 	(info->ChipFamily == CHIP_FAMILY_RS300)) {
@@ -5337,7 +6170,7 @@ static void RADEONRestorePLLRegisters(ScrnInfoPtr pScrn,
     RADEONPLLWriteUpdate(pScrn);
     RADEONPLLWaitForReadUpdateComplete(pScrn);
 
-    OUTPLL(RADEON_HTOTAL_CNTL, restore->htotal_cntl);
+    OUTPLL(pScrn, RADEON_HTOTAL_CNTL, restore->htotal_cntl);
 
     OUTPLLP(pScrn, RADEON_PPLL_CNTL,
 	    0,
@@ -5368,9 +6201,6 @@ static void RADEONRestorePLLRegisters(ScrnInfoPtr pScrn,
 static void RADEONRestorePLL2Registers(ScrnInfoPtr pScrn,
 				       RADEONSavePtr restore)
 {
-    RADEONInfoPtr  info       = RADEONPTR(pScrn);
-    unsigned char *RADEONMMIO = info->MMIO;
-
     OUTPLLP(pScrn, RADEON_PIXCLKS_CNTL,
 	    RADEON_PIX2CLK_SRC_SEL_CPUCLK,
 	    ~(RADEON_PIX2CLK_SRC_SEL_MASK));
@@ -5399,7 +6229,7 @@ static void RADEONRestorePLL2Registers(ScrnInfoPtr pScrn,
     RADEONPLL2WriteUpdate(pScrn);
     RADEONPLL2WaitForReadUpdateComplete(pScrn);
 
-    OUTPLL(RADEON_HTOTAL2_CNTL, restore->htotal_cntl2);
+    OUTPLL(pScrn, RADEON_HTOTAL2_CNTL, restore->htotal_cntl2);
 
     OUTPLLP(pScrn, RADEON_P2PLL_CNTL,
 	    0,
@@ -5423,6 +6253,144 @@ static void RADEONRestorePLL2Registers(ScrnInfoPtr pScrn,
     OUTPLLP(pScrn, RADEON_PIXCLKS_CNTL,
 	    RADEON_PIX2CLK_SRC_SEL_P2PLLCLK,
 	    ~(RADEON_PIX2CLK_SRC_SEL_MASK));
+}
+
+void RADEONChangeSurfaces(ScrnInfoPtr pScrn)
+{
+   /* the idea here is to only set up front buffer as tiled, and back/depth buffer when needed.
+      Everything else is left as untiled. This means we need to use eplicit src/dst pitch control
+      when blitting, based on the src/target address, and can no longer use a default offset.
+      But OTOH we don't need to dynamically change surfaces (for xv for instance), and some
+      ugly offset / fb reservation (cursor) is gone. And as a bonus, everything actually works...
+      For simplicity, just always update everything (just let the ioctl fail - could do better).
+      All surface addresses are relative to RADEON_MC_FB_LOCATION */
+  
+    RADEONInfoPtr  info  = RADEONPTR(pScrn);
+    int cpp = info->CurrentLayout.pixel_bytes;
+    /* depth/front/back pitch must be identical (and the same as displayWidth) */
+    int width_bytes = pScrn->displayWidth * cpp;
+    int bufferSize = ((((pScrn->virtualY + 15) & ~15) * width_bytes
+        + RADEON_BUFFER_ALIGN) & ~RADEON_BUFFER_ALIGN);
+    unsigned int depth_pattern, color_pattern, swap_pattern;
+
+    swap_pattern = 0;
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+    switch (pScrn->bitsPerPixel) {
+    case 16:
+	swap_pattern = RADEON_SURF_AP0_SWP_16BPP | RADEON_SURF_AP1_SWP_16BPP;
+	break;
+
+    case 32:
+	swap_pattern = RADEON_SURF_AP0_SWP_32BPP | RADEON_SURF_AP1_SWP_32BPP;
+	break;
+    }
+#endif
+    if (info->ChipFamily < CHIP_FAMILY_R200) {
+	color_pattern = RADEON_SURF_TILE_COLOR_MACRO;
+	if (cpp == 2)
+	    depth_pattern = RADEON_SURF_TILE_DEPTH_16BPP;
+	else
+	    depth_pattern = RADEON_SURF_TILE_DEPTH_32BPP;
+    } else if (IS_R300_VARIANT) {
+       color_pattern = R300_SURF_TILE_COLOR_MACRO;
+       if (cpp == 2)
+           depth_pattern = R300_SURF_TILE_COLOR_MACRO;
+       else
+           depth_pattern = R300_SURF_TILE_COLOR_MACRO | R300_SURF_TILE_DEPTH_32BPP;
+    } else {
+	color_pattern = R200_SURF_TILE_COLOR_MACRO;
+	if (cpp == 2)
+	    depth_pattern = R200_SURF_TILE_DEPTH_16BPP;
+	else
+	    depth_pattern = R200_SURF_TILE_DEPTH_32BPP;
+    }   
+#ifdef XF86DRI
+    if (info->directRenderingEnabled && info->allowColorTiling) {
+	drmRadeonSurfaceFree drmsurffree;
+	int retvalue;
+
+	drmsurffree.address = info->frontOffset;
+	retvalue = drmCommandWrite(info->drmFD, DRM_RADEON_SURF_FREE,
+	    &drmsurffree, sizeof(drmsurffree));
+
+	if ((info->ChipFamily != CHIP_FAMILY_RV100) || 
+	    (info->ChipFamily != CHIP_FAMILY_RS100) ||
+	    (info->ChipFamily != CHIP_FAMILY_RS200)) {
+	    drmsurffree.address = info->depthOffset;
+	    retvalue = drmCommandWrite(info->drmFD, DRM_RADEON_SURF_FREE,
+		&drmsurffree, sizeof(drmsurffree));
+	}
+
+	if (!info->noBackBuffer) {
+	    drmsurffree.address = info->backOffset;
+	    retvalue = drmCommandWrite(info->drmFD, DRM_RADEON_SURF_FREE,
+		&drmsurffree, sizeof(drmsurffree));
+	}
+
+	if (info->tilingEnabled) {
+	    drmRadeonSurfaceAlloc drmsurfalloc;
+	    drmsurfalloc.size = bufferSize;
+	    drmsurfalloc.address = info->frontOffset;
+
+	    if (IS_R300_VARIANT)
+		drmsurfalloc.flags = swap_pattern | (width_bytes / 8) | color_pattern;
+	    else
+		drmsurfalloc.flags = swap_pattern | (width_bytes / 16) | color_pattern;
+
+	    retvalue = drmCommandWrite(info->drmFD, DRM_RADEON_SURF_ALLOC,
+		&drmsurfalloc, sizeof(drmsurfalloc));
+	    if (retvalue < 0)
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		    "drm: could not allocate surface for front buffer!\n");
+
+	    if ((info->have3DWindows) && (!info->noBackBuffer)) {
+		drmsurfalloc.address = info->backOffset;
+		retvalue = drmCommandWrite(info->drmFD, DRM_RADEON_SURF_ALLOC,
+		    &drmsurfalloc, sizeof(drmsurfalloc));
+		if (retvalue < 0)
+		    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+			"drm: could not allocate surface for back buffer!\n");
+	    }
+	}
+	/* rv100 and probably the derivative igps don't have depth tiling on all the time? */
+	if (info->have3DWindows && ((info->ChipFamily != CHIP_FAMILY_RV100) || 
+	    (info->ChipFamily != CHIP_FAMILY_RS100) ||
+	    (info->ChipFamily != CHIP_FAMILY_RS200))) {
+	    drmRadeonSurfaceAlloc drmsurfalloc;
+	    drmsurfalloc.size = bufferSize;
+	    drmsurfalloc.address = info->depthOffset;
+            if (IS_R300_VARIANT)
+                drmsurfalloc.flags = swap_pattern | (width_bytes / 8) | depth_pattern;
+            else
+                drmsurfalloc.flags = swap_pattern | (width_bytes / 16) | depth_pattern;
+	    retvalue = drmCommandWrite(info->drmFD, DRM_RADEON_SURF_ALLOC,
+		&drmsurfalloc, sizeof(drmsurfalloc));
+	    if (retvalue < 0)
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		    "drm: could not allocate surface for depth buffer!\n");
+	}
+    }
+    else
+#endif
+    if (info->allowColorTiling) {
+	unsigned int surf_info = 0;
+	unsigned char *RADEONMMIO = info->MMIO;
+	/* we don't need anything like WaitForFifo, no? */
+	if (!info->IsSecondary) {
+	    if (info->tilingEnabled) {
+		if (IS_R300_VARIANT)
+		   surf_info = swap_pattern | (width_bytes / 8) | color_pattern;
+		else
+		   surf_info = swap_pattern | (width_bytes / 16) | color_pattern;
+	    }
+	    OUTREG(RADEON_SURFACE0_INFO, surf_info);
+	    OUTREG(RADEON_SURFACE0_LOWER_BOUND, 0);
+	    OUTREG(RADEON_SURFACE0_UPPER_BOUND, bufferSize - 1);
+/*	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		"surface0 set to %x, LB 0x%x UB 0x%x\n",
+		surf_info, 0, bufferSize - 1024);*/
+	}
+    }
 }
 
 #if 0
@@ -5450,6 +6418,35 @@ static void RADEONRestorePalette(ScrnInfoPtr pScrn, RADEONSavePtr restore)
     }
 }
 #endif
+
+/* restore original surface info (for fb console). */
+static void RADEONRestoreSurfaces(ScrnInfoPtr pScrn, RADEONSavePtr restore)
+{
+    RADEONInfoPtr      info = RADEONPTR(pScrn);
+    unsigned char *RADEONMMIO = info->MMIO;
+    unsigned int surfnr;
+    
+    for ( surfnr = 0; surfnr < 8; surfnr++ ) {
+	OUTREG(RADEON_SURFACE0_INFO + 16 * surfnr, restore->surfaces[surfnr][0]);
+	OUTREG(RADEON_SURFACE0_LOWER_BOUND + 16 * surfnr, restore->surfaces[surfnr][1]);
+	OUTREG(RADEON_SURFACE0_UPPER_BOUND + 16 * surfnr, restore->surfaces[surfnr][2]);
+    }
+}
+
+/* save original surface info (for fb console). */
+static void RADEONSaveSurfaces(ScrnInfoPtr pScrn, RADEONSavePtr save)
+{
+    RADEONInfoPtr      info = RADEONPTR(pScrn);
+    unsigned char *RADEONMMIO = info->MMIO;
+    unsigned int surfnr;
+    
+    for ( surfnr = 0; surfnr < 8; surfnr++ ) {
+	save->surfaces[surfnr][0] = INREG(RADEON_SURFACE0_INFO + 16 * surfnr);
+	save->surfaces[surfnr][1] = INREG(RADEON_SURFACE0_LOWER_BOUND + 16 * surfnr);
+	save->surfaces[surfnr][2] = INREG(RADEON_SURFACE0_UPPER_BOUND + 16 * surfnr);
+    }
+}
+
 
 /* Write out state to define a new video mode */
 static void RADEONRestoreMode(ScrnInfoPtr pScrn, RADEONSavePtr restore)
@@ -5731,7 +6728,6 @@ static void RADEONSave(ScrnInfoPtr pScrn)
     RADEONInfoPtr  info       = RADEONPTR(pScrn);
     unsigned char *RADEONMMIO = info->MMIO;
     RADEONSavePtr  save       = &info->SavedReg;
-    vgaHWPtr       hwp        = VGAHWPTR(pScrn);
 
     RADEONTRACE(("RADEONSave\n"));
     if (info->FBDev) {
@@ -5740,26 +6736,34 @@ static void RADEONSave(ScrnInfoPtr pScrn)
     }
 
     if (!info->IsSecondary) {
-	vgaHWUnlock(hwp);
-#if defined(__powerpc__)
-	/* temporary hack to prevent crashing on PowerMacs when trying to
-	 * read VGA fonts and colormap, will find a better solution
-	 * in the future
-	 */
-	vgaHWSave(pScrn, &hwp->SavedReg, VGA_SR_MODE); /* Save mode only */
-#else
-	vgaHWSave(pScrn, &hwp->SavedReg, VGA_SR_MODE | VGA_SR_FONTS); /* Save mode
-						       * & fonts & cmap
-						       */
+#ifdef WITH_VGAHW
+        if (info->VGAAccess) {
+           vgaHWPtr hwp = VGAHWPTR(pScrn);
+
+            vgaHWUnlock(hwp);
+# if defined(__powerpc__)
+           /* temporary hack to prevent crashing on PowerMacs when trying to
+            * read VGA fonts and colormap, will find a better solution
+            * in the future. TODO: Check if there's actually some VGA stuff
+            * setup in the card at all !!
+            */
+           vgaHWSave(pScrn, &hwp->SavedReg, VGA_SR_MODE); /* Save mode only */
+# else
+           /* Save mode * & fonts & cmap */
+           vgaHWSave(pScrn, &hwp->SavedReg, VGA_SR_MODE | VGA_SR_FONTS);
+# endif
+           vgaHWLock(hwp);
+       }
 #endif
-	vgaHWLock(hwp);
 	save->dp_datatype      = INREG(RADEON_DP_DATATYPE);
 	save->rbbm_soft_reset  = INREG(RADEON_RBBM_SOFT_RESET);
 	save->clock_cntl_index = INREG(RADEON_CLOCK_CNTL_INDEX);
-	if (info->R300CGWorkaround) R300CGWorkaround(pScrn);
+	RADEONPllErrataAfterIndex(info);
     }
 
     RADEONSaveMode(pScrn, save);
+    if (!info->IsSecondary)
+	RADEONSaveSurfaces(pScrn, save);
 }
 
 /* Restore the original (text) mode */
@@ -5768,7 +6772,6 @@ static void RADEONRestore(ScrnInfoPtr pScrn)
     RADEONInfoPtr  info       = RADEONPTR(pScrn);
     unsigned char *RADEONMMIO = info->MMIO;
     RADEONSavePtr  restore    = &info->SavedReg;
-    vgaHWPtr       hwp        = VGAHWPTR(pScrn);
 
     RADEONTRACE(("RADEONRestore\n"));
 
@@ -5784,7 +6787,7 @@ static void RADEONRestore(ScrnInfoPtr pScrn)
     RADEONBlank(pScrn);
 
     OUTREG(RADEON_CLOCK_CNTL_INDEX, restore->clock_cntl_index);
-    if (info->R300CGWorkaround) R300CGWorkaround(pScrn);
+    RADEONPllErrataAfterIndex(info);
     OUTREG(RADEON_RBBM_SOFT_RESET,  restore->rbbm_soft_reset);
     OUTREG(RADEON_DP_DATATYPE,      restore->dp_datatype);
     OUTREG(RADEON_GRPH_BUFFER_CNTL, restore->grph_buffer_cntl);
@@ -5800,6 +6803,8 @@ static void RADEONRestore(ScrnInfoPtr pScrn)
 #endif
 
     RADEONRestoreMode(pScrn, restore);
+    if (!info->IsSecondary)
+	RADEONRestoreSurfaces(pScrn, restore);
 
 #if 0
     /* Temp fix to "solve" VT switch problems.  When switching VTs on
@@ -5810,28 +6815,39 @@ static void RADEONRestore(ScrnInfoPtr pScrn)
     usleep(100000);
 #endif
 
-    if (!info->IsSecondary) {
-	vgaHWUnlock(hwp);
-#if defined(__powerpc__)
-	/* Temporary hack to prevent crashing on PowerMacs when trying to
-	 * write VGA fonts, will find a better solution in the future
-	 */
-	vgaHWRestore(pScrn, &hwp->SavedReg, VGA_SR_MODE );
-#else
-	vgaHWRestore(pScrn, &hwp->SavedReg, VGA_SR_MODE | VGA_SR_FONTS );
-#endif
-	vgaHWLock(hwp);
-    } else {
-        RADEONEntPtr pRADEONEnt = RADEONEntPriv(pScrn);
-	ScrnInfoPtr   pScrn0;
-	vgaHWPtr      hwp0;
+#ifdef WITH_VGAHW
+    if (info->VGAAccess) {
+       vgaHWPtr hwp = VGAHWPTR(pScrn);
+        if (!info->IsSecondary) {
+            vgaHWUnlock(hwp);
+# if defined(__powerpc__)
+           /* Temporary hack to prevent crashing on PowerMacs when trying to
+            * write VGA fonts, will find a better solution in the future
+            */
+           vgaHWRestore(pScrn, &hwp->SavedReg, VGA_SR_MODE );
+# else
+           vgaHWRestore(pScrn, &hwp->SavedReg, VGA_SR_MODE | VGA_SR_FONTS );
+# endif
+           vgaHWLock(hwp);
+        } else {
+            RADEONEntPtr  pRADEONEnt = RADEONEntPriv(pScrn);
+           ScrnInfoPtr   pScrn0 = pRADEONEnt->pPrimaryScrn;
+            RADEONInfoPtr info0 = RADEONPTR(pScrn0);
+           vgaHWPtr      hwp0;
 
-	pScrn0 = pRADEONEnt->pPrimaryScrn;
-	hwp0   = VGAHWPTR(pScrn0);
-	vgaHWUnlock(hwp0);
-	vgaHWRestore(pScrn0, &hwp0->SavedReg, VGA_SR_MODE | VGA_SR_FONTS );
-	vgaHWLock(hwp0);
+           if (info0->VGAAccess) {
+               hwp0 = VGAHWPTR(pScrn0);
+               vgaHWUnlock(hwp0);
+#if defined(__powerpc__)
+               vgaHWRestore(pScrn0, &hwp0->SavedReg, VGA_SR_MODE);
+#else
+               vgaHWRestore(pScrn0, &hwp0->SavedReg, VGA_SR_MODE | VGA_SR_FONTS );
+#endif
+               vgaHWLock(hwp0);
+           }
+       }
     }
+#endif
     RADEONUnblank(pScrn);
 
 #if 0
@@ -5978,7 +6994,7 @@ static void RADEONInitDispBandwidth(ScrnInfoPtr pScrn)
 	*/
 	temp = INREG(RADEON_MEM_CNTL);
 	data = (R300_MEM_NUM_CHANNELS_MASK & temp);
-	if (data == 2) {
+	if (data == 1) {
 	    if (R300_MEM_USE_CD_CH_ONLY & temp) {
 		temp  = INREG(R300_MC_IND_INDEX);
 		temp &= ~R300_MC_IND_ADDR_MASK;
@@ -6284,6 +7300,22 @@ static Bool RADEONInitCrtcRegisters(ScrnInfoPtr pScrn, RADEONSavePtr save,
 
     save->crtc_offset      = 0;
     save->crtc_offset_cntl = INREG(RADEON_CRTC_OFFSET_CNTL);
+    if (info->tilingEnabled) {
+       if (IS_R300_VARIANT)
+          save->crtc_offset_cntl |= (R300_CRTC_X_Y_MODE_EN |
+				     R300_CRTC_MICRO_TILE_BUFFER_DIS |
+				     R300_CRTC_MACRO_TILE_EN);
+       else
+          save->crtc_offset_cntl |= RADEON_CRTC_TILE_EN;
+    }
+    else {
+       if (IS_R300_VARIANT)
+          save->crtc_offset_cntl &= ~(R300_CRTC_X_Y_MODE_EN |
+				      R300_CRTC_MICRO_TILE_BUFFER_DIS |
+				      R300_CRTC_MACRO_TILE_EN);
+       else
+          save->crtc_offset_cntl &= ~RADEON_CRTC_TILE_EN;
+    }
 
     save->crtc_pitch  = (((pScrn->displayWidth * pScrn->bitsPerPixel) +
 			  ((pScrn->bitsPerPixel * 8) -1)) /
@@ -6459,8 +7491,27 @@ static Bool RADEONInitCrtc2Registers(ScrnInfoPtr pScrn, RADEONSavePtr save,
 				      ? RADEON_CRTC2_V_SYNC_POL
 				      : 0));
 
+    /* It seems all fancy options apart from pflip can be safely disabled
+     */
     save->crtc2_offset      = 0;
-    save->crtc2_offset_cntl = INREG(RADEON_CRTC2_OFFSET_CNTL);
+    save->crtc2_offset_cntl = INREG(RADEON_CRTC2_OFFSET_CNTL) & RADEON_CRTC_OFFSET_FLIP_CNTL;
+    if (info->tilingEnabled) {
+       if (IS_R300_VARIANT)
+          save->crtc2_offset_cntl |= (R300_CRTC_X_Y_MODE_EN |
+				      R300_CRTC_MICRO_TILE_BUFFER_DIS |
+				      R300_CRTC_MACRO_TILE_EN);
+       else
+          save->crtc2_offset_cntl |= RADEON_CRTC_TILE_EN;
+    }
+    else {
+       if (IS_R300_VARIANT)
+          save->crtc2_offset_cntl &= ~(R300_CRTC_X_Y_MODE_EN |
+				      R300_CRTC_MICRO_TILE_BUFFER_DIS |
+				      R300_CRTC_MACRO_TILE_EN);
+       else
+          save->crtc2_offset_cntl &= ~RADEON_CRTC_TILE_EN;
+    }
+
     /* this should be right */
     if (info->MergedFB) {
     save->crtc2_pitch  = (((info->CRT2pScrn->displayWidth * pScrn->bitsPerPixel) +
@@ -6482,8 +7533,9 @@ static Bool RADEONInitCrtc2Registers(ScrnInfoPtr pScrn, RADEONSavePtr save,
 	save->fp2_h_sync_strt_wid = save->crtc2_h_sync_strt_wid;
 	save->fp2_v_sync_strt_wid = save->crtc2_v_sync_strt_wid;
 	save->fp2_gen_cntl        = info->SavedReg.fp2_gen_cntl | RADEON_FP2_ON;
+	save->fp2_gen_cntl	  &= ~(RADEON_FP2_BLANK_EN);
 
-	if (info->ChipFamily == CHIP_FAMILY_R200 ||
+	if ((info->ChipFamily == CHIP_FAMILY_R200) ||
 	    IS_R300_VARIANT) {
 	    save->fp2_gen_cntl   &= ~(R200_FP2_SOURCE_SEL_MASK |
 				      RADEON_FP2_DVO_RATE_SEL_SDR);
@@ -6501,6 +7553,23 @@ static Bool RADEONInitCrtc2Registers(ScrnInfoPtr pScrn, RADEONSavePtr save,
 	    save->fp2_gen_cntl &= ~RADEON_FP2_PANEL_FORMAT;/* 18 bit format */
 
     }
+
+    /* We must set SURFACE_CNTL properly on the second screen too */
+    save->surface_cntl = 0;
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+    /* Alhought we current onlu use aperture 0, also setting aperture 1 should not harm -ReneR */
+    switch (pScrn->bitsPerPixel) {
+    case 16:
+       save->surface_cntl |= RADEON_NONSURF_AP0_SWP_16BPP;
+       save->surface_cntl |= RADEON_NONSURF_AP1_SWP_16BPP;
+       break;
+
+    case 32:
+       save->surface_cntl |= RADEON_NONSURF_AP0_SWP_32BPP;
+       save->surface_cntl |= RADEON_NONSURF_AP1_SWP_32BPP;
+       break;
+    }
+#endif
 
     RADEONTRACE(("Pitch = %d bytes (virtualX = %d, displayWidth = %d)\n",
 		 save->crtc2_pitch, pScrn->virtualX,
@@ -6690,7 +7759,18 @@ static void RADEONInitFPRegisters(ScrnInfoPtr pScrn, RADEONSavePtr orig,
         }
     }
 
-    if (info->IsMobility) {
+    info->BiosHotkeys = FALSE;
+    /*
+     * Allow the bios to toggle outputs. see below for more.
+     */
+    if (xf86ReturnOptValBool(info->Options, OPTION_BIOS_HOTKEYS, FALSE)) {
+	info->BiosHotkeys = TRUE;
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "BIOS HotKeys Enabled\n");
+    } else {
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "BIOS HotKeys Disabled\n");
+    }
+
+    if (info->IsMobility && (!info->BiosHotkeys)) {
 	RADEONEntPtr pRADEONEnt   = RADEONEntPriv(pScrn);
 
 	/* To work correctly with laptop hotkeys.
@@ -6718,6 +7798,21 @@ static void RADEONInitFPRegisters(ScrnInfoPtr pScrn, RADEONSavePtr orig,
 	}
 	save->bios_4_scratch = 0x4;
 	save->bios_6_scratch = orig->bios_6_scratch | 0x40000000;
+
+    } else if (info->IsMobility && (info->DisplayType == MT_LCD)) {
+	RADEONEntPtr pRADEONEnt = RADEONEntPriv(pScrn);
+
+	/* BIOS will use this setting to reset displays upon lid close/open.
+	 * Here we let BIOS controls LCD, but the driver will control the external CRT.
+	 */
+	if (info->MergedFB || pRADEONEnt->HasSecondary)
+	    save->bios_5_scratch = 0x01020201;
+	else
+	    save->bios_5_scratch = orig->bios_5_scratch;
+
+    	save->bios_4_scratch = orig->bios_4_scratch;
+	save->bios_6_scratch = orig->bios_6_scratch;
+
     }
 
     save->fp_crtc_h_total_disp = save->crtc_h_total_disp;
@@ -6727,8 +7822,8 @@ static void RADEONInitFPRegisters(ScrnInfoPtr pScrn, RADEONSavePtr orig,
 }
 
 /* Define PLL registers for requested video mode */
-static void RADEONInitPLLRegisters(RADEONSavePtr save, RADEONPLLPtr pll,
-				   double dot_clock)
+static void RADEONInitPLLRegisters(RADEONInfoPtr info, RADEONSavePtr save,
+                                  RADEONPLLPtr pll, double dot_clock)
 {
     unsigned long  freq = dot_clock * 100;
 
@@ -6751,6 +7846,13 @@ static void RADEONInitPLLRegisters(RADEONSavePtr save, RADEONPLLPtr pll,
 	{ 12, 7 },              /* VCLK_SRC/12              */
 	{  0, 0 }
     };
+
+    if (info->UseBiosDividers) {
+       save->ppll_ref_div = info->RefDivider;
+       save->ppll_div_3   = info->FeedbackDivider | (info->PostDivider << 16);
+       save->htotal_cntl  = 0;
+       return;
+    }
 
     if (freq > pll->max_pll_freq)      freq = pll->max_pll_freq;
     if (freq * 12 < pll->min_pll_freq) freq = pll->min_pll_freq / 12;
@@ -6786,7 +7888,7 @@ static void RADEONInitPLLRegisters(RADEONSavePtr save, RADEONPLLPtr pll,
 
 /* Define PLL2 registers for requested video mode */
 static void RADEONInitPLL2Registers(RADEONSavePtr save, RADEONPLLPtr pll,
-				    double dot_clock)
+                                   double dot_clock, int no_odd_postdiv)
 {
     unsigned long  freq = dot_clock * 100;
 
@@ -6813,6 +7915,11 @@ static void RADEONInitPLL2Registers(RADEONSavePtr save, RADEONPLLPtr pll,
     if (freq * 12 < pll->min_pll_freq) freq = pll->min_pll_freq / 12;
 
     for (post_div = &post_divs[0]; post_div->divider; ++post_div) {
+       /* Odd post divider value don't work properly on the second digital
+        * output
+        */
+       if (no_odd_postdiv && (post_div->divider & 1))
+           continue;
 	save->pll_output_freq_2 = post_div->divider * freq;
 	if (save->pll_output_freq_2 >= pll->min_pll_freq
 	    && save->pll_output_freq_2 <= pll->max_pll_freq) break;
@@ -6913,7 +8020,7 @@ static Bool RADEONInit(ScrnInfoPtr pScrn, DisplayModePtr mode,
     if (info->IsSecondary) {
 	if (!RADEONInitCrtc2Registers(pScrn, save, mode, info))
 	    return FALSE;
-	RADEONInitPLL2Registers(save, &info->pll, dot_clock);
+       RADEONInitPLL2Registers(save, &info->pll, dot_clock, info->DisplayType != MT_CRT);
     } else if (info->MergedFB) {
         RADEONInitCommonRegisters(save, info);
         if (!RADEONInitCrtcRegisters(pScrn, save, 
@@ -6921,7 +8028,7 @@ static Bool RADEONInit(ScrnInfoPtr pScrn, DisplayModePtr mode,
             return FALSE;
         dot_clock = (((RADEONMergedDisplayModePtr)mode->Private)->CRT1)->Clock / 1000.0;
         if (dot_clock) {
-            RADEONInitPLLRegisters(save, &info->pll, dot_clock);
+            RADEONInitPLLRegisters(info, save, &info->pll, dot_clock);
         } else {
             save->ppll_ref_div = info->SavedReg.ppll_ref_div;
             save->ppll_div_3   = info->SavedReg.ppll_div_3;
@@ -6930,19 +8037,13 @@ static Bool RADEONInit(ScrnInfoPtr pScrn, DisplayModePtr mode,
         RADEONInitCrtc2Registers(pScrn, save, 
 			((RADEONMergedDisplayModePtr)mode->Private)->CRT2, info);
         dot_clock = (((RADEONMergedDisplayModePtr)mode->Private)->CRT2)->Clock / 1000.0;
-        RADEONInitPLL2Registers(save, &info->pll, dot_clock);
+        RADEONInitPLL2Registers(save, &info->pll, dot_clock, info->MergeType != MT_CRT);
     } else {
 	if (!RADEONInitCrtcRegisters(pScrn, save, mode, info))
 	    return FALSE;
 	dot_clock = mode->Clock/1000.0;
 	if (dot_clock) {
-            if (info->UseBiosDividers) {
-                save->ppll_ref_div = info->RefDivider;
-                save->ppll_div_3   = info->FeedbackDivider | (info->PostDivider << 16);
-                save->htotal_cntl  = 0;
-            }
-            else
-		RADEONInitPLLRegisters(save, &info->pll, dot_clock);
+           RADEONInitPLLRegisters(info, save, &info->pll, dot_clock);
 	} else {
 	    save->ppll_ref_div = info->SavedReg.ppll_ref_div;
 	    save->ppll_div_3   = info->SavedReg.ppll_div_3;
@@ -7008,10 +8109,11 @@ static Bool RADEONSaveScreen(ScreenPtr pScreen, int mode)
     return TRUE;
 }
 
-Bool RADEONSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
+_X_EXPORT Bool RADEONSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 {
     ScrnInfoPtr    pScrn       = xf86Screens[scrnIndex];
     RADEONInfoPtr  info        = RADEONPTR(pScrn);
+    Bool           tilingOld   = info->tilingEnabled;
     Bool           ret;
 #ifdef XF86DRI
     Bool           CPStarted   = info->CPStarted;
@@ -7022,7 +8124,37 @@ Bool RADEONSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
     }
 #endif
 
-    if (info->accelOn) info->accel->Sync(pScrn);
+    if (info->allowColorTiling) {
+	if (info->MergedFB) {
+	    if ((((RADEONMergedDisplayModePtr)mode->Private)->CRT1->Flags &
+		(V_DBLSCAN | V_INTERLACE)) ||
+		(((RADEONMergedDisplayModePtr)mode->Private)->CRT2->Flags &
+		(V_DBLSCAN | V_INTERLACE)))
+		info->tilingEnabled = FALSE;
+	    else info->tilingEnabled = TRUE;
+	}
+	else {
+            info->tilingEnabled = (mode->Flags & (V_DBLSCAN | V_INTERLACE)) ? FALSE : TRUE;
+	}
+#ifdef XF86DRI	
+	if (info->directRenderingEnabled && (info->tilingEnabled != tilingOld)) {
+	    RADEONSAREAPrivPtr pSAREAPriv;
+	    drmRadeonSetParam  radeonsetparam;
+	    memset(&radeonsetparam, 0, sizeof(drmRadeonSetParam));
+	    radeonsetparam.param = RADEON_SETPARAM_SWITCH_TILING;
+	    radeonsetparam.value = info->tilingEnabled ? 1 : 0;
+	    if (drmCommandWrite(info->drmFD, DRM_RADEON_SETPARAM,
+		&radeonsetparam, sizeof(drmRadeonSetParam)) < 0)
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		    "[drm] failed changing tiling status\n");
+	    pSAREAPriv = DRIGetSAREAPrivate(pScrn->pScreen);
+	    info->tilingEnabled = pSAREAPriv->tiling_enabled ? TRUE : FALSE;
+	}
+#endif
+    }
+
+    if (info->accelOn)
+        RADEON_SYNC(info, pScrn);
 
     if (info->FBDev) {
 	RADEONSaveFBDevRegisters(pScrn, &info->ModeReg);
@@ -7036,8 +8168,16 @@ Bool RADEONSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 	info->IsSwitching = FALSE;
     }
 
+    if (info->tilingEnabled != tilingOld) {
+	/* need to redraw front buffer, I guess this can be considered a hack ? */
+	xf86EnableDisableFBAccess(scrnIndex, FALSE);
+	RADEONChangeSurfaces(pScrn);
+	xf86EnableDisableFBAccess(scrnIndex, TRUE);
+	/* xf86SetRootClip would do, but can't access that here */
+    }
+
     if (info->accelOn) {
-	info->accel->Sync(pScrn);
+        RADEON_SYNC(info, pScrn);
 	RADEONEngineRestore(pScrn);
     }
 
@@ -7059,8 +8199,8 @@ Bool RADEONSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 }
 
 #ifdef X_XF86MiscPassMessage
-Bool RADEONHandleMessage(int scrnIndex, const char* msgtype,
-			 const char* msgval, char** retmsg)
+_X_EXPORT Bool RADEONHandleMessage(int scrnIndex, const char* msgtype,
+                                   const char* msgval, char** retmsg)
 {
     ErrorF("RADEONHandleMessage(%d, \"%s\", \"%s\", retmsg)\n", scrnIndex,
 		    msgtype, msgval);
@@ -7070,8 +8210,8 @@ Bool RADEONHandleMessage(int scrnIndex, const char* msgtype,
 #endif
 
 /* Used to disallow modes that are not supported by the hardware */
-ModeStatus RADEONValidMode(int scrnIndex, DisplayModePtr mode,
-			   Bool verbose, int flag)
+_X_EXPORT ModeStatus RADEONValidMode(int scrnIndex, DisplayModePtr mode,
+                                     Bool verbose, int flag)
 {
     /* There are problems with double scan mode at high clocks
      * They're likely related PLL and display buffer settings.
@@ -7091,9 +8231,10 @@ void RADEONDoAdjustFrame(ScrnInfoPtr pScrn, int x, int y, int clone)
 {
     RADEONInfoPtr  info       = RADEONPTR(pScrn);
     unsigned char *RADEONMMIO = info->MMIO;
-    int            reg, Base;
+    int            reg, Base, regcntl, crtcoffsetcntl, xytilereg, crtcxytile;
 #ifdef XF86DRI
     RADEONSAREAPrivPtr pSAREAPriv;
+    XF86DRISAREAPtr pSAREA;
 #endif
 
     if (info->showCache && y) {
@@ -7104,31 +8245,81 @@ void RADEONDoAdjustFrame(ScrnInfoPtr pScrn, int x, int y, int clone)
 		y += (pScrn->virtualY - 1) * (y / 3 + 1);
 		if (y > lastline) y = lastline;
     }
-    Base = y * info->CurrentLayout.displayWidth + x;
-    
-    switch (info->CurrentLayout.pixel_code) {
-    case 15:
-    case 16: Base *= 2; break;
-    case 24: Base *= 3; break;
-    case 32: Base *= 4; break;
+
+    Base = pScrn->fbOffset;
+
+  /* note we cannot really simply use the info->ModeReg.crtc_offset_cntl value, since the
+     drm might have set FLIP_CNTL since we wrote that. Unfortunately FLIP_CNTL causes
+     flickering when scrolling vertically in a virtual screen, possibly because crtc will
+     pick up the new offset value at the end of each scanline, but the new offset_cntl value
+     only after a vsync. We'd probably need to wait (in drm) for vsync and only then update
+     OFFSET and OFFSET_CNTL, if the y coord has changed. Seems hard to fix. */
+    if (clone || info->IsSecondary) {
+        reg = RADEON_CRTC2_OFFSET;
+	regcntl = RADEON_CRTC2_OFFSET_CNTL;
+	xytilereg = R300_CRTC2_TILE_X0_Y0;
+    } else {
+        reg = RADEON_CRTC_OFFSET;
+	regcntl = RADEON_CRTC_OFFSET_CNTL;
+	xytilereg = R300_CRTC_TILE_X0_Y0;
+    }
+    crtcoffsetcntl = INREG(regcntl) & ~0xf;
+#if 0
+    /* try to get rid of flickering when scrolling at least for 2d */
+#ifdef XF86DRI
+    if (!info->have3DWindows)
+#endif
+    crtcoffsetcntl &= ~RADEON_CRTC_OFFSET_FLIP_CNTL;
+#endif
+    if (info->tilingEnabled) {
+        if (IS_R300_VARIANT) {
+	/* On r300/r400 when tiling is enabled crtc_offset is set to the address of
+	 * the surface.  the x/y offsets are handled by the X_Y tile reg for each crtc
+	 * Makes tiling MUCH easier.
+	 */
+             crtcxytile = x | (y << 16);
+             Base &= ~0x7ff;
+         } else {
+             int byteshift = info->CurrentLayout.bitsPerPixel >> 4;
+             /* crtc uses 256(bytes)x8 "half-tile" start addresses? */
+             int tile_addr = (((y >> 3) * info->CurrentLayout.displayWidth + x) >> (8 - byteshift)) << 11;
+             Base += tile_addr + ((x << byteshift) % 256) + ((y % 8) << 8);
+             crtcoffsetcntl = crtcoffsetcntl | (y % 16);
+         }
+    }
+    else {
+       Base += y * info->CurrentLayout.displayWidth + x;
+       switch (info->CurrentLayout.pixel_code) {
+       case 15:
+       case 16: Base *= 2; break;
+       case 24: Base *= 3; break;
+       case 32: Base *= 4; break;
+       }
     }
 
     Base &= ~7;                 /* 3 lower bits are always 0 */
 
-    if (clone || info->IsSecondary) {
-	Base += pScrn->fbOffset;
-	reg = RADEON_CRTC2_OFFSET;
-    } else {
-	reg = RADEON_CRTC_OFFSET;
-    }
-
 #ifdef XF86DRI
     if (info->directRenderingEnabled) {
-
-	pSAREAPriv = DRIGetSAREAPrivate(pScrn->pScreen);
+	/* note cannot use pScrn->pScreen since this is unitialized when called from
+	   RADEONScreenInit, and we need to call from there to get mergedfb + pageflip working */
+        /*** NOTE: r3/4xx will need sarea and drm pageflip updates to handle the xytile regs for
+	 *** pageflipping!
+	 ***/
+	pSAREAPriv = DRIGetSAREAPrivate(screenInfo.screens[pScrn->scrnIndex]);
+	/* can't get at sarea in a semi-sane way? */
+	pSAREA = (void *)((char*)pSAREAPriv - sizeof(XF86DRISAREARec));
 
 	if (clone || info->IsSecondary) {
 	    pSAREAPriv->crtc2_base = Base;
+	}
+	else {
+	    pSAREA->frame.x = (Base  / info->CurrentLayout.pixel_bytes)
+		% info->CurrentLayout.displayWidth;
+	    pSAREA->frame.y = (Base / info->CurrentLayout.pixel_bytes)
+		/ info->CurrentLayout.displayWidth;
+	    pSAREA->frame.width = pScrn->frameX1 - x + 1;
+	    pSAREA->frame.height = pScrn->frameY1 - y + 1;
 	}
 
 	if (pSAREAPriv->pfCurrentPage == 1) {
@@ -7138,9 +8329,16 @@ void RADEONDoAdjustFrame(ScrnInfoPtr pScrn, int x, int y, int clone)
 #endif
 
     OUTREG(reg, Base);
+
+    if (IS_R300_VARIANT) {
+        OUTREG(xytilereg, crtcxytile);
+    } else {
+        OUTREG(regcntl, crtcoffsetcntl);
+    }
+
 }
 
-void RADEONAdjustFrame(int scrnIndex, int x, int y, int flags)
+_X_EXPORT void RADEONAdjustFrame(int scrnIndex, int x, int y, int flags)
 {
     ScrnInfoPtr    pScrn      = xf86Screens[scrnIndex];
     RADEONInfoPtr  info       = RADEONPTR(pScrn);
@@ -7149,7 +8347,8 @@ void RADEONAdjustFrame(int scrnIndex, int x, int y, int flags)
     if (info->CPStarted) DRILock(pScrn->pScreen, 0);
 #endif
 
-    if (info->accelOn) info->accel->Sync(pScrn);
+    if (info->accelOn)
+        RADEON_SYNC(info, pScrn);
 
     if(info->MergedFB) {
     	RADEONAdjustFrameMerged(scrnIndex, x, y, flags);
@@ -7159,7 +8358,6 @@ void RADEONAdjustFrame(int scrnIndex, int x, int y, int flags)
 	RADEONDoAdjustFrame(pScrn, x, y, FALSE);
     }
 
-    RADEONSetFBLocation (pScrn);
 #ifdef XF86DRI
 	if (info->CPStarted) DRIUnlock(pScrn->pScreen);
 #endif
@@ -7168,7 +8366,7 @@ void RADEONAdjustFrame(int scrnIndex, int x, int y, int flags)
 /* Called when VT switching back to the X server.  Reinitialize the
  * video mode.
  */
-Bool RADEONEnterVT(int scrnIndex, int flags)
+_X_EXPORT Bool RADEONEnterVT(int scrnIndex, int flags)
 {
     ScrnInfoPtr    pScrn = xf86Screens[scrnIndex];
     RADEONInfoPtr  info  = RADEONPTR(pScrn);
@@ -7198,8 +8396,9 @@ Bool RADEONEnterVT(int scrnIndex, int flags)
     } else
 	if (!RADEONModeInit(pScrn, pScrn->currentMode)) return FALSE;
 
-    RADEONSetFBLocation (pScrn);
-
+    RADEONSetFBLocation(pScrn);
+    if (!info->IsSecondary)
+	RADEONRestoreSurfaces(pScrn, &info->ModeReg);
 #ifdef XF86DRI
     if (info->directRenderingEnabled) {
 	/* get the Radeon back into shape after resume */
@@ -7229,7 +8428,7 @@ Bool RADEONEnterVT(int scrnIndex, int flags)
 /* Called when VT switching away from the X server.  Restore the
  * original text mode.
  */
-void RADEONLeaveVT(int scrnIndex, int flags)
+_X_EXPORT void RADEONLeaveVT(int scrnIndex, int flags)
 {
     ScrnInfoPtr    pScrn = xf86Screens[scrnIndex];
     RADEONInfoPtr  info  = RADEONPTR(pScrn);
@@ -7252,6 +8451,8 @@ void RADEONLeaveVT(int scrnIndex, int flags)
 	fbdevHWLeaveVT(scrnIndex,flags);
     }
 
+    if (!info->IsSecondary)
+	RADEONSaveSurfaces(pScrn, save);
     RADEONRestore(pScrn);
 }
 
@@ -7274,21 +8475,34 @@ static Bool RADEONCloseScreen(int scrnIndex, ScreenPtr pScreen)
     }
 #endif
 
-    if(info->RenderTex) {
+#ifdef USE_XAA
+    if(!info->useEXA && info->RenderTex) {
         xf86FreeOffscreenLinear(info->RenderTex);
         info->RenderTex = NULL;
     }
+#endif /* USE_XAA */
 
     if (pScrn->vtSema) {
+	RADEONDisplayPowerManagementSet(pScrn, DPMSModeOn, 0);
 	RADEONRestore(pScrn);
     }
     RADEONUnmapMem(pScrn);
 
-    if (info->accel) XAADestroyInfoRec(info->accel);
-    info->accel = NULL;
+#ifdef USE_EXA
+    if (info->useEXA && info->accelOn)
+	exaDriverFini(pScreen);
+#endif /* USE_EXA */
+#ifdef USE_XAA
+    if (!info->useEXA) {
+	if (info->accel)
+		XAADestroyInfoRec(info->accel);
+	info->accel = NULL;
 
-    if (info->scratch_save) xfree(info->scratch_save);
-    info->scratch_save = NULL;
+	if (info->scratch_save)
+	    xfree(info->scratch_save);
+	info->scratch_save = NULL;
+    }
+#endif /* USE_XAA */
 
     if (info->cursor) xf86DestroyCursorInfoRec(info->cursor);
     info->cursor = NULL;
@@ -7305,7 +8519,7 @@ static Bool RADEONCloseScreen(int scrnIndex, ScreenPtr pScreen)
     return (*pScreen->CloseScreen)(scrnIndex, pScreen);
 }
 
-void RADEONFreeScreen(int scrnIndex, int flags)
+_X_EXPORT void RADEONFreeScreen(int scrnIndex, int flags)
 {
     ScrnInfoPtr  pScrn = xf86Screens[scrnIndex];
     RADEONInfoPtr  info  = RADEONPTR(pScrn);
@@ -7349,8 +8563,10 @@ void RADEONFreeScreen(int scrnIndex, int flags)
        }
     }
 
-    if (xf86LoaderCheckSymbol("vgaHWFreeHWRec"))
+#ifdef WITH_VGAHW
+    if (info->VGAAccess && xf86LoaderCheckSymbol("vgaHWFreeHWRec"))
 	vgaHWFreeHWRec(pScrn);
+#endif
     RADEONFreeRec(pScrn);
 }
 
@@ -7435,7 +8651,8 @@ static void RADEONDisplayPowerManagementSet(ScrnInfoPtr pScrn,
     if (info->CPStarted) DRILock(pScrn->pScreen, 0);
 #endif
 
-    if (info->accelOn) info->accel->Sync(pScrn);
+    if (info->accelOn)
+        RADEON_SYNC(info, pScrn);
 
     if (info->FBDev) {
 	fbdevHWDPMSSet(pScrn, PowerManagementMode, flags);
@@ -7463,15 +8680,15 @@ static void RADEONDisplayPowerManagementSet(ScrnInfoPtr pScrn,
 	    /* Screen: Off; HSync: Off, VSync: On */
 	    if (info->IsSecondary)
 		OUTREGP(RADEON_CRTC2_GEN_CNTL,
-			RADEON_CRTC2_DISP_DIS | RADEON_CRTC2_HSYNC_DIS,
+			(RADEON_CRTC2_DISP_DIS | RADEON_CRTC2_HSYNC_DIS),
 			~mask2);
 	    else {
 		if (info->MergedFB)
 		    OUTREGP(RADEON_CRTC2_GEN_CNTL,
-			    RADEON_CRTC2_DISP_DIS | RADEON_CRTC2_HSYNC_DIS,
+			    (RADEON_CRTC2_DISP_DIS | RADEON_CRTC2_HSYNC_DIS),
 			    ~mask2);
 		OUTREGP(RADEON_CRTC_EXT_CNTL,
-			RADEON_CRTC_DISPLAY_DIS | RADEON_CRTC_HSYNC_DIS,
+			(RADEON_CRTC_DISPLAY_DIS | RADEON_CRTC_HSYNC_DIS),
 			~mask1);
 	    }
 	    break;
@@ -7480,15 +8697,15 @@ static void RADEONDisplayPowerManagementSet(ScrnInfoPtr pScrn,
 	    /* Screen: Off; HSync: On, VSync: Off */
 	    if (info->IsSecondary)
 		OUTREGP(RADEON_CRTC2_GEN_CNTL,
-			RADEON_CRTC2_DISP_DIS | RADEON_CRTC2_VSYNC_DIS,
+			(RADEON_CRTC2_DISP_DIS | RADEON_CRTC2_VSYNC_DIS),
 			~mask2);
 	    else {
 		if (info->MergedFB)
 		    OUTREGP(RADEON_CRTC2_GEN_CNTL,
-			    RADEON_CRTC2_DISP_DIS | RADEON_CRTC2_VSYNC_DIS,
+			    (RADEON_CRTC2_DISP_DIS | RADEON_CRTC2_VSYNC_DIS),
 			    ~mask2);
 		OUTREGP(RADEON_CRTC_EXT_CNTL,
-			RADEON_CRTC_DISPLAY_DIS | RADEON_CRTC_VSYNC_DIS,
+			(RADEON_CRTC_DISPLAY_DIS | RADEON_CRTC_VSYNC_DIS),
 			~mask1);
 	    }
 	    break;
@@ -7579,7 +8796,7 @@ static void RADEONDisplayPowerManagementSet(ScrnInfoPtr pScrn,
 			     ~(RADEON_LVDS_BLON | RADEON_LVDS_ON));
 
 		    if (info->IsMobility || info->IsIGP) {
-			OUTPLL(RADEON_PIXCLKS_CNTL, tmpPixclksCntl);
+			OUTPLL(pScrn, RADEON_PIXCLKS_CNTL, tmpPixclksCntl);
 		    }
 		} else if (info->DisplayType == MT_CRT) {
 		    if ((pRADEONEnt->HasSecondary) || info->MergedFB) {
@@ -7627,6 +8844,10 @@ RADEONGetMergedFBOptions(ScrnInfoPtr pScrn)
     info->CRT2IsScrn0 = FALSE;
     info->CRT2Position = radeonClone;
     info->MergedFBXDPI = info->MergedFBYDPI = 0;
+    info->CRT1XOffs = info->CRT1YOffs = info->CRT2XOffs = info->CRT2YOffs = 0;
+    info->NonRect = info->HaveNonRect = info->HaveOffsRegions = FALSE;
+    info->MBXNR1XMAX = info->MBXNR1YMAX = info->MBXNR2XMAX = info->MBXNR2YMAX = 65536;
+    info->MouseRestrictions = TRUE;
 
     if (info->MergeType == MT_NONE) {
 	info->MergedFB = FALSE;
@@ -7662,36 +8883,68 @@ RADEONGetMergedFBOptions(ScrnInfoPtr pScrn)
        }
     }
     if(info->MergedFB) {
+	  int result, ival;
+	  Bool valid = FALSE;
+	  char *tempstr;
 	  strptr = (char *)xf86GetOptValString(info->Options, OPTION_CRT2POS);
-      	  if(strptr) {
-       	     if((!strcmp(strptr,"LeftOf")) || (!strcmp(strptr,"leftof"))) {
-                info->CRT2Position = radeonLeftOf;
-		info->CRT2IsScrn0 = TRUE;
-	     }
- 	     else if((!strcmp(strptr,"RightOf")) || (!strcmp(strptr,"rightof"))) {
-                info->CRT2Position = radeonRightOf;
-                info->CRT2IsScrn0 = FALSE;
-	     }
-	     else if((!strcmp(strptr,"Above")) || (!strcmp(strptr,"above"))) {
-                info->CRT2Position = radeonAbove;
-                info->CRT2IsScrn0 = FALSE;
-	     }
-	     else if((!strcmp(strptr,"Below")) || (!strcmp(strptr,"below"))) {
-                info->CRT2Position = radeonBelow;
-                info->CRT2IsScrn0 = TRUE;
-	     }
-	     else if((!strcmp(strptr,"Clone")) || (!strcmp(strptr,"clone"))) {
-                info->CRT2Position = radeonClone;
-                /*info->CRT2IsScrn0 = FALSE; */
-                 info->CRT2IsScrn0 = TRUE; 
-	     }
-	     else {
+	  if (strptr) {
+	      tempstr = xalloc(strlen(strptr) + 1);
+	      result = sscanf(strptr, "%s %d", tempstr, &ival);
+	  } else { 	      /* Not specified - default is "Clone" */
+	      tempstr = NULL;
+	      result = 0;
+	      info->CRT2Position = radeonClone;
+	      valid = TRUE;
+	  }
+	  if(result >= 1) {
+       	        if(!xf86NameCmp(tempstr,"LeftOf")) {
+                   info->CRT2Position = radeonLeftOf;
+		   valid = TRUE;
+		   if(result == 2) {
+		      if(ival < 0) info->CRT1YOffs = -ival;
+		      else info->CRT2YOffs = ival;
+		   }
+		   info->CRT2IsScrn0 = TRUE;
+ 	        } else if(!xf86NameCmp(tempstr,"RightOf")) {
+                   info->CRT2Position = radeonRightOf;
+		   valid = TRUE;
+		   if(result == 2) {
+		      if(ival < 0) info->CRT1YOffs = -ival;
+		      else info->CRT2YOffs = ival;
+		   }
+		   info->CRT2IsScrn0 = FALSE;
+	        } else if(!xf86NameCmp(tempstr,"Above")) {
+                   info->CRT2Position = radeonAbove;
+		   valid = TRUE;
+		   if(result == 2) {
+		      if(ival < 0) info->CRT1XOffs = -ival;
+		      else info->CRT2XOffs = ival;
+		   }
+		   info->CRT2IsScrn0 = FALSE;
+	        } else if(!xf86NameCmp(tempstr,"Below")) {
+                   info->CRT2Position = radeonBelow;
+		   valid = TRUE;
+		   if(result == 2) {
+		      if(ival < 0) info->CRT1XOffs = -ival;
+		      else info->CRT2XOffs = ival;
+		   }
+		   info->CRT2IsScrn0 = TRUE;
+	        } else if(!xf86NameCmp(tempstr,"Clone")) {
+                   info->CRT2Position = radeonClone;
+		   if(result == 1) valid = TRUE;
+		   /*info->CRT2IsScrn0 = TRUE;*/
+	        } 
+	  }
+	  if(!valid) {
 	        xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
 	            "\"%s\" is not a valid parameter for Option \"CRT2Position\"\n", strptr);
 	    	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 	            "Valid parameters are \"RightOf\", \"LeftOf\", \"Above\", \"Below\", or \"Clone\"\n");
-	     }
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+	            "Except for \"Clone\", the parameter may be followed by an integer.\n");
 	  }
+	  xfree(tempstr);
+
 	  strptr = (char *)xf86GetOptValString(info->Options, OPTION_METAMODES);
 	  if(strptr) {
 	     info->MetaModes = xalloc(strlen(strptr) + 1);
@@ -7708,8 +8961,8 @@ RADEONGetMergedFBOptions(ScrnInfoPtr pScrn)
 	      if(info->CRT2VRefresh) memcpy(info->CRT2VRefresh, strptr, strlen(strptr) + 1);
 	  }
 
-	if(xf86GetOptValBool(info->Options, OPTION_NORADEONXINERAMA, &val)) {
-	    if (val)
+	if(xf86GetOptValBool(info->Options, OPTION_RADEONXINERAMA, &val)) {
+	    if (!val)
 		info->UseRADEONXinerama = FALSE;
 	}
 	if(info->UseRADEONXinerama) {
@@ -7717,6 +8970,12 @@ RADEONGetMergedFBOptions(ScrnInfoPtr pScrn)
 		   if(val) info->CRT2IsScrn0 = TRUE;
 		   else    info->CRT2IsScrn0 = FALSE;
 		}
+                if(xf86GetOptValBool(info->Options, OPTION_MERGEDFBNONRECT, &val)) {
+  	            info->NonRect = val ? TRUE : FALSE;
+  	        }
+  	        if(xf86GetOptValBool(info->Options, OPTION_MERGEDFBMOUSER, &val)) {
+  	            info->MouseRestrictions = val ? TRUE : FALSE;
+  	        }
 	}
 	strptr = (char *)xf86GetOptValString(info->Options, OPTION_MERGEDDPI);
 	if(strptr) {
@@ -7800,14 +9059,14 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 			RADEON_SCLK_FORCE_RE   | RADEON_SCLK_FORCE_PB  |
 			RADEON_SCLK_FORCE_TAM  | RADEON_SCLK_FORCE_TDM |
                         RADEON_SCLK_FORCE_RB);
-                OUTPLL(RADEON_SCLK_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_SCLK_CNTL, tmp);
             } else if (info->ChipFamily == CHIP_FAMILY_RV350) {
                 /* for RV350/M10, no delays are required. */
                 tmp = INPLL(pScrn, R300_SCLK_CNTL2);
                 tmp |= (R300_SCLK_FORCE_TCL |
                         R300_SCLK_FORCE_GA  |
 			R300_SCLK_FORCE_CBA);
-                OUTPLL(R300_SCLK_CNTL2, tmp);
+                OUTPLL(pScrn, R300_SCLK_CNTL2, tmp);
 
                 tmp = INPLL(pScrn, RADEON_SCLK_CNTL);
                 tmp |= (RADEON_SCLK_FORCE_DISP2 | RADEON_SCLK_FORCE_CP      |
@@ -7818,11 +9077,11 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 			R300_SCLK_FORCE_PX      | R300_SCLK_FORCE_TX        |
 			R300_SCLK_FORCE_US      | RADEON_SCLK_FORCE_TV_SCLK |
                         R300_SCLK_FORCE_SU      | RADEON_SCLK_FORCE_OV0);
-                OUTPLL(RADEON_SCLK_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_SCLK_CNTL, tmp);
 
                 tmp = INPLL(pScrn, RADEON_SCLK_MORE_CNTL);
                 tmp |= RADEON_SCLK_MORE_FORCEON;
-                OUTPLL(RADEON_SCLK_MORE_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_SCLK_MORE_CNTL, tmp);
 
                 tmp = INPLL(pScrn, RADEON_MCLK_CNTL);
                 tmp |= (RADEON_FORCEON_MCLKA |
@@ -7830,13 +9089,13 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
                         RADEON_FORCEON_YCLKA |
 			RADEON_FORCEON_YCLKB |
                         RADEON_FORCEON_MC);
-                OUTPLL(RADEON_MCLK_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_MCLK_CNTL, tmp);
 
                 tmp = INPLL(pScrn, RADEON_VCLK_ECP_CNTL);
                 tmp &= ~(RADEON_PIXCLK_ALWAYS_ONb  | 
                          RADEON_PIXCLK_DAC_ALWAYS_ONb | 
 			 R300_DISP_DAC_PIXCLK_DAC_BLANK_OFF); 
-                OUTPLL(RADEON_VCLK_ECP_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_VCLK_ECP_CNTL, tmp);
 
                 tmp = INPLL(pScrn, RADEON_PIXCLKS_CNTL);
                 tmp &= ~(RADEON_PIX2CLK_ALWAYS_ONb         | 
@@ -7853,7 +9112,7 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 			 R300_P2G2CLK_ALWAYS_ONb            | 
 			 R300_P2G2CLK_ALWAYS_ONb           | 
 			 R300_DISP_DAC_PIXCLK_DAC2_BLANK_OFF); 
-                OUTPLL(RADEON_PIXCLKS_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_PIXCLKS_CNTL, tmp);
             }  else {
                 tmp = INPLL(pScrn, RADEON_SCLK_CNTL);
                 tmp |= (RADEON_SCLK_FORCE_CP | RADEON_SCLK_FORCE_E2);
@@ -7880,7 +9139,7 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 			     RADEON_SCLK_FORCE_IDCT  |
 			     RADEON_SCLK_FORCE_VIP);
 		}
-                OUTREG(RADEON_SCLK_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_SCLK_CNTL, tmp);
             
                 usleep(16000);
 
@@ -7890,7 +9149,7 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
                     tmp |= ( R300_SCLK_FORCE_TCL |
 			     R300_SCLK_FORCE_GA  |
 			     R300_SCLK_FORCE_CBA);
-                    OUTPLL(R300_SCLK_CNTL2, tmp);
+                    OUTPLL(pScrn, R300_SCLK_CNTL2, tmp);
 		    usleep(16000);
 		}
 
@@ -7898,7 +9157,7 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
                     tmp = INPLL(pScrn, RADEON_MCLK_CNTL);
                     tmp &= ~(RADEON_FORCEON_MCLKA |
 			     RADEON_FORCEON_YCLKA);
-                    OUTREG(RADEON_MCLK_CNTL, tmp);
+                    OUTPLL(pScrn, RADEON_MCLK_CNTL, tmp);
 		    usleep(16000);
 		}
   
@@ -7907,7 +9166,7 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 		    (info->ChipFamily == CHIP_FAMILY_RV280)) {
                     tmp = INPLL(pScrn, RADEON_SCLK_MORE_CNTL);
 		    tmp |= RADEON_SCLK_MORE_FORCEON;
-                    OUTPLL(RADEON_SCLK_MORE_CNTL, tmp);
+                    OUTPLL(pScrn, RADEON_SCLK_MORE_CNTL, tmp);
 		    usleep(16000);
 		}
 
@@ -7920,13 +9179,13 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
                          RADEON_PIXCLK_LVDS_ALWAYS_ONb     |
                          RADEON_PIXCLK_TMDS_ALWAYS_ONb);
 
-		OUTREG(RADEON_PIXCLKS_CNTL, tmp);
+		OUTPLL(pScrn, RADEON_PIXCLKS_CNTL, tmp);
 		usleep(16000);
 
                 tmp = INPLL(pScrn, RADEON_VCLK_ECP_CNTL);
                 tmp &= ~(RADEON_PIXCLK_ALWAYS_ONb  |
 			 RADEON_PIXCLK_DAC_ALWAYS_ONb); 
-                OUTPLL(RADEON_VCLK_ECP_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_VCLK_ECP_CNTL, tmp);
 	    }
 	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Dynamic Clock Scaling Disabled\n");
             break;
@@ -7942,7 +9201,7 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 			 RADEON_SCLK_FORCE_IDCT | RADEON_SCLK_FORCE_RE   |
 			 RADEON_SCLK_FORCE_PB   | RADEON_SCLK_FORCE_TAM  |
 			 RADEON_SCLK_FORCE_TDM);
-                OUTPLL (RADEON_SCLK_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_SCLK_CNTL, tmp);
 	    } else if ((info->ChipFamily == CHIP_FAMILY_R300) ||
 		       (info->ChipFamily == CHIP_FAMILY_R350) ||
 		       (info->ChipFamily == CHIP_FAMILY_RV350)) {
@@ -7954,7 +9213,7 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 		    tmp |=  (R300_SCLK_TCL_MAX_DYN_STOP_LAT |
 			     R300_SCLK_GA_MAX_DYN_STOP_LAT  |
 			     R300_SCLK_CBA_MAX_DYN_STOP_LAT);
-		    OUTPLL(R300_SCLK_CNTL2, tmp);
+		    OUTPLL(pScrn, R300_SCLK_CNTL2, tmp);
 
 		    tmp = INPLL(pScrn, RADEON_SCLK_CNTL);
 		    tmp &= ~(RADEON_SCLK_FORCE_DISP2 | RADEON_SCLK_FORCE_CP      |
@@ -7966,17 +9225,17 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 			     R300_SCLK_FORCE_US      | RADEON_SCLK_FORCE_TV_SCLK |
 			     R300_SCLK_FORCE_SU      | RADEON_SCLK_FORCE_OV0);
 		    tmp |=  RADEON_DYN_STOP_LAT_MASK;
-		    OUTPLL(RADEON_SCLK_CNTL, tmp);
+		    OUTPLL(pScrn, RADEON_SCLK_CNTL, tmp);
 
 		    tmp = INPLL(pScrn, RADEON_SCLK_MORE_CNTL);
 		    tmp &= ~RADEON_SCLK_MORE_FORCEON;
 		    tmp |=  RADEON_SCLK_MORE_MAX_DYN_STOP_LAT;
-		    OUTPLL(RADEON_SCLK_MORE_CNTL, tmp);
+		    OUTPLL(pScrn, RADEON_SCLK_MORE_CNTL, tmp);
 
 		    tmp = INPLL(pScrn, RADEON_VCLK_ECP_CNTL);
 		    tmp |= (RADEON_PIXCLK_ALWAYS_ONb |
 			    RADEON_PIXCLK_DAC_ALWAYS_ONb);   
-		    OUTPLL(RADEON_VCLK_ECP_CNTL, tmp);
+		    OUTPLL(pScrn, RADEON_VCLK_ECP_CNTL, tmp);
 
 		    tmp = INPLL(pScrn, RADEON_PIXCLKS_CNTL);
 		    tmp |= (RADEON_PIX2CLK_ALWAYS_ONb         |
@@ -7992,12 +9251,12 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 			    R300_PIXCLK_TVO_ALWAYS_ONb        |
 			    R300_P2G2CLK_ALWAYS_ONb           |
 			    R300_P2G2CLK_ALWAYS_ONb);
-		    OUTPLL(RADEON_PIXCLKS_CNTL, tmp);
+		    OUTPLL(pScrn, RADEON_PIXCLKS_CNTL, tmp);
 
 		    tmp = INPLL(pScrn, RADEON_MCLK_MISC);
 		    tmp |= (RADEON_MC_MCLK_DYN_ENABLE |
 			    RADEON_IO_MCLK_DYN_ENABLE);
-		    OUTPLL(RADEON_MCLK_MISC, tmp);
+		    OUTPLL(pScrn, RADEON_MCLK_MISC, tmp);
 
 		    tmp = INPLL(pScrn, RADEON_MCLK_CNTL);
 		    tmp |= (RADEON_FORCEON_MCLKA |
@@ -8026,19 +9285,19 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 			}
 		    }
 
-		    OUTPLL(RADEON_MCLK_CNTL, tmp);
+		    OUTPLL(pScrn, RADEON_MCLK_CNTL, tmp);
 		} else {
 		    tmp = INPLL(pScrn, RADEON_SCLK_CNTL);
 		    tmp &= ~(R300_SCLK_FORCE_VAP);
 		    tmp |= RADEON_SCLK_FORCE_CP;
-		    OUTPLL(RADEON_SCLK_CNTL, tmp);
+		    OUTPLL(pScrn, RADEON_SCLK_CNTL, tmp);
 		    usleep(15000);
 
 		    tmp = INPLL(pScrn, R300_SCLK_CNTL2);
 		    tmp &= ~(R300_SCLK_FORCE_TCL |
 			     R300_SCLK_FORCE_GA  |
 			     R300_SCLK_FORCE_CBA);
-		    OUTPLL(R300_SCLK_CNTL2, tmp);
+		    OUTPLL(pScrn, R300_SCLK_CNTL2, tmp);
 		}
 	    } else {
                 tmp = INPLL(pScrn, RADEON_CLK_PWRMGT_CNTL);
@@ -8049,12 +9308,12 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 
                 tmp |= (RADEON_ENGIN_DYNCLK_MODE |
 			(0x01 << RADEON_ACTIVE_HILO_LAT_SHIFT));
-                OUTPLL(RADEON_CLK_PWRMGT_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_CLK_PWRMGT_CNTL, tmp);
 		usleep(15000);
 
                 tmp = INPLL(pScrn, RADEON_CLK_PIN_CNTL);
                 tmp |= RADEON_SCLK_DYN_START_CNTL; 
-                OUTPLL(RADEON_CLK_PIN_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_CLK_PIN_CNTL, tmp);
 		usleep(15000);
 
 		/* When DRI is enabled, setting DYN_STOP_LAT to zero can cause some R200 
@@ -8075,7 +9334,7 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
                     tmp |= RADEON_SCLK_FORCE_VIP;
                 }
 
-                OUTPLL(RADEON_SCLK_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_SCLK_CNTL, tmp);
 
 		if ((info->ChipFamily == CHIP_FAMILY_RV200) ||
 		    (info->ChipFamily == CHIP_FAMILY_RV250) ||
@@ -8090,7 +9349,7 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 			 RADEON_CFG_ATI_REV_A13)) {
                         tmp |= RADEON_SCLK_MORE_FORCEON;
 		    }
-                    OUTPLL(RADEON_SCLK_MORE_CNTL, tmp);
+                    OUTPLL(pScrn, RADEON_SCLK_MORE_CNTL, tmp);
 		    usleep(15000);
                 }
 
@@ -8101,7 +9360,7 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 		     RADEON_CFG_ATI_REV_A13)) {
                     tmp = INPLL(pScrn, RADEON_PLL_PWRMGT_CNTL);
                     tmp |= RADEON_TCL_BYPASS_DISABLE;
-                    OUTREG(RADEON_PLL_PWRMGT_CNTL, tmp);
+                    OUTPLL(pScrn, RADEON_PLL_PWRMGT_CNTL, tmp);
                 }
 		usleep(15000);
 
@@ -8115,14 +9374,14 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
 			 RADEON_PIXCLK_LVDS_ALWAYS_ONb     |
 			 RADEON_PIXCLK_TMDS_ALWAYS_ONb);
 
-		OUTPLL(RADEON_PIXCLKS_CNTL, tmp);
+		OUTPLL(pScrn, RADEON_PIXCLKS_CNTL, tmp);
 		usleep(15000);
 
 		tmp = INPLL(pScrn, RADEON_VCLK_ECP_CNTL);
 		tmp |= (RADEON_PIXCLK_ALWAYS_ONb  |
 		        RADEON_PIXCLK_DAC_ALWAYS_ONb); 
 
-                OUTPLL(RADEON_VCLK_ECP_CNTL, tmp);
+                OUTPLL(pScrn, RADEON_VCLK_ECP_CNTL, tmp);
 		usleep(15000);
             }    
 	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Dynamic Clock Scaling Enabled\n");
@@ -8132,7 +9391,7 @@ static void RADEONSetDynamicClock(ScrnInfoPtr pScrn, int mode)
     }
 }
 
-void RADEONFillInScreenInfo(ScrnInfoPtr pScrn)
+_X_EXPORT void RADEONFillInScreenInfo(ScrnInfoPtr pScrn)
 {
     pScrn->driverVersion = RADEON_VERSION_CURRENT;
     pScrn->driverName    = RADEON_DRIVER_NAME;

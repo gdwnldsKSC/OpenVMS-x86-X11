@@ -8,13 +8,6 @@
 
 typedef volatile unsigned long npireg_t;
 
-union npfloat {
-	volatile float f;
-	npireg_t       i;
-};
-
-typedef union npfloat npfreg_t;
-
 union np_dcb {
 	npireg_t all;
 	struct { volatile unsigned short s0, s1; } hwords;
@@ -150,44 +143,44 @@ struct Newport_rexregs {
 	unsigned long _pad1[0x30];
 
 	/* Iterators, full state for context switch */
-	npfreg_t _xstart;	/* X-start point (current) */
-	npfreg_t _ystart;	/* Y-start point (current) */
-	npfreg_t _xend;		/* x-end point */
-	npfreg_t _yend;		/* y-end point */
+	npireg_t _xstart;	/* X-start point (current) */
+	npireg_t _ystart;	/* Y-start point (current) */
+	npireg_t _xend;		/* x-end point */
+	npireg_t _yend;		/* y-end point */
 	npireg_t xsave;		/* copy of xstart integer value for BLOCk addressing MODE */
 	npireg_t xymove;	/* x.y offset from xstart, ystart for relative operations */
-	npfreg_t bresd;
-	npfreg_t bress1;
+	npireg_t bresd;
+	npireg_t bress1;
 	npireg_t bresoctinc1;
-	volatile int bresrndinc2;
+	npireg_t bresrndinc2;
 	npireg_t brese1;
 	npireg_t bress2;
 	npireg_t aweight0;
 	npireg_t aweight1;
-	npfreg_t xstartf;
-	npfreg_t ystartf;
-	npfreg_t xendf;
-	npfreg_t yendf;
+	npireg_t xstartf;
+	npireg_t ystartf;
+	npireg_t xendf;
+	npireg_t yendf;
 	npireg_t xstarti;
-	npfreg_t xendf1;
+	npireg_t xendf1;
 	npireg_t xystarti;
 	npireg_t xyendi;
 	npireg_t xstartendi;
 
 	unsigned long _unused2[0x29];
 
-	npfreg_t colorred;
-	npfreg_t coloralpha;
-	npfreg_t colorgrn;
-	npfreg_t colorblue;
-	npfreg_t slopered;
-	npfreg_t slopealpha;
-	npfreg_t slopegrn;
-	npfreg_t slopeblue;
+	npireg_t colorred;
+	npireg_t coloralpha;
+	npireg_t colorgrn;
+	npireg_t colorblue;
+	npireg_t slopered;
+	npireg_t slopealpha;
+	npireg_t slopegrn;
+	npireg_t slopeblue;
 	npireg_t wrmask;
 	npireg_t colori;
-	npfreg_t colorx;
-	npfreg_t slopered1;
+	npireg_t colorx;
+	npireg_t slopered1;
 	npireg_t hostrw0;
 	npireg_t hostrw1;
 	npireg_t dcbmode;
@@ -247,21 +240,22 @@ struct Newport_cregs {
 #define NPORT_CMODE_CMSK  0x00001e00
 
 	unsigned long _unused0;
-	unsigned long config;
+	npireg_t config;
 #define NPORT_CFG_G32MD   0x00000001
 #define NPORT_CFG_BWIDTH  0x00000002
 #define NPORT_CFG_ERCVR   0x00000004
 #define NPORT_CFG_BDMSK   0x00000078
-#define NPORT_CFG_GDMSK   0x00000f80
-#define NPORT_CFG_GD0     0x00000080
-#define NPORT_CFG_GD1     0x00000100
-#define NPORT_CFG_GD2     0x00000200
-#define NPORT_CFG_GD3     0x00000400
-#define NPORT_CFG_GD4     0x00000800
-#define NPORT_CFG_GFAINT  0x00001000
-#define NPORT_CFG_TOMSK   0x0000e000
-#define NPORT_CFG_VRMSK   0x00070000
-#define NPORT_CFG_FBTYP   0x00080000
+#define NPORT_CFG_BFAINT  0x00000080
+#define NPORT_CFG_GDMSK   0x00001f00
+#define NPORT_CFG_GD0     0x00000100
+#define NPORT_CFG_GD1     0x00000200
+#define NPORT_CFG_GD2     0x00000400
+#define NPORT_CFG_GD3     0x00000800
+#define NPORT_CFG_GD4     0x00001000
+#define NPORT_CFG_GFAINT  0x00002000
+#define NPORT_CFG_TOMSK   0x0001C000
+#define NPORT_CFG_VRMSK   0x000E0000
+#define NPORT_CFG_FBTYP   0x00100000
 
 	npireg_t _unused1;
 	npireg_t stat;

@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xc/doc/specs/programs/Imakefile,v 1.2 2004/04/23 18:42:19 eich Exp $
+XCOMM $XdotOrg: xc/doc/specs/programs/Imakefile,v 1.4 2005/07/04 17:21:18 alanc Exp $
 XCOMM $Xorg: Imakefile,v 1.3 2000/08/17 19:42:50 cpqbld Exp $
 
 
@@ -85,8 +85,8 @@ XFREE86_MANUALS = \
   $(TOP)/programs/Xserver/hw/darwin/XDarwin.man \
   $(TOP)/programs/Xserver/hw/darwin/utils/dumpkeymap.man \
   $(TOP)/lib/Xxf86dga/XDGA.man \
-  $(TOP)/programs/Xserver/hw/xfree86/doc/man/XF86Misc.man \
-  $(TOP)/programs/Xserver/hw/xfree86/doc/man/XF86VM.man
+  $(TOP)/lib/Xxf86misc/XF86Misc.man \
+  $(TOP)/lib/Xxf86vm/XF86VM.man
 
 EXTRA_MANUALS = \
   $(TOP)/extras/rman/rman.1
@@ -109,8 +109,8 @@ MANUALS = $(XFREE86_MANUALS) \
   $(TOP)/programs/dpsexec/dpsexec.man \
   $(TOP)/programs/dpsinfo/dpsinfo.man \
   $(TOP)/programs/editres/editres.man \
-  $(TOP)/extras/fontconfig/fc-cache/fc-cache.man \
-  $(TOP)/extras/fontconfig/fc-list/fc-list.man \
+  $(TOP)/programs/fc-cache/fc-cache.man \
+  $(TOP)/programs/fc-list/fc-list.man \
   $(TOP)/programs/fslsfonts/fslsfonts.man \
   $(TOP)/programs/fstobdf/fstobdf.man \
   $(TOP)/config/util/gccmakedep.man \

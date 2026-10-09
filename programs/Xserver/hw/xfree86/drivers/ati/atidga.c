@@ -21,6 +21,9 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #ifndef AVOID_DGA
 
 #include "ati.h"

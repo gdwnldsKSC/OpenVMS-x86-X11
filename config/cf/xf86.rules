@@ -188,7 +188,7 @@ InstallDriverSDKDynamicModule(Concat(module,_drv.o),dest,subdir)
 #else
 #if MakeDllModules
 #define InstallDriverSDKObjectSubModule(module,dest,subdir)		@@\
-InstallDriverSDKDynamicModule(Concat(module,.o),dest,subdir)
+InstallDriverSDKDynamicModule(Concat(module,.so),dest,subdir)
 #else
 #define InstallDriverSDKObjectSubModule(module,dest,subdir)		@@\
 InstallDriverSDKDynamicModule(Concat(module,.o),dest,subdir)

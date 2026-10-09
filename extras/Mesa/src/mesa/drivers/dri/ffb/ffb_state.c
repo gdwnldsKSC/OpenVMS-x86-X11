@@ -26,6 +26,7 @@
  */
 
 #include "mtypes.h"
+#include "buffers.h"
 #include "colormac.h"
 #include "mm.h"
 #include "ffb_dd.h"
@@ -444,6 +445,8 @@ void ffbCalcViewport(GLcontext *ctx)
 static void ffbDDViewport(GLcontext *ctx, GLint x, GLint y,
 			  GLsizei width, GLsizei height)
 {
+	/* update size of Mesa/software ancillary buffers */
+	_mesa_ResizeBuffersMESA();
 	ffbCalcViewport(ctx);
 }
 
@@ -519,14 +522,14 @@ static void ffbDDSetBuffer(GLcontext *ctx, GLframebuffer *colorBuffer,
 #endif
 	fbc &= ~(FFB_FBC_RB_MASK);
 	switch (bufferBit) {
-	case DD_FRONT_LEFT_BIT:
+	case BUFFER_BIT_FRONT_LEFT:
 		if (fmesa->back_buffer == 0)
 			fbc |= FFB_FBC_RB_B;
 		else
 			fbc |= FFB_FBC_RB_A;
 		break;
 
-	case DD_BACK_LEFT_BIT:
+	case BUFFER_BIT_BACK_LEFT:
 		if (fmesa->back_buffer == 0)
 			fbc |= FFB_FBC_RB_A;
 		else
@@ -589,6 +592,8 @@ static void ffbDDColorMask(GLcontext *ctx,
 		new_pmask |= 0x0000ff00;
 	if (b)
 		new_pmask |= 0x00ff0000;
+	if (a)
+		new_pmask |= 0xff000000;
 
 	if (fmesa->pmask != new_pmask) {
 		fmesa->pmask = new_pmask;

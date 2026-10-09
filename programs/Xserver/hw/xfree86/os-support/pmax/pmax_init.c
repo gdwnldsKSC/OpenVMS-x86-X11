@@ -71,6 +71,10 @@
  *
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <sys/types.h>
 #include <time.h>
 #include <errno.h>
@@ -79,8 +83,8 @@
 #include <sys/cpu.h>
 #include <sys/ipl.h>
 
-#include "X.h"
-#include "Xmd.h"
+#include <X11/X.h>
+#include <X11/Xmd.h>
 
 #include "compiler.h"
 

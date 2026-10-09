@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/glint/pm3_accel.c,v 1.2 2004/04/23 19:33:33 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/glint/pm3_accel.c,v 1.5 2005/07/11 02:29:49 ajax Exp $ */
 /*
  * Copyright 2000-2001 by Sven Luther <luther@dpt-info.u-strasbg.fr>.
  *
@@ -29,7 +29,11 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/glint/pm3_accel.c,v 1.30 2002/05/21 14:38:04 alanh Exp $ */
 
-#include "Xarch.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <X11/Xarch.h>
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"

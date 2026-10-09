@@ -24,7 +24,11 @@
 
 /* Re-written May 2001 to represent the current state of reality */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "compiler.h"
 
@@ -69,7 +73,7 @@ xf86SetKbdLeds(int leds)
 }
 
 int
-xf86GetKbdLeds()
+xf86GetKbdLeds(void)
 {
   int leds;
 
@@ -136,7 +140,7 @@ static uchar_t *sc_mapbuf;
 static uchar_t *sc_mapbuf2;
 
 void
-xf86KbdInit()
+xf86KbdInit(void)
 {
   orig_getsc = 0;
   if (ioctl (xf86Info.consoleFd, TCGETSC, &orig_getsc) < 0)
@@ -210,7 +214,7 @@ xf86KbdInit()
 }
 
 int
-xf86KbdOn()
+xf86KbdOn(void)
 {
   struct termios newtio;
 
@@ -244,7 +248,7 @@ xf86KbdOn()
 }
 
 int
-xf86KbdOff()
+xf86KbdOff(void)
 {
   /* Revert back to original translate scancode mode */
   if (use_tcs)
@@ -262,12 +266,4 @@ xf86KbdOff()
   ioctl(xf86Info.consoleFd, XCSETA, &orig_termios);
 
   return(xf86Info.consoleFd);
-}
-
-#include "xf86OSKbd.h"
-
-Bool
-xf86OSKbdPreInit(InputInfoPtr pInfo)
-{
-    return FALSE;
 }

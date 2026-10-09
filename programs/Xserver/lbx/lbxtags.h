@@ -48,6 +48,10 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $XFree86: xc/programs/Xserver/lbx/lbxtags.h,v 1.3 2001/01/17 22:37:00 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _LBXTAGS_H_
 #define _LBXTAGS_H_
 #include	"lbxserve.h"
@@ -55,8 +59,8 @@ in this Software without prior written authorization from The Open Group.
 #include	"os.h"
 #include	"opaque.h"
 #include	"resource.h"
-#include	"X.h"
-#include	"Xproto.h"
+#include	<X11/X.h>
+#include	<X11/Xproto.h>
 
 typedef struct _tagdata {
     XID         tid;

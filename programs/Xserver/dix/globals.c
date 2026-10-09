@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/dix/globals.c,v 1.2 2004/04/23 19:04:44 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/dix/globals.c,v 1.7 2005/07/03 08:53:38 daniels Exp $ */
 /* $XFree86: xc/programs/Xserver/dix/globals.c,v 1.12tsi Exp $ */
 /************************************************************
 
@@ -49,8 +49,12 @@ SOFTWARE.
 
 /* $Xorg: globals.c,v 1.4 2001/02/09 02:04:40 xorgcvs Exp $ */
 
-#include "X.h"
-#include "Xmd.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xmd.h>
 #include "misc.h"
 #include "windowstr.h"
 #include "scrnintstr.h"
@@ -94,14 +98,23 @@ int  ScreenSaverBlanking;
 int  ScreenSaverAllowExposures;
 
 #ifdef DPMSExtension
-#define DEFAULT_STANDBY_TIME DEFAULT_SCREEN_SAVER_TIME * 2
-#define DEFAULT_SUSPEND_TIME DEFAULT_SCREEN_SAVER_TIME * 3
-#define DEFAULT_OFF_TIME DEFAULT_SCREEN_SAVER_TIME * 4
+# ifndef DEFAULT_STANDBY_TIME
+#  define DEFAULT_STANDBY_TIME DEFAULT_SCREEN_SAVER_TIME * 2
+# endif
+# ifndef DEFAULT_SUSPEND_TIME
+#  define DEFAULT_SUSPEND_TIME DEFAULT_SCREEN_SAVER_TIME * 3
+# endif
+# ifndef DEFAULT_OFF_TIME
+#  define DEFAULT_OFF_TIME DEFAULT_SCREEN_SAVER_TIME * 4
+# endif
+# ifndef DEFAULT_DPMS_ENABLED
+#  define DEFAULT_DPMS_ENABLED FALSE
+# endif
 CARD32 defaultDPMSStandbyTime = DEFAULT_STANDBY_TIME;
 CARD32 defaultDPMSSuspendTime = DEFAULT_SUSPEND_TIME;
 CARD32 defaultDPMSOffTime = DEFAULT_OFF_TIME;
 CARD16 DPMSPowerLevel = 0;
-Bool defaultDPMSEnabled = FALSE;
+Bool defaultDPMSEnabled = DEFAULT_DPMS_ENABLED;
 Bool DPMSEnabledSwitch = FALSE;	  /* these denote the DPMS command line */
 Bool DPMSDisabledSwitch = FALSE;  /*                      switch states */
 Bool DPMSCapableFlag = FALSE;

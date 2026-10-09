@@ -10,7 +10,7 @@ CCMDEP_PROG = ccmakedep
 EXPORTLISTGEN = exportlistgen
 #endif
 
-#if defined(Win32Architecture)
+#if defined(Win32Architecture) && !defined(CrossCompiling)
 CMKDIRHIER = mkdirhier.exe
 #endif
 
@@ -94,7 +94,7 @@ SimpleProgramTarget_2(lndir)
 #endif
 #endif
 
-#if defined(Win32Architecture)
+#if defined(Win32Architecture) && !defined(CrossCompiling)
 AllTarget(ProgramTargetName(mkdirhier))
 SimpleProgramTarget_3(mkdirhier)
 #endif

@@ -43,6 +43,7 @@
 #include "fontutil.h"
 #include "fontenc.h"
 #include "ft.h"
+#define NOT_IN_FTFUNCS
 #include "ftfuncs.h"
 #endif /* XP_PSTEXT */
 
@@ -611,7 +612,7 @@ fnmetrics(
 
 	for(i=0; fm->name_ps[i]!=0; i++)
 		if(fm->name_ps[i] == ' ')
-			fm->name_ps[i] = '_'; /* no spaces in the Postscript name *m
+			fm->name_ps[i] = '_'; /* no spaces in the Postscript name *m */
 
 	/* guess the boldness from the font names */
 	fm->force_bold=0;

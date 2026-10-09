@@ -7,7 +7,7 @@ XCOMM This isn't an option we must build a shared lib
 #define LibName xrxnest
 #define SoRev SOXRXREV
 
-SharedLibReferences(xrxnest,xrxnest,$(RXSRC),SOXRXREV,6.8)
+SharedLibReferences(xrxnest,xrxnest,$(RXSRC),SOXRXREV,SharedxrxnestRev)
 
           RXSRC = ../rx
     RX_INCLUDES = -I$(RXSRC)

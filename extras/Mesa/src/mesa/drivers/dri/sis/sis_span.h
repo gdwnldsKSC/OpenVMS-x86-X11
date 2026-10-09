@@ -32,12 +32,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __SIS_SPAN_H__
 #define __SIS_SPAN_H__
  
-#ifdef GLX_DIRECT_RENDERING
+#include "drirenderbuffer.h"
+
 
 extern void sisSpanRenderStart( GLcontext *ctx );
 extern void sisSpanRenderFinish( GLcontext *ctx );
 
 extern void sisDDInitSpanFuncs( GLcontext *ctx );
 
-#endif
+extern void
+sisSetSpanFunctions(driRenderbuffer *rb, const GLvisual *vis);
+
 #endif

@@ -1,4 +1,5 @@
 .\" $Xorg: XtGetANC.man,v 1.3 2000/08/17 19:42:00 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtGetANC.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright (c) 1993, 1994  X Consortium
 .\" 
@@ -143,13 +144,14 @@ Returns the application name.
 Returns the application class.
 .SH DESCRIPTION
 .ZN XtGetApplicationNameAndClass
-returns the application anme and class passed to
+returns the application name and class passed to
 .ZN XtDisplayInitialize
 for the specified display. If the display was never initialized or
 has been closed, the result is undefined. The returned strings are
 owned by the Intrinsics and must not be modified or freed by the
 caller.
 .SH "SEE ALSO"
+.BR XtDisplayInitialize (3Xt)
 .br
 \fI\*(xT\fP
 .br

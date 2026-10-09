@@ -2,6 +2,9 @@
 
 /* Some OS-dependent utility code */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xosdefs.h>
 #include <X11/IntrinsicP.h>
 #include "Private.h"

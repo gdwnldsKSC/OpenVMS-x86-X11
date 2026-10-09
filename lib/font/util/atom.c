@@ -33,7 +33,10 @@ in this Software without prior written authorization from The Open Group.
 
 /* lame atom replacement routines for font applications */
 
-#include "fontmisc.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <X11/fonts/fontmisc.h>
 
 typedef struct _AtomList {
     char		*name;

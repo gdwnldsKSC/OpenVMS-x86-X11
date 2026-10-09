@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/extras/Xpm/lib/parse.c,v 1.2.4.2 2004/12/17 01:09:36 gisburn Exp $ */
+/* $XdotOrg: xc/extras/Xpm/lib/parse.c,v 1.6 2005/07/16 21:11:25 alanc Exp $ */
 /*
  * Copyright (C) 1989-95 GROUPE BULL
  *
@@ -43,11 +43,14 @@
 
 /* October 2004, source code review by Thomas Biege <thomas@suse.de> */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "XpmI.h"
 #include <ctype.h>
 #include <string.h>
 
-#ifdef HAS_STRLCAT
+#if defined(HAS_STRLCAT) || defined(HAVE_STRLCAT)
 # define STRLCAT(dst, src, dstsize) do { \
   	if (strlcat(dst, src, dstsize) >= (dstsize)) \
 	    return (XpmFileInvalid); } while(0)

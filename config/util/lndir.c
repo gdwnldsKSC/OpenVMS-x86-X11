@@ -225,7 +225,7 @@ dodir (char *fn,		/* name of "from" directory, either absolute or
 #ifdef S_ISDIR
 	    if(S_ISDIR(sb.st_mode))
 #else
-	    if (sb.st_mode & S_IFDIR) 
+	    if ((sb.st_mode & S_IFMT) == S_IFDIR)
 #endif
 	    {
 		/* directory */
@@ -403,7 +403,7 @@ main (int ac, char *av[])
 #ifdef S_ISDIR
     if (!(S_ISDIR(ts.st_mode)))
 #else
-    if (!(ts.st_mode & S_IFDIR))
+    if (!(ts.st_mode & S_IFMT) == S_IFDIR)
 #endif
 	quit (2, "%s: Not a directory", tn);
     if (chdir (tn) < 0)
@@ -415,7 +415,7 @@ main (int ac, char *av[])
 #ifdef S_ISDIR
     if (!(S_ISDIR(fs.st_mode)))
 #else
-    if (!(fs.st_mode & S_IFDIR))
+    if (!(fs.st_mode & S_IFMT) == S_IFDIR)
 #endif
 	quit (2, "%s: Not a directory", fn);
 

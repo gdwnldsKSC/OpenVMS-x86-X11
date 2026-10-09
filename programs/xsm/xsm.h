@@ -1,4 +1,5 @@
 /* $Xorg: xsm.h,v 1.4 2001/02/09 02:06:01 xorgcvs Exp $ */
+/* $XdotOrg: xc/programs/xsm/xsm.h,v 1.3 2005/07/16 22:07:13 alanc Exp $ */
 /******************************************************************************
 
 Copyright 1993, 1998  The Open Group
@@ -27,6 +28,10 @@ in this Software without prior written authorization from The Open Group.
 
 #ifndef _XSM_H_
 #define _XSM_H_
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include <X11/Xos.h>
 #include <X11/Xfuncs.h>

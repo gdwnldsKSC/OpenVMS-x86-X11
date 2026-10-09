@@ -35,8 +35,8 @@
 /*
  * arc.h
  *
- * $Date$ $Revision$
- * $Header: //depot/main/gfx/lib/glu/libnurbs/internals/arc.h#5 $
+ * $Date: 2004/03/14 08:29:10 $ $Revision: 1.1.1.4 $
+ * $Header: /cvs/xorg/xc/extras/ogl-sample/main/gfx/lib/glu/libnurbs/internals/arc.h,v 1.1.1.4 2004/03/14 08:29:10 eich Exp $
  */
 
 #ifndef __gluarc_h_

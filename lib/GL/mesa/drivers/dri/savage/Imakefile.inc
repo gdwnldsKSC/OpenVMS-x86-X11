@@ -16,14 +16,15 @@ ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
 #endif
 
 #if BuildXF86DRI
-  DRI_DEFINES = GlxDefines -DX_BYTE_ORDER=ByteOrder
+  DRI_DEFINES = GlxDefines -DX_BYTE_ORDER=ByteOrder -DIN_DRI_DRIVER
  DRI_INCLUDES = -I$(GLXLIBSRC)/dri \
 		-I$(XINCLUDESRC) \
 		-I$(GLXLIBSRC)/glx \
 		-I$(GLXLIBSRC)/include \
 		-I$(SERVERSRC)/GL/dri \
+		-I$(XF86COMSRC) \
 		-I$(XF86OSSRC) \
-		-I$(DRMSRCDIR)/shared \
+		-I$(DRMSRCDIR)/shared-core \
 		-I$(XF86DRIVERSRC)/savage \
 		-I$(GLXLIBSRC)/dri/drm
 #endif
@@ -38,8 +39,8 @@ MESA_INCLUDES = -I$(MESASRCDIR)/src/mesa \
    X_INCLUDES = -I$(XINCLUDESRC) -I$(EXTINCSRC)
 
    SAVAGESRCS = $(MESADRVMGABUILDDIR)savagedd.c \
-		$(MESADRVMGABUILDDIR)savagedma.c \
 		$(MESADRVMGABUILDDIR)savageioctl.c \
+		$(MESADRVMGABUILDDIR)savagerender.c \
 		$(MESADRVMGABUILDDIR)savagespan.c \
 		$(MESADRVMGABUILDDIR)savagestate.c \
 		$(MESADRVMGABUILDDIR)savagetex.c \
@@ -47,8 +48,8 @@ MESA_INCLUDES = -I$(MESASRCDIR)/src/mesa \
 		$(MESADRVMGABUILDDIR)savage_xmesa.c
 
    SAVAGEOBJS = $(MESADRVMGABUILDDIR)savagedd.o \
-		$(MESADRVMGABUILDDIR)savagedma.o \
 		$(MESADRVMGABUILDDIR)savageioctl.o \
+		$(MESADRVMGABUILDDIR)savagerender.o \
 		$(MESADRVMGABUILDDIR)savagespan.o \
 		$(MESADRVMGABUILDDIR)savagestate.o \
 		$(MESADRVMGABUILDDIR)savagetex.o \
@@ -56,8 +57,8 @@ MESA_INCLUDES = -I$(MESASRCDIR)/src/mesa \
 		$(MESADRVMGABUILDDIR)savage_xmesa.o
 
   SAVAGEUOBJS = $(MESADRVMGABUILDDIR)unshared/savagedd.o \
-		$(MESADRVMGABUILDDIR)unshared/savagedma.o \
 		$(MESADRVMGABUILDDIR)unshared/savageioctl.o \
+		$(MESADRVMGABUILDDIR)unshared/savagerender.o \
 		$(MESADRVMGABUILDDIR)unshared/savagespan.o \
 		$(MESADRVMGABUILDDIR)unshared/savagestate.o \
 		$(MESADRVMGABUILDDIR)unshared/savagetex.o \
@@ -65,8 +66,8 @@ MESA_INCLUDES = -I$(MESASRCDIR)/src/mesa \
 		$(MESADRVMGABUILDDIR)unshared/savage_xmesa.o
 
   SAVAGEDOBJS = $(MESADRVMGABUILDDIR)debugger/savagedd.o \
-		$(MESADRVMGABUILDDIR)debugger/savagedma.o \
 		$(MESADRVMGABUILDDIR)debugger/savageioctl.o \
+		$(MESADRVMGABUILDDIR)debugger/savagerender.o \
 		$(MESADRVMGABUILDDIR)debugger/savagespan.o \
 		$(MESADRVMGABUILDDIR)debugger/savagestate.o \
 		$(MESADRVMGABUILDDIR)debugger/savagetex.o \
@@ -74,8 +75,8 @@ MESA_INCLUDES = -I$(MESASRCDIR)/src/mesa \
 		$(MESADRVMGABUILDDIR)debugger/savage_xmesa.o
 
   SAVAGEPOBJS = $(MESADRVMGABUILDDIR)profiled/savagedd.o \
-		$(MESADRVMGABUILDDIR)profiled/savagedma.o \
 		$(MESADRVMGABUILDDIR)profiled/savageioctl.o \
+		$(MESADRVMGABUILDDIR)profiled/savagerender.o \
 		$(MESADRVMGABUILDDIR)profiled/savagespan.o \
 		$(MESADRVMGABUILDDIR)profiled/savagestate.o \
 		$(MESADRVMGABUILDDIR)profiled/savagetex.o \
@@ -88,11 +89,10 @@ LinkSourceFile(savage_bci.h, $(MESADRVSRCDIR)/savage)
 LinkSourceFile(savagecontext.h, $(MESADRVSRCDIR)/savage)
 LinkSourceFile(savagedd.c, $(MESADRVSRCDIR)/savage)
 LinkSourceFile(savagedd.h, $(MESADRVSRCDIR)/savage)
-LinkSourceFile(savagedma.c, $(MESADRVSRCDIR)/savage)
-LinkSourceFile(savagedma.h, $(MESADRVSRCDIR)/savage)
 LinkSourceFile(savage_init.h, $(MESADRVSRCDIR)/savage)
 LinkSourceFile(savageioctl.c, $(MESADRVSRCDIR)/savage)
 LinkSourceFile(savageioctl.h, $(MESADRVSRCDIR)/savage)
+LinkSourceFile(savagerender.c, $(MESADRVSRCDIR)/savage)
 LinkSourceFile(savagespan.c, $(MESADRVSRCDIR)/savage)
 LinkSourceFile(savagespan.h, $(MESADRVSRCDIR)/savage)
 LinkSourceFile(savagestate.c, $(MESADRVSRCDIR)/savage)

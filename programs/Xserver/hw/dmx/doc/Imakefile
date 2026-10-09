@@ -5,4 +5,6 @@ XCOMM $XFree86$
 
 all::
 
+#if BuildSgmlDocs
 LinuxDocTarget(dmx)
+#endif

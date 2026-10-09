@@ -24,6 +24,9 @@ SOFTWARE.
 /* $XFree86$ */
 
 #define NEED_EVENTS
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xlibint.h>
 #include <X11/Xlib.h>
 #undef NEED_EVENTS
@@ -408,7 +411,7 @@ _XimProtoEventToWire(
 	}
 	/* Common process */
 	if (((XAnyEvent *)re)->send_event)
-	    event->u.u.type &= 0x80;
+	    event->u.u.type |= 0x80;
 	event->u.u.sequenceNumber =
 	    ((XAnyEvent *)re)->serial & ~((unsigned long)0xffff);
 	event->u.u.sequenceNumber = sw16(event->u.u.sequenceNumber, sw);

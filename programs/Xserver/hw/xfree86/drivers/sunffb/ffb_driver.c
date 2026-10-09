@@ -22,6 +22,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/sunffb/ffb_driver.c,v 1.11 2002/12/06 02:44:04 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -29,12 +33,7 @@
 #include "mipointer.h"
 #include "mibstore.h"
 #include "micmap.h"
-
-#define PSZ 8
-#include "cfb.h"
-#undef PSZ
-#include "cfb32.h"
-#include "cfb8_32wid.h"
+#include "fb.h"
 
 #include "xf86cmap.h"
 
@@ -50,6 +49,7 @@ static Bool	FFBEnterVT(int scrnIndex, int flags);
 static void	FFBLeaveVT(int scrnIndex, int flags);
 static Bool	FFBCloseScreen(int scrnIndex, ScreenPtr pScreen);
 static Bool	FFBSaveScreen(ScreenPtr pScreen, int mode);
+static void	FFBDPMSSet(ScrnInfoPtr pScrn, int mode, int flags);
 
 /* Required if the driver supports mode switching */
 static Bool	FFBSwitchMode(int scrnIndex, DisplayModePtr mode, int flags);
@@ -71,7 +71,7 @@ void FFBSync(ScrnInfoPtr pScrn);
 #define FFB_DRIVER_NAME "sunffb"
 #define FFB_MAJOR_VERSION 1
 #define FFB_MINOR_VERSION 0
-#define FFB_PATCHLEVEL 0
+#define FFB_PATCHLEVEL 1
 
 /* 
  * This contains the functions needed by the server after loading the driver
@@ -81,7 +81,7 @@ void FFBSync(ScrnInfoPtr pScrn);
  * an upper-case version of the driver name.
  */
 
-DriverRec SUNFFB = {
+_X_EXPORT DriverRec SUNFFB = {
     VERSION,
     FFB_DRIVER_NAME,
     FFBIdentify,
@@ -122,7 +122,7 @@ static XF86ModuleVersionInfo sunffbVersRec =
 	{0,0,0,0}
 };
 
-XF86ModuleData sunffbModuleData = { &sunffbVersRec, ffbSetup, NULL };
+_X_EXPORT XF86ModuleData sunffbModuleData = { &sunffbVersRec, ffbSetup, NULL };
 
 pointer
 ffbSetup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -416,12 +416,12 @@ FFBPreInit(ScrnInfoPtr pScrn, int flags)
 	return FALSE;
     }
 
-    if (xf86LoadSubModule(pScrn, "cfb32") == NULL) {
+    if (xf86LoadSubModule(pScrn, "fb") == NULL) {
 	FFBFreeRec(pScrn);
 	return FALSE;
     }
 
-    if (xf86LoadSubModule(pScrn, "cfb") == NULL) {
+    if (xf86LoadSubModule(pScrn, "xaa") == NULL) {
 	FFBFreeRec(pScrn);
 	return FALSE;
     }
@@ -570,8 +570,6 @@ FFBProbeBoardType(FFBPtr pFfb)
 			pFfb->has_z_buffer = 0;
 		}
 		if (sbits & (1 << 0)) {
-			ErrorF("Double-buffered.\n");
-
 			/* This state really means to the driver that the double
 			 * buffers are available for hw accelerate Dbe.  When the
 			 * FFB is in high-resolution mode, the buffers are combined
@@ -581,84 +579,15 @@ FFBProbeBoardType(FFBPtr pFfb)
 			if ((ffb->fbcfg0 & FFB_FBCFG0_RES_MASK) != FFB_FBCFG0_RES_HIGH)
 				pFfb->has_double_buffer = 1;
 			else
-				pFfb->has_double_buffer = 1;
+				pFfb->has_double_buffer = 0;
 		} else {
-			ErrorF("Single-buffered.\n");
 			pFfb->has_double_buffer = 0;
 		}
+		if (pFfb->has_double_buffer)
+			ErrorF("Double-buffered.\n");
+		else
+			ErrorF("Single-buffered.\n");
 	}
-}
-
-static unsigned long CreatorUnaccelGeneration = 0;
-static int CreatorUnaccelWindowPrivateIndex;
-
-#define CreatorUnaccelGetWid(w) \
-	((w)->devPrivates[CreatorUnaccelWindowPrivateIndex].val)
-#define CreatorUnaccelSetWid(w,wid) \
-	(((w)->devPrivates[CreatorUnaccelWindowPrivateIndex].val) = (wid))
-
-static unsigned int
-CreatorWidGet(WindowPtr pWin)
-{
-	return CreatorUnaccelGetWid(pWin);
-}
-
-static Bool
-CreatorWidAlloc(WindowPtr pWin)
-{
-	ScreenPtr pScreen = pWin->drawable.pScreen;
-	ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
-	FFBPtr pFfb = GET_FFB_FROM_SCRN(pScrn);
-	unsigned int wid;
-	int i, visual, visclass;
-
-	visual = wVisual(pWin);
-	visclass = 0;
-	for (i = 0; i < pScreen->numVisuals; i++) {
-		if (pScreen->visuals[i].vid == visual) {
-			visclass = pScreen->visuals[i].class;
-			break;
-		}
-	}
-
-	wid = FFBWidAlloc(pFfb, visclass, wColormap(pWin), TRUE);
-	if (wid == (unsigned int) -1)
-		return FALSE;
-
-	CreatorUnaccelSetWid(pWin, wid);
-
-	return TRUE;
-}
-
-static void
-CreatorWidFree(WindowPtr pWin)
-{
-	ScrnInfoPtr pScrn = xf86Screens[pWin->drawable.pScreen->myNum];
-	FFBPtr pFfb = GET_FFB_FROM_SCRN(pScrn);
-	unsigned int wid = CreatorUnaccelGetWid(pWin);
-
-	FFBWidFree(pFfb, wid);
-}
-
-static cfb8_32WidOps CreatorUnaccelWidOps = {
-	CreatorWidGet,
-	CreatorWidAlloc,
-	CreatorWidFree,
-	NULL,
-	NULL
-};
-
-static Bool
-CreatorUnaccelWidInit(ScreenPtr pScreen)
-{
-	if (serverGeneration != CreatorUnaccelGeneration) {
-		CreatorUnaccelWindowPrivateIndex =
-			AllocateWindowPrivateIndex();
-		if (CreatorUnaccelWindowPrivateIndex == -1)
-			return FALSE;
-	}
-
-	return TRUE;
 }
 
 /* Mandatory */
@@ -673,10 +602,6 @@ FFBScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     int ret;
     unsigned int afb_fem;
     VisualPtr visual;
-
-    /* Add in our Dbe hook. */
-    if (!FFBDbePreInit(pScreen))
-	return FALSE;
 
     /* 
      * First get the ScrnInfoRec
@@ -797,11 +722,6 @@ FFBScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     /* Darken the screen for aesthetic reasons and set the viewport */
     FFBSaveScreen(pScreen, SCREEN_SAVER_ON);
 
-    if (pFfb->NoAccel == TRUE) {
-	    if (!CreatorUnaccelWidInit(pScreen))
-		    return FALSE;
-    }
-
     /*
      * The next step is to setup the screen's visuals, and initialise the
      * framebuffer code.  In cases where the framebuffer's default
@@ -817,14 +737,14 @@ FFBScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     miClearVisualTypes();
 
     /* Setup the visuals we support. */
-    if (!miSetVisualTypes(24, TrueColorMask | DirectColorMask,
+    if (!miSetVisualTypes(24, TrueColorMask,
 			  pScrn->rgbBits, TrueColor))
 	    return FALSE;
-    if (!miSetVisualTypes(8, PseudoColorMask | GrayScaleMask | StaticGrayMask,
-			  pScrn->rgbBits, PseudoColor))
-	    return FALSE;
 
-#ifdef XF86DRI
+    if (!miSetPixmapDepths())
+        return FALSE;
+
+#if 0 /*def XF86DRI*/
     if (pFfb->ffb_type != afb_m3 && pFfb->ffb_type != afb_m6 &&
 	pFfb->NoAccel == FALSE) {
 	    pFfb->dri_enabled = FFBDRIScreenInit(pScreen);
@@ -843,29 +763,13 @@ FFBScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
      * Call the framebuffer layer's ScreenInit function, and fill in other
      * pScreen fields.
      */
-    if (pFfb->NoAccel == TRUE) {
-	    ret = cfb8_32WidScreenInit(pScreen, pFfb->dfb24, pFfb->dfb8r, pFfb->dfb8x,
-				       pScrn->virtualX, pScrn->virtualY,
-				       pScrn->xDpi, pScrn->yDpi,
-				       2048, 2048, 2048, 8,
-				       &CreatorUnaccelWidOps);
-    } else {
-	    /* Use smart framebuffer aperture for cfb8/cfb32. */
-	    ret = cfb8_32WidScreenInit(pScreen, pFfb->sfb32, pFfb->sfb8r, pFfb->dfb8x,
-				       pScrn->virtualX, pScrn->virtualY,
-				       pScrn->xDpi, pScrn->yDpi,
-				       2048, 2048, 2048, 8,
-				       &CreatorUnaccelWidOps);
-    }
+    ret = fbScreenInit(pScreen, (pFfb->NoAccel ? pFfb->dfb24 : pFfb->sfb32),
+		       pScrn->virtualX, pScrn->virtualY,
+		       pScrn->xDpi, pScrn->yDpi,
+		       2048, 32);
 
     if (!ret)
 	return FALSE;
-
-    miInitializeBackingStore(pScreen);
-    xf86SetBackingStore(pScreen);
-    xf86SetSilkenMouse(pScreen);
-
-    xf86SetBlackWhitePixels(pScreen);
 
     if (pScrn->bitsPerPixel > 8) {
         /* Fixup RGB ordering */
@@ -882,11 +786,23 @@ FFBScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	}
     }
 
+    if (!fbPictureInit(pScreen, NULL, 0) &&
+	(serverGeneration == 1))
+      xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+		 "RENDER extension initialisation failed.\n");
+
+    xf86SetBlackWhitePixels(pScreen);
+
     if (!pFfb->NoAccel) {
 	if (!FFBAccelInit(pScreen, pFfb))
 	    return FALSE;
 	xf86Msg(X_INFO, "%s: Using acceleration\n", pFfb->psdp->device);
     }
+
+
+    miInitializeBackingStore(pScreen);
+    xf86SetBackingStore(pScreen);
+    xf86SetSilkenMouse(pScreen);
 
     /* Initialise cursor functions */
     miDCInitialize (pScreen, xf86GetPointerScreenFuncs());
@@ -912,9 +828,6 @@ FFBScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
      */
     if (!xf86HandleColormaps(pScreen, 256, 8,
 			     FFBDacLoadPalette, NULL,
-#if 0
-			     CMAP_PALETTED_TRUECOLOR |
-#endif
 			     CMAP_LOAD_EVEN_IF_OFFSCREEN |
 			     CMAP_RELOAD_ON_MODE_SWITCH))
 	return FALSE;
@@ -923,9 +836,9 @@ FFBScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if (!pFfb->NoAccel)
 	    FFB_InitDGA(pScreen);
 
-#ifdef XF86DRI
+#if 0 /*def XF86DRI*/
     if (pFfb->dri_enabled) {
-	    /* Now that mi, cfb, drm and others have done their thing, 
+	    /* Now that mi, fb, drm and others have done their thing, 
 	     * complete the DRI setup.
 	     */
 	    pFfb->dri_enabled = FFBDRIFinishScreenInit(pScreen);
@@ -937,6 +850,8 @@ FFBScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 			    pFfb->psdp->device);
     }
 #endif
+
+    xf86DPMSInit(pScreen, FFBDPMSSet, 0);
 
     pFfb->CloseScreen = pScreen->CloseScreen;
     pScreen->CloseScreen = FFBCloseScreen;
@@ -1034,34 +949,34 @@ FFBLeaveVT(int scrnIndex, int flags)
 static Bool
 FFBCloseScreen(int scrnIndex, ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-    FFBPtr pFfb = GET_FFB_FROM_SCRN(pScrn);
+	ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+	FFBPtr pFfb = GET_FFB_FROM_SCRN(pScrn);
 
-#ifdef XF86DRI
-    if (pFfb->dri_enabled)
-	    FFBDRICloseScreen(pScreen);
+#if 0 /*def XF86DRI*/
+	if (pFfb->dri_enabled)
+		FFBDRICloseScreen(pScreen);
 #endif
 
-    /* Restore kernel ramdac state before we unmap registers. */
-    FFBDacFini(pFfb);
+	/* Restore kernel ramdac state before we unmap registers. */
+	FFBDacFini(pFfb);
 
-    pScrn->vtSema = FALSE;
+	pScrn->vtSema = FALSE;
 
-    xf86UnmapSbusMem(pFfb->psdp, pFfb->dfb24, 0x1000000);
-    xf86UnmapSbusMem(pFfb->psdp, pFfb->dfb8r, 0x400000);
-    xf86UnmapSbusMem(pFfb->psdp, pFfb->dfb8x, 0x400000);
-    xf86UnmapSbusMem(pFfb->psdp, pFfb->sfb32, 0x1000000);
-    xf86UnmapSbusMem(pFfb->psdp, pFfb->sfb8r, 0x400000);
-    xf86UnmapSbusMem(pFfb->psdp, pFfb->sfb8x, 0x400000);
-    xf86UnmapSbusMem(pFfb->psdp, pFfb->regs, 16384);
-    xf86UnmapSbusMem(pFfb->psdp, pFfb->dac, 8192);
-    xf86UnmapSbusMem(pFfb->psdp, (void *)pFfb->strapping_bits, 8192);
+	xf86UnmapSbusMem(pFfb->psdp, pFfb->dfb24, 0x1000000);
+	xf86UnmapSbusMem(pFfb->psdp, pFfb->dfb8r, 0x400000);
+	xf86UnmapSbusMem(pFfb->psdp, pFfb->dfb8x, 0x400000);
+	xf86UnmapSbusMem(pFfb->psdp, pFfb->sfb32, 0x1000000);
+	xf86UnmapSbusMem(pFfb->psdp, pFfb->sfb8r, 0x400000);
+	xf86UnmapSbusMem(pFfb->psdp, pFfb->sfb8x, 0x400000);
+	xf86UnmapSbusMem(pFfb->psdp, pFfb->regs, 16384);
+	xf86UnmapSbusMem(pFfb->psdp, pFfb->dac, 8192);
+	xf86UnmapSbusMem(pFfb->psdp, (void *)pFfb->strapping_bits, 8192);
 
-    if (pFfb->HWCursor)
-	xf86SbusHideOsHwCursor (pFfb->psdp);
+	if (pFfb->HWCursor)
+		xf86SbusHideOsHwCursor (pFfb->psdp);
 
-    pScreen->CloseScreen = pFfb->CloseScreen;
-    return (*pScreen->CloseScreen)(scrnIndex, pScreen);
+	pScreen->CloseScreen = pFfb->CloseScreen;
+	return (*pScreen->CloseScreen)(scrnIndex, pScreen);
 }
 
 
@@ -1071,7 +986,7 @@ FFBCloseScreen(int scrnIndex, ScreenPtr pScreen)
 static void
 FFBFreeScreen(int scrnIndex, int flags)
 {
-    FFBFreeRec(xf86Screens[scrnIndex]);
+	FFBFreeRec(xf86Screens[scrnIndex]);
 }
 
 
@@ -1081,10 +996,10 @@ FFBFreeScreen(int scrnIndex, int flags)
 static ModeStatus
 FFBValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
 {
-    if (mode->Flags & V_INTERLACE)
-	return(MODE_BAD);
+	if (mode->Flags & V_INTERLACE)
+		return MODE_BAD;
 
-    return(MODE_OK);
+	return MODE_OK;
 }
 
 /* Do screen blanking */
@@ -1100,6 +1015,14 @@ FFBSaveScreen(ScreenPtr pScreen, int mode)
     */
 {
     return FFBDacSaveScreen(GET_FFB_FROM_SCREEN(pScreen), mode);
+}
+
+static void
+FFBDPMSSet(ScrnInfoPtr pScrn, int mode, int flags)
+{
+	FFBPtr pFfb = GET_FFB_FROM_SCRN(pScrn);
+
+	FFBDacDPMSMode(pFfb, mode, 0);
 }
 
 /*

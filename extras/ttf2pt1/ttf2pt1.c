@@ -111,6 +111,7 @@
 #include "fontutil.h"
 #include "fontenc.h"
 #include "ft.h"
+#define NOT_IN_FTFUNCS
 #include "ftfuncs.h"
 #endif /* XP_PSTEXT */
 
@@ -689,7 +690,7 @@ unicode_init_user(
 			continue;
 		}
 
-		if(sscanf(buffer, "id %d %d", pid, eid)==2) {
+		if(sscanf(buffer, "id %d %d", &pid, &eid)==2) {
 			if( !overid /* only if the user has not overriden */
 			&& (enabled || !sawplane) ) { 
 				force_pid = pid; force_eid = eid;

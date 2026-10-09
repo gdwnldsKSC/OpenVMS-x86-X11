@@ -32,6 +32,9 @@ PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 /* $XFree86: xc/lib/X11/imRm.c,v 3.12 2003/04/13 19:22:21 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <X11/Xlib.h>
 #include "Xlibint.h"
@@ -1860,11 +1863,11 @@ static XimICMode	ic_mode[] = {
 		0,
 		0},
     {XNSpotLocation, 0,
-		0,
+		0, /*(XIM_MODE_PRE_SET | XIM_MODE_PRE_GET),*/
 		(XIM_MODE_PRE_CREATE | XIM_MODE_PRE_SET | XIM_MODE_PRE_GET),
 		0,
-		0,
-		0,
+		(XIM_MODE_PRE_SET | XIM_MODE_PRE_GET),
+		(XIM_MODE_PRE_SET | XIM_MODE_PRE_GET),
 		0,
 		0,
 		0,

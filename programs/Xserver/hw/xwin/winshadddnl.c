@@ -32,6 +32,9 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xwin/winshadddnl.c,v 1.23 2002/10/17 08:18:25 alanh Exp $ */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 
 
@@ -523,6 +526,7 @@ winAllocateFBShadowDDNL (ScreenPtr pScreen)
 }
 
 
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
 /*
  * Create a DirectDraw surface for the new multi-window window
  */
@@ -568,6 +572,7 @@ winFinishCreateWindowsWindowDDNL (WindowPtr pWin)
     }
   return TRUE;
 }
+#endif
 
 
 /*
@@ -733,7 +738,7 @@ winCloseScreenShadowDDNL (int nIndex, ScreenPtr pScreen)
   pScreenPriv->fActive = FALSE;
 
   /* Call the wrapped CloseScreen procedure */
-  pScreen->CloseScreen = pScreenPriv->CloseScreen;
+  WIN_UNWRAP(CloseScreen);
   fReturn = (*pScreen->CloseScreen) (nIndex, pScreen);
 
   /* Free the screen DC */
@@ -1306,7 +1311,7 @@ winStoreColorsShadowDDNL (ColormapPtr pColormap,
 					  + pdefs[0].pixel);
   if (FAILED (ddrval))
     {
-      ErrorF ("winStoreColorsShadowDDNL - SetEntries () failed\n");
+      ErrorF ("winStoreColorsShadowDDNL - SetEntries () failed: %08x\n", ddrval);
       return FALSE;
     }
 

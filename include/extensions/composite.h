@@ -1,5 +1,5 @@
 /*
- * $Id: composite.h,v 1.4 2004/07/08 07:20:55 keithp Exp $
+ * $Id: composite.h,v 1.2 2004/07/31 06:16:50 anholt Exp $
  *
  * Copyright © 2003 Keith Packard
  *

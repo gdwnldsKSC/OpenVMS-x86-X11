@@ -23,6 +23,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/sunffb/ffb_dga.c,v 1.1 2000/05/23 04:47:44 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -35,30 +39,16 @@
 #include "ffb_stip.h"
 #include "ffb_loops.h"
 
-static Bool FFB_OpenFramebuffer(ScrnInfoPtr pScrn, char **name, unsigned char **mem,
-				int *size, int *offset, int *extra);
-static void FFB_CloseFramebuffer(ScrnInfoPtr pScrn);
-static Bool FFB_SetMode(ScrnInfoPtr pScrn, DGAModePtr pMode);
-static void FFB_SetViewport(ScrnInfoPtr pScrn, int x, int y, int flags);
-static int FFB_GetViewport(ScrnInfoPtr pScrn);
-static void FFB_Flush(ScrnInfoPtr pScrn);
-
-/* Have to disable all this stuff for now until I figure out where
- * we should get the WID values from... ho hum... -DaveM
- */
-#if 0
-static void FFB_FillRect(ScrnInfoPtr pScrn, int x, int y, int w, int h, unsigned long color);
-
-#ifdef USE_VIS
-static void FFB_BlitRect(ScrnInfoPtr pScrn, int srcx, int srcy, int w, int h,
-			 int dstx, int dsty);
-#else
-#define FFB_BlitRect NULL
-#endif
-#else
-#define FFB_FillRect NULL
-#define FFB_BlitRect NULL
-#endif
+static Bool FFB_OpenFramebuffer(ScrnInfoPtr, char **, unsigned char **,
+				int *, int *, int *);
+static void FFB_CloseFramebuffer(ScrnInfoPtr);
+static Bool FFB_SetMode(ScrnInfoPtr, DGAModePtr);
+static void FFB_SetViewport(ScrnInfoPtr, int, int, int);
+static int FFB_GetViewport(ScrnInfoPtr);
+static void FFB_Flush(ScrnInfoPtr);
+static void FFB_FillRect(ScrnInfoPtr, int, int, int, int, unsigned long);
+static void FFB_BlitRect(ScrnInfoPtr, int, int, int, int,
+			 int, int);
 
 static DGAFunctionRec FFB_DGAFuncs = {
 	FFB_OpenFramebuffer,
@@ -93,10 +83,7 @@ void FFB_InitDGA(ScreenPtr pScreen)
 
 	/* Hmmm, what does concurrent access really mean? -DaveM */
 	mode->flags = (DGA_CONCURRENT_ACCESS | DGA_PIXMAP_AVAILABLE | DGA_FILL_RECT);
-
-#ifdef USE_VIS
 	mode->flags |= DGA_BLIT_RECT;
-#endif
 
 	mode->imageWidth = 2048;
 	mode->imageHeight = 2048;
@@ -195,86 +182,31 @@ static void FFB_Flush(ScrnInfoPtr pScrn)
 	FFBWait(pFfb, ffb);
 }
 
-#if 0
-
-extern void CreatorFillBoxSolid (DrawablePtr pDrawable, int nBox,
-				 BoxPtr pBox, unsigned long pixel);
+extern void FFB_SetupForSolidFill(ScrnInfoPtr, int, int, unsigned int);
+extern void FFB_SubsequentSolidFillRect(ScrnInfoPtr, int, int, int, int);
 
 static void FFB_FillRect(ScrnInfoPtr pScrn, int x, int y, int w, int h, unsigned long color)
 {
-	DrawableRec draw;
-	BoxRec box;
+	FFBPtr pFfb = GET_FFB_FROM_SCRN(pScrn);
 
-	draw.pScreen = pScrn->pScreen;
-	box.x1 = x;
-	box.y1 = y;
-	box.x2 = x + w;
-	box.y2 = y + h;
-
-	CreatorFillBoxSolid(&draw, 1, &box, color);
+	FFB_SetupForSolidFill(pScrn, color, GXcopy, ~0);
+	FFB_SubsequentSolidFillRect(pScrn, x, y, w, h);
+	SET_SYNC_FLAG(pFfb->pXAAInfo);
 }
 
-#ifdef USE_VIS
-extern void VISmoveImageLR(unsigned char *, unsigned char *, long, long, long, long);
-extern void VISmoveImageRL(unsigned char *, unsigned char *, long, long, long, long);
+extern void FFB_SetupForScreenToScreenCopy(ScrnInfoPtr, int, int, int,
+					   unsigned int, int);
+extern void FFB_SubsequentScreenToScreenCopy(ScrnInfoPtr, int, int,
+					     int, int, int, int);
 
 static void FFB_BlitRect(ScrnInfoPtr pScrn, int srcx, int srcy,
 			 int w, int h, int dstx, int dsty)
 {
 	FFBPtr pFfb = GET_FFB_FROM_SCRN(pScrn);
-	ffb_fbcPtr ffb = pFfb->regs;
+	int xdir = ((srcx < dstx) && (srcy == dsty)) ? -1 : 1;
+	int ydir = (srcy < dsty) ? -1 : 1;
 
-	if (!pFfb->disable_vscroll &&
-	    dstx == srcx &&
-	    dsty != dsty) {
-		FFB_WRITE_ATTRIBUTES_VSCROLL(pFfb, 0x00ffffff);
-		FFBFifo(pFfb, 7);
-		ffb->drawop = FFB_DRAWOP_VSCROLL;
-		FFB_WRITE64(&ffb->by, srcy, srcx);
-		FFB_WRITE64_2(&ffb->dy, dsty, dstx);
-		FFB_WRITE64_3(&ffb->bh, h, w);
-		pFfb->rp_active = 1;
-	} else {
-		unsigned char *base = (unsigned char *)pFfb->fb;
-		int use_prefetch = pFfb->use_blkread_prefetch;
-
-		FFB_WRITE_ATTRIBUTES_SFB_VAR(pFfb, 0x00ffffff, GXcopy);
-		FFBWait(pFfb, ffb);
-		if (use_prefetch) {
-			FFBFifo(pFfb, 1);
-			ffb->mer = FFB_MER_EIRA;
-			pFfb->rp_active = 1;
-			FFBWait(pFfb, ffb);
-		}
-		if (srcx < dstx) {
-			VISmoveImageRL((base +
-					((srcy + h - 1) * (2048 * 4)) +
-					(srcx * (32 / 8))),
-				       (base +
-					((dsty + h - 1) * (2048 * 4)) +
-					(dstx * (32 / 8))),
-				       (w * (32 / 8)),
-				       h,
-				       -(2048 * 4), - (2048 * 4));
-		} else {
-			VISmoveImageLR((base +
-					((srcy + h - 1) * (2048 * 4)) +
-					(srcx * (32 / 8))),
-				       (base +
-					((dsty + h - 1) * (2048 * 4)) +
-					(dstx * (32 / 8))),
-				       (w * (32 / 8)),
-				       h,
-				       -(2048 * 4), - (2048 * 4));
-		}
-		if (use_prefetch) {
-			FFBFifo(pFfb, 1);
-			ffb->mer = FFB_MER_DRA;
-			pFfb->rp_active = 1;
-			FFBWait(pFfb, pFfb->regs);
-		}
-	}
+	FFB_SetupForScreenToScreenCopy(pScrn, xdir, ydir, GXcopy, ~0, -1);
+	FFB_SubsequentScreenToScreenCopy(pScrn, srcx, srcy, dstx,dsty, w, h);
+	SET_SYNC_FLAG(pFfb->pXAAInfo);
 }
-#endif
-
-#endif

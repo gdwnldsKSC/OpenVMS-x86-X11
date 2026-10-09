@@ -2,7 +2,7 @@
 
 #ifndef _XVMC_H
 #define _XVMC_H
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #include "xvdix.h"
 
 typedef struct {
@@ -107,5 +107,10 @@ void XvMCExtensionInit(void);
 int XvMCScreenInit(ScreenPtr pScreen, int num, XvMCAdaptorPtr adapt);
 
 XvImagePtr XvMCFindXvImage(XvPortPtr pPort, CARD32 id);
+
+int xf86XvMCRegisterDRInfo(ScreenPtr pScreen, char *name,
+			   char *busID, int major, int minor, 
+			   int patchLevel);
+
 
 #endif /* _XVMC_H */

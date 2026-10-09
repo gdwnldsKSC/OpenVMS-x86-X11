@@ -1,10 +1,9 @@
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/tseng/tseng_dpms.c,v 1.9 2000/08/08 08:58:06 eich Exp $ */
 
-
-
-
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "tseng.h"
 
@@ -15,7 +14,7 @@
  * This routine is for the ET4000W32P rev. c and later, which can
  * use CRTC indexed register 34 to turn off H/V Sync signals.
  *
- * '97 Harald Nordgård Hansen
+ * '97 Harald NordgÃ¥rd Hansen
  */
 void
 TsengCrtcDPMSSet(ScrnInfoPtr pScrn,

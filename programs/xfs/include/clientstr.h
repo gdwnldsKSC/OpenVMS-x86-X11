@@ -49,7 +49,7 @@ in this Software without prior written authorization from The Open Group.
 #ifndef _CLIENTSTR_H_
 #define	_CLIENTSTR_H_
 
-#include	"FS.h"
+#include	<X11/fonts/FS.h>
 #include	"client.h"
 #include	"auth.h"
 #include	"misc.h"

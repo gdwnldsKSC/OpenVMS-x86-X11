@@ -4,7 +4,7 @@
 // keyboard and a Norwegian Northern Sami keyboard (with 
 // dead key support) according to the spec on
 // http://www.hum.uit.no/a/trond/se-lat9-no-keys.html
-// Written by Børre Gaup <boerre.gaup@pc.nu>
+// Written by BÃ¸rre Gaup <boerre.gaup@pc.nu>
 // 
 // $XFree86$
 //
@@ -20,7 +20,7 @@ partial alphanumeric_keys
  xkb_symbols "basic" {
  
  
-    name[Group1]= "Sámegiella";
+    name[Group1]= "SÃ¡megiella";
  
     key <TLDE> {	[             bar,         section      ],
 			[       brokenbar,       paragraph	]};
@@ -154,7 +154,7 @@ partial alphanumeric_keys
     // keyboard according to the specs at:
     // http://www.hum.uit.no/a/trond/se-lat9-sefi-keys.html
  
-    name[Group1]= "Sámegiella";
+    name[Group1]= "SÃ¡megiella";
 
     include "sapmi(basic)"
  

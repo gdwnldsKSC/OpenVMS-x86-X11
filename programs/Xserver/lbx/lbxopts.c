@@ -23,21 +23,25 @@
  */
 /* $XFree86: xc/programs/Xserver/lbx/lbxopts.c,v 1.5 2001/01/17 22:37:00 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifdef OPTDEBUG
 #include <stdio.h>
 #endif
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "colormapst.h"
 #include "propertyst.h"
 #include "lbxserve.h"
-#include "lbxstr.h"
-#include "lbximage.h"
-#include "lbxopts.h"
+#include <X11/extensions/lbxstr.h>
+#include <X11/extensions/lbximage.h>
+#include <X11/extensions/lbxopts.h>
 #include "lbxsrvopts.h"
 #ifndef NO_ZLIB
-#include "lbxzlib.h"
+#include <X11/extensions/lbxzlib.h>
 #endif /* NO_ZLIB */
 
 static int LbxProxyDeltaOpt ( LbxNegOptsPtr pno, unsigned char *popt, 

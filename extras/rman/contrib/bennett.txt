@@ -3,7 +3,7 @@
 ***************
 *** 1,5 ****
 --- 1,9 ----
-  static char rcsid[] = "$Header: /home/orodruin/h/bair/phelps/spine/rman/RCS/rman.c,v 1.70 1996/07/17 01:18:19 phelps Exp phelps $";
+  static char rcsid[] = "$Header: /cvs/xorg/xc/extras/rman/contrib/bennett.txt,v 1.1.1.4 2004/03/14 08:29:12 eich Exp $";
   
 + /* ELS: SearchDirs by "Edward L. Sutter" <els@sage.sage.att.com> */
 + /* AB:  HTMLHeader and HTMLFooter by Anne Bennett <anne@alcor.concordia.ca> */

@@ -35,24 +35,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#ifdef __CYGWIN__
 #include <sys/select.h>
+#else
+#include "Xwinsock.h"
+#define HAS_WINSOCK
+#endif
 #include <fcntl.h>
 #include <setjmp.h>
 #include <pthread.h>
 
 /* X headers */
-#include "X11/X.h"
-#include "X11/Xatom.h"
+#include <X11/X.h>
+#include <X11/Xatom.h>
 /* NOTE: For some unknown reason, including Xproto.h solves
  * tons of problems with including windows.h.  Unknowns reasons
  * are usually bad, so someone should investigate this.
  */
-#include "X11/Xproto.h"
+#include <X11/Xproto.h>
 #include "X11/Xutil.h"
 #include "X11/Xlocale.h"
 
 /* Fixups to prevent collisions between Windows and X headers */
 #define ATOM			DWORD
+
+#ifndef __CYGWIN__
+#define sleep(x) Sleep (1000 * (x))
+#endif
 
 /* Windows headers */
 #ifndef XFree86Server
@@ -65,7 +74,9 @@
 /* Clipboard module constants */
 #define WIN_CLIPBOARD_WINDOW_CLASS		"xwinclip"
 #define WIN_CLIPBOARD_WINDOW_TITLE		"xwinclip"
-#define WIN_MSG_QUEUE_FNAME			"/dev/windows"
+#ifdef HAS_DEVWINDOWS
+# define WIN_MSG_QUEUE_FNAME			"/dev/windows"
+#endif
 #define WIN_CONNECT_RETRIES			40
 #define WIN_CONNECT_DELAY			4
 #define WIN_JMP_OKAY				0

@@ -1,4 +1,4 @@
-.TH XvGetPortAttribute 3X __vendorversion__
+.TH XvGetPortAttribute __libmansuffix__ __vendorversion__
 .\" $XFree86: xc/doc/man/Xv/XvGetPortAttribute.man,v 1.6 2001/01/27 18:20:35 dawes Exp $
 .SH Name
 XvGetPortAttribute \- return current port attribute value
@@ -41,7 +41,7 @@ return.
 .SH Description
 .\"
 .PP
-XvGetPortAttribute(3X) returns the current value of the requested
+XvGetPortAttribute(__libmansuffix__) returns the current value of the requested
 port attribute in the integer pointed to by \fIp_value\fR.  
 The attribute is identified using an Atom that equates to the attribute name.  
 The XInternAtom request can be used with one of the strings
@@ -77,11 +77,11 @@ Attribute String        Type             Default
 .fi
 .SH Returned Values
 .IP [Success] 8
-Returned if XvGetPortAttribute(3X) completed successfully.
+Returned if XvGetPortAttribute(__libmansuffix__) completed successfully.
 .IP [XvBadExtension] 8
 Returned if the Xv extension is unavailable.
 .IP [XvBadAlloc] 8
-Returned if XvGetPortAttribute(3X) failed to allocate memory to process
+Returned if XvGetPortAttribute(__libmansuffix__) failed to allocate memory to process
 the request.
 .SH Diagnostics
 .IP [XvBadPort] 8
@@ -91,7 +91,7 @@ Generated if the requested attribute atom does not specify an attribute
 supported by the adaptor.
 .SH See Also
 .\"
-XvSetPortAttribute(3X), XvPortNotify(3X)
+XvSetPortAttribute(__libmansuffix__), XvPortNotify(__libmansuffix__)
 .br
 
 

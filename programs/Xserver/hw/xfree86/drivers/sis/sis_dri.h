@@ -1,9 +1,9 @@
 /* $XFree86$ */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/sis/sis_dri.h,v 1.6 2004/06/21 00:38:20 twini Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/sis/sis_dri.h,v 1.15 2005/08/16 22:08:50 twini Exp $ */
 /*
  * SiS DRI wrapper
  *
- * Copyright (C) 2001-2004 by Thomas Winischhofer, Vienna, Austria
+ * Copyright (C) 2001-2005 by Thomas Winischhofer, Vienna, Austria
  *
  * Licensed under the following terms:
  *
@@ -32,8 +32,8 @@
  * Previously taken and modified from tdfx_dri.h
  */
 
-#ifndef _SIS_DRI_
-#define _SIS_DRI_
+#ifndef _SIS_DRI_H_
+#define _SIS_DRI_H_
 
 #include "xf86drm.h"
 
@@ -50,19 +50,12 @@
 
 typedef struct {
   int CtxOwner;
-  int QueueLength;
-  unsigned int AGPCmdBufNext;
+  int QueueLength;		/* (300: current, 315/etc: total) length of command queue */
+  unsigned int AGPCmdBufNext;   /* (rename to AGPVtxBufNext) */
   unsigned int FrameCount;
 #ifdef SIS315DRI
-  /* For 315 series */
-  unsigned long sharedWPoffset;
-#endif
-#if 0
-  unsigned char *AGPCmdBufBase;
-  unsigned long AGPCmdBufAddr;
-  unsigned long AGPCmdBufOffset;
-  unsigned int  AGPCmdBufSize;
-  unsigned long AGPCmdBufNext;
+  unsigned int  sharedWPoffset;	/* Offset to current queue position (shared with 2D) */
+  unsigned int  cmdQueueOffset;	/* Offset of start of command queue in VRAM */
 #endif
 } SISSAREAPriv, *SISSAREAPrivPtr;
 
@@ -75,27 +68,38 @@ typedef struct {
 typedef struct {
   drm_handle_t handle;
   drmSize size;
+#ifndef SISISXORG6899900
   drmAddress map;
+#endif
 } sisRegion, *sisRegionPtr;
 
 typedef struct {
-  sisRegion regs, agp;
-  int deviceID;
-  int width;
-  int height;
-  int mem;				/* unused in Mesa 3 DRI */
-  int bytesPerPixel;
-  int priv1;				/* unused in Mesa 3 DRI */
-  int priv2;				/* unused in Mesa 3 DRI */
-  int fbOffset;				/* unused in Mesa 3 DRI */
-  int backOffset;			/* unused in Mesa 3 DRI */
-  int depthOffset;			/* unused in Mesa 3 DRI */
-  int textureOffset;			/* unused in Mesa 3 DRI */
-  int textureSize;			/* unused in Mesa 3 DRI */
-  unsigned int AGPCmdBufOffset;
-  unsigned int AGPCmdBufSize;
-  int irqEnabled;			/* unused in Mesa 3 DRI */
-  unsigned int scrnX, scrnY;		/* unused in Mesa 3 DRI */
+  sisRegion regs;			/* MMIO registers */
+  sisRegion agp;			/* AGP public area */
+  int deviceID;				/* = pSiS->Chipset (PCI ID) */
+  int width;				/* = pScrn->virtualX */
+  int height;				/* = pScrn->virtualY */
+  int mem;				/* total video RAM; seems unused */
+  int bytesPerPixel;			/* Screen's bpp/8 */
+  int priv1;				/* unused */
+  int priv2;				/* unused */
+  int fbOffset;				/* Front buffer; set up, but unused by DRI driver*/
+  int backOffset;			/* unused (handled by the DRI driver) */
+  int depthOffset;			/* unused (handled by the DRI driver) */
+  int textureOffset;			/* unused (handled by the DRI driver) */
+  int textureSize;			/* unused (handled by the DRI driver) */
+  unsigned int AGPCmdBufOffset;		/* (rename to AGPVtxBufOffset) */
+  unsigned int AGPCmdBufSize;		/* (rename to AGPVtxBufSize)   */
+  int irqEnabled;
+  unsigned int scrnX;			/* TODO: = width = pScrn->virtualX */
+  unsigned int scrnY;			/* TODO: = height = pScrn->virtualY */
+#ifdef SIS315DRI
+  unsigned char *AGPCmdBufBase;
+  unsigned long AGPCmdBufAddr;
+  unsigned long AGPCmdBufOffset2;	/* (rename to AGPCmdBufOffset) */
+  unsigned int  AGPCmdBufSize2;		/* (rename to AGPCmdBufSize)   */
+  int deviceRev;			/* Chip revision */
+#endif
 } SISDRIRec, *SISDRIPtr;
 
 #define AGPVtxBufOffset AGPCmdBufOffset

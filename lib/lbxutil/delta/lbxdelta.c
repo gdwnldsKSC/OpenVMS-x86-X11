@@ -1,6 +1,8 @@
 /*
  * $NCDXorg: @(#)lbxdelta.c,v 1.2 1994/01/22 02:23:40 dct Exp $
  * $Xorg: lbxdelta.c,v 1.5 2000/08/17 19:46:40 cpqbld Exp $
+ * $XdotOrg: xc/lib/lbxutil/delta/lbxdelta.c,v 1.7 2005/07/30 21:07:25 alanc Exp $
+ *
  * Copyright 1993 Network Computing Devices
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,14 +26,14 @@
  */
 /* $XFree86: xc/lib/lbxutil/delta/lbxdelta.c,v 1.7 2001/07/25 15:04:57 dawes Exp $ */
 
-#include "X.h"
-#include "Xproto.h"
-#include "os.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #define _XLBX_SERVER_
-#include "lbxstr.h"
-#include "lbxdeltastr.h"
+#include <X11/extensions/lbxstr.h>
+#include <X11/extensions/lbxdeltastr.h>
 
 #include <stddef.h>
+#include <string.h>
 
 #ifdef LBXREQSTATS
 #include "../lbx_zlib/reqstats.h"
@@ -40,6 +42,17 @@ extern struct ReqStats CoreRequestStats[128];
 extern struct ReqStats LbxRequestStats[LbxNumberReqs];
 
 #define LBX_CODE 136 /* XXX - this should not be hardcoded - on todo list */
+#endif
+
+/* Copied from xc/programs/Xserver/include/xorg/os.h */
+#ifndef _HAVE_XALLOC_DECLS
+#define _HAVE_XALLOC_DECLS
+#include <X11/Xdefs.h>
+
+extern pointer Xalloc(unsigned long /*amount*/);
+extern pointer Xcalloc(unsigned long /*amount*/);
+extern pointer Xrealloc(pointer /*ptr*/, unsigned long /*amount*/);
+extern void Xfree(pointer /*ptr*/);
 #endif
 
 /*
@@ -56,7 +69,7 @@ LBXInitDeltaCache(LBXDeltasPtr	pcache,
     if ((pcache->nDeltas = nDeltas)) {
 	pcache->maxDeltasize = maxDeltasize;
 	if ((pcache->deltas = (LBXDeltaElemPtr)
-	    xalloc(pcache->nDeltas * sizeof(LBXDeltaElemRec) +
+	    Xalloc(pcache->nDeltas * sizeof(LBXDeltaElemRec) +
 		pcache->nDeltas * pcache->maxDeltasize)) == NULL) {
 	    return -1;
 	}
@@ -82,7 +95,7 @@ void
 LBXFreeDeltaCache(LBXDeltasPtr pcache)
 {
     if (pcache->nDeltas && pcache->deltas)
-	xfree(pcache->deltas);
+	Xfree(pcache->deltas);
 }
 
 static int 

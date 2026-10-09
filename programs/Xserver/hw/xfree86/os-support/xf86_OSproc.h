@@ -136,6 +136,10 @@ extern void xf86WrapperInit(void);
 #include <X11/Xfuncproto.h>
 #include "opaque.h"
 
+#if defined(XQUEUE)
+#include "input.h"	/* for DeviceIntPtr */
+#endif
+
 _XFUNCPROTOBEGIN
 
 /* public functions */
@@ -145,7 +149,7 @@ extern pointer xf86MapVidMem(int, int, unsigned long, unsigned long);
 extern void xf86UnMapVidMem(int, pointer, unsigned long);
 extern void xf86MapReadSideEffects(int, int, pointer, unsigned long);
 extern int xf86ReadBIOS(unsigned long, unsigned long, unsigned char *, int);
-extern void xf86EnableIO(void);
+extern Bool xf86EnableIO(void);
 extern void xf86DisableIO(void);
 extern Bool xf86DisableInterrupts(void);
 extern void xf86EnableInterrupts(void);
@@ -194,6 +198,7 @@ extern Bool xf86AcquireGART(int screenNum);
 extern Bool xf86ReleaseGART(int screenNum);
 extern int xf86AllocateGARTMemory(int screenNum, unsigned long size, int type,
 				  unsigned long *physical);
+extern Bool xf86DeallocateGARTMemory(int screenNum, int key);
 extern Bool xf86BindGARTMemory(int screenNum, int key, unsigned long offset);
 extern Bool xf86UnbindGARTMemory(int screenNum, int key);
 extern Bool xf86EnableAGP(int screenNum, CARD32 mode);
@@ -233,6 +238,7 @@ extern void xf86KbdEvents(void);
 extern int  xf86XqueKbdProc(DeviceIntPtr, int);
 extern void xf86XqueEvents(void);
 #endif
+extern void xf86ReloadInputDevs(int sig);
 #ifdef WSCONS_SUPPORT
 extern void xf86WSKbdEvents(void);
 #endif
@@ -256,6 +262,8 @@ resPtr xf86AccResFromOS(resPtr ret);
 #endif /* NEED_OS_RAC_PROTOS */
 
 extern Bool xf86GetPciSizeFromOS(PCITAG tag, int indx, int* bits);
+extern Bool xf86GetPciOffsetFromOS(PCITAG tag, int indx, unsigned long* bases);
+extern unsigned long xf86GetOSOffsetFromPCI(PCITAG tag, int space, unsigned long base);
 
 extern void xf86MakeNewMapping(int, int, unsigned long, unsigned long, pointer);
 extern void xf86InitVidMem(void);

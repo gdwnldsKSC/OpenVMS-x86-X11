@@ -1,9 +1,9 @@
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/tseng/tseng_bank.c,v 1.2 1998/07/26 09:56:17 dawes Exp $ */
 
-
-
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "tseng.h"
 

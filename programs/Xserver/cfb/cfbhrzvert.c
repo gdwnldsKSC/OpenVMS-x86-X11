@@ -46,7 +46,11 @@ SOFTWARE.
 
 ******************************************************************/
 /* $Xorg: cfbhrzvert.c,v 1.4 2001/02/09 02:04:38 xorgcvs Exp $ */
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "gc.h"
 #include "window.h"

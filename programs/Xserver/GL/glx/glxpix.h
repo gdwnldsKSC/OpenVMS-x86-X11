@@ -1,4 +1,8 @@
 /* $XFree86$ */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _glxpix_h_
 #define _glxpix_h_
 

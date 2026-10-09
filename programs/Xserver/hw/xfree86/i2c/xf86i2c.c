@@ -8,14 +8,18 @@
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/i2c/xf86i2c.c,v 1.14 2003/05/05 21:18:41 tsi Exp $ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #if 1
 #include "misc.h"
 #include "xf86.h"
 #include "xf86_ansic.h"
 #include "xf86_OSproc.h"
 
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "scrnintstr.h"
 #include "regionstr.h"
 #include "windowstr.h"
@@ -87,7 +91,7 @@ I2CUDelay(I2CBusPtr b, int usec)
       d_secs  = (a_secs - b_secs);
       d_usecs = (a_usecs - b_usecs);
       diff = d_secs*1000000 + d_usecs;
-    } while (diff>0 && diff< (usec + 1));
+    } while (diff>=0 && diff< (usec + 1));
   }
 }
 #endif

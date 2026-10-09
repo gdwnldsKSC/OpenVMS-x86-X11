@@ -98,6 +98,7 @@ typedef struct {
 
     unsigned char* mmioVirtBase;
     CARD32* vmwareFIFO;
+    Bool canPitchLock;
 
     xf86CursorInfoPtr CursorInfoRec;
     struct {

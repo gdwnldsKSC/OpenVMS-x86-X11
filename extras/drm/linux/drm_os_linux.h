@@ -3,7 +3,6 @@
  * OS abstraction macros.
  */
 
-#define __NO_VERSION__
 
 #include <linux/interrupt.h>	/* For task queue support */
 #include <linux/delay.h>
@@ -16,6 +15,7 @@
 /** Current process ID */
 #define DRM_CURRENTPID			current->pid
 #define DRM_UDELAY(d)			udelay(d)
+#ifndef NEWREADWRITE
 /** Read a byte from a MMIO region */
 #define DRM_READ8(map, offset)		readb(((unsigned long)(map)->handle) + (offset))
 /** Read a word from a MMIO region */
@@ -28,6 +28,20 @@
 #define DRM_WRITE16(map, offset, val)	writew(val, ((unsigned long)(map)->handle) + (offset))
 /** Write a dword into a MMIO region */
 #define DRM_WRITE32(map, offset, val)	writel(val, ((unsigned long)(map)->handle) + (offset))
+#else
+/** Read a byte from a MMIO region */
+#define DRM_READ8(map, offset)		readb((map)->handle + (offset))
+/** Read a word from a MMIO region */
+#define DRM_READ16(map, offset)		readw((map)->handle + (offset))
+/** Read a dword from a MMIO region */
+#define DRM_READ32(map, offset)		readl((map)->handle + (offset))
+/** Write a byte into a MMIO region */
+#define DRM_WRITE8(map, offset, val)	writeb(val, (map)->handle + (offset))
+/** Write a word into a MMIO region */
+#define DRM_WRITE16(map, offset, val)	writew(val, (map)->handle + (offset))
+/** Write a dword into a MMIO region */
+#define DRM_WRITE32(map, offset, val)	writel(val, (map)->handle + (offset))
+#endif
 /** Read memory barrier */
 #define DRM_READMEMORYBARRIER()		rmb()
 /** Write memory barrier */
@@ -48,12 +62,37 @@ typedef void irqreturn_t;
 #endif
 
 /** AGP types */
+#if __OS_HAS_AGP
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,5,70)
 #define DRM_AGP_MEM		agp_memory
 #define DRM_AGP_KERN		agp_kern_info
 #else
 #define DRM_AGP_MEM		struct agp_memory
 #define DRM_AGP_KERN		struct agp_kern_info
+#endif
+#else
+/* define some dummy types for non AGP supporting kernels */
+struct no_agp_kern {
+	unsigned long aper_base;
+	unsigned long aper_size;
+};
+#define DRM_AGP_MEM		int
+#define DRM_AGP_KERN		struct no_agp_kern
+#endif
+
+#if !(__OS_HAS_MTRR)
+static __inline__ int mtrr_add (unsigned long base, unsigned long size,
+				unsigned int type, char increment)
+{
+	return -ENODEV;
+}
+
+static __inline__ int mtrr_del (int reg, unsigned long base,
+				unsigned long size)
+{
+	return -ENODEV;
+}
+#define MTRR_TYPE_WRCOMB     1
 #endif
 
 /** Task queue handler arguments */
@@ -86,11 +125,6 @@ typedef void irqreturn_t;
 	__put_user(val, uaddr)
 
 
-/** 'malloc' without the overhead of DRM(alloc)() */
-#define DRM_MALLOC(x) kmalloc(x, GFP_KERNEL)
-/** 'free' without the overhead of DRM(free)() */
-#define DRM_FREE(x,size) kfree(x)
-
 #define DRM_GET_PRIV_WITH_RETURN(_priv, _filp) _priv = _filp->private_data
 
 /** 
@@ -120,7 +154,7 @@ do {								\
 	add_wait_queue(&(queue), &entry);			\
 								\
 	for (;;) {						\
-		current->state = TASK_INTERRUPTIBLE;		\
+		__set_current_state(TASK_INTERRUPTIBLE);	\
 		if (condition)					\
 			break;					\
 		if (time_after_eq(jiffies, end)) {		\
@@ -133,7 +167,7 @@ do {								\
 			break;					\
 		}						\
 	}							\
-	current->state = TASK_RUNNING;				\
+	__set_current_state(TASK_RUNNING);			\
 	remove_wait_queue(&(queue), &entry);			\
 } while (0)
 

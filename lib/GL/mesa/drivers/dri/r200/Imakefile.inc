@@ -16,7 +16,7 @@ ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
 #endif
 
 #if BuildXF86DRI
-  DRI_DEFINES = GlxDefines -DX_BYTE_ORDER=ByteOrder -DUSE_NEW_INTERFACE
+  DRI_DEFINES = GlxDefines -DX_BYTE_ORDER=ByteOrder -DUSE_NEW_INTERFACE -DIN_DRI_DRIVER
  DRI_INCLUDES = -I$(GLXLIBSRC)/dri \
 		-I$(XINCLUDESRC) \
 		-I$(GLXLIBSRC)/glx \
@@ -24,7 +24,7 @@ ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
 		-I$(SERVERSRC)/GL/dri \
 		-I$(XF86COMSRC) \
 		-I$(XF86OSSRC) \
-		-I$(DRMSRCDIR)/shared \
+		-I$(DRMSRCDIR)/shared-core \
 		-I$(XF86DRIVERSRC)/ati \
 		-I$(GLXLIBSRC)/dri/drm
 #endif
@@ -35,7 +35,8 @@ MESA_INCLUDES = -I$(MESASRCDIR)/src/mesa \
 		-I$(MESASRCDIR)/src/mesa/shader \
 		-I$(MESASRCDIR)/include \
 		-I$(MESADRVSRCDIR)/common \
-		-I$(MESADRVSRCDIR)/r200
+		-I$(MESADRVSRCDIR)/r200 \
+                -I$(MESADRVSRCDIR)/radeon/server
    X_INCLUDES = -I$(XINCLUDESRC) -I$(EXTINCSRC)
 
    R200SRCS = $(MESADRVR200BUILDDIR)r200_context.c \

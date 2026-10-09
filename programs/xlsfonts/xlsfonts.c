@@ -93,6 +93,7 @@ void usage(void)
     fprintf (stderr, "    -1                       force single column\n");
     fprintf (stderr, "    -u                       keep output unsorted\n");
 #ifdef BUILD_PRINTSUPPORT
+    fprintf (stderr, "    -r resolution            set print resolution\n");
     fprintf (stderr, "    -b                       list printer builtin fonts\n");
     fprintf (stderr, "    -B                       do not list printer builtin fonts\n");
     fprintf (stderr, "    -g                       list glyph fonts\n");
@@ -173,6 +174,29 @@ int main(int argc, char **argv)
                     sort_output = False;
                     break;
 #ifdef BUILD_PRINTSUPPORT
+                case 'r':
+                {
+                    const char        *resname;
+                    XpuResolutionList  rlist;
+                    int                num_rlist;
+                    XpuResolutionRec  *res;
+
+                    if (--argc <= 0) usage ();
+                    argv++;
+                    resname = argv[0];
+                    
+                    if (!printer_output)
+                        Fatal_Error("Option '%c' only supported for printers.", argv[0][i]);
+                    rlist = XpuGetResolutionList(dpy, pcontext, &num_rlist);
+                    if (!rlist)
+                        Fatal_Error("Could not get list of supported resolutions (Server configuration error ?).");
+                    res = XpuFindResolutionByName(rlist, num_rlist, resname);
+                    if (!res)
+                        Fatal_Error("Could not find resolution '%s'.", resname);
+                    XpuSetDocResolution(dpy, pcontext, res);
+                    XpuFreeResolutionList(rlist);
+                }
+                    goto next;
                 case 'b':
                     mode = "xp-list-internal-printer-fonts";
                     if (!printer_output)

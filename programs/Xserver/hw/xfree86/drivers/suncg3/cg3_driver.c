@@ -22,6 +22,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/suncg3/cg3_driver.c,v 1.4 2001/05/16 06:48:10 keithp Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define PSZ 8
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -73,7 +77,7 @@ void CG3Sync(ScrnInfoPtr pScrn);
  * an upper-case version of the driver name.
  */
 
-DriverRec SUNCG3 = {
+_X_EXPORT DriverRec SUNCG3 = {
     VERSION,
     CG3_DRIVER_NAME,
     CG3Identify,
@@ -105,7 +109,7 @@ static XF86ModuleVersionInfo suncg3VersRec =
 	{0,0,0,0}
 };
 
-XF86ModuleData suncg3ModuleData = { &suncg3VersRec, cg3Setup, NULL };
+_X_EXPORT XF86ModuleData suncg3ModuleData = { &suncg3VersRec, cg3Setup, NULL };
 
 pointer
 cg3Setup(pointer module, pointer opts, int *errmaj, int *errmin)

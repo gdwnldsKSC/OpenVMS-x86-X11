@@ -52,6 +52,10 @@ copyright holders.
 ** 
 ********************************************************************/
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -65,9 +69,9 @@ copyright holders.
 #include <sys/sysmacros.h>
 #endif
 
-#include "X.h"
+#include <X11/X.h>
 #define NEED_EVENTS 1
-#include "Xproto.h"
+#include <X11/Xproto.h>
 #include <servermd.h>
 
 #include "screenint.h"
@@ -78,14 +82,14 @@ copyright holders.
 #include "inputstr.h"
 
 #include "gcstruct.h"
-#include "fonts/fontstruct.h"
+#include <X11/fonts/fontstruct.h>
 #include "errno.h"
 
 typedef char *XPointer;
 #define HAVE_XPointer 1
 
 #define Status int
-#include <Xresource.h>
+#include <X11/Xresource.h>
 
 #include "DiPrint.h"
 #include "attributes.h"
@@ -164,6 +168,8 @@ PixmapFormatRec	PSPixmapFormats[] = {
     {  1,  1, BITMAP_SCANLINE_PAD },
     {  8,  8, BITMAP_SCANLINE_PAD },
     { 12, 16, BITMAP_SCANLINE_PAD },
+    { 14, 16, BITMAP_SCANLINE_PAD },
+    { 16, 16, BITMAP_SCANLINE_PAD },
     { 24, 32, BITMAP_SCANLINE_PAD }
 };
 
@@ -296,11 +302,23 @@ static Bool xprintInitGlobalsCalled = FALSE;
  * variables at an very early point of server startup (even before
  * |ProcessCommandLine()|. 
  */
-void XprintInitGlobals(void)
+void PrinterInitGlobals(void)
 {
     extern char dispatchExceptionAtReset; /* defined in Xserver/dix/dispatch.c */
 
     xprintInitGlobalsCalled = TRUE;
+
+#ifdef DAMAGE
+    /* Disable DAMAGE extension for now as it does not work with
+     * the Postscript DDX yet (see
+     * https://bugs.freedesktop.org/show_bug.cgi?id=1660) ...
+     * (you can enable the DAMAGE extension explicitly via
+     * % X +extension DAMAGE ... #) ;-( */
+    {
+      extern Bool noDamageExtension;
+      noDamageExtension = TRUE;
+    }
+#endif /* DAMAGE */
 
 #ifdef SMART_SCHEDULE
     /* Somehow the XF86 "smart scheduler" completely kills the Xprint DDX 
@@ -327,9 +345,9 @@ void XprintInitGlobals(void)
 }
 
 /*
- * XprintUseMsg() prints usage for the Xprint-specific options
+ * PrinterUseMsg() prints usage for the Xprint-specific options
  */
-void XprintUseMsg()
+void PrinterUseMsg(void)
 {
     XpSpoolerTypePtr curr = xpstm;
 
@@ -354,12 +372,12 @@ void XprintUseMsg()
 }
 
 /*
- * XprintOptions checks argv[i] to see if it is our command line
+ * PrinterOptions checks argv[i] to see if it is our command line
  * option specifying a configuration file name.  It returns the index
  * of the next option to process.
  */
 int
-XprintOptions(
+PrinterOptions(
     int argc,
     char **argv,
     int i)
@@ -518,7 +536,7 @@ AugmentPrinterDb(const char *command)
 
 #define XP_DESCRIPTOR     "xp-printerattr.descriptor="
 #define XP_DESCRIPTOR_LEN (sizeof(XP_DESCRIPTOR)-1)
-        while (option = strchr(option, '\t')) {
+        while ((option = strchr(option, '\t'))) {
            option++; /* Skip the '\t' */
            if (!strncmp(option, XP_DESCRIPTOR, XP_DESCRIPTOR_LEN)) {
                *(option-1) = '\0'; /* Kill the '\t' (only if we found a valid option) */
@@ -737,7 +755,7 @@ GetConfigFileName(void)
     /*
      * Check for a LANG-specific file.
      */
-    if(dirName = XpGetConfigDir(TRUE))
+    if((dirName = XpGetConfigDir(TRUE)))
     {
         filePath = (char *)xalloc(strlen(dirName) +
 				  strlen(XPRINTERSFILENAME) + 2);
@@ -756,7 +774,7 @@ GetConfigFileName(void)
 	xfree(filePath);
     }
 
-    if(dirName = XpGetConfigDir(FALSE))
+    if((dirName = XpGetConfigDir(FALSE)))
     {
 	filePath = (char *)xalloc(strlen(dirName) +
 				  strlen(XPRINTERSFILENAME) + 2);
@@ -815,7 +833,7 @@ BuildPrinterDb(void)
 		{
 		    while((tok = strtok((char *)NULL, " \t")) != (char *)NULL)
 		    {
-		        if(ptr = MbStrchr(tok, '\012'))
+		        if((ptr = MbStrchr(tok, '\012')))
 		            *ptr = (char)'\0';
 			AddPrinterDbName(tok, NULL);
 		    }
@@ -871,7 +889,7 @@ BuildPrinterDb(void)
             curr_spooler_type = XpSpoolerNameToXpSpoolerType(spname);
             if(!curr_spooler_type)
             {
-                FatalError("BuildPrinterDb: No spooler type entry found for '%s'.\n", spname);
+                FatalError("BuildPrinterDb: No spooler type entry found for '%s'.\n", spname);
             }
             
             if(curr_spooler_type->list_queues_command == NULL ||
@@ -1076,7 +1094,7 @@ FindFontDir(
         return (char *)NULL;
     
     configDir = XpGetConfigDir(TRUE);
-    if(fontDir = ValidateFontDir(configDir, modelName))
+    if((fontDir = ValidateFontDir(configDir, modelName)))
     {
 	xfree(configDir);
 	return fontDir;
@@ -1197,7 +1215,7 @@ AugmentFontPath(void)
     for(i = 0; allIDs != (char **)NULL && allIDs[i] != (char *)NULL; i ++)
     {
 	char *fontDir;
-	if(fontDir = FindFontDir(allIDs[i]))
+	if((fontDir = FindFontDir(allIDs[i])))
 	{
 	    AddToFontPath(fontDir);
 	    xfree(fontDir);
@@ -1387,10 +1405,10 @@ PrinterInitOutput(
     /* This should NEVER happen, but... */
     if( !xprintInitGlobalsCalled )
     {
-      FatalError("Internal error: XprintInitGlobals() not called.");
+      FatalError("Internal error: PrinterInitGlobals() not called.");
     }
 #ifdef SMART_SCHEDULE
-    /* |XprintInitGlobals| should have set |SmartScheduleDisable| to
+    /* |PrinterInitGlobals| should have set |SmartScheduleDisable| to
      * |TRUE| - if not we will trigger this safeguard. */
     if( SmartScheduleDisable != TRUE )
     {
@@ -1400,7 +1418,7 @@ PrinterInitOutput(
     /* Safeguard for
      * http://pdx.freedesktop.org/cgi-bin/bugzilla/show_bug.cgi?id=567 ("Xorg
      * Xprt starts to consume 100% CPU when being idle for some time")
-     * |XprintInitGlobals| should have set |defaultScreenSaverTime| to
+     * |PrinterInitGlobals| should have set |defaultScreenSaverTime| to
      * |0| - if not we will trigger this trap. */
     if( defaultScreenSaverTime != 0 )
     {

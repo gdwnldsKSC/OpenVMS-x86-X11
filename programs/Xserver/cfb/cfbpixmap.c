@@ -52,15 +52,17 @@ SOFTWARE.
    on a monchrome device, a pixmap is a bitmap.
 */
 
-#include "Xmd.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/Xmd.h>
 #include "servermd.h"
 #include "scrnintstr.h"
 #include "pixmapstr.h"
 #include "mi.h"
 #include "cfb.h"
 #include "cfbmskbits.h"
-
-extern CfbBits endtab[];
 
 PixmapPtr
 cfbCreatePixmap (pScreen, width, height, depth)
@@ -70,10 +72,13 @@ cfbCreatePixmap (pScreen, width, height, depth)
     int		depth;
 {
     PixmapPtr pPixmap;
-    int datasize;
-    int paddedWidth;
+    size_t datasize;
+    size_t paddedWidth;
 
     paddedWidth = PixmapBytePad(width, depth);
+
+    if (paddedWidth / 4 > 32767 || height > 32767)
+	return NullPixmap;
     datasize = height * paddedWidth;
     pPixmap = AllocatePixmap(pScreen, datasize);
     if (!pPixmap)
@@ -160,7 +165,7 @@ cfbPadPixmap(pPixmap)
     if (rep*width != PGSZ)
         return;
  
-    mask = endtab[width];
+    mask = mfbGetendtab(width);
  
     p = (CfbBits *)(pPixmap->devPrivate.ptr);
     for (h=0; h < pPixmap->drawable.height; h++)

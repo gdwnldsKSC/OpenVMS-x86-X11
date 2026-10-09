@@ -28,6 +28,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/cyrix/cyrix_bank.c,v 1.1 2000/02/13 00:56:10 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define PSZ 8
 
 /* All drivers should typically include these */

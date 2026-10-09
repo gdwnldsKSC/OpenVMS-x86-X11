@@ -22,19 +22,6 @@
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-#if 0
-#include "xf86.h"
-#include "xf86_OSproc.h"
-#include "xf86_ansic.h"
-#include "xf86Priv.h"
-
-#include "xf86PciInfo.h"
-#include "xf86Pci.h"
-
-#define _XF86DRI_SERVER_
-#include "GL/glxtokens.h"
-
-#else
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,7 +32,6 @@
 #include "driver.h"
 #include "drm.h"
 #include "imports.h"
-#endif
 
 #include "dri_util.h"
 
@@ -68,20 +54,20 @@ static int VIADRIFinishScreenInit(DRIDriverContext * ctx);
 
 /* _SOLO : missing macros normally defined by X code */
 #define xf86DrvMsg(a, b, ...) fprintf(stderr, __VA_ARGS__)
-#define MMIO_IN8(base, addr) ((*(((volatile uint8_t*)base)+(addr)))+0)
-#define MMIO_OUT8(base, addr, val) ((*(((volatile uint8_t*)base)+(addr)))=((uint8_t)val))
-#define MMIO_OUT16(base, addr, val) ((*(volatile uint16_t*)(((uint8_t*)base)+(addr)))=((uint16_t)val))
+#define MMIO_IN8(base, addr) ((*(((volatile u_int8_t*)base)+(addr)))+0)
+#define MMIO_OUT8(base, addr, val) ((*(((volatile u_int8_t*)base)+(addr)))=((u_int8_t)val))
+#define MMIO_OUT16(base, addr, val) ((*(volatile u_int16_t*)(((u_int8_t*)base)+(addr)))=((u_int16_t)val))
 
 #define VIDEO	0 
 #define AGP		1
 #define AGP_PAGE_SIZE 4096
 #define AGP_PAGES 8192
 #define AGP_SIZE (AGP_PAGE_SIZE * AGP_PAGES)
-#define AGP_CMDBUF_PAGES 256
+#define AGP_CMDBUF_PAGES 512
 #define AGP_CMDBUF_SIZE (AGP_PAGE_SIZE * AGP_CMDBUF_PAGES)
 
 static char VIAKernelDriverName[] = "via";
-static char VIAClientDriverName[] = "via";
+static char VIAClientDriverName[] = "unichrome";
 
 static int VIADRIAgpInit(const DRIDriverContext *ctx, VIAPtr pVia);
 static int VIADRIPciInit(DRIDriverContext * ctx, VIAPtr pVia);
@@ -89,10 +75,113 @@ static int VIADRIFBInit(DRIDriverContext * ctx, VIAPtr pVia);
 static int VIADRIKernelInit(DRIDriverContext * ctx, VIAPtr pVia);
 static int VIADRIMapInit(DRIDriverContext * ctx, VIAPtr pVia);
 
+static void VIADRIIrqInit( DRIDriverContext *ctx )
+{
+    VIAPtr pVia = VIAPTR(ctx);
+    VIADRIPtr pVIADRI = pVia->devPrivate;
+
+    pVIADRI->irqEnabled = drmGetInterruptFromBusID(pVia->drmFD,
+					   ctx->pciBus,
+					   ctx->pciDevice,
+					   ctx->pciFunc);
+
+    if ((drmCtlInstHandler(pVia->drmFD, pVIADRI->irqEnabled))) {
+	xf86DrvMsg(pScreen->myNum, X_WARNING,
+		   "[drm] Failure adding irq handler. "
+		   "Falling back to irq-free operation.\n");
+	pVIADRI->irqEnabled = 0;
+    }
+
+    if (pVIADRI->irqEnabled)
+	xf86DrvMsg(pScreen->myNum, X_INFO,
+		   "[drm] Irq handler installed, using IRQ %d.\n",
+		   pVIADRI->irqEnabled);
+}
+
+static void VIADRIIrqExit( DRIDriverContext *ctx ) {
+    VIAPtr pVia = VIAPTR(ctx);
+    VIADRIPtr pVIADRI = pVia->devPrivate;
+
+    if (pVIADRI->irqEnabled) {
+	if (drmCtlUninstHandler(pVia->drmFD)) {
+	    xf86DrvMsg(pScreen-myNum, X_INFO,"[drm] Irq handler uninstalled.\n");
+	} else {
+	    xf86DrvMsg(pScreen->myNum, X_ERROR,
+		       "[drm] Could not uninstall irq handler.\n");
+	}
+    }
+}
+	    
+static void VIADRIRingBufferCleanup(DRIDriverContext *ctx)
+{
+    VIAPtr pVia = VIAPTR(ctx);
+    VIADRIPtr pVIADRI = pVia->devPrivate;
+    drm_via_dma_init_t ringBufInit;
+
+    if (pVIADRI->ringBufActive) {
+	xf86DrvMsg(pScreen->myNum, X_INFO, 
+		   "[drm] Cleaning up DMA ring-buffer.\n");
+	ringBufInit.func = VIA_CLEANUP_DMA;
+	if (drmCommandWrite(pVia->drmFD, DRM_VIA_DMA_INIT, &ringBufInit,
+			    sizeof(ringBufInit))) {
+	    xf86DrvMsg(pScreen->myNum, X_WARNING, 
+		       "[drm] Failed to clean up DMA ring-buffer: %d\n", errno);
+	}
+	pVIADRI->ringBufActive = 0;
+    }
+}
+
+static int VIADRIRingBufferInit(DRIDriverContext *ctx)
+{
+    VIAPtr pVia = VIAPTR(ctx);
+    VIADRIPtr pVIADRI = pVia->devPrivate;
+    drm_via_dma_init_t ringBufInit;
+    drmVersionPtr drmVer;
+
+    pVIADRI->ringBufActive = 0;
+
+    if (NULL == (drmVer = drmGetVersion(pVia->drmFD))) {
+	return GL_FALSE;
+    }
+
+    if (((drmVer->version_major <= 1) && (drmVer->version_minor <= 3))) {
+	return GL_FALSE;
+    } 
+
+    /*
+     * Info frome code-snippet on DRI-DEVEL list; Erdi Chen.
+     */
+
+    switch (pVia->ChipId) {
+    case PCI_CHIP_VT3259:
+    	ringBufInit.reg_pause_addr = 0x40c;
+	break;
+    default:
+    	ringBufInit.reg_pause_addr = 0x418;
+	break;
+    }
+   
+    ringBufInit.offset = pVia->agpSize;
+    ringBufInit.size = AGP_CMDBUF_SIZE;
+    ringBufInit.func = VIA_INIT_DMA;
+    if (drmCommandWrite(pVia->drmFD, DRM_VIA_DMA_INIT, &ringBufInit,
+			sizeof(ringBufInit))) {
+	xf86DrvMsg(pScreen->myNum, X_ERROR, 
+		   "[drm] Failed to initialize DMA ring-buffer: %d\n", errno);
+	return GL_FALSE;
+    }
+    xf86DrvMsg(pScreen->myNum, X_INFO, 
+	       "[drm] Initialized AGP ring-buffer, size 0x%lx at AGP offset 0x%lx.\n",
+	       ringBufInit.size, ringBufInit.offset);
+   
+    pVIADRI->ringBufActive = 1;
+    return GL_TRUE;
+}	    
+
 static int VIADRIAgpInit(const DRIDriverContext *ctx, VIAPtr pVia)
 {
     unsigned long  agp_phys;
-    unsigned int agpaddr;
+    drmAddress agpaddr;
     VIADRIPtr pVIADRI;
     pVIADRI = pVia->devPrivate;
     pVia->agpSize = 0;
@@ -125,7 +214,12 @@ static int VIADRIAgpInit(const DRIDriverContext *ctx, VIAPtr pVia)
         return GL_FALSE;
     }
 
-    pVia->agpSize = AGP_SIZE;
+    /*
+     * Place the ring-buffer last in the AGP region, and restrict the
+     * public map not to include the buffer for security reasons.
+     */
+
+    pVia->agpSize = AGP_SIZE - AGP_CMDBUF_SIZE;
     pVia->agpAddr = drmAgpBase(pVia->drmFD);
     xf86DrvMsg(pScreen->myNum, X_INFO,
                  "[drm] agpAddr = 0x%08lx\n",pVia->agpAddr);
@@ -140,23 +234,31 @@ static int VIADRIAgpInit(const DRIDriverContext *ctx, VIAPtr pVia)
         return GL_FALSE;
     }  
     /* Map AGP from kernel to Xserver - Not really needed */
-    drmMap(pVia->drmFD, pVIADRI->agp.handle,pVIADRI->agp.size,
-	(drmAddressPtr)&agpaddr);
+    drmMap(pVia->drmFD, pVIADRI->agp.handle,pVIADRI->agp.size, &agpaddr);
 
-#if 0
-    xf86DrvMsg(pScreen->myNum, X_INFO, 
-                "[drm] agpBase = 0x%08lx\n", pVia->agpBase);
     xf86DrvMsg(pScreen->myNum, X_INFO, 
                 "[drm] agpAddr = 0x%08lx\n", pVia->agpAddr);
-#endif
     xf86DrvMsg(pScreen->myNum, X_INFO, 
                 "[drm] agpSize = 0x%08lx\n", pVia->agpSize);
     xf86DrvMsg(pScreen->myNum, X_INFO, 
                 "[drm] agp physical addr = 0x%08lx\n", agp_phys);
 
-    drmVIAAgpInit(pVia->drmFD, 0, AGP_SIZE);
-    return GL_TRUE;
+    {
+	drm_via_agp_t agp;
+	agp.offset = 0;
+	agp.size = AGP_SIZE-AGP_CMDBUF_SIZE;
+	if (drmCommandWrite(pVia->drmFD, DRM_VIA_AGP_INIT, &agp,
+			    sizeof(drm_via_agp_t)) < 0) {
+	    drmUnmap(&agpaddr,pVia->agpSize);
+	    drmRmMap(pVia->drmFD,pVIADRI->agp.handle);
+	    drmAgpUnbind(pVia->drmFD, pVia->agpHandle);
+	    drmAgpFree(pVia->drmFD, pVia->agpHandle);
+	    drmAgpRelease(pVia->drmFD);
+	    return GL_FALSE;
+	}
+    }
 
+    return GL_TRUE;
 }
 
 static int VIADRIFBInit(DRIDriverContext * ctx, VIAPtr pVia)
@@ -167,13 +269,23 @@ static int VIADRIFBInit(DRIDriverContext * ctx, VIAPtr pVia)
     pVIADRI->fbOffset = FBOffset;
     pVIADRI->fbSize = pVia->videoRambytes;
 
-    if (drmVIAFBInit(pVia->drmFD, FBOffset, FBSize) < 0) {
-	xf86DrvMsg(pScreen->myNum, X_ERROR,"[drm] failed to init frame buffer area\n");
-	return GL_FALSE;
-    }
-    else {
-	xf86DrvMsg(pScreen->myNum, X_INFO,"[drm] FBFreeStart= 0x%08lx FBFreeEnd= 0x%08lx FBSize= 0x%08lx\n", pVia->FBFreeStart, pVia->FBFreeEnd, FBSize);
-	return GL_TRUE;
+    {
+	drm_via_fb_t fb;
+	fb.offset = FBOffset;
+	fb.size = FBSize;
+	
+	if (drmCommandWrite(pVia->drmFD, DRM_VIA_FB_INIT, &fb,
+			    sizeof(drm_via_fb_t)) < 0) {
+	    xf86DrvMsg(pScreen->myNum, X_ERROR,
+		       "[drm] failed to init frame buffer area\n");
+	    return GL_FALSE;
+	} else {
+	    xf86DrvMsg(pScreen->myNum, X_INFO,
+		       "[drm] FBFreeStart= 0x%08x FBFreeEnd= 0x%08x "
+		       "FBSize= 0x%08x\n",
+		       pVia->FBFreeStart, pVia->FBFreeEnd, FBSize);
+	    return GL_TRUE;	
+	}   
     }
 }
 
@@ -191,7 +303,7 @@ static int VIADRIScreenInit(DRIDriverContext * ctx)
 #if 0
     ctx->shared.SAREASize = ((sizeof(drm_sarea_t) + 0xfff) & 0x1000);
 #else
-    if (sizeof(drm_sarea_t)+sizeof(VIASAREAPriv) > SAREA_MAX) {
+    if (sizeof(drm_sarea_t)+sizeof(drm_via_sarea_t) > SAREA_MAX) {
 	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 			"Data does not fit in SAREA\n");
 	return GL_FALSE;
@@ -263,37 +375,16 @@ static int VIADRIScreenInit(DRIDriverContext * ctx)
     ctx->driverClientMsg = pVIADRI;
     ctx->driverClientMsgSize = sizeof(*pVIADRI);
 
-    pVia->IsPCI = !VIADRIAgpInit(ctx, pVia);
-
-    if (pVia->IsPCI) {
-        VIADRIPciInit(ctx, pVia);
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "[dri] use pci.\n" );
-    }
-    else
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "[dri] use agp.\n" );
-
-    if (!(VIADRIFBInit(ctx, pVia))) {
-	VIADRICloseScreen(ctx);
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "[dri] frame buffer initialize fial .\n" );
-        return GL_FALSE;
-    }
-    
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "[dri] frame buffer initialized.\n" );
- 
     /* DRIScreenInit doesn't add all the common mappings.  Add additional mappings here. */
     if (!VIADRIMapInit(ctx, pVia)) {
 	VIADRICloseScreen(ctx);
 	return GL_FALSE;
     }
+
     pVIADRI->regs.size = VIA_MMIO_REGSIZE;
-    pVIADRI->regs.map = 0;
     pVIADRI->regs.handle = pVia->registerHandle;
     xf86DrvMsg(pScreen->myNum, X_INFO, "[drm] mmio Registers = 0x%08lx\n",
 	pVIADRI->regs.handle);
-    
-    /*pVIADRI->drixinerama = pVia->drixinerama;*/
-    /*=* John Sheng [2003.12.9] Tuxracer & VQ *=*/
-    pVIADRI->VQEnable = pVia->VQEnable;
 
     if (drmMap(pVia->drmFD,
                pVIADRI->regs.handle,
@@ -306,6 +397,40 @@ static int VIADRIScreenInit(DRIDriverContext * ctx)
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "[dri] mmio mapped.\n" );
 
+    VIAEnableMMIO(ctx);
+
+    /* Get video memory clock. */
+    VGAOUT8(0x3D4, 0x3D);
+    pVia->MemClk = (VGAIN8(0x3D5) & 0xF0) >> 4;
+    xf86DrvMsg(0, X_INFO, "[dri] MemClk (0x%x)\n", pVia->MemClk);
+
+    /* 3D rendering has noise if not enabled. */
+    VIAEnableExtendedFIFO(ctx);
+
+    VIAInitialize2DEngine(ctx);
+
+    /* Must disable MMIO or 3D won't work. */
+    VIADisableMMIO(ctx);
+
+    VIAInitialize3DEngine(ctx);
+
+    pVia->IsPCI = !VIADRIAgpInit(ctx, pVia);
+
+    if (pVia->IsPCI) {
+        VIADRIPciInit(ctx, pVia);
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "[dri] use pci.\n" );
+    }
+    else
+        xf86DrvMsg(pScrn->scrnIndex, X_INFO, "[dri] use agp.\n" );
+
+    if (!(VIADRIFBInit(ctx, pVia))) {
+	VIADRICloseScreen(ctx);
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "[dri] frame buffer initialize fail .\n" );
+        return GL_FALSE;
+    }
+    
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "[dri] frame buffer initialized.\n" );
+ 
     return VIADRIFinishScreenInit(ctx);
 }
 
@@ -314,6 +439,8 @@ VIADRICloseScreen(DRIDriverContext * ctx)
 {
     VIAPtr pVia = VIAPTR(ctx);
     VIADRIPtr pVIADRI=(VIADRIPtr)pVia->devPrivate;
+
+    VIADRIRingBufferCleanup(ctx);
 
     if (pVia->MapBase) {
 	xf86DrvMsg(pScreen->myNum, X_INFO, "[drm] Unmapping MMIO registers\n");
@@ -326,6 +453,11 @@ VIADRICloseScreen(DRIDriverContext * ctx)
 	xf86DrvMsg(pScreen->myNum, X_INFO, "[drm] Releasing agp module\n");
     	drmAgpRelease(pVia->drmFD);
     }
+
+#if 0
+    if (pVia->DRIIrqEnable) 
+#endif
+        VIADRIIrqExit(ctx);
 }
 
 static int
@@ -352,13 +484,13 @@ VIADRIFinishScreenInit(DRIDriverContext * ctx)
 
     /* set SAREA value */
     {
-	VIASAREAPriv *saPriv;
+	drm_via_sarea_t *saPriv;
 
-	saPriv=(VIASAREAPriv*)(((char*)ctx->pSAREA) +
+	saPriv=(drm_via_sarea_t*)(((char*)ctx->pSAREA) +
                                sizeof(drm_sarea_t));
 	assert(saPriv);
 	memset(saPriv, 0, sizeof(*saPriv));
-	saPriv->CtxOwner = -1;
+	saPriv->ctxOwner = -1;
     }
     pVIADRI=(VIADRIPtr)pVia->devPrivate;
     pVIADRI->deviceID=pVia->Chipset;  
@@ -371,23 +503,35 @@ VIADRIFinishScreenInit(DRIDriverContext * ctx)
     pVIADRI->scrnX=pVIADRI->width;
     pVIADRI->scrnY=pVIADRI->height;
 
+    /* Initialize IRQ */
+#if 0
+    if (pVia->DRIIrqEnable) 
+#endif
+	VIADRIIrqInit(ctx);
+    
+    pVIADRI->ringBufActive = 0;
+    VIADRIRingBufferInit(ctx);
+
     return GL_TRUE;
 }
 
 /* Initialize the kernel data structures. */
 static int VIADRIKernelInit(DRIDriverContext * ctx, VIAPtr pVia)
 {
-    drmVIAInit drmInfo;
-    memset(&drmInfo, 0, sizeof(drmVIAInit));
+    drm_via_init_t drmInfo;
+    memset(&drmInfo, 0, sizeof(drm_via_init_t));
     drmInfo.sarea_priv_offset   = sizeof(drm_sarea_t);
+    drmInfo.func = VIA_INIT_MAP;
     drmInfo.fb_offset           = pVia->FrameBufferBase;
     drmInfo.mmio_offset         = pVia->registerHandle;
     if (pVia->IsPCI)
-	drmInfo.agpAddr = (uint32_t)NULL;
+	drmInfo.agpAddr = (u_int32_t)NULL;
     else
-	drmInfo.agpAddr = (uint32_t)pVia->agpAddr;
+	drmInfo.agpAddr = (u_int32_t)pVia->agpAddr;
 
-    if (drmVIAInitMAP(pVia->drmFD, &drmInfo) < 0) return GL_FALSE;
+    if ((drmCommandWrite(pVia->drmFD, DRM_VIA_MAP_INIT,&drmInfo,
+			     sizeof(drm_via_init_t))) < 0)
+	    return GL_FALSE;
 
     return GL_TRUE;
 }
@@ -489,7 +633,7 @@ static void VIADisableMMIO(DRIDriverContext * ctx)
 static void VIADisableExtendedFIFO(DRIDriverContext *ctx)
 {
     VIAPtr  pVia = VIAPTR(ctx);
-    uint32_t  dwGE230, dwGE298;
+    u_int32_t  dwGE230, dwGE298;
 
     /* Cause of exit XWindow will dump back register value, others chipset no
      * need to set extended fifo value */
@@ -511,8 +655,8 @@ static void VIADisableExtendedFIFO(DRIDriverContext *ctx)
 static void VIAEnableExtendedFIFO(DRIDriverContext *ctx)
 {
     VIAPtr  pVia = VIAPTR(ctx);
-    uint8_t   bRegTemp;
-    uint32_t  dwGE230, dwGE298;
+    u_int8_t   bRegTemp;
+    u_int32_t  dwGE230, dwGE298;
 
     switch (pVia->Chipset) {
     case VIA_CLE266:
@@ -707,7 +851,7 @@ static void VIAEnableExtendedFIFO(DRIDriverContext *ctx)
              SR1C[7:0], SR1D[1:0] (10bits) *=*/
         wRegTemp = (pBIOSInfo->offsetWidthByQWord >> 1) + 4;
         VGAOUT8(0x3c4, 0x1c);
-        VGAOUT8(0x3c5, (uint8_t)(wRegTemp & 0xFF));
+        VGAOUT8(0x3c5, (u_int8_t)(wRegTemp & 0xFF));
         VGAOUT8(0x3c4, 0x1d);
         bRegTemp = VGAIN8(0x3c5) & ~0x03;
         VGAOUT8(0x3c5, bRegTemp | ((wRegTemp & 0x300) >> 8));
@@ -753,7 +897,7 @@ static void VIAEnableExtendedFIFO(DRIDriverContext *ctx)
              SR1C[7:0], SR1D[1:0] (10bits) *=*/
         wRegTemp = (pBIOSInfo->offsetWidthByQWord >> 1) + 4;
         VGAOUT8(0x3c4, 0x1c);
-        VGAOUT8(0x3c5, (uint8_t)(wRegTemp & 0xFF));
+        VGAOUT8(0x3c5, (u_int8_t)(wRegTemp & 0xFF));
         VGAOUT8(0x3c4, 0x1d);
         bRegTemp = VGAIN8(0x3c5) & ~0x03;
         VGAOUT8(0x3c5, bRegTemp | ((wRegTemp & 0x300) >> 8));
@@ -781,9 +925,9 @@ static void VIAEnableExtendedFIFO(DRIDriverContext *ctx)
 static void VIAInitialize2DEngine(DRIDriverContext *ctx)
 {
     VIAPtr  pVia = VIAPTR(ctx);
-    uint32_t  dwVQStartAddr, dwVQEndAddr;
-    uint32_t  dwVQLen, dwVQStartL, dwVQEndL, dwVQStartEndH;
-    uint32_t  dwGEMode;
+    u_int32_t  dwVQStartAddr, dwVQEndAddr;
+    u_int32_t  dwVQLen, dwVQStartL, dwVQEndL, dwVQStartEndH;
+    u_int32_t  dwGEMode;
 
     /* init 2D engine regs to reset 2D engine */
     VIASETREG(0x04, 0x0);
@@ -870,6 +1014,7 @@ static void VIAInitialize2DEngine(DRIDriverContext *ctx)
         break;
     case 32:
         dwGEMode |= VIA_GEM_32bpp;
+        break;
     default:
         dwGEMode |= VIA_GEM_8bpp;
         break;
@@ -925,14 +1070,14 @@ static void VIAInitialize3DEngine(DRIDriverContext *ctx)
 
         for (i = 0; i <= 0x7D; i++)
         {
-            VIASETREG(0x440, (uint32_t) i << 24);
+            VIASETREG(0x440, (u_int32_t) i << 24);
         }
 
         VIASETREG(0x43C, 0x00020000);
 
         for (i = 0; i <= 0x94; i++)
         {
-            VIASETREG(0x440, (uint32_t) i << 24);
+            VIASETREG(0x440, (u_int32_t) i << 24);
         }
 
         VIASETREG(0x440, 0x82400000);
@@ -942,7 +1087,7 @@ static void VIAInitialize3DEngine(DRIDriverContext *ctx)
 
         for (i = 0; i <= 0x94; i++)
         {
-            VIASETREG(0x440, (uint32_t) i << 24);
+            VIASETREG(0x440, (u_int32_t) i << 24);
         }
 
         VIASETREG(0x440, 0x82400000);
@@ -950,7 +1095,7 @@ static void VIAInitialize3DEngine(DRIDriverContext *ctx)
 
         for (i = 0; i <= 0x03; i++)
         {
-            VIASETREG(0x440, (uint32_t) i << 24);
+            VIASETREG(0x440, (u_int32_t) i << 24);
         }
 
         VIASETREG(0x43C, 0x00030000);
@@ -1053,27 +1198,22 @@ static int viaInitFBDev(DRIDriverContext *ctx)
 
     pVia->FBFreeStart = ctx->shared.virtualWidth * ctx->cpp *
         ctx->shared.virtualHeight;
+
+#if 1
+    /* Alloc a second framebuffer for the second head */
+    pVia->FBFreeStart += ctx->shared.virtualWidth * ctx->cpp *
+	ctx->shared.virtualHeight;
+#endif
+
+    pVia->VQStart = pVia->FBFreeStart;
+    pVia->VQEnd = pVia->FBFreeStart + VIA_VQ_SIZE - 1;
+
+    pVia->FBFreeStart += VIA_VQ_SIZE;
+
     pVia->FBFreeEnd = pVia->videoRambytes;
 
     if (!VIADRIScreenInit(ctx))
         return 0;
-
-    VIAEnableMMIO(ctx);
-
-    /* Get video memory clock. */
-    VGAOUT8(0x3D4, 0x3D);
-    pVia->MemClk = (VGAIN8(0x3D5) & 0xF0) >> 4;
-    xf86DrvMsg(0, X_INFO, "[dri] MemClk (0x%x)\n", pVia->MemClk);
-
-    /* 3D rendering has noise if not enabled. */
-    VIAEnableExtendedFIFO(ctx);
-
-    VIAInitialize2DEngine(ctx);
-
-    /* Must disable MMIO or 3D won't work. */
-    VIADisableMMIO(ctx);
-
-    VIAInitialize3DEngine(ctx);
 
     return 1;
 }

@@ -29,9 +29,13 @@ from The Open Group.
 */
 /* $XFree86: xc/lib/font/bitmap/bitmaputil.c,v 1.10 2002/09/24 20:52:48 tsi Exp $ */
 
-#include "fntfilst.h"
-#include "bitmap.h"
-#include "bdfint.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/bitmap.h>
+#include <X11/fonts/bdfint.h>
 
 #ifndef MAXSHORT
 #define MAXSHORT    32767

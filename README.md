@@ -1,6 +1,6 @@
-# OpenVMS x86 X11 R6.8.2 Port Effort  
+# OpenVMS x86 X11 R6.9.0 Port Effort  
   
-Currently, this is just the straight X11 R6.8.2 tree  
+Currently, this is just the straight X11 R6.9.0 tree  
   
 As parts become buildable, they will be updated and documented here.  
   
@@ -12,7 +12,7 @@ ZLIB. Produces `Z.OLB` - all 14 modules of the bundled zlib 1.1.4.
 FONTENC. Produces `FONTENC.OLB` - `fontenc.c` and `encparse.c`, using `Z.OLB`; upstream reverse-map cleanup and parser-growth defects remain.  
 EXPAT. Produces `EXPAT.OLB` - `xmlparse.c`, `xmltok.c`, and `xmlrole.c` from bundled Expat 1.95.6.  
 LBXUTIL. Produces `LBXUTIL.OLB` - all nine standard LBX utility modules, using `Z.OLB`; consumers supply `Xalloc`/`Xfree`.  
-XFONT. Produces `XFONT.OLB` - 68 objects across bitmap, fontfile, fc, util, builtins, fontcache, FreeType, and Speedo; gzip and TCP font-server transport included. Builds `Z.OLB` and `FREETYPE.OLB` dependencies; Type1/CID and fontencc excluded. Builtins and fontcache APIs require server-side activation.  
+XFONT. Produces `XFONT.OLB` - 68 objects across bitmap, fontfile, fc, util, builtins, fontcache, FreeType, and Speedo; gzip and TCP font-server transport included, with a minimal VMS text-read mode adaptation for font indexes and aliases. Builds `Z.OLB` and `FREETYPE.OLB` dependencies; Type1/CID and fontencc excluded. Builtins and fontcache APIs require server-side activation.  
 FNTSTUBS. Produces `FNTSTUBS.OLB` - all 17 unchanged modules from `lib/font/stubs`, for standalone font tools.  
 FS. Produces `FS.OLB` - all 25 standard font-server client library modules, with TCP transport.  
 PSRES. Produces `PSRES.OLB` - the complete upstream PostScript resource library; requires case-preserving Unix-style filenames (`DECC$EFS_CASE_PRESERVE` and `DECC$FILENAME_UNIX_REPORT` enabled); upstream cache defects remain.  
@@ -31,7 +31,7 @@ MAKEDEPEND. Produces `MAKEDEPEND.EXE` - all six upstream C dependency-generator 
 LNDIR. Produces `LNDIR.EXE` - the shadow symbolic-link tree generator from `config/util`, with OpenVMS directory traversal and case-preserving names; requires symbolic-link support and Unix-style paths.  
 ATOBM. Produces `ATOBM.EXE` - the upstream ASCII-to-bitmap converter from `programs/bitmap`.  
 GTF. Produces `GTF.EXE` - the upstream Generalized Timing Formula calculator from `programs/Xserver/hw/xfree86/etc`.  
-FREETYPE2. Produces `FREETYPE.OLB` - the complete 34-object upstream Unix profile of bundled FreeType 2.1.8, with an essential P64 PostScript-table relocation adaptation.  
+FREETYPE2. Produces `FREETYPE.OLB` - the complete 34-object upstream Unix profile of bundled FreeType 2.1.9, with an essential P64 PostScript-table relocation adaptation; upstream variation-loader allocation-error assignment defect remains.  
 MKFONTSCALE. Produces `MKFONTSCALE.EXE` - all four upstream font-index generator modules, using `FONTENC.OLB`, `FREETYPE.OLB`, and `Z.OLB`.  
 FONTTOSFNT. Produces `FONTTOSFNT.EXE` - all five upstream bitmap-to-sfnt converter modules, with essential fixed-field initializer and C99 varargs retry adaptations, using `FREETYPE.OLB`, `FONTENC.OLB`, and `Z.OLB`.  
 REVPATH. Produces `REVPATH.EXE` - the unchanged upstream relative-path helper from `config/util`.  
@@ -40,9 +40,9 @@ UCS2ANY. Produces `UCS2ANY.EXE` - the unchanged upstream BDF character-encoding 
 DAMAGE. Produces `DAMAGE.OLB` - the unchanged internal server damage-tracking library from `programs/Xserver/miext/damage`; static profile with pixmap privates, excluding Render, Composite, and rootless hooks.  
 MI. Produces `MI.OLB` - all 38 unchanged machine-independent server modules from `programs/Xserver/mi`; static core profile with pixmap privates and native CRTL cube roots, excluding optional extensions and loadable hooks; upstream bank-separation limits remain.  
 CBRT. Produces `CBRT.OLB` - the separate unchanged upstream cube-root fallback from `programs/Xserver/mi`.  
-FB. Produces `FB.OLB` - all 35 unchanged upstream framebuffer modules from `programs/Xserver/fb`; static Render-enabled profile including 24-bit and 24/32 conversion paths, excluding loadable hooks and GCC MMX.  
+FB. Produces `FB.OLB` - all 35 upstream framebuffer modules from `programs/Xserver/fb`, with an essential P64 24-bit alignment adaptation; static Render-enabled profile including 24-bit and 24/32 conversion paths, excluding loadable hooks and GCC MMX.  
 RENDER. Produces `RENDER.OLB` - all 12 unchanged upstream Render extension modules from `programs/Xserver/render`; static profile excluding optional extension hooks; upstream triangle-strip/fan allocation and sampling/edge-stepping defects remain.  
-DIX. Produces `DIX.OLB` - all 23 unchanged upstream device-independent server modules from `programs/Xserver/dix`, plus a native entry adapter for the 64-bit environment-vector boundary; static Render-enabled profile excluding optional extension hooks.  
+DIX. Produces `DIX.OLB` - all 23 upstream device-independent server modules from `programs/Xserver/dix`, with minimal pointer-initialization and optional-Shape fixes, plus a native entry adapter for the 64-bit environment-vector boundary; static Render-enabled profile excluding optional extension hooks.  
 XPSTUBS. Produces `XPSTUBS.OLB` - the separate unchanged upstream non-Xprint server auxiliary from `programs/Xserver/dix`.  
 SHADOW. Produces `SHADOW.OLB` - all 15 unchanged upstream shadow-framebuffer modules from `programs/Xserver/miext/shadow`; static Render-enabled profile with packed, planar, and rotation paths, excluding loadable hooks.  
 RANDR. Produces `RANDR.OLB` - both unchanged upstream Resize and Rotate extension modules from `programs/Xserver/randr`; static Render-enabled profile; MI fallback does not change display modes, and the upstream rate-array cleanup defect remains.  
@@ -55,8 +55,8 @@ CW. Produces `CW.OLB` - all three unchanged upstream Composite wrapper modules f
 DAMAGEEXT. Produces `DAMAGE.OLB` in the separate damageext output directory - the unchanged upstream Damage protocol extension module; requires internal Damage tracking and matching server layouts.  
 EXT. Produces `EXT.OLB` - all 22 unchanged modules of the selected upstream static Xext profile, including ScreenSaver, FontCache, DPMS, XVideo/XvMC, X Resource, Multibuffer, EVI, CUP, and XEvIE; remaining optional and loadable extensions excluded. Runtime use requires matching core feature flags, `XFONT.OLB` for FontCache, and device-specific DPMS/video hooks. XEvIE requires matching XKB/XEVIE core event support; its upstream swapped SelectInput request-size defect remains.  
 XINPUT. Produces `XINPUT.OLB` - all 37 upstream Unix X Input library modules; requires an XINPUT-enabled server core and device-dependent hooks; upstream lint-only stubs excluded.  
-OS. Produces `OS.OLB` - all 15 modules of the upstream TCP/XDMCP, MIT-cookie and text-RGB profile, with minimal VMS/P64 fixes and one native process adapter; process helpers use DCL and reject images installed with added privileges or rights.  
-MFB. Produces `MFB.OLB` - all 47 standard monochrome framebuffer objects from unchanged upstream sources, including specialized drawing variants; static profile excluding banked and loadable hooks.  
+OS. Produces `OS.OLB` - all 16 modules of the upstream TCP/XDMCP, MIT-cookie and text-RGB profile, with minimal VMS/P64 fixes and one native process adapter; process helpers use DCL and reject images installed with added privileges or rights.  
+MFB. Produces `MFB.OLB` - all 47 standard monochrome framebuffer objects, with corrected upstream weak-callback declarations, including specialized drawing variants; static profile excluding banked and loadable hooks.  
 VFB. Produces `VFB.OLB` - all four upstream virtual-framebuffer DDx objects from unchanged sources; malloc framebuffer with Render, excluding SHM, MMAP, and DPMS; not a standalone Xvfb executable.  
 XKB. Produces `XKB.OLB` - all 35 upstream keyboard-extension objects from unchanged sources, including generic DDx hooks and X Input event support; requires matching XKB/XINPUT server layouts, keymaps, and xkbcomp for runtime use.  
 LBX. Produces `LBX.OLB` - all 12 upstream Low Bandwidth X server extension objects from unchanged sources; requires matching LBX server layouts, `LBXUTIL.OLB`, and `Z.OLB`.  

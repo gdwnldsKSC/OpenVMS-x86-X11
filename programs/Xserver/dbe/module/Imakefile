@@ -14,6 +14,7 @@ XCOMM $XFree86: xc/programs/Xserver/dbe/module/Imakefile,v 1.1 2000/04/06 15:35:
        OBJS = dbe.o midbe.o $(MOBJS)
    INCLUDES = -I.. -I$(SERVERSRC)/include -I$(XINCLUDESRC) -I$(EXTINCSRC) $(EXTRAINCLUDES)
    LINTLIBS = ../../dix/llib-ldix.ln ../../os/llib-los.ln
+    DEFINES = $(EXT_DEFINES)
 
 LinkSourceFile(dbemodule.c,..)
 LinkSourceFile(midbe.c,..)

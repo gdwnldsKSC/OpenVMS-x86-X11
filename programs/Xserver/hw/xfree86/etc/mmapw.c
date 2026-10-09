@@ -38,7 +38,7 @@
 # define MAP_FAILED ((void *)(-1))
 #endif
 
-#if defined(_SCO_DS) && !defined(_SCO_DS_LL)
+#if _SCO_DS - 0 == 1
 #define strtoull (unsigned long long)strtoul
 #endif
 

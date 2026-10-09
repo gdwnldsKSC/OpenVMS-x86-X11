@@ -1,4 +1,5 @@
 /* $XConsortium: Dvi.c,v 1.21 94/04/17 20:43:34 keith Exp $ */
+/* $XdotOrg: xc/programs/xditview/Dvi.c,v 1.3 2005/07/16 22:07:13 alanc Exp $ */
 /*
 
 Copyright (c) 1991  X Consortium
@@ -34,6 +35,10 @@ from the X Consortium.
 /*
  * Dvi.c - Dvi display widget
  */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #define XtStrlen(s)	((s) ? strlen(s) : 0)
 

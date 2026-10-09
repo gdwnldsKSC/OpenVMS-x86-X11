@@ -40,12 +40,18 @@
 
 #include <X11/Xfuncs.h>
 #include "XKBuiPriv.h"
-#include "XKBfileInt.h"
 #include <X11/extensions/XKBfile.h>
 
 #ifndef M_PI
 #  define M_PI	3.141592653589793238462
 #endif
+
+/* This function is an internal function in the xkbfile library */
+extern int	_XkbStrCaseCmp(
+	char *	/* str1 */,
+	char *	/* str2 */
+);
+
 
 static XkbUI_ViewOptsRec dfltOpts = { 
 	XkbUI_AllViewOptsMask	/* present */,

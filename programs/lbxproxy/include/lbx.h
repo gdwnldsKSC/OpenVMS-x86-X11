@@ -52,7 +52,7 @@ in this Software without prior written authorization from The Open Group.
 #include "misc.h"
 #include "os.h"
 #include "util.h"
-#include "lbxstr.h"
+#include <X11/extensions/lbxstr.h>
 
 /* we keep the ifdefs in the code as a guide to what's going on */
 /* but we want the proxy to work with all possible servers */

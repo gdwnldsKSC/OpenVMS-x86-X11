@@ -79,6 +79,8 @@ manual volume numbers.
 
       <arg><option>-o</option></arg>
 
+      <arg><option>-r <replaceable>resolution</replaceable></option></arg>
+
       <arg><option>-b</option></arg>
 
       <arg><option>-B</option></arg>
@@ -266,6 +268,22 @@ manual volume numbers.
         </listitem>
       </varlistentry>
 
+      <varlistentry>
+        <term><option>-r <replaceable>resolutionname</replaceable></option>
+        </term>
+        <listitem>
+          <para>
+            Set print resolution name (usually values like <literal>300dpi</literal>
+            or <literal>300x600</literal>, see output of <command>xplsprinters</command>).
+            This may alter the output of <command>xlsfonts</command> if there are printer
+            fonts which get enabled/disabled on per-resolution basis by the DDX.
+          </para>
+          <para>
+            (printer mode only)
+          </para>
+        </listitem>
+      </varlistentry>      
+      
       <varlistentry>
         <term><option>-b</option>
         </term>

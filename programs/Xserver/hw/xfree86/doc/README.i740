@@ -167,7 +167,7 @@ detected.
 
    o Daryll Strauss <daryll@precisioninsight.com>
 
-The X11R6.8.2 version of this driver originally came from XFree86 4.4 rc2.
+The X11R6.9 version of this driver originally came from XFree86 4.4 rc2.
 
 The XFree86 version of this driver was donated to The XFree86 Project by:
 
@@ -178,4 +178,4 @@ The XFree86 version of this driver was donated to The XFree86 Project by:
 http://www.precisioninsight.com
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.i740,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.i740,v 1.4 2005/12/21 05:39:05 kem Exp $

@@ -29,6 +29,7 @@
 #ifndef MGALIB_INC
 #define MGALIB_INC
 
+#include <stdint.h>
 #include "drm.h"
 #include "mga_drm.h"
 #include "dri_util.h"
@@ -62,6 +63,7 @@
 #define MGA_FALLBACK_STENCIL        0x20
 #define MGA_FALLBACK_DEPTH          0x40
 #define MGA_FALLBACK_BORDER_MODE    0x80
+#define MGA_FALLBACK_DISABLE        0x100
 
 
 /* Use the templated vertex formats:
@@ -267,7 +269,7 @@ struct mga_context_t {
    GLuint swap_count;
    GLuint swap_missed_count;
 
-   PFNGLXGETUSTPROC get_ust;
+   uint32_t last_frame_fence;
 
    /* Drawable, cliprect and scissor information
     */

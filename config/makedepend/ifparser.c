@@ -65,6 +65,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 /****************************************************************************
 		   Internal Macros and Utilities for Parser
@@ -296,7 +297,10 @@ parse_product (IfParser *g, const char *cp, long *valp)
 
       case '/':
 	DO (cp = parse_product (g, cp + 1, &rightval));
-	*valp = (*valp / rightval);
+    if (rightval)
+	    *valp = (*valp / rightval);
+    else
+        *valp = LONG_MAX;
 	break;
 
       case '%':

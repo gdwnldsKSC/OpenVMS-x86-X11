@@ -100,11 +100,9 @@ XCOMM operating system: OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVer
 
 #if OSMajorVersion < 5
 #define SymbolTables -Wf,-XNp16000,-XNd16000,-XNh2000
-#define PexSymbolTables -Wf,-XNp15000,-XNd15000,-XNh2000
 #define ServerSymbolTables -Wf,-XNp8000,-XNh2000,-XNd8000
 #else
 #define SymbolTables
-#define PexSymbolTables
 #define ServerSymbolTables
 #endif
 
@@ -177,9 +175,6 @@ XCOMM operating system: OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVer
 
 #ifndef DefaultCCOptions
 #define DefaultCCOptions sgiCCOptions SymbolTables
-#endif
-#ifndef PexCCOptions
-#define PexCCOptions sgiCCOptions PexSymbolTables
 #endif
 #ifndef ServerCCOptions
 #define ServerCCOptions sgiCCOptions ServerSymbolTables

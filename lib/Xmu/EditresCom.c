@@ -31,6 +31,9 @@ in this Software without prior written authorization from The Open Group.
  * Author:  Chris D. Peterson, Dave Sternlicht, MIT X Consortium
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/IntrinsicP.h>	/* To get into the composite and core widget
 				   structures. */
 #include <X11/ObjectP.h>	/* For XtIs<Classname> macros. */

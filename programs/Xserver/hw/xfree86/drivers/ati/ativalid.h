@@ -24,11 +24,8 @@
 #ifndef ___ATIVALID_H___
 #define ___ATIVALID_H___ 1
 
-#include "atiproto.h"
-
 #include "xf86str.h"
 
-extern ModeStatus ATIValidMode FunctionPrototype((int, DisplayModePtr, Bool,
-                                                  int));
+extern ModeStatus ATIValidMode(int, DisplayModePtr, Bool, int);
 
 #endif /* ___ATIVALID_H___ */

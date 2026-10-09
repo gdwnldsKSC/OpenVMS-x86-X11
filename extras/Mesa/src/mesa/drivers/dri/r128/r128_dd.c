@@ -40,10 +40,11 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "swrast/swrast.h"
 
 #include "context.h"
+#include "framebuffer.h"
 
 #include "utils.h"
 
-#define DRIVER_DATE	"20041001"
+#define DRIVER_DATE	"20041026"
 
 
 /* Return the width and height of the current color buffer.
@@ -140,7 +141,7 @@ static void r128Finish( GLcontext *ctx )
 void r128InitDriverFuncs( struct dd_function_table *functions )
 {
    functions->GetBufferSize	= r128GetBufferSize;
-   functions->ResizeBuffers	= _swrast_alloc_buffers;
+   functions->ResizeBuffers	= _mesa_resize_framebuffer;
    functions->GetString		= r128GetString;
    functions->Finish		= r128Finish;
    functions->Flush		= r128Flush;

@@ -38,7 +38,9 @@ SHELL=/bin/sh
 ifndef LINUXDIR
 RUNNING_REL := $(shell uname -r)
 
-LINUXDIR := /lib/modules/$(RUNNING_REL)/build
+LINUXDIR := $(shell if [ -e /lib/modules/$(RUNNING_REL)/source ]; then \
+		 echo /lib/modules/$(RUNNING_REL)/source; \
+		 else echo /lib/modules/$(RUNNING_REL)/build; fi)
 endif
 
 ifndef O
@@ -48,7 +50,7 @@ endif
 MACHINE := $(shell uname -m)
 
 # Modules for all architectures
-MODULE_LIST := gamma.o tdfx.o r128.o radeon.o mga.o sis.o savage.o via.o mach64.o
+MODULE_LIST := tdfx.o r128.o radeon.o mga.o sis.o savage.o via.o mach64.o
 
 # Modules only for ix86 architectures
 ifneq (,$(findstring 86,$(MACHINE)))
@@ -67,13 +69,12 @@ DRM_MODULES ?= $(MODULE_LIST)
 
 DRMTEMPLATES =  drm_auth.h drm_bufs.h drm_context.h drm_dma.h drm_drawable.h \
                 drm_drv.h drm_fops.h drm_init.h drm_ioctl.h drm_irq.h \
-                drm_lock.h drm_memory.h drm_proc.h drm_stub.h drm_vm.h
+                drm_lock.h drm_memory.h drm_proc.h drm_stub.h drm_vm.h \
+                drm_core.h
 
 DRMSHARED =     drm.h drm_sarea.h
 DRMHEADERS =    drmP.h $(DRMSHARED)
 
-GAMMAHEADERS =  gamma.h gamma_context.h gamma_drm.h gamma_drv.h gamma_lists.h \
-                gamma_old_dma.h gamma_lock.h $(DRMHEADERS) $(DRMTEMPLATES)
 TDFXHEADERS =   tdfx.h $(DRMHEADERS) $(DRMTEMPLATES)
 TDFXSHARED =    tdfx.h
 R128HEADERS =   r128.h r128_drv.h r128_drm.h $(DRMHEADERS) $(DRMTEMPLATES)
@@ -95,9 +96,10 @@ SISSHARED=      sis.h sis_drv.h sis_drm.h sis_ds.c sis_ds.h sis_mm.c
 SAVAGEHEADERS=  savage.h savage_drv.h savage_drm.h $(DRMHEADERS) \
                 $(DRMTEMPLATES)
 VIAHEADERS	= via_drm.h via_drv.h via.h via_mm.h via_ds.h \
-		$(DRMHEADERS) $(DRMTEMPLATES)
-VIASHARED	= via_drm.h via_drv.h via.h via_mm.h via_ds.h via_drv.c \
-		via_ds.c via_irq.c via_map.c via_mm.c
+		via_3d_reg.h $(DRMHEADERS) $(DRMTEMPLATES)
+VIASHARED	= via_drm.h via_drv.h via.h via_mm.h via_ds.h \
+		via_3d_reg.h via_drv.c via_ds.c via_irq.c via_map.c \
+		via_mm.c via_dma.c via_verifier.c via_verifier.h via_video.c
 MACH64HEADERS	= mach64.h mach64_drv.h mach64_drm.h $(DRMHEADERS) \
 		$(DRMTEMPLATES)
 MACH64SHARED 	= mach64.h mach64_drv.h mach64_drm.h mach64_dma.c \
@@ -110,7 +112,7 @@ SHAREDSRC = $(DRMSHARED) $(MGASHARED) $(R128SHARED) $(RADEONSHARED) \
 
 PROGS = dristat drmstat
 
-CLEANFILES = *.o *.ko $(PROGS) .depend .*.flags .*.d .*.cmd *.mod.c linux drm_pciids.h .tmp_versions
+CLEANFILES = *.o *.ko $(PROGS) .depend .*.flags .*.d .*.cmd *.mod.c linux .tmp_versions
 
 # VERSION is not defined from the initial invocation.  It is defined when
 # this Makefile is invoked from the kernel's root Makefile.
@@ -158,7 +160,7 @@ endif
 endif
 
 ifneq ($(HAVECONFIG),y)
-ifneq ($(0),$(LINUXDIR))
+ifneq ($(O),$(LINUXDIR))
 GETCONFIG += O=$(O)
 endif
 HAVECONFIG := $(shell if [ -e $(O)/.config ]; then echo y; fi)
@@ -168,6 +170,10 @@ ifneq ($(HAVECONFIG),y)
 $(error Cannot find a kernel config file)
 endif
 
+endif
+
+ifneq ($(findstring 2.6,$(RUNNING_REL)),)
+$(error Building 2.4 version on $(RUNNING_REL))
 endif
 
 CLEANCONFIG := $(shell if cmp -s $(LINUXDIR)/.config .config; then echo y; fi)
@@ -296,6 +302,14 @@ ifneq ($(DOMUNMAP),0)
 EXTRA_CFLAGS += -DDO_MUNMAP_4_ARGS
 endif
 
+# Check for new read/write interface
+READWRITE := $(shell grep static $(LINUXDIR)/include/asm/io.h | \
+		grep -c volatile)
+
+ifneq ($(READWRITE),0)
+EXTRA_CFLAGS += -DNEWREADWRITE
+endif
+
 # Check for 5-argument remap_page_range() in RH9 kernel, and 2.5.x kernels
 RPR := $(shell grep remap_page_range $(LINUXDIR)/include/linux/mm.h | \
 		grep -c vma)
@@ -338,9 +352,6 @@ CONFIG_DRM_MACH64 := n
 
 # Enable module builds for the modules requested/supported.
 
-ifneq (,$(findstring gamma,$(DRM_MODULES)))
-CONFIG_DRM_GAMMA := m
-endif
 ifneq (,$(findstring tdfx,$(DRM_MODULES)))
 CONFIG_DRM_TDFX := m
 endif
@@ -359,7 +370,7 @@ endif
 ifneq (,$(findstring mach64,$(DRM_MODULES)))
 CONFIG_DRM_MACH64 := m
 endif
-ifneq (,$($findstring ffb,$(DRM_MODULES)))
+ifneq (,$(findstring ffb,$(DRM_MODULES)))
 CONFIG_DRM_FFB := m
 endif
 
@@ -386,13 +397,12 @@ endif
 include $(DRMSRCDIR)/Makefile.kernel
 
 # Depencencies
-$(gamma-objs):	$(GAMMAHEADERS)
 $(tdfx-objs):	$(TDFXHEADERS)
 $(r128-objs):	$(R128HEADERS)
 $(mga-objs):	$(MGAHEADERS)
 $(i810-objs):	$(I810HEADERS)
 $(i830-objs):	$(I830HEADERS)
-$(i915-objs):	$(I830HEADERS)
+$(i915-objs):	$(I915HEADERS)
 $(radeon-objs):	$(RADEONHEADERS)
 $(sis-objs):	$(SISHEADERS)
 $(ffb-objs):	$(FFBHEADERS)

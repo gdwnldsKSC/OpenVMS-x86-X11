@@ -27,6 +27,7 @@
 /* $XFree86: xc/programs/xedit/util.c,v 1.26 2003/05/07 20:54:43 herrb Exp $ */
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>		/* for realpath() */
 #include "xedit.h"
 
@@ -57,14 +58,43 @@ extern Widget scratch;
 extern Widget vpanes[2], labels[3], texts[3], forms[3];
 extern XawTextWrapMode wrapmodes[3];
 
+#ifndef va_copy
+# ifdef __va_copy
+#  define va_copy __va_copy
+# else
+#  error "no working va_copy was found"
+# endif
+#endif
+    
 /*
  * Implementation
  */
 void
-XeditPrintf(char *str)
+XeditPrintf(const char *format, ...)
 {
-    XawTextBlock text;
-    XawTextPosition pos = XawTextSourceScan(XawTextGetSource(messwidget),
+    char         *str;
+    size_t        size;
+    va_list       va,
+                  va2;
+    XawTextBlock  text;
+    XawTextPosition pos;
+    
+    va_start(va, format);
+
+    va_copy(va2, va);
+    size = vsnprintf(NULL, 0, format, va2);
+    va_end(va2);
+
+    str = (char *)malloc(size + 1);
+    if (str == NULL)
+        return;
+
+    vsnprintf(str, size + 1, format, va);
+    str[size] = 0;
+    
+    va_end(va);
+    
+    pos = XawTextSourceScan(XawTextGetSource(messwidget),
 					    0, XawstAll, XawsdRight, 1, True);
 
     text.length = strlen(str);
@@ -75,6 +105,8 @@ XeditPrintf(char *str)
     XawTextReplace(messwidget, pos, pos, &text);
 
     XawTextSetInsertionPoint(messwidget, pos + text.length);
+    
+    free(str);
 }
 
 Widget

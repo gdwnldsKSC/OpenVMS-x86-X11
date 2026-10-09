@@ -32,6 +32,9 @@
 /*
  * Look at hw/darwin/quartz/xpr/xprFrame.c and hw/darwin/quartz/cr/crFrame.c
  */
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 #include <winuser.h>
 #define _WINDOWSWM_SERVER_
@@ -39,7 +42,7 @@
 #include "dixevents.h"
 #include "winmultiwindowclass.h"
 #include "winprefs.h"
-#include "Xatom.h"
+#include <X11/Xatom.h>
 
 
 /*
@@ -52,7 +55,6 @@
 #define ULW_ALPHA	0x00000002
 #define ULW_OPAQUE	0x00000004
 #define AC_SRC_ALPHA	0x01
-
 
 /*
  * Local function
@@ -203,7 +205,7 @@ InitWin32RootlessEngine (win32RootlessWindowPtr pRLWinPriv)
 							+ 256 * sizeof (RGBQUAD));
   if (pRLWinPriv->pbmihShadow == NULL)
     {
-      ErrorF ("winMWExtWMCreateFrame - malloc () failed\n");
+      ErrorF ("InitWin32RootlessEngine - malloc () failed\n");
       return;
     }
   
@@ -276,7 +278,8 @@ winMWExtWMCreateFrame (RootlessWindowPtr pFrame, ScreenPtr pScreen,
     }
 
   /* Add incrementing window ID to make unique class name */
-  sprintf (pszWindowID, "-%x", s_iWindowID++);
+  snprintf (pszWindowID, sizeof(pszWindowID), "-%x", s_iWindowID++);
+  pszWindowID[sizeof(pszWindowID)-1] = 0;
   strcat (pszClass, pszWindowID);
 
 #if CYGMULTIWINDOW_DEBUG
@@ -454,16 +457,29 @@ winMWExtWMMoveFrame (RootlessFrameID wid, ScreenPtr pScreen, int iNewX, int iNew
   /* Store the origin, height, and width in a rectangle structure */
   SetRect (&rcNew, iX, iY, iX + iWidth, iY + iHeight);
 
+#ifdef CYGMULTIWINDOW_DEBUG
+          winDebug("\tWindow {%d, %d, %d, %d}, {%d, %d}\n", 
+              rcNew.left, rcNew.top, rcNew.right, rcNew.bottom,
+              rcNew.right - rcNew.left, rcNew.bottom - rcNew.top);
+#endif
   /*
    * Calculate the required size of the Windows window rectangle,
    * given the size of the Windows window client area.
    */
   AdjustWindowRectEx (&rcNew, dwStyle, FALSE, dwExStyle);
 
+#ifdef CYGMULTIWINDOW_DEBUG
+          winDebug("\tAdjusted {%d, %d, %d, %d}, {%d, %d}\n", 
+              rcNew.left, rcNew.top, rcNew.right, rcNew.bottom,
+              rcNew.right - rcNew.left, rcNew.bottom - rcNew.top);
+#endif
   g_fNoConfigureWindow = TRUE;
   SetWindowPos (pRLWinPriv->hWnd, NULL, rcNew.left, rcNew.top, 0, 0,
 		SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOZORDER);
   g_fNoConfigureWindow = FALSE;
+#if CYGMULTIWINDOW_DEBUG
+  winDebug ("winMWExtWMMoveFrame (%08x) done\n", (int) pRLWinPriv);
+#endif
 }
 
 void
@@ -478,7 +494,7 @@ winMWExtWMResizeFrame (RootlessFrameID wid, ScreenPtr pScreen,
   DWORD dwExStyle;
   DWORD dwStyle;
   int iX, iY;
-  
+
 #if CYGMULTIWINDOW_DEBUG
   winDebug ("winMWExtWMResizeFrame (%08x) (%d %d)-(%d %d)\n",
 	  (int) pRLWinPriv, iNewX, iNewY, uiNewWidth, uiNewHeight);
@@ -525,6 +541,7 @@ winMWExtWMRestackFrame (RootlessFrameID wid, RootlessFrameID nextWid)
   win32RootlessWindowPtr pRLWinPriv = (win32RootlessWindowPtr) wid;
   win32RootlessWindowPtr pRLNextWinPriv = (win32RootlessWindowPtr) nextWid;
   winScreenPriv(pRLWinPriv->pFrame->win->drawable.pScreen);
+  winScreenInfo *pScreenInfo = NULL;
   DWORD dwCurrentProcessID = GetCurrentProcessId ();
   DWORD dwWindowProcessID = 0;
   HWND hWnd;
@@ -535,6 +552,8 @@ winMWExtWMRestackFrame (RootlessFrameID wid, RootlessFrameID nextWid)
 #endif
 
   if (pScreenPriv->fRestacking) return;
+
+  if (pScreenPriv) pScreenInfo = pScreenPriv->pScreenInfo;
 
   pRLWinPriv->fRestackingNow = TRUE;
 
@@ -551,8 +570,9 @@ winMWExtWMRestackFrame (RootlessFrameID wid, RootlessFrameID nextWid)
       SetWindowPos (pRLWinPriv->hWnd, HWND_TOP,
 		    0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
     }
-  else
+  else if (winIsInternalWMRunning(pScreenInfo))
     {
+      /* using mulwinidow wm */
 #if CYGMULTIWINDOW_DEBUG
       winDebug ("Win %08x is not top\n", pRLWinPriv);
 #endif
@@ -613,6 +633,19 @@ winMWExtWMRestackFrame (RootlessFrameID wid, RootlessFrameID nextWid)
 	    }
 	}
     }
+  else
+    {
+      /* using general wm like twm, wmaker etc.
+	 Interleave X window and Windows window will cause problem. */
+      SetWindowPos (pRLWinPriv->hWnd, pRLNextWinPriv->hWnd,
+		    0, 0, 0, 0,
+		    SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
+#if 0
+#endif
+    }
+#if CYGMULTIWINDOW_DEBUG
+  winDebug ("winMWExtWMRestackFrame - done (%08x)\n", (int) pRLWinPriv);
+#endif
 
   pRLWinPriv->fRestackingNow = FALSE;
 }
@@ -628,7 +661,7 @@ winMWExtWMReshapeFrame (RootlessFrameID wid, RegionPtr pShape)
 #endif
 
   hRgn = winMWExtWMCreateRgnFromRegion (pShape);
-
+  
   /* Create region for non-client area */
   GetWindowRect (pRLWinPriv->hWnd, &rcWindow);
   GetClientRect (pRLWinPriv->hWnd, &rcClient);
@@ -687,8 +720,10 @@ winMWExtWMStartDrawing (RootlessFrameID wid, char **pixelData, int *bytesPerRow)
       if (pScreenPriv) pScreenInfo = pScreenPriv->pScreenInfo;
       
 #if CYGMULTIWINDOW_DEBUG
-      winDebug ("pScreenPriv %08X\n", (int) pScreenPriv);
-      winDebug ("pScreenInfo %08X\n", (int) pScreenInfo);
+      winDebug ("\tpScreenPriv %08X\n", (int) pScreenPriv);
+      winDebug ("\tpScreenInfo %08X\n", (int) pScreenInfo);
+      winDebug ("\t(%d, %d)\n", (int)pRLWinPriv->pFrame->width,
+		(int) pRLWinPriv->pFrame->height);
 #endif
       if (pRLWinPriv->hdcScreen == NULL)
 	{
@@ -697,11 +732,24 @@ winMWExtWMStartDrawing (RootlessFrameID wid, char **pixelData, int *bytesPerRow)
       
       if (pRLWinPriv->fResized)
 	{
-	  hdcNew = CreateCompatibleDC (pRLWinPriv->hdcScreen);
-	  /* Describe shadow bitmap to be created */
-	  pRLWinPriv->pbmihShadow->biWidth = pRLWinPriv->pFrame->width;//pRLWinPriv->dwWidth;
-	  pRLWinPriv->pbmihShadow->biHeight = -pRLWinPriv->pFrame->height;//pRLWinPriv->dwHeight;
+          /* width * bpp must be multiple of 4 to match 32bit alignment */
+	  int stridesize;
+	  int misalignment;
+         
+	  pRLWinPriv->pbmihShadow->biWidth = pRLWinPriv->pFrame->width;
+	  pRLWinPriv->pbmihShadow->biHeight = -pRLWinPriv->pFrame->height;
+ 
+	  stridesize = pRLWinPriv->pFrame->width * (pScreenInfo->dwBPP >> 3);
+	  misalignment = stridesize & 3; 
+	  if (misalignment != 0)
+	  {
+	    stridesize += 4 - misalignment;
+	    pRLWinPriv->pbmihShadow->biWidth = stridesize / (pScreenInfo->dwBPP >> 3);
+	    winDebug("\tresizing to %d (was %d)\n", 
+		    pRLWinPriv->pbmihShadow->biWidth, pRLWinPriv->pFrame->width);
+	  }
 	  
+	  hdcNew = CreateCompatibleDC (pRLWinPriv->hdcScreen);
 	  /* Create a DI shadow bitmap with a bit pointer */
 	  hbmpNew = CreateDIBSection (pRLWinPriv->hdcScreen,
 				      (BITMAPINFO *) pRLWinPriv->pbmihShadow,
@@ -763,10 +811,11 @@ winMWExtWMStartDrawing (RootlessFrameID wid, char **pixelData, int *bytesPerRow)
 	  if (dibsection.dsBmih.biHeight < 0)
 	    {
 	      /* FIXME: Figure out why biHeight is sometimes negative */
-	      ErrorF ("winMWExtWMStartDrawing - WEIRDNESS - biHeight "
-		      "still negative: %d\n"
-		      "winAllocateFBShadowGDI - WEIRDNESS - Flipping biHeight sign\n",
-		      (int) dibsection.dsBmih.biHeight);
+	      ErrorF ("winMWExtWMStartDrawing - WEIRDNESS - "
+                  "biHeight still negative: %d\n", 
+                  (int) dibsection.dsBmih.biHeight);
+	      ErrorF ("winMWExtWMStartDrawing - WEIRDNESS - "
+                  "Flipping biHeight sign\n");
 	      dibsection.dsBmih.biHeight = -dibsection.dsBmih.biHeight;
 	    }
 	  
@@ -785,18 +834,19 @@ winMWExtWMStartDrawing (RootlessFrameID wid, char **pixelData, int *bytesPerRow)
 	  pRLWinPriv->hbmpShadow = hbmpNew;
 	  
 	  pRLWinPriv->fResized = FALSE;
-	}
-#if CYGMULTIWINDOW_DEBUG
-      winDebug ("winMWExtWMStartDrawing - 0x%08x %d\n",
-		(unsigned int)pRLWinPriv->pfb, (unsigned int)dibsection.dsBm.bmWidthBytes);
+#if CYGMULTIWINDOW_DEBUG && FALSE
+	  winDebug ("winMWExtWMStartDrawing - 0x%08x %d\n",
+		(unsigned int)pRLWinPriv->pfb, 
+		(unsigned int)dibsection.dsBm.bmWidthBytes);
 #endif
+	}
     }
   else
     {
       ErrorF ("winMWExtWMStartDrawing - Already window was destroyed \n"); 
     }
 #if CYGMULTIWINDOW_DEBUG
-  winDebug ("winMWExtWMStartDrawing - done (0x08x) 0x%08x %d\n",
+  winDebug ("winMWExtWMStartDrawing - done (0x%08x) 0x%08x %d\n",
 	    (int) pRLWinPriv,
 	    (unsigned int)pRLWinPriv->pfb, (unsigned int)pRLWinPriv->dwWidthBytes);
 #endif
@@ -914,6 +964,13 @@ winMWExtWMRootlessSwitchWindow (RootlessWindowPtr pFrame, WindowPtr oldWin)
   pRLWinPriv->pFrame = pFrame;
   pRLWinPriv->fResized = TRUE;
 
+  /* Set the window extended style flags */
+  SetWindowLongPtr (pRLWinPriv->hWnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW);
+
+  /* Set the window standard style flags */
+  SetWindowLongPtr (pRLWinPriv->hWnd, GWL_STYLE,
+		    WS_POPUP | WS_CLIPCHILDREN);
+
   DeleteProperty (oldWin, AtmWindowsWmNativeHwnd ());
   winMWExtWMSetNativeProperty (pFrame);
 #if CYGMULTIWINDOW_DEBUG
@@ -1029,7 +1086,7 @@ winMWExtWMSetNativeProperty (RootlessWindowPtr pFrame)
 
   /* FIXME: move this to WindowsWM extension */
 
-  lData = pRLWinPriv->hWnd;
+  lData = (long) pRLWinPriv->hWnd;
   ChangeWindowProperty (pFrame->win, AtmWindowsWmNativeHwnd (),
 			XA_INTEGER, 32, PropModeReplace, 1, &lData, TRUE);
 }

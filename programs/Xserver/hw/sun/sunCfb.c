@@ -401,7 +401,6 @@ Bool sunCG2Init (screen, pScreen, argc, argv)
 
     sunFbs[screen].EnterLeave = (void (*)())NoopDDA;
     pScreen->SaveScreen = CG2SaveScreen;
-#ifndef LOWMEMFTPT
     if (mono) {
 	pScreen->whitePixel = 0;
 	pScreen->blackPixel = 1;
@@ -410,15 +409,12 @@ Bool sunCG2Init (screen, pScreen, argc, argv)
 			mfbCreateDefColormap, CG2SaveScreen, 0);
 	((CG2Ptr) sunFbs[screen].fb)->regs.ppmask.reg = 1;
     } else {
-#endif /* ifndef LOWMEMFTPT */
 	ret = sunInitCommon (screen, pScreen, (off_t) 0,
 			sunCfbScreenInit, CG2ScreenInit,
 			cfbCreateDefColormap, CG2SaveScreen,
 			(int) &((struct cg2memfb *) 0)->pixplane);
 	((CG2Ptr) sunFbs[screen].fb)->regs.ppmask.reg = 0xFF;
-#ifndef LOWMEMFTPT
     }
-#endif /* ifndef LOWMEMFTPT */
     return ret;
 }
 #endif /* INCLUDE_CG2_HEADER */
@@ -495,12 +491,10 @@ Bool sunCG6Init (screen, pScreen, argc, argv)
 	    sunFbs[screen].info.fb_width,
 	    sunFbs[screen].info.fb_depth))
 	return FALSE;
-#ifndef LOWMEMFTPT
     if (sunNoGX == FALSE) {
 	if (!sunGXInit (pScreen, &sunFbs[screen]))
 	    return FALSE;
     }
-#endif /* ifndef LOWMEMFTPT */
     if (!sunCfbFinishScreenInit(pScreen,
 	    sunFbs[screen].fb + CG6_IMAGE_OFFSET,
 	    sunFbs[screen].info.fb_width, 

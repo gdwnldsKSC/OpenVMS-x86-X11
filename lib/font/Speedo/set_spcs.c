@@ -29,6 +29,9 @@ WITH THE SPEEDO SOFTWARE OR THE BITSTREAM CHARTER OUTLINE FONT.
  * This module implements all sp_set_specs() functionality.                  *
  *                                                                           *
  ****************************************************************************/
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #define SET_SPCS
 #include "spdo_prv.h"               /* General definitions for Speedo    */
 #include "keys.h"

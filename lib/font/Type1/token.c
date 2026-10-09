@@ -29,6 +29,9 @@
  */
 /* $XFree86: xc/lib/font/Type1/token.c,v 1.5tsi Exp $ */
 /* Authors: Sig Nin & Carol Thompson IBM Almaden Research Laboratory */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "t1stdio.h"
 #include "util.h"
 #include "digit.h"

@@ -751,9 +751,7 @@ RemoveDQuote(char *str)
     *o = '\0';
 }
 
-static MenuRoot *GetRoot(name, fore, back)
-char *name;
-char *fore, *back;
+static MenuRoot *GetRoot(char *name, char* fore, char *back)
 {
     MenuRoot *tmp;
 
@@ -775,8 +773,7 @@ char *fore, *back;
     return tmp;
 }
 
-static void GotButton(butt, func)
-int butt, func;
+static void GotButton(int butt, int func)
 {
     int i;
 
@@ -805,9 +802,7 @@ int butt, func;
     mods = 0;
 }
 
-static void GotKey(key, func)
-char *key;
-int func;
+static void GotKey(char *key, int func)
 {
     int i;
 
@@ -827,10 +822,7 @@ int func;
 }
 
 
-static void GotTitleButton (bitmapname, func, rightside)
-    char *bitmapname;
-    int func;
-    Bool rightside;
+static void GotTitleButton (char *bitmapname, int func, Bool rightside)
 {
     if (!CreateTitleButton (bitmapname, func, Action, pull, rightside, True)) {
 	twmrc_error_prefix();
@@ -842,8 +834,7 @@ static void GotTitleButton (bitmapname, func, rightside)
     pull = NULL;
 }
 
-static Bool CheckWarpScreenArg (s)
-    register char *s;
+static Bool CheckWarpScreenArg (char *s)
 {
     XmuCopyISOLatin1Lowered (s, s);
 
@@ -857,8 +848,7 @@ static Bool CheckWarpScreenArg (s)
 }
 
 
-static Bool CheckWarpRingArg (s)
-    register char *s;
+static Bool CheckWarpRingArg (char *s)
 {
     XmuCopyISOLatin1Lowered (s, s);
 
@@ -870,8 +860,7 @@ static Bool CheckWarpRingArg (s)
 }
 
 
-static Bool CheckColormapArg (s)
-    register char *s;
+static Bool CheckColormapArg (char *s)
 {
     XmuCopyISOLatin1Lowered (s, s);
 

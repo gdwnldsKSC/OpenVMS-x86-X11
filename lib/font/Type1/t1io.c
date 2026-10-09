@@ -50,6 +50,13 @@
 *  I/O package for Type 1 font reading
 ********************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
 #ifndef STATIC
 #define STATIC static
 #endif
@@ -58,7 +65,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #else
-#include "Xdefs.h"	/* Bool declaration */
+#include "Xdefs.h"
 #include "Xmd.h"	/* INT32 declaration */
 #include "xf86_ansic.h"
 #endif
@@ -67,7 +74,7 @@
 #ifdef WIN32
 #include <X11/Xw32defs.h>
 #endif
-#include "Xdefs.h"
+#include <X11/Xdefs.h>
 
 /* Constants and variables used in the decryption */
 #define c1 ((unsigned short)52845)
@@ -85,7 +92,7 @@ STATIC unsigned char TheBuffer[F_BUFSIZ];
 static int T1Decrypt ( unsigned char *p, int len );
 static int T1Fill ( F_FILE *f );
 
-#ifdef BUILDCID
+#if XFONT_CID
 void 
 resetDecrypt(void)
 {
@@ -251,7 +258,7 @@ T1eexec(F_FILE *f)   /* Stream descriptor */
   return (T1Feof(f))?NULL:f;
 } /* end eexec */
 
-#ifdef BUILDCID
+#if XFONT_CID
 F_FILE *             /* Initialization */
 CIDeexec(F_FILE *f)  /* Stream descriptor */ 
 {

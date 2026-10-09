@@ -48,13 +48,18 @@ SOFTWARE.
 
 
 /* $Xorg: devices.c,v 1.4 2001/02/09 02:04:39 xorgcvs Exp $ */
+/* $XdotOrg: xc/programs/Xserver/dix/devices.c,v 1.8 2005/07/03 08:53:38 daniels Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "misc.h"
 #include "resource.h"
 #define NEED_EVENTS
 #define NEED_REPLIES
-#include "Xproto.h"
+#include <X11/Xproto.h>
 #include "windowstr.h"
 #include "inputstr.h"
 #include "scrnintstr.h"
@@ -63,11 +68,11 @@ SOFTWARE.
 #include "site.h"
 #define	XKB_IN_SERVER
 #ifdef XKB
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 #endif
 #ifdef XCSECURITY
 #define _SECURITY_SERVER
-#include "security.h"
+#include <X11/extensions/security.h>
 #endif
 #ifdef LBX
 #include "lbxserve.h"
@@ -78,9 +83,7 @@ SOFTWARE.
 #include "dixevents.h"
 
 DeviceIntPtr
-_AddInputDevice(deviceProc, autoStart)
-    DeviceProc deviceProc;
-    Bool autoStart;
+_AddInputDevice(DeviceProc deviceProc, Bool autoStart)
 {
     register DeviceIntPtr dev;
 
@@ -122,13 +125,15 @@ _AddInputDevice(deviceProc, autoStart)
 #ifdef XKB
     dev->xkb_interest= NULL;
 #endif
+    dev->nPrivates = 0;
+    dev->devPrivates = NULL;
+    dev->unwrapProc = NULL;
     inputInfo.off_devices = dev;
     return dev;
 }
 
 Bool
-EnableDevice(dev)
-    register DeviceIntPtr dev;
+EnableDevice(register DeviceIntPtr dev)
 {
     register DeviceIntPtr *prev;
 
@@ -146,8 +151,7 @@ EnableDevice(dev)
 }
 
 Bool
-DisableDevice(dev)
-    register DeviceIntPtr dev;
+DisableDevice(register DeviceIntPtr dev)
 {
     register DeviceIntPtr *prev;
 
@@ -302,8 +306,7 @@ CloseDownDevices()
 }
 
 void
-RemoveDevice(dev)
-    register DeviceIntPtr dev;
+RemoveDevice(register DeviceIntPtr dev)
 {
     register DeviceIntPtr prev,tmp,next;
 
@@ -353,18 +356,14 @@ NumMotionEvents()
 }
 
 void
-_RegisterPointerDevice(device)
-    DeviceIntPtr device;
+_RegisterPointerDevice(DeviceIntPtr device)
 {
     inputInfo.pointer = device;
 #ifdef XKB
-    if (noXkbExtension) {
-	device->public.processInputProc = CoreProcessPointerEvent;
-	device->public.realInputProc = CoreProcessPointerEvent;
-    } else {
-	device->public.processInputProc = ProcessPointerEvent;
-	device->public.realInputProc = ProcessPointerEvent;
-    }
+    device->public.processInputProc = CoreProcessPointerEvent;
+    device->public.realInputProc = CoreProcessPointerEvent;
+    if (!noXkbExtension)
+       XkbSetExtension(device,ProcessPointerEvent);
 #else
     device->public.processInputProc = ProcessPointerEvent;
     device->public.realInputProc = ProcessPointerEvent;
@@ -380,18 +379,14 @@ _RegisterPointerDevice(device)
 }
 
 void
-_RegisterKeyboardDevice(device)
-    DeviceIntPtr device;
+_RegisterKeyboardDevice(DeviceIntPtr device)
 {
     inputInfo.keyboard = device;
 #ifdef XKB
-    if (noXkbExtension) {
-	device->public.processInputProc = CoreProcessKeyboardEvent;
-	device->public.realInputProc = CoreProcessKeyboardEvent;
-    } else {
-	device->public.processInputProc = ProcessKeyboardEvent;
-	device->public.realInputProc = ProcessKeyboardEvent;
-    }
+    device->public.processInputProc = CoreProcessKeyboardEvent;
+    device->public.realInputProc = CoreProcessKeyboardEvent;
+    if (!noXkbExtension)
+       XkbSetExtension(device,ProcessKeyboardEvent);
 #else
     device->public.processInputProc = ProcessKeyboardEvent;
     device->public.realInputProc = ProcessKeyboardEvent;
@@ -419,8 +414,7 @@ LookupPointerDevice()
 }
 
 DevicePtr
-LookupDevice(id)
-    int id;
+LookupDevice(int id)
 {
     DeviceIntPtr dev;
 
@@ -436,8 +430,7 @@ LookupDevice(id)
 }
 
 void
-QueryMinMaxKeyCodes(minCode, maxCode)
-    KeyCode *minCode, *maxCode;
+QueryMinMaxKeyCodes(KeyCode *minCode, KeyCode *maxCode)
 {
     if (inputInfo.keyboard) {
 	*minCode = inputInfo.keyboard->key->curKeySyms.minKeyCode;
@@ -446,8 +439,7 @@ QueryMinMaxKeyCodes(minCode, maxCode)
 }
 
 Bool
-SetKeySymsMap(dst, src)
-    register KeySymsPtr dst, src;
+SetKeySymsMap(register KeySymsPtr dst, register KeySymsPtr src)
 {
     int i, j;
     int rowDif = src->minKeyCode - dst->minKeyCode;
@@ -538,10 +530,7 @@ InitModMap(register KeyClassPtr keyc)
 }
 
 Bool
-InitKeyClassDeviceStruct(dev, pKeySyms, pModifiers)
-    DeviceIntPtr dev;
-    KeySymsPtr pKeySyms;
-    CARD8 pModifiers[];
+InitKeyClassDeviceStruct(DeviceIntPtr dev, KeySymsPtr pKeySyms, CARD8 pModifiers[])
 {
     int i;
     register KeyClassPtr keyc;
@@ -579,10 +568,8 @@ InitKeyClassDeviceStruct(dev, pKeySyms, pModifiers)
 }
 
 Bool
-InitButtonClassDeviceStruct(dev, numButtons, map)
-    register DeviceIntPtr dev;
-    int numButtons;
-    CARD8 *map;
+InitButtonClassDeviceStruct(register DeviceIntPtr dev, int numButtons, 
+                            CARD8 *map)
 {
     register ButtonClassPtr butc;
     int i;
@@ -605,12 +592,9 @@ InitButtonClassDeviceStruct(dev, numButtons, map)
 }
 
 Bool
-InitValuatorClassDeviceStruct(dev, numAxes, motionProc, numMotionEvents, mode)
-    DeviceIntPtr dev;
-    ValuatorMotionProcPtr motionProc;
-    int numAxes;
-    int numMotionEvents;
-    int mode;
+InitValuatorClassDeviceStruct(DeviceIntPtr dev, int numAxes, 
+                              ValuatorMotionProcPtr motionProc, 
+                              int numMotionEvents, int mode)
 {
     int i;
     register ValuatorClassPtr valc;
@@ -634,8 +618,7 @@ InitValuatorClassDeviceStruct(dev, numAxes, motionProc, numMotionEvents, mode)
 }
 
 Bool
-InitFocusClassDeviceStruct(dev)
-    DeviceIntPtr dev;
+InitFocusClassDeviceStruct(DeviceIntPtr dev)
 {
     register FocusClassPtr focc;
 
@@ -653,10 +636,8 @@ InitFocusClassDeviceStruct(dev)
 }
 
 Bool
-InitKbdFeedbackClassDeviceStruct(dev, bellProc, controlProc)
-    DeviceIntPtr dev;
-    BellProcPtr bellProc;
-    KbdCtrlProcPtr controlProc;
+InitKbdFeedbackClassDeviceStruct(DeviceIntPtr dev, BellProcPtr bellProc, 
+                                 KbdCtrlProcPtr controlProc)
 {
     register KbdFeedbackPtr feedc;
 
@@ -683,9 +664,7 @@ InitKbdFeedbackClassDeviceStruct(dev, bellProc, controlProc)
 }
 
 Bool
-InitPtrFeedbackClassDeviceStruct(dev, controlProc)
-    DeviceIntPtr dev;
-    PtrCtrlProcPtr controlProc;
+InitPtrFeedbackClassDeviceStruct(DeviceIntPtr dev, PtrCtrlProcPtr controlProc)
 {
     register PtrFeedbackPtr feedc;
 
@@ -726,13 +705,9 @@ IntegerCtrl defaultIntegerControl = {
 	0};
 
 Bool
-InitStringFeedbackClassDeviceStruct (dev, controlProc, max_symbols,
-				     num_symbols_supported, symbols)
-    DeviceIntPtr dev;
-    StringCtrlProcPtr controlProc;
-    int max_symbols;
-    int num_symbols_supported;
-    KeySym *symbols;
+InitStringFeedbackClassDeviceStruct (
+      DeviceIntPtr dev, StringCtrlProcPtr controlProc, 
+      int max_symbols, int num_symbols_supported, KeySym *symbols)
 {
     int i;
     register StringFeedbackPtr feedc;
@@ -770,10 +745,8 @@ InitStringFeedbackClassDeviceStruct (dev, controlProc, max_symbols,
 }
 
 Bool
-InitBellFeedbackClassDeviceStruct (dev, bellProc, controlProc)
-    DeviceIntPtr dev;
-    BellProcPtr bellProc;
-    BellCtrlProcPtr controlProc;
+InitBellFeedbackClassDeviceStruct (DeviceIntPtr dev, BellProcPtr bellProc, 
+                                   BellCtrlProcPtr controlProc)
 {
     register BellFeedbackPtr feedc;
 
@@ -792,9 +765,7 @@ InitBellFeedbackClassDeviceStruct (dev, bellProc, controlProc)
 }
 
 Bool
-InitLedFeedbackClassDeviceStruct (dev, controlProc)
-    DeviceIntPtr dev;
-    LedCtrlProcPtr controlProc;
+InitLedFeedbackClassDeviceStruct (DeviceIntPtr dev, LedCtrlProcPtr controlProc)
 {
     register LedFeedbackPtr feedc;
 
@@ -815,9 +786,7 @@ InitLedFeedbackClassDeviceStruct (dev, controlProc)
 }
 
 Bool
-InitIntegerFeedbackClassDeviceStruct (dev, controlProc)
-    DeviceIntPtr dev;
-    IntegerCtrlProcPtr controlProc;
+InitIntegerFeedbackClassDeviceStruct (DeviceIntPtr dev, IntegerCtrlProcPtr controlProc)
 {
     register IntegerFeedbackPtr feedc;
 
@@ -835,14 +804,9 @@ InitIntegerFeedbackClassDeviceStruct (dev, controlProc)
 }
 
 Bool
-InitPointerDeviceStruct(device, map, numButtons, motionProc, controlProc,
-			numMotionEvents)
-    DevicePtr device;
-    CARD8 *map;
-    int numButtons;
-    PtrCtrlProcPtr controlProc;
-    ValuatorMotionProcPtr motionProc;
-    int numMotionEvents;
+InitPointerDeviceStruct(DevicePtr device, CARD8 *map, int numButtons, 
+                        ValuatorMotionProcPtr motionProc, 
+                        PtrCtrlProcPtr controlProc, int numMotionEvents)
 {
     DeviceIntPtr dev = (DeviceIntPtr)device;
 
@@ -853,12 +817,9 @@ InitPointerDeviceStruct(device, map, numButtons, motionProc, controlProc,
 }
 
 Bool
-InitKeyboardDeviceStruct(device, pKeySyms, pModifiers, bellProc, controlProc)
-    DevicePtr device;
-    KeySymsPtr pKeySyms;
-    CARD8 pModifiers[];
-    BellProcPtr bellProc;
-    KbdCtrlProcPtr controlProc;
+InitKeyboardDeviceStruct(DevicePtr device, KeySymsPtr pKeySyms, 
+                         CARD8 pModifiers[], BellProcPtr bellProc, 
+                         KbdCtrlProcPtr controlProc) 
 {
     DeviceIntPtr dev = (DeviceIntPtr)device;
 
@@ -868,10 +829,8 @@ InitKeyboardDeviceStruct(device, pKeySyms, pModifiers, bellProc, controlProc)
 }
 
 void
-SendMappingNotify(request, firstKeyCode, count, client)
-    unsigned int request, count;
-    unsigned int firstKeyCode;
-    ClientPtr	client;
+SendMappingNotify(unsigned request, unsigned firstKeyCode, unsigned count, 
+                  ClientPtr client)
 {
     int i;
     xEvent event;
@@ -914,11 +873,7 @@ SendMappingNotify(request, firstKeyCode, count, client)
  * sort it to do the checking. How often is it called? Just being lazy?
  */
 Bool
-BadDeviceMap(buff, length, low, high, errval)
-    register BYTE *buff;
-    int length;
-    unsigned low, high;
-    XID *errval;
+BadDeviceMap(register BYTE *buff, int length, unsigned low, unsigned high, XID *errval)
 {
     register int     i, j;
 
@@ -966,8 +921,7 @@ AllModifierKeysAreUp(dev, map1, per1, map2, per2)
 }
 
 int 
-ProcSetModifierMapping(client)
-    ClientPtr client;
+ProcSetModifierMapping(ClientPtr client)
 {
     xSetModifierMappingReply rep;
     REQUEST(xSetModifierMappingReq);
@@ -1078,8 +1032,7 @@ ProcSetModifierMapping(client)
 }
 
 int
-ProcGetModifierMapping(client)
-    ClientPtr client;
+ProcGetModifierMapping(ClientPtr client)
 {
     xGetModifierMappingReply rep;
     register KeyClassPtr keyc = inputInfo.keyboard->key;
@@ -1100,8 +1053,7 @@ ProcGetModifierMapping(client)
 }
 
 int
-ProcChangeKeyboardMapping(client)
-    ClientPtr client;
+ProcChangeKeyboardMapping(ClientPtr client)
 {
     REQUEST(xChangeKeyboardMappingReq);
     unsigned len;
@@ -1146,8 +1098,7 @@ ProcChangeKeyboardMapping(client)
 }
 
 int
-ProcSetPointerMapping(client)
-    ClientPtr client;
+ProcSetPointerMapping(ClientPtr client)
 {
     REQUEST(xSetPointerMappingReq);
     BYTE *map;
@@ -1186,8 +1137,7 @@ ProcSetPointerMapping(client)
 }
 
 int
-ProcGetKeyboardMapping(client)
-    ClientPtr client;
+ProcGetKeyboardMapping(ClientPtr client)
 {
     xGetKeyboardMappingReply rep;
     REQUEST(xGetKeyboardMappingReq);
@@ -1225,8 +1175,7 @@ ProcGetKeyboardMapping(client)
 }
 
 int
-ProcGetPointerMapping(client)
-    ClientPtr client;
+ProcGetPointerMapping(ClientPtr client)
 {
     xGetPointerMappingReply rep;
     ButtonClassPtr butc = inputInfo.pointer->button;
@@ -1242,10 +1191,7 @@ ProcGetPointerMapping(client)
 }
 
 void
-NoteLedState(keybd, led, on)
-    DeviceIntPtr keybd;
-    int		led;
-    Bool	on;
+NoteLedState(DeviceIntPtr keybd, int led, Bool on)
 {
     KeybdCtrl *ctrl = &keybd->kbdfeed->ctrl;
     if (on)
@@ -1255,8 +1201,7 @@ NoteLedState(keybd, led, on)
 }
 
 int
-Ones(mask)                /* HACKMEM 169 */
-    unsigned long mask;
+Ones(unsigned long mask)             /* HACKMEM 169 */
 {
     register unsigned long y;
 
@@ -1266,8 +1211,7 @@ Ones(mask)                /* HACKMEM 169 */
 }
 
 int
-ProcChangeKeyboardControl (client)
-    ClientPtr client;
+ProcChangeKeyboardControl (ClientPtr client)
 {
 #define DO_ALL    (-1)
     KeybdCtrl ctrl;
@@ -1457,8 +1401,7 @@ ProcChangeKeyboardControl (client)
 } 
 
 int
-ProcGetKeyboardControl (client)
-    ClientPtr client;
+ProcGetKeyboardControl (ClientPtr client)
 {
     int i;
     register KeybdCtrl *ctrl = &inputInfo.keyboard->kbdfeed->ctrl;
@@ -1481,8 +1424,7 @@ ProcGetKeyboardControl (client)
 } 
 
 int
-ProcBell(client)
-    ClientPtr client;
+ProcBell(ClientPtr client)
 {
     register DeviceIntPtr keybd = inputInfo.keyboard;
     int base = keybd->kbdfeed->ctrl.bell;
@@ -1511,8 +1453,7 @@ ProcBell(client)
 } 
 
 int
-ProcChangePointerControl(client)
-    ClientPtr client;
+ProcChangePointerControl(ClientPtr client)
 {
     DeviceIntPtr mouse = inputInfo.pointer;
     PtrCtrl ctrl;		/* might get BadValue part way through */
@@ -1566,8 +1507,7 @@ ProcChangePointerControl(client)
 } 
 
 int
-ProcGetPointerControl(client)
-    ClientPtr client;
+ProcGetPointerControl(ClientPtr client)
 {
     register PtrCtrl *ctrl = &inputInfo.pointer->ptrfeed->ctrl;
     xGetPointerControlReply rep;
@@ -1584,9 +1524,7 @@ ProcGetPointerControl(client)
 }
 
 void
-MaybeStopHint(dev, client)
-    register DeviceIntPtr dev;
-    ClientPtr client;
+MaybeStopHint(register DeviceIntPtr dev, ClientPtr client)
 {
     GrabPtr grab = dev->grab;
 
@@ -1602,8 +1540,7 @@ MaybeStopHint(dev, client)
 }
 
 int
-ProcGetMotionEvents(client)
-    ClientPtr client;
+ProcGetMotionEvents(ClientPtr client)
 {
     WindowPtr pWin;
     xTimecoord * coords = (xTimecoord *) NULL;
@@ -1670,8 +1607,7 @@ ProcGetMotionEvents(client)
 }
 
 int
-ProcQueryKeymap(client)
-    ClientPtr client;
+ProcQueryKeymap(ClientPtr client)
 {
     xQueryKeymapReply rep;
     int i;
@@ -1703,9 +1639,7 @@ ProcQueryKeymap(client)
 #undef AddInputDevice
 
 DevicePtr
-AddInputDevice(
-    DeviceProc deviceProc,
-    Bool autoStart)
+AddInputDevice(DeviceProc deviceProc, Bool autoStart)
 {
     return (DevicePtr)_AddInputDevice(deviceProc, autoStart);
 }

@@ -35,6 +35,10 @@
 */
 
 #define NEED_REPLIES
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "glxserver.h"
 
 /*
@@ -49,6 +53,7 @@ __GLXcontext *__glXLastContext;
 RESTYPE __glXContextRes;
 RESTYPE __glXClientRes;
 RESTYPE __glXPixmapRes;
+RESTYPE __glXSwapBarrierRes;
 
 /*
 ** Error codes with the extension error base already added in.

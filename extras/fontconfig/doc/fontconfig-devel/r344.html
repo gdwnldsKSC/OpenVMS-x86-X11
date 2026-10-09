@@ -1,24 +1,22 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
->FcPatternAdd</TITLE
+>FcPatternHash</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
 REL="HOME"
-TITLE="Fontconfig Developers Reference, Version 2.2.2
- "
 HREF="index.html"><LINK
 REL="UP"
 TITLE="FcPattern"
-HREF="x93.html#AEN225"><LINK
+HREF="x93.html#AEN246"><LINK
 REL="PREVIOUS"
-TITLE="FcPatternHash"
-HREF="r323.html"><LINK
+TITLE="FcPatternEqualSubset"
+HREF="r316.html"><LINK
 REL="NEXT"
-TITLE="FcPatternAddWeak"
-HREF="r372.html"></HEAD
+TITLE="FcPatternAdd"
+HREF="r365.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -38,7 +36,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
->Fontconfig Developers Reference, Version 2.2.2</TH
+></TH
 ></TR
 ><TR
 ><TD
@@ -46,7 +44,7 @@ WIDTH="10%"
 ALIGN="left"
 VALIGN="bottom"
 ><A
-HREF="r323.html"
+HREF="r316.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -60,7 +58,7 @@ WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
 ><A
-HREF="r372.html"
+HREF="r365.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -71,9 +69,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCPATTERNADD"
+NAME="FCPATTERNHASH"
 ></A
->FcPatternAdd</H1
+>FcPatternHash</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -81,7 +79,7 @@ NAME="AEN348"
 ></A
 ><H2
 >Name</H2
->FcPatternAdd&nbsp;--&nbsp;Add a value to a pattern</DIV
+>FcPatternHash&nbsp;--&nbsp;Compute a pattern hash value</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -98,14 +96,14 @@ NAME="AEN352"
 ></A
 ><PRE
 CLASS="FUNCSYNOPSISINFO"
->#include &#60;fontconfig.h&#62;
+>#include &lt;fontconfig.h&gt;
 	</PRE
 ><P
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->FcBool FcPatternAdd</CODE
->(FcPattern *p, const char *object, FcValuevalue, FcBoolappend);</CODE
+>FcChar32 FcPatternHash</CODE
+>(const FcPattern *p);</CODE
 ></P
 ><P
 ></P
@@ -114,30 +112,24 @@ CLASS="FUNCDEF"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN365"
+NAME="AEN359"
 ></A
 ><H2
 >Description</H2
 ><P
->Adds a single value to the list of values associated with the property named
-`object<VAR
-CLASS="PARAMETER"
->.  If `append</VAR
-> is FcTrue, the value is added at the end of any
-existing list, otherwise it is inserted at the begining.  `value' is saved
-(with FcValueSave) when inserted into the pattern so that the library
-retains no reference to any application-supplied data structure.
+>Returns a 32-bit number which is the same for any two patterns which are
+equal.
 	    </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN369"
+NAME="AEN362"
 ></A
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.2.2
+>Fontconfig version 2.3.2
 
 	    </P
 ></DIV
@@ -157,7 +149,7 @@ WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
 ><A
-HREF="r323.html"
+HREF="r316.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -175,7 +167,7 @@ WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
 ><A
-HREF="r372.html"
+HREF="r365.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -185,13 +177,13 @@ ACCESSKEY="N"
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FcPatternHash</TD
+>FcPatternEqualSubset</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN225"
+HREF="x93.html#AEN246"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -199,7 +191,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->FcPatternAddWeak</TD
+>FcPatternAdd</TD
 ></TR
 ></TABLE
 ></DIV

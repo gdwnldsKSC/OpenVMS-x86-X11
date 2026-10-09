@@ -31,8 +31,12 @@ in this Software without prior written authorization from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
-#include "fntfilst.h"
-#include "bitmap.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/bitmap.h>
 
 int
 bitmapGetGlyphs(FontPtr pFont, unsigned long count, unsigned char *chars, 

@@ -23,6 +23,10 @@
  * SOFTWARE.
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #if /* NO_INLINE && */ defined(__powerpc__)
 
 #include "xf86Pci.h"

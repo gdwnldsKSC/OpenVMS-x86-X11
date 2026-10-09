@@ -31,12 +31,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#define __NO_VERSION__
 #include "drmP.h"
 #include <linux/module.h>
 
-#if __REALLY_HAVE_AGP
-
+#if __OS_HAS_AGP
 
 #define DRM_AGP_GET (drm_agp_t *)inter_module_get("drm_agp")
 #define DRM_AGP_PUT inter_module_put("drm_agp")
@@ -471,4 +469,4 @@ int DRM(agp_unbind_memory)(DRM_AGP_MEM *handle)
 	return drm_agp->unbind_memory(handle);
 }
 
-#endif /* __REALLY_HAVE_AGP */
+#endif /* __OS_HAS_AGP */

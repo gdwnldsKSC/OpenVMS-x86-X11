@@ -64,6 +64,13 @@
 /******************/
 /* Include Files: */
 /******************/
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
 #ifndef FONTMODULE
 #include  <stdio.h>          /* a system-dependent include, usually */
 #include  <math.h>
@@ -92,7 +99,7 @@ typedef struct xobject xobject;
 #define MAXPSFAKESTACK 32  /* Max depth of fake PostScript stack (local) */
 #define MAXSTRLEN 512      /* Max length of a Type 1 string (local) */
 #define MAXLABEL 256       /* Maximum number of new hints */
-#ifdef BUILDCID
+#if XFONT_CID
 #define MAXSTEMS 500       /* Maximum number of VSTEM and HSTEM hints */
 #else
 #define MAXSTEMS 128       /* Maximum number of VSTEM and HSTEM hints */
@@ -164,7 +171,7 @@ struct stem {                     /* representation of a STEM hint */
 struct xobject *Type1Char(char *env, struct XYspace *S, 
 			  psobj *charstrP, psobj *subrsP, psobj *osubrsP, 
 			  struct blues_struct *bluesP, int *modeP);
-#ifdef BUILDCID
+#if XFONT_CID
 struct xobject *CIDChar(char *env, struct XYspace *S, 
 			psobj *charstrP, psobj *subrsP, psobj *osubrsP, 
 			struct blues_struct *bluesP, int *modeP);
@@ -1143,7 +1150,7 @@ Escape(int Code)
       if (Top < Num+1) Error;
       for (i = 0; i < Num; i++) PSFakePush(Stack[Top - i - 2]);
       Top -= Num + 2;
-#ifdef BUILDCID
+#if XFONT_CID
       if ((int)Stack[Top + Num + 2] > 3)
         ClearPSFakeStack();
       else
@@ -1826,7 +1833,7 @@ Type1Char(char *env, struct XYspace *S, psobj *charstrP, psobj *subrsP,
   return((struct xobject *) path);
 }
 
-#ifdef BUILDCID
+#if XFONT_CID
 struct xobject *
 CIDChar(char *env, struct XYspace *S, 
 	psobj *charstrP, psobj *subrsP, psobj *osubrsP, 

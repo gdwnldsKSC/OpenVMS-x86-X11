@@ -47,6 +47,10 @@ SOFTWARE.
 ******************************************************************/
 /* $Xorg: osdep.h,v 1.5 2001/02/09 02:05:23 xorgcvs Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _OSDEP_H_
 #define _OSDEP_H_ 1
 
@@ -89,7 +93,7 @@ SOFTWARE.
 #if defined(NOFILE) && !defined(NOFILES_MAX)
 #define OPEN_MAX NOFILE
 #else
-#ifndef __UNIXOS2__
+#if !defined(__UNIXOS2__) && !defined(WIN32)
 #define OPEN_MAX NOFILES_MAX
 #else
 #define OPEN_MAX 256
@@ -216,7 +220,7 @@ extern int StandardFlushClient(
     int /*extraCount*/
 );
 extern int LbxFlushClient(ClientPtr /*who*/, OsCommPtr /*oc*/, 
-    char */*extraBuf*/, int /*extraCount*/);
+    char * /*extraBuf*/, int /*extraCount*/);
 #else
 extern int FlushClient(
     ClientPtr /*who*/,
@@ -245,8 +249,14 @@ extern fd_set ClientsWithInput;
 extern fd_set ClientsWriteBlocked;
 extern fd_set OutputPending;
 extern fd_set IgnoredClientsWithInput;
- 
+
+#ifndef WIN32
 extern int *ConnectionTranslation;
+#else
+extern int GetConnectionTranslation(int conn);
+extern void SetConnectionTranslation(int conn, int client);
+extern void ClearConnectionTranslation();
+#endif
  
 extern Bool NewOutputPending;
 extern Bool AnyClientsWriteBlocked;
@@ -260,6 +270,9 @@ extern OsCommPtr AvailableInput;
 extern WorkQueuePtr workQueue;
 
 /* added by raphael */
+#ifdef WIN32
+typedef long int fd_mask;
+#endif
 #define ffs mffs
 extern int mffs(fd_mask);
 
@@ -337,5 +350,9 @@ extern int XdmcpAddAuthorization (ARRAY8Ptr name, ARRAY8Ptr data);
 
 struct sockaddr_in;
 extern void XdmcpRegisterBroadcastAddress (struct sockaddr_in *addr);
+
+#ifdef HASXDMAUTH
+extern void XdmAuthenticationInit (char *cookie, int cookie_length);
+#endif
 
 #endif /* _OSDEP_H_ */

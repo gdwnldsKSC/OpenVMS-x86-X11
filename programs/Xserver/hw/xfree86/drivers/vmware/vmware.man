@@ -33,4 +33,4 @@ Disable or enable acceleration.  Default: acceleration is enabled.
 .SH "SEE ALSO"
 __xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__)
 .SH AUTHORS
-Copyright (c) 1999-2001 VMware, Inc.
+Copyright (c) 1999-2005 VMware, Inc.

@@ -1,3 +1,4 @@
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/xf86cfg/interface.c,v 1.8 2005/11/08 06:33:30 jkj Exp $ */
 /*
  * Copyright (c) 2000 by Conectiva S.A. (http://www.conectiva.com)
  * 
@@ -24,7 +25,7 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Author: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
+ * Author: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br>
  *
  * $XFree86: xc/programs/Xserver/hw/xfree86/xf86cfg/interface.c,v 1.36 2002/10/19 20:04:21 herrb Exp $
  */
@@ -66,6 +67,9 @@
 #else
 #define DefaultXFree86Dir	"/usr/X11R6"
 #endif
+
+#define IS_KBDDRIV(S) ((strcasecmp((S),"kbd") == 0) || \
+	(strcasecmp((S), "keyboard") == 0))
 
 /*
  * Prototypes
@@ -333,7 +337,7 @@ main(int argc, char *argv[])
     pane = XtCreateManagedWidget("pane", panedWidgetClass,
 				 toplevel, NULL, 0);
     hpane = XtVaCreateManagedWidget("hpane", panedWidgetClass, pane,
-				    XtNorientation, XtorientHorizontal, NULL, 0);
+				    XtNorientation, XtorientHorizontal, NULL);
     topMenu = XtCreateManagedWidget("topM", menuButtonWidgetClass,
 				 hpane, NULL, 0);
     expert = XtCreateManagedWidget("expert", commandWidgetClass, hpane, NULL, 0);
@@ -361,7 +365,7 @@ main(int argc, char *argv[])
 				     pane, NULL, 0);
 
     mouse = XtVaCreateManagedWidget("mouse", menuButtonWidgetClass,
-				    commands, XtNmenuName, "mouseP", NULL, 0);
+				    commands, XtNmenuName, "mouseP", NULL);
     popup = XtCreatePopupShell("mouseP", simpleMenuWidgetClass,
 			       mouse, NULL, 0);
     sme = XtCreateManagedWidget("new", smeBSBObjectClass,
@@ -373,7 +377,7 @@ main(int argc, char *argv[])
 		  (XtPointer)MOUSE);
 
     keyboard = XtVaCreateManagedWidget("keyboard", menuButtonWidgetClass,
-				       commands, XtNmenuName, "keyboardP", NULL, 0);
+				       commands, XtNmenuName, "keyboardP", NULL);
     popup = XtCreatePopupShell("keyboardP", simpleMenuWidgetClass,
 			       keyboard, NULL, 0);
     sme = XtCreateManagedWidget("new", smeBSBObjectClass,
@@ -385,7 +389,7 @@ main(int argc, char *argv[])
 		  (XtPointer)KEYBOARD);
 
     card = XtVaCreateManagedWidget("card", menuButtonWidgetClass,
-				   commands, XtNmenuName, "cardP", NULL, 0);
+				   commands, XtNmenuName, "cardP", NULL);
     popup = XtCreatePopupShell("cardP", simpleMenuWidgetClass,
 			       card, NULL, 0);
     sme = XtCreateManagedWidget("new", smeBSBObjectClass,
@@ -397,7 +401,7 @@ main(int argc, char *argv[])
 		  (XtPointer)CARD);
 
     monitor = XtVaCreateManagedWidget("monitor", menuButtonWidgetClass,
-				      commands, XtNmenuName, "monitorP", NULL, 0);
+				      commands, XtNmenuName, "monitorP", NULL);
     popup = XtCreatePopupShell("monitorP", simpleMenuWidgetClass,
 			       monitor, NULL, 0);
     sme = XtCreateManagedWidget("new", smeBSBObjectClass,
@@ -418,7 +422,7 @@ main(int argc, char *argv[])
     layout = XtVaCreateManagedWidget("layout", asciiTextWidgetClass,
 				     bottom,
 				     XtNeditType, XawtextEdit,
-				     NULL, 0);
+				     NULL);
     layoutp = XtCreatePopupShell("menu", simpleMenuWidgetClass,
 				 bottom, NULL, 0);
     sme = XtCreateManagedWidget("new", smeBSBObjectClass, layoutp,
@@ -480,7 +484,7 @@ main(int argc, char *argv[])
 				      XtNlabel, lay->lay_identifier,
 				      XtNmenuName, lay->lay_identifier,
 				      XtNleftBitmap, menuPixmap,
-				      NULL, 0);
+				      NULL);
 	XtAddCallback(sme, XtNcallback, SelectLayoutCallback, (XtPointer)lay);
 	if (layoutsme == NULL)
 	    layoutsme = sme;
@@ -528,18 +532,13 @@ main(int argc, char *argv[])
 
     if (!config_set && startedx) {
 	XtFree(XF86Config_path);
-#ifdef XF86CONFIG
-# ifdef XF86CONFIGDIR
+#ifndef XF86CONFIG
+# define XF86CONFIG __XCONFIGFILE__
+#endif
+#ifdef XF86CONFIGDIR
 	XF86Config_path = XtNewString(XF86CONFIGDIR "/" XF86CONFIG);
-# else
-	XF86Config_path = XtNewString("/etc/X11/" XF86CONFIG);
-# endif
 #else
-# ifdef XF86CONFIGDIR
-	XF86Config_path = XtNewString(XF86CONFIGDIR "/"__XCONFIGFILE__);
-# else
-	XF86Config_path = XtNewString("/etc/X11/"__XCONFIGFILE__);
-# endif
+	XF86Config_path = XtNewString("/etc/X11/" XF86CONFIG);
 #endif
     }
     XtAppMainLoop(appcon);
@@ -594,7 +593,7 @@ AskConfig(void)
 	shell_cf = XtCreatePopupShell("quit", transientShellWidgetClass,
 				      toplevel, NULL, 0);
 	dialog = XtVaCreateManagedWidget("ask", dialogWidgetClass, shell_cf,
-					 XtNvalue, XF86Config_path, NULL, 0);
+					 XtNvalue, XF86Config_path, NULL);
 	XawDialogAddButton(dialog, "yes", WriteConfig, (XtPointer)1);
 	XawDialogAddButton(dialog, "no", WriteConfig, (XtPointer)0);
 	XawDialogAddButton(dialog, "cancel", WriteConfig, (XtPointer)-1);
@@ -718,7 +717,7 @@ QuitCallback(Widget w, XtPointer user_data, XtPointer call_data)
 			dialog = XtVaCreateManagedWidget("notice",
 				 dialogWidgetClass,
 				 shell, XtNvalue, NULL,
-				 NULL, 0);
+				 NULL);
 			XawDialogAddButton(dialog, "ok", PopdownErrorCallback,
 					   (XtPointer)shell);
 			XtRealizeWidget(shell);
@@ -795,7 +794,7 @@ InitializeDevices(void)
 		    mouse_x = work->core.width - (work->core.width >> 2);
 		}
 	    }
-	    else if (strcasecmp(input->inp_driver, "keyboard") == 0) {
+	    else if (IS_KBDDRIV(input->inp_driver)) {
 		device = AddDevice(KEYBOARD, (XtPointer)input, keyboard_x, keyboard_y);
 		SetTip(device);
 		if ((keyboard_x += DEFAULT_KEYBOARD_WIDTH) >
@@ -900,7 +899,7 @@ AddDevice(int type, XtPointer config, int x, int y)
 					XtNx, x,
 					XtNy, y,
 					XtNtip, NULL,
-					NULL, 0);
+					NULL);
 	    computer.devices[computer.num_devices]->type = type;
 	    computer.devices[computer.num_devices]->state = UNUSED;
 	    computer.devices[computer.num_devices]->refcount = 0;
@@ -1062,7 +1061,7 @@ SelectLayoutCallback(Widget w, XtPointer user_data, XtPointer call_data)
 					    XtNlabel, name,
 					    XtNmenuName, l->lay_identifier,
 					    XtNleftBitmap, menuPixmap,
-					    NULL, 0);
+					    NULL);
 	XtAddCallback(layoutsme, XtNcallback,
 		      SelectLayoutCallback, (XtPointer)l);
 
@@ -1177,7 +1176,7 @@ DefaultLayoutCallback(Widget w, XtPointer user_data, XtPointer call_data)
 				      XtNlabel, lay->lay_identifier,
 				      XtNmenuName, lay->lay_identifier,
 				      XtNleftBitmap, menuPixmap,
-				      NULL, 0);
+				      NULL);
 	XtAddCallback(sme, XtNcallback, SelectLayoutCallback, (XtPointer)lay);
 	if (layoutsme == NULL)
 	    layoutsme = sme;
@@ -1317,11 +1316,16 @@ SetTip(xf86cfgDevice *device)
 
 	    if (monitor == NULL)
 		return;
-	    len = XmuSnprintf(buffer, sizeof(buffer),
-			      "Identifier \"%s\"\n"
-			      "Vendor     \"%s\"\n",
-			      monitor->mon_identifier,
-			      monitor->mon_vendor);
+	    if (monitor->mon_vendor != NULL)
+		len = XmuSnprintf(buffer, sizeof(buffer),
+				  "Identifier \"%s\"\n"
+				  "Vendor     \"%s\"\n",
+				  monitor->mon_identifier,
+				  monitor->mon_vendor);
+	    else
+		len = XmuSnprintf(buffer, sizeof(buffer),
+				  "Identifier \"%s\"\n",
+				  monitor->mon_identifier);
 	    option = monitor->mon_option_lst;
 	}   break;
 	case SCREEN: {
@@ -1644,8 +1648,7 @@ EnableDeviceCallback(Widget w, XtPointer user_data, XtPointer call_data)
 	    while (nex != NULL) {
 		if (strcasecmp(nex->iref_inputdev->inp_driver, "mouse") == 0)
 		    ++nmouses;
-		else if (strcasecmp(nex->iref_inputdev->inp_driver,
-				    "keyboard") == 0)
+		else if (IS_KBDDRIV(nex->iref_inputdev->inp_driver))
 		    ++nkeyboards;
 		iref = nex;
 		nex = (XF86ConfInputrefPtr)(nex->list.next);

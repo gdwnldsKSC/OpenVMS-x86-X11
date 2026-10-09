@@ -1,6 +1,6 @@
 .\"
 .\" $XFree86: xc/lib/Xrandr/Xrandr.man,v 1.7 2003/08/04 10:32:21 eich Exp $
-.\" $XdotOrg: xc/lib/Xrandr/Xrandr.man,v 1.2 2004/04/23 18:43:47 eich Exp $
+.\" $XdotOrg: xc/lib/Xrandr/Xrandr.man,v 1.4 2005/10/13 02:56:42 alanc Exp $
 .\"
 .\" Copyright 2002 Hewlett-Packard Company.\"
 .\" Permission to use, copy, modify, distribute, and sell this software and its
@@ -150,16 +150,16 @@ Specifies the refresh rate in Hz.
 .PP
 Can be any of:
 .nf
-#define RR_Rotate_0             1
-#define RR_Rotate_90            2
-#define RR_Rotate_180           4
-#define RR_Rotate_270           8
+\&#define RR_Rotate_0             1
+\&#define RR_Rotate_90            2
+\&#define RR_Rotate_180           4
+\&#define RR_Rotate_270           8
 
 /\(** new in 1.0 protocol, to allow reflection of screen */
 /\(** reflection is applied after rotation */
 
-#define RR_Reflect_X            16
-#define RR_Reflect_Y            32
+\&#define RR_Reflect_X            16
+\&#define RR_Reflect_Y            32
 
 
 typedef struct {

@@ -1,5 +1,9 @@
 /* $XFree86: Exp $ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifndef LNX_H_
 # ifdef __alpha__
 extern unsigned long _bus_base __P ((void)) __attribute__ ((const));
@@ -38,6 +42,13 @@ extern long (*_iobase)(unsigned, int, int, int);
 #   define IOBASE_FROM_HOSE	0x10000
 #  endif
 # endif /* __alpha__ */
+
+# if defined(DO_OS_FONTRESTORE)
+Bool lnx_savefont(void);
+Bool lnx_restorefont(void);
+Bool lnx_switchaway(void);
+void lnx_freefontdata(void);
+# endif
 
 #define LNX_H_
 

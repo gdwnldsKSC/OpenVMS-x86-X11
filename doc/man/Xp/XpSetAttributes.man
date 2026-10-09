@@ -1,4 +1,4 @@
-.\" $XdotOrg: xc/doc/man/Xp/XpSetAttributes.man,v 1.1 2004/05/22 06:27:25 alanc Exp $
+.\" $XdotOrg: xc/doc/man/Xp/XpSetAttributes.man,v 1.2 2005/10/12 23:45:05 alanc Exp $
 .\"
 .\" Copyright 1996 Hewlett-Packard Company
 .\" Copyright 1996 International Business Machines Corp.
@@ -128,11 +128,11 @@ context to coordinate their operations.
 The values for the typedef XPAttributes in <X11/extensions/Print.h> are:
 .nf
 
-    #define XPJobAttr		1	/* get/set */
-    #define XPDocAttr		2	/* get/set */
-    #define XPPageAttr		3	/* get/set - subset of XPDocAttr */
-    #define XPPrinterAttr	4	/* get only (library) */
-    #define XPServerAttr		5	/* get only (library), no context needed */
+    #define XPJobAttr		1	/\(** get/set */
+    #define XPDocAttr		2	/\(** get/set */
+    #define XPPageAttr		3	/\(** get/set - subset of XPDocAttr */
+    #define XPPrinterAttr	4	/\(** get only (library) */
+    #define XPServerAttr		5	/\(** get only (library), no context needed */
 
 .fi
 The values for the typedef XPAttrReplacement in <X11/extensions/Print.h> are:

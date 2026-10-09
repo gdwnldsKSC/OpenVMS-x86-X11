@@ -174,7 +174,7 @@ void radeonInitState( radeonContextPtr rmesa )
       rmesa->state.depth.clear = 0x00ffffff;
       rmesa->state.depth.scale = 1.0 / (GLfloat)0xffffff;
       depth_fmt = RADEON_DEPTH_FORMAT_24BIT_INT_Z;
-      rmesa->state.stencil.clear = 0xff000000;
+      rmesa->state.stencil.clear = 0xffff0000;
       break;
    default:
       fprintf( stderr, "Error: Unsupported depth %d... exiting\n",
@@ -329,6 +329,9 @@ void radeonInitState( radeonContextPtr rmesa )
       ((rmesa->radeonScreen->depthPitch &
 	RADEON_DEPTHPITCH_MASK) |
        RADEON_DEPTH_ENDIAN_NO_SWAP);
+       
+   if (rmesa->using_hyperz)
+       rmesa->hw.ctx.cmd[CTX_RB3D_DEPTHPITCH] |= RADEON_DEPTH_HYPERZ;
 
    rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] = (depth_fmt |
 					       RADEON_Z_TEST_LESS |
@@ -338,12 +341,23 @@ void radeonInitState( radeonContextPtr rmesa )
 					       RADEON_STENCIL_ZFAIL_KEEP |
 					       RADEON_Z_WRITE_ENABLE);
 
+   if (rmesa->using_hyperz) {
+       rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= RADEON_Z_COMPRESSION_ENABLE |
+						   RADEON_Z_DECOMPRESSION_ENABLE;
+      if (rmesa->radeonScreen->chipset & RADEON_CHIPSET_TCL) {
+	 /* works for q3, but slight rendering errors with glxgears ? */
+/*	 rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= RADEON_Z_HIERARCHY_ENABLE;*/
+	 /* need this otherwise get lots of lockups with q3 ??? */
+	 rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= RADEON_FORCE_Z_DIRTY;
+      } 
+   }
+
    rmesa->hw.ctx.cmd[CTX_PP_CNTL] = (RADEON_SCISSOR_ENABLE |
 				     RADEON_ANTI_ALIAS_NONE);
 
    rmesa->hw.ctx.cmd[CTX_RB3D_CNTL] = (RADEON_PLANE_MASK_ENABLE |
 				       color_fmt |
-				       (1<<15));
+				       RADEON_ZBLOCK16);
 
    switch ( driQueryOptioni( &rmesa->optionCache, "dither_mode" ) ) {
    case DRI_CONF_DITHER_XERRORDIFFRESET:
@@ -371,6 +385,10 @@ void radeonInitState( radeonContextPtr rmesa )
    rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] = ((rmesa->state.color.drawPitch &
 					      RADEON_COLORPITCH_MASK) |
 					     RADEON_COLOR_ENDIAN_NO_SWAP);
+   /* (fixed size) sarea is initialized to zero afaics so can omit version check. Phew! */
+   if (rmesa->sarea->tiling_enabled) {
+      rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] |= RADEON_COLOR_TILE_ENABLE;
+   }
 
    rmesa->hw.set.cmd[SET_SE_CNTL] = (RADEON_FFACE_CULL_CCW |
 				     RADEON_BFACE_SOLID |
@@ -511,8 +529,8 @@ void radeonInitState( radeonContextPtr rmesa )
       ctx->Driver.Lightfv( ctx, p, GL_AMBIENT, l->Ambient );
       ctx->Driver.Lightfv( ctx, p, GL_DIFFUSE, l->Diffuse );
       ctx->Driver.Lightfv( ctx, p, GL_SPECULAR, l->Specular );
-      ctx->Driver.Lightfv( ctx, p, GL_POSITION, 0 );
-      ctx->Driver.Lightfv( ctx, p, GL_SPOT_DIRECTION, 0 );
+      ctx->Driver.Lightfv( ctx, p, GL_POSITION, NULL );
+      ctx->Driver.Lightfv( ctx, p, GL_SPOT_DIRECTION, NULL );
       ctx->Driver.Lightfv( ctx, p, GL_SPOT_EXPONENT, &l->SpotExponent );
       ctx->Driver.Lightfv( ctx, p, GL_SPOT_CUTOFF, &l->SpotCutoff );
       ctx->Driver.Lightfv( ctx, p, GL_CONSTANT_ATTENUATION,
@@ -533,12 +551,12 @@ void radeonInitState( radeonContextPtr rmesa )
       ctx->Driver.ClipPlane( ctx, GL_CLIP_PLANE0 + i, NULL );
    }
 
-   ctx->Driver.Fogfv( ctx, GL_FOG_MODE, 0 );
+   ctx->Driver.Fogfv( ctx, GL_FOG_MODE, NULL );
    ctx->Driver.Fogfv( ctx, GL_FOG_DENSITY, &ctx->Fog.Density );
    ctx->Driver.Fogfv( ctx, GL_FOG_START, &ctx->Fog.Start );
    ctx->Driver.Fogfv( ctx, GL_FOG_END, &ctx->Fog.End );
    ctx->Driver.Fogfv( ctx, GL_FOG_COLOR, ctx->Fog.Color );
-   ctx->Driver.Fogfv( ctx, GL_FOG_COORDINATE_SOURCE_EXT, 0 );
+   ctx->Driver.Fogfv( ctx, GL_FOG_COORDINATE_SOURCE_EXT, NULL );
    
    rmesa->hw.grd.cmd[GRD_VERT_GUARD_CLIP_ADJ] = IEEE_ONE;
    rmesa->hw.grd.cmd[GRD_VERT_GUARD_DISCARD_ADJ] = IEEE_ONE;

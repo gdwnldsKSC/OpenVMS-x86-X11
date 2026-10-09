@@ -126,9 +126,7 @@ static struct _CursorName {
 };
 
 void 
-NewFontCursor (cp, str)
-    Cursor *cp;
-    char *str;
+NewFontCursor (Cursor *cp, char *str)
 {
     int i;
 
@@ -148,9 +146,7 @@ NewFontCursor (cp, str)
 }
 
 void
-NewBitmapCursor(cp, source, mask)
-    Cursor *cp;
-    char *source, *mask;
+NewBitmapCursor(Cursor *cp, char *source, char *mask)
 {
     int hotx, hoty;
     int sx, sy, mx, my;

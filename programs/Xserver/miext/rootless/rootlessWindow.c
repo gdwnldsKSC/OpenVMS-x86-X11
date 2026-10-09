@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/miext/rootless/rootlessWindow.c,v 1.3 2004/07/30 19:12:17 torrey Exp $ */
+/* $XdotOrg: xc/programs/Xserver/miext/rootless/rootlessWindow.c,v 1.6 2005/07/03 07:02:02 daniels Exp $ */
 /*
  * Rootless window management
  */
@@ -30,6 +30,10 @@
  * use or other dealings in this Software without prior written authorization.
  */
 /* $XFree86: xc/programs/Xserver/miext/rootless/rootlessWindow.c,v 1.12 2004/07/02 01:30:33 torrey Exp $ */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #include "rootlessCommon.h"
 #include "rootlessWindow.h"
@@ -481,7 +485,7 @@ RootlessUnrealizeWindow(WindowPtr pWin)
 
 /*
  * RootlessReorderWindow
- *  Reorder the window associated with the given frame so that it's
+ *  Reorder the frame associated with the given window so that it's
  *  physically above the window below it in the X stacking order.
  */
 void
@@ -494,6 +498,15 @@ RootlessReorderWindow(WindowPtr pWin)
         RootlessWindowRec *newPrev;
         RootlessFrameID newPrevID;
         ScreenPtr pScreen = pWin->drawable.pScreen;
+
+        /* Check if the implementation wants the frame to not be reordered
+           even though the X11 window is restacked. This can be useful if
+           frames are ordered-in with animation so that the reordering is not
+           done until the animation is complete. */
+        if (SCREENREC(pScreen)->imp->DoReorderWindow) {
+            if (!SCREENREC(pScreen)->imp->DoReorderWindow(winRec))
+                return;
+        }
 
         RootlessStopDrawing(pWin, FALSE);
 

@@ -49,8 +49,12 @@ SOFTWARE.
 ******************************************************************/
 /* $XConsortium: afbbitblt.c,v 5.25 94/04/17 20:28:16 dpw Exp $ */
 
-#include "X.h"
-#include "Xprotostr.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xprotostr.h>
 
 #include "regionstr.h"
 #include "gcstruct.h"

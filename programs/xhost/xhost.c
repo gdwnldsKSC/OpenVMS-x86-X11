@@ -1,5 +1,5 @@
 /* $Xorg: xhost.c,v 1.4 2001/02/09 02:05:46 xorgcvs Exp $ */
-/* $XdotOrg: xc/programs/xhost/xhost.c,v 1.3 2004/07/27 06:06:06 herrb Exp $ */
+/* $XdotOrg: xc/programs/xhost/xhost.c,v 1.4 2005/06/18 08:03:35 alanc Exp $ */
 /*
 
 Copyright 1985, 1986, 1987, 1998  The Open Group
@@ -36,6 +36,10 @@ X Window System is a trademark of The Open Group.
 
 */
 /* $XFree86: xc/programs/xhost/xhost.c,v 3.26 2003/07/27 14:05:45 herrb Exp $ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #if defined(TCPCONN) || defined(STREAMSCONN)
 #define NEEDSOCKETS
@@ -124,11 +128,15 @@ static int change_host(Display *dpy, char *name, Bool add);
 static char *get_hostname(XHostAddress *ha);
 static int local_xerror(Display *dpy, XErrorEvent *rep);
 
+#ifdef RETSIGTYPE /* autoconf AC_TYPE_SIGNAL */
+# define signal_t RETSIGTYPE
+#else /* Imake */
 #ifdef SIGNALRETURNSINT
 #define signal_t int
 #else
 #define signal_t void
 #endif
+#endif /* RETSIGTYPE */
 static signal_t nameserver_lost(int sig);
 
 #define NAMESERVER_TIMEOUT 5	/* time to wait for nameserver */

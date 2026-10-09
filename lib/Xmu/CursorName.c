@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xmu/CursorName.c,v 3.7tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xmu/CharSet.h>
 #include <X11/Xmu/CurUtil.h>
 #include <X11/cursorfont.h>

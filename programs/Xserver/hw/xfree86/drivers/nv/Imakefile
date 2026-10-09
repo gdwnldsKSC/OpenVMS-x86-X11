@@ -77,7 +77,7 @@ ObjectModuleTarget(nv,$(R_OBJS) $(N_OBJS))
 ObjectModuleTarget(nv,$(N_OBJS))
 #endif
 
-InstallObjectModule(nv,$(MODULEDIR),drivers)
+InstallVideoObjectModule(nv,$(MODULEDIR))
 
 SubDriverObjectModuleTarget(riva128,$(R_OBJS))
 InstallSubDriverObjectModule(riva128,$(MODULEDIR),drivers)

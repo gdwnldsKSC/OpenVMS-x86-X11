@@ -1,7 +1,7 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/panel/platform.c,v 1.3tsi Exp $ */
 /*
  * $Workfile: platform.c $
- * $Revision$
+ * $Revision: 1.3 $
  *
  * File Contents: This file contains platform dependent functions
  *                which provide interface to that platform.

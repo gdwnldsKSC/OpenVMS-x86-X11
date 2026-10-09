@@ -1,11 +1,15 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/xaa/xaaCpyArea.c,v 1.12 2000/09/28 20:47:59 mvojkovi Exp $ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "misc.h"
 #include "xf86.h"
 #include "xf86_ansic.h"
 #include "xf86_OSproc.h"
 
-#include "X.h"
+#include <X11/X.h>
 #include "scrnintstr.h"
 #include "xf86str.h"
 #include "xaa.h"

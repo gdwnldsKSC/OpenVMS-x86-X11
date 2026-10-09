@@ -20,9 +20,16 @@ NormalLintTarget($(SRCS))
 
 MKG3STATES = ./mkg3states
 
+#if CrossCompiling
+HOST_CFLAGS=$(TOP_INCLUDES) $(INCLUDES) $(BOOTSTRAPCFLAGS) \
+	$(CROSSCOMPILEDEFINES) $(CROSSCOMPILEBOOTSTRAPDEFINES)
+#else
+HOST_CFLAGS=$(CFLAGS)
+#endif
+
 g3states.h : mkg3states.c
 	RemoveFiles($@ HostProgramTargetName(mkg3states))
-	-HostLinkRule(HostProgramTargetName(mkg3states), $(CFLAGS),mkg3states.c,$(LDLIBS))
+	-HostLinkRule(HostProgramTargetName(mkg3states), $(HOST_CFLAGS),mkg3states.c,$(LDLIBS))
 	RunProgram(MKG3STATES,> g3_states_h)
 	$(MV) g3_states_h $@
 	RemoveFiles(HostProgramTargetName(mkg3states) g3_states_h)

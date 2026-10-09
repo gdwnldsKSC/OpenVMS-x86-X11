@@ -50,7 +50,7 @@ max( int x, int y ) { return ( x < y ) ? y : x; }
 inline REAL 
 min( REAL x, REAL y ) { return ( x > y ) ? y : x; }
 
-#ifdef _SCO_DS
+#if defined(__SCO__) || defined(__UNIXWARE__) || defined(__SUNPRO_CC)
 #define abs __gluabs
 #endif
 inline REAL 

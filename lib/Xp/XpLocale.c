@@ -36,6 +36,9 @@
  *****************************************************************************/
 /* $XFree86: xc/lib/Xp/XpLocale.c,v 1.4 2001/01/17 19:43:02 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/extensions/Printstr.h>
 #include <X11/Xlibint.h>
 #include "XpExtUtil.h"

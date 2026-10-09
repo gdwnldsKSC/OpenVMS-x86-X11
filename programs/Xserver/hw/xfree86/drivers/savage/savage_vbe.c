@@ -1,7 +1,13 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/savage/savage_vbe.c,v 1.11 2002/05/14 20:19:52 alanh Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "savage_driver.h"
 #include "savage_vbe.h"
+
+#define iabs(a)	((int)(a)>0?(a):(-(a)))
 
 #if X_BYTE_ORDER == X_LITTLE_ENDIAN
 #define B_O16(x)  (x) 
@@ -16,6 +22,8 @@
 Bool vbeModeInit( vbeInfoPtr, int );
 static int SavageGetDevice( SavagePtr psav );
 /*static int SavageGetTVType( SavagePtr psav );*/
+void SavageSetVESAModeCrtc1( SavagePtr psav, int n, int Refresh );
+void SavageSetVESAModeCrtc2( SavagePtr psav, int n, int Refresh );
 
 static void
 SavageClearVM86Regs( xf86Int10InfoPtr pInt )
@@ -49,12 +57,80 @@ SavageSetTextMode( SavagePtr psav )
     xf86ExecX86int10( psav->pVbe->pInt10 );
 }
 
+void
+SavageSetVESAModeCrtc1(SavagePtr psav, int n, int refresh)
+{
+    unsigned char byte;
+
+    xf86Msg(X_INFO,"SavageSetVESAModeCrtc1:mode=0x%x,refresh=%dHZ\n",n,refresh);
+
+    SavageClearVM86Regs(psav->pVbe->pInt10);
+    
+    /* set active displays. */
+    psav->pVbe->pInt10->ax = S3_EXTBIOS_INFO;
+    psav->pVbe->pInt10->bx = S3_SET_ACTIVE_DISP;
+    if (psav->TvOn)
+    	psav->pVbe->pInt10->cx = 0x87; /* lcd, tv, crt, duoview */
+    else
+    	psav->pVbe->pInt10->cx = 0x83; /* lcd, crt, duoview */
+    xf86ExecX86int10(psav->pVbe->pInt10);
+    
+    SavageClearVM86Regs(psav->pVbe->pInt10);
+    
+    /* Establish the refresh rate for this mode. */
+    psav->pVbe->pInt10->ax = S3_EXTBIOS_INFO;
+    psav->pVbe->pInt10->bx = S3_SET_REFRESH;
+    psav->pVbe->pInt10->cx = n & 0x1ff;
+    psav->pVbe->pInt10->di = refresh & 0xffff;
+    xf86ExecX86int10(psav->pVbe->pInt10);
+
+    /* SR01:turn off screen */
+    OUTREG8 (SEQ_ADDRESS_REG,0x01);
+    byte = INREG8(SEQ_DATA_REG) | 0x20;
+    OUTREG8(SEQ_DATA_REG,byte);
+    
+    psav->pVbe->pInt10->ax = BIOS_SET_VBE_MODE;
+    psav->pVbe->pInt10->bx = n;
+    xf86ExecX86int10(psav->pVbe->pInt10);
+    
+}
+
+void
+SavageSetVESAModeCrtc2( SavagePtr psav, int n, int refresh )
+{
+
+    xf86Msg(X_INFO,"SavageSetVESAModeCrtc2:mode=0x%x,refresh=%dHZ\n",n,refresh);
+
+    SavageClearVM86Regs(psav->pVbe->pInt10);
+
+    UnLockExtRegs();
+    
+    psav->pVbe->pInt10->ax = S3_EXTBIOS_INFO;
+    psav->pVbe->pInt10->bx = S3_ALT_SET_ACTIVE_DISP;
+    if (psav->TvOn)
+    	psav->pVbe->pInt10->cx = 0x87; /* lcd, tv, crt, duoview */
+    else
+    	psav->pVbe->pInt10->cx = 0x83; /* lcd, crt, duoview */
+    psav->pVbe->pInt10->dx = n & 0x1ff;
+    psav->pVbe->pInt10->di = refresh & 0xffff;
+    xf86ExecX86int10(psav->pVbe->pInt10);
+
+}
 
 void
 SavageSetVESAMode( SavagePtr psav, int n, int Refresh )
 {
     int iDevInfo;
     static int iCount = 0;
+
+    if (psav->IsSecondary) {
+        SavageSetVESAModeCrtc2(psav, n, Refresh);
+	return;
+    }
+    if (psav->IsPrimary) {
+        SavageSetVESAModeCrtc1(psav, n, Refresh);
+	return;
+    }
 
     /* Get current display device status. */
 
@@ -92,7 +168,7 @@ SavageSetVESAMode( SavagePtr psav, int n, int Refresh )
 	SavageClearVM86Regs( psav->pVbe->pInt10 );
 	psav->pVbe->pInt10->ax = 0x4f14;	/* S3 extensions */
 	psav->pVbe->pInt10->bx = 0x0003;	/* set active devices */
-	psav->pVbe->pInt10->cx = psav->PAL ? 0x08 : 0x04;
+	psav->pVbe->pInt10->cx = psav->iDevInfo;
 	xf86ExecX86int10( psav->pVbe->pInt10 );
 
 	/* Re-fetch actual device set. */
@@ -122,6 +198,23 @@ SavageSetVESAMode( SavagePtr psav, int n, int Refresh )
 #endif
 }
 
+void
+SavageSetPanelEnabled( SavagePtr psav, Bool active )
+{
+    int iDevInfo;
+    if( !psav->PanelX )
+	return; /* no panel */
+    iDevInfo = SavageGetDevice( psav );
+    if( active )
+	iDevInfo |= LCD_ACTIVE;
+    else
+	iDevInfo &= ~LCD_ACTIVE;
+    SavageClearVM86Regs( psav->pVbe->pInt10 );
+    psav->pVbe->pInt10->ax = 0x4f14;	/* S3 extensions */
+    psav->pVbe->pInt10->bx = 0x0003;	/* set active devices */
+    psav->pVbe->pInt10->cx = iDevInfo;
+    xf86ExecX86int10( psav->pVbe->pInt10 );
+}
 
 /* Function to get supported device list. */
 
@@ -300,4 +393,72 @@ SavageGetBIOSModes(
     xf86Int10FreePages( psav->pVbe->pInt10, vbeLinear, 1 );
 
     return iModeCount;
+}
+
+ModeStatus SavageMatchBiosMode(ScrnInfoPtr pScrn,int width,int height,int refresh,
+                              unsigned int *vesaMode,unsigned int *newRefresh)
+{
+    SavageModeEntryPtr pmt;
+    Bool found = FALSE;
+    SavagePtr psav = SAVPTR(pScrn);    
+    int i,j;
+    unsigned int chosenVesaMode = 0;
+    unsigned int chosenRefresh = 0;
+    
+    /* Scan through our BIOS list to locate the closest valid mode. */
+    
+    /*
+     * If we ever break 4GHz clocks on video boards, we'll need to
+     * change this.
+     * refresh = (mode->Clock * 1000) / (mode->HTotal * mode->VTotal);
+     * now we use VRefresh directly,instead of by calculating from dot clock
+     */
+
+    for( i = 0, pmt = psav->ModeTable->Modes; 
+	i < psav->ModeTable->NumModes;
+	i++, pmt++ )
+    {
+	if( (pmt->Width == width) && 
+	    (pmt->Height == height) )
+	{
+	    int jDelta = 99;
+	    int jBest = 0;
+
+	    /* We have an acceptable mode.  Find a refresh rate. */
+	    chosenVesaMode = pmt->VesaMode;
+            if (vesaMode)
+                *vesaMode = chosenVesaMode;
+	    for( j = 0; j < pmt->RefreshCount; j++ )
+	    {
+		if( pmt->RefreshRate[j] == refresh )
+		{
+		    /* Exact match. */
+		    jBest = j;
+		    break;
+		}
+		else if( iabs(pmt->RefreshRate[j] - refresh) < jDelta )
+		{
+		    jDelta = iabs(pmt->RefreshRate[j] - refresh);
+		    jBest = j;
+		}
+	    }
+	    chosenRefresh = pmt->RefreshRate[jBest];
+            if (newRefresh)
+                *newRefresh = chosenRefresh;
+            found = TRUE;
+	    break;
+	}
+    }
+
+    if( found ) {
+	/* Success: we found a match in the BIOS. */
+	xf86DrvMsg(pScrn->scrnIndex, X_PROBED, 
+		  "Chose mode %x at %dHz.\n", chosenVesaMode, chosenRefresh );
+        return MODE_OK;
+    } else {
+	xf86DrvMsg(pScrn->scrnIndex, X_PROBED, 
+		  "No suitable BIOS mode found for %dx%d %dHz.\n",
+		  width, height, refresh);
+        return MODE_NOMODE;
+    }
 }

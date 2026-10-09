@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/wacom/xf86Wacom.c,v 1.2 2004/04/23 19:54:06 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/wacom/xf86Wacom.c,v 1.7 2005/07/11 02:38:01 ajax Exp $ */
 /* $XConsortium: xf86Wacom.c /main/20 1996/10/27 11:05:20 kaleb $ */
 /*
  * Copyright 1995-2001 by Frederic Lepied, France. <Lepied@XFree86.org>
@@ -44,6 +44,10 @@
  * John Joganic <john@joganic.com>.
  *
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 static const char identification[] = "$Identification: 42 $";
 
@@ -5205,10 +5209,7 @@ xf86WcmInit(InputDriverPtr	drv,
     return NULL;
 }
 
-#ifdef XFree86LOADER
-static
-#endif
-InputDriverRec WACOM = {
+_X_EXPORT InputDriverRec WACOM = {
     1,				/* driver version */
     "wacom",			/* driver name */
     NULL,				/* identify */
@@ -5273,9 +5274,11 @@ static XF86ModuleVersionInfo xf86WcmVersionRec =
 				/* a tool */
 };
 
-XF86ModuleData wacomModuleData = {&xf86WcmVersionRec,
-				  xf86WcmPlug,
-				  xf86WcmUnplug};
+_X_EXPORT XF86ModuleData wacomModuleData = {
+    &xf86WcmVersionRec,
+    xf86WcmPlug,
+    xf86WcmUnplug
+};
 
 #endif /* XFree86LOADER */
 

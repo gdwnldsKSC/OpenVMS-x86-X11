@@ -1,5 +1,9 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/tdfx/tdfx_dri.c,v 1.25 2003/02/08 21:26:59 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -8,6 +12,7 @@
 #include "xf86Pci.h"
 #include "fb.h"
 #include "miline.h"
+#include "GL/glxint.h"
 #include "GL/glxtokens.h"
 #include "tdfx.h"
 #include "tdfx_dri.h"
@@ -296,7 +301,6 @@ Bool TDFXDRIScreenInit(ScreenPtr pScreen)
     /* Check that the GLX, DRI, and DRM modules have been loaded by testing
        for canonical symbols in each module. */
     if (!xf86LoaderCheckSymbol("GlxSetVisualConfigs")) return FALSE;
-    if (!xf86LoaderCheckSymbol("DRIScreenInit"))       return FALSE;
     if (!xf86LoaderCheckSymbol("drmAvailable"))        return FALSE;
     if (!xf86LoaderCheckSymbol("DRIQueryVersion")) {
       xf86DrvMsg(pScreen->myNum, X_ERROR,
@@ -308,12 +312,13 @@ Bool TDFXDRIScreenInit(ScreenPtr pScreen)
   {
     int major, minor, patch;
     DRIQueryVersion(&major, &minor, &patch);
-    if (major != 4 || minor < 0) {
+    if (major != DRIINFO_MAJOR_VERSION || minor < DRIINFO_MINOR_VERSION) {
       xf86DrvMsg(pScreen->myNum, X_ERROR,
                  "[dri] TDFXDRIScreenInit failed because of a version mismatch.\n"
-                 "[dri] libDRI version is %d.%d.%d but version 4.0.x is needed.\n"
+                 "[dri] libdri version is %d.%d.%d but version %d.%d.x is needed.\n"
                  "[dri] Disabling the DRI.\n",
-                 major, minor, patch);
+                 major, minor, patch,
+                 DRIINFO_MAJOR_VERSION, DRIINFO_MINOR_VERSION);
       return FALSE;
     }
   }
@@ -439,7 +444,7 @@ Bool TDFXDRIScreenInit(ScreenPtr pScreen)
     xf86DrvMsg(pScreen->myNum, X_ERROR, "drmAddMap failed, disabling DRI.\n");
     return FALSE;
   }
-  xf86DrvMsg(pScreen->myNum, X_INFO, "[drm] Registers = 0x%08lx\n",
+  xf86DrvMsg(pScreen->myNum, X_INFO, "[drm] Registers = 0x%08x\n",
 	       pTDFXDRI->regs);
 
   if (!(TDFXInitVisualConfigs(pScreen))) {
@@ -589,6 +594,10 @@ TDFXDRIMoveBuffers(WindowPtr pParent, DDXPointRec ptOldOrg,
   pTDFX->AccelInfoRec->NeedToSync = TRUE;
 }
 
+/*
+ * the FullScreen DRI code is dead; this is just left in place to show how
+ * to set up SLI mode.
+ */
 static Bool
 TDFXDRIOpenFullScreen(ScreenPtr pScreen)
 {

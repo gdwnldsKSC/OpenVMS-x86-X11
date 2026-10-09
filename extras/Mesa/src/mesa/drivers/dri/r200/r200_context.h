@@ -36,8 +36,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __R200_CONTEXT_H__
 #define __R200_CONTEXT_H__
 
-#ifdef GLX_DIRECT_RENDERING
-
 #include "tnl/t_vertex.h"
 #include "drm.h"
 #include "radeon_drm.h"
@@ -61,14 +59,12 @@ typedef struct r200_context *r200ContextPtr;
 
 /* Flags for software fallback cases */
 /* See correponding strings in r200_swtcl.c */
-#define R200_FALLBACK_TEXTURE           0x1
-#define R200_FALLBACK_DRAW_BUFFER       0x2
-#define R200_FALLBACK_STENCIL           0x4
-#define R200_FALLBACK_RENDER_MODE       0x8
-#define R200_FALLBACK_BLEND_EQ          0x10
-#define R200_FALLBACK_BLEND_FUNC        0x20
-#define R200_FALLBACK_DISABLE           0x40
-#define R200_FALLBACK_BORDER_MODE       0x80
+#define R200_FALLBACK_TEXTURE           0x01
+#define R200_FALLBACK_DRAW_BUFFER       0x02
+#define R200_FALLBACK_STENCIL           0x04
+#define R200_FALLBACK_RENDER_MODE       0x08
+#define R200_FALLBACK_DISABLE           0x10
+#define R200_FALLBACK_BORDER_MODE       0x20
 
 /* The blit width for texture uploads
  */
@@ -102,6 +98,7 @@ struct r200_colorbuffer_state {
 
 
 struct r200_depthbuffer_state {
+   GLuint clear;
    GLfloat scale;
 };
 
@@ -168,6 +165,8 @@ struct r200_tex_obj {
    GLuint pp_cubic_faces;	        /* cube face 1,2,3,4 log2 sizes */
 
    GLboolean  border_fallback;
+
+   GLuint tile_bits;			/* hw texture tile bits used on this texture */
 };
 
 
@@ -487,7 +486,10 @@ struct r200_state_atom {
 #define CST_SE_TCL_INPUT_VTX_3                17
 #define CST_STATE_SIZE                        18
 
-
+#define PRF_CMD_0         0
+#define PRF_PP_TRI_PERF   1
+#define PRF_PP_PERF_CNTL  2
+#define PRF_STATE_SIZE    3
 
 
 struct r200_hw_state {
@@ -517,15 +519,16 @@ struct r200_hw_state {
    struct r200_state_atom tex[6];
    struct r200_state_atom cube[6];
    struct r200_state_atom zbs;
-   struct r200_state_atom mtl[2]; 
-   struct r200_state_atom mat[9]; 
+   struct r200_state_atom mtl[2];
+   struct r200_state_atom mat[9];
    struct r200_state_atom lit[8]; /* includes vec, scl commands */
    struct r200_state_atom ucp[6];
    struct r200_state_atom pix[6]; /* pixshader stages */
    struct r200_state_atom eye; /* eye pos */
    struct r200_state_atom grd; /* guard band clipping */
-   struct r200_state_atom fog; 
-   struct r200_state_atom glt; 
+   struct r200_state_atom fog;
+   struct r200_state_atom glt;
+   struct r200_state_atom prf;
 
    int max_state_size;	/* Number of bytes necessary for a full state emit. */
    GLboolean is_dirty, all_dirty;
@@ -731,6 +734,8 @@ struct dfn_lists {
    struct dynfn MultiTexCoord2fvARB;
    struct dynfn MultiTexCoord1fARB;
    struct dynfn MultiTexCoord1fvARB;
+   struct dynfn FogCoordfEXT;
+   struct dynfn FogCoordfvEXT;
 };
 
 struct dfn_generators {
@@ -764,6 +769,8 @@ struct dfn_generators {
    struct dynfn *(*MultiTexCoord2fvARB)( GLcontext *, const int * );
    struct dynfn *(*MultiTexCoord1fARB)( GLcontext *, const int * );
    struct dynfn *(*MultiTexCoord1fvARB)( GLcontext *, const int * );
+   struct dynfn *(*FogCoordfEXT)( GLcontext *, const int * );
+   struct dynfn *(*FogCoordfvEXT)( GLcontext *, const int * );
 };
 
 
@@ -797,6 +804,7 @@ struct r200_vbinfo {
 
    GLfloat *normalptr;
    GLfloat *floatcolorptr;
+   GLfloat *fogptr;
    r200_color_t *colorptr;
    GLfloat *floatspecptr;
    r200_color_t *specptr;
@@ -845,6 +853,7 @@ struct r200_context {
    GLuint TclFallback;
    GLuint Fallback;
    GLuint NewGLState;
+   GLuint tnl_index;	/* index of bits for last tnl_install_attrs */
 
    /* Vertex buffers
     */
@@ -889,7 +898,6 @@ struct r200_context {
    GLuint TexMatEnabled;
    GLuint TexMatCompSel;
    GLuint TexGenEnabled;
-   GLuint TexGenInputs;
    GLuint TexGenCompSel;
    GLmatrix tmpmat;
 
@@ -904,7 +912,6 @@ struct r200_context {
    GLuint swap_count;
    GLuint swap_missed_count;
 
-   PFNGLXGETUSTPROC get_ust;
 
    /* r200_tcl.c
     */
@@ -925,6 +932,9 @@ struct r200_context {
    /* Configuration cache
     */
    driOptionCache optionCache;
+
+   GLboolean using_hyperz;
+   GLboolean texmicrotile;
 };
 
 #define R200_CONTEXT(ctx)		((r200ContextPtr)(ctx->DriverCtx))
@@ -982,5 +992,4 @@ extern int R200_DEBUG;
 #define DEBUG_PIXEL     0x2000
 #define DEBUG_MEMORY    0x4000
 
-#endif
 #endif /* __R200_CONTEXT_H__ */

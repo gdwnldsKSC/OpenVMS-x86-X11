@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xmu/DrawLogo.c,v 1.7 2001/01/17 19:42:54 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xlib.h>  
 #include <X11/Xmu/Drawing.h>
 

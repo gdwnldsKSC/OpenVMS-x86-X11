@@ -39,6 +39,9 @@
 
 /* October 2004, source code review by Thomas Biege <thomas@suse.de> */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "XpmI.h"
 #include <sys/stat.h>
 #if !defined(FOR_MSW) && !defined(WIN32)

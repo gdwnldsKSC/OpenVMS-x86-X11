@@ -6,13 +6,13 @@ Copyright 1993 by Sun Microsystems, Inc. Mountain View, CA.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Digital or Sun not be
 used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
+software without specific, written prior permission.
 
 DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
 ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
@@ -60,6 +60,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xt/Geometry.c,v 1.12 2001/12/14 19:56:15 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "IntrinsicI.h"
 #include "ShellP.h"
 #include "ShellI.h"
@@ -90,15 +93,16 @@ static void ClearRectObjAreas(
  * Returns more data than the public interface.  Does not convert
  * XtGeometryDone to XtGeometryYes.
  *
- * clear_rect_obj - *** RETURNED ***  
+ * clear_rect_obj - *** RETURNED ***
  *		    TRUE if the rect obj has been cleared, false otherwise.
  */
 
-XtGeometryResult 
-_XtMakeGeometryRequest (widget, request, reply, clear_rect_obj)
-    Widget widget;
-    XtWidgetGeometry *request, *reply;
-    Boolean * clear_rect_obj;
+XtGeometryResult
+_XtMakeGeometryRequest (
+    Widget widget,
+    XtWidgetGeometry *request,
+    XtWidgetGeometry *reply,
+    Boolean * clear_rect_obj)
 {
     XtWidgetGeometry    junk;
     XtGeometryHandler manager = (XtGeometryHandler) NULL;
@@ -324,7 +328,7 @@ _XtMakeGeometryRequest (widget, request, reply, clear_rect_obj)
      * If Unrealized, not a XtGeometryYes, or a query-only then we are done.
      */
 
-    if ((returnCode != XtGeometryYes) || 
+    if ((returnCode != XtGeometryYes) ||
 	(req.changeMask & XtCWQueryOnly) || !XtIsRealized(widget)) {
 
 #ifdef XT_GEO_TATTLER
@@ -350,7 +354,7 @@ _XtMakeGeometryRequest (widget, request, reply, clear_rect_obj)
 			   (reply)?reply->width:junk.width,
 			   (reply)?reply->height:junk.height));
 	    CALLGEOTAT(_XtGeoTab(-1));
-	    
+
             /* check for no change */
             break ;
 	case XtGeometryYes:
@@ -459,9 +463,10 @@ _XtMakeGeometryRequest (widget, request, reply, clear_rect_obj)
 
 /* Public routines */
 
-XtGeometryResult XtMakeGeometryRequest (widget, request, reply)
-    Widget         widget;
-    XtWidgetGeometry *request, *reply;
+XtGeometryResult XtMakeGeometryRequest (
+    Widget         widget,
+    XtWidgetGeometry *request,
+    XtWidgetGeometry *reply)
 {
     Boolean junk;
     XtGeometryResult r;
@@ -474,15 +479,15 @@ XtGeometryResult XtMakeGeometryRequest (widget, request, reply)
 	call_data.type = XtHpreGeometry;
 	call_data.widget = widget;
 	call_data.request = request;
-	XtCallCallbackList(hookobj, 
-		((HookObject)hookobj)->hooks.geometryhook_callbacks, 
+	XtCallCallbackList(hookobj,
+		((HookObject)hookobj)->hooks.geometryhook_callbacks,
 		(XtPointer)&call_data);
-	call_data.result = r = 
+	call_data.result = r =
 	    _XtMakeGeometryRequest(widget, request, reply, &junk);
 	call_data.type = XtHpostGeometry;
 	call_data.reply = reply;
-	XtCallCallbackList(hookobj, 
-		((HookObject)hookobj)->hooks.geometryhook_callbacks, 
+	XtCallCallbackList(hookobj,
+		((HookObject)hookobj)->hooks.geometryhook_callbacks,
 		(XtPointer)&call_data);
     } else {
 	r = _XtMakeGeometryRequest(widget, request, reply, &junk);
@@ -492,7 +497,7 @@ XtGeometryResult XtMakeGeometryRequest (widget, request, reply)
     return ((r == XtGeometryDone) ? XtGeometryYes : r);
 }
 
-XtGeometryResult 
+XtGeometryResult
 XtMakeResizeRequest(
     Widget	widget,
     _XtDimension width,
@@ -516,15 +521,15 @@ XtMakeResizeRequest(
 	call_data.type = XtHpreGeometry;
 	call_data.widget = widget;
 	call_data.request = &request;
-	XtCallCallbackList(hookobj, 
-		((HookObject)hookobj)->hooks.geometryhook_callbacks, 
+	XtCallCallbackList(hookobj,
+		((HookObject)hookobj)->hooks.geometryhook_callbacks,
 		(XtPointer)&call_data);
-	call_data.result = r = 
+	call_data.result = r =
 	    _XtMakeGeometryRequest(widget, &request, &reply, &junk);
 	call_data.type = XtHpostGeometry;
 	call_data.reply = &reply;
-	XtCallCallbackList(hookobj, 
-		((HookObject)hookobj)->hooks.geometryhook_callbacks, 
+	XtCallCallbackList(hookobj,
+		((HookObject)hookobj)->hooks.geometryhook_callbacks,
 		(XtPointer)&call_data);
     } else {
 	r = _XtMakeGeometryRequest(widget, &request, &reply, &junk);
@@ -545,8 +550,8 @@ XtMakeResizeRequest(
     return ((r == XtGeometryDone) ? XtGeometryYes : r);
 } /* XtMakeResizeRequest */
 
-void XtResizeWindow(w)
-    Widget w;
+void XtResizeWindow(
+    Widget w)
 {
     XtConfigureHookDataRec req;
     Widget hookobj;
@@ -596,10 +601,10 @@ void XtConfigureWidget(
 
     CALLGEOTAT(_XtGeoTrace(w,
                    "\"%s\" is being configured by its parent \"%s\"\n",
-		   XtName(w), 
+		   XtName(w),
 		   (XtParent(w))?XtName(XtParent(w)):"Root"));
     CALLGEOTAT(_XtGeoTab(1));
-    
+
     LOCK_APP(app);
     req.changeMask = 0;
     if ((old.x = w->core.x) != x) {
@@ -640,7 +645,7 @@ void XtConfigureWidget(
 	    if (XtIsWidget(w)) {
 		CALLGEOTAT(_XtGeoTrace(w,
                                   "XConfigure \"%s\"'s window\n",XtName(w)));
-		XConfigureWindow(XtDisplay(w), XtWindow(w), 
+		XConfigureWindow(XtDisplay(w), XtWindow(w),
 				 req.changeMask, &req.changes);
 	    } else {
 		CALLGEOTAT(_XtGeoTrace(w,
@@ -662,7 +667,7 @@ void XtConfigureWidget(
 	LOCK_PROCESS;
 	resize = XtClass(w)->core_class.resize;
 	UNLOCK_PROCESS;
-	if ((req.changeMask & (CWWidth | CWHeight)) && 
+	if ((req.changeMask & (CWWidth | CWHeight)) &&
 	    resize != (XtWidgetProc) NULL) {
 	    CALLGEOTAT(_XtGeoTrace(w,"Resize proc is called.\n"));
 	    (*resize)(w);
@@ -721,10 +726,10 @@ void XtTranslateCoords(
     UNLOCK_APP(app);
 }
 
-XtGeometryResult XtQueryGeometry(widget, intended, reply)
-    Widget widget;
-    register XtWidgetGeometry *intended; /* parent's changes; may be NULL */
-    XtWidgetGeometry *reply;	/* child's preferred geometry; never NULL */
+XtGeometryResult XtQueryGeometry(
+    Widget widget,
+    register XtWidgetGeometry *intended, /* parent's changes; may be NULL */
+    XtWidgetGeometry *reply)	/* child's preferred geometry; never NULL */
 {
     XtWidgetGeometry null_intended;
     XtGeometryHandler query;
@@ -790,7 +795,7 @@ XtGeometryResult XtQueryGeometry(widget, intended, reply)
 	} else {\
 	      _XtGeoTrace(widget," replied %s = %d\n","field",\
 			                           reply->field);\
-	} 
+	}
 #else
 #define FillIn(mask, field) \
 	if (!(reply->request_mode & mask)) reply->field = widget->core.field;
@@ -805,7 +810,7 @@ XtGeometryResult XtQueryGeometry(widget, intended, reply)
     CALLGEOTAT(_XtGeoTab(-1));
 #undef FillIn
 
-    if (!(reply->request_mode & CWStackMode)) 
+    if (!(reply->request_mode & CWStackMode))
 	reply->stack_mode = XtSMDontChange;
     UNLOCK_APP(app);
     return result;

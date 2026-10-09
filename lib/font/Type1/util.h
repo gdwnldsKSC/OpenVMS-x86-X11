@@ -49,6 +49,9 @@
 #ifndef UTIL_H
 #define UTIL_H
  
+#ifdef BUILDCID
+#define XFONT_CID 1
+#endif
  
 #ifndef boolean
 typedef int boolean;
@@ -80,7 +83,7 @@ typedef int boolean;
  
 /* this is the size of memory allocated for reading fonts */
  
-#ifdef BUILDCID
+#if XFONT_CID
 #define VM_SIZE               (100*1024)
 #else
 #define VM_SIZE               (50*1024)

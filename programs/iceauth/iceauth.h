@@ -29,6 +29,10 @@ in this Software without prior written authorization from The Open Group.
 
 /* $XFree86: xc/programs/iceauth/iceauth.h,v 3.4 2001/07/25 15:05:13 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <stdio.h>
 #include <X11/Xos.h>
 #include <X11/ICE/ICElib.h>

@@ -43,10 +43,14 @@
  * calls and monitoring their latency.  This functionality can be turned
  * on using the -stat command-line parameter. */
 
+#ifdef HAVE_DMX_CONFIG_H
+#include <dmx-config.h>
+#endif
+
 #include "dmx.h"
 #include "dmxstat.h"
 #include "dmxlog.h"
-#include "Xos.h"                /* For sys/time.h */
+#include <X11/Xos.h>                /* For sys/time.h */
 
 /** Used to compute a running average of value. */
 typedef struct _DMXStatAvg {

@@ -27,13 +27,10 @@ in this Software without prior written authorization from The Open Group.
 /* $Xorg: Xcup.c,v 1.5 2001/02/09 02:03:49 xorgcvs Exp $ */
 
 #ifdef WIN32
-#define BOOL wBOOL
-#undef Status
-#define Status wStatus
-#include <windows.h>
-#undef Status
-#define Status int
-#undef BOOL
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <X11/Xwindows.h>
 #endif
 
 #define NEED_EVENTS
@@ -83,10 +80,10 @@ static XEXT_GENERATE_CLOSE_DISPLAY (close_display, xcup_info)
  *****************************************************************************/
 
 Status
-XcupQueryVersion(dpy, major_version_return, minor_version_return)
-    Display* dpy;
-    int* major_version_return; 
-    int* minor_version_return;
+XcupQueryVersion(
+    Display* dpy,
+    int* major_version_return,
+    int* minor_version_return)
 {
     XExtDisplayInfo *info = find_display (dpy);
     xXcupQueryVersionReply rep;

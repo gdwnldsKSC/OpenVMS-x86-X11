@@ -1,6 +1,7 @@
 /*
+ * $RCSId: xc/lib/fontconfig/fc-cache/fc-cache.c,v 1.8tsi Exp $
  *
- * Copyright © 2002 Keith Packard
+ * Copyright Â© 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -66,16 +67,29 @@ extern int optind, opterr, optopt;
 static void
 usage (char *program)
 {
-    fprintf (stderr, "usage: %s [-fvV?] [--force] [--verbose] [--version] [--help] [dirs]\n",
+#if HAVE_GETOPT_LONG
+    fprintf (stderr, "usage: %s [-fsvV?] [--force] [--system-only] [--verbose] [--version] [--help] [dirs]\n",
 	     program);
+#else
+    fprintf (stderr, "usage: %s [-fsvV?] [dirs]\n",
+	     program);
+#endif
     fprintf (stderr, "Build font information caches in [dirs]\n"
 	     "(all directories in font configuration by default).\n");
     fprintf (stderr, "\n");
+#if HAVE_GETOPT_LONG
     fprintf (stderr, "  -f, --force          scan directories with apparently valid caches\n");
     fprintf (stderr, "  -s, --system-only    scan system-wide directories only\n");
     fprintf (stderr, "  -v, --verbose        display status information while busy\n");
     fprintf (stderr, "  -V, --version        display font config version and exit\n");
     fprintf (stderr, "  -?, --help           display this help and exit\n");
+#else
+    fprintf (stderr, "  -f         (force)   scan directories with apparently valid caches\n");
+    fprintf (stderr, "  -s         (system)  scan system-wide directories only\n");
+    fprintf (stderr, "  -v         (verbose) display status information while busy\n");
+    fprintf (stderr, "  -V         (version) display font config version and exit\n");
+    fprintf (stderr, "  -?         (help)    display this help and exit\n");
+#endif
     exit (1);
 }
 
@@ -127,6 +141,7 @@ scanDirs (FcStrList *list, FcConfig *config, char *program, FcBool force, FcBool
 	{
 	    fprintf (stderr, "Can't create directory set\n");
 	    ret++;
+	    FcFontSetDestroy (set);
 	    continue;
 	}
 	
@@ -148,23 +163,31 @@ scanDirs (FcStrList *list, FcConfig *config, char *program, FcBool force, FcBool
 		perror ("");
 		ret++;
 	    }
+	    FcFontSetDestroy (set);
+	    FcStrSetDestroy (subdirs);
 	    continue;
 	}
 	if (stat ((char *) dir, &statb) == -1)
 	{
 	    fprintf (stderr, "\"%s\": ", dir);
 	    perror ("");
+	    FcFontSetDestroy (set);
+	    FcStrSetDestroy (subdirs);
 	    ret++;
 	    continue;
 	}
 	if (!S_ISDIR (statb.st_mode))
 	{
 	    fprintf (stderr, "\"%s\": not a directory, skipping\n", dir);
+	    FcFontSetDestroy (set);
+	    FcStrSetDestroy (subdirs);
 	    continue;
 	}
 	if (!FcDirScan (set, subdirs, 0, FcConfigGetBlanks (config), dir, force))
 	{
 	    fprintf (stderr, "\"%s\": error scanning\n", dir);
+	    FcFontSetDestroy (set);
+	    FcStrSetDestroy (subdirs);
 	    ret++;
 	    continue;
 	}
@@ -187,6 +210,7 @@ scanDirs (FcStrList *list, FcConfig *config, char *program, FcBool force, FcBool
 	}
 	FcFontSetDestroy (set);
 	sublist = FcStrListCreate (subdirs);
+	FcStrSetDestroy (subdirs);
 	if (!sublist)
 	{
 	    fprintf (stderr, "Can't create subdir list in \"%s\"\n", dir);
@@ -194,7 +218,6 @@ scanDirs (FcStrList *list, FcConfig *config, char *program, FcBool force, FcBool
 	    continue;
 	}
 	ret += scanDirs (sublist, config, program, force, verbose);
-	FcStrSetDestroy (subdirs);
     }
     FcStrListDone (list);
     return ret;
@@ -215,9 +238,9 @@ main (int argc, char **argv)
     int		c;
 
 #if HAVE_GETOPT_LONG
-    while ((c = getopt_long (argc, argv, "fVv?", longopts, NULL)) != -1)
+    while ((c = getopt_long (argc, argv, "fsVv?", longopts, NULL)) != -1)
 #else
-    while ((c = getopt (argc, argv, "fVv?")) != -1)
+    while ((c = getopt (argc, argv, "fsVv?")) != -1)
 #endif
     {
 	switch (c) {
@@ -275,6 +298,15 @@ main (int argc, char **argv)
     else
 	list = FcConfigGetConfigDirs (config);
     ret = scanDirs (list, config, argv[0], force, verbose);
+    /* 
+     * Now we need to sleep a second  (or two, to be extra sure), to make
+     * sure that timestamps for changes after this run of fc-cache are later
+     * then any timestamps we wrote.  We don't use gettimeofday() because
+     * sleep(3) can't be interrupted by a signal here -- this isn't in the
+     * library, and there aren't any signals flying around here.
+     */
+    FcConfigDestroy (config);
+    sleep (2);
     if (verbose)
 	printf ("%s: %s\n", argv[0], ret ? "failed" : "succeeded");
     return ret;

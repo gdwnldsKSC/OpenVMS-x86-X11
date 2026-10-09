@@ -14,9 +14,13 @@ is" without express or implied warranty.
 */
 /* $XFree86: xc/programs/Xserver/hw/xnest/Events.c,v 1.2 2001/08/01 00:44:57 tsi Exp $ */
 
-#include "X.h"
+#ifdef HAVE_XNEST_CONFIG_H
+#include <xnest-config.h>
+#endif
+
+#include <X11/X.h>
 #define NEED_EVENTS
-#include "Xproto.h"
+#include <X11/Xproto.h>
 #include "screenint.h"
 #include "input.h"
 #include "misc.h"
@@ -34,6 +38,7 @@ is" without express or implied warranty.
 #include "Screen.h"
 #include "XNWindow.h"
 #include "Events.h"
+#include "Keyboard.h"
 #include "mipointer.h"
 
 CARD32 lastEventTime = 0;
@@ -96,6 +101,16 @@ xnestCollectExposures()
 }
 
 void
+xnestQueueKeyEvent(int type, unsigned int keycode)
+{
+  xEvent x;
+  x.u.u.type = type;
+  x.u.u.detail = keycode;
+  x.u.keyButtonPointer.time = lastEventTime = GetTimeInMillis();
+  mieqEnqueue(&x);
+}
+
+void
 xnestCollectEvents()
 {
   XEvent X;
@@ -105,20 +120,17 @@ xnestCollectEvents()
   while (XCheckIfEvent(xnestDisplay, &X, xnestNotExposurePredicate, NULL)) {
     switch (X.type) {
     case KeyPress:
-      x.u.u.type = KeyPress;
-      x.u.u.detail = X.xkey.keycode;
-      x.u.keyButtonPointer.time = lastEventTime = GetTimeInMillis();
-      mieqEnqueue(&x);
+      xnestUpdateModifierState(X.xkey.state);
+      xnestQueueKeyEvent(KeyPress, X.xkey.keycode);
       break;
       
     case KeyRelease:
-      x.u.u.type = KeyRelease;
-      x.u.u.detail = X.xkey.keycode;
-      x.u.keyButtonPointer.time = lastEventTime = GetTimeInMillis();
-      mieqEnqueue(&x);
+      xnestUpdateModifierState(X.xkey.state);
+      xnestQueueKeyEvent(KeyRelease, X.xkey.keycode);
       break;
       
     case ButtonPress:
+      xnestUpdateModifierState(X.xkey.state);
       x.u.u.type = ButtonPress;
       x.u.u.detail = X.xbutton.button;
       x.u.keyButtonPointer.time = lastEventTime = GetTimeInMillis();
@@ -126,6 +138,7 @@ xnestCollectEvents()
       break;
       
     case ButtonRelease:
+      xnestUpdateModifierState(X.xkey.state);
       x.u.u.type = ButtonRelease;
       x.u.u.detail = X.xbutton.button;
       x.u.keyButtonPointer.time = lastEventTime = GetTimeInMillis();
@@ -195,6 +208,14 @@ xnestCollectEvents()
       if (xnestParentWindow != (Window) 0 &&
 	  X.xdestroywindow.window == xnestParentWindow)
 	exit (0);
+      break;
+
+    case CirculateNotify:
+    case ConfigureNotify:
+    case GravityNotify:
+    case MapNotify:
+    case ReparentNotify:
+    case UnmapNotify:
       break;
       
     default:

@@ -58,7 +58,7 @@ in this Software without prior written authorization from The Open Group.
 #include	"globals.h"
 #include	"clientstr.h"
 #include	"accstr.h"
-#include	"fontstruct.h"
+#include	<X11/fonts/fontstruct.h>
 #include	<X11/keysymdef.h>
 
 #include	"authstr.h"

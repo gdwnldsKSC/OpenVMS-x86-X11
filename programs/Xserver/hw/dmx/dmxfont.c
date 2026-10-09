@@ -35,6 +35,10 @@
 /** \file
  * This file provides support for fonts. */
 
+#ifdef HAVE_DMX_CONFIG_H
+#include <dmx-config.h>
+#endif
+
 #define DMX_FONTPATH_DEBUG 0
 
 #include "dmx.h"
@@ -42,7 +46,7 @@
 #include "dmxfont.h"
 #include "dmxlog.h"
 
-#include "fontstruct.h"
+#include <X11/fonts/fontstruct.h>
 #include "dixfont.h"
 #include "dixstruct.h"
 

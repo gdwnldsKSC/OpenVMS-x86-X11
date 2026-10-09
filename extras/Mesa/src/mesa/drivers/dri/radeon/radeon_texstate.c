@@ -55,6 +55,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define RADEON_TXFORMAT_AL88      RADEON_TXFORMAT_AI88
 #define RADEON_TXFORMAT_YCBCR     RADEON_TXFORMAT_YVYU422
 #define RADEON_TXFORMAT_YCBCR_REV RADEON_TXFORMAT_VYUY422
+#define RADEON_TXFORMAT_RGB_DXT1  RADEON_TXFORMAT_DXT1
+#define RADEON_TXFORMAT_RGBA_DXT1 RADEON_TXFORMAT_DXT1
+#define RADEON_TXFORMAT_RGBA_DXT3 RADEON_TXFORMAT_DXT23
+#define RADEON_TXFORMAT_RGBA_DXT5 RADEON_TXFORMAT_DXT45
 
 #define _COLOR(f) \
     [ MESA_FORMAT_ ## f ] = { RADEON_TXFORMAT_ ## f, 0 }
@@ -68,7 +72,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
    [ MESA_FORMAT_ ## f ] = { RADEON_TXFORMAT_ ## f, RADEON_YUV_TO_RGB }
 #define _INVALID(f) \
     [ MESA_FORMAT_ ## f ] = { 0xffffffff, 0 }
-#define VALID_FORMAT(f) ( ((f) <= MESA_FORMAT_YCBCR_REV) \
+#define VALID_FORMAT(f) ( ((f) <= MESA_FORMAT_RGBA_DXT5) \
 			     && (tx_table[f].format != 0xffffffff) )
 
 static const struct {
@@ -95,6 +99,12 @@ tx_table[] =
    _INVALID(CI8),
    _YUV(YCBCR),
    _YUV(YCBCR_REV),
+   _INVALID(RGB_FXT1),
+   _INVALID(RGBA_FXT1),
+   _COLOR(RGB_DXT1),
+   _ALPHA(RGBA_DXT1),
+   _ALPHA(RGBA_DXT3),
+   _ALPHA(RGBA_DXT5),
 };
 
 #undef _COLOR
@@ -117,8 +127,8 @@ static void radeonSetTexImages( radeonContextPtr rmesa,
 {
    radeonTexObjPtr t = (radeonTexObjPtr)tObj->DriverData;
    const struct gl_texture_image *baseImage = tObj->Image[0][tObj->BaseLevel];
-   GLint curOffset;
-   GLint i;
+   GLint curOffset, blitWidth;
+   GLint i, texelBytes;
    GLint numLevels;
    GLint log2Width, log2Height, log2Depth;
 
@@ -138,6 +148,7 @@ static void radeonSetTexImages( radeonContextPtr rmesa,
       return;
    }
 
+   texelBytes = baseImage->TexFormat->TexelBytes;
 
    /* Compute which mipmap levels we really want to send to the hardware.
     */
@@ -156,6 +167,34 @@ static void radeonSetTexImages( radeonContextPtr rmesa,
     * memory organized as a rectangle of width BLIT_WIDTH_BYTES.
     */
    curOffset = 0;
+   blitWidth = BLIT_WIDTH_BYTES;
+   t->tile_bits = 0;
+
+   /* figure out if this texture is suitable for tiling. */
+   if (texelBytes && (tObj->Target != GL_TEXTURE_RECTANGLE_NV)) {
+      if (rmesa->texmicrotile && (baseImage->Height > 1)) {
+	 /* allow 32 (bytes) x 1 mip (which will use two times the space
+	    the non-tiled version would use) max if base texture is large enough */
+	 if ((numLevels == 1) ||
+	   (((baseImage->Width * texelBytes / baseImage->Height) <= 32) &&
+	       (baseImage->Width * texelBytes > 64)) ||
+	    ((baseImage->Width * texelBytes / baseImage->Height) <= 16)) {
+	    /* R100 has two microtile bits (only the txoffset reg, not the blitter)
+	       weird: X2 + OPT: 32bit correct, 16bit completely hosed
+		      X2: 32bit correct, 16bit correct
+		      OPT: 32bit large mips correct, small mips hosed, 16bit completely hosed */
+	    t->tile_bits |= RADEON_TXO_MICRO_TILE_X2 /*| RADEON_TXO_MICRO_TILE_OPT*/;
+	 }
+      }
+      if ((baseImage->Width * texelBytes >= 256) && (baseImage->Height >= 16)) {
+	 /* R100 disables macro tiling only if mip width is smaller than 256 bytes, and not
+	    in the case if height is smaller than 16 (not 100% sure), as does the r200,
+	    so need to disable macro tiling in that case */
+	 if ((numLevels == 1) || ((baseImage->Width * texelBytes / baseImage->Height) <= 4)) {
+	    t->tile_bits |= RADEON_TXO_MACRO_TILE;
+	 }
+      }
+   }
 
    for (i = 0; i < numLevels; i++) {
       const struct gl_texture_image *texImage;
@@ -167,20 +206,42 @@ static void radeonSetTexImages( radeonContextPtr rmesa,
 
       /* find image size in bytes */
       if (texImage->IsCompressed) {
-         size = texImage->CompressedSize;
+      /* need to calculate the size AFTER padding even though the texture is
+         submitted without padding.
+         Only handle pot textures currently - don't know if npot is even possible,
+         size calculation would certainly need (trivial) adjustments.
+         Align (and later pad) to 32byte, not sure what that 64byte blit width is
+         good for? */
+         if ((t->pp_txformat & RADEON_TXFORMAT_FORMAT_MASK) == RADEON_TXFORMAT_DXT1) {
+            /* RGB_DXT1/RGBA_DXT1, 8 bytes per block */
+            if ((texImage->Width + 3) < 8) /* width one block */
+               size = texImage->CompressedSize * 4;
+            else if ((texImage->Width + 3) < 16)
+               size = texImage->CompressedSize * 2;
+            else size = texImage->CompressedSize;
+         }
+         else /* DXT3/5, 16 bytes per block */
+            if ((texImage->Width + 3) < 8)
+               size = texImage->CompressedSize * 2;
+            else size = texImage->CompressedSize;
       }
       else if (tObj->Target == GL_TEXTURE_RECTANGLE_NV) {
-      	 size = ((texImage->Width * texImage->TexFormat->TexelBytes + 63)
-      	         & ~63) * texImage->Height;
+	 size = ((texImage->Width * texelBytes + 63) & ~63) * texImage->Height;
+      }
+      else if (t->tile_bits & RADEON_TXO_MICRO_TILE_X2) {
+	 /* tile pattern is 16 bytes x2. mipmaps stay 32 byte aligned,
+	    though the actual offset may be different (if texture is less than
+	    32 bytes width) to the untiled case */
+	 int w = (texImage->Width * texelBytes * 2 + 31) & ~31;
+	 size = (w * ((texImage->Height + 1) / 2)) * texImage->Depth;
+	 blitWidth = MAX2(texImage->Width, 64 / texelBytes);
       }
       else {
-         int w = texImage->Width * texImage->TexFormat->TexelBytes;
-         if (w < 32)
-            w = 32;
-         size = w * texImage->Height * texImage->Depth;
+	 int w = (texImage->Width * texelBytes + 31) & ~31;
+	 size = w * texImage->Height * texImage->Depth;
+	 blitWidth = MAX2(texImage->Width, 64 / texelBytes);
       }
       assert(size > 0);
-
 
       /* Align to 32-byte offset.  It is faster to do this unconditionally
        * (no branch penalty).
@@ -188,10 +249,18 @@ static void radeonSetTexImages( radeonContextPtr rmesa,
 
       curOffset = (curOffset + 0x1f) & ~0x1f;
 
-      t->image[0][i].x = curOffset % BLIT_WIDTH_BYTES;
-      t->image[0][i].y = curOffset / BLIT_WIDTH_BYTES;
-      t->image[0][i].width  = MIN2(size, BLIT_WIDTH_BYTES);
-      t->image[0][i].height = size / t->image[0][i].width;
+      if (texelBytes) {
+	 t->image[0][i].x = curOffset; /* fix x and y coords up later together with offset */
+	 t->image[0][i].y = 0;
+	 t->image[0][i].width = MIN2(size / texelBytes, blitWidth);
+	 t->image[0][i].height = (size / texelBytes) / t->image[0][i].width;
+      }
+      else {
+         t->image[0][i].x = curOffset % BLIT_WIDTH_BYTES;
+         t->image[0][i].y = curOffset / BLIT_WIDTH_BYTES;
+         t->image[0][i].width  = MIN2(size, BLIT_WIDTH_BYTES);
+         t->image[0][i].height = size / t->image[0][i].width;     
+      }
 
 #if 0
       /* for debugging only and only  applicable to non-rectangle targets */
@@ -236,7 +305,7 @@ static void radeonSetTexImages( radeonContextPtr rmesa,
    if (baseImage->IsCompressed)
       t->pp_txpitch = (tObj->Image[0][t->base.firstLevel]->Width + 63) & ~(63);
    else
-      t->pp_txpitch = ((tObj->Image[0][t->base.firstLevel]->Width * baseImage->TexFormat->TexelBytes) + 63) & ~(63);
+      t->pp_txpitch = ((tObj->Image[0][t->base.firstLevel]->Width * texelBytes) + 63) & ~(63);
    t->pp_txpitch -= 32;
 
    t->dirty_state = TEX_ALL;
@@ -812,14 +881,16 @@ static GLboolean radeon_validate_texgen( GLcontext *ctx, GLuint unit )
       /* Very easy to do this, in fact would remove a fallback case
        * elsewhere, but I haven't done it yet...  Fallback: 
        */
-      fprintf(stderr, "fallback Q_BIT\n");
+      if (RADEON_DEBUG & DEBUG_FALLBACKS) 
+	fprintf(stderr, "fallback Q_BIT\n");
       return GL_FALSE;
    }
    else if ((texUnit->TexGenEnabled & (S_BIT|T_BIT)) != (S_BIT|T_BIT) ||
 	    texUnit->GenModeS != texUnit->GenModeT) {
       /* Mixed modes, fallback:
        */
-      /* fprintf(stderr, "fallback mixed texgen\n"); */
+      if (RADEON_DEBUG & DEBUG_FALLBACKS) 
+        fprintf(stderr, "fallback mixed texgen\n");
       return GL_FALSE;
    }
    else
@@ -854,7 +925,8 @@ static GLboolean radeon_validate_texgen( GLcontext *ctx, GLuint unit )
    default:
       /* Unsupported mode, fallback:
        */
-      /*  fprintf(stderr, "fallback unsupported texgen\n"); */
+      if (RADEON_DEBUG & DEBUG_FALLBACKS) 
+	 fprintf(stderr, "fallback GL_SPHERE_MAP\n");
       return GL_FALSE;
    }
 

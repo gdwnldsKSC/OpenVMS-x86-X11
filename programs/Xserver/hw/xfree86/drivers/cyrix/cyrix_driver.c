@@ -52,6 +52,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/cyrix/cyrix_driver.c,v 1.30tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "fb.h"
 #include "mibank.h"
 #include "micmap.h"
@@ -73,12 +77,14 @@
 
 #include "cyrix.h"
 
+#ifdef XFreeXDGA
 #define _XF86DGA_SERVER_
-#include "extensions/xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
+#endif
 
 #include "opaque.h"
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 static const OptionInfoRec * CYRIXAvailableOptions(int chip, int busid);
 static void	CYRIXIdentify(int flags);
@@ -134,7 +140,7 @@ enum GenericTypes {
  * an upper-case version of the driver name.
  */
 
-DriverRec CYRIX = {
+_X_EXPORT DriverRec CYRIX = {
     VERSION,
     CYRIX_DRIVER_NAME,
     CYRIXIdentify,
@@ -241,7 +247,7 @@ static XF86ModuleVersionInfo cyrixVersRec =
 	{0,0,0,0}
 };
 
-XF86ModuleData cyrixModuleData = { &cyrixVersRec, cyrixSetup, NULL };
+_X_EXPORT XF86ModuleData cyrixModuleData = { &cyrixVersRec, cyrixSetup, NULL };
 
 pointer
 cyrixSetup(pointer module, pointer opts, int *errmaj, int *errmin)

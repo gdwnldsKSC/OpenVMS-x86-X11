@@ -21,6 +21,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef XFree86LOADER
 
 #include "ativersion.h"
@@ -77,7 +81,7 @@ R128Setup
 }
 
 /* The following record must be called r128ModuleData */
-XF86ModuleData r128ModuleData =
+_X_EXPORT XF86ModuleData r128ModuleData =
 {
     &R128VersionRec,
     R128Setup,

@@ -1,3 +1,244 @@
+2005-07-05  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwm.c:
+	Fix crash on server shutdown
+	
+2005-07-05  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winkeybd.c:
+	* winkeybd.h:
+	* winwndproc.c:
+	Fix simultanious presses of Left and Right Control and Shift keys.
+	https://bugs.freedesktop.org/show_bug.cgi?id=3677
+
+2005-07-05  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwm.c:
+	Fix typo which broke window titles
+
+2005-07-05  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwndproc.c:
+	* winkeybd.c:
+	Fix problem with fake Control press on Alt-Gr
+	https://bugs.freedesktop.org/show_bug.cgi?id=3680
+	https://bugs.freedesktop.org/show_bug.cgi?id=3497
+
+	* InitOutput.c:
+	Fix static declaration of winGetBaseDir
+
+2005-07-05  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winwindow.h:
+	* winmultiwindowwm.c:
+	* winscrinit.c:
+	External windowmanagers could connect in multiwindow mode which lead
+	to strange results with the internal windowmanager.
+
+2005-07-05  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* *.c:
+	Include xwin-config.h if HAVE_XWIN_CONFIG is defined
+	Cleanup X11 includes handling
+	Warning fixes
+	
+2005-06-30  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwndproc.c:
+	Pass serverClient instead of NULL to ConfigureWindow.
+	This should fix a crash reported by Øyvind Harboe
+
+2005-06-08  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winlayouts.h:
+	Merge from CYGWIN
+	Added layout "French (Canada)" as ca_enhanced 
+	Added Czech (QWERTY) layout
+	* winshaddnl.c:
+	Merge from CYGWIN
+	Print error code if winStoreColorsShadowDDNL fails
+
+2005-06-08  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwindow.c:
+	Fix crash reported by Øyvind Harboe
+
+2005-06-03  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwndproc.c:
+	* winblock.c:
+	Backout last winRaiseWindow patch which caused stacking problems
+
+2005-05-25  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* win.h:
+	* winmultiwindowwm.c:
+	Workaround bug in pthread.h
+
+2005-05-08  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwndproc.c:
+	* winblock.c:
+	Only call ConfigureWindow from winRaiseWindow if the windows
+	message dispatch loop is running.
+
+2005-05-02  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winerror.c:
+	Print correct logfile in FatalError message
+
+2005-04-19  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwndproc.c:
+	Prevent recursive calls to winRaiseWindow. 
+
+2005-03-10  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwndproc.c:
+	Force rebuilding of window stack if a window changes it's state from 
+	minimized.
+
+2005-03-07  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwndproc.c:
+	* winmultiwindowwindow.c:
+	Prevent winRaiseWindow from calling ConfigureWindow if the message
+	was sent from within winDestroyWindowsWindow
+
+	DestroyWindow send a WM_WINDOWPOSCHANGED to another window causing
+	a restacking of all windows, even of the window which is just about
+	to destroyed and whose structures may not be intact anymore.
+
+2005-02-24  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwndproc.c:
+	on WM_WINDOWPOSCHANGED raise window directly and in sync without 
+	utilizing the async windowmanager thread. Fixes some restacking 
+	problems occuring which were timing dependent
+	Do not raise the window on WM_ACTIVATE
+	Removed unused code for WM_WINDOWPOSCHANGING
+	ESC is debug key. Print status but do not abort processing the message
+	
+2005-02-12  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwindow.c
+	* winmultiwindowwndproc.c
+	* winwin32rootlesswndproc.c:
+	Cleanup some message debugging
+	
+2005-02-12  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* win.h
+	* winfont.c
+	* winmultiwindowshape.c
+	* winmultiwindowwindow.c
+	* winpfbdd.c
+	* winshaddd.c
+	* winshadddnl.c
+	* winshadgdi.c
+	* winwindow.c:
+	Fix incorrect wrapping of functions. Ensure the pointers from pScreen 
+	point to the called function even if wrapped functions changed it
+	
+	* winmultiwindowwindow.c:
+	Set the window properties to NULL to avoid referencing freed memory 
+	because of timing problems after deleting a window
+
+	* winscrinit.c:
+	Do not wrap ChangeWindowAttributes. All functions are noops currently
+	
+2005-02-12  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmsg.h:
+	* winmsg.c:
+	print window handle in message output
+	
+2005-02-08  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winkeybd.c:
+	* winkeynames.h:
+	Updated fix for ABNT2 and HK_Toggle keys. 
+
+2005-02-08  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winkeybd.h:
+	* winkeynames.h:
+	Backout ABNT2 and HK_Toggle fix since it broke keys F1 and F4. 
+
+2005-02-07  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winlayouts.h:
+	* winconfig.c:
+	Moved keyboard layout table to external file.
+
+2005-02-02  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* wincreatewnd.c:
+	Force ShowWindow if XWin was started via run.exe. Fixes mainwindow
+	not showing bug
+
+2005-01-31  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwindow.c
+	* winmultiwindowwndproc.c:
+	Create windows with SWP_NOACTIVATE flag (updated) (Kensuke Matsuzaki)
+
+2005-01-31  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwndproc.c:
+	Fixes for window ordering problem (updated) (Kensuke Matsuzaki)
+
+2005-01-31  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winconfig.c:
+	Added hungarian keyboard layout.
+
+2005-01-31  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmessages.h
+	* winmsg.h
+	* winmsg.c
+	* winmultiwindowwndproc.c
+	* winwin32rootlesswndproc.c
+	* winwndproc.c:
+	Make logging of messages configurable with environment variables
+
+2005-01-31  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* InitOutput.c:
+	resolve SHGetFolderPath dynamicly since it is not available on all Windows 
+	systems.
+
+2005-01-12  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmsg.c
+	* winmsg.h:
+	Introduce function winTrace which prints log message with verbosity 10
+	* winmultiwindowwindow.c:
+	Use winTrace for 3 heavily called functions
+
+2005-01-11  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* XWin.man:
+	Document the -silent-dup-error switch
+
+2005-01-11  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winkeyhook.c:
+	Do not grab ALT-TAB when window is in multiwindow mode
+	
+2005-01-11  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winprefs.h:
+	Fix crash with not matching definitions of PATH_MAX
+	
+2005-01-10  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winkeybd.h
+	* winkeynames.h:
+	Adjust keysyms for  Hiragana_Katakana toggle and backslash/underscore
+	on Japanese and ABNT2 keyboards
+
 2005-01-10  Alexander Gottwald  <ago at freedesktop dot org>
 
 	* winkeybd.h
@@ -6,16 +247,29 @@
 	Make keyhook feature work in multiwindowmode too
 	Hook windows keys
 
+2005-01-08  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winblock.c:
+	Fix a possible null-pointer dereference	(Keishi Suenaga)
+
+2005-01-06  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* Imakefile 
+	* InitOutput.c 
+	* XWin.rc 
+	* winerror.c 
+	* wintrayicon.c 
+	* winvideo.c
+	* winshaddd.c       	
+	* winwindow.h:
+	Set PROJECT_NAME in Imakefile to create alternative window titles 
+	for Cygwin/X and Xming
+	
 2005-01-06  Alexander Gottwald  <ago at freedesktop dot org>
 
 	* winmultiwindowclass.c:
 	* winmultiwindowwm.c:
-	Fix crash with non-nullterminated strings (reported by �yvind Harboe)
-
-2004-12-27  Alexander Gottwald  <ago at freedesktop dot org>
-
-	* winmultiwindowwindow.c:
-	Bug #1945: Stop unnecessary reordering. (Kensuke Matsuzaki)
+	Fix crash with non-nullterminated strings (reported by Øyvind Harboe)
 
 2004-12-14  Alexander Gottwald  <ago at freedesktop dot org>
 
@@ -31,6 +285,51 @@
 	Added support for placing the main window with the @<monitor#>.
 	Patch by Mark Fisher, small changes by Alexander Gottwald
 	
+2004-12-06  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* XWin.rc:
+	include windows.h
+
+2004-12-05  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* ddraw.h:
+	redone ddraw.h to be able to mix it with w32api style COM header 
+	files. 
+	
+	* winmultiwindowwm.c:
+	* obj_base.h:
+	* ddraw.h:
+	obj_base.h is not needed anymore. Using <objbase.h> instead.
+
+	* winms.h:
+	Use Xwindows.h instead of windows.h
+
+	* winresource.h:
+	do not include win_ms.h
+	
+	* win.h:
+	remove extra definition of sleep()
+
+	* InitOutput.c:
+	Set HOME to Documents and Settings/username if not set
+	
+	* winprefs.c:
+	Use Xming basedir instead of ProjectRoot for system.XWinrc
+
+	* windialogs.c:
+	* winshadgdi.c:
+	* winprefs.c:
+	Fix callback functions to use wBOOL instead of BOOL
+
+	* winmultiwindowwindow.c:
+	* winwin32rootless.c:
+	* winwin32rootlesswindow.c:
+	* winerror.c:
+	Fix compiler warnings. Added debug output.
+
+	* winconfig.c:
+	Fix warning about undefined macro max
+	
 2004-12-04  Earle Philhower
 
 	* InitOutput.c:
@@ -39,16 +338,129 @@
 	* winprocarg.c:
 	Optional position -screen parameter (-screen n WxH+X+Y or 
 	-screen n W H X Y)
+
+2004-12-03  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* windialogs.c:
+	* win.h:
+	* Imakefile:
+	* winerror.c:
+	Removed scprintf, aprintf and snprintf stuff and use newXprintf
+
+2004-12-02  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winwin32rootless.c:
+	Adjust the width of the rootless backbuffer to match 32 bit alignment
+
+	* winprocarg.c:
+	Make multiplemonitors default for -internalwm
+
+2004-12-01  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* InitOutput.c:
+	Set XERRORDB environment variable to relocate the XErrorDB file
+
+2004-11-29  Kensuke Matsuzaki  <zakki@peppermint.jp>
+
+	* winmultiwindowwm.c:
+	Fixed windows.h include for cygwin.
 	
+	* winmultiwindowwindow.c:
+	Bugzilla #1945: Stop unnecessary reordering.
+
 2004-11-24  Alexander Gottwald  <ago at freedesktop dot org>
 
 	* winmultiwindowwm.c:
 	Finally the multiwindow mode defines a default cursor
 
+2004-11-22  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winmultiwindowwm.c: 
+	Fixes for building multiwindow and internalwm on mingw
+	* winwin32rootless.c:
+	Changed some debugging output
+
+2004-11-22  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* InitOutput.c, winglobals.c, winprocarg.c:
+	Xming: Place logfile in users tempdir
+	
+2004-11-15  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* Imakefile:
+	Remove override of HasSnprintf
+
+2004-11-15  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* Imakefile:
+	* InitInput.c: (InitInput):
+	* InitOutput.c: (winClipboardShutdown), (ddxGiveUp),
+	(winCheckMount), (winGetBaseDir), (winFixupPaths), (OsVendorInit),
+	(winCheckDisplayNumber):
+	* win.h:
+	* winblock.c: (winBlockHandler):
+	* winclipboard.h:
+	* winclipboardthread.c: (winClipboardProc):
+	* winclipboardwndproc.c: (winClipboardWindowProc):
+	* winconfig.c: (winConfigKeyboard), (winConfigFiles):
+	* wincreatewnd.c: (winCreateBoundingWindowWindowed):
+	* windialogs.c: (winDisplayExitDialog), (winExitDlgProc),
+	(winAboutDlgProc):
+	* winengine.c: (winSetEngine):
+	* winerror.c: (OsVendorVErrorF), (winMessageBoxF), (scprintf):
+	* winglobals.c: (winInitializeGlobals):
+	* winkeybd.c: (winKeybdReleaseKeys):
+	* winmultiwindowicons.c:
+	* winmultiwindowwindow.c: (winCreateWindowsWindow):
+	* winmultiwindowwm.c:
+	* winprefs.c: (ReloadPrefs), (HandleCustomWM_COMMAND):
+	* winprocarg.c: (ddxProcessArgument):
+	* winscrinit.c: (winFinishScreenInitFB):
+	* winshadddnl.c:
+	* wintrayicon.c: (winHandleIconMessage):
+	* winwakeup.c: (winWakeupHandler):
+	* winwin32rootless.c: (winMWExtWMCreateFrame):
+	* winwindow.c: (winReshapeRootless):
+	* winwindow.h:
+	* winwndproc.c: (winWindowProc):
+	Bufzilla #1802, http://freedesktop.org/bugzilla/show_bug.cgi?id=1802
+	Added mingw (Win32) port     
+
 2004-11-11  Alexander Gottwald  <ago at freedesktop dot org>
 
 	* winconfig.c:
 	added keyboard layout "French (Switzerland)"
+
+2004-11-06  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* winwndproc.c, wintrayicon.c, winscrinit.c:
+	* winmultiwindowwindow.c:
+	Wrap all mwextwm and internalwm code with XWIN_MULTIWINDOWEXTWM
+
+2004-11-04  Kensuke Matsuzaki  <zakki@peppermint.jp>
+
+	* InitOutput.c: (winUseMsg):
+	* win.h:
+	* winmultiwindowwindow.c: (winMinimizeWindow):
+	* winmultiwindowwm.c: (PushMessage), (UpdateName),
+	(PreserveWin32Stack), (winMultiWindowWMProc),
+	(winMultiWindowXMsgProc), (winInitWM), (winInitMultiWindowWM),
+	(CheckAnotherWindowManager):
+	* winprocarg.c: (winInitializeDefaultScreens),
+	(ddxProcessArgument):
+	* winscrinit.c: (winFinishScreenInitFB):
+	* wintrayicon.c: (winHandleIconMessage):
+	* winwin32rootless.c: (InitWin32RootlessEngine),
+	(winMWExtWMResizeFrame), (winMWExtWMRestackFrame),
+	(winMWExtWMStartDrawing), (winMWExtWMRootlessSwitchWindow),
+	(winMWExtWMSetNativeProperty):
+	* winwin32rootlesswindow.c: (winMWExtWMReorderWindows),
+	(winMWExtWMDecorateWindow), (winMWExtWMUpdateWindowDecoration),
+	(winIsInternalWMRunning), (winMWExtWMRestackWindows):
+	* winwin32rootlesswndproc.c: (winMWExtWMWindowProc):
+	* winwindow.h:
+	* winwndproc.c: (winWindowProc):
+	Add internalwm mode.
 
 2004-10-28  Alexander Gottwald  <ago at freedesktop dot org>
 
@@ -83,7 +495,13 @@
 	* win.h:
 	Make multiple monitors default for -multiwindow and -mwextwm.
 	Added a flag to indicate if the user has overridden the multimonitor
-	settings. (�yvind Harboe, Alexander Gottwald)
+	settings. (Øyvind Harboe, Alexander Gottwald)
+
+2004-10-07  Torrey Lyons  <torrey at freedesktop dot org>
+
+	* winscrinit.c:
+	Add compatibility with the generic rootless layer's new
+	DoReorderWindow function.
 
 2004-10-05  Alexander Gottwald  <ago at freedesktop dot org>
 
@@ -111,6 +529,12 @@
 	* winclipboardxevents.c (winClipboardFlushXEvents):
 	Fix clipboard bug with unicode applications.
 	
+2004-09-17  Torrey Lyons  <torrey at freedesktop dot org>
+
+	* winscrinit.c: (winFinishScreenInitFB):
+	Bugzilla #1032: Make rootless acceleration functions compatible with
+	Damage.
+
 2004-09-16  Alexander Gottwald <ago at freedesktop dot org>
 
 	* wincreatewnd.c (winCreateBoundingWindowWindowed):
@@ -236,4 +660,4 @@
 	to prevent our window appearing twice in the clipboard chain.  Also 
 	detect loops when they occur and try to behave in a reasonable way.
 
-# vim:ts=8:noexpandtab        
+# vim:ts=8:noexpandtab:encoding=utf8        

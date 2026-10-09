@@ -23,6 +23,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* $XConsortium: $ */
 
 
@@ -36,8 +40,8 @@
 #include "Ti302X.h"
 #include "IBMRGB.h"
 
-void I128SavePalette(I128Ptr pI128);
-void I128RestorePalette(I128Ptr pI128);
+static void I128SavePalette(I128Ptr pI128);
+static void I128RestorePalette(I128Ptr pI128);
 
 
 void
@@ -516,7 +520,7 @@ I128Init(ScrnInfoPtr pScrn, DisplayModePtr mode)
 }
 
 
-void
+static void
 I128SavePalette(I128Ptr pI128)
 {
    short i;
@@ -536,7 +540,7 @@ I128SavePalette(I128Ptr pI128)
 }
 
 
-void
+static void
 I128RestorePalette(I128Ptr pI128)
 {
    int i;

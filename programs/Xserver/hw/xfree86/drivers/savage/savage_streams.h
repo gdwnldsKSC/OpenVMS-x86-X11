@@ -10,9 +10,9 @@
 
 /* New streams */
 
-/* CR67[2] = 1 : enable stream 1 */
+/* CR67[2] = 1 : enable secondary stream 1 */
 #define ENABLE_STREAM1              0x04
-/* CR67[1] = 1 : enable stream 2 */
+/* CR67[1] = 1 : enable secondary stream 2 */
 #define ENABLE_STREAM2              0x02
 /* mask to clear CR67[2,1] */
 #define NO_STREAMS                  0xF9
@@ -53,6 +53,8 @@
 #define PSTREAM_FBADDR1_REG		0x81C4
 #define PSTREAM_STRIDE_REG		0x81C8
 #define DOUBLE_BUFFER_REG		0x81CC
+/* updated by peterzhu,original define is DOUBLE_BUFFER_REG*/
+#define MULTIPLE_BUFFER_REG             0x81CC
 #define SSTREAM_FBADDR0_REG		0x81D0
 #define SSTREAM_FBADDR1_REG		0x81D4
 #define SSTREAM_STRIDE_REG		0x81D8
@@ -69,8 +71,34 @@
 #define SSTREAM_FBSIZE_REG		0x8304
 #define SSTREAM_FBADDR2_REG		0x8308
 
-#define OS_XY(x,y)	(((x+1)<<16)|(y+1))
+#define OS_XY(x,y)	(((x)<<16)|(y+1)) /*(((x+1)<<16)|(y+1))*/
 #define OS_WH(x,y)	(((x-1)<<16)|(y))
+
+/* Streams Processor macros */
+#define H_Shift                 0
+#define H_Mask                  (((1L << 11) - 1) << H_Shift)
+#define W_Shift                 16
+#define W_Mask                  (((1L << 11) - 1) << W_Shift)
+                                                                                                                    
+#define Y_Shift                 0
+#define Y_Mask                  (((1L << 11) - 1) << Y_Shift)
+#define X_Shift                 16
+#define X_Mask                  (((1L << 11) - 1) << X_Shift)
+                                                                                                                    
+#define XY(x,y)      ((((x+1)<<X_Shift)&X_Mask) | (((y+1)<<Y_Shift)&Y_Mask))
+#define WH(w,h)      ((((w-1)<<W_Shift)&W_Mask) | (((h)<<H_Shift)&H_Mask))
+
+#define HSCALING_Shift    0
+#define HSCALING_Mask     (((1L << 16)-1) << HSCALING_Shift)
+#define HSCALING(w0,w1)   ((((unsigned int)(((double)w0/(double)w1) * (1 << 15))) \
+                               << HSCALING_Shift) \
+                           & HSCALING_Mask)
+                                                                                                                    
+#define VSCALING_Shift    0
+#define VSCALING_Mask     (((1L << 20)-1) << VSCALING_Shift)
+#define VSCALING(h0,h1)   ((((unsigned int) (((double)h0/(double)h1) * (1 << 15))) \
+                               << VSCALING_Shift) \
+                           & VSCALING_Mask)
 
 /* New Streams Processor */
 /* Stream Processor 1 */
@@ -164,6 +192,24 @@
 /* Secondary Stream 2 Opaque Overlay Control */
 #define SEC_STREAM2_OPAQUE_OVERLAY      0x8180
 
+/* savage 2000 */
+#define SEC_STREAM_COLOR_CONVERT0_2000       0x8198
+#define SEC_STREAM_COLOR_CONVERT1_2000       0x819c
+#define SEC_STREAM_COLOR_CONVERT2_2000       0x81e0
+#define SEC_STREAM_COLOR_CONVERT3_2000       0x81e4
+#define SEC_STREAM_SRC_START_2000            0x818c
+#define SEC_STREAM_SRC_SIZE_2000             0x81a8
+#define SEC_STREAM_BUFFERSIZE_2000           0x81a4
+#define S_SRC_H_Mask            0x00000fff
+#define S_SRC_W_Shift           16
+#define S_SRC_W_Mask            0x0fff0000
+#define SRCSIZE(w,h)   (((w <<S_SRC_W_Shift) & S_SRC_W_Mask) | (h & S_SRC_H_Mask))
+#define SRCSTART(x,y)  (((x <<S_SRC_W_Shift) & 0x7ff0000) | (y & 0x000007ff))
+#define VSCALING_2000(h0,h1)   ((unsigned int) (((float)h0/(float)h1) * (float)(65536.0) ))
+#define HSCALING_NORMALIZE(h0,h1)  ((unsigned int) ((float)2048.0 * ((float)h0/ (float)h1))) << 16
+#define HSCALING_2000(w0,w1)   ((unsigned int) (((float)w0/ (float)w1) * (float)(65536.0)))
+#define XY_2000(x,y)      ((((x)<<X_Shift)&X_Mask) | (((y)<<Y_Shift)&Y_Mask))
+#define WH_2000(w,h)      ((((w)<<W_Shift)&W_Mask) | (((h)<<H_Shift)&H_Mask))
 
 #define BASE_PAD 0xf
 

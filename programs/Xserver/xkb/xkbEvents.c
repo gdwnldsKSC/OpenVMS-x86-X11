@@ -26,15 +26,19 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $XFree86: xc/programs/Xserver/xkb/xkbEvents.c,v 3.11 2003/07/16 01:39:10 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
 #define NEED_EVENTS 1
 #include <X11/X.h>
 #include <X11/Xproto.h>
 #include <X11/keysym.h>
-#include "XI.h"
+#include <X11/extensions/XI.h>
 #include "inputstr.h"
 #include "windowstr.h"
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 #include "xkb.h"
 
 /***====================================================================***/

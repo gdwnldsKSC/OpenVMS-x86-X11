@@ -49,7 +49,7 @@
 #define LOCAL_VARS							\
    __DRIdrawablePrivate *dPriv = fxMesa->driDrawable;			\
    tdfxScreenPrivate *fxPriv = fxMesa->fxScreen;			\
-   GLuint pitch = (fxMesa->glCtx->Color.DrawBuffer == GL_FRONT)         \
+   GLuint pitch = (fxMesa->glCtx->Color.DrawBuffer[0] == GL_FRONT)         \
                ? (fxMesa->screen_width * BYTESPERPIXEL) :               \
                (info.strideInBytes);                                    \
    GLuint height = fxMesa->height;					\
@@ -59,19 +59,6 @@
    GLuint p;								\
    (void) buf; (void) p;
 
-
-#define CLIPPIXEL( _x, _y )	( _x >= minx && _x < maxx &&		\
-				  _y >= miny && _y < maxy )
-
-#define CLIPSPAN( _x, _y, _n, _x1, _n1, _i )				\
-   if ( _y < miny || _y >= maxy ) {					\
-      _n1 = 0, _x1 = x;							\
-   } else {								\
-      _n1 = _n;								\
-      _x1 = _x;								\
-      if ( _x1 < minx ) _i += (minx-_x1), n1 -= (minx-_x1), _x1 = minx; \
-      if ( _x1 + _n1 >= maxx ) n1 -= (_x1 + n1 - maxx);		        \
-   }
 
 #define Y_FLIP(_y)		(height - _y - 1)
 
@@ -596,11 +583,13 @@ GetFbParams(tdfxContextPtr fxMesa,
             PUT_WRAPPED_FB_DATA(ReadParamsp, type, x, y, value);    \
     } while (0)
 
+
 static void
-tdfxDDWriteDepthSpan(GLcontext * ctx,
-		     GLuint n, GLint x, GLint y, const GLdepth depth[],
+tdfxDDWriteDepthSpan(GLcontext * ctx, struct gl_renderbuffer *rb,
+		     GLuint n, GLint x, GLint y, const void *values,
 		     const GLubyte mask[])
 {
+   const GLuint *depth = (const GLuint *) values;
    tdfxContextPtr fxMesa = (tdfxContextPtr) ctx->DriverCtx;
    GLint bottom = fxMesa->y_offset + fxMesa->height - 1;
    GLuint depth_size = fxMesa->glCtx->Visual.depthBits;
@@ -833,9 +822,24 @@ tdfxDDWriteDepthSpan(GLcontext * ctx,
 }
 
 static void
-tdfxDDReadDepthSpan(GLcontext * ctx,
-		    GLuint n, GLint x, GLint y, GLdepth depth[])
+tdfxDDWriteMonoDepthSpan(GLcontext * ctx, struct gl_renderbuffer *rb,
+                         GLuint n, GLint x, GLint y, const void *value,
+                         const GLubyte mask[])
 {
+   GLuint depthVal = *((GLuint *) value);
+   GLuint depths[MAX_WIDTH];
+   GLuint i;
+   for (i = 0; i < n; i++)
+      depths[i] = depthVal;
+   tdfxDDWriteDepthSpan(ctx, rb, n, x, y, depths, mask);
+}
+
+
+static void
+tdfxDDReadDepthSpan(GLcontext * ctx, struct gl_renderbuffer *rb,
+		    GLuint n, GLint x, GLint y, void *values)
+{
+   GLuint *depth = (GLuint *) values;
    tdfxContextPtr fxMesa = (tdfxContextPtr) ctx->DriverCtx;
    GLint bottom = fxMesa->height + fxMesa->y_offset - 1;
    GLuint i;
@@ -936,10 +940,11 @@ tdfxDDReadDepthSpan(GLcontext * ctx,
 
 
 static void
-tdfxDDWriteDepthPixels(GLcontext * ctx,
+tdfxDDWriteDepthPixels(GLcontext * ctx, struct gl_renderbuffer *rb,
 		       GLuint n, const GLint x[], const GLint y[],
-		       const GLdepth depth[], const GLubyte mask[])
+		       const void *values, const GLubyte mask[])
 {
+   const GLuint *depth = (const GLuint *) values;
    tdfxContextPtr fxMesa = (tdfxContextPtr) ctx->DriverCtx;
    GLint bottom = fxMesa->height + fxMesa->y_offset - 1;
    GLuint i;
@@ -1018,9 +1023,10 @@ tdfxDDWriteDepthPixels(GLcontext * ctx,
 
 
 static void
-tdfxDDReadDepthPixels(GLcontext * ctx, GLuint n,
-		      const GLint x[], const GLint y[], GLdepth depth[])
+tdfxDDReadDepthPixels(GLcontext * ctx, struct gl_renderbuffer *rb, GLuint n,
+		      const GLint x[], const GLint y[], void *values)
 {
+   GLuint *depth = (GLuint *) values;
    tdfxContextPtr fxMesa = (tdfxContextPtr) ctx->DriverCtx;
    GLint bottom = fxMesa->height + fxMesa->y_offset - 1;
    GLuint i;
@@ -1104,9 +1110,11 @@ tdfxDDReadDepthPixels(GLcontext * ctx, GLuint n,
 #define BUILD_ZS(z, s)  (((s) << 24) | (z))
 
 static void
-write_stencil_span(GLcontext * ctx, GLuint n, GLint x, GLint y,
-                   const GLstencil stencil[], const GLubyte mask[])
+write_stencil_span(GLcontext * ctx, struct gl_renderbuffer *rb,
+                   GLuint n, GLint x, GLint y,
+                   const void *values, const GLubyte mask[])
 {
+   const GLubyte *stencil = (const GLubyte *) values;
    tdfxContextPtr fxMesa = TDFX_CONTEXT(ctx);
    GrLfbInfo_t info;
    GrLfbInfo_t backBufferInfo;
@@ -1161,9 +1169,25 @@ write_stencil_span(GLcontext * ctx, GLuint n, GLint x, GLint y,
 
 
 static void
-read_stencil_span(GLcontext * ctx, GLuint n, GLint x, GLint y,
-                  GLstencil stencil[])
+write_mono_stencil_span(GLcontext * ctx, struct gl_renderbuffer *rb,
+                        GLuint n, GLint x, GLint y,
+                        const void *value, const GLubyte mask[])
 {
+   GLbyte stencilVal = *((GLbyte *) value);
+   GLbyte stencils[MAX_WIDTH];
+   GLuint i;
+   for (i = 0; i < n; i++)
+      stencils[i] = stencilVal;
+   write_stencil_span(ctx, rb, n, x, y, stencils, mask);
+}
+
+
+static void
+read_stencil_span(GLcontext * ctx, struct gl_renderbuffer *rb,
+                  GLuint n, GLint x, GLint y,
+                  void *values)
+{
+   GLubyte *stencil = (GLubyte *) values;
    tdfxContextPtr fxMesa = TDFX_CONTEXT(ctx);
    GrLfbInfo_t info;
    GrLfbInfo_t backBufferInfo;
@@ -1211,10 +1235,11 @@ read_stencil_span(GLcontext * ctx, GLuint n, GLint x, GLint y,
 
 
 static void
-write_stencil_pixels(GLcontext * ctx, GLuint n,
-                     const GLint x[], const GLint y[],
-                     const GLstencil stencil[], const GLubyte mask[])
+write_stencil_pixels(GLcontext * ctx, struct gl_renderbuffer *rb,
+                     GLuint n, const GLint x[], const GLint y[],
+                     const void *values, const GLubyte mask[])
 {
+   const GLubyte *stencil = (const GLubyte *) values;
    tdfxContextPtr fxMesa = TDFX_CONTEXT(ctx);
    GrLfbInfo_t info;
    GrLfbInfo_t backBufferInfo;
@@ -1249,9 +1274,11 @@ write_stencil_pixels(GLcontext * ctx, GLuint n,
 
 
 static void
-read_stencil_pixels(GLcontext * ctx, GLuint n, const GLint x[],
-                    const GLint y[], GLstencil stencil[])
+read_stencil_pixels(GLcontext * ctx, struct gl_renderbuffer *rb,
+                    GLuint n, const GLint x[], const GLint y[],
+                    void *values)
 {
+   GLubyte *stencil = (GLubyte *) values;
    tdfxContextPtr fxMesa = TDFX_CONTEXT(ctx);
    GrLfbInfo_t info;
    GrLfbInfo_t backBufferInfo;
@@ -1315,10 +1342,10 @@ static void tdfxDDSetBuffer( GLcontext *ctx,
    (void) buffer;
 
    switch ( bufferBit ) {
-   case DD_FRONT_LEFT_BIT:
+   case BUFFER_BIT_FRONT_LEFT:
       fxMesa->DrawBuffer = fxMesa->ReadBuffer = GR_BUFFER_FRONTBUFFER;
       break;
-   case DD_BACK_LEFT_BIT:
+   case BUFFER_BIT_BACK_LEFT:
       fxMesa->DrawBuffer = fxMesa->ReadBuffer = GR_BUFFER_BACKBUFFER;
       break;
    default:
@@ -1332,69 +1359,69 @@ static void tdfxDDSetBuffer( GLcontext *ctx,
 
 void tdfxDDInitSpanFuncs( GLcontext *ctx )
 {
-   tdfxContextPtr fxMesa = TDFX_CONTEXT(ctx);
    struct swrast_device_driver *swdd = _swrast_GetDeviceDriverReference( ctx );
-
    swdd->SetBuffer = tdfxDDSetBuffer;
-
-   if ( VISUAL_EQUALS_RGBA(ctx->Visual, 5, 6, 5, 0) )
-   {
-      /* 16bpp mode */
-      swdd->WriteRGBASpan	= tdfxWriteRGBASpan_RGB565;
-      swdd->WriteRGBSpan	= tdfxWriteRGBSpan_RGB565;
-      swdd->WriteMonoRGBASpan	= tdfxWriteMonoRGBASpan_RGB565;
-      swdd->WriteRGBAPixels	= tdfxWriteRGBAPixels_RGB565;
-      swdd->WriteMonoRGBAPixels	= tdfxWriteMonoRGBAPixels_RGB565;
-      swdd->ReadRGBASpan	= tdfxReadRGBASpan_RGB565;
-      swdd->ReadRGBAPixels	= tdfxReadRGBAPixels_RGB565;
-   }
-   else if ( VISUAL_EQUALS_RGBA(ctx->Visual, 8, 8, 8, 0) )
-   {
-      /* 24bpp mode */
-      swdd->WriteRGBASpan	= tdfxWriteRGBASpan_RGB888;
-      swdd->WriteRGBSpan	= tdfxWriteRGBSpan_RGB888;
-      swdd->WriteMonoRGBASpan	= tdfxWriteMonoRGBASpan_RGB888;
-      swdd->WriteRGBAPixels	= tdfxWriteRGBAPixels_RGB888;
-      swdd->WriteMonoRGBAPixels	= tdfxWriteMonoRGBAPixels_RGB888;
-      swdd->ReadRGBASpan	= tdfxReadRGBASpan_RGB888;
-      swdd->ReadRGBAPixels	= tdfxReadRGBAPixels_RGB888;
-   }
-   else if ( VISUAL_EQUALS_RGBA(ctx->Visual, 8, 8, 8, 8) )
-   {
-      /* 32bpp mode */
-      swdd->WriteRGBASpan	= tdfxWriteRGBASpan_ARGB8888;
-      swdd->WriteRGBSpan	= tdfxWriteRGBSpan_ARGB8888;
-      swdd->WriteMonoRGBASpan	= tdfxWriteMonoRGBASpan_ARGB8888;
-      swdd->WriteRGBAPixels	= tdfxWriteRGBAPixels_ARGB8888;
-      swdd->WriteMonoRGBAPixels	= tdfxWriteMonoRGBAPixels_ARGB8888;
-      swdd->ReadRGBAPixels      = tdfxReadRGBAPixels_ARGB8888;
-      swdd->ReadRGBASpan	= tdfxReadRGBASpan_ARGB8888;
-   }
-   else
-   {
-      abort();
-   }
-
-   if ( fxMesa->haveHwStencil ) {
-      swdd->WriteStencilSpan	= write_stencil_span;
-      swdd->ReadStencilSpan	= read_stencil_span;
-      swdd->WriteStencilPixels	= write_stencil_pixels;
-      swdd->ReadStencilPixels	= read_stencil_pixels;
-   }
-
-   swdd->WriteDepthSpan		= tdfxDDWriteDepthSpan;
-   swdd->WriteDepthPixels	= tdfxDDWriteDepthPixels;
-   swdd->ReadDepthSpan		= tdfxDDReadDepthSpan;
-   swdd->ReadDepthPixels	= tdfxDDReadDepthPixels;
-
-   swdd->WriteCI8Span		= NULL;
-   swdd->WriteCI32Span		= NULL;
-   swdd->WriteMonoCISpan	= NULL;
-   swdd->WriteCI32Pixels	= NULL;
-   swdd->WriteMonoCIPixels	= NULL;
-   swdd->ReadCI32Span		= NULL;
-   swdd->ReadCI32Pixels		= NULL;
-
    swdd->SpanRenderStart          = tdfxSpanRenderStart;
    swdd->SpanRenderFinish         = tdfxSpanRenderFinish; 
+}
+
+
+
+/**
+ * Plug in the Get/Put routines for the given driRenderbuffer.
+ */
+void
+tdfxSetSpanFunctions(driRenderbuffer *drb, const GLvisual *vis)
+{
+   if (drb->Base.InternalFormat == GL_RGBA) {
+      if (vis->redBits == 5 && vis->greenBits == 6 && vis->blueBits == 5) {
+         drb->Base.GetRow        = tdfxReadRGBASpan_RGB565;
+         drb->Base.GetValues     = tdfxReadRGBAPixels_RGB565;
+         drb->Base.PutRow        = tdfxWriteRGBASpan_RGB565;
+         drb->Base.PutRowRGB     = tdfxWriteRGBSpan_RGB565;
+         drb->Base.PutMonoRow    = tdfxWriteMonoRGBASpan_RGB565;
+         drb->Base.PutValues     = tdfxWriteRGBAPixels_RGB565;
+         drb->Base.PutMonoValues = tdfxWriteMonoRGBAPixels_RGB565;
+      }
+      else if (vis->redBits == 8 && vis->greenBits == 8
+               && vis->blueBits == 8 && vis->alphaBits == 0) {
+         drb->Base.GetRow        = tdfxReadRGBASpan_RGB888;
+         drb->Base.GetValues     = tdfxReadRGBAPixels_RGB888;
+         drb->Base.PutRow        = tdfxWriteRGBASpan_RGB888;
+         drb->Base.PutRowRGB     = tdfxWriteRGBSpan_RGB888;
+         drb->Base.PutMonoRow    = tdfxWriteMonoRGBASpan_RGB888;
+         drb->Base.PutValues     = tdfxWriteRGBAPixels_RGB888;
+         drb->Base.PutMonoValues = tdfxWriteMonoRGBAPixels_RGB888;
+      }
+      else if (vis->redBits == 8 && vis->greenBits == 8
+               && vis->blueBits == 8 && vis->alphaBits == 8) {
+         drb->Base.GetRow        = tdfxReadRGBASpan_ARGB8888;
+         drb->Base.GetValues     = tdfxReadRGBAPixels_ARGB8888;
+         drb->Base.PutRow        = tdfxWriteRGBASpan_ARGB8888;
+         drb->Base.PutRowRGB     = tdfxWriteRGBSpan_ARGB8888;
+         drb->Base.PutMonoRow    = tdfxWriteMonoRGBASpan_ARGB8888;
+         drb->Base.PutValues     = tdfxWriteRGBAPixels_ARGB8888;
+         drb->Base.PutMonoValues = tdfxWriteMonoRGBAPixels_ARGB8888;
+      }
+      else {
+         _mesa_problem(NULL, "problem in tdfxSetSpanFunctions");
+      }
+   }
+   else if (drb->Base.InternalFormat == GL_DEPTH_COMPONENT16 ||
+            drb->Base.InternalFormat == GL_DEPTH_COMPONENT24) {
+      drb->Base.GetRow        = tdfxDDReadDepthSpan;
+      drb->Base.GetValues     = tdfxDDReadDepthPixels;
+      drb->Base.PutRow        = tdfxDDWriteDepthSpan;
+      drb->Base.PutMonoRow    = tdfxDDWriteMonoDepthSpan;
+      drb->Base.PutValues     = tdfxDDWriteDepthPixels;
+      drb->Base.PutMonoValues = NULL;
+   }
+   else if (drb->Base.InternalFormat == GL_STENCIL_INDEX8_EXT) {
+      drb->Base.GetRow        = read_stencil_span;
+      drb->Base.GetValues     = read_stencil_pixels;
+      drb->Base.PutRow        = write_stencil_span;
+      drb->Base.PutMonoRow    = write_mono_stencil_span;
+      drb->Base.PutValues     = write_stencil_pixels;
+      drb->Base.PutMonoValues = NULL;
+   }
 }

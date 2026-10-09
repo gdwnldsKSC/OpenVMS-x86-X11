@@ -1,6 +1,6 @@
 .\" Use -ms and macros.t
 .\" $Xorg: shape.ms,v 1.3 2000/08/17 19:42:36 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/Xext/shape.ms,v 1.3 2004/09/03 16:18:21 kem Exp $
+.\" $XdotOrg: xc/doc/specs/Xext/shape.ms,v 1.4 2005/12/20 16:04:41 kem Exp $
 .\" edited for DP edits and code consistency w/ core protocol/xlib 4/1/96
 .EH ''''
 .OH ''''
@@ -18,7 +18,7 @@ Shape Extension Protocol\fP\s-2
 .ce 3
 Version 1.0.1
 X.Org Standard
-X Version 11, Release 6.8
+X Version 11, Release 6.9/7.0
 .sp 6
 .ce 4
 \s-1Keith Packard

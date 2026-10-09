@@ -386,8 +386,6 @@ install.man:: list                                                      @@\
 #ifdef SparcArchitecture
 # define XsunLynxServer			YES
 # define XsunLynxMonoServer		NO
-# define BuildPexExt			YES
-# define BuildXIE			YES
 # ifndef BuildScreenSaverLibrary
 #  define BuildScreenSaverLibrary	YES
 # endif

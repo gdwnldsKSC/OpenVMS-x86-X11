@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/dix/events.c,v 1.6 2004/08/09 02:08:35 kem Exp $ */
+/* $XdotOrg: xc/programs/Xserver/dix/events.c,v 1.17 2005/08/25 22:11:04 anholt Exp $ */
 /* $XFree86: xc/programs/Xserver/dix/events.c,v 3.51 2004/01/12 17:04:52 tsi Exp $ */
 /************************************************************
 
@@ -76,14 +76,51 @@ Equipment Corporation.
 
 ******************************************************************/
 
+/*****************************************************************
+
+Copyright 2003-2005 Sun Microsystems, Inc.
+
+All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, and/or sell copies of the Software, and to permit persons
+to whom the Software is furnished to do so, provided that the above
+copyright notice(s) and this permission notice appear in all copies of
+the Software and that both the above copyright notice(s) and this
+permission notice appear in supporting documentation.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder
+shall not be used in advertising or otherwise to promote the sale, use
+or other dealings in this Software without prior written authorization
+of the copyright holder.
+
+******************************************************************/
+
 /* $Xorg: events.c,v 1.4 2001/02/09 02:04:40 xorgcvs Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "misc.h"
 #include "resource.h"
 #define NEED_EVENTS
 #define NEED_REPLIES
-#include "Xproto.h"
+#include <X11/Xproto.h>
 #include "windowstr.h"
 #include "inputstr.h"
 #include "scrnintstr.h"
@@ -97,13 +134,13 @@ Equipment Corporation.
 #include "globals.h"
 
 #ifdef XKB
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 extern Bool XkbFilterEvents(ClientPtr, int, xEvent *);
 #endif
 
 #ifdef XCSECURITY
 #define _SECURITY_SERVER
-#include "security.h"
+#include <X11/extensions/security.h>
 #endif
 
 #ifdef XEVIE
@@ -120,7 +157,7 @@ int    xeviegrabState = 0;
 xEvent *xeviexE;
 #endif
 
-#include "XIproto.h"
+#include <X11/extensions/XIproto.h>
 #include "exevents.h"
 #include "extnsionst.h"
 
@@ -222,14 +259,14 @@ HotSpot xeviehot;
 #endif
 
 static void DoEnterLeaveEvents(
-    WindowPtr /*fromWin*/,
-    WindowPtr /*toWin*/,
-    int /*mode*/
+    WindowPtr fromWin,
+    WindowPtr toWin,
+    int mode
 );
 
 static WindowPtr XYToWindow(
-    int /*x*/,
-    int /*y*/
+    int x,
+    int y
 );
 
 extern int lastEvent;
@@ -425,7 +462,13 @@ XineramaCheckVirtualMotion(
     if (qe)
     {
 	sprite.hot.pScreen = qe->pScreen;  /* should always be Screen 0 */
+#ifdef XEVIE
+	xeviehot.x =
+#endif
 	sprite.hot.x = qe->event->u.keyButtonPointer.rootX;
+#ifdef XEVIE
+	xeviehot.y =
+#endif
 	sprite.hot.y = qe->event->u.keyButtonPointer.rootY;
 	pWin = inputInfo.pointer->grab ? inputInfo.pointer->grab->confineTo :
 					 NullWindow;
@@ -462,12 +505,24 @@ XineramaCheckVirtualMotion(
 	lims = *REGION_EXTENTS(sprite.screen, &sprite.Reg2);
 
         if (sprite.hot.x < lims.x1)
+#ifdef XEVIE
+	    xeviehot.x =
+#endif
             sprite.hot.x = lims.x1;
         else if (sprite.hot.x >= lims.x2)
+#ifdef XEVIE
+	    xeviehot.x =
+#endif
             sprite.hot.x = lims.x2 - 1;
         if (sprite.hot.y < lims.y1)
+#ifdef XEVIE
+	    xeviehot.y =
+#endif
             sprite.hot.y = lims.y1;
         else if (sprite.hot.y >= lims.y2)
+#ifdef XEVIE
+	    xeviehot.y =
+#endif
             sprite.hot.y = lims.y2 - 1;
 
 	if (REGION_NUM_RECTS(&sprite.Reg2) > 1) 
@@ -497,16 +552,33 @@ XineramaCheckMotion(xEvent *xE)
 			  panoramiXdataPtr[0].x;
 	XE_KBPTR.rootY += panoramiXdataPtr[sprite.screen->myNum].y -
 			  panoramiXdataPtr[0].y;
-
+#ifdef XEVIE
+	xeviehot.x =
+#endif
 	sprite.hot.x = XE_KBPTR.rootX;
+#ifdef XEVIE
+	xeviehot.y =
+#endif
 	sprite.hot.y = XE_KBPTR.rootY;
 	if (sprite.hot.x < sprite.physLimits.x1)
+#ifdef XEVIE
+	    xeviehot.x =
+#endif
 	    sprite.hot.x = sprite.physLimits.x1;
 	else if (sprite.hot.x >= sprite.physLimits.x2)
+#ifdef XEVIE
+	    xeviehot.x =
+#endif
 	    sprite.hot.x = sprite.physLimits.x2 - 1;
 	if (sprite.hot.y < sprite.physLimits.y1)
+#ifdef XEVIE
+	    xeviehot.y =
+#endif
 	    sprite.hot.y = sprite.physLimits.y1;
 	else if (sprite.hot.y >= sprite.physLimits.y2)
+#ifdef XEVIE
+	    xeviehot.y =
+#endif
 	    sprite.hot.y = sprite.physLimits.y2 - 1;
 
 	if (sprite.hotShape) 
@@ -523,6 +595,9 @@ XineramaCheckMotion(xEvent *xE)
 	XE_KBPTR.rootY = sprite.hot.y;
     }
 
+#ifdef XEVIE
+    xeviewin =
+#endif
     sprite.win = XYToWindow(sprite.hot.x, sprite.hot.y);
 
     if (sprite.win != prevSpriteWin)
@@ -600,7 +675,9 @@ XineramaChangeToCursor(CursorPtr cursor)
 		(sprite.current->bits->yhot != cursor->bits->yhot))
 	    XineramaCheckPhysLimits(cursor, FALSE);
     	(*sprite.screen->DisplayCursor)(sprite.screen, cursor);
+	FreeCursor(sprite.current, (Cursor)0);
 	sprite.current = cursor;
+	sprite.current->refcnt++;
     }
 }
 
@@ -608,9 +685,7 @@ XineramaChangeToCursor(CursorPtr cursor)
 #endif  /* PANORAMIX */
 
 void
-SetMaskForEvent(mask, event)
-    Mask mask;
-    int event;
+SetMaskForEvent(Mask mask, int event)
 {
     if ((event < LASTEvent) || (event >= 128))
 	FatalError("SetMaskForEvent: bogus event number");
@@ -618,8 +693,7 @@ SetMaskForEvent(mask, event)
 }
 
 void
-SetCriticalEvent(event)
-    int event;
+SetCriticalEvent(int event)
 {
     if (event >= 128)
 	FatalError("SetCriticalEvent: bogus event number");
@@ -747,7 +821,13 @@ CheckVirtualMotion(
     if (qe)
     {
 	sprite.hot.pScreen = qe->pScreen;
+#ifdef XEVIE
+	xeviehot.x =
+#endif
 	sprite.hot.x = qe->event->u.keyButtonPointer.rootX;
+#ifdef XEVIE
+	xeviehot.y =
+#endif
 	sprite.hot.y = qe->event->u.keyButtonPointer.rootY;
 	pWin = inputInfo.pointer->grab ? inputInfo.pointer->grab->confineTo :
 					 NullWindow;
@@ -759,16 +839,31 @@ CheckVirtualMotion(
 	if (sprite.hot.pScreen != pWin->drawable.pScreen)
 	{
 	    sprite.hot.pScreen = pWin->drawable.pScreen;
+#ifdef XEVIE
+	    xeviehot.x = xeviehot.y = 0;
+#endif
 	    sprite.hot.x = sprite.hot.y = 0;
 	}
 	lims = *REGION_EXTENTS(pWin->drawable.pScreen, &pWin->borderSize);
 	if (sprite.hot.x < lims.x1)
+#ifdef XEVIE
+	    xeviehot.x =
+#endif
 	    sprite.hot.x = lims.x1;
 	else if (sprite.hot.x >= lims.x2)
+#ifdef XEVIE
+	    xeviehot.x =
+#endif
 	    sprite.hot.x = lims.x2 - 1;
 	if (sprite.hot.y < lims.y1)
+#ifdef XEVIE
+	    xeviehot.y =
+#endif
 	    sprite.hot.y = lims.y1;
 	else if (sprite.hot.y >= lims.y2)
+#ifdef XEVIE
+	    xeviehot.y =
+#endif
 	    sprite.hot.y = lims.y2 - 1;
 #ifdef SHAPE
 	if (wBoundingShape(pWin))
@@ -837,14 +932,15 @@ ChangeToCursor(CursorPtr cursor)
 			    (ScreenPtr)NULL);
 	(*sprite.hotPhys.pScreen->DisplayCursor) (sprite.hotPhys.pScreen,
 						  cursor);
+	FreeCursor(sprite.current, (Cursor)0);
 	sprite.current = cursor;
+	sprite.current->refcnt++;
     }
 }
 
 /* returns true if b is a descendent of a */
 Bool
-IsParent(a, b)
-    register WindowPtr a, b;
+IsParent(register WindowPtr a, register WindowPtr b)
 {
     for (b = b->parent; b; b = b->parent)
 	if (b == a) return TRUE;
@@ -900,8 +996,7 @@ GetSpriteCursor()
 }
 
 void
-GetSpritePosition(px, py)
-    int *px, *py;
+GetSpritePosition(int *px, int *py)
 {
     *px = sprite.hotPhys.x;
     *py = sprite.hotPhys.y;
@@ -941,8 +1036,7 @@ MonthChangedOrBadTime(register xEvent *xE)
     lastDeviceEventTime = currentTime; }
 
 void
-NoticeEventTime(xE)
-    register xEvent *xE;
+NoticeEventTime(register xEvent *xE)
 {
     if (!syncEvents.playingEvents)
 	NoticeTime(xE);
@@ -953,10 +1047,7 @@ NoticeEventTime(xE)
  **************************************************************************/
 
 void
-EnqueueEvent(xE, device, count)
-    xEvent		*xE;
-    DeviceIntPtr	device;
-    int			count;
+EnqueueEvent(xEvent *xE, DeviceIntPtr device, int count)
 {
     register QdEventPtr tail = *syncEvents.pendtail;
     register QdEventPtr qe;
@@ -1172,9 +1263,7 @@ ScreenRestructured (ScreenPtr pScreen)
 #endif
 
 void
-CheckGrabForSyncs(thisDev, thisMode, otherMode)
-    register DeviceIntPtr thisDev;
-    Bool thisMode, otherMode;
+CheckGrabForSyncs(register DeviceIntPtr thisDev, Bool thisMode, Bool otherMode)
 {
     register GrabPtr grab = thisDev->grab;
     register DeviceIntPtr dev;
@@ -1208,11 +1297,8 @@ CheckGrabForSyncs(thisDev, thisMode, otherMode)
 }
 
 void
-ActivatePointerGrab(mouse, grab, time, autoGrab)
-    register GrabPtr grab;
-    register DeviceIntPtr mouse;
-    TimeStamp time;
-    Bool autoGrab;
+ActivatePointerGrab(register DeviceIntPtr mouse, register GrabPtr grab, 
+                    TimeStamp time, Bool autoGrab)
 {
     WindowPtr oldWin = (mouse->grab) ? mouse->grab->window
 				     : sprite.win;
@@ -1239,8 +1325,7 @@ ActivatePointerGrab(mouse, grab, time, autoGrab)
 }
 
 void
-DeactivatePointerGrab(mouse)
-    register DeviceIntPtr mouse;
+DeactivatePointerGrab(register DeviceIntPtr mouse)
 {
     register GrabPtr grab = mouse->grab;
     register DeviceIntPtr dev;
@@ -1264,11 +1349,7 @@ DeactivatePointerGrab(mouse)
 }
 
 void
-ActivateKeyboardGrab(keybd, grab, time, passive)
-    register DeviceIntPtr keybd;
-    GrabPtr grab;
-    TimeStamp time;
-    Bool passive;
+ActivateKeyboardGrab(register DeviceIntPtr keybd, GrabPtr grab, TimeStamp time, Bool passive)
 {
     WindowPtr oldWin;
 
@@ -1294,8 +1375,7 @@ ActivateKeyboardGrab(keybd, grab, time, passive)
 }
 
 void
-DeactivateKeyboardGrab(keybd)
-    register DeviceIntPtr keybd;
+DeactivateKeyboardGrab(register DeviceIntPtr keybd)
 {
     register GrabPtr grab = keybd->grab;
     register DeviceIntPtr dev;
@@ -1319,11 +1399,7 @@ DeactivateKeyboardGrab(keybd)
 }
 
 void
-AllowSome(client, time, thisDev, newState)
-    ClientPtr		client;
-    TimeStamp		time;
-    register DeviceIntPtr thisDev;
-    int			newState;
+AllowSome(ClientPtr client, TimeStamp time, DeviceIntPtr thisDev, int newState)
 {
     Bool thisGrabbed, otherGrabbed, othersFrozen, thisSynced;
     TimeStamp grabTime;
@@ -1431,8 +1507,7 @@ AllowSome(client, time, thisDev, newState)
 }
 
 int
-ProcAllowEvents(client)
-    register ClientPtr client;
+ProcAllowEvents(register ClientPtr client)
 {
     TimeStamp		time;
     DeviceIntPtr	mouse = inputInfo.pointer;
@@ -1475,8 +1550,7 @@ ProcAllowEvents(client)
 }
 
 void
-ReleaseActiveGrabs(client)
-    ClientPtr client;
+ReleaseActiveGrabs(ClientPtr client)
 {
     register DeviceIntPtr dev;
     Bool    done;
@@ -1502,12 +1576,8 @@ ReleaseActiveGrabs(client)
  **************************************************************************/
 
 int
-TryClientEvents (client, pEvents, count, mask, filter, grab)
-    ClientPtr client;
-    GrabPtr grab;
-    xEvent *pEvents;
-    int count;
-    Mask mask, filter;
+TryClientEvents (ClientPtr client, xEvent *pEvents, int count, Mask mask, 
+                 Mask filter, GrabPtr grab)
 {
     int i;
     int type;
@@ -1585,13 +1655,8 @@ TryClientEvents (client, pEvents, count, mask, filter, grab)
 }
 
 int
-DeliverEventsToWindow(pWin, pEvents, count, filter, grab, mskidx)
-    register WindowPtr pWin;
-    GrabPtr grab;
-    xEvent *pEvents;
-    int count;
-    Mask filter;
-    int mskidx;
+DeliverEventsToWindow(register WindowPtr pWin, xEvent *pEvents, int count, 
+                      Mask filter, GrabPtr grab, int mskidx)
 {
     int deliveries = 0, nondeliveries = 0;
     int attempt;
@@ -1709,12 +1774,8 @@ XineramaTryClientEventsResult(
 #endif
 
 int
-MaybeDeliverEventsToClient(pWin, pEvents, count, filter, dontClient)
-    register WindowPtr pWin;
-    xEvent *pEvents;
-    int count;
-    Mask filter;
-    ClientPtr dontClient;
+MaybeDeliverEventsToClient(register WindowPtr pWin, xEvent *pEvents, 
+                           int count, Mask filter, ClientPtr dontClient)
 {
     register OtherClients *other;
 
@@ -1804,12 +1865,8 @@ FixUpEventFromWindow(
 }
 
 int
-DeliverDeviceEvents(pWin, xE, grab, stopAt, dev, count)
-    register WindowPtr pWin, stopAt;
-    register xEvent *xE;
-    GrabPtr grab;
-    DeviceIntPtr dev;
-    int count;
+DeliverDeviceEvents(register WindowPtr pWin, register xEvent *xE, GrabPtr grab, 
+                    register WindowPtr stopAt, DeviceIntPtr dev, int count)
 {
     Window child = None;
     int type = xE->u.u.type;
@@ -1872,10 +1929,8 @@ DeliverDeviceEvents(pWin, xE, grab, stopAt, dev, count)
 
 /* not useful for events that propagate up the tree or extension events */
 int
-DeliverEvents(pWin, xE, count, otherParent)
-    register WindowPtr pWin, otherParent;
-    register xEvent *xE;
-    int count;
+DeliverEvents(register WindowPtr pWin, register xEvent *xE, int count, 
+              register WindowPtr otherParent)
 {
     Mask filter;
     int     deliveries;
@@ -1941,26 +1996,32 @@ static WindowPtr
 XYToWindow(int x, int y)
 {
     register WindowPtr  pWin;
+    BoxRec		box;
 
     spriteTraceGood = 1;	/* root window still there */
     pWin = ROOT->firstChild;
     while (pWin)
     {
 	if ((pWin->mapped) &&
-		(x >= pWin->drawable.x - wBorderWidth (pWin)) &&
-		(x < pWin->drawable.x + (int)pWin->drawable.width +
-		    wBorderWidth(pWin)) &&
-		(y >= pWin->drawable.y - wBorderWidth (pWin)) &&
-		(y < pWin->drawable.y + (int)pWin->drawable.height +
-		    wBorderWidth (pWin))
+	    (x >= pWin->drawable.x - wBorderWidth (pWin)) &&
+	    (x < pWin->drawable.x + (int)pWin->drawable.width +
+	     wBorderWidth(pWin)) &&
+	    (y >= pWin->drawable.y - wBorderWidth (pWin)) &&
+	    (y < pWin->drawable.y + (int)pWin->drawable.height +
+	     wBorderWidth (pWin))
 #ifdef SHAPE
-		/* When a window is shaped, a further check
-		 * is made to see if the point is inside
-		 * borderSize
-		 */
-		&& (!wBoundingShape(pWin) || PointInBorderSize(pWin, x, y))
+	    /* When a window is shaped, a further check
+	     * is made to see if the point is inside
+	     * borderSize
+	     */
+	    && (!wBoundingShape(pWin) || PointInBorderSize(pWin, x, y))
+	    && (!wInputShape(pWin) ||
+		POINT_IN_REGION(pWin->drawable.pScreen,
+				wInputShape(pWin),
+				x - pWin->drawable.x,
+				y - pWin->drawable.y, &box))
 #endif
-		)
+	    )
 	{
 	    if (spriteTraceGood >= spriteTraceSize)
 	    {
@@ -1996,15 +2057,33 @@ CheckMotion(xEvent *xE)
 	    sprite.hot.pScreen = sprite.hotPhys.pScreen;
 	    ROOT = WindowTable[sprite.hot.pScreen->myNum];
 	}
+#ifdef XEVIE
+	xeviehot.x =
+#endif
 	sprite.hot.x = XE_KBPTR.rootX;
+#ifdef XEVIE
+	xeviehot.y =
+#endif
 	sprite.hot.y = XE_KBPTR.rootY;
 	if (sprite.hot.x < sprite.physLimits.x1)
+#ifdef XEVIE
+	    xeviehot.x =
+#endif
 	    sprite.hot.x = sprite.physLimits.x1;
 	else if (sprite.hot.x >= sprite.physLimits.x2)
+#ifdef XEVIE
+	    xeviehot.x =
+#endif
 	    sprite.hot.x = sprite.physLimits.x2 - 1;
 	if (sprite.hot.y < sprite.physLimits.y1)
+#ifdef XEVIE
+	    xeviehot.y =
+#endif
 	    sprite.hot.y = sprite.physLimits.y1;
 	else if (sprite.hot.y >= sprite.physLimits.y2)
+#ifdef XEVIE
+	    xeviehot.y =
+#endif
 	    sprite.hot.y = sprite.physLimits.y2 - 1;
 #ifdef SHAPE
 	if (sprite.hotShape)
@@ -2022,6 +2101,9 @@ CheckMotion(xEvent *xE)
 	XE_KBPTR.rootY = sprite.hot.y;
     }
 
+#ifdef XEVIE
+    xeviewin =
+#endif
     sprite.win = XYToWindow(sprite.hot.x, sprite.hot.y);
 #ifdef notyet
     if (!(sprite.win->deliverableEvents &
@@ -2091,8 +2173,7 @@ void ReinitializeRootWindow(WindowPtr win, int xoff, int yoff)
 #endif
 
 void
-DefineInitialRootWindow(win)
-    register WindowPtr win;
+DefineInitialRootWindow(register WindowPtr win)
 {
     register ScreenPtr pScreen = win->drawable.pScreen;
 
@@ -2102,8 +2183,12 @@ DefineInitialRootWindow(win)
     sprite.hot = sprite.hotPhys;
     sprite.hotLimits.x2 = pScreen->width;
     sprite.hotLimits.y2 = pScreen->height;
+#ifdef XEVIE
+    xeviewin =
+#endif
     sprite.win = win;
     sprite.current = wCursor (win);
+    sprite.current->refcnt++;
     spriteTraceGood = 1;
     ROOT = win;
     (*pScreen->CursorLimits) (
@@ -2139,18 +2224,14 @@ DefineInitialRootWindow(win)
  * between the one the pointer is in and the one that the last cursor was
  * instantiated from.
  */
-/*ARGSUSED*/
 void
-WindowHasNewCursor(pWin)
-    WindowPtr pWin;
+WindowHasNewCursor(WindowPtr pWin)
 {
     PostNewCursor();
 }
 
 void
-NewCurrentScreen(newScreen, x, y)
-    ScreenPtr newScreen;
-    int x,y;
+NewCurrentScreen(ScreenPtr newScreen, int x, int y)
 {
     sprite.hotPhys.x = x;
     sprite.hotPhys.y = y;
@@ -2211,7 +2292,12 @@ XineramaPointInWindowIsVisible(
 	x = xoff - panoramiXdataPtr[i].x;
 	y = yoff - panoramiXdataPtr[i].y;
 
-	if(POINT_IN_REGION(pScreen, &pWin->borderClip, x, y, &box))
+	if(POINT_IN_REGION(pScreen, &pWin->borderClip, x, y, &box)
+	   && (!wInputShape(pWin) ||
+	       POINT_IN_REGION(pWin->drawable.pScreen,
+			       wInputShape(pWin),
+			       x - pWin->drawable.x, 
+			       y - pWin->drawable.y, &box)))
             return TRUE;
 
     }
@@ -2293,8 +2379,7 @@ XineramaWarpPointer(ClientPtr client)
 
 
 int
-ProcWarpPointer(client)
-    ClientPtr client;
+ProcWarpPointer(ClientPtr client)
 {
     WindowPtr	dest = NULL;
     int		x, y;
@@ -2497,7 +2582,7 @@ CheckPassiveGrabsOnWindow(
     return FALSE;
 }
 
-/*
+/**
 "CheckDeviceGrabs" handles both keyboard and pointer events that may cause
 a passive grab to be activated.  If the event is a keyboard event, the
 ancestors of the focus window are traced down and tried to see if they have
@@ -2511,11 +2596,8 @@ tried. PRH
 */
 
 Bool
-CheckDeviceGrabs(device, xE, checkFirst, count)
-    register DeviceIntPtr device;
-    register xEvent *xE;
-    int checkFirst;
-    int count;
+CheckDeviceGrabs(register DeviceIntPtr device, register xEvent *xE, 
+                 int checkFirst, int count)
 {
     register int i;
     register WindowPtr pWin = NULL;
@@ -2558,11 +2640,7 @@ CheckDeviceGrabs(device, xE, checkFirst, count)
 }
 
 void
-DeliverFocusedEvent(keybd, xE, window, count)
-    xEvent *xE;
-    DeviceIntPtr keybd;
-    WindowPtr window;
-    int count;
+DeliverFocusedEvent(DeviceIntPtr keybd, xEvent *xE, WindowPtr window, int count)
 {
     WindowPtr focus = keybd->focus->win;
     int mskidx = 0;
@@ -2590,11 +2668,8 @@ DeliverFocusedEvent(keybd, xE, window, count)
 }
 
 void
-DeliverGrabbedEvent(xE, thisDev, deactivateGrab, count)
-    register xEvent *xE;
-    register DeviceIntPtr thisDev;
-    Bool deactivateGrab;
-    int count;
+DeliverGrabbedEvent(register xEvent *xE, register DeviceIntPtr thisDev, 
+                    Bool deactivateGrab, int count)
 {
     register GrabPtr grab = thisDev->grab;
     int deliveries = 0;
@@ -2676,13 +2751,10 @@ DeliverGrabbedEvent(xE, thisDev, deactivateGrab, count)
 
 void
 #ifdef XKB
-CoreProcessKeyboardEvent (xE, keybd, count)
+CoreProcessKeyboardEvent (register xEvent *xE, register DeviceIntPtr keybd, int count)
 #else
-ProcessKeyboardEvent (xE, keybd, count)
+ProcessKeyboardEvent (register xEvent *xE, register DeviceIntPtr keybd, int count)
 #endif
-    register xEvent *xE;
-    register DeviceIntPtr keybd;
-    int count;
 {
     int             key, bit;
     register BYTE   *kptr;
@@ -2705,20 +2777,13 @@ ProcessKeyboardEvent (xE, keybd, count)
       {} else {
 #ifdef XKB
         if(!noXkbExtension)
-          xevieKBEventSent = 0;
+	    xevieKBEventSent = 1;
 #endif
         if(!xevieKBEventSent)
         {
           xeviekb = keybd;
           if(!rootWin) {
-            WindowPtr pWin = xeviewin->parent;
-            while(pWin) {
-              if(!pWin->parent) {
-                rootWin = pWin->drawable.id;
-                break;
-              }
-              pWin = pWin->parent;
-            };
+	      rootWin = GetCurrentRootWindow()->drawable.id;
           }
           xE->u.keyButtonPointer.event = xeviewin->drawable.id;
           xE->u.keyButtonPointer.root = rootWin;
@@ -2732,8 +2797,8 @@ drawable.id:0;
           if(noXkbExtension)
 #endif
             return;
-        }else {
-          xevieKBEventSent = 0;
+        } else {
+	    xevieKBEventSent = 0;
         }
       }
     }
@@ -2750,6 +2815,15 @@ drawable.id:0;
 	    CallCallbacks(&DeviceEventCallback, (pointer)&eventinfo);
 	}
     }
+#ifdef XEVIE
+    /* fix for bug5094030: don't change the state bit if the event is from XEvIE client */
+    if(!(!xeviegrabState && xevieFlag && clients[xevieClientIndex] &&
+	 (xevieMask & xevieFilters[xE->u.u.type]
+#ifdef XKB
+	  && !noXkbExtension
+#endif
+    )))
+#endif
     XE_KBPTR.state = (keyc->state | inputInfo.pointer->button->state);
     XE_KBPTR.rootX = sprite.hot.x;
     XE_KBPTR.rootY = sprite.hot.y;
@@ -2757,6 +2831,17 @@ drawable.id:0;
     kptr = &keyc->down[key >> 3];
     bit = 1 << (key & 7);
     modifiers = keyc->modifierMap[key];
+#if defined(XKB) && defined(XEVIE)
+    if(!noXkbExtension && !xeviegrabState &&
+       xevieFlag && clients[xevieClientIndex] &&
+       (xevieMask & xevieFilters[xE->u.u.type])) {
+	switch(xE->u.u.type) {
+	  case KeyPress: *kptr &= ~bit; break;
+	  case KeyRelease: *kptr |= bit; break;
+	}
+    }
+#endif
+
 #ifdef DEBUG
     if ((xkbDebugFlags&0x4)&&
 	((xE->u.u.type==KeyPress)||(xE->u.u.type==KeyRelease))) {
@@ -2835,9 +2920,7 @@ drawable.id:0;
    CoreProcessKeyEvent to be called, as in for example Mouse Keys.
 */
 void
-FixKeyState (xE, keybd)
-    register xEvent *xE;
-    register DeviceIntPtr keybd;
+FixKeyState (register xEvent *xE, register DeviceIntPtr keybd)
 {
     int             key, bit;
     register BYTE   *kptr;
@@ -2869,13 +2952,10 @@ FixKeyState (xE, keybd)
 
 void
 #ifdef XKB
-CoreProcessPointerEvent (xE, mouse, count)
+CoreProcessPointerEvent (register xEvent *xE, register DeviceIntPtr mouse, int count)
 #else
-ProcessPointerEvent (xE, mouse, count)
+ProcessPointerEvent (register xEvent *xE, register DeviceIntPtr mouse, int count)
 #endif
-    register xEvent 		*xE;
-    register DeviceIntPtr 	mouse;
-    int				count;
 {
     register GrabPtr	grab = mouse->grab;
     Bool                deactivateGrab = FALSE;
@@ -3026,10 +3106,12 @@ RecalculateDeliverableEvents(pWin)
     }
 }
 
+/**
+ *
+ *  \param value must conform to DeleteType
+ */
 int
-OtherClientGone(value, id)
-    pointer value; /* must conform to DeleteType */
-    XID   id;
+OtherClientGone(pointer value, XID id)
 {
     register OtherClientsPtr other, prev;
     register WindowPtr pWin = (WindowPtr)value;
@@ -3058,10 +3140,7 @@ OtherClientGone(value, id)
 }
 
 int
-EventSelectForWindow(pWin, client, mask)
-    register WindowPtr pWin;
-    register ClientPtr client;
-    Mask mask;
+EventSelectForWindow(register WindowPtr pWin, register ClientPtr client, Mask mask)
 {
     Mask check;
     OtherClients * others;
@@ -3140,13 +3219,9 @@ maskSet:
     return Success;
 }
 
-/*ARGSUSED*/
 int
-EventSuppressForWindow(pWin, client, mask, checkOptional)
-    register WindowPtr pWin;
-    register ClientPtr client;
-    Mask mask;
-    Bool *checkOptional;
+EventSuppressForWindow(register WindowPtr pWin, register ClientPtr client, 
+                       Mask mask, Bool *checkOptional)
 {
     register int i, free;
 
@@ -3432,10 +3507,7 @@ FocusOutEvents(
 }
 
 void
-DoFocusEvents(dev, fromWin, toWin, mode)
-    DeviceIntPtr dev;
-    WindowPtr fromWin, toWin;
-    int mode;
+DoFocusEvents(DeviceIntPtr dev, WindowPtr fromWin, WindowPtr toWin, int mode)
 {
     int     out, in;		       /* for holding details for to/from
 				          PointerRoot/None */
@@ -3654,8 +3726,7 @@ ProcSetInputFocus(client)
 }
 
 int
-ProcGetInputFocus(client)
-    ClientPtr client;
+ProcGetInputFocus(ClientPtr client)
 {
     xGetInputFocusReply rep;
     /* REQUEST(xReq); */
@@ -3676,8 +3747,7 @@ ProcGetInputFocus(client)
 }
 
 int
-ProcGrabPointer(client)
-    ClientPtr client;
+ProcGrabPointer(ClientPtr client)
 {
     xGrabPointerReply rep;
     DeviceIntPtr device = inputInfo.pointer;
@@ -3783,8 +3853,7 @@ ProcGrabPointer(client)
 }
 
 int
-ProcChangeActivePointerGrab(client)
-    ClientPtr client;
+ProcChangeActivePointerGrab(ClientPtr client)
 {
     DeviceIntPtr device = inputInfo.pointer;
     register GrabPtr grab = device->grab;
@@ -3830,8 +3899,7 @@ ProcChangeActivePointerGrab(client)
 }
 
 int
-ProcUngrabPointer(client)
-    ClientPtr client;
+ProcUngrabPointer(ClientPtr client)
 {
     DeviceIntPtr device = inputInfo.pointer;
     GrabPtr grab;
@@ -3850,17 +3918,9 @@ ProcUngrabPointer(client)
 }
 
 int
-GrabDevice(client, dev, this_mode, other_mode, grabWindow, ownerEvents, ctime,
-	   mask, status)
-    register ClientPtr client;
-    register DeviceIntPtr dev;
-    unsigned this_mode;
-    unsigned other_mode;
-    Window grabWindow;
-    unsigned ownerEvents;
-    Time ctime;
-    Mask mask;
-    CARD8 *status;
+GrabDevice(register ClientPtr client, register DeviceIntPtr dev, 
+           unsigned this_mode, unsigned other_mode, Window grabWindow, 
+           unsigned ownerEvents, Time ctime, Mask mask, CARD8 *status)
 {
     register WindowPtr pWin;
     register GrabPtr grab;
@@ -3915,8 +3975,7 @@ GrabDevice(client, dev, this_mode, other_mode, grabWindow, ownerEvents, ctime,
 }
 
 int
-ProcGrabKeyboard(client)
-    ClientPtr client;
+ProcGrabKeyboard(ClientPtr client)
 {
     xGrabKeyboardReply rep;
     REQUEST(xGrabKeyboardReq);
@@ -3945,8 +4004,7 @@ ProcGrabKeyboard(client)
 }
 
 int
-ProcUngrabKeyboard(client)
-    ClientPtr client;
+ProcUngrabKeyboard(ClientPtr client)
 {
     DeviceIntPtr device = inputInfo.keyboard;
     GrabPtr grab;
@@ -3965,8 +4023,7 @@ ProcUngrabKeyboard(client)
 }
 
 int
-ProcQueryPointer(client)
-    ClientPtr client;
+ProcQueryPointer(ClientPtr client)
 {
     xQueryPointerReply rep;
     WindowPtr pWin, t;
@@ -4043,6 +4100,9 @@ InitEvents()
     spriteTraceGood = 0;
     lastEventMask = OwnerGrabButtonMask;
     filters[MotionNotify] = PointerMotionMask;
+#ifdef XEVIE
+    xeviewin =
+#endif
     sprite.win = NullWindow;
     sprite.current = NullCursor;
     sprite.hotLimits.x1 = 0;
@@ -4081,8 +4141,7 @@ CloseDownEvents(void)
 }
 
 int
-ProcSendEvent(client)
-    ClientPtr client;
+ProcSendEvent(ClientPtr client)
 {
     WindowPtr pWin;
     WindowPtr effectiveFocus = NullWindow; /* only set if dest==InputFocus */
@@ -4170,8 +4229,7 @@ ProcSendEvent(client)
 }
 
 int
-ProcUngrabKey(client)
-    ClientPtr client;
+ProcUngrabKey(ClientPtr client)
 {
     REQUEST(xUngrabKeyReq);
     WindowPtr pWin;
@@ -4212,8 +4270,7 @@ ProcUngrabKey(client)
 }
 
 int
-ProcGrabKey(client)
-    ClientPtr client;
+ProcGrabKey(ClientPtr client)
 {
     WindowPtr pWin;
     REQUEST(xGrabKeyReq);
@@ -4267,8 +4324,7 @@ ProcGrabKey(client)
 
 
 int
-ProcGrabButton(client)
-    ClientPtr client;
+ProcGrabButton(ClientPtr client)
 {
     WindowPtr pWin, confineTo;
     REQUEST(xGrabButtonReq);
@@ -4342,8 +4398,7 @@ ProcGrabButton(client)
 }
 
 int
-ProcUngrabButton(client)
-    ClientPtr client;
+ProcUngrabButton(ClientPtr client)
 {
     REQUEST(xUngrabButtonReq);
     WindowPtr pWin;
@@ -4375,9 +4430,7 @@ ProcUngrabButton(client)
 }
 
 void
-DeleteWindowFromAnyEvents(pWin, freeResources)
-    WindowPtr		pWin;
-    Bool		freeResources;
+DeleteWindowFromAnyEvents(WindowPtr pWin, Bool freeResources)
 {
     WindowPtr		parent;
     DeviceIntPtr	mouse = inputInfo.pointer;
@@ -4464,12 +4517,11 @@ DeleteWindowFromAnyEvents(pWin, freeResources)
 #endif
 }
 
-/* Call this whenever some window at or below pWin has changed geometry */
-
-/*ARGSUSED*/
+/**
+ * Call this whenever some window at or below pWin has changed geometry 
+ */
 void
-CheckCursorConfinement(pWin)
-    WindowPtr pWin;
+CheckCursorConfinement(WindowPtr pWin)
 {
     GrabPtr grab = inputInfo.pointer->grab;
     WindowPtr confineTo;
@@ -4488,9 +4540,7 @@ CheckCursorConfinement(pWin)
 }
 
 Mask
-EventMaskForClient(pWin, client)
-    WindowPtr		pWin;
-    ClientPtr		client;
+EventMaskForClient(WindowPtr pWin, ClientPtr client)
 {
     register OtherClientsPtr	other;
 
@@ -4505,8 +4555,7 @@ EventMaskForClient(pWin, client)
 }
 
 int
-ProcRecolorCursor(client)
-    ClientPtr client;
+ProcRecolorCursor(ClientPtr client)
 {
     CursorPtr pCursor;
     int		nscr;
@@ -4547,10 +4596,7 @@ ProcRecolorCursor(client)
 }
 
 void
-WriteEventsToClient(pClient, count, events)
-    ClientPtr	pClient;
-    int		count;
-    xEvent	*events;
+WriteEventsToClient(ClientPtr pClient, int count, xEvent *events)
 {
 #ifdef PANORAMIX
     xEvent    eventCopy;

@@ -36,6 +36,10 @@
  *  Provide support for the RENDER extension (version 0.8).
  */
 
+#ifdef HAVE_DMX_CONFIG_H
+#include <dmx-config.h>
+#endif
+
 #include "dmx.h"
 #include "dmxsync.h"
 #include "dmxpict.h"
@@ -46,8 +50,8 @@
 #include "pixmapstr.h"
 #include "dixstruct.h"
 
-#include "render.h"
-#include "renderproto.h"
+#include <X11/extensions/render.h>
+#include <X11/extensions/renderproto.h>
 #include "picture.h"
 #include "picturestr.h"
 #include "mipict.h"
@@ -956,8 +960,9 @@ void dmxValidatePicture(PicturePtr pPicture, Mask mask)
     if (pPictPriv->pict) {
 	XRenderPictureAttributes  attribs;
 
-	if (mask & CPRepeat)
-	    attribs.repeat = pPicture->repeat;
+	if (mask & CPRepeat) {
+	    attribs.repeat = pPicture->repeatType;
+	}
 	if (mask & CPAlphaMap) {
 	    if (pPicture->alphaMap) {
 		dmxPictPrivPtr  pAlphaPriv;

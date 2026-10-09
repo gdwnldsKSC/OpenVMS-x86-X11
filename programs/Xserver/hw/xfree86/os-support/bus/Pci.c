@@ -195,9 +195,13 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <errno.h>
 #include <signal.h>
-#include "Xarch.h"
+#include <X11/Xarch.h>
 #include "compiler.h"
 #include "xf86.h"
 #include "xf86Priv.h"
@@ -207,13 +211,6 @@
 
 #define PCI_MFDEV_SUPPORT   1 /* Include PCI multifunction device support */
 #define PCI_BRIDGE_SUPPORT  1 /* Include support for PCI-to-PCI bridges */
-
-#ifdef PC98
-#define outb(port,data) _outb(port,data)
-#define outl(port,data) _outl(port,data)
-#define inb(port) _inb(port)
-#define inl(port) _inl(port)
-#endif
 
 /*
  * Global data
@@ -322,14 +319,24 @@ pciReadWord(PCITAG tag, int offset)
   CARD32 tmp;
   int    shift = (offset & 3) * 8;
   int    aligned_offset = offset & ~3;
+  int	 bus = PCI_BUS_FROM_TAG(tag);
 
   if (shift != 0 && shift != 16)
 	  FatalError("pciReadWord: Alignment error: Cannot read 16 bits "
 		     "at offset %d\n", offset);
 
-  tmp = pciReadLong(tag, aligned_offset);
+  pciInit();
 
-  return((CARD16)((tmp >> shift) & 0xffff));
+  if ((bus >= 0) && ((bus < pciNumBuses) || inProbe) && pciBusInfo[bus] &&
+	pciBusInfo[bus]->funcs->pciReadWord) {
+    CARD32 rv = (*pciBusInfo[bus]->funcs->pciReadWord)(tag, offset);
+
+    return(rv);
+  } else {
+    tmp = pciReadLong(tag, aligned_offset);
+
+    return((CARD16)((tmp >> shift) & 0xffff));
+  }
 }
 
 CARD8
@@ -338,10 +345,20 @@ pciReadByte(PCITAG tag, int offset)
   CARD32 tmp;
   int    shift = (offset & 3) * 8;
   int    aligned_offset = offset & ~3;
+  int	 bus = PCI_BUS_FROM_TAG(tag);
 
-  tmp = pciReadLong(tag, aligned_offset);
+  pciInit();
 
-  return((CARD8)((tmp >> shift) & 0xff));
+  if ((bus >= 0) && ((bus < pciNumBuses) || inProbe) && pciBusInfo[bus] &&
+	pciBusInfo[bus]->funcs->pciReadByte) {
+    CARD8 rv = (*pciBusInfo[bus]->funcs->pciReadByte)(tag, offset);
+
+    return(rv);
+  } else {
+    tmp = pciReadLong(tag, aligned_offset);
+
+    return((CARD8)((tmp >> shift) & 0xff));
+  }
 }
 
 void
@@ -362,17 +379,25 @@ pciWriteWord(PCITAG tag, int offset, CARD16 val)
   CARD32 tmp;
   int    aligned_offset = offset & ~3;
   int    shift = (offset & 3) * 8;
+  int	 bus = PCI_BUS_FROM_TAG(tag);
 
   if (shift != 0 && shift != 16)
 	  FatalError("pciWriteWord: Alignment Error: Cannot read 16 bits "
 			"from offset %d\n", offset);
 
-  tmp = pciReadLong(tag, aligned_offset);
+  pciInit();
 
-  tmp &= ~(0xffffL << shift);
-  tmp |= (((CARD32)val) << shift);
+  if ((bus >= 0) && (bus < pciNumBuses) && pciBusInfo[bus] &&
+      pciBusInfo[bus]->funcs->pciWriteWord) {
+    (*pciBusInfo[bus]->funcs->pciWriteWord)(tag, offset, val);
+  } else {
+    tmp = pciReadLong(tag, aligned_offset);
 
-  pciWriteLong(tag, aligned_offset, tmp);
+    tmp &= ~(0xffffL << shift);
+    tmp |= (((CARD32)val) << shift);
+    
+    pciWriteLong(tag, aligned_offset, tmp);
+  }
 }
 
 void
@@ -381,13 +406,22 @@ pciWriteByte(PCITAG tag, int offset, CARD8 val)
   CARD32 tmp;
   int    aligned_offset = offset & ~3;
   int    shift = (offset & 3) *8 ;
+  int	 bus = PCI_BUS_FROM_TAG(tag);
 
-  tmp = pciReadLong(tag, aligned_offset);
+  pciInit();
 
-  tmp &= ~(0xffL << shift);
-  tmp |= (((CARD32)val) << shift);
+  if ((bus >= 0) && (bus < pciNumBuses) && pciBusInfo[bus] &&
+      pciBusInfo[bus]->funcs->pciWriteByte) {
+	  (*pciBusInfo[bus]->funcs->pciWriteByte)(tag, offset, val);
+  } else {
 
-  pciWriteLong(tag, aligned_offset, tmp);
+    tmp = pciReadLong(tag, aligned_offset);
+    
+    tmp &= ~(0xffL << shift);
+    tmp |= (((CARD32)val) << shift);
+    
+    pciWriteLong(tag, aligned_offset, tmp);
+  }
 }
 
 void
@@ -833,90 +867,6 @@ pciGenFindFirst(void)
   return pciGenFindNext();
 }
 
-#if defined (__powerpc__)
-static int buserr_detected;
-
-static
-void buserr(int sig)
-{
-	buserr_detected = 1;
-}
-#endif
-
-CARD32
-pciCfgMech1Read(PCITAG tag, int offset)
-{
-  unsigned long rv = 0xffffffff;
-#ifdef DEBUGPCI
-  ErrorF("pciCfgMech1Read(tag=%08x,offset=%08x)\n", tag, offset);
-#endif
-
-#if defined(__powerpc__)
-  signal(SIGBUS, buserr);
-  buserr_detected = 0;
-#endif
-
-  outl(0xCF8, PCI_EN | tag | (offset & 0xfc));
-  rv = inl(0xCFC);
-
-#if defined(__powerpc__)
-  signal(SIGBUS, SIG_DFL);
-  if (buserr_detected)
-  {
-#ifdef DEBUGPCI
-    ErrorF("pciCfgMech1Read() BUS ERROR\n");
-#endif
-    return(0xffffffff);
-  }
-  else
-#endif
-    return(rv);
-}
-
-void
-pciCfgMech1Write(PCITAG tag, int offset, CARD32 val)
-{
-#ifdef DEBUGPCI
-  ErrorF("pciCfgMech1Write(tag=%08x,offset=%08x,val=%08x)\n",
-        tag, offset,val);
-#endif
-
-#if defined(__powerpc__)
-  signal(SIGBUS, SIG_IGN);
-#endif
-
-  outl(0xCF8, PCI_EN | tag | (offset & 0xfc));
-#if defined(Lynx) && defined(__powerpc__)
-  outb(0x80, 0x00);	/* without this the next access fails
-                         * on my Powerstack system when we use
-                         * assembler inlines for outl */
-#endif
-  outl(0xCFC, val);
-
-#if defined(__powerpc__)
-  signal(SIGBUS, SIG_DFL);
-#endif
-}
-
-void
-pciCfgMech1SetBits(PCITAG tag, int offset, CARD32 mask, CARD32 val)
-{
-    unsigned long rv = 0xffffffff;
-
-#if defined(__powerpc__)
-    signal(SIGBUS, buserr);
-#endif
-
-    outl(0xCF8, PCI_EN | tag | (offset & 0xfc));
-    rv = inl(0xCFC);
-    rv = (rv & ~mask) | val;
-    outl(0xCFC, rv);
-
-#if defined(__powerpc__)
-    signal(SIGBUS, SIG_DFL);
-#endif
-}
-
 CARD32
 pciByteSwap(CARD32 u)
 {
@@ -956,6 +906,11 @@ xf86scanpci(int flags)
     PCITAG       tag;
     static Bool  done = FALSE;
 
+    /*
+     * if we haven't found PCI devices checking for pci_devp may
+     * result in an endless recursion if platform/OS specific PCI
+     * bus probing code calls this function from with in it.
+     */
     if (done || pci_devp[0])
 	return pci_devp;
 
@@ -1173,14 +1128,30 @@ handlePciBIOS(PCITAG Tag, int basereg,
     for (i = ROM_BASE_PRESET; i <= ROM_BASE_FIND; i++) {
 	memType savebase = 0, newbase, romaddr;
 
-	if (i == ROM_BASE_PRESET) {
+        switch (i) {
+        case ROM_BASE_PRESET:
 	    /* Does the driver have a preference? */
 	    if (basereg > ROM_BASE_PRESET && basereg <= ROM_BASE_FIND)
 		b_reg = basereg;
 	    else
 		b_reg = ++i;
-	} else
+ 	    break;
+         case ROM_BASE_FIND:
+ 	    /*
+ 	     * If we have something that looks like a valid address
+ 	     * in romsave, it's probably not going to help to try
+ 	     * to guess a new address and reprogram it.
+ 	     */
+ 	    if (PCIGETROM(romsave)) {
+ 		pciWriteLong(Tag, PCI_MAP_ROM_REG, PCI_MAP_ROM_ADDRESS_MASK);
+ 		if (romsave != pciReadLong(Tag, PCI_MAP_ROM_REG)) {
+ 		    pciWriteLong(Tag, PCI_MAP_ROM_REG, romsave);
+ 	            continue;
+ 		}
+ 	    }
+ 	default:
 	    b_reg = i;
+	}
 
 	if (!(newbase = getValidBIOSBase(Tag, b_reg)))
 	    continue;  /* no valid address found */

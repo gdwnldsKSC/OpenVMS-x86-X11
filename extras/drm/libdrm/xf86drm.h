@@ -104,7 +104,8 @@ typedef enum {
     DRM_REGISTERS       = 1,      /**< no caching, no core dump */
     DRM_SHM             = 2,      /**< shared, cached */
     DRM_AGP             = 3,	  /**< AGP/GART */
-    DRM_SCATTER_GATHER  = 4	  /**< PCI scatter/gather */
+    DRM_SCATTER_GATHER  = 4,	  /**< PCI scatter/gather */
+    DRM_CONSISTENT      = 5	  /**< PCI consistent */
 } drmMapType;
 
 typedef enum {
@@ -147,7 +148,8 @@ typedef enum {
 typedef enum {
     DRM_PAGE_ALIGN       = 0x01,
     DRM_AGP_BUFFER       = 0x02,
-    DRM_SG_BUFFER        = 0x04
+    DRM_SG_BUFFER        = 0x04,
+    DRM_FB_BUFFER        = 0x08
 } drmBufDescFlags;
 
 typedef enum {
@@ -281,11 +283,11 @@ typedef struct _drmSetVersion {
 
 #define __drm_dummy_lock(lock) (*(__volatile__ unsigned int *)lock)
 
-#define DRM_LOCK_HELD  0x80000000 /**< Hardware lock is held */
-#define DRM_LOCK_CONT  0x40000000 /**< Hardware lock is contended */
+#define DRM_LOCK_HELD  0x80000000U /**< Hardware lock is held */
+#define DRM_LOCK_CONT  0x40000000U /**< Hardware lock is contended */
 
 #if defined(__GNUC__) && (__GNUC__ >= 2)
-# if defined(__i386) || defined(__AMD64__)
+# if defined(__i386) || defined(__AMD64__) || defined(__x86_64__) || defined(__amd64__)
 				/* Reflect changes here to drmP.h */
 #define DRM_CAS(lock,old,new,__ret)                                    \
 	do {                                                           \
@@ -317,8 +319,8 @@ typedef struct _drmSetVersion {
                 "       stl_c %1, %2\n"		\
                 "1:     xor   %1, 1, %1\n"	\
                 "       stl   %1, %3"		\
-                : "+r" (old32),                 \
-		  "+&r" (cur32),		\
+                : "=r" (old32),                 \
+		  "=&r" (cur32),		\
                    "=m" (__drm_dummy_lock(lock)),\
                    "=m" (ret)			\
  		: "r" (old),			\
@@ -575,11 +577,11 @@ extern int           drmAgpRelease(int fd);
 extern int           drmAgpEnable(int fd, unsigned long mode);
 extern int           drmAgpAlloc(int fd, unsigned long size,
 				 unsigned long type, unsigned long *address,
-				 unsigned long *handle);
-extern int           drmAgpFree(int fd, unsigned long handle);
-extern int 	     drmAgpBind(int fd, unsigned long handle,
+				 drm_handle_t *handle);
+extern int           drmAgpFree(int fd, drm_handle_t handle);
+extern int 	     drmAgpBind(int fd, drm_handle_t handle,
 				unsigned long offset);
-extern int           drmAgpUnbind(int fd, unsigned long handle);
+extern int           drmAgpUnbind(int fd, drm_handle_t handle);
 
 /* AGP/GART info: authenticated client and/or X */
 extern int           drmAgpVersionMajor(int fd);
@@ -594,8 +596,8 @@ extern unsigned int  drmAgpDeviceId(int fd);
 
 /* PCI scatter/gather support: X server (root) only */
 extern int           drmScatterGatherAlloc(int fd, unsigned long size,
-					   unsigned long *handle);
-extern int           drmScatterGatherFree(int fd, unsigned long handle);
+					   drm_handle_t *handle);
+extern int           drmScatterGatherFree(int fd, drm_handle_t handle);
 
 extern int           drmWaitVBlank(int fd, drmVBlankPtr vbl);
 

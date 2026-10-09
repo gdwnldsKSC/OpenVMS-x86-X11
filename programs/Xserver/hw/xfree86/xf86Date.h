@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/xf86Date.h,v 1.4 2004/08/16 22:48:50 kem Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/xf86Date.h,v 1.6 2005/07/03 07:01:24 daniels Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/xf86Date.h,v 1.54 2003/12/19 04:52:10 dawes Exp $ */
 /*
  * Copyright (c) 2003 by The XFree86 Project, Inc.
@@ -26,6 +26,10 @@
  * the sale, use or other dealings in this Software without prior written
  * authorization from the copyright holder(s) and author(s).
  */
+
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
 
 #ifndef XF86_DATE
 

@@ -28,6 +28,7 @@
 
 
 #include "mtypes.h"
+#include "buffers.h"
 #include "colormac.h"
 #include "dd.h"
 
@@ -299,8 +300,8 @@ void mgaUpdateClipping(const GLcontext *ctx)
       int x1 = mmesa->driDrawable->x + ctx->Scissor.X;
       int y1 = mmesa->driDrawable->y + mmesa->driDrawable->h
 	 - (ctx->Scissor.Y + ctx->Scissor.Height);
-      int x2 = x1 + ctx->Scissor.Width - 1;
-      int y2 = y1 + ctx->Scissor.Height - 1;
+      int x2 = x1 + ctx->Scissor.Width;
+      int y2 = y1 + ctx->Scissor.Height;
 
       if (x1 < 0) x1 = 0;
       if (y1 < 0) y1 = 0;
@@ -695,6 +696,8 @@ static void mgaViewport( GLcontext *ctx,
 			  GLint x, GLint y, 
 			  GLsizei width, GLsizei height )
 {
+   /* update size of Mesa/software ancillary buffers */
+   _mesa_ResizeBuffersMESA();
    mgaCalcViewport( ctx );
 }
 
@@ -822,15 +825,15 @@ static void mgaDDDrawBuffer(GLcontext *ctx, GLenum mode )
    /*
     * _DrawDestMask is easier to cope with than <mode>.
     */
-   switch ( ctx->Color._DrawDestMask ) {
-   case DD_FRONT_LEFT_BIT:
+   switch ( ctx->DrawBuffer->_ColorDrawBufferMask[0] ) {
+   case BUFFER_BIT_FRONT_LEFT:
       mmesa->setup.dstorg = mmesa->mgaScreen->frontOffset;
       mmesa->dirty |= MGA_UPLOAD_CONTEXT;
       mmesa->draw_buffer = MGA_FRONT;
       mgaXMesaSetFrontClipRects( mmesa );
       FALLBACK( ctx, MGA_FALLBACK_DRAW_BUFFER, GL_FALSE );
       break;
-   case DD_BACK_LEFT_BIT:
+   case BUFFER_BIT_BACK_LEFT:
       mmesa->setup.dstorg = mmesa->mgaScreen->backOffset;
       mmesa->draw_buffer = MGA_BACK;
       mmesa->dirty |= MGA_UPLOAD_CONTEXT;

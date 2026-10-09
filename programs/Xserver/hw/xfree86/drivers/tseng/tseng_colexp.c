@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/tseng/tseng_colexp.c,v 1.12 2000/08/08 08:58:06 eich Exp $ */
 
-
-
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /*
  * ET4/6K acceleration interface -- color expansion primitives.

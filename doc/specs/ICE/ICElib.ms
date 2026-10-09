@@ -1,5 +1,5 @@
 .\" $Xorg: ICElib.ms,v 1.3 2000/08/17 19:42:09 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/ICE/ICElib.ms,v 1.3 2004/09/03 16:18:19 kem Exp $
+.\" $XdotOrg: xc/doc/specs/ICE/ICElib.ms,v 1.4 2005/12/20 16:04:39 kem Exp $
 .\" 
 .\" Use tbl, -ms, and macros.t
 .\" 
@@ -29,7 +29,7 @@ Version 1.0
 .sp
 X Consortium Standard
 .sp
-X Version 11, Release 6.8
+X Version 11, Release 6.9/7.0
 .AU
 Ralph Mor
 .AI
@@ -63,8 +63,8 @@ in this Software without prior written authorization from the X Consortium.
 .sp 5
 X Window System is a trademark of The Open Group.
 .bp
-.EH '\fBInter-Client Exchange Library\fP''\fBX11, Release 6.8\fP'
-.OH '\fBInter-Client Exchange Library\fP''\fBX11, Release 6.8\fP'
+.EH '\fBInter-Client Exchange Library\fP''\fBX11, Release 6.9/7.0\fP'
+.OH '\fBInter-Client Exchange Library\fP''\fBX11, Release 6.9/7.0\fP'
 .bp 1
 .EF ''\- \\\\n(PN \-''
 .OF ''\- \\\\n(PN \-''

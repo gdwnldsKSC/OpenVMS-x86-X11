@@ -52,8 +52,11 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/FS/FSConnServ.c,v 3.10 2001/10/28 03:32:27 tsi Exp $ */
 
-#include	<stdio.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include	"FSlibint.h"
+#include	<stdio.h>
 #include	"X11/Xpoll.h"
 #ifdef NCD
 #include	<fcntl.h>

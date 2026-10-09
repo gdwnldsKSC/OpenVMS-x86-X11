@@ -49,17 +49,21 @@
  */
 
 /* $XConsortium: xf86Events.c /main/46 1996/10/25 11:36:30 kaleb $ */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86Events.c,v 1.3.2.1 2004/12/15 05:36:14 gisburn Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86Events.c,v 1.21 2005/11/08 06:33:28 jkj Exp $ */
 
 /* [JCH-96/01/21] Extended std reverse map to four buttons. */
+
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
 
 #ifdef __UNIXOS2__
 #define I_NEED_OS2_H
 #endif
 
-#include "X.h"
-#include "Xpoll.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xpoll.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 
 #include "compiler.h"
@@ -76,8 +80,8 @@
 #endif
 
 #ifdef XINPUT
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 #else
 #include "inputstr.h"
 #endif
@@ -88,7 +92,7 @@
 
 #ifdef XF86BIGFONT
 #define _XF86BIGFONT_SERVER_
-#include "xf86bigfont.h"
+#include <X11/extensions/xf86bigfont.h>
 #endif
 
 #ifdef XKB
@@ -97,7 +101,7 @@ extern Bool noXkbExtension;
 
 #ifdef DPMSExtension
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 #include "dpmsproc.h"
 #endif
 
@@ -119,7 +123,7 @@ extern Bool noXkbExtension;
 #ifdef XTESTEXT1
 
 #define	XTestSERVER_SIDE
-#include "xtestext1.h"
+#include <X11/extensions/xtestext1.h>
 extern short xtest_mousex;
 extern short xtest_mousey;
 extern int   on_steal_input;          
@@ -169,7 +173,9 @@ extern fd_set EnabledDevices;
 #if defined(XQUEUE)
 extern void xf86XqueRequest(void);
 #endif
+#ifdef XF86PM
 extern void (*xf86OSPMClose)(void);
+#endif
 
 static void xf86VTSwitch(void);
 
@@ -358,7 +364,7 @@ xf86ProcessActionEvent(ActionEvent action, void *arg)
     case ACTION_SWITCHSCREEN:
 	if (VTSwitchEnabled && !xf86Info.dontVTSwitch && arg) {
 	    int vtno = *((int *) arg);
-#ifdef SCO
+#if defined(__SCO__) || defined(__UNIXWARE__)
 	    vtno--;
 #endif
 #if defined(QNX4)
@@ -371,12 +377,13 @@ xf86ProcessActionEvent(ActionEvent action, void *arg)
 	break;
     case ACTION_SWITCHSCREEN_NEXT:
 	if (VTSwitchEnabled && !xf86Info.dontVTSwitch) {
-#if defined(SCO) /* Shouldn't this be true for (sun) && (i386) && (SVR4) ? */
+/* Shouldn't this be true for (sun) && (i386) && (SVR4) ? */
+#if defined(__SCO__) || defined(__UNIXWARE__)
 	    if (ioctl(xf86Info.consoleFd, VT_ACTIVATE, xf86Info.vtno) < 0)
 #else
 	    if (ioctl(xf86Info.consoleFd, VT_ACTIVATE, xf86Info.vtno + 1) < 0)
 #endif
-#if defined (SCO) || (defined(sun) && defined (i386) && defined (SVR4))
+#if defined (__SCO__) || (defined(sun) && defined (i386) && defined (SVR4)) || defined(__UNIXWARE__)
 		if (ioctl(xf86Info.consoleFd, VT_ACTIVATE, 0) < 0)
 #else
 		if (ioctl(xf86Info.consoleFd, VT_ACTIVATE, 1) < 0)
@@ -434,9 +441,7 @@ xf86ProcessActionEvent(ActionEvent action, void *arg)
 extern u_char SpecialServerMap[];
 #endif
 
-#if !defined(__UNIXOS2__) && \
-    !defined(__SOL8__) && \
-    (!defined(sun) || defined(i386)) 
+#if !defined(__UNIXOS2__)
 void
 xf86PostKbdEvent(unsigned key)
 {
@@ -780,7 +785,7 @@ special:
 	break;
 #endif
 
-#if defined(linux) || (defined(CSRG_BASED) && (defined(SYSCONS_SUPPORT) || defined(PCVT_SUPPORT) || defined(WSCONS_SUPPORT))) || defined(SCO)
+#if defined(linux) || (defined(CSRG_BASED) && (defined(SYSCONS_SUPPORT) || defined(PCVT_SUPPORT) || defined(WSCONS_SUPPORT))) || defined(__SCO__) || defined(__UNIXWARE__)
 	/*
 	 * Under Linux, the raw keycodes are consumed before the kernel
 	 * does any processing on them, so we must emulate the vt switching
@@ -919,7 +924,7 @@ special:
 
 #endif /* USE_VT_SYSREQ */
 
-#ifdef SCO
+#ifdef __SCO__
     /*
      *	With the console in raw mode, SCO will not switch consoles,
      *	you get around this by activating the next console along, if
@@ -934,7 +939,7 @@ special:
 	xf86ProcessActionEvent(ACTION_SWITCHSCREEN_NEXT, NULL);
       return;
     }
-#endif /* SCO */
+#endif /* __SCO__ */
 #ifdef XKB
     }
 #endif
@@ -1100,8 +1105,9 @@ special:
 Bool
 xf86CommonSpecialKey(int key, Bool down, int modifiers)
 {
-  if ((ModifierIsSet(ControlMask | AltMask)) ||
-      (ModifierIsSet(ControlMask | AltLangMask))) {
+  if ((!ModifierIsSet(ShiftMask)) &&
+      (((ModifierIsSet(ControlMask | AltMask)) ||
+        (ModifierIsSet(ControlMask | AltLangMask))))) {
       switch (key) {
 	
       case KEY_BackSpace:
@@ -1265,6 +1271,191 @@ xf86InterceptSignals(int *signo)
 	*signo = -1;
 }
 
+static void (*xf86SigIllHandler)(void) = NULL;
+
+void 
+xf86InterceptSigIll(void (*sigillhandler)(void))
+{
+    xf86SigIllHandler = sigillhandler;
+}
+
+#ifdef HAVE_EXECINFO_H
+#define HAVE_BACKTRACE
+#include <execinfo.h>
+#endif
+
+#ifdef HAVE_BACKTRACE
+
+static __inline__ void xorg_backtrace(void)
+{
+    void *array[32]; /* deeper nesting than this means something's wrong */
+    size_t size, i;
+    char **strings;
+    ErrorF("\nBacktrace:\n");
+    size = backtrace(array, 32);
+    strings = backtrace_symbols(array, size);
+    for (i = 0; i < size; i++)
+        ErrorF("%d: %s\n", i, strings[i]);
+    free(strings);
+}
+
+#else /* not glibc or glibc < 2.1 */
+
+# if defined(sun) && defined(__SVR4)
+#  define HAVE_PSTACK
+# endif
+
+# if defined(HAVE_WALKCONTEXT) /* Solaris 9 & later */
+
+# include <ucontext.h>
+# include <signal.h>
+# include <dlfcn.h>
+# include <sys/elf.h>
+
+#ifdef _LP64
+# define ElfSym Elf64_Sym
+#else
+# define ElfSym Elf32_Sym
+#endif
+
+/* Called for each frame on the stack to print it's contents */
+static int xorg_backtrace_frame(uintptr_t pc, int signo, void *arg)
+{
+    Dl_info dlinfo;
+    ElfSym *dlsym;
+    char header[32];
+    int depth = *((int *) arg);
+    
+    if (signo) {
+	char signame[SIG2STR_MAX];
+
+	if (sig2str(signo, signame) != 0) {
+	    strcpy(signame, "unknown");
+	}
+
+	ErrorF("** Signal %d (%s)\n", signo, signame);
+    }
+
+    snprintf(header, sizeof(header), "%d: 0x%lx", depth, pc);
+    *((int *) arg) = depth + 1;
+    
+    /* Ask system dynamic loader for info on the address */
+    if (dladdr1((void *) pc, &dlinfo, (void **) &dlsym, RTLD_DL_SYMENT)) {
+	unsigned long offset = pc - (uintptr_t) dlinfo.dli_saddr;
+	const char *symname;
+	
+	if (offset < dlsym->st_size) { /* inside a function */
+	    symname = dlinfo.dli_sname;
+	} else { /* found which file it was in, but not which function */
+	    symname = "<section start>";
+	    offset = pc - (uintptr_t)dlinfo.dli_fbase;
+	}
+	ErrorF("%s: %s:%s+0x%lx\n", header, dlinfo.dli_fname,
+	       symname, offset);
+
+    } else {
+	/* Couldn't find symbol info from system dynamic loader, should
+	 * probably poke elfloader here, but haven't written that code yet,
+	 * so we just print the pc.
+	 */
+	ErrorF("%s\n", header);
+    }
+    
+    return 0;
+}
+# endif /* HAVE_WALKCONTEXT */
+
+# ifdef HAVE_PSTACK
+static int xorg_backtrace_pstack(void) {
+    pid_t kidpid;
+    int pipefd[2];
+
+    if (pipe(pipefd) != 0) {
+	return -1;
+    }
+
+    kidpid = fork1();
+
+    if (kidpid == -1) {
+	/* ERROR */
+	return -1;
+    } else if (kidpid == 0) {
+	/* CHILD */
+	char parent[16];
+	
+	seteuid(0);
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	dup2(pipefd[1],STDOUT_FILENO);
+	closefrom(STDERR_FILENO);
+
+	snprintf(parent, sizeof(parent), "%d", getppid());
+	execle("/usr/bin/pstack", "pstack", parent, NULL);
+	exit(1);
+    } else {
+	/* PARENT */
+	char btline[256];
+	int kidstat;
+	int bytesread;
+	int done = 0;
+	
+	close(pipefd[1]);
+
+	while (!done) {
+	    bytesread = read(pipefd[0], btline, sizeof(btline) - 1);
+	    
+	    if (bytesread > 0) {
+		btline[bytesread] = 0;
+		ErrorF("%s", btline);
+	    }
+	    else if ((bytesread < 0) ||
+		     ((errno != EINTR) && (errno != EAGAIN)))
+		done = 1;
+	}
+	close(pipefd[0]);
+	waitpid(kidpid, &kidstat, 0);
+	if (kidstat != 0)
+	    return -1;
+    }
+    return 0;
+}
+# endif /* HAVE_PSTACK */
+
+
+# if defined(HAVE_PSTACK) || defined(HAVE_WALKCONTEXT)
+
+static __inline__ void xorg_backtrace(void) {
+
+    ErrorF("\nBacktrace:\n");
+    
+#  ifdef HAVE_PSTACK    
+/* First try fork/exec of pstack - otherwise fall back to walkcontext
+   pstack is preferred since it can print names of non-exported functions */
+    
+    if (xorg_backtrace_pstack() < 0)
+#  endif	
+    {
+#  ifdef HAVE_WALKCONTEXT
+	ucontext_t u;
+	int depth = 1;
+	
+	if (getcontext(&u) == 0)
+	    walkcontext(&u, xorg_backtrace_frame, &depth);
+	else
+#  endif
+	    Error("Failed to get backtrace info");
+    }
+    ErrorF("\n");	
+}
+
+# else
+
+/* Default fallback if we can't find any way to get a backtrace */
+static __inline__ void xorg_backtrace(void) { return; }
+
+# endif
+#endif
+
 /*
  * xf86SigHandler --
  *    Catch unexpected signals and exit or continue cleanly.
@@ -1272,10 +1463,17 @@ xf86InterceptSignals(int *signo)
 void
 xf86SigHandler(int signo)
 {
+  if ((signo == SIGILL) && xf86SigIllHandler) {
+    (*xf86SigIllHandler)();
+    /* Re-arm handler just in case we unexpectedly return here */
+    (void) signal(signo, xf86SigHandler);
+    return;
+  }
+  
   if (xf86SignalIntercept && (*xf86SignalIntercept < 0)) {
+    *xf86SignalIntercept = signo;
     /* Re-arm handler just in case */
     (void) signal(signo, xf86SigHandler);
-    *xf86SignalIntercept = signo;
     return;
   }
 
@@ -1291,6 +1489,9 @@ xf86SigHandler(int signo)
 	 "   *** If unresolved symbols were reported above, they might not\n"
 	 "   *** be the reason for the server aborting.\n");
 #endif
+
+  xorg_backtrace();
+    
   FatalError("Caught signal %d.  Server aborting\n", signo);
 }
 
@@ -1403,9 +1604,11 @@ xf86VTSwitch()
       xf86UnblockSIGIO(prevSIGIO);
 
     } else {
+#ifdef XF86PM
 	  if (xf86OSPMClose)
 	      xf86OSPMClose();
 	  xf86OSPMClose = NULL;
+#endif
 
 	for (i = 0; i < xf86NumScreens; i++) {
  	    /*
@@ -1416,7 +1619,8 @@ xf86VTSwitch()
 	    xf86Screens[i]->access = NULL;
 	    xf86Screens[i]->busAccess = NULL;
 	}
-      xf86DisableIO();
+	if (xorgHWAccess)
+	    xf86DisableIO();
     }
   } else {
 
@@ -1426,9 +1630,12 @@ xf86VTSwitch()
     if (!xf86VTSwitchTo()) return;
 
     prevSIGIO = xf86BlockSIGIO();
+#ifdef XF86PM
     xf86OSPMClose = xf86OSPMOpen();
+#endif
 
-    xf86EnableIO();
+    if (xorgHWAccess)
+	xf86EnableIO();
     xf86AccessEnter();
     xf86EnterServerState(SETUP);
     for (i = 0; i < xf86NumScreens; i++) {
@@ -1608,6 +1815,26 @@ XTestGenerateEvent(int dev_type, int keycode, int keystate, int mousex,
 }
 
 #endif /* XTESTEXT1 */
+
+void
+xf86ReloadInputDevs(int sig)
+{
+  InputInfoPtr pInfo;
+  
+  signal(sig, (void(*)(int))xf86ReloadInputDevs);
+
+  DisableDevice((DeviceIntPtr)xf86Info.pKeyboard);
+  EnableDevice((DeviceIntPtr)xf86Info.pKeyboard);
+
+  pInfo = xf86InputDevs;
+  while (pInfo) {
+    DisableDevice(pInfo->dev);
+    EnableDevice(pInfo->dev);
+    pInfo = pInfo->next;
+  }
+  
+  return;
+}
 
 #ifdef WSCONS_SUPPORT
 

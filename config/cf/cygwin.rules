@@ -20,9 +20,7 @@
 #define SharedLibSM		YES
 #define SharedLibICE		YES
 #define SharedLibXext		YES
-#define SharedLibXie		YES
 #define SharedLibXi		YES
-#define SharedLibPex		YES
 #define SharedLibXtst		YES
 #define SharedOldX		YES
 #define SharedLibXp		YES

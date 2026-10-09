@@ -15,6 +15,7 @@ XMESA_GLX_SRCS = $(MESAXBUILDDIR)fakeglx.c \
 
    XMESA_SRCS = $(XMESA_GLX_SRCS) \
 		$(MESAXBUILDDIR)xm_api.c \
+                $(MESAXBUILDDIR)xm_buffer.c \
 		$(MESAXBUILDDIR)xm_dd.c \
 		$(MESAXBUILDDIR)xm_line.c \
 		$(MESAXBUILDDIR)xm_span.c \
@@ -29,6 +30,7 @@ LinkSourceFile(realglx.c, $(MESASRCDIR)/src/mesa/drivers/x11)
 LinkSourceFile(xfonts.c, $(MESASRCDIR)/src/mesa/drivers/x11)
 #endif
 LinkSourceFile(xm_api.c, $(MESASRCDIR)/src/mesa/drivers/x11)
+LinkSourceFile(xm_buffer.c, $(MESASRCDIR)/src/mesa/drivers/x11)
 LinkSourceFile(xm_dd.c, $(MESASRCDIR)/src/mesa/drivers/x11)
 LinkSourceFile(xm_line.c, $(MESASRCDIR)/src/mesa/drivers/x11)
 LinkSourceFile(xm_span.c, $(MESASRCDIR)/src/mesa/drivers/x11)
@@ -44,6 +46,7 @@ XMESA_GLX_OBJS = $(MESAXBUILDDIR)fakeglx.o \
 
    XMESA_OBJS = $(XMESA_GLX_OBJS) \
 		$(MESAXBUILDDIR)xm_api.o \
+                $(MESAXBUILDDIR)xm_buffer.o \
 		$(MESAXBUILDDIR)xm_dd.o \
 		$(MESAXBUILDDIR)xm_line.o \
 		$(MESAXBUILDDIR)xm_span.o \
@@ -59,6 +62,7 @@ XMESA_GLX_UOBJS = $(MESAXBUILDDIR)unshared/fakeglx.o \
 
   XMESA_UOBJS = $(XMESA_GLX_UOBJS) \
 		$(MESAXBUILDDIR)unshared/xm_api.o \
+                $(MESAXBUILDDIR)unshared/xm_buffer.o \
 		$(MESAXBUILDDIR)unshared/xm_dd.o \
 		$(MESAXBUILDDIR)unshared/xm_line.o \
 		$(MESAXBUILDDIR)unshared/xm_span.o \
@@ -77,6 +81,7 @@ XMESA_GLX_DOBJS = $(MESAXBUILDDIR)debugger/fakeglx.o \
 
   XMESA_DOBJS = $(XMESA_GLX_DOBJS) \
 		$(MESAXBUILDDIR)debugger/xm_api.o \
+                $(MESAXBUILDDIR)debugger/xm_buffer.o \
 		$(MESAXBUILDDIR)debugger/xm_dd.o \
 		$(MESAXBUILDDIR)debugger/xm_line.o \
 		$(MESAXBUILDDIR)debugger/xm_span.o \
@@ -91,6 +96,7 @@ XMESA_GLX_POBJS = $(MESAXBUILDDIR)profiled/fakeglx.o \
 
   XMESA_POBJS = $(XMESA_GLX_POBJS) \
 		$(MESAXBUILDDIR)profiled/xm_api.o \
+                $(MESAXBUILDDIR)profiled/xm_buffer.o \
 		$(MESAXBUILDDIR)profiled/xm_dd.o \
 		$(MESAXBUILDDIR)profiled/xm_line.o \
 		$(MESAXBUILDDIR)profiled/xm_span.o \

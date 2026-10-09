@@ -15,6 +15,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/cirrus/lg_driver.c,v 1.49 2003/11/03 05:11:09 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define EXPERIMENTAL
 
 /* All drivers should typically include these */
@@ -63,7 +67,7 @@
 #include "lg.h"
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 /*
  * Forward definitions for the functions that make up the driver.
@@ -258,7 +262,11 @@ static XF86ModuleVersionInfo lgVersRec =
  * This is the module init data.
  * Its name has to be the driver name followed by ModuleData.
  */
-XF86ModuleData cirrus_lagunaModuleData = { &lgVersRec, lgSetup, NULL };
+_X_EXPORT XF86ModuleData cirrus_lagunaModuleData = {
+    &lgVersRec,
+    lgSetup,
+    NULL
+};
 
 static pointer
 lgSetup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -276,13 +284,13 @@ lgSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 
 #endif /* XFree86LOADER */
 
-const OptionInfoRec *
+_X_EXPORT const OptionInfoRec *
 LgAvailableOptions(int chipid)
 {
     return LgOptions;
 }
 
-ScrnInfoPtr
+_X_EXPORT ScrnInfoPtr
 LgProbe(int entity)
 {
     ScrnInfoPtr pScrn = NULL;

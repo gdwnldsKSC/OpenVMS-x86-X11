@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xmu/ClientWin.c,v 1.7 2001/12/14 19:55:34 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 

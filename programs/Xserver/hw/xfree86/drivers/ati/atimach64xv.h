@@ -25,16 +25,13 @@
 #define ___ATIMACH64XV_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 #include "xf86xv.h"
 
-extern int  ATIMach64XVInitialiseAdaptor
-            FunctionPrototype((ScreenPtr, ScrnInfoPtr, ATIPtr,
-                              XF86VideoAdaptorPtr **));
+extern int  ATIMach64XVInitialiseAdaptor(ScreenPtr, ScrnInfoPtr, ATIPtr,
+                                         XF86VideoAdaptorPtr **);
 
-extern void ATIMach64CloseXVideo
-            FunctionPrototype((ScreenPtr, ScrnInfoPtr, ATIPtr));
+extern void ATIMach64CloseXVideo(ScreenPtr, ScrnInfoPtr, ATIPtr);
 
 #endif /* ___ATIMACH64XV_H___ */

@@ -175,7 +175,7 @@ tdfx_bitmap_R5G6B5(GLcontext * ctx, GLint px, GLint py,
 			  SCISSOR_BIT |
 			  STENCIL_BIT |
 			  MASKING_BIT |
-			  ALPHABUF_BIT | MULTI_DRAW_BIT)) return GL_FALSE;
+			  MULTI_DRAW_BIT)) return GL_FALSE;
 
    if (ctx->Scissor.Enabled) {
       /* This is a bit tricky, but by carefully adjusting the px, py,
@@ -255,7 +255,7 @@ tdfx_bitmap_R5G6B5(GLcontext * ctx, GLint px, GLint py,
        * to the front or back buffer.  This compile-time test seems to do
        * the job for now.
        */
-      const GLint dstStride = (fxMesa->glCtx->Color.DrawBuffer == GL_FRONT)
+      const GLint dstStride = (fxMesa->glCtx->Color.DrawBuffer[0] == GL_FRONT)
 	 ? (fxMesa->screen_width) : (info.strideInBytes / 2);
       GLint row;
       /* compute dest address of bottom-left pixel in bitmap */
@@ -264,10 +264,10 @@ tdfx_bitmap_R5G6B5(GLcontext * ctx, GLint px, GLint py,
 
       for (row = 0; row < height; row++) {
 	 const GLubyte *src =
-	    (const GLubyte *) _mesa_image_address(finalUnpack,
-						  bitmap, width, height,
-						  GL_COLOR_INDEX,
-						  GL_BITMAP, 0, row, 0);
+	    (const GLubyte *) _mesa_image_address2d(finalUnpack,
+                                                    bitmap, width, height,
+                                                    GL_COLOR_INDEX,
+                                                    GL_BITMAP, row, 0);
 	 if (finalUnpack->LsbFirst) {
 	    /* least significan bit first */
 	    GLubyte mask = 1U << (finalUnpack->SkipPixels & 0x7);
@@ -339,7 +339,7 @@ tdfx_bitmap_R8G8B8A8(GLcontext * ctx, GLint px, GLint py,
 			  SCISSOR_BIT |
 			  STENCIL_BIT |
 			  MASKING_BIT |
-			  ALPHABUF_BIT | MULTI_DRAW_BIT)) return GL_FALSE;
+			  MULTI_DRAW_BIT)) return GL_FALSE;
 
    if (ctx->Scissor.Enabled) {
       /* This is a bit tricky, but by carefully adjusting the px, py,
@@ -407,7 +407,7 @@ tdfx_bitmap_R8G8B8A8(GLcontext * ctx, GLint px, GLint py,
       GLuint *dst;
       GLint row;
 
-      if (fxMesa->glCtx->Color.DrawBuffer == GL_FRONT) {
+      if (fxMesa->glCtx->Color.DrawBuffer[0] == GL_FRONT) {
 	 dstStride = fxMesa->screen_width;
 	 dst =
 	    (GLuint *) info.lfbPtr + (winY - py) * dstStride + (winX +
@@ -423,10 +423,10 @@ tdfx_bitmap_R8G8B8A8(GLcontext * ctx, GLint px, GLint py,
       /* compute dest address of bottom-left pixel in bitmap */
       for (row = 0; row < height; row++) {
 	 const GLubyte *src =
-	    (const GLubyte *) _mesa_image_address(finalUnpack,
-						  bitmap, width, height,
-						  GL_COLOR_INDEX,
-						  GL_BITMAP, 0, row, 0);
+	    (const GLubyte *) _mesa_image_address2d(finalUnpack,
+                                                    bitmap, width, height,
+                                                    GL_COLOR_INDEX,
+                                                    GL_BITMAP, row, 0);
 	 if (finalUnpack->LsbFirst) {
 	    /* least significan bit first */
 	    GLubyte mask = 1U << (finalUnpack->SkipPixels & 0x7);
@@ -508,12 +508,12 @@ tdfx_readpixels_R5G6B5(GLcontext * ctx, GLint x, GLint y,
 		    fxMesa->ReadBuffer,
 		    GR_LFBWRITEMODE_ANY,
 		    GR_ORIGIN_UPPER_LEFT, FXFALSE, &info)) {
-	 const GLint srcStride = (fxMesa->glCtx->Color.DrawBuffer ==
+	 const GLint srcStride = (fxMesa->glCtx->Color.DrawBuffer[0] ==
 	     GL_FRONT) ? (fxMesa->screen_width) : (info.strideInBytes / 2);
 	 const GLushort *src = (const GLushort *) info.lfbPtr
 	    + scrY * srcStride + scrX;
-	 GLubyte *dst = (GLubyte *) _mesa_image_address(packing,
-            dstImage, width, height, format, type, 0, 0, 0);
+	 GLubyte *dst = (GLubyte *) _mesa_image_address2d(packing,
+            dstImage, width, height, format, type, 0, 0);
 	 const GLint dstStride = _mesa_image_row_stride(packing,
             width, format, type);
 
@@ -567,14 +567,14 @@ tdfx_readpixels_R8G8B8A8(GLcontext * ctx, GLint x, GLint y,
                     GR_LFBWRITEMODE_ANY,
                     GR_ORIGIN_UPPER_LEFT, FXFALSE, &info))
       {
-         const GLint srcStride = (fxMesa->glCtx->Color.DrawBuffer == GL_FRONT)
+         const GLint srcStride = (fxMesa->glCtx->Color.DrawBuffer[0] == GL_FRONT)
             ? (fxMesa->screen_width) : (info.strideInBytes / 4);
          const GLuint *src = (const GLuint *) info.lfbPtr
             + scrY * srcStride + scrX;
          const GLint dstStride =
             _mesa_image_row_stride(packing, width, format, type);
-         GLubyte *dst = (GLubyte *) _mesa_image_address(packing,
-            dstImage, width, height, format, type, 0, 0, 0);
+         GLubyte *dst = (GLubyte *) _mesa_image_address2d(packing,
+            dstImage, width, height, format, type, 0, 0);
          const GLint widthInBytes = width * 4;
 
 	 {
@@ -646,7 +646,7 @@ tdfx_drawpixels_R8G8B8A8(GLcontext * ctx, GLint x, GLint y,
       }
 
       /* look for clipmasks, giveup if region obscured */
-      if (fxMesa->glCtx->Color.DrawBuffer == GL_FRONT) {
+      if (fxMesa->glCtx->Color.DrawBuffer[0] == GL_FRONT) {
          if (!inClipRects_Region(fxMesa, scrX, scrY, width, height)) {
             UNLOCK_HARDWARE(fxMesa);
 	    _swrast_DrawPixels( ctx, x, y, width, height, format, type, 
@@ -661,14 +661,14 @@ tdfx_drawpixels_R8G8B8A8(GLcontext * ctx, GLint x, GLint y,
                     GR_LFBWRITEMODE_8888,
                     GR_ORIGIN_UPPER_LEFT, FXTRUE, &info))
       {
-         const GLint dstStride = (fxMesa->glCtx->Color.DrawBuffer == GL_FRONT)
+         const GLint dstStride = (fxMesa->glCtx->Color.DrawBuffer[0] == GL_FRONT)
             ? (fxMesa->screen_width * 4) : (info.strideInBytes);
          GLubyte *dst = (GLubyte *) info.lfbPtr
             + scrY * dstStride + scrX * 4;
          const GLint srcStride =
             _mesa_image_row_stride(unpack, width, format, type);
-         const GLubyte *src = (GLubyte *) _mesa_image_address(unpack,
-            pixels, width, height, format, type, 0, 0, 0);
+         const GLubyte *src = (GLubyte *) _mesa_image_address2d(unpack,
+            pixels, width, height, format, type, 0, 0);
          const GLint widthInBytes = width * 4;
 
          if ((format == GL_BGRA && type == GL_UNSIGNED_INT_8_8_8_8) ||

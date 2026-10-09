@@ -98,16 +98,18 @@
  *      device as "zzz", 
  *
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86Aiptek.h"
 
 static const char identification[] = "$Identification: 0 $";
 static InputDriverPtr aiptekDrv;
 static int debug_level = INI_DEBUG_LEVEL;
 
-#ifdef XFree86LOADER
-static
-#endif
-InputDriverRec AIPTEK =
+_X_EXPORT InputDriverRec AIPTEK =
 {
     1,                  /* driver version */
     "aiptek",           /* driver name */
@@ -2447,7 +2449,7 @@ static XF86ModuleVersionInfo xf86AiptekVersionRec =
                          * */
 };
 
-XF86ModuleData aiptekModuleData =
+_X_EXPORT XF86ModuleData aiptekModuleData =
 {
     &xf86AiptekVersionRec,
     xf86AiptekPlug,

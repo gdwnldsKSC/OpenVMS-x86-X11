@@ -1,17 +1,17 @@
-
+// $XdotOrg: xc/programs/xkbcomp/symbols/pc/si,v 1.3 2005/08/12 11:08:49 pascal Exp $
 // based on
 // Slovenian keyboards
 // by Marko Samastur (markos@elite.org) and
 // Primoz Peterlin (primoz.peterlin@biofiz.mf.uni-lj.si)
 //
-// $XFree86: xc/programs/xkbcomp/symbols/pc/si,v 1.3 2003/02/05 01:38:36 dawes Exp $
+// $XFree86: xc/programs/xkbcomp/symbols/si,v 1.3 2003/02/05 01:38:36 dawes Exp $
 
 default partial alphanumeric_keys
 xkb_symbols "basic" {
 
     include "pc/latin(type3)"
 
-    name[Group1]="Slovene";
+    name[Group1]="Slovenia";
 
     key <AE01>	{ [         1,     exclam,   asciitilde,   dead_tilde ]	};
     key <AE02>	{ [         2,   quotedbl,   dead_caron,        caron ]	};
@@ -39,8 +39,8 @@ xkb_symbols "basic" {
 
     key <BKSL>	{ [    zcaron,     Zcaron,     currency,   dead_breve ]	};
 
-    key <KPDL>	{ [ KP_Delete, KP_Separator ]	};
+    include "keypad(comma)"
 
-    include "level3(ralt_switch_multikey)"
+    include "level3(ralt_switch)"
 };
 

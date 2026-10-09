@@ -21,6 +21,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ati.h"
 #include "atibank.h"
 #include "atimach64io.h"

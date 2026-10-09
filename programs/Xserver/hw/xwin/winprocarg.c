@@ -26,6 +26,14 @@ from The Open Group.
 
 */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
+#ifdef XVENDORNAME
+#define VENDOR_STRING XVENDORNAME
+#define VERSION_STRING XORG_RELEASE
+#define VENDOR_CONTACT BUILDERADDR
+#endif
 #include "win.h"
 #include "winconfig.h"
 #include "winprefs.h"
@@ -45,6 +53,9 @@ extern Bool			g_fClipboard;
 #endif
 extern int			g_iLogVerbose;
 extern char *			g_pszLogFile;
+#ifdef RELOCATE_PROJECTROOT
+extern Bool			g_fLogFileChanged;
+#endif
 extern Bool			g_fXdmcpEnabled;
 extern char *			g_pszCommandLine;
 extern Bool			g_fKeyboardHookLL;
@@ -64,12 +75,12 @@ struct GetMonitorInfoData {
     int  monitorWidth;
 };
 
-typedef BOOL (*ENUMDISPLAYMONITORSPROC)(HDC,LPCRECT,MONITORENUMPROC,LPARAM);
+typedef wBOOL (*ENUMDISPLAYMONITORSPROC)(HDC,LPCRECT,MONITORENUMPROC,LPARAM);
 ENUMDISPLAYMONITORSPROC _EnumDisplayMonitors;
 
-BOOL CALLBACK getMonitorInfo(HMONITOR hMonitor, HDC hdc, LPRECT rect, LPARAM _data);
+wBOOL CALLBACK getMonitorInfo(HMONITOR hMonitor, HDC hdc, LPRECT rect, LPARAM _data);
 
-Bool QueryMonitor(int index, struct GetMonitorInfoData *data)
+static Bool QueryMonitor(int index, struct GetMonitorInfoData *data)
 {
     /* Load EnumDisplayMonitors from DLL */
     HMODULE user32;
@@ -172,6 +183,7 @@ winInitializeDefaultScreens (void)
       g_ScreenInfo[i].fDecoration = TRUE;
 #ifdef XWIN_MULTIWINDOWEXTWM
       g_ScreenInfo[i].fMWExtWM = FALSE;
+      g_ScreenInfo[i].fInternalWM = FALSE;
 #endif
       g_ScreenInfo[i].fRootless = FALSE;
 #ifdef XWIN_MULTIWINDOW
@@ -561,16 +573,20 @@ ddxProcessArgument (int argc, char *argv[], int i)
 	  /* Parameter is for all screens */
 	  for (j = 0; j < MAXSCREENS; j++)
 	    {
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
               if (!g_ScreenInfo[j].fMultiMonitorOverride)
                 g_ScreenInfo[j].fMultipleMonitors = FALSE;
+#endif
 	      g_ScreenInfo[j].fFullScreen = TRUE;
 	    }
 	}
       else
 	{
 	  /* Parameter is for a single screen */
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
           if (!g_ScreenInfo[g_iLastScreen].fMultiMonitorOverride)
             g_ScreenInfo[g_iLastScreen].fMultipleMonitors = FALSE;
+#endif
 	  g_ScreenInfo[g_iLastScreen].fFullScreen = TRUE;
 	}
 
@@ -617,16 +633,20 @@ ddxProcessArgument (int argc, char *argv[], int i)
 	  /* Parameter is for all screens */
 	  for (j = 0; j < MAXSCREENS; j++)
 	    {
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
               if (!g_ScreenInfo[j].fMultiMonitorOverride)
                 g_ScreenInfo[j].fMultipleMonitors = FALSE;
+#endif
 	      g_ScreenInfo[j].fDecoration = FALSE;
 	    }
 	}
       else
 	{
 	  /* Parameter is for a single screen */
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
           if (!g_ScreenInfo[g_iLastScreen].fMultiMonitorOverride)
             g_ScreenInfo[g_iLastScreen].fMultipleMonitors = FALSE;
+#endif
 	  g_ScreenInfo[g_iLastScreen].fDecoration = FALSE;
 	}
 
@@ -664,6 +684,37 @@ ddxProcessArgument (int argc, char *argv[], int i)
       /* Indicate that we have processed this argument */
       return 1;
     }
+  /*
+   * Look for the '-internalwm' argument
+   */
+  if (IS_OPTION ("-internalwm"))
+    {
+      /* Is this parameter attached to a screen or is it global? */
+      if (-1 == g_iLastScreen)
+	{
+	  int			j;
+
+	  /* Parameter is for all screens */
+	  for (j = 0; j < MAXSCREENS; j++)
+	    {
+	      if (!g_ScreenInfo[j].fMultiMonitorOverride)
+	        g_ScreenInfo[j].fMultipleMonitors = TRUE;
+	      g_ScreenInfo[j].fMWExtWM = TRUE;
+	      g_ScreenInfo[j].fInternalWM = TRUE;
+	    }
+	}
+      else
+	{
+	  /* Parameter is for a single screen */
+	  if (!g_ScreenInfo[g_iLastScreen].fMultiMonitorOverride)
+	    g_ScreenInfo[g_iLastScreen].fMultipleMonitors = TRUE;
+	  g_ScreenInfo[g_iLastScreen].fMWExtWM = TRUE;
+	  g_ScreenInfo[g_iLastScreen].fInternalWM = TRUE;
+	}
+
+      /* Indicate that we have processed this argument */
+      return 1;
+    }
 #endif
 
   /*
@@ -679,16 +730,20 @@ ddxProcessArgument (int argc, char *argv[], int i)
 	  /* Parameter is for all screens */
 	  for (j = 0; j < MAXSCREENS; j++)
 	    {
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
               if (!g_ScreenInfo[j].fMultiMonitorOverride)
                 g_ScreenInfo[j].fMultipleMonitors = FALSE;
+#endif
 	      g_ScreenInfo[j].fRootless = TRUE;
 	    }
 	}
       else
 	{
 	  /* Parameter is for a single screen */
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
           if (!g_ScreenInfo[g_iLastScreen].fMultiMonitorOverride)
             g_ScreenInfo[g_iLastScreen].fMultipleMonitors = FALSE;
+#endif
 	  g_ScreenInfo[g_iLastScreen].fRootless = TRUE;
 	}
 
@@ -710,16 +765,20 @@ ddxProcessArgument (int argc, char *argv[], int i)
 	  /* Parameter is for all screens */
 	  for (j = 0; j < MAXSCREENS; j++)
 	    {
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
               if (!g_ScreenInfo[j].fMultiMonitorOverride)
                 g_ScreenInfo[j].fMultipleMonitors = TRUE;
+#endif
 	      g_ScreenInfo[j].fMultiWindow = TRUE;
 	    }
 	}
       else
 	{
 	  /* Parameter is for a single screen */
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
           if (!g_ScreenInfo[g_iLastScreen].fMultiMonitorOverride)
             g_ScreenInfo[g_iLastScreen].fMultipleMonitors = TRUE;
+#endif
 	  g_ScreenInfo[g_iLastScreen].fMultiWindow = TRUE;
 	}
 
@@ -742,14 +801,18 @@ ddxProcessArgument (int argc, char *argv[], int i)
 	  /* Parameter is for all screens */
 	  for (j = 0; j < MAXSCREENS; j++)
 	    {
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
               g_ScreenInfo[j].fMultiMonitorOverride = TRUE;
+#endif
 	      g_ScreenInfo[j].fMultipleMonitors = TRUE;
 	    }
 	}
       else
 	{
 	  /* Parameter is for a single screen */
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
           g_ScreenInfo[g_iLastScreen].fMultiMonitorOverride = TRUE;
+#endif
 	  g_ScreenInfo[g_iLastScreen].fMultipleMonitors = TRUE;
 	}
 
@@ -771,14 +834,18 @@ ddxProcessArgument (int argc, char *argv[], int i)
 	  /* Parameter is for all screens */
 	  for (j = 0; j < MAXSCREENS; j++)
 	    {
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
               g_ScreenInfo[j].fMultiMonitorOverride = TRUE;
+#endif
 	      g_ScreenInfo[j].fMultipleMonitors = FALSE;
 	    }
 	}
       else
 	{
 	  /* Parameter is for a single screen */
+#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
           g_ScreenInfo[g_iLastScreen].fMultiMonitorOverride = TRUE;
+#endif
 	  g_ScreenInfo[g_iLastScreen].fMultipleMonitors = FALSE;
 	}
 
@@ -1284,6 +1351,9 @@ ddxProcessArgument (int argc, char *argv[], int i)
     {
       CHECK_ARGS (1);
       g_pszLogFile = argv[++i];
+#ifdef RELOCATE_PROJECTROOT
+      g_fLogFileChanged = TRUE;
+#endif
       return 2;
     }
 
@@ -1473,7 +1543,7 @@ winLogVersionInfo (void)
  * getMonitorInfo - callback function used to return information from the enumeration of monitors attached
  */
 
-BOOL CALLBACK getMonitorInfo(HMONITOR hMonitor, HDC hdc, LPRECT rect, LPARAM _data) 
+wBOOL CALLBACK getMonitorInfo(HMONITOR hMonitor, HDC hdc, LPRECT rect, LPARAM _data) 
 {
   struct GetMonitorInfoData* data = (struct GetMonitorInfoData*)_data;
   // only get data for monitor number specified in <data>

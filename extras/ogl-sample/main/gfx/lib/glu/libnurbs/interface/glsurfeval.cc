@@ -36,8 +36,8 @@
 /*
  * glsurfeval.c++
  *
- * $Date$ $Revision$
- * $Header$
+ * $Date: 2004/04/23 18:42:55 $ $Revision: 1.2 $
+ * $Header: /cvs/xorg/xc/extras/ogl-sample/main/gfx/lib/glu/libnurbs/interface/glsurfeval.cc,v 1.2 2004/04/23 18:42:55 eich Exp $
  */
 
 /* Polynomial Evaluator Interface */

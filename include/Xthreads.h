@@ -70,7 +70,12 @@ typedef thread_t xthread_t;
 typedef thread_key_t xthread_key_t;
 typedef cond_t xcondition_rec;
 typedef mutex_t xmutex_rec;
+#if defined(__UNIXWARE__)
+extern xthread_t (*_x11_thr_self)();
+#define xthread_self  (_x11_thr_self)
+#else
 #define xthread_self thr_self
+#endif
 #define xthread_fork(func,closure) thr_create(NULL,0,func,closure,THR_NEW_LWP|THR_DETACHED,NULL)
 #define xthread_yield() thr_yield()
 #define xthread_exit(v) thr_exit(v)
@@ -93,17 +98,7 @@ typedef mutex_t xmutex_rec;
 #define xcondition_broadcast(cv) cond_broadcast(cv)
 #else /* !SVR4 */
 #ifdef WIN32
-#define BOOL wBOOL
-#ifdef Status
-#undef Status
-#define Status wStatus
-#endif
-#include <windows.h>
-#ifdef Status
-#undef Status
-#define Status int
-#endif
-#undef BOOL
+#include <X11/Xwindows.h>
 typedef DWORD xthread_t;
 typedef DWORD xthread_key_t;
 struct _xthread_waiter {

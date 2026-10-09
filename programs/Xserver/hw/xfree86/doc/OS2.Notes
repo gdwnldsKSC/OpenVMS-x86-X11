@@ -1,4 +1,4 @@
-               Notes on Rebuilding X11R6.8.2/OS2 from Scratch
+                Notes on Rebuilding X11R6.9/OS2 from Scratch
 
                                  Holger Veit
 
@@ -16,11 +16,11 @@ intend to rebuild the system from scratch under OS/2.
 Please also read README.OS2 for end-user information, and set at least the
 environment variables described there.
 
-At the current time, the most recent version available is X11R6.8.2 This is a
+At the current time, the most recent version available is X11R6.9 This is a
 full and unrestricted version which comes with complete source code. 4.0 is a
 highly experimental release, so many features that might have worked in ear-
 lier versions, may now no longer work, or work differently.  Be aware that
-for OS/2, X11R6.8.2 is considered to be alpha software.
+for OS/2, X11R6.9 is considered to be alpha software.
 
 2.  Tools required
 
@@ -69,9 +69,8 @@ If there is no version number given, any new version will do. Particularly
 critical is only EMX/gcc and GNU make. Note that the second GCC implementa-
 tion which might still be available from some archives is NOT compatible.
 
-Furthermore, you need the X11R6.8.2 sources. These are available from the
-common X.org repositories. Look into a directory which is often named
-/pub/R6.8.2.
+Furthermore, you need the X11R6.9 sources. These are available from the com-
+mon X.Org repositories. Look into a directory which is often named /pub/R6.9.
 
 3.  Compiling and Installing
 
@@ -146,15 +145,14 @@ installed them. Nor did I install the test subtree.
       servers). Certain changes must be set to the following values:
 
          o Disable if not already done any PC98 server; PC98 (Japanese
-           X11R6.8.2) does not work yet. Porters from Japan are welcome!
+           X11R6.9) does not work yet. Porters from Japan are welcome!
 
          o #define WacomSupport            NO #define ElographicsSupport
            NO Both options are not yet supported.
 
          o Tcl* and Tk* don't need to be set explicitly. Reasonable defaults
            are in the other config files, provided you have a complete
-           X11R6.8.2/OS2 binary tree with the tcl/tk runtime support
-           installed.
+           X11R6.9/OS2 binary tree with the tcl/tk runtime support installed.
 
          o #define BuildDynamicLoading   NO This does not work.
 
@@ -167,8 +165,8 @@ installed them. Nor did I install the test subtree.
 
   9.  Set the environment variable X11ROOT to something different than it is;
       otherwise the installation process will overwrite your original
-      X11R6.8.2/OS2 installation. If you have not set this variable, go back
-      to the prefix section of this document: you have forgotten something.
+      X11R6.9/OS2 installation. If you have not set this variable, go back to
+      the prefix section of this document: you have forgotten something.
 
  10.  Copy the file xc/pro-
       grams/Xserver/hw/xfree86/etc/bindist/OS2/host.def.os2 to the location
@@ -202,13 +200,13 @@ installed them. Nor did I install the test subtree.
             lation.  This is no problem and has no effect on the rest of the
             system.
 
-        2.  The imake.exe which is installed in \X11R6.8.2\bin is usually
+        2.  The imake.exe which is installed in \X11R6.9\bin is usually
             defective.  The one which was built initially and installed in
             the root directory of the drive where you have the source tree is
-            okay. So simply copy this \imake.exe to the \X11R6.8.2\bin direc-
+            okay. So simply copy this \imake.exe to the \X11R6.9\bin direc-
             tory manually. Some day this might be fixed.
 
 Well, you see, this was quite easy :-)
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/OS2.Notes,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/OS2.Notes,v 1.4 2005/12/21 05:39:05 kem Exp $

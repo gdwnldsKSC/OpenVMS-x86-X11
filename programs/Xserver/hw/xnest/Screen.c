@@ -14,8 +14,12 @@ is" without express or implied warranty.
 */
 /* $XFree86: xc/programs/Xserver/hw/xnest/Screen.c,v 3.12 2003/11/14 22:25:59 dawes Exp $ */
 
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_XNEST_CONFIG_H
+#include <xnest-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "scrnintstr.h"
 #include "dix.h"
 #include "mi.h"
@@ -249,6 +253,16 @@ xnestOpenScreen(int index, ScreenPtr pScreen, int argc, char *argv[])
     xnestHeight = gattributes.height;
   }
 
+  /* myNum */
+  /* id */
+  miScreenInit(pScreen, NULL, xnestWidth, xnestHeight, 1, 1, xnestWidth,
+	       rootDepth,
+	       numDepths, depths,
+	       defaultVisual, /* root visual */
+	       numVisuals, visuals);
+
+/*  miInitializeBackingStore(pScreen); */
+
   pScreen->defColormap = (Colormap) FakeClientID(0);
   pScreen->minInstalledCmaps = MINCMAPS;
   pScreen->maxInstalledCmaps = MAXCMAPS;
@@ -332,15 +346,6 @@ xnestOpenScreen(int index, ScreenPtr pScreen, int argc, char *argv[])
   pScreen->WakeupHandler = (ScreenWakeupHandlerProcPtr)NoopDDA;
   pScreen->blockData = NULL;
   pScreen->wakeupData = NULL;
-  /* myNum */
-  /* id */
-  miScreenInit(pScreen, NULL, xnestWidth, xnestHeight, 1, 1, xnestWidth,
-	       rootDepth,
-	       numDepths, depths,
-	       defaultVisual, /* root visual */
-	       numVisuals, visuals);
-
-/*  miInitializeBackingStore(pScreen); */
 
   miPointerInitialize (pScreen, &xnestPointerSpriteFuncs, 
 		       &xnestPointerCursorFuncs, True);
@@ -359,6 +364,11 @@ xnestOpenScreen(int index, ScreenPtr pScreen, int argc, char *argv[])
 
   if (!miScreenDevPrivateInit(pScreen, xnestWidth, NULL))
       return FALSE;
+
+#ifdef SHAPE
+  /* overwrite miSetShape with our own */
+  pScreen->SetShape = xnestSetShape;
+#endif /* SHAPE */
 
   /* devPrivates */
 

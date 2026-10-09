@@ -48,7 +48,11 @@ SOFTWARE.
 ******************************************************************/
 /* $XConsortium: afbpushpxl.c,v 5.6 94/04/17 20:28:31 dpw Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "gcstruct.h"
 #include "scrnintstr.h"
 #include "pixmapstr.h"
@@ -184,7 +188,7 @@ afbPushPixels(pGC, pBitMap, pDrawable, dx, dy, xOrg, yOrg)
 		pwEnd = pwLineStart + dxDivPPW;
 		while(pw  < pwEnd) {
 			w = *pw;
-			mask = endtab[1];
+			mask = mfbGetendtab(1);
 			for(ib = 0; ib < PPW; ib++) {
 				if(w & mask) {
 					if(!fInBox) {
@@ -214,7 +218,7 @@ afbPushPixels(pGC, pBitMap, pDrawable, dx, dy, xOrg, yOrg)
 		if(ibEnd) {
 			/* Process final partial word on line */
 			w = *pw;
-			mask = endtab[1];
+			mask = mfbGetendtab(1);
 			for(ib = 0; ib < ibEnd; ib++) {
 				if(w & mask) {
 					if(!fInBox) {

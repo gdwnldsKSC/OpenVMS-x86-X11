@@ -12,6 +12,7 @@ lib/libXThrStub.so.6.1
 lib/libXTrap.so.6.4
 lib/libXaw.so.6.1
 lib/libXaw.so.7.0
+lib/libXaw.so.8.0
 lib/libXcursor.so.1.0.2
 lib/libXext.so.6.4
 lib/libXfont.so.1.5
@@ -45,3 +46,7 @@ lib/libpsres.so.1.0
 lib/libxkbfile.so.1.0
 lib/libxkbui.so.1.0
 lib/libxrx.so.6.3
+lib/libXcomposite.so.1.0
+lib/libXdamage.so.1.0
+lib/libXevie.so.1.0
+lib/libXfixes.so.3.0

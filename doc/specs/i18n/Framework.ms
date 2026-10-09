@@ -1,5 +1,5 @@
 .\" $Xorg: Framework.ms,v 1.3 2000/08/17 19:42:49 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/i18n/Framework.ms,v 1.3 2004/09/03 16:18:22 kem Exp $
+.\" $XdotOrg: xc/doc/specs/i18n/Framework.ms,v 1.4 2005/12/20 16:04:42 kem Exp $
 .\" To print this out, type tbl macros.t ThisFile | troff -ms
 .\" $XFree86: xc/doc/specs/i18n/Framework.ms,v 1.4 2001/01/17 16:57:45 dawes Exp $
 .EH ''''
@@ -67,8 +67,8 @@ in this Software without prior written authorization from the X Consortium.
 .ps 11
 .nr PS 11
 .bp 1
-.EH '\fBSample Implementation Frame Work\fP''\fBX11, Release 6.8\fP'
-.OH '\fBSample Implementation Frame Work\fP''\fBX11, Release 6.8\fP'
+.EH '\fBSample Implementation Frame Work\fP''\fBX11, Release 6.9/7.0\fP'
+.OH '\fBSample Implementation Frame Work\fP''\fBX11, Release 6.9/7.0\fP'
 .EF ''\fB % \fP''
 .OF ''\fB % \fP''
 .NH 1

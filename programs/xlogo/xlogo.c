@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 
 /* $XFree86: xc/programs/xlogo/xlogo.c,v 3.7 2001/07/25 15:05:26 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Intrinsic.h>
 #include <X11/StringDefs.h>
 #include <X11/Shell.h>
@@ -57,6 +60,7 @@ static XrmOptionDescRec options[] = {
 {"-sharp", "*sharp", XrmoptionNoArg, "TRUE"},
 #endif
 {"-v",         "Verbose",     XrmoptionNoArg,  "TRUE"},
+{"-q",         "Quiet",       XrmoptionNoArg,  "TRUE"},
 #ifdef INCLUDE_XPRINT_SUPPORT
 {"-print",     "Print",       XrmoptionNoArg,  "TRUE"},
 {"-printer",   "printer",     XrmoptionSepArg, NULL},
@@ -80,6 +84,7 @@ XLogoResourceData userOptions;
 
 XtResource resources[] = {
   {"verbose",   "Verbose",   XtRBoolean, sizeof(Boolean), Offset(verbose),      XtRImmediate, (XtPointer)False},
+  {"quiet",     "Quiet",     XtRBoolean, sizeof(Boolean), Offset(quiet),        XtRImmediate, (XtPointer)False},
 #ifdef INCLUDE_XPRINT_SUPPORT
   {"print",     "Print",     XtRBoolean, sizeof(Boolean), Offset(printAndExit), XtRImmediate, (XtPointer)False},
   {"printer",   "Printer",   XtRString,  sizeof(String),  Offset(printername),  XtRImmediate, (XtPointer)NULL},
@@ -128,6 +133,7 @@ Syntax(Widget toplevel)
     reasons[n++] = "Usage: ";
     reasons[n++] = (String)ProgramName;
     reasons[n++] = " [-fg <color>] [-bg <color>] [-rv] [-bw <pixels>] [-bd <color>]\n";
+    reasons[n++] = "             [-v] [-q]\n";
     reasons[n++] = "             [-d [<host>]:[<vs>]]\n";
     reasons[n++] = "             [-g [<width>][x<height>][<+-><xoff>[<+-><yoff>]]]\n";
 #ifdef INCLUDE_XPRINT_SUPPORT

@@ -31,7 +31,10 @@ in this Software without prior written authorization from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
-#include    "fntfilst.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include    <X11/fonts/fntfilst.h>
 #ifdef _XOPEN_SOURCE
 #include <math.h>
 #else

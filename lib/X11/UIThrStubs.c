@@ -49,6 +49,9 @@
  */
 
 #ifdef CTHREADS
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <cthreads.h>
 typedef cthread_t xthread_t;
 #define xthread_self cthread_self
@@ -99,7 +102,7 @@ typedef pthread_t xthread_t;
 #else
 #include <pthread.h>
 typedef pthread_t xthread_t;
-#if __GNUC__ >= 3
+#if __GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
 xthread_t pthread_self()    __attribute__ ((weak, alias ("_Xthr_self_stub_")));
 int pthread_mutex_init()    __attribute__ ((weak, alias ("_Xthr_zero_stub_")));
 int pthread_mutex_destroy() __attribute__ ((weak, alias ("_Xthr_zero_stub_")));

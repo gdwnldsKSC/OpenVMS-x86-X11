@@ -3,8 +3,12 @@
 /*
    Copyright (c) 1999,  The XFree86 Project Inc. 
    Code adapted from mga/mga_shadow.c (Mark Vojkovich <markv@valinux.com>)
-   by Michel Dänzer <michdaen@iiic.ethz.ch>
+   by Michel DÃ¤nzer <michdaen@iiic.ethz.ch>
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "xf86.h"
 #include "xf86_OSproc.h"

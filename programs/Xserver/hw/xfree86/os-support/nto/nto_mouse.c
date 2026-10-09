@@ -4,7 +4,11 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/os-support/nto/nto_mouse.c,v 1.1 2001/11/16 16:47:56 dawes Exp $ */
 
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "xf86.h"
 #include "xf86Xinput.h"
 #include "xf86OSmouse.h"
@@ -95,6 +99,7 @@ int what;
                     AddEnabledDevice(pInfo->fd);
                 }
                 pMse->lastButtons = 0;
+                pMse->lastMappedButtons = 0;
                 pMse->emulateState = 0;
                 pPointer->public.on = TRUE;
                 break;

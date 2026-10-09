@@ -3,6 +3,41 @@
 #ifndef _S3BCI_H_
 #define _S3BCI_H_
 
+
+/* BCI Control Register */
+#define   S3_BCI_CONTROL                0x816C
+
+/*
+ *  High 8 bit of primary bitmap descriptor 2 register.
+ *  Bits 25-24: Tile Format  00 = Linear ; 10 = 16 bits; 11 = 32 bits (Savage4)
+ *            00 = Linear ; 01 = Tile; 10 = Texture tiling format/ Destination Tiling format      
+ *            11 = Reserved/Destination tiling format. 
+ */
+
+
+#define   TILE_LINEAR                   0
+#define   TILE_FORMAT_LINEAR            0
+#define   TILE_TEXTURE                  2
+#define   TILE_DESTINATION              1
+#define   TILE_FORMAT_16BPP     	2
+#define   TILE_FORMAT_32BPP     	3
+
+/* BD - BCI enable */
+/* savage4, MX, IX, 3D */
+#define   BCI_ENABLE                    8
+/* twister, prosavage, DDR, supersavage, 2000 */
+#define   BCI_ENABLE_TWISTER            0
+
+#define   S3_BIG_ENDIAN                    4
+#define   S3_LITTLE_ENDIAN                 0
+#define   S3_BD64                          1
+
+
+ 
+/*  Global Bitmap Descriptor */
+#define   S3_BCI_GLB_BD_LOW             0x8168
+#define   S3_BCI_GLB_BD_HIGH            0x816C
+
 #define REVERSE_BYTE_ORDER32(dword) {\
     unsigned int temp; \
     dword =  (temp & 0xFF) << 24; \
@@ -71,11 +106,13 @@
 #define BCI_BD_TILE_MASK             0x03000000
 #define BCI_BD_TILE_NONE             0x00000000
 #define BCI_BD_TILE_16               0x02000000
-#define BCI_BD_TILE_32               0x04000000
+#define BCI_BD_TILE_32               0x03000000
 #define BCI_BD_GET_BPP(bd)           (((bd) >> 16) & 0xFF)
 #define BCI_BD_SET_BPP(bd, bpp)      ((bd) |= (((bpp) & 0xFF) << 16))
 #define BCI_BD_GET_STRIDE(bd)        ((bd) & 0xFFFF)
 #define BCI_BD_SET_STRIDE(bd, st)    ((bd) |= ((st) & 0xFFFF))
+
+#define BCI_SET_REGISTER             0x96000000
 
 #define BCI_W_H(w, h)                ((((h) << 16) | (w)) & 0x0FFF0FFF)
 #define BCI_X_Y(x, y)                ((((y) << 16) | (x)) & 0x0FFF0FFF)

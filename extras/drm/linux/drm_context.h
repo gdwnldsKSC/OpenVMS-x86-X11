@@ -40,13 +40,7 @@
  *		needed by SiS driver's memory management.
  */
 
-#define __NO_VERSION__
 #include "drmP.h"
-
-#if !__HAVE_CTX_BITMAP
-#error "__HAVE_CTX_BITMAP must be defined"
-#endif
-
 
 /******************************************************************/
 /** \name Context bitmap support */
@@ -420,10 +414,13 @@ int DRM(addctx)( struct inode *inode, struct file *filp,
 				/* Should this return -EBUSY instead? */
 		return -ENOMEM;
 	}
-#ifdef DRIVER_CTX_CTOR
+
 	if ( ctx.handle != DRM_KERNEL_CONTEXT )
-		DRIVER_CTX_CTOR(ctx.handle); /* XXX: also pass dev ? */
-#endif
+	{
+		if (dev->fn_tbl.context_ctor)
+			dev->fn_tbl.context_ctor(dev, ctx.handle);
+	}
+
 	ctx_entry = DRM(alloc)( sizeof(*ctx_entry), DRM_MEM_CTXLIST );
 	if ( !ctx_entry ) {
 		DRM_DEBUG("out of memory\n");
@@ -555,9 +552,8 @@ int DRM(rmctx)( struct inode *inode, struct file *filp,
 		priv->remove_auth_on_close = 1;
 	}
 	if ( ctx.handle != DRM_KERNEL_CONTEXT ) {
-#ifdef DRIVER_CTX_DTOR
-		DRIVER_CTX_DTOR(ctx.handle); /* XXX: also pass dev ? */
-#endif
+		if (dev->fn_tbl.context_dtor)
+			dev->fn_tbl.context_dtor(dev, ctx.handle);
 		DRM(ctxbitmap_free)( dev, ctx.handle );
 	}
 
@@ -579,3 +575,4 @@ int DRM(rmctx)( struct inode *inode, struct file *filp,
 }
 
 /*@}*/
+

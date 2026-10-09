@@ -49,8 +49,12 @@ SOFTWARE.
 
 /* $Xorg: cursor.c,v 1.4 2001/02/09 02:04:39 xorgcvs Exp $ */
 
-#include "X.h"
-#include "Xmd.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xmd.h>
 #include "servermd.h"
 #include "scrnintstr.h"
 #include "dixstruct.h"
@@ -100,14 +104,13 @@ FreeCursorBits(CursorBitsPtr bits)
     }
 }
 
-/*
- * To be called indirectly by DeleteResource; must use exactly two args
+/**
+ * To be called indirectly by DeleteResource; must use exactly two args.
+ *
+ *  \param value must conform to DeleteType
  */
-/*ARGSUSED*/
 int
-FreeCursor(value, cid)
-    pointer	value; /* must conform to DeleteType */
-    XID 	cid;	
+FreeCursor(pointer value, XID cid)
 {
     int		nscr;
     CursorPtr 	pCurs = (CursorPtr)value;
@@ -152,19 +155,19 @@ CheckForEmptyMask(CursorBitsPtr bits)
     bits->emptyMask = TRUE;
 }
 
-/*
+/**
  * does nothing about the resource table, just creates the data structure.
  * does not copy the src and mask bits
+ *
+ *  \param psrcbits  server-defined padding
+ *  \param pmaskbits server-defined padding
+ *  \param argb      no padding
  */
 CursorPtr 
-AllocCursorARGB(psrcbits, pmaskbits, argb, cm,
-	    foreRed, foreGreen, foreBlue, backRed, backGreen, backBlue)
-    unsigned char *	psrcbits;		/* server-defined padding */
-    unsigned char *	pmaskbits;		/* server-defined padding */
-    CARD32 *		argb;			/* no padding */
-    CursorMetricPtr	cm;
-    unsigned		foreRed, foreGreen, foreBlue;
-    unsigned		backRed, backGreen, backBlue;
+AllocCursorARGB(unsigned char *psrcbits, unsigned char *pmaskbits, CARD32 *argb, 
+                CursorMetricPtr cm,
+                unsigned foreRed, unsigned foreGreen, unsigned foreBlue, 
+                unsigned backRed, unsigned backGreen, unsigned backBlue)
 {
     CursorBitsPtr  bits;
     CursorPtr 	pCurs;
@@ -227,14 +230,16 @@ AllocCursorARGB(psrcbits, pmaskbits, argb, cm,
     return pCurs;
 }
 
+/**
+ *
+ * \param psrcbits   server-defined padding
+ * \param pmaskbits  server-defined padding
+ */
 CursorPtr 
-AllocCursor(psrcbits, pmaskbits, cm,
-	    foreRed, foreGreen, foreBlue, backRed, backGreen, backBlue)
-    unsigned char *	psrcbits;		/* server-defined padding */
-    unsigned char *	pmaskbits;		/* server-defined padding */
-    CursorMetricPtr	cm;
-    unsigned		foreRed, foreGreen, foreBlue;
-    unsigned		backRed, backGreen, backBlue;
+AllocCursor(unsigned char *psrcbits, unsigned char *pmaskbits, 
+            CursorMetricPtr cm,
+            unsigned foreRed, unsigned foreGreen, unsigned foreBlue,
+            unsigned backRed, unsigned backGreen, unsigned backBlue)
 {
     return AllocCursorARGB (psrcbits, pmaskbits, (CARD32 *) 0, cm,
 			    foreRed, foreGreen, foreBlue,
@@ -242,15 +247,10 @@ AllocCursor(psrcbits, pmaskbits, cm,
 }
 
 int
-AllocGlyphCursor(source, sourceChar, mask, maskChar,
-		 foreRed, foreGreen, foreBlue, backRed, backGreen, backBlue,
-		 ppCurs, client)
-    Font source, mask;
-    unsigned int sourceChar, maskChar;
-    unsigned foreRed, foreGreen, foreBlue;
-    unsigned backRed, backGreen, backBlue;
-    CursorPtr *ppCurs;
-    ClientPtr client;
+AllocGlyphCursor(Font source, unsigned sourceChar, Font mask, unsigned maskChar,
+                unsigned foreRed, unsigned foreGreen, unsigned foreBlue, 
+                unsigned backRed, unsigned backGreen, unsigned backBlue,
+                CursorPtr *ppCurs, ClientPtr client)
 {
     FontPtr  sourcefont, maskfont;
     unsigned char   *srcbits;
@@ -422,8 +422,7 @@ AllocGlyphCursor(source, sourceChar, mask, maskChar,
     return Success;
 }
 
-/***********************************************************
- * CreateRootCursor
+/** CreateRootCursor
  *
  * look up the name of a font
  * open the font
@@ -433,9 +432,7 @@ AllocGlyphCursor(source, sourceChar, mask, maskChar,
  *************************************************************/
 
 CursorPtr 
-CreateRootCursor(pfilename, glyph)
-    char *		pfilename;
-    unsigned int	glyph;
+CreateRootCursor(char *pfilename, unsigned glyph)
 {
     CursorPtr 	curs;
     FontPtr 	cursorfont;

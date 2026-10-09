@@ -26,7 +26,11 @@ from The Open Group.
 */
 /* $XFree86: xc/programs/Xserver/os/secauth.c,v 1.10 2001/08/01 00:44:59 tsi Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "os.h"
 #include "osdep.h"
 #include "dixstruct.h"
@@ -34,7 +38,7 @@ from The Open Group.
 
 #ifdef XCSECURITY
 #define _SECURITY_SERVER
-#include "extensions/security.h"
+#include <X11/extensions/security.h>
 #endif
 
 #ifdef XCSECURITY

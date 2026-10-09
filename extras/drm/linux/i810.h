@@ -36,10 +36,6 @@
 
 /* General customization:
  */
-#define __HAVE_AGP		1
-#define __MUST_HAVE_AGP		1
-#define __HAVE_MTRR		1
-#define __HAVE_CTX_BITMAP	1
 
 #define DRIVER_AUTHOR		"VA Linux Systems Inc."
 
@@ -77,48 +73,5 @@
 	[DRM_IOCTL_NR(DRM_IOCTL_I810_MC)]      = { i810_dma_mc,     1, 1 }, \
 	[DRM_IOCTL_NR(DRM_IOCTL_I810_RSTATUS)] = { i810_rstatus,    1, 0 }, \
 	[DRM_IOCTL_NR(DRM_IOCTL_I810_FLIP)] =    { i810_flip_bufs,  1, 0 }
-
-#define __HAVE_COUNTERS         4
-#define __HAVE_COUNTER6         _DRM_STAT_IRQ
-#define __HAVE_COUNTER7         _DRM_STAT_PRIMARY
-#define __HAVE_COUNTER8         _DRM_STAT_SECONDARY
-#define __HAVE_COUNTER9         _DRM_STAT_DMA
-
-/* Driver customization:
- */
-#define __HAVE_RELEASE		1
-#define DRIVER_RELEASE() do {						\
-	i810_reclaim_buffers( filp );					\
-} while (0)
-
-#define DRIVER_PRETAKEDOWN( dev ) do {					\
-	i810_dma_cleanup( dev );					\
-} while (0)
-
-/* DMA customization:
- */
-#define __HAVE_DMA		1
-#define __HAVE_DMA_QUEUE	1
-#define __HAVE_DMA_WAITLIST	0
-#define __HAVE_DMA_RECLAIM	1
-
-#define __HAVE_DMA_QUIESCENT	1
-#define DRIVER_DMA_QUIESCENT() do {					\
-	i810_dma_quiescent( dev );					\
-} while (0)
-
-/* Don't need an irq any more.  The template code will make sure that
- * a noop stub is generated for compatibility.
- */
-/* XXX: Add vblank support? */
-#define __HAVE_IRQ		0
-
-/* Buffer customization:
- */
-
-#define DRIVER_BUF_PRIV_T	drm_i810_buf_priv_t
-
-#define DRIVER_AGP_BUFFERS_MAP( dev )					\
-	((drm_i810_private_t *)((dev)->dev_private))->buffer_map
 
 #endif

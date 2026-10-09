@@ -28,6 +28,7 @@
 #include <sys/time.h>
 #include "dri_util.h"
 #include "via_dri.h"
+#include "xmlconfig.h"
 
 typedef struct {
     viaRegion regs;
@@ -43,9 +44,6 @@ typedef struct {
     int fbFormat;
     int fbOffset;
     int fbSize;
-#ifdef USE_XINERAMA
-    Bool drixinerama;
-#endif
     
     int fbStride;
 
@@ -61,14 +59,19 @@ typedef struct {
     
     drmAddress reg;
     drmAddress agpLinearStart;
-    GLuint* agpBase;
+    GLuint agpBase;
 
     __DRIscreenPrivate *driScrnPriv;
     drmBufMapPtr bufs;
     unsigned int sareaPrivOffset;
     /*=* John Sheng [2003.12.9] Tuxracer & VQ *=*/
     int VQEnable;
+    int irqEnabled;
+
+    /* Configuration cache with default values for all contexts */
+    driOptionCache optionCache;
 } viaScreenPrivate;
+
 
 extern GLboolean
 viaCreateContext(const __GLcontextModes *mesaVis,

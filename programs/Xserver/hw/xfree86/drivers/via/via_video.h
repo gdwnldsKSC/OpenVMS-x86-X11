@@ -1,4 +1,3 @@
-/* $XFree86$ */
 /*
  * Copyright 1998-2003 VIA Technologies, Inc. All Rights Reserved.
  * Copyright 2001-2003 S3 Graphics, Inc. All Rights Reserved.
@@ -17,9 +16,9 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- * VIA, S3 GRAPHICS, AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
 
@@ -30,104 +29,81 @@
  * I N C L U D E S
  */
 
-/* #define   XV_DEBUG      1 */   /* write log msg to /var/log/XFree86.0.log */
 #define   COLOR_KEY       1    /* set color key value from driver layer*/
-
-#ifdef XV_DEBUG
-# define DBG_DD(x) (x)
-#else
-# define DBG_DD(x)
-#endif
 
 #define HW_3123
 
-#define TRUE        1
-#define FALSE       0
-
 /* Definition for VideoStatus */
-#define VIDEO_NULL              0x00000000
-#define TV0SURFACE_CREATED      0x00000001
-#define TV1SURFACE_CREATED      0x00000002
-#define SWOV_SURFACE_CREATED    0x00000004
-#define HW_MPEG_ON              0x00000010
-#define TV0_VIDEO_ON            0x00000020
-#define TV1_VIDEO_ON            0x00000040
-#define SW_VIDEO_ON             0x00000080
+#define VIDEO_NULL                  0x00000000
+#define VIDEO_SWOV_SURFACE_CREATED  0x00000001
+#define VIDEO_SWOV_ON               0x00000002
 
-typedef struct {
-  unsigned long dwWidth;          /* On screen Width                  */
-  unsigned long dwHeight;         /* On screen Height                 */
-  unsigned long dwBPP;            /* Bits Per Pixel                   */
-  unsigned long dwRefreshRate;    /* Refresh rate of the mode         */
-}MODEINFO, * LPMODEINFO;
+#define SINGLE_3205_100 0.41
+#define SINGLE_3205_133 0.70
 
-#define SDR100  1
-#define SDR133  2
-#define DDR100  3
-#define DDR133  4
-
+#define VIDEO_BPP 2
 
 typedef struct{ 
-      unsigned long interruptflag;         /* 200 */
-      unsigned long ramtab;                /* 204 */
-      unsigned long alphawin_hvstart;      /* 208 */
-      unsigned long alphawin_size;         /* 20c */
-      unsigned long alphawin_ctl;          /* 210 */
-      unsigned long crt_startaddr;         /* 214 */
-      unsigned long crt_startaddr_2;       /* 218 */
-      unsigned long alphafb_stride ;       /* 21c */
-      unsigned long color_key;             /* 220 */
-      unsigned long alphafb_addr;          /* 224 */
-      unsigned long chroma_low;            /* 228 */
-      unsigned long chroma_up;             /* 22c */
-      unsigned long video1_ctl;            /* 230 */
-      unsigned long video1_fetch;          /* 234 */
-      unsigned long video1y_addr1;         /* 238 */
-      unsigned long video1_stride;         /* 23c */
-      unsigned long video1_hvstart;        /* 240 */
-      unsigned long video1_size;           /* 244 */
-      unsigned long video1y_addr2;         /* 248 */
-      unsigned long video1_zoom;           /* 24c */
-      unsigned long video1_mictl;          /* 250 */
-      unsigned long video1y_addr0;         /* 254 */
-      unsigned long video1_fifo;           /* 258 */
-      unsigned long video1y_addr3;         /* 25c */
-      unsigned long hi_control;            /* 260 */
-      unsigned long snd_color_key;         /* 264 */
-      unsigned long v3alpha_prefifo;       /* 268 */
-      unsigned long v1_source_w_h;         /* 26c */
-      unsigned long hi_transparent_color;  /* 270 */
-      unsigned long v_display_temp;        /* 274 :No use */
-      unsigned long v3alpha_fifo;          /* 278 */
-      unsigned long v3_source_width;       /* 27c */
-      unsigned long dummy1;                /* 280 */
-      unsigned long video1_CSC1;           /* 284 */
-      unsigned long video1_CSC2;           /* 288 */
-      unsigned long video1u_addr0;         /* 28c */
-      unsigned long video1_opqctl;         /* 290 */
-      unsigned long video3_opqctl;         /* 294 */
-      unsigned long compose;               /* 298 */
-      unsigned long dummy2;                /* 29c */
-      unsigned long video3_ctl;            /* 2a0 */
-      unsigned long video3_addr0;          /* 2a4 */
-      unsigned long video3_addr1;          /* 2a8 */
-      unsigned long video3_stribe;         /* 2ac */
-      unsigned long video3_hvstart;        /* 2b0 */
-      unsigned long video3_size;           /* 2b4 */
-      unsigned long v3alpha_fetch;         /* 2b8 */
-      unsigned long video3_zoom;           /* 2bc */
-      unsigned long video3_mictl;          /* 2c0 */
-      unsigned long video3_CSC1;           /* 2c4 */
-      unsigned long video3_CSC2;           /* 2c8 */
-      unsigned long v3_display_temp;       /* 2cc */
-      unsigned long reserved[5];           /* 2d0 */
-      unsigned long video1u_addr1;         /* 2e4 */
-      unsigned long video1u_addr2;         /* 2e8 */
-      unsigned long video1u_addr3;         /* 2ec */
-      unsigned long video1v_addr0;         /* 2f0 */
-      unsigned long video1v_addr1;         /* 2f4 */
-      unsigned long video1v_addr2;         /* 2f8 */
-      unsigned long video1v_addr3;         /* 2fc */
+      CARD32 interruptflag;         /* 200 */
+      CARD32 ramtab;                /* 204 */
+      CARD32 alphawin_hvstart;      /* 208 */
+      CARD32 alphawin_size;         /* 20c */
+      CARD32 alphawin_ctl;          /* 210 */
+      CARD32 crt_startaddr;         /* 214 */
+      CARD32 crt_startaddr_2;       /* 218 */
+      CARD32 alphafb_stride ;       /* 21c */
+      CARD32 color_key;             /* 220 */
+      CARD32 alphafb_addr;          /* 224 */
+      CARD32 chroma_low;            /* 228 */
+      CARD32 chroma_up;             /* 22c */
+      CARD32 video1_ctl;            /* 230 */
+      CARD32 video1_fetch;          /* 234 */
+      CARD32 video1y_addr1;         /* 238 */
+      CARD32 video1_stride;         /* 23c */
+      CARD32 video1_hvstart;        /* 240 */
+      CARD32 video1_size;           /* 244 */
+      CARD32 video1y_addr2;         /* 248 */
+      CARD32 video1_zoom;           /* 24c */
+      CARD32 video1_mictl;          /* 250 */
+      CARD32 video1y_addr0;         /* 254 */
+      CARD32 video1_fifo;           /* 258 */
+      CARD32 video1y_addr3;         /* 25c */
+      CARD32 hi_control;            /* 260 */
+      CARD32 snd_color_key;         /* 264 */
+      CARD32 v3alpha_prefifo;       /* 268 */
+      CARD32 v1_source_w_h;         /* 26c */
+      CARD32 hi_transparent_color;  /* 270 */
+      CARD32 v_display_temp;        /* 274 :No use */
+      CARD32 v3alpha_fifo;          /* 278 */
+      CARD32 v3_source_width;       /* 27c */
+      CARD32 dummy1;                /* 280 */
+      CARD32 video1_CSC1;           /* 284 */
+      CARD32 video1_CSC2;           /* 288 */
+      CARD32 video1u_addr0;         /* 28c */
+      CARD32 video1_opqctl;         /* 290 */
+      CARD32 video3_opqctl;         /* 294 */
+      CARD32 compose;               /* 298 */
+      CARD32 dummy2;                /* 29c */
+      CARD32 video3_ctl;            /* 2a0 */
+      CARD32 video3_addr0;          /* 2a4 */
+      CARD32 video3_addr1;          /* 2a8 */
+      CARD32 video3_stribe;         /* 2ac */
+      CARD32 video3_hvstart;        /* 2b0 */
+      CARD32 video3_size;           /* 2b4 */
+      CARD32 v3alpha_fetch;         /* 2b8 */
+      CARD32 video3_zoom;           /* 2bc */
+      CARD32 video3_mictl;          /* 2c0 */
+      CARD32 video3_CSC1;           /* 2c4 */
+      CARD32 video3_CSC2;           /* 2c8 */
+      CARD32 v3_display_temp;       /* 2cc */
+      CARD32 reserved[5];           /* 2d0 */
+      CARD32 video1u_addr1;         /* 2e4 */
+      CARD32 video1u_addr2;         /* 2e8 */
+      CARD32 video1u_addr3;         /* 2ec */
+      CARD32 video1v_addr0;         /* 2f0 */
+      CARD32 video1v_addr1;         /* 2f4 */
+      CARD32 video1v_addr2;         /* 2f8 */
+      CARD32 video1v_addr3;         /* 2fc */
 }  video_via_regs;     
 
 #define vmmtr volatile video_via_regs *

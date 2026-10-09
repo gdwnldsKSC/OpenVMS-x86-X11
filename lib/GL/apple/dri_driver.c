@@ -60,9 +60,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifdef GLX_DIRECT_RENDERING
 
+/* These are first to ensure that Apple's GL headers are used. */
+#include <OpenGL/OpenGL.h>
+#include <OpenGL/CGLContext.h>
+
 #include <unistd.h>
 #include <X11/Xlibint.h>
 #include <X11/extensions/Xext.h>
+
+#define GLAPIENTRYP *
 #include "extutil.h"
 #include "glxclient.h"
 #include "appledri.h"

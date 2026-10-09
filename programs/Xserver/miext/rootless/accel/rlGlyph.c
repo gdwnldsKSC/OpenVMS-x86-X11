@@ -1,7 +1,7 @@
 /*
  * This code is largely copied from fbglyph.c.
  *
- * Copyright © 1998 Keith Packard
+ * Copyright Â© 1998 Keith Packard
  * Copyright (c) 2003 Torrey T. Lyons. All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -24,8 +24,12 @@
  */
 /* $XFree86: xc/programs/Xserver/fb/fbglyph.c,v 1.12 2001/09/07 15:16:00 keithp Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "fb.h"
-#include "fontstruct.h"
+#include <X11/fonts/fontstruct.h>
 #include "dixfontstr.h"
 #include "rlAccel.h"
 

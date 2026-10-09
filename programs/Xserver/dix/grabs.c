@@ -48,10 +48,14 @@ SOFTWARE.
 */
 /* $XFree86: xc/programs/Xserver/dix/grabs.c,v 3.4 2002/02/19 11:09:22 alanh Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "misc.h"
 #define NEED_EVENTS
-#include "Xproto.h"
+#include <X11/Xproto.h>
 #include "windowstr.h"
 #include "inputstr.h"
 #include "cursorstr.h"
@@ -123,11 +127,8 @@ FreeGrab(GrabPtr pGrab)
     xfree(pGrab);
 }
 
-/*ARGSUSED*/
 int
-DeletePassiveGrab(value, id)
-    pointer value;
-    XID   id;
+DeletePassiveGrab(pointer value, XID id)
 {
     register GrabPtr g, prev;
     GrabPtr pGrab = (GrabPtr)value;
@@ -240,8 +241,7 @@ GrabSupersedesSecond(GrabPtr pFirstGrab, GrabPtr pSecondGrab)
 }
 
 Bool
-GrabMatchesSecond(pFirstGrab, pSecondGrab)
-    GrabPtr pFirstGrab, pSecondGrab;
+GrabMatchesSecond(GrabPtr pFirstGrab, GrabPtr pSecondGrab)
 {
     if ((pFirstGrab->device != pSecondGrab->device) ||
 	(pFirstGrab->modifierDevice != pSecondGrab->modifierDevice) ||
@@ -272,8 +272,7 @@ GrabMatchesSecond(pFirstGrab, pSecondGrab)
 }
 
 int
-AddPassiveGrabToList(pGrab)
-    GrabPtr pGrab;
+AddPassiveGrabToList(GrabPtr pGrab)
 {
     GrabPtr grab;
 
@@ -306,8 +305,7 @@ AddPassiveGrabToList(pGrab)
  */
 
 Bool
-DeletePassiveGrabFromList(pMinuendGrab)
-    GrabPtr pMinuendGrab;
+DeletePassiveGrabFromList(GrabPtr pMinuendGrab)
 {
     register GrabPtr grab;
     GrabPtr *deletes, *adds;

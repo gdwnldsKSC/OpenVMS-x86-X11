@@ -10,11 +10,16 @@
 
 1.  Statement of intent
 
-Generally speaking, the driver is intended for all ATI video adapters, pro-
-viding maximum video function within hardware limitations.  The driver is
-also intended to optionally provide the same level of support for generic VGA
-or 8514/A adapters.  This driver is still being actively developed, meaning
-that it currently does not yet fully meet these goals.
+Generally speaking, the driver is intended for all ATI video adapters based
+on the Mach64 series or older chipsets, providing maximum video function
+within hardware limitations.  The driver is also intended to optionally pro-
+vide the same level of support for generic VGA or 8514/A adapters.  The newer
+Rage 128 and Radeon chips are not yet supported by this driver.  Rage 128's
+and Radeon's are, however, supported by separate drivers, and owners of such
+adapters should consult the documentation provided with these drivers.  This
+driver will also invoke the appropriate driver if it finds Rage 128 and/or
+Radeon adapter(s) in the system.  This driver is still being actively devel-
+oped, meaning that it currently does not yet fully meet these goals.
 
 The driver will provide
 
@@ -36,10 +41,6 @@ file.  See the ``xorg.conf specifications'' section below for details.
 
 If none of the above conditions are met, the ATI driver will essentially dis-
 able itself to allow other drivers to examine the system.
-
-Note that I am currently considering removing the driver's support for
-generic VGA.  If you have any concerns about this, please contact me at
-<tsi@xfree86.org>.
 
 2.  A note on acceleration
 
@@ -637,19 +638,21 @@ Support for the following will be added in a future release:
 
 If you are experiencing problems that are not already recorded in this docu-
 ment, first ensure that you have the latest current release of this driver
-and the Xorg X server..  Check the server's log (usually found in
+and the Xorg X server.  Check the server's log (usually found in
 /var/log/Xorg.0.log) and ftp://ftp.freedesktop.org/pub/Xorg if you are uncer-
 tain.
 
 Secondly, please check Xorg's doc directory for additional information.
 
 Thirdly, a scan through the comp.windows.x.i386unix and comp.os.linux.x news-
-groups and the xorg mailing list using your favourite archiving service can
-also prove useful in resolving problems.
+groups, the xorg mailing list archives at http://lists.freedesktop.org/mail-
+man/listinfo/xorg, and the Xorg bug database at https://bugs.freedesk-
+top.org/enter_bug.cgi?product=xorg can also prove useful in resolving prob-
+lems.
 
-If you are still experiencing problems, you can send me non-HTMLised e-mail
-at <tsi@xfree86.org>.  Please be as specific as possible when describing the
-problem(s), and include an unedited copy of the server's log and the
+If you are still experiencing problems, you can send non-HTMLised e-mail to
+<xorg@lists.fredesktop.org>.  Please be as specific as possible when describ-
+ing the problem(s), and include an unedited copy of the server's log and the
 xorg.conf file used.
 
 9.  Driver history
@@ -670,8 +673,8 @@ Rik Faith obtained the X11R4 driver from Doug Evans in the summer of 1992 and
 ported the code to the X386 part of X11R5.  This subsequently became part of
 XFree86.
 
-I (Marc Aurele La France) took over development and maintenance of the driver
-in the fall of 1993 after Rik got rid of his VGA Wonder adapter.
+Marc Aurele La France took over development and maintenance of the driver in
+the fall of 1993 after Rik got rid of his VGA Wonder adapter.
 
 10.  Driver versions
 
@@ -702,7 +705,7 @@ newer driver API of XFree86 4.0 and later.
 The introduction of version 6 is a first swipe at porting the driver to non-
 Intel architectures.
 
-     $Id$ Based on XFree86: xc/programs/Xserver/hw/xfree86/doc/sgml/ati.sgml,v 3.42 2003/01/20 03:43:07 dawes Exp
+     Generated from Id: ati.sgml,v 1.3 alanc Exp $ Based on XFree86: xc/programs/Xserver/hw/xfree86/doc/sgml/ati.sgml,v 3.42 2003/01/20 03:43:07 dawes Exp
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.ati,v 1.3.2.1 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.ati,v 1.4 2005/12/21 05:39:05 kem Exp $

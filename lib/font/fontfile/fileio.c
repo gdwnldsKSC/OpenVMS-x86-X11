@@ -31,7 +31,10 @@ in this Software without prior written authorization from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
-#include <fntfilio.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <X11/fonts/fntfilio.h>
 #include <X11/Xos.h>
 #ifndef O_BINARY
 #define O_BINARY O_RDONLY

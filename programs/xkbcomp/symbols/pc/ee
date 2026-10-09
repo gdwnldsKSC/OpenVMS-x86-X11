@@ -1,4 +1,4 @@
-
+// $XdotOrg: xc/programs/xkbcomp/symbols/pc/ee,v 1.3 2005/08/12 11:08:49 pascal Exp $
 // based on
 // Estonian XKB-keymap by Ville Hallik <ville@linux.ee>
 //
@@ -13,7 +13,7 @@ xkb_symbols "basic" {
 
     include "pc/latin(type4)"
 
-    name[Group1]="Estonian";
+    name[Group1]="Estonia";
 
     key <AE03>	{ [         3, numbersign,     sterling,     sterling ]	};
     key <AE04>	{ [         4,   currency,       dollar,       dollar ]	};
@@ -34,7 +34,7 @@ xkb_symbols "basic" {
     key <AB08>	{ [     comma,  semicolon,         less,     multiply ]	};
     key <AB09>	{ [    period,      colon,      greater,     division ]	};
 
-    include "level3(ralt_switch_multikey)"
+    include "level3(ralt_switch)"
 };
 
 partial alphanumeric_keys
@@ -43,6 +43,7 @@ xkb_symbols "nodeadkeys" {
     // Modifies the basic Estonian layout to eliminate all dead keys
 
     include "pc/ee(basic)"
+    name[Group1]="Estonia - Eliminate dead keys";
 
     key <TLDE>	{ [asciicircum,asciitilde ]	};
     key <AE12>	{ [apostrophe,      grave ]	};

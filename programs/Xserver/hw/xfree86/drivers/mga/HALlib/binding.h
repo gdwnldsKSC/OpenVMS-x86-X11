@@ -3,7 +3,7 @@
  @doc MGA MGA_STRUCT
 
  @module MGA Structures | Structure of The MGA Layer
- @normal Copyright © 1997, Matrox Graphics Inc.
+ @normal Copyright Â© 1997, Matrox Graphics Inc.
 
  All Rights Reserved.
 
@@ -243,6 +243,7 @@ ULONG MGAOpenLibrary(LPBOARDHANDLE pBoard, LPVOID lpClient, ULONG ulClientSize);
 ULONG MGAGetBOARDHANDLESize(void);
 ULONG MGASetTVStandard(LPBOARDHANDLE pBoard, ULONG ulTVStandard);
 ULONG MGASetTVCableType(LPBOARDHANDLE pBoard, ULONG ulCableType);
+ULONG HALSetDisplayStart(LPBOARDHANDLE pBoard, ULONG x, ULONG y, ULONG crtc);
 
 #if defined(__cplusplus)
     }

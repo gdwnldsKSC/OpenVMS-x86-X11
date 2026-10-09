@@ -89,7 +89,7 @@ FONTCACHEPROFILEOBJS = fontcache/profiled/?*.o
        SUBDIRS = bitmap fontfile fc $(FONTCACHEDIRS) \
 		 $(SPEEDODIRS) $(TYPE1DIRS) \
 		 $(FREETYPEDIRS) $(BUILTINDIRS) \
-		 util $(STUBDIRS)
+		 util $(STUBDIRS) include
    SHARED_OBJS = bitmap/?*.o fontfile/?*.o fc/?*.o $(FONTCACHESHAREDOBJS) \
 		 $(SPEEDOSHAREDOBJS) $(TYPE1SHAREDOBJS) \
 		 $(FREETYPESHAREDOBJS) \

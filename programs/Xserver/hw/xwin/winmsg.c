@@ -29,8 +29,14 @@
  */
 /* $XFree86$ */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 #include "winmsg.h"
+#if CYGDEBUG
+#include "winmessages.h"
+#endif
 #include <stdarg.h>
 
 void winVMsg (int, MessageType, int verb, const char *, va_list);
@@ -103,6 +109,15 @@ winDebug (const char *format, ...)
 }
 
 void
+winTrace (const char *format, ...)
+{
+  va_list ap;
+  va_start (ap, format);
+  LogVMessageVerb(X_NONE, 10, format, ap);
+  va_end (ap);
+}
+
+void
 winW32Error(int verb, const char *msg)
 {
     winW32ErrorEx(verb, msg, GetLastError());
@@ -131,3 +146,35 @@ winW32ErrorEx(int verb, const char *msg, DWORD errorcode)
         LocalFree(buffer);
     }
 }
+
+#if CYGDEBUG
+void winDebugWin32Message(const char* function, HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+  static int force = 0;
+
+  if (message >= WM_USER)
+    {
+      if (force || getenv("WIN_DEBUG_MESSAGES") || getenv("WIN_DEBUG_WM_USER"))
+      {
+        winDebug("%s - Message WM_USER + %d\n", function, message - WM_USER);
+        winDebug("\thwnd 0x%x wParam 0x%x lParam 0x%x\n", hwnd, wParam, lParam);
+      }
+    }
+  else if (message < MESSAGE_NAMES_LEN && MESSAGE_NAMES[message])
+    {
+      const char *msgname = MESSAGE_NAMES[message];
+      char buffer[64];
+      snprintf(buffer, sizeof(buffer), "WIN_DEBUG_%s", msgname);
+      buffer[63] = 0;
+      if (force || getenv("WIN_DEBUG_MESSAGES") || getenv(buffer))
+      {
+        winDebug("%s - Message %s\n", function, MESSAGE_NAMES[message]);
+        winDebug("\thwnd 0x%x wParam 0x%x lParam 0x%x\n", hwnd, wParam, lParam);
+      }
+    }
+}
+#else
+void winDebugWin32Message(const char* function, HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+}
+#endif

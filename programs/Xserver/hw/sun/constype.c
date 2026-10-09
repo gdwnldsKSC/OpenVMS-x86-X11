@@ -1,4 +1,4 @@
-/*
+/* $XdotOrg: xc/programs/Xserver/hw/sun/constype.c,v 1.3 2005/09/28 17:07:55 alanc Exp $
  * $Xorg: constype.c,v 1.3 2000/08/17 19:48:29 cpqbld Exp $
  * 
  * consoletype - utility to print out string identifying Sun console type
@@ -38,8 +38,25 @@ Note on coding style: the function wu_fbid is actually located in a local
 library, accounting for what otherwise might appear to be a strange coding
 style.
 */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#else
+# if defined(SVR4) || defined(CSRG_BASED)
+#  define STDC_HEADERS 1
+# endif
+# if defined(SVR4) || defined(__bsdi__)
+#  define HAVE_SYS_FBIO_H 1
+#  if defined(SVR4) && defined(sun)
+#   define HAVE_SYS_VISUAL_IO_H 1
+#  endif
+# elif defined(CSRG_BASED)
+#  define HAVE_MACHINE_FBIO_H
+# endif
+#endif
+
 #include <stdio.h>
-#if defined(SVR4) || defined(CSRG_BASED)
+#ifdef STDC_HEADERS
 #include <string.h>
 #else
 /*  SunOS  */
@@ -47,12 +64,10 @@ style.
 #endif
 #include <unistd.h>
 
-int wu_fbid(char *devname, char **fbname, int *fbtype);
+static int wu_fbid(const char *devname, char **fbname, int *fbtype);
 
 int
-main (argc, argv)
-    int argc;
-    char **argv;
+main (int argc, char **argv)
 {
     int fbtype = -1;
     char *fbname, *dev;
@@ -75,21 +90,22 @@ main (argc, argv)
     putchar ('\n');
     return error;
 }
+
 #include <sys/ioctl.h>
 #include <sys/file.h>
-#if defined(SVR4) || defined(__bsdi__)
-#include <fcntl.h>
-#include <sys/fbio.h>
-#if defined(SVR4) && defined(sun)
+#ifdef HAVE_SYS_FBIO_H
+# include <fcntl.h>
+# include <sys/fbio.h>
+# ifdef HAVE_SYS_VISUAL_IO_H
 /* VIS_GETIDENTIFIER ioctl added in Solaris 2.3 */
-#include <sys/visual_io.h>
-#endif
+#  include <sys/visual_io.h> 
+# endif
 #else
-#ifndef CSRG_BASED
-#include <sun/fbio.h>
-#else
-#include <machine/fbio.h>
-#endif
+# ifndef HAVE_MACHINE_FBIO_H
+#  include <sun/fbio.h>
+# else
+#  include <machine/fbio.h>
+# endif
 #endif
 
 /* Sun doesn't see fit to update <sys/fbio.h> to reflect the addition
@@ -111,7 +127,7 @@ static char *decode_fb[] = {
 	"bw1", "cg1",
 	"bw2", "cg2",
 	"gp2",
-	"bw3", "cg3",
+	"cg5", "cg3",
 	"cg8", "cg4",
 	"nsA", "nsB", "nsC", 
 #ifdef FBTYPE_SUNFAST_COLOR
@@ -143,16 +159,13 @@ static char *decode_fb[] = {
 #endif
 	};
 
-int wu_fbid(devname, fbname, fbtype)
-	char* devname;
-	char** fbname;
-	int* fbtype;
+static int
+wu_fbid(const char* devname, char** fbname, int* fbtype)
 {
 	struct fbgattr fbattr;
 	int fd, ioctl_ret;
 #ifdef VIS_GETIDENTIFIER
 	int vistype;
-	char *visname = NULL;
 	struct vis_identifier fbid;
 #endif
 
@@ -163,7 +176,10 @@ int wu_fbid(devname, fbname, fbtype)
 
 #ifdef VIS_GETIDENTIFIER
 	if ((vistype = ioctl(fd, VIS_GETIDENTIFIER, &fbid)) >= 0) {
-	    visname = fbid.name;
+	    *fbname = fbid.name;
+	    *fbtype = vistype;
+	    close(fd);
+	    return 0;
 	}
 #endif
 
@@ -172,13 +188,6 @@ int wu_fbid(devname, fbname, fbtype)
 	    ioctl_ret = ioctl(fd, FBIOGTYPE, &fbattr.fbtype);
 	close(fd);
 	if ( ioctl_ret == -1 ) {
-#ifdef VIS_GETIDENTIFIER
-	    if (visname != NULL) {
-		*fbname = visname;
-		*fbtype = vistype;
-		return 0;
-	    } 
-#endif
 	    *fbname = "ioctl on fb failed";
 	    return 2;
 	}
@@ -191,13 +200,6 @@ int wu_fbid(devname, fbname, fbtype)
 		*fbname = "tcx";
 		return 0;
 	    } else {
-#ifdef VIS_GETIDENTIFIER
-		if (visname != NULL) {
-		    *fbname = visname;
-		    *fbtype = vistype;
-		    return 0;
-		} 
-#endif
 		*fbname = "unk";
 		return 1;
 	    }
@@ -206,13 +208,6 @@ int wu_fbid(devname, fbname, fbtype)
 	 * have entries for some of the values returned by the ioctl.
 	 * Compare <sun/fbio.h> to the entries in "decode_fb" */
 	if ( decode_fb[fbattr.fbtype.fb_type] == NULL ) {
-#ifdef VIS_GETIDENTIFIER
-	    if (visname != NULL) {
-		*fbname = visname;
-		*fbtype = vistype;
-		return 0;
-	    } 
-#endif
             *fbname = "unk";
 	    return 1;
 	}

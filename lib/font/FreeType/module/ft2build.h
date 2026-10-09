@@ -19,7 +19,7 @@
 
 /* $XFree86: xc/lib/font/FreeType/ft2build.h,v 1.3 2002/10/01 00:02:10 alanh Exp $ */
 
-/* $XdotOrg: xc/lib/font/FreeType/module/ft2build.h,v 1.2 2004/04/23 18:44:08 eich Exp $ */
+/* $XdotOrg: xc/lib/font/FreeType/module/ft2build.h,v 1.3 2005/07/03 07:00:58 daniels Exp $ */
   /*************************************************************************/
   /*                                                                       */
   /* This file corresponds to the default "ft2build.h" file for            */

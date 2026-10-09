@@ -21,6 +21,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ati.h"
 #include "atiadjust.h"
 #include "atichip.h"
@@ -128,7 +132,7 @@ ATIAdjustPreInit
  * displayed location in video memory.  This is used to implement the virtual
  * window.
  */
-void
+_X_EXPORT void
 ATIAdjustFrame
 (
     int scrnIndex,

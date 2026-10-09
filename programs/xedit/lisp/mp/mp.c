@@ -24,7 +24,7 @@
  * dealings in this Software without prior written authorization from the
  * XFree86 Project.
  *
- * Author: Paulo César Pereira de Andrade
+ * Author: Paulo CÃ©sar Pereira de Andrade
  */
 
 /* $XFree86: xc/programs/xedit/lisp/mp/mp.c,v 1.2 2002/11/08 08:01:00 paulo Exp $ */
@@ -400,7 +400,7 @@ mp_base_mul(BNS *rop, BNS *op1, BNS *op2, BNI len1, BNI len2)
 }
 
 	/* Karatsuba method
-	 * t + ((a0 + a1) (b0 + b1) - t - u) x + ux²
+	 * t + ((a0 + a1) (b0 + b1) - t - u) x + uxÂ²
 	 * where t = a0b0 and u = a1b1
 	 *
 	 * Karatsuba method reduces the number of multiplications. Example:
@@ -410,7 +410,7 @@ mp_base_mul(BNS *rop, BNS *op1, BNS *op2, BNI len1, BNI len2)
 	 *	but since it is recursive, every 20*20=400 is reduced to
 	 *	10*10+10*10+10*10=300
 	 *	and so on.
-	 * The multiplication by x and x² is a just a shift, as it is a
+	 * The multiplication by x and xÂ² is a just a shift, as it is a
 	 * power of two, and is implemented below by just writting at the
 	 * correct offset */
 long
@@ -543,7 +543,7 @@ mp_karatsuba_mul(BNS *rop, BNS *op1, BNS *op2, BNI len1, BNI len2)
 	 *	d = d/4			(w3 = 13)
 	 *
 	 *	RESULT:
-	 *	w4*10^4 + w3*10³ + w2*10² + w1*10 + w0
+	 *	w4*10^4 + w3*10Â³ + w2*10Â² + w1*10 + w0
 	 *	40000   + 13000   + 2800   + 270    + 18
 	 *	10 is the base where the calculation was done
 	 *
@@ -571,7 +571,7 @@ mp_karatsuba_mul(BNS *rop, BNS *op1, BNS *op2, BNI len1, BNI len2)
 	 *	w2 = (U1*V1)
 	 *
 	 *	w1 = w - w0 - w2
-	 * w2x² + w1x + w0
+	 * w2xÂ² + w1x + w0
 	 *
 	 *	See Knuth's Seminumerical Algorithms for a sample implemention
 	 * using 4 stacks and k = [ 0 1 2 3 ... ], based on the size of the
@@ -603,7 +603,7 @@ mp_toom_mul(BNS *rop, BNS *op1, BNS *op2, BNI len1, BNI len2)
 
 	/* EVALUATE U AND V */
 
-    /* Numbers are in the format U2x²+U1x+U0 and V2x²+V1x+V0 */
+    /* Numbers are in the format U2xÂ²+U1x+U0 and V2xÂ²+V1x+V0 */
 
 	/* U[0] = U2+U1*2+U0*4 */
 

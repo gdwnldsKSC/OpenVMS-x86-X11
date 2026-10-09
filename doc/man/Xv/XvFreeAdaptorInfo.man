@@ -1,4 +1,4 @@
-.TH XvFreeAdaptorInfo 3X __vendorversion__
+.TH XvFreeAdaptorInfo __libmansuffix__ __vendorversion__
 .\" $XFree86: xc/doc/man/Xv/XvFreeAdaptorInfo.man,v 1.4 1999/03/02 11:49:13 dawes Exp $
 .SH Name
 XvFreeAdaptorInfo \- free adaptor information 
@@ -14,11 +14,11 @@ Pointer to where the adaptor information is located.
 .\"
 .SH Description
 .\"
-XvFreeAdaptorInfo(3X) frees adaptor information that 
-was returned by XvQueryAdaptors(3X).  The data structure
+XvFreeAdaptorInfo(__libmansuffix__) frees adaptor information that 
+was returned by XvQueryAdaptors(__libmansuffix__).  The data structure
 used for adaptor information is defined in the
-reference page for XvQueryAdaptors(3X).
+reference page for XvQueryAdaptors(__libmansuffix__).
 .SH See Also
 .\"
-XvQueryAdaptors(3X), XvFreeEncodingInfo(3X)
+XvQueryAdaptors(__libmansuffix__), XvFreeEncodingInfo(__libmansuffix__)
 .br

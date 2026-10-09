@@ -34,6 +34,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "xf86.h"
 #ifdef XFree86LOADER
 #include "xf86_ansic.h"
@@ -44,8 +48,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "dixstruct.h"
 #include "extnsionst.h"
@@ -71,19 +75,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 extern Bool noPanoramiXExtension;
 #endif
 
-extern Bool noXFree86DRIExtension;
-
 static int DRIScreenPrivIndex = -1;
 static int DRIWindowPrivIndex = -1;
 static unsigned long DRIGeneration = 0;
 static unsigned int DRIDrawableValidationStamp = 0;
-static int lockRefCount=0;
-
-				/* Support cleanup for fullscreen mode,
-                                   independent of the DRICreateDrawable
-                                   resource management. */
-static Bool    _DRICloseFullScreen(pointer pResource, XID id);
-static RESTYPE DRIFullScreenResType;
 
 static RESTYPE DRIDrawablePrivResType;
 static RESTYPE DRIContextPrivResType;
@@ -284,7 +279,7 @@ DRIScreenInit(ScreenPtr pScreen, DRIInfoPtr pDRIInfo, int *pDRMFD)
 	return FALSE;
     }
     DRIDrvMsg(pScreen->myNum, X_INFO,
-	      "[drm] added %d byte SAREA at 0x%08lx\n",
+	      "[drm] added %d byte SAREA at %p\n",
 	      pDRIPriv->pDriverInfo->SAREASize, pDRIPriv->hSAREA);
 
     if (drmMap( pDRIPriv->drmFD,
@@ -300,7 +295,7 @@ DRIScreenInit(ScreenPtr pScreen, DRIInfoPtr pDRIInfo, int *pDRMFD)
 	return FALSE;
     }
     memset(pDRIPriv->pSAREA, 0, pDRIPriv->pDriverInfo->SAREASize);
-    DRIDrvMsg(pScreen->myNum, X_INFO, "[drm] mapped SAREA 0x%08lx to %p\n",
+    DRIDrvMsg(pScreen->myNum, X_INFO, "[drm] mapped SAREA %p to %p\n",
 	      pDRIPriv->hSAREA, pDRIPriv->pSAREA);
 
     if (drmAddMap( pDRIPriv->drmFD,
@@ -318,7 +313,7 @@ DRIScreenInit(ScreenPtr pScreen, DRIInfoPtr pDRIInfo, int *pDRMFD)
                   "[drm] drmAddMap failed\n");
 	return FALSE;
     }
-    DRIDrvMsg(pScreen->myNum, X_INFO, "[drm] framebuffer handle = 0x%08lx\n",
+    DRIDrvMsg(pScreen->myNum, X_INFO, "[drm] framebuffer handle = %p\n",
 	      pDRIPriv->hFrameBuffer);
 
 				/* Add tags for reserved contexts */
@@ -381,7 +376,7 @@ DRIFinishScreenInit(ScreenPtr pScreen)
     pDRIPriv->myContextPriv = pDRIContextPriv;
 
     DRIDrvMsg(pScreen->myNum, X_INFO,
-	      "X context handle = 0x%08lx\n", pDRIPriv->myContext);
+	      "X context handle = %p\n", pDRIPriv->myContext);
 
     /* Now that we have created the X server's context, we can grab the
      * hardware lock for the X server.
@@ -563,16 +558,16 @@ DRICloseScreen(ScreenPtr pScreen)
 
 	/* Make sure signals get unblocked etc. */
 	drmUnlock(pDRIPriv->drmFD, pDRIPriv->myContext);
-	lockRefCount=0;
+	pDRIPriv->lockRefCount = 0;
 	DRIDrvMsg(pScreen->myNum, X_INFO,
-		  "[drm] unmapping %d bytes of SAREA 0x%08lx at %p\n",
+		  "[drm] unmapping %d bytes of SAREA %p at %p\n",
 		  pDRIInfo->SAREASize,
 		  pDRIPriv->hSAREA,
 		  pDRIPriv->pSAREA);
 	if (drmUnmap(pDRIPriv->pSAREA, pDRIInfo->SAREASize)) {
 	    DRIDrvMsg(pScreen->myNum, X_ERROR,
 		      "[drm] unable to unmap %d bytes"
-		      " of SAREA 0x%08lx at %p\n",
+		      " of SAREA %p at %p\n",
 		      pDRIInfo->SAREASize,
 		      pDRIPriv->hSAREA,
 		      pDRIPriv->pSAREA);
@@ -604,7 +599,6 @@ DRIExtensionInit(void)
 
     DRIDrawablePrivResType = CreateNewResourceType(DRIDrawablePrivDelete);
     DRIContextPrivResType = CreateNewResourceType(DRIContextPrivDelete);
-    DRIFullScreenResType = CreateNewResourceType(_DRICloseFullScreen);
 
     for (i = 0; i < screenInfo.numScreens; i++)
     {
@@ -1908,9 +1902,9 @@ DRILock(ScreenPtr pScreen, int flags)
     DRIScreenPrivPtr pDRIPriv = DRI_SCREEN_PRIV(pScreen);
     if(!pDRIPriv) return;
 
-    if (!lockRefCount)
+    if (!pDRIPriv->lockRefCount)
         DRM_LOCK(pDRIPriv->drmFD, pDRIPriv->pSAREA, pDRIPriv->myContext, flags);
-    lockRefCount++;
+    pDRIPriv->lockRefCount++;
 }
 
 void
@@ -1919,14 +1913,14 @@ DRIUnlock(ScreenPtr pScreen)
     DRIScreenPrivPtr pDRIPriv = DRI_SCREEN_PRIV(pScreen);
     if(!pDRIPriv) return;
 
-    if (lockRefCount > 0) {
-        lockRefCount--;
+    if (pDRIPriv->lockRefCount > 0) {
+        pDRIPriv->lockRefCount--;
     }
     else {
         ErrorF("DRIUnlock called when not locked\n");
         return;
     }
-    if (!lockRefCount)
+    if (!pDRIPriv->lockRefCount)
         DRM_UNLOCK(pDRIPriv->drmFD, pDRIPriv->pSAREA, pDRIPriv->myContext);
 }
 
@@ -1958,14 +1952,15 @@ DRIGetWrappedFuncs(ScreenPtr pScreen)
     return &(DRI_SCREEN_PRIV(pScreen)->wrap);
 }
 
+/* note that this returns the library version, not the protocol version */
 void
 DRIQueryVersion(int *majorVersion,
                 int *minorVersion,
                 int *patchVersion)
 {
-    *majorVersion = XF86DRI_MAJOR_VERSION;
-    *minorVersion = XF86DRI_MINOR_VERSION;
-    *patchVersion = XF86DRI_PATCH_VERSION;
+    *majorVersion = DRIINFO_MAJOR_VERSION;
+    *minorVersion = DRIINFO_MINOR_VERSION;
+    *patchVersion = DRIINFO_PATCH_VERSION;
 }
 
 static void
@@ -2020,96 +2015,6 @@ DRIAdjustFrame(int scrnIndex, int x, int y, int flags)
 
     _DRIAdjustFrame(pScrn, pDRIPriv, x, y);
 }
-
-/* WARNING WARNING WARNING: Just like every other function call in this
-   file, the DRIOpenFullScreen and DRICloseFullScreen calls are for
-   internal use only!  They should be used only by GLX internals and
-   should NEVER be called from a GL application.
-
-   Some time in the future, there will be a (proposed) standard GLX
-   extension that performs expanded functionality, that is designed for
-   used by application-level programs, and that should be portable
-   across multiple GLX implementations. */
-Bool
-DRIOpenFullScreen(ScreenPtr pScreen, DrawablePtr pDrawable)
-{
-    DRIScreenPrivPtr   pDRIPriv    = DRI_SCREEN_PRIV(pScreen);
-    ScrnInfoPtr        pScrn       = xf86Screens[pScreen->myNum];
-    WindowPtr	       pWin        = (WindowPtr)pDrawable;
-    drm_clip_rect_t * pClipRects  = (void *)REGION_RECTS(&pWin->clipList);
-
-    _DRIAdjustFrame(pScrn, pDRIPriv, pScrn->frameX0, pScrn->frameY0);
-
-    if (pDrawable->type != DRAWABLE_WINDOW) return FALSE;
-
-    if (!pScrn->vtSema) return FALSE; /* switched away */
-
-    if (pDrawable->x != pScrn->frameX0
-	|| pDrawable->y != pScrn->frameY0
-	|| pDrawable->width != pScrn->frameX1 - pScrn->frameX0 + 1
-	|| pDrawable->height != pScrn->frameY1 - pScrn->frameY0 + 1) {
-	return FALSE;
-    }
-
-    if (REGION_NUM_RECTS(&pWin->clipList) != 1) return FALSE;
-    if (pDrawable->x != pClipRects[0].x1
-	|| pDrawable->y != pClipRects[0].y1
-	|| pDrawable->width != pClipRects[0].x2 - pClipRects[0].x1
-	|| pDrawable->height != pClipRects[0].y2 - pClipRects[0].y1) {
-	return FALSE;
-    }
-
-    AddResource(pDrawable->id, DRIFullScreenResType, (pointer)pWin);
-
-    xf86EnableVTSwitch(FALSE);
-    pScrn->EnableDisableFBAccess(pScreen->myNum, FALSE);
-    pScrn->vtSema        = FALSE;
-    pDRIPriv->fullscreen = pDrawable;
-    DRIClipNotify(pWin, 0, 0);
-
-    if (pDRIPriv->pDriverInfo->OpenFullScreen)
-	pDRIPriv->pDriverInfo->OpenFullScreen(pScreen);
-
-    pDRIPriv->pSAREA->frame.fullscreen = 1;
-    return TRUE;
-}
-
-static Bool
-_DRICloseFullScreen(pointer pResource, XID id)
-{
-    DrawablePtr      pDrawable = (DrawablePtr)pResource;
-    ScreenPtr        pScreen   = pDrawable->pScreen;
-    DRIScreenPrivPtr pDRIPriv  = DRI_SCREEN_PRIV(pScreen);
-    ScrnInfoPtr      pScrn     = xf86Screens[pScreen->myNum];
-    WindowPtr	     pWin      = (WindowPtr)pDrawable;
-    WindowOptPtr     optional  = pWin->optional;
-    Mask             mask      = pWin->eventMask;
-
-    if (pDRIPriv->pDriverInfo->CloseFullScreen)
-	pDRIPriv->pDriverInfo->CloseFullScreen(pScreen);
-
-    pDRIPriv->fullscreen = NULL;
-    pScrn->vtSema        = TRUE;
-
-				/* Turn off expose events for the top window */
-    pWin->eventMask &= ~ExposureMask;
-    pWin->optional   = NULL;
-    pScrn->EnableDisableFBAccess(pScreen->myNum, TRUE);
-    pWin->eventMask  = mask;
-    pWin->optional   = optional;
-
-    xf86EnableVTSwitch(TRUE);
-    pDRIPriv->pSAREA->frame.fullscreen = 0;
-    return TRUE;
-}
-
-Bool
-DRICloseFullScreen(ScreenPtr pScreen, DrawablePtr pDrawable)
-{
-    FreeResourceByType(pDrawable->id, DRIFullScreenResType, FALSE);
-    return TRUE;
-}
-
 
 /* 
  * DRIMoveBuffersHelper swaps the regions rects in place leaving you

@@ -34,9 +34,13 @@ from The Open Group.
  */
 
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifdef SECURE_RPC
 
-#include "X.h"
+#include <X11/X.h>
 #include "Xauth.h"
 #include "misc.h"
 #include "os.h"

@@ -23,7 +23,10 @@
 
 /* $XFree86: xc/lib/font/FreeType/fttools.c,v 1.6 2003/06/08 15:41:13 herrb Exp $ */
 
-#include "fontmisc.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <X11/fonts/fontmisc.h>
 #ifndef FONTMODULE
 #include <ctype.h>
 #include <string.h>
@@ -33,7 +36,7 @@
 #include "xf86_ansic.h"
 #endif
 
-#include "font.h"
+#include <X11/fonts/font.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_SFNT_NAMES_H

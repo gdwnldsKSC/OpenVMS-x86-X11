@@ -24,6 +24,14 @@ XCOMM
 #define IHaveModules
 #include <Server.tmpl>
 
+
+XAA_DEFINES = -DUSE_XAA
+
+EXA_DIR = -I$(XF86SRC)/exa
+EXA_DEFINES = -DUSE_EXA
+RADEON_EXA_SOURCE = radeon_exa.c
+RADEON_EXA_OBJS = radeon_exa.o
+
 #ifdef ATIDriverCCOptions
 CCOPTIONS = ATIDriverCCOptions
 #endif
@@ -34,11 +42,17 @@ MODSRCS1 = atimodule.c
 MODSRCS2 = atiload.c atimisc.c
 MODSRCS3 = r128_misc.c
 MODSRCS4 = radeon_misc.c
+MODSRC_THEATRE_DETECT = theatre_detect_module.c
+MODSRC_THEATRE = theatre_module.c
+MODSRC_THEATRE200 = theatre200_module.c
 
 MODOBJS1 = atimodule.o
 MODOBJS2 = atiload.o atimisc.o
 MODOBJS3 = r128_misc.o
 MODOBJS4 = radeon_misc.o
+MODOBJ_THEATRE_DETECT = theatre_detect_module.o
+MODOBJ_THEATRE = theatre_module.o
+MODOBJ_THEATRE200 = theatre200_module.o
 
 #endif
 
@@ -57,7 +71,7 @@ DRIOBJS3 = r128_dri.o
 DRIOBJS4 = radeon_dri.o
 
 DRIINCLUDES = -I$(SERVERSRC)/GL/dri -I$(LIBSRC)/GL/dri -I$(TOP)/include \
-              -I$(DRMSRCDIR)/shared
+              -I$(DRMSRCDIR)/shared-core
 DRIDEFINES  = $(GLX_DEFINES) $(DRIDEVEL_DEFINES)
 
 #endif
@@ -157,8 +171,30 @@ DGAOBJS2 = atidga.o
 
 #endif
 
-DEFINES = $(CPIODEFINES) $(DGADEFINES) $(NONPCIDEFINES) $(NOLEGACYDEFINES) \
-	$(DRIDEFINES)
+/* 
+ * TV-out only supported on x86
+ */
+#if ATIAvoidCPIO
+# undef ATITVOut
+# define ATITVOut NO
+#elif defined(i386Architecture)
+# undef ATITVOut
+# define ATITVOut YES
+#endif
+
+#if ATITVOut
+
+TVOUTDEFINES = -DTV_OUT
+
+#endif
+
+/* The vgahw module is not built on all architectures. */
+#if XF86VgaHw
+VGAHWDEFINES = -DWITH_VGAHW
+#endif
+
+DEFINES = $(CPIODEFINES) $(DGADEFINES) $(NONPCIDEFINES) $(DRIDEFINES) \
+	  $(TVOUTDEFINES) $(VGAHWDEFINES) $(EXA_DEFINES) $(XAA_DEFINES)
 
 SRCS1 = ati.c atiadapter.c atibus.c atichip.c atiident.c atioption.c \
 	atiprobe.c atividmem.c $(CPIOSRCS1) $(MODSRCS1) \
@@ -172,7 +208,11 @@ SRCS2 = atiaccel.c atiadjust.c atiaudio.c aticlock.c aticonfig.c aticonsole.c \
 SRCS3 = r128_accel.c r128_cursor.c r128_dga.c r128_driver.c \
         r128_video.c $(DRISRCS3) $(MODSRCS3)
 SRCS4 = radeon_accel.c radeon_mergedfb.c radeon_cursor.c radeon_dga.c radeon_driver.c \
-        radeon_video.c radeon_bios.c $(DRISRCS4) $(MODSRCS4)
+        radeon_video.c radeon_bios.c radeon_mm_i2c.c radeon_vip.c \
+	$(RADEON_EXA_SOURCE) $(DRISRCS4) $(MODSRCS4)
+SRCS_THEATRE_DETECT = theatre.c $(MODSRC_THEATRE_DETECT)
+SRCS_THEATRE = theatre.c $(MODSRC_THEATRE)
+SRCS_THEATRE200 = theatre200.c $(MODSRC_THEATRE200)
 
 OBJS1 = ati.o atiadapter.o atibus.o atichip.o atiident.o atioption.o \
         atiprobe.o atividmem.o $(CPIOOBJS1) $(MODOBJS1) \
@@ -186,19 +226,23 @@ OBJS2 = atiaccel.o atiadjust.o atiaudio.o aticlock.o aticonfig.o aticonsole.o \
 OBJS3 = r128_accel.o r128_cursor.o r128_dga.o r128_driver.o \
         r128_video.o $(DRIOBJS3) $(MODOBJS3)
 OBJS4 = radeon_accel.o radeon_mergedfb.o radeon_cursor.o radeon_dga.o radeon_driver.o \
-        radeon_video.o radeon_bios.o $(DRIOBJS4) $(MODOBJS4)
+        radeon_video.o radeon_bios.o radeon_mm_i2c.o radeon_vip.o \
+	$(RADEON_EXA_OBJS) $(DRIOBJS4) $(MODOBJS4)
+OBJS_THEATRE_DETECT = theatre_detect.o $(MODOBJ_THEATRE_DETECT)
+OBJS_THEATRE = theatre.o $(MODOBJ_THEATRE)
+OBJS_THEATRE200 = theatre200.o $(MODOBJ_THEATRE200)
 
-SRCS = $(SRCS1) $(SRCS2) $(SRCS3) $(SRCS4)
-OBJS = $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4)
+SRCS = $(SRCS1) $(SRCS2) $(SRCS3) $(SRCS4) $(SRCS_THEATRE_DETECT) $(SRCS_THEATRE) $(SRCS_THEATRE200)
+OBJS = $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBJS_THEATRE_DETECT) $(OBJS_THEATRE) $(OBJS_THEATRE200)
 
 #if defined(XF86DriverSDK)
 INCLUDES = -I. -I../../include
 #else
-INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86OSSRC) -I$(XF86SRC) \
+INCLUDES = -I. -I../i2c -I$(XF86COMSRC) -I$(XF86OSSRC) -I$(XF86SRC) \
            -I$(XF86SRC)/vbe -I$(XF86SRC)/int10 \
            -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c \
            -I$(XF86SRC)/rac -I$(XF86SRC)/ramdac \
-           -I$(XF86SRC)/shadowfb -I$(XF86SRC)/xaa \
+           -I$(XF86SRC)/shadowfb -I$(XF86SRC)/xaa $(EXA_DIR) \
            -I$(XF86SRC)/xf4bpp -I$(XF86SRC)/xf1bpp \
            -I$(XF86SRC)/vgahw -I$(XF86SRC)/fbdevhw \
            -I$(SERVERSRC)/mfb -I$(SERVERSRC)/fb -I$(SERVERSRC)/mi \
@@ -217,11 +261,17 @@ ObjectModuleTarget(ati,$(OBJS1))
 ObjectModuleTarget(atimisc,$(OBJS2))
 ObjectModuleTarget(r128,$(OBJS3))
 ObjectModuleTarget(radeon,$(OBJS4))
+ObjectModuleTarget(theatre_detect, $(OBJS_THEATRE_DETECT))
+ObjectModuleTarget(theatre, $(OBJS_THEATRE))
+ObjectModuleTarget(theatre200, $(OBJS_THEATRE200))
 
 InstallObjectModule(ati,$(MODULEDIR),drivers)
 InstallObjectModule(atimisc,$(MODULEDIR),drivers)
 InstallObjectModule(r128,$(MODULEDIR),drivers)
 InstallObjectModule(radeon,$(MODULEDIR),drivers)
+InstallObjectModule(theatre_detect,$(MODULEDIR),multimedia)
+InstallObjectModule(theatre,$(MODULEDIR),multimedia)
+InstallObjectModule(theatre200,$(MODULEDIR),multimedia)
 
 #if !defined(XF86DriverSDK)
 #if 0
@@ -310,7 +360,6 @@ InstallDriverSDKNonExecFile(atiprint.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(atipriv.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(atiprobe.c,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(atiprobe.h,$(DRIVERSDKDIR)/drivers/ati)
-InstallDriverSDKNonExecFile(atiproto.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(atiregs.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(atirgb514.c,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(atirgb514.h,$(DRIVERSDKDIR)/drivers/ati)
@@ -343,6 +392,7 @@ InstallDriverSDKNonExecFile(mach64_common.h,$(DRIVERSDKDIR)/drivers/ati)
 
 InstallDriverSDKNonExecFile(r128.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(r128_accel.c,$(DRIVERSDKDIR)/drivers/ati)
+InstallDriverSDKNonExecFile(r128_chipset.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(r128_cursor.c,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(r128_dga.c,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(r128_dri.c,$(DRIVERSDKDIR)/drivers/ati)
@@ -367,14 +417,18 @@ InstallDriverSDKNonExecFile(radeon_dri.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_dripriv.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_driver.c,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_macros.h,$(DRIVERSDKDIR)/drivers/ati)
+InstallDriverSDKNonExecFile(radeon_mergedfb.c,$(DRIVERSDKDIR)/drivers/ati)
+InstallDriverSDKNonExecFile(radeon_mergedfb.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_misc.c,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_probe.c,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_probe.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_reg.h,$(DRIVERSDKDIR)/drivers/ati)
+InstallDriverSDKNonExecFile(radeon_render.c,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_sarea.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_version.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_video.c,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_bios.c,$(DRIVERSDKDIR)/drivers/ati)
+InstallDriverSDKNonExecFile(radeon_chipset.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_common.h,$(DRIVERSDKDIR)/drivers/ati)
 InstallDriverSDKNonExecFile(radeon_accelfuncs.c,$(DRIVERSDKDIR)/drivers/ati)
 
@@ -382,6 +436,18 @@ InstallDriverSDKObjectModule(ati,$(DRIVERSDKMODULEDIR),drivers)
 InstallDriverSDKObjectModule(atimisc,$(DRIVERSDKMODULEDIR),drivers)
 InstallDriverSDKObjectModule(r128,$(DRIVERSDKMODULEDIR),drivers)
 InstallDriverSDKObjectModule(radeon,$(DRIVERSDKMODULEDIR),drivers)
+
+InstallDriverSDKNonExecFile(theatre_detect.c,$(DRIVERSDKDIR)/drivers/ati)
+InstallDriverSDKNonExecFile(theatre_detect_module.c,$(DRIVERSDKDIR)/drivers/ati)
+
+InstallDriverSDKNonExecFile(theatre.c,$(DRIVERSDKDIR)/drivers/ati)
+InstallDriverSDKNonExecFile(theatre_module.c,$(DRIVERSDKDIR)/drivers/ati)
+InstallDriverSDKNonExecFile(theatre.h,$(DRIVERSDKDIR)/drivers/ati)
+InstallDriverSDKNonExecFile(theatre_reg.h,$(DRIVERSDKDIR)/drivers/ati)
+
+InstallDriverSDKNonExecFile(theatre200.c,$(DRIVERSDKDIR)/drivers/ati)
+InstallDriverSDKNonExecFile(theatre200_module.c,$(DRIVERSDKDIR)/drivers/ati)
+InstallDriverSDKNonExecFile(theatre200.h,$(DRIVERSDKDIR)/drivers/ati)
 
 /* Remove instances of ati2 module */
 #if DoLoadableServer

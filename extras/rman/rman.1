@@ -1,4 +1,3 @@
-.\" $XFree86$
 .TH PolyglotMan 1
 .SH "NAME "
 PolyglotMan, rman - reverse compile man pages from formatted 
@@ -6,6 +5,10 @@ form to a number of source formats
 .SH "SYNOPSIS "
 rman [ \fIoptions \fR] [ \fIfile \fR] 
 .SH "DESCRIPTION "
+Up-to-date instructions can be found at
+http://polyglotman.sourceforge.net/rman.html
+
+.PP
 \fIPolyglotMan \fR takes man pages from most of the popular flavors 
 of UNIX and transforms them into any of a number of text source 
 formats. PolyglotMan was formerly known as RosettaMan. The name 
@@ -43,8 +46,8 @@ Tk, TkMan, [tn]roff (traditional man page source), SGML, HTML,
 MIME, LaTeX, LaTeX2e, RTF, Perl 5 POD. A modular architecture 
 permits easy addition of additional output formats. 
 .PP
-The latest version of PolyglotMan is always available from \fI
-ftp://ftp.cs.berkeley.edu/ucb/people/phelps/tcltk/rman.tar.Z \fR. 
+The latest version of PolyglotMan is available from \fI
+http://polyglotman.sourceforge.net/ \fR. 
 .SH "OPTIONS "
 The following options should not be used with any others and 
 exit PolyglotMan without processing any input. 
@@ -160,7 +163,7 @@ This option outputs the text in a series of Tcl lists consisting
 of text-tags pairs, where tag names roughly correspond to HTML. 
 This output can be inserted into a Tk text widget by doing an \fI
 eval <textwidget> insert end <text> \fR. This format should be 
-relatively easily parsable by other programs that want both the 
+relatively easily parsible by other programs that want both the 
 text and the tags. Also see ASCII. 
 .SS "ASCII "
 When printed on a line printer, man pages try to produce special 
@@ -175,12 +178,12 @@ see Tk.
 Dumps section and (optionally) subsection titles. This might 
 be useful for another program that processes man pages. 
 .SS "HTML "
-With a simple extension to an HTTP server for Mosaic or other 
+With a simple extention to an HTTP server for Mosaic or other 
 World Wide Web browser, \fIPolyglotMan \fR can produce high quality 
 HTML on the fly. Several such extensions and pointers to several 
 others are included in \fIPolyglotMan \fR's \fIcontrib \fR directory. 
 .SS "SGML "
-This is approaching the Docbook DTD, but I'm hoping that someone 
+This is appoaching the Docbook DTD, but I'm hoping that someone 
 that someone with a real interest in this will polish the tags 
 generated. Try it to see how close the tags are now. 
 .SS "MIME "
@@ -267,4 +270,4 @@ University of California, Berkeley
 .br
 Computer Science Division 
 .PP
-Manual page last updated on $Date$ 
+Manual page last updated on $Date: 2005/07/15 15:45:29 $ 

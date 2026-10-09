@@ -24,7 +24,11 @@
  */
 /* $XConsortium: VTsw_sco.c /main/2 1995/11/13 06:08:36 kaleb $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "xf86.h"
 #include "xf86Priv.h"
@@ -54,7 +58,7 @@ xf86VTRequest(int sig)
 }
 
 Bool
-xf86VTSwitchPending()
+xf86VTSwitchPending(void)
 {
   return(xf86Info.vtRequestsPending ? TRUE : FALSE);
 }
@@ -68,7 +72,7 @@ static int sco_ledstatus = -1;
 static unsigned int sco_ledstate = 0;
 
 Bool
-xf86VTSwitchAway()
+xf86VTSwitchAway(void)
 {
   ev_flush();
   ev_suspend();
@@ -89,7 +93,7 @@ xf86VTSwitchAway()
  * switched away.
  */
 Bool
-xf86VTSwitchTo()
+xf86VTSwitchTo(void)
 {
   ev_resume();
 

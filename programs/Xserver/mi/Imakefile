@@ -12,6 +12,10 @@ CBRT_SRC = cbrt.c
 CBRT_OBJ = cbrt.o
 #endif
 
+#if HasFfs
+FFS_DEFINES = -DHAS_FFS
+#endif
+
 #if DoLoadableServer
 EXTRAMIINITEXTOBJ = miinitext.o
 #else
@@ -54,6 +58,7 @@ INCLUDES = -I. -I../include -I../../../include/fonts -I../render \
 	    -I../xfixes -I../damageext -I../miext/damage \
            -I$(XINCLUDESRC) -I$(FONTINCSRC) -I$(EXTINCSRC) -I$(SERVERSRC)/Xext
 LINTLIBS = ../dix/llib-ldix.ln ../os/llib-los.ln
+DEFINES  = $(FFS_DEFINES)
 
 NormalLibraryObjectRule()
 NormalLibraryTarget(mi,$(OBJS))

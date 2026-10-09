@@ -1,4 +1,5 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/ati/ativga.c,v 1.20 2003/04/23 21:51:31 tsi Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/ati/ativga.c,v 1.6 2005/07/11 02:29:45 ajax Exp $ */
 /*
  * Copyright 1997 through 2004 by Marc Aurele La France (TSI @ UQV), tsi@xfree86.org
  *
@@ -21,6 +22,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ati.h"
 #include "atiadapter.h"
 #include "atichip.h"
@@ -32,7 +37,7 @@
 #ifndef DPMS_SERVER
 # define DPMS_SERVER
 #endif
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 #ifndef AVOID_CPIO
 

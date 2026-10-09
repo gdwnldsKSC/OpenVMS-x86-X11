@@ -1,3 +1,4 @@
+XCOMM $XdotOrg: xc/lib/GLw/Imakefile,v 1.2 2005/08/24 16:27:26 alanc Exp $
 /*
  * Copyright (c) 2000 by The XFree86 Project, Inc.
  *
@@ -49,7 +50,11 @@ XCOMM MOTIF_LDFLAGS  = -L/usr/local/lib
 #define SoRev SOGLWREV
 #define IncSubdir GL
 
+#ifdef SharedGLwReqs
+REQUIREDLIBS = SharedGLwReqs
+#else
 REQUIREDLIBS = $(LDPRELIBS) $(XTOOLLIB) $(XLIB)
+#endif
 
 DEFINES = 
 

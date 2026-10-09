@@ -65,7 +65,7 @@
 
 /* For SYSV, no gethostname, so fake it */
 #include <sys/param.h>
-#if defined(SCO) || defined(SCO325)
+#if defined(__SCO__)
 /* SCO systems define MAXHOSTNAMELEN here */
 #include <sys/socket.h>
 #endif

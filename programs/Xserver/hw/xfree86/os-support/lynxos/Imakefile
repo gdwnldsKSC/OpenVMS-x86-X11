@@ -35,7 +35,7 @@ OBJS = lynx_init.o lynx_video.o lynx_io.o lynx_mmap.o \
 
 INCLUDES = -I$(XF86COMSRC) -I$(XF86OSSRC) -I. -I$(SERVERSRC)/include \
            -I$(XINCLUDESRC) -I$(EXTINCSRC) \
-           -I$(ENV_PREFIX)/sys/lynx.os -I$(DRMSRCDIR)/shared
+           -I$(ENV_PREFIX)/sys/lynx.os -I$(DRMSRCDIR)/shared-core
 
 RESDEFINES = -DUSESTDRES
 

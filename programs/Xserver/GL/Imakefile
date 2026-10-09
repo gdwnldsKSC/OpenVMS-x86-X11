@@ -11,6 +11,8 @@ XCOMM $XFree86: xc/programs/Xserver/GL/Imakefile,v 1.12 2003/08/06 14:04:01 eich
  CORE_SUBDIR = apple mesa
 #elif defined(cygwinArchitecture) && GlxUseWindows
  CORE_SUBDIR = windows mesa
+#elif defined(Win32Architecture) && GlxUseWindows
+ CORE_SUBDIR = windows
 #else
  CORE_SUBDIR = mesa
 #endif

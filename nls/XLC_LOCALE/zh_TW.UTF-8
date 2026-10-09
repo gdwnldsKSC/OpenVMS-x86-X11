@@ -42,45 +42,8 @@ fs2	{
 				substitute BIG5-0:GLGR
         }
 }
-XCOMM 	fs3 class (Kanji)
+XCOMM	fs3 class
 fs3	{
-	charset	{
-		name	JISX0208.1983-0:GL
-	}
-	font	{
-		primary	JISX0208.1983-0:GL
-	}
-}
-XCOMM   fs4 class (Korean Character)
-fs4	{
-	charset	{
-		name	KSC5601.1987-0:GL
-	}
-	font	{
-		primary	KSC5601.1987-0:GL
-	}
-}
-XCOMM   fs5 class (Chinese Han Character)
-fs5	{
-	charset	{
-		name	GB2312.1980-0:GL
-	}
-	font	{
-		primary	GB2312.1980-0:GL
-	}
-}
-XCOMM	fs6 class (Half Kana)
-fs6	{
-	charset	{
-		name	JISX0201.1976-0:GR
-	}
-	font	{
-		primary		JISX0201.1976-0:GR
-		vertical_rotate	all
-	}
-}
-XCOMM	fs7 class
-fs7	{
 	charset	{
 		name	ISO10646-1
 	}
@@ -117,47 +80,11 @@ XCOMM	cs2 class
 cs2	{
 	side		none
 	length		2
-	byte1		\xa1,\xf9
-	byte2		\x40,\x7e;\xa1,\xfe
-
-	wc_encoding	\x00008000
-	ct_encoding	BIG5-0:GLGR:\x1b\x25\x2f\x32
-
-	mb_conversion	[\xa140,\xf9fe]->\x2140
-	ct_conversion	[\x2140,\x79fe]->\xa140
+	ct_encoding	BIG5-0:GLGR
 }
+
 XCOMM	cs3 class
 cs3	{
-	side		GR
-	length		2
-	ct_encoding	JISX0208.1983-0:GL; JISX0208.1983-0:GR;			JISX0208.1983-1:GL; JISX0208.1983-1:GR
-
-}
-
-XCOMM	cs4 class
-cs4     {
-        side            GL
-        length          2
-        ct_encoding     KSC5601.1987-0:GL; KSC5601.1987-0:GR;                        KSC5601.1987-1:GL; KSC5601.1987-1:GR
-
-}
- 
-XCOMM	cs5 class
-cs5     {
-        side            GR
-        length          2
-        ct_encoding     GB2312.1980-0:GL; GB2312.1980-0:GR
-}
- 
-XCOMM	cs6 class
-cs6	{
-	side		GR
-	length		1
-	ct_encoding	JISX0201.1976-0:GR
-}
-
-XCOMM	cs7 class
-cs7	{
 	side		none
 	ct_encoding	ISO10646-1
 }

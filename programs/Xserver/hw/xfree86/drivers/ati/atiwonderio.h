@@ -35,8 +35,7 @@
 
 #ifndef AVOID_CPIO
 
-extern void ATIModifyExtReg FunctionPrototype((ATIPtr, const CARD8, int,
-                                               const CARD8, CARD8));
+extern void ATIModifyExtReg(ATIPtr, const CARD8, int, const CARD8, CARD8);
 
 #define ATIGetExtReg(_Index)                    \
     GetReg(pATI->CPIO_VGAWonder, _Index)

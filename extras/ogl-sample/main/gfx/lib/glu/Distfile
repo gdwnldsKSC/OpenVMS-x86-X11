@@ -1,5 +1,5 @@
 #
-# $Header: //depot/main/gfx/lib/glu/Distfile#4 $
+# $Header: /cvs/xorg/xc/extras/ogl-sample/main/gfx/lib/glu/Distfile,v 1.1.1.4 2004/03/14 08:29:09 eich Exp $
 #
 
 DISTDIR_SI = /xc/lib/GL/glu

@@ -1,6 +1,7 @@
 #
+# $RCSId:$
 #
-# Copyright © 2002 Keith Packard
+# Copyright Â© 2002 Keith Packard
 #
 # Permission to use, copy, modify, distribute, and sell this software and its
 # documentation for any purpose is hereby granted without fee, provided that
@@ -22,7 +23,40 @@
 #
 # Urdu (UR)
 #
-# Urdu is written in a varient of Perso-Arabic, but I haven't found
-# any references which define the variations.  So, for now we'll use Arabic
-# fonts
-include ar.orth
+# Data from Roozbeh Pournader <roozbeh@sharif.edu>
+#
+# Select fonts based on support for presentation forms; this may
+# exclude some OpenType fonts, but the hope is those would be
+# located by a clever shaper by Unicode codepoints in any case.
+#
+# General forms.
+#0621-0624
+#0626-063a
+#0641-0642
+#0644-0648
+#0679
+#067e
+#0686
+#0688
+#0691
+#0698
+#06a9
+#06af
+#06ba
+#06be
+#06cc
+#06d2
+# Presentations Forms:
+fb56-fb59
+fb66-fb69
+fb7a-fb7d
+fb88-fb8d
+fb8e-fb95
+fb9e-fb9f
+fbfc-fbff
+fbaa-fbaf
+fe80-fe86
+fe89-fed8
+fedd-feee
+#fef5-fef8      # These four happen very rarely
+fefb-fefc

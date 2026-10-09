@@ -25,6 +25,9 @@ in this Software without prior written authorization from The Open Group.
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "xlogo.h"
 #include "Logo.h"
 #include "print.h"
@@ -111,12 +114,35 @@ PageSetupCB(Widget widget, XtPointer client_data, XtPointer call_data)
 
 void FinishPrinting(AppPrintData *p)
 {
+    char *scr;
+
     if (p->printtofile_handle) {
         if (XpuWaitForPrintFileChild(p->printtofile_handle) != XPGetDocFinished) {
             fprintf(stderr, "%s: Error while printing to file.\n", ProgramName);
         }
         p->printtofile_handle = NULL;
     }   
+
+    /* Job completed, check if there are any messages from the spooler command */
+    scr = XpGetOneAttribute(p->pdpy, p->pcontext, XPJobAttr, "xp-spooler-command-results");
+    if( scr )
+    {
+      if( strlen(scr) > 0 )
+      {
+        const char *msg = XpuCompoundTextToXmb(p->pdpy, scr);
+        if( msg )
+        {
+          Msg(("Spooler command returned '%s'.\n", msg));
+          XpuFreeXmbString(msg);
+        }
+        else
+        {
+          Msg(("Spooler command returned '%s' (unconverted).\n", scr));
+        }
+      }
+
+      XFree((void *)scr);
+    }
 
     if (p->printshell) {
         XtDestroyWidget(p->printshell);
@@ -161,7 +187,8 @@ void DoPrint(Widget toplevel, const char *printername, const char *toFile)
     int            plist_count;         /* number of entries in |plist|-array */
     Display       *pdpy        = NULL;
     XPContext      pcontext    = None;
-    long           dpi         = 0;
+    long           dpi_x       = 0L,
+                   dpi_y       = 0L;
 
     if (apd->isPrinting) {
         fprintf(stderr, "%s: Already busy with printing.\n", ProgramName);
@@ -196,7 +223,7 @@ void DoPrint(Widget toplevel, const char *printername, const char *toFile)
     XpSetContext(pdpy, pcontext);   
 
     /* Get default printer resolution */   
-    if (XpuGetResolution(pdpy, pcontext, &dpi) != 1) {
+    if (XpuGetResolution(pdpy, pcontext, &dpi_x, &dpi_y) != 1) {
         fprintf(stderr, "%s: No default resolution for printer '%s'\n", ProgramName, printername);
         XpuClosePrinterDisplay(pdpy, pcontext);
         return;

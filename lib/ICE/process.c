@@ -28,6 +28,9 @@ Author: Ralph Mor, X Consortium
 ******************************************************************************/
 /* $XFree86: xc/lib/ICE/process.c,v 3.9tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/ICE/ICElib.h>
 #include "ICElibint.h"
 
@@ -247,16 +250,33 @@ Bool		 *replyReadyRet;
 
 	_IceAddReplyWait (iceConn, replyWait);
 
-
 	/*
 	 * Note that there are two different replyWaits.  The first is
 	 * the one passed into IceProcessMessages, and is the replyWait
 	 * for the message the client is blocking on.  The second is
 	 * the replyWait for the message currently being processed
 	 * by IceProcessMessages.  We call it "useThisReplyWait".
+	 *
+	 * Also, when two hosts communicate over an ICE connection and use
+	 * different major opcodes for a subprotocol, it is impossible
+	 * to use message replies unless we translate opcodes before
+	 * comparing them.
 	 */
+	
+	{
+	    int op;
 
-	useThisReplyWait = _IceSearchReplyWaits (iceConn, header->majorOpcode);
+	    if (header->majorOpcode == 0)
+	    {
+		op = 0;
+	    }
+	    else
+	    {
+		int idx = header->majorOpcode - iceConn->his_min_opcode;
+		op = iceConn->process_msg_info[idx].my_opcode;
+	    }
+	    useThisReplyWait = _IceSearchReplyWaits (iceConn, op);
+	}
     }
 
     if (header->majorOpcode == 0)

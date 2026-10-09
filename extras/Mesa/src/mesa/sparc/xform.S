@@ -1,4 +1,4 @@
-/* $Id: xform.S,v 1.3 2004/04/26 10:10:25 alanh Exp $ */
+/* $Id: xform.S,v 1.1.1.2 2005/07/31 16:46:49 ajax Exp $ */
 
 	/* TODO
 	 *
@@ -18,7 +18,7 @@
 
 #include "sparc_matrix.h"
 
-#ifdef SVR4
+#if defined(SVR4) || defined(__SVR4) || defined(__svr4__)
 	/* Solaris requires this for 64-bit. */
         .register %g2, #scratch
         .register %g3, #scratch

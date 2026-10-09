@@ -1,4 +1,5 @@
 .\" $Xorg: XtAddIn.man,v 1.3 2000/08/17 19:41:57 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtAddIn.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright (c) 1993, 1994  X Consortium
 .\" 
@@ -35,7 +36,7 @@
 .ds xC Inter-Client Communication Conventions Manual
 .ds Rn 3
 .ds Vn 2.2
-.hw XtAdd-Input XtAdd-Timeout XtAddWorkProc wid-get
+.hw XtAdd-Input XtAdd-TimeOut XtAddWorkProc wid-get
 .na
 .de Ds
 .nf
@@ -128,13 +129,13 @@
 .ny0
 .TH XtAddInput 3Xt __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
 .SH NAME
-XtAddInput, XtAddTimeout \- register input, timeout, and workprocs
+XtAddInput, XtAddTimeOut, XtAddWorkProc \- register input, timeout, and workprocs
 .SH SYNTAX
 .HP
 XtInputId XtAddInput(int \fIsource\fP, XtPointer \fIcondition\fP,
 XtInputCallbackProc \fIproc\fP, XtPointer \fIclient_data\fP); 
 .HP
-XtIntervalId XtAddTimeout(unsigned long \fIinterval\fP, XtInputCallbackProc
+XtIntervalId XtAddTimeOut(unsigned long \fIinterval\fP, XtInputCallbackProc
 \fIproc\fP, XtPointer \fIclient_data\fP);
 .HP
 XtWorkProcId XtAddWorkProc(XtWorkProc \fIproc\fP, XtPointer
@@ -157,14 +158,15 @@ or other operating system dependent device specification.
 has been replaced by
 .ZN XtAppAddInput.
 .LP
-.ZN XtAddTimeout
+.ZN XtAddTimeOut
 has been replaced by
-.ZN XtAppAddTimeout.
+.ZN XtAppAddTimeOut.
 .LP
 .ZN XtAddWorkProc
 has been replaced by
 .ZN XtAppAddWorkProc .
 .SH "SEE ALSO"
+XtAppAddInput(3Xt), XtAppAddTimeOut(3Xt), XtAppAddWorkProc(3Xt)
 .br
 \fI\*(xT\fP
 .br

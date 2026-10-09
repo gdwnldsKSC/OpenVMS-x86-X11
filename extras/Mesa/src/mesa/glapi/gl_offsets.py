@@ -1,6 +1,6 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 
-# (C) Copyright IBM Corporation 2004
+# (C) Copyright IBM Corporation 2004, 2005
 # All Rights Reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,37 +25,63 @@
 # Authors:
 #    Ian Romanick <idr@us.ibm.com>
 
-from xml.sax import saxutils
-from xml.sax import make_parser
-from xml.sax.handler import feature_namespaces
-
 import gl_XML
 import license
 import sys, getopt
 
-class PrintGlOffsets(gl_XML.FilterGLAPISpecBase):
-	name = "gl_offsets.py (from Mesa)"
-
+class PrintGlOffsets(gl_XML.gl_print_base):
 	def __init__(self):
-		gl_XML.FilterGLAPISpecBase.__init__(self)
+		gl_XML.gl_print_base.__init__(self)
+
+		self.name = "gl_offsets.py (from Mesa)"
+		self.header_tag = '_GLAPI_OFFSETS_H_'
 		self.license = license.bsd_license_template % ( \
 """Copyright (C) 1999-2001  Brian Paul   All Rights Reserved.
 (C) Copyright IBM Corporation 2004""", "BRIAN PAUL, IBM")
-
-	def printFunction(self, f):
-		if f.fn_offset < 0: return
-		print '#define _gloffset_%s %d' % (f.name, f.fn_offset)
-
-	def printRealHeader(self):
-		print '#ifndef _GLAPI_OFFSETS_H_'
-		print '#define _GLAPI_OFFSETS_H_'
-		print ''
 		return
 
-	def printRealFooter(self):
+	def printBody(self, api):
+		abi = [ "1.0", "1.1", "1.2", "GL_ARB_multitexture" ]
+
+		functions = []
+		abi_functions = []
+		count = 0
+		for f in api.functionIterateByOffset():
+			[category, num] = api.get_category_for_name( f.name )
+			if category not in abi:
+				functions.append( [f, count] )
+				count += 1
+			else:
+				abi_functions.append( f )
+
+
+		for f in abi_functions:
+			print '#define _gloffset_%s %d' % (f.name, f.offset)
+			last_static = f.offset
+
 		print ''
-		print '#endif'
+		print '#if !defined(IN_DRI_DRIVER)'
+		print ''
+
+		for [f, index] in functions:
+			print '#define _gloffset_%s %d' % (f.name, f.offset)
+			if f.offset > last_static:
+				last_static = f.offset
+
+		print '#define _gloffset_FIRST_DYNAMIC %d' % (last_static + 1)
+
+		print ''
+		print '#else'
+		print ''
+
+		for [f, index] in functions:
+			print '#define _gloffset_%s driDispatchRemapTable[%s_remap_index]' % (f.name, f.name)
+
+		print ''
+		print '#endif /* !defined(IN_DRI_DRIVER) */'
+
 		return
+
 
 def show_usage():
 	print "Usage: %s [-f input_file_name]" % sys.argv[0]
@@ -73,14 +99,7 @@ if __name__ == '__main__':
 		if arg == "-f":
 			file_name = val
 
-	dh = PrintGlOffsets()
+	api = gl_XML.parse_GL_API( file_name )
 
-	parser = make_parser()
-	parser.setFeature(feature_namespaces, 0)
-	parser.setContentHandler(dh)
-
-	f = open(file_name)
-
-	dh.printHeader()
-	parser.parse(f)
-	dh.printFooter()
+	printer = PrintGlOffsets()
+	printer.Print( api )

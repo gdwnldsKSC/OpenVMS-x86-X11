@@ -1,5 +1,6 @@
 /*
  * $Xorg: parsedpy.c,v 1.4 2001/02/09 02:05:38 xorgcvs Exp $
+ * $XdotOrg: xc/programs/xauth/parsedpy.c,v 1.3 2005/07/26 16:58:27 alanc Exp $
  *
  * parse_displayname - utility routine for splitting up display name strings
  *
@@ -30,6 +31,10 @@ in this Software without prior written authorization from The Open Group.
  */
 
 /* $XFree86: xc/programs/xauth/parsedpy.c,v 3.7 2003/07/09 15:27:37 tsi Exp $ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>			/* for NULL */
 #include <ctype.h>			/* for isascii() and isdigit() */

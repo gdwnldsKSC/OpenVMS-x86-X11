@@ -742,7 +742,7 @@ void XDGAKeyEventToXKeyEvent(
 #include <signal.h>
 #include <unistd.h>
 
-#if defined(SVR4) && !defined(sun) && !defined(SCO325)
+#if defined(SVR4) && !defined(sun)
 #define DEV_MEM "/dev/pmem"
 #elif defined(SVR4) && defined(sun)
 #define DEV_MEM "/dev/xsvc"

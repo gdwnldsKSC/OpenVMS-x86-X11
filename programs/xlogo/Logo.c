@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/xlogo/Logo.c,v 1.2 2004/04/23 19:54:57 eich Exp $ */
+/* $XdotOrg: xc/programs/xlogo/Logo.c,v 1.3 2005/10/15 01:04:15 alanc Exp $ */
 /* $Xorg: Logo.c,v 1.4 2001/02/09 02:05:54 xorgcvs Exp $ */
 /*
 
@@ -29,6 +29,9 @@ from The Open Group.
 */
 /* $XFree86: xc/programs/xlogo/Logo.c,v 1.6 2002/05/23 23:53:59 keithp Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/StringDefs.h>
 #include <X11/IntrinsicP.h>
 #include <X11/Xmu/Drawing.h>

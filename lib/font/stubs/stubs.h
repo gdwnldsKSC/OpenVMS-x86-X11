@@ -3,8 +3,8 @@
 /* This directory includes dummy entry for bdftopcf and mkfontdir */
 
 #include <stdio.h>
-#include "fntfilst.h"
-#include "font.h"
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/font.h>
 
 
 #ifndef True

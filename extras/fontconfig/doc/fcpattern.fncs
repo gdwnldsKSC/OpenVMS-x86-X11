@@ -1,7 +1,7 @@
 /*
- * $Id$
+ * $Id: fcpattern.fncs,v 1.3 2005/06/28 01:01:03 alanc Exp $
  *
- * Copyright © 2003 Keith Packard
+ * Copyright Â© 2003 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -150,7 +150,8 @@ any existing list of values.
 @TYPE4@		FcValue *			@ARG4@		v 
 @PURPOSE@	Return a value from a pattern
 @DESC@
-Returns in `v<parameter> the `id</parameter>th value associated with the property `object'.
+Returns in <parameter>v</parameter> the <parameter>id</parameter>'th value
+associated with the property <parameter>object</parameter>.
 The value returned is not a copy, but rather refers to the data stored
 within the pattern directly.  Applications must not free this value.
 @@
@@ -262,6 +263,17 @@ Deletes all values associated with the property `object', returning
 whether the property existed or not.
 @@
 
+@RET@		FcBool
+@FUNC@		FcPatternRemove
+@TYPE1@		FcPattern *			@ARG1@		p
+@TYPE2@		const char *			@ARG2@		object 
+@TYPE3@		int				@ARG3@		id
+@PURPOSE@	Remove one object of the specified type from the pattern
+@DESC@
+Removes the value associated with the property `object' at position `id', returning 
+whether the property existed and had a value at that position or not.
+@@
+		
 @RET@		void
 @FUNC@		FcPatternPrint
 @TYPE1@		const FcPattern *		@ARG1@		p 

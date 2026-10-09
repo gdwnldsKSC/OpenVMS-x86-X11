@@ -1,6 +1,7 @@
 /*
+ * $RCSId: xc/lib/fontconfig/src/fcinit.c,v 1.7 2002/08/22 07:36:44 keithp Exp $
  *
- * Copyright © 2001 Keith Packard
+ * Copyright Â© 2001 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -107,6 +108,19 @@ FcInit (void)
 }
 
 /*
+ * Free all library-allocated data structures.
+ */
+void
+FcFini (void)
+{
+    if (_fcConfig)
+	FcConfigDestroy (_fcConfig);
+
+    FcPatternThawAll ();
+    FcCharSetThawAll ();
+}
+
+/*
  * Reread the configuration and available font lists
  */
 FcBool
@@ -182,6 +196,7 @@ static struct {
     { "vstack" },
     { "attr" },
     { "pstack" },
+    { "staticstr" },
 };
 
 static int  FcAllocCount, FcAllocMem;
@@ -202,13 +217,13 @@ FcMemReport (void)
     printf ("\t   Which       Alloc           Free           Active\n");
     printf ("\t           count   bytes   count   bytes   count   bytes\n");
     for (i = 0; i < FC_MEM_NUM; i++)
-	printf ("\t%8.8s%8d%8d%8d%8d%8d%8d\n",
+	printf ("%16.16s%8d%8d%8d%8d%8d%8d\n",
 		FcInUse[i].name,
 		FcInUse[i].alloc_count, FcInUse[i].alloc_mem,
 		FcInUse[i].free_count, FcInUse[i].free_mem,
 		FcInUse[i].alloc_count - FcInUse[i].free_count,
 		FcInUse[i].alloc_mem - FcInUse[i].free_mem);
-    printf ("\t%8.8s%8d%8d%8d%8d%8d%8d\n",
+    printf ("%16.16s%8d%8d%8d%8d%8d%8d\n",
 	    "Total",
 	    FcAllocCount, FcAllocMem,
 	    FcFreeCount, FcFreeMem,

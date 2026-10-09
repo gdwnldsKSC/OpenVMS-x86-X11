@@ -87,6 +87,7 @@ $ xkb_path = unix_root + "/LIB/X11/XKB"
 $ rgb_path = unix_root + "/LIB/X11/rgb"
 $ screen = ":" + display_number
 $ server = "$" + image
+$! The default compiled XKB_BIN_DIRECTORY is relative to this runtime root.
 $ SET DEFAULT 'root'
 $ IF no_listen .NES. "" THEN GOTO restricted
 $ server "''screen'" "-auth" "''authority'" "-fp" "''font_path'" "-xkbdir" "''xkb_path'" "-co" "''rgb_path'"

@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id: configure.ac,v 1.3 2004/01/15 08:54:55 daniel Exp $
+dnl  $Id: configure.ac,v 1.1 2004/07/31 05:50:39 anholt Exp $
 dnl 
 dnl  Copyright © 2003 Keith Packard, Noah Levitt
 dnl 

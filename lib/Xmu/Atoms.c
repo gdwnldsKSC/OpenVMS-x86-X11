@@ -40,6 +40,9 @@ in this Software without prior written authorization from The Open Group.
  *	XmuNameOfAtom		returns name from an AtomPtr
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Intrinsic.h>
 #include "Atoms.h"
 

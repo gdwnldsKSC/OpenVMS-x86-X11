@@ -1,8 +1,8 @@
 /*
  * $XFree86: xc/lib/Xrandr/Xrandr.c,v 1.13tsi Exp $
  *
- * Copyright © 2000 Compaq Computer Corporation, Inc.
- * Copyright © 2002 Hewlett Packard Company, Inc.
+ * Copyright Â© 2000 Compaq Computer Corporation, Inc.
+ * Copyright Â© 2002 Hewlett Packard Company, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -23,6 +23,10 @@
  *
  * Author:  Jim Gettys, HP Labs, HP.
  */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <stdio.h>
 #include <X11/Xlib.h>
@@ -574,6 +578,7 @@ static XRRScreenConfiguration *_XRRGetScreenInfo (Display *dpy, Window window)
 XRRScreenConfiguration *XRRGetScreenInfo (Display *dpy, Window window)
 {
   XRRScreenConfiguration *config;
+  XRRFindDisplay(dpy);
   LockDisplay (dpy);
   config = _XRRGetScreenInfo(dpy, window);
   UnlockDisplay (dpy);
@@ -709,10 +714,17 @@ int XRRUpdateConfiguration(XEvent *event)
 	scevent = (XRRScreenChangeNotifyEvent *) event;
 	snum = XRRRootToScreen(dpy, 
 			       ((XRRScreenChangeNotifyEvent *) event)->root);
-	dpy->screens[snum].width   = scevent->width;
-	dpy->screens[snum].height  = scevent->height;
-	dpy->screens[snum].mwidth  = scevent->mwidth;
-	dpy->screens[snum].mheight = scevent->mheight;
+	if (scevent->rotation & (RR_Rotate_90 | RR_Rotate_270)) {
+		dpy->screens[snum].width   = scevent->height;
+		dpy->screens[snum].height  = scevent->width;
+		dpy->screens[snum].mwidth  = scevent->mheight;
+		dpy->screens[snum].mheight = scevent->mwidth;
+	} else {
+		dpy->screens[snum].width   = scevent->width;
+		dpy->screens[snum].height  = scevent->height;
+		dpy->screens[snum].mwidth  = scevent->mwidth;
+		dpy->screens[snum].mheight = scevent->mheight;
+	}
 	XRenderSetSubpixelOrder (dpy, snum, scevent->subpixel_order);
 	break;
     default:

@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_galstub.c,v 1.1 2002/12/10 15:12:23 alanh Exp $ */
 /*
  * $Workfile: nsc_galstub.c $
- * $Revision$
- * $Author$
+ * $Revision: 1.4 $
+ * $Author: ajax $
  *
  * File Contents: This file contains the file inclusions of the GAL
  *
@@ -138,6 +138,10 @@
  * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  *
  * END_NSC_LIC_GPL */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #if defined(STB_X)
 /* all driver need this */

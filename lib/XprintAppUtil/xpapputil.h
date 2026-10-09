@@ -71,7 +71,8 @@ typedef struct
     void                    *print_to_filehandle;
     Screen                  *pscreen;
     int                      pscreennumber;
-    long                     document_dpi;
+    long                     document_dpi_x,
+                             document_dpi_y;
     
     XpuSupportedFlags        supported_job_attributes;
     XpuSupportedFlags        supported_doc_attributes;

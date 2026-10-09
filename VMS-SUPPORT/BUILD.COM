@@ -61,6 +61,8 @@ $ directory = profile + ".INCLUDE.X11.ICE]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]ICE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11.SM]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]SM.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".INCLUDE.X11.XTRANS]"
+$ IF F$SEARCH(profile + ".INCLUDE.X11]XTRANS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11.XCURSOR]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]XCURSOR.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11.XMU]"

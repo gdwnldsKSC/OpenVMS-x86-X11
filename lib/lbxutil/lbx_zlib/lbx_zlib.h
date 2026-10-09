@@ -53,7 +53,7 @@ from The Open Group.
 /* $XFree86: xc/lib/lbxutil/lbx_zlib/lbx_zlib.h,v 1.9 2001/08/27 19:01:07 dawes Exp $ */
 
 #include "zlib.h"
-#include "Xfuncproto.h"
+#include <X11/Xfuncproto.h>
 
 struct compress_private {
     z_stream	stream;
@@ -123,3 +123,14 @@ extern void FreeInput ( ZlibBufferPtr inbuf, int len );
 extern void CommitOutBuf ( ZlibBufferPtr outbuf, int outlen );
 extern int FlushOutBuf ( int fd, ZlibBufferPtr outbuf );
 extern int FlushIovBuf ( int fd, struct iovec *iovbuf );
+
+/* Copied from xc/programs/Xserver/include/xorg/os.h */
+#ifndef _HAVE_XALLOC_DECLS
+#define _HAVE_XALLOC_DECLS
+#include <X11/Xdefs.h>
+
+extern pointer Xalloc(unsigned long /*amount*/);
+extern pointer Xcalloc(unsigned long /*amount*/);
+extern pointer Xrealloc(pointer /*ptr*/, unsigned long /*amount*/);
+extern void Xfree(pointer /*ptr*/);
+#endif

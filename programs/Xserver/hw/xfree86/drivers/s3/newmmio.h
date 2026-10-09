@@ -9,7 +9,7 @@
 #ifndef _NEWMMIO_H_
 #define _NEWMMIO_H_
 
-#include <Xmd.h>
+#include <X11/Xmd.h>
 
 
 #define int16	CARD16

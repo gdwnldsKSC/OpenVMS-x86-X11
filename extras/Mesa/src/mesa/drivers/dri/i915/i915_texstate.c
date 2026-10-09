@@ -60,83 +60,17 @@ static GLint step_offsets[6][2] = { {0,2},
 
 #define I915_TEX_UNIT_ENABLED(unit)		(1<<unit)
 
-static void i915SetTexImages( i915ContextPtr i915, 
-			     struct gl_texture_object *tObj )
+static void i915LayoutTextureImages( i915ContextPtr i915,
+				     struct gl_texture_object *tObj )
 {
-   GLuint total_height, pitch, i, textureFormat;
-   i915TextureObjectPtr t = (i915TextureObjectPtr) tObj->DriverData;
    const struct gl_texture_image *baseImage = tObj->Image[0][tObj->BaseLevel];
+   i915TextureObjectPtr t = (i915TextureObjectPtr) tObj->DriverData;
    GLint firstLevel, lastLevel, numLevels;
-   GLint ss2 = 0;
-
-   switch( baseImage->TexFormat->MesaFormat ) {
-   case MESA_FORMAT_L8:
-      t->intel.texelBytes = 1;
-      textureFormat = MAPSURF_8BIT | MT_8BIT_L8;
-      break;
-
-   case MESA_FORMAT_I8:
-      t->intel.texelBytes = 1;
-      textureFormat = MAPSURF_8BIT | MT_8BIT_I8;
-      break;
-
-   case MESA_FORMAT_A8:
-      t->intel.texelBytes = 1;
-      textureFormat = MAPSURF_8BIT | MT_8BIT_A8; 
-      break;
-
-   case MESA_FORMAT_AL88:
-      t->intel.texelBytes = 2;
-      textureFormat = MAPSURF_16BIT | MT_16BIT_AY88;
-      break;
-
-   case MESA_FORMAT_RGB565:
-      t->intel.texelBytes = 2;
-      textureFormat = MAPSURF_16BIT | MT_16BIT_RGB565;
-      break;
-
-   case MESA_FORMAT_ARGB1555:
-      t->intel.texelBytes = 2;
-      textureFormat = MAPSURF_16BIT | MT_16BIT_ARGB1555;
-      break;
-
-   case MESA_FORMAT_ARGB4444:
-      t->intel.texelBytes = 2;
-      textureFormat = MAPSURF_16BIT | MT_16BIT_ARGB4444;
-      break;
-
-   case MESA_FORMAT_ARGB8888:
-      t->intel.texelBytes = 4;
-      textureFormat = MAPSURF_32BIT | MT_32BIT_ARGB8888;
-      break;
-
-   case MESA_FORMAT_YCBCR_REV:
-      t->intel.texelBytes = 2;
-      textureFormat = (MAPSURF_422 | MT_422_YCRCB_NORMAL);
-      ss2 |= SS2_COLORSPACE_CONVERSION;
-      break;
-
-   case MESA_FORMAT_YCBCR:
-      t->intel.texelBytes = 2;
-      textureFormat = (MAPSURF_422 | MT_422_YCRCB_SWAPY);
-      ss2 |= SS2_COLORSPACE_CONVERSION;
-      break;
-
-   case MESA_FORMAT_RGB_FXT1:
-   case MESA_FORMAT_RGBA_FXT1:
-     t->intel.texelBytes = 2;
-     textureFormat = (MAPSURF_COMPRESSED | MT_COMPRESS_FXT1);
-     break;
-
-   default:
-      fprintf(stderr, "%s: bad image format\n", __FUNCTION__);
-      abort();
-   }
+   GLint i, total_height, pitch;
 
    /* Compute which mipmap levels we really want to send to the hardware.
     */
    driCalculateTextureFirstLastLevel( (driTextureObject *) t );
-
 
    /* Figure out the amount of memory required to hold all the mipmap
     * levels.  Choose the smallest pitch to accomodate the largest
@@ -254,21 +188,336 @@ static void i915SetTexImages( i915ContextPtr i915,
    t->intel.Pitch = pitch;
    t->intel.base.totalSize = total_height*pitch;
    t->intel.max_level = numLevels-1;
+}
+
+
+static void i945LayoutTextureImages( i915ContextPtr i915,
+				    struct gl_texture_object *tObj )
+{
+   const struct gl_texture_image *baseImage = tObj->Image[0][tObj->BaseLevel];
+   i915TextureObjectPtr t = (i915TextureObjectPtr) tObj->DriverData;
+   GLint firstLevel, lastLevel, numLevels;
+   GLint i, total_height, pitch, sz, max_offset = 0, offset;
+
+
+   /* Compute which mipmap levels we really want to send to the hardware.
+    */
+   driCalculateTextureFirstLastLevel( (driTextureObject *) t );
+
+   /* Figure out the amount of memory required to hold all the mipmap
+    * levels.  Choose the smallest pitch to accomodate the largest
+    * mipmap:
+    */
+   firstLevel = t->intel.base.firstLevel;
+   lastLevel = t->intel.base.lastLevel;
+   numLevels = lastLevel - firstLevel + 1;
+
+
+
+   /* All images must be loaded at this pitch.  Count the number of
+    * lines required:
+    */
+   switch (tObj->Target) {
+   case GL_TEXTURE_CUBE_MAP: {
+      const GLuint dim = tObj->Image[0][firstLevel]->Width;
+      GLuint face;
+
+      /* Depending on the size of the largest images, pitch can be
+       * determined either by the old-style packing of cubemap faces,
+       * or the final row of 4x4, 2x2 and 1x1 faces below this. 
+       */
+      if (dim > 32) {
+	 pitch = dim * t->intel.texelBytes;
+	 pitch *= 2;		/* double pitch for cube layouts */
+	 pitch = (pitch + 3) & ~3;
+      }
+      else {
+	 pitch = 14 * 8 * t->intel.texelBytes; /* determined by row of
+						* little maps at
+						* bottom */
+      }
+      
+      total_height = dim * 4 + 4;
+
+      for ( face = 0 ; face < 6 ; face++) {
+	 GLuint x = initial_offsets[face][0] * dim;
+	 GLuint y = initial_offsets[face][1] * dim;
+	 GLuint d = dim;
+	 
+	 if (dim == 4 && face >= 4) {
+	    y = total_height - 4;
+	    x = (face - 4) * 8;
+	 }
+	 else if (dim < 4) {
+	    y = total_height - 4;
+	    x = face * 8;
+	 }
+
+	 t->intel.base.dirty_images[face] = ~0;
+
+	 assert(tObj->Image[face][firstLevel]->Width == dim);
+	 assert(tObj->Image[face][firstLevel]->Height == dim);
+
+	 for (i = 0; i < numLevels; i++) {
+
+
+	    t->intel.image[face][i].image = tObj->Image[face][firstLevel + i];
+	    assert(t->intel.image[face][i].image);
+	 
+	    t->intel.image[face][i].offset = 
+	       y * pitch + x * t->intel.texelBytes;
+	    t->intel.image[face][i].internalFormat = baseImage->Format;
+
+	    d >>= 1;
+	    
+	    switch (d) {
+	    case 4:
+	       switch (face) {
+	       case FACE_POS_X:
+	       case FACE_NEG_X:
+		  x += step_offsets[face][0] * d;
+		  y += step_offsets[face][1] * d;
+		  break;
+	       case FACE_POS_Y:
+	       case FACE_NEG_Y:
+		  y += 12;
+		  x -= 8;
+		  break;
+	       case FACE_POS_Z:
+	       case FACE_NEG_Z:
+		  y = total_height - 4;
+		  x = (face - 4) * 8;
+		  break;
+	       }
+
+	    case 2:
+	       y = total_height - 4;
+	       x = 16 + face * 8;
+	       break;
+
+	    case 1:
+	       x += 48;
+	       break;
+	       
+	    default:
+	       x += step_offsets[face][0] * d;
+	       y += step_offsets[face][1] * d;
+	       break;
+	    }
+	 }
+      }
+      max_offset = total_height * pitch;
+      break;
+   }
+   case GL_TEXTURE_3D: {
+      GLuint depth_packing = 0, depth_pack_pitch;
+      GLuint tmp_numLevels = numLevels;
+      pitch = tObj->Image[0][firstLevel]->Width * t->intel.texelBytes;
+      pitch = (pitch + 3) & ~3;
+      depth_pack_pitch = pitch;
+      
+      t->intel.base.dirty_images[0] = ~0;
+
+
+      for ( total_height = i = 0 ; i < tmp_numLevels ; i++ ) {
+	 t->intel.image[0][i].image = tObj->Image[0][firstLevel + i];
+	 if (!t->intel.image[0][i].image) 
+	    break;
+
+	 
+	 t->intel.image[0][i].offset = total_height * pitch;
+	 t->intel.image[0][i].internalFormat = baseImage->Format;
+	 
+
+
+	 total_height += MAX2(2, t->intel.image[0][i].image->Height) * 
+	    MAX2((t->intel.image[0][i].image->Depth >> depth_packing), 1);
+
+	 /* When alignment dominates, can't increase depth packing?
+	  * Or does pitch grow???  What are the alignment constraints,
+	  * anyway?
+	  */
+	 if (depth_pack_pitch > 4) {
+	    depth_packing++;
+	    depth_pack_pitch <<= 2;
+	 }
+      }
+
+      max_offset = total_height * pitch;
+      break;
+   }
+   default:
+      pitch = tObj->Image[0][firstLevel]->Width * t->intel.texelBytes;
+      pitch = (pitch + 3) & ~3;
+      t->intel.base.dirty_images[0] = ~0;
+      max_offset = 0;
+
+      for ( offset = i = 0 ; i < numLevels ; i++ ) {
+	 t->intel.image[0][i].image = tObj->Image[0][firstLevel + i];
+	 if (!t->intel.image[0][i].image) 
+	    break;
+	 
+	 t->intel.image[0][i].offset = offset;
+	 t->intel.image[0][i].internalFormat = baseImage->Format;
+
+	 if (t->intel.image[0][i].image->IsCompressed)
+	    sz = MAX2(1, t->intel.image[0][i].image->Height/4) * pitch;
+	 else
+	    sz = MAX2(2, t->intel.image[0][i].image->Height) * pitch;
+	 
+	 /* Because the images are packed better, the final offset
+	  * might not be the maximal one:
+	  */
+	 max_offset = MAX2(max_offset, offset + sz);
+
+	 /* LPT change: step right after second mipmap.
+	  */
+	 if (i == 1) 
+	    offset += pitch / 2;
+	 else 
+	    offset += sz;
+
+      }
+      break;
+   }
+
+   t->intel.Pitch = pitch;
+   t->intel.base.totalSize = max_offset;
+   t->intel.max_level = numLevels-1;
+}
+
+
+
+
+static void i915SetTexImages( i915ContextPtr i915, 
+			     struct gl_texture_object *tObj )
+{
+   GLuint textureFormat;
+   i915TextureObjectPtr t = (i915TextureObjectPtr) tObj->DriverData;
+   const struct gl_texture_image *baseImage = tObj->Image[0][tObj->BaseLevel];
+   GLint ss2 = 0;
+
+   switch( baseImage->TexFormat->MesaFormat ) {
+   case MESA_FORMAT_L8:
+      t->intel.texelBytes = 1;
+      textureFormat = MAPSURF_8BIT | MT_8BIT_L8;
+      break;
+
+   case MESA_FORMAT_I8:
+      t->intel.texelBytes = 1;
+      textureFormat = MAPSURF_8BIT | MT_8BIT_I8;
+      break;
+
+   case MESA_FORMAT_A8:
+      t->intel.texelBytes = 1;
+      textureFormat = MAPSURF_8BIT | MT_8BIT_A8; 
+      break;
+
+   case MESA_FORMAT_AL88:
+      t->intel.texelBytes = 2;
+      textureFormat = MAPSURF_16BIT | MT_16BIT_AY88;
+      break;
+
+   case MESA_FORMAT_RGB565:
+      t->intel.texelBytes = 2;
+      textureFormat = MAPSURF_16BIT | MT_16BIT_RGB565;
+      break;
+
+   case MESA_FORMAT_ARGB1555:
+      t->intel.texelBytes = 2;
+      textureFormat = MAPSURF_16BIT | MT_16BIT_ARGB1555;
+      break;
+
+   case MESA_FORMAT_ARGB4444:
+      t->intel.texelBytes = 2;
+      textureFormat = MAPSURF_16BIT | MT_16BIT_ARGB4444;
+      break;
+
+   case MESA_FORMAT_ARGB8888:
+      t->intel.texelBytes = 4;
+      textureFormat = MAPSURF_32BIT | MT_32BIT_ARGB8888;
+      break;
+
+   case MESA_FORMAT_YCBCR_REV:
+      t->intel.texelBytes = 2;
+      textureFormat = (MAPSURF_422 | MT_422_YCRCB_NORMAL);
+      ss2 |= SS2_COLORSPACE_CONVERSION;
+      break;
+
+   case MESA_FORMAT_YCBCR:
+      t->intel.texelBytes = 2;
+      textureFormat = (MAPSURF_422 | MT_422_YCRCB_SWAPY);
+      ss2 |= SS2_COLORSPACE_CONVERSION;
+      break;
+
+   case MESA_FORMAT_RGB_FXT1:
+   case MESA_FORMAT_RGBA_FXT1:
+     t->intel.texelBytes = 2;
+     textureFormat = (MAPSURF_COMPRESSED | MT_COMPRESS_FXT1);
+     break;
+
+   case MESA_FORMAT_DEPTH_COMPONENT16:
+      t->intel.texelBytes = 2;
+      textureFormat = (MAPSURF_16BIT | MT_16BIT_L16);
+      break;
+
+   case MESA_FORMAT_RGBA_DXT1:
+   case MESA_FORMAT_RGB_DXT1:
+     /* 
+      * DXTn pitches are Width/4 * blocksize in bytes 
+      * for DXT1: blocksize=8 so Width/4*8 = Width * 2 
+      * for DXT3/5: blocksize=16 so Width/4*16 = Width * 4
+      */
+     t->intel.texelBytes = 2;
+     textureFormat = (MAPSURF_COMPRESSED | MT_COMPRESS_DXT1);
+     break;
+
+   case MESA_FORMAT_RGBA_DXT3:
+     t->intel.texelBytes = 4;
+     textureFormat = (MAPSURF_COMPRESSED | MT_COMPRESS_DXT2_3);
+     break;
+
+   case MESA_FORMAT_RGBA_DXT5:
+     t->intel.texelBytes = 4;
+     textureFormat = (MAPSURF_COMPRESSED | MT_COMPRESS_DXT4_5);
+     break;
+
+#if 0
+   case MESA_FORMAT_DEPTH_COMPONENT_X8Z24:
+      t->intel.texelBytes = 4;
+      textureFormat = (MAPSURF_32BIT | MT_32BIT_xL824);
+      break;
+#endif
+
+   default:
+      fprintf(stderr, "%s: bad image format %x\n", __FUNCTION__,
+	      baseImage->TexFormat->MesaFormat);
+      abort();
+   }
+
+
+   if (i915->intel.intelScreen->deviceID == PCI_CHIP_I945_G)
+      i945LayoutTextureImages( i915, tObj );	 
+   else
+      i915LayoutTextureImages( i915, tObj );
+
    t->Setup[I915_TEXREG_MS3] = 
-      (((tObj->Image[0][firstLevel]->Height - 1) << MS3_HEIGHT_SHIFT) |
-       ((tObj->Image[0][firstLevel]->Width - 1) << MS3_WIDTH_SHIFT) |
+      (((tObj->Image[0][t->intel.base.firstLevel]->Height - 1) << MS3_HEIGHT_SHIFT) |
+       ((tObj->Image[0][t->intel.base.firstLevel]->Width - 1) << MS3_WIDTH_SHIFT) |
        textureFormat |
        MS3_USE_FENCE_REGS);
+
    t->Setup[I915_TEXREG_MS4] = 
-      ((((pitch / 4) - 1) << MS4_PITCH_SHIFT) | 
+      ((((t->intel.Pitch / 4) - 1) << MS4_PITCH_SHIFT) | 
        MS4_CUBE_FACE_ENA_MASK |
        (((t->intel.max_level * 4)) << MS4_MAX_LOD_SHIFT) |
-       ((tObj->Image[0][firstLevel]->Depth - 1) << MS4_VOLUME_DEPTH_SHIFT));
+       ((tObj->Image[0][t->intel.base.firstLevel]->Depth - 1) << MS4_VOLUME_DEPTH_SHIFT));
 
-   t->Setup[I915_TEXREG_SS2] &= ~SS2_COLORSPACE_CONVERSION;
+   t->Setup[I915_TEXREG_SS2] &= ~(SS2_COLORSPACE_CONVERSION);
    t->Setup[I915_TEXREG_SS2] |= ss2;
 
    t->intel.dirty = I915_UPLOAD_TEX_ALL;
+
 }
 
 
@@ -294,7 +543,7 @@ static GLuint translate_wrap_mode( GLenum wrap )
 static void i915ImportTexObjState( struct gl_texture_object *texObj )
 {   
    i915TextureObjectPtr t = (i915TextureObjectPtr)texObj->DriverData;
-   int minFilt = 0, mipFilt = 0, magFilt = 0;
+   int minFilt = 0, mipFilt = 0, magFilt = 0, shadow = 0;
 
    if(INTEL_DEBUG&DEBUG_DRI)
       fprintf(stderr, "%s\n", __FUNCTION__);
@@ -345,12 +594,26 @@ static void i915ImportTexObjState( struct gl_texture_object *texObj )
       }  
    }
 
-   t->Setup[I915_TEXREG_SS2] &= ~SS2_MIN_FILTER_MASK;
-   t->Setup[I915_TEXREG_SS2] &= ~SS2_MIP_FILTER_MASK;
-   t->Setup[I915_TEXREG_SS2] &= ~SS2_MAG_FILTER_MASK;
+   if (texObj->CompareMode == GL_COMPARE_R_TO_TEXTURE_ARB && 
+       texObj->Target != GL_TEXTURE_3D) {
+
+      shadow = SS2_SHADOW_ENABLE;
+      shadow |= intel_translate_compare_func( texObj->CompareFunc );
+      
+      minFilt = FILTER_4X4_FLAT;
+      magFilt = FILTER_4X4_FLAT;
+   }
+
+
+   t->Setup[I915_TEXREG_SS2] &= ~(SS2_MIN_FILTER_MASK |
+				 SS2_MIP_FILTER_MASK |
+				 SS2_MAG_FILTER_MASK |
+				 SS2_SHADOW_ENABLE |
+				 SS2_SHADOW_FUNC_MASK);
    t->Setup[I915_TEXREG_SS2] |= ((minFilt << SS2_MIN_FILTER_SHIFT) |
 				(mipFilt << SS2_MIP_FILTER_SHIFT) |
-				(magFilt << SS2_MAG_FILTER_SHIFT));
+				(magFilt << SS2_MAG_FILTER_SHIFT) |
+				shadow);
 
    {
       GLuint ss3 = t->Setup[I915_TEXREG_SS3] & ~(SS3_TCX_ADDR_MODE_MASK |

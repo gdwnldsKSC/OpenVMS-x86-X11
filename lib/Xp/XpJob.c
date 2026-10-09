@@ -40,6 +40,9 @@
 #define __EXTENSIONS__
 #endif
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/extensions/Printstr.h>
 #include <X11/Xlibint.h>
 #include <X11/Xos.h>

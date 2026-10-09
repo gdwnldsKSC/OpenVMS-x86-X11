@@ -1,6 +1,6 @@
 #
 # Makefile for PolyglotMan
-#   It's helpful to read the README-rman file first.
+#   It's helpful to read the README-rman.txt file first.
 #   You should read over all parts of this file,
 #      down to the "you shouldn't modify" line
 #
@@ -11,20 +11,21 @@
 ### you need to localize the paths on these lines
 
 # The executable `rman' is placed in BINDIR.
-# If you're also installing TkMan (available separately--see README-rman),
+# If you're also installing TkMan (available separately--see README-rman.txt),
 #    this must be a directory that's in your bin PATH.
 # MANDIR holds the man page.
 
-BINDIR = /private/share/bin
+BINDIR = /opt/local/bin
 #BINDIR = /usr/local/bin
-MANDIR = /home/auspex/h/bair/phelps/man/man1
-#MANDIR = /usr/local/man/man1
+#BINDIR = //C/bin
+MANDIR = /usr/local/man/man1
+# popular alternative
+#BINDIR = /opt/local/bin
+#MANDIR = /opt/local/man/man1
 
 
-### if you have GNU gcc v2.x, use these definitions
-
+### if you have GNU gcc, use these definitions
 CC = gcc
-# if you don't have gcc v2.x, try -O for CFLAGS
 CFLAGS = -O2 -finline-functions
 
 ### if you just have a standard UNIX, use these instead of GNU.
@@ -56,7 +57,7 @@ VOLLIST = "1:2:3:4:5:6:7:8:9:o:l:n:p"
 #VOLLIST = "1:2:3:4:5:6:7:8:9:o:l:n:p:D"
 
 
-# the printf strings used to set the <TITLE> and
+# the printf strings used to set the HTML <TITLE> and
 # to set URL hyperlinks to referenced manual pages
 # can be defined at runtime.  The defaults are defined below.
 # The first %s parameter is the manual page name,
@@ -68,6 +69,7 @@ MANTITLEPRINTF = "%s(%s) manual page"
 MANREFPRINTF = "%s.%s"
 # on-the-fly through a cgi-bin script
 #MANREFPRINTF = "/cgi-bin/man2html?%s&%s"
+#MANREFPRINTF = "/cgi-bin/man2html?m=%s&n=%s"
 
 
 # # # these lines are probably fine
@@ -84,13 +86,13 @@ RM = rm
 #
 #--------------------------------------------------
 
-version = 3.0.8
+version = 3.2
 rman = rman-$(version)
-srcs = rman.c getopt.c macish.c
+srcs = rman.c
 objs = rman
 defs = -DVOLLIST='$(VOLLIST)' -DMANTITLEPRINTF='$(MANTITLEPRINTF)' -DMANREFPRINTF='$(MANREFPRINTF)'
 libs = 
-aux = ANNOUNCE-rman README-rman Makefile Makefile.mac rman.1 rman.html CHANGES
+aux = README-rman.txt Makefile rman.1 site/rman.html CHANGES
 distrib = $(srcs) $(libs) $(aux) contrib
 
 
@@ -102,14 +104,6 @@ all:  rman
 rman: rman.c Makefile
 	$(CC) -DNDEBUG $(defs) -DPOLYGLOTMANVERSION=\"$(version)\" $(CFLAGS) -o rman rman.c
 
-dox: rman.1 ANNOUNCE-rman
-
-ANNOUNCE-rman: Announce-rman
-	sed -e /=========/,/bogusline/p -e d Announce-rman > ANNOUNCE-rman
-
-rman.1: rman.html rman
-	echo '.TH PolyglotMan 1' > rman.1
-	cat ../html/html.dtd rman.html | sgmls | ../html/html2man.pl >> rman.1
 
 debug:
 	$(CC) $(defs) -DDEBUG -DPOLYGLOTMANVERSION=\"debug\" -g -Wall -o rman rman.c
@@ -144,20 +138,20 @@ sww:
 clean:
 	rm -f $(objs)
 
-dist: dox
+dist: 
 	rm -rf $(rman)*
 	mkdir $(rman)
-	$(CP) -R $(distrib) $(rman)
+	$(CP) -RH $(distrib) $(rman)
 #	expand -4 rman.c > $(rman)/rman.c
 	rm -f $(rman)/contrib/*~
 	@echo 'gcksum crc   length name' > MANIFEST
 	@echo '----------   ------ ----' >> MANIFEST
-	@gcksum $(filter-out contrib, $(filter-out %~, $(distrib) $(wildcard contrib/*))) | gtee -a MANIFEST
+	@cksum $(filter-out contrib, $(filter-out %~, $(distrib) $(wildcard contrib/*))) | tee -a MANIFEST
 	mv MANIFEST $(rman)
-	gtar chvf $(rman).tar $(rman)
-	compress $(rman).tar
-#	gzip -9v $(rman).tar
-	rm -rf $(rman) ANNOUNCE-rman rman.1
+	tar chvf $(rman).tar $(rman)
+	gzip -9v $(rman).tar
+	rm -rf $(rman)
+# ANNOUNCE-rman rman.1
 	@echo "*** Did you remember to ci -l first?"
 
 uu: tar

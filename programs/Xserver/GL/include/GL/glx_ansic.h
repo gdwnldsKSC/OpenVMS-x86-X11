@@ -1,3 +1,7 @@
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _glx_ansic_h_
 #define _glx_ansic_h_
 

@@ -1,5 +1,5 @@
 /* $TOG: panoramiX.h /main/4 1998/03/17 06:51:02 kaleb $ */
-/* $XdotOrg: xc/programs/Xserver/Xext/panoramiX.h,v 1.2 2004/04/23 18:44:41 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/Xext/panoramiX.h,v 1.5 2005/07/03 07:01:04 daniels Exp $ */
 /*****************************************************************
 
 Copyright (c) 1991, 1997 Digital Equipment Corporation, Maynard, Massachusetts.
@@ -36,10 +36,14 @@ Equipment Corporation.
  *	PanoramiX definitions
  */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _PANORAMIX_H_
 #define _PANORAMIX_H_
 
-#include "panoramiXext.h"
+#include <X11/extensions/panoramiXext.h>
 #include "gcstruct.h"
 
 

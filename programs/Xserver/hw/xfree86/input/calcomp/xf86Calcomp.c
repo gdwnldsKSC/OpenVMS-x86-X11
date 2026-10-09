@@ -33,6 +33,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/calcomp/xf86Calcomp.c,v 1.7 2003/01/12 03:55:50 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _CALCOMP_C_
 /*****************************************************************************
  *	Standard Headers
@@ -60,7 +64,7 @@
  *	Local Variables
  ****************************************************************************/
 
-InputDriverRec CALCOMP = {
+_X_EXPORT InputDriverRec CALCOMP = {
                 1,
                 "calcomp",
                 NULL,
@@ -161,7 +165,11 @@ CalcompSetupProc(       pointer module,
 
                                                                                                 
                                                                                                 
-XF86ModuleData calcompModuleData = { &VersionRec, CalcompSetupProc, NULL };
+_X_EXPORT XF86ModuleData calcompModuleData = {
+    &VersionRec,
+    CalcompSetupProc,
+    NULL
+};
                                                                                                 
                                                                                                 
 #endif /* XFree86LOADER */

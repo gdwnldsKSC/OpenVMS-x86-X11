@@ -1,4 +1,5 @@
 .\" $Xorg: XtClass.man,v 1.3 2000/08/17 19:41:59 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtClass.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright 1993 X Consortium
 .\"
@@ -232,7 +233,7 @@ for each of the built-in classes. These procedures are
 .ZN XtIsTopLevelShell ,
 .ZN XtIsApplicationShell ,
 and
-ZN XtIsSessionShell .
+.ZN XtIsSessionShell .
 .LP
 The
 .SH "SEE ALSO"

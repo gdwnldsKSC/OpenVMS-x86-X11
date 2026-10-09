@@ -50,6 +50,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/elo2300/elo.c,v 1.10 2000/08/11 19:10:44 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _elo_C_
 /*****************************************************************************
  *	Standard Headers
@@ -102,7 +106,11 @@ static const char *default_options[] =
 	"FlowControl", "None"
 };
 
-XF86ModuleData elo2300ModuleData = { &VersionRec, SetupProc, TearDownProc };
+_X_EXPORT XF86ModuleData elo2300ModuleData = {
+    &VersionRec,
+    SetupProc,
+    TearDownProc
+};
 
 /*****************************************************************************
  *	Function Definitions

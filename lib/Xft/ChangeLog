@@ -1,12 +1,163 @@
-Fri Aug 13 21:01:34 2004  Soeren Sandmann  <sandmann@daimi.au.dk>
+2005-05-17  Egbert Eich  <eich-at-freedesktop-dot-org>
+        * Xft.h:
+        gcc4 allows to check if sentinels are correct (a sentinel is the
+        terminating element in a varargs list). A sentinel needs to be
+        NULL, not 0 - which doesn't make a difference on 32bit but
+        matters on 64bit.
+        Furthermore it can be told that functions have a printf-like
+        format string and argument list so that they can verify that
+        both match.
+        To use these features certain attributes need to be set - which
+        are compiler specific. To do this we define macros which are
+        expanded depending on the compiler version.
+        For now we put those in include/Xfuncproto.h (the XFree86 DDX
+        layer contains a file compiler.h which however is not visible
+        outside the DDX) (Bugzilla #3268).
 
-	* xftint.h (HAVE_FT_BITMAP_SIZE_Y_PPEM): Fix the build
+2005-05-01  Josh Triplett  <josh@freedesktop.org>
 
+	* Makefile.am:
+	* configure.ac:
+	* xft-config.1.in:
+	Add Branden Robinson's xft-config manpage.
+
+2005-04-20  Branden Robinson  <branden@deadbeast.net>
+
+	* Xft.3.in:
+	- Independently document each of the XftTextExtents* functions,
+	  with particular attention to the units the "len" parameter is
+	  measuring for each function.  (Thanks to Matthew Allum for the
+	  suggestion.)
+	- Tweak wording to not risk programmer inference that exposed
+	  functions used internally are not for application usage.
+	- Don't escape hyphens when we don't really mean it (unescaped
+	  hyphens are perfectly appropriate for hyphenated terms like
+	  "mother-in-law" or "UTF-8".
+
+2005-04-20  Branden Robinson  <branden@deadbeast.net>
+
+	* Xft.3.in:
+	- Flesh out with more details of constants, data types, and
+	  functions used in the library.  This continues to be a
+	  work-in-progress.
+	- Move Xft 1.x compatibility interfaces to a new subsection of the
+	  "COMPATBILITY" section.
+	- Add "HEADER FILE" section.
+	- Add "SEE ALSO" section.
+
+2005-04-02  Branden Robinson  <branden@deadbeast.net>
+	* Xft.3.in:
+	Improve roff markup in many respects:
+	- Don't define a macro we don't use (TQ).
+	- Eliminate gratuitous blank lines.
+	- End sentences with newlines so that roff knows when to use
+	  intersentence spacing.
+	- Consistently use boldface when referring to the Xft library name
+	  and data types.
+	- Mark up function prototypes more legibly.
+	- Remove extraneous whitespace characters at ends of lines.
+	Make editorial changes to improve comprehensibility:
+	- Delcare manpage name in .TH macro using mixed case.
+	- Rename "DATATYPES" section to "DATA TYPES".
+	- Make various wording changes and clarifications.
+	- Consistently refer to the RENDER extension as the "X Rendering
+	  Extension".
+
+2005-04-02  Branden Robinson  <branden@deadbeast.net>
+
+	* Makefile.am:
+	Remove $(man_MANS) from EXTRA_DIST; the Xft.3 manpage is generated
+	by the ./configure script, so there is no need to ship it as part
+	of the distribution tarball.
+	Whitespace police.
+
+2005-03-29  Keith Packard  <keithp@keithp.com>
+
+	* README:
+	* Xft.h:
+	* configure.ac:
+	Update for version 2.1.7
+
+2005-03-01  Keith Packard  <keithp@keithp.com>
+
+	* xftdpy.c: (_XftDisplayInfoGet), (XftDefaultSubstitute):
+	Avoid calling any Render functions when Render is missing (#137)
+	
+	* xftglyphs.c: (XftFontLoadGlyphs):
+	Only clip to bounding box when FC_CHARCELL is specified.
+	Only fix glyph spacing when FC_MONO is specified.
+
+2005-02-28  Keith Packard  <keithp@keithp.com>
+
+	* configure.ac:
+	* xftdpy.c: (_XftDefaultInit), (XftDefaultSubstitute):
+	* xftfreetype.c: (XftFontInfoFill), (XftFontOpenInfo):
+	* xftglyphs.c: (XftFontLoadGlyphs):
+	* xftint.h:
+	Add support for artificial emboldening of glyphs through
+	the FT_GlyphSlot_Embolden API when it is available.
+
+	* xftextent.c: (XftGlyphExtents):
+	Optimize one glyph extents case (it happens a *lot*).
+	(Ross Burton)
+	
+2004-11-28  James Henstridge  <james@jamesh.id.au>
+
+	* xftfreetype.c (_XftReleaseFile): add parentheses in the
+	expression in the second argument to XftMemFree so that it is
+	interpreted correctly.
+
+2004-09-05  Keith Packard  <keithp@keithp.com>
+
+	* configure.ac:
+	Move AC_CONFIG_AUX_DIR above AM_INIT_AUTOMAKE to make 
+	automake 1.9 happy
+	
 Fri Aug 13 19:47:12 2004  Soeren Sandmann  <sandmann@redhat.com>
 
 	* xftint.h: Make HAVE_FT_BITMAP_SIZE_Y_PPEM conditional on the
 	FreeType version instead of proping it. This way it will work
 	with the monolithic version too. #1062, Patch by Owen Taylor.
+	
+2004-08-03  Keith Packard  <keithp@keithp.com>
+
+	* xftfreetype.c: (_XftReleaseFile):
+	Called strlen with (f->file) without checking for NULL (which
+	happens when directly using FT_Face objects).
+
+2004-04-14  Keith Packard  <keithp@keithp.com>
+
+	* AUTHORS:
+	* Makefile.am:
+	* Xft-def.cpp:
+	* Xft.3.in:
+	* Xft.h:
+	* XftCompat.h:
+	* configure.ac:
+	* xftcolor.c:
+	* xftcore.c:
+	* xftdbg.c:
+	* xftdpy.c:
+	* xftdraw.c:
+	* xftextent.c:
+	* xftfont.c:
+	* xftfreetype.c: (XftFontOpenInfo):
+	* xftglyphs.c:
+	* xftinit.c:
+	* xftint.h:
+	* xftlist.c:
+	* xftname.c:
+	* xftrender.c:
+	* xftstr.c:
+	* xftswap.c:
+	* xftxlfd.c:
+	Regularize #include usage so that all includes
+	happen in xftint.h. This allows conditional inclusion
+	of system headers like string.h/strings.h
+	
+	Add GCC warnings on GCC systems.
+
+	Fix CVS Id strings
 
 2004-03-22  Keith Packard  <keithp@keithp.com>
 

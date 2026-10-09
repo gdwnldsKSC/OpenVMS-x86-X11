@@ -21,6 +21,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef XFree86LOADER
 
 #include "ativersion.h"
@@ -76,7 +80,7 @@ RADEONSetup
 }
 
 /* The following record must be called radeonModuleData */
-XF86ModuleData radeonModuleData =
+_X_EXPORT XF86ModuleData radeonModuleData =
 {
     &RADEONVersionRec,
     RADEONSetup,

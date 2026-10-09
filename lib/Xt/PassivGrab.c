@@ -6,13 +6,13 @@ Copyright 1988 by Hewlett-Packard Company
 Copyright 1987, 1988, 1989,1990 by Digital Equipment Corporation, Maynard, Massachusetts
 Copyright 1993 by Sun Microsystems, Inc. Mountain View, CA.
 
-Permission to use, copy, modify, and distribute this software 
-and its documentation for any purpose and without fee is hereby 
-granted, provided that the above copyright notice appear in all 
-copies and that both that copyright notice and this permission 
-notice appear in supporting documentation, and that the names of 
-Hewlett-Packard, Digital, or Sun not be used in advertising or 
-publicity pertaining to distribution of the software without specific, 
+Permission to use, copy, modify, and distribute this software
+and its documentation for any purpose and without fee is hereby
+granted, provided that the above copyright notice appear in all
+copies and that both that copyright notice and this permission
+notice appear in supporting documentation, and that the names of
+Hewlett-Packard, Digital, or Sun not be used in advertising or
+publicity pertaining to distribution of the software without specific,
 written prior permission.
 
 DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
@@ -61,6 +61,9 @@ in this Software without prior written authorization from The Open Group.
 
 */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "IntrinsicI.h"
 #include "StringDefs.h"
 #include "PassivGraI.h"
@@ -87,9 +90,9 @@ in this Software without prior written authorization from The Open Group.
  * with the detail.
  */
 
-static void DeleteDetailFromMask(ppDetailMask, detail)
-    Mask **ppDetailMask;
-    unsigned short detail;
+static void DeleteDetailFromMask(
+    Mask **ppDetailMask,
+    unsigned short detail)
 {
     Mask *pDetailMask = *ppDetailMask;
 
@@ -108,20 +111,20 @@ static void DeleteDetailFromMask(ppDetailMask, detail)
  * Make an exact copy of the specified detail mask.
  */
 
-static Mask *CopyDetailMask(pOriginalDetailMask)
-    Mask *pOriginalDetailMask;
+static Mask *CopyDetailMask(
+    Mask *pOriginalDetailMask)
 {
     Mask *pTempMask;
     int i;
-    
+
     if (!pOriginalDetailMask)
 	return NULL;
-    
+
     pTempMask = (Mask *)__XtMalloc(sizeof(Mask) * MasksPerDetailMask);
-    
+
     for ( i = 0; i < MasksPerDetailMask; i++)
       pTempMask[i]= pOriginalDetailMask[i];
-    
+
     return pTempMask;
 }
 
@@ -131,21 +134,20 @@ static Mask *CopyDetailMask(pOriginalDetailMask)
  * specified parameters.
  */
 
-static XtServerGrabPtr CreateGrab(widget, ownerEvents, modifiers,
-				  keybut, pointer_mode, keyboard_mode,
-				  event_mask, confine_to, cursor, need_ext)
-    Widget	widget;
-    Boolean	ownerEvents;
-    Modifiers	modifiers;
-    KeyCode 	keybut;
-    int		pointer_mode, keyboard_mode;
-    Mask	event_mask;
-    Window 	confine_to;
-    Cursor 	cursor;
-    Boolean	need_ext;
+static XtServerGrabPtr CreateGrab(
+    Widget	widget,
+    Boolean	ownerEvents,
+    Modifiers	modifiers,
+    KeyCode 	keybut,
+    int		pointer_mode,
+    int		keyboard_mode,
+    Mask	event_mask,
+    Window 	confine_to,
+    Cursor 	cursor,
+    Boolean	need_ext)
 {
     XtServerGrabPtr grab;
-    
+
     if (confine_to || cursor)
 	need_ext = True;
     grab = (XtServerGrabPtr)__XtMalloc(sizeof(XtServerGrabRec) +
@@ -176,8 +178,8 @@ static XtServerGrabPtr CreateGrab(widget, ownerEvents, modifiers,
  * Free up the space occupied by a grab entry.
  */
 
-static void FreeGrab(pGrab)
-    XtServerGrabPtr pGrab;
+static void FreeGrab(
+    XtServerGrabPtr pGrab)
 {
     if (pGrab->hasExt) {
 	XtServerGrabExtPtr ext = GRABEXT(pGrab);
@@ -199,22 +201,23 @@ typedef struct _DetailRec {
  * is contained in the mask of the first, then TRUE is returned.
  */
 
-static Bool IsInGrabMask(firstDetail, secondDetail, exception)
-    register DetailPtr firstDetail, secondDetail;
-    unsigned short exception;
+static Bool IsInGrabMask(
+    register DetailPtr firstDetail,
+    register DetailPtr secondDetail,
+    unsigned short exception)
 {
     if (firstDetail->exact == exception) {
 	if (!firstDetail->pMask)
 	    return TRUE;
-	  
+
 	/* (at present) never called with two non-null pMasks */
 	if (secondDetail->exact == exception)
 	    return FALSE;
-	  
+
 	if (GETBIT(firstDetail->pMask, secondDetail->exact))
 	    return TRUE;
     }
-    
+
     return FALSE;
 }
 
@@ -224,15 +227,17 @@ static Bool IsInGrabMask(firstDetail, secondDetail, exception)
  * exactly, then TRUE is returned.
  */
 
-static Bool IdenticalExactDetails(firstExact, secondExact, exception)
-    unsigned short firstExact, secondExact, exception;
+static Bool IdenticalExactDetails(
+    unsigned short firstExact,
+    unsigned short secondExact,
+    unsigned short exception)
 {
     if ((firstExact == exception) || (secondExact == exception))
 	return FALSE;
-    
+
     if (firstExact == secondExact)
 	return TRUE;
-    
+
     return FALSE;
 }
 
@@ -244,17 +249,18 @@ static Bool IdenticalExactDetails(firstExact, secondExact, exception)
  * TRUE is returned.
  */
 
-static Bool DetailSupersedesSecond(firstDetail, secondDetail, exception)
-    register DetailPtr firstDetail, secondDetail;
-    unsigned short exception;
+static Bool DetailSupersedesSecond(
+    register DetailPtr firstDetail,
+    register DetailPtr secondDetail,
+    unsigned short exception)
 {
     if (IsInGrabMask(firstDetail, secondDetail, exception))
 	return TRUE;
-    
+
     if (IdenticalExactDetails(firstDetail->exact, secondDetail->exact,
 			      exception))
 	return TRUE;
-    
+
     return FALSE;
 }
 
@@ -264,8 +270,9 @@ static Bool DetailSupersedesSecond(firstDetail, secondDetail, exception)
  * 'encompasses' the second grab entry, then TRUE is returned.
  */
 
-static Bool GrabSupersedesSecond(pFirstGrab, pSecondGrab)
-    register XtServerGrabPtr pFirstGrab, pSecondGrab;
+static Bool GrabSupersedesSecond(
+    register XtServerGrabPtr pFirstGrab,
+    register XtServerGrabPtr pSecondGrab)
 {
     DetailRec first, second;
 
@@ -281,7 +288,7 @@ static Bool GrabSupersedesSecond(pFirstGrab, pSecondGrab)
 	second.pMask = NULL;
     if (!DetailSupersedesSecond(&first, &second, (unsigned short)AnyModifier))
       return FALSE;
-    
+
     first.exact = pFirstGrab->keybut;
     if (pFirstGrab->hasExt)
 	first.pMask = GRABEXT(pFirstGrab)->pKeyButMask;
@@ -294,7 +301,7 @@ static Bool GrabSupersedesSecond(pFirstGrab, pSecondGrab)
 	second.pMask = NULL;
     if (DetailSupersedesSecond(&first, &second, (unsigned short)AnyKey))
       return TRUE;
-    
+
     return FALSE;
 }
 
@@ -311,20 +318,21 @@ static Bool GrabSupersedesSecond(pFirstGrab, pSecondGrab)
  *    for the other entry encompasses the first.
  */
 
-static Bool GrabMatchesSecond(pFirstGrab, pSecondGrab)
-    register XtServerGrabPtr pFirstGrab, pSecondGrab;
+static Bool GrabMatchesSecond(
+    register XtServerGrabPtr pFirstGrab,
+    register XtServerGrabPtr pSecondGrab)
 {
     DetailRec firstD, firstM, secondD, secondM;
 
     if (pDisplay(pFirstGrab) != pDisplay(pSecondGrab))
 	return FALSE;
-    
+
     if (GrabSupersedesSecond(pFirstGrab, pSecondGrab))
 	return TRUE;
-    
+
     if (GrabSupersedesSecond(pSecondGrab, pFirstGrab))
 	return TRUE;
-    
+
     firstD.exact = pFirstGrab->keybut;
     firstM.exact = pFirstGrab->modifiers;
     if (pFirstGrab->hasExt) {
@@ -347,11 +355,11 @@ static Bool GrabMatchesSecond(pFirstGrab, pSecondGrab)
     if (DetailSupersedesSecond(&secondD, &firstD, (unsigned short)AnyKey) &&
 	DetailSupersedesSecond(&firstM, &secondM, (unsigned short)AnyModifier))
 	return TRUE;
-    
-    if (DetailSupersedesSecond(&firstD, &secondD, (unsigned short)AnyKey) && 
+
+    if (DetailSupersedesSecond(&firstD, &secondD, (unsigned short)AnyKey) &&
 	DetailSupersedesSecond(&secondM, &firstM, (unsigned short)AnyModifier))
 	return TRUE;
-    
+
     return FALSE;
 }
 
@@ -362,17 +370,17 @@ static Bool GrabMatchesSecond(pFirstGrab, pSecondGrab)
  * may result in multiple entries being modified/deleted.
  */
 
-static void DeleteServerGrabFromList(passiveListPtr, pMinuendGrab)
-    XtServerGrabPtr 	*passiveListPtr;	
-    XtServerGrabPtr 	pMinuendGrab;
+static void DeleteServerGrabFromList(
+    XtServerGrabPtr 	*passiveListPtr,
+    XtServerGrabPtr 	pMinuendGrab)
 {
     register XtServerGrabPtr *next;
     register XtServerGrabPtr grab;
     register XtServerGrabExtPtr ext;
-    
+
     for (next = passiveListPtr; (grab = *next); )
     {
-	if (GrabMatchesSecond(grab, pMinuendGrab) && 
+	if (GrabMatchesSecond(grab, pMinuendGrab) &&
 	    (pDisplay(grab) == pDisplay(pMinuendGrab)))
 	{
 	    if (GrabSupersedesSecond(pMinuendGrab, grab))
@@ -430,7 +438,7 @@ static void DeleteServerGrabFromList(passiveListPtr, pMinuendGrab)
 		 * mask set to AnyModifier & ~(deleted modifiers).
 		 */
 		XtServerGrabPtr pNewGrab;
-				  
+
 		DeleteDetailFromMask(&ext->pKeyButMask, pMinuendGrab->keybut);
 		pNewGrab = CreateGrab(grab->widget,
 				      (Boolean)grab->ownerEvents,
@@ -441,10 +449,10 @@ static void DeleteServerGrabFromList(passiveListPtr, pMinuendGrab)
 				      (Mask)0, (Window)0, (Cursor)0, True);
 		GRABEXT(pNewGrab)->pModifiersMask =
 		    CopyDetailMask(ext->pModifiersMask);
-				  
+
 		DeleteDetailFromMask(&GRABEXT(pNewGrab)->pModifiersMask,
 				     pMinuendGrab->modifiers);
-				  
+
 		pNewGrab->next = *passiveListPtr;
 		*passiveListPtr = pNewGrab;
 	    } else if (pMinuendGrab->keybut == AnyKey) {
@@ -461,8 +469,8 @@ static void DeleteServerGrabFromList(passiveListPtr, pMinuendGrab)
 		/*
 		 * The list entry has keycode AnyKey and modifier
 		 * AnyModifier; the entry being deleted has a
-		 * specific keycode and modifier AnyModifier.  So 
-		 * we simply need to mask off the specified 
+		 * specific keycode and modifier AnyModifier.  So
+		 * we simply need to mask off the specified
 		 * keycode.
 		 */
 		DeleteDetailFromMask(&ext->pKeyButMask, pMinuendGrab->keybut);
@@ -472,18 +480,18 @@ static void DeleteServerGrabFromList(passiveListPtr, pMinuendGrab)
     }
 }
 
-static void DestroyPassiveList(passiveListPtr)
-    XtServerGrabPtr	*passiveListPtr;
+static void DestroyPassiveList(
+    XtServerGrabPtr	*passiveListPtr)
 {
     XtServerGrabPtr	next, grab;
 
     for (next = *passiveListPtr; next; ) {
 	grab = next;
 	next = grab->next;
-	  
+
 	/* not necessary to explicitly ungrab key or button;
 	 * window is being destroyed so server will take care of it.
-	 */ 
+	 */
 
 	FreeGrab(grab);
     }
@@ -494,10 +502,10 @@ static void DestroyPassiveList(passiveListPtr)
  * This function is called at widget destroy time to clean up
  */
 /*ARGSUSED*/
-void _XtDestroyServerGrabs(w, closure, call_data)
-    Widget		w;
-    XtPointer		closure;
-    XtPointer		call_data; /* unused */
+void _XtDestroyServerGrabs(
+    Widget		w,
+    XtPointer		closure,
+    XtPointer		call_data) /* unused */
 {
     XtPerWidgetInput	pwi = (XtPerWidgetInput)closure;
     XtPerDisplayInput	pdi;
@@ -506,14 +514,14 @@ void _XtDestroyServerGrabs(w, closure, call_data)
     pdi = _XtGetPerDisplayInput(XtDisplay(w));
     _XtClearAncestorCache(w);
     UNLOCK_PROCESS;
-    
+
     /* Remove the active grab, if necessary */
-    if ((pdi->keyboard.grabType != XtNoServerGrab) && 
+    if ((pdi->keyboard.grabType != XtNoServerGrab) &&
 	(pdi->keyboard.grab.widget == w)) {
 	pdi->keyboard.grabType = XtNoServerGrab;
 	pdi->activatingKey = (KeyCode)0;
     }
-    if ((pdi->pointer.grabType != XtNoServerGrab) && 
+    if ((pdi->pointer.grabType != XtNoServerGrab) &&
 	(pdi->pointer.grab.widget == w))
 	pdi->pointer.grabType = XtNoServerGrab;
 
@@ -554,7 +562,7 @@ XtServerGrabPtr _XtCheckServerGrabsOnWidget (
      */
     if (!*passiveListPtr)
 	return (XtServerGrabPtr)NULL;
-    
+
     /* Take only the lower thirteen bits as modifier state.  The X Keyboard
      * Extension may be representing keyboard group state in two upper bits.
      */
@@ -576,11 +584,11 @@ XtServerGrabPtr _XtCheckServerGrabsOnWidget (
  */
 
 /*ARGSUSED*/
-static void  ActiveHandler (widget, pdi, event, cont)
-    Widget 		widget;
-    XtPointer		pdi;
-    XEvent 		*event;
-    Boolean		*cont;
+static void  ActiveHandler (
+    Widget 		widget,
+    XtPointer		pdi,
+    XEvent 		*event,
+    Boolean		*cont)
 {
     /* nothing */
 }
@@ -589,19 +597,19 @@ static void  ActiveHandler (widget, pdi, event, cont)
 /*
  *	MakeGrab
  */
-static void  MakeGrab(grab, passiveListPtr, isKeyboard, pdi, pwi)
-    XtServerGrabPtr	grab;
-    XtServerGrabPtr	*passiveListPtr;
-    Boolean		isKeyboard;
-    XtPerDisplayInput	pdi;
-    XtPerWidgetInput	pwi;
+static void  MakeGrab(
+    XtServerGrabPtr	grab,
+    XtServerGrabPtr	*passiveListPtr,
+    Boolean		isKeyboard,
+    XtPerDisplayInput	pdi,
+    XtPerWidgetInput	pwi)
 {
     if (!isKeyboard && !pwi->active_handler_added) {
 	XtAddEventHandler(grab->widget, ButtonReleaseMask, FALSE,
 			  ActiveHandler, (XtPointer)pdi);
 	pwi->active_handler_added = TRUE;
     }
-	
+
     if (isKeyboard) {
 	XGrabKey(pDisplay(grab),
 		 grab->keybut, grab->modifiers,
@@ -630,10 +638,10 @@ static void  MakeGrab(grab, passiveListPtr, isKeyboard, pdi, pwi)
     *passiveListPtr = grab;
 }
 
-static void MakeGrabs(passiveListPtr, isKeyboard, pdi)
-    XtServerGrabPtr	*passiveListPtr;
-    Boolean		isKeyboard;
-    XtPerDisplayInput	pdi;
+static void MakeGrabs(
+    XtServerGrabPtr	*passiveListPtr,
+    Boolean		isKeyboard,
+    XtPerDisplayInput	pdi)
 {
     XtServerGrabPtr	next = *passiveListPtr;
     XtServerGrabPtr	grab;
@@ -653,8 +661,8 @@ static void MakeGrabs(passiveListPtr, isKeyboard, pdi)
 	  MakeGrab(grab, passiveListPtr, isKeyboard, pdi, pwi);
       }
     UNLOCK_PROCESS;
-} 
-   
+}
+
 /*
  * This function is the event handler attached to the associated widget
  * when grabs need to be added, but the widget is not yet realized.  When
@@ -663,11 +671,11 @@ static void MakeGrabs(passiveListPtr, isKeyboard, pdi)
  */
 
 /*ARGSUSED*/
-static void  RealizeHandler (widget, closure, event, cont)
-    Widget 		widget;
-    XtPointer		closure;
-    XEvent 		*event;	/* unused */
-    Boolean		*cont;	/* unused */
+static void  RealizeHandler (
+    Widget 		widget,
+    XtPointer		closure,
+    XEvent 		*event,	/* unused */
+    Boolean		*cont)	/* unused */
 {
     XtPerWidgetInput	pwi = (XtPerWidgetInput)closure;
     XtPerDisplayInput	pdi;
@@ -677,7 +685,7 @@ static void  RealizeHandler (widget, closure, event, cont)
     UNLOCK_PROCESS;
     MakeGrabs(&pwi->keyList, KEYBOARD, pdi);
     MakeGrabs(&pwi->ptrList, POINTER, pdi);
- 
+
     XtRemoveEventHandler(widget, XtAllEvents, True,
 			 RealizeHandler, (XtPointer)pwi);
     pwi->realize_handler_added = FALSE;
@@ -694,26 +702,24 @@ static void  RealizeHandler (widget, closure, event, cont)
  */
 
 static
-void GrabKeyOrButton (widget, keyOrButton, modifiers, owner_events,
-		       pointer_mode, keyboard_mode, event_mask,
-		       confine_to, cursor, isKeyboard)
-    Widget	widget;
-    KeyCode	keyOrButton;
-    Modifiers	modifiers;
-    Boolean	owner_events;
-    int 	pointer_mode;
-    int 	keyboard_mode;
-    Mask	event_mask;
-    Window 	confine_to;
-    Cursor 	cursor;
-    Boolean	isKeyboard;
+void GrabKeyOrButton (
+    Widget	widget,
+    KeyCode	keyOrButton,
+    Modifiers	modifiers,
+    Boolean	owner_events,
+    int 	pointer_mode,
+    int 	keyboard_mode,
+    Mask	event_mask,
+    Window 	confine_to,
+    Cursor 	cursor,
+    Boolean	isKeyboard)
 {
     XtServerGrabPtr	*passiveListPtr;
     XtServerGrabPtr 	newGrab;
     XtPerWidgetInput	pwi;
     XtPerDisplayInput	pdi;
-    
-    
+
+
     XtCheckSubclass(widget, coreWidgetClass, "in XtGrabKey or XtGrabButton");
     LOCK_PROCESS;
     pwi = _XtGetPerWidgetInput(widget, TRUE);
@@ -723,8 +729,8 @@ void GrabKeyOrButton (widget, keyOrButton, modifiers, owner_events,
       passiveListPtr = &pwi->ptrList;
     pdi = _XtGetPerDisplayInput(XtDisplay(widget));
     UNLOCK_PROCESS;
-    newGrab = CreateGrab(widget, owner_events, modifiers, 
-			 keyOrButton, pointer_mode, keyboard_mode, 
+    newGrab = CreateGrab(widget, owner_events, modifiers,
+			 keyOrButton, pointer_mode, keyboard_mode,
 			 event_mask, confine_to, cursor, False);
     /*
      *  if the widget is realized then process the entry into the grab
@@ -742,7 +748,7 @@ void GrabKeyOrButton (widget, keyOrButton, modifiers, owner_events,
 				  (XtPointer)pwi);
 		pwi->realize_handler_added = TRUE;
 	    }
-	
+
 	while (*passiveListPtr)
 	    passiveListPtr = &(*passiveListPtr)->next;
 	*passiveListPtr = newGrab;
@@ -751,24 +757,24 @@ void GrabKeyOrButton (widget, keyOrButton, modifiers, owner_events,
 
 
 static
-void   UngrabKeyOrButton (widget, keyOrButton, modifiers, isKeyboard)
-    Widget	widget;
-    int		keyOrButton;
-    Modifiers	modifiers;
-    Boolean	isKeyboard;
+void   UngrabKeyOrButton (
+    Widget	widget,
+    int		keyOrButton,
+    Modifiers	modifiers,
+    Boolean	isKeyboard)
 {
     XtServerGrabRec 	tempGrab;
     XtPerWidgetInput	pwi;
-    
+
     XtCheckSubclass(widget, coreWidgetClass,
 		    "in XtUngrabKey or XtUngrabButton");
-    
+
     /* Build a temporary grab list entry */
     tempGrab.widget = widget;
     tempGrab.modifiers = modifiers;
     tempGrab.keybut = keyOrButton;
     tempGrab.hasExt = False;
-    
+
     LOCK_PROCESS;
     pwi = _XtGetPerWidgetInput(widget, FALSE);
     UNLOCK_PROCESS;
@@ -792,11 +798,11 @@ void   UngrabKeyOrButton (widget, keyOrButton, modifiers, isKeyboard)
 		       widget->core.window);
 	  else
 	    XUngrabButton(widget->core.screen->display,
-			  keyOrButton, (unsigned int)modifiers, 
+			  keyOrButton, (unsigned int)modifiers,
 			  widget->core.window);
       }
 
-   
+
     /* Delete all entries which are encompassed by the specified grab. */
     DeleteServerGrabFromList(isKeyboard ? &pwi->keyList : &pwi->ptrList,
 			     &tempGrab);
@@ -814,7 +820,7 @@ void  XtGrabKey (
 
     LOCK_APP(app);
     GrabKeyOrButton(widget, (KeyCode)keycode, modifiers, owner_events,
-		    pointer_mode, keyboard_mode, 
+		    pointer_mode, keyboard_mode,
 		    (Mask)0, (Window)None, (Cursor)None, KEYBOARD);
     UNLOCK_APP(app);
 }
@@ -834,7 +840,7 @@ void  XtGrabButton(
 
     LOCK_APP(app);
     GrabKeyOrButton(widget, (KeyCode)button, modifiers, owner_events,
-		    pointer_mode, keyboard_mode, 
+		    pointer_mode, keyboard_mode,
 		    (Mask)event_mask, confine_to, cursor, POINTER);
     UNLOCK_APP(app);
 }
@@ -857,10 +863,10 @@ void   XtUngrabKey (
     UNLOCK_APP(app);
 }
 
-void   XtUngrabButton (widget, button, modifiers)
-    Widget	widget;
-    unsigned int button;
-    Modifiers	modifiers;
+void   XtUngrabButton (
+    Widget	widget,
+    unsigned int button,
+    Modifiers	modifiers)
 {
     WIDGET_TO_APPCON(widget);
 
@@ -872,22 +878,20 @@ void   XtUngrabButton (widget, button, modifiers)
 /*
  * Active grab of Device. clear any client side grabs so we dont lock
  */
-static int GrabDevice (widget, owner_events,
-		       pointer_mode, keyboard_mode, 
-		       event_mask, confine_to, cursor, time, isKeyboard)
-    Widget	widget;
-    Boolean	owner_events;
-    int 	pointer_mode;
-    int 	keyboard_mode;
-    Mask	event_mask;
-    Window 	confine_to;
-    Cursor 	cursor;
-    Time	time;
-    Boolean	isKeyboard;
+static int GrabDevice (
+    Widget	widget,
+    Boolean	owner_events,
+    int 	pointer_mode,
+    int 	keyboard_mode,
+    Mask	event_mask,
+    Window 	confine_to,
+    Cursor 	cursor,
+    Time	time,
+    Boolean	isKeyboard)
 {
     XtPerDisplayInput	pdi;
     int			returnVal;
-    
+
     XtCheckSubclass(widget, coreWidgetClass,
 		    "in XtGrabKeyboard or XtGrabPointer");
     if (!XtIsRealized(widget))
@@ -896,18 +900,18 @@ static int GrabDevice (widget, owner_events,
     pdi = _XtGetPerDisplayInput(XtDisplay(widget));
     UNLOCK_PROCESS;
     if (!isKeyboard)
-      returnVal = XGrabPointer(XtDisplay(widget), XtWindow(widget), 
+      returnVal = XGrabPointer(XtDisplay(widget), XtWindow(widget),
 			       owner_events, event_mask,
 			       pointer_mode, keyboard_mode,
 			       confine_to, cursor, time);
     else
-      returnVal = XGrabKeyboard(XtDisplay(widget), XtWindow(widget), 
-				owner_events, pointer_mode, 
+      returnVal = XGrabKeyboard(XtDisplay(widget), XtWindow(widget),
+				owner_events, pointer_mode,
 				keyboard_mode, time);
 
     if (returnVal == GrabSuccess) {
 	  XtDevice		device;
-	  
+
 	  device = isKeyboard ? &pdi->keyboard : &pdi->pointer;
 	  /* fill in the server grab rec */
 	  device->grab.widget = widget;
@@ -923,10 +927,10 @@ static int GrabDevice (widget, owner_events,
     return returnVal;
 }
 
-static void   UngrabDevice(widget, time, isKeyboard)
-    Widget	widget;
-    Time	time;
-    Boolean	isKeyboard;
+static void   UngrabDevice(
+    Widget	widget,
+    Time	time,
+    Boolean	isKeyboard)
 {
     XtPerDisplayInput pdi;
     XtDevice device;
@@ -937,7 +941,7 @@ static void   UngrabDevice(widget, time, isKeyboard)
     device = isKeyboard ? &pdi->keyboard : &pdi->pointer;
     XtCheckSubclass(widget, coreWidgetClass,
 		    "in XtUngrabKeyboard or XtUngrabPointer");
-    
+
     if (device->grabType != XtNoServerGrab) {
 
 	if (device->grabType != XtPseudoPassiveServerGrab
@@ -968,7 +972,7 @@ int XtGrabKeyboard (
 
     LOCK_APP(app);
     retval = GrabDevice (widget, owner_events,
-			pointer_mode, keyboard_mode, 
+			pointer_mode, keyboard_mode,
 			(Mask)0, (Window)None, (Cursor)None, time, KEYBOARD);
     UNLOCK_APP(app);
     return retval;
@@ -979,9 +983,9 @@ int XtGrabKeyboard (
  * Ungrab the keyboard
  */
 
-void   XtUngrabKeyboard(widget, time)
-    Widget	widget;
-    Time	time;
+void   XtUngrabKeyboard(
+    Widget	widget,
+    Time	time)
 {
     WIDGET_TO_APPCON(widget);
 
@@ -1011,8 +1015,8 @@ int XtGrabPointer (
 
     LOCK_APP(app);
     retval = GrabDevice (widget, owner_events,
-			pointer_mode, keyboard_mode, 
-			(Mask)event_mask, confine_to, 
+			pointer_mode, keyboard_mode,
+			(Mask)event_mask, confine_to,
 			cursor, time, POINTER);
     UNLOCK_APP(app);
     return retval;
@@ -1023,9 +1027,9 @@ int XtGrabPointer (
  * Ungrab the pointer
  */
 
-void   XtUngrabPointer(widget, time)
-    Widget	widget;
-    Time	time;
+void   XtUngrabPointer(
+    Widget	widget,
+    Time	time)
 {
     WIDGET_TO_APPCON(widget);
 
@@ -1035,8 +1039,8 @@ void   XtUngrabPointer(widget, time)
 }
 
 
-void _XtRegisterPassiveGrabs (widget)
-    Widget	widget;
+void _XtRegisterPassiveGrabs (
+    Widget	widget)
 {
     XtPerWidgetInput	pwi = _XtGetPerWidgetInput (widget, FALSE);
 
@@ -1047,4 +1051,3 @@ void _XtRegisterPassiveGrabs (widget)
 	pwi->realize_handler_added = TRUE;
     }
 }
-

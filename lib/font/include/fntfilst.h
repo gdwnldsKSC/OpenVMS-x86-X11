@@ -38,11 +38,11 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/Xos.h>
 #endif
 #ifndef XP_PSTEXT
-#include "fontmisc.h"
+#include <X11/fonts/fontmisc.h>
 #endif
-#include "fontstruct.h"
-#include "fontxlfd.h"
-#include "fntfil.h"
+#include <X11/fonts/fontstruct.h>
+#include <X11/fonts/fontxlfd.h>
+#include <X11/fonts/fntfil.h>
 
 typedef struct _FontName {
     char	*name;

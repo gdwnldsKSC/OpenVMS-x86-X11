@@ -1,5 +1,3 @@
-XCOMM $XFree86: xc/programs/Xserver/GL/mesa/src/math/Imakefile,v 1.8 2002/11/22 22:56:01 tsi Exp $
-
 #if DoLoadableServer
 #if !BuildModuleInSubdir
 #define IHaveModules
@@ -7,6 +5,11 @@ XCOMM $XFree86: xc/programs/Xserver/GL/mesa/src/math/Imakefile,v 1.8 2002/11/22 
 #define IHaveSubdirs
 SUBDIRS = module
 #endif
+#endif
+
+#if !defined(IHaveModules) || !BuildModuleInSubdir
+#define IHaveSubdirs
+      SUBDIRS = grammar slang
 #endif
 
 #include <Server.tmpl>
@@ -25,6 +28,8 @@ SUBDIRS = module
 
      INCLUDES = -I$(MESASRCDIR)/src/mesa \
 		-I$(MESASRCDIR)/src/mesa/shader \
+                -I$(MESASRCDIR)/src/mesa/shader/grammar \
+                -I$(MESASRCDIR)/src/mesa/shader/slang \
 		-I$(MESASRCDIR)/src/mesa/main \
 		-I$(MESASRCDIR)/src/mesa/glapi \
 		-I$(MESASRCDIR)/include \
@@ -52,4 +57,3 @@ DependTarget()
 MakeSubdirs($(SUBDIRS))
 DependSubdirs($(SUBDIRS))
 #endif
-

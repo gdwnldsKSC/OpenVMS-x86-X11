@@ -55,7 +55,7 @@ SOFTWARE.
  *
  *****************************************************************/
 
-#include "Xos.h"			/* for strings, fcntl, time */
+#include <X11/Xos.h>			/* for strings, fcntl, time */
 
 #include <errno.h>
 #include <stdio.h>

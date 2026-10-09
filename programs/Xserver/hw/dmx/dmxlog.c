@@ -36,12 +36,16 @@
  * This file encapsulated all of the logging functions that are used by
  * DMX for informational, warning, and error messages. */
 
+#ifdef HAVE_DMX_CONFIG_H
+#include <dmx-config.h>
+#endif
+
 #include "dmx.h"
 #include "dmxlog.h"
 #include "dmxinput.h"
 #ifdef XINPUT
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 #endif
 
 static dmxLogLevel dmxCurrentLogLevel = dmxDebug;

@@ -288,7 +288,7 @@ void r200ReleaseDmaRegion( r200ContextPtr rmesa,
       rmesa->dma.nr_released_bufs++;
    }
 
-   region->buf = 0;
+   region->buf = NULL;
    region->start = 0;
 }
 
@@ -343,11 +343,11 @@ void r200AllocDmaRegionVerts( r200ContextPtr rmesa,
  * SwapBuffers with client-side throttling
  */
 
-static uint32_t r200GetLastFrame(r200ContextPtr rmesa)
+static u_int32_t r200GetLastFrame(r200ContextPtr rmesa)
 {
    drm_radeon_getparam_t gp;
    int ret;
-   uint32_t frame;
+   u_int32_t frame;
 
    gp.param = RADEON_PARAM_LAST_FRAME;
    gp.value = (int *)&frame;
@@ -486,7 +486,7 @@ void r200CopyBuffer( const __DRIdrawablePrivate *dPriv )
    rmesa->hw.all_dirty = GL_TRUE;
 
    rmesa->swap_count++;
-   (*rmesa->get_ust)( & ust );
+   (*dri_interface->getUST)( & ust );
    if ( missed_target ) {
       rmesa->swap_missed_count++;
       rmesa->swap_missed_ust = ust - rmesa->swap_ust;
@@ -540,7 +540,7 @@ void r200PageFlip( const __DRIdrawablePrivate *dPriv )
    driWaitForVBlank( dPriv, & rmesa->vbl_seq, rmesa->vblank_flags, & missed_target );
    if ( missed_target ) {
       rmesa->swap_missed_count++;
-      (void) (*rmesa->get_ust)( & rmesa->swap_missed_ust );
+      (void) (*dri_interface->getUST)( & rmesa->swap_missed_ust );
    }
    LOCK_HARDWARE( rmesa );
 
@@ -554,7 +554,7 @@ void r200PageFlip( const __DRIdrawablePrivate *dPriv )
    }
 
    rmesa->swap_count++;
-   (void) (*rmesa->get_ust)( & rmesa->swap_ust );
+   (void) (*dri_interface->getUST)( & rmesa->swap_ust );
 
    if ( rmesa->sarea->pfCurrentPage == 1 ) {
 	 rmesa->state.color.drawOffset = rmesa->r200Screen->frontOffset;
@@ -568,6 +568,9 @@ void r200PageFlip( const __DRIdrawablePrivate *dPriv )
    rmesa->hw.ctx.cmd[CTX_RB3D_COLOROFFSET] = rmesa->state.color.drawOffset
 					   + rmesa->r200Screen->fbLocation;
    rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH]  = rmesa->state.color.drawPitch;
+   if (rmesa->sarea->tiling_enabled) {
+      rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] |= R200_COLOR_TILE_ENABLE;
+   }
 }
 
 
@@ -597,26 +600,26 @@ static void r200Clear( GLcontext *ctx, GLbitfield mask, GLboolean all,
 
    r200Flush( ctx );
 
-   if ( mask & DD_FRONT_LEFT_BIT ) {
+   if ( mask & BUFFER_BIT_FRONT_LEFT ) {
       flags |= RADEON_FRONT;
       color_mask = rmesa->hw.msk.cmd[MSK_RB3D_PLANEMASK];
-      mask &= ~DD_FRONT_LEFT_BIT;
+      mask &= ~BUFFER_BIT_FRONT_LEFT;
    }
 
-   if ( mask & DD_BACK_LEFT_BIT ) {
+   if ( mask & BUFFER_BIT_BACK_LEFT ) {
       flags |= RADEON_BACK;
       color_mask = rmesa->hw.msk.cmd[MSK_RB3D_PLANEMASK];
-      mask &= ~DD_BACK_LEFT_BIT;
+      mask &= ~BUFFER_BIT_BACK_LEFT;
    }
 
-   if ( mask & DD_DEPTH_BIT ) {
-      if ( ctx->Depth.Mask ) flags |= RADEON_DEPTH; /* FIXME: ??? */
-      mask &= ~DD_DEPTH_BIT;
+   if ( mask & BUFFER_BIT_DEPTH ) {
+      flags |= RADEON_DEPTH;
+      mask &= ~BUFFER_BIT_DEPTH;
    }
 
-   if ( (mask & DD_STENCIL_BIT) && rmesa->state.stencil.hwBuffer ) {
+   if ( (mask & BUFFER_BIT_STENCIL) && rmesa->state.stencil.hwBuffer ) {
       flags |= RADEON_STENCIL;
-      mask &= ~DD_STENCIL_BIT;
+      mask &= ~BUFFER_BIT_STENCIL;
    }
 
    if ( mask ) {
@@ -627,6 +630,17 @@ static void r200Clear( GLcontext *ctx, GLbitfield mask, GLboolean all,
 
    if ( !flags ) 
       return;
+
+   if (rmesa->using_hyperz) {
+      flags |= RADEON_USE_COMP_ZBUF;
+/*      if (rmesa->r200Screen->chipset & R200_CHIPSET_REAL_R200)
+	 flags |= RADEON_USE_HIERZ; */
+      if (!(rmesa->state.stencil.hwBuffer) ||
+	 ((flags & RADEON_DEPTH) && (flags & RADEON_STENCIL) &&
+	    ((rmesa->state.stencil.clear & R200_STENCIL_WRITE_MASK) == R200_STENCIL_WRITE_MASK))) {
+	  flags |= RADEON_CLEAR_FASTZ;
+      }
+   }
 
    /* Flip top to bottom */
    cx += dPriv->x;
@@ -707,7 +721,7 @@ static void r200Clear( GLcontext *ctx, GLbitfield mask, GLboolean all,
 
       clear.flags       = flags;
       clear.clear_color = rmesa->state.color.clear;
-      clear.clear_depth = 0;	/* not used */
+      clear.clear_depth = rmesa->state.depth.clear;	/* needed for hyperz */
       clear.color_mask  = rmesa->hw.msk.cmd[MSK_RB3D_PLANEMASK];
       clear.depth_mask  = rmesa->state.stencil.clear;
       clear.depth_boxes = depth_boxes;

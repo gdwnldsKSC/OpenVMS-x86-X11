@@ -25,17 +25,12 @@
 #define ___ATIACCEL_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 #include "xf86fbman.h"
 
-extern Bool        ATIInitializeAcceleration FunctionPrototype((ScreenPtr,
-                                                                ScrnInfoPtr,
-                                                                ATIPtr));
+extern Bool        ATIInitializeAcceleration(ScreenPtr, ScrnInfoPtr, ATIPtr);
 
-extern FBLinearPtr ATIResizeOffscreenLinear  FunctionPrototype((ScreenPtr,
-                                                                FBLinearPtr,
-                                                                int));
+extern FBLinearPtr ATIResizeOffscreenLinear(ScreenPtr, FBLinearPtr, int);
 
 #endif /* ___ATIACCEL_H___ */

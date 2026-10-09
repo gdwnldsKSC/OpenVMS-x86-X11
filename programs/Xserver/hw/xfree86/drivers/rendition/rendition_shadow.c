@@ -6,6 +6,10 @@
  */
 /* $XFree86$ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "rendition.h"
 #include "vtypes.h"
 #include "rendition_shadow.h"

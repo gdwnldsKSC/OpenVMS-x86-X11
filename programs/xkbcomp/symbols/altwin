@@ -1,4 +1,4 @@
-// $XdotOrg: xc/programs/xkbcomp/symbols/altwin,v 1.2 2004/04/23 19:54:52 eich Exp $
+// $XdotOrg: xc/programs/xkbcomp/symbols/altwin,v 1.3 2005/08/12 11:10:11 pascal Exp $
 // $XFree86: xc/programs/xkbcomp/symbols/altwin,v 1.4 2001/10/10 19:18:32 herrb Exp $
 
 partial modifier_keys 
@@ -47,3 +47,13 @@ xkb_symbols "menu" {
     key <MENU> {	[ 	Menu		]	};
 };
 
+// Layout for Tux key caps with additional right Alt key
+partial modifier_keys 
+xkb_symbols "alt_super_win" {
+    key <LALT> {        [       Alt_L,  Meta_L          ]       };
+    key <RWIN> {        [       Alt_R,  Meta_R          ]       };
+    key <LWIN> {        [       Super_L                 ]       };
+    key <MENU> {        [       Super_R                 ]       };
+    modifier_map Mod1   { Alt_L, Alt_R, Meta_L, Meta_R };
+    modifier_map Mod4   { Super_L, Super_R };
+};

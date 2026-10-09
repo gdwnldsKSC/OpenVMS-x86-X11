@@ -1,4 +1,5 @@
 /* $Xorg: imakemdep.h,v 1.6 2001/02/09 02:03:16 xorgcvs Exp $ */
+/* $XdotOrg: xc/config/imake/imakemdep.h,v 1.12 2005/11/08 06:33:24 jkj Exp $ */
 /*
 
 Copyright (c) 1993, 1994, 1998  The Open Group
@@ -64,16 +65,37 @@ in this Software without prior written authorization from The Open Group.
 #define imake_ccflags "-DSYSV"
 #endif
 
-#if defined(USL) || defined(__USLC__) || defined(Oki) || defined(NCR)
-#define imake_ccflags "-Xa -DSVR4"
+/*
+ * SCO UnixWare and OpenServer 6 are both System V Release 5 based OSes.
+ * The native C compiler doesn't assert __UNIXWARE__ but gcc does, so
+ * we don't redefine it if we are using gcc (as it sets it to a specific
+ * value). On OpenServer 6, which is a multi-ABI world, if you attempt
+ * to build with -Kosr, then the C compiler will assert __OPENSERVER__
+ * and set it to the value 507.  That indicates an OSR5 compile, and
+ * is handled below.
+ */
+
+#if defined(__UNIXWARE__) || defined(__USLC__) || defined(Oki) || defined(NCR)
+# ifdef imake_ccflags
+#  undef imake_ccflags
+# endif
+# ifdef __UNIXWARE__
+#  ifndef __GNUC__
+#   define imake_ccflags "-Xa -DSVR4 -DSVR5 -D__UNIXWARE__"
+#  else
+#   define imake_ccflags "-Xa -DSVR4 -DSVR5"
+#  endif
+# else
+#  define imake_ccflags "-Xa -DSVR4"
+# endif
 #endif
 
 /* SCO may define __USLC__ so put this after the USL check */
-#if defined(M_UNIX) || defined(_SCO_DS)
-#ifdef imake_ccflags
-#undef imake_ccflags
-#endif
-#define imake_ccflags "-Dsco -DSYSV -DSCO -DSCO325"
+#if defined(M_UNIX) || defined(_SCO_DS) || defined(__OPENSERVER__)
+# ifdef imake_ccflags
+#  undef imake_ccflags
+# endif
+# define imake_ccflags "-DSYSV -DSCO325 -D__SCO__"
 #endif
 
 #ifdef sony
@@ -143,10 +165,14 @@ in this Software without prior written authorization from The Open Group.
 #endif
 
 #ifdef WIN32
+#ifdef __GNUC__
+#define imake_ccflags "-D__STDC__"
+#else
 #if _MSC_VER < 1000
 #define imake_ccflags "-nologo -batch -D__STDC__"
 #else
 #define imake_ccflags "-nologo -D__STDC__"
+#endif
 #endif
 #endif
 
@@ -199,7 +225,7 @@ in this Software without prior written authorization from The Open Group.
  *     descriptor onto another, define such a mechanism here (if you don't
  *     already fall under the existing category(ies).
  */
-#if defined(SYSV) && !defined(_CRAY) && !defined(Mips) && !defined(_SEQUENT_) && !defined(sco)
+#if defined(SYSV) && !defined(_CRAY) && !defined(Mips) && !defined(_SEQUENT_) && !defined(__SCO__)
 #define	dup2(fd1,fd2)	((fd1 == fd2) ? fd1 : (close(fd2), \
 					       fcntl(fd1, F_DUPFD, fd2)))
 #endif
@@ -214,7 +240,7 @@ in this Software without prior written authorization from The Open Group.
  *     all colons).  One way to tell if you need this is to see whether or not
  *     your Makefiles have no tabs in them and lots of @@ strings.
  */
-#if defined(sun) || defined(SYSV) || defined(SVR4) || defined(hcx) || defined(WIN32) || defined(sco) || (defined(AMOEBA) && defined(CROSS_COMPILE)) || defined(__QNX__) || defined(__sgi) || defined(__UNIXOS2__)
+#if defined(sun) || defined(SYSV) || defined(SVR4) || defined(hcx) || defined(WIN32) || defined(__SCO__) || (defined(AMOEBA) && defined(CROSS_COMPILE)) || defined(__QNX__) || defined(__sgi) || defined(__UNIXOS2__) || defined(__UNIXWARE__)
 #define FIXUP_CPP_WHITESPACE
 #endif
 #ifdef WIN32
@@ -256,7 +282,11 @@ in this Software without prior written authorization from The Open Group.
 #endif
 #ifdef WIN32
 #define USE_CC_E
+#ifdef __GNUC__
+#define DEFAULT_CC "gcc"
+#else
 #define DEFAULT_CC "cl"
+#endif
 #endif
 #ifdef apollo
 #define DEFAULT_CPP "/usr/lib/cpp"
@@ -285,7 +315,7 @@ in this Software without prior written authorization from The Open Group.
 #if defined(__386BSD__)
 #define DEFAULT_CPP "/usr/libexec/cpp"
 #endif
-#if defined(__FreeBSD__)  || defined(__NetBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__)  || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
 #define USE_CC_E
 #endif
 #if defined(__sgi) && defined(__ANSI_CPP__)
@@ -348,8 +378,9 @@ char *cpp_argv[ARGUMENTS] = {
 #endif
 #endif
 #if defined(__386BSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
-    defined(__FreeBSD__) || defined(MACH) || defined(linux) || \
-    defined(__GNU__) || defined(__bsdi__) || defined(__GNUC__)
+    defined(__FreeBSD__) || defined(__DragonFly__) || defined(MACH) || \
+    defined(linux) || defined(__GNU__) || defined(__bsdi__) || \
+    defined(__GNUC__) || defined(__GLIBC__)
 # ifdef __i386__
 	"-D__i386__",
 #  if defined(__GNUC__) && (__GNUC__ >= 3)
@@ -395,6 +426,9 @@ char *cpp_argv[ARGUMENTS] = {
 # ifdef __m68k__
 	"-D__m68k__",
 # endif
+# ifdef __hppa__
+	"-D__hppa__",
+# endif
 # ifdef __sh__
 	"-D__sh__",
 # endif
@@ -423,8 +457,9 @@ char *cpp_argv[ARGUMENTS] = {
 #if defined(macII) || defined(_AUX_SOURCE)
 	"-DmacII",	/* Apple A/UX */
 #endif
-#if defined(USL) || defined(__USLC__)
-	"-DUSL",	/* USL */
+#if defined(USL) || defined(__UNIXWARE__) || \
+	(defined(__USLC__) && !defined(_SCO_DS))
+	"-D__UNIXWARE__",	/* SCO UnixWare 7 */
 #endif
 #ifdef sony
 	"-Dsony",	/* Sony */
@@ -482,8 +517,9 @@ char *cpp_argv[ARGUMENTS] = {
 	"-DSVR4",
 # endif
 #endif /* MOTOROLA */
-#if defined(M_UNIX) || defined(sco)
-	"-Dsco",
+#if defined(M_UNIX) || defined(sco) || defined(__SCO__) || \
+	defined(_SCO_DS) || defined(__OPENSERVER__)
+	"-D__SCO__",
 	"-DSYSV",
 #endif
 #ifdef i386
@@ -509,11 +545,11 @@ char *cpp_argv[ARGUMENTS] = {
 #    endif
 #   endif
 #  endif
-#  ifdef SCO
-	"-DSCO",
-#   ifdef _SCO_DS
+#  if (_SCO_DS - 0 == 1)
     "-DSCO325",
-#   endif
+#  endif
+#  if (_SCO_DS - 0 > 1)
+    "-DSCO5V6",
 #  endif
 # endif
 # ifdef ESIX
@@ -547,12 +583,12 @@ char *cpp_argv[ARGUMENTS] = {
 #   endif
 #  endif
 # endif
-# ifdef SCO
-	"-DSCO",
-#  ifdef _SCO_DS
+# if (_SCO_DS - 0 == 1)
 	"-DSCO325",
-#  endif
 # endif
+#  if (_SCO_DS - 0 > 1)
+    "-DSCO5V6",
+#  endif
 # ifdef ESIX
 	"-DESIX",
 # endif
@@ -591,12 +627,20 @@ char *cpp_argv[ARGUMENTS] = {
 #if defined(SVR4) || defined(__svr4__) || defined(__SVR4) || defined(__sol__)
 	"-DSVR4",
 #endif
+# ifdef __sparcv9
+	"-D__sparcv9",
+# endif
+# ifdef __amd64
+	"-D__amd64",
+# endif
 #endif
 #ifdef WIN32
 	"-DWIN32",
+#ifndef __GNUC__
 	"-nologo",
 #if _MSC_VER < 1000
 	"-batch",
+#endif
 #endif
 	"-D__STDC__",
 #endif
@@ -679,15 +723,15 @@ char *cpp_argv[ARGUMENTS] = {
 # ifdef SVR4
 	"-DSVR4",
 # endif
-# ifdef __powerpc__
+#endif
+#ifdef __powerpc__
 	"-D__powerpc__",
-# endif
-# ifdef __powerpc64__
+#endif
+#ifdef __powerpc64__
 	"-D__powerpc64__",
-# endif
-# ifdef PowerMAX_OS
+#endif
+#ifdef PowerMAX_OS
 	"-DPowerMAX_OS",
-# endif
 #endif
 #if defined (__QNX__) && !defined(__QNXNTO__)
         "-traditional",
@@ -762,7 +806,8 @@ char *cpp_argv[ARGUMENTS] = {
 #  define DEFAULT_OS_MINOR_REV	"r %*[^.].%*d.%1s"
 #  define DEFAULT_OS_TEENY_REV	"r %*[^.].%*d.%*c%[0-9]"
 #  define DEFAULT_OS_NAME	"srvm %[^\n]"
-# elif defined(USL) || defined(__USLC__)
+# elif defined(USL) || defined(__USLC__) || defined(__UNIXWARE__) || \
+	defined(__SCO__) || defined(__OPENSERVER__) || defined(_SCO_DS)
 /* uname -v returns "x.yz" or "x.y.z", e.g. "2.02" or "2.1.2". */
 #  define DEFAULT_OS_MAJOR_REV	"v %[0-9]"
 #  define DEFAULT_OS_MINOR_REV	"v %*d.%1s"
@@ -816,14 +861,14 @@ char *cpp_argv[ARGUMENTS] = {
 #  define DEFAULT_OS_MINOR_REV   "r %*d.%[0-9]"
 #  define DEFAULT_OS_TEENY_REV   "v %[0-9]" 
 /* # define DEFAULT_OS_NAME        "srm %[^\n]" */ /* Not useful on ISC */
-# elif defined(__FreeBSD__) || defined(__OpenBSD__)
+# elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__OpenBSD__) || defined(__DragonFly__)
 /* BSD/OS too? */
 /* uname -r returns "x.y[.z]-mumble", e.g. "2.1.5-RELEASE" or "2.2-0801SNAP" */
 #  define DEFAULT_OS_MAJOR_REV   "r %[0-9]"
 #  define DEFAULT_OS_MINOR_REV   "r %*d.%[0-9]"
 #  define DEFAULT_OS_TEENY_REV   "r %*d.%*d.%[0-9]" 
 #  define DEFAULT_OS_NAME        "srm %[^\n]"
-#  if defined(__FreeBSD__)
+#  if defined(__FreeBSD__) || defined(__DragonFly__)
 /* Use an alternate way to find the teeny version for -STABLE, -SNAP versions */
 #   ifndef CROSSCOMPILE_CPP
 #    define DEFAULT_OS_TEENY_REV_FROB(buf, size)			\
@@ -1095,6 +1140,24 @@ struct symtab	predefs[] = {
 #ifdef __HIGHC__
 	{"__HIGHC__", "1"},
 #endif
+#ifdef __OPENSERVER__
+	{"__OPENSERVER__", DEF_STRINGIFY(__OPENSERVER__)},
+#endif
+#ifdef _SCO_DS
+	{"_SCO_DS", DEF_STRINGIFY(_SCO_DS)},
+#endif
+#ifdef _SCO_DS_LL
+	{"_SCO_DS_LL", DEF_STRINGIFY(_SCO_DS_LL)},
+#endif
+#ifdef __SCO_VERSION__
+	{"__SCO_VERSION__", DEF_STRINGIFY(__SCO_VERSION__)},
+#endif
+#ifdef __UNIXWARE__
+	{"__UNIXWARE__", DEF_STRINGIFY(__UNIXWARE__)},
+#endif
+#ifdef __USLC__
+	{"__USLC__", DEF_STRINGIFY(__USLC__)},
+#endif
 #ifdef CMU
 	{"CMU", "1"},
 #endif
@@ -1237,6 +1300,9 @@ struct symtab	predefs[] = {
 #ifdef _MIPS_SZPTR
 	{"_MIPS_SZPTR", DEF_STRINGIFY(_MIPS_SZPTR)},
 #endif
+#ifdef __DragonFly__
+	{"__DragonFly__", "1"},
+#endif
 #ifdef __FreeBSD__
 	{"__FreeBSD__", "1"},
 #endif
@@ -1284,6 +1350,13 @@ struct symtab	predefs[] = {
 	{"__amd64__", "1"},
 	{"__x86_64__", "1"},
 # endif
+# if defined (__amd64) || defined(__x86_64)
+	{"__amd64", "1"},
+	{"__x86_64", "1"},
+# endif
+# ifdef __x86
+	{"__x86", "1"},
+# endif
 # ifdef __i386
 	{"__i386", "1"},
 # endif
@@ -1326,6 +1399,9 @@ struct symtab	predefs[] = {
 # ifdef __s390__
 	{"__s390__", "1"},
 # endif
+# ifdef __hppa__
+	{"__hppa__", "1"},
+# endif
 # ifdef __sh__
 	{"__sh__", "1"},
 # endif
@@ -1356,6 +1432,12 @@ struct symtab	predefs[] = {
 #if defined (__CHAR_BIT__)
 	{"__CHAR_BIT__", DEF_STRINGIFY(__CHAR_BIT__)},
 #endif
+#if defined (__BUILTIN_VA_STRUCT)
+	{"__BUILTIN_VA_STRUCT", "1"},
+#endif
+#if defined (__BUILTIN_VA_ARG_INCR)
+	{"__BUILTIN_VA_ARG_INCR", "1"},
+#endif	
 	/* add any additional symbols before this line */
 	{NULL, NULL}
 };
@@ -1408,10 +1490,11 @@ typedef enum {
   netBSD,
   LinuX,
   emx,
-  win32
+  win32,
+  dragonfly
 } System;
 
-#   ifdef linux
+#   if defined(linux) || defined(__GLIBC__)
 System sys = LinuX;
 #   elif defined __FreeBSD__
 System sys = freebsd;
@@ -1421,6 +1504,8 @@ System sys = netBSD;
 System sys = emx;
 #   elif defined WIN32
 System sys = win32;
+#   elif defined __DragonFly__
+System sys = dragonfly;
 #   else
 System sys = unknown;
 #   endif
@@ -1432,7 +1517,7 @@ int gnu_c_minor = __GNUC_MINOR__;
 int gnu_c = 0;
 int gnu_c_minor = -1;
 #   endif
-#   if defined linux
+#   if defined(linux) || defined(__GLIBC__)
 #    include <features.h>
 int glibc_major = __GLIBC__ + 4;
 int glibc_minor = __GLIBC_MINOR__;

@@ -44,6 +44,10 @@ copyright holders.
 **    *********************************************************
 ** 
 ********************************************************************/
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _RASTER_H_
 #define _RASTER_H_
 
@@ -58,7 +62,7 @@ typedef char *XPointer;
 #define True 1
 #define False 0
 #include "misc.h"
-#include <Xfuncproto.h>
+#include <X11/Xfuncproto.h>
 #include <X11/Xresource.h>
 #include "attributes.h"
 

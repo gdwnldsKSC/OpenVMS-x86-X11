@@ -35,8 +35,8 @@
 /*
 ** Author: Eric Veach, July 1994.
 **
-** $Date$ $Revision$
-** $Header: //depot/main/gfx/lib/glu/libtess/geom.h#5 $
+** $Date: 2004/03/14 08:29:11 $ $Revision: 1.1.1.4 $
+** $Header: /cvs/xorg/xc/extras/ogl-sample/main/gfx/lib/glu/libtess/geom.h,v 1.1.1.4 2004/03/14 08:29:11 eich Exp $
 */
 
 #ifndef __geom_h_

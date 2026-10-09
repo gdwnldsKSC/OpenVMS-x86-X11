@@ -282,48 +282,52 @@ static void i810TexParameter( GLcontext *ctx, GLenum target,
 }
 
 
+/**
+ * Setup hardware bits for new texture environment settings.
+ * 
+ * \todo
+ * Determine whether or not \c param can be used instead of
+ * \c texUnit->EnvColor in the \c GL_TEXTURE_ENV_COLOR case.
+ */
 static void i810TexEnv( GLcontext *ctx, GLenum target, 
 			GLenum pname, const GLfloat *param )
 {
    i810ContextPtr imesa = I810_CONTEXT( ctx );
-   GLuint unit = ctx->Texture.CurrentUnit;
+   const GLuint unit = ctx->Texture.CurrentUnit;
+   const struct gl_texture_unit *texUnit = &ctx->Texture.Unit[unit];
 
    /* Only one env color.  Need a fallback if env colors are different
     * and texture setup references env color in both units.  
     */
    switch (pname) {
    case GL_TEXTURE_ENV_COLOR: {
-      struct gl_texture_unit *texUnit = &ctx->Texture.Unit[unit];
-      GLfloat *fc = texUnit->EnvColor;
-      GLuint r, g, b, a, col;
-      CLAMPED_FLOAT_TO_UBYTE(r, fc[0]);
-      CLAMPED_FLOAT_TO_UBYTE(g, fc[1]);
-      CLAMPED_FLOAT_TO_UBYTE(b, fc[2]);
-      CLAMPED_FLOAT_TO_UBYTE(a, fc[3]);
+      GLubyte c[4];
+      GLuint envColor;
 
-      col = ((a << 24) | 
-	     (r << 16) | 
-	     (g <<  8) | 
-	     (b <<  0));
- 
-      if (imesa->Setup[I810_CTXREG_CF1] != col) {
-	 I810_STATECHANGE(imesa, I810_UPLOAD_CTX);	
-	 imesa->Setup[I810_CTXREG_CF1] = col;      
+      UNCLAMPED_FLOAT_TO_RGBA_CHAN( c, texUnit->EnvColor );
+      envColor = PACK_COLOR_8888( c[3], c[0], c[1], c[2] );
+
+      if (imesa->Setup[I810_CTXREG_CF1] != envColor) {
+	 I810_STATECHANGE(imesa, I810_UPLOAD_CTX);
+	 imesa->Setup[I810_CTXREG_CF1] = envColor;
       }
       break;
    }
+
    case GL_TEXTURE_ENV_MODE:
       imesa->TexEnvImageFmt[unit] = 0; /* force recalc of env state */
       break;
 
-   case GL_TEXTURE_LOD_BIAS_EXT:
-      {
-         struct gl_texture_object *tObj = ctx->Texture.Unit[unit]._Current;
-         i810TextureObjectPtr t = (i810TextureObjectPtr) tObj->DriverData;
-         t->Setup[I810_TEXREG_MLC] &= ~(MLC_LOD_BIAS_MASK);
-         t->Setup[I810_TEXREG_MLC] |= i810ComputeLodBias(*param);
+   case GL_TEXTURE_LOD_BIAS: {
+      if ( texUnit->_Current != NULL ) {
+	 const struct gl_texture_object *tObj = texUnit->_Current;
+	 i810TextureObjectPtr t = (i810TextureObjectPtr) tObj->DriverData;
+
+	 t->Setup[I810_TEXREG_MLC] &= ~(MLC_LOD_BIAS_MASK);
+	 t->Setup[I810_TEXREG_MLC] |= i810ComputeLodBias(*param);
       }
       break;
+   }
 
    default:
       break;
@@ -430,6 +434,14 @@ static void i810DeleteTexture( GLcontext *ctx, struct gl_texture_object *tObj )
    _mesa_delete_texture_object(ctx, tObj);
 }
 
+/**
+ * Choose a Mesa texture format to match the requested format.
+ * 
+ * \todo
+ * Determine why \c _mesa_texformat_al88 doesn't work right for
+ * \c GL_LUMINANCE_ALPHA textures.  It seems to work fine for \c GL_INTENSITY,
+ * but \c GL_LUMINANCE_ALPHA gets some red bands in progs/demos/texenv.
+ */
 static const struct gl_texture_format *
 i810ChooseTextureFormat( GLcontext *ctx, GLint internalFormat,
 			 GLenum format, GLenum type )
@@ -500,7 +512,11 @@ i810ChooseTextureFormat( GLcontext *ctx, GLint internalFormat,
    case GL_INTENSITY12:
    case GL_INTENSITY16:
    case GL_COMPRESSED_INTENSITY:
+#if 0
+      return &_mesa_texformat_al88;
+#else
       return &_mesa_texformat_argb4444;
+#endif
 
    case GL_YCBCR_MESA:
       if (type == GL_UNSIGNED_SHORT_8_8_MESA ||

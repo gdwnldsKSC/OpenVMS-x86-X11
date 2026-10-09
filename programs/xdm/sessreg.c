@@ -1,5 +1,6 @@
 /*
  * $Xorg: sessreg.c,v 1.5 2000/08/17 19:54:15 cpqbld Exp $
+ * $XdotOrg: xc/programs/xdm/sessreg.c,v 1.8 2005/10/05 04:10:02 kem Exp $
  *
  * Copyright 1990, 1998  The Open Group
  *
@@ -25,6 +26,37 @@
  * other dealings in this Software without prior written authorization
  * from The Open Group.
  *
+ */
+
+/* Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, and/or sell copies of the Software, and to permit persons
+ * to whom the Software is furnished to do so, provided that the above
+ * copyright notice(s) and this permission notice appear in all copies of
+ * the Software and that both the above copyright notice(s) and this
+ * permission notice appear in supporting documentation.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+ * OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+ * INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+ * FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+ * NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+ * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * 
+ * Except as contained in this notice, the name of a copyright holder
+ * shall not be used in advertising or otherwise to promote the sale, use
+ * or other dealings in this Software without prior written authorization
+ * of the copyright holder.
+ */
+
+/*
  * Author:  Keith Packard, MIT X Consortium
  * Lastlog support and dynamic utmp entry allocation
  *   by Andreas Stolcke <stolcke@icsi.berkeley.edu>
@@ -47,19 +79,41 @@
  * one of -a or -d must be specified
  */
 
-
-# include	"dm.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 # include	<X11/Xos.h>
 # include	<X11/Xfuncs.h>
 # include	<stdio.h>
+# include	<stdlib.h>
 # include	<utmp.h>
 
-#if defined(SYSV) || defined(SVR4) || defined(Lynx) || defined(__QNX__) || defined(__DARWIN__) || defined(_SEQUENT_)
-#define NO_LASTLOG
+#ifndef HAVE_CONFIG_H /* Imake fallback - hardcode platforms with utmpx */
+# if (defined(sun) && defined (__SVR4))
+#  define HAVE_UTMPX_H
+#  define HAVE_UTMPX_UT_SYSLEN 1
+# endif
 #endif
 
-#ifdef CSRG_BASED
+#ifdef HAVE_UTMPX_H
+# if HAVE_UTMPX_UT_SYSLEN
+#  include <utmpx.h>
+#  define USE_UTMPX
+# endif
+#endif
+
+#ifdef HAVE_CONFIG_H
+# ifndef HAVE_LASTLOG_H
+#  define NO_LASTLOG
+# endif
+#else /* Imake */
+# if defined(SYSV) || (defined(SVR4) && !defined(sun)) || defined(Lynx) || defined(__QNX__) || defined(__DARWIN__) || defined(_SEQUENT_)
+#  define NO_LASTLOG
+# endif
+#endif
+
+#if defined(CSRG_BASED) || defined(HAVE_SYS_PARAM_H)
 #include <sys/param.h>
 #endif
 
@@ -74,7 +128,7 @@
 # include	<pwd.h>
 #endif
 
-#if defined(SVR4) || defined(linux)
+#if defined(__SVR4) || defined(SVR4) || defined(linux) || defined(__GLIBC__)
 #define SYSV
 #endif
 
@@ -123,8 +177,16 @@ extern char	*ttyname ();
 
 static void set_utmp (struct utmp *u, char *line, char *user, char *host, Time_t date, int addp);
 
+#ifdef USE_UTMPX
+static void set_utmpx (struct utmpx *u, const char *line, const char *user,
+		       const char *host, Time_t date, int addp);
+#endif
+
 int	wflag, uflag, lflag;
 char	*wtmp_file, *utmp_file, *line;
+#ifdef USE_UTMPX
+static char *wtmpx_file = NULL, *utmpx_file = NULL;
+#endif
 int	utmp_none, wtmp_none;
 /*
  * BSD specific variables.  To make life much easier for Xstartup/Xreset
@@ -181,7 +243,7 @@ getstring (char ***avp, int *flagp)
 
 #ifndef SYSV
 static int
-syserr (int x, char *s)
+syserr (int x, const char *s)
 {
 	if (x == -1) {
 		perror (s);
@@ -192,7 +254,7 @@ syserr (int x, char *s)
 #endif
 
 static int
-sysnerr (int x, char *s)
+sysnerr (int x, const char *s)
 {
 	if (x == 0) {
 		perror (s);
@@ -211,6 +273,10 @@ main (int argc, char **argv)
 	int		wtmp;
 	Time_t		current_time;
 	struct utmp	utmp_entry;
+#ifdef USE_UTMPX
+	int		wtmpx;	
+	struct utmpx	utmpx_entry;
+#endif
 
 	program_name = argv[0];
 	while (*++argv && **argv == '-') {
@@ -266,11 +332,19 @@ main (int argc, char **argv)
 	usage (!(aflag ^ dflag));
 	usage (xflag && !lflag);
 	/* set up default file names */
-	if (!wflag)
+	if (!wflag) {
 		wtmp_file = WTMP_FILE;
+#ifdef USE_UTMPX
+		wtmpx_file = WTMPX_FILE;
+#endif
+	}
 #ifndef NO_UTMP
-	if (!uflag)
+	if (!uflag) {
 		utmp_file = UTMP_FILE;
+#ifdef USE_UTMPX
+		utmpx_file = UTMPX_FILE;
+#endif
+	}
 #else
 	utmp_none = 1;
 #endif
@@ -298,7 +372,26 @@ main (int argc, char **argv)
 	}
 	time (&current_time);
 	set_utmp (&utmp_entry, line, user_name, host_name, current_time, aflag);
+
+#ifdef USE_UTMPX
+	/* need to set utmpxname() before calling set_utmpx() for
+	   UtmpxIdOpen to work */
+	if (utmpx_file != NULL) {
+	        utmpxname (utmpx_file);
+	}
+	set_utmpx (&utmpx_entry, line, user_name,
+		   host_name, current_time, aflag);
+#endif	
+
 	if (!utmp_none) {
+#ifdef USE_UTMPX
+	    if (utmpx_file != NULL) {
+		setutxent ();
+		(void) getutxid (&utmpx_entry);
+		pututxline (&utmpx_entry);
+		endutxent ();
+	    }
+#endif
 #ifdef SYSV
 		utmpname (utmp_file);
 		setutent ();
@@ -316,12 +409,18 @@ main (int argc, char **argv)
 #endif
 	}
 	if (!wtmp_none) {
+#ifdef USE_UTMPX
+		if (wtmpx_file != NULL) {
+			updwtmpx(wtmpx_file, &utmpx_entry);
+		}
+#else
 		wtmp = open (wtmp_file, O_WRONLY|O_APPEND);
 		if (wtmp != -1) {
 			sysnerr (write (wtmp, (char *) &utmp_entry, sizeof (utmp_entry))
 				        == sizeof (utmp_entry), "write wtmp entry");
 			close (wtmp);
 		}
+#endif		
 	}
 #ifndef NO_LASTLOG
 	if (aflag && !llog_none) {
@@ -359,6 +458,7 @@ main (int argc, char **argv)
 static void
 set_utmp (struct utmp *u, char *line, char *user, char *host, Time_t date, int addp)
 {
+	bzero (u, sizeof (*u));
 	if (line)
 		(void) strncpy (u->ut_line, line, sizeof (u->ut_line));
 	else
@@ -401,6 +501,108 @@ set_utmp (struct utmp *u, char *line, char *user, char *host, Time_t date, int a
 #endif
 	u->ut_time = date;
 }
+
+#ifdef USE_UTMPX
+static int
+UtmpxIdOpen( char *utmpId )
+{
+	struct utmpx *u;	/* pointer to entry in utmp file           */
+	int    status = 1;	/* return code                             */
+ 
+	while ( (u = getutxent()) != NULL ) {
+		
+		if ( (strncmp(u->ut_id, utmpId, 4) == 0 ) &&
+		     u->ut_type != DEAD_PROCESS ) {
+			
+			status = 0;
+			break;
+		}
+	}
+ 
+	endutent();
+	return (status);
+}
+
+static void
+set_utmpx (struct utmpx *u, const char *line, const char *user,
+	   const char *host, Time_t date, int addp)
+{
+	static const char letters[] =
+	       "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        if (line)
+	{
+                if(strcmp(line, ":0") == 0)
+                        (void) strcpy(u->ut_line, "console");
+                else
+                        (void) strncpy (u->ut_line, line, sizeof (u->ut_line));
+
+		strncpy(u->ut_host, line, sizeof(u->ut_host));
+		u->ut_syslen = strlen(line); 
+	}
+        else
+                bzero (u->ut_line, sizeof (u->ut_line));
+        if (addp && user)
+                (void) strncpy (u->ut_name, user, sizeof (u->ut_name));
+        else
+                bzero (u->ut_name, sizeof (u->ut_name));
+
+        if (line) {
+                int     i;
+                /*
+                 * this is a bit crufty, but
+                 * follows the apparent conventions in
+                 * the ttys file.  ut_id is only 4 bytes
+                 * long, and the last 4 bytes of the line
+                 * name are written into it, left justified.
+                 */
+                i = strlen (line);
+                if (i >= sizeof (u->ut_id))
+                        i -= sizeof (u->ut_id);
+                else
+                        i = 0;
+                (void) strncpy (u->ut_id, line + i, sizeof (u->ut_id));
+
+		/* make sure there is no entry using identical ut_id */
+		if (!UtmpxIdOpen(u->ut_id) && addp) {
+                        int limit = sizeof(letters) - 1;
+                        int t = 0;
+
+                        u->ut_id[1] = line[i];
+                        u->ut_id[2] = line[i+1];
+                        u->ut_id[3] = line[i+2];
+                        do {
+                                u->ut_id[0] = letters[t];
+                                t++;
+                        } while (!UtmpxIdOpen(u->ut_id) && (t < limit));
+                }
+                if (!addp && strstr(line, ":") != NULL) {
+                        struct utmpx *tmpu;             
+
+                        while ( (tmpu = getutxent()) != NULL ) {
+                                if ( (strcmp(tmpu->ut_host, line) == 0 ) &&
+                                        tmpu->ut_type != DEAD_PROCESS ) {
+                                        strncpy(u->ut_id, tmpu->ut_id,
+						sizeof(u->ut_id));
+                                        break;
+                                }
+                        }
+                        endutxent();
+                }
+        } else
+                bzero (u->ut_id, sizeof (u->ut_id));
+	
+        if (addp) {
+                u->ut_pid = getppid ();
+                u->ut_type = USER_PROCESS;
+        } else {
+                u->ut_pid = 0;
+                u->ut_type = DEAD_PROCESS;
+        }
+	u->ut_tv.tv_sec = date;
+	u->ut_tv.tv_usec = 0;
+}
+#endif /* USE_UTMPX */
 
 #ifndef SYSV
 /*

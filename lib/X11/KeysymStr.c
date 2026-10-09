@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/X11/KeysymStr.c,v 3.9 2003/04/13 19:22:16 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "Xlibint.h"
 #include <X11/Xresource.h>
 #include <X11/keysymdef.h>
@@ -75,25 +78,28 @@ char *XKeysymToString(ks)
     int h;
     register int idx;
     const unsigned char *entry;
-    unsigned char val1, val2;
+    unsigned char val1, val2, val3, val4;
     XrmDatabase keysymdb;
 
     if (!ks || (ks & ((unsigned long) ~0x1fffffff)) != 0)
 	return ((char *)NULL);
     if (ks == XK_VoidSymbol)
 	ks = 0;
-    if (ks <= 0xffff)
+    if (ks <= 0x1fffffff)
     {
-	val1 = ks >> 8;
-	val2 = ks & 0xff;
+	val1 = ks >> 24;
+	val2 = (ks >> 16) & 0xff;
+	val3 = (ks >> 8) & 0xff;
+	val4 = ks & 0xff;
 	i = ks % VTABLESIZE;
 	h = i + 1;
 	n = VMAXHASH;
 	while ((idx = hashKeysym[i]))
 	{
 	    entry = &_XkeyTable[idx];
-	    if ((entry[0] == val1) && (entry[1] == val2))
-		return ((char *)entry + 2);
+	    if ((entry[0] == val1) && (entry[1] == val2) &&
+                (entry[2] == val3) && (entry[3] == val4))
+		return ((char *)entry + 4);
 	    if (!--n)
 		break;
 	    i += h;
@@ -120,7 +126,7 @@ char *XKeysymToString(ks)
         if (data.name)
 	    return data.name;
     }
-    if ((ks & 0xff000000) == 0x01000000){
+    if (ks >= 0x01000100 && ks <= 0x0110ffff) {
         KeySym val = ks & 0xffffff;
         char *s;
         int i;

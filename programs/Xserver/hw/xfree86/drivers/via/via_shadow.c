@@ -1,4 +1,3 @@
-/* $XFree86$ */
 /*
  * Copyright 1998-2003 VIA Technologies, Inc. All Rights Reserved.
  * Copyright 2001-2003 S3 Graphics, Inc. All Rights Reserved.
@@ -17,18 +16,22 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- * VIA, S3 GRAPHICS, AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "via_driver.h"
 #include "shadowfb.h"
 #include "servermd.h"
 
 
-void
+static void
 VIARefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 {
     VIAPtr pVia = VIAPTR(pScrn);
@@ -43,7 +46,7 @@ VIARefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
         height = pbox->y2 - pbox->y1;
         src = pVia->ShadowPtr + (pbox->y1 * pVia->ShadowPitch) + 
               (pbox->x1 * Bpp);
-        dst = pVia->FBStart + (pbox->y1 * FBPitch) + (pbox->x1 * Bpp);
+        dst = pVia->FBBase + (pbox->y1 * FBPitch) + (pbox->x1 * Bpp);
 
         while (height--) {
             memcpy(dst, src, width);
@@ -56,7 +59,7 @@ VIARefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 } 
 
 
-void
+static void
 VIAPointerMoved(int index, int x, int y)
 {
     ScrnInfoPtr pScrn = xf86Screens[index];
@@ -77,7 +80,7 @@ VIAPointerMoved(int index, int x, int y)
 }
 
 
-void
+static void
 VIARefreshArea8(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 {
     VIAPtr pVia = VIAPTR(pScrn);
@@ -95,12 +98,12 @@ VIARefreshArea8(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
         height = (y2 - y1) >> 2;  /* in dwords */
 
         if (pVia->rotate == 1) {
-            dstPtr = pVia->FBStart + (pbox->x1 * dstPitch) + 
+            dstPtr = pVia->FBBase + (pbox->x1 * dstPitch) + 
                      pScrn->virtualX - y2;
             srcPtr = pVia->ShadowPtr + ((1 - y2) * srcPitch) + pbox->x1;
         } 
         else {
-            dstPtr = pVia->FBStart + 
+            dstPtr = pVia->FBBase + 
                      ((pScrn->virtualY - pbox->x2) * dstPitch) + y1;
             srcPtr = pVia->ShadowPtr + (y1 * srcPitch) + pbox->x2 - 1;
         }
@@ -126,7 +129,7 @@ VIARefreshArea8(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 } 
 
 
-void
+static void
 VIARefreshArea16(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 {
     VIAPtr pVia = VIAPTR(pScrn);
@@ -144,13 +147,13 @@ VIARefreshArea16(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
         height = (y2 - y1) >> 1;  /* in dwords */
 
         if (pVia->rotate == 1) {
-            dstPtr = (CARD16*)pVia->FBStart + 
+            dstPtr = (CARD16*)pVia->FBBase + 
                      (pbox->x1 * dstPitch) + pScrn->virtualX - y2;
             srcPtr = (CARD16*)pVia->ShadowPtr + 
                      ((1 - y2) * srcPitch) + pbox->x1;
         } 
         else {
-            dstPtr = (CARD16*)pVia->FBStart + 
+            dstPtr = (CARD16*)pVia->FBBase + 
                      ((pScrn->virtualY - pbox->x2) * dstPitch) + y1;
             srcPtr = (CARD16*)pVia->ShadowPtr + 
                      (y1 * srcPitch) + pbox->x2 - 1;
@@ -174,7 +177,7 @@ VIARefreshArea16(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
     }
 }
 
-
+#ifdef UNUSED
 /* this one could be faster */
 void
 VIARefreshArea24(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
@@ -194,12 +197,12 @@ VIARefreshArea24(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
         height = (y2 - y1) >> 2;  /* blocks of 3 dwords */
 
         if (pVia->rotate == 1) {
-            dstPtr = pVia->FBStart + 
+            dstPtr = pVia->FBBase + 
                      (pbox->x1 * dstPitch) + ((pScrn->virtualX - y2) * 3);
             srcPtr = pVia->ShadowPtr + ((1 - y2) * srcPitch) + (pbox->x1 * 3);
         } 
         else {
-            dstPtr = pVia->FBStart + 
+            dstPtr = pVia->FBBase + 
                      ((pScrn->virtualY - pbox->x2) * dstPitch) + (y1 * 3);
             srcPtr = pVia->ShadowPtr + (y1 * srcPitch) + (pbox->x2 * 3) - 3;
         }
@@ -228,9 +231,9 @@ VIARefreshArea24(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
         pbox++;
     }
 }
+#endif /* UNUSED */
 
-
-void
+static void
 VIARefreshArea32(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 {
     VIAPtr pVia = VIAPTR(pScrn);
@@ -245,13 +248,13 @@ VIARefreshArea32(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
         height = pbox->y2 - pbox->y1;
 
         if (pVia->rotate == 1) {
-            dstPtr = (CARD32*)pVia->FBStart + 
+            dstPtr = (CARD32*)pVia->FBBase + 
                      (pbox->x1 * dstPitch) + pScrn->virtualX - pbox->y2;
             srcPtr = (CARD32*)pVia->ShadowPtr + 
                      ((1 - pbox->y2) * srcPitch) + pbox->x1;
         } 
         else {
-            dstPtr = (CARD32*)pVia->FBStart + 
+            dstPtr = (CARD32*)pVia->FBBase + 
                      ((pScrn->virtualY - pbox->x2) * dstPitch) + pbox->y1;
             srcPtr = (CARD32*)pVia->ShadowPtr + 
                      (pbox->y1 * srcPitch) + pbox->x2 - 1;
@@ -274,3 +277,36 @@ VIARefreshArea32(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
         pbox++;
     }
 }
+
+/*
+ *
+ */
+void
+ViaShadowFBInit(ScrnInfoPtr pScrn, ScreenPtr pScreen)
+{
+    VIAPtr pVia = VIAPTR(pScrn);
+    RefreshAreaFuncPtr refreshArea = VIARefreshArea;
+    
+    if (pVia->rotate) {
+	if (!pVia->PointerMoved) {
+	    pVia->PointerMoved = pScrn->PointerMoved;
+	    pScrn->PointerMoved = VIAPointerMoved;
+	}
+	
+	switch(pScrn->bitsPerPixel) {
+	case 8:
+	    refreshArea = VIARefreshArea8;
+	    break;
+	case 16:
+	    refreshArea = VIARefreshArea16;
+	    break;
+	case 32:
+	    refreshArea = VIARefreshArea32;
+	    break;
+	}
+    }
+    
+    ShadowFBInit(pScreen, refreshArea);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "ShadowFB initialised.\n");
+}
+

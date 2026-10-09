@@ -38,7 +38,7 @@ to use this version. These features include
 	many of the known hardware cursor problems.
 <item>Gamma correction at all depths and DirectColor visuals for depths of
 	15 or greater with the HiQV series of chipsets.
-<item>Supports PsuedoColor overlays on 16bpp TrueColor screens for HiQV.
+<item>Supports PseudoColor overlays on 16bpp TrueColor screens for HiQV.
 <item>Supports YUV colour space conversion with the XVideo extension.
 <item>32bpp pixmaps while using a framebuffer in 24bpp packed pixel mode.
 <item>Heaps more acceleration.

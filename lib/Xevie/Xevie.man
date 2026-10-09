@@ -1,5 +1,5 @@
 .\"
-.\" $XdotOrg: xc/lib/Xevie/Xevie.man,v 
+.\" $XdotOrg: xc/lib/Xevie/Xevie.man,v 1.2 2005/04/04 02:41:49 alanc Exp $
 .\"
 .\"
 .de TQ
@@ -10,7 +10,7 @@
 .TH XEVIE __libmansuffix__ __vendorversion__
 
 .SH NAME
- Xevie \- X Event Interceptor extension.
+Xevie \- X Event Interception Extension (XEvIE)
 .SH SYNTAX
 \&#include <X11/extensions/Xevie.h>
 .nf    
@@ -46,13 +46,10 @@ has changed or synthesised this event.
 
 
 .SH DESCRIPTION
-.B Xevie
-X Event Interception Extension (XEvIE) is designed for users 
-who need to intercept all the Keyboard and Mouse events. 
-The requirement for XEvIE is directly from GNOME Accessibility project. 
-AT Accessibility API needs to have full keyboard/mouse control. 
-XEvIE provides a set of API to allow AT Accessibility API to get 
-and consume Keyboard/Mouse events.
+.B X Event Interception Extension (XEvIE) 
+is designed for users who need to intercept all the Keyboard and Mouse events.
+Programs can determine which events should be forwarded to other clients and
+modify the events if necessary.
 .PP
 
 .SH FUNCTIONS
@@ -69,8 +66,7 @@ will be sent to the client which has enabled XEvIE.
 If XKB or AccessX is enabled, the events that are sent to the XEvIE clients
 are XKB/AccessX processed (filtered) ones.
 
-
-.B XevieSend
+.B XevieSendEvent
 Events are sent back to the X server through XevieSendEvent.
 
 .B XevieEnd
@@ -84,9 +80,9 @@ and pointer events associated with the specified event mask.
 By default, X will report KeyPress, KeyRelease, ButtonPress, ButtonRelease
 and MotionNotify events.
 
-SH RESTRICTIONS
+.SH RESTRICTIONS
 .B Xevie
 will remain upward compatible after the current 1.0 release.
-.SH AUTHOR
-Derek Wang, Stuart Kreitman, SUN
+.SH AUTHORS
+Derek Wang and Stuart Kreitman, Sun Microsystems, Inc.
 

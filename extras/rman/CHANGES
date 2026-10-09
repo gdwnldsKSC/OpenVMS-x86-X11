@@ -77,14 +77,16 @@
 27	commented out Ensemble output format, which nobody used
  2 Oct	>4000 lines
 11
- 8 Nov  released 3.0 alpha.  source code parsing works well for Solaris, SunOS, HP-UX; in generating HTML
+ 8 Nov  release 3.0 alpha.  source code parsing works well for Solaris, SunOS, HP-UX; in generating HTML
 25	recognize URLs (Mic Campanel)
+
 
 1997
 19 Mar	bug fixes, more special characters (roff expert Larry Jones)
  8 Aug  renamed to PolyglotMan
  4 Nov	TkMan module: Rebus and NoteMark identification for paragraph lengths and command line options taken over from Tcl (still have search, highlight in Tcl, necessarily) (Chad Loder)
 	>5000 lines, or nearly 40X the lines of code of version 1.0 (which just supported TkMan)
+
 
 1998
 20 Mar	automatic detection of Tcl/Tk source (within automatic detection of source; already had within formatted)
@@ -94,7 +96,23 @@
 20	incorporate (RCS) versioning diff's, for HTML
 
 
-Anticipated/Contemplated
-make source translation work on Digital UNIX better--just tweaks now
-fix up other output formats to work well with source parsing
-??-???	SGML/XML output format (DTD found at long last), validated by sgmls/sp
+2000
+22 Jun  eliminate last of encumbered code, release as Open Source
+	release version 3.0.9
+
+
+2002
+24 Aug  used in Apple's OS X 10.2 (Jaguar) to convert manual pages for display in Project Builder
+
+
+2003
+28 Mar  updated for groff 1.18's new escape codes
+	remove Ensemble output format, which is obsolete
+	remove Texinfo output format, which is not useful
+	HTML tags in lowercase
+	released version 3.1
+ 5 Jun  applied Aaron Hawley's patches for DocBook XML
+ 6 Jul  assume HTML browsers support full set of entity references
+	discontinue support for Mac OS 9 and earlier (compiles out of the box on OS X)
+25	tags well nested for troff source input (at last!)
+26	release version 3.2

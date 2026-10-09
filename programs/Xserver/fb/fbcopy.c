@@ -1,7 +1,7 @@
 /*
  * Id: fbcopy.c,v 1.1 1999/11/02 03:54:45 keithp Exp $
  *
- * Copyright © 1998 Keith Packard
+ * Copyright Â© 1998 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -23,10 +23,15 @@
  */
 /* $XFree86: xc/programs/Xserver/fb/fbcopy.c,v 1.13 2003/11/10 18:21:47 tsi Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "fb.h"
 #ifdef IN_MODULE
 #include "xf86_ansic.h"
 #endif
+#include "fbmmx.h"
 
 void
 fbCopyNtoN (DrawablePtr	pSrcDrawable,
@@ -54,28 +59,52 @@ fbCopyNtoN (DrawablePtr	pSrcDrawable,
     
     fbGetDrawable (pSrcDrawable, src, srcStride, srcBpp, srcXoff, srcYoff);
     fbGetDrawable (pDstDrawable, dst, dstStride, dstBpp, dstXoff, dstYoff);
-    
+
     while (nbox--)
     {
+#ifdef USE_MMX
+	if (pm == FB_ALLONES && alu == GXcopy && !reverse &&
+	    !upsidedown && fbHaveMMX())
+	{
+	    if (!fbCopyAreammx (pSrcDrawable,
+				pDstDrawable,
+				
+				(pbox->x1 + dx),
+				(pbox->y1 + dy),
+				
+				(pbox->x1),
+				(pbox->y1),
+				
+				(pbox->x2 - pbox->x1),
+				(pbox->y2 - pbox->y1)))
+		goto fallback;
+	    else
+		goto next;
+	}
+    fallback:
+#endif
 	fbBlt (src + (pbox->y1 + dy + srcYoff) * srcStride,
 	       srcStride,
 	       (pbox->x1 + dx + srcXoff) * srcBpp,
-    
+	       
 	       dst + (pbox->y1 + dstYoff) * dstStride,
 	       dstStride,
 	       (pbox->x1 + dstXoff) * dstBpp,
-    
+	       
 	       (pbox->x2 - pbox->x1) * dstBpp,
 	       (pbox->y2 - pbox->y1),
-    
+	       
 	       alu,
 	       pm,
 	       dstBpp,
-    
+	       
 	       reverse,
 	       upsidedown);
+#ifdef USE_MMX
+    next:
+#endif
 	pbox++;
-    }
+    }    
 }
 
 void
@@ -594,7 +623,7 @@ fbCopyArea (DrawablePtr	pSrcDrawable,
 	    int		yOut)
 {
     fbCopyProc	copy;
-    
+
 #ifdef FB_24_32BIT
     if (pSrcDrawable->bitsPerPixel != pDstDrawable->bitsPerPixel)
 	copy = fb24_32CopyMtoN;

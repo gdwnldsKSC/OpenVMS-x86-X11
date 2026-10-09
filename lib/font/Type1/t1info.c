@@ -101,8 +101,15 @@ from The Open Group.
  */
 /* $XFree86: xc/lib/font/Type1/t1info.c,v 1.18tsi Exp $ */
 
-#include "fntfilst.h"
-#include "fontutil.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/fontutil.h>
 #ifndef FONTMODULE
 #include <stdio.h> 
 #ifndef BUILDCID
@@ -111,9 +118,9 @@ from The Open Group.
 #else
 #include "xf86_ansic.h"
 #endif
-#include "FSproto.h"
+#include <X11/fonts/FSproto.h>
 
-#ifdef BUILDCID
+#if XFONT_CID
 #ifndef FONTMODULE
 #ifdef _XOPEN_SOURCE
 #include <math.h>
@@ -128,7 +135,7 @@ from The Open Group.
 #include "range.h"
 #endif
 
-#ifdef BUILDCID
+#if XFONT_CID
 #include "util.h"
 #include "fontfcn.h"
 
@@ -151,7 +158,7 @@ enum scaleType {
     resolution_y, average_width
 };
 
-#ifdef BUILDCID
+#if XFONT_CID
 extern cidfont *CIDFontP;
 static int stdpropsinit = 0;
 
@@ -327,7 +334,7 @@ ComputeBounds(FontInfoPtr pInfo, CharInfoPtr pChars, FontScalablePtr Vals)
     FontComputeInfoAccelerators (pInfo);
 }
 
-#ifdef BUILDCID
+#if XFONT_CID
 #ifdef CID_ALL_CHARS
 void
 ComputeBoundsAllChars(FontPtr pFont, char *cfmfilename, double sxmult)
@@ -594,7 +601,7 @@ ComputeProps(FontInfoPtr pInfo, FontScalablePtr Vals, char *Filename,
     }
 }
 
-#ifdef BUILDCID
+#if XFONT_CID
 #ifndef CID_ALL_CHARS
 static void
 CIDComputeStdProps(FontInfoPtr pInfo, FontScalablePtr Vals, 
@@ -871,7 +878,7 @@ ComputeStdProps(FontInfoPtr pInfo, FontScalablePtr Vals,
     }
 }
 
-#ifdef BUILDCID
+#if XFONT_CID
 /*ARGSUSED*/
 int
 CIDGetInfoScalable(FontPathElementPtr fpe, 
@@ -931,7 +938,7 @@ Type1GetInfoScalable(FontPathElementPtr fpe,
     return Successful;
 }
 
-#ifdef BUILDCID
+#if XFONT_CID
 #ifndef CID_ALL_CHARS
 void
 CIDFillFontInfo(FontPtr pFont, FontScalablePtr Vals, 
@@ -1059,7 +1066,7 @@ T1FillFontInfo(FontPtr pFont, FontScalablePtr Vals,
  
 /* Called once, at renderer registration time */
 void
-#ifdef BUILDCID
+#if XFONT_CID
 Type1InitStdProps(void)
 #else
 T1InitStdProps(void)
@@ -1068,7 +1075,7 @@ T1InitStdProps(void)
     int         i;
     fontProp   *t;
  
-#ifdef BUILDCID
+#if XFONT_CID
     if (!stdpropsinit) {
         stdpropsinit = 1;
         i = sizeof(fontNamePropTable) / sizeof(fontProp);

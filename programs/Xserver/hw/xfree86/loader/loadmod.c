@@ -49,6 +49,10 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "os.h"
 /* For stat() and related stuff */
 #define NO_OSLIB_PROTOTYPES
@@ -204,13 +208,13 @@ LoaderSetPath(const char *path)
 
 /* Standard set of module subdirectories to search, in order of preference */
 static const char *stdSubdirs[] = {
-    "drivers/",
+    "",
+    "fonts/",
     "input/",
+    "drivers/",
     "multimedia/",
     "extensions/",
-    "fonts/",
     "internal/",
-    "",
     NULL
 };
 
@@ -398,19 +402,20 @@ static char *
 FindModule(const char *module, const char *dir, const char **subdirlist,
 	   PatternPtr patterns)
 {
-    char buf[PATH_MAX + 1];
+    char buf[PATH_MAX + 1], tmpBuf[PATH_MAX + 1];
     char *dirpath = NULL;
     char *name = NULL;
     struct stat stat_buf;
-    int len, dirlen;
+    int dirlen;
     char *fp;
-    DIR *d;
     const char **subdirs = NULL;
-    PatternPtr p = NULL;
     const char **s;
-    struct dirent *dp;
-    regmatch_t match[2];
-
+#ifdef DLOPEN_HACK
+    const char suffix[3][3] = { "so", "a", "o" };
+#else
+    const char suffix[3][3] = { "a", "o", "so" };
+#endif
+    
     subdirs = InitSubdirs(subdirlist);
     if (!subdirs)
 	return NULL;
@@ -431,39 +436,37 @@ FindModule(const char *module, const char *dir, const char **subdirlist,
 	strcpy(buf, dirpath);
 	strcat(buf, *s);
 	/*xf86Msg(X_INFO,"OS2DIAG: FindModule: buf=%s\n",buf); */
-	fp = buf + dirlen;
-	if (stat(buf, &stat_buf) == 0 && S_ISDIR(stat_buf.st_mode) &&
-	    (d = opendir(buf))) {
-	    if (buf[dirlen - 1] != '/') {
-		buf[dirlen++] = '/';
-		fp++;
+        if ((stat(buf, &stat_buf) == 0) && S_ISDIR(stat_buf.st_mode)) {
+	    int i;
+	
+            if (buf[dirlen - 1] != '/') {
+                buf[dirlen++] = '/';
+                fp++;
+            }
+	    
+	    for (i = 0; i < 3 && !name; i++) {
+                snprintf(tmpBuf, PATH_MAX, "%slib%s.%s", buf, module,
+                         suffix[i]);
+                if (stat(tmpBuf, &stat_buf) == 0) {
+                    name = tmpBuf;
+                    break;
+                }
+                snprintf(tmpBuf, PATH_MAX, "%s%s_drv.%s", buf, module,
+                         suffix[i]);
+                if (stat(tmpBuf, &stat_buf) == 0) {
+                    name = tmpBuf;
+                    break;
+                }
+                snprintf(tmpBuf, PATH_MAX, "%s%s.%s", buf, module,
+                         suffix[i]);
+                if (stat(tmpBuf, &stat_buf) == 0) {
+                    name = tmpBuf;
+                    break;
+                }
 	    }
-	    while ((dp = readdir(d))) {
-		if (dirlen + strlen(dp->d_name) + 1 > PATH_MAX)
-		    continue;
-		strcpy(fp, dp->d_name);
-		if (!(stat(buf, &stat_buf) == 0 && S_ISREG(stat_buf.st_mode)))
-		    continue;
-		for (p = patterns; p->pattern; p++) {
-		    if (regexec(&p->rex, dp->d_name, 2, match, 0) == 0 &&
-			match[1].rm_so != -1) {
-			len = match[1].rm_eo - match[1].rm_so;
-			if (len == strlen(module) &&
-			    strncmp(module, dp->d_name + match[1].rm_so,
-				    len) == 0) {
-			    /*xf86Msg(X_INFO,"OS2DIAG: matching %s\n",buf); */
-			    name = buf;
-			    break;
-			}
-		    }
-		}
-		if (name)
-		    break;
-	    }
-	    closedir(d);
 	    if (name)
 		break;
-	}
+        }
     }
     FreeSubdirs(subdirs);
     if (dirpath != dir)
@@ -588,7 +591,13 @@ CheckVersion(const char *module, XF86ModuleVersionInfo * data,
 	    data->modname ? data->modname : "UNKNOWN!",
 	    data->vendor ? data->vendor : "UNKNOWN!");
 
-    if (ver > (4 << 24)) {
+    /* Check for the different scheme used in XFree86 4.0.x releases:
+     * ((((((((major << 7) | minor) << 7) | subminor) << 5) | beta) << 5) | alpha)
+     * Since it wasn't used in 4.1.0 or later, limit to versions in the 4.0.x
+     * range, which limits the overlap with the new version scheme to conflicts
+     * with 6.71.8.764 through 6.72.39.934.
+     */
+    if ((ver > (4 << 24)) && (ver < ( (4 << 24) + (1 << 17)))) {
 	/* 4.0.x and earlier */
 	verstr[1] = verstr[3] = 0;
 	verstr[2] = (ver & 0x1f) ? (ver & 0x1f) + 'a' - 1 : 0;
@@ -954,6 +963,11 @@ LoadModule(const char *module, const char *path, const char **subdirlist,
 
     ret->filename = xstrdup(found);
 
+    /* drop any explicit suffix from the module name */
+    p = strchr(name, '.');
+    if (p)
+        *p = '\0';
+
     /*
      * now check if the special data object <modulename>ModuleData is
      * present.
@@ -1203,6 +1217,7 @@ void
 LoaderErrorMsg(const char *name, const char *modname, int errmaj, int errmin)
 {
     const char *msg;
+    MessageType type = X_ERROR;
 
     switch (errmaj) {
     case LDR_NOERROR:
@@ -1230,7 +1245,8 @@ LoaderErrorMsg(const char *name, const char *modname, int errmaj, int errmin)
 	msg = "loader failed";
 	break;
     case LDR_ONCEONLY:
-	msg = "once-only module";
+	msg = "already loaded";
+        type = X_INFO;
 	break;
     case LDR_NOPORTOPEN:
 	msg = "port open failed";
@@ -1257,10 +1273,10 @@ LoaderErrorMsg(const char *name, const char *modname, int errmaj, int errmin)
 	msg = "uknown error";
     }
     if (name)
-	xf86Msg(X_ERROR, "%s: Failed to load module \"%s\" (%s, %d)\n",
+	xf86Msg(type, "%s: Failed to load module \"%s\" (%s, %d)\n",
 		name, modname, msg, errmin);
     else
-	xf86Msg(X_ERROR, "Failed to load module \"%s\" (%s, %d)\n",
+	xf86Msg(type, "Failed to load module \"%s\" (%s, %d)\n",
 		modname, msg, errmin);
 }
 

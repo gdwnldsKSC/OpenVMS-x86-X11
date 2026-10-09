@@ -22,7 +22,7 @@ SUBDIRS = module
 #endif
 
 
-LinkSourceFile(compsize.c,$(LIBSRC)/GL/glx)
+LinkSourceFile(compsize.c,$(MESASRCDIR)/src/glx/x11)
 
   DRIVER_SRCS = $(XMESA_SRCS)
   DRIVER_OBJS = $(XMESA_OBJS)
@@ -55,7 +55,7 @@ GLXSRV_DEFINES = -DXFree86Server
 		-I$(SERVERSRC)/include -I$(SERVERSRC)/GL/include \
 		-I$(SERVERSRC)/GL/glx \
 		-I$(XF86OSSRC) \
-		-I$(DRMSRCDIR)/shared
+		-I$(DRMSRCDIR)/shared-core
 
       DEFINES = $(GLX_DEFINES) $(GLXSRV_DEFINES) /*-DUSE_X86_ASM*/ /*-DUSE_SPARC_ASM*/
 

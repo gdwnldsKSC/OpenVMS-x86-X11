@@ -27,6 +27,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/os-support/libusb/descr.c,v 1.1.2.2 1999/12/03 10:12:42 hohndel Exp $ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <sys/types.h>
 
 #include <assert.h>

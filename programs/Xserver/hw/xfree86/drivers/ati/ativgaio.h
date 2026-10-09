@@ -32,11 +32,10 @@
 
 #include "atiio.h"
 #include "atipriv.h"
-#include "atiproto.h"
 
 #ifndef AVOID_CPIO
 
-extern void ATISetVGAIOBase FunctionPrototype((ATIPtr, const CARD8));
+extern void ATISetVGAIOBase(ATIPtr, const CARD8);
 
 /* Odds and ends to ease reading and writting of indexed registers */
 #define GetReg(_Register, _Index) \

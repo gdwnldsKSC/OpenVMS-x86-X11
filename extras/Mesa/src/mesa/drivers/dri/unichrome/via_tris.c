@@ -30,6 +30,7 @@
 #include "mtypes.h"
 #include "macros.h"
 #include "colormac.h"
+#include "enums.h"
 
 #include "swrast/swrast.h"
 #include "swrast_setup/swrast_setup.h"
@@ -39,139 +40,152 @@
 #include "via_context.h"
 #include "via_tris.h"
 #include "via_state.h"
-#include "via_vb.h"
+#include "via_span.h"
 #include "via_ioctl.h"
+#include "via_3d_reg.h"
+#include "via_tex.h"
 
-static void viaRenderPrimitive(GLcontext *ctx, GLenum prim);
-GLuint RasterCounter = 0;
-extern GLuint idle;
-extern GLuint busy;
 /***********************************************************************
  *                    Emit primitives as inline vertices               *
  ***********************************************************************/
+#define LINE_FALLBACK (0)
+#define POINT_FALLBACK (0)
+#define TRI_FALLBACK (0)
+#define ANY_FALLBACK_FLAGS (POINT_FALLBACK|LINE_FALLBACK|TRI_FALLBACK)
+#define ANY_RASTER_FLAGS (DD_TRI_LIGHT_TWOSIDE|DD_TRI_OFFSET|DD_TRI_UNFILLED)
 
-#if defined(USE_X86_ASM)
-#define COPY_DWORDS(j, vb, vertsize, v)                                 \
-    do {                                                                \
-        int __tmp;                                                      \
-        __asm__ __volatile__("rep ; movsl"                              \
-                              : "=%c" (j), "=D" (vb), "=S" (__tmp)      \
-                              : "0" (vertsize),                         \
-                                "D" ((long)vb),                         \
-                                "S" ((long)v));                         \
+
+#if 0
+#define COPY_DWORDS(vb, vertsize, v) 		\
+do {						\
+   via_sse_memcpy(vb, v, vertsize * 4);		\
+   vb += vertsize;				\
+} while (0)
+#else
+#if defined( USE_X86_ASM )
+#define COPY_DWORDS(vb, vertsize, v)					\
+    do {								\
+        int j;								\
+        int __tmp;							\
+        __asm__ __volatile__("rep ; movsl"				\
+                              : "=%c" (j), "=D" (vb), "=S" (__tmp)	\
+                              : "0" (vertsize),				\
+                                "D" ((long)vb),				\
+                                "S" ((long)v));				\
     } while (0)
 #else
-#define COPY_DWORDS(j, vb, vertsize, v)                                 \
-    do {                                                                \
-        for (j = 0; j < vertsize; j++)                                  \
-            vb[j] = ((GLuint *)v)[j];                                   \
-        vb += vertsize;                                                 \
+#define COPY_DWORDS(vb, vertsize, v)		\
+    do {					\
+        int j;					\
+        for (j = 0; j < vertsize; j++)		\
+            vb[j] = ((GLuint *)v)[j];		\
+        vb += vertsize;				\
     } while (0)
 #endif
+#endif
 
-static void __inline__ via_draw_triangle(viaContextPtr vmesa,
-                                         viaVertexPtr v0,
-                                         viaVertexPtr v1,
-                                         viaVertexPtr v2)
+static void via_draw_triangle(struct via_context *vmesa,
+			      viaVertexPtr v0,
+			      viaVertexPtr v1,
+			      viaVertexPtr v2)
 {
-    GLuint vertsize = vmesa->vertexSize;
-    GLuint *vb = viaCheckDma(vmesa, 3 * 4 * vertsize);
-    int j;
-    
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif
-    COPY_DWORDS(j, vb, vertsize, v0);
-    COPY_DWORDS(j, vb, vertsize, v1);
-    COPY_DWORDS(j, vb, vertsize, v2);
-    vmesa->dmaLow += 3 * 4 * vertsize;
-    vmesa->primitiveRendered = GL_TRUE;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
+   GLuint vertsize = vmesa->vertexSize;
+   GLuint *vb = viaExtendPrimitive(vmesa, 3 * 4 * vertsize);
+
+   COPY_DWORDS(vb, vertsize, v0);
+   COPY_DWORDS(vb, vertsize, v1);
+   COPY_DWORDS(vb, vertsize, v2);
 }
 
 
-static void __inline__ via_draw_quad(viaContextPtr vmesa,
-                                     viaVertexPtr v0,
-                                     viaVertexPtr v1,
-                                     viaVertexPtr v2,
-                                     viaVertexPtr v3)
+static void via_draw_quad(struct via_context *vmesa,
+			  viaVertexPtr v0,
+			  viaVertexPtr v1,
+			  viaVertexPtr v2,
+			  viaVertexPtr v3)
 {
-    GLuint vertsize = vmesa->vertexSize;
-    GLuint *vb = viaCheckDma(vmesa, 6 * 4 * vertsize);
-    int j;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);    
-#endif
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif    
-    COPY_DWORDS(j, vb, vertsize, v0);
-    COPY_DWORDS(j, vb, vertsize, v1);
-    COPY_DWORDS(j, vb, vertsize, v3);
-    COPY_DWORDS(j, vb, vertsize, v1);
-    COPY_DWORDS(j, vb, vertsize, v2);
-    COPY_DWORDS(j, vb, vertsize, v3);
-    vmesa->dmaLow += 6 * 4 * vertsize;
-    vmesa->primitiveRendered = GL_TRUE;    
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
+   GLuint vertsize = vmesa->vertexSize;
+   GLuint *vb = viaExtendPrimitive(vmesa, 6 * 4 * vertsize);
+
+   COPY_DWORDS(vb, vertsize, v0);
+   COPY_DWORDS(vb, vertsize, v1);
+   COPY_DWORDS(vb, vertsize, v3);
+   COPY_DWORDS(vb, vertsize, v1);
+   COPY_DWORDS(vb, vertsize, v2);
+   COPY_DWORDS(vb, vertsize, v3);
+}
+
+static void via_draw_line(struct via_context *vmesa,
+			  viaVertexPtr v0,
+			  viaVertexPtr v1)
+{
+   GLuint vertsize = vmesa->vertexSize;
+   GLuint *vb = viaExtendPrimitive(vmesa, 2 * 4 * vertsize);
+   COPY_DWORDS(vb, vertsize, v0);
+   COPY_DWORDS(vb, vertsize, v1);
 }
 
 
-static __inline__ void via_draw_point(viaContextPtr vmesa,
-                                      viaVertexPtr v0)
+static void via_draw_point(struct via_context *vmesa,
+			   viaVertexPtr v0)
 {
-    /*GLfloat sz = vmesa->glCtx->Point._Size * .5;*/
-    int vertsize = vmesa->vertexSize;
-    /*GLuint *vb = viaCheckDma(vmesa, 2 * 4 * vertsize);*/
-    GLuint *vb = viaCheckDma(vmesa, 4 * vertsize);
-    int j;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);    
-#endif
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif
-    COPY_DWORDS(j, vb, vertsize, v0);
-    vmesa->dmaLow += 4 * vertsize;
-    vmesa->primitiveRendered = GL_TRUE;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
+   GLuint vertsize = vmesa->vertexSize;
+   GLuint *vb = viaExtendPrimitive(vmesa, 4 * vertsize);
+   COPY_DWORDS(vb, vertsize, v0);
 }
 
 
-/*
- *	Draw line in hardware.
- *	Checked out - AC.
+/* Fallback drawing functions for the ptex hack.
  */
-static __inline__ void via_draw_line(viaContextPtr vmesa,
-                                     viaVertexPtr v0,
-                                     viaVertexPtr v1)
+#define PTEX_VERTEX( tmp, vertex_size, v)	\
+do {							\
+   GLuint j;						\
+   GLfloat rhw = 1.0 / v->f[vertex_size];		\
+   for ( j = 0 ; j < vertex_size ; j++ )		\
+      tmp.f[j] = v->f[j];				\
+   tmp.f[3] *= v->f[vertex_size];			\
+   tmp.f[vertex_size-2] *= rhw;				\
+   tmp.f[vertex_size-1] *= rhw;				\
+} while (0)
+
+static void via_ptex_tri (struct via_context *vmesa,
+			  viaVertexPtr v0,
+			  viaVertexPtr v1,
+			  viaVertexPtr v2)
 {
-    GLuint vertsize = vmesa->vertexSize;
-    GLuint *vb = viaCheckDma(vmesa, 2 * 4 * vertsize);
-    int j;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);    
-#endif
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif    
-    COPY_DWORDS(j, vb, vertsize, v0);
-    COPY_DWORDS(j, vb, vertsize, v1);
-    vmesa->dmaLow += 2 * 4 * vertsize;
-    vmesa->primitiveRendered = GL_TRUE;    
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);
-#endif
+   GLuint vertsize = vmesa->hwVertexSize;
+   GLuint *vb = viaExtendPrimitive(vmesa, 3*4*vertsize);
+   viaVertex tmp;
+
+   PTEX_VERTEX(tmp, vertsize, v0); COPY_DWORDS(vb, vertsize, &tmp);
+   PTEX_VERTEX(tmp, vertsize, v1); COPY_DWORDS(vb, vertsize, &tmp);
+   PTEX_VERTEX(tmp, vertsize, v2); COPY_DWORDS(vb, vertsize, &tmp);
 }
+
+static void via_ptex_line (struct via_context *vmesa,
+			   viaVertexPtr v0,
+			   viaVertexPtr v1)
+{
+   GLuint vertsize = vmesa->hwVertexSize;
+   GLuint *vb = viaExtendPrimitive(vmesa, 2*4*vertsize);
+   viaVertex tmp;
+
+   PTEX_VERTEX(tmp, vertsize, v0); COPY_DWORDS(vb, vertsize, &tmp);
+   PTEX_VERTEX(tmp, vertsize, v1); COPY_DWORDS(vb, vertsize, &tmp);
+}
+
+static void via_ptex_point (struct via_context *vmesa,
+			    viaVertexPtr v0)
+{
+   GLuint vertsize = vmesa->hwVertexSize;
+   GLuint *vb = viaExtendPrimitive(vmesa, 1*4*vertsize);
+   viaVertex tmp;
+
+   PTEX_VERTEX(tmp, vertsize, v0); COPY_DWORDS(vb, vertsize, &tmp);
+}
+
+
+
 
 
 /***********************************************************************
@@ -180,7 +194,6 @@ static __inline__ void via_draw_line(viaContextPtr vmesa,
 
 #define TRI(a, b, c)                                \
     do {                                            \
-        if (VIA_DEBUG) fprintf(stderr, "hw TRI\n"); \
         if (DO_FALLBACK)                            \
             vmesa->drawTri(vmesa, a, b, c);         \
         else                                        \
@@ -189,7 +202,6 @@ static __inline__ void via_draw_line(viaContextPtr vmesa,
 
 #define QUAD(a, b, c, d)                            \
     do {                                            \
-        if (VIA_DEBUG) fprintf(stderr, "hw QUAD\n");\
         if (DO_FALLBACK) {                          \
             vmesa->drawTri(vmesa, a, b, d);         \
             vmesa->drawTri(vmesa, b, c, d);         \
@@ -200,7 +212,6 @@ static __inline__ void via_draw_line(viaContextPtr vmesa,
 
 #define LINE(v0, v1)                                \
     do {                                            \
-        if(VIA_DEBUG) fprintf(stderr, "hw LINE\n");\
         if (DO_FALLBACK)                            \
             vmesa->drawLine(vmesa, v0, v1);         \
         else                                        \
@@ -209,7 +220,6 @@ static __inline__ void via_draw_line(viaContextPtr vmesa,
 
 #define POINT(v0)                                    \
     do {                                             \
-        if (VIA_DEBUG) fprintf(stderr, "hw POINT\n");\
         if (DO_FALLBACK)                             \
             vmesa->drawPoint(vmesa, v0);             \
         else                                         \
@@ -233,7 +243,7 @@ static struct {
     tnl_line_func            line;
     tnl_triangle_func        triangle;
     tnl_quad_func            quad;
-} rast_tab[VIA_MAX_TRIFUNC];
+} rast_tab[VIA_MAX_TRIFUNC + 1];
 
 
 #define DO_FALLBACK (IND & VIA_FALLBACK_BIT)
@@ -273,58 +283,79 @@ static struct {
     } while (0)
 
 
-#define DEPTH_SCALE (1.0 / 0xffff)
+#define DEPTH_SCALE vmesa->polygon_offset_scale
 #define UNFILLED_TRI unfilled_tri
 #define UNFILLED_QUAD unfilled_quad
 #define VERT_X(_v) _v->v.x
 #define VERT_Y(_v) _v->v.y
 #define VERT_Z(_v) _v->v.z
 #define AREA_IS_CCW(a) (a > 0)
-#define GET_VERTEX(e) (vmesa->verts + (e<<vmesa->vertexStrideShift))
+#define GET_VERTEX(e) (vmesa->verts + (e * vmesa->vertexSize * sizeof(int)))
 
-#define VERT_SET_RGBA(v, c)    VIA_COLOR(v->ub4[coloroffset], c)
-#define VERT_COPY_RGBA(v0, v1) v0->ui[coloroffset] = v1->ui[coloroffset]
-#define VERT_SAVE_RGBA(idx)    color[idx] = v[idx]->ui[coloroffset]
-#define VERT_RESTORE_RGBA(idx) v[idx]->ui[coloroffset] = color[idx]
-#define VERT_SET_SPEC(v, c)    if (havespec) VIA_SPEC(v->ub4[5], c)
-#define VERT_COPY_SPEC(v0, v1) if (havespec) COPY_3V(v0->ub4[5], v1->ub4[5])
-#define VERT_SAVE_SPEC(idx)    if (havespec) spec[idx] = v[idx]->ui[5]
-#define VERT_RESTORE_SPEC(idx) if (havespec) v[idx]->ui[5] = spec[idx]
+#define VERT_SET_RGBA( v, c )  					\
+do {								\
+   via_color_t *color = (via_color_t *)&((v)->ui[coloroffset]);	\
+   UNCLAMPED_FLOAT_TO_UBYTE(color->red, (c)[0]);		\
+   UNCLAMPED_FLOAT_TO_UBYTE(color->green, (c)[1]);		\
+   UNCLAMPED_FLOAT_TO_UBYTE(color->blue, (c)[2]);		\
+   UNCLAMPED_FLOAT_TO_UBYTE(color->alpha, (c)[3]);		\
+} while (0)
 
-#define SET_PRIMITIVE_RENDERED vmesa->primitiveRendered = GL_TRUE;
+#define VERT_COPY_RGBA( v0, v1 ) v0->ui[coloroffset] = v1->ui[coloroffset]
+
+#define VERT_SET_SPEC( v, c )					\
+do {								\
+   if (specoffset) {						\
+     via_color_t *color = (via_color_t *)&((v)->ui[specoffset]);	\
+     UNCLAMPED_FLOAT_TO_UBYTE(color->red, (c)[0]);		\
+     UNCLAMPED_FLOAT_TO_UBYTE(color->green, (c)[1]);		\
+     UNCLAMPED_FLOAT_TO_UBYTE(color->blue, (c)[2]);		\
+   }								\
+} while (0)
+#define VERT_COPY_SPEC( v0, v1 )			\
+do {							\
+   if (specoffset) {					\
+      v0->ub4[specoffset][0] = v1->ub4[specoffset][0];	\
+      v0->ub4[specoffset][1] = v1->ub4[specoffset][1];	\
+      v0->ub4[specoffset][2] = v1->ub4[specoffset][2];	\
+   }							\
+} while (0)
+
+
+#define VERT_SAVE_RGBA( idx )    color[idx] = v[idx]->ui[coloroffset]
+#define VERT_RESTORE_RGBA( idx ) v[idx]->ui[coloroffset] = color[idx]
+#define VERT_SAVE_SPEC( idx )    if (specoffset) spec[idx] = v[idx]->ui[specoffset]
+#define VERT_RESTORE_SPEC( idx ) if (specoffset) v[idx]->ui[specoffset] = spec[idx]
+
 
 #define LOCAL_VARS(n)                                                   \
-    viaContextPtr vmesa = VIA_CONTEXT(ctx);                             \
+    struct via_context *vmesa = VIA_CONTEXT(ctx);                             \
     GLuint color[n], spec[n];                                           \
-    GLuint coloroffset = (vmesa->vertexSize == 4 ? 3 : 4);              \
-    GLboolean havespec = (vmesa->vertexSize > 4);                       \
-    (void)color; (void)spec; (void)coloroffset; (void)havespec;
+    GLuint coloroffset = vmesa->coloroffset;              \
+    GLuint specoffset = vmesa->specoffset;                       \
+    (void)color; (void)spec; (void)coloroffset; (void)specoffset;
 
 
 /***********************************************************************
  *                Helpers for rendering unfilled primitives            *
  ***********************************************************************/
-/*
-static const GLuint hwPrim[GL_POLYGON + 1] = {
-    PR_LINES,
-    PR_LINES,
-    PR_LINES,
-    PR_LINES,
-    PR_TRIANGLES,
-    PR_TRIANGLES,
-    PR_TRIANGLES,
-    PR_TRIANGLES,
-    PR_TRIANGLES,
-    PR_TRIANGLES
-};
-*/
 
-#define RASTERIZE(x)           	                \
-    if (vmesa->hwPrimitive != x) {		\
-        viaRasterPrimitiveFinish(ctx);		\
-        viaRasterPrimitive(ctx, x, x);		\
-    }          	
-	
+static const GLenum hwPrim[GL_POLYGON + 2] = {
+    GL_POINTS,
+    GL_LINES,
+    GL_LINES,
+    GL_LINES,
+    GL_TRIANGLES,
+    GL_TRIANGLES,
+    GL_TRIANGLES,
+    GL_TRIANGLES,
+    GL_TRIANGLES,
+    GL_TRIANGLES,
+    GL_POLYGON+1
+};
+
+
+#define RASTERIZE(x) viaRasterPrimitive( ctx, x, hwPrim[x] )
 #define RENDER_PRIMITIVE vmesa->renderPrimitive
 #define TAG(x) x
 #define IND VIA_FALLBACK_BIT
@@ -339,68 +370,86 @@ static const GLuint hwPrim[GL_POLYGON + 1] = {
 
 #define IND (0)
 #define TAG(x) x
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_OFFSET_BIT)
 #define TAG(x) x##_offset
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_TWOSIDE_BIT)
 #define TAG(x) x##_twoside
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_TWOSIDE_BIT|VIA_OFFSET_BIT)
 #define TAG(x) x##_twoside_offset
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_UNFILLED_BIT)
 #define TAG(x) x##_unfilled
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_OFFSET_BIT|VIA_UNFILLED_BIT)
 #define TAG(x) x##_offset_unfilled
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_TWOSIDE_BIT|VIA_UNFILLED_BIT)
 #define TAG(x) x##_twoside_unfilled
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_TWOSIDE_BIT|VIA_OFFSET_BIT|VIA_UNFILLED_BIT)
 #define TAG(x) x##_twoside_offset_unfilled
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_FALLBACK_BIT)
 #define TAG(x) x##_fallback
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_OFFSET_BIT|VIA_FALLBACK_BIT)
 #define TAG(x) x##_offset_fallback
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_TWOSIDE_BIT|VIA_FALLBACK_BIT)
 #define TAG(x) x##_twoside_fallback
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_TWOSIDE_BIT|VIA_OFFSET_BIT|VIA_FALLBACK_BIT)
 #define TAG(x) x##_twoside_offset_fallback
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_UNFILLED_BIT|VIA_FALLBACK_BIT)
 #define TAG(x) x##_unfilled_fallback
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_OFFSET_BIT|VIA_UNFILLED_BIT|VIA_FALLBACK_BIT)
 #define TAG(x) x##_offset_unfilled_fallback
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_TWOSIDE_BIT|VIA_UNFILLED_BIT|VIA_FALLBACK_BIT)
 #define TAG(x) x##_twoside_unfilled_fallback
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
 
 #define IND (VIA_TWOSIDE_BIT|VIA_OFFSET_BIT|VIA_UNFILLED_BIT| \
              VIA_FALLBACK_BIT)
 #define TAG(x) x##_twoside_offset_unfilled_fallback
-#include "via_dd_tritmp.h"
+#include "tnl_dd/t_dd_tritmp.h"
+
+
+/* Catchall case for flat, separate specular triangles (via has flat
+ * diffuse shading, but always does specular color with gouraud).
+ */
+#undef  DO_FALLBACK
+#undef  DO_OFFSET
+#undef  DO_UNFILLED
+#undef  DO_TWOSIDE
+#undef  DO_FLAT
+#define DO_FALLBACK (0)
+#define DO_OFFSET   (ctx->_TriangleCaps & DD_TRI_OFFSET)
+#define DO_UNFILLED (ctx->_TriangleCaps & DD_TRI_UNFILLED)
+#define DO_TWOSIDE  (ctx->_TriangleCaps & DD_TRI_LIGHT_TWOSIDE)
+#define DO_FLAT     1
+#define TAG(x) x##_flat_specular
+#define IND VIA_MAX_TRIFUNC
+#include "tnl_dd/t_dd_tritmp.h"
 
 
 static void init_rast_tab(void)
@@ -421,6 +470,8 @@ static void init_rast_tab(void)
     init_offset_unfilled_fallback();
     init_twoside_unfilled_fallback();
     init_twoside_offset_unfilled_fallback();
+
+    init_flat_specular();	/* special! */
 }
 
 
@@ -434,90 +485,85 @@ static void init_rast_tab(void)
  * primitives.
  */
 static void
-via_fallback_tri(viaContextPtr vmesa,
+via_fallback_tri(struct via_context *vmesa,
                  viaVertex *v0,
                  viaVertex *v1,
                  viaVertex *v2)
 {    
     GLcontext *ctx = vmesa->glCtx;
     SWvertex v[3];
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif
-    via_translate_vertex(ctx, v0, &v[0]);
-    via_translate_vertex(ctx, v1, &v[1]);
-    via_translate_vertex(ctx, v2, &v[2]);
+    _swsetup_Translate(ctx, v0, &v[0]);
+    _swsetup_Translate(ctx, v1, &v[1]);
+    _swsetup_Translate(ctx, v2, &v[2]);
+    viaSpanRenderStart( ctx );
     _swrast_Triangle(ctx, &v[0], &v[1], &v[2]);
+    viaSpanRenderFinish( ctx );
 }
 
 
 static void
-via_fallback_line(viaContextPtr vmesa,
+via_fallback_line(struct via_context *vmesa,
                   viaVertex *v0,
                   viaVertex *v1)
 {
     GLcontext *ctx = vmesa->glCtx;
     SWvertex v[2];
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif
-    via_translate_vertex(ctx, v0, &v[0]);
-    via_translate_vertex(ctx, v1, &v[1]);
+    _swsetup_Translate(ctx, v0, &v[0]);
+    _swsetup_Translate(ctx, v1, &v[1]);
+    viaSpanRenderStart( ctx );
     _swrast_Line(ctx, &v[0], &v[1]);
+    viaSpanRenderFinish( ctx );
 }
 
 
 static void
-via_fallback_point(viaContextPtr vmesa,
+via_fallback_point(struct via_context *vmesa,
                    viaVertex *v0)
 {
     GLcontext *ctx = vmesa->glCtx;
     SWvertex v[1];
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif
-    via_translate_vertex(ctx, v0, &v[0]);
+    _swsetup_Translate(ctx, v0, &v[0]);
+    viaSpanRenderStart( ctx );
     _swrast_Point(ctx, &v[0]);
+    viaSpanRenderFinish( ctx );
+}
+
+static void viaResetLineStipple( GLcontext *ctx )
+{
+   struct via_context *vmesa = VIA_CONTEXT(ctx);
+   vmesa->regCmdB |= HC_HLPrst_MASK;
 }
 
 /**********************************************************************/
 /*               Render unclipped begin/end objects                   */
-/*		 (No Twoside / Offset / Unfilled)		      */
 /**********************************************************************/
 #define IND 0
-#define V(x) (viaVertex *)(vertptr + ((x) << vertshift))
+#define V(x) (viaVertex *)(vertptr + ((x) * vertsize * sizeof(int)))
 #define RENDER_POINTS(start, count)   \
     for (; start < count; start++) POINT(V(ELT(start)));
 #define RENDER_LINE(v0, v1)         LINE(V(v0), V(v1))
-
-#define RENDER_TRI( v0, v1, v2)                            	\
-    if (VIA_DEBUG) fprintf(stderr, "RENDER_TRI - simple\n");	\
-    TRI( V(v0), V(v1), V(v2))
-    
+#define RENDER_TRI( v0, v1, v2)     TRI( V(v0), V(v1), V(v2))
 #define RENDER_QUAD(v0, v1, v2, v3) QUAD(V(v0), V(v1), V(v2), V(v3))
-
-#define INIT(x) viaRasterPrimitive(ctx, x, x)
-
+#define INIT(x) viaRasterPrimitive(ctx, x, hwPrim[x])
 #undef LOCAL_VARS
 #define LOCAL_VARS                                              \
-    viaContextPtr vmesa = VIA_CONTEXT(ctx);                     \
+    struct via_context *vmesa = VIA_CONTEXT(ctx);                     \
     GLubyte *vertptr = (GLubyte *)vmesa->verts;                 \
-    const GLuint vertshift = vmesa->vertexStrideShift;          \
+    const GLuint vertsize = vmesa->vertexSize;          \
     const GLuint * const elt = TNL_CONTEXT(ctx)->vb.Elts;       \
-    (void)elt;
-#define POSTFIX							\
-    viaRasterPrimitiveFinish(ctx)    
-#define RESET_STIPPLE
+   const GLboolean stipple = ctx->Line.StippleFlag;		\
+   (void) elt; (void) stipple;
+#define RESET_STIPPLE	if ( stipple ) viaResetLineStipple( ctx );
 #define RESET_OCCLUSION
 #define PRESERVE_VB_DEFS
 #define ELT(x) x
-#define TAG(x) via_fast##x##_verts
-#include "via_vb_rendertmp.h"
+#define TAG(x) via_##x##_verts
+#include "tnl/t_vb_rendertmp.h"
 #undef ELT
 #undef TAG
-#define TAG(x) via_fast##x##_elts
+#define TAG(x) via_##x##_elts
 #define ELT(x) elt[x]
-#include "via_vb_rendertmp.h"
+#include "tnl/t_vb_rendertmp.h"
 #undef ELT
 #undef TAG
 #undef NEED_EDGEFLAG_SETUP
@@ -525,54 +571,6 @@ via_fallback_point(viaContextPtr vmesa,
 #undef EDGEFLAG_SET
 #undef RESET_OCCLUSION
 
-/**********************************************************************/
-/*               Render unclipped begin/end objects                   */
-/*		 (Can handle Twoside / Offset / Unfilled	      */
-/**********************************************************************/
-#define NEED_EDGEFLAG_SETUP (ctx->_TriangleCaps & DD_TRI_UNFILLED)
-#define EDGEFLAG_GET(idx) VB->EdgeFlag[idx]
-#define EDGEFLAG_SET(idx, val) VB->EdgeFlag[idx] = val
-
-#define RENDER_POINTS(start, count)  		\
-   tnl->Driver.Render.Points(ctx, start, count)
-
-#define RENDER_LINE(v1, v2)	 		\
-    LineFunc(ctx, v1, v2)				
-
-#define RENDER_TRI(v1, v2, v3)			            				\
-    if (VIA_DEBUG) fprintf(stderr, "RENDER_TRI - complex\n");				\
-    if (VIA_DEBUG) fprintf(stderr, "TriangleFunc = %x\n", (unsigned int)TriangleFunc); 	\
-    TriangleFunc(ctx, v1, v2, v3)
-
-#define RENDER_QUAD(v1, v2, v3, v4)		\
-    QuadFunc(ctx, v1, v2, v3, v4)		
-
-#define LOCAL_VARS							\
-    TNLcontext *tnl = TNL_CONTEXT(ctx);					\
-    struct vertex_buffer *VB = &tnl->vb;				\
-    const GLuint * const elt = VB->Elts;				\
-    const tnl_line_func LineFunc = tnl->Driver.Render.Line;			\
-    const tnl_triangle_func TriangleFunc = tnl->Driver.Render.Triangle;	\
-    const tnl_quad_func QuadFunc = tnl->Driver.Render.Quad;			\
-    const GLboolean stipple = ctx->Line.StippleFlag;			\
-    (void) (LineFunc && TriangleFunc && QuadFunc);			\
-    (void) elt; (void) stipple;
-
-#define POSTFIX                                                         \
-    viaRasterPrimitiveFinish(ctx)	                    
-#define ELT(x) x
-#define TAG(x) via_##x##_verts
-/*#define INIT(x) tnl->Driver.Render.PrimitiveNotify(ctx, x)*/
-#define INIT(x) viaRasterPrimitive(ctx, x, x)
-#define RESET_STIPPLE if (stipple) tnl->Driver.Render.ResetLineStipple(ctx)
-#define RESET_OCCLUSION ctx->OcclusionResult = GL_TRUE
-#define PRESERVE_VB_DEFS
-#include "via_vb_rendertmp.h"
-#undef ELT
-#undef TAG
-#define ELT(x) elt[x]
-#define TAG(x) via_##x##_elts
-#include "via_vb_rendertmp.h"
 
 /**********************************************************************/
 /*                   Render clipped primitives                        */
@@ -585,12 +583,8 @@ static void viaRenderClippedPoly(GLcontext *ctx, const GLuint *elts,
 {
     TNLcontext *tnl = TNL_CONTEXT(ctx);
     struct vertex_buffer *VB = &TNL_CONTEXT(ctx)->vb;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif
+    GLuint prim = VIA_CONTEXT(ctx)->renderPrimitive;
+
     /* Render the new vertices as an unclipped polygon.
      */
     {
@@ -600,71 +594,35 @@ static void viaRenderClippedPoly(GLcontext *ctx, const GLuint *elts,
                                                    PRIM_BEGIN|PRIM_END);
         VB->Elts = tmp;
     }
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);	
-#endif
+
+    /* Restore the render primitive
+     */
+    if (prim != GL_POLYGON &&
+	prim != GL_POLYGON + 1)
+       tnl->Driver.Render.PrimitiveNotify( ctx, prim );
 }
 
 static void viaRenderClippedLine(GLcontext *ctx, GLuint ii, GLuint jj)
 {
-    viaContextPtr vmesa = VIA_CONTEXT(ctx);
     TNLcontext *tnl = TNL_CONTEXT(ctx);
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);    
-#endif
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif    
-    vmesa->primitiveRendered = GL_TRUE;
-    
     tnl->Driver.Render.Line(ctx, ii, jj);
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
 }
 
 static void viaFastRenderClippedPoly(GLcontext *ctx, const GLuint *elts,
                                      GLuint n)
 {
-    viaContextPtr vmesa = VIA_CONTEXT(ctx);
+    struct via_context *vmesa = VIA_CONTEXT(ctx);
     GLuint vertsize = vmesa->vertexSize;
-    GLuint *vb = viaCheckDma(vmesa, (n - 2) * 3 * 4 * vertsize);
+    GLuint *vb = viaExtendPrimitive(vmesa, (n - 2) * 3 * 4 * vertsize);
     GLubyte *vertptr = (GLubyte *)vmesa->verts;
-    const GLuint vertshift = vmesa->vertexStrideShift;
     const GLuint *start = (const GLuint *)V(elts[0]);
-    GLuint *temp1;
-    GLuint *temp2;
-    int i,j;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);    
-#endif
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif
-    vmesa->primitiveRendered = GL_TRUE;
+    int i;
 
     for (i = 2; i < n; i++) {
-	/*=* [DBG] exy : fix flat-shading + clipping error *=*/
-        /*COPY_DWORDS(j, vb, vertsize, start);
-        COPY_DWORDS(j, vb, vertsize, V(elts[i - 1]));
-	temp1 = (GLuint *)V(elts[i - 1]);	
-        COPY_DWORDS(j, vb, vertsize, V(elts[i]));
-	temp2 = (GLuint *)V(elts[i]);*/
-	COPY_DWORDS(j, vb, vertsize, V(elts[i - 1]));
-        COPY_DWORDS(j, vb, vertsize, V(elts[i]));
-	temp1 = (GLuint *)V(elts[i - 1]);
-	COPY_DWORDS(j, vb, vertsize, start);	
-	temp2 = (GLuint *)V(elts[i]);
-#ifdef DEBUG
-	if (VIA_DEBUG) fprintf(stderr, "start = %d -  x = %f, y = %f, z = %f, w = %f, u = %f, v = %f\n", elts[0], *(GLfloat *)&start[0], *(GLfloat *)&start[1], *(GLfloat *)&start[2], *(GLfloat *)&start[3], *(GLfloat *)&start[6], *(GLfloat *)&start[7]);
-	if (VIA_DEBUG) fprintf(stderr, "%d -  x = %f, y = %f, z = %f, w = %f, u = %f, v = %f\n", elts[i - 1], *(GLfloat *)&temp1[0], *(GLfloat *)&temp1[1], *(GLfloat *)&temp1[2], *(GLfloat *)&temp1[3], *(GLfloat *)&temp1[6], *(GLfloat *)&temp1[7]);
-	if (VIA_DEBUG) fprintf(stderr, "%d -  x = %f, y = %f, z = %f, w = %f, u = %f, v = %f\n", elts[i], *(GLfloat *)&temp2[0], *(GLfloat *)&temp2[1], *(GLfloat *)&temp2[2], *(GLfloat *)&temp2[3], *(GLfloat *)&temp2[6], *(GLfloat *)&temp2[7]);	
-#endif
+	COPY_DWORDS(vb, vertsize, V(elts[i - 1]));
+        COPY_DWORDS(vb, vertsize, V(elts[i]));
+	COPY_DWORDS(vb, vertsize, start);	
     }
-    vmesa->dmaLow += (n - 2) * 3 * 4 * vertsize;
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
 }
 
 /**********************************************************************/
@@ -673,6 +631,13 @@ static void viaFastRenderClippedPoly(GLcontext *ctx, const GLuint *elts,
 
 
 
+
+#define _VIA_NEW_VERTEX (_NEW_TEXTURE |                         \
+                         _DD_NEW_SEPARATE_SPECULAR |            \
+                         _DD_NEW_TRI_UNFILLED |                 \
+                         _DD_NEW_TRI_LIGHT_TWOSIDE |            \
+                         _NEW_FOG)
+
 #define _VIA_NEW_RENDERSTATE (_DD_NEW_LINE_STIPPLE |            \
                               _DD_NEW_TRI_UNFILLED |            \
                               _DD_NEW_TRI_LIGHT_TWOSIDE |       \
@@ -680,778 +645,248 @@ static void viaFastRenderClippedPoly(GLcontext *ctx, const GLuint *elts,
                               _DD_NEW_TRI_STIPPLE |             \
                               _NEW_POLYGONSTIPPLE)
 
-#define POINT_FALLBACK (0)
-/*#define LINE_FALLBACK (DD_LINE_STIPPLE)
-*/
-#define LINE_FALLBACK (0)
-#define TRI_FALLBACK (0)
-#define ANY_FALLBACK_FLAGS (POINT_FALLBACK|LINE_FALLBACK|TRI_FALLBACK)
-#define ANY_RASTER_FLAGS (DD_TRI_LIGHT_TWOSIDE|DD_TRI_OFFSET|DD_TRI_UNFILLED)
 
 static void viaChooseRenderState(GLcontext *ctx)
 {
-    TNLcontext *tnl = TNL_CONTEXT(ctx);
-    viaContextPtr vmesa = VIA_CONTEXT(ctx);
-    GLuint flags = ctx->_TriangleCaps;
-    GLuint index = 0;
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-    
-    if (VIA_DEBUG) fprintf(stderr, "_TriangleCaps = %x\n", flags);    
-#endif
-    if (flags & (ANY_FALLBACK_FLAGS|ANY_RASTER_FLAGS)) {
-        if (flags & ANY_RASTER_FLAGS) {
-            if (flags & DD_TRI_LIGHT_TWOSIDE)    index |= VIA_TWOSIDE_BIT;
-            if (flags & DD_TRI_OFFSET)           index |= VIA_OFFSET_BIT;
-            if (flags & DD_TRI_UNFILLED)         index |= VIA_UNFILLED_BIT;
-        }
+   TNLcontext *tnl = TNL_CONTEXT(ctx);
+   struct via_context *vmesa = VIA_CONTEXT(ctx);
+   GLuint flags = ctx->_TriangleCaps;
+   GLuint index = 0;
 
-        vmesa->drawPoint = via_draw_point;
-        vmesa->drawLine = via_draw_line;
-        vmesa->drawTri = via_draw_triangle;
+   if (vmesa->ptexHack) {
+      vmesa->drawPoint = via_ptex_point;
+      vmesa->drawLine = via_ptex_line;
+      vmesa->drawTri = via_ptex_tri;
+      index |= VIA_FALLBACK_BIT;
+   }
+   else {
+      vmesa->drawPoint = via_draw_point;
+      vmesa->drawLine = via_draw_line;
+      vmesa->drawTri = via_draw_triangle;
+   }
 
-        /* Hook in fallbacks for specific primitives.
-         */
-        if (flags & ANY_FALLBACK_FLAGS) {
-            if (flags & POINT_FALLBACK)
-                vmesa->drawPoint = via_fallback_point;
+   if (flags & (ANY_FALLBACK_FLAGS|ANY_RASTER_FLAGS)) {
+      if (flags & DD_TRI_LIGHT_TWOSIDE)    index |= VIA_TWOSIDE_BIT;
+      if (flags & DD_TRI_OFFSET)           index |= VIA_OFFSET_BIT;
+      if (flags & DD_TRI_UNFILLED)         index |= VIA_UNFILLED_BIT;
+      if (flags & ANY_FALLBACK_FLAGS)      index |= VIA_FALLBACK_BIT;
 
-            if (flags & LINE_FALLBACK)
-                vmesa->drawLine = via_fallback_line;
+      /* Hook in fallbacks for specific primitives.
+       */
+      if (flags & POINT_FALLBACK)
+	 vmesa->drawPoint = via_fallback_point;
+      
+      if (flags & LINE_FALLBACK)
+	 vmesa->drawLine = via_fallback_line;
 
-            if (flags & TRI_FALLBACK)
-                vmesa->drawTri = via_fallback_tri;
+      if (flags & TRI_FALLBACK)
+	 vmesa->drawTri = via_fallback_tri;
+   }
 
-            index |= VIA_FALLBACK_BIT;
-        }
-    }
-#ifdef DEBUG
-    if (VIA_DEBUG) {
-	fprintf(stderr, "index = %x\n", index);    
-	fprintf(stderr, "renderIndex = %x\n", vmesa->renderIndex);
-    }	
-#endif
-    if (vmesa->renderIndex != index) {
-        vmesa->renderIndex = index;
 
-        tnl->Driver.Render.Points = rast_tab[index].points;
-        tnl->Driver.Render.Line = rast_tab[index].line;
-        tnl->Driver.Render.Triangle = rast_tab[index].triangle;
-#ifdef DEBUG
-	if (VIA_DEBUG) fprintf(stderr, "tnl->Driver.Render.xxx = rast_tab[index].xxx = %x\n", (unsigned int)tnl->Driver.Render.Triangle);
-#endif
-        tnl->Driver.Render.Quad = rast_tab[index].quad;
+   if ((flags & DD_SEPARATE_SPECULAR) &&
+       ctx->Light.ShadeModel == GL_FLAT) {
+      index = VIA_MAX_TRIFUNC;	/* flat specular */
+   }
 
-        if (index == 0) {
-            tnl->Driver.Render.PrimTabVerts = via_fastrender_tab_verts;
-            tnl->Driver.Render.PrimTabElts = via_fastrender_tab_elts;
-            tnl->Driver.Render.ClippedLine = line; /* from tritmp.h */
-            tnl->Driver.Render.ClippedPolygon = viaFastRenderClippedPoly;
-        }
-        else {
-            tnl->Driver.Render.PrimTabVerts = via_render_tab_verts;
-            tnl->Driver.Render.PrimTabElts = via_render_tab_elts;
-            tnl->Driver.Render.ClippedLine = viaRenderClippedLine;
-            tnl->Driver.Render.ClippedPolygon = viaRenderClippedPoly;
-        }
-    }
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
+   if (vmesa->renderIndex != index) {
+      vmesa->renderIndex = index;
+
+      tnl->Driver.Render.Points = rast_tab[index].points;
+      tnl->Driver.Render.Line = rast_tab[index].line;
+      tnl->Driver.Render.Triangle = rast_tab[index].triangle;
+      tnl->Driver.Render.Quad = rast_tab[index].quad;
+
+      if (index == 0) {
+	 tnl->Driver.Render.PrimTabVerts = via_render_tab_verts;
+	 tnl->Driver.Render.PrimTabElts = via_render_tab_elts;
+	 tnl->Driver.Render.ClippedLine = line; /* from tritmp.h */
+	 tnl->Driver.Render.ClippedPolygon = viaFastRenderClippedPoly;
+      }
+      else {
+	 tnl->Driver.Render.PrimTabVerts = _tnl_render_tab_verts;
+	 tnl->Driver.Render.PrimTabElts = _tnl_render_tab_elts;
+	 tnl->Driver.Render.ClippedLine = viaRenderClippedLine;
+	 tnl->Driver.Render.ClippedPolygon = viaRenderClippedPoly;
+      }
+   }
 }
 
-static const GLenum reducedPrim[GL_POLYGON + 1] = {
-    GL_POINTS,
-    GL_LINES,
-    GL_LINES,
-    GL_LINES,
-    GL_TRIANGLES,
-    GL_TRIANGLES,
-    GL_TRIANGLES,
-    GL_TRIANGLES,
-    GL_TRIANGLES,
-    GL_TRIANGLES
-};
+
+#define VIA_EMIT_TEX1	0x01
+#define VIA_EMIT_TEX0	0x02
+#define VIA_EMIT_PTEX0	0x04
+#define VIA_EMIT_RGBA	0x08
+#define VIA_EMIT_SPEC	0x10
+#define VIA_EMIT_FOG	0x20
+#define VIA_EMIT_W	0x40
+
+#define EMIT_ATTR( ATTR, STYLE, INDEX, REGB )				\
+do {									\
+   vmesa->vertex_attrs[vmesa->vertex_attr_count].attrib = (ATTR);	\
+   vmesa->vertex_attrs[vmesa->vertex_attr_count].format = (STYLE);	\
+   vmesa->vertex_attr_count++;						\
+   setupIndex |= (INDEX);						\
+   regCmdB |= (REGB);							\
+} while (0)
+
+#define EMIT_PAD( N )							\
+do {									\
+   vmesa->vertex_attrs[vmesa->vertex_attr_count].attrib = 0;		\
+   vmesa->vertex_attrs[vmesa->vertex_attr_count].format = EMIT_PAD;	\
+   vmesa->vertex_attrs[vmesa->vertex_attr_count].offset = (N);		\
+   vmesa->vertex_attr_count++;						\
+} while (0)
 
 
-static void emit_all_state(viaContextPtr vmesa)
+
+static void viaChooseVertexState( GLcontext *ctx )
 {
-    GLcontext *ctx = vmesa->glCtx;
-    GLuint *vb = viaCheckDma(vmesa, 0x110);
-    GLuint i = 0;
-    GLuint j = 0;
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif    
-    
-    *vb++ = HC_HEADER2;
-    *vb++ = (HC_ParaType_NotTex << 16);
-    *vb++ = ((HC_SubA_HEnable << 24) | vmesa->regEnable);
-    *vb++ = ((HC_SubA_HFBBMSKL << 24) | vmesa->regHFBBMSKL);    
-    *vb++ = ((HC_SubA_HROP << 24) | vmesa->regHROP);        
-    i += 5;
-    
-    if (vmesa->hasDepth && vmesa->hasStencil) {
-	GLuint pitch, format, offset;
-	
-	format = HC_HZWBFM_24;	    
-	
-	offset = vmesa->depth.offset;
-	pitch = vmesa->depth.pitch;
-	
-        *vb++ = ((HC_SubA_HZWBBasL << 24) | (offset & 0xFFFFFF));
+   struct via_context *vmesa = VIA_CONTEXT(ctx);
+   TNLcontext *tnl = TNL_CONTEXT(ctx);
+   GLuint index = tnl->render_inputs;
+   GLuint regCmdB = HC_HVPMSK_X | HC_HVPMSK_Y | HC_HVPMSK_Z;
+   GLuint setupIndex = 0;
 
-        *vb++ = ((HC_SubA_HZWBBasH << 24) | ((offset & 0xFF000000) >> 24));	
-        *vb++ = ((HC_SubA_HZWBType << 24) | HC_HDBLoc_Local | HC_HZONEasFF_MASK | 
-	         format | pitch);            
-        *vb++ = ((HC_SubA_HZWTMD << 24) | vmesa->regHZWTMD);
-	/* set stencil */
-	*vb++ = ((HC_SubA_HSTREF << 24) | vmesa->regHSTREF);
-	*vb++ = ((HC_SubA_HSTMD << 24) | vmesa->regHSTMD);
-	
-	i += 6;	
-    }
-    else if (vmesa->hasDepth) {
-	GLuint pitch, format, offset;
-	
-	if (vmesa->depthBits == 16) {
-	    /* We haven't support 16bit depth yet */
-	    format = HC_HZWBFM_16;
-	    /*format = HC_HZWBFM_32;*/
-#ifdef DEBUG
-	    if (VIA_DEBUG) fprintf(stderr, "z format = 16\n");
-#endif
-	}	    
-	else {
-	    format = HC_HZWBFM_32;
-#ifdef DEBUG
-	    if (VIA_DEBUG) fprintf(stderr, "z format = 32\n");
-#endif
-	}
-	    
-	    
-	offset = vmesa->depth.offset;
-	pitch = vmesa->depth.pitch;
-	
-        *vb++ = ((HC_SubA_HZWBBasL << 24) | (offset & 0xFFFFFF));
+   vmesa->vertex_attr_count = 0;
+ 
+   /* EMIT_ATTR's must be in order as they tell t_vertex.c how to
+    * build up a hardware vertex.
+    */
+   if (index & (_TNL_BITS_TEX_ANY|_TNL_BIT_FOG)) {
+      EMIT_ATTR( _TNL_ATTRIB_POS, EMIT_4F_VIEWPORT, VIA_EMIT_W, HC_HVPMSK_W );
+      vmesa->coloroffset = 4;
+   }
+   else {
+      EMIT_ATTR( _TNL_ATTRIB_POS, EMIT_3F_VIEWPORT, 0, 0 );
+      vmesa->coloroffset = 3;
+   }
 
-        *vb++ = ((HC_SubA_HZWBBasH << 24) | ((offset & 0xFF000000) >> 24));	
-        *vb++ = ((HC_SubA_HZWBType << 24) | HC_HDBLoc_Local | HC_HZONEasFF_MASK | 
-	         format | pitch);            
-        *vb++ = ((HC_SubA_HZWTMD << 24) | vmesa->regHZWTMD);
-	i += 4;	
-    }
-    else if (vmesa->hasStencil) {
-	GLuint pitch, format, offset;
-	
-	format = HC_HZWBFM_24;	    
-	
-	offset = vmesa->depth.offset;
-	pitch = vmesa->depth.pitch;
-	
-        *vb++ = ((HC_SubA_HZWBBasL << 24) | (offset & 0xFFFFFF));
+   /* t_context.c always includes a diffuse color */
+   EMIT_ATTR( _TNL_ATTRIB_COLOR0, EMIT_4UB_4F_BGRA, VIA_EMIT_RGBA, 
+	      HC_HVPMSK_Cd );
+      
+   vmesa->specoffset = 0;
+   if (index & (_TNL_BIT_COLOR1|_TNL_BIT_FOG)) {
+      if ((index & _TNL_BIT_COLOR1)) {
+	 vmesa->specoffset = vmesa->coloroffset + 1;
+	 EMIT_ATTR( _TNL_ATTRIB_COLOR1, EMIT_3UB_3F_BGR, VIA_EMIT_SPEC, 
+		    HC_HVPMSK_Cs );
+      }
+      else
+	 EMIT_PAD( 3 );
 
-        *vb++ = ((HC_SubA_HZWBBasH << 24) | ((offset & 0xFF000000) >> 24));	
-        *vb++ = ((HC_SubA_HZWBType << 24) | HC_HDBLoc_Local | HC_HZONEasFF_MASK | 
-	         format | pitch);            
-        *vb++ = ((HC_SubA_HZWTMD << 24) | vmesa->regHZWTMD);
-	/* set stencil */
-	*vb++ = ((HC_SubA_HSTREF << 24) | vmesa->regHSTREF);
-	*vb++ = ((HC_SubA_HSTMD << 24) | vmesa->regHSTMD);
-	
-	i += 6;	
-    }
-    
-    if (ctx->Color.AlphaEnabled) {
-        *vb++ = ((HC_SubA_HATMD << 24) | vmesa->regHATMD);
-        i++;
-    }   
+      if ((index & _TNL_BIT_FOG))
+	 EMIT_ATTR( _TNL_ATTRIB_FOG, EMIT_1UB_1F, VIA_EMIT_FOG, HC_HVPMSK_Cs );
+      else
+	 EMIT_PAD( 1 );
+   }
 
-    if (ctx->Color.BlendEnabled) {
-        *vb++ = ((HC_SubA_HABLCsat << 24) | vmesa->regHABLCsat);
-        *vb++ = ((HC_SubA_HABLCop  << 24) | vmesa->regHABLCop); 
-        *vb++ = ((HC_SubA_HABLAsat << 24) | vmesa->regHABLAsat);        
-        *vb++ = ((HC_SubA_HABLAop  << 24) | vmesa->regHABLAop); 
-        *vb++ = ((HC_SubA_HABLRCa  << 24) | vmesa->regHABLRCa); 
-        *vb++ = ((HC_SubA_HABLRFCa << 24) | vmesa->regHABLRFCa);        
-        *vb++ = ((HC_SubA_HABLRCbias << 24) | vmesa->regHABLRCbias);    
-        *vb++ = ((HC_SubA_HABLRCb  << 24) | vmesa->regHABLRCb); 
-        *vb++ = ((HC_SubA_HABLRFCb << 24) | vmesa->regHABLRFCb);        
-        *vb++ = ((HC_SubA_HABLRAa  << 24) | vmesa->regHABLRAa); 
-        *vb++ = ((HC_SubA_HABLRAb  << 24) | vmesa->regHABLRAb); 
-        i += 11;
-    }
-    
-    if (ctx->Fog.Enabled) {
-        *vb++ = ((HC_SubA_HFogLF << 24) | vmesa->regHFogLF);        
-        *vb++ = ((HC_SubA_HFogCL << 24) | vmesa->regHFogCL);            
-        *vb++ = ((HC_SubA_HFogCH << 24) | vmesa->regHFogCH);            
-        i += 3;
-    }
-    
-    if (ctx->Line.StippleFlag) {
-        *vb++ = ((HC_SubA_HLP << 24) | ctx->Line.StipplePattern);           
-        *vb++ = ((HC_SubA_HLPRF << 24) | ctx->Line.StippleFactor);                  
-    }
-    else {
-        *vb++ = ((HC_SubA_HLP << 24) | 0xFFFF);         
-        *vb++ = ((HC_SubA_HLPRF << 24) | 0x1);              
-    }
+   if (index & _TNL_BIT_TEX(0)) {
+      if (vmesa->ptexHack)
+	 EMIT_ATTR( _TNL_ATTRIB_TEX0, EMIT_3F_XYW, VIA_EMIT_PTEX0, 
+		    (HC_HVPMSK_S | HC_HVPMSK_T) );
+      else 
+	 EMIT_ATTR( _TNL_ATTRIB_TEX0, EMIT_2F, VIA_EMIT_TEX0, 
+		    (HC_HVPMSK_S | HC_HVPMSK_T) );
+   }
 
-    i += 2;
-    
-    *vb++ = ((HC_SubA_HPixGC << 24) | 0x0);             
-    i++;
-    
-    if (i & 0x1) {
-        *vb++ = HC_DUMMY;
-        i++;    
-    }    
-    
-    if (ctx->Texture._EnabledUnits) {
-    
-	struct gl_texture_unit *texUnit0 = &ctx->Texture.Unit[0];
-	struct gl_texture_unit *texUnit1 = &ctx->Texture.Unit[1];
+   if (index & _TNL_BIT_TEX(1)) {
+      EMIT_ATTR( _TNL_ATTRIB_TEX1, EMIT_2F, VIA_EMIT_TEX1, 
+		 (HC_HVPMSK_S | HC_HVPMSK_T) );
+   }
 
-        {
-	    viaTextureObjectPtr t = (viaTextureObjectPtr)texUnit0->_Current->DriverData;
-	    GLuint nDummyValue = 0;
-            
-	    *vb++ = HC_HEADER2;
-            *vb++ = (HC_ParaType_Tex << 16) | (HC_SubType_TexGeneral << 24);
+   if (setupIndex != vmesa->setupIndex) {
+      vmesa->vertexSize = _tnl_install_attrs( ctx, 
+					       vmesa->vertex_attrs, 
+					       vmesa->vertex_attr_count,
+					       vmesa->ViewportMatrix.m, 0 );
+      vmesa->vertexSize >>= 2;
+      vmesa->setupIndex = setupIndex;
+      vmesa->regCmdB &= ~HC_HVPMSK_MASK;
+      vmesa->regCmdB |= regCmdB;
 
-	    if (ctx->Texture._EnabledUnits > 1) {
-#ifdef DEBUG
-		if (VIA_DEBUG) fprintf(stderr, "multi texture\n");
-#endif                
-		nDummyValue = (HC_SubA_HTXSMD << 24) | (1 << 3);
-                
-		if (t && t->needClearCache) {
-                    *vb++ = nDummyValue | HC_HTXCHCLR_MASK;
-                    *vb++ = nDummyValue;
-                }
-                else {
-                    *vb++ = nDummyValue;
-                    *vb++ = nDummyValue;
-                }
-            }
-            else {
-#ifdef DEBUG
-		if (VIA_DEBUG) fprintf(stderr, "single texture\n");
-#endif                
-		nDummyValue = (HC_SubA_HTXSMD << 24) | 0;
-                
-		if (t && t->needClearCache) {
-                    *vb++ = nDummyValue | HC_HTXCHCLR_MASK;
-                    *vb++ = nDummyValue;
-                }
-                else {
-                    *vb++ = nDummyValue;
-                    *vb++ = nDummyValue;
-                }
-            }
-            *vb++ = HC_HEADER2;
-            *vb++ = HC_ParaType_NotTex << 16;
-            *vb++ = (HC_SubA_HEnable << 24) | vmesa->regEnable;
-            *vb++ = (HC_SubA_HEnable << 24) | vmesa->regEnable;
-            i += 8;
-        }
-
-        if (texUnit0->Enabled) {
-	    struct gl_texture_object *texObj = texUnit0->_Current;
-	    viaTextureObjectPtr t = (viaTextureObjectPtr)texObj->DriverData;
-	    GLuint numLevels = t->lastLevel - t->firstLevel + 1;
-	    GLuint nDummyValue = 0;
-#ifdef DEBUG
-	    if (VIA_DEBUG) {
-		fprintf(stderr, "texture0 enabled\n");
-		fprintf(stderr, "texture level %d\n", t->actualLevel);
-	    }		
-#endif	    
-            if (numLevels == 8) {
-                nDummyValue = t->regTexFM;
-                *vb++ = HC_HEADER2;
-                *vb++ = (HC_ParaType_Tex << 16) |  (0 << 24);
-                *vb++ = t->regTexFM;
-                *vb++ = (HC_SubA_HTXnL0OS << 24) |
-                        ((t->actualLevel) << HC_HTXnLVmax_SHIFT);
-                *vb++ = t->regTexWidthLog2[0];
-                *vb++ = t->regTexWidthLog2[1];
-                *vb++ = t->regTexHeightLog2[0];
-                *vb++ = t->regTexHeightLog2[1];
-                *vb++ = t->regTexBaseH[0];
-                *vb++ = t->regTexBaseH[1];
-                *vb++ = t->regTexBaseH[2];
-
-                *vb++ = t->regTexBaseAndPitch[0].baseL;
-                *vb++ = t->regTexBaseAndPitch[0].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[1].baseL;
-                *vb++ = t->regTexBaseAndPitch[1].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[2].baseL;
-                *vb++ = t->regTexBaseAndPitch[2].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[3].baseL;
-                *vb++ = t->regTexBaseAndPitch[3].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[4].baseL;
-                *vb++ = t->regTexBaseAndPitch[4].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[5].baseL;
-                *vb++ = t->regTexBaseAndPitch[5].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[6].baseL;
-                *vb++ = t->regTexBaseAndPitch[6].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[7].baseL;
-                *vb++ = t->regTexBaseAndPitch[7].pitchLog2;
-                i += 27;
-            }
-            else if (numLevels > 1) {
-                nDummyValue = t->regTexFM;
-                *vb++ = HC_HEADER2;
-                *vb++ = (HC_ParaType_Tex << 16) |  (0 << 24);
-                *vb++ = t->regTexFM;
-                *vb++ = (HC_SubA_HTXnL0OS << 24) |
-                           ((t->actualLevel) << HC_HTXnLVmax_SHIFT);
-		*vb++ = t->regTexWidthLog2[0];
-		*vb++ = t->regTexHeightLog2[0];
-		
-		if (numLevels > 6) {
-		    *vb++ = t->regTexWidthLog2[1];
-		    *vb++ = t->regTexHeightLog2[1];
-		    i += 2;
-		}
-                
-		*vb++ = t->regTexBaseH[0];
-		
-                if (numLevels > 3) { 
-		    *vb++ = t->regTexBaseH[1];
-		    i++;
-		}
-		if (numLevels > 6) {
-		    *vb++ = t->regTexBaseH[2];
-		    i++;
-		}
-		if (numLevels > 9)  {
-		    *vb++ = t->regTexBaseH[3];
-		    i++;
-		}
-		
-		i += 7;
-
-                for (j = 0; j < numLevels; j++) {
-                    *vb++ = t->regTexBaseAndPitch[j].baseL;
-                    *vb++ = t->regTexBaseAndPitch[j].pitchLog2;
-		    i += 2;
-                }
-            }
-            else {
-                nDummyValue = t->regTexFM;
-                *vb++ = HC_HEADER2;
-                *vb++ = (HC_ParaType_Tex << 16) |  (0 << 24);
-                *vb++ = t->regTexFM;
-                *vb++ = (HC_SubA_HTXnL0OS << 24) |
-                           ((t->actualLevel) << HC_HTXnLVmax_SHIFT);
-                *vb++ = t->regTexWidthLog2[0];
-                *vb++ = t->regTexHeightLog2[0];
-                *vb++ = t->regTexBaseH[0];
-                *vb++ = t->regTexBaseAndPitch[0].baseL;
-                *vb++ = t->regTexBaseAndPitch[0].pitchLog2;
-                i += 9;
-            }
-
-            *vb++ = (HC_SubA_HTXnTB << 24) | vmesa->regHTXnTB_0;
-            *vb++ = (HC_SubA_HTXnMPMD << 24) | vmesa->regHTXnMPMD_0;
-            *vb++ = (HC_SubA_HTXnTBLCsat << 24) | vmesa->regHTXnTBLCsat_0;
-            *vb++ = (HC_SubA_HTXnTBLCop << 24) | vmesa->regHTXnTBLCop_0;
-            *vb++ = (HC_SubA_HTXnTBLMPfog << 24) | vmesa->regHTXnTBLMPfog_0;
-            *vb++ = (HC_SubA_HTXnTBLAsat << 24) | vmesa->regHTXnTBLAsat_0;
-            *vb++ = (HC_SubA_HTXnTBLRCb << 24) | vmesa->regHTXnTBLRCb_0;
-            *vb++ = (HC_SubA_HTXnTBLRAa << 24) | vmesa->regHTXnTBLRAa_0;
-            *vb++ = (HC_SubA_HTXnTBLRFog << 24) | vmesa->regHTXnTBLRFog_0;
-            i += 9;
-	    /*=* John Sheng [2003.7.18] texture combine */
-	    *vb++ = (HC_SubA_HTXnTBLRCa << 24) | vmesa->regHTXnTBLRCa_0;
-            *vb++ = (HC_SubA_HTXnTBLRCc << 24) | vmesa->regHTXnTBLRCc_0;
-            *vb++ = (HC_SubA_HTXnTBLRCbias << 24) | vmesa->regHTXnTBLRCbias_0;
-	    i += 3;
-
-            if (t->regTexFM == HC_HTXnFM_Index8) {
-                struct gl_color_table *table = &texObj->Palette;
-		GLfloat *tableF = (GLfloat *)table->Table;
-
-                *vb++ = HC_HEADER2;
-                *vb++ = (HC_ParaType_Palette << 16) | (0 << 24);
-                i += 2;
-                for (j = 0; j < table->Size; j++) {
-                    *vb++ = tableF[j];
-		    i++;
-                }
-            }
-            if (i & 0x1) {
-    		*vb++ = HC_DUMMY;
-    		i++;    
-	    }
-        }
-	
-	if (texUnit1->Enabled) {
-	    struct gl_texture_object *texObj = texUnit1->_Current;
-	    viaTextureObjectPtr t = (viaTextureObjectPtr)texObj->DriverData;
-	    GLuint numLevels = t->lastLevel - t->firstLevel + 1;
-	    GLuint nDummyValue = 0;
-#ifdef DEBUG
-	    if (VIA_DEBUG) {
-		fprintf(stderr, "texture1 enabled\n");
-		fprintf(stderr, "texture level %d\n", t->actualLevel);
-	    }		
-#endif	    
-            if (numLevels == 8) {
-                nDummyValue = t->regTexFM;
-                *vb++ = HC_HEADER2;
-                *vb++ = (HC_ParaType_Tex << 16) |  (1 << 24);
-                *vb++ = t->regTexFM;
-                *vb++ = (HC_SubA_HTXnL0OS << 24) |
-                        ((t->actualLevel) << HC_HTXnLVmax_SHIFT);
-                *vb++ = t->regTexWidthLog2[0];
-                *vb++ = t->regTexWidthLog2[1];
-                *vb++ = t->regTexHeightLog2[0];
-                *vb++ = t->regTexHeightLog2[1];
-                *vb++ = t->regTexBaseH[0];
-                *vb++ = t->regTexBaseH[1];
-                *vb++ = t->regTexBaseH[2];
-
-                *vb++ = t->regTexBaseAndPitch[0].baseL;
-                *vb++ = t->regTexBaseAndPitch[0].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[1].baseL;
-                *vb++ = t->regTexBaseAndPitch[1].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[2].baseL;
-                *vb++ = t->regTexBaseAndPitch[2].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[3].baseL;
-                *vb++ = t->regTexBaseAndPitch[3].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[4].baseL;
-                *vb++ = t->regTexBaseAndPitch[4].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[5].baseL;
-                *vb++ = t->regTexBaseAndPitch[5].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[6].baseL;
-                *vb++ = t->regTexBaseAndPitch[6].pitchLog2;
-                *vb++ = t->regTexBaseAndPitch[7].baseL;
-                *vb++ = t->regTexBaseAndPitch[7].pitchLog2;
-                i += 27;
-            }
-            else if (numLevels > 1) {
-                nDummyValue = t->regTexFM;
-                *vb++ = HC_HEADER2;
-                *vb++ = (HC_ParaType_Tex << 16) |  (1 << 24);
-                *vb++ = t->regTexFM;
-                *vb++ = (HC_SubA_HTXnL0OS << 24) |
-                           ((t->actualLevel) << HC_HTXnLVmax_SHIFT);
-		*vb++ = t->regTexWidthLog2[0];
-		*vb++ = t->regTexHeightLog2[0];
-		
-		if (numLevels > 6) {
-		    *vb++ = t->regTexWidthLog2[1];
-		    *vb++ = t->regTexHeightLog2[1];
-		    i += 2;
-		}
-                
-		*vb++ = t->regTexBaseH[0];
-		
-                if (numLevels > 3) { 
-		    *vb++ = t->regTexBaseH[1];
-		    i++;
-		}
-		if (numLevels > 6) {
-		    *vb++ = t->regTexBaseH[2];
-		    i++;
-		}
-		if (numLevels > 9)  {
-		    *vb++ = t->regTexBaseH[3];
-		    i++;
-		}
-		
-		i += 7;
-
-                for (j = 0; j < numLevels; j++) {
-                    *vb++ = t->regTexBaseAndPitch[j].baseL;
-                    *vb++ = t->regTexBaseAndPitch[j].pitchLog2;
-		    i += 2;
-                }
-            }
-            else {
-                nDummyValue = t->regTexFM;
-                *vb++ = HC_HEADER2;
-                *vb++ = (HC_ParaType_Tex << 16) |  (1 << 24);
-                *vb++ = t->regTexFM;
-                *vb++ = (HC_SubA_HTXnL0OS << 24) |
-                           ((t->actualLevel) << HC_HTXnLVmax_SHIFT);
-                *vb++ = t->regTexWidthLog2[0];
-                *vb++ = t->regTexHeightLog2[0];
-                *vb++ = t->regTexBaseH[0];
-                *vb++ = t->regTexBaseAndPitch[0].baseL;
-                *vb++ = t->regTexBaseAndPitch[0].pitchLog2;
-                i += 9;
-            }
-
-            *vb++ = (HC_SubA_HTXnTB << 24) | vmesa->regHTXnTB_1;
-            *vb++ = (HC_SubA_HTXnMPMD << 24) | vmesa->regHTXnMPMD_1;
-            *vb++ = (HC_SubA_HTXnTBLCsat << 24) | vmesa->regHTXnTBLCsat_1;
-            *vb++ = (HC_SubA_HTXnTBLCop << 24) | vmesa->regHTXnTBLCop_1;
-            *vb++ = (HC_SubA_HTXnTBLMPfog << 24) | vmesa->regHTXnTBLMPfog_1;
-            *vb++ = (HC_SubA_HTXnTBLAsat << 24) | vmesa->regHTXnTBLAsat_1;
-            *vb++ = (HC_SubA_HTXnTBLRCb << 24) | vmesa->regHTXnTBLRCb_1;
-            *vb++ = (HC_SubA_HTXnTBLRAa << 24) | vmesa->regHTXnTBLRAa_1;
-            *vb++ = (HC_SubA_HTXnTBLRFog << 24) | vmesa->regHTXnTBLRFog_1;
-            i += 9;
-
-            if (t->regTexFM == HC_HTXnFM_Index8) {
-                struct gl_color_table *table = &texObj->Palette;
-		GLfloat *tableF = (GLfloat *)table->Table;
-
-                *vb++ = HC_HEADER2;
-                *vb++ = (HC_ParaType_Palette << 16) | (1 << 24);
-                i += 2;
-                for (j = 0; j < table->Size; j++) {
-                    *vb++ = tableF[j];
-		    i++;
-                }
-            }
-            if (i & 0x1) {
-    		*vb++ = HC_DUMMY;
-    		i++;    
-	    }
-        }
-    }
-    
-    
-    if (ctx->Polygon.StippleFlag) {
-        GLuint *stipple = &ctx->PolygonStipple[0];
-        
-        *vb++ = HC_HEADER2;             
-        *vb++ = ((HC_ParaType_Palette << 16) | (HC_SubType_Stipple << 24));
-
-        *vb++ = stipple[31];            
-        *vb++ = stipple[30];            
-        *vb++ = stipple[29];            
-        *vb++ = stipple[28];            
-        *vb++ = stipple[27];            
-        *vb++ = stipple[26];            
-        *vb++ = stipple[25];            
-        *vb++ = stipple[24];            
-        *vb++ = stipple[23];            
-        *vb++ = stipple[22];            
-        *vb++ = stipple[21];            
-        *vb++ = stipple[20];            
-        *vb++ = stipple[19];            
-        *vb++ = stipple[18];            
-        *vb++ = stipple[17];            
-        *vb++ = stipple[16];            
-        *vb++ = stipple[15];            
-        *vb++ = stipple[14];            
-        *vb++ = stipple[13];            
-        *vb++ = stipple[12];            
-        *vb++ = stipple[11];            
-        *vb++ = stipple[10];            
-        *vb++ = stipple[9];             
-        *vb++ = stipple[8];             
-        *vb++ = stipple[7];             
-        *vb++ = stipple[6];             
-        *vb++ = stipple[5];             
-        *vb++ = stipple[4];             
-        *vb++ = stipple[3];             
-        *vb++ = stipple[2];             
-        *vb++ = stipple[1];             
-        *vb++ = stipple[0];             
-        
-        *vb++ = HC_HEADER2;                     
-        *vb++ = (HC_ParaType_NotTex << 16);
-        *vb++ = ((HC_SubA_HSPXYOS << 24) | (0x20 - (vmesa->driDrawable->h & 0x1F)));
-        *vb++ = ((HC_SubA_HSPXYOS << 24) | (0x20 - (vmesa->driDrawable->h & 0x1F)));
-        i += 38;
-    }
-    
-    vmesa->dmaLow += (i << 2);
-
-    vmesa->dirty = 0;
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);
-#endif
+      if (vmesa->ptexHack) 
+	 vmesa->hwVertexSize = vmesa->vertexSize - 1;
+      else
+	 vmesa->hwVertexSize = vmesa->vertexSize;
+   }
 }
 
 
-static void emit_partial_state(viaContextPtr vmesa)
+
+
+/* Check if projective texture coordinates are used and if we can fake
+ * them. Fallback to swrast if we can't. Returns GL_TRUE if projective
+ * texture coordinates must be faked, GL_FALSE otherwise.
+ */
+static GLboolean viaCheckPTexHack( GLcontext *ctx )
 {
-    GLcontext *ctx = vmesa->glCtx;
-    GLuint dirty = vmesa->dirty;
-    GLuint *vb = viaCheckDma(vmesa, 0x110);
-    GLuint i = 0;
+   TNLcontext *tnl = TNL_CONTEXT(ctx);
+   struct vertex_buffer *VB = &tnl->vb;
+   GLuint index = tnl->render_inputs;
+   GLboolean fallback = GL_FALSE;
+   GLboolean ptexHack = GL_FALSE;
 
-#ifdef DEBUG    
-    if( VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif    
+   if (index & _TNL_BIT_TEX(0) && VB->TexCoordPtr[0]->size == 4) {
+      if ((index & _TNL_BITS_TEX_ANY) == _TNL_BIT_TEX(0))
+	 ptexHack = GL_TRUE; 
+      else
+	 fallback = GL_TRUE;
+   }
+   if ((index & _TNL_BIT_TEX(1)) && VB->TexCoordPtr[1]->size == 4)
+      fallback = GL_TRUE;
 
-#ifdef PERFORMANCE_MEASURE
-    if (VIA_PERFORMANCE) P_M;
-#endif
-    vb = vb;
-    
-    *vb++ = HC_HEADER2;
-    *vb++ = (HC_ParaType_NotTex << 16);
-    *vb++ = ((HC_SubA_HEnable << 24) | vmesa->regEnable);
-    *vb++ = ((HC_SubA_HFBBMSKL << 24) | vmesa->regHFBBMSKL);    
-    *vb++ = ((HC_SubA_HROP << 24) | vmesa->regHROP);        
-    i += 5;
-
-    if (dirty & VIA_UPLOAD_DESTBUFFER) {
-    }
-
-    if (dirty & VIA_UPLOAD_DEPTHBUFFER) {
-    }
-    
-    if (dirty * VIA_UPLOAD_DEPTH) {
-        *vb++ = ((HC_SubA_HZWTMD << 24) | vmesa->regHZWTMD);
-        i++;
-    }
-    
-    if (dirty * VIA_UPLOAD_ALPHATEST) {
-        *vb++ = ((HC_SubA_HATMD << 24) | vmesa->regHATMD);
-        i++;
-    }
-
-
-    if (dirty & VIA_UPLOAD_BLEND) {
-        *vb++ = ((HC_SubA_HABLCsat << 24) | vmesa->regHABLCsat);
-        *vb++ = ((HC_SubA_HABLCop  << 24) | vmesa->regHABLCop); 
-        *vb++ = ((HC_SubA_HABLAsat << 24) | vmesa->regHABLAsat);        
-        *vb++ = ((HC_SubA_HABLAop  << 24) | vmesa->regHABLAop); 
-        *vb++ = ((HC_SubA_HABLRCa  << 24) | vmesa->regHABLRCa); 
-        *vb++ = ((HC_SubA_HABLRFCa << 24) | vmesa->regHABLRFCa);        
-        *vb++ = ((HC_SubA_HABLRCbias << 24) | vmesa->regHABLRCbias);    
-        *vb++ = ((HC_SubA_HABLRCb  << 24) | vmesa->regHABLRCb); 
-        *vb++ = ((HC_SubA_HABLRFCb << 24) | vmesa->regHABLRFCb);        
-        *vb++ = ((HC_SubA_HABLRAa  << 24) | vmesa->regHABLRAa); 
-        *vb++ = ((HC_SubA_HABLRAb  << 24) | vmesa->regHABLRAb); 
-        i += 11;
-    }
-    
-    if (dirty & VIA_UPLOAD_FOG) {
-        *vb++ = ((HC_SubA_HFogLF << 24) | vmesa->regHFogLF);        
-        *vb++ = ((HC_SubA_HFogCL << 24) | vmesa->regHFogCL);            
-        *vb++ = ((HC_SubA_HFogCH << 24) | vmesa->regHFogCH);            
-        i += 3;
-    }
-    
-    if (dirty & VIA_UPLOAD_LINESTIPPLE) {
-        *vb++ = ((HC_SubA_HLP << 24) | ctx->Line.StipplePattern);           
-        *vb++ = ((HC_SubA_HLPRF << 24) | ctx->Line.StippleFactor);                  
-    }
-    else {
-        *vb++ = ((HC_SubA_HLP << 24) | 0xFFFF);         
-        *vb++ = ((HC_SubA_HLPRF << 24) | 0x1);              
-    }
-    i += 2;
-    
-    *vb++ = ((HC_SubA_HPixGC << 24) | 0x0);             
-    i++;
-    
-    if (i & 0x1) {
-        *vb++ = HC_DUMMY;
-        i++;    
-    }    
-
-    if (dirty & VIA_UPLOAD_TEXTURE) {
-                
-    }
-    
-    if (dirty & VIA_UPLOAD_POLYGONSTIPPLE) {
-    
-    }
-    
-    vmesa->dmaLow += (i << 2);
-
-    vmesa->dirty = 0;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);
-#endif    
+   FALLBACK(VIA_CONTEXT(ctx), VIA_FALLBACK_PROJ_TEXTURE, fallback);
+   return ptexHack;
 }
+
+
+
 
 /**********************************************************************/
 /*                 High level hooks for t_vb_render.c                 */
 /**********************************************************************/
 
-/* Determine the rasterized primitive when not drawing unfilled
- * polygons.
- *
- * Used only for the default render stage which always decomposes
- * primitives to trianges/lines/points.  For the accelerated stage,
- * which renders strips as strips, the equivalent calculations are
- * performed in via_render.c.
- */
-static void viaRenderPrimitive(GLcontext *ctx, GLenum prim)
-{
-    viaContextPtr vmesa = VIA_CONTEXT(ctx);
-    GLuint rprim = reducedPrim[prim];
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif    
-    vmesa->renderPrimitive = prim;
-    viaRasterPrimitive(ctx, rprim, rprim);
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
-}
-
-static void viaRunPipeline(GLcontext *ctx)
-{
-    viaContextPtr vmesa = VIA_CONTEXT(ctx);
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);    
-    
-    if (VIA_DEBUG) fprintf(stderr, "newState = %x\n", vmesa->newState);        
-#endif
-    
-    if (vmesa->newState) {
-        if (vmesa->newState & _NEW_TEXTURE)
-            viaUpdateTextureState(ctx); /* may modify vmesa->newState */
-
-	viaChooseVertexState(ctx);
-	viaChooseRenderState(ctx);
-        vmesa->newState = 0;
-    }
-
-    if (vmesa->needUploadAllState)
-    	emit_all_state(vmesa);
-    else
-        emit_partial_state(vmesa);
-
-    _tnl_run_pipeline(ctx);
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);        
-#endif
-}
 
 static void viaRenderStart(GLcontext *ctx)
 {
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
-    
-    /* Check for projective texturing.  Make sure all texcoord
-     * pointers point to something.  (fix in mesa?)
-     */
-    viaCheckTexSizes(ctx);
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);
-#endif
+   struct via_context *vmesa = VIA_CONTEXT(ctx);
+   TNLcontext *tnl = TNL_CONTEXT(ctx);
+   struct vertex_buffer *VB = &TNL_CONTEXT(ctx)->vb;
+
+   {
+      GLboolean ptexHack = viaCheckPTexHack( ctx );
+      if (ptexHack != vmesa->ptexHack) {
+	 vmesa->ptexHack = ptexHack;
+	 vmesa->newRenderState |= _VIA_NEW_RENDERSTATE;
+      }
+   }
+
+   if (vmesa->newState) {
+      vmesa->newRenderState |= vmesa->newState;
+      viaValidateState( ctx );
+   }
+
+   if (vmesa->Fallback) {
+      tnl->Driver.Render.Start(ctx);
+      return;
+   }
+
+   if (vmesa->newRenderState) {
+      viaChooseVertexState(ctx);
+      viaChooseRenderState(ctx);
+      vmesa->newRenderState = 0;
+   }
+
+   /* Important:
+    */
+   VB->AttribPtr[VERT_ATTRIB_POS] = VB->NdcPtr;
 }
 
 static void viaRenderFinish(GLcontext *ctx)
 {
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif    
-    if (VIA_CONTEXT(ctx)->renderIndex & VIA_FALLBACK_BIT)
-        _swrast_flush(ctx);
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);	
-#endif
+   VIA_FINISH_PRIM(VIA_CONTEXT(ctx));
 }
 
 
@@ -1459,196 +894,201 @@ static void viaRenderFinish(GLcontext *ctx)
  * primitive.
  */
 void viaRasterPrimitive(GLcontext *ctx,
-                        GLenum rprim,
-                        GLuint hwprim)
+			GLenum glprim,
+			GLenum hwprim)
 {
-    viaContextPtr vmesa = VIA_CONTEXT(ctx);
-    GLuint *vb = viaCheckDma(vmesa, 32);
-    GLuint regCmdB;
-#ifdef DEBUG
-    if (VIA_DEBUG) {
-	fprintf(stderr, "%s - in\n", __FUNCTION__);
-	fprintf(stderr, "hwprim = %x\n", hwprim);
-    }
-#endif    
-    /*=* [DBG] exy : fix wireframe + clipping error *=*/
-    if (((rprim == GL_TRIANGLES && (ctx->_TriangleCaps & DD_TRI_UNFILLED)))) {
-	hwprim = GL_LINES;
-    }
-    
-    if (RasterCounter > 0) {
-    
-#ifdef DEBUG
-	if (VIA_DEBUG) fprintf(stderr, "enter twice:%d\n",RasterCounter);
-#endif
-	RasterCounter++;
-	return;
-    }
-    RasterCounter++;
-    
-    vmesa->primitiveRendered = GL_FALSE;
-    regCmdB = vmesa->regCmdB;
+   struct via_context *vmesa = VIA_CONTEXT(ctx);
+   GLuint regCmdB;
+   RING_VARS;
 
-    switch (hwprim) {
-    case GL_POINTS:
-#ifdef DEBUG
-        if (VIA_DEBUG) fprintf(stderr, "Points\n");
-#endif
-        vmesa->regCmdA_End = vmesa->regCmdA | HC_HPMType_Point | HC_HVCycle_Full;
-        if (ctx->Light.ShadeModel == GL_FLAT)
-            vmesa->regCmdA_End |= HC_HShading_FlatA;
-        break;
-    case GL_LINES:
-#ifdef DEBUG
-        if (VIA_DEBUG) fprintf(stderr, "Lines\n");    
-#endif
-        vmesa->regCmdA_End = vmesa->regCmdA | HC_HPMType_Line | HC_HVCycle_Full;
-        if (ctx->Light.ShadeModel == GL_FLAT)
-            vmesa->regCmdA_End |= HC_HShading_FlatB; 
-        break;
-    case GL_LINE_LOOP:
-    case GL_LINE_STRIP:
-#ifdef DEBUG
-        if (VIA_DEBUG) fprintf(stderr, "Line Loop / Line Strip\n");
-#endif
-        vmesa->regCmdA_End = vmesa->regCmdA | HC_HPMType_Line | HC_HVCycle_AFP |
-                             HC_HVCycle_AB | HC_HVCycle_NewB;
-        regCmdB |= HC_HVCycle_AB | HC_HVCycle_NewB | HC_HLPrst_MASK;
-        if (ctx->Light.ShadeModel == GL_FLAT)
-            vmesa->regCmdA_End |= HC_HShading_FlatB; 
-        break;
-    case GL_TRIANGLES:
-#ifdef DEBUG
-        if (VIA_DEBUG) fprintf(stderr, "Triangles\n");        
-#endif
-        vmesa->regCmdA_End = vmesa->regCmdA | HC_HPMType_Tri | HC_HVCycle_Full;
-        if (ctx->Light.ShadeModel == GL_FLAT)
-            vmesa->regCmdA_End |= HC_HShading_FlatC; 
-        break;
-    case GL_TRIANGLE_STRIP:
-#ifdef DEBUG
-        if (VIA_DEBUG) fprintf(stderr, "Triangle Strip\n");
-#endif
-        vmesa->regCmdA_End = vmesa->regCmdA | HC_HPMType_Tri | HC_HVCycle_AFP |
-                             HC_HVCycle_AC | HC_HVCycle_BB | HC_HVCycle_NewC;
-        regCmdB |= HC_HVCycle_AA | HC_HVCycle_BC | HC_HVCycle_NewC;
-        if (ctx->Light.ShadeModel == GL_FLAT)
-            vmesa->regCmdA_End |= HC_HShading_FlatB; 
-        break;
-    case GL_TRIANGLE_FAN:
-#ifdef DEBUG
-        if (VIA_DEBUG) fprintf(stderr, "Triangle Fan\n");
-#endif
-        vmesa->regCmdA_End = vmesa->regCmdA | HC_HPMType_Tri | HC_HVCycle_AFP |
-                             HC_HVCycle_AA | HC_HVCycle_BC | HC_HVCycle_NewC;
-        regCmdB |= HC_HVCycle_AA | HC_HVCycle_BC | HC_HVCycle_NewC;
-        if (ctx->Light.ShadeModel == GL_FLAT)
-            vmesa->regCmdA_End |= HC_HShading_FlatC; 
-        break;
-    case GL_QUADS:
-#ifdef DEBUG
-        if (VIA_DEBUG) fprintf(stderr, "No HW Quads\n");
-#endif
-        return;
-    case GL_QUAD_STRIP:
-#ifdef DEBUG
-        if (VIA_DEBUG) fprintf(stderr, "No HW Quad Strip\n");
-#endif
-        return;
-    case GL_POLYGON:
-#ifdef DEBUG
-        if (VIA_DEBUG) fprintf(stderr, "Polygon\n");        
-#endif
-        vmesa->regCmdA_End = vmesa->regCmdA | HC_HPMType_Tri | HC_HVCycle_AFP |
-                             HC_HVCycle_AA | HC_HVCycle_BC | HC_HVCycle_NewC;
-        regCmdB |= HC_HVCycle_AA | HC_HVCycle_BC | HC_HVCycle_NewC;
-        if (ctx->Light.ShadeModel == GL_FLAT)
-            vmesa->regCmdA_End |= HC_HShading_FlatC; 
-        break;                          
-    default:
-#ifdef DEBUG
-        if (VIA_DEBUG) fprintf(stderr, "Unknow\n");        
-#endif
-        return;
-    }
-    
-    *vb++ = HC_HEADER2;    
-    *vb++ = (HC_ParaType_NotTex << 16);
-    *vb++ = 0xCCCCCCCC;
-    *vb++ = 0xDDDDDDDD;
+   if (VIA_DEBUG & DEBUG_PRIMS) 
+      fprintf(stderr, "%s: %s/%s/%s\n", 
+	      __FUNCTION__, _mesa_lookup_enum_by_nr(glprim),
+	      _mesa_lookup_enum_by_nr(hwprim),
+	      _mesa_lookup_enum_by_nr(ctx->Light.ShadeModel));
 
-    *vb++ = HC_HEADER2;    
-    *vb++ = (HC_ParaType_CmdVdata << 16);
-    *vb++ = regCmdB;
-    *vb++ = vmesa->regCmdA_End;
-    vmesa->dmaLow += 32;
+   assert (!vmesa->newState);
+
+   vmesa->renderPrimitive = glprim;
+
+   if (hwprim != vmesa->hwPrimitive ||
+       ctx->Light.ShadeModel != vmesa->hwShadeModel) {
+
+      VIA_FINISH_PRIM(vmesa);
+
+      /* Ensure no wrapping inside this function  */    
+      viaCheckDma( vmesa, 1024 );	
+
+      if (vmesa->newEmitState) {
+	 viaEmitState(vmesa);
+      }
+       
+      vmesa->regCmdA_End = HC_ACMD_HCmdA;
+
+      if (ctx->Light.ShadeModel == GL_SMOOTH) {
+	 vmesa->regCmdA_End |= HC_HShading_Gouraud;
+      }
+      
+      vmesa->hwShadeModel = ctx->Light.ShadeModel;
+      regCmdB = vmesa->regCmdB;
+
+      switch (hwprim) {
+      case GL_POINTS:
+	 vmesa->regCmdA_End |= HC_HPMType_Point | HC_HVCycle_Full;
+	 vmesa->regCmdA_End |= HC_HShading_Gouraud; /* always Gouraud 
+						       shade points?!? */
+	 break;
+      case GL_LINES:
+	 vmesa->regCmdA_End |= HC_HPMType_Line | HC_HVCycle_Full;
+         regCmdB |= HC_HLPrst_MASK;
+	 if (ctx->Light.ShadeModel == GL_FLAT)
+            vmesa->regCmdA_End |= HC_HShading_FlatB; 
+	 break;
+      case GL_LINE_LOOP:
+      case GL_LINE_STRIP:
+	 vmesa->regCmdA_End |= HC_HPMType_Line | HC_HVCycle_AFP |
+	    HC_HVCycle_AB | HC_HVCycle_NewB;
+	 regCmdB |= HC_HVCycle_AB | HC_HVCycle_NewB | HC_HLPrst_MASK;
+	 if (ctx->Light.ShadeModel == GL_FLAT)
+            vmesa->regCmdA_End |= HC_HShading_FlatB; 
+	 break;
+      case GL_TRIANGLES:
+	 vmesa->regCmdA_End |= HC_HPMType_Tri | HC_HVCycle_Full;
+	 if (ctx->Light.ShadeModel == GL_FLAT)
+            vmesa->regCmdA_End |= HC_HShading_FlatC; 
+	 break;
+      case GL_TRIANGLE_STRIP:
+	 vmesa->regCmdA_End |= HC_HPMType_Tri | HC_HVCycle_AFP |
+	    HC_HVCycle_AC | HC_HVCycle_BB | HC_HVCycle_NewC;
+	 regCmdB |= HC_HVCycle_AA | HC_HVCycle_BC | HC_HVCycle_NewC;
+	 if (ctx->Light.ShadeModel == GL_FLAT)
+            vmesa->regCmdA_End |= HC_HShading_FlatC; 
+	 break;
+      case GL_TRIANGLE_FAN:
+	 vmesa->regCmdA_End |= HC_HPMType_Tri | HC_HVCycle_AFP |
+	    HC_HVCycle_AA | HC_HVCycle_BC | HC_HVCycle_NewC;
+	 regCmdB |= HC_HVCycle_AA | HC_HVCycle_BC | HC_HVCycle_NewC;
+	 if (ctx->Light.ShadeModel == GL_FLAT)
+            vmesa->regCmdA_End |= HC_HShading_FlatC; 
+	 break;
+      case GL_QUADS:
+	 abort();
+	 return;
+      case GL_QUAD_STRIP:
+	 abort();
+	 return;
+      case GL_POLYGON:
+	 vmesa->regCmdA_End |= HC_HPMType_Tri | HC_HVCycle_AFP |
+	    HC_HVCycle_AA | HC_HVCycle_BC | HC_HVCycle_NewC;
+	 regCmdB |= HC_HVCycle_AA | HC_HVCycle_BC | HC_HVCycle_NewC;
+	 if (ctx->Light.ShadeModel == GL_FLAT)
+            vmesa->regCmdA_End |= HC_HShading_FlatC; 
+	 break;                          
+      default:
+	 abort();
+	 return;
+      }
     
-    vmesa->reducedPrimitive = rprim;
-    vmesa->hwPrimitive = rprim;    
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
+/*     assert((vmesa->dmaLow & 0x4) == 0); */
+
+      if (vmesa->dmaCliprectAddr == ~0) {
+	 if (VIA_DEBUG & DEBUG_DMA) 
+	    fprintf(stderr, "reserve cliprect space at %x\n", vmesa->dmaLow);
+	 vmesa->dmaCliprectAddr = vmesa->dmaLow;
+	 BEGIN_RING(8);
+	 OUT_RING( HC_HEADER2 );    
+	 OUT_RING( (HC_ParaType_NotTex << 16) );
+	 OUT_RING( 0xCCCCCCCC );
+	 OUT_RING( 0xCCCCCCCC );
+	 OUT_RING( 0xCCCCCCCC );
+	 OUT_RING( 0xCCCCCCCC );
+	 OUT_RING( 0xCCCCCCCC );
+	 OUT_RING( 0xCCCCCCCC );
+	 ADVANCE_RING();
+      }
+
+      assert(vmesa->dmaLastPrim == 0);
+
+      BEGIN_RING(8);
+      OUT_RING( HC_HEADER2 );    
+      OUT_RING( (HC_ParaType_NotTex << 16) );
+      OUT_RING( 0xCCCCCCCC );
+      OUT_RING( 0xDDDDDDDD );
+
+      OUT_RING( HC_HEADER2 );    
+      OUT_RING( (HC_ParaType_CmdVdata << 16) );
+      OUT_RING( regCmdB );
+      OUT_RING( vmesa->regCmdA_End );
+      ADVANCE_RING();
+
+      vmesa->hwPrimitive = hwprim;        
+      vmesa->dmaLastPrim = vmesa->dmaLow;
+   }
+   else {
+      assert(!vmesa->newEmitState);
+   }
 }
 
-void viaRasterPrimitiveFinish(GLcontext *ctx)
+/* Callback for mesa:
+ */
+static void viaRenderPrimitive( GLcontext *ctx, GLuint prim )
 {
-    viaContextPtr vmesa = VIA_CONTEXT(ctx);
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-    
-    if (VIA_DEBUG) fprintf(stderr, "primitiveRendered = %x\n", vmesa->primitiveRendered);    
-#endif    
-    if (RasterCounter > 1) {
-	RasterCounter--;
-#ifdef DEBUG
-	if (VIA_DEBUG) fprintf(stderr, "finish enter twice: %d\n",RasterCounter);
-#endif
-	return;
-    }
-    RasterCounter = 0;
+   viaRasterPrimitive( ctx, prim, hwPrim[prim] );
+}
 
-    
-    if (vmesa->primitiveRendered) {
-        GLuint *vb = viaCheckDma(vmesa, 0);
-	GLuint cmdA = vmesa->regCmdA_End | HC_HPLEND_MASK | HC_HPMValidN_MASK | HC_HE3Fire_MASK;    
-	
-	/*=* John Sheng [2003.6.20] fix pci *=*/
-        /*if (vmesa->dmaLow & 0x1) {*/
-	if (vmesa->dmaLow & 0x1 || !vmesa->useAgp) {
-            *vb++ = cmdA ;
-            vmesa->dmaLow += 4;
-	}   
-	else {      
-    	    *vb++ = cmdA;
-            *vb++ = cmdA;
-	    vmesa->dmaLow += 8;
-        }   
-    }
-    else {
-	if (vmesa->dmaLow >=  (32 + DMA_OFFSET))	
-	    vmesa->dmaLow -= 32;
-    }
-    
-    if (0) viaFlushPrimsLocked(vmesa);
-    if (0) {	
-	volatile GLuint *pnMMIOBase = vmesa->regMMIOBase;
-        volatile GLuint *pnEngBase = (volatile GLuint *)((GLuint)pnMMIOBase + 0x400);
-        int nStatus = *pnEngBase;
-	if (((nStatus & 0xFFFEFFFF) == 0x00020000)) {
-#ifdef PERFORMANCE_MEASURE    
-	    idle++;
-#endif
-	    viaFlushPrims(vmesa);        
-	}
-#ifdef PERFORMANCE_MEASURE    
-	else {
-	    busy++;
-	}
-#endif
-    }	
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
+
+void viaFinishPrimitive(struct via_context *vmesa)
+{
+   if (VIA_DEBUG & (DEBUG_DMA|DEBUG_PRIMS)) 
+      fprintf(stderr, "%s\n", __FUNCTION__);
+
+   if (!vmesa->dmaLastPrim || vmesa->dmaCliprectAddr == ~0) {
+      assert(0);
+   }
+   else if (vmesa->dmaLow != vmesa->dmaLastPrim) {
+      GLuint cmdA = (vmesa->regCmdA_End | HC_HPLEND_MASK | 
+		     HC_HPMValidN_MASK | HC_HE3Fire_MASK); 
+      RING_VARS;
+
+      vmesa->dmaLastPrim = 0;
+
+      /* KW: modified 0x1 to 0x4 below:
+       */
+      if ((vmesa->dmaLow & 0x4) || !vmesa->useAgp) {
+	 BEGIN_RING_NOCHECK( 1 );
+	 OUT_RING( cmdA );
+	 ADVANCE_RING();
+      }   
+      else {      
+	 BEGIN_RING_NOCHECK( 2 );
+	 OUT_RING( cmdA );
+	 OUT_RING( cmdA );
+	 ADVANCE_RING();
+      }   
+
+      if (vmesa->dmaLow > VIA_DMA_HIGHWATER)
+	 viaFlushDma( vmesa );
+   }
+   else {
+      if (VIA_DEBUG & (DEBUG_DMA|DEBUG_PRIMS)) 
+	 fprintf(stderr, "remove empty primitive\n");
+
+      /* Remove the primitive header:
+       */
+      vmesa->dmaLastPrim = 0;
+      vmesa->dmaLow -= 8 * sizeof(GLuint);
+
+      /* Maybe remove the cliprect as well:
+       */
+      if (vmesa->dmaCliprectAddr == vmesa->dmaLow - 8 * sizeof(GLuint)) {
+	 vmesa->dmaLow -= 8 * sizeof(GLuint);
+	 vmesa->dmaCliprectAddr = ~0;
+      }
+   }
+
+   vmesa->renderPrimitive = GL_POLYGON + 1;
+   vmesa->hwPrimitive = GL_POLYGON + 1;
+   vmesa->dmaLastPrim = 0;
 }
 
 
@@ -1657,23 +1097,20 @@ void viaRasterPrimitiveFinish(GLcontext *ctx)
 /**********************************************************************/
 
 
-void viaFallback(viaContextPtr vmesa, GLuint bit, GLboolean mode)
+void viaFallback(struct via_context *vmesa, GLuint bit, GLboolean mode)
 {
     GLcontext *ctx = vmesa->glCtx;
     TNLcontext *tnl = TNL_CONTEXT(ctx);
     GLuint oldfallback = vmesa->Fallback;
-#ifdef DEBUG
-    if (VIA_DEBUG) fprintf(stderr, "%s old %x bit %x mode %d\n", __FUNCTION__,
-                   vmesa->Fallback, bit, mode);
-#endif
     
     if (mode) {
         vmesa->Fallback |= bit;
         if (oldfallback == 0) {
-#ifdef DEBUG
-            if (VIA_DEBUG) fprintf(stderr, "ENTER FALLBACK\n");
-#endif
-	    VIA_FIREVERTICES(vmesa);
+	    VIA_FLUSH_DMA(vmesa);
+
+ 	    if (VIA_DEBUG & DEBUG_FALLBACKS) 
+	       fprintf(stderr, "ENTER FALLBACK %x\n", bit);
+
             _swsetup_Wakeup(ctx);
             vmesa->renderIndex = ~0;
         }
@@ -1681,17 +1118,42 @@ void viaFallback(viaContextPtr vmesa, GLuint bit, GLboolean mode)
     else {
         vmesa->Fallback &= ~bit;
         if (oldfallback == bit) {
-#ifdef DEBUG
-            if (VIA_DEBUG) fprintf(stderr, "LEAVE FALLBACK\n");
-#endif
+	    _swrast_flush( ctx );
+
+ 	    if (VIA_DEBUG & DEBUG_FALLBACKS) 
+	       fprintf(stderr, "LEAVE FALLBACK %x\n", bit);
+
 	    tnl->Driver.Render.Start = viaRenderStart;
             tnl->Driver.Render.PrimitiveNotify = viaRenderPrimitive;
             tnl->Driver.Render.Finish = viaRenderFinish;
-            tnl->Driver.Render.BuildVertices = viaBuildVertices;
+
+	    tnl->Driver.Render.BuildVertices = _tnl_build_vertices;
+	    tnl->Driver.Render.CopyPV = _tnl_copy_pv;
+	    tnl->Driver.Render.Interp = _tnl_interp;
+    	    tnl->Driver.Render.ResetLineStipple = viaResetLineStipple;
+
+	    _tnl_invalidate_vertex_state( ctx, ~0 );
+	    _tnl_invalidate_vertices( ctx, ~0 );
+	    _tnl_install_attrs( ctx, 
+				vmesa->vertex_attrs, 
+				vmesa->vertex_attr_count,
+				vmesa->ViewportMatrix.m, 0 ); 
+
             vmesa->newState |= (_VIA_NEW_RENDERSTATE|_VIA_NEW_VERTEX);
         }
-    }
-    
+    }    
+}
+
+static void viaRunPipeline( GLcontext *ctx )
+{
+   struct via_context *vmesa = VIA_CONTEXT(ctx);
+
+   if (vmesa->newState) {
+      vmesa->newRenderState |= vmesa->newState;
+      viaValidateState( ctx );
+   }
+
+   _tnl_run_pipeline( ctx );
 }
 
 
@@ -1702,6 +1164,7 @@ void viaFallback(viaContextPtr vmesa, GLuint bit, GLboolean mode)
 
 void viaInitTriFuncs(GLcontext *ctx)
 {
+    struct via_context *vmesa = VIA_CONTEXT(ctx);
     TNLcontext *tnl = TNL_CONTEXT(ctx);
     static int firsttime = 1;
 
@@ -1714,6 +1177,14 @@ void viaInitTriFuncs(GLcontext *ctx)
     tnl->Driver.Render.Start = viaRenderStart;
     tnl->Driver.Render.Finish = viaRenderFinish;
     tnl->Driver.Render.PrimitiveNotify = viaRenderPrimitive;
-    tnl->Driver.Render.ResetLineStipple = _swrast_ResetLineStipple;
-    tnl->Driver.Render.BuildVertices = viaBuildVertices;
+    tnl->Driver.Render.ResetLineStipple = viaResetLineStipple;
+    tnl->Driver.Render.BuildVertices = _tnl_build_vertices;
+    tnl->Driver.Render.CopyPV = _tnl_copy_pv;
+    tnl->Driver.Render.Interp = _tnl_interp;
+
+    _tnl_init_vertices( ctx, ctx->Const.MaxArrayLockSize + 12, 
+			(6 + 2*ctx->Const.MaxTextureUnits) * sizeof(GLfloat) );
+   
+    vmesa->verts = (GLubyte *)tnl->clipspace.vertex_buf;
+
 }

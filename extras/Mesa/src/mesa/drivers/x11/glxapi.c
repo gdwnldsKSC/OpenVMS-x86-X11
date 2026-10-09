@@ -1,8 +1,8 @@
 /*
  * Mesa 3-D graphics library
- * Version:  6.2.1
+ * Version:  6.3
  * 
- * Copyright (C) 1999-2004  Brian Paul   All Rights Reserved.
+ * Copyright (C) 1999-2005  Brian Paul   All Rights Reserved.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "glheader.h"
 #include "glapi.h"
 #include "glxapi.h"
 
@@ -79,31 +80,7 @@ get_dispatch(Display *dpy)
     * or Mesa's pseudo-GLX.
     */
    {
-      struct _glxapi_table *t = NULL;
-
-#ifdef GLX_BUILT_IN_XMESA
-      if (!getenv("LIBGL_FORCE_XMESA")) {
-         int ignore;
-         if (XQueryExtension( dpy, "GLX", &ignore, &ignore, &ignore )) {
-            /* the X server has the GLX extension */
-            t = _real_GetGLXDispatchTable();
-         }
-      }
-#endif
-
-      if (!t) {
-         /* Fallback to Mesa with Xlib driver */
-#ifdef GLX_BUILT_IN_XMESA
-         if (getenv("LIBGL_DEBUG")) {
-            fprintf(stderr,
-                    "libGL: server %s lacks the GLX extension.",
-                    dpy->display_name);
-            fprintf(stderr, " Using Mesa Xlib renderer.\n");
-         }
-#endif
-         t = _mesa_GetGLXDispatchTable();
-         assert(t);  /* this has to work */
-      }
+      struct _glxapi_table *t = _mesa_GetGLXDispatchTable();
 
       if (t) {
          struct display_dispatch *d;
@@ -145,10 +122,8 @@ get_dispatch(Display *dpy)
 
 
 /* Set by glXMakeCurrent() and glXMakeContextCurrent() only */
-#ifndef GLX_BUILT_IN_XMESA
 static GLXContext CurrentContext = 0;
 #define __glXGetCurrentContext() CurrentContext;
-#endif
 
 
 /*
@@ -157,7 +132,8 @@ static GLXContext CurrentContext = 0;
 
 /*** GLX_VERSION_1_0 ***/
 
-XVisualInfo *glXChooseVisual(Display *dpy, int screen, int *list)
+XVisualInfo PUBLIC *
+glXChooseVisual(Display *dpy, int screen, int *list)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -167,7 +143,8 @@ XVisualInfo *glXChooseVisual(Display *dpy, int screen, int *list)
 }
 
 
-void glXCopyContext(Display *dpy, GLXContext src, GLXContext dst, unsigned long mask)
+void PUBLIC
+glXCopyContext(Display *dpy, GLXContext src, GLXContext dst, unsigned long mask)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -177,7 +154,8 @@ void glXCopyContext(Display *dpy, GLXContext src, GLXContext dst, unsigned long 
 }
 
 
-GLXContext glXCreateContext(Display *dpy, XVisualInfo *visinfo, GLXContext shareList, Bool direct)
+GLXContext PUBLIC
+glXCreateContext(Display *dpy, XVisualInfo *visinfo, GLXContext shareList, Bool direct)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -187,7 +165,8 @@ GLXContext glXCreateContext(Display *dpy, XVisualInfo *visinfo, GLXContext share
 }
 
 
-GLXPixmap glXCreateGLXPixmap(Display *dpy, XVisualInfo *visinfo, Pixmap pixmap)
+GLXPixmap PUBLIC
+glXCreateGLXPixmap(Display *dpy, XVisualInfo *visinfo, Pixmap pixmap)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -197,7 +176,8 @@ GLXPixmap glXCreateGLXPixmap(Display *dpy, XVisualInfo *visinfo, Pixmap pixmap)
 }
 
 
-void glXDestroyContext(Display *dpy, GLXContext ctx)
+void PUBLIC
+glXDestroyContext(Display *dpy, GLXContext ctx)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -207,7 +187,8 @@ void glXDestroyContext(Display *dpy, GLXContext ctx)
 }
 
 
-void glXDestroyGLXPixmap(Display *dpy, GLXPixmap pixmap)
+void PUBLIC
+glXDestroyGLXPixmap(Display *dpy, GLXPixmap pixmap)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -217,7 +198,8 @@ void glXDestroyGLXPixmap(Display *dpy, GLXPixmap pixmap)
 }
 
 
-int glXGetConfig(Display *dpy, XVisualInfo *visinfo, int attrib, int *value)
+int PUBLIC
+glXGetConfig(Display *dpy, XVisualInfo *visinfo, int attrib, int *value)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -227,30 +209,23 @@ int glXGetConfig(Display *dpy, XVisualInfo *visinfo, int attrib, int *value)
 }
 
 
-#ifdef GLX_BUILT_IN_XMESA
-/* Use real libGL's glXGetCurrentContext() function */
-#else
-/* stand-alone Mesa */
-GLXContext glXGetCurrentContext(void)
+GLXContext PUBLIC
+glXGetCurrentContext(void)
 {
    return CurrentContext;
 }
-#endif
 
 
-#ifdef GLX_BUILT_IN_XMESA
-/* Use real libGL's glXGetCurrentContext() function */
-#else
-/* stand-alone Mesa */
-GLXDrawable glXGetCurrentDrawable(void)
+GLXDrawable PUBLIC
+glXGetCurrentDrawable(void)
 {
    __GLXcontext *gc = (__GLXcontext *) glXGetCurrentContext();
    return gc ? gc->currentDrawable : 0;
 }
-#endif
 
 
-Bool glXIsDirect(Display *dpy, GLXContext ctx)
+Bool PUBLIC
+glXIsDirect(Display *dpy, GLXContext ctx)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -260,7 +235,8 @@ Bool glXIsDirect(Display *dpy, GLXContext ctx)
 }
 
 
-Bool glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx)
+Bool PUBLIC
+glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx)
 {
    Bool b;
    struct _glxapi_table *t;
@@ -269,16 +245,15 @@ Bool glXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx)
       return False;
    }
    b = (*t->MakeCurrent)(dpy, drawable, ctx);
-#ifndef  GLX_BUILT_IN_XMESA
    if (b) {
       CurrentContext = ctx;
    }
-#endif
    return b;
 }
 
 
-Bool glXQueryExtension(Display *dpy, int *errorb, int *event)
+Bool PUBLIC
+glXQueryExtension(Display *dpy, int *errorb, int *event)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -288,7 +263,8 @@ Bool glXQueryExtension(Display *dpy, int *errorb, int *event)
 }
 
 
-Bool glXQueryVersion(Display *dpy, int *maj, int *min)
+Bool PUBLIC
+glXQueryVersion(Display *dpy, int *maj, int *min)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -298,7 +274,8 @@ Bool glXQueryVersion(Display *dpy, int *maj, int *min)
 }
 
 
-void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
+void PUBLIC
+glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -308,7 +285,8 @@ void glXSwapBuffers(Display *dpy, GLXDrawable drawable)
 }
 
 
-void glXUseXFont(Font font, int first, int count, int listBase)
+void PUBLIC
+glXUseXFont(Font font, int first, int count, int listBase)
 {
    struct _glxapi_table *t;
    Display *dpy = glXGetCurrentDisplay();
@@ -319,7 +297,8 @@ void glXUseXFont(Font font, int first, int count, int listBase)
 }
 
 
-void glXWaitGL(void)
+void PUBLIC
+glXWaitGL(void)
 {
    struct _glxapi_table *t;
    Display *dpy = glXGetCurrentDisplay();
@@ -330,7 +309,8 @@ void glXWaitGL(void)
 }
 
 
-void glXWaitX(void)
+void PUBLIC
+glXWaitX(void)
 {
    struct _glxapi_table *t;
    Display *dpy = glXGetCurrentDisplay();
@@ -344,7 +324,8 @@ void glXWaitX(void)
 
 /*** GLX_VERSION_1_1 ***/
 
-const char *glXGetClientString(Display *dpy, int name)
+const char PUBLIC *
+glXGetClientString(Display *dpy, int name)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -354,7 +335,8 @@ const char *glXGetClientString(Display *dpy, int name)
 }
 
 
-const char *glXQueryExtensionsString(Display *dpy, int screen)
+const char PUBLIC *
+glXQueryExtensionsString(Display *dpy, int screen)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -364,7 +346,8 @@ const char *glXQueryExtensionsString(Display *dpy, int screen)
 }
 
 
-const char *glXQueryServerString(Display *dpy, int screen, int name)
+const char PUBLIC *
+glXQueryServerString(Display *dpy, int screen, int name)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -376,21 +359,21 @@ const char *glXQueryServerString(Display *dpy, int screen, int name)
 
 /*** GLX_VERSION_1_2 ***/
 
-#if !defined(GLX_BUILT_IN_XMESA)
-Display *glXGetCurrentDisplay(void)
+Display PUBLIC *
+glXGetCurrentDisplay(void)
 {
    /* Same code as in libGL's glxext.c */
    __GLXcontext *gc = (__GLXcontext *) glXGetCurrentContext();
    if (NULL == gc) return NULL;
    return gc->currentDpy;
 }
-#endif
 
 
 
 /*** GLX_VERSION_1_3 ***/
 
-GLXFBConfig *glXChooseFBConfig(Display *dpy, int screen, const int *attribList, int *nitems)
+GLXFBConfig PUBLIC *
+glXChooseFBConfig(Display *dpy, int screen, const int *attribList, int *nitems)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -400,7 +383,8 @@ GLXFBConfig *glXChooseFBConfig(Display *dpy, int screen, const int *attribList, 
 }
 
 
-GLXContext glXCreateNewContext(Display *dpy, GLXFBConfig config, int renderType, GLXContext shareList, Bool direct)
+GLXContext PUBLIC
+glXCreateNewContext(Display *dpy, GLXFBConfig config, int renderType, GLXContext shareList, Bool direct)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -410,7 +394,8 @@ GLXContext glXCreateNewContext(Display *dpy, GLXFBConfig config, int renderType,
 }
 
 
-GLXPbuffer glXCreatePbuffer(Display *dpy, GLXFBConfig config, const int *attribList)
+GLXPbuffer PUBLIC
+glXCreatePbuffer(Display *dpy, GLXFBConfig config, const int *attribList)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -420,7 +405,8 @@ GLXPbuffer glXCreatePbuffer(Display *dpy, GLXFBConfig config, const int *attribL
 }
 
 
-GLXPixmap glXCreatePixmap(Display *dpy, GLXFBConfig config, Pixmap pixmap, const int *attribList)
+GLXPixmap PUBLIC
+glXCreatePixmap(Display *dpy, GLXFBConfig config, Pixmap pixmap, const int *attribList)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -430,7 +416,8 @@ GLXPixmap glXCreatePixmap(Display *dpy, GLXFBConfig config, Pixmap pixmap, const
 }
 
 
-GLXWindow glXCreateWindow(Display *dpy, GLXFBConfig config, Window win, const int *attribList)
+GLXWindow PUBLIC
+glXCreateWindow(Display *dpy, GLXFBConfig config, Window win, const int *attribList)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -440,7 +427,8 @@ GLXWindow glXCreateWindow(Display *dpy, GLXFBConfig config, Window win, const in
 }
 
 
-void glXDestroyPbuffer(Display *dpy, GLXPbuffer pbuf)
+void PUBLIC
+glXDestroyPbuffer(Display *dpy, GLXPbuffer pbuf)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -450,7 +438,8 @@ void glXDestroyPbuffer(Display *dpy, GLXPbuffer pbuf)
 }
 
 
-void glXDestroyPixmap(Display *dpy, GLXPixmap pixmap)
+void PUBLIC
+glXDestroyPixmap(Display *dpy, GLXPixmap pixmap)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -460,7 +449,8 @@ void glXDestroyPixmap(Display *dpy, GLXPixmap pixmap)
 }
 
 
-void glXDestroyWindow(Display *dpy, GLXWindow window)
+void PUBLIC
+glXDestroyWindow(Display *dpy, GLXWindow window)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -470,18 +460,16 @@ void glXDestroyWindow(Display *dpy, GLXWindow window)
 }
 
 
-#ifdef GLX_BUILT_IN_XMESA
-/* Use the glXGetCurrentReadDrawable() function from libGL */
-#else
-GLXDrawable glXGetCurrentReadDrawable(void)
+GLXDrawable PUBLIC
+glXGetCurrentReadDrawable(void)
 {
    __GLXcontext *gc = (__GLXcontext *) glXGetCurrentContext();
    return gc ? gc->currentReadable : 0;
 }
-#endif
 
 
-int glXGetFBConfigAttrib(Display *dpy, GLXFBConfig config, int attribute, int *value)
+int PUBLIC
+glXGetFBConfigAttrib(Display *dpy, GLXFBConfig config, int attribute, int *value)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -491,7 +479,8 @@ int glXGetFBConfigAttrib(Display *dpy, GLXFBConfig config, int attribute, int *v
 }
 
 
-GLXFBConfig *glXGetFBConfigs(Display *dpy, int screen, int *nelements)
+GLXFBConfig PUBLIC *
+glXGetFBConfigs(Display *dpy, int screen, int *nelements)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -500,7 +489,8 @@ GLXFBConfig *glXGetFBConfigs(Display *dpy, int screen, int *nelements)
    return (t->GetFBConfigs)(dpy, screen, nelements);
 }
 
-void glXGetSelectedEvent(Display *dpy, GLXDrawable drawable, unsigned long *mask)
+void PUBLIC
+glXGetSelectedEvent(Display *dpy, GLXDrawable drawable, unsigned long *mask)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -510,7 +500,8 @@ void glXGetSelectedEvent(Display *dpy, GLXDrawable drawable, unsigned long *mask
 }
 
 
-XVisualInfo *glXGetVisualFromFBConfig(Display *dpy, GLXFBConfig config)
+XVisualInfo PUBLIC *
+glXGetVisualFromFBConfig(Display *dpy, GLXFBConfig config)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -520,7 +511,8 @@ XVisualInfo *glXGetVisualFromFBConfig(Display *dpy, GLXFBConfig config)
 }
 
 
-Bool glXMakeContextCurrent(Display *dpy, GLXDrawable draw, GLXDrawable read, GLXContext ctx)
+Bool PUBLIC
+glXMakeContextCurrent(Display *dpy, GLXDrawable draw, GLXDrawable read, GLXContext ctx)
 {
    Bool b;
    struct _glxapi_table *t;
@@ -528,16 +520,15 @@ Bool glXMakeContextCurrent(Display *dpy, GLXDrawable draw, GLXDrawable read, GLX
    if (!t)
       return False;
    b = (t->MakeContextCurrent)(dpy, draw, read, ctx);
-#ifndef GLX_BUILT_IN_XMESA
    if (b) {
       CurrentContext = ctx;
    }
-#endif
    return b;
 }
 
 
-int glXQueryContext(Display *dpy, GLXContext ctx, int attribute, int *value)
+int PUBLIC
+glXQueryContext(Display *dpy, GLXContext ctx, int attribute, int *value)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -548,7 +539,8 @@ int glXQueryContext(Display *dpy, GLXContext ctx, int attribute, int *value)
 }
 
 
-void glXQueryDrawable(Display *dpy, GLXDrawable draw, int attribute, unsigned int *value)
+void PUBLIC
+glXQueryDrawable(Display *dpy, GLXDrawable draw, int attribute, unsigned int *value)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -558,7 +550,8 @@ void glXQueryDrawable(Display *dpy, GLXDrawable draw, int attribute, unsigned in
 }
 
 
-void glXSelectEvent(Display *dpy, GLXDrawable drawable, unsigned long mask)
+void PUBLIC
+glXSelectEvent(Display *dpy, GLXDrawable drawable, unsigned long mask)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -571,7 +564,8 @@ void glXSelectEvent(Display *dpy, GLXDrawable drawable, unsigned long mask)
 
 /*** GLX_SGI_swap_control ***/
 
-int glXSwapIntervalSGI(int interval)
+int PUBLIC
+glXSwapIntervalSGI(int interval)
 {
    struct _glxapi_table *t;
    Display *dpy = glXGetCurrentDisplay();
@@ -585,7 +579,8 @@ int glXSwapIntervalSGI(int interval)
 
 /*** GLX_SGI_video_sync ***/
 
-int glXGetVideoSyncSGI(unsigned int *count)
+int PUBLIC
+glXGetVideoSyncSGI(unsigned int *count)
 {
    struct _glxapi_table *t;
    Display *dpy = glXGetCurrentDisplay();
@@ -595,7 +590,8 @@ int glXGetVideoSyncSGI(unsigned int *count)
    return (t->GetVideoSyncSGI)(count);
 }
 
-int glXWaitVideoSyncSGI(int divisor, int remainder, unsigned int *count)
+int PUBLIC
+glXWaitVideoSyncSGI(int divisor, int remainder, unsigned int *count)
 {
    struct _glxapi_table *t;
    Display *dpy = glXGetCurrentDisplay();
@@ -609,7 +605,8 @@ int glXWaitVideoSyncSGI(int divisor, int remainder, unsigned int *count)
 
 /*** GLX_SGI_make_current_read ***/
 
-Bool glXMakeCurrentReadSGI(Display *dpy, GLXDrawable draw, GLXDrawable read, GLXContext ctx)
+Bool PUBLIC
+glXMakeCurrentReadSGI(Display *dpy, GLXDrawable draw, GLXDrawable read, GLXContext ctx)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -618,20 +615,17 @@ Bool glXMakeCurrentReadSGI(Display *dpy, GLXDrawable draw, GLXDrawable read, GLX
    return (t->MakeCurrentReadSGI)(dpy, draw, read, ctx);
 }
 
-#ifdef GLX_BUILT_IN_XMESA
-/* Use glXGetCurrentReadDrawableSGI() from libGL */
-#else
-/* stand-alone Mesa */
-GLXDrawable glXGetCurrentReadDrawableSGI(void)
+GLXDrawable PUBLIC
+glXGetCurrentReadDrawableSGI(void)
 {
    return glXGetCurrentReadDrawable();
 }
-#endif
 
 
 #if defined(_VL_H)
 
-GLXVideoSourceSGIX glXCreateGLXVideoSourceSGIX(Display *dpy, int screen, VLServer server, VLPath path, int nodeClass, VLNode drainNode)
+GLXVideoSourceSGIX PUBLIC
+glXCreateGLXVideoSourceSGIX(Display *dpy, int screen, VLServer server, VLPath path, int nodeClass, VLNode drainNode)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -640,7 +634,8 @@ GLXVideoSourceSGIX glXCreateGLXVideoSourceSGIX(Display *dpy, int screen, VLServe
    return (t->CreateGLXVideoSourceSGIX)(dpy, screen, server, path, nodeClass, drainNode);
 }
 
-void glXDestroyGLXVideoSourceSGIX(Display *dpy, GLXVideoSourceSGIX src)
+void PUBLIC
+glXDestroyGLXVideoSourceSGIX(Display *dpy, GLXVideoSourceSGIX src)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -654,7 +649,8 @@ void glXDestroyGLXVideoSourceSGIX(Display *dpy, GLXVideoSourceSGIX src)
 
 /*** GLX_EXT_import_context ***/
 
-void glXFreeContextEXT(Display *dpy, GLXContext context)
+void PUBLIC
+glXFreeContextEXT(Display *dpy, GLXContext context)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -663,27 +659,20 @@ void glXFreeContextEXT(Display *dpy, GLXContext context)
    (t->FreeContextEXT)(dpy, context);
 }
 
-#ifdef GLX_BUILT_IN_XMESA
-/* Use real libGL's glXGetContextIDEXT() function */
-#else
-/* stand-alone Mesa */
-GLXContextID glXGetContextIDEXT(const GLXContext context)
+GLXContextID PUBLIC
+glXGetContextIDEXT(const GLXContext context)
 {
    return ((__GLXcontext *) context)->xid;
 }
-#endif
 
-#ifdef GLX_BUILT_IN_XMESA
-/* Use real libGL's glXGetCurrentDisplayEXT() function */
-#else
-/* stand-alone Mesa */
-Display *glXGetCurrentDisplayEXT(void)
+Display PUBLIC *
+glXGetCurrentDisplayEXT(void)
 {
    return glXGetCurrentDisplay();
 }
-#endif
 
-GLXContext glXImportContextEXT(Display *dpy, GLXContextID contextID)
+GLXContext PUBLIC
+glXImportContextEXT(Display *dpy, GLXContextID contextID)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -692,7 +681,8 @@ GLXContext glXImportContextEXT(Display *dpy, GLXContextID contextID)
    return (t->ImportContextEXT)(dpy, contextID);
 }
 
-int glXQueryContextInfoEXT(Display *dpy, GLXContext context, int attribute,int *value)
+int PUBLIC
+glXQueryContextInfoEXT(Display *dpy, GLXContext context, int attribute,int *value)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -705,7 +695,8 @@ int glXQueryContextInfoEXT(Display *dpy, GLXContext context, int attribute,int *
 
 /*** GLX_SGIX_fbconfig ***/
 
-int glXGetFBConfigAttribSGIX(Display *dpy, GLXFBConfigSGIX config, int attribute, int *value)
+int PUBLIC
+glXGetFBConfigAttribSGIX(Display *dpy, GLXFBConfigSGIX config, int attribute, int *value)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -714,7 +705,8 @@ int glXGetFBConfigAttribSGIX(Display *dpy, GLXFBConfigSGIX config, int attribute
    return (t->GetFBConfigAttribSGIX)(dpy, config, attribute, value);
 }
 
-GLXFBConfigSGIX *glXChooseFBConfigSGIX(Display *dpy, int screen, int *attrib_list, int *nelements)
+GLXFBConfigSGIX PUBLIC *
+glXChooseFBConfigSGIX(Display *dpy, int screen, int *attrib_list, int *nelements)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -723,7 +715,8 @@ GLXFBConfigSGIX *glXChooseFBConfigSGIX(Display *dpy, int screen, int *attrib_lis
    return (t->ChooseFBConfigSGIX)(dpy, screen, attrib_list, nelements);
 }
 
-GLXPixmap glXCreateGLXPixmapWithConfigSGIX(Display *dpy, GLXFBConfigSGIX config, Pixmap pixmap)
+GLXPixmap PUBLIC
+glXCreateGLXPixmapWithConfigSGIX(Display *dpy, GLXFBConfigSGIX config, Pixmap pixmap)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -732,7 +725,8 @@ GLXPixmap glXCreateGLXPixmapWithConfigSGIX(Display *dpy, GLXFBConfigSGIX config,
    return (t->CreateGLXPixmapWithConfigSGIX)(dpy, config, pixmap);
 }
 
-GLXContext glXCreateContextWithConfigSGIX(Display *dpy, GLXFBConfigSGIX config, int render_type, GLXContext share_list, Bool direct)
+GLXContext PUBLIC
+glXCreateContextWithConfigSGIX(Display *dpy, GLXFBConfigSGIX config, int render_type, GLXContext share_list, Bool direct)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -741,7 +735,8 @@ GLXContext glXCreateContextWithConfigSGIX(Display *dpy, GLXFBConfigSGIX config, 
    return (t->CreateContextWithConfigSGIX)(dpy, config, render_type, share_list, direct);
 }
 
-XVisualInfo * glXGetVisualFromFBConfigSGIX(Display *dpy, GLXFBConfigSGIX config)
+XVisualInfo PUBLIC *
+glXGetVisualFromFBConfigSGIX(Display *dpy, GLXFBConfigSGIX config)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -750,7 +745,8 @@ XVisualInfo * glXGetVisualFromFBConfigSGIX(Display *dpy, GLXFBConfigSGIX config)
    return (t->GetVisualFromFBConfigSGIX)(dpy, config);
 }
 
-GLXFBConfigSGIX glXGetFBConfigFromVisualSGIX(Display *dpy, XVisualInfo *vis)
+GLXFBConfigSGIX PUBLIC
+glXGetFBConfigFromVisualSGIX(Display *dpy, XVisualInfo *vis)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -763,7 +759,8 @@ GLXFBConfigSGIX glXGetFBConfigFromVisualSGIX(Display *dpy, XVisualInfo *vis)
 
 /*** GLX_SGIX_pbuffer ***/
 
-GLXPbufferSGIX glXCreateGLXPbufferSGIX(Display *dpy, GLXFBConfigSGIX config, unsigned int width, unsigned int height, int *attrib_list)
+GLXPbufferSGIX PUBLIC
+glXCreateGLXPbufferSGIX(Display *dpy, GLXFBConfigSGIX config, unsigned int width, unsigned int height, int *attrib_list)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -772,7 +769,8 @@ GLXPbufferSGIX glXCreateGLXPbufferSGIX(Display *dpy, GLXFBConfigSGIX config, uns
    return (t->CreateGLXPbufferSGIX)(dpy, config, width, height, attrib_list);
 }
 
-void glXDestroyGLXPbufferSGIX(Display *dpy, GLXPbufferSGIX pbuf)
+void PUBLIC
+glXDestroyGLXPbufferSGIX(Display *dpy, GLXPbufferSGIX pbuf)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -781,7 +779,8 @@ void glXDestroyGLXPbufferSGIX(Display *dpy, GLXPbufferSGIX pbuf)
    (t->DestroyGLXPbufferSGIX)(dpy, pbuf);
 }
 
-int glXQueryGLXPbufferSGIX(Display *dpy, GLXPbufferSGIX pbuf, int attribute, unsigned int *value)
+int PUBLIC
+glXQueryGLXPbufferSGIX(Display *dpy, GLXPbufferSGIX pbuf, int attribute, unsigned int *value)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -790,7 +789,8 @@ int glXQueryGLXPbufferSGIX(Display *dpy, GLXPbufferSGIX pbuf, int attribute, uns
    return (t->QueryGLXPbufferSGIX)(dpy, pbuf, attribute, value);
 }
 
-void glXSelectEventSGIX(Display *dpy, GLXDrawable drawable, unsigned long mask)
+void PUBLIC
+glXSelectEventSGIX(Display *dpy, GLXDrawable drawable, unsigned long mask)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -799,7 +799,8 @@ void glXSelectEventSGIX(Display *dpy, GLXDrawable drawable, unsigned long mask)
    (t->SelectEventSGIX)(dpy, drawable, mask);
 }
 
-void glXGetSelectedEventSGIX(Display *dpy, GLXDrawable drawable, unsigned long *mask)
+void PUBLIC
+glXGetSelectedEventSGIX(Display *dpy, GLXDrawable drawable, unsigned long *mask)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -812,7 +813,8 @@ void glXGetSelectedEventSGIX(Display *dpy, GLXDrawable drawable, unsigned long *
 
 /*** GLX_SGI_cushion ***/
 
-void glXCushionSGI(Display *dpy, Window win, float cushion)
+void PUBLIC
+glXCushionSGI(Display *dpy, Window win, float cushion)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -825,7 +827,8 @@ void glXCushionSGI(Display *dpy, Window win, float cushion)
 
 /*** GLX_SGIX_video_resize ***/
 
-int glXBindChannelToWindowSGIX(Display *dpy, int screen, int channel , Window window)
+int PUBLIC
+glXBindChannelToWindowSGIX(Display *dpy, int screen, int channel , Window window)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -834,7 +837,8 @@ int glXBindChannelToWindowSGIX(Display *dpy, int screen, int channel , Window wi
    return (t->BindChannelToWindowSGIX)(dpy, screen, channel, window);
 }
 
-int glXChannelRectSGIX(Display *dpy, int screen, int channel, int x, int y, int w, int h)
+int PUBLIC
+glXChannelRectSGIX(Display *dpy, int screen, int channel, int x, int y, int w, int h)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -843,7 +847,8 @@ int glXChannelRectSGIX(Display *dpy, int screen, int channel, int x, int y, int 
    return (t->ChannelRectSGIX)(dpy, screen, channel, x, y, w, h);
 }
 
-int glXQueryChannelRectSGIX(Display *dpy, int screen, int channel, int *x, int *y, int *w, int *h)
+int PUBLIC
+glXQueryChannelRectSGIX(Display *dpy, int screen, int channel, int *x, int *y, int *w, int *h)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -852,7 +857,8 @@ int glXQueryChannelRectSGIX(Display *dpy, int screen, int channel, int *x, int *
    return (t->QueryChannelRectSGIX)(dpy, screen, channel, x, y, w, h);
 }
 
-int glXQueryChannelDeltasSGIX(Display *dpy, int screen, int channel, int *dx, int *dy, int *dw, int *dh)
+int PUBLIC
+glXQueryChannelDeltasSGIX(Display *dpy, int screen, int channel, int *dx, int *dy, int *dw, int *dh)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -861,7 +867,8 @@ int glXQueryChannelDeltasSGIX(Display *dpy, int screen, int channel, int *dx, in
    return (t->QueryChannelDeltasSGIX)(dpy, screen, channel, dx, dy, dw, dh);
 }
 
-int glXChannelRectSyncSGIX(Display *dpy, int screen, int channel, GLenum synctype)
+int PUBLIC
+glXChannelRectSyncSGIX(Display *dpy, int screen, int channel, GLenum synctype)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -874,7 +881,8 @@ int glXChannelRectSyncSGIX(Display *dpy, int screen, int channel, GLenum synctyp
 
 #if defined(_DM_BUFFER_H_)
 
-Bool glXAssociateDMPbufferSGIX(Display *dpy, GLXPbufferSGIX pbuffer, DMparams *params, DMbuffer dmbuffer)
+Bool PUBLIC
+glXAssociateDMPbufferSGIX(Display *dpy, GLXPbufferSGIX pbuffer, DMparams *params, DMbuffer dmbuffer)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -888,7 +896,8 @@ Bool glXAssociateDMPbufferSGIX(Display *dpy, GLXPbufferSGIX pbuffer, DMparams *p
 
 /*** GLX_SGIX_swap_group ***/
 
-void glXJoinSwapGroupSGIX(Display *dpy, GLXDrawable drawable, GLXDrawable member)
+void PUBLIC
+glXJoinSwapGroupSGIX(Display *dpy, GLXDrawable drawable, GLXDrawable member)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -900,7 +909,8 @@ void glXJoinSwapGroupSGIX(Display *dpy, GLXDrawable drawable, GLXDrawable member
 
 /*** GLX_SGIX_swap_barrier ***/
 
-void glXBindSwapBarrierSGIX(Display *dpy, GLXDrawable drawable, int barrier)
+void PUBLIC
+glXBindSwapBarrierSGIX(Display *dpy, GLXDrawable drawable, int barrier)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -909,7 +919,8 @@ void glXBindSwapBarrierSGIX(Display *dpy, GLXDrawable drawable, int barrier)
    (*t->BindSwapBarrierSGIX)(dpy, drawable, barrier);
 }
 
-Bool glXQueryMaxSwapBarriersSGIX(Display *dpy, int screen, int *max)
+Bool PUBLIC
+glXQueryMaxSwapBarriersSGIX(Display *dpy, int screen, int *max)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -922,7 +933,8 @@ Bool glXQueryMaxSwapBarriersSGIX(Display *dpy, int screen, int *max)
 
 /*** GLX_SUN_get_transparent_index ***/
 
-Status glXGetTransparentIndexSUN(Display *dpy, Window overlay, Window underlay, long *pTransparent)
+Status PUBLIC
+glXGetTransparentIndexSUN(Display *dpy, Window overlay, Window underlay, long *pTransparent)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -935,7 +947,8 @@ Status glXGetTransparentIndexSUN(Display *dpy, Window overlay, Window underlay, 
 
 /*** GLX_MESA_copy_sub_buffer ***/
 
-void glXCopySubBufferMESA(Display *dpy, GLXDrawable drawable, int x, int y, int width, int height)
+void PUBLIC
+glXCopySubBufferMESA(Display *dpy, GLXDrawable drawable, int x, int y, int width, int height)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -948,7 +961,8 @@ void glXCopySubBufferMESA(Display *dpy, GLXDrawable drawable, int x, int y, int 
 
 /*** GLX_MESA_release_buffers ***/
 
-Bool glXReleaseBuffersMESA(Display *dpy, Window w)
+Bool PUBLIC
+glXReleaseBuffersMESA(Display *dpy, Window w)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -961,7 +975,8 @@ Bool glXReleaseBuffersMESA(Display *dpy, Window w)
 
 /*** GLX_MESA_pixmap_colormap ***/
 
-GLXPixmap glXCreateGLXPixmapMESA(Display *dpy, XVisualInfo *visinfo, Pixmap pixmap, Colormap cmap)
+GLXPixmap PUBLIC
+glXCreateGLXPixmapMESA(Display *dpy, XVisualInfo *visinfo, Pixmap pixmap, Colormap cmap)
 {
    struct _glxapi_table *t;
    GET_DISPATCH(dpy, t);
@@ -974,7 +989,8 @@ GLXPixmap glXCreateGLXPixmapMESA(Display *dpy, XVisualInfo *visinfo, Pixmap pixm
 
 /*** GLX_MESA_set_3dfx_mode ***/
 
-Bool glXSet3DfxModeMESA(int mode)
+Bool PUBLIC
+glXSet3DfxModeMESA(int mode)
 {
    struct _glxapi_table *t;
    Display *dpy = glXGetCurrentDisplay();
@@ -988,7 +1004,7 @@ Bool glXSet3DfxModeMESA(int mode)
 
 /*** GLX_NV_vertex_array_range ***/
 
-void *
+void PUBLIC *
 glXAllocateMemoryNV( GLsizei size,
                      GLfloat readFrequency,
                      GLfloat writeFrequency,
@@ -1003,7 +1019,7 @@ glXAllocateMemoryNV( GLsizei size,
 }
 
 
-void 
+void PUBLIC
 glXFreeMemoryNV( GLvoid *pointer )
 {
    struct _glxapi_table *t;
@@ -1015,9 +1031,11 @@ glXFreeMemoryNV( GLvoid *pointer )
 }
 
 
+
+
 /*** GLX_MESA_agp_offset */
 
-GLuint
+GLuint PUBLIC
 glXGetAGPOffsetMESA( const GLvoid *pointer )
 {
    struct _glxapi_table *t;
@@ -1029,38 +1047,28 @@ glXGetAGPOffsetMESA( const GLvoid *pointer )
 }
 
 
-/*** GLX_ARB_render_Texture ***/
+/*** GLX_MESA_allocate_memory */
 
-Bool
-glXBindTexImageARB( Display *dpy, GLXPbuffer pbuffer, int buffer )
+void *
+glXAllocateMemoryMESA(Display *dpy, int scrn, size_t size,
+                      float readfreq, float writefreq, float priority)
 {
-   struct _glxapi_table *t;
-   GET_DISPATCH(dpy, t);
-   if (!t)
-      return False;
-   return (t->BindTexImageARB)(dpy, pbuffer, buffer);
+   /* dummy */
+   return NULL;
+}
+
+void
+glXFreeMemoryMESA(Display *dpy, int scrn, void *pointer)
+{
+   /* dummy */
 }
 
 
-Bool
-glXReleaseTexImageARB(Display *dpy, GLXPbuffer pbuffer, int buffer )
+GLuint
+glXGetMemoryOffsetMESA(Display *dpy, int scrn, const void *pointer)
 {
-   struct _glxapi_table *t;
-   GET_DISPATCH(dpy, t);
-   if (!t)
-      return False;
-   return (t->ReleaseTexImageARB)(dpy, pbuffer, buffer);
-}
-
-
-Bool
-glXDrawableAttribARB( Display *dpy, GLXDrawable draw, const int *attribList )
-{
-   struct _glxapi_table *t;
-   GET_DISPATCH(dpy, t);
-   if (!t)
-      return False;
-   return (t->DrawableAttribARB)(dpy, draw, attribList);
+   /* dummy */
+   return 0;
 }
 
 
@@ -1107,9 +1115,6 @@ _glxapi_get_extensions(void)
 #endif
 #ifdef GLX_SGIX_pbuffer
       "GLX_SGIX_pbuffer",
-#endif
-#ifdef GLX_ARB_render_texture
-      "GLX_ARB_render_texture",
 #endif
       NULL
    };
@@ -1291,10 +1296,10 @@ static struct name_address_pair GLX_functions[] = {
    /*** GLX_MESA_agp_offset ***/
    { "glXGetAGPOffsetMESA", (__GLXextFuncPtr) glXGetAGPOffsetMESA },
 
-   /*** GLX_ARB_render_texture ***/
-   { "glXBindTexImageARB", (__GLXextFuncPtr) glXBindTexImageARB },
-   { "glXReleaseTexImageARB", (__GLXextFuncPtr) glXReleaseTexImageARB },
-   { "glXDrawableAttribARB", (__GLXextFuncPtr) glXDrawableAttribARB },
+   /*** GLX_MESA_allocate_memory ***/
+   { "glXAllocateMemoryMESA", (__GLXextFuncPtr) glXAllocateMemoryMESA },
+   { "glXFreeMemoryMESA", (__GLXextFuncPtr) glXFreeMemoryMESA },
+   { "glXGetMemoryOffsetMESA", (__GLXextFuncPtr) glXGetMemoryOffsetMESA },
 
    { NULL, NULL }   /* end of list */
 };

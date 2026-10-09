@@ -1,5 +1,9 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/apm/apm_driver.c,v 1.65 2003/10/30 17:36:57 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "apm.h"
 #include "xf86cmap.h"
 #include "shadowfb.h"
@@ -10,14 +14,14 @@
 
 #include "opaque.h"
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 #define VERSION			4000
 #define APM_NAME		"APM"
 #define APM_DRIVER_NAME		"apm"
 #define APM_MAJOR_VERSION       1
 #define APM_MINOR_VERSION       0
-#define APM_PATCHLEVEL          0
+#define APM_PATCHLEVEL          1
 #ifndef PCI_CHIP_AT3D
 #define PCI_CHIP_AT3D	0x643D
 #endif
@@ -54,7 +58,7 @@ static void	ApmProbeDDC(ScrnInfoPtr pScrn, int index);
 int ApmPixmapIndex = -1;
 static unsigned long ApmGeneration = 0;
 
-DriverRec APM = {
+_X_EXPORT DriverRec APM = {
 	VERSION,
 	APM_DRIVER_NAME,
 	ApmIdentify,
@@ -241,7 +245,7 @@ static MODULESETUPPROTO(apmSetup);
  * This is the module init data.
  * Its name has to be the driver name followed by ModuleData.
  */
-XF86ModuleData apmModuleData = { &apmVersRec, apmSetup, NULL };
+_X_EXPORT XF86ModuleData apmModuleData = { &apmVersRec, apmSetup, NULL };
 
 static pointer
 apmSetup(pointer module, pointer opts, int *errmaj, int *errmain)
@@ -1026,7 +1030,7 @@ ApmPreInit(ScrnInfoPtr pScrn, int flags)
 		      pApm->MaxClock = 144000;
 		      break;
 		 case 24:
-		      pApm->MaxClock = 94000; /* Changed from 75000 by Grenié */
+		      pApm->MaxClock = 94000; /* Changed from 75000 by GreniÃ© */
 		      break;
 		 case 32:
 		      pApm->MaxClock = 94500;

@@ -36,6 +36,9 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/s3/s3_driver.c,v 1.19tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -114,7 +117,7 @@ static void S3DisplayPowerManagementSet(ScrnInfoPtr pScrn,
 
 
 
-DriverRec S3 =
+_X_EXPORT DriverRec S3 =
 {
 	S3_VERSION,
 	DRIVER_NAME,
@@ -176,23 +179,11 @@ RamDacSupportedInfoRec S3IBMRamdacs[] = {
 	{ -1 }
 };
 
-#define S3_USEFB
-
-#ifdef S3_USEFB
 static const char *fbSymbols[] = {
     "fbPictureInit",
     "fbScreenInit",
     NULL
 };
-#else
-static const char *cfbSymbols[] = {
-	"cfbScreenInit",
-	"cfb16ScreenInit",
-	"cfb24ScreenInit",
-	"cfb32ScreenInit",
-	NULL
-};
-#endif
 
 static const char *vgaHWSymbols[] = {
         "vgaHWGetHWRec",
@@ -267,7 +258,7 @@ static XF86ModuleVersionInfo S3VersRec = {
 };
 
 
-XF86ModuleData s3ModuleData = { &S3VersRec, S3Setup, NULL };
+_X_EXPORT XF86ModuleData s3ModuleData = { &S3VersRec, S3Setup, NULL };
 
 pointer S3Setup (pointer module, pointer opts, int *errmaj, int *errmin)
 {
@@ -278,11 +269,7 @@ pointer S3Setup (pointer module, pointer opts, int *errmaj, int *errmin)
                 xf86AddDriver(&S3, module, 0);
                 LoaderRefSymLists(vgaHWSymbols,
 				  vbeSymbols, int10Symbols, ramdacSymbols,
-#ifdef S3_USEFB
 				  fbSymbols,
-#else
-				  cfbSymbols,
-#endif
 				  xaaSymbols,
 				  NULL);
                 return (pointer) 1;
@@ -715,7 +702,7 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
 	clockRanges->minClock = 15600;
 	clockRanges->maxClock = pS3->MaxClock;
 	clockRanges->clockIndex = -1;
-	clockRanges->interlaceAllowed = FALSE;	/* not yet */
+	clockRanges->interlaceAllowed = TRUE;	/* not yet */
 	clockRanges->doubleScanAllowed = TRUE;	/* not yet */
 	
         i = xf86ValidateModes(pScrn, pScrn->monitor->Modes,
@@ -746,31 +733,8 @@ static Bool S3PreInit(ScrnInfoPtr pScrn, int flags)
         xf86PrintModes(pScrn);
         xf86SetDpi(pScrn, 0, 0);
  
-#ifdef S3_USEFB
         xf86LoadSubModule(pScrn, "fb");
         xf86LoaderReqSymLists(fbSymbols, NULL);
-#else
-	{
-		switch (pScrn->bitsPerPixel) {
-		case 8:
-		        xf86LoadSubModule(pScrn, "cfb");
-	     		xf86LoaderReqSymbols("cfbScreenInit", NULL);
-			break;
-		case 16:
-		        xf86LoadSubModule(pScrn, "cfb16");
-	     		xf86LoaderReqSymbols("cfb16ScreenInit", NULL);
-			break;
-		case 24:
-		        xf86LoadSubModule(pScrn, "cfb24");
-	     		xf86LoaderReqSymbols("cfb24ScreenInit", NULL);
-			break;
-		case 32:
-		        xf86LoadSubModule(pScrn, "cfb32");
-	     		xf86LoaderReqSymbols("cfb32ScreenInit", NULL);
-			break;
-		}
-	}
-#endif
 
 	if (!xf86LoadSubModule(pScrn, "xaa"))
 		return FALSE;
@@ -819,45 +783,10 @@ static Bool S3ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
         
         miSetPixmapDepths ();
 
-#ifdef S3_USEFB
         if (!fbScreenInit(pScreen, pS3->FBBase, pScrn->virtualX,
                           pScrn->virtualY, pScrn->xDpi, pScrn->yDpi,
                           pScrn->displayWidth, pScrn->bitsPerPixel))
                 return FALSE;
-#else
-	{
-		int ret;
-
-		switch(pScrn->bitsPerPixel) {
-		case 8:
-			ret = cfbScreenInit(pScreen, pS3->FBBase,
-				pScrn->virtualX, pScrn->virtualY,
-				pScrn->xDpi, pScrn->yDpi,
-				pScrn->displayWidth);
-			break;
-		case 16:
-			ret = cfb16ScreenInit(pScreen, pS3->FBBase,
-				pScrn->virtualX, pScrn->virtualY,
-				pScrn->xDpi, pScrn->yDpi,
-				pScrn->displayWidth);
-			break;
-		case 24:
-			ret = cfb24ScreenInit(pScreen, pS3->FBBase,
-				pScrn->virtualX, pScrn->virtualY,
-				pScrn->xDpi, pScrn->yDpi,
-				pScrn->displayWidth);
-			break;
-		case 32:
-			ret = cfb32ScreenInit(pScreen, pS3->FBBase,
-				pScrn->virtualX, pScrn->virtualY,
-				pScrn->xDpi, pScrn->yDpi,
-				pScrn->displayWidth);
-			break;
-		}
-		if (!ret)
-			return FALSE;
-	}
-#endif
         
         xf86SetBlackWhitePixels(pScreen);
                         
@@ -876,9 +805,7 @@ static Bool S3ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc,
                         }
                 } 
         }
-#ifdef S3_USEFB
 	fbPictureInit (pScreen, 0, 0);
-#endif
 	S3DGAInit(pScreen);
 
         miInitializeBackingStore(pScreen);
@@ -1152,6 +1079,7 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
         vgaRegPtr pVga = &hwp->ModeReg;
         int vgaCRIndex = pS3->vgaCRIndex, vgaCRReg = pS3->vgaCRReg;
 	int vgaIOBase = hwp->IOBase;
+	int interlacedived = mode->Flags & V_INTERLACE ? 1 : 0;
 	int r, n, m;
 	unsigned char tmp;
 
@@ -1183,6 +1111,15 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 			mode->CrtcHSyncEnd <<= -pS3->pixMuxShift;
 			mode->CrtcHSkew <<= -pS3->pixMuxShift;
 		}
+	}
+
+	/* This shouldn't be needed -- they should be set by vgaHWInit() */
+	if (!mode->CrtcVAdjusted) {
+		mode->CrtcVTotal >>= interlacedived;
+		mode->CrtcVDisplay >>= interlacedived;
+		mode->CrtcVSyncStart >>= interlacedived;
+		mode->CrtcVSyncEnd >>= interlacedived;
+		mode->CrtcVAdjusted = TRUE;
 	}
 
         if (!vgaHWInit(pScrn, mode))
@@ -1463,9 +1400,15 @@ static Bool S3ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		outb(vgaCRReg, new->cr62);
 	}
 
-	outb(vgaCRIndex, 0x42);
-	new->cr42 = inb(vgaCRReg) & ~0x20;
-	outb(vgaCRReg, new->cr42);
+	if (mode->Flags & V_INTERLACE) {
+		outb(vgaCRIndex, 0x42);
+		new->cr42 = inb(vgaCRReg) | 0x20;
+		outb(vgaCRReg, new->cr42);
+	} else {
+		outb(vgaCRIndex, 0x42);
+		new->cr42 = inb(vgaCRReg) & ~0x20;
+		outb(vgaCRReg, new->cr42);
+	}
 
 	if (pS3->Chipset == PCI_CHIP_968) {
 		unsigned char a;

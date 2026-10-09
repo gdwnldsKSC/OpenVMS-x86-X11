@@ -27,8 +27,15 @@ from The Open Group.
 
 /* $Xorg: xpstubs.c,v 1.5 2001/03/08 17:52:08 pookie Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "misc.h"
-#include "font.h"
+#include <X11/fonts/font.h>
+#ifdef XPRINT
+#include "DiPrint.h"
+#endif
 
 Bool
 XpClientIsBitmapClient(
@@ -44,11 +51,27 @@ XpClientIsPrintClient(
 {
     return FALSE;
 }
+#ifdef XPRINT
 int
-XprintOptions(
+PrinterOptions(
     int argc,
     char **argv,
     int i)
 {
     return i;
 }
+void
+PrinterInitOutput(
+     ScreenInfo *pScreenInfo,
+     int argc,
+     char **argv)
+{
+}
+void PrinterUseMsg(void)
+{
+}
+void PrinterInitGlobals(void)
+{
+}
+#endif /* XPRINT */
+

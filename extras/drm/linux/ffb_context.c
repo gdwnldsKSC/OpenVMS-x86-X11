@@ -1,4 +1,4 @@
-/* $Id: ffb_context.c,v 1.1 2004/04/22 11:31:55 airlied Exp $
+/* $Id: ffb_context.c,v 1.1.1.2 2005/06/15 18:31:50 idr Exp $
  * ffb_context.c: Creator/Creator3D DRI/DRM context switching.
  *
  * Copyright (C) 2000 David S. Miller (davem@redhat.com)
@@ -388,7 +388,7 @@ int DRM(resctx)(struct inode *inode, struct file *filp, unsigned int cmd,
 	int		i;
 
 	DRM_DEBUG("%d\n", DRM_RESERVED_CONTEXTS);
-	if (copy_from_user(&res, (drm_ctx_res_t *)arg, sizeof(res)))
+	if (copy_from_user(&res, (drm_ctx_res_t __user *)arg, sizeof(res)))
 		return -EFAULT;
 	if (res.count >= DRM_RESERVED_CONTEXTS) {
 		memset(&ctx, 0, sizeof(ctx));
@@ -401,7 +401,7 @@ int DRM(resctx)(struct inode *inode, struct file *filp, unsigned int cmd,
 		}
 	}
 	res.count = DRM_RESERVED_CONTEXTS;
-	if (copy_to_user((drm_ctx_res_t *)arg, &res, sizeof(res)))
+	if (copy_to_user((drm_ctx_res_t __user *)arg, &res, sizeof(res)))
 		return -EFAULT;
 	return 0;
 }
@@ -415,7 +415,7 @@ int DRM(addctx)(struct inode *inode, struct file *filp, unsigned int cmd,
 	drm_ctx_t	ctx;
 	int idx;
 
-	if (copy_from_user(&ctx, (drm_ctx_t *)arg, sizeof(ctx)))
+	if (copy_from_user(&ctx, (drm_ctx_t __user *)arg, sizeof(ctx)))
 		return -EFAULT;
 	idx = DRM(alloc_queue)(dev, (ctx.flags & _DRM_CONTEXT_2DONLY));
 	if (idx < 0)
@@ -423,7 +423,7 @@ int DRM(addctx)(struct inode *inode, struct file *filp, unsigned int cmd,
 
 	DRM_DEBUG("%d\n", ctx.handle);
 	ctx.handle = idx;
-	if (copy_to_user((drm_ctx_t *)arg, &ctx, sizeof(ctx)))
+	if (copy_to_user((drm_ctx_t __user *)arg, &ctx, sizeof(ctx)))
 		return -EFAULT;
 	return 0;
 }
@@ -438,7 +438,7 @@ int DRM(modctx)(struct inode *inode, struct file *filp, unsigned int cmd,
 	drm_ctx_t ctx;
 	int idx;
 
-	if (copy_from_user(&ctx, (drm_ctx_t*)arg, sizeof(ctx)))
+	if (copy_from_user(&ctx, (drm_ctx_t __user *)arg, sizeof(ctx)))
 		return -EFAULT;
 
 	idx = ctx.handle;
@@ -467,7 +467,7 @@ int DRM(getctx)(struct inode *inode, struct file *filp, unsigned int cmd,
 	drm_ctx_t ctx;
 	int idx;
 
-	if (copy_from_user(&ctx, (drm_ctx_t*)arg, sizeof(ctx)))
+	if (copy_from_user(&ctx, (drm_ctx_t __user *)arg, sizeof(ctx)))
 		return -EFAULT;
 
 	idx = ctx.handle;
@@ -483,7 +483,7 @@ int DRM(getctx)(struct inode *inode, struct file *filp, unsigned int cmd,
 	else
 		ctx.flags = 0;
 
-	if (copy_to_user((drm_ctx_t*)arg, &ctx, sizeof(ctx)))
+	if (copy_to_user((drm_ctx_t __user *)arg, &ctx, sizeof(ctx)))
 		return -EFAULT;
 
 	return 0;
@@ -496,7 +496,7 @@ int DRM(switchctx)(struct inode *inode, struct file *filp, unsigned int cmd,
 	drm_device_t	*dev	= priv->dev;
 	drm_ctx_t	ctx;
 
-	if (copy_from_user(&ctx, (drm_ctx_t *)arg, sizeof(ctx)))
+	if (copy_from_user(&ctx, (drm_ctx_t __user *)arg, sizeof(ctx)))
 		return -EFAULT;
 	DRM_DEBUG("%d\n", ctx.handle);
 	return DRM(context_switch)(dev, dev->last_context, ctx.handle);
@@ -507,7 +507,7 @@ int DRM(newctx)(struct inode *inode, struct file *filp, unsigned int cmd,
 {
 	drm_ctx_t	ctx;
 
-	if (copy_from_user(&ctx, (drm_ctx_t *)arg, sizeof(ctx)))
+	if (copy_from_user(&ctx, (drm_ctx_t __user *)arg, sizeof(ctx)))
 		return -EFAULT;
 	DRM_DEBUG("%d\n", ctx.handle);
 
@@ -523,7 +523,7 @@ int DRM(rmctx)(struct inode *inode, struct file *filp, unsigned int cmd,
 	ffb_dev_priv_t	*fpriv	= (ffb_dev_priv_t *) dev->dev_private;
 	int idx;
 
-	if (copy_from_user(&ctx, (drm_ctx_t *)arg, sizeof(ctx)))
+	if (copy_from_user(&ctx, (drm_ctx_t __user *)arg, sizeof(ctx)))
 		return -EFAULT;
 	DRM_DEBUG("%d\n", ctx.handle);
 
@@ -536,4 +536,81 @@ int DRM(rmctx)(struct inode *inode, struct file *filp, unsigned int cmd,
 		fpriv->hw_state[idx] = NULL;
 	}
 	return 0;
+}
+
+static void ffb_driver_release(drm_device_t *dev)
+{
+	ffb_dev_priv_t *fpriv = (ffb_dev_priv_t *) dev->dev_private;
+	int context = _DRM_LOCKING_CONTEXT(dev->lock.hw_lock->lock);
+	int idx;
+
+	idx = context - 1;
+	if (fpriv &&
+	    context != DRM_KERNEL_CONTEXT &&
+	    fpriv->hw_state[idx] != NULL) {
+		kfree(fpriv->hw_state[idx]);
+		fpriv->hw_state[idx] = NULL;
+	}	
+}
+
+static int ffb_driver_presetup(drm_device_t *dev)
+{
+	int ret;
+	ret = ffb_presetup(dev);
+	if (_ret != 0) return ret;
+}
+
+static void ffb_driver_pretakedown(drm_device_t *dev)
+{
+	if (dev->dev_private) kfree(dev->dev_private);
+}
+
+static void ffb_driver_postcleanup(drm_device_t *dev)
+{
+	if (ffb_position != NULL) kfree(ffb_position);
+}
+
+static int ffb_driver_kernel_context_switch_unlock(struct drm_device *dev)
+{
+	dev->lock.filp = 0;
+	{
+		__volatile__ unsigned int *plock = &dev->lock.hw_lock->lock;
+		unsigned int old, new, prev, ctx;
+		
+		ctx = lock.context;
+		do {
+			old  = *plock;
+			new  = ctx;
+			prev = cmpxchg(plock, old, new);
+		} while (prev != old);
+	}
+	wake_up_interruptible(&dev->lock.lock_queue);
+}
+
+static unsigned long ffb_driver_get_map_ofs(drm_map_t *map)
+{
+	return (map->offset & 0xffffffff);
+}
+
+static unsigned long ffb_driver_get_reg_ofs(drm_device_t *dev)
+{
+	ffb_dev_priv_t *ffb_priv = (ffb_dev_priv_t *)dev->dev_private;
+
+	if (ffb_priv)
+		return ffb_priv->card_phys_base;
+
+	return 0;
+}
+
+static void ffb_driver_register_fns(drm_device_t *dev)
+{
+	DRM(fops).get_unmapped_area = ffb_get_unmapped_area;
+	dev->fn_tbl.release = ffb_driver_release;
+	dev->fn_tbl.presetup = ffb_driver_presetup;
+	dev->fn_tbl.pretakedown = ffb_driver_pretakedown;
+	dev->fn_tbl.postcleanup = ffb_driver_postcleanup;
+	dev->fn_tbl.kernel_context_switch = ffb_context_switch;
+	dev->fn_tbl.kernel_context_switch_unlock = ffb_driver_kernel_context_switch_unlock;
+	dev->fn_tbl.get_map_ofs = ffb_driver_get_map_ofs;
+	dev->fn_tbl.get_reg_ofs = ffb_driver_get_reg_ofs;
 }

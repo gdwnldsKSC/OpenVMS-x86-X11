@@ -103,12 +103,10 @@ XCOMM operating system:  OSName
 
 #ifdef Mc68000Architecture
 #define UnalignedReferencesAllowed YES  /* if arbitrary deref is okay */
-#define BuildPexExt		NO		
 #define XlunaServer 		YES
 #endif
 
 #ifdef Mc88000Architecture
-#define BuildPexExt		NO
 #define XlunaServer 		YES
 #endif
 

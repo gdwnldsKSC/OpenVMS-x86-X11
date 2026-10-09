@@ -28,14 +28,18 @@ from The Open Group.
 */
 /* $XFree86: xc/programs/Xserver/hw/vfb/InitOutput.c,v 3.25 2003/11/15 04:01:56 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #if defined(WIN32)
 #include <X11/Xwinsock.h>
 #endif
 #include <stdio.h>
-#include "X11/X.h"
+#include <X11/X.h>
 #define NEED_EVENTS
-#include "X11/Xproto.h"
-#include "X11/Xos.h"
+#include <X11/Xproto.h>
+#include <X11/Xos.h>
 #include "scrnintstr.h"
 #include "servermd.h"
 #define PSZ 8
@@ -66,13 +70,13 @@ from The Open Group.
 #include "dix.h"
 #include "miline.h"
 
-#define VFB_DEFAULT_WIDTH  1280
-#define VFB_DEFAULT_HEIGHT 1024
-#define VFB_DEFAULT_DEPTH  8
-#define VFB_DEFAULT_WHITEPIXEL 1
-#define VFB_DEFAULT_BLACKPIXEL 0
-#define VFB_DEFAULT_LINEBIAS 0
-#define XWD_WINDOW_NAME_LEN 60
+#define VFB_DEFAULT_WIDTH      1280
+#define VFB_DEFAULT_HEIGHT     1024
+#define VFB_DEFAULT_DEPTH         8
+#define VFB_DEFAULT_WHITEPIXEL    1
+#define VFB_DEFAULT_BLACKPIXEL    0
+#define VFB_DEFAULT_LINEBIAS      0
+#define XWD_WINDOW_NAME_LEN      60
 
 typedef struct
 {
@@ -855,9 +859,15 @@ static Bool
 vfbScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
 {
     vfbScreenInfoPtr pvfb = &vfbScreens[index];
-    int dpix = 100, dpiy = 100;
+    int dpix = monitorResolution, dpiy = monitorResolution;
     int ret;
     char *pbits;
+    
+    if (dpix == 0)
+      dpix = 100;
+
+    if (dpiy == 0)
+      dpiy = 100;
 
     pvfb->paddedBytesWidth = PixmapBytePad(pvfb->width, pvfb->depth);
     pvfb->bitsPerPixel = vfbBitsPerPixel(pvfb->depth);
@@ -879,8 +889,22 @@ vfbScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
 				   (1 << PseudoColor) |
 				   (1 << TrueColor) |
 				   (1 << DirectColor)),
-				  8, PseudoColor, 0x07, 0x38, 0xc0);
+				  8, PseudoColor, 0, 0, 0);
 	break;
+#if 0
+    /* 12bit PseudoColor with 12bit color resolution
+     * (to simulate SGI hardware and the 12bit PseudoColor emulation layer) */
+    case 12:
+	miSetVisualTypesAndMasks (12,
+				  ((1 << StaticGray) |
+				   (1 << GrayScale) |
+				   (1 << StaticColor) |
+				   (1 << PseudoColor) |
+				   (1 << TrueColor) |
+				   (1 << DirectColor)),
+				  12, PseudoColor, 0, 0, 0);
+	break;
+#endif
     case 15:
 	miSetVisualTypesAndMasks (15,
 				  ((1 << TrueColor) |
@@ -899,6 +923,16 @@ vfbScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
 				   (1 << DirectColor)),
 				  8, TrueColor, 0xff0000, 0x00ff00, 0x0000ff);
 	break;
+#if 0
+    /* 30bit TrueColor (to simulate Sun's XVR-1000/-4000 high quality
+     * framebuffer series) */
+    case 30:
+	miSetVisualTypesAndMasks (30,
+				  ((1 << TrueColor) |
+				   (1 << DirectColor)),
+				  10, TrueColor, 0x3ff00000, 0x000ffc00, 0x000003ff);
+	break;
+#endif
     }
 	
     ret = fbScreenInit(pScreen, pbits, pvfb->width, pvfb->height,
@@ -910,7 +944,7 @@ vfbScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
 
     if (!ret) return FALSE;
 
-    /* miInitializeBackingStore(pScreen); */
+    miInitializeBackingStore(pScreen);
 
     /*
      * Circumvent the backing store that was just initialised.  This amounts
@@ -962,9 +996,15 @@ InitOutput(ScreenInfo *screenInfo, int argc, char **argv)
 	vfbPixmapDepths[1] = TRUE;
 	vfbPixmapDepths[4] = TRUE;
 	vfbPixmapDepths[8] = TRUE;
+#if 0
+	vfbPixmapDepths[12] = TRUE;
+#endif
 /*	vfbPixmapDepths[15] = TRUE; */
 	vfbPixmapDepths[16] = TRUE;
 	vfbPixmapDepths[24] = TRUE;
+#if 0
+	vfbPixmapDepths[30] = TRUE;
+#endif
 	vfbPixmapDepths[32] = TRUE;
     }
 

@@ -32,9 +32,29 @@ from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
-#include "fntfilst.h"
-#include "bitmap.h"
-#include "fontutil.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+/*
+ * Translate monolithic #defines to modular definitions
+ */
+
+#ifdef PCFFORMAT
+#define XFONT_PCFFORMAT 1
+#endif
+
+#ifdef SNFFORMAT
+#define XFONT_SNFFORMAT 1
+#endif
+
+#ifdef BDFFORMAT
+#define XFONT_BDFFORMAT 1
+#endif
+
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/bitmap.h>
+#include <X11/fonts/fontutil.h>
 #ifndef FONTMODULE
 #ifdef _XOPEN_SOURCE
 #include <math.h>
@@ -85,28 +105,28 @@ typedef FontPtr (*ScaleFunc) ( FontPtr /* pf */,
 /* These next two arrays must be kept in step with the renderer array */
 ScaleFunc scale[] =
 {
-#ifdef	PCFFORMAT
+#if XFONT_PCFFORMAT
     BitmapScaleBitmaps,
     BitmapScaleBitmaps,
 #ifdef X_GZIP_FONT_COMPRESSION
     BitmapScaleBitmaps,
 #endif
 #endif
-#ifdef	SNFFORMAT
+#if XFONT_SNFFORMAT
     BitmapScaleBitmaps,
     BitmapScaleBitmaps,
 #ifdef X_GZIP_FONT_COMPRESSION
     BitmapScaleBitmaps,
 #endif
 #endif
-#ifdef	BDFFORMAT
+#if XFONT_BDFFORMAT
     BitmapScaleBitmaps,
     BitmapScaleBitmaps,
 #ifdef X_GZIP_FONT_COMPRESSION
     BitmapScaleBitmaps,
 #endif
 #endif
-#ifdef	PCFFORMAT
+#if XFONT_PCFFORMAT
     PrinterScaleBitmaps,
 #endif
 };
@@ -135,22 +155,30 @@ typedef FontEntryPtr (*FindToScale) (FontPathElementPtr fpe,
 				     FontPathElementPtr *fpep);
 FindToScale find_scale[] =
 {
+#if XFONT_PCFFORMAT
     FindBestToScale,
     FindBestToScale,
 #ifdef X_GZIP_FONT_COMPRESSION
     FindBestToScale,
 #endif
+#endif
+#if XFONT_SNFFORMAT
     FindBestToScale,
     FindBestToScale,
 #ifdef X_GZIP_FONT_COMPRESSION
     FindBestToScale,
 #endif
+#endif
+#if XFONT_BDFFORMAT
     FindBestToScale,
     FindBestToScale,
 #ifdef X_GZIP_FONT_COMPRESSION
     FindBestToScale,
 #endif
+#endif
+#if XFONT_PCFFORMAT
     FindPmfToScale,
+#endif
 };
 
 static unsigned long bitscaleGeneration = 0;	/* initialization flag */

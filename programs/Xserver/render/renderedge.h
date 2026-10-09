@@ -1,5 +1,5 @@
 /*
- * $Id: renderedge.h,v 1.1 2004/07/29 08:10:15 keithp Exp $
+ * $Id: renderedge.h,v 1.4 2005/08/24 11:18:33 daniels Exp $
  *
  * Copyright © 2004 Keith Packard
  *

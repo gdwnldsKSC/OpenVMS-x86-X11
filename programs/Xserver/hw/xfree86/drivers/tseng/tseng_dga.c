@@ -24,6 +24,10 @@
  *           by: Rainer Keller, <Rainer.Keller@studmail.uni-stuttgart.de>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "tseng.h"
 #include "dgaproc.h"
 

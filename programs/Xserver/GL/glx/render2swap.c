@@ -35,12 +35,15 @@
 */
 
 /* #define NEED_REPLIES */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "glxserver.h"
 #include "unpack.h"
 #include "g_disptab.h"
 #include "g_disptab_EXT.h"
 
-extern GLint __glEvalComputeK(GLenum target);
 
 void __glXDispSwap_Map1f(GLbyte *pc)
 {
@@ -61,7 +64,7 @@ void __glXDispSwap_Map1f(GLbyte *pc)
     u1 = *(GLfloat *)(pc + 4);
     u2 = *(GLfloat *)(pc + 8);
     points = (GLfloat *)(pc + 16);
-    k = __glEvalComputeK(target);
+    k = __glMap1f_size(target);
 
     if (order <= 0 || k < 0) {
 	/* Erroneous command. */
@@ -100,7 +103,7 @@ void __glXDispSwap_Map2f(GLbyte *pc)
     v2 = *(GLfloat *)(pc + 20);
     points = (GLfloat *)(pc + 28);
 
-    k = __glEvalComputeK(target);
+    k = __glMap2f_size(target);
     ustride = vorder * k;
     vstride = k;
 
@@ -130,7 +133,7 @@ void __glXDispSwap_Map1d(GLbyte *pc)
 
     target = *(GLenum*) (pc + 16);
     order = *(GLint*) (pc + 20);
-    k = __glEvalComputeK(target);
+    k = __glMap1d_size(target);
     if (order <= 0 || k < 0) {
 	/* Erroneous command. */
 	compsize = 0;
@@ -178,7 +181,7 @@ void __glXDispSwap_Map2d(GLbyte *pc)
     target = *(GLenum *)(pc + 32);
     uorder = *(GLint *)(pc + 36);
     vorder = *(GLint *)(pc + 40);
-    k = __glEvalComputeK(target);
+    k = __glMap2d_size(target);
     if (vorder <= 0 || uorder <= 0 || k < 0) {
 	/* Erroneous command. */
 	compsize = 0;

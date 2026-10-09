@@ -1,4 +1,5 @@
 .\" $Xorg: XtExtEvDis.man,v 1.3 2000/08/17 19:42:00 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtExtEvDis.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright (c) 1993, 1994  X Consortium
 .\" 
@@ -133,11 +134,11 @@ XtRegisterExtensionSelector, XtSetEventDispatcher, XtDispatchEventToWidget
 \- extension event handling
 .SH SYNTAX
 .HP
-void XtInsertEventTypeHandler(Widget \fIwdget\fP, int \fIevent_type\fP,
+void XtInsertEventTypeHandler(Widget \fIwidget\fP, int \fIevent_type\fP,
 XtPointer \fIselect_data\fP, XtEventHandler \fIproc\fP, XtPointer
 \fIclient_data\fP, XtListPosition \fIposition\fP); 
 .HP
-void XtRemoveEventTypeHandler(Widget \fIwdget\fP, int \fIevent_type\fP,
+void XtRemoveEventTypeHandler(Widget \fIwidget\fP, int \fIevent_type\fP,
 XtPointer \fIselect_data\fP, XtEventHandler \fIproc\fP, XtPointer
 \fIclient_data\fP); 
 .HP
@@ -173,7 +174,7 @@ Specifies a pointer to the event to be dispatched.
 .SH DESCRIPTION
 The
 .ZN XtInsertEventTypeHandler
-function registeres a procedure with the dispatch mechanism that is to
+function registers a procedure with the dispatch mechanism that is to
 be called when an event that matches the specified \fIevent_type\fP is
 dispatched to the specified \fIwidget\fP.
 .LP
@@ -247,9 +248,9 @@ previous call for the same display in any other way, an error results.
 .LP
 The
 .ZN XtSetEventDispatcher
-function registes the event dispatcher procedure specified by \fIproc\fP
-for event swith the type \fIevent_type\fP. The previously registered
-dispatcher (or the default dispatcher if there was no previousl registered
+function registers the event dispatcher procedure specified by \fIproc\fP
+for events with the type \fIevent_type\fP. The previously registered
+dispatcher (or the default dispatcher if there was no previously registered
 dispatcher) is returned. If \fIproc\fP is NULL, the default procedure is
 restored for the specified type.
 .LP

@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/lib/font/Type1/scanfont.c,v 1.2 2004/04/23 18:44:09 eich Exp $ */
+/* $XdotOrg: xc/lib/font/Type1/scanfont.c,v 1.5 2005/07/09 23:30:06 keithp Exp $ */
 /* $Xorg: scanfont.c,v 1.3 2000/08/17 19:46:32 cpqbld Exp $ */
 /* Copyright International Business Machines,Corp. 1991
  * All Rights Reserved
@@ -48,6 +48,13 @@
  */
 /* $XFree86: xc/lib/font/Type1/scanfont.c,v 1.16 2003/05/27 22:26:46 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
 #ifndef FONTMODULE
 #include <string.h>
 #else
@@ -58,7 +65,7 @@
 #include "t1stdio.h"
 #include "util.h"
 #include "token.h"
-#ifdef BUILDCID
+#if XFONT_CID
 #include "range.h"
 #endif
 #include "objects.h"
@@ -66,7 +73,7 @@
 #include "fontfcn.h"
 #include "blues.h"
  
-#ifdef BUILDCID
+#if XFONT_CID
 #define CID_BUFSIZE 80
 
 extern psfont *FDArrayP;
@@ -622,7 +629,7 @@ getEncoding(psobj *arrayP)
   return (SCAN_ERROR);
 }
 /***================================================================***/
-#ifdef BUILDCID
+#if XFONT_CID
 static int 
 getFDArray(psobj *arrayP)
 {
@@ -935,7 +942,7 @@ BuildCharStrings(psfont *FontP)
  
 }
 /***================================================================***/
-#ifdef BUILDCID
+#if XFONT_CID
 /***================================================================***/
 /*
  *   BuildCIDFontInfo Dictionary
@@ -1078,7 +1085,7 @@ BuildFontInfo(psfont *fontP)
   objFormatReal(&(dictP[UNDERLINETHICKNESS].value),0.0);
   return(SCAN_OK);
 }
-#ifdef BUILDCID
+#if XFONT_CID
 /***================================================================***/
 /*
  *   BuildCIDType1Private Dictionary
@@ -1540,7 +1547,7 @@ FindDictValue(psdict *dictP)
          if ( V != SCAN_OK ) return(V);
          break;
        case OBJ_ARRAY:
-#ifdef BUILDCID
+#if XFONT_CID
          if (0 == strncmp(tokenStartP,"FDArray",7))
              V = getFDArray(&(dictP[N].value));
          else
@@ -1604,7 +1611,7 @@ FindDictValue(psdict *dictP)
 }
 /***================================================================***/
 
-#ifdef BUILDCID
+#if XFONT_CID
 /*
  * -------------------------------------------------------------------
  *  Scan the next token and convert it into an object

@@ -63,9 +63,14 @@ SOFTWARE.
 #endif
 
 #define SEG_BUFF_SIZE		128
+#ifdef NO_I18N
 #define ASCII_TIME_BUFLEN	32	/* big enough for 26 plus slop */
-
 #define STRFTIME_BUFF_SIZE      100     /* buffer for "strftime" option */
+#else
+#define STRFTIME_BUFF_SIZE	256	/* should handle any locale */
+#endif
+
+
 
 /* New fields for the clock widget instance record */
 typedef struct {
@@ -105,7 +110,11 @@ typedef struct {
 	 XPoint	*hour, *sec;
 	 struct tm  otm ;
 	 XtIntervalId interval_id;
-	 char prev_time_string[ASCII_TIME_BUFLEN];
+	 char prev_time_string[STRFTIME_BUFF_SIZE];
+#ifndef NO_I18N
+    	 XFontSet fontSet;     /* font set for localized text */
+	 Boolean	utf8;
+#endif
 #ifdef XRENDER
 	 XftColor	fg_color;
 	 XftColor	hour_color;

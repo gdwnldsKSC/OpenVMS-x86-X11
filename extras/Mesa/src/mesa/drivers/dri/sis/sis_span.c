@@ -43,6 +43,8 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define LOCAL_VARS							\
    sisContextPtr smesa = SIS_CONTEXT(ctx);				\
+   __DRIdrawablePrivate *dPriv = smesa->driDrawable;			\
+   GLuint pitch = smesa->drawPitch;					\
    char *buf = (char *)(smesa->FbBase + smesa->drawOffset);		\
    char *read_buf = (char *)(smesa->FbBase + smesa->readOffset);	\
    GLuint p;								\
@@ -50,103 +52,42 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define LOCAL_DEPTH_VARS						\
    sisContextPtr smesa = SIS_CONTEXT(ctx);				\
+   __DRIdrawablePrivate *dPriv = smesa->driDrawable;			\
    char *buf = smesa->depthbuffer;					\
 
 #define LOCAL_STENCIL_VARS LOCAL_DEPTH_VARS 
 
-#define CLIPPIXEL(_x,_y) (_x >= minx && _x < maxx && \
-			  _y >= miny && _y < maxy)
-
-#define CLIPSPAN( _x, _y, _n, _x1, _n1, _i )				\
-   if ( _y < miny || _y >= maxy ) {					\
-      _n1 = 0, _x1 = x;							\
-   } else {								\
-      _n1 = _n;								\
-      _x1 = _x;								\
-      if ( _x1 < minx ) _i += (minx-_x1), n1 -= (minx-_x1), _x1 = minx; \
-      if ( _x1 + _n1 >= maxx ) n1 -= (_x1 + n1 - maxx);		        \
-   }
-
 #define HW_LOCK() do {} while(0);
-
-#define HW_CLIPLOOP()							\
-   do {									\
-      __DRIdrawablePrivate *dPriv = smesa->driDrawable;			\
-      int _nc = dPriv->numClipRects;					\
-									\
-      while ( _nc-- ) {							\
-	 int minx = dPriv->pClipRects[_nc].x1 - dPriv->x;		\
-	 int miny = dPriv->pClipRects[_nc].y1 - dPriv->y;		\
-	 int maxx = dPriv->pClipRects[_nc].x2 - dPriv->x;		\
-	 int maxy = dPriv->pClipRects[_nc].y2 - dPriv->y;
-
-#define HW_ENDCLIPLOOP()						\
-      }									\
-   } while (0)
 
 #define HW_UNLOCK() do {} while(0);
 
 /* RGB565 */
-#define INIT_MONO_PIXEL(p, color) \
-  p = SISPACKCOLOR565( color[0], color[1], color[2] )
+#define SPANTMP_PIXEL_FMT GL_RGB
+#define SPANTMP_PIXEL_TYPE GL_UNSIGNED_SHORT_5_6_5
 
-#define WRITE_RGBA( _x, _y, r, g, b, a )				\
-   *(GLushort *)(buf + _x*2 + _y*smesa->drawPitch) =			\
-					     (((r & 0xf8) << 8) |	\
-					     ((g & 0xfc) << 3) |	\
-					     (b >> 3))
-
-#define WRITE_PIXEL( _x, _y, p )  \
-   *(GLushort *)(buf + _x*2 + _y*smesa->drawPitch) = p
-
-#define READ_RGBA( rgba, _x, _y )			\
-do {							\
-   GLushort p = *(GLushort *)(read_buf + _x*2 + _y*smesa->readPitch);	\
-   rgba[0] = (p & 0xf800) >> 8;				\
-   rgba[1] = (p & 0x07e0) >> 3;			        \
-   rgba[2] = (p & 0x001f) << 3;			        \
-   rgba[3] = 0xff;					\
-} while(0)
-
-#define TAG(x) sis##x##_565
-#include "spantmp.h"
+#define TAG(x)    sis##x##_RGB565
+#define TAG2(x,y) sis##x##_RGB565##y
+#include "spantmp2.h"
 
 
 /* ARGB8888 */
-#undef INIT_MONO_PIXEL
-#define INIT_MONO_PIXEL(p, color) \
-  p = SISPACKCOLOR8888( color[0], color[1], color[2], color[3] )
+/* FIXME the old code always read back alpha as 0xff, i.e. fully opaque.
+   Was there a reason to do so ? If so that'll won't work with that template... */
+#define SPANTMP_PIXEL_FMT GL_BGRA
+#define SPANTMP_PIXEL_TYPE GL_UNSIGNED_INT_8_8_8_8_REV
 
-#define WRITE_RGBA( _x, _y, r, g, b, a )			\
-   *(GLuint *)(buf + _x*4 + _y*smesa->drawPitch) =		\
-					   (((a) << 24) |	\
-					   ((r) << 16) |	\
-					   ((g) << 8) |		\
-					   ((b)))
-
-#define WRITE_PIXEL( _x, _y, p )  \
-   *(GLuint *)(buf + _x*4 + _y*smesa->drawPitch)  = p
-
-#define READ_RGBA( rgba, _x, _y )			\
-do {							\
-   GLuint p = *(GLuint *)(read_buf + _x*4 + _y*smesa->readPitch);	\
-   rgba[0] = (p >> 16) & 0xff;				\
-   rgba[1] = (p >> 8) & 0xff;				\
-   rgba[2] = (p >> 0) & 0xff;				\
-   rgba[3] = 0xff;					\
-} while(0)
-
-#define TAG(x) sis##x##_8888
-#include "spantmp.h"
+#define TAG(x)    sis##x##_ARGB8888
+#define TAG2(x,y) sis##x##_ARGB8888##y
+#include "spantmp2.h"
 
 
 /* 16 bit depthbuffer functions.
  */
 #define WRITE_DEPTH( _x, _y, d )	\
-   *(GLushort *)(buf + _x*2 + _y*smesa->depthPitch) = d;
+   *(GLushort *)(buf + (_x)*2 + (_y)*smesa->depthPitch) = d;
 
 #define READ_DEPTH( d, _x, _y )		\
-   d = *(GLushort *)(buf + _x*2 + _y*smesa->depthPitch);
+   d = *(GLushort *)(buf + (_x)*2 + (_y)*smesa->depthPitch);
 
 #define TAG(x) sis##x##_16
 #include "depthtmp.h"
@@ -155,10 +96,10 @@ do {							\
 /* 32 bit depthbuffer functions.
  */
 #define WRITE_DEPTH( _x, _y, d )	\
-   *(GLuint *)(buf + _x*4 + _y*smesa->depthPitch) = d;
+   *(GLuint *)(buf + (_x)*4 + (_y)*smesa->depthPitch) = d;
 
 #define READ_DEPTH( d, _x, _y )		\
-   d = *(GLuint *)(buf + _x*4 + _y*smesa->depthPitch);
+   d = *(GLuint *)(buf + (_x)*4 + (_y)*smesa->depthPitch);
 
 #define TAG(x) sis##x##_32
 #include "depthtmp.h"
@@ -167,28 +108,28 @@ do {							\
 /* 8/24 bit interleaved depth/stencil functions
  */
 #define WRITE_DEPTH( _x, _y, d ) {				\
-   GLuint tmp = *(GLuint *)(buf + _x*4 + _y*smesa->depthPitch); \
+   GLuint tmp = *(GLuint *)(buf + (_x)*4 + (_y)*smesa->depthPitch); \
    tmp &= 0xff000000;						\
    tmp |= (d & 0x00ffffff);					\
-   *(GLuint *)(buf + _x*4 + _y*smesa->depthPitch) = tmp;	\
+   *(GLuint *)(buf + (_x)*4 + (_y)*smesa->depthPitch) = tmp;	\
 }
 
 #define READ_DEPTH( d, _x, _y )	{			\
-   d = *(GLuint *)(buf + _x*4 + _y*smesa->depthPitch) & 0x00ffffff; \
+   d = *(GLuint *)(buf + (_x)*4 + (_y)*smesa->depthPitch) & 0x00ffffff; \
 }
 
 #define TAG(x) sis##x##_24_8
 #include "depthtmp.h"
 
 #define WRITE_STENCIL( _x, _y, d ) {				\
-   GLuint tmp = *(GLuint *)(buf + _x*4 + _y*smesa->depthPitch); \
+   GLuint tmp = *(GLuint *)(buf + (_x)*4 + (_y)*smesa->depthPitch); \
    tmp &= 0x00ffffff;						\
    tmp |= (d << 24);						\
-   *(GLuint *)(buf + _x*4 + _y*smesa->depthPitch) = tmp;	\
+   *(GLuint *)(buf + (_x)*4 + (_y)*smesa->depthPitch) = tmp;	\
 }
 
 #define READ_STENCIL( d, _x, _y )			\
-   d = (*(GLuint *)(buf + _x*4 + _y*smesa->depthPitch) & 0xff000000) >> 24;
+   d = (*(GLuint *)(buf + (_x)*4 + (_y)*smesa->depthPitch) & 0xff000000) >> 24;
 
 #define TAG(x) sis##x##_24_8
 #include "stenciltmp.h"
@@ -205,11 +146,11 @@ static void sisDDSetBuffer( GLcontext *ctx,
    sisContextPtr smesa = SIS_CONTEXT(ctx);
 
    switch ( bufferBit ) {
-   case DD_FRONT_LEFT_BIT:
+   case BUFFER_BIT_FRONT_LEFT:
       smesa->drawOffset = smesa->readOffset = smesa->frontOffset;
       smesa->drawPitch  = smesa->readPitch  = smesa->frontPitch;
       break;
-   case DD_BACK_LEFT_BIT:
+   case BUFFER_BIT_BACK_LEFT:
       smesa->drawOffset = smesa->readOffset = smesa->backOffset;
       smesa->drawPitch  = smesa->readPitch  = smesa->backPitch;
       break;
@@ -238,81 +179,59 @@ void sisSpanRenderFinish( GLcontext *ctx )
 void
 sisDDInitSpanFuncs( GLcontext *ctx )
 {
-   sisContextPtr smesa = SIS_CONTEXT(ctx);
    struct swrast_device_driver *swdd = _swrast_GetDeviceDriverReference(ctx);
 
    swdd->SetBuffer = sisDDSetBuffer;
-
-   switch (smesa->zFormat)
-   {
-   case SiS_ZFORMAT_Z16:
-      swdd->ReadDepthSpan = sisReadDepthSpan_16;
-      swdd->ReadDepthPixels = sisReadDepthPixels_16;
-      swdd->WriteDepthSpan = sisWriteDepthSpan_16;
-      swdd->WriteDepthPixels = sisWriteDepthPixels_16;
-
-      swdd->ReadStencilSpan = NULL;
-      swdd->ReadStencilPixels = NULL;
-      swdd->WriteStencilSpan = NULL;
-      swdd->WriteStencilPixels = NULL;
-      break;
-   case SiS_ZFORMAT_Z32:
-      swdd->ReadDepthSpan = sisReadDepthSpan_32;
-      swdd->ReadDepthPixels = sisReadDepthPixels_32;
-      swdd->WriteDepthSpan = sisWriteDepthSpan_32;
-      swdd->WriteDepthPixels = sisWriteDepthPixels_32;
-
-      swdd->ReadStencilSpan = NULL;
-      swdd->ReadStencilPixels = NULL;
-      swdd->WriteStencilSpan = NULL;
-      swdd->WriteStencilPixels = NULL;
-      break;
-   case SiS_ZFORMAT_S8Z24:
-      swdd->ReadDepthSpan = sisReadDepthSpan_24_8;
-      swdd->ReadDepthPixels = sisReadDepthPixels_24_8;
-      swdd->WriteDepthSpan = sisWriteDepthSpan_24_8;
-      swdd->WriteDepthPixels = sisWriteDepthPixels_24_8;
-
-      swdd->ReadStencilSpan = sisReadStencilSpan_24_8;
-      swdd->ReadStencilPixels = sisReadStencilPixels_24_8;
-      swdd->WriteStencilSpan = sisWriteStencilSpan_24_8;
-      swdd->WriteStencilPixels = sisWriteStencilPixels_24_8;
-      break;
-   }
-
-   switch ( smesa->bytesPerPixel )
-   {
-   case 2:
-      swdd->WriteRGBASpan = sisWriteRGBASpan_565;
-      swdd->WriteRGBSpan = sisWriteRGBSpan_565;
-      swdd->WriteMonoRGBASpan = sisWriteMonoRGBASpan_565;
-      swdd->WriteRGBAPixels = sisWriteRGBAPixels_565;
-      swdd->WriteMonoRGBAPixels = sisWriteMonoRGBAPixels_565;
-      swdd->ReadRGBASpan = sisReadRGBASpan_565;
-      swdd->ReadRGBAPixels = sisReadRGBAPixels_565;
-      break;
-   case 4:
-      swdd->WriteRGBASpan = sisWriteRGBASpan_8888;
-      swdd->WriteRGBSpan = sisWriteRGBSpan_8888;
-      swdd->WriteMonoRGBASpan = sisWriteMonoRGBASpan_8888;
-      swdd->WriteRGBAPixels = sisWriteRGBAPixels_8888;
-      swdd->WriteMonoRGBAPixels = sisWriteMonoRGBAPixels_8888;
-      swdd->ReadRGBASpan = sisReadRGBASpan_8888;
-      swdd->ReadRGBAPixels = sisReadRGBAPixels_8888;
-      break;
-    default:
-      sis_fatal_error("Bad bytesPerPixel.\n");
-      break;
-   }
-
-   swdd->WriteCI8Span      = NULL;
-   swdd->WriteCI32Span     = NULL;
-   swdd->WriteMonoCISpan   = NULL;
-   swdd->WriteCI32Pixels   = NULL;
-   swdd->WriteMonoCIPixels = NULL;
-   swdd->ReadCI32Span      = NULL;
-   swdd->ReadCI32Pixels    = NULL;
-
    swdd->SpanRenderStart   = sisSpanRenderStart;
    swdd->SpanRenderFinish  = sisSpanRenderFinish; 
+}
+
+
+
+/**
+ * Plug in the Get/Put routines for the given driRenderbuffer.
+ */
+void
+sisSetSpanFunctions(driRenderbuffer *drb, const GLvisual *vis)
+{
+   if (drb->Base.InternalFormat == GL_RGBA) {
+      if (vis->redBits == 5 && vis->greenBits == 6 && vis->blueBits == 5) {
+         sisInitPointers_RGB565( &drb->Base );
+      }
+      else {
+         sisInitPointers_ARGB8888( &drb->Base );
+      }
+   }
+   else if (drb->Base.InternalFormat == GL_DEPTH_COMPONENT16) {
+      drb->Base.GetRow        = sisReadDepthSpan_16;
+      drb->Base.GetValues     = sisReadDepthPixels_16;
+      drb->Base.PutRow        = sisWriteDepthSpan_16;
+      drb->Base.PutMonoRow    = sisWriteMonoDepthSpan_16;
+      drb->Base.PutValues     = sisWriteDepthPixels_16;
+      drb->Base.PutMonoValues = NULL;
+   }
+   else if (drb->Base.InternalFormat == GL_DEPTH_COMPONENT24) {
+      drb->Base.GetRow        = sisReadDepthSpan_24_8;
+      drb->Base.GetValues     = sisReadDepthPixels_24_8;
+      drb->Base.PutRow        = sisWriteDepthSpan_24_8;
+      drb->Base.PutMonoRow    = sisWriteMonoDepthSpan_24_8;
+      drb->Base.PutValues     = sisWriteDepthPixels_24_8;
+      drb->Base.PutMonoValues = NULL;
+   }
+   else if (drb->Base.InternalFormat == GL_DEPTH_COMPONENT32) {
+      drb->Base.GetRow        = sisReadDepthSpan_32;
+      drb->Base.GetValues     = sisReadDepthPixels_32;
+      drb->Base.PutRow        = sisWriteDepthSpan_32;
+      drb->Base.PutMonoRow    = sisWriteMonoDepthSpan_32;
+      drb->Base.PutValues     = sisWriteDepthPixels_32;
+      drb->Base.PutMonoValues = NULL;
+   }
+   else if (drb->Base.InternalFormat == GL_STENCIL_INDEX8_EXT) {
+      drb->Base.GetRow        = sisReadStencilSpan_24_8;
+      drb->Base.GetValues     = sisReadStencilPixels_24_8;
+      drb->Base.PutRow        = sisWriteStencilSpan_24_8;
+      drb->Base.PutMonoRow    = sisWriteMonoStencilSpan_24_8;
+      drb->Base.PutValues     = sisWriteStencilPixels_24_8;
+      drb->Base.PutMonoValues = NULL;
+   }
 }

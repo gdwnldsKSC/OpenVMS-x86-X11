@@ -26,6 +26,12 @@
  ********************************************************/
 /* $XFree86: xc/lib/xkbfile/xkbout.c,v 3.9 2001/10/28 03:32:47 tsi Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#elif defined(HAVE_CONFIG_H)
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -42,19 +48,19 @@
 
 #else
 
-#include "X.h"
+#include <X11/X.h>
 #define	NEED_EVENTS
 #include <X11/keysym.h>
-#include "Xproto.h"
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "inputstr.h"
 #include "dix.h"
-#include "XKBstr.h"
+#include <X11/extensions/XKBstr.h>
 #define XKBSRV_NEED_FILE_FUNCS	1
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 
 #include <X11/extensions/XKBgeom.h>
-#include "extensions/XKBfile.h"
+#include <X11/extensions/XKBfile.h>
 
 #endif
 

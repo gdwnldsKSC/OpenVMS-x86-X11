@@ -34,6 +34,10 @@
  * Additions, updates and bugfixes by Dejan Ilic <dejan.ilic@home.se>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * Activate acceleration code or not.
  *
@@ -68,10 +72,10 @@
 
 #define RENDITION_NAME            "RENDITION"
 #define RENDITION_DRIVER_NAME     "rendition"
-#define RENDITION_VERSION_NAME    "4.0"
+#define RENDITION_VERSION_NAME    "4.0.1"
 #define RENDITION_VERSION_MAJOR   4
 #define RENDITION_VERSION_MINOR   0
-#define RENDITION_PATCHLEVEL      0
+#define RENDITION_PATCHLEVEL      1
 #define RENDITION_VERSION_CURRENT ((RENDITION_VERSION_MAJOR << 24) | \
                  (RENDITION_VERSION_MINOR << 16) | RENDITION_PATCHLEVEL)
 
@@ -133,7 +137,7 @@ OptionInfoRec const renditionOptions[]={
     { -1,                NULL,      OPTV_NONE,    {0}, FALSE }
 };
 
-DriverRec RENDITION={
+_X_EXPORT DriverRec RENDITION={
     RENDITION_VERSION_CURRENT,
     "rendition",
     renditionIdentify,
@@ -189,14 +193,6 @@ static const char *int10Symbols[] = {
     NULL
 };
 
-#ifdef XFree86LOADER
-static const char *miscfbSymbols[]={
-    "xf1bppScreenInit",
-    "xf4bppScreenInit",
-    NULL
-};
-#endif
-
 static const char *fbSymbols[]={
     "fbScreenInit",
     "fbPictureInit",
@@ -236,7 +232,7 @@ static XF86ModuleVersionInfo renditionVersionRec = {
     {0, 0, 0, 0}
 };
 
-XF86ModuleData renditionModuleData = 
+_X_EXPORT XF86ModuleData renditionModuleData = 
                { &renditionVersionRec, renditionSetup, NULL };
 
 static pointer
@@ -248,7 +244,7 @@ renditionSetup(pointer Module, pointer Options, int *ErrorMajor,
     if (!Initialised) {
         Initialised=TRUE;
         xf86AddDriver(&RENDITION, Module, 0);
-        LoaderRefSymLists(vgahwSymbols, ramdacSymbols, miscfbSymbols,
+        LoaderRefSymLists(vgahwSymbols, ramdacSymbols,
 			  fbSymbols, xaaSymbols, ddcSymbols, int10Symbols,
 			  shadowfbSymbols, vbeSymbols, NULL);
         return (pointer)TRUE;

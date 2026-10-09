@@ -1,14 +1,16 @@
+// $XdotOrg: xc/programs/xkbcomp/symbols/pc/mt,v 1.3 2005/08/12 11:08:49 pascal Exp $
+
 // Maltese keyboard map (based on MSA Standard DMS100)
 // by Ramon Casha (ramon.casha@linux.org.mt)
 //
-// $XFree86: xc/programs/xkbcomp/symbols/pc/mt,v 1.3 2002/12/13 04:18:04 dawes Exp $
+// $XFree86: xc/programs/xkbcomp/symbols/mt,v 1.3 2002/12/13 04:18:04 dawes Exp $
 
 partial default alphanumeric_keys
 xkb_symbols "basic" {
 
     include "pc/latin"
 
-    name[Group1]="Maltese";
+    name[Group1]="Malta";
 
     // The following four sets are the four additional letters, with the UK
     // equivalents
@@ -30,5 +32,26 @@ xkb_symbols "basic" {
     key <AD09>	{ [         o,          O,       ograve,       Ograve ]	};
     key <AC01>	{ [         a,          A,       agrave,       Agrave ]	};
 
-    include "level3(ralt_switch_multikey)"
+    include "level3(ralt_switch)"
+};
+
+// Maltese keyboard map (based on MSA Standard DMS100, annex A)
+// by Ramon Casha (ramon.casha@linux.org.mt)
+
+partial alphanumeric_keys
+xkb_symbols "us" {
+
+    include "pc/mt(basic)"
+
+    // Describes the differences between the mt
+    // keyboard and a US-based physical keyboard
+
+    name[Group1]="Malta - US keyboard with Maltian letters";
+
+    key <BKSL>	{ [ zabovedot,  Zabovedot,    backslash,          bar ]	};
+
+    key <TLDE>	{ [ cabovedot,  Cabovedot,        grave,   asciitilde ]	};
+
+    key <AE03>	{ [         3,   EuroSign,   numbersign               ]	};
+
 };

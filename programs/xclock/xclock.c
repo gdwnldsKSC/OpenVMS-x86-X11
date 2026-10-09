@@ -1,4 +1,5 @@
 /* $Xorg: xclock.c,v 1.4 2001/02/09 02:05:39 xorgcvs Exp $ */
+/* $XdotOrg: xc/programs/xclock/xclock.c,v 1.4 2005/07/16 17:31:45 alanc Exp $ */
 
 /*
  * xclock --  Hacked from Tony Della Fera's much hacked clock program.
@@ -31,6 +32,11 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $XFree86: xclock.c,v 1.16 2002/10/21 13:33:08 alanh Exp $ */
 
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <X11/Xatom.h>
@@ -46,6 +52,10 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/extensions/XKBbells.h>
 #endif
 
+#ifndef NO_I18N
+#include <locale.h> /* for setlocale() */
+Boolean no_locale = True; /* if True, use old behavior */
+#endif
 
 /* Command line options table.  Only resources are entered here...there is a
    pass over the remaining options after XtParseCommand is let loose. */
@@ -144,6 +154,18 @@ main(int argc, char *argv[])
     Arg arg;
     Pixmap icon_pixmap = None;
     XtAppContext app_con;
+
+#ifndef NO_I18N
+    char *locale_name = setlocale(LC_ALL,"");
+    XtSetLanguageProc ( NULL, NULL, NULL );
+
+    if(!locale_name || 0 == strcmp(locale_name,"C")) {
+	no_locale = True;
+    }
+    else {
+	no_locale = False;
+    }
+#endif
 
     toplevel = XtOpenApplication(&app_con, "XClock",
 				 options, XtNumber(options), &argc, argv, NULL,

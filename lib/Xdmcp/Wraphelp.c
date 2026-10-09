@@ -3,6 +3,9 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <sys/types.h>
 #include <X11/Xmd.h>
 #include "Wrap.h"

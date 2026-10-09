@@ -1,13 +1,6 @@
 #define IHaveModules
 #include <Server.tmpl>
 
-#ifdef XFree86Version
-#if DoLoadableServer
-XFMODSRC = cw.c cw_ops.c cw_render.c
-XFMODOBJ = cw.o cw_ops.o cw_render.o
-#endif
-#endif
-
 SRCS = cw.c cw_ops.c cw_render.c
 
 OBJS = cw.o cw_ops.o cw_render.o
@@ -19,14 +12,11 @@ OBJS = cw.o cw_ops.o cw_render.o
 	     ../../mi/llib-lmi.ln
 
 NormalLibraryObjectRule()
-LibraryModuleTarget(cw,$(OBJS))
+NormalLibraryTarget(cw,$(OBJS))
 LintLibraryTarget(cw,$(SRCS))
 
 NormalLintTarget($(SRCS))
 
-InstallLibraryModule(cw,$(MODULEDIR),.)
-
 DependTarget()
 
-InstallDriverSDKLibraryModule(cw,$(DRIVERSDKMODULEDIR),.)
 InstallDriverSDKNonExecFile(cw.h,$(DRIVERSDKINCLUDEDIR))

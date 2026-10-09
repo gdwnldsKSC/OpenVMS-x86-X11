@@ -29,7 +29,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(cyrix,$(OBJS))
 
-InstallObjectModule(cyrix,$(MODULEDIR),drivers)
+InstallVideoObjectModule(cyrix,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(cyrix)

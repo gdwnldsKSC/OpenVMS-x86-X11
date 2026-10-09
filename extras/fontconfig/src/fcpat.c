@@ -1,7 +1,7 @@
 /*
  * $RCSId: xc/lib/fontconfig/src/fcpat.c,v 1.18 2002/09/18 17:11:46 tsi Exp $
  *
- * Copyright © 2000 Keith Packard
+ * Copyright Â© 2000 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -321,18 +321,12 @@ FcValueListEntCreate (FcValueList *h)
     FcValueListEnt  *e;
     FcValueList	    *l, *new;
     int		    n;
-    int		    string_size = 0;
-    FcChar8	    *strs;
     int		    size;
 
     n = 0;
     for (l = h; l; l = l->next)
-    {
-	if (l->value.type == FcTypeString)
-	    string_size += strlen ((char *) l->value.u.s) + 1;
 	n++;
-    }
-    size = sizeof (FcValueListAlign) + n * sizeof (FcValueList) + string_size;
+    size = sizeof (FcValueListAlign) + n * sizeof (FcValueList);
     FcValueListFrozenCount[h->value.type]++;
     FcValueListFrozenBytes[h->value.type] += size;
     ea = malloc (size);
@@ -341,21 +335,17 @@ FcValueListEntCreate (FcValueList *h)
     FcMemAlloc (FC_MEM_VALLIST, size);
     e = &ea->ent;
     e->list = (FcValueList *) (ea + 1);
-    strs = (FcChar8 *) (e->list + n);
     new = e->list;
     for (l = h; l; l = l->next, new++)
     {
 	if (l->value.type == FcTypeString)
 	{
 	    new->value.type = FcTypeString;
-	    new->value.u.s = strs;
-	    strcpy ((char *) strs, (char *) l->value.u.s);
-	    strs += strlen ((char *) strs) + 1;
+	    new->value.u.s = FcObjectStaticName (l->value.u.s);
 	}
 	else
 	{
-	    new->value = l->value;
-	    new->value = FcValueSave (new->value);
+	    new->value = FcValueSave (l->value);
 	}
 	new->binding = l->binding;
 	if (l->next)
@@ -366,15 +356,43 @@ FcValueListEntCreate (FcValueList *h)
     return e;
 }
 
+static void
+FcValueListEntDestroy (FcValueListEnt *e)
+{
+    FcValueList	*l;
+
+    FcValueListFrozenCount[e->list->value.type]--;
+
+    /* XXX: We should perform these two operations with "size" as
+       computed in FcValueListEntCreate, but we don't have access to
+       that value here. Without this, the FcValueListFrozenBytes
+       values will be wrong as will the FcMemFree counts.
+
+       FcValueListFrozenBytes[e->list->value.type] -= size;
+       FcMemFree (FC_MEM_VALLIST, size);
+    */
+
+    for (l = e->list; l; l = l->next)
+    {
+	if (l->value.type != FcTypeString)
+	    FcValueDestroy (l->value);
+    }
+    /* XXX: Are we being too chummy with the implementation here to
+       free(e) when it was actually the enclosing FcValueListAlign
+       that was allocated? */
+    free (e);
+}
+
 static int	FcValueListTotal;
 static int	FcValueListUsed;
+
+static FcValueListEnt   *FcValueListHashTable[FC_VALUE_LIST_HASH_SIZE];
 
 static FcValueList *
 FcValueListFreeze (FcValueList *l)
 {
-    static FcValueListEnt   *hashTable[FC_VALUE_LIST_HASH_SIZE];
     FcChar32		    hash = FcValueListHash (l);
-    FcValueListEnt	    **bucket = &hashTable[hash % FC_VALUE_LIST_HASH_SIZE];
+    FcValueListEnt	    **bucket = &FcValueListHashTable[hash % FC_VALUE_LIST_HASH_SIZE];
     FcValueListEnt	    *ent;
 
     FcValueListTotal++;
@@ -393,6 +411,26 @@ FcValueListFreeze (FcValueList *l)
     ent->next = *bucket;
     *bucket = ent;
     return ent->list;
+}
+
+static void
+FcValueListThawAll (void)
+{
+    int i;
+    FcValueListEnt	*ent, *next;
+
+    for (i = 0; i < FC_VALUE_LIST_HASH_SIZE; i++)
+    {
+	for (ent = FcValueListHashTable[i]; ent; ent = next)
+	{
+	    next = ent->next;
+	    FcValueListEntDestroy (ent);
+	}
+	FcValueListHashTable[i] = 0;
+    }
+
+    FcValueListTotal = 0;
+    FcValueListUsed = 0;
 }
 
 static FcChar32
@@ -417,16 +455,15 @@ struct _FcPatternEnt {
 static int	FcPatternTotal;
 static int	FcPatternUsed;
 
+static FcPatternEnt	*FcPatternHashTable[FC_VALUE_LIST_HASH_SIZE];
+
 static FcPattern *
 FcPatternBaseFreeze (FcPattern *b)
 {
-    static FcPatternEnt	*hashTable[FC_VALUE_LIST_HASH_SIZE];
     FcChar32		hash = FcPatternBaseHash (b);
-    FcPatternEnt	**bucket = &hashTable[hash % FC_VALUE_LIST_HASH_SIZE];
+    FcPatternEnt	**bucket = &FcPatternHashTable[hash % FC_VALUE_LIST_HASH_SIZE];
     FcPatternEnt	*ent;
     int			i;
-    char		*objects;
-    int			size_objects;
     int			size;
 
     FcPatternTotal++;
@@ -436,7 +473,7 @@ FcPatternBaseFreeze (FcPattern *b)
 	{
 	    for (i = 0; i < b->num; i++)
 	    {
-		if (strcmp (b->elts[i].object, ent->pattern.elts[i].object))
+		if (b->elts[i].object != ent->pattern.elts[i].object)
 		    break;
 		if (b->elts[i].values != ent->pattern.elts[i].values)
 		    break;
@@ -447,13 +484,9 @@ FcPatternBaseFreeze (FcPattern *b)
     }
 
     /*
-     * Compute size of pattern + elts + object names
+     * Compute size of pattern + elts
      */
-    size_objects = 0;
-    for (i = 0; i < b->num; i++)
-	size_objects += strlen (b->elts[i].object) + 1;
-
-    size = sizeof (FcPatternEnt) + b->num*sizeof (FcPatternElt) + size_objects;
+    size = sizeof (FcPatternEnt) + b->num*sizeof (FcPatternElt);
     ent = malloc (size);
     if (!ent)
 	return 0;
@@ -466,19 +499,36 @@ FcPatternBaseFreeze (FcPattern *b)
     ent->pattern.size = b->num;
     ent->pattern.ref = FC_REF_CONSTANT;
 
-    objects = (char *) (ent->pattern.elts + b->num);
     for (i = 0; i < b->num; i++)
     {
 	ent->pattern.elts[i].values = b->elts[i].values;
-	strcpy (objects, b->elts[i].object);
-	ent->pattern.elts[i].object = objects;
-	objects += strlen (objects) + 1;
+	ent->pattern.elts[i].object = b->elts[i].object;
     }
 
     ent->hash = hash;
     ent->next = *bucket;
     *bucket = ent;
     return &ent->pattern;
+}
+
+static void
+FcPatternBaseThawAll (void)
+{
+    int i;
+    FcPatternEnt	*ent, *next;
+
+    for (i = 0; i < FC_VALUE_LIST_HASH_SIZE; i++)
+    {
+	for (ent = FcPatternHashTable[i]; ent; ent = next)
+	{
+	    next = ent->next;
+	    free (ent);
+	}
+	FcPatternHashTable[i] = 0;
+    }
+
+    FcPatternTotal = 0;
+    FcPatternUsed = 0;
 }
 
 FcPattern *
@@ -488,6 +538,9 @@ FcPatternFreeze (FcPattern *p)
     int		size;
     int		i;
     
+    if (p->ref == FC_REF_CONSTANT)
+       return p;
+
     size = sizeof (FcPattern) + p->num * sizeof (FcPatternElt);
     b = (FcPattern *) malloc (size);
     if (!b)
@@ -526,11 +579,19 @@ bail:
     return n;
 }
 
+void
+FcPatternThawAll (void)
+{
+    FcPatternBaseThawAll ();
+    FcValueListThawAll ();
+}
+
 static int
 FcPatternPosition (const FcPattern *p, const char *object)
 {
     int	    low, high, mid, c;
 
+    object = FcObjectStaticName(object);
     low = 0;
     high = p->num - 1;
     c = 1;
@@ -538,7 +599,7 @@ FcPatternPosition (const FcPattern *p, const char *object)
     while (low <= high)
     {
 	mid = (low + high) >> 1;
-	c = strcmp (p->elts[mid].object, object);
+	c = p->elts[mid].object - object;
 	if (c == 0)
 	    return mid;
 	if (c < 0)
@@ -602,7 +663,7 @@ FcPatternInsertElt (FcPattern *p, const char *object)
 	/* bump count */
 	p->num++;
 	
-	p->elts[i].object = object;
+	p->elts[i].object = FcObjectStaticName (object);
 	p->elts[i].values = 0;
     }
     
@@ -621,7 +682,7 @@ FcPatternEqual (const FcPattern *pa, const FcPattern *pb)
 	return FcFalse;
     for (i = 0; i < pa->num; i++)
     {
-	if (strcmp (pa->elts[i].object, pb->elts[i].object) != 0)
+	if (pa->elts[i].object != pb->elts[i].object)
 	    return FcFalse;
 	if (!FcValueListEqual (pa->elts[i].values, pb->elts[i].values))
 	    return FcFalse;
@@ -771,6 +832,31 @@ FcPatternDel (FcPattern *p, const char *object)
     p->elts[p->num].object = 0;
     p->elts[p->num].values = 0;
     return FcTrue;
+}
+
+FcBool
+FcPatternRemove (FcPattern *p, const char *object, int id)
+{
+    FcPatternElt   *e;
+    FcValueList    **prev, *l;
+
+    e = FcPatternFindElt (p, object);
+    if (!e)
+	return FcFalse;
+    for (prev = &e->values; (l = *prev); prev = &l->next)
+    {
+	if (!id)
+	{
+	    *prev = l->next;
+	    l->next = 0;
+	    FcValueListDestroy (l);
+	    if (!e->values)
+		FcPatternDel (p, object);
+	    return FcTrue;
+	}
+	id--;
+    }
+    return FcFalse;
 }
 
 FcBool
@@ -1062,4 +1148,55 @@ FcPatternBuild (FcPattern *orig, ...)
     FcPatternVapBuild (orig, orig, va);
     va_end (va);
     return orig;
+}
+
+/*
+ * Add all of the elements in 's' to 'p'
+ */
+FcBool
+FcPatternAppend (FcPattern *p, FcPattern *s)
+{
+    int		    i;
+    FcPatternElt    *e;
+    FcValueList	    *v;
+    
+    for (i = 0; i < s->num; i++)
+    {
+	e = &s->elts[i];
+	for (v = e->values; v; v = v->next)
+	{
+	    if (!FcPatternAddWithBinding (p, e->object,
+					  v->value, v->binding, FcTrue))
+		return FcFalse;
+	}
+    }
+    return FcTrue;
+}
+
+const char *
+FcObjectStaticName (const char *name)
+{
+#define OBJECT_HASH_SIZE    31
+    static struct objectBucket {
+	struct objectBucket	*next;
+	FcChar32		hash;
+    } *buckets[OBJECT_HASH_SIZE];
+    FcChar32		hash = FcStringHash ((const FcChar8 *) name);
+    struct objectBucket	**p;
+    struct objectBucket	*b;
+    int			size;
+
+    for (p = &buckets[hash % OBJECT_HASH_SIZE]; (b = *p); p = &(b->next))
+	if (b->hash == hash && !strcmp (name, (char *) (b + 1)))
+	    return (char *) (b + 1);
+    size = sizeof (struct objectBucket) + strlen (name) + 1;
+    b = malloc (size);
+    FcMemAlloc (FC_MEM_STATICSTR, size);
+    if (!b)
+	return NULL;
+    b->next = 0;
+    b->hash = hash;
+    strcpy ((char *) (b + 1), name);
+    *p = b;
+    return (char *) (b + 1);
 }

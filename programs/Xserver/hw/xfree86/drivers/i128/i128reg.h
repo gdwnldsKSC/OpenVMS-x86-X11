@@ -72,6 +72,7 @@ struct i128mem {
     CARD32 *rbase_a;
     CARD32 *rbase_b;
     CARD32 *rbase_i;
+    float *rbase_af;
 };
 
 /* save the registers needed for restoration in this structure */
@@ -128,6 +129,21 @@ typedef union {
 #define GINTM 0x0004
 #define SGRAM 0x00A4
 
+/* DMA regs, relative to RBASE_I.  T2R4 only. */
+#define DMA_SRC     0x00D0/4
+#define     DMA_SRC_MASK        0x07
+#define DMA_DST     0x00D4/4
+#define     DMA_DST_MASK        0xFC000007
+#define DMA_CMD     0x00D8/4
+#define     DMA_QWORDS_MASK     0x0001FFFF
+#define     DMA_REQ_LENGTH_4Q   0x00000000
+#define     DMA_REQ_LENGTH_8Q   0x01000000
+#define     DMA_REQ_LENGTH_16Q  0x02000000
+#define     DMA_REQ_LENGTH_32Q  0x03000000
+#define     DMA_PIPELINE_READY  0x10000000
+#define     DMA_IDLE            0x20000000
+#define     DMA_EXPEDITE        0x40000000
+
 /* RBASE_G register offsets  (divided by four for double word indexing */
 
 #define WR_ADR   0x0000/4
@@ -159,6 +175,7 @@ typedef union {
 
 
 /* RBASE_W register offsets  (divided by four for double word indexing */
+/* MW1_* are probably T2R and T2R4 only */
 
 #define MW0_CTRL 0x0000/4
 #define MW0_AD   0x0004/4
@@ -169,7 +186,15 @@ typedef union {
 #define MW0_WKEY 0x001C/4
 #define MW0_KDAT 0x0020/4
 #define MW0_MASK 0x0024/4
-
+#define MW1_CTRL 0x0028/4
+#define MW1_AD   0x002C/4
+#define MW1_SZ   0x0030/4
+#define MW1_PGE  0x0034/4
+#define MW1_ORG  0x0038/4
+#define MW1_MSRC 0x0040/4
+#define MW1_WKEY 0x0044/4
+#define MW1_KDAT 0x0048/4
+#define MW1_MASK 0x004C/4
 
 /* RBASE_[AB] register offsets  (divided by four for double word indexing */
 
@@ -223,8 +248,10 @@ typedef union {
 #define DE_SORG   0x0028/4
 #define DE_DORG   0x002C/4
 #define DE_MSRC   0x0030/4
+/* these next two sound bogus */
 #define DE_WKEY   0x0038/4
 #define DE_KYDAT  0x003C/4
+#define DE_TPTCH  0x0038/4
 #define DE_ZPTCH  0x003C/4
 #define DE_SPTCH  0x0040/4
 #define DE_DPTCH  0x0044/4
@@ -241,8 +268,13 @@ typedef union {
 #define  CO_LINE     0x02
 #define  CO_ELINE    0x03
 #define  CO_TRIAN    0x04
+#define  CO_PLINE    0x05
 #define  CO_RXFER    0x06
 #define  CO_WXFER    0x07
+#define  CO_LINE3D   0x08
+#define  CO_TRIAN3D  0x09
+#define  CO_TEXINV   0x0A
+#define  CO_LOADPAL  0x0B
 #define CMD_ROP   0x0054/4
 #define  CR_CLEAR    0x00
 #define  CR_NOR      0x01
@@ -314,9 +346,129 @@ typedef union {
 #define  XY_X_DATA    0xFFFF0000
 #define  XY_I_DATA1   0x0000FFFF
 #define  XY_I_DATA2   0xFFFF0000
+#define LOD0_ORG  0x00D0/4
+#define LOD1_ORG  0x00D4/4
+#define LOD2_ORG  0x00D8/4
+#define LOD3_ORG  0x00DC/4
+#define LOD4_ORG  0x00E0/4
+#define LOD5_ORG  0x00E4/4
+#define LOD6_ORG  0x00E8/4
+#define LOD7_ORG  0x00EC/4
+#define LOD8_ORG  0x00F0/4
+#define LOD9_ORG  0x00F4/4
+
 #define DL_ADR    0x00F8/4
 #define DL_CNTRL  0x00FC/4
 #define ACNTRL    0x016C/4
+#define  ASRC_FUNC    0x0000000F
+#define  ADST_FUNC    0x000000F0
+#define  ACTL_SRE     0x00000100  /* 0: pixel alpha, 1: srca reg */
+#define  ACTL_DRE     0x00000200  /* likewise */
+#define  ACTL_BE      0x00000400
+#define  ACTL_AOP     0x000F0000
+#define  ACTL_AEN     0x00100000  /* alpha compare enable */
+#define  ACTL_ASL     0x01000000  /* 0: texture alpha, 1: vertex alpha */
+#define  ACTL_AMD     0x02000000
+#define  ACTL_DAB     0x04000000
+#define THREEDCTL 0x0170/4
+#define  TCTL_ZE      0x00000001
+#define  TCTL_ZRO     0x00000002
+#define  TCTL_FIS     0x00000008
+#define  TCTL_FSL     0x00000010
+#define  TCTL_ZOP     0x000000E0
+#define     TCTL_ZOP_SHIFT  5
+#define  TCTL_YOP     0x00000800
+#define  TCTL_HOP     0x00003100
+#define  TCTL_KYP     0x00004000
+#define  TCTL_KYE     0x00008000
+#define  TCTL_DOP     0x00010000
+#define  TCTL_ABS     0x00020000
+#define  TCTL_TBS     0x00040000
+#define  TCTL_RSL     0x00080000
+#define  TCTL_SSC     0x00200000
+#define  TCTL_CW      0x00400000
+#define  TCTL_BCE     0x00800000
+#define  TCTL_SH      0x01000000
+#define  TCTL_SPE     0x02000000
+#define  TCTL_RSC     0x04000000
+#define  TCTL_FEN     0x08000000
+#define  TCTL_RT      0x10000000
+#define  TCTL_P8      0x20000000
+#define  TCTL_ZS      0x40000000
+#define TEX_CTL   0x0174/4
+#define  TEX_TM       0x00000001
+#define  TEX_MM       0x00000002
+#define  TEX_NMG      0x00000004
+#define  TEX_MLM      0x00000008
+#define  TEX_NMN      0x00000010
+#define  TEX_RM       0x00000020
+#define  TEX_PM       0x00000040
+#define  TEX_CCS      0x00000080
+#define  TEX_TCU      0x00000100
+#define  TEX_TCV      0x00000200
+#define  TEX_MLP2     0x00000400
+#define  TEX_MMN      0x0000F000
+#define  TEX_MMSIZEX  0x000F0000
+#define  TEX_MMSIZEY  0x00F00000
+#define  TEX_FMT      0x3F000000
+#define  TEX_TCT      0x40000000
+#define  TEX_UVS      0x80000000
+#define PPTR      0x0178/4
+/* for each vertex: x, y, z, w, color, specular color, u, v */
+#define V0_X      0x017C/4
+#define V0_Y      0x0180/4
+#define V0_Z      0x0184/4
+#define V0_W      0x0188/4
+#define V0_C      0x018C/4
+#define V0_S      0x0190/4
+#define V0_U      0x0194/4
+#define V0_V      0x0198/4
+#define V1_X      0x019C/4
+#define V1_Y      0x01A0/4
+#define V1_Z      0x01A4/4
+#define V1_W      0x01A8/4
+#define V1_C      0x01AC/4
+#define V1_S      0x01B0/4
+#define V1_U      0x01B4/4
+#define V1_V      0x01B8/4
+#define V2_X      0x01BC/4
+#define V2_Y      0x01C0/4
+#define V2_Z      0x01C4/4
+#define V2_W      0x01C8/4
+#define V2_C      0x01CC/4
+#define V2_S      0x01D0/4
+#define V2_U      0x01D4/4
+#define V2_V      0x01D8/4
+#define TRIGGER3D 0x01DC/4
+
+/* alpha blend functions */
+#define ABLEND_SRC_ZERO         0
+#define ABLEND_SRC_ONE          1
+#define ABLEND_SRC_DST_COLOR    2
+#define ABLEND_SRC_OMDST_COLOR  3
+#define ABLEND_SRC_SRC_ALPHA    4
+#define ABLEND_SRC_OMSRC_ALPHA  5
+#define ABLEND_SRC_DST_ALPHA    6
+#define ABLEND_SRC_OMDST_ALPHA  7
+#define ABLEND_DST_ZERO         0 << 4
+#define ABLEND_DST_ONE          1 << 4
+#define ABLEND_DST_SRC_COLOR    2 << 4
+#define ABLEND_DST_OMSRC_COLOR  3 << 4
+#define ABLEND_DST_SRC_ALPHA    4 << 4
+#define ABLEND_DST_OMSRC_ALPHA  5 << 4
+#define ABLEND_DST_DST_ALPHA    6 << 4
+#define ABLEND_DST_OMDST_ALPHA  7 << 4
+
+/* comparison functions */
+#define COMP_FALSE      0
+#define COMP_TRUE       1
+#define COMP_LT         2
+#define COMP_LE         3
+#define COMP_EQ         4
+#define COMP_GE         5
+#define COMP_GT         6
+#define COMP_NE         7
+
 
 #define I128_WAIT_READY 1
 #define I128_WAIT_DONE  2

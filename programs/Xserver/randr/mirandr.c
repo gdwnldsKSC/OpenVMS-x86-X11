@@ -1,8 +1,8 @@
 /*
  * $XFree86: xc/programs/Xserver/randr/mirandr.c,v 1.5 2001/06/04 09:45:40 keithp Exp $
  *
- * Copyright © 2000, Compaq Computer Corporation, 
- * Copyright © 2002, Hewlett Packard, Inc.
+ * Copyright Â© 2000, Compaq Computer Corporation, 
+ * Copyright Â© 2002, Hewlett Packard, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -25,9 +25,13 @@
  */
 
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "scrnintstr.h"
 #include "mi.h"
-#include "randr.h"
+#include <X11/extensions/randr.h>
 #include "randrstr.h"
 #include <stdio.h>
 

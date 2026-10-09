@@ -25,11 +25,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-/* $XdotOrg: xc/lib/font/FreeType/ftfuncs.c,v 1.7 2004/08/04 12:21:48 eich Exp $ */
+/* $XdotOrg: xc/lib/font/FreeType/ftfuncs.c,v 1.13 2005/10/23 18:32:05 ajax Exp $ */
 
 /* $XFree86: xc/lib/font/FreeType/ftfuncs.c,v 1.43 2004/02/07 04:37:18 dawes Exp $ */
 
-#include "fontmisc.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <X11/fonts/fontmisc.h>
 
 #ifndef FONTMODULE
 #include <string.h>
@@ -40,9 +43,9 @@ THE SOFTWARE.
 #include "xf86_ansic.h"
 #endif
 
-#include "fntfilst.h"
-#include "fontutil.h"
-#include "FSproto.h"
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/fontutil.h>
+#include <X11/fonts/FSproto.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_SIZES_H
@@ -64,7 +67,7 @@ THE SOFTWARE.
 #include FT_OUTLINE_H
 #endif
 
-#include "fontenc.h"
+#include <X11/fonts/fontenc.h>
 #include "ft.h"
 #include "ftfuncs.h"
 #include "xttcap.h"
@@ -928,7 +931,8 @@ FT_Do_SBit_Metrics( FT_Face ft_face, FT_Size ft_size, FT_ULong strike_index,
     face = (TT_Face)ft_face;
     sfnt   = (SFNT_Service)face->sfnt;
 
-    if ( strike_index != 0xFFFFU && sfnt->load_sbits ) {
+    if (strike_index != 0xFFFFU && sfnt && sfnt->find_sbit_image &&
+            sfnt->load_sbits) {
         /* Check whether there is a glyph sbit for the current index */
         error = sfnt->find_sbit_image( face, glyph_index, strike_index,
                                        &range, &strike, &glyph_offset );

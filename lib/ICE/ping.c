@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 Author: Ralph Mor, X Consortium
 ******************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/ICE/ICElib.h>
 #include "ICElibint.h"
 

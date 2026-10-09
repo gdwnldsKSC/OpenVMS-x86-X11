@@ -25,11 +25,20 @@ realclean:
 	$(MAKE) clean
 	-rm -rf lib*
 	-rm -f $(TOP)/configs/current
+	-rm -f `find . -name \*.o`
+	-rm -f `find . -name \*.a`
+	-rm -f `find . -name \*.so`
+	-rm -f `find . -name depend`
+
 
 
 install:
 	@echo "Installing"
-	$(TOP)/bin/installmesa 
+	$(TOP)/bin/installmesa $(DESTDIR)
+
+# DirectFBGL module installation
+linux-directfb-install:
+	cd src/mesa/drivers/directfb && $(MAKE) install
 
 # If there's no current configuration file
 $(TOP)/configs/current:
@@ -53,6 +62,7 @@ darwin \
 darwin-static \
 freebsd \
 freebsd-dri \
+freebsd-dri-amd64 \
 freebsd-dri-x86 \
 hpux10 \
 hpux10-gcc \
@@ -74,9 +84,13 @@ linux \
 linux-alpha \
 linux-alpha-static \
 linux-debug \
+linux-directfb \
 linux-dri \
 linux-dri-x86 \
 linux-dri-x86-64 \
+linux-dri-ppc \
+linux-indirect \
+linux-fbdev \
 linux-glide \
 linux-icc \
 linux-icc-static \
@@ -95,8 +109,11 @@ linux-ultrasparc \
 linux-tcc \
 linux-x86 \
 linux-x86-debug \
+linux-x86-32 \
 linux-x86-64 \
+linux-x86-64-debug \
 linux-x86-64-static \
+linux-x86-xcb \
 linux-x86-glide \
 linux-x86-static \
 netbsd \
@@ -117,28 +134,28 @@ ultrix-gcc:
 
 # Rules for making release tarballs
 
-DIRECTORY = Mesa-6.2.1
-LIB_NAME = MesaLib-6.2.1
-DEMO_NAME = MesaDemos-6.2.1
+DIRECTORY = Mesa-6.4.1
+LIB_NAME = MesaLib-6.4.1
+DEMO_NAME = MesaDemos-6.4.1
+GLUT_NAME = MesaGLUT-6.4.1
 
-LIB_FILES =	\
+MAIN_FILES = \
 	$(DIRECTORY)/Makefile*						\
 	$(DIRECTORY)/descrip.mms					\
 	$(DIRECTORY)/mms-config					\
-	$(DIRECTORY)/Mesa.dsw						\
 	$(DIRECTORY)/bin/mklib						\
 	$(DIRECTORY)/bin/installmesa					\
 	$(DIRECTORY)/configs/[a-z]*					\
 	$(DIRECTORY)/docs/*.html					\
 	$(DIRECTORY)/docs/COPYING					\
-	$(DIRECTORY)/docs/INSTALL.GNU					\
 	$(DIRECTORY)/docs/README.*					\
 	$(DIRECTORY)/docs/RELNOTES*					\
 	$(DIRECTORY)/docs/VERSIONS					\
 	$(DIRECTORY)/docs/*.spec					\
 	$(DIRECTORY)/include/GL/internal/glcore.h			\
-	$(DIRECTORY)/include/GL/dmesa.h					\
 	$(DIRECTORY)/include/GL/amesa.h					\
+	$(DIRECTORY)/include/GL/dmesa.h					\
+	$(DIRECTORY)/include/GL/directfbgl.h				\
 	$(DIRECTORY)/include/GL/fxmesa.h				\
 	$(DIRECTORY)/include/GL/ggimesa.h				\
 	$(DIRECTORY)/include/GL/gl.h					\
@@ -159,6 +176,7 @@ LIB_FILES =	\
 	$(DIRECTORY)/include/GL/xmesa.h					\
 	$(DIRECTORY)/include/GL/xmesa_x.h				\
 	$(DIRECTORY)/include/GL/xmesa_xf86.h				\
+	$(DIRECTORY)/include/GLView.h					\
 	$(DIRECTORY)/src/Makefile					\
 	$(DIRECTORY)/src/descrip.mms					\
 	$(DIRECTORY)/src/mesa/Makefile*					\
@@ -166,28 +184,25 @@ LIB_FILES =	\
 	$(DIRECTORY)/src/mesa/descrip.mms				\
 	$(DIRECTORY)/src/mesa/depend					\
 	$(DIRECTORY)/src/mesa/main/*.[chS]				\
-	$(DIRECTORY)/src/mesa/main/main.dsp				\
 	$(DIRECTORY)/src/mesa/main/descrip.mms				\
 	$(DIRECTORY)/src/mesa/glapi/*.[chS]				\
-	$(DIRECTORY)/src/mesa/glapi/glapi.dsp				\
 	$(DIRECTORY)/src/mesa/glapi/descrip.mms				\
 	$(DIRECTORY)/src/mesa/array_cache/*.[ch]			\
-	$(DIRECTORY)/src/mesa/array_cache/array_cache.dsp		\
 	$(DIRECTORY)/src/mesa/array_cache/descrip.mms			\
 	$(DIRECTORY)/src/mesa/math/*.[ch]				\
-	$(DIRECTORY)/src/mesa/math/math.dsp				\
 	$(DIRECTORY)/src/mesa/math/descrip.mms				\
 	$(DIRECTORY)/src/mesa/shader/*.[ch]				\
-	$(DIRECTORY)/src/mesa/shader/shader.dsp				\
 	$(DIRECTORY)/src/mesa/shader/descrip.mms			\
+	$(DIRECTORY)/src/mesa/shader/grammar/*.[ch]			\
+	$(DIRECTORY)/src/mesa/shader/grammar/descrip.mms		\
+	$(DIRECTORY)/src/mesa/shader/slang/*.[ch]			\
+	$(DIRECTORY)/src/mesa/shader/slang/descrip.mms			\
+	$(DIRECTORY)/src/mesa/shader/slang/library/*.[ch]		\
 	$(DIRECTORY)/src/mesa/swrast/*.[ch]				\
-	$(DIRECTORY)/src/mesa/swrast/swrast.dsp				\
 	$(DIRECTORY)/src/mesa/swrast/descrip.mms			\
 	$(DIRECTORY)/src/mesa/swrast_setup/*.[ch]			\
-	$(DIRECTORY)/src/mesa/swrast_setup/swrast_setup.dsp		\
 	$(DIRECTORY)/src/mesa/swrast_setup/descrip.mms			\
 	$(DIRECTORY)/src/mesa/tnl/*.[chS]				\
-	$(DIRECTORY)/src/mesa/tnl/tnl.dsp				\
 	$(DIRECTORY)/src/mesa/tnl/descrip.mms				\
 	$(DIRECTORY)/src/mesa/tnl_dd/*.[ch]				\
 	$(DIRECTORY)/src/mesa/tnl_dd/imm/*.[ch]				\
@@ -196,11 +211,11 @@ LIB_FILES =	\
 	$(DIRECTORY)/src/mesa/drivers/beos/Makefile			\
 	$(DIRECTORY)/src/mesa/drivers/common/*.[ch]			\
 	$(DIRECTORY)/src/mesa/drivers/common/descrip.mms		\
+	$(DIRECTORY)/src/mesa/drivers/directfb/*.[ch]			\
+	$(DIRECTORY)/src/mesa/drivers/directfb/Makefile			\
 	$(DIRECTORY)/src/mesa/drivers/dos/*.[chS]			\
-	$(DIRECTORY)/src/mesa/drivers/dri/common/*.[ch]			\
 	$(DIRECTORY)/src/mesa/drivers/fbdev/glfbdev.c			\
 	$(DIRECTORY)/src/mesa/drivers/glide/*.[ch]			\
-	$(DIRECTORY)/src/mesa/drivers/glide/*.def			\
 	$(DIRECTORY)/src/mesa/drivers/ggi/*.[ch]			\
 	$(DIRECTORY)/src/mesa/drivers/ggi/ggimesa.conf.in		\
 	$(DIRECTORY)/src/mesa/drivers/ggi/default/*.c			\
@@ -211,26 +226,61 @@ LIB_FILES =	\
 	$(DIRECTORY)/src/mesa/drivers/osmesa/Makefile.win		\
 	$(DIRECTORY)/src/mesa/drivers/osmesa/descrip.mms		\
 	$(DIRECTORY)/src/mesa/drivers/osmesa/osmesa.def			\
-	$(DIRECTORY)/src/mesa/drivers/osmesa/osmesa.dsp			\
 	$(DIRECTORY)/src/mesa/drivers/osmesa/*.[ch]			\
 	$(DIRECTORY)/src/mesa/drivers/svga/*.[ch]			\
 	$(DIRECTORY)/src/mesa/drivers/windows/*/*.[ch]			\
 	$(DIRECTORY)/src/mesa/drivers/windows/*/*.def			\
-	$(DIRECTORY)/src/mesa/drivers/windows/*/*.dsp			\
 	$(DIRECTORY)/src/mesa/drivers/x11/descrip.mms			\
 	$(DIRECTORY)/src/mesa/drivers/x11/*.[ch]			\
+	$(DIRECTORY)/src/mesa/ppc/*.[ch]				\
 	$(DIRECTORY)/src/mesa/sparc/*.[chS]				\
 	$(DIRECTORY)/src/mesa/x86/Makefile				\
 	$(DIRECTORY)/src/mesa/x86/*.[ch]				\
 	$(DIRECTORY)/src/mesa/x86/*.S					\
+	$(DIRECTORY)/src/mesa/x86/rtasm/*.[ch]				\
+	$(DIRECTORY)/src/mesa/x86-64/*.[chS]				\
+	$(DIRECTORY)/src/mesa/x86-64/Makefile				\
+	$(DIRECTORY)/progs/Makefile					\
+	$(DIRECTORY)/progs/util/README					\
+	$(DIRECTORY)/progs/util/*.[ch]					\
+	$(DIRECTORY)/progs/util/sampleMakefile				\
+	$(DIRECTORY)/vms/analyze_map.com				\
+	$(DIRECTORY)/vms/xlib.opt					\
+	$(DIRECTORY)/vms/xlib_share.opt					\
+	$(DIRECTORY)/windows/VC6/mesa/gdi/gdi.dsp			\
+	$(DIRECTORY)/windows/VC6/mesa/glu/*.txt				\
+	$(DIRECTORY)/windows/VC6/mesa/glu/glu.dsp			\
+	$(DIRECTORY)/windows/VC6/mesa/mesa.dsw				\
+	$(DIRECTORY)/windows/VC6/mesa/mesa/mesa.dsp			\
+	$(DIRECTORY)/windows/VC6/mesa/osmesa/osmesa.dsp			\
+	$(DIRECTORY)/windows/VC7/mesa/gdi/gdi.vcproj			\
+	$(DIRECTORY)/windows/VC7/mesa/glu/glu.vcproj			\
+	$(DIRECTORY)/windows/VC7/mesa/mesa.sln				\
+	$(DIRECTORY)/windows/VC7/mesa/mesa/mesa.vcproj			\
+	$(DIRECTORY)/windows/VC7/mesa/osmesa/osmesa.vcproj
+
+DRI_FILES = \
+	$(DIRECTORY)/include/GL/internal/dri_interface.h		\
+	$(DIRECTORY)/include/GL/internal/sarea.h			\
+	$(DIRECTORY)/src/glx/Makefile					\
+	$(DIRECTORY)/src/glx/x11/Makefile				\
+	$(DIRECTORY)/src/glx/x11/*.[ch]					\
+	$(DIRECTORY)/src/mesa/drivers/dri/Makefile			\
+	$(DIRECTORY)/src/mesa/drivers/dri/Makefile.template		\
+	$(DIRECTORY)/src/mesa/drivers/dri/common/xmlpool/*.[ch]		\
+	$(DIRECTORY)/src/mesa/drivers/dri/common/xmlpool/*.po		\
+	$(DIRECTORY)/src/mesa/drivers/dri/*/*.[chS]			\
+	$(DIRECTORY)/src/mesa/drivers/dri/*/Makefile			\
+	$(DIRECTORY)/src/mesa/drivers/dri/*/Doxyfile			\
+	$(DIRECTORY)/src/mesa/drivers/dri/*/server/*.[ch]
+
+SGI_GLU_FILES = \
 	$(DIRECTORY)/src/glu/Makefile					\
 	$(DIRECTORY)/src/glu/descrip.mms				\
 	$(DIRECTORY)/src/glu/sgi/Makefile				\
 	$(DIRECTORY)/src/glu/sgi/Makefile.win				\
 	$(DIRECTORY)/src/glu/sgi/Makefile.DJ				\
-	$(DIRECTORY)/src/glu/sgi/cc*.txt				\
 	$(DIRECTORY)/src/glu/sgi/glu.def				\
-	$(DIRECTORY)/src/glu/sgi/glu.dsp				\
 	$(DIRECTORY)/src/glu/sgi/dummy.cc				\
 	$(DIRECTORY)/src/glu/sgi/descrip.mms				\
 	$(DIRECTORY)/src/glu/sgi/mesaglu.opt				\
@@ -244,45 +294,24 @@ LIB_FILES =	\
 	$(DIRECTORY)/src/glu/sgi/libtess/README				\
 	$(DIRECTORY)/src/glu/sgi/libtess/alg-outline			\
 	$(DIRECTORY)/src/glu/sgi/libtess/*.[ch]				\
-	$(DIRECTORY)/src/glu/sgi/libutil/*.[ch]				\
-	$(DIRECTORY)/src/glu/mesa/README[12]				\
-	$(DIRECTORY)/src/glu/mesa/Makefile*				\
-	$(DIRECTORY)/src/glu/mesa/descrip.mms				\
-	$(DIRECTORY)/src/glu/mesa/mms_depend				\
-	$(DIRECTORY)/src/glu/mesa/*.def					\
-	$(DIRECTORY)/src/glu/mesa/depend				\
-	$(DIRECTORY)/src/glu/mesa/*.[ch]				\
-	$(DIRECTORY)/src/glw/*.[ch]					\
-	$(DIRECTORY)/src/glw/Makefile*					\
-	$(DIRECTORY)/src/glw/README					\
-	$(DIRECTORY)/src/glw/depend					\
-	$(DIRECTORY)/progs/Makefile					\
-	$(DIRECTORY)/progs/util/README					\
-	$(DIRECTORY)/progs/util/*.[ch]					\
-	$(DIRECTORY)/progs/util/sampleMakefile				\
-	$(DIRECTORY)/vms/analyze_map.com				\
-	$(DIRECTORY)/vms/xlib.opt					\
-	$(DIRECTORY)/vms/xlib_share.opt
+	$(DIRECTORY)/src/glu/sgi/libutil/*.[ch]
 
+MESA_GLU_FILES = \
+	$(DIRECTORY)/src/glu/mesa/README[12]		\
+	$(DIRECTORY)/src/glu/mesa/Makefile*		\
+	$(DIRECTORY)/src/glu/mesa/descrip.mms		\
+	$(DIRECTORY)/src/glu/mesa/mms_depend		\
+	$(DIRECTORY)/src/glu/mesa/*.def			\
+	$(DIRECTORY)/src/glu/mesa/depend		\
+	$(DIRECTORY)/src/glu/mesa/*.[ch]
 
-DEMO_FILES =	\
-	$(DIRECTORY)/include/GL/glut.h			\
-	$(DIRECTORY)/include/GL/glutf90.h		\
-	$(DIRECTORY)/src/glut/glx/Makefile*		\
-	$(DIRECTORY)/src/glut/glx/depend		\
-	$(DIRECTORY)/src/glut/glx/*def			\
-	$(DIRECTORY)/src/glut/glx/descrip.mms		\
-	$(DIRECTORY)/src/glut/glx/mms_depend		\
-	$(DIRECTORY)/src/glut/glx/glut.dsp		\
-	$(DIRECTORY)/src/glut/glx/*.[ch]		\
-	$(DIRECTORY)/src/glut/beos/*.[ch]		\
-	$(DIRECTORY)/src/glut/beos/*.cpp		\
-	$(DIRECTORY)/src/glut/beos/Makefile		\
-	$(DIRECTORY)/src/glut/dos/*.[ch]		\
-	$(DIRECTORY)/src/glut/dos/Makefile.DJ		\
-	$(DIRECTORY)/src/glut/dos/PC_HW/*.[chS]		\
-	$(DIRECTORY)/src/glut/ggi/*.[ch]		\
-	$(DIRECTORY)/src/glut/ggi/Makefile		\
+GLW_FILES = \
+	$(DIRECTORY)/src/glw/*.[ch]			\
+	$(DIRECTORY)/src/glw/Makefile*			\
+	$(DIRECTORY)/src/glw/README			\
+	$(DIRECTORY)/src/glw/depend
+
+DEMO_FILES = \
 	$(DIRECTORY)/progs/beos/*.cpp			\
 	$(DIRECTORY)/progs/beos/Makefile		\
 	$(DIRECTORY)/progs/images/*.rgb			\
@@ -293,8 +322,8 @@ DEMO_FILES =	\
 	$(DIRECTORY)/progs/demos/*.cxx			\
 	$(DIRECTORY)/progs/demos/*.dat			\
 	$(DIRECTORY)/progs/demos/README			\
-	$(DIRECTORY)/progs/demos/Windows/*.dsp		\
-	$(DIRECTORY)/progs/demos/Windows/*.dsw		\
+	$(DIRECTORY)/progs/osdemos/Makefile		\
+	$(DIRECTORY)/progs/osdemos/*.c			\
 	$(DIRECTORY)/progs/xdemos/Makefile*		\
 	$(DIRECTORY)/progs/xdemos/descrip.mms		\
 	$(DIRECTORY)/progs/xdemos/*.[chf]		\
@@ -307,67 +336,108 @@ DEMO_FILES =	\
 	$(DIRECTORY)/progs/windml/Makefile.ugl		\
 	$(DIRECTORY)/progs/windml/*.c			\
 	$(DIRECTORY)/progs/windml/*.bmp			\
-	$(DIRECTORY)/progs/ggi/*.c
+	$(DIRECTORY)/progs/ggi/*.c			\
+	$(DIRECTORY)/windows/VC6/progs/demos/*.dsp	\
+	$(DIRECTORY)/windows/VC6/progs/progs.dsw	\
+	$(DIRECTORY)/windows/VC7/progs/demos/*.vcproj	\
+	$(DIRECTORY)/windows/VC7/progs/progs.sln
+
+GLUT_FILES = \
+	$(DIRECTORY)/include/GL/glut.h			\
+	$(DIRECTORY)/include/GL/glutf90.h		\
+	$(DIRECTORY)/src/glut/glx/Makefile*		\
+	$(DIRECTORY)/src/glut/glx/depend		\
+	$(DIRECTORY)/src/glut/glx/*def			\
+	$(DIRECTORY)/src/glut/glx/descrip.mms		\
+	$(DIRECTORY)/src/glut/glx/mms_depend		\
+	$(DIRECTORY)/src/glut/glx/*.[ch]		\
+	$(DIRECTORY)/src/glut/beos/*.[ch]		\
+	$(DIRECTORY)/src/glut/beos/*.cpp		\
+	$(DIRECTORY)/src/glut/beos/Makefile		\
+	$(DIRECTORY)/src/glut/dos/*.[ch]		\
+	$(DIRECTORY)/src/glut/dos/Makefile.DJ		\
+	$(DIRECTORY)/src/glut/dos/PC_HW/*.[chS]		\
+	$(DIRECTORY)/src/glut/ggi/*.[ch]		\
+	$(DIRECTORY)/src/glut/ggi/Makefile		\
+	$(DIRECTORY)/windows/VC6/progs/glut/glut.dsp	\
+	$(DIRECTORY)/windows/VC7/progs/glut/glut.vcproj
+
+DEPEND_FILES = \
+	$(TOP)/src/mesa/depend		\
+	$(TOP)/src/glw/depend		\
+	$(TOP)/src/glut/glx/depend	\
+	$(TOP)/src/glu/sgi/depend
 
 
-DRI_FILES = \
-	$(DIRECTORY)/src/glx/Makefile					\
-	$(DIRECTORY)/src/glx/mini/*.[ch]				\
-	$(DIRECTORY)/src/glx/mini/example.miniglx.conf			\
-	$(DIRECTORY)/src/glx/mini/NOTES					\
-	$(DIRECTORY)/src/mesa/drivers/dri/Makefile			\
-	$(DIRECTORY)/src/mesa/drivers/dri/Makefile.template		\
-	$(DIRECTORY)/src/mesa/drivers/dri/common/*.[ch]			\
-	$(DIRECTORY)/src/mesa/drivers/dri/dri_client/imports/*.h	\
-	$(DIRECTORY)/src/mesa/drivers/dri/*/*.[ch]			\
-	$(DIRECTORY)/src/mesa/drivers/dri/*/depend			\
-	$(DIRECTORY)/src/mesa/drivers/dri/*/Makefile			\
-	$(DIRECTORY)/src/mesa/drivers/dri/*/Doxyfile			\
-	$(DIRECTORY)/src/mesa/drivers/dri/*/server/*.[ch]
+LIB_FILES = $(MAIN_FILES) $(DRI_FILES) $(SGI_GLU_FILES) $(GLW_FILES)
 
 
 # Everything for new a Mesa release:
-tarballs: lib_gz demo_gz lib_bz2 demo_bz2 lib_zip demo_zip md5
+tarballs: rm_depend lib_gz demo_gz glut_gz lib_bz2 demo_bz2 glut_bz2 lib_zip demo_zip glut_zip md5
 
+
+rm_depend:
+	@for dep in $(DEPEND_FILES) ; do \
+		rm -f $$dep ; \
+		touch $$dep ; \
+	done
 
 lib_gz:
 	rm -f configs/current ; \
 	cd .. ; \
-	tar -cvf $(LIB_NAME).tar $(LIB_FILES) ; \
+	tar -cf $(LIB_NAME).tar $(LIB_FILES) ; \
 	gzip $(LIB_NAME).tar ; \
 	mv $(LIB_NAME).tar.gz $(DIRECTORY)
 
 demo_gz:
 	cd .. ; \
-	tar -cvf $(DEMO_NAME).tar $(DEMO_FILES) ; \
+	tar -cf $(DEMO_NAME).tar $(DEMO_FILES) ; \
 	gzip $(DEMO_NAME).tar ; \
 	mv $(DEMO_NAME).tar.gz $(DIRECTORY)
+
+glut_gz:
+	cd .. ; \
+	tar -cf $(GLUT_NAME).tar $(GLUT_FILES) ; \
+	gzip $(GLUT_NAME).tar ; \
+	mv $(GLUT_NAME).tar.gz $(DIRECTORY)
 
 lib_bz2:
 	rm -f configs/current ; \
 	cd .. ; \
-	tar -cvf $(LIB_NAME).tar $(LIB_FILES) ; \
+	tar -cf $(LIB_NAME).tar $(LIB_FILES) ; \
 	bzip2 $(LIB_NAME).tar ; \
 	mv $(LIB_NAME).tar.bz2 $(DIRECTORY)
 
 demo_bz2:
 	cd .. ; \
-	tar -cvf $(DEMO_NAME).tar $(DEMO_FILES) ; \
+	tar -cf $(DEMO_NAME).tar $(DEMO_FILES) ; \
 	bzip2 $(DEMO_NAME).tar ; \
 	mv $(DEMO_NAME).tar.bz2 $(DIRECTORY)
 
+glut_bz2:
+	cd .. ; \
+	tar -cf $(GLUT_NAME).tar $(GLUT_FILES) ; \
+	bzip2 $(GLUT_NAME).tar ; \
+	mv $(GLUT_NAME).tar.bz2 $(DIRECTORY)
+
 lib_zip:
 	rm -f configs/current ; \
-	-rm $(LIB_NAME).zip ; \
+	rm -f $(LIB_NAME).zip ; \
 	cd .. ; \
-	zip -r $(LIB_NAME).zip $(LIB_FILES) ; \
+	zip -qr $(LIB_NAME).zip $(LIB_FILES) ; \
 	mv $(LIB_NAME).zip $(DIRECTORY)
 
 demo_zip:
-	-rm $(DEMO_NAME).zip ; \
+	rm -f $(DEMO_NAME).zip ; \
 	cd .. ; \
-	zip -r $(DEMO_NAME).zip $(DEMO_FILES) ; \
+	zip -qr $(DEMO_NAME).zip $(DEMO_FILES) ; \
 	mv $(DEMO_NAME).zip $(DIRECTORY)
+
+glut_zip:
+	rm -f $(GLUT_NAME).zip ; \
+	cd .. ; \
+	zip -qr $(GLUT_NAME).zip $(GLUT_FILES) ; \
+	mv $(GLUT_NAME).zip $(DIRECTORY)
 
 md5:
 	@-md5sum $(LIB_NAME).tar.gz
@@ -376,3 +446,6 @@ md5:
 	@-md5sum $(DEMO_NAME).tar.gz
 	@-md5sum $(DEMO_NAME).tar.bz2
 	@-md5sum $(DEMO_NAME).zip
+	@-md5sum $(GLUT_NAME).tar.gz
+	@-md5sum $(GLUT_NAME).tar.bz2
+	@-md5sum $(GLUT_NAME).zip

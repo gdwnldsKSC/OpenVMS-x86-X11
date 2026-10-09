@@ -1,6 +1,7 @@
 /*
+ * $RCSId: xc/lib/fontconfig/src/fcdbg.c,v 1.10 2002/08/22 18:53:22 keithp Exp $
  *
- * Copyright © 2000 Keith Packard
+ * Copyright Â© 2000 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -156,6 +157,7 @@ FcOpPrint (FcOp op)
     case FcOpCeil: printf ("Ceil"); break;
     case FcOpRound: printf ("Round"); break;
     case FcOpTrunc: printf ("Trunc"); break;
+    case FcOpListing: printf ("Listing"); break;
     case FcOpInvalid: printf ("Invalid"); break;
     }
 }
@@ -200,6 +202,7 @@ FcExprPrint (const FcExpr *expr)
     case FcOpMore:
     case FcOpMoreEqual:
     case FcOpContains:
+    case FcOpListing:
     case FcOpNotContains:
     case FcOpPlus:
     case FcOpMinus:
@@ -224,6 +227,7 @@ FcExprPrint (const FcExpr *expr)
 	case FcOpMore: printf ("More"); break;
 	case FcOpMoreEqual: printf ("MoreEqual"); break;
 	case FcOpContains: printf ("Contains"); break;
+	case FcOpListing: printf ("Listing"); break;
 	case FcOpNotContains: printf ("NotContains"); break;
 	case FcOpPlus: printf ("Plus"); break;
 	case FcOpMinus: printf ("Minus"); break;

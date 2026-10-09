@@ -45,23 +45,14 @@ BUGMSG = -DBUILDERADDR='$(BUILDERADDR)'
  * of Imakefile (include <Server.tmpl>)
  */
 
-#ifndef HasGccStackProtector
-#define HasGccStackProtector	NO
-#endif
-
-#if HasGccStackProtector
-MODULE_GCC_FLAGS1 = -fno-stack-protector
-#endif 
 
 #ifndef HasGccMergeConstants
 #define HasGccMergeConstants	NO
 #endif
 
 #if HasGccMergeConstants && DoLoadableServer && !MakeDllModules
-MODULE_GCC_FLAGS2 = -fno-merge-constants
+MODULE_GCC_FLAGS = -fno-merge-constants
 #endif
-
-MODULE_GCC_FLAGS = $(MODULE_GCC_FLAGS1) $(MODULE_GCC_FLAGS2)
 
 #if defined(IHaveModules) && MakeDllModules
 MODULE_PIC_FLAGS = $(PICFLAGS)
@@ -93,10 +84,10 @@ MODULE_DEFINES = -DXFree86Module
 		grep -v '^\#' > basename.i
 
 #undef AssembleObject
-#define AssembleObject(flags) ModCPPOnlyAsm($*,flags)			@@\
-	RemoveFile($*.o)						@@\
-	$(MODAS) $(MODASFLAGS) -o $*.o $*.i				@@\
-	RemoveFile($*.i)
+#define AssembleObject(basename,flags) ModCPPOnlyAsm(basename,flags)	@@\
+	RemoveFile(basename.o)						@@\
+	$(MODAS) $(MODASFLAGS) -o basename.o basename.i			@@\
+	RemoveFile(basename.i)
 
 /* This overrides the NormalRelocatableTarget in Imake.rules */
 #undef NormalRelocatableTarget

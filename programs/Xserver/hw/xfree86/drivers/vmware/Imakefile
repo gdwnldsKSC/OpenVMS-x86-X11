@@ -34,7 +34,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(vmware,$(OBJS))
 
-InstallObjectModule(vmware,$(MODULEDIR),drivers)
+InstallVideoObjectModule(vmware,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(vmware)

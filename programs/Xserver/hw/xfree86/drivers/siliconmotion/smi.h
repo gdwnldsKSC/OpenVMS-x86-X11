@@ -31,8 +31,6 @@ authorization from the XFree86 Project and Silicon Motion.
 #ifndef _SMI_H
 #define _SMI_H
 
-#define USE_FB
-
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -46,16 +44,7 @@ authorization from the XFree86 Project and Silicon Motion.
 #include "mipointer.h"
 #include "micmap.h"
 
-#ifdef USE_FB
 #include "fb.h"
-#else
-
-#define PSZ 8
-#include "cfb.h"
-#undef PSZ
-#include "cfb16.h"
-#include "cfb24.h"
-#endif
 
 #include "xaa.h"
 #include "xf86cmap.h"
@@ -65,7 +54,7 @@ authorization from the XFree86 Project and Silicon Motion.
 #include "vbe.h"
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 /******************************************************************************/
 /*			D E F I N I T I O N S				      */

@@ -78,7 +78,7 @@ However, if you have problems with auto-detection, you can specify:
 
 8.  Authors
 
-The X11R6.8.2 driver was originally part of XFree86 4.4 rc2.
+The X11R6.9 driver was originally part of XFree86 4.4 rc2.
 
 The XFree86 4 driver was ported from XFree86 3.3.x and enhanced by:
 
@@ -119,4 +119,4 @@ http://www.precisioninsight.com
 http://www.suse.com
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.r128,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.r128,v 1.4 2005/12/21 05:39:05 kem Exp $

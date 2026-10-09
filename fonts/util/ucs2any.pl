@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# ucs2any.pl -- Markus Kuhn <mkuhn@acm.org>
+# ucs2any.pl -- Markus Kuhn <http://www.cl.cam.ac.uk/~mgk25/>
 #
 # This Perl script allows you to generate from an ISO10646-1 encoded
 # BDF font other BDF fonts in any possible encoding. This way, you can
@@ -11,8 +11,8 @@
 # storing the same fonts in many different encodings is clearly
 # a waste of storage capacity).
 #
-# Id: ucs2any.pl,v 1.12 2001-02-17 15:21:05+00 mgk25 Rel
-# $XFree86: xc/fonts/util/ucs2any.pl,v 1.4 2001/03/01 00:37:06 dawes Exp $
+# $ucs-fonts: ucs2any.pl,v 1.14 2002-11-12 20:39:22+00 mgk25 Rel $
+#
 
 use strict 'subs';
 
@@ -89,7 +89,7 @@ sub combine_bbx {
 
 print <<End if $#ARGV < 0;
 
-Usage: ucs2any [+d|-d] <source-name> { <mapping-file> <registry-encoding> }
+Usage: ucs2any.pl [+d|-d] <source-name> { <mapping-file> <registry-encoding> }
 
 where
 
@@ -110,7 +110,7 @@ where
 
 Example:
 
-   ucs2any 6x13.bdf 8859-1.TXT iso8859-1 8859-2.TXT iso8859-2
+   ucs2any.pl 6x13.bdf 8859-1.TXT iso8859-1 8859-2.TXT iso8859-2
 
 will generate the files 6x13-iso8859-1.bdf and 6x13-iso8859-2.bdf
 
@@ -302,7 +302,9 @@ while ($#ARGV > 0) {
     print FOUT "COMMENT Generated with 'ucs2any.pl $fsource $fmap " .
 	"$registry-$encoding'\n";
     print FOUT "COMMENT from an ISO10646-1 encoded source BDF font.\n";
-    print FOUT "COMMENT ucs2any.pl by Markus Kuhn <mkuhn\@acm.org>, 2000.\n";
+    print FOUT
+	"COMMENT ucs2any.pl by " .
+	"Markus Kuhn <http://www.cl.cam.ac.uk/~mgk25/>, 2000.\n";
     $newheader = $header;
     $newheader =~
 	s/^FONTBOUNDINGBOX\s+.*$/FONTBOUNDINGBOX @bbx/m

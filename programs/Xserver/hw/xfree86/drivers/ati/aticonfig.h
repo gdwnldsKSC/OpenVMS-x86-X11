@@ -25,10 +25,9 @@
 #define ___ATICONFIG_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
-extern void ATIProcessOptions FunctionPrototype((ScrnInfoPtr, ATIPtr));
+extern void ATIProcessOptions(ScrnInfoPtr, ATIPtr);
 
 #endif /* ___ATICONFIG_H___ */

@@ -27,6 +27,9 @@
 
 /* $XFree86: xc/lib/Xaw/Converters.c,v 3.13 1999/06/06 08:47:54 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>

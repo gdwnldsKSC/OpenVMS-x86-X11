@@ -50,6 +50,7 @@ in this Software without prior written authorization from The Open Group.
 
 #define ShapeBounding			0
 #define ShapeClip			1
+#define ShapeInput			2
 
 #define ShapeNotifyMask			(1L << 0)
 #define ShapeNotify			0

@@ -31,7 +31,6 @@
  *
  */
 
-#define __NO_VERSION__
 #include "i830.h"
 #include "drmP.h"
 #include "drm.h"
@@ -54,11 +53,6 @@
 
 #define I830_BUF_UNMAPPED 0
 #define I830_BUF_MAPPED   1
-
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,4,2)
-#define down_write down
-#define up_write up
-#endif
 
 static inline void i830_print_status_page(drm_device_t *dev)
 {
@@ -160,6 +154,7 @@ static int i830_map_buffer(drm_buf_t *buf, struct file *filp)
 	drm_i830_buf_priv_t *buf_priv = buf->dev_private;
       	drm_i830_private_t *dev_priv = dev->dev_private;
    	struct file_operations *old_fops;
+	unsigned long virtual;
 	int retcode = 0;
 
 	if(buf_priv->currently_mapped == I830_BUF_MAPPED) return -EINVAL;
@@ -168,17 +163,17 @@ static int i830_map_buffer(drm_buf_t *buf, struct file *filp)
 	old_fops = filp->f_op;
 	filp->f_op = &i830_buffer_fops;
 	dev_priv->mmap_buffer = buf;
-	buf_priv->virtual = (void __user *)do_mmap(filp, 0, buf->total, 
-					    PROT_READ|PROT_WRITE,
-					    MAP_SHARED, 
-					    buf->bus_address);
+	virtual = do_mmap(filp, 0, buf->total, PROT_READ|PROT_WRITE,
+			    MAP_SHARED, buf->bus_address);
 	dev_priv->mmap_buffer = NULL;
 	filp->f_op = old_fops;
-	if (IS_ERR(buf_priv->virtual)) {
+	if (IS_ERR((void *)virtual)) {		/* ugh */
 		/* Real error */
 		DRM_ERROR("mmap error\n");
-		retcode = PTR_ERR(buf_priv->virtual);
+		retcode = virtual;
 		buf_priv->virtual = NULL;
+	} else {
+		buf_priv->virtual = (void __user *)virtual;
 	}
 	up_write( &current->mm->mmap_sem );
 
@@ -239,13 +234,11 @@ int i830_dma_cleanup(drm_device_t *dev)
 {
 	drm_device_dma_t *dma = dev->dma;
 
-#if __HAVE_IRQ
 	/* Make sure interrupts are disabled here because the uninstall ioctl
 	 * may not have been called from userspace and after dev_private
 	 * is freed, it's too late.
 	 */
 	if (dev->irq_enabled) DRM(irq_uninstall)(dev);
-#endif
 
 	if (dev->dev_private) {
 		int i;
@@ -377,15 +370,15 @@ static int i830_dma_initialize(drm_device_t *dev,
 		DRM_ERROR("can not find sarea!\n");
 		return -EINVAL;
 	}
-	DRM_FIND_MAP( dev_priv->mmio_map, init->mmio_offset );
+	dev_priv->mmio_map = drm_core_findmap(dev, init->mmio_offset);
 	if(!dev_priv->mmio_map) {
 		dev->dev_private = (void *)dev_priv;
 		i830_dma_cleanup(dev);
 		DRM_ERROR("can not find mmio map!\n");
 		return -EINVAL;
 	}
-	DRM_FIND_MAP( dev_priv->buffer_map, init->buffers_offset );
-	if(!dev_priv->buffer_map) {
+	dev->agp_buffer_map = drm_core_findmap(dev, init->buffers_offset);
+	if(!dev->agp_buffer_map) {
 		dev->dev_private = (void *)dev_priv;
 		i830_dma_cleanup(dev);
 		DRM_ERROR("can not find dma buffer map!\n");
@@ -470,7 +463,7 @@ static int i830_dma_initialize(drm_device_t *dev,
 }
 
 int i830_dma_init(struct inode *inode, struct file *filp,
-		  unsigned int cmd, unsigned long __user arg)
+		  unsigned int cmd, unsigned long arg)
 {
    	drm_file_t *priv = filp->private_data;
    	drm_device_t *dev = priv->dev;
@@ -478,7 +471,7 @@ int i830_dma_init(struct inode *inode, struct file *filp,
    	drm_i830_init_t init;
    	int retcode = 0;
 	
-  	if (copy_from_user(&init, (void __user *)arg, sizeof(init)))
+  	if (copy_from_user(&init, (void * __user) arg, sizeof(init)))
 		return -EFAULT;
 	
    	switch(init.func) {
@@ -1172,19 +1165,19 @@ static void i830_dma_dispatch_vertex(drm_device_t *dev,
    	DRM_DEBUG(  "start + used - 4 : %ld\n", start + used - 4);
 
 	if (buf_priv->currently_mapped == I830_BUF_MAPPED) {
-		u32 *vp = buf_priv->virtual;
+		u32 *vp = buf_priv->kernel_virtual;
 
-		DRM_PUT_USER_UNCHECKED(&vp[0], (GFX_OP_PRIMITIVE |
-			 sarea_priv->vertex_prim |
-			 ((used/4)-2)));
+		vp[0] = (GFX_OP_PRIMITIVE |
+			sarea_priv->vertex_prim |
+			((used/4)-2));
 
 		if (dev_priv->use_mi_batchbuffer_start) {
-			DRM_PUT_USER_UNCHECKED(&vp[used/4], MI_BATCH_BUFFER_END);
+			vp[used/4] = MI_BATCH_BUFFER_END;
 			used += 4; 
 		}
 		
 		if (used & 4) {
-			DRM_PUT_USER_UNCHECKED(&vp[used/4], 0);
+			vp[used/4] = 0;
 			used += 4;
 		}
 
@@ -1292,10 +1285,8 @@ static int i830_flush_queue(drm_device_t *dev)
 }
 
 /* Must be called with the lock held */
-void i830_reclaim_buffers( struct file *filp )
+void i830_reclaim_buffers( drm_device_t *dev, struct file *filp )
 {
-	drm_file_t    *priv   = filp->private_data;
-	drm_device_t  *dev    = priv->dev;
 	drm_device_dma_t *dma = dev->dma;
 	int		 i;
 
@@ -1322,7 +1313,7 @@ void i830_reclaim_buffers( struct file *filp )
 }
 
 int i830_flush_ioctl(struct inode *inode, struct file *filp, 
-		     unsigned int cmd, unsigned long __user arg)
+		     unsigned int cmd, unsigned long arg)
 {
    	drm_file_t	  *priv	  = filp->private_data;
    	drm_device_t	  *dev	  = priv->dev;
@@ -1337,7 +1328,7 @@ int i830_flush_ioctl(struct inode *inode, struct file *filp,
 }
 
 int i830_dma_vertex(struct inode *inode, struct file *filp,
-	       unsigned int cmd, unsigned long __user arg)
+	       unsigned int cmd, unsigned long arg)
 {
 	drm_file_t *priv = filp->private_data;
 	drm_device_t *dev = priv->dev;
@@ -1372,7 +1363,7 @@ int i830_dma_vertex(struct inode *inode, struct file *filp,
 }
 
 int i830_clear_bufs(struct inode *inode, struct file *filp,
-		   unsigned int cmd, unsigned long __user arg)
+		   unsigned int cmd, unsigned long arg)
 {
 	drm_file_t *priv = filp->private_data;
 	drm_device_t *dev = priv->dev;
@@ -1399,7 +1390,7 @@ int i830_clear_bufs(struct inode *inode, struct file *filp,
 }
 
 int i830_swap_bufs(struct inode *inode, struct file *filp,
-		  unsigned int cmd, unsigned long __user arg)
+		  unsigned int cmd, unsigned long arg)
 {
 	drm_file_t *priv = filp->private_data;
 	drm_device_t *dev = priv->dev;
@@ -1463,7 +1454,7 @@ int i830_flip_bufs(struct inode *inode, struct file *filp,
 }
 
 int i830_getage(struct inode *inode, struct file *filp, unsigned int cmd,
-		unsigned long __user arg)
+		unsigned long arg)
 {
    	drm_file_t	  *priv	    = filp->private_data;
 	drm_device_t	  *dev	    = priv->dev;
@@ -1477,7 +1468,7 @@ int i830_getage(struct inode *inode, struct file *filp, unsigned int cmd,
 }
 
 int i830_getbuf(struct inode *inode, struct file *filp, unsigned int cmd,
-		unsigned long __user arg)
+		unsigned long arg)
 {
 	drm_file_t	  *priv	    = filp->private_data;
 	drm_device_t	  *dev	    = priv->dev;
@@ -1514,7 +1505,7 @@ int i830_getbuf(struct inode *inode, struct file *filp, unsigned int cmd,
 int i830_copybuf(struct inode *inode,
 		 struct file *filp, 
 		 unsigned int cmd,
-		 unsigned long __user arg)
+		 unsigned long arg)
 {
 	/* Never copy - 2.4.x doesn't need it */
 	return 0;
@@ -1529,7 +1520,7 @@ int i830_docopy(struct inode *inode, struct file *filp, unsigned int cmd,
 
 
 int i830_getparam( struct inode *inode, struct file *filp, unsigned int cmd,
-		      unsigned long __user arg )
+		      unsigned long arg )
 {
 	drm_file_t	  *priv	    = filp->private_data;
 	drm_device_t	  *dev	    = priv->dev;
@@ -1563,7 +1554,7 @@ int i830_getparam( struct inode *inode, struct file *filp, unsigned int cmd,
 
 
 int i830_setparam( struct inode *inode, struct file *filp, unsigned int cmd,
-		   unsigned long __user arg )
+		   unsigned long arg )
 {
 	drm_file_t	  *priv	    = filp->private_data;
 	drm_device_t	  *dev	    = priv->dev;
@@ -1588,3 +1579,45 @@ int i830_setparam( struct inode *inode, struct file *filp, unsigned int cmd,
 
 	return 0;
 }
+
+
+static void i830_driver_pretakedown(drm_device_t *dev)
+{
+	i830_dma_cleanup( dev );
+}
+
+static void i830_driver_release(drm_device_t *dev, struct file *filp)
+{
+	i830_reclaim_buffers(dev, filp);
+}
+
+static int i830_driver_dma_quiescent(drm_device_t *dev)
+{
+	i830_dma_quiescent( dev );
+	return 0;
+}
+
+void i830_driver_register_fns(drm_device_t *dev)
+{
+	dev->driver_features = DRIVER_USE_AGP | DRIVER_REQUIRE_AGP | DRIVER_USE_MTRR | DRIVER_HAVE_DMA | DRIVER_DMA_QUEUE;
+#if USE_IRQS
+	dev->driver_features |= DRIVER_HAVE_IRQ | DRIVER_SHARED_IRQ;
+#endif
+	dev->dev_priv_size = sizeof(drm_i830_buf_priv_t);
+	dev->fn_tbl.pretakedown = i830_driver_pretakedown;
+	dev->fn_tbl.release = i830_driver_release;
+	dev->fn_tbl.dma_quiescent = i830_driver_dma_quiescent;
+	dev->fn_tbl.reclaim_buffers = i830_reclaim_buffers;
+#if USE_IRQS
+	dev->fn_tbl.irq_preinstall = i830_driver_irq_preinstall;
+	dev->fn_tbl.irq_postinstall = i830_driver_irq_postinstall;
+	dev->fn_tbl.irq_uninstall = i830_driver_irq_uninstall;
+	dev->fn_tbl.irq_handler = i830_driver_irq_handler;
+#endif
+	dev->counters += 4;
+	dev->types[6] = _DRM_STAT_IRQ;
+	dev->types[7] = _DRM_STAT_PRIMARY;
+	dev->types[8] = _DRM_STAT_SECONDARY;
+	dev->types[9] = _DRM_STAT_DMA;
+}
+

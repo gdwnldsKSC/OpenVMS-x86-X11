@@ -31,5 +31,8 @@ vi_VN.tcvn
 vi_VN.viscii
 zh_CN
 zh_CN.gbk
+zh_CN.gb18030
+zh_HK.big5
+zh_HK.big5hkscs
 zh_TW
 zh_TW.big5

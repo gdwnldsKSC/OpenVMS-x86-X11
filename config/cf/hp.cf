@@ -104,12 +104,9 @@ XCOMM operating system:  OSName (OSMajorVersion.OSMinorVersion.OSTeenyVersion)
 # define StandardDefines	-Dhpux -DSYSV
 # if OSMajorVersion < 8
 #  define DefaultCCOptions	-Wc,-Nd4000,-Ns4100,-Ne700,-Np200,-Nw300
-#  define PexCCOptions		-Wp,-H150000 -Wc,-Nd4000,-Ns8100,-Ne700,-Np200
 # else
 #  define OptimizedCDebugFlags	+O1
-#  define PexCCOptions		-Wp,-H250000
 # endif
-# define PexShmIPC		NO
 # define LintOpts		-ax -Nd4000 -Ns8000 -Ne700 -Np200 -Na25000
 #endif
 #define MvCmd			mv -f

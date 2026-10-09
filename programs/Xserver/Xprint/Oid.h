@@ -31,10 +31,14 @@ dealings in this Software without prior written authorization from said
 copyright holders.
 */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _Xp_Oid_h
 #define _Xp_Oid_h
 
-#include <Xproto.h>
+#include <X11/Xproto.h>
 
 /*
  * include the auto-generated XpOid enum definition
@@ -187,6 +191,7 @@ typedef struct
 const char* XpOidString(XpOid);
 int XpOidStringLength(XpOid);
 XpOid XpOidFromString(const char* value);
+BOOL XpOidTrayMediumListHasTray(const XpOidTrayMediumList* list, XpOid tray);
 
 /*
  * XpOidList public methods

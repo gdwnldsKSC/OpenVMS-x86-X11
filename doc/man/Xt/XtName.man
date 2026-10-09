@@ -131,7 +131,7 @@
 XtName \- obtain widget's name
 .SH SYNTAX
 .HP
-Widget XtName(Widget \fIw\fP); 
+String XtName(Widget \fIw\fP); 
 .SH ARGUMENTS
 .IP \fIw\fP 1i
 Specifies the widget.

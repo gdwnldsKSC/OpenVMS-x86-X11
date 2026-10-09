@@ -1,4 +1,4 @@
-			Mesa 6.1 DOS/DJGPP Port v1.6
+			Mesa 6.3 DOS/DJGPP Port v1.7
 			~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -6,7 +6,7 @@
 Description:
 ~~~~~~~~~~~~
 
-Well, guess what... this is the DOS port of Mesa 6.1, for DJGPP fans... Whoa!
+Well, guess what... this is the DOS port of Mesa 6.3, for DJGPP fans... Whoa!
 The driver has its origins in ddsample.c, written by Brian Paul and found by me
 in Mesa 3.4.2.
 
@@ -59,7 +59,7 @@ Tested on:
 	CPU:		AMD Athlon XP 1800+
 	Mainboard:	GA-7VTXE w/ 512 MB DDRAM
 	Video card:	Voodoo5 6000 AGP w/ 128 MB SDRAM
-	DJGPP:		djdev 2.04 + gcc v3.3.2 + make v3.80
+	DJGPP:		djdev 2.04 + gcc v3.4.3 + make v3.80
 	OS:		DOS and Win98SE
 
 
@@ -91,8 +91,12 @@ FAQ:
 
 2. Using Mesa for DJGPP
 
+   Q) Every test I tried crashes badly.
+   A) If you have compiled with SSE and you're running under plain DOS, you
+      have to disable SSE at run-time. See environment variables below.
+
    Q) DMesa is so SLOOOW! The Win32 OpenGL performs so much better...
-   A) Is that a question? If you have a 3dfx Voodoo or higher card, you're
+   A) Is that a question? If you have a 3dfx Voodoo (any model), you're
       lucky (check http://sourceforge.net/projects/glide for the DJGPP port).
       If you haven't, sorry; everything is done in software. Suggestions?
 
@@ -109,14 +113,10 @@ FAQ:
       at peak performance ;-).
 
    Q) I'm getting a "bad font!" fatal error.
-   A) By default, DOS GLUT compiles with GLUT_IMPORT_LIB, to cope with variable
-      access inside dynamic modules (same mechanism used for Win32 _DLL). Since
-      -DGLUT_IMPORT_LIB affects Mesa's `glut.h', your apps must be compiled the
-      same way GLUT was compiled (either with or without defining it). If you
-      want to use another `glut.h' when building your own demos, or just don't
-      feel happy about this, make sure you remove the line with GLUT_IMPORT_LIB
-      from `Mesa/src/glut/dos/Makefile.DJ' before (re)making GLUT. Beware, this
-      means you will never EVER be able to safely use `glut.dxe'!
+   A) Always use GLUT_STROKE_* and GLUT_BITMAP_* constants when dealing with
+      GLUT fonts. If you're using `glut.dxe', then make sure GLUT_STROKE_* and
+      GLUT_BITMAP_* are mapped to integer constants, not to the actual font
+      address (same mechanism used for Win32 _DLL).
 
    Q) What is NUL driver good for, if I don't get any output at all?
    A) For debugging. The NUL driver is very much like OSMesa. Everything is
@@ -134,7 +134,7 @@ FAQ:
 	struct {
 		int xres, yres;
 		int bpp;
-	} **l = malloc(n * sizeof(void **));
+	} **l = malloc(n * sizeof(void *));
       Now pass the newly allocated buffer to fill in:
 	DMesaGetIntegerv(DMESA_GET_VIDEO_MODES, (GLint *)l);
       And collect the info:
@@ -194,6 +194,7 @@ Environment variables:
 ~~~~~~~~~~~~~~~~~~~~~~
 	DMESA_NULDRV		- (any value) force NUL driver
 	GLUT_FPS		- print frames/second statistics to stderr
+	MESA_NO_SSE		- (any value) safe option under pure DOS
 	DMESA_GLUT_REFRESH	- set vertical screen refresh rate (VESA3)
 	DMESA_GLUT_BPP		- set default bits per pixel (VGA needs 8)
 	DMESA_GLUT_ALPHA	- set default alpha bits (8)
@@ -256,6 +257,13 @@ v1.6 (aug-2004)
 	* reorganized fxMesa wrapper to handle multiple contexts
 	! fixed a horrible bug in VGA initialization routine
 	! fixed partial clears
+
+v1.7 (???-2005)
+	+ enabled OpenGL 2.0 support
+	+ added support for sw texture compression
+	+ added FreeGLUT specific functions
+	* no more GLX sources in DOS GLUT
+	* made GLUT timer callbacks less accurate but safer
 
 
 

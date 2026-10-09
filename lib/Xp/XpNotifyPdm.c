@@ -43,6 +43,9 @@
  *****************************************************************************/
 /* $XFree86: xc/lib/Xp/XpNotifyPdm.c,v 1.7tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/extensions/Print.h>
 #include <X11/Xlibint.h>
 #include <X11/Xutil.h>

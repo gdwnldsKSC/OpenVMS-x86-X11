@@ -48,12 +48,17 @@
  * authorization from the copyright holder(s) and author(s).
  */
 /* $XConsortium: xf86Xinput.c /main/14 1996/10/27 11:05:25 kaleb $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86Xinput.c,v 1.7 2005/10/21 19:06:13 ajax Exp $ */
 
-#include "Xfuncproto.h"
-#include "Xmd.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/Xfuncproto.h>
+#include <X11/Xmd.h>
 #ifdef XINPUT
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 #endif
 #include "xf86.h"
 #include "xf86Priv.h"
@@ -66,7 +71,7 @@
 
 #ifdef DPMSExtension
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 #include "dpmsproc.h"
 #endif
 
@@ -86,7 +91,7 @@
 #include <stdarg.h>
 
 #include "osdep.h"		/* EnabledDevices */
-#include "Xpoll.h"
+#include <X11/Xpoll.h>
 #include "xf86_OSproc.h"	/* sigio stuff */
 
 /******************************************************************************
@@ -205,7 +210,7 @@ xf86CheckButton(int	button,
     
     DBG(5, ErrorF("xf86CheckButton "
 		  "button=%d down=%d state=%d check=%d returns ",
-		   button, down, state, check));
+		   button, down, xf86CoreButtonState, check));
     if ((check && down) || (!check && !down)) {
 	DBG(5, ErrorF("FALSE\n"));
 	return FALSE;
@@ -308,8 +313,8 @@ xf86ActivateDevice(LocalDevicePtr local)
 	if (dev == NULL)
 	    FatalError("Too many input devices");
 	
-	local->atom = MakeAtom(local->name,
-			       strlen(local->name),
+	local->atom = MakeAtom(local->type_name,
+			       strlen(local->type_name),
 			       TRUE);
 	AssignTypeAndName (dev, local->atom, local->name);
 	dev->public.devicePrivate = (pointer) local;

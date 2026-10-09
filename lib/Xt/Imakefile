@@ -105,7 +105,23 @@ HEADERS = \
 	ShellP.h \
 	StringDefs.h \
 	Vendor.h \
-	VendorP.h
+	VendorP.h \
+			\
+	CallbackI.h	\
+	ConvertI.h	\
+	CreateI.h	\
+	EventI.h	\
+	HookObjI.h	\
+	InitialI.h	\
+	IntrinsicI.h	\
+	PassivGraI.h	\
+	ResourceI.h	\
+	SelectionI.h	\
+	ShellI.h	\
+	ThreadsI.h	\
+	TranslateI.h	\
+	VarargsI.h
+
 
 SRCS = \
 	$(MISCSRCS) \

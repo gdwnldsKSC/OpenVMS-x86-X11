@@ -26,6 +26,9 @@
  ********************************************************/
  /* $XFree86: xc/lib/xkbfile/cout.c,v 3.8 2003/02/03 20:12:00 paulo Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>

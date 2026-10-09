@@ -50,8 +50,11 @@ in this Software without prior written authorization from The Open Group.
  * decompress - cat a compressed file
  */
 
-#include "fontmisc.h"
-#include <bufio.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include <X11/fonts/fontmisc.h>
+#include <X11/fonts/bufio.h>
 
 #define BITS	16
 

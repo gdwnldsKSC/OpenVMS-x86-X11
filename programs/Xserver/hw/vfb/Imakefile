@@ -17,6 +17,7 @@ XCOMM add more architectures here as we discover them
     SystemV4 || \
     defined(OSF1Architecture) || \
     defined(i386BsdArchitecture) || \
+    (defined(KFreeBSDArchitecture) && defined(i386Architecture)) || \
     defined(LinuxArchitecture) || \
     defined(DarwinArchitecture)
 MMAPDEF = -DHAS_MMAP
@@ -32,7 +33,7 @@ SRCSA =	InitInput.c InitOutput.c stubs.c $(SRCS1) miinitext.c $(SRCS2)
 OBJSA =	InitInput.o InitOutput.o stubs.o $(OBJS1) miinitext.o $(OBJS2)
 
 INCLUDES = -I. -I$(XBUILDINCDIR) -I$(FONTINCSRC) \
-	   -I$(SERVERSRC)/fb -I$(SERVERSRC)/mfb -I$(SERVERSRC)/mi -I$(SERVERSRC)/include -I../../os  \
+	   -I$(SERVERSRC)/fb -I$(SERVERSRC)/mi -I$(SERVERSRC)/include -I../../os  \
 	   -I$(SERVERSRC)/Xext -I$(EXTINCSRC) -I$(XINCLUDESRC) \
 	   -I$(SERVERSRC)/render
 

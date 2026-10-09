@@ -28,6 +28,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * Authors:
  *   Kevin E. Martin <martin@valinux.com>
@@ -243,7 +247,7 @@ static Bool R128InitVisualConfigs(ScreenPtr pScreen)
 		}
 		pConfigs[i].auxBuffers         = 0;
 		pConfigs[i].level              = 0;
-		if (accum || stencil) {
+		if (accum) {
 		   pConfigs[i].visualRating    = GLX_SLOW_CONFIG;
 		} else {
 		   pConfigs[i].visualRating    = GLX_NONE;
@@ -522,7 +526,7 @@ static Bool R128DRIAgpInit(R128InfoPtr info, ScreenPtr pScreen)
 	return FALSE;
     }
     xf86DrvMsg(pScreen->myNum, X_INFO,
-	       "[agp] ring handle = 0x%08lx\n", info->ringHandle);
+	       "[agp] ring handle = 0x%08x\n", info->ringHandle);
 
     if (drmMap(info->drmFD, info->ringHandle, info->ringMapSize,
 	       (drmAddressPtr)&info->ring) < 0) {
@@ -540,7 +544,7 @@ static Bool R128DRIAgpInit(R128InfoPtr info, ScreenPtr pScreen)
 	return FALSE;
     }
     xf86DrvMsg(pScreen->myNum, X_INFO,
-	       "[agp] ring read ptr handle = 0x%08lx\n",
+ 	       "[agp] ring read ptr handle = 0x%08x\n",
 	       info->ringReadPtrHandle);
 
     if (drmMap(info->drmFD, info->ringReadPtrHandle, info->ringReadMapSize,
@@ -811,7 +815,7 @@ static Bool R128DRIMapInit(R128InfoPtr info, ScreenPtr pScreen)
 	return FALSE;
     }
     xf86DrvMsg(pScreen->myNum, X_INFO,
-	       "[drm] register handle = 0x%08lx\n", info->registerHandle);
+	       "[drm] register handle = 0x%08x\n", info->registerHandle);
 
     return TRUE;
 }
@@ -973,7 +977,6 @@ Bool R128DRIScreenInit(ScreenPtr pScreen)
     /* Check that the GLX, DRI, and DRM modules have been loaded by testing
      * for known symbols in each module. */
     if (!xf86LoaderCheckSymbol("GlxSetVisualConfigs")) return FALSE;
-    if (!xf86LoaderCheckSymbol("DRIScreenInit"))       return FALSE;
     if (!xf86LoaderCheckSymbol("drmAvailable"))        return FALSE;
     if (!xf86LoaderCheckSymbol("DRIQueryVersion")) {
       xf86DrvMsg(pScreen->myNum, X_ERROR,
@@ -983,12 +986,13 @@ Bool R128DRIScreenInit(ScreenPtr pScreen)
 
     /* Check the DRI version */
     DRIQueryVersion(&major, &minor, &patch);
-    if (major != 4 || minor < 0) {
+    if (major != DRIINFO_MAJOR_VERSION || minor < DRIINFO_MINOR_VERSION) {
 	xf86DrvMsg(pScreen->myNum, X_ERROR,
 		"[dri] R128DRIScreenInit failed because of a version mismatch.\n"
-		"[dri] libDRI version is %d.%d.%d but version 4.0.x is needed.\n"
+		"[dri] libdri version is %d.%d.%d but version %d.%d.x is needed.\n"
 		"[dri] Disabling the DRI.\n",
-		major, minor, patch);
+		major, minor, patch,
+                DRIINFO_MAJOR_VERSION, DRIINFO_MINOR_VERSION);
 	return FALSE;
     }
 

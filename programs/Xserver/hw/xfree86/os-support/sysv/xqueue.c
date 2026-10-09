@@ -24,7 +24,11 @@
  */
 /* $XConsortium: xqueue.c /main/8 1996/10/19 18:08:11 kaleb $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "compiler.h"
 
 #include "xf86.h"
@@ -476,6 +480,7 @@ XqMouseProc(DeviceIntPtr pPointer, int what)
       
     case DEVICE_ON:
 	pMse->lastButtons = 0;
+	pMse->lastMappedButtons = 0;
 	pMse->emulateState = 0;
 	pPointer->public.on = TRUE;
 	ret = XqEnable(pInfo);

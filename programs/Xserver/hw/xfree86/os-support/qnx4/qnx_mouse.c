@@ -32,6 +32,10 @@
  */
 
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -42,7 +46,7 @@
 #include <sys/proxy.h>
 #include <errno.h>
 
-#include "X.h"
+#include <X11/X.h>
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86Xinput.h"
@@ -155,6 +159,7 @@ int what;
 	case DEVICE_ON:
 		if(QNX_mouse == NULL) return(-1);
 		pMse->lastButtons = 0;
+		pMse->lastMappedButtons = 0;
 		pMse->emulateState = 0;
 		pPointer->public.on = TRUE;
         	mouse_flush(QNX_mouse);

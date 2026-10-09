@@ -1,10 +1,11 @@
 		     X Window System, Version 11
-			     Release 6.8
+			     Release 6.9
 
 			Portions Copyright by:
 
 			      2d3d Inc.
 			     Adam de Boor
+			     Adam Jackson
 			  Adobe Systems Inc.
 			  After X-TT Project
 			    AGE Logic Inc.
@@ -38,6 +39,7 @@
 		     Daewoo Electronics Co. Ltd.
 			   Dale Schumacher
 			    Damien Miller
+			     Daniel Borca
 			   Daniver Limited
 			    Daryll Strauss
 		       Data General Corporation
@@ -49,10 +51,12 @@
 			   David McCullough
 			 David Mosberger-Tang
 			   David S. Miller
+			    David Turner
 			   David Wexelblat
 			     Davor Matic
 		    Digital Equipment Corporation
 			     Dirk Hohndel
+			    Dmitry Golubev
 			      Doug Anson
 			  Edouard TISSERANT
 			   Eduardo Horvath
@@ -63,7 +67,9 @@
 			     Erik Fortune
 			     Erik Nygren
 	       Evans & Sutherland Computer Corporation
+			    Felix Kuehling
 			   Finn Thoegersen
+		       Francesco Zappa Nardelli
 			   Frederic Lepied
 		    Free Software Foundation Inc.
 			   Fujitsu Limited
@@ -117,6 +123,7 @@
 			  Lennart Augustsson
 		      Lexmark International Inc.
 			    Linus Torvalds
+			     Loïc Grenié
 		     Machine Vision Holdings Inc.
 			    Manfred Brands
 			Marc Aurele La France
@@ -139,6 +146,7 @@
 			 NCR Corporation Inc.
 		 Netscape Communications Corporation
 		    Network Computing Devices Inc.
+			    Nicholas Miell
 			     Noah Levitt
 			     Novell Inc.
 			     Nozomi YTOW
@@ -146,7 +154,7 @@
 		      Number Nine Computer Corp.
 		   Number Nine Visual Technologies
 			     NVIDIA Corp.
-			     Oivier Danet
+			    Olivier Danet
 		  Oki Technosystems Laboratory Inc.
 			  OMRON Corporation
 		       Open Software Foundation
@@ -170,7 +178,7 @@
 			     Red Hat Inc.
 	       Regents of the University of California
 			    Rene Cougnenc
-			    R�gis Cridlig
+			    Régis Cridlig
 			  Richard A. Hecker
 			   Richard Burdick
 			     Rich Murphey
@@ -178,7 +186,9 @@
 			     Robert Baron
 			    Robert Chesler
 			   Robert V. Baron
+			    Robert Wilhelm
 			    Robin Cutshaw
+			    Roland Mainz
 			   S3 Graphics Inc.
 			     Sam Leffler
 			   SciTech Software
@@ -214,9 +224,11 @@
 		     The Open Software Foundation
 	     The Regents of the University of California
 		    The Santa Cruz Operation Inc.
+			The Unichrome Project
 		       The Weather Channel Inc.
 			   The X Consortium
 		       The XFree86 Project Inc.
+			   Thomas A. Phelps
 			   Thomas E. Dickey
 			    Thomas G. Lane
 			    Thomas Mueller
@@ -230,6 +242,7 @@
 			   Tomohiro KUBOTA
 			   Torrey T. Lyons
 			    TOSHIBA Corp.
+			    Trolltech AS
 			Tungsten Graphics Inc.
 			   UCHIYAMA Yasushi
 			     Unicode Inc.
@@ -242,9 +255,11 @@
 		      Video Electronics Standard
 			     VMware Inc.
 			  Vrije Universiteit
+			    Werner Lemberg
 			   Wittawat Yamwong
 			 Wyse Technology Inc.
 			     X Consortium
 			   Xi Graphics Inc.
 			  X-Oz Technologies
 		      X-TrueType Server Project
+			X.Org Foundation, LLC

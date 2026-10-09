@@ -1,5 +1,5 @@
 /* Cygwin/X vendor strings and version */
-#include  "xorgversion.def"
+#include "xorgversion.def"
 
 #ifndef CygxVersionMajor
 # define CygxVersionMajor	XORG_VERSION_MAJOR
@@ -361,7 +361,7 @@
  * XFree86Server is defined for the w32api headers, which protects some
  * colliding names with #ifdef XFree86Server.
  */
-#define XWinServerDefines	-DAVOID_GLYPHBLT -DPIXPRIV -DSINGLEDEPTH \
+#define XWinServerDefines	-DPIXPRIV \
 				-DXFree86Server \
 				-DX_BYTE_ORDER=ByteOrder \
 				XvExtensionDefines \
@@ -456,6 +456,10 @@
 
 #ifndef XtransFailSoft
 #define XtransFailSoft		YES
+#endif
+
+#ifndef HasDevWindows
+# define HasDevWindows		YES
 #endif
 
 #include <cygwin.rules>

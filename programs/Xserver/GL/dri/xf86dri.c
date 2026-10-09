@@ -35,6 +35,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "xf86.h"
 #ifdef XFree86LOADER
 #include "xf86_ansic.h"
@@ -42,8 +46,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "dixstruct.h"
 #include "extnsionst.h"
@@ -76,8 +80,6 @@ static DISPATCH_PROC(ProcXF86DRIGetDrawableInfo);
 static DISPATCH_PROC(ProcXF86DRIGetDeviceInfo);
 static DISPATCH_PROC(ProcXF86DRIDispatch);
 static DISPATCH_PROC(ProcXF86DRIAuthConnection);
-static DISPATCH_PROC(ProcXF86DRIOpenFullScreen);
-static DISPATCH_PROC(ProcXF86DRICloseFullScreen);
 
 static DISPATCH_PROC(SProcXF86DRIQueryVersion);
 static DISPATCH_PROC(SProcXF86DRIDispatch);
@@ -210,7 +212,7 @@ ProcXF86DRIOpenConnection(
                   ((rep.busIdStringLength + 3) & ~3)) >> 2;
 
     rep.hSAREALow  = (CARD32)(hSAREA & 0xffffffff);
-#ifdef LONG64
+#if defined(LONG64) && !defined(__linux__)
     rep.hSAREAHigh = (CARD32)(hSAREA >> 32);
 #else
     rep.hSAREAHigh = 0;
@@ -548,7 +550,7 @@ ProcXF86DRIGetDeviceInfo(
     }
 
     rep.hFrameBufferLow  = (CARD32)(hFrameBuffer & 0xffffffff);
-#ifdef LONG64
+#if defined(LONG64) && !defined(__linux__)
     rep.hFrameBufferHigh = (CARD32)(hFrameBuffer >> 32);
 #else
     rep.hFrameBufferHigh = 0;
@@ -565,67 +567,6 @@ ProcXF86DRIGetDeviceInfo(
     if (rep.length) {
 	WriteToClient(client, rep.devPrivateSize, (char *)pDevPrivate);
     }
-    return (client->noClientException);
-}
-
-static int
-ProcXF86DRIOpenFullScreen (
-    register ClientPtr client
-)
-{
-    REQUEST(xXF86DRIOpenFullScreenReq);
-    xXF86DRIOpenFullScreenReply rep;
-    DrawablePtr                 pDrawable;
-
-    REQUEST_SIZE_MATCH(xXF86DRIOpenFullScreenReq);
-    if (stuff->screen >= screenInfo.numScreens) {
-	client->errorValue = stuff->screen;
-	return BadValue;
-    }
-
-    rep.type           = X_Reply;
-    rep.length         = 0;
-    rep.sequenceNumber = client->sequence;
-
-    if (!(pDrawable = SecurityLookupDrawable(stuff->drawable,
-					     client, 
-					     SecurityReadAccess)))
-	return BadValue;
-
-    rep.isFullScreen = DRIOpenFullScreen(screenInfo.screens[stuff->screen],
-					 pDrawable);
-    
-    WriteToClient(client, sizeof(xXF86DRIOpenFullScreenReply), (char *)&rep);
-    return client->noClientException;
-}
-
-static int
-ProcXF86DRICloseFullScreen (
-    register ClientPtr client
-)
-{
-    REQUEST(xXF86DRICloseFullScreenReq);
-    xXF86DRICloseFullScreenReply rep;
-    DrawablePtr                  pDrawable;
-
-    REQUEST_SIZE_MATCH(xXF86DRICloseFullScreenReq);
-    if (stuff->screen >= screenInfo.numScreens) {
-	client->errorValue = stuff->screen;
-	return BadValue;
-    }
-
-    rep.type           = X_Reply;
-    rep.length         = 0;
-    rep.sequenceNumber = client->sequence;
-
-    if (!(pDrawable = SecurityLookupDrawable(stuff->drawable,
-					     client, 
-					     SecurityReadAccess)))
-	return BadValue;
-    
-    DRICloseFullScreen(screenInfo.screens[stuff->screen], pDrawable);
-    
-    WriteToClient(client, sizeof(xXF86DRICloseFullScreenReply), (char *)&rep);
     return (client->noClientException);
 }
 
@@ -669,10 +610,7 @@ ProcXF86DRIDispatch (
 	return ProcXF86DRIGetDeviceInfo(client);
     case X_XF86DRIAuthConnection:
 	return ProcXF86DRIAuthConnection(client);
-    case X_XF86DRIOpenFullScreen:
-	return ProcXF86DRIOpenFullScreen(client);
-    case X_XF86DRICloseFullScreen:
-	return ProcXF86DRICloseFullScreen(client);
+    /* {Open,Close}FullScreen are deprecated now */
     default:
 	return BadRequest;
     }

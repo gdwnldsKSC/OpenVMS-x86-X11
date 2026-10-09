@@ -36,7 +36,7 @@ from The Open Group.
 #ifndef _BITMAP_H_
 #define _BITMAP_H_
 
-#include "fntfilio.h"
+#include <X11/fonts/fntfilio.h>
 #ifndef FONTMODULE
 #include <stdio.h>  /* just for NULL */
 #else

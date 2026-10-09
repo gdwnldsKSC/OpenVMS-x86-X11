@@ -28,10 +28,8 @@
  * SOFTWARE.
  */
  
-#include "fntfilst.h"
-#include "FSproto.h"
- 
-void Display();
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/FSproto.h>
  
 #define DECIPOINTSPERINCH 722.7
 #define DEFAULTRES 75

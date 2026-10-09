@@ -18,7 +18,12 @@ REQUIREDLIBS = SharedXvMCReqs
 ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
 #endif
 
-      DEFINES = $(ALLOC_DEFINES)
+#if HasShm
+SHM_DEFINES = -DHAS_SHM
+#endif
+
+      DEFINES = $(ALLOC_DEFINES) $(SHM_DEFINES)
+     INCLUDES = -I$(XF86OSSRC)
          SRCS = XvMC.c
          OBJS = XvMC.o
      LINTLIBS = $(LINTXLIB)
@@ -29,7 +34,13 @@ ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
 
 #if defined(LinuxArchitecture) && BuildXF86DRI
 #define IHaveSubdirs
-SUBDIRS = hw/i810
+
+#if defined(i386Architecture) || defined(AMD64Architecture)
+VIA_SUBDIRS = hw/via/unichrome hw/via/unichromeProA
+INTEL_SUBDIRS = hw/i810
+#endif
+
+SUBDIRS = $(INTEL_SUBDIRS) $(VIA_SUBDIRS) wrapper
 
 MakeSubdirs($(SUBDIRS))
 DependSubdirs($(SUBDIRS))

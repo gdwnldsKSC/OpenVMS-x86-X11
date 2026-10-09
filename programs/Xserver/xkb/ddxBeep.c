@@ -26,6 +26,10 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $XFree86: xc/programs/Xserver/xkb/ddxBeep.c,v 3.9 2002/12/05 21:59:00 paulo Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
 #define	NEED_EVENTS 1
 #include <X11/X.h>
@@ -34,8 +38,8 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "inputstr.h"
 #include "scrnintstr.h"
 #include "windowstr.h"
-#include "XKBsrv.h"
-#include "XI.h"
+#include <X11/extensions/XKBsrv.h>
+#include <X11/extensions/XI.h>
 
 #if (defined(__osf__) && defined(__alpha))
 #include <sys/sysinfo.h>

@@ -25,6 +25,10 @@
  */
 /* $XFree86:$ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "cg6.h"
 
 static void CG6LoadCursorImage(ScrnInfoPtr pScrn, unsigned char *src);

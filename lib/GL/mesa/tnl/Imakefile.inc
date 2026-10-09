@@ -13,7 +13,10 @@ MESATNLBUILDDIR = MesaTnlBuildDir
 		  $(MESATNLBUILDDIR)t_save_api.c \
 		  $(MESATNLBUILDDIR)t_save_loopback.c \
 		  $(MESATNLBUILDDIR)t_save_playback.c \
+                  $(MESATNLBUILDDIR)t_vb_arbprogram.c \
+                  $(MESATNLBUILDDIR)t_vb_arbprogram_sse.c \
 		  $(MESATNLBUILDDIR)t_vb_fog.c \
+		  $(MESATNLBUILDDIR)t_vb_cull.c \
 		  $(MESATNLBUILDDIR)t_vb_light.c \
 		  $(MESATNLBUILDDIR)t_vb_normals.c \
 		  $(MESATNLBUILDDIR)t_vb_points.c \
@@ -23,8 +26,9 @@ MESATNLBUILDDIR = MesaTnlBuildDir
 		  $(MESATNLBUILDDIR)t_vb_texmat.c \
 		  $(MESATNLBUILDDIR)t_vb_vertex.c \
 		  $(MESATNLBUILDDIR)t_vertex.c \
-		  $(MESATNLBUILDDIR)t_vertex_c.c \
-		  $(MESATNLBUILDDIR)t_vertex_codegen.c \
+                  $(MESATNLBUILDDIR)t_vertex_generic.c \
+                  $(MESATNLBUILDDIR)t_vertex_sse.c \
+                  $(MESATNLBUILDDIR)t_vp_build.c \
 		  $(MESATNLBUILDDIR)t_vtx_api.c \
 		  $(MESATNLBUILDDIR)t_vtx_eval.c \
 		  $(MESATNLBUILDDIR)t_vtx_exec.c \
@@ -49,8 +53,12 @@ LinkSourceFile(t_save_api.c, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_save_api.h, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_save_loopback.c, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_save_playback.c, $(MESASRCDIR)/src/mesa/tnl)
+LinkSourceFile(t_vb_arbprogram.c, $(MESASRCDIR)/src/mesa/tnl)
+LinkSourceFile(t_vb_arbprogram.h, $(MESASRCDIR)/src/mesa/tnl)
+LinkSourceFile(t_vb_arbprogram_sse.c, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vb_cliptmp.h, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vb_fog.c, $(MESASRCDIR)/src/mesa/tnl)
+LinkSourceFile(t_vb_cull.c, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vb_light.c, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vb_lighttmp.h, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vb_normals.c, $(MESASRCDIR)/src/mesa/tnl)
@@ -62,9 +70,11 @@ LinkSourceFile(t_vb_texgen.c, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vb_texmat.c, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vb_vertex.c, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vertex.c, $(MESASRCDIR)/src/mesa/tnl)
-LinkSourceFile(t_vertex_c.c, $(MESASRCDIR)/src/mesa/tnl)
-LinkSourceFile(t_vertex_codegen.c, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vertex.h, $(MESASRCDIR)/src/mesa/tnl)
+LinkSourceFile(t_vertex_generic.c, $(MESASRCDIR)/src/mesa/tnl)
+LinkSourceFile(t_vertex_sse.c, $(MESASRCDIR)/src/mesa/tnl)
+LinkSourceFile(t_vp_build.c, $(MESASRCDIR)/src/mesa/tnl)
+LinkSourceFile(t_vp_build.h, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vtx_api.c, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vtx_api.h, $(MESASRCDIR)/src/mesa/tnl)
 LinkSourceFile(t_vtx_eval.c, $(MESASRCDIR)/src/mesa/tnl)
@@ -83,7 +93,10 @@ LinkSourceFile(t_vtx_x86_gcc.S, $(MESASRCDIR)/src/mesa/tnl)
                   $(MESATNLBUILDDIR)t_save_api.o \
                   $(MESATNLBUILDDIR)t_save_loopback.o \
                   $(MESATNLBUILDDIR)t_save_playback.o \
+                  $(MESATNLBUILDDIR)t_vb_arbprogram.o \
+                  $(MESATNLBUILDDIR)t_vb_arbprogram_sse.o \
                   $(MESATNLBUILDDIR)t_vb_fog.o \
+                  $(MESATNLBUILDDIR)t_vb_cull.o \
                   $(MESATNLBUILDDIR)t_vb_light.o \
                   $(MESATNLBUILDDIR)t_vb_normals.o \
                   $(MESATNLBUILDDIR)t_vb_points.o \
@@ -93,8 +106,9 @@ LinkSourceFile(t_vtx_x86_gcc.S, $(MESASRCDIR)/src/mesa/tnl)
                   $(MESATNLBUILDDIR)t_vb_texmat.o \
                   $(MESATNLBUILDDIR)t_vb_vertex.o \
                   $(MESATNLBUILDDIR)t_vertex.o \
-                  $(MESATNLBUILDDIR)t_vertex_c.o \
-                  $(MESATNLBUILDDIR)t_vertex_codegen.o \
+                  $(MESATNLBUILDDIR)t_vertex_generic.o \
+                  $(MESATNLBUILDDIR)t_vertex_sse.o \
+                  $(MESATNLBUILDDIR)t_vp_build.o \
                   $(MESATNLBUILDDIR)t_vtx_api.o \
                   $(MESATNLBUILDDIR)t_vtx_eval.o \
                   $(MESATNLBUILDDIR)t_vtx_exec.o \
@@ -113,7 +127,10 @@ LinkSourceFile(t_vtx_x86_gcc.S, $(MESASRCDIR)/src/mesa/tnl)
 		  $(MESATNLBUILDDIR)unshared/t_save_api.o \
 		  $(MESATNLBUILDDIR)unshared/t_save_loopback.o \
 		  $(MESATNLBUILDDIR)unshared/t_save_playback.o \
+                  $(MESATNLBUILDDIR)unshared/t_vb_arbprogram.o \
+                  $(MESATNLBUILDDIR)unshared/t_vb_arbprogram_sse.o \
 		  $(MESATNLBUILDDIR)unshared/t_vb_fog.o \
+		  $(MESATNLBUILDDIR)unshared/t_vb_cull.o \
 		  $(MESATNLBUILDDIR)unshared/t_vb_light.o \
 		  $(MESATNLBUILDDIR)unshared/t_vb_normals.o \
 		  $(MESATNLBUILDDIR)unshared/t_vb_points.o \
@@ -123,8 +140,9 @@ LinkSourceFile(t_vtx_x86_gcc.S, $(MESASRCDIR)/src/mesa/tnl)
 		  $(MESATNLBUILDDIR)unshared/t_vb_texmat.o \
 		  $(MESATNLBUILDDIR)unshared/t_vb_vertex.o \
 		  $(MESATNLBUILDDIR)unshared/t_vertex.o \
-		  $(MESATNLBUILDDIR)unshared/t_vertex_c.o \
-		  $(MESATNLBUILDDIR)unshared/t_vertex_codegen.o \
+                  $(MESATNLBUILDDIR)unshared/t_vertex_generic.o \
+                  $(MESATNLBUILDDIR)unshared/t_vertex_sse.o \
+                  $(MESATNLBUILDDIR)unshared/t_vp_build.o \
 		  $(MESATNLBUILDDIR)unshared/t_vtx_api.o \
 		  $(MESATNLBUILDDIR)unshared/t_vtx_eval.o \
 		  $(MESATNLBUILDDIR)unshared/t_vtx_exec.o \
@@ -146,7 +164,10 @@ LinkSourceFile(t_vtx_x86_gcc.S, $(MESASRCDIR)/src/mesa/tnl)
 		  $(MESATNLBUILDDIR)debugger/t_save_api.o \
 		  $(MESATNLBUILDDIR)debugger/t_save_loopback.o \
 		  $(MESATNLBUILDDIR)debugger/t_save_playback.o \
+                  $(MESATNLBUILDDIR)debugger/t_vb_arbprogram.o \
+                  $(MESATNLBUILDDIR)debugger/t_vb_arbprogram_sse.o \
 		  $(MESATNLBUILDDIR)debugger/t_vb_fog.o \
+		  $(MESATNLBUILDDIR)debugger/t_vb_cull.o \
 		  $(MESATNLBUILDDIR)debugger/t_vb_light.o \
 		  $(MESATNLBUILDDIR)debugger/t_vb_normals.o \
 		  $(MESATNLBUILDDIR)debugger/t_vb_points.o \
@@ -156,8 +177,9 @@ LinkSourceFile(t_vtx_x86_gcc.S, $(MESASRCDIR)/src/mesa/tnl)
 		  $(MESATNLBUILDDIR)debugger/t_vb_texmat.o \
 		  $(MESATNLBUILDDIR)debugger/t_vb_vertex.o \
 		  $(MESATNLBUILDDIR)debugger/t_vertex.o \
-		  $(MESATNLBUILDDIR)debugger/t_vertex_c.o \
-		  $(MESATNLBUILDDIR)debugger/t_vertex_codegen.o \
+                  $(MESATNLBUILDDIR)debugger/t_vertex_generic.o \
+                  $(MESATNLBUILDDIR)debugger/t_vertex_sse.o \
+                  $(MESATNLBUILDDIR)debugger/t_vp_build.o \
 		  $(MESATNLBUILDDIR)debugger/t_vtx_api.o \
 		  $(MESATNLBUILDDIR)debugger/t_vtx_eval.o \
 		  $(MESATNLBUILDDIR)debugger/t_vtx_exec.o \
@@ -175,7 +197,10 @@ LinkSourceFile(t_vtx_x86_gcc.S, $(MESASRCDIR)/src/mesa/tnl)
 		  $(MESATNLBUILDDIR)profiled/t_save_api.o \
 		  $(MESATNLBUILDDIR)profiled/t_save_loopback.o \
 		  $(MESATNLBUILDDIR)profiled/t_save_playback.o \
+                  $(MESATNLBUILDDIR)profiled/t_vb_arbprogram.o \
+                  $(MESATNLBUILDDIR)profiled/t_vb_arbprogram_sse.o \
 		  $(MESATNLBUILDDIR)profiled/t_vb_fog.o \
+		  $(MESATNLBUILDDIR)profiled/t_vb_cull.o \
 		  $(MESATNLBUILDDIR)profiled/t_vb_light.o \
 		  $(MESATNLBUILDDIR)profiled/t_vb_normals.o \
 		  $(MESATNLBUILDDIR)profiled/t_vb_points.o \
@@ -185,8 +210,9 @@ LinkSourceFile(t_vtx_x86_gcc.S, $(MESASRCDIR)/src/mesa/tnl)
 		  $(MESATNLBUILDDIR)profiled/t_vb_texmat.o \
 		  $(MESATNLBUILDDIR)profiled/t_vb_vertex.o \
 		  $(MESATNLBUILDDIR)profiled/t_vertex.o \
-		  $(MESATNLBUILDDIR)profiled/t_vertex_c.o \
-		  $(MESATNLBUILDDIR)profiled/t_vertex_codegen.o \
+                  $(MESATNLBUILDDIR)profiled/t_vertex_generic.o \
+                  $(MESATNLBUILDDIR)profiled/t_vertex_sse.o \
+                  $(MESATNLBUILDDIR)profiled/t_vp_build.o \
 		  $(MESATNLBUILDDIR)profiled/t_vtx_api.o \
 		  $(MESATNLBUILDDIR)profiled/t_vtx_eval.o \
 		  $(MESATNLBUILDDIR)profiled/t_vtx_exec.o \

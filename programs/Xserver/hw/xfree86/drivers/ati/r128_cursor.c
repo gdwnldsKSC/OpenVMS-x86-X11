@@ -44,6 +44,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 				/* Driver data structures */
 #include "r128.h"
 #include "r128_reg.h"
@@ -72,8 +76,16 @@ static void R128SetCursorColors(ScrnInfoPtr pScrn, int bg, int fg)
     R128InfoPtr   info      = R128PTR(pScrn);
     unsigned char *R128MMIO = info->MMIO;
 
-    OUTREG(R128_CUR_CLR0, bg);
-    OUTREG(R128_CUR_CLR1, fg);
+    if(info->IsSecondary)
+    {
+        OUTREG(R128_CUR2_CLR0, bg);
+        OUTREG(R128_CUR2_CLR1, fg);
+    }
+    else
+    {
+    	OUTREG(R128_CUR_CLR0, bg);
+    	OUTREG(R128_CUR_CLR1, fg);
+    }
 }
 
 /* Set cursor position to (x,y) with offset into cursor bitmap at
@@ -94,11 +106,25 @@ static void R128SetCursorPosition(ScrnInfoPtr pScrn, int x, int y)
     if (xorigin >= cursor->MaxWidth)  xorigin = cursor->MaxWidth - 1;
     if (yorigin >= cursor->MaxHeight) yorigin = cursor->MaxHeight - 1;
 
-    OUTREG(R128_CUR_HORZ_VERT_OFF,  R128_CUR_LOCK | (xorigin << 16) | yorigin);
-    OUTREG(R128_CUR_HORZ_VERT_POSN, (R128_CUR_LOCK
+    if(!info->IsSecondary)
+    {
+    	OUTREG(R128_CUR_HORZ_VERT_OFF,  R128_CUR_LOCK | (xorigin << 16) | yorigin);
+    	OUTREG(R128_CUR_HORZ_VERT_POSN, (R128_CUR_LOCK
 				     | ((xorigin ? 0 : x) << 16)
 				     | (yorigin ? 0 : y)));
-    OUTREG(R128_CUR_OFFSET,         info->cursor_start + yorigin * 16);
+    	OUTREG(R128_CUR_OFFSET,         info->cursor_start + yorigin * 16);
+    } 
+    else 
+    {
+        OUTREG(R128_CUR2_HORZ_VERT_OFF,  (R128_CUR2_LOCK
+				       | (xorigin << 16)
+				       | yorigin));
+        OUTREG(R128_CUR2_HORZ_VERT_POSN, (R128_CUR2_LOCK
+				       | ((xorigin ? 0 : x) << 16)
+				       | (yorigin ? 0 : y)));
+        OUTREG(R128_CUR2_OFFSET,         
+			info->cursor_start + pScrn->fbOffset + yorigin * 16);
+    }
 }
 
 /* Copy cursor image from `image' to video memory.  R128SetCursorPosition
@@ -112,8 +138,16 @@ static void R128LoadCursorImage(ScrnInfoPtr pScrn, unsigned char *image)
     int           y;
     CARD32        save;
 
-    save = INREG(R128_CRTC_GEN_CNTL);
-    OUTREG(R128_CRTC_GEN_CNTL, save & (CARD32)~R128_CRTC_CUR_EN);
+    if(!info->IsSecondary)
+    {
+    	save = INREG(R128_CRTC_GEN_CNTL);
+    	OUTREG(R128_CRTC_GEN_CNTL, save & (CARD32)~R128_CRTC_CUR_EN);
+    }
+    else
+    {
+        save = INREG(R128_CRTC2_GEN_CNTL);
+        OUTREG(R128_CRTC2_GEN_CNTL, save & (CARD32)~R128_CRTC2_CUR_EN);
+    }
 
 #if X_BYTE_ORDER == X_BIG_ENDIAN
     switch(info->CurrentLayout.pixel_bytes) {
@@ -169,7 +203,11 @@ static void R128LoadCursorImage(ScrnInfoPtr pScrn, unsigned char *image)
     }
 
 
-    OUTREG(R128_CRTC_GEN_CNTL, save);
+    if(!info->IsSecondary)
+    	OUTREG(R128_CRTC_GEN_CNTL, save);
+    else
+        OUTREG(R128_CRTC2_GEN_CNTL, save);
+
 }
 
 /* Hide hardware cursor. */
@@ -178,7 +216,10 @@ static void R128HideCursor(ScrnInfoPtr pScrn)
     R128InfoPtr   info      = R128PTR(pScrn);
     unsigned char *R128MMIO = info->MMIO;
 
-    OUTREGP(R128_CRTC_GEN_CNTL, 0, ~R128_CRTC_CUR_EN);
+     if(info->IsSecondary)
+        OUTREGP(R128_CRTC2_GEN_CNTL, 0, ~R128_CRTC2_CUR_EN);
+     else
+    	OUTREGP(R128_CRTC_GEN_CNTL, 0, ~R128_CRTC_CUR_EN);
 }
 
 /* Show hardware cursor. */
@@ -187,7 +228,15 @@ static void R128ShowCursor(ScrnInfoPtr pScrn)
     R128InfoPtr   info      = R128PTR(pScrn);
     unsigned char *R128MMIO = info->MMIO;
 
-    OUTREGP(R128_CRTC_GEN_CNTL, R128_CRTC_CUR_EN, ~R128_CRTC_CUR_EN);
+    if(info->IsSecondary)
+    {
+         OUTREGP(R128_CRTC2_GEN_CNTL, R128_CRTC2_CUR_EN,
+               ~R128_CRTC2_CUR_EN);
+    }
+    else
+    {
+    	OUTREGP(R128_CRTC_GEN_CNTL, R128_CRTC_CUR_EN, ~R128_CRTC_CUR_EN);
+    }
 }
 
 /* Determine if hardware cursor is in use. */

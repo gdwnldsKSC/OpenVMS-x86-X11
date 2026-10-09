@@ -47,26 +47,39 @@ PLATFORM_OBJ=ia64Pci.o lnx_ia64.o
 PLATFORM_DEFINES=-DOS_PROBE_PCI_CHIPSET=lnxProbePciChipset
 #endif
 
+#if DoOSFontRestore
+FONTSRC=lnx_font.c
+FONTOBJ=lnx_font.o
+# ifndef FontRestoreCheckOsVersion
+#  define FontRestoreCheckOsVersion YES
+# endif
+FONT_DEFINES=-DDO_OS_FONTRESTORE -DCHECK_OS_VERSION=FontRestoreCheckOsVersion
+#endif
+
 SRCS = lnx_init.c lnx_video.c lnx_io.c libc_wrapper.c bios_mmap.c \
-       VTsw_usl.c std_kbdEv.c posix_tty.c $(MOUSESRC) \
+       VTsw_usl.c std_kbdEv.c posix_tty.c lnx_acpi.c $(MOUSESRC) \
        lnx_pci.c vidmem.c lnx_apm.c $(JOYSTICK_SRC) $(DRI_SRC) $(RES_SRCS) \
-       $(PLATFORM_SRC) lnx_kmod.c lnx_agp.c $(KBDSRC) /*wcHelper.c*/
+       $(PLATFORM_SRC) lnx_kmod.c lnx_agp.c $(FONTSRC) $(KBDSRC) /*wcHelper.c*/
 
 OBJS = lnx_init.o lnx_video.o lnx_io.o libc_wrapper.o bios_mmap.o \
-       VTsw_usl.o std_kbdEv.o posix_tty.o $(MOUSEOBJ) \
+       VTsw_usl.o std_kbdEv.o posix_tty.o lnx_acpi.o $(MOUSEOBJ) \
        lnx_pci.o vidmem.o lnx_apm.o $(JOYSTICK_OBJ) $(DRI_OBJ) $(RES_OBJS) \
-       $(PLATFORM_OBJ) lnx_kmod.o lnx_agp.o $(KBDOBJ) /*wcHelper.o*/
+       $(PLATFORM_OBJ) lnx_kmod.o lnx_agp.o $(FONTOBJ) $(KBDOBJ) /*wcHelper.o*/
 
 INCLUDES = -I$(XF86COMSRC) -I$(XF86OSSRC) -I. -I$(SERVERSRC)/include \
            -I$(XINCLUDESRC) -I$(EXTINCSRC) -I$(XF86OSSRC)/shared \
-	   -I$(XF86OSSRC)/bus -I$(DRMSRCDIR)/shared
+	   -I$(XF86OSSRC)/bus -I$(DRMSRCDIR)/shared-core
 
 RESDEFINES = -DUSESTDRES
 
-DEFINES = $(MTRRDEFINES) $(RESDEFINES) $(PLATFORM_DEFINES) -DHAVE_SYSV_IPC
+DEFINES = $(MTRRDEFINES) $(RESDEFINES) $(PLATFORM_DEFINES) $(FONT_DEFINES) -DHAVE_SYSV_IPC
 
 #if defined(AlphaArchitecture)
 SpecialObjectRule(lnx_ev56.o, lnx_ev56.c, -mcpu=ev56)
+#endif
+
+#if DoOSFontRestore
+SpecialObjectRule(VTsw_usl.o, VTsw_usl.c, -DOSHEADER=\"lnx.h\" -DOSSWITCHAWAY="lnx_switchaway()")
 #endif
 
 SubdirLibraryRule($(OBJS))
@@ -124,7 +137,6 @@ LinkSourceFile(ia64Pci.c,../shared)
 #endif
 DependTarget()
 
-InstallDriverSDKNonExecFile(agpgart.h,$(DRIVERSDKINCLUDEDIR)/linux)
 #if 0
 InstallDriverSDKDynamicModule(lnx_jstk.o,$(DRIVERSDKMODULEDIR))
 #endif

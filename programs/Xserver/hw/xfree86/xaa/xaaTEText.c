@@ -18,13 +18,17 @@
 
 ********************************************************************/
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "misc.h"
 #include "xf86.h"
 #include "xf86_ansic.h"
 #include "xf86_OSproc.h"
 
-#include "X.h"
-#include "font.h"
+#include <X11/X.h>
+#include <X11/fonts/font.h>
 #include "scrnintstr.h"
 #include "dixfontstr.h"
 #include "xf86str.h"
@@ -249,6 +253,7 @@ XAAGlyphBltTEColorExpansion(
 	RightEdge = min(Right, pbox->x2);
 
 	if(RightEdge > LeftEdge) {	/* we have something to draw */
+	    unsigned int *fallbackBits = NULL;
 	    ytop = max(Top, pbox->y1);
 	    ybot = min(Bottom, pbox->y2);
 	    
@@ -261,9 +266,22 @@ XAAGlyphBltTEColorExpansion(
 		int count;
 		glyphs = (unsigned int**)(infoRec->PreAllocMem);
 
-		for(count = 0; count < nglyph; count++) 
+		for(count = 0; count < nglyph; count++) {
  			glyphs[count] = (unsigned int*) 
 				FONTGLYPHBITS(gBase,*ppci++);
+			if (!glyphs[count]) {
+			    /* Glyphs with NULL bits do exist in the wild.
+			       Replace with blank bits in that case */
+			    
+			    if (!fallbackBits) {
+				int fontHeight = Bottom - Top + 1;
+				fallbackBits = xcalloc (glyphWidth * fontHeight, 1);
+				if (!fallbackBits)
+				    return;
+			    }
+			    glyphs[count] = fallbackBits;
+			}
+		}
 
 		/* our new unrolled TE code only writes DWORDS at a time 
 		   so it can read up to 6 characters past the last one 
@@ -276,12 +294,15 @@ XAAGlyphBltTEColorExpansion(
 		glyphs[count + 5] = glyphs[0];
 	    }
 
-   /* x, y, w, h, skipleft, skiptop, glyphp, glyphWidth, fg, bg, rop, pm */
+    /* x, y, w, h, skipleft, skiptop, glyphp, glyphWidth, fg, bg, rop, pm */
 
 	    (*infoRec->TEGlyphRenderer)( pScrn, 
 		LeftEdge, ytop, RightEdge - LeftEdge, ybot - ytop, 
 		skippix, ytop - Top, glyphs + skipglyphs, glyphWidth, 
-		fg, bg, rop, planemask); 
+		fg, bg, rop, planemask);
+
+	    if (fallbackBits)
+		xfree (fallbackBits);
 	}
 
 	nbox--; pbox++;

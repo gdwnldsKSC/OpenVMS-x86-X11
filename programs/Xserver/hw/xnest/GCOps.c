@@ -14,10 +14,14 @@ is" without express or implied warranty.
 */
 /* $XFree86: xc/programs/Xserver/hw/xnest/GCOps.c,v 3.5 2003/07/16 01:38:51 dawes Exp $ */
 
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_XNEST_CONFIG_H
+#include <xnest-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "regionstr.h"
-#include "fontstruct.h"
+#include <X11/fonts/fontstruct.h>
 #include "gcstruct.h"
 #include "scrnintstr.h"
 #include "windowstr.h"

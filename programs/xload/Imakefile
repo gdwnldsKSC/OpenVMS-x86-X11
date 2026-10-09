@@ -1,5 +1,7 @@
 XCOMM $XConsortium: Imakefile /main/30 1996/03/09 09:37:57 kaleb $
 XCOMM $XFree86: xc/programs/xload/Imakefile,v 1.7tsi Exp $
+XCOMM $XdotOrg: xc/programs/xload/Imakefile,v 1.3 2005/07/27 00:34:57 alanc Exp $
+
         DEPLIBS = XawClientDepLibs
 LOCAL_LIBRARIES = XawClientLibs
 
@@ -11,7 +13,7 @@ LOCAL_LIBRARIES = XawClientLibs
 #elif defined(SonyArchitecture)
   SYS_LIBRARIES = -lmld
 #elif defined(SunArchitecture) && SystemV4
-  SYS_LIBRARIES = -lkvm -lelf
+  SYS_LIBRARIES = -lkstat
 #elif defined(SVR4Architecture)
   SYS_LIBRARIES = -lelf
 #elif defined(OsfArchitecture)

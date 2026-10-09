@@ -35,6 +35,10 @@
 
 #define I_NEED_OS2_H
 #define INCL_DOSMEMMGR
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <os2.h>
 #include <sys/types.h>
 #include <umalloc.h>

@@ -25,14 +25,12 @@
 #define ___ATIDSP_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
-extern Bool ATIDSPPreInit   FunctionPrototype((int, ATIPtr));
-extern void ATIDSPSave      FunctionPrototype((ATIPtr, ATIHWPtr));
-extern void ATIDSPCalculate FunctionPrototype((ATIPtr, ATIHWPtr,
-                                               DisplayModePtr));
-extern void ATIDSPSet       FunctionPrototype((ATIPtr, ATIHWPtr));
+extern Bool ATIDSPPreInit(int, ATIPtr);
+extern void ATIDSPSave(ATIPtr, ATIHWPtr);
+extern void ATIDSPCalculate(ATIPtr, ATIHWPtr, DisplayModePtr);
+extern void ATIDSPSet(ATIPtr, ATIHWPtr);
 
 #endif /* ___ATIDSP_H___ */

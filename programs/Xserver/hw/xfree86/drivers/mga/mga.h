@@ -36,7 +36,6 @@
 
 
 
-#include "xf86dri.h"
 #include "dri.h"
 
 
@@ -50,7 +49,6 @@
 #ifdef USEMGAHAL
 #include "client.h"
 #endif
-#include "mga_bios.h"
 
 typedef enum {
     OPTION_SW_CURSOR,
@@ -87,7 +85,9 @@ typedef enum {
     OPTION_HSYNC2,
     OPTION_VREFRESH2,
     OPTION_MONITOR2POS,
-    OPTION_METAMODES
+    OPTION_METAMODES,
+    OPTION_OLDDMA,
+    OPTION_PCIDMA
 } MGAOpts;
 
 
@@ -152,7 +152,7 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 #define MGA_MODULE_DATA mgaModuleData
 #define MGA_DRIVER_NAME "mga"
 #define MGA_MAJOR_VERSION 1
-#define MGA_MINOR_VERSION 1
+#define MGA_MINOR_VERSION 2
 #define MGA_PATCHLEVEL 1
 
 typedef struct {
@@ -286,6 +286,86 @@ typedef struct {
     ScrnInfoPtr 	pScrn_2;
 } MGAEntRec, *MGAEntPtr;
 
+/**
+ * Track the range of a voltage controlled osciliator (VCO).
+ */
+struct mga_VCO {
+    /**
+     * Minimum selectable frequency for this VCO, measured in kHz.
+     */
+    unsigned min_freq;
+    
+    /**
+     * Maximum selectable frequency for this VCO, measured in kHz.
+     * 
+     * If this value is zero, then the VCO is not available.
+     */
+    unsigned max_freq;
+};
+
+/**
+ * Host interface types that can be set by the card's BIOS.
+ */
+typedef enum {
+    MGA_HOST_UNKNOWN0 = 0,  /**< Meaning unknown. */
+    MGA_HOST_UNKNOWN1 = 1,  /**< Meaning unknown. */
+    MGA_HOST_UNKNOWN2 = 2,  /**< Meaning unknown. */
+    MGA_HOST_HYBRID = 3,    /**< AGP 4x for data xfers only. */
+
+    /**
+     * PCI interface.  Either native or via a universal PCI-to-PCI bridge
+     * chip.  The PCI G450 and PCI G550 cards are examples.
+     */
+    MGA_HOST_PCI = 4,
+
+    MGA_HOST_AGP_1x = 5,    /**< AGP 1x capable. */
+    MGA_HOST_AGP_2x = 6,    /**< AGP 2x capable. */
+    MGA_HOST_AGP_4x = 7     /**< AGP 4x capable. */
+} mga_host_t;
+
+/**
+ * Card information derrived from BIOS PInS data.
+ */
+struct mga_bios_values {
+    /**
+     * \name Voltage Controlled Oscilators
+     * \brief Track information about the various VCOs.
+     *
+     * MGA cards have between one and three VCOs that can be used to drive the
+     * various clocks.  On older cards, only \c mga_bios_values::pixel VCO is
+     * available.  On newer cards, such as the G450 and G550, all three are
+     * available.  If \c mga_VCO::max_freq is zero, the VCO is not available.
+     */
+    /*@{*/
+    struct mga_VCO   system;    /**< System VCO. */
+    struct mga_VCO   pixel;     /**< Pixel VCO. */
+    struct mga_VCO   video;     /**< Video VCO. */
+    /*@}*/
+    
+    /**
+     * Memory clock speed, measured in kHz.
+     */
+    unsigned mem_clock;
+
+    /**
+     * PLL reference frequency value.  On older cards this is ~14MHz, and on
+     * newer cards it is ~27MHz.
+     */
+    unsigned pll_ref_freq;
+
+    /**
+     * Some older MGA cards have a "fast bitblt" mode.  This is determined
+     * by a capability bit stored in the PInS data.
+     */
+    Bool fast_bitblt;
+
+    /**
+     * Type of physical interface used for the card.
+     */
+    mga_host_t host_interface;
+};
+
+
 typedef struct {
 #ifdef USEMGAHAL
     LPCLIENTDATA	pClientStruct;
@@ -294,8 +374,7 @@ typedef struct {
     LPMGAHWINFO		pMgaHwInfo;
 #endif
     EntityInfoPtr	pEnt;
-    MGABiosInfo		Bios;
-    MGABios2Info	Bios2;
+    struct mga_bios_values bios;
     CARD8               BiosOutputMode;
     pciVideoPtr		PciInfo;
     PCITAG		PciTag;
@@ -417,6 +496,9 @@ typedef struct {
 
     int                 irq;
     CARD32              reg_ien;
+    
+    Bool                useOldDmaInit;
+    Bool                forcePciDma;
 #endif
     XF86VideoAdaptorPtr adaptor;
     Bool		DualHeadEnabled;
@@ -492,7 +574,7 @@ Bool MGAGetRec(ScrnInfoPtr pScrn);
 void MGAProbeDDC(ScrnInfoPtr pScrn, int index);
 void MGASoftReset(ScrnInfoPtr pScrn);
 void MGAFreeRec(ScrnInfoPtr pScrn);
-void MGAReadBios(ScrnInfoPtr pScrn);
+Bool mga_read_and_process_bios(ScrnInfoPtr pScrn);
 void MGADisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
 				  int flags);
 void MGAAdjustFrameCrtc2(int scrnIndex, int x, int y, int flags);

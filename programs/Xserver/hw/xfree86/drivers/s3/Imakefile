@@ -16,10 +16,9 @@ INCLUDES = -I. -I../../include
 #else
 INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86OSSRC) \
            -I$(SERVERSRC)/fb -I$(SERVERSRC)/mi \
-	   -I$(SERVERSRC)/mfb \
-           -I$(XF86SRC)/xaa -I$(SERVERSRC)/cfb \
+           -I$(XF86SRC)/xaa \
            -I$(XF86SRC)/xf1bpp -I$(XF86SRC)/xf4bpp \
-           -I$(XF86SRC)/xf24_32bpp -I$(SERVERSRC)/Xext \
+           -I$(SERVERSRC)/Xext \
            -I$(XF86SRC)/vgahw -I$(XF86SRC)/ramdac \
            -I$(XF86SRC)/rac -I$(XF86SRC)/int10 \
            -I$(XF86SRC)/fbdevhw -I$(XF86SRC)/ddc \
@@ -37,7 +36,7 @@ NormalAsmObjectRule()
 ModuleObjectRule()
 ObjectModuleTarget(s3, $(OBJS))
 
-InstallObjectModule(s3,$(MODULEDIR),drivers)
+InstallVideoObjectModule(s3,$(MODULEDIR))
 
 DependTarget()
 

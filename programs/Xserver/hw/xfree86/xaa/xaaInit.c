@@ -1,11 +1,15 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/xaa/xaaInit.c,v 1.34 2001/07/19 14:19:42 tsi Exp $ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "misc.h"
 #include "xf86.h"
 #include "xf86_ansic.h"
 #include "xf86_OSproc.h"
 
-#include "X.h"
+#include <X11/X.h>
 #include "scrnintstr.h"
 #include "pixmapstr.h"
 #include "windowstr.h"
@@ -498,6 +502,9 @@ XAACreatePixmap(ScreenPtr pScreen, int w, int h, int depth)
     XAAPixmapPtr pPriv;
     PixmapPtr pPix = NULL;
     int size = w * h;
+
+    if (w > 32767 || h > 32767)
+	return NullPixmap;
     
     if (!infoRec->offscreenDepthsInitialized)
 	XAAInitializeOffscreenDepths (pScreen);

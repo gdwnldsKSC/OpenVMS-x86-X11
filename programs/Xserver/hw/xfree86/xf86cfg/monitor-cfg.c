@@ -24,7 +24,7 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Author: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
+ * Author: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br>
  *
  * $XFree86: xc/programs/Xserver/hw/xfree86/xf86cfg/monitor-cfg.c,v 1.6 2001/02/21 23:37:03 paulo Exp $
  */
@@ -382,25 +382,25 @@ MonitorLayout(XF86SetupInfo *info)
 	XtCreateManagedWidget("hlabel", labelWidgetClass, layout, NULL, 0);
 	hsync = XtVaCreateManagedWidget("hsync", asciiTextWidgetClass, layout,
 					XtNeditType, XawtextEdit,
-					NULL, 0);
+					NULL);
 	viewport = XtCreateManagedWidget("hviewport", viewportWidgetClass,
 					 layout, NULL, 0);
 	hlist = XtVaCreateManagedWidget("hlist", listWidgetClass, viewport,
 					XtNlist, hmodes,
 					XtNnumberStrings, sizeof(hmodes) /
-					sizeof(hmodes[0]), NULL, 0);
+					sizeof(hmodes[0]), NULL);
 	XtAddCallback(hlist, XtNcallback, MonitorHsyncCallback, NULL);
 
 	XtCreateManagedWidget("vlabel", labelWidgetClass, layout, NULL, 0);
 	vsync = XtVaCreateManagedWidget("vsync", asciiTextWidgetClass, layout,
 					XtNeditType, XawtextEdit,
-					NULL, 0);
+					NULL);
 	viewport = XtCreateManagedWidget("vviewport", viewportWidgetClass,
 					 layout, NULL, 0);
 	vlist = XtVaCreateManagedWidget("vlist", listWidgetClass, viewport,
 					XtNlist, vmodes,
 					XtNnumberStrings, sizeof(vmodes) /
-					sizeof(vmodes[0]), NULL, 0);
+					sizeof(vmodes[0]), NULL);
 	XtAddCallback(vlist, XtNcallback, MonitorVsyncCallback, NULL);
 
 	XtCreateManagedWidget("clabel", labelWidgetClass, layout, NULL, 0);
@@ -424,7 +424,7 @@ MonitorLayout(XF86SetupInfo *info)
     XtSetValues(cmenu, args, 1);
     ++men;
     sme = XtVaCreateManagedWidget("none", smeBSBObjectClass, menu,
-				  NULL, 0);
+				  NULL);
     XtAddCallback(sme, XtNcallback, MonitorSelectCardCallback, NULL);
 
     while (device != NULL) {

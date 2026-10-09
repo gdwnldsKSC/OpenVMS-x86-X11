@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_gx1_driver.c,v 1.10tsi Exp $ */
 /*
  * $Workfile: nsc_gx1_driver.c $
- * $Revision$
- * $Author$
+ * $Revision: 1.6 $
+ * $Author: ajax $
  *
  * File Contents: This is the main module configures the interfacing 
  *                with the X server. The individual modules will be 
@@ -148,9 +148,12 @@
  * Alan Hourihane <alanh@fairlite.demon.co.uk>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define DEBUG(x)
 #define GEODE_TRACE 0
-#define CFB 0
 #define HWVGA 0
 
 /* Includes that are used by all drivers */
@@ -170,22 +173,7 @@
 #include "xf86cmap.h"
 
 /* Frame buffer stuff */
-#if CFB
-/*
- * If using cfb, cfb.h is required.  Select the others for the bpp values
- * the driver supports.
- */
-#define PSZ 8				/* needed for cfb.h */
-#include "cfb.h"
-#undef PSZ
-#include "cfb16.h"
-#include "cfb24.h"
-#include "cfb32.h"
-
-#else
 #include "fb.h"
-
-#endif
 
 #include "shadowfb.h"
 
@@ -201,13 +189,13 @@
 /* Check for some extensions */
 #ifdef XFreeXDGA
 #define _XF86_DGA_SERVER_
-#include "extensions/xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
 #endif /* XFreeXDGA */
 
 #include "globals.h"
 #include "opaque.h"
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 /* Our private include file (this also includes the durango headers) */
 #include "nsc.h"
@@ -308,11 +296,7 @@ extern const char *nscVgahwSymbols[];
 extern const char *nscVbeSymbols[];
 extern const char *nscInt10Symbols[];
 
-#if CFB
-extern const char *nscCfbSymbols[];
-#else
 extern const char *nscFbSymbols[];
-#endif
 extern const char *nscXaaSymbols[];
 extern const char *nscRamdacSymbols[];
 extern const char *nscShadowSymbols[];
@@ -474,11 +458,6 @@ GX1PreInit(ScrnInfoPtr pScreenInfo, int flags)
    MessageType from;
    int i = 0;
    GeodePtr pGeode;
-#if CFB
-   char *mod = NULL;
-
-   char *reqSymbol = NULL;
-#endif
 
 #if defined(STB_X)
    GAL_ADAPTERINFO sAdapterInfo;
@@ -1020,37 +999,12 @@ GX1PreInit(ScrnInfoPtr pScreenInfo, int flags)
    xf86SetDpi(pScreenInfo, 0, 0);
    GeodeDebug(("GX1PreInit(14)!\n"));
 
-#if CFB
-   /* Load bpp-specific modules */
-   mod = NULL;
-
-   /* Load bpp-specific modules */
-   switch (pScreenInfo->bitsPerPixel) {
-   case 8:
-      mod = "cfb";
-      reqSymbol = "cfbScreenInit";
-      break;
-   case 16:
-      mod = "cfb16";
-      reqSymbol = "cfb16ScreenInit";
-      break;
-   default:
-      return FALSE;
-   }
-   if (mod && xf86LoadSubModule(pScreenInfo, mod) == NULL) {
-      GX1FreeRec(pScreenInfo);
-      return FALSE;
-   }
-
-   xf86LoaderReqSymbols(reqSymbol, NULL);
-#else
    if (xf86LoadSubModule(pScreenInfo, "fb") == NULL) {
       GX1FreeRec(pScreenInfo);
       return FALSE;
    }
 
    xf86LoaderReqSymLists(nscFbSymbols, NULL);
-#endif
    GeodeDebug(("GX1PreInit(15)!\n"));
    if (pGeode->NoAccel == FALSE) {
       if (!xf86LoadSubModule(pScreenInfo, "xaa")) {
@@ -2019,26 +1973,12 @@ GX1ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
    /* Initialise the framebuffer */
    switch (pScreenInfo->bitsPerPixel) {
-#if CFB
-   case 8:
-      Inited = cfbScreenInit(pScreen, FBStart, width, height,
-			     pScreenInfo->xDpi, pScreenInfo->yDpi,
-			     displayWidth);
-      break;
-   case 16:
-      Inited = cfb16ScreenInit(pScreen, FBStart, width, height,
-			       pScreenInfo->xDpi, pScreenInfo->yDpi,
-			       displayWidth);
-      break;
-
-#else
    case 8:
    case 16:
       Inited = fbScreenInit(pScreen, FBStart, width, height,
 			    pScreenInfo->xDpi, pScreenInfo->yDpi,
 			    displayWidth, pScreenInfo->bitsPerPixel);
       break;
-#endif
    default:
       xf86DrvMsg(scrnIndex, X_ERROR,
 		 "Internal error: invalid bpp (%d) in ScreenInit\n",
@@ -2071,11 +2011,8 @@ GX1ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	 }
       }
    }
-#if CFB
-#else
    /* must be after RGB ordering fixed */
    fbPictureInit(pScreen, 0, 0);
-#endif
 
    GeodeDebug(("GX1ScreenInit(6)!\n"));
    if (!pGeode->NoAccel) {

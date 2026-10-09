@@ -1,5 +1,5 @@
 /* $Xorg: authutil.c,v 1.5 2001/02/09 02:03:26 xorgcvs Exp $ */
-/* $XdotOrg: xc/lib/ICE/authutil.c,v 1.2 2004/04/23 18:43:22 eich Exp $ */
+/* $XdotOrg: xc/lib/ICE/authutil.c,v 1.4 2005/07/03 07:00:55 daniels Exp $ */
 /******************************************************************************
 
 
@@ -29,6 +29,9 @@ Author: Ralph Mor, X Consortium
 ******************************************************************************/
 /* $XFree86: authutil.c,v 3.9 2002/05/31 18:45:41 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/ICE/ICElib.h>
 #include "ICElibint.h"
 #include <X11/ICE/ICEutil.h>

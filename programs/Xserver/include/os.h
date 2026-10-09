@@ -54,7 +54,7 @@ SOFTWARE.
 #include "misc.h"
 #define ALLOCATE_LOCAL_FALLBACK(_size) Xalloc((unsigned long)(_size))
 #define DEALLOCATE_LOCAL_FALLBACK(_ptr) Xfree((pointer)(_ptr))
-#include "Xalloca.h"
+#include <X11/Xalloca.h>
 #ifndef IN_MODULE
 #include <stdarg.h>
 #else
@@ -93,7 +93,7 @@ typedef struct _NewClientRec *NewClientPtr;
 #endif
 
 #ifndef IN_MODULE
-#ifdef SCO
+#ifdef __SCO__
 #include <stdio.h>
 #endif
 #include <string.h>
@@ -256,6 +256,10 @@ extern void OsInitAllocator(void);
 
 extern char *Xstrdup(const char *s);
 extern char *XNFstrdup(const char *s);
+extern char *Xprintf(const char *fmt, ...);
+extern char *Xvprintf(const char *fmt, va_list va);
+extern char *XNFprintf(const char *fmt, ...);
+extern char *XNFvprintf(const char *fmt, va_list va);
 
 typedef SIGVAL (*OsSigHandlerPtr)(int /* sig */);
 
@@ -510,14 +514,9 @@ typedef enum {
 /* XXX Need to check which GCC versions have the format(printf) attribute. */
 #if defined(__GNUC__) && \
     ((__GNUC__ > 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ > 4)))
-#define _printf_attribute(a,b) __attribute((format(printf,a,b)))
+#define _printf_attribute(a,b) __attribute((format(__printf__,a,b)))
 #else
 #define _printf_attribute(a,b) /**/
-#endif
-
-#ifdef printf
-#define printf_defined
-#undef printf
 #endif
 
 extern const char *LogInit(const char *fname, const char *backup);
@@ -550,11 +549,6 @@ extern void LogPrintMarkers(void);
 extern int snprintf(char *str, size_t size, const char *format, ...)
 	_printf_attribute(3,4);
 extern int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-#endif
-
-#ifdef printf_defined
-#define printf xf86printf
-#undef printf_defined
 #endif
 
 #endif /* OS_H */

@@ -29,7 +29,11 @@ in this Software without prior written authorization from The Open Group.
  * Jeff Anton'x fixes: cfb8line.c   97/02/07
  */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include <stdint.h>
 
 #include "gcstruct.h"

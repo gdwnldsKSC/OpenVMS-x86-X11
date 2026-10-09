@@ -38,6 +38,9 @@ in this Software without prior written authorization from The Open Group.
  *     XmuCreatePixmapFromBitmap	make a pixmap from a bitmap
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xos.h>
 #include <X11/Xlib.h>
 #include <X11/Xmu/Drawing.h>

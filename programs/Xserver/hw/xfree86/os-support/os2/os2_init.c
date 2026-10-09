@@ -38,9 +38,13 @@
 #define INCL_DOSSEMAPHORES
 #define INCL_DOSMODULEMGR
 #define INCL_DOSFILEMGR
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <float.h>
-#include "X.h"
-#include "Xmd.h"
+#include <X11/X.h>
+#include <X11/Xmd.h>
 #include "input.h"
 #include "scrnintstr.h"
 

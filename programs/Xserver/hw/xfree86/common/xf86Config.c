@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86Config.c,v 1.5 2004/08/16 20:17:51 kem Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86Config.c,v 1.21 2005/12/20 22:30:50 alanc Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/common/xf86Config.c,v 3.276 2003/10/08 14:58:26 dawes Exp $ */
 
 
@@ -46,6 +46,10 @@
  *      ... and others
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifdef XF86DRI
 #include <sys/types.h>
 #include <grp.h>
@@ -71,7 +75,7 @@ extern DeviceAssocRec mouse_assoc;
 
 #ifdef XKB
 #define XKB_IN_SERVER
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 #endif
 
 #ifdef RENDER
@@ -79,7 +83,8 @@ extern DeviceAssocRec mouse_assoc;
 #endif
 
 #if (defined(i386) || defined(__i386__)) && \
-    (defined(__FreeBSD__) || defined(__NetBSD__) || defined(linux) || \
+    (defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || \
+     defined(__NetBSD__) || defined(linux) || \
      (defined(SVR4) && !defined(sun)) || defined(__GNU__))
 #define SUPPORT_PC98
 #endif
@@ -443,6 +448,52 @@ xf86InputDriverlistFromConfig()
     return modulearray;
 }
 
+static void
+fixup_video_driver_list(char **drivers)
+{
+    static const char *fallback[5] = { "vga", "vesa", "fbdev", "wsfb", NULL };
+    char **end, **drv;
+    char *x;
+    char **ati, **atimisc;
+    int i;
+
+    /* walk to the end of the list */
+    for (end = drivers; *end && **end; end++) ;
+    end--;
+
+    /*
+     * for each of the fallback drivers, if we find it in the list,
+     * swap it with the last available non-fallback driver.
+     */
+    for (i = 0; fallback[i]; i++) {
+        for (drv = drivers; drv != end; drv++) {
+            if (strstr(*drv, fallback[i])) {
+                x = *drv; *drv = *end; *end = x;
+                end--;
+                break;
+            }
+        }
+    }
+    /*
+     * since the ati wrapper driver is gross and awful, sort ati before
+     * atimisc, which makes sure all the ati symbols are visible in xorgcfg.
+     */
+    for (drv = drivers; drv != end; drv++) {
+        if (!strcmp(*drv, "atimisc")) {
+            atimisc = drv;
+            for (drv = atimisc; drv != end; drv++) {
+                if (!strcmp(*drv, "ati")) {
+                    ati = drv;
+                    x = *ati; *ati = *atimisc; *atimisc = x;
+                    return;
+                }
+            }
+            /* if we get here, ati was already ahead of atimisc */
+	    return;
+        }
+    }
+}
+
 
 /*
  * Generate a compiled-in list of driver names.  This is used to produce a
@@ -452,6 +503,18 @@ xf86InputDriverlistFromConfig()
 static char **
 GenerateDriverlist(char * dirname, char * drivernames)
 {
+#ifdef XFree86LOADER
+    char **ret;
+    char *subdirs[] = { dirname, NULL };
+    static const char *patlist[] = {"(.*)_drv\\.so", "(.*)_drv\\.o", NULL};
+    ret = LoaderListDirs(subdirs, patlist);
+    
+    /* fix up the probe order for video drivers */
+    if (strstr(dirname, "drivers"))
+        fixup_video_driver_list(ret);
+
+    return ret;
+#else /* non-loadable server */
     char *cp, **driverlist;
     int count;
 
@@ -482,63 +545,8 @@ GenerateDriverlist(char * dirname, char * drivernames)
     }
     driverlist[count] = NULL;
 
-#ifdef XFree86LOADER
-    {
-        const char *subdirs[] = {NULL, NULL};
-        static const char *patlist[] = {"(.*)_drv\\.so", "(.*)_drv\\.o", NULL};
-        char **dlist, **clist, **dcp, **ccp;
-	int size;
-
-        subdirs[0] = dirname;
-
-        /* Get module list */
-        dlist = LoaderListDirs(subdirs, patlist);
-        if (!dlist) {
-            xfree(driverlist);
-            return NULL;        /* No modules, no list */
-        }
-
-        clist = driverlist;
-
-        /* The resulting list cannot be longer than the module list */
-        for (dcp = dlist, count = 0;  *dcp++;  count++);
-        driverlist = (char **)xnfalloc((size = count + 1) * sizeof(char *));
-
-        /* First, add modules not in compiled-in list */
-        for (count = 0, dcp = dlist;  *dcp;  dcp++) {
-            for (ccp = clist;  ;  ccp++) {
-                if (!*ccp) {
-                    driverlist[count++] = *dcp;
-		    if (count >= size)
-			driverlist = (char**)
-			    xnfrealloc(driverlist, ++size * sizeof(char*));
-                    break;
-                }
-                if (!strcmp(*ccp, *dcp))
-                    break;
-            }
-        }
-
-        /* Next, add compiled-in names that are also modules */
-        for (ccp = clist;  *ccp;  ccp++) {
-            for (dcp = dlist;  *dcp;  dcp++) {
-                if (!strcmp(*ccp, *dcp)) {
-                    driverlist[count++] = *ccp;
-		    if (count >= size)
-			driverlist = (char**)
-			    xnfrealloc(driverlist, ++size * sizeof(char*));
-                    break;
-                }
-            }
-        }
-
-        driverlist[count] = NULL;
-        xfree(clist);
-        xfree(dlist);
-    }
-#endif /* XFree86LOADER */
-
     return driverlist;
+#endif
 }
 
 
@@ -1001,25 +1009,40 @@ configServerFlags(XF86ConfFlagsPtr flagsconf, XF86OptionPtr layoutopts)
 	xf86Info.estimateSizesAggressively = i;
     else
 	xf86Info.estimateSizesAggressively = 0;
-	
+
+/* Make sure that timers don't overflow CARD32's after multiplying */
+#define MAX_TIME_IN_MIN (0x7fffffff / MILLI_PER_MIN)
+
     i = -1;
     xf86GetOptValInteger(FlagOptions, FLAG_SAVER_BLANKTIME, &i);
-    if (i >= 0)
+    if ((i >= 0) && (i < MAX_TIME_IN_MIN))
 	ScreenSaverTime = defaultScreenSaverTime = i * MILLI_PER_MIN;
+    else if (i != -1)
+	xf86ConfigError("BlankTime value %d outside legal range of 0 - %d minutes",
+			i, MAX_TIME_IN_MIN);
 
 #ifdef DPMSExtension
     i = -1;
     xf86GetOptValInteger(FlagOptions, FLAG_DPMS_STANDBYTIME, &i);
-    if (i >= 0)
+    if ((i >= 0) && (i < MAX_TIME_IN_MIN))
 	DPMSStandbyTime = defaultDPMSStandbyTime = i * MILLI_PER_MIN;
+    else if (i != -1)
+	xf86ConfigError("StandbyTime value %d outside legal range of 0 - %d minutes",
+			i, MAX_TIME_IN_MIN);
     i = -1;
     xf86GetOptValInteger(FlagOptions, FLAG_DPMS_SUSPENDTIME, &i);
-    if (i >= 0)
+    if ((i >= 0) && (i < MAX_TIME_IN_MIN))
 	DPMSSuspendTime = defaultDPMSSuspendTime = i * MILLI_PER_MIN;
+    else if (i != -1)
+	xf86ConfigError("SuspendTime value %d outside legal range of 0 - %d minutes",
+			i, MAX_TIME_IN_MIN);
     i = -1;
     xf86GetOptValInteger(FlagOptions, FLAG_DPMS_OFFTIME, &i);
-    if (i >= 0)
+    if ((i >= 0) && (i < MAX_TIME_IN_MIN))
 	DPMSOffTime = defaultDPMSOffTime = i * MILLI_PER_MIN;
+    else if (i != -1)
+	xf86ConfigError("OffTime value %d outside legal range of 0 - %d minutes",
+			i, MAX_TIME_IN_MIN);
 #endif
 
     i = -1;
@@ -1086,6 +1109,11 @@ configInputKbd(IDevPtr inputp)
   MessageType from = X_DEFAULT;
   Bool customKeycodesDefault = FALSE;
   int verb = 0;
+#if defined(XQUEUE)
+  char *kbdproto = "Xqueue";
+#else
+  char *kbdproto = "standard";
+#endif
 
   /* Initialize defaults */
   xf86Info.xleds         = 0L;
@@ -1126,16 +1154,25 @@ configInputKbd(IDevPtr inputp)
   xf86Info.xkbgeometry   = NULL;
 #endif
 
-  s = xf86SetStrOption(inputp->commonOptions, "Protocol", "standard");
+  s = xf86SetStrOption(inputp->commonOptions, "Protocol", kbdproto);
   if (xf86NameCmp(s, "standard") == 0) {
      xf86Info.kbdProc    = xf86KbdProc;
      xf86Info.kbdEvents  = xf86KbdEvents;
      xfree(s);
   } else if (xf86NameCmp(s, "xqueue") == 0) {
+#ifdef __UNIXWARE__
+    /*
+     * To retain compatibility with older config files, on UnixWare, we
+     * accept the xqueue protocol but use the normal keyboard procs.
+     */
+     xf86Info.kbdProc    = xf86KbdProc;
+     xf86Info.kbdEvents  = xf86KbdEvents;
+#else
 #ifdef XQUEUE
     xf86Info.kbdProc = xf86XqueKbdProc;
     xf86Info.kbdEvents = xf86XqueEvents;
     xf86Msg(X_CONFIG, "Xqueue selected for keyboard input\n");
+#endif
 #endif
     xfree(s);
 #ifdef WSCONS_SUPPORT
@@ -1592,17 +1629,17 @@ checkCoreInputDevices(serverLayoutPtr servlayoutp, Bool implicitLayout)
 	confInput = xf86findInput(CONF_IMPLICIT_KEYBOARD,
 				  xf86configptr->conf_input_lst);
 	if (!confInput) {
-	    confInput = xf86findInputByDriver("keyboard",
+	    confInput = xf86findInputByDriver("kbd",
 					      xf86configptr->conf_input_lst);
 	}
 	if (!confInput) {
-	    confInput = xf86findInputByDriver("kbd",
+	    confInput = xf86findInputByDriver("keyboard",
 					      xf86configptr->conf_input_lst);
 	}
 	if (confInput) {
 	    foundKeyboard = TRUE;
 	    from = X_DEFAULT;
-	    pointerMsg = "first keyboard device";
+	    keyboardMsg = "first keyboard device";
 	}
     }
 
@@ -1610,7 +1647,7 @@ checkCoreInputDevices(serverLayoutPtr servlayoutp, Bool implicitLayout)
     if (!foundKeyboard) {
 	bzero(&defKbd, sizeof(defKbd));
 	defKbd.inp_identifier = "<default keyboard>";
-	defKbd.inp_driver = "keyboard";
+	defKbd.inp_driver = "kbd";
 	confInput = &defKbd;
 	foundKeyboard = TRUE;
 	keyboardMsg = "default keyboard configuration";
@@ -1652,6 +1689,20 @@ checkCoreInputDevices(serverLayoutPtr servlayoutp, Bool implicitLayout)
 
     return TRUE;
 }
+
+typedef enum {
+    LAYOUT_ISOLATEDEVICE,
+    LAYOUT_SINGLECARD
+} LayoutValues;
+
+static OptionInfoRec LayoutOptions[] = {
+  { LAYOUT_ISOLATEDEVICE,      "IsolateDevice",        OPTV_STRING,
+       {0}, FALSE },
+  { LAYOUT_SINGLECARD,         "SingleCard",           OPTV_BOOLEAN,
+       {0}, FALSE },
+  { -1,                                NULL,                   OPTV_NONE,
+       {0}, FALSE },
+};
 
 /*
  * figure out which layout is active, which screens are used in that layout,
@@ -2114,16 +2165,20 @@ configMonitor(MonPtr monitorp, XF86ConfMonitorPtr conf_monitor)
     /*
      * fill in the monitor structure
      */    
-    for( count = 0 ; count < conf_monitor->mon_n_hsync; count++) {
+    for( count = 0 ;
+	 count < conf_monitor->mon_n_hsync && count < MAX_HSYNC;
+	 count++) {
         monitorp->hsync[count].hi = conf_monitor->mon_hsync[count].hi;
         monitorp->hsync[count].lo = conf_monitor->mon_hsync[count].lo;
     }
-    monitorp->nHsync = conf_monitor->mon_n_hsync;
-    for( count = 0 ; count < conf_monitor->mon_n_vrefresh; count++) {
+    monitorp->nHsync = count;
+    for( count = 0 ;
+	 count < conf_monitor->mon_n_vrefresh && count < MAX_VREFRESH;
+	 count++) {
         monitorp->vrefresh[count].hi = conf_monitor->mon_vrefresh[count].hi;
         monitorp->vrefresh[count].lo = conf_monitor->mon_vrefresh[count].lo;
     }
-    monitorp->nVrefresh = conf_monitor->mon_n_vrefresh;
+    monitorp->nVrefresh = count;
 
     /*
      * first we collect the mode lines from the UseModes directive
@@ -2421,12 +2476,14 @@ configExtensions(XF86ConfExtensionsPtr conf_ext)
 
 	    if (!val ||
 		xf86NameCmp(val, "enable") == 0 ||
+		xf86NameCmp(val, "enabled") == 0 ||
 		xf86NameCmp(val, "on") == 0 ||
 		xf86NameCmp(val, "1") == 0 ||
 		xf86NameCmp(val, "yes") == 0 ||
 		xf86NameCmp(val, "true") == 0) {
 		/* NOTHING NEEDED -- enabling is handled below */
 	    } else if (xf86NameCmp(val, "disable") == 0 ||
+                       xf86NameCmp(val, "disabled") == 0 ||
 		       xf86NameCmp(val, "off") == 0 ||
 		       xf86NameCmp(val, "0") == 0 ||
 		       xf86NameCmp(val, "no") == 0 ||
@@ -2443,9 +2500,8 @@ configExtensions(XF86ConfExtensionsPtr conf_ext)
 		xf86Msg(X_CONFIG, "Extension \"%s\" is %s\n",
 			name, enable ? "enabled" : "disabled");
 	    } else {
-		xf86Msg(X_ERROR,
-			    "Extension \"%s\" is unrecognized\n", name);
-		return FALSE;
+		xf86Msg(X_WARNING, "Ignoring unrecognized extension \"%s\"\n",
+                        name);
 	    }
 	}
     }
@@ -2532,6 +2588,8 @@ xf86HandleConfigFile(Bool autoconfig)
     const char *filename;
     char *searchpath;
     MessageType from = X_DEFAULT;
+    char *scanptr;
+    Bool singlecard = 0;
 
     if (!autoconfig) {
 	if (getuid() == 0)
@@ -2603,6 +2661,29 @@ xf86HandleConfigFile(Bool autoconfig)
 	    return CONFIG_PARSE_ERROR;
 	  }
 	}
+    }
+
+    xf86ProcessOptions(-1, xf86ConfigLayout.options, LayoutOptions);
+
+    if ((scanptr = xf86GetOptValString(LayoutOptions, LAYOUT_ISOLATEDEVICE))) {
+       ; /* IsolateDevice specified; overrides SingleCard */
+    } else {
+       xf86GetOptValBool(LayoutOptions, LAYOUT_SINGLECARD, &singlecard);
+       if (singlecard)
+           scanptr = xf86ConfigLayout.screens->screen->device->busID;
+    }
+    if (scanptr) {
+       int bus, device, func, stroffset = 0;
+       if (strncmp(scanptr, "PCI:", 4) != 0) {
+           xf86Msg(X_WARNING, "Bus types other than PCI not yet isolable.\n"
+                              "\tIgnoring IsolateDevice option.\n");
+       } else if (sscanf(scanptr, "PCI:%d:%d:%d", &bus, &device, &func) == 3) {
+           xf86IsolateDevice.bus = bus;
+           xf86IsolateDevice.device = device;
+           xf86IsolateDevice.func = func;
+           xf86Msg(X_INFO,
+                   "Isolating PCI bus \"%d:%d:%d\"\n", bus, device, func);
+       }
     }
 
     /* Now process everything else */

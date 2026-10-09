@@ -28,6 +28,11 @@
  *    negligence, tort, under statute, in equity, at law or otherwise, even if
  *    advised of the possibility of such damage. 
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define PSZ 8
 
 /*

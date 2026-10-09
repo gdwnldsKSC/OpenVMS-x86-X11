@@ -32,9 +32,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <misc.h>
 #include <auth.h>
-#include <font.h>
+#include <X11/fonts/font.h>
 #include <accstr.h>
-#include <fontstruct.h>
+#include <X11/fonts/fontstruct.h>
 
 typedef void (*DifsWakeupFunc)(pointer data, int result, unsigned long * pReadmask);
 typedef Bool (*DifsWorkFunc) (ClientPtr, pointer);

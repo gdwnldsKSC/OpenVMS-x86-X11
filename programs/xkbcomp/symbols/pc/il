@@ -1,4 +1,4 @@
-
+// $XdotOrg: xc/programs/xkbcomp/symbols/pc/il,v 1.3 2005/08/12 11:08:49 pascal Exp $
 // based on a keyboard map from an 'xkb/symbols/il' file
 //
 // $XFree86: xc/programs/xkbcomp/symbols/pc/il,v 1.3 2003/01/07 02:03:44 dawes Exp $
@@ -8,7 +8,7 @@ xkb_symbols "basic" {
 
     // uses the kbd layout in use in Israel.
 
-    name[Group1]= "Israelian";
+    name[Group1]= "Israel";
 
     key <TLDE> { [ semicolon,	asciitilde	]	};
 
@@ -59,7 +59,7 @@ xkb_symbols "basic" {
 // nikud patter based on Dekel Tsur's Hebrew mapping for LyX
 partial alphanumeric_keys 
 xkb_symbols "lyx" {
-    name[Group1]= "Israelian";
+    name[Group1]= "Israel - lyx";
 
     key <TLDE> { [ semicolon,	asciitilde	]	};
     // On some key (e.g. AD01, right below) there is not yet mapping for the
@@ -118,7 +118,7 @@ xkb_symbols "lyx" {
 // layout. 
 partial alphanumeric_keys 
 xkb_symbols "si1452" {
-    name[Group1]= "Israelian";
+    name[Group1]= "Israel - si1452";
 
     include "pc/il(basic)"
     
@@ -152,3 +152,44 @@ xkb_symbols "si1452" {
                                       
     key <BKSL> { [ backslash,    backslash,  0x10005bb	]}; // Qubuts
 };
+
+partial alphanumeric_keys 
+xkb_symbols "phonetic" {
+
+    // uses the phonetic layout from old Slackware 'il.map' file
+
+    name[Group1]= "Israel - Phonetic";
+
+    key <AE12> {        [     equal,    plus, hebrew_doublelowline, hebrew_doublelowline ]};
+
+    key <LatQ> {	[ hebrew_qoph, hebrew_qoph	]	};
+    key <LatW> {	[ hebrew_waw, hebrew_waw	]	};
+    key <LatE> {	[ hebrew_aleph, hebrew_aleph	]       };
+    key <LatR> {	[ hebrew_resh, hebrew_resh	]	};
+    key <LatT> {	[ hebrew_taw, hebrew_tet	]       };
+    key <LatY> {	[ hebrew_ayin, hebrew_ayin	]       };
+    key <LatU> {	[ hebrew_waw, hebrew_waw	]       };
+    key <LatI> {	[ hebrew_yod, hebrew_yod	]       };
+    key <LatO> {	[ hebrew_samech, hebrew_samech	]       };
+    key <LatP> {	[ hebrew_pe, hebrew_finalpe	]	};
+
+    key <LatA> {	[ hebrew_aleph, hebrew_aleph	]	};
+    key <LatS> {	[ hebrew_shin, hebrew_shin	]       };
+    key <LatD> {	[ hebrew_dalet, hebrew_dalet	]       };
+    key <LatF> {	[ hebrew_pe, hebrew_finalpe	]	};
+    key <LatG> {	[ hebrew_gimel, hebrew_gimel	]       };
+    key <LatH> {	[ hebrew_he, hebrew_he		]       };
+    key <LatJ> {	[ hebrew_yod, hebrew_yod	]	};
+    key <LatK> {	[ hebrew_kaph, hebrew_finalkaph	]	};
+    key <LatL> {	[ hebrew_lamed, hebrew_lamed	]       };
+
+    key <LatZ> {	[ hebrew_zain, hebrew_zain	]       };
+    key <LatX> {	[ hebrew_chet, hebrew_chet	]       };
+    key <LatC> {	[ hebrew_zade, hebrew_finalzade	]       };
+    key <LatV> {	[ hebrew_waw, hebrew_waw	]       };
+    key <LatB> {	[ hebrew_bet, hebrew_bet	]       };
+    key <LatN> {	[ hebrew_nun, hebrew_finalnun	]	};
+    key <LatM> {	[ hebrew_mem, hebrew_finalmem	]	};
+};
+
+

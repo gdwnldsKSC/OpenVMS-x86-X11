@@ -1,12 +1,12 @@
 #!/usr/bin/perl
 #
-# bdftruncate.pl -- Markus Kuhn <mkuhn@acm.org>
+# bdftruncate.pl -- Markus Kuhn <http://www.cl.cam.ac.uk/~mgk25/>
 #
 # This Perl script allows you to generate from an ISO10646-1 encoded
 # BDF font other ISO10646-1 BDF fonts in which all characters above
 # a threshold code value are stored unencoded.
 #
-# Id: bdftruncate.pl,v 1.5 2001-05-31 10:58:58+01 mgk25 Exp $
+# $ucs-fonts: bdftruncate.pl,v 1.7 2004-11-28 18:41:13+00 mgk25 Rel $
 
 # Subroutine to identify whether the ISO 10646/Unicode character code
 # ucs belongs into the East Asian Wide (W) or East Asian FullWidth
@@ -34,11 +34,11 @@ if ($ARGV[0] eq '-w' || $ARGV[0] eq '+w') {
 
 print STDERR <<End if $#ARGV != 0;
 
-Usage: bdftruncate [+w|-w] threshold <source.bdf >destination.bdf
+Usage: bdftruncate.pl [+w|-w] threshold <source.bdf >destination.bdf
 
 Example:
 
-   bdftruncate 0x3200 <6x13.bdf >6x13t.bdf
+   bdftruncate.pl 0x3200 <6x13.bdf >6x13t.bdf
 
 will generate the file 6x13t.bdf in which all glyphs with codes
 >= 0x3200 will only be stored unencoded (i.e., ENCODING -1).

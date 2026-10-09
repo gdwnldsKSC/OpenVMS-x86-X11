@@ -25,7 +25,6 @@
 #define ___ATIBANK_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "mibank.h"
 
@@ -74,7 +73,7 @@ extern miBankProc        ATIMach64SetReadPlanar,
  * used before ATIScreenInit() is called.
  */
 
-typedef void ATIBankProc FunctionPrototype((ATIPtr, unsigned int));
+typedef void ATIBankProc(ATIPtr, unsigned int);
 typedef ATIBankProc     *ATIBankProcPtr;
 
 extern ATIBankProc       ATIV3SetBank,

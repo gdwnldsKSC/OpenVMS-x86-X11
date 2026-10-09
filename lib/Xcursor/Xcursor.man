@@ -1,7 +1,7 @@
 .\"
-.\" $Id$
+.\" $Id: Xcursor.man,v 1.4 2005/10/13 02:22:47 alanc Exp $
 .\"
-.\" Copyright © 2002 Keith Packard
+.\" Copyright Â© 2002 Keith Packard
 .\"
 .\" Permission to use, copy, modify, distribute, and sell this software and its
 .\" documentation for any purpose is hereby granted without fee, provided that
@@ -162,12 +162,12 @@ value containing ARGB with A in the high byte.
 .nf
 .ft CR
     typedef struct _XcursorImage {
-        XcursorDim	size;	    /* nominal size for matching */
-        XcursorDim	width;	    /* actual width */
-        XcursorDim	height;	    /* actual height */
-        XcursorDim	xhot;	    /* hot spot x (must be inside image) */
-        XcursorDim	yhot;       /* hot spot y (must be inside image) */
-        XcursorPixel    *pixels;    /* pointer to pixels */
+        XcursorDim	size;	    /\(** nominal size for matching */
+        XcursorDim	width;	    /\(** actual width */
+        XcursorDim	height;	    /\(** actual height */
+        XcursorDim	xhot;	    /\(** hot spot x (must be inside image) */
+        XcursorDim	yhot;       /\(** hot spot y (must be inside image) */
+        XcursorPixel    *pixels;    /\(** pointer to pixels */
     } XcursorImage;
 .ft
 .fi
@@ -180,8 +180,8 @@ XcursorImages is freed.
 .nf
 .ft CR
     typedef struct _XcursorImages {
-        int             nimage;	    /* number of images */
-        XcursorImage    **images;   /* array of XcursorImage pointers */
+        int             nimage;	    /\(** number of images */
+        XcursorImage    **images;   /\(** array of XcursorImage pointers */
     } XcursorImages;
 .ft
 .fi
@@ -195,10 +195,10 @@ structures can use the same XcursorCursors.
 .nf
 .ft CR
     typedef struct _XcursorCursors {
-        Display     *dpy;	/* Display holding cursors */
-        int	    ref;	/* reference count */
-        int	    ncursor;	/* number of cursors */
-        Cursor	    *cursors;	/* array of cursors */
+        Display     *dpy;	/\(** Display holding cursors */
+        int	    ref;	/\(** reference count */
+        int	    ncursor;	/\(** number of cursors */
+        Cursor	    *cursors;	/\(** array of cursors */
     } XcursorCursors;
 .ft
 .fi
@@ -212,8 +212,8 @@ holds a reference which is removed when the XcursorAnimate is freed.
 .nf
 .ft CR
     typedef struct _XcursorAnimate {
-        XcursorCursors   *cursors;  /* list of cursors to use */
-        int		 sequence;  /* which cursor is next */
+        XcursorCursors   *cursors;  /\(** list of cursors to use */
+        int		 sequence;  /\(** which cursor is next */
     } XcursorAnimate;
 .ft
 .fi

@@ -9,7 +9,7 @@
 <date>2004 August 18
 
 <ident>
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/sgml/Solaris.sgml,v 1.3.2.1 2005/02/07 23:15:26 gisburn Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/sgml/Solaris.sgml,v 1.4 2005/12/19 07:56:55 alanc Exp $
 </ident>
 
 <!-- Table of contents -->
@@ -195,13 +195,8 @@ There is no known work around.<p>
 The SPARC port is still quite new, so instability is to be expected (and
 reported!).
 It might even have broken some aspects of the x86 port.<p>
-<item>
-The <tt>kbd</tt> driver is not yet supported on Solaris, but the server
-still logs a message that it can't find the <tt>Keyboard</tt> driver and
-suggests you use <tt>kbd</tt>.   That message should be ignored in this
-release.
 </enum>
 <sect>Bug Notification<p>
-Bug reports should be reported using the bugzilla.freedesktop.org using the 
-xorg product or sent to <email>xorg@freedesktop.org</email>.
+Bug reports should be reported at bugs.freedesktop.org using the 
+xorg product or sent to <email>xorg@lists.freedesktop.org</email>.
 </article>

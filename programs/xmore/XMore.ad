@@ -101,6 +101,8 @@
 *printdialogshell*setup*orientationlist.tip:          Select page orientation
 *printdialogshell*setup*plexlist.fromHoriz:           orientationlist
 *printdialogshell*setup*plexlist.tip:                 Select page plex mode (simplex, duplex, etc.)
+*printdialogshell*setup*colorspacelist.fromHoriz:     plexlist
+*printdialogshell*setup*colorspacelist.tip:           Select color space (color, grayscale, CYMK, etc.)
 *printdialogshell*setup*jobcopieslabel.fromVert:      paperlist
 *printdialogshell*setup*jobcopieslabel.tip:           Set number of job copies
 *printdialogshell*setup*jobcopieslabel.label:         Job Copies:

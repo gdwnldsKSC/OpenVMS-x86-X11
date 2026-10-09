@@ -8,7 +8,7 @@ XCOMM $XFree86: xc/lib/X11/Imakefile,v 3.52 2003/05/27 16:53:15 tsi Exp $
 
 
         HEADERS = Xlib.h Xresource.h Xutil.h cursorfont.h Xlibint.h \
-			Xcms.h Xlocale.h XKBlib.h
+		Xcms.h Xlocale.h XKBlib.h XlibConf.h Xregion.h ImUtil.h
 
 #if BuildServersOnly && !XWinServer && !XnestServer && !BuildGLXLibrary && !BuildClients && !XdmxServer
 all::
@@ -1076,13 +1076,16 @@ MAKEKEYS = ./makekeys
 
 #if CrossCompiling
 HOST_LDLIBS=
+HOST_CFLAGS=$(TOP_INCLUDES) $(INCLUDES) $(BOOTSTRAPCFLAGS) \
+	$(CROSSCOMPILEDEFINES) $(CROSSCOMPILEBOOTSTRAPDEFINES)
 #else
 HOST_LDLIBS=$(LDLIBS)
+HOST_CFLAGS=$(CFLAGS)
 #endif
 
 ks_tables.h: $(XINCLUDESRC)/keysymdef.h util/makekeys.c
 	RemoveFiles($@ HostProgramTargetName(makekeys) makekeys.Osuf)
-	-HostLinkRule(HostProgramTargetName(makekeys),$(CFLAGS) $(LOCAL_LDFLAGS),util/makekeys.c,$(HOST_LDLIBS))
+	-HostLinkRule(HostProgramTargetName(makekeys),$(HOST_CFLAGS) $(LOCAL_LDFLAGS),util/makekeys.c,$(HOST_LDLIBS))
 	RunProgram(MAKEKEYS,< $(XINCLUDESRC)/keysymdef.h > ks_tables_h)
 	$(MV) ks_tables_h $@
 	RemoveFiles(HostProgramTargetName(makekeys) makekeys.Osuf ks_tables_h)
@@ -1105,3 +1108,27 @@ MakeLintSubdirs($(LINTSUBDIRS),install.ln,install.ln)
 #endif
 #endif
 
+includes:: XlibConf.h
+
+#include <Threads.tmpl>
+
+#if ThreadedProject
+#define XThreadsDefine echo '#ifndef XTHREADS' >> $@		@@\
+	echo '#define XTHREADS' >> $@				@@\
+	echo '#endif' >> $@
+#else
+#define XThreadsDefine echo '#undef XTHREADS' >> $@
+#endif
+
+#if HasThreadSafeAPI
+#define MTSafeAPIDefine	echo '#ifndef XUSE_MTSAFE_API' >> $@	@@\
+	echo '#define XUSE_MTSAFE_API' >> $@			@@\
+	echo '#endif' >> $@
+#else
+#define MTSafeAPIDefine echo '#undef XUSE_MTSAFE_API' >> $@
+#endif
+
+XlibConf.h:
+	echo '/* Defines needed to use Xlib from non-imake projects */' > $@
+	XThreadsDefine
+	MTSafeAPIDefine

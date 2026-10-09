@@ -35,8 +35,8 @@
 /*
  * arcsorter.c++
  *
- * $Date$ $Revision$
- * $Header: //depot/main/gfx/lib/glu/libnurbs/internals/arcsorter.cc#3 $
+ * $Date: 2004/03/14 08:29:10 $ $Revision: 1.1.1.4 $
+ * $Header: /cvs/xorg/xc/extras/ogl-sample/main/gfx/lib/glu/libnurbs/internals/arcsorter.cc,v 1.1.1.4 2004/03/14 08:29:10 eich Exp $
  */
 
 #ifndef __gluarcsorter_c_

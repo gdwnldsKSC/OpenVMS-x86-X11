@@ -27,8 +27,12 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $XFree86: xc/programs/Xserver/cfb/cfbcppl.c,v 1.6 2001/12/14 19:59:22 dawes Exp $ */
 
-#include "X.h"
-#include "Xmd.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xmd.h>
 #include "gcstruct.h"
 #include "window.h"
 #include "pixmapstr.h"
@@ -245,15 +249,15 @@ cfbCopyPlane8to1(
 #else /*  PSZ == 8 */
 
 #define mfbmaskbits(x, w, startmask, endmask, nlw) \
-    startmask = starttab[(x)&0x1f]; \
-    endmask = endtab[((x)+(w)) & 0x1f]; \
+    startmask = mfbGetstarttab((x)&0x1f); \
+    endmask = mfbGetendtab(((x)+(w)) & 0x1f); \
     if (startmask) \
 	nlw = (((w) - (32 - ((x)&0x1f))) >> 5); \
     else \
 	nlw = (w) >> 5;
 
 #define mfbmaskpartialbits(x, w, mask) \
-    mask = partmasks[(x)&0x1f][(w)&0x1f];
+    mask = mfbGetpartmasks((x)&0x1f,(w)&0x1f);
 
 #define LeftMost    0
 #define StepBit(bit, inc)  ((bit) += (inc))

@@ -28,6 +28,9 @@ from The Open Group.
 */
 /* $XFree86: xc/lib/X11/XKBCvt.c,v 3.34 2002/10/08 23:31:35 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -271,7 +274,12 @@ _XkbGetCharset()
 #else
         char *cf = __XOS2RedirRoot(CHARSET_FILE);
 #endif
-	if ( (stat(cf,&sbuf)==0) && (sbuf.st_mode&S_IFREG) &&
+
+#ifndef S_ISREG
+# define S_ISREG(mode)   (((mode) & S_IFMT) == S_IFREG)
+#endif
+	
+	if ( (stat(cf,&sbuf)==0) && S_ISREG(sbuf.st_mode) &&
 	    (file = fopen(cf,"r")) ) {
 	    tmp = _XkbAlloc(sbuf.st_size+1);
 	    if (tmp!=NULL) {

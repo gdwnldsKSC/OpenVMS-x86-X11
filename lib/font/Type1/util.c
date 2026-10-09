@@ -47,6 +47,13 @@
 /* $XFree86: xc/lib/font/Type1/util.c,v 1.5 1999/08/21 13:47:53 dawes Exp $ */
 /* Author: Katherine A. Hitchcock    IBM Almaden Research Laboratory */
  
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
 #ifndef FONTMODULE
 #include <stdio.h>
 #else
@@ -55,7 +62,7 @@
 #include "xf86_ansic.h"
 #endif
 #include "util.h"
-#include "fontmisc.h"			/* for xalloc/xfree */
+#include <X11/fonts/fontmisc.h>			/* for xalloc/xfree */
  
 static char *vm_base = NULL;  /* Start of virtual memory area */
        char *vm_next = NULL;  /* Pointer to first free byte */
@@ -68,7 +75,7 @@ static char *vm_base = NULL;  /* Start of virtual memory area */
 boolean 
 vm_init(int cnt)
 {
-#ifdef BUILDCID
+#if XFONT_CID
   if (vm_base == NULL || (vm_base != NULL && vm_size != cnt)) {
       if (vm_base != NULL) xfree(vm_base);
       vm_next = vm_base = (char *)xalloc (cnt);

@@ -48,7 +48,7 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $XFree86: xc/programs/xfs/difs/extensions.c,v 1.6 2001/08/01 00:45:04 tsi Exp $ */
 
-#include	"FSproto.h"
+#include	<X11/fonts/FSproto.h>
 #include	"misc.h"
 #include	"clientstr.h"
 #include	"extentst.h"

@@ -1,7 +1,7 @@
 /*
- * $Id: Xcomposite.h,v 1.2 2004/07/08 07:33:23 keithp Exp $
+ * $Id: Xcomposite.h,v 1.5 2005/11/09 21:31:19 kem Exp $
  *
- * Copyright © 2003 Keith Packard
+ * Copyright Â© 2003 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -35,7 +35,7 @@
  */
 #define XCOMPOSITE_MAJOR	COMPOSITE_MAJOR
 #define XCOMPOSITE_MINOR	COMPOSITE_MINOR
-#define XCOMPOSITE_REVISION	0
+#define XCOMPOSITE_REVISION	2
 #define XCOMPOSITE_VERSION	((XCOMPOSITE_MAJOR * 10000) + (XCOMPOSITE_MINOR * 100) + (XCOMPOSITE_REVISION))
 
 _XFUNCPROTOBEGIN

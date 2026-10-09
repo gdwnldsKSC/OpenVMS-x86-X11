@@ -27,73 +27,177 @@
 #define SAVAGE_IOCTL_H
 
 #include "savagecontext.h"
-#include "savagedma.h"
-
-void savageGetGeneralDmaBufferLocked( savageContextPtr mmesa ); 
 
 void savageFlushVertices( savageContextPtr mmesa ); 
-void savageFlushVerticesLocked( savageContextPtr mmesa );
 
-void savageFlushGeneralLocked( savageContextPtr imesa );
-void savageWaitAgeLocked( savageContextPtr imesa, int age );
-void savageWaitAge( savageContextPtr imesa, int age );
+unsigned int savageEmitEventLocked( savageContextPtr imesa, unsigned int flags );
+unsigned int savageEmitEvent( savageContextPtr imesa, unsigned int flags );
+void savageWaitEvent( savageContextPtr imesa, unsigned int event);
 
-void savageDmaFinish( savageContextPtr imesa );
-
-void savageRegetLockQuiescent( savageContextPtr imesa );
+void savageFlushCmdBufLocked( savageContextPtr imesa, GLboolean discard );
+void savageFlushCmdBuf( savageContextPtr imesa, GLboolean discard );
 
 void savageDDInitIoctlFuncs( GLcontext *ctx );
 
 void savageSwapBuffers( __DRIdrawablePrivate *dPriv );
 
-int savage_check_copy(int fd);
-
-extern GLboolean (*savagePagePending)( savageContextPtr imesa );
-extern void (*savageWaitForFIFO)( savageContextPtr imesa, unsigned count );
-extern void (*savageWaitIdleEmpty)( savageContextPtr imesa );
-
-#define PAGE_PENDING(result) do { \
-    result = savagePagePending(imesa); \
-} while (0)
-#define WAIT_FOR_FIFO(count) do { \
-    savageWaitForFIFO(imesa, count); \
-} while (0)
-#define WAIT_IDLE_EMPTY do { \
-    savageWaitIdleEmpty(imesa); \
+#define WAIT_IDLE_EMPTY(imesa) do { \
+    if (SAVAGE_DEBUG & DEBUG_VERBOSE_MSG) \
+        fprintf (stderr, "WAIT_IDLE_EMPTY in %s\n", __FUNCTION__); \
+    savageWaitEvent(imesa, \
+		    savageEmitEvent(imesa, SAVAGE_WAIT_2D|SAVAGE_WAIT_3D)); \
 } while (0)
 
-#if SAVAGE_CMD_DMA
-int  savageAllocDMABuffer(savageContextPtr imesa,  drm_savage_alloc_cont_mem_t *req);
-GLuint savageGetPhyAddress(savageContextPtr imesa,void * pointer);
-int  savageFreeDMABuffer(savageContextPtr, drm_savage_alloc_cont_mem_t*);
-#endif
+#define WAIT_IDLE_EMPTY_LOCKED(imesa) do { \
+    if (SAVAGE_DEBUG & DEBUG_VERBOSE_MSG) \
+        fprintf (stderr, "WAIT_IDLE_EMPTY_LOCKED in %s\n", __FUNCTION__); \
+    savageWaitEvent(imesa, savageEmitEventLocked( \
+			imesa, SAVAGE_WAIT_2D|SAVAGE_WAIT_3D)); \
+} while (0)
 
 #define FLUSH_BATCH(imesa) do { \
-    if (imesa->vertex_dma_buffer) savageFlushVertices(imesa); \
+    if (SAVAGE_DEBUG & DEBUG_VERBOSE_MSG) \
+        fprintf (stderr, "FLUSH_BATCH in %s\n", __FUNCTION__); \
+    savageFlushVertices(imesa); \
+    savageFlushCmdBuf(imesa, GL_FALSE); \
 } while (0)
 
-static __inline
-uint32_t *savageAllocDmaLow( savageContextPtr imesa, GLuint bytes )
-{
-   uint32_t *head;
+extern void savageGetDMABuffer( savageContextPtr imesa );
 
-   if (!imesa->vertex_dma_buffer) {
-      LOCK_HARDWARE(imesa);
-      imesa->vertex_dma_buffer = savageFakeGetBuffer (imesa);
-      UNLOCK_HARDWARE(imesa);
-   } else if (imesa->vertex_dma_buffer->used + bytes >
-	      imesa->vertex_dma_buffer->total) {
-      LOCK_HARDWARE(imesa);
-      savageFlushVerticesLocked( imesa );
-      imesa->vertex_dma_buffer = savageFakeGetBuffer (imesa);
-      UNLOCK_HARDWARE(imesa);
+static __inline
+void savageReleaseIndexedVerts( savageContextPtr imesa )
+{
+    imesa->firstElt = -1;
+}
+
+static __inline
+GLboolean savageHaveIndexedVerts( savageContextPtr imesa )
+{
+    return (imesa->firstElt != -1);
+}
+
+static __inline
+u_int32_t *savageAllocVtxBuf( savageContextPtr imesa, GLuint words )
+{
+   struct savage_vtxbuf_t *buffer = imesa->vtxBuf;
+   u_int32_t *head;
+
+   if (buffer == &imesa->dmaVtxBuf) {
+       if (!buffer->total) {
+	   LOCK_HARDWARE(imesa);
+	   savageGetDMABuffer(imesa);
+	   UNLOCK_HARDWARE(imesa);
+       } else if (buffer->used + words > buffer->total) {
+	   if (SAVAGE_DEBUG & DEBUG_VERBOSE_MSG)
+	       fprintf (stderr, "... flushing DMA buffer in %s\n",
+			__FUNCTION__);
+	   savageReleaseIndexedVerts(imesa);
+	   savageFlushVertices(imesa);
+	   LOCK_HARDWARE(imesa);
+	   savageFlushCmdBufLocked(imesa, GL_TRUE); /* discard DMA buffer */
+	   savageGetDMABuffer(imesa);
+	   UNLOCK_HARDWARE(imesa);
+       }
+   } else if (buffer->used + words > buffer->total) {
+       if (SAVAGE_DEBUG & DEBUG_VERBOSE_MSG)
+	   fprintf (stderr, "... flushing client vertex buffer in %s\n",
+		    __FUNCTION__);
+       savageReleaseIndexedVerts(imesa);
+       savageFlushVertices(imesa);
+       LOCK_HARDWARE(imesa);
+       savageFlushCmdBufLocked(imesa, GL_FALSE); /* free clientVtxBuf */
+       UNLOCK_HARDWARE(imesa);
    }
 
-   head = (uint32_t *)((uint8_t *)imesa->vertex_dma_buffer->address +
-		       imesa->vertex_dma_buffer->used);
+   head = &buffer->buf[buffer->used];
 
-   imesa->vertex_dma_buffer->used += bytes;
+   buffer->used += words;
    return head;
+}
+
+static __inline
+u_int32_t *savageAllocIndexedVerts( savageContextPtr imesa, GLuint n )
+{
+    u_int32_t *ret;
+    savageFlushVertices(imesa);
+    ret = savageAllocVtxBuf(imesa, n*imesa->HwVertexSize);
+    imesa->firstElt = imesa->vtxBuf->flushed / imesa->HwVertexSize;
+    imesa->vtxBuf->flushed = imesa->vtxBuf->used;
+    return ret;
+}
+
+/* Flush Elts:
+ * - Complete the drawing command with the correct number of indices.
+ * - Actually allocate entries for the indices in the command buffer.
+ *   (This allocation must succeed without wrapping the cmd buffer!)
+ */
+static __inline
+void savageFlushElts( savageContextPtr imesa )
+{
+    if (imesa->elts.cmd) {
+	GLuint qwords = (imesa->elts.n + 3) >> 2;
+	assert(imesa->cmdBuf.write - imesa->cmdBuf.base + qwords
+	       <= imesa->cmdBuf.size);
+	imesa->cmdBuf.write += qwords;
+
+	imesa->elts.cmd->idx.count = imesa->elts.n;
+	imesa->elts.cmd = NULL;
+    }
+}
+
+/* Allocate a command buffer entry with <bytes> bytes of arguments:
+ * - implies savageFlushElts
+ */
+static __inline
+drm_savage_cmd_header_t *savageAllocCmdBuf( savageContextPtr imesa, GLuint bytes )
+{
+    drm_savage_cmd_header_t *ret;
+    GLuint qwords = ((bytes + 7) >> 3) + 1; /* round up */
+    assert (qwords < imesa->cmdBuf.size);
+
+    savageFlushElts(imesa);
+
+    if (imesa->cmdBuf.write - imesa->cmdBuf.base + qwords > imesa->cmdBuf.size)
+	savageFlushCmdBuf(imesa, GL_FALSE);
+
+    ret = (drm_savage_cmd_header_t *)imesa->cmdBuf.write;
+    imesa->cmdBuf.write += qwords;
+    return ret;
+}
+
+/* Allocate Elts:
+ * - if it doesn't fit, flush the cmd buffer first
+ * - allocates the drawing command on the cmd buffer if there is no
+ *   incomplete indexed drawing command yet
+ * - increments the number of elts. Final allocation is done in savageFlushElts
+ */
+static __inline
+u_int16_t *savageAllocElts( savageContextPtr imesa, GLuint n )
+{
+    u_int16_t *ret;
+    GLuint qwords;
+    assert (savageHaveIndexedVerts(imesa));
+
+    if (imesa->elts.cmd)
+	qwords = (imesa->elts.n + n + 3) >> 2;
+    else
+	qwords = ((n + 3) >> 2) + 1;
+    if (imesa->cmdBuf.write - imesa->cmdBuf.base + qwords > imesa->cmdBuf.size)
+	savageFlushCmdBuf(imesa, GL_FALSE); /* implies savageFlushElts */
+
+    if (!imesa->elts.cmd) {
+	savageFlushVertices(imesa);
+	imesa->elts.cmd = savageAllocCmdBuf(imesa, 0);
+	imesa->elts.cmd->idx.cmd = (imesa->vtxBuf == &imesa->dmaVtxBuf) ?
+	    SAVAGE_CMD_DMA_IDX : SAVAGE_CMD_VB_IDX;
+	imesa->elts.cmd->idx.prim = imesa->HwPrim;
+	imesa->elts.cmd->idx.skip = imesa->skip;
+	imesa->elts.n = 0;
+    }
+
+    ret = (u_int16_t *)(imesa->elts.cmd+1) + imesa->elts.n;
+    imesa->elts.n += n;
+    return ret;
 }
 
 #endif

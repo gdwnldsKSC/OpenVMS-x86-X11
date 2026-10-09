@@ -24,6 +24,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/glint/pm3_video.c,v 1.14tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
@@ -37,7 +41,7 @@
 #include "glint.h"
 #include "glint_regs.h"
 #include "pm3_regs.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #include "xaa.h"
 #include "xaalocal.h"
 #include "dixstruct.h"

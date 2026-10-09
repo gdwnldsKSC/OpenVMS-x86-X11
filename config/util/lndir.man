@@ -76,7 +76,7 @@ argument may be relative (e.g., ../src) and is relative to
 (not the current directory).
 .PP 
 .\" CVS.adm is used by the Concurrent Versions System.
-Note that BitKeeper, RCS, SCCS, CVS and CVS.adm directories are
+Note that BitKeeper, RCS, SCCS, .svn, CVS and CVS.adm directories are
 shadowed only if the \fB\-withrevinfo\fP flag is specified.
 .PP
 If you add files, simply run
@@ -105,7 +105,7 @@ If the link is to a directory, this is almost certainly the wrong thing.
 This option exists mostly to emulate the behavior the C version of
 \fIlndir\fP had in X11R6.  Its use is not recommended.
 .IP \-withrevinfo
-Causes any BitKeeper, RCS, SCCS, CVS and CVS.adm subdirectories to be
+Causes any BitKeeper, RCS, SCCS, .svn, CVS and CVS.adm subdirectories to be
 treated as any other directory, rather than ignored.
 .SH DIAGNOSTICS
 The program displays the name of each subdirectory it enters, followed

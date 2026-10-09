@@ -94,13 +94,17 @@ in this Software without prior written authorization from The Open Group.
 #undef cfbFillSpanTileOddGeneral
 #undef cfbFinishScreenInit
 #undef cfbGCFuncs
+#undef cfbGCPrivateIndex
 #undef cfbGetImage
 #undef cfbGetScreenPixmap
 #undef cfbGetSpans
 #undef cfbHorzS
 #undef cfbImageGlyphBlt8
+#undef cfbInitializeColormap
+#undef cfbInstallColormap
 #undef cfbLineSD
 #undef cfbLineSS
+#undef cfbListInstalledColormaps
 #undef cfbMapWindow
 #undef cfbMatchCommon
 #undef cfbNonTEOps
@@ -116,6 +120,7 @@ in this Software without prior written authorization from The Open Group.
 #undef cfbPositionWindow
 #undef cfbPutImage
 #undef cfbReduceRasterOp
+#undef cfbResolveColor
 #undef cfbRestoreAreas
 #undef cfbSaveAreas
 #undef cfbScreenInit
@@ -136,11 +141,13 @@ in this Software without prior written authorization from The Open Group.
 #undef cfbTEOps1Rect
 #undef cfbTile32FSCopy
 #undef cfbTile32FSGeneral
+#undef cfbUninstallColormap
 #undef cfbUnmapWindow
 #undef cfbUnnaturalStippleFS
 #undef cfbUnnaturalTileFS
 #undef cfbValidateGC
 #undef cfbVertS
+#undef cfbWindowPrivateIndex
 #undef cfbXRotatePixmap
 #undef cfbYRotatePixmap
 #undef cfbZeroPolyArcSS8Copy
@@ -223,7 +230,9 @@ cfb can not hack PSZ yet
 #define cfbBresD CFBNAME(BresD)
 #define cfbBresS CFBNAME(BresS)
 #define cfbChangeWindowAttributes CFBNAME(ChangeWindowAttributes)
+#define cfbClearVisualTypes CFBNAME(cfbClearVisualTypes)
 #define cfbCloseScreen CFBNAME(CloseScreen)
+#define cfbCreateDefColormap CFBNAME (cfbCreateDefColormap)
 #define cfbCopyArea CFBNAME(CopyArea)
 #define cfbCopyImagePlane CFBNAME(CopyImagePlane)
 #define cfbCopyPixmap CFBNAME(CopyPixmap)
@@ -242,6 +251,7 @@ cfb can not hack PSZ yet
 #define cfbDoBitbltGeneral CFBNAME(DoBitbltGeneral)
 #define cfbDoBitbltOr CFBNAME(DoBitbltOr)
 #define cfbDoBitbltXor CFBNAME(DoBitbltXor)
+#define cfbExpandDirectColors CFBNAME(cfbExpandDirectColors)
 #define cfbFillBoxSolid CFBNAME(FillBoxSolid)
 #define cfbFillBoxTile32 CFBNAME(FillBoxTile32)
 #define cfbFillBoxTile32sCopy CFBNAME(FillBoxTile32sCopy)
@@ -263,13 +273,18 @@ cfb can not hack PSZ yet
 #define cfbFillSpanTileOddGeneral CFBNAME(FillSpanTileOddGeneral)
 #define cfbFinishScreenInit CFBNAME(FinishScreenInit)
 #define cfbGCFuncs CFBNAME(GCFuncs)
+#define cfbGCPrivateIndex CFBNAME(GCPrivateIndex)
 #define cfbGetImage CFBNAME(GetImage)
 #define cfbGetScreenPixmap CFBNAME(GetScreenPixmap)
 #define cfbGetSpans CFBNAME(GetSpans)
 #define cfbHorzS CFBNAME(HorzS)
 #define cfbImageGlyphBlt8 CFBNAME(ImageGlyphBlt8)
+#define cfbInitializeColormap CFBNAME(InitializeColormap)
+#define cfbInitVisuals CFBNAME(cfbInitVisuals)
+#define cfbInstallColormap CFBNAME(InstallColormap)
 #define cfbLineSD CFBNAME(LineSD)
 #define cfbLineSS CFBNAME(LineSS)
+#define cfbListInstalledColormaps CFBNAME(ListInstalledColormaps)
 #define cfbMapWindow CFBNAME(MapWindow)
 #define cfbMatchCommon CFBNAME(MatchCommon)
 #define cfbNonTEOps CFBNAME(NonTEOps)
@@ -285,6 +300,7 @@ cfb can not hack PSZ yet
 #define cfbPositionWindow CFBNAME(PositionWindow)
 #define cfbPutImage CFBNAME(PutImage)
 #define cfbReduceRasterOp CFBNAME(ReduceRasterOp)
+#define cfbResolveColor CFBNAME(ResolveColor)
 #define cfbRestoreAreas CFBNAME(RestoreAreas)
 #define cfbSaveAreas CFBNAME(SaveAreas)
 #define cfbScreenInit CFBNAME(ScreenInit)
@@ -294,6 +310,7 @@ cfb can not hack PSZ yet
 #define cfbSetScanline CFBNAME(SetScanline)
 #define cfbSetScreenPixmap CFBNAME(SetScreenPixmap)
 #define cfbSetSpans CFBNAME(SetSpans)
+#define cfbSetVisualTypes CFBNAME(cfbSetVisualTypes)
 #define cfbSetupScreen CFBNAME(SetupScreen)
 #define cfbSolidSpansCopy CFBNAME(SolidSpansCopy)
 #define cfbSolidSpansGeneral CFBNAME(SolidSpansGeneral)
@@ -305,11 +322,13 @@ cfb can not hack PSZ yet
 #define cfbTEOps1Rect CFBNAME(TEOps1Rect)
 #define cfbTile32FSCopy CFBNAME(Tile32FSCopy)
 #define cfbTile32FSGeneral CFBNAME(Tile32FSGeneral)
+#define cfbUninstallColormap CFBNAME(UninstallColormap)
 #define cfbUnmapWindow CFBNAME(UnmapWindow)
 #define cfbUnnaturalStippleFS CFBNAME(UnnaturalStippleFS)
 #define cfbUnnaturalTileFS CFBNAME(UnnaturalTileFS)
 #define cfbValidateGC CFBNAME(ValidateGC)
 #define cfbVertS CFBNAME(VertS)
+#define cfbWindowPrivateIndex CFBNAME(WindowPrivateIndex)
 #define cfbXRotatePixmap CFBNAME(XRotatePixmap)
 #define cfbYRotatePixmap CFBNAME(YRotatePixmap)
 #define cfbZeroPolyArcSS8Copy CFBNAME(ZeroPolyArcSSCopy)

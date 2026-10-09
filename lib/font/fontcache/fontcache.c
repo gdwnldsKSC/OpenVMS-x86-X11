@@ -28,6 +28,9 @@
  */
 /* $XFree86: xc/lib/font/fontcache/fontcache.c,v 1.4 2001/04/05 17:42:28 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

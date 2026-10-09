@@ -1,4 +1,5 @@
 /* $Xorg: rgb.c,v 1.4 2001/02/09 02:05:35 xorgcvs Exp $ */
+/* $XdotOrg: xc/programs/rgb/rgb.c,v 1.4 2005/11/08 06:33:31 jkj Exp $ */
 /*
 
 Copyright 1985, 1998  The Open Group
@@ -34,10 +35,14 @@ from The Open Group.
    where red/green/blue are decimal values, and inserts them in a database.
  */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #ifdef NDBM
 #include <ndbm.h>
 #else
-#if defined(SVR4) && !defined(SCO325)
+#if defined(SVR4)
 #include <rpcsvc/dbm.h>
 #else
 #include <dbm.h>

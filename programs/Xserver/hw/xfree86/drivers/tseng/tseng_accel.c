@@ -20,6 +20,10 @@
  * operations a lot.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define NO_OPTIMIZE
 
 /*

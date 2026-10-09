@@ -28,6 +28,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/cyrix/cyrix_accel.c,v 1.3 2000/04/19 16:57:43 eich Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "vgaHW.h"
 #include "xf86.h"
 #include "xf86_ansic.h"

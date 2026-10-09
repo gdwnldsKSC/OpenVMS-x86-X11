@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/miext/rootless/safeAlpha/safeAlphaWindow.c,v 1.2 2004/04/23 19:54:28 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/miext/rootless/safeAlpha/safeAlphaWindow.c,v 1.4 2005/07/01 22:43:42 daniels Exp $ */
 /*
  * Specialized window functions to protect the alpha channel
  */
@@ -30,7 +30,7 @@
 /* Portions of this file are based on fbwindow.c, which contains the
  * following copyright:
  *
- * Copyright © 1998 Keith Packard
+ * Copyright Â© 1998 Keith Packard
  */
 /* $XFree86: xc/programs/Xserver/miext/rootless/safeAlpha/safeAlphaWindow.c,v 1.1 2003/09/16 00:36:20 torrey Exp $ */
 

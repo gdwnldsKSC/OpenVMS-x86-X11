@@ -28,7 +28,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(suncg6,$(OBJS))
 
-InstallObjectModule(suncg6,$(MODULEDIR),drivers)
+InstallVideoObjectModule(suncg6,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(suncg6)

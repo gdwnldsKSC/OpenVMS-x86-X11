@@ -32,10 +32,13 @@ from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
-#include "fntfilst.h"
-#include "bitmap.h"
-#include "pcf.h"
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/bitmap.h>
+#include <X11/fonts/pcf.h>
 
 /* Write PCF font files */
 

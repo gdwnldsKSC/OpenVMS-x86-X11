@@ -58,7 +58,7 @@ without express or implied warranty.
 #endif
 
 #if defined(i386) && defined(SYSV)
-#if !defined(SCO) && !defined(SCO325)
+#if !defined(__SCO__)
 #include <net/errno.h>
 #endif
 #include <sys/stropts.h>
@@ -272,10 +272,10 @@ extern Xstream _XsStream[];
 
 
 #ifndef USL_COMPAT
-#if !defined(USG) || defined(MOTOROLA)
-#if (defined(SCO) || defined(SCO325)) || (!(defined(SYSV) && defined(i386)))
+#if !defined(USG) || defined(MOTOROLA) || \
+	defined(__SCO__) || (!(defined(SYSV) && defined(i386))) || \
+	defined(__UNIXWARE__)
 #define _XReadV readv
-#endif
 #define _XWriteV writev
 #endif
 #endif /* !USL_COMPAT */

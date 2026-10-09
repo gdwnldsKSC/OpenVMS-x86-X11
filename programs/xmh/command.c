@@ -35,7 +35,7 @@
 #ifndef SYSV
 #include <sys/wait.h>
 #endif	/* SYSV */
-#if defined(SVR4) && !defined(SCO325) && !defined(DGUX)
+#if defined(SVR4) && !defined(DGUX)
 #include <sys/filio.h>
 #endif
 

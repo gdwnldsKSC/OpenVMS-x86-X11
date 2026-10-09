@@ -29,6 +29,9 @@ in this Software without prior written authorization from The Open Group.
 
 /* $XFree86: xc/lib/Xdmcp/GenKey.c,v 3.7 2001/07/25 15:04:50 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xos.h>
 #include <X11/X.h>
 #include <X11/Xmd.h>
@@ -50,6 +53,12 @@ getbits (long data, unsigned char *dst)
 #if defined(SYSV) || defined(SVR4)
 #define srandom srand48
 #define random lrand48
+#endif
+#ifdef WIN32
+#include <process.h>
+#define srandom srand
+#define random rand
+#define getpid(x) _getpid(x)
 #endif
 
 void

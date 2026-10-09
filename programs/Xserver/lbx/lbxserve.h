@@ -47,6 +47,10 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $XFree86: xc/programs/Xserver/lbx/lbxserve.h,v 1.4 2001/08/01 00:44:58 tsi Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _LBXSERVE_H_
 
 #include "colormap.h"
@@ -54,9 +58,9 @@ in this Software without prior written authorization from The Open Group.
 
 #define _LBXSERVE_H_
 #define _XLBX_SERVER_
-#include "lbxstr.h"
-#include "lbxdeltastr.h"
-#include "lbxopts.h"
+#include <X11/extensions/lbxstr.h>
+#include <X11/extensions/lbxdeltastr.h>
+#include <X11/extensions/lbxopts.h>
 
 #define MAX_LBX_CLIENTS	MAXCLIENTS
 #define	MAX_NUM_PROXIES	(MAXCLIENTS >> 1)

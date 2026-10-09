@@ -1,5 +1,5 @@
 .\" $Xorg: protocol.ms,v 1.3 2000/08/17 19:42:07 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/FSProtocol/protocol.ms,v 1.3 2004/09/03 16:18:19 kem Exp $
+.\" $XdotOrg: xc/doc/specs/FSProtocol/protocol.ms,v 1.4 2005/12/20 16:04:39 kem Exp $
 .\" Use tbl, -ms, and macros.t
 .EH ''''
 .OH ''''
@@ -15,7 +15,7 @@
 \fBVersion 2.0\fP
 \fBX Window System Standard\fR
 .sp
-\fBX Version 11, Release 6.8\fR
+\fBX Version 11, Release 6.9/7.0\fR
 .sp 6
 Jim Fulton
 Network Computing Devices, Inc.
@@ -64,8 +64,8 @@ in this Software without prior written authorization from the X Consortium.
 .ps 11
 .nr PS 11
 .bp 1
-.EH '\fBX Font Service Protocol\fP''\fBX11, Release 6.8\fP'
-.OH '\fBX Font Service Protocol\fP''\fBX11, Release 6.8\fP'
+.EH '\fBX Font Service Protocol\fP''\fBX11, Release 6.9/7.0\fP'
+.OH '\fBX Font Service Protocol\fP''\fBX11, Release 6.9/7.0\fP'
 .EF ''\fB\\\\n(PN\fP''
 .OF ''\fB\\\\n(PN\fP''
 .NH 1

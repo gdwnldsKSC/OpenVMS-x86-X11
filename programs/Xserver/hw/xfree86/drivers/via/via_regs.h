@@ -1,4 +1,3 @@
-/* $XFree86$ */
 /*
  * Copyright 1998-2003 VIA Technologies, Inc. All Rights Reserved.
  * Copyright 2001-2003 S3 Graphics, Inc. All Rights Reserved.
@@ -17,9 +16,9 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- * VIA, S3 GRAPHICS, AND/OR ITS SUPPLIERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
 
@@ -34,32 +33,6 @@
 #define _VIA_REGS_H_ 1
 
 #include "via_driver.h"
-
-#define VIA_SERIES(chip)  (chip == VIA_CLE266)
-
-
-/* Chip tags.  These are used to group the adapters into
- * related families.
- */
-
-enum VIACHIPTAGS {
-    VIA_UNKNOWN = 0,
-    VIA_CLE266,
-    VIA_KM400,
-    VIA_K8M800,
-    VIA_LAST
-};
-
-
-#define PCI_VIA_VENDOR_ID       0x1106
-
-#define PCI_CHIP_CLE3122        0x3122
-#define PCI_CHIP_CLE3022        0x3022
-#define PCI_CHIP_VT3205         0x3205
-#define PCI_CHIP_VT7205         0x7205
-#define PCI_CHIP_VT3204         0x3204
-#define PCI_CHIP_VT7204         0x7204
-
 
 #define BIOS_BSIZE              1024
 #define BIOS_BASE               0xc0000
@@ -192,18 +165,6 @@ enum VIACHIPTAGS {
 
 
 #define MAXLOOP                 0xffffff
-
-
-#define VerticalRetraceWait() \
-{ \
-    VGAOUT8(vgaCRIndex, 0x17); \
-    if (VGAIN8(vgaCRReg) & 0x80) { \
-        while ((VGAIN8(vgaIOBase + 0x0a) & 0x08) == 0x00) ; \
-        while ((VGAIN8(vgaIOBase + 0x0a) & 0x08) == 0x08) ; \
-        while ((VGAIN8(vgaIOBase + 0x0a) & 0x08) == 0x00) ; \
-    } \
-}
-
 
 #define VIASETREG(addr, data)   *(volatile unsigned int *)(pVia->MapBase + (addr)) = (data)
 #define VIAGETREG(addr)         *(volatile unsigned int *)(pVia->MapBase + (addr))

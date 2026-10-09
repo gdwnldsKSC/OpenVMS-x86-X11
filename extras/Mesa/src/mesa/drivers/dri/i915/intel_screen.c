@@ -27,9 +27,12 @@
 
 #include "glheader.h"
 #include "context.h"
+#include "framebuffer.h"
 #include "matrix.h"
+#include "renderbuffer.h"
 #include "simple_list.h"
 #include "utils.h"
+#include "xmlpool.h"
 
 
 #include "intel_screen.h"
@@ -43,13 +46,15 @@
 
 #include "i830_dri.h"
 
-const char __driConfigOptions[] = { 0 };
-const GLuint __driNConfigOptions = 0;
+PUBLIC const char __driConfigOptions[] =
+DRI_CONF_BEGIN
+    DRI_CONF_SECTION_PERFORMANCE
+       DRI_CONF_FORCE_S3TC_ENABLE(false)
+    DRI_CONF_SECTION_END
+DRI_CONF_END;
+const GLuint __driNConfigOptions = 1;
 
-#ifdef USE_NEW_INTERFACE
-static PFNGLXCREATECONTEXTMODES create_context_modes = NULL;
-#endif /*USE_NEW_INTERFACE*/
-
+extern const struct dri_extension card_extensions[];
 
 static void intelPrintDRIInfo(intelScreenPrivate *intelScreen,
 			     __DRIscreenPrivate *sPriv,
@@ -70,14 +75,24 @@ static GLboolean intelInitDriver(__DRIscreenPrivate *sPriv)
 {
    intelScreenPrivate *intelScreen;
    I830DRIPtr         gDRIPriv = (I830DRIPtr)sPriv->pDevPriv;
+   PFNGLXSCRENABLEEXTENSIONPROC glx_enable_extension =
+     (PFNGLXSCRENABLEEXTENSIONPROC) (*dri_interface->getProcAddress("glxEnableExtension"));
+   void * const psc = sPriv->psc->screenConfigs;
 
+   if (sPriv->devPrivSize != sizeof(I830DRIRec)) {
+      fprintf(stderr,"\nERROR!  sizeof(I830DRIRec) does not match passed size from device driver\n");
+      return GL_FALSE;
+   }
 
    /* Allocate the private area */
-   intelScreen = (intelScreenPrivate *)MALLOC(sizeof(intelScreenPrivate));
+   intelScreen = (intelScreenPrivate *)CALLOC(sizeof(intelScreenPrivate));
    if (!intelScreen) {
       fprintf(stderr,"\nERROR!  Allocating private area failed\n");
       return GL_FALSE;
    }
+   /* parse information in __driConfigOptions */
+   driParseOptionInfo (&intelScreen->optionCache,
+		       __driConfigOptions, __driNConfigOptions);
 
    intelScreen->driScrnPriv = sPriv;
    sPriv->private = (void *)intelScreen;
@@ -184,28 +199,14 @@ static GLboolean intelInitDriver(__DRIscreenPrivate *sPriv)
       }
    }
 
-   if ( driCompareGLXAPIVersion( 20030813 ) >= 0 ) {
-      PFNGLXSCRENABLEEXTENSIONPROC glx_enable_extension =
-          (PFNGLXSCRENABLEEXTENSIONPROC) glXGetProcAddress( (const GLubyte *) "__glXScrEnableExtension" );
-      void * const psc = sPriv->psc->screenConfigs;
-
-      if (glx_enable_extension != NULL) {
-	 (*glx_enable_extension)( psc, "GLX_SGI_make_current_read" );
-
-	 if ( driCompareGLXAPIVersion( 20030915 ) >= 0 ) {
-	    (*glx_enable_extension)( psc, "GLX_SGIX_fbconfig" );
-	    (*glx_enable_extension)( psc, "GLX_OML_swap_method" );
-	 }
-
-	 if ( driCompareGLXAPIVersion( 20030818 ) >= 0 ) {
-	    sPriv->psc->allocateMemory = (void *) intelAllocateMemoryMESA;
-	    sPriv->psc->freeMemory     = (void *) intelFreeMemoryMESA;
-	    sPriv->psc->memoryOffset   = (void *) intelGetMemoryOffsetMESA;
-
-	    (*glx_enable_extension)( psc, "GLX_MESA_allocate_memory" );
-	 }
-      }
+   if (glx_enable_extension != NULL) {
+      (*glx_enable_extension)( psc, "GLX_SGI_make_current_read" );
+      (*glx_enable_extension)( psc, "GLX_MESA_allocate_memory" );
    }
+   
+   sPriv->psc->allocateMemory = (void *) intelAllocateMemoryMESA;
+   sPriv->psc->freeMemory     = (void *) intelFreeMemoryMESA;
+   sPriv->psc->memoryOffset   = (void *) intelGetMemoryOffsetMESA;
 
    return GL_TRUE;
 }
@@ -224,24 +225,78 @@ static void intelDestroyScreen(__DRIscreenPrivate *sPriv)
    sPriv->private = NULL;
 }
 
+
 static GLboolean intelCreateBuffer( __DRIscreenPrivate *driScrnPriv,
 				    __DRIdrawablePrivate *driDrawPriv,
 				    const __GLcontextModes *mesaVis,
 				    GLboolean isPixmap )
 {
+   intelScreenPrivate *screen = (intelScreenPrivate *) driScrnPriv->private;
+
    if (isPixmap) {
       return GL_FALSE; /* not implemented */
    } else {
       GLboolean swStencil = (mesaVis->stencilBits > 0 && 
 			     mesaVis->depthBits != 24);
 
+#if 0
       driDrawPriv->driverPrivate = (void *) 
 	 _mesa_create_framebuffer(mesaVis,
 				  GL_FALSE,  /* software depth buffer? */
 				  swStencil,
 				  mesaVis->accumRedBits > 0,
 				  GL_FALSE /* s/w alpha planes */);
-      
+#else
+      struct gl_framebuffer *fb = _mesa_create_framebuffer(mesaVis);
+
+      {
+         driRenderbuffer *frontRb
+            = driNewRenderbuffer(GL_RGBA, screen->cpp,
+                                 screen->frontOffset, screen->frontPitch);
+         intelSetSpanFunctions(frontRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_FRONT_LEFT, &frontRb->Base);
+      }
+
+      if (mesaVis->doubleBufferMode) {
+         driRenderbuffer *backRb
+            = driNewRenderbuffer(GL_RGBA, screen->cpp,
+                                 screen->backOffset, screen->backPitch);
+         intelSetSpanFunctions(backRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_BACK_LEFT, &backRb->Base);
+      }
+
+      if (mesaVis->depthBits == 16) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT16, screen->cpp,
+                                 screen->depthOffset, screen->depthPitch);
+         intelSetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+      else if (mesaVis->depthBits == 24) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT24, screen->cpp,
+                                 screen->depthOffset, screen->depthPitch);
+         intelSetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+
+      if (mesaVis->stencilBits > 0 && !swStencil) {
+         driRenderbuffer *stencilRb
+            = driNewRenderbuffer(GL_STENCIL_INDEX8_EXT, screen->cpp,
+                                 screen->depthOffset, screen->depthPitch);
+         intelSetSpanFunctions(stencilRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_STENCIL, &stencilRb->Base);
+      }
+
+      _mesa_add_soft_renderbuffers(fb,
+                                   GL_FALSE, /* color */
+                                   GL_FALSE, /* depth */
+                                   swStencil,
+                                   mesaVis->accumRedBits > 0,
+                                   GL_FALSE, /* alpha */
+                                   GL_FALSE /* aux */);
+      driDrawPriv->driverPrivate = (void *) fb;
+#endif
       return (driDrawPriv->driverPrivate != NULL);
    }
 }
@@ -283,6 +338,8 @@ static GLboolean intelCreateContext( const __GLcontextModes *mesaVis,
 				sharedContextPrivate );
 
    case PCI_CHIP_I915_G:
+   case PCI_CHIP_I915_GM:
+   case PCI_CHIP_I945_G:
       return i915CreateContext( mesaVis, driContextPriv, 
 			       sharedContextPrivate );
  
@@ -310,23 +367,7 @@ static const struct __DriverAPIRec intelAPI = {
    .SwapBuffersMSC  = NULL
 };
 
-/*
- * This is the bootstrap function for the driver.
- * The __driCreateScreen name is the symbol that libGL.so fetches.
- * Return:  pointer to a __DRIscreenPrivate.
- */
-#if !defined(DRI_NEW_INTERFACE_ONLY)
-void *__driCreateScreen(Display *dpy, int scrn, __DRIscreen *psc,
-			int numConfigs, __GLXvisualConfig *config)
-{
-   __DRIscreenPrivate *psp;
-   psp = __driUtilCreateScreen(dpy, scrn, psc, numConfigs, config, &intelAPI);
-   return (void *) psp;
-}
-#endif /* !defined(DRI_NEW_INTERFACE_ONLY) */
-	     
 
-#ifdef USE_NEW_INTERFACE
 static __GLcontextModes *
 intelFillInModes( unsigned pixel_bits, unsigned depth_bits,
 		 unsigned stencil_bits, GLboolean have_back_buffer )
@@ -339,28 +380,30 @@ intelFillInModes( unsigned pixel_bits, unsigned depth_bits,
    GLenum fb_format;
    GLenum fb_type;
 
-   /* GLX_SWAP_COPY_OML is only supported because the MGA driver doesn't
+   /* GLX_SWAP_COPY_OML is only supported because the Intel driver doesn't
     * support pageflipping at all.
     */
    static const GLenum back_buffer_modes[] = {
       GLX_NONE, GLX_SWAP_UNDEFINED_OML, GLX_SWAP_COPY_OML
    };
 
-   uint8_t depth_bits_array[2];
-   uint8_t stencil_bits_array[2];
+   u_int8_t depth_bits_array[3];
+   u_int8_t stencil_bits_array[3];
 
 
    depth_bits_array[0] = 0;
    depth_bits_array[1] = depth_bits;
+   depth_bits_array[2] = depth_bits;
 
    /* Just like with the accumulation buffer, always provide some modes
     * with a stencil buffer.  It will be a sw fallback, but some apps won't
     * care about that.
     */
    stencil_bits_array[0] = 0;
-   stencil_bits_array[1] = (stencil_bits == 0) ? 8 : stencil_bits;
+   stencil_bits_array[1] = 0;
+   stencil_bits_array[2] = (stencil_bits == 0) ? 8 : stencil_bits;
 
-   depth_buffer_factor = ((depth_bits != 0) || (stencil_bits != 0)) ? 2 : 1;
+   depth_buffer_factor = ((depth_bits != 0) || (stencil_bits != 0)) ? 3 : 1;
    back_buffer_factor  = (have_back_buffer) ? 3 : 1;
 
    num_modes = depth_buffer_factor * back_buffer_factor * 4;
@@ -374,7 +417,7 @@ intelFillInModes( unsigned pixel_bits, unsigned depth_bits,
         fb_type = GL_UNSIGNED_INT_8_8_8_8_REV;
     }
 
-   modes = (*create_context_modes)( num_modes, sizeof( __GLcontextModes ) );
+   modes = (*dri_interface->createContextModes)( num_modes, sizeof( __GLcontextModes ) );
    m = modes;
    if ( ! driFillInModes( & m, fb_format, fb_type,
 			  depth_bits_array, stencil_bits_array, depth_buffer_factor,
@@ -383,9 +426,15 @@ intelFillInModes( unsigned pixel_bits, unsigned depth_bits,
 	fprintf( stderr, "[%s:%u] Error creating FBConfig!\n",
 		 __func__, __LINE__ );
 	return NULL;
-    }
-
-   /* There's no direct color modes on intel? */
+   }
+   if ( ! driFillInModes( & m, fb_format, fb_type,
+			  depth_bits_array, stencil_bits_array, depth_buffer_factor,
+			  back_buffer_modes, back_buffer_factor,
+			  GLX_DIRECT_COLOR ) ) {
+	fprintf( stderr, "[%s:%u] Error creating FBConfig!\n",
+		 __func__, __LINE__ );
+	return NULL;
+   }
 
    /* Mark the visual as slow if there are "fake" stencil bits.
     */
@@ -397,7 +446,6 @@ intelFillInModes( unsigned pixel_bits, unsigned depth_bits,
 
    return modes;
 }
-#endif /* USE_NEW_INTERFACE */
 
 
 /**
@@ -410,8 +458,8 @@ intelFillInModes( unsigned pixel_bits, unsigned depth_bits,
  * \return A pointer to a \c __DRIscreenPrivate on success, or \c NULL on 
  *         failure.
  */
-#ifdef USE_NEW_INTERFACE
-void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc,
+PUBLIC
+void * __driCreateNewScreen_20050727( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc,
 			     const __GLcontextModes * modes,
 			     const __DRIversion * ddx_version,
 			     const __DRIversion * dri_version,
@@ -419,13 +467,16 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
 			     const __DRIframebuffer * frame_buffer,
 			     drmAddress pSAREA, int fd, 
 			     int internal_api_version,
+			     const __DRIinterfaceMethods * interface,
 			     __GLcontextModes ** driver_modes )
 			     
 {
    __DRIscreenPrivate *psp;
-   static const __DRIversion ddx_expected = { 1, 0, 0 };
+   static const __DRIversion ddx_expected = { 1, 4, 0 };
    static const __DRIversion dri_expected = { 4, 0, 0 };
    static const __DRIversion drm_expected = { 1, 1, 0 };
+
+   dri_interface = interface;
 
    if ( ! driCheckDriDdxDrmVersions2( "i915",
 				      dri_version, & dri_expected,
@@ -439,17 +490,22 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
 				  frame_buffer, pSAREA, fd,
 				  internal_api_version, &intelAPI);
    if ( psp != NULL ) {
-      create_context_modes = (PFNGLXCREATECONTEXTMODES)
-	  glXGetProcAddress( (const GLubyte *) "__glXCreateContextModes" );
-      if ( create_context_modes != NULL ) {
-	 I830DRIPtr dri_priv = (I830DRIPtr) psp->pDevPriv;
-	 *driver_modes = intelFillInModes( dri_priv->cpp * 8,
-					   (dri_priv->cpp == 2) ? 16 : 24,
-					   (dri_priv->cpp == 2) ? 0  : 8,
-					   (dri_priv->backOffset != dri_priv->depthOffset) );
-      }
+      I830DRIPtr dri_priv = (I830DRIPtr) psp->pDevPriv;
+      *driver_modes = intelFillInModes( dri_priv->cpp * 8,
+					(dri_priv->cpp == 2) ? 16 : 24,
+					(dri_priv->cpp == 2) ? 0  : 8,
+					(dri_priv->backOffset != dri_priv->depthOffset) );
+
+      /* Calling driInitExtensions here, with a NULL context pointer, does not actually
+       * enable the extensions.  It just makes sure that all the dispatch offsets for all
+       * the extensions that *might* be enables are known.  This is needed because the
+       * dispatch offsets need to be known when _mesa_context_create is called, but we can't
+       * enable the extensions until we have a context pointer.
+       *
+       * Hello chicken.  Hello egg.  How are you two today?
+       */
+      driInitExtensions( NULL, card_extensions, GL_FALSE );
    }
 
    return (void *) psp;
 }
-#endif /* USE_NEW_INTERFACE */

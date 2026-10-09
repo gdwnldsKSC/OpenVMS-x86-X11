@@ -2,7 +2,7 @@
 
 ;; dri_dispatch.defs
 
-;; $Id: dri_dispatch.defs,v 1.9 2003/02/17 20:05:41 jharper Exp $
+;; $Id: dri_dispatch.defs,v 1.5 2004/08/18 23:12:49 kem Exp $
 ;; $XFree86: xc/lib/GL/apple/dri_dispatch.defs,v 1.6 2004/04/21 04:59:40 torrey Exp $
 
 ;; Copyright (c) 2002 Apple Computer, Inc. All rights reserved.

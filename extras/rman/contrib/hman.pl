@@ -1,8 +1,8 @@
 #!/usr/bin/perl -w
 #!/citi/gtfd/mach/bin/perl -w
 ###############
-# $Id: hman.pl,v 1.7 1997/11/04 21:56:13 teto Exp teto $
-# $Source: /pub/src/dev/hman/RCS/hman.pl,v $
+# $Id: hman.pl,v 1.1.1.4 2004/03/14 08:29:12 eich Exp $
+# $Source: /cvs/xorg/xc/extras/rman/contrib/hman.pl,v $
 ############################################
 # TODO:
 #	reorganize location of man pages - move 3x stuff from man3 to man3x

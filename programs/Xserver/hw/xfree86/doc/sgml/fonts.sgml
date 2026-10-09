@@ -48,7 +48,7 @@ installed system-wide for displaying documents with embedded fonts.
 
 Xft is not compatible with the core fonts system: usage of Xft
 requires making fairly extensive changes to toolkits (user-interface
-libraries).  While X.org will continue to maintain the core fonts
+libraries).  While X.Org will continue to maintain the core fonts
 system, toolkit authors are encouraged to switch to Xft as soon as
 possible.
 
@@ -163,8 +163,10 @@ counterclockwise).
 
 <sect2>Configuring applications
 
-<p>Because most current applications use the core fonts system by
-default, it is necessary to explicitly configure them to use Xft.
+<p>Most existing applications use the core fonts system by
+default, but a growing number have been converted to use Xft.
+Some of these use Xft by default, for others it is necessary to 
+explicitly configure them to use Xft.
 How this is done depends on the application.
 
 XTerm can be set to use Xft by using the `<tt/-fa/' command line
@@ -250,11 +252,13 @@ server font path"> below.
 
 <sect2>Installing scalable fonts
 
-<p>The X11R&relvers; server supports scalable fonts in four formats:
-Type&nbsp;1, Speedo, TrueType and CIDFont.  This section only applies
-to the former three; for information on CIDFonts, please see
+<p>The X11R&relvers; server supports scalable fonts in three formats:
+Type&nbsp;1, TrueType and CIDFont.  This section only applies
+to the first two; for information on CIDFonts, please see
 <ref id="sec:cid-fonts" name="Installing CIDFonts"> later in this
-document.
+document.   Previous versions also included support for the Speedo
+scalable font format, but that is disabled in the default builds of
+X11R6.9 and not included in X11R7.0 and later releases.
 
 Installing scalable fonts is very similar to installing bitmap fonts:
 you create a directory with the font files, and run `<tt/mkfontdir/'
@@ -407,7 +411,7 @@ usually runs as root, beware of NFS-mounted font directories).  If
 this doesn't help, it is quite possible that you are trying to use a
 font in a format that is not supported by your server.
 
-X11R&relvers; supports the BDF, PCF, SNF, Type 1, Speedo, TrueType, OpenType
+X11R&relvers; supports the BDF, PCF, SNF, Type 1, TrueType, OpenType
 and CIDFont font formats.  However, not all X11R&relvers; servers
 come with all the font backends configured in.
 
@@ -431,8 +435,7 @@ Type&nbsp;1 fonts (`<tt/*.pfa/' and `<tt/*.pfb/');
 <item> <tt/"type1"/: alternate Type&nbsp;1 backend (`<tt/*.pfa/' and
 `<tt/*.pfb/') and CIDFont backend;
 <item> <tt/"xtt"/: alternate TrueType backend (`<tt/*.ttf/' and
-`<tt/*.ttc/');
-<item> <tt/"speedo"/: Bitstream Speedo fonts (`<tt/*.spd/').
+`<tt/*.ttc/').
 </itemize>
 Please note that the argument of the `<tt/Load/' directive is
 case-sensitive.
@@ -564,24 +567,6 @@ and reside in the font files
 /usr/X11R6/lib/X11/fonts/Type1/c*bt_.pfb
 </verb></tscreen>
 
-<sect2>Standard Speedo fonts
-
-<p>X11R&relvers; includes Speedo versions of the Bitstream Courier and
-Charter fonts.  In order to use these fonts, you should ensure that
-your X server is loading the `<tt/Speedo/' font backend; see 
-<ref id="sec:troubleshooting-core" name="Troubleshooting">.
-
-These fonts cover all of ISO&nbsp;8859-1 and almost all of
-ISO&nbsp;8859-2.  They have XLFD name
-<tscreen><verb>
--bitstream-courier-*-*-normal--0-0-0-0-m-0-*-*
--bitstream-charter-*-*-normal--0-0-0-0-p-0-*-*
-</verb></tscreen>
-and reside in the font files
-<tscreen><verb>
-/usr/X11R6/lib/X11/fonts/Speedo/font*.spd
-</verb></tscreen>
-
 <sect1>The Bigelow &amp; Holmes Luxi family
 
 <p>X11R&relvers; includes the <it/Luxi/ family of scalable fonts, in both
@@ -647,7 +632,7 @@ X11 fonts system.
 
 <sect1>Core fonts and internationalisation <label id="sec:internationalisation">
 
-<p>The scalable font backends (Type&nbsp;1, Speedo and TrueType) can
+<p>The scalable font backends (Type&nbsp;1 and TrueType) can
 automatically re-encode fonts to the encoding specified in the
 XLFD in `<tt/fonts.dir/'.  For example, a `<tt/fonts.dir/' file can
 contain entries for the Type&nbsp;1 Courier font such as
@@ -660,7 +645,7 @@ ISO&nbsp;8859-2 respectively.
 
 <sect2>The <it/fontenc/ layer <label id="sec:fontenc">
 
-<p>Three of the scalable backends (Type&nbsp;1, Speedo, and the
+<p>Two of the scalable backends (Type&nbsp;1 and the
 <it/FreeType/ TrueType backend) use a common <it/fontenc/ layer for
 font re-encoding.  This allows these backends to share their encoding
 data, and allows simple configuration of new locales independently of
@@ -751,14 +736,6 @@ ISO&nbsp;8859-1.
 <p>The Type&nbsp;1 backend behaves similarly to the FreeType backend
 with Type&nbsp;1 fonts, except that it limits all encodings to 8-bit
 codes.
-
-<sect3>Speedo
-
-<p>The Speedo backend searches for a mapping with a target of Unicode,
-and uses it if found.  If none is found, the backend defaults to
-ISO&nbsp;8859-1.
-
-The Speedo backend limits all encodings to 8-bit codes.
 
 <sect2>Format of encoding directory files <label id="sec:format-encoding-directory-files">
 
@@ -1187,7 +1164,7 @@ to be <it/bitmap fonts/.  They may also consist of a mathematical
 description of glyph shapes, in which case they are said to be
 <it/scalable fonts/.  Common formats for scalable font files are
 <it/Type&nbsp;1/ (sometimes incorrectly called <it/ATM fonts/ or
-<it/PostScript fonts/), <it/TrueType/ and <it/Speedo/.
+<it/PostScript fonts/), <it/TrueType/ and <it/OpenType/.
 
 The glyph data in a digital font needs to be indexed somehow.  How
 this is done depends on the font file format.  In the case of
@@ -1271,7 +1248,7 @@ this document and all manual pages) can be found from
      url="http://wiki.x.org/">.
 
 The <url name="comp.fonts FAQ"
-         url="http://www.netmeg.net/faq/computers/fonts/">, 
+         url="http://www.faqs.org/faqs/by-newsgroup/comp/comp.fonts.html">, 
 which is unfortunately no longer being maintained, contains a wealth
 of information about digital fonts.
 

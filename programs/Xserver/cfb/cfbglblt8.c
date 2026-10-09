@@ -30,11 +30,15 @@ in this Software without prior written authorization from The Open Group.
  * only.
  */
 
-#include	"X.h"
-#include	"Xmd.h"
-#include	"Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include	<X11/X.h>
+#include	<X11/Xmd.h>
+#include	<X11/Xproto.h>
 #include	"cfb.h"
-#include	"fontstruct.h"
+#include	<X11/fonts/fontstruct.h>
 #include	"dixfontstr.h"
 #include	"gcstruct.h"
 #include	"windowstr.h"
@@ -64,7 +68,6 @@ in this Software without prior written authorization from The Open Group.
 
 #ifdef USE_LEFTBITS
 typedef	unsigned char	*glyphPointer;
-extern CfbBits endtab[];
 
 #define GlyphBits(bits,width,dst)	getleftbits(bits,width,dst); \
 					(dst) &= widthMask; \
@@ -251,7 +254,7 @@ cfbPolyGlyphBlt8 (pDrawable, pGC, x, y, nglyph, ppci, pglyphBase)
 #ifdef USE_LEFTBITS
 	    w = pci->metrics.rightSideBearing - pci->metrics.leftSideBearing;
 	    widthGlyph = PADGLYPHWIDTHBYTES(w);
-	    widthMask = endtab[w];
+	    widthMask = mfbGetendtab(w);
 #endif
 	    do {
 	    	dst = dstLine;
@@ -380,7 +383,7 @@ cfbPolyGlyphBlt8Clipped(
 #ifdef USE_LEFTBITS
 	    w = pci->metrics.rightSideBearing - pci->metrics.leftSideBearing;
 	    widthGlyph = PADGLYPHWIDTHBYTES(w);
-	    widthMask = endtab[w];
+	    widthMask = mfbGetendtab(w);
 #endif
 	    switch (cfb8ComputeClipMasks32 (pBox, numRects, xG, yG, w, hTmp, clips))
  	    {

@@ -1,5 +1,9 @@
 /* (c) Itai Nahshon */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/cirrus/alp_xaa.c,v 1.7 2001/10/01 13:44:05 eich Exp $ */
 
 #include "xf86.h"

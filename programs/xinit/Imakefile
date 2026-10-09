@@ -31,16 +31,56 @@ LOCAL_LIBRARIES = $(XONLYLIB)
 #if HasCookieMaker
      COOKIEDEFS = -DHAS_COOKIE_MAKER -DMK_COOKIE=MkCookieCmd
 #endif
+#if defined(SCOArchitecture) || defined(USLArchitecture)
+      SHELL_CMD = /bin/ksh
+#else
+      SHELL_CMD = /bin/sh
+#endif
 
 all:: startx $(SAMPLECONFIG)
 
 ComplexProgramTarget_1(xinit,$(LOCAL_LIBRARIES),$(DEFFILE))
 
-MakeScriptFromCpp(xinitrc, -DXINITDIR=$(XINITDIR))
+#ifndef UseFullPathToProgs
+#define UseFullPathToProgs
+#endif
 
-MakeScriptFromCpp(startx, -DXINITDIR=$(XINITDIR) -DBINDIR=$(BINDIR) $(COOKIEDEFS))
+#ifdef UseFullPathToProgs
+           XRDB = $(BINDIR)/xrdb
+        XMODMAP = $(BINDIR)/xmodmap
+            TWM = $(BINDIR)/twm
+         XCLOCK = $(BINDIR)/xclock
+          XTERM = $(BINDIR)/xterm
+        XSERVER = $(BINDIR)/X
+          XAUTH = $(BINDIR)/xauth
+          XINIT = $(BINDIR)/xinit
+#else
+           XRDB = xrdb
+        XMODMAP = xmodmap
+            TWM = twm
+         XCLOCK = xclock
+          XTERM = xterm
+XCOMM You always want to specify the full path to the X server
+        XSERVER = $(BINDIR)/X
+          XAUTH = xauth
+          XINIT = xinit
+#endif
 
-EXTRAMANDEFS=-D__xinitdir__=$(XINITDIR) -D__XCONFIGFILE__=XConfigFile -D__XSERVERNAME__=XServerName
+    PROGCPPDEFS = -DXRDB=$(XRDB) -DXMODMAP=$(XMODMAP) -DTWM=$(TWM) \
+		  -DXCLOCK=$(XCLOCK) -DXTERM=$(XTERM) -DXSERVER=$(XSERVER) \
+		  -DXAUTH=$(XAUTH) -DXINIT=$(XINIT)
+
+MakeScriptFromCpp(xinitrc, -DXINITDIR=$(XINITDIR) $(PROGCPPDEFS) -DSHELL_CMD=$(SHELL_CMD) -DLIBDIR=$(LIBDIR))
+
+MakeScriptFromCpp(startx, -DXINITDIR=$(XINITDIR) $(PROGCPPDEFS) $(COOKIEDEFS) -DSHELL_CMD=$(SHELL_CMD) -DLIBDIR=$(LIBDIR))
+
+#if defined(SCOArchitecture) || defined(USLArchitecture)
+ARCHMANDEFS=-D__SCOMAN__
+#else
+ARCHMANDEFS=
+#endif
+
+EXTRAMANDEFS=-D__xinitdir__=$(XINITDIR) -D__XCONFIGFILE__=XConfigFile -D__XSERVERNAME__=XServerName -D__libdir__=$(LIBDIR) $(ARCHMANDEFS)
 
 InstallNamedProg(startx,startx,$(BINDIR))
 #ifdef OS2Architecture

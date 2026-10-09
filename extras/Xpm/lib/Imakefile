@@ -72,8 +72,7 @@ XCOMM add -DVOID_SPRINTF
     (defined(MipsArchitecture) && !defined(SGIArchitecture))
 STRDUPDEF = -DNEED_STRDUP
 #else
-# if defined(Win32Architecture) || defined(USLArchitecture) || \
-     (defined(HasStrcasecmp) && !HasStrcasecmp)
+# if defined(Win32Architecture) || (defined(HasStrcasecmp) && !HasStrcasecmp)
 STRCASECMPDEF = -DNEED_STRCASECMP
 # else
 #  if defined(SunArchitecture) && !defined(SVR4Architecture)

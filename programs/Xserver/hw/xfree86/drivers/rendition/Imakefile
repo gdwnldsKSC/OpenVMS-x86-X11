@@ -16,8 +16,7 @@ OBJS = rendition.o vboard.o vmodes.o vramdac.o v1krisc.o \
 #if defined(XF86DriverSDK)
 INCLUDES = -I. -I../../include
 #else
-INCLUDES = -I. -I$(SERVERSRC)/fb \
-	   -I$(SERVERSRC)/mi -I$(SERVERSRC)/cfb\
+INCLUDES = -I. -I$(SERVERSRC)/fb -I$(SERVERSRC)/mi \
 	   -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c -I$(XF86SRC)/vgahw \
 	   -I$(XF86SRC)/rac -I$(XF86SRC)/int10 -I$(XF86SRC)/vbe \
 	   -I$(XF86COMSRC) -I$(XF86OSSRC) -I$(FONTINCSRC) -I$(XINCLUDESRC) \
@@ -43,7 +42,7 @@ ObjectModuleTarget(rendition,$(OBJS))
 
 ObjectFromSpecialSource(accel, accelX, -DPSZ=16)
 
-InstallObjectModule(rendition,$(MODULEDIR),drivers)
+InstallVideoObjectModule(rendition,$(MODULEDIR))
 InstallNonExecFile(v10002d.uc,$(MODULEDIR))
 InstallNonExecFile(v20002d.uc,$(MODULEDIR))
 

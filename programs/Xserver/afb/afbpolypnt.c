@@ -49,8 +49,12 @@ SOFTWARE.
 ******************************************************************/
 /* $XConsortium: afbpolypnt.c,v 5.6 94/04/17 20:28:30 dpw Exp $ */
 
-#include "X.h"
-#include "Xprotostr.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xprotostr.h>
 #include "pixmapstr.h"
 #include "gcstruct.h"
 #include "windowstr.h"
@@ -113,7 +117,7 @@ afbPolyPoint(pDrawable, pGC, mode, npt, pptInit)
 						y = ppt->y + pDrawable->y;
 						if ((x >= pbox->x1) && (x < pbox->x2) &&
 							(y >= pbox->y1) && (y < pbox->y2))
-							*afbScanline(addrl, x, y, nlwidth) &= rmask[x & PIM];
+							*afbScanline(addrl, x, y, nlwidth) &= mfbGetrmask(x & PIM);
 					}
 					break;
 
@@ -123,7 +127,7 @@ afbPolyPoint(pDrawable, pGC, mode, npt, pptInit)
 						y = ppt->y + pDrawable->y;
 						if ((x >= pbox->x1) && (x < pbox->x2) &&
 							(y >= pbox->y1) && (y < pbox->y2))
-							*afbScanline(addrl, x, y, nlwidth) |= mask[x & PIM];
+							*afbScanline(addrl, x, y, nlwidth) |= mfbGetmask(x & PIM);
 					}
 					break;
 
@@ -133,7 +137,7 @@ afbPolyPoint(pDrawable, pGC, mode, npt, pptInit)
 						y = ppt->y + pDrawable->y;
 						if ((x >= pbox->x1) && (x < pbox->x2) &&
 							(y >= pbox->y1) && (y < pbox->y2))
-							*afbScanline(addrl, x, y, nlwidth) ^= mask[x & PIM];
+							*afbScanline(addrl, x, y, nlwidth) ^= mfbGetmask(x & PIM);
 					}
 					break;
 

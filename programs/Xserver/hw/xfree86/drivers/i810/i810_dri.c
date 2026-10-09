@@ -12,6 +12,10 @@
  * with <TAB> characters expanded at 8-column intervals.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -48,8 +52,6 @@ static void I810DRIMoveBuffers(WindowPtr pParent, DDXPointRec ptOldOrg,
 			       RegionPtr prgnSrc, CARD32 index);
 
 
-static Bool I810DRIOpenFullScreen(ScreenPtr pScreen);
-static Bool I810DRICloseFullScreen(ScreenPtr pScreen);
 static void I810EnablePageFlip(ScreenPtr pScreen);
 static void I810DisablePageFlip(ScreenPtr pScreen);
 static void I810DRITransitionSingleToMulti3d(ScreenPtr pScreen);
@@ -286,8 +288,8 @@ I810DRIScreenInit(ScreenPtr pScreen)
    DRIInfoPtr pDRIInfo;
    I810DRIPtr pI810DRI;
    unsigned long tom;
-   unsigned long agpHandle;
-   unsigned long dcacheHandle;
+   drm_handle_t agpHandle;
+   drm_handle_t dcacheHandle;
    int sysmem_size = 0;
    int back_size = 0;
    unsigned int pitch_idx = 0;
@@ -304,8 +306,6 @@ I810DRIScreenInit(ScreenPtr pScreen)
     * for known symbols in each module. */
    if (!xf86LoaderCheckSymbol("GlxSetVisualConfigs"))
       return FALSE;
-   if (!xf86LoaderCheckSymbol("DRIScreenInit"))
-      return FALSE;
    if (!xf86LoaderCheckSymbol("drmAvailable"))
       return FALSE;
    if (!xf86LoaderCheckSymbol("DRIQueryVersion")) {
@@ -319,11 +319,12 @@ I810DRIScreenInit(ScreenPtr pScreen)
       int major, minor, patch;
 
       DRIQueryVersion(&major, &minor, &patch);
-      if (major != 4 || minor < 0) {
+      if (major != DRIINFO_MAJOR_VERSION || minor < DRIINFO_MINOR_VERSION) {
 	 xf86DrvMsg(pScreen->myNum, X_ERROR,
 		    "[dri] I810DRIScreenInit failed because of a version mismatch.\n"
-		    "[dri] libDRI version is %d.%d.%d bug version 4.0.x is needed.\n"
-		    "[dri] Disabling DRI.\n", major, minor, patch);
+		    "[dri] libdri version is %d.%d.%d bug version %d.%d.x is needed.\n"
+		    "[dri] Disabling DRI.\n", major, minor, patch,
+                    DRIINFO_MAJOR_VERSION, DRIINFO_MINOR_VERSION);
 	 return FALSE;
       }
    }
@@ -393,8 +394,6 @@ I810DRIScreenInit(ScreenPtr pScreen)
    pDRIInfo->InitBuffers = I810DRIInitBuffers;
    pDRIInfo->MoveBuffers = I810DRIMoveBuffers;
    pDRIInfo->bufferRequests = DRI_ALL_WINDOWS;
-   pDRIInfo->OpenFullScreen = I810DRIOpenFullScreen;
-   pDRIInfo->CloseFullScreen = I810DRICloseFullScreen;
    pDRIInfo->TransitionTo2d = I810DRITransitionTo2d;
    pDRIInfo->TransitionTo3d = I810DRITransitionTo3d;
    pDRIInfo->TransitionSingleToMulti3D = I810DRITransitionSingleToMulti3d;
@@ -487,7 +486,7 @@ I810DRIScreenInit(ScreenPtr pScreen)
       DRICloseScreen(pScreen);
       return FALSE;
    }
-   xf86DrvMsg(pScreen->myNum, X_INFO, "[drm] Registers = 0x%08lx\n",
+   xf86DrvMsg(pScreen->myNum, X_INFO, "[drm] Registers = 0x%08x\n",
 	      pI810DRI->regs);
 
    pI810->backHandle = DRM_AGP_NO_HANDLE;
@@ -526,7 +525,7 @@ I810DRIScreenInit(ScreenPtr pScreen)
    drmAgpAlloc(pI810->drmSubFD, 4096 * 1024, 1, NULL, &dcacheHandle);
    pI810->dcacheHandle = dcacheHandle;
 
-   xf86DrvMsg(pScreen->myNum, X_INFO, "[agp] dcacheHandle : 0x%lx\n",
+   xf86DrvMsg(pScreen->myNum, X_INFO, "[agp] dcacheHandle : 0x%x\n",
 	      dcacheHandle);
 
 #define Elements(x) sizeof(x)/sizeof(*x)
@@ -1322,19 +1321,6 @@ I810DRIMoveBuffers(WindowPtr pParent, DDXPointRec ptOldOrg,
 }
 
 
-/* Fullscreen hooks.  The DRI fullscreen mode can probably be removed as
- * it adds little or nothing above the mechanism below (and isn't widely
- * used).
- */
-static Bool I810DRIOpenFullScreen(ScreenPtr pScreen)
-{
-    return TRUE;
-}
-
-static Bool I810DRICloseFullScreen(ScreenPtr pScreen)
-{
-    return TRUE;
-}
 /* Use the miext/shadow module to maintain a list of dirty rectangles.
  * These are blitted to the back buffer to keep both buffers clean
  * during page-flipping when the 3d application isn't fullscreen.
@@ -1498,10 +1484,10 @@ I810DRILeave(ScrnInfoPtr pScrn)
 	    return FALSE;
 	 }
       if (pI810->cursorARGBHandle != 0)
-	 if (drmAgpUnbind(pI810->drmSubFD, pI810->cursorARGBHandle) != 0) {
-	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,"%s\n",strerror(errno));
-	    return FALSE;
-	 }
+	  if (drmAgpUnbind(pI810->drmSubFD, pI810->cursorARGBHandle) != 0) {
+	      xf86DrvMsg(pScrn->scrnIndex, X_ERROR,"%s\n",strerror(errno));
+	      return FALSE;
+	  }
       if (pI810->agpAcquired == TRUE)
 	 drmAgpRelease(pI810->drmSubFD);
       pI810->agpAcquired = FALSE;

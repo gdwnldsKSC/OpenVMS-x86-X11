@@ -33,7 +33,7 @@ ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
 #define NeedToLinkMesaSrc
 #include "Imakefile.inc"
 
-      DEFINES = $(ALLOC_DEFINES) GlxDefines $(MESA_ASM_DEFINES)
+      DEFINES = $(ALLOC_DEFINES) GlxDefines -DIN_DRI_DRIVER $(MESA_ASM_DEFINES)
      INCLUDES = /*-I$(INCLUDESRC) -I$(EXTINCSRC)*/ -I$(MESASRCDIR)/src/mesa \
 		-I$(MESASRCDIR)/include \
 		-I$(GLXLIBSRC)/include \
@@ -54,7 +54,7 @@ SubdirLibraryRule($(OBJS))
 NormalLintTarget($(SRCS))
 
 ObjectFromAsmSource(common_x86_asm, NullParameter)
-
+ObjectFromAsmSource(read_rgba_span_x86, NullParameter)
 ObjectFromAsmSource(x86_cliptest, NullParameter)
 ObjectFromAsmSource(x86_xform2, NullParameter)
 ObjectFromAsmSource(x86_xform3, NullParameter)
@@ -82,11 +82,18 @@ ObjectFromAsmSource(sse_xform4, NullParameter)
 
 LinkSourceFile(gen_matypes.c, $(MESASRCDIR)/src/mesa/x86)
 
+#if CrossCompiling
+HOST_CFLAGS=$(TOP_INCLUDES) $(INCLUDES) $(BOOTSTRAPCFLAGS) \
+	$(CROSSCOMPILEDEFINES) $(CROSSCOMPILEBOOTSTRAPDEFINES)
+#else
+HOST_CFLAGS=$(CFLAGS)
+#endif
+
 MATYPES = ./gen_matypes
 
 matypes.h: gen_matypes.c
 	RemoveFiles($@ HostProgramTargetName(gen_matypes))
-	-HostLinkRule(HostProgramTargetName(gen_matypes),$(CFLAGS) $(LOCAL_LDFLAGS),gen_matypes.c,$(LDLIBS))
+	-HostLinkRule(HostProgramTargetName(gen_matypes),$(HOST_CFLAGS) $(LOCAL_LDFLAGS),gen_matypes.c,$(LDLIBS))
 	RunProgram(MATYPES,> matypes_h)
 	$(MV) matypes_h $@
 	RemoveFiles(HostProgramTargetName(gen_matypes))

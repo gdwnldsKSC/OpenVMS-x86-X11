@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/loader/misym.c,v 1.2 2004/04/23 19:54:06 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/loader/misym.c,v 1.9 2005/10/18 04:02:31 aplattner Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/loader/misym.c,v 1.38 2003/10/15 16:29:04 dawes Exp $ */
 
 /*
@@ -51,6 +51,10 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "sym.h"
 #include "misc.h"
 #include "mi.h"
@@ -72,6 +76,12 @@
 #ifdef RENDER
 #include "mipict.h"
 #endif
+#ifdef COMPOSITE
+#include "cw.h"
+#endif
+#ifdef DAMAGE
+#include "damage.h"
+#endif
 
 /* mi things */
 
@@ -91,8 +101,6 @@ LOOKUP miLookupTab[] = {
     SYMFUNC(miClearDrawable)
     SYMFUNC(miPolyPoint)
     SYMFUNC(miStepDash)
-    SYMFUNC(miEmptyBox)
-    SYMFUNC(miEmptyData)
     SYMFUNC(miIntersect)
     SYMFUNC(miRegionAppend)
     SYMFUNC(miRegionCopy)
@@ -197,13 +205,21 @@ LOOKUP miLookupTab[] = {
     SYMFUNC(miOverlayComputeCompositeClip)
     SYMFUNC(miOverlayGetPrivateClips)
     SYMFUNC(miOverlaySetRootClip)
+    SYMVAR(miEmptyBox)
+    SYMVAR(miEmptyData)
     SYMVAR(miZeroLineScreenIndex)
     SYMVAR(miSpritePointerFuncs)
     SYMVAR(miPointerScreenIndex)
     SYMVAR(miInstalledMaps)
     SYMVAR(miInitVisualsProc)
 #ifdef RENDER
-    SYMVAR(miGlyphExtents)
+    SYMFUNC(miGlyphExtents)
+#endif
+#ifdef COMPOSITE
+    SYMFUNC(miDisableCompositeWrapper)
+#endif
+#ifdef DAMAGE
+    SYMFUNC(DamageDamageRegion)
 #endif
 
     {0, 0}

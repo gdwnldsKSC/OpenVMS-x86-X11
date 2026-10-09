@@ -25,6 +25,10 @@
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nv/riva_driver.c,v 1.5 2003/11/03 05:11:26 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "riva_include.h"
 
 #include "xf86int10.h"
@@ -180,7 +184,7 @@ static XF86ModuleVersionInfo rivaVersRec =
     {0,0,0,0}
 };
 
-XF86ModuleData riva128ModuleData = { &rivaVersRec, rivaSetup, NULL };
+_X_EXPORT XF86ModuleData riva128ModuleData = { &rivaVersRec, rivaSetup, NULL };
 #endif
 
 
@@ -273,14 +277,14 @@ rivaSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 
 #endif /* XFree86LOADER */
 
-const OptionInfoRec *
+_X_EXPORT const OptionInfoRec *
 RivaAvailableOptions(int chipid, int busid)
 {
     return RivaOptions;
 }
 
 
-Bool
+_X_EXPORT Bool
 RivaGetScrnInfoRec(PciChipsets *chips, int chip)
 {
     ScrnInfoPtr pScrn;
@@ -1190,7 +1194,7 @@ RivaScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
      * function.  If not, the visuals will need to be setup before calling
      * a fb ScreenInit() function and fixed up after.
      *
-     * For most PC hardware at depths >= 8, the defaults that cfb uses
+     * For most PC hardware at depths >= 8, the defaults that fb uses
      * are not appropriate.  In this driver, we fixup the visuals after.
      */
 

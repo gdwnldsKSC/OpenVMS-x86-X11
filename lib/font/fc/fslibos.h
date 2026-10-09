@@ -37,7 +37,7 @@ from The Open Group.
  * FSlib networking & os include file
  */
 
-#include <X11/Xtrans.h>
+#include <X11/Xtrans/Xtrans.h>
 
 #ifndef WIN32
 
@@ -65,11 +65,7 @@ from The Open Group.
 #endif
 #ifndef OPEN_MAX
 #if defined(SVR4) || defined(__UNIXOS2__)
-#ifdef SCO325
-#define OPEN_MAX sysconf(_SC_OPEN_MAX)
-#else
 #define OPEN_MAX 256
-#endif
 #else
 #include <sys/param.h>
 #ifndef OPEN_MAX

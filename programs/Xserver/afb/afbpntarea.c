@@ -49,7 +49,11 @@ SOFTWARE.
 ******************************************************************/
 /* $XConsortium: afbpntarea.c,v 5.7 94/04/17 20:28:29 dpw Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "windowstr.h"
 #include "regionstr.h"

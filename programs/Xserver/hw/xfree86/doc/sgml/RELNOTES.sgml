@@ -4,86 +4,90 @@
 
 <article>
 
-<title>Release Notes for X11R&relvers;
+<title>Release Notes for X11R&relvers; and X11R&modvers;
 <author>The X.Org Foundation
 <and>The XFree86 Project, Inc.
 <date>&reldate;
 
 <abstract>
 
-These release notes contains information about features and their status in the
-X.Org Foundation X11R&relvers; release.
-It is based on the XFree86 4.4RC2 RELNOTES document published by 
-The XFree86&trade; Project, Inc.
-There are significant updates and differences in the X.Org release
-as noted below.
+These release notes contains information about features and their status
+in the X.Org Foundation X11R&relvers;/X11R&modvers; release.  It is
+based on the XFree86 4.4RC2 RELNOTES document published by The
+XFree86&trade; Project, Inc.  There are significant updates and
+differences in the X.Org release as noted below.
+
 </abstract>
 
 <toc>
 
 <p>
-<sect>Introduction to the X11R&relvers Release
+<sect>Introduction to the X11R&relvers;/X11R&modvers; Release
+<p>
+This release constitutes the first major version release of the X Window
+System in over a decade.  The main reasons for the major version bump
+from 6 to 7 is that we have moved from what has traditionally been a
+source codebase comprised of many different components brought together
+into a single monolithic tree to a source codebase where each of those
+same components found in the monolithic tree are now split into logical
+modules that can be developed, built and maintained separately, but
+still fit together coherently into the larger project.  At the same
+time, we have moved away from the imake build system to an autotools
+build system.  By making these changes we have opened the source code up
+to a new generation of developers that can continue to build upon the
+long tradition of the X Window System.
+<p>
+The reason for having simultaneous releases for both the monolithic and
+modular trees is to allow for a transition period as developers,
+builders and vendors incorporate the significant changes to how the tree
+is built and developed into their products and to allow time for
+additional platforms to be supported the modular tree.  This initial
+modular release has support for Linux and Solaris.  During the
+transition period, we expect both the monolithic and modular trees to
+coexist.  For the monolithic tree, we expect that there will be
+maintenance releases in the X11R6.8.x and X11R6.9.x series as needed.
+However, the main development effort will move over to the new modular
+tree.
+<p>
+The X11R&modvers; release is the first in the modular series.  One of
+the advantages of the modular tree is that it allows for more rapid and
+independent updates of module components, so full maintenance releases
+will no longer be required for simple bug fixes.  Rather, each module
+component maintainer can prepare new releases as needed.  These module
+component releases will then be periodically "rolled up" into official
+X.Org Foundation releases.  The next official release will be
+X11R&nextrelvers; and is expected in &nextfullreldate;.
+<p>
+For more information on the modularization effort see the <url
+name="Modularization Proposal"
+url="http://wiki.x.org/wiki/ModularizationProposal">, and for help with
+how to build and develop in the new modular tree see <url name="Modular
+Developer's Guide" url="http://wiki.x.org/wiki/ModularDevelopersGuide">.
+<p>
+We encourage you to submit bug fixes and enhancements to
+freedesktop.org's <url name="bug tracking system"
+url="https://bugs.freedesktop.org/"> using the xorg product, and to
+discuss them on <email>xorg@lists.freedesktop.org</email>.
 <p>
 The release numbering is based on the original MIT X numbering system.
 X11 refers to the version of the network protocol that the X Window
 system is based on: Version 11 was first released in 1988 and has been
-stable for 15 years, with only upward compatible additions to the
-core X protocol, a record of stability envied in computing.
-Formal releases of X started with X version 9 from MIT;
-the first commercial X products were based on X version 10.
-The MIT X Consortium and its successors, the X Consortium, the Open Group
-X Project Team, and the X.Org Group released versions X11R3 through X11R6.6,
-before the founding of the X.Org Foundation.
+stable for 17 years, with only upward compatible additions to the core X
+protocol, a record of stability envied in computing.  Formal releases of
+X started with X version 9 from MIT; the first commercial X products
+were based on X version 10.  The MIT X Consortium and its successors,
+the X Consortium, the Open Group X Project Team, and the X.Org Group
+released versions X11R3 through X11R6.6, before the founding of the
+X.Org Foundation in early 2004.
 <p>
-There will be future maintenance releases in the X11R6.8.x series.
-However, efforts are well underway to split the X distribution into its
-modular components to allow for easier maintenance and independent
-updates.  We expect a transitional period while both X11R6.8 releases
-are being fielded and the modular release completed and deployed while
-both will be available as different consumers of X technology have
-different constraints on deployment. We have not yet decided how the
-modular X releases will be numbered.
-<p>
-We encourage you to submit bug fixes and enhancements to bugzilla.freedesktop.org
-using the xorg product, and discussions on this server take
-place on <email>xorg@freedesktop.org</email>.
-
-X11R&relvers; comes with a graphical configuration tool called 
-"<tt>xorgcfg</tt>",
-which also has a text mode interface and can be used to create an initial
-configuration file. It can also be used to customise existing
-configurations.
-
-Next in the order of configuration preferences is to use the Xorg
-server's ability to create a starting configuration file.  Run as root:
-<tscreen><verb>Xorg -configure</verb></tscreen> and follow the instructions.
-
-Finally, if all else fails, the trusty old standby text-based tool
-"<tt>xorgconfig</tt>" can also be used for generating X server config
-files.
-
-At least one, and hopefully, all of these configuration options will
-give you a reasonable starting point for a suitable configuration
-file.  With the automatic mechanism you might even find that you don't
-need one!  
-
-If you do need to customise the configuration file, see the <htmlurl
-name="xorg.conf manual page" url="xorg.conf.5.html">.  You can also
-check the driver-specific manual pages and the related documentation
-(found at <ref id="drivertables" name="tables below"> also.
-
-Before downloading  the binary distributions for this release, please
-have a quick read through the <htmlurl name="Installation Document"
-url="Install.html">.  It may save you some time and also help you figure out
-which of the binary releases you need.
-
 <![ %updaterel [
 The next sections describe what has changed in the update release(s)
 as well as what is new in the latest full release (&fullrelvers;).
 ]]>
 <![ %fullrel [
-The next section describes what is new in the latest version (&relvers;)
-compared with the previous full release (&prevrelvers;).
+The next section describes what is new in the latest version
+(&relvers;/&modvers;) compared with the previous full release
+(&prevrelvers;).
 ]]>
 The other sections below describe some of the new features and changes
 between 3.3.x and 4.0.  There are lots of new features, and we definitely
@@ -92,232 +96,223 @@ don't have enough space to cover them all here.
 </sect>
 
 <![ %updaterel [
-<sect>Summary of updates in &relvers;.
+<sect>Summary of updates in &relvers; and &modvers;.
 <p>
 
 </sect>
 ]]>
 
-<sect>Summary of new features in X11R&relvers;
+<sect>Summary of new features in X11R&relvers; and X11R&modvers;
 <P>
-This is a sampling of the new features in X11R&relvers;.  A more
-complete list of changes can be found in the ChangeLog file that is part of
-the X source tree.
-<p>
+This is a sampling of the new features in X11R&relvers;/X11R&modvers;.
+A more complete list of changes can be found in the ChangeLog file that
+is part of the X source tree.
 
 <itemize>
-<item>Freetype was updated to version 2.1.8. But installing freetype
+
+<item>EXA support included
+
+EXA is a new accleration architecture to replace XAA, the current
+architecture.  It is largely based upon KAA in KDrive, and is far more
+efficient at accelerating typical workloads on modern hardware,
+particularly involving the RENDER extension.
+
+<item>FreeType was updated to version 2.1.9. But installing FreeType
 from X distributions would often or usually result in the replacement
-or use of "stale" versions of freetype. On Linux, FreeBSD, Solaris 10,
+or use of "stale" versions of FreeType. On Linux, FreeBSD, Solaris 10,
 and SCO5, therefore, X11R&relvers; will by default use the version
-of freetype2 that is installed on the system. If your system doesn't
-come with an installed freetype2 and you wish to use the version
+of FreeType2 that is installed on the system. If your system doesn't
+come with an installed FreeType2 and you wish to use the version
 supplied with this distribution, please add:
 
   #define HasFreetype2 NO 
 
 to config/cf/host.def.
 
-<item>The XTT font module and FreeType1 have been retired because FreeType2 subsumes 
-their functionality
-<item>Retire old PS Type1 font rasterizer (except for CID font usage) since the FreeType2 rasterizer now handles PS Type1 (*.pfa, *.pfb)
-<item>Render implementation fixes
-<item>Updated x86emu and resynced with upstream at Scitech
-<item>Updated SiS driver
-<item>Updated Nvidia driver (opensource version)
-<item>Render acceleration for ATI's R100 and R200-series cards
-<item>Substantial speedups in the software implementation of the
-render extensions when compiled with gcc 3.4 on the i386 architecture.
-<item>Infrastructure for rotation support in drivers
-<item>New Trapezoid specification for the Render extension
+<item>Updated Mesa and DRI from upstream sources
 	<itemize>
-          <item>Respecify Render to include only 'normal' traps
-          <item>Allow backward compatibility but internally covert to new format
+          <item>More OpenGL extensions
+          <item>Support for Radeon r3xx/r4xx and PCI-Express chips
+          <item>Support for mixed 32-bit and 64-bit clients on 64-bit
+                machines.
 	</itemize>
-<item>Software mouse cursor is now based on the Damage extension
-<item>A new keyboard driver is enabled by default. The old driver is disabled unless explicitly compiled in by defining the macro |USE_DEPRECATED_KEYBOARD_DRIVER|.
-<item>All extensions (except Xserver-specific extensions "DMX" and "XpExtension") can now be
-enabled/disabled from the configuration file and from the command line.
-<item>Mac OS X updates:
-	<itemize>
-         <item>Support dynamic screen configuration changes in rootless mode
-         <item>Added option to always use Mac command key equivalents
-         <item>Interpret scroll wheel mouse events correctly when shift is held down
-         <item>Added trivial Xinput support
-         <item>Fixed launch of X clients from Finder with a space in their path
-         <item>Fixed some GLX rendering problems on Mac OS X 10.2 and earlier
-	</itemize>
-<item>Updated xterm version
-</itemize>
 
-<sect1>New X extensions
-<P>
-X11R&relvers; includes four new extensions:
+<item>Individual extensions may be enabled or disabled on the command line using the -extension flag
 
-<descrip>
+<item>Improved chipset probing for IA64
 
-<tag>XFixes</tag> 
+<item>SecureRPC enabled on Linux by default
 
-The XFixes extension is a collection of improvements for deficiencies
-in the core protocol, including
+<item>Updated XRX support
 
-<itemize>
-<item>Notification when a selection changes <item>Server-side region
-objects
-<item>Allow clients to track the cursor image
-</itemize>
+<item>Fixes to rootless mode for Cygwin and Darwin ports
 
-<tag>Damage</tag>
+<item>Numerous K&amp;R-to-ANSI C conversions
 
-The Damage extension allows a client to be notified whenever something
-is drawn to a window. This feature is useful for VNC servers, for
-screen magnifiers, and for clients using the Composite extension to
-update the screen.
+<item>Many Darwin fixes
 
-<tag>Composite (experimental)</tag>
+<item>Updated XvMC support, enabling generic loading of hardware-specific drivers
 
-The Composite extension allows a client to request that all drawing to
-window is redirected to off-screen buffer. Though the Damage extension the
-client, called a 'compositing manager', can know which areas of a window is
-modified and render the windows on screen. By making use of the drawing
-requests from both the core protocol and the RENDER extension, the
-compositing manager can create special effects, such as translucennt windows.
+<item>Added wsfb video driver for OpenBSD and NetBSD framebuffer consoles
 
-    The Composite extension is considered experimental in X11R&relvers; and is
-turned off by default.
+<item>Numerous ATI driver updates from the GATOS project, including TV input support
 
-<tag>XEvIE (X Event Interception Extension) (experimental)</tag>
+<item>Improved ProPolice support
 
-XEvIE is an extension to intercept core keyboard and pointing device
-input It allows consumation, modification or synthesis of input events
-before these are sent to their final destination (i.e., interested
-clients). This feature is required by the GNOME accessibility project.
+<item>Improved module loader support for Alpha chips
 
-The XEvIE extension is considered experimental in X11R&relvers; and is
-turned off by default.
+<item>Added mingw port for native Win32 builds
 
-</descrip>
+<item>Updated PCI scanning
 
-As noted above, some extensions are disabled by default.  They can be
-enabled either in the <tt>xorg.conf</tt> configuration file or on the
-<tt>Xorg</tt> command-line.  For example, to enable the Composite
-extension, you could include a section like the following in the
-<tt>xorg.conf</tt> file:
+<item>Experimental DRI support for Radeon 9500 and above
 
-<verb>
-Section "Extensions"
-        Option "Composite" "Enable"
-EndSection
-</verb>
+<item>Updated xterm to #207 from <url name="Thomas Dickey's xterm project"
+      url="http://dickey.his.com/xterm/xterm.html">
 
-or you could put <tt>+extension Composite</tt> on your command line.
+<item>Added evdev input driver for generic input handling on Linux
 
+<item>Switched to libdl-based module loader
 
-<sect1>
-Distributed Multihead X (DMX)
-<p>
-X11R&relvers; includes a new X server, called <tt>Xdmx</tt>, that allows
-users to create a single unified desktop from multiple running X
-servers.  It works by creating a local screen on each of these running X
-servers, which can be distributed across a network, and then presents
-that set of screens to the user.  When combined with Xinerama, a unified
-workspace, ranging from large display walls to small two display
-enviroments, can be created.
-<p>
-More information about DMX can be found on the <url name="DMX Project's
-web site" url="http://dmx.sf.net/">, including how to configure and use
-<tt>Xdmx</tt>.
+<item>MMX blending routines for the Render extension
 
-<sect1>
-Xprint updates
-<p>
-<itemize>
-  <item>Integrated various fixes from <url name="xprint.mozdev.org" url="http://xprint.mozdev.org"> (more or less the whole codebase has been merged)
-  <item>Integrated various fixes from Sun Microsystems
-  <item>OpenGL is now supported for printing
-  <item>New set of maintenance tools for the Xprint server (xplsprinters, xprehashprinterlist, etc.)
-  <item>Added new XprintUtils client library to make the usage of Xprint easier
-  <item>Various other features and fixes integrated
-  <item>Athena toolkit now has print support (XawPrintShell) which is included
-        in a new version of that library (Xaw8)
-  <item>Various applications/tools like xman, xedit, xlogo, xlsfonts, etc.
-        now have print support
-</itemize>
+<item>Initial support for running the Xorg server without root privileges
 
-<sect1>Updated Mesa and DRI from upstream sources
-<P>	
+<item>Add DragonFly BSD support
+
+<item>SGI Altix support
+
+<item>Support for FreeBSD/powerpc
+
+<item>Enhanced software Render core
+
+<item>Support for more than 12 buttons in the generic mouse driver
+
+<item>Better support for DRI on 64-bit platforms
+
+<item>Solaris support updates:
   <itemize>
-    <item>Mesa version has been updated to 6.2.1 (in X11R6.8.2)
-    <item>More OpenGL extensions
-    <item>MergedFB for Radeon (Dualhead DRI support on these cards)
-    <item>Many GLX fixes
-    <item>Working SiS DRI driver
-    <item>Major Radeon and R200 DRI driver updates
-    <item>fbconfigs support
-    <item>Beginnings of pbuffer support (indirect only, and only in specific circumstances).
-    <item>Merge Mach64 DRI support (Eric Anholt, July 23)
+   <item>enhanced mouse driver
+   <item>agpgart support
+   <item>experimental AMD64 support
+   <item>kbd support
+   <item>/dev/audio keyboard bell option
   </itemize>
+
+<item>Output-only windows
+
+<item>Non-rectangular mergedfb desktops
+
+<item>Update bundled fontconfig to 2.3.2
+
+<item>Added gradient, solid fill, and convolution filter operations to Render
+
+<item>Support for XGI chipsets in SiS video driver
+
+<item>Xft updated to 2.1.7
+
+<item>Include stack backtraces in logfiles when server crashes on glibc and Solaris systems
+
+<item>Multiseat support
+
+<item>xload made compatible with 64-bit kernels on Solaris
+
+<item>Bundled Mesa upgraded to 6.4.1
+
+<item>CAN-2005-2495 security fixes
+
+<item>Shared libraries now built for libXau and libXdmcp
+
+<item>GNU/kFreeBSD support
+
+</itemize>
+
+<sect1>Updated keyboard mappings
+<p>
+The requirement for XKB data can, in the modular tree, be satisfied either
+by the traditional data set (the 'xkbdata' module), or by the dataset from
+the xkeyboard-config project (the 'xkbdesc' module).  xkbdesc has numerous
+improvements relative to xkbdata: layouts have been cleaned up for
+consistency and universal multi-layout support, some new layouts have added,
+and some layouts have changed names to be more straightforward and ISO
+compliant.  Some setups will need adjustments in order to use xkbdesc.
+
+<sect1>New loader mechanism
+<p>
+The loader now uses the standard libdl-based loader, instead of
+implementing its own ELF loading and parsing mechanism.  This extends loadable
+server support to many platforms where it was not previously possible, such
+as MIPS, Motorola 68000, HP PA/RISC, et al.  The core loader itself has also
+been significantly optimised.
 
 <sect1>Video driver enhancements
 <p>
 <itemize>
-  <item>ATI Radeon driver updates:
-       <itemize>
-        <item>Merged Framebuffer support (dualhead with DRI)
-        <item>DynamicClocks option (reduced power usage)
-        <item>Render acceleration (r100, r200 chips only)
-        <item>Support for new ATI chips (R420/M18, R423, RV370/M22, RV380/M24, RS300)
-        <item>DRI support for IGP chips
-        <item>Xv gamma correction
-        <item>Updated 3D drivers
-        <item>Many other small fixes
-       </itemize>
-  <item>Chips driver update
-       <itemize>
-        <item>Improved BE support
-       </itemize>
-  <item>MGA driver updates
-       <itemize>
-        <item>Support for DDC and DPMS on second head on G400
-        <item>Updated 3D driver
-       </itemize>
-  <item>Neomagic driver updates
-       <itemize>
-        <item>Support for Xv on pre-nm2160 chips
-        <item>Pseudocolor overlay mode (=PseudoColor emulation)
-        <item>Improved support for lowres double scan modes
-       </itemize>
-  <item>i810 driver updates
-       <itemize>
-        <item>Dualhead support (i830+)
-        <item>i915 support
-        <item>New 3D driver (i830+)
-        <item>i810 driver is now supported for AMD64
-       </itemize>
-  <item>S3 driver updates
-       <itemize>
-        <item>Support for additional IBM RAMDACS
-       </itemize>
-  <item>Savage driver updates
-       <itemize>
-        <item>Pseudocolor overlay mode
-       </itemize>
-  <item>SiS driver updates include
-       <itemize>
-        <item>output device hotplugging
-        <item>lots of fixes for 661, 741, 760
-        <item>extended interface for SiSCtrl?
-        <item>extended LCD handling (allow more modes)
-        <item>HDTV support (480p, 480i, 720p. 1080i; 315/330 series)
-        <item>Added video blitter Xv adapter (315/330 series)
-        <item>extended RENDER acceleration
-        <item>SiS driver now supported on AMD64
-       </itemize>
-  <item>New Voodoo driver (Alan Cox)
-       <itemize>
-        <item>Provides native (glide-less) acceleration and mode setup for voodoo/voodoo2 boards
-       </itemize>
-</itemize>
+   <item>SiS driver updates include
+	<itemize>
+         <item>Support for EXA acceleration
+         <item>Support for non-rectangular MergedFB, including RandR
+         <item>Support for XGI chipsets
+	</itemize>
+   <item>New sisusb driver for USB-attached video
+   <item>ATI driver updates
+    <itemize>
+          <item>Mach64 TV out support
+    </itemize>
+   <item>Rage 128 driver updates
+    <itemize>
+          <item>Added dualhead support
+    </itemize>
+   <item>Radeon driver updates
+	<itemize>
+         <item>Support for non-rectangular MergedFB
+         <item>Support for EXA acceleration
+         <item>Full 3D support for r3xx/r4xx series, and PCI-Express
+         <item>Support for RN50/ES1000 chips
+         <item>VIVO support merged from the GATOS project
+         <item>Hostdata blit support for Xv videos and RENDER images
+         <item>BIOS hotkey support
+         <item>Tiled framebuffer support
+	</itemize>
+   <item>MGA driver updates
+	<itemize>
+         <item>New BIOS parsing
+	</itemize>
+   <item>i810 driver updates
+	<itemize>
+         <item>i915GM, i945G and E7221 support
+         <item>Linux power management support (ACPI)
+         <item>BIOS hotkey support
+         <item>ShadowFB support
+         <item>Improved DDC support
+	</itemize>
+   <item>SunFFB driver updates
+    <itemize>
+         <item>XAA acceleration
+    </itemize>
+   <item>Savage driver updates
+    <itemize>
+         <item>Support for PCI Savages
+         <item>Added dualhead and DRI support
+    </itemize>
+   <item>Newport driver updates
+    <itemize>
+         <item>XAA acceleration
+    </itemize>
+   <item>VIA driver updates
+    <itemize>
+          <item>Unichrome Pro support
+          <item>DRI support
+    </itemize>
+   <item>NV driver updates
+    <itemize>
+          <item>DPMS support for GeForce4 and greater laptops
+    </itemize>
+   <item>VMWare driver updates
+    <itemize>
+          <item>RandR support
+    </itemize>    
+</itemize>    
 
 <sect>Drivers
 <P>
@@ -325,7 +320,7 @@ Xprint updates
 <sect1>Video Drivers
 <p>
 
-X11R&relvers; includes the following video drivers:
+X11R&relvers;/X11R&modvers; includes the following video drivers:
 
 <table border=1 align="center">
 <tabular ca="|l|l|l|">
@@ -385,6 +380,8 @@ X11R&relvers; includes the following video drivers:
    <tabrow><tt>sis</tt><colsep>SiS<colsep><htmlurl
 		name="README.SiS" url="SiS.html">, <htmlurl
 		name="sis(4)" url="sis.4.html"></tabrow>
+   <tabrow><tt>sisusb</tt><colsep>SiS USB<colsep><htmlurl
+		name="sisusb(4)" url="sisusb.4.html"></tabrow>
    <tabrow><tt>sunbw2</tt> (+)<colsep>Sun bw2<colsep>&nbsp;</tabrow>
    <tabrow><tt>suncg14</tt> (+)<colsep>Sun cg14<colsep>&nbsp;</tabrow>
    <tabrow><tt>suncg3</tt> (+)<colsep>Sun cg3<colsep>&nbsp;</tabrow>
@@ -399,13 +396,13 @@ X11R&relvers; includes the following video drivers:
    <tabrow><tt>trident</tt><colsep>Trident<colsep><htmlurl
 		name="trident(4)" url="trident.4.html"></tabrow>
    <tabrow><tt>tseng</tt><colsep>Tseng Labs<colsep>&nbsp;</tabrow>
-   <tabrow><tt>via</tt><colsep>VIA<colsep><htmlurl
-		name="via(4)" url="via.4.html"></tabrow>
    <tabrow><tt>vesa</tt><colsep>VESA<colsep><htmlurl
 		name="vesa(4)" url="vesa.4.html"></tabrow>
    <tabrow><tt>vga</tt><colsep>Generic VGA<colsep><htmlurl
 		name="vga(4)" url="vga.4.html"></tabrow>
-   <tabrow><tt>vmware</tt><colsep>VMWare guest OS<colsep><htmlurl
+   <tabrow><tt>via</tt><colsep>VIA<colsep><htmlurl
+		name="via(4)" url="via.4.html"></tabrow>
+   <tabrow><tt>vmware</tt><colsep>VMware guest OS<colsep><htmlurl
 		name="vmware(4)" url="vmware.4.html"></tabrow>
 </tabular>
 </table>
@@ -424,39 +421,14 @@ Darwin/Mac OS X uses IOKit drivers and does not use the module loader drivers
 listed above. Further information can be found in
 <htmlurl name="README.Darwin" url="Darwin.html">.
 
-X11R&relvers; includes the following print drivers:
-
-<sect1>Print Drivers
-<p>
-
-<table border=1 align="center">
-<tabular ca="|l|l|l|">
-   <tabrow>Driver Name<colsep>Description<colsep>Further Information</tabrow>
-   <hline>
-   <tabrow><tt>PostScript</tt><colsep>PostScript driver<colsep>&nbsp;</tabrow>
-   <tabrow><tt>PCL</tt><colsep>PCL color driver<colsep>&nbsp;</tabrow>
-   <tabrow><tt>PCL-MONO</tt><colsep>PCL monocrome driver<colsep>&nbsp;</tabrow>
-   <tabrow><tt>RASTER</tt><colsep>Monocrome raster driver (XWD, PS, PCL)<colsep>&nbsp;</tabrow>
-<!-- not yet
-   <tabrow><tt>SVG</tt><colsep>Scaleable Vector Graphics driver<colsep>&nbsp;</tabrow>
--->
-</tabular>
-</table>
-
-Drivers marked with (*) are available for Linux only.
-
-X11R&relvers; includes the following input drivers:
-
 <sect1>Input Drivers
 <p>
+X11R&relvers;/X11R&modvers; includes the following input drivers:
 
 <table border=1 align="center">
 <tabular ca="|l|l|l|">
    <tabrow>Driver Name<colsep>Description<colsep>Further Information</tabrow>
    <hline>
-<!--
-   <tabrow><tt>acecad</tt><colsep>AceCad<colsep>&nbsp;</tabrow>
--->
    <tabrow><tt>aiptek(*)</tt><colsep>Aiptek USB tablet<colsep><htmlurl
 		name="aiptek(4)" url="aiptek.4.html"></tabrow>
    <tabrow><tt>calcomp</tt><colsep>Calcomp<colsep>&nbsp;</tabrow>
@@ -467,14 +439,15 @@ X11R&relvers; includes the following input drivers:
 		name="dmc(4)" url="dmc.4.html"></tabrow>
    <tabrow><tt>dynapro</tt><colsep>Dynapro<colsep>&nbsp;</tabrow>
    <tabrow><tt>elographics</tt><colsep>EloGraphics<colsep>&nbsp;</tabrow>
+   <tabrow><tt>evdev(*)</tt><colsep>EvDev<colsep>&nbsp;</tabrow>
    <tabrow><tt>fpit</tt><colsep>Fujitsu Stylistic Tablet PCs<colsep><htmlurl
 		name="fpit(4)" url="fpit.4.html"></tabrow>
    <tabrow><tt>hyperpen</tt><colsep>Aiptek HyperPen 6000<colsep>&nbsp;</tabrow>
    <tabrow><tt>js_x</tt><colsep>JamStudio pentablet<colsep><htmlurl
 		name="js_x(4)" url="js_x.4.html"></tabrow>
-   <tabrow><tt>kbd</tt><colsep>generic keyboards (loadable module)<colsep><htmlurl
+   <tabrow><tt>kbd</tt><colsep>generic keyboards (alternate)<colsep><htmlurl
 		name="kbd(4)" url="kbd.4.html"></tabrow>
-   <tabrow><tt>keyboard</tt><colsep>generic keyboards (builtin driver)<colsep><htmlurl
+   <tabrow><tt>keyboard</tt><colsep>generic keyboards<colsep><htmlurl
 		name="keyboard(4)" url="keyboard.4.html"></tabrow>
    <tabrow><tt>microtouch</tt><colsep>MicroTouch<colsep>&nbsp;</tabrow>
    <tabrow><tt>mouse</tt><colsep>most mouse devices<colsep><htmlurl
@@ -491,24 +464,29 @@ X11R&relvers; includes the following input drivers:
 		name="ur98(4)" url="ur98.4.html"></tabrow>
    <tabrow><tt>void</tt><colsep>dummy device<colsep><htmlurl
 		name="void(4)" url="void.4.html"></tabrow>
-   <tabrow><tt>wacom</tt><colsep>Wacom tablets<colsep><htmlurl
+   <tabrow><tt>wacom(-)</tt><colsep>Wacom tablets<colsep><htmlurl
 		name="wacom(4)" url="wacom.4.html"></tabrow>
 </tabular>
 </table>
 
 Drivers marked with (*) are available for Linux only.
-
-<sect>Overview of X11R&relvers;
 <p>
-On most platforms, X11R&relvers; has a single X server binary called <tt>Xorg</tt>.
-This binary can either have one or more video and input drivers linked in
-statically, or more usually, dynamically, and in that manner load the
-video drivers, input drivers, and other modules that are needed.
+Drivers marked with (-) are available for X11R&relvers; only.
+
+<sect>Overview of X11R&relvers; and X11R&modvers;
+<p>
+On most platforms, X11R&relvers;/X11R&modvers; has a single X server
+binary called <tt>Xorg</tt>.  This binary can either have one or more
+video and input drivers linked in statically, or more usually,
+dynamically, and in that manner load the video drivers, input drivers,
+and other modules that are needed.
 
 X11R&relvers; has X server support for most UNIX&reg; and UNIX-like
 operating systems on Intel/x86 platforms, plus support for Linux and
 some BSD OSs on Alpha, PowerPC, IA-64, AMD64, Sparc, and Mips platforms,
-and for Darwin on PowerPC.
+and for Darwin on PowerPC.  X11R&modvers; has X server currently has
+support for Linux and Solaris, and is expected to have other platform
+support in X11R&nextrelvers;.
 
 <sect1>Loader and Modules
 <p>
@@ -523,8 +501,8 @@ or FreeBSD, or even OS/2.
 
 A main benefit of this, is that when modules are updated, they do not
 need to be recompiled for every different operating system.  The loader
-in version &relvers; has support for Intel (x86), Alpha and PowerPC
-platforms.  It also has preliminary support for Sparc platforms.
+in version &relvers;/&modvers; has support for Intel (x86), Alpha and
+PowerPC platforms.  It also has preliminary support for Sparc platforms.
 
 The X server makes use of modules for video drivers, X server extensions,
 font rasterisers, input device drivers, framebuffer layers (like mfb,
@@ -558,9 +536,28 @@ for providing configuration and run-time parameters.  The configuration
 file format is described in detail in the <htmlurl name="xorg.conf(5)"
 url="xorg.conf.5.html"> manual page.
 
-The X server has support for automatically determining an initial
-configuration on most platforms, as well as support or generating a basic
-initial configuration file.
+This release comes with a graphical configuration tool called
+"<tt>xorgcfg</tt>", which also has a text mode interface and can be used
+to create an initial configuration file. It can also be used to
+customise existing configurations.
+
+Next in the order of configuration preferences is to use the Xorg
+server's ability to create a starting configuration file.  Run as root:
+<tscreen><verb>Xorg -configure</verb></tscreen> and follow the instructions.
+
+Finally, if all else fails, the trusty old standby text-based tool
+"<tt>xorgconfig</tt>" can also be used for generating X server config
+files.
+
+At least one, and hopefully, all of these configuration options will
+give you a reasonable starting point for a suitable configuration
+file.  With the automatic mechanism you might even find that you don't
+need one!  
+
+If you do need to customize the configuration file, see the <htmlurl
+name="xorg.conf manual page" url="xorg.conf.5.html">.  You can also
+check the driver-specific manual pages and the related documentation
+(found at <ref id="drivertables" name="tables below"> also.
 
 <sect1>Command Line Options
 <p>
@@ -574,7 +571,7 @@ url="Xorg.1.html"> manual page.
 <p>
 
 The XFree86 Acceleration Architecture (XAA) was completely rewritten
-from scratch for XFree86 4.x and is used in X11R&relvers;.  
+from scratch for XFree86 4.x and is used in X11R&relvers;/X11R&modvers;.  
 Most drivers implement acceleration by
 making use of the XAA module.
 The Xorg server will accept modules built either for XFree86 4.4
@@ -583,7 +580,7 @@ servers or its own.
 <sect1>Multi-head
 <p>
 Some multi-head configurations are supported in 
-X11R&relvers;, primarily with multiple PCI/AGP cards.
+X11R&relvers;/X11R&modvers;, primarily with multiple PCI/AGP cards.
 
 One of the main problems is with drivers not sufficiently initialising
 cards that were not initialised at boot time.  This has been improved
@@ -606,8 +603,9 @@ an 8-bit screen together with a 16-bit screen in Xinerama mode.
 Xinerama is not enabled by default, and can be enabled with the
 <tt>+xinerama</tt> command line option for the X server.
 
-Xinerama was included with X11R6.4.  The version included in X11R&relvers;
-was completely rewritten for improved performance and correctness.
+Xinerama was included with X11R6.4.  The version included in
+X11R&relvers;/X11R&modvers; was completely rewritten for improved
+performance and correctness.
 
 Known problems:
 <itemize>
@@ -622,7 +620,7 @@ Known problems:
 <sect1>DGA version 2
 <p>
 
-DGA 2.0 is included in &relvers;.
+DGA 2.0 is included in &relvers;/&modvers;.
 Documentation for the client libraries can be found in the <htmlurl
 name="XDGA(3)" url="XDGA.3.man"> man page.  A good degree of backwards
 compatibility with version 1.0 is provided.
@@ -666,7 +664,8 @@ url="http://dri.sf.net/">.  The 3D core rendering component is provided by
 
 <sect1>XVideo Extension (Xv)
 <p>
-The XVideo extension is supported in X11R6.7.x and newer releases.
+
+The XVideo extension is supported in X11R6.7.x.
 An XvQueryPortAttributes function has been added as well as
 support for XvImages.  XvImages are XImages in alternate color spaces 
 such as YUV and can be passed to the server through shared memory
@@ -711,28 +710,25 @@ To allow a graceful transition for applications moving from core text
 rendering to the Render extension, Xft can use either the core rendering
 requests or the Render extension for text.  
 See the section on FreeType support in Xft for instructions on
-configuring X11R&relvers; to use an existing FreeType installation.
+configuring X11R&relvers;/X11R&modvers; to use an existing FreeType
+installation.
 
 <p>
 The Xft library uses configuration files, <tt>/etc/fonts/fonts.conf</tt>
 and <tt>/etc/fonts/local.conf</tt>, which
 contains information about which directories contain font files and also
 provides a sophisticated font aliasing mechanism.  Documentation for that
-file is included in the
-<htmlurl name="Xft(3)" url="Xft.3.man">,
-<htmlurl name="fontconfig(3)" url="fontconfig.3.man"> and
-<htmlurl name="fonts.conf(4)" url="fonts.conf.4.man">
-man pages.
+file is included in the <htmlurl name="Xft(3)" url="Xft.3.man"> man page.
 
 </sect2>
 
 <sect2>Application Support For Anti-Aliased Text
 <p>
 
-Only four applications have been modified in X11R&relvers; to work 
-with the Render extension and the Xft and FreeType libraries to provide 
-anti-aliased text: xterm, xditview, x11perf and xclock.  Migration of other 
-applications may occur in future releases.
+Only four applications have been modified in X11R&relvers;/X11R&modvers;
+to work with the Render extension and the Xft and FreeType libraries to
+provide anti-aliased text: xterm, xditview, x11perf and xclock.
+Migration of other applications may occur in future releases.
 
 <p>
 By default, xterm uses core fonts through the standard core API.  It has
@@ -786,7 +782,7 @@ Xedit has several new features, including:
   <item>Flexible search/replace interface that allows regex matches.
   <item>Please refer to <tt><htmlurl name="xedit(1)" url="xedit.1.html"></tt>
 	for more details.
-  <item>Support for printing via Xprint.
+  <item>XPrint support.
 </itemize>
 
 <!--
@@ -797,37 +793,37 @@ Xedit has several new features, including:
 <sect1>Font support
 <p>
 
-Details about the font support in X11R&lastfullrelvers;.x can be found
-in the <htmlurl name="README.fonts" url="fonts.html"> document.
+Details about the font support in X11R&relvers;.x/X11R&modvers;.x can be
+found in the <htmlurl name="README.fonts" url="fonts.html"> document.
 
 <sect1>TrueType support
 <p>
 
 X11R6.7 came with two TrueType backends.  The functionality from the
-`X-TrueType' (="XTT") backend has been integrated into the `FreeType'
-backend which is designed to transparently support all of the functionality
-from the `X-TrueType' backend with the exception of the font encoding
-libraries; the `FreeType' backend uses only the fontenc-based encoding
-system.
+`X-TrueType' backend has been integrated into the `FreeType' backend which
+is designed to transparently support all of the functionality from the
+`X-TrueType' backend with the exception of the font encoding libraries; the
+`FreeType' backend uses only the fontenc-based encoding system .
 
 <sect1>CID font support
 <p>
 
-Support for CID-keyed fonts is included in X11R&relvers;
+Support for CID-keyed fonts is included in X11R&relvers;/X11R&modvers;
 The CID-keyed font format was designed by <url name="Adobe Systems"
 url="http://www.adobe.com"> for fonts with large character sets.  The
-CID-keyed font support in X11R&relvers; was donated by <url name="SGI"
-url="http://www.sgi.com">.  See the <htmlurl name="LICENSE"
-url="LICENSE.html"> document for a copy of the CID Font Code Public
-License.
+CID-keyed font support in X11R&relvers;/X11R&modvers; was donated by
+<url name="SGI" url="http://www.sgi.com">.  See the <htmlurl
+name="LICENSE" url="LICENSE.html"> document for a copy of the CID Font
+Code Public License.
 
 <sect1>Internationalisation of the scalable font backends
 <p>
 
-X11R&relvers; has a ``fontenc'' layer to allow the scalable font backends to
-use a common method of font re-encoding.  This re-encoding makes it possible
-to uses fonts in encodings other than their their native encoding.  This
-layer is used by the Type1, Speedo and FreeType backends.
+X11R&relvers;/X11R&modvers; has a ``fontenc'' layer to allow the
+scalable font backends to use a common method of font re-encoding.  This
+re-encoding makes it possible to uses fonts in encodings other than
+their their native encoding.  This layer is used by the Type1 and
+FreeType backends.
 
 <sect1>Large font optimisation
 <p>
@@ -839,7 +835,7 @@ transmitted in a compressed format.
 
 <sect1>Unicode/ISO 10646 support
 <p>
-What is included in X11R&relvers;
+What is included in X11R&relvers;/X11R&modvers;
 
 <itemize>
   <item>All ``-misc-fixed-*'' BDF fonts are now available in the
@@ -881,7 +877,7 @@ What is included in X11R&relvers;
 <p>
 
 A more flexible Compose file processing system was added to Xlib in
-X11R&relvers;.  The compose file is searched for in 
+X11R&relvers;/X11R&modvers;.  The compose file is searched for in 
 the following order:
 
 <enum>
@@ -935,7 +931,7 @@ These fonts include all of the glyphs needed for ISO&nbsp; 8859 parts 1 9
 and 15.
 
 The license terms for the Vera fonts are inclued in the file
-<tt/COPYRIGHT.Vera/.
+<tt/COPYRIGHT.Vera/>.
 
 <sect1>Luxi fonts from Bigelow and Holmes <label id="luxi">
 <p>
@@ -973,8 +969,8 @@ please contact
 
 <sect>Miscellaneous
 <p>
-This section describes other items of note for the X11R&relvers;
-release.
+This section describes other items of note for the
+X11R&relvers;/X11R&modvers; release.
 
 <sect1>Legacy keyboard driver phase-out
 <p>
@@ -997,7 +993,7 @@ Note that the driver name is case-sensitive.
 <sect1>Socket directory ownership and permissions
 <p>
 The socket directories created in <tt>/tmp</tt> are now required to be
-owned by root and have their sticky-bit set.  If the premissions are not
+owned by root and have their sticky-bit set.  If the permissions are not
 set correctly, the component using this directory will print an error
 message and fail to start.  Common socket directories that are known to
 be affected include:
@@ -1040,92 +1036,278 @@ starting the application.
 Since Composite is not enabled by default, it is not expected that this
 issue will be visible to most users.
 
+<sect>Deprecated components and removal plans
+
+<p>
+This section lists current plans for removal of obsolete or deprecated
+components in the X.Org releases.  As our releases are open source,
+users who continue to require these can find the source in previous
+releases and continue to use these, but the X.Org Foundation and its
+volunteers have decided the burden of continued maintenance and
+distribution in the core X11 releases outweighs the benefits of doing
+so.  In some cases, this is simply because no one has volunteered to do
+continued maintenance, so if software is listed here that you need, you
+can contact <email>xorg@lists.freedesktop.org</email> to volunteer to
+take over maintainership, either inside or outside of the Xorg release
+process.
+
+<descrip>
+<tag>Display Postscript (DPS)</tag>
+
+The DPS software is included and built by default (except as noted in
+README.dps) in the X.Org X11R6.8 release series.  The software will be
+included, but not built unless specifically configured by the builder,
+in the X.Org X11R6.9 release series.  At this time, X.Org does not
+plan to include any of the DPS software in X11R7.0 or later releases.
+For more information, see
+xc/programs/Xserver/hw/xfree86/doc/README.dps in the X.Org source
+release.
+
+</descrip>
+
 <sect>Attributions/Acknowledgements/Credits
 
-This section lists the credits for the X11R&relvers; release.  For a more
-detailed breakdown, refer to the ChangeLog file in the X.Org source
-tree, the ChangeLog's in <url name="the xorg product in
-freedesktop.org's CVS"
-url="http://freedesktop.org/cgi-bin/viewcvs.cgi/xorg/xc/Attic/"> or
-the 'cvs log' information for individual source files.
+This section lists the credits for the X11R&relvers;/X11R&modvers;
+release.  For a more detailed breakdown, refer to the ChangeLog file in
+the X.Org source tree, the ChangeLog's in <url name="the xorg product in
+freedesktop.org's CVS" url="http://cvs.freedesktop.org/xorg/"> or the
+'cvs log' information for individual source files.
 
 <![ %snapshot [
-<bf>THIS IS A DRAFT OF THE X11R&relvers; CREDITS SECTION.</bf>
+<bf>THIS IS A DRAFT OF THE X11R&relvers;/X11R&modvers; CREDITS SECTION.</bf>
 If you find missing credits, incorrect attributions, or other errors, please
-send details to <email>xorg@freedesktop.org</email>.
+send details to <email>xorg@lists.freedesktop.org</email>.
 ]]>
 
 <P>
 <descrip>
-<tag>These people contributed in some way to X11R&relvers;</tag>
-Paul Anderson, 
-Eric Anholt, 
-Dave Airlie, 
-Donnie Berkholz, 
-Daniel Berrange, 
-Thomas Biege, 
-Russ Blaine, 
-Ryan Breen, 
-Alan Coopersmith, 
-Jay Cotton, 
-Michel Daenzer, 
-David Dawes,
-Kevin DeKorte, 
-Alex Deucher, 
-Stefan Dirsch, 
-Egbert Eich, 
-Rik Faith,
-Jim Gettys, 
-Giuseppe Ghib&ograve;, 
-Thomas Gilg, 
-Alexander Gottwald, 
-Mike A. Harris, 
-John Harper, 
-John Heasley, 
-Jeremy Huddleston, 
-Matthieu Herrb, 
-Alan Hourihane, 
-Jay Hobson, 
-Matthias Hopf, 
-Kristian H&oslash;sberg, 
-Harold L. Hunt II, 
-Adam Jackson, 
-Daniel Jacobowitz, 
-Deron Johnson, 
-Masaki Katakai, 
-Stephen Kennedy, 
-Ivan Kokshaysky, 
-Stuart Kreitman, 
-Peter Kunzman,
-Julien Lafon, 
+<tag>These people contributed in some way to X11R&relvers;/X11R&modvers;</tag>
+Kenneth Aafl&oslash;y,
+Dave Airlie,
+Andrew C. Aitchison,
+Antti Ajanki,
+Stuart Anderson,
+Eric Anholt,
+Xavier Bachelot,
+Joshua Baergen,
+Terry Barnaby,
+Jesse Barnes,
+Michael Banck,
+Olivier Baudron,
+Dominik Behr,
+J. Scott Berg,
+Cedric Berger,
+Donnie Berkholz,
+Thomas Biege,
+Billy Biggs,
+Jürg Billeter,
+Dmitry Bolkhovitanov,
+Andy Bowers,
+Peter Breitenlohner,
+Kevin Brosius,
+Rob Brown,
+Jan Brunner,
+Andy Burrows,
+Lennert Buytenhek,
+Neil Campbell,
+Pierre Chifflier,
+Juliusz Chroboczek,
+Andrew Church,
+David M. Clay,
+James Cloos,
+Alan Coopersmith,
+Jay Cotton,
+Bill Crawford,
+Grzegorz Dąbrowski,
+Michel D&auml;nzer,
+Kevin DeKorte,
+Leif Delgass,
+Vladimir Dergachev,
+Alex Deucher,
+Stefaan DeRoeck,
+Bogdan Diaconescu,
+Thomas Dickey,
+Fabio M. Di Nitto,
+Stefan Dirsch,
+Dima Dorfman,
+Egbert Eich,
+Hannes Eriksson,
+Chris Evans,
+Mike Fabian,
+Helmut Fahrion,
+Micha Feigin,
+Werner Fink,
+Jordan Frank,
+Fabian Franz,
+Matthias Fr&ouml;lich,
+George Fufutos,
+Bdale Garbee,
+Jim Gettys,
+Chris Gilbert,
+Jerome Glisse,
+Ortwin Gl&uuml;ck,
+Shelley Gong,
+Michael Gor,
+Alexander Gottwald,
+Peter Grehan,
+Nicolai Haehnle,
+Bruno Haible,
+Miroslav Halas,
+Mike A. Harris,
+Colin Harrison,
+John Harper,
+Olli Helenius,
+Bjorn Helgaas,
+Thomas Hellstr&ouml;m,
+Olaf Hering,
+Matthieu Herrb,
+Benjamin Herrenschmidt,
+Ivor Hewitt,
+Masakazu HIGAKI,
+Leon Ho,
+Jay Hobson,
+Kristian H&oslash;gsberg,
+Fredrick H&ouml;glund,
+Gerte Hoogewerf,
+Matthias Hopf,
+Tony Houghton,
+Alan Hourihane,
+Jeremy Huddleston,
+Falk Hueffner,
+Adam Jackson,
+Kean Johnston,
+Nicolas Joly,
+Dave Jones,
+Anders Kaseorg,
+Egmont Koblinger,
+Greg Kroah-Hartman,
+Felix Kuehling,
+Markus Kuhn,
+Klaus Kusche,
+Vladimir Kushnir,
+Marc Aurele La France,
+Julien Lafon,
+Pierre Lalet,
+Philip Langdale,
+Sam Lau,
 Nolan Leake,
-Ryan Lortie, 
-Andreas Luik, 
-Torrey T. Lyons, 
-Roland Mainz, 
-Guy Martin, 
-Kevin E. Martin, 
-Dan McNichol, 
-Dagfinn Ilmari Mannsaker, 
-Simon Montagu, 
-Keith Packard, 
-Greg Parker, 
-Drew Parsons, 
-Aaron Plattner, 
-Branden Robinson, 
-S&oslash;ren Sandmann,
-Ty Sarna, 
-Yu Shao, 
-Gustavo Noronha Silva, 
-Bryan Stine, 
-Owen Taylor, 
-Travis Tilley, 
-Ryan Underwood, 
-Ronny Vindenes, 
-Chisato Yamauchi,
-Mark Vojkovich, 
+Germain Le-Chapelain,
+Chris Lee,
+Allen Leinwand,
+Vincent Le Ligeour,
+Jonathan Lennox,
+Dejan Lesjak,
+Terry Lewis,
+Sophia Li,
+Vedran Ljubovic,
+Andreas Luik,
+Lubos Lunak,
+Torrey T. Lyons,
+Stephen Kennedy,
+Mark Kettenis,
+Mark Kilgard,
+Min Sik Kim,
+Lars Knoll,
+Egmont Koblinger,
+David Krause,
+Stuart Kreitman,
+Tomohiro KUBOITA,
+Eric Kunze,
+Paul Mackerras,
+Roland Mainz,
+Stephane Marchesin,
+Kevin E. Martin,
+David Mart&iacute;nez Moreno,
+Ferris McCormick,
+Mark McLoughlin,
+Dan McNichol,
+Marcus Meissner,
+Frederico Mena-Quintero,
+Robert Millan,
+David S. Miller,
+S&eacute;rgio Monte&iacute;ro Basto,
+Thomas J. Moore,
+Jeff Muizelaar,
+Shrijeet Mukherjee,
+ISHIKAWA Mutsumi,
+Gustavo Noronha Silva,
+Krzysztof Nowicki,
+Mike Owens,
+Keith Packard,
+Drew Parsons,
+Brian Paul,
+Diego Pettenó,
+S&oslash;ren Sandmann Pedersen,
+Pieter Peers,
+Hong Bo Peng,
+Rune Petersen,
+Daphne Pfister,
+Andrew Pimlott,
+Aaron Plattner,
+Bill Randle,
+Joris van Rantwijk,
+Anuradha Ratnaweera,
+Jeremy C. Reed,
+Thomas Reifferscheid,
+Alex Reisen,
+Bernhard Reiter,
+Andreas Robinson,
+Branden Robinson,
+Felipe Rodriguez,
+Ian Romanick,
+Alex Romosan,
+Bernhard Rosenkraenzer,
+Jeroen Ruigrok,
+Zack Rusin,
+Leo Savernik,
+Christophe Saout,
+Marcus Schaefer,
+Roland Scheidegger,
+David Schleef,
+Michael Schroeder,
+Andreas Schuldei,
+Andreas Schwab,
+Stanislaw Skowronek,
+Jon Smirl,
+Jeff Smith,
+Jakub Stachowshi,
+Sam Stephenson,
+Tobis Stoeckmann,
+Daniel Stone,
+Aivils Stoss,
+James Su,
+Ienup Sung,
+Alan Swanson,
+Aapo Tahkola,
+Hidetoshi Tajima,
+Owen Taylor,
+Bob Terek,
+Samuel Thibault,
+Sergey Tikhonov,
+Simon Toedt,
+Yuri Vasilevski,
+Luc Verhaegen,
+Mike Verona,
+Ronny V. Vindenes,
+Mark Vojkovich,
+Detlef Vollman,
+St&eacute;phane VOLTZ,
+Jochen Voss,
+Derek Wang,
+Tim Waugh,
+Keith Whitwell,
+Nathan J. Williams,
+Alex Williamson,
+Thomas Winischhofer,
+David Wong,
+David Woodhouse,
+Carl Worth,
+Michael Yaroslavtsev,
 Tim Yamin,
-Hui Yu
+Cha Young-Ho,
+Hui Yu,
+Austin Yuan,
+Henry Zhao
 </descrip>
 
 <p>
@@ -1143,15 +1325,14 @@ Michael Bax,
 Jehan Bing,
 Peter Breitenlohner,
 Alan Coopersmith,
-Thomas Dickey, 
 Egbert Eich,
 John Dennis,
 Fabrizio Gennari,
 Jim Gettys,
 Alexander Gottwald,
-Ralf Habacker,
+Ralf Habacker
 Mike Harris,
-Mattheiu Herrb,
+Matthieu Herrb,
 Alan Hourihane,
 Harold L Hunt II,
 Elliot Lee,
@@ -1161,7 +1342,7 @@ Stuart Kreitman,
 Andreas Luik,
 Torrey Lyons,
 Roland Mainz,
-Kevin E. Martin,
+Kevin E. Martin, 
 Takuma Murakami,
 Kensuke Matsuzaki,
 Keith Packard,
@@ -1170,8 +1351,10 @@ Earle F. Philhower III,
 Benjamin Rienfenstahl,
 Leon Shiman,
 Toshimitsu Tanaka,
-Nicholas Wourms,
+Nicholas Wourms.
+
 2d3d Inc., 
+3Dlabs Inc. Ltd.,
 Aaron Plattner, 
 Adam de Boor, 
 Adam Jackson, 
@@ -1183,10 +1366,13 @@ Alan Cox,
 Alan Hourihane, 
 Alexander Gottwald, 
 Alex Deucher, 
+Anders Carlsson, 
 Andreas Luik, 
 Andreas Monitzer, 
+Andreas Robinson,
 Andrew C Aitchison, 
 Andy Ritger, 
+Angus Lees,
 Ani Joshi, 
 Anton Zioviev, 
 Apollo Computer Inc., 
@@ -1194,17 +1380,21 @@ Apple Computer Inc.,
 Ares Software Corp., 
 AT&amp;T Inc., 
 ATI Technologies Inc., 
+BEAM Ltd.,
+Ben Skeggs,
+Benjamin Herrenschmidt,
 Benjamin Rienfenstahl, 
 Bigelow and Holmes, 
 Bill Reynolds, 
 Bitstream Inc., 
-Bitstream, 
-Inc, 
+Bogdan Diaconescu,
+Branden Robinson,
 Brian Fundakowski Feldman, 
 Brian Goines, 
 Brian Paul, 
 Bruno Haible, 
 Bryan Stine, 
+Catharon Productions Inc.,
 Charles Murcko, 
 Chen Xiangyang, 
 Chisato Yamauchi, 
@@ -1220,10 +1410,12 @@ Daewoo Electronics Co. Ltd.,
 Dale Schumacher, 
 Damien Miller, 
 Daniel Berrange, 
+Daniel Borca,
 Daniel Stone, 
 Daniver Limited, 
 Daryll Strauss, 
 Data General Corporation, 
+Dave Airlie,
 David Bateman, 
 David Dawes, 
 David E. Wexelblat, 
@@ -1234,9 +1426,11 @@ David Mosberger-Tang,
 David S. Miller, 
 Davor Matic, 
 Deron Johnson, 
+Digeo Inc.,
 Digital Equipment Corporation, 
 Dirk Hohndel, 
 Doug Anson, 
+Dmitry Golubev,
 Earle F. Philhower III, 
 Edouard TISSERANT, 
 Eduardo Horvath, 
@@ -1248,8 +1442,12 @@ Eric Sunshine,
 Erik Fortune, 
 Erik Nygren, 
 Evans & Sutherland Computer Corporation, 
-Fabio Massimo Di Nitto Fabrizio Gennari, 
-Finn Thoegersen, 
+Fabio Massimo Di Nitto,
+Fabrizio Gennari, 
+Felix Kuehling,
+Finn Thoegersen,
+Francesco Zappa Nardelli, 
+Frank C. Earl,
 Frederic Lepied, 
 Free Software Foundation Inc., 
 Fujitsu Limited, 
@@ -1261,8 +1459,9 @@ Gerry Toll,
 Glenn G. Lai, 
 GNOME Foundation, 
 Go Watanabe, 
-Gregory Mokhin, 
+Greg Kroah-Hartman,
 Greg Parker, 
+Gregory Mokhin, 
 GROUPE BULL, 
 Guy Martin, 
 Hans Oey, 
@@ -1287,34 +1486,37 @@ Jakub Jelinek,
 James Tsillas, 
 Jason Bacon, 
 Jean-loup Gailly, 
+Jeff Hartmann,
 Jeff Kirk, 
 Jeffrey Hsu, 
 Jehan Bing, 
 Jeremy Katz, 
+Jerome Glisse,
 Jim Gettys, 
 Jim Tsillas, 
-J. Kean Johnston, 
 John Dennis, 
 John Harper, 
 John Heasley, 
 Jon Block, 
+Jon Smirl,
 Jon Tombs, 
 Jorge Delgado, 
+José Fonseca,
 Joseph Friedman, 
 Joseph V. Moss, 
 Juliusz Chroboczek, 
 Jyunji Takagi, 
 Kaleb Keithley, 
-Kaleb S. Keithley, 
 Kazushi (Jam) Marukawa, 
 Kazuyuki (ikko-) Okamoto, 
-Kean Johnston. Keith Packard, 
+Kean Johnston, 
 Keith Packard, 
 Keith Whitwell, 
 Kensuke Matsuzaki, 
 Kristian H&oslash;gsberg, 
 Larry Wall, 
 Lawrence Berkeley Laboratory, 
+Leif Delgass,
 Lennart Augustsson, 
 Leon Shiman, 
 Lexmark International Inc., 
@@ -1327,9 +1529,10 @@ Mark J. Kilgard,
 Mark Leisher, 
 Mark Smulders, 
 Mark Vojkovich, 
+Marvin Solomon,
 Massachusetts Institute Of Technology, 
 Matrox Graphics, 
-Mattheiu Herrb Matthew Grossman, 
+Matthew Grossman, 
 Matthieu Herrb, 
 Metro Link Inc., 
 Michael Bax, 
@@ -1339,14 +1542,15 @@ Michael Schimek,
 Michael Smith, 
 Michel Daenzer, 
 Mike A. Harris, 
-Mike Harris, 
 Ming Yu, 
 MIPS Computer Systems Inc., 
 National Semiconductor, 
 NCR Corporation Inc., 
 Netscape Communications Corporation, 
 Network Computing Devices Inc., 
+Nicholas Miell,
 Nicholas Wourms, 
+Nicolai Haehnle,
 Noah Levitt, 
 Nolan Leake, 
 Novell Inc., 
@@ -1370,6 +1574,7 @@ Patrick Lecoanet,
 Patrick Lerda, 
 Paul Anderson, 
 Paul Elliott, 
+Paul Mackerras,
 Peter Breitenlohner, 
 Peter Kunzmann, 
 Peter Trattler, 
@@ -1388,9 +1593,9 @@ Richard Burdick,
 Rich Murphey, 
 Rickard E. Faith, 
 Rik Faith, 
-Robert Baron, 
 Robert Chesler, 
-Robert Millan. Robert V. Baron, 
+Robert Millan,
+Robert V. Baron, 
 Robin Cutshaw, 
 Roland Mainz, 
 Ronny Vindenes, 
@@ -1416,14 +1621,15 @@ S&oslash;ren Sandmann,
 SRI, 
 Stanislav Brabec, 
 Stefan Dirsch, 
-Stephan Dirsch, 
 Stephan Lang, 
+Stephane Marchesin,
 Steven Lang, 
 Stuart Kreitman, 
 Sun Microsystems Inc., 
 SunSoft Inc., 
 SuSE Inc, 
 Sven Luther, 
+T. A. Phelps,
 Takis Psarogiannakopoulos, 
 Takuma Murakami, 
 Takuya SHIOZAKI, 
@@ -1457,12 +1663,15 @@ Torrey T. Lyons,
 TOSHIBA Corp., 
 Toshimitsu Tanaka, 
 Travis Tilley, 
+Trolltech AS,
 Tungsten Graphics Inc., 
+Tuomas J. Lukka,
 Ty Sarna, 
 UCHIYAMA Yasushi, 
 Unicode Inc., 
 UniSoft Group Limited, 
 University of Utah, 
+University of Wisconsin, 
 UNIX System Laboratories Inc., 
 URW++ GmbH, 
 VA Linux Systems, 
@@ -1476,7 +1685,7 @@ X Consortium,
 Xi Graphics Inc., 
 X-Oz Technologies, 
 X-TrueType Server Project and their contributors,
-Yu Shao,
+Yu Shao.
 
 This product includes software developed by The XFree86 Project, Inc
 (http://www.xfree86.org/) and its contributors.

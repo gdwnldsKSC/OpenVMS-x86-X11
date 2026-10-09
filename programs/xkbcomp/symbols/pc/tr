@@ -1,10 +1,11 @@
+// $XdotOrg: xc/programs/xkbcomp/symbols/pc/tr,v 1.3 2005/08/12 11:08:49 pascal Exp $
 
 // based on
 // Turkish keyboard symbols for PC and xkb
 // This file distributed without any expressed or implied warranty
-// Nilgün Belma Bugüner <nilgun@superonline.com>, 2002
+// Nilgün Belma Bugüner <nilgun@belgeler.org>, 2005
 //
-// $XFree86: xc/programs/xkbcomp/symbols/pc/tr,v 1.5 2003/04/19 12:22:12 pascal Exp $
+// $XFree86: xc/programs/xkbcomp/symbols/tr,v 1.5 2003/04/19 12:22:12 pascal Exp $
 
 //Default Layout (Turkish Q)
 default partial
@@ -30,7 +31,8 @@ xkb_symbols "basic" {
     key <AD03>	{ [         e,          E,     EuroSign,   VoidSymbol ]	};
     key <AD05>	{ [         t,          T,    trademark,   VoidSymbol ]	};
     key <AD07>	{ [         u,          U,  ucircumflex,  Ucircumflex ]	};
-    key <AD08>	{ [  idotless,          I,  icircumflex,  Icircumflex ]	};
+    key <AD08>	{ type[group1] = "FOUR_LEVEL_ALPHABETIC",
+                  [  idotless,          I,  icircumflex,  Icircumflex ] };
     key <AD09>	{ [         o,          O,  ocircumflex,  Ocircumflex ]	};
     key <AD10>	{ [         p,          P,   VoidSymbol,   VoidSymbol ]	};
     key <AD11>	{ [    gbreve,     Gbreve ] };
@@ -45,7 +47,8 @@ xkb_symbols "basic" {
     key <AC08>	{ [         k,          K,   VoidSymbol,   VoidSymbol ]	};
     key <AC09>	{ [         l,          L,   VoidSymbol,   VoidSymbol ]	};
     key <AC10>	{ [  scedilla,   Scedilla,        acute,   dead_acute ]	};
-    key <AC11>	{ [         i,  Iabovedot,   apostrophe,   dead_caron ]	};
+    key <AC11>	{ type[group1] = "FOUR_LEVEL_SEMIALPHABETIC", 
+                  [ i,  Iabovedot,   apostrophe,   dead_caron ]	};
     key <TLDE>	{ [  quotedbl,  backslash,    plusminus,       degree ]	};
 
     key <BKSL>	{ [     comma,  semicolon,        grave,   dead_grave ]	};
@@ -55,17 +58,17 @@ xkb_symbols "basic" {
     key <AB10>	{ [    period,      colon, dead_abovedot, dead_abovedot ] };
     key <SPCE>	{ [     space,      space, nobreakspace,   nobreakspace ] };
 
-    include "level3(ralt_switch_multikey)"
+    include "level3(ralt_switch)"
 };
 
 
 // Turkish F Layout
 partial
-xkb_symbols "tr_f" {
+xkb_symbols "f" {
 
     include "pc/latin"
 
-    name[Group1]="Turkish";
+    name[Group1]="Turkish - (F)";
 
     key <AE01>	{ [         1,     exclam,  onesuperior,   exclamdown ]	};
     key <AE02>	{ [         2,   quotedbl,  twosuperior,   VoidSymbol ]	};
@@ -82,7 +85,8 @@ xkb_symbols "tr_f" {
     key <AD01>	{ [         f,          F,           at,   VoidSymbol ]	};
     key <AD02>	{ [         g,          G,   VoidSymbol,   VoidSymbol ]	};
     key <AD03>	{ [    gbreve,     Gbreve,   VoidSymbol,   VoidSymbol ]	};
-    key <AD04>	{ [  idotless,          I,    paragraph,   VoidSymbol ]	};
+    key <AD04>	{ type[group1] = "FOUR_LEVEL_SEMIALPHABETIC",
+                  [  idotless,          I,    paragraph,   VoidSymbol ]	};
     key <AD05>	{ [         o,          O,  ocircumflex,  Ocircumflex ]	};
     key <AD06>	{ [         d,          D,          yen,   VoidSymbol ]	};
     key <AD07>	{ [         r,          R,   registered,   VoidSymbol ]	};
@@ -93,7 +97,8 @@ xkb_symbols "tr_f" {
     key <AD12>	{ [         w,          W,   asciitilde,   dead_breve ]	};
 
     key <AC01>	{ [         u,          U,  ucircumflex,  Ucircumflex ]	};
-    key <AC02>	{ [         i,  Iabovedot,  icircumflex,  Icircumflex ]	};
+    key <AC02>	{ type[group1] = "FOUR_LEVEL_ALPHABETIC",
+                  [         i,  Iabovedot,  icircumflex,  Icircumflex ]	};
     key <AC03>	{ [         e,          E,     EuroSign,   VoidSymbol ]	};
     key <AC04>	{ [         a,          A,  acircumflex,  Acircumflex ]	};
     key <AC05>	{ [udiaeresis, Udiaeresis,  ucircumflex,  Ucircumflex ]	};
@@ -119,16 +124,16 @@ xkb_symbols "tr_f" {
     key <SPCE>	{ [    space,       space, nobreakspace, nobreakspace ]	};
     key <LSGT>	{ [     less,     greater,          bar,    brokenbar ]	};
    
-    include "level3(ralt_switch_multikey)"
+    include "level3(ralt_switch)"
 };
 
 // Turkish Alt-Q Layout
 partial
-xkb_symbols "tr_alt" {
+xkb_symbols "alt" {
 
     include "pc/latin"
 
-    name[Group1]="Turkish";
+    name[Group1]="Turkish - Alt-Q";
 
     key <AE07>  { [         7,   ampersand,  lowleftcorner,  upleftcorner ] };
     key <AE08>  { [         8,    asterisk,          leftt,          topt ] };
@@ -149,5 +154,5 @@ xkb_symbols "tr_alt" {
     key <AB03>  { [         c,           C,     ccedilla,     Ccedilla ] };
     key <SPCE>  { [     space,       space, nobreakspace, nobreakspace ] };
 
-    include "level3(ralt_switch_multikey)"
+    include "level3(ralt_switch)"
 };

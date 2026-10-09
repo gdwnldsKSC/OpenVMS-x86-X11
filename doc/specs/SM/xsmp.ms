@@ -12,7 +12,7 @@
 .sp
 X.Org Standard
 .sp
-X Version 11, Release 6.8
+X Version 11, Release 6.9/7.0
 .AU
 Mike Wexler
 .AI
@@ -58,8 +58,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 .OF ''\\\\n(PN''
 .bp 1
 .af PN 1
-.EH '\fBX Session Management Protocol\fP''\fBX11, Release 6.8\fP'
-.OH '\fBX Session Management Protocol\fP''\fBX11, Release 6.8\fP'
+.EH '\fBX Session Management Protocol\fP''\fBX11, Release 6.9/7.0\fP'
+.OH '\fBX Session Management Protocol\fP''\fBX11, Release 6.9/7.0\fP'
 .EF ''\fB\\\\n(PN\fP''
 .OF ''\fB\\\\n(PN\fP''
 .nH 1 "Acknowledgements"

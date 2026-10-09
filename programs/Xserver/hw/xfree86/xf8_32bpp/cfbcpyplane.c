@@ -1,8 +1,12 @@
 /* $XFree86$ */
 
-#include "X.h"
-#include "Xmd.h"
-#include "Xproto.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xmd.h>
+#include <X11/Xproto.h>
 #include "gcstruct.h"
 #include "windowstr.h"
 #include "scrnintstr.h"

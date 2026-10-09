@@ -1,6 +1,11 @@
 /* $XFree86: xc/programs/Xserver/dbe/dbemodule.c,v 1.6 1999/01/26 05:53:50 dawes Exp $ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "xf86Module.h"
+#include "globals.h"
 
 static MODULESETUPPROTO(dbeSetup);
 
@@ -9,7 +14,7 @@ extern void DbeExtensionInit(INITARGS);
 ExtensionModule dbeExt = {
     DbeExtensionInit,
     "DOUBLE-BUFFER",
-    NULL,
+    &noDbeExtension,
     NULL,
     NULL
 };

@@ -1,4 +1,4 @@
-/* $Id$
+/* $Id: citron.h,v 1.3 2005/07/01 22:43:22 daniels Exp $
  * Copyright (c) 1998  Metro Link Incorporated
  *
  * Permission is hereby granted, free of charge, to any person obtaining a

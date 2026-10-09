@@ -58,7 +58,7 @@ int setDestroy(set_t *set);
 
 /*
  * GLX Hardware Device Driver common code
- * Copyright (C) 1999 Keith Whitwell
+ * Copyright (C) 1999 Wittawat Yamwong
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -85,8 +85,8 @@ struct mem_block_t {
 	struct mem_block_t *heap;
 	int ofs,size;
 	int align;
-	int free:1;
-	int reserved:1;
+	unsigned int free:1;
+	unsigned int reserved:1;
 };
 typedef struct mem_block_t TMemBlock;
 typedef struct mem_block_t *PMemBlock;

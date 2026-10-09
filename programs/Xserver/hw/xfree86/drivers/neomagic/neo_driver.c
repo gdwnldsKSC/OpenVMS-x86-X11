@@ -44,6 +44,10 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *   1998, 1999 by Egbert Eich (Egbert.Eich@Physik.TU-Darmstadt.DE)
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -96,7 +100,7 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "picturestr.h"
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 /*
  * Driver data structures.
@@ -106,12 +110,14 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "neo_macros.h"
 
 /* These need to be checked */
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "scrnintstr.h"
 #include "servermd.h"
+#ifdef XFreeXDGA
 #define _XF86DGA_SERVER_
-#include "extensions/xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
+#endif
 
 /* Mandatory functions */
 static const OptionInfoRec *	NEOAvailableOptions(int chipid, int busid);
@@ -285,7 +291,7 @@ static DisplayModeRec neo1024x480Mode = {
  * an upper-case version of the driver name.
  */
 
-DriverRec NEOMAGIC = {
+_X_EXPORT DriverRec NEOMAGIC = {
     VERSION,
     NEO_DRIVER_NAME,
     NEOIdentify,
@@ -505,7 +511,7 @@ static XF86ModuleVersionInfo neoVersRec =
  * This is the module init data.
  * Its name has to be the driver name followed by ModuleData
  */
-XF86ModuleData neomagicModuleData = { &neoVersRec, neoSetup, NULL };
+_X_EXPORT XF86ModuleData neomagicModuleData = { &neoVersRec, neoSetup, NULL };
 
 static pointer
 neoSetup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -683,7 +689,7 @@ neoFindIsaDevice(GDevPtr dev)
     unsigned char id;
     
     vgaIOBase = (inb(0x3CC) & 0x01) ? 0x3D0 : 0x3B0;
-    /* §§§ Too intrusive ? */
+    /* Â§Â§Â§ Too intrusive ? */
     outw(GRAX, 0x2609); /* Unlock NeoMagic registers */
 
     outb(vgaIOBase + 4, 0x1A);
@@ -1307,12 +1313,9 @@ NEOPreInit(ScrnInfoPtr pScrn, int flags)
     clockRanges = (ClockRangePtr)xnfcalloc(sizeof(ClockRange), 1);
     clockRanges->next = NULL;
     clockRanges->ClockMulFactor = 1;
-    clockRanges->minClock = 11000;   /* guessed §§§ */
+    clockRanges->minClock = 11000;   /* guessed Â§Â§Â§ */
     clockRanges->maxClock = maxClock;
     clockRanges->clockIndex = -1;		/* programmable */
-    if (!nPtr->internDisp && nPtr->externDisp) 
-	clockRanges->interlaceAllowed = TRUE; 
-    else
 	clockRanges->interlaceAllowed = FALSE; 
     clockRanges->doubleScanAllowed = TRUE;
 
@@ -1364,7 +1367,7 @@ NEOPreInit(ScrnInfoPtr pScrn, int flags)
     {
        i = xf86ValidateModes(pScrn, pScrn->monitor->Modes,
 			  pScrn->display->modes, clockRanges,
-			  NULL, 256, maxWidth,(8 * pScrn->bitsPerPixel),/*§§§*/
+			  NULL, 256, maxWidth,(8 * pScrn->bitsPerPixel),/*Â§Â§Â§*/
 			  128, maxHeight, pScrn->display->virtualX,
 			  pScrn->display->virtualY, apertureSize,
 			  LOOKUP_BEST_REFRESH);
@@ -1903,7 +1906,7 @@ NEOAdjustFrame(int scrnIndex, int x, int y, int flags)
      * This is a workaround for a higher level bug that causes the cursor
      * to be at the wrong position after a virtual screen resolution change
      */
-    if (nPtr->NeoHWCursorInitialized) { /*§§§ do we still need this?*/
+    if (nPtr->NeoHWCursorInitialized) { /*Â§Â§Â§ do we still need this?*/
 	NeoRepositionCursor();
     }
 #endif
@@ -1953,6 +1956,13 @@ NEOValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
     NEOPtr nPtr = NEOPTR(pScrn);
     int vDisplay = mode->VDisplay * ((mode->Flags & V_DBLSCAN) ? 2 : 1);
     
+    /*
+     * Is there any LineCompare Bit 10? Where?
+     * The 9 well known VGA bits give us a maximum height of 1024
+     */
+    if (vDisplay > 1024)
+	return MODE_BAD;
+
     /*
      * Limit the modes to just those allowed by the various NeoMagic
      * chips.  
@@ -2643,7 +2653,6 @@ neoRestore(ScrnInfoPtr pScrn, vgaRegPtr VgaReg, NeoRegPtr restore,
     }
     
     vgaHWProtect(pScrn, FALSE);		/* Turn on screen */
-
 }
     
 static Bool
@@ -2711,7 +2720,7 @@ neoModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     NeoNew->VerticalExt = (((mode->CrtcVTotal -2) & 0x400) >> 10 )
       | (((mode->CrtcVDisplay -1) & 0x400) >> 9 )
         | (((mode->CrtcVSyncStart) & 0x400) >> 8 )
-          | (((mode->CrtcVSyncStart) & 0x400) >> 7 );
+          | (((mode->CrtcVBlankStart - 1) & 0x400) >> 7 );
 
     /* Fast write bursts on unless disabled. */
     if (nPtr->onPciBurst) {
@@ -2933,7 +2942,7 @@ neoModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	nPtr->videoHZoom = 1.0;
 	nPtr->videoVZoom = 1.0;
     }
-
+    /* Do double scan */
     if (mode->VDisplay < 480) {
 	NeoStd->Sequencer[1] |= 0x8;
 	clockMul = 2;
@@ -2984,13 +2993,13 @@ neoCalcVCLK(ScrnInfoPtr pScrn, long freq)
     int n, d, f;
     double f_out;
     double f_diff;
-    int n_best = 0, d_best = 0, f_best = 0;
+    int n_best = 0, d_best = 1, f_best = 0;
     double f_best_diff = 999999.0;
     double f_target = freq/1000.0;
 
     for (f = 0; f <= MAX_F; f++)
 	for (n = 0; n <= MAX_N; n++)
-	    for (d = 0; d <= MAX_D; d++) {
+	    for (d = 1; d <= MAX_D; d++) {
 		f_out = (n+1.0)/((d+1.0)*(1<<f))*REF_FREQ;
 		f_diff = abs(f_out-f_target);
 		if (f_diff < f_best_diff) {

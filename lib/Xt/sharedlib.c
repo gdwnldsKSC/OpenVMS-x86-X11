@@ -28,6 +28,9 @@ in this Software without prior written authorization from The Open Group.
 /* $XFree86: xc/lib/Xt/sharedlib.c,v 3.7 2002/05/31 18:45:46 dawes Exp $ */
 
 #if (defined(SUNSHLIB) || defined(AIXSHLIB)) && !defined(SHAREDCODE)
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "IntrinsicI.h"
 #include "VarargsI.h"
 #include "ShellP.h"

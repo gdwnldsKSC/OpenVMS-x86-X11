@@ -4,7 +4,7 @@
 /*
  * This code is largely copied from fbBlt.c.
  *
- * Copyright © 1998 Keith Packard
+ * Copyright Â© 1998 Keith Packard
  * Copyright (c) 2002 Apple Computer, Inc. All Rights Reserved.
  * Copyright (c) 2003 Torrey T. Lyons. All Rights Reserved.
  *
@@ -27,6 +27,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 /* $XFree86: xc/programs/Xserver/fb/fbblt.c,v 1.8 2000/09/28 00:47:22 keithp Exp $ */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #include "fb.h"
 #include "rootlessCommon.h"

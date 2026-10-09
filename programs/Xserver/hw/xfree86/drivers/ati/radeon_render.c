@@ -1,3 +1,37 @@
+/*
+ * Copyright 2004 Eric Anholt
+ * All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice (including the next
+ * paragraph) shall be included in all copies or substantial portions of the
+ * Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * Authors:
+ *    Eric Anholt <anholt@FreeBSD.org>
+ *    Hui Yu <hyu@ati.com>
+ *
+ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#ifdef USE_XAA
 
 #include "dixstruct.h"
 
@@ -6,16 +40,6 @@
 
 #ifndef RENDER_GENERIC_HELPER
 #define RENDER_GENERIC_HELPER
-
-/* R100 code path constants */
-/* Minimum working values for RV200: 65x8 - your mileage may vary */
-#define MAGIC_R100_MIN_TEX_WIDTH (65)
-#define MAGIC_R100_MIN_TEX_HEIGHT (8)
-
-static void RadeonInit3DEngineMMIO(ScrnInfoPtr pScrn);
-#ifdef XF86DRI
-static void RadeonInit3DEngineCP(ScrnInfoPtr pScrn);
-#endif
 
 struct blendinfo {
 	Bool dst_alpha;
@@ -230,24 +254,6 @@ ATILog2(int val)
 	return bits - 1;
 }
 
-static void RadeonInit3DEngine(ScrnInfoPtr pScrn)
-{
-    RADEONInfoPtr info = RADEONPTR (pScrn);
-
-#ifdef XF86DRI
-    if (info->directRenderingEnabled) {
-	RADEONSAREAPrivPtr pSAREAPriv;
-
-	pSAREAPriv = DRIGetSAREAPrivate(pScrn->pScreen);
-	pSAREAPriv->ctxOwner = DRIGetContext(pScrn->pScreen);
-	RadeonInit3DEngineCP(pScrn);
-    } else
-#endif
-	RadeonInit3DEngineMMIO(pScrn);
-
-    info->RenderInited3D = TRUE;
-}
-
 static void
 RemoveLinear (FBLinearPtr linear)
 {
@@ -275,10 +281,16 @@ AllocateLinear (
    ScrnInfoPtr pScrn,
    int sizeNeeded
 ){
-    RADEONInfoPtr  info       = RADEONPTR(pScrn);
+   RADEONInfoPtr  info       = RADEONPTR(pScrn);
+   int cpp = info->CurrentLayout.bitsPerPixel / 8;
 
    info->RenderTimeout = currentTime.milliseconds + 30000;
    info->RenderCallback = RenderCallback;
+
+   /* XAA allocates in units of pixels at the screen bpp, so adjust size
+    * appropriately.
+    */
+   sizeNeeded = (sizeNeeded + cpp - 1) / cpp;
 
    if (info->RenderTex) {
 	if (info->RenderTex->size >= sizeNeeded)
@@ -326,6 +338,7 @@ static Bool RADEONSetupRenderByteswap(ScrnInfoPtr pScrn, int tex_bytepp)
 		   "tex_bytepp == %d!\n", __func__, tex_bytepp);
 	return FALSE;
     }
+    return TRUE;
 }
 
 static void RADEONRestoreByteswap(RADEONInfoPtr info)
@@ -358,76 +371,24 @@ static void RADEONRestoreByteswap(RADEONInfoPtr info)
 #endif
 #endif
 
-
-static void FUNC_NAME(RadeonInit3DEngine)(ScrnInfoPtr pScrn)
-{
-    RADEONInfoPtr  info       = RADEONPTR(pScrn);
-    ACCEL_PREAMBLE();
-
-    if (info->ChipFamily >= CHIP_FAMILY_R300) {
-	/* Unimplemented */
-    } else if ((info->ChipFamily == CHIP_FAMILY_RV250) || 
-	       (info->ChipFamily == CHIP_FAMILY_RV280) || 
-	       (info->ChipFamily == CHIP_FAMILY_RS300) || 
-	       (info->ChipFamily == CHIP_FAMILY_R200)) {
-
-	BEGIN_ACCEL(7);
-        if (info->ChipFamily == CHIP_FAMILY_RS300) {
-            OUT_ACCEL_REG(R200_SE_VAP_CNTL_STATUS, RADEON_TCL_BYPASS);
-        } else {
-            OUT_ACCEL_REG(R200_SE_VAP_CNTL_STATUS, 0);
-        }
-	OUT_ACCEL_REG(R200_PP_CNTL_X, 0);
-	OUT_ACCEL_REG(R200_PP_TXMULTI_CTL_0, 0);
-	OUT_ACCEL_REG(R200_SE_VTX_STATE_CNTL, 0);
-	OUT_ACCEL_REG(R200_RE_CNTL, 0x0);
-	/* XXX: correct?  Want it to be like RADEON_VTX_ST?_NONPARAMETRIC */
-	OUT_ACCEL_REG(R200_SE_VTE_CNTL, R200_VTX_ST_DENORMALIZED);
-	OUT_ACCEL_REG(R200_SE_VAP_CNTL, R200_VAP_FORCE_W_TO_ONE |
-	    R200_VAP_VF_MAX_VTX_NUM);
-	FINISH_ACCEL();
-    } else {
-	BEGIN_ACCEL(2);
-        if ((info->ChipFamily == CHIP_FAMILY_RADEON) ||
-            (info->ChipFamily == CHIP_FAMILY_RV200))
-            OUT_ACCEL_REG(RADEON_SE_CNTL_STATUS, 0);
-        else
-            OUT_ACCEL_REG(RADEON_SE_CNTL_STATUS, RADEON_TCL_BYPASS);
-	OUT_ACCEL_REG(RADEON_SE_COORD_FMT,
-	    RADEON_VTX_XY_PRE_MULT_1_OVER_W0 |
-	    RADEON_VTX_ST0_NONPARAMETRIC |
-	    RADEON_VTX_ST1_NONPARAMETRIC |
-	    RADEON_TEX1_W_ROUTING_USE_W0);
-	FINISH_ACCEL();
-    }
-
-    BEGIN_ACCEL(3);
-    OUT_ACCEL_REG(RADEON_RE_TOP_LEFT, 0);
-    OUT_ACCEL_REG(RADEON_RE_WIDTH_HEIGHT, 0x07ff07ff);
-    OUT_ACCEL_REG(RADEON_SE_CNTL, RADEON_DIFFUSE_SHADE_GOURAUD |
-				  RADEON_BFACE_SOLID | 
-				  RADEON_FFACE_SOLID |
-				  RADEON_VTX_PIX_CENTER_OGL |
-				  RADEON_ROUND_MODE_ROUND |
-				  RADEON_ROUND_PREC_4TH_PIX);
-    FINISH_ACCEL();
-}
-
 static Bool FUNC_NAME(R100SetupTexture)(
 	ScrnInfoPtr pScrn,
 	CARD32 format,
 	CARD8 *src,
 	int src_pitch,
-	int width,
-	int height,
+	unsigned int width,
+	unsigned int height,
 	int flags)
 {
     RADEONInfoPtr info = RADEONPTR(pScrn);
     CARD8 *dst;
     CARD32 tex_size = 0, txformat;
     int dst_pitch, offset, size, i, tex_bytepp;
-    int offscreensize = (pScrn->bitsPerPixel >> 3) *
-	pScrn->displayWidth * MAGIC_R100_MIN_TEX_HEIGHT;
+#ifdef ACCEL_CP
+    CARD32 buf_pitch;
+    unsigned int hpass;
+    CARD8 *tmp_dst;
+#endif
     ACCEL_PREAMBLE();
 
     if ((width > 2048) || (height > 2048))
@@ -435,6 +396,8 @@ static Bool FUNC_NAME(R100SetupTexture)(
 
     txformat = RadeonGetTextureFormat(format);
     tex_bytepp = PICT_FORMAT_BPP(format) >> 3;
+
+#ifndef ACCEL_CP
 
 #if X_BYTE_ORDER == X_BIG_ENDIAN
     if (!RADEONSetupRenderByteswap(pScrn, tex_bytepp)) {
@@ -444,11 +407,12 @@ static Bool FUNC_NAME(R100SetupTexture)(
     }
 #endif
 
-    dst_pitch = (width * tex_bytepp + 31) & ~31;
+#endif
+
+    dst_pitch = (width * tex_bytepp + 63) & ~63;
     size = dst_pitch * height;
 
-    /* Allocate off-screen space for texture pre-rendering as well */
-    if (!AllocateLinear(pScrn, size + offscreensize))
+    if (!AllocateLinear(pScrn, size))
 	return FALSE;
 
     if (flags & XAA_RENDER_REPEAT) {
@@ -459,11 +423,29 @@ static Bool FUNC_NAME(R100SetupTexture)(
 	txformat |= RADEON_TXFORMAT_NON_POWER2;
     }
 
-    offset = info->RenderTex->offset * pScrn->bitsPerPixel / 8 + offscreensize;
-
-    /* Upload texture to card.  Should use ImageWrite to avoid syncing. */
-    i = height;
+    offset = info->RenderTex->offset * pScrn->bitsPerPixel / 8;
     dst = (CARD8*)(info->FB + offset);
+
+    /* Upload texture to card. */
+
+#ifdef ACCEL_CP
+
+    while ( height )
+    {
+    	tmp_dst = RADEONHostDataBlit( pScrn, tex_bytepp, width,
+				      dst_pitch, &buf_pitch,
+				      &dst, &height, &hpass);
+	RADEONHostDataBlitCopyPass( pScrn, tex_bytepp, tmp_dst, src,
+				    hpass, buf_pitch, src_pitch );
+	src += hpass * src_pitch;
+    }
+
+    RADEON_PURGE_CACHE();
+    RADEON_WAIT_UNTIL_IDLE();
+
+#else
+
+    i = height;
 
     if (info->accel->NeedToSync)
 	info->accel->Sync(pScrn);
@@ -478,6 +460,8 @@ static Bool FUNC_NAME(R100SetupTexture)(
     RADEONRestoreByteswap(info);
 #endif
 
+#endif	/* ACCEL_CP */
+
     BEGIN_ACCEL(5);
     OUT_ACCEL_REG(RADEON_PP_TXFORMAT_0, txformat);
     OUT_ACCEL_REG(RADEON_PP_TEX_SIZE_0, tex_size);
@@ -489,7 +473,6 @@ static Bool FUNC_NAME(R100SetupTexture)(
 					RADEON_CLAMP_S_WRAP |
 					RADEON_CLAMP_T_WRAP);
     FINISH_ACCEL();
-    info->RenderTexValidR100 = FALSE;
 
     return TRUE;
 }
@@ -519,8 +502,8 @@ FUNC_NAME(R100SetupForCPUToScreenAlphaTexture) (
     if (blend_cntl == 0)
 	return FALSE;
 
-    if (!info->RenderInited3D)
-	RadeonInit3DEngine(pScrn);
+    if (!info->XInited3D)
+	RADEONInit3DEngine(pScrn);
 
     if (!FUNC_NAME(R100SetupTexture)(pScrn, maskFormat, alphaPtr, alphaPitch,
 				     width, height, flags))
@@ -531,9 +514,8 @@ FUNC_NAME(R100SetupForCPUToScreenAlphaTexture) (
     srccolor = ((alpha & 0xff00) << 16) | ((red & 0xff00) << 8) | (blue >> 8) |
 	(green & 0xff00);
 
-    BEGIN_ACCEL(8);
+    BEGIN_ACCEL(7);
     OUT_ACCEL_REG(RADEON_RB3D_CNTL, colorformat | RADEON_ALPHA_BLEND_ENABLE);
-    OUT_ACCEL_REG(RADEON_RB3D_COLORPITCH, pScrn->displayWidth);
     OUT_ACCEL_REG(RADEON_PP_CNTL, RADEON_TEX_0_ENABLE |
 				  RADEON_TEX_BLEND_0_ENABLE);
     OUT_ACCEL_REG(RADEON_PP_TFACTOR_0, srccolor);
@@ -571,8 +553,8 @@ FUNC_NAME(R100SetupForCPUToScreenTexture) (
     if (blend_cntl == 0)
 	return FALSE;
     
-    if (!info->RenderInited3D)
-	RadeonInit3DEngine(pScrn);
+    if (!info->XInited3D)
+	RADEONInit3DEngine(pScrn);
 
     if (!FUNC_NAME(R100SetupTexture)(pScrn, srcFormat, texPtr, texPitch, width,
 				     height, flags))
@@ -580,9 +562,8 @@ FUNC_NAME(R100SetupForCPUToScreenTexture) (
 
     colorformat = RadeonGetColorFormat(dstFormat);
     
-    BEGIN_ACCEL(7);
+    BEGIN_ACCEL(6);
     OUT_ACCEL_REG(RADEON_RB3D_CNTL, colorformat | RADEON_ALPHA_BLEND_ENABLE);
-    OUT_ACCEL_REG(RADEON_RB3D_COLORPITCH, pScrn->displayWidth);
     OUT_ACCEL_REG(RADEON_PP_CNTL, RADEON_TEX_0_ENABLE |
 				  RADEON_TEX_BLEND_0_ENABLE);
     if (srcFormat != PICT_a8)
@@ -617,116 +598,39 @@ FUNC_NAME(R100SubsequentCPUToScreenTexture) (
 
     ACCEL_PREAMBLE();
 
-    /* R100 chips seem to have cache problems and do not reload small textures
-     * from memory for small render areas. Thus we have to render a
-     * 'sufficiently large' portion of the texture (may contain uninitialized
-     * data as well) to off-screen memory to invalidate the cache. */
-    if (!info->RenderTexValidR100 &&
-	width*height < MAGIC_R100_MIN_TEX_WIDTH*MAGIC_R100_MIN_TEX_HEIGHT)
-/*      (width<MAGIC_R100_MIN_TEX_WIDTH || height<MAGIC_R100_MIN_TEX_HEIGHT))*/
-    {
-	fboffset = info->fbLocation + pScrn->fbOffset +
-	    info->RenderTex->offset * (pScrn->bitsPerPixel >> 3);
-	l = 0.0;
-	t = 0.0;
-	r = MAGIC_R100_MIN_TEX_WIDTH;
-	b = MAGIC_R100_MIN_TEX_HEIGHT;
-	
-#ifdef ACCEL_CP
-	BEGIN_RING(23);
-	
-	OUT_ACCEL_REG(RADEON_RB3D_COLOROFFSET, fboffset);
-	
-	OUT_RING(CP_PACKET3(RADEON_CP_PACKET3_3D_DRAW_IMMD, 17));
-	/* RADEON_SE_VTX_FMT */
-	OUT_RING(RADEON_CP_VC_FRMT_XY |
-		 RADEON_CP_VC_FRMT_ST0);
-	/* SE_VF_CNTL */
-	OUT_RING(RADEON_CP_VC_CNTL_PRIM_TYPE_TRI_FAN |
-		 RADEON_CP_VC_CNTL_PRIM_WALK_RING |
-		 RADEON_CP_VC_CNTL_MAOS_ENABLE |
-		 RADEON_CP_VC_CNTL_VTX_FMT_RADEON_MODE |
-		 (4 << RADEON_CP_VC_CNTL_NUM_SHIFT));
-	
-	OUT_RING(F_TO_DW(l));
-	OUT_RING(F_TO_DW(t));
-	OUT_RING(F_TO_DW(l));
-	OUT_RING(F_TO_DW(t));
-	
-	OUT_RING(F_TO_DW(r));
-	OUT_RING(F_TO_DW(t));
-	OUT_RING(F_TO_DW(r));
-	OUT_RING(F_TO_DW(t));
-	
-	OUT_RING(F_TO_DW(r));
-	OUT_RING(F_TO_DW(b));
-	OUT_RING(F_TO_DW(r));
-	OUT_RING(F_TO_DW(b));
-	
-	OUT_RING(F_TO_DW(l));
-	OUT_RING(F_TO_DW(b));
-	OUT_RING(F_TO_DW(l));
-	OUT_RING(F_TO_DW(b));
-	
-	OUT_ACCEL_REG(RADEON_WAIT_UNTIL, RADEON_WAIT_3D_IDLECLEAN);
-	
-	ADVANCE_RING();
-#else
-	BEGIN_ACCEL(19);
-	
-	OUT_ACCEL_REG(RADEON_RB3D_COLOROFFSET, fboffset);
-	
-	OUT_ACCEL_REG(RADEON_SE_VF_CNTL, RADEON_VF_PRIM_TYPE_TRIANGLE_FAN |
-		      RADEON_VF_PRIM_WALK_DATA |
-		      RADEON_VF_RADEON_MODE |
-		      (4 << RADEON_VF_NUM_VERTICES_SHIFT));
-	
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(l));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(t));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(l));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(t));
-	
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(r));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(t));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(r));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(t));
-	
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(r));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(b));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(r));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(b));
-	
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(l));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(b));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(l));
-	OUT_ACCEL_REG(RADEON_SE_PORT_DATA0, F_TO_DW(b));
-	
-	OUT_ACCEL_REG(RADEON_WAIT_UNTIL, RADEON_WAIT_3D_IDLECLEAN);
-	FINISH_ACCEL();
-#endif
-    }
-
     /* Note: we can't simply set up the 3D surface at the same location as the
      * front buffer, because the 2048x2048 limit on coordinates may be smaller
      * than the (MergedFB) screen.
+     * Can't use arbitrary offsets for color tiling
      */ 
-    byteshift = (pScrn->bitsPerPixel >> 4);
-    fboffset = (info->fbLocation + pScrn->fbOffset +
+    if (info->tilingEnabled) {
+       /* can't play tricks with x coordinate, or could we - tiling is disabled anyway in that case */
+       fboffset = info->fbLocation + pScrn->fbOffset +
+          (pScrn->displayWidth * (dsty & ~15) * (pScrn->bitsPerPixel >> 3));
+       l = dstx;
+       t = (dsty % 16);
+    }
+    else {
+       byteshift = (pScrn->bitsPerPixel >> 4);
+       fboffset = (info->fbLocation + pScrn->fbOffset +
 		((pScrn->displayWidth * dsty + dstx) << byteshift)) & ~15;
-    l = ((dstx << byteshift) % 16) >> byteshift;
-    t = 0.0;
+       l = ((dstx << byteshift) % 16) >> byteshift;
+       t = 0.0;
+    }
+
     r = width + l;
-    b = height;
+    b = height + t;
     fl = srcx;
     fr = srcx + width;
     ft = srcy;
     fb = srcy + height;
 
 #ifdef ACCEL_CP
-    BEGIN_RING(23);
+    BEGIN_RING(25);
 
+    OUT_ACCEL_REG(RADEON_RB3D_COLORPITCH, pScrn->displayWidth |
+	((info->tilingEnabled && (dsty <= pScrn->virtualY)) ? RADEON_COLOR_TILE_ENABLE : 0));
     OUT_ACCEL_REG(RADEON_RB3D_COLOROFFSET, fboffset);
-
     OUT_RING(CP_PACKET3(RADEON_CP_PACKET3_3D_DRAW_IMMD, 17));
     /* RADEON_SE_VTX_FMT */
     OUT_RING(RADEON_CP_VC_FRMT_XY |
@@ -762,8 +666,10 @@ FUNC_NAME(R100SubsequentCPUToScreenTexture) (
 
     ADVANCE_RING();
 #else
-    BEGIN_ACCEL(19);
+    BEGIN_ACCEL(20);
     
+    OUT_ACCEL_REG(RADEON_RB3D_COLORPITCH, pScrn->displayWidth |
+	((info->tilingEnabled && (dsty <= pScrn->virtualY)) ? RADEON_COLOR_TILE_ENABLE : 0));
     OUT_ACCEL_REG(RADEON_RB3D_COLOROFFSET, fboffset);
 
     OUT_ACCEL_REG(RADEON_SE_VF_CNTL, RADEON_VF_PRIM_TYPE_TRIANGLE_FAN |
@@ -794,7 +700,6 @@ FUNC_NAME(R100SubsequentCPUToScreenTexture) (
     OUT_ACCEL_REG(RADEON_WAIT_UNTIL, RADEON_WAIT_3D_IDLECLEAN);
     FINISH_ACCEL();
 #endif
-    info->RenderTexValidR100 = TRUE;
 
 }
 
@@ -803,14 +708,19 @@ static Bool FUNC_NAME(R200SetupTexture)(
 	CARD32 format,
 	CARD8 *src,
 	int src_pitch,
-	int width,
-	int height,
+	unsigned int width,
+	unsigned int height,
 	int flags)
 {
     RADEONInfoPtr info = RADEONPTR(pScrn);
     CARD8 *dst;
     CARD32 tex_size = 0, txformat;
     int dst_pitch, offset, size, i, tex_bytepp;
+#ifdef ACCEL_CP
+    CARD32 buf_pitch;
+    unsigned int hpass;
+    CARD8 *tmp_dst;
+#endif
     ACCEL_PREAMBLE();
 
     if ((width > 2048) || (height > 2048))
@@ -818,6 +728,8 @@ static Bool FUNC_NAME(R200SetupTexture)(
 
     txformat = RadeonGetTextureFormat(format);
     tex_bytepp = PICT_FORMAT_BPP(format) >> 3;
+
+#ifndef ACCEL_CP
 
 #if X_BYTE_ORDER == X_BIG_ENDIAN
     if (!RADEONSetupRenderByteswap(pScrn, tex_bytepp)) {
@@ -827,7 +739,9 @@ static Bool FUNC_NAME(R200SetupTexture)(
     }
 #endif
 
-    dst_pitch = (width * tex_bytepp + 31) & ~31;
+#endif
+
+    dst_pitch = (width * tex_bytepp + 63) & ~63;
     size = dst_pitch * height;
 
     if (!AllocateLinear(pScrn, size))
@@ -842,10 +756,28 @@ static Bool FUNC_NAME(R200SetupTexture)(
     }
 
     offset = info->RenderTex->offset * pScrn->bitsPerPixel / 8;
-
-    /* Upload texture to card.  Should use ImageWrite to avoid syncing. */
-    i = height;
     dst = (CARD8*)(info->FB + offset);
+
+    /* Upload texture to card. */
+
+#ifdef ACCEL_CP
+
+    while ( height )
+    {
+        tmp_dst = RADEONHostDataBlit( pScrn, tex_bytepp, width,
+				      dst_pitch, &buf_pitch,
+				      &dst, &height, &hpass );
+	RADEONHostDataBlitCopyPass( pScrn, tex_bytepp, tmp_dst, src,
+				    hpass, buf_pitch, src_pitch );
+	src += hpass * src_pitch;
+    }
+
+    RADEON_PURGE_CACHE();
+    RADEON_WAIT_UNTIL_IDLE();
+
+#else
+
+    i = height;
     if (info->accel->NeedToSync)
 	info->accel->Sync(pScrn);
 
@@ -858,6 +790,8 @@ static Bool FUNC_NAME(R200SetupTexture)(
 #if X_BYTE_ORDER == X_BIG_ENDIAN
     RADEONRestoreByteswap(info);
 #endif
+
+#endif	/* ACCEL_CP */
 
     BEGIN_ACCEL(6);
     OUT_ACCEL_REG(R200_PP_TXFORMAT_0, txformat);
@@ -900,8 +834,8 @@ FUNC_NAME(R200SetupForCPUToScreenAlphaTexture) (
     if (blend_cntl == 0)
 	return FALSE;
 
-    if (!info->RenderInited3D)
-	RadeonInit3DEngine(pScrn);
+    if (!info->XInited3D)
+	RADEONInit3DEngine(pScrn);
 
     if (!FUNC_NAME(R200SetupTexture)(pScrn, maskFormat, alphaPtr, alphaPitch,
 				     width, height, flags))
@@ -912,9 +846,8 @@ FUNC_NAME(R200SetupForCPUToScreenAlphaTexture) (
     srccolor = ((alpha & 0xff00) << 16) | ((red & 0xff00) << 8) | (blue >> 8) |
 	(green & 0xff00);
 
-    BEGIN_ACCEL(11);
+    BEGIN_ACCEL(10);
     OUT_ACCEL_REG(RADEON_RB3D_CNTL, colorformat | RADEON_ALPHA_BLEND_ENABLE);
-    OUT_ACCEL_REG(RADEON_RB3D_COLORPITCH, pScrn->displayWidth);
     OUT_ACCEL_REG(RADEON_PP_CNTL, RADEON_TEX_0_ENABLE |
 				  RADEON_TEX_BLEND_0_ENABLE);
     OUT_ACCEL_REG(R200_PP_TFACTOR_0, srccolor);
@@ -953,8 +886,8 @@ FUNC_NAME(R200SetupForCPUToScreenTexture) (
     if (blend_cntl == 0)
 	return FALSE;
 
-    if (!info->RenderInited3D)
-	RadeonInit3DEngine(pScrn);
+    if (!info->XInited3D)
+	RADEONInit3DEngine(pScrn);
 
     if (!FUNC_NAME(R200SetupTexture)(pScrn, srcFormat, texPtr, texPitch, width,
 				     height, flags))
@@ -962,9 +895,8 @@ FUNC_NAME(R200SetupForCPUToScreenTexture) (
 
     colorformat = RadeonGetColorFormat(dstFormat);
 
-    BEGIN_ACCEL(10);
+    BEGIN_ACCEL(9);
     OUT_ACCEL_REG(RADEON_RB3D_CNTL, colorformat | RADEON_ALPHA_BLEND_ENABLE);
-    OUT_ACCEL_REG(RADEON_RB3D_COLORPITCH, pScrn->displayWidth);
     OUT_ACCEL_REG(RADEON_PP_CNTL, RADEON_TEX_0_ENABLE |
 				  RADEON_TEX_BLEND_0_ENABLE);
     if (srcFormat != PICT_a8)
@@ -1002,14 +934,25 @@ FUNC_NAME(R200SubsequentCPUToScreenTexture) (
     /* Note: we can't simply set up the 3D surface at the same location as the
      * front buffer, because the 2048x2048 limit on coordinates may be smaller
      * than the (MergedFB) screen.
+     * Can't use arbitrary offsets for color tiling
      */ 
-    byteshift = (pScrn->bitsPerPixel >> 4);
-    fboffset = (info->fbLocation + pScrn->fbOffset + ((pScrn->displayWidth *
-	dsty + dstx) << byteshift)) & ~15;
-    l = ((dstx << byteshift) % 16) >> byteshift;
-    t = 0.0;
+    if (info->tilingEnabled) {
+       /* can't play tricks with x coordinate, or could we - tiling is disabled anyway in that case */
+       fboffset = info->fbLocation + pScrn->fbOffset +
+          (pScrn->displayWidth * (dsty & ~15) * (pScrn->bitsPerPixel >> 3));
+       l = dstx;
+       t = (dsty % 16);
+    }
+    else {
+       byteshift = (pScrn->bitsPerPixel >> 4);
+       fboffset = (info->fbLocation + pScrn->fbOffset +
+		((pScrn->displayWidth * dsty + dstx) << byteshift)) & ~15;
+       l = ((dstx << byteshift) % 16) >> byteshift;
+       t = 0.0;
+    }
+    
     r = width + l;
-    b = height;
+    b = height + t;
     fl = srcx;
     fr = srcx + width;
     ft = srcy;
@@ -1018,6 +961,8 @@ FUNC_NAME(R200SubsequentCPUToScreenTexture) (
 #ifdef ACCEL_CP
     BEGIN_RING(24);
 
+    OUT_ACCEL_REG(RADEON_RB3D_COLORPITCH, pScrn->displayWidth |
+	((info->tilingEnabled && (dsty <= pScrn->virtualY)) ? RADEON_COLOR_TILE_ENABLE : 0));
     OUT_ACCEL_REG(RADEON_RB3D_COLOROFFSET, fboffset);
 
     OUT_RING(CP_PACKET3(R200_CP_PACKET3_3D_DRAW_IMMD_2, 16));
@@ -1050,11 +995,13 @@ FUNC_NAME(R200SubsequentCPUToScreenTexture) (
 
     ADVANCE_RING();
 #else
-    BEGIN_ACCEL(19);
+    BEGIN_ACCEL(20);
     
     /* Note: we can't simply setup 3D surface at the same location as the front buffer,
        some apps may draw offscreen pictures out of the limitation of radeon 3D surface.
     */ 
+    OUT_ACCEL_REG(RADEON_RB3D_COLORPITCH, pScrn->displayWidth |
+	((info->tilingEnabled && (dsty <= pScrn->virtualY)) ? RADEON_COLOR_TILE_ENABLE : 0));
     OUT_ACCEL_REG(RADEON_RB3D_COLOROFFSET, fboffset);
 
     OUT_ACCEL_REG(RADEON_SE_VF_CNTL, (RADEON_VF_PRIM_TYPE_QUAD_LIST |
@@ -1088,4 +1035,4 @@ FUNC_NAME(R200SubsequentCPUToScreenTexture) (
 }
 
 #undef FUNC_NAME
-
+#endif /* USE_XAA */

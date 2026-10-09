@@ -46,6 +46,7 @@ SOFTWARE.
 
 ******************************************************************/
 /* $Xorg: servermd.h,v 1.3 2000/08/17 19:53:31 cpqbld Exp $ */
+/* $XdotOrg: xc/programs/Xserver/include/servermd.h,v 1.9 2005/11/15 00:29:23 ajax Exp $ */
 
 #ifndef SERVERMD_H
 #define SERVERMD_H 1
@@ -167,7 +168,7 @@ SOFTWARE.
 
 #endif /* hpux || __hppa__ */
 
-#if defined(__powerpc__)
+#if defined(__powerpc__) || defined(__ppc__)
 
 #define IMAGE_BYTE_ORDER        MSBFirst
 #define BITMAP_BIT_ORDER        MSBFirst
@@ -210,9 +211,15 @@ SOFTWARE.
 #endif /* SuperH */
 
 
-#if (defined(sun) && !(defined(i386) && defined(SVR4))) || \
+#if (defined(sun) && (defined(__sparc) || defined(sparc))) || \
     (defined(__uxp__) && (defined(sparc) || defined(mc68000))) || \
     defined(__sparc__) || defined(__mc68000__)
+
+#if defined(__sparc) || defined(__sparc__)
+# if !defined(sparc)
+#  define sparc 1
+# endif
+#endif
 
 #if defined(sun386) || defined(sun5)
 # define IMAGE_BYTE_ORDER	LSBFirst        /* Values for the SUN only */
@@ -389,7 +396,7 @@ SOFTWARE.
 
 #endif /* ia64 */
 
-#if defined(__amd64__) || defined(amd64)
+#if defined(__amd64__) || defined(amd64) || defined(__amd64)
 # define IMAGE_BYTE_ORDER	LSBFirst
 
 # if defined(XF86MONOVGA) || defined(XF86VGA16) || defined(XF86MONO)
@@ -442,7 +449,7 @@ SOFTWARE.
 
 #if	(defined(SVR4) && defined(i386)) || \
 	defined(__alpha__) || defined(__alpha) || \
-	defined(__i386__) || \
+	defined(__i386__) || defined(__i386) || \
 	defined(__UNIXOS2__) || \
 	defined(__OS2ELF__) || \
 	defined(__QNX__) || \

@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/xdm/resource.c,v 1.2.4.1 2004/12/15 01:53:41 gisburn Exp $ */
+/* $XdotOrg: xc/programs/xdm/resource.c,v 1.4 2005/11/08 06:33:31 jkj Exp $ */
 /* $Xorg: resource.c,v 1.4 2001/02/09 02:05:40 xorgcvs Exp $ */
 /*
 
@@ -133,8 +133,12 @@ int	choiceTimeout;	/* chooser choice timeout */
 #ifndef DEF_RANDOM_FILE
 #define DEF_RANDOM_FILE "/dev/mem"
 #endif
+#ifdef __SCO__
+#define DEF_PRNGD_SOCKET "/etc/egd-pool"
+#else
 #ifndef DEF_PRNGD_SOCKET 
 #define DEF_PRNGD_SOCKET "/tmp/entropy"
+#endif
 #endif
 #ifndef DEF_PRNGD_PORT
 #define DEF_PRNGD_PORT "0"

@@ -1,4 +1,5 @@
 /* $Xorg: bmtoa.c,v 1.4 2001/02/09 02:05:28 xorgcvs Exp $ */
+/* $XdotOrg: xc/programs/bitmap/bmtoa.c,v 1.3 2005/07/16 22:07:12 alanc Exp $ */
 /*
 
 Copyright 1988, 1993, 1998  The Open Group
@@ -32,6 +33,10 @@ from The Open Group.
  * bmtoa - bitmap to ascii filter
  * Author:  Jim Fulton, MIT X Consortium
  */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include <stdio.h>
 #include <X11/Xlib.h>

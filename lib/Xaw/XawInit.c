@@ -35,6 +35,9 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $XFree86: xc/lib/Xaw/XawInit.c,v 1.9 2001/01/17 19:42:36 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Intrinsic.h>
 #include <X11/Vendor.h>
 #include <X11/Xaw/XawInit.h>

@@ -4,7 +4,7 @@ XCOMM $XFree86: xc/programs/Xserver/hw/xfree86/os-support/Imakefile,v 3.61 2003/
 
 
 
-XCOMM $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/Imakefile,v 1.2 2004/04/23 19:54:07 eich Exp $
+XCOMM $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/Imakefile,v 1.6 2005/12/01 02:15:38 ajax Exp $
 XCOMM $XConsortium: Imakefile /main/9 1996/10/25 15:38:46 kaleb $
 
 #include <Server.tmpl>
@@ -15,6 +15,7 @@ XCOMM $XConsortium: Imakefile /main/9 1996/10/25 15:38:46 kaleb $
 	(defined(SunArchitecture) && defined(SparcArchitecture)) || \
 	(defined(KFreeBSDArchitecture) && defined(AlphaArchitecture)) || \
 	(defined(KFreeBSDArchitecture) && defined(Sparc64Architecture)) || \
+	(defined(KFreeBSDArchitecture) && defined(PpcArchitecture)) || \
 	(defined(KNetBSDArchitecture) && defined(AlphaArchitecture)) || \
 	(defined(KNetBSDArchitecture) && defined(PpcArchitecture)) || \
 	(defined(KNetBSDArchitecture) && defined(SparcArchitecture)) || \
@@ -50,6 +51,8 @@ OS_SUBDIR = pmax
 OS_SUBDIR = dgux
 # elif defined(SGIArchitecture)
 OS_SUBDIR = irix
+# elif defined(UnixWareArchitecture)
+OS_SUBDIR = usl
 # else
 OS_SUBDIR = sysv
 # endif
@@ -63,7 +66,7 @@ OS_SUBDIR = linux
 OS_SUBDIR = lynxos
 #endif
 
-#if defined(FreeBSDArchitecture) || defined(NetBSDArchitecture) || \
+#if defined(KFreeBSDArchitecture) || defined(NetBSDArchitecture) || \
     defined(OpenBSDArchitecture)
 OS_SUBDIR = bsd
 #endif
@@ -94,6 +97,8 @@ DRM_DONES = $(OS_SUBDIR)/drm/DONE
 
 #endif
 
+LIBDRM_DIR = ../../../../../extras/drm/libdrm
+
 SUBDIRS = $(OS_SUBDIR) $(BUS_SUBDIR) misc
 
 SRCS = $(OS_SUBDIR)/?*.c $(BUS_SUBDIR)/?*.c misc/?*.c $(DRM_SRC)
@@ -115,10 +120,11 @@ ForceSubdirs($(SUBDIRS))
 
 DependSubdirs($(SUBDIRS))
 
+LinkSourceFile(xf86drm.h,$(LIBDRM_DIR))
+
 InstallDriverSDKNonExecFile(xf86_OSproc.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(xf86_OSlib.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(xf86_ansic.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(xf86_libc.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(xf86drm.h,$(DRIVERSDKINCLUDEDIR))
-InstallDriverSDKNonExecFile(xf86drmCompat.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(assyntax.h,$(DRIVERSDKINCLUDEDIR))

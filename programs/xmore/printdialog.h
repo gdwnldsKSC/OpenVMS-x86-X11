@@ -48,10 +48,11 @@ in this Software without prior written authorization from The Open Group.
 
 typedef struct
 {
-    Display    *pdpy;
-    XPContext   pcontext;
-    const char *printToFileName;
-    Boolean     printToFile;
+    Display            *pdpy;
+    XPContext           pcontext;
+    const char         *printToFileName;
+    Boolean             printToFile;
+    XpuColorspaceRec   *colorspace;
 } XawPrintDialogCallbackStruct;
 
 typedef struct _PrintDialogClassRec *PrintDialogWidgetClass;

@@ -12,6 +12,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/cirrus/lg_hwcurs.c,v 1.4 2000/12/06 15:35:17 eich Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"

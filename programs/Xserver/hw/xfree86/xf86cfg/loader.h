@@ -24,7 +24,7 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Author: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
+ * Author: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br>
  *
  * $XFree86: xc/programs/Xserver/hw/xfree86/xf86cfg/loader.h,v 1.6 2001/07/07 01:43:58 paulo Exp $
  */
@@ -36,7 +36,9 @@
 
 #else
 
+#ifndef XFree86LOADER
 #define XFree86LOADER		/* not really */
+#endif
 #define IN_LOADER
 
 #include "xf86.h"
@@ -44,10 +46,12 @@
 #include "xf86Opt.h"
 #include "xf86Module.h"
 
+#ifndef XINPUT
 #define XINPUT
+#endif
 #include "xf86Xinput.h"
 
-#include "fontmod.h"
+#include <X11/fonts/fontmod.h>
 #include "loaderProcs.h"
 
 #include <sym.h>

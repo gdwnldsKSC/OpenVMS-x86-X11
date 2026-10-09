@@ -30,16 +30,23 @@ IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 /* $XFree86: xc/lib/X11/imTrans.c,v 1.3 2003/04/17 02:06:32 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <X11/Xatom.h>
 #include <X11/Xmd.h>
 #define NEED_EVENTS
 #include "Xlibint.h"
-#include <X11/Xtrans.h>
+#include <X11/Xtrans/Xtrans.h>
 #include "Xlcint.h"
 #include "Ximint.h"
 #include "XimTrans.h"
 #include "XimTrInt.h"
+
+#ifdef WIN32
+#include <X11/Xwindows.h>
+#endif
 
 
 #ifndef XIM_CONNECTION_RETRIES

@@ -1,5 +1,9 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/i128/i128dga.c,v 1.3tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -200,10 +204,10 @@ I128_FillRect (
 ){
     I128Ptr pI128 = I128PTR(pScrn);
 
-    if(pI128->AccelInfoRec) {
-	(*pI128->AccelInfoRec->SetupForSolidFill)(pScrn, color, GXcopy, ~0);
-	(*pI128->AccelInfoRec->SubsequentSolidFillRect)(pScrn, x, y, w, h);
-	SET_SYNC_FLAG(pI128->AccelInfoRec);
+    if(pI128->XaaInfoRec) {
+	(*pI128->XaaInfoRec->SetupForSolidFill)(pScrn, color, GXcopy, ~0);
+	(*pI128->XaaInfoRec->SubsequentSolidFillRect)(pScrn, x, y, w, h);
+	SET_SYNC_FLAG(pI128->XaaInfoRec);
     }
 }
 
@@ -216,15 +220,15 @@ I128_BlitRect(
 ){
     I128Ptr pI128 = I128PTR(pScrn);
 
-    if(pI128->AccelInfoRec) {
+    if(pI128->XaaInfoRec) {
 	int xdir = ((srcx < dstx) && (srcy == dsty)) ? -1 : 1;
 	int ydir = (srcy < dsty) ? -1 : 1;
 
-	(*pI128->AccelInfoRec->SetupForScreenToScreenCopy)(
+	(*pI128->XaaInfoRec->SetupForScreenToScreenCopy)(
 		pScrn, xdir, ydir, GXcopy, ~0, -1);
-	(*pI128->AccelInfoRec->SubsequentScreenToScreenCopy)(
+	(*pI128->XaaInfoRec->SubsequentScreenToScreenCopy)(
 		pScrn, srcx, srcy, dstx, dsty, w, h);
-	SET_SYNC_FLAG(pI128->AccelInfoRec);
+	SET_SYNC_FLAG(pI128->XaaInfoRec);
     }
 }
 
@@ -239,15 +243,15 @@ I128_BlitTransRect(
 ){
     I128Ptr pI128 = I128PTR(pScrn);
 
-    if(pI128->AccelInfoRec) {
+    if(pI128->XaaInfoRec) {
 	int xdir = ((srcx < dstx) && (srcy == dsty)) ? -1 : 1;
 	int ydir = (srcy < dsty) ? -1 : 1;
 
-	(*pI128->AccelInfoRec->SetupForScreenToScreenCopy)(
+	(*pI128->XaaInfoRec->SetupForScreenToScreenCopy)(
 		pScrn, xdir, ydir, GXcopy, ~0, color);
-	(*pI128->AccelInfoRec->SubsequentScreenToScreenCopy)(
+	(*pI128->XaaInfoRec->SubsequentScreenToScreenCopy)(
 		pScrn, srcx, srcy, dstx, dsty, w, h);
-	SET_SYNC_FLAG(pI128->AccelInfoRec);
+	SET_SYNC_FLAG(pI128->XaaInfoRec);
     }
 }
 #endif

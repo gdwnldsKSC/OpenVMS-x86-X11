@@ -23,6 +23,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/trident/trident_dga.c,v 1.4 2002/10/08 22:14:11 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"

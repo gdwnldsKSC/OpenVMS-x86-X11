@@ -39,6 +39,9 @@
 
 #define NEED_REPLIES
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/extensions/Printstr.h>
 #include <X11/Xlibint.h>
 #include "XpExtUtil.h"

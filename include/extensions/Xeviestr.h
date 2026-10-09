@@ -1,3 +1,4 @@
+/* $XdotOrg: xc/include/extensions/Xeviestr.h,v 1.3 2005/05/22 01:20:14 alanc Exp $ */
 /************************************************************          
                                                                        
 Copyright 2003 Sun Microsystems, Inc.                                  
@@ -33,14 +34,20 @@ of the copyright holder.
                                                                        
 #ifndef _XEVIESTR_H_                                                   
 #define _XEVIESTR_H_                                                   
-                                                                       
-#include "Xevie.h"                                                     
-                                                                       
+
 #define XEVIENAME "XEVIE"                                              
                                                                        
 #define XEVIE_MAJOR_VERSION 1                                          
 #define XEVIE_MINOR_VERSION 0                                          
-                                                                       
+
+#define X_XevieQueryVersion			0
+#define X_XevieStart				1
+#define X_XevieEnd				2
+#define X_XevieSend				3
+#define X_XevieSelectInput			4
+
+#define XevieNumberErrors			0
+
 typedef struct _XevieQueryVersion {                                    
     CARD8   reqType;                                                   
     CARD8   xevieReqType;                                              

@@ -32,6 +32,9 @@ in this Software without prior written authorization from The Open Group.
 #define Assertion(expr, msg) { if (!(expr)) { Error msg } }
 #define Log(x)   { if(True) printf x; }
 
+#ifdef XEDIT
+#include "xedit.h"
+#endif /* XEDIT */
 #include "print.h"
 #include <X11/Xaw/Form.h>
 #include <X11/Xaw/Label.h>
@@ -41,7 +44,8 @@ in this Software without prior written authorization from The Open Group.
 
 static Widget
 CreatePrintShell(Widget    videoshell,
-                 Screen   *pscreen, 
+                 Screen   *pscreen,
+                 Visual   *pvisual,
                  String    printshell_name,
                  ArgList   args,
                  Cardinal  numargs)
@@ -53,6 +57,9 @@ CreatePrintShell(Widget    videoshell,
     Display *pdpy = XDisplayOfScreen(pscreen);
     int      dummyc = 0;
     String   dummys = "";
+    Cardinal shell_n;
+    Arg      shell_args[5];
+
     XtGetApplicationNameAndClass(XtDisplay(videoshell), 
                                  &videoname, &videoclass);
 
@@ -62,11 +69,15 @@ CreatePrintShell(Widget    videoshell,
                         NULL, 0,
                         &dummyc, &dummys);
 
-    pappshell = XtVaAppCreateShell(videoname, videoclass,
+    shell_n = 0;
+    XtSetArg(shell_args[shell_n], XtNscreen, pscreen); shell_n++;
+    if (pvisual) {
+        XtSetArg(shell_args[shell_n], XtNvisual, pvisual); shell_n++;
+    }
+    pappshell = XtAppCreateShell(videoname, videoclass,
                                    applicationShellWidgetClass,
                                    pdpy,
-                                   XtNscreen, pscreen,
-                                   NULL);
+                                   shell_args, shell_n);
     printshell = XtCreatePopupShell(printshell_name,
                                     xawPrintShellWidgetClass,
                                     pappshell, args, numargs);
@@ -173,13 +184,36 @@ PageSetupCB(Widget widget, XtPointer client_data, XtPointer call_data)
 static
 void FinishPrinting(AppPrintData *p)
 {
+    char *scr;
+
     if (p->printtofile_handle) {
         if (XpuWaitForPrintFileChild(p->printtofile_handle) != XPGetDocFinished) {
-            fprintf(stderr, "%s: Error while printing to file.\n", apd->programname);
+            PrintMsg(("Error while printing to file.\n"));
         }
         p->printtofile_handle = NULL;
-    }   
+    }
+    
+    /* Job completed, check if there are any messages from the spooler command */
+    scr = XpGetOneAttribute(p->pdpy, p->pcontext, XPJobAttr, "xp-spooler-command-results");
+    if( scr )
+    {
+      if( strlen(scr) > 0 )
+      {
+        const char *msg = XpuCompoundTextToXmb(p->pdpy, scr);
+        if( msg )
+        {
+          PrintMsg(("Spooler command returned:\n%s", msg));
+          XpuFreeXmbString(msg);
+        }
+        else
+        {
+          PrintMsg(("Spooler command returned (unconverted):\n%s", scr));
+        }
+      }
 
+      XFree((void *)scr);
+    }
+    
     if (p->printshell) {
         XtDestroyWidget(p->printshell);
         p->printshell = NULL;
@@ -224,7 +258,7 @@ void PrintEndJobCB(Widget pshell, XtPointer client_data, XtPointer call_data)
 }
 
 static
-XFontSet GetPrintTextFontSet(const char *appname, Display *pdpy, long dpi)
+XFontSet GetPrintTextFontSet(const char *appname, Display *pdpy, long dpi_x, long dpi_y)
 {
     XFontSet     fontset;
     char         fontname[1024];
@@ -242,11 +276,11 @@ XFontSet GetPrintTextFontSet(const char *appname, Display *pdpy, long dpi)
                       "-wadalab-gothic-medium-r-normal--*-120-%ld-%ld-*-*,"
                       /* Fallback */
                       "-*-*-*-*-*--*-120-%ld-%ld-*-*",
-                      dpi, dpi,
-                      dpi, dpi,
-                      dpi, dpi,
-                      dpi, dpi,
-                      dpi, dpi);
+                      dpi_x, dpi_y,
+                      dpi_x, dpi_y,
+                      dpi_x, dpi_y,
+                      dpi_x, dpi_y,
+                      dpi_x, dpi_y);
     fontset = XCreateFontSet(pdpy, fontname,
                              &missing_charset_list_return,
                              &missing_charset_count_return,
@@ -265,10 +299,12 @@ XFontSet GetPrintTextFontSet(const char *appname, Display *pdpy, long dpi)
 void DoPrintTextSource(const char *programname,
                        Widget textsource, Widget toplevel,
                        Display *pdpy, XPContext pcontext,
+                       XpuColorspaceRec *colorspace,
                        XtCallbackProc pdpyDestroyCB,
                        const char *jobtitle, const char *toFile)
 {
-    long               dpi = 0;
+    long               dpi_x = 0L,
+                       dpi_y = 0L;
     int                n;
     Arg                args[20];
     XFontSet           textfontset = NULL;
@@ -278,7 +314,7 @@ void DoPrintTextSource(const char *programname,
     apd->pdpyDestroyCallback = pdpyDestroyCB;
   
     if (apd->isPrinting) {
-        fprintf(stderr, "%s: Already busy with printing.\n", apd->programname);
+        PrintMsg(("Already busy with printing.\n"));
         return;
     } 
         
@@ -292,8 +328,8 @@ void DoPrintTextSource(const char *programname,
     XpSetContext(pdpy, pcontext);   
 
     /* Get default printer resolution */   
-    if (XpuGetResolution(pdpy, pcontext, &dpi) != 1) {
-        fprintf(stderr, "%s: No default resolution for printer.\n", apd->programname);
+    if (XpuGetResolution(pdpy, pcontext, &dpi_x, &dpi_y) != 1) {
+        PrintMsg(("No default resolution for printer.\n"));
         XpuClosePrinterDisplay(pdpy, pcontext);
         return;
     }
@@ -310,14 +346,18 @@ void DoPrintTextSource(const char *programname,
      * |XawPrintLAYOUTMODE_PAGESIZE| are used. */
     XtSetArg(args[n], XtNgeometry,    "+0+0");                          n++;
     XtSetArg(args[n], XawNlayoutMode, XawPrintLAYOUTMODE_DRAWABLEAREA); n++;
-    apd->printshell = CreatePrintShell(toplevel, apd->pscreen, "printshell", args, n);
-
+    if (colorspace) {
+        printf("Setting visual to id=0x%lx.\n", colorspace->visualinfo.visualid);
+    }
+    apd->printshell = CreatePrintShell(toplevel, apd->pscreen, 
+                                       (colorspace?(colorspace->visualinfo.visual):(NULL)),
+                                       "printshell", args, n);
     n = 0;
     XtSetArg(args[n], XtNresizable,            True);            n++;
     XtSetArg(args[n], XtNright,                XtChainRight);    n++;
     apd->content.form = XtCreateManagedWidget("form", formWidgetClass, apd->printshell, args, n);
 
-    textfontset = GetPrintTextFontSet(apd->programname, pdpy, dpi);
+    textfontset = GetPrintTextFontSet(apd->programname, pdpy, dpi_x, dpi_y);
 
     n = 0;
     XtSetArg(args[n], XtNinternational,        True);            n++;
@@ -376,17 +416,18 @@ void DoPrintTextSource(const char *programname,
     apd->isPrinting = True;
 
     if (toFile) {
-        printf("%s: Printing to file '%s'...\n", apd->programname, toFile);
+        PrintMsg(("Printing to file '%s'...\n", toFile));
         apd->printtofile_handle = XpuStartJobToFile(pdpy, pcontext, toFile);
         if (!apd->printtofile_handle) {
             perror("XpuStartJobToFile failure");
+            PrintMsg(("Printing failed: XpuStartJobToFile\n"));
             apd->isPrinting = False;
             return;
         }
     }
     else
     {
-        printf("%s: Printing to printer...\n", apd->programname);
+        PrintMsg(("Printing to printer...\n"));
         XpuStartJobToSpooler(pdpy);
     }
 }

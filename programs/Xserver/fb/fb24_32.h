@@ -1,7 +1,7 @@
 /*
  * $XFree86$
  *
- * Copyright © 2000 SuSE, Inc.
+ * Copyright Â© 2000 SuSE, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -22,6 +22,10 @@
  *
  * Author:  Keith Packard, SuSE, Inc.
  */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #ifndef _FB24_32_H_
 #define _FB24_32_H_

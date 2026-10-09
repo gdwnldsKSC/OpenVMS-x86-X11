@@ -49,7 +49,11 @@ SOFTWARE.
 ******************************************************************/
 /* $XConsortium: afbhrzvert.c,v 1.15 94/04/17 20:28:24 dpw Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "gc.h"
 #include "window.h"
@@ -186,17 +190,17 @@ unsigned char *rrops;
 
 		switch (rrops[d]) {
 			case RROP_BLACK:
-				bitmask = rmask[x1 & PIM];
+				bitmask = mfbGetrmask(x1 & PIM);
 				Duff(len, *addrl &= bitmask; afbScanlineInc(addrl, nlwidth) );
 				break;
 
 			case RROP_WHITE:
-				bitmask = mask[x1 & PIM];
+				bitmask = mfbGetmask(x1 & PIM);
 				Duff(len, *addrl |= bitmask; afbScanlineInc(addrl, nlwidth) );
 				break;
 
 			case RROP_INVERT:
-				bitmask = mask[x1 & PIM];
+				bitmask = mfbGetmask(x1 & PIM);
 				Duff(len, *addrl ^= bitmask; afbScanlineInc(addrl, nlwidth) );
 				break;
 

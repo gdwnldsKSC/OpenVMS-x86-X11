@@ -1,6 +1,6 @@
-#!/usr/bin/python2
+#!/usr/bin/env python
 
-# (C) Copyright IBM Corporation 2004
+# (C) Copyright IBM Corporation 2004, 2005
 # All Rights Reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,42 +25,33 @@
 # Authors:
 #    Ian Romanick <idr@us.ibm.com>
 
-from xml.sax import saxutils
-from xml.sax import make_parser
-from xml.sax.handler import feature_namespaces
-
-import gl_XML
-import license
+import gl_XML, license
 import sys, getopt
 
-class PrintGenericStubs(gl_XML.FilterGLAPISpecBase):
-	name = "gl_x86_asm.py (from Mesa)"
+class PrintGenericStubs(gl_XML.gl_print_base):
 
 	def __init__(self):
-		gl_XML.FilterGLAPISpecBase.__init__(self)
+		gl_XML.gl_print_base.__init__(self)
+
+		self.name = "gl_x86_asm.py (from Mesa)"
 		self.license = license.bsd_license_template % ( \
 """Copyright (C) 1999-2001  Brian Paul   All Rights Reserved.
-(C) Copyright IBM Corporation 2004""", "BRIAN PAUL, IBM")
+(C) Copyright IBM Corporation 2004, 2005""", "BRIAN PAUL, IBM")
+		return
 
 
 	def get_stack_size(self, f):
 		size = 0
-		for p in f:
-			t = p.p_type
-
-			if p.is_array() or t.size != 8:
-				size += 4
-			else:
-				size += 8
+		for p in f.parameterIterator():
+			size += p.get_stack_size()
 
 		return size
+
 
 	def printRealHeader(self):
 		print '#include "assyntax.h"'
 		print '#include "glapioffsets.h"'
 		print ''
-		print '#ifndef __WIN32__'
-		print ''	
 		print '#if defined(STDCALL_API)'
 		print '# if defined(USE_MGL_NAMESPACE)'
 		print '#  define GL_PREFIX(n,n2) GLNAME(CONCAT(mgl,n2))'
@@ -83,16 +74,26 @@ class PrintGenericStubs(gl_XML.FilterGLAPISpecBase):
 		print '#define GLOBL_FN(x) GLOBL x'
 		print '#endif'
 		print ''
-		print '#if defined(PTHREADS) || defined(XTHREADS) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || defined(BEOS_THREADS)'
+		print '#if defined(PTHREADS) || defined(USE_XTHREADS) || defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || defined(BEOS_THREADS)'
 		print '#  define THREADS'
 		print '#endif'
 		print ''
-		print '#if defined(PTHREADS)'
+		print '#ifdef GLX_USE_TLS'
+		print ''
 		print '#  define GL_STUB(fn,off,fn_alt)\t\t\t\\'
 		print 'ALIGNTEXT16;\t\t\t\t\t\t\\'
 		print 'GLOBL_FN(GL_PREFIX(fn, fn_alt));\t\t\t\\'
 		print 'GL_PREFIX(fn, fn_alt):\t\t\t\t\t\\'
-		print '\tMOV_L(CONTENT(GLNAME(_glapi_DispatchTSD)), EAX) ;\t\\'
+		print '\tCALL(_x86_get_dispatch) ;\t\t\t\\'
+		print '\tNOP ;\t\t\t\t\t\t\\'
+		print '\tJMP(GL_OFFSET(off))'
+		print ''
+		print '#elif defined(PTHREADS)'
+		print '#  define GL_STUB(fn,off,fn_alt)\t\t\t\\'
+		print 'ALIGNTEXT16;\t\t\t\t\t\t\\'
+		print 'GLOBL_FN(GL_PREFIX(fn, fn_alt));\t\t\t\\'
+		print 'GL_PREFIX(fn, fn_alt):\t\t\t\t\t\\'
+		print '\tMOV_L(CONTENT(GLNAME(_glapi_Dispatch)), EAX) ;\t\\'
 		print '\tTEST_L(EAX, EAX) ;\t\t\t\t\\'
 		print '\tJE(1f) ;\t\t\t\t\t\\'
 		print '\tJMP(GL_OFFSET(off)) ;\t\t\t\t\\'
@@ -103,7 +104,7 @@ class PrintGenericStubs(gl_XML.FilterGLAPISpecBase):
 		print 'ALIGNTEXT16;\t\t\t\t\t\t\\'
 		print 'GLOBL_FN(GL_PREFIX(fn, fn_alt));\t\t\t\\'
 		print 'GL_PREFIX(fn, fn_alt):\t\t\t\t\t\\'
-		print '\tMOV_L(CONTENT(GLNAME(_glapi_DispatchTSD)), EAX) ;\t\\'
+		print '\tMOV_L(CONTENT(GLNAME(_glapi_Dispatch)), EAX) ;\t\\'
 		print '\tTEST_L(EAX, EAX) ;\t\t\t\t\\'
 		print '\tJE(1f) ;\t\t\t\t\t\\'
 		print '\tJMP(GL_OFFSET(off)) ;\t\t\t\t\\'
@@ -118,9 +119,27 @@ class PrintGenericStubs(gl_XML.FilterGLAPISpecBase):
 		print '\tJMP(GL_OFFSET(off))'
 		print '#endif'
 		print ''
+		print '#ifdef HAVE_ALIAS'
+		print '#  define GL_STUB_ALIAS(fn,off,fn_alt,alias,alias_alt)\t\\'
+		print '\t.globl\tGL_PREFIX(fn, fn_alt) ;\t\t\t\\'
+		print '\t.set\tGL_PREFIX(fn, fn_alt), GL_PREFIX(alias, alias_alt)'
+		print '#else'
+		print '#  define GL_STUB_ALIAS(fn,off,fn_alt,alias,alias_alt)\t\\'
+		print '    GL_STUB(fn, off, fn_alt)'
+		print '#endif'
+		print ''
 		print 'SEG_TEXT'
 		print ''
-		print '#ifdef PTHREADS'
+		print '#ifdef GLX_USE_TLS'
+		print ''
+		print '\tGLOBL\tGLNAME(_x86_get_dispatch)'
+		print '\tHIDDEN(GLNAME(_x86_get_dispatch))'
+		print 'ALIGNTEXT16'
+		print 'GLNAME(_x86_get_dispatch):'
+		print '\tmovl\t%gs:_glapi_tls_Dispatch@NTPOFF, %eax'
+		print '\tret'
+		print ''
+		print '#elif defined(PTHREADS)'
 		print 'EXTERN GLNAME(_glapi_Dispatch)'
 		print 'EXTERN GLNAME(_gl_DispatchTSD)'
 		print 'EXTERN GLNAME(pthread_getspecific)'
@@ -136,21 +155,59 @@ class PrintGenericStubs(gl_XML.FilterGLAPISpecBase):
 		print 'EXTERN GLNAME(_glapi_get_dispatch)'
 		print '#endif'
 		print ''
-		print '\t\tALIGNTEXT16 ; GLOBL GLNAME(gl_dispatch_functions_start)'
+
+		print '#if defined( GLX_USE_TLS )'
+		print '\t\t.section\twtext, "awx", @progbits'
+		print '#endif /* defined( GLX_USE_TLS ) */'
+
+		print ''
+		print '\t\tALIGNTEXT16'
+		print '\t\tGLOBL GLNAME(gl_dispatch_functions_start)'
+		print '\t\tHIDDEN(GLNAME(gl_dispatch_functions_start))'
 		print 'GLNAME(gl_dispatch_functions_start):'
 		print ''
 		return
 
+
 	def printRealFooter(self):
 		print ''
-		print '#endif  /* __WIN32__ */'
+		print '\t\tGLOBL\tGLNAME(gl_dispatch_functions_end)'
+		print '\t\tHIDDEN(GLNAME(gl_dispatch_functions_end))'
+		print '\t\tALIGNTEXT16'
+		print 'GLNAME(gl_dispatch_functions_end):'
+		print ''
+		print '#if defined(GLX_USE_TLS) && defined(__linux__)'
+		print '	.section ".note.ABI-tag", "a"'
+		print '	.p2align 2'
+		print '	.long	1f - 0f   /* name length */'
+		print '	.long	3f - 2f   /* data length */'
+		print '	.long	1         /* note length */'
+		print '0:	.asciz "GNU"      /* vendor name */'
+		print '1:	.p2align 2'
+		print '2:	.long	0         /* note data: the ABI tag */'
+		print '	.long	2,4,20    /* Minimum kernel version w/TLS */'
+		print '3:	.p2align 2        /* pad out section */'
+		print '#endif /* GLX_USE_TLS */'
 		return
 
-	def printFunction(self, f):
-		stack = self.get_stack_size(f)
 
-		alt = "%s@%u" % (f.name, stack)
-		print '\tGL_STUB(%s, _gloffset_%s, %s)' % (f.name, f.real_name, alt)
+	def printBody(self, api):
+		for f in api.functionIterateByOffset():
+			stack = self.get_stack_size(f)
+
+			alt = "%s@%u" % (f.name, stack)
+			print '\tGL_STUB(%s, _gloffset_%s, %s)' % (f.name, f.name, alt)
+
+		for f in api.functionIterateByOffset():
+			stack = self.get_stack_size(f)
+
+			alt = "%s@%u" % (f.name, stack)
+
+			for n in f.entry_points:
+				if n != f.name:
+					alt2 = "%s@%u" % (n, stack)
+					print '\tGL_STUB_ALIAS(%s, _gloffset_%s, %s, %s, %s)' % (n, f.name, alt2, f.name, alt)
+
 		return
 
 def show_usage():
@@ -173,17 +230,11 @@ if __name__ == '__main__':
 			file_name = val
 
 	if mode == "generic":
-		dh = PrintGenericStubs()
+		printer = PrintGenericStubs()
 	else:
 		print "ERROR: Invalid mode \"%s\" specified." % mode
 		show_usage()
 
-	parser = make_parser()
-	parser.setFeature(feature_namespaces, 0)
-	parser.setContentHandler(dh)
+	api = gl_XML.parse_GL_API( file_name )
 
-	f = open(file_name)
-
-	dh.printHeader()
-	parser.parse(f)
-	dh.printFooter()
+	printer.Print( api )

@@ -30,6 +30,9 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xwin/winmultiwindowshape.c,v 1.2 2003/11/10 18:22:44 tsi Exp $ */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #ifdef SHAPE
 
 #include "win.h"
@@ -42,13 +45,17 @@
 void
 winSetShapeMultiWindow (WindowPtr pWin)
 {
+  ScreenPtr		pScreen = pWin->drawable.pScreen;
+  winWindowPriv(pWin);
+  winScreenPriv(pScreen);
+
 #if CYGMULTIWINDOW_DEBUG
   ErrorF ("winSetShapeMultiWindow - pWin: %08x\n", pWin);
 #endif
   
-  /* Call any wrapped SetShape function */
-  if (winGetScreenPriv(pWin->drawable.pScreen)->SetShape)
-    winGetScreenPriv(pWin->drawable.pScreen)->SetShape (pWin);
+  WIN_UNWRAP(SetShape); 
+  (*pScreen->SetShape)(pWin);
+  WIN_WRAP(SetShape, winSetShapeMultiWindow);
   
   /* Update the Windows window's shape */
   winReshapeMultiWindow (pWin);
@@ -165,19 +172,19 @@ winReshapeMultiWindow (WindowPtr pWin)
       for (pRects = pShape, pEnd = pShape + nRects; pRects < pEnd; pRects++)
         {
 	  /* Create a Windows region for the X rectangle */
-	  hRgnRect = CreateRectRgn (pRects->x1 + iOffsetX - 1,
-				    pRects->y1 + iOffsetY - 1,
-				    pRects->x2 + iOffsetX - 1,
-				    pRects->y2 + iOffsetY - 1);
+	  hRgnRect = CreateRectRgn (pRects->x1 + iOffsetX,
+				    pRects->y1 + iOffsetY,
+				    pRects->x2 + iOffsetX,
+				    pRects->y2 + iOffsetY);
 	  if (hRgnRect == NULL)
 	    {
 	      ErrorF ("winReshape - Loop CreateRectRgn (%d, %d, %d, %d) "
 		      "failed: %d\n"
 		      "\tx1: %d x2: %d xOff: %d y1: %d y2: %d yOff: %d\n",
-		      pRects->x1 + iOffsetX - 1,
-		      pRects->y1 + iOffsetY - 1,
-		      pRects->x2 + iOffsetX - 1,
-		      pRects->y2 + iOffsetY - 1,
+		      pRects->x1 + iOffsetX,
+		      pRects->y1 + iOffsetY,
+		      pRects->x2 + iOffsetX,
+		      pRects->y2 + iOffsetY,
 		      (int) GetLastError (),
 		      pRects->x1, pRects->x2, iOffsetX,
 		      pRects->y1, pRects->y2, iOffsetY);

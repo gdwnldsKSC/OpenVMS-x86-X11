@@ -52,7 +52,7 @@ from The Open Group.
 #define WANT_RANDOM
 #endif
 
-#if defined(SVR4) && !defined(SCO325)
+#if defined(SVR4) && !defined(__UNIXWARE__)
 #define WANT_BFUNCS
 #define WANT_FFS
 #define WANT_RANDOM
@@ -64,7 +64,7 @@ from The Open Group.
 
 #ifdef SYSV
 #ifdef i386
-#ifndef SCO
+#if !defined(__SCO__) && !defined(__UNIXWARE__)
 #define WANT_FFS
 #define WANT_MEMMOVE
 #endif

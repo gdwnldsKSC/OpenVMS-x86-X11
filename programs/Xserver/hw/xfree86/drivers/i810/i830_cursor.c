@@ -2,7 +2,7 @@
 /**************************************************************************
 
 Copyright 1998-1999 Precision Insight, Inc., Cedar Park, Texas.
-Copyright © 2002 David Dawes
+Copyright Â© 2002 David Dawes
 All Rights Reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -54,6 +54,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -82,7 +86,7 @@ I830InitHWCursor(ScrnInfoPtr pScrn)
 
    DPRINTF(PFX, "I830InitHWCursor\n");
    /* Initialise the HW cursor registers, leaving the cursor hidden. */
-   if (IS_MOBILE(pI830) || IS_I915G(pI830)) {
+   if (IS_MOBILE(pI830) || IS_I915G(pI830) || IS_I945G(pI830)) {
       temp = INREG(CURSOR_A_CONTROL);
       temp &= ~(CURSOR_MODE | MCURSOR_GAMMA_ENABLE | MCURSOR_MEM_TYPE_LOCAL |
 		MCURSOR_PIPE_SELECT);
@@ -304,7 +308,7 @@ I830SetCursorPosition(ScrnInfoPtr pScrn, int x, int y)
    }
 
    /* have to upload the base for the new position */
-   if (IS_I915G(pI830)) {
+   if (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830)) {
       if (pI830->CursorIsARGB)
          OUTREG(CURSOR_A_BASE, pI830->CursorMemARGB->Physical);
       else
@@ -335,7 +339,7 @@ I830ShowCursor(ScrnInfoPtr pScrn)
 	   pI830->CursorMemARGB->Physical, pI830->CursorMemARGB->Start);
 
    pI830->cursorOn = TRUE;
-   if (IS_MOBILE(pI830) || IS_I915G(pI830)) {
+   if (IS_MOBILE(pI830) || IS_I915G(pI830) || IS_I945G(pI830)) {
       temp = INREG(CURSOR_A_CONTROL);
       temp &= ~(CURSOR_MODE | MCURSOR_PIPE_SELECT);
       if (pI830->CursorIsARGB)
@@ -383,7 +387,7 @@ I830HideCursor(ScrnInfoPtr pScrn)
    DPRINTF(PFX, "I830HideCursor\n");
 
    pI830->cursorOn = FALSE;
-   if (IS_MOBILE(pI830) || IS_I915G(pI830)) {
+   if (IS_MOBILE(pI830) || IS_I915G(pI830) || IS_I945G(pI830)) {
       temp = INREG(CURSOR_A_CONTROL);
       temp &= ~CURSOR_MODE;
       temp |= CURSOR_MODE_DISABLE;

@@ -61,6 +61,12 @@ from The Open Group.
 #ifndef XALLOCA_H
 #define XALLOCA_H 1
 
+#ifndef INCLUDE_ALLOCA_H
+# if defined(__SUNPRO_C)  /* Need to add more here to match Imake *.cf's */
+#  define INCLUDE_ALLOCA_H
+# endif
+#endif
+
 #ifdef INCLUDE_ALLOCA_H
 #  include <alloca.h>
 #endif

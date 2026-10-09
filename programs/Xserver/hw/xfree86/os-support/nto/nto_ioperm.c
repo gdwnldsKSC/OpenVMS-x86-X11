@@ -24,17 +24,22 @@
 
 /* I/O functions to enable access to I/O ports under Neutrino */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <sys/neutrino.h>
 #include <errno.h>
 
 
-void xf86EnableIO()
+Bool xf86EnableIO()
 {
 	ErrorF("xf86EnableIO: enabling I/O access\n");
 	if(ThreadCtl(_NTO_TCTL_IO, 0)) {
 		ErrorF("xf86EnableIO: could not set I/O privilege, errno %d\n",errno);
+		return FALSE;
 	}
-	return;
+	return TRUE;
 }
 
 void xf86DisableIO()

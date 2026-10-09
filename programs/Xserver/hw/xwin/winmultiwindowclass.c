@@ -29,7 +29,10 @@
  */
 /* $XFree86$ */
 
-#include "X11/Xatom.h"
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
+#include <X11/Xatom.h>
 #include "propertyst.h"
 #include "windowstr.h"
 #include "winmultiwindowclass.h"

@@ -38,6 +38,21 @@
 
 #include "xf86drm.h"		/* drm_handle_t, etc */
 
+#       define RADEON_AGP_1X_MODE           0x01
+#       define RADEON_AGP_2X_MODE           0x02
+#       define RADEON_AGP_4X_MODE           0x04
+#       define RADEON_AGP_FW_MODE           0x10
+#       define RADEON_AGP_MODE_MASK         0x17
+#define RADEON_CP_CSQ_CNTL                  0x0740
+#       define RADEON_CSQ_CNT_PRIMARY_MASK     (0xff << 0)
+#       define RADEON_CSQ_PRIDIS_INDDIS        (0    << 28)
+#       define RADEON_CSQ_PRIPIO_INDDIS        (1    << 28)
+#       define RADEON_CSQ_PRIBM_INDDIS         (2    << 28)
+#       define RADEON_CSQ_PRIPIO_INDBM         (3    << 28)
+#       define RADEON_CSQ_PRIBM_INDBM          (4    << 28)
+#       define RADEON_CSQ_PRIPIO_INDPIO        (15   << 28)
+
+
 #define PCI_CHIP_R200_BB                0x4242
 #define PCI_CHIP_RV250_Id               0x4964
 #define PCI_CHIP_RV250_Ie               0x4965
@@ -109,6 +124,8 @@ typedef struct {
    drmSize           registerSize;     /**< \brief MMIO register map size */
    drm_handle_t         registerHandle;   /**< \brief MMIO register map handle */
 
+   int               IsPCI;            /* Current card is a PCI card */
+   
    /**
     * \name AGP
     */
@@ -171,6 +188,8 @@ typedef struct {
    unsigned int      frontPitchOffset;
    unsigned int      backPitchOffset;
    unsigned int      depthPitchOffset;
+   
+   int               colorTiling;      /**< \brief Enable color tiling */
 
    int               irq;              /**< \brief IRQ number */
    int               page_flip_enable; /**< \brief Page Flip enable */

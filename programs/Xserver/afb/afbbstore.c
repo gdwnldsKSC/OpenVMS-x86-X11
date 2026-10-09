@@ -31,8 +31,12 @@ from the X Consortium.
 
 */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include	"afb.h"
-#include	"X.h"
+#include	<X11/X.h>
 #include	"mibstore.h"
 #include	"regionstr.h"
 #include	"scrnintstr.h"

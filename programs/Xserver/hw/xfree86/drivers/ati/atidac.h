@@ -32,7 +32,6 @@
 
 #include "aticrtc.h"
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
@@ -86,18 +85,16 @@ extern const SymTabRec ATIDACDescriptors[];
             (void)inb(pATI->CPIO_DAC_WAIT); \
         } while (0)
 
-    extern void ATISetDACIOPorts FunctionPrototype((ATIPtr, ATICRTCType));
+    extern void ATISetDACIOPorts(ATIPtr, ATICRTCType);
 
 #endif /* AVOID_CPIO */
 
-extern CARD8 ATIGetDACCmdReg     FunctionPrototype((ATIPtr));
+extern CARD8 ATIGetDACCmdReg(ATIPtr);
 
-extern void ATIDACPreInit        FunctionPrototype((ScrnInfoPtr, ATIPtr,
-                                                    ATIHWPtr));
-extern void ATIDACSave           FunctionPrototype((ATIPtr, ATIHWPtr));
-extern void ATIDACSet            FunctionPrototype((ATIPtr, ATIHWPtr));
+extern void ATIDACPreInit(ScrnInfoPtr, ATIPtr, ATIHWPtr);
+extern void ATIDACSave(ATIPtr, ATIHWPtr);
+extern void ATIDACSet(ATIPtr, ATIHWPtr);
 
-extern void ATILoadPalette       FunctionPrototype((ScrnInfoPtr, int, int *,
-                                                    LOCO *, VisualPtr));
+extern void ATILoadPalette(ScrnInfoPtr, int, int *, LOCO *, VisualPtr);
 
 #endif /* ___ATIDAC_H___ */

@@ -26,11 +26,11 @@
 #ifndef _SAVAGE_INIT_H_
 #define _SAVAGE_INIT_H_
 
-#ifdef GLX_DIRECT_RENDERING
-
 #include <sys/time.h>
 #include "dri_util.h"
 #include "mtypes.h"
+
+#include "xmlconfig.h"
 
 typedef struct {
    drm_handle_t handle;
@@ -39,11 +39,6 @@ typedef struct {
 } savageRegion, *savageRegionPtr;
 
 typedef struct {
-   savageRegion front;
-   savageRegion back;
-   savageRegion depth;
-   savageRegion aperture;
-
    int chipset;
    int width;
    int height;
@@ -51,40 +46,53 @@ typedef struct {
 
    int cpp;			/* for front and back buffers */
    int zpp;
+
+   int agpMode;
+
+   unsigned int bufferSize;
+
 #if 0 
    int bitsPerPixel;
 #endif
    unsigned int frontFormat;
    unsigned int frontOffset;
-   unsigned int frontPitch;
-   unsigned int frontBitmapDesc;
-
    unsigned int backOffset;
-   unsigned int backBitmapDesc;
    unsigned int depthOffset;
-   unsigned int depthBitmapDesc;
 
-   unsigned int backPitch;
-   unsigned int backPitchBits;
+   unsigned int aperturePitch;
 
    unsigned int textureOffset[SAVAGE_NR_TEX_HEAPS];
    unsigned int textureSize[SAVAGE_NR_TEX_HEAPS];
    unsigned int logTextureGranularity[SAVAGE_NR_TEX_HEAPS];
    drmAddress texVirtual[SAVAGE_NR_TEX_HEAPS];
   
-  __DRIscreenPrivate *driScrnPriv;
-  drmBufMapPtr  bufs;
-  int use_copy_buf;
-  unsigned int sarea_priv_offset;
+   __DRIscreenPrivate *driScrnPriv;
+
+   savageRegion aperture;
+   savageRegion agpTextures;
+
+   drmBufMapPtr bufs;
+
+   unsigned int sarea_priv_offset;
+
+   /* Configuration cache with default values for all contexts */
+   driOptionCache optionCache;
 } savageScreenPrivate;
+
+
+/**
+ * savageRenderbuffer, derived from Mesa's gl_renderbuffer
+ */
+typedef struct {
+   struct gl_renderbuffer Base;
+   /* XXX per-window info should go here */
+   int foo, bar;
+} savageRenderbuffer;
 
 
 #include "savagecontext.h"
 
 extern void savageGetLock( savageContextPtr imesa, GLuint flags );
-extern void savageEmitHwStateLocked( savageContextPtr imesa );
-extern void savageEmitScissorValues( savageContextPtr imesa, int box_nr, int emit );
-extern void savageEmitDrawingRectangle( savageContextPtr imesa );
 extern void savageXMesaSetBackClipRects( savageContextPtr imesa );
 extern void savageXMesaSetFrontClipRects( savageContextPtr imesa );
 
@@ -157,5 +165,4 @@ enum S3CHIPTAGS {
     S3_LAST
 };
 
-#endif
 #endif

@@ -32,14 +32,18 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/programs/Xserver/mi/misprite.c,v 3.10tsi Exp $ */
 
-# include   "X.h"
-# include   "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+# include   <X11/X.h>
+# include   <X11/Xproto.h>
 # include   "misc.h"
 # include   "pixmapstr.h"
 # include   "input.h"
 # include   "mi.h"
 # include   "cursorstr.h"
-# include   "font.h"
+# include   <X11/fonts/font.h>
 # include   "scrnintstr.h"
 # include   "colormapst.h"
 # include   "windowstr.h"
@@ -47,7 +51,8 @@ in this Software without prior written authorization from The Open Group.
 # include   "mipointer.h"
 # include   "mispritest.h"
 # include   "dixfontstr.h"
-# include   "fontstruct.h"
+# include   <X11/fonts/fontstruct.h>
+
 #ifdef RENDER
 # include   "mipict.h"
 #endif

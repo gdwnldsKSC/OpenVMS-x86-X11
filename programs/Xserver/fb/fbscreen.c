@@ -1,7 +1,7 @@
-/* $XdotOrg: xc/programs/Xserver/fb/fbscreen.c,v 1.3 2004/05/16 05:08:39 alanc Exp $
+/* $XdotOrg: xc/programs/Xserver/fb/fbscreen.c,v 1.6 2005/07/03 07:01:23 daniels Exp $
  * Id: fbscreen.c,v 1.1 1999/11/02 03:54:45 keithp Exp $
  *
- * Copyright © 1998 Keith Packard
+ * Copyright Â© 1998 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -22,6 +22,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 /* $XFree86: xc/programs/Xserver/fb/fbscreen.c,v 1.13 2001/05/29 04:54:09 keithp Exp $ */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #include "fb.h"
 

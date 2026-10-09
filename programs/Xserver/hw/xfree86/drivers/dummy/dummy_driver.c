@@ -4,6 +4,10 @@
  * Copyright 2002, SuSE Linux AG, Author: Egbert Eich
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -21,6 +25,10 @@
 /* All drivers using the mi colormap manipulation need this */
 #include "micmap.h"
 
+/* identifying atom needed by magnifiers */
+#include <X11/Xatom.h>
+#include "property.h"
+
 #include "xf86cmap.h"
 
 #include "xf86fbman.h"
@@ -30,7 +38,7 @@
 #include "picturestr.h"
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 /*
  * Driver data structures.
@@ -38,12 +46,14 @@
 #include "dummy.h"
 
 /* These need to be checked */
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "scrnintstr.h"
 #include "servermd.h"
+#ifdef XFreeXDGA
 #define _XF86DGA_SERVER_
-#include "extensions/xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
+#endif
 
 /* Mandatory functions */
 static const OptionInfoRec *	DUMMYAvailableOptions(int chipid, int busid);
@@ -55,6 +65,7 @@ static Bool     DUMMYScreenInit(int Index, ScreenPtr pScreen, int argc,
 static Bool     DUMMYEnterVT(int scrnIndex, int flags);
 static void     DUMMYLeaveVT(int scrnIndex, int flags);
 static Bool     DUMMYCloseScreen(int scrnIndex, ScreenPtr pScreen);
+static Bool     DUMMYCreateWindow(WindowPtr pWin);
 static void     DUMMYFreeScreen(int scrnIndex, int flags);
 static ModeStatus DUMMYValidMode(int scrnIndex, DisplayModePtr mode,
                                  Bool verbose, int flags);
@@ -64,6 +75,9 @@ static Bool	DUMMYSaveScreen(ScreenPtr pScreen, int mode);
 static Bool     dummyModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode);
 static void	dummySave(ScrnInfoPtr pScrn);
 static void	dummyRestore(ScrnInfoPtr pScrn, Bool restoreText);
+static Bool	dummyDriverFunc(ScrnInfoPtr pScrn, xorgDriverFuncOp op,
+				pointer ptr);
+
 
 /* static void     DUMMYDisplayPowerManagementSet(ScrnInfoPtr pScrn, */
 /* 				int PowerManagementMode, int flags); */
@@ -91,14 +105,15 @@ static int pix24bpp = 0;
  * an upper-case version of the driver name.
  */
 
-DriverRec DUMMY = {
+_X_EXPORT DriverRec DUMMY = {
     VERSION,
     DUMMY_DRIVER_NAME,
     DUMMYIdentify,
     DUMMYProbe,
     DUMMYAvailableOptions,
     NULL,
-    0
+    0,
+    dummyDriverFunc
 };
 
 static SymTabRec DUMMYChipsets[] = {
@@ -161,7 +176,7 @@ static XF86ModuleVersionInfo dummyVersRec =
  * This is the module init data.
  * Its name has to be the driver name followed by ModuleData
  */
-XF86ModuleData dummyModuleData = { &dummyVersRec, dummySetup, NULL };
+_X_EXPORT XF86ModuleData dummyModuleData = { &dummyVersRec, dummySetup, NULL };
 
 static pointer
 dummySetup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -170,7 +185,7 @@ dummySetup(pointer module, pointer opts, int *errmaj, int *errmin)
 
     if (!setupDone) {
 	setupDone = TRUE;
-        xf86AddDriver(&DUMMY, module, 0);
+        xf86AddDriver(&DUMMY, module, HaveDriverFuncs);
 
 	/*
 	 * Modules that this driver always requires can be loaded here
@@ -309,10 +324,6 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
     if (!DUMMYGetRec(pScrn)) {
 	return FALSE;
     }
-# define RETURN \
-    { DUMMYFreeRec(pScrn);\
-			    return FALSE;\
-					     }
     
     dPtr = DUMMYPTR(pScrn);
 
@@ -412,7 +423,7 @@ DUMMYPreInit(ScrnInfoPtr pScrn, int flags)
     clockRanges = (ClockRangePtr)xnfcalloc(sizeof(ClockRange), 1);
     clockRanges->next = NULL;
     clockRanges->ClockMulFactor = 1;
-    clockRanges->minClock = 11000;   /* guessed §§§ */
+    clockRanges->minClock = 11000;   /* guessed Â§Â§Â§ */
     clockRanges->maxClock = 300000;
     clockRanges->clockIndex = -1;		/* programmable */
     clockRanges->interlaceAllowed = TRUE; 
@@ -536,6 +547,8 @@ DUMMYLoadPalette(
 
 }
 
+static ScrnInfoPtr DUMMYScrn; /* static-globalize it */
+
 /* Mandatory */
 static Bool
 DUMMYScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
@@ -551,6 +564,7 @@ DUMMYScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
      */
     pScrn = xf86Screens[pScreen->myNum];
     dPtr = DUMMYPTR(pScrn);
+    DUMMYScrn = pScrn;
 
 
     if (!(dPtr->FBBase = xalloc(pScrn->videoRam * 1024)))
@@ -668,6 +682,10 @@ DUMMYScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     dPtr->CloseScreen = pScreen->CloseScreen;
     pScreen->CloseScreen = DUMMYCloseScreen;
 
+    /* Wrap the current CreateWindow function */
+    dPtr->CreateWindow = pScreen->CreateWindow;
+    pScreen->CreateWindow = DUMMYCreateWindow;
+
     /* Report any unused options (only for the first generation) */
     if (serverGeneration == 1) {
 	xf86ShowUnusedOptions(pScrn->scrnIndex, pScrn->options);
@@ -777,3 +795,51 @@ dummyModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     return(TRUE);
 }
 
+
+Atom VFB_PROP  = 0;
+#define  VFB_PROP_NAME  "VFB_IDENT"
+
+
+
+static Bool
+DUMMYCreateWindow(WindowPtr pWin)
+{
+    DUMMYPtr dPtr = DUMMYPTR(DUMMYScrn);
+    WindowPtr pWinRoot;
+    int ret;
+	
+    ret = dPtr->CreateWindow(pWin);
+    if(ret != TRUE)
+	return(ret);
+	
+    if(dPtr->prop == FALSE) {
+        pWinRoot = WindowTable[DUMMYScrn->pScreen->myNum];
+        if (! ValidAtom(VFB_PROP))
+            VFB_PROP = MakeAtom(VFB_PROP_NAME, strlen(VFB_PROP_NAME), 1);
+
+        ret = ChangeWindowProperty(pWinRoot, VFB_PROP, XA_STRING, 
+		8, PropModeReplace, (int)4, (pointer)"TRUE", FALSE);
+	if( ret != Success)
+		ErrorF("Could not set VFB root window property");
+        dPtr->prop = TRUE;
+
+	return TRUE;
+    }
+    return TRUE;
+}
+
+
+static Bool
+dummyDriverFunc(ScrnInfoPtr pScrn, xorgDriverFuncOp op, pointer ptr)
+{
+    CARD32 *flag;
+    
+    switch (op) {
+	case GET_REQUIRED_HW_INTERFACES:
+	    flag = (CARD32*)ptr;
+	    (*flag) = 0;
+	    return TRUE;
+	default:
+	    return FALSE;
+    }
+}

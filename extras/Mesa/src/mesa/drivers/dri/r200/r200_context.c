@@ -40,6 +40,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "imports.h"
 #include "matrix.h"
 #include "extensions.h"
+#include "framebuffer.h"
 #include "state.h"
 
 #include "swrast/swrast.h"
@@ -62,7 +63,19 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "r200_vtxfmt.h"
 #include "r200_maos.h"
 
-#define DRIVER_DATE	"20040929"
+#define need_GL_ARB_multisample
+#define need_GL_ARB_texture_compression
+#define need_GL_ARB_vertex_buffer_object
+#define need_GL_ARB_vertex_program
+#define need_GL_EXT_blend_minmax
+#define need_GL_EXT_fog_coord
+#define need_GL_EXT_secondary_color
+#define need_GL_EXT_blend_equation_separate
+#define need_GL_EXT_blend_func_separate
+#define need_GL_NV_vertex_program
+#include "extension_helper.h"
+
+#define DRIVER_DATE	"20041207"
 
 #include "vblank.h"
 #include "utils.h"
@@ -118,34 +131,49 @@ static const GLubyte *r200GetString( GLcontext *ctx, GLenum name )
 
 /* Extension strings exported by the R200 driver.
  */
-static const char * const card_extensions[] =
+const struct dri_extension card_extensions[] =
 {
-    "GL_ARB_multisample",
-    "GL_ARB_multitexture",
-    "GL_ARB_texture_border_clamp",
-    "GL_ARB_texture_compression",
-    "GL_ARB_texture_env_add",
-    "GL_ARB_texture_env_combine",
-    "GL_ARB_texture_env_dot3",
-    "GL_ARB_texture_mirrored_repeat",
-    "GL_ARB_vertex_buffer_object",
-    "GL_EXT_blend_minmax",
-    "GL_EXT_blend_subtract",
-    "GL_EXT_secondary_color",
-    "GL_EXT_stencil_wrap",
-    "GL_EXT_texture_edge_clamp",
-    "GL_EXT_texture_env_combine",
-    "GL_EXT_texture_env_dot3",
-    "GL_EXT_texture_filter_anisotropic",
-    "GL_EXT_texture_lod_bias",
-    "GL_EXT_texture_mirror_clamp",
-    "GL_EXT_texture_rectangle",
-    "GL_ATI_texture_env_combine3",
-    "GL_ATI_texture_mirror_once",
-    "GL_MESA_pack_invert",
-    "GL_NV_blend_square",
-    "GL_SGIS_generate_mipmap",
-    NULL
+    { "GL_ARB_multisample",                GL_ARB_multisample_functions },
+    { "GL_ARB_multitexture",               NULL },
+    { "GL_ARB_texture_border_clamp",       NULL },
+    { "GL_ARB_texture_compression",        GL_ARB_texture_compression_functions },
+    { "GL_ARB_texture_env_add",            NULL },
+    { "GL_ARB_texture_env_combine",        NULL },
+    { "GL_ARB_texture_env_dot3",           NULL },
+    { "GL_ARB_texture_mirrored_repeat",    NULL },
+    { "GL_ARB_vertex_buffer_object",       GL_ARB_vertex_buffer_object_functions },
+    { "GL_EXT_blend_minmax",               GL_EXT_blend_minmax_functions },
+    { "GL_EXT_blend_subtract",             NULL },
+    { "GL_EXT_fog_coord",                  GL_EXT_fog_coord_functions },
+    { "GL_EXT_secondary_color",            GL_EXT_secondary_color_functions },
+    { "GL_EXT_stencil_wrap",               NULL },
+    { "GL_EXT_texture_edge_clamp",         NULL },
+    { "GL_EXT_texture_env_combine",        NULL },
+    { "GL_EXT_texture_env_dot3",           NULL },
+    { "GL_EXT_texture_filter_anisotropic", NULL },
+    { "GL_EXT_texture_lod_bias",           NULL },
+    { "GL_EXT_texture_mirror_clamp",       NULL },
+    { "GL_EXT_texture_rectangle",          NULL },
+    { "GL_ATI_texture_env_combine3",       NULL },
+    { "GL_ATI_texture_mirror_once",        NULL },
+    { "GL_MESA_pack_invert",               NULL },
+    { "GL_NV_blend_square",                NULL },
+    { "GL_SGIS_generate_mipmap",           NULL },
+    { NULL,                                NULL }
+};
+
+const struct dri_extension blend_extensions[] = {
+    { "GL_EXT_blend_equation_separate",    GL_EXT_blend_equation_separate_functions },
+    { "GL_EXT_blend_func_separate",        GL_EXT_blend_func_separate_functions },
+    { NULL,                                NULL }
+};
+							 
+const struct dri_extension ARB_vp_extension[] = {
+    { "GL_ARB_vertex_program",             GL_ARB_vertex_program_functions }
+};
+
+const struct dri_extension NV_vp_extension[] = {
+    { "GL_NV_vertex_program",              GL_NV_vertex_program_functions }
 };
 
 extern const struct tnl_pipeline_stage _r200_render_stage;
@@ -165,6 +193,7 @@ static const struct tnl_pipeline_stage *r200_pipeline[] = {
    &_tnl_fog_coordinate_stage,
    &_tnl_texgen_stage,
    &_tnl_texture_transform_stage,
+   &_tnl_arb_vertex_program_stage,
    &_tnl_vertex_program_stage,
 
    /* Try again to go to tcl? 
@@ -181,7 +210,7 @@ static const struct tnl_pipeline_stage *r200_pipeline[] = {
     */
 /*    &_r200_render_stage,  */ /* FIXME: bugs with ut2003 */
    &_tnl_render_stage,		/* FALLBACK:  */
-   0,
+   NULL,
 };
 
 
@@ -191,7 +220,7 @@ static const struct tnl_pipeline_stage *r200_pipeline[] = {
 static void r200InitDriverFuncs( struct dd_function_table *functions )
 {
     functions->GetBufferSize		= r200GetBufferSize;
-    functions->ResizeBuffers           = _swrast_alloc_buffers;
+    functions->ResizeBuffers            = _mesa_resize_framebuffer;
     functions->GetString		= r200GetString;
 
     functions->Error			= NULL;
@@ -221,14 +250,6 @@ static const struct dri_debug_control debug_control[] =
 };
 
 
-static int
-get_ust_nop( int64_t * ust )
-{
-   *ust = 1;
-   return 0;
-}
-
-
 /* Create the device specific rendering context.
  */
 GLboolean r200CreateContext( const __GLcontextModes *glVisual,
@@ -251,6 +272,9 @@ GLboolean r200CreateContext( const __GLcontextModes *glVisual,
    rmesa = (r200ContextPtr) CALLOC( sizeof(*rmesa) );
    if ( !rmesa )
       return GL_FALSE;
+      
+   /* init exp fog table data */
+   r200InitStaticFogData();
 
    /* Parse configuration files.
     * Do this here so that initialMaxAnisotropy is set before we create
@@ -260,6 +284,17 @@ GLboolean r200CreateContext( const __GLcontextModes *glVisual,
 			screen->driScreen->myNum, "r200");
    rmesa->initialMaxAnisotropy = driQueryOptionf(&rmesa->optionCache,
                                                  "def_max_anisotropy");
+
+   if ( driQueryOptionb( &rmesa->optionCache, "hyperz" ) ) {
+      if ( sPriv->drmMinor < 13 )
+	 fprintf( stderr, "DRM version 1.%d too old to support HyperZ, "
+			  "disabling.\n",sPriv->drmMinor );
+      else
+	 rmesa->using_hyperz = GL_TRUE;
+   }
+ 
+   if ( sPriv->drmMinor >= 15 )
+      rmesa->texmicrotile = GL_TRUE;
 
    /* Init default driver functions then plug in our R200-specific functions
     * (the texture functions are especially important)
@@ -350,6 +385,13 @@ GLboolean r200CreateContext( const __GLcontextModes *glVisual,
 				 12,
 				 GL_FALSE );
 
+   /* adjust max texture size a bit. Hack, but I really want to use larger textures
+      which will work just fine in 99.999999% of all cases, especially with texture compression... */
+   if (driQueryOptionb( &rmesa->optionCache, "texture_level_hack" ))
+   {
+     if (ctx->Const.MaxTextureLevels < 12) ctx->Const.MaxTextureLevels += 1;
+   }
+
    ctx->Const.MaxTextureMaxAnisotropy = 16.0;
 
    /* No wide points.
@@ -400,21 +442,28 @@ GLboolean r200CreateContext( const __GLcontextModes *glVisual,
    _math_matrix_set_identity( &rmesa->tmpmat );
 
    driInitExtensions( ctx, card_extensions, GL_TRUE );
-   if (rmesa->r200Screen->chipset & R200_CHIPSET_REAL_R200) {
-   /* yuv textures only work with r200 chips for unknown reasons, the
-      others get the bit ordering right but don't actually do YUV-RGB conversion */
+   if (!(rmesa->r200Screen->chipset & R200_CHIPSET_YCBCR_BROKEN)) {
+     /* yuv textures don't work with some chips - R200 / rv280 okay so far
+	others get the bit ordering right but don't actually do YUV-RGB conversion */
       _mesa_enable_extension( ctx, "GL_MESA_ycbcr_texture" );
    }
+   if (rmesa->glCtx->Mesa_DXTn) {
+      _mesa_enable_extension( ctx, "GL_EXT_texture_compression_s3tc" );
+      _mesa_enable_extension( ctx, "GL_S3_s3tc" );
+   }
+   else if (driQueryOptionb (&rmesa->optionCache, "force_s3tc_enable")) {
+      _mesa_enable_extension( ctx, "GL_EXT_texture_compression_s3tc" );
+   }
+
    if (rmesa->r200Screen->drmSupportsCubeMaps)
       _mesa_enable_extension( ctx, "GL_ARB_texture_cube_map" );
    if (rmesa->r200Screen->drmSupportsBlendColor) {
-      _mesa_enable_extension( ctx, "GL_EXT_blend_equation_separate" );
-      _mesa_enable_extension( ctx, "GL_EXT_blend_func_separate" );
+       driInitExtensions( ctx, blend_extensions, GL_FALSE );
    }
    if(driQueryOptionb(&rmesa->optionCache, "arb_vertex_program"))
-      _mesa_enable_extension( ctx, "GL_ARB_vertex_program");
+      driInitSingleExtension( ctx, ARB_vp_extension );
    if(driQueryOptionb(&rmesa->optionCache, "nv_vertex_program"))
-      _mesa_enable_extension( ctx, "GL_NV_vertex_program");
+      driInitSingleExtension( ctx, NV_vp_extension );
 
 #if 0
    r200InitDriverFuncs( ctx );
@@ -453,11 +502,7 @@ GLboolean r200CreateContext( const __GLcontextModes *glVisual,
    rmesa->prefer_gart_client_texturing = 
       (getenv("R200_GART_CLIENT_TEXTURES") != 0);
 
-   rmesa->get_ust = (PFNGLXGETUSTPROC) glXGetProcAddress( (const GLubyte *) "__glXGetUST" );
-   if ( rmesa->get_ust == NULL ) {
-      rmesa->get_ust = get_ust_nop;
-   }
-   (*rmesa->get_ust)( & rmesa->swap_ust );
+   (*dri_interface->getUST)( & rmesa->swap_ust );
 
 
 #if DO_DEBUG
@@ -480,10 +525,11 @@ GLboolean r200CreateContext( const __GLcontextModes *glVisual,
       }
       TCL_FALLBACK(rmesa->glCtx, R200_TCL_FALLBACK_TCL_DISABLE, 1);
    }
+
    if (rmesa->r200Screen->chipset & R200_CHIPSET_TCL) {
-      if (tcl_mode >= DRI_CONF_TCL_VTXFMT && !getenv("R200_NO_VTXFMT")) {
+      if (tcl_mode >= DRI_CONF_TCL_VTXFMT)
 	 r200VtxfmtInit( ctx, tcl_mode >= DRI_CONF_TCL_CODEGEN );
-      }
+
       _tnl_need_dlist_norm_lengths( ctx, GL_FALSE );
    }
    return GL_TRUE;
@@ -503,7 +549,7 @@ void r200DestroyContext( __DRIcontextPrivate *driContextPriv )
    /* check if we're deleting the currently bound context */
    if (rmesa == current) {
       R200_FIREVERTICES( rmesa );
-      _mesa_make_current2(NULL, NULL, NULL);
+      _mesa_make_current(NULL, NULL, NULL);
    }
 
    /* Free r200 context resources */
@@ -538,7 +584,7 @@ void r200DestroyContext( __DRIcontextPrivate *driContextPriv )
 
       if (rmesa->state.scissor.pClipRects) {
 	 FREE(rmesa->state.scissor.pClipRects);
-	 rmesa->state.scissor.pClipRects = 0;
+	 rmesa->state.scissor.pClipRects = NULL;
       }
 
       if ( release_texture_heaps ) {
@@ -612,14 +658,9 @@ r200MakeCurrent( __DRIcontextPrivate *driContextPriv,
 	 r200UpdateViewportOffset( newCtx->glCtx );
       }
 
-      _mesa_make_current2( newCtx->glCtx,
-			   (GLframebuffer *) driDrawPriv->driverPrivate,
-			   (GLframebuffer *) driReadPriv->driverPrivate );
-
-      if ( !newCtx->glCtx->Viewport.Width ) {
-	 _mesa_set_viewport( newCtx->glCtx, 0, 0,
-			     driDrawPriv->w, driDrawPriv->h );
-      }
+      _mesa_make_current( newCtx->glCtx,
+			  (GLframebuffer *) driDrawPriv->driverPrivate,
+			  (GLframebuffer *) driReadPriv->driverPrivate );
 
       if (newCtx->vb.enabled)
 	 r200VtxfmtMakeCurrent( newCtx->glCtx );
@@ -630,7 +671,7 @@ r200MakeCurrent( __DRIcontextPrivate *driContextPriv,
    } else {
       if (R200_DEBUG & DEBUG_DRI)
 	 fprintf(stderr, "%s ctx is null\n", __FUNCTION__);
-      _mesa_make_current( 0, 0 );
+      _mesa_make_current( NULL, NULL, NULL );
    }
 
    if (R200_DEBUG & DEBUG_DRI)

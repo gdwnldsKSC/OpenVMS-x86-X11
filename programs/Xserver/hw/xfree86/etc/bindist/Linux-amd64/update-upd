@@ -1,5 +1,5 @@
 bin/SuperProbe
-bin/XFree86
+bin/Xorg
 bin/gccmakedep
 bin/mkhtmlindex
 bin/rman
@@ -36,6 +36,8 @@ lib/libXaw.so.6
 lib/libXaw.so.6.1
 lib/libXaw.so.7
 lib/libXaw.so.7.0
+lib/libXaw.so.8
+lib/libXaw.so.8.0
 lib/libXfont.a
 lib/libXfont.so
 lib/libXfont.so.1
@@ -48,6 +50,18 @@ lib/libfreetype.a
 lib/libfreetype.so
 lib/libfreetype.so.6
 lib/libfreetype.so.6.2
-man/man1/XFree86.1x
+lib64/libXcomposite.so.1.0
+lib64/libXcomposite.so.1
+lib64/libXcomposite.so
+lib64/libXdamage.so.1.0
+lib64/libXdamage.so.1
+lib64/libXdamage.so
+lib64/libXevie.so.1.0
+lib64/libXevie.so.1
+lib64/libXevie.so
+lib64/libXfixes.so.3.0
+lib64/libXfixes.so.3
+lib64/libXfixes.so
+man/man1/Xorg.1x
 man/man4/nv.4
-man/man5/XF86Config.5x
+man/man5/xorg.conf.5x

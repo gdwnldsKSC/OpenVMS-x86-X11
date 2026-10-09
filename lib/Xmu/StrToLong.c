@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xmu/StrToLong.c,v 1.8 2001/08/23 00:03:21 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <X11/Intrinsic.h>
 #include <X11/Xmu/SysUtil.h>

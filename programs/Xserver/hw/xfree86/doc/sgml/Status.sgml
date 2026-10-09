@@ -5,11 +5,11 @@
 <article>
 
 <title>Driver Status
-<author>The X.org Foundation
+<author>The X.Org Foundation
 <date>28 March, 2004
 
 <ident>
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/sgml/Status.sgml,v 1.2 2004/04/23 19:23:59 eich Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/sgml/Status.sgml,v 1.3 2005/12/19 07:56:55 alanc Exp $
 </ident>
 
 <abstract>

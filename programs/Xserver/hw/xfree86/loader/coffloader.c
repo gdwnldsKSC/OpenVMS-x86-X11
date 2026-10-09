@@ -22,6 +22,10 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -39,7 +43,7 @@
 #define Xfree(size) free(size)
 #endif
 
-#include "Xos.h"
+#include <X11/Xos.h>
 #include "os.h"
 #include "coff.h"
 

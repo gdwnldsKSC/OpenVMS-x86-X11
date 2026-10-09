@@ -1,6 +1,6 @@
 /*
  *
- * Copyright © 2000 SuSE, Inc.
+ * Copyright Â© 2000 SuSE, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -65,7 +65,7 @@ typedef struct {
 #define PictFormatColormap  (1 << 11)
 
 typedef struct _XRenderPictureAttributes {
-    Bool		repeat;
+    int 		repeat;
     Picture		alpha_map;
     int			alpha_x_origin;
     int			alpha_y_origin;
@@ -143,6 +143,12 @@ typedef struct _XTriangle {
     XPointFixed	p1, p2, p3;
 } XTriangle;
 
+typedef struct _XCircle {
+    XFixed x;
+    XFixed y;
+    XFixed radius;
+} XCircle;
+
 typedef struct _XTrapezoid {
     XFixed  top, bottom;
     XLineFixed	left, right;
@@ -176,6 +182,21 @@ typedef struct _XSpanFix {
 typedef struct _XTrap {
     XSpanFix	    top, bottom;
 } XTrap;
+
+typedef struct _XLinearGradient {
+    XPointFixed p1;
+    XPointFixed p2;
+} XLinearGradient;
+
+typedef struct _XRadialGradient {
+    XCircle inner;
+    XCircle outer;
+} XRadialGradient;
+
+typedef struct _XConicalGradient {
+    XPointFixed center;
+    XFixed angle; /* in degrees */
+} XConicalGradient;
 
 _XFUNCPROTOBEGIN
 
@@ -480,6 +501,27 @@ XRenderAddTraps (Display	    *dpy,
 		 int		    yOff,
 		 _Xconst XTrap	    *traps,
 		 int		    ntrap);
+
+Picture XRenderCreateSolidFill (Display *dpy,
+                                const XRenderColor *color);
+
+Picture XRenderCreateLinearGradient (Display *dpy,
+                                     const XLinearGradient *gradient,
+                                     const XFixed *stops,
+                                     const XRenderColor *colors,
+                                     int nstops);
+
+Picture XRenderCreateRadialGradient (Display *dpy,
+                                     const XRadialGradient *gradient,
+                                     const XFixed *stops,
+                                     const XRenderColor *colors,
+                                     int nstops);
+
+Picture XRenderCreateConicalGradient (Display *dpy,
+                                      const XConicalGradient *gradient,
+                                      const XFixed *stops,
+                                      const XRenderColor *colors,
+                                      int nstops);
 
 _XFUNCPROTOEND
 

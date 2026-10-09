@@ -28,6 +28,10 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/neomagic/neo_video.c,v 1.6tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "neo.h"
 #include "neo_video.h"
 

@@ -33,6 +33,9 @@
 *                                                                             *
 \*****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "XpmI.h"
 
 LFUNC(AtomMake, xpmHashAtom, (char *name, void *data));

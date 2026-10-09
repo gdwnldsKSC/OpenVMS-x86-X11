@@ -41,7 +41,7 @@ ALLOC_DEFINES = -DMALLOC_0_RETURNS_NULL
 #endif
 
 #if BuildXF86DRI
-  DRI_DEFINES = GlxDefines
+  DRI_DEFINES = GlxDefines -DIN_DRI_DRIVER
  DRI_INCLUDES = -I../../../dri -I../../../glx -I../../dri -I../../../include \
 		-I$(INCLUDESRC)/GL -I$(XF86OSSRC) -I$(SERVERSRC)/GL/dri
 #endif

@@ -162,8 +162,6 @@ XCOMM operating system:  OSName V/**/OSMajorVersion./**/OSMinorVersion./**/OSTee
  */
 
 #define BuildDps		YES
-#define BuildPexClients		NO
-#define BuildPexExt		YES	/* needed for contrib xscope */
 #define BuildServer		YES
 #define BuildXF86DGA		NO	/* DGA has no meaning on Sequent HW */
 #define BuildXF86MiscExt	NO	/* turn off the server portion */
@@ -331,8 +329,6 @@ XCOMM operating system:  OSName V/**/OSMajorVersion./**/OSMinorVersion./**/OSTee
 #define DebugLibXaw		DebugLibDefault	/* debugged widget library */
 #define DebugLibXi		DebugLibDefault	/* debugged Xi library */
 #define DebugLibXtst		DebugLibDefault	/* debugged Xtst library */
-#define DebugLibPex		DebugLibDefault	/* debugged PEX5 library */
-#define DebugLibXie		DebugLibDefault	/* debugged XIE library */
 #define DebugLibICE		DebugLibDefault	/* debugged ICE library */
 #define DebugLibSM		DebugLibDefault	/* debugged SM library */
 #define DebugLibXkey		DebugLibDefault	/* debugged Xkey library */

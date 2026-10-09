@@ -31,9 +31,12 @@ Author: Ralph Mor, X Consortium
 #ifdef WIN32
 #define _WILLWINSOCK_
 #endif
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/ICE/ICElib.h>
 #include "ICElibint.h"
-#include <X11/Xtrans.h>
+#include <X11/Xtrans/Xtrans.h>
 #include <stdio.h>
 #ifdef WIN32
 #include <X11/Xwinsock.h>
@@ -614,10 +617,14 @@ int 	myOpcode;
 
 
 char *
-_IceGetPeerName (iceConn)
-
-IceConn iceConn;
-
+IceGetPeerName (IceConn iceConn)
 {
     return (_IceTransGetPeerNetworkId (iceConn->trans_conn));
+}
+
+
+char *
+_IceGetPeerName (IceConn iceConn)
+{
+    return (IceGetPeerName(iceConn));
 }

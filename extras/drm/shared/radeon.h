@@ -37,21 +37,15 @@
 
 /* General customization:
  */
-#define __HAVE_AGP		1
-#define __MUST_HAVE_AGP		0
-#define __HAVE_MTRR		1
-#define __HAVE_CTX_BITMAP	1
-#define __HAVE_SG		1
-#define __HAVE_PCI_DMA		1
 
 #define DRIVER_AUTHOR		"Gareth Hughes, Keith Whitwell, others."
 
 #define DRIVER_NAME		"radeon"
 #define DRIVER_DESC		"ATI Radeon"
-#define DRIVER_DATE		"20020828"
+#define DRIVER_DATE		"20050311"
 
 #define DRIVER_MAJOR		1
-#define DRIVER_MINOR		11
+#define DRIVER_MINOR		16
 #define DRIVER_PATCHLEVEL	0
 
 /* Interface history:
@@ -86,6 +80,16 @@
  *       located in the card's address space
  * 1.11- Add packet R200_EMIT_RB3D_BLENDCOLOR to support GL_EXT_blend_color
  *       and GL_EXT_blend_[func|equation]_separate on r200
+ * 1.12- Add R300 CP microcode support - this just loads the CP on r300
+ *       (No 3D support yet - just microcode loading).
+ * 1.13- Add packet R200_EMIT_TCL_POINT_SPRITE_CNTL for ARB_point_parameters
+ *     - Add hyperz support, add hyperz flags to clear ioctl.
+ * 1.14- Add support for color tiling
+ *     - Add R100/R200 surface allocation/free support
+ * 1.15- Add support for texture micro tiling
+ *     - Add support for r100 cube maps
+ * 1.16- Add R200_EMIT_PP_TRI_PERF_CNTL packet to support brilinear
+ *       texture filtering on r200
  */
 #define DRIVER_IOCTLS							     \
  [DRM_IOCTL_NR(DRM_IOCTL_DMA)]               = { radeon_cp_buffers,  1, 0 }, \
@@ -114,60 +118,7 @@
  [DRM_IOCTL_NR(DRM_IOCTL_RADEON_IRQ_EMIT)]   = { radeon_irq_emit,    1, 0 }, \
  [DRM_IOCTL_NR(DRM_IOCTL_RADEON_IRQ_WAIT)]   = { radeon_irq_wait,    1, 0 }, \
  [DRM_IOCTL_NR(DRM_IOCTL_RADEON_SETPARAM)]   = { radeon_cp_setparam, 1, 0 }, \
-
-#define DRIVER_FILE_FIELDS						\
-	int64_t radeon_fb_delta;					\
-
-#define DRIVER_OPEN_HELPER( filp_priv, dev )				\
-do {									\
-	drm_radeon_private_t *dev_priv = dev->dev_private;		\
-	if ( dev_priv )							\
-		filp_priv->radeon_fb_delta = dev_priv->fb_location;	\
-	else								\
-		filp_priv->radeon_fb_delta = 0;				\
-} while( 0 )
-
-/* When a client dies:
- *    - Check for and clean up flipped page state
- *    - Free any alloced GART memory.
- *
- * DRM infrastructure takes care of reclaiming dma buffers.
- */
-#define DRIVER_PRERELEASE() 						\
-do {									\
-	if ( dev->dev_private ) {					\
-		drm_radeon_private_t *dev_priv = dev->dev_private;	\
-		if ( dev_priv->page_flipping ) {			\
-			radeon_do_cleanup_pageflip( dev );		\
-		}							\
-		radeon_mem_release( filp, dev_priv->gart_heap );	\
-		radeon_mem_release( filp, dev_priv->fb_heap );		\
-	}								\
-} while (0)
-
-/* When the last client dies, shut down the CP and free dev->dev_priv.
- */
-/* #define __HAVE_RELEASE 1 */
-#define DRIVER_PRETAKEDOWN( dev )		\
-do {						\
-    radeon_do_release( dev );			\
-} while (0)
-
-
-
-/* DMA customization:
- */
-#define __HAVE_DMA		1
-#define __HAVE_IRQ		1
-#define __HAVE_VBL_IRQ		1
-#define __HAVE_SHARED_IRQ       1
-
-
-/* Buffer customization:
- */
-#define DRIVER_BUF_PRIV_T	drm_radeon_buf_priv_t
-
-#define DRIVER_AGP_BUFFERS_MAP( dev )				\
-	((drm_radeon_private_t *)((dev)->dev_private))->buffers
+ [DRM_IOCTL_NR(DRM_IOCTL_RADEON_SURF_ALLOC)] = { radeon_surface_alloc, 1, 0 }, \
+ [DRM_IOCTL_NR(DRM_IOCTL_RADEON_SURF_FREE)]  = { radeon_surface_free, 1, 0 }, \
 
 #endif

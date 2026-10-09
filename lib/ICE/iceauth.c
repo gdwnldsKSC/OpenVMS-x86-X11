@@ -28,6 +28,9 @@ Author: Ralph Mor, X Consortium
 ******************************************************************************/
 /* $XFree86: xc/lib/ICE/iceauth.c,v 3.5 2001/12/14 19:53:36 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/ICE/ICElib.h>
 #include "ICElibint.h"
 #include <X11/ICE/ICEutil.h>

@@ -31,7 +31,6 @@
 #define ___ATIBUS_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
@@ -53,7 +52,6 @@ typedef enum
 
 extern const char *ATIBusNames[];
 
-extern int ATIClaimBusSlot FunctionPrototype((DriverPtr, int, GDevPtr, Bool,
-                                              ATIPtr));
+extern int ATIClaimBusSlot(DriverPtr, int, GDevPtr, Bool, ATIPtr);
 
 #endif /* ___ATIBUS_H___ */

@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_driver.c,v 1.4tsi Exp $ */
 /*
  * $Workfile: nsc_driver.c $
- * $Revision$
- * $Author$
+ * $Revision: 1.7 $
+ * $Author: ajax $
  *
  * File Contents: This is the main module configures the interfacing 
  *                with the X server. The individual modules will be 
@@ -143,9 +143,12 @@
  *
  * END_NSC_LIC_GPL */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define DEBUG(x)
 #define NSC_TRACE 0
-#define CFB 0
 #define HWVGA 1
 
 /* Includes that are used by all drivers */
@@ -167,20 +170,7 @@
 #define RC_MAX_DEPTH 24
 
 /* Frame buffer stuff */
-#if CFB
-/*
- * If using cfb, cfb.h is required.  Select the others for the bpp values
- * the driver supports.
- */
-#define PSZ 8				/* needed for cfb.h */
-#include "cfb.h"
-#undef PSZ
-#include "cfb16.h"
-#include "cfb24.h"
-#include "cfb32.h"
-#else
 #include "fb.h"
-#endif
 
 #include "shadowfb.h"
 
@@ -196,13 +186,13 @@
 /* Check for some extensions */
 #ifdef XFreeXDGA
 #define _XF86_DGA_SERVER_
-#include "extensions/xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
 #endif /* XFreeXDGA */
 
 #include "globals.h"
 #include "opaque.h"
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 #define EXTERN
 /* Our private include file (this also includes the durango headers) */
@@ -246,7 +236,7 @@ extern unsigned char *XpressROMPtr;
 /* driver record contains the functions needed by the server after loading
  * the driver module.
  */
-DriverRec NSC = {
+_X_EXPORT DriverRec NSC = {
    NSC_VERSION_CURRENT,
    NSC_DRIVER_NAME,
    NscIdentify,
@@ -352,21 +342,11 @@ const char *nscInt10Symbols[] = {
    NULL
 };
 
-#if CFB
-const char *nscCfbSymbols[] = {
-   "cfbScreenInit",
-   "cfb16ScreenInit",
-   "cfb24ScreenInit",
-   "cfb32ScreenInit",
-   NULL
-};
-#else
 const char *nscFbSymbols[] = {
    "fbScreenInit",
    "fbPictureInit",
    NULL
 };
-#endif
 
 const char *nscXaaSymbols[] = {
    "XAADestroyInfoRec",
@@ -410,7 +390,7 @@ static XF86ModuleVersionInfo NscVersionRec = {
  * This data is accessed by the loader.  The name must be the module name
  * followed by "ModuleInit".
  */
-XF86ModuleData nscModuleData = { &NscVersionRec, NscSetup, NULL };
+_X_EXPORT XF86ModuleData nscModuleData = { &NscVersionRec, NscSetup, NULL };
 
 /*-------------------------------------------------------------------------
  * NscSetup.
@@ -442,11 +422,7 @@ NscSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)
        * module might refer to.
        */
       LoaderRefSymLists(nscVgahwSymbols, nscVbeSymbols,
-#if CFB
-			nscCfbSymbols,
-#else
 			nscFbSymbols,
-#endif
 			nscXaaSymbols,
 			nscInt10Symbols, nscRamdacSymbols, nscShadowSymbols,
 			NULL);

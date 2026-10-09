@@ -1,4 +1,4 @@
-.\" $XdotOrg: xc/doc/man/Xp/XpGetPrinterList.man,v 1.1 2004/05/22 06:27:25 alanc Exp $
+.\" $XdotOrg: xc/doc/man/Xp/XpGetPrinterList.man,v 1.2 2005/10/12 23:45:05 alanc Exp $
 .\"
 .\" Copyright 1996 Hewlett-Packard Company
 .\" Copyright 1996 International Business Machines Corp.
@@ -107,8 +107,8 @@ The XPPrinterList structure defined in <X11/extensions/Print.h> contains:
 .nf
 
 typedef struct {
-    char *name;	/* name */
-    char *desc;	/* localized description */
+    char *name;	/\(** name */
+    char *desc;	/\(** localized description */
 } XPPrinterRec, *XPPrinterList;
 
 .fi

@@ -1,4 +1,4 @@
-/* $Id */
+/* $XdotOrg: xc/config/util/makestrs.c,v 1.4 2005/05/24 15:58:51 ago Exp $ */
 
 /*
 
@@ -73,6 +73,13 @@ static char* fileprotstr;
 static char* externrefstr;
 static char* externdefstr;
 
+#ifndef FALSE
+# define FALSE 0
+# define TRUE  !(FALSE)
+#endif
+
+static int   solaris_abi_names = FALSE;
+
 #define X_DEFAULT_ABI	0
 #define X_ARRAYPER_ABI	1
 #define X_INTEL_ABI	2
@@ -81,6 +88,35 @@ static char* externdefstr;
 #define X_FUNCTION_ABI	5
 
 #define X_MAGIC_STRING "<<<STRING_TABLE_GOES_HERE>>>"
+
+/* Wrapper for fopen()
+ * Prepend filename with an includedir which can be specified on the 
+ * commandline. Needed to separate source and build directories.
+ */
+static char* includedir = NULL;
+static FILE *ifopen(const char *file, const char *mode)
+{
+    size_t len;
+    char *buffer;
+    FILE *ret;
+    
+    if (includedir == NULL)
+        return fopen(file, mode);
+
+    len = strlen(file) + strlen(includedir) + 1;
+    buffer = (char*)malloc(len + 1);
+    if (buffer == NULL)
+        return NULL;
+            
+    strcpy(buffer, includedir);
+    strcat(buffer, "/");
+    strcat(buffer, file);
+
+    ret = fopen(buffer, mode);
+
+    free(buffer);
+    return ret;
+}
 
 static void WriteHeaderProlog (FILE *f, File *phile)
 {
@@ -391,7 +427,7 @@ static void WriteSource(char *tagline, int abi)
     FILE* tmpl;
 
     if (ctmplstr) {
-	tmpl = fopen (ctmplstr, "r");
+	tmpl = ifopen (ctmplstr, "r");
 
 	if (tmpl) CopyTmplProlog (tmpl, stdout);
 	else {
@@ -490,6 +526,13 @@ static void DoLine(char *buf)
 	    if ((table->name = malloc (strlen (buf + strlen (table_str)) + 1)) == NULL) 
 		exit(1);
 	    (void) strcpy (table->name, buf + strlen (table_str) + 1);
+	    if (solaris_abi_names) {
+		if (strcmp(table->name, "XtStringsR6") == 0) {
+		    strcpy(table->name, "XtR6Strings");
+		} else if (strcmp(table->name, "XtShellStringsR6") == 0) {
+		    strcpy(table->name, "XtR6ShellStrings");
+		}
+	    }
 	    table->tableent = NULL;
 	    table->tableentcurrent = NULL;
 	    table->tableenttail = &table->tableent;
@@ -527,7 +570,7 @@ static void DoLine(char *buf)
 	(void) strcpy (ctmplstr, buf + strlen (ctmpl_str) + 1);
 	break;
     case X_HTMPL_TOKEN:
-	if ((filecurrent->tmpl = fopen (buf + strlen (htmpl_str) + 1, "r")) == NULL) {
+	if ((filecurrent->tmpl = ifopen (buf + strlen (htmpl_str) + 1, "r")) == NULL) {
 	    (void) fprintf (stderr, 
 			    "Expected template %s, not found\n", htmpl_str);
 	    exit (1);
@@ -662,6 +705,12 @@ int main(int argc, char *argv[])
 		else
 		    return 1;
 	    }
+	    if (strcmp (argv[i], "-i") == 0) {
+		if (++i < argc)
+		    includedir = argv[i];
+		else
+		    return 1;
+	    }
 	    if (strcmp (argv[i], "-sparcabi") == 0)
 		abi = X_SPARC_ABI;
 	    if (strcmp (argv[i], "-intelabi") == 0)
@@ -676,6 +725,8 @@ int main(int argc, char *argv[])
 	    if (strcmp (argv[i], "-defaultabi") == 0)
 		abi = X_DEFAULT_ABI;
 #endif
+	    if (strcmp (argv[i], "-solarisabinames") == 0)
+		solaris_abi_names = TRUE;
 	}
     }
 

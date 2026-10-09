@@ -192,6 +192,13 @@ TRANS(ConvertAddress)(int *familyp, int *addrlenp, Xtransaddr **addrp)
     }
 #endif /* defined(UNIXCONN) || defined(LOCALCONN) || defined(OS2PIPECONN)*/
 
+#if (defined(__SCO__) || defined(__UNIXWARE__)) && defined(LOCALCONN)
+    case 0:
+    {
+	*familyp=FamilyLocal;
+	break;
+    }
+#endif
 
     default:
 	PRMSG(1,"ConvertAddress: Unknown family type %d\n",
@@ -327,11 +334,15 @@ static jmp_buf env;
 #ifdef SIGALRM
 static volatile int nameserver_timedout = 0;
 
-static 
+static
+#ifdef RETSIGTYPE /* set by autoconf AC_TYPE_SIGNAL */
+RETSIGTYPE
+#else /* Imake */
 #ifdef SIGNALRETURNSINT
 int
 #else
 void
+#endif
 #endif
 nameserver_lost(int sig)
 {
@@ -472,7 +483,7 @@ TRANS(WSAStartup) (void)
 
     PRMSG (2,"WSAStartup()\n", 0, 0, 0);
 
-    if (!wsadata.wVersion && WSAStartup(MAKEWORD(1,1), &wsadata))
+    if (!wsadata.wVersion && WSAStartup(0x0101, &wsadata))
         return 1;
     return 0;
 }
@@ -498,6 +509,7 @@ is_numeric (char *str)
 #include <errno.h>
 
 #if !defined(S_IFLNK) && !defined(S_ISLNK)
+#undef lstat
 #define lstat(a,b) stat(a,b)
 #endif
 
@@ -523,6 +535,7 @@ trans_mkdir(char *path, int mode)
 	}
 	/* Dir doesn't exist. Try to create it */
 
+#ifndef WIN32
 	/*
 	 * 'sticky' bit requested: assume application makes
 	 * certain security implications. If effective user ID
@@ -541,7 +554,9 @@ trans_mkdir(char *path, int mode)
 		      path, 0, 0);
 	    }
 	}
-	
+#endif
+
+#ifndef WIN32
 	if (mkdir(path, mode) == 0) {
 	    if (chmod(path, mode)) {
 		PRMSG(1, "mkdir: ERROR: Mode of %s should be set to %04o\n",
@@ -550,6 +565,9 @@ trans_mkdir(char *path, int mode)
 		return -1;
 #endif
 	    }
+#else
+	if (mkdir(path) == 0) {
+#endif
 	} else {
 	    PRMSG(1, "mkdir: ERROR: Cannot create %s\n",
 		  path, 0, 0);

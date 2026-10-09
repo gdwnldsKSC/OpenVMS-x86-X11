@@ -1,3 +1,4 @@
+/* $XdotOrg: xc/lib/font/builtins/fpe.c,v 1.5 2005/07/30 18:56:32 alanc Exp $ */
 /*
  * Id: fpe.c,v 1.2 1999/11/02 06:16:48 keithp Exp $
  *
@@ -24,7 +25,10 @@
  */
 /* $XFree86: xc/lib/font/builtins/fpe.c,v 1.3 1999/12/30 02:29:51 robin Exp $ */
 
-#include    "fntfilst.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include    <X11/fonts/fntfilst.h>
 #include    "builtin.h"
 
 static int  font_file_type;
@@ -72,7 +76,8 @@ BuiltinFreeFPE (fpe)
     return Successful;
 }
 
-BuiltinRegisterFpeFunctions()
+void
+BuiltinRegisterFpeFunctions(void)
 {
     BuiltinRegisterFontFileFunctions ();
 

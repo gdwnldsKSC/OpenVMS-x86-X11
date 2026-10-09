@@ -12,7 +12,7 @@
 
 \s+1\fBX Window System Standard\fP\s-1
 
-\s+1\fBX Version 11, Release 6.8\fP\s-1
+\s+1\fBX Version 11, Release 6.9/7.0\fP\s-1
 .sp 6
 .ce 4
 \s-1James Gettys

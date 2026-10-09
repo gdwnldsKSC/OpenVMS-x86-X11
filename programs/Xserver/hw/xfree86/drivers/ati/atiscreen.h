@@ -24,11 +24,9 @@
 #ifndef ___ATISCREEN_H___
 #define ___ATISCREEN_H___ 1
 
-#include "atiproto.h"
-
 #include "screenint.h"
 
-extern Bool ATIScreenInit  FunctionPrototype((int, ScreenPtr, int, char **));
-extern Bool ATICloseScreen FunctionPrototype((int, ScreenPtr));
+extern Bool ATIScreenInit(int, ScreenPtr, int, char **);
+extern Bool ATICloseScreen(int, ScreenPtr);
 
 #endif /* ___ATISCREEN_H___ */

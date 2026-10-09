@@ -24,11 +24,14 @@
  * dealings in this Software without prior written authorization from the
  * XFree86 Project.
  *
- * Author: Paulo César Pereira de Andrade
+ * Author: Paulo CÃ©sar Pereira de Andrade
  */
 
 /* $XFree86: xc/lib/Xaw/Tip.c,v 1.4 1999/07/11 08:49:16 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xos.h>

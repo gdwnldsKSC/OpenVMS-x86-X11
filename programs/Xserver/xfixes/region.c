@@ -1,5 +1,5 @@
 /*
- * $Id: region.c,v 1.7 2004/07/26 17:14:27 keithp Exp $
+ * $Id: region.c,v 1.7 2005/07/03 07:37:35 daniels Exp $
  *
  * Copyright © 2003 Keith Packard
  *
@@ -22,9 +22,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
 #endif
+
 #include "xfixesint.h"
 #include "scrnintstr.h"
 #ifdef RENDER
@@ -675,7 +676,6 @@ ProcXFixesSetWindowShapeRegion (ClientPtr client)
     ScreenPtr	    pScreen;
     RegionPtr	    pRegion;
     RegionPtr	    *pDestRegion;
-    int		    destBounding;
     REQUEST(xXFixesSetWindowShapeRegionReq);
 
     REQUEST_SIZE_MATCH(xXFixesSetWindowShapeRegionReq);
@@ -686,18 +686,16 @@ ProcXFixesSetWindowShapeRegion (ClientPtr client)
 	return BadWindow;
     }
     VERIFY_REGION_OR_NONE(pRegion, stuff->region, client, SecurityWriteAccess);
+    pScreen = pWin->drawable.pScreen;
     switch (stuff->destKind) {
     case ShapeBounding:
-	destBounding = 1;
-	break;
     case ShapeClip:
-	destBounding = 0;
+    case ShapeInput:
 	break;
     default:
 	client->errorValue = stuff->destKind;
 	return BadValue;
     }
-    pScreen = pWin->drawable.pScreen;
     if (pRegion)
     {
 	pRegion = XFixesRegionCopy (pRegion);
@@ -705,10 +703,18 @@ ProcXFixesSetWindowShapeRegion (ClientPtr client)
 	    return BadAlloc;
 	if (!pWin->optional)
 	    MakeWindowOptional (pWin);
-	if (destBounding)
+	switch (stuff->destKind) {
+	default:
+	case ShapeBounding:
 	    pDestRegion = &pWin->optional->boundingShape;
-	else
+	    break;
+	case ShapeClip:
 	    pDestRegion = &pWin->optional->clipShape;
+	    break;
+	case ShapeInput:
+	    pDestRegion = &pWin->optional->inputShape;
+	    break;
+	}
 	if (stuff->xOff || stuff->yOff)
 	    REGION_TRANSLATE (0, pRegion, stuff->xOff, stuff->yOff);
     }
@@ -716,10 +722,18 @@ ProcXFixesSetWindowShapeRegion (ClientPtr client)
     {
 	if (pWin->optional)
 	{
-	    if (destBounding)
+	    switch (stuff->destKind) {
+	    default:
+	    case ShapeBounding:
 		pDestRegion = &pWin->optional->boundingShape;
-	    else
+		break;
+	    case ShapeClip:
 		pDestRegion = &pWin->optional->clipShape;
+		break;
+	    case ShapeInput:
+		pDestRegion = &pWin->optional->inputShape;
+		break;
+	    }
 	}
 	else
 	    pDestRegion = &pRegion; /* a NULL region pointer */

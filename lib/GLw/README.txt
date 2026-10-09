@@ -118,24 +118,24 @@ Most of the code is covered by the following license terms:
 
      Original Code. The Original Code is: OpenGL Sample Implementation,
      Version 1.2.1, released January 26, 2000, developed by Silicon
-     Graphics, Inc. The Original Code is Copyright © 1991-2000 Silicon
+     Graphics, Inc. The Original Code is Copyright Â© 1991-2000 Silicon
      Graphics, Inc. Copyright in any portions created by third parties
      is as indicated elsewhere herein. All Rights Reserved.
 
      Additional Notice Provisions: The application programming
      interfaces established by SGI in conjunction with the Original
-     Code are The OpenGL® Graphics System: A Specification (Version
-     1.2.1), released April 1, 1999; The OpenGL® Graphics System
+     Code are The OpenGLÂ® Graphics System: A Specification (Version
+     1.2.1), released April 1, 1999; The OpenGLÂ® Graphics System
      Utility Library (Version 1.3), released November 4, 1998; and
-     OpenGL® Graphics with the X Window System® (Version 1.3), released
-     October 19, 1998. This software was created using the OpenGL®
+     OpenGLÂ® Graphics with the X Window SystemÂ® (Version 1.3), released
+     October 19, 1998. This software was created using the OpenGLÂ®
      version 1.2.1 Sample Implementation published by SGI, but has not
-     been independently verified as being compliant with the OpenGL®
+     been independently verified as being compliant with the OpenGLÂ®
      version 1.2.1 Specification.
 
 The demonstration programs are covered by the following license terms:
 
-     Copyright © Mark J. Kilgard, 1995, 1996.
+     Copyright Â© Mark J. Kilgard, 1995, 1996.
 
      NOTICE: This source code distribution contains source code
      contained in the book "Programming OpenGL for the X Window System"

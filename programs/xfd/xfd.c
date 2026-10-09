@@ -401,7 +401,7 @@ change_page(int page)
     GetFontGridCellDimensions (fontGrid, &oldstart, &ncols, &nrows);
 
     if (page) {
-	Dimension start = (oldstart + 
+	long start = (oldstart + 
 			   ((long) ncols) * ((long) nrows) * ((long) page));
 
 	arg.value = (XtArgVal) start;
@@ -414,7 +414,7 @@ change_page(int page)
 
     /* if not paging, then initialize it, else only do it actually changed */
     if (!page || newstart != oldstart) {
-	unsigned int row = (unsigned int) ((newstart >> 8) & 0xff);
+	unsigned int row = (unsigned int) ((newstart >> 8));
 	unsigned int col = (unsigned int) (newstart & 0xff);
 
 	XtSetArg (arg, XtNlabel, buf);

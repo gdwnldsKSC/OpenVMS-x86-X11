@@ -1,6 +1,6 @@
 .\" Use tbl and -ms and macros.t	-*- Nroff -*-
 .\" $Xorg: xlfd.tbl.ms,v 1.3 2000/08/17 19:42:22 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/XLFD/xlfd.tbl.ms,v 1.3 2004/09/03 16:18:20 kem Exp $
+.\" $XdotOrg: xc/doc/specs/XLFD/xlfd.tbl.ms,v 1.4 2005/12/20 16:04:40 kem Exp $
 .nr sM 4		\" section on Matrix Transformations
 .nr sS 5		\" section on Scalable fonts
 .nr sP 6		\" section on Polymorphic font support
@@ -20,7 +20,7 @@
 
 \fBX Consortium Standard\fP
 
-\fBX Version 11, Release 6.8\fP
+\fBX Version 11, Release 6.9/7.0\fP
 .sp 6
 \s+1Jim Flowers\s-1
 .sp 6p
@@ -89,8 +89,8 @@ This documentation is provided as is without express or implied warranty.
 .ps 11
 .nr PS 11
 .bp 1
-.EH '\fBX Logical Font Description Conventions\fP''\fBX11, Release 6.8\fP'
-.OH '\fBX Logical Font Description Conventions\fP''\fBX11, Release 6.8\fP'
+.EH '\fBX Logical Font Description Conventions\fP''\fBX11, Release 6.9/7.0\fP'
+.OH '\fBX Logical Font Description Conventions\fP''\fBX11, Release 6.9/7.0\fP'
 .EF ''\fB\\\\n(PN\fP''
 .OF ''\fB\\\\n(PN\fP''
 .NH 1 

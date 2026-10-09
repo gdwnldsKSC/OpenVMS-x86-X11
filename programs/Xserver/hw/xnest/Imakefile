@@ -7,6 +7,11 @@ XCOMM $XFree86: xc/programs/Xserver/hw/xnest/Imakefile,v 3.28 2003/10/02 13:30:0
 
 #include <Server.tmpl>
 
+#if BuildDPMS
+DPMSSRC  = dpmsstubs.c
+DPMSOBJS = dpmsstubs.o
+#endif
+
 #ifdef OS2Architecture
 SRCS1 = os2Stub.c
 OBJS1 = os2Stub.o
@@ -64,13 +69,18 @@ DEFINES = $(OS_DEFINES) $(EXT_DEFINES) -DNO_HW_ONLY_EXTS \
 
 XKB_DEFINES = -DXKB_BASE_DIRECTORY=\"$(LIBDIR)/xkb/\"
 
-all:: $(OBJS)
+all:: $(OBJS) $(DPMSOBJS)
 
 LinkSourceFile(stubs.c,$(SERVERSRC)/Xi)
 SpecialCObjectRule(Init,$(ICONFIGFILES),$(_NOOP_))
 LinkSourceFile(miinitext.c,$(SERVERSRC)/mi)
 SpecialCObjectRule(miinitext,$(ICONFIGFILES),-UDPMSExtension)
 SpecialCObjectRule(Keyboard,$(ICONFIGFILES),$(XKB_DEFINES))
+#if BuildDPMS
+LinkSourceFile(dpmsstubs.c,$(SERVERSRC)/Xext)
+SpecialCObjectRule(dpmsstubs,$(ICONFIGFILES),$(EXT_DEFINES))
+#endif
+
 
 NormalLibraryObjectRule()
 NormalLibraryTarget(xnest,$(OBJS))

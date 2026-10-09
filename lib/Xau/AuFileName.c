@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xau/AuFileName.c,v 3.6 2001/07/25 15:04:48 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xauth.h>
 #include <X11/Xos.h>
 #include <stdlib.h>
@@ -49,7 +52,7 @@ XauFileName ()
     if (!name) {
 #ifdef WIN32
 	(void) strcpy (dir, "/users/");
-	if (name = getenv("USERNAME")) {
+	if ((name = getenv("USERNAME"))) {
 	    (void) strcat (dir, name);
 	    name = dir;
 	}

@@ -31,18 +31,19 @@
 #ifndef _VIA_DEFINES_
 #define _VIA_DEFINES_
 
-#define VIA_DMA_BUF_ORDER		12
-#define VIA_DMA_BUF_SZ 		        (1 << VIA_DMA_BUF_ORDER)
-#define VIA_DMA_BUF_NR 			256
+#ifndef __KERNEL__
+#include "via_drmclient.h"
+#endif
+
 #define VIA_NR_SAREA_CLIPRECTS 		8
 #define VIA_NR_XVMC_PORTS               10
 #define VIA_NR_XVMC_LOCKS               5
 #define VIA_MAX_CACHELINE_SIZE          64
 #define XVMCLOCKPTR(saPriv,lockNo)					\
-        ((volatile int *)(((((unsigned long) (saPriv)->XvMCLockArea) +	\
-                            (VIA_MAX_CACHELINE_SIZE - 1)) &             \
-                           ~(VIA_MAX_CACHELINE_SIZE - 1)) +             \
-                          VIA_MAX_CACHELINE_SIZE*(lockNo)))
+	((volatile drm_hw_lock_t *)(((((unsigned long) (saPriv)->XvMCLockArea) + \
+				      (VIA_MAX_CACHELINE_SIZE - 1)) &	\
+				     ~(VIA_MAX_CACHELINE_SIZE - 1)) +	\
+				    VIA_MAX_CACHELINE_SIZE*(lockNo)))
 
 /* Each region is a minimum of 64k, and there are at most 64 of them.
  */
@@ -50,8 +51,8 @@
 #define VIA_LOG_MIN_TEX_REGION_SIZE 16
 #endif
 
-#define VIA_UPLOAD_TEX0IMAGE  0x1 /* handled clientside */
-#define VIA_UPLOAD_TEX1IMAGE  0x2 /* handled clientside */
+#define VIA_UPLOAD_TEX0IMAGE  0x1	/* handled clientside */
+#define VIA_UPLOAD_TEX1IMAGE  0x2	/* handled clientside */
 #define VIA_UPLOAD_CTX        0x4
 #define VIA_UPLOAD_BUFFERS    0x8
 #define VIA_UPLOAD_TEX0       0x10
@@ -60,18 +61,40 @@
 #define VIA_UPLOAD_ALL        0xff
 
 /* VIA specific ioctls */
-#define DRM_IOCTL_VIA_ALLOCMEM	DRM_IOWR(0x40, drm_via_mem_t)
-#define DRM_IOCTL_VIA_FREEMEM	DRM_IOW(0x41, drm_via_mem_t)
-#define DRM_IOCTL_VIA_AGP_INIT	DRM_IOWR(0x42, drm_via_agp_t)
-#define DRM_IOCTL_VIA_FB_INIT	DRM_IOWR(0x43, drm_via_fb_t)
-#define DRM_IOCTL_VIA_MAP_INIT	DRM_IOWR(0x44, drm_via_init_t)
-#define DRM_IOCTL_VIA_DEC_FUTEX DRM_IOW(0x45, drm_via_futex_t)
+#define DRM_VIA_ALLOCMEM	0x00
+#define DRM_VIA_FREEMEM	        0x01
+#define DRM_VIA_AGP_INIT	0x02
+#define DRM_VIA_FB_INIT	        0x03
+#define DRM_VIA_MAP_INIT	0x04
+#define DRM_VIA_DEC_FUTEX       0x05
+#define NOT_USED
+#define DRM_VIA_DMA_INIT	0x07
+#define DRM_VIA_CMDBUFFER	0x08
+#define DRM_VIA_FLUSH	        0x09
+#define DRM_VIA_PCICMD	        0x0a
+#define DRM_VIA_CMDBUF_SIZE	0x0b
+#define NOT_USED
+#define DRM_VIA_WAIT_IRQ        0x0d
+
+#define DRM_IOCTL_VIA_ALLOCMEM	  DRM_IOWR(DRM_COMMAND_BASE + DRM_VIA_ALLOCMEM, drm_via_mem_t)
+#define DRM_IOCTL_VIA_FREEMEM	  DRM_IOW( DRM_COMMAND_BASE + DRM_VIA_FREEMEM, drm_via_mem_t)
+#define DRM_IOCTL_VIA_AGP_INIT	  DRM_IOWR(DRM_COMMAND_BASE + DRM_VIA_AGP_INIT, drm_via_agp_t)
+#define DRM_IOCTL_VIA_FB_INIT	  DRM_IOWR(DRM_COMMAND_BASE + DRM_VIA_FB_INIT, drm_via_fb_t)
+#define DRM_IOCTL_VIA_MAP_INIT	  DRM_IOWR(DRM_COMMAND_BASE + DRM_VIA_MAP_INIT, drm_via_init_t)
+#define DRM_IOCTL_VIA_DEC_FUTEX   DRM_IOW( DRM_COMMAND_BASE + DRM_VIA_DEC_FUTEX, drm_via_futex_t)
+#define DRM_IOCTL_VIA_DMA_INIT	  DRM_IOWR(DRM_COMMAND_BASE + DRM_VIA_DMA_INIT, drm_via_dma_init_t)
+#define DRM_IOCTL_VIA_CMDBUFFER	  DRM_IOW( DRM_COMMAND_BASE + DRM_VIA_CMDBUFFER, drm_via_cmdbuffer_t)
+#define DRM_IOCTL_VIA_FLUSH	  DRM_IO(  DRM_COMMAND_BASE + DRM_VIA_FLUSH)
+#define DRM_IOCTL_VIA_PCICMD	  DRM_IOW( DRM_COMMAND_BASE + DRM_VIA_PCICMD, drm_via_cmdbuffer_t)
+#define DRM_IOCTL_VIA_CMDBUF_SIZE DRM_IOWR( DRM_COMMAND_BASE + DRM_VIA_CMDBUF_SIZE, \
+					    drm_via_cmdbuf_size_t)
+#define DRM_IOCTL_VIA_WAIT_IRQ    DRM_IOWR( DRM_COMMAND_BASE + DRM_VIA_WAIT_IRQ, drm_via_irqwait_t)
 
 /* Indices into buf.Setup where various bits of state are mirrored per
  * context and per buffer.  These can be fired at the card as a unit,
  * or in a piecewise fashion as required.
  */
- 
+
 #define VIA_TEX_SETUP_SIZE 8
 
 /* Flags for clear ioctl
@@ -83,101 +106,138 @@
 #define VIDEO 0
 #define AGP 1
 typedef struct {
-        unsigned int offset;
-        unsigned int size;
-} drm_via_agp_t;    
+	uint32_t offset;
+	uint32_t size;
+} drm_via_agp_t;
 
 typedef struct {
-        unsigned int offset;
-        unsigned int size;
-} drm_via_fb_t;    
+	uint32_t offset;
+	uint32_t size;
+} drm_via_fb_t;
 
 typedef struct {
-        unsigned int context;
-        unsigned int type;
-        unsigned int size;
-        unsigned long index;
-        unsigned long offset;
-} drm_via_mem_t;    
+	uint32_t context;
+	uint32_t type;
+	uint32_t size;
+	unsigned long index;
+	unsigned long offset;
+} drm_via_mem_t;
 
 typedef struct _drm_via_init {
-        enum {
-                VIA_INIT_MAP = 0x01,
-                VIA_CLEANUP_MAP = 0x02
-        } func;
+	enum {
+		VIA_INIT_MAP = 0x01,
+		VIA_CLEANUP_MAP = 0x02
+	} func;
 
-        unsigned long sarea_priv_offset;
-        unsigned long fb_offset;
-        unsigned long mmio_offset;
-        unsigned long agpAddr;
+	unsigned long sarea_priv_offset;
+	unsigned long fb_offset;
+	unsigned long mmio_offset;
+	unsigned long agpAddr;
 } drm_via_init_t;
 
 typedef struct _drm_via_futex {
-        enum {
-                VIA_FUTEX_WAIT = 0x00,
-                VIA_FUTEX_WAKE = 0X01
-        }fut;
-        unsigned int op;
-        unsigned int ms;
-        unsigned int lock;
-        unsigned int val;
+	enum {
+		VIA_FUTEX_WAIT = 0x00,
+		VIA_FUTEX_WAKE = 0X01
+	} func;
+	uint32_t ms;
+	uint32_t lock;
+	uint32_t val;
 } drm_via_futex_t;
+
+typedef struct _drm_via_dma_init {
+	enum {
+		VIA_INIT_DMA = 0x01,
+		VIA_CLEANUP_DMA = 0x02,
+                VIA_DMA_INITIALIZED = 0x03
+	} func;
+
+	unsigned long offset;
+	unsigned long size;
+	unsigned long reg_pause_addr;
+} drm_via_dma_init_t;
+
+typedef struct _drm_via_cmdbuffer {
+	char *buf;
+	unsigned long size;
+} drm_via_cmdbuffer_t;
 
 /* Warning: If you change the SAREA structure you must change the Xserver
  * structure as well */
 
 typedef struct _drm_via_tex_region {
-        unsigned char next, prev;	/* indices to form a circular LRU  */
-        unsigned char inUse;	/* owned by a client, or free? */
-        int age;			/* tracked by clients to update local LRU's */
+	unsigned char next, prev;	/* indices to form a circular LRU  */
+	unsigned char inUse;	/* owned by a client, or free? */
+	int age;		/* tracked by clients to update local LRU's */
 } drm_via_tex_region_t;
 
 typedef struct _drm_via_sarea {
-        unsigned int dirty;
-        unsigned int nbox;
-        drm_clip_rect_t boxes[VIA_NR_SAREA_CLIPRECTS];   
-        drm_via_tex_region_t texList[VIA_NR_TEX_REGIONS + 1]; 
-        int texAge;			/* last time texture was uploaded */
-        int ctxOwner;		/* last context to upload state */
-        int vertexPrim;
+	unsigned int dirty;
+	unsigned int nbox;
+	drm_clip_rect_t boxes[VIA_NR_SAREA_CLIPRECTS];
+	drm_via_tex_region_t texList[VIA_NR_TEX_REGIONS + 1];
+	int texAge;		/* last time texture was uploaded */
+	int ctxOwner;		/* last context to upload state */
+	int vertexPrim;
 
-        /*
-         * Below is for XvMC.
-         * We want the lock integers alone on, and aligned to, a cache line.
-         * Therefore this somewhat strange construct.
-         */
+	/*
+	 * Below is for XvMC.
+	 * We want the lock integers alone on, and aligned to, a cache line.
+	 * Therefore this somewhat strange construct.
+	 */
 
-        char XvMCLockArea[VIA_MAX_CACHELINE_SIZE * (VIA_NR_XVMC_LOCKS + 1)];
+	char XvMCLockArea[VIA_MAX_CACHELINE_SIZE * (VIA_NR_XVMC_LOCKS + 1)];
 
-        unsigned int XvMCDisplaying[VIA_NR_XVMC_PORTS];      
-        unsigned int XvMCSubPicOn[VIA_NR_XVMC_PORTS]; 
-        unsigned int XvMCCtxNoGrabbed;     /* Last context to hold decoder */
+	unsigned int XvMCDisplaying[VIA_NR_XVMC_PORTS];
+	unsigned int XvMCSubPicOn[VIA_NR_XVMC_PORTS];
+	unsigned int XvMCCtxNoGrabbed;	/* Last context to hold decoder */
 
 } drm_via_sarea_t;
 
+typedef struct _drm_via_cmdbuf_size {
+	enum {
+		VIA_CMDBUF_SPACE = 0x01,
+		VIA_CMDBUF_LAG = 0x02
+	} func;
+	int wait;
+	uint32_t size;
+} drm_via_cmdbuf_size_t;
 
-typedef struct _drm_via_flush_agp {
-        unsigned int offset;
-        unsigned int size;
-        unsigned int index;		
-        int discard;	/* client is finished with the buffer? */
-} drm_via_flush_agp_t;
+typedef enum {
+	VIA_IRQ_ABSOLUTE = 0x0,
+	VIA_IRQ_RELATIVE = 0x1,
+	VIA_IRQ_SIGNAL = 0x10000000,
+	VIA_IRQ_FORCE_SEQUENCE = 0x20000000
+} via_irq_seq_type_t;
 
-typedef struct _drm_via_flush_sys {
-        unsigned int offset;
-        unsigned int size;
-        unsigned long index;		
-        int discard;	/* client is finished with the buffer? */
-} drm_via_flush_sys_t;
+#define VIA_IRQ_FLAGS_MASK 0xF0000000
+
+struct drm_via_wait_irq_request{
+	unsigned irq;
+	via_irq_seq_type_t type;
+	uint32_t sequence;
+	uint32_t signal;
+};
+
+typedef union drm_via_irqwait {
+	struct drm_via_wait_irq_request request;
+	struct drm_wait_vblank_reply reply;
+} drm_via_irqwait_t;
 
 #ifdef __KERNEL__
 
-int via_fb_init( DRM_IOCTL_ARGS );		
-int via_mem_alloc( DRM_IOCTL_ARGS );				
-int via_mem_free( DRM_IOCTL_ARGS );		
-int via_agp_init( DRM_IOCTL_ARGS );				
-int via_map_init( DRM_IOCTL_ARGS );				
-int via_decoder_futex( DRM_IOCTL_ARGS ); 
+int via_fb_init(DRM_IOCTL_ARGS);
+int via_mem_alloc(DRM_IOCTL_ARGS);
+int via_mem_free(DRM_IOCTL_ARGS);
+int via_agp_init(DRM_IOCTL_ARGS);
+int via_map_init(DRM_IOCTL_ARGS);
+int via_decoder_futex(DRM_IOCTL_ARGS);
+int via_dma_init(DRM_IOCTL_ARGS);
+int via_cmdbuffer(DRM_IOCTL_ARGS);
+int via_flush_ioctl(DRM_IOCTL_ARGS);
+int via_pci_cmdbuffer(DRM_IOCTL_ARGS);
+int via_cmdbuf_size(DRM_IOCTL_ARGS);
+int via_wait_irq(DRM_IOCTL_ARGS);
 
 #endif
-#endif /* _VIA_DRM_H_ */
+#endif				/* _VIA_DRM_H_ */

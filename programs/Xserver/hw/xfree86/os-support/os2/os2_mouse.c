@@ -31,8 +31,12 @@
 
 #define I_NEED_OS2_H
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "inputstr.h"
 #include "scrnintstr.h"
@@ -458,6 +462,7 @@ int os2MouseProc(DeviceIntPtr pPointer, int what)
     case DEVICE_ON:
 	if (!HandleValid) return -1;
 	pMse->lastButtons = 0;
+	pMse->lastMappedButtons = 0;
 	pMse->emulateState = 0;
 	pPointer->public.on = TRUE;
 	state = 0x300;

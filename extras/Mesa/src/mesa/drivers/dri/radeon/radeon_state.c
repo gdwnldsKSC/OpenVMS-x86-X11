@@ -39,6 +39,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "enums.h"
 #include "colormac.h"
 #include "state.h"
+#include "buffers.h"
 #include "context.h"
 
 #include "swrast/swrast.h"
@@ -692,7 +693,7 @@ static void radeonPolygonMode( GLcontext *ctx, GLenum face, GLenum mode )
 static void radeonUpdateSpecular( GLcontext *ctx )
 {
    radeonContextPtr rmesa = RADEON_CONTEXT(ctx);
-   uint32_t p = rmesa->hw.ctx.cmd[CTX_PP_CNTL];
+   u_int32_t p = rmesa->hw.ctx.cmd[CTX_PP_CNTL];
 
    RADEON_STATECHANGE( rmesa, tcl );
 
@@ -1331,6 +1332,34 @@ static void radeonStencilOp( GLcontext *ctx, GLenum fail,
 {
    radeonContextPtr rmesa = RADEON_CONTEXT(ctx);
 
+   /* radeon 7200 have stencil bug, DEC and INC_WRAP will actually both do DEC_WRAP,
+      and DEC_WRAP (and INVERT) will do INVERT. No way to get correct INC_WRAP and DEC,
+      but DEC_WRAP can be fixed by using DEC and INC_WRAP at least use INC. */
+   
+   GLuint tempRADEON_STENCIL_FAIL_DEC_WRAP;
+   GLuint tempRADEON_STENCIL_FAIL_INC_WRAP;
+   GLuint tempRADEON_STENCIL_ZFAIL_DEC_WRAP;
+   GLuint tempRADEON_STENCIL_ZFAIL_INC_WRAP;
+   GLuint tempRADEON_STENCIL_ZPASS_DEC_WRAP;
+   GLuint tempRADEON_STENCIL_ZPASS_INC_WRAP;
+   
+   if (rmesa->radeonScreen->chipset & RADEON_CHIPSET_BROKEN_STENCIL) {
+      tempRADEON_STENCIL_FAIL_DEC_WRAP = RADEON_STENCIL_FAIL_DEC;
+      tempRADEON_STENCIL_FAIL_INC_WRAP = RADEON_STENCIL_FAIL_INC;
+      tempRADEON_STENCIL_ZFAIL_DEC_WRAP = RADEON_STENCIL_ZFAIL_DEC;
+      tempRADEON_STENCIL_ZFAIL_INC_WRAP = RADEON_STENCIL_ZFAIL_INC;
+      tempRADEON_STENCIL_ZPASS_DEC_WRAP = RADEON_STENCIL_ZPASS_DEC;
+      tempRADEON_STENCIL_ZPASS_INC_WRAP = RADEON_STENCIL_ZPASS_INC;
+   }
+   else {
+      tempRADEON_STENCIL_FAIL_DEC_WRAP = RADEON_STENCIL_FAIL_DEC_WRAP;
+      tempRADEON_STENCIL_FAIL_INC_WRAP = RADEON_STENCIL_FAIL_INC_WRAP;
+      tempRADEON_STENCIL_ZFAIL_DEC_WRAP = RADEON_STENCIL_ZFAIL_DEC_WRAP;
+      tempRADEON_STENCIL_ZFAIL_INC_WRAP = RADEON_STENCIL_ZFAIL_INC_WRAP;
+      tempRADEON_STENCIL_ZPASS_DEC_WRAP = RADEON_STENCIL_ZPASS_DEC_WRAP;
+      tempRADEON_STENCIL_ZPASS_INC_WRAP = RADEON_STENCIL_ZPASS_INC_WRAP;
+   }
+   
    RADEON_STATECHANGE( rmesa, ctx );
    rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] &= ~(RADEON_STENCIL_FAIL_MASK |
 					       RADEON_STENCIL_ZFAIL_MASK |
@@ -1351,6 +1380,12 @@ static void radeonStencilOp( GLcontext *ctx, GLenum fail,
       break;
    case GL_DECR:
       rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= RADEON_STENCIL_FAIL_DEC;
+      break;
+   case GL_INCR_WRAP:
+      rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= tempRADEON_STENCIL_FAIL_INC_WRAP;
+      break;
+   case GL_DECR_WRAP:
+      rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= tempRADEON_STENCIL_FAIL_DEC_WRAP;
       break;
    case GL_INVERT:
       rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= RADEON_STENCIL_FAIL_INVERT;
@@ -1373,6 +1408,12 @@ static void radeonStencilOp( GLcontext *ctx, GLenum fail,
    case GL_DECR:
       rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= RADEON_STENCIL_ZFAIL_DEC;
       break;
+   case GL_INCR_WRAP:
+      rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= tempRADEON_STENCIL_ZFAIL_INC_WRAP;
+      break;
+   case GL_DECR_WRAP:
+      rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= tempRADEON_STENCIL_ZFAIL_DEC_WRAP;
+      break;
    case GL_INVERT:
       rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= RADEON_STENCIL_ZFAIL_INVERT;
       break;
@@ -1393,6 +1434,12 @@ static void radeonStencilOp( GLcontext *ctx, GLenum fail,
       break;
    case GL_DECR:
       rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= RADEON_STENCIL_ZPASS_DEC;
+      break;
+   case GL_INCR_WRAP:
+      rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= tempRADEON_STENCIL_ZPASS_INC_WRAP;
+      break;
+   case GL_DECR_WRAP:
+      rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= tempRADEON_STENCIL_ZPASS_DEC_WRAP;
       break;
    case GL_INVERT:
       rmesa->hw.ctx.cmd[CTX_RB3D_ZSTENCILCNTL] |= RADEON_STENCIL_ZPASS_INVERT;
@@ -1451,6 +1498,8 @@ void radeonUpdateWindow( GLcontext *ctx )
 static void radeonViewport( GLcontext *ctx, GLint x, GLint y,
 			    GLsizei width, GLsizei height )
 {
+   /* update size of Mesa/software ancillary buffers */
+   _mesa_ResizeBuffersMESA();
    /* Don't pipeline viewport changes, conflict with window offset
     * setting below.  Could apply deltas to rescue pipelined viewport
     * values, or keep the originals hanging around.
@@ -1473,8 +1522,8 @@ void radeonUpdateViewportOffset( GLcontext *ctx )
    GLfloat yoffset = (GLfloat)dPriv->y + dPriv->h;
    const GLfloat *v = ctx->Viewport._WindowMap.m;
 
-   GLfloat tx = v[MAT_TX] + xoffset;
-   GLfloat ty = (- v[MAT_TY]) + yoffset;
+   GLfloat tx = v[MAT_TX] + xoffset + SUBPIXEL_X;
+   GLfloat ty = (- v[MAT_TY]) + yoffset + SUBPIXEL_Y;
 
    if ( rmesa->hw.vpt.cmd[VPT_SE_VPORT_XOFFSET] != *(GLuint *)&tx ||
 	rmesa->hw.vpt.cmd[VPT_SE_VPORT_YOFFSET] != *(GLuint *)&ty )
@@ -1612,12 +1661,12 @@ static void radeonDrawBuffer( GLcontext *ctx, GLenum mode )
    /*
     * _DrawDestMask is easier to cope with than <mode>.
     */
-   switch ( ctx->Color._DrawDestMask ) {
-   case DD_FRONT_LEFT_BIT:
+   switch ( ctx->DrawBuffer->_ColorDrawBufferMask[0] ) {
+   case BUFFER_BIT_FRONT_LEFT:
       FALLBACK( rmesa, RADEON_FALLBACK_DRAW_BUFFER, GL_FALSE );
       radeonSetCliprects( rmesa, GL_FRONT_LEFT );
       break;
-   case DD_BACK_LEFT_BIT:
+   case BUFFER_BIT_BACK_LEFT:
       FALLBACK( rmesa, RADEON_FALLBACK_DRAW_BUFFER, GL_FALSE );
       radeonSetCliprects( rmesa, GL_BACK_LEFT );
       break;
@@ -1637,6 +1686,9 @@ static void radeonDrawBuffer( GLcontext *ctx, GLenum mode )
 					       rmesa->radeonScreen->fbLocation)
 					      & RADEON_COLOROFFSET_MASK);
    rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] = rmesa->state.color.drawPitch;
+   if (rmesa->sarea->tiling_enabled) {
+      rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] |= RADEON_COLOR_TILE_ENABLE;
+   }
 }
 
 static void radeonReadBuffer( GLcontext *ctx, GLenum mode )
@@ -1756,7 +1808,7 @@ static void radeonEnable( GLcontext *ctx, GLenum cap, GLboolean state )
       RADEON_STATECHANGE(rmesa, ctx );
       if ( state ) {
 	 rmesa->hw.ctx.cmd[CTX_PP_CNTL] |= RADEON_FOG_ENABLE;
-	 radeonFogfv( ctx, GL_FOG_MODE, 0 );
+	 radeonFogfv( ctx, GL_FOG_MODE, NULL );
       } else {
 	 rmesa->hw.ctx.cmd[CTX_PP_CNTL] &= ~RADEON_FOG_ENABLE;
 	 RADEON_STATECHANGE(rmesa, tcl);

@@ -39,6 +39,9 @@ This module is responsible for handling the TYPE1IMAGER "XYspace" object.
 :h3.Include Files
 */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #ifdef FONTMODULE
 #include "Xdefs.h"	/* Bool declaration ??? */
 #include "Xmd.h"	/* INT32 declaration ??? */
@@ -46,6 +49,7 @@ This module is responsible for handling the TYPE1IMAGER "XYspace" object.
 #include "xf86_ansic.h"
 #else
 #include "X11/Xos.h"
+#include <stdio.h>
 #endif
 #include "objects.h"
 #include "spaces.h"

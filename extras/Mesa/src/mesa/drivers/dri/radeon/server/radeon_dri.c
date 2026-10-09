@@ -16,6 +16,7 @@
 
 #include "driver.h"
 #include "drm.h"
+#include "memops.h"
 
 #include "radeon.h"
 #include "radeon_dri.h"
@@ -24,6 +25,21 @@
 #include "drm_sarea.h"
 
 static size_t radeon_drm_page_size;
+
+static int RadeonSetParam(const DRIDriverContext *ctx, int param, int value)
+{
+   drm_radeon_setparam_t sp;
+
+   memset(&sp, 0, sizeof(sp));
+   sp.param = param;
+   sp.value = value;
+
+   if (drmCommandWrite(ctx->drmFD, DRM_RADEON_SETPARAM, &sp, sizeof(sp))) {
+     return -1;
+   }
+
+   return 0;
+}
 
 /**
  * \brief Wait for free FIFO entries.
@@ -209,6 +225,8 @@ static int RADEONEngineRestore( const DRIDriverContext *ctx )
 
 
    OUTREG(RADEON_GEN_INT_CNTL, info->gen_int_cntl);
+   if (info->colorTiling)
+	   info->crtc_offset_cntl |= RADEON_CRTC_TILE_EN;
    OUTREG(RADEON_CRTC_OFFSET_CNTL, info->crtc_offset_cntl);
 
    /* Initialize and start the CP if required */
@@ -380,7 +398,7 @@ static int RADEONDRIAgpInit( const DRIDriverContext *ctx, RADEONInfoPtr info)
       fprintf(stderr, "[gart] Could not add ring mapping\n");
       return 0;
    }
-   fprintf(stderr, "[gart] ring handle = 0x%08lx\n", info->ringHandle);
+   fprintf(stderr, "[gart] ring handle = 0x%08x\n", info->ringHandle);
     
 
    if (drmAddMap(ctx->drmFD, info->ringReadOffset, info->ringReadMapSize,
@@ -391,7 +409,7 @@ static int RADEONDRIAgpInit( const DRIDriverContext *ctx, RADEONInfoPtr info)
    }
     
    fprintf(stderr,
-	   "[gart] ring read ptr handle = 0x%08lx\n",
+ 	   "[gart] ring read ptr handle = 0x%08lx\n",
 	   info->ringReadPtrHandle);
     
    if (drmAddMap(ctx->drmFD, info->bufStart, info->bufMapSize,
@@ -401,7 +419,7 @@ static int RADEONDRIAgpInit( const DRIDriverContext *ctx, RADEONInfoPtr info)
       return 0;
    }
    fprintf(stderr,
-	   "[gart] vertex/indirect buffers handle = 0x%08lx\n",
+ 	   "[gart] vertex/indirect buffers handle = 0x%08x\n",
 	   info->bufHandle);
 
    if (drmAddMap(ctx->drmFD, info->gartTexStart, info->gartTexMapSize,
@@ -411,7 +429,7 @@ static int RADEONDRIAgpInit( const DRIDriverContext *ctx, RADEONInfoPtr info)
       return 0;
    }
    fprintf(stderr,
-	   "[gart] AGP texture map handle = 0x%08lx\n",
+ 	   "[gart] AGP texture map handle = 0x%08lx\n",
 	   info->gartTexHandle);
 
    /* Initialize Radeon's AGP registers */
@@ -419,6 +437,88 @@ static int RADEONDRIAgpInit( const DRIDriverContext *ctx, RADEONInfoPtr info)
    OUTREG(RADEON_AGP_BASE, info->ringHandle);
 
    return 1;
+}
+
+/* Initialize the PCI GART state.  Request memory for use in PCI space,
+ * and initialize the Radeon registers to point to that memory.
+ */
+static int RADEONDRIPciInit(const DRIDriverContext *ctx, RADEONInfoPtr info)
+{
+    int  ret;
+    int  flags = DRM_READ_ONLY | DRM_LOCKED | DRM_KERNEL;
+    int            s, l;
+
+    ret = drmScatterGatherAlloc(ctx->drmFD, info->gartSize*1024*1024,
+				&info->gartMemHandle);
+    if (ret < 0) {
+	fprintf(stderr, "[pci] Out of memory (%d)\n", ret);
+	return 0;
+    }
+    fprintf(stderr,
+	       "[pci] %d kB allocated with handle 0x%08lx\n",
+	       info->gartSize*1024, info->gartMemHandle);
+
+   info->gartOffset = 0;
+   
+   /* Initialize the CP ring buffer data */
+   info->ringStart       = info->gartOffset;
+   info->ringMapSize     = info->ringSize*1024*1024 + radeon_drm_page_size;
+
+   info->ringReadOffset  = info->ringStart + info->ringMapSize;
+   info->ringReadMapSize = radeon_drm_page_size;
+
+   /* Reserve space for vertex/indirect buffers */
+   info->bufStart        = info->ringReadOffset + info->ringReadMapSize;
+   info->bufMapSize      = info->bufSize*1024*1024;
+
+   /* Reserve the rest for AGP textures */
+   info->gartTexStart     = info->bufStart + info->bufMapSize;
+   s = (info->gartSize*1024*1024 - info->gartTexStart);
+   l = RADEONMinBits((s-1) / RADEON_NR_TEX_REGIONS);
+   if (l < RADEON_LOG_TEX_GRANULARITY) l = RADEON_LOG_TEX_GRANULARITY;
+   info->gartTexMapSize   = (s >> l) << l;
+   info->log2GARTTexGran  = l;
+
+    if (drmAddMap(ctx->drmFD, info->ringStart, info->ringMapSize,
+		  DRM_SCATTER_GATHER, flags, &info->ringHandle) < 0) {
+	fprintf(stderr,
+		   "[pci] Could not add ring mapping\n");
+	return 0;
+    }
+    fprintf(stderr,
+	       "[pci] ring handle = 0x%08x\n", info->ringHandle);
+
+    if (drmAddMap(ctx->drmFD, info->ringReadOffset, info->ringReadMapSize,
+		  DRM_SCATTER_GATHER, flags, &info->ringReadPtrHandle) < 0) {
+	fprintf(stderr,
+		   "[pci] Could not add ring read ptr mapping\n");
+	return 0;
+    }
+    fprintf(stderr,
+ 	       "[pci] ring read ptr handle = 0x%08lx\n",
+	       info->ringReadPtrHandle);
+
+    if (drmAddMap(ctx->drmFD, info->bufStart, info->bufMapSize,
+		  DRM_SCATTER_GATHER, 0, &info->bufHandle) < 0) {
+	fprintf(stderr,
+		   "[pci] Could not add vertex/indirect buffers mapping\n");
+	return 0;
+    }
+    fprintf(stderr,
+ 	       "[pci] vertex/indirect buffers handle = 0x%08lx\n",
+	       info->bufHandle);
+
+    if (drmAddMap(ctx->drmFD, info->gartTexStart, info->gartTexMapSize,
+		  DRM_SCATTER_GATHER, 0, &info->gartTexHandle) < 0) {
+	fprintf(stderr,
+		   "[pci] Could not add GART texture map mapping\n");
+	return 0;
+    }
+    fprintf(stderr,
+ 	       "[pci] GART texture map handle = 0x%08x\n",
+	       info->gartTexHandle);
+
+    return 1;
 }
 
 
@@ -452,7 +552,7 @@ static int RADEONDRIKernelInit( const DRIDriverContext *ctx,
 
    /* This is the struct passed to the kernel module for its initialization */
    drmInfo.sarea_priv_offset   = sizeof(drm_sarea_t);
-   drmInfo.is_pci              = 0;
+   drmInfo.is_pci              = ctx->isPCI;
    drmInfo.cp_mode             = RADEON_DEFAULT_CP_BM_MODE;
    drmInfo.gart_size            = info->gartSize*1024*1024;
    drmInfo.ring_size           = info->ringSize*1024*1024;
@@ -526,7 +626,7 @@ static int RADEONDRIBufInit( const DRIDriverContext *ctx, RADEONInfoPtr info )
    info->bufNumBufs = drmAddBufs(ctx->drmFD,
 				 info->bufMapSize / RADEON_BUFFER_SIZE,
 				 RADEON_BUFFER_SIZE,
-				 DRM_AGP_BUFFER,
+				 ctx->isPCI ? DRM_SG_BUFFER : DRM_AGP_BUFFER,
 				 info->bufStart);
 
    if (info->bufNumBufs <= 0) {
@@ -619,12 +719,9 @@ static int RADEONMemoryInit( const DRIDriverContext *ctx, RADEONInfoPtr info )
 {
    int        width_bytes = ctx->shared.virtualWidth * ctx->cpp;
    int        cpp         = ctx->cpp;
-   int        bufferSize  = ((ctx->shared.virtualHeight * width_bytes
-			      + RADEON_BUFFER_ALIGN)
-			     & ~RADEON_BUFFER_ALIGN);
+   int        bufferSize  = ((((ctx->shared.virtualHeight+15) & ~15) * width_bytes			     + RADEON_BUFFER_ALIGN) & ~RADEON_BUFFER_ALIGN);
    int        depthSize   = ((((ctx->shared.virtualHeight+15) & ~15) * width_bytes
-			      + RADEON_BUFFER_ALIGN)
-			     & ~RADEON_BUFFER_ALIGN);
+			     + RADEON_BUFFER_ALIGN) & ~RADEON_BUFFER_ALIGN);
    int        l;
 
    info->frontOffset = 0;
@@ -642,6 +739,11 @@ static int RADEONMemoryInit( const DRIDriverContext *ctx, RADEONInfoPtr info )
    /* Front, back and depth buffers - everything else texture??
     */
    info->textureSize = ctx->shared.fbSize - 2 * bufferSize - depthSize;
+
+   if (ctx->colorTiling==1)
+   {
+	info->textureSize = ctx->shared.fbSize - ((ctx->shared.fbSize - info->textureSize + width_bytes * 16 - 1) / (width_bytes * 16)) * (width_bytes*16);
+   }
 
    if (info->textureSize < 0) 
       return 0;
@@ -665,10 +767,17 @@ static int RADEONMemoryInit( const DRIDriverContext *ctx, RADEONInfoPtr info )
    }
 
    /* Reserve space for textures */
-   info->textureOffset = ((ctx->shared.fbSize - info->textureSize +
-			   RADEON_BUFFER_ALIGN) &
+   if (ctx->colorTiling==1)
+   {
+      info->textureOffset = ((ctx->shared.fbSize - info->textureSize) / 
+			(width_bytes * 16)) * (width_bytes*16);
+   }
+   else
+   {
+      info->textureOffset = ((ctx->shared.fbSize - info->textureSize +
+   	 		   RADEON_BUFFER_ALIGN) &
 			  ~RADEON_BUFFER_ALIGN);
-
+   }
    /* Reserve space for the shared depth
     * buffer.
     */
@@ -702,6 +811,43 @@ static int RADEONMemoryInit( const DRIDriverContext *ctx, RADEONInfoPtr info )
    info->depthPitchOffset = (((info->depthPitch * cpp / 64) << 22) |
 			     (info->depthOffset >> 10));
 
+   return 1;
+}
+
+static int RADEONColorTilingInit( const DRIDriverContext *ctx, RADEONInfoPtr info )
+{
+   int        width_bytes = ctx->shared.virtualWidth * ctx->cpp;
+   int        bufferSize  = ((((ctx->shared.virtualHeight+15) & ~15) * width_bytes			     + RADEON_BUFFER_ALIGN)
+			     & ~RADEON_BUFFER_ALIGN);
+   /* Setup color tiling */
+   if (info->drmMinor<14)
+      info->colorTiling=0;
+
+   if (info->colorTiling)
+   {
+
+      int colorTilingFlag;
+      drm_radeon_surface_alloc_t front,back;
+
+      RadeonSetParam(ctx, RADEON_SETPARAM_SWITCH_TILING, info->colorTiling ? 1 : 0);
+      
+      /* Setup the surfaces */
+      if (info->ChipFamily < CHIP_FAMILY_R200)
+         colorTilingFlag=RADEON_SURF_TILE_COLOR_MACRO;
+      else
+         colorTilingFlag=R200_SURF_TILE_COLOR_MACRO;
+
+      front.address = info->frontOffset;
+      front.size = bufferSize;
+      front.flags = (width_bytes) | colorTilingFlag;
+      drmCommandWrite(ctx->drmFD, DRM_RADEON_SURF_ALLOC, &front,sizeof(front)); 
+ 
+      back.address = info->backOffset;
+      back.size = bufferSize;
+      back.flags = (width_bytes) | colorTilingFlag;
+      drmCommandWrite(ctx->drmFD, DRM_RADEON_SURF_ALLOC, &back,sizeof(back)); 
+
+   }
    return 1;
 } 
 
@@ -838,11 +984,16 @@ static int RADEONScreenInit( DRIDriverContext *ctx, RADEONInfoPtr info )
       return 0;
    }
 
-   /* Initialize AGP */
-   if (!RADEONDRIAgpInit(ctx, info)) {
-      return 0;
+   if (ctx->isPCI) {
+      /* Initialize PCI */
+      if (!RADEONDRIPciInit(ctx, info))
+         return 0;
    }
-
+   else {
+      /* Initialize AGP */
+      if (!RADEONDRIAgpInit(ctx, info))
+         return 0;
+   }
 
    /* Memory manager setup */
    if (!RADEONMemoryInit(ctx, info)) {
@@ -873,12 +1024,15 @@ static int RADEONScreenInit( DRIDriverContext *ctx, RADEONInfoPtr info )
       return 0;
    }
 
+   RADEONColorTilingInit(ctx, info);
+
    /* Initialize IRQ */
    RADEONDRIIrqInit(ctx, info);
 
    /* Initialize kernel gart memory manager */
    RADEONDRIAgpHeapInit(ctx, info);
 
+   fprintf(stderr,"color tiling %sabled\n", info->colorTiling?"en":"dis");
    fprintf(stderr,"page flipping %sabled\n", info->page_flip_enable?"en":"dis");
    /* Initialize the SAREA private data structure */
    {
@@ -894,14 +1048,13 @@ static int RADEONScreenInit( DRIDriverContext *ctx, RADEONInfoPtr info )
     * the clear ioctl to do this, but would need to setup hw state
     * first.
     */
-   memset((char *)ctx->FBAddress + info->frontOffset,
+   drimemsetio((char *)ctx->FBAddress + info->frontOffset,
 	  0,
 	  info->frontPitch * ctx->cpp * ctx->shared.virtualHeight );
 
-   memset((char *)ctx->FBAddress + info->backOffset,
+   drimemsetio((char *)ctx->FBAddress + info->backOffset,
 	  0,
 	  info->backPitch * ctx->cpp * ctx->shared.virtualHeight );
-
 
    /* This is the struct passed to radeon_dri.so for its initialization */
    ctx->driverClientMsg = malloc(sizeof(RADEONDRIRec));
@@ -912,7 +1065,7 @@ static int RADEONScreenInit( DRIDriverContext *ctx, RADEONInfoPtr info )
    pRADEONDRI->height            = ctx->shared.virtualHeight;
    pRADEONDRI->depth             = ctx->bpp; /* XXX: depth */
    pRADEONDRI->bpp               = ctx->bpp;
-   pRADEONDRI->IsPCI             = 0;
+   pRADEONDRI->IsPCI             = ctx->isPCI;
    pRADEONDRI->AGPMode           = ctx->agpmode;
    pRADEONDRI->frontOffset       = info->frontOffset;
    pRADEONDRI->frontPitch        = info->frontPitch;
@@ -1038,6 +1191,8 @@ static int radeonValidateMode( const DRIDriverContext *ctx )
    info->gen_int_cntl = INREG(RADEON_GEN_INT_CNTL);
    info->crtc_offset_cntl = INREG(RADEON_CRTC_OFFSET_CNTL);
 
+   if (info->colorTiling)
+	   info->crtc_offset_cntl |= RADEON_CRTC_TILE_EN;
    return 1;
 }
 
@@ -1058,9 +1213,12 @@ static int radeonPostValidateMode( const DRIDriverContext *ctx )
    unsigned char *RADEONMMIO = ctx->MMIOAddress;
    RADEONInfoPtr info = ctx->driverPrivate;
 
+   RADEONColorTilingInit( ctx, info);
    OUTREG(RADEON_GEN_INT_CNTL, info->gen_int_cntl);
+   if (info->colorTiling)
+	   info->crtc_offset_cntl |= RADEON_CRTC_TILE_EN;
    OUTREG(RADEON_CRTC_OFFSET_CNTL, info->crtc_offset_cntl);
-
+   
    return 1;
 }
 
@@ -1084,16 +1242,27 @@ static int radeonInitFBDev( DRIDriverContext *ctx )
    {
       int  dummy = ctx->shared.virtualWidth;
 
-      switch (ctx->bpp / 8) {
-      case 1: dummy = (ctx->shared.virtualWidth + 127) & ~127; break;
-      case 2: dummy = (ctx->shared.virtualWidth +  31) &  ~31; break;
-      case 3:
-      case 4: dummy = (ctx->shared.virtualWidth +  15) &  ~15; break;
+      if (ctx->colorTiling==1)
+      {
+         switch (ctx->bpp / 8) {
+         case 1: dummy = (ctx->shared.virtualWidth + 255) & ~255; break;
+         case 2: dummy = (ctx->shared.virtualWidth + 127) & ~127; break;
+         case 3:
+         case 4: dummy = (ctx->shared.virtualWidth +  63) &  ~63; break;
+         }
+      } else {
+	 switch (ctx->bpp / 8) {
+         case 1: dummy = (ctx->shared.virtualWidth + 127) & ~127; break;
+         case 2: dummy = (ctx->shared.virtualWidth +  31) &  ~31; break;
+         case 3:
+         case 4: dummy = (ctx->shared.virtualWidth +  15) &  ~15; break;
+         }
       }
 
       ctx->shared.virtualWidth = dummy;
    }
 
+   fprintf(stderr,"shared virtual width is %d\n", ctx->shared.virtualWidth);
    ctx->driverPrivate = (void *)info;
    
    info->gartFastWrite  = RADEON_DEFAULT_AGP_FAST_WRITE;
@@ -1102,6 +1271,7 @@ static int radeonInitFBDev( DRIDriverContext *ctx )
    info->bufSize       = RADEON_DEFAULT_BUFFER_SIZE;
    info->ringSize      = RADEON_DEFAULT_RING_SIZE;
    info->page_flip_enable = RADEON_DEFAULT_PAGE_FLIP;
+   info->colorTiling = ctx->colorTiling;
   
    info->Chipset = ctx->chipset;
 

@@ -3,13 +3,17 @@
  *
  * This version is for both Linux and FreeBSD.
  *
- * Copyright © 2000 VA Linux Systems, Inc.
- * Copyright © 2001 The XFree86 Project, Inc.
+ * Copyright Â© 2000 VA Linux Systems, Inc.
+ * Copyright Â© 2001 The XFree86 Project, Inc.
  */
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/os-support/linux/lnx_agp.c,v 3.11 2003/04/03 22:47:42 dawes Exp $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSlib.h"
@@ -18,7 +22,7 @@
 #if defined(linux)
 #include <asm/ioctl.h>
 #include <linux/agpgart.h>
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
 #include <sys/ioctl.h>
 #include <sys/agpio.h>
 #endif
@@ -135,6 +139,8 @@ xf86GetAGPInfo(int screenNum)
 		return NULL;
 	}
 
+	memset((char*)&agpinf, 0, sizeof(agpinf));
+
 	if (ioctl(gartFd, AGPIOC_INFO, &agpinf) != 0) {
 		xf86DrvMsg(screenNum, X_ERROR,
 			   "xf86GetAGPInfo: AGPIOC_INFO failed (%s)\n",
@@ -149,6 +155,8 @@ xf86GetAGPInfo(int screenNum)
 	info->totalPages = agpinf.pg_total;
 	info->systemPages = agpinf.pg_system;
 	info->usedPages = agpinf.pg_used;
+
+	xf86DrvMsg(screenNum, X_INFO, "Kernel reported %d total, %d used\n", agpinf.pg_total, agpinf.pg_used);
 
 	return info;
 }
@@ -244,6 +252,27 @@ xf86AllocateGARTMemory(int screenNum, unsigned long size, int type,
 	return alloc.key;
 }
 
+Bool
+xf86DeallocateGARTMemory(int screenNum, int key)
+{
+	if (!GARTInit(screenNum) || acquiredScreen != screenNum)
+		return FALSE;
+
+	if (acquiredScreen != screenNum) {
+		xf86DrvMsg(screenNum, X_ERROR,
+                   "xf86UnbindGARTMemory: AGP not acquired by this screen\n");
+		return FALSE;
+	}
+
+	if (ioctl(gartFd, AGPIOC_DEALLOCATE, (int *)key) != 0) {
+		xf86DrvMsg(screenNum, X_WARNING,"xf86DeAllocateGARTMemory: "
+                   "deallocation gart memory with key %d failed\n\t(%s)\n",
+                   key, strerror(errno));
+		return FALSE;
+	}
+
+	return TRUE;
+}
 
 /* Bind GART memory with "key" at "offset" */
 Bool

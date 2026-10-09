@@ -24,7 +24,7 @@
 ;; dealings in this Software without prior written authorization from the
 ;; XFree86 Project.
 ;;
-;; Author: Paulo César Pereira de Andrade
+;; Author: Paulo CÃ©sar Pereira de Andrade
 ;;
 ;;
 ;; $XFree86: xc/programs/xedit/lisp/modules/progmodes/c.lsp,v 1.27 2004/01/12 17:53:20 paulo Exp $

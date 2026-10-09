@@ -52,6 +52,9 @@ SOFTWARE.
  * Grip.c - Grip Widget (Used by Paned Widget)
  *
  */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xaw/GripP.h>

@@ -1,6 +1,10 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/fbdevhw/fbdevhw.c,v 1.32 2003/08/26 10:57:03 daenzer Exp $ */
 
 /* all driver need this */
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -23,7 +27,7 @@
 
 #include "globals.h"
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 #define DEBUG 0
 
@@ -305,7 +309,10 @@ fbdev_open_pci(pciVideoPtr pPci, char **namep)
 	}
 	if (namep)
 	    *namep = NULL;
+	xf86DrvMsg(-1, X_ERROR,
+		   "Unable to find a valid framebuffer device\n");
 	return -1;
+
 }
 
 static int
@@ -803,7 +810,7 @@ fbdevHWAdjustFrame(int scrnIndex, int x, int y, int flags)
 	fPtr->var.xoffset = x;
 	fPtr->var.yoffset = y;
 	if (-1 == ioctl(fPtr->fd,FBIOPAN_DISPLAY,(void*)&fPtr->var))
-		xf86DrvMsgVerb(scrnIndex,5, X_WARNING,
+		xf86DrvMsgVerb(scrnIndex, X_WARNING, 5, 
 			   "FBIOPAN_DISPLAY: %s\n", strerror(errno));
 }
 

@@ -26,6 +26,10 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $XFree86: xc/programs/Xserver/xkb/xkbPrKeyEv.c,v 3.8 2001/01/17 22:37:15 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
 #include <math.h>
 #define NEED_EVENTS 1
@@ -34,7 +38,7 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <X11/keysym.h>
 #include "misc.h"
 #include "inputstr.h"
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 #include <ctype.h>
 
 

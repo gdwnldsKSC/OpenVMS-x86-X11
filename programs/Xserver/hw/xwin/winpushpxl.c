@@ -45,7 +45,10 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 SOFTWARE.
 
 ******************************************************************/
-#include "X.h"
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
+#include <X11/X.h>
 #include "gcstruct.h"
 #include "scrnintstr.h"
 #include "pixmapstr.h"

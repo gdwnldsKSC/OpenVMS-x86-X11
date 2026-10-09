@@ -5,7 +5,7 @@ XCOMM $XFree86: xc/programs/Xserver/miext/rootless/Imakefile,v 1.2 2003/09/16 00
 #ifdef DarwinArchitecture
 #define RootlessSafeAlpha YES
 #define RootlessAcceleration YES
-#elif defined(XWinServer) && XWinServer
+#elif (defined(XWinServer) && XWinServer) || defined(Win32Architecture)
 #define RootlessSafeAlpha YES
 #define RootlessAcceleration YES
 #else

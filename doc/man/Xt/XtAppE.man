@@ -1,4 +1,5 @@
 .\" $Xorg: XtAppE.man,v 1.3 2000/08/17 19:41:58 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtAppE.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright 1993 X Consortium
 .\"
@@ -146,7 +147,7 @@ void XtAppWarning(XtAppContext \fIapp_context\fP, String \fImessage\fP);
 Specifies the application context.
 .IP \fImessage\fP 1i
 Specifies the nonfatal error message that is to be reported.
-.ds Ha fatal error procedure, which should not return,
+.ds Ha fatal error procedure, which should not return, \
 or the nonfatal error procedure, which usually returns
 .IP \fIhandler\fP 1i
 Specifies the new \*(Ha.

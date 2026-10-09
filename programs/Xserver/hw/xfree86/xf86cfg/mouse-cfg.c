@@ -24,7 +24,7 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Author: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
+ * Author: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br>
  *
  * $XFree86: xc/programs/Xserver/hw/xfree86/xf86cfg/mouse-cfg.c,v 1.11tsi Exp $
  */
@@ -58,8 +58,11 @@ static struct MouseProtocol {
 #ifdef __UNIXOS2__
     {"OS2Mouse",		MTYPE_AUTOMOUSE},
 #endif
-#ifdef SCO
+#ifdef __SCO__
     {"OsMouse",			MTYPE_AUTOMOUSE},
+#endif
+#if defined(__UNIXWARE__)
+    {"Xqueue",			MTYPE_XQUEUE},
 #endif
 #ifdef WSCONS_SUPPORT
     {"wsmouse",			MTYPE_AUTOMOUSE},
@@ -367,7 +370,7 @@ MouseDeviceAndProtocol(XF86SetupInfo *info)
 	text = XtVaCreateManagedWidget("device", asciiTextWidgetClass,
 				       mouse_dp,
 				       XtNeditType, XawtextEdit,
-				       NULL, 0);
+				       NULL);
 	viewport = XtCreateManagedWidget("viewportD", viewportWidgetClass,
 					 mouse_dp, NULL, 0);
 
@@ -375,7 +378,7 @@ MouseDeviceAndProtocol(XF86SetupInfo *info)
 					viewport,
 					XtNlist, devices,
 					XtNnumberStrings, ndevices,
-					NULL, 0);
+					NULL);
 	XtAddCallback(listD, XtNcallback, MouseDeviceCallback, (XtPointer)text);
 
 	/* PROTOCOL */
@@ -392,11 +395,11 @@ MouseDeviceAndProtocol(XF86SetupInfo *info)
 					viewport,
 					XtNlist, list,
 					XtNnumberStrings, count,
-					NULL, 0);
+					NULL);
 	XtAddCallback(listP, XtNcallback, MouseProtocolCallback, NULL);
 
 	emul3 = XtVaCreateManagedWidget("emulate3", toggleWidgetClass,
-					mouse_dp, XtNstate, True, NULL, 0);
+					mouse_dp, XtNstate, True, NULL);
 	XtAddCallback(emul3, XtNcallback, MouseEmulateCallback, NULL);
 	apply = XtCreateManagedWidget("apply", commandWidgetClass,
 				      mouse_dp, NULL, 0);

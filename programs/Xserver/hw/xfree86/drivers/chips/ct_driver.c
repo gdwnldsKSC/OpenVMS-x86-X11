@@ -3,7 +3,7 @@
 /*
  * Copyright 1993 by Jon Block <block@frc.com>
  * Modified by Mike Hollick <hollick@graphics.cis.upenn.edu>
- * Modified 1994 by Régis Cridlig <cridlig@dmi.ens.fr>
+ * Modified 1994 by RÃ©gis Cridlig <cridlig@dmi.ens.fr>
  *
  * Major Contributors to XFree86 3.2
  *   Modified 1995/6 by Nozomi Ytow
@@ -69,6 +69,10 @@
  *    negligence, tort, under statute, in equity, at law or otherwise, even if
  *    advised of the possibility of such damage. 
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /* All drivers should typically include these */
 #include "xf86.h"
@@ -464,7 +468,7 @@ static DisplayModeRec ChipsNTSCMode = {
 #define CHIPS_DRIVER_NAME "chips"
 #define CHIPS_MAJOR_VERSION 1
 #define CHIPS_MINOR_VERSION 0
-#define CHIPS_PATCHLEVEL 0
+#define CHIPS_PATCHLEVEL 1
 
 /*
  * This contains the functions needed by the server after loading the driver
@@ -474,7 +478,7 @@ static DisplayModeRec ChipsNTSCMode = {
  * an upper-case version of the driver name.
  */
 
-DriverRec CHIPS = {
+_X_EXPORT DriverRec CHIPS = {
 	VERSION,
 	CHIPS_DRIVER_NAME,
 	CHIPSIdentify,
@@ -761,7 +765,7 @@ static XF86ModuleVersionInfo chipsVersRec =
  * This is the module init data.
  * Its name has to be the driver name followed by ModuleData
  */
-XF86ModuleData chipsModuleData = { &chipsVersRec, chipsSetup, NULL };
+_X_EXPORT XF86ModuleData chipsModuleData = { &chipsVersRec, chipsSetup, NULL };
 
 static pointer
 chipsSetup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -1532,7 +1536,7 @@ chipsPreInitHiQV(ScrnInfoPtr pScrn, int flags)
 	if (cPtr->pEnt->location.type == BUS_PCI) {
 	    /* Tack on 0x800000 to access the big-endian aperture? */
 #if X_BYTE_ORDER == X_BIG_ENDIAN
-	    if (!BE_SWAP_APRETURE(pScrn,cPtr))
+	    if (BE_SWAP_APRETURE(pScrn,cPtr))
 		cPtr->FbAddress =  (cPtr->PciInfo->memBase[0] & 0xff800000) + 0x800000L;
 	    else
 #endif
@@ -1849,9 +1853,9 @@ chipsPreInitHiQV(ScrnInfoPtr pScrn, int flags)
     }
 
 #if X_BYTE_ORDER == X_BIG_ENDIAN
-    if (cPtr->pEnt->chipset == CHIPS_CT69030 && (cPtr->readXR(cPtr, 0x71) & 0x2))
+    if (cPtr->pEnt->chipset == CHIPS_CT69030 && ((cPtr->readXR(cPtr, 0x71) & 0x2)) == 0) /* CFG9: Pipeline variable ByteSwap mapping */
 	cPtr->dualEndianAp = TRUE;
-    else
+    else  /* CFG9: Pipeline A/B mapping */
 	cPtr->dualEndianAp = FALSE;
 #endif
 
@@ -4528,7 +4532,7 @@ CHIPSCloseScreen(int scrnIndex, ScreenPtr pScreen)
     CHIPSPtr cPtr = CHIPSPTR(pScrn);
     CHIPSEntPtr cPtrEnt;    
 
-    if(pScrn->vtSema){   /*§§§*/
+    if(pScrn->vtSema){   /*Â§Â§Â§*/
 	if (cPtr->Flags & ChipsDualChannelSupport) {
   	    cPtrEnt = xf86GetEntityPrivate(pScrn->entityList[0],
 					   CHIPSEntityIndex)->ptr;
@@ -4562,9 +4566,9 @@ CHIPSCloseScreen(int scrnIndex, ScreenPtr pScreen)
     if(cPtr->BlockHandler)
 	pScreen->BlockHandler = cPtr->BlockHandler;
 
-    pScreen->CloseScreen = cPtr->CloseScreen; /*§§§*/
+    pScreen->CloseScreen = cPtr->CloseScreen; /*Â§Â§Â§*/
     xf86ClearPrimInitDone(pScrn->entityList[0]);
-    return (*pScreen->CloseScreen)(scrnIndex, pScreen);/*§§§*/
+    return (*pScreen->CloseScreen)(scrnIndex, pScreen);/*Â§Â§Â§*/
 }
 
 /* Optional */
@@ -4704,7 +4708,7 @@ chipsDisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
 static Bool
 CHIPSSaveScreen(ScreenPtr pScreen, int mode)
 {
-    ScrnInfoPtr pScrn = NULL;            /* §§§ */
+    ScrnInfoPtr pScrn = NULL;            /* Â§Â§Â§ */
     Bool unblank;
 
     unblank = xf86IsUnblank(mode);
@@ -4715,7 +4719,7 @@ CHIPSSaveScreen(ScreenPtr pScreen, int mode)
     if (unblank)
 	SetTimeSinceLastInputEvent();
 
-    if ((pScrn != NULL) && pScrn->vtSema) { /* §§§ */
+    if ((pScrn != NULL) && pScrn->vtSema) { /* Â§Â§Â§ */
 	chipsBlankScreen(pScrn, unblank);
     }
     return (TRUE);
@@ -5506,8 +5510,7 @@ chipsModeInitHiQV(ScrnInfoPtr pScrn, DisplayModePtr mode)
 #if X_BYTE_ORDER == X_BIG_ENDIAN
     ChipsNew->XR[0x0A] &= 0xCF;
     if (pScrn->bitsPerPixel == 16) {
-	ChipsNew->XR[0x0A] &= 0xCF;
-	if  (cPtr->dualEndianAp)
+	if  (!cPtr->dualEndianAp)
 	    ChipsNew->XR[0x0A] |= 0x10;
     }
 #endif
@@ -5609,27 +5612,7 @@ chipsModeInitHiQV(ScrnInfoPtr pScrn, DisplayModePtr mode)
     if ((cPtr->Chipset == CHIPS_CT69000) || (cPtr->Chipset == CHIPS_CT69030)) {
 	/* The 690xx has overflow bits for the horizontal values as well */
 	ChipsNew->CR[0x38] = (((mode->CrtcHTotal >> 3) - 5) & 0x100) >> 8;
-#if 0
-	/* We need to redo the overscan voodoo from vgaHW.c */
-	ChipsStd->CRTC[3]  = (ChipsStd->CRTC[3] & ~0x1F) 
-	  | (((mode->CrtcHBlankEnd >> 3) - 1) & 0x1F);
-	ChipsStd->CRTC[5]  = (ChipsStd->CRTC[5] & ~0x80) 
-	  | ((((mode->CrtcHBlankEnd >> 3) - 1) & 0x20) << 2);
-	ChipsNew->CR[0x3C] = ((mode->CrtcHBlankEnd >> 3) - 1) & 0xC0;
-	if ((mode->CrtcHBlankEnd >> 3) == (mode->CrtcHTotal >> 3)) {
-	    int i = (ChipsStd->CRTC[3] & 0x1F) 
-	             | ((ChipsStd->CRTC[5] & 0x80) >> 2) 
-	             | (ChipsNew->CR[0x3C] & 0xC0);
-	    if ((i-- > (ChipsStd->CRTC[2])) &&
-		(mode->CrtcHBlankEnd == mode->CrtcHTotal))
-	        i = 0;
-	    ChipsStd->CRTC[3] = (ChipsStd->CRTC[3] & ~0x1F) | (i & 0x1F);
-	    ChipsStd->CRTC[5] = (ChipsStd->CRTC[5] & ~0x80) | ((i << 2) &0x80);
-	    ChipsNew->CR[0x3C] = (i & 0xC0);
-	}
-#else
 	ChipsNew->CR[0x3C] = vgaHWHBlankKGA(mode, ChipsStd, 8, 0) << 6;
-#endif
     } else
       vgaHWHBlankKGA(mode, ChipsStd, 6, 0);
     vgaHWVBlankKGA(mode, ChipsStd, 8, 0);

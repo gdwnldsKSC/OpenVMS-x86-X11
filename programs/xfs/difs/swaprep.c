@@ -51,7 +51,7 @@ in this Software without prior written authorization from The Open Group.
 #include	<swaprep.h>
 #include	<swapreq.h>
 
-#include	"FSproto.h"
+#include	<X11/fonts/FSproto.h>
 #include	"clientstr.h"
 
 static void SwapConnSetupAccept(fsConnSetupAccept *pConnSetup, fsConnSetupAccept *pConnSetupT);

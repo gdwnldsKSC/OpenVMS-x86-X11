@@ -22,11 +22,16 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
  */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/sunos/sun_init.c,v 1.5 2005/07/03 07:01:36 daniels Exp $ */
+
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
 
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSlib.h"
-#ifdef __i386
+#if defined(__i386) || defined(__x86)
 # include <sys/kd.h>
 #endif
 
@@ -170,7 +175,7 @@ xf86OpenConsole(void)
 	if (ioctl(xf86Info.consoleFd, VT_SETMODE, &VT) < 0)
 	    FatalError("xf86OpenConsole: VT_SETMODE VT_PROCESS failed\n");
 #endif
-#ifdef __i386
+#ifdef KDSETMODE
 	if (ioctl(xf86Info.consoleFd, KDSETMODE, KD_GRAPHICS) < 0)
 	    FatalError("xf86OpenConsole: KDSETMODE KD_GRAPHICS failed\n");
 #endif
@@ -210,7 +215,7 @@ xf86CloseConsole(void)
     int tmp;
 #endif
 
-#ifndef i386
+#if !defined(i386) && !defined(__x86)
 
     if (!xf86DoProbe && !xf86DoConfigure) {
 	int fd;
@@ -255,7 +260,7 @@ xf86CloseConsole(void)
 
 #endif
 
-#ifdef __i386
+#ifdef KDSETMODE
     /* Reset the display back to text mode */
     ioctl(xf86Info.consoleFd, KDSETMODE, KD_TEXT);
 #endif

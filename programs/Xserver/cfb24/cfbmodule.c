@@ -25,6 +25,12 @@
  * XFree86 Project.
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#define PSZ 24
+
 #ifdef XFree86LOADER
 
 #include "xf86Module.h"

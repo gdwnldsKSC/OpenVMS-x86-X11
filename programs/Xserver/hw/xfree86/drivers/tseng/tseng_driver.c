@@ -28,9 +28,9 @@
  */
 /* $XConsortium: et4_driver.c /main/27 1996/10/28 04:48:15 kaleb $ */
 
-
-
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /*** Generic includes ***/
 
@@ -50,7 +50,7 @@
 #include "xf86int10.h"
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 /*** Chip-specific includes ***/
 
@@ -118,7 +118,7 @@ static int pix24bpp = 0;
  * this DriverRec be an upper-case version of the driver name.
  */
 
-DriverRec TSENG =
+_X_EXPORT DriverRec TSENG =
 {
     VERSION,
     TSENG_DRIVER_NAME,
@@ -294,7 +294,7 @@ static XF86ModuleVersionInfo tsengVersRec =
  *
  * Its name has to be the driver name followed by ModuleData.
  */
-XF86ModuleData tsengModuleData = { &tsengVersRec, tsengSetup, NULL };
+_X_EXPORT XF86ModuleData tsengModuleData = { &tsengVersRec, tsengSetup, NULL };
 
 static pointer
 tsengSetup(pointer module, pointer opts, int *errmaj, int *errmin)

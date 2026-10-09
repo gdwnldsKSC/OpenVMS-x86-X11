@@ -1,7 +1,7 @@
 /*
- * $Id: filter.c,v 1.3 2004/01/15 09:03:47 keithp Exp $
+ * $Id: filter.c,v 1.10 2005/07/03 08:53:54 daniels Exp $
  *
- * Copyright © 2002 Keith Packard
+ * Copyright Â© 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -22,9 +22,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
 #endif
+
 #include "misc.h"
 #include "scrnintstr.h"
 #include "os.h"
@@ -46,8 +47,6 @@ static int  nfilterNames;
 /*
  * standard but not required filters don't have constant indices
  */
-
-int pictFilterConvolution;
 
 int
 PictureGetFilterId (char *filter, int len, Bool makeit)
@@ -87,17 +86,20 @@ static Bool
 PictureSetDefaultIds (void)
 {
     /* careful here -- this list must match the #define values */
-    
+
     if (PictureGetFilterId (FilterNearest, -1, TRUE) != PictFilterNearest)
 	return FALSE;
     if (PictureGetFilterId (FilterBilinear, -1, TRUE) != PictFilterBilinear)
 	return FALSE;
-    
+
     if (PictureGetFilterId (FilterFast, -1, TRUE) != PictFilterFast)
 	return FALSE;
     if (PictureGetFilterId (FilterGood, -1, TRUE) != PictFilterGood)
 	return FALSE;
     if (PictureGetFilterId (FilterBest, -1, TRUE) != PictFilterBest)
+	return FALSE;
+
+    if (PictureGetFilterId (FilterConvolution, -1, TRUE) != PictFilterConvolution)
 	return FALSE;
     return TRUE;
 }
@@ -174,7 +176,7 @@ PictureSetFilterAlias (ScreenPtr pScreen, char *filter, char *alias)
 
 	if (ps->filterAliases)
 	    aliases = xrealloc (ps->filterAliases,
-				(ps->nfilterAliases + 1) * 
+				(ps->nfilterAliases + 1) *
 				sizeof (PictFilterAliasRec));
 	else
 	    aliases = xalloc (sizeof (PictFilterAliasRec));
@@ -212,6 +214,26 @@ PictureFindFilter (ScreenPtr pScreen, char *name, int len)
     return 0;
 }
 
+static Bool
+convolutionFilterValidateParams (PicturePtr pPicture,
+                                 int	   filter,
+                                 xFixed	   *params,
+                                 int	   nparams)
+{
+    if (nparams < 3)
+        return FALSE;
+
+    if (xFixedFrac (params[0]) || xFixedFrac (params[1]))
+        return FALSE;
+
+    nparams -= 2;
+    if ((xFixedToInt (params[0]) * xFixedToInt (params[1])) > nparams)
+        return FALSE;
+
+    return TRUE;
+}
+
+
 Bool
 PictureSetDefaultFilters (ScreenPtr pScreen)
 {
@@ -229,6 +251,10 @@ PictureSetDefaultFilters (ScreenPtr pScreen)
 	return FALSE;
     if (!PictureSetFilterAlias (pScreen, FilterBilinear, FilterBest))
 	return FALSE;
+
+    if (PictureAddFilter (pScreen, FilterConvolution, convolutionFilterValidateParams) < 0)
+        return FALSE;
+
     return TRUE;
 }
 

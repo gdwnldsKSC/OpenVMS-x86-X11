@@ -28,10 +28,20 @@
  * Authors:	Harold L Hunt II
  */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
+#ifdef XVENDORNAME
+#define VENDOR_STRING XVENDORNAME
+#define VERSION_STRING XORG_RELEASE
+#define VENDOR_CONTACT BUILDERADDR
+#endif
+
 #include "win.h"
 
 /* References to external symbols */
 extern char *		g_pszCommandLine;
+extern char *		g_pszLogFile;
 extern Bool		g_fSilentFatalError;
 
 
@@ -43,16 +53,22 @@ OsVendorVErrorF (const char *pszFormat, va_list va_args);
 void
 OsVendorVErrorF (const char *pszFormat, va_list va_args)
 {
+#if defined(XWIN_CLIPBOARD) || defined (XWIN_MULTIWINDOW)
+  /* make sure the clipboard and multiwindow threads do not interfere the
+   * main thread */
   static pthread_mutex_t	s_pmPrinting = PTHREAD_MUTEX_INITIALIZER;
 
   /* Lock the printing mutex */
   pthread_mutex_lock (&s_pmPrinting);
+#endif
 
   /* Print the error message to a log file, could be stderr */
   LogVWrite (0, pszFormat, va_args);
 
+#if defined(XWIN_CLIPBOARD) || defined (XWIN_MULTIWINDOW)
   /* Unlock the printing mutex */
   pthread_mutex_unlock (&s_pmPrinting);
+#endif
 }
 #endif
 
@@ -72,9 +88,10 @@ OsVendorFatalError (void)
   if (g_fSilentFatalError)
     return;
 
-  winMessageBoxF ("A fatal error has occurred and Cygwin/X will now exit.\n" \
-		  "Please open /tmp/XWin.log for more information.\n",
-		  MB_ICONERROR);
+  winMessageBoxF (
+          "A fatal error has occurred and " PROJECT_NAME " will now exit.\n" \
+		  "Please open %s for more information.\n",
+		  MB_ICONERROR, (g_pszLogFile?g_pszLogFile:"the logfile"));
 }
 #endif
 
@@ -87,25 +104,15 @@ OsVendorFatalError (void)
 void
 winMessageBoxF (const char *pszError, UINT uType, ...)
 {
-  int		i;
   char *	pszErrorF = NULL;
   char *	pszMsgBox = NULL;
   va_list	args;
 
-  /* Get length of formatted error string */
-  va_start (args, uType);
-  i = sprintf (NULL, pszError, args);
-  va_end (args);
-  
-  /* Allocate memory for formatted error string */
-  pszErrorF = malloc (i);
+  va_start(args, uType);
+  pszErrorF = Xvprintf(pszError, args);
+  va_end(args);
   if (!pszErrorF)
     goto winMessageBoxF_Cleanup;
-
-  /* Create the formatted error string */
-  va_start (args, uType);
-  sprintf (pszErrorF, pszError, args);
-  va_end (args);
 
 #define MESSAGEBOXF \
 	"%s\n" \
@@ -115,33 +122,22 @@ winMessageBoxF (const char *pszError, UINT uType, ...)
 	"XWin was started with the following command-line:\n\n" \
 	"%s\n"
 
-  /* Get length of message box string */
-  i = sprintf (NULL, MESSAGEBOXF,
-	       pszErrorF,
-	       VENDOR_STRING, VERSION_STRING, VENDOR_CONTACT,
-	       g_pszCommandLine);
-
-  /* Allocate memory for message box string */
-  pszMsgBox = malloc (i);
+  pszMsgBox = Xprintf (MESSAGEBOXF,
+	   pszErrorF, VENDOR_STRING, VERSION_STRING, VENDOR_CONTACT,
+	   g_pszCommandLine);
   if (!pszMsgBox)
     goto winMessageBoxF_Cleanup;
-
-  /* Format the message box string */
-  sprintf (pszMsgBox, MESSAGEBOXF,
-	   pszErrorF,
-	   VENDOR_STRING, VERSION_STRING, VENDOR_CONTACT,
-	   g_pszCommandLine);
 
   /* Display the message box string */
   MessageBox (NULL,
 	      pszMsgBox,
-	      "Cygwin/X",
+	      PROJECT_NAME,
 	      MB_OK | uType);
 
  winMessageBoxF_Cleanup:
   if (pszErrorF)
-    free (pszErrorF);
+    xfree (pszErrorF);
   if (pszMsgBox)
-    free (pszMsgBox);
+    xfree (pszMsgBox);
 #undef MESSAGEBOXF
 }

@@ -1,7 +1,7 @@
 /*
- * $Id: xfixes.h,v 1.5 2003/11/07 04:26:08 keithp Exp $
+ * $Id: xfixes.h,v 1.6 2005/07/03 07:02:08 daniels Exp $
  *
- * Copyright © 2002 Keith Packard
+ * Copyright Â© 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -21,6 +21,10 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #ifndef _XFIXES_H_
 #define _XFIXES_H_

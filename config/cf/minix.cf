@@ -54,11 +54,11 @@ XCOMM platform:  $XFree86: xc/config/cf/minix.cf,v 3.5 1999/07/10 07:24:33 dawes
 #define HasPutenv		YES	/* for xsm */
 
 #ifndef AssembleObject
-#define AssembleObject(flags) $(RM) $@                                    @@\
-	$(CPP) AsmDefines $(DEFINES) $(INCLUDES) flags $*.S | \           @@\
-	    grep -v '^\#' > $*.i.s                                        @@\
-	$(AS) -o $*.o $*.i.s                                              @@\
-	$(RM) $*.i.s
+#define AssembleObject(basename,flags) $(RM) $@                           @@\
+	$(CPP) AsmDefines $(DEFINES) $(INCLUDES) flags basename.S | \     @@\
+	    grep -v '^\#' > basename.i.s                                  @@\
+	$(AS) -o $*.o basename.i.s                                        @@\
+	$(RM) basename.i.s
 #endif
 
 #include <xorg.cf>

@@ -10,7 +10,7 @@ DEVZIP=/tmp/fontconfig-dev-@VERSION@.zip
 cd @prefix@
 rm -f $ZIP
 zip $ZIP -@ <<EOF
-lib/libfontconfig-@LT_CURRENT_MINUS_AGE@.dll
+bin/libfontconfig-@LT_CURRENT_MINUS_AGE@.dll
 etc/fonts/fonts.conf
 EOF
 
@@ -26,5 +26,8 @@ bin/fc-list.exe
 bin/fc-cache.exe
 man/man1/fc-cache.1
 man/man1/fc-list.1
-man/man3/fontconfig.3
+man/man5/fonts-conf.5
+share/doc/fontconfig
 EOF
+
+zip $DEVZIP man/man3/Fc*.3

@@ -1,5 +1,5 @@
 XCOMM platform:  $XFree86: xc/config/cf/OpenBSD.cf,v 3.100 2004/01/08 22:51:41 herrb Exp $
-XCOMM $XdotOrg: xc/config/cf/OpenBSD.cf,v 1.6 2004/08/29 22:02:35 kem Exp $
+XCOMM $XdotOrg: xc/config/cf/OpenBSD.cf,v 1.12 2005/10/01 16:42:11 herrb Exp $
 XCOMM
 
 #ifndef OSName
@@ -58,6 +58,9 @@ XCOMM operating system:  OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVe
 #define HasMkstemp		YES
 #define HasSetProcTitle		YES
 #define HasZlib			YES
+#ifndef HasLibpng
+# define HasLibpng		NO
+#endif
 #ifndef HasKrbIV
 # if OSMajorVersion == 2 || OSMajorVersion == 3 && OSMinorVersion < 3
 #  define HasKrbIV		YES
@@ -148,10 +151,6 @@ XCOMM operating system:  OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVe
 #define UseGas			YES
 #define GnuCpp			YES
 
-#ifndef HasGccStackProtector	
-#define HasGccStackProtector	NO
-#endif
-
 #define UseGnuMalloc		NO
 
 #define NeedConstPrototypes	YES
@@ -178,12 +177,13 @@ XCOMM operating system:  OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVe
 #endif
 #ifndef DefaultCCOptions
 #if defined(UseInstalled)
-#define DefaultCCOptions 	/**/
+   /* conform to OpenBSD's habits */
+#  define DefaultCCOptions	$(COPTS)
 #else
 #  ifdef  PpcArchitecture
-#    define DefaultCCOptions	-ansi -fsigned-char GccWarningOptions
+#    define DefaultCCOptions	-pipe -fsigned-char GccWarningOptions
 #  else
-#    define DefaultCCOptions 	-ansi GccWarningOptions
+#    define DefaultCCOptions 	-pipe GccWarningOptions
 #  endif
 #endif
 #endif
@@ -206,11 +206,9 @@ XCOMM operating system:  OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVe
  * (This introduces an ABI change)
  */
 #ifndef OverrideShlibRevs
-# define OverrideShlibRevs     HasGccStackProtector
+# define OverrideShlibRevs     ProPoliceSupport
 #endif
 
-
-#define StandardDefines	-DCSRG_BASED
 #define XawI18nDefines	-DUSE_XWCHAR_STRING -DUSE_XMBTOWC
 
 
@@ -414,13 +412,13 @@ install:: fonts.alias							@@\
 #   ifndef HasNetBSDApertureDriver
 #     define HasNetBSDApertureDriver	YES
 #   endif
-#   define ServerOSDefines	XFree86ServerOSDefines \
-				-DDDXTIME -DDDXOSINIT
+#   define ServerOSDefines	XFree86ServerOSDefines  -DDDXOSINIT
 #   define ServerExtraDefines	GccGasOption -D_XSERVER64 XFree86ServerDefines
 #   define ServerExtraSysLibs	-lalpha
 #   ifndef DoLoadableServer
 #     define DoLoadableServer	YES
 #   endif
+#   define XF86OSCardDrivers	wsfb
 #   ifndef XFree86ConsoleDefines
 #     define XFree86ConsoleDefines -DWSCONS_SUPPORT -DPCVT_SUPPORT
 #   endif
@@ -444,7 +442,7 @@ install:: fonts.alias							@@\
 # define XorgServer		YES
 
 # ifndef DoLoadableServer
-#  define DoLoadableServer	NO
+#  define DoLoadableServer	YES
 # endif
 
 # ifndef HasNetBSDApertureDriver
@@ -455,7 +453,6 @@ install:: fonts.alias							@@\
 
 # define ServerExtraSysLibs	-lamd64
 # define ServerExtraDefines	GccGasOption -D_XSERVER64 XFree86ServerDefines
-
 
 # ifndef XFree86ConsoleDefines
 #  define XFree86ConsoleDefines	-DWSCONS_SUPPORT -DPCVT_SUPPORT
@@ -486,12 +483,9 @@ install:: fonts.alias							@@\
 #  ifndef BuildXF86DRI
 #   define BuildXF86DRI			NO
 #  endif 
-#  ifndef BuildXF86OldDRMCompat
-#   define BuildXF86OldDRMCompat	NO
-#  endif
 # endif 
 
-#define HasWeakSymbols		YES
+# define HasWeakSymbols		YES
 
 /* To use the NetBSD Aperture driver */
 # ifndef HasNetBSDApertureDriver
@@ -532,15 +526,7 @@ install:: fonts.alias							@@\
 #   define XFree86ConsoleDefines -DWSCONS_SUPPORT -DPCVT_SUPPORT
 # endif
 
-#define JoystickSupport	NO
-
-/* Support for USB Mices */
-# ifndef UsbMouseSupport
-#  if OSMajorVersion > 2 || (OSMajorVersion == 2 && OSMinorVersion >= 6)
-#   define UsbMouseSupport		YES
-#  endif
-# endif
-
+# define JoystickSupport	NO
 
 /* A hack to work around an optimization problem with gcc 2.95.2 */
 # if OSMajorVersion > 2 || (OSMajorVersion == 2 && OSMinorVersion >= 6)
@@ -576,7 +562,6 @@ install:: fonts.alias							@@\
  */
 
 # define PositionIndependentCFlags -fpic -fno-function-cse
-# define HasWeakSymbols		NO
 # define BuildGlxExt		NO
 # define BuildGLXLibrary	YES
  
@@ -662,7 +647,6 @@ install:: fonts.alias							@@\
 # define ServerOSDefines       -DDDXOSINIT
 # define BootstrapCFlags       -Dsun3
 # define UnalignedReferencesAllowed	YES /* changes _XtCopyArgs() */
-/* Note: -ansi turns off -Dmc68000 */
 # define ServerExtraDefines    GccGasOption -Dmc68000 -Dmc68020 \
 				-DXFree86Server -DINCLUDE_CG2_HEADER
 
@@ -757,12 +741,12 @@ install:: fonts.alias							@@\
 
 /* Definitions for building the X server */
 # if XorgServer
-#   define ServerOSDefines	XFree86ServerOSDefines \
-				-DDDXTIME -DDDXOSINIT
+#   define ServerOSDefines	XFree86ServerOSDefines -DDDXOSINIT
 #   define ServerExtraDefines	GccGasOption XFree86ServerDefines
 #   ifndef DoLoadableServer
 #     define DoLoadableServer	YES
 #   endif
+#   define XF86OSCardDrivers	wsfb
 #   ifndef XF86CardDrivers
 #    define XF86CardDrivers	ati mga glint s3virge sis savage\
 				trident chips tdfx \
@@ -771,11 +755,6 @@ install:: fonts.alias							@@\
 #   endif
 #   ifndef DevelDrivers 
 #    define DevelDrivers nv
-#   endif
-
-    /* Support for USB Mices */
-#   ifndef UsbMouseSupport
-#     define UsbMouseSupport		YES
 #   endif
 
 # endif /* XorgServer */
@@ -801,6 +780,13 @@ install:: fonts.alias							@@\
 #  define ServerExtraDefines	-DAVOID_GLYPHBLT -DPIXPRIV  -DXFree86Server \
 				DebugDefines -DINCLUDE_CG2_HEADER \
 				-DX_BYTE_ORDER=$(X_BYTE_ORDER)
+#  define XOrgServer		NO
+# else
+#  define XorgServer		YES
+# endif 
+
+# if !XorgServer
+
 #  ifndef Xsun24Server
 #   define Xsun24Server		YES
 #  endif
@@ -810,7 +796,12 @@ install:: fonts.alias							@@\
 #  ifndef XsunMonoServer
 #   define XsunMonoServer	YES
 #  endif
-# else 
+#  ifndef InstallXserverSetUID
+#   define InstallXserverSetUID NO
+#  endif
+
+# else /* XF86Server */
+
 #  ifndef Xsun24Server
 #   define Xsun24Server		NO
 #  endif
@@ -820,13 +811,25 @@ install:: fonts.alias							@@\
 #  ifndef XsunMonoServer
 #   define XsunMonoServer	NO
 #  endif
+#  ifndef DoLoadableServer
+#    define DoLoadableServer	YES
+#  endif
+
+#  define XF86CardDrivers	wsfb
+#  define XFree86ConsoleDefines -DWSCONS_SUPPORT
+#  define BuildXInputExt	YES
+#  define ServerOSDefines	XFree86ServerOSDefines -DDDXTIME -DDDXOSINIT
+#  define ServerExtraDefines	GccGasOption XFree86ServerDefines
+
 # endif
 
 # define XkbServerDefines	-DXKB_ALWAYS_USES_SOFT_REPEAT
 
 # define BuildXF86VidModeExt	NO
 # define BuildXF86DGA		NO
-# define BuildXInputExt		NO
+# ifndef BuildXInputExt
+#  define BuildXInputExt	NO
+# endif
 # include <xorg.cf>
 
 #endif /* SparcArchitecture */
@@ -846,14 +849,14 @@ install:: fonts.alias							@@\
 # endif
 
 # define ServerExtraDefines	GccGasOption -D_XSERVER64 XFree86ServerDefines
-# define ServerOSDefines	XFree86ServerOSDefines \
-				-DDDXTIME -DDDXOSINIT
+# define ServerOSDefines	XFree86ServerOSDefines -DDDXOSINIT
 # define XkbServerDefines	-DXKB_ALWAYS_USES_SOFT_REPEAT
 
 # if XorgServer
 #   ifndef DoLoadableServer
-#     define DoLoadableServer	NO
+#     define DoLoadableServer	YES
 #   endif
+#   define XF86OSCardDrivers	wsfb
 #   define XFree86ConsoleDefines -DWSCONS_SUPPORT
 # endif
 
@@ -894,6 +897,10 @@ install:: fonts.alias							@@\
  * Generic settings for all architectures
  * which can be overridden by architecture specific sections above
  */
+
+#ifndef StandardDefines
+# define StandardDefines	-DCSRG_BASED 
+#endif
 
 #if !defined(OptimizedCDebugFlags)
 # define OptimizedCDebugFlags	-O2
@@ -960,6 +967,10 @@ install:: fonts.alias							@@\
 # define SharedLibXdmGreet		NO
 #endif
 
+#define HasFreetype2		NO
+#define HasExpat		NO
+#define	BuildXterm		BuildClients
+
 /*
  * XFree86 uses its own (more portable) database routines to speed up
  * the RGB database lookups
@@ -983,17 +994,20 @@ install:: fonts.alias							@@\
 #endif
 
 #ifndef DlLibrary
-# if (OSMajorVersion < 3 || OSMajorVersion == 3 && OSMinorVersion == 0)\
-    && UseElfFormat
-#  define DlLibrary -ldl
+# if UseElfFormat
+#  if (OSMajorVersion < 3 || OSMajorVersion == 3 && OSMinorVersion == 0)
+#   define DlLibrary -ldl
+#  else
+#   define DlLibrary -Wl,--export-dynamic
+#  endif
 # else
 #  define DlLibrary /**/
 # endif
 #endif
 
-#  if !defined(GccWarningOptions)
-#    define GccWarningOptions 		-Wall -Wpointer-arith
-#  endif
+#if !defined(GccWarningOptions)
+# define GccWarningOptions 		-Wall -Wpointer-arith
+#endif
 
 /* This must come last */
 #if OSMajorVersion == 2 && OSMinorVersion >= 8 || OSMajorVersion > 2

@@ -40,6 +40,10 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  * This module supports acceleration for 2097 and 2160.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"

@@ -192,6 +192,10 @@
  * The Mach64's clock divider is not used in this case.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ati.h"
 #include "atiadapter.h"
 #include "atichip.h"

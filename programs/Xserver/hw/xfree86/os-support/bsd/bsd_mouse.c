@@ -27,7 +27,11 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSlib.h"
@@ -68,7 +72,7 @@
 static void usbSigioReadInput (int fd, void *closure);
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 /* These are for FreeBSD */
 #define DEFAULT_MOUSE_DEV		"/dev/mouse"
 #define DEFAULT_SYSMOUSE_DEV		"/dev/sysmouse"
@@ -97,7 +101,7 @@ SupportedInterfaces(void)
 {
 #if defined(__NetBSD__)
     return MSE_SERIAL | MSE_BUS | MSE_PS2 | MSE_AUTO;
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
     return MSE_SERIAL | MSE_BUS | MSE_PS2 | MSE_AUTO | MSE_MISC;
 #else
     return MSE_SERIAL | MSE_BUS | MSE_PS2 | MSE_XPS2 | MSE_AUTO;
@@ -120,7 +124,7 @@ static const char *internalNames[] = {
  * main "mouse" driver.
  */
 static const char *miscNames[] = {
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 	"SysMouse",
 #endif
 	NULL
@@ -149,7 +153,7 @@ CheckProtocol(const char *protocol)
 static const char *
 DefaultProtocol(void)
 {
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
     return "Auto";
 #elif defined(__OpenBSD__) && defined(WSCONS_SUPPORT)
     return "WSMouse";
@@ -158,7 +162,7 @@ DefaultProtocol(void)
 #endif
 }
 
-#if defined(__FreeBSD__) && defined(MOUSE_PROTO_SYSMOUSE)
+#if (defined(__FreeBSD__) || defined(__FreeBSD_kernel__)) && defined(MOUSE_PROTO_SYSMOUSE)
 static struct {
 	int dproto;
 	const char *name;
@@ -227,7 +231,7 @@ SetSysMouseRes(InputInfoPtr pInfo, const char *protocol, int rate, int res)
     mode.rate = rate > 0 ? rate : -1;
     mode.resolution = res > 0 ? res : -1;
     mode.accelfactor = -1;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
     if (pMse->autoProbe ||
 	(protocol && xf86NameCmp(protocol, "SysMouse") == 0)) {
 	/*
@@ -245,7 +249,7 @@ SetSysMouseRes(InputInfoPtr pInfo, const char *protocol, int rate, int res)
 }
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 
 #define MOUSED_PID_FILE "/var/run/moused.pid"
 
@@ -547,6 +551,7 @@ usbMouseProc(DeviceIntPtr pPointer, int what)
 	    }
 	}
 	pMse->lastButtons = 0;
+	pMse->lastMappedButtons = 0;
 	pMse->emulateState = 0;
 	pPointer->public.on = TRUE;
 	break;
@@ -769,7 +774,7 @@ xf86OSMouseInit(int flags)
     p->BuiltinNames = BuiltinNames;
     p->DefaultProtocol = DefaultProtocol;
     p->CheckProtocol = CheckProtocol;
-#if defined(__FreeBSD__) && defined(MOUSE_PROTO_SYSMOUSE)
+#if (defined(__FreeBSD__) || defined(__FreeBSD_kernel__)) && defined(MOUSE_PROTO_SYSMOUSE)
     p->SetupAuto = SetupAuto;
     p->SetPS2Res = SetSysMouseRes;
     p->SetBMRes = SetSysMouseRes;
@@ -779,7 +784,7 @@ xf86OSMouseInit(int flags)
     p->SetupAuto = SetupAuto;
     p->SetMiscRes = SetMouseRes;
 #endif
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__OpenBSD__)
     p->FindDevice = FindDevice;
 #endif
     p->PreInit = bsdMousePreInit;

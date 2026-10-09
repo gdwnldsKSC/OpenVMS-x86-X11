@@ -1,6 +1,10 @@
 /* $XFree86: xc/programs/Xserver/mi/mioverlay.c,v 3.15tsi Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "scrnintstr.h"
 #include "validate.h"
 #include "windowstr.h"

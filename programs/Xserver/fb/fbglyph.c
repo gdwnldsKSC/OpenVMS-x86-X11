@@ -1,8 +1,8 @@
 /*
- * $XdotOrg: xc/programs/Xserver/fb/fbglyph.c,v 1.2 2004/04/23 19:05:14 eich Exp $
+ * $XdotOrg: xc/programs/Xserver/fb/fbglyph.c,v 1.5 2005/07/03 07:01:23 daniels Exp $
  * $XFree86: xc/programs/Xserver/fb/fbglyph.c,v 1.12tsi Exp $
  *
- * Copyright © 1998 Keith Packard
+ * Copyright Â© 1998 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -23,8 +23,12 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "fb.h"
-#include	"fontstruct.h"
+#include	<X11/fonts/fontstruct.h>
 #include	"dixfontstr.h"
 
 #define dummyScreen screenInfo.screens[0]

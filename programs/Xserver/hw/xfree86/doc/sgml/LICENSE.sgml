@@ -8,13 +8,13 @@
 <date>March 2004</date>
 
 <ident>
-$Id$
+$Id: LICENSE.sgml,v 1.4 2005/12/19 07:56:55 alanc Exp $
 </ident>
 
 <sect>Introduction
 <p>
 
-The X.org Foundation X Window System distribution is a compilation of code and
+The X.Org Foundation X Window System distribution is a compilation of code and
 documentation from many sources.  This document is intended primarily
 as a guide to the licenses used in the distribution: you must check
 each file and/or package for precise redistribution

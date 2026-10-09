@@ -1,4 +1,5 @@
 .\" $Xorg: XtErrM.man,v 1.3 2000/08/17 19:42:00 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtErrM.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright (c) 1993, 1994  X Consortium
 .\" 
@@ -150,7 +151,7 @@ Specifies the default message to use\*(Dm.
 Specifies the general kind of error.
 .IP \fItype\fP 1i
 Specifies the detailed name of the error.
-.ds Mh fatal error procedure, which should not return
+.ds Mh fatal error procedure, which should not return \
 or the nonfatal error procedure, which usually returns
 .IP \fImsg_handler\fP 1i
 Specifies the new \*(Mh.
@@ -179,6 +180,7 @@ The
 function has been superceded by
 .ZN XtAppWarningMsg
 .SH "SEE ALSO"
+.BR XtAppErrorMsg (3Xt)
 .br
 \fI\*(xT\fP
 .br

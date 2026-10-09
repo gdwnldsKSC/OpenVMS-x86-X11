@@ -525,7 +525,11 @@ TRANS(DNETBytesReadable) (XtransConnInfo ciptr, BytesReadable_t *pend)
     PRMSG (2,"DNETBytesReadable(%x,%d,%x)\n", ciptr, ciptr->fd, pend);
 
 #ifdef WIN32
-    return ioctlsocket ((SOCKET) ciptr->fd, FIONREAD, (u_long *) pend);
+    {
+	int ret = ioctlsocket ((SOCKET) ciptr->fd, FIONREAD, (u_long *) pend);
+	errno = WSAGetLastError();
+	return ret;
+    }
 #else
     return ioctl(ciptr->fd, FIONREAD, (char *)pend);
 #endif /* WIN32 */
@@ -539,7 +543,11 @@ TRANS(DNETRead) (XtransConnInfo ciptr, char *buf, int size)
     PRMSG (2,"DNETRead(%d,%x,%d)\n", ciptr->fd, buf, size);
 
 #ifdef WIN32
-    return recv ((SOCKET)ciptr->fd, buf, size, 0);
+    {
+	int ret = recv ((SOCKET)ciptr->fd, buf, size, 0);
+	errno = WSAGetLastError();
+	return ret;
+    }
 #else
     return read (ciptr->fd, buf, size);
 #endif /* WIN32 */
@@ -553,7 +561,11 @@ TRANS(DNETWrite) (XtransConnInfo ciptr, char *buf, int size)
     PRMSG (2,"DNETWrite(%d,%x,%d)\n", ciptr->fd, buf, size);
 
 #ifdef WIN32
-    return send ((SOCKET)ciptr->fd, buf, size, 0);
+    {
+	int ret = send ((SOCKET)ciptr->fd, buf, size, 0);
+	errno = WSAGetLastError();
+	return ret;
+    }
 #else
     return write (ciptr->fd, buf, size);
 #endif /* WIN32 */
@@ -586,7 +598,15 @@ TRANS(DNETDisconnect) (XtransConnInfo ciptr)
 {
     PRMSG (2,"DNETDisconnect(%x,%d)\n", ciptr, ciptr->fd, 0);
 
+#ifdef WIN32
+    {
+	int ret = shutdown (ciptr->fd, 2);
+	errno = WSAGetLastError();
+	return ret;
+    }
+#else
     return shutdown (ciptr->fd, 2); /* disallow further sends and receives */
+#endif
 }
 
 
@@ -596,7 +616,15 @@ TRANS(DNETClose) (XtransConnInfo ciptr)
 {
     PRMSG (2,"DNETClose(%x,%d)\n", ciptr, ciptr->fd, 0);
 
+#ifdef WIN32
+    {
+	int ret = close (ciptr->fd);
+	errno = WSAGetLastError();
+	return ret;
+    }
+#else
     return close (ciptr->fd);
+#endif
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * $Id: compinit.c,v 1.14 2004/06/04 16:10:50 keithp Exp $
+ * $Id: compinit.c,v 1.9 2005/07/03 07:37:34 daniels Exp $
  *
  * Copyright © 2003 Keith Packard
  *
@@ -22,9 +22,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
 #endif
+
 #include "compint.h"
 
 int	CompScreenPrivateIndex;

@@ -5,6 +5,7 @@
  *
  * 
 Copyright 1988, 1998  The Open Group
+Copyright 2005 Hitachi, Ltd.
 
 Permission to use, copy, modify, distribute, and sell this software and its
 documentation for any purpose is hereby granted without fee, provided that
@@ -30,6 +31,54 @@ in this Software without prior written authorization from The Open Group.
  */
 
 /* $XFree86: xc/programs/xdpyinfo/xdpyinfo.c,v 3.29 2003/04/14 20:38:10 herrb Exp $ */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+# if HAVE_X11_EXTENSIONS_MULTIBUF_H
+#  define MULTIBUFFER
+# endif
+
+# if HAVE_X11_EXTENSIONS_XSHM_H
+#  define MITSHM
+# endif
+
+# if HAVE_X11_EXTENSIONS_XKB_H && HAVE_X11_XKBLIB_H
+#  define XKB
+# endif
+
+# if HAVE_X11_EXTENSIONS_XF86VMODE_H && HAVE_X11_EXTENSIONS_XF86VMSTR_H
+#  define XF86VIDMODE
+# endif
+
+# if HAVE_X11_EXTENSIONS_XF86DGA_H && HAVE_X11_EXTENSIONS_XF86DGASTR_H
+#  define XFreeXDGA
+# endif
+
+# if HAVE_X11_EXTENSIONS_XF86MISC_H && HAVE_X11_EXTENSIONS_XF86MSCSTR_H
+#  define XF86MISC
+# endif
+
+# if HAVE_X11_EXTENSIONS_XINPUT_H
+#  define XINPUT
+# endif
+
+# if HAVE_X11_EXTENSIONS_XRENDER_H
+#  define XRENDER
+# endif
+
+# if HAVE_X11_EXTENSIONS_XINERAMA_H
+#  define PANORAMIX
+# endif
+
+# if HAVE_X11_EXTENSIONS_DMXEXT_H
+#  define DMX
+# endif
+
+# if HAVE_X11_EXTENSIONS_PRINT_H
+#  define INCLUDE_XPRINT_SUPPORT
+# endif
+
+#endif
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -343,6 +392,8 @@ print_visual_info(XVisualInfo *vip)
 	    vip->bits_per_rgb);
 }
 
+/* xc/programs/twm/twm.c has a copy of |hasExtension()|, please
+ * keep both versions in sync... */
 static
 Bool hasExtension(Display *dpy, char *extname)
 {
@@ -356,6 +407,31 @@ Bool hasExtension(Display *dpy, char *extname)
   return i != num_extensions;
 }
 
+#ifdef INCLUDE_XPRINT_SUPPORT
+/* xc/programs/twm/twm.c has a copy of |IsPrintScreen()|, please
+ * keep both versions in sync... */
+static
+Bool IsPrintScreen(Screen *s)
+{
+    Display *dpy = XDisplayOfScreen(s);
+    int      i;
+
+    /* Check whether this is a screen of a print DDX */
+    if (hasExtension(dpy, XP_PRINTNAME)) {
+        Screen **pscreens;
+        int      pscrcount;
+
+        pscreens = XpQueryScreens(dpy, &pscrcount);
+        for( i = 0 ; (i < pscrcount) && pscreens ; i++ ) {
+            if (s == pscreens[i]) {
+                return True;
+            }
+        }
+        XFree(pscreens);                      
+    }
+    return False;
+}
+#endif /* INCLUDE_XPRINT_SUPPORT */
 
 static void
 print_screen_info(Display *dpy, int scr)
@@ -370,7 +446,7 @@ print_screen_info(Display *dpy, int scr)
     double xres, yres;
     int ndepths = 0, *depths = NULL;
     unsigned int width, height;
-    Bool isPrintScreen = False;
+    Bool isPrintScreen = False; /* Initalise this if |INCLUDE_XPRINT_SUPPORT| is not set */
 
     /*
      * there are 2.54 centimeters to an inch; so there are 25.4 millimeters.
@@ -390,19 +466,7 @@ print_screen_info(Display *dpy, int scr)
 
 #ifdef INCLUDE_XPRINT_SUPPORT
     /* Check whether this is a screen of a print DDX */
-    if (hasExtension(dpy, XP_PRINTNAME)) {
-        Screen **pscreens;
-        int      pscrcount;
-
-        pscreens = XpQueryScreens(dpy, &pscrcount);
-        for( i = 0 ; (i < pscrcount) && pscreens ; i++ ) {
-            if (scr == (int)XScreenNumberOfScreen(pscreens[i])) {
-                isPrintScreen = True;
-                break;
-            }
-        }
-        XFree(pscreens);		      
-    }
+    isPrintScreen = IsPrintScreen(s);
     printf ("  print screen:    %s\n", isPrintScreen?"yes":"no");
 #endif /* INCLUDE_XPRINT_SUPPORT */
 

@@ -28,17 +28,30 @@
  * Authors:	Harold L Hunt II
  */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 
+#ifdef XWIN_NATIVEGDI
 /* See Porting Layer Definition - p. 32 */
 /* See mfb/mfbfont.c - mfbRealizeFont() - which is empty :) */
 Bool
 winRealizeFontNativeGDI (ScreenPtr pScreen, FontPtr pFont)
 {
+  BOOL			fResult = TRUE;
+  winScreenPriv(pScreen);
+  
 #if CYGDEBUG
-  winDebug ("winRealizeFont()\n");
+  winTrace ("winRealizeFont (%p, %p)\n", pScreen, pFont);
 #endif
-  return TRUE;
+
+  WIN_UNWRAP(RealizeFont);
+  if (pScreen->RealizeFont)
+    fResult = (*pScreen->RealizeFont) (pScreen, pFont);
+  WIN_WRAP(RealizeFont, winRealizeFontNativeGDI);
+  
+  return fResult;
 }
 
 /* See Porting Layer Definition - p. 32 */
@@ -46,8 +59,22 @@ winRealizeFontNativeGDI (ScreenPtr pScreen, FontPtr pFont)
 Bool
 winUnrealizeFontNativeGDI (ScreenPtr pScreen, FontPtr pFont)
 {
+  BOOL			fResult = TRUE;
+  winScreenPriv(pScreen);
+  
+#if CYGDEBUG
+  winTrace ("winUnrealizeFont (%p, %p)\n", pScreen, pFont);
+#endif
+
+  WIN_UNWRAP(UnrealizeFont);
+  if (pScreen->UnrealizeFont)
+    fResult = (*pScreen->UnrealizeFont) (pScreen, pFont);
+  WIN_WRAP(UnrealizeFont, winUnrealizeFontNativeGDI);
+  
+  return fResult;
 #if CYGDEBUG
   winDebug ("winUnrealizeFont()\n");
 #endif
   return TRUE;
 }
+#endif

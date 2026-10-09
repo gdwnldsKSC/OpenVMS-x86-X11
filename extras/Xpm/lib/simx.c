@@ -35,6 +35,9 @@
 
 #ifdef FOR_MSW
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "xpm.h"
 #include "xpmi.h"			/* for XpmMalloc */
 

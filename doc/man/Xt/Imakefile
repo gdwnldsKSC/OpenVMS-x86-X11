@@ -1,4 +1,5 @@
 XCOMM $Xorg: Imakefile,v 1.3 2000/08/17 19:41:57 cpqbld Exp $
+XCOMM $XdotOrg: xc/doc/man/Xt/Imakefile,v 1.3 2005/01/19 19:27:34 alanc Exp $
 
 
 
@@ -140,6 +141,7 @@ InstallManPageAliases(XtAddInput,$(MANDIR),XtAddTimeOut XtAddTimeout)
 #else
 InstallManPageAliases(XtAddInput,$(MANDIR),XtAddTimeOut)
 #endif
+InstallManPageAliases(XtAddInput,$(MANDIR),XtAddWorkProc)
 InstallManPageLong(XtBlockH,$(MANDIR),XtAppAddBlockHook)
 InstallManPageAliases(XtAppAddBlockHook,$(MANDIR),XtRemoveBlockHook)
 InstallManPageLong(XtGetClExt,$(MANDIR),XtGetClassExtension)

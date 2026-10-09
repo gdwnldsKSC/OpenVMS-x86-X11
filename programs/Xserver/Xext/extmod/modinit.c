@@ -23,15 +23,20 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifdef XFree86LOADER
 #include "xf86_ansic.h"
 
 #include "xf86Module.h"
 #include "xf86Opt.h"
 
-#include "Xproto.h"
+#include <X11/Xproto.h>
 
 #include "modinit.h"
+#include "globals.h"
 
 static MODULESETUPPROTO(extmodSetup);
 
@@ -43,7 +48,7 @@ ExtensionModule extensionModules[] = {
     {
 	ShapeExtensionInit,
 	SHAPENAME,
-	NULL,
+	&noShapeExtension,
 	NULL,
 	NULL
     },
@@ -52,7 +57,7 @@ ExtensionModule extensionModules[] = {
     {
 	MultibufferExtensionInit,
 	MULTIBUFFER_PROTOCOL_NAME,
-	NULL,
+	&noMultibufferExtension,
 	NULL,
 	NULL
     },
@@ -61,7 +66,7 @@ ExtensionModule extensionModules[] = {
     {
 	MITMiscExtensionInit,
 	MITMISCNAME,
-	NULL,
+	&noMITMiscExtension,
 	NULL,
 	NULL
     },
@@ -79,7 +84,7 @@ ExtensionModule extensionModules[] = {
      {
 	BigReqExtensionInit,
 	XBigReqExtensionName,
-	NULL,
+	&noBigReqExtension,
 	NULL,
 	NULL
      },
@@ -88,7 +93,7 @@ ExtensionModule extensionModules[] = {
     {
 	SyncExtensionInit,
 	SYNC_NAME,
-	NULL,
+	&noSyncExtension,
 	NULL,
 	NULL
     },
@@ -97,7 +102,7 @@ ExtensionModule extensionModules[] = {
     {
 	ScreenSaverExtensionInit,
 	ScreenSaverName,
-	NULL,
+	&noScreenSaverExtension,
 	NULL,
 	NULL
     },
@@ -106,7 +111,7 @@ ExtensionModule extensionModules[] = {
     {
 	XCMiscExtensionInit,
 	XCMiscExtensionName,
-	NULL,
+	&noXCMiscExtension,
 	NULL,
 	NULL
     },
@@ -115,7 +120,7 @@ ExtensionModule extensionModules[] = {
     {
 	XFree86VidModeExtensionInit,
 	XF86VIDMODENAME,
-	NULL,
+	&noXFree86VidModeExtension,
 	NULL,
 	NULL
     },
@@ -124,7 +129,7 @@ ExtensionModule extensionModules[] = {
     {
 	XFree86MiscExtensionInit,
 	XF86MISCNAME,
-	NULL,
+	&noXFree86MiscExtension,
 	NULL,
 	NULL
     },
@@ -133,7 +138,7 @@ ExtensionModule extensionModules[] = {
     {
 	XFree86DGAExtensionInit,
 	XF86DGANAME,
-	NULL,
+	&noXFree86DGAExtension,
 	XFree86DGARegister,
 	NULL
     },
@@ -142,6 +147,7 @@ ExtensionModule extensionModules[] = {
     {
 	DPMSExtensionInit,
 	DPMSExtensionName,
+	&noDPMSExtension,
 	NULL,
 	NULL
     },
@@ -150,7 +156,7 @@ ExtensionModule extensionModules[] = {
     {
 	FontCacheExtensionInit,
 	FONTCACHENAME,
-	NULL,
+	&noFontCacheExtension,
 	NULL,
 	NULL
     },
@@ -159,7 +165,7 @@ ExtensionModule extensionModules[] = {
     {
 	XcupExtensionInit,
 	XCUPNAME,
-	NULL,
+	&noXcupExtension,
 	NULL,
 	NULL
     },
@@ -168,7 +174,7 @@ ExtensionModule extensionModules[] = {
     {
 	EVIExtensionInit,
 	EVINAME,
-	NULL,
+	&noEVIExtension,
 	NULL,
 	NULL
     },
@@ -177,14 +183,14 @@ ExtensionModule extensionModules[] = {
     {
 	XvExtensionInit,
 	XvName,
-	NULL,
+	&noXvExtension,
 	XvRegister,
 	NULL
     },
     {
         XvMCExtensionInit,
         XvMCName,
-        NULL,
+        &noXvExtension,
         NULL,
         NULL
     },
@@ -193,7 +199,7 @@ ExtensionModule extensionModules[] = {
     {
         ResExtensionInit,
         XRES_NAME, 
-        NULL,
+        &noResExtension,
         NULL,
         NULL
     },

@@ -178,8 +178,9 @@ InitPsuedoGlobals(void)
    * Allocate necessary memory. 
    */
 
-  man_globals = (ManpageGlobals *) 
-                XtMalloc( (Cardinal) sizeof(ManpageGlobals));
+  man_globals = (ManpageGlobals *)XtCalloc(ONE, (Cardinal) sizeof(ManpageGlobals));
+  if(!man_globals)
+    return NULL;
 
   man_globals->search_widget = NULL;
   man_globals->section_name = (char **) XtMalloc( (Cardinal) (sections *

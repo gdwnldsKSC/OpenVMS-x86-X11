@@ -28,6 +28,9 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $XFree86: xc/lib/Xdmcp/WC32.c,v 1.4 2001/01/17 19:42:44 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xos.h>
 #include <X11/X.h>
 #include <X11/Xmd.h>

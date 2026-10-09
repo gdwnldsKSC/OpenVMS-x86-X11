@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/Xext/shape.c,v 1.4 2004/07/29 23:43:39 kem Exp $ */
+/* $XdotOrg: xc/programs/Xserver/Xext/shape.c,v 1.9 2005/07/03 08:53:36 daniels Exp $ */
 /* $XFree86: xc/programs/Xserver/Xext/shape.c,v 3.18 2003/10/28 23:08:43 tsi Exp $ */
 /************************************************************
 
@@ -29,8 +29,12 @@ in this Software without prior written authorization from The Open Group.
 /* $Xorg: shape.c,v 1.4 2001/02/09 02:04:32 xorgcvs Exp $ */
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "os.h"
 #include "windowstr.h"
@@ -41,7 +45,7 @@ in this Software without prior written authorization from The Open Group.
 #include "resource.h"
 #include "opaque.h"
 #define _SHAPE_SERVER_	/* don't want Xlib structures */
-#include "shapestr.h"
+#include <X11/extensions/shapestr.h>
 #include "regionstr.h"
 #include "gcstruct.h"
 #ifdef EXTMODULE
@@ -320,7 +324,6 @@ ProcShapeRectangles (client)
     RegionPtr		srcRgn;
     RegionPtr		*destRgn;
     CreateDftPtr	createDefault;
-    int			destBounding;
 
     REQUEST_AT_LEAST_SIZE (xShapeRectanglesReq);
     UpdateCurrentTime();
@@ -329,12 +332,13 @@ ProcShapeRectangles (client)
 	return BadWindow;
     switch (stuff->destKind) {
     case ShapeBounding:
-	destBounding = 1;
 	createDefault = CreateBoundingShape;
 	break;
     case ShapeClip:
-	destBounding = 0;
 	createDefault = CreateClipShape;
+	break;
+    case ShapeInput:
+	createDefault = CreateBoundingShape;
 	break;
     default:
 	client->errorValue = stuff->destKind;
@@ -359,10 +363,19 @@ ProcShapeRectangles (client)
 
     if (!pWin->optional)
 	MakeWindowOptional (pWin);
-    if (destBounding)
+    switch (stuff->destKind) {
+    case ShapeBounding:
 	destRgn = &pWin->optional->boundingShape;
-    else
+	break;
+    case ShapeClip:
 	destRgn = &pWin->optional->clipShape;
+	break;
+    case ShapeInput:
+	destRgn = &pWin->optional->inputShape;
+	break;
+    default:
+	return BadValue;
+    }
 
     return RegionOperate (client, pWin, (int)stuff->destKind,
 			  destRgn, srcRgn, (int)stuff->op,
@@ -410,7 +423,6 @@ ProcShapeMask (client)
     RegionPtr		*destRgn;
     PixmapPtr		pPixmap;
     CreateDftPtr	createDefault;
-    int			destBounding;
 
     REQUEST_SIZE_MATCH (xShapeMaskReq);
     UpdateCurrentTime();
@@ -419,12 +431,13 @@ ProcShapeMask (client)
 	return BadWindow;
     switch (stuff->destKind) {
     case ShapeBounding:
-	destBounding = 1;
 	createDefault = CreateBoundingShape;
 	break;
     case ShapeClip:
-	destBounding = 0;
 	createDefault = CreateClipShape;
+	break;
+    case ShapeInput:
+	createDefault = CreateBoundingShape;
 	break;
     default:
 	client->errorValue = stuff->destKind;
@@ -448,10 +461,19 @@ ProcShapeMask (client)
 
     if (!pWin->optional)
 	MakeWindowOptional (pWin);
-    if (destBounding)
+    switch (stuff->destKind) {
+    case ShapeBounding:
 	destRgn = &pWin->optional->boundingShape;
-    else
+	break;
+    case ShapeClip:
 	destRgn = &pWin->optional->clipShape;
+	break;
+    case ShapeInput:
+	destRgn = &pWin->optional->inputShape;
+	break;
+    default:
+	return BadValue;
+    }
 
     return RegionOperate (client, pWin, (int)stuff->destKind,
 			  destRgn, srcRgn, (int)stuff->op,
@@ -508,7 +530,6 @@ ProcShapeCombine (client)
     CreateDftPtr	createDefault;
     CreateDftPtr	createSrc;
     RegionPtr		tmp;
-    int			destBounding;
 
     REQUEST_SIZE_MATCH (xShapeCombineReq);
     UpdateCurrentTime();
@@ -519,12 +540,13 @@ ProcShapeCombine (client)
 	MakeWindowOptional (pDestWin);
     switch (stuff->destKind) {
     case ShapeBounding:
-	destBounding = 1;
 	createDefault = CreateBoundingShape;
 	break;
     case ShapeClip:
-	destBounding = 0;
 	createDefault = CreateClipShape;
+	break;
+    case ShapeInput:
+	createDefault = CreateBoundingShape;
 	break;
     default:
 	client->errorValue = stuff->destKind;
@@ -544,6 +566,10 @@ ProcShapeCombine (client)
 	srcRgn = wClipShape (pSrcWin);
 	createSrc = CreateClipShape;
 	break;
+    case ShapeInput:
+	srcRgn = wInputShape (pSrcWin);
+	createSrc = CreateBoundingShape;
+	break;
     default:
 	client->errorValue = stuff->srcKind;
 	return BadValue;
@@ -562,10 +588,19 @@ ProcShapeCombine (client)
 
     if (!pDestWin->optional)
 	MakeWindowOptional (pDestWin);
-    if (destBounding)
+    switch (stuff->destKind) {
+    case ShapeBounding:
 	destRgn = &pDestWin->optional->boundingShape;
-    else
+	break;
+    case ShapeClip:
 	destRgn = &pDestWin->optional->clipShape;
+	break;
+    case ShapeInput:
+	destRgn = &pDestWin->optional->inputShape;
+	break;
+    default:
+	return BadValue;
+    }
 
     return RegionOperate (client, pDestWin, (int)stuff->destKind,
 			  destRgn, srcRgn, (int)stuff->op,
@@ -626,6 +661,9 @@ ProcShapeOffset (client)
 	break;
     case ShapeClip:
 	srcRgn = wClipShape(pWin);
+	break;
+    case ShapeInput:
+	srcRgn = wInputShape (pWin);
 	break;
     default:
 	client->errorValue = stuff->destKind;
@@ -888,7 +926,8 @@ SendShapeNotify (pWin, which)
     pHead = (ShapeEventPtr *) LookupIDByType(pWin->drawable.id, EventType);
     if (!pHead)
 	return;
-    if (which == ShapeBounding) {
+    switch (which) {
+    case ShapeBounding:
 	region = wBoundingShape(pWin);
 	if (region) {
 	    extents = *REGION_EXTENTS(pWin->drawable.pScreen, region);
@@ -900,7 +939,8 @@ SendShapeNotify (pWin, which)
 	    extents.y2 = pWin->drawable.height + wBorderWidth (pWin);
 	    shaped = xFalse;
 	}
-    } else {
+	break;
+    case ShapeClip:
 	region = wClipShape(pWin);
 	if (region) {
 	    extents = *REGION_EXTENTS(pWin->drawable.pScreen, region);
@@ -912,6 +952,22 @@ SendShapeNotify (pWin, which)
 	    extents.y2 = pWin->drawable.height;
 	    shaped = xFalse;
 	}
+	break;
+    case ShapeInput:
+	region = wInputShape(pWin);
+	if (region) {
+	    extents = *REGION_EXTENTS(pWin->drawable.pScreen, region);
+	    shaped = xTrue;
+	} else {
+	    extents.x1 = -wBorderWidth (pWin);
+	    extents.y1 = -wBorderWidth (pWin);
+	    extents.x2 = pWin->drawable.width + wBorderWidth (pWin);
+	    extents.y2 = pWin->drawable.height + wBorderWidth (pWin);
+	    shaped = xFalse;
+	}
+	break;
+    default:
+	return;
     }
     for (pShapeEvent = *pHead; pShapeEvent; pShapeEvent = pShapeEvent->next) {
 	client = pShapeEvent->client;
@@ -995,6 +1051,9 @@ ProcShapeGetRectangles (client)
     case ShapeClip:
 	region = wClipShape(pWin);
 	break;
+    case ShapeInput:
+	region = wInputShape (pWin);
+	break;
     default:
 	client->errorValue = stuff->kind;
 	return BadValue;
@@ -1016,6 +1075,12 @@ ProcShapeGetRectangles (client)
 	    rects->y = 0;
 	    rects->width = pWin->drawable.width;
 	    rects->height = pWin->drawable.height;
+	    break;
+	case ShapeInput:
+	    rects->x = - (int) wBorderWidth (pWin);
+	    rects->y = - (int) wBorderWidth (pWin);
+	    rects->width = pWin->drawable.width + wBorderWidth (pWin);
+	    rects->height = pWin->drawable.height + wBorderWidth (pWin);
 	    break;
 	}
     } else {

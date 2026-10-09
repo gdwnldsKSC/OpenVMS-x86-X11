@@ -23,6 +23,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/trident/tvga_dac.c,v 1.7tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -55,7 +59,6 @@ TVGAInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     OUTB(vgaIOBase + 4, FIFOControl);
     pReg->tridentRegs3x4[FIFOControl] = INB(vgaIOBase + 5) | 0x24;
 
-    if (pScrn->bitsPerPixel >= 8) {
        	/* YUK ! here we have to mess with old mode operation */
        	OUTB(0x3C4, 0x0B); OUTB(0x3C5, 0x00); /* Goto Old Mode */
        	OUTB(0x3C4, OldMode2 + NewMode2);
@@ -64,7 +67,6 @@ TVGAInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
    	pReg->tridentRegs3x4[Underline] = 0x40;
 	if (pTrident->Chipset < TGUI9440AGi)
 	    pReg->tridentRegs3x4[CRTCMode] = 0xA3;
-    }
 
     if (pScrn->videoRam > 512)
     	pReg->tridentRegs3C4[ConfPort2] |= 0x20;
@@ -72,10 +74,6 @@ TVGAInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     	pReg->tridentRegs3C4[ConfPort2] &= 0xDF;
 
     switch (pScrn->bitsPerPixel) {
-	case 1:
-	case 4:
-    	    offset = pScrn->displayWidth >> 4;
-	    break;
 	case 8:
 	    if (pScrn->videoRam < 1024)
     	    	offset = pScrn->displayWidth >> 3;
@@ -165,11 +163,9 @@ TVGARestore(ScrnInfoPtr pScrn, TRIDENTRegPtr tridentReg)
     OUTW_3x4(LinearAddReg);
     OUTW_3x4(FIFOControl);
     OUTW_3C4(ConfPort2);
-    if (pScrn->bitsPerPixel >= 8) {
-       OUTW_3x4(Underline);
-       if (pTrident->Chipset < TGUI9440AGi)
+    OUTW_3x4(Underline);
+    if (pTrident->Chipset < TGUI9440AGi)
            OUTW_3x4(CRTCMode);
-    }
     OUTW_3x4(AddColReg);
     OUTW_3CE(MiscExtFunc);
     OUTW_3x4(Offset);
@@ -210,11 +206,9 @@ TVGASave(ScrnInfoPtr pScrn, TRIDENTRegPtr tridentReg)
     OUTW(0x3C4, ((0x80 ^ 0x02) << 8) | NewMode1);
     OUTW(vgaIOBase + 4, (0x92 << 8) | NewMode1);
 
-    if (pScrn->bitsPerPixel >= 8) {
-        INB_3x4(Underline);
-        if (pTrident->Chipset < TGUI9440AGi)
+    INB_3x4(Underline);
+    if (pTrident->Chipset < TGUI9440AGi)
             INB_3x4(CRTCMode);
-    }
     INB_3x4(LinearAddReg);
     INB_3x4(FIFOControl);
     INB_3x4(CRTCModuleTest);

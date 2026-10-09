@@ -49,6 +49,9 @@ SOFTWARE.
 
 /* $XFree86: xc/lib/Xaw/Simple.c,v 1.16 2001/09/29 04:36:02 paulo Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>

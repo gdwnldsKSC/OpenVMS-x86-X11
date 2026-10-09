@@ -1,5 +1,5 @@
 /* $XConsortium: man.c,v 1.30 94/04/17 20:43:56 rws Exp $ */
-/* $XdotOrg: xc/programs/xman/man.c,v 1.3 2004/05/22 19:20:06 alanc Exp $ */
+/* $XdotOrg: xc/programs/xman/man.c,v 1.4 2005/11/08 06:33:33 jkj Exp $ */
 /*
 
 Copyright (c) 1987, 1988  X Consortium
@@ -437,7 +437,7 @@ ReadCurrentSection(Manual * local_manual, char * path)
  */
 
   if ( (ptr = rindex(path, '.')) != NULL) {
-#if !defined(SCO) && !defined(ISC)
+#if !defined(__SCO__) && !defined(ISC)
     if (streq(ptr + 1, COMPRESSION_EXTENSION)) 
 #else
     if (strpbrk(ptr + 1, COMPRESSION_EXTENSIONS) != NULL)
@@ -475,7 +475,7 @@ ReadCurrentSection(Manual * local_manual, char * path)
  */
 
     if ( (ptr = rindex(full_name, '.')) != NULL) {
-#if !defined(SCO) && !defined(ISC)
+#if !defined(__SCO__) && !defined(ISC)
       if (streq(ptr + 1, COMPRESSION_EXTENSION)) 
 #else
       if (strpbrk(ptr + 1, COMPRESSION_EXTENSIONS) != NULL)

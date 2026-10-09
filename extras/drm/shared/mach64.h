@@ -38,11 +38,6 @@
 
 /* General customization:
  */
-#define __HAVE_AGP		1
-#define __MUST_HAVE_AGP		0
-#define __HAVE_MTRR		1
-#define __HAVE_CTX_BITMAP	1
-#define __HAVE_PCI_DMA		1
 
 #define DRIVER_AUTHOR		"Gareth Hughes, Leif Delgass, José Fonseca"
 
@@ -70,25 +65,5 @@
    	[DRM_IOCTL_NR(DRM_IOCTL_MACH64_BLIT)]     = { mach64_dma_blit,       1, 0 },	\
    	[DRM_IOCTL_NR(DRM_IOCTL_MACH64_FLUSH)]    = { mach64_dma_flush,      1, 0 },    \
    	[DRM_IOCTL_NR(DRM_IOCTL_MACH64_GETPARAM)] = { mach64_get_param,      1, 0 }
-
-/* Driver customization:
- */
-#define DRIVER_PRETAKEDOWN(dev) do {					\
-	mach64_do_cleanup_dma( dev );					\
-} while (0)
-
-/* DMA customization:
- */
-#define __HAVE_DMA		1
-#define __HAVE_DMA_IRQ          1
-#define __HAVE_VBL_IRQ		1
-#define __HAVE_SHARED_IRQ       1
-#define __HAVE_IRQ		1
-
-/* Buffer customization:
- */
-
-#define DRIVER_AGP_BUFFERS_MAP( dev )					\
-	((drm_mach64_private_t *)((dev)->dev_private))->buffers
 
 #endif

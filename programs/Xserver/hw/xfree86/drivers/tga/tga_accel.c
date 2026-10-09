@@ -26,6 +26,10 @@
  * DEC TGA accelerated options.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "fb.h"
 #include "micmap.h"
 #include "xf86.h"

@@ -1,5 +1,5 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/xaa/xaaWideLine.c,v 1.10 2001/11/16 16:47:56 dawes Exp $ */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/xaa/xaaWideLine.c,v 1.3 2004/08/29 00:48:17 alanc Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/xaa/xaaWideLine.c,v 1.7 2005/07/03 08:53:49 daniels Exp $ */
 /*
 
 XAAPolylinesWideSolid does not maintain a span list and subsequently does
@@ -13,6 +13,10 @@ function is used only for solid lines.
 Original mi code written by Keith Packard.
 
 */
+
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
 
 #ifndef XFree86LOADER
 #if defined(_XOPEN_SOURCE) || defined(__QNXNTO__) \
@@ -30,7 +34,7 @@ Original mi code written by Keith Packard.
 #include "xf86_ansic.h"
 #include "xf86_OSproc.h"
 
-#include "X.h"
+#include <X11/X.h>
 #include "windowstr.h"
 #include "gcstruct.h"
 #include "regionstr.h"

@@ -1,4 +1,12 @@
-XCOMM $XFree86$
+XCOMM $XdotOrg: xc/programs/fc-cache/Imakefile,v 1.4 2005/06/29 21:51:13 alanc Exp $
+
+#if HasGetoptLong
+GETOPT_DEFINES=-DHAVE_GETOPT_LONG
+#elif HasGetopt
+GETOPT_DEFINES=-DHAVE_GETOPT
+#endif
+
+DEFINES=$(GETOPT_DEFINES)
 
 FONTCONFIGDIR = $(TOP)/extras/fontconfig
 
@@ -28,5 +36,11 @@ install::
 #endif
 
 LinkSourceFile(fc-cache.c,$(FONTCONFIGDIR)/fc-cache)
-LinkSourceFile(fc-cache.man,$(FONTCONFIGDIR)/fc-cache)
+
+#ifdef HasDocBookTools
+all:: fc-cache.man fc-cache.html
+
+ConvertDocBookToManPage(fc-cache.sgml, fc-cache.man)
+ConvertDocBookToHTML(fc-cache.sgml, fc-cache.html)
+#endif /* HasDocBookTools */
 

@@ -1,6 +1,7 @@
 /*
+ * $Id: display.c,v 1.6 2005/10/19 22:26:55 ajax Exp $
  *
- * Copyright © 2002 Keith Packard
+ * Copyright Â© 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -27,6 +28,18 @@
 
 static XcursorDisplayInfo *_XcursorDisplayInfo;
 
+static void
+_XcursorFreeDisplayInfo (XcursorDisplayInfo *info)
+{
+    if (info->theme)
+	free (info->theme);
+
+    if (info->theme_from_config)
+	free (info->theme_from_config);
+
+    free (info);
+}
+
 static int
 _XcursorCloseDisplay (Display *dpy, XExtCodes *codes)
 {
@@ -43,10 +56,8 @@ _XcursorCloseDisplay (Display *dpy, XExtCodes *codes)
 	    break;
 	}
     _XUnlockMutex (_Xglobal_lock);
-    
-    if (info->theme)
-	free (info->theme);
-    free (info);
+
+    _XcursorFreeDisplayInfo (info);
     return 0;
 }
 
@@ -189,6 +200,7 @@ _XcursorGetDisplayInfo (Display *dpy)
     }
     
     info->theme = 0;
+    info->theme_from_config = 0;
 
     /*
      * Get the desired theme
@@ -198,9 +210,17 @@ _XcursorGetDisplayInfo (Display *dpy)
 	v = XGetDefault (dpy, "Xcursor", "theme");
     if (v)
     {
-	info->theme = malloc (strlen (v) + 1);
+	int len;
+
+	len = strlen (v) + 1;
+
+	info->theme = malloc (len);
 	if (info->theme)
 	    strcpy (info->theme, v);
+
+	info->theme_from_config = malloc (len);
+	if (info->theme_from_config)
+	    strcpy (info->theme_from_config, v);
     }
 
     /*
@@ -252,9 +272,7 @@ _XcursorGetDisplayInfo (Display *dpy)
 	    break;
     if (old)
     {
-	if (info->theme)
-	    free (info->theme);
-	free (info);
+	_XcursorFreeDisplayInfo (info);
 	info = old;
     }
     else
@@ -312,6 +330,10 @@ XcursorSetTheme (Display *dpy, const char *theme)
 
     if (!info)
 	return XcursorFalse;
+
+    if (!theme)
+	theme = info->theme_from_config;
+
     if (theme)
     {
 	copy = malloc (strlen (theme) + 1);

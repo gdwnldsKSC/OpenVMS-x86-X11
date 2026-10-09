@@ -1,4 +1,4 @@
-.TH XvPutVideo 3X  __vendorversion__
+.TH XvPutVideo __libmansuffix__  __vendorversion__
 .\" $XFree86: xc/doc/man/Xv/XvPutVideo.man,v 1.4 1999/03/02 11:49:15 dawes Exp $
 .SH Name
 XvPutVideo \- write video into a drawable
@@ -98,7 +98,7 @@ VideoNotify event with detail XvHardError is generated for the drawable.
 .\"
 .SH Returned Values
 .IP [Success] 8
-Returned if XvPutVideo(3X) completed successfully.
+Returned if XvPutVideo(__libmansuffix__) completed successfully.
 .IP [XvBadExtension] 8
 Returned if the Xv extension is unavailable.
 .IP [XvBadAlloc] 8
@@ -115,5 +115,5 @@ Generated if there were insufficient resources to process the request.
 .\"
 .SH See Also
 .\"
-XvPutStill(3X), XvGetVideo(3X), XvVideoNotify(3X)
+XvPutStill(__libmansuffix__), XvGetVideo(__libmansuffix__), XvVideoNotify(__libmansuffix__)
 .br

@@ -1,5 +1,6 @@
 /*
  * $Xorg: xauth.c,v 1.4 2001/02/09 02:05:38 xorgcvs Exp $
+ * $XdotOrg: xc/programs/xauth/xauth.c,v 1.3 2005/07/26 16:58:27 alanc Exp $
  *
  * xauth - manipulate authorization file
  *
@@ -29,6 +30,10 @@ in this Software without prior written authorization from The Open Group.
  * Author:  Jim Fulton, MIT X Consortium
  */
 /* $XFree86: xc/programs/xauth/xauth.c,v 1.5tsi Exp $ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "xauth.h"
 

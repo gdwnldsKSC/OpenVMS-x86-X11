@@ -20,6 +20,10 @@ TTF2PT1SRCFILE = ttf2pt1wrap.c
 TTF2PT1OBJFILE = ttf2pt1wrap.o
 #endif
 
+#if defined(SCOArchitecture)
+XTRA_SYS_DEFINES = SCOBuildFlags
+#endif
+
 TTF2PT1SRCS = ft.c pt1.c runt1asm.c $(TTF2PT1SRCFILE)
 TTF2PT1OBJS = ft.o pt1.o runt1asm.o $(TTF2PT1OBJFILE)
 TTF2PT1_DEFINES = -DUSE_FREETYPE -DXP_ONLY_BLOCKS
@@ -27,11 +31,11 @@ TTF2PT1_DEFINES = -DUSE_FREETYPE -DXP_ONLY_BLOCKS
 
 SRCS1 =	PsInit.c PsPrint.c PsGC.c PsMisc.c PsSpans.c PsArea.c PsPixel.c \
         PsLine.c PsPolygon.c PsArc.c PsText.c PsWindow.c PsFonts.c \
-        PsAttr.c PsAttVal.c PsColor.c PsPixmap.c psout.c PsCache.c
+        PsAttr.c PsAttVal.c PsColor.c PsPixmap.c psout.c PsCache.c PsImageUtil.c
 
 OBJS1 = PsInit.o PsPrint.o PsGC.o PsMisc.o PsSpans.o PsArea.o PsPixel.o \
         PsLine.o PsPolygon.o PsArc.o PsText.o PsWindow.o PsFonts.o \
-        PsAttr.o PsAttVal.o PsColor.o PsPixmap.o psout.o PsCache.o
+        PsAttr.o PsAttVal.o PsColor.o PsPixmap.o psout.o PsCache.o PsImageUtil.o
 
 SRCS = $(SRCS1) $(TTF2PT1SRCS) $(FTSRCS)
 
@@ -65,18 +69,17 @@ XCOMM DEFINES = -DPIXPRIV
 
 XCOMM BM_CACHE disabled because it causes PostScript errors
 XCOMM (see http://xprint.mozdev.org/bugs/show_bug.cgi?id=1489)
-XCOMM   DEFINES = -DXP_PSTEXT -DBM_CACHE $(VENDOR_DEFINES) $(TTF2PT1_DEFINES) $(FT_DEFINES)
-   DEFINES = -UXFree86LOADER -DXP_PSTEXT -D_XP_PRINT_SERVER_ $(VENDOR_DEFINES) $(TTF2PT1_DEFINES) $(FT_DEFINES) $(EXT_DEFINES)
+XCOMM   DEFINES = -DPSOUT_USE_DEEPCOLOR -DXP_PSTEXT -DBM_CACHE $(VENDOR_DEFINES) $(TTF2PT1_DEFINES) $(FT_DEFINES)
+   DEFINES = -UXFree86LOADER -DPSOUT_USE_DEEPCOLOR -DXP_PSTEXT -D_XP_PRINT_SERVER_ $(VENDOR_DEFINES) $(TTF2PT1_DEFINES) $(FT_DEFINES) $(EXT_DEFINES) $(XTRA_SYS_DEFINES)
 
-   INCLUDES = -I. -I../../cfb -I../../mi -I../../mfb -I$(LIBSRC) \
+   INCLUDES = -I. -I../../mi -I../../mfb -I$(LIBSRC) \
              -I$(XINCLUDESRC) -I../../include -I.. -I$(TOP)/include \
              -I$(EXTINCSRC) -I$(FONTINCSRC) -I$(FONTLIBSRC)/include \
              $(FT2INCS) -I../../../../lib/font/FreeType
 
    LINTLIBS = $(TOP)/server/dix/llib-ldix.ln $(TOP)/server/os/llib-los.ln \
 	      $(TOP)/server/ddx/mfb/llib-lmfb.ln \
-	      $(TOP)/server/ddx/mi/llib-lmi.ln \
-	      $(TOP)/server/ddx/cfb/llib-lcfb.ln
+	      $(TOP)/server/ddx/mi/llib-lmi.ln
 
 NormalLibraryObjectRule()
 

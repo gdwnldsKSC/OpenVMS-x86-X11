@@ -1,5 +1,5 @@
 XCOMM $XFree86: xc/lib/Xft/Imakefile,v 1.28 2003/11/17 15:18:04 tsi Exp $
-XCOMM $XdotOrg: xc/lib/Xft/Imakefile,v 1.2 2004/04/23 18:43:41 eich Exp $
+XCOMM $XdotOrg: xc/lib/Xft/Imakefile,v 1.5 2005/10/19 02:46:56 kem Exp $
 
 #define DoNormalLib NormalLibXft
 #define DoSharedLib SharedLibXft
@@ -47,7 +47,8 @@ WARNINGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wmissing-prototypes -Wmissin
 INCLUDES=$(FONTCONFIGINCLUDES) $(FREETYPE2INCLUDES) -I$(XBUILDINCDIR) $(WARNINGS)
 DEFINES=$(FREETYPE2DEFINES) $(RENDERDEFINES) -DXFREE86_FT2
 
-XFT_REVISION=2
+XFT_REVISION=8
+XFT_VERSION=2.1.$(XFT_REVISION)
 
 FREETYPE_LIBS=$(FREETYPE2LIB)
 FREETYPE_CFLAGS=$(FREETYPE2INCLUDES)
@@ -85,7 +86,7 @@ SUBSTVARS=prefix="$(PROJECTROOT)" \
 	  libdir="$(USRLIBDIR)" \
 	  hardcode_libdir_flag_spec="$(RPATH_CFLAG)" \
 	  includedir="$(INCROOT)" \
-	  VERSION="$(SOXFTREV).$(XFT_REVISION)" \
+	  VERSION="$(XFT_VERSION)" \
 	  FREETYPE_LIBS="$(FREETYPE_LIBS)" \
 	  FREETYPE_CFLAGS="$(FREETYPE_CFLAGS)" \
 	  XRENDER_LIBS="$(XRENDER_LIBS)" \
@@ -115,29 +116,30 @@ HEADERS = Xft.h XftCompat.h
 SpecialCObjectRule(sharedlib,NullParameter,$(SHLIBDEF))
 #endif
 
-MANSUFFIX = $(LIBMANSUFFIX)
-InstallManPage(Xft,$(LIBMANDIR))
-DependTarget()
+#define ConfigSubst(file, old_suffix, new_suffix)		@@\
+								@@\
+all:: Concat(file,new_suffix)					@@\
+								@@\
+Concat(file,new_suffix): Concat(file,old_suffix)		@@\
+	RemoveFile($@)						@@\
+	sh config/config-subst $(SUBSTVARS) < Concat(file,old_suffix) > $@ @@\
+								@@\
+clean::								@@\
+	RemoveFile(Concat(file,new_suffix))
 
-all:: xft-config.script
-
-xft-config.script: xft-config.in
-	RemoveFile($@)
-	sh config/config-subst $(SUBSTVARS) < xft-config.in > $@
-
+XCOMM Create xft-config.script from xft-config.in
+ConfigSubst(xft-config,.in,.script)
 InstallScript(xft-config,$(BINDIR))
 
-clean::
-	RemoveFile(xft-config.script)
-
-all:: xft.pc
-
-xft.pc: xft.pc.in
-	RemoveFile($@)
-	sh config/config-subst $(SUBSTVARS) < xft.pc.in > $@
-
+XCOMM Create xft.pc from xft.pc.in
+ConfigSubst(xft.pc,.in,/*none*/)
 InstallNonExecFile(xft.pc,$(USRLIBDIR)/pkgconfig)
 
-clean::
-	RemoveFile(xft.pc)
+XCOMM Create man pages from .*.in files
+ConfigSubst(xft-config,.1.in,.man)
+ConfigSubst(Xft,.3.in,.man)
 
+InstallGenManPage(xft-config,$(MANDIR),$(MANSUFFIX))
+InstallGenManPage(Xft,$(LIBMANDIR),$(LIBMANSUFFIX))
+
+DependTarget()

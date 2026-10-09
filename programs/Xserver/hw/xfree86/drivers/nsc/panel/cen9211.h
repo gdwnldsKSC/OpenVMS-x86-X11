@@ -1,7 +1,7 @@
 /* $XFree86$ */
 /*
  * $Workfile: cen9211.h $
- * $Revision$
+ * $Revision: 1.3 $
  *
  * File Contents: This header file defines the Durango routines and 
  *                variables used to access the memory mapped regions.

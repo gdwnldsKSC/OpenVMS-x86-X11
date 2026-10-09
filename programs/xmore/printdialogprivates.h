@@ -100,6 +100,7 @@ typedef struct _PrintDialogPart {
     char  *filename;
     Bool   canPrint,       /* can we print ? */
            canReallyPrint; /* is it really save to print ? */
+    XpuColorspaceRec *selected_colorspace;
 
     struct
     {
@@ -118,6 +119,7 @@ typedef struct _PrintDialogPart {
              resolutionlist,
              orientationlist,
              plexlist,
+             colorspacelist,
              jobcopieslabel,
              jobcopies,
              ok,
@@ -153,6 +155,10 @@ typedef struct _PrintDialogPart {
     XpuPlexList              plexlist;
     int                      num_plex;
     String                  *widget_plexlist;
+
+    XpuColorspaceList        colorspacelist;
+    int                      num_colorspaces;
+    String                  *widget_colorspacelist;
 } PrintDialogPart;
 
 typedef struct _PrintDialogRec {

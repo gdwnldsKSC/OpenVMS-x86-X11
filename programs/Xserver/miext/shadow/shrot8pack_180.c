@@ -1,7 +1,7 @@
 /*
  * $XFree86$
  *
- * Copyright © 2000 Keith Packard
+ * Copyright Â© 2000 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -25,5 +25,9 @@
 #define FUNC	shadowUpdateRotate8_180
 #define Data	CARD8
 #define ROTATE	180
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #include "shrotpack.h"

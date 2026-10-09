@@ -6,13 +6,13 @@ Copyright 1993 by Sun Microsystems, Inc. Mountain View, CA.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Digital or Sun not be
 used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
+software without specific, written prior permission.
 
 DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
 ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
@@ -62,6 +62,9 @@ in this Software without prior written authorization from The Open Group.
 
 /* Make sure all wm properties can make it out of the resource manager */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "IntrinsicI.h"
 #include "StringDefs.h"
 #include "CoreP.h"
@@ -110,7 +113,7 @@ in this Software without prior written authorization from The Open Group.
 /*
  This is a set of default records describing the command line arguments that
  Xlib will parse and set into the resource data base.
- 
+
  This list is applied before the users list to enforce these defaults.  This is
  policy, which the toolkit avoids but I hate differing programs at this level.
 */
@@ -176,7 +179,7 @@ static void GetHostname (
 
 
 #ifdef SUNSHLIB
-void _XtInherit()
+void _XtInherit(void)
 {
     extern void __XtInherit();
     __XtInherit();
@@ -201,19 +204,19 @@ void _XtInherit()
  * File adds a code stub to each client to provide the
  * exported symbol name.  This stub uses an indirect
  * pointer to get the original symbol address, which is
- * then jumped to, like in this example: 
+ * then jumped to, like in this example:
  *
  * --- client ---                                     --- dll ----
- *  ... 
- *  call foo 
- * 
- * foo: jmp (*_imp_foo)               ---->           foo: .... 
+ *  ...
+ *  call foo
+ *
+ * foo: jmp (*_imp_foo)               ---->           foo: ....
  *      nop
- *      nop       
- * 
+ *      nop
+ *
  * _imp_foo: .long <index of foo in dll export table, is
  *		    set to the real address by the runtime linker>
- * 
+ *
  * Now it is clear why the clients symbol foo isn't the same
  * as in the dll and we can think about how to deal which
  * this two above mentioned requirements, to export this
@@ -224,12 +227,12 @@ void _XtInherit()
  * with the second requirement, that this symbol should
  * be used as function.  The Trick is to build a little
  * code stub in the data section in the exact manner as
- * above explained.  This is done with the assembler code 
+ * above explained.  This is done with the assembler code
  * below.
- * 
+ *
  * Ralf Habacker
  *
- * References: 
+ * References:
  * msdn          http://msdn.microsoft.com/msdnmag/issues/02/02/PE/PE.asp
  * cygwin-xfree: http://www.cygwin.com/ml/cygwin-xfree/2003-10/msg00000.html
  */
@@ -238,13 +241,13 @@ asm (".data\n\
  .globl __XtInherit        \n\
  __XtInherit:      jmp *_y \n\
   _y: .long ___XtInherit   \n\
-    .text                 \n"); 
+    .text                 \n");
 
 #define _XtInherit __XtInherit
 #endif
 
 
-void _XtInherit()
+void _XtInherit(void)
 {
     XtErrorMsg("invalidProcedure","inheritanceProc",XtCXtToolkitError,
             "Unresolved inheritance operation",
@@ -252,7 +255,7 @@ void _XtInherit()
 }
 
 
-void XtToolkitInitialize()
+void XtToolkitInitialize(void)
 {
     static Boolean initialized = False;
 
@@ -275,14 +278,14 @@ void XtToolkitInitialize()
     /* Some apps rely on old (broken) XtAppPeekEvent behavior */
     if(getenv("XTAPPPEEKEVENT_SKIPTIMER"))
 	XtAppPeekEvent_SkipTimer = True;
-    else 
+    else
 	XtAppPeekEvent_SkipTimer = False;
 }
 
 
-String _XtGetUserName(dest, len)
-    String dest;
-    int len;
+String _XtGetUserName(
+    String dest,
+    int len)
 {
 #ifdef WIN32
     String ptr = NULL;
@@ -320,7 +323,7 @@ static String GetRootDirName(
 {
 #ifdef WIN32
     register char *ptr1;
-    register char *ptr2;
+    register char *ptr2 = NULL;
     int len1 = 0, len2 = 0;
 
     if (ptr1 = getenv("HOME")) {	/* old, deprecated */
@@ -415,7 +418,7 @@ static void CombineUserDefaults(
 	XrmCombineDatabase(XrmGetStringDatabase(dpy_defaults), pdb, False);
     } else {
 	char filename[PATH_MAX];
-	(void) GetRootDirName(filename, 
+	(void) GetRootDirName(filename,
 			PATH_MAX - strlen (slashDotXdefaults) - 1);
 	(void) strcat(filename, slashDotXdefaults);
 	(void)XrmCombineFileDatabase(filename, pdb, False);
@@ -485,7 +488,7 @@ XtLanguageProc XtSetLanguageProc(
         app->langProcRec.closure = closure;
 	UNLOCK_PROCESS;
 	UNLOCK_APP(app);
-    } else {    
+    } else {
 	/* set langProcRec for all application contexts */
         ProcessContext process;
 
@@ -505,8 +508,8 @@ XtLanguageProc XtSetLanguageProc(
     return (old ? old : _XtDefaultLanguageProc);
 }
 
-XrmDatabase XtScreenDatabase(screen)
-    Screen *screen;
+XrmDatabase XtScreenDatabase(
+    Screen *screen)
 {
     int scrno;
     Bool doing_def;
@@ -548,7 +551,7 @@ XrmDatabase XtScreenDatabase(screen)
 	    int len;
 	    char *slashDotXdefaultsDash = "/.Xdefaults-";
 
-	    (void) GetRootDirName(filename = filenamebuf, 
+	    (void) GetRootDirName(filename = filenamebuf,
 			PATH_MAX - strlen (slashDotXdefaultsDash) - 1);
 	    (void) strcat(filename, slashDotXdefaultsDash);
 	    len = strlen(filename);
@@ -623,9 +626,11 @@ static void _MergeOptionTables(
     Cardinal *num_dst)
 {
     XrmOptionDescRec *table, *endP;
-    register XrmOptionDescRec *opt1, *whereP, *dstP; 
-    const register XrmOptionDescRec *opt2;
-    int i1, i2, dst_len, order;
+    register XrmOptionDescRec *opt1, *whereP, *dstP;
+    register const XrmOptionDescRec *opt2;
+    int i1;
+    Cardinal i2;
+    int dst_len, order;
     Boolean found;
     enum {Check, NotSorted, IsSorted} sort_order = Check;
 
@@ -723,13 +728,15 @@ static Boolean _GetResource(
     return False;
 }
 
-XrmDatabase _XtPreparseCommandLine(urlist, num_urs, argc, argv, applName,
-				   displayName, language)
-    XrmOptionDescRec *urlist;
-    Cardinal num_urs;
-    int argc;
-    String *argv;
-    String *applName, *displayName, *language;	/* return */
+XrmDatabase _XtPreparseCommandLine(
+    XrmOptionDescRec *urlist,
+    Cardinal num_urs,
+    int argc,
+    String *argv,
+    /* return */
+    String *applName,
+    String *displayName,
+    String *language)
 {
     XrmDatabase db = 0;
     XrmOptionDescRec *options;
@@ -773,7 +780,7 @@ XrmDatabase _XtPreparseCommandLine(urlist, num_urs, argc, argv, applName,
     return db;
 }
 
-  
+
 static void GetLanguage(
     Display *dpy,
     XtPerDisplay pd)
@@ -952,7 +959,7 @@ XtAppSetFallbackResources(
     UNLOCK_APP(app_context);
 }
 
-	
+
 Widget XtOpenApplication(XtAppContext *app_context_return,
 			 _Xconst char *application_class,
 			 XrmOptionDescRec *options, Cardinal num_options,
@@ -966,9 +973,9 @@ Widget XtOpenApplication(XtAppContext *app_context_return,
     Widget root;
     Arg args[3], *merged_args;
     Cardinal num = 0;
-    
+
     XtToolkitInitialize(); /* cannot be moved into _XtAppInit */
-    
+
     dpy = _XtAppInit(&app_con, (String)application_class, options, num_options,
 		     argc_in_out, &argv_in_out, fallback_resources);
 
@@ -982,7 +989,7 @@ Widget XtOpenApplication(XtAppContext *app_context_return,
 
     root = XtAppCreateShell(NULL, application_class, widget_class, dpy,
 			    merged_args, num);
-    
+
     if (app_context_return)
 	*app_context_return = app_con;
 
@@ -992,7 +999,7 @@ Widget XtOpenApplication(XtAppContext *app_context_return,
     return root;
 }
 
-	
+
 Widget
 XtAppInitialize(
     XtAppContext * app_context_return,
@@ -1006,7 +1013,7 @@ XtAppInitialize(
     Cardinal num_args_in)
 {
     return XtOpenApplication(app_context_return, application_class,
-			     options, num_options, 
+			     options, num_options,
 			     argc_in_out, argv_in_out, fallback_resources,
 			     applicationShellWidgetClass,
 			     args_in, num_args_in);
@@ -1014,7 +1021,7 @@ XtAppInitialize(
 
 
 /*ARGSUSED*/
-Widget 
+Widget
 XtInitialize(
     _Xconst char* name,
     _Xconst char* classname,
@@ -1032,6 +1039,6 @@ XtInitialize(
 
     LOCK_PROCESS;
     process->defaultAppContext = app_con;
-    UNLOCK_PROCESS; 
+    UNLOCK_PROCESS;
     return root;
 }

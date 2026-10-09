@@ -1,5 +1,5 @@
 .\" $Xorg: startx.man,v 1.4 2001/02/09 02:05:49 xorgcvs Exp $
-.\" $XdotOrg: xc/programs/xinit/startx.man,v 1.2 2004/04/23 19:54:49 eich Exp $
+.\" $XdotOrg: xc/programs/xinit/startx.man,v 1.3 2005/11/08 06:33:33 jkj Exp $
 .\" Copyright 1993, 1998  The Open Group
 .\" 
 .\" Permission to use, copy, modify, distribute, and sell this software and its
@@ -72,6 +72,23 @@ startx -- -dpi 100
 .PP
 startx -- -layout Multihead
 .RE
+#ifdef __SCOMAN__
+.PP
+To determine the client to run,
+.I startx
+looks for the following files, in order:
+.RS
+.PP
+.I $(HOME)/.startxrc
+.PP
+.I __libdir__/sys.startxrc
+.PP
+.I $(HOME)/.xinitrc
+.PP
+.I __xinitdir__/xinitrc
+.RE
+.PP
+#else
 .PP
 To determine the client to run,
 .I startx
@@ -83,6 +100,7 @@ the file
 in the
 .I xinit
 library directory.
+#endif
 If command line client options are given, they override this
 behavior and revert to the
 .IR xinit (1)
@@ -166,6 +184,17 @@ and
 .IR Xsecurity (__miscmansuffix__)
 manual pages for more information on X client/server authentication.
 .SH FILES
+#ifdef __SCOMAN__
+.TP 25
+.I $(HOME)/.startxrc
+Client to run.  Typically a shell script which runs many programs in
+the background.
+.TP 25
+.I __libdir__/sys.startxrc
+Client to use if the user has no
+.I .startxrc
+file.
+#endif
 .TP 25
 .I $(HOME)/.xinitrc
 Client to run.  Typically a shell script which runs many programs in

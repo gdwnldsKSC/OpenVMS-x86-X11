@@ -24,20 +24,25 @@
  *
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include "X.h"
-#include "Xmd.h"
+#include <X11/X.h>
+#include <X11/Xmd.h>
 #include "os.h"
 #ifdef XFree86LOADER
 #include "loaderProcs.h"
 #endif
 #include "xf86.h"
 #include "xf86Config.h"
+#include "xf86_OSlib.h"
 #include "xf86Priv.h"
 #include "xf86PciData.h"
 #define IN_XSERVER
@@ -71,15 +76,18 @@ Bool foundMouse = FALSE;
 #if defined(__UNIXOS2__)
 #define DFLT_MOUSE_DEV "mouse$"
 #define DFLT_MOUSE_PROTO "OS2Mouse"
-#elif defined(SCO)
+#elif defined(__SCO__)
 static char *DFLT_MOUSE_PROTO = "OSMouse";
+#elif defined(__UNIXWARE__)
+static char *DFLT_MOUSE_PROTO = "Xqueue";
+static char *DFLT_MOUSE_DEV = "/dev/mouse";
 #elif defined(QNX4)
 static char *DFLT_MOUSE_PROTO = "OSMouse";
 static char *DFLT_MOUSE_DEV = "/dev/mouse";
 #elif defined(__QNXNTO__)
 static char *DFLT_MOUSE_PROTO = "OSMouse";
 static char *DFLT_MOUSE_DEV = "/dev/devi/mouse0";
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 static char *DFLT_MOUSE_DEV = "/dev/sysmouse";
 static char *DFLT_MOUSE_PROTO = "auto";
 #else
@@ -289,7 +297,7 @@ configureInputSection (void)
 	}
 #endif
 
-#ifndef SCO
+#ifndef __SCO__
 	fd = open(DFLT_MOUSE_DEV, 0);
 	if (fd != -1) {
 	    foundMouse = TRUE;
@@ -306,10 +314,12 @@ configureInputSection (void)
     mouse->inp_driver = "mouse";
     mouse->inp_option_lst = 
 		xf86addNewOption(mouse->inp_option_lst, "Protocol", DFLT_MOUSE_PROTO);
-#ifndef SCO
+#ifndef __SCO__
     mouse->inp_option_lst = 
 		xf86addNewOption(mouse->inp_option_lst, "Device", DFLT_MOUSE_DEV);
 #endif
+    mouse->inp_option_lst = 
+		xf86addNewOption(mouse->inp_option_lst, "ZAxisMapping", "4 5 6 7");
     ptr = (XF86ConfInputPtr)xf86addListItem((glp)ptr, (glp)mouse);
     return ptr;
 }
@@ -789,6 +799,24 @@ DoConfigure()
 
     xfree(vlist);
 
+    for (i = 0; i < xf86NumDrivers; i++) {
+	xorgHWFlags flags;
+	if (!xf86DriverList[i]->driverFunc
+	    || !xf86DriverList[i]->driverFunc(NULL,
+					      GET_REQUIRED_HW_INTERFACES,
+					      &flags)
+	    || NEED_IO_ENABLED(flags)) {
+	    xorgHWAccess = TRUE;
+	    break;
+	}
+    }
+    /* Enable full I/O access */
+    if (xorgHWAccess) {
+	if(!xf86EnableIO())
+	    /* oops, we have failed */
+	    xorgHWAccess = FALSE;
+    }
+
     /* Disable PCI devices */
     xf86ResourceBrokerInit();
     xf86AccessInit();
@@ -803,6 +831,16 @@ DoConfigure()
 
     /* Call all of the probe functions, reporting the results. */
     for (CurrentDriver = 0;  CurrentDriver < xf86NumDrivers;  CurrentDriver++) {
+	xorgHWFlags flags;
+	
+	if (!xorgHWAccess) {
+	    if (!xf86DriverList[CurrentDriver]->driverFunc
+		|| !xf86DriverList[CurrentDriver]->driverFunc(NULL,
+						GET_REQUIRED_HW_INTERFACES,
+						&flags)
+		|| NEED_IO_ENABLED(flags)) 
+		continue;
+	}
 	
 	if (xf86DriverList[CurrentDriver]->Probe == NULL) continue;
 
@@ -850,7 +888,7 @@ DoConfigure()
 #ifdef __UNIXOS2__
 #define PATH_MAX 2048
 #endif
-#if defined(SCO) || defined(SCO325)
+#if !defined(PATH_MAX)
 #define PATH_MAX 1024
 #endif
         const char* configfile = XF86CONFIGFILE".new";
@@ -974,13 +1012,13 @@ DoConfigure()
 
     ErrorF("\n");
 
-#ifdef SCO
+#ifdef __SCO__
     ErrorF("\n"__XSERVERNAME__
 	   " is using the kernel event driver to access the mouse.\n"
 	    "If you wish to use the internal "__XSERVERNAME__
-	   "mouse drivers, please\n"
+	   " mouse drivers, please\n"
 	    "edit the file and correct the Device.\n");
-#else /* !SCO */
+#else /* !__SCO__ */
     if (!foundMouse) {
 	ErrorF("\n"__XSERVERNAME__" is not able to detect your mouse.\n"
 		"Edit the file and correct the Device.\n");
@@ -993,7 +1031,7 @@ DoConfigure()
 		"the protocol.\n",DFLT_MOUSE_DEV);
 #endif
     }
-#endif /* !SCO */
+#endif /* !__SCO__ */
 
     if (xf86NumScreens > 1) {
 	ErrorF("\n"__XSERVERNAME__

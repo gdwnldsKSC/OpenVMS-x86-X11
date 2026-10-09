@@ -1,6 +1,6 @@
 #include <Server.tmpl>
 
-LinkSourceFile(compsize.c,$(LIBSRC)/GL/glx)
+LinkSourceFile(compsize.c,$(MESASRCDIR)/src/glx/x11)
 
          SRCS = compsize.c indirect.c glwrap.c
          OBJS = compsize.o indirect.o glwrap.o
@@ -24,7 +24,11 @@ LinkSourceFile(compsize.c,$(LIBSRC)/GL/glx)
 #if defined(GlxUseWindows) && GlxUseWindows
       CYGWIN_GL_DEFINES = -DUSE_OPENGL32
 #endif
-      DEFINES = $(GLX_DEFINES) $(CYGWIN_GL_DEFINES)
+#if defined(Win32Architecture)
+# undef __stdcall
+      APIENTRY_DEFS = -DAPIENTRY=__stdcall
+#endif
+      DEFINES = $(GLX_DEFINES) $(CYGWIN_GL_DEFINES) $(APIENTRY_DEFS)
 
 NormalLibraryTarget(GLcore,$(OBJS))
 NormalLibraryObjectRule()

@@ -34,7 +34,7 @@
  * TORTIOUS ACTIONS, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/aiptek/xf86Aiptek.h,v 1.2 2004/04/23 19:54:02 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/aiptek/xf86Aiptek.h,v 1.4 2005/07/13 02:18:12 kem Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/aiptek/xf86Aiptek.h,v 1.2 2003/11/03 05:36:32 tsi Exp $ */
 
 #ifndef _AIPTEK_H_
@@ -76,7 +76,7 @@
 #include <xf86_OSproc.h>
 #include <xf86Xinput.h>
 #include <exevents.h>        /* Needed for InitValuator/Proximity stuff */
-#include <keysym.h>
+#include <X11/keysym.h>
 #include <mipointer.h>
 
 #ifdef XFree86LOADER

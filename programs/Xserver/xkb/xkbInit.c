@@ -1,5 +1,5 @@
 /* $Xorg: xkbInit.c,v 1.3 2000/08/17 19:53:47 cpqbld Exp $ */
-/* $XdotOrg: xc/programs/Xserver/xkb/xkbInit.c,v 1.2 2004/04/23 19:54:30 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/xkb/xkbInit.c,v 1.9 2005/10/19 22:45:54 ajax Exp $ */
 /************************************************************
 Copyright (c) 1993 by Silicon Graphics Computer Systems, Inc.
 
@@ -27,6 +27,14 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $XFree86: xc/programs/Xserver/xkb/xkbInit.c,v 3.32tsi Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#ifdef HAVE_XKB_CONFIG_H
+#include <xkb-config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -42,8 +50,8 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "opaque.h"
 #include "property.h"
 #define	XKBSRV_NEED_FILE_FUNCS
-#include "XKBsrv.h"
-#include "XKBgeom.h"
+#include <X11/extensions/XKBsrv.h>
+#include <X11/extensions/XKBgeom.h>
 #include <X11/extensions/XKMformat.h>
 #include <X11/extensions/XKBfile.h>
 #include "xkb.h"
@@ -92,6 +100,9 @@ typedef struct	_SrvXkmInfo {
 #ifndef XKB_BASE_DIRECTORY
 #define	XKB_BASE_DIRECTORY	"/usr/lib/X11/xkb"
 #endif
+#ifndef XKB_BIN_DIRECTORY
+#define	XKB_BIN_DIRECTORY	XKB_BASE_DIRECTORY
+#endif
 #ifndef XKB_DFLT_RULES_FILE
 #define	XKB_DFLT_RULES_FILE	"rules"
 #endif
@@ -115,6 +126,7 @@ typedef struct	_SrvXkmInfo {
 #endif
 
 char	*		XkbBaseDirectory=	XKB_BASE_DIRECTORY;
+char	*		XkbBinDirectory=	XKB_BIN_DIRECTORY;
 char	*		XkbInitialMap=		NULL;
 int	 		XkbWantAccessX=		0;	
 static XkbFileInfo *	_XkbInitFileInfo=	NULL;
@@ -755,7 +767,7 @@ XkbRF_VarDefsRec	defs;
 	_XkbInitFileInfo= &finfo;
     }
     else {
-	LogMessage(X_ERROR, "Couldn't load XKB keymap, falling back to pre-XKB keymap\n");
+	LogMessage(X_WARNING, "Couldn't load XKB keymap, falling back to pre-XKB keymap\n");
     }
     ok= InitKeyboardDeviceStruct((DevicePtr)dev,pSyms,pMods,bellProc,ctrlProc);
     if ((config!=NULL)&&(dev && dev->key && dev->key->xkbInfo))

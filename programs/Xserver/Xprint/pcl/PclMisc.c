@@ -46,11 +46,15 @@ copyright holders.
 */
 /* $XFree86: xc/programs/Xserver/Xprint/pcl/PclMisc.c,v 1.10tsi Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include "Xos.h"	/* for SIGCLD on pre-POSIX systems */
+#include <X11/Xos.h>	/* for SIGCLD on pre-POSIX systems */
 #include "Pcl.h"
 
 #include "cursor.h"

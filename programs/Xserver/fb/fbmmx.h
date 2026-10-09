@@ -1,5 +1,6 @@
 /*
- * Copyright © 2004 Red Hat, Inc.
+ * Copyright Â© 2004 Red Hat, Inc.
+ * Copyright Â© 2005 Trolltech AS
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -11,24 +12,39 @@
  * suitability of this software for any purpose.  It is provided "as is"
  * without express or implied warranty.
  *
- * RED HAT DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL RED HAT
- * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN 
- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
+ * SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS, IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+ * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
+ * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+ * SOFTWARE.
  *
- * Author:  Søren Sandmann (sandmann@redhat.com)
+ * Author:  SÃ¸ren Sandmann (sandmann@redhat.com)
+ *          Lars Knoll (lars@trolltech.com)
  * 
  * Based on work by Owen Taylor
  */
-#ifdef USE_GCC34_MMX
-Bool fbHaveMMX(void);
-#else
-#define fbHaveMMX FALSE
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
 #endif
 
-#ifdef USE_GCC34_MMX
+#ifdef USE_MMX
+
+#if !defined(__amd64__) && !defined(__x86_64__)
+Bool fbHaveMMX(void);
+#else
+#define fbHaveMMX() TRUE
+#endif
+
+#else
+#define fbHaveMMX() FALSE
+#endif
+
+#ifdef USE_MMX
+
+void fbComposeSetupMMX(void);
 
 void fbCompositeSolidMask_nx8888x0565Cmmx (CARD8      op,
 					   PicturePtr pSrc,
@@ -54,6 +70,18 @@ void fbCompositeSrcAdd_8888x8888mmx (CARD8	op,
 				     INT16      yDst,
 				     CARD16     width,
 				     CARD16     height);
+void fbCompositeSrc_8888x8888mmx (CARD8		op,
+				  PicturePtr	pSrc,
+				  PicturePtr	pMask,
+				  PicturePtr	pDst,
+				  INT16		xSrc,
+				  INT16		ySrc,
+				  INT16		xMask,
+				  INT16		yMask,
+				  INT16		xDst,
+				  INT16		yDst,
+				  CARD16	width,
+				  CARD16	height);
 void fbCompositeSolidMask_nx8888x8888Cmmx (CARD8	op,
 					   PicturePtr	pSrc,
 					   PicturePtr	pMask,
@@ -150,6 +178,38 @@ void fbCompositeSolidMask_nx8x0565mmx (CARD8      op,
 				       INT16      yDst,
 				       CARD16     width,
 				       CARD16     height);
+void fbCompositeSrc_8888x8x8888mmx (CARD8	op,
+				    PicturePtr  pSrc,
+				    PicturePtr  pMask,
+				    PicturePtr  pDst,
+				    INT16	xSrc,
+				    INT16	ySrc,
+				    INT16       xMask,
+				    INT16       yMask,
+				    INT16       xDst,
+				    INT16       yDst,
+				    CARD16      width,
+				    CARD16      height);
+Bool fbCopyAreammx (DrawablePtr	pSrc,
+		    DrawablePtr	pDst,
+		    int		src_x,
+		    int		src_y,
+		    int		dst_x,
+		    int		dst_y,
+		    int		width,
+		    int		height);
+void fbCompositeCopyAreammx (CARD8	op,
+			     PicturePtr	pSrc,
+			     PicturePtr	pMask,
+			     PicturePtr	pDst,
+			     INT16	xSrc,
+			     INT16      ySrc,
+			     INT16      xMask,
+			     INT16      yMask,
+			     INT16      xDst,
+			     INT16      yDst,
+			     CARD16     width,
+			     CARD16     height);
 Bool fbSolidFillmmx (DrawablePtr	pDraw,
 		     int		x,
 		     int		y,
@@ -157,4 +217,4 @@ Bool fbSolidFillmmx (DrawablePtr	pDraw,
 		     int		height,
 		     FbBits		xor);
 
-#endif /* USE_GCC34_MMX */
+#endif /* USE_MMX */

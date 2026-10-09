@@ -114,7 +114,7 @@ typedef enum { NO = 0, YES = 1 } boolean_e ;
  */
 #define INS_CHAR( c, sp, bep, cc )					\
 	{								\
-	    if ( sp < bep )						\
+	    if ( sp != NULL && sp < bep )				\
 		*sp++ = c ;						\
 	    cc++ ;							\
 	}
@@ -355,7 +355,11 @@ conv_10(wide_int num, bool_int is_unsigned, bool_int *is_negative,
  * Do format conversion.
  */
 SCOPE int 
+#if (defined(__UNIXWARE__) || defined(__OPENSERVER)) && !defined(__GNUC__)
+vsnprintf(char *str, size_t size, const char *fmt, _VA_LIST ap)
+#else
 vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
+#endif
 {
     char *sp;
     char *bep;
@@ -392,7 +396,7 @@ vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
     boolean_e adjust_width;
     bool_int is_negative;
 
-    if (size == 0)
+    if (size == 0 && str != NULL)
 	return 0;
 
     sp = str;
@@ -699,10 +703,12 @@ vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
 	}
 	fmt++;
     }
-    if (cc < size)
-	str[cc] = NUL;
-    else
-	str[size - 1] = NUL;
+    if (str != NULL) {
+        if (cc < size)
+            str[cc] = NUL;
+        else
+            str[size - 1] = NUL;
+    }
     return cc;
 }
 

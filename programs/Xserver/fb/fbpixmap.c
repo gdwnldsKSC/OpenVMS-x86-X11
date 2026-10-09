@@ -1,7 +1,7 @@
 /*
  * Id: fbpixmap.c,v 1.1 1999/11/02 03:54:45 keithp Exp $
  *
- * Copyright © 1998 Keith Packard
+ * Copyright Â© 1998 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -23,6 +23,10 @@
  */
 /* $XFree86: xc/programs/Xserver/fb/fbpixmap.c,v 1.9 2001/05/29 04:54:09 keithp Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "fb.h"
 #ifdef IN_MODULE
 #include "xf86_ansic.h"
@@ -32,12 +36,14 @@ PixmapPtr
 fbCreatePixmapBpp (ScreenPtr pScreen, int width, int height, int depth, int bpp)
 {
     PixmapPtr	pPixmap;
-    int		datasize;
-    int		paddedWidth;
+    size_t	datasize;
+    size_t	paddedWidth;
     int		adjust;
     int		base;
 
     paddedWidth = ((width * bpp + FB_MASK) >> FB_SHIFT) * sizeof (FbBits);
+    if (paddedWidth / 4 > 32767 || height > 32767)
+	return NullPixmap;
     datasize = height * paddedWidth;
 #ifdef PIXPRIV
     base = pScreen->totalPixmapSize;

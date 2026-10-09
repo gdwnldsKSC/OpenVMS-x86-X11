@@ -25,7 +25,11 @@
  */
 /* $XConsortium: bsd_init.c /main/8 1996/10/23 13:13:05 kaleb $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "compiler.h"
 
@@ -34,7 +38,9 @@
 #include "xf86_OSlib.h"
 
 #include <sys/utsname.h>
+#include <sys/ioctl.h>
 #include <stdlib.h>
+#include <errno.h>
 
 static Bool KeepTty = FALSE;
 static int devConsoleFd = -1;
@@ -74,6 +80,10 @@ static int initialVT = -1;
 #if defined(WSCONS_SUPPORT) && defined(__NetBSD__)
 /* NetBSD's new console driver */
 #define WSCONS_PCVT_COMPAT_CONSOLE_DEV "/dev/ttyE0"
+#endif
+
+#ifdef __GLIBC__
+#define setpgrp setpgid
 #endif
 
 #define CHECK_DRIVER_MSG \
@@ -235,11 +245,11 @@ xf86OpenConsole()
 	     * switching anymore. Here we check for FreeBSD 3.1 and up.
 	     * Add cases for other *BSD that behave the same.
 	    */
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 	    uname (&uts);
-	    if (strcmp(uts.sysname, "FreeBSD") == 0) {
-		i = atof(uts.release) * 100;
-		if (i >= 310) goto acquire_vt;
-	    }
+	    i = atof(uts.release) * 100;
+	    if (i >= 310) goto acquire_vt;
+#endif
 	    /* otherwise fall through */
 	case PCVT:
 	    /*

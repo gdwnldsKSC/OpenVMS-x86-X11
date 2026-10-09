@@ -1,4 +1,8 @@
 /* $XFree86$ */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _singlesize_h_
 #define _singlesize_h_
 
@@ -36,6 +40,8 @@
 ** compliant with the OpenGL(R) version 1.2.1 Specification.
 **
 */
+
+#include "indirect_size.h"
 
 extern GLint __glReadPixels_size(GLenum format, GLenum type,
 				 GLint width, GLint height);

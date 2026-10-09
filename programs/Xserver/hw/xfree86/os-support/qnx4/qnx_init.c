@@ -29,6 +29,10 @@
 
 /* This module contains the qnx-specific functions used at server init.
  */
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -36,7 +40,7 @@
 #include <sys/mman.h>
 #include <sys/console.h>
 
-#include <X.h>
+#include <X11/X.h>
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSlib.h"

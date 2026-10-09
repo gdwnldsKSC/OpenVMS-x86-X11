@@ -257,7 +257,7 @@ XCOMM $XFree86: xc/config/cf/svr4.cf,v 3.50 2003/11/04 01:25:31 dawes Exp $
  * At this point, an XFree86 port to Sparc/SunOS cannot be officially supported
  * because the system I am using to develop this is just a loaner from Sun.
  */
-#if defined(i386Architecture) || \
+#if defined(i386Architecture) || defined(AMD64Architecture) || \
     defined(PpcArchitecture) || \
     (defined(SparcArchitecture) && \
      defined(SunArchitecture) && \

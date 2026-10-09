@@ -5,7 +5,7 @@ TOP = ../../..
 include $(TOP)/configs/current
 
 
-DEFINES += -DGLX_DIRECT_RENDERING
+DEFINES += -DGLX_DIRECT_RENDERING -DIN_MINI_GLX -UIN_DRI_DRIVER
 
 C_SOURCES = \
 	  $(TOP)/src/mesa/main/dispatch.c \
@@ -55,7 +55,8 @@ default: depend $(LIB_DIR)/$(GL_LIB_NAME)
 
 # Make libGL
 $(LIB_DIR)/$(GL_LIB_NAME):  $(OBJECTS) Makefile
-	CC=$(CC) CXX=$(CXX) $(TOP)/bin/mklib -o $(GL_LIB) -major 1 -minor 2 $(MKLIB_OPTIONS) \
+	$(TOP)/bin/mklib -o $(GL_LIB) -linker '$(CC)' \
+		-major 1 -minor 2 $(MKLIB_OPTIONS) \
 		-install $(LIB_DIR) $(GL_LIB_DEPS) $(OBJECTS)
 	rm -f $(LIB_DIR)/miniglx.conf
 	install example.miniglx.conf $(LIB_DIR)/miniglx.conf
@@ -68,7 +69,7 @@ drmtest: xf86drm.o drmtest.o
 depend: $(C_SOURCES) $(ASM_SOURCES)
 	touch depend
 	$(MKDEP) $(MKDEP_OPTIONS) $(INCLUDES) $(C_SOURCES) $(ASM_SOURCES) \
-		> /dev/null 2>&1
+		> /dev/null 
 
 
 # Emacs tags

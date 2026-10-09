@@ -36,9 +36,13 @@ Author: Keith Packard
 /* Modified jun 95 by Geert Uytterhoeven (Geert.Uytterhoeven@cs.kuleuven.ac.be)
    to use interleaved bitplanes instead of normal bitplanes */
 
-#include "X.h"
-#include "Xmd.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xmd.h>
+#include <X11/Xproto.h>
 #include "ilbm.h"
 #include "gcstruct.h"
 #include "windowstr.h"

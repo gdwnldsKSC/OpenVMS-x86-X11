@@ -50,6 +50,10 @@ be used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from the XFree86 Project.
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"

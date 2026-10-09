@@ -19,7 +19,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget($(DRIVER),$(OBJS))
 
-InstallObjectModule($(DRIVER),$(MODULEDIR),input)
+InstallInputObjectModule($(DRIVER),$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage($(DRIVER))

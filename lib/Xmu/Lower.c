@@ -29,6 +29,9 @@ in this Software without prior written authorization from The Open Group.
 /* $XFree86: xc/lib/Xmu/Lower.c,v 1.11 2001/07/25 15:04:50 dawes Exp $ */
 
 #define  XK_LATIN1
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/keysymdef.h>
 #include <X11/Xmu/CharSet.h>
 #include <X11/Xmu/SysUtil.h>

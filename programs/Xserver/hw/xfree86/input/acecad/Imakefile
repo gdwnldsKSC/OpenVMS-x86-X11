@@ -24,7 +24,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget($(DRIVER),$(OBJS))
 
-InstallObjectModule($(DRIVER),$(MODULEDIR),input)
+InstallInputObjectModule($(DRIVER),$(MODULEDIR))
 
 DependTarget()
 

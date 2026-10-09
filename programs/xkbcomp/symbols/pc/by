@@ -1,4 +1,4 @@
-
+// $XdotOrg: xc/programs/xkbcomp/symbols/pc/by,v 1.3 2005/08/12 11:08:49 pascal Exp $
 // based on
 // belarusian standard keyboard 
 // Alexander Mikhailian <mikhailian@altern.org>
@@ -9,7 +9,7 @@
 partial default alphanumeric_keys 
 xkb_symbols "basic" {
 
-    name[Group1]= "Belarusian";
+    name[Group1]= "Belarus";
 
     key	<TLDE> {	[     Cyrillic_io,     Cyrillic_IO	]	};
     key	<LSGT> {	[		bar,	brokenbar	]	};
@@ -64,6 +64,7 @@ xkb_symbols "basic" {
 partial alphanumeric_keys
 xkb_symbols "winkeys" {
     include "pc/by(basic)"
+    name[Group1]= "Belarus - Winkeys";
     key	<AE04> {	[		4,       semicolon	]	};
     key	<AE03> {	[		3,      numbersign	]	};
     key	<AE05> {	[		5,	   percent	]	};

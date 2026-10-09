@@ -10,7 +10,7 @@ PRODUCT INFORMATION
 Durango is a graphics/video software support package designed to assist in the
 development of display drivers and embedded applications. The core of this 
 package is source code that performs most of the graphics related 
-functionality for the National Semiconductor ® Geode family of products.  
+functionality for the National Semiconductor Â® Geode family of products.  
 Development time for new software is reduced by using these routines to access
 the hardware.
 

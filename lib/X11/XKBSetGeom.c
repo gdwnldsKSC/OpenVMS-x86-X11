@@ -1,4 +1,5 @@
 /* $Xorg: XKBSetGeom.c,v 1.3 2000/08/17 19:45:03 cpqbld Exp $ */
+/* $XdotOrg: xc/lib/X11/XKBSetGeom.c,v 1.5 2005/07/03 07:00:55 daniels Exp $ */
 /************************************************************
 Copyright (c) 1993 by Silicon Graphics Computer Systems, Inc.
 
@@ -27,6 +28,9 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* $XFree86: xc/lib/X11/XKBSetGeom.c,v 3.5 2003/05/27 22:26:25 tsi Exp $ */
 
 #ifdef DEBUG
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #endif
 
@@ -400,7 +404,7 @@ char *			wire,*tbuf;
     sz+= _SizeGeomDoodads(geom->num_doodads,geom->doodads);
     sz+= _SizeGeomKeyAliases(geom);
     req->length+= (sz/4);
-    if (sz<BUFSIZE) {
+    if (sz < (dpy->bufmax - dpy->buffer)) {
 	BufAlloc(char *,wire,sz);
 	tbuf= NULL;
     }

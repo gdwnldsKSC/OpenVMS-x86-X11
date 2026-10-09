@@ -15,7 +15,7 @@ XVFBDIR = vfb
 #endif
 
 #if XdmxServer
-XDMXDIR = xdmx
+XDMXDIR = dmx
 #endif
 
 SUBDIRS= $(XNESTDIR) $(XVFBDIR) $(XDMXDIR)

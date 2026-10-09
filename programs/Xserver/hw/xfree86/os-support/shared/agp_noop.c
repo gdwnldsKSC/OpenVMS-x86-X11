@@ -31,10 +31,14 @@
  * AGP GART support.
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifdef __UNIXOS2__
 # define I_NEED_OS2_H
 #endif
-#include "X.h"
+#include <X11/X.h>
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSlib.h"
@@ -77,6 +81,11 @@ xf86AllocateGARTMemory(int screenNum, unsigned long size, int type,
 	return -1;
 }
 
+Bool
+xf86DeallocateGARTMemory(int screenNum, int key)
+{
+	return FALSE;
+}
 
 Bool
 xf86BindGARTMemory(int screenNum, int key, unsigned long offset)

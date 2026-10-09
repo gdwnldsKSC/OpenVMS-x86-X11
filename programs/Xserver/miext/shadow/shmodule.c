@@ -1,7 +1,7 @@
 /*
  * $XFree86$
  *
- * Copyright © 2000 Keith Packard
+ * Copyright Â© 2000 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -22,15 +22,19 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifdef XFree86LOADER
 
 #include "xf86Module.h"
-#include    "X.h"
+#include    <X11/X.h>
 #include    "scrnintstr.h"
 #include    "windowstr.h"
-#include    "font.h"
+#include    <X11/fonts/font.h>
 #include    "dixfontstr.h"
-#include    "fontstruct.h"
+#include    <X11/fonts/fontstruct.h>
 #include    "mi.h"
 #include    "regionstr.h"
 #include    "globals.h"

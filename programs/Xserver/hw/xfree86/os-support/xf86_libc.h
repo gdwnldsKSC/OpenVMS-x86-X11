@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/xf86_libc.h,v 1.2 2004/04/23 19:54:07 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/xf86_libc.h,v 1.9 2005/08/24 11:18:31 daniels Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/os-support/xf86_libc.h,v 3.63 2003/12/08 21:46:55 alanh Exp $ */
 /*
  * Copyright (c) 1997-2003 by The XFree86 Project, Inc.
@@ -45,7 +45,7 @@
 #ifndef	XF86_LIBC_H
 #define XF86_LIBC_H 1
 
-#include "Xfuncs.h"
+#include <X11/Xfuncs.h>
 #include <stddef.h>
 
 /*
@@ -185,6 +185,20 @@ typedef int xf86jmp_buf[1024];
 #define xf86_EBUSY		1022
 #define xf86_ENODEV		1023
 #define xf86_EIO		1024
+
+#define xf86_ESRCH		1025
+#define xf86_ENXIO		1026
+#define xf86_E2BIG		1027
+#define xf86_ENOEXEC		1028
+#define xf86_ECHILD		1029
+#define xf86_ENOTBLK		1030
+#define xf86_EXDEV		1031
+#define xf86_EFBIG		1032
+#define xf86_ESPIPE		1033
+#define xf86_EMLINK		1034
+#define xf86_EDOM		1035
+#define xf86_ERANGE		1036
+ 
 
 /* sysv IPV */
 /* xf86shmget() */
@@ -569,7 +583,9 @@ typedef int xf86jmp_buf[1024];
 #define open			xf86open
 #define close(a)		xf86close(a)
 #define lseek(a,b,c)		xf86lseek(a,b,c)
+#if !defined(__DragonFly__)
 #define ioctl(a,b,c)		xf86ioctl(a,b,c)
+#endif
 #define read(a,b,c)		xf86read(a,b,c)
 #define write(a,b,c)		xf86write(a,b,c)
 #define mmap(a,b,c,d,e,f)	xf86mmap(a,b,c,d,e,f)
@@ -690,6 +706,10 @@ typedef int xf86jmp_buf[1024];
 /* Some ANSI macros */
 #undef FILENAME_MAX
 #define FILENAME_MAX		1024
+
+#if (defined(sun) && defined(__SVR4)) 
+# define _FILEDEFED /* Already have FILE defined, don't redefine it */
+#endif
 
 #endif /* XFree86LOADER  && !DONT_DEFINE_WRAPPERS */
 

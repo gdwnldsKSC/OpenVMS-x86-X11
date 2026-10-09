@@ -1,4 +1,5 @@
 /* $Xorg: smproxy.h,v 1.4 2001/02/09 02:05:36 xorgcvs Exp $ */
+/* $XdotOrg: xc/programs/smproxy/smproxy.h,v 1.3 2005/07/16 22:07:13 alanc Exp $ */
 /******************************************************************************
 
 Copyright 1994, 1998  The Open Group
@@ -26,6 +27,10 @@ in this Software without prior written authorization from The Open Group.
 Author:  Ralph Mor, X Consortium
 ******************************************************************************/
 /* $XFree86: xc/programs/smproxy/smproxy.h,v 1.5 2001/07/25 15:05:16 dawes Exp $ */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include <X11/Xosdefs.h>
 #include <X11/Xfuncs.h>

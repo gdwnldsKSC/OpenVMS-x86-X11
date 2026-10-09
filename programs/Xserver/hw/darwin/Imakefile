@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xc/programs/Xserver/hw/darwin/Imakefile,v 1.5 2004/07/30 20:42:06 torrey Exp $
+XCOMM $XdotOrg: xc/programs/Xserver/hw/darwin/Imakefile,v 1.6 2004/11/08 06:35:27 fabbione Exp $
 XCOMM $XFree86: xc/programs/Xserver/hw/darwin/Imakefile,v 1.19 2003/05/14 05:27:55 torrey Exp $
 
 #include <Server.tmpl>
@@ -36,10 +36,14 @@ INCLUDES = -I. -I$(SERVERSRC)/mi -I$(SERVERSRC)/fb -I$(EXTINCSRC) \
 OSNAME = OSName
 OSVENDOR = OSVendor
 OSNAMEDEF = -DOSNAME='" $(OSNAME)"' -DOSVENDOR='" $(OSVENDOR)"'
-#if defined(XFree86CustomVersion)
+#if defined(XorgCustomVersion) || defined(XFree86CustomVersion)
+# if defined(XorgCustomVersion)
+CUSTOMVERSION = XorgCustomVersion
+# else 
 CUSTOMVERSION = XFree86CustomVersion
-CUSTOMVERDEF = -DXF86_CUSTOM_VERSION='$(CUSTOMVERSION)'
-#endif
+# endif /* XorgCustomVersion */
+CUSTOMVERDEF = -DXORG_CUSTOM_VERSION='$(CUSTOMVERSION)'
+#endif /* XorgCustomVersion || XFree86CustomVersion */
 #if defined(BuilderString)
 BUILDERSTRING = BuilderString
 BUILDERMSG = -DBUILDERSTRING='$(BUILDERSTRING)'

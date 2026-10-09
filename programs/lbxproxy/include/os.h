@@ -32,7 +32,7 @@ from The Open Group.
 #ifndef OS_H
 #define OS_H
 
-#include <X11/Xtrans.h>
+#include <X11/Xtrans/Xtrans.h>
 
 extern fd_set AllSockets;
 extern fd_set AllClients;

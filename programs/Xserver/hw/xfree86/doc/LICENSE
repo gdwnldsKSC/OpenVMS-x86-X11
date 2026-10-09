@@ -6,7 +6,7 @@
 
 1.  Introduction
 
-The X.org Foundation X Window System distribution is a compilation of code
+The X.Org Foundation X Window System distribution is a compilation of code
 and documentation from many sources.  This document is intended primarily as
 a guide to the licenses used in the distribution: you must check each file
 and/or package for precise redistribution terms. None-the-less, this summary
@@ -820,7 +820,7 @@ For further information, contact:
 
 info@urwpp.de or design@bigelowandholmes.com
 
-     $Id$
+     Generated from Id: LICENSE.sgml,v 1.4 alanc Exp $
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/LICENSE,v 1.3 2004/09/03 23:41:21 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/LICENSE,v 1.4 2005/12/21 05:39:05 kem Exp $

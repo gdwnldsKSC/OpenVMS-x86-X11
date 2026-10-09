@@ -38,6 +38,10 @@ copyright holders.
  * request will allow us to build it with the description in the locale of
  * the requesting client.
  */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _XpDiPrint_H_
 #define _XpDiPrint_H_ 1
 
@@ -62,7 +66,11 @@ extern char * XpDiGetDriverName(int index, char *printerName);
 
 extern WindowPtr XpDiValidatePrinter(char *printerName, int printerNameLen);
 
-extern int XprintOptions(int argc, char **argv, int i);
+extern int PrinterOptions(int argc, char **argv, int i);
+
+extern void PrinterUseMsg(void);
+
+extern void PrinterInitGlobals(void);
 
 extern void PrinterInitOutput(ScreenInfo *pScreenInfo, int argc, char **argv);
 

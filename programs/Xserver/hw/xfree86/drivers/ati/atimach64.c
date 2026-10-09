@@ -49,6 +49,10 @@
  *    Leif Delgass <ldelgass@retinalburn.net>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ati.h"
 #include "atibus.h"
 #include "atichip.h"
@@ -61,7 +65,7 @@
 #ifndef DPMS_SERVER
 # define DPMS_SERVER
 #endif
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 /*
  * ATIMach64PreInit --
@@ -617,7 +621,11 @@ ATIMach64Calculate
     {
         pMode->Flags &= ~(V_PHSYNC | V_NHSYNC | V_PVSYNC | V_NVSYNC);
 
-        if (pATI->OptionPanelDisplay && (pATI->LCDPanelID >= 0))
+        if (pATI->OptionPanelDisplay && (pATI->LCDPanelID >= 0)
+#ifdef TV_OUT
+       && !pATI->tvActive
+#endif
+)
             VDisplay = pATI->LCDVertical;
         else
             VDisplay = pMode->CrtcVDisplay;

@@ -28,8 +28,11 @@
 #include "dri_util.h"
 #include "glheader.h"
 #include "context.h"
+#include "framebuffer.h"
+#include "renderbuffer.h"
 #include "matrix.h"
 #include "simple_list.h"
+#include "vblank.h"
 
 #include "via_state.h"
 #include "via_tex.h"
@@ -38,14 +41,29 @@
 #include "via_ioctl.h"
 #include "via_screen.h"
 #include "via_fb.h"
-
 #include "via_dri.h"
-extern viaContextPtr current_mesa;
 
-#ifdef USE_NEW_INTERFACE
-static PFNGLXCREATECONTEXTMODES create_context_modes = NULL;
-#endif /* USE_NEW_INTERFACE */
+#include "GL/internal/dri_interface.h"
 
+/* Radeon configuration
+ */
+#include "xmlpool.h"
+
+const char __driConfigOptions[] =
+DRI_CONF_BEGIN
+    DRI_CONF_SECTION_PERFORMANCE
+        DRI_CONF_FTHROTTLE_MODE(DRI_CONF_FTHROTTLE_IRQS)
+        DRI_CONF_VBLANK_MODE(DRI_CONF_VBLANK_DEF_INTERVAL_0)
+    DRI_CONF_SECTION_END
+    DRI_CONF_SECTION_DEBUG
+        DRI_CONF_NO_RAST(false)
+    DRI_CONF_SECTION_END
+DRI_CONF_END;
+static const GLuint __driNConfigOptions = 3;
+
+extern const struct dri_extension card_extensions[];
+
+static int getSwapInfo( __DRIdrawablePrivate *dPriv, __DRIswapInfo * sInfo );
 
 static drmBufMapPtr via_create_empty_buffers(void)
 {
@@ -64,15 +82,29 @@ static drmBufMapPtr via_create_empty_buffers(void)
     return retval;
 }
 
+static void via_free_empty_buffers( drmBufMapPtr bufs )
+{
+   if (bufs && bufs->list)
+      FREE(bufs->list);
+
+   if (bufs)
+      FREE(bufs);
+}
+
+
 static GLboolean
 viaInitDriver(__DRIscreenPrivate *sPriv)
 {
     viaScreenPrivate *viaScreen;
     VIADRIPtr gDRIPriv = (VIADRIPtr)sPriv->pDevPriv;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
+    PFNGLXSCRENABLEEXTENSIONPROC glx_enable_extension =
+      (PFNGLXSCRENABLEEXTENSIONPROC) (*dri_interface->getProcAddress("glxEnableExtension"));
+    void * const psc = sPriv->psc->screenConfigs;
 
+    if (sPriv->devPrivSize != sizeof(VIADRIRec)) {
+      fprintf(stderr,"\nERROR!  sizeof(VIADRIRec) does not match passed size from device driver\n");
+      return GL_FALSE;
+    }
 
     /* Allocate the private area */
     viaScreen = (viaScreenPrivate *) CALLOC(sizeof(viaScreenPrivate));
@@ -81,6 +113,11 @@ viaInitDriver(__DRIscreenPrivate *sPriv)
         return GL_FALSE;
     }
 
+    /* parse information in __driConfigOptions */
+    driParseOptionInfo (&viaScreen->optionCache,
+			__driConfigOptions, __driNConfigOptions);
+
+
     viaScreen->driScrnPriv = sPriv;
     sPriv->private = (void *)viaScreen;
 
@@ -88,31 +125,20 @@ viaInitDriver(__DRIscreenPrivate *sPriv)
     viaScreen->width = gDRIPriv->width;
     viaScreen->height = gDRIPriv->height;
     viaScreen->mem = gDRIPriv->mem;
-    viaScreen->bitsPerPixel = gDRIPriv->bytesPerPixel << 3;
+    viaScreen->bitsPerPixel = gDRIPriv->bytesPerPixel * 8;
     viaScreen->bytesPerPixel = gDRIPriv->bytesPerPixel;
     viaScreen->fbOffset = 0;
     viaScreen->fbSize = gDRIPriv->fbSize;
-#ifdef USE_XINERAMA
-    viaScreen->drixinerama = gDRIPriv->drixinerama;
-#endif
-    /*=* John Sheng [2003.12.9] Tuxracer & VQ *=*/
-    viaScreen->VQEnable = gDRIPriv->VQEnable;
-#ifdef DEBUG    
-    if (VIA_DEBUG) {
+    viaScreen->irqEnabled = gDRIPriv->irqEnabled;
+    viaScreen->irqEnabled = 1;
+
+    if (VIA_DEBUG & DEBUG_DRI) {
 	fprintf(stderr, "deviceID = %08x\n", viaScreen->deviceID);
 	fprintf(stderr, "width = %08x\n", viaScreen->width);	
 	fprintf(stderr, "height = %08x\n", viaScreen->height);	
 	fprintf(stderr, "cpp = %08x\n", viaScreen->cpp);	
 	fprintf(stderr, "fbOffset = %08x\n", viaScreen->fbOffset);	
     }
-#endif
-    /* DBG */
-    /*
-    if (gDRIPriv->bitsPerPixel == 15)
-        viaScreen->fbFormat = DV_PF_555;
-    else
-        viaScreen->fbFormat = DV_PF_565;
-    */	
 
     viaScreen->bufs = via_create_empty_buffers();
     if (viaScreen->bufs == NULL) {
@@ -136,20 +162,34 @@ viaInitDriver(__DRIscreenPrivate *sPriv)
                    gDRIPriv->agp.handle,
                    gDRIPriv->agp.size,
 	           (drmAddress *)&viaScreen->agpLinearStart) != 0) {
+	    drmUnmap(viaScreen->reg, gDRIPriv->regs.size);
 	    FREE(viaScreen);
-	    drmUnmap(viaScreen->reg, gDRIPriv->agp.size);
 	    sPriv->private = NULL;
 	    __driUtilMessage("viaInitDriver: drmMap agp failed");
 	    return GL_FALSE;
-	}	    
-	viaScreen->agpBase = (GLuint *)gDRIPriv->agp.handle;
+	}
+	    
+	/*
+	 * FIXME: This is an invalid assumption that works until handle is
+	 * changed to mean something else than the 32-bit physical AGP address.
+	 */
+
+	viaScreen->agpBase = gDRIPriv->agp.handle;
     } else
 	viaScreen->agpLinearStart = 0;
 
     viaScreen->sareaPrivOffset = gDRIPriv->sarea_priv_offset;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);
-#endif
+
+    if ( glx_enable_extension != NULL ) {
+       if ( viaScreen->irqEnabled ) {
+	  (*glx_enable_extension)( psc, "GLX_SGI_swap_control" );
+	  (*glx_enable_extension)( psc, "GLX_SGI_video_sync" );
+	  (*glx_enable_extension)( psc, "GLX_MESA_swap_control" );
+       }
+
+       (*glx_enable_extension)( psc, "GLX_MESA_swap_frame_usage" );
+    }
+
     return GL_TRUE;
 }
 
@@ -158,18 +198,17 @@ viaDestroyScreen(__DRIscreenPrivate *sPriv)
 {
     viaScreenPrivate *viaScreen = (viaScreenPrivate *)sPriv->private;
     VIADRIPtr gDRIPriv = (VIADRIPtr)sPriv->pDevPriv;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
+
     drmUnmap(viaScreen->reg, gDRIPriv->regs.size);
     if (gDRIPriv->agp.size)
         drmUnmap(viaScreen->agpLinearStart, gDRIPriv->agp.size);
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);	
-#endif    
+
+    via_free_empty_buffers(viaScreen->bufs);
+
     FREE(viaScreen);
     sPriv->private = NULL;
 }
+
 
 static GLboolean
 viaCreateBuffer(__DRIscreenPrivate *driScrnPriv,
@@ -177,52 +216,94 @@ viaCreateBuffer(__DRIscreenPrivate *driScrnPriv,
                 const __GLcontextModes *mesaVis,
                 GLboolean isPixmap)
 {
-    viaContextPtr vmesa = current_mesa;
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif    
-    /*=* John Sheng [2003.7.2] for visual config & patch viewperf *=*/
-    if (mesaVis->depthBits == 32 && vmesa->depthBits == 16) {
-	vmesa->depthBits = mesaVis->depthBits;
-	vmesa->depth.size *= 2;
-	vmesa->depth.pitch *= 2;
-	vmesa->depth.bpp *= 2;
-	if (vmesa->depth.map)
-	    via_free_depth_buffer(vmesa);
-	if (!via_alloc_depth_buffer(vmesa)) {
-	    via_free_depth_buffer(vmesa);
-	    return GL_FALSE;
-	}
-	
-	((__GLcontextModes*)mesaVis)->depthBits = 16; /* XXX : sure you want to change read-only data? */
-    }
-    
+    viaScreenPrivate *screen = (viaScreenPrivate *) driScrnPriv->private;
+
+    GLboolean swStencil = (mesaVis->stencilBits > 0 && 
+			   mesaVis->depthBits != 24);
+
+
     if (isPixmap) {
+       /* KW: This needs work, disabled for now:
+	*/
+#if 0
 	driDrawPriv->driverPrivate = (void *)
             _mesa_create_framebuffer(mesaVis,
                                      GL_FALSE,	/* software depth buffer? */
-                                     mesaVis->stencilBits > 0,
+                                     swStencil,
                                      mesaVis->accumRedBits > 0,
                                      GL_FALSE 	/* s/w alpha planes */);
 
-	if (vmesa) vmesa->drawType = GLX_PBUFFER_BIT;
-#ifdef DEBUG    
-        if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);				     
-#endif	
         return (driDrawPriv->driverPrivate != NULL);
+#endif
+	return GL_FALSE;
     }
     else {
+#if 0
         driDrawPriv->driverPrivate = (void *)
             _mesa_create_framebuffer(mesaVis,
                                      GL_FALSE,	/* software depth buffer? */
-                                     mesaVis->stencilBits > 0,
+                                     swStencil,
                                      mesaVis->accumRedBits > 0,
                                      GL_FALSE 	/* s/w alpha planes */);
-	
-	if (vmesa) vmesa->drawType = GLX_WINDOW_BIT;
-#ifdef DEBUG    
-        if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);				     
-#endif	
+#else
+      struct gl_framebuffer *fb = _mesa_create_framebuffer(mesaVis);
+
+      /* XXX check/fix the offset/pitch parameters! */
+      {
+         driRenderbuffer *frontRb
+            = driNewRenderbuffer(GL_RGBA, screen->bytesPerPixel,
+                                 0, screen->width);
+         viaSetSpanFunctions(frontRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_FRONT_LEFT, &frontRb->Base);
+      }
+
+      if (mesaVis->doubleBufferMode) {
+         driRenderbuffer *backRb
+            = driNewRenderbuffer(GL_RGBA, screen->bytesPerPixel,
+                                 0, screen->width);
+         viaSetSpanFunctions(backRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_BACK_LEFT, &backRb->Base);
+      }
+
+      if (mesaVis->depthBits == 16) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT16, screen->bytesPerPixel,
+                                 0, screen->width);
+         viaSetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+      else if (mesaVis->depthBits == 24) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT24, screen->bytesPerPixel,
+                                 0, screen->width);
+         viaSetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+      else if (mesaVis->depthBits == 32) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT32, screen->bytesPerPixel,
+                                 0, screen->width);
+         viaSetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+
+      if (mesaVis->stencilBits > 0 && !swStencil) {
+         driRenderbuffer *stencilRb
+            = driNewRenderbuffer(GL_STENCIL_INDEX8_EXT, screen->bytesPerPixel,
+                                 0, screen->width);
+         viaSetSpanFunctions(stencilRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_STENCIL, &stencilRb->Base);
+      }
+
+      _mesa_add_soft_renderbuffers(fb,
+                                   GL_FALSE, /* color */
+                                   GL_FALSE, /* depth */
+                                   swStencil,
+                                   mesaVis->accumRedBits > 0,
+                                   GL_FALSE, /* alpha */
+                                   GL_FALSE /* aux */);
+      driDrawPriv->driverPrivate = (void *) fb;
+#endif
         return (driDrawPriv->driverPrivate != NULL);
    }
 }
@@ -231,77 +312,29 @@ viaCreateBuffer(__DRIscreenPrivate *driScrnPriv,
 static void
 viaDestroyBuffer(__DRIdrawablePrivate *driDrawPriv)
 {
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - in\n", __FUNCTION__);
-#endif
     _mesa_destroy_framebuffer((GLframebuffer *)(driDrawPriv->driverPrivate));
-#ifdef DEBUG    
-    if (VIA_DEBUG) fprintf(stderr, "%s - out\n", __FUNCTION__);    
-#endif
 }
 
-
-#if 0
-/* Initialize the fullscreen mode.
- */
-GLboolean
-XMesaOpenFullScreen(__DRIcontextPrivate *driContextPriv)
-{
-    viaContextPtr vmesa = (viaContextPtr)driContextPriv->driverPrivate;
-    vmesa->doPageFlip = 1;
-    vmesa->currentPage = 0;
-    return GL_TRUE;
-}
-
-/* Shut down the fullscreen mode.
- */
-GLboolean
-XMesaCloseFullScreen(__DRIcontextPrivate *driContextPriv)
-{
-    viaContextPtr vmesa = (viaContextPtr)driContextPriv->driverPrivate;
-
-    if (vmesa->currentPage == 1) {
-        viaPageFlip(vmesa);
-        vmesa->currentPage = 0;
-    }
-
-    vmesa->doPageFlip = GL_FALSE;
-    vmesa->Setup[VIA_DESTREG_DI0] = vmesa->driScreen->front_offset;
-    return GL_TRUE;
-}
-#endif
 
 
 static struct __DriverAPIRec viaAPI = {
-    viaInitDriver,
-    viaDestroyScreen,
-    viaCreateContext,
-    viaDestroyContext,
-    viaCreateBuffer,
-    viaDestroyBuffer,
-    viaSwapBuffers,
-    viaMakeCurrent,
-    viaUnbindContext
+   .InitDriver      = viaInitDriver,
+   .DestroyScreen   = viaDestroyScreen,
+   .CreateContext   = viaCreateContext,
+   .DestroyContext  = viaDestroyContext,
+   .CreateBuffer    = viaCreateBuffer,
+   .DestroyBuffer   = viaDestroyBuffer,
+   .SwapBuffers     = viaSwapBuffers,
+   .MakeCurrent     = viaMakeCurrent,
+   .UnbindContext   = viaUnbindContext,
+   .GetSwapInfo     = getSwapInfo,
+   .GetMSC          = driGetMSC32,
+   .WaitForMSC      = driWaitForMSC32,
+   .WaitForSBC      = NULL,
+   .SwapBuffersMSC  = NULL
 };
 
 
-/*
- * This is the bootstrap function for the driver.
- * The __driCreateScreen name is the symbol that libGL.so fetches.
- * Return:  pointer to a __DRIscreenPrivate.
- */
-#if !defined(DRI_NEW_INTERFACE_ONLY)
-void *__driCreateScreen(Display *dpy, int scrn, __DRIscreen *psc,
-                        int numConfigs, __GLXvisualConfig *config)
-{
-    __DRIscreenPrivate *psp;
-    psp = __driUtilCreateScreen(dpy, scrn, psc, numConfigs, config, &viaAPI);
-    return (void *)psp;
-}
-#endif /* !defined(DRI_NEW_INTERFACE_ONLY) */
-
-
-#ifdef USE_NEW_INTERFACE
 static __GLcontextModes *
 viaFillInModes( unsigned pixel_bits, GLboolean have_back_buffer )
 {
@@ -324,8 +357,8 @@ viaFillInModes( unsigned pixel_bits, GLboolean have_back_buffer )
     /* The 32-bit depth-buffer mode isn't supported yet, so don't actually
      * enable it.
      */
-    static const uint8_t depth_bits_array[4]   = { 0, 16, 24, 32 };
-    static const uint8_t stencil_bits_array[4] = { 0,  0,  8,  0 };
+    static const u_int8_t depth_bits_array[4]   = { 0, 16, 24, 32 };
+    static const u_int8_t stencil_bits_array[4] = { 0,  0,  8,  0 };
     const unsigned depth_buffer_factor = 3;
 
 
@@ -336,14 +369,15 @@ viaFillInModes( unsigned pixel_bits, GLboolean have_back_buffer )
         fb_type = GL_UNSIGNED_SHORT_5_6_5;
     }
     else {
-        fb_format = GL_BGR;
+        fb_format = GL_BGRA;
         fb_type = GL_UNSIGNED_INT_8_8_8_8_REV;
     }
 
-    modes = (*create_context_modes)( num_modes, sizeof( __GLcontextModes ) );
+    modes = (*dri_interface->createContextModes)( num_modes, sizeof( __GLcontextModes ) );
     m = modes;
     if ( ! driFillInModes( & m, fb_format, fb_type,
-			   depth_bits_array, stencil_bits_array, depth_buffer_factor,
+			   depth_bits_array, stencil_bits_array, 
+			   depth_buffer_factor,
 			   back_buffer_modes, back_buffer_factor,
 			   GLX_TRUE_COLOR ) ) {
 	fprintf( stderr, "[%s:%u] Error creating FBConfig!\n",
@@ -352,7 +386,8 @@ viaFillInModes( unsigned pixel_bits, GLboolean have_back_buffer )
     }
 
     if ( ! driFillInModes( & m, fb_format, fb_type,
-			   depth_bits_array, stencil_bits_array, depth_buffer_factor,
+			   depth_bits_array, stencil_bits_array, 
+			   depth_buffer_factor,
 			   back_buffer_modes, back_buffer_factor,
 			   GLX_DIRECT_COLOR ) ) {
 	fprintf( stderr, "[%s:%u] Error creating FBConfig!\n",
@@ -362,7 +397,6 @@ viaFillInModes( unsigned pixel_bits, GLboolean have_back_buffer )
 
     return modes;
 }
-#endif /* USE_NEW_INTERFACE */
 
 
 /**
@@ -375,8 +409,9 @@ viaFillInModes( unsigned pixel_bits, GLboolean have_back_buffer )
  * \return A pointer to a \c __DRIscreenPrivate on success, or \c NULL on 
  *         failure.
  */
-#ifdef USE_NEW_INTERFACE
-void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc,
+PUBLIC
+void * __driCreateNewScreen_20050727( __DRInativeDisplay *dpy, int scrn,
+			     __DRIscreen *psc,
 			     const __GLcontextModes * modes,
 			     const __DRIversion * ddx_version,
 			     const __DRIversion * dri_version,
@@ -384,13 +419,18 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
 			     const __DRIframebuffer * frame_buffer,
 			     drmAddress pSAREA, int fd, 
 			     int internal_api_version,
+			     const __DRIinterfaceMethods * interface,
 			     __GLcontextModes ** driver_modes )
 			     
 {
    __DRIscreenPrivate *psp;
-   static const __DRIversion ddx_expected = { 4, 0, 0 };
+   static const __DRIversion ddx_expected = { VIA_DRIDDX_VERSION_MAJOR,
+                                              VIA_DRIDDX_VERSION_MINOR,
+                                              VIA_DRIDDX_VERSION_PATCH };
    static const __DRIversion dri_expected = { 4, 0, 0 };
-   static const __DRIversion drm_expected = { 1, 1, 0 };
+   static const __DRIversion drm_expected = { 2, 3, 0 };
+
+   dri_interface = interface;
 
    if ( ! driCheckDriDdxDrmVersions2( "Unichrome",
 				      dri_version, & dri_expected,
@@ -404,15 +444,48 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
 				  frame_buffer, pSAREA, fd,
 				  internal_api_version, &viaAPI);
    if ( psp != NULL ) {
-      create_context_modes = (PFNGLXCREATECONTEXTMODES)
-	  glXGetProcAddress( (const GLubyte *) "__glXCreateContextModes" );
-      if ( create_context_modes != NULL ) {
-	 VIADRIPtr dri_priv = (VIADRIPtr) psp->pDevPriv;
-	 *driver_modes = viaFillInModes( dri_priv->bytesPerPixel * 8,
-					 GL_TRUE );
-      }
+      VIADRIPtr dri_priv = (VIADRIPtr) psp->pDevPriv;
+      *driver_modes = viaFillInModes( dri_priv->bytesPerPixel * 8,
+				      GL_TRUE );
+
+      /* Calling driInitExtensions here, with a NULL context pointer, does not actually
+       * enable the extensions.  It just makes sure that all the dispatch offsets for all
+       * the extensions that *might* be enables are known.  This is needed because the
+       * dispatch offsets need to be known when _mesa_context_create is called, but we can't
+       * enable the extensions until we have a context pointer.
+       *
+       * Hello chicken.  Hello egg.  How are you two today?
+       */
+      driInitExtensions( NULL, card_extensions, GL_FALSE );
    }
 
+   fprintf(stderr, "%s - succeeded\n", __FUNCTION__);
    return (void *) psp;
 }
-#endif /* USE_NEW_INTERFACE */
+
+
+/**
+ * Get information about previous buffer swaps.
+ */
+static int
+getSwapInfo( __DRIdrawablePrivate *dPriv, __DRIswapInfo * sInfo )
+{
+   struct via_context *vmesa;
+
+   if ( (dPriv == NULL) || (dPriv->driContextPriv == NULL)
+	|| (dPriv->driContextPriv->driverPrivate == NULL)
+	|| (sInfo == NULL) ) {
+      return -1;
+   }
+
+   vmesa = (struct via_context *) dPriv->driContextPriv->driverPrivate;
+   sInfo->swap_count = vmesa->swap_count;
+   sInfo->swap_ust = vmesa->swap_ust;
+   sInfo->swap_missed_count = vmesa->swap_missed_count;
+
+   sInfo->swap_missed_usage = (sInfo->swap_missed_count != 0)
+       ? driCalculateSwapUsage( dPriv, 0, vmesa->swap_missed_ust )
+       : 0.0;
+
+   return 0;
+}

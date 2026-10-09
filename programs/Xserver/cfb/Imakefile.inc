@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xc/programs/Xserver/cfb/Imakefile.inc,v 1.3 2004/04/26 02:39:58 alanc Exp $
+XCOMM $XdotOrg: xc/programs/Xserver/cfb/Imakefile.inc,v 1.5 2005/07/11 19:13:26 ajax Exp $
 XCOMM $Xorg: Imakefile,v 1.3 2000/08/17 19:48:12 cpqbld Exp $
 
 
@@ -65,6 +65,7 @@ XFMODSRC = cfbmodule.c
 XFMODOBJ = cfbmodule.o
 #endif
 
+XCOMM THIS IS STUPID
 #if !(defined(IHaveModules) && defined(LinkDirectory))
 CFBCMAP = cfbcmap.o
 #endif
@@ -91,7 +92,7 @@ OBJS =   cfbgc.o cfbrrop.o cfbwindow.o \
 	 cfbtileoddC.o cfbtileoddG.o cfbtile32C.o cfbtile32G.o \
 	 cfbfillsp.o cfbsetsp.o cfbscrinit.o cfballpriv.o \
 	 cfbpntwin.o cfbmskbits.o cfbpixmap.o \
-	 $(CFBCMAP) cfbzerarcC.o cfbzerarcX.o cfbzerarcG.o \
+	 cfbcmap.o cfbzerarcC.o cfbzerarcX.o cfbzerarcG.o \
 	 cfbfillarcC.o cfbfillarcG.o \
 	 cfbigblt8.o cfbglblt8.o cfbtegblt.o cfbbstore.o \
 	 cfbpolypnt.o \
@@ -104,10 +105,6 @@ OBJS =   cfbgc.o cfbrrop.o cfbwindow.o \
 
 #if (defined(XFree86Version) || defined(XorgVersion))
 PLATFORMDEFS = -DXFREE86
-#endif
-
-#if BuildLowMem
-  LMDEFINES = -ULOWMEMFTPT
 #endif
 
    INCLUDES = -I$(SERVERSRC)/cfb -I$(SERVERSRC)/mfb -I$(SERVERSRC)/mi \

@@ -41,10 +41,13 @@ LOCAL_LIBRARIES = $(LISPLIBS) $(PRINT_LIBS) XawClientLibs $(DLLIB)
    STRCCMP_OBJS = strcasecmp.o
 STRCCMP_DEFINES = -DNEED_STRCASECMP
 #endif
+#if defined(SCOArchitecture)
+ XTRA_SYS_FLAGS = SCOBuildFlags
+#endif
        SYS_SRCS = $(RP_SRCS) $(STRCCMP_SRCS)
        SYS_OBJS = $(RP_OBJS) $(STRCCMP_OBJS)
-    SYS_DEFINES = $(RP_DEFINES) $(STRCCMP_DEFINES)
-        DEFINES = $(PRINT_DEFS) $(SIGNAL_DEFINES) $(SYS_DEFINES)
+    SYS_DEFINES = $(RP_DEFINES) $(STRCCMP_DEFINES) $(XTRA_SYS_FLAGS)
+        DEFINES = $(PRINT_DEFS) $(SIGNAL_DEFINES) $(SYS_DEFINES) -DXEDIT
        INCLUDES = -I. -Ilisp/re $(MISC_INCLUDES)
 
            SRCS = xedit.c commands.c util.c $(SYS_SRCS) ispell.c options.c \

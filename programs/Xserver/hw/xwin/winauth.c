@@ -1,3 +1,6 @@
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #if defined(XCSECURITY)
 /*
  *Copyright (C) 2003-2004 Harold L Hunt II All Rights Reserved.
@@ -34,8 +37,8 @@
 /* Includes for authorization */
 #include "X11/Xauth.h"
 #define _SECURITY_SERVER
-#include "X11/extensions/security.h"
-#include "X11/extensions/securstr.h"
+#include <X11/extensions/security.h>
+#include <X11/extensions/securstr.h>
 
 
 /*

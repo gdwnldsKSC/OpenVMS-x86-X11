@@ -56,9 +56,12 @@ in this Software without prior written authorization from The Open Group.
  * does initial handshake w/ font server
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include	<stdio.h>
 #include	"FSlibint.h"
-#include 	<X11/Xtrans.h>
+#include 	<X11/Xtrans/Xtrans.h>
 
 int         _FSdebug = 0;
 

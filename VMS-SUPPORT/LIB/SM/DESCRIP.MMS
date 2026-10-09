@@ -1,5 +1,5 @@
 ! Mirrors all seven objects in lib/SM/Imakefile, using the ICE library.
-SM_HEADERS = $(COMMON_HEADERS), $(OUT).INCLUDE.X11]XMD.H, -
+SM_HEADERS = $(COMMON_HEADERS), $(XTRANS_HEADERS), $(OUT).INCLUDE.X11]XMD.H, -
              $(OUT).INCLUDE.X11]XOS_R.H, -
              $(OUT).INCLUDE.X11.ICE]ICE.H, -
              $(OUT).INCLUDE.X11.ICE]ICECONN.H, -

@@ -263,7 +263,7 @@ informations on how to configure wscons into the kernel.
 <p>
 By default NetBSD include the BSD 4.4 kernel security
 feature that disable access to the <tt>/dev/mem</tt> device when in
-multi-users mode. But X.org foundation X servers can take advantage 
+multi-users mode. But X.Org foundation X servers can take advantage 
 (or require)
 linear access to the display memory.
 

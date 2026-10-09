@@ -21,7 +21,7 @@
 	Keith Packard
 -->
 
-<!-- Font directory list configured on @FC_FONTDATE@ -->
+<!-- Font directory list -->
 
 	<dir>@FC_DEFAULT_FONTS@</dir>
 	@FC_FONTPATH@
@@ -73,14 +73,17 @@
  -->
 	<alias>
 		<family>Bitstream Vera Serif</family>
-		<family>Times</family>
 		<family>Times New Roman</family>
+		<family>Thorndale AMT</family>
+		<family>Times</family>
 		<family>Nimbus Roman No9 L</family>
 		<family>Luxi Serif</family>
 		<family>Kochi Mincho</family>
 		<family>AR PL SungtiL GB</family>
 		<family>AR PL Mingti2L Big5</family>
-		<family>Baekmuk Batang</family>			
+		<family>ＭＳ 明朝</family>
+		<family>Baekmuk Batang</family>
+		<family>FreeSerif</family>
 		<default><family>serif</family></default>
 	</alias>
 <!--
@@ -91,13 +94,16 @@
 		<family>Helvetica</family>
 		<family>Arial</family>
 		<family>Verdana</family>
+		<family>Albany AMT</family>
 		<family>Nimbus Sans L</family>
 		<family>Luxi Sans</family>
 		<family>Kochi Gothic</family>
 		<family>AR PL KaitiM GB</family>
 		<family>AR PL KaitiM Big5</family>
+		<family>ＭＳ ゴシック</family>
 		<family>Baekmuk Dotum</family>
 		<family>SimSun</family>
+		<family>FreeSans</family>
 		<default><family>sans-serif</family></default>
 	</alias>
 <!--
@@ -109,8 +115,10 @@
 		<family>Courier New</family>
 		<family>Andale Mono</family>
 		<family>Luxi Mono</family>
+		<family>Cumberland AMT</family>
 		<family>Nimbus Mono L</family>
 		<family>NSimSun</family>
+		<family>FreeMono</family>
 		<default><family>monospace</family></default>
 	</alias>
 <!--
@@ -130,7 +138,40 @@
 			<string>sans-serif</string>
 		</edit>
 	</match>
-	
+
+<!--
+  URW provides metric and shape compatible fonts for these 3 Adobe families.
+  -->
+        <alias>
+	  <family>Times</family>
+	  <accept><family>Nimbus Roman No9 L</family></accept>
+	</alias>
+        <alias>
+	  <family>Helvetica</family>
+	  <accept><family>Nimbus Sans L</family></accept>
+	</alias>
+        <alias>
+	  <family>Courier</family>
+	  <accept><family>Nimbus Mono L</family></accept>
+	</alias>
+
+<!--
+ AMT provides metric and shape compatible fonts for these three web font
+ families.
+ -->
+ 	<alias>
+		<family>Times New Roman</family>
+		<accept><family>Thorndale AMT</family></accept>
+	</alias>
+ 	<alias>
+		<family>Arial</family>
+		<accept><family>Albany AMT</family></accept>
+	</alias>
+ 	<alias>
+		<family>Courier New</family>
+		<accept><family>Cumberland AMT</family></accept>
+	</alias>
+ 
 <!--
   Some Asian fonts misadvertise themselves as monospaced when
   in fact they are dual-spaced (half and full).  This makes
@@ -140,7 +181,7 @@
 		<test name="family"><string>GulimChe</string></test>
 		<edit name="globaladvance"><bool>false</bool></edit>
 	</match>
-	
+
 	<match target="font">
 		<test name="family"><string>DotumChe</string></test>
 		<edit name="globaladvance"><bool>false</bool></edit>
@@ -163,7 +204,7 @@
 	didn't include the right instructions in the 'prep' table. Fix this
 	by disabling hinting manually at smaller sizes (< 8ppem)
  -->
-	
+
 	<match target="font">
 		<test name="family">
 			<string>Bitstream Vera Sans</string>
@@ -175,7 +216,7 @@
 			<bool>false</bool>
 		</edit>
 	</match>
-	
+
 	<match target="font">
 		<test name="family">
 			<string>Bitstream Vera Serif</string>
@@ -187,7 +228,7 @@
 			<bool>false</bool>
 		</edit>
 	</match>
-	
+
 	<match target="font">
 		<test name="family">
 			<string>Bitstream Vera Sans Mono</string>
@@ -199,7 +240,7 @@
 			<bool>false</bool>
 		</edit>
 	</match>
-	
+
 <!--
   Load per-user customization file
 -->
@@ -208,56 +249,9 @@
 <!--
   Load local system customization file
 -->
+	<include ignore_missing="yes">conf.d</include>
 	<include ignore_missing="yes">local.conf</include>
 
-<!--
-  Alias well known font names to available TrueType fonts
--->
-	<alias>
-		<family>Times</family>
-		<accept><family>Times New Roman</family></accept>
-	</alias>
-	<alias>
-		<family>Helvetica</family>
-		<accept><family>Verdana</family></accept>
-	</alias>
-	<alias>
-		<family>Arial</family>
-		<accept><family>Verdana</family></accept>
-	</alias>
-	<alias>
-		<family>Courier</family>
-		<accept><family>Courier New</family></accept>
-	</alias>
-
-<!--
- Check user preference to avoid bitmap fonts and replace
- bitmap face names with equivalent scalable fonts
- -->
-
-	<match target="pattern">
-	        <test name="prefer_outline">
-	                <bool>true</bool>
-	        </test>
-	        <test name="family">
-	                <string>Helvetica</string>
-	        </test>
-	        <edit name="family" mode="prepend" binding="same">
-	                <string>Arial</string>
-	        </edit>
-	</match>
-
-	<match target="pattern">
-	        <test name="prefer_outline">
-	                <bool>true</bool>
-	        </test>
-	        <test name="family">
-	                <string>Times</string>
-	        </test>
-	        <edit name="family" mode="prepend" binding="same">
-	                <string>Times New Roman</string>
-	        </edit>
-	</match>
 <!--
   Provide required aliases for standard names
 -->
@@ -266,13 +260,17 @@
 		<prefer>
 			<family>Bitstream Vera Serif</family>
 			<family>Times New Roman</family>
-			<family>Nimbus Roman No9 L</family>
+			<family>Thorndale AMT</family>
 			<family>Luxi Serif</family>
+			<family>Nimbus Roman No9 L</family>
 			<family>Times</family>
+			<family>Frank Ruehl</family>
 			<family>Kochi Mincho</family>
 			<family>AR PL SungtiL GB</family>
 			<family>AR PL Mingti2L Big5</family>
-			<family>Baekmuk Batang</family>			
+			<family>ＭＳ 明朝</family>
+			<family>Baekmuk Batang</family>
+			<family>FreeSerif</family>
 		</prefer>
 	</alias>
 	<alias>
@@ -280,15 +278,19 @@
 		<prefer>
 			<family>Bitstream Vera Sans</family>
 			<family>Verdana</family>
-			<family>Nimbus Sans L</family>
-			<family>Luxi Sans</family>
 			<family>Arial</family>
+			<family>Albany AMT</family>
+			<family>Luxi Sans</family>
+			<family>Nimbus Sans L</family>
 			<family>Helvetica</family>
+			<family>Nachlieli</family>
 			<family>Kochi Gothic</family>
 			<family>AR PL KaitiM GB</family>
 			<family>AR PL KaitiM Big5</family>
+			<family>ＭＳ ゴシック</family>
 			<family>Baekmuk Dotum</family>
 			<family>SimSun</family>
+			<family>FreeSans</family>
 		</prefer>
 	</alias>
 	<alias>
@@ -297,11 +299,15 @@
 			<family>Bitstream Vera Sans Mono</family>
 			<family>Andale Mono</family>
 			<family>Courier New</family>
+			<family>Cumberland AMT</family>
 			<family>Luxi Mono</family>
 			<family>Nimbus Mono L</family>
+			<family>Courier</family>
+			<family>Miriam Mono</family>
 			<family>Kochi Gothic</family>
 			<family>AR PL KaitiM GB</family>
 			<family>Baekmuk Dotum</family>
+			<family>FreeMono</family>
 		</prefer>
 	</alias>
 
@@ -333,6 +339,26 @@
 		</edit>
 	</match>
 
+<!--
+ Synthetic emboldening for fonts that do not have bold face available
+ -->
+
+	<match target="font">
+		<!-- check to see if the font is just regular -->
+		<test name="weight" compare="less_eq">
+			<int>100</int>
+		</test>
+		<!-- check to see if the pattern requests bold -->
+		<test target="pattern" name="weight" compare="more_eq">
+			<int>200</int>
+		</test>
+		<!-- set the embolden flag -->
+		<edit name="embolden" mode="assign">
+			<bool>true</bool>
+		</edit>
+	</match>
+
+
 	<config>
 <!--
   These are the default Unicode chars that are expected to be blank
@@ -341,11 +367,21 @@
  -->
 		<blank>
 			<int>0x0020</int>	<!-- SPACE -->
-			<int>0x00a0</int>	<!-- NO-BREAK SPACE -->
-			<int>0x00ad</int>	<!-- SOFT HYPHEN -->
-			<int>0x115f</int>	<!-- HANGUL CHOSEONG FILLER -->
+			<int>0x00A0</int>	<!-- NO-BREAK SPACE -->
+			<int>0x00AD</int>	<!-- SOFT HYPHEN -->
+			<int>0x034F</int>	<!-- COMBINING GRAPHEME JOINER -->
+			<int>0x0600</int>	<!-- ARABIC NUMBER SIGN -->
+			<int>0x0601</int>	<!-- ARABIC SIGN SANAH -->
+			<int>0x0602</int>	<!-- ARABIC FOOTNOTE MARKER -->
+			<int>0x0603</int>	<!-- ARABIC SIGN SAFHA -->
+			<int>0x06DD</int>	<!-- ARABIC END OF AYAH -->
+			<int>0x070F</int>	<!-- SYRIAC ABBREVIATION MARK -->
+			<int>0x115F</int>	<!-- HANGUL CHOSEONG FILLER -->
 			<int>0x1160</int>	<!-- HANGUL JUNGSEONG FILLER -->
 			<int>0x1680</int>	<!-- OGHAM SPACE MARK -->
+			<int>0x17B4</int>	<!-- KHMER VOWEL INHERENT AQ -->
+			<int>0x17B5</int>	<!-- KHMER VOWEL INHERENT AA -->
+			<int>0x180E</int>	<!-- MONGOLIAN VOWEL SEPARATOR -->
 			<int>0x2000</int>	<!-- EN QUAD -->
 			<int>0x2001</int>	<!-- EM QUAD -->
 			<int>0x2002</int>	<!-- EN SPACE -->
@@ -356,21 +392,21 @@
 			<int>0x2007</int>	<!-- FIGURE SPACE -->
 			<int>0x2008</int>	<!-- PUNCTUATION SPACE -->
 			<int>0x2009</int>	<!-- THIN SPACE -->
-			<int>0x200a</int>	<!-- HAIR SPACE -->
-			<int>0x200b</int>	<!-- ZERO WIDTH SPACE -->
-			<int>0x200c</int>	<!-- ZERO WIDTH NON-JOINER -->
-			<int>0x200d</int>	<!-- ZERO WIDTH JOINER -->
-			<int>0x200e</int>	<!-- LEFT-TO-RIGHT MARK -->
-			<int>0x200f</int>	<!-- RIGHT-TO-LEFT MARK -->
+			<int>0x200A</int>	<!-- HAIR SPACE -->
+			<int>0x200B</int>	<!-- ZERO WIDTH SPACE -->
+			<int>0x200C</int>	<!-- ZERO WIDTH NON-JOINER -->
+			<int>0x200D</int>	<!-- ZERO WIDTH JOINER -->
+			<int>0x200E</int>	<!-- LEFT-TO-RIGHT MARK -->
+			<int>0x200F</int>	<!-- RIGHT-TO-LEFT MARK -->
 			<int>0x2028</int>	<!-- LINE SEPARATOR -->
 			<int>0x2029</int>	<!-- PARAGRAPH SEPARATOR -->
-			<int>0x202a</int>	<!-- LEFT-TO-RIGHT EMBEDDING -->
-			<int>0x202b</int>	<!-- RIGHT-TO-LEFT EMBEDDING -->
-			<int>0x202c</int>	<!-- POP DIRECTIONAL FORMATTING -->
-			<int>0x202d</int>	<!-- LEFT-TO-RIGHT OVERRIDE -->
-			<int>0x202e</int>	<!-- RIGHT-TO-LEFT OVERRIDE -->
-			<int>0x202f</int>	<!-- NARROW NO-BREAK SPACE -->
-			<int>0x205f</int>	<!-- MEDIUM MATHEMATICAL SPACE -->
+			<int>0x202A</int>	<!-- LEFT-TO-RIGHT EMBEDDING -->
+			<int>0x202B</int>	<!-- RIGHT-TO-LEFT EMBEDDING -->
+			<int>0x202C</int>	<!-- POP DIRECTIONAL FORMATTING -->
+			<int>0x202D</int>	<!-- LEFT-TO-RIGHT OVERRIDE -->
+			<int>0x202E</int>	<!-- RIGHT-TO-LEFT OVERRIDE -->
+			<int>0x202F</int>	<!-- NARROW NO-BREAK SPACE -->
+			<int>0x205F</int>	<!-- MEDIUM MATHEMATICAL SPACE -->
 			<int>0x2060</int>	<!-- WORD JOINER -->
 			<int>0x2061</int>	<!-- FUNCTION APPLICATION -->
 			<int>0x2062</int>	<!-- INVISIBLE TIMES -->
@@ -383,11 +419,11 @@
 			<int>0x206F</int>	<!-- NOMINAL DIGIT SHAPES -->
 			<int>0x3000</int>	<!-- IDEOGRAPHIC SPACE -->
 			<int>0x3164</int>	<!-- HANGUL FILLER -->
-			<int>0xfeff</int>	<!-- ZERO WIDTH NO-BREAK SPACE -->
-			<int>0xffa0</int>	<!-- HALFWIDTH HANGUL FILLER -->
-			<int>0xfff9</int>	<!-- INTERLINEAR ANNOTATION ANCHOR -->
-			<int>0xfffa</int>	<!-- INTERLINEAR ANNOTATION SEPARATOR -->
-			<int>0xfffb</int>	<!-- INTERLINEAR ANNOTATION TERMINATOR -->
+			<int>0xFEFF</int>	<!-- ZERO WIDTH NO-BREAK SPACE -->
+			<int>0xFFA0</int>	<!-- HALFWIDTH HANGUL FILLER -->
+			<int>0xFFF9</int>	<!-- INTERLINEAR ANNOTATION ANCHOR -->
+			<int>0xFFFA</int>	<!-- INTERLINEAR ANNOTATION SEPARATOR -->
+			<int>0xFFFB</int>	<!-- INTERLINEAR ANNOTATION TERMINATOR -->
 		</blank>
 <!--
   Rescan configuration every 30 seconds when FcFontSetList is called

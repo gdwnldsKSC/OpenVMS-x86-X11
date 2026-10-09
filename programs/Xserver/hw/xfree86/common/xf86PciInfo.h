@@ -46,7 +46,6 @@
  * to ../etc/extrapci.ids.
  */
 
-
 #ifndef _XF86_PCIINFO_H
 #define _XF86_PCIINFO_H
 
@@ -140,6 +139,7 @@
 #define PCI_CHIP_RV360_AR               0x4152
 #define PCI_CHIP_RV350_AS               0x4153
 #define PCI_CHIP_RV350_AT               0x4154
+#define PCI_CHIP_RV350_4155             0x4155
 #define PCI_CHIP_RV350_AV               0x4156
 #define PCI_CHIP_MACH32			0x4158
 #define PCI_CHIP_RS250_4237		0x4237
@@ -180,7 +180,12 @@
 #define PCI_CHIP_R420_JL                0x4A4C
 #define PCI_CHIP_R420_JM                0x4A4D
 #define PCI_CHIP_R420_JN                0x4A4E
+#define PCI_CHIP_R420_4A4F              0x4A4F
 #define PCI_CHIP_R420_JP                0x4A50
+#define PCI_CHIP_R481_4B49              0x4B49
+#define PCI_CHIP_R481_4B4A              0x4B4A
+#define PCI_CHIP_R481_4B4B              0x4B4B
+#define PCI_CHIP_R481_4B4C              0x4B4C
 #define PCI_CHIP_MACH64LB		0x4C42
 #define PCI_CHIP_MACH64LD		0x4C44
 #define PCI_CHIP_RAGE128LE		0x4C45
@@ -258,6 +263,7 @@
 #define PCI_CHIP_RV200_QX		0x5158
 #define PCI_CHIP_RV100_QY		0x5159
 #define PCI_CHIP_RV100_QZ		0x515A
+#define PCI_CHIP_RN50_515E		0x515E
 #define PCI_CHIP_RAGE128RE		0x5245
 #define PCI_CHIP_RAGE128RF		0x5246
 #define PCI_CHIP_RAGE128RG		0x5247
@@ -289,9 +295,18 @@
 #define PCI_CHIP_R423_UI                0x5549
 #define PCI_CHIP_R423_UJ                0x554A
 #define PCI_CHIP_R423_UK                0x554B
+#define PCI_CHIP_R430_554C              0x554C
+#define PCI_CHIP_R430_554D              0x554D
+#define PCI_CHIP_R430_554E              0x554E
+#define PCI_CHIP_R430_554F              0x554F
+#define PCI_CHIP_R423_5550              0x5550
 #define PCI_CHIP_R423_UQ                0x5551
 #define PCI_CHIP_R423_UR                0x5552
 #define PCI_CHIP_R423_UT                0x5554
+#define PCI_CHIP_RV410_564A             0x564A
+#define PCI_CHIP_RV410_564B             0x564B
+#define PCI_CHIP_RV410_5652             0x5652
+#define PCI_CHIP_RV410_5653             0x5653
 #define PCI_CHIP_MACH64VT		0x5654
 #define PCI_CHIP_MACH64VU		0x5655
 #define PCI_CHIP_MACH64VV		0x5656
@@ -299,6 +314,20 @@
 #define PCI_CHIP_RS300_5835		0x5835
 #define PCI_CHIP_RS300_5836		0x5836
 #define PCI_CHIP_RS300_5837		0x5837
+#define PCI_CHIP_RS480_5954             0x5954
+#define PCI_CHIP_RS480_5955             0x5955
+#define PCI_CHIP_RV280_5960		0x5960
+#define PCI_CHIP_RV280_5961		0x5961
+#define PCI_CHIP_RV280_5962		0x5962
+#define PCI_CHIP_RV280_5964		0x5964
+#define PCI_CHIP_RV280_5965 		0x5965
+#define PCI_CHIP_RN50_5969		0x5969
+#define PCI_CHIP_RS482_5974             0x5974
+#define PCI_CHIP_RS482_5975             0x5975
+#define PCI_CHIP_RS400_5A41             0x5A41
+#define PCI_CHIP_RS400_5A42             0x5A42
+#define PCI_CHIP_RC410_5A61             0x5A61
+#define PCI_CHIP_RC410_5A62             0x5A62
 #define PCI_CHIP_RV370_5B60             0x5B60
 #define PCI_CHIP_RV370_5B61             0x5B61
 #define PCI_CHIP_RV370_5B62             0x5B62
@@ -307,13 +336,24 @@
 #define PCI_CHIP_RV370_5B65             0x5B65
 #define PCI_CHIP_RV370_5B66             0x5B66
 #define PCI_CHIP_RV370_5B67             0x5B67
-#define PCI_CHIP_RV280_5960		0x5960
-#define PCI_CHIP_RV280_5961		0x5961
-#define PCI_CHIP_RV280_5962		0x5962
-#define PCI_CHIP_RV280_5964		0x5964
 #define PCI_CHIP_RV280_5C61		0x5C61
 #define PCI_CHIP_RV280_5C63		0x5C63
+#define PCI_CHIP_R430_5D48              0x5D48
+#define PCI_CHIP_R430_5D49              0x5D49
+#define PCI_CHIP_R430_5D4A              0x5D4A
+#define PCI_CHIP_R480_5D4C              0x5D4C
+#define PCI_CHIP_R480_5D4D              0x5D4D
+#define PCI_CHIP_R480_5D4E              0x5D4E
+#define PCI_CHIP_R480_5D4F              0x5D4F
+#define PCI_CHIP_R480_5D50              0x5D50
+#define PCI_CHIP_R480_5D52              0x5D52
 #define PCI_CHIP_R423_5D57              0x5D57
+#define PCI_CHIP_RV410_5E48             0x5E48
+#define PCI_CHIP_RV410_5E4A             0x5E4A
+#define PCI_CHIP_RV410_5E4B             0x5E4B
+#define PCI_CHIP_RV410_5E4C             0x5E4C
+#define PCI_CHIP_RV410_5E4D             0x5E4D
+#define PCI_CHIP_RV410_5E4F             0x5E4F
 #define PCI_CHIP_RS350_7834             0x7834
 #define PCI_CHIP_RS350_7835             0x7835
 
@@ -462,6 +502,9 @@
 #define PCI_CHIP_ZX1_IOC		0x122A
 #define PCI_CHIP_ZX1_LBA		0x122E	/* a.k.a. Mercury */
 #define PCI_CHIP_ZX1_AGP8		0x12B4	/* a.k.a. QuickSilver */
+#define PCI_CHIP_ZX2_LBA		0x12EE
+#define PCI_CHIP_ZX2_SBA		0x4030
+#define PCI_CHIP_ZX2_IOC		0x4031
 
 /* SGS */
 #define PCI_CHIP_STG2000		0x0008
@@ -596,21 +639,34 @@
 #define PCI_CHIP_TRIO64V2_DXGX		0x8901
 #define PCI_CHIP_PLATO_PX		0x8902
 #define PCI_CHIP_Trio3D			0x8904
-#define PCI_CHIP_Trio3D_2X		0x8A13
 #define PCI_CHIP_VIRGE_DXGX		0x8A01
 #define PCI_CHIP_VIRGE_GX2		0x8A10
+#define PCI_CHIP_Trio3D_2X		0x8A13
 #define PCI_CHIP_SAVAGE3D		0x8A20
 #define PCI_CHIP_SAVAGE3D_MV		0x8A21
 #define PCI_CHIP_SAVAGE4		0x8A22
-#define PCI_CHIP_VIRGE_MX		0x8C01
-#define PCI_CHIP_VIRGE_MXPLUS		0x8C01
-#define PCI_CHIP_VIRGE_MXP		0x8C03
 #define PCI_CHIP_PROSAVAGE_PM		0x8A25
 #define PCI_CHIP_PROSAVAGE_KM		0x8A26
+#define PCI_CHIP_VIRGE_MX		0x8C01
+#define PCI_CHIP_VIRGE_MXPLUS		0x8C02
+#define PCI_CHIP_VIRGE_MXP		0x8C03
 #define PCI_CHIP_SAVAGE_MX_MV		0x8C10
 #define PCI_CHIP_SAVAGE_MX		0x8C11
 #define PCI_CHIP_SAVAGE_IX_MV		0x8C12
 #define PCI_CHIP_SAVAGE_IX		0x8C13
+#define PCI_CHIP_SUPSAV_MX128		0x8C22
+#define PCI_CHIP_SUPSAV_MX64		0x8C24
+#define PCI_CHIP_SUPSAV_MX64C		0x8C26
+#define PCI_CHIP_SUPSAV_IX128SDR	0x8C2A
+#define PCI_CHIP_SUPSAV_IX128DDR	0x8C2B
+#define PCI_CHIP_SUPSAV_IX64SDR		0x8C2C
+#define PCI_CHIP_SUPSAV_IX64DDR		0x8C2D
+#define PCI_CHIP_SUPSAV_IXCSDR		0x8C2E
+#define PCI_CHIP_SUPSAV_IXCDDR		0x8C2F
+#define PCI_CHIP_S3TWISTER_P		0x8D01
+#define PCI_CHIP_S3TWISTER_K		0x8D02
+#define PCI_CHIP_PROSAVAGE_DDR		0x8D03
+#define PCI_CHIP_PROSAVAGE_DDRK		0x8D04
 #define PCI_CHIP_SAVAGE2000		0x9102
 
 /* ARK Logic */

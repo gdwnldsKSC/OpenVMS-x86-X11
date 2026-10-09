@@ -1,37 +1,28 @@
 #!/bin/sh
 
 # Make a shared library.
-# Basically do a switch/case depending on the OS and make a shared (or static)
-# library conforming to that OS.
+# This script should be useful for projects other than Mesa.
+# Improvements/fixes are welcome.
 
 
-# Usage:
-#   mklib [options] objects ...
-# Options:
-#   -o LIBRARY    specifies the name of resulting library
-#                 ("-o GL" for example, might result in "libGL.so" being made)
-#   -major N      specifies major version number (default is 1)
-#   -minor N      specifies minor version number (default is 0)
-#   -patch N      specifies patch version number (default is 0)
-#   -lLIBRARY     specifies a dependency on LIBRARY
-#   -LDIR         search in DIR for library dependencies
-#   -cplusplus    link with C++ runtime
-#   -static       make a static library (default is dynamic/shared)
-#   -install DIR  move resulting library file(s) to DIR
-#   -arch ARCH    override using `uname` to determine architecture
-#   -archopt OPT  specify an extra achitecture-specific option OPT
-#   -noprefix     don't prefix library name with "lib" or any suffix
+# Copyright (C) 1999-2005  Brian Paul   All Rights Reserved.
 #
-# The library name should just be "GL" or "GLU", etc.  The 'lib' prefix
-# will be added here if needed, as well as the ".so" or ".a" suffix,
-# etc (unless the -noprefix option is used).
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
 #
-# objects should be:  foo.o bar.o etc.o
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
 #
-# Environment variables recognized:
-#   CC   C compiler command
-#   CXX  C++ compiler command
-#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# BRIAN PAUL BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+# AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 #
@@ -42,12 +33,14 @@ MAJOR=1
 MINOR=0
 PATCH=""
 DEPS=""
+LINK=""
 CPLUSPLUS=0
 STATIC=0
 INSTALLDIR="."
 ARCH="auto"
 ARCHOPT=""
 NOPREFIX=0
+EXPORTS=""
 
 
 #
@@ -56,24 +49,92 @@ NOPREFIX=0
 while true
 do
     case $1 in
-	'-o')         shift 1; LIBNAME=$1;;
-	'-major')     shift 1; MAJOR=$1;;
-	'-minor')     shift 1; MINOR=$1;;
-	'-patch')     shift 1; PATCH=$1;;
-	-l*)          DEPS="$DEPS $1";;
-	-L*)          DEPS="$DEPS $1";;
-	'-cplusplus') CPLUSPLUS=1;;
-	'-static')    STATIC=1;;
-	'-install')   shift 1; INSTALLDIR=$1;;
-	'-arch')      shift 1; ARCH=$1;;
-	'-archopt')   shift 1; ARCHOPT=$1;;
-	'-noprefix')  NOPREFIX=1;;
-	-*)           echo "mklib: Unknown option: " $1 ; exit 1;;
-	*) break
+	'-h' | '--help')
+	    echo 'Usage: mklib [options] objects'
+	    echo 'Create a shared library from object files.'
+	    echo '  -o LIBRARY    specifies the name of the resulting library, without'
+	    echo '                the leading "lib" or any suffix.'
+	    echo '                (eg: "-o GL" might result in "libGL.so" being made)'
+	    echo '  -major N      specifies major version number (default is 1)'
+	    echo '  -minor N      specifies minor version number (default is 0)'
+	    echo '  -patch N      specifies patch version number (default is 0)'
+	    echo '  -lLIBRARY     specifies a dependency on LIBRARY'
+	    echo '  -LDIR         search in DIR for library dependencies'
+	    echo '  -linker L     explicity specify the linker program to use (eg: gcc, g++)'
+	    echo '                Not observed on all systems at this time.'
+	    echo '  -cplusplus    link with C++ runtime'
+	    echo '  -static       make a static library (default is dynamic/shared)'
+	    echo '  -install DIR  put resulting library file(s) in DIR'
+	    echo '  -arch ARCH    override using `uname` to determine host system'
+	    echo '  -archopt OPT  specify an extra achitecture-specific option OPT'
+	    echo "  -noprefix     don't prefix library name with 'lib' nor add any suffix"
+	    echo '  -exports FILE only export the symbols listed in FILE'
+	    echo '  -h, --help    display this information and exit'
+	    exit 1
+	    ;;
+	'-o')
+	    shift 1;
+	    LIBNAME=$1
+	    ;;
+	'-major')
+	    shift 1;
+	    MAJOR=$1
+	    ;;
+	'-minor')
+	    shift 1;
+	    MINOR=$1
+	    ;;
+	'-patch')
+	    shift 1;
+	    PATCH=$1
+	    ;;
+	'-linker')
+	    shift 1;
+	    LINK=$1
+	    ;;
+	-l*)
+	    DEPS="$DEPS $1"
+	    ;;
+	-L*)
+	    DEPS="$DEPS $1"
+	    ;;
+	'-cplusplus')
+	    CPLUSPLUS=1
+	    ;;
+	'-static')
+	    STATIC=1
+	    ;;
+	'-install')
+	    shift 1;
+	    INSTALLDIR=$1
+	    ;;
+	'-arch')
+	    shift 1;
+	    ARCH=$1
+	    ;;
+	'-archopt')
+	    shift 1;
+	    ARCHOPT=$1
+	    ;;
+	'-noprefix')
+	    NOPREFIX=1
+	    ;;
+	'-exports')
+	    shift 1;
+	    EXPORTS=$1
+	    ;;
+	-*)
+	    echo "mklib: Unknown option: " $1 ;
+	    exit 1
+	    ;;
+	*)
+	    # This should be the first object file, stop parsing
+	    break
     esac
     shift 1
 done
 OBJECTS=$@
+
 
 if [ ${ARCH} = "auto" ] ; then
     ARCH=`uname`
@@ -104,6 +165,7 @@ if [  ]  ; then
     echo MINOR is $MINOR
     echo PATCH is $PATCH
     echo DEPS are $DEPS
+    echo "EXPORTS in" $EXPORTS
     echo "-----------------"
 fi
 
@@ -114,14 +176,15 @@ fi
 case $ARCH in
 
     'Linux' | 'OpenBSD')
-	# GCC-based environment
+	# we assume gcc
 
-	# Set default compilers if env vars not set
-	if [ "x$CXX" = "x" ] ; then
-	    CXX=g++
-	fi
-	if [ "x$CC" = "x" ] ; then
-	    CC=gcc
+	if [ "x$LINK" = "x" ] ; then
+	    # -linker was not specified so set default link command now
+            if [ $CPLUSPLUS = 1 ] ; then
+                LINK=g++
+            else
+                LINK=gcc
+            fi
 	fi
 
 	if [ $NOPREFIX = 1 ] ; then
@@ -129,13 +192,16 @@ case $ARCH in
 	    echo "mklib: Making" $ARCH "shared library: " ${LIBNAME}
 	    #OPTS="-shared -Wl,-soname,${LIBNAME}"  # soname???
 	    OPTS="-shared"
-            if [ $CPLUSPLUS = 1 ] ; then
-                LINK=$CXX
-            else
-                LINK=$CC
-            fi
-            rm -f ${LIBNAME}
 
+	    # Check if objects are 32-bit and we're running in 64-bit
+	    # environment.  If so, pass -m32 flag to linker.
+	    set ${OBJECTS}
+	    ABI32=`file $1 | grep 32-bit`
+	    if [ "${ABI32}" -a `uname -m` = "x86_64" ] ; then
+		OPTS="-m32 ${OPTS}"
+	    fi
+
+            rm -f ${LIBNAME}
             # make lib
             ${LINK} ${OPTS} -o ${LIBNAME} ${OBJECTS} ${DEPS}
             # finish up
@@ -157,6 +223,27 @@ case $ARCH in
 	    else
 		OPTS="-shared -Wl,-soname,${LIBNAME}.so.${MAJOR}"
 	    fi
+	    if [ $EXPORTS ] ; then
+		#OPTS="${OPTS} -Xlinker --retain-symbols-file ${EXPORTS}"
+		# Make the 'exptmp' file for --version-script option
+		echo "VERSION_${MAJOR}.${MINOR} {" > exptmp
+		echo "global:" >> exptmp
+		sed 's/$/;/' ${EXPORTS} >> exptmp
+		echo "local:" >> exptmp
+		echo "*;" >> exptmp
+		echo "};" >> exptmp
+		OPTS="${OPTS} -Xlinker --version-script=exptmp"
+		# exptmp is removed below
+	    fi
+
+	    # Check if objects are 32-bit and we're running in 64-bit
+	    # environment.  If so, pass -m32 flag to linker.
+	    set ${OBJECTS}
+	    ABI32=`file $1 | grep 32-bit`
+	    if [ "${ABI32}" -a `uname -m` = "x86_64" ] ; then
+		OPTS="-m32 ${OPTS}"
+	    fi
+
 	    if [ x${PATCH} = "x" ] ; then
 		VERSION="${MAJOR}.${MINOR}"
 	    else
@@ -164,12 +251,6 @@ case $ARCH in
 	    fi
 
             echo "mklib: Making" $ARCH "shared library: " ${LIBNAME}.so.${VERSION}
-
-            if [ $CPLUSPLUS = 1 ] ; then
-                LINK=$CXX
-            else
-                LINK=$CC
-            fi
 
             # rm any old libs
             rm -f ${LIBNAME}.so.${VERSION}
@@ -183,6 +264,7 @@ case $ARCH in
             ln -s ${LIBNAME}.so.${MAJOR} ${LIBNAME}.so
             # finish up
             FINAL_LIBS="${LIBNAME}.so.${VERSION} ${LIBNAME}.so.${MAJOR} ${LIBNAME}.so"
+#	    rm -f exptmp
         fi
 	;;
 
@@ -198,41 +280,25 @@ case $ARCH in
 	    echo "mklib: Making SunOS shared library: " ${LIBNAME}
 	    # XXX OPTS for gcc should be -shared, but that doesn't work.
 	    # Using -G does work though.
-	    if [ $CPLUSPLUS = 1 ] ; then
-		# determine linker and options for C++ code
-		if [ "x${CXX}" = "xg++" ] ; then
-		    # use g++
-		    LINK="g++"
-		    OPTS="-G"
-		elif [ "x${CXX}" = "xCC" ] ; then
-		    # use Sun CC
-		    LINK="CC"
-		    OPTS="-G"
-		elif [ "x${CXX}" = "xc++" ] ; then
-		    # use Sun c++
-		    LINK="c++"
-		    OPTS="-G"
-		elif [ `which c++` ] ; then
-		    # use Sun c++
-		    LINK="c++"
-		    OPTS="-G"
-		elif [ `type g++` ] ; then
-		    # use g++
-		    LINK="g++"
-		    OPTS="-G"
+	    OPTS="-G"
+	    if [ "x$LINK" = "x" ] ; then
+		# -linker was not specified, choose default linker now
+		if [ $CPLUSPLUS = 1 ] ; then
+		    # determine linker and options for C++ code
+		    if [ `which c++` ] ; then
+			# use Sun c++
+			LINK="c++"
+		    elif [ `type g++` ] ; then
+			# use g++
+			LINK="g++"
+		    else
+			echo "mklib: warning: can't find C++ comiler, trying CC."
+			LINK="CC"
+		    fi
 		else
-		    echo "mklib: warning: can't find C++ comiler, trying CC."
-		    LINK="CC"
-		    OPTS="-G"
+		    # use native Sun linker for C code
+		    LINK="ld"
 		fi
-	    elif [ "x${CC}" = "xgcc" ] ; then
-		# use gcc for linking
-		LINK="gcc"
-		OPTS="-G"
-	    else
-		# use native Sun linker
-		LINK="ld"
-		OPTS="-G"
 	    fi
 	    echo "mklib: linker is" ${LINK} ${OPTS}
 	    rm -f ${LIBNAME}.${MAJOR} ${LIBNAME}
@@ -243,11 +309,23 @@ case $ARCH in
 	;;
 
     'FreeBSD')
+	# we assume gcc
+
+	if [ "x$LINK" = "x" ] ; then
+	    # -linker was not specified so set default link command now
+            if [ $CPLUSPLUS = 1 ] ; then
+                LINK=g++
+            else
+                LINK=gcc
+            fi
+	fi
+
 	if [ $NOPREFIX = 1 ] ; then
 	    # No "lib" or ".so" part
 	    echo "mklib: Making FreeBSD shared library: " ${LIBNAME}
+	    OPTS="-shared"
 	    rm -f ${LIBNAME}
-	    ld -Bshareable -o ${LIBNAME} ${OBJECTS}
+	    ${LINK} ${OPTS} -o ${LIBNAME} ${OBJECTS} ${DEPS}
 	    FINAL_LIBS=${LIBNAME}
         elif [ $STATIC = 1 ] ; then
 	    STLIB="lib${LIBNAME}.a"
@@ -257,12 +335,13 @@ case $ARCH in
 	    ranlib ${STLIB}
 	    FINAL_LIBS=${STLIB}
 	else
-	    SHLIB="lib${LIBNAME}.so.${MAJOR}.${MINOR}"
+	    SHLIB="lib${LIBNAME}.so.${MAJOR}"
+	    OPTS="-shared -Wl,-soname,${SHLIB}"
 	    echo "mklib: Making FreeBSD shared library: " ${SHLIB}
 	    rm -f ${SHLIB}
-	    ld -Bshareable -o ${SHLIB} ${OBJECTS}
-	    # XXX make lib${LIBNAME}.so.${MAJOR} symlink?
-	    FINAL_LIBS=${SHLIB}
+	    ${LINK} ${OPTS} -o ${SHLIB} ${OBJECTS} ${DEPS}
+	    ln -sf ${SHLIB} "lib${LIBNAME}.so"
+	    FINAL_LIBS="${SHLIB} lib${LIBNAME}.so"
 	fi
 	;;
 
@@ -291,6 +370,8 @@ case $ARCH in
 	    FINAL_LIBS=${LIBNAME}
 	else
 	    LIBNAME="lib${LIBNAME}.so"  # prefix with "lib", suffix with ".so"
+	    # XXX we should run 'file' on the first object file to determine
+	    # if it's o32, n32 or 64 format, as we do for Linux above.
 	    if [ $ARCHOPT = "64" ] ; then
 		# 64-bit ABI
 		OPTS="-64 -shared -all"
@@ -339,53 +420,27 @@ case $ARCH in
 	fi
 	;;
 
-    'AIX')
-        if [ $STATIC = 1 ] ; then
-            LIBNAME="lib${LIBNAME}.a"
-            echo "mklib: Making AIX static library: " ${LIBNAME}
-            ar -ruv ${LIBNAME} ${OBJECTS}
-            FINAL_LIBS=${LIBNAME}
-        else
-	    EXPFILE="lib${LIBNAME}.exp"
-	    OFILE=shr.o  #Want to be consistent with the IBM libGL.a
-	    LIBNAME="lib${LIBNAME}.a"  # shared objects are still stored in the .a libraries
-	    OPTS="-bE:${EXPFILE} -bM:SRE -bnoentry"
-	    rm -f ${EXPFILE} ${OFILE}
-	    NM="/bin/nm -eC"
-	    echo "#! /usr/lib/${LIBNAME}" > ${EXPFILE}
-	    ${NM} ${OBJECTS} | awk '{
-	    if ((($2 == "T") || ($2 == "D") || ($2 == "B")) \
-	    && ( substr($1,1,1) != ".")) {
-		    if (substr ($1, 1, 7) != "__sinit" &&
-			    substr ($1, 1, 7) != "__sterm") {
-			    if (substr ($1, 1, 5) == "__tf1")
-				print (substr ($1, 7))
-			    else if (substr ($1, 1, 5) == "__tf9")
-				print (substr ($1, 15))
-			    else
-				print $1
-			}
-		}
-	    }' | sort -u >> ${EXPFILE}
-	    cc ${OPTS} -o ${OFILE} ${OBJECTS} ${DEPS}
-	    ar -r ${LIBNAME} ${OFILE}
-            FINAL_LIBS="${LIBNAME}"
-        fi
-        ;;
+    'AIX' | 'AIX64')
+	if [ $ARCH = "AIX64" ] ; then
+	    X64="-X64"
+	fi
 
-    'AIX64')
         if [ $STATIC = 1 ] ; then
             LIBNAME="lib${LIBNAME}.a"
             echo "mklib: Making AIX static library: " ${LIBNAME}
-            ar -X64 -ruv ${LIBNAME} ${OBJECTS}
+            ar -ruv ${X64} ${LIBNAME} ${OBJECTS}
             FINAL_LIBS=${LIBNAME}
         else
 	    EXPFILE="lib${LIBNAME}.exp"
 	    OFILE=shr.o  #Want to be consistent with the IBM libGL.a
 	    LIBNAME="lib${LIBNAME}.a"  # shared objects are still stored in the .a libraries
-	    OPTS="-bE:${EXPFILE} -bM:SRE -bnoentry -q64"
+	    if [ $ARCH = "AIX64" ] ; then
+		OPTS="-bE:${EXPFILE} -bM:SRE -bnoentry -q64"
+	    else
+		OPTS="-bE:${EXPFILE} -bM:SRE -bnoentry"
+	    fi
 	    rm -f ${EXPFILE} ${OFILE}
-	    NM="/bin/nm -eC -X64"
+	    NM="/bin/nm -eC ${X64}"
 	    echo "#! /usr/lib/${LIBNAME}" > ${EXPFILE}
 	    ${NM} ${OBJECTS} | awk '{
 	    if ((($2 == "T") || ($2 == "D") || ($2 == "B")) \
@@ -402,7 +457,7 @@ case $ARCH in
 		}
 	    }' | sort -u >> ${EXPFILE}
 	    cc ${OPTS} -o ${OFILE} ${OBJECTS} ${DEPS}
-	    ar -X64 -r ${LIBNAME} ${OFILE}
+	    ar ${X64} -r ${LIBNAME} ${OFILE}
             FINAL_LIBS="${LIBNAME}"
         fi
         ;;
@@ -425,8 +480,15 @@ case $ARCH in
 	    VERSION="${MAJOR}.${MINOR}"
 	    LIBNAME="lib${LIBNAME}.so"
 	    echo "mklib: Making OSF/1 shared library: " ${LIBNAME}
+	    if [ "x$LINK" = "x" ] ; then
+		if [ $CPLUSPLUS = 1 ] ; then
+		    LINK=cxx
+		else
+		    LINK=cc
+		fi
+	    fi
 	    rm -f ${LIBNAME}.${VERSION}
-	    ld -o ${LIBNAME}.${VERSION} -shared -no_archive -set_version ${VERSION} -soname ${LIBNAME}.${VERSION} -expect_unresolved \* -all ${OBJECTS} ${DEPS}
+	    ${LINK} -o ${LIBNAME}.${VERSION} -shared -set_version ${VERSION} -soname ${LIBNAME}.${VERSION} -expect_unresolved \* -all ${OBJECTS} ${DEPS}
 	    ln -sf ${LIBNAME}.${VERSION} ${LIBNAME}
 	    FINAL_LIBS="${LIBNAME} ${LIBNAME}.${VERSION}"
 	fi
@@ -441,9 +503,9 @@ case $ARCH in
             ${LINK} ${OPTS} ${LIBNAME} ${OBJECTS}
             FINAL_LIBS=${LIBNAME}
         else
-            LIBNAME="${LIBNAME}.dylib"
+            LIBNAME="lib${LIBNAME}.dylib"
             echo "mklib: Making Darwin shared library: " ${LIBNAME}
-            FLAGS="-dynamiclib -multiply_defined suppress"
+            FLAGS="-dynamiclib -multiply_defined suppress -current_version ${MAJOR}.${MINOR}.0 -compatibility_version ${MAJOR}.${MINOR}.0"
 	    if [ $CPLUSPLUS = 1 ] ; then
 		LINK="g++"
 	    else
@@ -472,6 +534,7 @@ case $ARCH in
 	    echo "mklib: Making BeOS shared library: " ${LIBNAME}
 	    gcc -nostart -Xlinker "-soname=${LIBNAME}" -L/Be/develop/lib/x86 -lbe ${DEPS} ${OBJECTS} -o "${LIBNAME}"
 	    mimeset -f "${LIBNAME}"
+	    # XXX remove the Mesa3D stuff here since mklib isn't mesa-specific.
 	    setversion "${LIBNAME}" -app ${MAJOR} ${MINOR} ${PATCH} -short "Powered by Mesa3D!" -long "Powered by Mesa3D!"
 	fi
 	FINAL_LIBS=${LIBNAME}
@@ -493,6 +556,8 @@ case $ARCH in
 
     'icc')
 	# Intel C compiler
+	# This should get merged into the Linux code, above, since this isn't
+	# really a different architecture.
 	LIBNAME="lib${LIBNAME}"     # prefix with "lib"
 
         if [ $STATIC = 1 ] ; then
@@ -610,7 +675,7 @@ case $ARCH in
 	    ar rv ${LIBNAME} ${OBJECTS}
 	    FINAL_LIBS="${LIBNAME}"
 	else
-	    LIBNAME="lib${LIBNAME}.so"  # prefix with "lib"
+	    LIBNAME="lib${LIBNAME}.so"  # prefix with "lib", suffix with ".so"
 	    echo "mklib: Making shared library for example arch: " ${LIBNAME}
 	    ld -o ${LIBNAME} ${OBJECTS} ${DEPS}
 	    FINAL_LIBS="${LIBNAME}"

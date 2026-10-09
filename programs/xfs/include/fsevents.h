@@ -54,7 +54,7 @@ in this Software without prior written authorization from the X Consortium.
 #define _EVENTS_H_
 
 #include	<misc.h>
-#include	"FS.h"
+#include	<X11/fonts/FS.h>
 
 extern int ProcGetEventMask(ClientPtr client);
 extern int ProcSetEventMask(ClientPtr client);

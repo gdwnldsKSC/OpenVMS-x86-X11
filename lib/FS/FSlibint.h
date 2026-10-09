@@ -55,7 +55,10 @@ in this Software without prior written authorization from The Open Group.
 /*
  * FSlib internal decls
  */
+#include <X11/Xos.h>
 #include <stdio.h>
+
+/* This is all probably superfluous given Xos.h above */
 #ifdef USG
 #ifndef __TYPES__
 #include <sys/types.h>			/* forgot to protect it... */
@@ -72,7 +75,6 @@ in this Software without prior written authorization from The Open Group.
 #endif /* USG */
 
 #include	"FSlib.h"
-#include	"FSproto.h"
 #include	"FSlibos.h"
 #include	<errno.h>
 #include	<stddef.h>

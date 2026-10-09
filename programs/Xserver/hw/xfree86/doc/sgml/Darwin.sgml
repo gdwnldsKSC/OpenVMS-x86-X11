@@ -3,12 +3,12 @@
 ]>
 
 <article>
-<title>X.org X on Darwin and Mac OS X
+<title>X.Org X on Darwin and Mac OS X
 <author>Torrey T. Lyons
 <date>15 December 2003
 
 <ident>
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/sgml/Darwin.sgml,v 1.2 2004/04/23 19:23:59 eich Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/sgml/Darwin.sgml,v 1.3 2005/12/19 07:56:55 alanc Exp $
 </ident>
 
 <toc>

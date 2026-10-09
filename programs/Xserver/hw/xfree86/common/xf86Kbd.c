@@ -50,12 +50,16 @@
 
 /* $XConsortium: xf86Kbd.c /main/10 1996/02/21 17:38:32 kaleb $ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifdef __UNIXOS2__
 #define I_NEED_OS2_H
 #endif
 
-#include "X.h"
-#include "Xmd.h"
+#include <X11/X.h>
+#include <X11/Xmd.h>
 #include "input.h"
 #include "scrnintstr.h"
 

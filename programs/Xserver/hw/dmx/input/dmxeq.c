@@ -66,6 +66,10 @@
  * Consortium).  (Another example of similar code is provided in
  * hw/xfree86/common/xf86Xinput.c.) */
 
+#ifdef HAVE_DMX_CONFIG_H
+#include <dmx-config.h>
+#endif
+
 #define DMX_EQ_DEBUG 0
 
 #include "dmx.h"
@@ -78,7 +82,7 @@
 #include "scrnintstr.h"         /* For screenInfo */
 
 #ifdef XINPUT
-#include "XIproto.h"
+#include <X11/extensions/XIproto.h>
 #define EXTENSION_PROC_ARGS void *
 #include "extinit.h"            /* For LookupDeviceIntRec */
 #endif

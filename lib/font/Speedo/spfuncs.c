@@ -51,11 +51,14 @@ from The Open Group.
 */
 /* $XFree86: xc/lib/font/Speedo/spfuncs.c,v 1.7 2001/08/27 19:49:51 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #ifndef FONTMODULE
 #include <X11/Xos.h>
 #endif
-#include "fntfilst.h"
-#include "fontutil.h"
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/fontutil.h>
 #include "spint.h"
 
 /* ARGSUSED */

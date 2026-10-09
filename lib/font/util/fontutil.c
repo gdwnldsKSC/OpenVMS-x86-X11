@@ -33,13 +33,13 @@ from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
-#include    "fontmisc.h"
-#include    "fontstruct.h"
-#include    "FSproto.h"
-#include    "fontutil.h"
-#ifdef NEED_STRCASECMP
-#include    <ctype.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
 #endif
+#include    <X11/fonts/fontmisc.h>
+#include    <X11/fonts/fontstruct.h>
+#include    <X11/fonts/FSproto.h>
+#include    <X11/fonts/fontutil.h>
 
 /* Define global here...  doesn't hurt the servers, and avoids
    unresolved references in font clients.  */

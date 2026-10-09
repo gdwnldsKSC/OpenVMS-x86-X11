@@ -25,7 +25,11 @@
  */
 /* $XConsortium: std_kbdEv.c /main/4 1996/03/11 10:47:33 kaleb $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSlib.h"

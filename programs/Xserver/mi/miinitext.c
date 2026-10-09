@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/mi/miinitext.c,v 1.12.2.3 2004/12/13 05:48:41 gisburn Exp $ */
+/* $XdotOrg: xc/programs/Xserver/mi/miinitext.c,v 1.26 2005/07/16 03:49:59 kem Exp $ */
 /* $XFree86: xc/programs/Xserver/mi/miinitext.c,v 3.67 2003/01/12 02:44:27 dawes Exp $ */
 /***********************************************************
 
@@ -48,17 +48,28 @@ SOFTWARE.
 ******************************************************************/
 /* $Xorg: miinitext.c,v 1.4 2001/02/09 02:05:21 xorgcvs Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#ifdef HAVE_DMX_CONFIG_H
+#include <dmx-config.h>
+#endif
+
+#ifdef HAVE_XNEST_CONFIG_H
+#include <xnest-config.h>
+#undef DPMSExtension
+#endif
+
 #include "misc.h"
 #include "extension.h"
 #include "micmap.h"
 
-#ifdef NOPEXEXT /* sleaze for Solaris cpp building XsunMono */
-#undef PEXEXT
-#endif
-
 #if defined(QNX4) /* sleaze for Watcom on QNX4 ... */
-#undef PEXEXT
-#undef XIE
 #undef GLXEXT
 #endif
 
@@ -68,7 +79,6 @@ SOFTWARE.
 #undef XKB
 #undef PANORAMIX
 #undef RES
-#undef XIE
 #undef XINPUT
 #undef XV
 #undef SCREENSAVER
@@ -81,18 +91,18 @@ SOFTWARE.
 #undef DPMSExtension
 #undef DPSEXT
 #undef FONTCACHE
-#undef RENDER /* not yet */
 #undef DAMAGE
 #undef XFIXES
 #undef XEVIE
+#else
+#ifndef LOADABLEPRINTDDX
+#undef XPRINT
+#endif /* LOADABLEPRINTDDX */
 #endif /* PRINT_ONLY_SERVER */
 
 
 extern Bool noTestExtensions;
 
-#ifdef BEZIER
-extern Bool noBezierExtension;
-#endif
 #ifdef BIGREQS
 extern Bool noBigReqExtension;
 #endif
@@ -153,9 +163,6 @@ extern Bool noSyncExtension;
 #ifdef TOGCUP
 extern Bool noXcupExtension;
 #endif
-#ifdef PEXEXT
-extern Bool noPexExtension;
-#endif
 #ifdef RES
 extern Bool noResExtension;
 #endif
@@ -167,9 +174,6 @@ extern Bool noXCMiscExtension;
 #endif
 #ifdef XEVIE
 extern Bool noXevieExtension;
-#endif
-#ifdef XIE
-extern Bool noXie;
 #endif
 #ifdef XF86BIGFONT
 extern Bool noXFree86BigfontExtension;
@@ -215,44 +219,41 @@ typedef void (*InitExtension)(INITARGS);
 
 #ifdef MITSHM
 #define _XSHM_SERVER_
-#include "shmstr.h"
+#include <X11/extensions/shmstr.h>
 #endif
 #ifdef XTEST
 #define _XTEST_SERVER_
-#include "XTest.h"
+#include <X11/extensions/XTest.h>
 #endif
 #ifdef XKB
-#include "XKB.h"
+#include <X11/extensions/XKB.h>
 #endif
 #ifdef LBX
 #define _XLBX_SERVER_
-#include "lbxstr.h"
+#include <X11/extensions/lbxstr.h>
 #endif
 #ifdef XPRINT
 #include "Print.h"
 #endif
 #ifdef XAPPGROUP
 #define _XAG_SERVER_
-#include "Xagstr.h"
+#include <X11/extensions/Xagstr.h>
 #endif
 #ifdef XCSECURITY
 #define _SECURITY_SERVER
-#include "securstr.h"
+#include <X11/extensions/securstr.h>
 #endif
 #ifdef PANORAMIX
-#include "panoramiXproto.h"
+#include <X11/extensions/panoramiXproto.h>
 #endif
 #ifdef XF86BIGFONT
-#include "xf86bigfstr.h"
+#include <X11/extensions/xf86bigfstr.h>
 #endif
 #ifdef RES
-#include "XResproto.h"
+#include <X11/extensions/XResproto.h>
 #endif
 
 /* FIXME: this whole block of externs should be from the appropriate headers */
-#ifdef BEZIER
-extern void BezierExtensionInit(INITARGS);
-#endif
 #ifdef XTESTEXT1
 extern void XTestExtension1Init(INITARGS);
 #endif
@@ -264,9 +265,6 @@ extern void EVIExtensionInit(INITARGS);
 #endif
 #ifdef MITSHM
 extern void ShmExtensionInit(INITARGS);
-#endif
-#ifdef PEXEXT
-extern void PexExtensionInit(INITARGS);
 #endif
 #ifdef MULTIBUFFER
 extern void MultibufferExtensionInit(INITARGS);
@@ -298,9 +296,6 @@ extern void ScreenSaverExtensionInit (INITARGS);
 #ifdef XV
 extern void XvExtensionInit(INITARGS);
 extern void XvMCExtensionInit(INITARGS);
-#endif
-#ifdef XIE
-extern void XieInit(INITARGS);
 #endif
 #ifdef XSYNC
 extern void SyncExtensionInit(INITARGS);
@@ -401,9 +396,6 @@ typedef struct {
 static ExtensionToggle ExtensionToggleList[] =
 {
     /* sort order is extension name string as shown in xdpyinfo */
-#ifdef BEZIER
-    { "BEZIER", &noBezierExtension },
-#endif
 #ifdef BIGREQS
     { "BIG-REQUESTS", &noBigReqExtension },
 #endif
@@ -464,9 +456,6 @@ static ExtensionToggle ExtensionToggleList[] =
 #ifdef TOGCUP
     { "TOG-CUP", &noXcupExtension },
 #endif
-#ifdef PEXEXT
-    { "X3D-PEX", &noPexExtension },
-#endif
 #ifdef RES
     { "X-Resource", &noResExtension },
 #endif
@@ -496,9 +485,6 @@ static ExtensionToggle ExtensionToggleList[] =
 #endif
 #ifdef XFIXES
     { "XFIXES", &noXFixesExtension },
-#endif
-#ifdef XIE
-    { "XIE", &noXie },
 #endif
 #ifdef PANORAMIX
     { "XINERAMA", &noPanoramiXExtension },
@@ -554,9 +540,6 @@ InitExtensions(argc, argv)
   if (!noPanoramiXExtension) PanoramiXExtensionInit();
 # endif
 #endif
-#ifdef BEZIER
-    if (!noBezierExtension) BezierExtensionInit();
-#endif
 #ifdef XTESTEXT1
     if (!noTestExtensions) XTestExtension1Init();
 #endif
@@ -568,9 +551,6 @@ InitExtensions(argc, argv)
 #endif
 #ifdef EVI
     if (!noEVIExtension) EVIExtensionInit();
-#endif
-#ifdef PEXEXT
-    if (!noPexExtension) PexExtensionInit();
 #endif
 #ifdef MULTIBUFFER
     if (!noMultibufferExtension) MultibufferExtensionInit();
@@ -601,9 +581,6 @@ InitExtensions(argc, argv)
       XvExtensionInit();
       XvMCExtensionInit();
     }
-#endif
-#ifdef XIE
-    if (!noXie) XieInit();
 #endif
 #ifdef XSYNC
     if (!noSyncExtension) SyncExtensionInit();
@@ -713,9 +690,6 @@ InitVisualWrap()
 #else /* XFree86LOADER */
 /* List of built-in (statically linked) extensions */
 static ExtensionModule staticExtensions[] = {
-#ifdef BEZIER
-    { BezierExtensionInit, "BEZIER", &noBezierExtension, NULL, NULL },
-#endif
 #ifdef XTESTEXT1
     { XTestExtension1Init, "XTEST1", &noTestExtensions, NULL, NULL },
 #endif

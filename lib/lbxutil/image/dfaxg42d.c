@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include "g3states.h"
 #include "lbxfax.h"
-#include "lbximage.h"
+#include <X11/extensions/lbximage.h>
 
 /*
  * -------------------------------------------------------------------------

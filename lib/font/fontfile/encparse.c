@@ -32,14 +32,14 @@ THE SOFTWARE.
 #include <string.h>
 #include <stdio.h>
 
-#ifdef SCO325
+#if defined(__SCO__) || defined(__UNIXWARE__)
 #include <strings.h>
 #endif
 
 #ifndef FONTENC_NO_LIBFONT
 
-#include "fntfilio.h"
-#include "fntfilst.h"
+#include <X11/fonts/fntfilio.h>
+#include <X11/fonts/fntfilst.h>
 
 #else
 
@@ -59,7 +59,7 @@ typedef gzFile FontFilePtr;
 
 #endif
 
-#include "fontenc.h"
+#include <X11/fonts/fontenc.h>
 #include "fontencI.h"
 
 #define MAXALIASES 20

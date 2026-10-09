@@ -139,8 +139,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
+
 #include <errno.h>
+#if defined(XWIN_MULTIWINDOWEXTWM) || defined(XWIN_CLIPBOARD) || defined(XWIN_MULTIWINDOW)
+#define HANDLE void *
 #include <pthread.h>
+#undef HANDLE
+#endif
 
 #ifdef HAS_MMAP
 #include <sys/mman.h>
@@ -149,10 +154,10 @@
 #endif /* MAP_FILE */
 #endif /* HAS_MMAP */
 
-#include "X11/X.h"
-#include "X11/Xproto.h"
-#include "X11/Xos.h"
-#include "X11/Xprotostr.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
+#include <X11/Xos.h>
+#include <X11/Xprotostr.h>
 #include "scrnintstr.h"
 #include "pixmapstr.h"
 #include "pixmap.h"
@@ -219,16 +224,9 @@ if (fDebugProcMsg) \
 { \
   char *pszTemp; \
   int iLength; \
-  \
-  iLength = sprintf (NULL, str, ##__VA_ARGS__); \
-  \
-  pszTemp = malloc (iLength + 1); \
-  \
-  sprintf (pszTemp, str, ##__VA_ARGS__); \
-  \
+  pszTemp = Xprintf (str, ##__VA_ARGS__); \
   MessageBox (NULL, pszTemp, szFunctionName, MB_OK); \
-  \
-  free (pszTemp); \
+  xfree (pszTemp); \
 }
 #else
 #define DEBUG_MSG(str,...)
@@ -425,6 +423,8 @@ typedef struct
   Bool			fDecoration;
 #ifdef XWIN_MULTIWINDOWEXTWM
   Bool			fMWExtWM;
+  Bool			fInternalWM;
+  Bool			fAnotherWMRunning;
 #endif
   Bool			fRootless;
 #ifdef XWIN_MULTIWINDOW
@@ -629,7 +629,9 @@ typedef struct {
 extern winScreenInfo		g_ScreenInfo[];
 extern miPointerScreenFuncRec	g_winPointerCursorFuncs;
 extern DWORD			g_dwEvents;
+#ifdef HAS_DEVWINDOWS
 extern int			g_fdMessageQueue;
+#endif
 extern int			g_iScreenPrivateIndex;
 extern int			g_iCmapPrivateIndex;
 extern int			g_iGCPrivateIndex;
@@ -725,6 +727,21 @@ extern FARPROC			g_fpTrackMouseEvent;
 #define winWindowPriv(pWin) \
 	winPrivWinPtr pWinPriv = winGetWindowPriv(pWin)
 
+/*
+ * wrapper macros 
+ */
+#define _WIN_WRAP(priv, real, mem, func) {\
+    priv->mem = real->mem; \
+    real->mem = func; \
+}
+
+#define _WIN_UNWRAP(priv, real, mem) {\
+    real->mem = priv->mem; \
+}
+
+#define WIN_WRAP(mem, func) _WIN_WRAP(pScreenPriv, pScreen, mem, func) 
+
+#define WIN_UNWRAP(mem) _WIN_UNWRAP(pScreenPriv, pScreen, mem)
 
 /*
  * BEGIN DDX and DIX Function Prototypes
@@ -946,10 +963,10 @@ winSendKeyEvent (DWORD dwKey, Bool fDown);
  */
 
 Bool
-winInstallKeyboardHookLL ();
+winInstallKeyboardHookLL (void);
 
 void
-winRemoveKeyboardHookLL ();
+winRemoveKeyboardHookLL (void);
 
 
 /*
@@ -1396,6 +1413,19 @@ winMWExtWMMoveResizeXWindow (WindowPtr pWin, int x, int y, int w, int h);
 
 void
 winMWExtWMUpdateIcon (Window id);
+
+void
+winMWExtWMUpdateWindowDecoration (win32RootlessWindowPtr pRLWinPriv,
+				  winScreenInfoPtr pScreenInfo);
+
+wBOOL CALLBACK
+winMWExtWMDecorateWindow (HWND hwnd, LPARAM lParam);
+
+Bool
+winIsInternalWMRunning (winScreenInfoPtr pScreenInfo);
+
+void
+winMWExtWMRestackWindows (ScreenPtr pScreen);
 #endif
 
 

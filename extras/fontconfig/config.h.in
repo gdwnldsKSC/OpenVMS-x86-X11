@@ -25,8 +25,23 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
-/* Define to 1 if you have the `FT_Get_First_Char' function. */
-#undef HAVE_FT_GET_FIRST_CHAR
+/* FT_Bitmap_Size structure includes y_ppem field */
+#undef HAVE_FT_BITMAP_SIZE_Y_PPEM
+
+/* Define to 1 if you have the `FT_Get_BDF_Property' function. */
+#undef HAVE_FT_GET_BDF_PROPERTY
+
+/* Define to 1 if you have the `FT_Get_Next_Char' function. */
+#undef HAVE_FT_GET_NEXT_CHAR
+
+/* Define to 1 if you have the `FT_Get_PS_Font_Info' function. */
+#undef HAVE_FT_GET_PS_FONT_INFO
+
+/* Define to 1 if you have the `FT_Get_X11_Font_Format' function. */
+#undef HAVE_FT_GET_X11_FONT_FORMAT
+
+/* Define to 1 if you have the `FT_Has_PS_Glyph_Names' function. */
+#undef HAVE_FT_HAS_PS_GLYPH_NAMES
 
 /* Define to 1 if you have the `geteuid' function. */
 #undef HAVE_GETEUID
@@ -39,6 +54,12 @@
 
 /* Define to 1 if you have the `getuid' function. */
 #undef HAVE_GETUID
+
+/* Define to 1 if you have the `iconv' function. */
+#undef HAVE_ICONV
+
+/* Define to 1 if you have the <iconv.h> header file. */
+#undef HAVE_ICONV_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -105,8 +126,8 @@
 /* Use xmlparse.h instead of expat.h */
 #undef HAVE_XMLPARSE_H
 
-/* Define to 1 if you have the `XML_ParserCreate' function. */
-#undef HAVE_XML_PARSERCREATE
+/* Define to 1 if you have the `XML_SetDoctypeDeclHandler' function. */
+#undef HAVE_XML_SETDOCTYPEDECLHANDLER
 
 /* Name of package */
 #undef PACKAGE

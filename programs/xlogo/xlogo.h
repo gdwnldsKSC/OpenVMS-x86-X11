@@ -35,9 +35,11 @@ in this Software without prior written authorization from The Open Group.
 
 #define Error(x) { printf x ; exit(EXIT_FAILURE); }
 #define Log(x)   { if(userOptions.verbose) printf x; }
+#define Msg(x)   { if((!userOptions.quiet) || userOptions.verbose) printf x; }
 
 typedef struct {
   Boolean verbose;
+  Boolean quiet;
   Boolean printAndExit;
   String  printername;
   String  printfile;

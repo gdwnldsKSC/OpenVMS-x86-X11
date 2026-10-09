@@ -1,4 +1,4 @@
-               Information for Rendition (Micron) Verité Users
+               Information for Rendition (Micron) VeritUsers
 
                           The XFree86 Project Inc.
 
@@ -107,7 +107,7 @@ on the list of features to be included.
             "ShadowFB" and automatically enable it. It also disables the
             acceleration.  The option is not activated by default.
 
-6.  News in the X11R6.8.2 release
+6.  News in the X11R6.9 release
 
 This driver was originally part of the XFree86 4.4 rc2 release.
 
@@ -148,4 +148,4 @@ This driver was originally part of the XFree86 4.4 rc2 release.
      eral bugs left to clear out before if is stable for general use.
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.rendition,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.rendition,v 1.5 2005/12/21 05:39:05 kem Exp $

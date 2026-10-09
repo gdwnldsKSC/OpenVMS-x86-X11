@@ -24,30 +24,30 @@ used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from The Open Group.
 
 */
-/**       Copyright 1988 by Evans & Sutherland Computer Corporation,        **/
-/**                          Salt Lake City, Utah                           **/
-/**                        Cambridge, Massachusetts                         **/
-/**                                                                         **/
-/**                           All Rights Reserved                           **/
-/**                                                                         **/
-/**    Permission to use, copy, modify, and distribute this software and    **/
-/**    its documentation  for  any  purpose  and  without  fee is hereby    **/
-/**    granted, provided that the above copyright notice appear  in  all    **/
-/**    copies and that both  that  copyright  notice  and  this  permis-    **/
-/**    sion  notice appear in supporting  documentation,  and  that  the    **/
-/**    name of Evans & Sutherland not be used in advertising    **/
-/**    in publicity pertaining to distribution of the  software  without    **/
-/**    specific, written prior permission.                                  **/
-/**                                                                         **/
-/**    EVANS & SUTHERLAND DISCLAIMs ALL WARRANTIES WITH REGARD    **/
-/**    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    **/
-/**    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND    **/
-/**    BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-    **/
-/**    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    **/
-/**    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    **/
-/**    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    **/
-/**    OR PERFORMANCE OF THIS SOFTWARE.                                     **/
-/*****************************************************************************/
+/*       Copyright 1988 by Evans & Sutherland Computer Corporation,        */
+/*                          Salt Lake City, Utah                           */
+/*                        Cambridge, Massachusetts                         */
+/*                                                                         */
+/*                           All Rights Reserved                           */
+/*                                                                         */
+/*    Permission to use, copy, modify, and distribute this software and    */
+/*    its documentation  for  any  purpose  and  without  fee is hereby    */
+/*    granted, provided that the above copyright notice appear  in  all    */
+/*    copies and that both  that  copyright  notice  and  this  permis-    */
+/*    sion  notice appear in supporting  documentation,  and  that  the    */
+/*    name of Evans & Sutherland not be used in advertising                */
+/*    in publicity pertaining to distribution of the  software  without    */
+/*    specific, written prior permission.                                  */
+/*                                                                         */
+/*    EVANS & SUTHERLAND DISCLAIMs ALL WARRANTIES WITH REGARD              */
+/*    TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES  OF  MERCHANT-    */
+/*    ABILITY  AND  FITNESS,  IN  NO  EVENT SHALL EVANS & SUTHERLAND       */
+/*    BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL  DAM-           */
+/*    AGES OR  ANY DAMAGES WHATSOEVER  RESULTING FROM LOSS OF USE, DATA    */
+/*    OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER    */
+/*    TORTIOUS ACTION, ARISING OUT OF OR IN  CONNECTION  WITH  THE  USE    */
+/*    OR PERFORMANCE OF THIS SOFTWARE.                                     */
+/*********************************************************************(*****/
 /* $XFree86: xc/programs/twm/gc.c,v 1.5 2001/01/17 23:45:06 dawes Exp $ */
 
 
@@ -67,15 +67,10 @@ in this Software without prior written authorization from The Open Group.
 #include "screen.h"
 #include "gc.h"
 
-/***********************************************************************
- *
- *  Procedure:
- *	CreateGCs - open fonts and create all the needed GC's.  I only
+/** \fn CreateGCs
+ * open fonts and create all the needed GC's.  I only
  *		    want to do this once, hence the first_time flag.
- *
- ***********************************************************************
  */
-
 void
 CreateGCs()
 {

@@ -1,4 +1,8 @@
 /* $XFree86: xc/programs/Xserver/GL/glx/glxext.h,v 1.7 2003/11/17 22:20:26 dawes Exp $ */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _glxext_h_
 #define _glxext_h_
 
@@ -102,6 +106,26 @@ extern int GlxInitVisuals(
     int               bitsPerRGB,
     int               preferredVis
 );
+
+typedef struct {
+    void * (* queryHyperpipeNetworkFunc)(int, int *, int *);
+    void * (* queryHyperpipeConfigFunc)(int, int, int *, int *);
+    int    (* destroyHyperpipeConfigFunc)(int, int);
+    void * (* hyperpipeConfigFunc)(int, int, int *, int *, void *);
+} __GLXHyperpipeExtensionFuncs;
+
+extern void __glXHyperpipeInit(int screen, __GLXHyperpipeExtensionFuncs *funcs);
+
+extern __GLXHyperpipeExtensionFuncs *__glXHyperpipeFuncs;
+
+typedef struct {
+    int    (* bindSwapBarrierFunc)(int, XID, int);
+    int    (* queryMaxSwapBarriersFunc)(int);
+} __GLXSwapBarrierExtensionFuncs;
+
+extern void __glXSwapBarrierInit(int screen, __GLXSwapBarrierExtensionFuncs *funcs);
+
+extern __GLXSwapBarrierExtensionFuncs *__glXSwapBarrierFuncs;
 
 #endif /* _glxext_h_ */
 

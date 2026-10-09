@@ -4,6 +4,10 @@
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/trident/trident_tv.c,v 1.1 2003/04/15 22:13:43 alanh Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86_ansic.h"
 #include "trident.h"
 #include "trident_regs.h"

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/sunos/find_deps.pl,v 1.1 2004/04/26 02:39:58 alanc Exp $
+# $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/sunos/find_deps.pl,v 1.2 2004/09/22 17:20:56 alanc Exp $
 #
 # Copyright 2004 Sun Microsystems, Inc.  All rights reserved.
 #
@@ -85,13 +85,13 @@ for my $f (@objlist) {
   my $edline;
   my %deps = ();
   while ($edline = <ELFDUMP>) {
-    next unless $edline =~ /(GLOB_DAT|R_386_32)/;
+    next unless $edline =~ /(GLOB_DAT|R_386_32|R_SPARC_32)/;
     my @edpart = split /\s+/, $edline;
-    if (exists $symtable{$edpart[4]}) {
-#      print "$f : $edpart[4] - $symtable{$edpart[4]}\n";
-      $deps{$symtable{$edpart[4]}} += 1;
+    if (exists $symtable{$edpart[$#edpart]}) {
+#      print "$f : $edpart[$#edpart] - $symtable{$edpart[$#edpart]}\n";
+      $deps{$symtable{$edpart[$#edpart]}} += 1;
     } else {
-      print "$f : $edpart[4] - not found\n";
+      print "$f : $edpart[$#edpart] - not found\n";
     }
   }
   close(ELFDUMP);

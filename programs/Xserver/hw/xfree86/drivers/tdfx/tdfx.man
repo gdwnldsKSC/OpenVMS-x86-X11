@@ -45,6 +45,10 @@ This has XvImage support use the texture engine rather than the video overlay.
 .BI "Option \*qVideoKey\*q \*q" integer \*q
 This sets the default pixel value for the YUV video overlay key.
 Default: undefined.
+.TP
+.BI "Option \*qUsePIO\*q \*q" boolean \*q
+Force the use of Programmed IO instead of Memory Mapped IO.
+Default: off.
 .PP
 The following additional
 .B Options

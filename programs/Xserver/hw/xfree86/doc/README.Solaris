@@ -81,15 +81,15 @@ Limitations of the virtual terminal sub-system under Solaris x86:
 There are only a total of 8 available VT's (7 normal VT's + 1 console) not
 the usual 15.  If you have all 8 allocated, and you attempt to allocate a
 additional VT you will panic the system.  (This bug is worked around in the
-Solaris X11R6.8.2 Xserver.)
+Solaris X11R6.9 Xserver.)
 
 From a programming stand point, they work pretty much as documented in the
 AT&T Unix System V/386 Release 4 Integrated Software Development Guide, how-
 ever a number of ioctl() calls are broken.
 
-2.  Notes for building X11R6.8.2 on Solaris
+2.  Notes for building X11R6.9 on Solaris
 
-  1.  Both GCC, and the Sun Studio compilers are supported by X11R6.8.2.  The
+  1.  Both GCC, and the Sun Studio compilers are supported by X11R6.9.  The
       minimum recommended GCC release is 2.7.2.  Some earlier GCC's are known
       to not work and should be avoided.
 
@@ -115,7 +115,7 @@ ever a number of ioctl() calls are broken.
       Whether this behaviour still exists with newer GCC's has not been veri-
       fied.
 
-  4.  To build X11R6.8.2 with GCC you need gcc and (optionally) c++filt from
+  4.  To build X11R6.9 with GCC you need gcc and (optionally) c++filt from
       GNU binutils.  Don't install gas or ld from GNU binutils, use the one
       provided by Sun.
 
@@ -123,9 +123,9 @@ ever a number of ioctl() calls are broken.
       bolic links named cc, CC, and c++filt pointing respectively to the
       actual gcc, g++ and c++filt commands.
 
-  5.  If you are using Sun compilers to compile the X11R6.8.2 distribution,
-      you need to modify your PATH appropriately so the Sun compiler tools
-      are available.  Normally, they should be in /opt/SUNWspro/bin
+  5.  If you are using Sun compilers to compile the X11R6.9 distribution, you
+      need to modify your PATH appropriately so the Sun compiler tools are
+      available.  Normally, they should be in /opt/SUNWspro/bin
 
   6.  You MUST put /usr/ccs/bin at the front of your PATH.  There are known
       problems with some GNU replacements for the utilities found there.  So
@@ -195,16 +195,12 @@ ever a number of ioctl() calls are broken.
       (and reported!).  It might even have broken some aspects of the x86
       port.
 
-  3.  The kbd driver is not yet supported on Solaris, but the server still
-      logs a message that it can't find the Keyboard driver and suggests you
-      use kbd.   That message should be ignored in this release.
-
 5.  Bug Notification
 
-Bug reports should be reported using the bugzilla.freedesktop.org using the
-xorg product or sent to <xorg@freedesktop.org>.
+Bug reports should be reported at bugs.freedesktop.org using the xorg product
+or sent to <xorg@lists.freedesktop.org>.
 
-     Generated from XdotOrg: xc/programs/Xserver/hw/xfree86/doc/sgml/Solaris.sgml,v 1.3.2.1 gisburn Exp $
+     Generated from XdotOrg: xc/programs/Xserver/hw/xfree86/doc/sgml/Solaris.sgml,v 1.3 kem Exp $
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.Solaris,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.Solaris,v 1.4 2005/12/21 05:39:05 kem Exp $

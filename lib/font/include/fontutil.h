@@ -3,7 +3,7 @@
 #ifndef _FONTUTIL_H_
 #define _FONTUTIL_H_
 
-#include "FSproto.h"
+#include <X11/fonts/FSproto.h>
 
 extern int FontCouldBeTerminal(FontInfoPtr);
 extern int CheckFSFormat(fsBitmapFormat, fsBitmapFormatMask, int *, int *,

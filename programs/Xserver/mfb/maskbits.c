@@ -50,6 +50,10 @@ SOFTWARE.
 */
 /* $XFree86: xc/programs/Xserver/mfb/maskbits.c,v 1.5 2001/01/17 22:37:01 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "maskbits.h"
 #include "servermd.h"
 
@@ -150,7 +154,6 @@ PixelType endtab[PPW+1] =
 	LONG2CHARS( 0xFFFFFFFF )
     };
 
-#ifndef LOWMEMFTPT
 
 #ifdef NEED_OLD_MFB_MASKS
 /* a hack, for now, since the entries for 0 need to be all
@@ -233,7 +236,6 @@ PixelType endpartial[33] =
     };
 #endif /* NEED_OLD_MFB_MASKS */
 
-#endif /* ifndef LOWMEMFTPT */
 
 PixelType partmasks[PPW][PPW] = {
      {LONG2CHARS( 0xFFFFFFFF ), LONG2CHARS( 0x80000000 ), LONG2CHARS( 0xC0000000 ), LONG2CHARS( 0xE0000000 ),
@@ -575,7 +577,6 @@ PixelType endtab[PPW+1] =
 	LONG2CHARS( 0xFFFFFFFF )
 	};
 
-#ifndef LOWMEMFTPT
 
 #ifdef NEED_OLD_MFB_MASKS
 /* a hack ), for now, since the entries for 0 need to be all
@@ -658,7 +659,6 @@ PixelType endpartial[33] =
 	};
 #endif
 
-#endif /* ifndef LOWMEMFTPT */
 
 PixelType partmasks[PPW][PPW] = {
      {LONG2CHARS( 0xFFFFFFFF ), LONG2CHARS( 0x00000001 ), LONG2CHARS( 0x00000003 ), LONG2CHARS( 0x00000007 ),
@@ -1052,6 +1052,10 @@ mergeRopRec mergeRopBits[16] = {
 { I,O,O,I, },	/* nand		0xe		NOT src OR NOT dst */
 { O,O,O,I, },	/* set		0xf		1 */
 };
+
+mergeRopPtr mergeGetRopBits(int i) {
+    return &mergeRopBits[i];
+}
 
 #undef O
 #undef I

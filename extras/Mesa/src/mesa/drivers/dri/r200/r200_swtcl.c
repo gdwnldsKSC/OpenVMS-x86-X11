@@ -64,7 +64,6 @@ static void flush_last_swtcl_prim( r200ContextPtr rmesa  );
  *                         Initialization 
  ***********************************************************************/
 
-#define EMIT_SZ(sz)   (EMIT_1F + (sz) - 1)
 #define EMIT_ATTR( ATTR, STYLE, F0 )					\
 do {									\
    rmesa->swtcl.vertex_attrs[rmesa->swtcl.vertex_attr_count].attrib = (ATTR);	\
@@ -107,7 +106,7 @@ static void r200SetVertexFormat( GLcontext *ctx )
    /* EMIT_ATTR's must be in order as they tell t_vertex.c how to
     * build up a hardware vertex.
     */
-   if ( !rmesa->swtcl.needproj ) {
+   if ( !rmesa->swtcl.needproj || (index & _TNL_BITS_TEX_ANY)) { /* need w coord for projected textures */
       EMIT_ATTR( _TNL_ATTRIB_POS, EMIT_4F, R200_VTX_XY | R200_VTX_Z0 | R200_VTX_W0 );
       offset = 4;
    }
@@ -166,28 +165,23 @@ static void r200SetVertexFormat( GLcontext *ctx )
       for (i = 0; i < ctx->Const.MaxTextureUnits; i++) {
 	 if (index & _TNL_BIT_TEX(i)) {
 	    GLuint sz = VB->TexCoordPtr[i]->size;
-	    GLuint emit;
-
-	    /* r200 doesn't like 4D texcoords (is that true?):
-	     */
-	    if (sz != 4) {
-	       emit = EMIT_1F + (sz - 1);
-	    }
-	    else {
-	       sz = 3;
-	       emit = EMIT_3F_XYW; 
-	    }
 
 	    fmt_1 |= sz << (3 * i);
-	    EMIT_ATTR( _TNL_ATTRIB_TEX0+i, EMIT_SZ(sz), 0 );
+	    EMIT_ATTR( _TNL_ATTRIB_TEX0+i, EMIT_1F + sz - 1, 0 );
 	 }
       }
    }
 
+   if ( (rmesa->hw.ctx.cmd[CTX_PP_FOG_COLOR] & R200_FOG_USE_MASK)
+      != R200_FOG_USE_SPEC_ALPHA ) {
+      R200_STATECHANGE( rmesa, ctx );
+      rmesa->hw.ctx.cmd[CTX_PP_FOG_COLOR] &= ~R200_FOG_USE_MASK;
+      rmesa->hw.ctx.cmd[CTX_PP_FOG_COLOR] |= R200_FOG_USE_SPEC_ALPHA;
+   }
 
-
-   if ( (rmesa->hw.vtx.cmd[VTX_VTXFMT_0] != fmt_0)
-	|| (rmesa->hw.vtx.cmd[VTX_VTXFMT_1] != fmt_1) ) {
+   if ( rmesa->tnl_index != index ||
+	(rmesa->hw.vtx.cmd[VTX_VTXFMT_0] != fmt_0) ||
+	(rmesa->hw.vtx.cmd[VTX_VTXFMT_1] != fmt_1) ) {
       R200_NEWPRIM(rmesa);
       R200_STATECHANGE( rmesa, vtx );
       rmesa->hw.vtx.cmd[VTX_VTXFMT_0] = fmt_0;
@@ -199,6 +193,7 @@ static void r200SetVertexFormat( GLcontext *ctx )
 			      rmesa->swtcl.vertex_attr_count,
 			      NULL, 0 );
       rmesa->swtcl.vertex_size /= 4;
+      rmesa->tnl_index = index;
    }
 }
 
@@ -224,9 +219,18 @@ void r200ChooseVertexState( GLcontext *ctx )
 {
    r200ContextPtr rmesa = R200_CONTEXT( ctx );
    TNLcontext *tnl = TNL_CONTEXT(ctx);
+   GLuint vte;
+   GLuint vap;
 
-   GLuint vte = rmesa->hw.vte.cmd[VTE_SE_VTE_CNTL];
-   GLuint vap = rmesa->hw.vap.cmd[VAP_SE_VAP_CNTL];
+   /* We must ensure that we don't do _tnl_need_projected_coords while in a
+    * rasterization fallback.  As this function will be called again when we
+    * leave a rasterization fallback, we can just skip it for now.
+    */
+   if (rmesa->Fallback != 0)
+      return;
+
+   vte = rmesa->hw.vte.cmd[VTE_SE_VTE_CNTL];
+   vap = rmesa->hw.vap.cmd[VAP_SE_VAP_CNTL];
 
    /* HW perspective divide is a win, but tiny vertex formats are a
     * bigger one.
@@ -236,7 +240,12 @@ void r200ChooseVertexState( GLcontext *ctx )
       rmesa->swtcl.needproj = GL_TRUE;
       vte |= R200_VTX_XY_FMT | R200_VTX_Z_FMT;
       vte &= ~R200_VTX_W0_FMT;
-      vap |= R200_VAP_FORCE_W_TO_ONE;
+      if (tnl->render_inputs & _TNL_BITS_TEX_ANY) {
+	 vap &= ~R200_VAP_FORCE_W_TO_ONE;
+      }
+      else {
+	 vap |= R200_VAP_FORCE_W_TO_ONE;
+      }
    }
    else {
       rmesa->swtcl.needproj = GL_FALSE;
@@ -266,7 +275,7 @@ static void flush_last_swtcl_prim( r200ContextPtr rmesa  )
    if (R200_DEBUG & DEBUG_IOCTL)
       fprintf(stderr, "%s\n", __FUNCTION__);
 
-   rmesa->dma.flush = 0;
+   rmesa->dma.flush = NULL;
 
    if (rmesa->dma.current.buf) {
       struct r200_dma_region *current = &rmesa->dma.current;
@@ -369,7 +378,6 @@ static void r200ResetLineStipple( GLcontext *ctx );
 #undef LOCAL_VARS
 #undef ALLOC_VERTS
 #define CTX_ARG r200ContextPtr rmesa
-#define CTX_ARG2 rmesa
 #define GET_VERTEX_DWORDS() rmesa->swtcl.vertex_size
 #define ALLOC_VERTS( n, size ) r200AllocDmaLowVerts( rmesa, n, size * 4 )
 #define LOCAL_VARS						\
@@ -648,8 +656,6 @@ static const char * const fallbackStrings[] = {
    "glDrawBuffer(GL_FRONT_AND_BACK)",
    "glEnable(GL_STENCIL) without hw stencil buffer",
    "glRenderMode(selection or feedback)",
-   "glBlendEquation",
-   "glBlendFunc(mode != ADD)",
    "R200_NO_RAST",
    "Mixing GL_CLAMP_TO_BORDER and GL_CLAMP (or GL_MIRROR_CLAMP_ATI)"
 };
@@ -678,7 +684,6 @@ void r200Fallback( GLcontext *ctx, GLuint bit, GLboolean mode )
 	 R200_FIREVERTICES( rmesa );
 	 TCL_FALLBACK( ctx, R200_TCL_FALLBACK_RASTER, GL_TRUE );
 	 _swsetup_Wakeup( ctx );
-	 _tnl_need_projected_coords( ctx, GL_TRUE );
 	 rmesa->swtcl.RenderIndex = ~0;
          if (R200_DEBUG & DEBUG_FALLBACKS) {
             fprintf(stderr, "R200 begin rasterization fallback: 0x%x %s\n",
@@ -847,8 +852,8 @@ r200PointsBitmap( GLcontext *ctx, GLint px, GLint py,
     */
    for (row=0; row<height; row++) {
       const GLubyte *src = (const GLubyte *) 
-	 _mesa_image_address( unpack, bitmap, width, height, 
-			      GL_COLOR_INDEX, GL_BITMAP, 0, row, 0 );
+	 _mesa_image_address2d(unpack, bitmap, width, height, 
+                               GL_COLOR_INDEX, GL_BITMAP, row, 0 );
 
       if (unpack->LsbFirst) {
          /* Lsb first */

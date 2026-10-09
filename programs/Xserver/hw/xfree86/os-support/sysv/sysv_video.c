@@ -25,7 +25,11 @@
  */
 /* $XConsortium: sysv_video.c /main/8 1996/10/25 11:38:09 kaleb $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 
 #define _NEED_SYSI86
 #include "xf86.h"
@@ -281,22 +285,23 @@ xf86OSInitVidMem(VidMemInfoPtr pVidMem)
 static Bool ExtendedEnabled = FALSE;
 static Bool InitDone = FALSE;
 
-void
+Bool
 xf86EnableIO()
 {
 	int i;
 
 	if (ExtendedEnabled)
-		return;
+		return TRUE;
 
 	if (SET_IOPL() < 0)
 	{
-		FatalError(
+	    xf86Msg(X_WARNING,
 			"xf86EnableIO: Failed to set IOPL for extended I/O\n");
+	    return FALSE;
 	}
 	ExtendedEnabled = TRUE;
 
-	return;
+	return TRUE;
 }
 	
 void

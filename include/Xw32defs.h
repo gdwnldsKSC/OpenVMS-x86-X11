@@ -3,6 +3,13 @@
 #ifndef _XW32DEFS_H
 #define  _XW32DEFS_H
 
+#ifdef __GNUC__ /* mingw is more close to unix than msvc */
+#if !defined(__daddr_t_defined) 
+typedef char *caddr_t;
+#endif
+#define lstat stat
+
+#else
 typedef char *caddr_t;
 
 #define access	   _access
@@ -70,5 +77,5 @@ typedef char *caddr_t;
 #define	X_OK	1
 #define	W_OK	2
 #define	R_OK	4
-
+#endif /* __GNUC__ */
 #endif

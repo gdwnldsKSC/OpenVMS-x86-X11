@@ -52,7 +52,7 @@ from The Open Group.
 #ifndef _SPINT_H_
 #define _SPINT_H_
 
-#include "fntfilst.h"
+#include <X11/fonts/fntfilst.h>
 #ifndef XFree86LOADER
 #include <stdio.h>
 #else

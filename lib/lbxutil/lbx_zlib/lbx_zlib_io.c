@@ -33,9 +33,8 @@
 #if !defined(WIN32) && !defined(Lynx)
 #include <sys/param.h>
 #endif
-#include "lbxbufstr.h"
+#include <X11/extensions/lbxbufstr.h>
 #include "lbx_zlib.h"
-#include "os.h"
 
 #include <stddef.h>
 
@@ -44,7 +43,7 @@
  * The following is taken from the xtrans code, almost as is,
  * it would be nice to share it...
  */
-#if defined(WIN32) || defined(__sxg__) || (defined(SCO) && !defined(SVR4) && !defined(SCO325))
+#if defined(WIN32) || defined(__sxg__)
 static int
 writev(int fildes, const struct iovec *iov, int iovcnt)
 {

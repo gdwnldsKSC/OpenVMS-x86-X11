@@ -38,9 +38,14 @@
 #include "tdfx_context.h"
 #include "tdfx_lock.h"
 #include "tdfx_vb.h"
+#include "tdfx_span.h"
 #include "tdfx_tris.h"
-#include "utils.h"
 
+#include "framebuffer.h"
+#include "renderbuffer.h"
+#include "xmlpool.h"
+
+#include "utils.h"
 
 #ifdef DEBUG_LOCKING
 char *prevLockFile = 0;
@@ -48,18 +53,20 @@ int prevLockLine = 0;
 #endif
 
 #ifndef TDFX_DEBUG
-int TDFX_DEBUG = (0
-/*  		  | DEBUG_ALWAYS_SYNC */
-/*		  | DEBUG_VERBOSE_API */
-/*		  | DEBUG_VERBOSE_MSG */
-/*		  | DEBUG_VERBOSE_LRU */
-/*  		  | DEBUG_VERBOSE_DRI */
-/*  		  | DEBUG_VERBOSE_IOCTL */
-/*   		  | DEBUG_VERBOSE_2D */
-   );
+int TDFX_DEBUG = 0;
 #endif
 
+PUBLIC const char __driConfigOptions[] =
+DRI_CONF_BEGIN
+    DRI_CONF_SECTION_DEBUG
+        DRI_CONF_NO_RAST(false)
+    DRI_CONF_SECTION_END
+DRI_CONF_END;
 
+static const GLuint __driNConfigOptions = 1;
+
+extern const struct dri_extension card_extensions[];
+extern const struct dri_extension napalm_extensions[];
 
 static GLboolean
 tdfxCreateScreen( __DRIscreenPrivate *sPriv )
@@ -67,10 +74,19 @@ tdfxCreateScreen( __DRIscreenPrivate *sPriv )
    tdfxScreenPrivate *fxScreen;
    TDFXDRIPtr fxDRIPriv = (TDFXDRIPtr) sPriv->pDevPriv;
 
+   if (sPriv->devPrivSize != sizeof(TDFXDRIRec)) {
+      fprintf(stderr,"\nERROR!  sizeof(TDFXDRIRec) does not match passed size from device driver\n");
+      return GL_FALSE;
+   }
+
    /* Allocate the private area */
    fxScreen = (tdfxScreenPrivate *) CALLOC( sizeof(tdfxScreenPrivate) );
    if ( !fxScreen )
       return GL_FALSE;
+
+   /* parse information in __driConfigOptions */
+   driParseOptionInfo (&fxScreen->optionCache,
+		       __driConfigOptions, __driNConfigOptions);
 
    fxScreen->driScrnPriv = sPriv;
    sPriv->private = (void *) fxScreen;
@@ -106,12 +122,16 @@ tdfxDestroyScreen( __DRIscreenPrivate *sPriv )
 {
    tdfxScreenPrivate *fxScreen = (tdfxScreenPrivate *) sPriv->private;
 
-   if ( fxScreen ) {
-      drmUnmap( fxScreen->regs.map, fxScreen->regs.size );
+   if (!fxScreen)
+      return;
 
-      FREE( fxScreen );
-      sPriv->private = NULL;
-   }
+   drmUnmap( fxScreen->regs.map, fxScreen->regs.size );
+
+   /* free all option information */
+   driDestroyOptionInfo (&fxScreen->optionCache);
+
+   FREE( fxScreen );
+   sPriv->private = NULL;
 }
 
 
@@ -137,16 +157,70 @@ tdfxCreateBuffer( __DRIscreenPrivate *driScrnPriv,
                   const __GLcontextModes *mesaVis,
                   GLboolean isPixmap )
 {
+   tdfxScreenPrivate *screen = (tdfxScreenPrivate *) driScrnPriv->private;
+
    if (isPixmap) {
       return GL_FALSE; /* not implemented */
    }
    else {
+#if 0
       driDrawPriv->driverPrivate = (void *) 
          _mesa_create_framebuffer( mesaVis,
                                    GL_FALSE, /* software depth buffer? */
                                    mesaVis->stencilBits > 0,
                                    mesaVis->accumRedBits > 0,
                                    GL_FALSE /* software alpha channel? */ );
+#else
+      struct gl_framebuffer *fb = _mesa_create_framebuffer(mesaVis);
+
+      {
+         driRenderbuffer *frontRb
+            = driNewRenderbuffer(GL_RGBA, screen->cpp,
+                                 screen->fbOffset, screen->width);
+         tdfxSetSpanFunctions(frontRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_FRONT_LEFT, &frontRb->Base);
+      }
+
+      if (mesaVis->doubleBufferMode) {
+         driRenderbuffer *backRb
+            = driNewRenderbuffer(GL_RGBA, screen->cpp,
+                                 screen->backOffset, screen->width);
+         tdfxSetSpanFunctions(backRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_BACK_LEFT, &backRb->Base);
+      }
+
+      if (mesaVis->depthBits == 16) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT16, screen->cpp,
+                                 screen->depthOffset, screen->width);
+         tdfxSetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+      else if (mesaVis->depthBits == 24) {
+         driRenderbuffer *depthRb
+            = driNewRenderbuffer(GL_DEPTH_COMPONENT24, screen->cpp,
+                                 screen->depthOffset, screen->width);
+         tdfxSetSpanFunctions(depthRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_DEPTH, &depthRb->Base);
+      }
+
+      if (mesaVis->stencilBits > 0) {
+         driRenderbuffer *stencilRb
+            = driNewRenderbuffer(GL_STENCIL_INDEX8_EXT, screen->cpp,
+                                 screen->depthOffset, screen->width);
+         tdfxSetSpanFunctions(stencilRb, mesaVis);
+         _mesa_add_renderbuffer(fb, BUFFER_STENCIL, &stencilRb->Base);
+      }
+
+      _mesa_add_soft_renderbuffers(fb,
+                                   GL_FALSE, /* color */
+                                   GL_FALSE, /* depth */
+                                   GL_FALSE, /*swStencil,*/
+                                   mesaVis->accumRedBits > 0,
+                                   GL_FALSE, /* alpha */
+                                   GL_FALSE /* aux */);
+      driDrawPriv->driverPrivate = (void *) fb;
+#endif
       return (driDrawPriv->driverPrivate != NULL);
    }
 }
@@ -280,12 +354,6 @@ static const struct __DriverAPIRec tdfxAPI = {
    .SwapBuffersMSC  = NULL
 };
 
-#ifdef USE_NEW_INTERFACE
-/*
- * new interface code, derived from radeon_screen.c
- * XXX this may still be wrong
- */
-static PFNGLXCREATECONTEXTMODES create_context_modes = NULL;
 
 static __GLcontextModes *tdfxFillInModes(unsigned pixel_bits,
 					 unsigned depth_bits,
@@ -307,7 +375,7 @@ static __GLcontextModes *tdfxFillInModes(unsigned pixel_bits,
 
 	num_modes = (depth_bits == 16) ? 32 : 16;
 
-	modes = (*create_context_modes)(num_modes, sizeof(__GLcontextModes));
+	modes = (*dri_interface->createContextModes)(num_modes, sizeof(__GLcontextModes));
 	m = modes;
 
 	for (i = 0; i <= 1; i++) {
@@ -334,8 +402,7 @@ static __GLcontextModes *tdfxFillInModes(unsigned pixel_bits,
 			    m->depthBits	= deep
 			    			  ? (depth ? 24 : 0)
 			    			  : (depth ? 0 : depth_bits);
-			    m->visualType	= i ? GLX_TRUE_COLOR
-			    			    : GLX_DIRECT_COLOR;
+			    m->visualType	= vis[i];
 			    m->renderType	= GLX_RGBA_BIT;
 			    m->drawableType	= GLX_WINDOW_BIT;
 			    m->rgbMode		= GL_TRUE;
@@ -366,7 +433,8 @@ static __GLcontextModes *tdfxFillInModes(unsigned pixel_bits,
  * \return A pointer to a \c __DRIscreenPrivate on success, or \c NULL on
  *         failure.
  */
-void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc,
+PUBLIC
+void * __driCreateNewScreen_20050727( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc,
 			     const __GLcontextModes * modes,
 			     const __DRIversion * ddx_version,
 			     const __DRIversion * dri_version,
@@ -374,12 +442,15 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
 			     const __DRIframebuffer * frame_buffer,
 			     drmAddress pSAREA, int fd,
 			     int internal_api_version,
+			     const __DRIinterfaceMethods * interface,
 			     __GLcontextModes ** driver_modes )
 {
    __DRIscreenPrivate *psp;
-   static const __DRIversion ddx_expected = { 1, 0, 0 };
+   static const __DRIversion ddx_expected = { 1, 1, 0 };
    static const __DRIversion dri_expected = { 4, 0, 0 };
    static const __DRIversion drm_expected = { 1, 0, 0 };
+
+   dri_interface = interface;
 
    if ( ! driCheckDriDdxDrmVersions2( "tdfx",
 				      dri_version, & dri_expected,
@@ -393,10 +464,7 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
 				  frame_buffer, pSAREA, fd,
 				  internal_api_version, &tdfxAPI);
 
-   create_context_modes = (PFNGLXCREATECONTEXTMODES)
-      glXGetProcAddress((const GLubyte *)"__glXCreateContextModes");
-      
-   if (create_context_modes != NULL) {
+   if (psp != NULL) {
       /* divined from tdfx_dri.c, sketchy */
       TDFXDRIPtr dri_priv = (TDFXDRIPtr) psp->pDevPriv;
       int bpp = (dri_priv->cpp > 2) ? 24 : 16;
@@ -407,24 +475,18 @@ void * __driCreateNewScreen( __DRInativeDisplay *dpy, int scrn, __DRIscreen *psc
       *driver_modes = tdfxFillInModes(bpp, (bpp == 16) ? 16 : 24,
 				(bpp == 16) ? 0 : 8,
 				(dri_priv->backOffset!=dri_priv->depthOffset));
+
+      /* Calling driInitExtensions here, with a NULL context pointer, does not actually
+       * enable the extensions.  It just makes sure that all the dispatch offsets for all
+       * the extensions that *might* be enables are known.  This is needed because the
+       * dispatch offsets need to be known when _mesa_context_create is called, but we can't
+       * enable the extensions until we have a context pointer.
+       *
+       * Hello chicken.  Hello egg.  How are you two today?
+       */
+      driInitExtensions( NULL, card_extensions, GL_FALSE );
+      driInitExtensions( NULL, napalm_extensions, GL_FALSE );
    }
 
    return (void *)psp;
 }
-#endif /* USE_NEW_INTERFACE */
-
-
-/*
- * This is the bootstrap function for the driver.
- * The __driCreateScreen name is the symbol that libGL.so fetches.
- * Return:  pointer to a __DRIscreenPrivate.
- */
-#if !defined(DRI_NEW_INTERFACE_ONLY)
-void *__driCreateScreen(Display *dpy, int scrn, __DRIscreen *psc,
-                        int numConfigs, __GLXvisualConfig *config)
-{
-   __DRIscreenPrivate *psp;
-   psp = __driUtilCreateScreen(dpy, scrn, psc, numConfigs, config, &tdfxAPI);
-   return (void *) psp;
-}
-#endif /* !defined(DRI_NEW_INTERFACE_ONLY) */

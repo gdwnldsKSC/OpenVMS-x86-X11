@@ -29,6 +29,10 @@
  */
 /* $XFree86: xc/programs/Xserver/miext/rootless/rootless.h,v 1.7 2004/07/02 01:30:33 torrey Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _ROOTLESS_H
 #define _ROOTLESS_H
 
@@ -267,6 +271,20 @@ typedef void (*RootlessSwitchWindowProc)
     (RootlessWindowPtr pFrame, WindowPtr oldWin);
 
 /*
+ * Check if window should be reordered. (Optional)
+ *  The underlying window system may animate windows being ordered in.
+ *  We want them to be mapped but remain ordered out until the animation
+ *  completes. If defined this function will be called to check if a
+ *  framed window should be reordered now. If this function returns
+ *  FALSE, the window will still be mapped from the X11 perspective, but
+ *  the RestackFrame function will not be called for its frame.
+ *
+ *  pFrame      Frame to reorder
+ */
+typedef Bool (*RootlessDoReorderWindowProc)
+    (RootlessWindowPtr pFrame);
+
+/*
  * Copy bytes. (Optional)
  *  Source and destinate may overlap and the right thing should happen.
  *
@@ -354,6 +372,7 @@ typedef struct _RootlessFrameProcs {
 
     /* Optional frame functions */
     RootlessSwitchWindowProc SwitchWindow;
+    RootlessDoReorderWindowProc DoReorderWindow;
 
     /* Optional acceleration functions */
     RootlessCopyBytesProc CopyBytes;
@@ -367,6 +386,13 @@ typedef struct _RootlessFrameProcs {
  * Initialize rootless mode on the given screen.
  */
 Bool RootlessInit(ScreenPtr pScreen, RootlessFrameProcsPtr procs);
+
+/*
+ * Initialize acceleration for rootless mode on a given screen.
+ *  Note: RootlessAccelInit() must be called before DamageSetup()
+ *  and RootlessInit() must be called afterwards.
+ */
+Bool RootlessAccelInit(ScreenPtr pScreen);
 
 /*
  * Return the frame ID for the physical window displaying the given window. 

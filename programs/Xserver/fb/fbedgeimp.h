@@ -1,5 +1,5 @@
 /*
- * $Id: fbedgeimp.h,v 1.1 2004/07/29 08:10:15 keithp Exp $
+ * $Id: fbedgeimp.h,v 1.4 2005/08/30 03:05:21 anholt Exp $
  *
  * Copyright © 2004 Keith Packard
  *
@@ -21,6 +21,10 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #ifndef rasterizeSpan
 #endif
@@ -104,7 +108,12 @@ rasterizeEdges (FbBits		*buf,
 			AddAlpha (N_X_FRAC(N_BITS));
 			StepAlpha;
 		    }
-		    AddAlpha (rxs);
+		    /* Do not add in a 0 alpha here. This check is necessary
+		     * to avoid a buffer overrun when rx is exactly on a pixel
+		     * boundary.
+		     */
+		    if (rxs != 0)
+			AddAlpha (rxs);
 		}
 	    }
 #endif

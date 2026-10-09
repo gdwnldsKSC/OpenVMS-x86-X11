@@ -30,7 +30,7 @@ _C_ was created using the OpenGL(R) version 1.2.1 Sample Implementation
 _C_ published by SGI, but has not been independently verified as being
 _C_ compliant with the OpenGL(R) version 1.2.1 Specification.
 _C_
-_C_ $Date$ $Revision$
+_C_ $Date: 2004/03/14 08:29:09 $ $Revision: 1.1.1.4 $
 _C_ The first character in this file must be an '_'!
 _C_ Anything on a line after _C_ is ignored
 _define(_filters,eqn)_C_

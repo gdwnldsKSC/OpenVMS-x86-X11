@@ -38,6 +38,10 @@
 ** An implementation of a buffer which is part of the front buffer
 */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "glxserver.h"
 #include "glxutil.h"
 #include "glxfb.h"

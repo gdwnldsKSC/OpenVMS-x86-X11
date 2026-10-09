@@ -1,4 +1,4 @@
-// $XdotOrg: xc/programs/xkbcomp/symbols/dvorak,v 1.2 2004/04/23 19:54:52 eich Exp $
+// $XdotOrg: xc/programs/xkbcomp/symbols/dvorak,v 1.3 2004/12/04 00:43:16 kuhn Exp $
 // $Xorg: dvorak,v 1.3 2000/08/17 19:54:42 cpqbld Exp $
 
 // symbols definition for a very simple dvorak layout.
@@ -220,7 +220,7 @@ xkb_symbols "sv" {
 
 
 // Dvorak (UK) keymap (by odaen) allowing the usage of
-// the £ and ? key and swapping the @ and " keys.
+// the Â£ and ? key and swapping the @ and " keys.
 
 partial alphanumeric_keys
 xkb_symbols "gb" {
@@ -237,7 +237,7 @@ xkb_symbols "gb" {
     key <AD01> {	[  apostrophe,  at		]	};
 };
 
-// Keymap Dvorak pour le Français
+// Keymap Dvorak pour le FranÃ§ais
 // par Josselin Mouette <josselin.mouette@ens-lyon.org>.
 
 partial alphanumeric_keys modifier_keys 

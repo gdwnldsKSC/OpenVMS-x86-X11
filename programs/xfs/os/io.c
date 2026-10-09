@@ -48,7 +48,7 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $XFree86: xc/programs/xfs/os/io.c,v 3.18 2001/12/14 20:01:41 dawes Exp $ */
 
-#include	<X11/Xtrans.h>
+#include	<X11/Xtrans/Xtrans.h>
 #include	<stdio.h>
 #include	<errno.h>
 #include	<sys/types.h>
@@ -61,7 +61,7 @@ in this Software without prior written authorization from The Open Group.
 #include	<uio.h>
 #endif
 
-#include	"FSproto.h"
+#include	<X11/fonts/FSproto.h>
 #include	"clientstr.h"
 #include	"X11/Xpoll.h"
 #include	"osdep.h"

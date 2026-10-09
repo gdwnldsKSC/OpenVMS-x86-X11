@@ -37,6 +37,10 @@
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/dmc/xf86DMC.c,v 1.1 2001/08/17 13:27:55 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _DMC_C_
 
 #include <misc.h>
@@ -50,7 +54,7 @@
 
 #include "xf86DMC.h"
 
-InputDriverRec DMC = {
+_X_EXPORT InputDriverRec DMC = {
         1,
         "dmc",
         NULL,
@@ -135,7 +139,7 @@ DMCSetupProc(	pointer module,
 	return (pointer) 1;
 }
 
-XF86ModuleData dmcModuleData = { &VersionRec, DMCSetupProc, NULL };
+_X_EXPORT XF86ModuleData dmcModuleData = { &VersionRec, DMCSetupProc, NULL };
 
 
 #endif /* XFree86LOADER */

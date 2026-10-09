@@ -1,5 +1,9 @@
 /* $XFree86$ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "misc.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -776,10 +780,7 @@ init_err:
 	return NULL;
 }
 
-#ifdef XFree86LOADER
-static
-#endif
-InputDriverRec PALMAX = {
+_X_EXPORT InputDriverRec PALMAX = {
 	1,			/* driver version */
 	"palmax",		/* driver name */
 	NULL,			/* identify */
@@ -819,6 +820,6 @@ static XF86ModuleVersionInfo version_rec = {
  * is setup after the pattern <module_name>ModuleData.
  * Do not change it.
  */
-XF86ModuleData palmaxModuleData = { &version_rec, Plug, Unplug };
+_X_EXPORT XF86ModuleData palmaxModuleData = { &version_rec, Plug, Unplug };
 #endif
 

@@ -1,4 +1,5 @@
 .\" $Xorg: xsm.man,v 1.4 2001/02/09 02:06:01 xorgcvs Exp $
+.\" $XdotOrg: xc/programs/xsm/xsm.man,v 1.3 2005/10/23 16:58:38 alanc Exp $
 .\" Copyright 1994,1998  The Open Group
 .\" 
 .\" Permission to use, copy, modify, distribute, and sell this software and its
@@ -89,7 +90,7 @@ The first time \fIxsm\fP is started, it will need to locate a list of
 applications to start up.  For example, this list might include a window
 manager, a session management proxy, and an xterm.  \fIxsm\fP will first
 look for the file \fI.xsmstartup\fP in the user's home directory.  If that
-file does not exists, it will look for the \fIsystem.xsm\fP file that was
+file does not exist, it will look for the \fIsystem.xsm\fP file that was
 set up at installation time.  Note that \fIxsm\fP provides a "fail safe"
 option when the user chooses a session to start up.  The fail safe option
 simply loads the default applications described above.

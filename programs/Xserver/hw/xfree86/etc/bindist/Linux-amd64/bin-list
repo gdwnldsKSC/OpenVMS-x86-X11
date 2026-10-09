@@ -37,6 +37,8 @@ lib64/libXaw.so.6.1
 lib64/libXaw.so.6
 lib64/libXaw.so.7.0
 lib64/libXaw.so.7
+lib64/libXaw.so.8.0
+lib64/libXaw.so.8
 lib64/libXaw.so
 lib64/libXcursor.so.1.0
 lib64/libXcursor.so.1
@@ -136,3 +138,15 @@ lib64/libxkbui.so
 lib64/libxrx.so.6.3
 lib64/libxrx.so.6
 lib64/libxrx.so
+lib64/libXcomposite.so.1.0
+lib64/libXcomposite.so.1
+lib64/libXcomposite.so
+lib64/libXdamage.so.1.0
+lib64/libXdamage.so.1
+lib64/libXdamage.so
+lib64/libXevie.so.1.0
+lib64/libXevie.so.1
+lib64/libXevie.so
+lib64/libXfixes.so.3.0
+lib64/libXfixes.so.3
+lib64/libXfixes.so

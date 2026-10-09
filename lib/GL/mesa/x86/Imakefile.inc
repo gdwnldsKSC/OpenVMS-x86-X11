@@ -9,58 +9,72 @@ MESAX86BUILDDIR = MesaX86BuildDir
 MESA_X86_SRCS = $(MESAX86BUILDDIR)common_x86.c \
 		$(MESAX86BUILDDIR)common_x86_asm.S \
 		$(MESAX86BUILDDIR)glapi_x86.S \
+                $(MESAX86BUILDDIR)read_rgba_span_x86.S \
 		$(MESAX86BUILDDIR)x86.c \
 		$(MESAX86BUILDDIR)x86_cliptest.S \
 		$(MESAX86BUILDDIR)x86_xform2.S \
 		$(MESAX86BUILDDIR)x86_xform3.S \
-		$(MESAX86BUILDDIR)x86_xform4.S
+		$(MESAX86BUILDDIR)x86_xform4.S \
+                $(MESAX86BUILDDIR)x86sse.c
 
 #ifdef NeedToLinkMesaSrc
 LinkSourceFile(common_x86.c, $(MESASRCDIR)/src/mesa/x86)
 LinkSourceFile(common_x86_asm.S, $(MESASRCDIR)/src/mesa/x86)
 LinkSourceFile(glapi_x86.S, $(MESASRCDIR)/src/mesa/x86)
+LinkSourceFile(read_rgba_span_x86.S, $(MESASRCDIR)/src/mesa/x86)
+LinkSourceFile(read_rgba_span_x86.h, $(MESASRCDIR)/src/mesa/x86)
 LinkSourceFile(x86.c, $(MESASRCDIR)/src/mesa/x86)
 LinkSourceFile(x86_cliptest.S, $(MESASRCDIR)/src/mesa/x86)
 LinkSourceFile(x86_xform2.S, $(MESASRCDIR)/src/mesa/x86)
 LinkSourceFile(x86_xform3.S, $(MESASRCDIR)/src/mesa/x86)
 LinkSourceFile(x86_xform4.S, $(MESASRCDIR)/src/mesa/x86)
+LinkSourceFile(x86sse.c, $(MESASRCDIR)/src/mesa/x86/rtasm)
+LinkSourceFile(x86sse.h, $(MESASRCDIR)/src/mesa/x86/rtasm)
 #endif
 
 MESA_X86_OBJS = $(MESAX86BUILDDIR)common_x86.o \
 		$(MESAX86BUILDDIR)common_x86_asm.o \
+                $(MESAX86BUILDDIR)read_rgba_span_x86.o \
 		$(MESAX86BUILDDIR)x86.o \
 		$(MESAX86BUILDDIR)x86_cliptest.o \
 		$(MESAX86BUILDDIR)x86_xform2.o \
 		$(MESAX86BUILDDIR)x86_xform3.o \
-		$(MESAX86BUILDDIR)x86_xform4.o
+		$(MESAX86BUILDDIR)x86_xform4.o \
+                $(MESAX86BUILDDIR)x86sse.o
 
 #if defined(DoSharedLib) && DoSharedLib
 MESA_X86_UOBJS = $(MESAX86BUILDDIR)unshared/common_x86.o \
 		$(MESAX86BUILDDIR)common_x86_asm.o \
+                $(MESAX86BUILDDIR)read_rgba_span_x86.o \
 		$(MESAX86BUILDDIR)unshared/x86.o \
 		$(MESAX86BUILDDIR)x86_cliptest.o \
 		$(MESAX86BUILDDIR)x86_xform2.o \
 		$(MESAX86BUILDDIR)x86_xform3.o \
-		$(MESAX86BUILDDIR)x86_xform4.o
+		$(MESAX86BUILDDIR)x86_xform4.o \
+                $(MESAX86BUILDDIR)x86sse.o
 #else
 MESA_X86_UOBJS = $(MESA_X86_OBJS)
 #endif
 
 MESA_X86_DOBJS = $(MESAX86BUILDDIR)debugger/common_x86.o \
 		$(MESAX86BUILDDIR)common_x86_asm.o \
+                $(MESAX86BUILDDIR)read_rgba_span_x86.o \
 		$(MESAX86BUILDDIR)debugger/x86.o \
 		$(MESAX86BUILDDIR)x86_cliptest.o \
 		$(MESAX86BUILDDIR)x86_xform2.o \
 		$(MESAX86BUILDDIR)x86_xform3.o \
-		$(MESAX86BUILDDIR)x86_xform4.o
+		$(MESAX86BUILDDIR)x86_xform4.o \
+                $(MESAX86BUILDDIR)x86sse.o
 
 MESA_X86_POBJS = $(MESAX86BUILDDIR)profiled/common_x86.o \
 		$(MESAX86BUILDDIR)common_x86_asm.o \
+                $(MESAX86BUILDDIR)read_rgba_span_x86.o \
 		$(MESAX86BUILDDIR)profiled/x86.o \
 		$(MESAX86BUILDDIR)x86_cliptest.o \
 		$(MESAX86BUILDDIR)x86_xform2.o \
 		$(MESAX86BUILDDIR)x86_xform3.o \
-		$(MESAX86BUILDDIR)x86_xform4.o
+		$(MESAX86BUILDDIR)x86_xform4.o \
+                $(MESAX86BUILDDIR)x86sse.o
 
 MESA_X86_DEFS = -DUSE_X86_ASM
 

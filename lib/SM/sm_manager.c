@@ -30,81 +30,27 @@ in this Software without prior written authorization from The Open Group.
  * Author: Ralph Mor, X Consortium
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/SM/SMlib.h>
 #include "SMlibint.h"
+#include <X11/Xtrans/Xtrans.h>
 
-#ifdef __USLC__
+#ifdef __UNIXWARE__
 #undef shutdown
 #endif
 
 
-Status
-SmsInitialize (vendor, release, newClientProc, managerData,
-    hostBasedAuthProc, errorLength, errorStringRet)
 
-char 		 		*vendor;
-char 		 		*release;
-SmsNewClientProc 		newClientProc;
-SmPointer	 		managerData;
-IceHostBasedAuthProc		hostBasedAuthProc;
-int  		 		errorLength;
-char 		 		*errorStringRet;
-
-{
-    if (errorStringRet && errorLength > 0)
-	*errorStringRet = '\0';
-
-    if (!newClientProc)
-    {
-	strncpy (errorStringRet,
-	    "The SmsNewClientProc callback can't be NULL", errorLength);
-
-	return (0);
-    }
-
-    if (!_SmsOpcode)
-    {
-	Status _SmsProtocolSetupProc ();
-
-	if ((_SmsOpcode = IceRegisterForProtocolReply ("XSMP",
-	    vendor, release, _SmVersionCount, _SmsVersions,
-	    _SmAuthCount, _SmAuthNames, _SmsAuthProcs, hostBasedAuthProc,
-	    _SmsProtocolSetupProc,
-	    NULL,	/* IceProtocolActivateProc - we don't care about
-			   when the Protocol Reply is sent, because the
-			   session manager can not immediately send a
-			   message - it must wait for RegisterClient. */
-	    NULL	/* IceIOErrorProc */
-            )) < 0)
-	{
-	    strncpy (errorStringRet,
-	        "Could not register XSMP protocol with ICE", errorLength);
-
-	    return (0);
-	}
-    }
-
-    _SmsNewClientProc = newClientProc;
-    _SmsNewClientData = managerData;
-
-    return (1);
-}
-
-
-
-Status
-_SmsProtocolSetupProc (iceConn,
-    majorVersion, minorVersion, vendor, release,
-    clientDataRet, failureReasonRet)
-
-IceConn    iceConn;
-int	   majorVersion;
-int	   minorVersion;
-char  	   *vendor;
-char 	   *release;
-IcePointer *clientDataRet;
-char	   **failureReasonRet;
-
+static Status
+_SmsProtocolSetupProc (IceConn    iceConn,
+		       int majorVersion,
+		       int minorVersion,
+		       char *vendor,
+		       char *release,
+		       IcePointer *clientDataRet,
+		       char **failureReasonRet)
 {
     SmsConn  		smsConn;
     unsigned long 	mask;
@@ -165,16 +111,67 @@ char	   **failureReasonRet;
 
 
 
-/* Using private API from libICE. */
-extern char *_IceGetPeerName (IceConn /* iceConn */);
 
+Status
+SmsInitialize (vendor, release, newClientProc, managerData,
+    hostBasedAuthProc, errorLength, errorStringRet)
+
+char 		 		*vendor;
+char 		 		*release;
+SmsNewClientProc 		newClientProc;
+SmPointer	 		managerData;
+IceHostBasedAuthProc		hostBasedAuthProc;
+int  		 		errorLength;
+char 		 		*errorStringRet;
+
+{
+    if (errorStringRet && errorLength > 0)
+	*errorStringRet = '\0';
+
+    if (!newClientProc)
+    {
+	strncpy (errorStringRet,
+	    "The SmsNewClientProc callback can't be NULL", errorLength);
+
+	return (0);
+    }
+
+    if (!_SmsOpcode)
+    {
+
+	if ((_SmsOpcode = IceRegisterForProtocolReply ("XSMP",
+	    vendor, release, _SmVersionCount, _SmsVersions,
+	    _SmAuthCount, _SmAuthNames, _SmsAuthProcs, hostBasedAuthProc,
+	    _SmsProtocolSetupProc,
+	    NULL,	/* IceProtocolActivateProc - we don't care about
+			   when the Protocol Reply is sent, because the
+			   session manager can not immediately send a
+			   message - it must wait for RegisterClient. */
+	    NULL	/* IceIOErrorProc */
+            )) < 0)
+	{
+	    strncpy (errorStringRet,
+	        "Could not register XSMP protocol with ICE", errorLength);
+
+	    return (0);
+	}
+    }
+
+    _SmsNewClientProc = newClientProc;
+    _SmsNewClientData = managerData;
+
+    return (1);
+}
+
+
+
 char *
 SmsClientHostName (smsConn)
 
 SmsConn smsConn;
 
 {
-    return (_IceGetPeerName (smsConn->iceConn));
+    return (IceGetPeerName (smsConn->iceConn));
 }
 
 

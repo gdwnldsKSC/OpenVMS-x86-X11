@@ -1,10 +1,10 @@
 /* $XFree86$ */
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/sis/sis300_accel.h,v 1.4 2004/07/26 22:40:56 twini Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/sis/sis300_accel.h,v 1.8 2005/07/04 10:57:08 twini Exp $ */
 /*
  * 2D Acceleration for SiS 530, 620, 300, 540, 630, 730.
  * Definitions for the SIS engine communication
  *
- * Copyright (C) 2001-2004 by Thomas Winischhofer, Vienna, Austria
+ * Copyright (C) 2001-2005 by Thomas Winischhofer, Vienna, Austria
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -113,73 +113,73 @@
 
 #define SiSIdle \
   { \
-  while( (MMIO_IN16(pSiS->IOBase, BR(16)+2) & 0xE000) != 0xE000){}; \
-  while( (MMIO_IN16(pSiS->IOBase, BR(16)+2) & 0xE000) != 0xE000){}; \
-  while( (MMIO_IN16(pSiS->IOBase, BR(16)+2) & 0xE000) != 0xE000){}; \
-  CmdQueLen = (MMIO_IN16(pSiS->IOBase, 0x8240) & pSiS->CmdQueLenMask) - pSiS->CmdQueLenFix; \
+  while( (SIS_MMIO_IN16(pSiS->IOBase, BR(16)+2) & 0xE000) != 0xE000){}; \
+  while( (SIS_MMIO_IN16(pSiS->IOBase, BR(16)+2) & 0xE000) != 0xE000){}; \
+  while( (SIS_MMIO_IN16(pSiS->IOBase, BR(16)+2) & 0xE000) != 0xE000){}; \
+  CmdQueLen = (SIS_MMIO_IN16(pSiS->IOBase, 0x8240) & pSiS->CmdQueLenMask) - pSiS->CmdQueLenFix; \
   }
 /* (do three times, because 2D engine seems quite unsure about whether or not it's idle) */
 
 #define SiSSetupSRCBase(base) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(0), base);\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(0), base);\
                 CmdQueLen--;
 
 #define SiSSetupSRCPitch(pitch) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT16(pSiS->IOBase, BR(1), pitch);\
+                SIS_MMIO_OUT16(pSiS->IOBase, BR(1), pitch);\
                 CmdQueLen--;
 
 #define SiSSetupSRCXY(x,y) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(2), (x)<<16 | (y) );\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(2), (x)<<16 | (y) );\
                 CmdQueLen--;
 
 #define SiSSetupDSTBase(base) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(4), base);\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(4), base);\
                 CmdQueLen--;
 
 #define SiSSetupDSTXY(x,y) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(3), (x)<<16 | (y) );\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(3), (x)<<16 | (y) );\
                 CmdQueLen--;
 
 #define SiSSetupDSTRect(x,y) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(5), (y)<<16 | (x) );\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(5), (y)<<16 | (x) );\
                 CmdQueLen--;
 
 #define SiSSetupDSTColorDepth(bpp) \
                 if(pSiS->VGAEngine != SIS_530_VGA) { \
                   if (CmdQueLen <= 0)  SiSIdle;\
-                  MMIO_OUT16(pSiS->IOBase, BR(1)+2, bpp);\
+                  SIS_MMIO_OUT16(pSiS->IOBase, BR(1)+2, bpp);\
                   CmdQueLen--; \
 		}
 
 #define SiSSetupRect(w,h) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(6), (h)<<16 | (w) );\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(6), (h)<<16 | (w) );\
                 CmdQueLen--;
 
 #define SiSSetupPATFG(color) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(7), color);\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(7), color);\
                 CmdQueLen--;
 
 #define SiSSetupPATBG(color) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(8), color);\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(8), color);\
                 CmdQueLen--;
 
 #define SiSSetupSRCFG(color) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(9), color);\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(9), color);\
                 CmdQueLen--;
 
 #define SiSSetupSRCBG(color) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(10), color);\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(10), color);\
                 CmdQueLen--;
 
 /* 0x8224 src colorkey high */
@@ -188,30 +188,30 @@
 /* 0x8220 dest colorkey low */
 #define SiSSetupSRCTrans(color) \
                 if (CmdQueLen <= 1)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, 0x8224, color);\
-		MMIO_OUT32(pSiS->IOBase, 0x8228, color);\
+                SIS_MMIO_OUT32(pSiS->IOBase, 0x8224, color);\
+		SIS_MMIO_OUT32(pSiS->IOBase, 0x8228, color);\
 		CmdQueLen -= 2;
 
 #define SiSSetupDSTTrans(color) \
 		if (CmdQueLen <= 1)  SiSIdle;\
-		MMIO_OUT32(pSiS->IOBase, 0x821C, color); \
-		MMIO_OUT32(pSiS->IOBase, 0x8220, color); \
+		SIS_MMIO_OUT32(pSiS->IOBase, 0x821C, color); \
+		SIS_MMIO_OUT32(pSiS->IOBase, 0x8220, color); \
                 CmdQueLen -= 2;
 
 #define SiSSetupMONOPAT(p0,p1) \
                 if (CmdQueLen <= 1)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(11), p0);\
-                MMIO_OUT32(pSiS->IOBase, BR(12), p1);\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(11), p0);\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(12), p1);\
                 CmdQueLen -= 2;
 
 #define SiSSetupClipLT(left,top) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(13), ((left) & 0xFFFF) | (top)<<16 );\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(13), ((left) & 0xFFFF) | (top)<<16 );\
                 CmdQueLen--;
 
 #define SiSSetupClipRB(right,bottom) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(14), ((right) & 0xFFFF) | (bottom)<<16 );\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(14), ((right) & 0xFFFF) | (bottom)<<16 );\
                 CmdQueLen--;
 
 /* General */
@@ -223,84 +223,84 @@
 
 #define SiSDoCMD \
                 if (CmdQueLen <= 1)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(15), pSiS->CommandReg); \
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(15), pSiS->CommandReg); \
 		CmdQueLen--; \
 		if(pSiS->VGAEngine != SIS_530_VGA) { \
-                   MMIO_OUT32(pSiS->IOBase, BR(16), 0);\
+                   SIS_MMIO_OUT32(pSiS->IOBase, BR(16), 0);\
                    CmdQueLen--; \
 		} else { \
 		   unsigned long temp; \
-		   temp = MMIO_IN32(pSiS->IOBase, BR(16)); \
+		   temp = SIS_MMIO_IN32(pSiS->IOBase, BR(16)); \
 		   (void) temp; \
 		} \
 
 /* Line */
 #define SiSSetupX0Y0(x,y) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(2), (y)<<16 | (x) );\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(2), (y)<<16 | (x) );\
                 CmdQueLen--;
 
 #define SiSSetupX1Y1(x,y) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(3), (y)<<16 | (x) );\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(3), (y)<<16 | (x) );\
                 CmdQueLen--;
 
 #define SiSSetupLineCount(c) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT16(pSiS->IOBase, BR(6), c);\
+                SIS_MMIO_OUT16(pSiS->IOBase, BR(6), c);\
                 CmdQueLen--;
 
 #define SiSSetupStylePeriod(p) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT16(pSiS->IOBase, BR(6)+2, p);\
+                SIS_MMIO_OUT16(pSiS->IOBase, BR(6)+2, p);\
                 CmdQueLen--;
 
 #define SiSSetupStyleLow(ls) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(11), ls);\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(11), ls);\
                 CmdQueLen--;
 
 #define SiSSetupStyleHigh(ls) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, BR(12), ls);\
+                SIS_MMIO_OUT32(pSiS->IOBase, BR(12), ls);\
                 CmdQueLen--;
 
 /* Trapezoid */
 #define SiSSetupYH(y,h) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, 0x8208, (y)<<16 | (h) );\
+                SIS_MMIO_OUT32(pSiS->IOBase, 0x8208, (y)<<16 | (h) );\
                 CmdQueLen--;
 
 #define SiSSetupLR(left,right) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, 0x820C, (right)<<16 | (left) );\
+                SIS_MMIO_OUT32(pSiS->IOBase, 0x820C, (right)<<16 | (left) );\
                 CmdQueLen--;
 
 #define SiSSetupdL(dxL,dyL) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, 0x8244, (dyL)<<16 | (dxL) );\
+                SIS_MMIO_OUT32(pSiS->IOBase, 0x8244, (dyL)<<16 | (dxL) );\
                 CmdQueLen--;
 
 #define SiSSetupdR(dxR,dyR) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-		MMIO_OUT32(pSiS->IOBase, 0x8248, (dyR)<<16 | (dxR) );\
+		SIS_MMIO_OUT32(pSiS->IOBase, 0x8248, (dyR)<<16 | (dxR) );\
                 CmdQueLen--;
 
 #define SiSSetupEL(eL) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-		MMIO_OUT32(pSiS->IOBase, 0x824C, eL);\
+		SIS_MMIO_OUT32(pSiS->IOBase, 0x824C, eL);\
 		CmdQueLen--;
 
 #define SiSSetupER(eR) \
                 if (CmdQueLen <= 0)  SiSIdle;\
-                MMIO_OUT32(pSiS->IOBase, 0x8250, eR);\
+                SIS_MMIO_OUT32(pSiS->IOBase, 0x8250, eR);\
                 CmdQueLen--;
 
 
 /* Set Pattern register */    
 #define SiSSetPattern(num, value) \
       if (CmdQueLen <= 0)  SiSIdle; \
-      MMIO_OUT32(pSiS->IOBase, (PATTERN_REG + (num * 4)), value); \
+      SIS_MMIO_OUT32(pSiS->IOBase, (PATTERN_REG + (num * 4)), value); \
       CmdQueLen--;
 
             
@@ -1179,7 +1179,7 @@
 #define SiSWait3DCmdQueue(wLen)\
 do{ \
   while ( CmdQueLen < (int)(wLen)) { \
-      CmdQueLen = (MMIO_IN16(pSiS->IOBase, 0x8240) & pSiS->CmdQueLenMask) - pSiS->CmdQueLenFix; \
+      CmdQueLen = (SIS_MMIO_IN16(pSiS->IOBase, 0x8240) & pSiS->CmdQueLenMask) - pSiS->CmdQueLenFix; \
   } \
   CmdQueLen -= (int)(wLen); \
 } while(0) 

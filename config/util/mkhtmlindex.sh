@@ -2,7 +2,7 @@
 #
 # $XFree86: xc/config/util/mkhtmlindex.sh,v 1.3 2000/08/26 04:30:49 dawes Exp $
 #
-# Copyright © 2000 by Precision Insight, Inc.
+# Copyright Â© 2000 by Precision Insight, Inc.
 #
 # Generate index files for the HTML man pages
 #

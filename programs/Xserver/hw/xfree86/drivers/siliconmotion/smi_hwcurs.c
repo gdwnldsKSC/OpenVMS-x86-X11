@@ -28,6 +28,10 @@ authorization from the XFree86 Project and Silicon Motion.
 */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/siliconmotion/smi_hwcurs.c,v 1.1 2000/11/28 20:59:20 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "cursorstr.h"
 #include "smi.h"
 

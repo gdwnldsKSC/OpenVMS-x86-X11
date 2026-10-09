@@ -26,7 +26,6 @@
  */
 /* $XFree86: xc/programs/xedit/xedit.c,v 1.17 2002/09/22 07:09:05 paulo Exp $ */
 
-#include <X11/IntrinsicP.h>
 #include "xedit.h"
 #include <X11/Xaw/SmeBSB.h>
 #include <time.h>

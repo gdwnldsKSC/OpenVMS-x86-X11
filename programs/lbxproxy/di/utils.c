@@ -1,4 +1,5 @@
 /* $Xorg: utils.c,v 1.5 2001/02/09 02:05:32 xorgcvs Exp $ */
+/* $XdotOrg: xc/programs/lbxproxy/di/utils.c,v 1.3 2005/07/26 18:55:42 alanc Exp $ */
 /***********************************************************
 
 Copyright 1987, 1996, 1998  The Open Group
@@ -47,6 +48,10 @@ SOFTWARE.
 ******************************************************************/
 /* $XFree86: xc/programs/lbxproxy/di/utils.c,v 1.17 2003/09/13 21:33:10 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "lbx.h"
 #include <stdio.h>
 #include <stdlib.h>		/* getenv(), {m,re}alloc() */
@@ -71,11 +76,15 @@ SOFTWARE.
 
 static void VErrorF(const char*, va_list);
 
+#ifdef RETSIGTYPE /* autoconf AC_TYPE_SIGNAL */
+# define SIGVAL RETSIGTYPE
+#else /* Imake */
 #ifdef SIGNALRETURNSINT
 #define SIGVAL int
 #else
 #define SIGVAL void
 #endif
+#endif /* RETSIGTYPE */
 
 #include "util.h"
 #include "wire.h"

@@ -1,3 +1,7 @@
+Tue May 17 12:59:47 2005  Søren Sandmann  <sandmann@redhat.com>
+
+	* Xdamage.c: Conditionally include config.h
+
 2004-02-03  Jim Gettys  <jg@freedesktop.org>
 
 	* AUTHORS: Add authors.

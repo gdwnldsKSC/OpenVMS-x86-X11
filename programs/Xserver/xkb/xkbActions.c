@@ -1,4 +1,5 @@
 /* $Xorg: xkbActions.c,v 1.3 2000/08/17 19:53:47 cpqbld Exp $ */
+/* $XdotOrg: xc/programs/Xserver/xkb/xkbActions.c,v 1.7 2005/07/03 08:53:54 daniels Exp $ */
 /************************************************************
 Copyright (c) 1993 by Silicon Graphics Computer Systems, Inc.
 
@@ -26,6 +27,10 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ********************************************************/
 /* $XFree86: xc/programs/Xserver/xkb/xkbActions.c,v 3.13 2003/07/16 01:39:08 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
 #include <math.h>
 #define NEED_EVENTS 1
@@ -34,9 +39,51 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <X11/keysym.h>
 #include "misc.h"
 #include "inputstr.h"
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 #include "xkb.h"
 #include <ctype.h>
+
+static unsigned int _xkbServerGeneration;
+int xkbDevicePrivateIndex = -1;
+
+void
+xkbUnwrapProc(DeviceIntPtr device, DeviceHandleProc proc,
+                   pointer data)
+{
+    xkbDeviceInfoPtr xkbPrivPtr = XKBDEVICEINFO(device);
+    ProcessInputProc tmp = device->public.processInputProc;
+    if(xkbPrivPtr->unwrapProc)
+	xkbPrivPtr->unwrapProc = NULL;
+
+    UNWRAP_PROCESS_INPUT_PROC(device,xkbPrivPtr);
+    proc(device,data);
+    WRAP_PROCESS_INPUT_PROC(device,xkbPrivPtr,
+			    tmp,xkbUnwrapProc);
+}
+
+
+void
+XkbSetExtension(DeviceIntPtr device, ProcessInputProc proc)
+{
+    xkbDeviceInfoPtr xkbPrivPtr;
+
+    if (serverGeneration != _xkbServerGeneration) {
+	if ((xkbDevicePrivateIndex = AllocateDevicePrivateIndex()) == -1)
+	    return;
+	_xkbServerGeneration = serverGeneration;
+    }
+    if (!AllocateDevicePrivate(device, xkbDevicePrivateIndex))
+	return;
+
+    xkbPrivPtr = (xkbDeviceInfoPtr) xalloc(sizeof(xkbDeviceInfoRec));
+    if (!xkbPrivPtr)
+	return;
+    xkbPrivPtr->unwrapProc = NULL;
+
+    device->devPrivates[xkbDevicePrivateIndex].ptr = xkbPrivPtr;
+    WRAP_PROCESS_INPUT_PROC(device,xkbPrivPtr,
+			    proc,xkbUnwrapProc);
+}
 
 #ifdef XINPUT
 extern	void	ProcessOtherEvent(
@@ -822,6 +869,7 @@ xEvent 		ev;
 int		x,y;
 XkbStateRec	old;
 unsigned	mods,mask,oldCoreState = 0,oldCorePrevState = 0;
+xkbDeviceInfoPtr xkbPrivPtr = XKBDEVICEINFO(xkbi->device);
 
     if ((filter->keycode!=0)&&(filter->keycode!=keycode))
 	return 1;
@@ -870,7 +918,10 @@ unsigned	mods,mask,oldCoreState = 0,oldCorePrevState = 0;
 
 	realMods = xkbi->device->key->modifierMap[ev.u.u.detail];
 	xkbi->device->key->modifierMap[ev.u.u.detail] = 0;
-	CoreProcessKeyboardEvent(&ev,xkbi->device,1);
+	UNWRAP_PROCESS_INPUT_PROC(xkbi->device,xkbPrivPtr);
+	xkbi->device->public.processInputProc(&ev,xkbi->device,1);
+	COND_WRAP_PROCESS_INPUT_PROC(xkbi->device, xkbPrivPtr,
+				     ProcessKeyboardEvent,xkbUnwrapProc);
 	xkbi->device->key->modifierMap[ev.u.u.detail] = realMods;
 	
 	if ( mask || mods ) {
@@ -908,7 +959,10 @@ unsigned	mods,mask,oldCoreState = 0,oldCorePrevState = 0;
 
 	realMods = xkbi->device->key->modifierMap[ev.u.u.detail];
 	xkbi->device->key->modifierMap[ev.u.u.detail] = 0;
-	CoreProcessKeyboardEvent(&ev,xkbi->device,1);
+	UNWRAP_PROCESS_INPUT_PROC(xkbi->device,xkbPrivPtr);
+	xkbi->device->public.processInputProc(&ev,xkbi->device,1);
+	COND_WRAP_PROCESS_INPUT_PROC(xkbi->device, xkbPrivPtr,
+				     ProcessKeyboardEvent,xkbUnwrapProc);
 	xkbi->device->key->modifierMap[ev.u.u.detail] = realMods;
 
 	if ( mask || mods ) {
@@ -1102,6 +1156,8 @@ Bool		pressEvent;
 #ifdef XINPUT
 Bool		xiEvent;
 #endif
+    
+xkbDeviceInfoPtr xkbPrivPtr = XKBDEVICEINFO(dev);
 
     keyc= kbd->key;
     xkbi= keyc->xkbInfo;
@@ -1244,7 +1300,10 @@ Bool		xiEvent;
 	if (keyEvent) {
 	    realMods = keyc->modifierMap[key];
 	    keyc->modifierMap[key] = 0;
-	    CoreProcessKeyboardEvent(xE,dev,count);
+	    UNWRAP_PROCESS_INPUT_PROC(dev,xkbPrivPtr);
+	    dev->public.processInputProc(xE,dev,count);
+	    COND_WRAP_PROCESS_INPUT_PROC(dev, xkbPrivPtr,
+					 ProcessKeyboardEvent,xkbUnwrapProc);
 	    keyc->modifierMap[key] = realMods;
 	}
 	else CoreProcessPointerEvent(xE,dev,count);

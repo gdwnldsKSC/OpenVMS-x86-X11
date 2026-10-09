@@ -1,5 +1,9 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/ur98/xf86Ur-98.c,v 1.1tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
@@ -673,10 +677,7 @@ init_err:
 	return NULL;
 }
 
-#ifdef XFree86LOADER
-static
-#endif
-InputDriverRec UR98 = {
+_X_EXPORT InputDriverRec UR98 = {
 	1,			/* driver version */
 	"ur98",			/* driver name */
 	NULL,			/* identify */
@@ -716,6 +717,6 @@ static XF86ModuleVersionInfo version_rec = {
  * is setup after the pattern <module_name>ModuleData.
  * Do not change it.
  */
-XF86ModuleData ur98ModuleData = { &version_rec, Plug, Unplug };
+_X_EXPORT XF86ModuleData ur98ModuleData = { &version_rec, Plug, Unplug };
 #endif
 

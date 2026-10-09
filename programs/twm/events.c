@@ -86,7 +86,7 @@ XEvent ButtonEvent;		/* button press event */
 XEvent Event;			/* the current event */
 TwmWindow *Tmp_win;		/* the current twm window */
 
-/* Used in HandleEnterNotify to remove border highlight from a window 
+/** Used in HandleEnterNotify to remove border highlight from a window 
  * that has not recieved a LeaveNotify event because of a pointer grab 
  */
 TwmWindow *UnHighLight_win = NULL;
@@ -117,8 +117,7 @@ int ButtonPressed = -1;
 int Cancel = FALSE;
 
 
-void AutoRaiseWindow (tmp)
-    TwmWindow *tmp;
+void AutoRaiseWindow (TwmWindow *tmp)
 {
     XRaiseWindow (dpy, tmp->frame);
     XSync (dpy, 0);
@@ -127,8 +126,7 @@ void AutoRaiseWindow (tmp)
     raise_win = tmp;
 }
 
-void SetRaiseWindow (tmp)
-    TwmWindow *tmp;
+void SetRaiseWindow (TwmWindow *tmp)
 {
     enter_flag = TRUE;
     enter_win = NULL;
@@ -138,14 +136,9 @@ void SetRaiseWindow (tmp)
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	InitEvents - initialize the event jump table
- *
- ***********************************************************************
+/**
+ * initialize the event jump table.
  */
-
 void
 InitEvents()
 {
@@ -186,8 +179,7 @@ InitEvents()
 
 Time lastTimestamp = CurrentTime;	/* until Xlib does this for us */
 
-Bool StashEventTime (ev)
-    register XEvent *ev;
+Bool StashEventTime (XEvent *ev)
 {
     switch (ev->type) {
       case KeyPress:
@@ -223,13 +215,12 @@ Bool StashEventTime (ev)
 
 
 
-/*
- * WindowOfEvent - return the window about which this event is concerned; this
+/**
+ * return the window about which this event is concerned; this
  * window may not be the same as XEvent.xany.window (the first window listed
  * in the structure).
  */
-Window WindowOfEvent (e)
-    XEvent *e;
+Window WindowOfEvent (XEvent *e)
 {
     /*
      * Each window subfield is marked with whether or not it is the same as
@@ -276,14 +267,9 @@ Window WindowOfEvent (e)
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	DispatchEvent2 - 
+/**
  *      handle a single X event stored in global var Event
- *      this rouitine for is for a call during an f.move
- *
- ***********************************************************************
+ * this routine for is for a call during an f.move
  */
 Bool DispatchEvent2 ()
 {
@@ -309,12 +295,8 @@ Bool DispatchEvent2 ()
     return True;
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *	DispatchEvent - handle a single X event stored in global var Event
- *
- ***********************************************************************
+/**
+ * handle a single X event stored in global var Event
  */
 Bool DispatchEvent ()
 {
@@ -339,14 +321,9 @@ Bool DispatchEvent ()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleEvents - handle X events
- *
- ***********************************************************************
+/**
+ * handle X events
  */
-
 void
 HandleEvents()
 {
@@ -373,18 +350,14 @@ HandleEvents()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleColormapNotify - colormap notify event handler
+/**
+ * colormap notify event handler.
  *
  * This procedure handles both a client changing its own colormap, and
  * a client explicitly installing its colormap itself (only the window
  * manager should do that, so we must set it correctly).
  *
- ***********************************************************************
  */
-
 void
 HandleColormapNotify()
 {
@@ -530,18 +503,14 @@ HandleColormapNotify()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleVisibilityNotify - visibility notify event handler
+/**
+ * visibility notify event handler.
  *
  * This routine keeps track of visibility events so that colormap
  * installation can keep the maximum number of useful colormaps
  * installed at one time.
  *
- ***********************************************************************
  */
-
 void
 HandleVisibilityNotify()
 {
@@ -570,16 +539,12 @@ HandleVisibilityNotify()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleKeyPress - key press event handler
- *
- ***********************************************************************
- */
 
 int MovedFromKeyPress = False;
 
+/**
+ * key press event handler
+ */
 void
 HandleKeyPress()
 {
@@ -704,9 +669,7 @@ HandleKeyPress()
 
 
 static void 
-free_window_names (tmp, nukefull, nukename, nukeicon)
-    TwmWindow *tmp;
-    Bool nukefull, nukename, nukeicon;
+free_window_names (TwmWindow *tmp, Bool nukefull, Bool nukename, Bool nukeicon)
 {
 /*
  * XXX - are we sure that nobody ever sets these to another constant (check
@@ -724,8 +687,7 @@ free_window_names (tmp, nukefull, nukename, nukeicon)
 
 
 void 
-free_cwins (tmp)
-    TwmWindow *tmp;
+free_cwins (TwmWindow *tmp)
 {
     int i;
     TwmColormap *cmap;
@@ -753,14 +715,9 @@ free_cwins (tmp)
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandlePropertyNotify - property notify event handler
- *
- ***********************************************************************
+/**
+ * property notify event handler
  */
-
 void
 HandlePropertyNotify()
 {
@@ -967,12 +924,8 @@ HandlePropertyNotify()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	RedoIconName - procedure to re-position the icon window and name
- *
- ***********************************************************************
+/**
+ * procedure to re-position the icon window and name
  */
 void
 RedoIconName()
@@ -1034,14 +987,9 @@ RedoIconName()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleClientMessage - client message event handler
- *
- ***********************************************************************
+/**
+ *client message event handler
  */
-
 void
 HandleClientMessage()
 {
@@ -1068,12 +1016,8 @@ HandleClientMessage()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleExpose - expose event handler
- *
- ***********************************************************************
+/**
+ * expose event handler
  */
 void
 HandleExpose()
@@ -1174,8 +1118,7 @@ HandleExpose()
 
 
 
-static void remove_window_from_ring (tmp)
-    TwmWindow *tmp;
+static void remove_window_from_ring (TwmWindow *tmp)
 {
     TwmWindow *prev = tmp->ring.prev, *next = tmp->ring.next;
 
@@ -1200,14 +1143,9 @@ static void remove_window_from_ring (tmp)
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleDestroyNotify - DestroyNotify event handler
- *
- ***********************************************************************
+/**
+ * DestroyNotify event handler
  */
-
 void
 HandleDestroyNotify()
 {
@@ -1319,14 +1257,9 @@ HandleCreateNotify()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
+/**
  *	HandleMapRequest - MapRequest event handler
- *
- ***********************************************************************
  */
-
 void
 HandleMapRequest()
 {
@@ -1407,14 +1340,9 @@ void SimulateMapRequest (w)
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleMapNotify - MapNotify event handler
- *
- ***********************************************************************
+/**
+ *	MapNotify event handler
  */
-
 void
 HandleMapNotify()
 {
@@ -1446,14 +1374,9 @@ HandleMapNotify()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleUnmapNotify - UnmapNotify event handler
- *
- ***********************************************************************
+/**
+ * UnmapNotify event handler
  */
-
 void
 HandleUnmapNotify()
 {
@@ -1516,14 +1439,9 @@ HandleUnmapNotify()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleMotionNotify - MotionNotify event handler
- *
- ***********************************************************************
+/**
+ * MotionNotify event handler
  */
-
 void
 HandleMotionNotify()
 {
@@ -1548,12 +1466,8 @@ HandleMotionNotify()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleButtonRelease - ButtonRelease event handler
- *
- ***********************************************************************
+/**
+ * ButtonRelease event handler
  */
 void
 HandleButtonRelease()
@@ -1729,10 +1643,13 @@ HandleButtonRelease()
 
 
 
+/**
+ *
+ * \param menu menu to pop up
+ * \param w    invoking window, or None
+ */
 static void 
-do_menu (menu, w)
-    MenuRoot *menu;			/* menu to pop up */
-    Window w;				/* invoking window or None */
+do_menu (MenuRoot *menu, Window w)
 {
     int x = Event.xbutton.x_root;
     int y = Event.xbutton.y_root;
@@ -1758,12 +1675,8 @@ do_menu (menu, w)
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleButtonPress - ButtonPress event handler
- *
- ***********************************************************************
+/**
+ * ButtonPress event handler
  */
 void
 HandleButtonPress()
@@ -1998,32 +1911,23 @@ HandleButtonPress()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HENQueueScanner - EnterNotify event q scanner
+/** \fn HENQueueScanner
+ * EnterNotify event q scanner.
  *
  *	Looks at the queued events and determines if any matching
  *	LeaveNotify events or EnterEvents deriving from the
  *	termination of a grab are behind this event to allow
  *	skipping of unnecessary processing.
- *
- ***********************************************************************
  */
-
 typedef struct HENScanArgs {
-    Window w;		/* Window we are currently entering */
-    Bool leaves;	/* Any LeaveNotifies found for this window */
-    Bool inferior;	/* Was NotifyInferior the mode for LeaveNotify */
-    Bool enters;	/* Any EnterNotify events with NotifyUngrab */
+    Window w;		/**< Window we are currently entering */
+    Bool leaves;	/**< Any LeaveNotifies found for this window */
+    Bool inferior;	/**< Was NotifyInferior the mode for LeaveNotify */
+    Bool enters;	/**< Any EnterNotify events with NotifyUngrab */
 } HENScanArgs;
 
-/* ARGSUSED*/
 static Bool
-HENQueueScanner(dpy, ev, args)
-    Display *dpy;
-    XEvent *ev;
-    char *args;
+HENQueueScanner(Display *dpy, XEvent *ev, char *args)
 {
     if (ev->type == LeaveNotify) {
 	if (ev->xcrossing.window == ((HENScanArgs *) args)->w &&
@@ -2045,14 +1949,9 @@ HENQueueScanner(dpy, ev, args)
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleEnterNotify - EnterNotify event handler
- *
- ***********************************************************************
+/**
+ * EnterNotify event handler
  */
-
 void
 HandleEnterNotify()
 {
@@ -2206,30 +2105,22 @@ HandleEnterNotify()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HLNQueueScanner - LeaveNotify event q scanner
+/** \fn HLNQueueScanner
+ *  LeaveNotify event q scanner.
  *
  *	Looks at the queued events and determines if any
  *	EnterNotify events are behind this event to allow
  *	skipping of unnecessary processing.
- *
- ***********************************************************************
  */
 
 typedef struct HLNScanArgs {
-    Window w;		/* The window getting the LeaveNotify */
-    Bool enters;	/* Any EnterNotify event at all */
-    Bool matches;	/* Any matching EnterNotify events */
+    Window w;		/**< The window getting the LeaveNotify */
+    Bool enters;	/**< Any EnterNotify event at all */
+    Bool matches;	/**< Any matching EnterNotify events */
 } HLNScanArgs;
 
-/* ARGSUSED*/
 static Bool
-HLNQueueScanner(dpy, ev, args)
-    Display *dpy;
-    XEvent *ev;
-    char *args;
+HLNQueueScanner(Display *dpy, XEvent *ev, char *args)
 {
     if (ev->type == EnterNotify && ev->xcrossing.mode != NotifyGrab) {
 	((HLNScanArgs *) args)->enters = True;
@@ -2242,14 +2133,9 @@ HLNQueueScanner(dpy, ev, args)
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleLeaveNotify - LeaveNotify event handler
- *
- ***********************************************************************
+/**
+ * LeaveNotify event handler
  */
-
 void
 HandleLeaveNotify()
 {
@@ -2322,14 +2208,9 @@ HandleLeaveNotify()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
+/**
  *	HandleConfigureRequest - ConfigureRequest event handler
- *
- ***********************************************************************
  */
-
 void
 HandleConfigureRequest()
 {
@@ -2457,12 +2338,8 @@ HandleConfigureRequest()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleShapeNotify - shape notification event handler
- *
- ***********************************************************************
+/**
+ * shape notification event handler
  */
 void
 HandleShapeNotify ()
@@ -2483,14 +2360,9 @@ HandleShapeNotify ()
 
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	HandleUnknown - unknown event handler
- *
- ***********************************************************************
+/**
+ * unknown event handler
  */
-
 void
 HandleUnknown()
 {
@@ -2501,44 +2373,28 @@ HandleUnknown()
 
 
 
-/***********************************************************************
+/**
+ * checks to see if the window is a transient.
  *
- *  Procedure:
- *	Transient - checks to see if the window is a transient
+ *  \return TRUE  if window is a transient
+ *  \return FALSE if window is not a transient
  *
- *  Returned Value:
- *	TRUE	- window is a transient
- *	FALSE	- window is not a transient
- *
- *  Inputs:
- *	w	- the window to check
- *
- ***********************************************************************
+ *	\param w the window to check
  */
-
 int
-Transient(w, propw)
-    Window w, *propw;
+Transient(Window w, Window *propw)
 {
     return (XGetTransientForHint(dpy, w, propw));
 }
 
 
 
-/***********************************************************************
+/**
+ * get ScreenInfo struct associated with a given window
  *
- *  Procedure:
- *	FindScreenInfo - get ScreenInfo struct associated with a given window
- *
- *  Returned Value:
- *	ScreenInfo struct
- *
- *  Inputs:
- *	w	- the window
- *
- ***********************************************************************
+ *  \return ScreenInfo struct
+ *  \param  w the window
  */
-
 ScreenInfo *
 FindScreenInfo(w)
     Window w;
@@ -2572,22 +2428,15 @@ static void flush_expose (w)
 
 
 
-/***********************************************************************
+/**
+ * install the colormaps for one twm window.
  *
- *  Procedure:
- *	InstallWindowColormaps - install the colormaps for one twm window
- *
- *  Inputs:
- *	type	- type of event that caused the installation
- *	tmp	- for a subset of event types, the address of the
+ *  \param type  type of event that caused the installation
+ *  \param tmp   for a subset of event types, the address of the
  *		  window structure, whose colormaps are to be installed.
- *
- ***********************************************************************
  */
 void
-InstallWindowColormaps (type, tmp)
-    int type;
-    TwmWindow *tmp;
+InstallWindowColormaps (int type, TwmWindow *tmp)
 {
     int i, j, n, number_cwins, state;
     ColormapWindow **cwins, *cwin, **maxcwin = NULL;
@@ -2676,10 +2525,10 @@ InstallWindowColormaps (type, tmp)
 
 
 
-/***********************************************************************
+/** \fn InstallRootColormap
+ *  \fn UninstallRootColormap
  *
- *  Procedures:
- *	<Uni/I>nstallRootColormap - Force (un)loads root colormap(s)
+ * Force (un)loads root colormap(s)
  *
  *	   These matching routines provide a mechanism to insure that
  *	   the root colormap(s) is installed during operations like
@@ -2692,7 +2541,6 @@ InstallWindowColormaps (type, tmp)
  *	   which would otherwise have be loaded to be loaded, unless
  *	   Enter or Leave Notify events are queued, indicating some
  *	   other colormap list would potentially be loaded anyway.
- ***********************************************************************
  */
 void
 InstallRootColormap()
@@ -2713,12 +2561,8 @@ InstallRootColormap()
 
 
 
-/* ARGSUSED*/
 static Bool
-UninstallRootColormapQScanner(dpy, ev, args)
-    Display *dpy;
-    XEvent *ev;
-    char *args;
+UninstallRootColormapQScanner(Display *dpy, XEvent *ev, char *args)
 {
     if (!*args) {
 	if (ev->type == EnterNotify) {
@@ -2759,8 +2603,7 @@ UninstallRootColormap()
 
 #ifdef TRACE
 void
-dumpevent (e)
-    XEvent *e;
+dumpevent (XEvent *e)
 {
     char *name = NULL;
 

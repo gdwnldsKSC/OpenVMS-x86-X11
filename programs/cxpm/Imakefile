@@ -5,7 +5,7 @@ XCOMM $XFree86: xc/programs/cxpm/Imakefile,v 1.2tsi Exp $
 LOCAL_LIBRARIES = $(XPMLIB) $(XONLYLIB)
         DEPLIBS = $(DEPXPMLIB) $(DEPXONLYLIB)
         CXPMDIR = $(TOP)/extras/Xpm/cxpm
-       INCLUDES = -I$(CXPMDIR)
+       INCLUDES = -I$(CXPMDIR)/../lib
 
 SimpleProgramTarget(cxpm)
 

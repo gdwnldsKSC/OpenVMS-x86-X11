@@ -1,7 +1,7 @@
 /*
  * $XFree86: xc/lib/Xft/xftmatrix.c,v 1.1 2001/03/30 18:50:18 keithp Exp $
  *
- * Copyright © 2000 Tuomas J. Lukka
+ * Copyright Â© 2000 Tuomas J. Lukka
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that

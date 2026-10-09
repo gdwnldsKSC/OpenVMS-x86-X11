@@ -51,8 +51,8 @@ in this Software without prior written authorization from The Open Group.
 #include	<stdlib.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
-#include	"FS.h"
-#include	"FSproto.h"
+#include	<X11/fonts/FS.h>
+#include	<X11/fonts/FSproto.h>
 #include	"clientstr.h"
 #include	"fsresource.h"
 #include	"misc.h"

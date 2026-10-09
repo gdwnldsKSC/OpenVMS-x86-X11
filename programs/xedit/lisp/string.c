@@ -24,10 +24,10 @@
  * dealings in this Software without prior written authorization from the
  * XFree86 Project.
  *
- * Author: Paulo César Pereira de Andrade
+ * Author: Paulo CÃ©sar Pereira de Andrade
  */
 
-/* $XdotOrg: xc/programs/xedit/lisp/string.c,v 1.2 2004/04/23 19:54:44 eich Exp $ */
+/* $XdotOrg: xc/programs/xedit/lisp/string.c,v 1.3 2004/12/04 00:43:13 kuhn Exp $ */
 /* $XFree86: xc/programs/xedit/lisp/string.c,v 1.24tsi Exp $ */
 
 #include "lisp/helper.h"

@@ -27,11 +27,10 @@
 #ifndef AVOID_DGA
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
-extern Bool ATIDGAInit FunctionPrototype((ScreenPtr, ScrnInfoPtr, ATIPtr));
+extern Bool ATIDGAInit(ScreenPtr, ScrnInfoPtr, ATIPtr);
 
 #endif /* AVOID_DGA */
 

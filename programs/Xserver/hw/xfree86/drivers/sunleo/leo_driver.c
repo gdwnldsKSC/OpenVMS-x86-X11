@@ -23,6 +23,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/sunleo/leo_driver.c,v 1.8 2001/10/01 13:44:10 eich Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -31,9 +35,7 @@
 #include "mibstore.h"
 #include "micmap.h"
 
-#define PSZ 32
-#include "cfb.h"
-#undef PSZ
+#include "fb.h"
 #include "xf86cmap.h"
 #include "leo.h"
 
@@ -75,7 +77,7 @@ void LeoSync(ScrnInfoPtr pScrn);
  * an upper-case version of the driver name.
  */
 
-DriverRec SUNLEO = {
+_X_EXPORT DriverRec SUNLEO = {
     VERSION,
     LEO_DRIVER_NAME,
     LeoIdentify,
@@ -116,7 +118,7 @@ static XF86ModuleVersionInfo sunleoVersRec =
 	{0,0,0,0}
 };
 
-XF86ModuleData sunleoModuleData = { &sunleoVersRec, leoSetup, NULL };
+_X_EXPORT XF86ModuleData sunleoModuleData = { &sunleoVersRec, leoSetup, NULL };
 
 pointer
 leoSetup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -414,7 +416,7 @@ LeoPreInit(ScrnInfoPtr pScrn, int flags)
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Acceleration disabled\n");
     }
         
-    if (xf86LoadSubModule(pScrn, "cfb32") == NULL) {
+    if (xf86LoadSubModule(pScrn, "fb") == NULL) {
 	LeoFreeRec(pScrn);
 	return FALSE;
     }
@@ -502,9 +504,9 @@ LeoScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
      * pScreen fields.
      */
 
-    ret = cfb32ScreenInit(pScreen, pLeo->fb, pScrn->virtualX,
-			  pScrn->virtualY, pScrn->xDpi, pScrn->yDpi,
-			  2048);
+    ret = fbScreenInit(pScreen, pLeo->fb, pScrn->virtualX,
+		       pScrn->virtualY, pScrn->xDpi, pScrn->yDpi,
+		       2048, pScrn->bitsPerPixel);
     if (!ret)
 	return FALSE;
 

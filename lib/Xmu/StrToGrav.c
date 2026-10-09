@@ -27,6 +27,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xmu/StrToGrav.c,v 1.6 2001/01/17 19:42:57 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Intrinsic.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/Xmu/CharSet.h>

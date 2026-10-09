@@ -45,7 +45,7 @@
 static int intelEmitIrqLocked( intelContextPtr intel )
 {
    drmI830IrqEmit ie;
-   int ret, seq;
+   int ret, seq = 0;
       
    assert(((*(int *)intel->driHwLock) & ~DRM_LOCK_CONT) == 
 	  (DRM_LOCK_HELD|intel->hHWContext));
@@ -107,8 +107,8 @@ void intel_dump_batchbuffer( long offset,
    int i;
    fprintf(stderr, "\n\n\nSTART BATCH (%d dwords):\n", count);
    for (i = 0; i < count/4; i += 4) 
-      fprintf(stderr, "\t0x%x: 0x%08x 0x%08x 0x%08x 0x%08x\n", 
-	      offset + i*4, ptr[i], ptr[i+1], ptr[i+2], ptr[i+3]);
+      fprintf(stderr, "\t0x%lx: 0x%08x 0x%08x 0x%08x 0x%08x\n", 
+	      (unsigned int)offset + i*4, ptr[i], ptr[i+1], ptr[i+2], ptr[i+3]);
    fprintf(stderr, "END BATCH\n\n\n");
 }
 
@@ -247,7 +247,7 @@ void intelFlushBatchLocked( intelContextPtr intel,
 	 }
       } else {
 	 drmI830CmdBuffer cmd;
-	 cmd.buf = intel->alloc.ptr + batch.start;
+	 cmd.buf = (GLubyte *)intel->alloc.ptr + batch.start;
 	 cmd.sz = batch.used;
 	 cmd.DR1 = batch.DR1;
 	 cmd.DR4 = batch.DR4;
@@ -348,41 +348,41 @@ void intelClear(GLcontext *ctx, GLbitfield mask, GLboolean all,
     */
    intelFlush( &intel->ctx );
 
-   if (mask & DD_FRONT_LEFT_BIT) {
+   if (mask & BUFFER_BIT_FRONT_LEFT) {
       if (colorMask == ~0) {
-	 blit_mask |= DD_FRONT_LEFT_BIT;
+	 blit_mask |= BUFFER_BIT_FRONT_LEFT;
       } 
       else {
-	 tri_mask |= DD_FRONT_LEFT_BIT;
+	 tri_mask |= BUFFER_BIT_FRONT_LEFT;
       }
    }
 
-   if (mask & DD_BACK_LEFT_BIT) {
+   if (mask & BUFFER_BIT_BACK_LEFT) {
       if (colorMask == ~0) {
-	 blit_mask |= DD_BACK_LEFT_BIT;
+	 blit_mask |= BUFFER_BIT_BACK_LEFT;
       } 
       else {
-	 tri_mask |= DD_BACK_LEFT_BIT;
+	 tri_mask |= BUFFER_BIT_BACK_LEFT;
       }
    }
 
-   if (mask & DD_DEPTH_BIT) {
-      blit_mask |= DD_DEPTH_BIT;
+   if (mask & BUFFER_BIT_DEPTH) {
+      blit_mask |= BUFFER_BIT_DEPTH;
    }
 
-   if (mask & DD_STENCIL_BIT) {
+   if (mask & BUFFER_BIT_STENCIL) {
       if (!intel->hw_stencil) {
-	 swrast_mask |= DD_STENCIL_BIT;
+	 swrast_mask |= BUFFER_BIT_STENCIL;
       }
       else if (ctx->Stencil.WriteMask[0] != 0xff) {
-	 tri_mask |= DD_STENCIL_BIT;
+	 tri_mask |= BUFFER_BIT_STENCIL;
       } 
       else {
-	 blit_mask |= DD_STENCIL_BIT;
+	 blit_mask |= BUFFER_BIT_STENCIL;
       }
    }
 
-   swrast_mask |= (mask & DD_ACCUM_BIT);
+   swrast_mask |= (mask & BUFFER_BIT_ACCUM);
 
    if (blit_mask) 
       intelClearWithBlit( ctx, blit_mask, all, cx, cy, cw, ch );
@@ -398,7 +398,7 @@ void intelClear(GLcontext *ctx, GLbitfield mask, GLboolean all,
 
 void *intelAllocateAGP( intelContextPtr intel, GLsizei size )
 {
-   int region_offset;
+   int region_offset = 0;
    drmI830MemAlloc alloc;
    int ret;
 

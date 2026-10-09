@@ -31,7 +31,7 @@ ObjectFromSpecialSource(tga_seg, tga_line, -DPOLYSEGMENT)
 
 ObjectModuleTarget(tga,$(OBJS))
 
-InstallObjectModule(tga,$(MODULEDIR),drivers)
+InstallVideoObjectModule(tga,$(MODULEDIR))
 
 DependTarget()
 

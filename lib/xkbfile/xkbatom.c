@@ -73,6 +73,9 @@ SOFTWARE.
  ********************************************************/
 /* $XFree86: xc/lib/xkbfile/xkbatom.c,v 3.8 2001/12/14 19:57:03 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>

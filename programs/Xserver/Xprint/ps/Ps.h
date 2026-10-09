@@ -75,6 +75,10 @@ in this Software without prior written authorization from The Open Group.
 ** 
 ********************************************************************/
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _PS_H_
 #define _PS_H_
 
@@ -94,7 +98,7 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/extensions/Printstr.h>
 
 #include "regionstr.h"
-#include "fontstruct.h"
+#include <X11/fonts/fontstruct.h>
 #include "dixfontstr.h"
 #include "gcstruct.h"
 
@@ -574,5 +578,13 @@ extern void PsCopyDisplayList(PixmapPtr src, PixmapPtr dst, int xoff,
 extern PsElmPtr PsCreateFillElementList(PixmapPtr pix, int *nElms);
 extern PsElmPtr PsCloneFillElementList(int nElms, PsElmPtr elms);
 extern void PsDestroyFillElementList(int nElms, PsElmPtr elms);
+
+/*
+ *  Functions in PsImageUtil.c
+ */
+
+extern unsigned long
+PsGetImagePixel(char *pImage, int depth, int w, int h, int leftPad, int format,
+                int px, int py);
 
 #endif  /* _PS_H_ */

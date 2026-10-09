@@ -2,18 +2,22 @@
    Copyright (c) 2002  XFree86 Inc
 */
 /* $XFree86: xc/programs/Xserver/Xext/xres.c,v 1.7tsi Exp $ */
-/* $XdotOrg: xc/programs/Xserver/Xext/xres.c,v 1.2 2004/04/23 18:44:42 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/Xext/xres.c,v 1.7 2005/07/03 08:53:36 daniels Exp $ */
 
 #define NEED_EVENTS
 #define NEED_REPLIES
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "os.h"
 #include "dixstruct.h"
 #include "extnsionst.h"
 #include "swaprep.h"
-#include "XResproto.h"
+#include <X11/extensions/XResproto.h>
 #include "pixmapstr.h"
 #include "modinit.h"
 
@@ -160,7 +164,7 @@ ProcXResQueryClientResources (ClientPtr client)
 
             if(!ResourceNames[i + 1]) {
                 char buf[40];
-                sprintf(buf, "Unregistered resource %i", i + 1);
+                snprintf(buf, sizeof(buf), "Unregistered resource %i", i + 1);
                 RegisterResourceName(i + 1, buf);
             }
 

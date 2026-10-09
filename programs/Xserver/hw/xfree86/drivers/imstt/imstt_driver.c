@@ -30,6 +30,9 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -105,7 +108,7 @@ static void IMSTTWriteMode(ScrnInfoPtr pScrn);
 			 PATCHLEVEL)
 
 
-DriverRec IMSTT =
+_X_EXPORT DriverRec IMSTT =
 {
 	IMSTT_VERSION,
 	DRIVER_NAME,
@@ -200,7 +203,7 @@ static XF86ModuleVersionInfo IMSTTVersRec = {
 	{0, 0, 0, 0}
 };
 
-XF86ModuleData imsttModuleData = { &IMSTTVersRec, IMSTTSetup, NULL };
+_X_EXPORT XF86ModuleData imsttModuleData = { &IMSTTVersRec, IMSTTSetup, NULL };
 
 pointer IMSTTSetup(pointer module, pointer opts, int *errmaj,
 			  int *errmin)

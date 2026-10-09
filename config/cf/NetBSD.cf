@@ -123,7 +123,11 @@ XCOMM operating system:  OSName (OSMajorVersion./**/OSMinorVersion./**/OSTeenyVe
 # define ThreadedX		YES
 # define HasThreadSafeAPI	YES
 # define ThreadsLibraries	-lpthread
-# define LibraryMTDefines	-DUSE_NBSD_THREADLIB
+# if ((OSMajorVersion == 2 && OSMinorVersion == 99 && OSTeenyVersion < 11) || \
+      (OSMajorVersion == 2 && OSMinorVersion < 99) || \
+      (OSMajorVersion < 2))
+#  define LibraryMTDefines	-DUSE_NBSD_THREADLIB
+# endif
 # define SystemMTDefines	-D_REENTRANT
 # define MTSafeAPIDefines	-DXUSE_MTSAFE_API -DXNO_MTSAFE_PWDAPI
 #else 
@@ -468,9 +472,7 @@ all:: file.0								@@\
 file.0:: file.$(MANNEWSUFFIX)						@@\
 	@if [ -f file.$(MANNEWSUFFIX) ]; \				@@\
 	then \								@@\
-	cat file.$(MANNEWSUFFIX) | $(NEQN) | $(TBL) | $(NROFF) $(MANMACROS) | $(COL) >/tmp/$$$$.man; \	@@\
-	cp /tmp/$$$$.man file.0; \					@@\
-	$(RM) /tmp/$$$$.man; \						@@\
+	cat file.$(MANNEWSUFFIX) | $(NEQN) | $(TBL) | $(NROFF) $(MANMACROS) | $(COL) > file.0; \	@@\
 	fi 								@@\
 									@@\
 install.man::                                                           @@\

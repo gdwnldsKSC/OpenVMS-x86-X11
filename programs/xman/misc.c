@@ -1,5 +1,5 @@
 /* $XConsortium: misc.c,v 1.31 94/12/16 21:36:53 gildea Exp $ */
-/* $XdotOrg: xc/programs/xman/misc.c,v 1.6 2004/09/02 08:40:33 kem Exp $ */
+/* $XdotOrg: xc/programs/xman/misc.c,v 1.8 2005/11/08 06:33:33 jkj Exp $ */
 /*
 
 Copyright (c) 1987, 1988  X Consortium
@@ -37,6 +37,10 @@ from the X Consortium.
  * Created:   October 27, 1987
  */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include "globals.h"
 #include "vendor.h"
 #include <X11/Xos.h> 		/* sys/types.h and unistd.h included in here */
@@ -62,7 +66,7 @@ static Boolean UncompressUnformatted(ManpageGlobals * man_globals,
 static Boolean ConstructCommand(char * cmdbuf, char * path, char * filename, char * tempfile);
 #endif
 
-#if defined(ISC) || defined(SCO)
+#if defined(ISC) || defined(__SCO__) || defined(__UNIXWARE__)
 static char *uncompress_format = NULL;
 static char *uncompress_formats[] =
       {  UNCOMPRESS_FORMAT_1,
@@ -193,7 +197,7 @@ FindManualFile(ManpageGlobals * man_globals, int section_num, int entry_num)
   char filename[BUFSIZ];
   char * entry = manual[section_num].entries[entry_num];
   int len_cat = strlen(CAT);
-#if defined(ISC) || defined(SCO)
+#if defined(ISC) || defined(__SCO__) || defined(__UNIXWARE__)
   int i;
 #endif
 
@@ -224,7 +228,7 @@ FindManualFile(ManpageGlobals * man_globals, int section_num, int entry_num)
  * Then for compressed files in an uncompressed directory.
  */
 
-#if !defined(ISC) && !defined(SCO)
+#if !defined(ISC) && !defined(__UNIXWARE__)
 #if defined(__OpenBSD__) || defined(__NetBSD__)
   /* look in machine subdir first */
   snprintf(filename, sizeof(filename), "%s/%s%s/%s/%s.%s", path, CAT,

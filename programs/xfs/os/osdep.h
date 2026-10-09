@@ -74,17 +74,16 @@ in this Software without prior written authorization from The Open Group.
 #define OPEN_MAX 256
 #else
 #ifdef SVR4
-#ifdef SCO324
-#define OPEN_MAX sysconf(_SC_OPEN_MAX)
-#else
 #define OPEN_MAX 128
-#endif
 #else
 #include <sys/param.h>
 #ifdef __GNU__
 #define OPEN_MAX (sysconf(_SC_OPEN_MAX))
 #endif /*__GNU__*/
 #ifndef OPEN_MAX
+#ifdef SCO325
+#define OPEN_MAX (sysconf(_SC_OPEN_MAX))
+#else
 #if defined(NOFILE) && !defined(NOFILES_MAX)
 #define OPEN_MAX NOFILE
 #else
@@ -94,8 +93,9 @@ in this Software without prior written authorization from The Open Group.
 #endif
 #endif
 #endif
+#endif
 
-#ifdef __GNU__
+#if defined(__GNU__) || defined(SCO325)
 #define MAXSOCKS 128
 #else /*__GNU__*/
 #if OPEN_MAX <= 128		/* 128 is value of MAXCLIENTS */

@@ -18,7 +18,9 @@ DPSDIR = DPS
 SUBDIRS = bitmaps extensions fonts $(GLXDIR) $(DPSDIR)
 
 #ifdef Win32Architecture
-EXTRA_HEADERS = Xw32defs.h Xwinsock.h
+EXTRA_HEADERS = Xw32defs.h Xwinsock.h Xwindows.h
+#elif defined(cygwinArchitecture)
+EXTRA_HEADERS = Xwindows.h
 #endif
 
 HEADERS = DECkeysym.h \
@@ -68,6 +70,15 @@ InstallDriverSDKNonExecFile(Xosdefs.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(Xproto.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(Xprotostr.h,$(DRIVERSDKINCLUDEDIR))
 InstallDriverSDKNonExecFile(keysym.h,$(DRIVERSDKINCLUDEDIR))
+
+/* _XOPEN_SOURCE is defined where needed to move __fds_bits to fds_bits. */
+USE_FDS_BITS = fds_bits
+	
+Xpoll.h: Xpoll.h.in
+	sed -e "s/@USE_FDS_BITS@/$(USE_FDS_BITS)/;" < Xpoll.h.in > Xpoll.h
+
+clean::
+	-$(RM) Xpoll.h
 
 XCOMM For the Linux/OpenGL base standard
 #if LinkGLToUsrInclude && AlternateIncRoot

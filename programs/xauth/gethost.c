@@ -1,5 +1,6 @@
 /*
  * $Xorg: gethost.c,v 1.5 2001/02/09 02:05:38 xorgcvs Exp $
+ * $XdotOrg: xc/programs/xauth/gethost.c,v 1.4 2005/11/08 06:33:31 jkj Exp $
  * 
 Copyright 1989, 1998  The Open Group
 
@@ -27,6 +28,10 @@ in this Software without prior written authorization from The Open Group.
  */
 
 /* $XFree86: xc/programs/xauth/gethost.c,v 3.20 2003/07/27 12:34:25 herrb Exp $ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /* sorry, streams support does not really work yet */
 #if defined(STREAMSCONN) && defined(SVR4)
@@ -58,9 +63,9 @@ in this Software without prior written authorization from The Open Group.
 #include <arpa/inet.h>
 #ifdef SYSV
 #ifdef i386
-#if !defined(sco) && !defined(sun)
+#if !defined(SCO325) && !defined(sun)
 #include <net/errno.h>
-#endif /* !sco && !sun */
+#endif /* !SCO325 && !sun */
 #endif /* i386 */
 #endif /* SYSV */
 #endif /* !STREAMSCONN */
@@ -87,13 +92,17 @@ static volatile Bool nameserver_timedout = False;
  * be found.  Stolen from xhost.
  */
 
-static jmp_buf env;
-static 
-#ifdef SIGNALRETURNSINT
-int
-#else
-void
+/* defined by autoconf AC_TYPE_SIGNAL, need to define for Imake */
+#ifndef RETSIGTYPE 
+# ifdef SIGNALRETURNSINT
+#  define RETSIGTYPE int
+# else
+#  define RETSIGTYPE void
+# endif
 #endif
+
+static jmp_buf env;
+static RETSIGTYPE
 nameserver_lost(int sig)
 {
   nameserver_timedout = True;

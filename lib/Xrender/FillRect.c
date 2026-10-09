@@ -22,6 +22,9 @@
  * Author:  Keith Packard, SuSE, Inc.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "Xrenderint.h"
 
 /* precompute the maximum size of batching request allowed */

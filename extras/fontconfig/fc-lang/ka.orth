@@ -1,6 +1,7 @@
 #
+# $RCSId: xc/lib/fontconfig/fc-lang/ka.orth,v 1.2 2002/07/06 23:59:16 keithp Exp $
 #
-# Copyright © 2002 Keith Packard
+# Copyright Â© 2002 Keith Packard
 #
 # Permission to use, copy, modify, distribute, and sell this software and its
 # documentation for any purpose is hereby granted without fee, provided that
@@ -22,7 +23,7 @@
 #
 # Georgian (KA)
 0589	# Armenian full stop (vertsaket)
-10a0-10c5
+#10a0-10c5	# capital letters, not used in normal writing
 10d0-10f6
 #10f7-10f8	# additional letters for Mingrelian and Svan
 10fb

@@ -32,13 +32,17 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifndef _AOUT_H
 #define _AOUT_H
 
-#include "Xos.h"
+#include <X11/Xos.h>
 
-/* Get prototype for ntohl. */
-#include <ctype.h>
+/* Get prototype for ntohl, per SuSv3. */
+#include <arpa/inet.h>
 
 /* OS/2 EMX has ntohl in this file */
 #ifdef __UNIXOS2__

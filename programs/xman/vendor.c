@@ -55,7 +55,7 @@ static SectionNameRec SectionNames[] = {
     {"(l) Local",			"l"},
     {"(n) New",				"n"},
     {"(o) Old",				"o"}
-#ifdef SCO
+#ifdef __SCO__
       ,
       { "(ADM) System Administration", "ADM" },
       { "(ADMN) Network Administration", "ADMN" },

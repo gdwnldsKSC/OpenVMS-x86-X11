@@ -1,4 +1,4 @@
-.TH XvVideoNotify 3X  __vendorversion__
+.TH XvVideoNotify __libmansuffix__  __vendorversion__
 .\" $XFree86: xc/doc/man/Xv/XvVideoNotify.man,v 1.5 2001/01/27 18:20:36 dawes Exp $
 .SH Name
 XvVideoNotify \- event generated for video processing
@@ -30,7 +30,7 @@ XvVideoNotify \- event generated for video processing
 .EE
 .\"
 .IP \fItype\fR 8
-Specifies the type of event: XvVideoNotify(3X).
+Specifies the type of event: XvVideoNotify(__libmansuffix__).
 .IP \fIserial\fR 8
 Number of the last request processed by the server.
 .IP \fIsend_event\fR 8
@@ -47,12 +47,12 @@ The port processing the video for which the event was generated.
 .\"
 .SH Description
 .\"
-XvVideoNotify(3X) events are generated when video
+XvVideoNotify(__libmansuffix__) events are generated when video
 is started, stopped, preempted by another video
 request, ignored because the port is grabbed by another client, or interrupted
 because of a hard transmission or reception error.
 .\"
 .SH See Also
-XvPutVideo(3X), XvPutStill(3X), XvGetVideo(3X), XvGetStill(3X), 
-XvStopVideo(3X), XvSelectVideoNotify(3X)
+XvPutVideo(__libmansuffix__), XvPutStill(__libmansuffix__), XvGetVideo(__libmansuffix__), XvGetStill(__libmansuffix__), 
+XvStopVideo(__libmansuffix__), XvSelectVideoNotify(__libmansuffix__)
 .\"

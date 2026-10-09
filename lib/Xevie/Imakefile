@@ -1,4 +1,4 @@
-XCOMM $XFree86: xc/lib/Xevie/Imakefile,v 1.1 2001/05/23 03:29:44 keithp Exp $
+XCOMM $XdotOrg: xc/lib/Xevie/Imakefile,v 1.4 2005/10/24 23:30:21 alanc Exp $
 
 #ifndef NormalLibXevie
 #define NormalLibXevie YES
@@ -71,3 +71,6 @@ InstallNonExecFile(xevie.pc,$(USRLIBDIR)/pkgconfig)
 clean::
 	RemoveFile(xevie.pc)
 
+#if ExpandManNames
+InstallManPageAliases(Xevie,$(LIBMANDIR),XevieQueryVersion XevieStart XevieSelectInput XevieSendEvent XevieEnd)
+#endif

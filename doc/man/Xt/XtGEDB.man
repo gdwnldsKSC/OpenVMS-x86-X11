@@ -167,6 +167,8 @@ The
 function has been superceded by
 .ZN XtAppGetErrorDatabaseText .
 .SH "SEE ALSO"
+.BR XtAppGetErrorDatabase (3Xt)
+.BR XtAppGetErrorDatabaseText (3Xt)
 .br
 \fI\*(xT\fP
 .br

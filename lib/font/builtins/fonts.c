@@ -24,6 +24,9 @@
  */
 /* $XFree86: xc/lib/font/builtins/fonts.c,v 1.3 1999/12/30 02:29:49 robin Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "builtin.h"
 
 static const char file_6x13[] = {

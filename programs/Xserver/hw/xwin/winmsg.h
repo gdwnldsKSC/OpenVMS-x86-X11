@@ -42,9 +42,11 @@ void winDrvMsg (int scrnIndex, MessageType type, const char *format, ...);
 void winMsgVerb (MessageType type, int verb, const char *format, ...);
 void winMsg (MessageType type, const char *format, ...);
 void winDebug (const char *format, ...);
+void winTrace (const char *format, ...);
 
 void winErrorFVerb (int verb, const char *format, ...);
 void winW32Error(int verb, const char *message);
 void winW32ErrorEx(int verb, const char *message, DWORD errorcode);
+void winDebugWin32Message(const char* function, HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 #endif

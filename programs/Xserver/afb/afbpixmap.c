@@ -54,7 +54,11 @@ SOFTWARE.
    on a monchrome device, a pixmap is a bitmap.
 */
 
-#include "Xmd.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/Xmd.h>
 #include "scrnintstr.h"
 #include "pixmapstr.h"
 #include "maskbits.h"
@@ -73,10 +77,14 @@ afbCreatePixmap(pScreen, width, height, depth)
 	int				depth;
 {
 	PixmapPtr pPixmap;
-	int datasize;
-	int paddedWidth;
+	size_t datasize;
+	size_t paddedWidth;
 
 	paddedWidth = BitmapBytePad(width);
+
+	if (paddedWidth > 32767 || height > 32767 || depth > 4)
+	    return NullPixmap;
+	
 	datasize = height * paddedWidth * depth;
 	pPixmap = AllocatePixmap(pScreen, datasize);
 	if (!pPixmap)
@@ -164,7 +172,7 @@ afbPadPixmap(pPixmap)
 	if (rep*width != PPW)
 		return;
 
-	mask = endtab[width];
+	mask = mfbGetendtab(width);
 
 	p = (PixelType *)(pPixmap->devPrivate.ptr);
 
@@ -206,7 +214,7 @@ afbXRotatePixmap(pPix, rw)
 		while(pw < pwFinal) {
 			t = *pw;
 			*pw++ = SCRRIGHT(t, rw) |
-					(SCRLEFT(t, (PPW-rw)) & endtab[rw]);
+				(SCRLEFT(t, (PPW-rw)) & mfbGetendtab(rw));
 		}
 	} else {
 		/* We no longer do this.  Validate doesn't try to rotate odd-size

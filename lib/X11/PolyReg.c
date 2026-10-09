@@ -50,9 +50,12 @@ SOFTWARE.
 #define LARGE_COORDINATE 1000000
 #define SMALL_COORDINATE -LARGE_COORDINATE
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "Xlibint.h"
 #include "Xutil.h"
-#include "region.h"
+#include <X11/Xregion.h>
 #include "poly.h"
 
 /*

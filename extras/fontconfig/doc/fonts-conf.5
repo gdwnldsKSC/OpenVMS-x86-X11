@@ -3,7 +3,7 @@
 .\" <http://shell.ipoline.com/~elmert/comp/docbook2X/> 
 .\" Please send any bug reports, improvements, comments, patches, 
 .\" etc. to Steve Cheng <steve@ggi-project.org>.
-.TH "FONTS-CONF" "5" "10 March 2004" "" ""
+.TH "FONTS-CONF" "5" "27 April 2005" "" ""
 
 .SH NAME
 fonts.conf \- Font configuration files
@@ -12,6 +12,7 @@ fonts.conf \- Font configuration files
 .nf
    /etc/fonts/fonts.conf
    /etc/fonts/fonts.dtd
+   /etc/fonts/conf.d
    ~/.fonts.conf
 .fi
 .SH "DESCRIPTION"
@@ -58,17 +59,23 @@ convenience for the applications rendering mechanism.
 .nf
   Property        Type    Description
   --------------------------------------------------------------
-  family          String  Font family name
+  family          String  Font family names
+  familylang      String  Languages cooresponding to each family
   style           String  Font style. Overrides weight and slant
+  stylelang       String  Languages cooresponding to each style
+  fullname        String  Font full names (often includes style)
+  fullnamelang    String  Languages cooresponding to each fullname
   slant           Int     Italic, oblique or roman
   weight          Int     Light, medium, demibold, bold or black
   size            Double  Point size
+  width           Int     Condensed, normal or expanded
   aspect          Double  Stretches glyphs horizontally before hinting
   pixelsize       Double  Pixel size
-  spacing         Int     Proportional, monospace or charcell
+  spacing         Int     Proportional, dual-width, monospace or charcell
   foundry         String  Font foundry name
   antialias       Bool    Whether glyphs can be antialiased
   hinting         Bool    Whether the rasterizer should use hinting
+  hintstyle       Int     Automatic hinting style
   verticallayout  Bool    Use vertical layout
   autohint        Bool    Use autohinter instead of normal hinter
   globaladvance   Bool    Use font global advance data
@@ -86,6 +93,9 @@ convenience for the applications rendering mechanism.
   charset         CharSet Unicode chars encoded by the font
   lang            String  List of RFC-3066-style languages this
                           font supports
+  fontversion     Int     Version number of the font
+  capability      String  List of layout capabilities in the font
+  embolden        Bool    Rasterizer should synthetically embolden the font
     
 .fi
 .SS "FONT MATCHING"
@@ -152,7 +162,7 @@ list of family names, second a list of point sizes and finally a list of
 additional properties:
 
 .nf
-	<families>-<point sizes>:<name1>=<values1>:<name2>=<values2>...
+	<families>-<point sizes>:<name1>=<values1>:<name2>=<values2>\&...
     
 .fi
 .PP
@@ -176,14 +186,19 @@ Here are some examples:
 Each font in the database contains a list of languages it supports.  This is
 computed by comparing the Unicode coverage of the font with the orthography
 of each language.  Languages are tagged using an RFC-3066 compatible naming
-and occur in two parts -- the ISO639 language tag followed a hyphen and then
+and occur in two parts -- the ISO 639 language tag followed a hyphen and then
 by the ISO 3166 country code.  The hyphen and country code may be elided.
 .PP
 Fontconfig has orthographies for several languages built into the library.
 No provision has been made for adding new ones aside from rebuilding the
 library.  It currently supports 122 of the 139 languages named in ISO 639-1,
 141 of the languages with two-letter codes from ISO 639-2 and another 30
-languages with only three-letter codes.
+languages with only three-letter codes.  Languages with both two and three
+letter codes are provided with only the two letter code.
+.PP
+For languages used in multiple territories with radically different
+character sets, fontconfig includes per-territory orthographies.  This
+includes Azerbaijani, Kurdish, Pashto, Tigrinya and Chinese.
 .SH "CONFIGURATION FILE FORMAT"
 .PP
 Configuration files for fontconfig are stored in XML format; this
@@ -220,15 +235,18 @@ information.  If it starts with '~', it refers to a file in the users
 home directory.  This file is used to hold information about fonts that
 isn't present in the per-directory cache files.  It is automatically
 maintained by the fontconfig library.  The default for this file 
-is ``~/.fonts.cache-version'', where version is the font configuration
+is ``~/.fonts.cache-version\&'', where version is the font configuration
 file version number (currently 1).
 .SS "INCLUDE IGNORE_MISSING=\&"NO\&""
 .PP
-This element contains the name of an additional configuration file.  When
-the XML datatype is traversed by FcConfigParse, the contents of the file
-will also be incorporated into the configuration by passing the filename to
+This element contains the name of an additional configuration file or
+directory.  If a directory, every file within that directory starting with a
+number will be processed in sorted order.  When
+the XML datatype is traversed by FcConfigParse, the contents of the file(s)
+will also be incorporated into the configuration by passing the filename(s) to
 FcConfigLoadAndParse.  If 'ignore_missing' is set to "yes" instead of the
-default "no", a missing file will elicit no warning message from the library.
+default "no", a missing file or directory will elicit no warning message from
+the library.
 .SS "CONFIG"
 .PP
 This element provides a place to consolodate additional configuration
@@ -247,6 +265,44 @@ The rescan element holds an int element which indicates the default
 interval between automatic checks for font configuration changes.
 Fontconfig will validate all of the configuration files and directories and
 automatically rebuild the internal datastructures when this interval passes.
+.SS "SELECTFONT"
+.PP
+This element is used to black/white list fonts from being listed or matched
+against.  It holds acceptfont and rejectfont elements.
+.SS "ACCEPTFONT"
+.PP
+Fonts matched by an acceptfont element are "whitelisted"; such fonts are
+explicitly included in the set of fonts used to resolve list and match
+requests; including them in this list protects them from being "blacklisted"
+by a rejectfont element.  Acceptfont elements include glob and pattern
+elements which are used to match fonts.
+.SS "REJECTFONT"
+.PP
+Fonts matched by an rejectfont element are "blacklisted"; such fonts are
+excluded from the set of fonts used to resolve list and match requests as if
+they didn't exist in the system.  Rejectfont elements include glob and
+pattern elements which are used to match fonts.
+.SS "GLOB"
+.PP
+Glob elements hold shell-style filename matching patterns (including ? and
+*) which match fonts based on their complete pathnames.  This can be used to
+exclude a set of directories (/usr/share/fonts/uglyfont*), or particular
+font file types (*.pcf.gz), but the latter mechanism relies rather heavily
+on filenaming conventions which can't be relied upon.
+.SS "PATTERN"
+.PP
+Pattern elements perform list-style matching on incoming fonts; that is,
+they hold a list of elements and associated values.  If all of those
+elements have a matching value, then the pattern matches the font.  This can
+be used to select fonts based on attributes of the font (scalable, bold,
+etc), which is a more reliable mechanism than using file extensions.
+Pattern elements include patelt elements.
+.SS "PATELT NAME=\&"PROPERTY\&""
+.PP
+Patelt elements hold a single pattern element and list of values.  They must
+have a 'name' attribute which indicates the pattern element name.  Patelt
+elements include int, double, string, matrix, bool, charset and const
+elements.
 .SS "MATCH TARGET=\&"PATTERN\&""
 .PP
 This element holds first a (possibly empty) list of test elements and then
@@ -254,15 +310,18 @@ a (possibly empty) list of edit elements.  Patterns which match all of the
 tests are subjected to all the edits.  If 'target' is set to "font" instead
 of the default "pattern", then this element applies to the font name
 resulting from a match rather than a font pattern to be matched.
-.SS "TEST QUAL=\&"ANY\&" NAME=\&"PROPERTY\&" COMPARE=\&"EQ\&""
+.SS "TEST QUAL=\&"ANY\&" NAME=\&"PROPERTY\&" TARGET=\&"DEFAULT\&" COMPARE=\&"EQ\&""
 .PP
-This element contains a single value which is compared with the pattern
-property "property" (substitute any of the property names seen 
+This element contains a single value which is compared with the target
+('pattern', 'font' or 'default') property "property" (substitute any of the property names seen 
 above). 'compare' can be one of "eq", "not_eq", "less", "less_eq", "more", or
 "more_eq".  'qual' may either be the default, "any", in which case the match
 succeeds if any value associated with the property matches the test value, or
 "all", in which case all of the values associated with the property must
-match the test value.
+match the test value.  When used in a <match target="font"> element,
+the target= attribute in the <test> element selects between matching
+the original pattern or the font.  "default" selects whichever target the
+outer <match> element has selected.
 .SS "EDIT NAME=\&"PROPERTY\&" MODE=\&"ASSIGN\&" BINDING=\&"WEAK\&""
 .PP
 This element contains a list of expression elements (any of the value or
@@ -270,7 +329,9 @@ operator elements).  The expression elements are evaluated at run-time and
 modify the property "property".  The modification depends on whether
 "property" was matched by one of the associated test elements, if so, the
 modification may affect the first matched value.  Any values inserted into
-the property are given the indicated binding. 'mode' is one of:
+the property are given the indicated binding ("strong", "weak" or "same")
+with "same" binding using the value from the matched pattern element.
+\&'mode' is one of:
 
 .nf
   Mode                    With Match              Without Match
@@ -307,15 +368,34 @@ symbolic names for common font values:
 .nf
   Constant        Property        Value
   -------------------------------------
-  light           weight          0
+  thin            weight          0
+  extralight      weight          40
+  ultralight      weight          40
+  light           weight          50
+  book            weight          75
+  regular         weight          80
+  normal          weight          80
   medium          weight          100
   demibold        weight          180
+  semibold        weight          180
   bold            weight          200
+  extrabold       weight          205
   black           weight          210
+  heavy           weight          210
   roman           slant           0
   italic          slant           100
   oblique         slant           110
+  ultracondensed  width           50
+  extracondensed  width           63
+  condensed       width           75
+  semicondensed   width           87
+  normal          width           100
+  semiexpanded    width           113
+  expanded        width           125
+  extraexpanded   width           150
+  ultraexpanded   width           200
   proportional    spacing         0
+  dual            spacing         90
   mono            spacing         100
   charcell        spacing         110
   unknown         rgba            0
@@ -324,6 +404,10 @@ symbolic names for common font values:
   vrgb            rgba            3
   vbgr            rgba            4
   none            rgba            5
+  hintnone        hintstyle       0
+  hintslight      hintstyle       1
+  hintmedium      hintstyle       2
+  hintfull        hintstyle       3
     
 .fi
 .SS "OR, AND, PLUS, MINUS, TIMES, DIVIDE"
@@ -370,8 +454,8 @@ This is an example of a system-wide configuration file
 <!-- 
 	Find fonts in these directories
 -->
-<dir>/usr/X11R6/lib/X11/fonts/truetype</dir>
-<dir>/usr/X11R6/lib/X11/fonts/Type1</dir>
+<dir>/usr/share/fonts</dir>
+<dir>/usr/X11R6/lib/X11/fonts</dir>
 
 <!--
 	Accept deprecated 'mono' alias, replacing it with 'monospace'
@@ -398,6 +482,13 @@ This is an example of a system-wide configuration file
 <include ignore_missing="yes">~/.fonts.conf</include>
 
 <!--
+	Load local customization files, but don't complain
+	if there aren't any
+-->
+<include ignore_missing="yes">conf.d</include>
+<include ignore_missing="yes">local.conf</include>
+
+<!--
 	Alias well known font names to available TrueType fonts.
 	These substitute TrueType faces for similar Type1
 	faces to improve screen appearance.
@@ -409,7 +500,7 @@ This is an example of a system-wide configuration file
 </alias>
 <alias>
 	<family>Helvetica</family>
-	<prefer><family>Verdana</family></prefer>
+	<prefer><family>Arial</family></prefer>
 	<default><family>sans</family></default>
 </alias>
 <alias>
@@ -429,7 +520,7 @@ This is an example of a system-wide configuration file
 </alias>
 <alias>
 	<family>sans</family>
-	<prefer><family>Verdana</family></prefer>
+	<prefer><family>Arial</family></prefer>
 </alias>
 <alias>
 	<family>monospace</family>
@@ -452,7 +543,7 @@ This is an example of a per-user configuration file that lives in
 <!--
 	Private font directory
 -->
-<dir>~/misc/fonts</dir>
+<dir>~/.fonts</dir>
 
 <!--
 	use rgb sub-pixel ordering to improve glyph appearance on
@@ -473,6 +564,14 @@ consisting of directories to look at for font information as well as
 instructions on editing program specified font patterns before attempting to
 match the available fonts.  It is in xml format.
 .PP
+\fBconf.d\fR
+is the conventional name for a directory of additional configuration files
+managed by external applications or the local administrator.  The
+filenames starting with decimal digits are sorted in lexicographic order
+and used as additional configuration files.  All of these files are in xml
+format.  The master fonts.conf file references this directory in an 
+<include> directive.
+.PP
 \fBfonts.dtd\fR
 is a DTD that describes the format of the configuration files.
 .PP
@@ -483,6 +582,9 @@ actual location is specified in the global fonts.conf file.
 \fB ~/.fonts.cache-*\fR
 is the conventional repository of font information that isn't found in the
 per-directory caches.  This file is automatically maintained by fontconfig.
+.SH "SEE ALSO"
+.PP
+fc-cache(1), fc-match(1), fc-list(1)
 .SH "VERSION"
 .PP
-Fontconfig version 2.2.2
+Fontconfig version 2.3.2

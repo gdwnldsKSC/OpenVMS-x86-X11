@@ -26,6 +26,9 @@
  ********************************************************/
 /* $XFree86: xc/lib/xkbfile/xkmout.c,v 1.5 2001/07/25 15:04:58 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>

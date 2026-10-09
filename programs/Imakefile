@@ -13,6 +13,9 @@ XCOMM $XFree86: xc/programs/Imakefile,v 3.54 2003/04/14 20:37:16 herrb Exp $
 #if BuildServer
         XSSRCDIR = Xserver
 #endif
+#if BuildXkbcomp
+      XKBCOMPDIR = xkbcomp
+#endif
 #ifndef Win32Architecture
 #if HasXServer
      XINITSRCDIR = xinit
@@ -21,7 +24,7 @@ XCOMM $XFree86: xc/programs/Imakefile,v 3.54 2003/04/14 20:37:16 herrb Exp $
        XFSSRCDIR = xfs
 #endif
 #if BuildXKBlib
-      XKBSRCDIRS = setxkbmap xkbcomp xkbevd xkbprint xkbutils
+      XKBSRCDIRS = setxkbmap $(XKBCOMPDIR) xkbevd xkbprint xkbutils
 #endif
 #if BuildScreenSaverLibrary
 SCREENSAVESRCDIR = beforelight
@@ -39,7 +42,7 @@ SCREENSAVESRCDIR = beforelight
   LBXPROXYSRCDIR = lbxproxy
 #endif
 #if BuildXprintClients
-  XPSRCDIRS = xplsprinters xprehashprinterlist xphelloworld
+  XPSRCDIRS = xplsprinters xprehashprinterlist xphelloworld xpr
 #endif
   PROXYMGRSRCDIR = proxymngr
     RSTARTSRCDIR = rstart
@@ -64,7 +67,7 @@ XFINDPROXYSRCDIR = xfindproxy
      XTERMSRCDIR = xterm
 #endif
       SCRIPTSDIR = scripts
-#endif
+#endif /* Win32Architecture */
 #if BuildCID
      MKCFMSRCDIR = mkcfm
 #endif
@@ -89,6 +92,9 @@ XTRAPCLIENTDIRS = xtrap
 /* on the other hand, the following are independent clients */
 #if BuildDPSClients
      DPSCLIENTDIRS = dpsinfo dpsexec texteroids
+#endif
+#if BuildDBElib && BuildXprintClients
+     DBECLIENTDIRS = xdbedizzy
 #endif
 
    XPMCLIENTDIRS = cxpm sxpm
@@ -123,13 +129,13 @@ XTRAPCLIENTDIRS = xtrap
 #endif
 
 #if BuildServersOnly || !BuildClients
-SUBDIRS = $(XSSRCDIR)
+SUBDIRS = $(XSSRCDIR) $(XKBCOMPDIR)
 #else
 SUBDIRS = \
 	appres bdftopcf bitmap \
 	$(SCREENSAVESRCDIR) editres $(FCDIRS) $(FCLANGDIR) fslsfonts fstobdf \
 	iceauth ico listres luit \
-	$(MAKEPSRESDIR) $(DPSCLIENTDIRS) \
+	$(MAKEPSRESDIR) $(DPSCLIENTDIRS) $(DBECLIENTDIRS) \
 	$(MKCFMSRCDIR) \
 	mkfontdir $(MKFONTSCALEDIR) oclock $(PROXYMGRSRCDIR) \
 	$(RGBSRCDIR) $(RSTARTSRCDIR) showfont \

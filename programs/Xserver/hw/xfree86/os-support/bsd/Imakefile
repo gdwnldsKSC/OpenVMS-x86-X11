@@ -8,7 +8,7 @@ XCOMM $XFree86: xc/programs/Xserver/hw/xfree86/os-support/bsd/Imakefile,v 3.61 2
 
 #include <Server.tmpl>
 
-#if defined(FreeBSDArchitecture) || defined(NetBSDArchitecture) || defined(OpenBSDArchitecture)
+#if defined(KFreeBSDArchitecture) || defined(NetBSDArchitecture) || defined(OpenBSDArchitecture)
 #if BuildXInputExt
 # if JoystickSupport
  JOYSTICK_SRC = bsd_jstk.c
@@ -47,7 +47,7 @@ SHARED_CFLAGS = PositionIndependentCFlags
   IOPERM_SRC = ioperm_noop.c
   IOPERM_OBJ = ioperm_noop.o
 # endif
-#elif defined(FreeBSDArchitecture)
+#elif defined(KFreeBSDArchitecture)
 # if defined(i386Architecture) || defined(AMD64Architecture)
   IOPERMDEFINES = -DUSE_DEV_IO
 # elif defined(AlphaBsdArchitecture)
@@ -106,7 +106,7 @@ APMSRC = pm_noop.c
 APMOBJ = pm_noop.o
 #endif
 
-#if defined(FreeBSDArchitecture) && (OSMajorVersion > 2)
+#if defined(KFreeBSDArchitecture) && (OSMajorVersion > 2)
 KMODSRC = bsd_kmod.c
 KMODOBJ = bsd_kmod.o
 #else
@@ -127,7 +127,7 @@ AXP_SRC=bsd_ev56.c xf86Axp.c bsd_axp.c
 AXP_OBJ=bsd_ev56.o xf86Axp.o bsd_axp.o
 #endif
 
-#if (defined(FreeBSDArchitecture) || defined(NetBSDArchitecture) || \
+#if (defined(KFreeBSDArchitecture) || defined(NetBSDArchitecture) || \
 	defined(OpenBSDArchitecture)) && HasAgpGart
 AGP_SRC=lnx_agp.c
 AGP_OBJ=lnx_agp.o
@@ -167,7 +167,7 @@ OBJS = bsd_init.o $(VIDEO_OBJ) bsd_io.o bsd_VTsw.o \
 
 INCLUDES = -I$(XF86COMSRC) -I$(XF86OSSRC) -I. -I$(SERVERSRC)/include \
            -I$(XINCLUDESRC) -I$(EXTINCSRC) -I$(SERVERSRC)/mi $(APINCLUDES) \
-	    $(LIBUSBINCLUDES) -I$(XF86OSSRC)/shared -I$(DRMSRCDIR)/shared
+	    $(LIBUSBINCLUDES) -I$(XF86OSSRC)/shared -I$(DRMSRCDIR)/shared-core
 
 CONSDEFINES = XFree86ConsoleDefines
 RESDEFINES = -DUSESTDRES
@@ -219,7 +219,7 @@ LinkSourceFile(stdPci.c,../shared)
 LinkSourceFile(vidmem.c,../shared)
 LinkSourceFile(sigio.c,../shared)
 LinkSourceFile(kmod_noop.c,../shared)
-#if (defined(FreeBSDArchitecture) || defined(NetBSDArchitecture) || \
+#if (defined(KFreeBSDArchitecture) || defined(NetBSDArchitecture) || \
 	defined(OpenBSDArchitecture)) && HasAgpGart
 LinkSourceFile(lnx_agp.c,../linux)
 #else

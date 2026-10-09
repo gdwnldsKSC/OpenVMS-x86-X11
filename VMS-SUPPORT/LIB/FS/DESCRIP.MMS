@@ -1,6 +1,6 @@
 ! Mirrors lib/FS/Imakefile's normal library with TCP-only client transport.
 FS_HEADERS = $(COMMON_HEADERS), $(OUT).INCLUDE.X11]XMD.H, -
-             $(OUT).INCLUDE.X11]XDEFS.H, $(OUT).INCLUDE.X11]XTRANS.H, -
+             $(OUT).INCLUDE.X11]XDEFS.H, $(XTRANS_HEADERS), -
              $(OUT).INCLUDE.X11]XPOLL.H, $(OUT).INCLUDE.X11]XOS_R.H, -
              $(OUT).INCLUDE.X11.FONTS]FS.H, -
              $(OUT).INCLUDE.X11.FONTS]FSPROTO.H, -

@@ -48,8 +48,12 @@ SOFTWARE.
 ******************************************************************/
 /* $Xorg: mfbsetsp.c,v 1.4 2001/02/09 02:05:19 xorgcvs Exp $ */
 
-#include "X.h"
-#include "Xmd.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xmd.h>
 
 #include "misc.h"
 #include "regionstr.h"

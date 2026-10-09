@@ -1,15 +1,16 @@
+// $XdotOrg: xc/programs/xkbcomp/symbols/pc/ua,v 1.3 2005/08/12 11:08:49 pascal Exp $
 
 // based on
 // ukrainian standard keyboard 
 // AEN <aen@logic.ru> & Leon Kanter <leon@geon.donetsk.ua>
 // Last Changes 2003/09/03 by Andriy Rysin <arysin@yahoo.com>
 //
-// $XFree86: xc/programs/xkbcomp/symbols/pc/ua,v 1.4 2003/05/15 11:29:47 pascal Exp $
+// $XFree86: xc/programs/xkbcomp/symbols/ua,v 1.4 2003/05/15 11:29:47 pascal Exp $
 
 partial default alphanumeric_keys 
 xkb_symbols "basic" {
 
-    name[Group1]= "Ukrainian";
+    name[Group1]= "Ukraine";
 
     key	<TLDE> {	[      apostrophe,	asciitilde	]	};
     key	<AE01> {	[		1,	    exclam 	]	};
@@ -70,6 +71,8 @@ partial alphanumeric_keys
 xkb_symbols "winkeys" {
     include "pc/ua(basic)"
  
+    name[Group1]= "Ukraine - Winkeys";
+
     key <AE03> {        [               3,      numerosign      ]       };
     key <AE04> {        [               4,       semicolon      ]       };
     key <AE05> {        [               5,         percent      ]       };
@@ -82,6 +85,8 @@ xkb_symbols "winkeys" {
 partial alphanumeric_keys
 xkb_symbols "typewriter" {
     include "pc/ua(basic)"
+
+    name[Group1]= "Ukraine - Typewriter";
 
     key	<TLDE> {	[      apostrophe,	  quotedbl	] 	};
     key	<AE01> {	[	   exclam,		 1 	]	};
@@ -110,6 +115,8 @@ partial alphanumeric_keys
 xkb_symbols "phonetic" {
   include "pc/ua(basic)"
   
+  name[Group1]= "Ukraine - Phonetic";
+
   key <LatQ> {   [ Cyrillic_ya,       Cyrillic_YA         ]    };
   key <LatW> {   [ Cyrillic_ve,       Cyrillic_VE         ]    };
   key <LatE> {   [ Cyrillic_ie,       Cyrillic_IE         ]    };
@@ -147,3 +154,60 @@ xkb_symbols "phonetic" {
   key <AB09> {   [ Ukrainian_ie,      Ukrainian_IE	  ]    };
   key <AB10> {   [ slash,             question            ]    };
 };
+
+// ukrainian keyboard layout RSTU 2019-91 (Respublikanskij STandart Ukrajiny)
+// Andrew Porokhnyak <aop@porokhnyak.org>
+partial alphanumeric_keys
+xkb_symbols "rstu" {
+    include "pc/ua(basic)"
+
+    name[Group1]= "Ukraine - Standard RSTU";
+
+    key	<TLDE> {	[      apostrophe,	  question	] 	};
+    key	<AE01> {	[	   exclam,		 1 	]	};
+    key	<AE02> {	[        quotedbl,		 2	]	};
+    key	<AE03> {	[      numbersign,		 3	]	};
+    key	<AE04> {	[	semicolon,		 4	]	};
+    key	<AE05> {	[	    colon,		 5	]	};
+    key	<AE06> {	[	    comma,		 6	]	};
+    key	<AE07> {	[	   period,		 7	]	};
+    key	<AE08> {	[        asterisk,		 8	]	};
+    key	<AE09> {	[	parenleft,		 9	]	};
+    key	<AE10> {	[      parenright,		 0	]	};
+
+    key	<AD12> {	[ Ukrainian_ghe_with_upturn, Ukrainian_GHE_WITH_UPTURN ] };
+
+    key	<AC02> {	[      Cyrillic_i,	Cyrillic_I	]	};
+
+    key	<AB05> {	[     Ukrainian_i,     Ukrainian_I	]	};
+
+    key	<AB10> {	[    Ukrainian_yi,    Ukrainian_YI	]	};
+
+    key	<BKSL> {	[	    slash,	   percent	]	};
+};
+
+// russian keyboard layout RSTU 2019-91 (Respublikanskij STandart Ukrajiny)
+// Andrew Porokhnyak <aop@porokhnyak.org>
+partial alphanumeric_keys
+xkb_symbols "rstu_ru" {
+    include "pc/ru(basic)"
+    name[Group1]= "Ukraine - Standard RSTU on Russian layout";
+
+    key <TLDE> {        [      apostrophe,        question      ]       };
+    key <AE01> {        [          exclam,               1      ]       };
+    key <AE02> {        [        quotedbl,               2      ]       };
+    key <AE03> {        [      numbersign,               3      ]       };
+    key <AE04> {        [       semicolon,               4      ]       };
+    key <AE05> {        [           colon,               5      ]       };
+    key <AE06> {        [           comma,               6      ]       };
+    key <AE07> {        [          period,               7      ]       };
+    key <AE08> {        [        asterisk,               8      ]       };
+    key <AE09> {        [       parenleft,               9      ]       };
+    key <AE10> {        [      parenright,               0      ]       };
+    key <BKSL> {        [           slash,         percent      ]       };
+
+key.type[group1]="ALPHABETIC";
+
+    key <AB10> {        [     Cyrillic_io,     Cyrillic_IO      ]       };
+};
+

@@ -28,6 +28,9 @@ in this Software without prior written authorization from The Open Group.
 
 /* $XFree86: xc/lib/Xaw/Panner.c,v 3.8 2001/07/25 15:04:49 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <ctype.h>
 #include <math.h>
 #include <X11/IntrinsicP.h>

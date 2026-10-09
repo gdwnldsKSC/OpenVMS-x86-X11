@@ -1,4 +1,5 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/common/xf86Init.c,v 3.212 2004/01/27 01:31:45 dawes Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86Init.c,v 1.29 2005/12/14 20:12:00 ajax Exp $ */
 
 /*
  * Loosely based on code bearing the following copyright:
@@ -32,6 +33,10 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include <stdlib.h>
 
 #undef HAS_UTSNAME
@@ -44,10 +49,10 @@
 #ifdef __UNIXOS2__
 #define I_NEED_OS2_H
 #endif
-#include "X.h"
-#include "Xmd.h"
-#include "Xproto.h"
-#include "Xatom.h"
+#include <X11/X.h>
+#include <X11/Xmd.h>
+#include <X11/Xproto.h>
+#include <X11/Xatom.h>
 #include "input.h"
 #include "servermd.h"
 #include "windowstr.h"
@@ -74,8 +79,8 @@
 #include "xf86Build.h"
 #include "mipointer.h"
 #ifdef XINPUT
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 #else
 #include "inputstr.h"
 #endif
@@ -95,7 +100,7 @@ extern int xtest_command_key;
 
 #ifdef DPMSExtension
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 #include "dpmsproc.h"
 #endif
 
@@ -106,16 +111,13 @@ static void xf86PrintBanner(void);
 static void xf86PrintMarkers(void);
 static void xf86RunVtInit(void);
 
-#ifdef DO_CHECK_BETA
-static int extraDays = 0;
-static char *expKey = NULL;
-#endif
-
 #ifdef __UNIXOS2__
 extern void os2ServerVideoAccess();
 #endif
 
+#ifdef XF86PM
 void (*xf86OSPMClose)(void) = NULL;
+#endif
 
 #ifdef XFree86LOADER
 static char *baseModules[] = {
@@ -260,7 +262,9 @@ PostConfigInit(void)
 #endif
     }
 
+#ifdef XF86PM
     xf86OSPMClose = xf86OSPMOpen();
+#endif
     
     /* Run an external VT Init program if specified in the config file */
     xf86RunVtInit();
@@ -306,10 +310,6 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
       xf86ServerName++;
     else
       xf86ServerName = argv[0];
-
-#ifdef DO_CHECK_BETA
-    xf86CheckBeta(extraDays, expKey);
-#endif
 
     xf86PrintBanner();
     xf86PrintMarkers();
@@ -387,9 +387,6 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 
     xf86OpenConsole();
 
-    /* Enable full I/O access */
-    xf86EnableIO();
-
     /* Do a general bus probe.  This will be a PCI probe for x86 platforms */
     xf86BusProbe();
 
@@ -455,20 +452,37 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
     }
 
     /*
-     * Call each of the Identify functions.  The Identify functions print
-     * out some identifying information, and anything else that might be
+     * Call each of the Identify functions and call the driverFunc to check
+     * if HW access is required.  The Identify functions print out some
+     * identifying information, and anything else that might be
      * needed at this early stage.
      */
 
-    for (i = 0; i < xf86NumDrivers; i++)
+    for (i = 0; i < xf86NumDrivers; i++) {
+	xorgHWFlags flags;
       /* The Identify function is mandatory, but if it isn't there continue */
-      if (xf86DriverList[i]->Identify != NULL)
-	xf86DriverList[i]->Identify(0);
-      else {
-        xf86Msg(X_WARNING, "Driver `%s' has no Identify function\n",
-	       xf86DriverList[i]->driverName ? xf86DriverList[i]->driverName
+	if (xf86DriverList[i]->Identify != NULL)
+	    xf86DriverList[i]->Identify(0);
+	else {
+	    xf86Msg(X_WARNING, "Driver `%s' has no Identify function\n",
+		  xf86DriverList[i]->driverName ? xf86DriverList[i]->driverName
 					     : "noname");
-      }
+	}
+	if (!xorgHWAccess
+	    && (!xf86DriverList[i]->driverFunc
+		|| !xf86DriverList[i]->driverFunc(NULL,
+						  GET_REQUIRED_HW_INTERFACES,
+						  &flags)
+		|| NEED_IO_ENABLED(flags)))
+	    xorgHWAccess = TRUE;
+    }
+
+    /* Enable full I/O access */
+    if (xorgHWAccess) {
+	if(!xf86EnableIO())
+	    /* oops, we have failed */
+	    xorgHWAccess = FALSE;
+    }
 
     /*
      * Locate bus slot that had register IO enabled at server startup
@@ -484,15 +498,25 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
      */
 
     for (i = 0; i < xf86NumDrivers; i++) {
-      if (xf86DriverList[i]->Probe != NULL)
-	xf86DriverList[i]->Probe(xf86DriverList[i], PROBE_DEFAULT);
-      else {
-        xf86MsgVerb(X_WARNING, 0,
-		"Driver `%s' has no Probe function (ignoring)\n",
-		xf86DriverList[i]->driverName ? xf86DriverList[i]->driverName
-					     : "noname");
-      }
-      xf86SetPciVideo(NULL,NONE);
+	xorgHWFlags flags;
+	if (!xorgHWAccess) {
+	    if (!xf86DriverList[i]->driverFunc
+		|| !xf86DriverList[i]->driverFunc(NULL,
+						 GET_REQUIRED_HW_INTERFACES,
+						  &flags)
+		|| NEED_IO_ENABLED(flags)) 
+		continue;
+	}
+	    
+	if (xf86DriverList[i]->Probe != NULL)
+	    xf86DriverList[i]->Probe(xf86DriverList[i], PROBE_DEFAULT);
+	else {
+	    xf86MsgVerb(X_WARNING, 0,
+			"Driver `%s' has no Probe function (ignoring)\n",
+			xf86DriverList[i]->driverName
+			? xf86DriverList[i]->driverName : "noname");
+	}
+	xf86SetPciVideo(NULL,NONE);
     }
 
     /*
@@ -812,6 +836,7 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
      */
     xf86OpenConsole();
 
+#ifdef XF86PM
     /*
       should we reopen it here? We need to deal with an already opened
       device. We could leave this to the OS layer. For now we simply
@@ -821,9 +846,11 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
         xf86OSPMClose();
     if ((xf86OSPMClose = xf86OSPMOpen()) != NULL)
 	xf86MsgVerb(X_INFO, 3, "APM registered successfully\n");
+#endif
 
     /* Make sure full I/O access is enabled */
-    xf86EnableIO();
+    if (xorgHWAccess)
+	xf86EnableIO();
   }
 
 #if 0
@@ -879,7 +906,7 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
       xf86EnterServerState(SETUP);
     } 
   }
-#ifdef SCO
+#ifdef SCO325
   else {
     /*
      * Under SCO we must ack that we got the console at startup,
@@ -892,7 +919,7 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
         xf86Msg(X_WARNING, "VT_ACKACQ failed");
     }
   }
-#endif /* SCO */
+#endif /* SCO325 */
 
   for (i = 0; i < xf86NumScreens; i++) {    
    	xf86EnableAccess(xf86Screens[i]);
@@ -905,7 +932,7 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 	xf86Screens[i]->DPMSSet = NULL;
 	xf86Screens[i]->LoadPalette = NULL; 
 	xf86Screens[i]->SetOverscan = NULL;
-	xf86Screens[i]->RRFunc = NULL;
+	xf86Screens[i]->DriverFunc = NULL;
 	xf86Screens[i]->pScreen = NULL;
 	scr_index = AddScreen(xf86Screens[i]->ScreenInit, argc, argv);
       if (scr_index == i) {
@@ -1111,7 +1138,8 @@ InitInput(argc, argv)
     else {
 #ifdef USE_DEPRECATED_KEYBOARD_DRIVER
       /* Only set this if we're allowing the old driver. */
-      xf86Info.pKeyboard = AddInputDevice(xf86Info.kbdProc, TRUE);
+	if (xf86Info.kbdProc != NULL) 
+	    xf86Info.pKeyboard = AddInputDevice(xf86Info.kbdProc, TRUE);
 #endif
     }
     if (corePointer)
@@ -1196,9 +1224,11 @@ ddxGiveUp()
 {
     int i;
 
+#ifdef XF86PM
     if (xf86OSPMClose)
 	xf86OSPMClose();
     xf86OSPMClose = NULL;
+#endif
 
     xf86AccessLeaveState();
 
@@ -1338,14 +1368,20 @@ ddxProcessArgument(int argc, char **argv, int i)
    * yet.  Use malloc/free instead.
    */
 
+#define CHECK_FOR_REQUIRED_ARGUMENT() \
+    if (((i + 1) >= argc) || (!argv[i + 1])) { 				\
+      ErrorF("Required argument to %s not specified\n", argv[i]); 	\
+      UseMsg(); 							\
+      FatalError("Required argument to %s not specified\n", argv[i]);	\
+    }
+  
   /* First the options that are only allowed for root */
-  if (getuid() == 0)
+  if (getuid() == 0 || geteuid != 0)
   {
     if (!strcmp(argv[i], "-modulepath"))
     {
       char *mp;
-      if (!argv[i + 1])
-	return 0;
+      CHECK_FOR_REQUIRED_ARGUMENT();
       mp = malloc(strlen(argv[i + 1]) + 1);
       if (!mp)
 	FatalError("Can't allocate memory for ModulePath\n");
@@ -1357,8 +1393,7 @@ ddxProcessArgument(int argc, char **argv, int i)
     else if (!strcmp(argv[i], "-logfile"))
     {
       char *lf;
-      if (!argv[i + 1])
-	return 0;
+      CHECK_FOR_REQUIRED_ARGUMENT();
       lf = malloc(strlen(argv[i + 1]) + 1);
       if (!lf)
 	FatalError("Can't allocate memory for LogFile\n");
@@ -1367,16 +1402,18 @@ ddxProcessArgument(int argc, char **argv, int i)
       xf86LogFileFrom = X_CMDLINE;
       return 2;
     }
+  } else if (!strcmp(argv[i], "-modulepath") || !strcmp(argv[i], "-logfile")) {
+    FatalError("The '%s' option can only be used by root.\n", argv[i]);
   }
   if (!strcmp(argv[i], "-config") || !strcmp(argv[i], "-xf86config"))
   {
-    if (!argv[i + 1])
-      return 0;
+    CHECK_FOR_REQUIRED_ARGUMENT();
     if (getuid() != 0 && !xf86PathIsSafe(argv[i + 1])) {
-      FatalError("\nInvalid argument for -config\n"
-	  "\tFor non-root users, the file specified with -config must be\n"
+      FatalError("\nInvalid argument for %s\n"
+	  "\tFor non-root users, the file specified with %s must be\n"
 	  "\ta relative path and must not contain any \"..\" elements.\n"
-	  "\tUsing default "__XCONFIGFILE__" search path.\n\n");
+	  "\tUsing default "__XCONFIGFILE__" search path.\n\n",
+	  argv[i], argv[i]);
     }
     xf86ConfigFile = argv[i + 1];
     return 2;
@@ -1437,14 +1474,6 @@ ddxProcessArgument(int argc, char **argv, int i)
 #endif
     return 1;
   }
-#ifdef DO_CHECK_BETA
-  if (!strcmp(argv[i],"-extendExpiry"))
-  {
-    extraDays = atoi(argv[i + 1]);
-    expKey = argv[i + 2];
-    return 3;
-  }
-#endif
   if (!strcmp(argv[i],"-verbose"))
   {
     if (++i < argc && argv[i])
@@ -1519,11 +1548,11 @@ ddxProcessArgument(int argc, char **argv, int i)
   }
   if (!strcmp(argv[i], "-bpp"))
   {
-    if (++i >= argc)
-      return 0;
     ErrorF("The -bpp option is no longer supported.\n"
 	"\tUse -depth to set the color depth, and use -fbbpp if you really\n"
 	"\tneed to force a non-default framebuffer (hardware) pixel format.\n");
+    if (++i >= argc)
+      return 1;
     return 2;
   }
   if (!strcmp(argv[i], "-pixmap24"))
@@ -1539,9 +1568,8 @@ ddxProcessArgument(int argc, char **argv, int i)
   if (!strcmp(argv[i], "-fbbpp"))
   {
     int bpp;
-    if (++i >= argc)
-      return 0;
-    if (sscanf(argv[i], "%d", &bpp) == 1)
+    CHECK_FOR_REQUIRED_ARGUMENT();
+    if (sscanf(argv[++i], "%d", &bpp) == 1)
     {
       xf86FbBpp = bpp;
       return 2;
@@ -1555,9 +1583,8 @@ ddxProcessArgument(int argc, char **argv, int i)
   if (!strcmp(argv[i], "-depth"))
   {
     int depth;
-    if (++i >= argc)
-      return 0;
-    if (sscanf(argv[i], "%d", &depth) == 1)
+    CHECK_FOR_REQUIRED_ARGUMENT();
+    if (sscanf(argv[++i], "%d", &depth) == 1)
     {
       xf86Depth = depth;
       return 2;
@@ -1571,9 +1598,8 @@ ddxProcessArgument(int argc, char **argv, int i)
   if (!strcmp(argv[i], "-weight"))
   {
     int red, green, blue;
-    if (++i >= argc)
-      return 0;
-    if (sscanf(argv[i], "%1d%1d%1d", &red, &green, &blue) == 3)
+    CHECK_FOR_REQUIRED_ARGUMENT();
+    if (sscanf(argv[++i], "%1d%1d%1d", &red, &green, &blue) == 3)
     {
       xf86Weight.red = red;
       xf86Weight.green = green;
@@ -1590,9 +1616,8 @@ ddxProcessArgument(int argc, char **argv, int i)
       !strcmp(argv[i], "-ggamma") || !strcmp(argv[i], "-bgamma"))
   {
     double gamma;
-    if (++i >= argc)
-      return 0;
-    if (sscanf(argv[i], "%lf", &gamma) == 1) {
+    CHECK_FOR_REQUIRED_ARGUMENT();    
+    if (sscanf(argv[++i], "%lf", &gamma) == 1) {
        if (gamma < GAMMA_MIN || gamma > GAMMA_MAX) {
 	  ErrorF("gamma out of range, only  %.2f <= gamma_value <= %.1f"
 		 " is valid\n", GAMMA_MIN, GAMMA_MAX);
@@ -1608,35 +1633,36 @@ ddxProcessArgument(int argc, char **argv, int i)
   }
   if (!strcmp(argv[i], "-layout"))
   {
-    if (++i >= argc)
-      return 0;
-    xf86LayoutName = argv[i];
+    CHECK_FOR_REQUIRED_ARGUMENT();
+    xf86LayoutName = argv[++i];
     return 2;
   }
   if (!strcmp(argv[i], "-screen"))
   {
-    if (++i >= argc)
-      return 0;
-    xf86ScreenName = argv[i];
+    CHECK_FOR_REQUIRED_ARGUMENT();
+    xf86ScreenName = argv[++i];
     return 2;
   }
   if (!strcmp(argv[i], "-pointer"))
   {
-    if (++i >= argc)
-      return 0;
-    xf86PointerName = argv[i];
+    CHECK_FOR_REQUIRED_ARGUMENT();
+    xf86PointerName = argv[++i];
     return 2;
   }
   if (!strcmp(argv[i], "-keyboard"))
   {
-    if (++i >= argc)
-      return 0;
-    xf86KeyboardName = argv[i];
+    CHECK_FOR_REQUIRED_ARGUMENT();    
+    xf86KeyboardName = argv[++i];
     return 2;
   }
   if (!strcmp(argv[i], "-nosilk"))
   {
     xf86silkenMouseDisableFlag = TRUE;
+    return 1;
+  }
+  if (!strcmp(argv[i], "-noacpi"))
+  {
+    xf86acpiDisableFlag = TRUE;
     return 1;
   }
   if (!strcmp(argv[i], "-scanpci"))
@@ -1653,13 +1679,29 @@ ddxProcessArgument(int argc, char **argv, int i)
   }
   if (!strcmp(argv[i], "-configure"))
   {
-    if (getuid() != 0) {
+    if (getuid() != 0 && geteuid == 0) {
 	ErrorF("The '-configure' option can only be used by root.\n");
 	exit(1);
     }
     xf86DoConfigure = TRUE;
     xf86AllowMouseOpenFail = TRUE;
     return 1;
+  }
+  if (!strcmp(argv[i], "-isolateDevice"))
+  {
+    int bus, device, func;
+    CHECK_FOR_REQUIRED_ARGUMENT();
+    if (strncmp(argv[++i], "PCI:", 4)) {
+       FatalError("Bus types other than PCI not yet isolable\n");
+    }
+    if (sscanf(argv[i], "PCI:%d:%d:%d", &bus, &device, &func) == 3) {
+       xf86IsolateDevice.bus = bus;
+       xf86IsolateDevice.device = device;
+       xf86IsolateDevice.func = func;
+       return 2;
+    } else {
+       FatalError("Invalid isolated device specification\n");
+    }
   }
   /* OS-specific processing */
   return xf86ProcessArgument(argc, argv, i);
@@ -1682,17 +1724,14 @@ ddxUseMsg()
   ErrorF("\n");
   ErrorF("\n");
   ErrorF("Device Dependent Usage\n");
-  if (getuid() == 0)
+  if (getuid() == 0 || geteuid() != 0)
   {
     ErrorF("-modulepath paths      specify the module search path\n");
     ErrorF("-logfile file          specify a log file name\n");
     ErrorF("-configure             probe for devices and write an "__XCONFIGFILE__"\n");
   }
-  else
-  {
-    ErrorF("-config file       specify a configuration file, relative to the\n");
-    ErrorF("                       "__XCONFIGFILE__" search path, only root can use absolute\n");
-  }
+  ErrorF("-config file           specify a configuration file, relative to the\n");
+  ErrorF("                       "__XCONFIGFILE__" search path, only root can use absolute\n");
   ErrorF("-probeonly             probe for devices, then exit\n");
   ErrorF("-scanpci               execute the scanpci module and exit\n");
   ErrorF("-verbose [n]           verbose startup messages\n");
@@ -1725,6 +1764,7 @@ ddxUseMsg()
 #endif
   ErrorF("-bestRefresh           choose modes with the best refresh rate\n");
   ErrorF("-ignoreABI             make module ABI mismatches non-fatal\n");
+  ErrorF("-isolateDevice bus_id  restrict device resets to bus_id (PCI only)\n");
   ErrorF("-version               show the server version\n");
   /* OS-specific usage */
   xf86UseMsg();
@@ -1747,13 +1787,13 @@ xf86PrintBanner()
 {
 #if PRE_RELEASE
   ErrorF("\n"
-    "This is a pre-release version of the " XVENDORNAME " X11.\n"
+    "This is a pre-release version of the X server from " XVENDORNAME ".\n"
     "It is not supported in any way.\n"
     "Bugs may be filed in the bugzilla at http://bugs.freedesktop.org/.\n"
     "Select the \"xorg\" product for bugs you find in this release.\n"
     "Before reporting bugs in pre-release versions please check the\n"
-    "latest version in the " XVENDORNAME " \"monolithic tree\" CVS\n"
-    "repository hosted at http://www.freedesktop.org/Software/xorg/");
+    "latest version in the X.Org Foundation CVS repository.\n"
+    "See http://wiki.x.org/wiki/CvsPage for CVS access instructions.\n");
 #endif
   ErrorF("\nX Window System Version %d.%d.%d",
 	 XORG_VERSION_MAJOR,
@@ -1764,22 +1804,22 @@ xf86PrintBanner()
 #endif
 
 #if XORG_VERSION_SNAP >= 900
-  /* When the patch number is 99, that signifies that the we are making
-   * a release candidate for a major version; however, if the patch
-   * number is < 99, then we are making a release candidate for the next
-   * point release.
+  /* When the minor number is 99, that signifies that the we are making
+   * a release candidate for a major version.  (X.0.0)
+   * When the patch number is 99, that signifies that the we are making
+   * a release candidate for a minor version.  (X.Y.0)
+   * When the patch number is < 99, then we are making a release
+   * candidate for the next point release.  (X.Y.Z)
    */
-  if (XORG_VERSION_PATCH == 99)
-      ErrorF(" (%d.%d.0 RC %d)",
-	     XORG_VERSION_MAJOR,
-	     XORG_VERSION_MINOR + 1,
-	     XORG_VERSION_SNAP - 900);
-  else
-      ErrorF(" (%d.%d.%d RC %d)",
-	     XORG_VERSION_MAJOR,
-	     XORG_VERSION_MINOR,
-	     XORG_VERSION_PATCH + 1,
-	     XORG_VERSION_SNAP - 900);
+#if XORG_VERSION_MINOR >= 99
+  ErrorF(" (%d.0.0 RC %d)", XORG_VERSION_MAJOR+1, XORG_VERSION_SNAP - 900);
+#elif XORG_VERSION_PATCH == 99
+  ErrorF(" (%d.%d.0 RC %d)", XORG_VERSION_MAJOR, XORG_VERSION_MINOR + 1,
+				XORG_VERSION_SNAP - 900);
+#else
+  ErrorF(" (%d.%d.%d RC %d)", XORG_VERSION_MAJOR, XORG_VERSION_MINOR,
+ 			 XORG_VERSION_PATCH + 1, XORG_VERSION_SNAP - 900);
+#endif
 #endif
 
 #ifdef XORG_CUSTOM_VERSION
@@ -1796,7 +1836,11 @@ xf86PrintBanner()
   {
     struct utsname name;
 
-    if (uname(&name) == 0) {
+    /* Linux & BSD state that 0 is success, SysV (including Solaris, HP-UX,
+       and Irix) and Single Unix Spec 3 just say that non-negative is success.
+       All agree that failure is represented by a negative number.
+     */
+    if (uname(&name) >= 0) {
       ErrorF("Current Operating System: %s %s %s %s %s\n",
 	name.sysname, name.nodename, name.release, name.version, name.machine);
     }

@@ -115,6 +115,10 @@ typedef struct dynamic64 {
     } d_un;
 } Elf64_Dyn;
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #ifndef QNX4
 extern Elf32_Dyn _DYNAMIC[];
 #endif
@@ -273,6 +277,7 @@ extern Elf32_Dyn _DYNAMIC[];
 #define R_ALPHA_GLOB_DAT	25	/* Create GOT entry */
 #define R_ALPHA_JMP_SLOT	26	/* Create PLT entry */
 #define R_ALPHA_RELATIVE	27	/* Adjust by program base */
+#define R_ALPHA_BRSGP		28	/* Calc displacement for BRS */   
 
 /* IA-64 relocations.  */
 #define R_IA64_NONE		0x00	/* none */

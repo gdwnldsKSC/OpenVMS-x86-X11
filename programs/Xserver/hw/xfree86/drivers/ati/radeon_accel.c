@@ -27,6 +27,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * Authors:
  *   Kevin E. Martin <martin@xfree86.org>
@@ -72,9 +76,9 @@
 
 				/* Driver data structures */
 #include "radeon.h"
+#include "radeon_reg.h"
 #include "radeon_macros.h"
 #include "radeon_probe.h"
-#include "radeon_reg.h"
 #include "radeon_version.h"
 #ifdef XF86DRI
 #define _XF86DRI_SERVER_
@@ -88,6 +92,7 @@
 
 				/* X and server generic header files */
 #include "xf86.h"
+
 
 static struct {
     int rop;
@@ -156,6 +161,10 @@ void RADEONEngineFlush(ScrnInfoPtr pScrn)
 	if (!(INREG(RADEON_RB2D_DSTCACHE_CTLSTAT) & RADEON_RB2D_DC_BUSY))
 	    break;
     }
+    if (i == RADEON_TIMEOUT) {
+	RADEONTRACE(("DC flush timeout: %x\n",
+		    INREG(RADEON_RB2D_DSTCACHE_CTLSTAT)));
+    }
 }
 
 /* Reset graphics card to known state */
@@ -168,10 +177,35 @@ void RADEONEngineReset(ScrnInfoPtr pScrn)
     CARD32         rbbm_soft_reset;
     CARD32         host_path_cntl;
 
+    /* The following RBBM_SOFT_RESET sequence can help un-wedge
+     * an R300 after the command processor got stuck.
+     */
+    rbbm_soft_reset = INREG(RADEON_RBBM_SOFT_RESET);
+    OUTREG(RADEON_RBBM_SOFT_RESET, (rbbm_soft_reset |
+                                   RADEON_SOFT_RESET_CP |
+                                   RADEON_SOFT_RESET_HI |
+                                   RADEON_SOFT_RESET_SE |
+                                   RADEON_SOFT_RESET_RE |
+                                   RADEON_SOFT_RESET_PP |
+                                   RADEON_SOFT_RESET_E2 |
+                                   RADEON_SOFT_RESET_RB));
+    INREG(RADEON_RBBM_SOFT_RESET);
+    OUTREG(RADEON_RBBM_SOFT_RESET, (rbbm_soft_reset & (CARD32)
+                                   ~(RADEON_SOFT_RESET_CP |
+                                     RADEON_SOFT_RESET_HI |
+                                     RADEON_SOFT_RESET_SE |
+                                     RADEON_SOFT_RESET_RE |
+                                     RADEON_SOFT_RESET_PP |
+                                     RADEON_SOFT_RESET_E2 |
+                                     RADEON_SOFT_RESET_RB)));
+    INREG(RADEON_RBBM_SOFT_RESET);
+    OUTREG(RADEON_RBBM_SOFT_RESET, rbbm_soft_reset);
+    INREG(RADEON_RBBM_SOFT_RESET);
+
     RADEONEngineFlush(pScrn);
 
     clock_cntl_index = INREG(RADEON_CLOCK_CNTL_INDEX);
-    if (info->R300CGWorkaround) R300CGWorkaround(pScrn);
+    RADEONPllErrataAfterIndex(info);
 
 #if 0 /* taken care of by new PM code */
     /* Some ASICs have bugs with dynamic-on feature, which are
@@ -245,12 +279,12 @@ void RADEONEngineReset(ScrnInfoPtr pScrn)
     INREG(RADEON_HOST_PATH_CNTL);
     OUTREG(RADEON_HOST_PATH_CNTL, host_path_cntl);
 
-    if (IS_R300_VARIANT)
+    if (!IS_R300_VARIANT)
 	OUTREG(RADEON_RBBM_SOFT_RESET, rbbm_soft_reset);
 
     OUTREG(RADEON_CLOCK_CNTL_INDEX, clock_cntl_index);
-    OUTPLL(RADEON_MCLK_CNTL, mclk_cntl);
-    if (info->R300CGWorkaround) R300CGWorkaround(pScrn);
+    RADEONPllErrataAfterIndex(info);
+    OUTPLL(pScrn, RADEON_MCLK_CNTL, mclk_cntl);
 }
 
 /* Restore the acceleration hardware to its previous state */
@@ -266,21 +300,11 @@ void RADEONEngineRestore(ScrnInfoPtr pScrn)
 
     RADEONWaitForFifo(pScrn, 1);
 
-    /* NOTE: The following RB2D_DSTCACHE_MODE setting will cause the
-     * R300 to hang.  ATI does not see a reason to change it from the
-     * default BIOS settings (even on non-R300 cards).  This setting
-     * might be removed in future versions of the Radeon driver.
-     */
-
-    /* Turn of all automatic flushing - we'll do it all */
-    if (!IS_R300_VARIANT)
-	OUTREG(RADEON_RB2D_DSTCACHE_MODE, 0);
-
     pitch64 = ((pScrn->displayWidth * (pScrn->bitsPerPixel / 8) + 0x3f)) >> 6;
 
-    RADEONWaitForFifo(pScrn, 1);
-    OUTREG(RADEON_DEFAULT_OFFSET, ((info->fbLocation >> 10)
-				  | (pitch64 << 22)));
+/*    RADEONWaitForFifo(pScrn, 2);
+    OUTREG(RADEON_DST_PITCH_OFFSET, info->dst_pitch_offset);
+    OUTREG(RADEON_SRC_PITCH_OFFSET, info->dst_pitch_offset);*/
 
     RADEONWaitForFifo(pScrn, 1);
 #if X_BYTE_ORDER == X_BIG_ENDIAN
@@ -291,10 +315,8 @@ void RADEONEngineRestore(ScrnInfoPtr pScrn)
     OUTREGP(RADEON_DP_DATATYPE, 0, ~RADEON_HOST_BIG_ENDIAN_EN);
 #endif
 
-    /* Restore SURFACE_CNTL - only the first head contains valid data -ReneR */
-    if (!info->IsSecondary) {
-	OUTREG(RADEON_SURFACE_CNTL, info->ModeReg.surface_cntl);
-    }
+    /* Restore SURFACE_CNTL */
+    OUTREG(RADEON_SURFACE_CNTL, info->ModeReg.surface_cntl);
 
     RADEONWaitForFifo(pScrn, 1);
     OUTREG(RADEON_DEFAULT_SC_BOTTOM_RIGHT, (RADEON_DEFAULT_SC_RIGHT_MAX
@@ -315,9 +337,7 @@ void RADEONEngineRestore(ScrnInfoPtr pScrn)
 
     RADEONWaitForIdleMMIO(pScrn);
 
-#ifdef RENDER
-    info->RenderInited3D = FALSE;
-#endif
+    info->XInited3D = FALSE;
 }
 
 /* Initialize the acceleration hardware */
@@ -353,7 +373,8 @@ void RADEONEngineInit(ScrnInfoPtr pScrn)
 
     info->dp_gui_master_cntl =
 	((info->datatype << RADEON_GMC_DST_DATATYPE_SHIFT)
-	 | RADEON_GMC_CLR_CMP_CNTL_DIS);
+	 | RADEON_GMC_CLR_CMP_CNTL_DIS
+	 | RADEON_GMC_DST_PITCH_OFFSET_CNTL);
 
 #ifdef XF86DRI
     info->sc_left         = 0x00000000;
@@ -371,13 +392,15 @@ void RADEONEngineInit(ScrnInfoPtr pScrn)
     RADEONEngineRestore(pScrn);
 }
 
+
 #define ACCEL_MMIO
 #define ACCEL_PREAMBLE()        unsigned char *RADEONMMIO = info->MMIO
 #define BEGIN_ACCEL(n)          RADEONWaitForFifo(pScrn, (n))
 #define OUT_ACCEL_REG(reg, val) OUTREG(reg, val)
 #define FINISH_ACCEL()
 
-#ifdef RENDER
+#include "radeon_commonfuncs.c"
+#if defined(RENDER) && defined(USE_XAA)
 #include "radeon_render.c"
 #endif
 #include "radeon_accelfuncs.c"
@@ -398,7 +421,9 @@ void RADEONEngineInit(ScrnInfoPtr pScrn)
 #define OUT_ACCEL_REG(reg, val) OUT_RING_REG(reg, val)
 #define FINISH_ACCEL()          ADVANCE_RING()
 
-#ifdef RENDER
+
+#include "radeon_commonfuncs.c"
+#if defined(RENDER) && defined(USE_XAA)
 #include "radeon_render.c"
 #endif
 #include "radeon_accelfuncs.c"
@@ -578,35 +603,287 @@ void RADEONCPReleaseIndirect(ScrnInfoPtr pScrn)
     drmCommandWriteRead(info->drmFD, DRM_RADEON_INDIRECT,
 			&indirect, sizeof(drmRadeonIndirect));
 }
+
+
+/* Set up a hostdata blit to transfer data from system memory to the
+ * framebuffer. Returns the address where the data can be written to and sets
+ * the dstPitch and hpass variables as required.
+ */
+CARD8*
+RADEONHostDataBlit(
+    ScrnInfoPtr pScrn,
+    unsigned int bpp,
+    unsigned int w,
+    CARD32 dstPitch,
+    CARD32 *bufPitch,
+    CARD8* *dst,
+    unsigned int *h,
+    unsigned int *hpass
+){
+    RADEONInfoPtr info = RADEONPTR( pScrn );
+    CARD32 format, dst_offs, dwords, x, y;
+    CARD8 *ret;
+    RING_LOCALS;
+
+    if ( *h == 0 )
+    {
+	return NULL;
+    }
+
+    switch ( bpp )
+    {
+    case 4:
+	format = RADEON_GMC_DST_32BPP;
+	*bufPitch = 4 * w;
+	break;
+    case 2:
+	format = RADEON_GMC_DST_16BPP;
+	w = (w + 1) & ~1;
+	*bufPitch = 2 * w;
+	break;
+    case 1:
+	format = RADEON_GMC_DST_8BPP_CI;
+	w = (w + 3) & ~3;
+	*bufPitch = w;
+	break;
+    default:
+	xf86DrvMsg( pScrn->scrnIndex, X_ERROR,
+		    "%s: Unsupported bpp %d!\n", __func__, bpp );
+	return NULL;
+    }
+
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+    /* Swap doesn't work on R300 and later, it's handled during the
+     * copy to ind. buffer pass
+     */
+    if (info->ChipFamily < CHIP_FAMILY_R300) {
+        BEGIN_RING(2);
+	if (bpp == 2)
+	    OUT_RING_REG(RADEON_RBBM_GUICNTL,
+			 RADEON_HOST_DATA_SWAP_HDW);
+	else if (bpp == 1)
+	    OUT_RING_REG(RADEON_RBBM_GUICNTL,
+			 RADEON_HOST_DATA_SWAP_32BIT);
+	else
+	    OUT_RING_REG(RADEON_RBBM_GUICNTL,
+			 RADEON_HOST_DATA_SWAP_NONE);
+	ADVANCE_RING();
+    }
 #endif
 
-/* Initialize XAA for supported acceleration and also initialize the
- * graphics hardware for acceleration
+    /*RADEON_PURGE_CACHE();
+      RADEON_WAIT_UNTIL_IDLE();*/
+
+    dst_offs = *dst - info->FB + info->fbLocation;
+    *hpass = min( *h, ( ( RADEON_BUFFER_SIZE - 8 * 4 ) / *bufPitch ) );
+    dwords = *hpass * *bufPitch / 4;
+
+    y = ( dst_offs & 1023 ) / dstPitch;
+    x = ( ( dst_offs & 1023 ) - ( y * dstPitch ) ) / bpp;
+
+    BEGIN_RING( dwords + 8 );
+    OUT_RING( CP_PACKET3( RADEON_CP_PACKET3_CNTL_HOSTDATA_BLT, dwords + 8 - 2 ) );
+    OUT_RING( RADEON_GMC_DST_PITCH_OFFSET_CNTL
+	    | RADEON_GMC_BRUSH_NONE
+	    | format
+	    | RADEON_GMC_SRC_DATATYPE_COLOR
+	    | RADEON_ROP3_S
+	    | RADEON_DP_SRC_SOURCE_HOST_DATA
+	    | RADEON_GMC_CLR_CMP_CNTL_DIS
+	    | RADEON_GMC_WR_MSK_DIS );
+    OUT_RING( dstPitch << 16 | dst_offs >> 10 );
+    OUT_RING( 0xffffffff );
+    OUT_RING( 0xffffffff );
+    OUT_RING( y << 16 | x );
+    OUT_RING( *hpass << 16 | w );
+    OUT_RING( dwords );
+
+    ret = ( CARD8* )&__head[__count];
+
+    __count += dwords;
+    ADVANCE_RING();
+
+    *dst += *hpass * dstPitch;
+    *h -= *hpass;
+
+    return ret;
+}
+
+void RADEONCopySwap(CARD8 *dst, CARD8 *src, unsigned int size, int swap)
+{
+    switch(swap) {
+    case RADEON_HOST_DATA_SWAP_HDW:
+        {
+	    unsigned int *d = (unsigned int *)dst;
+	    unsigned int *s = (unsigned int *)src;
+	    unsigned int nwords = size >> 2;
+
+	    for (; nwords > 0; --nwords, ++d, ++s)
+		*d = ((*s & 0xffff) << 16) | ((*s >> 16) & 0xffff);
+	    return;
+        }
+    case RADEON_HOST_DATA_SWAP_32BIT:
+        {
+	    unsigned int *d = (unsigned int *)dst;
+	    unsigned int *s = (unsigned int *)src;
+	    unsigned int nwords = size >> 2;
+
+	    for (; nwords > 0; --nwords, ++d, ++s)
+#ifdef __powerpc__
+		asm volatile("stwbrx %0,0,%1" : : "r" (*s), "r" (d));
+#else
+		*d = ((*s >> 24) & 0xff) | ((*s >> 8) & 0xff00)
+			| ((*s & 0xff00) << 8) | ((*s & 0xff) << 24);
+#endif
+	    return;
+        }
+    case RADEON_HOST_DATA_SWAP_16BIT:
+        {
+	    unsigned short *d = (unsigned short *)dst;
+	    unsigned short *s = (unsigned short *)src;
+	    unsigned int nwords = size >> 1;
+
+	    for (; nwords > 0; --nwords, ++d, ++s)
+#ifdef __powerpc__
+		asm volatile("stwbrx %0,0,%1" : : "r" (*s), "r" (d));
+#else
+	        *d = ((*s >> 24) & 0xff) | ((*s >> 8) & 0xff00)
+			| ((*s & 0xff00) << 8) | ((*s & 0xff) << 24);
+#endif
+	    return;
+	}
+    }
+    if (src != dst)
+	    memmove(dst, src, size);
+}
+
+/* Copies a single pass worth of data for a hostdata blit set up by
+ * RADEONHostDataBlit().
  */
+void
+RADEONHostDataBlitCopyPass(
+    ScrnInfoPtr pScrn,
+    unsigned int bpp,
+    CARD8 *dst,
+    CARD8 *src,
+    unsigned int hpass,
+    unsigned int dstPitch,
+    unsigned int srcPitch
+){
+
+    RADEONInfoPtr info = RADEONPTR( pScrn );
+
+    /* RADEONHostDataBlitCopy can return NULL ! */
+    if( (dst==NULL) || (src==NULL)) return;
+
+    if ( dstPitch == srcPitch )
+    {
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+        if (info->ChipFamily >= CHIP_FAMILY_R300) {
+	    switch(bpp) {
+	    case 1:
+		RADEONCopySwap(dst, src, hpass * dstPitch,
+			       RADEON_HOST_DATA_SWAP_32BIT);
+		return;
+	    case 2:
+	        RADEONCopySwap(dst, src, hpass * dstPitch,
+			       RADEON_HOST_DATA_SWAP_HDW);
+		return;
+	    }
+	}
+#endif
+	memcpy( dst, src, hpass * dstPitch );
+    }
+    else
+    {
+	unsigned int minPitch = min( dstPitch, srcPitch );
+	while ( hpass-- )
+	{
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+            if (info->ChipFamily >= CHIP_FAMILY_R300) {
+		switch(bpp) {
+		case 1:
+		    RADEONCopySwap(dst, src, minPitch,
+				   RADEON_HOST_DATA_SWAP_32BIT);
+		    goto next;
+		case 2:
+	            RADEONCopySwap(dst, src, minPitch,
+				   RADEON_HOST_DATA_SWAP_HDW);
+		    goto next;
+		}
+	    }
+#endif
+	    memcpy( dst, src, minPitch );
+	next:
+	    src += srcPitch;
+	    dst += dstPitch;
+	}
+    }
+}
+
+#endif
+
 Bool RADEONAccelInit(ScreenPtr pScreen)
 {
     ScrnInfoPtr    pScrn = xf86Screens[pScreen->myNum];
     RADEONInfoPtr  info  = RADEONPTR(pScrn);
-    XAAInfoRecPtr  a;
 
-    if (!(a = info->accel = XAACreateInfoRec())) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "XAACreateInfoRec Error\n");
-	return FALSE;
+#ifdef USE_EXA
+    if (info->useEXA) {
+# ifdef XF86DRI
+	if (info->directRenderingEnabled) {
+	    if (!RADEONDrawInitCP(pScreen))
+		return FALSE;
+	} else
+# endif /* XF86DRI */
+	{
+	    if (!RADEONDrawInitMMIO(pScreen))
+		return FALSE;
+	}
     }
+#endif /* USE_EXA */
+#ifdef USE_XAA
+    if (!info->useEXA) {
+	XAAInfoRecPtr  a;
+
+	if (!(a = info->accel = XAACreateInfoRec())) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "XAACreateInfoRec Error\n");
+	    return FALSE;
+	}
 
 #ifdef XF86DRI
-    if (info->directRenderingEnabled)
-	RADEONAccelInitCP(pScreen, a);
-    else
-#endif
-	RADEONAccelInitMMIO(pScreen, a);
+	if (info->directRenderingEnabled)
+	    RADEONAccelInitCP(pScreen, a);
+	else
+#endif /* XF86DRI */
+	    RADEONAccelInitMMIO(pScreen, a);
 
-    RADEONEngineInit(pScrn);
+	RADEONEngineInit(pScrn);
 
-    if (!XAAInit(pScreen, a)) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "XAAInit Error\n");
-	return FALSE;
+	if (!XAAInit(pScreen, a)) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "XAAInit Error\n");
+	    return FALSE;
+	}
     }
-
+#endif /* USE_XAA */
     return TRUE;
 }
+
+void RADEONInit3DEngine(ScrnInfoPtr pScrn)
+{
+    RADEONInfoPtr info = RADEONPTR (pScrn);
+
+#ifdef XF86DRI
+    if (info->directRenderingEnabled) {
+	RADEONSAREAPrivPtr pSAREAPriv;
+
+	pSAREAPriv = DRIGetSAREAPrivate(pScrn->pScreen);
+	pSAREAPriv->ctxOwner = DRIGetContext(pScrn->pScreen);
+	RADEONInit3DEngineCP(pScrn);
+    } else
+#endif
+	RADEONInit3DEngineMMIO(pScrn);
+
+    info->XInited3D = TRUE;
+}
+

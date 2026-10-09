@@ -1,13 +1,17 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/xaa/xaaGCmisc.c,v 1.14 2000/05/03 00:44:23 tsi Exp $ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "misc.h"
 #include "xf86.h"
 #include "xf86_ansic.h"
 #include "xf86_OSproc.h"
 
-#include "X.h"
+#include <X11/X.h>
 #include "scrnintstr.h"
-#include "fontstruct.h"
+#include <X11/fonts/fontstruct.h>
 #include "dixfontstr.h"
 #include "xf86str.h"
 #include "xaa.h"

@@ -47,6 +47,9 @@ in this Software without prior written authorization from The Open Group.
  * Based on an optimized version provided by Jim Becker, Auguest 5, 1988.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xos.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>

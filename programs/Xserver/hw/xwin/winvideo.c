@@ -28,9 +28,12 @@
  * Authors:	Harold L Hunt II
  */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
-#include "Xv.h"
-#include "Xvproto.h"
+#include <X11/extensions/Xv.h>
+#include <X11/extensions/Xvproto.h>
 
 void
 winInitVideo (ScreenPtr pScreen);
@@ -63,7 +66,7 @@ winInitVideo (ScreenPtr pScreen)
 #include "../xfree86/common/xf86.h"
 #include "../Xext/xvdix.h"
 #include "../xfree86/common/xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #endif
 
 #include "win.h"
@@ -145,7 +148,7 @@ winSetupImageVideo (ScreenPtr pScreen)
 
     adapt->type = XvWindowMask | XvInputMask | XvImageMask;
     adapt->flags = VIDEO_OVERLAID_IMAGES | VIDEO_CLIP_TO_VIEWPORT;
-    adapt->name = "Cygwin/X Video Overlay";
+    adapt->name = PROJECT_NAME " Video Overlay";
     adapt->nEncodings = 1;
     adapt->pEncodings = DummyEncoding;
     adapt->nFormats = NUM_FORMATS;

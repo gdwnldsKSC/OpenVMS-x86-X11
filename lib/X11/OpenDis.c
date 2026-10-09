@@ -28,11 +28,14 @@ in this Software without prior written authorization from The Open Group.
 
 #define NEED_REPLIES
 #define NEED_EVENTS
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "Xlibint.h"
-#include <X11/Xtrans.h>
+#include <X11/Xtrans/Xtrans.h>
 #include <X11/Xatom.h>
 #include <X11/Xresource.h>
-#include "bigreqstr.h"
+#include <X11/extensions/bigreqstr.h>
 #include <stdio.h>
 #include "Xintconn.h"
 
@@ -52,10 +55,6 @@ typedef struct {
     unsigned long seq;
     int opcode;
 } _XBigReqState;
-
-#ifdef WIN32
-int *_Xdebug_p = &_Xdebug;
-#endif
 
 #ifdef XTHREADS
 #include "locking.h"

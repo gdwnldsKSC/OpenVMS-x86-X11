@@ -4,7 +4,7 @@ exec rep "$0" "$@"
 
 ;; build-dispatch
 
-;; $Id$
+;; $Id: build-dispatch,v 1.2 2004/04/23 18:43:09 eich Exp $
 ;; $XFree86: $
 
 ;; Copyright (c) 2002 Apple Computer, Inc. All rights reserved.

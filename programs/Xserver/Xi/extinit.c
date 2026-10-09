@@ -57,13 +57,17 @@ SOFTWARE.
 
 #define	 NEED_EVENTS
 #define	 NEED_REPLIES
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "inputstr.h"
 #include "gcstruct.h"   		/* pointer for extnsionst.h*/
 #include "extnsionst.h"			/* extension entry   */
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 
 #include "dixevents.h"
 #include "exevents.h"

@@ -46,7 +46,11 @@ SOFTWARE.
 
 ******************************************************************/
 /* $Xorg: miwindow.c,v 1.4 2001/02/09 02:05:22 xorgcvs Exp $ */
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "regionstr.h"
 #include "region.h"
 #include "mi.h"
@@ -883,8 +887,14 @@ miSlideAndSizeWindow(pWin, x, y, w, h, pSib)
 
 	    /* and move those bits */
 
-	    if (oldpt.x != x || oldpt.y != y)
+	    if (oldpt.x != x || oldpt.y != y
+#ifdef COMPOSITE
+		|| pWin->redirectDraw
+#endif
+		)
+	    {
 		(*pWin->drawable.pScreen->CopyWindow)(pWin, oldpt, gravitate[g]);
+	    }
 
 	    /* remove any overwritten bits from the remaining useful bits */
 

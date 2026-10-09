@@ -68,6 +68,10 @@ AllTarget(ProgramTargetName(dmxtodmx))
 
 LinkSourceFile(dmxlog.c,..)
 
+InstallProgram(dmxtodmx,$(BINDIR))
+InstallProgram(vdltodmx,$(BINDIR))
+InstallProgram(xdmxconfig,$(BINDIR))
+
 InstallManPage(dmxtodmx,$(MANDIR))
 InstallManPage(vdltodmx,$(MANDIR))
 InstallManPage(xdmxconfig,$(MANDIR))

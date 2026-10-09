@@ -36,6 +36,9 @@ in this Software without prior written authorization from The Open Group.
  *                      MIT X Consortium
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <X11/IntrinsicP.h>

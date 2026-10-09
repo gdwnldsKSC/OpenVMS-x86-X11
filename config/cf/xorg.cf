@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xc/config/cf/xorg.cf,v 1.27.2.6 2005/01/24 03:11:42 gisburn Exp $
+XCOMM $XdotOrg: xc/config/cf/xorg.cf,v 1.53 2005/10/03 16:08:44 alanc Exp $
 /*
  * This configuration file contains all of the configuration
  * information for the Xorg based X Servers.
@@ -183,11 +183,16 @@ RELEASE_VERSION = ReleaseVersion
 #define BuildModuleInSubdir	NO
 #endif
 
-#ifndef MakeDllModules
-#define MakeDllModules		NO
-#endif
 #ifndef DoLoadableServer
 #define DoLoadableServer	NO
+#endif
+
+#ifndef MakeDllModules
+#if DoLoadableServer
+#define MakeDllModules		YES
+#else
+#define MakeDllModules		NO
+#endif
 #endif 
 
 /*
@@ -324,10 +329,6 @@ RELEASE_VERSION = ReleaseVersion
 # ifndef XF8_16Bpp
 #  define XF8_16Bpp		YES
 # endif
-/* 24/32bpp conversion module */
-# ifndef XF24_32Bpp
-#  define XF24_32Bpp		YES
-# endif
 /* shadow fb module */
 # ifndef XFShadowFB
 #  define XFShadowFB		YES
@@ -339,6 +340,10 @@ RELEASE_VERSION = ReleaseVersion
 /* XAA module */
 # ifndef XF86XAA
 #  define XF86XAA		YES
+# endif
+/* Exa module */
+# ifndef XF86EXA
+#  define XF86EXA		YES
 # endif
 /* ramdac module */
 # ifndef XF86Ramdac
@@ -410,20 +415,17 @@ RELEASE_VERSION = ReleaseVersion
 # endif
 
 # ifndef DevelDRIDrivers
-#  define DevelDRIDrivers	ffb mach64 savage unichrome
+#  define DevelDRIDrivers	ffb mach64 unichrome
 # endif
 
 # ifndef DriDrivers
 #  ifndef ia64Architecture
-#   define i386DRIDrivers i810 i915 sis tdfx
+#   define i386DRIDrivers i810 i915 sis
 #  else
-   /*
-    *  The tdfx driver needs Glide, which is not available for IA64.
-    *  SiS is 64-bit unclean as of this writing. 
-    */  
+   /* SiS is 64-bit unclean as of this writing. */
 #   define i386DRIDrivers /**/
 #  endif
-#  define DriDrivers		gamma i386DRIDrivers mga r128 radeon r200
+#  define DriDrivers		i386DRIDrivers mga r128 radeon r200 tdfx
 # endif
 #endif /* i386Architecture || ia64Architecture */
 
@@ -437,23 +439,30 @@ RELEASE_VERSION = ReleaseVersion
 #  define XF86AFB		YES
 # endif
 
-# define DevelDrivers		/**/
+/*
+ * Drivers under development, but not ready for binary releases, or
+ * drivers included on this platform only for build testing.
+ */
+# ifndef DevelDrivers
+#  if XFree86Devel
+#   define DevelDrivers         /**/
+#  else
+#   define DevelDrivers         /**/
+#  endif
+# endif
 
 /* Pure PCI drivers should go first */
 # ifndef XF86CardDrivers
 #  define XF86CardDrivers	mga glint nv tga s3 s3virge sis rendition \
 				neomagic tdfx savage cirrus tseng trident \
 				chips apm i128 ati ark cyrix siliconmotion \
-				vga dummy vesa i810 \
-				XF86OSCardDrivers XF86ExtraCardDrivers
+				vga dummy vesa i810 vmware \
+				XF86OSCardDrivers XF86ExtraCardDrivers DevelDrivers
 # endif
 
-/* 
- * The tdfx driver needs Glide, which is not available for AMD64.  
- * SiS is 64-bit unclean as of this writing.
- */
+/* SiS is 64-bit unclean as of this writing. */
 # ifndef DriDrivers
-#  define DriDrivers		i915 gamma mga r128 radeon r200
+#  define DriDrivers		i915 mga r128 radeon r200 tdfx
 # endif
 #endif /*AMD64Arcitecture*/
 
@@ -496,11 +505,11 @@ RELEASE_VERSION = ReleaseVersion
 #  ifdef SunArchitecture
 #   define XF86CardDrivers	/* sunffb */ sunleo suncg6 suncg3 suncg14 \
 				suntcx sunbw2 glint mga tdfx ati vesa vga \
-				XF86OSCardDrivers XF86ExtraCardDrivers \
+				dummy XF86OSCardDrivers XF86ExtraCardDrivers \
 				DevelDrivers
 #  else
 #   define XF86CardDrivers	sunffb sunleo suncg6 suncg3 suncg14 suntcx \
-				sunbw2 glint mga tdfx ati vesa vga \
+				sunbw2 glint mga tdfx ati vesa vga dummy \
 				XF86OSCardDrivers XF86ExtraCardDrivers \
 				DevelDrivers
 #  endif
@@ -535,7 +544,7 @@ RELEASE_VERSION = ReleaseVersion
 
 /* Pure PCI drivers should go first */
 # ifndef XF86CardDrivers
-#  define XF86CardDrivers	ati \
+#  define XF86CardDrivers	ati dummy \
 				DevelDrivers \
 				XF86OSCardDrivers XF86ExtraCardDrivers
 # endif
@@ -559,7 +568,7 @@ RELEASE_VERSION = ReleaseVersion
 
 # ifndef XF86CardDrivers
 #  define XF86CardDrivers	mga glint nv s3 s3virge sis savage \
-				trident chips tdfx ati \
+				trident chips tdfx ati dummy \
 				DevelDrivers newport \
 				XF86OSCardDrivers XF86ExtraCardDrivers
 # endif
@@ -586,14 +595,15 @@ RELEASE_VERSION = ReleaseVersion
 # ifndef XF86CardDrivers
 #  define XF86CardDrivers	mga tdfx glint s3 s3virge rendition tga ati \
 				savage nv cirrus DevelDrivers siliconmotion  \
-				vga XF86OSCardDrivers XF86ExtraCardDrivers
+				vga dummy XF86OSCardDrivers \
+				XF86ExtraCardDrivers
 # endif
 /*
  *  Glide is available for Alpha, therefore build tdfx DRM module.
  *  SiS is 64-bit unclean as of this writing. 
  */  
 # ifndef DriDrivers
-#  define DriDrivers		gamma tdfx mga r128 radeon r200
+#  define DriDrivers		tdfx mga r128 radeon r200
 # endif
 #endif /* AlphaArchitecture */
 
@@ -622,12 +632,12 @@ RELEASE_VERSION = ReleaseVersion
 # ifndef XF86CardDrivers
 #  define XF86CardDrivers	ati mga glint nv s3 s3virge sis savage\
 				trident chips tdfx \
-				DevelDrivers vga \
+				DevelDrivers vga dummy \
 				XF86OSCardDrivers XF86ExtraCardDrivers
 # endif
 /*  The tdfx driver needs Glide, which is not available for PPC. */
 # ifndef DriDrivers
-#  define DriDrivers		gamma mga r128 radeon r200
+#  define DriDrivers		mga r128 radeon r200
 # endif
 #endif  /* PpcArchitecture || Mc68020Architecture */
 
@@ -652,11 +662,11 @@ RELEASE_VERSION = ReleaseVersion
 # ifndef XF86CardDrivers
 #  define XF86CardDrivers	ati mga glint nv s3 s3virge sis savage\
 				trident chips tdfx \
-				DevelDrivers vga \
+				DevelDrivers vga dummy \
 				XF86OSCardDrivers XF86ExtraCardDrivers
 # endif
 # ifndef DriDrivers
-#  define DriDrivers		gamma mga r128 radeon r200
+#  define DriDrivers		mga r128 radeon r200
 # endif
 #endif
 
@@ -691,10 +701,6 @@ RELEASE_VERSION = ReleaseVersion
 # ifndef XF8_16Bpp
 #  define XF8_16Bpp		YES
 # endif
-/* 24/32bpp conversion module */
-# ifndef XF24_32Bpp
-#  define XF24_32Bpp		YES
-# endif
 /* shadow fb module */
 # ifndef XFShadowFB
 #  define XFShadowFB		YES
@@ -706,6 +712,10 @@ RELEASE_VERSION = ReleaseVersion
 /* XAA module */
 # ifndef XF86XAA
 #  define XF86XAA		YES
+# endif
+/* Exa module */
+# ifndef XF86EXA
+#  define XF86EXA		YES
 # endif
 /* ramdac module */
 # ifndef XF86Ramdac
@@ -734,7 +744,7 @@ RELEASE_VERSION = ReleaseVersion
 
 /* vgahw module */
 # ifndef XF86VgaHw
-#  define XF86VgaHw		NO
+#  define XF86VgaHw		YES
 # endif
 /* Amiga framebuffer module */
 # ifndef XF86AFB
@@ -751,17 +761,13 @@ RELEASE_VERSION = ReleaseVersion
 
 /* Pure PCI drivers should go first */
 # ifndef XF86CardDrivers
-#  define XF86CardDrivers	ati mga \
+#  define XF86CardDrivers	ati mga dummy \
 				DevelDrivers \
 				XF86OSCardDrivers XF86ExtraCardDrivers
 # endif
-# if HasGlide3
-#  define TdfxDriDriver		
-# else
-#  define TdfxDriDriver		/**/
-# endif
+# define TdfxDriDriver		/**/
 # ifndef DriDrivers
-#  define DriDrivers		gamma r128
+#  define DriDrivers		r128
 # endif
 #endif /* Ppc64Architecture */
 
@@ -870,10 +876,6 @@ IPLAN2P8_DEFS = -DUSE_IPLAN2P8
 #  else
 #    define BuildGLXLibrary	YES
 #  endif
-#endif
-
-#ifndef BuildXF86OldDRMCompat
-#  define BuildXF86OldDRMCompat	YES
 #endif
 
 /*
@@ -1221,17 +1223,6 @@ IPLAN2P8_DEFS = -DUSE_IPLAN2P8
 #endif
 
 /*
- * The expiry date for beta versions
- *
- * 853286400 is Wed Jan 15 00:00:00 1997 GMT
- * 855964800 is Sat Feb 15 00:00:00 1997 GMT
- * 866332800 is Sun Jun 15 00:00:00 1997 GMT
- */
-#ifndef XorgServerExpiry
-# define XorgServerExpiry 0
-#endif
-
-/*
  * Build the font server
  */
 #ifndef BuildFontServer
@@ -1295,7 +1286,8 @@ IPLAN2P8_DEFS = -DUSE_IPLAN2P8
 # if SystemV || SystemV4 || \
     (defined(LinuxArchitecture) && !defined(Mc68020Architecture)) || \
     defined(i386BsdArchitecture) || defined(LynxOSArchitecture) || \
-    defined(OS2Architecture) || defined(GNUMachArchitecture)
+    defined(OS2Architecture) || defined(GNUMachArchitecture) || \
+    (defined(KFreeBSDArchitecture) && defined(i386Architecture))
 #   define BuildScanpci		YES
 # else
 #   define BuildScanpci		NO
@@ -1402,9 +1394,9 @@ IPLAN2P8_DEFS = -DUSE_IPLAN2P8
 #endif
 
 #ifndef XFree86ConsoleDefines
-# if defined(i386BsdArchitecture) || defined(AlphaBsdArchitecture)
+# if defined(i386BsdArchitecture) || defined(AlphaBsdArchitecture) || (defined(KFreeBSDArchitecture) && defined(i386Architecture))
 #  define XFree86ConsoleDefines	-DPCCONS_SUPPORT -DSYSCONS_SUPPORT -DPCVT_SUPPORT
-# elif defined(FreeBSDArchitecture)
+# elif defined(KFreeBSDArchitecture)
 #  define XFree86ConsoleDefines -DSYSCONS_SUPPORT
 # else
 #  define XFree86ConsoleDefines	/**/
@@ -1538,7 +1530,7 @@ XFREE86JAPANESEDOCDIR = $(DOCDIR)/Japanese
 #  if defined(UseInstalled)
 #   define DefaultCCOptions /* -ansi */
 #  else
-#   define DefaultCCOptions -ansi -pedantic GccWarningOptions
+#   define DefaultCCOptions -ansi GccWarningOptions
 #  endif
 # endif
 # if defined(UseInstalled)
@@ -1584,6 +1576,12 @@ XFREE86JAPANESEDOCDIR = $(DOCDIR)/Japanese
 #if HasGcc2 && defined(Ppc64Architecture)
 # ifndef DefaultGcc2Ppc64Opt
 #  define DefaultGcc2Ppc64Opt -O2 GccAliasingArgs
+# endif
+#endif
+
+#if HasGcc2 && defined(MipsArchitecture)
+# ifndef DefaultGcc2MipsOpt
+#  define DefaultGcc2MipsOpt -O2 GccAliasingArgs
 # endif
 #endif
 
@@ -1672,6 +1670,12 @@ XFREE86JAPANESEDOCDIR = $(DOCDIR)/Japanese
 # else
 #  define StaticNeedsPicForShared NO
 # endif
+#endif
+
+#if (defined(SparcArchitecture) || defined(Sparc64Architecture)) \
+    && !defined(LargePositionIndependentCFlags) \
+    && defined(HasGcc)
+# define LargePositionIndependentCFlags -fPIC
 #endif
 
 #ifndef XF8_32Wid

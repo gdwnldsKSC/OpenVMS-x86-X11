@@ -42,7 +42,7 @@
 
 
 
-
+#undef  PI
 #define PI 3.141592
 
 
@@ -130,7 +130,7 @@ static GLuint src_vector( struct i915_fragment_program *p,
       case PROGRAM_STATE_VAR:
       case PROGRAM_NAMED_PARAM:
          src = i915_emit_param4fv( 
-	    p, program->Parameters->Parameters[source->Index].Values );
+	    p, program->Parameters->ParameterValues[source->Index] );
 	 break;
 
       default:
@@ -139,10 +139,10 @@ static GLuint src_vector( struct i915_fragment_program *p,
    }
 
    src = swizzle(src, 
-		 source->Swizzle[0],
-		 source->Swizzle[1],
-		 source->Swizzle[2],
-		 source->Swizzle[3]);
+		 GET_SWZ(source->Swizzle, 0),
+		 GET_SWZ(source->Swizzle, 1),
+		 GET_SWZ(source->Swizzle, 2),
+		 GET_SWZ(source->Swizzle, 3));
 
    if (source->NegateBase)
       src = negate( src, 1,1,1,1 );
@@ -157,9 +157,9 @@ static GLuint get_result_vector( struct i915_fragment_program *p,
    switch (inst->DstReg.File) {
    case PROGRAM_OUTPUT:
       switch (inst->DstReg.Index) {
-      case 0: 
+      case FRAG_OUTPUT_COLR: 
 	 return UREG(REG_TYPE_OC, 0);
-      case 1: 
+      case FRAG_OUTPUT_DEPR: 
 	 p->depth_written = 1;
 	 return UREG(REG_TYPE_OD, 0);
       default: 
@@ -179,30 +179,30 @@ static GLuint get_result_flags( const struct fp_instruction *inst )
    GLuint flags = 0;
 
    if (inst->Saturate) flags |= A0_DEST_SATURATE;
-   if (inst->DstReg.WriteMask[0]) flags |= A0_DEST_CHANNEL_X;
-   if (inst->DstReg.WriteMask[1]) flags |= A0_DEST_CHANNEL_Y;
-   if (inst->DstReg.WriteMask[2]) flags |= A0_DEST_CHANNEL_Z;
-   if (inst->DstReg.WriteMask[3]) flags |= A0_DEST_CHANNEL_W;
+   if (inst->DstReg.WriteMask & WRITEMASK_X) flags |= A0_DEST_CHANNEL_X;
+   if (inst->DstReg.WriteMask & WRITEMASK_Y) flags |= A0_DEST_CHANNEL_Y;
+   if (inst->DstReg.WriteMask & WRITEMASK_Z) flags |= A0_DEST_CHANNEL_Z;
+   if (inst->DstReg.WriteMask & WRITEMASK_W) flags |= A0_DEST_CHANNEL_W;
 
    return flags;
 }
 
-static GLuint translate_tex_src_bit( struct i915_fragment_program *p,
+static GLuint translate_tex_src_idx( struct i915_fragment_program *p,
 				     GLubyte bit )
 {
    switch (bit) {
-   case TEXTURE_1D_BIT:   return D0_SAMPLE_TYPE_2D;
-   case TEXTURE_2D_BIT:   return D0_SAMPLE_TYPE_2D;
-   case TEXTURE_RECT_BIT: return D0_SAMPLE_TYPE_2D;
-   case TEXTURE_3D_BIT:   return D0_SAMPLE_TYPE_VOLUME;
-   case TEXTURE_CUBE_BIT: return D0_SAMPLE_TYPE_CUBE;
+   case TEXTURE_1D_INDEX:   return D0_SAMPLE_TYPE_2D;
+   case TEXTURE_2D_INDEX:   return D0_SAMPLE_TYPE_2D;
+   case TEXTURE_RECT_INDEX: return D0_SAMPLE_TYPE_2D;
+   case TEXTURE_3D_INDEX:   return D0_SAMPLE_TYPE_VOLUME;
+   case TEXTURE_CUBE_INDEX: return D0_SAMPLE_TYPE_CUBE;
    default: i915_program_error(p, "TexSrcBit"); return 0;
    }
 }
 
 #define EMIT_TEX( OP )						\
 do {								\
-   GLuint dim = translate_tex_src_bit( p, inst->TexSrcBit );	\
+   GLuint dim = translate_tex_src_idx( p, inst->TexSrcIdx );	\
    GLuint sampler = i915_emit_decl(p, REG_TYPE_S,		\
 				  inst->TexSrcUnit, dim);	\
    GLuint coord = src_vector( p, &inst->SrcReg[0], program);	\
@@ -245,7 +245,7 @@ do {									\
  */
 static void upload_program( struct i915_fragment_program *p )
 {
-   const struct fragment_program *program = p->ctx->FragmentProgram.Current;
+   const struct fragment_program *program = p->ctx->FragmentProgram._Current;
    const struct fp_instruction *inst = program->Instructions;
 
 /*    _mesa_debug_fp_inst(program->Base.NumInstructions, inst); */
@@ -592,10 +592,10 @@ static void upload_program( struct i915_fragment_program *p )
 			 swizzle(tmp, X,Y,X,Y), 
 			 swizzle(tmp, X,X,ONE,ONE), 0);
 
-	 if (inst->DstReg.WriteMask[1]) {
+	 if (inst->DstReg.WriteMask & WRITEMASK_Y) {
 	    GLuint tmp1;
 	    
-	    if (inst->DstReg.WriteMask[0])
+	    if (inst->DstReg.WriteMask & WRITEMASK_X)
 	       tmp1 = i915_get_utemp( p );
 	    else
 	       tmp1 = tmp;
@@ -614,7 +614,7 @@ static void upload_program( struct i915_fragment_program *p )
 			    i915_emit_const4fv( p, sin_constants ), 0);
 	 }
 
-	 if (inst->DstReg.WriteMask[0]) {
+	 if (inst->DstReg.WriteMask & WRITEMASK_X) {
 	    i915_emit_arith( p, 
 			    A0_MUL,
 			    tmp, A0_DEST_CHANNEL_XYZ, 0,
@@ -788,7 +788,7 @@ static void check_wpos( struct i915_fragment_program *p )
    GLuint inputs = p->FragProg.InputsRead;
    GLint i;
 
-   p->wpos_tex = 0;
+   p->wpos_tex = -1;
 
    for (i = 0; i < p->ctx->Const.MaxTextureCoordUnits; i++) {
       if (inputs & FRAG_BIT_TEX(i)) 
@@ -886,10 +886,10 @@ static struct program *i915NewProgram( GLcontext *ctx,
 	 return NULL;
    }
 
-   case GL_FRAGMENT_PROGRAM_NV:
    default:
-      _mesa_problem(ctx, "bad target in _mesa_new_program");
-      return NULL;
+      /* Just fallback:
+       */
+      return _mesa_new_program( ctx, target, id );
    }
 }
 
@@ -949,7 +949,7 @@ void i915ValidateFragmentProgram( i915ContextPtr i915 )
    struct vertex_buffer *VB = &tnl->vb;
 
    struct i915_fragment_program *p = 
-      (struct i915_fragment_program *)ctx->FragmentProgram.Current;
+      (struct i915_fragment_program *)ctx->FragmentProgram._Current;
 
    GLuint inputsRead = p->FragProg.InputsRead;
    GLuint s4 = i915->state.Ctx[I915_CTXREG_LIS4] & ~S4_VFMT_MASK;
@@ -981,15 +981,27 @@ void i915ValidateFragmentProgram( i915ContextPtr i915 )
       EMIT_ATTR( _TNL_ATTRIB_COLOR0, EMIT_4UB_4F_BGRA, S4_VFMT_COLOR, 4 );
    }
    
-   if (inputsRead & FRAG_BIT_COL1) {
-      intel->specoffset = offset / 4;
-      EMIT_ATTR( _TNL_ATTRIB_COLOR1, EMIT_3UB_3F_BGR, S4_VFMT_SPEC_FOG, 3 );
-      EMIT_PAD( 1 );
+   if ((inputsRead & (FRAG_BIT_COL1|FRAG_BIT_FOGC)) || 
+       i915->vertex_fog != I915_FOG_NONE) {
+
+      if (inputsRead & FRAG_BIT_COL1) {
+	 intel->specoffset = offset / 4;
+	 EMIT_ATTR( _TNL_ATTRIB_COLOR1, EMIT_3UB_3F_BGR, S4_VFMT_SPEC_FOG, 3 );
+      }
+      else
+	 EMIT_PAD(3);
+
+      if ((inputsRead & FRAG_BIT_FOGC) || i915->vertex_fog != I915_FOG_NONE) 
+	 EMIT_ATTR( _TNL_ATTRIB_FOG, EMIT_1UB_1F, S4_VFMT_SPEC_FOG, 1 );
+      else
+	 EMIT_PAD( 1 );
    }
 
-   if (inputsRead & FRAG_BIT_FOGC) {
+#if 0
+   if ((inputsRead & FRAG_BIT_FOGC) || i915->vertex_fog != I915_FOG_NONE) {
       EMIT_ATTR( _TNL_ATTRIB_FOG, EMIT_1F, S4_VFMT_FOG_PARAM, 4 );
    }
+#endif
 
    for (i = 0; i < p->ctx->Const.MaxTextureCoordUnits; i++) {
       if (inputsRead & FRAG_BIT_TEX(i)) {

@@ -28,16 +28,23 @@
  * font server i/o routines
  */
 
-#ifdef WIN32
-#define _WILLWINSOCK_
+#ifdef HAVE_CONFIG_H
+#include <config.h>
 #endif
 
-#include 	"X11/Xtrans.h"
+#ifdef WIN32
+#define _WILLWINSOCK_
+#include	"X11/Xwindows.h"
+#endif
+
+#define FONT_t
+#define TRANS_CLIENT
+#include 	"X11/Xtrans/Xtrans.h"
 #include	"X11/Xpoll.h"
-#include	"FS.h"
-#include	"FSproto.h"
-#include	"fontmisc.h"
-#include	"fontstruct.h"
+#include	<X11/fonts/FS.h>
+#include	<X11/fonts/FSproto.h>
+#include	<X11/fonts/fontmisc.h>
+#include	<X11/fonts/fontstruct.h>
 #include	"fservestr.h"
 
 #include	<stdio.h>

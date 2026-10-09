@@ -26,6 +26,9 @@
  ********************************************************/
 /* $XFree86: xc/lib/xkbfile/srvmisc.c,v 3.4 2001/10/28 03:32:47 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>

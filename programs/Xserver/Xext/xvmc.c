@@ -2,8 +2,12 @@
 
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "os.h"
 #include "dixstruct.h"
@@ -11,12 +15,28 @@
 #include "scrnintstr.h"
 #include "extnsionst.h"
 #include "servermd.h"
-#include "Xfuncproto.h"
+#include <X11/Xfuncproto.h>
 #include "xvdix.h"
-#include "XvMC.h"
-#include "Xvproto.h"
-#include "XvMCproto.h"
+#include <X11/extensions/XvMC.h>
+#include <X11/extensions/Xvproto.h>
+#include <X11/extensions/XvMCproto.h>
 #include "xvmcext.h"
+
+#ifdef HAS_XVMCSHM
+#ifndef Lynx
+#include <sys/ipc.h>
+#include <sys/types.h>
+#include <sys/shm.h>
+#else
+#include <ipc.h>
+#include <shm.h>
+#endif /* Lynx */
+#endif /* HAS_XVMCSHM */
+   
+
+
+#define DR_CLIENT_DRIVER_NAME_SIZE 48
+#define DR_BUSID_SIZE 48
 
 int XvMCScreenIndex = -1;
 
@@ -34,6 +54,11 @@ typedef struct {
    int num_adaptors;
    XvMCAdaptorPtr adaptors;
    CloseScreenProcPtr	CloseScreen;
+   char clientDriverName[DR_CLIENT_DRIVER_NAME_SIZE];
+   char busID[DR_BUSID_SIZE];
+   int major;
+   int minor;
+   int patchLevel;
 } XvMCScreenRec, *XvMCScreenPtr; 
 
 #define XVMC_GET_PRIVATE(pScreen) \
@@ -542,6 +567,79 @@ ProcXvMCListSubpictureTypes(ClientPtr client)
     return Success;
 }
 
+static int
+ProcXvMCGetDRInfo(ClientPtr client)
+{
+    xvmcGetDRInfoReply rep;
+    XvPortPtr pPort;
+    ScreenPtr pScreen;
+    XvMCScreenPtr pScreenPriv;
+
+#ifdef HAS_XVMCSHM
+    volatile CARD32 *patternP;
+#endif
+
+    REQUEST(xvmcGetDRInfoReq);
+    REQUEST_SIZE_MATCH(xvmcGetDRInfoReq);
+
+
+    if(!(pPort = LOOKUP_PORT(stuff->port, client))) {
+	client->errorValue = stuff->port;
+	return _XvBadPort;
+    }
+
+    pScreen = pPort->pAdaptor->pScreen;
+    pScreenPriv = XVMC_GET_PRIVATE(pScreen);
+    
+    rep.type = X_Reply;
+    rep.sequenceNumber = client->sequence;
+    rep.major = pScreenPriv->major;
+    rep.minor = pScreenPriv->minor;
+    rep.patchLevel = pScreenPriv->patchLevel;
+    rep.nameLen = (strlen(pScreenPriv->clientDriverName) + 4) >> 2;
+    rep.busIDLen = (strlen(pScreenPriv->busID) + 4) >> 2;
+
+    rep.length = rep.nameLen + rep.busIDLen;
+    rep.nameLen <<=2;
+    rep.busIDLen <<=2;
+
+    /*
+     * Read back to the client what she has put in the shared memory
+     * segment she prepared for us.
+     */
+
+    rep.isLocal = 1;
+#ifdef HAS_XVMCSHM
+    patternP = (CARD32 *)shmat( stuff->shmKey, NULL, SHM_RDONLY );
+    if ( -1 != (long) patternP) {
+        register volatile CARD32 *patternC = patternP;
+	register int i;
+	CARD32 magic = stuff->magic;
+	
+	rep.isLocal = 1;
+	i = 1024 / sizeof(CARD32);
+	
+	while ( i-- ) {
+	    if (*patternC++ != magic) {
+		rep.isLocal = 0;
+		break;
+	    }
+	    magic = ~magic;
+	}
+	shmdt( (char *)patternP ); 
+    }
+#endif /* HAS_XVMCSHM */
+    
+    WriteToClient(client, sizeof(xvmcGetDRInfoReply), 
+		  (char*)&rep);
+    if (rep.length) {      
+	WriteToClient(client, rep.nameLen, 
+		      pScreenPriv->clientDriverName);
+	WriteToClient(client, rep.busIDLen, 
+		      pScreenPriv->busID);
+    }	
+    return Success;
+}
 
 
 int (*ProcXvMCVector[xvmcNumRequest])(ClientPtr) = {
@@ -553,7 +651,8 @@ int (*ProcXvMCVector[xvmcNumRequest])(ClientPtr) = {
   ProcXvMCDestroySurface,
   ProcXvMCCreateSubpicture,
   ProcXvMCDestroySubpicture,
-  ProcXvMCListSubpictureTypes
+  ProcXvMCListSubpictureTypes,
+  ProcXvMCGetDRInfo
 };
 
 static int
@@ -637,6 +736,11 @@ XvMCScreenInit(ScreenPtr pScreen, int num, XvMCAdaptorPtr pAdapt)
 
    pScreenPriv->num_adaptors = num;
    pScreenPriv->adaptors = pAdapt;
+   pScreenPriv->clientDriverName[0] = 0;
+   pScreenPriv->busID[0] = 0;
+   pScreenPriv->major = 0;
+   pScreenPriv->minor = 0;
+   pScreenPriv->patchLevel = 0;
 
    return Success;
 }
@@ -672,3 +776,21 @@ XvImagePtr XvMCFindXvImage(XvPortPtr pPort, CARD32 id)
 
     return pImage;
 }
+
+int
+xf86XvMCRegisterDRInfo(ScreenPtr pScreen, char *name,
+		       char *busID, int major, int minor,
+		       int patchLevel)
+{
+    XvMCScreenPtr pScreenPriv = XVMC_GET_PRIVATE(pScreen);
+    strncpy(pScreenPriv->clientDriverName, name,
+	    DR_CLIENT_DRIVER_NAME_SIZE);
+    strncpy(pScreenPriv->busID, busID, DR_BUSID_SIZE);
+    pScreenPriv->major = major;
+    pScreenPriv->minor = minor;
+    pScreenPriv->patchLevel = patchLevel;
+    pScreenPriv->clientDriverName[DR_CLIENT_DRIVER_NAME_SIZE-1] = 0;
+    pScreenPriv->busID[DR_BUSID_SIZE-1] = 0;
+    return Success;
+}
+

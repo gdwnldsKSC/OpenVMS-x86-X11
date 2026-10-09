@@ -51,7 +51,8 @@ MODULEDEFINES = -DDEFAULT_MODULE_PATH=\"$(MODULEDIR)\"
 		-I$(SERVERSRC)/os -I$(XINCLUDESRC) -I$(FONTINCSRC) \
 		-I$(FONTLIBSRC)/include -I$(FONTLIBSRC)/fontcache \
 		-I$(EXTINCSRC) -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c \
-		-I$(SERVERSRC)/render
+		-I$(SERVERSRC)/render -I$(SERVERSRC)/miext/cw \
+		-I$(SERVERSRC)/miext/damage
 
 #ifdef OS2Architecture
 SRCS1 = os2funcs.c
@@ -79,11 +80,25 @@ NormalLibraryTarget(loader,$(OBJS) )
 NormalLibraryTarget(xloader,$(XOBJS) )
 
 SpecialCObjectRule(loadmod,NullParameter,$(MODULEDEFINES) $(EXT_DEFINES))
-SpecialCObjectRule(xf86sym,NullParameter,$(EXT_DEFINES))
 SpecialCObjectRule(dixsym,NullParameter,$(EXT_DEFINES))
 
+#if defined(USLArchitecture) && !HasGcc
+XCOMM Copy libcrt.a from uccs since it will be missing in a
+XCOMM runtime-only environment
+libcrt.a: /usr/ccs/lib/libcrt.a
+	rm -f libcrt.a
+	cp /usr/ccs/lib/libcrt.a libcrt.a
+
+InstallDynamicModule(libcrt.a,$(MODULEDIR),.)
+
+XCOMM loader needs to know the location of modules to load libcrt.a
+SpecialCObjectRule(loader,NullParameter,$(MODULEDEFINES))
+#endif
+
 #if ProPoliceSupport
-SpecialCObjectRule(xf86sym,xf86sym.c,$(SSPOPTIONS) $(EXT_DEFINES))
+SpecialCObjectRule(xf86sym,NullParameter,$(SSPOPTIONS) $(EXT_DEFINES))
+#else
+SpecialCObjectRule(xf86sym,NullParameter,$(EXT_DEFINES))
 #endif
 
 #ifdef SparcArchitecture

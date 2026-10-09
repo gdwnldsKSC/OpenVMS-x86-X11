@@ -104,6 +104,8 @@ strbw(char *a, char *b)
 
 
 #if defined(sun) && defined(SVR4)
+#include <sys/wait.h>
+
 int 
 System(char *s)
 {

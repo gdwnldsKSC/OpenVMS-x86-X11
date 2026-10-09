@@ -21,6 +21,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/chips/ct_regs.c,v 1.8tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * The functions in this file are used to read/write the C&T extension register
  * and supply MMIO replacements of the VGA register access functions in

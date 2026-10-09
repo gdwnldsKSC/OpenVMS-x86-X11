@@ -78,25 +78,20 @@
 do {									\
     CARD32 tmp = INREG(addr);						\
     tmp &= (mask);							\
-    tmp |= (val);							\
+    tmp |= ((val) & ~(mask));						\
     OUTREG(addr, tmp);							\
 } while (0)
 
 #define INPLL(pScrn, addr) RADEONINPLL(pScrn, addr)
 
-#define OUTPLL(addr, val)						\
-do {									\
-    OUTREG8(RADEON_CLOCK_CNTL_INDEX, (((addr) & 0x3f) |			\
-				      RADEON_PLL_WR_EN));		\
-    OUTREG(RADEON_CLOCK_CNTL_DATA, val);				\
-} while (0)
+#define OUTPLL(pScrn, addr, val) RADEONOUTPLL(pScrn, addr, val)
 
 #define OUTPLLP(pScrn, addr, val, mask)					\
 do {									\
     CARD32 tmp_ = INPLL(pScrn, addr);					\
     tmp_ &= (mask);							\
-    tmp_ |= (val);							\
-    OUTPLL(addr, tmp_);							\
+    tmp_ |= ((val) & ~(mask));						\
+    OUTPLL(pScrn, addr, tmp_);						\
 } while (0)
 
 #define OUTPAL_START(idx)						\
@@ -137,6 +132,5 @@ do {									\
 	       RADEON_DAC2_PALETTE_ACC_CTL);				\
     }									\
 } while (0)
-
 
 #endif

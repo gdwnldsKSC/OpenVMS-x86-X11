@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/tseng/tseng_ramdac.c,v 1.27 2003/11/03 05:11:45 tsi Exp $ */
 
-
-
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /*
  *

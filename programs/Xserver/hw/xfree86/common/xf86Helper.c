@@ -36,7 +36,11 @@
  * different drivers.
  */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "os.h"
 #include "servermd.h"
 #include "pixmapstr.h"
@@ -83,7 +87,12 @@ xf86AddDriver(DriverPtr driver, pointer module, int flags)
     xf86DriverList = xnfrealloc(xf86DriverList,
 				xf86NumDrivers * sizeof(DriverPtr));
     xf86DriverList[xf86NumDrivers - 1] = xnfalloc(sizeof(DriverRec));
-    *xf86DriverList[xf86NumDrivers - 1] = *driver;
+    if (flags & HaveDriverFuncs)
+	*xf86DriverList[xf86NumDrivers - 1] = *driver;
+    else {
+	memcpy(xf86DriverList[xf86NumDrivers - 1], driver, sizeof(DriverRec1));
+	xf86DriverList[xf86NumDrivers - 1]->driverFunc = NULL;
+    }
     xf86DriverList[xf86NumDrivers - 1]->module = module;
     xf86DriverList[xf86NumDrivers - 1]->refCount = 0;
 }
@@ -209,6 +218,8 @@ xf86AllocateScreen(DriverPtr drv, int flags)
     }
 #endif
 
+    xf86Screens[i]->DriverFunc = drv->driverFunc;
+    
     return xf86Screens[i];
 }
 
@@ -254,7 +265,7 @@ xf86DeleteScreen(int scrnIndex, int flags)
     if (pScrn->drv)
 	pScrn->drv->refCount--;
 
-    if (pScrn->privates);
+    if (pScrn->privates)
 	xfree(pScrn->privates);
 
     xf86ClearEntityListForScreen(scrnIndex);
@@ -346,7 +357,7 @@ xf86DeleteInput(InputInfoPtr pInp, int flags)
     if (pInp->drv)
 	pInp->drv->refCount--;
 
-    if (pInp->private);
+    if (pInp->private)
 	xfree(pInp->private);
 
     /* Remove the entry from the list. */

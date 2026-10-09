@@ -6,13 +6,13 @@ Copyright 1993 by Sun Microsystems, Inc. Mountain View, CA
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Digital or Sun not be
 used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
+software without specific, written prior permission.
 
 DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
 ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
@@ -60,6 +60,9 @@ in this Software without prior written authorization from The Open Group.
 
 */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "IntrinsicI.h"
 #include "VarargsI.h"
 #include "ShellP.h"
@@ -72,7 +75,7 @@ in this Software without prior written authorization from The Open Group.
 static String XtNxtCreateWidget = "xtCreateWidget";
 static String XtNxtCreatePopupShell = "xtCreatePopupShell";
 
-static void 
+static void
 CallClassPartInit(WidgetClass ancestor, WidgetClass wc)
 {
     if (ancestor->core_class.superclass != NULL) {
@@ -83,7 +86,7 @@ CallClassPartInit(WidgetClass ancestor, WidgetClass wc)
     }
 }
 
-void 
+void
 XtInitializeWidgetClass(wc)
     WidgetClass wc;
 {
@@ -181,10 +184,10 @@ XtInitializeWidgetClass(wc)
 	}
     }
 
-    if ((wc->core_class.superclass != NULL) 
+    if ((wc->core_class.superclass != NULL)
 	    && (!(wc->core_class.superclass->core_class.class_inited)))
  	XtInitializeWidgetClass(wc->core_class.superclass);
- 
+
     if (wc->core_class.class_initialize != NULL)
 	(*(wc->core_class.class_initialize))();
     CallClassPartInit(wc, wc);
@@ -192,7 +195,7 @@ XtInitializeWidgetClass(wc)
     UNLOCK_PROCESS;
 }
 
-static void 
+static void
 CallInitialize (
     WidgetClass class,
     Widget      req_widget,
@@ -221,7 +224,7 @@ CallInitialize (
 	(*initialize_hook) (new_widget, args, &num_args);
 }
 
-static void 
+static void
 CallConstraintInitialize (
     ConstraintWidgetClass class,
     Widget	req_widget,
@@ -266,10 +269,10 @@ xtWidgetAlloc(
     ext = (ObjectClassExtension)
 	XtGetClassExtension(widget_class,
 			    XtOffsetOf(ObjectClassRec, object_class.extension),
-			    NULLQUARK, XtObjectExtensionVersion, 
+			    NULLQUARK, XtObjectExtensionVersion,
 			    sizeof(ObjectClassExtensionRec));
     if (parent_constraint_class)
-	csize = parent_constraint_class->constraint_class.constraint_size;    
+	csize = parent_constraint_class->constraint_class.constraint_size;
     if (ext && ext->allocate) {
 	XtAllocateProc allocate;
 	Cardinal extra = 0;
@@ -325,7 +328,7 @@ CompileCallbacks(
     UNLOCK_PROCESS;
 }
 
-static Widget 
+static Widget
 xtCreate(
     char        *name,
     char        *class,
@@ -348,10 +351,10 @@ xtCreate(
     Cardinal                wsize, csize;
     Widget	    	    widget;
     XtCacheRef		    *cache_refs;
-    int			    i;
+    Cardinal		    i;
     XtCreateHookDataRec     call_data;
 
-    widget = xtWidgetAlloc(widget_class, parent_constraint_class, parent, 
+    widget = xtWidgetAlloc(widget_class, parent_constraint_class, parent,
 		name, args, num_args, typed_args, num_typed_args);
 
     if (XtIsRectObj(widget)) {
@@ -378,7 +381,7 @@ xtCreate(
     UNLOCK_PROCESS;
 
     /* fetch resources */
-    cache_refs = _XtGetResources(widget, args, num_args, 
+    cache_refs = _XtGetResources(widget, args, num_args,
 		typed_args, &num_typed_args);
 
     /* Convert typed arg list to arg list */
@@ -391,7 +394,7 @@ xtCreate(
 	}
 	num_args = num_typed_args;
     }
-    
+
     CompileCallbacks(widget);
 
     if (cache_refs != NULL) {
@@ -408,7 +411,7 @@ xtCreate(
         csize = parent_constraint_class->constraint_class.constraint_size;
 	if (csize) {
 	    req_constraints = XtStackAlloc(csize, constraint_cache);
-	    (void) memmove((char*)req_constraints, widget->core.constraints, 
+	    (void) memmove((char*)req_constraints, widget->core.constraints,
 			(int)csize);
 	    req_widget->core.constraints = req_constraints;
 	} else req_widget->core.constraints = NULL;
@@ -422,7 +425,7 @@ xtCreate(
     if (post_proc != (XtWidgetProc) NULL) {
 	Widget hookobj;
 	(*post_proc)(widget);
-	hookobj = XtHooksOfDisplay((default_screen != (Screen*) NULL) ? 
+	hookobj = XtHooksOfDisplay((default_screen != (Screen*) NULL) ?
 		default_screen->display :
 		XtDisplayOfObject(parent));
 	if (XtHasCallbacks(hookobj, XtNcreateHook) == XtCallbackHasSome) {
@@ -431,14 +434,14 @@ xtCreate(
 	    call_data.widget = widget;
 	    call_data.args = args;
 	    call_data.num_args = num_args;
-	    XtCallCallbackList(hookobj, 
-		((HookObject)hookobj)->hooks.createhook_callbacks, 
+	    XtCallCallbackList(hookobj,
+		((HookObject)hookobj)->hooks.createhook_callbacks,
 		(XtPointer)&call_data);
 	}
     }
     if (typed_args != NULL) {
 	while (num_typed_args-- > 0) {
-	
+
 	    /* In GetResources we may have dynamically alloc'd store to hold */
 	    /* a copy of a resource which was larger then sizeof(XtArgVal). */
 	    /* We must free this store now in order to prevent a memory leak */
@@ -456,7 +459,7 @@ xtCreate(
     return (widget);
 }
 
-static void 
+static void
 widgetPostProc(Widget w)
 {
     XtWidgetProc insert_child;
@@ -482,7 +485,7 @@ widgetPostProc(Widget w)
     }
 }
 
-Widget 
+Widget
 _XtCreateWidget(
     String      name,
     WidgetClass widget_class,
@@ -563,7 +566,7 @@ _XtCreateWidget(
     return (widget);
 }
 
-Widget 
+Widget
 XtCreateWidget(
     _Xconst char* name,
     WidgetClass widget_class,
@@ -583,7 +586,7 @@ XtCreateWidget(
 }
 
 
-Widget 
+Widget
 XtCreateManagedWidget(
     _Xconst char* name,
     WidgetClass widget_class,
@@ -615,16 +618,15 @@ popupPostProc(Widget w)
     parent->core.popup_list[parent->core.num_popups++] = w;
 }
 
-Widget 
-_XtCreatePopupShell(name, widget_class, parent, args, num_args,
-		    typed_args, num_typed_args)
-    String      name;
-    WidgetClass widget_class;
-    Widget      parent;
-    ArgList     args;
-    Cardinal    num_args;
-    XtTypedArgList      typed_args;
-    Cardinal            num_typed_args;
+Widget
+_XtCreatePopupShell(
+    String      name,
+    WidgetClass widget_class,
+    Widget      parent,
+    ArgList     args,
+    Cardinal    num_args,
+    XtTypedArgList      typed_args,
+    Cardinal            num_typed_args)
 {
     register Widget widget;
     Screen* default_screen;
@@ -653,7 +655,7 @@ _XtCreatePopupShell(name, widget_class, parent, args, num_args,
     return(widget);
 }
 
-Widget 
+Widget
 XtCreatePopupShell(
     _Xconst char* name,
     WidgetClass widget_class,
@@ -672,16 +674,16 @@ XtCreatePopupShell(
     return retval;
 }
 
-Widget 
-_XtAppCreateShell(name, class, widget_class, display, args, num_args,
-		  typed_args, num_typed_args)
-    String      name, class;
-    WidgetClass widget_class;
-    Display*    display;
-    ArgList     args;
-    Cardinal    num_args;
-    XtTypedArgList typed_args;
-    Cardinal	num_typed_args;
+Widget
+_XtAppCreateShell(
+    String      name,
+    String      class,
+    WidgetClass widget_class,
+    Display*    display,
+    ArgList     args,
+    Cardinal    num_args,
+    XtTypedArgList typed_args,
+    Cardinal	num_typed_args)
 {
     Widget shell;
 
@@ -706,7 +708,7 @@ _XtAppCreateShell(name, class, widget_class, display, args, num_args,
     return shell;
 }
 
-Widget 
+Widget
 XtAppCreateShell(
     _Xconst char*       name,
     _Xconst char*       class,
@@ -727,7 +729,7 @@ XtAppCreateShell(
 }
 
 /* ARGSUSED */
-Widget 
+Widget
 XtCreateApplicationShell(
     _Xconst char* name,		/* unused in R3 and later */
     WidgetClass widget_class,
@@ -752,26 +754,25 @@ XtCreateApplicationShell(
 }
 
 Widget
-_XtCreateHookObj(screen)
-    Screen* screen;
+_XtCreateHookObj(Screen* screen)
 {
     Widget req_widget;
     double widget_cache[100];
     Cardinal wsize = 0;
-    Widget hookobj = xtWidgetAlloc(hookObjectClass, 
-		(ConstraintWidgetClass)NULL, 
+    Widget hookobj = xtWidgetAlloc(hookObjectClass,
+		(ConstraintWidgetClass)NULL,
 		(Widget)NULL, "hooks",
-		(ArgList)NULL, (Cardinal)0, 
+		(ArgList)NULL, (Cardinal)0,
 		(XtTypedArgList)NULL, (Cardinal)0);
 
     ((HookObject)hookobj)->hooks.screen = screen;
-    (void) _XtGetResources(hookobj, (ArgList)NULL, 0, 
+    (void) _XtGetResources(hookobj, (ArgList)NULL, 0,
 		(XtTypedArgList)NULL, &wsize);
     CompileCallbacks(hookobj);
     wsize = hookObjectClass->core_class.widget_size;
     req_widget = (Widget) XtStackAlloc(wsize, widget_cache);
     (void) memmove ((char *) req_widget, (char *) hookobj, (int) wsize);
-    CallInitialize (hookObjectClass, req_widget, hookobj, 
+    CallInitialize (hookObjectClass, req_widget, hookobj,
 		(ArgList)NULL, (Cardinal) 0);
     XtStackFree((XtPointer)req_widget, widget_cache);
     return hookobj;

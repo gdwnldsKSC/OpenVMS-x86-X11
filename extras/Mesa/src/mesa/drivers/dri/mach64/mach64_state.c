@@ -37,6 +37,7 @@
 #include "mach64_tex.h"
 
 #include "context.h"
+#include "buffers.h"
 #include "enums.h"
 #include "colormac.h"
 #include "swrast/swrast.h"
@@ -646,6 +647,8 @@ static void mach64Viewport( GLcontext *ctx,
 			  GLint x, GLint y,
 			  GLsizei width, GLsizei height )
 {
+   /* update size of Mesa/software ancillary buffers */
+   _mesa_ResizeBuffersMESA();
    mach64CalcViewport( ctx );
 }
 
@@ -729,18 +732,18 @@ static void mach64DDDrawBuffer( GLcontext *ctx, GLenum mode )
    /*
     * _DrawDestMask is easier to cope with than <mode>.
     */
-   switch ( ctx->Color._DrawDestMask ) {
-   case DD_FRONT_LEFT_BIT:
+   switch ( ctx->DrawBuffer->_ColorDrawBufferMask[0] ) {
+   case BUFFER_BIT_FRONT_LEFT:
       FALLBACK( mmesa, MACH64_FALLBACK_DRAW_BUFFER, GL_FALSE );
       mach64SetCliprects( ctx, GL_FRONT_LEFT );
       if (MACH64_DEBUG & DEBUG_VERBOSE_MSG)
-	 fprintf(stderr,"%s: DD_FRONT_LEFT_BIT\n", __FUNCTION__);
+	 fprintf(stderr,"%s: BUFFER_BIT_FRONT_LEFT\n", __FUNCTION__);
       break;
-   case DD_BACK_LEFT_BIT:
+   case BUFFER_BIT_BACK_LEFT:
       FALLBACK( mmesa, MACH64_FALLBACK_DRAW_BUFFER, GL_FALSE );
       mach64SetCliprects( ctx, GL_BACK_LEFT );
       if (MACH64_DEBUG & DEBUG_VERBOSE_MSG)
-	 fprintf(stderr,"%s: DD_BACK_LEFT_BIT\n", __FUNCTION__);
+	 fprintf(stderr,"%s: BUFFER_BIT_BACK_LEFT\n", __FUNCTION__);
       break;
    default:
       /* GL_NONE or GL_FRONT_AND_BACK or stereo left&right, etc */

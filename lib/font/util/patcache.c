@@ -31,8 +31,11 @@ in this Software without prior written authorization from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
-#include    <fontmisc.h>
-#include    <fontstruct.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include    <X11/fonts/fontmisc.h>
+#include    <X11/fonts/fontstruct.h>
 
 /*
  * Static sized hash table for looking up font name patterns

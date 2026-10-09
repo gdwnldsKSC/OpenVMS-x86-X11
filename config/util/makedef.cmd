@@ -23,13 +23,13 @@ sOrdinals       = 0;
 sASDFeatureId   = '';
 sCountryCode    = '';
 sDateTime       = left(' 'date()' 'time(), 26);
-sDescription    = 'X.Org 6.8';
+sDescription    = 'X.Org 6.9';
 sFixPakVer      = '';
 sHostname       = strip(substr(VALUE('HOSTNAME',,'OS2ENVIRONMENT'), 1, 11));
 sLanguageCode   = '';
 sMiniVer        = '';
 sVendor         = 'X.Org';
-sVersion        = '6.8';
+sVersion        = '6.9';
 
 
 /*

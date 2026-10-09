@@ -27,8 +27,12 @@
 
 #include "misc.h"
 
-#include "fontmod.h"
+#include <X11/fonts/fontmod.h>
 #include "xf86Module.h"
+
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
 
 static MODULESETUPPROTO(type1Setup);
 

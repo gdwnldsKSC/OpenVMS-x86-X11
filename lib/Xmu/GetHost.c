@@ -33,6 +33,9 @@ in this Software without prior written authorization from The Open Group.
  * _XGetHostname - similar to gethostname but allows special processing.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xosdefs.h>
 #include <string.h>
 #include <unistd.h>

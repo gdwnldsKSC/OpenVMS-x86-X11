@@ -20,12 +20,15 @@
  * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
- *
- * Authors:
- *    Keith Whitwell <keith@tungstengraphics.com>
- *    Gareth Hughes <gareth@valinux.com>
  */
-/* $XFree86: xc/lib/GL/mesa/src/drv/mga/mgaioctl.c,v 1.16 2002/12/16 16:18:52 dawes Exp $ */
+
+/**
+ * \file mgaioctl.c
+ * MGA IOCTL related wrapper functions.
+ *
+ * \author Keith Whitwell <keith@tungstengraphics.com>
+ * \author Gareth Hughes <gareth@valinux.com>
+ */
 
 #include <errno.h>
 #include "mtypes.h"
@@ -45,6 +48,49 @@
 #include "mgatris.h"
 
 #include "vblank.h"
+
+
+int
+mgaSetFence( mgaContextPtr mmesa, uint32_t * fence )
+{
+    int ret = ENOSYS;
+
+    if ( mmesa->driScreen->drmMinor >= 2 ) {
+	ret = drmCommandWriteRead( mmesa->driScreen->fd, DRM_MGA_SET_FENCE,
+				   fence, sizeof( uint32_t ));
+	if (ret) {
+	    fprintf(stderr, "drmMgaSetFence: %d\n", ret);
+	    exit(1);
+	}
+    }
+
+    return ret;
+}
+
+
+int
+mgaWaitFence( mgaContextPtr mmesa, uint32_t fence, uint32_t * curr_fence )
+{
+    int ret = ENOSYS;
+
+    if ( mmesa->driScreen->drmMinor >= 2 ) {
+	uint32_t temp = fence;
+	
+	ret = drmCommandWriteRead( mmesa->driScreen->fd,
+				   DRM_MGA_WAIT_FENCE,
+				   & temp, sizeof( uint32_t ));
+	if (ret) {
+	   fprintf(stderr, "drmMgaSetFence: %d\n", ret);
+	    exit(1);
+	}
+
+	if ( curr_fence ) {
+	    *curr_fence = temp;
+	}
+    }
+
+    return ret;
+}
 
 
 static void mga_iload_dma_ioctl(mgaContextPtr mmesa,
@@ -175,30 +221,30 @@ mgaClear( GLcontext *ctx, GLbitfield mask, GLboolean all,
 
    FLUSH_BATCH( mmesa );
 
-   if ( mask & DD_FRONT_LEFT_BIT ) {
+   if ( mask & BUFFER_BIT_FRONT_LEFT ) {
       flags |= MGA_FRONT;
       color_mask = mmesa->setup.plnwt;
-      mask &= ~DD_FRONT_LEFT_BIT;
+      mask &= ~BUFFER_BIT_FRONT_LEFT;
    }
 
-   if ( mask & DD_BACK_LEFT_BIT ) {
+   if ( mask & BUFFER_BIT_BACK_LEFT ) {
       flags |= MGA_BACK;
       color_mask = mmesa->setup.plnwt;
-      mask &= ~DD_BACK_LEFT_BIT;
+      mask &= ~BUFFER_BIT_BACK_LEFT;
    }
 
-   if ( (mask & DD_DEPTH_BIT) && ctx->Depth.Mask ) {
+   if ( (mask & BUFFER_BIT_DEPTH) && ctx->Depth.Mask ) {
       flags |= MGA_DEPTH;
       clear_depth = (mmesa->ClearDepth & mmesa->depth_clear_mask);
       depth_mask |= mmesa->depth_clear_mask;
-      mask &= ~DD_DEPTH_BIT;
+      mask &= ~BUFFER_BIT_DEPTH;
    }
 
-   if ( (mask & DD_STENCIL_BIT) && mmesa->hw_stencil ) {
+   if ( (mask & BUFFER_BIT_STENCIL) && mmesa->hw_stencil ) {
       flags |= MGA_DEPTH;
       clear_depth |= (ctx->Stencil.Clear & mmesa->stencil_clear_mask);
       depth_mask |= mmesa->stencil_clear_mask;
-      mask &= ~DD_STENCIL_BIT;
+      mask &= ~BUFFER_BIT_STENCIL;
    }
 
    if ( flags ) {
@@ -283,40 +329,72 @@ mgaClear( GLcontext *ctx, GLbitfield mask, GLboolean all,
 }
 
 
+/**
+ * Wait for the previous frame of rendering has completed.
+ * 
+ * \param mmesa  Hardware context pointer.
+ *
+ * \bug
+ * The loop in this function should have some sort of a timeout mechanism.
+ *
+ * \warning
+ * This routine used to assume that the hardware lock was held on entry.  It
+ * now assumes that the lock is \b not held on entry.
+ */
+
 static void mgaWaitForFrameCompletion( mgaContextPtr mmesa )
 {
-   unsigned wait = 0;
-   GLuint last_frame, last_wrap;
+    if ( mgaWaitFence( mmesa, mmesa->last_frame_fence, NULL ) == ENOSYS ) {
+	unsigned wait = 0;
+	GLuint last_frame;
+	GLuint last_wrap;
 
 
-   last_frame = mmesa->sarea->last_frame.head;
-   last_wrap = mmesa->sarea->last_frame.wrap;
+	LOCK_HARDWARE( mmesa );
+	last_frame = mmesa->sarea->last_frame.head;
+	last_wrap = mmesa->sarea->last_frame.wrap;
 
-   /* FIXME: Add a timeout to this loop...
-    */
-   while ( 1 ) {
-      if ( last_wrap < mmesa->sarea->last_wrap ||
-	   ( last_wrap == mmesa->sarea->last_wrap &&
-	     last_frame <= (MGA_READ( MGAREG_PRIMADDRESS ) -
-			    mmesa->primary_offset) ) ) {
-	 break;
-      }
-      if ( 0 ) {
-	 wait++;
-	 fprintf( stderr, "   last: head=0x%06x wrap=%d\n",
-		  last_frame, last_wrap );
-	 fprintf( stderr, "   head: head=0x%06lx wrap=%d\n",
-		  (long)(MGA_READ( MGAREG_PRIMADDRESS ) - mmesa->primary_offset),
-		  mmesa->sarea->last_wrap );
-      }
-      UPDATE_LOCK( mmesa, DRM_LOCK_FLUSH );
+	/* The DMA routines in the kernel track a couple values in the SAREA
+	 * that we use here.  The number of times that the primary DMA buffer
+	 * has "wrapped" around is tracked in last_wrap.  In addition, the
+	 * wrap count and the buffer position at the end of the last frame are
+	 * stored in last_frame.wrap and last_frame.head.
+	 * 
+	 * By comparing the wrap counts and the current DMA pointer value
+	 * (read directly from the hardware) to last_frame.head, we can
+	 * determine when the graphics processor has processed all of the
+	 * commands for the last frame.
+	 * 
+	 * In this case "last frame" means the frame of the *previous* swap-
+	 * buffers call.  This is done to prevent queuing a second buffer swap
+	 * before the previous swap is executed.
+	 */
+	while ( 1 ) {
+	    if ( last_wrap < mmesa->sarea->last_wrap ||
+		 ( last_wrap == mmesa->sarea->last_wrap &&
+		   last_frame <= (MGA_READ( MGAREG_PRIMADDRESS ) -
+				  mmesa->primary_offset) ) ) {
+		break;
+	    }
+	    if ( 0 ) {
+		wait++;
+		fprintf( stderr, "   last: head=0x%06x wrap=%d\n",
+			 last_frame, last_wrap );
+		fprintf( stderr, "   head: head=0x%06lx wrap=%d\n",
+			 (long)(MGA_READ( MGAREG_PRIMADDRESS ) - mmesa->primary_offset),
+			 mmesa->sarea->last_wrap );
+	    }
+	    UPDATE_LOCK( mmesa, DRM_LOCK_FLUSH );
 
-      UNLOCK_HARDWARE( mmesa );
-      DO_USLEEP( 1 );
-      LOCK_HARDWARE( mmesa );
-   }
-   if ( wait )
-      fprintf( stderr, "\n" );
+	    UNLOCK_HARDWARE( mmesa );
+	    DO_USLEEP( 1 );
+	    LOCK_HARDWARE( mmesa );
+	}
+	if ( wait )
+	  fprintf( stderr, "\n" );
+
+	UNLOCK_HARDWARE( mmesa );
+    }
 }
 
 
@@ -341,14 +419,12 @@ void mgaCopyBuffer( const __DRIdrawablePrivate *dPriv )
 
    FLUSH_BATCH( mmesa );
 
-   LOCK_HARDWARE( mmesa );
    mgaWaitForFrameCompletion( mmesa );
-   UNLOCK_HARDWARE( mmesa );
    driWaitForVBlank( dPriv, & mmesa->vbl_seq, mmesa->vblank_flags,
 		     & missed_target );
    if ( missed_target ) {
       mmesa->swap_missed_count++;
-      (void) (*mmesa->get_ust)( & mmesa->swap_missed_ust );
+      (void) (*dri_interface->getUST)( & mmesa->swap_missed_ust );
    }
    LOCK_HARDWARE( mmesa );
 
@@ -381,50 +457,66 @@ void mgaCopyBuffer( const __DRIdrawablePrivate *dPriv )
       }
    }
 
+   (void) mgaSetFence( mmesa, & mmesa->last_frame_fence );
    UNLOCK_HARDWARE( mmesa );
 
    mmesa->dirty |= MGA_UPLOAD_CLIPRECTS;
    mmesa->swap_count++;
-   (void) (*mmesa->get_ust)( & mmesa->swap_ust );
+   (void) (*dri_interface->getUST)( & mmesa->swap_ust );
 }
 
 
-/* This is overkill
+/**
+ * Implement the hardware-specific portion of \c glFinish.
+ *
+ * Flushes all pending commands to the hardware and wait for them to finish.
+ * 
+ * \param ctx  Context where the \c glFinish command was issued.
+ *
+ * \sa glFinish, mgaFlush, mgaFlushDMA
  */
 static void mgaFinish( GLcontext *ctx  )
 {
-   mgaContextPtr mmesa = MGA_CONTEXT(ctx);
+    mgaContextPtr mmesa = MGA_CONTEXT(ctx);
+    uint32_t  fence;
 
-   FLUSH_BATCH( mmesa );
 
-   if (1/*mmesa->sarea->last_quiescent != mmesa->sarea->last_enqueue*/) {
-      if (MGA_DEBUG&DEBUG_VERBOSE_IOCTL)
-	 fprintf(stderr, "mgaRegetLockQuiescent\n");
+    LOCK_HARDWARE( mmesa );
+    if ( mmesa->vertex_dma_buffer != NULL ) {
+	mgaFlushVerticesLocked( mmesa );
+    }
 
-      LOCK_HARDWARE( mmesa );
-      UPDATE_LOCK( mmesa, DRM_LOCK_QUIESCENT | DRM_LOCK_FLUSH );
-      UNLOCK_HARDWARE( mmesa );
+    if ( mgaSetFence( mmesa, & fence ) == 0 ) {
+	UNLOCK_HARDWARE( mmesa );
+	(void) mgaWaitFence( mmesa, fence, NULL );
+    }
+    else {
+	if (MGA_DEBUG&DEBUG_VERBOSE_IOCTL) {
+	    fprintf(stderr, "mgaRegetLockQuiescent\n");
+	}
 
-      mmesa->sarea->last_quiescent = mmesa->sarea->last_enqueue;
-   }
+	UPDATE_LOCK( mmesa, DRM_LOCK_QUIESCENT | DRM_LOCK_FLUSH );
+	UNLOCK_HARDWARE( mmesa );
+    }
 }
 
+
+/**
+ * Flush all commands upto at least a certain point to the hardware.
+ *
+ * \note
+ * The term "wait" in the name of this function is misleading.  It doesn't
+ * actually wait for anything.  It just makes sure that the commands have
+ * been flushed to the hardware.
+ *
+ * \warning
+ * As the name implies, this function assumes that the hardware lock is
+ * held on entry.
+ */
 void mgaWaitAgeLocked( mgaContextPtr mmesa, int age  )
 {
    if (GET_DISPATCH_AGE(mmesa) < age) {
       UPDATE_LOCK( mmesa, DRM_LOCK_FLUSH );
-   }
-}
-
-
-void mgaWaitAge( mgaContextPtr mmesa, int age  )
-{
-   if (GET_DISPATCH_AGE(mmesa) < age) {
-      LOCK_HARDWARE(mmesa);
-      if (GET_DISPATCH_AGE(mmesa) < age) {
-	 UPDATE_LOCK( mmesa, DRM_LOCK_FLUSH );
-      }
-      UNLOCK_HARDWARE(mmesa);
    }
 }
 
@@ -451,9 +543,6 @@ static void age_mmesa( mgaContextPtr mmesa, int age )
    if (mmesa->CurrentTexObj[1]) mmesa->CurrentTexObj[1]->age = age;
 }
 
-#ifdef __i386__
-static int __break_vertex = 0;
-#endif
 
 void mgaFlushVerticesLocked( mgaContextPtr mmesa )
 {
@@ -552,13 +641,6 @@ void mgaFlushVerticesLocked( mgaContextPtr mmesa )
       }
    }
 
-   /* Do we really need to do this ? */
-#ifdef __i386__
-   if ( __break_vertex ) {
-      __asm__ __volatile__ ( "int $3" );
-   }
-#endif
-
    mmesa->dirty &= ~MGA_UPLOAD_CLIPRECTS;
 }
 
@@ -594,45 +676,28 @@ void mgaGetILoadBufferLocked( mgaContextPtr mmesa )
    mmesa->iload_buffer = mga_get_buffer_ioctl( mmesa );
 }
 
-drmBufPtr mgaGetBufferLocked( mgaContextPtr mmesa )
-{
-   return mga_get_buffer_ioctl( mmesa );
-}
 
-
-
+/**
+ * Implement the hardware-specific portion of \c glFlush.
+ *
+ * \param ctx  Context to be flushed.
+ *
+ * \sa glFlush, mgaFinish, mgaFlushDMA
+ */
 static void mgaFlush( GLcontext *ctx )
 {
-   mgaContextPtr mmesa = MGA_CONTEXT( ctx );
+    mgaContextPtr mmesa = MGA_CONTEXT( ctx );
 
 
-   FLUSH_BATCH( mmesa );
+    LOCK_HARDWARE( mmesa );
+    if ( mmesa->vertex_dma_buffer != NULL ) {
+	mgaFlushVerticesLocked( mmesa );
+    }
 
-   /* This may be called redundantly - dispatch_age may trail what
-    * has actually been sent and processed by the hardware.
-    */
-   if (1 || GET_DISPATCH_AGE( mmesa ) < mmesa->sarea->last_enqueue) {
-      LOCK_HARDWARE( mmesa );
-      UPDATE_LOCK( mmesa, DRM_LOCK_FLUSH );
-      UNLOCK_HARDWARE( mmesa );
-   }
+    UPDATE_LOCK( mmesa, DRM_LOCK_FLUSH );
+    UNLOCK_HARDWARE( mmesa );
 }
 
-
-
-
-void mgaReleaseBufLocked( mgaContextPtr mmesa, drmBufPtr buffer )
-{
-   drm_mga_vertex_t vertex;
-
-   if (!buffer) return;
-
-   vertex.idx = buffer->idx;
-   vertex.used = 0;
-   vertex.discard = 1;
-   drmCommandWrite( mmesa->driFd, DRM_MGA_VERTEX, 
-                    &vertex, sizeof(vertex) );
-}
 
 int mgaFlushDMA( int fd, drmLockFlags flags )
 {
@@ -641,9 +706,8 @@ int mgaFlushDMA( int fd, drmLockFlags flags )
 
    memset( &lock, 0, sizeof(lock) );
 
-   if ( flags & DRM_LOCK_QUIESCENT )    lock.flags |= DRM_LOCK_QUIESCENT;
-   if ( flags & DRM_LOCK_FLUSH )        lock.flags |= DRM_LOCK_FLUSH;
-   if ( flags & DRM_LOCK_FLUSH_ALL )    lock.flags |= DRM_LOCK_FLUSH_ALL;
+   lock.flags = flags & (DRM_LOCK_QUIESCENT | DRM_LOCK_FLUSH 
+			 | DRM_LOCK_FLUSH_ALL);
 
    do {
       ret = drmCommandWrite( fd, DRM_MGA_FLUSH, &lock, sizeof(lock) );

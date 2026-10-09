@@ -1,6 +1,7 @@
 /*
+ * $Id: Xcursor.h,v 1.6 2005/11/09 21:31:19 kem Exp $
  *
- * Copyright © 2002 Keith Packard
+ * Copyright Â© 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -76,7 +77,7 @@ typedef XcursorUInt	XcursorPixel;
 
 #define XCURSOR_LIB_MAJOR	1
 #define XCURSOR_LIB_MINOR	1
-#define XCURSOR_LIB_REVISION	2
+#define XCURSOR_LIB_REVISION	5
 #define XCURSOR_LIB_VERSION	((XCURSOR_LIB_MAJOR * 10000) + \
 				 (XCURSOR_LIB_MINOR * 100) + \
 				 (XCURSOR_LIB_REVISION))

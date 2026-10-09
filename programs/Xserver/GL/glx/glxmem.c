@@ -38,6 +38,10 @@
 ** Implementation of a buffer in main memory
 */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include "glxserver.h"
 #include "glxmem.h"
 #include "glxext.h"

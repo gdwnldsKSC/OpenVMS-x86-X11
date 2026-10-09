@@ -34,6 +34,9 @@ WITH THE SPEEDO SOFTWARE OR THE BITSTREAM CHARTER OUTLINE FONT.
  ****************************************************************************/
 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "spdo_prv.h"               /* General definitions for Speedo   */
 
 #define   DEBUG      0

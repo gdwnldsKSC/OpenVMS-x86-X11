@@ -8,7 +8,7 @@
  * includes
  */
 
-#include "Xmd.h"
+#include <X11/Xmd.h>
 #include "xf86Pci.h"
 
 

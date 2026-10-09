@@ -33,12 +33,39 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * \mainpage
+ *
+ * The Direct Rendering Manager (DRM) is a device-independent kernel-level
+ * device driver that provides support for the XFree86 Direct Rendering
+ * Infrastructure (DRI).
+ * 
+ * The DRM supports the Direct Rendering Infrastructure (DRI) in four major
+ * ways:
+ *     -# The DRM provides synchronized access to the graphics hardware via
+ *        the use of an optimized two-tiered lock.
+ *     -# The DRM enforces the DRI security policy for access to the graphics
+ *        hardware by only allowing authenticated X11 clients access to
+ *        restricted regions of memory.
+ *     -# The DRM provides a generic DMA engine, complete with multiple
+ *        queues and the ability to detect the need for an OpenGL context
+ *        switch.
+ *     -# The DRM is extensible via the use of small device-specific modules
+ *        that rely extensively on the API exported by the DRM module.
+ * 
+ */ 
 
 #ifndef _DRM_H_
 #define _DRM_H_
 
+#ifndef __user
+#define __user
+#endif
+
 #if defined(__linux__)
+#if defined(__KERNEL__)
 #include <linux/config.h>
+#endif
 #include <asm/ioctl.h>		/* For _IO* macros */
 #define DRM_IOCTL_NR(n)		_IOC_NR(n)
 #define DRM_IOC_VOID		_IOC_NONE
@@ -46,7 +73,7 @@
 #define DRM_IOC_WRITE		_IOC_WRITE
 #define DRM_IOC_READWRITE	_IOC_READ|_IOC_WRITE
 #define DRM_IOC(dir, group, nr, size) _IOC(dir, group, nr, size)
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
 #if defined(__FreeBSD__) && defined(IN_MODULE)
 /* Prevent name collision when including sys/ioccom.h */
 #undef ioctl
@@ -87,15 +114,15 @@
 #if defined(__linux__) || defined(__NetBSD__)
 #define DRM_MAJOR       226
 #endif
-#define DRM_MAX_MINOR   15
+#define DRM_MAX_MINOR   255
 #endif
 #define DRM_NAME	"drm"	  /**< Name in kernel, /dev, and /proc */
 #define DRM_MIN_ORDER	5	  /**< At least 2^5 bytes = 32 bytes */
 #define DRM_MAX_ORDER	22	  /**< Up to 2^22 bytes = 4MB */
 #define DRM_RAM_PERCENT 10	  /**< How much system ram can we lock? */
 
-#define _DRM_LOCK_HELD	0x80000000 /**< Hardware lock is held */
-#define _DRM_LOCK_CONT	0x40000000 /**< Hardware lock is contended */
+#define _DRM_LOCK_HELD	0x80000000U /**< Hardware lock is held */
+#define _DRM_LOCK_CONT	0x40000000U /**< Hardware lock is contended */
 #define _DRM_LOCK_IS_HELD(lock)	   ((lock) & _DRM_LOCK_HELD)
 #define _DRM_LOCK_IS_CONT(lock)	   ((lock) & _DRM_LOCK_CONT)
 #define _DRM_LOCKING_CONTEXT(lock) ((lock) & ~(_DRM_LOCK_HELD|_DRM_LOCK_CONT))
@@ -110,7 +137,7 @@ typedef unsigned int  drm_magic_t;      /**< Magic for authentication */
 /**
  * Cliprect.
  * 
- * \warning: If you change this structure, make sure you change
+ * \warning If you change this structure, make sure you change
  * XF86DRIClipRectRec in the server as well
  *
  * \note KW: Actually it's illegal to change either for
@@ -174,11 +201,11 @@ typedef struct drm_version {
 	int    version_minor;	  /**< Minor version */
 	int    version_patchlevel;/**< Patch level */
 	DRM_SIZE_T name_len;	  /**< Length of name buffer */
-	char   *name;		  /**< Name of driver */
+	char   __user *name;		  /**< Name of driver */
 	DRM_SIZE_T date_len;	  /**< Length of date buffer */
-	char   *date;		  /**< User-space buffer to hold date */
+	char   __user *date;		  /**< User-space buffer to hold date */
 	DRM_SIZE_T desc_len;	  /**< Length of desc buffer */
-	char   *desc;		  /**< User-space buffer to hold desc */
+	char   __user *desc;		  /**< User-space buffer to hold desc */
 } drm_version_t;
 
 
@@ -189,14 +216,14 @@ typedef struct drm_version {
  */
 typedef struct drm_unique {
 	DRM_SIZE_T unique_len;	  /**< Length of unique */
-	char   *unique;		  /**< Unique name for driver instantiation */
+	char   __user *unique;		  /**< Unique name for driver instantiation */
 } drm_unique_t;
 
 #undef DRM_SIZE_T
 
 typedef struct drm_list {
 	int		 count;	  /**< Length of user-space structures */
-	drm_version_t	 *version;
+	drm_version_t	 __user *version;
 } drm_list_t;
 
 
@@ -388,7 +415,8 @@ typedef struct drm_buf_desc {
 	enum {
 		_DRM_PAGE_ALIGN = 0x01, /**< Align on page boundaries for DMA */
 		_DRM_AGP_BUFFER = 0x02, /**< Buffer is in AGP space */
-		_DRM_SG_BUFFER  = 0x04  /**< Scatter/gather memory buffer */
+		_DRM_SG_BUFFER  = 0x04, /**< Scatter/gather memory buffer */
+		_DRM_FB_BUFFER  = 0x08  /**< Buffer is in frame buffer */
 	}	      flags;
 	unsigned long agp_start; /**< 
 				  * Start address of where the AGP buffers are
@@ -402,7 +430,7 @@ typedef struct drm_buf_desc {
  */
 typedef struct drm_buf_info {
 	int	       count;	  /**< Number of buffers described in list */
-	drm_buf_desc_t *list;	  /**< List of buffer descriptions */
+	drm_buf_desc_t __user *list;	  /**< List of buffer descriptions */
 } drm_buf_info_t;
 
 
@@ -411,7 +439,7 @@ typedef struct drm_buf_info {
  */
 typedef struct drm_buf_free {
 	int	       count;
-	int	       *list;
+	int	       __user *list;
 } drm_buf_free_t;
 
 
@@ -424,7 +452,7 @@ typedef struct drm_buf_pub {
 	int		  idx;	       /**< Index into the master buffer list */
 	int		  total;       /**< Buffer size */
 	int		  used;	       /**< Amount of buffer in use (for DMA) */
-	void		  *address;    /**< Address of buffer */
+	void	  __user *address;     /**< Address of buffer */
 } drm_buf_pub_t;
 
 
@@ -433,8 +461,8 @@ typedef struct drm_buf_pub {
  */
 typedef struct drm_buf_map {
 	int	      count;	/**< Length of the buffer list */
-	void	      *virtual;	/**< Mmap'd area in user-virtual */
-	drm_buf_pub_t *list;	/**< Buffer information */
+	void	      __user *virtual;	/**< Mmap'd area in user-virtual */
+	drm_buf_pub_t __user *list;	/**< Buffer information */
 } drm_buf_map_t;
 
 
@@ -448,13 +476,13 @@ typedef struct drm_buf_map {
 typedef struct drm_dma {
 	int		context;	  /**< Context handle */
 	int		send_count;	  /**< Number of buffers to send */
-	int		*send_indices;	  /**< List of handles to buffers */
-	int		*send_sizes;	  /**< Lengths of data to send */
+	int	__user *send_indices;	  /**< List of handles to buffers */
+	int	__user *send_sizes;	  /**< Lengths of data to send */
 	drm_dma_flags_t flags;		  /**< Flags */
 	int		request_count;	  /**< Number of buffers requested */
 	int		request_size;	  /**< Desired size for buffers */
-	int		*request_indices; /**< Buffer information */
-	int		*request_sizes;
+	int	__user *request_indices; /**< Buffer information */
+	int	__user *request_sizes;
 	int		granted_count;	  /**< Number of buffers granted */
 } drm_dma_t;
 
@@ -481,7 +509,7 @@ typedef struct drm_ctx {
  */
 typedef struct drm_ctx_res {
 	int		count;
-	drm_ctx_t	*contexts;
+	drm_ctx_t	__user *contexts;
 } drm_ctx_res_t;
 
 
@@ -595,14 +623,16 @@ typedef struct drm_agp_info {
 	int            agp_version_major;
 	int            agp_version_minor;
 	unsigned long  mode;
-	unsigned long  aperture_base;  /* physical address */
-	unsigned long  aperture_size;  /* bytes */
-	unsigned long  memory_allowed; /* bytes */
+	unsigned long  aperture_base;  /**< physical address */
+	unsigned long  aperture_size;  /**< bytes */
+	unsigned long  memory_allowed; /**< bytes */
 	unsigned long  memory_used;
 
-				/* PCI information */
+	/** \name PCI information */
+	/*@{*/
 	unsigned short id_vendor;
 	unsigned short id_device;
+	/*@}*/
 } drm_agp_info_t;
 
 
@@ -624,6 +654,11 @@ typedef struct drm_set_version {
 	int drm_dd_minor;
 } drm_set_version_t;
 
+
+/**
+ * \name Ioctls Definitions
+ */
+/*@{*/
 
 #define DRM_IOCTL_BASE			'd'
 #define DRM_IO(nr)			_IO(DRM_IOCTL_BASE,nr)
@@ -684,6 +719,9 @@ typedef struct drm_set_version {
 #define DRM_IOCTL_SG_FREE		DRM_IOW( 0x39, drm_scatter_gather_t)
 
 #define DRM_IOCTL_WAIT_VBLANK		DRM_IOWR(0x3a, drm_wait_vblank_t)
+
+/*@}*/
+
 
 /**
  * Device specific ioctls should only be in their respective headers

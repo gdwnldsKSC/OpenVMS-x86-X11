@@ -28,7 +28,7 @@ INCLUDE_DIRS = \
 	-I../dri_client/imports \
 	-Iserver \
 	-I$(TOP)/include \
-	-I$(DRM_SOURCE_PATH)/shared \
+	-I$(DRM_SOURCE_PATH)/shared-core \
 	-I$(TOP)/src/mesa \
 	-I$(TOP)/src/mesa/main \
 	-I$(TOP)/src/mesa/glapi \
@@ -67,14 +67,14 @@ default: depend $(LIB_DIR)/$(LIBNAME)
 
 
 $(LIB_DIR)/$(LIBNAME): $(OBJECTS) $(MESA_MODULES) $(WINOBJ) Makefile
-	CC=$(CC) CXX=$(CXX) $(TOP)/bin/mklib -o $(LIBNAME) -noprefix -install $(LIB_DIR) \
+	CC="$(CC)" CXX="$(CXX)" $(TOP)/bin/mklib -o $(LIBNAME) -noprefix -install $(LIB_DIR) \
 		$(OBJECTS) $(WINLIB) $(LIB_DEPS) $(WINOBJ) $(MESA_MODULES)
 
 
 depend: $(C_SOURCES) $(ASM_SOURCES)
 	touch depend
 	$(MKDEP) $(MKDEP_OPTIONS) $(INCLUDE_DIRS) $(C_SOURCES) $(ASM_SOURCES) \
-		> /dev/null 2>&1
+		> /dev/null 
 
 
 # Emacs tags

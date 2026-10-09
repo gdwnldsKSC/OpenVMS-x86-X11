@@ -47,6 +47,7 @@
 
 #include "driver.h"
 #include "drm.h"
+#include "memops.h"
 
 #include "r128.h"
 #include "r128_dri.h"
@@ -163,7 +164,7 @@ static GLboolean R128DRIAgpInit(const DRIDriverContext *ctx)
 	return GL_FALSE;
     }
     fprintf(stderr,
-	       "[agp] ring handle = 0x%08lx\n", info->ringHandle);
+	       "[agp] ring handle = 0x%08x\n", info->ringHandle);
 
     if (drmMap(ctx->drmFD, info->ringHandle, info->ringMapSize,
 	       (drmAddressPtr)&info->ring) < 0) {
@@ -181,7 +182,7 @@ static GLboolean R128DRIAgpInit(const DRIDriverContext *ctx)
 	return GL_FALSE;
     }
     fprintf(stderr,
-	       "[agp] ring read ptr handle = 0x%08lx\n",
+ 	       "[agp] ring read ptr handle = 0x%08x\n",
 	       info->ringReadPtrHandle);
 
     if (drmMap(ctx->drmFD, info->ringReadPtrHandle, info->ringReadMapSize,
@@ -271,7 +272,7 @@ static GLboolean R128DRIPciInit(const DRIDriverContext *ctx)
 {
     R128InfoPtr info = ctx->driverPrivate;
     unsigned char *R128MMIO = ctx->MMIOAddress;
-    uint32_t chunk;
+    u_int32_t chunk;
     int ret;
     int flags;
 
@@ -397,7 +398,7 @@ static GLboolean R128DRIMapInit(const DRIDriverContext *ctx)
 	return GL_FALSE;
     }
     fprintf(stderr,
-	       "[drm] register handle = 0x%08lx\n", info->registerHandle);
+	       "[drm] register handle = 0x%08x\n", info->registerHandle);
 
     return GL_TRUE;
 }
@@ -826,11 +827,11 @@ static GLboolean R128DRIScreenInit(DRIDriverContext *ctx)
     * the clear ioctl to do this, but would need to setup hw state
     * first.
     */
-   memset((char *)ctx->FBAddress + info->frontOffset,
+   drimemsetio((char *)ctx->FBAddress + info->frontOffset,
 	  0,
 	  info->frontPitch * ctx->cpp * ctx->shared.virtualHeight );
 
-   memset((char *)ctx->FBAddress + info->backOffset,
+   drimemsetio((char *)ctx->FBAddress + info->backOffset,
 	  0,
 	  info->backPitch * ctx->cpp * ctx->shared.virtualHeight );
     

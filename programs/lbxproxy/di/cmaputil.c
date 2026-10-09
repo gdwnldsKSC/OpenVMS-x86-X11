@@ -59,7 +59,7 @@ from The Open Group.
 #include	"resource.h"
 #include	"wire.h"
 #define  XK_LATIN1
-#include 	"keysymdef.h"
+#include 	<X11/keysymdef.h>
 
 typedef struct {
     Colormap    mid;

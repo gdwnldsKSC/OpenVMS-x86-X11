@@ -16,6 +16,10 @@
  *
  *
  */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef lint
 static char rcsid[] =
 "$XConsortium: iplbstore.c,v 5.8 93/12/13 17:21:51 dpw Exp $ SPRITE (Berkeley)";
@@ -25,7 +29,7 @@ static char rcsid[] =
 interleaved planes */
 
 #include    "ipl.h"
-#include    "X.h"
+#include    <X11/X.h>
 #include    "mibstore.h"
 #include    "regionstr.h"
 #include    "scrnintstr.h"

@@ -1,3 +1,4 @@
+/* $XdotOrg: xc/programs/twm/parse.h,v 1.3 2005/10/09 18:59:28 alanc Exp $ */
 /* $XFree86: xc/programs/twm/parse.h,v 1.10 2001/09/30 17:58:19 herrb Exp $ */
 /*****************************************************************************/
 /*
@@ -76,7 +77,7 @@ extern int do_color_keyword ( int keyword, int colormode, char *s );
 void put_pixel_on_root ( Pixel pixel );
 extern void do_string_savecolor ( int colormode, char *s );
 extern void do_var_savecolor ( int key );
-extern int ParseStringList ( char **sl );
+extern int ParseStringList ( unsigned char **sl );
 extern int ParseTwmrc ( char *filename );
 extern int parse_keyword ( char *s, int *nump );
 extern void TwmOutput ( int c );
@@ -87,7 +88,7 @@ extern void do_squeeze_entry ( name_list **list, char *name, int justify,
 
 extern int (*twmInputFunc)(void);
 extern int ConstrainedMoveTime;
-extern char *defTwmrc[];
+extern unsigned char *defTwmrc[];
 extern int mods;
 
 #define F_NOP			0

@@ -4,6 +4,10 @@
  * **********************************************************/
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/vmware/offscreen_manager.c,v 1.1 2002/12/10 04:17:19 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "vmware.h"
 
 struct _Heap {

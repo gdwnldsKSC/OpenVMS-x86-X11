@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xc/config/cf/linux.cf,v 1.13 2004/08/11 21:14:01 kem Exp $
+XCOMM $XdotOrg: xc/config/cf/linux.cf,v 1.31 2005/10/21 19:10:27 ajax Exp $
 XCOMM platform:  $Xorg: linux.cf,v 1.3 2000/08/17 19:41:47 cpqbld Exp $
 
 
@@ -95,13 +95,13 @@ XCOMM libc:	(LinuxCLibMajorVersion./**/LinuxCLibMinorVersion./**/LinuxCLibTeenyV
 XCOMM binutils:	(LinuxBinUtilsMajorVersion)
 
 #if LinuxDistribution == LinuxDebian
-# if !NothingOutsideProjectRoot
+# if !defined(NothingOutsideProjectRoot) || !NothingOutsideProjectRoot
 #  define SystemManDirectory	/usr/share/man
 # endif
 # define HasPam			YES
 /* un-comment this when it is un-broken */
 /* # define JoystickSupport YES */
-# if !NothingOutsideProjectRoot
+# if !defined(NothingOutsideProjectRoot) || !NothingOutsideProjectRoot
 #  define XAppLoadDir		EtcX11Directory/app-defaults
 # define XFileSearchPathDefault	Concat4(EtcX11Directory/%L/%T/%N%C,%S:EtcX11Directory/%l/%T/%N%C,%S:EtcX11Directory/%T/%N%C,%S:EtcX11Directory/%L/%T/%N%S:EtcX11Directory/%l/%T/%N%S:EtcX11Directory/%T/%N%S):Concat4($(LIBDIR)/%L/%T/%N%C,%S:$(LIBDIR)/%l/%T/%N%C,%S:$(LIBDIR)/%T/%N%C,%S:$(LIBDIR)/%L/%T/%N%S:$(LIBDIR)/%l/%T/%N%S:$(LIBDIR)/%T/%N%S)
 /* the relative symlink created by this rule causes problems for us */
@@ -112,7 +112,7 @@ InstallNamedTarget(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class)
 #  define InstallAppDefaultsLong(file,class)				@@\
 InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class)
 # endif /* InstallAppDefFiles */
-# endif /* !NothingOutsideProjectRoot */
+# endif /* !defined(NothingOutsideProjectRoot) || !NothingOutsideProjectRoot */
 # define SharedLibXdmGreet	NO
 # define LinkGLToUsrInclude	NO
 # define LinkGLToUsrLib		NO
@@ -120,6 +120,8 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 # define SharedLibGlu		YES
 # define NormalLibGlu		YES
 # define FSUseSyslog		YES
+
+# define BuildLibGlxWithoutPIC  NO
 
 # define DriverManSuffix       4x
 # define DriverManDir          $(MANSOURCEPATH)4
@@ -136,8 +138,8 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
  */
 
 # ifdef DebianMaintainer
-#  ifndef XFree86CustomVersion
-#   define XFree86CustomVersion		"Debian"
+#  ifndef XorgCustomVersion
+#   define XorgCustomVersion		"Debian"
 #  endif
 #  ifndef BuilderEMailAddr
 #   define BuilderEMailAddr		"debian-x@lists.debian.org"
@@ -164,15 +166,18 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #   define HasXdmAuth			YES
 #   define HasLatex			YES
 /* at present, glide2 only works on i386 */
-#   ifdef i386Architecture
+#   if defined(__linux__) && defined(i386Architecture)
 #    define HasGlide2			YES
 #    define Glide2IncDir		/usr/include/glide
-#   endif /* i386Architecture */
-/* at present, glide3 only works on alpha and i386 */
-#   if defined(i386Architecture) || defined(AlphaArchitecture)
+#   endif /* __linux__ && i386Architecture */
+/* at present, glide3 only works on alpha, amd64, i386 and ia64 */
+#   if defined(__linux__) && (defined(i386Architecture) || \
+       defined(AlphaArchitecture) || defined(ia64Architecture) || \
+       defined(AMD64Architecture))
 #    define HasGlide3			YES
 #    define Glide3IncDir		/usr/include/glide3
-#   endif /* i386Architecture || AlphaArchitecture */
+#   endif /* __linux__ && (i386Architecture || AlphaArchitecture || \
+             ia64Architecture || AMD64Architecture) */
 /* extended instruction set support */
 #   ifdef i386Architecture
 #   define HasX86Support		YES
@@ -228,6 +233,7 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 # define LinuxSourceDefines	-D_POSIX_C_SOURCE=199309L \
 				-D_POSIX_SOURCE -D_XOPEN_SOURCE \
 				-D_BSD_SOURCE -D_SVID_SOURCE \
+                                -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 \
 				LinuxAdditionalIncludes LinuxGnuSourceDefines \
 				LinuxLocaleDefines
 # define XawI18nDefines		-DHAS_WCHAR_H -DHAS_WCTYPE_H -DNO_WIDEC_H
@@ -275,22 +281,23 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 
 /* <linux/input.h> support mainly for USB support */
 #ifndef HasLinuxInput
-# if OSMajorVersion > 2 || (OSMajorVersion == 2 && OSMinorVersion >= 4)
+# if defined(__linux__) && (OSMajorVersion > 2 || (OSMajorVersion == 2 && OSMinorVersion >= 4))
 #  define HasLinuxInput YES
 # else
 #  define HasLinuxInput NO
 # endif
 #endif
 
-/* <linux/joystick.h> appeared in 2.1.45 (officially) */
 #ifndef JoystickSupport
 # define JoystickSupport	NO	/* joystick driver is broken */
 #endif
+
+/* <linux/joystick.h> appeared in 2.1.45 (officially) */
 #ifndef HasLinuxSupport
-# if JoystickSupport || \
+# if defined(__linux__) && (JoystickSupport || \
      (OSMajorVersion > 2) || \
      ((OSMajorVersion == 2) && (OSMinorVersion > 1)) || \
-     ((OSMajorVersion == 2) && (OSMinorVersion == 1) && (OSTeenyVersion >= 45))
+     ((OSMajorVersion == 2) && (OSMinorVersion == 1) && (OSTeenyVersion >= 45)))
 #  define HasLinuxJoystick	YES
 # else
 #  define HasLinuxJoystick	NO
@@ -315,12 +322,28 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #endif
 
 #ifndef XF86INT10_BUILD
-# if defined (i386Architecture)
+# if defined(__linux__) && defined(i386Architecture)
 #  define XF86INT10_BUILD	X86VM
-# elif defined (AMD64Architecture)
+# elif defined(__linux__) && defined(AMD64Architecture)
 #  define XF86INT10_BUILD	X86EMU_OS
 # else
 #  define XF86INT10_BUILD	X86EMU_GENERIC
+# endif
+#endif
+
+/* 
+ * Let the OS restore console fonts instead of the generic VGA
+ * layer. This exists for Linux only at the moment so put it
+ * here.
+ */
+#ifndef DoOSFontRestore
+# define DoOSFontRestore YES
+#endif
+
+/* Should we check the OS version to determine if the kernel supports it? */
+#if DoOSFontRestore
+# ifndef FontRestoreCheckOsVersion
+#  define FontRestoreCheckOsVersion YES
 # endif
 #endif
 
@@ -332,9 +355,11 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #  elif defined(Arm32Architecture)
 #    define BuildXF86DRI	NO
 #  elif defined(HPArchitecture)
-#    define BuildXF86DRI	NO
+#    define BuildXF86DRI	YES
 #  elif defined(i386Architecture)
-#    if OSMajorVersion > 2 || (OSMajorVersion == 2 && OSMinorVersion >= 2)
+#    if (defined(__linux__) && (OSMajorVersion > 2 || (OSMajorVersion == 2 && \
+        OSMinorVersion >= 2))) || \
+        defined(__FreeBSD_kernel__)
 #      define BuildXF86DRI	YES
 #    else
 #      define BuildXF86DRI	NO
@@ -366,9 +391,11 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
  * Build shared libGL and the DRI modules without -fPIC on some architectures.
  * This improves performance.
  */
-#if BuildXF86DRI
-# if defined(i386Architecture)
-#  define BuildLibGlxWithoutPIC	YES
+#ifndef BuildLibGlxWithoutPIC
+# if BuildXF86DRI
+#  if defined(i386Architecture)
+#   define BuildLibGlxWithoutPIC	YES
+#  endif
 # endif
 #endif
 
@@ -439,7 +466,7 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 # define BuildXF86RushExt	YES
 #endif
 
-#ifndef LinuxFBDevSupport
+#if defined(__linux__) && !defined(LinuxFBDevSupport)
 # define LinuxFBDevSupport	YES
 #endif
 
@@ -467,6 +494,16 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #ifndef HasShm
 # define HasShm			YES
 #endif
+
+/* Use SecureRPC (used for SUN-DES-1 auth. and other goodies) when
+ * glibc has support for it */
+#ifndef HasSecureRPC
+# if !(LinuxCLibMajorVersion < 6 || \
+       (LinuxCLibMajorVersion == 6 && LinuxCLibMinorVersion < 3))
+#  define HasSecureRPC          YES
+# endif
+#endif
+
 #define HasSockets		YES
 #if UseElfFormat || defined(AlphaArchitecture)
 #ifndef HasSnprintf
@@ -550,7 +587,7 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 
 #if UseElfFormat
 # ifndef DoLoadableServer
-#  if defined(HPArchitecture) || defined(MipsArchitecture) || defined(SuperHArchitecture)
+#  if defined(MipsArchitecture) || defined(SuperHArchitecture)
 #   define DoLoadableServer	NO
 #  else
 #   define DoLoadableServer	YES
@@ -575,7 +612,15 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #    define CcCmd		gcc -m32
 #   endif
 #   ifndef CplusplusCmd
-#    define CplusplusCmd		c++ -m32
+#    define CplusplusCmd	c++ -m32
+#   endif
+#  endif
+#  if defined (Ppc64Architecture)
+#   ifndef CcCmd
+#    define CcCmd		gcc -m64
+#   endif
+#   ifndef CplusplusCmd
+#    define CplusplusCmd	c++ -m64
 #   endif
 #  endif
 #  ifndef CcCmd
@@ -619,7 +664,7 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #    endif
 #   endif
 #  endif
-# else
+# else /* UseElfFormat */
 #  ifdef AlphaArchitecture
 #   define CcCmd		gcc -b alpha-linuxecoff
 #   define CplusplusCmd		g++ -b alpha-linuxecoff
@@ -716,16 +761,6 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 # endif
 #endif
 
-#if UseElfFormat
-# ifndef DoLoadableServer
-#  ifdef HPArchitecture
-#   define DoLoadableServer	NO
-#  else
-#   define DoLoadableServer	YES
-#  endif
-# endif
-#endif
-
 /*
  * Some older distros still need /lib/cpp.  There's probably a better
  * test, but this handles the older Red Hat releases at least.
@@ -761,7 +796,11 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #endif
 
 #ifndef XF86OSCardDrivers
-# define XF86OSCardDrivers	fbdev v4l
+# ifdef __linux__
+#  define XF86OSCardDrivers	fbdev v4l sisusb
+# else
+#  define XF86OSCardDrivers	/**/
+# endif
 #endif
 
 #ifndef OSXInputDrivers
@@ -771,7 +810,7 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #  define OSXInputDrivers1	/**/
 # endif
 # if HasLinuxInput
-#  define OSXInputDrivers2	aiptek
+#  define OSXInputDrivers2	aiptek evdev
 # else
 #  define OSXInputDrivers2	/**/
 # endif
@@ -796,7 +835,7 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #endif /* AlphaArchitecture */
 
 #ifdef Arm32Architecture
-# define DefaultCCOptions	-fsigned-char
+# define DefaultCCOptions
 # ifndef OptimizedCDebugFlags
 #  define OptimizedCDebugFlags	-O3
 # endif
@@ -841,7 +880,7 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 
 #ifdef MipsArchitecture
 # ifndef OptimizedCDebugFlags
-#  define OptimizedCDebugFlags	-O2  GccAliasingArgs
+#  define OptimizedCDebugFlags	DefaultGcc2MipsOpt
 # endif
 # define LinuxMachineDefines	-D__mips__
 # define ServerOSDefines	XFree86ServerOSDefines -DDDXTIME
@@ -849,7 +888,7 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #endif
 
 #ifdef Ppc64Architecture
-# define DefaultCCOptions	-fsigned-char -mminimal-toc
+# define DefaultCCOptions	-mminimal-toc
 # ifndef OptimizedCDebugFlags
 #  define OptimizedCDebugFlags	DefaultGcc2Ppc64Opt
 # endif
@@ -859,7 +898,7 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #endif /* Ppc64Architecture */
 
 #ifdef PpcArchitecture
-# define DefaultCCOptions	-fsigned-char
+# define DefaultCCOptions	
 # ifndef OptimizedCDebugFlags
 #  define OptimizedCDebugFlags	DefaultGcc2PpcOpt
 # endif
@@ -938,7 +977,11 @@ InstallNamedTargetNoClobber(install,file.ad,$(INSTAPPFLAGS),$(XAPPLOADDIR),class
 #endif /* AMD64Architecture */
 
 #ifndef StandardDefines
-# define StandardDefines	-Dlinux LinuxMachineDefines LinuxSourceDefines
+# ifdef __linux__
+#  define StandardDefines	-Dlinux LinuxMachineDefines LinuxSourceDefines
+# else
+#  define StandardDefines	LinuxMachineDefines LinuxSourceDefines
+# endif
 #endif
 
 #if UseElfFormat

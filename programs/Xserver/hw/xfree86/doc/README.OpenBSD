@@ -1,30 +1,30 @@
-                       README for X11R6.8.2 on OpenBSD
+                        README for X11R6.9 on OpenBSD
 
                                Matthieu Herrb
 
                      Last modified on: 4 February 2005.
 
-1.  What and Where is X11R6.8.2?
+1.  What and Where is X11R6.9?
 
-The X.org Foundation X11R6.8.2 is an Open Source version of the X Window Sys-
-tem that supports several UNIX(R) and UNIX-like operating systems (such as
-Linux, the BSDs and Solaris x86) on Intel and other platforms.
+The X.Org Foundation X11R6.9 is an Open Source version of the X Window System
+that supports several UNIX(R) and UNIX-like operating systems (such as Linux,
+the BSDs and Solaris x86) on Intel and other platforms.
 
 See the Copyright Notice.
 
-The sources for X11R6.8.2 are available from http://wiki.x.org
+The sources for X11R6.9 are available from http://wiki.x.org
 
-X11R6.8.2 builds on most architectures supported by OpenBSD. See section
-Building on other architectures (section 7., page 1) for details.
+X11R6.9 builds on most architectures supported by OpenBSD. See section Build-
+ing on other architectures (section 7., page 1) for details.
 
 2.  Bug Reports for This Document
 
-Use the X.org Bugzilla at http://bugs.freedesktop.org to submit comments or
+Use the X.Org Bugzilla at http://bugs.freedesktop.org to submit comments or
 suggestions about this file, using the xorg product.
 
 3.  New OS dependent features
 
-See the Release Notes for non-OS dependent new features in X11R6.8.2.
+See the Release Notes for non-OS dependent new features in X11R6.9.
 
    o Switch the the Xinput-aware kbd driver for keyboard input
 
@@ -61,7 +61,7 @@ the xvidtune utility.
 
 4.1  About mouse configuration
 
-X11R6.8.2 has support for the mouse driver included in the new wscons console
+X11R6.9 has support for the mouse driver included in the new wscons console
 driver.  Specify ``wsmouse'' as the protocol and ``/dev/wsmouse'' as the
 device in /etc/X11/xorg.conf with a PS/2 or USB mouse.
 
@@ -140,9 +140,9 @@ fications. You may want to start with this tree to rebuild from sources.  The
 OpenBSD XF4 source tree is available by anoncvs from all OpenBSD anoncvs
 servers. See http://www.openbsd.org/anoncvs.html for details on anoncvs.
 
-X11R6.8.2 compiles on most OpenBSD architectures. The X.Org X server builds
-and run on the following systems. On other architectures supported by
-OpenBSD, only client side libraries and applications are supported.
+X11R6.9 compiles on most OpenBSD architectures. The X.Org X server builds and
+run on the following systems. On other architectures supported by OpenBSD,
+only client side libraries and applications are supported.
 
 7.1  OpenBSD/alpha
 
@@ -181,8 +181,8 @@ For the Titanium Powerbook G4, you can try the following mode line in
 7.3  OpenBSD/sparc
 
 OpenBSD 3.2 on sparc switched to the wscons device driver and now uses the OS
-specific wsfb driver in the X server. This driver is not included in
-X11R6.8.2. Please use the version shipped with OpenBSD instead.
+specific wsfb driver in the X server. This driver is not included in X11R6.9.
+Please use the version shipped with OpenBSD instead.
 
 7.4  OpenBSD/sparc64
 
@@ -192,10 +192,10 @@ the X server on both SBus and UPA (unaccelerated) based cards.
 
 8.  Thanks
 
-Many thanks to all people who contributed to make X11R6.8.2 work on *BSD, in
+Many thanks to all people who contributed to make X11R6.9 work on *BSD, in
 particular: David Dawes, Todd Fries, Miodrag Vallat, Rod Grimes, Charles Han-
 num, Amancio Hasty, Christoph Robitschko, Matthias Scheler, Michael Smith,
 Ignatios Souvatzis, Jack Velte, Nate Williams and Pace Willison.
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.OpenBSD,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.OpenBSD,v 1.5 2005/12/21 05:39:05 kem Exp $

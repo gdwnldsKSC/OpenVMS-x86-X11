@@ -1,4 +1,4 @@
-.TH XvQueryEncodings 3X __vendorversion__
+.TH XvQueryEncodings __libmansuffix__ __vendorversion__
 .\" $XFree86: xc/doc/man/Xv/XvQueryEncodings.man,v 1.5 2000/03/21 23:17:20 dawes Exp $
 .SH Name
 XvQueryEncodings \- return list of encodings for an adaptor
@@ -72,17 +72,17 @@ The \fInumerator\fP and \fIdenominator\fP fields specify the
 appropriate parts of a fractional number.
 .\"
 .SH Description
-XvQueryEncodings(3X) returns encoding information about an adaptor.  Each
+XvQueryEncodings(__libmansuffix__) returns encoding information about an adaptor.  Each
 encoding is described by the XvEncodingInfo structure described above.  The 
 encodings are identified by an encoding-id, which can be used to set or get
 the encoding attribute of a port.
 .SH Returned Values
 .IP [Success] 8
-Returned if XvQueryEncodings(3X) completed successfully.
+Returned if XvQueryEncodings(__libmansuffix__) completed successfully.
 .IP [XvBadExtension] 8
 Returned if the Xv extension is unavailable.
 .IP [XvBadAlloc] 8
-Returned if XvQueryEncodings(3X) failed to allocate memory to process
+Returned if XvQueryEncodings(__libmansuffix__) failed to allocate memory to process
 the request.
 .SH Diagnostics
 .IP [XvBadPort] 8
@@ -90,5 +90,5 @@ Generated if the requested port does not exist.
 .\"
 .SH See Also
 .\"
-XvFreeEncodingInfo(3X)
+XvFreeEncodingInfo(__libmansuffix__)
 .br

@@ -25,7 +25,11 @@
  */
 /* $XConsortium: bsdi_io.c /main/10 1996/10/19 18:06:13 kaleb $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "compiler.h"
 

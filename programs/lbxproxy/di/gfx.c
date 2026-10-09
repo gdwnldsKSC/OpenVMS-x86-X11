@@ -59,7 +59,7 @@ in this Software without prior written authorization from The Open Group.
 #include	"util.h"
 #include	"resource.h"
 #include	"wire.h"
-#include        "lbximage.h"
+#include        <X11/extensions/lbximage.h>
 #include	"proxyopts.h"
 #include	"swap.h"
 

@@ -12,7 +12,8 @@
 #define xvmc_CreateSubpicture		6
 #define xvmc_DestroySubpicture		7
 #define xvmc_ListSubpictureTypes	8
-#define xvmc_LastRequest		xvmc_ListSubpictureTypes 
+#define xvmc_GetDRInfo                  9
+#define xvmc_LastRequest		xvmc_GetDRInfo
 
 #define xvmcNumRequest			(xvmc_LastRequest + 1)
 
@@ -199,5 +200,29 @@ typedef struct {
   CARD32 padl6 B32;
 } xvmcListSubpictureTypesReply;
 #define sz_xvmcListSubpictureTypesReply 32
+
+typedef struct {
+  CARD8 reqType;
+  CARD8 xvmcReqType;
+  CARD16 length B16;
+  CARD32 port B32;
+  CARD32 shmKey B32;
+  CARD32 magic B32;
+} xvmcGetDRInfoReq;
+#define sz_xvmcGetDRInfoReq 16;
+
+typedef struct {
+  BYTE type;  /* X_Reply */
+  BYTE padb1;
+  CARD16 sequenceNumber B16;
+  CARD32 length B32; 
+  CARD32 major B32; 
+  CARD32 minor B32;
+  CARD32 patchLevel B32;
+  CARD32 nameLen B32;
+  CARD32 busIDLen B32;
+  CARD32 isLocal B32;
+} xvmcGetDRInfoReply;
+#define sz_xvmcGetDRInfoReply 32
 
 #endif

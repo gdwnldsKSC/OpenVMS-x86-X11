@@ -22,16 +22,20 @@
  */
 /* $XFree86$ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define PSZ 32
 
 #include "leo.h"
 
 #include "pixmapstr.h"
 #include "scrnintstr.h"
-#include "fontstruct.h"
+#include <X11/fonts/fontstruct.h>
 #include "dixfontstr.h"
 
-#include "cfb.h"
+#include "fb.h"
 #include "mi.h"
 
 void
@@ -51,7 +55,7 @@ LeoPolyGlyphBlt (DrawablePtr pDrawable, GCPtr pGC, int x, int y,
 	unsigned char *fb;
 	int height, width;
 
-	clip = cfbGetCompositeClip(pGC);
+	clip = fbGetCompositeClip(pGC);
 	/* compute an approximate (but covering) bounding box */
 	box.x1 = 0;
 	if (ppci[0]->metrics.leftSideBearing < 0)
@@ -76,7 +80,7 @@ LeoPolyGlyphBlt (DrawablePtr pDrawable, GCPtr pGC, int x, int y,
 			ld0->vclipmax = ((clip->extents.y2 - 1) << 16) | (clip->extents.x2 - 1);
 			break;
 		}
-		cfbPolyGlyphBlt8 (pDrawable, pGC, x, y, nglyph, ppci, pGlyphBase);
+		fbPolyGlyphBlt (pDrawable, pGC, x, y, nglyph, ppci, pGlyphBase);
 	case rgnOUT:
 		return;
 	default:
@@ -178,7 +182,7 @@ LeoTEGlyphBlt (DrawablePtr pDrawable, GCPtr pGC, int x, int y,
 
 	widthGlyph = FONTMAXBOUNDS(pfont,characterWidth);
 	h = FONTASCENT(pfont) + FONTDESCENT(pfont);
-	clip = cfbGetCompositeClip(pGC);
+	clip = fbGetCompositeClip(pGC);
 	bbox.x1 = x + pDrawable->x;
 	bbox.x2 = bbox.x1 + (widthGlyph * nglyph);
 	bbox.y1 = y + pDrawable->y - FONTASCENT(pfont);
@@ -205,7 +209,7 @@ LeoTEGlyphBlt (DrawablePtr pDrawable, GCPtr pGC, int x, int y,
 		x -= pDrawable->x;
 		y = y - pDrawable->y + FONTASCENT(pfont);
 		if (pGlyphBase)
-			cfbPolyGlyphBlt8 (pDrawable, pGC, x, y, nglyph, ppci, NULL);
+			fbPolyGlyphBlt (pDrawable, pGC, x, y, nglyph, ppci, NULL);
 		else
 			miImageGlyphBlt(pDrawable, pGC, x, y, nglyph, ppci, pGlyphBase);
 	case rgnOUT:

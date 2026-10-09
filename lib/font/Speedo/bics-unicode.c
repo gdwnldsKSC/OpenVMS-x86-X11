@@ -24,6 +24,9 @@ THE SOFTWARE.
 
 /* These data are very dodgy. */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "bics-unicode.h"
 
 static short table_160[]=

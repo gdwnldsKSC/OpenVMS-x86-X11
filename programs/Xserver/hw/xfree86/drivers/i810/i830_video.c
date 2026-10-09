@@ -42,7 +42,7 @@ THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /*
  * i830_video.c: i830/i845 Xv driver. 
  *
- * Copyright © 2002 by Alan Hourihane and David Dawes
+ * Copyright Â© 2002 by Alan Hourihane and David Dawes
  *
  * Authors: 
  *	Alan Hourihane <alanh@tungstengraphics.com>
@@ -60,6 +60,10 @@ THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * XXX Could support more formats.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
@@ -72,7 +76,7 @@ THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "i830.h"
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #include "xaa.h"
 #include "xaalocal.h"
 #include "dixstruct.h"
@@ -110,7 +114,7 @@ static void I830BlockHandler(int, pointer, pointer, pointer);
 
 #define MAKE_ATOM(a) MakeAtom(a, sizeof(a) - 1, TRUE)
 
-static Atom xvBrightness, xvContrast, xvColorKey;
+static Atom xvBrightness, xvContrast, xvColorKey, xvPipe;
 static Atom xvGamma0, xvGamma1, xvGamma2, xvGamma3, xvGamma4, xvGamma5;
 
 #define IMAGE_MAX_WIDTH		1440
@@ -251,12 +255,20 @@ static XF86VideoFormatRec Formats[NUM_FORMATS] = {
    {15, TrueColor}, {16, TrueColor}, {24, TrueColor}
 };
 
-#define NUM_ATTRIBUTES 9
+#define CLONE_ATTRIBUTES 1
+static XF86AttributeRec CloneAttributes[CLONE_ATTRIBUTES] = {
+   {XvSettable | XvGettable, 0, 1, "XV_PIPE"}
+};
 
+#define NUM_ATTRIBUTES 3
 static XF86AttributeRec Attributes[NUM_ATTRIBUTES] = {
    {XvSettable | XvGettable, 0, (1 << 24) - 1, "XV_COLORKEY"},
    {XvSettable | XvGettable, -128, 127, "XV_BRIGHTNESS"},
-   {XvSettable | XvGettable, 0, 255, "XV_CONTRAST"},
+   {XvSettable | XvGettable, 0, 255, "XV_CONTRAST"}
+};
+
+#define GAMMA_ATTRIBUTES 6
+static XF86AttributeRec GammaAttributes[GAMMA_ATTRIBUTES] = {
    {XvSettable | XvGettable, 0, 0xffffff, "XV_GAMMA0"},
    {XvSettable | XvGettable, 0, 0xffffff, "XV_GAMMA1"},
    {XvSettable | XvGettable, 0, 0xffffff, "XV_GAMMA2"},
@@ -342,6 +354,7 @@ typedef struct {
 
    int brightness;
    int contrast;
+   int pipe;
 
    RegionRec clip;
    CARD32 colorKey;
@@ -503,7 +516,7 @@ I830ResetVideo(ScrnInfoPtr pScrn)
     * Select which pipe the overlay is enabled on.
     */
    overlay->OCONFIG &= ~OVERLAY_PIPE_MASK;
-   if (pI830->pipe == 0)
+   if (pPriv->pipe == 0)
       overlay->OCONFIG |= OVERLAY_PIPE_A;
    else 
       overlay->OCONFIG |= OVERLAY_PIPE_B;
@@ -580,6 +593,7 @@ I830SetupImageVideo(ScreenPtr pScreen)
    I830Ptr pI830 = I830PTR(pScrn);
    XF86VideoAdaptorPtr adapt;
    I830PortPrivPtr pPriv;
+   XF86AttributePtr att;
 
    DPRINTF(PFX, "I830SetupImageVideo\n");
 
@@ -589,7 +603,7 @@ I830SetupImageVideo(ScreenPtr pScreen)
 
    adapt->type = XvWindowMask | XvInputMask | XvImageMask;
    adapt->flags = VIDEO_OVERLAID_IMAGES | VIDEO_CLIP_TO_VIEWPORT;
-   adapt->name = "Intel(R) 830M/845G/852GM/855GM/865G/915G Video Overlay";
+   adapt->name = "Intel(R) Video Overlay";
    adapt->nEncodings = 1;
    adapt->pEncodings = DummyEncoding;
    adapt->nFormats = NUM_FORMATS;
@@ -600,12 +614,25 @@ I830SetupImageVideo(ScreenPtr pScreen)
    pPriv = (I830PortPrivPtr) (&adapt->pPortPrivates[1]);
 
    adapt->pPortPrivates[0].ptr = (pointer) (pPriv);
-   adapt->pAttributes = Attributes;
+   adapt->nAttributes = NUM_ATTRIBUTES;
+   if (pI830->Clone)
+      adapt->nAttributes += CLONE_ATTRIBUTES;
+   if (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))
+      adapt->nAttributes += GAMMA_ATTRIBUTES; /* has gamma */
+   adapt->pAttributes = xnfalloc(sizeof(XF86AttributeRec) * adapt->nAttributes);
+   /* Now copy the attributes */
+   att = adapt->pAttributes;
+   memcpy((char *)att, (char*)Attributes, sizeof(XF86AttributeRec)* NUM_ATTRIBUTES);
+   att+=NUM_ATTRIBUTES;
+   if (pI830->Clone) {
+      memcpy((char*)att, (char*)CloneAttributes, sizeof(XF86AttributeRec) * CLONE_ATTRIBUTES);
+      att+=CLONE_ATTRIBUTES;
+   }
+   if (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830)) {
+      memcpy((char*)att, (char*)GammaAttributes, sizeof(XF86AttributeRec) * GAMMA_ATTRIBUTES);
+      att+=GAMMA_ATTRIBUTES;
+   }
    adapt->nImages = NUM_IMAGES;
-   if (IS_I915G(pI830))
-      adapt->nAttributes = 9; /* has gamma */
-   else
-      adapt->nAttributes = 3;
    adapt->pImages = Images;
    adapt->PutVideo = NULL;
    adapt->PutStill = NULL;
@@ -622,6 +649,7 @@ I830SetupImageVideo(ScreenPtr pScreen)
    pPriv->videoStatus = 0;
    pPriv->brightness = 0;
    pPriv->contrast = 64;
+   pPriv->pipe = pI830->pipe; /* default to current pipe */
    pPriv->linear = NULL;
    pPriv->currentBuf = 0;
    pPriv->gamma5 = 0xc0c0c0;
@@ -655,7 +683,12 @@ I830SetupImageVideo(ScreenPtr pScreen)
    xvBrightness = MAKE_ATOM("XV_BRIGHTNESS");
    xvContrast = MAKE_ATOM("XV_CONTRAST");
    xvColorKey = MAKE_ATOM("XV_COLORKEY");
-   if (IS_I915G(pI830)) {
+
+   /* Allow the pipe to be switched from pipe A to B when in clone mode */
+   if (pI830->Clone)
+     xvPipe = MAKE_ATOM("XV_PIPE");
+
+   if (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830)) {
      xvGamma0 = MAKE_ATOM("XV_GAMMA0");
      xvGamma1 = MAKE_ATOM("XV_GAMMA1");
      xvGamma2 = MAKE_ATOM("XV_GAMMA2");
@@ -759,7 +792,21 @@ I830SetPortAttribute(ScrnInfoPtr pScrn,
       overlay->OCLRC0 = (pPriv->contrast << 18) | (pPriv->brightness & 0xff);
       if (pPriv->overlayOK)
          OVERLAY_UPDATE;
-   } else if (attribute == xvGamma0 && (IS_I915G(pI830))) {
+   } else if (pI830->Clone && attribute == xvPipe) {
+      if ((value < 0) || (value > 1))
+         return BadValue;
+      pPriv->pipe = value;
+      /*
+       * Select which pipe the overlay is enabled on.
+       */
+      overlay->OCONFIG &= ~OVERLAY_PIPE_MASK;
+      if (pPriv->pipe == 0)
+         overlay->OCONFIG |= OVERLAY_PIPE_A;
+      else 
+         overlay->OCONFIG |= OVERLAY_PIPE_B;
+      if (pPriv->overlayOK)
+         OVERLAY_UPDATE;
+   } else if (attribute == xvGamma0 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       /* Avoid video anomalies, so set gamma registers when overlay is off */
       /* We also clamp the values if they are outside the ranges */
       if (!*pI830->overlayOn) {
@@ -768,35 +815,35 @@ I830SetPortAttribute(ScrnInfoPtr pScrn,
 	   pPriv->gamma1 = pPriv->gamma0 + 0x7d;
       } else
          return BadRequest;
-   } else if (attribute == xvGamma1 && (IS_I915G(pI830))) {
+   } else if (attribute == xvGamma1 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       if (!*pI830->overlayOn) {
          pPriv->gamma1 = value;
          if (pPriv->gamma1 - pPriv->gamma0 > 0x7d)
            pPriv->gamma0 = pPriv->gamma1 - 0x7d;
       } else
          return BadRequest;
-   } else if (attribute == xvGamma2 && (IS_I915G(pI830))) {
+   } else if (attribute == xvGamma2 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       if (!*pI830->overlayOn) {
          pPriv->gamma2 = value;
          if (pPriv->gamma3 - pPriv->gamma2 > 0x7d)
             pPriv->gamma3 = pPriv->gamma2 + 0x7d;
       } else
          return BadRequest;
-   } else if (attribute == xvGamma3 && (IS_I915G(pI830))) {
+   } else if (attribute == xvGamma3 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       if (!*pI830->overlayOn) {
          pPriv->gamma3 = value;
          if (pPriv->gamma3 - pPriv->gamma2 > 0x7d)
             pPriv->gamma2 = pPriv->gamma3 - 0x7d;
       } else
          return BadRequest;
-   } else if (attribute == xvGamma4 && (IS_I915G(pI830))) {
+   } else if (attribute == xvGamma4 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       if (!*pI830->overlayOn) {
          pPriv->gamma4 = value;
          if (pPriv->gamma5 - pPriv->gamma4 > 0x7d)
             pPriv->gamma5 = pPriv->gamma4 + 0x7d;
       } else
          return BadRequest;
-   } else if (attribute == xvGamma5 && (IS_I915G(pI830))) {
+   } else if (attribute == xvGamma5 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       if (!*pI830->overlayOn) {
          pPriv->gamma5 = value;
          if (pPriv->gamma5 - pPriv->gamma4 > 0x7d)
@@ -828,7 +875,7 @@ I830SetPortAttribute(ScrnInfoPtr pScrn,
         attribute == xvGamma2 ||
         attribute == xvGamma3 ||
         attribute == xvGamma4 ||
-        attribute == xvGamma5) && (IS_I915G(pI830))) {
+        attribute == xvGamma5) && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
 	I830UpdateGamma(pScrn);
    }
 
@@ -846,17 +893,19 @@ I830GetPortAttribute(ScrnInfoPtr pScrn,
       *value = pPriv->brightness;
    } else if (attribute == xvContrast) {
       *value = pPriv->contrast;
-   } else if (attribute == xvGamma0 && (IS_I915G(pI830))) {
+   } else if (pI830->Clone && attribute == xvPipe) {
+      *value = pPriv->pipe;
+   } else if (attribute == xvGamma0 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       *value = pPriv->gamma0;
-   } else if (attribute == xvGamma1 && (IS_I915G(pI830))) {
+   } else if (attribute == xvGamma1 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       *value = pPriv->gamma1;
-   } else if (attribute == xvGamma2 && (IS_I915G(pI830))) {
+   } else if (attribute == xvGamma2 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       *value = pPriv->gamma2;
-   } else if (attribute == xvGamma3 && (IS_I915G(pI830))) {
+   } else if (attribute == xvGamma3 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       *value = pPriv->gamma3;
-   } else if (attribute == xvGamma4 && (IS_I915G(pI830))) {
+   } else if (attribute == xvGamma4 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       *value = pPriv->gamma4;
-   } else if (attribute == xvGamma5 && (IS_I915G(pI830))) {
+   } else if (attribute == xvGamma5 && (IS_I915G(pI830) || IS_I915GM(pI830) || IS_I945G(pI830))) {
       *value = pPriv->gamma5;
    } else if (attribute == xvColorKey) {
       *value = pPriv->colorKey;
@@ -912,7 +961,7 @@ I830CopyPackedData(ScrnInfoPtr pScrn,
 
 static void
 I830CopyPlanarData(ScrnInfoPtr pScrn, unsigned char *buf, int srcPitch,
-		   int dstPitch, int srcH, int top, int left,
+		   int srcPitch2, int dstPitch, int srcH, int top, int left,
 		   int h, int w, int id)
 {
    I830Ptr pI830 = I830PTR(pScrn);
@@ -920,8 +969,8 @@ I830CopyPlanarData(ScrnInfoPtr pScrn, unsigned char *buf, int srcPitch,
    int i;
    unsigned char *src1, *src2, *src3, *dst1, *dst2, *dst3;
 
-   DPRINTF(PFX, "I830CopyPlanarData: srcPitch %d, dstPitch %d\n"
-	   "nlines %d, npixels %d, top %d, left %d\n", srcPitch, dstPitch,
+   ErrorF("I830CopyPlanarData: srcPitch %d, srcPitch %d, dstPitch %d\n"
+	   "nlines %d, npixels %d, top %d, left %d\n", srcPitch, srcPitch2, dstPitch,
 	   h, w, top, left);
 
    /* Copy Y data */
@@ -957,12 +1006,12 @@ I830CopyPlanarData(ScrnInfoPtr pScrn, unsigned char *buf, int srcPitch,
 
    for (i = 0; i < h / 2; i++) {
       memcpy(dst2, src2, w / 2);
-      src2 += srcPitch >> 1;
+      src2 += srcPitch2;
       dst2 += dstPitch;
    }
 
    /* Copy U data for YV12, or V data for I420 */
-   src3 = buf + (srcH * srcPitch) + ((srcH * srcPitch) >> 2) +
+   src3 = buf + (srcH * srcPitch) + ((srcH >> 1) * srcPitch2) +
 	 ((top * srcPitch) >> 2) + (left >> 1);
    ErrorF("src3 is %p, offset is %d\n", src3,
 	  (unsigned long)src3 - (unsigned long)buf);
@@ -980,7 +1029,7 @@ I830CopyPlanarData(ScrnInfoPtr pScrn, unsigned char *buf, int srcPitch,
 
    for (i = 0; i < h / 2; i++) {
       memcpy(dst3, src3, w / 2);
-      src3 += srcPitch >> 1;
+      src3 += srcPitch2;
       dst3 += dstPitch;
    }
 }
@@ -1125,12 +1174,29 @@ I830DisplayVideo(ScrnInfoPtr pScrn, int id, short width, short height,
    I830OverlayRegPtr overlay =
 	 (I830OverlayRegPtr) (pI830->FbBase + pI830->OverlayMem->Start);
    unsigned int swidth;
+   unsigned int mask, shift, offsety, offsetu;
 
-   DPRINTF(PFX, "I830DisplayVideo: %dx%d (pitch %d)\n", width, height,
+   ErrorF("I830DisplayVideo: %dx%d (pitch %d)\n", width, height,
 	   dstPitch);
 
    if (!pPriv->overlayOK)
       return;
+
+   if (IS_I915G(pI830) || IS_I915GM(pI830)) {
+      shift = 6;
+      mask = 0x3f;
+   } else {
+      shift = 5;
+      mask = 0x1f;
+   }
+
+   if (pPriv->currentBuf == 0) {
+      offsety = pPriv->YBuf0offset;
+      offsetu = pPriv->UBuf0offset;
+   } else {
+      offsety = pPriv->YBuf1offset;
+      offsetu = pPriv->UBuf1offset;
+   }
 
 #if VIDEO_DEBUG
    CompareOverlay(pI830, (CARD32 *) overlay, 0x100);
@@ -1138,56 +1204,95 @@ I830DisplayVideo(ScrnInfoPtr pScrn, int id, short width, short height,
 
    /* When in dual head with different bpp setups we need to refresh the
     * color key, so let's reset the video parameters and refresh here */
-   I830ResetVideo(pScrn);
+#if 0
+   if (pI830->entityPrivate)
+#endif
+      I830ResetVideo(pScrn);
 
    switch (id) {
    case FOURCC_YV12:
    case FOURCC_I420:
-      swidth = (width + 1) & ~1 & 0xfff;
+      swidth = width;
+
       overlay->SWIDTH = swidth;
       swidth /= 2;
       overlay->SWIDTH |= (swidth & 0x7ff) << 16;
 
-      swidth = ((pPriv->YBuf0offset + width + 0x1f) >> 5) -
-	    (pPriv->YBuf0offset >> 5) - 1;
+      swidth = ((offsety + width + mask) >> shift) -
+	    (offsety >> shift);
 
-      ErrorF("Y width is %d, swidthsw is %d\n", width, swidth);
+      if (IS_I915G(pI830) || IS_I915GM(pI830))
+         swidth <<= 1;
+
+      swidth -= 1;
+
+      ErrorF("Y width is %d, swidth is %d\n", width, swidth);
 
       overlay->SWIDTHSW = swidth << 2;
 
-      swidth = ((pPriv->UBuf0offset + (width / 2) + 0x1f) >> 5) -
-	    (pPriv->UBuf0offset >> 5) - 1;
+      swidth = ((offsetu + (width / 2) + mask) >> shift) -
+	    (offsetu >> shift);
+
+      if (IS_I915G(pI830) || IS_I915GM(pI830))
+         swidth <<= 1;
+
+      swidth -= 1;
+
       ErrorF("UV width is %d, swidthsw is %d\n", width / 2, swidth);
 
       overlay->SWIDTHSW |= swidth << 18;
+
+      ErrorF("HEIGHT is %d\n",height);
+
+      overlay->SHEIGHT = height | ((height / 2) << 16);
       break;
    case FOURCC_UYVY:
    case FOURCC_YUY2:
    default:
-      /* XXX Check for i845 */
-
-      swidth = ((width + 31) & ~31) << 1;
+      swidth = width;
       overlay->SWIDTH = swidth;
-      overlay->SWIDTHSW = swidth >> 3;
+
+      ErrorF("Y width is %d\n", swidth);
+
+      swidth = ((offsety + (width << 1) + mask) >> shift) -
+	    (offsety >> shift);
+
+      if (IS_I915G(pI830) || IS_I915GM(pI830))
+         swidth <<= 1;
+
+      swidth -= 1;
+
+      ErrorF("swidthsw is %d\n", swidth);
+
+      overlay->SWIDTHSW = swidth << 2;
+
+      ErrorF("HEIGHT is %d\n",height);
+
+      overlay->SHEIGHT = height;
       break;
    }
-
-   overlay->SHEIGHT = height | ((height / 2) << 16);
 
    if (pPriv->oneLineMode) {
       /* change the coordinates with panel fitting active */
       dstBox->y1 = (((dstBox->y1 - 1) * pPriv->scaleRatio) >> 16) + 1;
       dstBox->y2 = ((dstBox->y2 * pPriv->scaleRatio) >> 16) + 1;
-
+ 
       /* Now, alter the height, so we scale to the correct size */
-      drw_h = dstBox->y2 - dstBox->y1;
-      if (drw_h < height) drw_h = height;
+      drw_h = ((drw_h * pPriv->scaleRatio) >> 16) + 1;
+
+      /* Keep the engine happy */
+      if (dstBox->y1 < 0) dstBox->y1 = 0;
+      if (dstBox->y2 < 0) dstBox->y2 = 0;
    }
+
 
    overlay->DWINPOS = (dstBox->y1 << 16) | dstBox->x1;
 
    overlay->DWINSZ = ((dstBox->y2 - dstBox->y1) << 16) |
 	 (dstBox->x2 - dstBox->x1);
+
+   ErrorF("dstBox: x1: %d, y1: %d, x2: %d, y2: %d\n", dstBox->x1, dstBox->y1,
+			dstBox->x2, dstBox->y2);
 
    /* buffer locations */
    overlay->OBUF_0Y = pPriv->YBuf0offset;
@@ -1252,8 +1357,8 @@ I830DisplayVideo(ScrnInfoPtr pScrn, int id, short width, short height,
       /*
        * Y down-scale factor as a multiple of 4096.
        */
-      xscaleFract = (src_w << 12) / drw_w;
-      yscaleFract = (src_h << 12) / drw_h;
+      xscaleFract = ((src_w - 1) << 12) / drw_w;
+      yscaleFract = ((src_h - 1) << 12) / drw_h;
 
       /* Calculate the UV scaling factor. */
       xscaleFractUV = xscaleFract / uvratio;
@@ -1273,9 +1378,9 @@ I830DisplayVideo(ScrnInfoPtr pScrn, int id, short width, short height,
       xscaleIntUV = xscaleFractUV >> 12;
       yscaleIntUV = yscaleFractUV >> 12;
 
-      ErrorF("xscale: 0x%x.%03x, yscale: 0x%x.%03x\n", xscaleInt,
+      ErrorF("xscale: %x.%03x, yscale: %x.%03x\n", xscaleInt,
 	     xscaleFract & 0xFFF, yscaleInt, yscaleFract & 0xFFF);
-      ErrorF("UV xscale: 0x%x.%03x, UV yscale: 0x%x.%03x\n", xscaleIntUV,
+      ErrorF("UV xscale: %x.%03x, UV yscale: %x.%03x\n", xscaleIntUV,
 	     xscaleFractUV & 0xFFF, yscaleIntUV, yscaleFractUV & 0xFFF);
 
       newval = (xscaleInt << 16) |
@@ -1385,12 +1490,8 @@ I830AllocateMemory(ScrnInfoPtr pScrn, FBLinearPtr linear, int size)
 {
    ScreenPtr pScreen;
    FBLinearPtr new_linear;
-   int bytespp = pScrn->bitsPerPixel >> 3;
 
    DPRINTF(PFX, "I830AllocateMemory\n");
-
-   /* convert size in bytes into number of pixels */
-   size = (size + bytespp - 1) / bytespp;
 
    if (linear) {
       if (linear->size >= size)
@@ -1438,7 +1539,7 @@ I830PutImage(ScrnInfoPtr pScrn,
    I830PortPrivPtr pPriv = (I830PortPrivPtr) data;
    ScreenPtr pScreen = screenInfo.screens[pScrn->scrnIndex];
    INT32 x1, x2, y1, y2;
-   int srcPitch, dstPitch;
+   int srcPitch, srcPitch2 = 0, dstPitch;
    int top, left, npixels, nlines, size, loops;
    BoxRec dstBox;
 
@@ -1448,7 +1549,7 @@ I830PutImage(ScrnInfoPtr pScrn,
 
    if (pI830->entityPrivate) {
 	 if (pI830->entityPrivate->XvInUse != -1 &&
-	     pI830->entityPrivate->XvInUse != pI830->pipe) {
+	     pI830->entityPrivate->XvInUse != pPriv->pipe) {
 #ifdef PANORAMIX
 		if (!noPanoramiXExtension) {
 			return Success; /* faked for trying to share it */
@@ -1459,8 +1560,15 @@ I830PutImage(ScrnInfoPtr pScrn,
 		}
 	 }
 
-      pI830->entityPrivate->XvInUse = pI830->pipe;
+      pI830->entityPrivate->XvInUse = pPriv->pipe;
    }
+
+   /* overlay limits */
+   if(src_w > (drw_w * 7))
+      drw_w = src_w * 7;
+
+   if(src_h > (drw_h * 7))
+      drw_h = src_h * 7;
 
    /* Clip */
    x1 = src_x;
@@ -1486,21 +1594,22 @@ I830PutImage(ScrnInfoPtr pScrn,
    case FOURCC_YV12:
    case FOURCC_I420:
       srcPitch = (width + 3) & ~3;
-      dstPitch = ((width / 2) + 255) & ~255;	/* of chroma */
+      srcPitch2 = ((width >> 1) + 3) & ~3;
+      dstPitch = ((width / 2) + 63) & ~63;	/* of chroma */
       size = dstPitch * height * 3;
       break;
    case FOURCC_UYVY:
    case FOURCC_YUY2:
    default:
-      srcPitch = (width << 1);
-      dstPitch = (srcPitch + 255) & ~255;
+      srcPitch = width << 1;
+      dstPitch = (srcPitch + 63) & ~63;	/* of chroma */
       size = dstPitch * height;
       break;
    }
    ErrorF("srcPitch: %d, dstPitch: %d, size: %d\n", srcPitch, dstPitch, size);
 
-   if (!(pPriv->linear = I830AllocateMemory(pScrn, pPriv->linear,
-					    size * 2 / pI830->cpp)))
+   /* size is multiplied by 2 because we have two buffers that are flipping */
+   if (!(pPriv->linear = I830AllocateMemory(pScrn, pPriv->linear, size * 2 / pI830->cpp)))
       return BadAlloc;
 
    /* fixup pointers */
@@ -1549,7 +1658,7 @@ I830PutImage(ScrnInfoPtr pScrn,
    case FOURCC_I420:
       top &= ~1;
       nlines = ((((y2 + 0xffff) >> 16) + 1) & ~1) - top;
-      I830CopyPlanarData(pScrn, buf, srcPitch, dstPitch, height, top, left,
+      I830CopyPlanarData(pScrn, buf, srcPitch, srcPitch2, dstPitch, height, top, left,
 			 nlines, npixels, id);
       break;
    case FOURCC_UYVY:
@@ -1605,21 +1714,13 @@ I830QueryImageAttributes(ScrnInfoPtr pScrn,
    case FOURCC_YV12:
    case FOURCC_I420:
       *h = (*h + 1) & ~1;
-#if 1
       size = (*w + 3) & ~3;
-#else
-      size = (*w + 255) & ~255;
-#endif
       if (pitches)
 	 pitches[0] = size;
       size *= *h;
       if (offsets)
 	 offsets[1] = size;
-#if 1
       tmp = ((*w >> 1) + 3) & ~3;
-#else
-      tmp = ((*w >> 1) + 255) & ~255;
-#endif
       if (pitches)
 	 pitches[1] = pitches[2] = tmp;
       tmp *= (*h >> 1);
@@ -1836,7 +1937,7 @@ I830DisplaySurface(XF86SurfacePtr surface,
 
    if (pI830->entityPrivate) {
 	 if (pI830->entityPrivate->XvInUse != -1 &&
-	     pI830->entityPrivate->XvInUse != pI830->pipe) {
+	     pI830->entityPrivate->XvInUse != pI830Priv->pipe) {
 #ifdef PANORAMIX
 		if (!noPanoramiXExtension) {
 			return Success; /* faked for trying to share it */
@@ -1847,7 +1948,7 @@ I830DisplaySurface(XF86SurfacePtr surface,
 		}
 	 }
 
-      pI830->entityPrivate->XvInUse = pI830->pipe;
+      pI830->entityPrivate->XvInUse = pI830Priv->pipe;
    }
 
    x1 = src_x;
@@ -1978,7 +2079,7 @@ I830VideoSwitchModeAfter(ScrnInfoPtr pScrn, DisplayModePtr mode)
    if (!pPriv)
       return;
 
-   if (pI830->pipe == 0) {
+   if (pPriv->pipe == 0) {
       if (INREG(PIPEACONF) & PIPEACONF_DOUBLE_WIDE) {
          xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
 	   "Disabling XVideo output because Pipe A is in double-wide mode.\n");
@@ -1990,7 +2091,7 @@ I830VideoSwitchModeAfter(ScrnInfoPtr pScrn, DisplayModePtr mode)
       }
    }
 
-   if (pI830->pipe == 1) {
+   if (pPriv->pipe == 1) {
       if (INREG(PIPEBCONF) & PIPEBCONF_DOUBLE_WIDE) {
          xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
 	   "Disabling XVideo output because Pipe B is in double-wide mode.\n");
@@ -2002,12 +2103,13 @@ I830VideoSwitchModeAfter(ScrnInfoPtr pScrn, DisplayModePtr mode)
       }
    }
 
-   /* Check we are on pipe B and have an LFP connected */
-   if ((pI830->pipe == 1) && (pI830->operatingDevices & (PIPE_LFP << 8))) {
-      size = INREG(PIPEBSRC);
+   /* Check we have an LFP connected */
+   if ((pPriv->pipe == 1 && pI830->operatingDevices & (PIPE_LFP << 8)) ||
+       (pPriv->pipe == 0 && pI830->operatingDevices & PIPE_LFP) ) {
+      size = pI830->pipe ? INREG(PIPEBSRC) : INREG(PIPEASRC);
       hsize = (size >> 16) & 0x7FF;
       vsize = size & 0x7FF;
-      active = INREG(VTOTAL_B) & 0x7FF;
+      active = pI830->pipe ? (INREG(VTOTAL_B) & 0x7FF) : (INREG(VTOTAL_A) & 0x7FF);
 
       if (vsize < active && hsize > 1024)
          I830SetOneLineModeRatio(pScrn);

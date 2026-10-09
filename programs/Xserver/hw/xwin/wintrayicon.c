@@ -30,6 +30,9 @@
  */
 /* $XFree86: $ */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 #include <shellapi.h>
 #include "winprefs.h"
@@ -57,7 +60,7 @@ winInitNotifyIcon (winPrivScreenPtr pScreenPriv)
   /* Set display and screen-specific tooltip text */
   snprintf (nid.szTip,
 	    sizeof (nid.szTip),
-	    "Cygwin/X Server - %s:%d",
+	    PROJECT_NAME " Server - %s:%d",
 	    display, 
 	    (int) pScreenInfo->dwScreen);
 
@@ -111,10 +114,22 @@ winHandleIconMessage (HWND hwnd, UINT message,
 		      WPARAM wParam, LPARAM lParam,
 		      winPrivScreenPtr pScreenPriv)
 {
+#if defined(XWIN_MULTIWINDOWEXTWM) || defined(XWIN_MULTIWINDOW)
   winScreenInfo		*pScreenInfo = pScreenPriv->pScreenInfo;
+#endif
 
   switch (lParam)
     {
+    case WM_LBUTTONUP:
+      /* Restack and bring all windows to top */
+      SetForegroundWindow (hwnd);
+
+#ifdef XWIN_MULTIWINDOWEXTWM
+      if (pScreenInfo->fMWExtWM)
+	winMWExtWMRestackWindows (pScreenInfo->pScreen);
+#endif
+      break;
+
     case WM_LBUTTONDBLCLK:
       /* Display Exit dialog box */
       winDisplayExitDialog (pScreenPriv);

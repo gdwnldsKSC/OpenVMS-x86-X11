@@ -28,3 +28,7 @@ lib/libX11.a
 lib/libXaw.a
 lib/libXfont.a
 lib/libXft.a
+lib/libXcomposite.a
+lib/libXdamage.a
+lib/libXevie.a
+lib/libXfixes.a

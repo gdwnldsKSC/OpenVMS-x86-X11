@@ -64,13 +64,11 @@ OBJS =  nsc_driver.o \
 INCLUDES = -I. -I../../include $(EXTINCLUDES)
 #else
 INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86OSSRC) -I$(SERVERSRC)/Xext \
-		-I$(SERVERSRC)/mfb -I$(SERVERSRC)/mi \
-		-I$(SERVERSRC)/cfb -I$(SERVERSRC)/fb -I$(XF86SRC)/xaa \
+		-I$(SERVERSRC)/mi -I$(SERVERSRC)/fb -I$(XF86SRC)/xaa \
 		-I$(XF86SRC)/vgahw -I$(XF86SRC)/ramdac \
 		-I$(XF86SRC)/ddc -I$(XF86SRC)/i2c \
 		-I$(XF86SRC)/rac -I$(XF86SRC)/int10 \
-		-I$(XF86SRC)/xf24_32bpp -I$(FONTINCSRC) \
-		-I$(XF86SRC)/xf8_32bpp -I$(XF86SRC)/xf1bpp \
+		-I$(FONTINCSRC) -I$(XF86SRC)/xf8_32bpp -I$(XF86SRC)/xf1bpp \
 		-I$(XF86SRC)/xf4bpp -I$(SERVERSRC)/include -I$(XINCLUDESRC) \
 		-I$(XF86SRC)/ddc -I$(XF86SRC)/i2c -I$(EXTINCSRC) $(DRIINCLUDES) \
 		-I$(XF86SRC)/shadowfb -I$(XF86SRC)/fbdevhw \
@@ -87,10 +85,9 @@ ModuleObjectRule()
 
 ObjectModuleTarget(nsc,$(OBJS))
 
-InstallObjectModule(nsc,$(MODULEDIR),drivers)
+InstallVideoObjectModule(nsc,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
-CppManTarget(nsc,)
 InstallModuleManPage(nsc)
 #endif 
 

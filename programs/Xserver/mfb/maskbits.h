@@ -24,8 +24,12 @@ SOFTWARE.
 ******************************************************************/
 /* $Xorg: maskbits.h,v 1.3 2000/08/17 19:53:34 cpqbld Exp $ */
 
-#include "X.h"
-#include "Xmd.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xmd.h>
 #include "servermd.h"
 
 
@@ -396,7 +400,7 @@ extern PixelType mfbGetmask(int);
     else \
     { \
 	register int d = PPW-(x); \
-	*(pdst) = (*(pdst) & endtab[x]) | (SCRRIGHT((src), x)); \
+	*(pdst) = (*(pdst) & mfbGetendtab(x)) | (SCRRIGHT((src), x)); \
 	(pdst)[1] = ((pdst)[1] & mfbGetstarttab(n)) | \
 		(SCRLEFT(src, d) & mfbGetendtab(n)); \
     } \

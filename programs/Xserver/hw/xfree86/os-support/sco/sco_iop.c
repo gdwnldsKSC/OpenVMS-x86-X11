@@ -23,7 +23,11 @@
 /* $XConsortium$ */
 
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "compiler.h"
 
@@ -62,17 +66,23 @@ extern long sysi86 (int cmd, ...);
 
 static Bool IOEnabled = FALSE;
 
-void xf86EnableIO(void)
+Bool
+xf86EnableIO(void)
 {
 	if (IOEnabled)
-		return;
+		return TRUE;
 
-	if (sysi86(SI86V86, V86SC_IOPL, PS_IOPL) < 0)
-		FatalError("Failed to set IOPL for extended I/O\n");
+	if (sysi86(SI86V86, V86SC_IOPL, PS_IOPL) < 0) {
+		xf86Msg(X_WARNING,"Failed to set IOPL for extended I/O\n");
+		return FALSE;
+	}
+	
 	IOEnabled = TRUE;
+	return TRUE;
 }
 
-void xf86DisableIO(void)
+void
+xf86DisableIO(void)
 {
 	if (!IOEnabled)
 		return;
@@ -85,7 +95,8 @@ void xf86DisableIO(void)
 /* Interrupt Handling section                                              */
 /***************************************************************************/
 
-Bool xf86DisableInterrupts()
+Bool
+xf86DisableInterrupts(void)
 {
   if (!IOEnabled) {
     if (sysi86(SI86V86, V86SC_IOPL, PS_IOPL) < 0)
@@ -105,7 +116,8 @@ Bool xf86DisableInterrupts()
   return(TRUE);
 }
 
-void xf86EnableInterrupts()
+void
+xf86EnableInterrupts(void)
 {
   if (!IOEnabled) {
     if (sysi86(SI86V86, V86SC_IOPL, PS_IOPL) < 0)

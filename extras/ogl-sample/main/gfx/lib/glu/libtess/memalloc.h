@@ -36,8 +36,8 @@
 /*
 ** Author: Eric Veach, July 1994.
 **
-** $Date$ $Revision$
-** $Header$
+** $Date: 2004/04/23 18:42:56 $ $Revision: 1.2 $
+** $Header: /cvs/xorg/xc/extras/ogl-sample/main/gfx/lib/glu/libtess/memalloc.h,v 1.2 2004/04/23 18:42:56 eich Exp $
 */
 
 #ifndef __memalloc_simple_h_

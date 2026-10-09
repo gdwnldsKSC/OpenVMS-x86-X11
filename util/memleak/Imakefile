@@ -42,7 +42,7 @@ GRA_OBJS = getreti386.o stackbottom.o
 GRA_SRCS = getreti386.c stackbottom.c
 #endif
 
-#ifdef LinuxArchitecture
+#if defined(LinuxArchitecture) || defined(__GLIBC__)
 #ifdef i386Architecture
 #define HasGetReturnAddress	YES
 #define TopOfStack 0xbffff800

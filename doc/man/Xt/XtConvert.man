@@ -1,4 +1,5 @@
 .\" $Xorg: XtConvert.man,v 1.3 2000/08/17 19:41:59 cpqbld Exp $
+.\" $XdotOrg: xc/doc/man/Xt/XtConvert.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright 1993 X Consortium
 .\"
@@ -138,7 +139,7 @@ String \fIto_type\fP, XrmValuePtr \fIto_return\fP);
 void XtDirectConvert(XtConverter \fIconverter\fP, XrmValuePtr \fIargs\fP,
 Cardinal \fInum_args\fP, XrmValuePtr \fIfrom\fP, XrmValuePtr \fIto_return\fP);
 .SH ARGUMENTS
-.ds Al that contains the additional arguments needed to perform
+.ds Al that contains the additional arguments needed to perform \
 the conversion (often NULL)
 .IP \fIargs\fP 1i
 Specifies the argument list \*(Al.

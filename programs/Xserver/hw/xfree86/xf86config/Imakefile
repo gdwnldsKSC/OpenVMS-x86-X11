@@ -3,7 +3,7 @@ XCOMM $XFree86: xc/programs/Xserver/hw/xfree86/xf86config/Imakefile,v 3.14tsi Ex
 #include <Server.tmpl>
 
 
-XCOMM $XdotOrg: xc/programs/Xserver/hw/xfree86/xf86config/Imakefile,v 1.6 2004/08/13 23:57:38 alanc Exp $
+XCOMM $XdotOrg: xc/programs/Xserver/hw/xfree86/xf86config/Imakefile,v 1.8 2005/02/11 13:41:40 ajax Exp $
 XCOMM $XConsortium: Imakefile /main/5 1996/02/21 18:12:46 kaleb $
 
             SRCS = xorgconfig.c cards.c
@@ -49,6 +49,7 @@ FONT_MODULE_DEFS = $(SPEEDO_DEF) $(TYPE1_DEF)
 		   -DXDOCDIR=\"$(DOCDIR)\" $(SITE_FONT_PATH) \
 		   -DFILEMANSUFFIX=\"$(FILEMANSUFFIX)\" \
 		   -DXVERSIONSTRING=\"$(XVERSIONSTRING)\" \
+		   -DXFONTDIR=\"$(FONTDIR)\" \
 		   $(VENDOR_DEFINES) $(KEYBOARD_DEFS) $(FONT_MODULE_DEFS)
 
 

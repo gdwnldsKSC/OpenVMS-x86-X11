@@ -1,3 +1,4 @@
+/* $XdotOrg: xc/programs/twm/parse.c,v 1.4 2005/10/09 18:59:28 alanc Exp $ */
 /* $XFree86: xc/programs/twm/parse.c,v 1.15 2002/09/24 21:00:28 tsi Exp $ */
 /*****************************************************************************/
 /*
@@ -81,10 +82,10 @@ in this Software without prior written authorization from The Open Group.
 static FILE *twmrc;
 static int ptr = 0;
 static int len = 0;
-static char buff[BUF_LEN+1];
+static unsigned char buff[BUF_LEN+1];
 static unsigned char overflowbuff[20];		/* really only need one */
 static int overflowlen;
-static char **stringListSource, *currentString;
+static unsigned char **stringListSource, *currentString;
 
 static int doparse ( int (*ifunc)(void), char *srctypename, char *srcname );
 static int twmFileInput ( void );
@@ -98,21 +99,11 @@ int ConstrainedMoveTime = 400;		/* milliseconds, event times */
 int (*twmInputFunc)(void);
 
 
-/***********************************************************************
- *
- *  Procedure:
- *	ParseTwmrc - parse the .twmrc file
- *
- *  Inputs:
- *	filename  - the filename to parse.  A NULL indicates $HOME/.twmrc
- *
- ***********************************************************************
+/**
+ * parse the .twmrc file
+ *  \param filename the filename to parse.  NULL indicates $HOME/.twmrc
  */
-
-static int doparse (ifunc, srctypename, srcname)
-    int (*ifunc)(void);
-    char *srctypename;
-    char *srcname;
+static int doparse (int (*ifunc)(void), char *srctypename, char*srcname)
 {
     mods = 0;
     ptr = 0;
@@ -168,8 +159,7 @@ static int doparse (ifunc, srctypename, srcname)
 }
 
 
-int ParseTwmrc (filename)
-    char *filename;
+int ParseTwmrc (char *filename)
 {
     int i;
     char *home = NULL;
@@ -235,8 +225,7 @@ int ParseTwmrc (filename)
     }
 }
 
-int ParseStringList (sl)
-    char **sl;
+int ParseStringList (unsigned char **sl)
 {
     stringListSource = sl;
     currentString = *sl;
@@ -244,28 +233,22 @@ int ParseStringList (sl)
 }
 
 
-/***********************************************************************
+/**
+ *  redefinition of the lex input routine for file input
  *
- *  Procedure:
- *	twmFileInput - redefinition of the lex input routine for file input
- *
- *  Returned Value:
- *	the next input character
- *
- ***********************************************************************
+ *  \return the next input character
  */
-
 static int twmFileInput()
 {
     if (overflowlen) return (int) overflowbuff[--overflowlen];
 
     while (ptr == len)
     {
-	if (fgets(buff, BUF_LEN, twmrc) == NULL)
+	if (fgets((char *) buff, BUF_LEN, twmrc) == NULL)
 	    return 0;
 
 	ptr = 0;
-	len = strlen(buff);
+	len = strlen((char *) buff);
     }
     return ((int)buff[ptr++]);
 }
@@ -288,19 +271,12 @@ static int twmStringListInput()
 }
 
 
-/***********************************************************************
+/*
+ * redefinition of the lex unput routine
  *
- *  Procedure:
- *	twmUnput - redefinition of the lex unput routine
- *
- *  Inputs:
- *	c	- the character to push back onto the input stream
- *
- ***********************************************************************
+ *  \param c the character to push back onto the input stream
  */
-
-void twmUnput (c)
-    int c;
+void twmUnput (int c)
 {
     if (overflowlen < sizeof overflowbuff) {
 	overflowbuff[overflowlen++] = (unsigned char) c;
@@ -312,29 +288,21 @@ void twmUnput (c)
 }
 
 
-/***********************************************************************
+/**
+ * redefinition of the lex output routine
  *
- *  Procedure:
- *	TwmOutput - redefinition of the lex output routine
- *
- *  Inputs:
- *	c	- the character to print
- *
- ***********************************************************************
+ * \param c  the character to print
  */
 
 void
-TwmOutput(c)
-    int c;
+TwmOutput(int c)
 {
     putchar(c);
 }
 
 
 /**********************************************************************
- *
  *  Parsing table and routines
- * 
  ***********************************************************************/
 
 typedef struct _TwmKeyword {
@@ -625,9 +593,7 @@ static TwmKeyword keytable[] = {
 
 static int numkeywords = (sizeof(keytable)/sizeof(keytable[0]));
 
-int parse_keyword (s, nump)
-    char *s;
-    int *nump;
+int parse_keyword (char *s, int *nump)
 {
     register int lower = 0, upper = numkeywords - 1;
 
@@ -655,8 +621,7 @@ int parse_keyword (s, nump)
  * action routines called by grammar
  */
 
-int do_single_keyword (keyword)
-    int keyword;
+int do_single_keyword (int keyword)
 {
     switch (keyword) {
       case kw0_NoDefaults:
@@ -764,9 +729,7 @@ int do_single_keyword (keyword)
 }
 
 
-int do_string_keyword (keyword, s)
-    int keyword;
-    char *s;
+int do_string_keyword (int keyword, char *s)
 {
     switch (keyword) {
       case kws_UsePPosition:
@@ -832,9 +795,7 @@ int do_string_keyword (keyword, s)
 }
 
 
-int do_number_keyword (keyword, num)
-    int keyword;
-    int num;
+int do_number_keyword (int keyword, int num)
 {
     switch (keyword) {
       case kwn_ConstrainedMoveTime:
@@ -885,10 +846,7 @@ int do_number_keyword (keyword, num)
     return 0;
 }
 
-name_list **do_colorlist_keyword (keyword, colormode, s)
-    int keyword;
-    int colormode;
-    char *s;
+name_list **do_colorlist_keyword (int keyword, int colormode, char *s)
 {
     switch (keyword) {
       case kwcl_BorderColor:
@@ -938,10 +896,7 @@ name_list **do_colorlist_keyword (keyword, colormode, s)
     return NULL;
 }
 
-int do_color_keyword (keyword, colormode, s)
-    int keyword;
-    int colormode;
-    char *s;
+int do_color_keyword (int keyword, int colormode, char *s)
 {
     switch (keyword) {
       case kwc_DefaultForeground:
@@ -988,12 +943,11 @@ int do_color_keyword (keyword, colormode, s)
     return 0;
 }
 
-/*
- * put_pixel_on_root() Save a pixel value in twm root window color property.
+/**
+ * Save a pixel value in twm root window color property.
  */
 void
-put_pixel_on_root(pixel)                                 
-    Pixel pixel;                                         
+put_pixel_on_root(Pixel pixel)
 {                                                        
   int           i, addPixel = 1;
   Atom          pixelAtom, retAtom;	                 
@@ -1015,28 +969,25 @@ put_pixel_on_root(pixel)
 		       (unsigned char *)&pixel, 1);                       
 }                                                        
 
-/*
- * do_string_savecolor() save a color from a string in the twmrc file.
+/**
+ * save a color from a string in the twmrc file.
  */
 void
-do_string_savecolor(colormode, s)
-     int colormode;
-     char *s;
+do_string_savecolor(int colormode, char *s)
 {
   Pixel p;
   GetColor(colormode, &p, s);
   put_pixel_on_root(p);
 }
 
-/*
- * do_var_savecolor() save a color from a var in the twmrc file.
- */
 typedef struct _cnode {int i; struct _cnode *next;} Cnode, *Cptr;
 Cptr chead = NULL;
 
+/**
+ * save a color from a var in the twmrc file
+ */
 void
-do_var_savecolor(key)
-int key;
+do_var_savecolor(int key)
 {
   Cptr cptrav, cpnew;
   if (!chead) {
@@ -1051,8 +1002,8 @@ int key;
   }
 }
 
-/*
- * assign_var_savecolor() traverse the var save color list placeing the pixels
+/**
+ * traverse the var save color list placeing the pixels
  *                        in the root window property.
  */
 void 
@@ -1104,8 +1055,7 @@ assign_var_savecolor()
 }
 
 static int 
-ParseUsePPosition (s)
-    register char *s;
+ParseUsePPosition (char *s)
 {
     XmuCopyISOLatin1Lowered (s, s);
 
@@ -1122,13 +1072,16 @@ ParseUsePPosition (s)
 }
 
 
+/**
+ *
+ *  \param list    squeeze or dont-squeeze list
+ *  \param name    window name
+ *  \param justify left, center, or right
+ *  \param num     signed num
+ *  \param denom   0 or indicates fraction denom
+ */
 void
-do_squeeze_entry (list, name, justify, num, denom)
-    name_list **list;			/* squeeze or dont-squeeze list */
-    char *name;				/* window name */
-    int justify;			/* left, center, right */
-    int num;				/* signed num */
-    int denom;				/* 0 or indicates fraction denom */
+do_squeeze_entry (name_list **list, char *name, int justify, int num, int denom)
 {
     int absnum = (num < 0 ? -num : num);
 

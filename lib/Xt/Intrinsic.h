@@ -5,13 +5,13 @@ Copyright 1987, 1988 by Digital Equipment Corporation, Maynard, Massachusetts,
 
 			All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the name Digital not be
 used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
+software without specific, written prior permission.
 
 DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
 ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
@@ -1032,6 +1032,10 @@ extern void XtRemoveInput(
     XtInputId 		/* id */
 );
 
+extern XtSignalId XtAddSignal(
+    XtSignalCallbackProc /* proc */,
+    XtPointer		/* closure */);
+
 extern XtSignalId XtAppAddSignal(
     XtAppContext       	/* app_context */,
     XtSignalCallbackProc /* proc */,
@@ -1090,20 +1094,36 @@ extern void XtRemoveBlockHook(
 #define XtIsComposite(widget)	(_XtCheckSubclassFlag(widget, (XtEnum)0x08))
 #define XtIsConstraint(widget)	(_XtCheckSubclassFlag(widget, (XtEnum)0x10))
 #define XtIsShell(widget)	(_XtCheckSubclassFlag(widget, (XtEnum)0x20))
+
+#undef XtIsOverrideShell
+extern Boolean XtIsOverrideShell(Widget /* object */);
 #define XtIsOverrideShell(widget) \
     (_XtIsSubclassOf(widget, (WidgetClass)overrideShellWidgetClass, \
 		     (WidgetClass)shellWidgetClass, (XtEnum)0x20))
+
 #define XtIsWMShell(widget)	(_XtCheckSubclassFlag(widget, (XtEnum)0x40))
+
+#undef XtIsVendorShell
+extern Boolean XtIsVendorShell(Widget /* object */);
 #define XtIsVendorShell(widget)	\
     (_XtIsSubclassOf(widget, (WidgetClass)vendorShellWidgetClass, \
 		     (WidgetClass)wmShellWidgetClass, (XtEnum)0x40))
+
+#undef XtIsTransientShell
+extern Boolean XtIsTransientShell(Widget /* object */);
 #define XtIsTransientShell(widget) \
     (_XtIsSubclassOf(widget, (WidgetClass)transientShellWidgetClass, \
 		     (WidgetClass)wmShellWidgetClass, (XtEnum)0x40))
 #define XtIsTopLevelShell(widget) (_XtCheckSubclassFlag(widget, (XtEnum)0x80))
+
+#undef XtIsApplicationShell
+extern Boolean XtIsApplicationShell(Widget /* object */);
 #define XtIsApplicationShell(widget) \
     (_XtIsSubclassOf(widget, (WidgetClass)applicationShellWidgetClass, \
 		     (WidgetClass)topLevelShellWidgetClass, (XtEnum)0x80))
+
+#undef XtIsSessionShell
+extern Boolean XtIsSessionShell(Widget /* object */);
 #define XtIsSessionShell(widget) \
     (_XtIsSubclassOf(widget, (WidgetClass)sessionShellWidgetClass, \
 		     (WidgetClass)topLevelShellWidgetClass, (XtEnum)0x80))
@@ -1176,7 +1196,7 @@ extern ArgList XtMergeArgLists(
 
 extern XtVarArgsList XtVaCreateArgsList(
     XtPointer		/*unused*/, ...
-);
+) _X_SENTINEL(0);
 
 /*************************************************************
  *
@@ -1230,7 +1250,12 @@ extern Widget XtParent(
 
 #endif /*_XtIntrinsicP_h*/
 
+#undef XtMapWidget
+extern void XtMapWidget(Widget /* w */);
 #define XtMapWidget(widget)	XMapWindow(XtDisplay(widget), XtWindow(widget))
+
+#undef XtUnmapWidget
+extern void XtUnmapWidget(Widget /* w */);
 #define XtUnmapWidget(widget)	\
 		XUnmapWindow(XtDisplay(widget), XtWindow(widget))
 
@@ -1315,7 +1340,7 @@ extern Widget XtVaCreatePopupShell(
     WidgetClass		/* widgetClass */,
     Widget		/* parent */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern void XtPopup(
     Widget 		/* popup_shell */,
@@ -1382,14 +1407,14 @@ extern Widget XtVaCreateWidget(
     WidgetClass		/* widget */,
     Widget		/* parent */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern Widget XtVaCreateManagedWidget(
     _Xconst _XtString	/* name */,
     WidgetClass		/* widget_class */,
     Widget		/* parent */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern Widget XtCreateApplicationShell( /* obsolete */
     _Xconst _XtString 	/* name */,
@@ -1413,7 +1438,7 @@ extern Widget XtVaAppCreateShell(
     WidgetClass		/* widget_class */,
     Display*		/* display */,
     ...
-);
+) _X_SENTINEL(0);
 
 /****************************************************************
  *
@@ -1465,7 +1490,7 @@ extern Widget XtVaOpenApplication(
     String*		/* fallback_resources */,
     WidgetClass		/* widget_class */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern Widget XtAppInitialize( /* obsolete */
     XtAppContext*	/* app_context_return */,
@@ -1488,7 +1513,7 @@ extern Widget XtVaAppInitialize( /* obsolete */
     String*		/* argv_in_out */,
     String*		/* fallback_resources */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern Widget XtInitialize( /* obsolete */
     _Xconst _XtString 	/* shell_name */,
@@ -1562,7 +1587,7 @@ extern void XtVaGetApplicationResources(
     XtResourceList	/* resources */,
     Cardinal		/* num_resources */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern void XtGetSubresources(
     Widget 		/* widget */,
@@ -1583,7 +1608,7 @@ extern void XtVaGetSubresources(
     XtResourceList	/* resources */,
     Cardinal		/* num_resources */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern void XtSetValues(
     Widget 		/* widget */,
@@ -1594,7 +1619,7 @@ extern void XtSetValues(
 extern void XtVaSetValues(
     Widget		/* widget */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern void XtGetValues(
     Widget 		/* widget */,
@@ -1605,7 +1630,7 @@ extern void XtGetValues(
 extern void XtVaGetValues(
     Widget		/* widget */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern void XtSetSubvalues(
     XtPointer 		/* base */,
@@ -1620,7 +1645,7 @@ extern void XtVaSetSubvalues(
     XtResourceList	/* resources */,
     Cardinal		/* num_resources */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern void XtGetSubvalues(
     XtPointer 		/* base */,
@@ -1635,7 +1660,7 @@ extern void XtVaGetSubvalues(
     XtResourceList	/* resources */,
     Cardinal		/* num_resources */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern void XtGetResourceList(
     WidgetClass 	/* widget_class */,
@@ -1885,6 +1910,9 @@ extern void _XtFree( /* implementation-private */
 #endif /* ifdef XTTRACEMEMORY */
 
 #define XtNew(type) ((type *) XtMalloc((unsigned) sizeof(type)))
+
+#undef XtNewString
+extern String XtNewString(String /* str */);
 #define XtNewString(str) \
     ((str) != NULL ? (strcpy(XtMalloc((unsigned)strlen(str) + 1), str)) : NULL)
 
@@ -1993,7 +2021,7 @@ extern String XtResolvePathname(
  *****************************************************************/
 
 #define XT_CONVERT_FAIL (Atom)0x80000001
-    
+
 extern void XtDisownSelection(
     Widget 		/* widget */,
     Atom 		/* selection */,
@@ -2264,7 +2292,7 @@ extern void XtAppUnlock(
 extern Boolean XtCvtStringToAcceleratorTable(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2273,7 +2301,7 @@ extern Boolean XtCvtStringToAcceleratorTable(
 extern Boolean XtCvtStringToAtom(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* Display */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2282,7 +2310,7 @@ extern Boolean XtCvtStringToAtom(
 extern Boolean XtCvtStringToBool(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2291,7 +2319,7 @@ extern Boolean XtCvtStringToBool(
 extern Boolean XtCvtStringToBoolean(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2300,7 +2328,7 @@ extern Boolean XtCvtStringToBoolean(
 extern Boolean XtCvtStringToCommandArgArray(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2309,7 +2337,7 @@ extern Boolean XtCvtStringToCommandArgArray(
 extern Boolean XtCvtStringToCursor(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* Display */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2318,7 +2346,7 @@ extern Boolean XtCvtStringToCursor(
 extern Boolean XtCvtStringToDimension(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2327,7 +2355,7 @@ extern Boolean XtCvtStringToDimension(
 extern Boolean XtCvtStringToDirectoryString(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2336,7 +2364,7 @@ extern Boolean XtCvtStringToDirectoryString(
 extern Boolean XtCvtStringToDisplay(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2345,7 +2373,7 @@ extern Boolean XtCvtStringToDisplay(
 extern Boolean XtCvtStringToFile(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2354,7 +2382,7 @@ extern Boolean XtCvtStringToFile(
 extern Boolean XtCvtStringToFloat(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2363,7 +2391,7 @@ extern Boolean XtCvtStringToFloat(
 extern Boolean XtCvtStringToFont(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* Display */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2372,7 +2400,7 @@ extern Boolean XtCvtStringToFont(
 extern Boolean XtCvtStringToFontSet(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* Display, locale */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2381,7 +2409,7 @@ extern Boolean XtCvtStringToFontSet(
 extern Boolean XtCvtStringToFontStruct(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* Display */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2390,7 +2418,7 @@ extern Boolean XtCvtStringToFontStruct(
 extern Boolean XtCvtStringToGravity(
     Display*	/* dpy */,
     XrmValuePtr /* args */,
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2399,7 +2427,7 @@ extern Boolean XtCvtStringToGravity(
 extern Boolean XtCvtStringToInitialState(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2408,7 +2436,7 @@ extern Boolean XtCvtStringToInitialState(
 extern Boolean XtCvtStringToInt(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2417,7 +2445,7 @@ extern Boolean XtCvtStringToInt(
 extern Boolean XtCvtStringToPixel(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* Screen, Colormap */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2428,7 +2456,7 @@ extern Boolean XtCvtStringToPixel(
 extern Boolean XtCvtStringToRestartStyle(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2437,7 +2465,7 @@ extern Boolean XtCvtStringToRestartStyle(
 extern Boolean XtCvtStringToShort(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2446,7 +2474,7 @@ extern Boolean XtCvtStringToShort(
 extern Boolean XtCvtStringToTranslationTable(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2455,7 +2483,7 @@ extern Boolean XtCvtStringToTranslationTable(
 extern Boolean XtCvtStringToUnsignedChar(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2464,7 +2492,7 @@ extern Boolean XtCvtStringToUnsignedChar(
 extern Boolean XtCvtStringToVisual(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* Screen, depth */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2475,7 +2503,7 @@ extern Boolean XtCvtStringToVisual(
 extern Boolean XtCvtIntToBool(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2484,7 +2512,7 @@ extern Boolean XtCvtIntToBool(
 extern Boolean XtCvtIntToBoolean(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2493,7 +2521,7 @@ extern Boolean XtCvtIntToBoolean(
 extern Boolean XtCvtIntToColor(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* Screen, Colormap */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2504,7 +2532,7 @@ extern Boolean XtCvtIntToColor(
 extern Boolean XtCvtIntToFloat(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2513,7 +2541,7 @@ extern Boolean XtCvtIntToFloat(
 extern Boolean XtCvtIntToFont(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2522,7 +2550,7 @@ extern Boolean XtCvtIntToFont(
 extern Boolean XtCvtIntToPixel(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2531,7 +2559,7 @@ extern Boolean XtCvtIntToPixel(
 extern Boolean XtCvtIntToPixmap(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2542,7 +2570,7 @@ extern Boolean XtCvtIntToPixmap(
 extern Boolean XtCvtIntToShort(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2551,7 +2579,7 @@ extern Boolean XtCvtIntToShort(
 extern Boolean XtCvtIntToUnsignedChar(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */
@@ -2562,7 +2590,7 @@ extern Boolean XtCvtIntToUnsignedChar(
 extern Boolean XtCvtColorToPixel(
     Display*	/* dpy */,
     XrmValuePtr /* args */,	/* none */
-    Cardinal*   /* num_args */,	
+    Cardinal*   /* num_args */,
     XrmValuePtr	/* fromVal */,
     XrmValuePtr	/* toVal */,
     XtPointer*	/* closure_ret */

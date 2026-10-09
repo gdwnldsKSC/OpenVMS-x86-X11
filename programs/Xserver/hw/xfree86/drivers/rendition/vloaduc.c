@@ -3,6 +3,10 @@
  * includes
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "rendition.h"
 #include "v1kregs.h"
 #include "v1krisc.h"

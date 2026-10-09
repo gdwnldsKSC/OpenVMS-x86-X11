@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xc/programs/xdm/config/Imakefile,v 1.3 2004/07/27 06:24:47 herrb Exp $
+XCOMM $XdotOrg: xc/programs/xdm/config/Imakefile,v 1.6 2005/12/14 20:01:32 alanc Exp $
 XCOMM $Xorg: Imakefile,v 1.4 2000/08/17 19:54:17 cpqbld Exp $
 
 
@@ -8,7 +8,7 @@ XCOMM $XFree86: xc/programs/xdm/config/Imakefile,v 1.14 2003/12/30 22:09:14 herr
 
 SERVERSTYPE = XdmServersType
 
-all:: Xservers.ws xdm-config Xservers Xresources
+all:: Xservers.ws xdm-config Xservers Xresources Xsession
 
 #if (defined(i386Architecture) || defined(AMD64Architecture)) && (defined(KNetBSDArchitecture) || defined(KOpenBSDArchitecture))
 DEFAULTVT=vt05
@@ -41,9 +41,16 @@ SU = "su -m"
 SU = su
 #endif
 
-CppFileTarget(Xservers.ws,Xserv.ws.cpp,-DBINDIR=$(BINDIR) -DDEFAULTVT=$(DEFAULTVT),NullParameter)
-CppFileTarget(xdm-config,xdm-conf.cpp,-DXDMDIR=$(XDMDIR) -DXDMLOGDIR=$(XDMLOGDIR) -DXDMPIDDIR=$(XDMPIDDIR) -DSU=$(SU) -DCHOOSERPATH=$(CHOOSERPATH),NullParameter)
+#ifdef SCOArchitecture
+SHELL_CMD = /bin/ksh
+#else
+SHELL_CMD = /bin/sh
+#endif
+
+CppFileTarget(Xservers.ws,Xserv.ws.cpp,-DBINDIR=$(BINDIR) -DDEFAULTVT=$(DEFAULTVT) -DSHELL_CMD=$(SHELL_CMD),NullParameter)
+CppFileTarget(xdm-config,xdm-conf.cpp,-DXDMDIR=$(XDMDIR) -DXDMLOGDIR=$(XDMLOGDIR) -DXDMPIDDIR=$(XDMPIDDIR) -DSU=$(SU) -DCHOOSERPATH=$(CHOOSERPATH) $(XPM_DEFINES),NullParameter)
 CppFileTarget(Xresources,Xres.cpp,$(XPM_DEFINES),NullParameter)
+CppFileTarget(Xsession,Xsession.cpp,-DBINDIR=$(BINDIR) -DDEFAULTVT=$(DEFAULTVT) -DSHELL_CMD=$(SHELL_CMD),NullParameter)
 
 LinkFile(Xservers,Xservers.$(SERVERSTYPE))
 
@@ -56,6 +63,8 @@ InstallNamedProg(Xsession,Xsession,$(XDMDIR))
 InstallNamedProg(GiveConsole,GiveConsole,$(XDMDIR))
 InstallNamedProg(TakeConsole,TakeConsole,$(XDMDIR))
 InstallNamedProg(Xsetup_0,Xsetup_0,$(XDMDIR))
+InstallNamedProg(Xstartup,Xstartup,$(XDMDIR))
+InstallNamedProg(Xreset,Xreset,$(XDMDIR))
 InstallNamedProg(Xwilling,Xwilling,$(XDMDIR))
 #else
 InstallNonExecFileNoClobber(xdm-config,$(XDMDIR))
@@ -66,6 +75,8 @@ InstallNamedProgNoClobber(Xsession,Xsession,$(XDMDIR))
 InstallNamedProgNoClobber(GiveConsole,GiveConsole,$(XDMDIR))
 InstallNamedProgNoClobber(TakeConsole,TakeConsole,$(XDMDIR))
 InstallNamedProgNoClobber(Xsetup_0,Xsetup_0,$(XDMDIR))
+InstallNamedProgNoClobber(Xstartup,Xstartup,$(XDMDIR))
+InstallNamedProgNoClobber(Xreset,Xreset,$(XDMDIR))
 InstallNamedProgNoClobber(Xwilling,Xwilling,$(XDMDIR))
 #endif
 

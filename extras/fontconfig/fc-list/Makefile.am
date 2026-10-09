@@ -1,7 +1,7 @@
 # 
-#  $Id$
+#  $Id: Makefile.am,v 1.3 2005/06/28 01:01:14 alanc Exp $
 # 
-#  Copyright © 2003 Keith Packard
+#  Copyright Â© 2003 Keith Packard
 # 
 #  Permission to use, copy, modify, distribute, and sell this software and its
 #  documentation for any purpose is hereby granted without fee, provided that
@@ -21,12 +21,36 @@
 #  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 #  PERFORMANCE OF THIS SOFTWARE.
 
+DOC2MAN = docbook2man
+
+FC_LIST_SRC=${top_srcdir}/fc-list
+
+SGML = ${FC_LIST_SRC}/fc-list.sgml
+
 bin_PROGRAMS=fc-list
 
-man1_MANS=fc-list.man
+INCLUDES=-I${top_srcdir} $(FREETYPE_CFLAGS) $(WARN_CFLAGS)
 
-INCLUDES=$(FREETYPE_CFLAGS)
+EXTRA_DIST=$(SGML)
 
-EXTRA_DIST=$(man1_MANS)
+fc_list_LDADD = ${top_builddir}/src/libfontconfig.la
 
-fc_list_LDADD = ../src/libfontconfig.la
+
+if USEDOCBOOK
+
+man_MANS=fc-list.1
+
+${man_MANS}: ${SGML}
+	$(RM) $@
+	$(DOC2MAN) ${SGML}
+	$(RM) manpage.refs manpage.links
+
+all-local: $(man_MANS)
+
+clean-local:
+	$(RM) $(man_MANS)
+
+else
+all-local:
+clean-local:
+endif

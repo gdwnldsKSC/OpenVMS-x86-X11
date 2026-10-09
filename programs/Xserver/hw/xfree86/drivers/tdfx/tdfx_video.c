@@ -1,10 +1,14 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/tdfx/tdfx_video.c,v 1.20tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "tdfx.h"
 #include "dixstruct.h"
 
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #include "fourcc.h"
 
 static Atom xvColorKey, xvFilterQuality;

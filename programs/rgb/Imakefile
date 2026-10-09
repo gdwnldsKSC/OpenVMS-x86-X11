@@ -40,7 +40,7 @@ XCOMM $XFree86: xc/programs/rgb/Imakefile,v 3.9 2000/06/30 17:15:19 dawes Exp $
     CCOPTIONS = /**/
     EXTRA_LOAD_FLAGS = /**/
 #endif
-#if defined(i386Architecture) && defined(SVR4Architecture) && !defined(SCOArchitecture)
+#if defined(i386Architecture) && defined(SVR4Architecture) && !defined(SCOArchitecture) && !defined(SunArchitecture)
        DBMLIB = DBMLibrary -lucb
 #endif
 #endif /*!UseRgbTxt */

@@ -24,7 +24,7 @@
 
 _XFUNCPROTOBEGIN
 
-#include "font.h"
+#include <X11/fonts/font.h>
 
 extern void XFree86BigfontExtensionInit(void);
 extern void XF86BigfontFreeFontShm(FontPtr);

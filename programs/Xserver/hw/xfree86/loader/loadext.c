@@ -29,6 +29,10 @@
 /* Maybe this file belongs elsewhere? */
 
 #define LOADERDECLARATIONS
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "loaderProcs.h"
 #include "misc.h"
 #include "xf86.h"

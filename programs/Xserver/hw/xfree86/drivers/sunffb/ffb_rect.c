@@ -23,6 +23,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/sunffb/ffb_rect.c,v 1.1 2000/05/18 23:21:37 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define PSZ 32
 
 #include "ffb.h"

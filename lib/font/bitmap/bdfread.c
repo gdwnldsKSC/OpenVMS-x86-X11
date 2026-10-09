@@ -52,14 +52,18 @@ from The Open Group.
 */
 /* $XFree86: xc/lib/font/bitmap/bdfread.c,v 1.12tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifndef FONTMODULE
 #include <ctype.h>
 #endif
-#include "fntfilst.h"
-#include "fontutil.h"
+#include <X11/fonts/fntfilst.h>
+#include <X11/fonts/fontutil.h>
 /* use bitmap structure */
-#include "bitmap.h"
-#include "bdfint.h"
+#include <X11/fonts/bitmap.h>
+#include <X11/fonts/bdfint.h>
 
 #define INDICES 256
 #define MAXENCODING 0xFFFF

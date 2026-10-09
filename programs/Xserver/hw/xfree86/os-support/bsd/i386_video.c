@@ -26,9 +26,16 @@
 
 /* $XConsortium: bsd_video.c /main/10 1996/10/25 11:37:57 kaleb $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "xf86.h"
 #include "xf86Priv.h"
+
+#include <errno.h>
+#include <sys/mman.h>
 
 #ifdef HAS_MTRR_SUPPORT
 #ifndef __NetBSD__
@@ -331,25 +338,26 @@ xf86ReadBIOS(unsigned long Base, unsigned long Offset, unsigned char *Buf,
 
 static Bool ExtendedEnabled = FALSE;
 
-void
+Bool
 xf86EnableIO()
 {
 	if (ExtendedEnabled)
-		return;
+		return TRUE;
 
 	if (i386_iopl(TRUE) < 0)
 	{
 #ifndef __OpenBSD__
-		FatalError("%s: Failed to set IOPL for extended I/O",
+		xf86Msg(X_WARNING,"%s: Failed to set IOPL for extended I/O",
 			   "xf86EnableIO");
 #else
-		FatalError("%s: Failed to set IOPL for extended I/O\n%s",
+		xf86Msg(X_WARNING,"%s: Failed to set IOPL for extended I/O\n%s",
 			   "xf86EnableIO", SYSCTL_MSG);
 #endif
+		return FALSE;
 	}
 	ExtendedEnabled = TRUE;
 
-	return;
+	return TRUE;
 }
 	
 void
@@ -373,25 +381,26 @@ xf86DisableIO()
 
 static Bool ExtendedEnabled = FALSE;
 
-void
+Bool
 xf86EnableIO()
 {
 	if (ExtendedEnabled)
-		return;
+		return TRUE;
 
 	if (amd64_iopl(TRUE) < 0)
 	{
 #ifndef __OpenBSD__
-		FatalError("%s: Failed to set IOPL for extended I/O",
+		xf86Msg(X_WARNING,"%s: Failed to set IOPL for extended I/O",
 			   "xf86EnableIO");
 #else
-		FatalError("%s: Failed to set IOPL for extended I/O\n%s",
+		xf86Msg(X_WARNING,"%s: Failed to set IOPL for extended I/O\n%s",
 			   "xf86EnableIO", SYSCTL_MSG);
 #endif
+		return FALSE;
 	}
 	ExtendedEnabled = TRUE;
 
-	return;
+	return TRUE;
 }
 	
 void
@@ -414,18 +423,19 @@ xf86DisableIO()
 #ifdef USE_DEV_IO
 static int IoFd = -1;
 
-void
+Bool
 xf86EnableIO()
 {
 	if (IoFd >= 0)
-		return;
+		return TRUE;
 
 	if ((IoFd = open("/dev/io", O_RDWR)) == -1)
 	{
-		FatalError("xf86EnableIO: "
+		xf86Msg(X_WARNING,"xf86EnableIO: "
 				"Failed to open /dev/io for extended I/O");
+		return FALSE;
 	}
-	return;
+	return TRUE;
 }
 
 void

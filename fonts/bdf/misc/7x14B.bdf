@@ -1,5 +1,5 @@
 STARTFONT 2.1
-COMMENT "$ucs-fonts: 7x14B.bdf,v 1.24 2002-11-08 20:42:37+00 mgk25 Rel $"
+COMMENT "$ucs-fonts: 7x14B.bdf,v 1.25 2003-07-26 14:55:51+01 mgk25 Rel $"
 COMMENT "Send bug reports to Markus Kuhn <http://www.cl.cam.ac.uk/~mgk25/>"
 FONT -Misc-Fixed-Bold-R-Normal--14-130-75-75-C-70-ISO10646-1
 SIZE 7 75 75
@@ -121,16 +121,16 @@ BBX 7 14 0 -2
 BITMAP
 00
 00
-3C
-3C
-3C
+78
+78
+78
 FC
 78
 78
 FC
-F0
-F0
-F0
+78
+78
+78
 00
 00
 ENDCHAR

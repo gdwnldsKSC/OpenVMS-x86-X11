@@ -69,4 +69,32 @@ in this Software without prior written authorization from The Open Group.
 #endif
 #endif /* _XFUNCPROTOBEGIN */
 
+#if defined(__GNUC__) && (__GNUC__ >= 4)
+# define _X_SENTINEL(x) __attribute__ ((__sentinel__(x)))
+# define _X_ATTRIBUTE_PRINTF(x,y) __attribute__((__format__(__printf__,x,y)))
+#else
+# define _X_SENTINEL(x)
+# define _X_ATTRIBUTE_PRINTF(x,y)
+#endif /* GNUC >= 4 */
+
+#if defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) >= 303)
+# define _X_EXPORT      __attribute__((visibility("default")))
+# define _X_HIDDEN      __attribute__((visibility("hidden")))
+# define _X_INTERNAL    __attribute__((visibility("internal")))
+#elif defined(__SUNPRO_C) && (__SUNPRO_C >= 0x550)
+# define _X_EXPORT      __global
+# define _X_HIDDEN      __hidden
+# define _X_INTERNAL    __hidden
+#else /* not gcc >= 3.3 and not Sun Studio >= 8 */
+# define _X_EXPORT
+# define _X_HIDDEN
+# define _X_INTERNAL
+#endif
+
+#if defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) >= 301)
+# define _X_DEPRECATED  __attribute__((deprecated))
+#else /* not gcc >= 3.1 */
+# define _X_DEPRECATED
+#endif
+
 #endif /* _XFUNCPROTO_H_ */

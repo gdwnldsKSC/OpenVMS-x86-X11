@@ -4,6 +4,10 @@
  * 
  * Copyright 1998,1999 by Egbert Eich <Egbert.Eich@Physik.TU-Darmstadt.DE>
  */
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "misc.h"
 #include "xf86.h"
 #include "xf86_ansic.h"
@@ -212,12 +216,15 @@ xf86DoEDID_DDC2(int scrnIndex, I2CBusPtr pBus)
 #ifdef DEBUG
     if (!tmp)
 	ErrorF("Cannot interpret EDID block\n");
-    ErrorF("Sections to follow: %i\n",tmp->no_sections);
+    else
+        ErrorF("Sections to follow: %i\n",tmp->no_sections);
 #endif
-    VDIF_Block = 
-	VDIFRead(scrnIndex, pBus, EDID1_LEN * (tmp->no_sections + 1));    
-    tmp->vdif = xf86InterpretVdif(VDIF_Block);
-
+    if (tmp) {
+        VDIF_Block = 
+            VDIFRead(scrnIndex, pBus, EDID1_LEN * (tmp->no_sections + 1));    
+        tmp->vdif = xf86InterpretVdif(VDIF_Block);
+    }
+    
     return tmp;
 }
 

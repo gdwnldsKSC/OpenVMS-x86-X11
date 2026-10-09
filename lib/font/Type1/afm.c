@@ -17,7 +17,14 @@
  */
 /* $XFree86: xc/lib/font/Type1/afm.c,v 1.2 1999/08/21 13:47:38 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
+#ifdef XFONT_CID
 #ifndef FONTMODULE
 #include <stdio.h>
 #include <string.h>
@@ -27,7 +34,7 @@
 #include "Xdefs.h"      /* For Bool */
 #include "xf86_ansic.h"
 #endif
-#include "fontmisc.h"			/* for xalloc/xfree */
+#include <X11/fonts/fontmisc.h>			/* for xalloc/xfree */
 #include "AFM.h"
 
 #define PBUF 256

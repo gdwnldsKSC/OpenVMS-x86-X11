@@ -100,7 +100,7 @@ GetUrl(char *url, char **reply_ret, int *len_ret)
 #else
 #define TRANS(func) _HttpTrans/**/func
 #endif
-#include <X11/Xtrans.h>
+#include <X11/Xtrans/Xtrans.h>
 
 #define HTTP_CONNECTION_RETRIES 5
 

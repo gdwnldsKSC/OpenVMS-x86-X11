@@ -14,12 +14,12 @@ v4l \- video4linux driver
 .SH DESCRIPTION
 .B v4l 
 is an __xservername__ driver for video4linux cards.  It provides a Xvideo
-extention port for video overlay.  Just add the driver to the module
+extension port for video overlay.  Just add the driver to the module
 list within the module section of your __xconfigfile__ file if you want
 to use it.  There are no config options.
 .P
 Note that the the extmod module is also required for the Xvideo
-support (and lots of other extentions too).
+support (and lots of other extensions too).
 .SH SUPPORTED HARDWARE
 The
 .B v4l

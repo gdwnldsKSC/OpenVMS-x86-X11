@@ -1,4 +1,4 @@
-/* $Id: ffb_drv.c,v 1.1 2004/04/22 11:31:55 airlied Exp $
+/* $Id: ffb_drv.c,v 1.1.1.2 2005/06/15 18:31:49 idr Exp $
  * ffb_drv.c: Creator/Creator3D direct rendering driver.
  *
  * Copyright (C) 2000 David S. Miller (davem@redhat.com)
@@ -25,58 +25,6 @@
 #define DRIVER_MAJOR		0
 #define DRIVER_MINOR		0
 #define DRIVER_PATCHLEVEL	1
-
-#define DRIVER_FOPS						\
-static struct file_operations	DRM(fops) = {			\
-	.owner   		= THIS_MODULE,			\
-	.open	 		= DRM(open),			\
-	.flush	 		= DRM(flush),			\
-	.release 		= DRM(release),			\
-	.ioctl	 		= DRM(ioctl),			\
-	.mmap	 		= DRM(mmap),			\
-	.read	 		= DRM(read),			\
-	.fasync	 		= DRM(fasync),			\
-	.poll	 		= DRM(poll),			\
-	.get_unmapped_area	= ffb_get_unmapped_area,		\
-}
-
-#define DRIVER_COUNT_CARDS()	ffb_count_card_instances()
-/* Allocate private structure and fill it */
-#define DRIVER_PRESETUP()	do {		\
-	int _ret;				\
-	_ret = ffb_presetup(dev);		\
-	if (_ret != 0) return _ret;		\
-} while(0)
-
-/* Free private structure */
-#define DRIVER_PRETAKEDOWN()	do {				\
-	if (dev->dev_private) kfree(dev->dev_private);		\
-} while(0)
-
-#define DRIVER_POSTCLEANUP()	do {				\
-	if (ffb_position != NULL) kfree(ffb_position);		\
-} while(0)
-
-/* We have to free up the rogue hw context state holding error or 
- * else we will leak it.
- */
-#define DRIVER_RELEASE()	do {					\
-	ffb_dev_priv_t *fpriv = (ffb_dev_priv_t *) dev->dev_private;	\
-	int context = _DRM_LOCKING_CONTEXT(dev->lock.hw_lock->lock);	\
-	int idx;							\
-									\
-	idx = context - 1;						\
-	if (fpriv &&							\
-	    context != DRM_KERNEL_CONTEXT &&				\
-	    fpriv->hw_state[idx] != NULL) {				\
-		kfree(fpriv->hw_state[idx]);				\
-		fpriv->hw_state[idx] = NULL;				\
-	}								\
-} while(0)
-
-/* For mmap customization */
-#define DRIVER_GET_MAP_OFS()	(map->offset & 0xffffffff)
-#define DRIVER_GET_REG_OFS()	ffb_get_reg_offset(dev)
 
 typedef struct _ffb_position_t {
 	int node;
@@ -219,36 +167,6 @@ static int __init ffb_scan_siblings(int root, int instance)
 	return instance;
 }
 
-static int ffb_presetup(drm_device_t *);
-
-static int __init ffb_count_card_instances(void)
-{
-	int root, total, instance;
-
-	total = ffb_count_siblings(prom_root_node);
-	root = prom_getchild(prom_root_node);
-	for (root = prom_searchsiblings(root, "upa"); root;
-	     root = prom_searchsiblings(prom_getsibling(root), "upa"))
-		total += ffb_count_siblings(root);
-
-	ffb_position = kmalloc(sizeof(ffb_position_t) * total, GFP_KERNEL);
-
-	/* Actual failure will be caught during ffb_presetup b/c we can't catch
-	 * it easily here.
-	 */
-	if (!ffb_position)
-		return -ENOMEM;
-
-	instance = ffb_scan_siblings(prom_root_node, 0);
-
-	root = prom_getchild(prom_root_node);
-	for (root = prom_searchsiblings(root, "upa"); root;
-	     root = prom_searchsiblings(prom_getsibling(root), "upa"))
-		instance = ffb_scan_siblings(root, instance);
-
-	return total;
-}
-
 static drm_map_t *ffb_find_map(struct file *filp, unsigned long off)
 {
 	drm_file_t	*priv	= filp->private_data;
@@ -275,11 +193,11 @@ static drm_map_t *ffb_find_map(struct file *filp, unsigned long off)
 	return NULL;
 }
 
-static unsigned long ffb_get_unmapped_area(struct file *filp,
-					   unsigned long hint,
-					   unsigned long len,
-					   unsigned long pgoff,
-					   unsigned long flags)
+unsigned long ffb_get_unmapped_area(struct file *filp,
+				    unsigned long hint,
+				    unsigned long len,
+				    unsigned long pgoff,
+				    unsigned long flags)
 {
 	drm_map_t *map = ffb_find_map(filp, pgoff << PAGE_SHIFT);
 	unsigned long addr = -ENOMEM;
@@ -319,26 +237,12 @@ static unsigned long ffb_get_unmapped_area(struct file *filp,
 	return addr;
 }
 
-static unsigned long ffb_get_reg_offset(drm_device_t *dev)
-{
-	ffb_dev_priv_t *ffb_priv = (ffb_dev_priv_t *)dev->dev_private;
-
-	if (ffb_priv)
-		return ffb_priv->card_phys_base;
-
-	return 0;
-}
-
-#include "drm_auth.h"
-#include "drm_bufs.h"
-#include "drm_dma.h"
-#include "drm_drawable.h"
-#include "drm_drv.h"
+#include "drm_core.h"
 
 /* This functions must be here since it references DRM(numdevs)
  * which drm_drv.h declares.
  */
-static int ffb_presetup(drm_device_t *dev)
+int ffb_presetup(drm_device_t *dev)
 {
 	ffb_dev_priv_t	*ffb_priv;
 	drm_device_t *temp_dev;
@@ -372,11 +276,3 @@ static int ffb_presetup(drm_device_t *dev)
 	return ret;
 }
 
-#include "drm_fops.h"
-#include "drm_init.h"
-#include "drm_ioctl.h"
-#include "drm_lock.h"
-#include "drm_memory.h"
-#include "drm_proc.h"
-#include "drm_vm.h"
-#include "drm_stub.h"

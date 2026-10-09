@@ -30,6 +30,9 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 /*
  * This is a first cut at a non-accelerated version to work with the
@@ -47,7 +50,6 @@
 /* Drivers that need to access the PCI config space directly need this */
 #include "xf86Pci.h"
 
-#include "mga_bios.h"
 #include "mga_reg.h"
 #include "mga.h"
 #include "mga_macros.h"
@@ -1079,100 +1081,13 @@ MGA3026RamdacInit(ScrnInfoPtr pScrn)
     MGAdac->LoadPalette 	= MGA3026LoadPalette;
     MGAdac->RestorePalette	= MGA3026RestorePalette;
     
+    MGAdac->maxPixelClock = pMga->bios.pixel.max_freq;
     MGAdac->ClockFrom = X_PROBED;
-    if ( pMga->Chipset == PCI_CHIP_MGA2064 && pMga->Bios2.PinID == 0 )
-    {
-	switch( pMga->Bios.RamdacType & 0xff )
-	{
-	case 1: MGAdac->maxPixelClock = 220000;
-	    break;
-	case 2: MGAdac->maxPixelClock = 250000;
-	    break;
-	default:
-	    MGAdac->maxPixelClock = 175000;
-	    MGAdac->ClockFrom = X_DEFAULT;
-	    break;
-	}
-	/* Set MCLK based on amount of memory */
-	if(pMga->OverclockMem) {
-	  if ( pScrn->videoRam < 4096 )
-            MGAdac->MemoryClock = pMga->Bios.ClkBase * 12;
-	  else if ( pScrn->videoRam < 8192 )
-            MGAdac->MemoryClock = pMga->Bios.Clk4MB * 12;
-	  else
-            MGAdac->MemoryClock = pMga->Bios.Clk8MB * 12;
-	  MGAdac->MemClkFrom = X_CONFIG;
-	  MGAdac->SetMemClk = TRUE;
-#if 0
-	  ErrorF("BIOS Memory clock settings: 2Mb %d, 4Mb %d, 8MB %d\n",
-		 pMga->Bios.ClkBase, pMga->Bios.Clk4MB, pMga->Bios.Clk8MB);
-#endif
-	} else {
-	  if ( pScrn->videoRam < 4096 )
-            MGAdac->MemoryClock = pMga->Bios.ClkBase * 10;
-	  else if ( pScrn->videoRam < 8192 )
-            MGAdac->MemoryClock = pMga->Bios.Clk4MB * 10;
-	  else
-            MGAdac->MemoryClock = pMga->Bios.Clk8MB * 10;
-	  MGAdac->MemClkFrom = X_PROBED;
-	  MGAdac->SetMemClk = TRUE;
-	}
-    }
-    else
-    {
-	if ( pMga->Bios2.PinID ) 	/* make sure BIOS is available */
-	{
-	    if ( pMga->Bios2.PclkMax != 0xff )
-	    {
-		MGAdac->maxPixelClock = (pMga->Bios2.PclkMax + 100) * 1000;
-	    }
-	    else
-		MGAdac->maxPixelClock = 220000;
 
-	    /* make sure we are not overdriving the GE for the amount of WRAM */
-	    switch (  pScrn->videoRam )
-	    {
-		case 4096:
-		    if (pMga->Bios2.Clk4MB != 0xff)
-			pMga->Bios2.ClkGE = pMga->Bios2.Clk4MB;
-		    break;
-		case 8192:
-		    if (pMga->Bios2.Clk8MB != 0xff)
-			pMga->Bios2.ClkGE = pMga->Bios2.Clk8MB;
-		    break;
-		case 12288:
-		    if (pMga->Bios2.Clk12MB != 0xff)
-			pMga->Bios2.ClkGE = pMga->Bios2.Clk12MB;
-		    break;
-		case 16384:
-		    if (pMga->Bios2.Clk16MB != 0xff)
-			pMga->Bios2.ClkGE = pMga->Bios2.Clk16MB;
-		    break;
-		default:
-		    break;
-	    }
+    MGAdac->MemoryClock = pMga->bios.mem_clock;
+    MGAdac->MemClkFrom = X_PROBED;
+    MGAdac->SetMemClk = TRUE;
 
-	    if ( pMga->Bios2.ClkGE != 0xff && pMga->Bios2.ClkMem == 0xff )
-		pMga->Bios2.ClkMem = pMga->Bios2.ClkGE;
-	    else if ( pMga->Bios2.ClkGE == 0xff && pMga->Bios2.ClkMem != 0xff )
-		    ; /* don't need to do anything */
-	    else if ( pMga->Bios2.ClkGE == pMga->Bios2.ClkMem && pMga->Bios2.ClkGE != 0xff )
-		pMga->Bios2.ClkMem = pMga->Bios2.ClkGE;
-	    else
-		pMga->Bios2.ClkMem = 60;
-
-	    MGAdac->MemoryClock = pMga->Bios2.ClkMem * 1000;
-    	    MGAdac->MemClkFrom = X_PROBED;
-    	    MGAdac->SetMemClk = TRUE;
-	} /* BIOS enabled initialization */
-	else
-	{
-		/* bios is not available, initialize to rational figures */
-		MGAdac->MemoryClock = 60000;	/* 60 MHz WRAM */
-		MGAdac->maxPixelClock = 220000;  /* 220 MHz */
-	        MGAdac->ClockFrom = X_DEFAULT;
-        }
-     } /* 2164 specific initialization */
 
     /* safety check */
     if ( (MGAdac->MemoryClock < 40000) ||
@@ -1201,7 +1116,7 @@ MGA3026RamdacInit(ScrnInfoPtr pScrn)
     pMga->Roundings[3] = 128 >> pMga->BppShifts[3];
 
     /* Set Fast bitblt flag */
-    pMga->HasFBitBlt = !(pMga->Bios.FeatFlag & 0x00000001);
+    pMga->HasFBitBlt = pMga->bios.fast_bitblt;
 }
 
 void MGA3026LoadPalette(

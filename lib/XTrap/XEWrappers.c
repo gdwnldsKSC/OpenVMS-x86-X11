@@ -41,8 +41,8 @@ typedef struct _ConverterRec **ConverterTable;  /* from ConvertI.h */
 #include "libdef.h"
 typedef struct _CallbackRec *CallbackList;      /* from CallbackI.h */
 typedef struct _XtGrabRec  *XtGrabList;         /* from EventI.h */
-#include "PassivGraI.h"
-#include "InitialI.h"
+#include <X11/PassivGraI.h>
+#include <X11/InitialI.h>
 #else  /* VMSDW_V3 */
 typedef struct _ModToKeysymTable {
     Modifiers mask;
@@ -59,10 +59,10 @@ typedef long  fd_mask;
 typedef	struct Fd_set {
 	fd_mask	fds_bits[howmany(256, NFDBITS)];
 } Fd_set;                                       /* from fd.h */
-#include "InitializeI.h"
+#include <X11/InitializeI.h>
 #endif  /* VMSDW_V3 */
 #else  /* !vms */
-#include "IntrinsicI.h"
+#include <X11/IntrinsicI.h>
 #define IS_AT_OR_AFTER(t1, t2) (((t2).tv_sec > (t1).tv_sec) \
         || (((t2).tv_sec == (t1).tv_sec)&& ((t2).tv_usec >= (t1).tv_usec)))
 #endif /* vms */
@@ -264,15 +264,11 @@ int XETrapAppWhileLoop(XtAppContext app, XETC *tc, Bool *done)
 int XETrapWaitForSomething(XtAppContext app)
 {
 #ifndef vms
-#ifndef X11R5
     return(_XtWaitForSomething(app, FALSE, FALSE, FALSE, FALSE, TRUE
 #ifdef XTHREADS
     , FALSE
 #endif /* XTHREADS */
     , 0L));
-#else /* X11R5 */
-    return(_XtwaitForSomething(FALSE, FALSE, FALSE, TRUE, 0L, app));
-#endif /* X11R5 */
 #else   /* vms */
 #define IS_AFTER(t1,t2) (((t2).high > (t1).high) \
        ||(((t2).high == (t1).high)&& ((t2).low > (t1).low)))

@@ -24,7 +24,11 @@
 #endif
 
 extern int snprintf (char *str, size_t count, const char *fmt, ...);
+#if (defined(__UNIXWARE__) || defined(__OPENSERVER)) && !defined(__GNUC__)
+extern int vsnprintf (char *str, size_t count, const char *fmt, _VA_LIST arg);
+#else
 extern int vsnprintf (char *str, size_t count, const char *fmt, va_list arg);
+#endif
 
 #endif /* HAS_SNPRINTF */
 

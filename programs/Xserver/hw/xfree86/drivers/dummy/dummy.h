@@ -8,7 +8,7 @@
 #include "xf86Cursor.h"
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 /* Supported chipsets */
 typedef enum {
@@ -65,6 +65,8 @@ typedef struct dummyRec
     int interlace;
     dummy_colors colors[256];
     pointer* FBBase;
+    Bool        (*CreateWindow)() ;     /* wrapped CreateWindow */
+    Bool prop;
 } DUMMYRec, *DUMMYPtr;
 
 /* The privates of the DUMMY driver */

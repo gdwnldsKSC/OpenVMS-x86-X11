@@ -47,9 +47,13 @@ SOFTWARE.
 ******************************************************************/
 /* $Xorg: mfbscrinit.c,v 1.4 2001/02/09 02:05:19 xorgcvs Exp $ */
 
-#include "X.h"
-#include "Xproto.h"	/* for xColorItem */
-#include "Xmd.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>	/* for xColorItem */
+#include <X11/Xmd.h>
 #include "scrnintstr.h"
 #include "pixmapstr.h"
 #include "windowstr.h"
@@ -85,7 +89,6 @@ static DepthRec depth = {
     1,		1,		&VID
 };
 
-#ifndef LOWMEMFTPT
 
 BSFuncRec mfbBSFuncRec = {
     mfbSaveAreas,
@@ -95,7 +98,6 @@ BSFuncRec mfbBSFuncRec = {
     (BackingStoreGetSpansPixmapProcPtr) 0,
 };
 
-#endif /* ifndef LOWMEMFTPT */
 
 Bool
 mfbAllocatePrivates(pScreen, pWinIndex, pGCIndex)
@@ -124,7 +126,6 @@ mfbAllocatePrivates(pScreen, pWinIndex, pGCIndex)
 	    AllocateGCPrivate(pScreen, mfbGCPrivateIndex, sizeof(mfbPrivGC)));
 }
 
-#ifndef LOWMEMFTPT
 
 /* dts * (inch/dot) * (25.4 mm / inch) = mm */
 Bool
@@ -171,7 +172,6 @@ mfbScreenInit(pScreen, pbits, xsize, ysize, dpix, dpiy, width)
     pScreen->BackingStoreFuncs = mfbBSFuncRec;
     return TRUE;
 }
-#endif /* ifndef LOWMEMFTPT */
 
 PixmapPtr
 mfbGetWindowPixmap(pWin)

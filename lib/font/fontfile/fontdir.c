@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/lib/font/fontfile/fontdir.c,v 1.2 2004/04/23 18:44:21 eich Exp $ */
+/* $XdotOrg: xc/lib/font/fontfile/fontdir.c,v 1.6 2005/11/14 20:40:42 ajax Exp $ */
 /* $Xorg: fontdir.c,v 1.4 2001/02/09 02:04:03 xorgcvs Exp $ */
 
 /*
@@ -32,7 +32,10 @@ in this Software without prior written authorization from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
-#include    "fntfilst.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include    <X11/fonts/fntfilst.h>
 #include    <X11/keysym.h>
 
 Bool
@@ -104,13 +107,10 @@ FontFileMakeDir(char *dirName, int size)
     FontDirectoryPtr	dir;
     int			dirlen;
     int			needslash = 0;
-#ifdef FONTDIRATTRIB
     char		*attrib;
     int			attriblen;
-#endif
 
-#ifdef FONTDIRATTRIB
-#ifndef __UNIXOS2__
+#if !defined(__UNIXOS2__) && !defined(WIN32)
     attrib = strchr(dirName, ':');
 #else
     /* OS/2 uses the colon in the drive letter descriptor, skip this */
@@ -123,20 +123,13 @@ FontFileMakeDir(char *dirName, int size)
 	dirlen = strlen(dirName);
 	attriblen = 0;
     }
-#else
-    dirlen = strlen(dirName);
-#endif
     if (dirName[dirlen - 1] != '/')
 #ifdef NCD
     if (dirlen)     /* leave out slash for builtins */
 #endif
 	needslash = 1;
-#ifdef FONTDIRATTRIB
     dir = (FontDirectoryPtr) xalloc(sizeof *dir + dirlen + needslash + 1 +
 				    (attriblen ? attriblen + 1 : 0));
-#else
-    dir = (FontDirectoryPtr) xalloc(sizeof *dir + dirlen + needslash + 1);
-#endif
     if (!dir)
 	return (FontDirectoryPtr)0;
     if (!FontFileInitTable (&dir->scalable, 0))
@@ -153,7 +146,6 @@ FontFileMakeDir(char *dirName, int size)
     dir->directory = (char *) (dir + 1);
     dir->dir_mtime = 0;
     dir->alias_mtime = 0;
-#ifdef FONTDIRATTRIB
     if (attriblen)
 	dir->attributes = dir->directory + dirlen + needslash + 1;
     else
@@ -162,9 +154,6 @@ FontFileMakeDir(char *dirName, int size)
     dir->directory[dirlen] = '\0';
     if (dir->attributes)
 	strcpy(dir->attributes, attrib);
-#else
-    strcpy(dir->directory, dirName);
-#endif
     if (needslash)
 	strcat(dir->directory, "/");
     return dir;
@@ -630,9 +619,7 @@ FontFileAddFontFile (FontDirectoryPtr dir, char *fontName, char *fileName)
     FontScalableExtraPtr    extra;
     FontEntryPtr	    bitmap = 0, scalable;
     Bool		    isscale;
-#ifdef FONTDIRATTRIB
     Bool		    scalable_xlfd;
-#endif
 
     renderer = FontFileMatchRenderer (fileName);
     if (!renderer)
@@ -658,7 +645,6 @@ FontFileAddFontFile (FontDirectoryPtr dir, char *fontName, char *fileName)
 	      (vals.values_supplied & PIXELSIZE_MASK) != PIXELSIZE_ARRAY &&
 	      (vals.values_supplied & POINTSIZE_MASK) != POINTSIZE_ARRAY &&
 	      !(vals.values_supplied & ENHANCEMENT_SPECIFY_MASK);
-#ifdef FONTDIRATTRIB
 #define UNSCALED_ATTRIB "unscaled"
     scalable_xlfd = (isscale &&
 		(((vals.values_supplied & PIXELSIZE_MASK) == 0) ||
@@ -686,7 +672,6 @@ FontFileAddFontFile (FontDirectoryPtr dir, char *fontName, char *fileName)
 		ptr1 = ptr2 + 1;
 	} while (ptr2);
     }
-#endif
     if (!isscale || (vals.values_supplied & SIZE_SPECIFY_MASK))
     {
       /*

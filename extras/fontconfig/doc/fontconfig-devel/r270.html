@@ -1,24 +1,22 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
->FcPatternEqual</TITLE
+>FcPatternDestroy</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
 REL="HOME"
-TITLE="Fontconfig Developers Reference, Version 2.2.2
- "
 HREF="index.html"><LINK
 REL="UP"
 TITLE="FcPattern"
-HREF="x93.html#AEN225"><LINK
+HREF="x93.html#AEN246"><LINK
 REL="PREVIOUS"
-TITLE="FcPatternDestroy"
+TITLE="FcPatternCreate"
 HREF="r249.html"><LINK
 REL="NEXT"
-TITLE="FcPatternEqualSubset"
-HREF="r295.html"></HEAD
+TITLE="FcPatternEqual"
+HREF="r291.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -38,7 +36,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
->Fontconfig Developers Reference, Version 2.2.2</TH
+></TH
 ></TR
 ><TR
 ><TD
@@ -60,7 +58,7 @@ WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
 ><A
-HREF="r295.html"
+HREF="r291.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -71,9 +69,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCPATTERNEQUAL"
+NAME="FCPATTERNDESTROY"
 ></A
->FcPatternEqual</H1
+>FcPatternDestroy</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -81,7 +79,7 @@ NAME="AEN274"
 ></A
 ><H2
 >Name</H2
->FcPatternEqual&nbsp;--&nbsp;Compare patterns</DIV
+>FcPatternDestroy&nbsp;--&nbsp;Destroy a pattern</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -98,14 +96,14 @@ NAME="AEN278"
 ></A
 ><PRE
 CLASS="FUNCSYNOPSISINFO"
->#include &#60;fontconfig.h&#62;
+>#include &lt;fontconfig.h&gt;
 	</PRE
 ><P
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->FcBool FcPatternEqual</CODE
->(const FcPattern *pa, const FcPattern *pb);</CODE
+>void FcPatternDestroy</CODE
+>(FcPattern *p);</CODE
 ></P
 ><P
 ></P
@@ -114,29 +112,23 @@ CLASS="FUNCDEF"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN287"
+NAME="AEN285"
 ></A
 ><H2
 >Description</H2
 ><P
->Returns whether <VAR
-CLASS="PARAMETER"
->pa</VAR
-> and <VAR
-CLASS="PARAMETER"
->pb</VAR
-> are exactly alike.
+>Destroys a pattern, in the process destroying all related values.
 	    </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN292"
+NAME="AEN288"
 ></A
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.2.2
+>Fontconfig version 2.3.2
 
 	    </P
 ></DIV
@@ -174,7 +166,7 @@ WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
 ><A
-HREF="r295.html"
+HREF="r291.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -184,13 +176,13 @@ ACCESSKEY="N"
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FcPatternDestroy</TD
+>FcPatternCreate</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN225"
+HREF="x93.html#AEN246"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -198,7 +190,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->FcPatternEqualSubset</TD
+>FcPatternEqual</TD
 ></TR
 ></TABLE
 ></DIV

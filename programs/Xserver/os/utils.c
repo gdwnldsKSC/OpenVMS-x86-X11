@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/os/utils.c,v 1.6.2.3 2004/12/08 06:34:31 gisburn Exp $ */
+/* $XdotOrg: xc/programs/Xserver/os/utils.c,v 1.21 2005/11/08 06:33:30 jkj Exp $ */
 /* $Xorg: utils.c,v 1.5 2001/02/09 02:05:24 xorgcvs Exp $ */
 /*
 
@@ -52,6 +52,10 @@ OR PERFORMANCE OF THIS SOFTWARE.
 */
 /* $XFree86: xc/programs/Xserver/os/utils.c,v 3.96 2004/01/07 04:16:37 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifdef __CYGWIN__
 #include <stdlib.h>
 #include <signal.h>
@@ -60,11 +64,11 @@ OR PERFORMANCE OF THIS SOFTWARE.
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include <X11/Xwinsock.h>
 #endif
-#include "Xos.h"
+#include <X11/Xos.h>
 #include <stdio.h>
 #include "misc.h"
-#include "X.h"
-#include <X11/Xtrans.h>
+#include <X11/X.h>
+#include <X11/Xtrans/Xtrans.h>
 #include "input.h"
 #include "dixfont.h"
 #include "osdep.h"
@@ -81,7 +85,9 @@ OR PERFORMANCE OF THIS SOFTWARE.
 #undef _POSIX_SOURCE
 #endif
 #endif
+#ifndef WIN32
 #include <sys/wait.h>
+#endif
 #if !defined(SYSV) && !defined(WIN32) && !defined(Lynx) && !defined(QNX4)
 #include <sys/resource.h>
 #endif
@@ -110,21 +116,22 @@ OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef XKB
-#include "XKBsrv.h"
+#include <X11/extensions/XKBsrv.h>
 #endif
 #ifdef XCSECURITY
 #define _SECURITY_SERVER
-#include "security.h"
+#include <X11/extensions/security.h>
 #endif
 
 #ifdef RENDER
 #include "picture.h"
 #endif
 
-Bool noTestExtensions;
-#ifdef BEZIER
-Bool noBezierExtension = FALSE;
+#ifdef XPRINT
+#include "DiPrint.h"
 #endif
+
+Bool noTestExtensions;
 #ifdef BIGREQS
 Bool noBigReqExtension = FALSE;
 #endif
@@ -187,9 +194,6 @@ Bool noSyncExtension = FALSE;
 #ifdef TOGCUP
 Bool noXcupExtension = FALSE;
 #endif
-#ifdef PEXEXT
-Bool noPexExtension = FALSE;
-#endif
 #ifdef RES
 Bool noResExtension = FALSE;
 #endif
@@ -203,9 +207,6 @@ Bool noXCMiscExtension = FALSE;
 /* Xevie is disabled by default for now until the
  * interface is stable */
 Bool noXevieExtension = TRUE;
-#endif
-#ifdef XIE
-Bool noXie = FALSE;
 #endif
 #ifdef XF86BIGFONT
 Bool noXFree86BigfontExtension = FALSE;
@@ -252,6 +253,7 @@ Bool PanoramiXVisibilityNotifySent = FALSE;
 Bool PanoramiXMapped = FALSE;
 Bool PanoramiXWindowExposureSent = FALSE;
 Bool PanoramiXOneExposeRequest = FALSE;
+Bool PanoramiXExtensionDisabledHack = FALSE;
 #endif
 
 int auditTrailLevel = 1;
@@ -651,6 +653,9 @@ void UseMsg(void)
 #ifdef XCSECURITY
     ErrorF("-sp file               security policy file\n");
 #endif
+#ifdef XPRINT
+    PrinterUseMsg();
+#endif
     ErrorF("-su                    disable any save under support\n");
     ErrorF("-t #                   mouse threshold (pixels)\n");
     ErrorF("-terminate             terminate at server reset\n");
@@ -1031,6 +1036,9 @@ ProcessCommandLine(int argc, char *argv[])
 	else if ( strcmp( argv[i], "-xinerama") == 0){
 	    noPanoramiXExtension = TRUE;
 	}
+	else if ( strcmp( argv[i], "-disablexineramaextension") == 0){
+	    PanoramiXExtensionDisabledHack = TRUE;
+	}
 #endif
 	else if ( strcmp( argv[i], "-x") == 0)
 	{
@@ -1057,7 +1065,7 @@ ProcessCommandLine(int argc, char *argv[])
 	}
 #endif
 #ifdef XPRINT
-	else if ((skip = XprintOptions(argc, argv, i)) != i)
+	else if ((skip = PrinterOptions(argc, argv, i)) != i)
 	{
 	    i = skip - 1;
 	}
@@ -1656,6 +1664,9 @@ OsBlockSignals (void)
 #ifdef SIGTTOU
 	sigaddset (&set, SIGTTOU);
 #endif
+#ifdef SIGCHLD
+	sigaddset (&set, SIGCHLD);
+#endif
 	sigprocmask (SIG_BLOCK, &set, &PreviousSignalMask);
     }
 #endif
@@ -1974,7 +1985,11 @@ Fclose(pointer iop)
 
 /* Check args and env only if running setuid (euid == 0 && euid != uid) ? */
 #ifndef CHECK_EUID
+#ifndef WIN32
 #define CHECK_EUID 1
+#else
+#define CHECK_EUID 0
+#endif
 #endif
 
 /*
@@ -2042,9 +2057,17 @@ CheckUserParameters(int argc, char **argv, char **envp)
     {
 	/* Check each argv[] */
 	for (i = 1; i < argc; i++) {
-	    if (strlen(argv[i]) > MAX_ARG_LENGTH) {
-		bad = ArgTooLong;
-		break;
+	    if (strcmp(argv[i], "-fp") == 0)
+	    {
+		i++; /* continue with next argument. skip the length check */
+		if (i >= argc)
+		    break;
+	    } else
+	    {
+		if (strlen(argv[i]) > MAX_ARG_LENGTH) {
+		    bad = ArgTooLong;
+		    break;
+		}
 	    }
 	    a = argv[i];
 	    while (*a) {
@@ -2215,3 +2238,53 @@ CheckUserAuthorization(void)
     }
 #endif
 }
+
+#ifdef __SCO__
+#include <fcntl.h>
+
+static void
+lockit (int fd, short what)
+{
+  struct flock lck;
+
+  lck.l_whence = 0;
+  lck.l_start = 0;
+  lck.l_len = 1;
+  lck.l_type = what;
+
+  (void)fcntl (fd, F_SETLKW, &lck);
+}
+
+/* SCO OpenServer 5 lacks pread/pwrite. Emulate them. */
+ssize_t
+pread (int fd, void *buf, size_t nbytes, off_t offset)
+{
+  off_t saved;
+  ssize_t ret;
+
+  lockit (fd, F_RDLCK);
+  saved = lseek (fd, 0, SEEK_CUR);
+  lseek (fd, offset, SEEK_SET);
+  ret = read (fd, buf, nbytes);
+  lseek (fd, saved, SEEK_SET);
+  lockit (fd, F_UNLCK);
+
+  return ret;
+}
+
+ssize_t
+pwrite (int fd, const void *buf, size_t nbytes, off_t offset)
+{
+  off_t saved;
+  ssize_t ret;
+
+  lockit (fd, F_WRLCK);
+  saved = lseek (fd, 0, SEEK_CUR);
+  lseek (fd, offset, SEEK_SET);
+  ret = write (fd, buf, nbytes);
+  lseek (fd, saved, SEEK_SET);
+  lockit (fd, F_UNLCK);
+
+  return ret;
+}
+#endif /* __SCO__ */

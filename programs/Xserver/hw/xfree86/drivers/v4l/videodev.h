@@ -9,7 +9,7 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/v4l/videodev.h,v 1.7tsi Exp $ */
 
-#include "Xmd.h"
+#include <X11/Xmd.h>
 
 #define VID_TYPE_CAPTURE	1	/* Can capture */
 #define VID_TYPE_TUNER		2	/* Can tune */

@@ -40,6 +40,9 @@
 The included files are:
 */
  
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "objects.h"
 #include "spaces.h"
 #include "paths.h"

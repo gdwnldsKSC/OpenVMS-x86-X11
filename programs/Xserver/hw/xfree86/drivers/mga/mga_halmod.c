@@ -1,4 +1,8 @@
 /* $XFree86$ */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86Module.h"
 
 #ifdef XFree86LOADER
@@ -27,7 +31,7 @@ static XF86ModuleVersionInfo halVersRec =
  * This is the module init data.
  * Its name has to be the driver name followed by ModuleData.
  */
-XF86ModuleData mga_halModuleData = { &halVersRec, halSetup, NULL };
+_X_EXPORT XF86ModuleData mga_halModuleData = { &halVersRec, halSetup, NULL };
 
 static pointer
 halSetup(pointer module, pointer opts, int *errmaj, int *errmin)

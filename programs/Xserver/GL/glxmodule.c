@@ -1,4 +1,3 @@
-
 /**************************************************************************
 
 Copyright 1998-1999 Precision Insight, Inc., Cedar Park, Texas.
@@ -33,9 +32,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "xf86Module.h"
 #include "colormap.h"
 #include "micmap.h"
+#include "globals.h"
 
 static MODULESETUPPROTO(glxSetup);
 
@@ -49,7 +53,7 @@ ExtensionModule GLXExt =
 {
     GlxExtensionInit,
     "GLX",
-    NULL,
+    &noGlxExtension,
     NULL,
     initdeps
 };
@@ -62,7 +66,6 @@ static const char *glcoreSymbols[] = {
     "__glConvolutionParameteriv_size",
     "__glDDXExtensionInfo",
     "__glDDXScreenInfo",
-    "__glEvalComputeK",
     "__glFloorLog2",
     "__glFogfv_size",
     "__glFogiv_size",

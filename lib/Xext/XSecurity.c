@@ -26,6 +26,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xext/XSecurity.c,v 1.5 2002/10/16 00:37:27 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xlibint.h>
 #include <stdio.h>
 #include <X11/extensions/Xext.h>

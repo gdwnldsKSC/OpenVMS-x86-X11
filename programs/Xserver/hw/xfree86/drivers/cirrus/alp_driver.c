@@ -11,6 +11,10 @@
  *    Guy DESBIEF
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/cirrus/alp_driver.c,v 1.35 2003/11/03 05:11:09 tsi Exp $ */
 
 /* All drivers should typically include these */
@@ -66,7 +70,7 @@
 #include "alp.h"
 
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 
 #ifdef ALPPROBEI2C
 /* For debugging... should go away. */
@@ -250,7 +254,11 @@ static XF86ModuleVersionInfo alpVersRec =
  * This is the module init data.
  * Its name has to be the driver name followed by ModuleData.
  */
-XF86ModuleData cirrus_alpineModuleData = { &alpVersRec, alpSetup, NULL };
+_X_EXPORT XF86ModuleData cirrus_alpineModuleData = {
+    &alpVersRec,
+    alpSetup,
+    NULL
+};
 
 static pointer
 alpSetup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -267,13 +275,13 @@ alpSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 
 #endif /* XFree86LOADER */
 
-const OptionInfoRec *
+_X_EXPORT const OptionInfoRec *
 AlpAvailableOptions(int chipid)
 {
     return CirOptions;
 }
 
-ScrnInfoPtr
+_X_EXPORT ScrnInfoPtr
 AlpProbe(int entity)
 {
     ScrnInfoPtr pScrn = NULL;

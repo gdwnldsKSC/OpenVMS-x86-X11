@@ -33,6 +33,9 @@ Equipment Corporation.
  */
 
 #define NEED_REPLIES
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xlibint.h>
 #include <X11/extensions/dpms.h>
 #include <X11/extensions/dpmsstr.h>

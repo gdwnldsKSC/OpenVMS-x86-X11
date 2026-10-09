@@ -293,6 +293,7 @@ static GLboolean radeon_run_tcl_render( GLcontext *ctx,
    radeonContextPtr rmesa = RADEON_CONTEXT(ctx);
    TNLcontext *tnl = TNL_CONTEXT(ctx);
    struct vertex_buffer *VB = &tnl->vb;
+   GLuint inputs = VERT_BIT_POS | VERT_BIT_COLOR0;
    GLuint i;
 
    /* TODO: separate this from the swtnl pipeline 
@@ -303,8 +304,31 @@ static GLboolean radeon_run_tcl_render( GLcontext *ctx,
    if (VB->Count == 0)
       return GL_FALSE;
 
-   radeonReleaseArrays( ctx, stage->changed_inputs );
-   radeonEmitArrays( ctx, stage->inputs );
+   /* NOTE: inputs != tnl->render_inputs - these are the untransformed
+    * inputs.
+    */
+   if (ctx->Light.Enabled) {
+      inputs |= VERT_BIT_NORMAL;
+      if (ctx->_TriangleCaps & DD_SEPARATE_SPECULAR) {
+	 inputs |= VERT_BIT_COLOR1;
+      }
+   }
+
+   if ( ctx->Fog.FogCoordinateSource == GL_FOG_COORD ) {
+      inputs |= VERT_BIT_FOG;
+   }
+
+   for (i = 0 ; i < ctx->Const.MaxTextureUnits; i++) {
+      if (ctx->Texture.Unit[i]._ReallyEnabled) {
+	 if (rmesa->TexGenNeedNormals[i]) {
+	    inputs |= VERT_BIT_NORMAL;
+	 }
+	 inputs |= VERT_BIT_TEX(i);
+      }
+   }
+
+   radeonReleaseArrays( ctx, ~0 );
+   radeonEmitArrays( ctx, inputs );
 
    rmesa->tcl.Elts = VB->Elts;
 
@@ -328,86 +352,15 @@ static GLboolean radeon_run_tcl_render( GLcontext *ctx,
 
 
 
-static void radeon_check_tcl_render( GLcontext *ctx,
-				     struct tnl_pipeline_stage *stage )
-{
-   radeonContextPtr rmesa = RADEON_CONTEXT(ctx);
-   GLuint inputs = VERT_BIT_POS;
-
-   if (ctx->RenderMode == GL_RENDER) {
-      /* Make all this event-driven:
-       */
-      if (ctx->Light.Enabled) {
-	 inputs |= VERT_BIT_NORMAL;
-
-	 if (1 || ctx->Light.ColorMaterialEnabled) {
-	    inputs |= VERT_BIT_COLOR0;
-	 }
-      }
-      else {
-	 inputs |= VERT_BIT_COLOR0;
-	 
-	 if (ctx->_TriangleCaps & DD_SEPARATE_SPECULAR) {
-	    inputs |= VERT_BIT_COLOR1;
-	 }
-      }
-
-      if (ctx->Texture.Unit[0]._ReallyEnabled) {
-	 if (ctx->Texture.Unit[0].TexGenEnabled) {
-	    if (rmesa->TexGenNeedNormals[0]) {
-	       inputs |= VERT_BIT_NORMAL;
-	    }
-	 } else {
-	    inputs |= VERT_BIT_TEX0;
-	 }
-      }
-
-      if (ctx->Texture.Unit[1]._ReallyEnabled) {
-	 if (ctx->Texture.Unit[1].TexGenEnabled) {
-	    if (rmesa->TexGenNeedNormals[1]) {
-	       inputs |= VERT_BIT_NORMAL;
-	    }
-	 } else {
-	    inputs |= VERT_BIT_TEX1;
-	 }
-      }
-
-      stage->inputs = inputs;
-      stage->active = 1;
-   }
-   else
-      stage->active = 0;
-}
-
-static void radeon_init_tcl_render( GLcontext *ctx,
-				    struct tnl_pipeline_stage *stage )
-{
-   stage->check = radeon_check_tcl_render;
-   stage->check( ctx, stage );
-}
-
-static void dtr( struct tnl_pipeline_stage *stage )
-{
-   (void)stage;
-}
-
-
 /* Initial state for tcl stage.  
  */
 const struct tnl_pipeline_stage _radeon_tcl_stage =
 {
    "radeon render",
-   (_DD_NEW_SEPARATE_SPECULAR |
-    _NEW_LIGHT|
-    _NEW_TEXTURE|
-    _NEW_FOG|
-    _NEW_RENDERMODE),		/* re-check (new inputs) */
-   0,				/* re-run (always runs) */
-   GL_TRUE,			/* active */
-   0, 0,			/* inputs (set in check_render), outputs */
-   0, 0,			/* changed_inputs, private */
-   dtr,				/* destructor */
-   radeon_init_tcl_render,	/* check - initially set to alloc data */
+   NULL,
+   NULL,
+   NULL,
+   NULL,
    radeon_run_tcl_render	/* run */
 };
 
@@ -472,7 +425,7 @@ static void transition_to_hwtnl( GLcontext *ctx )
    if ( rmesa->dma.flush )			
       rmesa->dma.flush( rmesa );	
 
-   rmesa->dma.flush = 0;
+   rmesa->dma.flush = NULL;
    rmesa->swtcl.vertex_format = 0;
    
    if (rmesa->swtcl.indexed_verts.buf) 
@@ -491,7 +444,10 @@ static char *fallbackStrings[] = {
    "Texgen unit 0",
    "Texgen unit 1",
    "Texgen unit 2",
-   "User disable"
+   "User disable",
+   "texture rectangle unit 0",
+   "texture rectangle unit 1",
+   "texture rectangle unit 2"
 };
 
 

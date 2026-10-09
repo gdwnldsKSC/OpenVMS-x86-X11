@@ -112,10 +112,10 @@ SOFTWARE.
 #endif
 
 #ifdef WIN32
-#define BOOL wBOOL
 #include <windows.h>
-#undef BOOL
 #define FileName(file) file.cFileName
+#undef TEXT
+#undef ALTERNATE
 #else
 #define FileName(file) file->d_name
 #ifndef X_NOT_POSIX
@@ -275,7 +275,7 @@ AddDirectory(char *head,char *ptrn,char *rest,char *map)
 	if (map!=NULL) {
 	    tmp= strchr(tmp,')');
 	    if ((tmp==NULL)||(tmp[1]!='\0')) {
-		ERROR("File and map must have the format file(map)\n");
+		ERROR1("File and map must have the format file(map)\n");
 		return 0;
 	    }
 	    *map= '\0'; map++;
@@ -365,7 +365,7 @@ char 	*str,*head,*ptrn,*rest= NULL;
     }
     if(((rest && ptrn)&&((strchr(ptrn,'(')!=NULL)||(strchr(ptrn,')')!=NULL)))||
 	(head && ((strchr(head,'(')!=NULL)||(strchr(head,')')!=NULL)))) {
-	ERROR("Files/maps to list must have the form file(map)\n");
+	ERROR1("Files/maps to list must have the form file(map)\n");
 	ACTION("Illegal specifier ignored\n");
 	return 0;
     }
@@ -400,7 +400,7 @@ unsigned	oldWarningLevel;
 char *		mapName;
 
     if (nFilesListed<1) {
-	ERROR("Must specify at least one file or pattern to list\n");
+	ERROR1("Must specify at least one file or pattern to list\n");
 	return 0;
     }
     if ((!out_name)||((out_name[0]=='-')&&(out_name[1]=='\0')))

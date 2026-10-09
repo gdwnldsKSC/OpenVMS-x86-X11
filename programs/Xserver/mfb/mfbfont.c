@@ -45,11 +45,15 @@ SOFTWARE.
 
 */
 /* $Xorg: mfbfont.c,v 1.4 2001/02/09 02:05:18 xorgcvs Exp $ */
-#include "X.h"
-#include "Xmd.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xmd.h>
+#include <X11/Xproto.h>
 #include "mfb.h"
-#include "fontstruct.h"
+#include <X11/fonts/fontstruct.h>
 #include "dixfontstr.h"
 #include "scrnintstr.h"
 
@@ -62,6 +66,12 @@ mfbRealizeFont( pscr, pFont)
     return (TRUE);
 }
 
+mfbRealizeFontProc *
+mfbRealizeFontWeak(void)
+{
+    return mfbRealizeFont;
+}
+
 /*ARGSUSED*/
 Bool
 mfbUnrealizeFont( pscr, pFont)
@@ -69,4 +79,10 @@ mfbUnrealizeFont( pscr, pFont)
     FontPtr	pFont;
 {
     return (TRUE);
+}
+
+mfbUnrealizeFontProc *
+mfbUnrealizeFontWeak(void)
+{
+    return mfbUnrealizeFont;
 }

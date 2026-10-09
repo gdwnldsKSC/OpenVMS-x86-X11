@@ -285,7 +285,7 @@ get_window_id(Display *dpy, int screen, int button, char *msg)
 #define MASK (ButtonPressMask | ButtonReleaseMask)
 
     root = RootWindow (dpy, screen);
-    cursor = XCreateFontCursor (dpy, XC_draped_box);
+    cursor = XCreateFontCursor (dpy, XC_pirate);
     if (cursor == None) {
 	fprintf (stderr, "%s:  unable to create selection cursor\n",
 		 ProgramName);

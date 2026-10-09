@@ -1,7 +1,7 @@
 /*
  * $XFree86: xc/include/extensions/render.h,v 1.10 2002/11/06 22:47:49 keithp Exp $
  *
- * Copyright © 2000 SuSE, Inc.
+ * Copyright Â© 2000 SuSE, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL SuSE
  * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN 
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * Author:  Keith Packard, SuSE, Inc.
@@ -33,7 +33,7 @@ typedef unsigned long	PictFormat;
 
 #define RENDER_NAME	"RENDER"
 #define RENDER_MAJOR	0
-#define RENDER_MINOR	9
+#define RENDER_MINOR	10
 
 #define X_RenderQueryVersion		    0
 #define X_RenderQueryPictFormats	    1
@@ -72,7 +72,12 @@ typedef unsigned long	PictFormat;
 #define X_RenderCreateAnimCursor	    31
 /* 0.9 */
 #define X_RenderAddTraps		    32
-#define RenderNumberRequests		    (X_RenderAddTraps+1)
+/* 0.10 */
+#define X_RenderCreateSolidFill             33
+#define X_RenderCreateLinearGradient        34
+#define X_RenderCreateRadialGradient        35
+#define X_RenderCreateConicalGradient       36
+#define RenderNumberRequests		    (X_RenderCreateConicalGradient+1)
 
 #define BadPictFormat			    0
 #define BadPicture			    1
@@ -158,6 +163,8 @@ typedef unsigned long	PictFormat;
 /* Filters included in 0.6 */
 #define FilterNearest			    "nearest"
 #define FilterBilinear			    "bilinear"
+/* Filters included in 0.10 */
+#define FilterConvolution		    "convolution"
 
 #define FilterFast			    "fast"
 #define FilterGood			    "good"
@@ -172,5 +179,11 @@ typedef unsigned long	PictFormat;
 #define SubPixelVerticalRGB		    3
 #define SubPixelVerticalBGR		    4
 #define SubPixelNone			    5
+
+/* Extended repeat attributes included in 0.10 */
+#define RepeatNone                          0
+#define RepeatNormal                        1
+#define RepeatPad                           2
+#define RepeatReflect                       3
 
 #endif	/* _RENDER_H_ */

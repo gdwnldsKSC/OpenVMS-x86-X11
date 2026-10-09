@@ -6,7 +6,7 @@
 .ds xL Xlib \(em C Language X Interface
 .ds xC Inter-Client Communication Conventions Manual
 .ds xP X Window System Protocol
-.ds Rn 6.8
+.ds Rn 6.9/7.0
 .ds Vn 2.2
 .ds oI Must be of class Object or any subclass thereof.
 .ds rI Must be of class RectObj or any subclass thereof.

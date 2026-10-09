@@ -59,7 +59,7 @@ dst.S: src.S							@@\
 	$(CP) $? $@						@@\
 								@@\
 dst.o: dst.S							@@\
-	AssembleObject(flags)					@@\
+	AssembleObject(dst,flags)				@@\
 								@@\
 dst.i: dst.S							@@\
 	CPPOnlyAsm(dst,flags)					@@\

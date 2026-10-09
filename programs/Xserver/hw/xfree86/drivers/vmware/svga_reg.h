@@ -1,7 +1,7 @@
 /* **********************************************************
  * Copyright (C) 1998-2001 VMware, Inc.
  * All Rights Reserved
- * $Id$
+ * $Id: svga_reg.h,v 1.4 2005/09/23 02:55:25 nolan Exp $
  * **********************************************************/
 
 /*
@@ -15,10 +15,8 @@
 #define _SVGA_REG_H_
 
 #define INCLUDE_ALLOW_USERLEVEL
-#define INCLUDE_ALLOW_MONITOR
+#define INCLUDE_ALLOW_VMMEXT
 #include "includeCheck.h"
-
-#include "svga_limits.h"
 
 /*
  * Memory and port addresses and fundamental constants
@@ -31,19 +29,17 @@
 #define SVGA_MAX_WIDTH			2360
 #define SVGA_MAX_HEIGHT			1770
 #define SVGA_MAX_BITS_PER_PIXEL		32
+#define SVGA_MAX_DEPTH                  24
 
-#define PAGE_SHIFT 12
 #define SVGA_FB_MAX_SIZE \
    ((((SVGA_MAX_WIDTH * SVGA_MAX_HEIGHT *                                    \
        SVGA_MAX_BITS_PER_PIXEL / 8) >> PAGE_SHIFT) + 1) << PAGE_SHIFT)
 
-#if SVGA_FB_MAX_SIZE > SVGA_VRAM_SIZE
-#error "Bad SVGA maximum sizes"
-#endif
 #define SVGA_MAX_PSEUDOCOLOR_DEPTH	8
 #define SVGA_MAX_PSEUDOCOLORS		(1 << SVGA_MAX_PSEUDOCOLOR_DEPTH)
+#define SVGA_NUM_PALETTE_REGS           (3 * SVGA_MAX_PSEUDOCOLORS)
 
-#define SVGA_MAGIC         0x900000
+#define SVGA_MAGIC         0x900000UL
 #define SVGA_MAKE_ID(ver)  (SVGA_MAGIC << 8 | (ver))
 
 /* Version 2 let the address of the frame buffer be unsigned on Win32 */
@@ -104,6 +100,8 @@ enum {
    SVGA_REG_VRAM_SIZE = 15,
    SVGA_REG_FB_SIZE = 16,
 
+   /* ID 0 implementation only had the above registers, then the palette */
+
    SVGA_REG_CAPABILITIES = 17,
    SVGA_REG_MEM_START = 18,	   /* Memory for command FIFO and bitmaps */
    SVGA_REG_MEM_SIZE = 19,
@@ -116,10 +114,18 @@ enum {
    SVGA_REG_CURSOR_Y = 26,	   /* Set cursor Y position */
    SVGA_REG_CURSOR_ON = 27,	   /* Turn cursor on/off */
    SVGA_REG_HOST_BITS_PER_PIXEL = 28, /* Current bpp in the host */
+   SVGA_REG_SCRATCH_SIZE = 29,     /* Number of scratch registers */
+   SVGA_REG_MEM_REGS = 30,         /* Number of FIFO registers */
 
-   SVGA_REG_TOP = 30,		   /* Must be 1 greater than the last register */
+   SVGA_REG_TOP = 31,		   /* Must be 1 more than the last register */
 
-   SVGA_PALETTE_BASE = 1024	   /* Base of SVGA color map */ 
+   SVGA_PALETTE_BASE = 1024,	   /* Base of SVGA color map */
+   /* Next 768 (== 256*3) registers exist for colormap */
+   SVGA_SCRATCH_BASE = SVGA_PALETTE_BASE + SVGA_NUM_PALETTE_REGS
+                                   /* Base of scratch registers */
+   /* Next reg[SVGA_REG_SCRATCH_SIZE] registers exist for scratch usage:
+      First 4 are reserved for VESA BIOS Extension; any remaining are for
+      the use of the current SVGA driver. */
 };
 
 
@@ -142,7 +148,8 @@ enum {
 #define SVGA_CAP_GLYPH_CLIPPING     0x0800
 #define SVGA_CAP_OFFSCREEN_1        0x1000
 #define SVGA_CAP_ALPHA_BLEND        0x2000
-
+#define SVGA_CAP_3D                 0x4000
+#define SVGA_CAP_EXTENDED_FIFO      0x8000
 
 /*
  *  Raster op codes (same encoding as X) used by FIFO drivers.
@@ -168,7 +175,7 @@ enum {
 
 #define SVGA_NUM_SUPPORTED_ROPS   16
 #define SVGA_ROP_ALL            (MASK(SVGA_NUM_SUPPORTED_ROPS))
-#define SVGA_IS_VALID_ROP(rop)  (rop >= 0 && rop < SVGA_NUM_SUPPORTED_ROPS)
+#define SVGA_IS_VALID_ROP(rop)  (rop < SVGA_NUM_SUPPORTED_ROPS)
 
 /*
  *  Ops
@@ -235,20 +242,62 @@ enum {
 #define SVGA_BLENDFLAG_ALL                      (MASK(SVGA_NUM_BLENDFLAGS))
 #define SVGA_IS_VALID_BLENDFLAG(flag)           ((flag & ~SVGA_BLENDFLAG_ALL) == 0)
 
-/*
- *  Memory area offsets (viewed as an array of 32-bit words)
- */
 
 /*
- *  The distance from MIN to MAX must be at least 10K
+ *  FIFO offsets (viewed as an array of 32-bit words)
  */
 
-#define	 SVGA_FIFO_MIN	      0
-#define	 SVGA_FIFO_MAX	      1
-#define	 SVGA_FIFO_NEXT_CMD   2
-#define	 SVGA_FIFO_STOP	      3
+enum {
+   /*
+    * The original defined FIFO offsets
+    */
 
-#define	 SVGA_FIFO_USER_DEFINED	    4
+   SVGA_FIFO_MIN = 0,
+   SVGA_FIFO_MAX,       /* The distance from MIN to MAX must be at least 10K */
+   SVGA_FIFO_NEXT_CMD,
+   SVGA_FIFO_STOP,
+
+   /*
+    * Additional offsets added as of SVGA_CAP_EXTENDED_FIFO
+    */
+
+   SVGA_FIFO_CAPABILITIES = 4,
+   SVGA_FIFO_FLAGS,
+   SVGA_FIFO_FENCE,
+   SVGA_FIFO_3D_HWVERSION,     /* Check SVGA3dHardwareVersion in svga3d_reg.h */
+   SVGA_FIFO_PITCHLOCK,
+
+   /*
+    * Always keep this last.  It's not an offset with semantic value, but
+    * rather a convenient way to produce the value of fifo[SVGA_FIFO_NUM_REGS]
+    */
+
+   SVGA_FIFO_NUM_REGS
+};
+
+/*
+ * FIFO Capabilities
+ *
+ *      Fence -- Fence register and command are supported
+ *      Accel Front -- Front buffer only commands are supported
+ *      Pitch Lock -- Pitch lock register is supported
+ */
+
+#define SVGA_FIFO_CAP_NONE                  0
+#define SVGA_FIFO_CAP_FENCE             (1<<0)
+#define SVGA_FIFO_CAP_ACCELFRONT        (1<<1)
+#define SVGA_FIFO_CAP_PITCHLOCK         (1<<2)
+
+
+/*
+ * FIFO Flags
+ *
+ *      Accel Front -- Driver should use front buffer only commands
+ */
+
+#define SVGA_FIFO_FLAG_NONE                 0
+#define SVGA_FIFO_FLAG_ACCELFRONT       (1<<0)
+
 
 /*
  *  Drawing object ID's, in the range 0 to SVGA_MAX_ID
@@ -267,16 +316,6 @@ enum {
 #define SVGA_PIXMAP_SCANLINE_SIZE(w,bpp) (( ((w)*(bpp))+31 ) >> 5)
 #define SVGA_GLYPH_SIZE(w,h) ((((((w) + 7) >> 3) * (h)) + 3) >> 2)
 #define SVGA_GLYPH_SCANLINE_SIZE(w) (((w) + 7) >> 3)
-
-/*
- * Get the width and height of VRAM in the current mode (for offscreen memory)
- */
-#define SVGA_VRAM_WIDTH_HEIGHT(width /* out */, height /* out */) { \
-   uint32 pitch = svga->reg[SVGA_REG_BYTES_PER_LINE]; \
-   width = (pitch * 8) / ((svga->reg[SVGA_REG_BITS_PER_PIXEL] + 7) & ~7); \
-   height = (svga->reg[SVGA_REG_VRAM_SIZE] - \
-                    svga->reg[SVGA_REG_FB_OFFSET]) / pitch; \
-}
 
 /*
  *  Increment from one scanline to the next of a bitmap or pixmap
@@ -418,39 +457,64 @@ enum {
            destX, destY, w, h, op (SVGA_BLENDOP*), flags (SVGA_BLENDFLAGS*), 
            param1, param2 */
 
-#define	SVGA_CMD_MAX			  29
+#define	 SVGA_CMD_FRONT_ROP_FILL          29
+         /* FIFO layout:
+            Color, X, Y, Width, Height, ROP */
 
-/* SURFACE_ALPHA_BLEND currently has the most (non-data) arguments: 12 */
-#define SVGA_CMD_MAX_ARGS                 12
+#define	 SVGA_CMD_FENCE                   30
+         /* FIFO layout:
+            Fence value */
 
+#define	SVGA_CMD_MAX			  31
+
+#define SVGA_CMD_MAX_ARGS                 64
 
 /*
- * A sync request is sent via a non-zero write to the SVGA_REG_SYNC
- * register.  In devel builds, the driver will write a specific value
- * indicating exactly why the sync is necessary
+ * Location and size of SVGA frame buffer and the FIFO.
  */
-enum {
-   SVGA_SYNC_INVALIDREASON = 0,     /* Don't ever write a zero */
-   SVGA_SYNC_GENERIC = 1,           /* Legacy drivers will always write a 1 */
-   SVGA_SYNC_FIFOFULL = 2,          /* Need to drain FIFO for next write */
-   SVGA_SYNC_FB_WRITE = 3,          /* About write to shadow frame buffer (generic) */
-   SVGA_SYNC_FB_BITBLT = 4,         /* Unaccelerated DrvBitBlt */
-   SVGA_SYNC_FB_COPYBITS = 5,       /* Unacclerated DrvCopyBits bits */
-   SVGA_SYNC_FB_FILLPATH = 6,       /* Unacclerated DrvFillPath */
-   SVGA_SYNC_FB_LINETO = 7,         /* Unacclerated DrvLineTo */
-   SVGA_SYNC_FB_PAINT = 8,          /* Unacclerated DrvPaint */
-   SVGA_SYNC_FB_STRETCHBLT = 9,     /* Unacclerated DrvStretchBlt */
-   SVGA_SYNC_FB_STROKEFILL = 10,    /* Unacclerated DrvStrokeAndFillPath */
-   SVGA_SYNC_FB_STROKE = 11,        /* Unacclerated DrvStrokePath */
-   SVGA_SYNC_FB_TEXTOUT = 12,       /* Unacclerated DrvTextOut */
-   SVGA_SYNC_FB_ALPHABLEND = 13,    /* Unacclerated DrvAlphaBlend */
-   SVGA_SYNC_FB_GRADIENT = 14,      /* Unacclerated DrvGradientFill */
-   SVGA_SYNC_FB_PLGBLT = 15,        /* Unacclerated DrvPlgBlt */
-   SVGA_SYNC_FB_STRETCHROP = 16,    /* Unacclerated DrvStretchBltROP */
-   SVGA_SYNC_FB_TRANSPARENT = 17,   /* Unacclerated DrvTransparentBlt */
-   SVGA_SYNC_FB_NEWCURSOR = 18,     /* Defined a new cursor */
-   SVGA_SYNC_FB_SYNCSURFACE = 19,   /* DrvSynchrnoizeSurface call */
-   SVGA_SYNC_FB_NUM_REASONS         /* Total number of reasons */
-};
+#define SVGA_VRAM_MAX_SIZE     (16 * 1024 * 1024)
+
+#define SVGA_VRAM_SIZE_WS       (16 * 1024 * 1024) // 16 MB
+#define SVGA_MEM_SIZE_WS        (2  * 1024 * 1024) // 2  MB
+#define SVGA_VRAM_SIZE_SERVER   (4  * 1024 * 1024) // 4  MB
+#define SVGA_MEM_SIZE_SERVER    (256 * 1024)       // 256 KB
+
+#if /* defined(VMX86_WGS) || */ defined(VMX86_SERVER)
+#define SVGA_VRAM_SIZE         SVGA_VRAM_SIZE_SERVER
+#define SVGA_MEM_SIZE          SVGA_MEM_SIZE_SERVER
+#else
+#define SVGA_VRAM_SIZE         SVGA_VRAM_SIZE_WS
+#define SVGA_MEM_SIZE          SVGA_MEM_SIZE_WS
+#endif
+
+/*
+ * SVGA_FB_START is the default starting address of the SVGA frame
+ * buffer in the guest's physical address space.
+ * SVGA_FB_START_BIGMEM is the starting address of the SVGA frame
+ * buffer for VMs that have a large amount of physical memory.
+ *
+ * The address of SVGA_FB_START is set to 2GB - (SVGA_FB_MAX_SIZE + SVGA_MEM_SIZE), 
+ * thus the SVGA frame buffer sits at [SVGA_FB_START .. 2GB-1] in the
+ * physical address space.  Our older SVGA drivers for NT treat the
+ * address of the frame buffer as a signed integer.  For backwards
+ * compatibility, we keep the default location of the frame buffer
+ * at under 2GB in the address space.  This restricts VMs to have "only"
+ * up to ~2031MB (i.e., up to SVGA_FB_START) of physical memory.
+ *
+ * For VMs that want more memory than the ~2031MB, we place the SVGA
+ * frame buffer at SVGA_FB_START_BIGMEM.  This allows VMs to have up
+ * to 3584MB, at least as far as the SVGA frame buffer is concerned
+ * (note that there may be other issues that limit the VM memory
+ * size).  PCI devices use high memory addresses, so we have to put
+ * SVGA_FB_START_BIGMEM low enough so that it doesn't overlap with any
+ * of these devices.  Placing SVGA_FB_START_BIGMEM at 0xE0000000
+ * should leave plenty of room for the PCI devices.
+ *
+ * NOTE: All of that is only true for the 0710 chipset.  As of the 0405
+ * chipset, the framebuffer start is determined solely based on the value
+ * the guest BIOS or OS programs into the PCI base address registers.
+ */
+#define SVGA_FB_LEGACY_START		0x7EFC0000
+#define SVGA_FB_LEGACY_START_BIGMEM	0xE0000000
 
 #endif

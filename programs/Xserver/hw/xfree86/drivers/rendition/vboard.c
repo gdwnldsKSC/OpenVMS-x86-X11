@@ -3,13 +3,17 @@
  * includes
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "rendition.h"
 #include "v1krisc.h"
 #include "vboard.h"
 #include "vloaduc.h"
 #include "vos.h"
 
-#if defined(SCO) || defined(SCO325)
+#if !defined(PATH_MAX)
 #define PATH_MAX 1024
 #endif
 

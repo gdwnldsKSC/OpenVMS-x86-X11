@@ -47,8 +47,8 @@ HandleLargeRequest(
 int nextFreeClientID; /* always MIN free client ID */
 int nClients;	/* number active clients */
 char *display_name = 0;
-char dispatchException = 0;
-char isItTimeToYield;
+volatile char dispatchException = 0;
+volatile char isItTimeToYield;
 Bool lbxUseLbx = TRUE;
 Bool lbxCompressImages = TRUE;
 Bool lbxDoAtomShortCircuiting = TRUE;

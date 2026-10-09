@@ -29,8 +29,13 @@
  *              Earle F. Philhower III
  */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
+#ifdef __CYGWIN__
 #include <sys/cygwin.h>
+#endif
 #include <shellapi.h>
 #include "winprefs.h"
 
@@ -44,7 +49,9 @@ extern HWND			g_hDlgDepthChange;
 extern HWND			g_hDlgExit;
 extern HWND			g_hDlgAbout;
 extern WINPREFS			pref;
+#ifdef XWIN_CLIPBOARD
 extern Bool			g_fClipboardStarted;
+#endif
 extern Bool			g_fSoftwareCursor;
 
 
@@ -52,15 +59,15 @@ extern Bool			g_fSoftwareCursor;
  * Local function prototypes
  */
 
-static BOOL CALLBACK
+static wBOOL CALLBACK
 winExitDlgProc (HWND hDialog, UINT message,
 		WPARAM wParam, LPARAM lParam);
 
-static BOOL CALLBACK
+static wBOOL CALLBACK
 winChangeDepthDlgProc (HWND hDialog, UINT message,
 		       WPARAM wParam, LPARAM lParam);
 
-static BOOL CALLBACK
+static wBOOL CALLBACK
 winAboutDlgProc (HWND hDialog, UINT message,
 		 WPARAM wParam, LPARAM lParam);
 
@@ -217,11 +224,15 @@ winDisplayExitDialog (winPrivScreenPtr pScreenPriv)
   for (i = 1; i < currentMaxClients; i++)
     if (clients[i] != NullClient)	
       liveClients++;
+#if defined(XWIN_MULTIWINDOW)
   /* Count down server internal clients */
   if (pScreenPriv->pScreenInfo->fMultiWindow)
     liveClients -= 2; /* multiwindow window manager & XMsgProc  */
+#endif
+#if defined(XWIN_CLIPBOARD)
   if (g_fClipboardStarted)
     liveClients--; /* clipboard manager */
+#endif
 
   /* A user reported that this sometimes drops below zero. just eye-candy. */ 
   if (liveClients < 0)
@@ -287,7 +298,7 @@ winDisplayExitDialog (winPrivScreenPtr pScreenPriv)
  * Exit dialog window procedure
  */
 
-static BOOL CALLBACK
+static wBOOL CALLBACK
 winExitDlgProc (HWND hDialog, UINT message,
 		WPARAM wParam, LPARAM lParam)
 {
@@ -299,7 +310,6 @@ winExitDlgProc (HWND hDialog, UINT message,
     case WM_INITDIALOG:
       {
 	char			*pszConnectedClients;
-	int			iReturn;
 
 	/* Store pointers to private structures for future use */
 	s_pScreenPriv = (winPrivScreenPtr) lParam;
@@ -314,20 +324,17 @@ winExitDlgProc (HWND hDialog, UINT message,
 					MAKEINTRESOURCE(IDI_XWIN)));
 
 	/* Format the connected clients string */
-	iReturn = sprintf (NULL, CONNECTED_CLIENTS_FORMAT,
-			   s_pScreenPriv->iConnectedClients);
-	if (iReturn <= 0)
-	  return TRUE;
-	pszConnectedClients = malloc (iReturn + 1);
+	pszConnectedClients = Xprintf (CONNECTED_CLIENTS_FORMAT,
+            s_pScreenPriv->iConnectedClients);
 	if (!pszConnectedClients)
-	  return TRUE;
-	snprintf (pszConnectedClients, iReturn + 1, CONNECTED_CLIENTS_FORMAT,
-		  s_pScreenPriv->iConnectedClients);
+	    return TRUE;
+     
+        
 	
 	/* Set the number of connected clients */
 	SetWindowText (GetDlgItem (hDialog, IDC_CLIENTS_CONNECTED),
 		       pszConnectedClients);
-	free (pszConnectedClients);
+	xfree (pszConnectedClients);
       }
       return TRUE;
 
@@ -435,7 +442,7 @@ winDisplayDepthChangeDialog (winPrivScreenPtr pScreenPriv)
  * disruptive screen depth changes. 
  */
 
-static BOOL CALLBACK
+static wBOOL CALLBACK
 winChangeDepthDlgProc (HWND hwndDialog, UINT message,
 		       WPARAM wParam, LPARAM lParam)
 {
@@ -590,7 +597,7 @@ winDisplayAboutDialog (winPrivScreenPtr pScreenPriv)
  * Process messages for the about dialog.
  */
 
-static BOOL CALLBACK
+static wBOOL CALLBACK
 winAboutDlgProc (HWND hwndDialog, UINT message,
 		 WPARAM wParam, LPARAM lParam)
 {
@@ -669,13 +676,18 @@ winAboutDlgProc (HWND hwndDialog, UINT message,
 
 	case ID_ABOUT_CHANGELOG:
 	  {
+	    int			iReturn;
+#ifdef __CYGWIN__
 	    const char *	pszCygPath = "/usr/X11R6/share/doc/"
 	      "xorg-x11-xwin/changelog.html";
 	    char		pszWinPath[MAX_PATH + 1];
-	    int			iReturn;
 
 	    /* Convert the POSIX path to a Win32 path */
 	    cygwin_conv_to_win32_path (pszCygPath, pszWinPath);
+#else
+	    const char *	pszWinPath = "http://x.cygwin.com/"
+		    "devel/server/changelog.html";
+#endif
 	    
 	    iReturn = (int) ShellExecute (NULL,
 					  "open",

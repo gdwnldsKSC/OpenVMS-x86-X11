@@ -1,4 +1,5 @@
 /* $Xorg: main.c,v 1.5 2001/02/09 02:03:16 xorgcvs Exp $ */
+/* $XdotOrg: xc/config/makedepend/main.c,v 1.4 2005/07/05 19:02:01 alanc Exp $ */
 /*
 
 Copyright (c) 1993, 1994, 1998 The Open Group
@@ -46,10 +47,6 @@ in this Software without prior written authorization from The Open Group.
 #endif
 
 #include <stdarg.h>
-
-#ifdef MINIX
-#define USE_CHMOD	1
-#endif
 
 #ifdef DEBUG
 int	_debugmask;
@@ -118,10 +115,14 @@ static void setfile_cmdinc(struct filepointer *filep, long count, char **list);
 static void redirect(char *line, char *makefile);
 
 static
-#ifdef SIGNALRETURNSINT
-int
+#ifdef RETSIGTYPE
+RETSIGTYPE
 #else
+# ifdef SIGNALRETURNSINT
+int
+# else
 void
+# endif
 #endif
 catch (int sig)
 {
@@ -142,6 +143,12 @@ catch (int sig)
 #endif
 struct sigaction sig_act;
 #endif /* USGISH */
+
+#ifndef USING_AUTOCONF
+# if !defined(USGISH) && !defined(_SEQUENT_) && !defined(MINIX)
+#  define HAVE_FCHMOD	1
+# endif
+#endif
 
 int
 main(int argc, char *argv[])
@@ -709,10 +716,6 @@ char *getnextline(struct filepointer *filep)
 	if (*bol != '#')
 		bol = NULL;
 done:
-	if (bol && whitespace) {
-		warning("%s:  non-portable whitespace encountered at line %d\n",
-			filep->f_name, lineno);
-	}
 	filep->f_p = p;
 	filep->f_line = lineno;
 #ifdef DEBUG_DUMP
@@ -738,7 +741,17 @@ char *base_name(char *file)
 	return(file);
 }
 
-#if defined(USG) && !defined(CRAY) && !defined(SVR4) && !defined(__UNIXOS2__) && !defined(clipper) && !defined(__clipper__)
+#ifdef USING_AUTOCONF
+# ifndef HAVE_RENAME
+#  define NEED_RENAME
+# endif
+#else /* Imake configured, check known OS'es without rename() */
+# if defined(USG) && !defined(CRAY) && !defined(SVR4) && !defined(__UNIXOS2__) && !defined(clipper) && !defined(__clipper__)
+#  define NEED_RENAME
+# endif
+#endif
+
+#ifdef NEED_RENAME
 int rename (char *from, char *to)
 {
     (void) unlink (to);
@@ -749,7 +762,7 @@ int rename (char *from, char *to)
 	return -1;
     }
 }
-#endif /* USGISH */
+#endif /* NEED_RENAME */
 
 void
 redirect(char *line, char *makefile)
@@ -814,11 +827,11 @@ redirect(char *line, char *makefile)
 	    }
 	}
 	fflush(fdout);
-#if defined(USGISH) || defined(_SEQUENT_) || defined(USE_CHMOD)
+#ifndef HAVE_FCHMOD
 	chmod(makefile, st.st_mode);
 #else
         fchmod(fileno(fdout), st.st_mode);
-#endif /* USGISH */
+#endif /* HAVE_FCHMOD */
 }
 
 void

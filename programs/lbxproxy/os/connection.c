@@ -64,7 +64,7 @@ SOFTWARE.
 /* $XFree86: xc/programs/lbxproxy/os/connection.c,v 1.18 2002/07/06 09:59:17 alanh Exp $ */
 
 #include "misc.h"
-#include <X11/Xtrans.h>
+#include <X11/Xtrans/Xtrans.h>
 #include <sys/param.h>
 #include <stdio.h>
 #include <stdlib.h>			/* atoi */
@@ -762,6 +762,8 @@ CloseDownConnection(client)
 {
     OsCommPtr oc = (OsCommPtr)client->osPrivate;
 
+    if(!oc)
+      return;
     if (oc->output && oc->output->count)
 	FlushClient(client, oc, (char *)NULL, 0);
     ConnectionTranslation[oc->fd] = 0;

@@ -34,6 +34,10 @@ THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *        Matt Sottek <matthew.j.sottek@intel.com>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
@@ -46,7 +50,7 @@ THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "i810.h"
 #include "xf86xv.h"
-#include "Xv.h"
+#include <X11/extensions/Xv.h>
 #include "xaa.h"
 #include "xaalocal.h"
 #include "dixstruct.h"

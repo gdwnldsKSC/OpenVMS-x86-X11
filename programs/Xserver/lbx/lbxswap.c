@@ -47,12 +47,16 @@ in this Software without prior written authorization from The Open Group.
  */
 /* $XFree86: xc/programs/Xserver/lbx/lbxswap.c,v 1.3 2001/01/17 22:37:00 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <sys/types.h>
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
-#include "Xos.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
+#include <X11/Xos.h>
 #include "misc.h"
 #include "os.h"
 #include "dixstruct.h"
@@ -62,9 +66,9 @@ in this Software without prior written authorization from The Open Group.
 #include "swaprep.h"
 #include "propertyst.h"
 #define _XLBX_SERVER_
-#include "lbxstr.h"
+#include <X11/extensions/lbxstr.h>
 #include "lbxserve.h"
-#include "Xfuncproto.h"
+#include <X11/Xfuncproto.h>
 
 #include <stdio.h>
 

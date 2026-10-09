@@ -51,9 +51,12 @@ from The Open Group.
 */
 /* $XFree86: xc/lib/font/Speedo/spglyph.c,v 1.6 2001/01/17 19:43:20 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include	<X11/X.h>	/* for bit order #defines */
 #include	"spint.h"
-#include	"fontutil.h"
+#include	<X11/fonts/fontutil.h>
 
 #undef	CLIP_BBOX_NOISE
 

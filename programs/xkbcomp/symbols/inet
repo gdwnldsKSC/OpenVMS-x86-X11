@@ -1,4 +1,7 @@
- // $XFree86: xc/programs/xkbcomp/symbols/inet,v 1.37 2004/01/09 00:16:03 dawes Exp $
+// $XdotOrg: xc/programs/xkbcomp/symbols/inet,v 1.5 2005/08/12 11:10:11 pascal Exp $
+// $XKeyboardConfig: xkbdesc/symbols/inet,v 1.11 2005/07/15 21:15:22 svu Exp $
+
+// $XFree86: xc/programs/xkbcomp/symbols/inet,v 1.38 2004/01/17 14:59:37 pascal Exp $
 
 // EAK (Easy Access, Internet, Multimedia, PDA) keyboards
 // Copyright (C) 2002 Stanislav Brabec <sbrabec@suse.cz>
@@ -11,19 +14,52 @@
 // Option "XkbLayout"	"my_kb_layout"
 // Option "XkbVariant"	"my_kb_variant"
 // Option "XkbModel"	"my_eak_type"
-// Option "XkbRules"	"xfree86"
+// Option "XkbRules"	"xorg"
 // Simple command line usage:
 // setxkbmap 'my_kb_layout' -variant 'my_kb_variant' -model 'my_eak_type'
 
 // All keyboards listed here should be also mentioned in
 // xc/programs/xkbcomp/rules: xorg, xorg.lst and xorg.xml.
 
-// Acer
+// A4Tech KB-21
+partial alphanumeric_keys
+xkb_symbols "a4techKB21" {
+    // Left side
+    key <I6A>   {       [ XF86Back              ]       };
+    key <I69>   {       [ XF86Forward           ]       };
+    key <I68>   {       [ XF86Stop              ]       };
+    key <I67>   {       [ XF86Refresh           ]       };
+    key <I32>   {       [ XF86HomePage          ]       };
+    key <I65>   {       [ XF86Search            ]       };
 
+    // Middle
+    key <I10>   {       [ XF86AudioPrev         ]       };
+    key <I22>   {       [ XF86AudioPlay, XF86AudioPause ] };
+    key <I24>   {       [ XF86AudioStop, XF86Eject ]    };
+    key <I19>   {       [ XF86AudioNext         ]       };
+
+    // Right side
+    key <I2E>   {       [ XF86AudioLowerVolume  ]       };	
+    key <I30>   {       [ XF86AudioRaiseVolume  ]       };
+    key <I20>   {       [ XF86AudioMute         ]       };
+    key <I66>   {       [ XF86Favorites         ]       };
+    key <I6C>   {       [ XF86Mail              ]       };
+    key <I6B>   {       [ XF86MyComputer        ]       };
+};
+
+// A4 KBS-8. Contributed by ojo at force dot sk
+partial alphanumeric_keys 
+xkb_symbols "a4techKBS8" { 
+    include "inet(a4techKB21)"
+    key <I6D>   {       [ XF86AudioMedia        ]       }; 
+    key <I21>   {       [ XF86Calculator        ]       }; 
+    key <I5F>   {       [ XF86Standby           ]       }; 
+
+};
+
+// Acer AirKey V
 partial alphanumeric_keys
 xkb_symbols "airkey" {
-    name[Group1]= "Acer AirKey V";
-
     key <I18>	{	[ XF86AudioPrev		]	};
     key <I15>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I31>	{	[ XF86AudioStop, XF86Eject ]	};
@@ -40,11 +76,10 @@ xkb_symbols "airkey" {
 
 // Azona
 
+// Azona RF2300 wireless Internet Keyboard
 partial alphanumeric_keys
 xkb_symbols "azonaRF2300" {
     // From Radics Laszlo <garaboncias@mailbox.hu>
-       name[Group1]= "Azona RF2300 wireless Internet Keyboard";
-
     key <I02>   {       [ XF86WWW               ]       };
     key <I17>   {       [ XF86AudioStop         ]       };
     key <I1E>   {       [ XF86AudioRaiseVolume  ]       };
@@ -66,11 +101,8 @@ xkb_symbols "azonaRF2300" {
 };
 
 // ACPI Standard
-
 partial alphanumeric_keys
 xkb_symbols "acpi" {
-    name[Group1]= "ACPI Standard";
-
     key <I5E>	{	[ XF86PowerOff		]	};
     key <I5F>	{	[ XF86Standby		]	};
     key <I63>	{	[ XF86WakeUp		]	};
@@ -79,10 +111,9 @@ xkb_symbols "acpi" {
 
 // Advance
 
+// Advance Scorpius KI
 partial alphanumeric_keys
 xkb_symbols "scorpius" {
-    name[Group1]= "Advance Scorpius KI";
-
     key <I10>	{	[ XF86AudioPrev		]	};
     key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I24>	{	[ XF86AudioStop		]	};
@@ -113,10 +144,9 @@ xkb_symbols "scorpius" {
 
 // Brother
 
+// Brother Internet Keyboard
 partial alphanumeric_keys
 xkb_symbols "brother" {
-    name[Group1]= "Brother Internet Keyboard";
-
     key <I21>	{	[ XF86WWW		]	};
     key <I1E>	{	[ XF86AudioMute		]	};
     key <I68>	{	[ XF86AudioLowerVolume	]	};
@@ -141,10 +171,9 @@ xkb_symbols "brother" {
 
 // BTC
 
+// BTC 5113RF Multimedia
 partial alphanumeric_keys
 xkb_symbols "btc5113rf" {
-    name[Group1]= "BTC 5113RF Multimedia";
-
     key <I30>	{	[ XF86WWW		]	};
     key <I26>	{	[ XF86Back		]	};
     key <I20>	{	[ XF86Favorites		]	};
@@ -162,19 +191,17 @@ xkb_symbols "btc5113rf" {
     key <I63>	{	[ XF86WakeUp		]	};
 };
 
+// BTC 5126T
 partial alphanumeric_keys
 xkb_symbols "btc5126t" {
-    name[Group1]= "BTC 5126T";
-
     key <I30>	{	[ XF86WWW		]	};
     key <I5F>	{	[ XF86Standby		]	};
     key <I2B>	{	[ XF86Mail		]	};
 };
 
+// BTC 9000
 partial alphanumeric_keys
 xkb_symbols "btc9000" {
-    name[Group1]= "BTC 9000";
-
     key <I19>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I22>	{	[ XF86AudioPrev		]	};
     key <I24>	{	[ XF86AudioNext		]	};
@@ -196,10 +223,9 @@ xkb_symbols "btc9000" {
     key <I5E>   {	[ XF86PowerOff		]	};
 };
 
+// BTC 9000A
 partial alphanumeric_keys
 xkb_symbols "btc9000a" {
-    name[Group1]= "BTC 9000A";
-
     key <I19>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I22>	{	[ XF86AudioPrev		]	};
     key <I24>	{	[ XF86AudioNext		]	};
@@ -221,9 +247,8 @@ xkb_symbols "btc9000a" {
     key <I5E>	{	[ XF86PowerOff		]	};
 };
 
+// BTC 9001AH
 xkb_symbols "btc9001ah" {
-    name[Group1]= "BTC 9001AH";
-
     key <I1F>   {       [ XF86AudioPlay, XF86AudioPause ] };
     key <I24>   {       [ XF86AudioPrev         ]       };
     key <I22>   {       [ XF86AudioNext         ]       };
@@ -239,10 +264,9 @@ xkb_symbols "btc9001ah" {
     key <I6C>   {       [ XF86Mail              ]       };
 };
 
+// BTC 5090
 partial alphanumeric_keys
 xkb_symbols "btc5090" {
-    name[Group1]= "BTC 5090";
-
     key <I32>   {       [ XF86WWW               ]       };
     key <I26>   {       [ XF86Start             ]       };
     key <I66>   {       [ XF86Favorites         ]       };
@@ -262,10 +286,9 @@ xkb_symbols "btc5090" {
 
 // Cherry Blue Line
 
+// Cherry Blue Line CyBo@rd
 partial alphanumeric_keys
 xkb_symbols "cherryblue" {
-    name[Group1]= "Cherry Blue Line CyBo@rd";
-
     key <I6A>	{	[ XF86Back		]	};
     key <I69>	{	[ XF86Forward		]	};
     key <I68>	{	[ XF86Stop		]	};
@@ -287,10 +310,50 @@ xkb_symbols "cherryblue" {
     key <I63>	{	[ XF86Standby		]	};
 };
 
+// Cherry CyMotion Master XPress
+partial alphanumeric_keys
+xkb_symbols "cherryblueb" {
+    key <I0B>	{	[ XF86ScrollUp		]	};
+    key <I12>   {       [ XF86ScrollDown        ]       };
+    key <I17>   {       [ XF86Cut               ]       };
+    key <I0A>   {       [ XF86Copy              ]       };
+    key <I18>   {       [ XF86Paste             ]       };
+    key <I71>   {       [ XF86Book              ]       };
+    key <I2C>   {       [ XF86Book              ]       };
+    key <I72>   {       [ XF86Book              ]       };
+    key <I07>   {       [ XF86Forward           ]       };
+    key <I08>   {       [ XF86Back              ]       };
+    key <I2E>   {       [ XF86AudioLowerVolume  ]       };
+    key <I30>   {       [ XF86AudioRaiseVolume  ]       };
+    key <I20>   {       [ XF86AudioMute         ]       };
+    key <I6D>   {       [ XF86AudioMedia        ]       };
+    key <I67>   {       [ XF86AudioRewind       ]       };
+    key <I10>   {       [ XF86Back              ]       };
+    key <I19>   {       [ XF86Forward           ]       };
+    key <I70>   {       [ XF86Eject             ]       };
+    key <I32>   {       [ XF86Finance           ]       };
+    key <I6A>   {       [ XF86Back              ]       };
+    key <I69>   {       [ XF86Forward           ]       };
+    key <I68>   {       [ XF86Stop              ]       };
+    key <FK16>  {       [ XF86Reload            ]       };
+    key <I65>   {       [ XF86Search            ]       };
+    key <I66>   {       [ XF86MyComputer        ]       };
+    key <I02>   {       [ XF86HomePage          ]       };
+    key <I6C>   {       [ XF86Mail              ]       };
+    key <PRSC>  {       [ XF86Terminal          ]       };
+    key <I21>   {       [ XF86Calculator        ]       };
+    key <I1E>   {       [ XF86AudioRaiseVolume  ]       };
+    key <I26>   {       [ XF86AudioMute         ]       };
+    key <I25>   {       [ XF86AudioLowerVolume  ]       };
+    key <XFER>  {       [ XF86Go                ]       };
+    key <I24>   {       [ XF86AudioStop                 ] };
+    key <I22>   {       [ XF86AudioPlay, XF86AudioPause ] };
+    key <I63>   {       [ XF86Standby                   ] };
+};
+
+// Cherry Blue Line CyBo@rd (alternate option)
 partial alphanumeric_keys
 xkb_symbols "cherrybluea" {
-    name[Group1]= "Cherry Blue Line CyBo@rd (alternate option)";
-
     key <I6A>	{	[ XF86Back		]	};
     key <I69>	{	[ XF86Forward		]	};
     key <I68>	{	[ XF86Stop		]	};
@@ -315,10 +378,9 @@ xkb_symbols "cherrybluea" {
 
 // Chicony
 
+// Chicony Internet Keyboard
 partial alphanumeric_keys 
 xkb_symbols "chicony" {
-    name[Group1]= "Chicony Internet Keyboard";
-
     key <I19>	{	[ XF86AudioLowerVolume	]	};
     key <I12>	{	[ XF86AudioMute		]	};
     key <I23>	{	[ XF86AudioRaiseVolume	]	};
@@ -338,10 +400,9 @@ xkb_symbols "chicony" {
     key <I2E>	{	[ XF86LaunchC		]	};
 };
 
+// Chicony KB-9885
 partial alphanumeric_keys
 xkb_symbols "chicony9885" {
-    name[Group1]= "Chicony KB-9885";
-
     key <I19>	{	[ XF86AudioLowerVolume	]	};
     key <I12>	{	[ XF86AudioMute		]	};
     key <I23>	{	[ XF86AudioRaiseVolume	]	};
@@ -364,10 +425,9 @@ xkb_symbols "chicony9885" {
 
 // Compaq
 
+// Compaq Easy Access Keyboard
 partial alphanumeric_keys
 xkb_symbols "compaqeak8" {
-    name[Group1]= "Compaq Easy Access Keyboard";
-
     key <I23>	{	[ XF86WWW		]	};
     key <I1F>	{	[ XF86HomePage		]	};
     key <I1A>	{	[ XF86Search		]	};
@@ -378,10 +438,9 @@ xkb_symbols "compaqeak8" {
     key <I1B>	{	[ XF86News		]	};
 };
 
+// Compaq Internet Keyboard (7 keys)
 partial alphanumeric_keys 
 xkb_symbols "compaqik7" {
-    name[Group1]= "Compaq Internet Keyboard (7 keys)";
-
     key <I1E>	{	[ XF86Mail		]	};
     key <I23>	{	[ Help			]	};
     key <I21>	{	[ XF86Search		]	};
@@ -391,10 +450,9 @@ xkb_symbols "compaqik7" {
     key <I32>	{	[ XF86Shop		]	};
 };
 
+// Compaq Internet Keyboard (13 keys)
 partial alphanumeric_keys
 xkb_symbols "compaqik13" {
-    name[Group1]= "Compaq Internet Keyboard (13 keys)";
-
     key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I24>	{	[ XF86AudioStop		]	};
     key <I10>	{	[ XF86AudioPrev		]	};
@@ -410,10 +468,9 @@ xkb_symbols "compaqik13" {
     key <I32>	{	[ XF86Shop		]	};
 };
 
+// Compaq Internet Keyboard (18 keys)
 partial alphanumeric_keys
 xkb_symbols "compaqik18" {
-    name[Group1]= "Compaq Internet Keyboard (18 keys)";
-
     key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I10>	{	[ XF86AudioPrev		]	};
     key <I19>	{	[ XF86AudioNext		]	};
@@ -437,10 +494,9 @@ xkb_symbols "compaqik18" {
 };
 
 
+// Laptop/notebook Compaq (eg. Armada, Evo) Laptop Keyboard
 partial alphanumeric_keys
 xkb_symbols "armada" {
-    name[Group1]= "Laptop/notebook Compaq (eg. Armada, Evo) Laptop Keyboard";
-
     key <I6F>	{	[ XF86AudioMedia	]	};
     key <I20>	{	[ XF86AudioMute		]	};
     key <I2E>	{	[ XF86AudioLowerVolume	]	};
@@ -451,10 +507,9 @@ xkb_symbols "armada" {
     key <I1E>	{	[ XF86Mail		]	};
 };
 
+// Laptop/notebook Compaq (eg. Presario) Internet Keyboard
 partial alphanumeric_keys
 xkb_symbols "presario" {
-    name[Group1]= "Laptop/notebook Compaq (eg. Presario) Internet Keyboard";
-
     key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I10>	{	[ XF86AudioPrev		]	};
     key <I19>	{	[ XF86AudioNext		]	};
@@ -471,10 +526,9 @@ xkb_symbols "presario" {
     key <I5F>	{	[ XF86Standby		]	};
 };
 
+// Compaq iPaq Keyboard
 partial alphanumeric_keys
 xkb_symbols "ipaq" {
-    name[Group1]= "Compaq iPaq Keyboard";
-
     key <I6C>	{	[ XF86Mail		]	};
     key <I69>	{	[ XF86BackForward	]	};
     key <I6A>	{	[ XF86Q			]	};
@@ -489,8 +543,6 @@ xkb_symbols "ipaq" {
 
 partial alphanumeric_keys
 xkb_symbols "dell" {
-    name[Group1]= "Dell";
-
     key <I12>	{	[ XF86Mail		]	};
     key <I26>	{	[ XF86HomePage		]	};
     key <I1E>	{	[ XF86Search		]	};
@@ -498,10 +550,9 @@ xkb_symbols "dell" {
 };
 
 
+// Laptop/notebook Dell Inspiron 8xxx
 partial alphanumeric_keys
 xkb_symbols "inspiron" {
-    name[Group1]= "Laptop/notebook Dell Inspiron 8xxx";
-
     key <XFER>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <NFER>	{	[ XF86AudioPrev		]	};
     key <I04>	{	[ XF86AudioNext		]	};
@@ -514,10 +565,9 @@ xkb_symbols "inspiron" {
 
 // Dexxa
 
+// Dexxa Wireless Desktop Keyboard
 partial alphanumeric_keys
 xkb_symbols "dexxa" {
-    name[Group1]= "Dexxa Wireless Desktop Keyboard";
-
     key <I67>	{	[ XF86Reload		]	};
     key <I66>	{	[ XF86Favorites		]	};
     key <I65>	{	[ XF86Search		]	};
@@ -532,10 +582,9 @@ xkb_symbols "dexxa" {
 
 // Diamond
 
+// Diamond 9801 / 9802 series
 partial alphanumeric_keys
 xkb_symbols "diamond" {
-    name[Group1]= "Diamond 9801 / 9802 series";
-
     key <I6A>	{	[ XF86Back		]	};
     key <I69>	{	[ XF86Forward		]	};
     key <I68>	{	[ XF86Stop		]	};
@@ -561,12 +610,11 @@ xkb_symbols "diamond" {
 
 // DTK
 
+// DTK2000
 partial alphanumeric_keys
 xkb_symbols "dtk2000" {
     // From Radics Laszlo <garaboncias@mailbox.hu>
     // Describes the extra keys on a DTK2000 Internet keyboard.
-
-    name[Group1]= "DTK2000";
     key <I10>   {       [ XF86AudioPrev         ]       };
     key <I19>   {       [ XF86AudioNext         ]       };
     key <I20>   {       [ XF86AudioMute         ]       };
@@ -593,10 +641,9 @@ xkb_symbols "dtk2000" {
 
 // Ennyah
 
+// Ennyah DKB-1008
 partial alphanumeric_keys
 xkb_symbols "ennyah_dkb1008" {
-    name[Group1]= "Ennyah DKB-1008";
-
     key <I32>	{	[ XF86HomePage		]	};
     key <I6C>	{	[ XF86Mail		]	};
     key <I6A>	{	[ XF86Back		]	};
@@ -621,10 +668,9 @@ xkb_symbols "ennyah_dkb1008" {
 
 // Genius
 
+// Genius Comfy KB-16M / Genius MM Keyboard KWD-910
 partial alphanumeric_keys
 xkb_symbols "genius" {
-    name[Group1]= "Genius Comfy KB-16M / Genius MM Keyboard KWD-910";
-
     key <I23>	{	[ XF86AudioPrev		]	};
     key <I22>   {	[ XF86AudioPlay, XF86AudioPause ] };
     key <I24>   {	[ XF86AudioStop		]	};
@@ -643,13 +689,11 @@ xkb_symbols "genius" {
     key <I63>   {	[ XF86WakeUp		]	};
 };
 
+// GeniusComfy21e
 partial alphanumeric_keys
 xkb_symbols "geniuscomfy2" {
     // From Radics Laszlo <garaboncias@mailbox.hu>
     // Describes the extra keys on a Genius Comfy KB-21e-Scroll
-
-    name[Group1]= "GeniusComfy21e";
-
     key <I10>   {       [ XF86AudioPrev         ]       };
     key <I13>   {       [ XF86Word              ]       };
     key <I14>   {       [ XF86Excel             ]       };
@@ -674,12 +718,34 @@ xkb_symbols "geniuscomfy2" {
     key <I6D>   {       [ XF86AudioMedia        ]       };
 };
 
+
+// Gyration
+
+partial alphanumeric_keys
+xkb_symbols "gyration" {
+    key <I24>	{	[ XF86AudioPrev		]	};
+    key <I1F>	{	[ XF86AudioPlay, XF86AudioPause ] };
+    key <I17>	{	[ XF86AudioStop		]	};
+    key <I22>	{	[ XF86AudioNext		]	};
+    key <I25>	{	[ XF86AudioLowerVolume	]	};
+    key <I1E>	{	[ XF86AudioRaiseVolume	]	};
+    key <I26>	{	[ XF86AudioMute		]	};
+    key <I6A>	{	[ XF86Back		]	};
+    key <I69>	{	[ XF86Forward		]	};
+    key <I68>	{	[ XF86Stop		]	};
+    key <FK16>	{	[ XF86Reload		]	};
+    key <I65>	{	[ XF86Search		]	};
+    key <I02>	{	[ XF86WWW		]	};
+    key <I66>	{	[ XF86Favorites		]	};
+    key <I6C>	{	[ XF86Mail		]	};
+};
+
+
 // Hewlett-Packard
 
+// Hewlett-Packard Internet Keyboard
 partial alphanumeric_keys 
 xkb_symbols "hpi6" {
-    name[Group1]= "Hewlett-Packard Internet Keyboard";
-
     key <I12>	{	[ XF86Search		]	};
     key <I26>	{	[ Help			]	};
     key <I5F>	{	[ XF86Standby		]	};
@@ -688,10 +754,9 @@ xkb_symbols "hpi6" {
     key <I20>	{	[ XF86AudioMute		]	};
 };
 
+// Hewlett-Packard SK-2501 Multimedia Keyboard
 partial alphanumeric_keys
 xkb_symbols "hp2501" {
-    name[Group1]= "Hewlett-Packard SK-2501 Multimedia Keyboard";
-
     key <I32>	{	[ XF86WWW		]	};
     key <I17>	{	[ XF86Search		]	};
     key <I12>	{	[ XF86Tools		]	};
@@ -707,10 +772,9 @@ xkb_symbols "hp2501" {
     key <I2E>	{	[ XF86AudioLowerVolume	]	};
 };
 
+// Hewlett-Packard SK-2505 Internet Keyboard
 partial alphanumeric_keys
 xkb_symbols "hp2505" {
-    name[Group1]= "Hewlett-Packard SK-2505 Internet Keyboard";
-
     key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I10>	{	[ XF86AudioPrev		]	};
     key <I19>	{	[ XF86AudioNext		]	};
@@ -724,10 +788,9 @@ xkb_symbols "hp2505" {
     key <I25>	{	[ XF86Standby		]	};
 };
 
+// Hewlett-Packard 5181 Internet Keyboard
 partial alphanumeric_keys
 xkb_symbols "hp5181" {
-    name[Group1]= "Hewlett-Packard 5181 Internet Keyboard";
-
     key <I10>	{	[ XF86AudioPrev		]	};
     key <I12>	{	[ XF86Search		]	};
     key <I14>	{	[ XF86VendorHome	]	};
@@ -750,10 +813,9 @@ xkb_symbols "hp5181" {
     key <I6C>	{	[ XF86Mail		]	};
 };
 
+// Hewlett-Packard 5185 Internet Keyboard
 partial alphanumeric_keys
 xkb_symbols "hp5185" {
-    name[Group1]= "Hewlett-Packard 5185 Internet Keyboard";
-
     key <I10>   {       [ XF86AudioPrev         ]       };
     key <I65>   {       [ XF86Search            ]       };
     key <I12>   {       [ XF86Go                ]       };
@@ -777,15 +839,14 @@ xkb_symbols "hp5185" {
     key <I6C>   {       [ XF86Mail              ]       };
 };
 
+// Hewlett-Packard Omnibook XE3 GC, GD, GE and Pavilion N5xxx
 partial alphanumeric_keys
 xkb_symbols "hpxe3gc" {
-
     // Describes the OneTouch buttons on HP Omnibook XE3 GC and
     // HP Pavilion N52XX models.
     // See http://sourceforge.net/projects/omke for details on enabling
     // these keys
 
-    name[Group1]= "Hewlett-Packard Omnibook XE3 GC, GD, GE and Pavilion N5xxx";
     key <I73>	{	[ XF86WWW		]	};
     key <I74>	{	[ XF86Mail		]	};
     key <I72>	{	[ XF86Launch1		]	};
@@ -799,6 +860,7 @@ xkb_symbols "hpxe3gc" {
     key <I20>	{	[ XF86AudioMute		]	};
 };
 
+// Hewlett-Packard Omnibook XE3 GF
 partial alphanumeric_keys
 xkb_symbols "hpxe3gf" {
 
@@ -806,7 +868,6 @@ xkb_symbols "hpxe3gf" {
     // See http://sourceforge.net/projects/omke for details on enabling
     // these keys
 
-    name[Group1]= "Hewlett-Packard Omnibook XE3 GF";
     key <I32>	{	[ XF86WWW		]	};
     key <I6C>	{	[ XF86Mail		]	};
     key <I74>	{	[ XF86Launch1		]	};
@@ -820,6 +881,7 @@ xkb_symbols "hpxe3gf" {
     key <I20>	{	[ XF86AudioMute		]	};
 };
 
+// Hewlett-Packard Omnibook XT1000
 partial alphanumeric_keys
 xkb_symbols "hpxt1000" {
 
@@ -827,7 +889,6 @@ xkb_symbols "hpxt1000" {
     // See http://sourceforge.net/projects/omke for details on enabling
     // these keys
 
-    name[Group1]= "Hewlett-Packard Omnibook XT1000";
     key <I6C>	{	[ XF86Mail		]	};
     key <I74>	{	[ XF86Launch1		]	};
     key <I32>	{	[ XF86WWW		]	};
@@ -843,6 +904,7 @@ xkb_symbols "hpxt1000" {
     key <I20>	{	[ XF86AudioMute		]	};
 };
 
+// Hewlett-Packard Pavilion ZT11xx
 partial alphanumeric_keys
 xkb_symbols "hpzt11xx" {
 
@@ -850,7 +912,6 @@ xkb_symbols "hpzt11xx" {
     // See http://sourceforge.net/projects/omke for details on enabling
     // these keys
 
-    name[Group1]= "Hewlett-Packard Pavilion ZT11xx";
     key <I6C>	{	[ XF86Mail		]	};
     key <I74>	{	[ XF86Launch1		]	};
     key <I32>	{	[ XF86WWW		]	};
@@ -866,6 +927,7 @@ xkb_symbols "hpzt11xx" {
     key <I20>	{	[ XF86AudioMute		]	};
 };
 
+// Hewlett-Packard Omnibook XE4xxx and ZE4xxx
 partial alphanumeric_keys
 xkb_symbols "hpxe4xxx" {
 
@@ -874,7 +936,6 @@ xkb_symbols "hpxe4xxx" {
     // See http://sourceforge.net/projects/omke for details on enabling
     // these keys
 
-    name[Group1]= "Hewlett-Packard Omnibook XE4xxx and ZE4xxx";
     key <I6C>	{	[ XF86Mail		]	};
     key <I73>	{	[ XF86Launch1		]	};
     key <I32>	{	[ XF86WWW		]	};
@@ -885,6 +946,7 @@ xkb_symbols "hpxe4xxx" {
     key <I20>	{	[ XF86AudioMute		]	};
 };
 
+// Hewlett-Packard Omnibook 500 FA
 partial alphanumeric_keys
 xkb_symbols "hp500fa" {
 
@@ -892,11 +954,11 @@ xkb_symbols "hp500fa" {
     // See http://sourceforge.net/projects/omke for details on enabling
     // these keys
 
-    name[Group1]= "Hewlett-Packard Omnibook 500 FA";
     key <I74>	{	[ XF86Launch1		]	};
     key <I73>	{	[ Help			]	};
 };
 
+// Hewlett-Packard Omnibook 5xx
 partial alphanumeric_keys
 xkb_symbols "hp5xx" {
 
@@ -904,7 +966,6 @@ xkb_symbols "hp5xx" {
     // See http://sourceforge.net/projects/omke for details on enabling
     // these keys
 
-    name[Group1]= "Hewlett-Packard Omnibook 5xx";
     key <I74>	{	[ XF86Launch1		]	};
     key <I73>	{	[ Help			]	};
     key <I10>	{	[ XF86AudioPrev		]	};
@@ -919,6 +980,7 @@ xkb_symbols "hp5xx" {
 // Honeywell
 
 
+// Honeywell Euroboard
 partial alphanumeric_keys
 xkb_symbols "honeywell_euroboard" {
 
@@ -926,7 +988,6 @@ xkb_symbols "honeywell_euroboard" {
     // January 2002
     // http://linux.dd.com.au/quest/linux/keyboard/honeywell/
 
-    name[Group1]= "Honeywell Euroboard";
     key <I10>	{	[ XF86Game		]	};
     key <I12>	{	[ XF86AudioPrev		]	};
     key <I17>	{	[ XF86Eject		]	};
@@ -948,10 +1009,9 @@ xkb_symbols "honeywell_euroboard" {
 // IBM
 
 
+// IBM Rapid Access
 partial alphanumeric_keys 
 xkb_symbols "rapidaccess" {
-    name[Group1]= "IBM Rapid Access";
-
     key <I22>	{	[ XF86AudioPause	]	};
     key <I12>	{	[ XF86AudioMute		]	};
     key <I1E>	{	[ XF86AudioLowerVolume	]	};
@@ -968,10 +1028,9 @@ xkb_symbols "rapidaccess" {
     key <I26>	{	[ Help			]	};
 };
 
+// IBM Rapid Access II
 partial alphanumeric_keys 
 xkb_symbols "rapidaccess2" {
-    name[Group1]= "IBM Rapid Access II";
-
     key <I25>	{	[ XF86HomePage		]	};
     key <I26>	{	[ XF86Shop		]	};
     key <I32>	{	[ XF86VendorHome	]	};
@@ -988,10 +1047,9 @@ xkb_symbols "rapidaccess2" {
     key <I12>	{	[ XF86AudioNext		]	};
 };
 
+// IBM Rapid Access II (alternate option)
 partial alphanumeric_keys
 xkb_symbols "rapidaccess2a" {
-    name[Group1]= "IBM Rapid Access II (alternate option)";
-
     key <I25>	{	[ XF86WWW		]	};
     key <I26>	{	[ XF86Shop		]	};
     key <I32>	{	[ XF86VendorHome	]	};
@@ -1012,10 +1070,9 @@ xkb_symbols "rapidaccess2a" {
 
 // Logitech
 
+// Logitech Cordless Desktop
 partial alphanumeric_keys
 xkb_symbols "ltcd" {
-    name[Group1]= "Logitech Cordless Desktop";
-
     key <I5F>	{	[ XF86Standby		]	};
 
     key <I26>	{	[ XF86AudioMute		]	};
@@ -1032,10 +1089,9 @@ xkb_symbols "ltcd" {
     key <I66>	{	[ XF86Go		]	};
 };
 
+// Logitech Access Keyboard
 partial alphanumeric_keys 
 xkb_symbols "logiaccess" {
-    name[Group1]= "Logitech Access Keyboard";
-
     key <I20>	{	[ XF86AudioMute		]	};
     key <I6D>	{	[ XF86AudioMedia	]	};
     key <I2E>	{	[ XF86AudioLowerVolume	]	};
@@ -1063,10 +1119,28 @@ xkb_symbols "logiaccess" {
     key <I58>	{	[ XF86Music		]	};
 };
 
+// Logitech Cordless Desktop iTouch
+partial alphanumeric_keys
+xkb_symbols "logicdit" {
+    key <I5F>   {       [ XF86Standby           ]       };
+
+    key <I20>   {       [ XF86AudioMute         ]       };
+    key <I2E>   {       [ XF86AudioLowerVolume  ]       };
+    key <I30>   {       [ XF86AudioRaiseVolume  ]       };
+    key <I22>   {       [ XF86AudioPlay, XF86AudioPause ] };
+    key <I24>   {       [ XF86AudioStop         ]       };
+    key <I10>   {       [ XF86AudioPrev         ]       };
+    key <I19>   {       [ XF86AudioNext         ]       };
+
+    key <I32>   {       [ XF86HomePage          ]       };
+    key <I6C>   {       [ XF86Mail              ]       };
+    key <I65>   {       [ XF86Search            ]       };
+    key <I66>   {       [ XF86Go                ]       };
+};
+
+// Logitech Cordless Desktop Pro
 partial alphanumeric_keys
 xkb_symbols "logicdp" {
-    name[Group1]= "Logitech Cordless Desktop Pro";
-
     key <I5F>	{	[ XF86Standby		]	};
 
     key <I20>	{	[ XF86AudioMute		]	};
@@ -1086,10 +1160,9 @@ xkb_symbols "logicdp" {
     key <I21>	{	[ XF86VendorHome	]	};
 };
 
+// Logitech Cordless Desktop Pro (alternate option)
 partial alphanumeric_keys
 xkb_symbols "logicdpa" {
-    name[Group1]= "Logitech Cordless Desktop Pro (alternate option)";
-
     key <I5F>	{	[ XF86Standby		]	};
 
     key <I26>	{	[ XF86AudioMute		]	};
@@ -1108,10 +1181,9 @@ xkb_symbols "logicdpa" {
     key <I21>	{	[ XF86VendorHome	]	};
 };
 
+// Logitech Internet Navigator Keyboard
 partial alphanumeric_keys 
 xkb_symbols "logicink" {
-    name[Group1]= "Logitech Internet Navigator Keyboard";
-
     // Media keys
     key <I20>	{	[ XF86AudioMute		]	};
     key <I6D>	{	[ XF86AudioMedia	]	};
@@ -1142,10 +1214,9 @@ xkb_symbols "logicink" {
     key <I16>	{	[ XF86ScrollClick	]	};
 };
 
+// Logitech iTouch Internet Navigator Keyboard
 partial alphanumeric_keys 
 xkb_symbols "logiciink" {
-    name[Group1]= "Logitech iTouch Internet Navigator Keyboard";
-
     // Media keys
     key <I20>	{	[ XF86AudioMute		]	};
     key <I6D>	{	[ XF86AudioMedia	]	};
@@ -1176,10 +1247,9 @@ xkb_symbols "logiciink" {
     key <I16>	{	[ XF86ScrollClick	]	};
 };
 
+// Logitech iTouch Internet Navigator Keyboard SE
 partial alphanumeric_keys 
 xkb_symbols "logiinkse" {
-    name[Group1]= "Logitech iTouch Internet Navigator Keyboard SE";
-
     // Media keys
     key <I20>	{	[ XF86AudioMute		]	};
     key <I6D>	{	[ XF86AudioMedia	]	};
@@ -1223,10 +1293,9 @@ xkb_symbols "logiinkse" {
     key <I58>	{	[ XF86Music		]	};	// F12
 };
 
+// Logitech iTouch Internet Navigator Keyboard SE (USB)
 partial alphanumeric_keys
 xkb_symbols "logiinkseusb" {
-    name[Group1]= "Logitech iTouch Internet Navigator Keyboard SE (USB)";
-
     // Media keys
     key <I26>   {       [ XF86AudioMute         ]       };
     key <XFER>  {       [ XF86AudioMedia        ]       };
@@ -1261,10 +1330,26 @@ xkb_symbols "logiinkseusb" {
 
 };
 
+// Logitech iTouch Cordless Keyboard (model Y-RB6)
+partial alphanumeric_keys
+xkb_symbols "logiitc" {
+    key <I5F>	{	[ XF86PowerOff		]	};
+    key <I20>	{	[ XF86AudioMute		]	};
+    key <I2E>	{	[ XF86AudioLowerVolume	]	};
+    key <I2F>	{	[ XF86AudioRaiseVolume	]	};
+    key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] };
+    key <I24>	{	[ XF86AudioStop		]	};
+    key <I10>	{	[ XF86AudioPrev		]	};
+    key <I19>	{	[ XF86AudioNext		]	};
+    key <I32>	{	[ XF86HomePage		]	};
+    key <I6C>	{	[ XF86Mail		]	};
+    key <I65>	{	[ XF86Search		]	};
+    key <I66>	{	[ XF86Favorites		]	};
+};
+
+// Logitech Internet Keyboard
 partial alphanumeric_keys
 xkb_symbols "logiik" {
-    name[Group1]= "Logitech Internet Keyboard";
-
     key <I25>	{	[ XF86VendorHome	]	};
     key <I10>	{	[ XF86Back		]	};
     key <I22>	{	[ XF86Forward		]	};
@@ -1285,10 +1370,9 @@ xkb_symbols "logiik" {
     key <I20>	{	[ XF86HotLinks		]	};
 };
 
+// Logitech iTouch
 partial alphanumeric_keys 
 xkb_symbols "itouch" {
-    name[Group1]= "Logitech iTouch";
-
     key <I5F>	{	[ XF86Standby		]	};
 
     key <I1F>	{	[ XF86AudioMute		]	};
@@ -1305,12 +1389,21 @@ xkb_symbols "itouch" {
     key <I66>	{	[ XF86Start		]	};
 };
 
+partial alphanumeric_keys 
+xkb_symbols "logiultrax" {
+    key <I01>	{	[ XF86AudioMedia	]	};
+    key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] };
+    key <I20>	{	[ XF86AudioMute		]	};
+    key <I66>	{	[ XF86Favorites		]	};
+    key <I6C>	{	[ XF86Mail		]	};
+    key <I02>	{	[ XF86WWW		]	};
+};
+
 // Memorex
 
+// Memorex MX1998
 partial alphanumeric_keys
 xkb_symbols "mx1998" {
-    name[Group1]= "Memorex MX1998";
-
     key <I24>	{	[ XF86AudioStop		]	};
     key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I10>	{	[ XF86AudioPrev		]	};
@@ -1336,10 +1429,9 @@ xkb_symbols "mx1998" {
     key <DOWN>	{	[ XF86ScrollDown	]	};
 };
 
+// Memorex MX2500 EZ-Access Keyboard
 partial alphanumeric_keys
 xkb_symbols "mx2500" {
-    name[Group1]= "Memorex MX2500 EZ-Access Keyboard";
-
     key <I5F>	{	[ XF86Standby		]	};
     key <I6B>	{	[ XF86WakeUp		]	};
     key <I5E>	{	[ XF86PowerOff		]	};
@@ -1367,10 +1459,9 @@ xkb_symbols "mx2500" {
     key <MENU>	{	[ Menu			]	};
 };
 
+// Memorex MX2750
 partial alphanumeric_keys
 xkb_symbols "mx2750" {
-    name[Group1]= "Memorex MX2750";
-
     key <I5E>	{	[ XF86PowerOff		]	};
     key <I5F>	{	[ XF86Standby		]	};
     key <I63>	{	[ XF86WakeUp		]	};
@@ -1392,10 +1483,9 @@ xkb_symbols "mx2750" {
 
 // Microsoft
 
+// Microsoft Internet Keyboard
 partial alphanumeric_keys
 xkb_symbols "microsoftinet" {
-    name[Group1]= "Microsoft Internet Keyboard";
-
     key <I6A>	{	[ XF86Back		]	};
     key <I69>	{	[ XF86Forward		]	};
     key <I68>	{	[ XF86AudioStop		]	};
@@ -1408,10 +1498,9 @@ xkb_symbols "microsoftinet" {
     key <I5F>	{	[ XF86Standby		]	};
 };
 
+// Microsoft Natural Keyboard Pro / Microsoft Internet Keyboard Pro
 partial alphanumeric_keys 
 xkb_symbols "microsoftpro" {
-    name[Group1]= "Microsoft Natural Keyboard Pro / Microsoft Internet Keyboard Pro";
-
 //   Multimedia Section -- Right Side
     key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I10>	{	[ XF86AudioPrev		]	};
@@ -1436,10 +1525,37 @@ xkb_symbols "microsoftpro" {
     key <I5F>	{	[ XF86Standby		]	};
 };
 
+// Microsoft Natural Keyboard Pro USB  
+partial alphanumeric_keys  
+ xkb_symbols "microsoftprousb" {  
+ //   Multimedia Section -- Right Side  
+     key <I1F>   {   [ XF86AudioPlay, XF86AudioPause ] };  
+     key <I24>   {   [ XF86AudioPrev      ]   };  
+     key <I17>   {   [ XF86AudioStop      ]   };  
+     key <I22>   {   [ XF86AudioNext      ]   };  
+     key <I01>   {   [ XF86AudioMedia   ]   };  
+     key <I25>   {   [ XF86AudioLowerVolume   ]   };  
+     key <I1E>   {   [ XF86AudioRaiseVolume   ]   };  
+     key <I26>   {   [ XF86AudioMute      ]   };  
+ //   Internet Section -- Left Side  
+     key <I02>   {   [ XF86HomePage      ]   };  
+     key <I6C>   {   [ XF86Mail      ]   };  
+     key <I66>   {   [ XF86Favorites      ]   };  
+     key <I65>   {   [ XF86Search      ]   };  
+     key <I68>   {   [ XF86Stop      ]   };  
+     key <I6A>   {   [ XF86Back      ]   };  
+     key <I69>   {   [ XF86Forward      ]   };  
+     key <FK16>   {   [ XF86Reload      ]   };  
+ //   My Computer Section -- Far Right  
+ //  My computer maps to printscreen, so leaving commented out for now   
+ //  key <PRSC>   {   [ XF86MyComputer   ]   };  
+     key <I21>   {   [ XF86Calculator   ]   };  
+     key <I63>   {   [ XF86Standby      ]   };  
+}; 
+
+// Microsoft Natural Keyboard Pro OEM 
 partial alphanumeric_keys  
 xkb_symbols "microsoftprooem" { 
-    name[Group1]= "Microsoft Natural Keyboard Pro OEM"; 
- 
 //   Multimedia Section -- Right Side 
     key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] }; 
     key <I10>	{	[ XF86AudioPrev		]	}; 
@@ -1466,10 +1582,9 @@ xkb_symbols "microsoftprooem" {
     key <I63>	{	[ XF86Standby		]	}; 
 };
 
+// Microsoft Internet Keyboard Pro, Swedish
 partial alphanumeric_keys
 xkb_symbols "microsoftprose" {
-    name[Group1]= "Microsoft Internet Keyboard Pro, Swedish";
-
     key <I6A>	{	[ XF86Back		]	};
     key <I69>	{	[ XF86Forward		]	};
     key <I68>	{	[ XF86AudioStop		]	};
@@ -1491,10 +1606,9 @@ xkb_symbols "microsoftprose" {
     key <I63>	{	[ XF86Standby		]	};
 };
 
+// Microsoft Office Keyboard
 partial alphanumeric_keys
 xkb_symbols "microsoftoffice" {
-    name[Group1]= "Microsoft Office Keyboard";
-
     key <I6A>	{	[ XF86Back		]	};
     key <I69>	{	[ XF86Forward		]	};
     key <I3C>	{	[ XF86Cut		]	};
@@ -1530,10 +1644,9 @@ xkb_symbols "microsoftoffice" {
     key <I70>	{	[ Redo			]	};
 };
 
+// Microsoft Wireless Multimedia Keyboard 1.0A 
 partial alphanumeric_keys 
 xkb_symbols "microsoftmult" { 
-    name[Group1]= "Microsoft Wireless Multimedia Keyboard 1.0A"; 
- 
 //   My Computer Section -- Left Side 
     key <I80>   {       [ XF86Documents ]       }; 
     key <I64>   {       [ XF86Pictures  ]       }; 
@@ -1576,10 +1689,9 @@ xkb_symbols "microsoftmult" {
 
 // Oretec
 
+// Oretec MCK-800 MM/Internet keyboard
 partial alphanumeric_keys
 xkb_symbols "oretec" {
-    name[Group1]= "Oretec MCK-800 MM/Internet keyboard";
-
     key <I21>	{	[ XF86WWW		]	};
     key <I1E>	{	[ XF86AudioMute		]	};
     key <I68>	{	[ XF86AudioLowerVolume	]	};
@@ -1604,10 +1716,9 @@ xkb_symbols "oretec" {
 
 // Propeller
 
+// Propeller Voyager (KTEZ-1000)
 partial alphanumeric_keys
 xkb_symbols "propeller" {
-    name[Group1]= "Propeller Voyager (KTEZ-1000)";
-
     key <I25>	{	[ XF86Calculator	]	};
     key <I18>	{	[ XF86Xfer		]	};
 
@@ -1634,10 +1745,9 @@ xkb_symbols "propeller" {
 
 // QTronix
 
+// QTronix Scorpius 98N+
 partial alphanumeric_keys
 xkb_symbols "qtronix" {
-    name[Group1]= "QTronix Scorpius 98N+";
-
     key <I21>	{	[ XF86AudioPrev		]	};
     key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I24>	{	[ XF86AudioStop		]	};
@@ -1667,10 +1777,9 @@ xkb_symbols "qtronix" {
 
 // Samsung
 
+// Samsung SDM 4500P
 partial alphanumeric_keys
 xkb_symbols "samsung4500" {
-    name[Group1]= "Samsung SDM 4500P";
-
     key <I2E>	{	[ XF86AudioLowerVolume	]	};
     key <I30>	{	[ XF86AudioRaiseVolume	]	};
     key <I20>	{	[ XF86AudioMute		]	};
@@ -1693,10 +1802,9 @@ xkb_symbols "samsung4500" {
     key <I06>	{	[ XF86Launch5		]	};
 };
 
+// Samsung SDM 4510P
 partial alphanumeric_keys
 xkb_symbols "samsung4510" {
-    name[Group1]= "Samsung SDM 4510P";
-
     key <I2E>	{	[ XF86AudioLowerVolume	]	};
     key <I30>	{	[ XF86AudioRaiseVolume	]	};
     key <I20>	{	[ XF86AudioMute		]	};
@@ -1714,10 +1822,9 @@ xkb_symbols "samsung4510" {
 
 // SK
 
+// SK-1300
 partial alphanumeric_keys
 xkb_symbols "sk1300" {
-    name[Group1]= "SK-1300";
-
     key <I20>	{	[ XF86WWW		]	};
     key <I26>	{	[ XF86Back		]	};
     key <I1E>	{	[ XF86Forward		]	};
@@ -1732,10 +1839,9 @@ xkb_symbols "sk1300" {
     key <I2E>	{	[ XF86AudioLowerVolume	]	};
 };
 
+// SK-2500
 partial alphanumeric_keys
 xkb_symbols "sk2500" {
-    name[Group1]= "SK-2500";
-
     key <I25>	{	[ XF86PowerOff		]	};
     key <I7A>	{	[ XF86ScreenSaver	]	};
     key <I32>	{	[ XF86WWW		]	};
@@ -1757,10 +1863,9 @@ xkb_symbols "sk2500" {
     key <I18>	{	[ XF86Eject		]	};
 };
 
+// SK-6200
 partial alphanumeric_keys
 xkb_symbols "sk6200" {
-    name[Group1]= "SK-6200";
-
     key <I24>	{	[ XF86AudioStop		]	};
     key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I23>	{	[ XF86AudioPrev		]	};
@@ -1777,10 +1882,9 @@ xkb_symbols "sk6200" {
     key <I19>	{	[ XF86Forward		]	};
 };
 
+// SK-7100
 partial alphanumeric_keys
 xkb_symbols "sk7100" {
-    name[Group1]= "SK-7100";
-
     key <I17>	{	[ XF86Close		]	};
     key <I25>	{	[ XF86CD		]	};
     key <I18>	{	[ XF86Video		]	};
@@ -1800,10 +1904,9 @@ xkb_symbols "sk7100" {
 
 // Sven
 
+// SVEN Ergonomic 2500
 partial alphanumeric_keys
 xkb_symbols "sven" {
-    name[Group1]= "SVEN Ergonomic 2500";
-
     key <I68>	{	[ XF86Back		]	};
     key <I12>	{	[ XF86Forward		]	};
     key <I23>	{	[ XF86Stop		]	};
@@ -1834,10 +1937,9 @@ xkb_symbols "sven" {
 
 // Symplon
 
+// Symplon PaceBook (tablet PC)
 partial alphanumeric_keys
 xkb_symbols "symplon" {
-    name[Group1]= "Symplon PaceBook (tablet PC)";
-
     key <HOME>	{	[ XF86RotationPB	]	};
     key <UP>	{	[ XF86MenuPB		]	};
     key <PAUS>	{	[ XF86UserPB		]	};
@@ -1855,6 +1957,7 @@ xkb_symbols "symplon" {
 
 // Toshiba
 
+// Toshiba Satellite S3000
 partial alphanumeric_keys
 xkb_symbols "toshiba_s3000" {
 
@@ -1862,7 +1965,6 @@ xkb_symbols "toshiba_s3000" {
     // See http://sourceforge.net/projects/omke for details on enabling
     // these keys
 
-    name[Group1]= "Toshiba Satellite S3000";
     key <I71>	{	[ XF86WWW		]	};
     key <I73>	{	[ XF86Mail		]	};
     key <I06>	{	[ XF86Launch1		]	};
@@ -1877,10 +1979,9 @@ xkb_symbols "toshiba_s3000" {
 
 // Trust
 
+// Trust Wireless Keyboard Classic
 partial alphanumeric_keys
 xkb_symbols "trust" {
-    name[Group1]= "Trust Wireless Keyboard Classic";
-
     key <I32>	{	[ XF86WWW		]	};
     key <I6A>	{	[ XF86Back		]	};
     key <I69>	{	[ XF86Forward		]	};
@@ -1900,10 +2001,9 @@ xkb_symbols "trust" {
 };
 
 
+// Trust Direct Access Keyboard
 partial alphanumeric_keys
 xkb_symbols "trustda" {
-    name[Group1]= "Trust Direct Access Keyboard";
-
     key <I7A>	{	[ XF86Away		]	};
     key <I32>	{	[ XF86WWW		]	};
     key <I21>	{	[ XF86Calculator	]	};
@@ -1926,10 +2026,9 @@ xkb_symbols "trustda" {
 
 // YaHoo!
 
+// Yahoo! Internet Keyboard
 partial alphanumeric_keys
 xkb_symbols "yahoo" {
-    name[Group1]= "Yahoo! Internet Keyboard";
-
     key <I11>	{	[ XF86AudioPrev		]	};
     key <I12>	{	[ XF86AudioPlay, XF86AudioPause ] };
     key <I1E>	{	[ XF86AudioStop		]	};
@@ -1946,4 +2045,68 @@ xkb_symbols "yahoo" {
     key <I5E>	{	[ XF86PowerOff		]	};
     key <I5F>	{	[ XF86Standby		]	};
     key <I63>	{	[ XF86WakeUp		]	};
+};
+
+// Super Power Internet Keyboard 
+ 
+// Super Power Multimedia Keyboard 
+xkb_symbols "sp_inet" { 
+    key <I67>	{	[ XF86Refresh		]	}; 
+    key <I66>	{	[ XF86Favorites		]	}; 
+    key <I6A>	{	[ XF86Back		]	}; 
+    key <I69>	{	[ XF86Forward		]	}; 
+    key <I68>	{	[ XF86Stop		]	}; 
+    key <I32>	{	[ XF86HomePage		]	}; 
+    key <I6C>	{	[ XF86Mail		]	}; 
+    key <I22>	{	[ XF86AudioPlay, XF86AudioPause ] }; 
+    key <I24>	{	[ XF86AudioStop		]	}; 
+    key <I10>	{	[ XF86AudioPrev		]	}; 
+    key <I19>	{	[ XF86AudioNext		]	}; 
+    key <I30>	{	[ XF86AudioRaiseVolume	]	}; 
+    key <I20>	{	[ XF86AudioMute		]	}; 
+    key <I2E>	{	[ XF86AudioLowerVolume	]	}; 
+    key <I5E>	{	[ XF86PowerOff		]	}; 
+    key <I5F>	{	[ XF86Standby		]	}; 
+    key <I63>	{	[ XF86WakeUp		]	};       
+};
+
+// Acer Travelmate 800
+xkb_symbols "acer_tm_800" { 
+    key <I6C>	{	[ XF86Mail		]	};
+    key <I32>   {       [ XF86WWW               ]       };
+    key <I30>	{	[ XF86AudioRaiseVolume	]	};
+    key <I2E>	{	[ XF86AudioLowerVolume	]	};
+    key <I20>   {       [ XF86AudioMute         ]       };
+// There are other buttons (P1, P2, Fn-F2, Fn-F3 - but they 
+// don't generate scancodes. It is possible to map them to whatever user wants.
+};
+
+partial alphanumeric_keys
+xkb_symbols "cymotionlinux" {
+    key <I6A>	{	[	XF86Back		]	};
+    key <I69>	{	[	XF86Forward		]	};
+    key	<I68>	{	[	XF86Stop		]	};
+    key <I67>	{	[	XF86Reload		]	};
+    key <FK17>	{	[	XF86Search		]	};
+    key <I30>	{	[	XF86AudioRaiseVolume	]	};
+    key <I2E>	{	[	XF86AudioLowerVolume	]	};
+    key <I20>	{	[	XF86AudioMute		]	};
+    key <XFER>	{	[	XF86AudioMedia		]	};
+    key <I22>	{	[	XF86AudioPlay		]	};
+    key <I24>	{	[	XF86AudioStop		]	};
+    key <I10>	{	[	XF86AudioPrev		]	};
+    key <I19>	{	[	XF86AudioNext		]	};
+    key <I21>	{	[	XF86Calculator		]	};
+    key <I6C>	{	[	XF86Mail		]	};
+    key <I02>	{	[	XF86WWW			]	};
+    key <I63>   {	[	XF86Standby		]	};
+    key <ALT>	{	[	XF86ScrollUp		]	};
+    key <I0F>	{	[	XF86ScrollDown		]	};
+    key <I3C>	{	[	XF86Cut			]	};
+    key <I78>	{	[	XF86Copy		]	};
+    key <I1F>	{	[	XF86Launch1		]	};
+    key <I17>	{	[	XF86Launch2		]	};
+    key <I2B>	{	[	XF86Launch3		]	};
+    key <AE13>	{	[	Redo			]	};
+    key <I07>	{	[	Undo			]	};
 };

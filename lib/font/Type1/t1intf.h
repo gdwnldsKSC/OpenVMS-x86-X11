@@ -47,6 +47,10 @@
 /* $XFree86: xc/lib/font/Type1/t1intf.h,v 1.6 2001/01/17 19:43:23 dawes Exp $ */
 
 #ifdef BUILDCID
+#define XFONT_CID 1
+#endif
+
+#if XFONT_CID
 #include "AFM.h"
 #endif
  
@@ -55,7 +59,7 @@ struct type1font {
        CharInfoRec  glyphs[256];
 };
 
-#ifdef BUILDCID
+#if XFONT_CID
 typedef struct cid_glyphs {
        char           *CIDFontName;
        char           *CMapName;
@@ -75,7 +79,7 @@ typedef struct cid_glyphs {
  * Function prototypes
  */
 /* t1funcs.c */
-#ifdef BUILDCID
+#if XFONT_CID
 extern int CIDOpenScalable ( FontPathElementPtr fpe, FontPtr *ppFont,
 			     int flags, FontEntryPtr entry, char *fileName, 
 			     FontScalablePtr vals, fsBitmapFormat format, 
@@ -87,7 +91,7 @@ extern int Type1OpenScalable ( FontPathElementPtr fpe, FontPtr *ppFont,
 			       FontScalablePtr vals, fsBitmapFormat format, 
 			       fsBitmapFormatMask fmask,
 			       FontPtr non_cachable_font );
-#ifdef BUILDCID
+#if XFONT_CID
 extern unsigned int getCID ( FontPtr pFont, unsigned int charcode );
 extern int CIDGetGlyphs ( FontPtr pFont, unsigned long count, 
 			  unsigned char *chars, FontEncoding charEncoding, 
@@ -99,7 +103,7 @@ extern void CIDCloseFont ( FontPtr pFont );
 #endif
 extern void Type1CloseFont ( FontPtr pFont );
 extern int Type1ReturnCodeToXReturnCode ( int rc );
-#ifdef BUILDCID
+#if XFONT_CID
 extern CharInfoPtr CIDRenderGlyph ( FontPtr pFont, psobj *charstringP, 
 				    psobj *subarrayP, 
 				    struct blues_struct *bluesP, 
@@ -110,7 +114,7 @@ extern CharInfoPtr CIDRenderGlyph ( FontPtr pFont, psobj *charstringP,
 #ifdef CID_ALL_CHARS
 extern void ComputeBoundsAllChars ( FontPtr pFont, char *cfmfilename, double sxmult );
 #endif
-#ifdef BUILDCID
+#if XFONT_CID
 extern int CIDGetInfoScalable ( FontPathElementPtr fpe, FontInfoPtr pInfo, 
 				FontEntryPtr entry, FontNamePtr fontName, 
 				char *fileName, FontScalablePtr Vals );
@@ -118,7 +122,7 @@ extern int CIDGetInfoScalable ( FontPathElementPtr fpe, FontInfoPtr pInfo,
 extern int Type1GetInfoScalable ( FontPathElementPtr fpe, FontInfoPtr pInfo, 
 				  FontEntryPtr entry, FontNamePtr fontName, 
 				  char *fileName, FontScalablePtr Vals );
-#ifdef BUILDCID
+#if XFONT_CID
 extern void CIDFillFontInfo ( FontPtr pFont, FontScalablePtr Vals, 
 			      char *Filename, char *Fontname, char *Cmapname, 
 #ifdef HAVE_CFM

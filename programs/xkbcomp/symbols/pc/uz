@@ -1,3 +1,4 @@
+// $XdotOrg: xc/programs/xkbcomp/symbols/pc/uz,v 1.3 2005/08/12 11:08:49 pascal Exp $
 // Uzbek standard keyboard
 //
 // Mashrab Kuvatov <kmashrab@uni-bremen.de>
@@ -8,22 +9,22 @@
 //
 // Created based on Russian standard keyboard. AEN <aen@logic.ru> 
 // The following symbols of Russian standard keyboard were replaced:
-// minus (key <AE11>) with Cyrillic_shortu (U045e),
-// equal (key <AE12>) with Cyrillic_kadescender (U049b)
-// Cyrillic_ha (key <AD11>) with Cyrillic_ghestoke (U0493)
-// Cyrillic_hardsign (key <AD11>) with Cyrillic_hadescender (U0493)
+// minus (key <AE11>) with Byelorussian_shortu (U045e),
+// equal (key <AE12>) with Cyrillic_ka_descender (U049b)
+// Cyrillic_ha (key <AD11>) with Cyrillic_ghe_bar (U0493)
+// Cyrillic_hardsign (key <AD12>) with Cyrillic_ha_descender (U04b3)
 // The following symbols of Russian standard keyboard were moved:
 // Cyrillic_ze       to key <AC02> (english 's'), 
 // Cyrillic_sha      to key <AD08> (english 'i'),
 // Cyrillic_ha       to key <AD09> (english 'o'),
 // Cyrillic_hardsign to key <AD10> (english 'p'). 
 //
-// $XFree86: xc/programs/xkbcomp/symbols/pc/uz,v 1.2 2003/06/21 13:01:59 pascal Exp $
+// $XFree86: xc/programs/xkbcomp/symbols/uz,v 1.2 2003/06/21 13:01:59 pascal Exp $
 
 partial default alphanumeric_keys 
 xkb_symbols "basic" {
 
-    name[Group1]= "Uzbek";
+    name[Group1]= "Uzbekistan";
 
     key	<AE01> {	[		1,	    exclam 	]	};
     key	<AE02> {	[		2,        quotedbl	]	};
@@ -41,8 +42,8 @@ xkb_symbols "basic" {
 
 key.type[group1]="ALPHABETIC";
 
-    key	<AE11> {	[           U045e,           U040e      ]	};
-    key	<AE12> {	[           U049b,           U049a      ]	};
+    key	<AE11> {	[ Byelorussian_shortu, Byelorussian_SHORTU ]	};
+    key	<AE12> {	[Cyrillic_ka_descender, Cyrillic_KA_descender ]	};
     key	<TLDE> {	[     Cyrillic_io,     Cyrillic_IO	]	};
     key	<AD01> {	[ Cyrillic_shorti, Cyrillic_SHORTI	]	};
     key	<AD02> {	[    Cyrillic_tse,    Cyrillic_TSE	]	};
@@ -54,8 +55,8 @@ key.type[group1]="ALPHABETIC";
     key	<AD08> {	[    Cyrillic_sha,    Cyrillic_SHA	]	};
     key	<AD09> {	[     Cyrillic_ha,     Cyrillic_HA	]	};
     key	<AD10> {	[Cyrillic_hardsign,Cyrillic_HARDSIGN    ]	};
-    key	<AD11> {	[           U0493,           U0492      ]	};
-    key	<AD12> {	[           U04b3,           U04b2	]	};
+    key	<AD11> {	[Cyrillic_ghe_bar, Cyrillic_GHE_bar     ]	};
+    key	<AD12> {	[Cyrillic_ha_descender, Cyrillic_HA_descender ]	};
     key	<AC01> {	[     Cyrillic_ef,     Cyrillic_EF	]	};
     key	<AC02> {	[     Cyrillic_ze,     Cyrillic_ZE	]	};
     key	<AC03> {	[     Cyrillic_ve,     Cyrillic_VE	]	};

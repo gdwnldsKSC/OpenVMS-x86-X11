@@ -1,7 +1,7 @@
 /*
  * $RCSId: xc/lib/fontconfig/src/fccache.c,v 1.12 2002/08/22 07:36:44 keithp Exp $
  *
- * Copyright © 2000 Keith Packard
+ * Copyright Â© 2000 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -251,7 +251,8 @@ FcCacheFontSetAdd (FcFontSet	    *set,
 		   const FcChar8    *dir,
 		   int		    dir_len,
 		   const FcChar8    *file,
-		   const FcChar8    *name)
+		   const FcChar8    *name,
+		   FcConfig	    *config)
 {
     FcChar8	path_buf[8192], *path;
     int		len;
@@ -276,7 +277,9 @@ FcCacheFontSetAdd (FcFontSet	    *set,
 	path[dir_len++] = '/';
 #endif
     strcpy ((char *) path + dir_len, (const char *) file);
-    if (!FcStrCmp (name, FC_FONT_FILE_DIR))
+    if (config && !FcConfigAcceptFilename (config, path))
+	ret = FcTrue;
+    else if (!FcStrCmp (name, FC_FONT_FILE_DIR))
     {
 	if (FcDebug () & FC_DBG_CACHEV)
 	    printf (" dir cache dir \"%s\"\n", path);
@@ -291,10 +294,18 @@ FcCacheFontSetAdd (FcFontSet	    *set,
 	font = FcNameParse (name);
 	if (font)
 	{
+	    FcChar8 *family;
+	    
 	    if (FcDebug () & FC_DBG_CACHEV)
 		printf (" dir cache file \"%s\"\n", file);
 	    ret = FcPatternAddString (font, FC_FILE, path);
-	    if (ret)
+	    /*
+	     * Make sure the pattern has the file name as well as
+	     * already containing at least one family name.
+	     */
+	    if (ret && 
+		FcPatternGetString (font, FC_FAMILY, 0, &family) == FcResultMatch &&
+		(!config || FcConfigAcceptFont (config, font)))
 	    {
 		frozen = FcPatternFreeze (font);
 		ret = (frozen != 0);
@@ -539,7 +550,8 @@ FcBool
 FcGlobalCacheScanDir (FcFontSet		*set,
 		      FcStrSet		*dirs,
 		      FcGlobalCache	*cache,
-		      const FcChar8	*dir)
+		      const FcChar8	*dir,
+		      FcConfig		*config)
 {
     FcGlobalCacheDir	*d = FcGlobalCacheDirGet (cache, dir,
 						  strlen ((const char *) dir),
@@ -582,7 +594,7 @@ FcGlobalCacheScanDir (FcFontSet		*set,
 		printf ("FcGlobalCacheScanDir add file %s\n", f->info.file);
 	    any_in_cache = FcTrue;
 	    if (!FcCacheFontSetAdd (set, dirs, dir, dir_len,
-				    f->info.file, f->name))
+				    f->info.file, f->name, config))
 	    {
 		cache->broken = FcTrue;
 		return FcFalse;
@@ -598,7 +610,7 @@ FcGlobalCacheScanDir (FcFontSet		*set,
 	
         any_in_cache = FcTrue;
 	if (!FcCacheFontSetAdd (set, dirs, dir, dir_len,
-				info.base, FC_FONT_FILE_DIR))
+				info.base, FC_FONT_FILE_DIR, config))
 	{
 	    cache->broken = FcTrue;
 	    return FcFalse;
@@ -971,7 +983,7 @@ FcDirCacheValid (const FcChar8 *dir)
 }
 
 FcBool
-FcDirCacheReadDir (FcFontSet *set, FcStrSet *dirs, const FcChar8 *dir)
+FcDirCacheReadDir (FcFontSet *set, FcStrSet *dirs, const FcChar8 *dir, FcConfig *config)
 {
     FcChar8	    *cache_file = FcStrPlus (dir, (FcChar8 *) "/" FC_DIR_CACHE_FILE);
     FILE	    *f;
@@ -1016,7 +1028,7 @@ FcDirCacheReadDir (FcFontSet *set, FcStrSet *dirs, const FcChar8 *dir)
 	   (name = FcCacheReadString (f, name_buf, sizeof (name_buf))))
     {
 	if (!FcCacheFontSetAdd (set, dirs, cache_file, dir_len,
-				file, name))
+				file, name, config))
 	    goto bail3;
 	if (file != file_buf)
 	    free (file);

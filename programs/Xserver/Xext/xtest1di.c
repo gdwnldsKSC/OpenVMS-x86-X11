@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/Xext/xtest1di.c,v 1.2 2004/04/23 18:44:42 eich Exp $ */
+/* $XdotOrg: xc/programs/Xserver/Xext/xtest1di.c,v 1.6 2005/07/03 08:53:36 daniels Exp $ */
 /* $Xorg: xtest1di.c,v 1.4 2001/02/09 02:04:33 xorgcvs Exp $ */
 /*
  *	File:  xtest1di.c
@@ -62,9 +62,13 @@ University of California.
 #define	 NEED_EVENTS
 #define	 NEED_REPLIES
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "os.h"
 #include "gcstruct.h"   
@@ -72,7 +76,7 @@ University of California.
 #include "dixstruct.h"
 #include "opaque.h"
 #define  XTestSERVER_SIDE
-#include "xtestext1.h"
+#include <X11/extensions/xtestext1.h>
 #include "modinit.h"
 
 #include "xtest1dd.h"

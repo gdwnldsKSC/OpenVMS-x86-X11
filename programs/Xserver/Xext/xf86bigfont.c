@@ -35,6 +35,10 @@
  * XLoadQueryFont).
  */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <sys/types.h>
 #ifdef HAS_SHM
 #if defined(linux) && (!defined(__GNU_LIBRARY__) || __GNU_LIBRARY__ < 2)
@@ -47,7 +51,7 @@
 #ifdef SVR4
 #include <sys/sysmacros.h>
 #endif
-#if defined(ISC) || defined(__CYGWIN__) || defined(SCO) || defined(SCO325)
+#if defined(ISC) || defined(__CYGWIN__) || defined(__SCO__)
 #include <sys/param.h>
 #include <sys/sysmacros.h>
 #endif
@@ -60,8 +64,8 @@
 #include <errno.h>
 #endif
 
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "os.h"
 #include "dixstruct.h"
@@ -70,7 +74,7 @@
 #include "extnsionst.h"
 
 #define _XF86BIGFONT_SERVER_
-#include "xf86bigfstr.h"
+#include <X11/extensions/xf86bigfstr.h>
 
 static void XF86BigfontResetProc(
     ExtensionEntry *	/* extEntry */

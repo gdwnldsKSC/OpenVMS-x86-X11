@@ -25,10 +25,14 @@ be used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from the XFree86 Project.
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "s3v.h"
 
 #include "miline.h"
-	/* cfb includes are in s3v.h */
+	/* fb includes are in s3v.h */
 #include "xaalocal.h"
 #include "xaarop.h"
 
@@ -961,90 +965,6 @@ S3VSubsequentSolidHorVertLinePlaneMask(
 
     S3VWriteMask((CARD32*)ps3v->MapBaseDense, dwords);
 }
-
-
-#if 0   /* Line funcs are disabled at the moment */
-
-static void (*LineFuncs[3])() = {
-  cfbBresS,
-  cfb16BresS,
-  cfb24BresS
-};
-
-static void 
-S3VSubsequentSolidBresenhamLine( 
-   ScrnInfoPtr pScrn,
-   int x, int y, 
-   int dmaj, int dmin, 
-   int e, int len, int octant
-){
-    S3VPtr ps3v = S3VPTR(pScrn);
-    cfbPrivGCPtr devPriv;
-    int Bpp = pScrn->bitsPerPixel >> 3;
-
-    if( ps3v->UseFB )
-      {
-#if 1
-	/*
-void
-fbBres (DrawablePtr     pDrawable,
-        GCPtr           pGC,
-        int             dashOffset,
-        int             signdx,
-        int             signdy,
-        int             axis,
-        int             x1,
-        int             y1,
-        int             e,
-        int             e1,
-        int             e3,
-        int             len)
-
-	from cfb, e3 = e2-e1.
-	for the cfb call e2 = dmin - dmaj
-	e1 = dmin
-	e3 = e2-e1 = dmin-dmaj-dmin
-	*/
-
-
-	fbBres(ps3v->CurrentDrawable, ps3v->CurrentGC, 0,
-           (octant & XDECREASING) ? -1 : 1,
-           (octant & YDECREASING) ? -1 : 1,
-           (octant & YMAJOR) ? Y_AXIS : X_AXIS,
-	       /*   x, y, dmin + e, dmin, dmin-dmaj, len); */
-	 x, y, dmin + e, dmin, -dmaj, len); 
-#endif
-#if 0
-	xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, VERBLEV, 
-		       "Bresenham dmaj=%i, -dmaj=%i, -1*dmaj=%i.\n", 
-		       dmaj, -dmaj, -1*dmaj );
-#endif
-
-      }
-    else
-      {
-	devPriv = cfbGetGCPrivate(ps3v->CurrentGC);
-
-	/* you could trap for lines you could do here and accelerate them */
-
-	/*
-	 * void
-	 * cfbBresS(rop, and, xor, addrl, nlwidth, signdx, signdy, axis, 
-	 * x1, y1, e, e1, e2, len)
-	 */
-
-	(*LineFuncs[Bpp - 1])
-		(devPriv->rop, devPriv->and, devPriv->xor, 
-                (unsigned long*)ps3v->FBBase,
-		 (pScrn->displayWidth * Bpp) >> LOG2_BYTES_PER_SCANLINE_PAD, 
-                (octant & XDECREASING) ? -1 : 1, 
-                (octant & YDECREASING) ? -1 : 1, 
-                (octant & YMAJOR) ? Y_AXIS : X_AXIS,
-                x, y, dmin + e, dmin, dmin - dmaj, len);
-      } /*if(fb)*/
-}
-
-#endif
 
 
 void

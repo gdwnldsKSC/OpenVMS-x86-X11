@@ -1,5 +1,5 @@
 XCOMM $XFree86: xc/programs/Xserver/hw/xfree86/os-support/sunos/Imakefile,v 1.4 2002/10/17 02:22:49 dawes Exp $
-XCOMM $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/sunos/Imakefile,v 1.2.4.2 2005/01/13 01:18:47 gisburn Exp $
+XCOMM $XdotOrg: xc/programs/Xserver/hw/xfree86/os-support/sunos/Imakefile,v 1.8 2005/11/06 03:49:22 alanc Exp $
 XCOMM
 XCOMM Copyright 2001 The XFree86 Project, Inc.  All Rights Reserved.
 XCOMM
@@ -34,12 +34,9 @@ XCOMM
 
 #if !HasGcc 
 # if HasSunC
-#  ifdef i386Architecture
-#   define AsmArch ia32
-#   define AsmFlags /**/
-#  else
-#   define AsmArch sparcv8plus
-#   define AsmFlags -xarch=v8plus
+#  if !defined(AsmArch) || !defined(AsmFlags)
+#   error "Unsupported Architecture for building Xorg server with Sun compilers."
+#   error "Need to use gcc or add AsmArch & AsmFlag settings in xc/config/cf/sun.cf"
 #  endif
 PROWORKS_ASM_ARCH = AsmArch
 PROWORKS_ASM_FLAGS = AsmFlags
@@ -54,10 +51,10 @@ CppFileTarget($(PROWORKS_ASM_ARCH).il,solaris-$(PROWORKS_ASM_ARCH).S,-DINLINE_AS
 $(PROWORKS_INOUT_OBJ): $(PROWORKS_INOUT_SRC)
 	$(AS) -P -o $@ $(PROWORKS_ASM_FLAGS) $(PROWORKS_INOUT_SRC)
 
-#elif defined(i386Architecture)
+# elif defined(i386Architecture)
 PROWORKS_INOUT_SRC = sun_inout.s
 PROWORKS_INOUT_OBJ = sun_inout.o
-#endif
+# endif
 #endif
 
 #if defined(i386Architecture) && (OSMinorVersion < 8)
@@ -76,15 +73,23 @@ VTSW_SRC = VTsw_noop.c
 VTSW_OBJ = VTsw_noop.o
 #endif
 
+#if defined(i386Architecture) || defined(AMD64Architecture)
+AGP_SRC = sun_agp.c
+AGP_OBJ = sun_agp.o
+#else
+AGP_SRC = agp_noop.c
+AGP_OBJ = agp_noop.o
+#endif
+
 #ifdef SVR4Architecture
 SYSVIPCDEFINES = -DHAVE_SYSV_IPC
 #endif
 
 SRCS = sun_bios.c sun_init.c $(IO_SRC) $(KBD_SRCS) $(PROWORKS_INOUT_SRC) \
-       sun_mouse.c sun_vid.c agp_noop.c libc_wrapper.c kmod_noop.c pm_noop.c \
+       sun_mouse.c sun_vid.c $(AGP_SRC) libc_wrapper.c kmod_noop.c pm_noop.c \
        posix_tty.c sigiostubs.c stdPci.c stdResource.c $(VTSW_SRC)
 OBJS = sun_bios.o sun_init.o $(IO_OBJ) $(KBD_OBJS) $(PROWORKS_INOUT_OBJ) \
-       sun_mouse.o sun_vid.o agp_noop.o libc_wrapper.o kmod_noop.o pm_noop.o \
+       sun_mouse.o sun_vid.o $(AGP_OBJ) libc_wrapper.o kmod_noop.o pm_noop.o \
        posix_tty.o sigiostubs.o stdPci.o stdResource.o $(VTSW_OBJ)
 
 INCLUDES = -I. -I$(XF86OSSRC) -I$(XF86COMSRC) \
@@ -111,3 +116,4 @@ LinkSourceFile(sysv_io.c,../sysv)
 LinkSourceFile(sysv_kbd.c,../shared)
 
 DependTarget()
+LintTarget()

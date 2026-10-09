@@ -30,17 +30,18 @@ OBJS_OS2 = os2_stubs.o
 #if PrintOnlyServer
 PO_DEFINES = -DPRINT_ONLY_SERVER
 #endif
+#endif
 #ifdef PrintServerExtensions
 XPEXT_DEFINES = PrintServerExtensions
 #else
 XPEXT_DEFINES = $(EXT_DEFINES)
 #endif
-SRCS3 = miinitext.c dpmsstubs.c
-OBJS3 = miinitext.o dpmsstubs.o
-#endif
 SRCS2 = ddxInit.c
 OBJS2 = ddxInit.o
 #endif
+
+SRCS3 = miinitext.c dpmsstubs.c
+OBJS3 = miinitext.o dpmsstubs.o
 
 SRCS = $(SRCS1) $(SRCS2) $(SRCS3) $(SRCS_OS2)
 
@@ -96,21 +97,19 @@ LinkSourceFile(Quarks.c,$(XLIBSRC))
 NormalLibraryObjectRule()
 
 #if XprtServer
-all:: $(OBJS2) $(OBJS3) $(OBJS_OS2)
+all:: $(OBJS2) $(OBJS_OS2) $(OBJS3)
 #endif
 
 NormalLibraryTarget(printer,$(OBJS))
 NormalLintTarget($(SRCS))
 
 SpecialCObjectRule(ddxInit,$(ICONFIGFILES),$(PO_DEFINES) $(OS_DEFINES) $(EXT_DEFINES))
-#if XprtServer && (PrintOnlyServer || defined(PrintServerExtensions))
+#if XprtServer
 LinkSourceFile(miinitext.c,$(SERVERSRC)/mi)
-SpecialCObjectRule(miinitext,$(ICONFIGFILES),$(PO_DEFINES) $(OS_DEFINES) $(XPEXT_DEFINES) -DXPRINT)
-#if PrintOnlyServer
+SpecialCObjectRule(miinitext,$(ICONFIGFILES), -DPRINT_ONLY_SERVER $(OS_DEFINES) $(XPEXT_DEFINES) -DXPRINT)
 LinkSourceFile(dpmsstubs.c,$(SERVERSRC)/Xext)
 LinkSourceFile(dpmsproc.h,$(SERVERSRC)/Xext)
 SpecialCObjectRule(dpmsstubs,$(ICONFIGFILES),$(PO_DEFINES) $(OS_DEFINES) $(XPEXT_DEFINES) -DXPRINT)
-#endif
 #endif
 
 #ifdef OS2Architecture

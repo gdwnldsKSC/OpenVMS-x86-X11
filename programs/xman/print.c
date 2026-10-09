@@ -41,7 +41,8 @@ in this Software without prior written authorization from The Open Group.
 
 static Widget
 CreatePrintShell(Widget    videoshell,
-                 Screen   *pscreen, 
+                 Screen   *pscreen,
+                 Visual   *pvisual,
                  String    printshell_name,
                  ArgList   args,
                  Cardinal  numargs)
@@ -53,6 +54,9 @@ CreatePrintShell(Widget    videoshell,
     Display *pdpy = XDisplayOfScreen(pscreen);
     int      dummyc = 0;
     String   dummys = "";
+    Cardinal shell_n;
+    Arg      shell_args[5];
+
     XtGetApplicationNameAndClass(XtDisplay(videoshell), 
                                  &videoname, &videoclass);
 
@@ -62,11 +66,15 @@ CreatePrintShell(Widget    videoshell,
                         NULL, 0,
                         &dummyc, &dummys);
 
-    pappshell = XtVaAppCreateShell(videoname, videoclass,
+    shell_n = 0;
+    XtSetArg(shell_args[shell_n], XtNscreen, pscreen); shell_n++;
+    if (pvisual) {
+        XtSetArg(shell_args[shell_n], XtNvisual, pvisual); shell_n++;
+    }
+    pappshell = XtAppCreateShell(videoname, videoclass,
                                    applicationShellWidgetClass,
                                    pdpy,
-                                   XtNscreen, pscreen,
-                                   NULL);
+                                   shell_args, shell_n);
     printshell = XtCreatePopupShell(printshell_name,
                                     xawPrintShellWidgetClass,
                                     pappshell, args, numargs);
@@ -224,19 +232,19 @@ void PrintEndJobCB(Widget pshell, XtPointer client_data, XtPointer call_data)
 }
 
 static
-XFontStruct *GetPrintTextFont(Display *pdpy, const char *fontprefix, long dpi)
+XFontStruct *GetPrintTextFont(Display *pdpy, const char *fontprefix, long dpi_x, long dpi_y)
 {
     XFontStruct *font;
     char         fontname[1024];
 
-    sprintf(fontname, "%s--*-120-%ld-%ld-*-*-iso8859-1", fontprefix, dpi, dpi);
+    sprintf(fontname, "%s--*-120-%ld-%ld-*-*-iso8859-1", fontprefix, dpi_x, dpi_y);
     font = XLoadQueryFont(pdpy, fontname);
     if (!font) {    
-        sprintf(fontname, "-adobe-courier-medium-r-normal--*-120-%ld-%ld-*-*-iso8859-1", dpi, dpi);
+        sprintf(fontname, "-adobe-courier-medium-r-normal--*-120-%ld-%ld-*-*-iso8859-1", dpi_x, dpi_y);
         font = XLoadQueryFont(pdpy, fontname);
     }
     if (!font) {          
-        sprintf(fontname, "-*-*-*-*-*-*-*-120-%ld-%ld-*-*-iso8859-1", dpi, dpi);
+        sprintf(fontname, "-*-*-*-*-*-*-*-120-%ld-%ld-*-*-iso8859-1", dpi_x, dpi_y);
         font = XLoadQueryFont(pdpy, fontname);
     }
     if (!font)
@@ -248,10 +256,12 @@ XFontStruct *GetPrintTextFont(Display *pdpy, const char *fontprefix, long dpi)
 void DoPrintManpage(const char *programname,
                     FILE *manpagefile, Widget toplevel,
                     Display *pdpy, XPContext pcontext,
+                    XpuColorspaceRec *colorspace,
                     XtCallbackProc pdpyDestroyCB,
                     const char *jobtitle, const char *toFile)
 {
-    long               dpi = 0;
+    long               dpi_x = 0L,
+                       dpi_y = 0L;
     int                n;
     Arg                args[20];
     XFontStruct       *printFontNormal;
@@ -281,7 +291,7 @@ void DoPrintManpage(const char *programname,
     XpSetContext(pdpy, pcontext);   
 
     /* Get default printer resolution */   
-    if (XpuGetResolution(pdpy, pcontext, &dpi) != 1) {
+    if (XpuGetResolution(pdpy, pcontext, &dpi_x, &dpi_y) != 1) {
         fprintf(stderr, "%s: No default resolution for printer.\n", apd->programname);
         XpuClosePrinterDisplay(pdpy, pcontext);
         return;
@@ -299,17 +309,22 @@ void DoPrintManpage(const char *programname,
      * |XawPrintLAYOUTMODE_PAGESIZE| are used. */
     XtSetArg(args[n], XtNgeometry,    "+0+0");                          n++;
     XtSetArg(args[n], XawNlayoutMode, XawPrintLAYOUTMODE_DRAWABLEAREA); n++;
-    apd->printshell = CreatePrintShell(toplevel, apd->pscreen, "printshell", args, n);
+    if (colorspace) {
+        printf("Setting visual to id=0x%lx.\n", colorspace->visualinfo.visualid);
+    }
+    apd->printshell = CreatePrintShell(toplevel, apd->pscreen, 
+                                       (colorspace?(colorspace->visualinfo.visual):(NULL)),
+                                       "printshell", args, n);
 
     n = 0;
     XtSetArg(args[n], XtNresizable,            True);            n++;
     XtSetArg(args[n], XtNright,                XtChainRight);    n++;
     apd->content.form = XtCreateManagedWidget("form", formWidgetClass, apd->printshell, args, n);
 
-    printFontNormal = GetPrintTextFont(pdpy, "-*-courier-medium-r-*", dpi);
-    printFontBold   = GetPrintTextFont(pdpy, "-*-courier-bold-r-*",   dpi);
-    printFontItalic = GetPrintTextFont(pdpy, "-*-courier-medium-o-*", dpi);
-    printFontSymbol = GetPrintTextFont(pdpy, "-*-symbol-*-*-*",       dpi);
+    printFontNormal = GetPrintTextFont(pdpy, "-*-courier-medium-r-*", dpi_x, dpi_y);
+    printFontBold   = GetPrintTextFont(pdpy, "-*-courier-bold-r-*",   dpi_x, dpi_y);
+    printFontItalic = GetPrintTextFont(pdpy, "-*-courier-medium-o-*", dpi_x, dpi_y);
+    printFontSymbol = GetPrintTextFont(pdpy, "-*-symbol-*-*-*",       dpi_x, dpi_y);
 
     n = 0;
     XtSetArg(args[n], XtNfromHoriz,            NULL);            n++;

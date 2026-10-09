@@ -1,4 +1,8 @@
 /* $XFree86$ */
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _GLX_error_h_
 #define _GLX_error_h_
 

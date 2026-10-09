@@ -53,7 +53,9 @@
 #undef cfbBresD
 #undef cfbBresS
 #undef cfbChangeWindowAttributes
+#undef cfbClearVisualTypes
 #undef cfbCloseScreen
+#undef cfbCreateDefColormap
 #undef cfbCopyArea
 #undef cfbCopyImagePlane
 #undef cfbCopyPixmap
@@ -72,6 +74,7 @@
 #undef cfbDoBitbltGeneral
 #undef cfbDoBitbltOr
 #undef cfbDoBitbltXor
+#undef cfbExpandDirectColors
 #undef cfbFillBoxSolid
 #undef cfbFillBoxTile32
 #undef cfbFillBoxTile32sCopy
@@ -93,13 +96,18 @@
 #undef cfbFillSpanTileOddGeneral
 #undef cfbFinishScreenInit
 #undef cfbGCFuncs
+#undef cfbGCPrivateIndex
 #undef cfbGetImage
 #undef cfbGetScreenPixmap
 #undef cfbGetSpans
 #undef cfbHorzS
 #undef cfbImageGlyphBlt8
+#undef cfbInitializeColormap
+#undef cfbInitVisuals
+#undef cfbInstallColormap
 #undef cfbLineSD
 #undef cfbLineSS
+#undef cfbListInstalledColormaps
 #undef cfbMapWindow
 #undef cfbMatchCommon
 #undef cfbNonTEOps
@@ -115,6 +123,7 @@
 #undef cfbPositionWindow
 #undef cfbPutImage
 #undef cfbReduceRasterOp
+#undef cfbResolveColor
 #undef cfbRestoreAreas
 #undef cfbSaveAreas
 #undef cfbScreenInit
@@ -124,6 +133,7 @@
 #undef cfbSetScanline
 #undef cfbSetScreenPixmap
 #undef cfbSetSpans
+#undef cfbSetVisualTypes
 #undef cfbSetupScreen
 #undef cfbSolidSpansCopy
 #undef cfbSolidSpansGeneral
@@ -135,11 +145,13 @@
 #undef cfbTEOps1Rect
 #undef cfbTile32FSCopy
 #undef cfbTile32FSGeneral
+#undef cfbUninstallColormap
 #undef cfbUnmapWindow
 #undef cfbUnnaturalStippleFS
 #undef cfbUnnaturalTileFS
 #undef cfbValidateGC
 #undef cfbVertS
+#undef cfbWindowPrivateIndex
 #undef cfbXRotatePixmap
 #undef cfbYRotatePixmap
 #undef cfbZeroPolyArcSS8Copy

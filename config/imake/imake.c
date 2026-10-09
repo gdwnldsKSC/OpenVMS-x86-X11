@@ -145,7 +145,7 @@ in this Software without prior written authorization from The Open Group.
  *	#include INCLUDE_IMAKEFILE
  *	<add any global targets like 'clean' and long dependencies>
  */
-#if defined(__FreeBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
 /* This needs to be before _POSIX_SOURCE gets defined */
 # include <sys/param.h>
 # include <sys/types.h>
@@ -153,7 +153,11 @@ in this Software without prior written authorization from The Open Group.
 #endif
 #include <stdlib.h>
 #include <stdio.h>
-#include "Xosdefs.h"
+#ifdef MONOLITH
+# include "Xosdefs.h"
+#else
+# include <X11/Xosdefs.h>
+#endif
 #include <string.h>
 #include <ctype.h>
 #ifdef WIN32
@@ -191,7 +195,7 @@ in this Software without prior written authorization from The Open Group.
 #include <sys/stat.h>
 #ifndef X_NOT_POSIX
 # ifdef _POSIX_SOURCE
-#  ifdef SCO325
+#  ifdef __SCO__
 #   include <sys/procset.h>
 #   include <sys/siginfo.h>
 #  endif
@@ -251,7 +255,7 @@ char *malloc(), *realloc();
 #  define SYS_NMLN 257
 # endif
 #endif
-#if defined(linux) || defined(__GNU__)
+#if defined(linux) || defined(__GNU__) || defined(__GLIBC__)
 #include <limits.h>
 #include <stdio.h>
 #endif
@@ -913,7 +917,7 @@ trim_version(char *p)
 }
 #endif
 
-#if defined linux
+#if defined(linux) || defined(__GLIBC__)
 const char *libc_c=
 "#include <stdio.h>\n"
 "#include <ctype.h>\n"
@@ -1020,7 +1024,7 @@ get_libc_version(FILE *inFile)
 }
 #endif
 
-#if defined(__OpenBSD__) 
+#if defined(__OpenBSD__) || defined(__DragonFly__)
 static void
 get_stackprotector(FILE *inFile)
 {
@@ -1038,7 +1042,7 @@ get_stackprotector(FILE *inFile)
     abort();
   while (fgets(buf, sizeof(buf), fp)) {
     if (strstr(buf, "propolice") != NULL) {
-      fprintf(inFile, "#define HasGccStackProtector YES\n");
+      fprintf(inFile, "#define ProPoliceSupport YES\n");
       break;
     }
   }
@@ -1048,7 +1052,7 @@ get_stackprotector(FILE *inFile)
 #endif
 	
 
-#if defined CROSSCOMPILE || defined linux
+#if defined CROSSCOMPILE || defined linux || defined(__GLIBC__)
 static void
 get_distrib(FILE *inFile)
 {
@@ -1351,8 +1355,12 @@ get_gcc(char *cmd)
      defined(__NetBSD__) || \
      defined(__OpenBSD__) || \
      defined(__FreeBSD__) || \
+     defined(__DragonFly__) || \
      defined(__APPLE__) || \
-     defined(__GNU__)
+     defined(__CYGWIN__) || \
+     defined(__MINGW32__) || \
+     defined(__GNU__) || \
+     defined(__GLIBC__)
 	"/usr/bin/cc",	/* for Linux PostIncDir */
 # endif
 	"/usr/local/bin/gcc",
@@ -1422,7 +1430,11 @@ define_os_defaults(FILE *inFile)
 {
 #if defined CROSSCOMPILE || ( !defined(WIN32) && !defined(__UNIXOS2__) )
 #ifdef CROSSCOMPILE
+#ifdef __GNUC__
+  if (1)
+#else
   if ((sys != win32) && (sys != emx))
+#endif
 #endif
     {
 # if (defined(DEFAULT_OS_NAME) || defined(DEFAULT_OS_MAJOR_REV) || \
@@ -1441,7 +1453,7 @@ define_os_defaults(FILE *inFile)
 	  else
 	      name = &uts_name;
       }
-#if defined CROSSCOMPILE && defined linux
+#if defined CROSSCOMPILE && (defined linux || defined(__GLIBC__))
       else {
 	  strncpy(uts_name.sysname,cross_uts_sysname,SYS_NMLN);
 	  strncpy(uts_name.release,cross_uts_release,SYS_NMLN);
@@ -1598,13 +1610,13 @@ define_os_defaults(FILE *inFile)
 # if defined CROSSCOMPILE
       if (CrossCompiling && sys == LinuX)
 # endif
-# if defined CROSSCOMPILE || defined linux
-#  ifdef CROSSCOMPILE
+# if defined CROSSCOMPILE || defined linux || defined(__GLIBC__)
+#  if defined(CROSSCOMPILE) && defined(__linux__)
 	if (sys == LinuX)
 #  endif
 	  get_distrib (inFile);
 # endif
-# if defined linux
+# if defined linux || defined(__GLIBC__)
 #  if defined CROSSCOMPILE
       if (!CrossCompiling)
 #  endif
@@ -1618,9 +1630,9 @@ define_os_defaults(FILE *inFile)
 	  fprintf(inFile,"#define DefaultLinuxCLibTeenyVersion 0\n");
       }
 #  endif
-# endif /* linux */
-# if defined CROSSCOMPILE || defined linux
-#  if defined CROSSCOMPILE
+# endif /* linux || __GLIBC__ */
+# if defined CROSSCOMPILE || defined linux || defined(__GLIBC__)
+#  if defined CROSSCOMPILE && defined(__linux__)
       if (sys == LinuX)
 #  endif
 	  get_ld_version(inFile);
@@ -1684,7 +1696,7 @@ define_os_defaults(FILE *inFile)
       fprintf(inFile, "#define DefaultOSTeenyVersion 0\n");
     }
 #endif /* EMX */
-#if defined(__OpenBSD__)
+#if defined(__OpenBSD__) || defined(__DragonFly__)
   get_stackprotector(inFile);
 #endif
   return FALSE;

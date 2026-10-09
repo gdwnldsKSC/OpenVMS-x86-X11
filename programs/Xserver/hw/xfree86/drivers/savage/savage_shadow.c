@@ -5,6 +5,10 @@
    based on code written by Mark Vojkovich <markv@valinux.com>
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "savage_driver.h"
 #include "shadowfb.h"
 #include "servermd.h"

@@ -26,6 +26,10 @@
  *    Leif Delgass <ldelgass@retinalburn.net>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ati.h"
 #include "atibus.h"
 #include "atichip.h"
@@ -46,6 +50,12 @@
 #include "mach64_dri.h"
 #include "mach64_sarea.h"
 #endif
+
+#ifdef TV_OUT
+
+#include "atichip.h"
+
+#endif /* TV_OUT */
 
 #include "shadowfb.h"
 #include "xf86cmap.h"
@@ -119,7 +129,7 @@ ATIMinBits
  *
  * This function is called by DIX to initialise the screen.
  */
-Bool
+_X_EXPORT Bool
 ATIScreenInit
 (
     int       iScreen,
@@ -176,7 +186,7 @@ ATIScreenInit
 #ifdef XF86DRI_DEVEL
 
     /* Setup DRI after visuals have been established, but before
-     * cfbScreenInit is called.  cfbScreenInit will eventually call the
+     * fbScreenInit is called.  fbScreenInit will eventually call the
      * driver's InitGLXVisuals call back.
      */
 
@@ -553,11 +563,17 @@ ATIScreenInit
     if (serverGeneration == 1)
         xf86ShowUnusedOptions(pScreenInfo->scrnIndex, pScreenInfo->options);
 
+#ifdef TV_OUT
+    /* Fix-up TV out after ImpacTV probe */
+    if (pATI->OptionTvOut && pATI->Chip < ATI_CHIP_264GTPRO)
+        ATISwitchMode(0, pScreenInfo->currentMode, 0);
+#endif /* TV_OUT */
+
 #ifdef XF86DRI_DEVEL
 
     /* DRI finalization */
     if (pATI->directRenderingEnabled) {
-	/* Now that mi, cfb, drm and others have done their thing,
+	/* Now that mi, fb, drm and others have done their thing,
 	 * complete the DRI setup.
 	 */
 	pATI->directRenderingEnabled = ATIDRIFinishScreenInit(pScreen);

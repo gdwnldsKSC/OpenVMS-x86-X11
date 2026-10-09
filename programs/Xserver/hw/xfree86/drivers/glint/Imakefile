@@ -15,7 +15,7 @@ XCOMM
 #if BuildXF86DRI /* || BuildXF86DRIDriverSupport -- does not currently work */
 DRISRC=glint_dri.c
 DRIOBJ=glint_dri.o
-DRIINCLUDES=-I$(SERVERSRC)/GL/dri -I$(LIBSRC)/GL/dri -I$(DRMSRCDIR)/shared
+DRIINCLUDES=-I$(SERVERSRC)/GL/dri -I$(LIBSRC)/GL/dri -I$(DRMSRCDIR)/shared-core
 DRIDEFINES=$(GLX_DEFINES)
 #endif
 
@@ -37,7 +37,7 @@ INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86OSSRC) -I$(SERVERSRC)/Xext \
            -I$(XF86SRC)/vgahw -I$(XF86SRC)/ramdac \
 	   -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c \
 	   -I$(XF86SRC)/rac -I$(XF86SRC)/int10 \
-	   -I$(XF86SRC)/xf24_32bpp -I$(FONTINCSRC) \
+	   -I$(FONTINCSRC) \
 	   -I$(XF86SRC)/xf8_32bpp -I$(XF86SRC)/xf1bpp \
            -I$(XF86SRC)/xf4bpp -I$(SERVERSRC)/include -I$(XINCLUDESRC) \
 	   -I$(XF86SRC)/ddc -I$(XF86SRC)/i2c -I$(EXTINCSRC) $(DRIINCLUDES) \
@@ -56,7 +56,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(glint,$(OBJS))
 
-InstallObjectModule(glint,$(MODULEDIR),drivers)
+InstallVideoObjectModule(glint,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(glint)

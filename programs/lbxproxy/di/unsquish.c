@@ -49,13 +49,13 @@ in this Software without prior written authorization from The Open Group.
 
 /* handles unsquishing events */
 
-#include "X.h"
+#include <X11/X.h>
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "Xproto.h"
+#include <X11/Xproto.h>
 #include "misc.h"
 #define	_XLBX_SERVER_
-#include "lbxstr.h"
+#include <X11/extensions/lbxstr.h>
 #include "proxyopts.h"
 
 #include	<stdio.h>

@@ -28,6 +28,9 @@
 */
 /* $XFree86: xc/programs/Xserver/hw/xwin/InitInput.c,v 1.11 2002/07/05 09:19:25 alanh Exp $ */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
 #include "win.h"
 #ifdef XWIN_CLIPBOARD
 # include "../../Xext/xf86miscproc.h"
@@ -57,7 +60,9 @@ CARD32				g_c32LastInputEventTime = 0;
  * References to external symbols
  */
 
+#ifdef HAS_DEVWINDOWS
 extern int			g_fdMessageQueue;
+#endif
 extern Bool			g_fXdmcpEnabled;
 #ifdef XWIN_CLIPBOARD
 extern winDispatchProcPtr	winProcEstablishConnectionOrig;
@@ -150,6 +155,7 @@ InitInput (int argc, char *argv[])
   /* Initialize the mode key states */
   winInitializeModeKeyStates ();
 
+#ifdef HAS_DEVWINDOWS
   /* Only open the windows message queue device once */
   if (g_fdMessageQueue == WIN_FD_INVALID)
     {
@@ -165,6 +171,7 @@ InitInput (int argc, char *argv[])
       /* Add the message queue as a device to wait for in WaitForSomething */
       AddEnabledDevice (g_fdMessageQueue);
     }
+#endif
 
 #if CYGDEBUG
   winDebug ("InitInput - returning\n");

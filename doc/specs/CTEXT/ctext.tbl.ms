@@ -1,4 +1,4 @@
-.\" $XdotOrg: xc/doc/specs/CTEXT/ctext.tbl.ms,v 1.3 2004/09/03 16:18:19 kem Exp $
+.\" $XdotOrg: xc/doc/specs/CTEXT/ctext.tbl.ms,v 1.4 2005/12/20 16:04:39 kem Exp $
 .\" Use tbl and -ms
 .sp 8
 .ce 5
@@ -6,7 +6,7 @@
 .sp 6p
 Version 1.1
 X Consortium Standard
-X Version 11, Release 6.8
+X Version 11, Release 6.9/7.0
 Robert W. Scheifler
 .sp 2
 .LP

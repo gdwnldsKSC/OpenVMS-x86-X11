@@ -24,10 +24,8 @@
 #ifndef ___ATIMACH64CURSOR_H___
 #define ___ATIMACH64CURSOR_H___ 1
 
-#include "atiproto.h"
-
 #include "xf86Cursor.h"
 
-extern Bool ATIMach64CursorInit FunctionPrototype((xf86CursorInfoPtr));
+extern Bool ATIMach64CursorInit(xf86CursorInfoPtr);
 
 #endif /* ___ATIMACH64CURSOR_H___ */

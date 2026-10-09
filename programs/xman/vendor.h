@@ -1,5 +1,5 @@
 /* $XConsortium: vendor.h,v 1.12 94/04/17 20:44:00 rws Exp $ */
-/* $XdotOrg: xc/programs/xman/vendor.h,v 1.3 2004/05/22 19:20:06 alanc Exp $ */
+/* $XdotOrg: xc/programs/xman/vendor.h,v 1.7 2005/11/08 06:33:33 jkj Exp $ */
 /*
 
 Copyright (c) 1991  X Consortium
@@ -32,6 +32,9 @@ from the X Consortium.
 /* $XFree86: xc/programs/xman/vendor.h,v 1.13 2003/07/29 21:16:56 dawes Exp $ */
 
 /* Vendor-specific definitions */
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #ifdef CSRG_BASED
 #include <sys/param.h>
@@ -74,11 +77,13 @@ from the X Consortium.
 #  define SYSMANPATH "/usr/share/man:/usr/contrib/man:/usr/contrib/isode/man:/usr/local/man"
 #elif defined(__OpenBSD__) || defined(__DARWIN__)
 #  define SYSMANPATH "/usr/share/man:/usr/local/man:/usr/X11R6/man"
+#elif defined(SVR4) && defined(sun)
+#  define SYSMANPATH "/usr/share/man:/usr/X11/man:/usr/openwin/share/man:/usr/dt/share/man:/usr/sfw/share/man"
 #elif defined(SVR4) || defined(__osf__) || (defined(BSD) && (BSD >= 199103))
 #  define SYSMANPATH "/usr/share/man"
 #elif defined(hcx)
 #  define SYSMANPATH "/usr/catman/local_man:/usr/catman/u_man:/usr/catman/a_man:/usr/catman/p_man:/usr/catman/ada_man"
-#elif defined(SYSV) && defined(i386) && !defined(SCO)
+#elif defined(SYSV) && defined(i386) && !defined(__SCO__)
 #  define SYSMANPATH "/usr/catman/u_man:/usr/catman/p_man"
 #elif defined(sgi)
 #  define SYSMANPATH "/usr/catman/a_man:/usr/catman/g_man:/usr/catman/p_man:/usr/catman/u_man:/usr/man/p_man:/usr/man/u_man:/usr/man"
@@ -95,8 +100,8 @@ from the X Consortium.
  */
 
 #if defined( macII ) || defined( hcx ) || \
-	(defined(SYSV) && defined(i386) && !defined(ISC) && !defined(SCO)) || \
-	defined(sgi)
+	(defined(SYSV) && defined(i386) && !defined(ISC) && \
+	!defined(__UNIXWARE__) && !defined(__SCO__)) || defined(sgi)
 #  define COMPRESSION_EXTENSION   "z"
 #  define UNCOMPRESS_FORMAT       "pcat %s > %s"
 #  define NO_COMPRESS		/* mac can't handle using pack as a filter and
@@ -105,9 +110,9 @@ from the X Consortium.
 #  define COMPRESSION_EXTENSION "C"
 #  define UNCOMPRESS_FORMAT     "ccat < %s > %s"
 #  define COMPRESS              "compact"
-#elif defined (ISC) || defined(SCO)
+#elif defined (ISC) || defined(__SCO__) || defined(__UNIXWARE__)
 #  define COMPRESSION_EXTENSION   "Z"     /* dummy */
-#  ifndef SCO
+#  if !defined(__SCO__) && !defined(__UNIXWARE__)
 #    define COMPRESSION_EXTENSIONS  "zZF" /* pack, compress, freeze */
 #  else
 #    define COMPRESSION_EXTENSIONS  "zZ"  /* pack, compress */
@@ -168,7 +173,7 @@ from the X Consortium.
 # elif defined(BSD) && (BSD >= 199103)
 #  define FORMAT "| eqn | tbl | nroff -man"
 # elif defined(linux)
-#  define FORMAT "| eqn | tbl | GROFF_NO_SGR= groff -Tlatin1 -mandoc"
+#  define FORMAT "| pic | eqn | tbl -Tlatin1 | GROFF_NO_SGR= groff -Tlatin1 -mandoc"
 # else
 #  define FORMAT "| neqn | nroff -man"      /* The format command. */
 # endif

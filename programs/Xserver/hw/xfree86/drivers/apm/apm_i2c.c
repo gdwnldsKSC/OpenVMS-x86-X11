@@ -1,5 +1,9 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/apm/apm_i2c.c,v 1.6.4.1 2001/11/28 22:35:13 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "apm.h"
 #include "apm_regs.h"
 

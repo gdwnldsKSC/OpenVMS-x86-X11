@@ -22,6 +22,9 @@ THE SOFTWARE.
 
 /* $XFree86$ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "t1unicode.h"
 
 static char* table_32[] = 

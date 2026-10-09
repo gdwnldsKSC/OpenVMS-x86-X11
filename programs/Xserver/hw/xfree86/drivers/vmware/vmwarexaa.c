@@ -8,6 +8,10 @@ char rcsId_vmwarexaa[] =
 #endif
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/vmware/vmwarexaa.c,v 1.5 2003/02/04 01:39:53 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "vmware.h"
 
 #define OFFSCREEN_SCRATCH_SIZE 1*1024*1024
@@ -445,7 +449,7 @@ vmwareSubsequentColorExpandScanline(ScrnInfoPtr pScrn, int bufno)
 
 static void
 RGBPlusAlphaChannelToPremultipliedRGBA(
-    CARD8 red, CARD8 blue, CARD8 green,
+    CARD8 red, CARD8 green, CARD8 blue,
     CARD8 *alphaPtr,   /* in bytes */
     int alphaPitch,
     CARD32 *dstPtr,

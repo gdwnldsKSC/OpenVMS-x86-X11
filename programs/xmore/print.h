@@ -35,11 +35,20 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/Xaw/Cardinals.h>
 #include <X11/XprintUtil/xprintutil.h>
 
+#if defined(XMORE)
+#define PrintMsg(x) { printf("xmore: "); printf x ; }
+#elif defined(XEDIT)
+#define PrintMsg(x) { XeditPrintf x ; }
+#else
+#error unknown application
+#endif 
+
 /* Prototypes */
 void DoPrintTextSource(const char *programname,
                        Widget textsource,
                        Widget toplevel, 
                        Display *pdpy, XPContext pcontext,
+                       XpuColorspaceRec *colorspace,
                        XtCallbackProc printDisplayDestroyCallback,
                        const char *jobTitle,
                        const char *toFile);

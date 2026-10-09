@@ -48,10 +48,13 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
+CC_FOR_BUILD = @CC_FOR_BUILD@
 CFLAGS = @CFLAGS@
 CONFDIR = @CONFDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CROSS_COMPILING_FALSE = @CROSS_COMPILING_FALSE@
+CROSS_COMPILING_TRUE = @CROSS_COMPILING_TRUE@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -61,6 +64,8 @@ DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
 DOCDIR = @DOCDIR@
+DOCMAN3 = @DOCMAN3@
+DOCSRC = @DOCSRC@
 ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -69,6 +74,7 @@ EGREP = @EGREP@
 ENABLE_DOCS_FALSE = @ENABLE_DOCS_FALSE@
 ENABLE_DOCS_TRUE = @ENABLE_DOCS_TRUE@
 EXEEXT = @EXEEXT@
+EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
 EXPAT_CFLAGS = @EXPAT_CFLAGS@
 EXPAT_LIBS = @EXPAT_LIBS@
 F77 = @F77@
@@ -96,6 +102,9 @@ LT_CURRENT = @LT_CURRENT@
 LT_CURRENT_MINUS_AGE = @LT_CURRENT_MINUS_AGE@
 LT_REVISION = @LT_REVISION@
 LT_VERSION_INFO = @LT_VERSION_INFO@
+MAINT = @MAINT@
+MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
+MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
 MS_LIB_AVAILABLE_FALSE = @MS_LIB_AVAILABLE_FALSE@
 MS_LIB_AVAILABLE_TRUE = @MS_LIB_AVAILABLE_TRUE@
@@ -115,7 +124,10 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USEDOCBOOK_FALSE = @USEDOCBOOK_FALSE@
+USEDOCBOOK_TRUE = @USEDOCBOOK_TRUE@
 VERSION = @VERSION@
+WARN_CFLAGS = @WARN_CFLAGS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_AS = @ac_ct_AS@
 ac_ct_CC = @ac_ct_CC@
@@ -163,12 +175,14 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 check_SCRIPTS = run-test.sh
-TESTS_ENVIRONMENT = sh
+TESTS_ENVIRONMENT = src=${srcdir} sh
 TESTS = run-test.sh
 
 TESTDATA = 4x6.pcf 8x16.pcf out.expected fonts.conf.in
 
 EXTRA_DIST = $(check_SCRIPTS) $(TESTDATA)
+
+CLEANFILES = 
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -179,10 +193,10 @@ DIST_COMMON = $(srcdir)/Makefile.in Makefile.am
 all: all-am
 
 .SUFFIXES:
-$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  test/Makefile
-Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 
 mostlyclean-libtool:
@@ -329,6 +343,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)

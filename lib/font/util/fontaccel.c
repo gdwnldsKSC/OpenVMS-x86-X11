@@ -33,9 +33,12 @@ from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
-#include    "fontmisc.h"
-#include    "fontstruct.h"
-#include    "fontutil.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include    <X11/fonts/fontmisc.h>
+#include    <X11/fonts/fontstruct.h>
+#include    <X11/fonts/fontutil.h>
 
 void
 FontComputeInfoAccelerators(FontInfoPtr pFontInfo)

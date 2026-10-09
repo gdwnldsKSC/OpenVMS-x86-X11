@@ -24,8 +24,6 @@
 #ifndef ___ATIIDENT_H___
 #define ___ATIIDENT_H___ 1
 
-#include "atiproto.h"
-
 typedef enum
 {
     ATI_CHIPSET_ATI,
@@ -49,7 +47,7 @@ typedef enum
 
 extern const char *ATIChipsetNames[];
 
-extern void ATIIdentify   FunctionPrototype((int));
-extern int  ATIIdentProbe FunctionPrototype((const char *));
+extern void ATIIdentify(int);
+extern int  ATIIdentProbe(const char *);
 
 #endif /* ___ATIIDENT_H___ */

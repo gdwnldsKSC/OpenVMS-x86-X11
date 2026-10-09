@@ -55,6 +55,10 @@ in this Software without prior written authorization from the XFree86 Project.
    based on code written by Mark Vojkovich <markv@valinux.com>
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"

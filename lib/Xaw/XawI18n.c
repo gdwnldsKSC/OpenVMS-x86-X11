@@ -55,6 +55,9 @@ in this Software without prior written authorization from The Open Group.
 */
 /* $XFree86: xc/lib/Xaw/XawI18n.c,v 1.7 2001/01/17 19:42:36 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/IntrinsicP.h>
 #include "XawI18n.h"
 

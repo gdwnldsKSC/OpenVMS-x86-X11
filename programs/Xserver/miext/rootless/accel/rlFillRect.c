@@ -1,7 +1,7 @@
 /*
  * This code is largely copied from fbfillrect.c.
  *
- * Copyright © 1998 Keith Packard
+ * Copyright Â© 1998 Keith Packard
  * Copyright (c) 2003 Torrey T. Lyons. All Rights Reserved.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -23,6 +23,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 /* $XFree86: xc/programs/Xserver/fb/fbfillrect.c,v 1.2 2000/02/23 20:29:43 dawes Exp $ */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #include "fb.h"
 #include "rlAccel.h"

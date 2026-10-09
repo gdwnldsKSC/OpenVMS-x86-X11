@@ -25,22 +25,20 @@
 #define ___ATICONSOLE_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
-extern Bool ATISaveScreen    FunctionPrototype((ScreenPtr, int));
-extern void ATISetDPMSMode   FunctionPrototype((ScrnInfoPtr, int, int));
+extern Bool ATISaveScreen(ScreenPtr, int);
+extern void ATISetDPMSMode(ScrnInfoPtr, int, int);
 
-extern Bool ATIEnterGraphics FunctionPrototype((ScreenPtr, ScrnInfoPtr,
-                                                ATIPtr));
-extern void ATILeaveGraphics FunctionPrototype((ScrnInfoPtr, ATIPtr));
+extern Bool ATIEnterGraphics(ScreenPtr, ScrnInfoPtr, ATIPtr);
+extern void ATILeaveGraphics(ScrnInfoPtr, ATIPtr);
 
-extern Bool ATISwitchMode    FunctionPrototype((int, DisplayModePtr, int));
+extern Bool ATISwitchMode(int, DisplayModePtr, int);
 
-extern Bool ATIEnterVT       FunctionPrototype((int, int));
-extern void ATILeaveVT       FunctionPrototype((int, int));
+extern Bool ATIEnterVT(int, int);
+extern void ATILeaveVT(int, int);
 
-extern void ATIFreeScreen    FunctionPrototype((int, int));
+extern void ATIFreeScreen(int, int);
 
 #endif /* ___ATICONSOLE_H___ */

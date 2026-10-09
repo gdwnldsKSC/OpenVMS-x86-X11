@@ -23,10 +23,14 @@
  */
 /* $XFree86: xc/programs/Xserver/lbx/lbxsrvopts.h,v 1.2 2000/05/18 23:46:24 dawes Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef _LBX_SRVOPTS_H_
 #define _LBX_SRVOPTS_H_
 
-#include "lbxopts.h"
+#include <X11/extensions/lbxopts.h>
 
 typedef struct _LbxNegOpts {
     int		nopts;

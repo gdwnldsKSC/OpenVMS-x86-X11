@@ -189,9 +189,9 @@ void radeonEmitState( radeonContextPtr rmesa )
    dest = rmesa->store.cmd_buf + rmesa->store.cmd_used;
 
    /* We always always emit zbs, this is due to a bug found by keithw in
-    * the hardware and rediscovered after Erics changes by me.
-    * if you ever touch this code make sure you emit zbs otherwise
-    * you get tcl lockups on at least M7/7500 class of chips - airlied */
+      the hardware and rediscovered after Erics changes by me.
+      if you ever touch this code make sure you emit zbs otherwise
+      you get tcl lockups on at least M7/7500 class of chips - airlied */
    rmesa->hw.zbs.dirty=1;
 
    if (RADEON_DEBUG & DEBUG_STATE) {
@@ -301,7 +301,7 @@ void radeonFlushElts( radeonContextPtr rmesa )
       fprintf(stderr, "%s\n", __FUNCTION__);
 
    assert( rmesa->dma.flush == radeonFlushElts );
-   rmesa->dma.flush = 0;
+   rmesa->dma.flush = NULL;
 
    /* Cope with odd number of elts:
     */
@@ -315,6 +315,11 @@ void radeonFlushElts( radeonContextPtr rmesa )
    cmd[1] |= (dwords - 3) << 16;
    cmd[3] |= nr << RADEON_CP_VC_CNTL_NUM_SHIFT;
 #endif
+
+   if (RADEON_DEBUG & DEBUG_SYNC) {
+      fprintf(stderr, "%s: Syncing\n", __FUNCTION__);
+      radeonFinish( rmesa->glCtx );
+   }
 }
 
 
@@ -585,6 +590,11 @@ static int radeonFlushCmdBufLocked( radeonContextPtr rmesa,
    if (ret)
       fprintf(stderr, "drmCommandWrite: %d\n", ret);
 
+   if (RADEON_DEBUG & DEBUG_SYNC) {
+      fprintf(stderr, "\nSyncing in %s\n\n", __FUNCTION__);
+      radeonWaitForIdleLocked( rmesa );
+   }
+
  out:
    rmesa->store.primnr = 0;
    rmesa->store.statenr = 0;
@@ -724,7 +734,7 @@ void radeonReleaseDmaRegion( radeonContextPtr rmesa,
       rmesa->dma.nr_released_bufs++;
    }
 
-   region->buf = 0;
+   region->buf = NULL;
    region->start = 0;
 }
 
@@ -777,11 +787,11 @@ void radeonAllocDmaRegionVerts( radeonContextPtr rmesa,
  * SwapBuffers with client-side throttling
  */
 
-static uint32_t radeonGetLastFrame (radeonContextPtr rmesa) 
+static u_int32_t radeonGetLastFrame (radeonContextPtr rmesa) 
 {
    unsigned char *RADEONMMIO = rmesa->radeonScreen->mmio.map;
    int ret;
-   uint32_t frame;
+   u_int32_t frame;
 
    if (rmesa->dri.screen->drmMinor >= 4) {
       drm_radeon_getparam_t gp;
@@ -925,7 +935,7 @@ void radeonCopyBuffer( const __DRIdrawablePrivate *dPriv )
 
    UNLOCK_HARDWARE( rmesa );
    rmesa->swap_count++;
-   (*rmesa->get_ust)( & ust );
+   (*dri_interface->getUST)( & ust );
    if ( missed_target ) {
       rmesa->swap_missed_count++;
       rmesa->swap_missed_ust = ust - rmesa->swap_ust;
@@ -973,7 +983,7 @@ void radeonPageFlip( const __DRIdrawablePrivate *dPriv )
    driWaitForVBlank( dPriv, & rmesa->vbl_seq, rmesa->vblank_flags, & missed_target );
    if ( missed_target ) {
       rmesa->swap_missed_count++;
-      (void) (*rmesa->get_ust)( & rmesa->swap_missed_ust );
+      (void) (*dri_interface->getUST)( & rmesa->swap_missed_ust );
    }
    LOCK_HARDWARE( rmesa );
 
@@ -987,7 +997,7 @@ void radeonPageFlip( const __DRIdrawablePrivate *dPriv )
    }
 
    rmesa->swap_count++;
-   (void) (*rmesa->get_ust)( & rmesa->swap_ust );
+   (void) (*dri_interface->getUST)( & rmesa->swap_ust );
 
    if ( rmesa->sarea->pfCurrentPage == 1 ) {
 	 rmesa->state.color.drawOffset = rmesa->radeonScreen->frontOffset;
@@ -1001,6 +1011,9 @@ void radeonPageFlip( const __DRIdrawablePrivate *dPriv )
    rmesa->hw.ctx.cmd[CTX_RB3D_COLOROFFSET] = rmesa->state.color.drawOffset
 					   + rmesa->radeonScreen->fbLocation;
    rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH]  = rmesa->state.color.drawPitch;
+   if (rmesa->sarea->tiling_enabled) {
+      rmesa->hw.ctx.cmd[CTX_RB3D_COLORPITCH] |= RADEON_COLOR_TILE_ENABLE;
+   }
 }
 
 
@@ -1016,7 +1029,7 @@ static void radeonClear( GLcontext *ctx, GLbitfield mask, GLboolean all,
    __DRIdrawablePrivate *dPriv = rmesa->dri.drawable;
    drm_radeon_sarea_t *sarea = rmesa->sarea;
    unsigned char *RADEONMMIO = rmesa->radeonScreen->mmio.map;
-   uint32_t clear;
+   u_int32_t clear;
    GLuint flags = 0;
    GLuint color_mask = 0;
    GLint ret, i;
@@ -1035,26 +1048,26 @@ static void radeonClear( GLcontext *ctx, GLbitfield mask, GLboolean all,
    
    radeonFlush( ctx ); 
 
-   if ( mask & DD_FRONT_LEFT_BIT ) {
+   if ( mask & BUFFER_BIT_FRONT_LEFT ) {
       flags |= RADEON_FRONT;
       color_mask = rmesa->hw.msk.cmd[MSK_RB3D_PLANEMASK];
-      mask &= ~DD_FRONT_LEFT_BIT;
+      mask &= ~BUFFER_BIT_FRONT_LEFT;
    }
 
-   if ( mask & DD_BACK_LEFT_BIT ) {
+   if ( mask & BUFFER_BIT_BACK_LEFT ) {
       flags |= RADEON_BACK;
       color_mask = rmesa->hw.msk.cmd[MSK_RB3D_PLANEMASK];
-      mask &= ~DD_BACK_LEFT_BIT;
+      mask &= ~BUFFER_BIT_BACK_LEFT;
    }
 
-   if ( mask & DD_DEPTH_BIT ) {
-      if ( ctx->Depth.Mask ) flags |= RADEON_DEPTH; /* FIXME: ??? */
-      mask &= ~DD_DEPTH_BIT;
+   if ( mask & BUFFER_BIT_DEPTH ) {
+      flags |= RADEON_DEPTH;
+      mask &= ~BUFFER_BIT_DEPTH;
    }
 
-   if ( (mask & DD_STENCIL_BIT) && rmesa->state.stencil.hwBuffer ) {
+   if ( (mask & BUFFER_BIT_STENCIL) && rmesa->state.stencil.hwBuffer ) {
       flags |= RADEON_STENCIL;
-      mask &= ~DD_STENCIL_BIT;
+      mask &= ~BUFFER_BIT_STENCIL;
    }
 
    if ( mask ) {
@@ -1066,6 +1079,16 @@ static void radeonClear( GLcontext *ctx, GLbitfield mask, GLboolean all,
    if ( !flags ) 
       return;
 
+   if (rmesa->using_hyperz) {
+      flags |= RADEON_USE_COMP_ZBUF;
+/*      if (rmesa->radeonScreen->chipset & RADEON_CHIPSET_TCL) 
+         flags |= RADEON_USE_HIERZ; */
+      if (!(rmesa->state.stencil.hwBuffer) ||
+	 ((flags & RADEON_DEPTH) && (flags & RADEON_STENCIL) &&
+	    ((rmesa->state.stencil.clear & RADEON_STENCIL_WRITE_MASK) == RADEON_STENCIL_WRITE_MASK))) {
+	  flags |= RADEON_CLEAR_FASTZ;
+      }
+   }
 
    /* Flip top to bottom */
    cx += dPriv->x;

@@ -42,6 +42,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "imports.h"
 #include "matrix.h"
 #include "extensions.h"
+#include "framebuffer.h"
 
 #include "swrast/swrast.h"
 #include "swrast_setup/swrast_setup.h"
@@ -62,7 +63,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "radeon_vtxfmt.h"
 #include "radeon_maos.h"
 
-#define DRIVER_DATE	"20040929"
+#define need_GL_ARB_multisample
+#define need_GL_ARB_texture_compression
+#define need_GL_EXT_blend_minmax
+#define need_GL_EXT_secondary_color
+#include "extension_helper.h"
+
+#define DRIVER_DATE	"20050528"
 
 #include "vblank.h"
 #include "utils.h"
@@ -118,32 +125,33 @@ static const GLubyte *radeonGetString( GLcontext *ctx, GLenum name )
 
 /* Extension strings exported by the R100 driver.
  */
-static const char * const card_extensions[] =
+const struct dri_extension card_extensions[] =
 {
-    "GL_ARB_multisample",
-    "GL_ARB_multitexture",
-    "GL_ARB_texture_border_clamp",
-    "GL_ARB_texture_compression",
-    "GL_ARB_texture_env_add",
-    "GL_ARB_texture_env_combine",
-    "GL_ARB_texture_env_crossbar",
-    "GL_ARB_texture_env_dot3",
-    "GL_ARB_texture_mirrored_repeat",
-    "GL_EXT_blend_logic_op",
-    "GL_EXT_blend_subtract",
-    "GL_EXT_secondary_color",
-    "GL_EXT_texture_edge_clamp",
-    "GL_EXT_texture_env_combine",
-    "GL_EXT_texture_env_dot3",
-    "GL_EXT_texture_filter_anisotropic",
-    "GL_EXT_texture_lod_bias",
-    "GL_EXT_texture_mirror_clamp",
-    "GL_ATI_texture_env_combine3",
-    "GL_ATI_texture_mirror_once",
-    "GL_MESA_ycbcr_texture",
-    "GL_NV_blend_square",
-    "GL_SGIS_generate_mipmap",
-    NULL
+    { "GL_ARB_multisample",                GL_ARB_multisample_functions },
+    { "GL_ARB_multitexture",               NULL },
+    { "GL_ARB_texture_border_clamp",       NULL },
+    { "GL_ARB_texture_compression",        GL_ARB_texture_compression_functions },
+    { "GL_ARB_texture_env_add",            NULL },
+    { "GL_ARB_texture_env_combine",        NULL },
+    { "GL_ARB_texture_env_crossbar",       NULL },
+    { "GL_ARB_texture_env_dot3",           NULL },
+    { "GL_ARB_texture_mirrored_repeat",    NULL },
+    { "GL_EXT_blend_logic_op",             NULL },
+    { "GL_EXT_blend_subtract",             GL_EXT_blend_minmax_functions },
+    { "GL_EXT_secondary_color",            GL_EXT_secondary_color_functions },
+    { "GL_EXT_stencil_wrap",               NULL },
+    { "GL_EXT_texture_edge_clamp",         NULL },
+    { "GL_EXT_texture_env_combine",        NULL },
+    { "GL_EXT_texture_env_dot3",           NULL },
+    { "GL_EXT_texture_filter_anisotropic", NULL },
+    { "GL_EXT_texture_lod_bias",           NULL },
+    { "GL_EXT_texture_mirror_clamp",       NULL },
+    { "GL_ATI_texture_env_combine3",       NULL },
+    { "GL_ATI_texture_mirror_once",        NULL },
+    { "GL_MESA_ycbcr_texture",             NULL },
+    { "GL_NV_blend_square",                NULL },
+    { "GL_SGIS_generate_mipmap",           NULL },
+    { NULL,                                NULL }
 };
 
 extern const struct tnl_pipeline_stage _radeon_texrect_stage;
@@ -171,7 +179,7 @@ static const struct tnl_pipeline_stage *radeon_pipeline[] = {
 
    &_radeon_render_stage,
    &_tnl_render_stage,		/* FALLBACK:  */
-   0,
+   NULL,
 };
 
 
@@ -181,7 +189,7 @@ static const struct tnl_pipeline_stage *radeon_pipeline[] = {
 static void radeonInitDriverFuncs( struct dd_function_table *functions )
 {
     functions->GetBufferSize	= radeonGetBufferSize;
-    functions->ResizeBuffers	= _swrast_alloc_buffers;
+    functions->ResizeBuffers	= _mesa_resize_framebuffer;
     functions->GetString	= radeonGetString;
 }
 
@@ -200,16 +208,9 @@ static const struct dri_debug_control debug_control[] =
     { "dri",   DEBUG_DRI },
     { "dma",   DEBUG_DMA },
     { "san",   DEBUG_SANITY },
+    { "sync",  DEBUG_SYNC },
     { NULL,    0 }
 };
-
-
-static int
-get_ust_nop( int64_t * ust )
-{
-   *ust = 1;
-   return 0;
-}
 
 
 /* Create the device specific context.
@@ -244,6 +245,17 @@ radeonCreateContext( const __GLcontextModes *glVisual,
 			screen->driScreen->myNum, "radeon");
    rmesa->initialMaxAnisotropy = driQueryOptionf(&rmesa->optionCache,
                                                  "def_max_anisotropy");
+
+   if ( driQueryOptionb( &rmesa->optionCache, "hyperz" ) ) {
+      if ( sPriv->drmMinor < 13 )
+	 fprintf( stderr, "DRM version 1.%d too old to support HyperZ, "
+			  "disabling.\n",sPriv->drmMinor );
+      else
+	 rmesa->using_hyperz = GL_TRUE;
+   }
+
+   if ( sPriv->drmMinor >= 15 )
+      rmesa->texmicrotile = GL_TRUE;
 
    /* Init default driver functions then plug in our Radeon-specific functions
     * (the texture functions are especially important)
@@ -329,6 +341,13 @@ radeonCreateContext( const __GLcontextModes *glVisual,
 				 12,
 				 GL_FALSE );
 
+   /* adjust max texture size a bit. Hack, but I really want to use larger textures
+      which will work just fine in 99.999999% of all cases, especially with texture compression... */
+   if (driQueryOptionb( &rmesa->optionCache, "texture_level_hack" ))
+   {
+     if (ctx->Const.MaxTextureLevels < 12) ctx->Const.MaxTextureLevels += 1;
+   }
+
    ctx->Const.MaxTextureMaxAnisotropy = 16.0;
 
    /* No wide points.
@@ -373,13 +392,7 @@ radeonCreateContext( const __GLcontextModes *glVisual,
     */
    _tnl_isolate_materials( ctx, GL_TRUE );
 
-
 /*     _mesa_allow_light_in_model( ctx, GL_FALSE ); */
-
-   /* Try and keep materials and vertices separate:
-    */
-   _tnl_isolate_materials( ctx, GL_TRUE );
-
 
    /* Configure swrast and T&L to match hardware characteristics:
     */
@@ -397,6 +410,13 @@ radeonCreateContext( const __GLcontextModes *glVisual,
    _math_matrix_set_identity( &rmesa->tmpmat );
 
    driInitExtensions( ctx, card_extensions, GL_TRUE );
+   if (rmesa->glCtx->Mesa_DXTn) {
+      _mesa_enable_extension( ctx, "GL_EXT_texture_compression_s3tc" );
+      _mesa_enable_extension( ctx, "GL_S3_s3tc" );
+   }
+   else if (driQueryOptionb (&rmesa->optionCache, "force_s3tc_enable")) {
+      _mesa_enable_extension( ctx, "GL_EXT_texture_compression_s3tc" );
+   }
 
    if (rmesa->dri.drmMinor >= 9)
       _mesa_enable_extension( ctx, "GL_NV_texture_rectangle");
@@ -422,11 +442,7 @@ radeonCreateContext( const __GLcontextModes *glVisual,
    rmesa->vblank_flags = (rmesa->radeonScreen->irq != 0)
        ? driGetDefaultVBlankFlags(&rmesa->optionCache) : VBLANK_FLAG_NO_IRQ;
 
-   rmesa->get_ust = (PFNGLXGETUSTPROC) glXGetProcAddress( (const GLubyte *) "__glXGetUST" );
-   if ( rmesa->get_ust == NULL ) {
-      rmesa->get_ust = get_ust_nop;
-   }
-   (*rmesa->get_ust)( & rmesa->swap_ust );
+   (*dri_interface->getUST)( & rmesa->swap_ust );
 
 
 #if DO_DEBUG
@@ -470,7 +486,7 @@ void radeonDestroyContext( __DRIcontextPrivate *driContextPriv )
    /* check if we're deleting the currently bound context */
    if (rmesa == current) {
       RADEON_FIREVERTICES( rmesa );
-      _mesa_make_current2(NULL, NULL, NULL);
+      _mesa_make_current(NULL, NULL, NULL);
    }
 
    /* Free radeon context resources */
@@ -506,7 +522,7 @@ void radeonDestroyContext( __DRIcontextPrivate *driContextPriv )
 
       if (rmesa->state.scissor.pClipRects) {
 	 FREE(rmesa->state.scissor.pClipRects);
-	 rmesa->state.scissor.pClipRects = 0;
+	 rmesa->state.scissor.pClipRects = NULL;
       }
 
       if ( release_texture_heaps ) {
@@ -582,14 +598,9 @@ radeonMakeCurrent( __DRIcontextPrivate *driContextPriv,
 	 radeonUpdateViewportOffset( newCtx->glCtx );
       }
   
-      _mesa_make_current2( newCtx->glCtx,
-			   (GLframebuffer *) driDrawPriv->driverPrivate,
-			   (GLframebuffer *) driReadPriv->driverPrivate );
-
-      if ( !newCtx->glCtx->Viewport.Width ) {
-	 _mesa_set_viewport( newCtx->glCtx, 0, 0,
-			     driDrawPriv->w, driDrawPriv->h );
-      }
+      _mesa_make_current( newCtx->glCtx,
+			  (GLframebuffer *) driDrawPriv->driverPrivate,
+			  (GLframebuffer *) driReadPriv->driverPrivate );
 
       if (newCtx->vb.enabled)
 	 radeonVtxfmtMakeCurrent( newCtx->glCtx );
@@ -597,7 +608,7 @@ radeonMakeCurrent( __DRIcontextPrivate *driContextPriv,
    } else {
       if (RADEON_DEBUG & DEBUG_DRI)
 	 fprintf(stderr, "%s ctx is null\n", __FUNCTION__);
-      _mesa_make_current( 0, 0 );
+      _mesa_make_current( NULL, NULL, NULL );
    }
 
    if (RADEON_DEBUG & DEBUG_DRI)

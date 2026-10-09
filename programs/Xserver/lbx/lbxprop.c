@@ -50,12 +50,16 @@ in this Software without prior written authorization from The Open Group.
 
 /* various bits of DIX-level mangling */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <sys/types.h>
 #include <stdio.h>
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "os.h"
 #include "dixstruct.h"
@@ -65,13 +69,13 @@ in this Software without prior written authorization from The Open Group.
 #include "colormapst.h"
 #include "windowstr.h"
 #define _XLBX_SERVER_
-#include "lbxstr.h"
+#include <X11/extensions/lbxstr.h>
 #include "lbxserve.h"
 #include "lbxtags.h"
-#include "Xfuncproto.h"
+#include <X11/Xfuncproto.h>
 #ifdef XCSECURITY
 #define _SECURITY_SERVER
-#include "extensions/security.h"
+#include <X11/extensions/security.h>
 #endif
 #include "swaprep.h"
 

@@ -1,7 +1,7 @@
 /*
  * $XFree86: xc/programs/Xserver/render/picture.h,v 1.20tsi Exp $
  *
- * Copyright © 2000 SuSE, Inc.
+ * Copyright Â© 2000 SuSE, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -86,9 +86,9 @@ typedef struct _Picture		*PicturePtr;
 #define PICT_a1b5g5r5	PICT_FORMAT(16,PICT_TYPE_ABGR,1,5,5,5)
 #define PICT_x1b5g5r5	PICT_FORMAT(16,PICT_TYPE_ABGR,0,5,5,5)
 #define PICT_a4r4g4b4	PICT_FORMAT(16,PICT_TYPE_ARGB,4,4,4,4)
-#define PICT_x4r4g4b4	PICT_FORMAT(16,PICT_TYPE_ARGB,4,4,4,4)
-#define PICT_a4b4g4r4	PICT_FORMAT(16,PICT_TYPE_ARGB,4,4,4,4)
-#define PICT_x4b4g4r4	PICT_FORMAT(16,PICT_TYPE_ARGB,4,4,4,4)
+#define PICT_x4r4g4b4	PICT_FORMAT(16,PICT_TYPE_ARGB,0,4,4,4)
+#define PICT_a4b4g4r4	PICT_FORMAT(16,PICT_TYPE_ABGR,4,4,4,4)
+#define PICT_x4b4g4r4	PICT_FORMAT(16,PICT_TYPE_ABGR,0,4,4,4)
 
 /* 8bpp formats */
 #define PICT_a8		PICT_FORMAT(8,PICT_TYPE_A,8,0,0,0)
@@ -165,7 +165,7 @@ extern int	RenderClientPrivateIndex;
 
 /* Fixed point updates from Carl Worth, USC, Information Sciences Institute */
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(__GNUC__)
 typedef __int64		xFixed_32_32;
 #else
 #  if defined (_LP64) || \

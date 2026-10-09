@@ -24,7 +24,7 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
+ * Authors: Paulo CÃ©sar Pereira de Andrade <pcpa@conectiva.com.br>
  *
  * $XFree86: xc/programs/Xserver/hw/xfree86/drivers/vesa/vesa.h,v 1.12 2002/08/06 13:46:27 dawes Exp $
  */
@@ -73,16 +73,19 @@
 #include "xf1bpp.h"
 #include "xf4bpp.h"
 #include "fb.h"
+
+#ifdef USE_AFB
 #include "afb.h"
+#endif
+
 #include "mfb.h"
-#include "cfb24_32.h"
 
 #define VESA_VERSION		4000
 #define VESA_NAME		"VESA"
 #define VESA_DRIVER_NAME	"vesa"
 #define VESA_MAJOR_VERSION	1
 #define VESA_MINOR_VERSION	0
-#define VESA_PATCHLEVEL		0
+#define VESA_PATCHLEVEL		1
 
 /*XXX*/
 
@@ -117,6 +120,7 @@ typedef struct _VESARec
     CloseScreenProcPtr CloseScreen;
     OptionInfoPtr Options;
     IOADDRESS ioBase;
+    Bool ModeSetClearScreen;
 } VESARec, *VESAPtr;
 
 

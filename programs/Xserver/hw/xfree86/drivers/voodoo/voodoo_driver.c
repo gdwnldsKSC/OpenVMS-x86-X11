@@ -41,6 +41,10 @@
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/voodoo/voodoo_driver.c,v 1.27 2001/08/07 07:04:46 keithp Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "fb.h"
 #include "mibank.h"
 #include "micmap.h"
@@ -62,11 +66,11 @@
 #include "voodoo.h"
 
 #define _XF86DGA_SERVER_
-#include "extensions/xf86dgastr.h"
+#include <X11/extensions/xf86dgastr.h>
 
 #include "opaque.h"
 #define DPMS_SERVER
-#include "extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 static const OptionInfoRec * VoodooAvailableOptions(int chipid, int busid);
 static void	VoodooIdentify(int flags);
@@ -96,7 +100,7 @@ static void	VoodooDisplayPowerManagementSet(ScrnInfoPtr pScrn,
  * this DriverRec be an upper-case version of the driver name.
  */
 
-DriverRec VOODOO = {
+_X_EXPORT DriverRec VOODOO = {
   VERSION,
   VOODOO_DRIVER_NAME,
   VoodooIdentify,
@@ -183,8 +187,11 @@ static pointer voodooSetup(pointer module, pointer opts, int *errmaj, int *errmi
   return NULL;
 }
 
-XF86ModuleData voodooModuleData = { &voodooVersRec, voodooSetup, NULL };
-
+_X_EXPORT XF86ModuleData voodooModuleData = {
+  &voodooVersRec,
+  voodooSetup,
+  NULL
+};
 
 #endif /* XFree86LOADER */
 

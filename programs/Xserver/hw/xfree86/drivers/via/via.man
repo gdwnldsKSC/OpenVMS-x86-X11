@@ -1,9 +1,8 @@
-.\" $XFree86: xc/programs/Xserver/hw/xfree86/drivers/via/via.man,v 1.3 2003/08/04 10:32:26 eich Exp $
 .\" shorthand for double quote that works everywhere.
 .ds q \N'34'
 .TH VIA __drivermansuffix__ __vendorversion__
 .SH NAME
-via \- VIA video driver
+via \- VIA unichrome graphics driver
 .SH SYNOPSIS
 .nf
 .B "Section \*qDevice\*q"
@@ -14,17 +13,23 @@ via \- VIA video driver
 .fi
 .SH DESCRIPTION
 .B via
-is an __xservername__ driver for VIA video chipsets.
+is an __xservername__ driver for VIA chipsets with onboard unichrome graphics.
 .PP
 The
 .B via
-driver supports the VIA CLE266 (CLE3122, CLE3022) chipset video and the
-VIA KM400/K8M800 VT3204/5/7204/5 video, including 2D acceleration and the Xv 
-video overlay extensions. Flat panel, TV and VGA outputs are supported.
+driver supports the VIA CLE266, KM400/KN400 chipsets, including 2D 
+acceleration and the Xv video overlay extensions. Flat panel, TV and VGA
+outputs are supported.
 .PP
-Direct rendering 3D is available for this device only using __xservername__ 4.2 
-builds. If you are interested in porting the DRI support to current __xservername__
-then please see the DRI project on sourceforge.net.
+K8M800/K8N800, PM8X0 and CN400 support is still under development.
+.PP
+Direct rendering 3D is available using experimental drivers in Mesa, www.mesa3d.org.
+Also there is an XvMC client library for hardware MPEG1 / MPEG2 decoding 
+acceleration available on the CLE266 and K8M/N800 chipsets that uses the Direct
+Rendering Infrastructure, DRI. The XvMC client library implements a nonstandard
+\*qVLD\*q extension to the XvMC standard. The current Direct Rendering Manager 
+Linux kernel module is available
+at dri.sourceforge.net.
 .PP
 .SH CONFIGURATION DETAILS
 Please refer to __xconfigfile__(__filemansuffix__) for general configuration
@@ -48,21 +53,18 @@ Disable or enable the use of a software cursor. The default is disabled.
 Use a shadow frame buffer. This is required when rotating the display,
 but otherwise defaults to disabled.
 .TP
-.BI "Option \*qUseBIOS\*q \*q" boolean \*q
-Use the video BIOS to set modes. Default false.
-.TP
 .BI "Option \*qVideoRAM\*q \*q" boolean \*q
 Override the VideoRAM auto detection. This should never be needed.
 .TP
 .BI "Option \*qRotate\*q \*q" string \*q
-Rotate the display either clockwise ("CW") or counter clockwise ("CCW").
+Rotate the display either clockwise (\*qCW\*q) or counter clockwise (\*qCCW\*q).
 Rotation is only supported unaccelerated.
 .TP
 .BI "Option \*qActiveDevice\*q \*q" string \*q
-Specify the active device combination. The choices are "CRT,TV",
-"CRT,LCD", "CRT,DFP", "TV,DFP", "CRT", "LCD", or "DFP", for the various
-supported combinations of VGA CRT output, LCD panel output, DFP output and
-TV output.
+Specify the active device combination. Any string containing \*qCRT\*q,
+\*qLCD\*q, \*qTV\*q should be possible. The default is to use what is
+detected. The driver is currently unable to use LCD and TV simultaneously,
+and will favour the LCD.
 .TP
 .BI "Option \*qLCDDualEdge\*q \*q" boolean \*q
 Use dual edge mode to set the LCD.
@@ -78,46 +80,63 @@ are supported.
 .BI "Option \*qTVDotCrawl\*q \*q" boolean \*q
 Disable or enable dotcrawl.
 .TP
+.BI "Option \*qTVDeflicker\*q \*q" integer \*q
+Specify deflicker setting for TV output. Valid values are 0,1,2
+0) No deflicker, 1) 1:1:1 deflicker, 2) 1:2:1 deflicker.
+.TP
 .BI "Option \*qTVType\*q \*q" string \*q
-Specify TV output format. The driver currently supports NTSC and
-PAL timings only.
+Specify TV output format. The driver currently supports \*qNTSC\*q and
+\*qPAL\*q timings only.
 .TP
 .BI "Option \*qTVOutput\*q \*q" string \*q
-Specify which TV output to use. The driver supports "S-Video", "Composite",
-"SC", "RGB" and "YCbCr" outputs. Note that on many boards the composite
-video port is shared with audio out and jumper selected.
-.TP
-.BI "Option \*qTVVScan\*q \*q" string \*q
-Specify whether to underscan the TV image (bordering it with black), or
-overscan it (losing the edges of the picture).
-.TP
-.BI "Option \*qTVHScale\*q \*q" string \*q
-Not yet implemented.
-.TP
-.BI "Option \*qTVEncoder\*q \*q" string \*q
-Specify which TV encoder chip is attached to the system. The driver
-currently supports the VT1621 and VT1622 encoders.
-.TP
-.BI "Option \*qRefresh\*q \*q" integer \*q
-Specify the desired refresh.
+Specify which TV output to use. The driver supports \*qS-Video\*q,
+\*qComposite\*q, \*qSC\*q, \*qRGB\*q and \*qYCbCr\*q outputs. Note that on some
+EPIA boards the composite video port is shared with audio out and jumper
+selected.
 .TP
 .BI "Option \*qDisableVQ\*q \*q" boolean \*q
 Disable or enable the use of VQ. VQ is enabled by default.
 .TP
-.BI "Option \*qCap0Deinterlace\*q \*q" string \*q
-Set the capture 0 port interlace mode to either Bob or Weave.
-.TP
-.BI "Option \*qCap1Deinterlace\*q \*q" string \*q
-Set the capture 1 port interlace mode to either Bob or Weave.
-.TP
-.BI "Option \*qCap0FieldSwap\*q \*q" string \*q
-Perform field swapping on capture port 0.
-.TP
 .BI "Option \*qDRIXINERAMA\*q \*q" boolean \*q
 Set DRI Xinerama mode. Currently unsupported.
 .TP
-.BI "Option \*qNoDDCValue\*q \*q" boolean \*q
-Disable the use of DDC to set the horizontal sync and vertical refresh.
+.BI "Option \*qEnableAGPDMA\*q \*q" boolean \*q
+Enable the AGP DMA functionality in DRM. This requires that DRI is enabled
+and will force 2D acceleration to use AGP DMA. The XvMC DRI client will also
+make use of this to consume much less CPU. 
+.TP
+.BI "Option \*qNoAGPFor2D\*q \*q" boolean \*q
+With this option on, 2D acceleration will not use AGP DMA even if it is enabled.
+.TP
+.BI "Option \*qVBEModes\*q \*q" boolean \*q
+The driver will set modes using BIOS similar to the way the vesa driver does. This
+is the default behaviour for Unichrome Pro in panel mode, which is otherwise not 
+supported. Use this option only when the driver does not support your particular 
+hardware.
+
+.SH "Supported TV Encoders"
+Unichromes tend to be paired with several different TV Encoders.
+.TP
+.BI "VIA Technologies VT1621"
+Untested as no combination with Unichrome is known or available.
+Supports the following normal modes: \*q640x480\*q and \*q800x600\*q. Use
+\*q640x480Over\*q and \*q800x600Over\*q for vertical overscan. These modes
+are made available by the driver and modelines provided in __xconfigfile__
+will be ignored.
+.TP
+.BI "VIA Technologies VT1622, VT1622A, VT1623"
+Supports the following modes: \*q640x480\*q, \*q800x600\*q, \*q1024x768\*q,
+\*q848x480\*q, \*q720x480\*q (NTSC only) and \*q720x576\*q (PAL only). Use
+\*q640x480Over\*q, \*q800x600Over\*q, \*q1024x768Over\*q, \*q848x480Over\*q,
+\*q720x480Over\*q (NTSC) and \*q720x576Over\*q (PAL) for vertical overscan.
+The modes \*q720x480Noscale\*q (NTSC VT1622 only) and \*q720x576Noscale\*q
+(PAL VT1622 and VT1622a only) provide cleaner TV output (unscaled with only minimal overscan).
+These modes are made available by the driver and modelines provided in
+__xconfigfile__ will be ignored.
+
+.SH "BUGS"
+The driver is not fully 64 bit clean. In particular, 3D acceleration, XvMC and VBEModes do not
+work properly in 64-bit mode.
 .SH "SEE ALSO"
 __xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__)
 .SH AUTHORS

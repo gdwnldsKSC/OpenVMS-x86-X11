@@ -1,5 +1,9 @@
 /* $XFree86$ */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86_ansic.h"
@@ -271,14 +275,18 @@ vm86_rep(struct vm86_struct *ptr)
     /* When compiling with -fPIC, we can't use asm constraint "b" because
        %ebx is already taken by gcc. */
     __asm__ __volatile__("pushl %%ebx\n\t"
+			 "push %%gs\n\t"
 			 "movl %2,%%ebx\n\t"
 			 "movl %1,%%eax\n\t"
 			 "int $0x80\n\t"
+			 "pop %%gs\n\t"
 			 "popl %%ebx"
 			 :"=a" (__res)
 			 :"n" ((int)113), "r" ((struct vm86_struct *)ptr));
 #else
-    __asm__ __volatile__("int $0x80\n\t"
+    __asm__ __volatile__("push %%gs\n\t"
+			 "int $0x80\n\t"
+			 "pop %%gs"
 			 :"=a" (__res):"a" ((int)113),
 			 "b" ((struct vm86_struct *)ptr));
 #endif

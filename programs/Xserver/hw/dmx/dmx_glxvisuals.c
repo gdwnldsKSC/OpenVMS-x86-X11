@@ -33,11 +33,15 @@
 **
 */
 
+#ifdef HAVE_DMX_CONFIG_H
+#include <dmx-config.h>
+#endif
+
 #include "dmx.h"
 #include <GL/glx.h>
 #include <GL/glxproto.h>
-#include "Xext.h"
-#include "extutil.h"
+#include <X11/extensions/Xext.h>
+#include <X11/extensions/extutil.h>
 
 #include "dmx_glxvisuals.h"
 

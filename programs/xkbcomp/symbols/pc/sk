@@ -1,7 +1,9 @@
-// $XFree86: xc/programs/xkbcomp/symbols/pc/sk,v 1.2 2002/11/22 04:02:22 dawes 
+// $XdotOrg: xc/programs/xkbcomp/symbols/pc/sk,v 1.2 2005/08/12 11:08:49 pascal Exp $
+
+// $XFree86: xc/programs/xkbcomp/symbols/sk,v 1.2 2002/11/22 04:02:22 dawes 
 // Exp $
 
-partial alphanumeric_keys 
+partial default alphanumeric_keys 
 xkb_symbols "basic" {
      
      // This layout conforms to a new sk compromise standard designed 
@@ -10,7 +12,7 @@ xkb_symbols "basic" {
 
     include "pc/latin"
 
-    name[Group1] = "Slovak";
+    name[Group1] = "Slovakia";
 
     key <TLDE>	{ [ semicolon, dead_abovering,    grave,   asciitilde ]	};
     key <AE01>	{ [      plus,          1,       exclam,   dead_tilde ]	};
@@ -72,12 +74,38 @@ xkb_symbols "basic" {
     key <KPDL>	{ type[Group1]="FOUR_LEVEL_KEYPAD",
                   [ KP_Delete,      comma,    KP_Delete,   KP_Decimal ]	};
 
-    include "level3(ralt_switch_multikey)"
+    include "level3(ralt_switch)"
 };
 
 // Use <BKSL> instead of <LSGT> (useful for keyboard without <LSGT> key)
 xkb_symbols "bksl" {
     include "pc/sk(basic)"
+
+    name[Group1] = "Slovakia - Extended Backslash";
+
+    key <BKSL>	{ [ backslash,        bar,        slash,     NoSymbol ]	};
+};
+
+partial alphanumeric_keys 
+xkb_symbols "qwerty" {
+ 
+    // This layout should work exactly as a sk with the exception 
+    // of 'Z' and 'Y' keys, which are in the qwerty style (ie. swapped).
+    // 2001 by Kamil Toman <ktoman@email.cz>
+    
+    include "pc/sk(basic)"
+
+    name[Group1] = "Slovakia - qwerty";
+
+    key <AB01>	{ [         z,          Z,       degree,     NoSymbol ]	};
+    key <AD06>	{ [         y,          Y,     NoSymbol,     NoSymbol ]	};
+};
+
+// Use <BKSL> instead of <LSGT> (useful for keyboard without <LSGT> key)
+xkb_symbols "qwerty_bksl" {
+    include "pc/sk(qwerty)"
+
+    name[Group1] = "Slovakia - qwerty, extended Backslash";
 
     key <BKSL>	{ [ backslash,        bar,        slash,     NoSymbol ]	};
 };

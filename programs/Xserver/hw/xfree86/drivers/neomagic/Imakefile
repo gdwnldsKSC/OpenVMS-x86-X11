@@ -20,7 +20,7 @@ INCLUDES = -I. -I$(XF86COMSRC) -I$(XF86OSSRC) \
 	   -I$(SERVERSRC)/miext/shadow \
 	   -I$(XINCLUDESRC) -I$(XF86SRC)/xaa -I$(FONTINCSRC) \
 	   -I$(XF86SRC)/ramdac -I$(XF86SRC)/rac	-I$(XF86SRC)/ddc \
-           -I$(XF86SRC)/i2c -I$(XF86SRC)/shadowfb -I$(XF86SRC)/xf24_32bpp \
+           -I$(XF86SRC)/i2c -I$(XF86SRC)/shadowfb \
 	   -I$(SERVERSRC)/Xext  -I$(EXTINCSRC) \
 	   -I$(XF86SRC)/int10 -I$(XF86SRC)/vbe -I$(SERVERSRC)/render
 #endif
@@ -34,7 +34,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(neomagic,$(OBJS))
 
-InstallObjectModule(neomagic,$(MODULEDIR),drivers)
+InstallVideoObjectModule(neomagic,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(neomagic)

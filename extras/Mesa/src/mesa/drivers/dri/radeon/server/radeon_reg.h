@@ -1065,6 +1065,20 @@
 #       define RADEON_NONSURF_AP0_SWP_16BPP (1 << 20)
 #       define RADEON_NONSURF_AP0_SWP_32BPP (1 << 21)
 #define RADEON_SURFACE0_INFO                0x0b0c
+#       define RADEON_SURF_TILE_COLOR_MACRO (0 << 16)
+#       define RADEON_SURF_TILE_COLOR_BOTH  (1 << 16)
+#       define RADEON_SURF_TILE_DEPTH_32BPP (2 << 16)
+#       define RADEON_SURF_TILE_DEPTH_16BPP (3 << 16)
+#       define R200_SURF_TILE_NONE          (0 << 16)
+#       define R200_SURF_TILE_COLOR_MACRO   (1 << 16)
+#       define R200_SURF_TILE_COLOR_MICRO   (2 << 16)
+#       define R200_SURF_TILE_COLOR_BOTH    (3 << 16)
+#       define R200_SURF_TILE_DEPTH_32BPP   (4 << 16)
+#       define R200_SURF_TILE_DEPTH_16BPP   (5 << 16)
+#       define RADEON_SURF_AP0_SWP_16BPP    (1 << 20)
+#       define RADEON_SURF_AP0_SWP_32BPP    (1 << 21)
+#       define RADEON_SURF_AP1_SWP_16BPP    (1 << 22)
+#       define RADEON_SURF_AP1_SWP_32BPP    (1 << 23)
 #define RADEON_SURFACE0_LOWER_BOUND         0x0b04
 #define RADEON_SURFACE0_UPPER_BOUND         0x0b08
 #define RADEON_SURFACE1_INFO                0x0b1c
@@ -1270,6 +1284,11 @@
 #       define RADEON_TXFORMAT_DXT1               (12 <<  0)
 #       define RADEON_TXFORMAT_DXT23              (14 <<  0)
 #       define RADEON_TXFORMAT_DXT45              (15 <<  0)
+#       define RADEON_TXFORMAT_SHADOW16           (16 <<  0)
+#       define RADEON_TXFORMAT_SHADOW32           (17 <<  0)
+#       define RADEON_TXFORMAT_DUDV88             (18 <<  0)
+#       define RADEON_TXFORMAT_LDUDV655           (19 <<  0)
+#       define RADEON_TXFORMAT_LDUDUV8888         (20 <<  0)
 #       define RADEON_TXFORMAT_FORMAT_MASK        (31 <<  0)
 #       define RADEON_TXFORMAT_FORMAT_SHIFT       0
 #       define RADEON_TXFORMAT_APPLE_YUV_MODE     (1  <<  5)
@@ -1540,6 +1559,7 @@
 #       define RADEON_COLOR_FORMAT_aYUV444     (14 << 10)
 #       define RADEON_COLOR_FORMAT_ARGB4444    (15 << 10)
 #       define RADEON_CLRCMP_FLIP_ENABLE       (1  << 14)
+#       define RADEON_ZBLOCK16                 (1  << 15)
 #define RADEON_RB3D_COLOROFFSET             0x1c40
 #       define RADEON_COLOROFFSET_MASK      0xfffffff0
 #define RADEON_RB3D_COLORPITCH              0x1c48
@@ -1552,6 +1572,7 @@
 #define RADEON_RB3D_DEPTHOFFSET             0x1c24
 #define RADEON_RB3D_DEPTHPITCH              0x1c28
 #       define RADEON_DEPTHPITCH_MASK         0x00001ff8
+#       define RADEON_DEPTH_HYPERZ            (3 << 16)
 #       define RADEON_DEPTH_ENDIAN_NO_SWAP    (0 << 18)
 #       define RADEON_DEPTH_ENDIAN_WORD_SWAP  (1 << 18)
 #       define RADEON_DEPTH_ENDIAN_DWORD_SWAP (2 << 18)
@@ -1600,6 +1621,7 @@
 #       define RADEON_Z_TEST_NEQUAL              (6  <<  4)
 #       define RADEON_Z_TEST_ALWAYS              (7  <<  4)
 #       define RADEON_Z_TEST_MASK                (7  <<  4)
+#       define RADEON_Z_HIERARCHY_ENABLE         (1  <<  8)
 #       define RADEON_STENCIL_TEST_NEVER         (0  << 12)
 #       define RADEON_STENCIL_TEST_LESS          (1  << 12)
 #       define RADEON_STENCIL_TEST_LEQUAL        (2  << 12)
@@ -1615,6 +1637,8 @@
 #       define RADEON_STENCIL_FAIL_INC           (3  << 16)
 #       define RADEON_STENCIL_FAIL_DEC           (4  << 16)
 #       define RADEON_STENCIL_FAIL_INVERT        (5  << 16)
+#       define RADEON_STENCIL_FAIL_INC_WRAP      (6  << 16)
+#       define RADEON_STENCIL_FAIL_DEC_WRAP      (7  << 16)
 #       define RADEON_STENCIL_FAIL_MASK          (0x7 << 16)
 #       define RADEON_STENCIL_ZPASS_KEEP         (0  << 20)
 #       define RADEON_STENCIL_ZPASS_ZERO         (1  << 20)
@@ -1622,6 +1646,8 @@
 #       define RADEON_STENCIL_ZPASS_INC          (3  << 20)
 #       define RADEON_STENCIL_ZPASS_DEC          (4  << 20)
 #       define RADEON_STENCIL_ZPASS_INVERT       (5  << 20)
+#       define RADEON_STENCIL_ZPASS_INC_WRAP     (6  << 20)
+#       define RADEON_STENCIL_ZPASS_DEC_WRAP     (7  << 20)
 #       define RADEON_STENCIL_ZPASS_MASK         (0x7 << 20)
 #       define RADEON_STENCIL_ZFAIL_KEEP         (0  << 24)
 #       define RADEON_STENCIL_ZFAIL_ZERO         (1  << 24)
@@ -1629,10 +1655,13 @@
 #       define RADEON_STENCIL_ZFAIL_INC          (3  << 24)
 #       define RADEON_STENCIL_ZFAIL_DEC          (4  << 24)
 #       define RADEON_STENCIL_ZFAIL_INVERT       (5  << 24)
+#       define RADEON_STENCIL_ZFAIL_INC_WRAP     (6  << 24)
+#       define RADEON_STENCIL_ZFAIL_DEC_WRAP     (7  << 24)
 #       define RADEON_STENCIL_ZFAIL_MASK         (0x7 << 24)
 #       define RADEON_Z_COMPRESSION_ENABLE       (1  << 28)
 #       define RADEON_FORCE_Z_DIRTY              (1  << 29)
 #       define RADEON_Z_WRITE_ENABLE             (1  << 30)
+#       define RADEON_Z_DECOMPRESSION_ENABLE     (1  << 31)
 #define RADEON_RE_LINE_PATTERN              0x1cd0
 #       define RADEON_LINE_PATTERN_MASK             0x0000ffff
 #       define RADEON_LINE_REPEAT_COUNT_SHIFT       16

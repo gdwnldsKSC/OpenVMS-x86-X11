@@ -56,7 +56,7 @@ typedef struct _FontPathRec *FontPathPtr;
 typedef struct _alt_server *AlternateServerPtr;
 typedef struct _auth *AuthPtr;
 
-#include "FSproto.h"
+#include <X11/fonts/FSproto.h>
 #include "client.h"
 #include "misc.h"
 

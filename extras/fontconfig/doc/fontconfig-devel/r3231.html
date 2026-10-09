@@ -1,21 +1,22 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
->FcStrBasename</TITLE
+>FcStrCopyFilename</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
 REL="HOME"
-TITLE="Fontconfig Developers Reference, Version 2.2.2
- "
 HREF="index.html"><LINK
 REL="UP"
 TITLE="String utilities"
-HREF="x93.html#AEN2980"><LINK
+HREF="x93.html#AEN3028"><LINK
 REL="PREVIOUS"
-TITLE="FcStrDirname"
-HREF="r3209.html"></HEAD
+TITLE="FcStrDowncase"
+HREF="r3209.html"><LINK
+REL="NEXT"
+TITLE="FcStrCmpIgnoreCase"
+HREF="r3254.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -35,7 +36,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
->Fontconfig Developers Reference, Version 2.2.2</TH
+></TH
 ></TR
 ><TR
 ><TD
@@ -56,7 +57,11 @@ VALIGN="bottom"
 WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
->&nbsp;</TD
+><A
+HREF="r3254.html"
+ACCESSKEY="N"
+>Next</A
+></TD
 ></TR
 ></TABLE
 ><HR
@@ -64,9 +69,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCSTRBASENAME"
+NAME="FCSTRCOPYFILENAME"
 ></A
->FcStrBasename</H1
+>FcStrCopyFilename</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -74,7 +79,7 @@ NAME="AEN3235"
 ></A
 ><H2
 >Name</H2
->FcStrBasename&nbsp;--&nbsp;last component of filename</DIV
+>FcStrCopyFilename&nbsp;--&nbsp;copy a string, expanding '~'</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -91,14 +96,14 @@ NAME="AEN3239"
 ></A
 ><PRE
 CLASS="FUNCSYNOPSISINFO"
->#include &#60;fontconfig.h&#62;
+>#include &lt;fontconfig.h&gt;
 	</PRE
 ><P
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->FcChar8 * FcStrBasename</CODE
->(const FcChar8 *file);</CODE
+>FcChar8 * FcStrCopyFilename</CODE
+>(const FcChar8 *s);</CODE
 ></P
 ><P
 ></P
@@ -112,23 +117,26 @@ NAME="AEN3246"
 ><H2
 >Description</H2
 ><P
->Returns the filename of <VAR
+>Just like FcStrCopy except that it converts any leading '~' characters in
+<CODE
 CLASS="PARAMETER"
->file</VAR
-> stripped of any leading
-directory names.  This is returned in newly allocated storage which should
-be freed when no longer needed.
+>s</CODE
+> to the value of the HOME environment variable.
+Returns NULL if '~' is present in <CODE
+CLASS="PARAMETER"
+>s</CODE
+> and HOME is unset.
 	    </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN3250"
+NAME="AEN3251"
 ></A
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.2.2
+>Fontconfig version 2.3.2
 
 	    </P
 ></DIV
@@ -165,20 +173,24 @@ ACCESSKEY="H"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->&nbsp;</TD
+><A
+HREF="r3254.html"
+ACCESSKEY="N"
+>Next</A
+></TD
 ></TR
 ><TR
 ><TD
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FcStrDirname</TD
+>FcStrDowncase</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN2980"
+HREF="x93.html#AEN3028"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -186,7 +198,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->&nbsp;</TD
+>FcStrCmpIgnoreCase</TD
 ></TR
 ></TABLE
 ></DIV

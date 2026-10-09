@@ -6,10 +6,14 @@
 
 /* THIS IS NOT AN X CONSORTIUM STANDARD */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "dixstruct.h"
 #include "extnsionst.h"
@@ -18,14 +22,14 @@
 #include "servermd.h"
 #define _XF86MISC_SERVER_
 #undef _XF86MISC_SAVER_COMPAT_
-#include "xf86mscstr.h"
+#include <X11/extensions/xf86mscstr.h>
 #include "swaprep.h"
 #include "xf86.h"
-#include "Xfuncproto.h"
+#include <X11/Xfuncproto.h>
 #include "xf86miscproc.h"
 
 #if 0
-#include <X11/Xtrans.h>
+#include <X11/Xtrans/Xtrans.h>
 #include "../os/osdep.h"
 #include <X11/Xauth.h>
 #ifndef USL
@@ -582,20 +586,29 @@ ProcXF86MiscPassMessage(client)
 	strncpy(msgtype,(char*)(&stuff[1]),stuff->typelen);
     } else return BadValue;
     if (stuff->vallen) {
-	if (!(msgval = xalloc(stuff->vallen)))
+	if (!(msgval = xalloc(stuff->vallen))) {
+	    xfree(msgtype);
 	    return BadAlloc;
-	strncpy(msgval,(char*)(&stuff[1] + ((stuff->typelen + 3) & ~3)),
+	}
+	strncpy(msgval,(char*)((char*)&stuff[1] + ((stuff->typelen + 3) & ~3)),
 			stuff->vallen);
-    } else return BadValue;
+    } else {
+	xfree(msgtype);
+	return BadValue;
+    }
 
-    if ((retval= MiscExtPassMessage(stuff->screen,msgtype,msgval,&retstr)) != 0)
+    if ((retval = MiscExtPassMessage(stuff->screen,msgtype,msgval,&retstr)) != 0) {
+	xfree(msgtype);
+	xfree(msgval);
 	return retval;
+    }
 
     rep.type = X_Reply;
     rep.sequenceNumber = client->sequence;
     rep.mesglen = (retstr? strlen(retstr): 0);
     rep.length = (SIZEOF(xXF86MiscPassMessageReply) - SIZEOF(xGenericReply) +
 		  ((rep.mesglen + 3) & ~3)) >> 2;
+    rep.status = 0;
     
     if (client->swapped) {
     	swaps(&rep.sequenceNumber, n);
@@ -607,6 +620,9 @@ ProcXF86MiscPassMessage(client)
     if (rep.mesglen)
         WriteToClient(client, rep.mesglen, (char *)retstr);
 
+    xfree(msgtype);
+    xfree(msgval);
+    
     return (client->noClientException);
 }
 

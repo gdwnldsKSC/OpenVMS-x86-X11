@@ -6,13 +6,13 @@ Copyright 1993 by Sun Microsystems, Inc. Mountain View, CA.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Digital or Sun not be
 used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
+software without specific, written prior permission.
 
 DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
 ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
@@ -60,6 +60,9 @@ in this Software without prior written authorization from The Open Group.
 
 */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "IntrinsicI.h"
 #include "Intrinsic.h"
 
@@ -69,13 +72,13 @@ in this Software without prior written authorization from The Open Group.
 
 #define	TOXRMQUARK(p) ((XrmQuark)(XtArgVal)(p))
 
-void XtGetResourceList(widget_class, resources, num_resources)
-	WidgetClass widget_class;
-	XtResourceList *resources;
-	Cardinal *num_resources;
+void XtGetResourceList(
+	WidgetClass widget_class,
+	XtResourceList *resources,
+	Cardinal *num_resources)
 {
 	int size;
-	register int i, dest = 0;
+	register Cardinal i, dest = 0;
 	register XtResourceList *list, dlist;
 
 	LOCK_PROCESS;
@@ -85,7 +88,7 @@ void XtGetResourceList(widget_class, resources, num_resources)
 	if (!widget_class->core_class.class_inited) {
 	    /* Easy case */
 
-	    (void) memmove((char *) *resources, 
+	    (void) memmove((char *) *resources,
 			   (char *)widget_class->core_class.resources, size);
 	    *num_resources = widget_class->core_class.num_resources;
 	    UNLOCK_PROCESS;
@@ -100,7 +103,7 @@ void XtGetResourceList(widget_class, resources, num_resources)
 	    if (list[i] != NULL) {
 		dlist[dest].resource_name = (String)
 			XrmQuarkToString(TOXRMQUARK(list[i]->resource_name));
-		dlist[dest].resource_class = (String) 
+		dlist[dest].resource_class = (String)
 			XrmQuarkToString(TOXRMQUARK(list[i]->resource_class));
 		dlist[dest].resource_type = (String)
 			XrmQuarkToString(TOXRMQUARK(list[i]->resource_type));
@@ -127,13 +130,13 @@ static Boolean ClassIsSubclassOf(WidgetClass class, WidgetClass superclass)
     return False;
 }
 
-void XtGetConstraintResourceList(widget_class, resources, num_resources)
-	WidgetClass widget_class;
-	XtResourceList *resources;
-	Cardinal *num_resources;
+void XtGetConstraintResourceList(
+	WidgetClass widget_class,
+	XtResourceList *resources,
+	Cardinal *num_resources)
 {
 	int size;
-	register int i, dest = 0;
+	register Cardinal i, dest = 0;
 	register XtResourceList *list, dlist;
 	ConstraintWidgetClass class = (ConstraintWidgetClass)widget_class;
 
@@ -156,7 +159,7 @@ void XtGetConstraintResourceList(widget_class, resources, num_resources)
 	if (!class->core_class.class_inited) {
 	    /* Easy case */
 
-	    (void) memmove((char *) *resources, 
+	    (void) memmove((char *) *resources,
 			   (char *)class->constraint_class.resources, size);
 	    *num_resources = class->constraint_class.num_resources;
 	    UNLOCK_PROCESS;
@@ -171,7 +174,7 @@ void XtGetConstraintResourceList(widget_class, resources, num_resources)
 	    if (list[i] != NULL) {
 		dlist[dest].resource_name = (String)
 			XrmQuarkToString(TOXRMQUARK(list[i]->resource_name));
-		dlist[dest].resource_class = (String) 
+		dlist[dest].resource_class = (String)
 			XrmQuarkToString(TOXRMQUARK(list[i]->resource_class));
 		dlist[dest].resource_type = (String)
 			XrmQuarkToString(TOXRMQUARK(list[i]->resource_type));

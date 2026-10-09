@@ -45,7 +45,7 @@ This driver does not support a virtual screen size different from the
 display size. This is a hardware limitation. 3D rendering is also not
 supported.
 .SH CONFIGURATION DETAILS
-Please refer to XF86Config(__filemansuffix__) for general configuration
+Please refer to __xconfigfile__(__filemansuffix__) for general configuration
 details.  This section only covers configuration details specific to this
 driver.
 .PP
@@ -67,6 +67,6 @@ The driver interacts badly with the
 sstfb frame buffer driver as there is insufficient information to restore
 the chip to its previous state. 
 .SH "SEE ALSO"
-XFree86(1), XF86Config(__filemansuffix__), xf86config(1), Xserver(1), X(__miscmansuffix__)
+XFree86(1), __xconfigfile__(__filemansuffix__), xf86config(1), Xserver(1), X(__miscmansuffix__)
 .SH AUTHORS
 Authors: Alan Cox, Ghozlane Toumi, Henrik Harmsen.

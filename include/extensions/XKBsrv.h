@@ -1,4 +1,5 @@
 /* $Xorg: XKBsrv.h,v 1.3 2000/08/18 04:05:45 coskrey Exp $ */
+/* $XdotOrg: xc/include/extensions/XKBsrv.h,v 1.5 2005/09/01 19:56:14 krh Exp $ */
 /************************************************************
 Copyright (c) 1993 by Silicon Graphics Computer Systems, Inc.
 
@@ -231,6 +232,40 @@ typedef struct	_XkbSrvLedInfo {
  */
 #define	_XkbStateNotifyInProgress	(1<<0)
 
+typedef struct
+{
+    ProcessInputProc processInputProc;
+    ProcessInputProc realInputProc;
+    DeviceUnwrapProc unwrapProc;
+} xkbDeviceInfoRec, *xkbDeviceInfoPtr;
+
+#define WRAP_PROCESS_INPUT_PROC(device, oldprocs, proc, unwrapproc) \
+	device->public.processInputProc = proc; \
+	oldprocs->processInputProc = \
+	oldprocs->realInputProc = device->public.realInputProc; \
+	device->public.realInputProc = proc; \
+	oldprocs->unwrapProc = device->unwrapProc; \
+	device->unwrapProc = unwrapproc;
+
+#define COND_WRAP_PROCESS_INPUT_PROC(device, oldprocs, proc, unwrapproc) \
+	if (device->public.processInputProc == device->public.realInputProc)\
+	    device->public.processInputProc = proc; \
+	oldprocs->processInputProc = \
+	oldprocs->realInputProc = device->public.realInputProc; \
+	device->public.realInputProc = proc; \
+	oldprocs->unwrapProc = device->unwrapProc; \
+	device->unwrapProc = unwrapproc;
+
+#define UNWRAP_PROCESS_INPUT_PROC(device, oldprocs) \
+	device->public.processInputProc = oldprocs->processInputProc; \
+	device->public.realInputProc = oldprocs->realInputProc; \
+	device->unwrapProc = oldprocs->unwrapProc;
+
+#define XKBDEVICEINFO(dev) ((xkbDeviceInfoPtr) (dev)->devPrivates[xkbDevicePrivateIndex].ptr)
+
+/***====================================================================***/
+
+
 /***====================================================================***/
 
 #define XkbAX_KRGMask	 (XkbSlowKeysMask|XkbBounceKeysMask)
@@ -244,6 +279,7 @@ extern int	XkbEventBase;
 extern int	XkbKeyboardErrorCode;
 extern int	XkbDisableLockActions;
 extern char *	XkbBaseDirectory;
+extern char *	XkbBinDirectory;
 extern char *	XkbInitialMap;
 extern int	_XkbClientMajor;
 extern int	_XkbClientMinor;
@@ -322,6 +358,8 @@ extern int XkbProcessArguments(
     char **			/* argv */,
     int				/* i */
 );
+
+extern	void	XkbSetExtension(DeviceIntPtr device, ProcessInputProc proc);
 
 extern	void	XkbFreeCompatMap(
     XkbDescPtr			/* xkb */,
@@ -648,7 +686,7 @@ extern	int  XkbComputeControlsNotify(
 	XkbControlsPtr		/* old */,
 	XkbControlsPtr		/* new */,
 	xkbControlsNotify *	/* pCN */,
-        Bool			/* forceCtrlProc */
+	Bool			/* forceCtrlProc */
 );
 
 extern	void XkbSendControlsNotify(
@@ -783,8 +821,8 @@ extern	void XkbFreeDeviceInfo(
 );
 
 extern Status XkbResizeDeviceButtonActions(
-        XkbDeviceInfoPtr        /* devi */,
-        unsigned int            /* newTotal */
+	XkbDeviceInfoPtr        /* devi */,
+	unsigned int            /* newTotal */
 );
 
 extern	XkbInterestPtr XkbFindClientResource(

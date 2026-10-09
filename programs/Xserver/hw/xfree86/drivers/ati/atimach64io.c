@@ -21,6 +21,10 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "ati.h"
 #include "atichip.h"
 #include "atimach64io.h"
@@ -72,7 +76,7 @@ ATIMach64PollEngineStatus
 
         /*
          * The following counts the number of bits in FIFO_STAT_BITS, and is
-         * derived from miSetVisualTypes() (formerly cfbSetVisualTypes()).
+         * derived from miSetVisualTypes().
          */
         IOValue = GetBits(IOValue, FIFO_STAT_BITS);
         Count = (IOValue >> 1) & 0x36DBU;

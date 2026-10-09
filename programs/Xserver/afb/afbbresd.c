@@ -48,7 +48,11 @@ SOFTWARE.
 ******************************************************************/
 /* $XConsortium: afbbresd.c,v 1.10 94/04/17 20:28:18 dpw Exp $ */
 
-#include "X.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
 #include "misc.h"
 #include "afb.h"
 #include "maskbits.h"
@@ -93,8 +97,8 @@ unsigned char *bgrrops;
 	register PixelType *addrl;
 	register int e3 = e2-e1;
 	register unsigned long bit;
-	PixelType leftbit = mask[0]; /* leftmost bit to process in new word */
-	PixelType rightbit = mask[PPW-1]; /* rightmost bit to process in new word */
+	PixelType leftbit = mfbGetmask(0); /* leftmost bit to process in new word */
+	PixelType rightbit = mfbGetmask(PPW-1); /* rightmost bit to process in new word */
 	int dashIndex;
 	int dashOffset;
 	int dashRemaining;
@@ -125,7 +129,7 @@ unsigned char *bgrrops;
 
 		e = saveE;
 		len = saveLen;
-		bit = mask[x1 & PIM];
+		bit = mfbGetmask(x1 & PIM);
 
 		rop = fgrop;
 		if (!isDoubleDash)

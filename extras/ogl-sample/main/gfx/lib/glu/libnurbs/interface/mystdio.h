@@ -35,8 +35,8 @@
 /*
  * mystdio.h
  *
- * $Date$ $Revision$
- * $Header: //depot/main/gfx/lib/glu/libnurbs/interface/mystdio.h#3 $
+ * $Date: 2004/03/14 08:29:10 $ $Revision: 1.1.1.4 $
+ * $Header: /cvs/xorg/xc/extras/ogl-sample/main/gfx/lib/glu/libnurbs/interface/mystdio.h,v 1.1.1.4 2004/03/14 08:29:10 eich Exp $
  */
 
 #ifndef __glumystdio_h_

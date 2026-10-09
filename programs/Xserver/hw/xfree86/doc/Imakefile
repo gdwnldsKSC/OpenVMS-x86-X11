@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xc/programs/Xserver/hw/xfree86/doc/Imakefile,v 1.3 2004/08/26 11:58:07 eich Exp $
+XCOMM $XdotOrg: xc/programs/Xserver/hw/xfree86/doc/Imakefile,v 1.5 2005/05/15 20:55:07 alanc Exp $
 XCOMM $XConsortium: Imakefile /main/33 1996/10/28 05:12:24 kaleb $
 
 
@@ -10,7 +10,9 @@ XCOMM $XFree86: xc/programs/Xserver/hw/xfree86/doc/Imakefile,v 3.84 2003/11/22 0
 #include <Server.tmpl>
 #include <lnxdoc.rules>
 
+#if BuildSgmlDocs || InstallJapaneseDocs
 #define IHaveSubdirs
+#endif
 
 #if BuildSgmlDocs
 SGMLDIR = sgml
@@ -20,7 +22,7 @@ SGMLDIR = sgml
 JAPANESEDIR = Japanese
 #endif
 
-SUBDIRS = $(SGMLDIR) $(JAPANESEDIR) man
+SUBDIRS = $(SGMLDIR) $(JAPANESEDIR)
 
 all::
 

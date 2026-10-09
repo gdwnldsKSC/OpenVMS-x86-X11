@@ -25,13 +25,16 @@ in this Software without prior written authorization from The Open Group.
 ********************************************************/
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_arc.c,v 1.12tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
-#include "X.h"
+#include <X11/X.h>
 #include "gcstruct.h"
 #include "windowstr.h"
 #include "pixmapstr.h"
 #include "regionstr.h"
-#include "Xprotostr.h"
+#include <X11/Xprotostr.h>
 #include "regionstr.h"
 #include "mizerarc.h"
 #include "mi.h"
@@ -44,7 +47,6 @@ in this Software without prior written authorization from The Open Group.
 
 #include "xf86Pci.h"
 
-#include "mga_bios.h"
 #include "mga.h"
 #include "mga_reg.h"
 #include "mga_macros.h"

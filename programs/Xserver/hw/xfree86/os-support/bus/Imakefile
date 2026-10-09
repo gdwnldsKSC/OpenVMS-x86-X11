@@ -18,8 +18,8 @@ PCIDRVROBJ = axpPci.o
 
 XCOMM Sparc SBUS driver and generic Linux PCI driver
 
-PCIDRVRSRC = linuxPci.c
-PCIDRVROBJ = linuxPci.o
+PCIDRVRSRC = sparcPci.c linuxPci.c
+PCIDRVROBJ = sparcPci.o linuxPci.o
 SBUSDRVSRC = Sbus.c
 SBUSDRVOBJ = Sbus.o
 
@@ -66,6 +66,13 @@ XCOMM NetBSD/powerpc
 PCIDRVRSRC = netbsdPci.c
 PCIDRVROBJ = netbsdPci.o
 
+#elif defined(FreeBSDArchitecture) && defined(PpcArchitecture)
+
+XCOMM FreeBSD/PowerPC PCI driver (using /dev/pci)
+
+PCIDRVRSRC = freebsdPci.c
+PCIDRVROBJ = freebsdPci.o
+
 #elif defined(PpcArchitecture)
 
 XCOMM PowerPC PCI drivers
@@ -81,7 +88,7 @@ XCOMM ix86 PCI driver with OS fallback for Linux
 PCIDRVRSRC = ix86Pci.c linuxPci.c
 PCIDRVROBJ = ix86Pci.o linuxPci.o
 
-#elif defined(FreeBSDArchitecture) && \
+#elif defined(KFreeBSDArchitecture) && \
 	(defined(AlphaArchitecture) || defined(AMD64Architecture))
 
 XCOMM generic FreeBSD PCI driver (using /dev/pci)
@@ -89,7 +96,7 @@ XCOMM generic FreeBSD PCI driver (using /dev/pci)
 PCIDRVRSRC = freebsdPci.c
 PCIDRVROBJ = freebsdPci.o
 
-#elif defined(FreeBSDArchitecture) && defined(Sparc64Architecture)
+#elif defined(KFreeBSDArchitecture) && defined(Sparc64Architecture)
 
 XCOMM Sparc SBUS & PCI drivers
 
@@ -126,8 +133,8 @@ PCIARCHSRC = sparcPci.c
 PCIARCHOBJ = sparcPci.o
 # endif
 #elif defined(ia64Architecture)
-PCIARCHSRC = 460gxPCI.c e8870PCI.c zx1PCI.c
-PCIARCHOBJ = 460gxPCI.o e8870PCI.o zx1PCI.o
+PCIARCHSRC = 460gxPCI.c e8870PCI.c zx1PCI.c altixPCI.c
+PCIARCHOBJ = 460gxPCI.o e8870PCI.o zx1PCI.o altixPCI.o
 #endif
 
 SRCS = Pci.c $(PCIDRVRSRC) $(SBUSDRVSRC) $(PCIARCHSRC)

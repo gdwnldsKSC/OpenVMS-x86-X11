@@ -1,5 +1,9 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_merge.c,v 1.4 2003/09/24 02:43:24 dawes Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -147,6 +151,8 @@ GenerateModeList(ScrnInfoPtr pScrn, char* str,
             case 0:
             case '-':
             case ' ':
+	    case ',':
+	    case ';':
                 if((strmode != str)) {/*we got a mode */
                     /* read new entry */
                     strncpy(modename,strmode,str - strmode);
@@ -170,11 +176,11 @@ GenerateModeList(ScrnInfoPtr pScrn, char* str,
                                 "Mode: \"%s\" is not a supported mode for monitor 1\n",modename);
                             /* find if a monitor2 mode follows */
                             gotdash = FALSE;
-                            while(*tmps == ' ') tmps++;
-                            if(*tmps == '-') { /* skip the next mode */
+                            while(*tmps == ' ' || *tmps == ';') tmps++;
+                            if(*tmps == '-' || *tmps == ',') { /* skip the next mode */
                                 tmps++;
-                                while((*tmps == ' ') && (*tmps != 0)) tmps++; /*skip spaces */
-                                while((*tmps != ' ') && (*tmps != '-') && (*tmps != 0)) tmps++; /*skip modename */
+                                while(*tmps == ' ' || *tmps == ';') tmps++; /*skip spaces */
+                                while(*tmps && *tmps != ' ' && *tmps != ';' && *tmps != '-' && *tmps != ',') tmps++; /*skip modename */
                                 /* for error message */
                                 strncpy(modename,strmode,tmps - strmode);
                                 modename[tmps - strmode] = 0;
@@ -188,7 +194,7 @@ GenerateModeList(ScrnInfoPtr pScrn, char* str,
                     gotdash = FALSE;
                 }
                 strmode = str+1; /* number starts on next char */
-                gotdash |= (*str == '-');
+                gotdash |= (*str == '-' || *str == ',');
                 
                 if(*str != 0) break; /* if end of string, we wont get a chance to catch a char and run the
                                         default case. do it now */
@@ -374,7 +380,7 @@ MGAPreInitMergedFB(ScrnInfoPtr pScrn1, int flags)
      * Read the BIOS data struct
      */
 
-    MGAReadBios(pScrn);
+    mga_read_and_process_bios( pScrn );
 
     /* HW bpp matches reported bpp */
     pMga->HwBpp = pMga1->HwBpp;

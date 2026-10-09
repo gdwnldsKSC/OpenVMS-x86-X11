@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/xload/get_load.c,v 1.2 2004/04/23 19:54:57 eich Exp $ */
+/* $XdotOrg: xc/programs/xload/get_load.c,v 1.4 2005/10/02 21:17:48 alanc Exp $ */
 /* $XConsortium: get_load.c /main/37 1996/03/09 09:38:04 kaleb $ */
 /* $XFree86: xc/programs/xload/get_load.c,v 1.21tsi Exp $ */
 /*
@@ -39,6 +39,10 @@ from the X Consortium.
  * Call InitLoadPoint() to initialize.
  * GetLoadPoint() is a callback for the StripChart widget.
  */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include <X11/Xos.h>
 #include <X11/Intrinsic.h>
@@ -123,10 +127,13 @@ void GetLoadPoint( w, closure, call_data )      /* SYSV386 version */
 
 #ifdef sun
 #    include <sys/param.h>
-#    if defined(SVR4) && (OSMAJORVERSION == 5) && (OSMINORVERSION > 3)
-#        include <kvm.h>
+#    if !defined(HAVE_CONFIG_H) && defined(SVR4) 
+# 	define HAVE_LIBKSTAT 1
 #    endif
-#    if defined(i386) && !defined(SVR4)
+#    ifdef HAVE_LIBKSTAT
+#	include <kstat.h>
+#	include <errno.h>
+#    elif defined(i386) && !defined(SVR4)
 #        include <kvm.h>
 #        define	KVM_ROUTINES
 #    endif /* i386 */
@@ -406,7 +413,7 @@ XtPointer call_data;	/* pointer to (double) return value */
 }
 #else /* not KVM_ROUTINES */
 
-#ifdef linux
+#if defined(linux) || (defined(__FreeBSD_kernel__) && defined(__GLIBC__))
 
 void InitLoadPoint()
 {
@@ -684,6 +691,36 @@ void GetLoadPoint(w, closure, call_data)
 }
 
 #else /* not BSD >= 199306 */
+#if defined(sun) && defined(HAVE_LIBKSTAT)
+
+static kstat_t		*ksp;
+static kstat_ctl_t	*kc;
+
+void
+InitLoadPoint(void)
+{
+	if ((kc = kstat_open()) == NULL)
+		xload_error("kstat_open failed:", strerror(errno));
+
+	if ((ksp = kstat_lookup(kc, "unix", 0, "system_misc")) == NULL)
+		xload_error("kstat_lookup failed:", strerror(errno));
+}
+
+void
+GetLoadPoint(Widget w, XtPointer closure, XtPointer call_data)
+{
+	kstat_named_t *vp;
+	double *loadavg = (double *)call_data;
+
+	if (kstat_read(kc, ksp, NULL) == -1)
+		xload_error("kstat_read failed:", strerror(errno));
+
+	if ((vp = kstat_data_lookup(ksp, "avenrun_1min")) == NULL)
+		xload_error("kstat_data_lookup failed:", strerror(errno));
+
+	*loadavg = (double)vp->value.l / FSCALE;
+}
+#else /* not Solaris */
 
 #ifndef KMEM_FILE
 #define KMEM_FILE "/dev/kmem"
@@ -891,30 +928,6 @@ void InitLoadPoint()
 	nl[i].n_value = (int)nl[i].n_value - v.v_kvoffset;
     }
 #else /* not macII */
-#if defined(sun) && defined(SVR4) && (OSMAJORVERSION == 5) && (OSMINORVERSION > 3)
-    {
-      kvm_t *kd;
-
-      kd = kvm_open(NULL, NULL, NULL, O_RDONLY, "xload");
-      if (kd == NULL)
-      {
-        xload_error("cannot get name list from", "kernel");
-       exit(-1);
-      }
-      if (kvm_nlist (kd, namelist) < 0 )
-      {
-        xload_error("cannot get name list from", "kernel");
-       exit(-1);
-      }
-      if (namelist[LOADAV].n_type == 0 ||
-       namelist[LOADAV].n_value == 0) {
-       xload_error("cannot get name list from", "kernel");
-       exit(-1);
-      }
-      loadavg_seek = namelist[LOADAV].n_value;
-    }
-#else /* sun svr4 5.5 or later */
-
 #if !defined(SVR4) && !defined(sgi) && !defined(MOTOROLA) && !defined(AIXV5) && !(BSD >= 199103)
     extern void nlist();
 #endif
@@ -947,7 +960,6 @@ void InitLoadPoint()
     loadavg_seek += ((char *) (((struct sysinfo *)NULL)->avenrun)) -
 	((char *) NULL);
 #endif /* CRAY && SYSINFO */
-#endif /* sun svr4 5.5 or later */  
     kmem = open(KMEM_FILE, O_RDONLY);
     if (kmem < 0) xload_error("cannot open", KMEM_FILE);
 #endif /* macII else */
@@ -1111,9 +1123,10 @@ void GetLoadPoint( w, closure, call_data )
 #    endif /* AIXV3 else */
 #  endif /* umips else */
 # endif /* macII else */
-#endif /* sun else */
+#endif /* sun or SVR4 or ... else */	
 	return;
 }
+#endif /* sun else */
 #endif /* BSD >= 199306 else */
 #endif /* __bsdi__ else */
 #endif /* __QNXNTO__ else */

@@ -105,6 +105,8 @@ void r200SetUpAtomList( r200ContextPtr rmesa )
       insert_at_tail( &rmesa->hw.atomlist, &rmesa->hw.mtl[i] );
    for (i = 0; i < 6; ++i)
        insert_at_tail( &rmesa->hw.atomlist, &rmesa->hw.ucp[i] );
+   /* FIXME: is this a good place to insert that atom ? */
+   insert_at_tail( &rmesa->hw.atomlist, &rmesa->hw.prf );
 }
 
 static void r200SaveHwState( r200ContextPtr rmesa )
@@ -195,9 +197,9 @@ void r200EmitState( r200ContextPtr rmesa )
 /* Fire a section of the retained (indexed_verts) buffer as a regular
  * primtive.  
  */
-extern void r200EmitVbufPrim( r200ContextPtr rmesa,
-				GLuint primitive,
-				GLuint vertex_nr )
+void r200EmitVbufPrim( r200ContextPtr rmesa,
+                       GLuint primitive,
+                       GLuint vertex_nr )
 {
    drm_radeon_cmd_header_t *cmd;
 
@@ -231,7 +233,7 @@ void r200FlushElts( r200ContextPtr rmesa )
       fprintf(stderr, "%s\n", __FUNCTION__);
 
    assert( rmesa->dma.flush == r200FlushElts );
-   rmesa->dma.flush = 0;
+   rmesa->dma.flush = NULL;
 
    /* Cope with odd number of elts:
     */

@@ -26,6 +26,11 @@
 /* Input device which doesn't output any event. This device can be used
  * as a core pointer or as a core keyboard.
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifndef XFree86LOADER
 #include <unistd.h>
 #include <errno.h>
@@ -41,7 +46,7 @@
 #include <xf86_OSproc.h>
 #include <xf86Xinput.h>
 #include <exevents.h>		/* Needed for InitValuator/Proximity stuff */
-#include <keysym.h>
+#include <X11/keysym.h>
 #include <mipointer.h>
 
 #ifdef XFree86LOADER
@@ -55,25 +60,107 @@
  *****************************************************************************/
 static KeySym void_map[] = 
 {
-    NoSymbol,	/* 0x00 */
-    NoSymbol,	/* 0x01 */
-    NoSymbol,	/* 0x02 */
-    NoSymbol,	/* 0x03 */
-    NoSymbol,	/* 0x04 */
-    NoSymbol,	/* 0x05 */
-    NoSymbol,	/* 0x06 */
-    NoSymbol	/* 0x07 */
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	XK_BackSpace,	XK_Tab,		XK_Linefeed,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	XK_Escape,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	XK_space,	XK_exclam,	XK_quotedbl,	XK_numbersign,
+	XK_dollar,	XK_percent,	XK_ampersand,	XK_apostrophe,
+	XK_parenleft,	XK_parenright,	XK_asterisk,	XK_plus,
+	XK_comma,	XK_minus,	XK_period,	XK_slash,
+	XK_0,		XK_1,		XK_2,		XK_3,
+	XK_4,		XK_5,		XK_6,		XK_7,
+	XK_8,		XK_9,		XK_colon,	XK_semicolon,
+	XK_less,	XK_equal,	XK_greater,	XK_question,
+	XK_at,		XK_A,		XK_B,		XK_C,
+	XK_D,		XK_E,		XK_F,		XK_G,
+	XK_H,		XK_I,		XK_J,		XK_K,
+	XK_L,		XK_M,		XK_N,		XK_O,
+	XK_P,		XK_Q,		XK_R,		XK_S,
+	XK_T,		XK_U,		XK_V,		XK_W,
+	XK_X,		XK_Y,		XK_Z,		XK_bracketleft,
+	XK_backslash,	XK_bracketright,XK_asciicircum,	XK_underscore,
+	XK_grave,	XK_a,		XK_b,		XK_c,
+	XK_d,		XK_e,		XK_f,		XK_g,
+	XK_h,		XK_i,		XK_j,		XK_k,
+	XK_l,		XK_m,		XK_n,		XK_o,
+	XK_p,		XK_q,		XK_r,		XK_s,
+	XK_t,		XK_u,		XK_v,		XK_w,
+	XK_x,		XK_y,		XK_z,		XK_braceleft,
+	XK_bar,		XK_braceright,	XK_asciitilde,	XK_BackSpace,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
+	XK_nobreakspace,XK_exclamdown,	XK_cent,	XK_sterling,
+	XK_currency,	XK_yen,		XK_brokenbar,	XK_section,
+	XK_diaeresis,	XK_copyright,	XK_ordfeminine,	XK_guillemotleft,
+	XK_notsign,	XK_hyphen,	XK_registered,	XK_macron,
+	XK_degree,	XK_plusminus,	XK_twosuperior,	XK_threesuperior,
+	XK_acute,	XK_mu,		XK_paragraph,	XK_periodcentered,
+	XK_cedilla,	XK_onesuperior,	XK_masculine,	XK_guillemotright,
+	XK_onequarter,	XK_onehalf,	XK_threequarters,XK_questiondown,
+	XK_Agrave,	XK_Aacute,	XK_Acircumflex,	XK_Atilde,
+	XK_Adiaeresis,	XK_Aring,	XK_AE,		XK_Ccedilla,
+	XK_Egrave,	XK_Eacute,	XK_Ecircumflex,	XK_Ediaeresis,
+	XK_Igrave,	XK_Iacute,	XK_Icircumflex,	XK_Idiaeresis,
+	XK_ETH,		XK_Ntilde,	XK_Ograve,	XK_Oacute,
+	XK_Ocircumflex,	XK_Otilde,	XK_Odiaeresis,	XK_multiply,
+	XK_Ooblique,	XK_Ugrave,	XK_Uacute,	XK_Ucircumflex,
+	XK_Udiaeresis,	XK_Yacute,	XK_THORN,	XK_ssharp,
+	XK_agrave,	XK_aacute,	XK_acircumflex,	XK_atilde,
+	XK_adiaeresis,	XK_aring,	XK_ae,		XK_ccedilla,
+	XK_egrave,	XK_eacute,	XK_ecircumflex,	XK_ediaeresis,
+	XK_igrave,	XK_iacute,	XK_icircumflex,	XK_idiaeresis,
+	XK_eth,		XK_ntilde,	XK_ograve,	XK_oacute,
+	XK_ocircumflex,	XK_otilde,	XK_odiaeresis,	XK_division,
+	XK_oslash,	XK_ugrave,	XK_uacute,	XK_ucircumflex,
+	XK_udiaeresis,	XK_yacute,	XK_thorn,	XK_ydiaeresis
 };
 
 /* minKeyCode = 8 because this is the min legal key code */
 static KeySymsRec void_keysyms = {
-  /* map	minKeyCode	maxKC	width */
-  void_map,	8,		8,	1
+  /* map	minKeyCode	maxKeyCode	width */
+  void_map,	8,		255,		1
 };
 
 static const char *DEFAULTS[] = {
     NULL
 };
+
+static void
+BellProc(
+    int percent,
+    DeviceIntPtr pDev,
+    pointer ctrl,
+    int unused)
+{
+    return;
+}
+
+static void
+KeyControlProc(
+    DeviceIntPtr pDev,
+    KeybdCtrl *ctrl)
+{
+    return;
+}
+
+static void
+PointerControlProc(
+    DeviceIntPtr dev,
+    PtrCtrl *ctrl)
+{
+    return;
+}
 
 /*
  * xf86VoidControlProc --
@@ -105,6 +192,7 @@ xf86VoidControlProc(DeviceIntPtr device, int what)
 	  return !Success;
 	}
       
+/*
 	if (InitFocusClassDeviceStruct(device) == FALSE) {
 	  ErrorF("unable to init Focus class device\n");
 	  return !Success;
@@ -112,6 +200,11 @@ xf86VoidControlProc(DeviceIntPtr device, int what)
           
 	if (InitKeyClassDeviceStruct(device, &void_keysyms, NULL) == FALSE) {
 	  ErrorF("unable to init key class device\n"); 
+	  return !Success;
+	}
+*/
+	if (InitKeyboardDeviceStruct((DevicePtr)device, &void_keysyms, NULL, BellProc, KeyControlProc) == FALSE) {
+	  ErrorF("unable to init keyboard device\n");
 	  return !Success;
 	}
 
@@ -138,6 +231,10 @@ xf86VoidControlProc(DeviceIntPtr device, int what)
 	else {
 	  /* allocate the motion history buffer if needed */
 	  xf86MotionHistoryAllocate(pInfo);
+	}
+	if (InitPtrFeedbackClassDeviceStruct(device, PointerControlProc) == FALSE) {
+	  ErrorF("unable to init pointer feedback class device\n"); 
+	  return !Success;
 	}
 	break;
 
@@ -211,10 +308,7 @@ xf86VoidInit(InputDriverPtr	drv,
     return (pInfo);
 }
 
-#ifdef XFree86LOADER
-static
-#endif
-InputDriverRec VOID = {
+_X_EXPORT InputDriverRec VOID = {
     1,				/* driver version */
     "void",			/* driver name */
     NULL,			/* identify */
@@ -273,9 +367,11 @@ static XF86ModuleVersionInfo xf86VoidVersionRec =
 				/* a tool */
 };
 
-XF86ModuleData voidModuleData = {&xf86VoidVersionRec,
-				  xf86VoidPlug,
-				  xf86VoidUnplug};
+_X_EXPORT XF86ModuleData voidModuleData = {
+    &xf86VoidVersionRec,
+    xf86VoidPlug,
+    xf86VoidUnplug
+};
 
 #endif /* XFree86LOADER */
 

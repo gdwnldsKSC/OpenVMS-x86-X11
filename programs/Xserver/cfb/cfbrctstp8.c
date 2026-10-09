@@ -32,10 +32,14 @@ Author: Keith Packard, MIT X Consortium
 
 /* $Xorg: cfbrctstp8.c,v 1.4 2001/02/09 02:04:38 xorgcvs Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #if PSZ == 8
 
-#include "X.h"
-#include "Xmd.h"
+#include <X11/X.h>
+#include <X11/Xmd.h>
 #include "servermd.h"
 #include "gcstruct.h"
 #include "window.h"

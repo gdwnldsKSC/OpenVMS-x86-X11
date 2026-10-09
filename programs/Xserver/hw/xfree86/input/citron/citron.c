@@ -1,4 +1,4 @@
-/* $Id$
+/* $Id: citron.c,v 1.7 2005/07/11 02:37:58 ajax Exp $
  * Copyright (c) 1998  Metro Link Incorporated
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -118,6 +118,9 @@
 
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #define _citron_C_
 #define PK	0
@@ -237,7 +240,7 @@ static int      debug_level = 0;
 static InputInfoPtr CitronPreInit(InputDriverPtr drv, IDevPtr dev, int flags);
 
 
-InputDriverRec CITRON = {
+_X_EXPORT InputDriverRec CITRON = {
 	1,
 	"citron",
 	NULL,
@@ -319,7 +322,11 @@ TearDownProc (pointer p)
 }
 
 
-XF86ModuleData citronModuleData = { &VersionRec, SetupProc, TearDownProc};
+_X_EXPORT XF86ModuleData citronModuleData = {
+    &VersionRec,
+    SetupProc,
+    TearDownProc
+};
 
 #endif /* XFree86LOADER */
 
@@ -2139,7 +2146,7 @@ static Bool cit_GetInitialErrors(cit_PrivatePtr priv)
 	{
 		cit_SetBlockDuration(priv, 500000);
 		res = cit_GetPacket(priv);
-		if ((res == Success) || (priv->lex_mode == cit_idle));
+		if ((res == Success) || (priv->lex_mode == cit_idle))
 			break;
 	}
 	if (res != Success)
@@ -2267,7 +2274,7 @@ static Bool cit_GetDefectiveBeams(cit_PrivatePtr priv)
 	{
 		cit_SetBlockDuration(priv, 500000);
 		res = cit_GetPacket(priv);
-		if ((res == Success) || (priv->lex_mode == cit_idle));
+		if ((res == Success) || (priv->lex_mode == cit_idle))
 			break;
 	}
 	if (res != Success)
@@ -2348,7 +2355,7 @@ static Bool cit_GetDesignator(cit_PrivatePtr priv)
 	{
 		cit_SetBlockDuration(priv, 500000);
 		res = cit_GetPacket(priv);
-		if ((res == Success) || (priv->lex_mode == cit_idle));
+		if ((res == Success) || (priv->lex_mode == cit_idle))
 			break;
 	}
 	if (res != Success)
@@ -2738,7 +2745,7 @@ static Bool cit_GetPressureSensors(cit_PrivatePtr priv)
 	{
 		cit_SetBlockDuration(priv, 500000);
 		res = cit_GetPacket(priv);
-		if ((res == Success) || (priv->lex_mode == cit_idle));
+		if ((res == Success) || (priv->lex_mode == cit_idle))
 			break;
 	}
 	if (res != Success)

@@ -28,6 +28,8 @@ lib/libXaw.6.1.dylib
 lib/libXaw.6.dylib
 lib/libXaw.7.0.dylib
 lib/libXaw.7.dylib
+lib/libXaw.8.0.dylib
+lib/libXaw.8.dylib
 lib/libXaw.dylib
 lib/libXcursor.1.0.2.dylib
 lib/libXcursor.1.dylib
@@ -124,3 +126,15 @@ lib/libxkbfile.dylib
 lib/libxkbui.1.0.dylib
 lib/libxkbui.1.dylib
 lib/libxkbui.dylib
+lib/libXcomposite.1.0.dylib
+lib/libXcomposite.1.dylib
+lib/libXcomposite.dylib
+lib/libXdamage.1.0.dylib
+lib/libXdamage.1.dylib
+lib/libXdamage.dylib
+lib/libXevie.1.0.dylib
+lib/libXevie.1.dylib
+lib/libXevie.dylib
+lib/libXfixes.3.0.dylib
+lib/libXfixes.3.dylib
+lib/libXfixes.dylib

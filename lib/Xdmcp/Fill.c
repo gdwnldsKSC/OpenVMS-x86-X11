@@ -32,6 +32,9 @@ in this Software without prior written authorization from The Open Group.
 #ifdef WIN32
 #define _WILLWINSOCK_
 #endif
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <X11/Xos.h>
 #include <X11/X.h>
 #include <X11/Xmd.h>

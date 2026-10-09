@@ -1,5 +1,5 @@
 .\" $Xorg: X.cpp,v 1.3 2000/08/17 19:42:04 cpqbld Exp $
-.\" $XdotOrg: xc/doc/man/general/X.man,v 1.4 2004/09/03 16:18:18 kem Exp $
+.\" $XdotOrg: xc/doc/man/general/X.man,v 1.7 2005/12/14 23:41:53 alanc Exp $
 .\"
 .\" Copyright (c) 1994, 2004  The Open Group
 .\" Copyright \(co 2000  The XFree86 Project, Inc.
@@ -103,23 +103,23 @@ a performance measurement utility, \fIx11perf\fP;
 a font compiler, \fIbdftopcf\fP;
 a font server and related utilities, \fIxfs\fP, \fIfsinfo\fP, \fIfslsfonts\fP, \fIfstobdf\fP;
 a display server and related utilities, \fIXserver\fP, \fIrgb\fP, \fImkfontdir\fP;
-a print server and related utilities, \fIXprt\fP, \fIxplsprinters\fP;
+a print server and related utilities, \fIXprt\fP, \fIxplsprinters\fP, and \fIxprehashprinterlist\fP;
 remote execution utilities, \fIrstart\fP and \fIxon\fP;
 a clipboard manager, \fIxclipboard\fP;
-keyboard description compiler and related utilities, \fIxkbcomp\fP, 
+keyboard description compiler and related utilities, \fIxkbcomp\fP, \fIsetxkbmap\fP
 \fIxkbprint\fP, \fIxkbbell\fP, \fIxkbevd\fP, \fIxkbvleds\fP, and \fIxkbwatch\fP;
 a utility to terminate clients, \fIxkill\fP; 
 an optimized X protocol proxy, \fIlbxproxy\fP;
 a firewall security proxy, \fIxfwp\fP;
 a proxy manager to control them, \fIproxymngr\fP;
 a utility to find proxies, \fIxfindproxy\fP;
-Netscape Navigator Plug-ins, \fIlibxrx.so\fP and \fIlibxrxnest.so\fP;
+web browser plug-ins, \fIlibxrx.so\fP and \fIlibxrxnest.so\fP;
 an RX MIME-type helper program, \fIxrx\fP;
 and a utility to cause part or all of the screen to be redrawn, \fIxrefresh\fP. 
 .PP
 Many other utilities, window managers, games, toolkits, etc. are included
 as user-contributed software in the X.Org Foundation distribution, or are
-available using anonymous ftp on the Internet.
+available on the Internet.
 See your site administrator for details.
 .SH "STARTING UP"
 .PP 
@@ -1226,7 +1226,7 @@ the appropriate instance name can be placed before the asterisk:
 .SH "SEE ALSO"
 .PP
 .\" introductions
-.BR XProjectTeam (__miscmansuffix__),
+.BR XOrgFoundation (__miscmansuffix__),
 .BR XStandards (__miscmansuffix__),
 .BR Xsecurity (__miscmansuffix__),
 .BR Xprint (__miscmansuffix__),
@@ -1297,6 +1297,7 @@ the appropriate instance name can be placed before the asterisk:
 .\" servers
 .BR Xserver (1),
 .BR Xdec (1),
+.BR Xdmx (1),
 .BR XmacII (1),
 .BR Xsun (1),
 .BR Xnest (1),
@@ -1313,7 +1314,7 @@ and
 X Window System is a trademark of The Open Group.
 .SH AUTHORS
 .PP
-A cast of thousands, literally.  The Release 6.8 distribution is 
+A cast of thousands, literally.  Releases 6.7 and later are 
 brought to you by the X.Org Foundation, LLC. The names of all people who 
 made it a reality will be found in the individual documents and 
 source files.

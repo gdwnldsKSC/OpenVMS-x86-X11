@@ -31,13 +31,13 @@ in this Software without prior written authorization from The Open Group.
 
 #include	"sun.h"
 
-#include	"Xmd.h"
+#include	<X11/Xmd.h>
 #include	"gcstruct.h"
 #include	"scrnintstr.h"
 #include	"pixmapstr.h"
 #include	"regionstr.h"
 #include	"mistruct.h"
-#include	"fontstruct.h"
+#include	<X11/fonts/fontstruct.h>
 #include	"dixfontstr.h"
 #include	"cfb/cfb.h"
 #include	"cfb/cfbmskbits.h"

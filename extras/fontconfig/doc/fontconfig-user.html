@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <HTML
 ><HEAD
 ><TITLE
 >fonts-conf</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.7"></HEAD
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -37,6 +37,7 @@ NAME="AEN8"
 CLASS="SYNOPSIS"
 >   /etc/fonts/fonts.conf
    /etc/fonts/fonts.dtd
+   /etc/fonts/conf.d
    ~/.fonts.conf</PRE
 ></DIV
 ><DIV
@@ -115,17 +116,23 @@ convenience for the applications rendering mechanism.
 CLASS="PROGRAMLISTING"
 >  Property        Type    Description
   --------------------------------------------------------------
-  family          String  Font family name
+  family          String  Font family names
+  familylang      String  Languages cooresponding to each family
   style           String  Font style. Overrides weight and slant
+  stylelang       String  Languages cooresponding to each style
+  fullname        String  Font full names (often includes style)
+  fullnamelang    String  Languages cooresponding to each fullname
   slant           Int     Italic, oblique or roman
   weight          Int     Light, medium, demibold, bold or black
   size            Double  Point size
+  width           Int     Condensed, normal or expanded
   aspect          Double  Stretches glyphs horizontally before hinting
   pixelsize       Double  Pixel size
-  spacing         Int     Proportional, monospace or charcell
+  spacing         Int     Proportional, dual-width, monospace or charcell
   foundry         String  Font foundry name
   antialias       Bool    Whether glyphs can be antialiased
   hinting         Bool    Whether the rasterizer should use hinting
+  hintstyle       Int     Automatic hinting style
   verticallayout  Bool    Use vertical layout
   autohint        Bool    Use autohinter instead of normal hinter
   globaladvance   Bool    Use font global advance data
@@ -143,6 +150,9 @@ CLASS="PROGRAMLISTING"
   charset         CharSet Unicode chars encoded by the font
   lang            String  List of RFC-3066-style languages this
                           font supports
+  fontversion     Int     Version number of the font
+  capability      String  List of layout capabilities in the font
+  embolden        Bool    Rasterizer should synthetically embolden the font
     </PRE
 ></DIV
 ><DIV
@@ -233,7 +243,7 @@ additional properties:
     </P
 ><PRE
 CLASS="PROGRAMLISTING"
->	&#60;families&#62;-&#60;point sizes&#62;:&#60;name1&#62;=&#60;values1&#62;:&#60;name2&#62;=&#60;values2&#62;...
+>	&lt;families&gt;-&lt;point sizes&gt;:&lt;name1&gt;=&lt;values1&gt;:&lt;name2&gt;=&lt;values2&gt;...
     </PRE
 ><P
 >Values in a list are separated with commas.  The name needn't include either
@@ -264,7 +274,7 @@ NAME="AEN42"
 >Each font in the database contains a list of languages it supports.  This is
 computed by comparing the Unicode coverage of the font with the orthography
 of each language.  Languages are tagged using an RFC-3066 compatible naming
-and occur in two parts -- the ISO639 language tag followed a hyphen and then
+and occur in two parts -- the ISO 639 language tag followed a hyphen and then
 by the ISO 3166 country code.  The hyphen and country code may be elided.
   </P
 ><P
@@ -272,13 +282,19 @@ by the ISO 3166 country code.  The hyphen and country code may be elided.
 No provision has been made for adding new ones aside from rebuilding the
 library.  It currently supports 122 of the 139 languages named in ISO 639-1,
 141 of the languages with two-letter codes from ISO 639-2 and another 30
-languages with only three-letter codes.
+languages with only three-letter codes.  Languages with both two and three
+letter codes are provided with only the two letter code.
+  </P
+><P
+>For languages used in multiple territories with radically different
+character sets, fontconfig includes per-territory orthographies.  This
+includes Azerbaijani, Kurdish, Pashto, Tigrinya and Chinese.
   </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN46"
+NAME="AEN47"
 ></A
 ><H2
 >Configuration File Format</H2
@@ -296,23 +312,23 @@ directory (/etc/fonts).  Each configuration file should contain the
 following structure:
     <PRE
 CLASS="PROGRAMLISTING"
->	&#60;?xml version="1.0"?&#62;
-	&#60;!DOCTYPE fontconfig SYSTEM "fonts.dtd"&#62;
-	&#60;fontconfig&#62;
+>	&lt;?xml version="1.0"?&gt;
+	&lt;!DOCTYPE fontconfig SYSTEM "fonts.dtd"&gt;
+	&lt;fontconfig&gt;
 	...
-	&#60;/fontconfig&#62;
+	&lt;/fontconfig&gt;
     </PRE
 >
   </P
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN51"
+NAME="AEN52"
 ></A
 ><H3
-><VAR
+><TT
 CLASS="LITERAL"
->&#60;fontconfig&#62;</VAR
+>&lt;fontconfig&gt;</TT
 ></H3
 ><P
 >This is the top level element for a font configuration and can contain
@@ -337,7 +353,7 @@ CLASS="SGMLTAG"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN60"
+NAME="AEN61"
 ></A
 ><H3
 ><CODE
@@ -352,7 +368,7 @@ to include in the set of available fonts.
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN64"
+NAME="AEN65"
 ></A
 ><H3
 ><CODE
@@ -378,7 +394,7 @@ file version number (currently 1).
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN70"
+NAME="AEN71"
 ></A
 ><H3
 ><CODE
@@ -386,17 +402,20 @@ CLASS="SGMLTAG"
 >include ignore_missing="no"</CODE
 ></H3
 ><P
->This element contains the name of an additional configuration file.  When
-the XML datatype is traversed by FcConfigParse, the contents of the file
-will also be incorporated into the configuration by passing the filename to
+>This element contains the name of an additional configuration file or
+directory.  If a directory, every file within that directory starting with a
+number will be processed in sorted order.  When
+the XML datatype is traversed by FcConfigParse, the contents of the file(s)
+will also be incorporated into the configuration by passing the filename(s) to
 FcConfigLoadAndParse.  If 'ignore_missing' is set to "yes" instead of the
-default "no", a missing file will elicit no warning message from the library.
+default "no", a missing file or directory will elicit no warning message from
+the library.
   </P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN74"
+NAME="AEN75"
 ></A
 ><H3
 ><CODE
@@ -421,7 +440,7 @@ order.
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN81"
+NAME="AEN82"
 ></A
 ><H3
 ><CODE
@@ -445,7 +464,7 @@ the set of characters supported by the font.
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN87"
+NAME="AEN88"
 ></A
 ><H3
 ><CODE
@@ -468,7 +487,111 @@ automatically rebuild the internal datastructures when this interval passes.
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN93"
+NAME="AEN94"
+></A
+><H3
+><CODE
+CLASS="SGMLTAG"
+>selectfont</CODE
+></H3
+><P
+>This element is used to black/white list fonts from being listed or matched
+against.  It holds acceptfont and rejectfont elements.
+  </P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN98"
+></A
+><H3
+><CODE
+CLASS="SGMLTAG"
+>acceptfont</CODE
+></H3
+><P
+>Fonts matched by an acceptfont element are "whitelisted"; such fonts are
+explicitly included in the set of fonts used to resolve list and match
+requests; including them in this list protects them from being "blacklisted"
+by a rejectfont element.  Acceptfont elements include glob and pattern
+elements which are used to match fonts.
+  </P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN102"
+></A
+><H3
+><CODE
+CLASS="SGMLTAG"
+>rejectfont</CODE
+></H3
+><P
+>Fonts matched by an rejectfont element are "blacklisted"; such fonts are
+excluded from the set of fonts used to resolve list and match requests as if
+they didn't exist in the system.  Rejectfont elements include glob and
+pattern elements which are used to match fonts.
+  </P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN106"
+></A
+><H3
+><CODE
+CLASS="SGMLTAG"
+>glob</CODE
+></H3
+><P
+>Glob elements hold shell-style filename matching patterns (including ? and
+*) which match fonts based on their complete pathnames.  This can be used to
+exclude a set of directories (/usr/share/fonts/uglyfont*), or particular
+font file types (*.pcf.gz), but the latter mechanism relies rather heavily
+on filenaming conventions which can't be relied upon.
+  </P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN110"
+></A
+><H3
+><CODE
+CLASS="SGMLTAG"
+>pattern</CODE
+></H3
+><P
+>Pattern elements perform list-style matching on incoming fonts; that is,
+they hold a list of elements and associated values.  If all of those
+elements have a matching value, then the pattern matches the font.  This can
+be used to select fonts based on attributes of the font (scalable, bold,
+etc), which is a more reliable mechanism than using file extensions.
+Pattern elements include patelt elements.
+  </P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN114"
+></A
+><H3
+><CODE
+CLASS="SGMLTAG"
+>patelt name="property"</CODE
+></H3
+><P
+>Patelt elements hold a single pattern element and list of values.  They must
+have a 'name' attribute which indicates the pattern element name.  Patelt
+elements include int, double, string, matrix, bool, charset and const
+elements.
+  </P
+></DIV
+><DIV
+CLASS="REFSECT2"
+><A
+NAME="AEN118"
 ></A
 ><H3
 ><CODE
@@ -492,27 +615,30 @@ resulting from a match rather than a font pattern to be matched.
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN99"
+NAME="AEN124"
 ></A
 ><H3
 ><CODE
 CLASS="SGMLTAG"
->test qual="any" name="property" compare="eq"</CODE
+>test qual="any" name="property" target="default" compare="eq"</CODE
 ></H3
 ><P
->This element contains a single value which is compared with the pattern
-property "property" (substitute any of the property names seen 
+>This element contains a single value which is compared with the target
+('pattern', 'font' or 'default') property "property" (substitute any of the property names seen 
 above). 'compare' can be one of "eq", "not_eq", "less", "less_eq", "more", or
 "more_eq".  'qual' may either be the default, "any", in which case the match
 succeeds if any value associated with the property matches the test value, or
 "all", in which case all of the values associated with the property must
-match the test value.
+match the test value.  When used in a &lt;match target="font"&gt; element,
+the target= attribute in the &lt;test&gt; element selects between matching
+the original pattern or the font.  "default" selects whichever target the
+outer &lt;match&gt; element has selected.
   </P
 ></DIV
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN103"
+NAME="AEN128"
 ></A
 ><H3
 ><CODE
@@ -528,7 +654,9 @@ CLASS="SGMLTAG"
 >test</CODE
 > elements, if so, the
 modification may affect the first matched value.  Any values inserted into
-the property are given the indicated binding. 'mode' is one of:
+the property are given the indicated binding ("strong", "weak" or "same")
+with "same" binding using the value from the matched pattern element.
+'mode' is one of:
     <PRE
 CLASS="PROGRAMLISTING"
 >  Mode                    With Match              Without Match
@@ -546,7 +674,7 @@ CLASS="PROGRAMLISTING"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN109"
+NAME="AEN134"
 ></A
 ><H3
 ><CODE
@@ -577,7 +705,7 @@ instead of -.5).
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN117"
+NAME="AEN142"
 ></A
 ><H3
 ><CODE
@@ -595,7 +723,7 @@ transformation.
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN122"
+NAME="AEN147"
 ></A
 ><H3
 ><CODE
@@ -610,7 +738,7 @@ the font, not the pattern.
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN126"
+NAME="AEN151"
 ></A
 ><H3
 ><CODE
@@ -624,15 +752,34 @@ symbolic names for common font values:
 CLASS="PROGRAMLISTING"
 >  Constant        Property        Value
   -------------------------------------
-  light           weight          0
+  thin            weight          0
+  extralight      weight          40
+  ultralight      weight          40
+  light           weight          50
+  book            weight          75
+  regular         weight          80
+  normal          weight          80
   medium          weight          100
   demibold        weight          180
+  semibold        weight          180
   bold            weight          200
+  extrabold       weight          205
   black           weight          210
+  heavy           weight          210
   roman           slant           0
   italic          slant           100
   oblique         slant           110
+  ultracondensed  width           50
+  extracondensed  width           63
+  condensed       width           75
+  semicondensed   width           87
+  normal          width           100
+  semiexpanded    width           113
+  expanded        width           125
+  extraexpanded   width           150
+  ultraexpanded   width           200
   proportional    spacing         0
+  dual            spacing         90
   mono            spacing         100
   charcell        spacing         110
   unknown         rgba            0
@@ -641,6 +788,10 @@ CLASS="PROGRAMLISTING"
   vrgb            rgba            3
   vbgr            rgba            4
   none            rgba            5
+  hintnone        hintstyle       0
+  hintslight      hintstyle       1
+  hintmedium      hintstyle       2
+  hintfull        hintstyle       3
     </PRE
 >
       </P
@@ -648,7 +799,7 @@ CLASS="PROGRAMLISTING"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN131"
+NAME="AEN156"
 ></A
 ><H3
 ><CODE
@@ -684,7 +835,7 @@ CLASS="SGMLTAG"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN142"
+NAME="AEN167"
 ></A
 ><H3
 ><CODE
@@ -713,7 +864,7 @@ CLASS="SGMLTAG"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN151"
+NAME="AEN176"
 ></A
 ><H3
 ><CODE
@@ -727,7 +878,7 @@ CLASS="SGMLTAG"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN155"
+NAME="AEN180"
 ></A
 ><H3
 ><CODE
@@ -743,7 +894,7 @@ of the third.
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN159"
+NAME="AEN184"
 ></A
 ><H3
 ><CODE
@@ -793,7 +944,7 @@ families to the end of the family list.
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN173"
+NAME="AEN198"
 ></A
 ><H3
 ><CODE
@@ -807,7 +958,7 @@ CLASS="SGMLTAG"
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN177"
+NAME="AEN202"
 ></A
 ><H3
 ><CODE
@@ -838,14 +989,14 @@ CLASS="SGMLTAG"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN186"
+NAME="AEN211"
 ></A
 ><H2
 >EXAMPLE CONFIGURATION FILE</H2
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN188"
+NAME="AEN213"
 ></A
 ><H3
 >System configuration file</H3
@@ -854,85 +1005,92 @@ NAME="AEN188"
     </P
 ><PRE
 CLASS="PROGRAMLISTING"
->&#60;?xml version="1.0"?&#62;
-&#60;!DOCTYPE fontconfig SYSTEM "fonts.dtd"&#62;
-&#60;!-- /etc/fonts/fonts.conf file to configure system font access --&#62;
-&#60;fontconfig&#62;
-&#60;!-- 
+>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE fontconfig SYSTEM "fonts.dtd"&gt;
+&lt;!-- /etc/fonts/fonts.conf file to configure system font access --&gt;
+&lt;fontconfig&gt;
+&lt;!-- 
 	Find fonts in these directories
---&#62;
-&#60;dir&#62;/usr/X11R6/lib/X11/fonts/truetype&#60;/dir&#62;
-&#60;dir&#62;/usr/X11R6/lib/X11/fonts/Type1&#60;/dir&#62;
+--&gt;
+&lt;dir&gt;/usr/share/fonts&lt;/dir&gt;
+&lt;dir&gt;/usr/X11R6/lib/X11/fonts&lt;/dir&gt;
 
-&#60;!--
+&lt;!--
 	Accept deprecated 'mono' alias, replacing it with 'monospace'
---&#62;
-&#60;match target="pattern"&#62;
-	&#60;test qual="any" name="family"&#62;&#60;string&#62;mono&#60;/string&#62;&#60;/test&#62;
-	&#60;edit name="family" mode="assign"&#62;&#60;string&#62;monospace&#60;/string&#62;&#60;/edit&#62;
-&#60;/match&#62;
+--&gt;
+&lt;match target="pattern"&gt;
+	&lt;test qual="any" name="family"&gt;&lt;string&gt;mono&lt;/string&gt;&lt;/test&gt;
+	&lt;edit name="family" mode="assign"&gt;&lt;string&gt;monospace&lt;/string&gt;&lt;/edit&gt;
+&lt;/match&gt;
 
-&#60;!--
+&lt;!--
 	Names not including any well known alias are given 'sans'
---&#62;
-&#60;match target="pattern"&#62;
-	&#60;test qual="all" name="family" mode="not_eq"&#62;sans&#60;/test&#62;
-	&#60;test qual="all" name="family" mode="not_eq"&#62;serif&#60;/test&#62;
-	&#60;test qual="all" name="family" mode="not_eq"&#62;monospace&#60;/test&#62;
-	&#60;edit name="family" mode="append_last"&#62;&#60;string&#62;sans&#60;/string&#62;&#60;/edit&#62;
-&#60;/match&#62;
+--&gt;
+&lt;match target="pattern"&gt;
+	&lt;test qual="all" name="family" mode="not_eq"&gt;sans&lt;/test&gt;
+	&lt;test qual="all" name="family" mode="not_eq"&gt;serif&lt;/test&gt;
+	&lt;test qual="all" name="family" mode="not_eq"&gt;monospace&lt;/test&gt;
+	&lt;edit name="family" mode="append_last"&gt;&lt;string&gt;sans&lt;/string&gt;&lt;/edit&gt;
+&lt;/match&gt;
 
-&#60;!--
+&lt;!--
 	Load per-user customization file, but don't complain
 	if it doesn't exist
---&#62;
-&#60;include ignore_missing="yes"&#62;~/.fonts.conf&#60;/include&#62;
+--&gt;
+&lt;include ignore_missing="yes"&gt;~/.fonts.conf&lt;/include&gt;
 
-&#60;!--
+&lt;!--
+	Load local customization files, but don't complain
+	if there aren't any
+--&gt;
+&lt;include ignore_missing="yes"&gt;conf.d&lt;/include&gt;
+&lt;include ignore_missing="yes"&gt;local.conf&lt;/include&gt;
+
+&lt;!--
 	Alias well known font names to available TrueType fonts.
 	These substitute TrueType faces for similar Type1
 	faces to improve screen appearance.
---&#62;
-&#60;alias&#62;
-	&#60;family&#62;Times&#60;/family&#62;
-	&#60;prefer&#62;&#60;family&#62;Times New Roman&#60;/family&#62;&#60;/prefer&#62;
-	&#60;default&#62;&#60;family&#62;serif&#60;/family&#62;&#60;/default&#62;
-&#60;/alias&#62;
-&#60;alias&#62;
-	&#60;family&#62;Helvetica&#60;/family&#62;
-	&#60;prefer&#62;&#60;family&#62;Verdana&#60;/family&#62;&#60;/prefer&#62;
-	&#60;default&#62;&#60;family&#62;sans&#60;/family&#62;&#60;/default&#62;
-&#60;/alias&#62;
-&#60;alias&#62;
-	&#60;family&#62;Courier&#60;/family&#62;
-	&#60;prefer&#62;&#60;family&#62;Courier New&#60;/family&#62;&#60;/prefer&#62;
-	&#60;default&#62;&#60;family&#62;monospace&#60;/family&#62;&#60;/default&#62;
-&#60;/alias&#62;
+--&gt;
+&lt;alias&gt;
+	&lt;family&gt;Times&lt;/family&gt;
+	&lt;prefer&gt;&lt;family&gt;Times New Roman&lt;/family&gt;&lt;/prefer&gt;
+	&lt;default&gt;&lt;family&gt;serif&lt;/family&gt;&lt;/default&gt;
+&lt;/alias&gt;
+&lt;alias&gt;
+	&lt;family&gt;Helvetica&lt;/family&gt;
+	&lt;prefer&gt;&lt;family&gt;Arial&lt;/family&gt;&lt;/prefer&gt;
+	&lt;default&gt;&lt;family&gt;sans&lt;/family&gt;&lt;/default&gt;
+&lt;/alias&gt;
+&lt;alias&gt;
+	&lt;family&gt;Courier&lt;/family&gt;
+	&lt;prefer&gt;&lt;family&gt;Courier New&lt;/family&gt;&lt;/prefer&gt;
+	&lt;default&gt;&lt;family&gt;monospace&lt;/family&gt;&lt;/default&gt;
+&lt;/alias&gt;
 
-&#60;!--
+&lt;!--
 	Provide required aliases for standard names
 	Do these after the users configuration file so that
 	any aliases there are used preferentially
---&#62;
-&#60;alias&#62;
-	&#60;family&#62;serif&#60;/family&#62;
-	&#60;prefer&#62;&#60;family&#62;Times New Roman&#60;/family&#62;&#60;/prefer&#62;
-&#60;/alias&#62;
-&#60;alias&#62;
-	&#60;family&#62;sans&#60;/family&#62;
-	&#60;prefer&#62;&#60;family&#62;Verdana&#60;/family&#62;&#60;/prefer&#62;
-&#60;/alias&#62;
-&#60;alias&#62;
-	&#60;family&#62;monospace&#60;/family&#62;
-	&#60;prefer&#62;&#60;family&#62;Andale Mono&#60;/family&#62;&#60;/prefer&#62;
-&#60;/alias&#62;
-&#60;/fontconfig&#62;
+--&gt;
+&lt;alias&gt;
+	&lt;family&gt;serif&lt;/family&gt;
+	&lt;prefer&gt;&lt;family&gt;Times New Roman&lt;/family&gt;&lt;/prefer&gt;
+&lt;/alias&gt;
+&lt;alias&gt;
+	&lt;family&gt;sans&lt;/family&gt;
+	&lt;prefer&gt;&lt;family&gt;Arial&lt;/family&gt;&lt;/prefer&gt;
+&lt;/alias&gt;
+&lt;alias&gt;
+	&lt;family&gt;monospace&lt;/family&gt;
+	&lt;prefer&gt;&lt;family&gt;Andale Mono&lt;/family&gt;&lt;/prefer&gt;
+&lt;/alias&gt;
+&lt;/fontconfig&gt;
     </PRE
 ></DIV
 ><DIV
 CLASS="REFSECT2"
 ><A
-NAME="AEN192"
+NAME="AEN217"
 ></A
 ><H3
 >User configuration file</H3
@@ -942,32 +1100,32 @@ NAME="AEN192"
     </P
 ><PRE
 CLASS="PROGRAMLISTING"
->&#60;?xml version="1.0"?&#62;
-&#60;!DOCTYPE fontconfig SYSTEM "fonts.dtd"&#62;
-&#60;!-- ~/.fonts.conf for per-user font configuration --&#62;
-&#60;fontconfig&#62;
+>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE fontconfig SYSTEM "fonts.dtd"&gt;
+&lt;!-- ~/.fonts.conf for per-user font configuration --&gt;
+&lt;fontconfig&gt;
 
-&#60;!--
+&lt;!--
 	Private font directory
---&#62;
-&#60;dir&#62;~/misc/fonts&#60;/dir&#62;
+--&gt;
+&lt;dir&gt;~/.fonts&lt;/dir&gt;
 
-&#60;!--
+&lt;!--
 	use rgb sub-pixel ordering to improve glyph appearance on
 	LCD screens.  Changes affecting rendering, but not matching
 	should always use target="font".
---&#62;
-&#60;match target="font"&#62;
-	&#60;edit name="rgba" mode="assign"&#62;&#60;const&#62;rgb&#60;/const&#62;&#60;/edit&#62;
-&#60;/match&#62;
-&#60;/fontconfig&#62;
+--&gt;
+&lt;match target="font"&gt;
+	&lt;edit name="rgba" mode="assign"&gt;&lt;const&gt;rgb&lt;/const&gt;&lt;/edit&gt;
+&lt;/match&gt;
+&lt;/fontconfig&gt;
     </PRE
 ></DIV
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN196"
+NAME="AEN221"
 ></A
 ><H2
 >Files</H2
@@ -983,6 +1141,21 @@ contains configuration information for the fontconfig library
 consisting of directories to look at for font information as well as
 instructions on editing program specified font patterns before attempting to
 match the available fonts.  It is in xml format.
+  </P
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>conf.d</I
+></SPAN
+>
+is the conventional name for a directory of additional configuration files
+managed by external applications or the local administrator.  The
+filenames starting with decimal digits are sorted in lexicographic order
+and used as additional configuration files.  All of these files are in xml
+format.  The master fonts.conf file references this directory in an 
+&lt;include&gt; directive.
   </P
 ><P
 ><SPAN
@@ -1020,12 +1193,23 @@ per-directory caches.  This file is automatically maintained by fontconfig.
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN206"
+NAME="AEN233"
+></A
+><H2
+>See Also</H2
+><P
+>fc-cache(1), fc-match(1), fc-list(1)
+  </P
+></DIV
+><DIV
+CLASS="REFSECT1"
+><A
+NAME="AEN236"
 ></A
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.2.2
+>Fontconfig version 2.3.2
 
 	    </P
 ></DIV

@@ -28,7 +28,7 @@ ModuleObjectRule()
 
 ObjectModuleTarget(suntcx,$(OBJS))
 
-InstallObjectModule(suntcx,$(MODULEDIR),drivers)
+InstallVideoObjectModule(suntcx,$(MODULEDIR))
 
 #if !defined(XF86DriverSDK)
 InstallModuleManPage(suntcx)

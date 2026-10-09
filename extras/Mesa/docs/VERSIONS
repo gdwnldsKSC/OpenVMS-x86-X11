@@ -1308,7 +1308,116 @@ Mesa Version History
 	- glReadPixels from a clipped front color buffer didn't always work
 	- glTexImage didn't accept GL_RED/GREEN/BLUE as the format
 	- Attempting queries/accesses of VBO 0 weren't detected as errors
-	- paletted textures failed if the palette had fewer that 256 entries
+	- paletted textures failed if the palette had fewer than 256 entries
     Changes:
 	- fixed a bunch of compiler warnings found with gcc 3.4
 	- bug reports should to go bugzilla.freedesktop.org
+
+
+6.3  July 20, 2005
+    New:
+	- GL_EXT_framebuffer_object extension
+	- GL_ARB_draw_buffers extension
+	- GL_ARB_pixel_buffer_object extension
+	- GL_OES_read_format extension (Ian Romanick)
+	- DirectFB driver (Claudio Ciccani)
+	- x86_64 vertex transformation code (Mikko T.)
+	- Updated GL/glext.h to version 29
+    Changes:
+	- added -stereo option for glxgears demo (Jacek Rosik)
+	- updated the PBuffer demo code in xdemos/ directory
+	- glDeleteTextures/Programs/Buffers() now makes the object ID
+	  available for immediate re-use
+	- assorted 64-bit clean-ups fixes (x86_64 and Win64)
+	- lots of internal changes for GL_EXT_framebuffer_object
+    Bug fixes:
+	- some functions didn't support PBO functionality
+	- glGetTexImage didn't convert color index images to RGBA as required
+	- fragment program texcoords were sometimes wrong for points and lines
+	- fixed problem with negative dot product in arbfplight, fplight demos
+	- fixed bug in perspective correction of antialiased, textured lines
+	- querying GL_POST_CONVOLUTION_ALPHA_BIAS_EXT returned wrong value
+	- fixed a couple per-pixel fog bugs (Soju Matsumoto)
+	- glGetBooleanv(GL_FRAGMENT_PROGRAM_BINDING_NV) was broken
+	- fixed float parsing bug in ARB frag/vert programs (bug 2520)
+	- XMesaGetDepthBuffer() returned incorrect value for bytesPerValue
+	- GL_COLOR_MATERIAL with glColor3 didn't properly set diffuse alpha
+	- glXChooseFBConfig() crashed if attribList pointer was NULL
+	- program state.light[n].spot.direction.w was wrong value (bug 3083)
+	- fragment program fog option required glEnable(GL_FOG) - wrong.
+	- glColorTable() could produce a Mesa implementation error (bug 3135)
+	- RasterPos could get corrupted by color index rendering path
+	- Removed bad XTranslateCoordinates call when rendering to Pixmaps
+	- glPopAttrib() didn't properly restore GL_TEXTURE_GEN enable state
+	- fixed a few Darwin compilation problems
+
+
+6.3.1
+    This was an intermediate release for X.org which wasn't otherwise released.
+
+
+6.3.2  August 19, 2005
+    New:
+	- The distribution now includes the DRI drivers and GLX code
+    Changes:
+	- Made the DRI "new" driver interface standard, remove old code
+    Bug fixes:
+	- GL_ARB_vertex/fragment_shader were mistakenly listed in the
+	  extensions string
+	- negative relative addressing in vertex programs was broken
+	- update/fix SPARC assembly code for vertex transformation
+	- fixed memory leak when freeing GLX drawables/renderbuffers
+	- fixed display list memory leak
+	- the GL_PIXEL_MAP_I_TO_I table is now floating point, not integer
+	- wglGetProcAddress() didn't handle wgl-functions
+	- fixed glxext.h cross-compile issue (Colin Harrison)
+	- assorted DRI driver fixes
+
+
+6.4  October 24, 2005
+    New:
+	- Added a fast XOR line drawing function in Xlib driver
+	- Added support for GL_ARB_texture_mirrored_repeat to savage
+	  driver (supported only on Savage4 hardware).
+    Changes:
+	- Mesa now packaged in three parts: Library, Demos and GLUT
+    Bug fixes:
+	- GLX_X_RENDERABLE token wasn't accepted by glXChooseFBConfig
+	- Some files were present multiple times in the 6.3.2 tarballs
+	- r200_vtxtmp_x86.S file was missing from 6.3.2 tarball (bug 4207)
+	- glxgears_fbconfig demo didn't work (bug 4237)
+	- fixed bug when bilinear sampling 2d textures with borders
+	- glXCreatePbuffer() could segfault instead of returning 0 (bug 4235)
+	- fixed undefined frexp and rand in X.org libGLcore.a (bug 4242)
+	- fixed a few problems with proxy color tables (bug 4270)
+	- fixed precision problem in Z clearing (bug 4395)
+	- glBitmap, glDraw/CopyPixels mistakenly generated selection hits
+	- fixed potential segfault caused by reading pixels outside
+	  of renderbuffer bounds
+	- glGetTexLevelParameter didn't accept GL_TEXTURE_DEPTH_SIZE_ARB
+	- fixed memory corruption bug involving software alpha buffers
+	- glReadPixels clipped by window bounds was sometimes broken
+	- glDraw/CopyPixels of stencil data ignored the stencil write mask
+	- glReadPixels from a texture bound to a framebuffer object didn't work
+	- glIsRender/FramebufferEXT weren't totally correct
+	- fixed a number of point size attenuation/fade bugs
+	- fixed glFogCoord bug 4729
+	- GLX encoding for transpose matrix functions was broken
+	- fixed broken fragment program KIL and SWZ instructions
+	- fragment programs that wrote result.depth.z didn't work
+
+
+6.4.1  November 30, 2005
+    Bug fixes:
+	- redefining a vertex program string didn't take effect in TNL module
+	- fixed occasional segfault upon vertex/fragment parsing error
+	- vertex program LIT instruction didn't handle 0^0=1 correctly
+	- fragment program fog option didn't work with glDrawPixels, glBitmap
+	- USE_MGL_NAMESPACE didn't work for x86-64
+	- OSMesa demos were missing from previous release tarballs
+	- fixed problem with float->ushort conversion in glClear (bug 4992)
+	- popping of GL_EYE_PLANE texgen state was broken (bug 4996)
+	- popping of GL_SPOT_DIRECTION light state was broken (bug 5005)
+	- fixed occasional triangle color interpolation problem on VMS
+	- work around invalid free() call (bug 5131)
+	- fixed BSD X server compilation problem by including stdint.h

@@ -5,6 +5,10 @@
  * Routines that handle mode setting.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /*
  * includes
  */

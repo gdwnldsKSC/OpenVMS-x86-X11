@@ -31,6 +31,7 @@
 #include "matrix.h"
 #include "simple_list.h"
 #include "extensions.h"
+#include "framebuffer.h"
 #include "imports.h"
 
 #include "swrast/swrast.h"
@@ -59,6 +60,23 @@
 int INTEL_DEBUG = (0);
 #endif
 
+#define need_GL_ARB_multisample
+#define need_GL_ARB_point_parameters
+#define need_GL_ARB_texture_compression
+#define need_GL_ARB_vertex_buffer_object
+#define need_GL_ARB_vertex_program
+#define need_GL_ARB_window_pos
+#define need_GL_EXT_blend_color
+#define need_GL_EXT_blend_equation_separate
+#define need_GL_EXT_blend_func_separate
+#define need_GL_EXT_blend_minmax
+#define need_GL_EXT_cull_vertex
+#define need_GL_EXT_fog_coord
+#define need_GL_EXT_multi_draw_arrays
+#define need_GL_EXT_secondary_color
+#define need_GL_NV_vertex_program
+#include "extension_helper.h"
+
 #ifndef VERBOSE
 int VERBOSE = 0;
 #endif
@@ -72,7 +90,7 @@ int prevLockLine;
  * Mesa's Driver Functions
  ***************************************/
 
-#define DRIVER_DATE                     "20040919"
+#define DRIVER_DATE                     "20050225"
 
 const GLubyte *intelGetString( GLcontext *ctx, GLenum name )
 {
@@ -96,6 +114,10 @@ const GLubyte *intelGetString( GLcontext *ctx, GLenum name )
 	 chipset = "Intel(R) 865G"; break;
       case PCI_CHIP_I915_G:
 	 chipset = "Intel(R) 915G"; break;
+      case PCI_CHIP_I915_GM:
+	 chipset = "Intel(R) 915GM"; break;
+      case PCI_CHIP_I945_G:
+	 chipset = "Intel(R) 945G"; break;
       default:
 	 chipset = "Unknown Intel Chipset"; break;
       }
@@ -124,76 +146,67 @@ static void intelBufferSize(GLframebuffer *buffer,
 }
 
 
-
 /**
  * Extension strings exported by the intel driver.
  *
  * \note
- * It appears that ARB_texture_env_crossbar and NV_blend_square have
- * "disappeared" compared to the old i830-specific driver.
- *
- * \note
- * See implementation of \c glGetString in each hw_context.c file:
- * This set of extensions is overridden and many are not actually
- * exported to the driver.  They are however enabled internally as
- * Mesa requires this when calculating things like GL version number.
+ * It appears that ARB_texture_env_crossbar has "disappeared" compared to the
+ * old i830-specific driver.
  */
-static const char * const card_extensions[] =
+const struct dri_extension card_extensions[] =
 {
-   "GL_ARB_multisample",
-   "GL_ARB_multitexture",
-   "GL_ARB_point_parameters",
-   "GL_ARB_texture_border_clamp",
-   "GL_ARB_texture_cube_map",
-   "GL_ARB_texture_compression",
-   "GL_ARB_texture_env_add",
-   "GL_ARB_texture_env_combine",
-   "GL_ARB_texture_env_dot3",
-   "GL_ARB_texture_mirrored_repeat",
-   "GL_ARB_texture_rectangle",
-   "GL_ARB_vertex_buffer_object",
-   "GL_ARB_vertex_program",
-   "GL_ARB_window_pos",
-
-   "GL_EXT_abgr",
-   "GL_EXT_bgra",
-   "GL_EXT_blend_color",
-   "GL_EXT_blend_equation_separate",
-   "GL_EXT_blend_func_separate",
-   "GL_EXT_blend_minmax",
-   "GL_EXT_blend_subtract",
-   "GL_EXT_fog_coord",
-   "GL_EXT_multi_draw_arrays",
-   "GL_EXT_secondary_color",
-   "GL_EXT_stencil_wrap",
-   "GL_EXT_texture_edge_clamp",
-   "GL_EXT_texture_env_combine",
-   "GL_EXT_texture_env_dot3",
-   "GL_EXT_texture_filter_anisotropic",
-   "GL_EXT_texture_lod_bias",
-
-   "GL_3DFX_texture_compression_FXT1",
-   "GL_APPLE_client_storage",
-   "GL_MESA_pack_invert",
-   "GL_MESA_ycbcr_texture",
-   "GL_NV_vertex_program",
-   "GL_NV_vertex_program1_1",
-   "GL_SGIS_generate_mipmap",
-
-   NULL
+    { "GL_ARB_multisample",                GL_ARB_multisample_functions },
+    { "GL_ARB_multitexture",               NULL },
+    { "GL_ARB_point_parameters",           GL_ARB_point_parameters_functions },
+    { "GL_ARB_texture_border_clamp",       NULL },
+    { "GL_ARB_texture_compression",        GL_ARB_texture_compression_functions },
+    { "GL_ARB_texture_cube_map",           NULL },
+    { "GL_ARB_texture_env_add",            NULL },
+    { "GL_ARB_texture_env_combine",        NULL },
+    { "GL_ARB_texture_env_dot3",           NULL },
+    { "GL_ARB_texture_mirrored_repeat",    NULL },
+    { "GL_ARB_texture_rectangle",          NULL },
+    { "GL_ARB_vertex_buffer_object",       GL_ARB_vertex_buffer_object_functions },
+    { "GL_ARB_vertex_program",             GL_ARB_vertex_program_functions },
+    { "GL_ARB_window_pos",                 GL_ARB_window_pos_functions },
+    { "GL_EXT_blend_color",                GL_EXT_blend_color_functions },
+    { "GL_EXT_blend_equation_separate",    GL_EXT_blend_equation_separate_functions },
+    { "GL_EXT_blend_func_separate",        GL_EXT_blend_func_separate_functions },
+    { "GL_EXT_blend_minmax",               GL_EXT_blend_minmax_functions },
+    { "GL_EXT_blend_subtract",             NULL },
+    { "GL_EXT_cull_vertex",                GL_EXT_cull_vertex_functions },
+    { "GL_EXT_fog_coord",                  GL_EXT_fog_coord_functions },
+    { "GL_EXT_multi_draw_arrays",          GL_EXT_multi_draw_arrays_functions },
+    { "GL_EXT_secondary_color",            GL_EXT_secondary_color_functions },
+    { "GL_EXT_stencil_wrap",               NULL },
+    { "GL_EXT_texture_edge_clamp",         NULL },
+    { "GL_EXT_texture_env_combine",        NULL },
+    { "GL_EXT_texture_env_dot3",           NULL },
+    { "GL_EXT_texture_filter_anisotropic", NULL },
+    { "GL_EXT_texture_lod_bias",           NULL },
+    { "GL_3DFX_texture_compression_FXT1",  NULL },
+    { "GL_APPLE_client_storage",           NULL },
+    { "GL_MESA_pack_invert",               NULL },
+    { "GL_MESA_ycbcr_texture",             NULL },
+    { "GL_NV_blend_square",                NULL },
+    { "GL_NV_vertex_program",              GL_NV_vertex_program_functions },
+    { "GL_NV_vertex_program1_1",           NULL },
+    { "GL_SGIS_generate_mipmap",           NULL },
+    { NULL,                                NULL }
 };
-
 
 extern const struct tnl_pipeline_stage _intel_render_stage;
 
 static const struct tnl_pipeline_stage *intel_pipeline[] = {
    &_tnl_vertex_transform_stage,
+   &_tnl_vertex_cull_stage,
    &_tnl_normal_transform_stage,
    &_tnl_lighting_stage,
    &_tnl_fog_coordinate_stage,
    &_tnl_texgen_stage,
    &_tnl_texture_transform_stage,
    &_tnl_point_attenuation_stage,
+   &_tnl_arb_vertex_program_stage,
    &_tnl_vertex_program_stage,
 #if 1
    &_intel_render_stage,     /* ADD: unclipped rastersetup-to-dma */
@@ -241,7 +254,7 @@ void intelInitDriverFunctions( struct dd_function_table *functions )
    functions->Clear = intelClear;
    functions->Finish = intelFinish;
    functions->GetBufferSize = intelBufferSize;
-   functions->ResizeBuffers = _swrast_alloc_buffers;
+   functions->ResizeBuffers = _mesa_resize_framebuffer;
    functions->GetString = intelGetString;
    functions->UpdateState = intelInvalidateState;
    functions->CopyColorTable = _swrast_CopyColorTable;
@@ -353,6 +366,14 @@ GLboolean intelInitContext( intelContextPtr intel,
    _math_matrix_ctr (&intel->ViewportMatrix);
 
    driInitExtensions( ctx, card_extensions, GL_TRUE );
+
+   if (intel->ctx.Mesa_DXTn) {
+     _mesa_enable_extension( ctx, "GL_EXT_texture_compression_s3tc" );
+     _mesa_enable_extension( ctx, "GL_S3_s3tc" );
+   }
+   else if (driQueryOptionb (&intelScreen->optionCache, "force_s3tc_enable")) {
+     _mesa_enable_extension( ctx, "GL_EXT_texture_compression_s3tc" );
+   }
 
 /*    driInitTextureObjects( ctx, & intel->swapped, */
 /* 			  DRI_TEXMGR_DO_TEXTURE_1D | */
@@ -491,16 +512,21 @@ void intelSetBackClipRects( intelContextPtr intel )
 
 void intelWindowMoved( intelContextPtr intel )
 {
-   switch (intel->ctx.Color._DrawDestMask) {
-   case DD_FRONT_LEFT_BIT:
+   if (!intel->ctx.DrawBuffer) {
       intelSetFrontClipRects( intel );
-      break;
-   case DD_BACK_LEFT_BIT:
-      intelSetBackClipRects( intel );
-      break;
-   default:
-      /* glDrawBuffer(GL_NONE or GL_FRONT_AND_BACK): software fallback */
-      intelSetFrontClipRects( intel );
+   }
+   else {
+      switch (intel->ctx.DrawBuffer->_ColorDrawBufferMask[0]) {
+      case BUFFER_BIT_FRONT_LEFT:
+	 intelSetFrontClipRects( intel );
+	 break;
+      case BUFFER_BIT_BACK_LEFT:
+	 intelSetBackClipRects( intel );
+	 break;
+      default:
+	 /* glDrawBuffer(GL_NONE or GL_FRONT_AND_BACK): software fallback */
+	 intelSetFrontClipRects( intel );
+      }
    }
 }
 
@@ -523,14 +549,13 @@ GLboolean intelMakeCurrent(__DRIcontextPrivate *driContextPriv,
 	 intelWindowMoved( intel );
       }
 
-      _mesa_make_current2(&intel->ctx,
-			  (GLframebuffer *) driDrawPriv->driverPrivate,
-			  (GLframebuffer *) driReadPriv->driverPrivate);
+      _mesa_make_current(&intel->ctx,
+			 (GLframebuffer *) driDrawPriv->driverPrivate,
+			 (GLframebuffer *) driReadPriv->driverPrivate);
 
-      if (!intel->ctx.Viewport.Width)
-	 _mesa_set_viewport(&intel->ctx, 0, 0, driDrawPriv->w, driDrawPriv->h);
+      intel->ctx.Driver.DrawBuffer( &intel->ctx, intel->ctx.Color.DrawBuffer[0] );
    } else {
-      _mesa_make_current(0,0);
+      _mesa_make_current(NULL, NULL, NULL);
    }
 
    return GL_TRUE;
@@ -683,5 +708,5 @@ void intelInitState( GLcontext *ctx )
 			  ctx->Stencil.ZPassFunc[0]);
 
 
-   ctx->Driver.DrawBuffer( ctx, ctx->Color.DrawBuffer );
+   ctx->Driver.DrawBuffer( ctx, ctx->Color.DrawBuffer[0] );
 }

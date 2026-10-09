@@ -1,6 +1,10 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/os-support/bsd/bsd_ev56.c,v 1.1 2000/03/05 16:59:17 dawes Exp $ */
 
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 #include "input.h"
 #include "scrnintstr.h"
 #include "compiler.h"

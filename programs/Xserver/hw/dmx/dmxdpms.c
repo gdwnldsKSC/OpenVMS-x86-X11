@@ -40,6 +40,10 @@
  * (and restored at Xdmx server shutdown time).
  */
 
+#ifdef HAVE_DMX_CONFIG_H
+#include <dmx-config.h>
+#endif
+
 #include "dmx.h"
 #include "dmxdpms.h"
 #include "dmxlog.h"
@@ -48,7 +52,7 @@
 #include "dpmsproc.h"
 #endif
 #include "windowstr.h"          /* For screenIsSaved */
-#include "X11/extensions/dpms.h"
+#include <X11/extensions/dpms.h>
 
 static unsigned long dpmsGeneration = 0;
 static Bool          dpmsSupported  = TRUE;

@@ -23,8 +23,12 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/os-support/hurd/hurd_mouse.c,v 1.7 2000/02/10 22:33:44 dawes Exp $ */
 
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "inputstr.h"
 #include "scrnintstr.h"
 #include "mipointer.h"
@@ -127,6 +131,7 @@ OsMouseProc(DeviceIntPtr pPointer, int what)
 	    }
 	}
 	pMse->lastButtons = 0;
+	pMse->lastMappedButtons = 0;
 	pMse->emulateState = 0;
 	pPointer->public.on = TRUE;
 	break;

@@ -21,7 +21,6 @@ XCOMM operating system:  OSName
 #define HasXServer		NO
 #define ConnectionFlags		-DTCPCONN
 #define HasShm			NO
-#define PexNativeFPFormat	PEXCRAY_Floating
 #define NativeFPFormat		CRAY_Float
 #ifdef UseInstalled
 #define InstallCmd              install

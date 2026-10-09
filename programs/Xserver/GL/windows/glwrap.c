@@ -5,14 +5,15 @@
  * Authors: Alexander Gottwald
  */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/Xwindows.h>
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include <glxserver.h>
 #include <glxext.h>
-
-#define WINDOWS_LEAN_AND_CLEAN
-#include <windows.h>
-
 
 #define RESOLVE_RET(procname, symbol, retval) \
     static Bool init = TRUE; \
@@ -324,38 +325,32 @@ GLAPI void GLAPIENTRY glCopyTexSubImage3D( GLenum target, GLint level,
  */
 GLAPI void GLAPIENTRY glGenTexturesEXT( GLsizei n, GLuint *textures )
 {
-    RESOLVE(PFNGLGENTEXTURESEXTPROC, "glGenTexturesEXT");
-    proc(n, textures);
+    glGenTextures(n, textures);
 }
 
 GLAPI void GLAPIENTRY glDeleteTexturesEXT( GLsizei n, const GLuint *textures)
 {
-    RESOLVE(PFNGLDELETETEXTURESEXTPROC, "glDeleteTexturesEXT");
-    proc(n, textures);
+    glDeleteTextures(n, textures);
 }
 
 GLAPI void GLAPIENTRY glBindTextureEXT( GLenum target, GLuint texture )
 {
-    RESOLVE(PFNGLBINDTEXTUREEXTPROC, "glBindTextureEXT");
-    proc(target, target);
+    glBindTexture(target, target);
 }
 
 GLAPI void GLAPIENTRY glPrioritizeTexturesEXT( GLsizei n, const GLuint *textures, const GLclampf *priorities )
 {
-    RESOLVE(PFNGLPRIORITIZETEXTURESEXTPROC, "glPrioritizeTexturesEXT");
-    proc(n, textures, priorities);
+    glPrioritizeTextures(n, textures, priorities);
 }
 
 GLAPI GLboolean GLAPIENTRY glAreTexturesResidentEXT( GLsizei n, const GLuint *textures, GLboolean *residences )
 {
-    RESOLVE_RET(PFNGLARETEXTURESRESIDENTEXTPROC, "glAreTexturesResidentEXT", FALSE);
-    return proc(n, textures, residences);
+    return glAreTexturesResident(n, textures, residences);
 }
 
 GLAPI GLboolean GLAPIENTRY glIsTextureEXT( GLuint texture )
 {
-    RESOLVE_RET(PFNGLISTEXTUREEXTPROC, "glIsTextureEXT", FALSE);
-    return proc(texture); 
+    return glIsTexture(texture); 
 }
 
 /*
@@ -487,6 +482,18 @@ GLAPI void APIENTRY glPointParameteri(GLenum pname, GLint param)
 GLAPI void APIENTRY glPointParameteriv(GLenum pname, const GLint *params)
 {
     RESOLVE(PFNGLPOINTPARAMETERIVPROC, "glPointParameteriv");
+    proc(pname, params);
+}
+
+GLAPI void APIENTRY glPointParameteriNV(GLenum pname, GLint param)
+{
+    RESOLVE(PFNGLPOINTPARAMETERINVPROC, "glPointParameteriNV");
+    proc(pname, param);
+}
+
+GLAPI void APIENTRY glPointParameterivNV(GLenum pname, const GLint *params)
+{
+    RESOLVE(PFNGLPOINTPARAMETERIVNVPROC, "glPointParameterivNV");
     proc(pname, params);
 }
 

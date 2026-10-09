@@ -41,6 +41,10 @@
  */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/cyrix/cyrix_helper.c,v 1.4 2002/11/06 11:38:59 alanh Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "cyrix.h"
 #include "vgaHW.h"
 #include "xf86_ansic.h"

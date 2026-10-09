@@ -37,8 +37,9 @@
 
 #include "context.h"
 #include "utils.h"
+#include "framebuffer.h"
 
-#define DRIVER_DATE	"20030502"
+#define DRIVER_DATE	"20051019"
 
 /* Return the current color buffer size.
  */
@@ -126,7 +127,7 @@ static void mach64DDFinish( GLcontext *ctx )
 void mach64InitDriverFuncs( struct dd_function_table *functions )
 {
    functions->GetBufferSize	= mach64DDGetBufferSize;
-   functions->ResizeBuffers    = _swrast_alloc_buffers;
+   functions->ResizeBuffers    = _mesa_resize_framebuffer;
    functions->GetString	= mach64DDGetString;
    functions->Finish		= mach64DDFinish;
    functions->Flush		= mach64DDFlush;

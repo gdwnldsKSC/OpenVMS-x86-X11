@@ -29,21 +29,25 @@ or other dealings in this Software without prior written authorization
 from Kaleb S. KEITHLEY
 
 */
-/* $XdotOrg: xc/programs/Xserver/Xext/xf86vmode.c,v 1.2.4.1 2004/12/15 05:01:25 gisburn Exp $ */
+/* $XdotOrg: xc/programs/Xserver/Xext/xf86vmode.c,v 1.8 2005/07/16 03:49:58 kem Exp $ */
 /* $Xorg: xf86vmode.c,v 1.3 2000/08/17 19:47:59 cpqbld Exp $ */
 /* THIS IS NOT AN X CONSORTIUM STANDARD OR AN X PROJECT TEAM SPECIFICATION */
 
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "dixstruct.h"
 #include "extnsionst.h"
 #include "scrnintstr.h"
 #include "servermd.h"
 #define _XF86VIDMODE_SERVER_
-#include "xf86vmstr.h"
+#include <X11/extensions/xf86vmstr.h>
 #include "swaprep.h"
 #include "xf86.h"
 #include "vidmodeproc.h"

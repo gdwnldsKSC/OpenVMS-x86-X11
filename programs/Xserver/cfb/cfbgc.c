@@ -48,11 +48,15 @@ SOFTWARE.
 
 /* $Xorg: cfbgc.c,v 1.4 2001/02/09 02:04:37 xorgcvs Exp $ */
 
-#include "X.h"
-#include "Xmd.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xmd.h>
+#include <X11/Xproto.h>
 #include "cfb.h"
-#include "fontstruct.h"
+#include <X11/fonts/fontstruct.h>
 #include "dixfontstr.h"
 #include "gcstruct.h"
 #include "windowstr.h"
@@ -85,14 +89,12 @@ SOFTWARE.
 # define usePolyGlyphBlt	miPolyGlyphBlt
 #endif
 
+static void cfbUnPushPixels (GCPtr, PixmapPtr, DrawablePtr, int, int, int, int);
+
 #ifdef FOUR_BIT_CODE
 # define usePushPixels	cfbPushPixels8
 #else
-#ifndef LOWMEMFTPT
-# define usePushPixels	mfbPushPixels
-#else
-# define usePushPixels	miPushPixels
-#endif /* ifndef LOWMEMFTPT */
+# define usePushPixels	cfbUnPushPixels
 #endif
 
 #ifdef PIXEL_ADDR
@@ -283,6 +285,14 @@ cfbCreateGC(pGC)
 	return (mfbCreateGC(pGC));
     pGC->clientClip = NULL;
     pGC->clientClipType = CT_NONE;
+
+    if (cfbNonTEOps.PushPixels == cfbUnPushPixels)
+    {
+        cfbTEOps1Rect.PushPixels    = mfbPushPixelsWeak();
+        cfbNonTEOps1Rect.PushPixels = mfbPushPixelsWeak();
+        cfbTEOps.PushPixels         = mfbPushPixelsWeak();
+        cfbNonTEOps.PushPixels      = mfbPushPixelsWeak();		    
+    }
 
     /*
      * some of the output primitives aren't really necessary, since they
@@ -766,11 +776,7 @@ cfbValidateGC(pGC, changes, pDrawable)
 	}
 #endif
 #ifdef FOUR_BIT_CODE
-#ifndef LOWMEMFTPT
-	pGC->ops->PushPixels = mfbPushPixels;
-#else
-	pGC->ops->PushPixels = miPushPixels;
-#endif /* ifndef LOWMEMFTPT */
+	pGC->ops->PushPixels = mfbPushPixelsWeak();
 	if (pGC->fillStyle == FillSolid && devPriv->rop == GXcopy)
 	    pGC->ops->PushPixels = cfbPushPixels8;
 #endif
@@ -788,4 +794,18 @@ cfbValidateGC(pGC, changes, pDrawable)
 	    }
 	}
     }
+}
+
+/*
+ * this is never called, it just exists to have its address
+ * taken in mfbCreateGC.
+ */
+static void
+cfbUnPushPixels (pGC, pBitmap, pDrawable, dx, dy, xOrg, yOrg)
+    GCPtr       pGC;
+    PixmapPtr   pBitmap;
+    DrawablePtr pDrawable;
+    int         dx, dy, xOrg, yOrg;
+{
+    return;
 }

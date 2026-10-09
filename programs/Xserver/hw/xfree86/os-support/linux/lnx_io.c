@@ -26,7 +26,11 @@
 /* $XConsortium: lnx_io.c /main/8 1996/10/19 18:06:28 kaleb $ */
 
 #define NEED_EVENTS
-#include "X.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
 
 #include "compiler.h"
 
@@ -73,7 +77,9 @@ xf86GetKbdLeds()
 #include <asm/kbio.h>
 #endif
 
-/* Deal with spurious kernel header change */
+/* Deal with spurious kernel header change in struct kbd_repeat.
+   We undo this define after the routine using that struct is over,
+   so as not to interfere with other 'rate' elements.  */
 #if defined(LINUX_VERSION_CODE) && defined(KERNEL_VERSION)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,42)
 #  define rate period
@@ -115,6 +121,13 @@ KDKBDREP_ioctl_ok(int rate, int delay) {
 }
 
 #undef rate
+
+/* Undo the earlier define for the struct kbd_repeat problem. */
+#if defined(LINUX_VERSION_CODE) && defined(KERNEL_VERSION)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,42)
+#  undef rate
+# endif
+#endif
 
 static int
 KIOCSRATE_ioctl_ok(int rate, int delay) {

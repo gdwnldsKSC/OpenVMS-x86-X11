@@ -28,13 +28,8 @@ OBJS1 = sunCfb.o \
 	sunMouse.o \
 	sunKeyMap.o
 
-#if BuildLowMem
-SRCS2 =
-OBJS2 =
-#else
 SRCS2 = sunGX.c
 OBJS2 = sunGX.o
-#endif
 
 #ifdef i386Architecture
 SRCS3 = sunInit.c

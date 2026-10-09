@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/lib/X11/Xlib.h,v 1.2 2004/04/23 18:43:24 eich Exp $ */
+/* $XdotOrg: xc/lib/X11/Xlib.h,v 1.6 2005/11/08 06:33:25 jkj Exp $ */
 /* $Xorg: Xlib.h,v 1.6 2001/02/09 02:03:38 xorgcvs Exp $ */
 /* 
 
@@ -53,7 +53,7 @@ in this Software without prior written authorization from The Open Group.
 #endif
 #endif /* USG */
 
-#if defined(SCO325) || defined(__USLC__)
+#if defined(__SCO__) || defined(__UNIXWARE__)
 #include <stdint.h>
 #endif
 
@@ -65,10 +65,8 @@ in this Software without prior written authorization from The Open Group.
 
 #ifndef X_WCHAR
 #ifdef X_NOT_STDC_ENV
-#ifndef SCO324
 #ifndef ISC
 #define X_WCHAR
-#endif
 #endif
 #endif
 #endif
@@ -671,7 +669,8 @@ typedef struct {
 	Bool send_event;	/* true if this came from a SendEvent request */
 	Display *display;	/* Display the event was read from */
 	Window window;		/* window of event */
-	int mode;		/* NotifyNormal, NotifyGrab, NotifyUngrab */
+	int mode;		/* NotifyNormal, NotifyWhileGrabbed,
+				   NotifyGrab, NotifyUngrab */
 	int detail;
 	/*
 	 * NotifyAncestor, NotifyVirtual, NotifyInferior, 
@@ -3571,12 +3570,12 @@ extern Status XCloseOM(
 extern char *XSetOMValues(
     XOM			/* om */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern char *XGetOMValues(
     XOM			/* om */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern Display *XDisplayOfOM(
     XOM			/* om */
@@ -3589,7 +3588,7 @@ extern char *XLocaleOfOM(
 extern XOC XCreateOC(
     XOM			/* om */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern void XDestroyOC(
     XOC			/* oc */
@@ -3602,12 +3601,12 @@ extern XOM XOMOfOC(
 extern char *XSetOCValues(
     XOC			/* oc */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern char *XGetOCValues(
     XOC			/* oc */,
     ...
-);
+) _X_SENTINEL(0);
 
 extern XFontSet XCreateFontSet(
     Display*		/* display */,
@@ -3839,11 +3838,11 @@ extern Status XCloseIM(
 
 extern char *XGetIMValues(
     XIM /* im */, ...
-);
+) _X_SENTINEL(0);
 
 extern char *XSetIMValues(
     XIM /* im */, ...
-);
+) _X_SENTINEL(0);
 
 extern Display *XDisplayOfIM(
     XIM /* im */
@@ -3855,7 +3854,7 @@ extern char *XLocaleOfIM(
 
 extern XIC XCreateIC(
     XIM /* im */, ...
-);
+) _X_SENTINEL(0);
 
 extern void XDestroyIC(
     XIC /* ic */
@@ -3883,11 +3882,11 @@ extern char *Xutf8ResetIC(
 
 extern char *XSetICValues(
     XIC /* ic */, ...
-);
+) _X_SENTINEL(0);
 
 extern char *XGetICValues(
     XIC /* ic */, ...
-);
+) _X_SENTINEL(0);
 
 extern XIM XIMOfIC(
     XIC /* ic */
@@ -3927,7 +3926,7 @@ extern int Xutf8LookupString(
 
 extern XVaNestedList XVaCreateNestedList(
     int /*unused*/, ...
-);
+) _X_SENTINEL(0);
 
 /* internal connections for IMs */
 

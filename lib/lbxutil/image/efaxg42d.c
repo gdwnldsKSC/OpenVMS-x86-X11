@@ -28,7 +28,7 @@
 #include <X11/Xfuncproto.h>
 #include <stdlib.h>
 #include "lbxfax.h"
-#include "lbximage.h"
+#include <X11/extensions/lbximage.h>
 #include "lbxbwcodes.h"
 
 /*

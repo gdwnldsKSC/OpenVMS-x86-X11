@@ -35,9 +35,13 @@ from The Open Group.
  * Author:  Keith Packard, MIT X Consortium
  */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <stdio.h>
-#include "X.h"
-#include "Xtrans.h"
+#include <X11/X.h>
+#include <X11/Xtrans/Xtrans.h>
 #include "os.h"
 #include "osdep.h"
 #include "dixstruct.h"
@@ -47,9 +51,9 @@ from The Open Group.
 static Bool authFromXDMCP;
 
 #ifdef XDMCP
-#include "Xmd.h"
+#include <X11/Xmd.h>
 #undef REQUEST
-#include "Xdmcp.h"
+#include <X11/Xdmcp.h>
 
 /* XDM-AUTHENTICATION-1 */
 

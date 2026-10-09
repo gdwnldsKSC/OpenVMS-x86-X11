@@ -54,6 +54,13 @@
 #define chdir _chdir2
 #endif
 
+#ifdef WIN32
+#define S_IRGRP 0
+#define S_IWGRP 0
+#define S_IROTH 0
+#define S_IWOTH 0
+#endif
+
 #define	lowbit(x)	((x) & (-(x)))
 
 /***====================================================================***/
@@ -487,7 +494,14 @@ register int i,tmp;
     else if (uStringEqual(inputFile,"-")) {
 	inputFormat= INPUT_XKB;
     }
+#ifndef WIN32
     else if (strchr(inputFile,':')==0) {
+#else
+    else if ((strchr(inputFile,':')==0) || (
+            strlen(inputFile) > 2 && 
+            isalpha(inputFile[0]) && 
+            inputFile[1] == ':' && strchr(inputFile + 2,':')==NULL)) {
+#endif
 	int	len;
 	len= strlen(inputFile);
 	if (inputFile[len-1]==')') {
@@ -611,6 +625,12 @@ register int i,tmp;
 	*ch++= '.';
 	strcpy(ch,fileTypeExt[outputFormat]);
     }
+#ifdef WIN32
+    else if (strlen(outputFile) > 2 && 
+            isalpha(outputFile[0]) && 
+            outputFile[1] == ':' && strchr(outputFile + 2,':')==NULL) {
+    }
+#endif
     else if (strchr(outputFile,':')!=NULL) {
 	outDpyName= outputFile;
 	outputFile= NULL;
@@ -899,7 +919,12 @@ Status		status;
 		    ACTION("Exiting\n");
 		    exit(1);
 		}
+#ifndef WIN32
 		out= fdopen(outputFileFd, openMode);
+#else
+        close(outputFileFd);
+        out= fopen(outputFile, "wb");
+#endif
 		/* end BR */
 		if (out==NULL) {
 		    ERROR1("Cannot open \"%s\" to write keyboard description\n",

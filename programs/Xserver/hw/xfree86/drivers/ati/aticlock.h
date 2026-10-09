@@ -25,7 +25,6 @@
 #define ___ATICLOCK_H___ 1
 
 #include "atipriv.h"
-#include "atiproto.h"
 
 #include "xf86str.h"
 
@@ -75,12 +74,9 @@ typedef struct
 } ClockRec, *ClockPtr;
 extern ClockRec ATIClockDescriptors[];
 
-extern void ATIClockPreInit   FunctionPrototype((ScrnInfoPtr, ATIPtr, GDevPtr,
-                                                 ClockRangePtr));
-extern void ATIClockSave      FunctionPrototype((ScrnInfoPtr, ATIPtr,
-                                                 ATIHWPtr));
-extern Bool ATIClockCalculate FunctionPrototype((int, ATIPtr, ATIHWPtr,
-                                                 DisplayModePtr));
-extern void ATIClockSet       FunctionPrototype((ATIPtr, ATIHWPtr));
+extern void ATIClockPreInit(ScrnInfoPtr, ATIPtr, GDevPtr, ClockRangePtr);
+extern void ATIClockSave(ScrnInfoPtr, ATIPtr, ATIHWPtr);
+extern Bool ATIClockCalculate(int, ATIPtr, ATIHWPtr, DisplayModePtr);
+extern void ATIClockSet(ATIPtr, ATIHWPtr);
 
 #endif /* ___ATICLOCK_H___ */

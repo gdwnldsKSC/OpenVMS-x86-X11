@@ -1,7 +1,7 @@
 /*
- * $Id: xfixesint.h,v 1.5 2003/11/22 00:49:11 keithp Exp $
+ * $Id: xfixesint.h,v 1.7 2005/07/03 08:53:54 daniels Exp $
  *
- * Copyright © 2002 Keith Packard
+ * Copyright Â© 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -21,6 +21,10 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
 
 #ifndef _XFIXESINT_H_
 #define _XFIXESINT_H_

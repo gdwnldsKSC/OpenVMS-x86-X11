@@ -25,11 +25,11 @@
 /* $XFree86: xc/lib/font/builtins/builtin.h,v 1.3 1999/12/30 02:29:49 robin Exp $ */
 
 #include <X11/Xdefs.h>
-#include <font.h>
-#include "fontxlfd.h"
-#include "fntfil.h"
-#include "fntfilio.h"
-#include "fntfilst.h"
+#include <X11/fonts/font.h>
+#include <X11/fonts/fontxlfd.h>
+#include <X11/fonts/fntfil.h>
+#include <X11/fonts/fntfilio.h>
+#include <X11/fonts/fntfilst.h>
 
 typedef struct _BuiltinFile {
     const char  *name;
@@ -59,4 +59,4 @@ extern const int		builtin_alias_count;
 extern FontFilePtr	BuiltinFileOpen ();
 extern int		BuiltinFileClose ();
 extern int		BuiltinReadDirectory (char *, FontDirectoryPtr *);
-extern int		BuiltinRegisterFontFileFunctions (void);
+extern void		BuiltinRegisterFontFileFunctions (void);

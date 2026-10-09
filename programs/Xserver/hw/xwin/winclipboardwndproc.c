@@ -28,6 +28,11 @@
  * Authors:	Harold L Hunt II
  */
 
+#ifdef HAVE_XWIN_CONFIG_H
+#include <xwin-config.h>
+#endif
+#include <sys/types.h>
+#include <sys/time.h>
 #include "winclipboard.h"
 
 
@@ -334,6 +339,8 @@ winClipboardWindowProc (HWND hwnd, UINT message,
 	     * previous XSetSelectionOwner messages.
 	     */
 	    XSync (pDisplay, FALSE);
+
+            winDebug("winClipboardWindowProc - XSync done.\n");
 	    
 	    /* Release PRIMARY selection if owned */
 	    iReturn = XGetSelectionOwner (pDisplay, XA_PRIMARY);

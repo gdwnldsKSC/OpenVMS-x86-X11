@@ -61,7 +61,7 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/Xlibint.h>
 #include <X11/Xutil.h>
 #include <stdio.h>
-#include "XLbx.h"
+#include <X11/extensions/XLbx.h>
 
 /* Hook up to an X server and set up a multiplexing LBX encoded connection */
 struct _XDisplay*

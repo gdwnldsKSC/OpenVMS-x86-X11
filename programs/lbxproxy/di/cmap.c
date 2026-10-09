@@ -1,4 +1,5 @@
 /* $Xorg: cmap.c,v 1.5 2001/02/09 02:05:31 xorgcvs Exp $ */
+/* $XdotOrg: xc/programs/lbxproxy/di/cmap.c,v 1.3 2005/08/27 01:45:27 alanc Exp $ */
 
 /*
 Copyright 1996, 1998  The Open Group
@@ -968,6 +969,8 @@ create_colormap(cmap, visual)
     Pixel     **pptr;
 
     pvis = GetVisual(visual);
+    if (!pvis)
+	return ((ColormapPtr) NULL);
     csize = pvis->colormapEntries;
     tsize = (csize * sizeof(Entry)) + (MAXCLIENTS * sizeof(Pixel *)) +
 	(MAXCLIENTS * sizeof(int));

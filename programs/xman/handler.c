@@ -631,7 +631,8 @@ printOKXtProc(Widget w, XtPointer client_data, XtPointer callData)
   
   DoPrintManpage("Xman",
                  file, topwindow,
-                 pdcs->pdpy, pdcs->pcontext, printshellDestroyXtProc,
+                 pdcs->pdpy, pdcs->pcontext, pdcs->colorspace,
+                 printshellDestroyXtProc,
                  mg->manpage_title,
                  pdcs->printToFile?pdcs->printToFileName:NULL);
 

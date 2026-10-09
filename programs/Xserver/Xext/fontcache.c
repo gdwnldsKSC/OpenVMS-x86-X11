@@ -33,8 +33,12 @@
 
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "dixstruct.h"
 #include "extnsionst.h"
@@ -44,7 +48,7 @@
 #define _FONTCACHE_SERVER_
 #include "fontcacheP.h"
 #include "fontcachstr.h"
-#include "Xfuncproto.h"
+#include <X11/Xfuncproto.h>
 
 #include "swaprep.h"
 #include "modinit.h"

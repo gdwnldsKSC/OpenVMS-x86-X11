@@ -34,6 +34,10 @@
 **
 */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #include <GL/gl.h>
 #include "glxserver.h"
 #include "singlesize.h"
@@ -47,7 +51,7 @@
 
 GLint __glReadPixels_size(GLenum format, GLenum type, GLint w, GLint h)
 {
-    return __glXImage3DSize( format, type, w, h, 1, 0, 0, 0, 0, 4 );
+    return __glXImageSize( format, type, 0, w, h, 1, 0, 0, 0, 0, 4 );
 }
 
 /**
@@ -227,35 +231,6 @@ GLint __glGetLightiv_size(GLenum pname)
     return __glGetLightfv_size(pname);
 }
 
-static GLint EvalComputeK(GLenum target)
-{
-    switch(target) {
-      case GL_MAP1_VERTEX_4:
-      case GL_MAP1_COLOR_4:
-      case GL_MAP1_TEXTURE_COORD_4:
-      case GL_MAP2_VERTEX_4:
-      case GL_MAP2_COLOR_4:
-      case GL_MAP2_TEXTURE_COORD_4:
-	return 4;
-      case GL_MAP1_VERTEX_3:
-      case GL_MAP1_TEXTURE_COORD_3:
-      case GL_MAP1_NORMAL:
-      case GL_MAP2_VERTEX_3:
-      case GL_MAP2_TEXTURE_COORD_3:
-      case GL_MAP2_NORMAL:
-	return 3;
-      case GL_MAP1_TEXTURE_COORD_2:
-      case GL_MAP2_TEXTURE_COORD_2:
-	return 2;
-      case GL_MAP1_TEXTURE_COORD_1:
-      case GL_MAP2_TEXTURE_COORD_1:
-      case GL_MAP1_INDEX:
-      case GL_MAP2_INDEX:
-	return 1;
-    }
-    return 0;
-}
-
 GLint __glGetMap_size(GLenum target, GLenum query)
 {
     GLint k, order=0, majorMinor[2];
@@ -275,7 +250,7 @@ GLint __glGetMap_size(GLenum target, GLenum query)
       case GL_MAP1_VERTEX_4:
 	switch (query) {
 	  case GL_COEFF:
-	    k = EvalComputeK(target);
+	    k = __glMap1d_size(target);
 	    glGetMapiv(target, GL_ORDER, &order);
 	    /*
 	    ** The query above might fail, but then order will be zero anyway.
@@ -298,7 +273,7 @@ GLint __glGetMap_size(GLenum target, GLenum query)
       case GL_MAP2_VERTEX_4:
 	switch (query) {
 	  case GL_COEFF:
-	    k = EvalComputeK(target);
+	    k = __glMap2d_size(target);
 	    majorMinor[0] = majorMinor[1] = 0;
 	    glGetMapiv(target, GL_ORDER, majorMinor);
 	    /*
@@ -1152,8 +1127,8 @@ GLint __glGetTexLevelParameteriv_size(GLenum pname)
 GLint __glGetTexImage_size(GLenum target, GLint level, GLenum format,
 			   GLenum type, GLint width, GLint height, GLint depth)
 {
-    return __glXImage3DSize( format, type, width, height, depth,
-			     0, 0, 0, 0, 4 );
+    return __glXImageSize( format, type, target, width, height, depth,
+			   0, 0, 0, 0, 4 );
 }
 
 GLint __glGetConvolutionParameteriv_size(GLenum pname)

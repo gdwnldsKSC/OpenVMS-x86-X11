@@ -44,6 +44,9 @@ The included files are:
 */
  
                              /*   after the system includes  (dsr)           */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #ifdef FONTMODULE
 # include  "os.h"
 #endif

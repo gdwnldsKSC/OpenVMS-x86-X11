@@ -2,25 +2,25 @@
 
                        J. Kean Johnston (jkj@sco.com)
 
-                              14 February 2003
+                               1 November 2005
 
 1.  Requirements
 
-Before you can either compile or execute a binary distribution of X11R6.8.2,
+Before you can either compile or execute a binary distribution of X11R6.9,
 the following conditions must be met:
 
    o Ensure that you are running Release 5.0.4 or later. This is required
      because OSS646 is only supported on those platforms. There are no plans
-     to support X11R6.8.2 on earlier releases of OpenServer.
+     to support X11R6.9 on earlier releases of OpenServer.
 
    o Ensure that OSS646, the ``Execution Environment Update'' package is
      installed, if appropriate.  Check the release notes for that update to
      see whether or not your current operating system requires this update.
      At least version OSS646B is required.  If you are running SCO OpenServer
-     Release 5.0.7, you must have Maintenance Pack 1 installed.
+     Release 5.0.7, you must have Maintenance Pack 4 installed.
 
    o Ensure that the "Graphics, Web and X11 Libraries" package is installed.
-     At least version 1.3.2Ag is required.  You should always install the
+     At least version 2.1.0Ba is required.  You should always install the
      latest possible version of this supplement that is valid for your oper-
      ating system release.  From time to time this release is bundled with
      Maintenance Packs, so if you are running 5.0.7 or later, the latest ver-
@@ -29,8 +29,8 @@ the following conditions must be met:
      est version can always be found at the SCO FTP site
      <URL:ftp://ftp.sco.com/pub/openserver5/opensrc>.
 
-   o To compile X11R6.8.2, you must use the SCO-supported version of the GNU
-     C Compiler.  It is possible that Skunkware versions of the compiler will
+   o To compile X11R6.9, you must use the SCO-supported version of the GNU C
+     Compiler.  It is possible that Skunkware versions of the compiler will
      work too, but this has not been tested.  The ``GNU Development System''
      is available for all releases from (and including) SCO OpenServer
      Release 5.0.5.  It is provided with the operating system in all versions
@@ -42,7 +42,7 @@ the following conditions must be met:
    o If you are not using OSR 5.0.7 or later, you need to get an updated con-
      sole driver.  See urlnam <URL:http://www.sco.com> for details on
      OpenServer supplements.  If you can't or don't want to upgrade your con-
-     sole driver, X11R6.8.2 will still compile, but you may run into problems
+     sole driver, X11R6.9 will still compile, but you may run into problems
      with some cards such as the Riva TNT and ATI Rage cards.  The problem
      with the console driver in 5.0.6A and earlier is that when the X server
      sets graphics mode, the driver does not set a status bit, so any text
@@ -51,11 +51,11 @@ the following conditions must be met:
      console video memory.  This just happens to be slap bang in the middle
      of palette data for the Riva TNT, so you get color map corruption.  The
      updated console driver also has an improved mechanism for allocating
-     video memory that X11R6.8.2 detects at compile time, and it will use it
-     if it exists.  It is STRONGLY recommended that you get the console
-     driver update.
+     video memory that X11R6.9 detects at compile time, and it will use it if
+     it exists.  It is STRONGLY recommended that you get the console driver
+     update.
 
-2.  Compiling X11R6.8.2
+2.  Compiling X11R6.9
 
 Using the GNU Development System, compiling the distribution should be fairly
 straightforward.  Before attempting to compile the system though, you should
@@ -85,7 +85,7 @@ the compilation, perform the following steps:
    o If you want to install the manual pages, execute the command make
      install.man 2>&1 | tee -a install.log as root.
 
-3.  Before Running X11R6.8.2
+3.  Before Running X11R6.9
 
 The SCO xterm terminfo description is not compatible with the xterm in the R5
 distribution.
@@ -99,7 +99,7 @@ ble getting your mouse to work using the X mouse drivers.
 
 4.  Switching Consoles
 
-X11R6.8.2 uses similar console switching keys as the SCO R4 and R5 servers.
+X11R6.9 uses similar console switching keys as the SCO R4 and R5 servers.
 That is, Ctrl-PrntScr takes you to the next console along from the one X is
 running on.  If this is the last console it will take you to console 1. Ctrl-
 Alt-FXX, where XX is a function key between F1 and F12 will switch you to the
@@ -135,12 +135,12 @@ manual pages yourself.
 
 6.  Using SCO binaries/servers.
 
-X11R6.8.2 will accept connections from SCO binaries (R3 upwards) and the SCO
-R5 server will also accept connections from X11R6.8.2 binaries. This means
-you may mix and match the two if you have ODT.  For example you may still use
-the Panning Motif window manager (pmwm) if you prefer.
+X11R6.9 will accept connections from SCO binaries (R3 upwards) and the SCO R5
+server will also accept connections from X11R6.9 binaries. This means you may
+mix and match the two if you have ODT.  For example you may still use the
+Panning Motif window manager (pmwm) if you prefer.
 
-     Generated from XdotOrg: xc/programs/Xserver/hw/xfree86/doc/sgml/SCO.sgml,v 1.3 keithp Exp $
+     Generated from XdotOrg: xc/programs/Xserver/hw/xfree86/doc/sgml/SCO.sgml,v 1.2 eich Exp $
 
 
-$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.SCO,v 1.3.2.2 2005/02/08 00:44:27 kem Exp $
+$XdotOrg: xc/programs/Xserver/hw/xfree86/doc/README.SCO,v 1.4 2005/12/21 05:39:05 kem Exp $

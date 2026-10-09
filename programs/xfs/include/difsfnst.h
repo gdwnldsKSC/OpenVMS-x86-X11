@@ -50,7 +50,7 @@ in this Software without prior written authorization from The Open Group.
 #define _DIFSFONTST_H_
 
 #include	"difsfn.h"
-#include	"font.h"
+#include	<X11/fonts/font.h>
 #include	"misc.h"
 
 /* has per-client info about the font */

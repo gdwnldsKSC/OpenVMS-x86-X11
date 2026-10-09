@@ -31,8 +31,12 @@
 /* $XFree86$ */
 
 #define I_NEED_OS2_H
-#include "X.h"
-#include "Xpoll.h"
+#ifdef HAVE_XORG_CONFIG_H
+#include <xorg-config.h>
+#endif
+
+#include <X11/X.h>
+#include <X11/Xpoll.h>
 #include "compiler.h"
 #include <time.h>
 

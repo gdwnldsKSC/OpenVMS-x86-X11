@@ -296,7 +296,8 @@ $ GOTO compile
 $fontenc_headers:
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]FONTENC.H") .EQS. "" THEN GOTO done
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]," + -
-    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS],[.LIB.FONT.FONTFILE]"
+    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS],[.LIB.FONT.FONTFILE]," + -
+    """./VMS-SUPPORT/_BUILD/P64/INCLUDE"""
 $ GOTO compile
 $regex_headers:
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]," + -

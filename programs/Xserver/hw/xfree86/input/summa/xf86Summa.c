@@ -26,6 +26,10 @@
 
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/summa/xf86Summa.c,v 1.16 2003/11/03 05:11:49 tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #if 0
 static const char identification[] = "$Identification: 18 $";
 #endif
@@ -54,7 +58,7 @@ static const char identification[] = "$Identification: 18 $";
 #include "xf86_OSproc.h"
 #include "xf86Xinput.h"
 #include "exevents.h"		/* Needed for InitValuator/Proximity stuff */
-#include "keysym.h"
+#include <X11/keysym.h>
 #include "mipointer.h"
 
 #ifdef XFree86LOADER
@@ -97,13 +101,13 @@ static InputDriverPtr sumDrv;
 #else /* pre 3.9 headers */
 
 #define NEED_EVENTS
-#include "X.h"
-#include "Xproto.h"
+#include <X11/X.h>
+#include <X11/Xproto.h>
 #include "misc.h"
 #include "inputstr.h"
 #include "scrnintstr.h"
-#include "XI.h"
-#include "XIproto.h"
+#include <X11/extensions/XI.h>
+#include <X11/extensions/XIproto.h>
 
 #if defined(sun) && !defined(i386)
 #define POSIX_TTY
@@ -1585,10 +1589,7 @@ xf86SumInit(InputDriverPtr	drv,
     return local;
 }
 
-#ifdef XFree86LOADER
-static
-#endif
-InputDriverRec SUMMA = {
+_X_EXPORT InputDriverRec SUMMA = {
     1,				/* driver version */
     "summa",			/* driver name */
     NULL,			/* identify */
@@ -1648,9 +1649,11 @@ static XF86ModuleVersionInfo xf86SumVersionRec =
 				/* a tool */
 };
 
-XF86ModuleData summaModuleData = {&xf86SumVersionRec,
-				  xf86SumPlug,
-				  xf86SumUnplug};
+_X_EXPORT XF86ModuleData summaModuleData = {
+    &xf86SumVersionRec,
+    xf86SumPlug,
+    xf86SumUnplug
+};
 
 #endif /* XFree86LOADER */
 #endif /* XFREE86_V4 */

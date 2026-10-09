@@ -28,8 +28,12 @@ in this Software without prior written authorization from The Open Group.
 
 /* $XFree86: xc/programs/Xserver/cfb/cfbrrop.h,v 3.10tsi Exp $ */
 
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
+#endif
+
 #ifndef GXcopy
-#include "X.h"
+#include <X11/X.h>
 #endif
 
 #define RROP_FETCH_GC(gc) \

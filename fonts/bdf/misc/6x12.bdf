@@ -1,5 +1,5 @@
 STARTFONT 2.1
-COMMENT $ucs-fonts: 6x12.bdf,v 1.27 2002-11-10 19:12:30+00 mgk25 Rel $
+COMMENT $ucs-fonts: 6x12.bdf,v 1.28 2004-11-28 20:04:01+00 mgk25 Rel $
 COMMENT Send bug reports to Markus Kuhn <http://www.cl.cam.ac.uk/~mgk25/>
 FONT -Misc-Fixed-Medium-R-SemiCondensed--12-110-75-75-C-60-ISO10646-1
 SIZE 12 75 75
@@ -28,7 +28,7 @@ _XMBDFED_INFO "Edited with xmbdfed 4.5."
 CAP_HEIGHT 7
 X_HEIGHT 5
 ENDPROPERTIES
-CHARS 1767
+CHARS 1768
 STARTCHAR char0
 ENCODING 0
 SWIDTH 480 0
@@ -21211,6 +21211,25 @@ F0
 F0
 40
 38
+00
+00
+ENDCHAR
+STARTCHAR uni20AF
+ENCODING 8367
+SWIDTH 480 0
+DWIDTH 6 0
+BBX 6 12 0 -2
+BITMAP
+00
+00
+40
+E0
+50
+48
+48
+48
+E8
+D0
 00
 00
 ENDCHAR

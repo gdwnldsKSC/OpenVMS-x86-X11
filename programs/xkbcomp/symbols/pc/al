@@ -1,4 +1,4 @@
-
+// $XdotOrg: xc/programs/xkbcomp/symbols/pc/al,v 1.3 2005/08/12 11:08:49 pascal Exp $
 // based on
 // albanian keyboard layout
 // done by Pablo Saratxaga <pablo@mandrakesoft.com>
@@ -10,7 +10,7 @@ xkb_symbols "basic" {
 
     include "pc/latin(type3)"
 
-    name[Group1]="Albanian";
+    name[Group1]="Albania";
 
     key <AE01>	{ [         1,     exclam,   asciitilde,   dead_tilde ]	};
     key <AE02>	{ [         2,   quotedbl,   dead_caron,    oneeighth ]	};
@@ -39,5 +39,5 @@ xkb_symbols "basic" {
     key <AB09>	{ [    period,      colon,      greater,     division ]	};
     key <AB10>	{ [     slash,   question, dead_belowdot, dead_abovedot ] };
 
-    include "level3(ralt_switch_multikey)"
+    include "level3(ralt_switch)"
 };

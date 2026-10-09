@@ -2,11 +2,38 @@ XCOMM $XFree86: xc/programs/Xserver/hw/xwin/Imakefile,v 1.18 2003/10/02 13:30:09
 
 #include <Server.tmpl>
 
+EXTRADEFINES = 
+
 #if HasShm
 SHMDEF = -DHAS_SHM
 #endif
 
+#ifdef cygwinArchitecture
 MMAPDEF = -DHAS_MMAP
+#endif
+
+#if defined(HasDevWindow) && HasDevWindows
+EXTRADEFINES += -DHAS_DEVWINDOWS
+#endif
+
+#if defined(RelocateProjectRoot) && RelocateProjectRoot
+EXTRADEFINES += -DRELOCATE_PROJECTROOT
+#endif
+
+#ifdef cygwinArchitecture
+EXTRADEFINES += -DREAD_FONTDIRS
+#endif
+
+#if defined(mingwArchitecture)
+PROJECT_NAME = Xming
+#elif defined(cygwinArchitecture)
+PROJECT_NAME = Cygwin/X
+#else
+PROJECT_NAME = Xorg
+#endif
+PROJECT_DEFINES = -DPROJECT_NAME="\"$(PROJECT_NAME)\""
+RC_PROJECT_DEFINES = -DPROJECT_NAME="\\\"$(PROJECT_NAME)\\\""
+EXTRA_DEFINES = $(PROJECT_DEFINES)
 
 #if BuildXWinClipboard
 SRCS_CLIPBOARD = \
@@ -262,7 +289,7 @@ CYGXVERSIONSTRING = CygxVersionString
 
 VENDOR_DEFINES = $(VENDOR_STRING) $(VENDOR_CONTACT) $(VERSION_STRING)
 
-DEFINES = $(OS_DEFINES) $(SHMDEF) $(MMAPDEF) \
+DEFINES = $(OS_DEFINES) $(SHMDEF) $(MMAPDEF) $(EXTRADEFINES) \
 	-DPROJECTROOT="\"$(PROJECTROOT)\"" -DETCX11DIR="\"$(ETCX11DIR)\""
 
 LinkSourceFile(stubs.c,$(SERVERSRC)/Xi)
@@ -272,7 +299,7 @@ SpecialCObjectRule(winerror,$(ICONFIGFILES),$(DEFINES) $(VENDOR_DEFINES))
 SpecialCObjectRule(winprocarg,$(ICONFIGFILES),$(DEFINES) $(VENDOR_DEFINES))
 
 /* Build the Windows resource file (contains the program icon, etc.) */
-ResourceObjectRule(XWin,X.ico X-boxed.ico,)
+ResourceObjectRule(XWin,X.ico X-boxed.ico,$(RC_PROJECT_DEFINES))
 
 NormalLibraryObjectRule()
 NormalLibraryTarget(XWin,$(OBJS))

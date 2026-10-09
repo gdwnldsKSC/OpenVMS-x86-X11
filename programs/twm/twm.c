@@ -2,6 +2,7 @@
 /*
 
 Copyright 1989, 1998  The Open Group
+Copyright 2005 Hitachi, Ltd.
 
 Permission to use, copy, modify, distribute, and sell this software and its
 documentation for any purpose is hereby granted without fee, provided that
@@ -56,8 +57,9 @@ in this Software without prior written authorization from The Open Group.
  *
  * twm - "Tom's Window Manager"
  *
- * 27-Oct-87 Thomas E. LaStrange	File created
- * 10-Oct-90 David M. Sternlicht        Storing saved colors on root
+ * 27-Oct-1987 Thomas E. LaStrange    File created
+ * 10-Oct-1990 David M. Sternlicht    Storing saved colors on root
+ * 19-Feb-2005 Julien Lafon           Handle print screens for unified Xserver
  ***********************************************************************/
 /* $XFree86: xc/programs/twm/twm.c,v 3.13 2003/04/21 08:15:10 herrb Exp $ */
 
@@ -83,6 +85,9 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/Xmu/Error.h>
 #include <X11/extensions/sync.h>
 #include <X11/Xlocale.h>
+#ifdef XPRINT
+#include <X11/extensions/Print.h>
+#endif /* XPRINT */
 
 XtAppContext appContext;	/* Xt application context */
 XtSignalId si;
@@ -91,6 +96,7 @@ Display *dpy = NULL;		/* which display are we talking to */
 Window ResizeWindow;		/* the window we are resizing */
 
 int MultiScreen = TRUE;		/* try for more than one screen? */
+int NoPrintscreens = False;     /* ignore special handling of print screens? */
 int NumScreens;			/* number of screens in ScreenList */
 int HasShape;			/* server supports shape extension? */
 int ShapeEventBase, ShapeErrorBase;
@@ -163,6 +169,45 @@ static char* atom_names[11] = {
     "WM_WINDOW_ROLE"
 };
 
+#ifdef XPRINT
+/* |hasExtension()| and |IsPrintScreen()| have been stolen from
+ * xc/programs/xdpyinfo/xdpyinfo.c */
+static
+Bool hasExtension(Display *dpy, char *extname)
+{
+  int    num_extensions,
+         i;
+  char **extensions;
+  extensions = XListExtensions(dpy, &num_extensions);
+  for (i = 0; i < num_extensions &&
+         (strcmp(extensions[i], extname) != 0); i++);
+  XFreeExtensionList(extensions);
+  return i != num_extensions;
+}
+
+static
+Bool IsPrintScreen(Screen *s)
+{
+    Display *dpy = XDisplayOfScreen(s);
+    int      i;
+
+    /* Check whether this is a screen of a print DDX */
+    if (hasExtension(dpy, XP_PRINTNAME)) {
+        Screen **pscreens;
+        int      pscrcount;
+
+        pscreens = XpQueryScreens(dpy, &pscrcount);
+        for( i = 0 ; (i < pscrcount) && pscreens ; i++ ) {
+            if (s == pscreens[i]) {
+                return True;
+            }
+        }
+        XFree(pscreens);                      
+    }
+    return False;
+}
+#endif /* XPRINT */
+
 /***********************************************************************
  *
  *  Procedure:
@@ -194,12 +239,19 @@ main(int argc, char *argv[])
 	if (argv[i][0] == '-') {
 	    switch (argv[i][1]) {
 	      case 'd':				/* -display dpy */
+		if (strcmp(&argv[i][1], "display")) goto usage;
 		if (++i >= argc) goto usage;
 		display_name = argv[i];
 		continue;
 	      case 's':				/* -single */
 		MultiScreen = FALSE;
 		continue;
+#ifdef XPRINT
+	      case 'n':				/* -noprint */
+		if (strcmp(&argv[i][1], "noprint")) goto usage;
+		NoPrintscreens = True;
+		continue;
+#endif /* XPRINT */
 	      case 'f':				/* -file twmrcfilename */
 		if (++i >= argc) goto usage;
 		InitFile = argv[i];
@@ -208,10 +260,12 @@ main(int argc, char *argv[])
 		PrintErrorMessages = True;
 		continue;
 	      case 'c':				/* -clientId */
+		if (strcmp(&argv[i][1], "clientId")) goto usage;
 		if (++i >= argc) goto usage;
 		client_id = argv[i];
 		continue;
 	      case 'r':				/* -restore */
+		if (strcmp(&argv[i][1], "restore")) goto usage;
 		if (++i >= argc) goto usage;
 		restore_filename = argv[i];
 		continue;
@@ -222,7 +276,11 @@ main(int argc, char *argv[])
 	}
       usage:
 	fprintf (stderr,
-		 "usage:  %s [-display dpy] [-f file] [-s] [-q] [-v] [-clientId id] [-restore file]\n",
+		 "usage:  %s [-display dpy] [-f file] [-s] [-q] [-v]"
+#ifdef XPRINT
+                 " [-noprint]"
+#endif /* XPRINT */
+                 " [-clientId id] [-restore file]\n",
 		 ProgramName);
 	exit (1);
     }
@@ -330,6 +388,17 @@ main(int argc, char *argv[])
     FirstScreen = TRUE;
     for (scrnum = firstscrn ; scrnum <= lastscrn; scrnum++)
     {
+#ifdef XPRINT
+        /* Ignore print screens to avoid that users accidentally warp on a
+         * print screen (which are not visible on video displays) */
+        if ((!NoPrintscreens) && IsPrintScreen(XScreenOfDisplay(dpy, scrnum)))
+        {
+	    fprintf (stderr, "%s:  skipping print screen %d\n",
+		     ProgramName, scrnum);
+            continue;
+        }
+#endif /* XPRINT */
+
         /* Make sure property priority colors is empty */
         XChangeProperty (dpy, RootWindow(dpy, scrnum), _XA_MIT_PRIORITY_COLORS,
 			 XA_CARDINAL, 32, PropModeReplace, NULL, 0);
@@ -344,7 +413,7 @@ main(int argc, char *argv[])
 
 	if (RedirectError)
 	{
-	    fprintf (stderr, "%s:  another window manager is already running",
+	    fprintf (stderr, "%s:  another window manager is already running.",
 		     ProgramName);
 	    if (MultiScreen && NumScreens > 0)
 		fprintf(stderr, " on screen %d?\n", scrnum);
@@ -599,8 +668,8 @@ main(int argc, char *argv[])
 
     if (numManaged == 0) {
 	if (MultiScreen && NumScreens > 0)
-	  fprintf (stderr, "%s:  unable to find any unmanaged screens\n",
-		   ProgramName);
+	  fprintf (stderr, "%s:  unable to find any unmanaged %sscreens.\n",
+		   ProgramName, NoPrintscreens?"":"video ");
 	exit (1);
     }
 
@@ -613,14 +682,9 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *	InitVariables - initialize twm variables
- *
- ***********************************************************************
+/**
+ * initialize twm variables
  */
-
 void
 InitVariables()
 {
@@ -783,8 +847,7 @@ CreateFonts ()
 }
 
 void
-RestoreWithdrawnLocation (tmp)
-    TwmWindow *tmp;
+RestoreWithdrawnLocation (TwmWindow *tmp)
 {
     int gravx, gravy;
     unsigned int bw, mask;
@@ -832,8 +895,7 @@ RestoreWithdrawnLocation (tmp)
 
 
 void 
-Reborder (time)
-Time time;
+Reborder (Time time)
 {
     TwmWindow *tmp;			/* temp twm window structure */
     int scrnum;
@@ -865,24 +927,8 @@ sigHandler(int sig)
     SIGNAL_RETURN;
 }
 
-/***********************************************************************
- *
- *  Procedure:
- *	Done - cleanup and exit twm
- *
- *  Returned Value:
- *	none
- *
- *  Inputs:
- *	none
- *
- *  Outputs:
- *	none
- *
- *  Special Considerations:
- *	none
- *
- ***********************************************************************
+/**
+ * cleanup and exit twm
  */
 void
 Done(XtPointer client_data, XtSignalId *si)
@@ -895,6 +941,7 @@ Done(XtPointer client_data, XtSignalId *si)
     exit(0);
 }
 
+
 /*
  * Error Handlers.  If a client dies, we'll get a BadWindow error (except for
  * GetGeometry which returns BadDrawable) for most operations that we do before
@@ -905,9 +952,7 @@ Bool ErrorOccurred = False;
 XErrorEvent LastErrorEvent;
 
 static int 
-TwmErrorHandler(dpy, event)
-    Display *dpy;
-    XErrorEvent *event;
+TwmErrorHandler(Display *dpy, XErrorEvent *event)
 {
     LastErrorEvent = *event;
     ErrorOccurred = True;
@@ -921,11 +966,8 @@ TwmErrorHandler(dpy, event)
 }
 
 
-/* ARGSUSED*/
 static int 
-CatchRedirectError(dpy, event)
-    Display *dpy;
-    XErrorEvent *event;
+CatchRedirectError(Display *dpy, XErrorEvent *event)
 {
     RedirectError = TRUE;
     LastErrorEvent = *event;

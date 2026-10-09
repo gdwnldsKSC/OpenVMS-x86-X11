@@ -198,7 +198,6 @@ $ @[.VMS-SUPPORT]BUILD OLDX
 $ @[.VMS-SUPPORT]BUILD XMUU  
 $ @[.VMS-SUPPORT]BUILD XPM  
 $ @[.VMS-SUPPORT]BUILD XPRINTAPPUTIL  
-  
 $ @[.VMS-SUPPORT]BUILD X11  
 $ @[.VMS-SUPPORT]BUILD XAUTH  
 $ @[.VMS-SUPPORT]BUILD XDPYINFO  
@@ -208,9 +207,9 @@ $ @[.VMS-SUPPORT]BUILD XMODMAP
 $ @[.VMS-SUPPORT]BUILD XEV  
 $ @[.VMS-SUPPORT]BUILD BISON  
 $ @[.VMS-SUPPORT]BUILD XKBCOMP  
-$ @[.VMS-SUPPORT]BUILD SETXKBMAP
-$ @[.VMS-SUPPORT]BUILD XKB_DATA
-$ @[.VMS-SUPPORT]BUILD RUNTIME
+$ @[.VMS-SUPPORT]BUILD SETXKBMAP  
+$ @[.VMS-SUPPORT]BUILD XKB_DATA  
+$ @[.VMS-SUPPORT]BUILD RUNTIME  
 $ @[.VMS-SUPPORT]BUILD XT  
 $ @[.VMS-SUPPORT]BUILD XMU  
 $ @[.VMS-SUPPORT]BUILD XVFB  
@@ -221,4 +220,4 @@ $ @[.VMS-SUPPORT]BUILD X11_DATA
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  
-XKBCOMP builds bundled GNU Bison 1.35 automatically; no separate download or BISON command setup is required.
+XKBCOMP builds bundled GNU Bison 1.35 automatically; no separate download or BISON command setup is required.  

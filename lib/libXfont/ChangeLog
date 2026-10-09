@@ -1,0 +1,175 @@
+2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for final X11R7 release candidate.
+
+2005-12-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	* src/fontfile/Makefile.am:
+	Bug #5175: Make encodingsdir configurable.
+
+2005-12-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC3 release.
+
+2005-11-19  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* xfont.pc.in:
+	Update pkgconfig files to separate library build-time dependencies
+	from application build-time dependencies.
+	* configure.ac:
+	Update dependencies to work with separate build roots.
+
+2005-11-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC2 release.
+
+2005-10-18  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for RC1 release.
+
+2005-10-05  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* src/FreeType/Makefile.am:
+	* src/builtins/Makefile.am:
+	Include missing files
+
+2005-10-03  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/fontcache/Makefile.am:
+	Bug #4677: Don't install libfontcache.so.
+
+2005-09-09  Daniel Stone  <daniel@freedesktop.org>
+
+	* configure.ac:
+	AC_DEFINE FONTCACHE rather than XFONT_FONTCACHE, as the former is used
+	in the code, and the latter in Makefile.ams for an AM_CONDITIONAL.
+
+2005-07-10  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* src/FreeType/Makefile.am:
+	* src/Speedo/Makefile.am:
+	Change include dir now that public headers are referenced
+	by <X11/fonts/*.h>
+
+2005-07-09  Keith Packard  <keithp@keithp.com>
+
+	* configure.ac:
+	* include/X11/fonts/fontconf.h.in:
+	* src/FreeType/Makefile.am:
+	* src/Makefile.am:
+	
+	Rearrange configuration options so that individual font file formats
+	drive combined options, and so that the default matches
+	the monolithic defaults
+	
+	Extend fontconf.h to cover all formats
+
+	Typo in src/Makefile.am failed to link in Type1 library
+
+	Missing xttcap.c from FreeType shim library.
+
+2005-07-08  Keith Packard  <keithp@keithp.com>
+
+	* .cvsignore:
+	* src/.cvsignore:
+	* src/FreeType/.cvsignore:
+	* src/FreeType/Makefile.am:
+	* src/Speedo/.cvsignore:
+	* src/Type1/.cvsignore:
+	* src/bitmap/.cvsignore:
+	* src/builtins/.cvsignore:
+	* src/fc/.cvsignore:
+	* src/fontcache/.cvsignore:
+	* src/fontcache/Makefile.am:
+	* src/fontfile/.cvsignore:
+	* src/stubs/.cvsignore:
+	* src/util/.cvsignore:
+	Add .cvsignore files
+	Switch _la_CFLAGS for AM_CFLAGS to clean up directory
+
+2005-07-05  Alexander Gottwald  <ago at freedesktop dot org>
+
+	* configure.ac:
+	Test for xtrans connection flags
+	
+2005-07-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* xfont.pc.in:
+	Undo previous change to add ${includedir}/X11/fonts to CFLAGS.
+	Instead, require all apps to include font headers explicitly --
+	i.e., from <X11/fonts/*.h> instead of "*.h" or <*.h>.
+
+2005-07-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* src/Type1/Makefile.am:
+	* src/bitmap/Makefile.am:
+	* src/builtins/Makefile.am:
+	* src/fc/Makefile.am:
+	* src/fontcache/Makefile.am:
+	* src/fontfile/Makefile.am:
+	* src/stubs/Makefile.am:
+	* src/util/Makefile.am:
+	Change include dir now that public headers are referenced
+	by <X11/fonts/*.h>
+
+2005-07-02  Keith Packard  <keithp@keithp.com>
+
+	* .cvsignore:
+	* include/X11/fonts/.cvsignore:
+	* src/.cvsignore:
+	* src/FreeType/.cvsignore:
+	* src/Speedo/.cvsignore:
+	* src/Type1/.cvsignore:
+	* src/bitmap/.cvsignore:
+	* src/builtins/.cvsignore:
+	* src/fc/.cvsignore:
+	* src/fontcache/.cvsignore:
+	* src/fontfile/.cvsignore:
+	* src/stubs/.cvsignore:
+	* src/util/.cvsignore:
+	Add suitable .cvsignore files
+
+2005-07-02  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* Makefile.am:
+	* src/bitmap/Makefile.am:
+	Make headers needed by bdftopcf public
+
+	* xfont.pc.in:
+	Set CFLAGS to make public interface actually public
+
+	* src/fontcache/Makefile.am:
+	Fix distcheck problem
+
+2005-07-02  Keith Packard  <keithp@keithp.com>
+
+	* Makefile.am:
+	* configure.ac:
+	* src/Makefile.am:
+	Build libXfont.la in the 'src' directory as my
+	version of automake really didn't like sub-subdirs
+	in SUBDIRS.
+
+2005-07-03  Daniel Stone  <daniel@freedesktop.org>
+
+	* xfont.pc.in:
+	Remove -I${includedir}/X11/fonts from xfont.pc.in CFLAGS.
+
+2005-07-02  Daniel Stone  <daniel@freedesktop.org>
+
+	* configure.ac:
+	Enable font services by default; minor formatting cleanup.
+
+2005-06-17  Søren Sandmann  <sandmann@redhat.com>
+
+	* configure.ac (XFONT_SPEEDO): Disable Speedo by default.
+
+2005-06-09  Alexander Gottwald <ago@freedesktop.org>
+
+	* src/fc/fstrans.c:
+	Replace <X11/transport.c> with <X11/Xtrans/transport.c>

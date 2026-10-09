@@ -7,15 +7,15 @@
 [Setup]
 AppName=expat
 AppId=expat
-AppVersion=1.95.6
-AppVerName=expat 1.95.6
-AppCopyright=Copyright © 1998-2002 Thai Open Source Software Center, Clark Cooper, and the Expat maintainers
-DefaultDirName={sd}\Expat-1.95.6
+AppVersion=1.95.8
+AppVerName=expat 1.95.8
+AppCopyright=Copyright © 1998-2003 Thai Open Source Software Center, Clark Cooper, and the Expat maintainers
+DefaultDirName={sd}\Expat-1.95.8
 AppPublisher=The Expat Developers
 AppPublisherURL=http://www.libexpat.org/
 AppSupportURL=http://www.libexpat.org/
 AppUpdatesURL=http://www.libexpat.org/
-UninstallDisplayName=Expat XML Parser (version 1.95.6)
+UninstallDisplayName=Expat XML Parser (version 1.95.8)
 UninstallFilesDir={app}\Uninstall
 
 Compression=bzip/9
@@ -42,6 +42,7 @@ CopyMode: alwaysoverwrite; Source: lib\Release-w\*.lib;        DestDir: "{app}\L
 CopyMode: alwaysoverwrite; Source: lib\Release_static\*.lib;   DestDir: "{app}\StaticLibs"
 CopyMode: alwaysoverwrite; Source: lib\Release-w_static\*.lib; DestDir: "{app}\StaticLibs"
 CopyMode: alwaysoverwrite; Source: expat.dsw;                  DestDir: "{app}\Source"
+CopyMode: alwaysoverwrite; Source: win32\README.txt;           DestDir: "{app}\Source"
 CopyMode: alwaysoverwrite; Source: bcb5\*.*;                   DestDir: "{app}\Source\bcb5"
 CopyMode: alwaysoverwrite; Source: lib\*.c;                    DestDir: "{app}\Source\lib"
 CopyMode: alwaysoverwrite; Source: lib\*.h;                    DestDir: "{app}\Source\lib"

@@ -3,6 +3,7 @@ $ SET NOON
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
 $ result = 2
+$ opened = 0
 $ saved_default = F$ENVIRONMENT("DEFAULT")
 $ section = F$EDIT(P1,"UPCASE,TRIM")
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. -
@@ -13,7 +14,7 @@ $ executable = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.PROGRAMS.MKFONTSCALE]MKFONTSCA
 $ IF executable .EQS. "" THEN GOTO done
 $ mkfontscale = "$" + executable
 $ output = "[.VMS-SUPPORT._BUILD.P64.FONTS." + section + "]"
-$ GOSUB stage_'section'
+$ GOSUB stage_packages
 $ SET DEFAULT 'output'
 $ IF section .EQS. "SPEEDO" THEN GOTO fonts_dir
 $ ignored = F$SEARCH("",2)
@@ -35,35 +36,57 @@ $ GOSUB check_index
 $ WRITE SYS$OUTPUT "Scaled ", section, ": ", count, " font names; index ", current
 $ result = 1
 $ GOTO done
-$stage_SPEEDO:
-$ COPY/NOLOG [.FONTS.SCALED.SPEEDO]*.SPD;0 'output'*.SPD;0
-$ COPY/NOLOG [.FONTS.SCALED.SPEEDO]FONTS.SCALE 'output'FONTS.SCALE
-$ COPY/NOLOG [.FONTS.SCALED.SPEEDO]COPYRIGHT. 'output'COPYRIGHT.
-$ RETURN
-$stage_TYPE1:
-$ COPY/NOLOG [.FONTS.SCALED.TYPE1]*.PFA;0 'output'*.PFA;0
-$ COPY/NOLOG [.FONTS.SCALED.TYPE1]*.PFB;0 'output'*.PFB;0
-$ COPY/NOLOG [.FONTS.SCALED.TYPE1]*.AFM;0 'output'*.AFM;0
-$ COPY/NOLOG [.FONTS.SCALED.TYPE1]COPYRIGHT.*;0 'output'COPYRIGHT.*;0
-$ RETURN
-$stage_TTF:
-$ COPY/NOLOG [.FONTS.SCALED.TTF]*.TTF;0 'output'*.TTF;0
-$ COPY/NOLOG [.EXTRAS.FONTS.BITSTREAM-VERA]*.TTF;0 'output'*.TTF;0
-$ COPY/NOLOG [.FONTS.SCALED.ETHIOPIC]*.TTF;0 'output'*.TTF;0
-$ COPY/NOLOG [.FONTS.SCALED.TTF]COPYRIGHT.*;0 'output'COPYRIGHT.*;0
-$ COPY/NOLOG [.EXTRAS.FONTS.BITSTREAM-VERA]COPYRIGHT.TXT 'output'COPYRIGHT.BITSTREAM_VERA
-$ COPY/NOLOG [.EXTRAS.FONTS.BITSTREAM-VERA]README.TXT 'output'README.BITSTREAM_VERA
-$ COPY/NOLOG [.EXTRAS.FONTS.BITSTREAM-VERA]RELEASENOTES.TXT 'output'RELEASENOTES.BITSTREAM_VERA
-$ COPY/NOLOG [.FONTS.SCALED.ETHIOPIC]LICENSE.TXT 'output'LICENSE.ETHIOPIC
-$ RETURN
-$stage_OTF:
-$ COPY/NOLOG [.FONTS.SCALED.ETHIOPIC]*.OTF;0 'output'*.OTF;0
-$ COPY/NOLOG [.FONTS.SCALED.MELTHO]*.OTF;0 'output'*.OTF;0
-$ COPY/NOLOG [.FONTS.SCALED.ETHIOPIC]LICENSE.TXT 'output'LICENSE.ETHIOPIC
-$ COPY/NOLOG [.FONTS.SCALED.MELTHO]LICENSE.TXT 'output'LICENSE.MELTHO
-$ COPY/NOLOG [.FONTS.SCALED.MELTHO]README. 'output'README.MELTHO
-$ RETURN
-$stage_CID:
+$stage_packages:
+$ IF section .EQS. "CID" THEN RETURN
+$ extensions = "PFA|PFB|AFM"
+$ IF section .EQS. "SPEEDO" THEN extensions = "SPD"
+$ IF section .EQS. "TTF" THEN extensions = "TTF"
+$ IF section .EQS. "OTF" THEN extensions = "OTF"
+$ OPEN/READ listing [.VMS-SUPPORT.FONTS.SCALED]PACKAGES.LIST
+$ opened = 1
+$next_package:
+$ READ/END=packages_done listing line
+$ IF F$ELEMENT(0,"|",line) .NES. section THEN GOTO next_package
+$ package = F$ELEMENT(1,"|",line)
+$ source = "[.FONT." + package + "]"
+$ extension_index = 0
+$next_extension:
+$ extension = F$ELEMENT(extension_index,"|",extensions)
+$ IF extension .EQS. "|" THEN GOTO notices
+$ ignored = F$SEARCH("",1)
+$next_font:
+$ input = F$SEARCH(source + "*." + extension + ";0",1)
+$ IF input .EQS. "" THEN GOTO extension_done
+$ target = output + F$PARSE(input,,,"NAME") + F$PARSE(input,,,"TYPE") + ";0"
+$ COPY/NOLOG 'input' 'target'
+$ GOTO next_font
+$extension_done:
+$ extension_index = extension_index + 1
+$ GOTO next_extension
+$notices:
+$ notice_patterns = "COPY*.*;0|LICENSE.*;0|README.*;0"
+$ notice_index = 0
+$next_notice_pattern:
+$ notice_pattern = F$ELEMENT(notice_index,"|",notice_patterns)
+$ IF notice_pattern .EQS. "|" THEN GOTO notices_done
+$ ignored = F$SEARCH("",2)
+$next_notice:
+$ input = F$SEARCH(source + notice_pattern,2)
+$ IF input .EQS. "" THEN GOTO notice_pattern_done
+$ name = F$PARSE(input,,,"NAME")
+$ type = F$PARSE(input,,,"TYPE")
+$ IF type .NES. "." THEN name = name + "_" + F$EXTRACT(1,F$LENGTH(type),type)
+$ COPY/NOLOG 'input' 'output''name'.'package';0
+$ GOTO next_notice
+$notice_pattern_done:
+$ notice_index = notice_index + 1
+$ GOTO next_notice_pattern
+$notices_done:
+$ IF section .EQS. "SPEEDO" THEN COPY/NOLOG 'source'FONTS.SCALE 'output'FONTS.SCALE;0
+$ GOTO next_package
+$packages_done:
+$ CLOSE listing
+$ opened = 0
 $ RETURN
 $check_index:
 $ IF (current .EQS. "") .OR. (current .EQS. previous) THEN GOTO done
@@ -84,5 +107,6 @@ $ result = $STATUS
 $ IF result .AND. 1 THEN result = 2
 $done:
 $ SET NOON
+$ IF opened THEN CLOSE listing
 $ SET DEFAULT 'saved_default'
 $ EXIT result

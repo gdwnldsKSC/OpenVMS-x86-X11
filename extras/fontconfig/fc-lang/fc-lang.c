@@ -1,7 +1,7 @@
 /*
  * $RCSId: xc/lib/fontconfig/fc-lang/fc-lang.c,v 1.3 2002/08/22 07:36:43 keithp Exp $
  *
- * Copyright Â© 2002 Keith Packard
+ * Copyright © 2002 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -75,26 +75,6 @@ get_line (FILE *f, char *line, int *lineno)
     return line;
 }
 
-char	*dir = 0;
-
-static FILE *
-scanopen (char *file)
-{
-    FILE    *f;
-
-    f = fopen (file, "r");
-    if (!f && dir)
-    {
-	char	path[1024];
-	
-	strcpy (path, dir);
-	strcat (path, "/");
-	strcat (path, file);
-	f = fopen (path, "r");
-    }
-    return f;
-}
-
 /*
  * build a single charset from a source file
  *
@@ -123,7 +103,7 @@ scan (FILE *f, char *file)
 	    end = strlen (file);
 	    if (file[end-1] == '\n')
 		file[end-1] = '\0';
-	    f = scanopen (file);
+	    f = fopen (file, "r");
 	    if (!f)
 		fatal (file, 0, "can't open");
 	    c = scan (f, file);
@@ -233,11 +213,6 @@ main (int argc, char **argv)
     
     while (*++argv)
     {
-	if (!strcmp (*argv, "-d"))
-	{
-	    dir = *++argv;
-	    continue;
-	}
 	if (i == MAX_LANG)
 	    fatal (*argv, 0, "Too many languages");
 	files[i++] = *argv;
@@ -247,7 +222,7 @@ main (int argc, char **argv)
     i = 0;
     while (files[i])
     {
-	f = scanopen (files[i]);
+	f = fopen (files[i], "r");
 	if (!f)
 	    fatal (files[i], 0, strerror (errno));
 	sets[i] = scan (f, files[i]);

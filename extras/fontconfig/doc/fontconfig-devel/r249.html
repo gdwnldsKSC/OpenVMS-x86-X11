@@ -1,21 +1,23 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML
 ><HEAD
 ><TITLE
->FcPatternCreate</TITLE
+>FcPatternDestroy</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
 REL="HOME"
+TITLE="Fontconfig Developers Reference, Version 2.2.3
+ "
 HREF="index.html"><LINK
 REL="UP"
 TITLE="FcPattern"
-HREF="x93.html#AEN246"><LINK
+HREF="x93.html#AEN225"><LINK
 REL="PREVIOUS"
-TITLE="FUNCTIONS"
-HREF="x93.html"><LINK
+TITLE="FcPatternCreate"
+HREF="r228.html"><LINK
 REL="NEXT"
-TITLE="FcPatternDestroy"
+TITLE="FcPatternEqual"
 HREF="r270.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
@@ -36,7 +38,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
-></TH
+>Fontconfig Developers Reference, Version 2.2.3</TH
 ></TR
 ><TR
 ><TD
@@ -44,7 +46,7 @@ WIDTH="10%"
 ALIGN="left"
 VALIGN="bottom"
 ><A
-HREF="x93.html"
+HREF="r228.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -69,9 +71,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCPATTERNCREATE"
+NAME="FCPATTERNDESTROY"
 ></A
->FcPatternCreate</H1
+>FcPatternDestroy</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -79,7 +81,7 @@ NAME="AEN253"
 ></A
 ><H2
 >Name</H2
->FcPatternCreate&nbsp;--&nbsp;Create a pattern</DIV
+>FcPatternDestroy&nbsp;--&nbsp;Destroy a pattern</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -102,8 +104,8 @@ CLASS="FUNCSYNOPSISINFO"
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->FcPattern * FcPatternCreate</CODE
->(void);</CODE
+>void FcPatternDestroy</CODE
+>(FcPattern *p);</CODE
 ></P
 ><P
 ></P
@@ -117,7 +119,7 @@ NAME="AEN264"
 ><H2
 >Description</H2
 ><P
->Creates a pattern with no properties; used to build patterns from scratch.
+>Destroys a pattern, in the process destroying all related values.
 	    </P
 ></DIV
 ><DIV
@@ -128,7 +130,7 @@ NAME="AEN267"
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.3.2
+>Fontconfig version 2.2.3
 
 	    </P
 ></DIV
@@ -148,7 +150,7 @@ WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
 ><A
-HREF="x93.html"
+HREF="r228.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -176,13 +178,13 @@ ACCESSKEY="N"
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FUNCTIONS</TD
+>FcPatternCreate</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN246"
+HREF="x93.html#AEN225"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -190,7 +192,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->FcPatternDestroy</TD
+>FcPatternEqual</TD
 ></TR
 ></TABLE
 ></DIV

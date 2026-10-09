@@ -1,4 +1,4 @@
-! Complete ucs2any target from fonts/util/Imakefile.
+! Complete ucs2any target from font/font-util/Makefile.am.
 UCS2ANY_BUILD_RULES = [.VMS-SUPPORT]CONFIG.MMS, [.VMS-SUPPORT]COMPILE.COM, -
                      [.VMS-SUPPORT.FONTS.UTIL]DESCRIP.MMS
 ! strdup uses the native X/Open extended namespace; line offsets remain ints upstream.
@@ -9,7 +9,7 @@ UCS2ANY_CFLAGS = $(CFLAGS)/POINTER_SIZE=64=ARGV/MAIN=POSIX_EXIT -
 UCS2ANY : $(OUT).FONTS.UTIL]UCS2ANY.EXE
 	CONTINUE
 
-$(OUT).FONTS.UTIL]UCS2ANY.OBJ : [.FONTS.UTIL]UCS2ANY.C, -
+$(OUT).FONTS.UTIL]UCS2ANY.OBJ : [.FONT.FONT-UTIL]UCS2ANY.C, -
     $(UCS2ANY_BUILD_RULES), $(RTL)
 	@[.VMS-SUPPORT]COMPILE.COM $(MMS$SOURCE) $(OUT).FONTS.UTIL]UCS2ANY "$(UCS2ANY_CFLAGS)" RTL
 

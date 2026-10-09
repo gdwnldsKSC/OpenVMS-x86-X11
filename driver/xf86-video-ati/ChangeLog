@@ -1,0 +1,80 @@
+2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version for X11R7 release.
+
+2005-12-19  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* README.ati.sgml:
+	* man/radeon.man:
+	Typo fixes, mailing list & url updates, and other changes
+        to prepare for X11R6.9 & 7.0 releases.
+
+2005-12-15  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* man/r128.man: 
+	Bugzilla #5238 <https://bugs.freedesktop.org/show_bug.cgi?id=5238>
+	Patch #3978  <https://bugs.freedesktop.org/attachment.cgi?id=3978>
+	r128 man page dualhead note update (Alex Deucher)
+
+2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	* src/r128_version.h:
+	* src/radeon_version.h:
+	Update package version number for final X11R7 release candidate.
+	Bump driver version number.
+
+2005-12-14  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/r128_accel.c:
+	* src/r128_driver.c:
+	* src/radeon_driver.c:
+	* src/radeon_probe.c:
+	Bug #1760: Fix ati wrapper multihead to be dlloader friendly.
+
+2005-12-08  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* src/Makefile.am:
+	Add configure options to allow hard-coded paths to be changed.
+
+2005-12-06  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* man/Makefile.am:
+	Change *man_SOURCES ==> *man_PRE to fix autotools warnings.
+
+2005-12-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC3 release.
+
+2005-12-01  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Remove extraneous AC_MSG_RESULT.
+
+2005-11-20  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump libdrm dep to 2.0.
+
+2005-11-29  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Only build dlloader modules by default.
+
+2005-11-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update package version number for X11R7 RC2 release.
+
+2005-11-01  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* configure.ac:
+	Update pkgcheck depedencies to work with separate build roots.
+
+2005-10-20  Donnie Berkholz  <spyderous@gentoo.org>
+
+	* configure.ac: Bug #4831
+	<https://bugs.freedesktop.org/show_bug.cgi?id=4831>. Check for x86_64 in
+	addition to amd64 in host_cpu.

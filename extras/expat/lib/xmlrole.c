@@ -2,16 +2,19 @@
    See the file COPYING for copying permission.
 */
 
-/* $XFree86: xc/extras/expat/lib/xmlrole.c,v 1.3 2003/04/10 20:05:16 herrb Exp $ */
+#include <stddef.h>
 
 #ifdef COMPILED_FROM_DSP
 #include "winconfig.h"
 #elif defined(MACOS_CLASSIC)
 #include "macconfig.h"
 #else
+#ifdef HAVE_EXPAT_CONFIG_H
 #include <expat_config.h>
+#endif
 #endif /* ndef COMPILED_FROM_DSP */
 
+#include "expat_external.h"
 #include "internal.h"
 #include "xmlrole.h"
 #include "ascii.h"
@@ -370,6 +373,8 @@ internalSubset(PROLOG_STATE *state,
   case XML_TOK_CLOSE_BRACKET:
     state->handler = doctype5;
     return XML_ROLE_DOCTYPE_NONE;
+  case XML_TOK_NONE:
+    return XML_ROLE_NONE;
   }
   return common(state, tok);
 }

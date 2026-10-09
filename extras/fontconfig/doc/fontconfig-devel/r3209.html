@@ -1,21 +1,23 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML
 ><HEAD
 ><TITLE
->FcStrDowncase</TITLE
+>FcStrDirname</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
 REL="HOME"
+TITLE="Fontconfig Developers Reference, Version 2.2.3
+ "
 HREF="index.html"><LINK
 REL="UP"
 TITLE="String utilities"
-HREF="x93.html#AEN3028"><LINK
+HREF="x93.html#AEN2980"><LINK
 REL="PREVIOUS"
-TITLE="FcStrCopy"
-HREF="r3186.html"><LINK
+TITLE="FcStrCmpIgnoreCase"
+HREF="r3184.html"><LINK
 REL="NEXT"
-TITLE="FcStrCopyFilename"
+TITLE="FcStrBasename"
 HREF="r3231.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
@@ -36,7 +38,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
-></TH
+>Fontconfig Developers Reference, Version 2.2.3</TH
 ></TR
 ><TR
 ><TD
@@ -44,7 +46,7 @@ WIDTH="10%"
 ALIGN="left"
 VALIGN="bottom"
 ><A
-HREF="r3186.html"
+HREF="r3184.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -69,9 +71,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCSTRDOWNCASE"
+NAME="FCSTRDIRNAME"
 ></A
->FcStrDowncase</H1
+>FcStrDirname</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -79,7 +81,7 @@ NAME="AEN3213"
 ></A
 ><H2
 >Name</H2
->FcStrDowncase&nbsp;--&nbsp;create a lower case translation of a string</DIV
+>FcStrDirname&nbsp;--&nbsp;directory part of filename</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -102,8 +104,8 @@ CLASS="FUNCSYNOPSISINFO"
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->FcChar8 * FcStrDowncase</CODE
->(const FcChar8 *s);</CODE
+>FcChar8 * FcStrDirname</CODE
+>(const FcChar8 *file);</CODE
 ></P
 ><P
 ></P
@@ -117,11 +119,12 @@ NAME="AEN3224"
 ><H2
 >Description</H2
 ><P
->Allocates memory, copies <CODE
+>Returns the directory containing <VAR
 CLASS="PARAMETER"
->s</CODE
->, converting upper case
-letters to lower case and returns the allocated buffer.
+>file</VAR
+>.  This
+is returned in newly allocated storage which should be freed when no longer
+needed.
 	    </P
 ></DIV
 ><DIV
@@ -132,7 +135,7 @@ NAME="AEN3228"
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.3.2
+>Fontconfig version 2.2.3
 
 	    </P
 ></DIV
@@ -152,7 +155,7 @@ WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
 ><A
-HREF="r3186.html"
+HREF="r3184.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -180,13 +183,13 @@ ACCESSKEY="N"
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FcStrCopy</TD
+>FcStrCmpIgnoreCase</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN3028"
+HREF="x93.html#AEN2980"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -194,7 +197,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->FcStrCopyFilename</TD
+>FcStrBasename</TD
 ></TR
 ></TABLE
 ></DIV

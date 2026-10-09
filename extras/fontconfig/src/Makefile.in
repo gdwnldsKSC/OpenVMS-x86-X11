@@ -14,29 +14,6 @@
 
 @SET_MAKE@
 
-#
-# $Id: Makefile.in,v 1.3 2005/06/28 01:01:14 alanc Exp $
-#
-# Copyright © 2003 Keith Packard
-#
-# Permission to use, copy, modify, distribute, and sell this software and its
-# documentation for any purpose is hereby granted without fee, provided that
-# the above copyright notice appear in all copies and that both that
-# copyright notice and this permission notice appear in supporting
-# documentation, and that the name of Keith Packard not be used in
-# advertising or publicity pertaining to distribution of the software without
-# specific, written prior permission.  Keith Packard makes no
-# representations about the suitability of this software for any purpose.  It
-# is provided "as is" without express or implied warranty.
-#
-# KEITH PACKARD DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
-# INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
-# EVENT SHALL KEITH PACKARD BE LIABLE FOR ANY SPECIAL, INDIRECT OR
-# CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-# DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
-# TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-# PERFORMANCE OF THIS SOFTWARE.
-
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -71,13 +48,10 @@ AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
-CC_FOR_BUILD = @CC_FOR_BUILD@
 CFLAGS = @CFLAGS@
 CONFDIR = @CONFDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CROSS_COMPILING_FALSE = @CROSS_COMPILING_FALSE@
-CROSS_COMPILING_TRUE = @CROSS_COMPILING_TRUE@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -87,8 +61,6 @@ DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
 DOCDIR = @DOCDIR@
-DOCMAN3 = @DOCMAN3@
-DOCSRC = @DOCSRC@
 ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -97,7 +69,6 @@ EGREP = @EGREP@
 ENABLE_DOCS_FALSE = @ENABLE_DOCS_FALSE@
 ENABLE_DOCS_TRUE = @ENABLE_DOCS_TRUE@
 EXEEXT = @EXEEXT@
-EXEEXT_FOR_BUILD = @EXEEXT_FOR_BUILD@
 EXPAT_CFLAGS = @EXPAT_CFLAGS@
 EXPAT_LIBS = @EXPAT_LIBS@
 F77 = @F77@
@@ -147,10 +118,7 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
-USEDOCBOOK_FALSE = @USEDOCBOOK_FALSE@
-USEDOCBOOK_TRUE = @USEDOCBOOK_TRUE@
 VERSION = @VERSION@
-WARN_CFLAGS = @WARN_CFLAGS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_AS = @ac_ct_AS@
 ac_ct_CC = @ac_ct_CC@
@@ -208,7 +176,6 @@ target_alias = @target_alias@
 INCLUDES = \
 	$(FREETYPE_CFLAGS)				\
 	$(EXPAT_CFLAGS)					\
-	$(WARN_CFLAGS)					\
 	-DFONTCONFIG_PATH='"$(CONFDIR)"'		\
 	-I$(top_srcdir)					\
 	-I$(top_srcdir)/src

@@ -1,19 +1,24 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML
 ><HEAD
 ><TITLE
->FcBlanksIsMember</TITLE
+>FcAtomicLock</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
 REL="HOME"
+TITLE="Fontconfig Developers Reference, Version 2.2.3
+ "
 HREF="index.html"><LINK
 REL="UP"
-TITLE="FcBlanks"
-HREF="x93.html#AEN2423"><LINK
+TITLE="FcAtomic"
+HREF="x93.html#AEN2466"><LINK
 REL="PREVIOUS"
-TITLE="FcBlanksAdd"
-HREF="r2468.html"></HEAD
+TITLE="FcAtomicCreate"
+HREF="r2469.html"><LINK
+REL="NEXT"
+TITLE="FcAtomicNewFile"
+HREF="r2513.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -33,7 +38,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
-></TH
+>Fontconfig Developers Reference, Version 2.2.3</TH
 ></TR
 ><TR
 ><TD
@@ -41,7 +46,7 @@ WIDTH="10%"
 ALIGN="left"
 VALIGN="bottom"
 ><A
-HREF="r2468.html"
+HREF="r2469.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -54,7 +59,11 @@ VALIGN="bottom"
 WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
->&nbsp;</TD
+><A
+HREF="r2513.html"
+ACCESSKEY="N"
+>Next</A
+></TD
 ></TR
 ></TABLE
 ><HR
@@ -62,9 +71,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCBLANKSISMEMBER"
+NAME="FCATOMICLOCK"
 ></A
->FcBlanksIsMember</H1
+>FcAtomicLock</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -72,7 +81,7 @@ NAME="AEN2495"
 ></A
 ><H2
 >Name</H2
->FcBlanksIsMember&nbsp;--&nbsp;Query membership in an FcBlanks</DIV
+>FcAtomicLock&nbsp;--&nbsp;lock a file</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -95,8 +104,8 @@ CLASS="FUNCSYNOPSISINFO"
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->FcBool FcBlanksIsMember</CODE
->(FcBlanks *b, FcChar32ucs4);</CODE
+>FcBool FcAtomicLock</CODE
+>(FcAtomic *atomic);</CODE
 ></P
 ><P
 ></P
@@ -105,24 +114,28 @@ CLASS="FUNCDEF"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN2508"
+NAME="AEN2506"
 ></A
 ><H2
 >Description</H2
 ><P
->Returns whether the specified FcBlanks object contains the indicated Unicode
-value.
+>Attempts to lock the file referenced by <VAR
+CLASS="PARAMETER"
+>atomic</VAR
+>.  Returns FcFalse if the
+file is locked by another process, else returns FcTrue and leaves the file
+locked.
 	    </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN2511"
+NAME="AEN2510"
 ></A
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.3.2
+>Fontconfig version 2.2.3
 
 	    </P
 ></DIV
@@ -142,7 +155,7 @@ WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
 ><A
-HREF="r2468.html"
+HREF="r2469.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -159,20 +172,24 @@ ACCESSKEY="H"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->&nbsp;</TD
+><A
+HREF="r2513.html"
+ACCESSKEY="N"
+>Next</A
+></TD
 ></TR
 ><TR
 ><TD
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FcBlanksAdd</TD
+>FcAtomicCreate</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN2423"
+HREF="x93.html#AEN2466"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -180,7 +197,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->&nbsp;</TD
+>FcAtomicNewFile</TD
 ></TR
 ></TABLE
 ></DIV

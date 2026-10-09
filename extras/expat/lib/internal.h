@@ -19,23 +19,20 @@
    Note: Use of these macros is based on judgement, not hard rules,
          and therefore subject to change.
 */
-/* $XFree86$ */
 
-#if defined(__GNUC__) && \
-    !defined(ia64) && !defined(__ia64__) && \
-    !defined(__sparc__) && !defined(__sparc_v9__) && !defined(sparc) && \
-    !defined(__sparc64__) && !defined(__arch64__)
+#if defined(__GNUC__) && defined(__i386__)
+/* We'll use this version by default only where we know it helps.
 
-/* Instability reported with egcs on a RedHat Linux 7.3.
-   Let's comment it out:
+   regparm() generates warnings on Solaris boxes.   See SF bug #692878.
+
+   Instability reported with egcs on a RedHat Linux 7.3.
+   Let's comment out:
    #define FASTCALL __attribute__((stdcall, regparm(3)))
    and let's try this:
 */
 #define FASTCALL __attribute__((regparm(3)))
-#define PTRCALL
 #define PTRFASTCALL __attribute__((regparm(3)))
-
-#elif defined(WIN32)
+#endif
 
 /* Using __fastcall seems to have an unexpected negative effect under
    MS VC++, especially for function pointers, so we won't use it for
@@ -44,11 +41,8 @@
    Likely reason: __fastcall on Windows is like stdcall, therefore
    the compiler cannot perform stack optimizations for call clusters.
 */
-#define FASTCALL
-#define PTRCALL
-#define PTRFASTCALL
 
-#endif
+/* Make sure all of these are defined if they aren't already. */
 
 #ifndef FASTCALL
 #define FASTCALL

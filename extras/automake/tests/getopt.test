@@ -1,0 +1,49 @@
+#! /bin/sh
+# Copyright (C) 2002  Free Software Foundation, Inc.
+#
+# This file is part of GNU Automake.
+#
+# GNU Automake is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# GNU Automake is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with autoconf; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+
+# Automake --help, and --version should have priority over any other option
+# so that their `exit 0' is coherent.
+
+. ./defs || exit 1
+
+set -e
+
+# This is expected to fail ...
+$AUTOMAKE -Wnonexistent 2>stderr && exit 1
+cat stderr
+grep ':.*nonexistent' stderr
+
+# ... but this should not.
+$AUTOMAKE -Wnonexistent --help 2>stderr
+cat stderr
+grep ':.*nonexistent' stderr && exit 1
+
+
+# Similarly, this should fail ...
+$AUTOMAKE --nonexistent 2>stderr && exit 1
+cat stderr
+grep ':.*nonexistent' stderr
+
+# ... but this should not.
+$AUTOMAKE --nonexistent --help 2>stderr
+cat stderr
+grep ':.*nonexistent' stderr && exit 1
+
+:

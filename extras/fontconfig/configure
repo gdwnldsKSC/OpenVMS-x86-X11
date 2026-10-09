@@ -463,7 +463,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE am__leading_dot MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT LT_CURRENT LT_REVISION LT_VERSION_INFO LT_CURRENT_MINUS_AGE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE LN_S build build_cpu build_vendor build_os host host_cpu host_vendor host_os EGREP ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB DLLTOOL ac_ct_DLLTOOL AS ac_ct_AS OBJDUMP ac_ct_OBJDUMP CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL OS_WIN32_TRUE OS_WIN32_FALSE ms_librarian MS_LIB_AVAILABLE_TRUE MS_LIB_AVAILABLE_FALSE WARN_CFLAGS CROSS_COMPILING_TRUE CROSS_COMPILING_FALSE CC_FOR_BUILD EXEEXT_FOR_BUILD ft_config FREETYPE_LIBS FREETYPE_CFLAGS HAVE_XMLPARSE_H HAVE_EXPAT EXPAT_LIBS EXPAT_CFLAGS FC_DEFAULT_FONTS FC_ADD_FONTS FC_FONTPATH FC_FONTDATE confdir CONFDIR ORTH_FILES HASDOCBOOK USEDOCBOOK_TRUE USEDOCBOOK_FALSE ENABLE_DOCS_TRUE ENABLE_DOCS_FALSE DOCSRC DOCMAN3 DOCDIR LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE am__leading_dot MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT LT_CURRENT LT_REVISION LT_VERSION_INFO LT_CURRENT_MINUS_AGE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE LN_S build build_cpu build_vendor build_os host host_cpu host_vendor host_os EGREP ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB DLLTOOL ac_ct_DLLTOOL AS ac_ct_AS OBJDUMP ac_ct_OBJDUMP CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL OS_WIN32_TRUE OS_WIN32_FALSE ms_librarian MS_LIB_AVAILABLE_TRUE MS_LIB_AVAILABLE_FALSE ft_config FREETYPE_LIBS FREETYPE_CFLAGS HAVE_XMLPARSE_H HAVE_EXPAT EXPAT_LIBS EXPAT_CFLAGS FC_DEFAULT_FONTS FC_ADD_FONTS FC_FONTPATH FC_FONTDATE confdir CONFDIR ORTH_FILES HASDOCBOOK ENABLE_DOCS_TRUE ENABLE_DOCS_FALSE DOCDIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1782,7 +1782,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=fontconfig
- VERSION=2.3.2
+ VERSION=2.2.3
 
 
 cat >>confdefs.h <<_ACEOF
@@ -3604,7 +3604,7 @@ linux*)
   lt_cv_deplibs_check_method=pass_all
   ;;
 
-netbsd* | netbsdelf*-gnu | knetbsd*-gnu)
+netbsd* | knetbsd*-gnu)
   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
     lt_cv_deplibs_check_method='match_pattern /lib[^/]+(\.so\.[0-9]+\.[0-9]+|_pic\.a)$'
   else
@@ -7022,7 +7022,7 @@ EOF
       fi
       ;;
 
-    netbsd* | netbsdelf*-gnu | knetbsd*-gnu)
+    netbsd* | knetbsd*-gnu)
       if echo __ELF__ | $CC -E - | grep __ELF__ >/dev/null; then
 	archive_cmds='$LD -Bshareable $libobjs $deplibs $linker_flags -o $lib'
 	wlarc=
@@ -7540,7 +7540,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
       link_all_deplibs=yes
       ;;
 
-    netbsd* | netbsdelf*-gnu | knetbsd*-gnu)
+    netbsd* | knetbsd*-gnu)
       if echo __ELF__ | $CC -E - | grep __ELF__ >/dev/null; then
 	archive_cmds='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'  # a.out
       else
@@ -8187,18 +8187,6 @@ linux*)
   # people can always --disable-shared, the test was removed, and we
   # assume the GNU/Linux dynamic linker is in use.
   dynamic_linker='GNU/Linux ld.so'
-  ;;
-
-netbsdelf*-gnu)
-  version_type=linux
-  need_lib_prefix=no
-  need_version=no
-  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
-  soname_spec='${libname}${release}${shared_ext}$major'
-  shlibpath_var=LD_LIBRARY_PATH
-  shlibpath_overrides_runpath=no
-  hardcode_into_libs=yes
-  dynamic_linker='NetBSD ld.elf_so'
   ;;
 
 knetbsd*-gnu)
@@ -9033,7 +9021,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9036 "configure"
+#line 9024 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9131,7 +9119,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9134 "configure"
+#line 9122 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10642,7 +10630,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	;;
     esac
     ;;
-  netbsd* | netbsdelf*-gnu | knetbsd*-gnu)
+  netbsd* | knetbsd*-gnu)
     if echo __ELF__ | $CC -E - | grep __ELF__ >/dev/null; then
       archive_cmds_CXX='$LD -Bshareable  -o $lib $predep_objects $libobjs $deplibs $postdep_objects $linker_flags'
       wlarc=
@@ -11197,7 +11185,7 @@ echo $ECHO_N "checking for $compiler option to produce PIC... $ECHO_C" >&6
 	    ;;
 	esac
 	;;
-      netbsd* | netbsdelf*-gnu | knetbsd*-gnu)
+      netbsd* | knetbsd*-gnu)
 	;;
       osf3* | osf4* | osf5*)
 	case $cc_basename in
@@ -11308,11 +11296,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11311: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11299: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11315: \$? = $ac_status" >&5
+   echo "$as_me:11303: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -11368,11 +11356,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11371: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11359: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11375: \$? = $ac_status" >&5
+   echo "$as_me:11363: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11891,18 +11879,6 @@ linux*)
   # people can always --disable-shared, the test was removed, and we
   # assume the GNU/Linux dynamic linker is in use.
   dynamic_linker='GNU/Linux ld.so'
-  ;;
-
-netbsdelf*-gnu)
-  version_type=linux
-  need_lib_prefix=no
-  need_version=no
-  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
-  soname_spec='${libname}${release}${shared_ext}$major'
-  shlibpath_var=LD_LIBRARY_PATH
-  shlibpath_overrides_runpath=no
-  hardcode_into_libs=yes
-  dynamic_linker='NetBSD ld.elf_so'
   ;;
 
 knetbsd*-gnu)
@@ -12737,7 +12713,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12740 "configure"
+#line 12716 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12835,7 +12811,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12838 "configure"
+#line 12814 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13662,11 +13638,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13665: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13641: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13669: \$? = $ac_status" >&5
+   echo "$as_me:13645: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -13722,11 +13698,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13725: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13701: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13729: \$? = $ac_status" >&5
+   echo "$as_me:13705: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13899,7 +13875,7 @@ EOF
       fi
       ;;
 
-    netbsd* | netbsdelf*-gnu | knetbsd*-gnu)
+    netbsd* | knetbsd*-gnu)
       if echo __ELF__ | $CC -E - | grep __ELF__ >/dev/null; then
 	archive_cmds_F77='$LD -Bshareable $libobjs $deplibs $linker_flags -o $lib'
 	wlarc=
@@ -14397,7 +14373,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
       link_all_deplibs_F77=yes
       ;;
 
-    netbsd* | netbsdelf*-gnu | knetbsd*-gnu)
+    netbsd* | knetbsd*-gnu)
       if echo __ELF__ | $CC -E - | grep __ELF__ >/dev/null; then
 	archive_cmds_F77='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'  # a.out
       else
@@ -15044,18 +15020,6 @@ linux*)
   # people can always --disable-shared, the test was removed, and we
   # assume the GNU/Linux dynamic linker is in use.
   dynamic_linker='GNU/Linux ld.so'
-  ;;
-
-netbsdelf*-gnu)
-  version_type=linux
-  need_lib_prefix=no
-  need_version=no
-  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
-  soname_spec='${libname}${release}${shared_ext}$major'
-  shlibpath_var=LD_LIBRARY_PATH
-  shlibpath_overrides_runpath=no
-  hardcode_into_libs=yes
-  dynamic_linker='NetBSD ld.elf_so'
   ;;
 
 knetbsd*-gnu)
@@ -15767,11 +15731,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15770: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15734: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15774: \$? = $ac_status" >&5
+   echo "$as_me:15738: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -16000,11 +15964,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16003: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15967: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16007: \$? = $ac_status" >&5
+   echo "$as_me:15971: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -16060,11 +16024,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16063: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16027: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16067: \$? = $ac_status" >&5
+   echo "$as_me:16031: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16237,7 +16201,7 @@ EOF
       fi
       ;;
 
-    netbsd* | netbsdelf*-gnu | knetbsd*-gnu)
+    netbsd* | knetbsd*-gnu)
       if echo __ELF__ | $CC -E - | grep __ELF__ >/dev/null; then
 	archive_cmds_GCJ='$LD -Bshareable $libobjs $deplibs $linker_flags -o $lib'
 	wlarc=
@@ -16755,7 +16719,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
       link_all_deplibs_GCJ=yes
       ;;
 
-    netbsd* | netbsdelf*-gnu | knetbsd*-gnu)
+    netbsd* | knetbsd*-gnu)
       if echo __ELF__ | $CC -E - | grep __ELF__ >/dev/null; then
 	archive_cmds_GCJ='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'  # a.out
       else
@@ -17402,18 +17366,6 @@ linux*)
   # people can always --disable-shared, the test was removed, and we
   # assume the GNU/Linux dynamic linker is in use.
   dynamic_linker='GNU/Linux ld.so'
-  ;;
-
-netbsdelf*-gnu)
-  version_type=linux
-  need_lib_prefix=no
-  need_version=no
-  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
-  soname_spec='${libname}${release}${shared_ext}$major'
-  shlibpath_var=LD_LIBRARY_PATH
-  shlibpath_overrides_runpath=no
-  hardcode_into_libs=yes
-  dynamic_linker='NetBSD ld.elf_so'
   ;;
 
 knetbsd*-gnu)
@@ -18248,7 +18200,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18251 "configure"
+#line 18203 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18346,7 +18298,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18349 "configure"
+#line 18301 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -19458,115 +19410,6 @@ else
 fi
 
 
-WARN_CFLAGS=""
-
-if test "x$GCC" = "xyes"; then
-	WARN_CFLAGS="-Wall -Wpointer-arith -Wstrict-prototypes \
-	-Wmissing-prototypes -Wmissing-declarations \
-	-Wnested-externs -fno-strict-aliasing"
-fi
-
-
-
-
-
-if test $cross_compiling = yes; then
-  CROSS_COMPILING_TRUE=
-  CROSS_COMPILING_FALSE='#'
-else
-  CROSS_COMPILING_TRUE='#'
-  CROSS_COMPILING_FALSE=
-fi
-
-
-
-# Setup for compiling build tools (fc-glyphname, etc)
-echo "$as_me:$LINENO: checking for a C compiler for build tools" >&5
-echo $ECHO_N "checking for a C compiler for build tools... $ECHO_C" >&6
-if test $cross_compiling = yes; then
-  for ac_prog in gcc cc
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_CC_FOR_BUILD+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$CC_FOR_BUILD"; then
-  ac_cv_prog_CC_FOR_BUILD="$CC_FOR_BUILD" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CC_FOR_BUILD="$ac_prog"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-CC_FOR_BUILD=$ac_cv_prog_CC_FOR_BUILD
-if test -n "$CC_FOR_BUILD"; then
-  echo "$as_me:$LINENO: result: $CC_FOR_BUILD" >&5
-echo "${ECHO_T}$CC_FOR_BUILD" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-  test -n "$CC_FOR_BUILD" && break
-done
-
-else
-  CC_FOR_BUILD=$CC
-fi
-echo "$as_me:$LINENO: result: $CC_FOR_BUILD" >&5
-echo "${ECHO_T}$CC_FOR_BUILD" >&6
-
-
-echo "$as_me:$LINENO: checking for suffix of executable build tools" >&5
-echo $ECHO_N "checking for suffix of executable build tools... $ECHO_C" >&6
-if test $cross_compiling = yes; then
-  cat >conftest.c <<\_______EOF
-int
-main ()
-{
-  exit (0);
-}
-_______EOF
-  for i in .exe ""; do
-    compile="$CC_FOR_BUILD conftest.c -o conftest$i"
-    if { (eval echo "$as_me:$LINENO: \"$compile\"") >&5
-  (eval $compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-      if (./conftest) 2>&5; then
-	EXEEXT_FOR_BUILD=$i
-	break
-      fi
-    fi
-  done
-  rm -f conftest*
-  if test "${EXEEXT_FOR_BUILD+set}" != set; then
-    { { echo "$as_me:$LINENO: error: Cannot determine suffix of executable build tools" >&5
-echo "$as_me: error: Cannot determine suffix of executable build tools" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-else
-  EXEEXT_FOR_BUILD=$EXEEXT
-fi
-echo "$as_me:$LINENO: result: $EXEEXT_FOR_BUILD" >&5
-echo "${ECHO_T}$EXEEXT_FOR_BUILD" >&6
-
-
 
 # Checks for header files.
 
@@ -20063,8 +19906,7 @@ fi
 
 
 
-
-for ac_header in fcntl.h stdlib.h string.h unistd.h iconv.h
+for ac_header in fcntl.h stdlib.h string.h unistd.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -20597,8 +20439,7 @@ done
 
 
 
-
-for ac_func in geteuid getuid link memmove memset mkstemp strchr strrchr strtol getopt getopt_long iconv
+for ac_func in geteuid getuid link memmove memset mkstemp strchr strrchr strtol getopt getopt_long
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -20769,23 +20610,17 @@ FREETYPE_LIBS="`$ft_config --libs`"
 
 
 #
-# Check to see whether we have:
-#  FT_Get_Next_Char
-#  FT_Get_BDF_Property
-#  FT_Get_PS_Font_Info
-#  FT_Has_PS_Glyph_Names
+# Check to see whether we have FT_Get_First_Char(), new in 2.0.9
 #
 
-fontconfig_save_libs="$LIBS"
+fontconfig_save_libs=$LIBS
 fontconfig_save_cflags="$CFLAGS"
 LIBS="$LIBS $FREETYPE_LIBS"
 CFLAGS="$CFLAGS $FREETYPE_CFLAGS"
 
 
 
-
-
-for ac_func in FT_Get_Next_Char FT_Get_BDF_Property FT_Get_PS_Font_Info FT_Has_PS_Glyph_Names FT_Get_X11_Font_Format
+for ac_func in FT_Get_First_Char FT_Get_Next_Char FT_Get_BDF_Property
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -21036,16 +20871,7 @@ no)
 	;;
 *)
 	case "$expat_includes" in
-	yes)
-		case "$expat" in
-		yes)
-			;;
-		*)
-			EXPAT_CFLAGS="-I$expat/include"
-			;;
-		esac
-		;;
-	no)
+	yes|no)
 		EXPAT_CFLAGS=""
 		;;
 	*)
@@ -21379,7 +21205,7 @@ _ACEOF
 		;;
 	yes)
 
-for ac_func in XML_SetDoctypeDeclHandler
+for ac_func in XML_ParserCreate
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -21479,7 +21305,10 @@ _ACEOF
 fi
 done
 
-		case "$ac_cv_func_XML_SetDoctypeDeclHandler" in
+		case "$ac_cv_func_XML_ParserCreate" in
+		no)
+			expat=no
+			;;
 		yes)
 			HAVE_EXPAT=1
 
@@ -21488,9 +21317,6 @@ cat >>confdefs.h <<_ACEOF
 #define HAVE_EXPAT $HAVE_EXPAT
 _ACEOF
 
-			;;
-		*)
-			expat=no
 			;;
 		esac
 		;;
@@ -21504,8 +21330,8 @@ esac
 
 case "$expat" in
 no)
-	{ { echo "$as_me:$LINENO: error: Cannot find usable expat library. This could mean that your version is too old." >&5
-echo "$as_me: error: Cannot find usable expat library. This could mean that your version is too old." >&2;}
+	{ { echo "$as_me:$LINENO: error: cannot find expat library" >&5
+echo "$as_me: error: cannot find expat library" >&2;}
    { (exit 1); exit 1; }; }
 	;;
 esac
@@ -21573,16 +21399,19 @@ yes)
 	for dir in /usr/X11R6/lib/X11 /usr/X11/lib/X11 /usr/lib/X11; do
 		case x"$FC_ADD_FONTS" in
 		x)
-			sub="$dir/fonts"
-			if test -d "$sub"; then
-				case x$FC_ADD_FONTS in
-				x)
-					FC_ADD_FONTS="$sub"
-					;;
-				*)
-					FC_ADD_FONTS="$FC_ADD_FONTS,$sub"
-					;;
-				esac
+			if test -d "$dir/fonts"; then
+				for sub in "$dir"/fonts/*; do
+					if ls "$sub" | grep -q -i '\.pf\|\.tt\|\.ot'; then
+						case x$FC_ADD_FONTS in
+						x)
+							FC_ADD_FONTS="$sub"
+							;;
+						*)
+							FC_ADD_FONTS="$FC_ADD_FONTS,$sub"
+							;;
+						esac
+					fi
+				done
 			fi
 			;;
 		esac
@@ -21614,14 +21443,13 @@ case "$FC_ADD_FONTS" in
 "")
 	;;
 *)
-	FC_FONTPATH=`echo $FC_ADD_FONTS |
-			sed -e 's/^/<dir>/' -e 's/$/<\/dir>/' -e 's/,/<\/dir> <dir>/g'`
+	FC_FONTPATH=`echo $FC_ADD_FONTS | sed -e 's/^/<dir>/' -e 's/$/<\/dir>/' -e 's/,/<\/dir> <dir>/g'`
 	;;
 esac
 
 
 
-FC_FONTDATE=`LC_ALL=C date`
+FC_FONTDATE=`date`
 
 
 
@@ -21702,36 +21530,19 @@ echo "${ECHO_T}no" >&6
 fi
 
 
-
-
-if test "x$HASDOCBOOK" = xyes; then
-  USEDOCBOOK_TRUE=
-  USEDOCBOOK_FALSE='#'
-else
-  USEDOCBOOK_TRUE='#'
-  USEDOCBOOK_FALSE=
-fi
-
-
-default_docs="yes"
-#
-# Check if docs exist or can be created
-#
-if test x$HASDOCBOOK = xno; then
-	if test -f doc/fonts-conf.5; then
-		:
-	else
-		default_docs="no"
-	fi
-fi
-
 # Check whether --enable-docs or --disable-docs was given.
 if test "${enable_docs+set}" = set; then
   enableval="$enable_docs"
 
 else
-  enable_docs=$default_docs
+  enable_docs=yes
 fi;
+
+if test "x$enable_docs" = xyes; then
+  if test "x$HASDOCBOOK" != xyes; then
+    enable_docs=no
+  fi
+fi
 
 
 
@@ -21742,24 +21553,6 @@ else
   ENABLE_DOCS_TRUE='#'
   ENABLE_DOCS_FALSE=
 fi
-
-
-if test "x$enable_docs" = xyes; then
-	DOCSRC="doc"
-	tmp=funcs.$$
-	cat $srcdir/doc/*.fncs | awk '
-	/^@TITLE@/	{ if (!done) { printf ("%s\n", $2); done = 1; } }
-	/^@FUNC@/	{ if (!done) { printf ("%s\n", $2); done = 1; } }
-	/^@@/		{ done = 0; }' > $tmp
-	DOCMAN3=`cat $tmp | awk '{ printf ("%s.3 ", $1); }'`
-	echo DOCMAN3 $DOCMAN3
-	rm -f $tmp
-else
-	DOCSRC=""
-	DOCMAN3=""
-fi
-
-
 
 
 #
@@ -21781,7 +21574,7 @@ fi
 
 
 
-                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile fontconfig/Makefile fc-lang/Makefile fc-glyphname/Makefile fc-case/Makefile src/Makefile src/fontconfig.def conf.d/Makefile fc-cache/Makefile fc-list/Makefile fc-match/Makefile doc/Makefile doc/version.sgml test/Makefile fontconfig.spec fontconfig.pc fonts.conf fontconfig-zip"
+                                                                                                                                            ac_config_files="$ac_config_files Makefile fontconfig/Makefile fc-lang/Makefile src/Makefile src/fontconfig.def fc-cache/Makefile fc-list/Makefile doc/Makefile doc/version.sgml test/Makefile fontconfig.spec fontconfig.pc fonts.conf fontconfig-zip"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -21912,20 +21705,6 @@ if test -z "${MS_LIB_AVAILABLE_TRUE}" && test -z "${MS_LIB_AVAILABLE_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"MS_LIB_AVAILABLE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"MS_LIB_AVAILABLE\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${CROSS_COMPILING_TRUE}" && test -z "${CROSS_COMPILING_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"CROSS_COMPILING\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"CROSS_COMPILING\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${USEDOCBOOK_TRUE}" && test -z "${USEDOCBOOK_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"USEDOCBOOK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"USEDOCBOOK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -22383,14 +22162,10 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "fontconfig/Makefile" ) CONFIG_FILES="$CONFIG_FILES fontconfig/Makefile" ;;
   "fc-lang/Makefile" ) CONFIG_FILES="$CONFIG_FILES fc-lang/Makefile" ;;
-  "fc-glyphname/Makefile" ) CONFIG_FILES="$CONFIG_FILES fc-glyphname/Makefile" ;;
-  "fc-case/Makefile" ) CONFIG_FILES="$CONFIG_FILES fc-case/Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "src/fontconfig.def" ) CONFIG_FILES="$CONFIG_FILES src/fontconfig.def" ;;
-  "conf.d/Makefile" ) CONFIG_FILES="$CONFIG_FILES conf.d/Makefile" ;;
   "fc-cache/Makefile" ) CONFIG_FILES="$CONFIG_FILES fc-cache/Makefile" ;;
   "fc-list/Makefile" ) CONFIG_FILES="$CONFIG_FILES fc-list/Makefile" ;;
-  "fc-match/Makefile" ) CONFIG_FILES="$CONFIG_FILES fc-match/Makefile" ;;
   "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
   "doc/version.sgml" ) CONFIG_FILES="$CONFIG_FILES doc/version.sgml" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
@@ -22565,11 +22340,6 @@ s,@OS_WIN32_FALSE@,$OS_WIN32_FALSE,;t t
 s,@ms_librarian@,$ms_librarian,;t t
 s,@MS_LIB_AVAILABLE_TRUE@,$MS_LIB_AVAILABLE_TRUE,;t t
 s,@MS_LIB_AVAILABLE_FALSE@,$MS_LIB_AVAILABLE_FALSE,;t t
-s,@WARN_CFLAGS@,$WARN_CFLAGS,;t t
-s,@CROSS_COMPILING_TRUE@,$CROSS_COMPILING_TRUE,;t t
-s,@CROSS_COMPILING_FALSE@,$CROSS_COMPILING_FALSE,;t t
-s,@CC_FOR_BUILD@,$CC_FOR_BUILD,;t t
-s,@EXEEXT_FOR_BUILD@,$EXEEXT_FOR_BUILD,;t t
 s,@ft_config@,$ft_config,;t t
 s,@FREETYPE_LIBS@,$FREETYPE_LIBS,;t t
 s,@FREETYPE_CFLAGS@,$FREETYPE_CFLAGS,;t t
@@ -22585,12 +22355,8 @@ s,@confdir@,$confdir,;t t
 s,@CONFDIR@,$CONFDIR,;t t
 s,@ORTH_FILES@,$ORTH_FILES,;t t
 s,@HASDOCBOOK@,$HASDOCBOOK,;t t
-s,@USEDOCBOOK_TRUE@,$USEDOCBOOK_TRUE,;t t
-s,@USEDOCBOOK_FALSE@,$USEDOCBOOK_FALSE,;t t
 s,@ENABLE_DOCS_TRUE@,$ENABLE_DOCS_TRUE,;t t
 s,@ENABLE_DOCS_FALSE@,$ENABLE_DOCS_FALSE,;t t
-s,@DOCSRC@,$DOCSRC,;t t
-s,@DOCMAN3@,$DOCMAN3,;t t
 s,@DOCDIR@,$DOCDIR,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t

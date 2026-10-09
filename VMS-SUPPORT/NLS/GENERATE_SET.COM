@@ -25,8 +25,7 @@ $ directory = directory + letter
 $ index = index + 1
 $ GOTO escape_loop
 $ escaped:
-$ source = "[.NLS." + P1 + "]" + locale
-$ IF F$LOCATE(".",locale) .EQ. F$LENGTH(locale) THEN source = source + "."
+$ source = "[.LIB.LIBX11.NLS." + directory + "]" + P1 + ".PRE"
 $ destination = prefix + directory + "]" + P1 + "."
 $ @[.VMS-SUPPORT.NLS]GENERATE.COM 'source' 'destination' "''option'"
 $ result = $STATUS

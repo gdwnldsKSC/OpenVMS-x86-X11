@@ -1,22 +1,24 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML
 ><HEAD
 ><TITLE
->FcNameRegisterConstants</TITLE
+>FcNameGetConstant</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
 REL="HOME"
+TITLE="Fontconfig Developers Reference, Version 2.2.3
+ "
 HREF="index.html"><LINK
 REL="UP"
 TITLE="FcConstant"
-HREF="x93.html#AEN2325"><LINK
+HREF="x93.html#AEN2277"><LINK
 REL="PREVIOUS"
-TITLE="FUNCTIONS"
-HREF="x93.html"><LINK
-REL="NEXT"
 TITLE="FcNameUnregisterConstants"
-HREF="r2352.html"></HEAD
+HREF="r2304.html"><LINK
+REL="NEXT"
+TITLE="FcNameConstant"
+HREF="r2350.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -36,7 +38,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
-></TH
+>Fontconfig Developers Reference, Version 2.2.3</TH
 ></TR
 ><TR
 ><TD
@@ -44,7 +46,7 @@ WIDTH="10%"
 ALIGN="left"
 VALIGN="bottom"
 ><A
-HREF="x93.html"
+HREF="r2304.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -58,7 +60,7 @@ WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
 ><A
-HREF="r2352.html"
+HREF="r2350.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -69,9 +71,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCNAMEREGISTERCONSTANTS"
+NAME="FCNAMEGETCONSTANT"
 ></A
->FcNameRegisterConstants</H1
+>FcNameGetConstant</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -79,7 +81,7 @@ NAME="AEN2332"
 ></A
 ><H2
 >Name</H2
->FcNameRegisterConstants&nbsp;--&nbsp;Register symbolic constants</DIV
+>FcNameGetConstant&nbsp;--&nbsp;Lookup symbolic constant</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -102,8 +104,8 @@ CLASS="FUNCSYNOPSISINFO"
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->FcBool FcNameRegisterConstants</CODE
->(const FcConstant *consts, intnconsts);</CODE
+>const FcConstant * FcNameGetConstant</CODE
+>(FcChar8 *string);</CODE
 ></P
 ><P
 ></P
@@ -112,26 +114,26 @@ CLASS="FUNCDEF"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN2345"
+NAME="AEN2343"
 ></A
 ><H2
 >Description</H2
 ><P
->Register <CODE
+>Return the FcConstant structure related to symbolic constant <VAR
 CLASS="PARAMETER"
->nconsts</CODE
-> new symbolic constants.
+>string</VAR
+>.
 	    </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN2349"
+NAME="AEN2347"
 ></A
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.3.2
+>Fontconfig version 2.2.3
 
 	    </P
 ></DIV
@@ -151,7 +153,7 @@ WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
 ><A
-HREF="x93.html"
+HREF="r2304.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -169,7 +171,7 @@ WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
 ><A
-HREF="r2352.html"
+HREF="r2350.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -179,13 +181,13 @@ ACCESSKEY="N"
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FUNCTIONS</TD
+>FcNameUnregisterConstants</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN2325"
+HREF="x93.html#AEN2277"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -193,7 +195,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->FcNameUnregisterConstants</TD
+>FcNameConstant</TD
 ></TR
 ></TABLE
 ></DIV

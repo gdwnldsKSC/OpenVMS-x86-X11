@@ -1,22 +1,24 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML
 ><HEAD
 ><TITLE
->FcPatternDestroy</TITLE
+>FcPatternEqual</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
 REL="HOME"
+TITLE="Fontconfig Developers Reference, Version 2.2.3
+ "
 HREF="index.html"><LINK
 REL="UP"
 TITLE="FcPattern"
-HREF="x93.html#AEN246"><LINK
+HREF="x93.html#AEN225"><LINK
 REL="PREVIOUS"
-TITLE="FcPatternCreate"
+TITLE="FcPatternDestroy"
 HREF="r249.html"><LINK
 REL="NEXT"
-TITLE="FcPatternEqual"
-HREF="r291.html"></HEAD
+TITLE="FcPatternEqualSubset"
+HREF="r295.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -36,7 +38,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
-></TH
+>Fontconfig Developers Reference, Version 2.2.3</TH
 ></TR
 ><TR
 ><TD
@@ -58,7 +60,7 @@ WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
 ><A
-HREF="r291.html"
+HREF="r295.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -69,9 +71,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCPATTERNDESTROY"
+NAME="FCPATTERNEQUAL"
 ></A
->FcPatternDestroy</H1
+>FcPatternEqual</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -79,7 +81,7 @@ NAME="AEN274"
 ></A
 ><H2
 >Name</H2
->FcPatternDestroy&nbsp;--&nbsp;Destroy a pattern</DIV
+>FcPatternEqual&nbsp;--&nbsp;Compare patterns</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -102,8 +104,8 @@ CLASS="FUNCSYNOPSISINFO"
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->void FcPatternDestroy</CODE
->(FcPattern *p);</CODE
+>FcBool FcPatternEqual</CODE
+>(const FcPattern *pa, const FcPattern *pb);</CODE
 ></P
 ><P
 ></P
@@ -112,23 +114,29 @@ CLASS="FUNCDEF"
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN285"
+NAME="AEN287"
 ></A
 ><H2
 >Description</H2
 ><P
->Destroys a pattern, in the process destroying all related values.
+>Returns whether <VAR
+CLASS="PARAMETER"
+>pa</VAR
+> and <VAR
+CLASS="PARAMETER"
+>pb</VAR
+> are exactly alike.
 	    </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN288"
+NAME="AEN292"
 ></A
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.3.2
+>Fontconfig version 2.2.3
 
 	    </P
 ></DIV
@@ -166,7 +174,7 @@ WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
 ><A
-HREF="r291.html"
+HREF="r295.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -176,13 +184,13 @@ ACCESSKEY="N"
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FcPatternCreate</TD
+>FcPatternDestroy</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN246"
+HREF="x93.html#AEN225"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -190,7 +198,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->FcPatternEqual</TD
+>FcPatternEqualSubset</TD
 ></TR
 ></TABLE
 ></DIV

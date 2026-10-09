@@ -7,7 +7,7 @@ $ result = 2
 $ step = "arguments"
 $ target = F$EDIT(P1,"UPCASE,TRIM")
 $ IF target .EQS. "" THEN target = "ALL"
-$ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|XFONT|FNTSTUBS|FS|PSRES|REGEX|ICE|SM|BDFTOPCF|FSLSFONTS|SHOWFONT|XFSINFO|ICEAUTH|MAKEPSRES|SHOWRGB|MAKESTRS|MAKEDEPEND|LNDIR|ATOBM|GTF|FREETYPE2|MKFONTSCALE|FONTTOSFNT|REVPATH|RMAN|"
+$ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|XFONT|FNTSTUBS|FS|ICE|SM|BDFTOPCF|FSLSFONTS|SHOWFONT|XFSINFO|ICEAUTH|SHOWRGB|MAKESTRS|MAKEDEPEND|LNDIR|ATOBM|GTF|FREETYPE2|MKFONTSCALE|FONTTOSFNT|REVPATH|"
 $ targets = targets + "UCS2ANY|DAMAGE|MI|CBRT|FB|RENDER|DIX|XPSTUBS|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|"
 $ targets = targets + "CFB|CFB16|CFB24|CFB32|XKBFILE|XKBUI|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ targets = targets + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
@@ -29,7 +29,7 @@ $ step = "locate source tree"
 $ support_directory = F$PARSE(procedure,,,"DEVICE") + F$PARSE(procedure,,,"DIRECTORY")
 $ SET DEFAULT 'support_directory'
 $ SET DEFAULT [-]
-$ IF F$SEARCH("[.INCLUDE]XFUNCPROTO.H") .EQS. "" THEN GOTO missing_source
+$ IF F$SEARCH("[.PROTO.XPROTO]XFUNCPROTO.H") .EQS. "" THEN GOTO missing_source
 $ step = "create output directories"
 $ IF F$SEARCH("[.VMS-SUPPORT]_BUILD.DIR") .EQS. "" THEN CREATE/DIRECTORY [.VMS-SUPPORT._BUILD]
 $ profile = "[.VMS-SUPPORT._BUILD.P64"
@@ -37,8 +37,6 @@ $ directory = profile + "]"
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD]P64.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE]"
 $ IF F$SEARCH(profile + "]INCLUDE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".INCLUDE.DPS]"
-$ IF F$SEARCH(profile + ".INCLUDE]DPS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.FREETYPE2]"
 $ IF F$SEARCH(profile + ".INCLUDE]FREETYPE2.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.FREETYPE2.FREETYPE]"
@@ -95,10 +93,6 @@ $ directory = profile + ".LIB.FNTSTUBS]"
 $ IF F$SEARCH(profile + ".LIB]FNTSTUBS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FS]"
 $ IF F$SEARCH(profile + ".LIB]FS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".LIB.PSRES]"
-$ IF F$SEARCH(profile + ".LIB]PSRES.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".LIB.REGEX]"
-$ IF F$SEARCH(profile + ".LIB]REGEX.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.ICE]"
 $ IF F$SEARCH(profile + ".LIB]ICE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.SM]"
@@ -201,8 +195,6 @@ $ directory = profile + ".PROGRAMS.XWININFO]"
 $ IF F$SEARCH(profile + ".PROGRAMS]XWININFO.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.ICEAUTH]"
 $ IF F$SEARCH(profile + ".PROGRAMS]ICEAUTH.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".PROGRAMS.MAKEPSRES]"
-$ IF F$SEARCH(profile + ".PROGRAMS]MAKEPSRES.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.SHOWRGB]"
 $ IF F$SEARCH(profile + ".PROGRAMS]SHOWRGB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.BITMAP]"

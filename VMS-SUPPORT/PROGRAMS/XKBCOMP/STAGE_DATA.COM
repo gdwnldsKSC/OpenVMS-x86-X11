@@ -26,7 +26,7 @@ $ SET DEFAULT 'support_directory'
 $ SET DEFAULT [-]
 $ SET DEFAULT [-]
 $ SET DEFAULT [-]
-$ IF F$SEARCH("[.PROGRAMS.XKBCOMP]IMAKEFILE.") .EQS. "" THEN GOTO usage
+$ IF F$SEARCH("[.DATA.XKBDATA]MAKEFILE.AM") .EQS. "" THEN GOTO usage
 $ destination = F$PARSE(P1,,,"DEVICE","SYNTAX_ONLY") + F$PARSE(P1,,,"DIRECTORY","SYNTAX_ONLY")
 $ IF F$PARSE(destination,,,"DIRECTORY","SYNTAX_ONLY") .EQS. "[000000]" THEN GOTO usage
 $ IF destination .EQS. F$ENVIRONMENT("DEFAULT") THEN GOTO usage
@@ -43,7 +43,7 @@ $ IF F$EXTRACT(0,1,line) .EQS. "!" THEN GOTO next
 $ relative = F$ELEMENT(0,"|",line)
 $ GOSUB native_relative
 $ IF result .NE. 1 THEN GOTO done
-$ source = "[.PROGRAMS.XKBCOMP" + relative_directory + "]" + relative_name
+$ source = "[.DATA.XKBDATA" + relative_directory + "]" + relative_name
 $ source = F$SEARCH(source)
 $ IF source .EQS. "" THEN GOTO missing
 $ relative = F$ELEMENT(1,"|",line)

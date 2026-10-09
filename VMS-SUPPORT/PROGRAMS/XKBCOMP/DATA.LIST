@@ -1,4 +1,4 @@
-! Upstream xkbcomp Imakefile installation: source|destination
+! Upstream xkbdata Makefile.am distributed-data installation: source|destination
 compat/accessx|compat/accessx
 compat/basic|compat/basic
 compat/complete|compat/complete
@@ -17,7 +17,6 @@ compat/pc98|compat/pc98
 compat/README|compat/README
 compat/xfree86|compat/xfree86
 compat/xtest|compat/xtest
-compiled/README|compiled/README
 geometry/amiga|geometry/amiga
 geometry/ataritt|geometry/ataritt
 geometry/chicony|geometry/chicony
@@ -106,18 +105,15 @@ keymap/sun/uk|keymap/sun/uk
 keymap/sun/us|keymap/sun/us
 keymap/xfree86|keymap/xfree86
 keymap/xfree98|keymap/xfree98
-README|README
-README.config|README.config
-README.enhancing|README.enhancing
 rules/README|rules/README
 rules/sgi|rules/sgi
 rules/sgi.lst|rules/sgi.lst
 rules/sun|rules/sun
 rules/sun.lst|rules/sun.lst
-rules/xorg|rules/xfree86
-rules/xorg-it.lst|rules/xfree86-it.lst
-rules/xorg.lst|rules/xfree86.lst
-rules/xorg.xml|rules/xfree86.xml
+rules/xfree98|rules/xfree98
+rules/xfree98.lst|rules/xfree98.lst
+rules/xkb.dtd|rules/xkb.dtd
+rules/xml2lst.pl|rules/xml2lst.pl
 rules/xorg|rules/xorg
 rules/xorg-it.lst|rules/xorg-it.lst
 rules/xorg.lst|rules/xorg.lst
@@ -195,6 +191,8 @@ symbols/level3|symbols/level3
 symbols/lo|symbols/lo
 symbols/lock|symbols/lock
 symbols/lt|symbols/lt
+symbols/lt_a|symbols/lt_a
+symbols/lt_p|symbols/lt_p
 symbols/lt_std|symbols/lt_std
 symbols/lv|symbols/lv
 symbols/macintosh/de|symbols/macintosh/de
@@ -214,6 +212,7 @@ symbols/macintosh/us|symbols/macintosh/us
 symbols/mk|symbols/mk
 symbols/ml|symbols/ml
 symbols/mm|symbols/mm
+symbols/mn|symbols/mn
 symbols/mt|symbols/mt
 symbols/mt_us|symbols/mt_us
 symbols/nec/jp|symbols/nec/jp
@@ -330,7 +329,23 @@ symbols/vn|symbols/vn
 symbols/xfree68/amiga|symbols/xfree68/amiga
 symbols/xfree68/ataritt|symbols/xfree68/ataritt
 symbols/yu|symbols/yu
+torture/indicator|torture/indicator
+torture/indicator1|torture/indicator1
+torture/indicator2|torture/indicator2
+torture/indicator3|torture/indicator3
+torture/mod_compat|torture/mod_compat
+torture/mod_compat1|torture/mod_compat1
+torture/mod_compat2|torture/mod_compat2
+torture/mod_compat3|torture/mod_compat3
+torture/mod_compat4|torture/mod_compat4
+torture/sym_interp|torture/sym_interp
+torture/sym_interp1|torture/sym_interp1
+torture/sym_interp2|torture/sym_interp2
+torture/sym_interp3|torture/sym_interp3
+torture/sym_interp4|torture/sym_interp4
+torture/types|torture/types
 types/basic|types/basic
+types/cancel|types/cancel
 types/caps|types/caps
 types/complete|types/complete
 types/default|types/default

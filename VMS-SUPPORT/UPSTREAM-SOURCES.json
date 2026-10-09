@@ -1,0 +1,2438 @@
+{
+  "release": "X11R7.0",
+  "source_index": "https://xorg.freedesktop.org/archive/X11R7.0/src/",
+  "packages": [
+    {
+      "path": "app/appres",
+      "release_archive": "appres-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/appres-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "bbc15785d609c7f26176b91d26354ca7bfcc5d9fe72d15a78f2809eeba1cb6b0",
+      "bytes": 74597,
+      "acquired_utc": "2026-10-09T16:25:29.364440+00:00"
+    },
+    {
+      "path": "app/bdftopcf",
+      "release_archive": "bdftopcf-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/bdftopcf-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "59760e300acf5b616400d08ac97d8ea265dfbb872b6131c65eb6246c61654803",
+      "bytes": 74661,
+      "acquired_utc": "2026-10-09T16:25:29.400395+00:00"
+    },
+    {
+      "path": "app/beforelight",
+      "release_archive": "beforelight-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/beforelight-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "76c42ee8e503a34b2a95fff59bc00e342f9a8f69e677ba63123f5f53cd41ce18",
+      "bytes": 77142,
+      "acquired_utc": "2026-10-09T16:25:29.383309+00:00"
+    },
+    {
+      "path": "app/bitmap",
+      "release_archive": "bitmap-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/bitmap-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "ac6a5c3f4aa88f39e8f04fe43f00972f0235674ac3edb994c70ac802a1ed0219",
+      "bytes": 117790,
+      "acquired_utc": "2026-10-09T16:25:29.492845+00:00"
+    },
+    {
+      "path": "app/editres",
+      "release_archive": "editres-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/editres-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "1373ded7c35c38e479122ac1fd8a85682a533612538645c79d09992abcbaab10",
+      "bytes": 115967,
+      "acquired_utc": "2026-10-09T16:25:29.467661+00:00"
+    },
+    {
+      "path": "app/fonttosfnt",
+      "release_archive": "fonttosfnt-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/fonttosfnt-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "77fb4d23dfa8c12d69ccfda71f482af9804132fab800610970cd5fe9944a3016",
+      "bytes": 90512,
+      "acquired_utc": "2026-10-09T16:25:29.404782+00:00"
+    },
+    {
+      "path": "app/fslsfonts",
+      "release_archive": "fslsfonts-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/fslsfonts-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "662c12ac9aa7009d3fdf1d1682417a86a5a332c46f6f2f17887d370c9adf8b21",
+      "bytes": 76899,
+      "acquired_utc": "2026-10-09T16:25:29.399967+00:00"
+    },
+    {
+      "path": "app/fstobdf",
+      "release_archive": "fstobdf-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/fstobdf-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "568896b458a4a8682a78a03248463a182bf3a34c18753a72cb9ca2c1bec3498c",
+      "bytes": 78666,
+      "acquired_utc": "2026-10-09T16:25:29.413010+00:00"
+    },
+    {
+      "path": "app/iceauth",
+      "release_archive": "iceauth-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/iceauth-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "46a02c0dddbe80fbd802da47d0a9eac03002deb538b109dae804553fbbdfa7bd",
+      "bytes": 84372,
+      "acquired_utc": "2026-10-09T16:25:29.868707+00:00"
+    },
+    {
+      "path": "app/ico",
+      "release_archive": "ico-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/ico-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "9c8a1d037135642ab85391f92332fdfc22ceeb3ad1f2c0c9911ac5a62a12ee7d",
+      "bytes": 85686,
+      "acquired_utc": "2026-10-09T16:25:29.899276+00:00"
+    },
+    {
+      "path": "app/lbxproxy",
+      "release_archive": "lbxproxy-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/lbxproxy-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "35360dd6160d94a981d923486a026fe91dfc3e0db2f5923aeb782b7e9c5e606f",
+      "bytes": 179860,
+      "acquired_utc": "2026-10-09T16:25:30.005808+00:00"
+    },
+    {
+      "path": "app/listres",
+      "release_archive": "listres-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/listres-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "41711ff3c94144b8a561146948b9b5fd49a55756532fa4d254d9a959e6622d87",
+      "bytes": 76647,
+      "acquired_utc": "2026-10-09T16:25:29.917204+00:00"
+    },
+    {
+      "path": "app/luit",
+      "release_archive": "luit-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/luit-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "fb423dc3ae75e64a256172c873732fe869ae482409cf1f3e7d980d222f070cee",
+      "bytes": 92017,
+      "acquired_utc": "2026-10-09T16:25:29.904900+00:00"
+    },
+    {
+      "path": "app/mkcfm",
+      "release_archive": "mkcfm-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/mkcfm-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "25cba395022c878cf0323da5b2b4aba1cca03001311a4e2d7632d6a199806294",
+      "bytes": 75940,
+      "acquired_utc": "2026-10-09T16:25:29.914047+00:00"
+    },
+    {
+      "path": "app/mkfontdir",
+      "release_archive": "mkfontdir-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/mkfontdir-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "409f2fdfd87b5185ca651197c1d1facc22619bc1399bfb8dda8fda1fbb6205b2",
+      "bytes": 60892,
+      "acquired_utc": "2026-10-09T16:25:29.963317+00:00"
+    },
+    {
+      "path": "app/mkfontscale",
+      "release_archive": "mkfontscale-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/mkfontscale-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "e83b80b4ccd7863223fac4a2d54974a64a79c635d6bdda0c6e7039f966eae9e2",
+      "bytes": 87485,
+      "acquired_utc": "2026-10-09T16:25:30.010654+00:00"
+    },
+    {
+      "path": "app/oclock",
+      "release_archive": "oclock-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/oclock-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "341d98894e76b4e3531c923b22bbb7603788a6f614a795c6285c339f6534bee9",
+      "bytes": 83165,
+      "acquired_utc": "2026-10-09T16:25:30.376898+00:00"
+    },
+    {
+      "path": "app/proxymngr",
+      "release_archive": "proxymngr-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/proxymngr-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "f1ce23f66ed90c4be505f23c5b659ce48578099521663e788733315f3c36fdb2",
+      "bytes": 91718,
+      "acquired_utc": "2026-10-09T16:25:30.425247+00:00"
+    },
+    {
+      "path": "app/rgb",
+      "release_archive": "rgb-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/rgb-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "97aa9c7c1f7f0ef29d6be741a421f92ca27662775c7a5dd7734c38137ff0f82a",
+      "bytes": 87271,
+      "acquired_utc": "2026-10-09T16:25:30.408499+00:00"
+    },
+    {
+      "path": "app/rstart",
+      "release_archive": "rstart-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/rstart-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "d662e932154df4d99ffcf29cd1efe5adb7b0eb1841ccffe9155b9c5d8055434c",
+      "bytes": 88773,
+      "acquired_utc": "2026-10-09T16:25:30.422933+00:00"
+    },
+    {
+      "path": "app/scripts",
+      "release_archive": "scripts-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/scripts-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "b502bc765cffc23189b77ba4d22e843fe03404bfab4e24b97ff4daee58176b33",
+      "bytes": 72337,
+      "acquired_utc": "2026-10-09T16:25:30.410262+00:00"
+    },
+    {
+      "path": "app/sessreg",
+      "release_archive": "sessreg-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/sessreg-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "3769ad5059a2841a8ee28fc8a7d3a3ca8eb59f4fd46d0bd629829f3841202734",
+      "bytes": 82144,
+      "acquired_utc": "2026-10-09T16:25:30.480209+00:00"
+    },
+    {
+      "path": "app/setxkbmap",
+      "release_archive": "setxkbmap-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/setxkbmap-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "4d710b17c5440518b43d3d1f7cbcb78a62c72f25e48a1b385a0ae3872ec8b40b",
+      "bytes": 80162,
+      "acquired_utc": "2026-10-09T16:25:30.511739+00:00"
+    },
+    {
+      "path": "app/showfont",
+      "release_archive": "showfont-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/showfont-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "58716b9fb29b8b9397577ebddfe01202f7dcd4be90c1f73fab2fb8794b83b390",
+      "bytes": 76966,
+      "acquired_utc": "2026-10-09T16:25:30.512844+00:00"
+    },
+    {
+      "path": "app/smproxy",
+      "release_archive": "smproxy-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/smproxy-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "c56617fd511eac4bdcff5b9b171be0aeacb7d8ddfe48615aa61295cf90b62888",
+      "bytes": 82934,
+      "acquired_utc": "2026-10-09T16:25:30.865557+00:00"
+    },
+    {
+      "path": "app/twm",
+      "release_archive": "twm-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/twm-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "2ce51682b63d1f3f3c566bddf84f74105634247d7b4ef559dd3f0199c9e6d41e",
+      "bytes": 220067,
+      "acquired_utc": "2026-10-09T16:25:31.091913+00:00"
+    },
+    {
+      "path": "app/viewres",
+      "release_archive": "viewres-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/viewres-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "0ee43fd2dd9c8b60fad0e3d89bb04dcb8d7e398b33bbcc603a8e0900c3144a28",
+      "bytes": 84830,
+      "acquired_utc": "2026-10-09T16:25:30.912477+00:00"
+    },
+    {
+      "path": "app/x11perf",
+      "release_archive": "x11perf-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/x11perf-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "de56a33aaf723aac41575662b88fca9e90aa493905998290718c02658f516d87",
+      "bytes": 127363,
+      "acquired_utc": "2026-10-09T16:25:31.011855+00:00"
+    },
+    {
+      "path": "app/xauth",
+      "release_archive": "xauth-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xauth-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "cbb271f6c3586210f31953933c4d06bd34272df9c596f5e26124ca3caf8529be",
+      "bytes": 95898,
+      "acquired_utc": "2026-10-09T16:25:30.922195+00:00"
+    },
+    {
+      "path": "app/xbiff",
+      "release_archive": "xbiff-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xbiff-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "c9c899fddcb5053d6cf2a00a933b6e6b0429af547efbe85f89ad3bb35176bbec",
+      "bytes": 83656,
+      "acquired_utc": "2026-10-09T16:25:30.970333+00:00"
+    },
+    {
+      "path": "app/xcalc",
+      "release_archive": "xcalc-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xcalc-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "a1af9c7474307077e69cf86c185c77a3a1454ada64e3abf766fcdee6e92b4fd6",
+      "bytes": 93681,
+      "acquired_utc": "2026-10-09T16:25:30.989868+00:00"
+    },
+    {
+      "path": "app/xclipboard",
+      "release_archive": "xclipboard-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xclipboard-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "74e949dc0fc1d275b60a170975a9bb99a12153687f2a3478b963b1ae4c607d96",
+      "bytes": 83692,
+      "acquired_utc": "2026-10-09T16:25:31.022548+00:00"
+    },
+    {
+      "path": "app/xclock",
+      "release_archive": "xclock-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xclock-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "eb93d5278f5e46f8d7ff5b53a10a03fef09326e72966c3a0b8faa255436ee6b9",
+      "bytes": 100013,
+      "acquired_utc": "2026-10-09T16:25:31.373868+00:00"
+    },
+    {
+      "path": "app/xcmsdb",
+      "release_archive": "xcmsdb-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xcmsdb-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "6e1cdf207ca998acd4e1cc991bde47fcf9d01d24ba733f9d3afe3c64843ef838",
+      "bytes": 96468,
+      "acquired_utc": "2026-10-09T16:25:31.422920+00:00"
+    },
+    {
+      "path": "app/xconsole",
+      "release_archive": "xconsole-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xconsole-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "f62bd7916589515d338055cf977b544d031883659f0ec97cbbd08441256f1059",
+      "bytes": 82259,
+      "acquired_utc": "2026-10-09T16:25:31.429210+00:00"
+    },
+    {
+      "path": "app/xcursorgen",
+      "release_archive": "xcursorgen-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xcursorgen-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "8290616302932e72d4224cbe27d872efa5f44b0b8553ded0bbfb3537abe76907",
+      "bytes": 78039,
+      "acquired_utc": "2026-10-09T16:25:31.486387+00:00"
+    },
+    {
+      "path": "app/xdbedizzy",
+      "release_archive": "xdbedizzy-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xdbedizzy-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "4511dc4df6ebb320a4a516b3b712c86f6924e5ee9832618f58ebba06c64712ea",
+      "bytes": 83105,
+      "acquired_utc": "2026-10-09T16:25:31.495585+00:00"
+    },
+    {
+      "path": "app/xditview",
+      "release_archive": "xditview-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xditview-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "c3662dc4e97f7eb0bbcd7cf952bd9f67218e8ceb8f5418fb6bf61ee5e8ec0392",
+      "bytes": 103002,
+      "acquired_utc": "2026-10-09T16:25:31.601090+00:00"
+    },
+    {
+      "path": "app/xdm",
+      "release_archive": "xdm-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xdm-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "9bf8895b98fb35ee38ac713ce83c80abdd8e33de278e1ddf982a293c31b56b81",
+      "bytes": 333977,
+      "acquired_utc": "2026-10-09T16:25:31.714101+00:00"
+    },
+    {
+      "path": "app/xdpyinfo",
+      "release_archive": "xdpyinfo-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xdpyinfo-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "d97f2872f5400f7fb5c0ad9442eced4bea55ab523de27417bd479db0071e3fed",
+      "bytes": 87616,
+      "acquired_utc": "2026-10-09T16:25:31.609509+00:00"
+    },
+    {
+      "path": "app/xdriinfo",
+      "release_archive": "xdriinfo-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xdriinfo-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "84753f1c33be507ed9c1cc9d5e78565cc61e60d1403e499d7f25603d9a3b4f6b",
+      "bytes": 77365,
+      "acquired_utc": "2026-10-09T16:25:31.872818+00:00"
+    },
+    {
+      "path": "app/xedit",
+      "release_archive": "xedit-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xedit-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "cfbea0872e9963ae3ff61b07000f92d840b65244eec0e1a9750a58a03d70db93",
+      "bytes": 440739,
+      "acquired_utc": "2026-10-09T16:25:32.140845+00:00"
+    },
+    {
+      "path": "app/xev",
+      "release_archive": "xev-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xev-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "eb7ea9a7917fa6d603529e76f793e56baefa87a3034602634c73f9b284adc8b7",
+      "bytes": 79852,
+      "acquired_utc": "2026-10-09T16:25:31.943342+00:00"
+    },
+    {
+      "path": "app/xeyes",
+      "release_archive": "xeyes-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xeyes-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "e93bb322fe96ceabd0581bb70101aaa1001b0b8f894b3ae0e1fa2e4b38f41af2",
+      "bytes": 81054,
+      "acquired_utc": "2026-10-09T16:25:31.990487+00:00"
+    },
+    {
+      "path": "app/xf86dga",
+      "release_archive": "xf86dga-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xf86dga-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "c8c90650a4f0c7e7684738a5f2fdbb92c8278afb315113ae6129b2d0bdd0a865",
+      "bytes": 75128,
+      "acquired_utc": "2026-10-09T16:25:32.000870+00:00"
+    },
+    {
+      "path": "app/xfd",
+      "release_archive": "xfd-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xfd-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "a3fe35b19aa957e5261a12ef78de2c62b47796aa612b2334088b3d98dcd77e8f",
+      "bytes": 88900,
+      "acquired_utc": "2026-10-09T16:25:32.094912+00:00"
+    },
+    {
+      "path": "app/xfindproxy",
+      "release_archive": "xfindproxy-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xfindproxy-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "33e4334126ee11aa6b68e0dc2c1aea0f0d37144240f650f21e10a90db9b05b6c",
+      "bytes": 77638,
+      "acquired_utc": "2026-10-09T16:25:32.129942+00:00"
+    },
+    {
+      "path": "app/xfontsel",
+      "release_archive": "xfontsel-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xfontsel-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "b87b5f171cb4d61e35ff0fda9231166c4b6132fe512b05e8ff63a91be47eab43",
+      "bytes": 95794,
+      "acquired_utc": "2026-10-09T16:25:32.234125+00:00"
+    },
+    {
+      "path": "app/xfs",
+      "release_archive": "xfs-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xfs-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "5d9df9048863f6d281fc1b71601ff7d31d5075eceeba462b3a32dd4734440c6a",
+      "bytes": 141138,
+      "acquired_utc": "2026-10-09T16:25:32.460849+00:00"
+    },
+    {
+      "path": "app/xfsinfo",
+      "release_archive": "xfsinfo-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xfsinfo-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "8d5f6ad0318a8958eaf5772657007ffb545a36c9cd8190f2511cfa03c0069d63",
+      "bytes": 74357,
+      "acquired_utc": "2026-10-09T16:25:32.477253+00:00"
+    },
+    {
+      "path": "app/xfwp",
+      "release_archive": "xfwp-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xfwp-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "d333ce08122e6cde1a9d4fc7cb8e58b13e9335b52fd249046e8380f23d9bf429",
+      "bytes": 104581,
+      "acquired_utc": "2026-10-09T16:25:32.572405+00:00"
+    },
+    {
+      "path": "app/xgamma",
+      "release_archive": "xgamma-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xgamma-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "ec744335f06c070d30f7f256262f6326c2cfff35a0ed6178e7be18ad44ad8a86",
+      "bytes": 74972,
+      "acquired_utc": "2026-10-09T16:25:32.491418+00:00"
+    },
+    {
+      "path": "app/xgc",
+      "release_archive": "xgc-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xgc-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "6151d08a12e7a9874738c46119c6ffe8383d1fe6c5d10ffc9d88e2adc8e454e8",
+      "bytes": 128835,
+      "acquired_utc": "2026-10-09T16:25:32.686877+00:00"
+    },
+    {
+      "path": "app/xhost",
+      "release_archive": "xhost-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xhost-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "5e3db5f2387457f67798d664ed67c67337d2f84c45f15d986ee2f46f9b45d0d1",
+      "bytes": 85776,
+      "acquired_utc": "2026-10-09T16:25:32.632380+00:00"
+    },
+    {
+      "path": "app/xinit",
+      "release_archive": "xinit-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xinit-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "e55c61ede6760ce0d8eaac6dc386850c7873311ab038c69338e35559ec0bbd02",
+      "bytes": 92299,
+      "acquired_utc": "2026-10-09T16:25:32.640909+00:00"
+    },
+    {
+      "path": "app/xkbcomp",
+      "release_archive": "xkbcomp-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xkbcomp-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "35825e80fa1905111302b5c069f5419f5fe63b370f9c437adb8c901fc10cfd16",
+      "bytes": 179839,
+      "acquired_utc": "2026-10-09T16:25:32.830483+00:00"
+    },
+    {
+      "path": "app/xkbevd",
+      "release_archive": "xkbevd-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xkbevd-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "9b358d085bb4fcbfcb0a928cacd4825ba918ef21a2a5e4a3ee401f09abc97f90",
+      "bytes": 102145,
+      "acquired_utc": "2026-10-09T16:25:33.047536+00:00"
+    },
+    {
+      "path": "app/xkbprint",
+      "release_archive": "xkbprint-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xkbprint-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "d2e9c3c28e23010441ce40c48bda7adabd338a256cb9b99848be6ed937fc10e7",
+      "bytes": 115152,
+      "acquired_utc": "2026-10-09T16:25:33.074608+00:00"
+    },
+    {
+      "path": "app/xkbutils",
+      "release_archive": "xkbutils-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xkbutils-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "8178a1c45af6e844ca0adcfe72fbddcbaebf3f305452a83e39768373981be92f",
+      "bytes": 65684,
+      "acquired_utc": "2026-10-09T16:25:32.992164+00:00"
+    },
+    {
+      "path": "app/xkill",
+      "release_archive": "xkill-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xkill-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "fe59dfdcd43faf8efa778f9b2390525a606a62dcd7a70774982bc19301f6a3ce",
+      "bytes": 77135,
+      "acquired_utc": "2026-10-09T16:25:33.082250+00:00"
+    },
+    {
+      "path": "app/xload",
+      "release_archive": "xload-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xload-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "6b5b3ef58e6646f004a5f1cbc6be8f32b824cfbf78a30bf242e4f07083668770",
+      "bytes": 87441,
+      "acquired_utc": "2026-10-09T16:25:33.134235+00:00"
+    },
+    {
+      "path": "app/xlogo",
+      "release_archive": "xlogo-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xlogo-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "1397377bae07e8907f73bc445e967d4d4400769e683c2119598d952c8ad28131",
+      "bytes": 87040,
+      "acquired_utc": "2026-10-09T16:25:33.146474+00:00"
+    },
+    {
+      "path": "app/xlsatoms",
+      "release_archive": "xlsatoms-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xlsatoms-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "6a079872319ac7934578cace787f4f89ea87258f6dd8b33e5b4359be1256e9a3",
+      "bytes": 74840,
+      "acquired_utc": "2026-10-09T16:25:33.208632+00:00"
+    },
+    {
+      "path": "app/xlsclients",
+      "release_archive": "xlsclients-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xlsclients-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "05c269e322ed1ef54b8a32883c8676f46330ec70d85b0a158dbefc2b0e91ceb8",
+      "bytes": 75661,
+      "acquired_utc": "2026-10-09T16:25:33.470109+00:00"
+    },
+    {
+      "path": "app/xlsfonts",
+      "release_archive": "xlsfonts-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xlsfonts-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "1f8d23d5f7dac0f06bc6c6fe6ed7d8e620fe1b0057654da314e24f7c6faefc6f",
+      "bytes": 87658,
+      "acquired_utc": "2026-10-09T16:25:33.494448+00:00"
+    },
+    {
+      "path": "app/xmag",
+      "release_archive": "xmag-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xmag-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "d039d857c6d334d481452c20f5e419b1e120e03e6c9af709f071d9c00ffd9cd1",
+      "bytes": 93663,
+      "acquired_utc": "2026-10-09T16:25:33.544790+00:00"
+    },
+    {
+      "path": "app/xman",
+      "release_archive": "xman-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xman-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "3d159c703ba901657d9633b239d39b21c8de68a2c3358fd1aa4175d20359ef87",
+      "bytes": 134005,
+      "acquired_utc": "2026-10-09T16:25:33.663420+00:00"
+    },
+    {
+      "path": "app/xmessage",
+      "release_archive": "xmessage-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xmessage-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "e9cb13ed6ae88cdeffe200ea1ec008b2413f182171c9d1ee7dede049f61df473",
+      "bytes": 83378,
+      "acquired_utc": "2026-10-09T16:25:33.566188+00:00"
+    },
+    {
+      "path": "app/xmh",
+      "release_archive": "xmh-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xmh-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "e86cbfb7d4fcad741751afd2e1304c41af42af3d95d09745cc27fb34200d5b8b",
+      "bytes": 153096,
+      "acquired_utc": "2026-10-09T16:25:33.711489+00:00"
+    },
+    {
+      "path": "app/xmodmap",
+      "release_archive": "xmodmap-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xmodmap-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "017530da4262a6e52c87cb8ea47aebc83fcd82346cc8072f02ba9de060407be3",
+      "bytes": 89685,
+      "acquired_utc": "2026-10-09T16:25:33.665436+00:00"
+    },
+    {
+      "path": "app/xmore",
+      "release_archive": "xmore-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xmore-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "0616d2c8d7aa990787f6c27e412c65b3f5e1b9a42b12562700bc2da953def4c1",
+      "bytes": 92055,
+      "acquired_utc": "2026-10-09T16:25:33.715174+00:00"
+    },
+    {
+      "path": "app/xphelloworld",
+      "release_archive": "xphelloworld-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xphelloworld-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "4fbc61ec9405b0797318dcf54f5c3a3cc83221f27014563113d2f3f78b3982bf",
+      "bytes": 73098,
+      "acquired_utc": "2026-10-09T16:25:33.974591+00:00"
+    },
+    {
+      "path": "app/xplsprinters",
+      "release_archive": "xplsprinters-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xplsprinters-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "4f54239ec09f4555d15969d44ac84719e739f78071b0f7855ec620a1f0257a3b",
+      "bytes": 77170,
+      "acquired_utc": "2026-10-09T16:25:34.001138+00:00"
+    },
+    {
+      "path": "app/xpr",
+      "release_archive": "xpr-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xpr-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "8c77256313114c80d49ac5db0013c439ddf9888f2d265f66c9ee3da2de46cdf4",
+      "bytes": 107488,
+      "acquired_utc": "2026-10-09T16:25:34.120606+00:00"
+    },
+    {
+      "path": "app/xprehashprinterlist",
+      "release_archive": "xprehashprinterlist-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xprehashprinterlist-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "cc28f5d046d60c12e71b88863c502cca3c6457a07996bd54974debe115f11d73",
+      "bytes": 75554,
+      "acquired_utc": "2026-10-09T16:25:34.058056+00:00"
+    },
+    {
+      "path": "app/xprop",
+      "release_archive": "xprop-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xprop-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "295a7f8bf08ca36c2db0defc1e5d38e498e7a7b6d7a0a78853e87ef71645388d",
+      "bytes": 92550,
+      "acquired_utc": "2026-10-09T16:25:34.165788+00:00"
+    },
+    {
+      "path": "app/xrandr",
+      "release_archive": "xrandr-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xrandr-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "40ccd95d26c43d326fb8396ca758334bf34854336007b46285d3e881cb66e73a",
+      "bytes": 76130,
+      "acquired_utc": "2026-10-09T16:25:34.161669+00:00"
+    },
+    {
+      "path": "app/xrdb",
+      "release_archive": "xrdb-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xrdb-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "adf3f97fcb0d768e19058e94dd4aaec70ea61afa8077f6c6e99aa70bc8564e14",
+      "bytes": 85598,
+      "acquired_utc": "2026-10-09T16:25:34.212724+00:00"
+    },
+    {
+      "path": "app/xrefresh",
+      "release_archive": "xrefresh-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xrefresh-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "9915ee47ff85d83eee825b1a44857b92b4b16558e4bf436671ae7a37f4ab65ad",
+      "bytes": 76351,
+      "acquired_utc": "2026-10-09T16:25:34.204195+00:00"
+    },
+    {
+      "path": "app/xrx",
+      "release_archive": "xrx-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xrx-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "2a177a9f36c92fdc109260a7c04980db6920fb9d3529d79e9bc019ae7f5a310e",
+      "bytes": 260441,
+      "acquired_utc": "2026-10-09T16:25:34.639850+00:00"
+    },
+    {
+      "path": "app/xset",
+      "release_archive": "xset-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xset-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "db17d017fff06df2e47f9d123bfb4f1d63a063eb3c08ec017292cc206bb293d1",
+      "bytes": 88719,
+      "acquired_utc": "2026-10-09T16:25:34.546219+00:00"
+    },
+    {
+      "path": "app/xsetmode",
+      "release_archive": "xsetmode-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xsetmode-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "ff7e076c77c35f746bc01d15d3ff9e203a45a850ef7e26ef11726b0b9f709e4a",
+      "bytes": 73740,
+      "acquired_utc": "2026-10-09T16:25:34.566811+00:00"
+    },
+    {
+      "path": "app/xsetpointer",
+      "release_archive": "xsetpointer-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xsetpointer-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "103e35a5523e9237ef3a27bb8e08ab4443de5ceedfe5784be48afde6fba6cd06",
+      "bytes": 73882,
+      "acquired_utc": "2026-10-09T16:25:34.632887+00:00"
+    },
+    {
+      "path": "app/xsetroot",
+      "release_archive": "xsetroot-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xsetroot-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "8327c294491dbd13c06c8d5d6bf971dca215f59facce99d3e4d0c170d7f0fe44",
+      "bytes": 77672,
+      "acquired_utc": "2026-10-09T16:25:34.640382+00:00"
+    },
+    {
+      "path": "app/xsm",
+      "release_archive": "xsm-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xsm-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "c66e75117b4aa9dc3272f1568f83321a1273ab50309fcb4bc64e62d124596a49",
+      "bytes": 116842,
+      "acquired_utc": "2026-10-09T16:25:34.821465+00:00"
+    },
+    {
+      "path": "app/xstdcmap",
+      "release_archive": "xstdcmap-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xstdcmap-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "3af07e423eddf28593a424f6cd53291d1413b905ddd6915aaa3f44007b238a8c",
+      "bytes": 76275,
+      "acquired_utc": "2026-10-09T16:25:34.827250+00:00"
+    },
+    {
+      "path": "app/xtrap",
+      "release_archive": "xtrap-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xtrap-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "be25959a38d1e2d3b54e5620863a95c2eb712c6b4bce698b88ccff66d2964559",
+      "bytes": 91255,
+      "acquired_utc": "2026-10-09T16:25:34.827631+00:00"
+    },
+    {
+      "path": "app/xvidtune",
+      "release_archive": "xvidtune-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xvidtune-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "f7b3925d7e9981d146d3e5774de0521e6d48e2ed99841f538f267e8bc58bf5cd",
+      "bytes": 88178,
+      "acquired_utc": "2026-10-09T16:25:35.038962+00:00"
+    },
+    {
+      "path": "app/xvinfo",
+      "release_archive": "xvinfo-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xvinfo-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "5b52a7241aef8e3372fb15f58f2276e043e19a87269aa6a0330b5823bc3697f6",
+      "bytes": 74754,
+      "acquired_utc": "2026-10-09T16:25:35.078975+00:00"
+    },
+    {
+      "path": "app/xwd",
+      "release_archive": "xwd-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xwd-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "8ec0abf34ec88f3681666c7727749bac1ccf3f935c1c7f78c009a764f7f0fb11",
+      "bytes": 97002,
+      "acquired_utc": "2026-10-09T16:25:35.132619+00:00"
+    },
+    {
+      "path": "app/xwininfo",
+      "release_archive": "xwininfo-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xwininfo-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "75bc03d2eafd4c7139d707fb86b023376d5a5ad2e9315dad53b250cb19e8bce1",
+      "bytes": 87409,
+      "acquired_utc": "2026-10-09T16:25:35.146051+00:00"
+    },
+    {
+      "path": "app/xwud",
+      "release_archive": "xwud-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/app/xwud-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "a10c7950ad632f07426ea9516b3743c562da8403f0da0cc678277031020f1586",
+      "bytes": 83089,
+      "acquired_utc": "2026-10-09T16:25:35.133680+00:00"
+    },
+    {
+      "path": "data/xbitmaps",
+      "release_archive": "xbitmaps-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/data/xbitmaps-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "3d7b78cf588871caa00ef79f5f66657803cf9a07350ac5dcf56fbe5ca2a794a8",
+      "bytes": 55492,
+      "acquired_utc": "2026-10-09T16:25:35.330951+00:00"
+    },
+    {
+      "path": "data/xcursor-themes",
+      "release_archive": "xcursor-themes-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/data/xcursor-themes-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "730029a4f23661094f0d246595041e51ec0b55e7405fcd5affee1ec7f9aba813",
+      "bytes": 2219697,
+      "acquired_utc": "2026-10-09T16:25:35.799640+00:00"
+    },
+    {
+      "path": "data/xkbdata",
+      "release_archive": "xkbdata-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/data/xkbdata-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "37af4603fa399760a055cc994c61b25778febf676af3fcfad84577f484a174e6",
+      "bytes": 285091,
+      "acquired_utc": "2026-10-09T16:25:35.514912+00:00"
+    },
+    {
+      "path": "doc/xorg-docs",
+      "release_archive": "xorg-docs-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/doc/xorg-docs-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "a3adf1c61247254cc81c80a6c020fe6a9fe0abbdc5f66f8631ec87a1a356c4ae",
+      "bytes": 8339757,
+      "acquired_utc": "2026-10-09T16:25:36.191096+00:00"
+    },
+    {
+      "path": "doc/xorg-sgml-doctools",
+      "release_archive": "xorg-sgml-doctools-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/doc/xorg-sgml-doctools-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "2a676fdaf45a7a1e40f4df2cbd09d542672c2d0fe1f890a874b8719e0a448ad7",
+      "bytes": 37232,
+      "acquired_utc": "2026-10-09T16:25:35.499509+00:00"
+    },
+    {
+      "path": "driver/xf86-input-acecad",
+      "release_archive": "xf86-input-acecad-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-acecad-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "699ba1716f74db0aaa66aa510ebf195560ff09f88001f98bde9275d2826f30ea",
+      "bytes": 213979,
+      "acquired_utc": "2026-10-09T16:25:35.718122+00:00"
+    },
+    {
+      "path": "driver/xf86-input-aiptek",
+      "release_archive": "xf86-input-aiptek-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-aiptek-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "62d1dfdc2f902d016999861ec3fd58b4630341e8f4df45e65c7bee730b51fd8e",
+      "bytes": 225634,
+      "acquired_utc": "2026-10-09T16:25:35.817355+00:00"
+    },
+    {
+      "path": "driver/xf86-input-calcomp",
+      "release_archive": "xf86-input-calcomp-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-calcomp-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "f3f913f627e0871a65a4e18cc3df3b0188bfe0e73a755436921488756753f989",
+      "bytes": 215168,
+      "acquired_utc": "2026-10-09T16:25:35.750930+00:00"
+    },
+    {
+      "path": "driver/xf86-input-citron",
+      "release_archive": "xf86-input-citron-X11R7.0-2.1.1.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-citron-X11R7.0-2.1.1.5.tar.bz2",
+      "sha256": "fbac5de06334b6757d91fcc2abc08e2c56c7a57dcba1abdb5c99133decf7f795",
+      "bytes": 233902,
+      "acquired_utc": "2026-10-09T16:25:36.004052+00:00"
+    },
+    {
+      "path": "driver/xf86-input-digitaledge",
+      "release_archive": "xf86-input-digitaledge-X11R7.0-1.0.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-digitaledge-X11R7.0-1.0.1.3.tar.bz2",
+      "sha256": "964a13291f412a6da62d3ad98bb8afa21ad7c884eb6234f279a0d40d7f912b58",
+      "bytes": 216971,
+      "acquired_utc": "2026-10-09T16:25:36.179745+00:00"
+    },
+    {
+      "path": "driver/xf86-input-dmc",
+      "release_archive": "xf86-input-dmc-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-dmc-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "6e03c373f3aa25b7305e927d76dd9fd233d83a3ec08bf517e8cbdd2b00d32be5",
+      "bytes": 212774,
+      "acquired_utc": "2026-10-09T16:25:36.117614+00:00"
+    },
+    {
+      "path": "driver/xf86-input-dynapro",
+      "release_archive": "xf86-input-dynapro-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-dynapro-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "28a2707b4633b99fa9b5fc5106d5eff9445344e50bd6a05a41094178a508e11b",
+      "bytes": 212029,
+      "acquired_utc": "2026-10-09T16:25:36.308608+00:00"
+    },
+    {
+      "path": "driver/xf86-input-elo2300",
+      "release_archive": "xf86-input-elo2300-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-elo2300-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "6a4dec968d92c7a73dc801367c2743062b3a09b37bb8ed7ba720f435f1f53703",
+      "bytes": 214388,
+      "acquired_utc": "2026-10-09T16:25:36.349155+00:00"
+    },
+    {
+      "path": "driver/xf86-input-elographics",
+      "release_archive": "xf86-input-elographics-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-elographics-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "f1b7f84175d33f4d18c83cd0d37bd3962acd668922fa074a8ae29e18517cdda7",
+      "bytes": 219736,
+      "acquired_utc": "2026-10-09T16:25:36.492143+00:00"
+    },
+    {
+      "path": "driver/xf86-input-evdev",
+      "release_archive": "xf86-input-evdev-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-evdev-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "ba53e8ce6bfa01da7fa86a31853542a71722b41b511041bdb58cf66c10f3edb4",
+      "bytes": 212372,
+      "acquired_utc": "2026-10-09T16:25:36.424902+00:00"
+    },
+    {
+      "path": "driver/xf86-input-fpit",
+      "release_archive": "xf86-input-fpit-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-fpit-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "8f131c2b26b1e0e16e9dfacc73d457bb16cf6e455a1dbdc382f4a3e3b219c703",
+      "bytes": 215828,
+      "acquired_utc": "2026-10-09T16:25:36.681084+00:00"
+    },
+    {
+      "path": "driver/xf86-input-hyperpen",
+      "release_archive": "xf86-input-hyperpen-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-hyperpen-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "708011ed8fdb6d321e7ca91787ff06c7bcb011cc4a3b5d6c0c02562222da7ef4",
+      "bytes": 218554,
+      "acquired_utc": "2026-10-09T16:25:36.771212+00:00"
+    },
+    {
+      "path": "driver/xf86-input-jamstudio",
+      "release_archive": "xf86-input-jamstudio-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-jamstudio-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "ed5c17b702a43192710b7476f3a8540d04bc800554fd05e348be4f510f651dfa",
+      "bytes": 209954,
+      "acquired_utc": "2026-10-09T16:25:36.774357+00:00"
+    },
+    {
+      "path": "driver/xf86-input-joystick",
+      "release_archive": "xf86-input-joystick-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-joystick-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "9b69192a4368bafeaf94432ec50025dd3f60340290ef2500f6032159870ed489",
+      "bytes": 212507,
+      "acquired_utc": "2026-10-09T16:25:36.783245+00:00"
+    },
+    {
+      "path": "driver/xf86-input-keyboard",
+      "release_archive": "xf86-input-keyboard-X11R7.0-1.0.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-keyboard-X11R7.0-1.0.1.3.tar.bz2",
+      "sha256": "e82d510157d13be37eed604cfb0d9355c054c4d3ac39bdef0c6ef320f2973d77",
+      "bytes": 215665,
+      "acquired_utc": "2026-10-09T16:25:36.916142+00:00"
+    },
+    {
+      "path": "driver/xf86-input-magellan",
+      "release_archive": "xf86-input-magellan-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-magellan-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "e13fb01c5b86b9409d1e4024c06b55a18d5c2eba98370e73870caa19f8ef973b",
+      "bytes": 212433,
+      "acquired_utc": "2026-10-09T16:25:36.957348+00:00"
+    },
+    {
+      "path": "driver/xf86-input-magictouch",
+      "release_archive": "xf86-input-magictouch-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-magictouch-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "1e384f8cf5f516c3b460b8e1a94ef98dba9681a3ca0a2f2fb3687a9df12d00d5",
+      "bytes": 214562,
+      "acquired_utc": "2026-10-09T16:25:37.026906+00:00"
+    },
+    {
+      "path": "driver/xf86-input-microtouch",
+      "release_archive": "xf86-input-microtouch-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-microtouch-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "f113b6649719261da21137d4b18168862d37efc1a79db2dcd1e078f6dc9d8a3b",
+      "bytes": 215714,
+      "acquired_utc": "2026-10-09T16:25:37.080697+00:00"
+    },
+    {
+      "path": "driver/xf86-input-mouse",
+      "release_archive": "xf86-input-mouse-X11R7.0-1.0.3.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-mouse-X11R7.0-1.0.3.1.tar.bz2",
+      "sha256": "183c1cda6550c8821ef4b8d13e681a32813bcd32b6cf34a75d3870e399fa292d",
+      "bytes": 259054,
+      "acquired_utc": "2026-10-09T16:25:37.359320+00:00"
+    },
+    {
+      "path": "driver/xf86-input-mutouch",
+      "release_archive": "xf86-input-mutouch-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-mutouch-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "f46f328c9d8ef4dd6fe118121831ff4cd34ea9f06b198f548af4c703a1aab771",
+      "bytes": 219973,
+      "acquired_utc": "2026-10-09T16:25:37.442844+00:00"
+    },
+    {
+      "path": "driver/xf86-input-palmax",
+      "release_archive": "xf86-input-palmax-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-palmax-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "0756cb4d78cd896811f06675b986bdaa8d48ef2b3c53bf68001634fe1f7806c9",
+      "bytes": 213854,
+      "acquired_utc": "2026-10-09T16:25:37.386598+00:00"
+    },
+    {
+      "path": "driver/xf86-input-penmount",
+      "release_archive": "xf86-input-penmount-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-penmount-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "314492cea0998182623f2a67461d64df00b910acd052c3a50f9349ead740151a",
+      "bytes": 212934,
+      "acquired_utc": "2026-10-09T16:25:37.388863+00:00"
+    },
+    {
+      "path": "driver/xf86-input-spaceorb",
+      "release_archive": "xf86-input-spaceorb-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-spaceorb-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "e5fa2e430b39ddfe443b6c433d975f02025b5fa90f31fa249942d8bf01452bc4",
+      "bytes": 211269,
+      "acquired_utc": "2026-10-09T16:25:37.522551+00:00"
+    },
+    {
+      "path": "driver/xf86-input-summa",
+      "release_archive": "xf86-input-summa-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-summa-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "6456ddecc0e1b962b5f14b98b81d2e936cb48dcdacdd871dfa0e24c0d252498c",
+      "bytes": 218264,
+      "acquired_utc": "2026-10-09T16:25:37.649868+00:00"
+    },
+    {
+      "path": "driver/xf86-input-tek4957",
+      "release_archive": "xf86-input-tek4957-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-tek4957-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "1cc4a964e2b407d2b9ebbac0bf38787e572d9bd88759fc0b229f588ac90ed139",
+      "bytes": 213488,
+      "acquired_utc": "2026-10-09T16:25:37.619738+00:00"
+    },
+    {
+      "path": "driver/xf86-input-ur98",
+      "release_archive": "xf86-input-ur98-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-ur98-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "2cbcca2d5c62de8376bbc9e1fea6f4564ece32f6f6b5e926b199c2e60a3dae7d",
+      "bytes": 214459,
+      "acquired_utc": "2026-10-09T16:25:37.665609+00:00"
+    },
+    {
+      "path": "driver/xf86-input-void",
+      "release_archive": "xf86-input-void-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-input-void-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "ca90a522b78114d72748164c7a99274634cd2b50953f9c52f91b31746c790b5e",
+      "bytes": 209891,
+      "acquired_utc": "2026-10-09T16:25:37.964198+00:00"
+    },
+    {
+      "path": "driver/xf86-video-apm",
+      "release_archive": "xf86-video-apm-X11R7.0-1.0.1.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-apm-X11R7.0-1.0.1.5.tar.bz2",
+      "sha256": "ceaf4a611b8ee8bc31bc784f1012b0d6be6380e8823f6bf03a9a1ee737264a78",
+      "bytes": 255034,
+      "acquired_utc": "2026-10-09T16:25:38.091996+00:00"
+    },
+    {
+      "path": "driver/xf86-video-ark",
+      "release_archive": "xf86-video-ark-X11R7.0-0.5.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-ark-X11R7.0-0.5.0.5.tar.bz2",
+      "sha256": "47aa2ecf4129e72e049796571e3125ff3bc8dae7fe31e27d361470d4a3b8d548",
+      "bytes": 215060,
+      "acquired_utc": "2026-10-09T16:25:37.991343+00:00"
+    },
+    {
+      "path": "driver/xf86-video-ati",
+      "release_archive": "xf86-video-ati-X11R7.0-6.5.7.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-ati-X11R7.0-6.5.7.3.tar.bz2",
+      "sha256": "094da5eae789e50d1ebc4d7823d4c8ac701e3bbe387c0ff63285e2ab32aad1f8",
+      "bytes": 659422,
+      "acquired_utc": "2026-10-09T16:25:38.271590+00:00"
+    },
+    {
+      "path": "driver/xf86-video-chips",
+      "release_archive": "xf86-video-chips-X11R7.0-1.0.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-chips-X11R7.0-1.0.1.3.tar.bz2",
+      "sha256": "2df2e34dc61907fb3c41b4590f51d39f951d2d74422d84f1f7d53ef6f5b25352",
+      "bytes": 302529,
+      "acquired_utc": "2026-10-09T16:25:38.281535+00:00"
+    },
+    {
+      "path": "driver/xf86-video-cirrus",
+      "release_archive": "xf86-video-cirrus-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-cirrus-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "29e6fdd67e8ec51c534f6123f9935a165711255d935fb9cb28cd44f9db278b3e",
+      "bytes": 250335,
+      "acquired_utc": "2026-10-09T16:25:38.340510+00:00"
+    },
+    {
+      "path": "driver/xf86-video-cyrix",
+      "release_archive": "xf86-video-cyrix-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-cyrix-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "6eb51d5d4489083c8a1eeabc1fbd22baeafe6486a7940516d1e2b741564acd06",
+      "bytes": 230817,
+      "acquired_utc": "2026-10-09T16:25:38.372996+00:00"
+    },
+    {
+      "path": "driver/xf86-video-dummy",
+      "release_archive": "xf86-video-dummy-X11R7.0-0.1.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-dummy-X11R7.0-0.1.0.5.tar.bz2",
+      "sha256": "f50f6d3d7fd79c5ce40ea6039a2fb82f136b13c18afbc2b7e941d41d6568b698",
+      "bytes": 212668,
+      "acquired_utc": "2026-10-09T16:25:38.329755+00:00"
+    },
+    {
+      "path": "driver/xf86-video-fbdev",
+      "release_archive": "xf86-video-fbdev-X11R7.0-0.1.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-fbdev-X11R7.0-0.1.0.5.tar.bz2",
+      "sha256": "c6032ec1753a0f5975b5a7488ca3ca0d46f84bc5dd8fcb42eebd807c7faec765",
+      "bytes": 215158,
+      "acquired_utc": "2026-10-09T16:25:38.757832+00:00"
+    },
+    {
+      "path": "driver/xf86-video-glint",
+      "release_archive": "xf86-video-glint-X11R7.0-1.0.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-glint-X11R7.0-1.0.1.3.tar.bz2",
+      "sha256": "d5b4cb7b490edc3be57c40a00299002b60b8060396b3c902b2bf92090fcbd940",
+      "bytes": 320027,
+      "acquired_utc": "2026-10-09T16:25:38.890592+00:00"
+    },
+    {
+      "path": "driver/xf86-video-i128",
+      "release_archive": "xf86-video-i128-X11R7.0-1.1.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-i128-X11R7.0-1.1.0.5.tar.bz2",
+      "sha256": "543d7b8bc0c9e7889c686a647f98641f0a9b052e58321a8a17518d680e6db95a",
+      "bytes": 250215,
+      "acquired_utc": "2026-10-09T16:25:38.859106+00:00"
+    },
+    {
+      "path": "driver/xf86-video-i740",
+      "release_archive": "xf86-video-i740-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-i740-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "b0f2f2dd17bd01018fa91d042214b596f9d2303a81a0b86de102400b00f87d09",
+      "bytes": 240418,
+      "acquired_utc": "2026-10-09T16:25:39.024169+00:00"
+    },
+    {
+      "path": "driver/xf86-video-i810",
+      "release_archive": "xf86-video-i810-X11R7.0-1.4.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-i810-X11R7.0-1.4.1.3.tar.bz2",
+      "sha256": "1d9227ba301152738c6b498ec512ddfa67ce7c09e40b883fdbf43cd31e85b523",
+      "bytes": 356294,
+      "acquired_utc": "2026-10-09T16:25:39.124646+00:00"
+    },
+    {
+      "path": "driver/xf86-video-imstt",
+      "release_archive": "xf86-video-imstt-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-imstt-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "738463dbf1980b9d0f95936a2d951dc51bd776c7949215c2456580948660669e",
+      "bytes": 217637,
+      "acquired_utc": "2026-10-09T16:25:39.071941+00:00"
+    },
+    {
+      "path": "driver/xf86-video-mga",
+      "release_archive": "xf86-video-mga-X11R7.0-1.2.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-mga-X11R7.0-1.2.1.3.tar.bz2",
+      "sha256": "8f4ef9e7a82aa1f4624b2d87da8ff0472e3f5c2ccdc7998f4418c6906cadc915",
+      "bytes": 335360,
+      "acquired_utc": "2026-10-09T16:25:39.192672+00:00"
+    },
+    {
+      "path": "driver/xf86-video-neomagic",
+      "release_archive": "xf86-video-neomagic-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-neomagic-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "cfaa594be277cd2a1bf9d796bb398e07319e9b34cff306b408145a37925dc97f",
+      "bytes": 250327,
+      "acquired_utc": "2026-10-09T16:25:39.125203+00:00"
+    },
+    {
+      "path": "driver/xf86-video-newport",
+      "release_archive": "xf86-video-newport-X11R7.0-0.1.4.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-newport-X11R7.0-0.1.4.1.tar.bz2",
+      "sha256": "88d4b58efd0dca626e926ce6dc531026c8a10e7126f2e6544e31a2fc00001c67",
+      "bytes": 233693,
+      "acquired_utc": "2026-10-09T16:25:39.501740+00:00"
+    },
+    {
+      "path": "driver/xf86-video-nsc",
+      "release_archive": "xf86-video-nsc-X11R7.0-2.7.6.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-nsc-X11R7.0-2.7.6.5.tar.bz2",
+      "sha256": "1f88d5c79cfa34230ed8a9079e6b7df194fce219909b6f7cc232c6511000839a",
+      "bytes": 453051,
+      "acquired_utc": "2026-10-09T16:25:39.649943+00:00"
+    },
+    {
+      "path": "driver/xf86-video-nv",
+      "release_archive": "xf86-video-nv-X11R7.0-1.0.1.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-nv-X11R7.0-1.0.1.5.tar.bz2",
+      "sha256": "0ce5ad1affc488f317fd297893a469ed20f451b8bd8b12bb36450ecc8c56e5d0",
+      "bytes": 267738,
+      "acquired_utc": "2026-10-09T16:25:39.620156+00:00"
+    },
+    {
+      "path": "driver/xf86-video-rendition",
+      "release_archive": "xf86-video-rendition-X11R7.0-4.0.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-rendition-X11R7.0-4.0.1.3.tar.bz2",
+      "sha256": "4ad42c65f60bc7f3f37f636eae5ae5a9049cdd4df5c546f93f201fdf16213f48",
+      "bytes": 278961,
+      "acquired_utc": "2026-10-09T16:25:39.773595+00:00"
+    },
+    {
+      "path": "driver/xf86-video-s3",
+      "release_archive": "xf86-video-s3-X11R7.0-0.3.5.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-s3-X11R7.0-0.3.5.5.tar.bz2",
+      "sha256": "3e11f78c39eb03fe4b9e6a2b68347420297fa38cd36f42235ee4be9c87175103",
+      "bytes": 234539,
+      "acquired_utc": "2026-10-09T16:25:39.796051+00:00"
+    },
+    {
+      "path": "driver/xf86-video-s3virge",
+      "release_archive": "xf86-video-s3virge-X11R7.0-1.8.6.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-s3virge-X11R7.0-1.8.6.5.tar.bz2",
+      "sha256": "064293e33256c5baa8932b42f181ec0d2fc7c0ef5b72e655aefa72d58e2b91ff",
+      "bytes": 270294,
+      "acquired_utc": "2026-10-09T16:25:39.829266+00:00"
+    },
+    {
+      "path": "driver/xf86-video-savage",
+      "release_archive": "xf86-video-savage-X11R7.0-2.0.2.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-savage-X11R7.0-2.0.2.3.tar.bz2",
+      "sha256": "e4ee3af5989cc9b0c8ff59082f64a564420dc22a2eb9fd53e41da24260a65e98",
+      "bytes": 282811,
+      "acquired_utc": "2026-10-09T16:25:39.887397+00:00"
+    },
+    {
+      "path": "driver/xf86-video-siliconmotion",
+      "release_archive": "xf86-video-siliconmotion-X11R7.0-1.3.1.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-siliconmotion-X11R7.0-1.3.1.5.tar.bz2",
+      "sha256": "6723b5b7e9ea5b3aebcbbaeaca59790e6a9ab6a7d5324c671454e426854aef3f",
+      "bytes": 257549,
+      "acquired_utc": "2026-10-09T16:25:39.935846+00:00"
+    },
+    {
+      "path": "driver/xf86-video-sis",
+      "release_archive": "xf86-video-sis-X11R7.0-0.8.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-sis-X11R7.0-0.8.1.3.tar.bz2",
+      "sha256": "c578fec74f7028ee28a46a62ab2b22fdcbd6de8cefa7a185e73c68b1d8a12e8b",
+      "bytes": 585512,
+      "acquired_utc": "2026-10-09T16:25:40.355853+00:00"
+    },
+    {
+      "path": "driver/xf86-video-sisusb",
+      "release_archive": "xf86-video-sisusb-X11R7.0-0.7.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-sisusb-X11R7.0-0.7.1.3.tar.bz2",
+      "sha256": "6f972b126774d3d051b2f683e82661c07a1b4787b8ce04847eae80b283c5feb3",
+      "bytes": 282820,
+      "acquired_utc": "2026-10-09T16:25:40.394432+00:00"
+    },
+    {
+      "path": "driver/xf86-video-sunbw2",
+      "release_archive": "xf86-video-sunbw2-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-sunbw2-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "13ab882849164dd677228523b91081fa7bda6955daae128f0b8754759e2f7278",
+      "bytes": 211092,
+      "acquired_utc": "2026-10-09T16:25:40.303262+00:00"
+    },
+    {
+      "path": "driver/xf86-video-suncg14",
+      "release_archive": "xf86-video-suncg14-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-suncg14-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "809a8d57a49c07991d350d4bff955656256afa2c99978050d2aa320d071ef52d",
+      "bytes": 212377,
+      "acquired_utc": "2026-10-09T16:25:40.427026+00:00"
+    },
+    {
+      "path": "driver/xf86-video-suncg3",
+      "release_archive": "xf86-video-suncg3-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-suncg3-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "31831c2f44e7d28c928d816c2c5074cc0ec1f0cc83994bf28e46c7f840ab8866",
+      "bytes": 210725,
+      "acquired_utc": "2026-10-09T16:25:40.441046+00:00"
+    },
+    {
+      "path": "driver/xf86-video-suncg6",
+      "release_archive": "xf86-video-suncg6-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-suncg6-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "f6ddac6bc0b0a446ff9401467e4219340151498824d98c9274ed38a959330aea",
+      "bytes": 215040,
+      "acquired_utc": "2026-10-09T16:25:40.455042+00:00"
+    },
+    {
+      "path": "driver/xf86-video-sunffb",
+      "release_archive": "xf86-video-sunffb-X11R7.0-1.0.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-sunffb-X11R7.0-1.0.1.3.tar.bz2",
+      "sha256": "318bd61c8da6e938d5c707a0c70ba3ada1c053ff3172a918f821a1a015b7b6ce",
+      "bytes": 278439,
+      "acquired_utc": "2026-10-09T16:25:40.612058+00:00"
+    },
+    {
+      "path": "driver/xf86-video-sunleo",
+      "release_archive": "xf86-video-sunleo-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-sunleo-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "025e3636fb59dae9285dab63de9181fc8337d1d8438b7ee8f93095d6731deb0f",
+      "bytes": 220890,
+      "acquired_utc": "2026-10-09T16:25:40.638560+00:00"
+    },
+    {
+      "path": "driver/xf86-video-suntcx",
+      "release_archive": "xf86-video-suntcx-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-suntcx-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "38eb95f2991fab51c3442022bcef258de508ebfa0c631024edbdf55a1c4f24fd",
+      "bytes": 214253,
+      "acquired_utc": "2026-10-09T16:25:40.939243+00:00"
+    },
+    {
+      "path": "driver/xf86-video-tdfx",
+      "release_archive": "xf86-video-tdfx-X11R7.0-1.1.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-tdfx-X11R7.0-1.1.1.3.tar.bz2",
+      "sha256": "65e95c95bc4fa5fdb766b7edf8f39253cf8496fca66bc4bc06f260ab9e9ce504",
+      "bytes": 257113,
+      "acquired_utc": "2026-10-09T16:25:41.090027+00:00"
+    },
+    {
+      "path": "driver/xf86-video-tga",
+      "release_archive": "xf86-video-tga-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-tga-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "96b071b4e12dcfd027402621b897c6d73818aada4d66f77a8802cc46b9efe206",
+      "bytes": 244810,
+      "acquired_utc": "2026-10-09T16:25:41.104747+00:00"
+    },
+    {
+      "path": "driver/xf86-video-trident",
+      "release_archive": "xf86-video-trident-X11R7.0-1.0.1.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-trident-X11R7.0-1.0.1.2.tar.bz2",
+      "sha256": "b7958afb0204bb1d3c8a33e7a56b94a6d4f09426dbcd141ef327e28f523d42eb",
+      "bytes": 261260,
+      "acquired_utc": "2026-10-09T16:25:41.152761+00:00"
+    },
+    {
+      "path": "driver/xf86-video-tseng",
+      "release_archive": "xf86-video-tseng-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-tseng-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "5e67a6893375585be731b0fd822e9c3407a0930f7addbc8cf01fffad57f9d0b6",
+      "bytes": 260944,
+      "acquired_utc": "2026-10-09T16:25:41.145817+00:00"
+    },
+    {
+      "path": "driver/xf86-video-v4l",
+      "release_archive": "xf86-video-v4l-X11R7.0-0.0.1.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-v4l-X11R7.0-0.0.1.5.tar.bz2",
+      "sha256": "54094ee8388e4d067e111f64bf765b677536bc11c71d39c05c83ab6ea336e0f8",
+      "bytes": 218210,
+      "acquired_utc": "2026-10-09T16:25:41.157069+00:00"
+    },
+    {
+      "path": "driver/xf86-video-vesa",
+      "release_archive": "xf86-video-vesa-X11R7.0-1.0.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-vesa-X11R7.0-1.0.1.3.tar.bz2",
+      "sha256": "c6601cd278ebc30a0d20b49b6284bc21b4910f8ef5d24d1c62daa1591a251452",
+      "bytes": 218918,
+      "acquired_utc": "2026-10-09T16:25:41.315504+00:00"
+    },
+    {
+      "path": "driver/xf86-video-vga",
+      "release_archive": "xf86-video-vga-X11R7.0-4.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-vga-X11R7.0-4.0.0.5.tar.bz2",
+      "sha256": "325a11679316f3ccd83e4c0712e45301285bda62ff716df232446211fb19cb34",
+      "bytes": 216215,
+      "acquired_utc": "2026-10-09T16:25:41.278160+00:00"
+    },
+    {
+      "path": "driver/xf86-video-via",
+      "release_archive": "xf86-video-via-X11R7.0-0.1.33.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-via-X11R7.0-0.1.33.2.tar.bz2",
+      "sha256": "75b73af76c2b0499180d670da94e3fde8e4c8796b2e17ec7bcb8473074cb4987",
+      "bytes": 355172,
+      "acquired_utc": "2026-10-09T16:25:41.674471+00:00"
+    },
+    {
+      "path": "driver/xf86-video-vmware",
+      "release_archive": "xf86-video-vmware-X11R7.0-10.11.1.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-vmware-X11R7.0-10.11.1.3.tar.bz2",
+      "sha256": "79b0bf59d866d3760fa8a55b4a19d56ae7fa6a962d629a9de5c188cec5c98c9a",
+      "bytes": 239037,
+      "acquired_utc": "2026-10-09T16:25:41.810420+00:00"
+    },
+    {
+      "path": "driver/xf86-video-voodoo",
+      "release_archive": "xf86-video-voodoo-X11R7.0-1.0.0.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/driver/xf86-video-voodoo-X11R7.0-1.0.0.5.tar.bz2",
+      "sha256": "2241fd7e5ae8de43f109f712f5125afa6ec5156068c941d7b65981ac7ce7548a",
+      "bytes": 226952,
+      "acquired_utc": "2026-10-09T16:25:41.829147+00:00"
+    },
+    {
+      "path": "extras/MesaDemos",
+      "release_archive": "MesaDemos-6.4.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/MesaDemos-6.4.1.tar.bz2",
+      "sha256": "f716751f1b750b186c08295cd40762ba98ece01f87eaf5b8db22fcb91c14bb14",
+      "bytes": 819391,
+      "acquired_utc": "2026-10-09T16:25:51.227118+00:00"
+    },
+    {
+      "path": "extras/MesaLib",
+      "release_archive": "MesaLib-6.4.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/MesaLib-6.4.1.tar.bz2",
+      "sha256": "2c1c8784cccab416a52ef9512e3539a0063b88dcc9b0abbcf1a407f9808758cf",
+      "bytes": 2913887,
+      "acquired_utc": "2026-10-09T16:25:51.432059+00:00"
+    },
+    {
+      "path": "extras/autoconf",
+      "release_archive": "autoconf-2.57",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/autoconf-2.57.tar.gz",
+      "sha256": "063463477905009bd90f6cc78e4513b959e84bf9292f35fe4085e00816a58e34",
+      "bytes": 1074128,
+      "acquired_utc": "2026-10-09T16:25:51.455285+00:00"
+    },
+    {
+      "path": "extras/automake",
+      "release_archive": "automake-1.7.9",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/automake-1.7.9.tar.gz",
+      "sha256": "a8b6221c408a4b839b5611b63bebf315a8db31c1a45bda8d61aefbf576fef85b",
+      "bytes": 737363,
+      "acquired_utc": "2026-10-09T16:25:51.459331+00:00"
+    },
+    {
+      "path": "extras/expat",
+      "release_archive": "expat-1.95.8",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/expat-1.95.8.tar.gz",
+      "sha256": "c6aaa0b427e775a0fd5a956a75ae41e5110f22760723d9bda316100010e891ca",
+      "bytes": 318349,
+      "acquired_utc": "2026-10-09T16:25:51.411493+00:00"
+    },
+    {
+      "path": "extras/fontconfig",
+      "release_archive": "fontconfig-2.2.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/fontconfig-2.2.3.tar.gz",
+      "sha256": "c98dfc2bdb5e9928068ffa4073731627bde8960b7f1ea9cd2b6305d989d06597",
+      "bytes": 750035,
+      "acquired_utc": "2026-10-09T16:25:51.509981+00:00"
+    },
+    {
+      "path": "extras/freetype",
+      "release_archive": "freetype-2.1.9",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/freetype-2.1.9.tar.gz",
+      "sha256": "cef0ecbb99f21d8130f189d6259b4e234f7bd8b86b0ab134fbbce232f357e582",
+      "bytes": 1334560,
+      "acquired_utc": "2026-10-09T16:25:51.754897+00:00"
+    },
+    {
+      "path": "extras/libdrm",
+      "release_archive": "libdrm-2.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/libdrm-2.0.tar.gz",
+      "sha256": "f4b81b00465e9a58e644e9058a55f69ea7f519eddbdeb4c02f84f7d2fafe33df",
+      "bytes": 370965,
+      "acquired_utc": "2026-10-09T16:25:51.885641+00:00"
+    },
+    {
+      "path": "extras/libpng",
+      "release_archive": "libpng-1.2.8-config",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/libpng-1.2.8-config.tar.gz",
+      "sha256": "95050a750e53fc09844668c824624509fc7468920dcec2275cf971d6a2bbaa15",
+      "bytes": 695097,
+      "acquired_utc": "2026-10-09T16:25:52.186754+00:00"
+    },
+    {
+      "path": "extras/libtool",
+      "release_archive": "libtool-1.5",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/libtool-1.5.tar.gz",
+      "sha256": "ab4eea3bad623165a56d793947f9e69a94eb05d8307c3347894041ee821f7316",
+      "bytes": 2816075,
+      "acquired_utc": "2026-10-09T16:25:52.387592+00:00"
+    },
+    {
+      "path": "extras/m4",
+      "release_archive": "m4-1.4.4",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/m4-1.4.4.tar.gz",
+      "sha256": "a116c52d314c8e3365756cb1e14c6b460d6bd28769121f92373a362497359d88",
+      "bytes": 384582,
+      "acquired_utc": "2026-10-09T16:25:52.110197+00:00"
+    },
+    {
+      "path": "extras/perl",
+      "release_archive": "perl-5.8.7",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/perl-5.8.7.tar.gz",
+      "sha256": "916d7e1393ed09ca4c61b3c1ecb5f5564266c955db81ff587d2da8af7a7abaab",
+      "bytes": 12512211,
+      "acquired_utc": "2026-10-09T16:25:52.852901+00:00"
+    },
+    {
+      "path": "extras/xterm",
+      "release_archive": "xterm-207",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/xterm-207.tar.gz",
+      "sha256": "652f579171e6e8f73c13ab6b060d2447ae35ebfbd39a6002b7c05a1dfc0f7eb8",
+      "bytes": 745083,
+      "acquired_utc": "2026-10-09T16:25:52.237195+00:00"
+    },
+    {
+      "path": "extras/zlib",
+      "release_archive": "zlib-1.2.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/extras/zlib-1.2.3.tar.gz",
+      "sha256": "1795c7d067a43174113fdf03447532f373e1c6c57c08d61d9e4e9be5e244b05e",
+      "bytes": 496597,
+      "acquired_utc": "2026-10-09T16:25:52.284591+00:00"
+    },
+    {
+      "path": "font/encodings",
+      "release_archive": "encodings-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/encodings-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "6bf1203487811d81e792db04fa347f4269dfd96de6ecd6cc590edb3999695d8e",
+      "bytes": 594892,
+      "acquired_utc": "2026-10-09T16:25:42.079238+00:00"
+    },
+    {
+      "path": "font/font-adobe-100dpi",
+      "release_archive": "font-adobe-100dpi-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-adobe-100dpi-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "88a76f7d261b5a4466ab28f2985a8af838a03ae03ee83ce3a441ca8332742cc3",
+      "bytes": 1007038,
+      "acquired_utc": "2026-10-09T16:25:42.162209+00:00"
+    },
+    {
+      "path": "font/font-adobe-75dpi",
+      "release_archive": "font-adobe-75dpi-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-adobe-75dpi-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "f1c7377f6b3b1d91ef384b81f44853e9dc23ff62c11f9f30291e34e9cf6c9d87",
+      "bytes": 789768,
+      "acquired_utc": "2026-10-09T16:25:42.380080+00:00"
+    },
+    {
+      "path": "font/font-adobe-utopia-100dpi",
+      "release_archive": "font-adobe-utopia-100dpi-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-adobe-utopia-100dpi-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "b962d55a91510e70c108b0c34ee928f8016391b40a8bc26d6df85d59c1283af5",
+      "bytes": 284406,
+      "acquired_utc": "2026-10-09T16:25:42.044385+00:00"
+    },
+    {
+      "path": "font/font-adobe-utopia-75dpi",
+      "release_archive": "font-adobe-utopia-75dpi-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-adobe-utopia-75dpi-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "168b326dbad59381d0e0a9544d26f1fb8bd23d3b5478fcc426f7ce470ee8a2f7",
+      "bytes": 206053,
+      "acquired_utc": "2026-10-09T16:25:41.959014+00:00"
+    },
+    {
+      "path": "font/font-adobe-utopia-type1",
+      "release_archive": "font-adobe-utopia-type1-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-adobe-utopia-type1-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "0ba76231d9af3422376d9c1652ab3f8614bdd52acc2e2a839d911e1a54b5d5b6",
+      "bytes": 208787,
+      "acquired_utc": "2026-10-09T16:25:42.362778+00:00"
+    },
+    {
+      "path": "font/font-alias",
+      "release_archive": "font-alias-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-alias-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "9c929ad5631e078d97835e5b631532edc8e3690d5068e59393d4aa04288022f4",
+      "bytes": 42497,
+      "acquired_utc": "2026-10-09T16:25:42.377604+00:00"
+    },
+    {
+      "path": "font/font-arabic-misc",
+      "release_archive": "font-arabic-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-arabic-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "264119a6bda478c5cb226161d660fdc1c24c957b124c1e1cc8e693a06607c6a0",
+      "bytes": 52842,
+      "acquired_utc": "2026-10-09T16:25:42.377214+00:00"
+    },
+    {
+      "path": "font/font-bh-100dpi",
+      "release_archive": "font-bh-100dpi-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-bh-100dpi-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "8f74dea65f4d39236f29cdf29ffbfe948d1e8a99963ceb9b1b87b081765dba55",
+      "bytes": 642898,
+      "acquired_utc": "2026-10-09T16:25:42.750828+00:00"
+    },
+    {
+      "path": "font/font-bh-75dpi",
+      "release_archive": "font-bh-75dpi-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-bh-75dpi-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "73ce25f055e0e5b1dc1fa41e7cf7ef3c2903715db9b3a240c1a9c391c1e298ba",
+      "bytes": 475715,
+      "acquired_utc": "2026-10-09T16:25:42.851771+00:00"
+    },
+    {
+      "path": "font/font-bh-lucidatypewriter-100dpi",
+      "release_archive": "font-bh-lucidatypewriter-100dpi-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-bh-lucidatypewriter-100dpi-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "9359a40738e7199d3b77ad0e55e02d0e27a6101aede4bc2a50e3c80d2c02cf03",
+      "bytes": 179267,
+      "acquired_utc": "2026-10-09T16:25:42.680847+00:00"
+    },
+    {
+      "path": "font/font-bh-lucidatypewriter-75dpi",
+      "release_archive": "font-bh-lucidatypewriter-75dpi-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-bh-lucidatypewriter-75dpi-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "8d55580d9cf032127bd17b8d4a6bdcdb09392e76fe8ec075ce7472bc3de8e5d6",
+      "bytes": 151564,
+      "acquired_utc": "2026-10-09T16:25:42.778853+00:00"
+    },
+    {
+      "path": "font/font-bh-ttf",
+      "release_archive": "font-bh-ttf-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-bh-ttf-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "a268245101a49b1e4c2785a9d809d43fe8564b8243dcf7898a37f25abf4d9edf",
+      "bytes": 370568,
+      "acquired_utc": "2026-10-09T16:25:43.083750+00:00"
+    },
+    {
+      "path": "font/font-bh-type1",
+      "release_archive": "font-bh-type1-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-bh-type1-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "f7cede14e92d83d6c3d36eeb9d3d66fdd60372c39e8571cb9ae40a7d8c5182d5",
+      "bytes": 571692,
+      "acquired_utc": "2026-10-09T16:25:43.172960+00:00"
+    },
+    {
+      "path": "font/font-bitstream-100dpi",
+      "release_archive": "font-bitstream-100dpi-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-bitstream-100dpi-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "3e9b85774a062d8a9c997d57d45164179e403061f0bb3765e593b6a465c523e6",
+      "bytes": 129846,
+      "acquired_utc": "2026-10-09T16:25:42.972179+00:00"
+    },
+    {
+      "path": "font/font-bitstream-75dpi",
+      "release_archive": "font-bitstream-75dpi-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-bitstream-75dpi-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "71b1b6416e0018ad954225f53c0c9f2eaf8d663e1084657f3cb9b930073b7f6b",
+      "bytes": 103866,
+      "acquired_utc": "2026-10-09T16:25:42.971201+00:00"
+    },
+    {
+      "path": "font/font-bitstream-speedo",
+      "release_archive": "font-bitstream-speedo-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-bitstream-speedo-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "f44bc571753fd04c09eac7b266d1e0256db9efd0d40ab834920b9dfbb4297d52",
+      "bytes": 337301,
+      "acquired_utc": "2026-10-09T16:25:43.373330+00:00"
+    },
+    {
+      "path": "font/font-bitstream-type1",
+      "release_archive": "font-bitstream-type1-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-bitstream-type1-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "f6f09d398a89595bec5825043d36056c0a080aa2d47ae3e52c01a7258119fd6d",
+      "bytes": 352053,
+      "acquired_utc": "2026-10-09T16:25:43.433981+00:00"
+    },
+    {
+      "path": "font/font-cronyx-cyrillic",
+      "release_archive": "font-cronyx-cyrillic-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-cronyx-cyrillic-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "28593d204b638c430d3ba1ecd3c87d1416d72d8dd1874a44588371970dc44b34",
+      "bytes": 182134,
+      "acquired_utc": "2026-10-09T16:25:43.495097+00:00"
+    },
+    {
+      "path": "font/font-cursor-misc",
+      "release_archive": "font-cursor-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-cursor-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "5a67c7201388653eda3efaaa62c2f8d4db4ce980a666436418c45575034c42b4",
+      "bytes": 42627,
+      "acquired_utc": "2026-10-09T16:25:43.427723+00:00"
+    },
+    {
+      "path": "font/font-daewoo-misc",
+      "release_archive": "font-daewoo-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-daewoo-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "c279ef1d730625a1cee74527529be25d0cbc91f7a8bb310ced871ce58cdc148d",
+      "bytes": 668277,
+      "acquired_utc": "2026-10-09T16:25:43.755982+00:00"
+    },
+    {
+      "path": "font/font-dec-misc",
+      "release_archive": "font-dec-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-dec-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "e7ee982884f0c1fca409b6b9a946493afb23c9e61d33ac84ec29819717a66b75",
+      "bytes": 40713,
+      "acquired_utc": "2026-10-09T16:25:43.370533+00:00"
+    },
+    {
+      "path": "font/font-ibm-type1",
+      "release_archive": "font-ibm-type1-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-ibm-type1-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "534210f571a2166f3b6d4d8e1c37f74574c0130a4a1ed4c7d37b50a98fc95cfc",
+      "bytes": 315301,
+      "acquired_utc": "2026-10-09T16:25:43.762825+00:00"
+    },
+    {
+      "path": "font/font-isas-misc",
+      "release_archive": "font-isas-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-isas-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "c845cfe0b4bc02ac2da322f4dbf6dab1ccfd204e926c40634b91c260316f55f7",
+      "bytes": 781027,
+      "acquired_utc": "2026-10-09T16:25:43.962218+00:00"
+    },
+    {
+      "path": "font/font-jis-misc",
+      "release_archive": "font-jis-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-jis-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "7f4c3ce6ddfa52232d00e09b0bc20316b2ab9edd8007c57c8f08a742dd78b546",
+      "bytes": 555563,
+      "acquired_utc": "2026-10-09T16:25:44.145997+00:00"
+    },
+    {
+      "path": "font/font-micro-misc",
+      "release_archive": "font-micro-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-micro-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "23b9c222618a1ea090b3a2b688f4c958b8469ed5f30a5c3e3d54bb02b235b222",
+      "bytes": 38802,
+      "acquired_utc": "2026-10-09T16:25:43.796498+00:00"
+    },
+    {
+      "path": "font/font-misc-cyrillic",
+      "release_archive": "font-misc-cyrillic-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-misc-cyrillic-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "e332497fe6220c019c411912653a96d26c8706c03456ac8ff3ff5ef38b1cc77c",
+      "bytes": 65603,
+      "acquired_utc": "2026-10-09T16:25:43.913133+00:00"
+    },
+    {
+      "path": "font/font-misc-ethiopic",
+      "release_archive": "font-misc-ethiopic-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-misc-ethiopic-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "04025084b8f4e7559e34938cab9a70b28cad8174ef5f5f6103abd633b54048d9",
+      "bytes": 184289,
+      "acquired_utc": "2026-10-09T16:25:44.032656+00:00"
+    },
+    {
+      "path": "font/font-misc-meltho",
+      "release_archive": "font-misc-meltho-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-misc-meltho-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "cacbf0c055b95db07e4e61716a549195f6ed054ba98d0b443879f57876ca253d",
+      "bytes": 1446293,
+      "acquired_utc": "2026-10-09T16:25:44.571701+00:00"
+    },
+    {
+      "path": "font/font-misc-misc",
+      "release_archive": "font-misc-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-misc-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "bdc1b9407305a88bb687caa46443abddef6149d2e681597e12f1c48ec5bf3678",
+      "bytes": 1831073,
+      "acquired_utc": "2026-10-09T16:25:44.718735+00:00"
+    },
+    {
+      "path": "font/font-mutt-misc",
+      "release_archive": "font-mutt-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-mutt-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "386a8d522ffc427e00df8034a8ce834767643e104b0aac141cf1cbf3113dd1a4",
+      "bytes": 199237,
+      "acquired_utc": "2026-10-09T16:25:45.316008+00:00"
+    },
+    {
+      "path": "font/font-schumacher-misc",
+      "release_archive": "font-schumacher-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-schumacher-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "d5c6c9f293ffa4d2cdb312b463381271bb8ad763738396671fdea19456fb38df",
+      "bytes": 78036,
+      "acquired_utc": "2026-10-09T16:25:44.294059+00:00"
+    },
+    {
+      "path": "font/font-screen-cyrillic",
+      "release_archive": "font-screen-cyrillic-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-screen-cyrillic-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "0c6da93cecc16e4ddc6897e90b941d72087bc82cfcbb26ef54e9a59d371c601d",
+      "bytes": 42859,
+      "acquired_utc": "2026-10-09T16:25:44.407337+00:00"
+    },
+    {
+      "path": "font/font-sony-misc",
+      "release_archive": "font-sony-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-sony-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "4ea7d0a314b6c7ec65c92f44a3dad39ac9535b1bb9f54768573f60b69902e5cd",
+      "bytes": 48447,
+      "acquired_utc": "2026-10-09T16:25:44.446772+00:00"
+    },
+    {
+      "path": "font/font-sun-misc",
+      "release_archive": "font-sun-misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-sun-misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "80094cd7060a08bda61eef0e481800e8f94d4bbb08b8297dcf6aecea99a09a07",
+      "bytes": 56437,
+      "acquired_utc": "2026-10-09T16:25:44.527405+00:00"
+    },
+    {
+      "path": "font/font-util",
+      "release_archive": "font-util-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-util-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "02eefdacc36d5df3707b3e454f5842d06c9c2eb9591e4cae93ccd3d66c78368f",
+      "bytes": 94683,
+      "acquired_utc": "2026-10-09T16:25:44.667788+00:00"
+    },
+    {
+      "path": "font/font-winitzki-cyrillic",
+      "release_archive": "font-winitzki-cyrillic-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-winitzki-cyrillic-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "5b6997057658e6b9e46c350c76fbeb32e597a6bb61c1e86b24494f5327742d1d",
+      "bytes": 41002,
+      "acquired_utc": "2026-10-09T16:25:44.713296+00:00"
+    },
+    {
+      "path": "font/font-xfree86-type1",
+      "release_archive": "font-xfree86-type1-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/font/font-xfree86-type1-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "cda4fed7e7d462257f7282db3459fa94f94ab70934a401b7a90f5decb044f94f",
+      "bytes": 66041,
+      "acquired_utc": "2026-10-09T16:25:44.912802+00:00"
+    },
+    {
+      "path": "lib/libAppleWM",
+      "release_archive": "libAppleWM-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libAppleWM-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "66d5b9d53816cc158a0f241772cbde60a52aa0a722e28d3ef76a5eb6c82840d5",
+      "bytes": 208693,
+      "acquired_utc": "2026-10-09T16:25:45.077798+00:00"
+    },
+    {
+      "path": "lib/libFS",
+      "release_archive": "libFS-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libFS-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "15bedd7f892fbb130e2b9c17d4f927c4904362a7be5b73d07d56d8aa7025f6f1",
+      "bytes": 229218,
+      "acquired_utc": "2026-10-09T16:25:45.217634+00:00"
+    },
+    {
+      "path": "lib/libICE",
+      "release_archive": "libICE-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libICE-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "e37cffdb45bbb193e5cb75e74e7e0410554f4b3c3a1fe436debea907778e6aac",
+      "bytes": 239843,
+      "acquired_utc": "2026-10-09T16:25:45.268792+00:00"
+    },
+    {
+      "path": "lib/libSM",
+      "release_archive": "libSM-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libSM-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "df219b7d5c2fac93bc7c8eb411ed365492eaeb3727ecbb04999890fd694d4e80",
+      "bytes": 220369,
+      "acquired_utc": "2026-10-09T16:25:45.357008+00:00"
+    },
+    {
+      "path": "lib/libWindowsWM",
+      "release_archive": "libWindowsWM-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libWindowsWM-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "76ccdb6adfc51a4c40e90fe66f599ee4de4787fca44860b851dd4bbf97f7889d",
+      "bytes": 211133,
+      "acquired_utc": "2026-10-09T16:25:45.405830+00:00"
+    },
+    {
+      "path": "lib/libX11",
+      "release_archive": "libX11-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libX11-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "89a3c2d8324ff9d0d91682503407310f7df30a74915cd253be3a75247b044248",
+      "bytes": 1344417,
+      "acquired_utc": "2026-10-09T16:25:45.591554+00:00"
+    },
+    {
+      "path": "lib/libXScrnSaver",
+      "release_archive": "libXScrnSaver-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXScrnSaver-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "66287d18ebe2b239b7b0adc02f4d40b6ea918761e5fde6b8db9c180742618c94",
+      "bytes": 209914,
+      "acquired_utc": "2026-10-09T16:25:45.511368+00:00"
+    },
+    {
+      "path": "lib/libXTrap",
+      "release_archive": "libXTrap-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXTrap-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "c7e50c85803e326b3207bcae2bfcb05353f3de18238fb9082bc7ae8f6e329003",
+      "bytes": 214200,
+      "acquired_utc": "2026-10-09T16:25:45.670910+00:00"
+    },
+    {
+      "path": "lib/libXau",
+      "release_archive": "libXau-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXau-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "9500d088e1b3cbf107a93703b81d4636f778492c1c1d14dea6aca7b8354e39e8",
+      "bytes": 213408,
+      "acquired_utc": "2026-10-09T16:25:45.790269+00:00"
+    },
+    {
+      "path": "lib/libXaw",
+      "release_archive": "libXaw-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXaw-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "076ed9c4b07379b1a957753a3c8fd2a1d93ba460587d450787630f81a85f9741",
+      "bytes": 502016,
+      "acquired_utc": "2026-10-09T16:25:46.067745+00:00"
+    },
+    {
+      "path": "lib/libXcomposite",
+      "release_archive": "libXcomposite-X11R7.0-0.2.2.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXcomposite-X11R7.0-0.2.2.2.tar.bz2",
+      "sha256": "d3d0e8883171a38802400836ba2bf7a40f3b22f669db80e01509c400137c5228",
+      "bytes": 200827,
+      "acquired_utc": "2026-10-09T16:25:46.041136+00:00"
+    },
+    {
+      "path": "lib/libXcursor",
+      "release_archive": "libXcursor-X11R7.0-1.1.5.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXcursor-X11R7.0-1.1.5.2.tar.bz2",
+      "sha256": "52bbd6e05de84e94ec11f2734029183411c91e2297779098fb17e162aca5e191",
+      "bytes": 225765,
+      "acquired_utc": "2026-10-09T16:25:46.055584+00:00"
+    },
+    {
+      "path": "lib/libXdamage",
+      "release_archive": "libXdamage-X11R7.0-1.0.2.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXdamage-X11R7.0-1.0.2.2.tar.bz2",
+      "sha256": "bba5acb547fee5c33d582cbd55ad8d03965b582808912a20a457c8b78ca04184",
+      "bytes": 205151,
+      "acquired_utc": "2026-10-09T16:25:45.999977+00:00"
+    },
+    {
+      "path": "lib/libXdmcp",
+      "release_archive": "libXdmcp-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXdmcp-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "a9f12dc2d3dff9a36904fd1d14fed3cc1b84dfa5661349e88ad164a4107cc878",
+      "bytes": 211397,
+      "acquired_utc": "2026-10-09T16:25:46.134224+00:00"
+    },
+    {
+      "path": "lib/libXevie",
+      "release_archive": "libXevie-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXevie-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "f12576dd82c1467be311bcd18d30f0c8bad6e515302857cec0e8ba011dac9752",
+      "bytes": 207641,
+      "acquired_utc": "2026-10-09T16:25:46.176118+00:00"
+    },
+    {
+      "path": "lib/libXext",
+      "release_archive": "libXext-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXext-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "5ccefe638c3dfc12fd8c2f2de38ec7e0e0b54bb271fa75f687e474a58edbad28",
+      "bytes": 250668,
+      "acquired_utc": "2026-10-09T16:25:46.381121+00:00"
+    },
+    {
+      "path": "lib/libXfixes",
+      "release_archive": "libXfixes-X11R7.0-3.0.1.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXfixes-X11R7.0-3.0.1.2.tar.bz2",
+      "sha256": "bdcb52a46967aca4367e276f88de35354daa5a62b4d0776e6a89dc43c2d336e6",
+      "bytes": 209960,
+      "acquired_utc": "2026-10-09T16:25:46.404356+00:00"
+    },
+    {
+      "path": "lib/libXfont",
+      "release_archive": "libXfont-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXfont-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "47d4de6986f6ca85bc48ecd76188d7f3f009e1aeb640008cab12ac5ca5896622",
+      "bytes": 586748,
+      "acquired_utc": "2026-10-09T16:25:46.847146+00:00"
+    },
+    {
+      "path": "lib/libXfontcache",
+      "release_archive": "libXfontcache-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXfontcache-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "3ae73ba79b28499082ea81527caf032004d5a884bf69ec8b8508dedd913556b8",
+      "bytes": 204829,
+      "acquired_utc": "2026-10-09T16:25:46.632863+00:00"
+    },
+    {
+      "path": "lib/libXft",
+      "release_archive": "libXft-X11R7.0-2.1.8.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXft-X11R7.0-2.1.8.2.tar.bz2",
+      "sha256": "0473d1db21968f05b39ff9832b18545ba6b93be76d2e61b04a14208c515680f3",
+      "bytes": 248233,
+      "acquired_utc": "2026-10-09T16:25:46.755009+00:00"
+    },
+    {
+      "path": "lib/libXi",
+      "release_archive": "libXi-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXi-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "64e8ece13fc778b9dd86ef93c4b782de9a1176a005ed7d895552a73acb103d9b",
+      "bytes": 239015,
+      "acquired_utc": "2026-10-09T16:25:46.770631+00:00"
+    },
+    {
+      "path": "lib/libXinerama",
+      "release_archive": "libXinerama-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXinerama-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "72b5a499ddce72f1e18963586f7fb67e8ef69f989be455ba2c5d7f4d9b5f467a",
+      "bytes": 201413,
+      "acquired_utc": "2026-10-09T16:25:46.745548+00:00"
+    },
+    {
+      "path": "lib/libXmu",
+      "release_archive": "libXmu-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXmu-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "537ba847b3a7665e7c84dfa3d6d1719db495e780f87a3e4583671c5aafbd0e29",
+      "bytes": 279996,
+      "acquired_utc": "2026-10-09T16:25:46.879305+00:00"
+    },
+    {
+      "path": "lib/libXp",
+      "release_archive": "libXp-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXp-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "7f58cb9039eff4f65a60d718797afaf2dfd0bd674e68d1fa83c72a35c54941ee",
+      "bytes": 237834,
+      "acquired_utc": "2026-10-09T16:25:47.074462+00:00"
+    },
+    {
+      "path": "lib/libXpm",
+      "release_archive": "libXpm-X11R7.0-3.5.4.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXpm-X11R7.0-3.5.4.2.tar.bz2",
+      "sha256": "58bb490a8c97e8b7e57525f105378a65dc5f7571765aea6a8f473d93e8713807",
+      "bytes": 329956,
+      "acquired_utc": "2026-10-09T16:25:47.080533+00:00"
+    },
+    {
+      "path": "lib/libXprintAppUtil",
+      "release_archive": "libXprintAppUtil-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXprintAppUtil-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "8349266b3cc8cf743a02e810d67ad500fbd1bdfd5188470d19f4bf97663510f4",
+      "bytes": 202104,
+      "acquired_utc": "2026-10-09T16:25:47.308183+00:00"
+    },
+    {
+      "path": "lib/libXprintUtil",
+      "release_archive": "libXprintUtil-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXprintUtil-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "bb9fab969dc0320a3f47aec440d06f6524cbb64f0ba413b3ae8ffca1a5a60f0e",
+      "bytes": 215208,
+      "acquired_utc": "2026-10-09T16:25:47.502067+00:00"
+    },
+    {
+      "path": "lib/libXrandr",
+      "release_archive": "libXrandr-X11R7.0-1.1.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXrandr-X11R7.0-1.1.0.2.tar.bz2",
+      "sha256": "6b6a3fcf44621bf163ba2db6dbcc518bff4e8cf74695d1b86595387a3ff3c6fb",
+      "bytes": 214724,
+      "acquired_utc": "2026-10-09T16:25:47.500956+00:00"
+    },
+    {
+      "path": "lib/libXrender",
+      "release_archive": "libXrender-X11R7.0-0.9.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXrender-X11R7.0-0.9.0.2.tar.bz2",
+      "sha256": "f240490ce348cedcf09c2c5d170c7d79002790d72ea5dc3d7d702005684ff713",
+      "bytes": 221203,
+      "acquired_utc": "2026-10-09T16:25:47.494776+00:00"
+    },
+    {
+      "path": "lib/libXres",
+      "release_archive": "libXres-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXres-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "b8f68d40797e1baadb77053f7834428894696cb345591f732c8c8c7e1ff1f3b8",
+      "bytes": 209322,
+      "acquired_utc": "2026-10-09T16:25:47.497948+00:00"
+    },
+    {
+      "path": "lib/libXt",
+      "release_archive": "libXt-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXt-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "dad0c901d3a542866dae53df27994498f320fb1981be2820d2ded81f4bf840f5",
+      "bytes": 482948,
+      "acquired_utc": "2026-10-09T16:25:47.681545+00:00"
+    },
+    {
+      "path": "lib/libXtst",
+      "release_archive": "libXtst-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXtst-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "93d9c1fb831e2aaaab4627835e79ae0550837cbe18a0d6bc91edc2aa3ea67ad3",
+      "bytes": 207156,
+      "acquired_utc": "2026-10-09T16:25:47.680884+00:00"
+    },
+    {
+      "path": "lib/libXv",
+      "release_archive": "libXv-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXv-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "b3bcacd212b1aac947cdfe7e64175255f0302bc5a461e2c8925e3cf491532b10",
+      "bytes": 217511,
+      "acquired_utc": "2026-10-09T16:25:47.775571+00:00"
+    },
+    {
+      "path": "lib/libXvMC",
+      "release_archive": "libXvMC-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXvMC-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "fa18853a6cb877e59433fdc1455e5b7fde9bd47c617d97208c7e3e32ff84d774",
+      "bytes": 212613,
+      "acquired_utc": "2026-10-09T16:25:47.892683+00:00"
+    },
+    {
+      "path": "lib/libXxf86dga",
+      "release_archive": "libXxf86dga-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXxf86dga-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "8bc2f9b7efe25f9765db6963501bcb06efef292006e184d5fe3f8b8f2a9c5199",
+      "bytes": 214036,
+      "acquired_utc": "2026-10-09T16:25:48.080150+00:00"
+    },
+    {
+      "path": "lib/libXxf86misc",
+      "release_archive": "libXxf86misc-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXxf86misc-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "94ea1585a426e1d36f9067d65b176c27d3fbecfdf59a076263014292d10862c5",
+      "bytes": 205438,
+      "acquired_utc": "2026-10-09T16:25:48.123839+00:00"
+    },
+    {
+      "path": "lib/libXxf86vm",
+      "release_archive": "libXxf86vm-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libXxf86vm-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "f972bbd632cf9047a28b4c467a2f7c2c72f9b36959a98649b3dfef6bf898b8df",
+      "bytes": 210002,
+      "acquired_utc": "2026-10-09T16:25:48.115664+00:00"
+    },
+    {
+      "path": "lib/libdmx",
+      "release_archive": "libdmx-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libdmx-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "3dfb83a88826c7250e41180442e891ac39898e46e0c9c1c2aba352d4a4aa9973",
+      "bytes": 213045,
+      "acquired_utc": "2026-10-09T16:25:48.128452+00:00"
+    },
+    {
+      "path": "lib/libfontenc",
+      "release_archive": "libfontenc-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libfontenc-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "448a4e35a8685b60829d1b51b498e2a6e4107549fd0458fa17dcc801d29d5f72",
+      "bytes": 211589,
+      "acquired_utc": "2026-10-09T16:25:48.372531+00:00"
+    },
+    {
+      "path": "lib/liblbxutil",
+      "release_archive": "liblbxutil-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/liblbxutil-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "e485f36d74f477f3d235a05bb67b502dc744092569842d9ab45e2f785f74f556",
+      "bytes": 222016,
+      "acquired_utc": "2026-10-09T16:25:48.369777+00:00"
+    },
+    {
+      "path": "lib/liboldX",
+      "release_archive": "liboldX-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/liboldX-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "98a06dfb046c0bf064c12361333a88c6f624df311d8acbc0d25c93fdd6f2c1fe",
+      "bytes": 210365,
+      "acquired_utc": "2026-10-09T16:25:48.519638+00:00"
+    },
+    {
+      "path": "lib/libxkbfile",
+      "release_archive": "libxkbfile-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libxkbfile-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "2260663af7613e35996e7aa1e8911a062e849619bce88086529031e6c479c9ed",
+      "bytes": 255310,
+      "acquired_utc": "2026-10-09T16:25:48.612832+00:00"
+    },
+    {
+      "path": "lib/libxkbui",
+      "release_archive": "libxkbui-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/libxkbui-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "6bdd9529c9c3f37f93f6b6fa51541f380b92639b0456c5328638cc6a426e075c",
+      "bytes": 203717,
+      "acquired_utc": "2026-10-09T16:25:48.695928+00:00"
+    },
+    {
+      "path": "lib/xtrans",
+      "release_archive": "xtrans-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/lib/xtrans-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "c9a049b4367318b53cbad02bc7e3c4450778e3237400a515b2a6272405b8b912",
+      "bytes": 88972,
+      "acquired_utc": "2026-10-09T16:25:48.613696+00:00"
+    },
+    {
+      "path": "proto/applewmproto",
+      "release_archive": "applewmproto-X11R7.0-1.0.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/applewmproto-X11R7.0-1.0.3.tar.bz2",
+      "sha256": "db738777fd573bede8e41f121f31692e8ec70bb822b5dcd263973533273fc5ec",
+      "bytes": 38932,
+      "acquired_utc": "2026-10-09T16:25:48.528035+00:00"
+    },
+    {
+      "path": "proto/bigreqsproto",
+      "release_archive": "bigreqsproto-X11R7.0-1.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/bigreqsproto-X11R7.0-1.0.2.tar.bz2",
+      "sha256": "69d82eff84b1cef08a30e3a79de26df0bce7f531a86d2144ee0d5e43fc21ce86",
+      "bytes": 36662,
+      "acquired_utc": "2026-10-09T16:25:48.523186+00:00"
+    },
+    {
+      "path": "proto/compositeproto",
+      "release_archive": "compositeproto-X11R7.0-0.2.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/compositeproto-X11R7.0-0.2.2.tar.bz2",
+      "sha256": "a30f75ce8d9fdfdee6c15d1b4428d0b08602b163debf7a8836c09838c2d795bc",
+      "bytes": 37336,
+      "acquired_utc": "2026-10-09T16:25:48.785350+00:00"
+    },
+    {
+      "path": "proto/damageproto",
+      "release_archive": "damageproto-X11R7.0-1.0.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/damageproto-X11R7.0-1.0.3.tar.bz2",
+      "sha256": "f71ae6f74fd43af078c052d5e9daa262b6bd28cc0d40938c3743391eaeb58bfc",
+      "bytes": 37637,
+      "acquired_utc": "2026-10-09T16:25:48.782464+00:00"
+    },
+    {
+      "path": "proto/dmxproto",
+      "release_archive": "dmxproto-X11R7.0-2.2.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/dmxproto-X11R7.0-2.2.2.tar.bz2",
+      "sha256": "531b957d9589950a96cbdbf6a8376f31203797948baed311553cc2d2870c78db",
+      "bytes": 39332,
+      "acquired_utc": "2026-10-09T16:25:48.931975+00:00"
+    },
+    {
+      "path": "proto/evieext",
+      "release_archive": "evieext-X11R7.0-1.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/evieext-X11R7.0-1.0.2.tar.bz2",
+      "sha256": "d7dad048a9496058ec19c63e958e5216c27964d8cb766926fd5dcb96ff879f23",
+      "bytes": 37487,
+      "acquired_utc": "2026-10-09T16:25:48.949101+00:00"
+    },
+    {
+      "path": "proto/fixesproto",
+      "release_archive": "fixesproto-X11R7.0-3.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/fixesproto-X11R7.0-3.0.2.tar.bz2",
+      "sha256": "dd7f67b0f01c253512b53a8a051271144316e82783d5f8391df77fc8c21ed327",
+      "bytes": 38756,
+      "acquired_utc": "2026-10-09T16:25:48.941811+00:00"
+    },
+    {
+      "path": "proto/fontcacheproto",
+      "release_archive": "fontcacheproto-X11R7.0-0.1.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/fontcacheproto-X11R7.0-0.1.2.tar.bz2",
+      "sha256": "72a6200a586f27c55b837cc6e537f15499a2f07783a826521c9ad2eaf35a6461",
+      "bytes": 38175,
+      "acquired_utc": "2026-10-09T16:25:49.020085+00:00"
+    },
+    {
+      "path": "proto/fontsproto",
+      "release_archive": "fontsproto-X11R7.0-2.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/fontsproto-X11R7.0-2.0.2.tar.bz2",
+      "sha256": "90a5d9ad2328e682a58c179a7df9eac1193db06423e832b107bd4e7802f660b4",
+      "bytes": 45141,
+      "acquired_utc": "2026-10-09T16:25:49.087519+00:00"
+    },
+    {
+      "path": "proto/glproto",
+      "release_archive": "glproto-X11R7.0-1.4.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/glproto-X11R7.0-1.4.3.tar.bz2",
+      "sha256": "bbdf932d306065435c98ef5893dc9da46c5929dcdc6ae9a77367ea0f973a8ba5",
+      "bytes": 53730,
+      "acquired_utc": "2026-10-09T16:25:49.183890+00:00"
+    },
+    {
+      "path": "proto/inputproto",
+      "release_archive": "inputproto-X11R7.0-1.3.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/inputproto-X11R7.0-1.3.2.tar.bz2",
+      "sha256": "3b48f495f9af74fc7cca2fe913e10ce3d947d1aa5e677722e87620b32f1068d0",
+      "bytes": 46316,
+      "acquired_utc": "2026-10-09T16:25:49.272525+00:00"
+    },
+    {
+      "path": "proto/kbproto",
+      "release_archive": "kbproto-X11R7.0-1.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/kbproto-X11R7.0-1.0.2.tar.bz2",
+      "sha256": "abfea195d72a6355dddacaf1ca37187ba9e8ca271af4bf6c38efaba4023b36a4",
+      "bytes": 57988,
+      "acquired_utc": "2026-10-09T16:25:49.282459+00:00"
+    },
+    {
+      "path": "proto/printproto",
+      "release_archive": "printproto-X11R7.0-1.0.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/printproto-X11R7.0-1.0.3.tar.bz2",
+      "sha256": "23bfd57906a1787814480f57763ded8fc10a696a903a4768869c56061283e972",
+      "bytes": 43464,
+      "acquired_utc": "2026-10-09T16:25:49.425544+00:00"
+    },
+    {
+      "path": "proto/randrproto",
+      "release_archive": "randrproto-X11R7.0-1.1.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/randrproto-X11R7.0-1.1.2.tar.bz2",
+      "sha256": "7a5eb58f10d02f58c2f7fb153bb5dc6d72173d5fa3d317bdbd9674f4577e0ad0",
+      "bytes": 38331,
+      "acquired_utc": "2026-10-09T16:25:49.348183+00:00"
+    },
+    {
+      "path": "proto/recordproto",
+      "release_archive": "recordproto-X11R7.0-1.13.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/recordproto-X11R7.0-1.13.2.tar.bz2",
+      "sha256": "080aecbaaa5ad81750541ed19fb5ea6ccb45e1c2a5a93e9a2878a42532e40ba5",
+      "bytes": 39255,
+      "acquired_utc": "2026-10-09T16:25:49.339397+00:00"
+    },
+    {
+      "path": "proto/renderproto",
+      "release_archive": "renderproto-X11R7.0-0.9.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/renderproto-X11R7.0-0.9.2.tar.bz2",
+      "sha256": "a875741d110a73952119460fac31e1bb7d0b0aff16f59c2a0a04bcd434c74f41",
+      "bytes": 40003,
+      "acquired_utc": "2026-10-09T16:25:49.424732+00:00"
+    },
+    {
+      "path": "proto/resourceproto",
+      "release_archive": "resourceproto-X11R7.0-1.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/resourceproto-X11R7.0-1.0.2.tar.bz2",
+      "sha256": "72df7c8fe3ea2177adcb9442fcc49dfde75231abf0300844bf4551393cdd42b4",
+      "bytes": 36828,
+      "acquired_utc": "2026-10-09T16:25:49.497021+00:00"
+    },
+    {
+      "path": "proto/scrnsaverproto",
+      "release_archive": "scrnsaverproto-X11R7.0-1.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/scrnsaverproto-X11R7.0-1.0.2.tar.bz2",
+      "sha256": "b709305970c99107d5121717711b244a7cd7a25e65d08f2e97dea8109f17b3cd",
+      "bytes": 38353,
+      "acquired_utc": "2026-10-09T16:25:49.615825+00:00"
+    },
+    {
+      "path": "proto/trapproto",
+      "release_archive": "trapproto-X11R7.0-3.4.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/trapproto-X11R7.0-3.4.3.tar.bz2",
+      "sha256": "522ded5292b80289e13dc8af9a0c11d35417f7079779969835cc8af55a38d006",
+      "bytes": 48801,
+      "acquired_utc": "2026-10-09T16:25:49.767807+00:00"
+    },
+    {
+      "path": "proto/videoproto",
+      "release_archive": "videoproto-X11R7.0-2.2.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/videoproto-X11R7.0-2.2.2.tar.bz2",
+      "sha256": "074b4576113e89213940e3ea3901dd035ab317255cd78c929aa52d89227f1f37",
+      "bytes": 42721,
+      "acquired_utc": "2026-10-09T16:25:49.770755+00:00"
+    },
+    {
+      "path": "proto/windowswmproto",
+      "release_archive": "windowswmproto-X11R7.0-1.0.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/windowswmproto-X11R7.0-1.0.3.tar.bz2",
+      "sha256": "e575dc15f7ac3bd4dd4241be617bd88806506cf6ff1fc9332a42ae2275a5118c",
+      "bytes": 38828,
+      "acquired_utc": "2026-10-09T16:25:49.732379+00:00"
+    },
+    {
+      "path": "proto/xcmiscproto",
+      "release_archive": "xcmiscproto-X11R7.0-1.1.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/xcmiscproto-X11R7.0-1.1.2.tar.bz2",
+      "sha256": "f28e8f6baaaa590ed991314c98f16d114e4668b93c5c6e7fb1bf51f3cc7bf6c0",
+      "bytes": 36766,
+      "acquired_utc": "2026-10-09T16:25:49.769715+00:00"
+    },
+    {
+      "path": "proto/xextproto",
+      "release_archive": "xextproto-X11R7.0-7.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/xextproto-X11R7.0-7.0.2.tar.bz2",
+      "sha256": "41c091d05943817c0b667192dab8c8f3a3a59c04a66dd311a9573f48a7b70b3b",
+      "bytes": 68316,
+      "acquired_utc": "2026-10-09T16:25:49.929752+00:00"
+    },
+    {
+      "path": "proto/xf86bigfontproto",
+      "release_archive": "xf86bigfontproto-X11R7.0-1.1.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/xf86bigfontproto-X11R7.0-1.1.2.tar.bz2",
+      "sha256": "56498126f54f123e2ffde0a883ccbc914097818e85bfa6b2a4a47df687f50b79",
+      "bytes": 37360,
+      "acquired_utc": "2026-10-09T16:25:49.831849+00:00"
+    },
+    {
+      "path": "proto/xf86dgaproto",
+      "release_archive": "xf86dgaproto-X11R7.0-2.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/xf86dgaproto-X11R7.0-2.0.2.tar.bz2",
+      "sha256": "c66920f0ad6921a33098008cd01f05eb9a47f550d214065dc6c7072f176c82cf",
+      "bytes": 40016,
+      "acquired_utc": "2026-10-09T16:25:49.938858+00:00"
+    },
+    {
+      "path": "proto/xf86driproto",
+      "release_archive": "xf86driproto-X11R7.0-2.0.3",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/xf86driproto-X11R7.0-2.0.3.tar.bz2",
+      "sha256": "256fd04cbd97b2b96e7ef808b6752561da855ded3835a1bb0d7acbe07758e924",
+      "bytes": 42797,
+      "acquired_utc": "2026-10-09T16:25:50.122583+00:00"
+    },
+    {
+      "path": "proto/xf86miscproto",
+      "release_archive": "xf86miscproto-X11R7.0-0.9.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/xf86miscproto-X11R7.0-0.9.2.tar.bz2",
+      "sha256": "ed0190e3db4c07fe042cfc9d726e3806af83a2e6dfdbd832a7f8c225805bde5b",
+      "bytes": 38412,
+      "acquired_utc": "2026-10-09T16:25:50.153917+00:00"
+    },
+    {
+      "path": "proto/xf86rushproto",
+      "release_archive": "xf86rushproto-X11R7.0-1.1.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/xf86rushproto-X11R7.0-1.1.2.tar.bz2",
+      "sha256": "861b881e2ac1e9164048c06217b54dffb5d88feb0bf72abf31984e663843b923",
+      "bytes": 37679,
+      "acquired_utc": "2026-10-09T16:25:50.165070+00:00"
+    },
+    {
+      "path": "proto/xf86vidmodeproto",
+      "release_archive": "xf86vidmodeproto-X11R7.0-2.2.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/xf86vidmodeproto-X11R7.0-2.2.2.tar.bz2",
+      "sha256": "2497487e51cb2e94dfe540b9084f625f8018eb0853a699d724be790b26d9fd15",
+      "bytes": 39489,
+      "acquired_utc": "2026-10-09T16:25:50.190761+00:00"
+    },
+    {
+      "path": "proto/xineramaproto",
+      "release_archive": "xineramaproto-X11R7.0-1.1.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/xineramaproto-X11R7.0-1.1.2.tar.bz2",
+      "sha256": "f74d0dfb47d23f544a67464427754adf3fbc52b76b4a68834ab1caf8dc5406df",
+      "bytes": 38362,
+      "acquired_utc": "2026-10-09T16:25:50.178387+00:00"
+    },
+    {
+      "path": "proto/xproto",
+      "release_archive": "xproto-X11R7.0-7.0.4",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/xproto-X11R7.0-7.0.4.tar.bz2",
+      "sha256": "78dec6988b9eec524ede61e04a379ff52fac23816c2824d7782a6e618997c31c",
+      "bytes": 127645,
+      "acquired_utc": "2026-10-09T16:25:50.433589+00:00"
+    },
+    {
+      "path": "proto/xproxymanagementprotocol",
+      "release_archive": "xproxymanagementprotocol-X11R7.0-1.0.2",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/proto/xproxymanagementprotocol-X11R7.0-1.0.2.tar.bz2",
+      "sha256": "f3c25042dfd332c3aee22176b3bcd244a99bc475112a97d9d4cc03505fe7b48f",
+      "bytes": 36984,
+      "acquired_utc": "2026-10-09T16:25:50.326192+00:00"
+    },
+    {
+      "path": "util/gccmakedep",
+      "release_archive": "gccmakedep-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/util/gccmakedep-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "dc126b21e2e9b93df2587b55418d8593642eaa8e14a74e14bd4cf93262a64443",
+      "bytes": 66964,
+      "acquired_utc": "2026-10-09T16:25:50.429561+00:00"
+    },
+    {
+      "path": "util/imake",
+      "release_archive": "imake-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/util/imake-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "dec5cee4e529ac218e7d99a550122e065daf29a3a4105d0b545620e4ca57edc4",
+      "bytes": 108622,
+      "acquired_utc": "2026-10-09T16:25:50.719752+00:00"
+    },
+    {
+      "path": "util/lndir",
+      "release_archive": "lndir-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/util/lndir-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "8f563e178ac29c64fcc0144c60d415092d998194a6797c7b45a95802d2df8410",
+      "bytes": 75972,
+      "acquired_utc": "2026-10-09T16:25:50.658665+00:00"
+    },
+    {
+      "path": "util/makedepend",
+      "release_archive": "makedepend-X11R7.0-1.0.0",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/util/makedepend-X11R7.0-1.0.0.tar.bz2",
+      "sha256": "1caf464a967ff9335a040f2d3ffe050c881efda13c14531be49cf1aa8dabda92",
+      "bytes": 103203,
+      "acquired_utc": "2026-10-09T16:25:50.735653+00:00"
+    },
+    {
+      "path": "util/util-macros",
+      "release_archive": "util-macros-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/util/util-macros-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "e95a45db65b33be472a3134492e348c4cd6edc200d02a85654ffe62bc2e6fdcd",
+      "bytes": 38475,
+      "acquired_utc": "2026-10-09T16:25:50.595441+00:00"
+    },
+    {
+      "path": "util/xorg-cf-files",
+      "release_archive": "xorg-cf-files-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/util/xorg-cf-files-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "019ba3dbfe2f23e5847cc839a26c630cea20fe8d62df4775a21087176908b9d7",
+      "bytes": 252075,
+      "acquired_utc": "2026-10-09T16:25:50.869579+00:00"
+    },
+    {
+      "path": "xserver/xorg-server",
+      "release_archive": "xorg-server-X11R7.0-1.0.1",
+      "url": "https://xorg.freedesktop.org/archive/X11R7.0/src/xserver/xorg-server-X11R7.0-1.0.1.tar.bz2",
+      "sha256": "0419124e1bab473f8f9e2d7de1dba8bae2ed1375b72d55cdfb9471dac357ed47",
+      "bytes": 5849840,
+      "acquired_utc": "2026-10-09T16:25:51.423772+00:00"
+    }
+  ],
+  "supplemental_dependencies": [
+    {
+      "path": "extras/bison",
+      "name": "GNU Bison",
+      "version": "1.35",
+      "url": "https://ftp.gnu.org/gnu/bison/bison-1.35.tar.gz",
+      "download_url": "https://mirrors.kernel.org/gnu/bison/bison-1.35.tar.gz",
+      "sha256": "710d4fd96568f17ede71fa1b4205931df7e5761248b0c8a291008c1d3c7b780e",
+      "acquired_date": "2026-10-06"
+    }
+  ],
+  "filename_mappings": [
+    {
+      "archive_path": "Mesa-6.4.1/mms-config.",
+      "path": "extras/MesaLib/mms-config",
+      "reason": "Existing project Windows-checkout convention: omit final filename dot; bytes unchanged"
+    }
+  ],
+  "upstream_symlinks": [
+    {
+      "path": "extras/MesaLib/src/glx/x11/glcontextmodes.c",
+      "target": "../../../src/mesa/drivers/dri/common/glcontextmodes.c"
+    }
+  ]
+}

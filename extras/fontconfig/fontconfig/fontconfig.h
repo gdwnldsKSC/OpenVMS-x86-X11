@@ -1,7 +1,7 @@
 /*
  * $RCSId: xc/lib/fontconfig/fontconfig/fontconfig.h,v 1.30 2002/09/26 00:17:27 keithp Exp $
  *
- * Copyright Â© 2001 Keith Packard
+ * Copyright © 2001 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -39,8 +39,8 @@ typedef int		FcBool;
  */
 
 #define FC_MAJOR	2
-#define FC_MINOR	3
-#define FC_REVISION	2
+#define FC_MINOR	2
+#define FC_REVISION	3
 
 #define FC_VERSION	((FC_MAJOR * 10000) + (FC_MINOR * 100) + (FC_REVISION))
 
@@ -70,7 +70,6 @@ typedef int		FcBool;
 #define FC_FOUNDRY	    "foundry"		/* String */
 #define FC_ANTIALIAS	    "antialias"		/* Bool (depends) */
 #define FC_HINTING	    "hinting"		/* Bool (true) */
-#define FC_HINT_STYLE	    "hintstyle"		/* Int */
 #define FC_VERTICAL_LAYOUT  "verticallayout"	/* Bool (false) */
 #define FC_AUTOHINT	    "autohint"		/* Bool (false) */
 #define FC_GLOBAL_ADVANCE   "globaladvance"	/* Bool (true) */
@@ -85,17 +84,10 @@ typedef int		FcBool;
 #define FC_DPI		    "dpi"		/* double */
 #define FC_RGBA		    "rgba"		/* Int */
 #define FC_MINSPACE	    "minspace"		/* Bool use minimum line spacing */
-#define FC_SOURCE	    "source"		/* String (deprecated) */
+#define FC_SOURCE	    "source"		/* String (X11, freetype) */
 #define FC_CHARSET	    "charset"		/* CharSet */
 #define FC_LANG		    "lang"		/* String RFC 3066 langs */
 #define FC_FONTVERSION	    "fontversion"	/* Int from 'head' table */
-#define FC_FULLNAME	    "fullname"		/* String */
-#define FC_FAMILYLANG	    "familylang"	/* String RFC 3066 langs */
-#define FC_STYLELANG	    "stylelang"		/* String RFC 3066 langs */
-#define FC_FULLNAMELANG	    "fullnamelang"	/* String RFC 3066 langs */
-#define FC_CAPABILITY       "capability"	/* String */
-#define FC_FONTFORMAT	    "fontformat"	/* String */
-#define FC_EMBOLDEN	    "embolden"		/* Bool - true if emboldening needed*/
 
 #define FC_DIR_CACHE_FILE	    "fonts.cache-"FC_CACHE_VERSION
 #define FC_USER_CACHE_FILE	    ".fonts.cache-"FC_CACHE_VERSION
@@ -109,7 +101,6 @@ typedef int		FcBool;
 #define FC_WEIGHT_EXTRALIGHT	    40
 #define FC_WEIGHT_ULTRALIGHT	    FC_WEIGHT_EXTRALIGHT
 #define FC_WEIGHT_LIGHT		    50
-#define FC_WEIGHT_BOOK		    75
 #define FC_WEIGHT_REGULAR	    80
 #define FC_WEIGHT_NORMAL	    FC_WEIGHT_REGULAR
 #define FC_WEIGHT_MEDIUM	    100
@@ -136,7 +127,6 @@ typedef int		FcBool;
 #define FC_WIDTH_ULTRAEXPANDED	    200
 
 #define FC_PROPORTIONAL		    0
-#define FC_DUAL			    90
 #define FC_MONO			    100
 #define FC_CHARCELL		    110
 
@@ -148,12 +138,6 @@ typedef int		FcBool;
 #define FC_RGBA_VBGR	    4
 #define FC_RGBA_NONE	    5
 
-/* hinting style */
-#define FC_HINT_NONE        0
-#define FC_HINT_SLIGHT      1
-#define FC_HINT_MEDIUM      2
-#define FC_HINT_FULL        3
- 
 typedef enum _FcType {
     FcTypeVoid, 
     FcTypeInteger, 
@@ -192,8 +176,7 @@ typedef struct _FcConstant {
 } FcConstant;
 
 typedef enum _FcResult {
-    FcResultMatch, FcResultNoMatch, FcResultTypeMismatch, FcResultNoId,
-    FcResultOutOfMemory
+    FcResultMatch, FcResultNoMatch, FcResultTypeMismatch, FcResultNoId
 } FcResult;
 
 typedef struct _FcPattern   FcPattern;
@@ -468,9 +451,6 @@ FcInitLoadConfigAndFonts (void);
 FcBool
 FcInit (void);
 
-void
-FcFini (void);
-
 int
 FcGetVersion (void);
 
@@ -691,9 +671,6 @@ FcBool
 FcPatternDel (FcPattern *p, const char *object);
 
 FcBool
-FcPatternRemove (FcPattern *p, const char *object, int id);
-
-FcBool
 FcPatternAddInteger (FcPattern *p, const char *object, int i);
 
 FcBool
@@ -749,25 +726,15 @@ FcStrCopy (const FcChar8 *s);
 FcChar8 *
 FcStrCopyFilename (const FcChar8 *s);
     
-/* These are ASCII only, suitable only for pattern element names */
-#define FcIsUpper(c)	((0101 <= (c) && (c) <= 0132))
-#define FcIsLower(c)	((0141 <= (c) && (c) <= 0172))
-#define FcToLower(c)	(FcIsUpper(c) ? (c) - 0101 + 0141 : (c))
-
-FcChar8 *
-FcStrDowncase (const FcChar8 *s);
+#define FcIsUpper(c)	(('A' <= (c) && (c) <= 'Z'))
+#define FcIsLower(c)	(('a' <= (c) && (c) <= 'z'))
+#define FcToLower(c)	(FcIsUpper(c) ? (c) - 'A' + 'a' : (c))
 
 int
 FcStrCmpIgnoreCase (const FcChar8 *s1, const FcChar8 *s2);
 
 int
 FcStrCmp (const FcChar8 *s1, const FcChar8 *s2);
-
-const FcChar8 *
-FcStrStrIgnoreCase (const FcChar8 *s1, const FcChar8 *s2);
-
-const FcChar8 *
-FcStrStr (const FcChar8 *s1, const FcChar8 *s2);
 
 int
 FcUtf8ToUcs4 (const FcChar8 *src_orig,

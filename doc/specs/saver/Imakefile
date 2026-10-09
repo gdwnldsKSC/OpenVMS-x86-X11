@@ -1,6 +1,0 @@
-XCOMM $XFree86$
-
-MakeSimpleDoc(saver,saver.ms)
-
-InstallRoffDoc(saver)
-

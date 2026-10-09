@@ -1,22 +1,21 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <HTML
 ><HEAD
 ><TITLE
->FcStrCopyFilename</TITLE
+>FcStrBasename</TITLE
 ><META
 NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
 REL="HOME"
+TITLE="Fontconfig Developers Reference, Version 2.2.3
+ "
 HREF="index.html"><LINK
 REL="UP"
 TITLE="String utilities"
-HREF="x93.html#AEN3028"><LINK
+HREF="x93.html#AEN2980"><LINK
 REL="PREVIOUS"
-TITLE="FcStrDowncase"
-HREF="r3209.html"><LINK
-REL="NEXT"
-TITLE="FcStrCmpIgnoreCase"
-HREF="r3254.html"></HEAD
+TITLE="FcStrDirname"
+HREF="r3209.html"></HEAD
 ><BODY
 CLASS="REFENTRY"
 BGCOLOR="#FFFFFF"
@@ -36,7 +35,7 @@ CELLSPACING="0"
 ><TH
 COLSPAN="3"
 ALIGN="center"
-></TH
+>Fontconfig Developers Reference, Version 2.2.3</TH
 ></TR
 ><TR
 ><TD
@@ -57,11 +56,7 @@ VALIGN="bottom"
 WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
-><A
-HREF="r3254.html"
-ACCESSKEY="N"
->Next</A
-></TD
+>&nbsp;</TD
 ></TR
 ></TABLE
 ><HR
@@ -69,9 +64,9 @@ ALIGN="LEFT"
 WIDTH="100%"></DIV
 ><H1
 ><A
-NAME="FCSTRCOPYFILENAME"
+NAME="FCSTRBASENAME"
 ></A
->FcStrCopyFilename</H1
+>FcStrBasename</H1
 ><DIV
 CLASS="REFNAMEDIV"
 ><A
@@ -79,7 +74,7 @@ NAME="AEN3235"
 ></A
 ><H2
 >Name</H2
->FcStrCopyFilename&nbsp;--&nbsp;copy a string, expanding '~'</DIV
+>FcStrBasename&nbsp;--&nbsp;last component of filename</DIV
 ><DIV
 CLASS="REFSYNOPSISDIV"
 ><A
@@ -102,8 +97,8 @@ CLASS="FUNCSYNOPSISINFO"
 ><CODE
 ><CODE
 CLASS="FUNCDEF"
->FcChar8 * FcStrCopyFilename</CODE
->(const FcChar8 *s);</CODE
+>FcChar8 * FcStrBasename</CODE
+>(const FcChar8 *file);</CODE
 ></P
 ><P
 ></P
@@ -117,26 +112,23 @@ NAME="AEN3246"
 ><H2
 >Description</H2
 ><P
->Just like FcStrCopy except that it converts any leading '~' characters in
-<CODE
+>Returns the filename of <VAR
 CLASS="PARAMETER"
->s</CODE
-> to the value of the HOME environment variable.
-Returns NULL if '~' is present in <CODE
-CLASS="PARAMETER"
->s</CODE
-> and HOME is unset.
+>file</VAR
+> stripped of any leading
+directory names.  This is returned in newly allocated storage which should
+be freed when no longer needed.
 	    </P
 ></DIV
 ><DIV
 CLASS="REFSECT1"
 ><A
-NAME="AEN3251"
+NAME="AEN3250"
 ></A
 ><H2
 >Version</H2
 ><P
->Fontconfig version 2.3.2
+>Fontconfig version 2.2.3
 
 	    </P
 ></DIV
@@ -173,24 +165,20 @@ ACCESSKEY="H"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
-><A
-HREF="r3254.html"
-ACCESSKEY="N"
->Next</A
-></TD
+>&nbsp;</TD
 ></TR
 ><TR
 ><TD
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->FcStrDowncase</TD
+>FcStrDirname</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="x93.html#AEN3028"
+HREF="x93.html#AEN2980"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -198,7 +186,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->FcStrCmpIgnoreCase</TD
+>&nbsp;</TD
 ></TR
 ></TABLE
 ></DIV

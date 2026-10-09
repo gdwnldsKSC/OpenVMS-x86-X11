@@ -1,4 +1,4 @@
-! Upstream xkbcomp install layout, including rules/xfree86 compatibility names.
+! Upstream xkbdata distributed-data install layout.
 ! Copies only declared data and the native compiler; no system startup changes.
 XKB_DATA : $(OUT).PROGRAMS.XKBCOMP]XKBCOMP.EXE, -
     [.VMS-SUPPORT.PROGRAMS.XKBCOMP]DATA.LIST, -

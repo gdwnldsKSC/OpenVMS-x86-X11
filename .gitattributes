@@ -1,6 +1,18 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# Preserve independently acquired modular upstream source bytes on every host.
+app/** -text
+data/** -text
+doc/** -text
+driver/** -text
+extras/** -text
+font/** -text
+lib/** -text
+proto/** -text
+util/** -text
+xserver/** -text
+
 # Preserve the independently acquired GNU Bison distribution byte-for-byte.
 extras/bison/** -text
 

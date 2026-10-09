@@ -15,10 +15,10 @@ $ targets = targets + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ targets = targets + "XEVIE|XFONTCACHE|DMX|XP|"
 $ targets = targets + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
 $ targets = targets + "X11|XAUTH|XDPYINFO|XWININFO|"
-$ targets = targets + "XSET|XMODMAP|XEV|BISON|XKBCOMP|XVFB|"
+$ targets = targets + "XSET|XMODMAP|XEV|BISON|XKBCOMP|SETXKBMAP|XKB_DATA|XVFB|XSERVER_CORE|XSERVER|"
 $ targets = targets + "XT|XMU|MKFONTDIR|FONTS|FONTS_BDF|FONTS_MISC|FONTS_75DPI|FONTS_100DPI|FONTS_CYRILLIC|"
 $ targets = targets + "FONTS_ENCODINGS|FONTS_SCALED|FONTS_SPEEDO|FONTS_TYPE1|FONTS_TTF|FONTS_OTF|FONTS_CID|"
-$ targets = targets + "NLS|NLS_XLC_LOCALE|NLS_COMPOSE|X11_DATA|"
+$ targets = targets + "NLS|NLS_XLC_LOCALE|NLS_COMPOSE|X11_DATA|RUNTIME|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -283,6 +283,8 @@ $ directory = profile + ".PROGRAMS.XEV]"
 $ IF F$SEARCH(profile + ".PROGRAMS]XEV.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XKBCOMP]"
 $ IF F$SEARCH(profile + ".PROGRAMS]XKBCOMP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.SETXKBMAP]"
+$ IF F$SEARCH(profile + ".PROGRAMS]SETXKBMAP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ server_base = profile + ".PROGRAMS.XSERVER.HW.VFB.SERVER"
 $ directory = server_base + "]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.VFB]SERVER.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'

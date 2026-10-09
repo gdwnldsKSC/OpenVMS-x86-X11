@@ -101,13 +101,19 @@ XMODMAP. Produces `XMODMAP.EXE`.
 XEV. Produces `XEV.EXE`.  
 BISON. Produces `BISON.EXE` from bundled, unchanged GNU Bison 1.35.  
 XKBCOMP. Produces `XKBCOMP.EXE`; builds and uses bundled native Bison automatically.  
+SETXKBMAP. Target for `SETXKBMAP.EXE`.
+
+XKB_DATA. Stages the upstream keyboard data and native compiler together.
+
 XT. Produces `XT.OLB` — complete static Xt, with P64 host types and generated string tables.  
 XMU. Produces `XMU.OLB` — complete static Xmu.  
 XVFB. Produces `XVFB.EXE` — headless core/Render/XKB/X Input server.  
 MKFONTDIR. Produces the native font-index launcher.  
 FONTS. Builds BDF fonts and scalable-font/encoding indexes.  
 NLS. Builds locale and Compose data.  
-X11_DATA. Copies XErrorDB and XKeysymDB.  
+X11_DATA. Copies XErrorDB, XKeysymDB, and Xcms.txt.
+
+RUNTIME. Stages BDF fonts/indexes, locale/Xlib/XKB data, and native utilities; no system installation or automatic startup.
   
 ## Notes  
   
@@ -204,6 +210,9 @@ $ @[.VMS-SUPPORT]BUILD XMODMAP
 $ @[.VMS-SUPPORT]BUILD XEV  
 $ @[.VMS-SUPPORT]BUILD BISON  
 $ @[.VMS-SUPPORT]BUILD XKBCOMP  
+$ @[.VMS-SUPPORT]BUILD SETXKBMAP
+$ @[.VMS-SUPPORT]BUILD XKB_DATA
+$ @[.VMS-SUPPORT]BUILD RUNTIME
 $ @[.VMS-SUPPORT]BUILD XT  
 $ @[.VMS-SUPPORT]BUILD XMU  
 $ @[.VMS-SUPPORT]BUILD XVFB  

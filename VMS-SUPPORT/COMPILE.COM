@@ -22,7 +22,7 @@ $ profiles = profiles + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
 $ profiles = profiles + "FONT_BUILTINS|FONT_FONTCACHE|FONT_FREETYPE|FONT_SPEEDO|"
 $ profiles = profiles + "X11|X11_MAKEKEYS|"
 $ profiles = profiles + "XAUTH|XDPYINFO|XWININFO|"
-$ profiles = profiles + "XSET|XMODMAP|XEV|XKBCOMP|"
+$ profiles = profiles + "XSET|XMODMAP|XEV|XKBCOMP|SETXKBMAP|"
 $ profiles = profiles + "XT|XMU|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
@@ -102,7 +102,7 @@ $ client_extensions = client_extensions + "XSS|XVMC|XXF86VM|XXF86MISC|"
 $ client_extensions = client_extensions + "XEVIE|XFONTCACHE|DMX|XP|"
 $ client_extensions = client_extensions + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
 $ client_extensions = client_extensions + "XAUTH|XDPYINFO|XWININFO|"
-$ client_extensions = client_extensions + "XSET|XMODMAP|XEV|XKBCOMP|"
+$ client_extensions = client_extensions + "XSET|XMODMAP|XEV|XKBCOMP|SETXKBMAP|"
 $ client_extensions = client_extensions + "XT|XMU|"
 $ IF F$LOCATE("|" + P4 + "|",client_extensions) .LT. F$LENGTH(client_extensions) -
     THEN include_directory = include_directory + -

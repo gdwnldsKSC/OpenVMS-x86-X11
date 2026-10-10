@@ -23,6 +23,7 @@ $ profiles = profiles + "X11|X11_MAKEKEYS|"
 $ profiles = profiles + "XAUTH|XDPYINFO|XWININFO|"
 $ profiles = profiles + "XSET|XMODMAP|XEV|XKBCOMP|SETXKBMAP|"
 $ profiles = profiles + "XT|XMU|"
+$ profiles = profiles + "XF86_VIDEO_VMWARE|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -257,6 +258,23 @@ $ IF (P4 .EQS. "FONT_BITMAP") .OR. (P4 .EQS. "BDFTOPCF") THEN -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.LIB.LIBXFONT.INCLUDE.X11.FONTS],[.LIB.LIBXFONT.SRC.BITMAP]"
 $ header = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]XFUNCPROTO.H")
+$ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN include_directory = -
+    "[.DRIVER.XF86-VIDEO-VMWARE.SRC]," + include_directory + -
+    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
+    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
+    "[.XSERVER.XORG-SERVER.XFIXES]," + -
+    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.BUS]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.RAMDAC]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.VGAHW]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.SHADOWFB]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.XAA]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.DDC]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.I2C]," + -
+    "[.XSERVER.XORG-SERVER.INCLUDE],[.XSERVER.XORG-SERVER.MI]," + -
+    "[.XSERVER.XORG-SERVER.FB],[.XSERVER.XORG-SERVER.RENDER]"
 $ IF header .EQS. "" THEN GOTO done
 $ headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")
 $ DEFINE/USER_MODE/TABLE=LNM$PROCESS X11 'headers'
@@ -297,12 +315,21 @@ $ IF (P4 .NES. "GTF") .AND. (P4 .NES. "RTL") THEN -
     include_directory = include_directory + "," + -
     F$PARSE(P1,,,"DEVICE") + F$PARSE(P1,,,"DIRECTORY")
 $ IF (P4 .EQS. "MI") .OR. (P4 .EQS. "EXT") THEN GOSUB mi_context
+$! Retain the upstream pointer-difference warnings for this static driver.
+$! Only these two source files' MAYLOSEDATA3 status is an accepted warning.
+$ vmware_offset_warning = 0
+$ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN -
+    vmware_offset_warning = (F$PARSE(P1,,,"NAME") .EQS. "OFFSCREEN_MANAGER") .OR. -
+                            (F$PARSE(P1,,,"NAME") .EQS. "VMWAREXAA")
+$ IF vmware_offset_warning THEN ON WARNING THEN CONTINUE
 $ CC 'P3' 'P5' 'first_include' /NESTED_INCLUDE_DIRECTORY=NONE -
     /INCLUDE_DIRECTORY=('include_directory',"") -
     /LIST='P2'.LIS/SHOW=INCLUDE -
     /MMS_DEPENDENCIES=(FILE='P2'.MMS,SYSTEM_INCLUDE_FILES) -
     /OBJECT='P2'.OBJ 'P1' + 'rtl_headers'/LIBRARY
 $ result = $STATUS
+$ ON WARNING THEN GOTO failed
+$ IF vmware_offset_warning .AND. (result .EQ. %X10B91260) THEN result = 1
 $ IF .NOT. result THEN GOTO done
 $ IF .NOT. scoped THEN GOTO done
 $ IF F$TRNLNM("X11") .NES. inherited_x11 THEN result = 2

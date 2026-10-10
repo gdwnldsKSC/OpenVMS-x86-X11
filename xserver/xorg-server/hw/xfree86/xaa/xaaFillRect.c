@@ -4,6 +4,7 @@
 #include <xorg-config.h>
 #endif
 
+#include <stdint.h>
 #include "misc.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -796,7 +797,7 @@ WriteColumn(
 
     pSrc += (Bpp * xoff);
    
-    if((skipleft = (long)pSrc & 0x03L)) {
+    if((skipleft = (int)((uintptr_t)pSrc & 0x03U))) {
         if(Bpp == 3)
            skipleft = 4 - skipleft;
         else
@@ -808,7 +809,7 @@ WriteColumn(
         if(Bpp == 3)
            pSrc -= 3 * skipleft;  
         else   /* is this Alpha friendly ? */
-           pSrc = (unsigned char*)((long)pSrc & ~0x03L);     
+           pSrc = (unsigned char*)((uintptr_t)pSrc & ~(uintptr_t)0x03U);
     }
 
     src = pSrc + (yoff * srcwidth);

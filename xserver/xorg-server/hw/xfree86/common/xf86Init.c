@@ -1893,6 +1893,10 @@ xf86PrintMarkers()
 static void
 xf86RunVtInit(void)
 {
+#ifdef __VMS
+    if (xf86Info.vtinit)
+        FatalError("VTInit is not supported on OpenVMS.\n");
+#else
     int i;
 
     /*
@@ -1922,6 +1926,7 @@ xf86RunVtInit(void)
           wait(NULL);
       }
     }
+#endif
 }
 
 #ifdef XFree86LOADER

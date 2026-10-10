@@ -109,8 +109,10 @@ SHADOWFB. Produces `SHADOWFB.OLB` — the unchanged static XFree86 shadowfb modu
 VGAHW. Produces `VGAHW.OLB` — the unchanged static XFree86 VGA hardware support module with 64-bit pointers; loader-only metadata excluded. The consuming server supplies port I/O and XFree86 services. Does not access hardware during the build.  
 RAMDAC. Produces `RAMDAC.OLB` — all eight unchanged static XFree86 RAMDAC/cursor objects, including IBM, BT, TI, and the upstream bit-order wrapper; loader-only metadata and optional ARGB cursors excluded. The consuming server supplies XFree86 and cursor services.  
 XAA. Produces `XAA.OLB` — all 54 static XFree86 acceleration objects, including bit-order, fixed-base, triple-bit and polysegment variants; Render enabled, with minimal P64 address-alignment fixes. Loadable hooks, Xinerama and architecture assembly excluded.  
-XF86CONFIG. Produces `XF86CONFIG.OLB` — all 17 unchanged upstream XFree86 configuration-parser modules. Reads, validates and writes configuration data; the consuming program supplies diagnostics. Uses current-process file permissions without Unix saved-ID switching; upstream Vendor-subsection Identifier and built-in scanner-reset defects remain.  
+XF86CONFIG. Produces `XF86CONFIG.OLB` — all 17 upstream XFree86 configuration-parser C sources unchanged, with VMS-only external-name aliases in headers. Reads, validates and writes configuration data; the consuming program supplies diagnostics. Uses current-process file permissions without Unix saved-ID switching; upstream Vendor-subsection Identifier and built-in scanner-reset defects remain.  
 RAC. Produces `RAC.OLB` — the unchanged static XFree86 resource-access control module with Render, framebuffer, cursor, colormap and viewport wrappers; loader-only metadata excluded. The consuming server supplies device-access and core services; upstream CloseScreen omits CreatePixmap restoration.  
+COMMON. Produces `COMMON.OLB` — all 32 objects of the selected static XFree86 common profile, including generated default modes and generic keyboard mapping; XKB, X Input and Render enabled, loader and XVideo excluded. The consuming server supplies OS, PCI and core services.  
+INIT. Produces `INIT.OLB` — the separate upstream XFree86 initialization object, with a VMS guard rejecting unsupported Unix VTInit commands; the consuming server supplies OS and device-dependent services.  
 MKFONTDIR. Produces the native font-index launcher.  
 FONTS. Builds 1,006 PCF fonts and scalable-font/encoding indexes.  
 NLS. Builds locale and Compose data for 57 locales.  
@@ -223,6 +225,8 @@ $ @[.VMS-SUPPORT]BUILD RAMDAC
 $ @[.VMS-SUPPORT]BUILD XAA  
 $ @[.VMS-SUPPORT]BUILD XF86CONFIG  
 $ @[.VMS-SUPPORT]BUILD RAC  
+$ @[.VMS-SUPPORT]BUILD COMMON  
+$ @[.VMS-SUPPORT]BUILD INIT  
 $ @[.VMS-SUPPORT]BUILD MKFONTDIR  
 $ @[.VMS-SUPPORT]BUILD FONTS  
 $ @[.VMS-SUPPORT]BUILD NLS  
@@ -230,4 +234,5 @@ $ @[.VMS-SUPPORT]BUILD X11_DATA
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  
+COMMON requires native Perl configured as the `PERL` foreign command to generate default modes.  
 XKBCOMP builds bundled GNU Bison 1.35 automatically; no separate download or BISON command setup is required.  

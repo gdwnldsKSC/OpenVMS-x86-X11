@@ -64,6 +64,21 @@
 
 #ifndef _xf86Optrec_h_
 #define _xf86Optrec_h_
+
+#ifdef __VMS
+/* Preserve APIs that otherwise differ from common's wrappers only in case. */
+#define xf86addNewOption xf86ParserAddNewOption
+#define xf86findOption xf86ParserFindOption
+#define xf86findOptionValue xf86ParserFindOptionValue
+#define xf86newOption xf86ParserNewOption
+#define xf86nextOption xf86ParserNextOption
+#define xf86optionListCreate xf86ParserOptionListCreate
+#define xf86optionListFree xf86ParserOptionListFree
+#define xf86optionListMerge xf86ParserOptionListMerge
+#define xf86optionName xf86ParserOptionName
+#define xf86optionValue xf86ParserOptionValue
+#endif
+
 #include <stdio.h>
 
 /* 

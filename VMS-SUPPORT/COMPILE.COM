@@ -7,8 +7,11 @@ $ saved_default = F$ENVIRONMENT("DEFAULT")
 $ default_scoped = 0
 $ scoped = 0
 $ freetype_scoped = 0
+$ loader_scoped = 0
 $ inherited_freetype = ""
 $ inherited_freetype_table = ""
+$ inherited_loader = ""
+$ inherited_loader_table = ""
 $ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|ICE|SM|BDFTOPCF|ICEAUTH|SHOWRGB|MAKEDEPEND|GTF|RTL|"
@@ -23,7 +26,7 @@ $ profiles = profiles + "X11|X11_MAKEKEYS|"
 $ profiles = profiles + "XAUTH|XDPYINFO|XWININFO|"
 $ profiles = profiles + "XSET|XMODMAP|XEV|XKBCOMP|SETXKBMAP|"
 $ profiles = profiles + "XT|XMU|"
-$ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|RAC|"
+$ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|RAC|COMMON|INIT|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -183,7 +186,7 @@ $ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.UTIL.MAKEDEPEND],[.UTIL.IMAKE]"
 $ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|CFB|ROOTLESS|XTRAP|"
-$ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|RAC|"
+$ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|RAC|COMMON|INIT|"
 $! Native case folding makes server xfixes.h collide with client Xfixes.h.
 $! Keep the server header ahead of the exported client extension directory.
 $ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
@@ -223,6 +226,21 @@ $ IF P4 .EQS. "RAC" THEN include_directory = include_directory + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.BUS]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.RAC]"
+$ IF (P4 .EQS. "COMMON") .OR. (P4 .EQS. "INIT") THEN include_directory = include_directory + -
+    ",[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XSERVER.HW.XFREE86.COMMON]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.BUS]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.DDC],[.XSERVER.XORG-SERVER.HW.XFREE86.I2C]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.LOADER],[.XSERVER.XORG-SERVER.HW.XFREE86.RAC]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.PARSER],[.XSERVER.XORG-SERVER.HW.XFREE86.SCANPCI]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.VBE],[.XSERVER.XORG-SERVER.HW.XFREE86.INT10]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.VGAHW],[.XSERVER.XORG-SERVER.HW.XFREE86.DIXMODS.EXTMOD]," + -
+    "[.XSERVER.XORG-SERVER.XEXT],[.XSERVER.XORG-SERVER.RANDR],[.XSERVER.XORG-SERVER.XKB]," + -
+    "[.XSERVER.XORG-SERVER.XI],[.XSERVER.XORG-SERVER.OS]"
+$ IF (P4 .EQS. "COMMON") .OR. (P4 .EQS. "INIT") THEN GOSUB xf86common_native
+$ IF ((P4 .EQS. "COMMON") .OR. (P4 .EQS. "INIT")) .AND. -
+    (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
 $ IF (P4 .EQS. "FB") .OR. (P4 .EQS. "RENDER") .OR. -
     (P4 .EQS. "SHADOW") THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.FB],[.XSERVER.XORG-SERVER.XEXT]"
@@ -310,6 +328,7 @@ $ DEFINE/USER_MODE/TABLE=LNM$PROCESS X11 'headers'
 $ scoped = 1
 $ IF F$TRNLNM("X11","LNM$FILE_DEV") .NES. headers THEN GOTO done
 $ IF P4 .EQS. "FONT_FREETYPE" THEN GOTO freetype_headers
+$ IF (P4 .EQS. "COMMON") .AND. (F$PARSE(P1,,,"NAME") .EQS. "XF86HELPER") THEN GOTO loader_headers
 $ GOTO compile
 $freetype_headers:
 $ inherited_freetype = F$TRNLNM("FREETYPE")
@@ -321,6 +340,18 @@ $ freetype_headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")
 $ DEFINE/USER_MODE/TABLE=LNM$PROCESS FREETYPE 'freetype_headers'
 $ freetype_scoped = 1
 $ IF F$TRNLNM("FREETYPE","LNM$FILE_DEV") .NES. freetype_headers THEN GOTO done
+$ GOTO compile
+$loader_headers:
+$! Resolve the unchanged loader/os.c include only for this compiler image.
+$ inherited_loader = F$TRNLNM("LOADER")
+$ inherited_loader_table = F$TRNLNM("LOADER",,,,,"TABLE_NAME")
+$ IF F$TRNLNM("LOADER","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
+$ header = F$SEARCH("[.XSERVER.XORG-SERVER.HW.XFREE86.LOADER]OS.C")
+$ IF header .EQS. "" THEN GOTO done
+$ loader_directory = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")
+$ DEFINE/USER_MODE/TABLE=LNM$PROCESS LOADER 'loader_directory'
+$ loader_scoped = 1
+$ IF F$TRNLNM("LOADER","LNM$FILE_DEV") .NES. loader_directory THEN GOTO done
 $ GOTO compile
 $rtl_headers:
 $! These utilities need only the explicit native RTL header library, not X11.
@@ -345,13 +376,16 @@ $ IF (P4 .NES. "GTF") .AND. (P4 .NES. "RTL") THEN -
     F$PARSE(P1,,,"DEVICE") + F$PARSE(P1,,,"DIRECTORY")
 $ IF (P4 .EQS. "MI") .OR. (P4 .EQS. "EXT") .OR. -
      (P4 .EQS. "RAMDAC") .OR. (P4 .EQS. "XAA") THEN GOSUB mi_context
-$! Retain the upstream pointer-difference warnings for this static driver.
-$! Only these two source files' MAYLOSEDATA3 status is an accepted warning.
-$ vmware_offset_warning = 0
+$! Retain reviewed upstream pointer-difference warnings in the native logs.
+$! Only the named source files' MAYLOSEDATA3 status is an accepted warning.
+$ offset_warning = 0
 $ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN -
-    vmware_offset_warning = (F$PARSE(P1,,,"NAME") .EQS. "OFFSCREEN_MANAGER") .OR. -
-                            (F$PARSE(P1,,,"NAME") .EQS. "VMWAREXAA")
-$ IF vmware_offset_warning THEN ON WARNING THEN CONTINUE
+    offset_warning = (F$PARSE(P1,,,"NAME") .EQS. "OFFSCREEN_MANAGER") .OR. -
+                     (F$PARSE(P1,,,"NAME") .EQS. "VMWAREXAA")
+$! These are same-string font-path lengths, not pointer-to-address casts.
+$ IF P4 .EQS. "COMMON" THEN -
+    offset_warning = F$PARSE(P1,,,"NAME") .EQS. "XF86CONFIG"
+$ IF offset_warning THEN ON WARNING THEN CONTINUE
 $ CC 'P3' 'P5' 'first_include' /NESTED_INCLUDE_DIRECTORY=NONE -
     /INCLUDE_DIRECTORY=('include_directory',"") -
     /LIST='P2'.LIS/SHOW=INCLUDE -
@@ -359,7 +393,7 @@ $ CC 'P3' 'P5' 'first_include' /NESTED_INCLUDE_DIRECTORY=NONE -
     /OBJECT='P2'.OBJ 'P1' + 'rtl_headers'/LIBRARY
 $ result = $STATUS
 $ ON WARNING THEN GOTO failed
-$ IF vmware_offset_warning .AND. (result .EQ. %X10B91260) THEN result = 1
+$ IF offset_warning .AND. (result .EQ. %X10B91260) THEN result = 1
 $ IF .NOT. result THEN GOTO done
 $ IF .NOT. scoped THEN GOTO done
 $ IF F$TRNLNM("X11") .NES. inherited_x11 THEN result = 2
@@ -367,10 +401,17 @@ $ IF F$TRNLNM("X11",,,,,"TABLE_NAME") .NES. inherited_table THEN result = 2
 $ IF freetype_scoped .AND. (F$TRNLNM("FREETYPE") .NES. inherited_freetype) THEN result = 2
 $ IF freetype_scoped .AND. -
     (F$TRNLNM("FREETYPE",,,,,"TABLE_NAME") .NES. inherited_freetype_table) THEN result = 2
+$ IF loader_scoped .AND. (F$TRNLNM("LOADER") .NES. inherited_loader) THEN result = 2
+$ IF loader_scoped .AND. -
+    (F$TRNLNM("LOADER",,,,,"TABLE_NAME") .NES. inherited_loader_table) THEN result = 2
 $ GOTO done
 $cfb_native:
 $ cfb_native_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.CFB]VMS_CFB_NATIVE.H")
 $ IF cfb_native_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + cfb_native_header
+$ RETURN
+$xf86common_native:
+$ xf86common_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.COMMON]VMS_COMMON_CONFIG.H")
+$ IF xf86common_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + xf86common_header
 $ RETURN
 $rootless_config:
 $ rootless_config_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.MIEXT.ROOTLESS]VMS_ROOTLESS_CONFIG.H")
@@ -419,6 +460,8 @@ $ IF result .AND. 1 THEN result = 2
 $done:
 $ SET NOON
 $ IF default_scoped THEN SET DEFAULT 'saved_default'
+$ IF loader_scoped .AND. (F$TRNLNM("LOADER","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER") -
+     THEN DEASSIGN/USER_MODE/TABLE=LNM$PROCESS LOADER
 $ IF freetype_scoped .AND. (F$TRNLNM("FREETYPE","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER") -
      THEN DEASSIGN/USER_MODE/TABLE=LNM$PROCESS FREETYPE
 $ IF scoped .AND. (F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER") -

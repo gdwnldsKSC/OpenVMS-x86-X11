@@ -65,6 +65,12 @@
 #ifndef _xf86Parser_h_
 #define _xf86Parser_h_
 
+#ifdef __VMS
+/* Distinguish the parser APIs from common's case-only wrapper names. */
+#define xf86pathIsAbsolute xf86ParserPathIsAbsolute
+#define xf86pathIsSafe xf86ParserPathIsSafe
+#endif
+
 #include "xf86Optrec.h"
 
 #define HAVE_PARSER_DECLS

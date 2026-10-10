@@ -4,6 +4,7 @@
 #include <xorg-config.h>
 #endif
 
+#include <stdint.h>
 #include "misc.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -198,7 +199,7 @@ XAAWritePixmap (
     beCareful = PlusOne = FALSE;
     Bpp = bpp >> 3;
 
-    if((skipleft = (long)src & 0x03L)) {
+    if((skipleft = (int)((uintptr_t)src & 0x03U))) {
 	if(!(infoRec->ImageWriteFlags & LEFT_EDGE_CLIPPING)) {
 	   skipleft = 0;
 	   beCareful = TRUE;
@@ -223,7 +224,7 @@ XAAWritePixmap (
 	if(Bpp == 3)
 	   src -= 3 * skipleft;  
 	else   /* is this Alpha friendly ? */
-	   src = (unsigned char*)((long)src & ~0x03L);     
+	   src = (unsigned char*)((uintptr_t)src & ~(uintptr_t)0x03U);
     }
 
 BAD_ALIGNMENT:
@@ -253,11 +254,11 @@ BAD_ALIGNMENT:
 	    src += srcwidth;
 	}
 	if(beCareful) {
-	   int shift = ((long)src & 0x03L) << 3;
+	   int shift = (int)((uintptr_t)src & 0x03U) << 3;
 	   if(--dwords)
 		XAAMoveDWORDS_FixedBase((CARD32*)infoRec->ImageWriteBase,
 			(CARD32*)src, dwords);
-	   src = (unsigned char*)((long)(src + (dwords << 2)) & ~0x03L);
+	   src = (unsigned char*)((uintptr_t)(src + (dwords << 2)) & ~(uintptr_t)0x03U);
 	   *((CARD32*)infoRec->ImageWriteBase) = *((CARD32*)src) >> shift;
 	}
     } else {
@@ -284,11 +285,11 @@ BAD_ALIGNMENT:
 	}
 
 	if(beCareful) {
-	    int shift = ((long)src & 0x03L) << 3;
+	    int shift = (int)((uintptr_t)src & 0x03U) << 3;
 	    if(--dwords)
 		XAAMoveDWORDS((CARD32*)infoRec->ImageWriteBase,
 					(CARD32*)src, dwords);
-	    src = (unsigned char*)((long)(src + (dwords << 2)) & ~0x03L);
+	    src = (unsigned char*)((uintptr_t)(src + (dwords << 2)) & ~(uintptr_t)0x03U);
      
 	    ((CARD32*)infoRec->ImageWriteBase)[dwords] = 
 			*((CARD32*)src) >> shift;
@@ -322,7 +323,7 @@ XAAWritePixmapScanline (
     Bool beCareful = FALSE;
     CARD32* base;
 
-    if((skipleft = (long)src & 0x03L)) {
+    if((skipleft = (int)((uintptr_t)src & 0x03U))) {
 	if(!(infoRec->ScanlineImageWriteFlags & LEFT_EDGE_CLIPPING)) {
 	   skipleft = 0;
 	   beCareful = TRUE;
@@ -347,7 +348,7 @@ XAAWritePixmapScanline (
 	if(Bpp == 3)
 	   src -= 3 * skipleft;  
 	else
-	   src = (unsigned char*)((long)src & ~0x03L);     
+	   src = (unsigned char*)((uintptr_t)src & ~(uintptr_t)0x03U);
     }
 
 BAD_ALIGNMENT:
@@ -375,11 +376,11 @@ BAD_ALIGNMENT:
     }
 
     if(beCareful) {
-	int shift = ((long)src & 0x03L) << 3;
+	int shift = (int)((uintptr_t)src & 0x03U) << 3;
 	base = (CARD32*)infoRec->ScanlineImageWriteBuffers[bufferNo];
 	if(--dwords)
 	    XAAMoveDWORDS(base,(CARD32*)src, dwords);
-	src = (unsigned char*)((long)(src + (dwords << 2)) & ~0x03L);
+	src = (unsigned char*)((uintptr_t)(src + (dwords << 2)) & ~(uintptr_t)0x03U);
      
 	base[dwords] = *((CARD32*)src) >> shift;
 	(*infoRec->SubsequentImageWriteScanline)(pScrn, bufferNo);

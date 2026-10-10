@@ -23,7 +23,7 @@ $ profiles = profiles + "X11|X11_MAKEKEYS|"
 $ profiles = profiles + "XAUTH|XDPYINFO|XWININFO|"
 $ profiles = profiles + "XSET|XMODMAP|XEV|XKBCOMP|SETXKBMAP|"
 $ profiles = profiles + "XT|XMU|"
-$ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|"
+$ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -181,7 +181,7 @@ $ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.UTIL.MAKEDEPEND],[.UTIL.IMAKE]"
 $ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|CFB|ROOTLESS|XTRAP|"
-$ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|"
+$ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|"
 $! Native case folding makes server xfixes.h collide with client Xfixes.h.
 $! Keep the server header ahead of the exported client extension directory.
 $ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
@@ -211,6 +211,11 @@ $ IF P4 .EQS. "RAMDAC" THEN include_directory = include_directory + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.BUS]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.RAMDAC]"
+$ IF P4 .EQS. "XAA" THEN include_directory = include_directory + -
+    ",[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.BUS]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.XAA]"
 $ IF (P4 .EQS. "FB") .OR. (P4 .EQS. "RENDER") .OR. -
     (P4 .EQS. "SHADOW") THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.FB],[.XSERVER.XORG-SERVER.XEXT]"
@@ -332,7 +337,7 @@ $ IF (P4 .NES. "GTF") .AND. (P4 .NES. "RTL") THEN -
     include_directory = include_directory + "," + -
     F$PARSE(P1,,,"DEVICE") + F$PARSE(P1,,,"DIRECTORY")
 $ IF (P4 .EQS. "MI") .OR. (P4 .EQS. "EXT") .OR. -
-     (P4 .EQS. "RAMDAC") THEN GOSUB mi_context
+     (P4 .EQS. "RAMDAC") .OR. (P4 .EQS. "XAA") THEN GOSUB mi_context
 $! Retain the upstream pointer-difference warnings for this static driver.
 $! Only these two source files' MAYLOSEDATA3 status is an accepted warning.
 $ vmware_offset_warning = 0

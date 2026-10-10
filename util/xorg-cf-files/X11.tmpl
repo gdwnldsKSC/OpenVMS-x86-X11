@@ -1,6 +1,6 @@
 XCOMM ----------------------------------------------------------------------
 XCOMM X Window System Build Parameters and Rules
-XCOMM $XdotOrg: xc/config/cf/X11.tmpl,v 1.52 2005/09/22 23:54:18 alanc Exp $
+XCOMM $XdotOrg: util/cf/X11.tmpl,v 1.54 2006/04/15 15:55:25 herrb Exp $
 XCOMM $Xorg: X11.tmpl,v 1.6 2000/08/17 19:41:46 cpqbld Exp $
 XCOMM
 XCOMM
@@ -812,7 +812,7 @@ XORGRELSTRING = XorgManVersionString
 # define DefaultFSFontPath DefaultFontPath
 #endif
 #ifndef DefaultRGBDatabase
-#define DefaultRGBDatabase $(LIBDIR)/rgb
+#define DefaultRGBDatabase $(SHAREDIR)/rgb
 #endif
 #ifndef UseRgbTxt
 #define UseRgbTxt		NO	/* default is to compile with dbm */
@@ -1469,6 +1469,13 @@ FCHOWN_DEFINES = -DHAS_FCHOWN
 #ifndef ModuleDir
 #define ModuleDir $(USRLIBDIR)/modules
 #endif
+#ifndef ShareDir
+# ifdef ProjectRoot
+#  define ShareDir Concat(ProjectRoot,/share/X11)
+# else
+#  define ShareDir /usr/share/X11
+# endif
+#endif
 #ifndef InstSrcDir
 #define InstSrcDir Concat(ProjectRoot,/src)
 #endif
@@ -1646,7 +1653,8 @@ XCOMM X Window System make variables; these need to be coordinated with rules
      XBUILDBINDIR = XBuildBinDir
            INCDIR = $(INCROOT)		/* header files */
            ADMDIR = AdmDir		/* server log files */
-           LIBDIR = LibDir		/* rgb, XErrorDB, etc. */
+           LIBDIR = LibDir		/* configs for xdm, xinit, etc. */
+         SHAREDIR = ShareDir		/* rgb, XErrorDB, etc. */
        LIBEXECDIR = LibexecDir
         MODULEDIR = ModuleDir
    TOP_X_INCLUDES = TopXInclude

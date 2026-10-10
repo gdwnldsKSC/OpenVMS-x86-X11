@@ -61,7 +61,6 @@
 #include "micmap.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Version.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -120,11 +119,11 @@ void     CYRIXSetRead(int bank);
 void     CYRIXSetWrite(int bank);
 void     CYRIXSetReadWrite(int bank);
 
-#define VERSION 4000
+#define CYRIX_VERSION 4000
 #define CYRIX_NAME "CYRIX"
 #define CYRIX_DRIVER_NAME "cyrix"
 #define CYRIX_MAJOR_VERSION 1
-#define CYRIX_MINOR_VERSION 0
+#define CYRIX_MINOR_VERSION 1
 #define CYRIX_PATCHLEVEL 0
 #define VGA_REGION 2
 
@@ -141,7 +140,7 @@ enum GenericTypes {
  */
 
 _X_EXPORT DriverRec CYRIX = {
-    VERSION,
+    CYRIX_VERSION,
     CYRIX_DRIVER_NAME,
     CYRIXIdentify,
     CYRIXProbe,
@@ -411,7 +410,7 @@ CYRIXProbe(DriverPtr drv, int flags)
 		if ((pScrn = xf86ConfigPciEntity(pScrn, 0, usedChips[i],
 						       CYRIXPCIchipsets,NULL, NULL,
 						       NULL, NULL, NULL))) {
-		    pScrn->driverVersion = VERSION;
+		    pScrn->driverVersion = CYRIX_VERSION;
 		    pScrn->driverName    = CYRIX_DRIVER_NAME;
 		    pScrn->name          = CYRIX_NAME;
 		    pScrn->Probe         = CYRIXProbe;

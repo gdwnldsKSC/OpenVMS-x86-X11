@@ -149,6 +149,8 @@ read_config_file (char *config, struct flist **list)
   return count;
 }
 
+#define div_255(x) (((x) + 0x80 + (((x) + 0x80) >> 8)) >> 8)
+
 static void
 premultiply_data (png_structp png, png_row_infop row_info, png_bytep data)
 {
@@ -163,9 +165,9 @@ premultiply_data (png_structp png, png_row_infop row_info, png_bytep data)
 	unsigned char  alpha = base[3];
 	XcursorPixel   p;
 
-	red = (unsigned) red * (unsigned) alpha / 255;
-	green = (unsigned) green * (unsigned) alpha / 255;
-	blue = (unsigned) blue * (unsigned) alpha / 255;
+        red = div_255((unsigned)red * (unsigned)alpha);
+	green = div_255((unsigned)green * (unsigned)alpha);
+	blue = div_255((unsigned)blue * (unsigned)alpha);
 	p = (alpha << 24) | (red << 16) | (green << 8) | (blue << 0);
 	memcpy (base, &p, sizeof (XcursorPixel));
     }

@@ -37,6 +37,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "config.h"
 #endif
 
+#include <string.h>
+#include <math.h>
+
 /*
  * This server does not support these XFree86 4.0 features yet
  * DDC1 & DDC2 (requires I2C)
@@ -53,7 +56,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * These are X and server generic header files.
  */
 #include "xf86.h"
-#include "xf86_ansic.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
 #include "xf86RAC.h"
@@ -137,16 +139,15 @@ static void I740ProbeDDC(ScrnInfoPtr pScrn, int index);
 static Bool I740MapMem(ScrnInfoPtr pScrn);
 static Bool I740UnmapMem(ScrnInfoPtr pScrn);
 
-
-#define VERSION 4000
+#define I740_VERSION 4000
 #define I740_NAME "I740"
 #define I740_DRIVER_NAME "i740"
 #define I740_MAJOR_VERSION 1
-#define I740_MINOR_VERSION 0
+#define I740_MINOR_VERSION 1
 #define I740_PATCHLEVEL 0
 
 _X_EXPORT DriverRec I740 = {
-  VERSION,
+  I740_VERSION,
   I740_DRIVER_NAME,
   I740Identify,
   I740Probe,
@@ -397,7 +398,7 @@ I740Probe(DriverPtr drv, int flags) {
 	  /* Allocate new ScrnInfoRec and claim the slot */
 	  if ((pScrn = xf86ConfigPciEntity(pScrn, 0, usedChips[i],
 						 I740PciChipsets, 0, 0, 0, 0, 0))) {
-	      pScrn->driverVersion = VERSION;
+	      pScrn->driverVersion = I740_VERSION;
 	      pScrn->driverName = I740_DRIVER_NAME;
 	      pScrn->name = I740_NAME;
 	      pScrn->Probe = I740Probe;
@@ -429,7 +430,7 @@ I740Probe(DriverPtr drv, int flags) {
 	  ScrnInfoPtr pScrn = NULL;
 	  if ((pScrn  = xf86ConfigPciEntity(pScrn, 0, usedChips[i],
 						  I740PciChipsets, 0, 0, 0, 0, 0))) {
-	      pScrn->driverVersion = VERSION;
+	      pScrn->driverVersion = I740_VERSION;
 	      pScrn->driverName = I740_DRIVER_NAME;
 	      pScrn->name = I740_NAME;
 	      pScrn->Probe = I740Probe;

@@ -11,28 +11,27 @@
 
 <article>
 
-<title>README for X11R&relvers; and X11R&modvers;
+<title>README for X11R&relvers;
 <author>The X.Org Foundation
 <date>&reldate;
 
 <ident>
-$Id: README.sgml,v 1.6 2005/12/19 08:26:18 alanc Exp $.
+$Id: README.sgml,v 1.6 2006/05/22 10:36:00 ajax Exp $.
 </ident>
 
 <abstract>
 
-X11R&relvers; and X11R&modvers; are Open Source versions of the X Window
+X11R&relvers; is an Open Source versions of the X Window
 System that supports many UNIX(R) and UNIX-like operating systems (such
 as Linux, FreeBSD, NetBSD, OpenBSD and Solaris x86) on Intel and other
 platforms.  This version is compatible with X11R&prevrelvers; and other
-X window system implementations which support the X11R&majorvers;
-standard.
+X window system implementations which support the X11 standard.
 
 </abstract>
 
 <toc>
 
-<sect>What are X11R&relvers; and X11R&modvers;?
+<sect>What is X11R&relvers;?
 <p>
 <![ %updaterel [
 X11R&relvers; is the &whichupdaterel; update to X11R&majorvers;,
@@ -47,11 +46,16 @@ fixes for security issues, fixes for driver bugs, and fixes that improve
 stability.
 ]]>
 
-<![ %fullrel [
-X11R&relvers; is the &whichfullrel; and final full release in the
-<![ %earlyrel; [new]]>
-X11R&majorvers; series, and X11R&modvers; is the first release in the
-new X11R&modmajor; series.
+<![ %majorrel [
+X11R&relvers; is the first release in the new X11R&majorvers; series.
+]]>
+
+<![ %minorrel [
+X11R&relvers; is the second release in the X11R&majorvers; series.
+Tarballs for packages that have had updates since the &prevrelvers;
+release are included in this release.  To build this release, you will
+first need to get the packages from X11R&prevrelvers; and then add the
+new packages from X11R&relvers; to them.
 ]]>
 
 <![ %snapshot [
@@ -72,30 +76,20 @@ X11R&relvers; is a feature-complete snapshot of X11R&fullrelvers;.
 
 <p>
 
-<![ %fullrel [The &relvers; version is a new release that includes
+<![ %majorrel [The &relvers; version is a new major release that includes
 additional hardware support, functional enhancements and bug fixes.]]>
-The &modvers; version is built from the same source code as the
-&relvers; so it contains the same additional hardware support,
-functional enhancements and bug fixes; however, it has been split into
-logical modules that can be developed, built and maintained separately,
-but still fit together coherently into the larger source code base as
-they have in the &relvers; tree.
+<![ %minorrel [The &relvers; version is a new minor release that includes
+additional hardware support, functional enhancements and bug fixes.]]>
 <![ %haverelnotes [
 Specific release enhancements can be viewed in the
 <htmlurl name="Release Notes" url="RELNOTES.html">.
 ]]>
 
-X11R&relvers; and X11R&modvers; are being released at the same time to
-assist in the transition from the older monolithic source tree to the
-new modular source tree.  It will take time for everyone to make this
-transition, so we will maintain the older X11R&majorvers; series through
-update releases to both X11R&relvers; and X11R&prevrelvers;.
-
-Most modern PC video hardware is supported in both releases, and most PC
+Most modern PC video hardware is supported in this release, and most PC
 video hardware that isn't supported explicitly can be used with the
 "vesa" driver.  The <htmlurl name="Release Notes" url="RELNOTES3.html">
-has a table showing the drivers provided with X11R&relvers; and
-X11R&modvers;, and links to related documentation.
+has a table showing the drivers provided with X11R&relvers;, and links to
+related documentation.
 
 The X.Org Foundation X releases are produced by the X.Org Foundation.
 The X.Org Foundation has been formed as a Delaware corporation organized
@@ -106,8 +100,8 @@ in the X.Org Foundation is free to all participants. Applications for
 Membership are now being accepted, and active participants in the
 further development of the X Window Technology are invited to complete a
 <url url="http://www.x.org/XOrg_Foundation_Membership.html"
-name="membership application">.  The X11R&relvers; and X11R&modvers;
-codebase forms the fourth X Window System release since the formation of
+name="membership application">.  The X11R&relvers;
+codebase forms the sixth full X Window System release since the formation of
 the X.Org Foundation and includes code from the X Consortium, the Open
 Group and the XFree86&trade; project.  This release is dedicated to the
 greater X community, developers and users alike.
@@ -157,10 +151,7 @@ url="http://www.debian.org/social_contract#guidelines">.
 <p>
 
 The documentation for this release can be found online at the <url
-name="X.Org web site" url="http://wiki.x.org/">.
-Information about binary distributions and the attendant installation
-instructions can be found in the <htmlurl name="Installation Document"
-url="Install.html">.
+name="X.Org web site" url="http://www.x.org/">.
 
 The X11 version numbering system (including historical information)
 can be found in the <htmlurl name="Versions Document" url="Versions.html">.
@@ -179,220 +170,32 @@ mailing list page" url="http://freedesktop.org/mailman/listinfo">.
 <sect>Contributing to the X.Org Foundation's X efforts.
 <p>
 If you have any new work or enhancements/bug fixes for existing work,
-please send them to <email>xorg@freedesktop.org</email> or to our <url
-name="bug tracking system" url="https://bugs.freedesktop.org/"> using
-the xorg component.  This will help ensure that they are included in
-future releases.
+please send them to <email>xorg@lists.freedesktop.org</email> or to our
+<url name="bug tracking system" url="https://bugs.freedesktop.org/">
+using the xorg component.  This will help ensure that they are included
+in future releases.
 
 <sect>How to get the release
 <p>
 <![ %snapshot; [
-X11R&relvers; can be found from the <url name="X.Org Foundation wiki at"
+X11R&relvers; can be found from the <url name="X.Org Foundation wiki"
 url="http://wiki.x.org">, and at
 mirrors of this server.
 ]]>
 
 <![ %release; [
-Information about X11R&relvers; and X11R&modvers; can be found from the
-<url name="X.Org Foundation wiki at" url="http://wiki.x.org">, and at
-mirrors of this server.  Information about obtaining and installing
-binary distributions of this release can be found in the <htmlurl
-name="Installation Document" url="Install.html">.
-
-Note that both X11R&relvers; and X11R&modvers; are being released
-simultaneously but only one source tree is required to build the
-release.  Information about obtaining the release in source form is
-given below.
+Information about X11R&relvers; can be found from the
+<url name="X.Org Foundation wiki" url="http://wiki.x.org">, and at
+mirrors of this server.
 ]]>
 
 <sect1>X11R&relvers;
 <p>
-<![ %updaterel; [
-The source for version &relvers; is available as a patch relative to
-&prevrelvers;.
-The patch file is <tt>&prevrelvers;-&relvers;.diff.gz</tt>.
-
-The patch should be applied to a clean &prevrelvers; source tree,
-working from the directory containing the <tt>xc/</tt> directory.  The
-patch should be applied by running:
-
-<tscreen><verb>
-gzip -d &lt; &prevrelvers;-&relvers;.diff.gz | patch -p0 -E
-</verb></tscreen>
-
-Information about getting the source for &prevrelvers can be found in the
-README file for that version, which can be found on the
-<url name="X.Org foundation wiki" url="http://wiki.x.org">.
-]]>
-
-<![ %fullrel [
-
-The source for version &fullrelvers; is available as a single tarball:
-
-<tscreen><verb>
-X11R&fullrelvers;-src.tar.gz
-</verb></tscreen>
-
-and also is available split into seven separate tarballs:
-
-<tscreen><verb>
-X11R&fullrelvers;-src1.tar.gz
-X11R&fullrelvers;-src2.tar.gz
-X11R&fullrelvers;-src3.tar.gz
-X11R&fullrelvers;-src4.tar.gz
-X11R&fullrelvers;-src5.tar.gz
-X11R&fullrelvers;-src6.tar.gz
-X11R&fullrelvers;-src7.tar.gz
-</verb></tscreen>
-
-The first three of the separate tarballs contain everything except the
-fonts and general X11 documentation.  Those three are sufficient for
-building X11R&relvers; if you already have a set of fonts.  The fourth
-and fifth contain the fonts.  The sixth contains the source for the
-general X11 documentation.  The seventh contains the general X11
-documentation in hardcopy format.
-
-<![ %onediff; [
-A source patch relative to version &prevfullrelvers; is also available.
-The patch file is <tt>X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff.gz</tt>.
-<![ %difftar; [
-There is also a tarball that contains some files that have components that
-can't be included in a diff.  It is
-<tt>X11R&relvers;-&prevfullrelvers;-&fullrelvers;-diff0.tgz</tt>.
-]]>
-The patch
-should be applied to a clean &prevfullrelvers; source tree, working from
-the directory containing the <tt>xc/</tt> directory.  The patch should
-be applied by running:
-
-<tscreen><verb>
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff.gz | patch -p0 -E
-</verb></tscreen>
-<![ %difftar; [
-<tscreen><verb>
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;-diff0.tgz | tar vxf -
-</verb></tscreen>
-]]>
-]]>
-
-<![ %twodiffs; [
-A source patch relative to version &prevfullrelvers; is also available.
-Because of its size, it is split into two parts.  The patch files are
-<tt>X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff1.gz</tt> and
-<tt>X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff2.gz</tt>.
-<![ %difftar; [
-There is also a tarball that contains some files that have components that
-can't be included in a diff.  It is <tt>X11R&relvers;-&prevfullrelvers;-&fullrelvers;-diff0.tgz</tt>.
-]]>
-These patches should
-be applied to a clean &prevfullrelvers; source tree, working from the directory
-containing the <tt>xc/</tt> directory.  The patches should be applied by
-running:
-
-<tscreen><verb>
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff1.gz | patch -p0 -E
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff2.gz | patch -p0 -E
-</verb></tscreen>
-<![ %difftar; [
-<tscreen><verb>
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;-diff0.tgz | tar vxf -
-</verb></tscreen>
-]]>
-]]>
-
-<![ %threediffs; [
-A source patch relative to version &prevfullrelvers; is also available.
-Because of its size, it is split into three parts.
-The patch files are:
-
-<tscreen><verb>
-X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff1.gz
-X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff2.gz
-X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff3.gz
-</verb></tscreen>
-
-<![ %difftar; [
-There is also a tarball that contains some files that have components that
-can't be included in a diff.  It is
-<tt>X11R&relvers;-&prevfullrelvers;-&fullrelvers;-diff0.tgz</tt>.
-]]>
-These patches should
-be applied to a clean &prevfullrelvers; source tree, working from the directory
-containing the <tt>xc/</tt> directory.  The patches should be applied by
-running:
-
-<tscreen><verb>
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff1.gz | patch -p0 -E
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff2.gz | patch -p0 -E
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff3.gz | patch -p0 -E
-</verb></tscreen>
-<![ %difftar; [
-<tscreen><verb>
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;-diff0.tgz | tar vxf -
-</verb></tscreen>
-]]>
-]]>
-
-<![ %fourdiffs; [
-A source patch relative to version &prevfullrelvers; is also available.
-Because of its size, it is split into four parts.
-The patch files are:
-
-<tscreen><verb>
-X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff1.gz
-X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff2.gz
-X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff3.gz
-X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff4.gz
-</verb></tscreen>
-
-<![ %difftar; [
-There is also a tarball and a cleanup script that handle files that have
-components that can't be included in a diff.  These are:
-
-<tscreen><verb>
-X11R&relvers;-&prevfullrelvers;-&fullrelvers;-diff0.tgz
-X11R&relvers;-&prevfullrelvers;-&fullrelvers;-cleanup.sh
-</verb></tscreen>
-
-]]>
-These patches should
-be applied to a clean &prevfullrelvers; source tree, working from the directory
-containing the <tt>xc/</tt> directory.  The patches should be applied by
-running:
-
-<tscreen><verb>
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff1.gz | patch -p0 -E
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff2.gz | patch -p0 -E
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff3.gz | patch -p0 -E
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;.diff4.gz | patch -p0 -E
-</verb></tscreen>
-<![ %difftar; [
-<tscreen><verb>
-sh X11R&relvers;-&prevfullrelvers;-&fullrelvers;-cleanup.sh
-gzip -d &lt; X11R&relvers;-&prevfullrelvers;-&fullrelvers;-diff0.tgz | tar vxf -
-</verb></tscreen>
-]]>
-]]>
-
-<!--
-<![ %prevrelwasupdate; [
-Patches might also be available relative to &prevrelvers;.  If so, the
-instructions for applying them are the same, except that you should start 
-with a clean &prevrelvers; source tree.
-]]>
-
-To format the X11R&relvers; documentation use the latest version of our doctools
-package available from the Xorg CVS repository's "doctools" module.
-]]>
--->
-
-<sect1>X11R&modvers;
-<p>
-This is the first release of the new modular source code tree.  The
-souce code has been split into nine logical modules: app, data, doc,
+This is the second release of the new modular source code tree.  The
+source code has been split into nine logical modules: app, data, doc,
 driver, font, lib. proto, util and xserver.  Each of these modules
 contain one or more packages that can be configured, built and installed
-separately.  Please see an X11R&modvers; release site for a complete
+separately.  Please see an X11R&relvers; release site for a complete
 list of the tarballs.
 
 For information on how to build the modular tree packages see the <url
@@ -407,11 +210,8 @@ The X source code for this and all releases/snapshots as well as
 development versions can also be accessed via the Freedesktop.org CVS
 repository.  It's also possible to browse the <url name="freedesktop CVS
 repository" url="http://cvs.freedesktop.org/xorg/">.  The CVS tag for
-the &relvers; version is "&reltag;" and the CVS tag for the &modvers;
-version is "&modtag;".
+the &relvers; version is "&reltag;".
 <![ %notsnapshot [
-The CVS tag for the stable branch for the %relvers; release is
-"&relbranchtag;".
 ]]>
 
 To check out the latest development version, don't specify any tag.

@@ -1,4 +1,4 @@
-.\" $XdotOrg: $
+.\" $XdotOrg: driver/xf86-input-keyboard/man/kbd.man,v 1.4 2005/12/19 09:07:50 alanc Exp $
 .\" $XFree86: xc/programs/Xserver/hw/xfree86/input/keyboard/keyboard.man,v 1.2 2001/01/27 18:20:57 dawes Exp $ 
 .\" shorthand for double quote that works everywhere.
 .ds q \N'34'

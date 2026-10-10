@@ -1,7 +1,7 @@
 /*
    Copyright (c) 2002  XFree86 Inc
 */
-/* $XdotOrg: xc/include/extensions/XRes.h,v 1.4 2003/12/18 05:48:06 dawes Exp $ */
+/* $XdotOrg: lib/XRes/include/X11/extensions/XRes.h,v 1.2 2004/04/23 18:43:06 eich Exp $ */
 /* $XFree86: xc/include/extensions/XRes.h,v 1.3 2002/03/10 22:05:51 mvojkovi Exp $ */
 
 #ifndef _XRES_H

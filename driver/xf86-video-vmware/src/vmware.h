@@ -8,9 +8,10 @@
 #ifndef VMWARE_H
 #define VMWARE_H
 
+#include <string.h>
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Resources.h"
 
 #include "compiler.h"	        /* inb/outb */
@@ -75,6 +76,10 @@ typedef struct {
 
     VMWARERegRec SavedReg;
     VMWARERegRec ModeReg;
+
+    DisplayModePtr initialMode;
+    DisplayModePtr dynMode1;
+    DisplayModePtr dynMode2;
 
     Bool* pvtSema;
 
@@ -241,5 +246,9 @@ Bool vmwareXAAModeInit(
 void vmwareXAACloseScreen(
    ScreenPtr pScreen
    );
+
+/* vmware_ctl.c */
+void VMwareCtrl_ExtInit(ScrnInfoPtr pScrn);
+
 
 #endif

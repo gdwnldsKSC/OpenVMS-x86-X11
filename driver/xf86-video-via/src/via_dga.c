@@ -36,9 +36,6 @@ static Bool VIADGAOpenFramebuffer(ScrnInfoPtr, char **, unsigned char **,
 static Bool VIADGASetMode(ScrnInfoPtr, DGAModePtr);
 static int  VIADGAGetViewport(ScrnInfoPtr);
 static void VIADGASetViewport(ScrnInfoPtr, int, int, int);
-static void VIADGAFillRect(ScrnInfoPtr, int, int, int, int, unsigned long);
-static void VIADGABlitRect(ScrnInfoPtr, int, int, int, int, int, int);
-
 
 static
 DGAFunctionRec VIADGAFuncs = {
@@ -47,9 +44,9 @@ DGAFunctionRec VIADGAFuncs = {
     VIADGASetMode,
     VIADGASetViewport,
     VIADGAGetViewport,
-    VIAAccelSync,
-    VIADGAFillRect,
-    VIADGABlitRect,
+    viaAccelSyncMarker,
+    viaAccelFillRect,
+    viaAccelBlitRect,
     NULL                    /* BlitTransRect */
 };
 
@@ -302,39 +299,6 @@ VIADGASetViewport(ScrnInfoPtr pScrn, int x, int y, int flags)
     pScrn->AdjustFrame(pScrn->pScreen->myNum, x, y, flags);
     pVia->DGAViewportStatus = 0;  /* MGAAdjustFrame loops until finished */
 }
-
-
-static void
-VIADGAFillRect(ScrnInfoPtr pScrn, int x, int y, int w, int h, unsigned long color)
-{
-    VIAPtr pVia = VIAPTR(pScrn);
-
-    if (pVia->AccelInfoRec) {
-        (*pVia->AccelInfoRec->SetupForSolidFill)(pScrn, color, GXcopy, ~0);
-        (*pVia->AccelInfoRec->SubsequentSolidFillRect)(pScrn, x, y, w, h);
-        SET_SYNC_FLAG(pVia->AccelInfoRec);
-    }
-}
-
-
-static void
-VIADGABlitRect(ScrnInfoPtr pScrn, int srcx, int srcy, int w, int h,
-               int dstx, int dsty)
-{
-    VIAPtr pVia = VIAPTR(pScrn);
-
-    if (pVia->AccelInfoRec) {
-        int xdir = ((srcx < dstx) && (srcy == dsty)) ? -1 : 1;
-        int ydir = (srcy < dsty) ? -1 : 1;
-
-        (*pVia->AccelInfoRec->SetupForScreenToScreenCopy)(
-                pScrn, xdir, ydir, GXcopy, ~0, -1);
-        (*pVia->AccelInfoRec->SubsequentScreenToScreenCopy)(
-                pScrn, srcx, srcy, dstx, dsty, w, h);
-        SET_SYNC_FLAG(pVia->AccelInfoRec);
-    }
-}
-
 
 static Bool
 VIADGAOpenFramebuffer(

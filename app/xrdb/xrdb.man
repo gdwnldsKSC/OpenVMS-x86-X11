@@ -1,3 +1,4 @@
+.\" $XdotOrg: app/xrdb/xrdb.man,v 1.3 2006/03/29 02:20:46 alanc Exp $
 .\" $Xorg: xrdb.man,v 1.4 2001/02/09 02:05:56 xorgcvs Exp $
 .\" Copyright 1991, Digital Equipment Corporation.
 .\" Copyright 1991, 1994, 1998  The Open Group
@@ -291,7 +292,8 @@ a directory to search for files that are referenced with
 .SH FILES
 Generalizes \fI~/.Xdefaults\fP files.
 .SH "SEE ALSO"
-X(__miscmansuffix__), Xlib Resource Manager documentation, Xt resource documentation
+X(__miscmansuffix__), appres(__appmansuffix__), listres(__appmansuffix__),
+Xlib Resource Manager documentation, Xt resource documentation
 .SH ENVIRONMENT
 .TP 8
 .B DISPLAY

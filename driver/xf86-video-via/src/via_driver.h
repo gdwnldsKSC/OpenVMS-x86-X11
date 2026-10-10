@@ -37,7 +37,6 @@
 #include "vgaHW.h"
 #include "xf86.h"
 #include "xf86Resources.h"
-#include "xf86_ansic.h"
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
 #include "xf86_OSproc.h"
@@ -55,6 +54,8 @@
 #include "via_bios.h"
 #include "via_priv.h"
 #include "via_swov.h"
+#include "via_dmabuffer.h"
+#include "via_3d.h"
 
 #ifdef XF86DRI
 #define _XF86DRI_SERVER_
@@ -66,16 +67,28 @@
 
 #define DRIVER_NAME     "via"
 #define VERSION_MAJOR   0
-#define VERSION_MINOR   1
-#define PATCHLEVEL      33
+#define VERSION_MINOR   2
+#define PATCHLEVEL      1
 #define VIA_VERSION     ((VERSION_MAJOR<<24) | (VERSION_MINOR<<16) | PATCHLEVEL)
 
-#define VIA_MAX_ACCEL_X         (2047)
-#define VIA_MAX_ACCEL_Y         (2047)
-#define VIA_PIXMAP_CACHE_SIZE   (4 * (VIA_MAX_ACCEL_X + 1) * (VIA_MAX_ACCEL_Y +1))
+#ifdef VIA_HAVE_EXA
+#include "exa.h"
+#define VIA_AGP_UPL_SIZE    (1024*128)
+#define VIA_DMA_DL_SIZE     (1024*128)
+#define VIA_SCRATCH_SIZE    (2048*1024)
+ 
+ /*
+  * Pixmap sizes below which we don't try to do hw accel.
+  */
+ 
+#define VIA_MIN_COMPOSITE   1 /*400*/  
+#define VIA_MIN_UPLOAD 4000
+#define VIA_MIN_TEX_UPLOAD 400
+#define VIA_MIN_DOWNLOAD 400
+#endif
+
 #define VIA_CURSOR_SIZE         (4 * 1024)
 #define VIA_VQ_SIZE             (256 * 1024)
-#define VIA_CBUFFERSIZE         512
 
 typedef struct {
     CARD8   SR08, SR0A, SR0F;
@@ -134,13 +147,24 @@ typedef struct {
 
 typedef struct _twodContext {
     CARD32 mode;
+    CARD32 cmd;
+    CARD32 fgColor;
+    CARD32 bgColor;
+    CARD32 pattern0;
+    CARD32 pattern1;
+    CARD32 patternAddr;
+    CARD32 keyControl;
+    unsigned srcOffset;
+    unsigned srcPitch;
+    unsigned Bpp;
+    unsigned bytesPPShift;
+    Bool clipping;
+    Bool dashed;
+    int clipX1;
+    int clipX2;
+    int clipY1;
+    int clipY2;
 } ViaTwodContext;
-
-typedef struct{
-    unsigned curPos;
-    CARD32 buffer[VIA_CBUFFERSIZE];
-    int status;
-} ViaCBuffer;
 
 typedef struct{
     /* textMode */
@@ -155,13 +179,13 @@ typedef struct _VIA {
     VIARegRec           SavedReg;
     xf86CursorInfoPtr   CursorInfoRec;
     int                 Bpp, Bpl;
-    unsigned            PlaneMask;
 
     Bool                FirstInit;
     unsigned long       videoRambytes;
     int                 videoRamKbytes;
     int                 FBFreeStart;
     int                 FBFreeEnd;
+    int                 driSize;
     int                 CursorStart;
     int                 VQStart;
     int                 VQEnd;
@@ -178,11 +202,6 @@ typedef struct _VIA {
     unsigned char*      MapBaseDense;
     unsigned char*      FBBase;
     CARD8               MemClk;
-
-    /* Private memory pool management */
-    int			SWOVUsed[MEM_BLOCKS]; /* Free map for SWOV pool */
-    unsigned long	SWOVPool;	/* Base of SWOV pool */
-    unsigned long	SWOVSize;	/* Size of SWOV blocks */
 
     /* Here are all the Options */
     Bool                VQEnable;
@@ -212,16 +231,38 @@ typedef struct _VIA {
 
     /* Support for XAA acceleration */
     XAAInfoRecPtr       AccelInfoRec;
-    xRectangle          Rect;
-    CARD32              SavedCmd;
-    CARD32              SavedFgColor;
-    CARD32              SavedBgColor;
-    CARD32              SavedPattern0;
-    CARD32              SavedPattern1;
-    CARD32              SavedPatternAddr;
-    int                 justSetup;
     ViaTwodContext      td;
-    ViaCBuffer          cBuf;
+    Via3DState          v3d;
+    Via3DState          *lastToUpload;
+    ViaCommandBuffer    cb;
+    int                 accelMarker;
+    CARD32              markerOffset;
+    CARD32             *markerBuf;
+    CARD32              curMarker;
+    CARD32              lastMarkerRead;
+    Bool                agpDMA;
+#ifdef VIA_HAVE_EXA
+    ExaDriverPtr        exaDriverPtr;
+    ExaOffscreenArea   *exa_scratch;
+    unsigned int        exa_scratch_next;
+    Bool                useEXA;
+    void               *maskP;
+    CARD32              maskFormat;
+    Bool                componentAlpha;
+    void               *srcP;
+    CARD32              srcFormat;
+    ExaOffscreenArea   *scratchFBBuffer;
+    unsigned            scratchOffset;
+    char *              scratchAddr;
+    Bool                noComposite;
+#ifdef XF86DRI
+    drm_via_mem_t       scratchAGPBuffer;
+    drm_via_mem_t       texAGPBuffer;
+    unsigned            texOffset;
+    char *              texAddr;
+    char *              dBounce;
+#endif
+#endif
   
     /* BIOS Info Ptr */
     VIABIOSInfoPtr      pBIOSInfo;
@@ -258,6 +299,7 @@ typedef struct _VIA {
     VIAConfigPrivPtr 	pVisualConfigsPriv;
     drm_handle_t 	agpHandle;
     drm_handle_t 	registerHandle;
+    drm_handle_t        frameBufferHandle;
     unsigned long 	agpAddr;
     drmAddress          agpMappedAddr;
     unsigned char 	*agpBase;
@@ -265,10 +307,15 @@ typedef struct _VIA {
     Bool 		IsPCI;
     Bool 		drixinerama;
     ViaXvMC             xvmc;
+    int                 drmVerMajor;
+    int                 drmVerMinor;
+    int                 drmVerPL;
+    VIAMem              driOffScreenMem;
 #endif
     Bool		DRIIrqEnable;
     Bool                agpEnable;
     Bool                dma2d;
+    Bool                dmaXV;
 
     CARD8               ActiveDevice;	/* Option */
     unsigned char       *CursorImage;
@@ -290,6 +337,7 @@ typedef struct _VIA {
     unsigned long	old_dwUseExtendedFIFO;
     
     ViaSharedPtr	sharedData;
+    Bool                useDmaBlit;
 
 #ifdef HAVE_DEBUG
     Bool                DumpVGAROM;
@@ -317,7 +365,7 @@ typedef struct
 } VIAEntRec, *VIAEntPtr;
 
 /* Prototypes. */
-#ifdef XF86DRI
+#if defined(XF86DRI) || defined(VIA_HAVE_EXA)
 void VIAInitialize3DEngine(ScrnInfoPtr pScrn);
 #endif 
 
@@ -329,10 +377,19 @@ void ViaCursorStore(ScrnInfoPtr pScrn);
 void ViaCursorRestore(ScrnInfoPtr pScrn);
 
 /* In via_accel.c. */
-Bool VIAInitAccel(ScreenPtr);
-void VIAInitialize2DEngine(ScrnInfoPtr);
-void VIAAccelSync(ScrnInfoPtr);
-void ViaVQDisable(ScrnInfoPtr pScrn);
+Bool viaInitAccel(ScreenPtr);
+void viaInitialize2DEngine(ScrnInfoPtr);
+void viaAccelSync(ScrnInfoPtr);
+void viaDisableVQ(ScrnInfoPtr);
+void viaExitAccel(ScreenPtr);
+void viaAccelBlitRect(ScrnInfoPtr, int, int, int, int, int, int);
+void viaAccelFillRect(ScrnInfoPtr, int, int, int, int, unsigned long);
+void viaAccelSyncMarker(ScrnInfoPtr);
+void viaFinishInitAccel(ScreenPtr);
+void viaAccelWaitMarker(ScreenPtr, int);
+int viaAccelMarkSync(ScreenPtr);
+
+
 
 /* In via_shadow.c */
 void ViaShadowFBInit(ScrnInfoPtr pScrn, ScreenPtr pScreen);

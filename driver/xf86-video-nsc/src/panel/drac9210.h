@@ -1,7 +1,7 @@
 /* $XFree86$ */
 /*
  * $Workfile: drac9210.h $
- * $Revision: 1.3 $
+ * $Revision$
  *
  * File Contents: This file contains the panel header file and definition
  *                for the platform with 9210 support.

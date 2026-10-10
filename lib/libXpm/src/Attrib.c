@@ -133,7 +133,7 @@ XpmFreeExtensions(extensions, nextensions)
 		XpmFree(ext->name);
 	    nlines = ext->nlines;
 	    for (j = 0, sptr = ext->lines; j < nlines; j++, sptr++)
-		if (*sptr)
+		if (sptr && *sptr)
 		    XpmFree(*sptr);
 	    if (ext->lines)
 		XpmFree(ext->lines);

@@ -8,7 +8,6 @@
 #include "config.h"
 #endif
 
-#include "xf86_ansic.h"
 #include "trident.h"
 #include "trident_regs.h"
 

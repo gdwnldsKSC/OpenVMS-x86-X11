@@ -1,3 +1,15 @@
+2006-03-09  Luc Verhaegen  <libv@skynet.be>
+
+	* src/generic.c: (GenericPreInit), (GenericSetMode),
+	(GenericValidMode):
+
+	- Stop using non-programmable dotclock infrastructure. This is worked
+	  around quite easily here, by limiting the clockRange to the two VGA
+	  standard clocks, with CLOCK_TOLERANCE. This happily removed
+	  the dependence on the nasty xf86GetClocks as well.
+	- Set the CS bits directly, don't rely on DisplayModePtr->ClockIndex.
+	- Add DisplayModePtr->Crtc* checking.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

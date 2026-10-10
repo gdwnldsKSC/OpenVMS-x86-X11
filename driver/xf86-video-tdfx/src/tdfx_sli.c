@@ -5,7 +5,6 @@
 #endif
 
 #include "xf86.h"
-#include "xf86_ansic.h"
 #include "xf86_OSproc.h"
 #include "xf86Pci.h"
 #include "tdfx.h"

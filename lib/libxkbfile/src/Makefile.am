@@ -22,7 +22,7 @@ INCLUDES = -I$(top_srcdir)/include/ -I$(top_srcdir)/include/X11/extensions/
 libxkbfile_la_LIBADD = @XKBFILE_LIBS@
 AM_CFLAGS = @XKBFILE_CFLAGS@
 
-libxkbfile_la_LDFLAGS = -version-number 1:0:0 -no-undefined
+libxkbfile_la_LDFLAGS = -version-number 1:0:2 -no-undefined
 
 libxkbfileincludedir = $(includedir)/X11/extensions
 libxkbfileinclude_HEADERS = \

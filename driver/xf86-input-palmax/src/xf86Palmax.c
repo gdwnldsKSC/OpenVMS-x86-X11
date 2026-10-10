@@ -4,6 +4,7 @@
 #include "config.h"
 #endif
 
+#include <string.h>
 #include "misc.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -808,7 +809,7 @@ static XF86ModuleVersionInfo version_rec = {
 	MODINFOSTRING1,
 	MODINFOSTRING2,
 	XORG_VERSION_CURRENT,
-	1, 0, 0,
+	1, 1, 0,
 	ABI_CLASS_XINPUT,
 	ABI_XINPUT_VERSION,
 	MOD_CLASS_XINPUT,

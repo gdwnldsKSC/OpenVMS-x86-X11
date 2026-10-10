@@ -10,6 +10,9 @@
 #ifndef _TDFX_H_
 #define _TDFX_H_
 
+#include <string.h>
+#include <stdio.h>
+
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
 #include "xf86xv.h"
@@ -29,7 +32,7 @@
 #define TDFX_NAME "TDFX"
 #define TDFX_DRIVER_NAME "tdfx"
 #define TDFX_MAJOR_VERSION 1
-#define TDFX_MINOR_VERSION 1
+#define TDFX_MINOR_VERSION 2
 #define TDFX_PATCHLEVEL 1
 
 struct _TDFXRec;

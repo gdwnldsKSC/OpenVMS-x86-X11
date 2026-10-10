@@ -42,19 +42,16 @@
 #define XFREE86_V4 1
 #endif
 
-#ifdef XFREE86_V4
 /* post 3.9 headers */
 
-#ifndef XFree86LOADER
 #include <unistd.h>
 #include <errno.h>
-#endif
+#include <string.h>
 
 #include "misc.h"
 #include "xf86.h"
 #define NEED_XF86_TYPES
 #if !defined(DGUX)
-#include "xf86_ansic.h"
 #include "xisb.h"
 #endif
 #include "xf86_OSproc.h"
@@ -99,56 +96,6 @@ static const char *default_options[] =
 };
 
 static InputDriverPtr dedgeDrv;
-
-#else  /* pre 3.9 headers */
-
-#include <X11/Xos.h>
-#include <signal.h>
-#include <stdio.h>
-
-#define NEED_EVENTS
-#include <X11/X.h>
-#include <X11/Xproto.h>
-#include "misc.h"
-#include "inputstr.h"
-#include "scrnintstr.h"
-#include <X11/extensions/XI.h>
-#include <X11/extensions/XIproto.h>
-
-#if defined(sun) && !defined(i386)
-#define POSIX_TTY
-#include <errno.h>
-#include <termio.h>
-#include <fcntl.h>
-#include <ctype.h>
-
-#include "extio.h"
-#else
-#include "compiler.h"
-
-#ifdef XFree86LOADER
-#include "xf86_libc.h"
-#endif
-#include "xf86.h"
-#include "xf86Procs.h"
-#include "xf86_OSlib.h"
-#include "xf86_Config.h"
-#include "xf86Xinput.h"
-#include "atKeynames.h"
-#endif
-
-#if !defined(sun) || defined(i386)
-#include "osdep.h"
-#include "exevents.h"
-
-#include "extnsionst.h"
-#include "extinit.h"
-#endif
-
-#if defined(__QNX__) || defined(__QNXNTO__)
-#define POSIX_TTY
-#endif
-#endif /* pre 3.9 headers */
 
 /*
 ** Debugging macros
@@ -1460,7 +1407,7 @@ static XF86ModuleVersionInfo xf86SumVersionRec =
     MODINFOSTRING1,
     MODINFOSTRING2,
     XORG_VERSION_CURRENT,
-    1, 0, 1,
+    1, 1, 0,
     ABI_CLASS_XINPUT,
     ABI_XINPUT_VERSION,
     MOD_CLASS_XINPUT,

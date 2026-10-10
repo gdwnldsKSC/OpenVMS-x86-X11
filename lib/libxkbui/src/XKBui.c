@@ -46,13 +46,6 @@
 #  define M_PI	3.141592653589793238462
 #endif
 
-/* This function is an internal function in the xkbfile library */
-extern int	_XkbStrCaseCmp(
-	char *	/* str1 */,
-	char *	/* str2 */
-);
-
-
 static XkbUI_ViewOptsRec dfltOpts = { 
 	XkbUI_AllViewOptsMask	/* present */,
 	1			/* fg */,
@@ -550,9 +543,13 @@ Bool		dfltBorder;
 		continue;
 	    }
 	    name= XkbAtomGetString(view->dpy,draw->u.doodad->any.name);
-	    if ((name!=NULL)&&(_XkbStrCaseCmp(name,"edges")==0)) {
-		dfltBorder= False;
-		break;
+	    if (name != NULL) {
+                if (strcmp(name, "edges") == 0) {
+                    _XkbFree(name);
+                    dfltBorder= False;
+                    break;
+                }
+                _XkbFree(name);
 	    }
 	}
 	if (dfltBorder)

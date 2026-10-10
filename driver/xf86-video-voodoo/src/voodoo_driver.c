@@ -50,7 +50,6 @@
 #include "micmap.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Version.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -101,7 +100,7 @@ static void	VoodooDisplayPowerManagementSet(ScrnInfoPtr pScrn,
  */
 
 _X_EXPORT DriverRec VOODOO = {
-  VERSION,
+  VOODOO_VERSION,
   VOODOO_DRIVER_NAME,
   VoodooIdentify,
   VoodooProbe,
@@ -284,7 +283,7 @@ VoodooProbe(DriverPtr drv, int flags)
 						       VoodooPCIChipsets,NULL,
 						       NULL, NULL, NULL,
 						       NULL))) {
-		    pScrn->driverVersion = VERSION;
+		    pScrn->driverVersion = VOODOO_VERSION;
 		    pScrn->driverName    = VOODOO_DRIVER_NAME;
 		    pScrn->name          = VOODOO_NAME;
 		    pScrn->Probe	 = VoodooProbe;

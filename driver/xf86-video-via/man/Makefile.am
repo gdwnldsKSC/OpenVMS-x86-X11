@@ -1,4 +1,4 @@
-# $Id: Makefile.am,v 1.6 2005/12/06 22:48:41 kem Exp $
+# $Id: Makefile.am,v 1.5 2005/11/28 22:04:15 alanc Exp $
 #
 # Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
 # 

@@ -516,17 +516,17 @@ inputReady(XtPointer w, int *source, XtInputId *id)
 	{
 	    OpenConsole();
 	}
-
+    } else {
+	Notify();
+	buffer[n] = '\0';
+	if (app_resources.stripNonprint)
+	{
+	    stripNonprint (buffer);
+	    n = strlen (buffer);
+	}
+	
+	TextAppend ((Widget) text, buffer, n);
     }
-    Notify ();
-    buffer[n] = '\0';
-    if (app_resources.stripNonprint)
-    {
-	stripNonprint (buffer);
-	n = strlen (buffer);
-    }
-
-    TextAppend ((Widget) text, buffer, n);
 }
 
 static Boolean

@@ -3,16 +3,16 @@
 <!-- shared entity definitions for the Xorg documentation -->
 
 <!-- Xorg version string -->
-<!ENTITY majorvers CDATA "6">
-<!ENTITY reldate CDATA "21 December 2005">
-<!ENTITY relvers CDATA "6.9">
-<!ENTITY prevrelvers CDATA "6.8">
-<!ENTITY fullrelvers CDATA "6.9.0">
-<!ENTITY prevfullrelvers CDATA "6.8.0">
-<!ENTITY nextrelvers CDATA "7.1">
-<!ENTITY nextfullrelvers CDATA "7.1.0">
-<!ENTITY nextfullreldate CDATA "mid 2006">
-<!ENTITY nextupdrelvers CDATA "6.9.1">
+<!ENTITY majorvers CDATA "7">
+<!ENTITY reldate CDATA "22 May 2006">
+<!ENTITY relvers CDATA "7.1">
+<!ENTITY prevrelvers CDATA "7.0">
+<!ENTITY fullrelvers CDATA "7.1.0">
+<!ENTITY prevfullrelvers CDATA "7.0.0">
+<!ENTITY nextrelvers CDATA "7.2">
+<!ENTITY nextfullrelvers CDATA "7.2.0">
+<!ENTITY nextfullreldate CDATA "late 2006">
+<!ENTITY nextupdrelvers CDATA "7.1.1">
 
 <!ENTITY srcvers CDATA "440">
 <!ENTITY prevsrcvers CDATA "660">
@@ -20,13 +20,9 @@
 <!ENTITY prevfullsrcvers CDATA "660">
 <!ENTITY whichfullrel CDATA "ninth">
 <!ENTITY whichupdaterel CDATA "none">
-<!ENTITY reltag CDATA "XORG-6_9_0">
-<!ENTITY relbranchtag CDATA "XORG-6_9-branch">
+<!ENTITY reltag CDATA "XORG-7_1">
+<!ENTITY relbranchtag CDATA "XORG-7_1-branch">
 <!ENTITY rcnum CDATA "0">
-
-<!ENTITY modvers CDATA "7.0">
-<!ENTITY modmajor CDATA "7">
-<!ENTITY modtag CDATA "XORG-7_0_0">
 
 <!-- Version of the most recent 3.3.x release -->
 <!ENTITY legacyvers CDATA "3.3.6">
@@ -50,7 +46,9 @@
 <!ENTITY % firstrel 'IGNORE'>
 <!ENTITY % earlyrel 'IGNORE'>
 <!ENTITY % laterrel 'INCLUDE'>
-<!ENTITY % fullrel 'INCLUDE'>
+<!ENTITY % majorrel 'IGNORE'>
+<!ENTITY % minorrel 'INCLUDE'>
+<!ENTITY % fullrel 'IGNORE'>
 <!ENTITY % fullbinaries 'INCLUDE'>
 <!ENTITY % updaterel 'IGNORE'>
 <!ENTITY % prevrelwasupdate 'IGNORE'>

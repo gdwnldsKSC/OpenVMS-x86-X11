@@ -61,86 +61,79 @@ SOFTWARE.
 #include "XIint.h"
 
 int
-XGetSelectedExtensionEvents (dpy, w, this_client_count, this_client_list, 
-	all_clients_count, all_clients_list)
-    register 	Display *dpy;
-    Window 	w;
-    int		*this_client_count;
-    XEventClass	**this_client_list;
-    int		*all_clients_count;
-    XEventClass	**all_clients_list;
-    {
-    int		tlen, alen;
-    register 	xGetSelectedExtensionEventsReq *req;
+XGetSelectedExtensionEvents(dpy, w, this_client_count, this_client_list,
+			    all_clients_count, all_clients_list)
+    register Display *dpy;
+    Window w;
+    int *this_client_count;
+    XEventClass **this_client_list;
+    int *all_clients_count;
+    XEventClass **all_clients_list;
+{
+    int tlen, alen;
+    register xGetSelectedExtensionEventsReq *req;
     xGetSelectedExtensionEventsReply rep;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return (NoSuchExtension);
-    GetReq(GetSelectedExtensionEvents,req);		
+    GetReq(GetSelectedExtensionEvents, req);
 
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_GetSelectedExtensionEvents;
     req->window = w;
 
-    if (! _XReply (dpy, (xReply *) &rep, 0, xFalse)) 
-	{
+    if (!_XReply(dpy, (xReply *) & rep, 0, xFalse)) {
 	UnlockDisplay(dpy);
 	SyncHandle();
 	return Success;
-	}
+    }
 
     *this_client_count = rep.this_client_count;
     *all_clients_count = rep.all_clients_count;
 
-    if (rep.length)
-	{
+    if (rep.length) {
 	int i;
 	CARD32 ec;
+
 	tlen = (*this_client_count) * sizeof(CARD32);
 	alen = (rep.length << 2) - tlen;
 
-	if (tlen)
-	    {
-	    *this_client_list = (XEventClass *) Xmalloc (
-				    *this_client_count * sizeof(XEventClass));
-	    if (!*this_client_list) 
-		{
-	        _XEatData (dpy, (unsigned long) tlen+alen);
+	if (tlen) {
+	    *this_client_list =
+		(XEventClass *) Xmalloc(*this_client_count *
+					sizeof(XEventClass));
+	    if (!*this_client_list) {
+		_XEatData(dpy, (unsigned long)tlen + alen);
 		return (Success);
-		}
-	    for (i = 0; i < *this_client_count; i++)
-	        {
-		    _XRead (dpy, (char *)(&ec), sizeof(CARD32));
-		    (*this_client_list)[i] = (XEventClass)ec;
-		}
 	    }
-	else
+	    for (i = 0; i < *this_client_count; i++) {
+		_XRead(dpy, (char *)(&ec), sizeof(CARD32));
+		(*this_client_list)[i] = (XEventClass) ec;
+	    }
+	} else
 	    *this_client_list = (XEventClass *) NULL;
-	if (alen)
-	    {
-	    *all_clients_list = (XEventClass *) Xmalloc (
-				    *all_clients_count * sizeof(XEventClass));
-	    if (!*all_clients_list) 
-		{
+	if (alen) {
+	    *all_clients_list =
+		(XEventClass *) Xmalloc(*all_clients_count *
+					sizeof(XEventClass));
+	    if (!*all_clients_list) {
 		Xfree((char *)*this_client_list);
 		*this_client_list = NULL;
-	        _XEatData (dpy, (unsigned long) alen);
+		_XEatData(dpy, (unsigned long)alen);
 		return (Success);
-		}
-	    for (i = 0; i < *all_clients_count; i++)
-	        {
-		    _XRead (dpy, (char *)(&ec), sizeof(CARD32));
-		    (*all_clients_list)[i] = (XEventClass)ec;
-		}
 	    }
-	else
+	    for (i = 0; i < *all_clients_count; i++) {
+		_XRead(dpy, (char *)(&ec), sizeof(CARD32));
+		(*all_clients_list)[i] = (XEventClass) ec;
+	    }
+	} else
 	    *all_clients_list = (XEventClass *) NULL;
 
-	}
+    }
 
     UnlockDisplay(dpy);
     SyncHandle();
     return (Success);
-    }
+}

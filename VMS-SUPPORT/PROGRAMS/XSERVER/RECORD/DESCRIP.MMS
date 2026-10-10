@@ -11,7 +11,8 @@ RECORD_BUILD_RULES = [.VMS-SUPPORT]CONFIG.MMS, [.VMS-SUPPORT]COMPILE.COM, -
     [.VMS-SUPPORT.PROGRAMS.XSERVER.RENDER]DESCRIP.MMS, -
     [.VMS-SUPPORT.PROGRAMS.XSERVER.RECORD]DESCRIP.MMS
 ! Fixed protocol-range member offsets fit the upstream int byte-offset API.
-RECORD_COUNT_CFLAGS = $(CFLAGS)/WARN=(ENABLE=LEVEL4,DISABLE=(EMBEDCOMMENT,MAYLOSEDATA3))
+! Setup swaps view the same aligned P64 protocol buffer as bytes and structures.
+RECORD_COUNT_CFLAGS = $(CFLAGS)/WARN=(ENABLE=LEVEL4,DISABLE=(EMBEDCOMMENT,MAYLOSEDATA3,PTRMISMATCH))
 ! Iteration uses CARD16-domain tokens or same-array offsets; the storage cast
 ! checks only alignment bits and leaves the full pointer unchanged.
 RECORD_SET_CFLAGS = $(CFLAGS)/WARN=(ENABLE=LEVEL4,DISABLE=(EMBEDCOMMENT,MAYLOSEDATA3,POINTERINTCAST))

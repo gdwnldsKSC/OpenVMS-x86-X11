@@ -14,6 +14,9 @@
 #ifndef MGA_H
 #define MGA_H
 
+#include <string.h>
+#include <stdio.h>
+
 #include "compiler.h"
 #include "xaa.h"
 #include "xf86Cursor.h"
@@ -22,29 +25,19 @@
 #include "xf86DDC.h"
 #include "xf86xv.h"
 
-
-
 #ifdef XF86DRI
 #include "xf86drm.h"
-
 
 #define _XF86DRI_SERVER_
 #include "mga_dripriv.h"
 #include "dri.h"
 #include "GL/glxint.h"
 
-
-
-
 #include "dri.h"
-
-
 
 #include "GL/glxint.h"
 #include "mga_dri.h"
 #endif
-
-
 
 #ifdef USEMGAHAL
 #include "client.h"
@@ -118,6 +111,14 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 #define OUTREG(addr,val) MGAdbg_outreg32(pScrn, addr, val, __FUNCTION__)
 #endif /* EXTRADEBUG */
 
+#ifndef PCI_CHIP_MGAG200_SE_A_PCI
+#define PCI_CHIP_MGAG200_SE_A_PCI 0x0522
+#endif
+
+#ifndef PCI_CHIP_MGAG200_SE_B_PCI
+#define PCI_CHIP_MGAG200_SE_B_PCI 0x0524
+#endif
+
 /*
  * Read/write to the DAC via MMIO 
  */
@@ -152,7 +153,7 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 #define MGA_MODULE_DATA mgaModuleData
 #define MGA_DRIVER_NAME "mga"
 #define MGA_MAJOR_VERSION 1
-#define MGA_MINOR_VERSION 2
+#define MGA_MINOR_VERSION 4
 #define MGA_PATCHLEVEL 1
 
 typedef struct {
@@ -592,15 +593,7 @@ void MGAStormEngineInit(ScrnInfoPtr pScrn);
 Bool MGAStormAccelInit(ScreenPtr pScreen);
 Bool MGAHWCursorInit(ScreenPtr pScreen);
 
-Bool Mga8AccelInit(ScreenPtr pScreen);
-Bool Mga16AccelInit(ScreenPtr pScreen);
-Bool Mga24AccelInit(ScreenPtr pScreen);
-Bool Mga32AccelInit(ScreenPtr pScreen);
-
-void Mga8InitSolidFillRectFuncs(MGAPtr pMga);
-void Mga16InitSolidFillRectFuncs(MGAPtr pMga);
-void Mga24InitSolidFillRectFuncs(MGAPtr pMga);
-void Mga32InitSolidFillRectFuncs(MGAPtr pMga);
+Bool mgaAccelInit(ScreenPtr pScreen);
 
 void MGAPolyArcThinSolid(DrawablePtr, GCPtr, int, xArc*);
 
@@ -612,27 +605,11 @@ void MGARefreshArea16(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
 void MGARefreshArea24(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
 void MGARefreshArea32(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
 
-void Mga8SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir,
-				int ydir, int rop, unsigned int planemask,
-				int trans);
-void Mga16SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir,
-				int ydir, int rop, unsigned int planemask,
-				int trans);
-void Mga24SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir,
-				int ydir, int rop, unsigned int planemask,
-				int trans);
-void Mga32SetupForScreenToScreenCopy(ScrnInfoPtr pScrn, int xdir,
-				int ydir, int rop, unsigned int planemask,
-				int trans);
+void mgaDoSetupForScreenToScreenCopy( ScrnInfoPtr pScrn, int xdir,
+    int ydir, int rop, unsigned int planemask, int trans, unsigned int bpp );
 
-void Mga8SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop,
-				unsigned int planemask);
-void Mga16SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop,
-				unsigned int planemask);
-void Mga24SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop,
-				unsigned int planemask);
-void Mga32SetupForSolidFill(ScrnInfoPtr pScrn, int color, int rop,
-				unsigned int planemask);
+void mgaDoSetupForSolidFill( ScrnInfoPtr pScrn, int color, int rop,
+    unsigned int planemask, unsigned int bpp );
 
 void MGAPointerMoved(int index, int x, int y);
 
@@ -682,6 +659,8 @@ void MGAG450PrintPLL(ScrnInfoPtr pScrn);
 #endif
 long MGAG450SavePLLFreq(ScrnInfoPtr pScrn);
 void MGAprintDac(ScrnInfoPtr pScrn);
+void MGAG200SESaveFonts(ScrnInfoPtr, vgaRegPtr);
+void MGAG200SERestoreFonts(ScrnInfoPtr, vgaRegPtr);
 
 #ifdef USEMGAHAL
 /************ ESC Call Definition ***************/

@@ -378,13 +378,6 @@ Bool		found;
 	remap->num_remap= 0;
 	return;
    }
-   if (((present&PART_MASK)&(1<<OPTION))&&
-				((present&PART_MASK)!=(1<<OPTION))) {
-	PR_DEBUG("Options cannot appear with other parts\n");
-	PR_DEBUG("Illegal mapping ignored\n");
-	remap->num_remap= 0;
-	return;
-   }
    if (((present&COMPONENT_MASK)&(1<<KEYMAP))&&
 				((present&COMPONENT_MASK)!=(1<<KEYMAP))) {
 	PR_DEBUG("Keymap cannot appear with other components\n");
@@ -1113,20 +1106,20 @@ int			len,headingtype,extra_ndx = 0;
     for ( ; GetInputLine(file,&line,False); line.num_line= 0) {
 	if (line.line[0]=='!') {
 	    tok = strtok(&(line.line[1]), " \t");
-	    if (!_XkbStrCaseCmp(tok,"model"))
+	    if (strcmp(tok,"model") == 0)
 		headingtype = HEAD_MODEL;
-	    else if (!_XkbStrCaseCmp(tok,"layout"))
+	    else if (_XkbStrCaseCmp(tok,"layout") == 0)
 		headingtype = HEAD_LAYOUT;
-	    else if (!_XkbStrCaseCmp(tok,"variant"))
+	    else if (_XkbStrCaseCmp(tok,"variant") == 0)
 		headingtype = HEAD_VARIANT;
-	    else if (!_XkbStrCaseCmp(tok,"option"))
+	    else if (_XkbStrCaseCmp(tok,"option") == 0)
 		headingtype = HEAD_OPTION;
 	    else {
 		int i;
 		headingtype = HEAD_EXTRA;
 		extra_ndx= -1;
 		for (i=0;(i<rules->num_extra)&&(extra_ndx<0);i++) {
-		    if (!_XkbStrCaseCmp(tok,rules->extra_names[i]))
+		    if (_XkbStrCaseCmp(tok,rules->extra_names[i]))
 			extra_ndx= i;
 		}
 		if (extra_ndx<0) {
@@ -1360,7 +1353,8 @@ XkbRF_GetNamesProp(Display *dpy,char **rf_rtrn,XkbRF_VarDefsPtr vd_rtrn)
 Atom		rules_atom,actual_type;
 int		fmt;
 unsigned long	nitems,bytes_after;
-char            *data,*out;
+unsigned char   *data;
+char            *out, *end;
 Status		rtrn;
 
     rules_atom= XInternAtom(dpy,_XKB_RF_NAMES_PROP_ATOM,True);
@@ -1381,35 +1375,36 @@ Status		rtrn;
 	return (fmt==0?True:False);
     }
 
-    out= data;
+    out=(char*)data;
+    end=out+nitems;
     if (out && (*out) && rf_rtrn)
 	 *rf_rtrn= _XkbDupString(out);
     out+=strlen(out)+1;
 
-    if ((out-data)<nitems) {
+    if (out<end) {
 	if (*out)
 	    vd_rtrn->model= _XkbDupString(out);
 	out+=strlen(out)+1;
     }
 
-    if ((out-data)<nitems) {
+    if (out<end) {
 	if (*out)
 	    vd_rtrn->layout= _XkbDupString(out);
 	out+=strlen(out)+1;
     }
 
-    if ((out-data)<nitems) {
+    if (out<end) {
 	if (*out)
 	    vd_rtrn->variant= _XkbDupString(out);
 	out+=strlen(out)+1;
     }
 
-
-    if ((out-data)<nitems) {
+    if (out<end) {
 	if (*out)
 	    vd_rtrn->options= _XkbDupString(out);
 	out+=strlen(out)+1;
     }
+
     XFree(data);
     return True;
 }

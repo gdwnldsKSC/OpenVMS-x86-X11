@@ -29,7 +29,7 @@ or other dealings in this Software without prior written authorization
 from Kaleb S. KEITHLEY
 
 */
-/* $XdotOrg: xc/programs/Xserver/Xext/xf86vmode.c,v 1.4 2005/04/20 12:25:12 daniels Exp $ */
+/* $XdotOrg: xserver/xorg/hw/xfree86/dixmods/extmod/xf86vmode.c,v 1.9.4.1 2006/04/07 01:26:25 ajax Exp $ */
 /* $Xorg: xf86vmode.c,v 1.3 2000/08/17 19:47:59 cpqbld Exp $ */
 /* THIS IS NOT AN X CONSORTIUM STANDARD OR AN X PROJECT TEAM SPECIFICATION */
 
@@ -51,10 +51,6 @@ from Kaleb S. KEITHLEY
 #include "swaprep.h"
 #include "xf86.h"
 #include "vidmodeproc.h"
-
-#ifdef EXTMODULE
-#include "xf86_ansic.h"
-#endif
 
 #define DEFAULT_XF86VIDMODE_VERBOSITY	3
 
@@ -1593,8 +1589,10 @@ ProcXF86VidModeGetGammaRamp(ClientPtr client)
 	    return BadAlloc;
    
         if (!VidModeGetGammaRamp(stuff->screen, stuff->size, 
-		ramp, ramp + length, ramp + (length * 2)))
+		ramp, ramp + length, ramp + (length * 2))) {
+	    xfree(ramp);
             return BadValue;
+	}
     }
 
     rep.type = X_Reply;

@@ -1,5 +1,7 @@
 libmandir = $(LIB_MAN_DIR)
 
+LIB_MAN_DIR_SUFFIX = $(LIB_MAN_DIR:@mandir@/man%=%)
+
 libman_PRE = \
 	DBE.man \
 	DPMSCapable.man \
@@ -48,13 +50,13 @@ BUILT_SOURCES = shadows.DONE
 shadows.DONE:
 	-rm -f $(all_aliases:=.@LIB_MAN_SUFFIX@)
 	(for i in $(XShape_man_aliases:=.@LIB_MAN_SUFFIX@) ; do \
-	echo .so man$(LIB_MAN_SUFFIX)/XShape.$(LIB_MAN_SUFFIX) > $$i; \
+	echo .so man$(LIB_MAN_DIR_SUFFIX)/XShape.$(LIB_MAN_SUFFIX) > $$i; \
 	done)
 	(for i in $(Xmbuf_man_aliases:=.@LIB_MAN_SUFFIX@) ; do \
-	echo .so man$(LIB_MAN_SUFFIX)/Xmbuf.$(LIB_MAN_SUFFIX) > $$i; \
+	echo .so man$(LIB_MAN_DIR_SUFFIX)/Xmbuf.$(LIB_MAN_SUFFIX) > $$i; \
 	done)
 	(for i in $(Xevi_man_aliases:=.@LIB_MAN_SUFFIX@) ; do \
-	echo .so man$(LIB_MAN_SUFFIX)/Xevi.$(LIB_MAN_SUFFIX) > $$i; \
+	echo .so man$(LIB_MAN_DIR_SUFFIX)/Xevi.$(LIB_MAN_SUFFIX) > $$i; \
 	done)
 	touch shadows.DONE
 

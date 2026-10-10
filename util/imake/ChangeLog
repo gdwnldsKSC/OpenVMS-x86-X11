@@ -1,3 +1,16 @@
+2006-05-15  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2
+
+2006-04-08  Donnie Berkholz  <spyderous@gentoo.org>
+
+	reviewed by: Adam Jackson
+
+	* imake.c: (get_libc_version):
+	Allow specifying TMPDIR environment variable to use instead of /tmp, for
+	systems on which /tmp is mounted noexec (Martin Schlemmer).
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

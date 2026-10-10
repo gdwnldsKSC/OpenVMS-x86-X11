@@ -1,3 +1,25 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.1
+
+2006-03-31  Daniel Stone  <daniel@freedesktop.org>
+
+	* **/*.[ch]:
+	Reindent with -bad -bap -c0 -cd0 -cp0 -ncdb -ci4 -cli0 -ncs -d0 -di4
+	-i4 -ip4 -l80 -npcs -psl -sob -ss -ce -sc -br -cdw -lp -cbi0.
+
+2006-03-20  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/Makefile.am:
+	Bug #6286: Fix build on Cygwin. (Yaakov Selkowitz)
+
+2006-02-12  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* man/Makefile.am: 
+	Bug #5628 <https://bugs.freedesktop.org/show_bug.cgi?id=5628>
+	Shadow pages not created correctly when MANDIR & MANSUFFIX don't match.
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

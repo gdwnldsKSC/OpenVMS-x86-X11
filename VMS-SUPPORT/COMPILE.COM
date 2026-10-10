@@ -12,7 +12,7 @@ $ inherited_freetype_table = ""
 $ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|ICE|SM|BDFTOPCF|ICEAUTH|SHOWRGB|MAKEDEPEND|GTF|RTL|"
-$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|"
+$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|"
 $ profiles = profiles + "CFB|XKBFILE|XKBUI|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ profiles = profiles + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ profiles = profiles + "XSS|XVMC|XXF86VM|XXF86MISC|"
@@ -91,6 +91,9 @@ $ IF (P4 .EQS. "XKBFILE") .OR. (P4 .EQS. "XKBUI") THEN -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
     "[.LIB.LIBXKBFILE.SRC]"
+$ IF (P4 .EQS. "XKBFILE") .OR. (P4 .EQS. "XKBUI") THEN GOSUB xkbfile_native
+$ IF ((P4 .EQS. "XKBFILE") .OR. (P4 .EQS. "XKBUI")) .AND. -
+    (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
 $ IF P4 .EQS. "XKBUI" THEN include_directory = include_directory + -
     ",[.LIB.LIBXKBUI.SRC]"
 $ IF P4 .EQS. "XT" THEN include_directory = -
@@ -176,7 +179,7 @@ $ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.INCLUDE]"
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.UTIL.MAKEDEPEND],[.UTIL.IMAKE]"
-$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|LAYER|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|CFB|ROOTLESS|XTRAP|"
+$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|CFB|ROOTLESS|XTRAP|"
 $! Native case folding makes server xfixes.h collide with client Xfixes.h.
 $! Keep the server header ahead of the exported client extension directory.
 $ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
@@ -191,14 +194,10 @@ $ IF P4 .EQS. "MI" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.MFB],[.XSERVER.XORG-SERVER.XEXT]," + -
     "[.XSERVER.XORG-SERVER.XFIXES],[.XSERVER.XORG-SERVER.DAMAGEEXT]"
 $ IF (P4 .EQS. "FB") .OR. (P4 .EQS. "RENDER") .OR. -
-    (P4 .EQS. "SHADOW") .OR. (P4 .EQS. "LAYER") THEN include_directory = include_directory + -
+    (P4 .EQS. "SHADOW") THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.FB],[.XSERVER.XORG-SERVER.XEXT]"
-$ IF (P4 .EQS. "SHADOW") .OR. (P4 .EQS. "LAYER") THEN include_directory = include_directory + -
+$ IF P4 .EQS. "SHADOW" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.MIEXT.SHADOW]"
-$ IF P4 .EQS. "LAYER" THEN include_directory = include_directory + -
-    ",[.XSERVER.XORG-SERVER.MIEXT.LAYER]"
-$ IF P4 .EQS. "LAYER" THEN GOSUB layer_names
-$ IF (P4 .EQS. "LAYER") .AND. (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
 $ IF P4 .EQS. "RANDR" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.RANDR]"
 $ IF P4 .EQS. "DBE" THEN include_directory = include_directory + -
@@ -239,7 +238,7 @@ $ IF P4 .EQS. "XKB" THEN include_directory = include_directory + -
 $ IF P4 .EQS. "LBX" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.LBX],[.XSERVER.XORG-SERVER.XEXT],[.LIB.LIBXFONT.INCLUDE.X11.FONTS]"
 $ IF P4 .EQS. "CFB" THEN include_directory = include_directory + -
-    ",[.XSERVER.XORG-SERVER.CFB],[.XSERVER.XORG-SERVER.CFB24]," + -
+    ",[.XSERVER.XORG-SERVER.CFB]," + -
     "[.XSERVER.XORG-SERVER.MFB],[.XSERVER.XORG-SERVER.XEXT]"
 $ IF P4 .EQS. "CFB" THEN GOSUB cfb_native
 $ IF (P4 .EQS. "CFB") .AND. (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
@@ -312,10 +311,6 @@ $ IF freetype_scoped .AND. (F$TRNLNM("FREETYPE") .NES. inherited_freetype) THEN 
 $ IF freetype_scoped .AND. -
     (F$TRNLNM("FREETYPE",,,,,"TABLE_NAME") .NES. inherited_freetype_table) THEN result = 2
 $ GOTO done
-$layer_names:
-$ layer_names_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.MIEXT.LAYER]VMS_LAYER_NAMES.H")
-$ IF layer_names_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + layer_names_header
-$ RETURN
 $cfb_native:
 $ cfb_native_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.CFB]VMS_CFB_NATIVE.H")
 $ IF cfb_native_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + cfb_native_header
@@ -327,6 +322,10 @@ $ RETURN
 $xprintapputil_native:
 $ xprintapputil_native_header = F$SEARCH("[.VMS-SUPPORT.LIB.XPRINTAPPUTIL]VMS_XPRINTAPPUTIL_NATIVE.H")
 $ IF xprintapputil_native_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + xprintapputil_native_header
+$ RETURN
+$xkbfile_native:
+$ xkbfile_native_header = F$SEARCH("[.VMS-SUPPORT.LIB.XKBFILE]VMS_XKBFILE_NATIVE.H")
+$ IF xkbfile_native_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + xkbfile_native_header
 $ RETURN
 $os_native_headers:
 $ starlet_headers = F$SEARCH("SYS$LIBRARY:SYS$STARLET_C.TLB")

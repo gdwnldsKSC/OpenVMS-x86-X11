@@ -150,34 +150,6 @@ unsigned	set,rtrn;
 
 /***===================================================================***/
 
-int
-_XkbStrCaseCmp(char *str1,char *str2)
-{
-    char buf1[512],buf2[512];
-    char c, *s;
-    register int n;
-
-    for (n=0, s = buf1; (c = *str1++); n++) {
-        if (isupper(c))
-            c = tolower(c);
-        if (n>510)
-            break;
-        *s++ = c;
-    }
-    *s = '\0';
-    for (n=0, s = buf2; (c = *str2++); n++) {
-        if (isupper(c))
-            c = tolower(c);
-        if (n>510)
-            break;
-        *s++ = c;
-    }
-    *s = '\0';
-    return (strcmp(buf1, buf2));
-}
-
-/***===================================================================***/
-
 Bool
 XkbLookupGroupAndLevel(	XkbDescPtr 	xkb,
 			int 		key,
@@ -349,7 +321,7 @@ XkbFileInfo	finfo;
 	if (wantNames&XkmTypesMask) {
 	    if (old_names->types!=None) {
 		tmp= XkbAtomGetString(dpy,old_names->types);
-		names->types= _XkbDupString(tmp);
+		names->types= tmp;
 	    }
 	    else {
 		wantDflts|= XkmTypesMask;
@@ -359,7 +331,7 @@ XkbFileInfo	finfo;
 	if (wantNames&XkmCompatMapMask) {
 	    if (old_names->compat!=None) {
 		tmp= XkbAtomGetString(dpy,old_names->compat);
-		names->compat= _XkbDupString(tmp);
+		names->compat= tmp;
 	    }
 	    else wantDflts|= XkmCompatMapMask;
 	    complete|= XkmCompatMapMask; 
@@ -368,13 +340,13 @@ XkbFileInfo	finfo;
 	    if (old_names->symbols==None)
 		return False;
 	    tmp= XkbAtomGetString(dpy,old_names->symbols);
-	    names->symbols= _XkbDupString(tmp);
+	    names->symbols= tmp;
 	    complete|= XkmSymbolsMask; 
 	}
 	if (wantNames&XkmKeyNamesMask) {
 	   if (old_names->keycodes!=None) {
 		tmp= XkbAtomGetString(dpy,old_names->keycodes);
-		names->keycodes= _XkbDupString(tmp);
+		names->keycodes= tmp;
 	    }
 	    else wantDflts|= XkmKeyNamesMask;
 	    complete|= XkmKeyNamesMask;
@@ -383,7 +355,7 @@ XkbFileInfo	finfo;
 	    if (old_names->geometry==None)
 		return False;
 	    tmp= XkbAtomGetString(dpy,old_names->geometry);
-	    names->geometry= _XkbDupString(tmp);
+	    names->geometry= tmp;
 	    complete|= XkmGeometryMask; 
 	    wantNames&= ~XkmGeometryMask;
 	}
@@ -687,3 +659,19 @@ XkbNameMatchesPattern(char *name,char *ptrn)
     /* if we get here, the pattern is exhausted (-:just like me:-) */
     return (name[0]=='\0');
 }
+
+#ifdef NEED_STRCASECMP
+_X_HIDDEN int
+_XkbStrCaseCmp(char *str1,char *str2)
+{
+    const u_char *us1 = (const u_char *)str1, *us2 = (const u_char *)str2;
+    
+    while (tolower(*us1) == tolower(*us2)) {
+        if (*us1++ == '\0')
+            return (0);
+        us2++;
+    }
+
+    return (tolower(*us1) - tolower(*us2));
+}
+#endif

@@ -171,7 +171,7 @@ physical button 2 to
 .IR N2 ,
 and so forth.  This enables the use of physical buttons that are obscured by
 .IR ZAxisMapping .
-Default: 1-to-1 mapping.
+Default:\ "1\ 2\ 3\ 8\ 9\ 10\ ...".
 .TP 7
 .BI "Option \*qFlipXY\*q \*q" boolean \*q
 Enable/disable swapping the X and Y axes.  This transformation is applied

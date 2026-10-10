@@ -62,12 +62,11 @@ SOFTWARE.
  *
  */
 
-XFreeDeviceList (list)
+XFreeDeviceList(list)
     XDeviceList *list;
-    {
-    if (list != NULL) 
-	{
-        XFree ((list->name) - sizeof(XDeviceList));
-        XFree ((XDeviceList *) list);
-        }
+{
+    if (list != NULL) {
+	XFree((list->name) - sizeof(XDeviceList));
+	XFree((XDeviceList *) list);
     }
+}

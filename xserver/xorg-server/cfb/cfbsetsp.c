@@ -53,7 +53,6 @@ SOFTWARE.
 
 #include <X11/X.h>
 #include <X11/Xmd.h>
-#include <stdint.h>
 #include "servermd.h"
 
 #include "misc.h"
@@ -121,9 +120,9 @@ cfbSetScanline(y, xOrigin, xStart, xEnd, psrc, alu, pdstBase, widthDst, planemas
 #if PSZ == 24
     nl = w;
     while (nl--){
-      psrc = (unsigned int *)((uintptr_t)psrcb & ~(uintptr_t)0x03);
+      psrc = (unsigned int *)((unsigned long)psrcb & ~0x03);
       getbits24(psrc, tmpSrc, offSrc);
-      pdst = (int *)((uintptr_t)pdstb & ~(uintptr_t)0x03);
+      pdst = (int *)((unsigned long)pdstb & ~0x03);
       DoMergeRop24(tmpSrc, pdst, xIndex);
       offSrc++;
       psrcb += 3;
@@ -316,3 +315,4 @@ cfbSetSpans(pDrawable, pGC, pcharsrc, ppt, pwidth, nspans, fSorted)
 	}
     }
 }
+

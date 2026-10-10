@@ -1,5 +1,5 @@
 .\" $Xorg: security.cpp,v 1.3 2000/08/17 19:42:05 cpqbld Exp $
-.\" $XdotOrg: $
+.\" $XdotOrg: doc/xorg-docs/man/general/security.man,v 1.3 2004/08/20 01:55:35 alanc Exp $
 .\" Copyright (c) 1993, 1994  X Consortium
 .\" Copyright 2004 Sun Microsystems, Inc.
 .\" 

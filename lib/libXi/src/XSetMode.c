@@ -61,28 +61,27 @@ SOFTWARE.
 #include "XIint.h"
 
 int
-XSetDeviceMode (dpy, dev, mode)
-    register Display 	*dpy;
-    XDevice 		*dev;
-    int			mode;
-    {       
-    xSetDeviceModeReq 		*req;
-    xSetDeviceModeReply 	rep;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+XSetDeviceMode(dpy, dev, mode)
+    register Display *dpy;
+    XDevice *dev;
+    int mode;
+{
+    xSetDeviceModeReq *req;
+    xSetDeviceModeReply rep;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return (NoSuchExtension);
 
-    GetReq(SetDeviceMode,req);		
+    GetReq(SetDeviceMode, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_SetDeviceMode;
     req->deviceid = dev->device_id;
     req->mode = mode;
 
-    (void) _XReply (dpy, (xReply *) &rep, 0, xTrue);
+    (void)_XReply(dpy, (xReply *) & rep, 0, xTrue);
     UnlockDisplay(dpy);
     SyncHandle();
     return (rep.status);
-    }
-
+}

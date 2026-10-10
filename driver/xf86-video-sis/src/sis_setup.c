@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis_setup.c,v 1.17 2005/07/13 17:17:00 twini Exp $ */
 /*
  * Basic hardware and memory detection
  *

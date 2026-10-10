@@ -26,7 +26,7 @@ include cpprules.in
 
 DEFS = \
 	-DCCCMD=$(CC)\
-	-DRMCMD="rm"\
+	-DRMCMD='"rm -f"'\
 	-DLNCMD="ln"\
 	-DMVCMD="mv"
 

@@ -126,6 +126,11 @@ extern Status XScreenSaverGetRegistered (
     Atom*	/* type */
 );
 
+extern void XScreenSaverSuspend (
+    Display*	/* display */,
+    Bool 	/* suspend */
+);
+
 _XFUNCPROTOEND
 
 #endif /* _SCRNSAVER_H_ */

@@ -63,185 +63,174 @@ SOFTWARE.
 #include <X11/extensions/extutil.h>
 #include "XIint.h"
 
-XDeviceInfo 
-*XListInputDevices(dpy, ndevices)
-    register Display *dpy;
-    int *ndevices;
-    {	
-    int				size;
-    xListInputDevicesReq 	*req;
-    xListInputDevicesReply	rep;
-    xDeviceInfo 		*list, *slist = NULL;
-    XDeviceInfo 		*sclist = NULL;
-    XDeviceInfo 		*clist = NULL;
-    xAnyClassPtr 		any, sav_any;
-    XAnyClassPtr 		Any;
-    char			*nptr, *Nptr;
-    register int 		i,j,k;
-    register long 		rlen;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+XDeviceInfo * XListInputDevices(dpy, ndevices)
+    register Display *
+	dpy;
+    int *
+	ndevices;
+{
+    int size;
+    xListInputDevicesReq *req;
+    xListInputDevicesReply rep;
+    xDeviceInfo *list, *slist = NULL;
+    XDeviceInfo *sclist = NULL;
+    XDeviceInfo *clist = NULL;
+    xAnyClassPtr any, sav_any;
+    XAnyClassPtr Any;
+    char *nptr, *Nptr;
+    register int i, j, k;
+    register long rlen;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return ((XDeviceInfo *) NULL);
 
-    GetReq(ListInputDevices,req);		
+    GetReq(ListInputDevices, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_ListInputDevices;
 
-    if (! _XReply (dpy, (xReply *) &rep, 0, xFalse)) 
-	{
+    if (!_XReply(dpy, (xReply *) & rep, 0, xFalse)) {
 	UnlockDisplay(dpy);
 	SyncHandle();
 	return (XDeviceInfo *) NULL;
+    }
+
+    if ((*ndevices = rep.ndevices)) {	/* at least 1 input device */
+	size = *ndevices * sizeof(XDeviceInfo);
+	rlen = rep.length << 2;	/* multiply length by 4    */
+	list = (xDeviceInfo *) Xmalloc(rlen);
+	slist = list;
+	if (!slist) {
+	    _XEatData(dpy, (unsigned long)rlen);
+	    UnlockDisplay(dpy);
+	    SyncHandle();
+	    return (XDeviceInfo *) NULL;
+	}
+	_XRead(dpy, (char *)list, rlen);
+
+	any = (xAnyClassPtr) ((char *)list + (*ndevices * sizeof(xDeviceInfo)));
+	sav_any = any;
+	for (i = 0; i < *ndevices; i++, list++) {
+	    for (j = 0; j < (int)list->num_classes; j++) {
+		switch (any->class) {
+		case KeyClass:
+		    size += sizeof(XKeyInfo);
+		    break;
+		case ButtonClass:
+		    size += sizeof(XButtonInfo);
+		    break;
+		case ValuatorClass:
+		{
+		    xValuatorInfoPtr v;
+
+		    v = (xValuatorInfoPtr) any;
+		    size += sizeof(XValuatorInfo) +
+			(v->num_axes * sizeof(XAxisInfo));
+		    break;
+		}
+		default:
+		    break;
+		}
+		any = (xAnyClassPtr) ((char *)any + any->length);
+	    }
 	}
 
-    if ((*ndevices = rep.ndevices)) /* at least 1 input device */
-	{
-	size = *ndevices * sizeof (XDeviceInfo);
-	rlen = rep.length << 2;   /* multiply length by 4    */
-	list = (xDeviceInfo *) Xmalloc (rlen);
-	slist = list;
-        if (!slist)
-	    {
-	    _XEatData (dpy, (unsigned long) rlen);
-	    UnlockDisplay(dpy);
-	    SyncHandle();
-	    return (XDeviceInfo *) NULL;
-	    }
-	_XRead (dpy, (char *)list, rlen);
-
-	any = (xAnyClassPtr) ((char *) list + 
-		(*ndevices * sizeof(xDeviceInfo)));
-	sav_any = any;
-	for (i=0; i<*ndevices; i++, list++) 
-	    {
-	    for (j=0; j<(int)list->num_classes; j++)
-		{
-		switch (any->class)
-		    {
-		    case KeyClass:
-			size += sizeof (XKeyInfo);
-			break;
-		    case ButtonClass:
-			size += sizeof (XButtonInfo);
-			break;
-		    case ValuatorClass:
-			{
-			xValuatorInfoPtr v;
-			v = (xValuatorInfoPtr) any;
-			size += sizeof (XValuatorInfo) + 
-				(v->num_axes * sizeof (XAxisInfo));
-			break;
-			}
-		    default:
-			break;
-		    }
-		any = (xAnyClassPtr) ((char *) any + any->length); 
-		}
-	    }
-
-	for (i=0, nptr = (char *) any; i<*ndevices; i++) 
-	    {
-	    size += *nptr +1;
+	for (i = 0, nptr = (char *)any; i < *ndevices; i++) {
+	    size += *nptr + 1;
 	    nptr += (*nptr + 1);
-	    }
+	}
 
-	clist = (XDeviceInfoPtr) Xmalloc (size);
-        if (!clist)
-	    {
-	    XFree ((char *)slist);
+	clist = (XDeviceInfoPtr) Xmalloc(size);
+	if (!clist) {
+	    XFree((char *)slist);
 	    UnlockDisplay(dpy);
 	    SyncHandle();
 	    return (XDeviceInfo *) NULL;
-	    }
+	}
 	sclist = clist;
-	Any = (XAnyClassPtr) ((char *) clist + 
-		(*ndevices * sizeof (XDeviceInfo)));
+	Any = (XAnyClassPtr) ((char *)clist +
+			      (*ndevices * sizeof(XDeviceInfo)));
 	list = slist;
 	any = sav_any;
-	for (i=0; i<*ndevices; i++, list++, clist++) 
-	    {
-	    clist->type	= list->type;
+	for (i = 0; i < *ndevices; i++, list++, clist++) {
+	    clist->type = list->type;
 	    clist->id = list->id;
 	    clist->use = list->use;
 	    clist->num_classes = list->num_classes;
 	    clist->inputclassinfo = Any;
-	    for (j=0; j<(int)list->num_classes; j++)
+	    for (j = 0; j < (int)list->num_classes; j++) {
+		switch (any->class) {
+		case KeyClass:
 		{
-		switch (any->class)
-		    {
-		    case KeyClass:
-			{
-			XKeyInfoPtr K = (XKeyInfoPtr) Any;
-			xKeyInfoPtr k = (xKeyInfoPtr) any;
-			K->class = KeyClass;
-			K->length = sizeof (XKeyInfo);
-			K->min_keycode = k->min_keycode;
-			K->max_keycode = k->max_keycode;
-			K->num_keys = k->num_keys;
-			break;
-			}
-		    case ButtonClass:
-			{
-			XButtonInfoPtr B = (XButtonInfoPtr) Any;
-			xButtonInfoPtr b = (xButtonInfoPtr) any;
-			B->class = ButtonClass;
-			B->length = sizeof (XButtonInfo);
-			B->num_buttons = b->num_buttons;
-			break;
-			}
-		    case ValuatorClass:
-			{
-			XValuatorInfoPtr V = (XValuatorInfoPtr) Any;
-			xValuatorInfoPtr v = (xValuatorInfoPtr) any;
-			XAxisInfoPtr A;
-			xAxisInfoPtr a;
+		    XKeyInfoPtr K = (XKeyInfoPtr) Any;
+		    xKeyInfoPtr k = (xKeyInfoPtr) any;
 
-			V->class = ValuatorClass;
-			V->length = sizeof (XValuatorInfo) +
-				(v->num_axes * sizeof (XAxisInfo));
-			V->num_axes = v->num_axes;
-			V->motion_buffer = v->motion_buffer_size;
-			V->mode = v->mode;
-			A = (XAxisInfoPtr) ((char *) V + sizeof(XValuatorInfo));
-			V->axes = A;
-			a = (xAxisInfoPtr) ((char *) any + 
-				sizeof (xValuatorInfo)); 
-			for (k=0; k<(int)v->num_axes; k++,a++,A++) 
-			    {
-			    A->min_value = a->min_value;
-			    A->max_value = a->max_value;
-			    A->resolution = a->resolution;
-			    }
-			break;
-			}
-		    default:
-			break;
-		    }
-		any = (xAnyClassPtr) ((char *) any + any->length); 
-		Any = (XAnyClassPtr) ((char *) Any + Any->length); 
+		    K->class = KeyClass;
+		    K->length = sizeof(XKeyInfo);
+		    K->min_keycode = k->min_keycode;
+		    K->max_keycode = k->max_keycode;
+		    K->num_keys = k->num_keys;
+		    break;
 		}
-	    }
+		case ButtonClass:
+		{
+		    XButtonInfoPtr B = (XButtonInfoPtr) Any;
+		    xButtonInfoPtr b = (xButtonInfoPtr) any;
 
-	clist = sclist;
-	nptr = (char *) any;
-	Nptr = (char *) Any;
-	for (i=0; i<*ndevices; i++,clist++) 
-	    {
-	    clist->name = (char *) Nptr;
-	    memcpy (Nptr,  nptr+1, *nptr);
-	    Nptr += (*nptr);
-	    *Nptr++ = '\0';
-	    nptr += (*nptr + 1);
+		    B->class = ButtonClass;
+		    B->length = sizeof(XButtonInfo);
+		    B->num_buttons = b->num_buttons;
+		    break;
+		}
+		case ValuatorClass:
+		{
+		    XValuatorInfoPtr V = (XValuatorInfoPtr) Any;
+		    xValuatorInfoPtr v = (xValuatorInfoPtr) any;
+		    XAxisInfoPtr A;
+		    xAxisInfoPtr a;
+
+		    V->class = ValuatorClass;
+		    V->length = sizeof(XValuatorInfo) +
+			(v->num_axes * sizeof(XAxisInfo));
+		    V->num_axes = v->num_axes;
+		    V->motion_buffer = v->motion_buffer_size;
+		    V->mode = v->mode;
+		    A = (XAxisInfoPtr) ((char *)V + sizeof(XValuatorInfo));
+		    V->axes = A;
+		    a = (xAxisInfoPtr) ((char *)any + sizeof(xValuatorInfo));
+		    for (k = 0; k < (int)v->num_axes; k++, a++, A++) {
+			A->min_value = a->min_value;
+			A->max_value = a->max_value;
+			A->resolution = a->resolution;
+		    }
+		    break;
+		}
+		default:
+		    break;
+		}
+		any = (xAnyClassPtr) ((char *)any + any->length);
+		Any = (XAnyClassPtr) ((char *)Any + Any->length);
 	    }
 	}
 
-    XFree ((char *)slist);
+	clist = sclist;
+	nptr = (char *)any;
+	Nptr = (char *)Any;
+	for (i = 0; i < *ndevices; i++, clist++) {
+	    clist->name = (char *)Nptr;
+	    memcpy(Nptr, nptr + 1, *nptr);
+	    Nptr += (*nptr);
+	    *Nptr++ = '\0';
+	    nptr += (*nptr + 1);
+	}
+    }
+
+    XFree((char *)slist);
     UnlockDisplay(dpy);
     SyncHandle();
     return (sclist);
-    }
+}
 
 /***********************************************************************
  *
@@ -249,11 +238,11 @@ XDeviceInfo
  *
  */
 
-void XFreeDeviceList (list)
+void
+XFreeDeviceList(list)
     XDeviceInfo *list;
-    {
-    if (list != NULL) 
-	{
-        XFree ((char *) list);
-        }
+{
+    if (list != NULL) {
+	XFree((char *)list);
     }
+}

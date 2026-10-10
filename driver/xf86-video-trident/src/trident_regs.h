@@ -200,6 +200,57 @@
 #define GER_DSTCLIP_X	0x214C		/* Word */
 #define GER_DSTCLIP_Y	0x214E		/* Word */
 
+/* Graphics Engine for Cyberblade/i1 */
+#define GER_SRC1 0x2100
+#define GER_SRC2 0x2104
+#define GER_DST1 0x2108
+#define GER_DST2 0x210C
+#define GER_CONTROL 0x2124
+#define   GER_CTL_RESET (1 << 7)
+#define   GER_CTL_RESUME 0
+#define GER_DRAW_CMD 0x2144
+#define   GER_OP_NULL 0
+#define   GER_OP_RSVD1 (1 << 28)
+#define   GER_OP_LINE (2 << 28)
+#define   GER_OP_RSVD2 (3 << 28)
+#define   GER_OP_RSVD3 (4 << 28)
+#define   GER_OP_RSVD4 (5 << 28)
+#define   GER_OP_RSVD5 (6 << 28)
+#define   GER_OP_RSVD6 (7 << 28)
+#define   GER_OP_BLT_FB (8 << 28)
+#define   GER_OP_TXT_FB (9 << 28)
+#define   GER_OP_BLT_HOST (0xA << 28)
+#define   GER_OP_TRAP_POLY1 (0xB<< 28)
+#define   GER_OP_BLT_RE (0xC << 28)
+#define   GER_OP_TXT_RE (0xD << 28)
+#define   GER_OP_TRAP_POLY (0xE << 28)
+#define   GER_OP_RSVD7 (0xF << 28)
+
+/* Op args */
+#define   GER_DRAW_SRC_COLOR (1 << 19)
+#define   GER_ROP_ENABLE (1 << 4)
+
+/* Blt, line & poly op operation sources */
+#define   GER_BLT_SRC_HOST (0 << 2)
+#define   GER_BLT_SRC_FB (1 << 2)
+#define   GER_SRC_CONST (2 << 2)
+#define   GER_BLK_WRITE (3 << 2)
+
+#define GER_ROP 0x2148
+#define GER_CLIP0 0x2154
+#define GER_CLIP1 0x2158
+#define GER_FGCOLOR 0x2160
+#define GER_BITMASK 0x2184
+#define GER_PATSTYLE 0x216C
+#define GER_DSTBASE0 0x21B8
+#define GER_DSTBASE1 0x21BC
+#define GER_DSTBASE2 0x21C0
+#define GER_DSTBASE3 0x21C4
+#define GER_SRCBASE0 0x21C8
+#define GER_SRCBASE1 0x21CC
+#define GER_SRCBASE2 0x21D0
+#define GER_SRCBASE3 0x21C4
+
 /* Wait for VSync */
 #define WAITFORVSYNC \
  { \

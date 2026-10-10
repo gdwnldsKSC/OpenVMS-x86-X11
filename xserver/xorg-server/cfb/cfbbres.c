@@ -51,7 +51,6 @@ SOFTWARE.
 #endif
 
 #include <X11/X.h>
-#include <stdint.h>
 #include "misc.h"
 #include "cfb.h"
 #include "cfbmskbits.h"
@@ -131,8 +130,8 @@ cfbBresS(rop, and, xor, addrl, nlwidth, signdx, signdy, axis, x1, y1, e, e1,
 	--len;
 #if PSZ == 24
 #define body_copy \
-	    addrp = (PixelType *)((uintptr_t)addrb & ~(uintptr_t)0x03); \
-	    switch((uintptr_t)addrb & 3){ \
+	    addrp = (PixelType *)((unsigned long)addrb & ~0x03); \
+	    switch((unsigned long)addrb & 3){ \
 	    case 0: \
 	      *addrp = ((*addrp)&0xFF000000)|(piQxelXor[0] & 0xFFFFFF); \
 	      break; \
@@ -192,8 +191,8 @@ cfbBresS(rop, and, xor, addrl, nlwidth, signdx, signdy, axis, x1, y1, e, e1,
 	while(len--)
 	{ 
 #if PSZ == 24
-	    addrp = (PixelType *)((uintptr_t)addrb & ~(uintptr_t)0x03);
-	    switch((uintptr_t)addrb & 3){
+	    addrp = (PixelType *)((unsigned long)addrb & ~0x03);
+	    switch((unsigned long)addrb & 3){
 	    case 0:
 	      *addrp = (*addrp & (piQxelAnd[0]|0xFF000000))
 			^ (piQxelXor[0] & 0xFFFFFF);

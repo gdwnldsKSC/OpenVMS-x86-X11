@@ -127,7 +127,12 @@ point value greater than 0 and less or equal to 10. \fIbrightness\fP is
 an integer value greater or equal to 0 and less than 128. 
 Default: gamma and brightness control is turned off. 
 Note: This is not supported on all chipsets.
+.BI "Option \*qAccelMethod\*q \*q" string \*q
+Choose acceleration architecture, either "XAA" or "EXA".  XAA is the old
+(but stable) XFree86 based acceleration architecture.  EXA is a newer and
+simpler acceleration architecture designed to better accelerate the X Render
+extension.  Default: "XAA".
 .SH "SEE ALSO"
 __xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__)
 .SH AUTHOR
-Author: Alan Hourihane
+Author: Alan Hourihane, EXA for Blade chips by Jesse Barnes

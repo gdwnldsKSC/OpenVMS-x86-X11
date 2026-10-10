@@ -2,15 +2,17 @@
 #include "config.h"
 #endif
 
+#include <math.h>
+
 #include "radeon.h"
 #include "radeon_reg.h"
 #include "radeon_macros.h"
 #include "radeon_probe.h"
 #include <X11/extensions/Xv.h>
 #include "radeon_video.h"
+#include "atipciids.h"
 
 #include "xf86.h"
-#include "xf86PciInfo.h"
 
 /* i2c stuff */
 #include "xf86i2c.h"

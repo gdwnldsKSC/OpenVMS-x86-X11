@@ -1,3 +1,25 @@
+2006-04-06  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/citron.c:
+	Unlibcwrap.  Bump server version requirement.  Bump to 2.2.0.
+
+2006-03-01  Peter Kunzmann  <kunzmann@citron.de>
+
+	* man/citron.man:
+	Change most -'s to \-.
+	Update list of supported devices.
+
+	* src/citron.c:
+	* src/citron.h:
+	Call the PostButton event when breaking beams.
+	Added channels for ambient overload, keys and pwmex channels.
+	Beep on keyclicks.
+	Bug #6065: Add NULL to default_options[] to prevent crash.
+
+	* configure.ac:
+	Bump to version 2.15.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

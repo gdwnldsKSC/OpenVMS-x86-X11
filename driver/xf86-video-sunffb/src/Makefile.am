@@ -35,38 +35,18 @@ endif
 sunffb_drv_la_SOURCES = \
          ffb_accel.c \
          ffb_attr.c \
-         ffb_bcopy.c \
-         ffb_checks.c \
-         ffb_circle.c \
-         ffb_cplane.c \
          ffb_cursor.c \
          ffb_dac.c \
          ffb_dac.h \
-         ffb_dbe.c \
          ffb_ddc.c \
          ffb_dga.c \
          ffb_driver.c \
          ffb_fifo.h \
-         ffb_frect.c \
-         ffb_fspans.c \
-         ffb_gc.c \
-         ffb_gc.h \
-         ffb_glyph.c \
-         ffb_gspans.c \
          ffb.h \
-         ffb_line.c \
          ffb_loops.h \
-         ffb_plygon.c \
-         ffb_point.c \
          ffb_rcache.h \
          ffb_regs.h \
-         ffb_seg.c \
-         ffb_sspans.c \
-         ffb_stip.c \
-         ffb_stip.h \
-         ffb_stubs.c \
          ffb_wid.c \
-         ffb_zeroarc.c \
          $(SPARC_ASM_SRC)
 
 if DRI 
@@ -74,9 +54,3 @@ sunffb_drv_la_SOURCES += \
          ffb_dri.c \
          ffb_drishare.h
 endif
-
-EXTRA_DIST = \
-         ffb_clip.c \
-         ffb_clip.h \
-         ffb_wline.c \
-         ffb_rect.c

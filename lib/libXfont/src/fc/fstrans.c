@@ -1,5 +1,5 @@
 /*
- * $Id: fstrans.c,v 1.3 2005/07/09 06:20:36 keithp Exp $
+ * $Id: fstrans.c,v 1.1 2005/05/27 05:17:52 josh Exp $
  *
  * Copyright © 2004 Keith Packard
  *

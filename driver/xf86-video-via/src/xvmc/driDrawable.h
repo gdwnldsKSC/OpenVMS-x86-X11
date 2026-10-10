@@ -25,7 +25,8 @@
 #ifndef _DRIDRAWABLE_H
 #define _DRIDRAWABLE_H
 
-typedef struct _drawableInfo {
+typedef struct _drawableInfo
+{
     drm_drawable_t drmDraw;
     unsigned stamp;
     unsigned index;
@@ -49,16 +50,15 @@ typedef struct _drawableInfo {
  */
 
 extern int
-getDRIDrawableInfoLocked (void *drawHash, Display *display, int screen, Drawable draw,
-			  unsigned lockFlags, int drmFD, drm_context_t drmContext,
-			  drmAddress sarea, Bool updateInfo, drawableInfo **info, 
-			  unsigned long infoSize);
+getDRIDrawableInfoLocked(void *drawHash, Display * display, int screen,
+    Drawable draw, unsigned lockFlags, int drmFD, drm_context_t drmContext,
+    drmAddress sarea, Bool updateInfo, drawableInfo ** info,
+    unsigned long infoSize);
 
 /*
  * Free all resources created by the above function. Typically done on exit.
  */
 
-extern void 
-driDestroyHashContents(void *drawHash);
+extern void driDestroyHashContents(void *drawHash);
 
 #endif

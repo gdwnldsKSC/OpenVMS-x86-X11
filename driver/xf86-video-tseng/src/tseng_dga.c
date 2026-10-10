@@ -72,10 +72,6 @@ TsengDGAInit(ScreenPtr pScreen)
   int imlines =  (pScrn->videoRam * 1024) /
        (pScrn->displayWidth * (pScrn->bitsPerPixel >> 3));
 
-  
-  if (!pTseng->UseLinMem)
-      return FALSE;
-  
   if (!pTseng->DGAnumModes) {
     pMode = firstMode = pScrn->modes;
     while (pMode) {
@@ -140,7 +136,7 @@ Tseng_OpenFramebuffer(
     TsengPtr pTseng = TsengPTR(pScrn);
 
     *name = NULL; 		/* no special device */
-    *mem = (unsigned char*)pTseng->LinFbAddress;
+    *mem = (unsigned char*)pTseng->FbAddress;
     *size = pTseng->FbMapSize;
     *offset = 0;                /* Always */
     *flags = 0;                 /* Root permissions OS-dependent */

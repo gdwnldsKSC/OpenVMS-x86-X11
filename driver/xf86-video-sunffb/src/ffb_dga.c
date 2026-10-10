@@ -29,14 +29,12 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "dgaproc.h"
 
 #include "ffb.h"
 #include "ffb_regs.h"
 #include "ffb_rcache.h"
 #include "ffb_fifo.h"
-#include "ffb_stip.h"
 #include "ffb_loops.h"
 
 static Bool FFB_OpenFramebuffer(ScrnInfoPtr, char **, unsigned char **,

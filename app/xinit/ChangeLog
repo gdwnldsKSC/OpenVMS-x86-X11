@@ -1,3 +1,15 @@
+2006-04-01  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2.
+
+2006-02-25  Jeremy C. Reed  <reed@reedmedia.net>
+
+	* startx.cpp:
+	Bug #4449 <https://bugs.freedesktop.org/show_bug.cgi?id=4449>
+	Be more portable (for different /bin/sh shells) for
+	the arithmetic.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

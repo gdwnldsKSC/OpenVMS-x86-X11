@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis_dri.c,v 1.26 2005/10/21 18:40:19 ajax Exp $ */
 /*
  * DRI wrapper for 300 and 315 series
  *

@@ -8,18 +8,10 @@
 #ifndef _XIINT_H_
 #define _XIINT_H_
 
-extern XExtDisplayInfo * XInput_find_display(
-	Display*
-);
+extern XExtDisplayInfo *XInput_find_display(Display *);
 
-extern int _XiCheckExtInit(
-	Display*,
-	int
-);
+extern int _XiCheckExtInit(Display *, int);
 
-extern XExtensionVersion * _XiGetExtensionVersion(
-	Display*,
-	_Xconst char*
-);
+extern XExtensionVersion *_XiGetExtensionVersion(Display *, _Xconst char *);
 
 #endif

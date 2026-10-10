@@ -1,5 +1,5 @@
 /* $Xorg: access.c,v 1.5 2001/02/09 02:05:23 xorgcvs Exp $ */
-/* $XdotOrg: xc/programs/Xserver/os/access.c,v 1.9 2005/05/02 22:01:08 harold Exp $ */
+/* $XdotOrg: xserver/xorg/os/access.c,v 1.15 2006/02/15 20:44:13 ajax Exp $ */
 /***********************************************************
 
 Copyright 1987, 1998  The Open Group
@@ -986,6 +986,8 @@ DefineSelf (int fd)
 	return;
     }
     for (ifr = ifap; ifr != NULL; ifr = ifr->ifa_next) {
+        if (!ifr->ifa_addr)
+            continue;
 #ifdef DNETCONN
 	if (ifr->ifa_addr.sa_family == AF_DECnet) 
 	    continue;
@@ -1385,7 +1387,7 @@ ResetHosts (char *display)
 }
 
 /* Is client on the local host */
-Bool LocalClient(ClientPtr client)
+_X_EXPORT Bool LocalClient(ClientPtr client)
 {
     int    		alen, family, notused;
     Xtransaddr		*from = NULL;

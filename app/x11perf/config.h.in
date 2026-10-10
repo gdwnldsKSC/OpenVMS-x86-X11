@@ -1,5 +1,11 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to 1 if you have the `XShmQueryExtension' function. */
+#undef HAVE_XSHMQUERYEXTENSION
+
+/* MIT-SHM extension available */
+#undef MITSHM
+
 /* Name of package */
 #undef PACKAGE
 
@@ -23,3 +29,9 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* Xft library available */
+#undef XFT
+
+/* Xrender library available */
+#undef XRENDER

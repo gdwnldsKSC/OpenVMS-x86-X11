@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id: configure.ac,v 1.11 2005/12/15 00:24:28 kem Exp $
+dnl  $Id: configure.ac,v 1.10 2005/12/03 05:49:42 kem Exp $
 dnl 
 dnl  Copyright © 2003 Keith Packard, Noah Levitt
 dnl 
@@ -32,7 +32,7 @@ dnl try to keep these the same.  Note that the library has an extra
 dnl digit in the version number to track changes which don't affect the
 dnl protocol, so XRes version l.n.m corresponds to protocol version l.n
 dnl
-AC_INIT(libXres, 1.0.0, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXres)
+AC_INIT(libXres, 1.0.1, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXres)
 AC_CONFIG_AUX_DIR(.)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_CONFIG_HEADER(config.h)

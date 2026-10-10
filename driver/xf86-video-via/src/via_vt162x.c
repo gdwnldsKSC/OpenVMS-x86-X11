@@ -607,7 +607,7 @@ VT1622ModeCrtc(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	pBIOSInfo->ClockExternal = TRUE;
     ViaCrtcMask(hwp, 0x6A, 0x40, 0x40);
     ViaCrtcMask(hwp, 0x6C, 0x01, 0x01);
-    ViaSeqMask(hwp, 0x1E, 0xC0, 0xC0); /* Enable DI0/DVP0 */
+    ViaSeqMask(hwp, 0x1E, 0xF0, 0xF0); /* Enable DI0/DVP0 */
 }
 
 /*

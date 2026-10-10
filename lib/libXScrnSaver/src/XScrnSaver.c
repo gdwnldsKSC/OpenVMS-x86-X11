@@ -439,4 +439,22 @@ Status XScreenSaverGetRegistered (dpy, screen, xid, type)
 	XFree ((char *) ulp);
     }
     return retval;
-}	
+}
+
+void
+XScreenSaverSuspend (Display *dpy, Bool suspend)
+{
+    XExtDisplayInfo *info = find_display (dpy);
+    xScreenSaverSuspendReq   *req;
+
+    ScreenSaverSimpleCheckExtension (dpy, info);
+
+    LockDisplay (dpy);
+    GetReq (ScreenSaverSuspend, req);
+    req->reqType = info->codes->major_opcode;
+    req->saverReqType = X_ScreenSaverSuspend;
+    req->suspend = suspend;
+    UnlockDisplay (dpy);
+    SyncHandle ();
+}
+

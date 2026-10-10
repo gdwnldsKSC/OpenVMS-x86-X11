@@ -1,5 +1,5 @@
 /*
- * $Id: file.c,v 1.5 2005/07/03 07:00:56 daniels Exp $
+ * $Id: file.c,v 1.7 2005/06/29 18:39:04 daniels Exp $
  *
  * Copyright © 2002 Keith Packard
  *

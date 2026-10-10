@@ -40,9 +40,10 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "compiler.h"
 #include "vgaHW.h"
 #include "xf86PciInfo.h"
@@ -67,13 +68,16 @@
 /* A few things all drivers should have */
 #define VGA_NAME            "VGA"
 #define VGA_DRIVER_NAME     "vga"
-#define VGA_VERSION_NAME    "4.0"
+#define VGA_VERSION_NAME    "4.1"
 #define VGA_VERSION_MAJOR   4
-#define VGA_VERSION_MINOR   0
+#define VGA_VERSION_MINOR   1
 #define VGA_PATCHLEVEL      0
 #define VGA_VERSION_CURRENT ((VGA_VERSION_MAJOR << 24) | \
 			     (VGA_VERSION_MINOR << 16) | VGA_PATCHLEVEL)
 
+#ifndef CLOCK_TOLERANCE
+#define CLOCK_TOLERANCE 2000 /* Clock matching tolerance (2MHz) */
+#endif
 
 /* Forward definitions */
 static const OptionInfoRec *GenericAvailableOptions(int chipid, int busid);
@@ -108,14 +112,12 @@ _X_EXPORT DriverRec VGA =
 typedef enum
 {
     OPTION_SHADOW_FB,
-    OPTION_VGA_CLOCKS,
     OPTION_KGA_UNIVERSAL
 } GenericOpts;
 
 static const OptionInfoRec GenericOptions[] =
 {
     { OPTION_SHADOW_FB,     "ShadowFB",     OPTV_BOOLEAN, {0}, FALSE },
-    { OPTION_VGA_CLOCKS,    "VGAClocks",    OPTV_BOOLEAN, {0}, FALSE },
     { OPTION_KGA_UNIVERSAL, "KGAUniversal", OPTV_BOOLEAN, {0}, FALSE },
     { -1,                   NULL,           OPTV_NONE,    {0}, FALSE }
 };
@@ -389,34 +391,6 @@ VGAFindIsaDevice(GDevPtr dev)
     return (int)CHIP_VGA_GENERIC;
 }
 
-static Bool
-GenericClockSelect(ScrnInfoPtr pScreenInfo, int ClockNumber)
-{
-#   ifndef PC98_EGC
-	vgaHWPtr pvgaHW = VGAHWPTR(pScreenInfo);
-	static CARD8 save_misc;
-
-	switch (ClockNumber)
-	{
-	    case CLK_REG_SAVE:
-		save_misc = inb(pvgaHW->PIOOffset + VGA_MISC_OUT_R);
-		break;
-
-	    case CLK_REG_RESTORE:
-		outb(pvgaHW->PIOOffset + VGA_MISC_OUT_W, save_misc);
-		break;
-
-	    default:
-		outb(pvgaHW->PIOOffset + VGA_MISC_OUT_W,
-		    (save_misc & 0xF3) | ((ClockNumber << 2) & 0x0C));
-		break;
-	}
-#   endif
-
-    return TRUE;
-}
-
-
 /*
  * This structure is used to wrap the screen's CloseScreen vector.
  */
@@ -450,26 +424,11 @@ GenericFreeRec(ScrnInfoPtr pScreenInfo)
     pScreenInfo->driverPrivate = NULL;
 }
 
-
-static void
-GenericProtect(ScrnInfoPtr pScreenInfo, Bool On)
-{
-    vgaHWProtect(pScreenInfo, On);
-}
-
-
 static Bool
 GenericSaveScreen(ScreenPtr pScreen, int mode)
 {
     return vgaHWSaveScreen(pScreen, mode);
 }
-
-static void
-GenericBlankScreen(ScrnInfoPtr pScreenInfo, Bool Unblank)
-{
-    vgaHWBlankScreen(pScreenInfo, Unblank);
-}
-
 
 /* The default mode */
 static DisplayModeRec GenericDefaultMode =
@@ -502,10 +461,9 @@ static Bool
 GenericPreInit(ScrnInfoPtr pScreenInfo, int flags)
 {
     static rgb        defaultWeight = {0, 0, 0};
-    static ClockRange GenericClockRange =
-		      {NULL, 0, 80000, 0, FALSE, TRUE, 1, 1, 0};
+    static ClockRange GenericClockRange;
     MessageType       From;
-    int               i, videoRam, Rounding, nModes = 0;
+    int               videoRam, Rounding, nModes = 0;
     const char       *Module = NULL;
     const char       *Sym = NULL;
     vgaHWPtr          pvgaHW;
@@ -650,43 +608,18 @@ GenericPreInit(ScrnInfoPtr pScreenInfo, int flags)
     xf86ProcessOptions(pScreenInfo->scrnIndex, pScreenInfo->options,
 		       pGenericPriv->Options);
 
-#ifndef __NOT_YET__
-    if (pScreenInfo->depth == 8)
-    {
-	pScreenInfo->numClocks = 1;
-	pScreenInfo->clock[0] = 25175;
-	goto SetDefaultMode;
-    }
-#endif
+    /* Set the clockRange */
+    memset(&GenericClockRange, 0, sizeof(ClockRange));
+    /* We only allow 2 Clocks and some tolerance.
+     * I do assume that CLOCK_TOLERANCE is always higher than 1573. */
+    GenericClockRange.minClock = 25175 - CLOCK_TOLERANCE - 1;
+    GenericClockRange.maxClock = 28322 + CLOCK_TOLERANCE + 1;
+    GenericClockRange.interlaceAllowed = FALSE;
+    GenericClockRange.doubleScanAllowed = TRUE;
+    GenericClockRange.ClockMulFactor = 1;
+    GenericClockRange.ClockDivFactor = 1;
 
-    /*
-     * Determine clocks.  Limit them to the first four because that's all that
-     * can be addressed.
-     */
-    if ((pScreenInfo->numClocks = pEnt->device->numclocks))
-    {
-	if (pScreenInfo->numClocks > 4)
-	    pScreenInfo->numClocks = 4;
-	for (i = 0;  i < pScreenInfo->numClocks;  i++)
-	    pScreenInfo->clock[i] = pEnt->device->clock[i];
-	From = X_CONFIG;
-    }
-    else
-    if (xf86ReturnOptValBool(pGenericPriv->Options, OPTION_VGA_CLOCKS, FALSE))
-    {
-	pScreenInfo->numClocks = 2;
-	pScreenInfo->clock[0] = 25175;
-	pScreenInfo->clock[1] = 28322;
-    }
-    else
-    {
-	xf86GetClocks(pScreenInfo, 4,
-	    GenericClockSelect, GenericProtect, GenericBlankScreen,
-	    pvgaHW->PIOOffset + pvgaHW->IOBase + VGA_IN_STAT_1_OFFSET,
-	    0x08, 1, 28322);
-	From = X_PROBED;
-    }
-    xf86ShowClocks(pScreenInfo, From);
+    pScreenInfo->progClock = TRUE; /* lie */
 
     /* Set the virtual X rounding (in bits) */
     if (pScreenInfo->depth == 8)
@@ -715,9 +648,6 @@ GenericPreInit(ScrnInfoPtr pScreenInfo, int flags)
 
     if (!nModes || !pScreenInfo->modes)
     {
-#ifndef __NOT_YET__
-  SetDefaultMode:
-#endif
 	/* Set a default mode, overridding any virtual settings */
 	pScreenInfo->virtualX = pScreenInfo->displayWidth = 320;
 	pScreenInfo->virtualY = 200;
@@ -828,6 +758,22 @@ GenericSetMode(ScrnInfoPtr pScreenInfo, DisplayModePtr pMode)
 
     if (!vgaHWInit(pScreenInfo, pMode))
 	return FALSE;
+
+    /* Set the clock here ourselves */
+    pvgaHW->ModeReg.MiscOutReg &= ~0x0C;
+    if (pMode->Clock > 26748) /* halfway between 25175kHz and 28322kHz */
+        pvgaHW->ModeReg.MiscOutReg |= 0x04; /* use 28322kHz */
+
+    /* TODO: when blanking helpers (limited blanking -> overscan) are
+     * implemented. Use them here. -- libv */
+
+    /*
+     * KGA is a dream. Yes, the problem does exist, but it doesn't exist only
+     * for blanking, it also exists for sync. And there is no definite solution
+     * for this problem. All there is, is to stop pretending that any device is
+     * VGA compatible. Translation: VGA is not suited as the ultimate fallback.
+     * -- libv.
+     */
     if (pGenericPriv->KGAUniversal)
     {
 #define KGA_FLAGS (KGA_FIX_OVERSCAN | KGA_BE_TOT_DEC)
@@ -1571,12 +1517,57 @@ GenericFreeScreen(int scrnIndex, int flags)
     GenericFreeRec(xf86Screens[scrnIndex]);
 }
 
-
 static ModeStatus
 GenericValidMode(int scrnIndex, DisplayModePtr pMode, Bool Verbose, int flags)
 {
+    /* Clocks are already limited correctly by clockRange. */
+
     if (pMode->Flags & V_INTERLACE)
 	return MODE_NO_INTERLACE;
+
+    /* Impose all CRTC restrictions here */
+    /* We could use better ModeStatus naming than BAD_H/VVALUE -- libv */
+
+    if (pMode->CrtcHTotal > 2080)
+        return MODE_BAD_HVALUE;
+    
+    if (pMode->CrtcHDisplay > 2048)
+        return MODE_BAD_HVALUE;
+
+    /* TODO: blanking might be worked around in WriteMode, when helpers exist */
+    if (pMode->CrtcHBlankStart > 2048)
+        return MODE_BAD_HVALUE;
+
+    if ((pMode->CrtcHBlankEnd - pMode->CrtcHBlankStart) > 512)
+        return MODE_HBLANK_WIDE;
+
+    if (pMode->CrtcHSyncStart > 2040)
+        return MODE_BAD_HVALUE;
+
+    if ((pMode->CrtcHSyncEnd - pMode->CrtcHSyncStart) > 248)
+        return MODE_HSYNC_WIDE;
+
+    if (pMode->CrtcHSkew > 27)
+        return MODE_BAD_HVALUE;
+
+    if (pMode->CrtcVTotal > 1025)
+        return MODE_BAD_VVALUE;
+
+    if (pMode->CrtcVDisplay > 1024)
+        return MODE_BAD_VVALUE;
+
+    /* TODO: blanking might be worked around in WriteMode, when helpers exist */
+    if (pMode->CrtcVBlankStart > 1024)
+        return MODE_BAD_VVALUE;
+
+    if ((pMode->CrtcVBlankEnd - pMode->CrtcVBlankStart) > 256)
+        return MODE_VBLANK_WIDE;
+
+    if (pMode->CrtcVSyncStart > 1023)
+        return MODE_BAD_VVALUE;
+
+    if ((pMode->CrtcVSyncEnd - pMode->CrtcVSyncStart) > 15)
+        return MODE_VSYNC_WIDE;
 
     return MODE_OK;
 }

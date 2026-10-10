@@ -25,13 +25,14 @@
  *
  */
 
-/* $XFree86: xc/programs/Xserver/hw/xfree86/input/citron/citron.h,v 1.4tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/input/citron/citron.h,v 1.1 2000/11/02 02:51:21 dawes Exp $ */
 
 /*
  * Based, in part, on code with the following copyright notice:
  *
  * Copyright 1999-2001 by Thomas Thanner, Citron GmbH, Germany. <support@citron.de>
- * Copyright 1999-2003 by Peter Kunzmann, Citron GmbH, Germany. <kunzmann@citron.de> *
+ * Copyright 2002-2005 Citron GmbH, Augsburg <support@citron.de>
+ *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is  hereby granted without fee, provided that
  * the above copyright notice appear in all copies and that both that copyright
@@ -81,6 +82,8 @@
 #define	CTS_OEMSTRING_LEN	256		/* Length of the OEM string */
 #define CTS_FPGA_LEN		28		/* Length of the FPGA version string */
 #define CTS_SENSORCOUNT_LEN	1		/* Length of sensorcount report */
+#define CTS_PERIPHERAL_LEN	4		/* Length of hardware peripheral report */
+#define CTS_KEYCHANGE_LEN	3		/* Length of Key chnage report */
 #define	CTS_USERNAME_LEN	14		/* User name length without trailing zero (GetUserString) */
 #define	CTS_USERSTRING_LEN	127		/* Length of the Userstring without trailing zero */
 
@@ -115,7 +118,7 @@
 
 /* SetTransmission command parameter values */
 #define	TM_TRANSMIT		0x01		/* Enable the transmission of messages (report will be transmitted always) */
-/*	TM_NONE			0x00 */		/* Disable transmission of messages and disable the XON/XOFF protocol */
+#define	TM_NONE			0x00		/* Disable transmission of messages and disable the XON/XOFF protocol */
 #define	TM_RXDFLOW		0x10		/* Enable the XON/XOFF protocol for the transmitter (IRT will send XON/XOFF to the host) */
 #define	TM_TXDFLOW		0x20		/* Enable the XON/XOFF protocol for the receiver (host will sned XON/XOFF to the IRT) */
 
@@ -182,6 +185,36 @@
 #define	GH_SENSORCOUNT		0x02	/* Report the number of pressure sensors */
 #define	GH_PERIPHERALS		0x04	/* Report a bit vector that identifies all assembled peripherals on the IRT */
 
+/* Defines for GH_PERIPHERALS (Peripheral identification bit)*/
+#define PR_NONE				0x00000000
+#define PR_OUT0				0x00000001		/* The /OC_OUT0 port is available */
+#define PR_BURNIN			0x00000002		/* The BurnIn jumper is available */
+#define PR_SSAVE			0x00000004		/* The /GP_OUT port is available */
+#define PR_PWM				0x00000008		/* The /OC_PWM port is available */
+#define PR_SOUND			0x00000010		/* The speaker port is available */
+#define PR_OCOUT0			0x00000020		
+#define PR_RUNLED			0x00000040		/* The red blinking indication LED is available */
+#define PR_GPIN				0x00000080		/* The /GP_IN port is available */
+#define PR_KEYMATRIX		0xffff0000
+
+
+#define PR_KEYMATRIX0		0x80000000	/* Key 0 available */
+#define PR_KEYMATRIX1		0x40000000	/* Key 1 available */
+#define PR_KEYMATRIX2		0x20000000	/* Key 2 available */
+#define PR_KEYMATRIX3		0x10000000	/* Key 3 available */
+#define PR_KEYMATRIX4		0x08000000	/* Key 4 available */
+#define PR_KEYMATRIX5		0x04000000	/* Key 5 available */
+#define PR_KEYMATRIX6		0x02000000	/* Key 6 available */
+#define PR_KEYMATRIX7		0x01000000	/* Key 7 available */
+#define PR_KEYMATRIX8		0x00800000	/* Key 8 available */
+#define PR_KEYMATRIX9		0x00400000	/* Key 9 available */
+#define PR_KEYMATRIX10		0x00200000	/* Key 10 available */
+#define PR_KEYMATRIX11		0x00100000	/* Key 11 available */
+#define PR_KEYMATRIX12		0x00080000	/* Key 12 available */
+#define PR_KEYMATRIX13		0x00040000	/* Key 13 available */
+#define PR_KEYMATRIX14		0x00020000	/* Key 14 available */
+#define PR_KEYMATRIX15		0x00010000	/* Key 15 available */
+
 /* GetHWVersion command parameters */
 #define	HV_SSNO			0x01	/* Report the silicon serial number */
 #define	HV_ASSY			0x02	/* Report the hard wired assembly number */
@@ -223,14 +256,6 @@
 #define	CE_PARAMCNT		0x00000002UL	/* Too much or too less parameters received */
 #define	CE_RANGE		0x00000004UL	/* One or more parameters were out of range */
 
-/* Peripheral indentification bit masks */
-#define	PERI_OCOUT0		0x00000001UL	/* The /OC_OUT0 port is available */
-#define	PERI_BURNIN		0x00000002UL	/* The BurnIn jumper is available */
-#define	PERI_GP_OUT		0x00000004UL	/* The /GP_OUT port is available */
-#define	PERI_OCPWM		0x00000008UL	/* The /OC_PWM port is available */
-#define	PERI_SPEAKER	0x00000010UL	/* The speaker port is available */
-#define	PERI_GP_IN		0x00000020UL	/* The /GP_IN port is available */
-#define	PERI_RUNLED		0x00000040UL	/* The red blinking indication LED is available */
 
 /* SaveSetup/ReadSetup command parameters */
 #define	SUP_SERIAL		0x01			/* Save/Read the serial port setup */
@@ -257,25 +282,32 @@
 #define D_ENTERCOUNT		0x04
 #define D_ZENTERCOUNT		0x05
 #define D_PWMADJ			0x06
-
+#define D_PWMEX				0x07
 
 /* Message identifiers */
-#define	R_DUALTOUCHERROR	0x18		/* Invalid multiple touches are detected */
-#define	R_COORD				0x19		/* Regular coordinate report */
-#define	R_EXIT				0x1a		/* An area was leaved */
-#define	R_PRESSURE			0x1b		/* An area was pressed or released */
-#define PRESS_BELOW			0x00		/* Pressure below a certain threshold */
-#define PRESS_EXCEED		0x01		/* Pressure higher than a certain threshold */
+#define	R_DUALTOUCHERROR		0x18		/* Invalid multiple touches are detected */
+#define	R_COORD					0x19		/* Regular coordinate report */
+#define	R_EXIT					0x1a		/* An area was leaved */
+#define	R_PRESSURE				0x1b		/* An area was pressed or released */
+#define	R_SLEEPMODE				0x1c		/* The sleep-mode was activated or deactivated */
+#define	R_DOZEMODE				0x1d		/* The doze-mode was activated or deactivated */
+#define R_AMBIENTOVERLOADERROR	0x1e		/* Ambient light exceeds or falls below a level proper function can be guaranteed */
+#define R_KEYCHANGE				0x1f		/* Report a keychange (4x4 matrix) for special Touches */
 
-#define	R_SLEEPMODE			0x1c		/* The sleep-mode was activated or deactivated */
-#define	R_DOZEMODE			0x1d		/* The doze-mode was activated or deactivated */
+#define PRESS_BELOW				0x00		/* Pressure below a certain threshold */
+#define PRESS_EXCEED			0x01		/* Pressure higher than a certain threshold */
+
 
 /* Special report identifiers */
 #define	R_POLYAREADEF		0x2a
 #define R_IDLE				0x34
 #define	R_SCANTIMING		0x56
 #define R_LOCKZ				0x52		/* LockZ timings report */
+#define R_AMBIENTOVERLOAD	0x58		/* Ambient overload behaviour */
+#define R_KEYSTATE			0x59		/* Report with state of all matrix keys */
 #define R_USERSTRING		0x66		/* Userstring report */
+#define R_KEYMODE			0x7d		/* Report with current handling of keyboard matrix actions */
+#define R_PWMEX				0x7f		/* State of extended PWM Channel */
 
 /* Command identifiers */
 #define	C_SOFTRESET			0x80
@@ -334,6 +366,10 @@
 #define	C_SETTOUCHTIME		0xd1
 #define C_GETLOCKZ			0xd2
 #define C_SETLOCKZ			0xd3
+#define C_SETAMBIENTOVERLOAD 0xd6
+#define C_GETAMBIENTOVERLOAD 0xd8
+#define C_GETKEYSTATE		0xd9
+
 
 #define	C_CLEARMACRO		0xe0
 #define	C_ENDMACRORECORD	0xe1
@@ -355,11 +391,26 @@
 #define	C_SETDOZEMODE		0xf9
 #define C_SETPWMFREQ		0xfa
 #define C_GETPWMFREQ		0xfb
+#define C_SETKEYMODE		0xfc
+#define C_GETKEYMODE		0xfd
+#define C_SETPWMEX			0xfe	/* Define behaviour of the extended PWM-channels */
+#define C_GETPWMEX			0xff	/* Ask for current settings of extended PWM channel */
 
 /* touch states */
 #define	CIT_TOUCHED			0x01
 #define	CIT_PRESSED			0x02
 #define	CIT_BUTTON			0x04
+#define CIT_KEYPRESSED		0x08
+#define CIT_AMBIENTOVERFLOW	0x10
+
+/* Key modes */
+#define KM_ENABLE			0x01	/* Enable keyboard matrix mode */
+
+/* Ambient overload modes */
+#define AO_IGNORE			0x00	/* Ignore ambient overload and generate no error messages */
+#define AO_GENERATE			0x01	/* generate ambient overflow messages */
+#define AO_STOPSCANNING		0x02	/* scanning is stopped in case of ambient light error */
+#define AMBIENTOFLOW_KEY	(-1)	/* Key sent if ambient overflow error occures */
 
 /* click modes */
 #define	CM_ENTER			1
@@ -371,6 +422,10 @@
 #define	MAX_DUAL_TOUCH_COUNT	2
 
 #define NO_CLICK_MODE		255		/* no click mode set in xf86Config */
+
+
+
+
 
 /* command structure for Feedback Functions */
 typedef struct {
@@ -431,19 +486,22 @@ cit_State;	/* Citron Infrared Touch Driver State */
 
 typedef struct _cit_privateRec
 {
-	int min_x;					/* Minimum x reported by calibration        */
-	int max_x;					/* Maximum x                  				*/
-	int min_y;					/* Minimum y reported by calibration        */
-	int max_y;					/* Maximum y                    			*/
-	int button_threshold;		/* Z > button threshold = button click 		*/
+	int min_x;						/* Minimum x reported by calibration        */
+	int max_x;						/* Maximum x                  				*/
+	int min_y;						/* Minimum y reported by calibration        */
+	int max_y;						/* Maximum y                    			*/
+	int button_threshold;			/* Z > button threshold = button click 		*/
 	int axes;
-	int	dual_touch_count;		/* counter for dual touch error events 		*/
-	int click_mode;				/* one of the CM_ constants 				*/
-	int button_number;			/* which button to report 					*/
-	int reporting_mode;			/* TS_Raw or TS_Scaled 						*/
-	int screen_num;				/* Screen associated with the device        */
-	int screen_width;			/* Width of the associated X screen     	*/
-	int screen_height;			/* Height of the screen             		*/
+	int	dual_touch_count;			/* counter for dual touch error events 		*/
+	int click_mode;					/* one of the CM_ constants 				*/
+	int button_number;				/* which button to report 					*/
+	int proximity_number;			/* which button to report if proximity is on*/
+	int key_number;					/* which key is pressed or released         */
+	int genproxbutev;				/* Generate proximity button events if != 0	*/
+	int reporting_mode;				/* TS_Raw or TS_Scaled 						*/
+	int screen_num;					/* Screen associated with the device        */
+	int screen_width;				/* Width of the associated X screen     	*/
+	int screen_height;				/* Height of the screen             		*/
 	int packeti;					/* index into packet 					*/
 	int raw_x;						/* Raw Coordinates */
 	int raw_y;
@@ -456,6 +514,9 @@ typedef struct _cit_privateRec
 	int pwm_freq;					/* PWM base frequency */
 	int	pwm_src;					/* Source for PWM adjust BL_TDK or BL_AC */
 	int pwm_dst;					/* Destination for PWM adjust BL_TDK or BL_AC */
+	int pwmex_channel;				/* Bitfield, defining which PWM channel is affected */
+	int pwmex_duty;					/* Duty cycle of PWM signal (logical high in 255 steps) */
+	int pwmex_freq;					/* Cycle frequency in Hz. 0x0000 means static on or off, depening on duty cycle */
 	int	state;
 /* additional parameters */
 	int last_x;						/* last cooked data */
@@ -467,6 +528,7 @@ typedef struct _cit_privateRec
 	int origin;						/* Coordinates origin 					*/
 	int delta_x;					/* Delta x - if coordinate changed less than delta x no motion event */
 	int delta_y;
+/* Beep in event of touch */
 	int beep;						/* 0= no beep, 1=beep enabled 			*/
 	int press_vol;					/* volume of beep (press event) 		*/
 	int press_pitch;				/* pitch of beep (press event)	 		*/
@@ -474,6 +536,16 @@ typedef struct _cit_privateRec
 	int rel_vol;					/* volume of beep (release event) 		*/
 	int rel_pitch;					/* pitch of beep (release event) 		*/
 	int rel_dur;					/* length of beep in 10ms (release event) */
+
+/* Beep in event of keyboard press or release */
+	int beepkey;					/* 0= no beep, 1=beep enabled 			*/
+	int presskey_vol;				/* volume of beep (press event) 		*/
+	int presskey_pitch;				/* pitch of beep (press event)	 		*/
+	int presskey_dur;				/* length of beep in 10ms (press event)	*/
+	int relkey_vol;					/* volume of beep (release event) 		*/
+	int relkey_pitch;				/* pitch of beep (release event) 		*/
+	int relkey_dur;					/* length of beep in 10ms (release event) */
+
 	int beam_timeout;				/* Beam timeout 0= no beam timeout		*/
 	int touch_time;					/* minimum time span for a valid interruption */
 	int	enter_touched;				/* button is down due to an enter event */
@@ -491,6 +563,10 @@ typedef struct _cit_privateRec
 	int lockz_enter_time;			/* Minimum duration of AreaPressEnter state before a PressEnter event is issued. Steps: 10ms */
 	int lockz_exit_time;			/* Minimum duration of AreaPressExit state before a PressEnter event is issued. Steps: 10ms */
 	int lockz_lock_time;			/* Minimum gap between PressExit and PressEnter event. Steps: 10ms */ 
+	int key_matrix;					/* if > 0 Enable key matrix (4x4) - only available on special touches with key matrix */
+	int ambient_overload;			/* Enable ambient overload report feature */
+	int ambientoverflow_changed;
+	unsigned long peripherals;		/* Bitfield of hardware used */
 	
 
 #define MAX_TIMER	2							/* Max. concurrent timers */
@@ -506,6 +582,7 @@ typedef struct _cit_privateRec
 	LocalDevicePtr local;			/* Pointer to local device */
 	Bool button_down;				/* is the "button" currently down 			*/
 	Bool proximity;
+	Bool key_changed;				/* is a key pressed or released */
 	cit_State lex_mode;
 	XISBuffer *buffer;
 	unsigned char packet[CTS_PACKET_SIZE];	/* packet being/just read 		*/	
@@ -553,11 +630,9 @@ const unsigned short cit_bright_adjust[2] [256] =
  *		Declarations
  *****************************************************************************/
 /*extern void ModuleInit (pointer *, INT32 *);*/
-#ifdef XFree86LOADER
 static MODULESETUPPROTO (SetupProc);
 static void TearDownProc (pointer p);
 /*static void *SetupProc (XF86OptionPtr, int *, int *);*/
-#endif
 static Bool DeviceControl (DeviceIntPtr def, int mode);
 static Bool DeviceOn (DeviceIntPtr);
 static Bool DeviceOff (DeviceIntPtr);
@@ -576,15 +651,18 @@ static Bool cit_GetInitialErrors(cit_PrivatePtr);
 static Bool cit_GetDefectiveBeams(cit_PrivatePtr);
 static Bool cit_GetDesignator(cit_PrivatePtr);
 static Bool cit_GetPressureSensors(cit_PrivatePtr);
+static Bool cit_GetPeripherals(cit_PrivatePtr);
 static Bool cit_GetRevision(cit_PrivatePtr, int);
 static void cit_ProcessPacket(cit_PrivatePtr);
 static void cit_Beep(cit_PrivatePtr priv, int press);
+static void cit_BeepKey(cit_PrivatePtr priv, int press);
 static void cit_SetBlockDuration (cit_PrivatePtr priv, int block_duration);
 static void cit_ReinitSerial(cit_PrivatePtr priv);
 static int cit_ZPress(cit_PrivatePtr priv);
 static void cit_SetEnterCount(cit_PrivatePtr priv);
 static void cit_SendPWM(cit_PrivatePtr priv);
 static void cit_SendPWMFreq(cit_PrivatePtr priv);
+static void cit_SendPWMEx(cit_PrivatePtr priv);
 static int cit_AdjustBright(cit_PrivatePtr priv, int val);
 
 #ifdef CIT_TIM

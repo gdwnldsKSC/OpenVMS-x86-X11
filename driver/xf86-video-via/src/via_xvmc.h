@@ -32,8 +32,7 @@
  * This file contains the common definitions between the XvMC lib and the 
  * X server side. It is referenced also by the XvMC lib. Make sure any 
  * structure change is reflected also in a change in minor version number!!
- */ 
-
+ */
 
 #define VIAXVMC_MAJOR 0
 #define VIAXVMC_MINOR 10
@@ -43,7 +42,7 @@
 
 /*
  * Commands that client submits through XvPutImage:
- */ 
+ */
 
 #define VIA_XVMC_COMMAND_FDISPLAY 0
 #define VIA_XVMC_COMMAND_DISPLAY 1
@@ -52,36 +51,40 @@
 
 typedef drm_via_sarea_t ViaXvMCSAreaPriv;
 
-typedef struct{
+typedef struct
+{
     INT32 attribute;
     INT32 value;
-}ViaAttrPair;
+} ViaAttrPair;
 
-typedef struct {
+typedef struct
+{
     unsigned numAttr;
     ViaAttrPair attributes[VIA_NUM_XVMC_ATTRIBUTES];
-}ViaXvMCAttrHolder;
+} ViaXvMCAttrHolder;
 
 /*
  * Passed from client to X server during overlay updates.
  */
 
-typedef struct{
+typedef struct
+{
     unsigned command;
     unsigned ctxNo;
     unsigned srfNo;
     unsigned subPicNo;
     ViaXvMCAttrHolder attrib;
     unsigned pad;
-}ViaXvMCCommandBuffer;
+} ViaXvMCCommandBuffer;
 
 /*
  * Passed from X server to client at context creation.
  */
 
-typedef struct {
+typedef struct
+{
     unsigned int ctxNo;
-    unsigned int major,minor,pl;
+    unsigned int major, minor, pl;
     unsigned xvmc_port;
     unsigned int fbOffset;
     unsigned int fbSize;
@@ -95,7 +98,7 @@ typedef struct {
     unsigned int screen;
     unsigned int depth;
     unsigned int stride;
-    unsigned int pad;        
+    unsigned int pad;
 } ViaXvMCCreateContextRec;
 
 #endif

@@ -1,3 +1,71 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/mga.h:
+	Bump to 1.4.1 for Xv changes.
+
+2006-04-07  Aaron Plattner  <aplattner@nvidia.com>
+
+	* src/mga_video.c: (MGAPutImage):
+	Add a DrawablePtr argument to the XV functions to pave the way for
+	redirected video.
+
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/clientlx.c:
+	* src/mga.h:
+	* src/mga_arc.c:
+	* src/mga_bios.c:
+	* src/mga_dac3026.c:
+	* src/mga_dacG.c:
+	* src/mga_dga.c:
+	* src/mga_dh.c:
+	* src/mga_dri.c:
+	* src/mga_driver.c:
+	* src/mga_esc.c:
+	* src/mga_g450pll.c:
+	* src/mga_hwcurs.c:
+	* src/mga_merge.c:
+	* src/mga_shadow.c:
+	* src/mga_storm.c:
+	* src/mga_video.c:
+	Unlibcwrap.  Bump server version requirement.  Bump to 1.4.0.
+
+2006-04-01  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/Makefile.am:
+	* src/mga.h:
+	* src/mga_bios.c:
+	* src/mga_dacG.c:
+	* src/mga_dga.c:
+	* src/mga_driver.c:
+	* src/mga_macros.h:
+	* src/mga_merge.c:
+	* src/mga_storm.c:
+	* src/mga_vga.c:
+	Bug #6328:  Add support for Matrox G200SE chips. (Matrox)
+
+2006-03-20  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/Makefile.am:
+	* src/mga.h:
+	* src/mga_dga.c:
+	* src/mga_dri.c:
+	* src/mga_macros.h:
+	* src/mga_map.h:
+	* src/mga_storm.c:
+	* src/mga_video.c:
+	Bug #5587: Refactor mga_storm.c to only build once for all color
+	depths.  (Ian Romanick)
+
+2006-03-15  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/mga_dri.c:
+	Coverity #92: Eliminate a dead code path.
+	Coverity #1009: Check for NULL first before assigning to pMGADRI.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

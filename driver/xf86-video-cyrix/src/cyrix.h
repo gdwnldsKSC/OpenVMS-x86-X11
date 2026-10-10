@@ -45,6 +45,7 @@
 #include "xaa.h"
 #include "xf86Cursor.h"
 #include "vgaHW.h"
+#include <string.h>
 
 /* this code is partly based on the MediaGX sources from the GGI project
    based on CYRIX example code (gxvideo.c) and included with CYRIX and

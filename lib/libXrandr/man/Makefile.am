@@ -27,6 +27,8 @@
 
 libmandir = $(LIB_MAN_DIR)
 
+LIB_MAN_DIR_SUFFIX = $(LIB_MAN_DIR:@mandir@/man%=%)
+
 libman_PRE = Xrandr.man
 
 libman_DATA = $(libman_PRE:man=@LIB_MAN_SUFFIX@) \
@@ -76,5 +78,5 @@ Xrandr_shadows =                            \
 shadows.DONE:
 	-rm -f $(Xrandr_shadows:=.@LIB_MAN_SUFFIX@)
 	(for i in $(Xrandr_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/Xrandr.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/Xrandr.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)

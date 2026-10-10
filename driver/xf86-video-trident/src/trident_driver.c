@@ -41,7 +41,6 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
-#include "xf86_ansic.h"
 #include "xf86Version.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -105,6 +104,7 @@ static void	PC98TRIDENT96xxDisable(ScrnInfoPtr pScrn);
 static void	PC98TRIDENT9385Init(ScrnInfoPtr pScrn);
 static void	PC98TRIDENT9385Enable(ScrnInfoPtr pScrn);
 static void	PC98TRIDENT9385Disable(ScrnInfoPtr pScrn);
+static int      TRIDENTLcdDisplaySize (xf86MonPtr pMon);
 
 /*
  * This is intentionally screen-independent.  It indicates the binding
@@ -112,11 +112,11 @@ static void	PC98TRIDENT9385Disable(ScrnInfoPtr pScrn);
  */
 static int pix24bpp = 0;
  
-#define VERSION 4000
+#define TRIDENT_VERSION 4000
 #define TRIDENT_NAME "TRIDENT"
 #define TRIDENT_DRIVER_NAME "trident"
 #define TRIDENT_MAJOR_VERSION 1
-#define TRIDENT_MINOR_VERSION 0
+#define TRIDENT_MINOR_VERSION 2
 #define TRIDENT_PATCHLEVEL 1
 
 /* 
@@ -128,7 +128,7 @@ static int pix24bpp = 0;
  */
 
 _X_EXPORT DriverRec TRIDENT = {
-    VERSION,
+    TRIDENT_VERSION,
     TRIDENT_DRIVER_NAME,
     TRIDENTIdentify,
     TRIDENTProbe,
@@ -171,6 +171,7 @@ static SymTabRec TRIDENTChipsets[] = {
     { BLADEXP,			"bladeXP" },
     { CYBERBLADEXPAI1,		"cyberbladeXPAi1" },
     { CYBERBLADEXP4,		"cyberbladeXP4" },
+    { XP5,			"XP5" },
     { -1,				NULL }
 };
 
@@ -214,10 +215,12 @@ static PciChipsets TRIDENTPciChipsets[] = {
     { BLADEXP,		PCI_CHIP_9910,	RES_SHARED_VGA },
     { CYBERBLADEXPAI1,	PCI_CHIP_8820,	RES_SHARED_VGA },
     { CYBERBLADEXP4,	PCI_CHIP_2100,	RES_SHARED_VGA },
+    { XP5,		PCI_CHIP_2200,	RES_SHARED_VGA },
     { -1,		-1,		RES_UNDEFINED }
 };
     
 typedef enum {
+    OPTION_ACCELMETHOD,
     OPTION_SW_CURSOR,
     OPTION_PCI_RETRY,
     OPTION_RGB_BITS,
@@ -245,6 +248,7 @@ typedef enum {
 } TRIDENTOpts;
 
 static const OptionInfoRec TRIDENTOptions[] = {
+    { OPTION_ACCELMETHOD,	"AccelMethod",	OPTV_ANYSTR,	{0}, FALSE },
     { OPTION_SW_CURSOR,		"SWcursor",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_PCI_RETRY,		"PciRetry",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_NOACCEL,		"NoAccel",	OPTV_BOOLEAN,	{0}, FALSE },
@@ -313,6 +317,7 @@ static int ClockLimit[] = {
 	230000,
 	230000,
 	230000,
+	230000,
 };
 
 static int ClockLimit16bpp[] = {
@@ -356,6 +361,7 @@ static int ClockLimit16bpp[] = {
 	230000,
 	230000,
 	230000,
+	230000,
 }; 
 
 static int ClockLimit24bpp[] = {
@@ -380,6 +386,7 @@ static int ClockLimit24bpp[] = {
 	70000,
 	70000,
 	70000,
+	115000,
 	115000,
 	115000,
 	115000,
@@ -443,6 +450,7 @@ static int ClockLimit32bpp[] = {
 	115000,
 	115000,
 	115000,
+	115000,
 };
 
 /*
@@ -474,7 +482,7 @@ tridentLCD LCD[] = {
     { 3,800,600,40000,0x7f,0x00,0x69,0x7f,0x72,0xf0,0x59,0x0d,0x00,0x08},
     { 2,1024,768,65000,0xa3,0x00,0x84,0x94,0x24,0xf5,0x03,0x09,0x24,0x08},
     { 0,1280,1024,108000,0xce,0x91,0xa6,0x14,0x28,0x5a,0x01,0x04,0x28,0xa8},
-    { 4,1400,1050,122000,0xe6,0xcd,0xba,0x1d,0x38,0x00,0x1c,0x28,0x28,0xf8},
+    { 4,1400,1050,122000,0xe6,0x8d,0xba,0x1d,0x38,0x00,0x1c,0x28,0x28,0xf8},
     { 0xff,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 #endif
@@ -486,6 +494,15 @@ static const char *xaaSymbols[] = {
     "XAADestroyInfoRec",
     "XAAInit",
     "XAAGetPatternROP",
+    NULL
+};
+
+const char *exaSymbols[] = {
+    "exaDriverAlloc",
+    "exaDriverInit",
+    "exaDriverFini",
+    "exaOffscreenAlloc",
+    "exaOffscreenFree",
     NULL
 };
 
@@ -585,7 +602,7 @@ tridentSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 	xf86AddDriver(&TRIDENT, module, 0);
 	LoaderRefSymLists(vgahwSymbols, fbSymbols, i2cSymbols, vbeSymbols,
 			  ramdacSymbols, int10Symbols,
-			  xaaSymbols, shadowSymbols, NULL);
+			  xaaSymbols, exaSymbols, shadowSymbols, NULL);
 	return (pointer)TRUE;
     } 
 
@@ -935,7 +952,7 @@ TRIDENTProbe(DriverPtr drv, int flags)
 						       TRIDENTPciChipsets, NULL,
 						       NULL, NULL, NULL, NULL))) {
 		    /* Fill in what we can of the ScrnInfoRec */
-		    pScrn->driverVersion = VERSION;
+		    pScrn->driverVersion = TRIDENT_VERSION;
 		    pScrn->driverName	 = TRIDENT_DRIVER_NAME;
 		    pScrn->name		 = TRIDENT_NAME;
 		    pScrn->Probe	 = TRIDENTProbe;
@@ -967,7 +984,7 @@ TRIDENTProbe(DriverPtr drv, int flags)
 	    if ((pScrn = xf86ConfigIsaEntity(pScrn,0,usedChips[i],
 						  TRIDENTISAchipsets,NULL,
 						  NULL,NULL,NULL,NULL))) {
-		pScrn->driverVersion = VERSION;
+		pScrn->driverVersion = TRIDENT_VERSION;
 		pScrn->driverName    = TRIDENT_DRIVER_NAME;
 		pScrn->name          = TRIDENT_NAME;
 		pScrn->Probe         = TRIDENTProbe;
@@ -1052,7 +1069,9 @@ TRIDENTPreInit(ScrnInfoPtr pScrn, int flags)
     CARD8 revision;
     ClockRangePtr clockRanges;
     Bool ddcLoaded = FALSE;
+    xf86MonPtr pMon = NULL;
     char *s;
+    Bool tmp_bool;
 
     /* Allocate the TRIDENTRec driverPrivate */
     if (!TRIDENTGetRec(pScrn)) {
@@ -1228,6 +1247,22 @@ TRIDENTPreInit(ScrnInfoPtr pScrn, int flags)
 #endif
     }
     from = X_DEFAULT;
+
+    pTrident->useEXA = FALSE;
+    if ((s = (char *)xf86GetOptValString(pTrident->Options,
+					 OPTION_ACCELMETHOD))) {
+	if (!xf86NameCmp(s, "EXA")) {
+	    pTrident->useEXA = TRUE;
+	    from = X_CONFIG;
+	}
+	else if (!xf86NameCmp(s, "XAA")) {
+	    pTrident->useEXA = FALSE;
+	    from = X_CONFIG;
+	}
+    }
+    xf86DrvMsg(pScrn->scrnIndex, from, "Using %s for acceleration\n",
+	       pTrident->useEXA ? "EXA" : "XAA");
+
     pTrident->HWCursor = TRUE;
     if (xf86ReturnOptValBool(pTrident->Options, OPTION_SW_CURSOR, FALSE)) {
 	from = X_CONFIG;
@@ -1246,9 +1281,7 @@ TRIDENTPreInit(ScrnInfoPtr pScrn, int flags)
 	pTrident->UsePCIBurst = FALSE;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "PCI Burst disbled\n");
     }
-    if (xf86ReturnOptValBool(pTrident->Options, OPTION_1400_DISPLAY, FALSE)) {
-	pTrident->displaySize = 1400;
-    }
+    /* Display Size override moved to DDC section */
     if(xf86GetOptValInteger(pTrident->Options, OPTION_VIDEO_KEY,
 						&(pTrident->videoKey))) {
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "video key set to 0x%x\n",
@@ -1501,7 +1534,6 @@ TRIDENTPreInit(ScrnInfoPtr pScrn, int flags)
      */
 
     if (xf86LoadSubModule(pScrn, "vbe")) {
-	xf86MonPtr pMon;
 	vbeInfoPtr pVbe;
 
         xf86LoaderReqSymLists(vbeSymbols, NULL);
@@ -1530,6 +1562,12 @@ TRIDENTPreInit(ScrnInfoPtr pScrn, int flags)
 	    
     }
     
+    if (xf86GetOptValBool(pTrident->Options, OPTION_1400_DISPLAY, &tmp_bool)) {
+	if (tmp_bool)
+	    pTrident->displaySize = 1400;
+    } else 
+	pTrident->displaySize = TRIDENTLcdDisplaySize(pMon);
+
     if (IsPciCard && UseMMIO) {
     	if (!TRIDENTMapMem(pScrn))
 	    return FALSE;
@@ -1994,9 +2032,19 @@ TRIDENTPreInit(ScrnInfoPtr pScrn, int flags)
             pTrident->HasSGRAM = TRUE;
 	    pTrident->IsCyber = TRUE;
 	    pTrident->shadowNew = TRUE;
-	    pTrident->NoAccel = TRUE; /* for now */
 	    Support24bpp = TRUE;
 	    chipset = "CyberBladeXP4";
+	    pTrident->NewClockCode = TRUE;
+	    pTrident->frequency = NTSC;
+	    break;
+	case XP5:
+    	    pTrident->ddc1Read = Tridentddc1Read;
+	    ramtype = "SGRAM";
+            pTrident->HasSGRAM = TRUE;
+	    pTrident->IsCyber = TRUE;
+	    pTrident->shadowNew = TRUE;
+	    Support24bpp = TRUE;
+	    chipset = "XP5";
 	    pTrident->NewClockCode = TRUE;
 	    pTrident->frequency = NTSC;
 	    break;
@@ -2046,6 +2094,27 @@ TRIDENTPreInit(ScrnInfoPtr pScrn, int flags)
 	pScrn->videoRam = pTrident->pEnt->device->videoRam;
 	from = X_CONFIG;
     } else {
+      if (pTrident->Chipset == XP5) {
+	OUTB(vgaIOBase + 4, 0x60);
+	videoram = INB(vgaIOBase + 5);
+	switch (videoram & 0x7) {
+ 	case 0x00:
+	    pScrn->videoRam = 65536 /* 131072 */;
+	    break;
+	case 0x01:
+	    pScrn->videoRam = 65536;
+	    break;
+	case 0x02:
+	    pScrn->videoRam = 32768;
+	    break;
+	case 0x03:
+	    pScrn->videoRam = 16384;
+	    break;
+	case 0x04:
+	    pScrn->videoRam = 8192;
+	    break;
+	}
+      } else
       if (pTrident->Chipset == CYBER9525DVD) {
 	pScrn->videoRam = 2560;
       } else
@@ -2142,7 +2211,7 @@ TRIDENTPreInit(ScrnInfoPtr pScrn, int flags)
 			pTrident->lcdMode = LCD[i].mode;
 		}
 		xf86DrvMsg(pScrn->scrnIndex,
-			   X_CONFIG,"%s Panel %ix%i found\n",
+			   X_INFO,"%s Panel %ix%i found\n",
 			   (dsp & 0x80) ? "TFT" :
 			   ((dsp1 & 0x20) ? "DSTN" : "STN"), 
 			   LCD[i].display_x,LCD[i].display_y);		
@@ -2377,16 +2446,38 @@ TRIDENTPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Load XAA if needed */
     if (!pTrident->NoAccel) {
-	if (!xf86LoadSubModule(pScrn, "xaa")) {
-	    if (IsPciCard && UseMMIO) {
-    	    	TRIDENTDisableMMIO(pScrn);
- 	    	TRIDENTUnmapMem(pScrn);
+	if (!pTrident->useEXA) {
+	    if (!xf86LoadSubModule(pScrn, "xaa")) {
+		if (IsPciCard && UseMMIO) {
+		    TRIDENTDisableMMIO(pScrn);
+		    TRIDENTUnmapMem(pScrn);
+		}
+		TRIDENTFreeRec(pScrn);
+		return FALSE;
 	    }
-	    TRIDENTFreeRec(pScrn);
-	    return FALSE;
+	    xf86LoaderReqSymLists(xaaSymbols, NULL);
 	}
 
-        xf86LoaderReqSymLists(xaaSymbols, NULL);
+	if (pTrident->useEXA) {
+	    XF86ModReqInfo req;
+	    int errmaj, errmin;
+
+	    memset(&req, 0, sizeof(req));
+
+	    req.majorversion = 2;
+            if (!LoadSubModule(pScrn->module, "exa", NULL, NULL, NULL, &req,
+		&errmaj, &errmin))
+	    {
+		LoaderErrorMsg(NULL, "exa", errmaj, errmin);
+		if (IsPciCard && UseMMIO) {
+		    TRIDENTDisableMMIO(pScrn);
+		    TRIDENTUnmapMem(pScrn);
+		}
+		TRIDENTFreeRec(pScrn);
+		return FALSE;
+	    }
+	    xf86LoaderReqSymLists(exaSymbols, NULL);
+	}
 
         switch (pScrn->displayWidth * pScrn->bitsPerPixel / 8) {
 	    case 512:
@@ -2425,15 +2516,14 @@ TRIDENTPreInit(ScrnInfoPtr pScrn, int flags)
 	TRIDENTUnmapMem(pScrn);
     }
 
-
-    pTrident->FbMapSize = pScrn->videoRam * 1024;
-    
     pScrn->racMemFlags = RAC_FB | RAC_COLORMAP | RAC_CURSOR | RAC_VIEWPORT;
 
     if (pTrident->IsCyber && pTrident->MMIOonly)
 	pScrn->racIoFlags = 0;
     else 
 	pScrn->racIoFlags = RAC_FB | RAC_COLORMAP | RAC_CURSOR | RAC_VIEWPORT;
+
+    pTrident->FbMapSize = pScrn->videoRam * 1024;
 
     return TRUE;
 }
@@ -2470,8 +2560,8 @@ TRIDENTMapMem(ScrnInfoPtr pScrn)
 				 pTrident->PciTag,
 				 (unsigned long)pTrident->FbAddress,
 				 pTrident->FbMapSize);
-    	if (pTrident->FbBase == NULL)
-	    return FALSE;
+	    if (pTrident->FbBase == NULL)
+		return FALSE;
     	}
     }
     else
@@ -2582,10 +2672,12 @@ TRIDENTModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	case BLADEXP:
 	case CYBERBLADEXPAI1:
 	case CYBERBLADEXP4:
+	case XP5:
 	    /* Get ready for MUX mode */
 	    if (pTrident->MUX && 
 		pScrn->bitsPerPixel == 8 && 
 		!mode->CrtcHAdjusted) {
+		ErrorF("BARF\n");
 		mode->CrtcHDisplay >>= 1;
 		mode->CrtcHSyncStart >>= 1;
 		mode->CrtcHSyncEnd >>= 1;
@@ -2613,6 +2705,7 @@ TRIDENTModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     /* Initialise the ModeReg values */
     if (!vgaHWInit(pScrn, mode))
 	return FALSE;
+
     pScrn->vtSema = TRUE;
     /*
      * We used to do this at a later time. 
@@ -2939,13 +3032,25 @@ TRIDENTScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	    (pTrident->Chipset == CYBERBLADEAI1) ||
 	    (pTrident->Chipset == CYBERBLADEAI1D) ||
 	    (pTrident->Chipset == CYBERBLADEE4) ||
-	    (pTrident->Chipset == BLADE3D))
-		BladeAccelInit(pScreen);
+	    (pTrident->Chipset == BLADE3D)) {
+	    if (pTrident->useEXA)
+		BladeExaInit(pScreen);
 	    else
-	    if (pTrident->Chipset >= BLADEXP)
+		BladeXaaInit(pScreen);
+	} else
+	if ((pTrident->Chipset == CYBERBLADEXP4) ||
+	    (pTrident->Chipset == XP5)) {
+	    if (pTrident->useEXA)
+	    	XP4ExaInit(pScreen);
+	    else
+		XP4XaaInit(pScreen);
+	} else
+	if ((pTrident->Chipset == BLADEXP) ||
+	    (pTrident->Chipset == CYBERBLADEXPAI1)) {
 		XPAccelInit(pScreen);
-	    else
+	} else {
 	    	ImageAccelInit(pScreen);
+	}
     } else {
     	TridentAccelInit(pScreen);
     }
@@ -3115,8 +3220,10 @@ TRIDENTLeaveVT(int scrnIndex, int flags)
     TRIDENTPtr pTrident = TRIDENTPTR(pScrn);
     vgaHWPtr hwp = VGAHWPTR(pScrn);
 
-    if (!pTrident->NoAccel)
+    if (!pTrident->NoAccel && !pTrident->useEXA)
 	pTrident->AccelInfoRec->Sync(pScrn);
+    else if (!pTrident->NoAccel && pTrident->useEXA)
+	pTrident->EXADriverPtr->WaitMarker(pScrn->pScreen, 0);
 
     TRIDENTRestore(pScrn);
     vgaHWLock(hwp);
@@ -3141,13 +3248,15 @@ TRIDENTCloseScreen(int scrnIndex, ScreenPtr pScreen)
     vgaHWPtr hwp = VGAHWPTR(pScrn);
     TRIDENTPtr pTrident = TRIDENTPTR(pScrn);
 
-    if (!pTrident->NoAccel)
+    if (pScrn->vtSema) {
+    if (!pTrident->NoAccel && !pTrident->useEXA)
 	pTrident->AccelInfoRec->Sync(pScrn);
+    else if (!pTrident->NoAccel && pTrident->useEXA)
+	pTrident->EXADriverPtr->WaitMarker(pScreen, 0);
 	
     if (xf86IsPc98())
 	PC98TRIDENTDisable(pScrn);
 
-    if (pScrn->vtSema) {
     	TRIDENTRestore(pScrn);
     	vgaHWLock(hwp);
 	if (IsPciCard && UseMMIO) TRIDENTDisableMMIO(pScrn);
@@ -3155,6 +3264,11 @@ TRIDENTCloseScreen(int scrnIndex, ScreenPtr pScreen)
     }
     if (pTrident->AccelInfoRec)
 	XAADestroyInfoRec(pTrident->AccelInfoRec);
+    if (pTrident->EXADriverPtr) {
+	exaDriverFini(pScreen);
+	xfree(pTrident->EXADriverPtr);
+	pTrident->EXADriverPtr = NULL;
+    }	
     if (pTrident->CursorInfoRec)
 	xf86DestroyCursorInfoRec(pTrident->CursorInfoRec);
     if (pTrident->ShadowPtr)
@@ -3609,5 +3723,41 @@ tridentSetModeBIOS(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	    }
 	}
     }
+}
+
+/* Currently we only test for 1400 */
+static int 
+TRIDENTLcdDisplaySize (xf86MonPtr pMon)
+{
+    if (pMon) {
+	int i,j;
+
+	for (i = 0; i < STD_TIMINGS; i++) {
+	    if (pMon->timings2[i].hsize == 1400) {
+		return 1400;
+	    }
+	}
+	/*
+	 * If not explicitely set try to find out if the display supports
+	 * the 1400 mode. For sanity check if DDC comes from a digital
+	 * display.
+	 */
+	if (DIGITAL(pMon->features.input_type)) {
+	    for (i = 0; i < DET_TIMINGS; i++) {
+		if (pMon->det_mon[i].type == DS_STD_TIMINGS) {
+		    for (j = 0; j < 5; j++) {
+			if (pMon->det_mon[i].section.std_t[j].hsize == 1400) {
+			    return 1400;
+			}
+		    }
+		} else if (pMon->det_mon[i].type == DT) {
+		    if (pMon->det_mon[i].section.d_timings.h_active == 1400) {
+			return 1400;
+		    }
+		}
+	    }
+	}
+    }
+    return 0;
 }
 

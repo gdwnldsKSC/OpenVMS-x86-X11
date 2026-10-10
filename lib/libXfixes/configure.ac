@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id: configure.ac,v 1.12 2005/12/15 00:24:29 kem Exp $
+dnl  $Id: configure.ac,v 1.11 2005/12/03 05:49:43 kem Exp $
 dnl 
 dnl  Copyright © 2003 Keith Packard, Noah Levitt
 dnl 
@@ -34,7 +34,7 @@ dnl protocol, so Xfixes version l.n.m corresponds to protocol version l.n,
 dnl that 'revision' number appears in Xfixes.h and has to be manually
 dnl synchronized.
 dnl
-AC_INIT(libXfixes, 3.0.1.2, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXfixes)
+AC_INIT(libXfixes, 4.0.1, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXfixes)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

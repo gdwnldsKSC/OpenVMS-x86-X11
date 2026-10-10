@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sisusb/src/sisusb_accel.c,v 1.6 2005/07/11 02:30:00 ajax Exp $ */
 /*
  * 2D Acceleration for SiS 315/USB - not functional!
  *

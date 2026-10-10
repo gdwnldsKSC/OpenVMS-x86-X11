@@ -43,8 +43,6 @@
 #include	"ffb_rcache.h"
 #include	"ffb_loops.h"
 #include	"ffb_regs.h"
-#include	"ffb_stip.h"
-#include 	"ffb_gc.h"
 
 int	CreatorScreenPrivateIndex;
 int	CreatorGCPrivateIndex;

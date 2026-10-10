@@ -1,4 +1,4 @@
-.\" $XdotOrg: $
+.\" $XdotOrg: lib/Xext/man/DPMSForceLevel.man,v 1.1 2005/06/28 23:21:40 alanc Exp $
 .\" 
 .\" Copyright \(co Digital Equipment Corporation, 1996
 .\" 

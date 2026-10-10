@@ -1,5 +1,5 @@
 /* $Xorg: Xos_r.h,v 1.4 2001/02/09 02:03:22 xorgcvs Exp $ */
-/* $XdotOrg: xc/include/Xos_r.h,v 1.4 2005/03/02 19:29:31 alanc Exp $ */
+/* $XdotOrg: proto/X11/Xos_r.h,v 1.6 2006/04/20 01:24:25 alanc Exp $ */
 /*
 Copyright 1996, 1998  The Open Group
 
@@ -42,13 +42,13 @@ in this Software without prior written authorization from The Open Group.
  * MT-safe system API (e.g. UnixWare) you must define _Xos_processLock
  * and _Xos_processUnlock macros before including this header.  If
  * you are on OSF/1 V3.2 and plan to use readdir(), you must also define
- * _Xos_isThreadsInitialized.  For convenience XOS_USE_XLIB_LOCKING or
+ * _Xos_isThreadInitialized.  For convenience XOS_USE_XLIB_LOCKING or
  * XOS_USE_XT_LOCKING may be defined to obtain either Xlib-only or
  * Xt-based versions of these macros.  These macros won't result in
  * truly thread-safe calls, but they are better than nothing.  If you
  * do not want locking in this situation define XOS_USE_NO_LOCKING.
  *
- * NOTE: On systems lacking approriate _r functions Gethostbyname(),
+ * NOTE: On systems lacking appropriate _r functions Gethostbyname(),
  *	Gethostbyaddr(), and Getservbyname() do NOT copy the host or
  *	protocol lists!
  *

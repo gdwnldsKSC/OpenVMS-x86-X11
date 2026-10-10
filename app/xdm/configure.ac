@@ -21,19 +21,27 @@ dnl  PERFORMANCE OF THIS SOFTWARE.
 dnl
 dnl Process this file with autoconf to create configure.
 
+dnl $XdotOrg: app/xdm/configure.ac,v 1.40 2006/04/27 21:21:15 alanc Exp $
+
 AC_PREREQ([2.57])
-AC_INIT(xdm,[1.0.1], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xdm)
+AC_INIT(xdm,[1.0.4],[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xdm)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
 AM_CONFIG_HEADER(config.h)
 
 AC_PROG_CC
+AC_C_INLINE
 AC_LIBTOOL_WIN32_DLL
 AM_PROG_LIBTOOL
 AC_PROG_INSTALL
 
 XORG_PROG_RAWCPP
+
+# Check for mktemp to prevent security issue noted in Xorg bug #5898
+# See https://bugs.freedesktop.org/show_bug.cgi?id=5898 for details.
+AC_PATH_PROG(MKTEMP_COMMAND, mktemp)
+AM_CONDITIONAL(HAVE_MKTEMP_COMMAND, test x$MKTEMP_COMMAND != x)
 
 AC_FUNC_FORK
 
@@ -68,10 +76,22 @@ if test "x$HAS_SETUSERCONTEXT" = "xyes" ; then
 		[Define to 1 if you have the 'setusercontext' function.])
 fi
 
+AC_CHECK_FUNCS([daemon])
+AC_CHECK_HEADERS([grp.h])
+
 XTRANS_CONNECTION_FLAGS
 dnl Sets $SECURE_RPC to "yes" or "no"
 XTRANS_SECURE_RPC_FLAGS
 AM_CONDITIONAL(HAS_SECURE_RPC, test x$SECURE_RPC = xyes)
+
+dnl Is key_setnet defined in a header file?
+AC_CHECK_DECL(key_setnet, 
+	AC_DEFINE(HAVE_DECL_KEY_SETNET,1,
+	     [Define to 1 if your headers define the key_setnet() function.]),
+	[],[
+#include <rpc/rpc.h>
+#include <rpc/key_prot.h>
+])
 
 # darwin could have PAM support, but not yet
 case $host_os in
@@ -109,7 +129,7 @@ case $host_os in
         OS_CFLAGS="-D__DARWIN__ -DNO_LASTLOG"
 	SU="su -m"
         ;;
-    *bsd*)
+    *bsd*|dragonfly*)
         OS_CFLAGS="-DCSRG_BASED"
 	SU="su -m"
         ;;
@@ -208,7 +228,8 @@ AC_ARG_WITH(config-type,
 AC_SUBST(SERVERSTYPE)
 
 case $host_os in
-    *sco*)	SHELL_CMD="/bin/ksh"	;;
+    *sco*|*solaris*)
+		SHELL_CMD="/bin/ksh"	;;
     *)		SHELL_CMD="/bin/sh"	;;
 esac
 AC_SUBST(SHELL_CMD)
@@ -468,6 +489,7 @@ AC_DEFINE_DIR(DEF_GREETER_LIB, XDMLIBDIR/libXdmGreet.so,
 PKG_CHECK_MODULES(APPDEFS, xt)
 appdefaultdir=$(pkg-config --variable=appdefaultdir xt)
 AC_SUBST(appdefaultdir)
+AC_SUBST(MKTEMP_COMMAND)
 
 XORG_MANPAGE_SECTIONS
 XORG_RELEASE_VERSION

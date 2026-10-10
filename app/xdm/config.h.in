@@ -57,11 +57,20 @@
 /* Define to 1 if you have the `authdes_seccreate' function. */
 #undef HAVE_AUTHDES_SECCREATE
 
+/* Define to 1 if you have the `daemon' function. */
+#undef HAVE_DAEMON
+
+/* Define to 1 if your headers define the key_setnet() function. */
+#undef HAVE_DECL_KEY_SETNET
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
 /* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
+
+/* Define to 1 if you have the <grp.h> header file. */
+#undef HAVE_GRP_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -155,6 +164,12 @@
 
 /* Define to pathname for xrdb program */
 #undef XRDB_PROGRAM
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
 
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t

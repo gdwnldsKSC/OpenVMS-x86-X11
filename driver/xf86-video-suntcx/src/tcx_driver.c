@@ -26,9 +26,10 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Version.h"
 #include "mipointer.h"
 #include "mibstore.h"
@@ -62,11 +63,11 @@ static ModeStatus TCXValidMode(int scrnIndex, DisplayModePtr mode,
 
 void TCXSync(ScrnInfoPtr pScrn);
 
-#define VERSION 4000
+#define TCX_VERSION 4000
 #define TCX_NAME "SUNTCX"
 #define TCX_DRIVER_NAME "suntcx"
 #define TCX_MAJOR_VERSION 1
-#define TCX_MINOR_VERSION 0
+#define TCX_MINOR_VERSION 1
 #define TCX_PATCHLEVEL 0
 
 /* 
@@ -78,7 +79,7 @@ void TCXSync(ScrnInfoPtr pScrn);
  */
 
 _X_EXPORT DriverRec SUNTCX = {
-    VERSION,
+    TCX_VERSION,
     TCX_DRIVER_NAME,
     TCXIdentify,
     TCXProbe,
@@ -259,7 +260,7 @@ TCXProbe(DriverPtr drv, int flags)
 	    pScrn = xf86AllocateScreen(drv, 0);
 
 	    /* Fill in what we can of the ScrnInfoRec */
-	    pScrn->driverVersion = VERSION;
+	    pScrn->driverVersion = TCX_VERSION;
 	    pScrn->driverName	 = TCX_DRIVER_NAME;
 	    pScrn->name		 = TCX_NAME;
 	    pScrn->Probe	 = TCXProbe;

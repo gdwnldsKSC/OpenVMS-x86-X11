@@ -31,7 +31,6 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
-#include "xf86_ansic.h"
 #include "compiler.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -65,7 +64,8 @@ static void Permedia3QueryBestSize(ScrnInfoPtr, Bool,
 	short, short, short, short, unsigned int *, unsigned int *, pointer);
 static int Permedia3PutImage( ScrnInfoPtr, 
 	short, short, short, short, short, short, short, short,
-	int, unsigned char*, short, short, Bool, RegionPtr, pointer);
+	int, unsigned char*, short, short, Bool, RegionPtr, pointer,
+	DrawablePtr);
 static int Permedia3QueryImageAttributes(ScrnInfoPtr, 
 	int, unsigned short *, unsigned short *,  int *, int *);
 static void Permedia3VideoTimerCallback(ScrnInfoPtr pScrn, Time time);
@@ -802,7 +802,8 @@ Permedia3PutImage(
   int id, unsigned char* buf, 
   short width, short height, 
   Bool sync,
-  RegionPtr clipBoxes, pointer data
+  RegionPtr clipBoxes, pointer data,
+  DrawablePtr pDraw
 ){
 #if 0
    GLINTPtr pGlint = GLINTPTR(pScrn);

@@ -57,7 +57,6 @@
 #include "xf86Resources.h"
 
 /* All drivers need this */
-#include "xf86_ansic.h"
 
 #include "compiler.h"
 
@@ -169,6 +168,8 @@ static SymTabRec MGAChipsets[] = {
     { PCI_CHIP_MGAG100_PCI,	"mgag100 PCI" },
     { PCI_CHIP_MGAG200,		"mgag200" },
     { PCI_CHIP_MGAG200_PCI,	"mgag200 PCI" },
+    { PCI_CHIP_MGAG200_SE_A_PCI,	"mgag200 SE A PCI" },
+    { PCI_CHIP_MGAG200_SE_B_PCI,	"mgag200 SE B PCI" },
     { PCI_CHIP_MGAG400,		"mgag400" },
     { PCI_CHIP_MGAG550,		"mgag550" },
     {-1,			NULL }
@@ -183,6 +184,10 @@ static PciChipsets MGAPciChipsets[] = {
     { PCI_CHIP_MGAG100_PCI, PCI_CHIP_MGAG100_PCI,(resRange*)RES_SHARED_VGA },
     { PCI_CHIP_MGAG200,	    PCI_CHIP_MGAG200,	(resRange*)RES_SHARED_VGA },
     { PCI_CHIP_MGAG200_PCI, PCI_CHIP_MGAG200_PCI,(resRange*)RES_SHARED_VGA },
+    { PCI_CHIP_MGAG200_SE_B_PCI, PCI_CHIP_MGAG200_SE_B_PCI,
+	(resRange*)RES_SHARED_VGA },
+    { PCI_CHIP_MGAG200_SE_A_PCI, PCI_CHIP_MGAG200_SE_A_PCI,
+	(resRange*)RES_SHARED_VGA },
     { PCI_CHIP_MGAG400,	    PCI_CHIP_MGAG400,	(resRange*)RES_SHARED_VGA },
     { PCI_CHIP_MGAG550,	    PCI_CHIP_MGAG550,	(resRange*)RES_SHARED_VGA },
     { -1,			-1,		(resRange*)RES_UNDEFINED }
@@ -755,6 +760,10 @@ MGACountRam(ScrnInfoPtr pScrn)
 	}
 	ProbeSize = 32768;
 	break;
+    case PCI_CHIP_MGAG200_SE_A_PCI:
+    case PCI_CHIP_MGAG200_SE_B_PCI:
+	ProbeSize = 4096;
+	break;
     case PCI_CHIP_MGAG200:
     case PCI_CHIP_MGAG200_PCI:
 	if(biosInfo) {
@@ -793,17 +802,71 @@ MGACountRam(ScrnInfoPtr pScrn)
 	tmp = INREG8(MGAREG_CRTCEXT_DATA);
 	OUTREG8(MGAREG_CRTCEXT_DATA, tmp | 0x80);
 
-	/* write, read and compare method
-	   split into two loops to make it more reliable on RS/6k -ReneR */
-	for(i = ProbeSize; i > 2048; i -= 2048) {
-	    base[(i * 1024) - 1] = 0xAA;
-	}
-	OUTREG8(MGAREG_CRTC_INDEX, 0);  /* flush the cache */
-	usleep(4);  /* twart write combination */
-	for(i = ProbeSize; i > 2048; i -= 2048) {
-	    if(base[(i * 1024) - 1] == 0xAA) {
-		SizeFound = i;
-		break;
+	/* apparently the G200SE doesn't have a BIOS to read */
+	if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
+	    (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+
+	    CARD32 MemoryAt0, MemoryAt1, Offset;
+	    CARD32 FirstMemoryVal1, FirstMemoryVal2;
+	    CARD32 SecondMemoryVal1, SecondMemoryVal2;
+	    CARD32 TestMemoryLocA, TestMemoryLocB;
+	    CARD32 TestMemoryLoc0, TestMemoryLoc1;
+	    CARD32 TestA, TestB;
+
+	    MemoryAt0 = base[0];
+	    MemoryAt1 = base[1];
+	    base[0] = 0;
+	    base[1] = 0;
+
+	    for (Offset = 0x100000; Offset < (ProbeSize * 1024);
+		 Offset += 0x1000) {
+		FirstMemoryVal1 = base[Offset];
+		FirstMemoryVal2 = base[Offset+1];
+		SecondMemoryVal1 = base[Offset+0x100];
+		SecondMemoryVal2 = base[Offset+0x101];
+
+		base[Offset] = 0x55;
+		base[Offset+1] = 0xaa;
+		base[Offset+0x100] = 0x55;
+		base[Offset+0x101] = 0xaa;
+
+		OUTREG(MGAREG_CRTC_INDEX, 0);
+		usleep(8);
+
+		TestMemoryLocA = base[Offset];
+		TestMemoryLocB = base[Offset+1];
+		TestMemoryLoc0 = base[0];
+		TestMemoryLoc1 = base[1];
+
+		base[Offset] = FirstMemoryVal1;
+		base[Offset+1] = FirstMemoryVal2;
+		base[Offset+0x100] = SecondMemoryVal1;
+		base[Offset+0x101] = SecondMemoryVal2;
+
+		TestA = ((TestMemoryLocB << 8) + TestMemoryLocA);
+		TestB = ((TestMemoryLoc1 << 8) + TestMemoryLoc0);
+		if ((TestA != 0xAA55) || (TestB)) {
+		    break;
+		}
+	    }
+
+	    base[0] = MemoryAt0;
+	    base[1] = MemoryAt1;
+
+	    SizeFound = (Offset / 1024) - 64;
+	} else {
+	    /* write, read and compare method
+	       split into two loops to make it more reliable on RS/6k -ReneR */
+	    for(i = ProbeSize; i > 2048; i -= 2048) {
+		base[(i * 1024) - 1] = 0xAA;
+	    }
+	    OUTREG8(MGAREG_CRTC_INDEX, 0);  /* flush the cache */
+	    usleep(4);  /* twart write combination */
+	    for(i = ProbeSize; i > 2048; i -= 2048) {
+		if(base[(i * 1024) - 1] == 0xAA) {
+		    SizeFound = i;
+		    break;
+		}
 	    }
 	}
 
@@ -1589,6 +1652,8 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     case PCI_CHIP_MGAG100_PCI:
     case PCI_CHIP_MGAG200:
     case PCI_CHIP_MGAG200_PCI:
+    case PCI_CHIP_MGAG200_SE_A_PCI:
+    case PCI_CHIP_MGAG200_SE_B_PCI:
     case PCI_CHIP_MGAG400:
     case PCI_CHIP_MGAG550:
 	MGAGSetupFuncs(pScrn);
@@ -1817,6 +1882,8 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	  case PCI_CHIP_MGAG400:
 	  case PCI_CHIP_MGAG200:
 	  case PCI_CHIP_MGAG200_PCI:
+	  case PCI_CHIP_MGAG200_SE_A_PCI:
+	  case PCI_CHIP_MGAG200_SE_B_PCI:
 	    pMga->SrcOrg = 0;
 	    pMga->DstOrg = 0;
 	    break;
@@ -1977,6 +2044,8 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 	   break;
 	case PCI_CHIP_MGAG200:
 	case PCI_CHIP_MGAG200_PCI:
+	case PCI_CHIP_MGAG200_SE_A_PCI:
+	case PCI_CHIP_MGAG200_SE_B_PCI:
 	case PCI_CHIP_MGAG400:
 	case PCI_CHIP_MGAG550:
 	   maxPitch = 4096;
@@ -2604,7 +2673,13 @@ MGAFillModeInfoStruct(ScrnInfoPtr pScrn, DisplayModePtr mode)
     } else { 
 	pMga->pMgaModeInfo->flOutput = MGAMODEINFO_FORCE_PITCH;
         if (digital1) {
-	    pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_DIGITAL1;
+	    if ((pMga->Chipset == PCI_CHIP_MGAG200) ||
+		(pMga->Chipset == PCI_CHIP_MGAG200_PCI)) {
+		pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_FLATPANEL1;
+		pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_DIGITAL2;
+	    } else {
+		pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_DIGITAL1;
+	    }
         } else if (tv1) {
 	    pMga->pMgaModeInfo->flOutput |= MGAMODEINFO_TV;
        	} else {
@@ -2737,6 +2812,8 @@ MGA_HAL(
 	    case PCI_CHIP_MGAG100_PCI:
 	    case PCI_CHIP_MGAG200:
 	    case PCI_CHIP_MGAG200_PCI:
+	    case PCI_CHIP_MGAG200_SE_A_PCI:
+	    case PCI_CHIP_MGAG200_SE_B_PCI:
 	    case PCI_CHIP_MGAG400:	      
 	    case PCI_CHIP_MGAG550:
 		if(pMga->SecondCrtc == FALSE && pMga->HWCursor == TRUE) {
@@ -2925,6 +3002,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     int width, height, displayWidth;
     MGAEntPtr pMgaEnt = NULL;
     int f;
+    CARD32 VRTemp, FBTemp;
 #ifdef XF86DRI
     MessageType driFrom = X_DEFAULT;
 #endif
@@ -2938,6 +3016,13 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     pMga = MGAPTR(pScrn);
     MGAdac = &pMga->Dac;
 
+    if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
+	(pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+	VRTemp = pScrn->videoRam;
+	FBTemp = pMga->FbMapSize;
+	pScrn->videoRam = 4096;
+	pMga->FbMapSize = pScrn->videoRam * 1024;
+    }
     
     /* Map the MGA memory and MMIO areas */
     if (pMga->FBDev) {
@@ -3016,6 +3101,11 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	  );	/* MGA_HAL */
 #endif
     }
+    if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
+	(pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+	pScrn->videoRam = VRTemp;
+	pMga->FbMapSize = FBTemp;
+    }
 #ifdef USEMGAHAL
     MGA_HAL(
 	/* There is a problem in the HALlib: set soft reset bit */
@@ -3053,6 +3143,8 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	    case PCI_CHIP_MGAG100_PCI:
 	    case PCI_CHIP_MGAG200:
 	    case PCI_CHIP_MGAG200_PCI:
+	    case PCI_CHIP_MGAG200_SE_A_PCI:
+	    case PCI_CHIP_MGAG200_SE_B_PCI:
 	    case PCI_CHIP_MGAG400:
 	    case PCI_CHIP_MGAG550:
 		outMGAdac(MGA1064_CURSOR_BASE_ADR_LOW, pMga->FbCursorOffset >> 10);
@@ -3160,7 +3252,13 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
       * InitGLXVisuals call back.
       * The DRI does not work when textured video is enabled at this time.
       */
-    if (!xf86ReturnOptValBool(pMga->Options, OPTION_DRI, TRUE)) {
+    if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
+	(pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+		   "Not supported by hardware, not initializing the DRI\n");
+	pMga->directRenderingEnabled = FALSE;
+	driFrom = X_PROBED;
+    } else if (!xf86ReturnOptValBool(pMga->Options, OPTION_DRI, TRUE)) {
 	driFrom = X_CONFIG;
     } else if ( pMga->NoAccel ) {
        xf86DrvMsg( pScrn->scrnIndex, X_ERROR,

@@ -1,6 +1,6 @@
 .\" Use -ms and macros.t
 .\" $Xorg: shapelib.ms,v 1.3 2000/08/17 19:42:36 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/Xext/shapelib.ms,v 1.2 2004/04/23 18:42:18 eich Exp $
+.\" $XdotOrg: doc/xorg-docs/specs/Xext/shapelib.ms,v 1.3 2004/09/03 16:18:21 kem Exp $
 .\" edited for DP edits and code consistency w/ core protocol/xlib 4/1/96
 .EH ''''
 .OH ''''

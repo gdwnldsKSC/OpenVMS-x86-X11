@@ -21,8 +21,12 @@
 #  Process this file with autoconf to create configure.
 
 SUBDIRS = hardcopy man sgml
+x11docdir = @X11DOCDIR@
+
+dist_x11doc_DATA = MAINTAINERS
 
 EXTRA_DIST = \
+	MAINTAINERS \
 	misc/xlogo.epsi \
 	registry \
 	specs/BDF/bdf.ms \

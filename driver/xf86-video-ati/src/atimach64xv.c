@@ -25,6 +25,8 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include "ati.h"
 #include "atiaccel.h"
 #include "atichip.h"
@@ -942,7 +944,8 @@ ATIMach64PutImage
     short         Height,
     Bool          Synchronise,
     RegionPtr     pClip,
-    pointer       Data
+    pointer       Data,
+    DrawablePtr   pDraw
 )
 {
     ATIPtr    pATI    = Data;

@@ -1,3 +1,8 @@
+2006-02-03  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* man/magictouch.man: 
+	Driver name is "magictouch", not "void"
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

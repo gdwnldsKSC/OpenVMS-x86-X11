@@ -1,4 +1,4 @@
-# $XdotOrg: $
+# $XdotOrg: lib/Xi/Makefile.am,v 1.1 2005/05/22 19:37:27 alanc Exp $
 
 AM_CFLAGS = $(XI_CFLAGS)
 

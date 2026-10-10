@@ -31,6 +31,7 @@
 #include "config.h"
 #endif
 
+#include "via.h"
 #include "via_driver.h"
 #include "vbe.h"
 #include "vbeModes.h"
@@ -124,9 +125,6 @@ ViaVbeSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
 
     pVia->OverlaySupported = FALSE;
 
-    if (pVia->FirstInit)
-	memset(pVia->FBBase, 0x00, pVia->videoRambytes);
-
     data = (VbeModeInfoData*)pMode->Private;
 
     mode = data->mode | (1 << 15);
@@ -161,7 +159,7 @@ ViaVbeSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     pScrn->vtSema = TRUE;
 
     if (!pVia->NoAccel)
-	VIAInitialize2DEngine(pScrn);
+	viaInitialize2DEngine(pScrn);
     
 #ifdef XF86DRI
     VIAInitialize3DEngine(pScrn);

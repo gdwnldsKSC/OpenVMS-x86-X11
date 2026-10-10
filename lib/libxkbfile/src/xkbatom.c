@@ -180,7 +180,7 @@ _XkbNameForAtom(Atom atom)
     NodePtr node;
     if (atom > lastAtom) return 0;
     if ((node = nodeTable[atom]) == (NodePtr)NULL) return 0;
-    return node->string;
+    return strdup(node->string);
 }
 
 static void

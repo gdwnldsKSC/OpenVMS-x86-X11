@@ -7,7 +7,6 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
-#include "xf86_ansic.h"
 #include "compiler.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -39,7 +38,8 @@ static void CHIPSQueryBestSize(ScrnInfoPtr, Bool,
 	short, short, short, short, unsigned int *, unsigned int *, pointer);
 static int CHIPSPutImage( ScrnInfoPtr, 
 	short, short, short, short, short, short, short, short,
-	int, unsigned char*, short, short, Bool, RegionPtr, pointer);
+	int, unsigned char*, short, short, Bool, RegionPtr, pointer,
+	DrawablePtr);
 static int CHIPSQueryImageAttributes(ScrnInfoPtr, 
 	int, unsigned short *, unsigned short *,  int *, int *);
 static void CHIPSVideoTimerCallback(ScrnInfoPtr pScrn, Time time);
@@ -660,7 +660,8 @@ CHIPSPutImage(
   int id, unsigned char* buf, 
   short width, short height, 
   Bool sync,
-  RegionPtr clipBoxes, pointer data
+  RegionPtr clipBoxes, pointer data,
+  DrawablePtr pDraw
 ){
    CHIPSPortPrivPtr pPriv = (CHIPSPortPrivPtr)data;
    CHIPSPtr cPtr = CHIPSPTR(pScrn);

@@ -1,3 +1,27 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 7.0.5
+
+2006-04-25  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* Xdefs.h: 
+	* Xos.h:
+	Fix more comment typos.
+
+2006-04-19  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* Xmd.h: 
+	On Solaris, #include <sys/isa_defs.h> to be sure _LP64 is defined
+	in 64-bit builds.
+
+	* Xmd.h:
+	* Xos.h: 
+	* Xos_r.h: 
+	* Xproto.h: 
+	* keysymdef.h:
+	Fix some comment typos.
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

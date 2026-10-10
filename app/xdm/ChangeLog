@@ -1,3 +1,143 @@
+2006-04-27  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* configure.ac: 
+	Version bump: 1.0.4
+
+2006-04-14  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* greeter/verify.c: 
+	<http://bugs.opensolaris.org/bugdatabase/view_bug.do?bug_id=6413255>
+	Sun bug #6413255: xdm should check for uid 0, not for username of 
+	"root", when doing non-console login check
+
+2006-04-13  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* configure.ac: 
+	Add AC_C_INLINE so we can use "inline" keyword
+
+	* greeter/Login.c: 
+	Add "inline" to max function definition
+
+2006-04-11  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* greeter/Login.c: 
+	When clearing username & password buffers, zero out the entire buffer,
+	not just the first byte, for reduced risk of leaking passwords into
+	core dumps.
+
+2006-04-07  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* session.c: 
+	Xorg bug #4765 <https://bugs.freedesktop.org/show_bug.cgi?id=4765>
+	Patch #3555 <https://bugs.freedesktop.org/attachment.cgi?id=3555>
+	xdm doesn't work with the pam_krb5 module (call pam_getenvlist
+	after pam_setcred)  (Constantine Sapuntzakis)
+
+2006-03-30  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* configure.ac:
+	Version bump: 1.0.3
+
+2006-03-30  Alan Coopersmith  <alan.coopersmith@sun.com>
+	
+	* daemon.c:
+	* util.c:
+	Drop all setpgrp/setpgid silliness and just use setsid everywhere.
+	(Assumes all platforms are at least POSIX.1-1990 compliant.)
+
+	* daemon.c:
+	Check for error return from daemon() function.
+
+2006-03-27  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* configure.ac: 
+	Version bump: 1.0.2
+
+2006-03-17  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* configure.ac:
+	* config/Xsession.cpp: 
+	* config/Makefile.am:
+	Bug #5898 <https://bugs.freedesktop.org/show_bug.cgi?id=5898>
+	Use mktemp command to create files safely in TMPDIR or /tmp
+	on systems that have it - don't try to create files there if
+	mktemp is not present.   Fix based on NetBSD fix from
+	<http://www.netbsd.org/cgi-bin/query-pr-single.pl?number=32805> .
+
+2006-03-16  Jeremy C. Reed  <reed@reedmedia.net>
+
+	reviewed by: Alan Coopersmith
+
+	* configure.ac:
+	DragonFly is a BSD, so is CSRG_BASED and use su with -m option.
+
+2006-03-16  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* configure.ac: 
+	* daemon.c:
+	* session.c:
+	* util.c:
+	Convert checks for <grp.h>, daemon(), and setpgrp arguments to
+	autoconf tests instead of checking OS name #ifdefs.
+
+2006-03-10  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* chooser.c: 
+	Coverity ids #722, 723, 724, 725, 726, 727, 728:
+	Need to XtFree the values returned by XawListShowCurrent to plug
+	memory leaks.
+
+	* socket.c (UpdateMcastGroup): 
+	Coverity id #834:  
+	After joining a multicast group, add group pointer to the list of
+	active multicast groups instead of just leaking the group pointer.
+
+2006-03-09  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* socket.c: (CreateSocklistEntry):
+	Coverity id #332: 
+	When malloc fails, don't just print an error and continue on using
+	the NULL pointer, return NULL to the caller.
+
+2006-03-01  Matthias Hopf  <mhopf@suse.de>
+
+	* greeter/verify.c: (PAM_conv):
+	openSUSE bug #142954
+	Fixed potential segfault on OOM condition.
+
+2006-02-24  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* configure.ac:
+	* session.c:
+	Bug #6036 <https://bugs.freedesktop.org/show_bug.cgi?id=6036>
+	Check for key_setnet declaration before defining it to avoid
+	compiler error of conflicting types on DragonFly BSD
+
+2006-02-24  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* netaddr.c: 
+	Bug #6026 <https://bugs.freedesktop.org/show_bug.cgi?id=6026>
+	Segfault in netaddr.c:ConvertAddr if ifa_addr is NULL
+	(Loser Mcloser <reebydobalina@yahoo.ca>)
+
+2006-02-24  Jeremy C. Reed  <reed@reedmedia.net>
+
+	reviewed by: Alan.Coopersmith@Sun.COM
+
+	* config/Xsession.cpp:
+	Bug #5897 <https://bugs.freedesktop.org/show_bug.cgi?id=5897>
+	Create xsession error file with umask 077 instead of chmod
+	a moment later. This was reported by Steven M. Bellovin to NetBSD.
+	<http://www.netbsd.org/cgi-bin/query-pr-single.pl?number=32804>
+
+2006-02-24  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* greeter/Login.c: 
+	Bug #1391 <https://bugs.freedesktop.org/show_bug.cgi?id=1391>
+	Patch #4739 <https://bugs.freedesktop.org/attachment.cgi?id=4739>
+	xdm hangs in a loop when invalid xpm bitmap is used for logo
+	(Costantino Leandro <lcostantino@gmail.com>)
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

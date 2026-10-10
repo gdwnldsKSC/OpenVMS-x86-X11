@@ -1,5 +1,5 @@
 .\" $Xorg: protocol.ms,v 1.3 2000/08/17 19:42:40 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/Xi/protocol.ms,v 1.2 2004/04/23 18:42:18 eich Exp $
+.\" $XdotOrg: doc/xorg-docs/specs/Xi/protocol.ms,v 1.3 2004/09/03 16:18:22 kem Exp $
 .\" Input Extension
 .EH ''''
 .OH ''''

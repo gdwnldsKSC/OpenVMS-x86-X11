@@ -60,22 +60,22 @@ SOFTWARE.
 #include <X11/extensions/extutil.h>
 #include "XIint.h"
 
-#ifdef MIN			/* some systems define this in <sys/param.h> */
+#ifdef MIN	/* some systems define this in <sys/param.h> */
 #undef MIN
 #endif
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 int
-XGetDeviceButtonMapping (dpy, device, map, nmap)
-    register 	Display	*dpy;
-    XDevice		*device;
-    unsigned 	char 	map[];
-    unsigned 	int 	nmap; 
-    {
-    int	status = 0;
-    unsigned char mapping[256];				/* known fixed size */
+XGetDeviceButtonMapping(dpy, device, map, nmap)
+    register Display *dpy;
+    XDevice *device;
+    unsigned char map[];
+    unsigned int nmap;
+{
+    int status = 0;
+    unsigned char mapping[256];	/* known fixed size */
     long nbytes;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
     register xGetDeviceButtonMappingReq *req;
     xGetDeviceButtonMappingReply rep;
@@ -89,20 +89,18 @@ XGetDeviceButtonMapping (dpy, device, map, nmap)
     req->ReqType = X_GetDeviceButtonMapping;
     req->deviceid = device->device_id;
 
-    status = _XReply (dpy, (xReply *)&rep, 0, xFalse);
-    if (status == 1)
-	{
+    status = _XReply(dpy, (xReply *) & rep, 0, xFalse);
+    if (status == 1) {
 	nbytes = (long)rep.length << 2;
-	_XRead (dpy, (char *)mapping, nbytes);
+	_XRead(dpy, (char *)mapping, nbytes);
 
 	/* don't return more data than the user asked for. */
-	if (rep.nElts) 
-	    memcpy ((char *) map, (char *) mapping, MIN((int)rep.nElts, nmap));
+	if (rep.nElts)
+	    memcpy((char *)map, (char *)mapping, MIN((int)rep.nElts, nmap));
 	status = rep.nElts;
-	}
-    else
+    } else
 	status = 0;
     UnlockDisplay(dpy);
     SyncHandle();
     return (status);
-    }
+}

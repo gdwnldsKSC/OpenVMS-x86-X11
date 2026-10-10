@@ -61,82 +61,86 @@ SOFTWARE.
 #include "XIint.h"
 
 XDeviceTimeCoord
-*XGetDeviceMotionEvents (dpy, dev, start, stop, nEvents, mode, axis_count)
-    register 	Display	*dpy;
-    XDevice		*dev;
-    Time 		start;
-    Time 		stop;
-    int 		*nEvents;
-    int 		*mode;
-    int 		*axis_count;
-    {       
-    xGetDeviceMotionEventsReq 	*req;
-    xGetDeviceMotionEventsReply 	rep;
+    * XGetDeviceMotionEvents(dpy, dev, start, stop, nEvents, mode, axis_count)
+    register Display *
+	dpy;
+    XDevice *
+	dev;
+    Time
+	start;
+    Time
+	stop;
+    int *
+	nEvents;
+    int *
+	mode;
+    int *
+	axis_count;
+{
+    xGetDeviceMotionEventsReq *req;
+    xGetDeviceMotionEventsReply rep;
     XDeviceTimeCoord *tc;
     int *data, *bufp, *readp, *savp;
     long size, size2;
-    int	 i, j;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+    int i, j;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return ((XDeviceTimeCoord *) NoSuchExtension);
 
-    GetReq(GetDeviceMotionEvents,req);		
+    GetReq(GetDeviceMotionEvents, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_GetDeviceMotionEvents;
     req->start = start;
     req->stop = stop;
     req->deviceid = dev->device_id;
 
-    if (!_XReply (dpy, (xReply *)&rep, 0, xFalse)) {
+    if (!_XReply(dpy, (xReply *) & rep, 0, xFalse)) {
 	UnlockDisplay(dpy);
-        SyncHandle();
+	SyncHandle();
 	*nEvents = 0;
 	return (NULL);
-	}
+    }
 
     *mode = rep.mode;
     *axis_count = rep.axes;
     *nEvents = rep.nEvents;
-    if (!rep.nEvents)
-	{
-	UnlockDisplay(dpy);
-        SyncHandle();
-	return (NULL);
-	}
-    size = rep.length << 2;
-    size2 = rep.nEvents * 
-	(sizeof (XDeviceTimeCoord) + (rep.axes * sizeof (int)));
-    savp = readp = (int *) Xmalloc (size);
-    bufp = (int *) Xmalloc (size2);
-    if (!bufp || !savp)
-	{
-	*nEvents = 0;
-	_XEatData (dpy, (unsigned long) size);
+    if (!rep.nEvents) {
 	UnlockDisplay(dpy);
 	SyncHandle();
 	return (NULL);
-	}
-    _XRead (dpy, (char *) readp, size);
+    }
+    size = rep.length << 2;
+    size2 = rep.nEvents * (sizeof(XDeviceTimeCoord) + (rep.axes * sizeof(int)));
+    savp = readp = (int *)Xmalloc(size);
+    bufp = (int *)Xmalloc(size2);
+    if (!bufp || !savp) {
+	*nEvents = 0;
+	_XEatData(dpy, (unsigned long)size);
+	UnlockDisplay(dpy);
+	SyncHandle();
+	return (NULL);
+    }
+    _XRead(dpy, (char *)readp, size);
 
     tc = (XDeviceTimeCoord *) bufp;
-    data = (int *) (tc + rep.nEvents);
-    for (i=0; i<*nEvents; i++,tc++)
-	{
+    data = (int *)(tc + rep.nEvents);
+    for (i = 0; i < *nEvents; i++, tc++) {
 	tc->time = *readp++;
 	tc->data = data;
-	for (j=0; j<*axis_count; j++)
+	for (j = 0; j < *axis_count; j++)
 	    *data++ = *readp++;
-	}
-    XFree ((char *)savp);
+    }
+    XFree((char *)savp);
     UnlockDisplay(dpy);
     SyncHandle();
     return ((XDeviceTimeCoord *) bufp);
-    }
+}
 
-void XFreeDeviceMotionEvents (events)
+void
+XFreeDeviceMotionEvents(events)
     XDeviceTimeCoord *events;
-    {
-    XFree ((char *)events);
-    }
+{
+    XFree((char *)events);
+}

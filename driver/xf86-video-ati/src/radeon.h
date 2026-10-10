@@ -39,8 +39,8 @@
 #define _RADEON_H_
 
 #include "xf86str.h"
-#include "xf86_ansic.h"
 #include "compiler.h"
+#include "xf86fbman.h"
 
 				/* PCI support */
 #include "xf86Pci.h"
@@ -50,7 +50,6 @@
 #endif
 #ifdef USE_XAA
 #include "xaa.h"
-#include "xf86fbman.h"
 #endif
 
 				/* Exa and Cursor Support */
@@ -102,7 +101,7 @@ typedef struct _region {
 
 /* ------------------------------------- */
 
-#define RADEON_DEBUG            0 /* Turn off debugging output               */
+#define RADEON_DEBUG            1 /* Turn off debugging output               */
 #define RADEON_IDLE_RETRY      16 /* Fall out of idle loops after this count */
 #define RADEON_TIMEOUT    2000000 /* Fall out of wait loops after this count */
 #define RADEON_MMIOSIZE   0x80000
@@ -116,13 +115,13 @@ typedef struct _region {
 				   */
 
 #if RADEON_DEBUG
-#define RADEONTRACE(x)							\
+#define RADEONTRACE(x)						\
 do {									\
     ErrorF("(**) %s(%d): ", RADEON_NAME, pScrn->scrnIndex);		\
     ErrorF x;								\
-} while (0);
+} while(0)
 #else
-#define RADEONTRACE(x)
+#define RADEONTRACE(x) do { } while(0)
 #endif
 
 
@@ -147,10 +146,16 @@ typedef struct {
     CARD32            cap0_trig_cntl;
     CARD32            cap1_trig_cntl;
     CARD32            bus_cntl;
-    CARD32            surface_cntl;
     CARD32            bios_4_scratch;
     CARD32            bios_5_scratch;
     CARD32            bios_6_scratch;
+    CARD32            surface_cntl;
+    CARD32            surfaces[8][3];
+    CARD32            mc_agp_location;
+    CARD32            mc_fb_location;
+    CARD32            display_base_addr;
+    CARD32            display2_base_addr;
+    CARD32            ov0_base_addr;
 
 				/* Other registers to save for VT switches */
     CARD32            dp_datatype;
@@ -158,8 +163,6 @@ typedef struct {
     CARD32            clock_cntl_index;
     CARD32            amcgpio_en_reg;
     CARD32            amcgpio_mask;
-    
-    CARD32            surfaces[8][3];
 
 				/* CRTC registers */
     CARD32            crtc_gen_cntl;
@@ -274,6 +277,8 @@ typedef enum {
     CHIP_FAMILY_RV350,
     CHIP_FAMILY_RV380,    /* RV370/RV380/M22/M24 */
     CHIP_FAMILY_R420,     /* R420/R423/M18 */
+    CHIP_FAMILY_RV410,    /* RV410, M26 */
+    CHIP_FAMILY_RS400,    /* xpress 200, 200m (RS400/410/480) */
     CHIP_FAMILY_LAST
 } RADEONChipFamily;
 
@@ -290,7 +295,9 @@ typedef enum {
         (info->ChipFamily == CHIP_FAMILY_RV350) ||  \
         (info->ChipFamily == CHIP_FAMILY_R350)  ||  \
         (info->ChipFamily == CHIP_FAMILY_RV380) ||  \
-        (info->ChipFamily == CHIP_FAMILY_R420))
+        (info->ChipFamily == CHIP_FAMILY_R420)  ||  \
+        (info->ChipFamily == CHIP_FAMILY_RV410) ||  \
+        (info->ChipFamily == CHIP_FAMILY_RS400))
 
 /*
  * Errata workarounds
@@ -326,6 +333,8 @@ typedef struct {
     unsigned long     MMIOAddr;         /* MMIO region physical address      */
     unsigned long     BIOSAddr;         /* BIOS physical address             */
     unsigned int      fbLocation;
+    CARD32            mc_fb_location;
+    CARD32            mc_agp_location;
 
     unsigned char     *MMIO;            /* Map of MMIO region                */
     unsigned char     *FB;              /* Map of frame buffer               */
@@ -338,7 +347,8 @@ typedef struct {
     CARD32            MemCntl;
     CARD32            BusCntl;
     unsigned long     FbMapSize;        /* Size of frame buffer, in bytes    */
-    unsigned long     FbSecureSize;     /* Size of secured fb area at end of framebuffer */
+    unsigned long     FbSecureSize;     /* Size of secured fb area at end of
+                                           framebuffer */
     int               Flags;            /* Saved copy of mode flags          */
 
 				/* VE/M6 support */
@@ -398,14 +408,14 @@ typedef struct {
     Bool              PaletteSavedOnVT; /* Palette saved on last VT switch   */
 
 #ifdef USE_EXA
-    ExaDriverRec      exa;
-#endif
-#ifdef USE_XAA
-    XAAInfoRecPtr     accel;
+    ExaDriverPtr      exa;
     int               engineMode;
 #define EXA_ENGINEMODE_UNKNOWN 0
 #define EXA_ENGINEMODE_2D      1
 #define EXA_ENGINEMODE_3D      2
+#endif
+#ifdef USE_XAA
+    XAAInfoRecPtr     accel;
 #endif
     Bool              accelOn;
     xf86CursorInfoPtr cursor;
@@ -480,13 +490,18 @@ typedef struct {
     RADEONFBLayout    CurrentLayout;
     CARD32            dst_pitch_offset;
 #ifdef XF86DRI
-    Bool              noBackBuffer;
+    Bool              noBackBuffer;	
     Bool              directRenderingEnabled;
+    Bool              directRenderingInited;
+    Bool              newMemoryMap;
+    drmVersionPtr     pLibDRMVersion;
+    drmVersionPtr     pKernelDRMVersion;
     DRIInfoPtr        pDRIInfo;
     int               drmFD;
     int               numVisualConfigs;
     __GLXvisualConfig *pVisualConfigs;
     RADEONConfigPrivPtr pVisualConfigsPriv;
+    Bool             (*DRICloseScreen)(int, ScreenPtr);
 
     drm_handle_t         fbHandle;
 
@@ -501,7 +516,6 @@ typedef struct {
     Bool              depthMoves;       /* Enable depth moves -- slow! */
     Bool              allowPageFlip;    /* Enable 3d page flipping */
     Bool              have3DWindows;    /* Are there any 3d clients? */
-    int               drmMinor;
 
     drmSize           gartSize;
     drm_handle_t         agpMemHandle;     /* Handle from drmAgpAlloc */
@@ -694,6 +708,11 @@ typedef struct {
     Bool                NonRect, HaveNonRect, HaveOffsRegions, MouseRestrictions;
     region              NonRectDead, OffDead1, OffDead2;
 
+    int			constantDPI; /* -1 = auto, 0 = off, 1 = on */
+    int			RADEONDPIVX, RADEONDPIVY;
+    RADEONScrn2Rel	MergedDPISRel;
+    int			RADEONMergedDPIVX, RADEONMergedDPIVY, RADEONMergedDPIRot;
+
     /* special handlings for DELL triple-head server */
     Bool		IsDellServer; 
 
@@ -766,11 +785,14 @@ extern void        RADEONPllErrataAfterData(RADEONInfoPtr info);
 #ifdef USE_XAA
 extern void        RADEONAccelInitCP(ScreenPtr pScreen, XAAInfoRecPtr a);
 #endif
+extern Bool        RADEONDRIGetVersion(ScrnInfoPtr pScrn);
 extern Bool        RADEONDRIScreenInit(ScreenPtr pScreen);
 extern void        RADEONDRICloseScreen(ScreenPtr pScreen);
 extern void        RADEONDRIResume(ScreenPtr pScreen);
 extern Bool        RADEONDRIFinishScreenInit(ScreenPtr pScreen);
 extern void        RADEONDRIAllocatePCIGARTTable(ScreenPtr pScreen);
+extern void	   RADEONDRIInitPageFlip(ScreenPtr pScreen);
+extern void        RADEONDRIStop(ScreenPtr pScreen);
 
 extern drmBufPtr   RADEONCPGetBuffer(ScrnInfoPtr pScrn);
 extern void        RADEONCPFlushIndirect(ScrnInfoPtr pScrn, int discard);

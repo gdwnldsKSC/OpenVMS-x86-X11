@@ -1,3 +1,14 @@
+2006-04-01  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2.
+
+2006-02-03  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* xkbevd.man: 
+	Bug #5802 <https://bugs.freedesktop.org/show_bug.cgi?id=5802>
+	Wrong name in .TH line in xkbevd man page (Masatake YAMATO)
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

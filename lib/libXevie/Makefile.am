@@ -1,4 +1,4 @@
-# $Id: Makefile.am,v 1.3 2005/10/13 04:22:14 alanc Exp $
+# $Id: $
 
 AM_CFLAGS = $(XEVIE_CFLAGS) $(X_CFLAGS)
 

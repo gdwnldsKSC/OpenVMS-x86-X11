@@ -30,13 +30,14 @@
 #ifndef _S3_H
 #define _S3_H
 
+#include <string.h>
+
 #include "xf86.h"
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
 #include "xf86RamDac.h"
 #include "xaa.h"
 #include "vbe.h"
-#include "xf86_ansic.h"
 #include "vgaHW.h"
 
 
@@ -163,10 +164,10 @@ typedef struct _S3Rec {
 
 
 #define DRIVER_NAME     "s3"
-#define DRIVER_VERSION  "0.3.5"
+#define DRIVER_VERSION  "0.4.1"
 #define VERSION_MAJOR   0
-#define VERSION_MINOR   3
-#define PATCHLEVEL      5
+#define VERSION_MINOR   4
+#define PATCHLEVEL      1
 #define S3_VERSION     ((VERSION_MAJOR << 24) | \
                         (VERSION_MINOR << 16) | PATCHLEVEL)
 

@@ -27,6 +27,8 @@
 
 libmandir = $(LIB_MAN_DIR)
 
+LIB_MAN_DIR_SUFFIX = $(LIB_MAN_DIR:@mandir@/man%=%)
+
 libman_PRE = Xevie.man
 
 libman_DATA = $(libman_PRE:man=@LIB_MAN_SUFFIX@) \
@@ -67,5 +69,5 @@ Xevie_shadows =                             \
 shadows.DONE:
 	-rm -f $(Xevie_shadows:=.@LIB_MAN_SUFFIX@)
 	(for i in $(Xevie_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/Xevie.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/Xevie.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)

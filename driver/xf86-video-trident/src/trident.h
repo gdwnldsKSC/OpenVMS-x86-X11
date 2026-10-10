@@ -27,6 +27,11 @@
 #ifndef _TRIDENT_H_
 #define _TRIDENT_H_
 
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+
+#include "exa.h"
 #include "xf86Cursor.h"
 #include "xaa.h"
 #include "xf86RamDac.h"
@@ -40,12 +45,14 @@
 #include "xf86Pci.h"
 #include "vbe.h"
 
+#define PCI_CHIP_2200		0x2200
+
 typedef struct {
 	unsigned char tridentRegs3x4[0x100];
 	unsigned char tridentRegs3CE[0x100];
 	unsigned char tridentRegs3C4[0x100];
 	unsigned char tridentRegsDAC[0x01];
-        unsigned char tridentRegsClock[0x03];
+        unsigned char tridentRegsClock[0x05];
 	unsigned char DacRegs[0x300];
 } TRIDENTRegRec, *TRIDENTRegPtr;
 
@@ -57,6 +64,8 @@ typedef struct {
     pciVideoPtr		PciInfo;
     PCITAG		PciTag;
     EntityInfoPtr	pEnt;
+    ExaDriverPtr	EXADriverPtr;
+    int			useEXA;
     int			Chipset;
     int			DACtype;
     int			RamDac;
@@ -223,8 +232,11 @@ void TridentSave(ScrnInfoPtr pScrn, TRIDENTRegPtr tridentReg);
 Bool TridentInit(ScrnInfoPtr pScrn, DisplayModePtr mode);
 Bool TridentAccelInit(ScreenPtr pScreen);
 Bool XPAccelInit(ScreenPtr pScreen);
+Bool XP4XaaInit(ScreenPtr pScreen);
+Bool XP4ExaInit(ScreenPtr pScreen);
 Bool ImageAccelInit(ScreenPtr pScreen);
-Bool BladeAccelInit(ScreenPtr pScreen);
+Bool BladeXaaInit(ScreenPtr pScreen);
+Bool BladeExaInit(ScreenPtr pScreen);
 Bool TridentHWCursorInit(ScreenPtr pScreen);
 int TridentFindMode(int xres, int yres, int depth);
 void TGUISetClock(ScrnInfoPtr pScrn, int clock, unsigned char *a, unsigned char *b);
@@ -305,7 +317,8 @@ typedef enum {
     CYBERBLADEE4,
     BLADEXP,
     CYBERBLADEXPAI1,
-    CYBERBLADEXP4
+    CYBERBLADEXP4,
+    XP5
 } TRIDENTType;
 
 #define UseMMIO		(pTrident->NoMMIO == FALSE)
@@ -336,6 +349,7 @@ typedef enum {
 			 (pTrident->Chipset == BLADE3D) || \
 			 (pTrident->Chipset == CYBERBLADEXPAI1) || \
 			 (pTrident->Chipset == CYBERBLADEXP4) || \
+			 (pTrident->Chipset == XP5) || \
 			 (pTrident->Chipset == BLADEXP))
 
 /*

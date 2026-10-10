@@ -1,5 +1,5 @@
 .\" $Xorg: XtCreateSR.man,v 1.3 2000/08/17 19:42:00 cpqbld Exp $
-.\" $XdotOrg: $
+.\" $XdotOrg: lib/Xt/man/XtCreateSelectionRequest.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright (c) 1993, 1994  X Consortium
 .\" 

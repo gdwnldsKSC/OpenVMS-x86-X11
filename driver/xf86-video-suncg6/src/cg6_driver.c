@@ -26,9 +26,10 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Version.h"
 #include "mipointer.h"
 #include "mibstore.h"
@@ -61,11 +62,11 @@ static ModeStatus CG6ValidMode(int scrnIndex, DisplayModePtr mode,
 
 void CG6Sync(ScrnInfoPtr pScrn);
 
-#define VERSION 4000
+#define CG6_VERSION 4000
 #define CG6_NAME "SUNCG6"
 #define CG6_DRIVER_NAME "suncg6"
 #define CG6_MAJOR_VERSION 1
-#define CG6_MINOR_VERSION 0
+#define CG6_MINOR_VERSION 1
 #define CG6_PATCHLEVEL 0
 
 /* 
@@ -77,7 +78,7 @@ void CG6Sync(ScrnInfoPtr pScrn);
  */
 
 _X_EXPORT DriverRec SUNCG6 = {
-    VERSION,
+    CG6_VERSION,
     CG6_DRIVER_NAME,
     CG6Identify,
     CG6Probe,
@@ -260,7 +261,7 @@ CG6Probe(DriverPtr drv, int flags)
 	    pScrn = xf86AllocateScreen(drv, 0);
 
 	    /* Fill in what we can of the ScrnInfoRec */
-	    pScrn->driverVersion = VERSION;
+	    pScrn->driverVersion = CG6_VERSION;
 	    pScrn->driverName	 = CG6_DRIVER_NAME;
 	    pScrn->name		 = CG6_NAME;
 	    pScrn->Probe	 = CG6Probe;

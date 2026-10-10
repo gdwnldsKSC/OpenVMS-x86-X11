@@ -63,61 +63,59 @@ SOFTWARE.
 extern Status _XiEventToWire();
 
 Status
-XSendExtensionEvent (dpy, dev, dest, prop, count, list, event)
-    register Display 	*dpy;
-    XDevice 		*dev;
-    Window 		dest;
-    Bool		prop;
-    int			count;
-    XEventClass		*list;
-    XEvent		*event;
-    {       
-    int				num_events;
-    int				ev_size;
-    xSendExtensionEventReq 	*req;
-    xEvent 			*ev;
-    register Status 		(**fp)();
-    Status 			status;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+XSendExtensionEvent(dpy, dev, dest, prop, count, list, event)
+    register Display *dpy;
+    XDevice *dev;
+    Window dest;
+    Bool prop;
+    int count;
+    XEventClass *list;
+    XEvent *event;
+{
+    int num_events;
+    int ev_size;
+    xSendExtensionEventReq *req;
+    xEvent *ev;
+    register Status(**fp) ();
+    Status status;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return (NoSuchExtension);
 
     /* call through display to find proper conversion routine */
 
     fp = &dpy->wire_vec[event->type & 0177];
-    if (*fp == NULL) 
+    if (*fp == NULL)
 	*fp = _XiEventToWire;
-    status = (**fp)(dpy, event, &ev, &num_events);
+    status = (**fp) (dpy, event, &ev, &num_events);
 
-    if (status) 
-	{
-	GetReq(SendExtensionEvent,req);		
-        req->reqType = info->codes->major_opcode;
+    if (status) {
+	GetReq(SendExtensionEvent, req);
+	req->reqType = info->codes->major_opcode;
 	req->ReqType = X_SendExtensionEvent;
 	req->deviceid = dev->device_id;
 	req->destination = dest;
 	req->propagate = prop;
 	req->count = count;
 	req->num_events = num_events;
-	ev_size = num_events * sizeof (xEvent);
+	ev_size = num_events * sizeof(xEvent);
 	req->length += (count + (ev_size >> 2));
 
 	/* note: Data is a macro that uses its arguments multiple
-           times, so "count" is changed in a separate assignment
-           statement.  Any extra events must be sent before the event
-	   list, in order to ensure quad alignment. */
+	 * times, so "count" is changed in a separate assignment
+	 * statement.  Any extra events must be sent before the event
+	 * list, in order to ensure quad alignment. */
 
-	Data (dpy, (char *) ev, ev_size);
+	Data(dpy, (char *)ev, ev_size);
 
 	count <<= 2;
-	Data32 (dpy, (long *) list, count);
-	XFree ((char *)ev);
-	}
+	Data32(dpy, (long *)list, count);
+	XFree((char *)ev);
+    }
 
     UnlockDisplay(dpy);
     SyncHandle();
     return (status);
-    }
-
+}

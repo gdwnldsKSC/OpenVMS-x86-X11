@@ -1,3 +1,20 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.1
+
+2006-03-20  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* Makefile.am:
+	Bug #6243: Fix build on Cygwin, and when srcdir != objdir.  (Yaakov
+	Selkowitz)
+
+2006-01-12  Adam Jackson  <ajax@freedesktop.org>
+
+	* Wraphelp.c:
+	static -> static const
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

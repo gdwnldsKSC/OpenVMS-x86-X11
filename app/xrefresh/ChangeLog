@@ -1,3 +1,14 @@
+2006-04-01  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2.
+
+2006-03-09  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* xrefresh.c: 
+	Replace custom copystring() with standard strdup()
+	(Also should clear Coverity warning #6827 against copystring)
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

@@ -44,7 +44,6 @@
 #include "xf86Resources.h"
 
 /* All drivers need this */
-#include "xf86_ansic.h"
 
 #include "compiler.h"
 
@@ -144,6 +143,16 @@ static void mga_initialize_bios_values( MGAPtr pMga,
 
 	bios->pll_ref_freq = 14318;
 	bios->mem_clock = 50000;
+	bios->host_interface = MGA_HOST_PCI;
+	break;
+
+    case PCI_CHIP_MGAG200_SE_A_PCI:
+    case PCI_CHIP_MGAG200_SE_B_PCI:
+	bios->system.max_freq = 114000;
+	bios->system.min_freq = 50000;
+	bios->pixel.max_freq  = 114000;
+	bios->pll_ref_freq = 27050;
+	bios->mem_clock = 45000;
 	bios->host_interface = MGA_HOST_PCI;
 	break;
 

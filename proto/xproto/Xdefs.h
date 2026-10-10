@@ -98,7 +98,7 @@ typedef CARD32 FSID;
 
 typedef FSID AccContext;
 
-/* OS independant time value 
+/* OS independent time value 
    XXX Should probably go in Xos.h */
 typedef struct timeval **OSTimePtr;
 

@@ -229,7 +229,7 @@ LintLibReferences(varname,libname,libsource)
  * InstallSharedLibrary - generate rules to install the shared library.
  * NOTE: file must be executable, hence "INSTBINFLAGS"
  */
-#ifndef FreeBSDArchitecture
+#if !defined(FreeBSDArchitecture) || defined(DragonFlyArchitecture)
 INSTALLMINORREV = true
 #else
 INSTALLMINORREV = false

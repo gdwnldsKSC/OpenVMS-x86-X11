@@ -37,7 +37,7 @@ in this Software without prior written authorization from the X Consortium.
 #define ScreenSaverCycleMask	0x00000002
 
 #define ScreenSaverMajorVersion	1
-#define ScreenSaverMinorVersion	0
+#define ScreenSaverMinorVersion	1
 
 #define ScreenSaverOff		0
 #define ScreenSaverOn		1

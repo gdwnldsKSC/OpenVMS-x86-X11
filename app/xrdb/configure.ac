@@ -22,7 +22,7 @@ dnl
 dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
-AC_INIT(xrdb,[1.0.1], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xrdb)
+AC_INIT(xrdb,[1.0.2], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xrdb)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
@@ -33,6 +33,35 @@ AC_PROG_INSTALL
 
 AC_CHECK_FUNC([mkstemp], 
    AC_DEFINE(HAS_MKSTEMP,1,[Define to 1 if you have the `mkstemp' function.]))
+
+# Find MAXHOSTNAMELEN definition
+# Common hidey holes:
+#  BSD & Linux - <sys/param.h>
+#  Solaris - <netdb.h>
+
+AC_CHECK_DECL([MAXHOSTNAMELEN],[FOUND_MAXHOSTNAMELEN=yes])
+
+if test x$FOUND_MAXHOSTNAMELEN != xyes ; then
+	AC_MSG_CHECKING([for header that defines MAXHOSTNAMELEN])
+
+	FOUND_MAXHOSTNAMELEN='not found'
+
+	AC_COMPILE_IFELSE(
+	    AC_LANG_PROGRAM([#include <sys/param.h>],
+			    [int h = MAXHOSTNAMELEN;]),
+	    [FOUND_MAXHOSTNAMELEN='sys/param.h'
+	     AC_DEFINE(NEED_SYS_PARAM_H,1,
+	       [Define to 1 if you need <sys/param.h> to define MAXHOSTNAMELEN])])
+
+	AC_COMPILE_IFELSE(
+	    AC_LANG_PROGRAM([#include <netdb.h>],
+			    [int h = MAXHOSTNAMELEN;]),
+	    [FOUND_MAXHOSTNAMELEN='netdb.h'
+	     AC_DEFINE(NEED_NETDB_H,1,
+	       [Define to 1 if you need <netdb.h> to define MAXHOSTNAMELEN])])
+
+	AC_MSG_RESULT([$FOUND_MAXHOSTNAMELEN])
+fi
 
 # xrdb needs to know where to find cpp at runtime - previously set as CppCmd
 # in Imake config files for each OS

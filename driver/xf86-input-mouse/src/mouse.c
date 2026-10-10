@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/mouse/mouse.c,v 1.8 2005/06/25 21:17:02 ajax Exp $ */
+/* $XdotOrg: driver/xf86-input-mouse/src/mouse.c,v 1.27 2006/04/07 17:59:54 ajax Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/mouse/mouse.c,v 1.79 2003/11/03 05:11:48 tsi Exp $ */
 /*
  *
@@ -49,6 +49,9 @@
 #include "config.h"
 #endif
 
+#include <math.h>
+#include <string.h>
+#include <stdio.h>
 #define NEED_EVENTS
 #include <X11/X.h>
 #include <X11/Xproto.h>
@@ -68,7 +71,6 @@
 #include "xf86_OSproc.h"
 #include "xf86OSmouse.h"
 #define NEED_XF86_TYPES	/* for xisb.h when !XFree86LOADER */
-#include "xf86_ansic.h"
 #include "compiler.h"
 
 #include "xisb.h"
@@ -538,6 +540,7 @@ MouseCommonOptions(InputInfoPtr pInfo)
 		}
 	    }
 	}
+	xfree(s);
     }
 
     s = xf86SetStrOption(pInfo->options, "ZAxisMapping", "4 5 6 7");
@@ -586,6 +589,7 @@ MouseCommonOptions(InputInfoPtr pInfo)
 	    xf86Msg(X_WARNING, "%s: Invalid ZAxisMapping value: \"%s\"\n",
 		    pInfo->name, s);
 	}
+	xfree(s);
     }
     if (xf86SetBoolOption(pInfo->options, "EmulateWheel", FALSE)) {
 	Bool yFromConfig = FALSE;
@@ -641,6 +645,7 @@ MouseCommonOptions(InputInfoPtr pInfo)
 		xf86Msg(X_CONFIG, "%s: XAxisMapping: %s\n", pInfo->name, msg);
 		xfree(msg);
 	    }
+	    xfree(s);
 	}
 	s = xf86SetStrOption(pInfo->options, "YAxisMapping", NULL);
 	if (s) {
@@ -666,6 +671,7 @@ MouseCommonOptions(InputInfoPtr pInfo)
 		xf86Msg(X_CONFIG, "%s: YAxisMapping: %s\n", pInfo->name, msg);
 		xfree(msg);
 	    }
+	    xfree(s);
 	}
 	if (!yFromConfig) {
 	    pMse->negativeY = 4;
@@ -686,8 +692,9 @@ MouseCommonOptions(InputInfoPtr pInfo)
     s = xf86SetStrOption(pInfo->options, "ButtonMapping", NULL);
     if (s) {
        int b, n = 0;
+       char *s1 = s;
        /* keep getting numbers which are buttons */
-       while (s && n < MSE_MAXBUTTONS && (b = strtol(s, &s, 10)) != 0) {
+       while (s1 && n < MSE_MAXBUTTONS && (b = strtol(s1, &s1, 10)) != 0) {
 	   /* check sanity for a button */
 	   if (b < 0 || b > MSE_MAXBUTTONS) {
 	       xf86Msg(X_WARNING,
@@ -697,6 +704,7 @@ MouseCommonOptions(InputInfoPtr pInfo)
 	   pMse->buttonMap[n++] = 1 << (b-1);
 	   if (b > pMse->buttons) pMse->buttons = b;
        }
+       xfree(s);
     }
     /* get maximum of mapped buttons */
     for (i = pMse->buttons-1; i >= 0; i--) {
@@ -734,6 +742,7 @@ MouseCommonOptions(InputInfoPtr pInfo)
             xf86Msg(X_CONFIG, "%s: DoubleClickButtons: %s\n", pInfo->name, msg);
             xfree(msg);
         }
+	xfree(s);
     }
 }
 /*
@@ -2084,6 +2093,9 @@ MouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
 
     pMse = pInfo->private;
 
+    change = buttons ^ pMse->lastMappedButtons;
+    pMse->lastMappedButtons = buttons;
+
     /* Do single button double click */
     if (pMse->doubleClickSourceButtonMask) {
         if (buttons & pMse->doubleClickSourceButtonMask) {
@@ -2108,13 +2120,12 @@ MouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
          * processed as a normal button as well.
          */
         buttons &= ~(pMse->doubleClickSourceButtonMask);
+        change  &= ~(pMse->doubleClickSourceButtonMask);
     }
 
     if (pMse->emulateWheel) {
 	/* Emulate wheel button handling */
 	wheelButtonMask = 1 << (pMse->wheelButton - 1);
-
-	change = buttons ^ pMse->lastMappedButtons;
 
 	if (change & wheelButtonMask) {
 	    if (buttons & wheelButtonMask) {
@@ -2203,6 +2214,7 @@ MouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
 	 * the timeout code.
 	 */
 	buttons &= ~wheelButtonMask;
+	change  &= ~wheelButtonMask;
     }
 
     if (pMse->emulate3ButtonsSoft && pMse->emulate3Pending && (dx || dy))
@@ -2211,9 +2223,7 @@ MouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
     if (dx || dy)
 	xf86PostMotionEvent(pInfo->dev, 0, 0, 2, dx, dy);
 
-    if (buttons != pMse->lastMappedButtons) {
-
-	change = buttons ^ pMse->lastMappedButtons;
+    if (change) {
 
 	/*
 	 * adjust buttons state for drag locks!
@@ -2314,7 +2324,6 @@ MouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
 				(buttons & (1 << (id - 1))), 0, 0);
 	}
 
-        pMse->lastMappedButtons = buttons;
     }
 }
 
@@ -3126,7 +3135,6 @@ autoOSProtocol(InputInfoPtr pInfo, int *protoPara)
 	    }
 	}
     }
-#ifdef PNP_MOUSE
     if (!name) {
 	/* A PnP serial mouse? */
 	protocolID = MouseGetPnpProtocol(pInfo);
@@ -3136,7 +3144,6 @@ autoOSProtocol(InputInfoPtr pInfo, int *protoPara)
 		    pInfo->name, name);
 	}
     }
-#endif
     if (!name && HAVE_GUESS_PROTOCOL && osInfo->GuessProtocol) {
 	name = osInfo->GuessProtocol(pInfo, 0);
 	if (name)
@@ -3721,7 +3728,7 @@ static XF86ModuleVersionInfo xf86MouseVersionRec =
     MODINFOSTRING1,
     MODINFOSTRING2,
     XORG_VERSION_CURRENT,
-    1, 0, 3,
+    1, 1, 0,
     ABI_CLASS_XINPUT,
     ABI_XINPUT_VERSION,
     MOD_CLASS_XINPUT,

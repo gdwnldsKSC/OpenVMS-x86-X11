@@ -1,3 +1,14 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.1
+
+2006-04-10  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* src/error.c: 
+	Coverity #664: Free memory allocated by EXTRACT_STRING in
+	_IceDefaultErrorHandler after we're done fprintf()'ing it.
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

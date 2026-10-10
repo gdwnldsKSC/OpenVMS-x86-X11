@@ -66,7 +66,7 @@
  * insure compliance.
  */
 
-static CARD32 skb[8][64] = {
+static const CARD32 skb[8][64] = {
 	/* for C bits (numbered as per FIPS 46) 1 2 3 4 5 6 */
 	{ 0x00000000,0x00000010,0x20000000,0x20000010,
 	  0x00010000,0x00010010,0x20010000,0x20010010,
@@ -206,7 +206,7 @@ static CARD32 skb[8][64] = {
 };
 
 
-static CARD32 SPtrans[8][64] = {
+static const CARD32 SPtrans[8][64] = {
 	/* nibble 0 */
 	{ 0x00410100, 0x00010000, 0x40400000, 0x40410100,
 	  0x00400000, 0x40010100, 0x40010000, 0x40400000,
@@ -372,7 +372,7 @@ static CARD32 SPtrans[8][64] = {
 #define HPERM_OP(a,t,n,m) ((t)=((((a)<<(16-(n)))^(a))&(m)),\
 	(a)=(a)^(t)^(t>>(16-(n))))\
 
-static char shifts2[16] = {0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,0};
+static const char shifts2[16] = {0,0,1,1,1,1,1,1,0,1,1,1,1,1,1,0};
 
 void _XdmcpAuthSetup(auth_cblock key, auth_wrapper_schedule schedule)
 {

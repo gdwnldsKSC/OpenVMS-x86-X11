@@ -36,6 +36,7 @@
 #include "xf86DDC.h"
 #include "xf86xv.h"
 #include "vgaHW.h"
+#include <string.h>
 
 /* Supported chipsets */
 typedef enum {

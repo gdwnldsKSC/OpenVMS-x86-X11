@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-input-keyboard],
-        1.0.1.3,
+        1.1.0,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-input-keyboard)
 
@@ -88,7 +88,7 @@ XORG_DRIVER_CHECK_EXT(XINPUT, inputproto)
 XORG_DRIVER_CHECK_EXT(XKB, kbproto)
 
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XORG, xorg-server xproto $REQUIRED_MODULES)
+PKG_CHECK_MODULES(XORG, [xorg-server >= 1.0.99.901] xproto $REQUIRED_MODULES)
 sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 
 CFLAGS="$CFLAGS $XORG_CFLAGS "' -I$(top_srcdir)/src'

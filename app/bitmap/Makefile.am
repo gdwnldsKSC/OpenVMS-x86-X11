@@ -100,6 +100,8 @@ dist_bitmap_DATA =	\
 	Term		\
 	Up
 
+APP_MAN_DIR_SUFFIX = $(APP_MAN_DIR:@mandir@/man%=%)
+
 appmandir = $(APP_MAN_DIR)
 
 appman_DATA = $(appman_PRE:man=@APP_MAN_SUFFIX@) \
@@ -139,5 +141,5 @@ man_shadows = atobm bmtoa
 shadows.DONE:
 	-rm -f $(man_shadows:=.@APP_MAN_SUFFIX@)
 	(for i in $(man_shadows:=.@APP_MAN_SUFFIX@) ; do \
-	 echo .so man$(APP_MAN_SUFFIX)/bitmap.$(APP_MAN_SUFFIX) > $$i; \
+	 echo .so man$(APP_MAN_DIR_SUFFIX)/bitmap.$(APP_MAN_SUFFIX) > $$i; \
 	 done)

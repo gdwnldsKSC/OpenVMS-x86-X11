@@ -1,3 +1,4 @@
+/* $XdotOrg: app/xfs/difs/cache.c,v 1.3 2006/03/14 03:41:28 alanc Exp $ */
 /* $Xorg: cache.c,v 1.4 2001/02/09 02:05:42 xorgcvs Exp $ */
 /*
 Copyright 1987, 1998  The Open Group
@@ -157,7 +158,7 @@ rebuild_cache(CachePtr cache)
     if (!tails)
 	return;
     entries = (CacheEntryPtr *) fsalloc(j * sizeof(CacheEntryPtr));
-    if (entries) {
+    if (!entries) {
 	DEALLOCATE_LOCAL(tails);
 	return;
     }

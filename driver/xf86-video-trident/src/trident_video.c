@@ -30,7 +30,6 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
-#include "xf86_ansic.h"
 #include "compiler.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -63,7 +62,8 @@ static void TRIDENTQueryBestSize(ScrnInfoPtr, Bool,
 	short, short, short, short, unsigned int *, unsigned int *, pointer);
 static int TRIDENTPutImage( ScrnInfoPtr, 
 	short, short, short, short, short, short, short, short,
-	int, unsigned char*, short, short, Bool, RegionPtr, pointer);
+	int, unsigned char*, short, short, Bool, RegionPtr, pointer,
+	DrawablePtr);
 static int TRIDENTQueryImageAttributes(ScrnInfoPtr, 
 	int, unsigned short *, unsigned short *,  int *, int *);
 static void TRIDENTVideoTimerCallback(ScrnInfoPtr pScrn, Time time);
@@ -787,7 +787,8 @@ TRIDENTPutImage(
   int id, unsigned char* buf, 
   short width, short height, 
   Bool sync,
-  RegionPtr clipBoxes, pointer data
+  RegionPtr clipBoxes, pointer data,
+  DrawablePtr pDraw
 ){
    TRIDENTPortPrivPtr pPriv = (TRIDENTPortPrivPtr)data;
    TRIDENTPtr pTrident = TRIDENTPTR(pScrn);
@@ -1187,6 +1188,7 @@ tridentFixFrame(ScrnInfoPtr pScrn, int *fixFrame)
     int h_off = 0;
     int v_off = 0;
     unsigned char CRTC[0x11];
+    unsigned char hcenter, vcenter;
     Bool isShadow;
     unsigned char shadow = 0;
 
@@ -1213,6 +1215,10 @@ tridentFixFrame(ScrnInfoPtr pScrn, int *fixFrame)
     CRTC[0x7] = INB(vgaIOBase + 5);
     OUTB(vgaIOBase + 4, 0x10);
     CRTC[0x10] = INB(vgaIOBase + 5);
+    OUTB(0x3CE, HorStretch);
+    hcenter = INB(0x3CF);
+    OUTB(0x3CE, VertStretch);
+    vcenter = INB(0x3CF);
 
     HTotal = CRTC[0] << 3;
     VTotal = CRTC[6] 
@@ -1227,15 +1233,23 @@ tridentFixFrame(ScrnInfoPtr pScrn, int *fixFrame)
     if (isShadow) {
 	SHADOW_RESTORE(shadow);
 	if (pTrident->lcdMode != 0xff) {
+	    if (hcenter & 0x80) {
 	    h_off = (LCD[pTrident->lcdMode].display_x 
 		     - pScrn->currentMode->HDisplay) >> 1;
+		switch (pTrident->Chipset) {
+		    case BLADEXP:
+			h_off -= 5;
+		}
+	    }
+	    if (vcenter & 0x80) {
 	    v_off = (LCD[pTrident->lcdMode].display_y 
 		     - pScrn->currentMode->VDisplay) >> 1;
 	}
     } 
+    } 
 
-    pTrident->hsync = (HTotal - HSyncStart) + 23 + h_off;
-    pTrident->vsync = (VTotal - VSyncStart) - 2 + v_off;
+    pTrident->hsync = HTotal - HSyncStart + 23 + h_off;
+    pTrident->vsync = VTotal - VSyncStart - 2 + v_off;
     pTrident->hsync_rskew = 0;
     pTrident->vsync_bskew = 0;
   

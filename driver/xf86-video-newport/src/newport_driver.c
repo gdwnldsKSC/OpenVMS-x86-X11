@@ -56,12 +56,15 @@
 #include "xf86xv.h"
 #include <X11/extensions/Xv.h>
 
-#define VERSION			4000
+#include <string.h>
+#include <stdio.h>
+
+#define NEWPORT_VERSION		4000
 #define NEWPORT_NAME		"NEWPORT"
 #define NEWPORT_DRIVER_NAME	"newport"
 #define NEWPORT_MAJOR_VERSION	0
-#define NEWPORT_MINOR_VERSION	1	
-#define NEWPORT_PATCHLEVEL	4
+#define NEWPORT_MINOR_VERSION	2
+#define NEWPORT_PATCHLEVEL	0
 
 
 /* Prototypes ------------------------------------------------------- */
@@ -85,7 +88,7 @@ static Bool NewportProbeCardInfo(ScrnInfoPtr pScrn);
 /* ------------------------------------------------------------------ */
 
 _X_EXPORT DriverRec NEWPORT = {
-        VERSION,
+        NEWPORT_VERSION,
 	NEWPORT_DRIVER_NAME,
         NewportIdentify,
         NewportProbe,
@@ -280,7 +283,7 @@ NewportProbe(DriverPtr drv, int flags)
 					pScrn = xf86ConfigIsaEntity(pScrn, 0, entity, NULL, range, \
 							NULL, NULL, NULL, NULL);
 					/* Allocate a ScrnInfoRec */
-					pScrn->driverVersion = VERSION;
+					pScrn->driverVersion = NEWPORT_VERSION;
 					pScrn->driverName    = NEWPORT_DRIVER_NAME;
 					pScrn->name          = NEWPORT_NAME;
 					pScrn->Probe         = NewportProbe;

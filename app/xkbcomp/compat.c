@@ -246,7 +246,7 @@ unsigned		merge;
 
     merge= newGC->merge;
     gc= &info->groupCompat[group];
-    if ((newGC->fileID<1)||
+    if ((newGC->fileID<0)||
 	((gc->real_mods==newGC->real_mods)&&(gc->vmods==newGC->vmods))) {
 	return True;
     }

@@ -1,5 +1,5 @@
 /* $Xorg: imakemdep.h,v 1.6 2001/02/09 02:03:16 xorgcvs Exp $ */
-/* $XdotOrg: xc/config/imake/imakemdep.h,v 1.9 2005/03/02 11:20:29 gisburn Exp $ */
+/* $XdotOrg: util/imake/imakemdep.h,v 1.12 2005/11/08 06:33:24 jkj Exp $ */
 /*
 
 Copyright (c) 1993, 1994, 1998  The Open Group

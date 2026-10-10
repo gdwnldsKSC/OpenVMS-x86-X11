@@ -1,7 +1,7 @@
 .\" Record Extension Protocol, v1.13
 .\" Use tbl, -ms and macros.t
 .\" $Xorg: record.ms,v 1.3 2000/08/17 19:42:36 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/Xext/record.ms,v 1.2 2004/04/23 18:42:18 eich Exp $
+.\" $XdotOrg: doc/xorg-docs/specs/Xext/record.ms,v 1.3 2004/09/03 16:18:21 kem Exp $
 .\" -----------------------------------------------
 .de Ip
 .IP \(bu 3

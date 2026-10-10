@@ -1063,8 +1063,8 @@ typedef struct _xEvent {
 	    BYTE bpad;
         } createNotify;
 /*
- * The event feilds in the structures for DestroyNotify, UnmapNotify,
- * MapNotify, ReparentNotify, ConfigureNotify, CirclulateNotify, GravityNotify,
+ * The event fields in the structures for DestroyNotify, UnmapNotify,
+ * MapNotify, ReparentNotify, ConfigureNotify, CirculateNotify, GravityNotify,
  * must be at the same offset because server internal code is depending upon
  * this to patch up the events before they are delivered.
  * Also note that MapRequest, ConfigureRequest and CirculateRequest have
@@ -1126,7 +1126,7 @@ typedef struct _xEvent {
 	} resizeRequest;
 	struct {
 /* The event field in the circulate record is really the parent when this
-   is used as a CirculateRequest insteaad of a CircluateNotify */
+   is used as a CirculateRequest instead of a CirculateNotify */
             CARD32 pad00 B32;
 	    Window event B32, window B32, parent B32;
 	    BYTE place;			/* Top or Bottom */
@@ -1718,7 +1718,7 @@ typedef struct {
     CARD32 planeMask B32;
 } xGetImageReq;    
 
-/* the folloiwng used by PolyText8 and PolyText16 */
+/* the following used by PolyText8 and PolyText16 */
 
 typedef struct {
     CARD8 reqType;

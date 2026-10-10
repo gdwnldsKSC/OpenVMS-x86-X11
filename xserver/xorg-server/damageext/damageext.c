@@ -1,5 +1,5 @@
 /*
- * $Id: damageext.c,v 1.6 2005/07/03 07:37:35 daniels Exp $
+ * $Id: damageext.c,v 1.5 2005/07/03 07:01:17 daniels Exp $
  *
  * Copyright © 2002 Keith Packard
  *
@@ -298,7 +298,7 @@ ProcDamageDispatch (ClientPtr client)
     REQUEST(xDamageReq);
     DamageClientPtr pDamageClient = GetDamageClient (client);
 
-    if (pDamageClient->major_version > NUM_VERSION_REQUESTS)
+    if (pDamageClient->major_version >= NUM_VERSION_REQUESTS)
 	return BadRequest;
     if (stuff->damageReqType > version_requests[pDamageClient->major_version])
 	return BadRequest;

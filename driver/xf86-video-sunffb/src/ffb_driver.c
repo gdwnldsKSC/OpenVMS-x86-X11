@@ -26,9 +26,10 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Version.h"
 #include "mipointer.h"
 #include "mibstore.h"
@@ -66,12 +67,12 @@ extern void FFB_InitDGA(ScreenPtr pScreen);
 
 void FFBSync(ScrnInfoPtr pScrn);
 
-#define VERSION 4000
+#define FFB_VERSION 4000
 #define FFB_NAME "SUNFFB"
 #define FFB_DRIVER_NAME "sunffb"
 #define FFB_MAJOR_VERSION 1
-#define FFB_MINOR_VERSION 0
-#define FFB_PATCHLEVEL 1
+#define FFB_MINOR_VERSION 1
+#define FFB_PATCHLEVEL 0
 
 /* 
  * This contains the functions needed by the server after loading the driver
@@ -82,7 +83,7 @@ void FFBSync(ScrnInfoPtr pScrn);
  */
 
 _X_EXPORT DriverRec SUNFFB = {
-    VERSION,
+    FFB_VERSION,
     FFB_DRIVER_NAME,
     FFBIdentify,
     FFBProbe,
@@ -265,7 +266,7 @@ FFBProbe(DriverPtr drv, int flags)
 	    pScrn = xf86AllocateScreen(drv, 0);
 
 	    /* Fill in what we can of the ScrnInfoRec */
-	    pScrn->driverVersion = VERSION;
+	    pScrn->driverVersion = FFB_VERSION;
 	    pScrn->driverName	 = FFB_DRIVER_NAME;
 	    pScrn->name		 = FFB_NAME;
 	    pScrn->Probe	 = FFBProbe;
@@ -411,11 +412,6 @@ FFBPreInit(ScrnInfoPtr pScrn, int flags)
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Acceleration disabled\n");
     }
         
-    if (xf86LoadSubModule(pScrn, "xf8_32wid") == NULL) {
-	FFBFreeRec(pScrn);
-	return FALSE;
-    }
-
     if (xf86LoadSubModule(pScrn, "fb") == NULL) {
 	FFBFreeRec(pScrn);
 	return FALSE;

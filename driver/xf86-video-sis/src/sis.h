@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis.h,v 1.68 2006/04/08 01:47:22 ajax Exp $ */
 /*
  * Main global data and definitions
  *
@@ -35,6 +35,11 @@
 #ifndef _SIS_H_
 #define _SIS_H_
 
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <setjmp.h>
+
 #define SISDRIVERVERSIONYEAR    5
 #define SISDRIVERVERSIONMONTH   9
 #define SISDRIVERVERSIONDAY     20
@@ -65,7 +70,6 @@
 #include "siscp.H"
 #endif
 
-#include "xf86_ansic.h"
 #include "compiler.h"
 #include "xf86Pci.h"
 #include "xf86Priv.h"
@@ -107,11 +111,12 @@
 #define SIS_DRIVER_NAME         "sis"
 #define SIS_MAJOR_VERSION       0
 #ifdef SISISXORG6899900
-#define SIS_MINOR_VERSION       8	/* DRI changes */
+#define SIS_MINOR_VERSION       9	/* DRI changes */
+#define SIS_PATCHLEVEL		1
 #else
 #define SIS_MINOR_VERSION       7
-#endif
 #define SIS_PATCHLEVEL          1
+#endif
 #define SIS_CURRENT_VERSION     ((SIS_MAJOR_VERSION << 16) | \
                                  (SIS_MINOR_VERSION << 8) | SIS_PATCHLEVEL )
 

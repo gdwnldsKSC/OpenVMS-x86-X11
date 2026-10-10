@@ -60,54 +60,51 @@ SOFTWARE.
 #include <X11/extensions/extutil.h>
 #include "XIint.h"
 
-XDevice
-*XOpenDevice(dpy, id)
-    register Display 	*dpy;
-    register XID	id;
-    {	
-    register long	rlen; /* raw length */
-    xOpenDeviceReq 	*req;
-    xOpenDeviceReply 	rep;
-    XDevice 		*dev;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+XDevice * XOpenDevice(dpy, id)
+    register Display *
+	dpy;
+    register XID
+	id;
+{
+    register long rlen;	/* raw length */
+    xOpenDeviceReq *req;
+    xOpenDeviceReply rep;
+    XDevice *dev;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return ((XDevice *) NoSuchExtension);
 
-    GetReq(OpenDevice,req);		
+    GetReq(OpenDevice, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_OpenDevice;
     req->deviceid = id;
 
-    if (! _XReply (dpy, (xReply *) &rep, 0, xFalse)) 
-	{
+    if (!_XReply(dpy, (xReply *) & rep, 0, xFalse)) {
 	UnlockDisplay(dpy);
 	SyncHandle();
 	return (XDevice *) NULL;
-	}
+    }
 
     rlen = rep.length << 2;
-    dev = (XDevice *) Xmalloc (sizeof(XDevice) + rep.num_classes * 
-	sizeof (XInputClassInfo));
-    if (dev)
-	{
-	int dlen; /* data length */
+    dev = (XDevice *) Xmalloc(sizeof(XDevice) + rep.num_classes *
+			      sizeof(XInputClassInfo));
+    if (dev) {
+	int dlen;	/* data length */
 
 	dev->device_id = req->deviceid;
 	dev->num_classes = rep.num_classes;
-	dev->classes = (XInputClassInfo *) ((char *) dev + sizeof (XDevice));
+	dev->classes = (XInputClassInfo *) ((char *)dev + sizeof(XDevice));
 	dlen = rep.num_classes * sizeof(xInputClassInfo);
-	_XRead (dpy, (char *)dev->classes, dlen);
+	_XRead(dpy, (char *)dev->classes, dlen);
 	/* could be padding that we still need to eat (yummy!) */
-	if(rlen - dlen > 0)
-	    _XEatData (dpy, (unsigned long) rlen - dlen);
-	}
-    else
-	_XEatData (dpy, (unsigned long) rlen);
+	if (rlen - dlen > 0)
+	    _XEatData(dpy, (unsigned long)rlen - dlen);
+    } else
+	_XEatData(dpy, (unsigned long)rlen);
 
-    UnlockDisplay (dpy);
+    UnlockDisplay(dpy);
     SyncHandle();
     return (dev);
-    }
-
+}

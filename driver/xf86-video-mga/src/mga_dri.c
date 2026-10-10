@@ -34,7 +34,6 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Priv.h"
 
 #include "xf86PciInfo.h"
@@ -47,8 +46,7 @@
 
 #include "miline.h"
 
-
-
+#include <errno.h>
 
 #include <inttypes.h>
 #include "mga_reg.h"
@@ -80,25 +78,9 @@ static char MGAClientDriverName[] = "mga";
 
 /* DRI buffer management
  */
-extern void Mga8DRIInitBuffers( WindowPtr pWin, RegionPtr prgn,
-				CARD32 index );
-extern void Mga8DRIMoveBuffers( WindowPtr pParent, DDXPointRec ptOldOrg,
-				RegionPtr prgnSrc, CARD32 index );
-
-extern void Mga16DRIInitBuffers( WindowPtr pWin, RegionPtr prgn,
-				 CARD32 index );
-extern void Mga16DRIMoveBuffers( WindowPtr pParent, DDXPointRec ptOldOrg,
-				 RegionPtr prgnSrc, CARD32 index );
-
-extern void Mga24DRIInitBuffers( WindowPtr pWin, RegionPtr prgn,
-				 CARD32 index );
-extern void Mga24DRIMoveBuffers( WindowPtr pParent, DDXPointRec ptOldOrg,
-				 RegionPtr prgnSrc, CARD32 index );
-
-extern void Mga32DRIInitBuffers( WindowPtr pWin, RegionPtr prgn,
-				 CARD32 index );
-extern void Mga32DRIMoveBuffers( WindowPtr pParent, DDXPointRec ptOldOrg,
-				 RegionPtr prgnSrc, CARD32 index );
+extern void mgaDRIInitBuffers( WindowPtr pWin, RegionPtr prgn, CARD32 index );
+extern void mgaDRIMoveBuffers( WindowPtr pParent, DDXPointRec ptOldOrg,
+    RegionPtr prgnSrc, CARD32 index );
 
 
 /* Initialize the visual configs that are supported by the hardware.
@@ -150,7 +132,6 @@ static Bool MGAInitVisualConfigs( ScreenPtr pScreen )
       }
 
       i = 0;
-      depth = 1;
       for ( accum = 0 ; accum <= 1 ; accum++ ) {
          for ( stencil = 0 ; stencil <= 1 ; stencil++ ) {
             for ( db = 1 ; db >= 0 ; db-- ) {
@@ -183,11 +164,7 @@ static Bool MGAInitVisualConfigs( ScreenPtr pScreen )
 	       }
                pConfigs[i].stereo		= FALSE;
                pConfigs[i].bufferSize		= 16;
-               if ( depth ) {
-                  pConfigs[i].depthSize		= 16;
-               } else {
-                  pConfigs[i].depthSize		= 0;
-	       }
+               pConfigs[i].depthSize		= 16;
                if ( stencil ) {
                   pConfigs[i].stencilSize	= 8;
                } else {
@@ -1117,20 +1094,8 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
       pDRIInfo->SwapContext = MGADRISwapContext;
    }
 
-   switch( pScrn->bitsPerPixel ) {
-   case 8:
-       pDRIInfo->InitBuffers = Mga8DRIInitBuffers;
-       pDRIInfo->MoveBuffers = Mga8DRIMoveBuffers;
-   case 16:
-       pDRIInfo->InitBuffers = Mga16DRIInitBuffers;
-       pDRIInfo->MoveBuffers = Mga16DRIMoveBuffers;
-   case 24:
-       pDRIInfo->InitBuffers = Mga24DRIInitBuffers;
-       pDRIInfo->MoveBuffers = Mga24DRIMoveBuffers;
-   case 32:
-       pDRIInfo->InitBuffers = Mga32DRIInitBuffers;
-       pDRIInfo->MoveBuffers = Mga32DRIMoveBuffers;
-   }
+   pDRIInfo->InitBuffers = mgaDRIInitBuffers;
+   pDRIInfo->MoveBuffers = mgaDRIMoveBuffers;
 
    pDRIInfo->bufferRequests = DRI_ALL_WINDOWS;
 
@@ -1257,11 +1222,13 @@ Bool MGADRIFinishScreenInit( ScreenPtr pScreen )
    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
    MGAPtr pMga = MGAPTR(pScrn);
    MGADRIServerPrivatePtr pMGADRIServer = pMga->DRIServerInfo;
-   MGADRIPtr pMGADRI = (MGADRIPtr)pMga->pDRIInfo->devPrivate;
+   MGADRIPtr pMGADRI;
    int i;
 
    if ( !pMga->pDRIInfo )
       return FALSE;
+
+   pMGADRI = (MGADRIPtr)pMga->pDRIInfo->devPrivate;
 
    pMga->pDRIInfo->driverSwapMethod = DRI_HIDE_X_CONTEXT;
 

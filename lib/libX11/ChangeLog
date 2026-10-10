@@ -1,3 +1,38 @@
+2006-02-14  Jamey Sharp  <jamey@minilop.net>
+
+	* configure.ac:
+	* modules/im/ximcp/Makefile.am:
+	* modules/lc/Utf8/Makefile.am:
+	* modules/lc/def/Makefile.am:
+	* modules/lc/gen/Makefile.am:
+	* modules/lc/xlocale/Makefile.am:
+	* modules/om/generic/Makefile.am:
+	* src/Makefile.am:
+	* src/util/Makefile.am:
+	* src/xcms/Makefile.am:
+	* src/xkb/Makefile.am:
+	* src/xlibi18n/Makefile.am:
+	Merge the X11 and BIGREQS package sets: they were used in
+	exactly the same places.
+
+2006-02-13  Jamey Sharp  <jamey@minilop.net>
+
+	* src/XlibInt.c:
+	Refactor _XFlush and _XSend code that sets dpy->synchandler to
+	_XSeqSyncFunction into a new function, _XSetSeqSyncFunction. It makes
+	the patch for XCB cleaner, but is arguably a good idea anyway.
+
+2006-02-12  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* man/Makefile.am: 
+	Bug #5628 <https://bugs.freedesktop.org/show_bug.cgi?id=5628>
+	Shadow pages not created correctly when MANDIR & MANSUFFIX don't match.
+
+2006-02-03  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* man/XSupportsLocale.man: 
+	Fix typo in .TH line
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

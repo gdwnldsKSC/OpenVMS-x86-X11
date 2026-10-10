@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/initextx.h,v 1.6 2005/09/17 23:07:17 twini Exp $ */
 /*
  * X.org/XFree86 specific supplements to init.c/init301.c
  *

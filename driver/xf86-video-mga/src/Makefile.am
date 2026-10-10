@@ -18,20 +18,6 @@
 #  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 #  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# FIXME: This is a little bit sick, but how else can you do it?
-noinst_LTLIBRARIES = libmga_storm8.la libmga_storm16.la libmga_storm24.la libmga_storm32.la
-libmga_storm8_la_SOURCES = mga_storm.c
-libmga_storm8_la_CFLAGS = @XORG_CFLAGS@ @DRI_CFLAGS@ -DPSZ=8
-
-libmga_storm16_la_SOURCES = mga_storm.c
-libmga_storm16_la_CFLAGS = @XORG_CFLAGS@ @DRI_CFLAGS@ -DPSZ=16
-
-libmga_storm24_la_SOURCES = mga_storm.c
-libmga_storm24_la_CFLAGS = @XORG_CFLAGS@ @DRI_CFLAGS@ -DPSZ=24
-
-libmga_storm32_la_SOURCES = mga_storm.c
-libmga_storm32_la_CFLAGS = @XORG_CFLAGS@ @DRI_CFLAGS@ -DPSZ=32
-
 # this is obnoxious:
 # -module lets us name the module exactly how we want
 # -avoid-version prevents gratuitous .0.0.0 version numbers on the end
@@ -61,7 +47,6 @@ mga_drv_la_SOURCES = \
          mga_halmod.c \
          mga_hwcurs.c \
          mga_macros.h \
-         mga_map.h \
          mga_maven.h \
          mga_merge.c \
          mga_merge.h \
@@ -69,7 +54,9 @@ mga_drv_la_SOURCES = \
          mga_reg.h \
          mga_sarea.h \
          mga_shadow.c \
+         mga_storm.c \
          mga_ucode.h \
+	 mga_vga.c \
          mga_video.c
 
 if DRI

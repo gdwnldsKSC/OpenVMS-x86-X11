@@ -1,3 +1,42 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/nsc_driver.c:
+	Bump to 2.8.1 for Xv changes.
+
+2006-04-07  Aaron Plattner  <aplattner@nvidia.com>
+
+	* src/nsc_gx1_video.c: (GX1PutImage):
+	* src/nsc_gx2_video.c: (GX2PutImage):
+	Add a DrawablePtr argument to the XV functions to pave the way for
+	redirected video.
+
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/durango.c:
+	* src/nsc.h:
+	* src/nsc_driver.c:
+	* src/nsc_galstub.c:
+	* src/nsc_gx1_accel.c:
+	* src/nsc_gx1_cursor.c:
+	* src/nsc_gx1_dga.c:
+	* src/nsc_gx1_driver.c:
+	* src/nsc_gx1_shadow.c:
+	* src/nsc_gx1_video.c:
+	* src/nsc_gx2_accel.c:
+	* src/nsc_gx2_cursor.c:
+	* src/nsc_gx2_dga.c:
+	* src/nsc_gx2_driver.c:
+	* src/nsc_gx2_shadow.c:
+	* src/nsc_gx2_video.c:
+	Unlibcwrap.  Bump server version requirement.  Bump to 2.8.0.
+
+2006-02-27  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* man/nsc.man: 
+	Typo fix (Nicholas Joly, XFree86 bugzilla #1658)
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

@@ -35,6 +35,8 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include "vesa.h"
 
 /* All drivers initialising the SW cursor need this */
@@ -174,7 +176,6 @@ static const char *fbSymbols[] = {
 };
 
 static const char *shadowSymbols[] = {
-    "shadowAlloc",
     "shadowInit",
     "shadowUpdatePackedWeak",
     "shadowUpdatePlanar4Weak",
@@ -787,11 +788,6 @@ VESAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if (pVesa->shadowFB && pScrn->bitsPerPixel == 4)
 	pScrn->bitsPerPixel = 8;
 
-    if (pVesa->shadowFB && (pVesa->shadowPtr =
-	shadowAlloc(pScrn->virtualX, pScrn->virtualY,
-		    pScrn->bitsPerPixel)) == NULL)
-	return (FALSE);
-
     /* save current video state */
     VESASaveRestore(pScrn, MODE_SAVE);
     pVesa->savedPal = VBESetGetPaletteData(pVesa->pVbe, FALSE, 0, 256,
@@ -836,24 +832,6 @@ VESAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 		       "Unsupported Memory Model: %d", mode->MemoryModel);
 	    return (FALSE);
 	case 0x3:	/* Planar */
-	    if (pVesa->shadowFB) {
-	        if (pScrn->depth == 1) {
-		    if (!mfbScreenInit(pScreen,
-				      pVesa->shadowPtr,
-				      pScrn->virtualX, pScrn->virtualY,
-				      pScrn->xDpi, pScrn->yDpi,
-				      pScrn->displayWidth))
-		        return FALSE;
-		} else {
-		    if (!fbScreenInit(pScreen,
-				      pVesa->shadowPtr,
-				      pScrn->virtualX, pScrn->virtualY,
-				      pScrn->xDpi, pScrn->yDpi,
-				      pScrn->displayWidth, pScrn->bitsPerPixel))
-		    return (FALSE);
-		    init_picture = 1;
-		}
-	    } else {
 		switch (pScrn->bitsPerPixel) {
 		    case 1:
 			if (!xf1bppScreenInit(pScreen, pVesa->base,
@@ -878,7 +856,6 @@ VESAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 			    return (FALSE);
 			break;
 		}
-	    }
 	    break;
 	case 0x4:	/* Packed pixel */
 	case 0x6:	/*  Direct Color */
@@ -888,7 +865,7 @@ VESAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 		case 24:
 		case 32:
 		    if (!fbScreenInit(pScreen,
-			    pVesa->shadowFB ? pVesa->shadowPtr : pVesa->base,
+				       pVesa->base,
 				       pScrn->virtualX, pScrn->virtualY,
 				       pScrn->xDpi, pScrn->yDpi,
 				       pScrn->displayWidth, pScrn->bitsPerPixel))
@@ -1027,10 +1004,6 @@ VESACloseScreen(int scrnIndex, ScreenPtr pScreen)
 	    VBESetGetPaletteData(pVesa->pVbe, TRUE, 0, 256,
 				 pVesa->savedPal, FALSE, TRUE);
 	VESAUnmapVidMem(pScrn);
-    }
-    if (pVesa->shadowPtr) {
-	xfree(pVesa->shadowPtr);
-	pVesa->shadowPtr = NULL;
     }
     if (pVesa->pDGAMode) {
 	xfree(pVesa->pDGAMode);

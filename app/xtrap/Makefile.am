@@ -107,6 +107,8 @@ appman_PRE = \
         xtrap.man
 
 
+APP_MAN_DIR_SUFFIX = $(APP_MAN_DIR:@mandir@/man%=%)
+
 appmandir = $(APP_MAN_DIR)
 
 appman_DATA = $(appman_PRE:man=@APP_MAN_SUFFIX@) \
@@ -153,5 +155,5 @@ man_shadows =    \
 shadows.DONE:
 	-rm -f $(man_shadows:=.@APP_MAN_SUFFIX@)
 	(for i in $(man_shadows:=.@APP_MAN_SUFFIX@) ; do \
-	 echo .so man$(APP_MAN_SUFFIX)/xtrap.$(APP_MAN_SUFFIX) > $$i; \
+	 echo .so man$(APP_MAN_DIR_SUFFIX)/xtrap.$(APP_MAN_SUFFIX) > $$i; \
 	 done)

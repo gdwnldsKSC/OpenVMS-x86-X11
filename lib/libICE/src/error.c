@@ -1,3 +1,4 @@
+/* $XdotOrg: lib/ICE/src/error.c,v 1.4 2006/04/10 16:44:40 alanc Exp $ */
 /* $Xorg: error.c,v 1.4 2001/02/09 02:03:26 xorgcvs Exp $ */
 /******************************************************************************
 
@@ -531,24 +532,28 @@ IcePointer	values;
 
 	    EXTRACT_STRING (pData, swap, str);
 	    fprintf (stderr, "Reason : %s\n", str);
+	    free(str);
             break;
 
         case IceAuthRejected:
 
 	    EXTRACT_STRING (pData, swap, str);
 	    fprintf (stderr, "Reason : %s\n", str);
+	    free(str);
             break;
 
         case IceAuthFailed:
 
 	    EXTRACT_STRING (pData, swap, str);
 	    fprintf (stderr, "Reason : %s\n", str);
+	    free(str);
             break;
 
         case IceProtocolDuplicate:
 
 	    EXTRACT_STRING (pData, swap, str);
 	    fprintf (stderr, "Protocol name : %s\n", str);
+	    free(str);
             break;
 
         case IceMajorOpcodeDuplicate:
@@ -560,6 +565,7 @@ IcePointer	values;
 
 	    EXTRACT_STRING (pData, swap, str);
 	    fprintf (stderr, "Protocol name : %s\n", str);
+	    free(str);
             break;
 
 	default:

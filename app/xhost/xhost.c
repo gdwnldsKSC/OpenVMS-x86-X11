@@ -1,5 +1,5 @@
 /* $Xorg: xhost.c,v 1.4 2001/02/09 02:05:46 xorgcvs Exp $ */
-/* $XdotOrg: xc/programs/xhost/xhost.c,v 1.3 2004/07/27 06:06:06 herrb Exp $ */
+/* $XdotOrg: app/xhost/xhost.c,v 1.5 2006/04/15 00:10:10 ajax Exp $ */
 /*
 
 Copyright 1985, 1986, 1987, 1998  The Open Group
@@ -355,6 +355,7 @@ change_host(Display *dpy, char *name, Bool add)
 	name += 5;
 #else
 	fprintf (stderr, "%s: not compiled for TCP/IP\n", ProgramName);
+	free(lname);
 	return 0;
 #endif
     }
@@ -365,6 +366,7 @@ change_host(Display *dpy, char *name, Bool add)
 	name += 6;
 #else
 	fprintf (stderr, "%s: not compiled for IPv6\n", ProgramName);
+	free(lname);
 	return 0;
 #endif
     }
@@ -377,6 +379,7 @@ change_host(Display *dpy, char *name, Bool add)
 	name += 7;
 #else
 	fprintf (stderr, "%s: not compiled for IPv6\n", ProgramName);
+	free(lname);
 	return 0;
 #endif
     }
@@ -387,6 +390,7 @@ change_host(Display *dpy, char *name, Bool add)
 	name += 5;
 #else
 	fprintf (stderr, "%s: not compiled for DECnet\n", ProgramName);
+	free(lname);
 	return 0;
 #endif
     }
@@ -396,6 +400,7 @@ change_host(Display *dpy, char *name, Bool add)
 	name += 4;
 #else
 	fprintf (stderr, "%s: not compiled for Secure RPC\n", ProgramName);
+	free(lname);
 	return 0;
 #endif
     }
@@ -405,6 +410,7 @@ change_host(Display *dpy, char *name, Bool add)
 	name +=4;
 #else
 	fprintf (stderr, "%s: not compiled for Kerberos 5\n", ProgramName);
+	free(lname);
 	return 0;
 #endif
     }
@@ -419,6 +425,7 @@ change_host(Display *dpy, char *name, Bool add)
 	*cp = '\0';
 	fprintf (stderr, "%s: unknown address family \"%s\"\n",
 		 ProgramName, lname);
+	free(lname);
 	return 0;
     }
     free(lname);

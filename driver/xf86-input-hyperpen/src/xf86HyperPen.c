@@ -50,16 +50,14 @@
 #ifdef XFREE86_V4
 /* post 3.9 headers */
 
-#ifndef XFree86LOADER
 #include <unistd.h>
 #include <errno.h>
-#endif
+#include <string.h>
 
 #include <misc.h>
 #include <xf86.h>
 #define NEED_XF86_TYPES
 #if !defined(DGUX)
-#include <xf86_ansic.h>
 #include <xisb.h>
 #endif
 #include <xf86_OSproc.h>
@@ -1768,7 +1766,7 @@ static XF86ModuleVersionInfo xf86HypVersionRec =
     MODINFOSTRING1,
     MODINFOSTRING2,
     XORG_VERSION_CURRENT,
-    1, 0, 0,
+    1, 1, 0,
     ABI_CLASS_XINPUT,
     ABI_XINPUT_VERSION,
     MOD_CLASS_XINPUT,

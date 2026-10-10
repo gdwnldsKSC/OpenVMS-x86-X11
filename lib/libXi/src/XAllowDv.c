@@ -61,20 +61,20 @@ SOFTWARE.
 #include "XIint.h"
 
 int
-XAllowDeviceEvents (dpy, dev, event_mode, time)
-    register Display 	*dpy;
-    XDevice		*dev;
-    int			event_mode;
-    Time		time;
-    {       
-    xAllowDeviceEventsReq 	*req;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+XAllowDeviceEvents(dpy, dev, event_mode, time)
+    register Display *dpy;
+    XDevice *dev;
+    int event_mode;
+    Time time;
+{
+    xAllowDeviceEventsReq *req;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return (NoSuchExtension);
 
-    GetReq(AllowDeviceEvents,req);		
+    GetReq(AllowDeviceEvents, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_AllowDeviceEvents;
     req->deviceid = dev->device_id;
@@ -84,5 +84,4 @@ XAllowDeviceEvents (dpy, dev, event_mode, time)
     UnlockDisplay(dpy);
     SyncHandle();
     return (Success);
-    }
-
+}

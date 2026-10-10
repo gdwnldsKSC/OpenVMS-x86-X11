@@ -1,5 +1,5 @@
 /* $Xorg: SetWMCW.c,v 1.4 2001/02/09 02:03:58 xorgcvs Exp $ */
-/* $XdotOrg: $
+/* $XdotOrg: lib/Xt/src/SetWMCW.c,v 1.4 2005/07/22 20:30:10 alanc Exp $
  *
  * Author:  Chris D. Peterson, MIT X Consortium
  */

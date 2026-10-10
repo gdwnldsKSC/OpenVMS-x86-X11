@@ -1,3 +1,14 @@
+2006-04-01  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2.
+
+2006-01-06  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* main.c (ArgError): 
+	<http://bugs.opensolaris.org/bugdatabase/view_bug.do?bug_id=6240826>
+	Sun bug 6240826: xman typo: 'geometery' in usage message (Sam Lau)
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

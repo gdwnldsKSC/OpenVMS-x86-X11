@@ -1,5 +1,5 @@
 /* $Xorg: verify.c,v 1.4 2001/02/09 02:05:41 xorgcvs Exp $ */
-/* $XdotOrg: xc/programs/xdm/greeter/verify.c,v 1.4 2004/10/21 06:03:13 herrb Exp $ */
+/* $XdotOrg: app/xdm/greeter/verify.c,v 1.8 2006/04/14 20:17:31 alanc Exp $ */
 /*
 
 Copyright 1988, 1998  The Open Group
@@ -148,10 +148,15 @@ static int PAM_conv (int num_msg,
 		case PAM_PROMPT_ECHO_OFF:
 			/* wants password */
 			if (reply) {
-				reply = realloc(reply, size);
+				void *r2 = reply;
+				if (! (reply = realloc(reply, size))) {
+					free (r2);
+					return PAM_CONV_ERR;
+				}
 				bzero(reply + size - PAM_RESPONSE_SIZE, PAM_RESPONSE_SIZE);
 			} else {
-				reply = (struct pam_response*)malloc(size);
+				if (! (reply = (struct pam_response*)malloc(size)))
+					return PAM_CONV_ERR;
 				bzero(reply, size);
 			}
 
@@ -407,13 +412,22 @@ Verify (struct display *d, struct greet_info *greet, struct verify_info *verify)
 
 	Debug ("Verify %s ...\n", greet->name);
 
+	p = getpwnam (greet->name);
+	endpwent();
+
+	if (!p || strlen (greet->name) == 0) {
+		Debug ("getpwnam() failed.\n");
+		bzero(greet->password, strlen(greet->password));
+		return 0;
+	}
+
 #if defined(sun) && defined(SVR4)
 	/* Solaris: If CONSOLE is set to /dev/console in /etc/default/login, 
 	   then root can only login on system console */
 
 # define SOLARIS_LOGIN_DEFAULTS "/etc/default/login"
 
-	if (strcmp(greet->name, "root") == 0) {
+	if (p->pw_uid == 0) {
 	    char *console = NULL, *tmp = NULL;
 	    FILE *fs;
 
@@ -448,23 +462,14 @@ Verify (struct display *d, struct greet_info *greet, struct verify_info *verify)
 #endif    
 
 #ifndef USE_PAM
-	p = getpwnam (greet->name);
-	endpwent();
-
-	if (!p || strlen (greet->name) == 0) {
-		Debug ("getpwnam() failed.\n");
-		bzero(greet->password, strlen(greet->password));
-		return 0;
-	} else {
 #ifdef linux
-	    if (!strcmp(p->pw_passwd, "!") || !strcmp(p->pw_passwd, "*")) {
-		Debug ("The account is locked, no login allowed.\n");
-		bzero(greet->password, strlen(greet->password));
-		return 0;
-	    }
-#endif
-	    user_pass = p->pw_passwd;
+	if (!strcmp(p->pw_passwd, "!") || !strcmp(p->pw_passwd, "*")) {
+	    Debug ("The account is locked, no login allowed.\n");
+	    bzero(greet->password, strlen(greet->password));
+	    return 0;
 	}
+#endif
+	user_pass = p->pw_passwd;
 #endif
 #ifdef KERBEROS
 	if(strcmp(greet->name, "root") != 0){

@@ -1,3 +1,22 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.1
+
+2006-04-02  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/Xdbe.c:
+	Coverity #575: Plug a leak on the error path.
+
+	* src/XEVI.c:
+	Coverity #929: Additional defensive NULL check.
+
+2006-02-12  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* man/Makefile.am: 
+	Bug #5628 <https://bugs.freedesktop.org/show_bug.cgi?id=5628>
+	Shadow pages not created correctly when MANDIR & MANSUFFIX don't match.
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

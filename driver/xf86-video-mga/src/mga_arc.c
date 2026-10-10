@@ -29,6 +29,7 @@ in this Software without prior written authorization from The Open Group.
 #include "config.h"
 #endif
 
+#include <values.h>
 #include <X11/X.h>
 #include "gcstruct.h"
 #include "windowstr.h"
@@ -43,7 +44,6 @@ in this Software without prior written authorization from The Open Group.
 #include "xaalocal.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 
 #include "xf86Pci.h"
 

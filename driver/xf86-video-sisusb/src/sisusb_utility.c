@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sisusb/src/sisusb_utility.c,v 1.8 2005/09/16 13:52:16 twini Exp $ */
 /*
  * SiSUSB driver utility interface & routines
  *

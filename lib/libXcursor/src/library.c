@@ -1,5 +1,5 @@
 /*
- * $Id: library.c,v 1.6 2005/12/08 17:54:40 kem Exp $
+ * $Id: library.c,v 1.5 2005/07/03 07:00:56 daniels Exp $
  *
  * Copyright © 2002 Keith Packard
  *

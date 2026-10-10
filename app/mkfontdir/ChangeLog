@@ -1,3 +1,12 @@
+2006-04-01  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2.
+
+2006-03-05  Matthieu Herrb <matthieu.herrb@laas.fr>
+	* Makefile.am:
+	Let BSD make find mkfontdir.cpp when building in a separate obj dir
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

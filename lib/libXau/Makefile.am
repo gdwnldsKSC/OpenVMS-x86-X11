@@ -29,6 +29,8 @@ xauinclude_HEADERS = include/X11/Xauth.h
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xau.pc
 
+LIB_MAN_DIR_SUFFIX = $(LIB_MAN_DIR:@mandir@/man%=%)
+
 libmandir = $(LIB_MAN_DIR)
 libman_PRE = Xau.man
 BUILT_SOURCES = shadows.DONE
@@ -51,7 +53,7 @@ Xau_shadows =                               \
 shadows.DONE:
 	-rm -f $(Xau_shadows:=.@LIB_MAN_SUFFIX@)
 	(for i in $(Xau_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/Xau.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/Xau.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 
 XORGRELSTRING = @PACKAGE_STRING@

@@ -1,5 +1,5 @@
 /*
- * $Id: xim_trans.c,v 1.2 2005/07/30 20:30:46 alanc Exp $
+ * $Id: xim_trans.c,v 1.1 2005/07/11 08:29:25 keithp Exp $
  *
  * Copyright © 2003 Keith Packard
  *

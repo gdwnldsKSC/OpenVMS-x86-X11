@@ -27,6 +27,8 @@
 
 libmandir = $(LIB_MAN_DIR)
 
+LIB_MAN_DIR_SUFFIX = $(LIB_MAN_DIR:@mandir@/man%=%)
+
 libman_PRE = Xfontcache.man
 
 BUILT_SOURCES = shadows.DONE
@@ -69,5 +71,5 @@ Xfontcache_shadows =                        \
 shadows.DONE:
 	-rm -f $(Xfontcache_shadows:=.@LIB_MAN_SUFFIX@)
 	(for i in $(Xfontcache_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/Xfontcache.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/Xfontcache.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)

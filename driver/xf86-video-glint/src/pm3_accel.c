@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/glint/pm3_accel.c,v 1.3 2005/04/20 12:25:24 daniels Exp $ */
+/* $XdotOrg: driver/xf86-video-glint/src/pm3_accel.c,v 1.6 2006/04/07 19:07:59 ajax Exp $ */
 /*
  * Copyright 2000-2001 by Sven Luther <luther@dpt-info.u-strasbg.fr>.
  *
@@ -36,7 +36,6 @@
 #include <X11/Xarch.h>
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"

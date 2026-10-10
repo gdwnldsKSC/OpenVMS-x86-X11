@@ -407,6 +407,9 @@ Bool DMXAddScreen(Display *dpy, const char *displayName, unsigned int mask,
     int                length;
     int                paddedLength;
 
+    if (!screen)
+	return False;
+
     DMXCheckExtension(dpy, info, False);
 
     LockDisplay(dpy);

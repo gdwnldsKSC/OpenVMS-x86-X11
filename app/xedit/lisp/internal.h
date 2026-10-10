@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/xedit/lisp/internal.h,v 1.2 2004/04/23 19:54:44 eich Exp $ */
+/* $XdotOrg: app/xedit/lisp/internal.h,v 1.3 2004/12/04 00:43:13 kuhn Exp $ */
 /*
  * Copyright (c) 2001 by The XFree86 Project, Inc.
  *

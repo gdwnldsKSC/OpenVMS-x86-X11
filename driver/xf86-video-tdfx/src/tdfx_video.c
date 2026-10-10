@@ -53,13 +53,13 @@ static void TDFXVideoTimerCallback(ScrnInfoPtr pScrn, Time time);
 static XF86VideoAdaptorPtr TDFXSetupImageVideoTexture(ScreenPtr);
 static int  TDFXSetPortAttributeTexture(ScrnInfoPtr, Atom, INT32, pointer);
 static int  TDFXGetPortAttributeTexture(ScrnInfoPtr, Atom ,INT32 *, pointer);
-static int  TDFXPutImageTexture(ScrnInfoPtr, short, short, short, short, short, short, short, short, int, unsigned char*, short, short, Bool, RegionPtr, pointer);
+static int  TDFXPutImageTexture(ScrnInfoPtr, short, short, short, short, short, short, short, short, int, unsigned char*, short, short, Bool, RegionPtr, pointer, DrawablePtr);
 static void TDFXStopVideoTexture(ScrnInfoPtr, pointer, Bool);
 
 static XF86VideoAdaptorPtr TDFXSetupImageVideoOverlay(ScreenPtr);
 static int  TDFXSetPortAttributeOverlay(ScrnInfoPtr, Atom, INT32, pointer);
 static int  TDFXGetPortAttributeOverlay(ScrnInfoPtr, Atom ,INT32 *, pointer);
-static int  TDFXPutImageOverlay(ScrnInfoPtr, short, short, short, short, short, short, short, short, int, unsigned char*, short, short, Bool, RegionPtr, pointer);
+static int  TDFXPutImageOverlay(ScrnInfoPtr, short, short, short, short, short, short, short, short, int, unsigned char*, short, short, Bool, RegionPtr, pointer, DrawablePtr);
 static void TDFXStopVideoOverlay(ScrnInfoPtr, pointer, Bool);
 static void TDFXResetVideoOverlay(ScrnInfoPtr);
 
@@ -621,7 +621,8 @@ TDFXPutImageTexture(
              int id, unsigned char* buf, 
              short width, short height, 
              Bool sync,
-             RegionPtr clipBoxes, pointer data
+             RegionPtr clipBoxes, pointer data,
+             DrawablePtr pDraw
              )
 {
    TDFXPtr pTDFX = TDFXPTR(pScrn);
@@ -887,7 +888,8 @@ TDFXPutImageOverlay(
   int id, unsigned char* buf,
   short width, short height,
   Bool Sync,
-  RegionPtr clipBoxes, pointer data
+  RegionPtr clipBoxes, pointer data,
+  DrawablePtr pDraw
 ){
    TDFXPtr pTDFX = TDFXPTR(pScrn);
    TDFXPortPrivPtr pPriv = (TDFXPortPrivPtr)data;

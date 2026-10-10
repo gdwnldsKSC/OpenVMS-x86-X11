@@ -1,3 +1,18 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2
+
+2006-04-10  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* src/encparse.c (FontEncReallyReallyLoad): 
+	Fix another file descriptor leak (related to previous Coverity #544)
+
+2006-04-06  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/encparse.c:
+	Coverity #544: File a file descriptor leak.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

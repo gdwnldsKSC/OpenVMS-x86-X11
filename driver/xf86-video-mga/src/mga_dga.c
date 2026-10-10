@@ -6,7 +6,6 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
 #include "xaa.h"
@@ -154,8 +153,16 @@ SECOND_PASS:
 	    mode->imageWidth = pitch;
 	    mode->imageHeight =  pMga->FbUsableSize / mode->bytesPerScanline; 
 	    mode->pixmapWidth = pitch;
-	    mode->pixmapHeight = (min(pMga->FbUsableSize, 16*1024*1024)) / 
-					mode->bytesPerScanline;
+	    switch (pMga->Chipset) {
+	    case PCI_CHIP_MGAG200_SE_A_PCI:
+	    case PCI_CHIP_MGAG200_SE_B_PCI:
+		mode->pixmapHeight = (min(pMga->FbUsableSize, 1*1024*1024)) /
+				     mode->bytesPerScanline;
+		break;
+	    default:
+		mode->pixmapHeight = (min(pMga->FbUsableSize, 16*1024*1024)) / 
+				     mode->bytesPerScanline;
+	    }
 	    mode->maxViewportX = mode->imageWidth - mode->viewportWidth;
 	    mode->maxViewportY = (pMga->FbUsableSize / mode->bytesPerScanline) -
 				 	mode->viewportHeight;
@@ -366,21 +373,8 @@ MGA_FillRect (
 
     if(!pMga->AccelInfoRec) return;
 
-    switch(pMga->CurrentLayout.bitsPerPixel) {
-    case 8:
-	Mga8SetupForSolidFill(pScrn, color, GXcopy, ~0);
-	break;
-    case 16:
-	Mga16SetupForSolidFill(pScrn, color, GXcopy, ~0);
-	break;
-    case 24:
-	Mga24SetupForSolidFill(pScrn, color, GXcopy, ~0);
-	break;
-    case 32:
-	Mga32SetupForSolidFill(pScrn, color, GXcopy, ~0);
-	break;
-    }
-
+    mgaDoSetupForSolidFill(pScrn, color, GXcopy, ~0, 
+			   pMga->CurrentLayout.bitsPerPixel);
     (*pMga->AccelInfoRec->SubsequentSolidFillRect)(pScrn, x, y, w, h);
 
     SET_SYNC_FLAG(pMga->AccelInfoRec);
@@ -399,24 +393,8 @@ MGA_BlitRect(
 
     if(!pMga->AccelInfoRec) return;
 
-    switch(pMga->CurrentLayout.bitsPerPixel) {
-    case 8:
-	Mga8SetupForScreenToScreenCopy(
-		pScrn, xdir, ydir, GXcopy, ~0, -1);
-	break;
-    case 16:
-	Mga16SetupForScreenToScreenCopy(
-		pScrn, xdir, ydir, GXcopy, ~0, -1);
-	break;
-    case 24:
-	Mga24SetupForScreenToScreenCopy(
-		pScrn, xdir, ydir, GXcopy, ~0, -1);
-	break;
-    case 32:
-	Mga32SetupForScreenToScreenCopy(
-		pScrn, xdir, ydir, GXcopy, ~0, -1);
-	break;
-    }
+    mgaDoSetupForScreenToScreenCopy( pScrn, xdir, ydir, GXcopy, ~0, -1,
+				     pMga->CurrentLayout.bitsPerPixel );
 
     (*pMga->AccelInfoRec->SubsequentScreenToScreenCopy)(
 		pScrn, srcx, srcy, dstx, dsty, w, h);
@@ -425,45 +403,30 @@ MGA_BlitRect(
 }
 
 
-static void 
-MGA_BlitTransRect(
-   ScrnInfoPtr pScrn, 
-   int srcx, int srcy, 
-   int w, int h, 
-   int dstx, int dsty,
-   unsigned long color
-){
+static void MGA_BlitTransRect( ScrnInfoPtr pScrn, int srcx, int srcy, 
+			       int w, int h, int dstx, int dsty,
+			       unsigned long color )
+{
     MGAPtr pMga = MGAPTR(pScrn);
-    int xdir = ((srcx < dstx) && (srcy == dsty)) ? -1 : 1;
-    int ydir = (srcy < dsty) ? -1 : 1;
 
-    if(!pMga->AccelInfoRec) return;
-    if(pMga->CurrentLayout.bitsPerPixel == 24) return;
-    if(pMga->Chipset == PCI_CHIP_MGA2064) return;
+    if( (pMga->AccelInfoRec != NULL)
+	&& (pMga->CurrentLayout.bitsPerPixel != 24)
+	&& (pMga->Chipset != PCI_CHIP_MGA2064) ) {
+	const int xdir = ((srcx < dstx) && (srcy == dsty)) ? -1 : 1;
+	const int ydir = (srcy < dsty) ? -1 : 1;
 
-    pMga->DrawTransparent = TRUE;
+	pMga->DrawTransparent = TRUE;
 
-    switch(pMga->CurrentLayout.bitsPerPixel) {
-    case 8:
-	Mga8SetupForScreenToScreenCopy(
-		pScrn, xdir, ydir, GXcopy, ~0, color);
-	break;
-    case 16:
-	Mga16SetupForScreenToScreenCopy(
-		pScrn, xdir, ydir, GXcopy, ~0, color);
-	break;
-    case 32:
-	Mga32SetupForScreenToScreenCopy(
-		pScrn, xdir, ydir, GXcopy, ~0, color);
-	break;
+	mgaDoSetupForScreenToScreenCopy( pScrn, xdir, ydir, GXcopy, ~0, color,
+					 pMga->CurrentLayout.bitsPerPixel );
+
+	pMga->DrawTransparent = FALSE;
+
+	(*pMga->AccelInfoRec->SubsequentScreenToScreenCopy)(
+	    pScrn, srcx, srcy, dstx, dsty, w, h);
+
+	SET_SYNC_FLAG(pMga->AccelInfoRec);
     }
-
-    pMga->DrawTransparent = FALSE;
-
-    (*pMga->AccelInfoRec->SubsequentScreenToScreenCopy)(
-		pScrn, srcx, srcy, dstx, dsty, w, h);
-
-    SET_SYNC_FLAG(pMga->AccelInfoRec);
 }
 
 

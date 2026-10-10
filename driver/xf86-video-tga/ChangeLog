@@ -1,3 +1,16 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/BT463ramdac.c:
+	* src/BTramdac.c:
+	* src/IBM561ramdac.c:
+	* src/tga_accel.c:
+	* src/tga_dac.c:
+	* src/tga_driver.c:
+	* src/tga_line.c:
+	* src/tga_regs.h:
+	Unlibcwrap.  Bump server version requirement.  Bump to 1.1.0.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

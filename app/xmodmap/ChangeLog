@@ -1,3 +1,13 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.1
+
+2006-03-22  Matthias Hopf  <mhopf@suse.de>
+
+	* handle.c: (do_pointer):
+	Allow changing of only a few buttons (not all).
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

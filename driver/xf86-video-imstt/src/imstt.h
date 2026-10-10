@@ -7,7 +7,6 @@
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
 #include "xaa.h"
-#include "xf86_ansic.h"
 
 
 typedef struct _IMSTTRec {

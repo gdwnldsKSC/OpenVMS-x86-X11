@@ -60,18 +60,18 @@ SOFTWARE.
 #include <X11/extensions/extutil.h>
 #include "XIint.h"
 
-int 
-XSetDeviceModifierMapping (dpy, dev, modmap)
-    register		Display 	*dpy;
-    XDevice				*dev;
-    XModifierKeymap			*modmap;
-    {
-    int         mapSize = modmap->max_keypermod << 3;	/* 8 modifiers */
-    xSetDeviceModifierMappingReq 	*req;
-    xSetDeviceModifierMappingReply 	rep;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+int
+XSetDeviceModifierMapping(dpy, dev, modmap)
+    register Display *dpy;
+    XDevice *dev;
+    XModifierKeymap *modmap;
+{
+    int mapSize = modmap->max_keypermod << 3;	/* 8 modifiers */
+    xSetDeviceModifierMappingReq *req;
+    xSetDeviceModifierMappingReply rep;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return (NoSuchExtension);
 
@@ -82,10 +82,11 @@ XSetDeviceModifierMapping (dpy, dev, modmap)
     req->numKeyPerModifier = modmap->max_keypermod;
     memcpy((char *)&req[1], modmap->modifiermap, mapSize);
 
-    (void) _XReply(dpy, (xReply *) &rep,
-	(sizeof(xSetDeviceModifierMappingReply) - sizeof(xReply)) >> 2, xTrue);
+    (void)_XReply(dpy, (xReply *) & rep,
+		  (sizeof(xSetDeviceModifierMappingReply) -
+		   sizeof(xReply)) >> 2, xTrue);
 
     UnlockDisplay(dpy);
     SyncHandle();
     return (rep.success);
-    }
+}

@@ -1,3 +1,19 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* include/X11/Xcursor/Xcursor.h:
+	Bump to 1.1.6
+
+2006-04-06  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/display.c:
+	Coverity #159: Prevent a possible NULL chase.
+
+2006-03-04  Daniel Stone  <daniel@freedesktop.org>
+
+	* include/X11/Xcursor/Xcursor.h:
+	Bug #4439: Include Xlib.h.
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

@@ -1,3 +1,16 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2
+
+2006-03-28  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* Clock.c:
+	* XClock-color.ad:
+	Bug #6420 <https://bugs.freedesktop.org/show_bug.cgi?id=6420>
+	Patch #5103 <https://bugs.freedesktop.org/attachment.cgi?id=5103>
+	xclock code contains wrong "ifdef RENDER" (Kirill Belokurov)
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

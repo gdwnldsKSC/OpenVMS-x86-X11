@@ -1,3 +1,4 @@
+/* $XdotOrg: lib/SM/src/sm_manager.c,v 1.9 2006/03/17 03:05:32 alanc Exp $ */
 /* $Xorg: sm_manager.c,v 1.4 2001/02/09 02:03:30 xorgcvs Exp $ */
 
 /*
@@ -130,8 +131,12 @@ char 		 		*errorStringRet;
 
     if (!newClientProc)
     {
-	strncpy (errorStringRet,
-	    "The SmsNewClientProc callback can't be NULL", errorLength);
+	if (errorStringRet && errorLength > 0) {
+	    strncpy (errorStringRet,
+		     "The SmsNewClientProc callback can't be NULL",
+		     errorLength);
+	    errorStringRet[errorLength - 1] = '\0';
+	}
 
 	return (0);
     }
@@ -150,9 +155,12 @@ char 		 		*errorStringRet;
 	    NULL	/* IceIOErrorProc */
             )) < 0)
 	{
-	    strncpy (errorStringRet,
-	        "Could not register XSMP protocol with ICE", errorLength);
-
+	    if (errorStringRet && errorLength > 0) {
+		strncpy (errorStringRet,
+			 "Could not register XSMP protocol with ICE",
+			 errorLength);
+		errorStringRet[errorLength - 1] = '\0';
+	    }
 	    return (0);
 	}
     }

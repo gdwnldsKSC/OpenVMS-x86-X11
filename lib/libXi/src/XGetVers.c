@@ -61,55 +61,47 @@ SOFTWARE.
 #include "XIint.h"
 
 XExtensionVersion *
-XGetExtensionVersion (
-    register Display 	*dpy,
-    _Xconst char	*name)
-    {       
-    XExtensionVersion		*ext;
+XGetExtensionVersion(register Display * dpy, _Xconst char *name)
+{
+    XExtensionVersion *ext;
 
-    LockDisplay (dpy);
-    ext = _XiGetExtensionVersion (dpy, name);
+    LockDisplay(dpy);
+    ext = _XiGetExtensionVersion(dpy, name);
     if (ext != (XExtensionVersion *) NoSuchExtension) {
-	UnlockDisplay (dpy);
+	UnlockDisplay(dpy);
 	SyncHandle();
     }
     return (ext);
-    }
+}
 
 XExtensionVersion *
-_XiGetExtensionVersion (
-    register Display 	*dpy,
-    _Xconst char	*name)
-    {       
-    xGetExtensionVersionReq 	*req;
-    xGetExtensionVersionReply 	rep;
-    XExtensionVersion		*ext;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+_XiGetExtensionVersion(register Display * dpy, _Xconst char *name)
+{
+    xGetExtensionVersionReq *req;
+    xGetExtensionVersionReply rep;
+    XExtensionVersion *ext;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
     if (_XiCheckExtInit(dpy, Dont_Check) == -1)
 	return ((XExtensionVersion *) NoSuchExtension);
 
-    GetReq(GetExtensionVersion,req);		
+    GetReq(GetExtensionVersion, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_GetExtensionVersion;
     req->nbytes = name ? strlen(name) : 0;
-    req->length += (unsigned)(req->nbytes+3)>>2;
+    req->length += (unsigned)(req->nbytes + 3) >> 2;
     _XSend(dpy, name, (long)req->nbytes);
 
-    if (! _XReply (dpy, (xReply *) &rep, 0, xTrue)) 
-	{
+    if (!_XReply(dpy, (xReply *) & rep, 0, xTrue)) {
 	return (XExtensionVersion *) NULL;
-	}
-    ext = (XExtensionVersion *) Xmalloc (sizeof (XExtensionVersion));
-    if (ext)
-	{
+    }
+    ext = (XExtensionVersion *) Xmalloc(sizeof(XExtensionVersion));
+    if (ext) {
 	ext->present = rep.present;
-	if (ext->present)
-	    {
+	if (ext->present) {
 	    ext->major_version = rep.major_version;
 	    ext->minor_version = rep.minor_version;
-	    }
 	}
-    return (ext);
     }
-
+    return (ext);
+}

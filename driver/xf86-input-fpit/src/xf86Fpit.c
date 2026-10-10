@@ -57,15 +57,13 @@
 
 #include <xf86Version.h>
 
-#  ifndef XFree86LOADER
-#    include <unistd.h>
-#    include <errno.h>
-#  endif
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
 
 #  include <misc.h>
 #  include <xf86.h>
 #  if !defined(DGUX)
-#    include <xf86_ansic.h>
 #  endif
 #  include <xf86_OSproc.h>
 #  include <xf86Xinput.h>
@@ -597,7 +595,7 @@ static void Unplug(pointer p)
 }
 
 static XF86ModuleVersionInfo version_rec = {
-	"fpit", MODULEVENDORSTRING, MODINFOSTRING1, MODINFOSTRING2, XORG_VERSION_CURRENT, 1, 0, 0, ABI_CLASS_XINPUT, ABI_XINPUT_VERSION, MOD_CLASS_XINPUT, 
+	"fpit", MODULEVENDORSTRING, MODINFOSTRING1, MODINFOSTRING2, XORG_VERSION_CURRENT, 1, 1, 0, ABI_CLASS_XINPUT, ABI_XINPUT_VERSION, MOD_CLASS_XINPUT, 
 	{0, 0, 0, 0}
 };
 

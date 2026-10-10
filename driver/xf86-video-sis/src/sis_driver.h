@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis_driver.h,v 1.28 2005/09/17 23:07:17 twini Exp $ */
 /*
  * Global data and definitions
  *

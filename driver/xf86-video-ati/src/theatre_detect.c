@@ -1,5 +1,5 @@
 /*************************************************************************************
- * $Id: theatre_detect.c,v 1.4 2005/08/28 18:00:23 bogdand Exp $
+ * $Id: theatre_detect.c,v 1.3 2005/07/11 02:29:45 ajax Exp $
  * 
  * Copyright (C) 2005 Bogdan D. bogdand@users.sourceforge.net
  *
@@ -23,9 +23,6 @@
  * authorization from the author.
  *
  * $Log: theatre_detect.c,v $
- * Revision 1.4  2005/08/28 18:00:23  bogdand
- * Modified the licens type from GPL to a X/MIT one
- *
  * Revision 1.3  2005/07/11 02:29:45  ajax
  * Prep for modular builds by adding guarded #include "config.h" everywhere.
  *

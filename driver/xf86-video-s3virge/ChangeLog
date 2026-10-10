@@ -1,3 +1,33 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/s3v_driver.c:
+	Bump to 1.9.1 for Xv changes.
+
+2006-04-07  Aaron Plattner  <aplattner@nvidia.com>
+
+	* src/s3v_xv.c:
+	Add a DrawablePtr argument to the XV functions to pave the way for
+	redirected video.
+
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/s3v.h:
+	* src/s3v_dga.c:
+	* src/s3v_driver.c:
+	* src/s3v_i2c.c:
+	* src/s3v_shadow.c:
+	Unlibcwrap.  Bump server version requirement.  Bump to 1.9.0.
+
+2006-02-08  Luc Verhaegen <libv@skynet.be>
+
+	* src/s3v.h:
+	* src/s3v_driver.c: (S3VPreInit):
+
+	Remove another insane use of pScrn->clock. Code ended up being ignored
+	anyway.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

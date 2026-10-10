@@ -1,3 +1,17 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.1
+
+2006-03-16  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* src/sm_manager.c:
+	* src/sm_client.c:
+	Specs say SmsInitialize & SmcOpenConnection return NULL terminated
+	strings in errorStringRet, but were just calling strncpy and not
+	making sure strings were NULL terminated if errorLength wasn't long
+	enough. (Noticed while evaluating Coverity ids 196 & 201.)
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

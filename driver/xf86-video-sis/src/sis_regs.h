@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis_regs.h,v 1.11 2005/07/04 10:57:08 twini Exp $ */
 /*
  * Register access macros and register definitions
  *

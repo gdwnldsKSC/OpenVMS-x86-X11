@@ -2,6 +2,8 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include "radeon.h"
 #include "radeon_reg.h"
 #include "radeon_macros.h"
@@ -10,7 +12,7 @@
 #include "radeon_video.h"
 
 #include "xf86.h"
-#include "xf86PciInfo.h"
+#include "atipciids.h"
 
 #include "generic_bus.h"
 #include "theatre_reg.h"

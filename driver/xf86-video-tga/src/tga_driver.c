@@ -28,10 +28,11 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 /* everybody includes these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 
 /* PCI headers */
 #include "xf86PciInfo.h"
@@ -114,11 +115,11 @@ static void TGADisplayPowerManagementSet(ScrnInfoPtr pScrn,
 
 void TGASync(ScrnInfoPtr pScrn);
 
-#define VERSION 4000
+#define TGA_VERSION 4000
 #define TGA_NAME "TGA"
 #define TGA_DRIVER_NAME "tga"
 #define TGA_MAJOR_VERSION 1
-#define TGA_MINOR_VERSION 0
+#define TGA_MINOR_VERSION 1
 #define TGA_PATCHLEVEL 0
 
 /* 
@@ -130,7 +131,7 @@ void TGASync(ScrnInfoPtr pScrn);
  */
 
 _X_EXPORT DriverRec TGA = {
-    VERSION,
+    TGA_VERSION,
     TGA_DRIVER_NAME,
     TGAIdentify,
     TGAProbe,
@@ -399,7 +400,7 @@ TGAProbe(DriverPtr drv, int flags)
 					       TGAPciChipsets, NULL, NULL,
 					       NULL, NULL, NULL))) {
 	    /* Fill in what we can of the ScrnInfoRec */
-	    pScrn->driverVersion = VERSION;
+	    pScrn->driverVersion = TGA_VERSION;
 	    pScrn->driverName	 = TGA_DRIVER_NAME;
 	    pScrn->name		 = TGA_NAME;
 	    pScrn->Probe	 = TGAProbe;

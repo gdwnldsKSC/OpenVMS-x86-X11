@@ -1,3 +1,17 @@
+2006-04-06  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/ark.h:
+	* src/ark_accel.c:
+	* src/ark_driver.c:
+	Unlibcwrap.  Bump server version requirement.  Bump to 0.6.0.
+
+2006-02-08  Luc Verhaegen  <libv@skynet.be>
+
+	* src/ark_driver.c: (ARKPreInit):
+	
+	Remove wrong usage of pScrn->clock.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

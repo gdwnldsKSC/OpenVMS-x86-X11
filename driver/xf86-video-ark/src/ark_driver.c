@@ -34,7 +34,6 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
 #include "xf86Version.h"
@@ -49,6 +48,7 @@
 #include "fb.h"
 #include "ark.h"
 
+#include <string.h>
 
 /*
  * prototypes
@@ -452,9 +452,6 @@ static Bool ARKPreInit(ScrnInfoPtr pScrn, int flags)
 		if (pScrn->bitsPerPixel == 32)
 			pARK->clock_mult = 2;
 	}
-
-	pScrn->numClocks = 1;
-	pScrn->clock[0] = 80000;	/* safe */
 
 	clockRanges = xnfcalloc(sizeof(ClockRange), 1);
 	clockRanges->next = NULL;

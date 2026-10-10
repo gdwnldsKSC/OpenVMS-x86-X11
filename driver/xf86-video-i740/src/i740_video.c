@@ -54,10 +54,12 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
+#include <string.h>
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
-#include "xf86_ansic.h"
 #include "compiler.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -629,7 +631,8 @@ static int I740PutImage(ScrnInfoPtr pScrn,
 			short src_w, short src_h, short drw_w, short drw_h,
 			int id, unsigned char* buf, 
 			short width, short height, 
-			Bool sync, RegionPtr clipBoxes, pointer data
+			Bool sync, RegionPtr clipBoxes, pointer data,
+			DrawablePtr pDraw
 			)
 {
   ScreenPtr pScreen = pScrn->pScreen;

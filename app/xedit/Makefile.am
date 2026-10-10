@@ -105,7 +105,7 @@ libre_a_SOURCES = \
 #   
 
 xedit_CFLAGS = $(XEDIT_CFLAGS) -I$(top_srcdir)/lisp/re -D_BSD_SOURCE -DXEDIT
-xedit_LDADD = $(XEDIT_LIBS) libre.a liblisp.a libmp.a -lm
+xedit_LDADD = libre.a liblisp.a libmp.a $(XEDIT_LIBS) -lm
 
 xedit_SOURCES =	\
         commands.c \

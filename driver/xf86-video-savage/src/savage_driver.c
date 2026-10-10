@@ -1841,26 +1841,11 @@ static Bool SavagePreInit(ScrnInfoPtr pScrn, int flags)
     /* Do the DDC dance. */ 
     SavageDoDDC(pScrn);
 
-    /* Savage ramdac speeds */
-    pScrn->numClocks = 4;
-    pScrn->clock[0] = 250000;
-    pScrn->clock[1] = 250000;
-    pScrn->clock[2] = 220000;
-    pScrn->clock[3] = 220000;
-
-    if (psav->dacSpeedBpp <= 0) {
-	if (pScrn->bitsPerPixel > 24)
-	    psav->dacSpeedBpp = pScrn->clock[3];
-	else if (pScrn->bitsPerPixel >= 24)
-	    psav->dacSpeedBpp = pScrn->clock[2];
-	else if ((pScrn->bitsPerPixel > 8) && (pScrn->bitsPerPixel < 24))
-	    psav->dacSpeedBpp = pScrn->clock[1];
-	else if (pScrn->bitsPerPixel <= 8)
-	    psav->dacSpeedBpp = pScrn->clock[0];
-    }
-
-    /* Set ramdac limits */
-    psav->maxClock = psav->dacSpeedBpp;
+    /* set up ramdac max clock - might be altered by SavageGetPanelInfo */
+    if (pScrn->bitsPerPixel >= 24)
+        psav->maxClock = 220000;
+    else
+        psav->maxClock = 250000;
 
     /* detect current mclk */
     VGAOUT8(0x3c4, 0x08);
@@ -1878,8 +1863,6 @@ static Bool SavagePreInit(ScrnInfoPtr pScrn, int flags)
     mclk = ((1431818 * (m+2)) / (n1+2) / (1 << n2) + 50) / 100;
     xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Detected current MCLK value of %1.3f MHz\n",
 	       mclk / 1000.0);
-
-    psav->minClock = 10000;
 
     pScrn->maxHValue = 2048 << 3;	/* 11 bits of h_total 8-pixel units */
     pScrn->maxVValue = 2048;		/* 11 bits of v_total */
@@ -1949,7 +1932,7 @@ static Bool SavagePreInit(ScrnInfoPtr pScrn, int flags)
 
     clockRanges = xnfalloc(sizeof(ClockRange));
     clockRanges->next = NULL;
-    clockRanges->minClock = psav->minClock;
+    clockRanges->minClock = 10000;
     clockRanges->maxClock = psav->maxClock;
     clockRanges->clockIndex = -1;
     clockRanges->interlaceAllowed = TRUE;

@@ -1,3 +1,374 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 6.6.0 and release.  This module's versioning is completely
+	screwed, so until we split out mach64/r128/radeon please just
+	increment the package number whenever you make significant changes.
+
+2006-04-07  Aaron Plattner  <aplattner@nvidia.com>
+
+	* src/atimach64xv.c: (ATIMach64PutImage):
+	* src/r128_video.c: (R128PutImage):
+	* src/radeon_video.c: (RADEONPutImage), (RADEONPutVideo):
+	Add a DrawablePtr argument to the XV functions to pave the way for
+	redirected video.
+
+2006-04-04  Eric Anholt  <anholt@FreeBSD.org>
+
+	* man/ati.man:
+	* man/radeon.man:
+	Bug #5632: Fix up ati.4 to explain that it is a wrapper driver for the
+	other three.  While here, touch up radeon.4, and add an authors list
+	gleaned from checking copyright headers.
+
+2006-04-01  Alex Deucher  <agd5f@yahoo.com>
+
+	* src/radeon.h:
+	* src/radeon_driver.c: (RADEONPreInitModes), (RADEONPreInit),
+	(RADEONResetDPI), (RADEONSwitchMode):
+	* src/radeon_mergedfb.c: (RADEONMergedFBCalcDPI),
+	(RADEONMergedFBSetDpi), (RADEONMergedFBResetDpi):
+	* src/radeon_mergedfb.h:
+	- Fix dpi when switching from clone to dualhead with MergedFB.
+	- Add ConstantDPI option to force a particlar dpi across mode changes
+	Both based on Thomas Winischhofer's sis code.
+
+2006-03-27  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_driver.c: (RADEONRestoreMemMapRegisters),
+	(RADEONInit):
+	Fix a regression of my latest fix that broke color tiling on some
+	setups. RADEONRestoreMemMapRegisters() must not clear CRTC_OFFSET_CNTL
+	and friends unconditionally but only when there is a map change or it
+	will clear them after the DRI updates the AGP location, thus turning
+	tiling back off on the CRTC.
+	Also remove a duplicate call to RADEONInitCommonRegisters().
+
+2006-03-23  Roland Scheidegger  <rscheidegger_lists@hispeed.ch>
+	* src/radeon_reg.h:
+	* src/radeon_video.c: (RADEONResetVideo), (RADEONDisplayVideo),
+	(RADEONPutImage): Use programmable tap coefficients for (hopefully)
+	better video image quality when downscaling. Remove unnecessary code
+	programming the tap coefficients twice. Disable some code which is
+	supposed to improve filtering quality but causes very visible image
+	quality problems at least with rv250 when upscaling. Fix potentially
+	broken FOURCC_RGB16T format (untested if it was broken, untested if it
+	works now...). Change some magic numbers to (new) macro defines.
+
+2006-03-23  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_driver.c: (RADEONRestoreMode),
+	(RADEONInitCrtcRegisters), (RADEONInitCrtc2Registers):
+	Call RADEONRestoreCommonRegisters() before
+	RADEONRestoreCrtc2Registers() instead of after. I can't find any good
+	reason why we did it backward until now and it definitely causes
+	problems as the workaround for VT switch in
+	RADEONRestoreCommonRegisters() will break output to the secondary head
+	in various situations. Also does an unrelated minor update to a
+	comment.
+
+2006-03-22  Kristian Høgsberg  <krh@redhat.com>
+
+	* src/Makefile.am (EXTRA_DIST): Add atipciids.h.
+
+	* src/theatre200.c: Convert use of xf86fopen() and other xf86
+	wrapped libc symbols to use libc symbols directly.  The xf86*
+	versions aren't supposed to be used directly.
+
+	* src/*.c: Drop libc wrapper; don't include xf86_ansic.h and add
+	includes now missing.
+
+2006-03-18  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_driver.c: (RADEONRestoreMemMapRegisters),
+	(RADEONRestoreCrtcRegisters), (RADEONRestoreCrtc2Registers):
+	* src/radeon_reg.h:
+	Clear the offsets when updating the memory map instead of when
+	enabling the CRTCs and try to make that code more reliable. Doesn't
+	disable the CRTCs beforehand.
+
+2006-03-18  Roland Scheidegger  <rscheidegger_lists@hispeed.ch>
+	* src/radeon_dri.c: (RADEONDRIGetVersion):
+	* src/radeon_driver.c: (RADEONGetAccessibleVRAM):
+	* man/radeon_reg.h:
+	* src/radeon_video.c:
+	Fix various small cosmetic issues. Change a driver message, get the order
+	right for requesting drm versions, replace the use of some numbers with
+	the respective macro defines in radeon_video.c, and add some more macro
+	defines. None of that really matters.
+
+2006-03-17  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_driver.c: (RADEONGetAccessibleVRAM),
+	(RADEONPreInitVRAM):
+	Add missing return statement (the driver would not start randomly),
+	add RV410 to the list of new generation cards for the memory map
+	setup and fix a bogus message.
+
+2006-03-16  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_driver.c: (RADEONInitCrtcRegisters),
+	(RADEONInitCrtc2Registers), (RADEONDoAdjustFrame):
+	Fix incorrect CRTC2_OFFSET values when using old-style dual head (not
+	MergedFB). Fixes Xinerama for me.
+
+2006-03-16  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_driver.c: (RADEONWaitForVerticalSync),
+	(RADEONWaitForVerticalSync2), (RADEONLoadPalette),
+	(RADEONScreenInit), (RADEONRestoreMemMapRegisters),
+	(RADEONRestoreCrtcRegisters), (RADEONRestoreCrtc2Registers),
+	(RADEONDoAdjustFrame), (RADEONCloseScreen):
+	* src/radeon_reg.h:
+	Add various workarounds that seem to fix some remaning lockup
+	scenarios I'm experiencing with the driver when setting the memory
+	map. Some of the magic delays are a bit dodgy but they seem to work, I
+	suppose I can't do better now without help from ATI. Also removed some
+	really too noisy debug messages.
+
+2006-03-15  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon.h:
+	* src/radeon_dri.c: (RADEONDRIScreenInit),
+	(RADEONDRIDoCloseScreen), (RADEONDRIFinishScreenInit),
+	(RADEONDRIStop), (RADEONDRICloseScreen):
+	* src/radeon_driver.c: (RADEONCloseScreen):
+	Fix various issues with DRI & server recycle by putting DRICloseSreen
+	in the normal CloseScreen callback chain at a spot that matches the
+	call to DRIFinishScreenInit in order to unwrap at the right time.
+
+2006-03-15  Luc Verhaegen  <libv@skynet.be>
+
+	* configure.ac:
+	* src/Makefile.am:
+	* src/radeon_cursor.c: (RADEONUseHWCursor):
+	* src/radeon_dga.c: (RADEON_BlitRect):
+	* src/radeon_driver.c: (RADEONPreInitAccel), (RADEONScreenInit):
+
+	Add some autoconf to keep this driver from building EXA when a
+	slightly older server with older exa is installed.
+
+	The way in which this problem was treated by the actually related
+	developers explains a lot about this driver.
+
+2006-03-13  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_video.c: (RADEONSetTransform):
+	Fix typo in the function setting the color space transformation
+	factors for old radeon
+
+2006-03-13  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_driver.c: (RADEONPreInitVRAM),
+	(RADEONPreInitChipType), (RADEONPreInit):
+	Earliest fix introduced a bug due to another chicken & egg problem in
+	card detection. Now split PreInitConfig into PreInitChipType and
+	PreInitVRAM so that PreInitDRI can be done just in between. Restores
+	proper AGPx4 functionality (when enabled)
+
+2006-03-12  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/ati.h:
+	* src/r128_dri.c:
+	* src/r128_driver.c:
+	* src/r128_probe.c:
+	* src/radeon_driver.c:
+	* src/radeon_mm_i2c.c:
+	* src/radeon_probe.c:
+	* src/radeon_video.c:
+	* src/radeon_vip.c:
+	* src/atipciids.h:
+	Stop using xf86PciInfo.h, instead use a local copy of the PCI IDs
+	we need in atipciids.h so we can update the ATI driver independently
+	of the server when new chips are added
+
+2006-03-10  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* src/radeon_driver.c: 
+	Add #ifdef XF86DRI guards around references to info->allowPageFlip
+	and info->depthMoves, since they are only defined if building with
+	DRI.
+
+2006-03-10  Roland Scheidegger  <rscheidegger_lists@hispeed.ch>
+	* man/radeon.man:
+	* src/radeon_driver.c: (RADEONSetupMemXAA_DRI), (RADEONScreenInit):
+	Use "FBTexPercent" option for XAA too (only for increasing
+	memory reserved for textures).
+
+2006-03-10  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon.h:
+	* src/radeon_dri.c: (RADEONDRIGartHeapInit), (RADEONDRIGetVersion),
+	(RADEONDRIScreenInit), (RADEONDRIInitPageFlip), (RADEONDRIResume),
+	(RADEONDRIAllocatePCIGARTTable):
+	* src/radeon_driver.c: (RADEONInitMemoryMap),
+	(RADEONGetAccessibleVRAM), (RADEONPreInitConfig),
+	(RADEONPreInitDRI), (RADEONPreInitColorTiling), (RADEONPreInit),
+	(RADEONScreenInit), (RADEONRestoreMode):
+	More memory map fixes !!! This time, we add a way to get the DRM
+	kernel module version early, in order to properly limit the
+	framebuffer size when a module that doesn't support the new map is
+	loaded. That will improve backward compatibility. I also made the
+	minimum required kernel module version 1.3 which hopefully shouldn't
+	be a problem for anybody, and cleaned up the ordering in which we test
+	for DRM version to enable features
+
+2006-03-09  Michel Dänzer  <michel@daenzer.net>
+
+	* src/radeon_driver.c: (RADEONGetClockInfo), (RADEONGetVRamType),
+	(RADEONPreInitConfig):
+	Bugzilla #5766 <https://bugs.freedesktop.org/show_bug.cgi?id=5766>
+	Patch #4636  <https://bugs.freedesktop.org/attachment.cgi?id=4636>
+	- Acknowledge that RN50 only has one CRTC, and use this to distinguish
+	  it from RV100.
+	- Fix detection of RN50 memory type and bus width.
+	- Model RN50 memory bandwidth limits by capping the pixel clock range
+	  based on memory clock, bpp and memory bus width.
+	(ATI Technologies Inc.)
+
+2006-03-03  Michel Dänzer  <michel@daenzer.net>
+
+	* man/radeon.man:
+	* src/radeon_driver.c: (RADEONScreenInit):
+	* src/radeon_exa.c: (RADEONSetupMemEXA):
+	Add Option "FBTexPercent" to override the amount of video RAM reserved
+	for OpenGL textures with EXA.
+
+2006-03-02  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_driver.c: (RADEONPreInitConfig):
+	Fix the fix ... I didn't interpret PciInfo->size properly and forgot
+	that the function works in Kb not bytes... Ooops.
+
+2006-03-02  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_driver.c: (RADEONInitMemoryMap),
+	(RADEONPreInitConfig):
+	Extend the alignement workaround to post-rv280 chips as well (thanks
+	Hui) and also limit the CPU accessible memory to the size of the PCI
+	BAR size (yeah, it was passed to the driver, I just got blind for a
+	while it seems)
+
+2006-03-01  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_driver.c: (RADEONInitMemoryMap),
+	(RADEONPreInitConfig):
+	Workaround for rv280 bug which needs the framebuffer memory mapping
+	to be aligned to its own size. Also add back limit of 128Mb of mapped
+	fb space for now until I fully sort out what's up with dual function
+	cards. I would really need to access the PCI BAR sizes here but that
+	information seem to be missing from the PCI info passed to the driver.
+
+2006-02-27  Roland Scheidegger  <rscheidegger_lists@hispeed.ch>
+	* src/atichip.h:
+	* src/atichip.c:
+	* src/radeon_chipset.h:
+	Add the newly added (and tons of previously forgotten ones) pci ids
+	to the ati wrapper too (probably not required for it to work as
+	everything should default to radeon anyway there).
+
+2006-02-26  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon.h:
+	* src/radeon_dri.c: (RADEONDRIFinishScreenInit),
+	(RADEONDRIInitPageFlip):
+	* src/radeon_driver.c: (RADEONScreenInit):
+	Fix page flipping with XAA. The new code ended up calling
+	ShadowFBInit() before XAAInit(), which breaks ShadowFB.
+
+2006-02-24  Roland Scheidegger  <rscheidegger_lists@hispeed.ch>
+	* src/radeon.h:
+	* src/radeon_chipset.h:
+	* src/radeon_driver.c:
+	* src/radeon_probe.c:
+	Add pci ids known to exist (see #4284 for instance). There are still
+	entries which probably don't really exist (cancelled cards and such),
+	leave them as-is. Fix the name of some entries, mostly based on the
+	.inf file of the newest catalyst driver. Use own family id for rv410
+	and rs400, though there is no different code (yet?).
+
+2006-02-17  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon.h:
+	* src/radeon_common.h:
+	* src/radeon_commonfuncs.c: (RADEONWaitForIdle):
+	* src/radeon_cursor.c: (RADEONCursorAllocEXA),
+	(RADEONSetCursorColors), (RADEONSetCursorPosition),
+	(RADEONLoadCursorImage), (RADEONHideCursor), (RADEONShowCursor),
+	(RADEONLoadCursorARGB), (RADEONCursorInit):
+	* src/radeon_dri.c: (RADEONDRIScreenInit),
+	(RADEONDRIFinishScreenInit), (RADEONDRICloseScreen),
+	(RADEONDRIRefreshArea):
+	* src/radeon_driver.c: (RADEONMapFB), (RADEONInitMemMapRegisters),
+	(RADEONInitMemoryMap), (RADEONGetAccessibleVRAM),
+	(RADEONPreInitConfig), (RADEONLoadPalette), (RADEONBlockHandler),
+	(RADEONScreenInit), (RADEONRestoreMemMapRegisters),
+	(RADEONAdjustMemMapRegisters), (RADEONRestoreSurfaces),
+	(RADEONSaveSurfaces), (RADEONChangeSurfaces), (RADEONRestoreMode),
+	(RADEONSaveMemMapRegisters), (RADEONSaveMode), (RADEONSave),
+	(RADEONInitDispBandwidth), (RADEONInitPLLRegisters),
+	(RADEONInitPLL2Registers), (RADEONInit), (RADEONModeInit),
+	(RADEONSaveScreen), (RADEONSwitchMode), (RADEONDoAdjustFrame),
+	(RADEONAdjustFrame), (RADEONEnterVT), (RADEONLeaveVT),
+	(RADEONCloseScreen), (RADEONDisplayPowerManagementSet):
+	* src/radeon_reg.h:
+	* src/radeon_render.c: (RADEONSetupRenderByteswap):
+	Memory map and misc fixes. This completely reworks the way the driver
+	detects available & accessible video memory and initializes the card
+	internal memory map. Along the way, I re-ordered some of the stuffs
+	in pre-init in order to remove some dodgy codepath, fixed various
+	init, exit and vt switch issues, and overall made the driver more
+	robust. The full memory map fix requires an updated DRM. The X driver
+	no longer tries to position the AGP aperture, this becomes entirely
+	DRM responsibility.
+
+2006-02-16  Benjamin Herrenschmidt  <benh@kernel.crashing.org>
+
+	* src/radeon_accel.c: (RADEONEngineRestore):
+	The engine setup would trigger a bogus line write before the proper
+	addresses are setup, thus causing the card to try to bus master over
+	the system bus to some stale location (usually 0 but could depend on
+	whatever was used before X). Remove that useless init bit, and always
+	setup some good enough engine source & destination pointers in case we
+	have some other spurrious engine activity going on.
+
+2006-02-13  Benjamin Herrenschmidt <benh@kernel.crashing.org>
+
+	* src/radeon_exa_render.c: (R100TextureSetup), (R200TextureSetup):
+	Fix EXA acceleration of textures with byteswap or tiling
+	From John Clemens <john@deater.net>
+
+2006-02-06  Eric Anholt  <anholt@FreeBSD.org>
+
+	* src/radeon_exa_render.c:
+	Fix a copy'n'paste-o in the EXA render implementation that resulted in
+	[ax]8b8g8r8 pict formats not being supported on r200, but no other
+	issues.
+
+2006-01-19  Daniel Stone  <daniel@freedesktop.org>
+
+	* src/radeon_driver.c:
+	Bug #5656: Set all Radeon XPRESS 200 R[CS]4xx-based chips to
+	have IsIGP = 1, fixing modesetting issues.
+
+2006-01-12  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* src/theatre200_module.c (theatre200VersRec): 
+	* src/theatre_detect_module.c (theatre_detectVersRec): 
+	XF86_VERSION_CURRENT -> XORG_VERSION_CURRENT
+
+2006-01-12  Alan Coopersmith  <alan.coopersmith@sun.com>	
+
+	* src/radeon_driver.c (RADEONPreInitModes): 
+	When failing to parse MetaModes, reset CRT2pScrn to NULL after 
+	free'ing it so we don't crash when trying to use it later 
+	(such as in RADEONFreeRec).
+
+2006-01-08  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/radeon.h:
+	Bug #5523: Make radeon compile without USE_XAA.  (Tilman Sauerbeck)
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

@@ -1,5 +1,5 @@
 /* $Xorg: CvtStdSel.c,v 1.4 2001/02/09 02:03:52 xorgcvs Exp $ */
-/* $XdotOrg: xc/lib/Xmu/CvtStdSel.c,v 1.5 2005/05/22 04:36:38 alanc Exp $ */
+/* $XdotOrg: lib/Xmu/src/CvtStdSel.c,v 1.6 2005/07/03 07:00:57 daniels Exp $ */
 
 /*
  

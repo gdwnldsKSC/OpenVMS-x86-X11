@@ -1,3 +1,14 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 3.5.5
+
+2006-03-18  Matthieu Herrb <matthieu.herrb@laas.fr>
+
+	* src/Attrib.c: XpmFreeExtensions
+	doublecheck that a pointer is not NULL before dereferencing it.
+	(Coverity CID 121).
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

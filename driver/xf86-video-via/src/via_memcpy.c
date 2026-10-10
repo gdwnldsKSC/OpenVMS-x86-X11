@@ -25,6 +25,7 @@
 #include "config.h"
 #endif
 
+#include <via.h>
 #include "via_driver.h"
 #include "via_memcpy.h"
 #include "compiler.h"
@@ -546,7 +547,6 @@ vidCopyFunc viaVidCopyInit( char *copyType,
     double cpuFreq;
     VIAPtr pVia = VIAPTR(pScrn);
 
-    pScrn->pScreen = pScreen;
     if (NULL == (cpuInfoFile = fopen("/proc/cpuinfo","r"))) {
 	return libc_YUV42X;
     }

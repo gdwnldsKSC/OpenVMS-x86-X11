@@ -72,10 +72,10 @@
 
 #define RENDITION_NAME            "RENDITION"
 #define RENDITION_DRIVER_NAME     "rendition"
-#define RENDITION_VERSION_NAME    "4.0.1"
+#define RENDITION_VERSION_NAME    "4.1.0"
 #define RENDITION_VERSION_MAJOR   4
-#define RENDITION_VERSION_MINOR   0
-#define RENDITION_PATCHLEVEL      1
+#define RENDITION_VERSION_MINOR   1
+#define RENDITION_PATCHLEVEL      0
 #define RENDITION_VERSION_CURRENT ((RENDITION_VERSION_MAJOR << 24) | \
                  (RENDITION_VERSION_MINOR << 16) | RENDITION_PATCHLEVEL)
 
@@ -787,32 +787,6 @@ renditionPreInit(ScrnInfoPtr pScreenInfo, int flags)
       xf86DrvMsg(pScreenInfo->scrnIndex, X_CONFIG,
 		 ("Skipping DDC probe on users request\n"));
     }
-#endif
-
-    /*
-     * Determine clocks.  Limit them to the first four because that's all that
-     * can be addressed.
-     * XXX Aren't the clocks programmable?  If so, this discrete clock stuff
-     * shouldn't be used.
-     */
-#if 0
-    if ((pScreenInfo->numClocks = pRendition->pEnt->device->numclocks))
-    {
-        if (pScreenInfo->numClocks > 4)
-            pScreenInfo->numClocks = 4;
-        for (i = 0;  i < pScreenInfo->numClocks;  i++)
-            pScreenInfo->clock[i] = pRendition->pEnt->device->clock[i];
-        From = X_CONFIG;
-    }
-    else
-    {
-        xf86GetClocks(pScreenInfo, 4,
-	    renditionClockSelect, renditionProtect, renditionBlankScreen,
-	    pvgaHW->PIOOffset + pvgaHW->IOBase + VGA_IN_STAT_1_OFFSET,
-	    0x08, 1, 28322);
-        From = X_PROBED;
-    }
-    xf86ShowClocks(pScreenInfo, From);
 #endif
 
     /* Set the virtual X rounding (in bits) */

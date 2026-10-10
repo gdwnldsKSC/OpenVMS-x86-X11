@@ -1,5 +1,5 @@
 /* $Xorg: Clock.c,v 1.4 2001/02/09 02:05:39 xorgcvs Exp $ */
-/* $XdotOrg: xc/programs/xclock/Clock.c,v 1.3 2004/10/30 20:33:44 alanc Exp $ */
+/* $XdotOrg: app/xclock/Clock.c,v 1.6 2006/03/29 02:10:49 alanc Exp $ */
 
 /***********************************************************
 
@@ -1140,11 +1140,11 @@ Destroy(Widget gw)
 {
      ClockWidget w = (ClockWidget) gw;
      if (w->clock.interval_id) XtRemoveTimeOut (w->clock.interval_id);
-#ifdef RENDER
+#ifdef XRENDER
     if (w->clock.picture)
-	XRenderFreePicture (dpy, w->clock.picture);
+	XRenderFreePicture (XtDisplay(w), w->clock.picture);
     if (w->clock.fill_picture)
-	XRenderFreePicture (dpy, w->clock.fill_picture);
+	XRenderFreePicture (XtDisplay(w), w->clock.fill_picture);
 #endif
      XtReleaseGC (gw, w->clock.myGC);
      XtReleaseGC (gw, w->clock.HighGC);

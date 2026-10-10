@@ -79,40 +79,40 @@ AC_REQUIRE([AC_CANONICAL_HOST])
 
 if test x$APP_MAN_SUFFIX = x    ; then
     case $host_os in
-	linux*)	APP_MAN_SUFFIX=1x ;;
+	linux* | k*bsd*-gnu)	APP_MAN_SUFFIX=1x ;;
 	*)	APP_MAN_SUFFIX=1  ;;
     esac
 fi
 if test x$APP_MAN_DIR = x    ; then
     case $host_os in
-	linux*)	APP_MAN_DIR='$(mandir)/man1' ;;
+	linux* | k*bsd*-gnu)	APP_MAN_DIR='$(mandir)/man1' ;;
 	*)	APP_MAN_DIR='$(mandir)/man$(APP_MAN_SUFFIX)' ;;
     esac
 fi
 
 if test x$LIB_MAN_SUFFIX = x    ; then
     case $host_os in
-	linux*)	LIB_MAN_SUFFIX=3x ;;
+	linux* | k*bsd*-gnu)	LIB_MAN_SUFFIX=3x ;;
 	*)	LIB_MAN_SUFFIX=3  ;;
     esac
 fi
 if test x$LIB_MAN_DIR = x    ; then
     case $host_os in
-	linux*)	LIB_MAN_DIR='$(mandir)/man3' ;;
+	linux* | k*bsd*-gnu)	LIB_MAN_DIR='$(mandir)/man3' ;;
 	*)	LIB_MAN_DIR='$(mandir)/man$(LIB_MAN_SUFFIX)' ;;
     esac
 fi
 
 if test x$FILE_MAN_SUFFIX = x    ; then
     case $host_os in
-	linux*)		FILE_MAN_SUFFIX=5x ;;
+	linux* | k*bsd*-gnu)		FILE_MAN_SUFFIX=5x ;;
 	solaris*)	FILE_MAN_SUFFIX=4  ;;
 	*)		FILE_MAN_SUFFIX=5  ;;
     esac
 fi
 if test x$FILE_MAN_DIR = x    ; then
     case $host_os in
-	linux*)	FILE_MAN_DIR='$(mandir)/man5' ;;
+	linux* | k*bsd*-gnu)	FILE_MAN_DIR='$(mandir)/man5' ;;
 	*)	FILE_MAN_DIR='$(mandir)/man$(FILE_MAN_SUFFIX)' ;;
     esac
 fi
@@ -121,14 +121,14 @@ fi
 # LinuxDebian, not other Linuxes, so we leave it unchanged here
 if test x$MISC_MAN_SUFFIX = x    ; then
     case $host_os in
-#	linux*)		MISC_MAN_SUFFIX=7x ;;
+#	linux* | k*bsd*-gnu)		MISC_MAN_SUFFIX=7x ;;
 	solaris*)	MISC_MAN_SUFFIX=5  ;;
 	*)		MISC_MAN_SUFFIX=7  ;;
     esac
 fi
 if test x$MISC_MAN_DIR = x    ; then
     case $host_os in
-#	linux*)	MISC_MAN_DIR='$(mandir)/man7' ;;
+#	linux* | k*bsd*-gnu)	MISC_MAN_DIR='$(mandir)/man7' ;;
 	*)	MISC_MAN_DIR='$(mandir)/man$(MISC_MAN_SUFFIX)' ;;
     esac
 fi
@@ -137,14 +137,14 @@ fi
 # LinuxDebian, not other Linuxes, so we leave it unchanged here
 if test x$DRIVER_MAN_SUFFIX = x    ; then
     case $host_os in
-#	linux*)		DRIVER_MAN_SUFFIX=4x ;;
+#	linux* | k*bsd*-gnu)		DRIVER_MAN_SUFFIX=4x ;;
 	solaris*)	DRIVER_MAN_SUFFIX=7  ;;
 	*)		DRIVER_MAN_SUFFIX=4  ;;
     esac
 fi
 if test x$DRIVER_MAN_DIR = x    ; then
     case $host_os in
-#	linux*)	DRIVER_MAN_DIR='$(mandir)/man4' ;;
+#	linux* | k*bsd*-gnu)	DRIVER_MAN_DIR='$(mandir)/man4' ;;
 	*)	DRIVER_MAN_DIR='$(mandir)/man$(DRIVER_MAN_SUFFIX)' ;;
     esac
 fi

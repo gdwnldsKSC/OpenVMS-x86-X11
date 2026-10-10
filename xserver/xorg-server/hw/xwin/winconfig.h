@@ -29,7 +29,7 @@
  *
  * Authors: Alexander Gottwald	
  */
-/* $Id: winconfig.h,v 1.4 2005/07/01 22:43:40 daniels Exp $ */
+/* $Id$ */
 
 #include "win.h"
 #ifdef XWIN_XF86CONFIG

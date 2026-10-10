@@ -61,32 +61,31 @@ SOFTWARE.
 #include "XIint.h"
 
 int
-XGetDeviceFocus (dpy, dev, focus, revert_to, time)
+XGetDeviceFocus(dpy, dev, focus, revert_to, time)
     register Display *dpy;
     XDevice *dev;
     Window *focus;
     int *revert_to;
     Time *time;
-    {       
-    xGetDeviceFocusReq 	*req;
-    xGetDeviceFocusReply 	rep;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+{
+    xGetDeviceFocusReq *req;
+    xGetDeviceFocusReply rep;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return (NoSuchExtension);
 
-    GetReq(GetDeviceFocus,req);		
+    GetReq(GetDeviceFocus, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_GetDeviceFocus;
     req->deviceid = dev->device_id;
 
-    (void) _XReply (dpy, (xReply *) &rep, 0, xTrue);
+    (void)_XReply(dpy, (xReply *) & rep, 0, xTrue);
     *focus = rep.focus;
     *revert_to = rep.revertTo;
     *time = rep.time;
     UnlockDisplay(dpy);
     SyncHandle();
     return (Success);
-    }
-
+}

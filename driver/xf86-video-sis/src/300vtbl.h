@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/300vtbl.h,v 1.13 2005/07/04 10:57:08 twini Exp $ */
 /*
  * Register settings for SiS 300 series
  *

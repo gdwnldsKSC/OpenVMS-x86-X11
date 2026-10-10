@@ -61,26 +61,26 @@ SOFTWARE.
 #include "XIint.h"
 
 int
-XUngrabDevice (dpy, dev, time)
+XUngrabDevice(dpy, dev, time)
     register Display *dpy;
     XDevice *dev;
     Time time;
-    {
-    register xUngrabDeviceReq 	*req;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+{
+    register xUngrabDeviceReq *req;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return (NoSuchExtension);
 
-    GetReq(UngrabDevice,req);		
+    GetReq(UngrabDevice, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_UngrabDevice;
-    
+
     req->deviceid = dev->device_id;
     req->time = time;
 
     UnlockDisplay(dpy);
     SyncHandle();
     return (Success);
-    }
+}

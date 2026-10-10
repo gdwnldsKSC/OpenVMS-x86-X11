@@ -1,4 +1,4 @@
-# $XdotOrg: lib/Xi/src/Makefile.am,v 1.1 2005/05/22 19:37:27 alanc Exp $
+# $XdotOrg: lib/Xi/src/Makefile.am,v 1.7 2006/03/20 19:54:58 ajax Exp $
 
 lib_LTLIBRARIES = libXi.la
 
@@ -48,7 +48,7 @@ AM_CFLAGS = $(XI_CFLAGS) $(MALLOC_ZERO_CFLAGS)
 
 #INCLUDES = -I$(top_srcdir)/include/X11/extensions
 
-libXi_la_LDFLAGS = -version-number 6:0:0
+libXi_la_LDFLAGS = -version-number 6:0:0 -no-undefined
 
 #libXiincludedir = $(includedir)/X11/extensions
 #libXiinclude_HEADERS = $(top_srcdir)/include/X11/extensions/Xi.h 

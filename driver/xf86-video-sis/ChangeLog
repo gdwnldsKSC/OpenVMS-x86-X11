@@ -1,3 +1,29 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/sis.h:
+	Bump to 0.9.1 for Xv changes.
+
+2006-04-07  Aaron Plattner  <aplattner@nvidia.com>
+
+	* src/sis6326_video.c:
+	* src/sis_video.c: (SISPutImage):
+	* src/sis_video.h:
+	Add a DrawablePtr argument to the XV functions to pave the way for
+	redirected video.
+
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/sis.h:
+	Unlibcwrap.  Bump server version requirement.  Bump to 0.9.0.
+
+2006-04-06  Eric Anholt  <anholt@FreeBSD.org>
+
+	* src/sis_driver.c:
+	Don't forget to zero the xf86ModReqInfo before using it.
+	Noticed by Alex Deucher.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

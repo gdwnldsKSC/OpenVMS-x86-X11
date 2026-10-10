@@ -104,6 +104,9 @@
 #endif
 
 #include "xf86Aiptek.h"
+#include <errno.h>
+#include <string.h>
+#include <math.h>
 
 static const char identification[] = "$Identification: 0 $";
 static InputDriverPtr aiptekDrv;
@@ -2440,7 +2443,7 @@ static XF86ModuleVersionInfo xf86AiptekVersionRec =
     MODINFOSTRING1,
     MODINFOSTRING2,
     XORG_VERSION_CURRENT,
-    1, 0, 0,
+    1, 1, 0,
     ABI_CLASS_XINPUT,
     ABI_XINPUT_VERSION,
     MOD_CLASS_XINPUT,

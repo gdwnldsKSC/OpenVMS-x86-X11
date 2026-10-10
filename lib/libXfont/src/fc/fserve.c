@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/lib/font/fc/fserve.c,v 1.7 2005/07/08 19:53:05 ajax Exp $ */
+/* $XdotOrg: lib/Xfont/src/fc/fserve.c,v 1.9 2006/02/21 21:35:32 daniels Exp $ */
 /* $Xorg: fserve.c,v 1.4 2001/02/09 02:04:02 xorgcvs Exp $ */
 /*
 
@@ -2366,7 +2366,7 @@ fs_read_list_info(FontPathElementPtr fpe, FSBlockDataPtr blockrec)
     _fs_free_props (&binfo->info);
 
     rep = (fsListFontsWithXInfoReply *) fs_get_reply (conn, &ret);
-    if (rep == 0)
+    if (!rep || rep->type == FS_Error)
     {
 	if (ret == FSIO_BLOCK)
 	    return StillWorking;

@@ -1,3 +1,4 @@
+/* $XdotOrg: lib/fontenc/src/encparse.c,v 1.6 2006/04/10 16:15:12 alanc Exp $ */
 /*
 Copyright (c) 1998-2001 by Juliusz Chroboczek
 
@@ -867,8 +868,10 @@ FontEncReallyReallyLoad(const char *charset,
         if(!strcasecmp(encoding_name, charset)) {
             /* Found it */
             if(file_name[0] != '/') {
-                if(strlen(dir) + strlen(file_name) >= MAXFONTFILENAMELEN)
+                if(strlen(dir) + strlen(file_name) >= MAXFONTFILENAMELEN) {
+		    fclose(file);
                     return NULL;
+		}
                 strcpy(buf, dir);
                 strcat(buf, file_name);
             } else {
@@ -877,6 +880,7 @@ FontEncReallyReallyLoad(const char *charset,
 
             f = FontFileOpen(buf);
             if(f == NULL) {
+		fclose(file);		
                 return NULL;
             }
             encoding = parseEncodingFile(f, 0);

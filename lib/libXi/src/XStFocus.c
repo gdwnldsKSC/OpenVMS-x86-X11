@@ -62,18 +62,18 @@ SOFTWARE.
 
 int
 XSetDeviceFocus(dpy, dev, focus, revert_to, time)
-    register 	Display *dpy;
-    XDevice 	*dev;
-    Window 	focus;
-    int 	revert_to;
-    Time	time;
-    {       
-    xSetDeviceFocusReq 	*req;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+    register Display *dpy;
+    XDevice *dev;
+    Window focus;
+    int revert_to;
+    Time time;
+{
+    xSetDeviceFocusReq *req;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
 
-    GetReq(SetDeviceFocus,req);		
+    GetReq(SetDeviceFocus, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_SetDeviceFocus;
     req->device = dev->device_id;
@@ -84,4 +84,4 @@ XSetDeviceFocus(dpy, dev, focus, revert_to, time)
     UnlockDisplay(dpy);
     SyncHandle();
     return (Success);
-    }
+}

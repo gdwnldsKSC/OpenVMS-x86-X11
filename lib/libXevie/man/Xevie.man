@@ -1,5 +1,5 @@
 .\"
-.\" $XdotOrg: xc/lib/Xevie/Xevie.man,v $
+.\" $XdotOrg: lib/Xevie/man/Xevie.man,v 1.2 2005/04/04 02:41:49 alanc Exp $
 .\"
 .\"
 .de TQ

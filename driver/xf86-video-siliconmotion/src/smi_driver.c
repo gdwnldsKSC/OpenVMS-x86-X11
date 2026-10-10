@@ -88,9 +88,9 @@ static void SMI_ProbeDDC(ScrnInfoPtr pScrn, int index);
 
 #define SILICONMOTION_NAME          "Silicon Motion"
 #define SILICONMOTION_DRIVER_NAME   "siliconmotion"
-#define SILICONMOTION_VERSION_NAME  "1.3.1"
+#define SILICONMOTION_VERSION_NAME  "1.4.1"
 #define SILICONMOTION_VERSION_MAJOR 1
-#define SILICONMOTION_VERSION_MINOR 3
+#define SILICONMOTION_VERSION_MINOR 4
 #define SILICONMOTION_PATCHLEVEL    1
 #define SILICONMOTION_DRIVER_VERSION ((SILICONMOTION_VERSION_MAJOR << 24) | \
                                       (SILICONMOTION_VERSION_MINOR << 16) | \
@@ -1066,40 +1066,6 @@ SMI_PreInit(ScrnInfoPtr pScrn, int flags)
 				pSmi->videoRAMKBytes);
 	}
 
-	/* Lynx built-in ramdac speeds */
-	pScrn->numClocks = 4;
-
-	if ((pScrn->clock[3] <= 0) && (pScrn->clock[2] > 0))
-	{
-		pScrn->clock[3] = pScrn->clock[2];
-	}
-
-    if ((pSmi->Chipset == SMI_LYNX3DM) || (pSmi->Chipset == SMI_COUGAR3DR))
-	{
-		if (pScrn->clock[0] <= 0) pScrn->clock[0] = 200000;
-		if (pScrn->clock[1] <= 0) pScrn->clock[1] = 200000;
-		if (pScrn->clock[2] <= 0) pScrn->clock[2] = 200000;
-		if (pScrn->clock[3] <= 0) pScrn->clock[3] = 200000;
-	}
-	else
-	{
-		if (pScrn->clock[0] <= 0) pScrn->clock[0] = 135000;
-		if (pScrn->clock[1] <= 0) pScrn->clock[1] = 135000;
-		if (pScrn->clock[2] <= 0) pScrn->clock[2] = 135000;
-		if (pScrn->clock[3] <= 0) pScrn->clock[3] = 135000;
-	}
-
-	/* Now set RAMDAC limits */
-	switch (pSmi->Chipset)
-	{
-		default:
-			pSmi->minClock = 20000;
-			pSmi->maxClock = 135000;
-			break;
-	}
-	xf86ErrorFVerb(VERBLEV, "\tSMI_PreInit minClock=%d, maxClock=%d\n",
-			pSmi->minClock, pSmi->maxClock);
-
 	/* Detect current MCLK and print it for user */
 	m = VGAIN8_INDEX(pSmi, VGA_SEQ_INDEX, VGA_SEQ_DATA, 0x6A);
 	n = VGAIN8_INDEX(pSmi, VGA_SEQ_INDEX, VGA_SEQ_DATA, 0x6B);
@@ -1133,8 +1099,13 @@ SMI_PreInit(ScrnInfoPtr pScrn, int flags)
 	 */
 	clockRanges = xnfcalloc(sizeof(ClockRange),1);
 	clockRanges->next = NULL;
-	clockRanges->minClock = pSmi->minClock;
-	clockRanges->maxClock = pSmi->maxClock;
+	clockRanges->minClock = 20000;
+
+        if ((pSmi->Chipset == SMI_LYNX3DM) || (pSmi->Chipset == SMI_COUGAR3DR))
+            clockRanges->maxClock = 200000;
+        else
+            clockRanges->maxClock = 135000;
+
 	clockRanges->clockIndex = -1;
 	clockRanges->interlaceAllowed = FALSE;
 	clockRanges->doubleScanAllowed = FALSE;
@@ -2641,8 +2612,10 @@ SMI_ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 	if (pSmi->MCLK > 0)
 	{
 		SMI_CommonCalcClock(pScrn->scrnIndex, pSmi->MCLK,
-				    1, 1, 31, 0, 2, pSmi->minClock,
-				    pSmi->maxClock, &new->SR6A, &new->SR6B);
+				    1, 1, 31, 0, 2,
+                                    pScrn->clockRanges->minClock,
+                                    pScrn->clockRanges->maxClock,
+                                    &new->SR6A, &new->SR6B);
 	}
 	else
 	{

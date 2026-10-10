@@ -22,8 +22,9 @@
  * 
  */
 
-#define GLX_GLXEXT_LEGACY
+#define GLX_GLXEXT_PROTOTYPES
 #include <GL/glx.h>
+#include <GL/glxext.h>
 #include <X11/Xlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -58,8 +59,8 @@ int main (int argc, char *argv[]) {
     char *funcArg = NULL;
     char *dpyName = NULL;
 
-    GetScreenDriver = (glXGetScreenDriver_t *)glXGetProcAddressARB ("glXGetScreenDriver");
-    GetDriverConfig = (glXGetDriverConfig_t *)glXGetProcAddressARB ("glXGetDriverConfig");
+    GetScreenDriver = (glXGetScreenDriver_t *)glXGetProcAddressARB ((const GLubyte *)"glXGetScreenDriver");
+    GetDriverConfig = (glXGetDriverConfig_t *)glXGetProcAddressARB ((const GLubyte *)"glXGetDriverConfig");
     if (!GetScreenDriver || !GetDriverConfig) {
 	fprintf (stderr, "libGL is too old.\n");
 	return 1;

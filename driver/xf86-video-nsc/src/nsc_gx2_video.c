@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_gx2_video.c,v 1.6tsi Exp $ */
 /*
  * $Workfile: nsc_gx2_video.c $
- * $Revision: 1.6 $
- * $Author: ajax $
+ * $Revision: 1.5 $
+ * $Author: daniels $
  *
  * File Contents: This file consists of main Xfree video supported routines.
  *
@@ -151,7 +151,6 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
-#include "xf86_ansic.h"
 #include "compiler.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -190,7 +189,7 @@ static void GX2QueryBestSize(ScrnInfoPtr, Bool,
 			     unsigned int *, pointer);
 static int GX2PutImage(ScrnInfoPtr, short, short, short, short, short, short,
 		       short, short, int, unsigned char *, short, short, Bool,
-		       RegionPtr, pointer);
+		       RegionPtr, pointer, DrawablePtr);
 static int GX2QueryImageAttributes(ScrnInfoPtr, int, unsigned short *,
 				   unsigned short *, int *, int *);
 
@@ -1018,7 +1017,8 @@ GX2PutImage(ScrnInfoPtr pScrn,
 	    short drw_w, short drw_h,
 	    int id, unsigned char *buf,
 	    short width, short height,
-	    Bool sync, RegionPtr clipBoxes, pointer data)
+	    Bool sync, RegionPtr clipBoxes, pointer data,
+	    DrawablePtr pDraw)
 {
    GeodePortPrivPtr pPriv = (GeodePortPrivPtr) data;
    GeodePtr pGeode = GEODEPTR(pScrn);

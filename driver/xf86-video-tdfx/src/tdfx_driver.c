@@ -50,7 +50,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * These are X and server generic header files.
  */
 #include "xf86.h"
-#include "xf86_ansic.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
 #include "xf86RAC.h"

@@ -1,5 +1,5 @@
 /*
- * $Id: xcursorint.h,v 1.6 2005/10/19 22:26:55 ajax Exp $
+ * $Id: xcursorint.h,v 1.5 2005/07/03 07:00:56 daniels Exp $
  *
  * Copyright © 2002 Keith Packard
  *

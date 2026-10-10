@@ -1,3 +1,22 @@
+2006-03-31  Fredrik Höglund  <fredrik@kde.org>
+
+	* configure.ac:
+	Update the package version number to 1.1.	
+	Require scrnsaverproto >= 1.1.
+
+	* man/Makefile.am:
+	* man/Xss.man:
+	Update the manpage to document the new XScreenSaverSuspend function.
+
+	* src/XScrnSaver.c (XScreenSaverSuspend):
+	Add the implementation of XScreenSaverSuspend.
+
+2006-02-12  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* man/Makefile.am: 
+	Bug #5628 <https://bugs.freedesktop.org/show_bug.cgi?id=5628>
+	Shadow pages not created correctly when MANDIR & MANSUFFIX don't match.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

@@ -27,6 +27,8 @@
 
 libmandir = $(LIB_MAN_DIR)
 
+LIB_MAN_DIR_SUFFIX = $(LIB_MAN_DIR:@mandir@/man%=%)
+
 libman_PRE = XDGA.man
 
 BUILT_SOURCES = shadows.DONE
@@ -81,5 +83,5 @@ XDGA_shadows = XF86DGA XFree86-DGA $(DGAFUNCS)
 shadows.DONE:
 	-rm -f $(XDGA_shadows:=.@LIB_MAN_SUFFIX@)
 	(for i in $(XDGA_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XDGA.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XDGA.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)

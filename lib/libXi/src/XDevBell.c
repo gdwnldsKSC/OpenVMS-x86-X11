@@ -61,20 +61,20 @@ SOFTWARE.
 #include "XIint.h"
 
 int
-XDeviceBell (dpy, dev, feedbackclass, feedbackid, percent)
-    register Display 	*dpy;
-    XDevice		*dev;
-    XID			feedbackclass, feedbackid;
-    int			percent;
-    {       
-    xDeviceBellReq 	*req;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+XDeviceBell(dpy, dev, feedbackclass, feedbackid, percent)
+    register Display *dpy;
+    XDevice *dev;
+    XID feedbackclass, feedbackid;
+    int percent;
+{
+    xDeviceBellReq *req;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Add_XDeviceBell) == -1)
 	return (NoSuchExtension);
 
-    GetReq(DeviceBell,req);		
+    GetReq(DeviceBell, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_DeviceBell;
     req->deviceid = dev->device_id;
@@ -85,5 +85,4 @@ XDeviceBell (dpy, dev, feedbackclass, feedbackid, percent)
     UnlockDisplay(dpy);
     SyncHandle();
     return (Success);
-    }
-
+}

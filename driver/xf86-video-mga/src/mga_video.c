@@ -7,7 +7,6 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
-#include "xf86_ansic.h"
 #include "compiler.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -50,7 +49,7 @@ static void MGAQueryBestSize(ScrnInfoPtr, Bool, short, short, short, short,
 			unsigned int *, unsigned int *, pointer);
 static int  MGAPutImage(ScrnInfoPtr, short, short, short, short, short, 
 			short, short, short, int, unsigned char*, short, 
-			short, Bool, RegionPtr, pointer);
+			short, Bool, RegionPtr, pointer, DrawablePtr);
 static int  MGAQueryImageAttributes(ScrnInfoPtr, int, unsigned short *, 
 			unsigned short *,  int *, int *);
 
@@ -650,6 +649,14 @@ MGADisplayVideoOverlay(
 
 }
 
+
+/**
+ * \todo
+ * Starting with at least the G200, the chip can handle non-mipmapped
+ * non-power-of-two textures.  However, the code in this routine forces the
+ * texture dimensions to be powers of two.  That should simplify the code and
+ * may improve performance slightly.
+ */
 static void
 MGADisplayVideoTexture(
     ScrnInfoPtr pScrn,
@@ -694,9 +701,8 @@ MGADisplayVideoTexture(
     CHECK_DMA_QUIESCENT(pMga, pScrn);
 
     if(pMga->Overlay8Plus24) {
-	i = 0x00ffffff;
 	WAITFIFO(1);
-	SET_PLANEMASK(i);
+	SET_PLANEMASK_REPLICATED( 0x00ffffff, 0xffffffff, 32 );
     }
 
     WAITFIFO(15);
@@ -747,7 +753,8 @@ MGAPutImage(
   int id, unsigned char* buf, 
   short width, short height, 
   Bool Sync,
-  RegionPtr clipBoxes, pointer data
+  RegionPtr clipBoxes, pointer data,
+  DrawablePtr pDraw
 ){
    MGAPtr pMga = MGAPTR(pScrn);
    MGAPortPrivPtr pPriv = pMga->portPrivate;

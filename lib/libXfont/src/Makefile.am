@@ -1,5 +1,5 @@
 # 
-#  $Id: Makefile.am,v 1.4 2005/07/16 07:55:12 daniels Exp $
+#  $Id: Makefile.am,v 1.3 2005/07/14 14:56:13 ajax Exp $
 # 
 #  Copyright © 2003 Keith Packard, Noah Levitt
 # 
@@ -82,4 +82,4 @@ libXfont_la_LIBADD = \
 
 libXfont_la_SOURCES = dummy.c
 
-libXfont_la_LDFLAGS = -version-number 1:4:1
+libXfont_la_LDFLAGS = -version-number 1:4:1 -no-undefined

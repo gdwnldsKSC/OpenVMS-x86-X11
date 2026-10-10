@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_gx2_vga.c,v 1.2tsi Exp $ */
 /*
  * $Workfile: nsc_gx2_vga.c $
- * $Revision: 1.4 $
- * $Author: ajax $
+ * $Revision: 1.3 $
+ * $Author: daniels $
  *
  * This file contains routines to set modes using the VGA registers.  
  * Since this file is for the first generation graphics unit, it interfaces

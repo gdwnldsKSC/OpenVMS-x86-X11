@@ -38,7 +38,6 @@
 #include "micmap.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Version.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -123,7 +122,7 @@ static Bool FBDevProbed = FALSE;
  */
 
 _X_EXPORT DriverRec GLINT = {
-    VERSION,
+    GLINT_VERSION,
     GLINT_DRIVER_NAME,
     GLINTIdentify,
     GLINTProbe,
@@ -707,7 +706,7 @@ GLINTProbe(DriverPtr drv, int flags)
   		    /* Fill in what we can of the ScrnInfoRec */
  		    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
  			       "%s successfully probed\n", dev ? dev : "default framebuffer device");
-  		    pScrn->driverVersion = VERSION;
+  		    pScrn->driverVersion = GLINT_VERSION;
   		    pScrn->driverName	 = GLINT_DRIVER_NAME;
 		    pScrn->name		 = GLINT_NAME;
 		    pScrn->Probe	 = GLINTProbe;
@@ -812,7 +811,7 @@ GLINTProbe(DriverPtr drv, int flags)
 		}
 
 		/* Fill in what we can of the ScrnInfoRec */
-		pScrn->driverVersion	= VERSION;
+		pScrn->driverVersion	= GLINT_VERSION;
 		pScrn->driverName	= GLINT_DRIVER_NAME;
 		pScrn->name		= GLINT_NAME;
 		pScrn->Probe	 	= GLINTProbe;

@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/vstruct.h,v 1.20 2005/09/05 14:26:16 twini Exp $ */
 /*
  * General structure definitions for universal mode switching modules
  *

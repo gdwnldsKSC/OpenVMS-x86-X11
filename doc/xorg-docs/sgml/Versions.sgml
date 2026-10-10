@@ -56,9 +56,7 @@ usually be added in update releases.  Update/bugfix releases will not be
 full releases, and will consist of source code patches, plus binary
 updates to be layered on top of the previous full release.
 
-The next full release will be version &nextrelvers;.  There is no
-scheduled update release, but if one is needed, the version will be
-&nextupdrelvers;.
+The next full release will be version &nextrelvers;.
 
 Aside from actual releases, snapshots of the active release branches
 are tagged in the CVS repository from time to time.  Each such snapshot

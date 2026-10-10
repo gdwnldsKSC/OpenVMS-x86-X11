@@ -27,7 +27,7 @@
 ;; Author: Paulo César Pereira de Andrade
 ;;
 ;;
-;; $XdotOrg: xc/programs/xedit/lisp/modules/xedit.lsp,v 1.2 2004/04/23 19:54:45 eich Exp $
+;; $XdotOrg: app/xedit/lisp/modules/xedit.lsp,v 1.3 2004/12/04 00:43:14 kuhn Exp $
 ;; $XFree86: xc/programs/xedit/lisp/modules/xedit.lsp,v 1.9 2003/01/16 03:50:46 paulo Exp $
 ;;
 

@@ -1,5 +1,5 @@
 .\" $Xorg: XtAppEM.man,v 1.3 2000/08/17 19:41:58 cpqbld Exp $
-.\" $XdotOrg: $
+.\" $XdotOrg: lib/Xt/man/XtAppErrorMsg.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright 1993 X Consortium
 .\"

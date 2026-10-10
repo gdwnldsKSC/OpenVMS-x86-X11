@@ -31,7 +31,6 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -150,7 +149,7 @@ BladeInitializeAccelerator(ScrnInfoPtr pScrn)
 }
 
 Bool
-BladeAccelInit(ScreenPtr pScreen)
+BladeXaaInit(ScreenPtr pScreen)
 {
     XAAInfoRecPtr infoPtr;
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];

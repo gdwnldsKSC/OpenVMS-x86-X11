@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sisusb/src/sisusb.h,v 1.17 2006/04/08 01:48:35 ajax Exp $ */
 /*
  * Main global data and definitions
  *
@@ -34,6 +34,14 @@
 #ifndef _SISUSB_H
 #define _SISUSB_H_
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+
 #define SISUSBDRIVERVERSIONYEAR    5
 #define SISUSBDRIVERVERSIONMONTH   9
 #define SISUSBDRIVERVERSIONDAY     28
@@ -63,7 +71,7 @@
 #define SISUSB_DRIVER_NAME         "sisusb"
 
 #define SISUSB_MAJOR_VERSION       0
-#define SISUSB_MINOR_VERSION       7
+#define SISUSB_MINOR_VERSION       8
 #define SISUSB_PATCHLEVEL          1
 #define SISUSB_CURRENT_VERSION     ((SISUSB_MAJOR_VERSION << 16) | 	\
                                    (SISUSB_MINOR_VERSION << 8)   |	\
@@ -73,7 +81,6 @@
 #define TWDEBUG    /* for debugging */
 #endif
 
-#include "xf86_ansic.h"
 #include "compiler.h"
 #include "xf86Priv.h"
 #include "xf86_OSproc.h"

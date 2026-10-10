@@ -1,7 +1,7 @@
-# $XdotOrg: $
+# $XdotOrg: app/xcursorgen/configure.ac,v 1.8 2006/05/19 18:33:36 ajax Exp $
 
 AC_PREREQ([2.57])
-AC_INIT(xcursorgen, [1.0.0], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], xcursorgen)
+AC_INIT(xcursorgen, [1.0.1], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], xcursorgen)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

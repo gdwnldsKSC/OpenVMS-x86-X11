@@ -307,9 +307,9 @@
 #       define RADEON_CRTC_DBL_SCAN_EN      (1 <<  0)
 #       define RADEON_CRTC_INTERLACE_EN     (1 <<  1)
 #       define RADEON_CRTC_CSYNC_EN         (1 <<  4)
+#       define RADEON_CRTC_ICON_EN          (1 << 15)
 #       define RADEON_CRTC_CUR_EN           (1 << 16)
 #       define RADEON_CRTC_CUR_MODE_MASK    (7 << 17)
-#       define RADEON_CRTC_ICON_EN          (1 << 20)
 #       define RADEON_CRTC_EXT_DISP_EN      (1 << 24)
 #       define RADEON_CRTC_EN               (1 << 25)
 #       define RADEON_CRTC_DISP_REQ_EN_B    (1 << 26)
@@ -364,6 +364,8 @@
 #	define RADEON_CRTC_OFFSET__OFFSET_LOCK 	   (1<<31)
 
 #define RADEON_CRTC2_OFFSET                 0x0324
+#	define RADEON_CRTC2_OFFSET__GUI_TRIG_OFFSET (1<<30)
+#	define RADEON_CRTC2_OFFSET__OFFSET_LOCK	    (1<<31)
 #define RADEON_CRTC_OFFSET_CNTL             0x0228
 #       define RADEON_CRTC_TILE_LINE_SHIFT              0
 #       define RADEON_CRTC_TILE_LINE_RIGHT_SHIFT        4
@@ -392,6 +394,7 @@
 #define R300_CRTC2_TILE_X0_Y0	            0x0358
 
 #define RADEON_CRTC2_OFFSET_CNTL            0x0328
+#       define RADEON_CRTC2_OFFSET_FLIP_CNTL (1 << 16)
 #       define RADEON_CRTC2_TILE_EN         (1 << 15)
 #define RADEON_CRTC_PITCH                   0x022c
 #	define RADEON_CRTC_PITCH__SHIFT		 0
@@ -812,6 +815,7 @@
 #define RADEON_HOST_DATA_LAST               0x17e0
 #define RADEON_HOST_PATH_CNTL               0x0130
 #       define RADEON_HDP_SOFT_RESET        (1 << 26)
+#       define RADEON_HDP_APER_CNTL         (1 << 23)
 #define RADEON_HTOTAL_CNTL                  0x0009 /* PLL */
 #define RADEON_HTOTAL2_CNTL                 0x002e /* PLL */
 
@@ -848,6 +852,9 @@
 #define RADEON_MAX_LATENCY                  0x0f3f /* PCI */
 #define RADEON_MC_AGP_LOCATION              0x014c
 #define RADEON_MC_FB_LOCATION               0x0148
+#define RADEON_MC_STATUS                    0x0150
+#       define RADEON_MC_IDLE               (1 << 2)
+#       define R300_MC_IDLE                 (1 << 4)
 #define RADEON_DISPLAY_BASE_ADDR            0x23c
 #define RADEON_DISPLAY2_BASE_ADDR           0x33c
 #define RADEON_OV0_BASE_ADDR                0x43c
@@ -925,6 +932,14 @@
 #       define  RADEON_EXCL_VERT_START_MASK        0x000003ff
 #       define  RADEON_EXCL_VERT_END_MASK          0x03ff0000
 #define RADEON_OV0_FILTER_CNTL              0x04A0
+#       define RADEON_FILTER_PROGRAMMABLE_COEF            0x0
+#       define RADEON_FILTER_HC_COEF_HORZ_Y               0x1
+#       define RADEON_FILTER_HC_COEF_HORZ_UV              0x2
+#       define RADEON_FILTER_HC_COEF_VERT_Y               0x4
+#       define RADEON_FILTER_HC_COEF_VERT_UV              0x8
+#       define RADEON_FILTER_HARDCODED_COEF               0xf
+#       define RADEON_FILTER_COEF_MASK                    0xf
+
 #define RADEON_OV0_FOUR_TAP_COEF_0          0x04B0
 #define RADEON_OV0_FOUR_TAP_COEF_1          0x04B4
 #define RADEON_OV0_FOUR_TAP_COEF_2          0x04B8
@@ -1012,14 +1027,15 @@
 #       define  RADEON_SCALER_SOURCE_YVYU422       0x00000C00L
 #       define  RADEON_SCALER_ADAPTIVE_DEINT       0x00001000L
 #       define  RADEON_SCALER_TEMPORAL_DEINT       0x00002000L
+#       define  RADEON_SCALER_CRTC_SEL             0x00004000L
 #       define  RADEON_SCALER_SMART_SWITCH         0x00008000L
 #       define  RADEON_SCALER_BURST_PER_PLANE      0x007F0000L
 #       define  RADEON_SCALER_DOUBLE_BUFFER        0x01000000L
 #       define  RADEON_SCALER_DIS_LIMIT            0x08000000L
+#       define  RADEON_SCALER_LIN_TRANS_BYPASS     0x10000000L
 #       define  RADEON_SCALER_INT_EMU              0x20000000L
 #       define  RADEON_SCALER_ENABLE               0x40000000L
 #       define  RADEON_SCALER_SOFT_RESET           0x80000000L
-#       define  RADEON_SCALER_ADAPTIVE_DEINT       0x00001000L
 #define RADEON_OV0_STEP_BY                  0x0484
 #define RADEON_OV0_TEST                     0x04F8
 #define RADEON_OV0_V_INC                    0x0424

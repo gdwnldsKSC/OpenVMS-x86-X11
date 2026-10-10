@@ -56,7 +56,6 @@ in this Software without prior written authorization from the XFree86 Project.
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "compiler.h"
 
 #include "xf86Pci.h"

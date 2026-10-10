@@ -1,3 +1,29 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/tdfx.h:
+	Bump to 1.2.1 for Xv changes.
+
+2006-04-07  Aaron Plattner  <aplattner@nvidia.com>
+
+	* src/tdfx_video.c: (TDFXPutImageTexture), (TDFXPutImageOverlay):
+	Add a DrawablePtr argument to the XV functions to pave the way for
+	redirected video.
+
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/tdfx.h:
+	* src/tdfx_accel.c:
+	* src/tdfx_dga.c:
+	* src/tdfx_dri.c:
+	* src/tdfx_driver.c:
+	* src/tdfx_hwcurs.c:
+	* src/tdfx_io.c:
+	* src/tdfx_priv.c:
+	* src/tdfx_sli.c:
+	Unlibcwrap.  Bump server version requirement.  Bump to 1.2.0.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

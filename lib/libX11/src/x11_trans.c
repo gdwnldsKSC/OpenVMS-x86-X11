@@ -1,5 +1,5 @@
 /*
- * $Id: x11_trans.c,v 1.3 2005/06/09 15:55:34 ago Exp $
+ * $Id: x11_trans.c,v 1.2 2005/05/16 22:35:28 sandmann Exp $
  *
  * Copyright © 2003 Keith Packard
  *

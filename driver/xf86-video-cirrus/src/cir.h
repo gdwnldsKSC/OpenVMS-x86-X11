@@ -8,6 +8,8 @@
 #include "xf86Cursor.h"
 #include "xaa.h"
 #include "xf86i2c.h"
+#include <string.h>
+#include <stdlib.h>
 
 /* Card-specific driver information */
 #define CIRPTR(p) ((CirPtr)((p)->driverPrivate))

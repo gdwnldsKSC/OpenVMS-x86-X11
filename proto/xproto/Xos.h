@@ -1,5 +1,5 @@
 /*
- * $XdotOrg: xc/include/Xos.h,v 1.4 2005/01/03 18:03:49 eich Exp $
+ * $XdotOrg: proto/X11/Xos.h,v 1.9 2006/04/20 01:24:25 alanc Exp $
  * $Xorg: Xos.h,v 1.6 2001/02/09 02:03:22 xorgcvs Exp $
  * 
  * 
@@ -31,7 +31,7 @@ in this Software without prior written authorization from The Open Group.
 /* $XFree86: xc/include/Xos.h,v 3.41tsi Exp $ */
 
 /* This is a collection of things to try and minimize system dependencies
- * in a "signficant" number of source files.
+ * in a "significant" number of source files.
  */
 
 #ifndef _XOS_H_

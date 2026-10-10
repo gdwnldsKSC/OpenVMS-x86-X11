@@ -1,5 +1,5 @@
 /* $Xorg: xinit.c,v 1.5 2001/02/09 02:05:49 xorgcvs Exp $ */
-/* $XdotOrg: $ */
+/* $XdotOrg: app/xinit/xinit.c,v 1.4 2005/10/04 01:27:34 ajax Exp $ */
 
 /*
 

@@ -28,12 +28,13 @@ in this Software without prior written authorization from the XFree86 Project.
 #ifndef _S3V_H
 #define _S3V_H
 
+#include <string.h>
+
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
 
 /* All drivers need this */
-#include "xf86_ansic.h"
 
 /* Everything using inb/outb, etc needs "compiler.h" */
 #include "compiler.h"
@@ -218,12 +219,7 @@ typedef struct tagS3VRec {
   /* Flag indicating if vgaHWMapMem was */
   /* used successfully for this screen */
   Bool		PrimaryVidMapped;
-  /* Clock value */
-  int			dacSpeedBpp;
-  int			minClock;
-  /* Maximum clock for present bpp */
-  int			maxClock;
-  int			HorizScaleFactor;
+  int		HorizScaleFactor;
   Bool		bankedMono;
   /* Memory Clock */
   int 		MCLK;

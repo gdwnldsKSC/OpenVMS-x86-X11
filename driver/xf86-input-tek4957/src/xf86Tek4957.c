@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/input/tek4957/xf86Tek4957.c,v 1.5 2005/06/27 18:32:54 ajax Exp $ */
+/* $XdotOrg: driver/xf86-input-tek4957/src/xf86Tek4957.c,v 1.10 2006/04/07 18:12:40 ajax Exp $ */
 /*
  * Copyright 2002 by Olivier DANET <odanet@caramail.com>
  *
@@ -28,16 +28,14 @@
 #include "config.h"
 #endif
 
-#ifndef XFree86LOADER
 #include <unistd.h>
 #include <errno.h>
-#endif
+#include <string.h>
 
 #include "misc.h"
 #include "xf86.h"
 #define NEED_XF86_TYPES
 #if !defined(DGUX)
-#include "xf86_ansic.h"
 #include "xisb.h"
 #endif
 #include "xf86_OSproc.h"
@@ -761,7 +759,7 @@ static XF86ModuleVersionInfo TekVersionRec =
     MODINFOSTRING1,
     MODINFOSTRING2,
     XORG_VERSION_CURRENT,
-    1, 0, 0,
+    1, 1, 0,
     ABI_CLASS_XINPUT,
     ABI_XINPUT_VERSION,
     MOD_CLASS_XINPUT,

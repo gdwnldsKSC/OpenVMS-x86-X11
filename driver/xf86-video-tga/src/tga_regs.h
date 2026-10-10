@@ -34,7 +34,6 @@
 #ifndef TGA_REGS_H
 #define TGA_REGS_H
 
-#include "xf86_ansic.h"
 #include "compiler.h"
 
 #define TYPE_TGA_8PLANE			0

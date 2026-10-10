@@ -1,3 +1,13 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2
+
+2006-04-03  Adam Jackson  <ajax@freedesktop.org>
+
+	* Makefile.am:
+	Bug #6480: Cygwin build fix.  (Yaakov Selkowitz)
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

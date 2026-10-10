@@ -1,3 +1,16 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2
+
+2006-04-06  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* xset.c (set_lock): 
+	Free modifier map when done with it (Coverity #823 & 824)
+
+	* xset.c (xkbset_repeatrate): 
+	Free Xkb keyboard description when done with it (Coverity #825)
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

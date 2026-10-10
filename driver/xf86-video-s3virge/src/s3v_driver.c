@@ -121,10 +121,10 @@ static int pix24bpp = 0;
  
 #define S3VIRGE_NAME "S3VIRGE"
 #define S3VIRGE_DRIVER_NAME "s3virge"
-#define S3VIRGE_VERSION_NAME "1.8.6"
+#define S3VIRGE_VERSION_NAME "1.9.1"
 #define S3VIRGE_VERSION_MAJOR   1
-#define S3VIRGE_VERSION_MINOR   8
-#define S3VIRGE_PATCHLEVEL      6
+#define S3VIRGE_VERSION_MINOR   9
+#define S3VIRGE_PATCHLEVEL      1
 #define S3VIRGE_DRIVER_VERSION ((S3VIRGE_VERSION_MAJOR << 24) | \
 				(S3VIRGE_VERSION_MINOR << 16) | \
 				S3VIRGE_PATCHLEVEL)
@@ -1166,15 +1166,43 @@ S3VPreInit(ScrnInfoPtr pScrn, int flags)
       usleep(10000);  /* wait a little bit... */
    }
 
+   /*
+    * There was a lot of plainly wrong code here. pScrn->clock is just a list
+    * of supported _dotclocks_ used when you don't have a programmable clock.
+    *
+    * S3V and Savage seem to think that this is the max ramdac speed. This
+    * driver just ignores the whole mess done before and sets 
+    * clockRange->maxClock differently slightly later.
+    *
+    * In order to not ditch information, here is a table of what the dacspeeds
+    * "were" before the cleanup.
+    *
+    * Chipset              ### >= 24bpp ### lower
+    *
+    *  S3_ViRGE_VX               135000     220000
+    *  S3_TRIO_3D_2X_SERIES      135000     230000
+    *  S3_ViRGE_DXGX             135000     170000
+    *  S3_ViRGE_GX2_SERIES       135000     170000
+    *  S3_ViRGE_MX_SERIES        100000     135000
+    * 
+    * Others devices get:
+    *      > 24bpp:  57000
+    *      = 24bpp:  95000
+    *      < 24bpp: 135000
+    *
+    * Special case is the MELCO BIOS:
+    *      > 24bpp:  83500
+    *      = 24bpp: 111500
+    *      >  8bpp: 162500
+    *      <= 8bpp: 191500
+    */
+
    if (find_bios_string(ps3v->PciTag, BIOS_BASE, "S3 86C325",
 			"MELCO WGP-VG VIDEO BIOS") != NULL) {
       if (xf86GetVerbosity())
 	 xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "MELCO BIOS found\n");
-      if (ps3v->MCLK <= 0)      ps3v->MCLK      =  74000;
-      if (pScrn->clock[0] <= 0) pScrn->clock[0] = 191500;
-      if (pScrn->clock[1] <= 0) pScrn->clock[1] = 162500;
-      if (pScrn->clock[2] <= 0) pScrn->clock[2] = 111500;
-      if (pScrn->clock[3] <= 0) pScrn->clock[3] =  83500;
+      if (ps3v->MCLK <= 0)
+          ps3v->MCLK = 74000;
    }
 
    if (ps3v->Chipset != S3_ViRGE_VX) {
@@ -1183,81 +1211,6 @@ S3VPreInit(ScrnInfoPtr pScrn, int flags)
       usleep(10000);  /* wait a little bit... */
    }
 
-   /* ViRGE built-in ramdac speeds */
-   					/* ViRGE has four default clocks */
-   pScrn->numClocks = 4;
-   
-   if (pScrn->clock[3] <= 0 && pScrn->clock[2] > 0)
-      pScrn->clock[3] = pScrn->clock[2];
-
-   if (ps3v->Chipset == S3_ViRGE_VX) {
-      if (pScrn->clock[0] <= 0) pScrn->clock[0] = 220000;
-      if (pScrn->clock[1] <= 0) pScrn->clock[1] = 220000;
-      if (pScrn->clock[2] <= 0) pScrn->clock[2] = 135000;
-      if (pScrn->clock[3] <= 0) pScrn->clock[3] = 135000;
-   }
-   else if (S3_TRIO_3D_2X_SERIES(ps3v->Chipset)) {
-      if (pScrn->clock[0] <= 0) pScrn->clock[0] = 230000;
-      if (pScrn->clock[1] <= 0) pScrn->clock[1] = 230000;
-      if (pScrn->clock[2] <= 0) pScrn->clock[2] = 135000;
-      if (pScrn->clock[3] <= 0) pScrn->clock[3] = 135000;
-   }
-   else if (ps3v->Chipset == S3_ViRGE_DXGX || S3_ViRGE_GX2_SERIES(ps3v->Chipset)) {
-      if (pScrn->clock[0] <= 0) pScrn->clock[0] = 170000;
-      if (pScrn->clock[1] <= 0) pScrn->clock[1] = 170000;
-      if (pScrn->clock[2] <= 0) pScrn->clock[2] = 135000;
-      if (pScrn->clock[3] <= 0) pScrn->clock[3] = 135000;
-   }
-   else if (S3_ViRGE_MX_SERIES(ps3v->Chipset)) {
-      if (pScrn->clock[0] <= 0) pScrn->clock[0] = 135000;
-      if (pScrn->clock[1] <= 0) pScrn->clock[1] = 135000;
-      if (pScrn->clock[2] <= 0) pScrn->clock[2] = 100000;
-      if (pScrn->clock[3] <= 0) pScrn->clock[3] = 100000;
-   }
-   else if(S3_TRIO_3D_SERIES(ps3v->Chipset)) {
-      if (pScrn->clock[0] <= 0) pScrn->clock[0] = 230000;
-      if (pScrn->clock[1] <= 0) pScrn->clock[1] = 230000;
-      if (pScrn->clock[2] <= 0) pScrn->clock[2] = 135000;
-      if (pScrn->clock[3] <= 0) pScrn->clock[3] = 135000;
-   }
-   else {
-      if (pScrn->clock[0] <= 0) pScrn->clock[0] = 135000;
-      if (pScrn->clock[1] <= 0) pScrn->clock[1] =  95000;
-      if (pScrn->clock[2] <= 0) pScrn->clock[2] =  57000;
-      if (pScrn->clock[3] <= 0) pScrn->clock[3] =  57000;
-   }
-   
-   if (ps3v->dacSpeedBpp <= 0) {
-      if (pScrn->bitsPerPixel > 24 && pScrn->clock[3] > 0)
-	 ps3v->dacSpeedBpp = pScrn->clock[3];
-      else if (pScrn->bitsPerPixel >= 24 && pScrn->clock[2] > 0)
-	 ps3v->dacSpeedBpp = pScrn->clock[2];
-      else if (pScrn->bitsPerPixel > 8 && pScrn->bitsPerPixel < 24 && pScrn->clock[1] > 0)
-	 ps3v->dacSpeedBpp = pScrn->clock[1];
-      else if (pScrn->bitsPerPixel <= 8 && pScrn->clock[0] > 0)
-	 ps3v->dacSpeedBpp = pScrn->clock[0];
-   } 
-/*cep*/
-#if 0
-   if (xf86Verbosity()) {
-      xf86ErrorFVerb(VERBLEV, "%s %s: Ramdac speed: %d MHz",
-	     OFLG_ISSET(XCONFIG_DACSPEED, &vga256InfoRec.xconfigFlag) ?
-	     XCONFIG_GIVEN : XCONFIG_PROBED, vga256InfoRec.name,
-	     pScrn->clock[0] / 1000);
-      if (ps3v->dacSpeedBpp != pScrn->clock[0])
-	 xf86ErrorFVerb(VERBLEV, "  (%d MHz for %d bpp)",ps3v->dacSpeedBpp / 1000, pScrn->bitsPerPixel);
-      xf86ErrorFVerb(VERBLEV, "\n");
-   }
-#endif
-
-   /* Now set RAMDAC limits */
-   /*ps3v->maxClock = ps3v->dacSpeedBpp;*/
-  if (ps3v->Chipset == S3_ViRGE_VX ) {
-    ps3v->maxClock = 440000;
-  } else {
-    ps3v->maxClock = 270000;
-  }
-    
    /* Detect current MCLK and print it for user */
    VGAOUT8(0x3c4, 0x08);
    VGAOUT8(0x3c5, 0x06); 
@@ -1351,23 +1304,6 @@ S3VPreInit(ScrnInfoPtr pScrn, int flags)
    vga256InfoRec.directMode = XF86DGADirectPresent;
 #endif
 
-
-#if 0
-  if (ps3v->Chipset == S3_ViRGE_VX ) {
-    ps3v->minClock = 220000;
-  } else {
-    ps3v->minClock = 135000;
-  }
-#else
-    ps3v->minClock = 10000;  /* cep */
-#endif
-  
-    xf86ErrorFVerb(VERBLEV, 
-	"	S3VPreInit minClock=%d, maxClock=%d\n",
-		ps3v->minClock,
-		ps3v->maxClock
-		 );
-  
     /*
      * xf86ValidateModes will check that the mode HTotal and VTotal values
      * don't exceed the chipset's limit if pScrn->maxHValue and
@@ -1400,8 +1336,11 @@ S3VPreInit(ScrnInfoPtr pScrn, int flags)
      */
     clockRanges = xnfcalloc(sizeof(ClockRange), 1);
     clockRanges->next = NULL;
-    clockRanges->minClock = ps3v->minClock;
-    clockRanges->maxClock = ps3v->maxClock;
+    clockRanges->minClock = 10000;
+    if (ps3v->Chipset == S3_ViRGE_VX )
+        clockRanges->maxClock = 440000;
+    else
+        clockRanges->maxClock = 270000;
     clockRanges->clockIndex = -1;		/* programmable */
     clockRanges->interlaceAllowed = TRUE;	/* yes, S3V SVGA 3.3.2 */
     clockRanges->doubleScanAllowed = TRUE;

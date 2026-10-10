@@ -13,7 +13,6 @@
 
 #include "xf86_OSproc.h"
 #include "xf86Pci.h"
-#include "xf86_ansic.h"
 #include "client.h"
 #include "mga.h"
 

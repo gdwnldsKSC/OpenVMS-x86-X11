@@ -208,7 +208,7 @@ add $displayname . $mcookie
 EOF
 	removelist="$displayname $removelist"
     else
-        dummy=$((dummy+1));
+        dummy=$(($dummy+1));
         XAUTH -q -f $xserverauthfile << EOF
 add :$dummy . $authcookie
 EOF

@@ -99,6 +99,7 @@ char	*rtrn,*tmp;
 	rtrn= tbGetBuffer(len);
 	strncpy(rtrn,tmp,len);
 	rtrn[len]= '\0';
+        _XkbFree(tmp);
     }
     else {
 	rtrn= tbGetBuffer(1);
@@ -123,7 +124,6 @@ XkbVModIndexText(Display *dpy,XkbDescPtr xkb,unsigned ndx,unsigned format)
 register int len;
 register Atom *vmodNames;
 char *rtrn,*tmp;
-char  numBuf[20];
 
     if (xkb && xkb->names)
 	 vmodNames= xkb->names->vmods;
@@ -131,11 +131,13 @@ char  numBuf[20];
 
     tmp= NULL;
     if (ndx>=XkbNumVirtualMods)
-	 tmp= "illegal";
+	 tmp= strdup("illegal");
     else if (vmodNames&&(vmodNames[ndx]!=None))
 	 tmp= XkbAtomGetString(dpy,vmodNames[ndx]);
-    if (tmp==NULL)
-	sprintf(tmp=numBuf,"%d",ndx);
+    if (tmp==NULL) {
+        tmp= (char *)_XkbAlloc(20 * sizeof(char));
+	snprintf(tmp,20,"%d",ndx);
+    }
 
     len= strlen(tmp)+1;
     if (format==XkbCFile)
@@ -144,10 +146,10 @@ char  numBuf[20];
 	len= BUFFER_SIZE-1;
     rtrn= tbGetBuffer(len);
     if (format==XkbCFile) {
-	 strcpy(rtrn,"vmod_");
-	 strncpy(&rtrn[5],tmp,len-4);
+         snprintf(rtrn, len, "vmod_%s", tmp);
     }
     else strncpy(rtrn,tmp,len);
+    _XkbFree(tmp);
     return rtrn;
 }
 

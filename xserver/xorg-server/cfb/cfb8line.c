@@ -33,6 +33,7 @@ in this Software without prior written authorization from The Open Group.
 #include <dix-config.h>
 #endif
 
+#include <stdlib.h>
 #include <X11/X.h>
 #include <stdint.h>
 
@@ -154,8 +155,8 @@ in this Software without prior written authorization from The Open Group.
 
 #if RROP == GXcopy
 #define body_rop \
-	    addrp = (PixelType *)((uintptr_t)addrb & ~(uintptr_t)0x03); \
-	    switch((uintptr_t)addrb & 3){ \
+	    addrp = (PixelType *)((unsigned long)addrb & ~0x03); \
+	    switch((unsigned long)addrb & 3){ \
 	    case 0: \
 	      *addrp = (*addrp & 0xFF000000)|(piQxelXor[0] & 0xFFFFFF); \
 	      break; \
@@ -174,8 +175,8 @@ in this Software without prior written authorization from The Open Group.
 #endif
 #if RROP == GXxor
 #define body_rop \
-	    addrp = (PixelType *)((uintptr_t)addrb & ~(uintptr_t)0x03); \
-	    switch((uintptr_t)addrb & 3){ \
+	    addrp = (PixelType *)((unsigned long)addrb & ~0x03); \
+	    switch((unsigned long)addrb & 3){ \
 	    case 0: \
 	      *addrp ^= piQxelXor[0] & 0xFFFFFF; \
 	      break; \
@@ -194,8 +195,8 @@ in this Software without prior written authorization from The Open Group.
 #endif
 #if RROP == GXand
 #define body_rop \
-	    addrp = (PixelType *)((uintptr_t)addrb & ~(uintptr_t)0x03); \
-	    switch((uintptr_t)addrb & 3){ \
+	    addrp = (PixelType *)((unsigned long)addrb & ~0x03); \
+	    switch((unsigned long)addrb & 3){ \
 	    case 0: \
 	      *addrp &= piQxelAnd[0] | 0xFF000000; \
 	      break; \
@@ -214,8 +215,8 @@ in this Software without prior written authorization from The Open Group.
 #endif
 #if RROP == GXor
 #define body_rop \
-	    addrp = (PixelType *)((uintptr_t)addrb & ~(uintptr_t)0x03); \
-	    switch((uintptr_t)addrb & 3){ \
+	    addrp = (PixelType *)((unsigned long)addrb & ~0x03); \
+	    switch((unsigned long)addrb & 3){ \
 	    case 0: \
 	      *addrp |= piQxelOr[0] & 0xFFFFFF; \
 	      break; \
@@ -234,8 +235,8 @@ in this Software without prior written authorization from The Open Group.
 #endif
 #if RROP == GXset
 #define body_rop \
-	    addrp = (PixelType *)((uintptr_t)addrb & ~(uintptr_t)0x03); \
-	    switch((uintptr_t)addrb & 3){ \
+	    addrp = (PixelType *)((unsigned long)addrb & ~0x03); \
+	    switch((unsigned long)addrb & 3){ \
 	    case 0: \
 	      *addrp = (*addrp & (piQxelAnd[0]|0xFF000000)) \
 			^ (piQxelXor[0] & 0xFFFFFF); \
@@ -411,7 +412,7 @@ FUNC_NAME(cfb8LineSS1Rect) (pDrawable, pGC, mode, npt, pptInit, pptInitOrig,
 	addrLineEnd = addr + WIDTH_MUL(_y1, nwidth);
 	xOffset = xBase + _x1;
 	addrb = (char *)addrLineEnd + xOffset * 3;
-	addrp = (PixelType *)((uintptr_t)addrb & ~(uintptr_t)0x03);
+	addrp = (PixelType *)((unsigned long)addrb & ~0x03);
 #else
 	addrp = addr + WIDTH_MUL(_y1, nwidth) + _x1;
 #endif
@@ -437,7 +438,7 @@ FUNC_NAME(cfb8LineSS1Rect) (pDrawable, pGC, mode, npt, pptInit, pptInitOrig,
 	addrLineEnd = addr + WIDTH_MUL(Y2, nwidth);
 	xOffset = xBase + X2;
 	addrb = (char *)addrLineEnd + xOffset * 3;
-	addrp = (PixelType *)((uintptr_t)addrb & ~(uintptr_t)0x03);
+	addrp = (PixelType *)((unsigned long)addrb & ~0x03);
 #else
 	addrp = addr + WIDTH_MUL(Y2, nwidth) + X2;
 #endif
@@ -458,7 +459,7 @@ FUNC_NAME(cfb8LineSS1Rect) (pDrawable, pGC, mode, npt, pptInit, pptInitOrig,
 	addrLineEnd = addr + WIDTH_MUL(y1_or_e1, nwidth);
 	xOffset = xBase + x1_or_len;
 	addrb = (char *)addrLineEnd + xOffset * 3;
-	addrp = (PixelType *)((uintptr_t)addrb & ~(uintptr_t)0x03);
+	addrp = (PixelType *)((unsigned long)addrb & ~0x03);
 #else
 	addrp = addr + WIDTH_MUL(y1_or_e1, nwidth) + x1_or_len;
 #endif
@@ -658,7 +659,7 @@ FUNC_NAME(cfb8LineSS1Rect) (pDrawable, pGC, mode, npt, pptInit, pptInitOrig,
 #endif
 #endif
 #if PSZ == 24
-	addrp = (PixelType *)((uintptr_t)addrb & ~(uintptr_t)0x03);
+	addrp = (PixelType *)((unsigned long)addrb & ~0x03);
 #endif
 	}
 #undef body

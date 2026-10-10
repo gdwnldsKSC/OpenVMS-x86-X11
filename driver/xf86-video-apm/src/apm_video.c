@@ -29,10 +29,12 @@ static int	ApmQueryImageAttributes(ScrnInfoPtr, int,
 					    unsigned short *, unsigned short *,
 					    int *, int *);
 #endif
-static int	A(ReputImage)(ScrnInfoPtr, short, short, RegionPtr, pointer);
+static int	A(ReputImage)(ScrnInfoPtr, short, short, RegionPtr, pointer,
+				DrawablePtr);
 static int	A(PutImage)(ScrnInfoPtr, short, short, short, short, short,
 				short, short, short, int, unsigned char*,
-				short, short, Bool, RegionPtr, pointer);
+				short, short, Bool, RegionPtr, pointer,
+				DrawablePtr);
 
 static void	A(ResetVideo)(ScrnInfoPtr);
 static void	A(XvMoveCB)(FBAreaPtr, FBAreaPtr);
@@ -510,7 +512,7 @@ static void A(XvRemoveCB)(FBAreaPtr area)
 
 static int
 A(ReputImage)(ScrnInfoPtr pScrn, short drw_x, short drw_y,
-		RegionPtr clipBoxes, pointer pdata)
+		RegionPtr clipBoxes, pointer pdata, DrawablePtr pDraw)
 {
     ScreenPtr		pScreen = pScrn->pScreen;
     APMDECL(pScrn);
@@ -660,7 +662,7 @@ A(PutImage)(ScrnInfoPtr pScrn, short src_x, short src_y,
 	      short drw_x, short drw_y, short src_w, short src_h,
 	      short drw_w, short drw_h, int id, unsigned char* buf,
 	      short width, short height, Bool sync, RegionPtr clipBoxes,
-	      pointer data)
+	      pointer data, DrawablePtr pDraw)
 {
     ApmPortPrivPtr	pPriv = (ApmPortPrivPtr)data;
     ScreenPtr	pScreen = pScrn->pScreen;
@@ -894,7 +896,7 @@ A(PutImage)(ScrnInfoPtr pScrn, short src_x, short src_y,
 	break;
     }
 
-    (void) A(ReputImage)(pScrn, drw_x, drw_y, clipBoxes, data);
+    (void) A(ReputImage)(pScrn, drw_x, drw_y, clipBoxes, data, pDraw);
 
     A(WaitForFifo)(pApm, 1);
     WRXW(pPriv->reg, pPriv->val);

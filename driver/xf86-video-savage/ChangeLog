@@ -1,3 +1,33 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/savage_driver.h:
+	Bump to 2.1.1 for Xv changes.
+
+2006-04-07  Aaron Plattner  <aplattner@nvidia.com>
+
+	* src/savage_video.c: (SavagePutImage):
+	Add a DrawablePtr argument to the XV functions to pave the way for
+	redirected video.
+
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/savage_dri.c:
+	* src/savage_driver.h:
+	* src/savage_hwmc.c:
+	* src/savage_i2c.c:
+	Unlibcwrap.  Bump server version requirement.  Bump to 2.1.0.
+
+2006-02-08  Luc Verhaegen  <libv@skynet.be>
+
+	* src/savage_dri.c: (SAVAGEDRIScreenInit):
+	* src/savage_driver.c: (SavagePreInit):
+	* src/savage_driver.h:
+	
+	- Remove insane usage of pScrn->clocks. Set maxClock directly.
+	- Fix trivial and harmless warning in DRI code (FrameBufferBase)
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

@@ -1,5 +1,5 @@
 /*
- * $Id: AddTrap.c,v 1.4 2005/07/03 07:00:57 daniels Exp $
+ * $Id: AddTrap.c,v 1.2 2004/12/04 00:42:48 kuhn Exp $
  *
  * Copyright © 2004 Keith Packard
  *

@@ -1,3 +1,15 @@
+2006-05-15  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2
+
+2006-04-21  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* xorg-macros.m4:
+	X.Org Bug #6654 <https://bugs.freedesktop.org/show_bug.cgi?id=6654>
+	Patch #5374 <https://bugs.freedesktop.org/attachment.cgi?id=5374>
+	Fix *_MAN_* macros to support GNU/kFreeBSD (Robert Millan)
+	
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

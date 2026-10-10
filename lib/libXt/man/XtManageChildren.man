@@ -1,5 +1,5 @@
 .\" $Xorg: XtManChild.man,v 1.3 2000/08/17 19:42:01 cpqbld Exp $
-.\" $XdotOrg: $
+.\" $XdotOrg: lib/Xt/man/XtManageChildren.man,v 1.4 2005/01/19 19:27:34 alanc Exp $
 .\"
 .\" Copyright 1993 X Consortium
 .\"

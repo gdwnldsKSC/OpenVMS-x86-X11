@@ -1,3 +1,4 @@
+/* $XdotOrg: lib/SM/src/sm_client.c,v 1.3 2006/03/17 03:05:32 alanc Exp $ */
 /* $Xorg: sm_client.c,v 1.4 2001/02/09 02:03:30 xorgcvs Exp $ */
 
 /*
@@ -90,8 +91,12 @@ char 		*errorStringRet;
 	    SmVendorString, SmReleaseString, _SmVersionCount, _SmcVersions,
             _SmAuthCount, _SmAuthNames, _SmcAuthProcs, NULL)) < 0)
 	{
-	    strncpy (errorStringRet,
-	        "Could not register XSMP protocol with ICE", errorLength);
+	    if (errorStringRet && errorLength > 0) {
+		strncpy (errorStringRet,
+			 "Could not register XSMP protocol with ICE",
+			 errorLength);
+		errorStringRet[errorLength - 1] = '\0';
+	    }
 
 	    return (NULL);
 	}
@@ -101,10 +106,12 @@ char 		*errorStringRet;
     {
 	if ((ids = (char *) getenv ("SESSION_MANAGER")) == NULL)
 	{
-	    strncpy (errorStringRet,
-	        "SESSION_MANAGER environment variable not defined",
-		errorLength);
-
+	    if (errorStringRet && errorLength > 0) {
+		strncpy (errorStringRet,
+			 "SESSION_MANAGER environment variable not defined",
+			 errorLength);
+		errorStringRet[errorLength - 1] = '\0';
+	    }
 	    return (NULL);
 	}
     }
@@ -121,7 +128,10 @@ char 		*errorStringRet;
 
     if ((smcConn = (SmcConn) malloc (sizeof (struct _SmcConn))) == NULL)
     {
-	strncpy (errorStringRet, "Can't malloc", errorLength);
+	if (errorStringRet && errorLength > 0) {
+	    strncpy (errorStringRet, "Can't malloc", errorLength);
+	    errorStringRet[errorLength - 1] = '\0';
+	}
 	IceCloseConnection (iceConn);
 	return (NULL);
     }
@@ -148,8 +158,11 @@ char 		*errorStringRet;
 	 */
 
 	free ((char *) smcConn);
-	strncpy (errorStringRet, "Internal error in IceOpenConnection",
-		errorLength);
+	if (errorStringRet && errorLength > 0) {
+	    strncpy (errorStringRet, "Internal error in IceOpenConnection",
+		     errorLength);
+	    errorStringRet[errorLength - 1] = '\0';
+	}
 	return (NULL);
     }
 
@@ -201,9 +214,11 @@ char 		*errorStringRet;
 
 	if (ioErrorOccured)
 	{
-	    strncpy (errorStringRet, "IO error occured opening connection",
-		errorLength);
-
+	    if (errorStringRet && errorLength > 0) {
+		strncpy (errorStringRet, "IO error occured opening connection",
+			 errorLength);
+		errorStringRet[errorLength - 1] = '\0';
+	    }
 	    free (smcConn->vendor);
 	    free (smcConn->release);
 	    free ((char *) smcConn);

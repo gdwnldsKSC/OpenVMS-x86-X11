@@ -1,3 +1,14 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2
+
+2006-03-18  Matthieu Herrb <matthieu.herrb@laas.fr>
+
+	* xconsole.c:
+	Avoid potential underflow if read() returns -1. 
+	Coverity CID 414
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

@@ -1,5 +1,5 @@
 /* $XConsortium: vendor.h,v 1.12 94/04/17 20:44:00 rws Exp $ */
-/* $XdotOrg: xc/programs/xman/vendor.h,v 1.4 2004/10/18 14:21:47 eich Exp $ */
+/* $XdotOrg: app/xman/vendor.h,v 1.7 2005/11/08 06:33:33 jkj Exp $ */
 /*
 
 Copyright (c) 1991  X Consortium

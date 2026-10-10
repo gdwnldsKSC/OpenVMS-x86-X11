@@ -39,6 +39,8 @@
  *
  */
 
+#include <string.h>
+#include <stdio.h>
 
 				/* Driver data structures */
 #include "radeon.h"
@@ -1092,7 +1094,7 @@ static void RADEONDRIGartHeapInit(RADEONInfoPtr info, ScreenPtr pScreen)
     drmRadeonMemInitHeap drmHeap;
 
     /* Start up the simple memory manager for GART space */
-    if (info->drmMinor >= 6) {
+    if (info->pKernelDRMVersion->version_minor >= 6) {
 	drmHeap.region = RADEON_MEM_REGION_GART;
 	drmHeap.start  = 0;
 	drmHeap.size   = info->gartTexMapSize;
@@ -1109,7 +1111,7 @@ static void RADEONDRIGartHeapInit(RADEONInfoPtr info, ScreenPtr pScreen)
     } else {
 	xf86DrvMsg(pScreen->myNum, X_INFO,
 		   "[drm] Kernel module too old (1.%d) for GART heap manager\n",
-		   info->drmMinor);
+		   info->pKernelDRMVersion->version_minor);
     }
 }
 
@@ -1193,6 +1195,140 @@ static void RADEONDRICPInit(ScrnInfoPtr pScrn)
 }
 
 
+/* Get the DRM version and do some basic useability checks of DRI */
+Bool RADEONDRIGetVersion(ScrnInfoPtr pScrn)
+{
+    RADEONInfoPtr  info    = RADEONPTR(pScrn);
+    int            major, minor, patch, fd;
+    int		   req_minor, req_patch;
+    char           *busId;
+    drmVersionPtr  libVersion;
+
+    /* Check that the GLX, DRI, and DRM modules have been loaded by testing
+     * for known symbols in each module.
+     */
+    if (!xf86LoaderCheckSymbol("GlxSetVisualConfigs")) return FALSE;
+    if (!xf86LoaderCheckSymbol("drmAvailable"))        return FALSE;
+    if (!xf86LoaderCheckSymbol("DRIQueryVersion")) {
+      xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		 "[dri] RADEONDRIGetVersion failed (libdri.a too old)\n"
+		 "[dri] Disabling DRI.\n");
+      return FALSE;
+    }
+
+    /* Check the DRI version */
+    DRIQueryVersion(&major, &minor, &patch);
+    if (major != DRIINFO_MAJOR_VERSION || minor < DRIINFO_MINOR_VERSION) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "[dri] RADEONDRIGetVersion failed because of a version "
+		   "mismatch.\n"
+		   "[dri] libdri version is %d.%d.%d but version %d.%d.x is "
+		   "needed.\n"
+		   "[dri] Disabling DRI.\n",
+		   major, minor, patch,
+                   DRIINFO_MAJOR_VERSION, DRIINFO_MINOR_VERSION);
+	return FALSE;
+    }
+
+    /* Check the lib version */
+    if (xf86LoaderCheckSymbol("drmGetLibVersion"))
+	info->pLibDRMVersion = drmGetLibVersion(info->drmFD);
+    if (info->pLibDRMVersion == NULL) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "[dri] RADEONDRIGetVersion failed because libDRM is really "
+		   "way to old to even get a version number out of it.\n"
+		   "[dri] Disabling DRI.\n");
+	return FALSE;
+    }
+    if (info->pLibDRMVersion->version_major != 1 ||
+	info->pLibDRMVersion->version_minor < 2) {
+	    /* incompatible drm library version */
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "[dri] RADEONDRIGetVersion failed because of a "
+		   "version mismatch.\n"
+		   "[dri] libdrm.a module version is %d.%d.%d but "
+		   "version 1.2.x is needed.\n"
+		   "[dri] Disabling DRI.\n",
+		   info->pLibDRMVersion->version_major,
+		   info->pLibDRMVersion->version_minor,
+		   info->pLibDRMVersion->version_patchlevel);
+	drmFreeVersion(info->pLibDRMVersion);
+	info->pLibDRMVersion = NULL;
+	return FALSE;
+    }
+
+    /* Create a bus Id */
+    if (xf86LoaderCheckSymbol("DRICreatePCIBusID")) {
+	busId = DRICreatePCIBusID(info->PciInfo);
+    } else {
+	busId = xalloc(64);
+	sprintf(busId,
+		"PCI:%d:%d:%d",
+		info->PciInfo->bus,
+		info->PciInfo->device,
+		info->PciInfo->func);
+    }
+
+    /* Low level DRM open */
+    fd = drmOpen(RADEON_DRIVER_NAME, busId);
+    xfree(busId);
+    if (fd < 0) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "[dri] RADEONDRIGetVersion failed to open the DRM\n"
+		   "[dri] Disabling DRI.\n");
+	return FALSE;
+    }
+
+    /* Get DRM version & close DRM */
+    info->pKernelDRMVersion = drmGetVersion(fd);
+    drmClose(fd);
+    if (info->pKernelDRMVersion == NULL) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "[dri] RADEONDRIGetVersion failed to get the DRM version\n"
+		   "[dri] Disabling DRI.\n");
+	return FALSE;
+    }
+
+    /* Now check if we qualify */
+    if (info->ChipFamily >= CHIP_FAMILY_R300) {
+        req_minor = 17;
+        req_patch = 0;
+    } else if (info->IsIGP) {
+        req_minor = 10;
+	req_patch = 0;
+    } else if (info->ChipFamily >= CHIP_FAMILY_R200) {
+	req_minor = 5;
+	req_patch = 0;
+    } else {
+	req_minor = 3;
+	req_patch = 0;
+    }
+
+    /* We don't, bummer ! */
+    if (info->pKernelDRMVersion->version_major != 1 ||
+	info->pKernelDRMVersion->version_minor < req_minor ||
+	(info->pKernelDRMVersion->version_minor == req_minor &&
+	 info->pKernelDRMVersion->version_patchlevel < req_patch)) {
+        /* Incompatible drm version */
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "[dri] RADEONDRIGetVersion failed because of a version "
+		   "mismatch.\n"
+		   "[dri] radeon.o kernel module version is %d.%d.%d "
+		   "but version 1.%d.%d or newer is needed.\n"
+		   "[dri] Disabling DRI.\n",
+		   info->pKernelDRMVersion->version_major,
+		   info->pKernelDRMVersion->version_minor,
+		   info->pKernelDRMVersion->version_patchlevel,
+		   req_minor,
+		   req_patch);
+	drmFreeVersion(info->pKernelDRMVersion);
+	info->pKernelDRMVersion = NULL;
+	return FALSE;
+    }
+
+    return TRUE;
+}
+
 /* Initialize the screen-specific data structures for the DRI and the
  * Radeon.  This is the main entry point to the device-specific
  * initialization code.  It calls device-independent DRI functions to
@@ -1204,33 +1340,9 @@ Bool RADEONDRIScreenInit(ScreenPtr pScreen)
     RADEONInfoPtr  info    = RADEONPTR(pScrn);
     DRIInfoPtr     pDRIInfo;
     RADEONDRIPtr   pRADEONDRI;
-    int            major, minor, patch;
     drmVersionPtr  version;
 
-    /* Check that the GLX, DRI, and DRM modules have been loaded by testing
-     * for known symbols in each module.
-     */
-    if (!xf86LoaderCheckSymbol("GlxSetVisualConfigs")) return FALSE;
-    if (!xf86LoaderCheckSymbol("drmAvailable"))        return FALSE;
-    if (!xf86LoaderCheckSymbol("DRIQueryVersion")) {
-      xf86DrvMsg(pScreen->myNum, X_ERROR,
-		 "[dri] RADEONDRIScreenInit failed (libdri.a too old)\n");
-      return FALSE;
-    }
-
-    /* Check the DRI version */
-    DRIQueryVersion(&major, &minor, &patch);
-    if (major != DRIINFO_MAJOR_VERSION || minor < DRIINFO_MINOR_VERSION) {
-	xf86DrvMsg(pScreen->myNum, X_ERROR,
-		   "[dri] RADEONDRIScreenInit failed because of a version "
-		   "mismatch.\n"
-		   "[dri] libdri version is %d.%d.%d but version %d.%d.x is "
-		   "needed.\n"
-		   "[dri] Disabling DRI.\n",
-		   major, minor, patch,
-                   DRIINFO_MAJOR_VERSION, DRIINFO_MINOR_VERSION);
-	return FALSE;
-    }
+    info->DRICloseScreen = NULL;
 
     switch (info->CurrentLayout.pixel_code) {
     case 8:
@@ -1350,121 +1462,6 @@ Bool RADEONDRIScreenInit(ScreenPtr pScreen)
 	pDRIInfo = NULL;
 	return FALSE;
     }
-
-    /* Check the DRM lib version.
-     * drmGetLibVersion was not supported in version 1.0, so check for
-     * symbol first to avoid possible crash or hang.
-     */
-    if (xf86LoaderCheckSymbol("drmGetLibVersion")) {
-	version = drmGetLibVersion(info->drmFD);
-    } else {
-	/* drmlib version 1.0.0 didn't have the drmGetLibVersion
-	 * entry point.  Fake it by allocating a version record
-	 * via drmGetVersion and changing it to version 1.0.0.
-	 */
-	version = drmGetVersion(info->drmFD);
-	version->version_major      = 1;
-	version->version_minor      = 0;
-	version->version_patchlevel = 0;
-    }
-
-    if (version) {
-	if (version->version_major != 1 ||
-	    version->version_minor < 1) {
-	    /* incompatible drm library version */
-	    xf86DrvMsg(pScreen->myNum, X_ERROR,
-		       "[dri] RADEONDRIScreenInit failed because of a "
-		       "version mismatch.\n"
-		       "[dri] libdrm.a module version is %d.%d.%d but "
-		       "version 1.1.x is needed.\n"
-		       "[dri] Disabling DRI.\n",
-		       version->version_major,
-		       version->version_minor,
-		       version->version_patchlevel);
-	    drmFreeVersion(version);
-	    RADEONDRICloseScreen(pScreen);
-	    return FALSE;
-	}
-	drmFreeVersion(version);
-    }
-
-    /* Check the radeon DRM version */
-    version = drmGetVersion(info->drmFD);
-    if (version) {
-	int req_minor, req_patch;
-
-	if (info->IsIGP) {
-	    req_minor = 10;
-	    req_patch = 0;
-       	} else if (info->ChipFamily >= CHIP_FAMILY_R300) {
-           req_minor = 17;
-           req_patch = 0;
-	} else if (info->ChipFamily >= CHIP_FAMILY_R200) {
-	    req_minor = 5;
-	    req_patch = 0;
-	} else {
-#if X_BYTE_ORDER == X_LITTLE_ENDIAN
-	    req_minor = 1;
-	    req_patch = 0;
-#else
-	    req_minor = 2;
-	    req_patch = 1;
-#endif
-	}
-
-	if (version->version_major != 1 ||
-	    version->version_minor < req_minor ||
-	    (version->version_minor == req_minor &&
-	     version->version_patchlevel < req_patch)) {
-	    /* Incompatible drm version */
-	    xf86DrvMsg(pScreen->myNum, X_ERROR,
-		       "[dri] RADEONDRIScreenInit failed because of a version "
-		       "mismatch.\n"
-		       "[dri] radeon.o kernel module version is %d.%d.%d "
-		       "but version 1.%d.%d or newer is needed.\n"
-		       "[dri] Disabling DRI.\n",
-		       version->version_major,
-		       version->version_minor,
-		       version->version_patchlevel,
-		       req_minor,
-		       req_patch);
-	    drmFreeVersion(version);
-	    RADEONDRICloseScreen(pScreen);
-	    return FALSE;
-	}
-
-	if (version->version_minor < 3) {
-	    xf86DrvMsg(pScreen->myNum, X_WARNING,
-		       "[dri] Some DRI features disabled because of version "
-		       "mismatch.\n"
-		       "[dri] radeon.o kernel module version is %d.%d.%d but "
-		       "1.3.1 or later is preferred.\n",
-		       version->version_major,
-		       version->version_minor,
-		       version->version_patchlevel);
-	}
-	info->drmMinor = version->version_minor;
-
-	if (info->allowColorTiling && version->version_minor < 14) {
-	    xf86DrvMsg(pScreen->myNum, X_WARNING,
-		       "[dri] color tiling disabled because of version "
-		       "mismatch.\n"
-		       "[dri] radeon.o kernel module version is %d.%d.%d but "
-		       "1.14.0 or later is required for color tiling.\n",
-		       version->version_major,
-		       version->version_minor,
-		       version->version_patchlevel);
-	   info->allowColorTiling = FALSE;
-	   info->tilingEnabled = FALSE;
-	   /* try to fix up already set mode, crt pitch, ddx major (hope that's ok to do here) */
-	   /* is this correct scrnIndex? flags? */
-	   RADEONSwitchMode(pScrn->scrnIndex, pScrn->currentMode, 0);
-	   pScrn->AdjustFrame(pScrn->scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
-	   pDRIInfo->ddxDriverMajorVersion = RADEON_VERSION_MAJOR;
-	}
-	drmFreeVersion(version);
-    }
-
 				/* Initialize AGP */
     if (info->cardType==CARD_AGP && !RADEONDRIAgpInit(info, pScreen)) {
 	xf86DrvMsg(pScreen->myNum, X_ERROR,
@@ -1514,6 +1511,17 @@ Bool RADEONDRIScreenInit(ScreenPtr pScreen)
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "[dri] Visual configs initialized\n");
 
     return TRUE;
+}
+
+static Bool RADEONDRIDoCloseScreen(int scrnIndex, ScreenPtr pScreen)
+{
+    ScrnInfoPtr    pScrn = xf86Screens[pScreen->myNum];
+    RADEONInfoPtr  info  = RADEONPTR(pScrn);
+
+    RADEONDRICloseScreen(pScreen);
+
+    pScreen->CloseScreen = info->DRICloseScreen;
+    return (*pScreen->CloseScreen)(scrnIndex, pScreen);
 }
 
 /* Finish initializing the device-dependent DRI state, and call
@@ -1604,14 +1612,34 @@ Bool RADEONDRIFinishScreenInit(ScreenPtr pScreen)
     pRADEONDRI->perctx_sarea_size = info->perctx_sarea_size;
 #endif
 
-    /* Have shadowfb run only while there is 3d active. */
-    if (!info->useEXA && info->allowPageFlip /* && info->drmMinor >= 3 */) {
-	ShadowFBInit( pScreen, RADEONDRIRefreshArea );
+    info->directRenderingInited = TRUE;
+
+    /* Wrap CloseScreen */
+    info->DRICloseScreen = pScreen->CloseScreen;
+    pScreen->CloseScreen = RADEONDRIDoCloseScreen;
+
+    return TRUE;
+}
+
+void RADEONDRIInitPageFlip(ScreenPtr pScreen)
+{
+    ScrnInfoPtr         pScrn = xf86Screens[pScreen->myNum];
+    RADEONInfoPtr       info  = RADEONPTR(pScrn);
+
+   /* Have shadowfb run only while there is 3d active. This must happen late,
+     * after XAAInit has been called 
+     */
+    if (!info->useEXA) {
+	if (!ShadowFBInit( pScreen, RADEONDRIRefreshArea )) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		       "ShadowFB init failed, Page Flipping disabled\n");
+	    info->allowPageFlip = 0;
+	} else
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		       "ShadowFB initialized for Page Flipping\n");
     } else {
        info->allowPageFlip = 0;
     }
-
-    return TRUE;
 }
 
 /**
@@ -1626,7 +1654,7 @@ void RADEONDRIResume(ScreenPtr pScreen)
     ScrnInfoPtr   pScrn   = xf86Screens[pScreen->myNum];
     RADEONInfoPtr info    = RADEONPTR(pScrn);
 
-    if (info->drmMinor >= 9) {
+    if (info->pKernelDRMVersion->version_minor >= 9) {
 	xf86DrvMsg(pScreen->myNum, X_INFO,
 		   "[RESUME] Attempting to re-init Radeon hardware.\n");
     } else {
@@ -1655,18 +1683,16 @@ void RADEONDRIResume(ScreenPtr pScreen)
     RADEONDRICPInit(pScrn);
 }
 
-/* The screen is being closed, so clean up any state and free any
- * resources used by the DRI.
- */
-void RADEONDRICloseScreen(ScreenPtr pScreen)
+void RADEONDRIStop(ScreenPtr pScreen)
 {
     ScrnInfoPtr    pScrn = xf86Screens[pScreen->myNum];
     RADEONInfoPtr  info  = RADEONPTR(pScrn);
-    drmRadeonInit  drmInfo;
     RING_LOCALS;
 
-				/* Stop the CP */
-    if (info->directRenderingEnabled) {
+    RADEONTRACE(("RADEONDRIStop\n"));
+
+    /* Stop the CP */
+    if (info->directRenderingInited) {
 	/* If we've generated any CP commands, we must flush them to the
 	 * kernel module now.
 	 */
@@ -1679,26 +1705,39 @@ void RADEONDRICloseScreen(ScreenPtr pScreen)
 	}
 	RADEONCP_STOP(pScrn, info);
     }
+    info->directRenderingInited = FALSE;
+}
 
-    if (info->irq) {
+/* The screen is being closed, so clean up any state and free any
+ * resources used by the DRI.
+ */
+void RADEONDRICloseScreen(ScreenPtr pScreen)
+{
+    ScrnInfoPtr    pScrn = xf86Screens[pScreen->myNum];
+    RADEONInfoPtr  info  = RADEONPTR(pScrn);
+    drmRadeonInit  drmInfo;
+
+     RADEONTRACE(("RADEONDRICloseScreen\n"));
+    
+     if (info->irq) {
 	drmCtlUninstHandler(info->drmFD);
 	info->irq = 0;
 	info->ModeReg.gen_int_cntl = 0;
     }
 
-				/* De-allocate vertex buffers */
+    /* De-allocate vertex buffers */
     if (info->buffers) {
 	drmUnmapBufs(info->buffers);
 	info->buffers = NULL;
     }
 
-				/* De-allocate all kernel resources */
+    /* De-allocate all kernel resources */
     memset(&drmInfo, 0, sizeof(drmRadeonInit));
     drmInfo.func = DRM_RADEON_CLEANUP_CP;
     drmCommandWrite(info->drmFD, DRM_RADEON_CP_INIT,
 		    &drmInfo, sizeof(drmRadeonInit));
 
-				/* De-allocate all GART resources */
+    /* De-allocate all GART resources */
     if (info->gartTex) {
 	drmUnmap(info->gartTex, info->gartTexMapSize);
 	info->gartTex = NULL;
@@ -1726,10 +1765,10 @@ void RADEONDRICloseScreen(ScreenPtr pScreen)
 	info->pciMemHandle = 0;
     }
 
-				/* De-allocate all DRI resources */
+    /* De-allocate all DRI resources */
     DRICloseScreen(pScreen);
 
-				/* De-allocate all DRI data structures */
+    /* De-allocate all DRI data structures */
     if (info->pDRIInfo) {
 	if (info->pDRIInfo->devPrivate) {
 	    xfree(info->pDRIInfo->devPrivate);
@@ -1747,7 +1786,6 @@ void RADEONDRICloseScreen(ScreenPtr pScreen)
 	info->pVisualConfigsPriv = NULL;
     }
 }
-
 
 /* Use callbacks from dri.c to support pageflipping mode for a single
  * 3d context without need for any specific full-screen extension.
@@ -1775,6 +1813,9 @@ static void RADEONDRIRefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
     int                 i;
     RADEONSAREAPrivPtr  pSAREAPriv = DRIGetSAREAPrivate(pScrn->pScreen);
 
+    if (!info->directRenderingInited)
+	return;
+
     /* Don't want to do this when no 3d is active and pages are
      * right-way-round
      */
@@ -1784,6 +1825,10 @@ static void RADEONDRIRefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
 #ifdef USE_XAA
     /* XXX: implement for EXA */
     /* pretty much a hack. */
+
+    /* Make sure accel has been properly inited */
+    if (info->accel == NULL || info->accel->SetupForScreenToScreenCopy == NULL)
+	return;
     if (info->tilingEnabled)
        info->dst_pitch_offset |= RADEON_DST_TILE_MACRO;
     (*info->accel->SetupForScreenToScreenCopy)(pScrn,
@@ -1987,7 +2032,8 @@ void RADEONDRIAllocatePCIGARTTable(ScreenPtr pScreen)
     ScrnInfoPtr        pScrn   = xf86Screens[pScreen->myNum];
     RADEONInfoPtr      info    = RADEONPTR(pScrn);
 
-    if (info->cardType!=CARD_PCIE || info->drmMinor<19)
+    if (info->cardType != CARD_PCIE ||
+	info->pKernelDRMVersion->version_minor < 19)
       return;
 
     if (info->FbSecureSize==0)

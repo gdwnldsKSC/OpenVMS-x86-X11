@@ -1,3 +1,21 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/i740_accel.c:
+	* src/i740_cursor.c:
+	* src/i740_dga.c:
+	* src/i740_driver.c:
+	* src/i740_i2c.c:
+	* src/i740_io.c:
+	* src/i740_video.c:
+	Delibcwrap, bump required server, update to 1.1.0.
+
+2006-04-07  Aaron Plattner  <aplattner@nvidia.com>
+
+	* src/i740_video.c: (I740PutImage):
+	Add a DrawablePtr argument to the XV functions to pave the way for
+	redirected video.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

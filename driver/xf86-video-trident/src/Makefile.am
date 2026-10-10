@@ -30,6 +30,7 @@ trident_drv_ladir = @moduledir@/drivers
 
 trident_drv_la_SOURCES = \
          blade_accel.c \
+         blade_accel_exa.c \
          image_accel.c \
          trident_accel.c \
          trident_bank.c \
@@ -45,4 +46,6 @@ trident_drv_la_SOURCES = \
          trident_tv.c \
          trident_video.c \
          tvga_dac.c \
-         xp_accel.c
+         xp_accel.c \
+	 xp4_accel.c \
+	 xp4_accel_exa.c

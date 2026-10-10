@@ -1,10 +1,10 @@
-dnl $Id: configure.ac,v 1.9 2005/12/15 00:24:29 kem Exp $
+dnl $Id: configure.ac,v 1.8 2005/12/03 05:49:43 kem Exp $
 dnl
 dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
 
-AC_INIT(libXevie, 1.0.0, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXevie)
+AC_INIT(libXevie, 1.0.1, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXevie)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

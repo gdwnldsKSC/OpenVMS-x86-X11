@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-v4l],
-        0.0.1.5,
+        0.1.1,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-v4l)
 
@@ -52,7 +52,7 @@ XORG_DRIVER_CHECK_EXT(RANDR, randrproto)
 XORG_DRIVER_CHECK_EXT(XV, videoproto)
 
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XORG, [xorg-server xproto $REQUIRED_MODULES])
+PKG_CHECK_MODULES(XORG, [xorg-server >= 1.0.99.901 xproto $REQUIRED_MODULES])
 sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 
 # Checks for libraries.

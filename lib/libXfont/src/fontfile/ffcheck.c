@@ -125,18 +125,16 @@ FontFileCheckRegisterFpeFunctions (void)
     BitmapRegisterFontFileFunctions ();
 
 
-#ifndef CRAY
-#ifdef BUILD_SPEEDO
+#ifdef XFONT_SPEEDO
     SpeedoRegisterFontFileFunctions ();
 #endif
-#ifdef BUILD_TYPE1
+#ifdef XFONT_TYPE1
     Type1RegisterFontFileFunctions();
 #endif
-#endif
-#ifdef BUILD_CID
+#ifdef XFONT_CID
     CIDRegisterFontFileFunctions();
 #endif
-#ifdef BUILD_FREETYPE
+#ifdef XFONT_FREETYPE
     FreeTypeRegisterFontFileFunctions();
 #endif
 

@@ -3,9 +3,12 @@
 #ifndef SAVAGE_VGAHWMMIO_H
 #define SAVAGE_VGAHWMMIO_H
 
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+
 #define MODE_24 24
 
-#include "xf86_ansic.h"
 #include "compiler.h"
 #include "vgaHW.h"
 #include "xf86.h"
@@ -148,10 +151,10 @@ typedef struct
 #define SAVAGE_TV_ON	4
 
 #define SAVAGE_DRIVER_NAME	"savage"
-#define SAVAGE_DRIVER_VERSION	"2.0.2"
+#define SAVAGE_DRIVER_VERSION	"2.1.1"
 #define SAVAGE_VERSION_MAJOR	2
-#define SAVAGE_VERSION_MINOR	0
-#define SAVAGE_PATCHLEVEL	2
+#define SAVAGE_VERSION_MINOR	1
+#define SAVAGE_PATCHLEVEL	1
 #define SAVAGE_VERSION	((SAVAGE_VERSION_MAJOR << 24) | \
 			 (SAVAGE_VERSION_MINOR << 16) | \
 			 SAVAGE_PATCHLEVEL)
@@ -272,8 +275,7 @@ typedef struct _Savage {
     CARD32 volatile *	ShadowVirtual;
 
     Bool		PrimaryVidMapped;
-    int			dacSpeedBpp;
-    int			minClock, maxClock;
+    int			maxClock;
     int			HorizScaleFactor;
     int			MCLK, REFCLK, LCDclk;
     double		refclk_fact;

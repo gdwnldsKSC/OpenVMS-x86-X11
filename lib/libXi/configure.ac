@@ -1,10 +1,10 @@
-dnl $XdotOrg: $
+dnl $XdotOrg: lib/Xi/configure.ac,v 1.10 2006/04/27 00:14:32 ajax Exp $
 dnl
 dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
 
-AC_INIT(libXi, 1.0.0, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXi)
+AC_INIT(libXi, 1.0.1, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXi)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

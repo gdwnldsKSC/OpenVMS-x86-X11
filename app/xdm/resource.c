@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/xdm/resource.c,v 1.2 2004/04/23 19:54:42 eich Exp $ */
+/* $XdotOrg: app/xdm/resource.c,v 1.4 2005/11/08 06:33:31 jkj Exp $ */
 /* $Xorg: resource.c,v 1.4 2001/02/09 02:05:40 xorgcvs Exp $ */
 /*
 

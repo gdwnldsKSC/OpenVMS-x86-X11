@@ -17,7 +17,7 @@
 #define XORGSERVER 1
 
 /* Current X.Org version. */
-#define XORG_VERSION_CURRENT (((7) * 10000000) + ((0) * 100000) + ((0) * 1000) + 0)
+#define XORG_VERSION_CURRENT (((7) * 10000000) + ((1) * 100000) + ((0) * 1000) + 0)
 
 /* Need XFree86 libc-replacement typedefs. */
 #define NEED_XF86_TYPES 1
@@ -50,10 +50,10 @@
 #define __XCONFIGFILE__ "xorg.conf"
 
 /* Path to loadable modules. */
-#define DEFAULT_MODULE_PATH "/opt/debrix/lib/xorg/modules"
+#define DEFAULT_MODULE_PATH "/usr/local/lib/xorg/modules"
 
 /* Path to server log file. */
-#define DEFAULT_LOGPREFIX "/opt/debrix/var/log/Xorg."
+#define DEFAULT_LOGPREFIX "/usr/local/var/log/Xorg."
 
 /* Building DRI-capable DDX. */
 #define XF86DRI 1
@@ -69,7 +69,7 @@
 /* #undef HAVE_WALKCONTEXT */
 
 /* Define to 1 if unsigned long is 64 bits. */
-#define _XSERVER64 1
+/* #undef _XSERVER64 */
 
 /* Building vgahw module */
 #define WITH_VGAHW 1
@@ -78,7 +78,7 @@
 /* #undef HAS_MTRR_BUILTIN */
 
 /* Define to 1 if BSD MTRR support is available */
-/* #undef HAS_MTRR_SUPPORT */
+#define HAS_MTRR_SUPPORT 1
 
 /* NetBSD PIO alpha IO */
 /* #undef USE_ALPHA_PIO */
@@ -106,5 +106,11 @@
 
 /* System has wscons console */
 /* #undef WSCONS_SUPPORT */
+
+/* System has /dev/xf86 aperture driver */
+/* #undef HAS_APERTURE_DRV */
+
+/* Has backtrace support */
+#define HAVE_BACKTRACE 1
 
 #endif /* _XORG_CONFIG_H_ */

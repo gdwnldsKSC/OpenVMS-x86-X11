@@ -1,3 +1,13 @@
+2006-05-22  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.1
+
+2006-05-22  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* defs.ent:
+	Update package version for X11R7.1 release.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

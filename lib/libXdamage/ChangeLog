@@ -1,3 +1,13 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.3
+
+2006-04-02  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/Xdamage.c:
+	Coverity #574: Plug a leak on the error path.
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

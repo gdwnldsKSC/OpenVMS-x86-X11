@@ -72,7 +72,7 @@ Default: no rotation.
 .TP
 .BI "Option \*qFlatPanel\*q \*q" boolean \*q
 This enables the FlatPanel display unit. The FlatPanel depends on the 
-BIOS to do the Pnale h/w initialization.
+BIOS to do the Panel h/w initialization.
 In GX2 based platforms with TFT part Flatpanel is enabled, and on CRT
 part is disabled.
 Default: off.

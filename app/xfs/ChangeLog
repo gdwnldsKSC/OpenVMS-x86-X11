@@ -1,3 +1,15 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2
+
+2006-03-13  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* difs/cache.c (rebuild_cache): 
+	Check for alloc error was reversed, causing memory leak, NULL
+	pointer dereference (if fsalloc actually failed), and failure 
+	to rebuild cache.  (Coverity ids #560 & #127).
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

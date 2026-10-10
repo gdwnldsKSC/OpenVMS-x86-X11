@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis_driver.c,v 1.73 2006/04/07 04:15:34 anholt Exp $ */
 /*
  * SiS driver main code
  *
@@ -207,7 +207,7 @@ static const char *xaaSymbols[] = {
 
 #ifdef SIS_USE_EXA
 static const char *exaSymbols[] = {
-    "exaGetVersion",
+    "exaDriverAccel",
     "exaDriverInit",
     "exaDriverFini",
     "exaOffscreenAlloc",
@@ -6956,24 +6956,32 @@ SISPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Load XAA/EXA (if needed) */
     if(!pSiS->NoAccel) {
-       char *modName = NULL;
        const char **symNames = NULL;
 #ifdef SIS_USE_XAA
        if(!pSiS->useEXA) {
-	  modName = "xaa";
+	  if (!xf86LoadSubModule(pScrn, "xaa")) {
+	    SISErrorLog(pScrn, "Could not load xaa module\n");
+	    goto my_error_1;
+	  }
 	  symNames = xaaSymbols;
        }
 #endif
 #ifdef SIS_USE_EXA
        if(pSiS->useEXA) {
-	  modName = "exa";
+	  XF86ModReqInfo req;
+	  int errmaj, errmin;
+
+	  memset(&req, 0, sizeof(req));
+	  req.majorversion = 2;
+	  req.minorversion = 0;
+	  if (!LoadSubModule(pScrn->module, "exa", NULL, NULL, NULL, &req,
+	    &errmaj, &errmin)) {
+	    LoaderErrorMsg(NULL, "exa", errmaj, errmin);
+	    goto my_error_1;
+	  }
 	  symNames = exaSymbols;
        }
 #endif
-       if(modName && (!xf86LoadSubModule(pScrn, modName))) {
-	  SISErrorLog(pScrn, "Could not load %s module\n", modName);
-	  goto my_error_1;
-       }
        if(symNames) {
 	  xf86LoaderReqSymLists(symNames, NULL);
 	  xf86DrvMsg(pScrn->scrnIndex, X_INFO, "2D acceleration enabled\n");

@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id: configure.ac,v 1.16 2005/12/15 00:24:34 kem Exp $
+dnl  $Id: configure.ac,v 1.15 2005/12/10 16:29:06 kem Exp $
 dnl 
 dnl  Copyright © 2003 Keith Packard, Noah Levitt
 dnl 
@@ -27,7 +27,7 @@ AC_PREREQ([2.57])
 
 dnl
 dnl
-AC_INIT(libXt, 1.0.0, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXt)
+AC_INIT(libXt, 1.0.2, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXt)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

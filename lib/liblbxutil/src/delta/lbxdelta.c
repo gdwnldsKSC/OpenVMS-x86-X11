@@ -1,7 +1,7 @@
 /*
  * $NCDXorg: @(#)lbxdelta.c,v 1.2 1994/01/22 02:23:40 dct Exp $
  * $Xorg: lbxdelta.c,v 1.5 2000/08/17 19:46:40 cpqbld Exp $
- * $XdotOrg: $
+ * $XdotOrg: lib/lbxutil/src/delta/lbxdelta.c,v 1.7 2005/07/30 21:07:25 alanc Exp $
  *
  * Copyright 1993 Network Computing Devices
  *

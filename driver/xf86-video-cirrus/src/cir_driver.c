@@ -24,7 +24,6 @@
 #include "xf86Resources.h"
 
 /* All drivers need this */
-#include "xf86_ansic.h"
 
 /* Drivers for PCI hardware need this */
 #include "xf86PciInfo.h"
@@ -51,11 +50,11 @@ static Bool	CIRProbe(DriverPtr drv, int flags);
 static Bool lg_loaded = FALSE;
 static Bool alp_loaded = FALSE;
 
-#define VERSION 4000
+#define CIR_VERSION 4000
 #define CIR_NAME "CIRRUS"
 #define CIR_DRIVER_NAME "cirrus"
 #define CIR_MAJOR_VERSION 1
-#define CIR_MINOR_VERSION 0
+#define CIR_MINOR_VERSION 1
 #define CIR_PATCHLEVEL 0
 
 /*
@@ -67,7 +66,7 @@ static Bool alp_loaded = FALSE;
  */
 
 _X_EXPORT DriverRec CIRRUS = {
-	VERSION,
+	CIR_VERSION,
 	CIR_DRIVER_NAME,
 	CIRIdentify,
 	CIRProbe,
@@ -304,7 +303,7 @@ CIRProbe(DriverPtr drv, int flags)
  	if (pScrn) {
  	    foundScreen = TRUE;
  	    /* Fill in what we can of the ScrnInfoRec */
- 	    pScrn->driverVersion = VERSION;
+ 	    pScrn->driverVersion = CIR_VERSION;
  	    pScrn->driverName	 = CIR_DRIVER_NAME;
  	    pScrn->name		 = CIR_NAME;
  	    pScrn->Probe	 = NULL;

@@ -1,5 +1,5 @@
 .\" $Xorg: icccm.ms,v 1.3 2000/08/17 19:42:08 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/ICCCM/icccm.ms,v 1.2 2004/04/23 18:42:15 eich Exp $
+.\" $XdotOrg: doc/xorg-docs/specs/ICCCM/icccm.ms,v 1.3 2004/09/03 16:18:19 kem Exp $
 .\" Use tbl, eqn, -ms, and macros.t
 .\" @(#)icccm.ms	1.50	16 Apr 1994	14:13:55
 .EH ''''

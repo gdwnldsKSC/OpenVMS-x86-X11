@@ -22,7 +22,6 @@
 #include "xf86_OSproc.h"
 
 /* All drivers need this */
-#include "xf86_ansic.h"
 
 /* Everything using inb/outb, etc needs "compiler.h" */
 #include "compiler.h"

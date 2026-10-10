@@ -25,13 +25,13 @@
  *
  */
 
-/* $XFree86: xc/programs/Xserver/hw/xfree86/input/citron/citron.c,v 1.11tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/input/citron/citron.c,v 1.4 2000/11/03 13:13:31 tsi Exp $ */
 
 /*
  * Based, in part, on code with the following copyright notice:
  *
  * Copyright 1999-2001 by Thomas Thanner, Citron GmbH, Germany. <support@citron.de>
- * Copyright 1999-2003 by Peter Kunzmann, Citron GmbH, Germany. <kunzmann@citron.de>
+ * Copyright 1999-2006 by Peter Kunzmann, Citron GmbH, Germany. <kunzmann@citron.de>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is  hereby granted without fee, provided that
@@ -114,6 +114,15 @@
 					command (SendLockZ) for 3-D support added
 					userstring commands added							pk
  2.11	07.02.03	Blockduration time raised to 1sec					pk
+ 2.12	19.11.03	PostButton Event command when breaking beams            pk
+
+ 2.13	23.02.05	xf86ScaleAxis width and height bot (-1)                         pk
+
+ 2.14	22.03.05	keys, ambient overload and pwmex channels added
+					beep for keyclick added                                                         pk
+ 2.15	23.02.06	minor changes, adapted for shared objects
+					if (( res == SUCCESS) ... semicolon deleted
+					default_options[] NULL added                       
  ============================================================================
 
 */
@@ -122,13 +131,15 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #define _citron_C_
 #define PK	0
 #define INITT 0		/* Initialisation of touch in first loop */
 
 
-#define CITOUCH_VERSION	0x211
-char version[]="Touch Driver V2.1.1  (c) 1999-2003 Citron GmbH";
+#define CITOUCH_VERSION	0x220
+char version[]="Touch Driver V2.2.0  (c) 1999-2006 Citron GmbH";
 
 #define CITOUCH_VERSION_MAJOR ((CITOUCH_VERSION >> 8) & 0xf)
 #define CITOUCH_VERSION_MINOR ((CITOUCH_VERSION >> 4) & 0xf)
@@ -142,11 +153,14 @@ char version[]="Touch Driver V2.1.1  (c) 1999-2003 Citron GmbH";
 #include "misc.h"
 #include "xf86.h"
 #define NEED_XF86_TYPES
-#include "xf86_ansic.h"
 #include "xf86_OSproc.h"
+/*#include "xf86Optrec.h" */
 #include "xf86Xinput.h"
 #include "xisb.h"
 #include "exevents.h"				/* Needed for InitValuator/Proximity stuff*/
+
+
+#include <X11/keysym.h>
 
 
 /* I have to explicit declare this function, because I get an error if I compile */
@@ -250,19 +264,28 @@ _X_EXPORT InputDriverRec CITRON = {
 	0
 };
 
-static char *UserStrNames[] =
+static KeySym cikeymap[] =
 {
-	"NAME",
-	"REV",
-	"RECEIVERBOARD",
-	"TOUCH",
-	"DISPLAY",
-	"INVERTER",
-	"MECHANICS",
-	"PAR1",
-	"PAR2",
-	NULL
+    /* 0x00 .. 0x07 */
+    NoSymbol,NoSymbol,NoSymbol,NoSymbol,NoSymbol,NoSymbol,NoSymbol,NoSymbol,
+    /* 0x08 .. 0x0f */
+    XK_F1,  XK_F2,  XK_F3,  XK_F4,  XK_F5,  XK_F6,  XK_F7,  XK_F8,
+    /* 0x10 .. 0x17 */
+    XK_F9,  XK_F10, XK_F11, XK_F12, XK_F13, XK_F14, XK_F15, XK_F16,
+    /* 0x18 .. 0x1f */
+    XK_F17, XK_F18, XK_F19, XK_F20, XK_F21, XK_F22, XK_F23, XK_F24,
+    /* 0x20 .. 0x27 */
+    XK_F25, XK_F26, XK_F27, XK_F28, XK_F29, XK_F30, XK_F31, XK_F32
 };
+
+/* minKeyCode = 8 because this is the min legal key code */
+static KeySymsRec keys =
+{
+  /* map        minKeyCode  maxKC   width */
+	cikeymap,	8,			0x27,	1
+};
+
+
 
 #ifdef XFree86LOADER
 
@@ -282,7 +305,7 @@ static XF86ModuleVersionInfo VersionRec =
 	MODULEVENDORSTRING,			/* vendor specific string */
 	MODINFOSTRING1,				
 	MODINFOSTRING2,
-	XORG_VERSION_CURRENT,		/* Current XFree version */
+	XF86_VERSION_CURRENT,		/* Current XFree version */
 	CITOUCH_VERSION_MAJOR,		/* Module-specific major version */
 	CITOUCH_VERSION_MINOR,		/* Module-specific minor version */
 	CITOUCH_VERSION_PATCH,		/* Module-specific patch level */
@@ -290,6 +313,21 @@ static XF86ModuleVersionInfo VersionRec =
 	ABI_XINPUT_VERSION,
 	MOD_CLASS_XINPUT,
 	{0, 0, 0, 0}				/* signature of the version info structure */
+};
+
+
+static char *UserStrNames[] =
+{
+	"NAME",
+	"REV",
+	"RECEIVERBOARD",
+	"TOUCH",
+	"DISPLAY",
+	"INVERTER",
+	"MECHANICS",
+	"PAR1",
+	"PAR2",
+	NULL
 };
 
 /* ************************************************************************
@@ -386,7 +424,8 @@ static const char *default_options[] =
 	"Vmin", 		"1",	/* blocking read until 1 chars received */
 	"Vtime", 		"1",
 	"FlowControl", 	"None",
-	"ClearDTR", 	""
+	"ClearDTR", 	"",
+	NULL
 };
 
 
@@ -462,6 +501,7 @@ cit_ParseCommand(DeviceIntPtr dev)
 	LocalDevicePtr		local = (LocalDevicePtr) dev->public.devicePrivate;
     cit_PrivatePtr		priv  = (cit_PrivatePtr)(local->private);
 	int i;
+	unsigned short tmp;
 
 	DBG(DDS, ErrorF("%scit_ParseCommand: numbytes=0x%02X, data= ", CI_INFO, priv->dds.numbytes));
 
@@ -470,6 +510,7 @@ cit_ParseCommand(DeviceIntPtr dev)
 		
 	DBG(DDS,ErrorF("\n"));
 
+	i=1;
 	switch(priv->dds.data[0]&0xff)
 	{
 		case C_SETPWM:
@@ -513,6 +554,16 @@ cit_ParseCommand(DeviceIntPtr dev)
 			priv->lockz_lock_time = priv->dds.data[3];
 			DBG(DDS, ErrorF("%scit_ParseCommand: LockZ: enter %d, exit %d, lock %d \n", CI_INFO,
 				priv->lockz_enter_time, priv->lockz_exit_time, priv->lockz_lock_time));
+		break;
+
+		case C_SETPWMEX:
+			priv->pwmex_channel = priv->dds.data[i++];
+			priv->pwmex_duty = priv->dds.data[i++];
+			tmp = priv->dds.data[i++];
+			tmp += priv->dds.data[i++] << 8;
+			priv->pwmex_freq = tmp;
+			DBG(DDS, ErrorF("%scit_ParseCommand: channel=%02x, duty cycle=%02x, freqency=%04x\n",
+				CI_INFO, priv->pwmex_channel, priv->pwmex_duty, priv->pwmex_freq));
 		break;
 
 		default:
@@ -591,6 +642,17 @@ cit_DriverComm(DeviceIntPtr dev)
 			ErrorF("%spwm_src=%d, pwm_dst=%d \n", CI_INFO, priv->pwm_src, priv->pwm_dst);
 		break;
 		
+		case D_PWMEX:
+			priv->pwmex_channel = priv->dds.data[i++];
+			priv->pwmex_duty = priv->dds.data[i++];
+			tmp = priv->dds.data[i++];
+			tmp += priv->dds.data[i++] << 8;
+			priv->pwmex_freq = tmp;
+			cit_SendPWMEx(priv);				/* Set PWMex values */
+			ErrorF("%sExtended PWM: channel=%02x, duty cycle=%02x, freqency=%04x\n",
+				CI_INFO, priv->pwmex_channel, priv->pwmex_duty, priv->pwmex_freq);
+		break;
+
 		default:
 			ErrorF("%sNot known command: %d [0x%02x] - Get a recent driver\n", CI_WARNING, priv->dds.data[1], priv->dds.data[1]);
 		break;		
@@ -603,10 +665,8 @@ xf86CitronPrint (int nr, LedCtrl *ctrl)
 {
 	DBG(8, ErrorF("%s------------------------------------------\n", CI_INFO));
 	DBG(8, ErrorF("%sxf86CitronFeedback%d(dev, ctrl)\n", CI_INFO, nr));
-	DBG(8, ErrorF("%s  ctrl->led_values.......:%ld [0x%08lX]\n", CI_INFO,
-		ctrl->led_values, ctrl->led_values));
-	DBG(8, ErrorF("%s  ctrl->led_mask.........:%ld [0x%08lX]\n", CI_INFO,
-		(unsigned long)ctrl->led_mask, (unsigned long)ctrl->led_mask));
+	DBG(8, ErrorF("%s  ctrl->led_values.......:%d [0x%08lX]\n", CI_INFO, (int)ctrl->led_values, ctrl->led_values));
+	DBG(8, ErrorF("%s  ctrl->led_mask.........:%d [0x%08lX]\n", CI_INFO, (int)ctrl->led_mask, ctrl->led_mask));
 	DBG(8, ErrorF("%s  ctrl->id...............:%d\n", CI_INFO, ctrl->id));
 }
 
@@ -628,7 +688,10 @@ xf86CitronFeedback0 (DeviceIntPtr dev, LedCtrl *ctrl)
     if(cmd->packet == 0)		/* test if first packet has come (with number of bytes in first byte) */
 	{
 		if(cmd->par[0] == 0)		/* test if something is to do at all */
+		{
+			DBG(DDS, ErrorF("%sxf86CitronFeedback0(): Nothing to do\n", CI_WARNING));
 			return;
+		}
 		priv->dds.curbyte = 2;
 		priv->dds.numbytes = cmd->par[0];
 		priv->dds.data[0] =  cmd->par[1];
@@ -661,10 +724,11 @@ xf86CitronFeedback0 (DeviceIntPtr dev, LedCtrl *ctrl)
 		}
 	}
 
-	DBG(DDS, ErrorF("%s 1 led_values = %08lx\n", CI_INFO, ctrl->led_values));
+	DBG(DDS, ErrorF("%s 1 led_values = %08x\n", CI_INFO, (int)ctrl->led_values));
 	ctrl->led_values = (unsigned long)GetTimeInMillis();
-	DBG(DDS, ErrorF("%s 2 led_values = %08lx\n", CI_INFO, ctrl->led_values));
+	DBG(DDS, ErrorF("%s 2 led_values = %08x\n", CI_INFO, (int)ctrl->led_values));
 
+	DBG(DDS, ErrorF("%sExiting xf86CitronFeedback0()\n",CI_INFO));
 }
 
 
@@ -722,7 +786,7 @@ cit_StartTimer(cit_PrivatePtr priv, int nr)
 {
 	priv->timer_ptr[nr] = TimerSet(priv->timer_ptr[nr], 0, priv->timer_val1[nr],
 			 priv->timer_callback[nr], (pointer)priv);
-	DBG(5, ErrorF ("%scit_StartTimer[%d] called PTR=%p\n", CI_INFO, nr, (void *)priv->timer_ptr));
+	DBG(5, ErrorF ("%scit_StartTimer[%d] called PTR=%08x\n", CI_INFO, nr, (unsigned int)priv->timer_ptr));
 }
 
 
@@ -733,7 +797,7 @@ static void
 cit_CloseTimer(cit_PrivatePtr priv, int nr)
 {
 
-	DBG(5, ErrorF ("%scit_CloseTimer[%d] called PTR=%p\n", CI_INFO, nr, (void *)priv->timer_ptr));
+	DBG(5, ErrorF ("%scit_CloseTimer[%d] called PTR=%08x\n", CI_INFO, nr, (unsigned int)priv->timer_ptr));
 	if(priv->timer_ptr[nr])
 	{
 		TimerFree(priv->timer_ptr[nr]);
@@ -754,8 +818,7 @@ cit_SuperVisionTimer(OsTimerPtr timer, CARD32 now, pointer arg)
 	cit_PrivatePtr priv = (cit_PrivatePtr) arg;
     int	sigstate;
 
-	DBG(5, ErrorF ("%scit_SuperVisionTimer called %ld\n", CI_INFO,
-			(unsigned long)GetTimeInMillis()));
+	DBG(5, ErrorF ("%scit_SuperVisionTimer called %ld\n", CI_INFO, GetTimeInMillis()));
 
     sigstate = xf86BlockSIGIO ();
 	
@@ -813,8 +876,7 @@ CitronPreInit (InputDriverPtr drv, IDevPtr dev, int flags)
 	int errmaj, errmin;
 #endif
 
-	ErrorF ("%sCitronPreInit called - xcalloc=%d\n", CI_INFO,
-		(int)sizeof(cit_PrivateRec));
+	ErrorF ("%sCitronPreInit called - xcalloc=%d\n", CI_INFO, sizeof(cit_PrivateRec));
 /*	DBG(2, ErrorF("\txf86Verbose=%d\n", xf86Verbose));*/
 	if ((!local) || (!priv))
 	{
@@ -894,6 +956,10 @@ CitronPreInit (InputDriverPtr drv, IDevPtr dev, int flags)
 	ErrorF("%sMaximum y position: %d\n", CI_CONFIG, priv->max_y);
 	priv->button_number = xf86SetIntOption(local->options, "ButtonNumber", 1);
 	ErrorF("%sButton Number: %d\n", CI_CONFIG, priv->button_number);
+	priv->proximity_number = xf86SetIntOption(local->options, "ProximityNumber", 2);
+	ErrorF("%sProximity Number: %d\n", CI_CONFIG, priv->proximity_number);
+	priv->genproxbutev = xf86SetIntOption(local->options, "GenProximityButtonEvents", 0);
+	ErrorF("%sGenerate Proximity Button Events: %d\n", CI_CONFIG, priv->genproxbutev);
 	priv->button_threshold = xf86SetIntOption(local->options, "ButtonThreshold", 10);
 	ErrorF("%sButton Threshold: %d\n", CI_CONFIG, priv->button_threshold);
 	priv->sleep_mode = xf86SetIntOption(local->options, "SleepMode", 0);
@@ -938,6 +1004,22 @@ CitronPreInit (InputDriverPtr drv, IDevPtr dev, int flags)
 	ErrorF("%sBeep Release Pitch: %d\n", CI_CONFIG, priv->rel_pitch);
 	priv->rel_dur = xf86SetIntOption(local->options, "ReleaseDur", 10) & 0xff;
 	ErrorF("%sBeep Release Duration: %d\n", CI_CONFIG, priv->rel_dur);
+
+	priv->beepkey = xf86SetIntOption(local->options, "BeepKey", 0);
+	ErrorF("%sBeepKey: %s\n", CI_CONFIG, (priv->beep > 0) ? "activated":"not activated");
+	priv->presskey_vol = xf86SetIntOption(local->options, "PressVolKey", 50);
+	ErrorF("%sBeep Pressure Volume Keyboard: %d\n", CI_CONFIG, priv->press_vol);
+	priv->presskey_pitch = xf86SetIntOption(local->options, "PressPitchKey", 1500);
+	ErrorF("%sBeep Pressure Pitch Keyboard: %d\n", CI_CONFIG, priv->press_pitch);
+	priv->presskey_dur = xf86SetIntOption(local->options, "PressDurKey", 120);
+	ErrorF("%sBeep Pressure Duration Keyboard: %d\n", CI_CONFIG, priv->press_dur);
+	priv->relkey_vol = xf86SetIntOption(local->options, "ReleaseVolKey", 50);
+	ErrorF("%sBeep Release Volume Keyboard: %d\n", CI_CONFIG, priv->rel_vol);
+	priv->relkey_pitch = xf86SetIntOption(local->options, "ReleasePitchKey", 1500*2);
+	ErrorF("%sBeep Release Pitch Keyboard: %d\n", CI_CONFIG, priv->rel_pitch);
+	priv->relkey_dur = xf86SetIntOption(local->options, "ReleaseDurKey", 120/2);
+	ErrorF("%sBeep Release Duration Keyboard: %d\n", CI_CONFIG, priv->rel_dur);
+
 	priv->beam_timeout = xf86SetIntOption(local->options, "BeamTimeout", 30) & 0xffff;
 	ErrorF("%sBeam Timeout: %d\n", CI_CONFIG, priv->beam_timeout);
 	priv->touch_time = xf86SetIntOption(local->options, "TouchTime", 0) & 0xff;
@@ -956,6 +1038,10 @@ CitronPreInit (InputDriverPtr drv, IDevPtr dev, int flags)
 	ErrorF("%sLockZExitTime: %d\n", CI_CONFIG, priv->lockz_exit_time);
 	priv->lockz_lock_time = xf86SetIntOption(priv->local->options, "LockZLockTime", 10);
 	ErrorF("%sLockLockTime: %d\n", CI_CONFIG, priv->lockz_lock_time);
+	priv->key_matrix = xf86SetIntOption(priv->local->options, "KeyMatrix", 0);
+	ErrorF("%sKeyMatrix: %s\n", CI_CONFIG, priv->key_matrix > 0 ? "enabled":"disabled");
+	priv->ambient_overload = xf86SetIntOption(priv->local->options, "AmbientOverload", 0);
+	ErrorF("%sAmbientOverload: %s\n", CI_CONFIG, priv->ambient_overload > 0 ? "enabled":"disabled");
 
 	cit_SetEnterCount(priv);	/* set enter_count according click_mode */
 
@@ -1002,7 +1088,6 @@ CitronPreInit (InputDriverPtr drv, IDevPtr dev, int flags)
 	priv->last_x = 0;
 	priv->last_y = 0;
 	priv->query_state = 0;	/* first query */
-
 
 #if(INITT)
 	DBG (8, XisbTrace (priv->buffer, 1));
@@ -1253,8 +1338,7 @@ DeviceInit (DeviceIntPtr dev)
 	LocalDevicePtr local = (LocalDevicePtr) dev->public.devicePrivate;
 	cit_PrivatePtr priv = (cit_PrivatePtr) (local->private);
 
-	unsigned char map[] =
-	{0, 1};
+	unsigned char map[] = {0, 1, 2, 3, 4, 5};
 
 	DBG (5, ErrorF("%sDeviceInit called\n", CI_INFO));
 	/* 
@@ -1268,9 +1352,9 @@ DeviceInit (DeviceIntPtr dev)
 						priv->screen_num, priv->screen_width, priv->screen_height));
 
 	/* 
-	 * Device reports button press for up to 1 button.
+	 * Device reports button press for up to 5 buttons.
 	 */
-	if (InitButtonClassDeviceStruct (dev, 1, map) == FALSE)
+	if (InitButtonClassDeviceStruct (dev, 5, map) == FALSE)
 	{
 		ErrorF ("%sUnable to allocate Citron touchscreen ButtonClassDeviceStruct\n", CI_ERROR);
 		return !Success;
@@ -1292,19 +1376,29 @@ DeviceInit (DeviceIntPtr dev)
 	}
 	else
 	{
-		InitValuatorAxisStruct (dev, 0, priv->min_x, priv->max_x,
-								CIT_DEF_MAX_X,
-								CIT_DEF_MIN_X /* min_res */ ,
-								CIT_DEF_MAX_X /* max_res */ );
-		InitValuatorAxisStruct (dev, 1, priv->min_y, priv->max_y,
-								CIT_DEF_MAX_Y,
-								CIT_DEF_MIN_Y /* min_res */ ,
-								CIT_DEF_MAX_Y /* max_res */ );
+		InitValuatorAxisStruct (dev, 0,
+								priv->min_x,	/* min val */
+								priv->max_x,	/* max val */
+								CIT_DEF_MAX_X,	/* resolution */
+								CIT_DEF_MIN_X,	/* min_res */
+								CIT_DEF_MAX_X);	/* max_res */
+		InitValuatorAxisStruct (dev, 1,
+								priv->min_y, 	/* min val */
+								priv->max_y,	/* max val */
+								CIT_DEF_MAX_Y,	/* resolution */
+								CIT_DEF_MIN_Y,	/* min_res */
+								CIT_DEF_MAX_Y);	/* max_res */
 	}
 
 	if (InitProximityClassDeviceStruct (dev) == FALSE)
 	{
 		ErrorF ("%sUnable to allocate Citron touchscreen ProximityClassDeviceStruct\n", CI_ERROR);
+		return !Success;
+	}
+
+	if (InitKeyClassDeviceStruct(dev, &keys, NULL) == FALSE)
+	{
+		ErrorF("%sUnable to init Key Class Device\n", CI_ERROR);
 		return !Success;
 	}
 
@@ -1349,6 +1443,7 @@ static void
 ReadInput (LocalDevicePtr local)
 {
 	int x, y;
+	int motionevent = 0;
 	cit_PrivatePtr priv = (cit_PrivatePtr) (local->private);
 
  	DBG(RI, ErrorF("%sReadInput called\n", CI_INFO));
@@ -1375,9 +1470,9 @@ ReadInput (LocalDevicePtr local)
 
 		if (priv->reporting_mode == TS_Scaled)
 		{
-			x = xf86ScaleAxis (priv->raw_x, 0, priv->screen_width, priv->min_x,
+			x = xf86ScaleAxis (priv->raw_x, 0, priv->screen_width-1, priv->min_x,
 							   priv->max_x);
-			y = xf86ScaleAxis (priv->raw_y, 0, priv->screen_height, priv->min_y,
+			y = xf86ScaleAxis (priv->raw_y, 0, priv->screen_height-1, priv->min_y,
 							   priv->max_y);
 			DBG(RI, ErrorF("%s\tscaled coordinates: (%d, %d)\n", CI_INFO, x, y));
 		}
@@ -1389,12 +1484,6 @@ ReadInput (LocalDevicePtr local)
 
 		xf86XInputSetScreen (local, priv->screen_num, x, y);
 
- 		if ((priv->proximity == FALSE) && (priv->state & CIT_TOUCHED))
-		{
-			priv->proximity = TRUE;
-			xf86PostProximityEvent (local->dev, 1, 0, 2, x, y);
-			DBG(RI, ErrorF("%s\tproximity(TRUE, x=%d, y=%d)\n", CI_INFO, x, y));
-		}
 
 		/*
 		 * Send events.
@@ -1405,21 +1494,55 @@ ReadInput (LocalDevicePtr local)
 		 * First test if coordinates have changed a predefined amount of pixels
 		 */
 
-		if ( ((x >= (priv->last_x + priv->delta_x)) ||
+
+		/* If the ccordinates are inside the hysteresis, or the coordinates are outside of a 
+		 * rectangle with delta_x and delta_y clearence and coordinates have not changed,
+		 * no motion event is sent. 
+		 * Only one motion event per touch event 
+		 */
+
+
+		if (((x >= (priv->last_x + priv->delta_x)) ||	/* coordinate inside of hyteresis rectangle */
 		 	  (x <= (priv->last_x - priv->delta_x)) ||
 		 	  (y >= (priv->last_y + priv->delta_y)) ||
-		 	  (y <= (priv->last_y - priv->delta_y)))	||
-		   ( ((x < priv->delta_x) ||
+		 	  (y <= (priv->last_y - priv->delta_y)))
+		  
+			||
+				
+		   ( (((x < priv->delta_x) ||						/* outside of a clearance of delta_x and delta_y */
 		 	  (x > (priv->screen_width - priv->delta_x))) ||
-			 ((y < priv->delta_x) ||
-		 	  (y > (priv->screen_height - priv->delta_y)))) )
+			 ((y < priv->delta_y) ||
+		 	  (y > (priv->screen_height - priv->delta_y))))
+
+			&&
+
+			  ( (x != priv->last_x) || (y != priv->last_y) ))) /* but only if the coordinates have changed */
+
 		{
         	xf86PostMotionEvent (local->dev, TRUE, 0, 2, x, y);
+			motionevent++;				/* motionevent has happened */
 			DBG(RI, ErrorF("%s\tPostMotionEvent(x=%d, y=%d, last_x=%d, last_y=%d)\n", CI_INFO,
 							 x, y, priv->last_x, priv->last_y));
 
 			priv->last_x = x; 		/* save cooked data */
 			priv->last_y = y;
+		}
+
+
+ 		if ((priv->proximity == FALSE) && (priv->state & CIT_TOUCHED))
+		{
+			priv->proximity = TRUE;
+			/* We *must* generate a motion before a button change */
+			if(motionevent <= 0)	/* send a motion event if not already done */
+			{
+	        	xf86PostMotionEvent (local->dev, TRUE, 0, 2, x, y);
+				motionevent++;		/* motionevent occurered */
+			}
+			xf86PostProximityEvent (local->dev, 1, 0, 2, x, y);
+			if(priv->genproxbutev)
+				xf86PostButtonEvent (local->dev, TRUE, priv->proximity_number, 1, 0, 2, x, y);
+			DBG(RI, ErrorF("%s\tproximity(TRUE, x=%d, y=%d, genproxbutev=%d, prox_num=%d)\n", 
+				CI_INFO, x, y, priv->genproxbutev, priv->proximity_number));
 		}
 
 		/* 
@@ -1434,6 +1557,13 @@ ReadInput (LocalDevicePtr local)
 			if(priv->enter_touched == priv->enter_count)
 			{
 				priv->enter_touched++; /* increment count one more time to prevent further enter events */
+
+				if(motionevent <= 0)	/* send a motion event if not already done */
+				{
+		        	xf86PostMotionEvent (local->dev, TRUE, 0, 2, x, y);
+					motionevent++; 
+				}
+
 				xf86PostButtonEvent (local->dev, TRUE,
 					     priv->button_number, 1, 0, 2, x, y);
 				cit_Beep(priv, 1);
@@ -1446,28 +1576,84 @@ ReadInput (LocalDevicePtr local)
 
 		if ((priv->button_down == TRUE) && !(priv->state & CIT_BUTTON))
 		{
+
+			if(motionevent <= 0)	/* send a motion event if not already done */
+			{
+	        	xf86PostMotionEvent (local->dev, TRUE, 0, 2, x, y);
+				motionevent++;		/* motionevent occurered */
+			}
 			xf86PostButtonEvent (local->dev, TRUE,
 					     priv->button_number, 0, 0, 2, x, y);
 			cit_Beep(priv, 0);
 			DBG(RI, ErrorF("%s\tPostButtonEvent(UP, x=%d, y=%d)\n", CI_INFO, x, y));
 			priv->button_down = FALSE;
 		}
+
+
 		/* 
 		 * the untouch should always come after the button release
 		 */
 		if ((priv->proximity == TRUE) && !(priv->state & CIT_TOUCHED))
 		{
 			priv->proximity = FALSE;
+
+			if(motionevent <= 0)	/* send a motion event if not already done */
+			{
+	        	xf86PostMotionEvent (local->dev, TRUE, 0, 2, x, y);
+				motionevent++;		/* motionevent occurered */
+			}
+
 			xf86PostProximityEvent (local->dev, 0, 0, 2, x, y);
-			DBG(RI, ErrorF("%s\tproximity(FALSE, x=%d, y=%d)\n", CI_INFO, x, y));
+			if(priv->genproxbutev)
+				xf86PostButtonEvent (local->dev, TRUE, priv->proximity_number, 0, 0, 2, x, y);
+			DBG(RI, ErrorF("%s\tproximity(FALSE, x=%d, y=%d, genproxbutev=%d, prox_num=%d)\n", 
+				CI_INFO, x, y, priv->genproxbutev, priv->proximity_number));
 		}
 		
 
-		DBG (RI, ErrorF ("%sTouchScreen: x(%d), y(%d), %s\n",
+
+		/*
+		 * Any key changed ? 
+		 */
+
+		if (priv->key_changed == TRUE)
+		{
+			xf86PostKeyEvent(local->dev, priv->key_number, (priv->state & CIT_KEYPRESSED) ? TRUE : FALSE, TRUE, 0, 2, x, y);
+/*			xf86PostKeyEvent(local->dev, 0x10, FALSE, TRUE, 0, 2, y, x); */
+		
+			DBG (RI, ErrorF ("%s\tPostKeyEvent: key %d %s\n",
+						CI_INFO, priv->key_number,
+						(priv->state & CIT_KEYPRESSED) ? "Pressed" : "Released"));
+
+			cit_BeepKey(priv, (priv->state & CIT_KEYPRESSED) ? 1 : 0);
+			priv->key_changed = FALSE;
+		}
+
+
+		/*
+		 * Ambient light overflow ? 
+		 */
+
+		if (priv->ambientoverflow_changed == TRUE)
+		{
+			xf86PostKeyEvent(local->dev, AMBIENTOFLOW_KEY, (priv->state & CIT_AMBIENTOVERFLOW) ? TRUE : FALSE, TRUE, 0, 2, x, y);
+/*			xf86PostKeyEvent(local->dev, 0x10, FALSE, TRUE, 0, 2, y, x); */
+		
+			DBG (RI, ErrorF ("%s\tPostKeyEvent: key %d %s\n",
+						CI_INFO, AMBIENTOFLOW_KEY,
+						(priv->state & CIT_AMBIENTOVERFLOW) ? "Overflow" : "No Overflow"));
+
+			priv->ambientoverflow_changed = FALSE;
+		}
+
+
+		DBG (RI, ErrorF ("%sTouchScreen: x(%d), y(%d), %s, %d motion events\n",
 						CI_INFO, x, y,
-						(priv->state == CIT_TOUCHED) ? "Touched" : "Released"));
+						(priv->state == CIT_TOUCHED) ? "Touched" : "Released", motionevent));
+
 
 #ifdef CIT_TIM
+		DBG (RI, ErrorF ("%s\tFAKE: YES\n", CI_INFO));
 		if(priv->fake_exit)
 		{
 			priv->fake_exit = FALSE;		/* do not sent any further faked exit messages */
@@ -1477,6 +1663,356 @@ ReadInput (LocalDevicePtr local)
 	}
  	DBG(RI, ErrorF("%sExit ReadInput\n", CI_INFO));
 }
+
+
+/*****************************************************************************
+ *	[cit_GetPacket]
+ ****************************************************************************/
+static Bool
+cit_GetPacket (cit_PrivatePtr priv)
+{
+	int c;
+	int errmaj, errmin;
+	int loop = 0;
+	DBG(GP, ErrorF("%scit_GetPacket called\n", CI_INFO));
+	DBG(GP, ErrorF("%s\t* initial lex_mode =%d (%s)\n", CI_INFO, priv->lex_mode,
+			    priv->lex_mode==cit_idle	?"idle":
+			    priv->lex_mode==cit_getID	?"getID":
+			    priv->lex_mode==cit_collect	?"collect":
+			    priv->lex_mode==cit_escape	?"escape":
+			    "???"));
+	while ((c = XisbRead (priv->buffer)) >= 0)
+	{
+#if(0)		
+		DBG(GP, ErrorF("%s c=%d\n",CI_INFO, c));
+#endif
+		loop++;
+	 	if (c == CTS_STX)
+		{
+			DBG(GP, ErrorF("%s\t+ STX detected\n", CI_INFO));
+			/* start of report received */
+			if (priv->lex_mode != cit_idle)
+				DBG(7, ErrorF("%s\t- no ETX received before this STX!\n", CI_WARNING));
+			priv->lex_mode = cit_getID;
+			DBG(GP, ErrorF("%s\t+ new lex_mode == getID\n", CI_INFO));
+			/* Start supervision timer at the beginning of a command */
+			priv->timer_val1[SV_TIMER] = 2000;		/* Timer delay [ms] 2s */
+			priv->timer_callback[SV_TIMER] = (OsTimerCallback)cit_SuperVisionTimer;		/* timer callback routine	*/
+			cit_StartTimer(priv, SV_TIMER);			
+
+		}
+		else if (c == CTS_ETX)
+		{
+			DBG(GP, ErrorF("%s\t+ ETX detected\n", CI_INFO));
+			/* end of command received */
+			/* always IDLE after report completion */
+			DBG(GP, ErrorF("%s\t+ new lex_mode == idle\n", CI_INFO));
+			if (priv->lex_mode == cit_collect)
+			{
+			    DBG(GP, ErrorF("%s\t+ Good report received\n", CI_INFO));
+			    priv->lex_mode = cit_idle;
+				cit_CloseTimer(priv, SV_TIMER);			/* stop supervision */
+			    return (Success);
+			}
+			DBG(GP, ErrorF("%s\t- unexpected ETX received!\n", CI_WARNING));
+			priv->lex_mode = cit_idle;
+		}
+		else if (c == CTS_ESC)
+		{
+			DBG(GP, ErrorF("%s\t+ escape detected\n", CI_INFO));
+			/* next character is encoded */
+			if (priv->lex_mode != cit_collect)
+			{
+				DBG(GP, ErrorF("%s\t- unexpected control character received\n", CI_WARNING));
+			}
+			else
+			{
+				priv->lex_mode = cit_escape;
+				DBG(GP, ErrorF("%s\t+ new lex_mode == escape\n", CI_INFO));
+			}
+		}
+		else if ((c < CTS_CTRLMIN) || (c > CTS_CTRLMAX))
+		{
+			/* regular report data received */
+			if (priv->lex_mode == cit_getID)
+			{	/* receive report ID */
+				priv->packeti = 0;
+				priv->packet[priv->packeti++] = (unsigned char)c;
+				priv->lex_mode = cit_collect;
+				DBG(GP, ErrorF("%s\t+ identifier captured, new lex_mode == collect\n", CI_INFO));
+			}
+			else if ((priv->lex_mode == cit_collect) || (priv->lex_mode == cit_escape))
+			{	/* receive command data */
+				if (priv->lex_mode == cit_escape)
+				{	/* decode encoded data byte */
+					c &= CTS_DECODE;	/* decode data */
+					priv->lex_mode = cit_collect;
+					DBG(GP, ErrorF("%s\t+ decoded character = 0x%02X\n", CI_INFO, c));
+					DBG(GP, ErrorF("%s\t+ new lex_mode = collect\n", CI_INFO));
+				}
+				if (priv->packeti < CTS_PACKET_SIZE)
+				{	/* add data bytes to buffer */
+					priv->packet[priv->packeti++] = (unsigned char)c;
+				}
+				else
+				{
+					DBG(GP, ErrorF("%s\t- command buffer overrun, loop[%d]\n", CI_ERROR, loop));
+					/* let's reinitialize the touch - maybe it sends breaks */
+					/* The touch assembles breaks until the buffer has an overrun */
+					/* 100ms x 256 -> 26 seconds */
+					
+					priv->lex_mode = cit_idle;
+					cit_ReinitSerial(priv);
+
+				}
+			}
+			else
+			{
+				/* this happens e.g. when the touch sends breaks, so we try to reconnect */
+				DBG(GP, ErrorF("%s\t- unexpected non control received! [%d, 0x%02x, loop[%d]]\n", CI_WARNING, c, c, loop));
+				DBG(GP, ErrorF("%s\t- Device not connected - trying to reconnect ...\n", CI_WARNING));
+				if (QueryHardware (priv->local, &errmaj, &errmin) != Success)
+					ErrorF ("%s\t- Unable to query/initialize Citron Touch hardware.\n", CI_ERROR);
+				else
+					ErrorF ("%s\t- Citron Touch reconnected\n", CI_INFO);
+
+				return(!Success);
+			}
+		}
+		else if (c != CTS_XON && c != CTS_XOFF)
+		{
+			DBG(GP, ErrorF("%s\t- unhandled control character received! loop[%d]\n", CI_WARNING, loop));
+		}
+	} /* end while */
+	DBG(GP, ErrorF("%scit_GetPacket exit !Success - loop[%d]\n", CI_INFO, loop));
+
+	return (!Success);
+}
+
+
+
+/*****************************************************************************
+ *	[cit_ProcessPacket]
+ ****************************************************************************/
+static void cit_ProcessPacket(cit_PrivatePtr priv)
+{
+	int	i;
+
+	DBG(PP, ErrorF("%scit_ProcessPacket called\n", CI_INFO));
+	DBG(PP, ErrorF("%s\t+ enter state = 0x%04X, dual touch count=%d\n", CI_INFO, priv->state, priv->dual_touch_count));
+	/* examine message identifier */
+
+	priv->dual_flg = TRUE;			/* Dual Touch Error occurred */
+#ifdef CIT_TIM
+	priv->timer_val1[FAKE_TIMER] = 1000;		/* Timer delay [ms]*/
+	priv->timer_callback[FAKE_TIMER] = (OsTimerCallback)cit_DualTouchTimer;		/* timer callback routine	*/
+	cit_StartTimer(priv, FAKE_TIMER);			
+#endif
+
+	switch (priv->packet[0])
+	{
+		case R_COORD:	/* new touch coordinates received */
+			if (priv->packeti < 5)
+			{
+				DBG(PP, ErrorF("%s\t- coordinate message packet too short (%d bytes)\n", CI_ERROR, priv->packeti));
+				break;
+			}
+
+
+			if (priv->dual_touch_count > 0)
+				priv->dual_touch_count--;
+
+			priv->raw_x = 0x0001U * priv->packet[1]
+				 	  	+ 0x0100U * priv->packet[2];
+			priv->raw_y = 0x0001U * priv->packet[3]
+				  		+ 0x0100U * priv->packet[4];
+
+			priv->raw_min_x = min(priv->raw_min_x, priv->raw_x);
+			priv->raw_max_x = max(priv->raw_max_x, priv->raw_x);
+			priv->raw_min_y = min(priv->raw_min_y, priv->raw_y);
+			priv->raw_max_y = max(priv->raw_max_y, priv->raw_y);
+
+			priv->state |= CIT_TOUCHED;
+
+			DBG(PP, ErrorF("%s\t+ COORD message raw (%d,%d)\n", CI_INFO, priv->raw_x, priv->raw_y));
+			break;
+		
+		case R_EXIT:	/* touch area no longer interrupted */
+			if (priv->packeti < 5)
+			{
+				DBG(PP, ErrorF("%s\t- exit message packet too short (%d bytes)\n", CI_ERROR, priv->packeti));
+				break;
+			}
+
+			priv->state &= ~(CIT_TOUCHED | CIT_PRESSED);
+			priv->dual_touch_count = 0;
+			priv->enter_touched = 0;		/* reset coordinate report counter */
+			priv->raw_x = 0x0001U * priv->packet[1]
+						+ 0x0100U * priv->packet[2];
+			priv->raw_y = 0x0001U * priv->packet[3]
+						+ 0x0100U * priv->packet[4];
+#ifdef CIT_TIM
+			cit_CloseTimer(priv, FAKE_TIMER);	/* close timer if exit message was received */
+#endif
+			DBG(PP, ErrorF("%s\t+ EXIT message (%d,%d)\n", CI_INFO, priv->raw_x, priv->raw_y));
+			break;
+		
+		case R_DUALTOUCHERROR:
+			if (priv->dual_touch_count < priv->max_dual_count)
+				priv->dual_touch_count++;
+			DBG(PP, ErrorF("%s\t+ DUAL TOUCH ERROR message received\n", CI_INFO));
+			break;
+		
+		case R_PRESSURE:	/* pressure message received */
+			if (priv->packeti < 2)
+			{
+				DBG(PP, ErrorF("%s\t- pressure message packet too short (%d bytes)\n", CI_ERROR, priv->packeti));
+				break;
+			}
+			priv->state |= CIT_TOUCHED;
+			if (priv->packet[1] == PRESS_EXCEED)
+				priv->state |= CIT_PRESSED;
+			else if(priv->packet[1] == PRESS_BELOW)
+			{
+				priv->enter_touched = 0;		/* reset coordinate report counter */
+				priv->state &= ~CIT_PRESSED;
+			}
+			else
+				DBG(PP, ErrorF("%sPressure Message Error\n", CI_ERROR));
+
+			DBG(PP, ErrorF("%s\t+ pressure %s message\n", CI_INFO, priv->packet[1] ? "enter":"exit"));
+			break;
+
+		case R_KEYCHANGE:	/* Key state has changed */
+			if (priv->packeti < CTS_KEYCHANGE_LEN)
+			{
+				DBG(PP, ErrorF("%s\t+ keychange message packet too short (%d bytes)\n", CI_ERROR, priv->packeti));
+				break;
+			}
+
+			priv->key_changed = TRUE;
+			priv->key_number = (int)priv->packet[1];
+
+			if(priv->packet[2])
+				priv->state |= CIT_KEYPRESSED;
+			else
+				priv->state &= ~CIT_KEYPRESSED; 
+
+			DBG(PP, ErrorF("%s\t+ key=%d state=%d \n", CI_INFO, priv->packet[1], priv->packet[2]));
+			
+			break;
+		
+
+		case R_AMBIENTOVERLOADERROR:	/* Ambient light overload error*/
+			if (priv->packeti < 2)
+			{
+				DBG(PP, ErrorF("%s\t- ambient overload error message packet too short (%d bytes)\n", CI_ERROR, priv->packeti));
+				break;
+			}
+			
+			priv->ambientoverflow_changed = TRUE;
+
+			if(priv->packet[1])
+				priv->state |= CIT_AMBIENTOVERFLOW;
+			else
+				priv->state &= ~CIT_AMBIENTOVERFLOW; 
+
+			DBG(PP, ErrorF("%s\t- Ambient overflow %s limit\n", CI_INFO, priv->state & CIT_AMBIENTOVERFLOW ? "exceeds" : "below"));
+			break;
+
+		default:
+			DBG(PP, ErrorF("%s\t* unhandled message:", CI_ERROR));
+			for (i=0; i<priv->packeti; i++)
+			{
+				DBG(PP, ErrorF(" 0x%02X", priv->packet[i]));
+			}
+			DBG(PP, ErrorF("\n"));
+	}
+	/* generate button state */
+	switch (priv->click_mode)
+	{
+		case CM_ZPRESS:
+			DBG(PP, ErrorF("%s\t+ ZPress, button ", CI_INFO));
+			if (priv->state & CIT_PRESSED)
+			{
+				priv->state |= CIT_BUTTON;
+				DBG(PP, ErrorF("down"));
+			}
+			else
+			{
+				priv->state &= ~CIT_BUTTON;
+				DBG(PP, ErrorF("up"));
+			}
+
+			break;
+
+		case CM_ZPRESSEXIT:
+			DBG(PP, ErrorF("%s\t+ ZPressExit, button ", CI_INFO));
+			if (priv->state & CIT_PRESSED)
+			{
+				priv->state |= CIT_BUTTON;
+				DBG(PP, ErrorF("down"));
+			}
+			else if (!(priv->state & CIT_TOUCHED))
+			{
+				priv->state &= ~CIT_BUTTON;
+				DBG(PP, ErrorF("up"));
+			}
+			break;
+
+		case CM_DUAL:
+			DBG(PP, ErrorF("%s\t+ Dual Touch, button ", CI_INFO));
+			if ((priv->dual_touch_count == priv->max_dual_count) && (priv->state & CIT_TOUCHED))
+			{
+				priv->state |= CIT_BUTTON;
+				DBG(PP, ErrorF("down"));
+			}
+			else if (priv->dual_touch_count == 0)
+			{
+				priv->state &= ~CIT_BUTTON;
+				DBG(PP, ErrorF("up"));
+			}
+			break;
+		
+		case CM_DUALEXIT:
+			DBG(PP, ErrorF("%s\t+ Dual Exit, button ", CI_INFO));
+			if ((priv->dual_touch_count == priv->max_dual_count) && (priv->state & CIT_TOUCHED))
+			{
+				priv->dual_flg = TRUE;
+				priv->state |= CIT_BUTTON;
+				DBG(PP, ErrorF("down"));
+			}
+			else if (!(priv->state & CIT_TOUCHED))
+			{
+				priv->state &= ~CIT_BUTTON;
+				DBG(PP, ErrorF("up"));
+			}
+			break;
+
+		default:	/* default to enter mode */
+			DBG(PP, ErrorF("%s\t+ Enter Mode, button ", CI_INFO));
+			if (priv->state & CIT_TOUCHED)
+			{
+				priv->state |= CIT_BUTTON;
+				DBG(PP, ErrorF("down"));
+			}
+			else
+			{
+				priv->state &= ~CIT_BUTTON;
+				DBG(PP, ErrorF("up"));
+			}
+			break;
+	}
+	DBG(PP, ErrorF("\n"));
+	DBG(PP, ErrorF("%s\t+ Click Mode=%d\n", CI_INFO, priv->click_mode));
+	DBG(PP+1, ErrorF("%s\t+ exit state  = 0x%04X, dual touch count=%d\n", CI_INFO, priv->state, priv->dual_touch_count));
+	DBG(PP+1, ErrorF("%s\t  raw_x=%d, raw_y=%d\n", CI_INFO, priv->raw_x, priv->raw_y));
+}
+
+
+
+
+
 
 /*****************************************************************************
  *	[ControlProc]
@@ -1577,9 +2113,9 @@ ConvertProc (LocalDevicePtr local,
 					CI_INFO, first, num, v0, v1, v2, v3));
 	if (priv->reporting_mode == TS_Raw)
 	{
-		*x = xf86ScaleAxis (v0, 0, priv->screen_width, priv->min_x,
+		*x = xf86ScaleAxis (v0, 0, priv->screen_width-1, priv->min_x,
 							priv->max_x);
-		*y = xf86ScaleAxis (v1, 0, priv->screen_height, priv->min_y,
+		*y = xf86ScaleAxis (v1, 0, priv->screen_height-1, priv->min_y,
 							priv->max_y);
 	}
 	else
@@ -1707,6 +2243,12 @@ QueryHardware (LocalDevicePtr local, int *errmaj, int *errmin)
 	if (cit_GetPressureSensors(priv)!=Success)
 	{
 		ErrorF("%sNo pressure sensors report received from Citron Touchscreen!\n",CI_ERROR);
+	}
+
+	DBG(6, ErrorF("%s\t+ requesting peripherals report\n",CI_INFO));
+	if (cit_GetPeripherals(priv)!=Success)
+	{
+		ErrorF("%sNo peripheralss report received from Citron Touchscreen!\n",CI_ERROR);
 	}
 
 	DBG(5, ErrorF("%s ClickMode is %d\n",CI_INFO, priv->click_mode));
@@ -1838,135 +2380,37 @@ QueryHardware (LocalDevicePtr local, int *errmaj, int *errmin)
 	/* now we can start beam scanning */
 	cit_SendCommand(priv->buffer, C_SETSCANNING, 1, SC_ENABLE);
 
+	/* Test if key matrix is available and enable reports */
+	if(priv->key_matrix)
+	{
+		/* at least 1 key has to be defined */
+		if(priv->peripherals & PR_KEYMATRIX)
+		{
+			cit_SendCommand(priv->buffer, C_SETKEYMODE, 1, KM_ENABLE);
+			DBG(6, ErrorF("%s\t+ Key matrix reports enabled\n",CI_INFO));
+		}
+		else
+			ErrorF("%sKeys enabled on a touch without key matrix\n",CI_ERROR);
+		
+	}
+
+	/* Test if ambient overload detection has to be enabled */
+	if(priv->ambient_overload)
+	{
+		if(priv->ambient_overload <= 2)
+		{
+			cit_SendCommand(priv->buffer, C_SETAMBIENTOVERLOAD, 1, priv->ambient_overload);
+			DBG(6, ErrorF("%s\t+ Ambient overload reports enabled in mode %d\n",CI_INFO, priv->ambient_overload));
+		}
+		
+	}
+
+
 	DBG(6, ErrorF("%s\t+ Touch initialized - %d\n",CI_INFO, priv->query_state));
 	
 	return (Success);
 }
 
-
-/*****************************************************************************
- *	[cit_GetPacket]
- ****************************************************************************/
-static Bool
-cit_GetPacket (cit_PrivatePtr priv)
-{
-	int c;
-	int errmaj, errmin;
-	int loop = 0;
-	DBG(GP, ErrorF("%scit_GetPacket called\n", CI_INFO));
-	DBG(GP, ErrorF("%s\t* initial lex_mode =%d (%s)\n", CI_INFO, priv->lex_mode,
-			    priv->lex_mode==cit_idle	?"idle":
-			    priv->lex_mode==cit_getID	?"getID":
-			    priv->lex_mode==cit_collect	?"collect":
-			    priv->lex_mode==cit_escape	?"escape":
-			    "???"));
-	while ((c = XisbRead (priv->buffer)) >= 0)
-	{
-#if(0)		
-		DBG(GP, ErrorF("%s c=%d\n",CI_INFO, c));
-#endif
-		loop++;
-	 	if (c == CTS_STX)
-		{
-			DBG(GP, ErrorF("%s\t+ STX detected\n", CI_INFO));
-			/* start of report received */
-			if (priv->lex_mode != cit_idle)
-				DBG(7, ErrorF("%s\t- no ETX received before this STX!\n", CI_WARNING));
-			priv->lex_mode = cit_getID;
-			DBG(GP, ErrorF("%s\t+ new lex_mode == getID\n", CI_INFO));
-			/* Start supervision timer at the beginning of a command */
-			priv->timer_val1[SV_TIMER] = 2000;		/* Timer delay [ms] 2s */
-			priv->timer_callback[SV_TIMER] = (OsTimerCallback)cit_SuperVisionTimer;		/* timer callback routine	*/
-			cit_StartTimer(priv, SV_TIMER);			
-
-		}
-		else if (c == CTS_ETX)
-		{
-			DBG(GP, ErrorF("%s\t+ ETX detected\n", CI_INFO));
-			/* end of command received */
-			/* always IDLE after report completion */
-			DBG(GP, ErrorF("%s\t+ new lex_mode == idle\n", CI_INFO));
-			if (priv->lex_mode == cit_collect)
-			{
-			    DBG(GP, ErrorF("%s\t+ Good report received\n", CI_INFO));
-			    priv->lex_mode = cit_idle;
-				cit_CloseTimer(priv, SV_TIMER);			/* stop supervision */
-			    return (Success);
-			}
-			DBG(GP, ErrorF("%s\t- unexpected ETX received!\n", CI_WARNING));
-			priv->lex_mode = cit_idle;
-		}
-		else if (c == CTS_ESC)
-		{
-			DBG(GP, ErrorF("%s\t+ escape detected\n", CI_INFO));
-			/* next character is encoded */
-			if (priv->lex_mode != cit_collect)
-			{
-				DBG(GP, ErrorF("%s\t- unexpected control character received\n", CI_WARNING));
-			}
-			else
-			{
-				priv->lex_mode = cit_escape;
-				DBG(GP, ErrorF("%s\t+ new lex_mode == escape\n", CI_INFO));
-			}
-		}
-		else if ((c < CTS_CTRLMIN) || (c > CTS_CTRLMAX))
-		{
-			/* regular report data received */
-			if (priv->lex_mode == cit_getID)
-			{	/* receive report ID */
-				priv->packeti = 0;
-				priv->packet[priv->packeti++] = (unsigned char)c;
-				priv->lex_mode = cit_collect;
-				DBG(GP, ErrorF("%s\t+ identifier captured, new lex_mode == collect\n", CI_INFO));
-			}
-			else if ((priv->lex_mode == cit_collect) || (priv->lex_mode == cit_escape))
-			{	/* receive command data */
-				if (priv->lex_mode == cit_escape)
-				{	/* decode encoded data byte */
-					c &= CTS_DECODE;	/* decode data */
-					priv->lex_mode = cit_collect;
-					DBG(GP, ErrorF("%s\t+ decoded character = 0x%02X\n", CI_INFO, c));
-					DBG(GP, ErrorF("%s\t+ new lex_mode = collect\n", CI_INFO));
-				}
-				if (priv->packeti < CTS_PACKET_SIZE)
-				{	/* add data bytes to buffer */
-					priv->packet[priv->packeti++] = (unsigned char)c;
-				}
-				else
-				{
-					DBG(GP, ErrorF("%s\t- command buffer overrun, loop[%d]\n", CI_ERROR, loop));
-					/* let's reinitialize the touch - maybe it sends breaks */
-					/* The touch assembles breaks until the buffer has an overrun */
-					/* 100ms x 256 -> 26 seconds */
-					
-					priv->lex_mode = cit_idle;
-					cit_ReinitSerial(priv);
-
-				}
-			}
-			else
-			{
-				/* this happens e.g. when the touch sends breaks, so we try to reconnect */
-				DBG(GP, ErrorF("%s\t- unexpected non control received! [%d, 0x%02x, loop[%d]]\n", CI_WARNING, c, c, loop));
-				DBG(GP, ErrorF("%s\t- Device not connected - trying to reconnect ...\n", CI_WARNING));
-				if (QueryHardware (priv->local, &errmaj, &errmin) != Success)
-					ErrorF ("%s\t- Unable to query/initialize Citron Touch hardware.\n", CI_ERROR);
-				else
-					ErrorF ("%s\t- Citron Touch reconnected\n", CI_INFO);
-
-				return(!Success);
-			}
-		}
-		else if (c != CTS_XON && c != CTS_XOFF)
-		{
-			DBG(GP, ErrorF("%s\t- unhandled control character received! loop[%d]\n", CI_WARNING, loop));
-		}
-	} /* end while */
-	DBG(GP, ErrorF("%scit_GetPacket exit !Success - loop[%d]\n", CI_INFO, loop));
-
-	return (!Success);
-}
 
 
 /*****************************************************************************
@@ -2030,6 +2474,19 @@ cit_Beep(cit_PrivatePtr priv, int press)
 	/*            (((unsigned long)duration * loudness / 50) << 16)) */
 	/* .. whatever the inventor wants to intend by it, I don't know (PK) */
 
+	/* Description (PK): The argument (for ioctl) consists of the tone value in 
+		the low word and the duration in the high word.
+		The tone value is not the frequency.
+		The PC mainboard timer 8254 is clocked at 1.19 MHz
+		and so it's 1,193,190/frequency. The duration is measured in timer ticks.
+		Formula: (1193190/freq & 0xffff) | (unsigned long) (dur * vol / 50) << 16
+		Example: If you set vol to 50 then dur is the duration of the tone in ms.
+		         if you want 100 Hz you have to put 11,931 to freq
+		         (1,193,190 / 11,931) = 100
+	*/
+
+
+
 		xf86SoundKbdBell(priv->rel_vol, priv->rel_pitch, priv->rel_dur);
 
 	else
@@ -2037,6 +2494,46 @@ cit_Beep(cit_PrivatePtr priv, int press)
 		xf86SoundKbdBell(priv->press_vol,priv->press_pitch, priv->press_dur);
 
 	DBG(7, ErrorF("%scit_Beep called - %s\n", CI_INFO, (press == 0) ? "release" : "press"));
+#endif
+}
+
+
+/*****************************************************************************
+ *	[cit_BeepKey]
+ ****************************************************************************/
+static void
+cit_BeepKey(cit_PrivatePtr priv, int press)
+{
+#ifdef CIT_BEEP
+	if(priv->beepkey == 0)
+		return;
+
+	/* ring release bell */
+	if(press <= 0)
+
+	/*               [0]: volume, [1]: pitch, [2]: duration */
+	/* formula is: ((1193190 / freq) & 0xffff) |				*/
+	/*            (((unsigned long)duration * loudness / 50) << 16)) */
+	/* .. whatever the inventor wants to intend by it, I don't know (PK) */
+
+	/* Description (PK): The argument (for ioctl) consists of the tone value in 
+		the low word and the duration in the high word.
+		The tone value is not the frequency.
+		The PC mainboard timer 8254 is clocked at 1.19 MHz
+		and so it's 1,193,190/frequency. The duration is measured in timer ticks.
+		Formula: (1193190/freq & 0xffff) | (unsigned long) (dur * vol / 50) << 16
+		Example: If you set vol to 50 then dur is the duration of the tone in ms.
+		         if you want 100 Hz you have to put 11,931 to freq
+		         (1,193,190 / 11,931) = 100
+	*/
+
+		xf86SoundKbdBell(priv->relkey_vol, priv->relkey_pitch, priv->relkey_dur);
+
+	else
+	/* ring press bell */
+		xf86SoundKbdBell(priv->presskey_vol,priv->presskey_pitch, priv->presskey_dur);
+
+	DBG(7, ErrorF("%scit_BeepKey called - %s\n", CI_INFO, (press == 0) ? "release" : "press"));
 #endif
 }
 
@@ -2535,196 +3032,12 @@ static Bool cit_GetUserString(cit_PrivatePtr priv, char *ustr_name, char *ustr_c
 	else
 	{
 		DBG(5, ErrorF("%s cit_GetUserString: %s != %s\n", CI_ERROR,
-						 ustr_name, &priv->packet[1]));
+						ustr_name, &priv->packet[1]));
 		return (!Success);
 	}
 
 	return (Success);
 }
-
-
-
-/*****************************************************************************
- *	[cit_ProcessPacket]
- ****************************************************************************/
-static void cit_ProcessPacket(cit_PrivatePtr priv)
-{
-	int	i;
-
-	DBG(PP, ErrorF("%scit_ProcessPacket called\n", CI_INFO));
-	DBG(PP, ErrorF("%s\t+ enter state = 0x%04X, dual touch count=%d\n", CI_INFO, priv->state, priv->dual_touch_count));
-	/* examine message identifier */
-
-	priv->dual_flg = TRUE;			/* Dual Touch Error occurred */
-#ifdef CIT_TIM
-	priv->timer_val1[FAKE_TIMER] = 1000;		/* Timer delay [ms]*/
-	priv->timer_callback[FAKE_TIMER] = (OsTimerCallback)cit_DualTouchTimer;		/* timer callback routine	*/
-	cit_StartTimer(priv, FAKE_TIMER);			
-#endif
-
-	switch (priv->packet[0])
-	{
-		case R_COORD:	/* new touch coordinates received */
-			if (priv->packeti < 5)
-			{
-				DBG(PP, ErrorF("%s\t- coordinate message packet too short (%d bytes)\n", CI_ERROR, priv->packeti));
-				break;
-			}
-
-
-			if (priv->dual_touch_count > 0)
-				priv->dual_touch_count--;
-
-			priv->raw_x = 0x0001U * priv->packet[1]
-				 	  	+ 0x0100U * priv->packet[2];
-			priv->raw_y = 0x0001U * priv->packet[3]
-				  		+ 0x0100U * priv->packet[4];
-
-			priv->raw_min_x = min(priv->raw_min_x, priv->raw_x);
-			priv->raw_max_x = max(priv->raw_max_x, priv->raw_x);
-			priv->raw_min_y = min(priv->raw_min_y, priv->raw_y);
-			priv->raw_max_y = max(priv->raw_max_y, priv->raw_y);
-
-			priv->state |= CIT_TOUCHED;
-
-			DBG(PP, ErrorF("%s\t+ COORD message raw (%d,%d)\n", CI_INFO, priv->raw_x, priv->raw_y));
-			break;
-		
-		case R_EXIT:	/* touch area no longer interrupted */
-			if (priv->packeti < 5)
-			{
-				DBG(PP, ErrorF("%s\t- exit message packet too short (%d bytes)\n", CI_ERROR, priv->packeti));
-				break;
-			}
-
-			priv->state &= ~(CIT_TOUCHED | CIT_PRESSED);
-			priv->dual_touch_count = 0;
-			priv->enter_touched = 0;		/* reset coordinate report counter */
-			priv->raw_x = 0x0001U * priv->packet[1]
-						+ 0x0100U * priv->packet[2];
-			priv->raw_y = 0x0001U * priv->packet[3]
-						+ 0x0100U * priv->packet[4];
-#ifdef CIT_TIM
-			cit_CloseTimer(priv, FAKE_TIMER);	/* close timer if exit message was received */
-#endif
-			DBG(PP, ErrorF("%s\t+ EXIT message (%d,%d)\n", CI_INFO, priv->raw_x, priv->raw_y));
-			break;
-		
-		case R_DUALTOUCHERROR:
-			if (priv->dual_touch_count < priv->max_dual_count)
-				priv->dual_touch_count++;
-			DBG(PP, ErrorF("%s\t+ DUAL TOUCH ERROR message received\n", CI_INFO));
-			break;
-		
-		case R_PRESSURE:	/* pressure message received */
-			if (priv->packeti < 2)
-			{
-				DBG(PP, ErrorF("%s\t- pressure message packet too short (%d bytes)\n", CI_ERROR, priv->packeti));
-				break;
-			}
-			priv->state |= CIT_TOUCHED;
-			if (priv->packet[1] == PRESS_EXCEED)
-				priv->state |= CIT_PRESSED;
-			else if(priv->packet[1] == PRESS_BELOW)
-			{
-				priv->enter_touched = 0;		/* reset coordinate report counter */
-				priv->state &= ~CIT_PRESSED;
-			}
-			else
-				DBG(PP, ErrorF("%sPressure Message Error\n", CI_ERROR));
-
-			DBG(PP, ErrorF("%s\t+ pressure %s message\n", CI_INFO, priv->packet[1] ? "enter":"exit"));
-			break;
-		
-		default:
-			DBG(PP, ErrorF("%s\t* unhandled message:", CI_ERROR));
-			for (i=0; i<priv->packeti; i++)
-			{
-				DBG(PP, ErrorF(" 0x%02X", priv->packet[i]));
-			}
-			DBG(PP, ErrorF("\n"));
-	}
-	/* generate button state */
-	switch (priv->click_mode)
-	{
-		case CM_ZPRESS:
-			DBG(PP, ErrorF("%s\t+ ZPress, button ", CI_INFO));
-			if (priv->state & CIT_PRESSED)
-			{
-				priv->state |= CIT_BUTTON;
-				DBG(PP, ErrorF("down"));
-			}
-			else
-			{
-				priv->state &= ~CIT_BUTTON;
-				DBG(PP, ErrorF("up"));
-			}
-
-			break;
-
-		case CM_ZPRESSEXIT:
-			DBG(PP, ErrorF("%s\t+ ZPressExit, button ", CI_INFO));
-			if (priv->state & CIT_PRESSED)
-			{
-				priv->state |= CIT_BUTTON;
-				DBG(PP, ErrorF("down"));
-			}
-			else if (!(priv->state & CIT_TOUCHED))
-			{
-				priv->state &= ~CIT_BUTTON;
-				DBG(PP, ErrorF("up"));
-			}
-			break;
-
-		case CM_DUAL:
-			DBG(PP, ErrorF("%s\t+ Dual Touch, button ", CI_INFO));
-			if ((priv->dual_touch_count == priv->max_dual_count) && (priv->state & CIT_TOUCHED))
-			{
-				priv->state |= CIT_BUTTON;
-				DBG(PP, ErrorF("down"));
-			}
-			else if (priv->dual_touch_count == 0)
-			{
-				priv->state &= ~CIT_BUTTON;
-				DBG(PP, ErrorF("up"));
-			}
-			break;
-		
-		case CM_DUALEXIT:
-			DBG(PP, ErrorF("%s\t+ Dual Exit, button ", CI_INFO));
-			if ((priv->dual_touch_count == priv->max_dual_count) && (priv->state & CIT_TOUCHED))
-			{
-				priv->dual_flg = TRUE;
-				priv->state |= CIT_BUTTON;
-				DBG(PP, ErrorF("down"));
-			}
-			else if (!(priv->state & CIT_TOUCHED))
-			{
-				priv->state &= ~CIT_BUTTON;
-				DBG(PP, ErrorF("up"));
-			}
-			break;
-
-		default:	/* default to enter mode */
-			DBG(PP, ErrorF("%s\t+ Enter Mode, button ", CI_INFO));
-			if (priv->state & CIT_TOUCHED)
-			{
-				priv->state |= CIT_BUTTON;
-				DBG(PP, ErrorF("down"));
-			}
-			else
-			{
-				priv->state &= ~CIT_BUTTON;
-				DBG(PP, ErrorF("up"));
-			}
-			break;
-	}
-	DBG(PP, ErrorF("\n"));
-	DBG(PP, ErrorF("%s\t+ Click Mode=%d\n", CI_INFO, priv->click_mode));
-	DBG(PP+1, ErrorF("%s\t+ exit state  = 0x%04X, dual touch count=%d\n", CI_INFO, priv->state, priv->dual_touch_count));
-	DBG(PP+1, ErrorF("%s\t  raw_x=%d, raw_y=%d\n", CI_INFO, priv->raw_x, priv->raw_y));
-}
-
 
 
 /*****************************************************************************
@@ -2781,6 +3094,60 @@ static Bool cit_GetPressureSensors(cit_PrivatePtr priv)
 
 
 /*****************************************************************************
+ *	[cit_GetPeripherals]
+ ****************************************************************************/
+static Bool cit_GetPeripherals(cit_PrivatePtr priv)
+{
+	int		i;
+	Bool	res;
+
+	cit_Flush(priv);
+	cit_SendCommand(priv->buffer, C_GETHARDWARE, 1, GH_PERIPHERALS);
+	/*
+	    touch responds within 1 millisecond,
+	    but it takes some time, until the command is sent and received!
+	*/
+	for (i=0; i<5; i++)
+	{
+		cit_SetBlockDuration(priv, 500000);
+		res = cit_GetPacket(priv);
+		if ((res == Success) || (priv->lex_mode == cit_idle))
+			break;
+	}
+	if (res != Success)
+	{
+                DBG(5, ErrorF("%s cit_GetPeripherals: No packet received!\n", CI_NOTICE));
+		return (!Success);
+	}
+	/* examine packet */
+	if (priv->packeti < 2+CTS_PERIPHERAL_LEN)
+	{
+		DBG(5, ErrorF("%sWrong packet length (expected >= %d, received %d bytes)\n", CI_NOTICE,
+		    2+CTS_PERIPHERAL_LEN,
+		    priv->packeti));
+		return (!Success);
+	}
+	if (priv->packet[0] != (C_GETHARDWARE & CMD_REP_CONV))
+	{
+		DBG(5, ErrorF("%sWrong packet identifier (expected 0x%02X, received 0x%02X)\n", CI_NOTICE,
+						(C_GETHARDWARE & CMD_REP_CONV), priv->packet[0]));
+		return (!Success);
+	}
+	if (priv->packet[1] != GH_PERIPHERALS)
+	{
+		DBG(5, ErrorF("%sWrong packet selector (expected 0x%02X, received 0x%02X)\n", CI_NOTICE,
+						GH_PERIPHERALS, priv->packet[1]));
+		return (!Success);
+	}
+	/* this is our packet! check contents */
+	priv->peripherals = priv->packet[2] + (priv->packet[3] * 0x100) + (priv->packet[4] * 0x10000) + (priv->packet[5] * 0x1000000);
+
+	ErrorF("%sPeripherals: \"%08lx\"\n", CI_INFO, priv->peripherals);
+	return (Success);
+}
+
+
+/*****************************************************************************
  *	[cit_ZPress] tell if click mode is ZPress (True if ZPress)
  ****************************************************************************/
 static int cit_ZPress(cit_PrivatePtr priv)
@@ -2805,7 +3172,7 @@ static void cit_SetEnterCount(cit_PrivatePtr priv)
 
 
 /*****************************************************************************
- *	[cit_SendPWM] send pwm for acive and sleep
+ *	[cit_SendPWM] send pwm for active and sleep mode
  ****************************************************************************/
 static void cit_SendPWM(cit_PrivatePtr priv)
 {
@@ -2819,6 +3186,7 @@ static void cit_SendPWM(cit_PrivatePtr priv)
 
 	DBG(3,ErrorF("%scit_SendPWM: active=%d, sleep=%d\n", CI_CONFIG, pwm_active, pwm_sleep));
 }
+
 
 /*****************************************************************************
  *	[cit_SendPWMFreq] send pwm frequency of PWM signal to the touch
@@ -2834,6 +3202,21 @@ static void cit_SendPWMFreq(cit_PrivatePtr priv)
 	}
 	else
 		DBG(3,ErrorF("%scit_SendPWMFreq: Frequency not set\n", CI_CONFIG));
+}
+
+/*****************************************************************************
+ *	[cit_SendPWMEX] send channel, duty cycle and frequency
+ ****************************************************************************/
+static void cit_SendPWMEx(cit_PrivatePtr priv)
+{
+
+	cit_SendCommand(priv->buffer, C_SETPWMEX, 4,	LOBYTE(priv->pwmex_channel),
+													LOBYTE(priv->pwmex_duty),
+													LOBYTE(priv->pwmex_freq),
+													HIBYTE(priv->pwmex_freq));
+
+	DBG(3,ErrorF("%scit_SendPWMEX: channel=%02x, duty=%02x, freq=%04x\n", 
+		CI_CONFIG, priv->pwmex_channel, priv->pwmex_duty, priv->pwmex_freq));
 }
 
 
@@ -2880,6 +3263,5 @@ static int cit_AdjustBright(cit_PrivatePtr priv, int val)
 	}
 	return (255);
 }
-
 
 

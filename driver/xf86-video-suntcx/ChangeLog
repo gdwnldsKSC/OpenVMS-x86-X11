@@ -1,3 +1,10 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/tcx.h:
+	* src/tcx_driver.c:
+	Unlibcwrap.  Bump server version requirement.  Bump to 1.1.0.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

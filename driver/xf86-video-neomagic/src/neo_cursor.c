@@ -43,7 +43,6 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h" 
 #include "vgaHW.h"
 
 #include "xf86Cursor.h"

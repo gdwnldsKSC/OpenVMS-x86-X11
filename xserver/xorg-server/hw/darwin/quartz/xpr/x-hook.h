@@ -1,5 +1,5 @@
 /* x-hook.h -- lists of function,data pairs to call.
-   $Id: x-hook.h,v 1.3 2005/07/01 22:43:08 daniels Exp $
+   $Id$
 
    Copyright (c) 2003 Apple Computer, Inc. All rights reserved.
 

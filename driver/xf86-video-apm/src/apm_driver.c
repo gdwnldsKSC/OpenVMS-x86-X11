@@ -16,11 +16,11 @@
 #define DPMS_SERVER
 #include <X11/extensions/dpms.h>
 
-#define VERSION			4000
+#define APM_VERSION		4000
 #define APM_NAME		"APM"
 #define APM_DRIVER_NAME		"apm"
 #define APM_MAJOR_VERSION       1
-#define APM_MINOR_VERSION       0
+#define APM_MINOR_VERSION       1
 #define APM_PATCHLEVEL          1
 #ifndef PCI_CHIP_AT3D
 #define PCI_CHIP_AT3D	0x643D
@@ -59,7 +59,7 @@ int ApmPixmapIndex = -1;
 static unsigned long ApmGeneration = 0;
 
 _X_EXPORT DriverRec APM = {
-	VERSION,
+	APM_VERSION,
 	APM_DRIVER_NAME,
 	ApmIdentify,
 	ApmProbe,
@@ -376,7 +376,7 @@ ApmFindIsaDevice(GDevPtr dev)
 static void
 ApmAssignFPtr(ScrnInfoPtr pScrn)
 {
-    pScrn->driverVersion	= VERSION;
+    pScrn->driverVersion	= APM_VERSION;
     pScrn->driverName		= APM_DRIVER_NAME;
     pScrn->name			= APM_NAME;
     pScrn->Probe		= ApmProbe;

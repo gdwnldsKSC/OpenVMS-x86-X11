@@ -1,9 +1,9 @@
-/* $XdotOrg: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_gx1_accel.c,v 1.3 2004/07/30 20:30:53 ajax Exp $ */
+/* $XdotOrg: driver/xf86-video-nsc/src/nsc_gx1_accel.c,v 1.6 2006/04/07 19:35:33 ajax Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_gx1_accel.c,v 1.7 2003/12/07 22:40:38 alanh Exp $ */
 /*
  * $Workfile: nsc_gx1_accel.c $
- * $Revision: 1.5 $
- * $Author: ajax $
+ * $Revision: 1.4 $
+ * $Author: daniels $
  *
  * File Contents: This file is consists of main Xfree
  *                acceleration supported routines like solid fill used
@@ -154,11 +154,9 @@
 /* Xfree86 header files */
 #include "vgaHW.h"
 #include "xf86.h"
-#include "xf86_ansic.h"
 #include "xaalocal.h"
 #include "xf86fbman.h"
 #include "miline.h"
-#include "xf86_libc.h"
 #include "xaarop.h"
 #include "nsc.h"
 

@@ -51,7 +51,6 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 
 /* Everything using inb/outb, etc needs "compiler.h" */
 #include "compiler.h"
@@ -155,13 +154,13 @@ static void     NeoDisplayPowerManagementSet(ScrnInfoPtr pScrn,
 				int PowerManagementMode, int flags);
 static int      neoFindMode(int xres, int yres, int depth);
 
-#define VERSION 4000
+#define NEO_VERSION 4000
 #define NEO_NAME "NEOMAGIC"
 #define NEO_DRIVER_NAME "neomagic"
 
 #define NEO_MAJOR_VERSION 1
-#define NEO_MINOR_VERSION 0
-#define NEO_PATCHLEVEL 0
+#define NEO_MINOR_VERSION 1
+#define NEO_PATCHLEVEL 1
 
 /*
  * This is intentionally screen-independent.  It indicates the binding
@@ -292,7 +291,7 @@ static DisplayModeRec neo1024x480Mode = {
  */
 
 _X_EXPORT DriverRec NEOMAGIC = {
-    VERSION,
+    NEO_VERSION,
     NEO_DRIVER_NAME,
     NEOIdentify,
     NEOProbe,
@@ -628,7 +627,7 @@ NEOProbe(DriverPtr drv, int flags)
 		if ((pScrn = xf86ConfigPciEntity(pScrn, 0, usedChips[i],
 						       NEOPCIchipsets,NULL, NULL,
 						       NULL, NULL, NULL))) {
-		    pScrn->driverVersion = VERSION;
+		    pScrn->driverVersion = NEO_VERSION;
 		    pScrn->driverName    = NEO_DRIVER_NAME;
 		    pScrn->name          = NEO_NAME;
 		    pScrn->Probe         = NEOProbe;
@@ -660,7 +659,7 @@ NEOProbe(DriverPtr drv, int flags)
 	if ((pScrn = xf86ConfigIsaEntity(pScrn, 0, usedChips[i],
 					 NEOISAchipsets, NULL, NULL,
 					 NULL, NULL, NULL))) {
-	    pScrn->driverVersion = VERSION;
+	    pScrn->driverVersion = NEO_VERSION;
 	    pScrn->driverName    = NEO_DRIVER_NAME;
 	    pScrn->name          = NEO_NAME;
 	    pScrn->Probe         = NEOProbe;

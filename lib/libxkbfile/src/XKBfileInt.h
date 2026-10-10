@@ -68,11 +68,13 @@ extern char *	_XkbDupString(
 	char *	/* old_str */
 );
 
-extern int	_XkbStrCaseCmp(
-	char *	/* str1 */,
-	char *	/* str2 */
-);
 #define _XkbStrCaseEqual(s1,s2)	(_XkbStrCaseCmp(s1,s2)==0)
+
+#ifdef NEED_STRCASECMP
+extern int _XkbStrCaseCmp(char *s1, char *s2);
+#else
+#define _XkbStrCaseCmp strcasecmp
+#endif
 
 _XFUNCPROTOEND
 

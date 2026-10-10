@@ -23,6 +23,10 @@ SOFTWARE.
 ******************************************************************************/
 /* $XFree86: xc/programs/x11perf/x11perf.h,v 3.4 2001/07/25 15:05:16 dawes Exp $ */
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifndef VMS
 #include <X11/Xlib.h>
 #include <stdlib.h>

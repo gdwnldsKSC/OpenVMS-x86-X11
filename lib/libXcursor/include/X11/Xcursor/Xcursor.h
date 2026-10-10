@@ -26,6 +26,7 @@
 #define _XCURSOR_H_
 #include <stdio.h>
 #include <X11/Xfuncproto.h>
+#include <X11/Xlib.h>
 
 typedef int		XcursorBool;
 typedef unsigned int	XcursorUInt;
@@ -77,7 +78,7 @@ typedef XcursorUInt	XcursorPixel;
 
 #define XCURSOR_LIB_MAJOR	1
 #define XCURSOR_LIB_MINOR	1
-#define XCURSOR_LIB_REVISION	5
+#define XCURSOR_LIB_REVISION	6
 #define XCURSOR_LIB_VERSION	((XCURSOR_LIB_MAJOR * 10000) + \
 				 (XCURSOR_LIB_MINOR * 100) + \
 				 (XCURSOR_LIB_REVISION))

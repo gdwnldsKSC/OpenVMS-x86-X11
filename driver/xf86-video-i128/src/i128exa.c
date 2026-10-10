@@ -602,51 +602,45 @@ I128ExaInit(ScreenPtr pScreen)
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     I128Ptr pI128 = I128PTR(pScrn);
 
-    if (exaGetVersion() < EXA_MAKE_VERSION(0, 2, 0)) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "EXA version is too old "
-                   "(got 0x%3x, need >= 0x020)\n", exaGetVersion());
-        return FALSE;
-    }
-
-    if (!(pExa = xf86calloc(1, sizeof(*pExa)))) {
+    if (!(pExa = exaDriverAlloc())) {
         pI128->NoAccel = TRUE;
         return FALSE;
     }
     pI128->ExaDriver = pExa;
 
-    pExa->card.flags = EXA_OFFSCREEN_PIXMAPS | EXA_OFFSCREEN_ALIGN_POT;
-    pExa->card.memoryBase = pI128->MemoryPtr;
-    pExa->card.memorySize = pI128->MemorySize * 1024;
-    pExa->card.offScreenBase = (pScrn->virtualX * pScrn->virtualY) *
+    pExa->flags = EXA_OFFSCREEN_PIXMAPS | EXA_OFFSCREEN_ALIGN_POT;
+    pExa->memoryBase = pI128->MemoryPtr;
+    pExa->memorySize = pI128->MemorySize * 1024;
+    pExa->offScreenBase = (pScrn->virtualX * pScrn->virtualY) *
                                (pScrn->bitsPerPixel / 8) + 4096;
     /* these two are probably right */
-    pExa->card.pixmapOffsetAlign = 16;
-    pExa->card.pixmapPitchAlign = 16;
+    pExa->pixmapOffsetAlign = 16;
+    pExa->pixmapPitchAlign = 16;
     /* these two are guesses */
-    pExa->card.maxX = 2048;
-    pExa->card.maxY = 2048;
+    pExa->maxX = 2048;
+    pExa->maxY = 2048;
 
-    pExa->accel.WaitMarker = i128WaitMarker;
+    pExa->WaitMarker = i128WaitMarker;
 
-    pExa->accel.PrepareSolid = i128PrepareSolid;
-    pExa->accel.Solid = i128Solid;
-    pExa->accel.DoneSolid = i128Done;
+    pExa->PrepareSolid = i128PrepareSolid;
+    pExa->Solid = i128Solid;
+    pExa->DoneSolid = i128Done;
 
-    pExa->accel.PrepareCopy = i128PrepareCopy;
-    pExa->accel.Copy = i128Copy;
-    pExa->accel.DoneCopy = i128Done;
+    pExa->PrepareCopy = i128PrepareCopy;
+    pExa->Copy = i128Copy;
+    pExa->DoneCopy = i128Done;
 
     if (0 && (pI128->Chipset == PCI_CHIP_I128_T2R ||
         pI128->Chipset == PCI_CHIP_I128_T2R4))
     {
 #if 0
-        pExa->accel.DownloadFromScreen = i128DownloadFromScreen;
-        pExa->accel.UploadToScreen = i128UploadToScreen;
+        pExa->DownloadFromScreen = i128DownloadFromScreen;
+        pExa->UploadToScreen = i128UploadToScreen;
 #endif
-        pExa->accel.CheckComposite = i128CheckComposite;
-        pExa->accel.PrepareComposite = i128PrepareComposite;
-        pExa->accel.Composite = i128Composite;
-        pExa->accel.DoneComposite = i128Done;
+        pExa->CheckComposite = i128CheckComposite;
+        pExa->PrepareComposite = i128PrepareComposite;
+        pExa->Composite = i128Composite;
+        pExa->DoneComposite = i128Done;
     }
 
     /*

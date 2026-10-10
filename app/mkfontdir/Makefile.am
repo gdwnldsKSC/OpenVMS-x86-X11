@@ -23,8 +23,8 @@ bin_SCRIPTS = mkfontdir
 
 appman_PRE = mkfontdir.man
 
-mkfontdir: mkfontdir.cpp
-	$(SED) s,BINDIR,`echo @bindir@/mkfontscale | $(SED) s,/[^/]*$$,,`, < mkfontdir.cpp | $(SED) s/XCOMM/\#/ > $@
+.cpp:
+	$(SED) s,BINDIR,`echo @bindir@/mkfontscale | $(SED) s,/[^/]*$$,,`, < $< | $(SED) s/XCOMM/\#/ > $@
 
 EXTRA_DIST = mkfontdir.cpp
 CLEANFILES = $(bin_SCRIPTS)
@@ -55,7 +55,7 @@ MAN_SUBSTS = \
 	-e 's|__miscmansuffix__|$(MISC_MAN_SUFFIX)|g' \
 	-e 's|__filemansuffix__|$(FILE_MAN_SUFFIX)|g'
 
-SUFFIXES = .$(APP_MAN_SUFFIX) .man
+SUFFIXES = .$(APP_MAN_SUFFIX) .man .cpp
 
 .man.$(APP_MAN_SUFFIX):
 	sed $(MAN_SUBSTS) < $< > $@

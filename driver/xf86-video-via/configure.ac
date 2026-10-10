@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-via],
-        0.1.33.2,
+        0.2.1,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-via)
 
@@ -59,7 +59,8 @@ XORG_DRIVER_CHECK_EXT(XF86DRI, xextproto x11)
 XORG_DRIVER_CHECK_EXT(DPMSExtension, xextproto)
 
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XORG, [xorg-server xproto xvmc fontsproto $REQUIRED_MODULES])
+# via_3d_reg.h comes with libdrm ATM.
+PKG_CHECK_MODULES(XORG, [xorg-server >= 1.0.99.901 xproto xvmc fontsproto libdrm $REQUIRED_MODULES])
 sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 
 # Checks for libraries.
@@ -67,29 +68,32 @@ sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 # Checks for header files.
 AC_HEADER_STDC
 
-if test "$DRI" != no; then
+
+if test "x$DRI" != xno; then
         AC_CHECK_FILE([${sdkdir}/dri.h],
                       [have_dri_h="yes"], [have_dri_h="no"])
         AC_CHECK_FILE([${sdkdir}/sarea.h],
                       [have_sarea_h="yes"], [have_sarea_h="no"])
         AC_CHECK_FILE([${sdkdir}/dristruct.h],
                       [have_dristruct_h="yes"], [have_dristruct_h="no"])
+        AC_CHECK_HEADER
 fi
 
 AC_MSG_CHECKING([whether to include DRI support])
 if test x$DRI = xauto; then
-        if test "$have_dri_h" = yes -a \
-                "$have_sarea_h" = yes -a \
-                "$have_dristruct_h" = yes; then
+        if test "x$have_dri_h" = xyes -a \
+                "x$have_sarea_h" = xyes -a \
+                "x$have_dristruct_h" = xyes; then
                 DRI="yes"
         else
                 DRI="no"
         fi
 fi
 AC_MSG_RESULT([$DRI])
-
 AM_CONDITIONAL(DRI, test x$DRI = xyes)
-if test "$DRI" = yes; then
+
+XVMC=no
+if test "x$DRI" = xyes; then
         PKG_CHECK_MODULES(DRI, [libdrm >= 2.0 xf86driproto])
         AC_DEFINE(XF86DRI,1,[Enable DRI driver support])
         AC_DEFINE(XF86DRI_DEVEL,1,[Enable developmental DRI driver support])
@@ -102,6 +106,14 @@ if test "$DRI" = yes; then
                 XVMC=no ;;
         esac
 fi
+
+if test "x$XVMC" = xyes; then
+	AC_CHECK_HEADERS(pthread.h sys/ioctl.h sys/time.h time.h,,[XVMC="no"; break],)
+fi
+
+AC_MSG_CHECKING([whether to build XvMC driver support])
+AC_MSG_RESULT([$XVMC])
+
 AM_CONDITIONAL(XVMC, test x$XVMC = xyes)
 
 AC_SUBST([DRI_CFLAGS])
@@ -111,6 +123,8 @@ AC_SUBST([moduledir])
 DRIVER_NAME=via
 AC_SUBST([DRIVER_NAME])
 
+AC_DEFINE(VIA_HAVE_EXA, 1, [Build support for Exa])
+
 XORG_MANPAGE_SECTIONS
 XORG_RELEASE_VERSION
 
@@ -118,7 +132,5 @@ AC_OUTPUT([
 	Makefile
 	src/Makefile
 	src/xvmc/Makefile
-	src/xvmc/unichrome/Makefile
-	src/xvmc/unichromeProA/Makefile
 	man/Makefile
 ])

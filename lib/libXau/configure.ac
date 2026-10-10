@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id: configure.ac,v 1.9 2005/12/15 00:24:28 kem Exp $
+dnl  $Id: configure.ac,v 1.8 2005/12/03 05:49:42 kem Exp $
 dnl 
 dnl  Copyright © 2003 Keith Packard, Noah Levitt
 dnl 
@@ -24,7 +24,7 @@ dnl
 dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
-AC_INIT(libXau, 1.0.0, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],libXau)
+AC_INIT(libXau, 1.0.1, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],libXau)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

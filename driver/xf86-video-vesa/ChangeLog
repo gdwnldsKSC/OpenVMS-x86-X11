@@ -1,3 +1,23 @@
+2006-05-19  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/vesa.h:
+	Bump to 1.2.0
+
+2006-05-18  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* src/vesa.c: (VESAScreenInit), (VESACloseScreen):
+	* src/vesa.h:
+	Fix ShadowFB support to work with recent miext/shadow changes from
+	bug #5460.
+
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/vesa.c:
+	* src/vesa.h:
+	Unlibcwrap.  Bump server version requirement.  Bump to 1.1.0.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

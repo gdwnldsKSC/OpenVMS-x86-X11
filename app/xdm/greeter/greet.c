@@ -1,5 +1,5 @@
 /* $Xorg: greet.c,v 1.4 2001/02/09 02:05:41 xorgcvs Exp $ */
-/* $XdotOrg: $ */
+/* $XdotOrg: app/xdm/greeter/greet.c,v 1.3 2005/08/19 04:26:04 alanc Exp $ */
 /*
 
 Copyright 1988, 1998  The Open Group

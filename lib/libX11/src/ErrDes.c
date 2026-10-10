@@ -1,6 +1,6 @@
 /*
  * $Xorg: ErrDes.c,v 1.4 2001/02/09 02:03:32 xorgcvs Exp $
- * $XdotOrg: xc/lib/X11/ErrDes.c,v 1.6 2005/05/13 22:53:43 sandmann Exp $
+ * $XdotOrg: lib/X11/src/ErrDes.c,v 1.8 2005-08-26 05:16:46 daniels Exp $
  */
 
 /***********************************************************

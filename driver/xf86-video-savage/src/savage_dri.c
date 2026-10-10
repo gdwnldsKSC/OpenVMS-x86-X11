@@ -30,7 +30,6 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Priv.h"
 
 #include "xaalocal.h"
@@ -882,7 +881,13 @@ Bool SAVAGEDRIScreenInit( ScreenPtr pScreen )
    pDRIInfo->ddxDriverMajorVersion = SAVAGE_VERSION_MAJOR;
    pDRIInfo->ddxDriverMinorVersion = SAVAGE_VERSION_MINOR;
    pDRIInfo->ddxDriverPatchVersion = SAVAGE_PATCHLEVEL;
+
+#if DRIINFO_MAJOR_VERSION < 5
    pDRIInfo->frameBufferPhysicalAddress = psav->FrameBufferBase;
+#else
+   pDRIInfo->frameBufferPhysicalAddress = (pointer) psav->FrameBufferBase;
+#endif
+
    pDRIInfo->frameBufferSize = psav->videoRambytes;
    pDRIInfo->frameBufferStride = pScrn->displayWidth*(pScrn->bitsPerPixel/8);
    pDRIInfo->ddxDrawableTableEntry = SAVAGE_MAX_DRAWABLES;

@@ -7,7 +7,7 @@
 #define NV_NAME "NV"
 #define NV_DRIVER_NAME "nv"
 #define NV_MAJOR_VERSION 1
-#define NV_MINOR_VERSION 0
+#define NV_MINOR_VERSION 1
 #define NV_PATCHLEVEL 1
 
 #endif /* __NV_CONST_H__ */

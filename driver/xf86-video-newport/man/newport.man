@@ -42,4 +42,4 @@ Set to 1 for the Indigo2 XL. Default: 0
 __xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__)
 .SH AUTHORS
 Authors:
-Guido GÜnther \fIagx@sigxcpu.org\fP
+Guido GÃœnther \fIagx@sigxcpu.org\fP

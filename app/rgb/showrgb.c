@@ -1,6 +1,6 @@
 /*
  * $Xorg: showrgb.c,v 1.4 2001/02/09 02:05:35 xorgcvs Exp $
- * $XdotOrg: $
+ * $XdotOrg: app/rgb/showrgb.c,v 1.5 2005/11/08 06:33:31 jkj Exp $
  *
 Copyright 1989, 1998  The Open Group
 

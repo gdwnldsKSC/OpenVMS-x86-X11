@@ -1,3 +1,25 @@
+2006-04-06  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/CirrusClk.c:
+	* src/alp_driver.c:
+	* src/alp_hwcurs.c:
+	* src/alp_i2c.c:
+	* src/alp_xaa.c:
+	* src/alp_xaam.c:
+	* src/cir.h:
+	* src/cir_dga.c:
+	* src/cir_driver.c:
+	* src/cir_shadow.c:
+	* src/lg_driver.c:
+	* src/lg_hwcurs.c:
+	* src/lg_i2c.c:
+	* src/lg_xaa.c:
+	Unlibcwrap.  Bump server version requirement.  Bump to 1.1.0.
+
+	* src/cir_driver.c:
+	VERSION -> CIR_VERSION
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

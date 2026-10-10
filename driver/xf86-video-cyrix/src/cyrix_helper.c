@@ -47,7 +47,6 @@
 
 #include "cyrix.h"
 #include "vgaHW.h"
-#include "xf86_ansic.h"
 #include "compiler.h"
 #include "xf86.h"
 

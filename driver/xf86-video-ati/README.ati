@@ -1,7 +1,6 @@
-  $Id: README.ati.sgml,v 1.3 2005/12/19 09:07:50 alanc Exp $
-  Based on XFree86:
-  xc/programs/Xserver/hw/xfree86/doc/sgml/ati.sgml,v 3.42
-  2003/01/20 03:43:07 dawes Exp ATI Adapters README file
+  $Id: ati.sgml,v 1.2 2004/04/23 19:23:59 eich Exp $ Based on
+  XFree86: xc/programs/Xserver/hw/xfree86/doc/sgml/ati.sgml,v
+  3.42 2003/01/20 03:43:07 dawes Exp ATI Adapters README file
   Marc Aurele La France
   2002 February 12
 
@@ -48,47 +47,43 @@
 
   ______________________________________________________________________
 
-  11..  SSttaatteemmeenntt ooff iinntteenntt
+  [1m1.  Statement of intent[0m
 
-  Generally speaking, the driver is intended for all ATI video adapters
-  based on the Mach64 series or older chipsets, providing maximum video
-  function within hardware limitations.  The driver is also intended to
-  optionally provide the same level of support for generic VGA or 8514/A
-  adapters.  The newer Rage 128 and Radeon chips are not yet supported
-  by this driver.  Rage 128's and Radeon's are, however, supported by
-  separate drivers, and owners of such adapters should consult the
-  documentation provided with these drivers.  This driver will also
-  invoke the appropriate driver if it finds Rage 128 and/or Radeon
-  adapter(s) in the system.  This driver is still being actively
-  developed, meaning that it currently does not yet fully meet these
-  goals.
-
+  Generally speaking, the driver is intended for all ATI video adapters,
+  providing maximum video function within hardware limitations.  The
+  driver is also intended to optionally provide the same level of
+  support for generic VGA or 8514/A adapters.  This driver is still
+  being actively developed, meaning that it currently does not yet fully
+  meet these goals.
 
   The driver will provide
 
-  +o  accelerated support if an ATI accelerator is detected _a_n_d the user
+  +o  accelerated support if an ATI accelerator is detected [4mand[24m the user
      has not requested that this support be disabled;  otherwise
 
   +o  accelerated support if a non-ATI 8514/A-capable adapter is detected
-     _a_n_d the user has requested such support;  otherwise
+     [4mand[24m the user has requested such support;  otherwise
 
   +o  unaccelerated SuperVGA support if an ATI VGA-capable adapter is
      detected; otherwise
 
   +o  generic VGA support if a non-ATI VGA-capable adapter is detected
-     _a_n_d the user has requested such support.
+     [4mand[24m the user has requested such support.
 
      Thus, the level of support provided not only depends on what the
      driver detects in the system, but also, on what the user specifies
-     in the xorg.conf file.  See the ````xxoorrgg..ccoonnff ssppeecciiffiiccaattiioonnss''''
+     in the xorg.conf file.  See the [1m``xorg.conf specifications''[0m
      section below for details.
 
   If none of the above conditions are met, the ATI driver will
   essentially disable itself to allow other drivers to examine the
   system.
 
+  Note that I am currently considering removing the driver's support for
+  generic VGA.  If you have any concerns about this, please contact me
+  at <tsi@xfree86.org>.
 
-  22..  AA nnoottee oonn aacccceelleerraattiioonn
+  [1m2.  A note on acceleration[0m
 
   The meaning of ``acceleration'', as used in this document, needs to be
   clarified.  Two of the many components in an accelerator are the CRT
@@ -113,7 +108,7 @@
   implies the use of the accelerator's CRTC.
 
 
-  33..  CCuurrrreenntt iimmpplleemmeennttaattiioonn ffoorr AATTII aaddaapptteerrss
+  [1m3.  Current implementation for ATI adapters[0m
 
   The driver currently supports the SuperVGA capabilities of all ATI
   adapters except some early Mach8 and Mach32 adapters that do not
@@ -133,6 +128,7 @@
   The driver also supports 32K, 64K and 16M-colour modes on the 264xT
   and 3D Rage series of adapters using the accelerator CRTC (but not the
   VGA CRTC).
+
 
   The newer Rage 128 and Radeon chips are not yet supported by this
   driver.  Rage 128's and Radeon's are, however, supported by separate
@@ -185,7 +181,7 @@
   and SuperVGA functionality, but the driver currently only uses the
   VGA.
 
-  The driver _d_o_e_s however support the accelerator CRTC present in all
+  The driver [4mdoes[24m however support the accelerator CRTC present in all
   ATI Mach64 adapters.  For 256-colour, and higher depth modes, this
   support will be used by default, although an xorg.conf option can be
   specified to use the SuperVGA CRTC instead.  A linear video memory
@@ -194,7 +190,6 @@
   88800 controllers, if the accelerator CRTC is used.  xorg.conf options
   are available to disable this aperture, or (for non-PCI adapters)
   enable it or move it to some other address.
-
 
   By default, the driver provides some acceleration for Mach64 if the
   accelerator CRTC is used, and modes whose colour depth greater than or
@@ -205,7 +200,7 @@
   Mach64 adapters.
 
 
-  44..  CCuurrrreenntt iimmpplleemmeennttaattiioonn ooff ggeenneerriicc VVGGAA ssuuppppoorrtt ffoorr nnoonn--AATTII aaddaapptteerrss
+  [1m4.  Current implementation of generic VGA support for non-ATI adapters[0m
 
   Support for generic VGA with non-ATI adapters is also implemented, but
   has undergone only limited testing.  The driver will intentionally
@@ -233,7 +228,7 @@
 
   +o  Colour depths higher than 8 are not available.
 
-  55..  xxoorrgg..ccoonnff ssppeecciiffiiccaattiioonnss
+  [1m5.  xorg.conf specifications[0m
 
   The driver recognises a number of xorg.conf options.  In general, all
   such options should be specified in a ``Device'' section, and affect
@@ -252,7 +247,7 @@
   assigned to the ``Device'' section which contains them.
 
 
-  55..11..  DDrriivveerr ````aattii''''
+  [1m5.1.  Driver ``ati''[0m
 
   The use of this specification is highly recommended if the ``Device''
   section is to be recognised by the driver.  In fact, it is almost (but
@@ -261,26 +256,25 @@
   ``Device'' section.
 
 
+  [1m5.2.  ChipSet ``name''[0m
 
-  55..22..  CChhiippSSeett ````nnaammee''''
-
-  The default ChipSet name for this driver is ``_a_t_i''.  In this case,
+  The default ChipSet name for this driver is ``[4mati[24m''.  In this case,
   any ATI adapter can be associated with the ``Device'' section.  If an
   ATI accelerator is detected and the driver supports it, the
   accelerator's CRTC will be used to drive the screen.  Otherwise, the
   driver will programme the adapter's SuperVGA CRTC.
 
-  If ``_a_t_i_v_g_a'' is specified instead, the driver will ignore any ATI
-  accelerator it detects, but otherwise operate as if ``_a_t_i'' had been
+  If ``[4mativga[24m'' is specified instead, the driver will ignore any ATI
+  accelerator it detects, but otherwise operate as if ``[4mati[24m'' had been
   specified.  This specification ensures the VGA CRTC is used.
 
-  A ChipSet name of ``_i_b_m_v_g_a'' causes any VGA-capable adapter in the
+  A ChipSet name of ``[4mibmvga[24m'' causes any VGA-capable adapter in the
   system to be associated with the ``Device'' section.  It enables the
   driver's generic VGA support, but only for non-ATI adapters.  If an
   ATI adapter is associated with the ``Device'' section, the driver will
-  operate as if ``_a_t_i_v_g_a'' had been specified instead.
+  operate as if ``[4mativga[24m'' had been specified instead.
 
-  A ChipSet name of ``_v_g_a_w_o_n_d_e_r'' is equivalent to ``_a_t_i_v_g_a'', except
+  A ChipSet name of ``[4mvgawonder[24m'' is equivalent to ``[4mativga[24m'', except
   that only VGAWonder-capable adapters can be assigned to the ``Device''
   section.  This specifically excludes the newer integrated Mach64
   controllers.
@@ -292,16 +286,16 @@
   lockup would occur, it will skip the probe.  In some situations, this
   determination cannot be accurate, and the driver will err on the side
   of caution, skipping the probe.  Specifying a ChipSet name of
-  ``_m_a_c_h_3_2'' or ``_m_a_c_h_6_4'', as appropriate, will force the driver to
+  ``[4mmach32[24m'' or ``[4mmach64[24m'', as appropriate, will force the driver to
   probe for the non-PCI adapter.  These ChipSet names should, therefore,
   only be used when there is in fact such an adapter in the system.
-  They are otherwise equivalent to ``_a_t_i''.
+  They are otherwise equivalent to ``[4mati[24m''.
 
-  On non-Intel platforms, only ``_a_t_i'' and ``_m_a_c_h_6_4'' ChipSet values are
+  On non-Intel platforms, only ``[4mati[24m'' and ``[4mmach64[24m'' ChipSet values are
   operative.
 
 
-  55..33..  CChhiippIIDD && CChhiippRReevv ssppeecciiffiiccaattiioonnss
+  [1m5.3.  ChipID & ChipRev specifications[0m
 
   These specifications will cause the driver to associate the ``Device''
   section only with an adapter having the same attributes, or an adapter
@@ -314,7 +308,7 @@
   specified in the same ``Device'' section.
 
 
-  55..44..  IIOOBBaassee
+  [1m5.4.  IOBase[0m
 
   This option limits the adapters that can be associated with the
   ``Device'' section to the one with the specified I/O base.  This
@@ -322,27 +316,28 @@
   adapters.
 
 
-  55..55..  BBuussIIDD
+  [1m5.5.  BusID[0m
 
   This option limits the adapters that can be associated with the
   ``Device'' section to the one with the specified PCI Bus ID.  This
   specification excludes non-PCI adapters.
 
-  55..66..  CClloocckkss
+
+  [1m5.6.  Clocks[0m
 
   For the purpose of specifying a clock line in your xorg.conf, one of
   four different situations can occur, as follows.
 
   Those configuring the driver's generic VGA support for a non-ATI
-  adapter, can skip ahead to the ````CClloocckkss ffoorr nnoonn--AATTII aaddaapptteerrss'''' section
-  below.  Those _n_o_t trying to configure the driver for a Mach64 adapter,
-  can skip ahead to the ````CClloocckkss ffoorr ffiixxeedd cclloocckk ggeenneerraattoorrss oonn AATTII
-  aaddaapptteerrss'''' section below.
+  adapter, can skip ahead to the [1m``Clocks for non-ATI adapters'' [22msection
+  below.  Those [4mnot[24m trying to configure the driver for a Mach64 adapter,
+  can skip ahead to the [1m``Clocks for fixed clock generators on ATI[0m
+  [1madapters'' [22msection below.
 
   The very earliest Mach64 adapters use fixed (i.e. non-programmable)
   clock generators.  Very few of these (mostly prototypes) are known to
   exist, but if you have one of these, you can also skip ahead to the
-  ````CClloocckkss ffoorr ffiixxeedd cclloocckk ggeenneerraattoorrss oonn AATTII aaddaapptteerrss'''' section below.
+  [1m``Clocks for fixed clock generators on ATI adapters'' [22msection below.
 
   The two cases that are left deal with programmable clock generators,
   which are used on the great majority of Mach64 adapters.
@@ -351,7 +346,7 @@
   run a clock probe with the command ``X -probeonly''.
 
 
-  55..66..11..  CClloocckkss ffoorr ssuuppppoorrtteedd pprrooggrraammmmaabbllee cclloocckk ggeenneerraattoorrss
+  [1m5.6.1.  Clocks for supported programmable clock generators[0m
 
   At bootup, video BIOS initialisation programmes an initial set of
   frequencies.  Two of these are reserved to allow the setting of modes
@@ -367,7 +362,7 @@
   generator as needed by the modes used during the X session.
 
 
-  55..66..22..  CClloocckkss ffoorr uunnssuuppppoorrtteedd pprrooggrraammmmaabbllee cclloocckk ggeenneerraattoorrss
+  [1m5.6.2.  Clocks for unsupported programmable clock generators[0m
 
   This case is unlikely to occur, but is documented for the sake of
   completeness.
@@ -394,6 +389,7 @@
              0.000  40.000  37.500  32.500  20.000  22.450  24.750  25.000
 
 
+
   BIOS setting 3:
 
     Clocks   0.000   0.000   0.000   0.000  25.180  28.320   0.000   0.000
@@ -403,10 +399,10 @@
 
 
   If the driver matches the clocks to the third setting above, function-
-  ality will be _e_x_t_r_e_m_e_l_y limited (assuming the driver works at all).
+  ality will be [4mextremely[24m limited (assuming the driver works at all).
 
 
-  55..66..33..  CClloocckkss ffoorr ffiixxeedd cclloocckk ggeenneerraattoorrss oonn AATTII aaddaapptteerrss
+  [1m5.6.3.  Clocks for fixed clock generators on ATI adapters[0m
 
   This section applies to all VGAWonder and Mach32 adapters, and to
   early Mach64 prototypes.
@@ -482,13 +478,13 @@
   all be said to be clones of one of the above) might generate non-zero
   frequencies for those that are zero above, or vice-versa.
 
-  The order of the clocks _i_s very important, although the driver will
+  The order of the clocks [4mis[24m very important, although the driver will
   reorder the specified clocks if it deems it appropriate to do so.
   Mach32 and Mach64 owners should note that this order is different than
   what they would use for previous accelerated servers.
 
 
-  55..66..44..  CClloocckkss ffoorr nnoonn--AATTII aaddaapptteerrss
+  [1m5.6.4.  Clocks for non-ATI adapters[0m
 
   If no clocks are specified in the xorg.conf, the driver will probe for
   four clocks, the second of which will be assumed to be 28.322 MHz.
@@ -498,7 +494,7 @@
   will be ignored.
 
 
-  55..77..  OOppttiioonn ````nnooppaanneell__ddiissppllaayy''''
+  [1m5.7.  Option ``nopanel_display''[0m
 
   This specification is only effective when the driver detects that the
   adapter's BIOS has initialised both the digital flat panel and CRT
@@ -509,14 +505,14 @@
   than the panel can handle.
 
 
-  55..88..  OOppttiioonn ````ccrrtt__ddiissppllaayy''''
+  [1m5.8.  Option ``crt_display''[0m
 
   This specification is only effective when the driver detects that the
   adapter's BIOS has initialised the digital flat panel interface, but
   has disabled the CRT interface.  In such a situation the driver will
   normally drive only the panel.  This specification causes the driver
   to instead display the same image on both the panel and the CRT.
-  55..99..  OOppttiioonn ````nnooaacccceell''''
+  [1m5.9.  Option ``noaccel''[0m
 
   By default, the driver will accelerate draw operations if a Mach64
   CRTC is used to drive the display.  As implemented in this driver,
@@ -524,7 +520,7 @@
   option disables this acceleration.
 
 
-  55..1100..  OOppttiioonn ````nnoolliinneeaarr''''
+  [1m5.10.  Option ``nolinear''[0m
 
   By default, the driver will enable a linear video memory aperture for
   256-colour and higher depth modes if it is also using a Mach64
@@ -535,20 +531,20 @@
   this option is ignored.
 
 
-  55..1111..  OOppttiioonn ````HHWWCCuurrssoorr''''  aanndd OOppttiioonn ````SSWWCCuurrssoorr''''
+  [1m5.11.  Option ``HWCursor''  and Option ``SWCursor''[0m
 
-  Option _`_`_H_W_C_u_r_s_o_r_'_', which is the default, specifies that hardware
+  Option [4m``HWCursor''[24m, which is the default, specifies that hardware
   facilities are to be used to paint the mouse pointer on the screen.
-  Option _`_`_S_W_C_u_r_s_o_r_'_' specifies that the mouse pointer is to be drawn by
+  Option [4m``SWCursor''[24m specifies that the mouse pointer is to be drawn by
   software, which is much slower.  If both options are specified, option
-  _`_`_S_W_C_u_r_s_o_r_'_' prevails.  Currently, these options are only acted upon
+  [4m``SWCursor''[24m prevails.  Currently, these options are only acted upon
   for 256-colour or higher depth modes, if a Mach64 accelerator CRTC, or
   a Mach64 integrated controller is being used.  In all other
   situations, a software cursor will be used, regardless of what these
   options specify.
 
 
-  55..1122..  OOppttiioonn ````SSiillkkeennMMoouussee''''
+  [1m5.12.  Option ``SilkenMouse''[0m
 
   This option is only acted upon when a hardware cursor is being used.
   It specifies that the cursor's position on the screen is to be updated
@@ -557,7 +553,7 @@
   when the X server is very busy.
 
 
-  55..1133..  OOppttiioonn ````sshhaaddoowwffbb''''
+  [1m5.13.  Option ``shadowfb''[0m
 
   If this option is enabled, the driver will cause the CPU to do each
   drawing operation first into a shadow frame buffer in system virtual
@@ -574,14 +570,14 @@
   frame buffer depth is less than 8, or when acceleration is used.
 
 
-  55..1144..  OOppttiioonn ````ddppmmss''''
+  [1m5.14.  Option ``dpms''[0m
 
   This option enables the driver's support for VESA's Display Power
   Management Specification.
 
 
 
-  55..1155..  OOppttiioonn ````bbaacckkiinnggssttoorree''''
+  [1m5.15.  Option ``backingstore''[0m
 
   This is not specifically a driver option.  It is used to enable the
   server's support for backing store, a mechanism by which pixel data
@@ -590,7 +586,7 @@
   needs to be redisplayed.
 
 
-  55..1166..  MMeemmBBaassee aaddddrreessss
+  [1m5.16.  MemBase address[0m
 
   This specification is only effective for non-PCI Mach64 adapters, and
   is used to override the CPU address at which the adapter will map its
@@ -605,7 +601,7 @@
   driver can not easily change the linear aperture address.
 
 
-  55..1177..  OOppttiioonn ````RReeffeerreenncceeCClloocckk''''  ````ffrreeqquueennccyy''''
+  [1m5.17.  Option ``ReferenceClock''  ``frequency''[0m
 
   This option is only applicable to non-Intel platforms, where an
   adapter BIOS is not available to the driver.  The option specifies the
@@ -614,23 +610,23 @@
   MHz.
 
 
-  55..1188..  CClloocckkCChhiipp ````nnaammee''''
+  [1m5.18.  ClockChip ``name''[0m
 
   This option is only applicable to non-Intel platforms, where an
   adapter BIOS is not available to the driver, and the driver cannot
   reliably determine whether the clock generator the adapter uses is a
   variant of an ATI 18818 (a.k.a.  ICS 2595) or an unsupported clock
-  generator.  The only values that are acted upon are _`_`_A_T_I _1_8_8_1_8_-_0_'_' or
-  _`_`_A_T_I _1_8_8_1_8_-_1_'_'.  From this specification, the driver derives a
+  generator.  The only values that are acted upon are [4m``ATI[24m [4m18818-0''[24m or
+  [4m``ATI[24m [4m18818-1''[24m.  From this specification, the driver derives a
   reference divider of 43 or 46 (respectively) for use in clock
   programming calculations.  The driver's default behaviour, in this
   case, is to assume an unsupported clock generator, which means it will
   treat it as a fixed-frequency clock generator, as described under the
-  heading ````CClloocckkss ffoorr uunnssuuppppoorrtteedd pprrooggrraammmmaabbllee cclloocckk ggeenneerraattoorrss''''
+  heading [1m``Clocks for unsupported programmable clock generators''[0m
   above.
 
 
-  66..  VViiddeeoo mmooddeess
+  [1m6.  Video modes[0m
 
   Mode timings can be derived from the information in X's doc
   subdirectory.  However, it is no longer required to specify such
@@ -650,11 +646,11 @@
   For a digital flat panel, any sync tolerances should be removed from
   the corresponding ``Monitor'' section.  The driver will automatically
   calculate these from the mode that is active on server entry.  The
-  driver also inserts timings for a mode called _"_N_a_t_i_v_e _p_a_n_e_l _m_o_d_e_" that
+  driver also inserts timings for a mode called [4m"Native[24m [4mpanel[24m [4mmode"[24m that
   represents the panel's native resolution.
 
 
-  77..  KKnnoowwnn pprroobblleemmss aanndd lliimmiittaattiioonnss
+  [1m7.  Known problems and limitations[0m
 
   There are several known problems or limitations related to the ATI
   driver.  They include:
@@ -753,11 +749,11 @@
 
   +o  3D operations.
 
-  88..  RReeppoorrttiinngg pprroobblleemmss
+  [1m8.  Reporting problems[0m
 
   If you are experiencing problems that are not already recorded in this
   document, first ensure that you have the latest current release of
-  this driver and the Xorg X server.  Check the server's log (usually
+  this driver and the Xorg X server..  Check the server's log (usually
   found in /var/log/Xorg.0.log) and ftp://ftp.freedesktop.org/pub/Xorg
   if you are uncertain.
 
@@ -765,23 +761,20 @@
   information.
 
   Thirdly, a scan through the comp.windows.x.i386unix and
-  comp.os.linux.x newsgroups, the xorg mailing list archives at
-  http://lists.freedesktop.org/mailman/listinfo/xorg, and the Xorg bug
-  database at https://bugs.freedesktop.org/enter_bug.cgi?product=xorg
-  can also prove useful in resolving problems.
+  comp.os.linux.x newsgroups and the xorg mailing list using your
+  favourite archiving service can also prove useful in resolving
+  problems.
 
-  If you are still experiencing problems, you can send _n_o_n_-_H_T_M_L_i_s_e_d e-
-  mail to  <xorg@lists.fredesktop.org>.  Please be as specific as
-  possible when describing the problem(s), and include an _u_n_e_d_i_t_e_d copy
-  of the server's log and the xorg.conf file used.
-
+  If you are still experiencing problems, you can send me [4mnon-HTMLised[0m
+  e-mail at  <tsi@xfree86.org>.  Please be as specific as possible when
+  describing the problem(s), and include an [4munedited[24m copy of the
+  server's log and the xorg.conf file used.
 
 
-  99..  DDrriivveerr hhiissttoorryy
+  [1m9.  Driver history[0m
 
   The complete history of the driver is rather cloudy.  The following is
   more than likely to be incomplete and inaccurate.
-
   Apparently, Per Lindqvist first got a driver working with an early ATI
   adapter under X386 1.1a.  This original driver might have actually
   been based on a non-functional ATI driver written by Thomas Roell
@@ -795,12 +788,12 @@
   1992 and ported the code to the X386 part of X11R5.  This subsequently
   became part of XFree86.
 
-  Marc Aurele La France took over development and maintenance of the
+  I (Marc Aurele La France) took over development and maintenance of the
   driver in the fall of 1993 after Rik got rid of his VGA Wonder
   adapter.
 
 
-  1100..  DDrriivveerr vveerrssiioonnss
+  [1m10.  Driver versions[0m
 
   Due to the introduction of loadable drivers in XFree86 4.0, it has
   become necessary to track driver versions separately.  Driver releases

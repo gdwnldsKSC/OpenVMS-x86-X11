@@ -115,7 +115,7 @@ VIALoadCursorImage(ScrnInfoPtr pScrn, unsigned char* src)
     VIAPtr pVia = VIAPTR(pScrn);
     CARD32 dwCursorMode;
 
-    VIAAccelSync(pScrn);
+    viaAccelSync(pScrn);
 
     dwCursorMode = VIAGETREG(VIA_REG_CURSOR_MODE);
 

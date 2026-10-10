@@ -294,7 +294,7 @@ static int
 XRenderCloseDisplay (Display *dpy, XExtCodes *codes)
 {
     XRenderExtDisplayInfo *info = XRenderFindDisplay (dpy);
-    if (info->info) XFree (info->info);
+    if (info && info->info) XFree (info->info);
     
     return XRenderExtRemoveDisplay (&XRenderExtensionInfo, dpy);
 }
@@ -463,16 +463,6 @@ XRenderQueryFormats (Display *dpy)
 				   rep.numScreens * sizeof (XRenderScreen) +
 				   rep.numDepths * sizeof (XRenderDepth) +
 				   rep.numVisuals * sizeof (XRenderVisual));
-    xri->major_version = async_state.major_version;
-    xri->minor_version = async_state.minor_version;
-    xri->format = (XRenderPictFormat *) (xri + 1);
-    xri->nformat = rep.numFormats;
-    xri->screen = (XRenderScreen *) (xri->format + rep.numFormats);
-    xri->nscreen = rep.numScreens;
-    xri->depth = (XRenderDepth *) (xri->screen + rep.numScreens);
-    xri->ndepth = rep.numDepths;
-    xri->visual = (XRenderVisual *) (xri->depth + rep.numDepths);
-    xri->nvisual = rep.numVisuals;
     rlength = (rep.numFormats * sizeof (xPictFormInfo) +
 	       rep.numScreens * sizeof (xPictScreen) +
 	       rep.numDepths * sizeof (xPictDepth) +
@@ -490,6 +480,16 @@ XRenderQueryFormats (Display *dpy)
 	SyncHandle ();
 	return 0;
     }
+    xri->major_version = async_state.major_version;
+    xri->minor_version = async_state.minor_version;
+    xri->format = (XRenderPictFormat *) (xri + 1);
+    xri->nformat = rep.numFormats;
+    xri->screen = (XRenderScreen *) (xri->format + rep.numFormats);
+    xri->nscreen = rep.numScreens;
+    xri->depth = (XRenderDepth *) (xri->screen + rep.numScreens);
+    xri->ndepth = rep.numDepths;
+    xri->visual = (XRenderVisual *) (xri->depth + rep.numDepths);
+    xri->nvisual = rep.numVisuals;
     _XRead (dpy, (char *) xData, rlength);
     format = xri->format;
     xFormat = (xPictFormInfo *) xData;

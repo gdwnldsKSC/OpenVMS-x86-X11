@@ -29,7 +29,6 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
 #include "xf86fbman.h"
@@ -39,6 +38,9 @@
 
 #include "glint_regs.h"
 #include "glint.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #undef MIN
 #undef ABS
@@ -1505,7 +1507,7 @@ static int
 Permedia2PutVideo(ScrnInfoPtr pScrn,
     short vid_x, short vid_y, short drw_x, short drw_y,
     short vid_w, short vid_h, short drw_w, short drw_h,
-    RegionPtr clipBoxes, pointer data)
+    RegionPtr clipBoxes, pointer data, DrawablePtr pDraw)
 {
     PortPrivPtr pPPriv = (PortPrivPtr) data;
     AdaptorPrivPtr pAPriv = pPPriv->pAdaptor;
@@ -1548,7 +1550,7 @@ static int
 Permedia2PutStill(ScrnInfoPtr pScrn,
     short vid_x, short vid_y, short drw_x, short drw_y,
     short vid_w, short vid_h, short drw_w, short drw_h,
-    RegionPtr clipBoxes, pointer data)
+    RegionPtr clipBoxes, pointer data, DrawablePtr pDraw)
 {
     PortPrivPtr pPPriv = (PortPrivPtr) data;  
     AdaptorPrivPtr pAPriv = pPPriv->pAdaptor;
@@ -1609,7 +1611,7 @@ static int
 Permedia2GetVideo(ScrnInfoPtr pScrn,
     short vid_x, short vid_y, short drw_x, short drw_y,
     short vid_w, short vid_h, short drw_w, short drw_h,
-    RegionPtr clipBoxes, pointer data)
+    RegionPtr clipBoxes, pointer data, DrawablePtr pDraw)
 {
     PortPrivPtr pPPriv = (PortPrivPtr) data;
     AdaptorPrivPtr pAPriv = pPPriv->pAdaptor;
@@ -1656,7 +1658,7 @@ static int
 Permedia2GetStill(ScrnInfoPtr pScrn,
     short vid_x, short vid_y, short drw_x, short drw_y,
     short vid_w, short vid_h, short drw_w, short drw_h,
-    RegionPtr clipBoxes, pointer data)
+    RegionPtr clipBoxes, pointer data, DrawablePtr pDraw)
 {
     PortPrivPtr pPPriv = (PortPrivPtr) data;  
     AdaptorPrivPtr pAPriv = pPPriv->pAdaptor;
@@ -1766,7 +1768,8 @@ Permedia2PutImage(ScrnInfoPtr pScrn,
     short src_x, short src_y, short drw_x, short drw_y,
     short src_w, short src_h, short drw_w, short drw_h,
     int id, unsigned char *buf, short width, short height,
-    Bool sync, RegionPtr clipBoxes, pointer data)
+    Bool sync, RegionPtr clipBoxes, pointer data,
+    DrawablePtr pDraw)
 {
     PortPrivPtr pPPriv = (PortPrivPtr) data;  
     AdaptorPrivPtr pAPriv = pPPriv->pAdaptor;
@@ -2985,7 +2988,7 @@ Permedia2VideoInit(ScreenPtr pScreen)
     options[2] = NULL;	/* VideoAdaptor options */
 
     for (i = 0;; i++) {
-	char *adaptor; /* receives VideoAdaptor section identifier */
+	char *adaptor = NULL; /* receives VideoAdaptor section identifier */
 
 	if (!options[0])
 	    options[0] = xf86FindXvOptions(pScreen->myNum, i, "input", &adaptor, options[2] ? NULL : &options[2]);

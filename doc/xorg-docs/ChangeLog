@@ -1,3 +1,61 @@
+2006-05-22  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.2
+
+2006-05-22  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+
+	* sgml/README.sgml:
+	* sgml/RELNOTES.sgml:
+	* sgml/Versions.sgml:
+	More updates for 7.1 release.
+
+2006-05-22  Adam Jackson  <ajax@freedesktop.org>
+
+	* sgml/README.sgml:
+	* sgml/RELNOTES.sgml:
+	7.1 updates.
+
+2006-04-06  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* MAINTAINERS: 
+	Start splitting out maintained apps.   (Accepted the xdm hot potato,
+	stuck xkbcomp on Daniel as part of his XKB master plan, compiz on
+	Dave R. - left the rest assigned to Jim, though probably should be
+	listed as "Seeking maintainers".)
+
+2006-04-01  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.1 for some reason.
+
+2006-03-15  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* MAINTAINERS: 
+	Add xf86-video-ast driver.
+
+2006-03-12  Daniel Stone  <daniel@freedesktop.org>
+
+	* MAINTAINERS:
+	Claim Xi for myself and Mercury.  Note that XKB and Xi in the srever
+	are in the middle of some serious work.
+	Acknowledge Luc's pivotal role in X development.
+
+2006-02-17  Keith Packard  <keithp@keithp.com>
+
+	* specs/Xext/shape.ms:
+	Include Input shapes, update to version 1.1
+
+2006-02-11  Adam Jackson  <ajax@freedesktop.org>
+
+	* MAINTAINERS:
+	More maintainers, more obsoletes.
+
+2006-02-11  Zephaniah E. Hull  <warp@aehallh.com>
+
+	* MAINTAINERS:
+	Took over xf86-input-evdev. *gulps*
+
 2005-12-21  Adam Jackson  <ajax@freedesktop.org>
 
 	* sgml/RELNOTES.sgml:

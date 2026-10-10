@@ -2,6 +2,7 @@
  * xrdb - X resource manager database utility
  *
  * $Xorg: xrdb.c,v 1.6 2000/08/17 19:54:56 cpqbld Exp $
+ * $XdotOrg: app/xrdb/xrdb.c,v 1.6 2006/04/03 20:32:20 alanc Exp $
  */
 
 /*
@@ -56,8 +57,12 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#if defined(sun) && defined(SVR4)
-#include <netdb.h> /* MAXHOSTNAMELEN */
+#ifdef NEED_SYS_PARAM_H
+# include <sys/param.h>		/* defines MAXHOSTNAMELEN on BSD & Linux */
+#endif
+
+#ifdef NEED_NETDB_H
+# include <netdb.h>		/* defines MAXHOSTNAMELEN on Solaris */
 #endif
 
 #define SCREEN_RESOURCES "SCREEN_RESOURCES"
@@ -144,20 +149,6 @@ static void StoreProperty ( Display *dpy, Window root, Atom res_prop );
 static void Process ( int scrno, Bool doScreen, Bool execute );
 static void ShuffleEntries ( Entries *db, Entries *dbs, int num );
 static void ReProcess ( int scrno, Bool doScreen );
-
-#if defined(USG) && !defined(CRAY) && !defined(MOTOROLA)
-static int 
-rename(char *from, char *to)
-{
-    (void) unlink (to);
-    if (link (from, to) == 0) {
-        unlink (from);
-        return 0;
-    } else {
-        return -1;
-    }
-}
-#endif
 
 static void 
 InitBuffer(Buffer *b)
@@ -429,7 +420,7 @@ static void
 AddNum(String *buff, char *title, int value)
 {
     char num[20];
-    sprintf(num, "%d", value);
+    snprintf(num, sizeof(num), "%d", value);
     AddDef(buff, title, num);
 }
 
@@ -446,8 +437,7 @@ AddDefTok(String *buff, char *prefix, char *title)
     char name[512];
     char c;
 
-    strcpy(name, prefix);
-    strcat(name, title);
+    snprintf(name, sizeof(name), "%s%s", prefix, title);
     for (s = name; (c = *s); s++) {
 	if (!isalpha(c) && !isdigit(c) && c != '_')
 	    *s = '_';
@@ -547,6 +537,7 @@ DoDisplayDefines(Display *display, String *defs, char *host)
     extnames = XListExtensions(display, &n);
     while (--n >= 0)
 	AddDefTok(defs, "EXT_", extnames[n]);
+    XFreeExtensionList(extnames);
 }
 
 char *ClassNames[] = {
@@ -579,7 +570,7 @@ DoScreenDefines(Display *display, int scrno, String *defs)
     AddNum(defs, "PLANES", DisplayPlanes(display, scrno));
     AddNum(defs, "BITS_PER_RGB", visual->bits_per_rgb);
     AddDef(defs, "CLASS", ClassNames[visual->class]);
-    sprintf(name, "CLASS_%s", ClassNames[visual->class]);
+    snprintf(name, sizeof(name), "CLASS_%s", ClassNames[visual->class]);
     AddNum(defs, name, (int)visual->visualid);
     switch(visual->class) {
 	case StaticColor:
@@ -596,7 +587,7 @@ DoScreenDefines(Display *display, int scrno, String *defs)
 		break;
 	}
 	if (j < 0) {
-	    sprintf(name, "CLASS_%s_%d",
+	    snprintf(name, sizeof(name), "CLASS_%s_%d",
 		    ClassNames[vinfos[i].class], vinfos[i].depth);
 	    AddNum(defs, name, (int)vinfos[i].visualid);
 	}
@@ -1109,8 +1100,7 @@ Process(int scrno, Bool doScreen, Bool execute)
 	char template[100], old[100];
 
 	input = fopen(editFile, "r");
-	strcpy(template, editFile);
-	strcat(template, "XXXXXX");
+	snprintf(template, sizeof(template), "%sXXXXXX", editFile);
 #ifndef HAS_MKSTEMP
 	(void) mktemp(template);
 	output = fopen(template, "w");
@@ -1127,8 +1117,7 @@ Process(int scrno, Bool doScreen, Bool execute)
 	if (input)
 	    fclose(input);
 	fclose(output);
-	strcpy(old, editFile);
-	strcat(old, backup_suffix);
+	snprintf(old, sizeof(old), "%s%s", editFile, backup_suffix);
 	if (dont_execute) {		/* then write to standard out */
 	    char buf[BUFSIZ];
 	    int n;

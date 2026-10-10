@@ -34,11 +34,9 @@
 
 #include "vgaHW.h"
 #include "xf86.h"
-#include "xf86_ansic.h"
 #include "xaalocal.h"
 #include "cyrix.h"
 #include "miline.h"
-#include "xf86_libc.h"
 #include "compiler.h"
 
 /* size of color expand source area (embedded in frame buffer) */

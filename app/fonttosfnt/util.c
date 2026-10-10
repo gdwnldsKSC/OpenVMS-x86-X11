@@ -417,3 +417,4 @@ degreesToFraction(int deg, int *num, int *den)
     *num = 0;
     return -1;
 }
+

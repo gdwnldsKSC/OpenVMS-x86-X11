@@ -27,7 +27,9 @@
 #include "drm.h"
 #include "xf86drm.h"
 
-typedef CARD32 uint32_t;
+#ifndef uint32_t
+#define uint32_t CARD32
+#endif
 
 #define UNICHROME_LOCK(fd, lockNo, saPriv, context, lastcontext, ret)	\
     do {								\

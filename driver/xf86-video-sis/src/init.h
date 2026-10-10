@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/init.h,v 1.30 2005/09/07 19:44:14 twini Exp $ */
 /*
  * Data and prototypes for init.c
  *

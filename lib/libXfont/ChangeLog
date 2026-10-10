@@ -1,3 +1,28 @@
+2006-04-01  Adam Jackson  <ajax@freedesktop.org>
+
+	* Makefile.am:
+	Add ft.h and ftfuncs.h to the install set for Xprint's benefit.
+
+	* configure.ac:
+	Bump to 1.1 for new header files and bugfixes.
+
+2006-03-31  Daniel Stone  <daniel@freedesktop.org>
+
+	* src/fontfile/ffcheck.c:
+	Change BUILD_* to XFONT_*.  (Drew Parsons)
+	Minor cleanup: remove random #ifndef CRAY.
+
+2006-03-20  Adam Jackson  <ajax@freedesktop.org>
+
+	* src/Makefile.am:
+	Bug #6247: Fix build on Cygwin.  (Yaakov Selkowitz)
+
+2006-02-21  Daniel Stone  <daniel@freedesktop.org>
+
+	* src/fc/fserve.c:
+	Don't crash when we receive an FS_Error from the font server (Guillem
+	Jover).
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

@@ -1,3 +1,4 @@
+/* $XdotOrg: proto/X11/Xmd.h,v 1.4 2006/04/20 01:24:25 alanc Exp $ */
 /* $XFree86: xc/include/Xmd.h,v 3.18tsi Exp $ */
 /***********************************************************
 
@@ -55,6 +56,10 @@ SOFTWARE.
 /*
  * Special per-machine configuration flags.
  */
+#if defined(sun) && defined(__SVR4)
+# include <sys/isa_defs.h> /* Solaris: defines _LP64 if necessary */
+#endif
+
 #ifdef CRAY
 #define WORD64				/* 64-bit architecture */
 #endif
@@ -72,7 +77,7 @@ SOFTWARE.
 
 /*
  * Stuff to handle large architecture machines; the constants were generated
- * on a 32-bit machine and must coorespond to the protocol.
+ * on a 32-bit machine and must correspond to the protocol.
  */
 #ifdef WORD64
 #define MUSTCOPY
@@ -102,7 +107,7 @@ SOFTWARE.
 
 /*
  * Bitfield suffixes for the protocol structure elements, if you
- * need them.  Note that bitfields are not guarranteed to be signed
+ * need them.  Note that bitfields are not guaranteed to be signed
  * (or even unsigned) according to ANSI C.
  */
 #ifdef WORD64

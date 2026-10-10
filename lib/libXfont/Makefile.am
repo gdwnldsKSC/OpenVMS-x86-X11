@@ -1,5 +1,5 @@
 # 
-#  $Id: Makefile.am,v 1.7 2005/07/02 21:39:22 kem Exp $
+#  $Id: Makefile.am,v 1.6 2005/07/02 21:22:31 keithp Exp $
 # 
 #  Copyright © 2003 Keith Packard, Noah Levitt
 # 
@@ -38,7 +38,9 @@ libXfontinclude_HEADERS = \
 	include/X11/fonts/fontshow.h \
 	include/X11/fonts/fontutil.h \
 	include/X11/fonts/fontxlfd.h \
-	include/X11/fonts/pcf.h
+	include/X11/fonts/pcf.h      \
+	src/FreeType/ft.h	     \
+	src/FreeType/ftfuncs.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xfont.pc

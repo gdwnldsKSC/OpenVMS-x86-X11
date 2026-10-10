@@ -10,7 +10,6 @@
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
 #include "xaa.h"
-#include "xf86_ansic.h"
 #include "vgaHW.h"
 
 typedef struct _ARKRegRec {
@@ -56,9 +55,9 @@ typedef struct _ARKRec {
 
 
 #define DRIVER_NAME	"ark"
-#define DRIVER_VERSION	"0.5.0"
+#define DRIVER_VERSION	"0.6.0"
 #define VERSION_MAJOR	0
-#define VERSION_MINOR	5
+#define VERSION_MINOR	6
 #define PATCHLEVEL	0
 #define ARK_VERSION	((VERSION_MAJOR << 24) | \
 			 (VERSION_MINOR << 16) | \

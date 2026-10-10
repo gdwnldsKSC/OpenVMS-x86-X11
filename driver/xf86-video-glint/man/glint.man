@@ -106,5 +106,5 @@ If you have a card of the same name, turn this on.  Default: off.
 .SH "SEE ALSO"
 __xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__)
 .SH AUTHORS
-Authors include: Alan Hourihane, Dirk Hohndel, Stefan Dirsch, Michel Dänzer,
+Authors include: Alan Hourihane, Dirk Hohndel, Stefan Dirsch, Michel DÃ¤nzer,
 Sven Luther

@@ -197,10 +197,10 @@ static const char *fbSymbols[] = {
 };
 
 static const char *exaSymbols[] = {
+    "exaDriverAlloc",
     "exaDriverInit",
     "exaDriverFini",
     "exaGetPixmapOffset",
-    "exaGetVersion",
     NULL
 };
 
@@ -1189,7 +1189,15 @@ I128PreInit(ScrnInfoPtr pScrn, int flags)
     /* Load the acceleration engine */
     if (!pI128->NoAccel) {
 	if (pI128->exa) {
-            if (!xf86LoadSubModule(pScrn, "exa")) {
+	    XF86ModReqInfo req;
+	    int errmaj, errmin;
+
+	    req.majorversion = 2;
+	    req.minorversion = 0;
+            if (!LoadSubModule(pScrn->module, "exa", NULL, NULL, NULL, &req,
+		&errmaj, &errmin))
+	    {
+		LoaderErrorMsg(NULL, "exa", errmaj, errmin);
                 I128FreeRec(pScrn);
                 return FALSE;
             } else xf86LoaderReqSymLists(exaSymbols, NULL);

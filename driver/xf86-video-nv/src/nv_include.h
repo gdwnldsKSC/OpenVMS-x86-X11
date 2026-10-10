@@ -3,11 +3,13 @@
 #ifndef __NV_INCLUDE_H__
 #define __NV_INCLUDE_H__
 
+#include <string.h>
+#include <math.h>
+
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
-#include "xf86_ansic.h"
 #include "compiler.h"
 
 /* Drivers for PCI hardware need this */
@@ -51,6 +53,10 @@
 #include "xf86DDC.h"
 
 #include "region.h"
+
+#ifdef RANDR
+#include <X11/extensions/randr.h>
+#endif
 
 #include "nv_local.h"
 #include "nv_type.h"

@@ -36,10 +36,10 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *   1998, 1999 by Egbert Eich (Egbert.Eich@Physik.TU-Darmstadt.DE)
  */
 
+#include <string.h>
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 
 /* Everything using inb/outb, etc needs "compiler.h" */
 #include "compiler.h"

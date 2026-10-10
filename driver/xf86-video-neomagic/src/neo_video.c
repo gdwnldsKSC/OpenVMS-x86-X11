@@ -45,7 +45,8 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 static XF86VideoAdaptorPtr NEOSetupVideo(ScreenPtr);
 
 static int NEOPutVideo(ScrnInfoPtr, short, short, short, short, 
-		       short, short, short, short, RegionPtr, pointer);
+		       short, short, short, short, RegionPtr, pointer,
+		       DrawablePtr);
 
 static void NEOStopVideo(ScrnInfoPtr, pointer, Bool);
 static int NEOSetPortAttribute(ScrnInfoPtr, Atom, INT32, pointer);
@@ -54,7 +55,7 @@ static void NEOQueryBestSize(ScrnInfoPtr, Bool, short, short, short,
 			     short, unsigned int *, unsigned int *, pointer);
 static int NEOPutImage(ScrnInfoPtr, short, short, short, short, short, short, 
 		       short, short, int, unsigned char *, short, short, Bool,
-		       RegionPtr, pointer);
+		       RegionPtr, pointer, DrawablePtr);
 static int NEOQueryImageAttributes(ScrnInfoPtr, int, unsigned short *, 
 				   unsigned short *, int *, int *);
 
@@ -301,7 +302,7 @@ static int
 NEOPutVideo(ScrnInfoPtr pScrn, 
 	     short src_x, short src_y, short drw_x, short drw_y,
 	     short src_w, short src_h, short drw_w, short drw_h,
-	     RegionPtr clipBoxes, pointer data)
+	     RegionPtr clipBoxes, pointer data, DrawablePtr pDraw)
 {
     NEOPortPtr pPriv = (NEOPortPtr)data;
     NEOPtr nPtr = NEOPTR(pScrn);
@@ -609,7 +610,8 @@ NEOPutImage(ScrnInfoPtr pScrn,
 	    short src_x, short src_y, short drw_x, short drw_y,
 	    short src_w, short src_h, short drw_w, short drw_h,
 	    int id, unsigned char *buf, short width, short height,
-	    Bool sync, RegionPtr clipBoxes, pointer data)
+	    Bool sync, RegionPtr clipBoxes, pointer data,
+	    DrawablePtr pDraw)
 {
     NEOPtr nPtr = NEOPTR(pScrn);
     NEOPortPtr pPriv = (NEOPortPtr)nPtr->overlayAdaptor->pPortPrivates[0].ptr;

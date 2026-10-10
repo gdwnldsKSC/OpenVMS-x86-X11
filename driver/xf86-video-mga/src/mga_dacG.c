@@ -18,7 +18,6 @@
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h" 
 
 /* Drivers for PCI hardware need this */
 #include "xf86PciInfo.h"
@@ -59,6 +58,52 @@ static void MGAGRestore(ScrnInfoPtr, vgaRegPtr, MGARegPtr, Bool);
 static Bool MGAGInit(ScrnInfoPtr, DisplayModePtr);
 static void MGAGLoadPalette(ScrnInfoPtr, int, int*, LOCO*, VisualPtr);
 static Bool MGAG_i2cInit(ScrnInfoPtr pScrn);
+
+static void
+MGAG200SEComputePLLParam(ScrnInfoPtr pScrn, long lFo, int *M, int *N, int *P)
+{
+    unsigned int ulComputedFo;
+    unsigned int ulFDelta;
+    unsigned int ulFPermitedDelta;
+    unsigned int ulFTmpDelta;
+    unsigned int ulVCOMax, ulVCOMin;
+    unsigned int ulTestP;
+    unsigned int ulTestM;
+    unsigned int ulTestN;
+    unsigned int ulPLLFreqRef;
+
+    ulVCOMax        = 320000;
+    ulVCOMin        = 160000;
+    ulPLLFreqRef    = 25000;
+
+    ulFDelta = 0xFFFFFFFF;
+    /* Permited delta is 0.5% as VESA Specification */
+    ulFPermitedDelta = lFo * 5 / 1000;  
+
+    /* Then we need to minimize the M while staying within 0.5% */
+    for (ulTestP = 8; ulTestP > 0; ulTestP >>= 1) {
+	if ((lFo * ulTestP) > ulVCOMax) continue;
+	if ((lFo * ulTestP) < ulVCOMin) continue;
+
+	for (ulTestN = 17; ulTestN <= 256; ulTestN++) {
+	    for (ulTestM = 1; ulTestM <= 32; ulTestM++) {
+		ulComputedFo = (ulPLLFreqRef * ulTestN) / (ulTestM * ulTestP);
+		if (ulComputedFo > lFo)
+		    ulFTmpDelta = ulComputedFo - lFo;
+		else
+		    ulFTmpDelta = lFo - ulComputedFo;
+
+		if (ulFTmpDelta < ulFDelta) {
+		    ulFDelta = ulFTmpDelta;
+		    *M = ulTestM - 1;
+		    *N = ulTestN - 1;
+		    *P = ulTestP - 1;
+		}
+	    }
+	}
+    }
+}
+
 
 /**
  * Calculate the PLL settings (m, n, p, s).
@@ -104,6 +149,8 @@ MGAGCalcClock ( ScrnInfoPtr pScrn, long f_out,
 		in_div_max   = 31;
 		post_div_max = 7;
 		break;
+	case PCI_CHIP_MGAG200_SE_A_PCI:
+	case PCI_CHIP_MGAG200_SE_B_PCI:
 	case PCI_CHIP_MGAG100:
 	case PCI_CHIP_MGAG100_PCI:
 	case PCI_CHIP_MGAG200:
@@ -193,13 +240,23 @@ MGAGSetPCLK( ScrnInfoPtr pScrn, long f_out )
 	    return;
 	}
 
-	/* Do the calculations for m, n, p and s */
-	MGAGCalcClock( pScrn, f_out, &m, &n, &p, &s );
+	if ((pMga->Chipset ==  PCI_CHIP_MGAG200_SE_A_PCI) ||
+	    (pMga->Chipset ==  PCI_CHIP_MGAG200_SE_B_PCI)) {
+	    MGAG200SEComputePLLParam(pScrn, f_out, &m, &n, &p);
 
-	/* Values for the pixel clock PLL registers */
-	pReg->DacRegs[ MGA1064_PIX_PLLC_M ] = m & 0x1F;
-	pReg->DacRegs[ MGA1064_PIX_PLLC_N ] = n & 0x7F;
-	pReg->DacRegs[ MGA1064_PIX_PLLC_P ] = (p & 0x07) | ((s & 0x03) << 3);
+	    pReg->DacRegs[ MGA1064_PIX_PLLC_M ] = m;
+	    pReg->DacRegs[ MGA1064_PIX_PLLC_N ] = n;
+	    pReg->DacRegs[ MGA1064_PIX_PLLC_P ] = p;
+	} else {
+	    /* Do the calculations for m, n, p and s */
+	    MGAGCalcClock( pScrn, f_out, &m, &n, &p, &s );
+
+	    /* Values for the pixel clock PLL registers */
+	    pReg->DacRegs[ MGA1064_PIX_PLLC_M ] = m & 0x1F;
+	    pReg->DacRegs[ MGA1064_PIX_PLLC_N ] = n & 0x7F;
+	    pReg->DacRegs[ MGA1064_PIX_PLLC_P ] = (p & 0x07) |
+						  ((s & 0x03) << 3);
+	}
 }
 
 /*
@@ -348,6 +405,20 @@ MGAGInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 		if(pMga->HasSDRAM)
 		   pReg->Option &= ~(1 << 14);
 		pReg->Option2 = 0x01003000;
+		break;
+	case PCI_CHIP_MGAG200_SE_A_PCI:
+	case PCI_CHIP_MGAG200_SE_B_PCI:
+#ifdef USEMGAHAL
+		MGA_HAL(break;);
+#endif
+        pReg->DacRegs[ MGA1064_VREF_CTL ] = 0x03;
+        pReg->DacRegs[ MGA1064_PIX_CLK_CTL ] = 0x01;
+        pReg->DacRegs[ MGA1064_MISC_CTL ] = 0x19;
+		if(pMga->HasSDRAM)
+		    pReg->Option = 0x40499121;
+		else
+		    pReg->Option = 0x4049cd21;
+        pReg->Option2 = 0x00008000;
 		break;
 	case PCI_CHIP_MGAG200:
 	case PCI_CHIP_MGAG200_PCI:
@@ -688,6 +759,10 @@ MGA_NOT_HAL(
 		   ((i == 0x2c) || (i == 0x2d) || (i == 0x2e) ||
 		    (i == 0x4c) || (i == 0x4d) || (i == 0x4e))))
 		 continue; 
+	      if (((pMga->Chipset ==  PCI_CHIP_MGAG200_SE_A_PCI) ||
+		   (pMga->Chipset ==  PCI_CHIP_MGAG200_SE_B_PCI)) &&
+		   (i == 0x2C) || (i == 0x2D) || (i == 0x2E))
+	         continue;
 	      outMGAdac(i, mgaReg->DacRegs[i]);
 	   }
 	   
@@ -722,11 +797,16 @@ MGA_NOT_HAL(
            for (i = 0; i < 6; i++)
 	      OUTREG16(0x1FDE, (mgaReg->ExtVga[i] << 8) | i);
 
-	   /*
-	    * This function handles restoring the generic VGA registers.
-	    */
-	   vgaHWRestore(pScrn, vgaReg,
+	   /* This handles restoring the generic VGA registers. */
+	   if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
+	       (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+	      vgaHWRestore(pScrn, vgaReg, VGA_SR_MODE);
+	      if (restoreFonts)
+	         MGAG200SERestoreFonts(pScrn, vgaReg);
+	   } else {
+	      vgaHWRestore(pScrn, vgaReg,
 			VGA_SR_MODE | (restoreFonts ? VGA_SR_FONTS : 0));
+	   }
   	   MGAGRestorePalette(pScrn, vgaReg->DAC); 
 	   
 	   /*
@@ -819,7 +899,15 @@ MGAGSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, MGARegPtr mgaReg,
 	 * This function will handle creating the data structure and filling
 	 * in the generic VGA portion.
 	 */
-	vgaHWSave(pScrn, vgaReg, VGA_SR_MODE | (saveFonts ? VGA_SR_FONTS : 0));
+	if ((pMga->Chipset ==  PCI_CHIP_MGAG200_SE_A_PCI) ||
+	    (pMga->Chipset ==  PCI_CHIP_MGAG200_SE_B_PCI)) {
+	    vgaHWSave(pScrn, vgaReg, VGA_SR_MODE);
+	    if (saveFonts)
+		MGAG200SESaveFonts(pScrn, vgaReg);
+	} else {
+	    vgaHWSave(pScrn, vgaReg, VGA_SR_MODE |
+				     (saveFonts ? VGA_SR_FONTS : 0));
+	}
 	MGAGSavePalette(pScrn, vgaReg->DAC);
 	/* 
 	 * Work around another bug in HALlib: it doesn't restore the
@@ -1024,8 +1112,13 @@ MGAG_ddc1Read(ScrnInfoPtr pScrn)
   outMGAdacmsk(MGA1064_GEN_IO_CTL, ~(DDC_P1_SCL_MASK | DDC_P1_SDA_MASK), 0);
 
   /* wait for Vsync */
-  while( INREG( MGAREG_Status ) & 0x08 );
-  while( ! (INREG( MGAREG_Status ) & 0x08) );
+  if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
+      (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+    usleep(4);
+  } else {
+    while( INREG( MGAREG_Status ) & 0x08 );
+    while( ! (INREG( MGAREG_Status ) & 0x08) );
+  }
 
   /* Get the result */
   val = (inMGAdac(MGA1064_GEN_IO_DATA) & DDC_P1_SDA_MASK);

@@ -1,3 +1,15 @@
+2006-05-15  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.1
+
+2006-04-28  Jeremy C. Reed  <reed@reedmedia.net>
+
+	reviewed by: Adam Jackson
+
+	* configure.ac:
+	pkg-config check for xproto instead of x11.
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

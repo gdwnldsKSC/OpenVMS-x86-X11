@@ -462,6 +462,7 @@ XdbeBackBufferAttributes *XdbeGetBackBufferAttributes(
     if (!_XReply (dpy, (xReply *) &rep, 0, xTrue)) {
         UnlockDisplay (dpy);
         SyncHandle ();
+	Xfree(attr);
         return NULL;
     }
     attr->window = rep.attributes;

@@ -136,6 +136,16 @@ typedef struct _ScreenSaverUnsetAttributes {
 } xScreenSaverUnsetAttributesReq;
 #define sz_xScreenSaverUnsetAttributesReq	8
 
+#define X_ScreenSaverSuspend   5
+
+typedef struct _ScreenSaverSuspend {
+    CARD8 reqType;
+    CARD8 saverReqType;
+    CARD16 length B16;
+    Bool suspend B32;
+} xScreenSaverSuspendReq;
+#define sz_xScreenSaverSuspendReq	8
+
 typedef struct _ScreenSaverNotify {
     CARD8 type;			/* always eventBase + ScreenSaverNotify */
     BYTE state;			/* off, on, cycle */

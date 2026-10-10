@@ -54,8 +54,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define X_XF86DRIGetDrawableInfo		9
 #define X_XF86DRIGetDeviceInfo			10
 #define X_XF86DRIAuthConnection                 11
-#define X_XF86DRIOpenFullScreen                 12   /* Deprecated */
-#define X_XF86DRICloseFullScreen                13   /* Deprecated */
+#define X_XF86DRIOpenFullScreen                 12	/* Deprecated */
+#define X_XF86DRICloseFullScreen                13	/* Deprecated */
 
 #define XF86DRINumberEvents		0
 
@@ -65,57 +65,52 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef _XF86DRI_SERVER_
 
-
 _XFUNCPROTOBEGIN
+    Bool uniDRIQueryExtension(Display * dpy, int *event_base,
+    int *error_base);
 
-Bool uniDRIQueryExtension( Display *dpy, int *event_base, int *error_base );
+Bool uniDRIQueryVersion(Display * dpy, int *majorVersion, int *minorVersion,
+    int *patchVersion);
 
-Bool uniDRIQueryVersion( Display *dpy, int *majorVersion, int *minorVersion,
-			 int *patchVersion );
+Bool uniDRIQueryDirectRenderingCapable(Display * dpy, int screen,
+    Bool * isCapable);
 
-Bool uniDRIQueryDirectRenderingCapable( Display *dpy, int screen,
-					Bool *isCapable );
+Bool uniDRIOpenConnection(Display * dpy, int screen, drm_handle_t * hSAREA,
+    char **busIDString);
 
-Bool uniDRIOpenConnection( Display *dpy, int screen, drm_handle_t *hSAREA,
-			   char **busIDString );
+Bool uniDRIAuthConnection(Display * dpy, int screen, drm_magic_t magic);
 
-Bool uniDRIAuthConnection( Display *dpy, int screen, drm_magic_t magic );
+Bool uniDRICloseConnection(Display * dpy, int screen);
 
-Bool uniDRICloseConnection( Display *dpy, int screen );
+Bool uniDRIGetClientDriverName(Display * dpy, int screen,
+    int *ddxDriverMajorVersion, int *ddxDriverMinorVersion,
+    int *ddxDriverPatchVersion, char **clientDriverName);
 
-Bool uniDRIGetClientDriverName( Display *dpy, int screen,
-				int *ddxDriverMajorVersion, int *ddxDriverMinorVersion,
-				int *ddxDriverPatchVersion, char **clientDriverName );
+Bool uniDRICreateContext(Display * dpy, int screen, Visual * visual,
+    XID * ptr_to_returned_context_id, drm_context_t * hHWContext);
 
-Bool uniDRICreateContext( Display *dpy, int screen, Visual *visual,
-			  XID *ptr_to_returned_context_id, drm_context_t *hHWContext );
+Bool uniDRICreateContextWithConfig(Display * dpy, int screen, int configID,
+    XID * ptr_to_returned_context_id, drm_context_t * hHWContext);
 
-Bool uniDRICreateContextWithConfig( Display *dpy, int screen, int configID,
-				    XID *ptr_to_returned_context_id, drm_context_t *hHWContext );
+extern Bool uniDRIDestroyContext(Display * dpy, int screen, XID context_id);
 
-extern Bool uniDRIDestroyContext( Display *dpy, int screen,
-				  XID context_id );
+extern Bool uniDRICreateDrawable(Display * dpy, int screen,
+    Drawable drawable, drm_drawable_t * hHWDrawable);
 
-extern Bool uniDRICreateDrawable( Display *dpy, int screen,
-				  Drawable drawable, drm_drawable_t *hHWDrawable );
+extern Bool uniDRIDestroyDrawable(Display * dpy, int screen,
+    Drawable drawable);
 
-extern Bool uniDRIDestroyDrawable( Display *dpy, int screen, 
-				   Drawable drawable);
+Bool uniDRIGetDrawableInfo(Display * dpy, int screen, Drawable drawable,
+    unsigned int *index, unsigned int *stamp,
+    int *X, int *Y, int *W, int *H,
+    int *numClipRects, drm_clip_rect_t ** pClipRects,
+    int *backX, int *backY,
+    int *numBackClipRects, drm_clip_rect_t ** pBackClipRects);
 
-Bool uniDRIGetDrawableInfo( Display *dpy, int screen, Drawable drawable,
-			    unsigned int *index, unsigned int *stamp, 
-			    int *X, int *Y, int *W, int *H,
-			    int *numClipRects, drm_clip_rect_t ** pClipRects,
-			    int *backX, int *backY,
-			    int *numBackClipRects, drm_clip_rect_t **pBackClipRects );
-
-Bool uniDRIGetDeviceInfo( Display *dpy, int screen,
-			  drm_handle_t *hFrameBuffer, int *fbOrigin, int *fbSize,
-			  int *fbStride, int *devPrivateSize, void **pDevPrivate );
+Bool uniDRIGetDeviceInfo(Display * dpy, int screen,
+    drm_handle_t * hFrameBuffer, int *fbOrigin, int *fbSize,
+    int *fbStride, int *devPrivateSize, void **pDevPrivate);
 
 _XFUNCPROTOEND
-
 #endif /* _XF86DRI_SERVER_ */
-
 #endif /* _XF86DRI_H_ */
-

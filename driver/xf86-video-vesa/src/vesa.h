@@ -38,7 +38,6 @@
 #include "xf86Resources.h"
 
 /* All drivers need this */
-#include "xf86_ansic.h"
 
 #include "compiler.h"
 
@@ -84,8 +83,8 @@
 #define VESA_NAME		"VESA"
 #define VESA_DRIVER_NAME	"vesa"
 #define VESA_MAJOR_VERSION	1
-#define VESA_MINOR_VERSION	0
-#define VESA_PATCHLEVEL		1
+#define VESA_MINOR_VERSION	2
+#define VESA_PATCHLEVEL		0
 
 /*XXX*/
 
@@ -110,7 +109,6 @@ typedef struct _VESARec
     CARD8 *fonts;
     xf86MonPtr monitor;
     Bool shadowFB, primary;
-    CARD8 *shadowPtr;
     CARD32 windowAoffset;
     /* Don't override the default refresh rate. */
     Bool defaultRefresh;

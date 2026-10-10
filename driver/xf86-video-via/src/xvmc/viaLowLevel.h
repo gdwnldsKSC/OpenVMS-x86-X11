@@ -22,15 +22,12 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-
 /*
  * Authors: Thomas Hellström 2004 - 2005.
  */
 
-
-#ifndef VIA_LOWLEVEL_H                  
+#ifndef VIA_LOWLEVEL_H
 #define VIA_LOWLEVEL_H
-
 
 /*
  * The below define is cache size sensitive. Increasing the AGP buffer size
@@ -64,7 +61,7 @@
 #define VIA_SLICEBUSYMASK        0x00000200
 #define VIA_BUSYMASK             0x00000207
 #define VIA_SLICEIDLEVAL         0x00000200
-#define VIA_IDLEVAL              0x00000204   
+#define VIA_IDLEVAL              0x00000204
 
 #include "via_drm.h"
 #include "viaXvMCPriv.h"
@@ -83,13 +80,11 @@
      (r1).w == (r2).w &&				\
      (r1).h == (r2).h)
 
-
-
 extern void
-*initXvMCLowLevel(int fd, drm_context_t *ctx,
-		 drmLockPtr hwLock, drmAddress mmioAddress, 
-		 drmAddress fbAddress, unsigned fbStride, unsigned fbDepth,
-		 unsigned width, unsigned height, int useAgp, unsigned chipId );
+    *initXvMCLowLevel(int fd, drm_context_t * ctx,
+    drmLockPtr hwLock, drmAddress mmioAddress,
+    drmAddress fbAddress, unsigned fbStride, unsigned fbDepth,
+    unsigned width, unsigned height, int useAgp, unsigned chipId);
 
 extern void setLowLevelLocking(void *xlp, int perFormLocking);
 extern void closeXvMCLowLevel(void *xlp);
@@ -97,48 +92,44 @@ extern void flushPCIXvMCLowLevel(void *xlp);
 extern CARD32 viaDMATimeStampLowLevel(void *xlp);
 extern void setAGPSyncLowLevel(void *xlp, int val, CARD32 timeStamp);
 
-
 /*
  * These two functions also return and clear the current error status.
  */
 
 extern unsigned flushXvMCLowLevel(void *xlp);
 extern unsigned syncXvMCLowLevel(void *xlp, unsigned int mode,
-				 unsigned int doSleep, CARD32 timeStamp);
+    unsigned int doSleep, CARD32 timeStamp);
 
-extern void hwlUnlock(void *xlp, int videoLock); 
-extern void hwlLock(void *xlp, int videoLock); 
+extern void hwlUnlock(void *xlp, int videoLock);
+extern void hwlLock(void *xlp, int videoLock);
 
 extern void viaVideoSetSWFLipLocked(void *xlp, unsigned yOffs, unsigned uOffs,
-				    unsigned vOffs, unsigned yStride, unsigned uvStride);
+    unsigned vOffs, unsigned yStride, unsigned uvStride);
 
 extern void viaMpegReset(void *xlp);
-extern void viaMpegWriteSlice(void *xlp, CARD8* slice, 
-				    int nBytes, CARD32 sCode);
-extern void viaMpegSetSurfaceStride(void *xlp, ViaXvMCContext *ctx);
-extern void viaMpegSetFB(void *xlp,unsigned i, unsigned yOffs,
-			       unsigned uOffs, unsigned vOffs);
-extern void viaMpegBeginPicture(void *xlp, ViaXvMCContext *ctx,unsigned width,
-				unsigned height,const XvMCMpegControl *control);
+extern void viaMpegWriteSlice(void *xlp, CARD8 * slice,
+    int nBytes, CARD32 sCode);
+extern void viaMpegSetSurfaceStride(void *xlp, ViaXvMCContext * ctx);
+extern void viaMpegSetFB(void *xlp, unsigned i, unsigned yOffs,
+    unsigned uOffs, unsigned vOffs);
+extern void viaMpegBeginPicture(void *xlp, ViaXvMCContext * ctx,
+    unsigned width, unsigned height, const XvMCMpegControl * control);
 
 /*
  * Low-level Video functions in viaLowLevel.c
- */ 
+ */
 
-
-extern void viaBlit(void *xlp,unsigned bpp,unsigned srcBase,
-		    unsigned srcPitch,unsigned dstBase,unsigned dstPitch,
-		    unsigned w,unsigned h,int xdir,int ydir, 
-		    unsigned blitMode, unsigned color); 
+extern void viaBlit(void *xlp, unsigned bpp, unsigned srcBase,
+    unsigned srcPitch, unsigned dstBase, unsigned dstPitch,
+    unsigned w, unsigned h, int xdir, int ydir,
+    unsigned blitMode, unsigned color);
 
 extern void viaVideoSWFlipLocked(void *xlp, unsigned flags,
-				 int progressiveSequence);
+    int progressiveSequence);
 
-extern void viaVideoSubPictureLocked(void *xlp,ViaXvMCSubPicture *pViaSubPic);
+extern void viaVideoSubPictureLocked(void *xlp,
+    ViaXvMCSubPicture * pViaSubPic);
 extern void viaVideoSubPictureOffLocked(void *xlp);
-
-
-
 
 #define PCI_CHIP_VT3204         0x3108 /* K8M800 */
 #define PCI_CHIP_VT3259         0x3118 /* PM800/PM880/CN400 */

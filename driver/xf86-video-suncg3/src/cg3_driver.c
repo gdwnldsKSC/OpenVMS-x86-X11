@@ -29,7 +29,6 @@
 #define PSZ 8
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Version.h"
 #include "mipointer.h"
 #include "mibstore.h"
@@ -62,11 +61,11 @@ static ModeStatus CG3ValidMode(int scrnIndex, DisplayModePtr mode,
 
 void CG3Sync(ScrnInfoPtr pScrn);
 
-#define VERSION 4000
+#define CG3_VERSION 4000
 #define CG3_NAME "SUNCG3"
 #define CG3_DRIVER_NAME "suncg3"
 #define CG3_MAJOR_VERSION 1
-#define CG3_MINOR_VERSION 0
+#define CG3_MINOR_VERSION 1
 #define CG3_PATCHLEVEL 0
 
 /* 
@@ -78,7 +77,7 @@ void CG3Sync(ScrnInfoPtr pScrn);
  */
 
 _X_EXPORT DriverRec SUNCG3 = {
-    VERSION,
+    CG3_VERSION,
     CG3_DRIVER_NAME,
     CG3Identify,
     CG3Probe,
@@ -252,7 +251,7 @@ CG3Probe(DriverPtr drv, int flags)
 	    pScrn = xf86AllocateScreen(drv, 0);
 
 	    /* Fill in what we can of the ScrnInfoRec */
-	    pScrn->driverVersion = VERSION;
+	    pScrn->driverVersion = CG3_VERSION;
 	    pScrn->driverName	 = CG3_DRIVER_NAME;
 	    pScrn->name		 = CG3_NAME;
 	    pScrn->Probe	 = CG3Probe;

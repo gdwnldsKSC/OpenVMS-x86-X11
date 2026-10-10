@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sisusb/src/sisusb_driver.c,v 1.16 2005/09/28 18:48:30 twini Exp $ */
 /*
  * SiSUSB driver main code
  *

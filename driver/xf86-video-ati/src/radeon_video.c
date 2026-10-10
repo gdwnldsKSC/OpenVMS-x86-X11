@@ -4,6 +4,11 @@
 #include "config.h"
 #endif
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
+
 #include "radeon.h"
 #include "radeon_reg.h"
 #include "radeon_macros.h"
@@ -13,7 +18,7 @@
 
 #include "xf86.h"
 #include "dixstruct.h"
-#include "xf86PciInfo.h"
+#include "atipciids.h"
 #include "xf86fbman.h"
 
 #include <X11/extensions/Xv.h>
@@ -85,7 +90,8 @@ static void RADEONQueryBestSize(ScrnInfoPtr, Bool, short, short, short, short,
 			unsigned int *, unsigned int *, pointer);
 static int  RADEONPutImage(ScrnInfoPtr, short, short, short, short, short,
 			short, short, short, int, unsigned char*, short,
-			short, Bool, RegionPtr, pointer);
+			short, Bool, RegionPtr, pointer,
+			DrawablePtr);
 static int  RADEONQueryImageAttributes(ScrnInfoPtr, int, unsigned short *,
 			unsigned short *,  int *, int *);
 static void RADEONFreeMemory(ScrnInfoPtr pScrn, void *mem_struct);
@@ -93,7 +99,7 @@ static void RADEONFreeMemory(ScrnInfoPtr pScrn, void *mem_struct);
 static void RADEONVideoTimerCallback(ScrnInfoPtr pScrn, Time now);
 static int RADEONPutVideo(ScrnInfoPtr pScrn, short src_x, short src_y, short drw_x, short drw_y,
                         short src_w, short src_h, short drw_w, short drw_h, 
-			RegionPtr clipBoxes, pointer data);
+			RegionPtr clipBoxes, pointer data, DrawablePtr pDraw);
 
 static void RADEON_board_setmisc(RADEONPortPrivPtr pPriv);
 static void RADEON_RT_SetEncoding(ScrnInfoPtr pScrn, RADEONPortPrivPtr pPriv);
@@ -928,7 +934,7 @@ static void RADEONSetTransform (ScrnInfoPtr pScrn,
     dwOvGOff = ((INT32)(OvGOff * 2.0)) & 0x1fff;
     dwOvBOff = ((INT32)(OvBOff * 2.0)) & 0x1fff;
 
-    if(info->ChipFamily < CHIP_FAMILY_RADEON)
+    if(info->ChipFamily == CHIP_FAMILY_RADEON)
     {
 	dwOvLuma =(((INT32)(OvLuma * 2048.0))&0x7fff)<<17;
 	dwOvRCb = (((INT32)(OvRCb * 2048.0))&0x7fff)<<1;
@@ -1115,10 +1121,10 @@ RADEONResetVideo(ScrnInfoPtr pScrn)
     sprintf(tmp, "INSTANCE:%d", pScrn->scrnIndex);
     pPriv->instance_id = MAKE_ATOM(tmp);
 
-    OUTREG(RADEON_OV0_SCALE_CNTL, 0x80000000);
+    OUTREG(RADEON_OV0_SCALE_CNTL, RADEON_SCALER_SOFT_RESET);
     OUTREG(RADEON_OV0_AUTO_FLIP_CNTL, 0);   /* maybe */
     OUTREG(RADEON_OV0_EXCLUSIVE_HORZ, 0);
-    OUTREG(RADEON_OV0_FILTER_CNTL, 0x0000000f);
+    OUTREG(RADEON_OV0_FILTER_CNTL, RADEON_FILTER_PROGRAMMABLE_COEF);
     OUTREG(RADEON_OV0_KEY_CNTL, RADEON_GRAPHIC_KEY_FN_EQ |
 				RADEON_VIDEO_KEY_FN_FALSE |
 				RADEON_CMP_MIX_OR);
@@ -1263,7 +1269,7 @@ static void RADEONSetupTheatre(ScrnInfoPtr pScrn, RADEONPortPrivPtr pPriv)
                         xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                                 "Unsupported reference clock frequency, Rage Theatre disabled\n");
                         t->theatre_num=-1;
-			xf86free(pPriv->theatre);
+			xfree(pPriv->theatre);
 			pPriv->theatre = NULL;
 			return;
                 }
@@ -2533,12 +2539,17 @@ RADEONDisplayVideo(
     /* the only place it is documented in is in ATI source code */
     /* we need twice as much space for 4 tap filtering.. */
     /* under special circumstances turn on 4 tap filtering */
-    if(!is_rgb && (step_by_y==1) && (step_by_uv==1) && (h_inc < (1<<12)) && (deinterlacing_method!=METHOD_WEAVE) 
+    /* disable this code for now as it has a DISASTROUS effect on image quality when upscaling
+       at least on rv250 (only as long as the drw_w*2 <=... requirement is still met of course) */
+#if 0
+    if(!is_rgb && (step_by_y==1) && (step_by_uv==1) && (h_inc < (1<<12))
+       && (deinterlacing_method!=METHOD_WEAVE)
        && (drw_w*2 <= pPriv->overlay_scaler_buffer_width)){
         step_by_y=0;
         step_by_uv=1;
         h_inc_uv = h_inc;
         }
+#endif
 
     /* keep everything in 16.16 */
 
@@ -2569,22 +2580,11 @@ RADEONDisplayVideo(
     left = (left >> 16) & 7;
 
     RADEONWaitForFifo(pScrn, 2);
-    OUTREG(RADEON_OV0_REG_LOAD_CNTL, 1);
+    OUTREG(RADEON_OV0_REG_LOAD_CNTL, RADEON_REG_LD_CTL_LOCK);
     if (info->accelOn) RADEON_SYNC(info, pScrn);
-    while(!(INREG(RADEON_OV0_REG_LOAD_CNTL) & (1 << 3)));
+    while(!(INREG(RADEON_OV0_REG_LOAD_CNTL) & RADEON_REG_LD_CTL_LOCK_READBACK));
 
-    dsr=(double)(1<<0xC)/h_inc;
-    if(dsr<0.25)dsr=0.25;
-    if(dsr>1.0)dsr=1.0;
-    tap_set=(int)((dsr-0.25)*100);
-    for(i=0;i<5;i++){
-	    OUTREG(RADEON_OV0_FOUR_TAP_COEF_0+i*4, (TapCoeffs[tap_set].coeff[i][0] &0xf) | 
-	    	((TapCoeffs[tap_set].coeff[i][1] &0x7f)<<8) | 
-	    	((TapCoeffs[tap_set].coeff[i][2] &0x7f)<<16) | 
-	    	((TapCoeffs[tap_set].coeff[i][3] &0xf)<<24));
-		}
-
-    RADEONWaitForFifo(pScrn, 14);
+    RADEONWaitForFifo(pScrn, 10);
     OUTREG(RADEON_OV0_H_INC, h_inc | ((h_inc_uv >> 1) << 16));
     OUTREG(RADEON_OV0_STEP_BY, step_by_y | (step_by_uv << 8));
 
@@ -2623,7 +2623,7 @@ RADEONDisplayVideo(
                                       ((dstBox->y1*y_mult) << 16)));
         OUTREG(RADEON_OV1_Y_X_END,   ((dstBox->x2 + x_off) |
                                       ((dstBox->y2*y_mult) << 16)));
-        scaler_src = (1 << 14);
+        scaler_src = RADEON_SCALER_CRTC_SEL;
     } else {
 	OUTREG(RADEON_OV0_Y_X_START, ((dstBox->x1 + x_off) |
 				      (((dstBox->y1*y_mult) + y_off) << 16)));
@@ -2632,7 +2632,9 @@ RADEONDisplayVideo(
 	scaler_src = 0;
     }
 
-
+    /* program the tap coefficients for better downscaling quality.
+       Could do slightly better by using hardcoded coefficients for one axis
+       in case only the other axis is downscaled (see RADEON_OV0_FILTER_CNTL) */
     dsr=(double)(1<<0xC)/h_inc;
     if(dsr<0.25)dsr=0.25;
     if(dsr>1.0)dsr=1.0;
@@ -2669,31 +2671,26 @@ RADEONDisplayVideo(
         | RADEON_SCALER_ENABLE | RADEON_SCALER_SMART_SWITCH | (0x7f<<16) | scaler_src;
    switch(id){
         case FOURCC_UYVY:
-                OUTREG(RADEON_OV0_SCALE_CNTL, RADEON_SCALER_SOURCE_YVYU422 | scale_cntl);
-                break;
+		scale_cntl |= RADEON_SCALER_SOURCE_YVYU422;
         case FOURCC_RGB24:
         case FOURCC_RGBA32:
-                OUTREG(RADEON_OV0_SCALE_CNTL, RADEON_SCALER_SOURCE_32BPP | scale_cntl | 0x10000000);
-                break;
-        case FOURCC_RGBT16:
-                OUTREG(RADEON_OV0_SCALE_CNTL, RADEON_SCALER_SOURCE_16BPP 
-                        | 0x10000000 
-                        | scale_cntl);
-                break;
+		scale_cntl |= RADEON_SCALER_SOURCE_32BPP | RADEON_SCALER_LIN_TRANS_BYPASS;
+		break;
         case FOURCC_RGB16:
-                OUTREG(RADEON_OV0_SCALE_CNTL, RADEON_SCALER_SOURCE_16BPP 
-                        | 0x10000000 
-                        | scale_cntl);
-                break;
+		scale_cntl |= RADEON_SCALER_SOURCE_16BPP | RADEON_SCALER_LIN_TRANS_BYPASS;
+		break;
+        case FOURCC_RGBT16:
+		scale_cntl |= RADEON_SCALER_SOURCE_15BPP | RADEON_SCALER_LIN_TRANS_BYPASS;
+		break;
         case FOURCC_YUY2:
         case FOURCC_YV12:
         case FOURCC_I420:
         default:
-                OUTREG(RADEON_OV0_SCALE_CNTL,  RADEON_SCALER_SOURCE_VYUY422 
-                        | ((info->ChipFamily>=CHIP_FAMILY_R200) ? RADEON_SCALER_TEMPORAL_DEINT :0) 
-                        | scale_cntl);
-        }
-
+		scale_cntl |= RADEON_SCALER_SOURCE_VYUY422
+			| ((info->ChipFamily >= CHIP_FAMILY_R200) ? RADEON_SCALER_TEMPORAL_DEINT : 0);
+		break;
+    }
+    OUTREG(RADEON_OV0_SCALE_CNTL, scale_cntl);
     OUTREG(RADEON_OV0_REG_LOAD_CNTL, 0);
 }
 
@@ -2708,7 +2705,8 @@ RADEONPutImage(
   int id, unsigned char* buf,
   short width, short height,
   Bool Sync,
-  RegionPtr clipBoxes, pointer data
+  RegionPtr clipBoxes, pointer data,
+  DrawablePtr pDraw
 ){
    RADEONInfoPtr info = RADEONPTR(pScrn);
    RADEONPortPrivPtr pPriv = (RADEONPortPrivPtr)data;
@@ -2783,11 +2781,8 @@ RADEONPutImage(
    	dstPitch=(width*4+0x0f)&(~0x0f);
 	srcPitch=width*4;
 	break;
-   case FOURCC_RGBT16:
-   	dstPitch=(width*2+0x0f)&(~0x0f);
-	srcPitch=(width*2+3)&(~0x03);
-	break;
    case FOURCC_RGB16:
+   case FOURCC_RGBT16:
    	dstPitch=(width*2+0x0f)&(~0x0f);
 	srcPitch=(width*2+3)&(~0x03);
 	break;
@@ -3190,7 +3185,8 @@ RADEONPutVideo(
   short drw_x, short drw_y,
   short src_w, short src_h,
   short drw_w, short drw_h,
-  RegionPtr clipBoxes, pointer data
+  RegionPtr clipBoxes, pointer data,
+  DrawablePtr pDraw
 ){
    RADEONInfoPtr info = RADEONPTR(pScrn);
    RADEONPortPrivPtr pPriv = (RADEONPortPrivPtr)data;

@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis300_accel.c,v 1.23 2006/03/09 06:06:25 anholt Exp $ */
 /*
  * 2D Acceleration for SiS 530, 620, 300, 540, 630, 730.
  *
@@ -1101,7 +1101,7 @@ SiS300AccelInit(ScreenPtr pScreen)
 #endif
 #ifdef SIS_USE_EXA
 	   if(pSiS->useEXA) {
-	      if(!(pSiS->EXADriverPtr = xnfcalloc(sizeof(ExaDriverRec), 1))) {
+	      if(!(pSiS->EXADriverPtr = exaDriverAlloc())) {
 		 pSiS->NoAccel = TRUE;
 		 pSiS->NoXvideo = TRUE; /* No fbmem manager -> no xv */
 	      }
@@ -1233,48 +1233,51 @@ SiS300AccelInit(ScreenPtr pScreen)
 #ifdef SIS_USE_EXA	/* ----------------------- EXA ----------------------- */
 	   if(pSiS->useEXA) {
 
+	      pSiS->EXADriverPtr->exa_major = 2;
+	      pSiS->EXADriverPtr->exa_major = 0;
+
 	      if(pSiS->scrnOffset < 8192) {
 
 		 /* data */
-		 pSiS->EXADriverPtr->card.memoryBase = pSiS->FbBase;
-		 pSiS->EXADriverPtr->card.memorySize = pSiS->maxxfbmem;
-		 pSiS->EXADriverPtr->card.offScreenBase = pScrn->virtualX * pScrn->virtualY
+		 pSiS->EXADriverPtr->memoryBase = pSiS->FbBase;
+		 pSiS->EXADriverPtr->memorySize = pSiS->maxxfbmem;
+		 pSiS->EXADriverPtr->offScreenBase = pScrn->virtualX * pScrn->virtualY
 						* ((pScrn->bitsPerPixel + 7) / 8);
-		 if(pSiS->EXADriverPtr->card.memorySize > pSiS->EXADriverPtr->card.offScreenBase) {
-		    pSiS->EXADriverPtr->card.flags = EXA_OFFSCREEN_PIXMAPS;
+		 if(pSiS->EXADriverPtr->memorySize > pSiS->EXADriverPtr->offScreenBase) {
+		    pSiS->EXADriverPtr->flags = EXA_OFFSCREEN_PIXMAPS;
 		 } else {
 		    pSiS->NoXvideo = TRUE;
 		    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 			"Not enough video RAM for offscreen memory manager. Xv disabled\n");
 		 }
-		 pSiS->EXADriverPtr->card.pixmapOffsetAlign = 16;	/* src/dst: double quad word boundary */
-		 pSiS->EXADriverPtr->card.pixmapPitchAlign = 4;		/* pitch:   double word boundary      */
+		 pSiS->EXADriverPtr->pixmapOffsetAlign = 16;	/* src/dst: double quad word boundary */
+		 pSiS->EXADriverPtr->pixmapPitchAlign = 4;		/* pitch:   double word boundary      */
 		 if(pSiS->VGAEngine == SIS_300_VGA) {
-		    pSiS->EXADriverPtr->card.maxX = 4095;
-		    pSiS->EXADriverPtr->card.maxY = 4095;
+		    pSiS->EXADriverPtr->maxX = 4095;
+		    pSiS->EXADriverPtr->maxY = 4095;
 		 } else {
-		    pSiS->EXADriverPtr->card.maxX = 2047;
-		    pSiS->EXADriverPtr->card.maxY = 2047;
+		    pSiS->EXADriverPtr->maxX = 2047;
+		    pSiS->EXADriverPtr->maxY = 2047;
 		 }
 
 		 /* Sync */
-		 pSiS->EXADriverPtr->accel.WaitMarker = SiSEXASync;
+		 pSiS->EXADriverPtr->WaitMarker = SiSEXASync;
 
 		 /* Solid fill */
-		 pSiS->EXADriverPtr->accel.PrepareSolid = SiSPrepareSolid;
-		 pSiS->EXADriverPtr->accel.Solid = SiSSolid;
-		 pSiS->EXADriverPtr->accel.DoneSolid = SiSDoneSolid;
+		 pSiS->EXADriverPtr->PrepareSolid = SiSPrepareSolid;
+		 pSiS->EXADriverPtr->Solid = SiSSolid;
+		 pSiS->EXADriverPtr->DoneSolid = SiSDoneSolid;
 
 		 /* Copy */
-		 pSiS->EXADriverPtr->accel.PrepareCopy = SiSPrepareCopy;
-		 pSiS->EXADriverPtr->accel.Copy = SiSCopy;
-		 pSiS->EXADriverPtr->accel.DoneCopy = SiSDoneCopy;
+		 pSiS->EXADriverPtr->PrepareCopy = SiSPrepareCopy;
+		 pSiS->EXADriverPtr->Copy = SiSCopy;
+		 pSiS->EXADriverPtr->DoneCopy = SiSDoneCopy;
 
 		 /* Composite not supported */
 
 		 /* Upload, download to/from Screen */
-		 pSiS->EXADriverPtr->accel.UploadToScreen = SiSUploadToScreen;
-		 pSiS->EXADriverPtr->accel.DownloadFromScreen = SiSDownloadFromScreen;
+		 pSiS->EXADriverPtr->UploadToScreen = SiSUploadToScreen;
+		 pSiS->EXADriverPtr->DownloadFromScreen = SiSDownloadFromScreen;
 
 	      } else {
 
@@ -1369,7 +1372,7 @@ SiS300AccelInit(ScreenPtr pScreen)
 						SiSScratchSave, pSiS);
 	      if(pSiS->exa_scratch) {
 		 pSiS->exa_scratch_next = pSiS->exa_scratch->offset;
-		 pSiS->EXADriverPtr->accel.UploadToScratch = SiSUploadToScratch;
+		 pSiS->EXADriverPtr->UploadToScratch = SiSUploadToScratch;
 	      }
 
 	   } else {

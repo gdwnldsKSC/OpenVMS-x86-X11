@@ -1,5 +1,5 @@
 /*************************************************************************************
- * $Id: theatre200.h,v 1.5 2005/12/08 17:54:40 kem Exp $
+ * $Id: theatre200.h,v 1.4 2005/11/07 19:28:40 bogdand Exp $
  * 
  * Copyright (C) 2005 Bogdan D. bogdand@users.sourceforge.net
  *
@@ -23,9 +23,6 @@
  * authorization from the author.
  *
  * $Log: theatre200.h,v $
- * Revision 1.5  2005/12/08 17:54:40  kem
- * 	Allow hard-coded paths to be configurable.
- *
  * Revision 1.4  2005/11/07 19:28:40  bogdand
  * Replaced the variadic macros(gcc) by macros according to C99 standard
  *

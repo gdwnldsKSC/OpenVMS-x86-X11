@@ -1,3 +1,12 @@
+2006-03-10  Daniel Stone  <daniel@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2; release.
+
+	* setxkbmap.c:
+	Initialise vd.variant and vd.variant to NULL when failing to get
+	the active RMLVO components from the server.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

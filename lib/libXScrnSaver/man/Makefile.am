@@ -27,6 +27,8 @@
 
 libmandir = $(LIB_MAN_DIR)
 
+LIB_MAN_DIR_SUFFIX = $(LIB_MAN_DIR:@mandir@/man%=%)
+
 libman_PRE = Xss.man
 
 BUILT_SOURCES = shadows.DONE
@@ -66,10 +68,11 @@ Xss_shadows = 				\
 	XScreenSaverUnsetAttributes	\
 	XScreenSaverRegister		\
 	XScreenSaverUnregister		\
-	XScreenSaverGetRegistered
+	XScreenSaverGetRegistered	\
+	XScreenSaverSuspend
 
 shadows.DONE:
 	-rm -f $(Xss_shadows:=.@LIB_MAN_SUFFIX@)
 	(for i in $(Xss_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/Xss.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/Xss.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)

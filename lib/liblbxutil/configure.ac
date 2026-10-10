@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id: configure.ac,v 1.9 2005/12/15 00:24:36 kem Exp $
+dnl  $Id: configure.ac,v 1.8 2005/12/03 05:49:46 kem Exp $
 dnl 
 dnl  Copyright © 2003 Keith Packard, Noah Levitt
 dnl 
@@ -25,16 +25,7 @@ dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
 
-dnl
-dnl Version should match the current XFixes version. XFixesQueryVersion
-dnl returns the version from xfixeswire.h, NOT the version we set here. But we
-dnl try to keep these the same.  Note that the library has an extra
-dnl digit in the version number to track changes which don't affect the
-dnl protocol, so Xfixes version l.n.m corresponds to protocol version l.n,
-dnl that 'revision' number appears in Xfixes.h and has to be manually
-dnl synchronized.
-dnl
-AC_INIT(lbxutil, 1.0.0, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], liblbxutil)
+AC_INIT(lbxutil, 1.0.1, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], liblbxutil)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

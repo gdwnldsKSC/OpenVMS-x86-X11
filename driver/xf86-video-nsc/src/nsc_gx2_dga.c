@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_gx2_dga.c,v 1.1 2002/12/10 15:12:24 alanh Exp $ */
 /*
  * $Workfile: nsc_gx2_dga.c $
- * $Revision: 1.4 $
- * $Author: ajax $
+ * $Revision: 1.3 $
+ * $Author: daniels $
  * 
  * File contents: DGA(Direct Acess Graphics mode) is feature of
  *                XFree86 that allows the program to access directly to video
@@ -149,7 +149,6 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
 #include "xaa.h"

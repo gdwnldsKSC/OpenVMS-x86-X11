@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-trident],
-        1.0.1.2,
+        1.2.1,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-trident)
 
@@ -55,7 +55,7 @@ XORG_DRIVER_CHECK_EXT(DPMSExtension, xextproto)
 XORG_DRIVER_CHECK_EXT(XFreeXDGA, xf86dgaproto)
 
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XORG, [xorg-server xproto fontsproto $REQUIRED_MODULES])
+PKG_CHECK_MODULES(XORG, [xorg-server >= 1.0.99.901 xproto fontsproto $REQUIRED_MODULES])
 sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 
 # Checks for libraries.

@@ -1,5 +1,5 @@
 /* $Xorg: x11perf.c,v 1.4 2000/08/17 19:54:10 cpqbld Exp $ */
-/* $XdotOrg: $ */
+/* $XdotOrg: app/x11perf/x11perf.c,v 1.4 2006/02/14 02:48:22 anholt Exp $ */
 /****************************************************************************
 Copyright 1988, 1989 by Digital Equipment Corporation, Maynard, Massachusetts.
 
@@ -23,10 +23,6 @@ SOFTWARE.
 
 ****************************************************************************/
 /* $XFree86: xc/programs/x11perf/x11perf.c,v 3.6 2001/11/03 21:59:20 dawes Exp $ */
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 #include <stdio.h>
 #include <ctype.h>

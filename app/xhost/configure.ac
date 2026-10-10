@@ -1,7 +1,7 @@
-# $XdotOrg: $
+# $XdotOrg: app/xhost/configure.ac,v 1.11 2006/04/15 00:10:10 ajax Exp $
 
 AC_PREREQ([2.57])
-AC_INIT(xhost,[1.0.0], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xhost)
+AC_INIT(xhost,[1.0.1], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xhost)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

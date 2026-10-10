@@ -1,9 +1,9 @@
-.\" $XFree86$
+.\" $XdotOrg: driver/xf86-input-magictouch/man/magictouch.man,v 1.3 2006/02/03 23:27:57 alanc Exp $
 .\" shorthand for double quote that works everywhere.
 .ds q \N'34'
-.TH VOID __drivermansuffix__ __vendorversion__
+.TH MAGICTOUCH __drivermansuffix__ __vendorversion__
 .SH NAME
-void \- null input driver
+magictouch \- MagicTouch input driver
 .SH SYNOPSIS
 .nf
 .B "Section \*qInputDevice\*q"

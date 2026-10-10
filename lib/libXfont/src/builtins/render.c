@@ -1,4 +1,4 @@
-/* $XdotOrg: $ */
+/* $XdotOrg: lib/Xfont/src/builtins/render.c,v 1.5 2005/07/30 18:56:32 alanc Exp $ */
 /*
  * Id: render.c,v 1.2 1999/11/02 06:16:48 keithp Exp $
  *
@@ -115,3 +115,4 @@ BuiltinRegisterFontFileFunctions(void)
     for (i = 0; i < numRenderers; i++)
 	FontFileRegisterRenderer ((FontRendererRec *) &renderers[i]);
 }
+

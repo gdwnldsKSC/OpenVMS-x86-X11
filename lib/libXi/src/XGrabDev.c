@@ -60,31 +60,31 @@ SOFTWARE.
 #include <X11/extensions/extutil.h>
 #include "XIint.h"
 
-int 
-XGrabDevice (dpy, dev, grab_window, ownerEvents, event_count, event_list,
-	this_device_mode, other_devices_mode, time)
-    register Display 	*dpy;
-    XDevice		*dev;
-    Window 		grab_window;
-    Bool 		ownerEvents;
-    int			event_count;
-    XEventClass		*event_list;
-    int 		this_device_mode;
-    int 		other_devices_mode;
-    Time 		time;
-    {
+int
+XGrabDevice(dpy, dev, grab_window, ownerEvents, event_count, event_list,
+	    this_device_mode, other_devices_mode, time)
+    register Display *dpy;
+    XDevice *dev;
+    Window grab_window;
+    Bool ownerEvents;
+    int event_count;
+    XEventClass *event_list;
+    int this_device_mode;
+    int other_devices_mode;
+    Time time;
+{
     xGrabDeviceReply rep;
     register xGrabDeviceReq *req;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return (NoSuchExtension);
 
-    GetReq(GrabDevice,req);		
+    GetReq(GrabDevice, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_GrabDevice;
-    
+
     req->deviceid = dev->device_id;
     req->grabWindow = grab_window;
     req->ownerEvents = ownerEvents;
@@ -95,15 +95,15 @@ XGrabDevice (dpy, dev, grab_window, ownerEvents, event_count, event_list,
     req->length += event_count;
 
     /* note: Data is a macro that uses its arguments multiple
-       times, so "nvalues" is changed in a separate assignment
-       statement */
+     * times, so "nvalues" is changed in a separate assignment
+     * statement */
 
     event_count <<= 2;
-    Data32 (dpy, (long *) event_list, event_count);
+    Data32(dpy, (long *)event_list, event_count);
 
-    if (_XReply (dpy, (xReply *) &rep, 0, xTrue) == 0) 
+    if (_XReply(dpy, (xReply *) & rep, 0, xTrue) == 0)
 	rep.status = GrabSuccess;
     UnlockDisplay(dpy);
     SyncHandle();
     return (rep.status);
-    }
+}

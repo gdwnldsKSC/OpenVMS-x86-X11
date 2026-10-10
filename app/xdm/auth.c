@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/xdm/auth.c,v 1.2 2004/04/23 19:54:42 eich Exp $ */
+/* $XdotOrg: app/xdm/auth.c,v 1.5 2005/11/08 06:33:31 jkj Exp $ */
 /* $Xorg: auth.c,v 1.5 2001/02/09 02:05:40 xorgcvs Exp $ */
 /*
 

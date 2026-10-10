@@ -1,4 +1,4 @@
-/* $XdotOrg: $ */
+/* $XdotOrg: lib/Xt/util/makestrs.c,v 1.4 2005/05/24 15:58:51 ago Exp $ */
 
 /*
 

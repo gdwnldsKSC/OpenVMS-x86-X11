@@ -1,5 +1,7 @@
 libmandir = $(LIB_MAN_DIR)
 
+LIB_MAN_DIR_SUFFIX = $(LIB_MAN_DIR:@mandir@/man%=%)
+
 libman_PRE = \
 	XtAddActions.man \
 	XtAddCallback.man \
@@ -536,218 +538,218 @@ XtOpenApplication_shadows =                 \
 shadows.DONE:
 	-rm -f $(all_aliases:=.@LIB_MAN_SUFFIX@)
 	(for i in $(XtAddCallback_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAddCallback.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAddCallback.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAddEventHandler_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAddEventHandler.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAddEventHandler.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAddGrab_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAddGrab.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAddGrab.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppAddConverter_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppAddConverter.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppAddConverter.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppAddInput_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppAddInput.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppAddInput.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppAddTimeOut_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppAddTimeOut.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppAddTimeOut.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppAddTimeOut_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppAddTimeOut.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppAddTimeOut.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppAddWorkProc_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppAddWorkProc.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppAddWorkProc.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppCreateShell_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppCreateShell.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppCreateShell.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppError_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppError.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppError.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppErrorMsg_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppErrorMsg.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppErrorMsg.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppGetErrorDatabase_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppGetErrorDatabase.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppGetErrorDatabase.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppGetSelectionTimeout_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppGetSelectionTimeout.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppGetSelectionTimeout.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppNextEvent_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppNextEvent.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppNextEvent.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtNextEvent_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtNextEvent.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtNextEvent.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtCallCallbacks_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtCallCallbacks.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtCallCallbacks.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtClass_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtClass.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtClass.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtConfigureWidget_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtConfigureWidget.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtConfigureWidget.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtConvert_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtConvert.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtConvert.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtConvertAndStore_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtConvertAndStore.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtConvertAndStore.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtCreateApplicationContext_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtCreateApplicationContext.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtCreateApplicationContext.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtCreatePopupShell_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtCreatePopupShell.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtCreatePopupShell.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtCreateWidget_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtCreateWidget.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtCreateWidget.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtDisplay_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtDisplay.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtDisplay.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtDisplayInitialize_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtDisplayInitialize.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtDisplayInitialize.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtGetGC_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtGetGC.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtGetGC.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtGetResourceList_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtGetResourceList.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtGetResourceList.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtGetSelectionValue_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtGetSelectionValue.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtGetSelectionValue.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtGetSubresources_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtGetSubresources.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtGetSubresources.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtGetApplicationResources_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtGetApplicationResources.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtGetApplicationResources.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtMakeGeometryRequest_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtMakeGeometryRequest.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtMakeGeometryRequest.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtMalloc_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtMalloc.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtMalloc.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtManageChildren_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtManageChildren.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtManageChildren.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtMapWidget_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtMapWidget.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtMapWidget.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtNameToWidget_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtNameToWidget.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtNameToWidget.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtOffset_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtOffset.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtOffset.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtOwnSelection_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtOwnSelection.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtOwnSelection.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtParseAcceleratorTable_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtParseAcceleratorTable.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtParseAcceleratorTable.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtParseTranslationTable_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtParseTranslationTable.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtParseTranslationTable.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtPopdown_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtPopdown.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtPopdown.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtPopup_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtPopup.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtPopup.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtRealizeWidget_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtRealizeWidget.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtRealizeWidget.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtSetArg_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtSetArg.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtSetArg.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtSetKeyTranslator_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtSetKeyTranslator.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtSetKeyTranslator.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtSetSensitive_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtSetSensitive.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtSetSensitive.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtSetValues_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtSetValues.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtSetValues.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtGetKeysymTable_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtGetKeysymTable.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtGetKeysymTable.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppSetTypeConverter_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppSetTypeConverter.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppSetTypeConverter.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppAddActionHook_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppAddActionHook.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppAddActionHook.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtSetMultiClickTime_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtSetMultiClickTime.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtSetMultiClickTime.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtInsertEventTypeHandler_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtInsertEventTypeHandler.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtInsertEventTypeHandler.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtLastEventProcessed_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtLastEventProcessed.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtLastEventProcessed.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppAddSignal_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppAddSignal.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppAddSignal.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAddInput_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAddInput.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAddInput.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAddInput_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAddInput.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAddInput.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAddInput_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAddInput.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAddInput.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppAddBlockHook_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppAddBlockHook.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppAddBlockHook.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppInitialize_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppInitialize.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppInitialize.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtSessionGetToken_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtSessionGetToken.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtSessionGetToken.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtErrorMsg_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtErrorMsg.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtErrorMsg.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtError_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtError.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtError.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtGetErrorDatabase_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtGetErrorDatabase.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtGetErrorDatabase.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtGetSelectionValueIncremental_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtGetSelectionValueIncremental.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtGetSelectionValueIncremental.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtGetSelectionTimeout_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtGetSelectionTimeout.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtGetSelectionTimeout.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtCreateSelectionRequest_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtCreateSelectionRequest.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtCreateSelectionRequest.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtReservePropertyAtom_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtReservePropertyAtom.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtReservePropertyAtom.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtGrabKey_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtGrabKey.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtGrabKey.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtRegisterDrawable_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtRegisterDrawable.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtRegisterDrawable.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppSetExitFlag_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppSetExitFlag.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppSetExitFlag.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtAppLock_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtAppLock.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtAppLock.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtProcessLock_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtProcessLock.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtProcessLock.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)
 	(for i in $(XtOpenApplication_shadows:=.@LIB_MAN_SUFFIX@) ; do \
-	 echo .so man$(LIB_MAN_SUFFIX)/XtOpenApplication.$(LIB_MAN_SUFFIX) > $$i; \
+	 echo .so man$(LIB_MAN_DIR_SUFFIX)/XtOpenApplication.$(LIB_MAN_SUFFIX) > $$i; \
 	 done)

@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis_cursor.c,v 1.14 2005/09/16 13:46:39 twini Exp $ */
 /*
  * SiS hardware cursor handling
  *

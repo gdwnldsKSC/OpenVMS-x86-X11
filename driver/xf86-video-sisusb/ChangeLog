@@ -1,3 +1,21 @@
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/sisusb.h:
+	Bump to 0.8.1 for Xv changes.
+
+2006-04-07  Aaron Plattner  <aplattner@nvidia.com>
+
+	* src/sisusb_video.c: (SISUSBPutImage):
+	Add a DrawablePtr argument to the XV functions to pave the way for
+	redirected video.
+
+2006-04-07  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	* src/sisusb.h:
+	Unlibcwrap.  Bump server version requirement.  Bump to 0.8.0.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

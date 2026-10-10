@@ -21,7 +21,7 @@
 #define BIGREQS 1
 
 /* Default font path */
-#define COMPILEDDEFAULTFONTPATH "/opt/debrix/lib/X11/fonts/misc/,/opt/debrix/lib/X11/fonts/TTF/,/opt/debrix/lib/X11/fonts/OTF,/opt/debrix/lib/X11/fonts/Type1/,/opt/debrix/lib/X11/fonts/CID/,/opt/debrix/lib/X11/fonts/100dpi/,/opt/debrix/lib/X11/fonts/75dpi/"
+#define COMPILEDDEFAULTFONTPATH "/usr/local/lib/X11/fonts/misc/,/usr/local/lib/X11/fonts/TTF/,/usr/local/lib/X11/fonts/OTF,/usr/local/lib/X11/fonts/Type1/,/usr/local/lib/X11/fonts/CID/,/usr/local/lib/X11/fonts/100dpi/,/usr/local/lib/X11/fonts/75dpi/"
 
 /* Support Composite Extension */
 #define COMPOSITE 1
@@ -168,10 +168,10 @@
 #define XORGSERVER 1
 
 /* Vendor release */
-#define XORG_RELEASE "Release 7.0"
+#define XORG_RELEASE "Release 7.1"
 
 /* Current Xorg version */
-#define XORG_VERSION_CURRENT (((7) * 10000000) + ((0) * 100000) + ((0) * 1000) + 0)
+#define XORG_VERSION_CURRENT (((7) * 10000000) + ((1) * 100000) + ((0) * 1000) + 0)
 
 /* Build Xv Extension */
 #define XvExtension 1
@@ -222,7 +222,7 @@
 #define __XSERVERNAME__ "Xorg"
 
 /* Define to 1 if unsigned long is 64 bits. */
-#define _XSERVER64 1
+/* #undef _XSERVER64 */
 
 /* Building vgahw module */
 #define WITH_VGAHW 1

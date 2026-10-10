@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_regacc.c,v 1.1 2002/12/10 15:12:25 alanh Exp $ */
 /*
  * $Workfile: nsc_regacc.c $
- * $Revision: 1.4 $
- * $Author: ajax $
+ * $Revision: 1.3 $
+ * $Author: daniels $
  *
  * This is the main file used to add Durango graphics support to a software 
  * project.  The main reason to have a single file include the other files

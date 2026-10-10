@@ -1,3 +1,20 @@
+2006-04-01  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.1.
+
+2006-01-16  Matthias Hopf  <mhopf@suse.de>
+
+	* xdriinfo.c:
+	GLX_GLXEXT_LEGACY -> GLX_GLXEXT_PROTOTYPES + glxext.h
+
+2006-01-13  Matthias Hopf  <mhopf@suse.de>
+
+	* configure.ac:
+	Using glXGetProcAddressARB instead of glXGetProcAddress.
+	* xdriinfo.c: (main):
+	Casting to GLubyte* to remove warning.
+
 2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

@@ -27,9 +27,10 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Version.h"
 #include "mipointer.h"
 #include "mibstore.h"
@@ -62,11 +63,11 @@ static ModeStatus LeoValidMode(int scrnIndex, DisplayModePtr mode,
 
 void LeoSync(ScrnInfoPtr pScrn);
 
-#define VERSION 4000
+#define LEO_VERSION 4000
 #define LEO_NAME "SUNLEO"
 #define LEO_DRIVER_NAME "sunleo"
 #define LEO_MAJOR_VERSION 1
-#define LEO_MINOR_VERSION 0
+#define LEO_MINOR_VERSION 1
 #define LEO_PATCHLEVEL 0
 
 /* 
@@ -78,7 +79,7 @@ void LeoSync(ScrnInfoPtr pScrn);
  */
 
 _X_EXPORT DriverRec SUNLEO = {
-    VERSION,
+    LEO_VERSION,
     LEO_DRIVER_NAME,
     LeoIdentify,
     LeoProbe,
@@ -261,7 +262,7 @@ LeoProbe(DriverPtr drv, int flags)
 	    pScrn = xf86AllocateScreen(drv, 0);
 
 	    /* Fill in what we can of the ScrnInfoRec */
-	    pScrn->driverVersion = VERSION;
+	    pScrn->driverVersion = LEO_VERSION;
 	    pScrn->driverName	 = LEO_DRIVER_NAME;
 	    pScrn->name		 = LEO_NAME;
 	    pScrn->Probe	 = LeoProbe;

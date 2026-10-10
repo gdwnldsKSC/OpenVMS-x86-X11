@@ -1,3 +1,13 @@
+2006-04-26  Adam Jackson  <ajax@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.0.2
+
+2006-04-03  Daniel Stone  <daniel@freedesktop.org>
+
+	* compat.c:
+	Bug #4851: Fix up have-no-file test.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

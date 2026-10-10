@@ -11,6 +11,7 @@
 #endif
 
 #include "newport.h"
+#include <values.h>
 
 #ifdef NEWPORT_ACCEL
 

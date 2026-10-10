@@ -1,6 +1,6 @@
 .\" Use tbl and -ms and macros.t	-*- Nroff -*-
 .\" $Xorg: xlfd.tbl.ms,v 1.3 2000/08/17 19:42:22 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/XLFD/xlfd.tbl.ms,v 1.2 2004/04/23 18:42:17 eich Exp $
+.\" $XdotOrg: doc/xorg-docs/specs/XLFD/xlfd.tbl.ms,v 1.3 2004/09/03 16:18:20 kem Exp $
 .nr sM 4		\" section on Matrix Transformations
 .nr sS 5		\" section on Scalable fonts
 .nr sP 6		\" section on Polymorphic font support

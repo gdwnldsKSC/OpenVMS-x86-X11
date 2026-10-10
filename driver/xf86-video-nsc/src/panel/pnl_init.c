@@ -1,7 +1,7 @@
 /* $XFree86$ */
 /*
  * $Workfile: pnl_init.c $
- * $Revision: 1.3 $
+ * $Revision$
  *
  * File Contents: This file contains the Geode frame buffer panel 
  *                intialization functions.

@@ -1,5 +1,5 @@
 .\"
-.\" $Id: Xcursor.man,v 1.4 2005/10/13 02:22:47 alanc Exp $
+.\" $Id: $
 .\"
 .\" Copyright © 2002 Keith Packard
 .\"

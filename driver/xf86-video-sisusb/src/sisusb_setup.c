@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sisusb/src/sisusb_setup.c,v 1.4 2005/07/11 02:30:00 ajax Exp $ */
 /*
  * Basic hardware and memory detection
  *

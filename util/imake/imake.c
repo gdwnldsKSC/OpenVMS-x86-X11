@@ -978,12 +978,22 @@ const char *libc_c=
 static void
 get_libc_version(FILE *inFile)
 {
-  char aout[] = "/tmp/imakeXXXXXX";
+  char aout[4096], *tmpdir;
   FILE *fp;
   const char *format = "%s -o %s -x c -";
   char *cc;
   int len;
   char *command;
+
+  /* If $TMPDIR is defined and has an acceptable length,
+   * use that as tmp dir, else use /tmp.  That fixes 
+   * problems with /tmp mounted "noexec".
+   */
+  if((tmpdir = getenv("TMPDIR")) != NULL && strlen(tmpdir) < (4096-13))
+    strcpy(aout, tmpdir);
+  else
+    strcpy(aout, "/tmp");
+  strcat(aout, "/imakeXXXXXX");
 
   /* Pre-create temp file safely */
   {
@@ -1000,7 +1010,8 @@ get_libc_version(FILE *inFile)
     cc = "gcc";
   len = strlen (aout) + strlen (format) + strlen (cc);
   if (len < 128) len = 128;
-  command = alloca (len);
+  if((command = alloca (len)) == NULL)
+    abort();
 
   if (snprintf (command , len, format, cc, aout) == len)
     abort ();

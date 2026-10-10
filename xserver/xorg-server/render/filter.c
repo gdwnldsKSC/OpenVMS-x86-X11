@@ -1,5 +1,5 @@
 /*
- * $Id: filter.c,v 1.10 2005/07/03 08:53:54 daniels Exp $
+ * $Id: filter.c,v 1.11 2005/12/28 11:48:14 anholt Exp $
  *
  * Copyright © 2002 Keith Packard
  *
@@ -125,7 +125,7 @@ PictureFreeFilterIds (void)
     filterNames = 0;
 }
 
-int
+_X_EXPORT int
 PictureAddFilter (ScreenPtr			    pScreen,
 		  char				    *filter,
 		  PictFilterValidateParamsProcPtr   ValidateParams)
@@ -157,7 +157,7 @@ PictureAddFilter (ScreenPtr			    pScreen,
     return id;
 }
 
-Bool
+_X_EXPORT Bool
 PictureSetFilterAlias (ScreenPtr pScreen, char *filter, char *alias)
 {
     PictureScreenPtr    ps = GetPictureScreen(pScreen);
@@ -272,9 +272,10 @@ int
 SetPictureFilter (PicturePtr pPicture, char *name, int len, xFixed *params, int nparams)
 {
     ScreenPtr		pScreen = pPicture->pDrawable->pScreen;
+    PictureScreenPtr	ps = GetPictureScreen(pScreen);
     PictFilterPtr	pFilter = PictureFindFilter (pScreen, name, len);
     xFixed		*new_params;
-    int			i;
+    int			i, result;
 
     if (!pFilter)
 	return BadName;
@@ -298,6 +299,9 @@ SetPictureFilter (PicturePtr pPicture, char *name, int len, xFixed *params, int 
     for (i = 0; i < nparams; i++)
 	pPicture->filter_params[i] = params[i];
     pPicture->filter = pFilter->id;
-    pPicture->serialNumber |= GC_CHANGE_SERIAL_BIT;
+
+    result = (*ps->ChangePictureFilter) (pPicture, pPicture->filter,
+					 params, nparams);
+    return result;
     return Success;
 }

@@ -1,5 +1,5 @@
 .\" $Xorg: SMlib.ms,v 1.3 2000/08/17 19:42:19 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/SM/SMlib.ms,v 1.2 2004/04/23 18:42:16 eich Exp $
+.\" $XdotOrg: doc/xorg-docs/specs/SM/SMlib.ms,v 1.3 2004/09/03 16:18:20 kem Exp $
 .\" 
 .\" Use tbl, -ms, and macros.t
 .\" edited for DP edits and code consistency w/ core protocol/xlib 4/18/96

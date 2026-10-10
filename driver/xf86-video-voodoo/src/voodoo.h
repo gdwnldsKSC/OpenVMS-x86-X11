@@ -1,3 +1,5 @@
+#include <string.h>
+
 typedef struct {
   CARD32		m;
   CARD32		n;
@@ -74,11 +76,11 @@ typedef struct {
 
 #define VoodooPTR(p) ((VoodooPtr)((p)->driverPrivate))
 
-#define VERSION 4000
+#define VOODOO_VERSION 4000
 #define VOODOO_NAME "Voodoo"
 #define VOODOO_DRIVER_NAME "voodoo"
 #define VOODOO_MAJOR_VERSION 1
-#define VOODOO_MINOR_VERSION 0
+#define VOODOO_MINOR_VERSION 1
 #define VOODOO_PATCHLEVEL 0
 
 #define PCI_CHIP_VOODOO1	0x0001

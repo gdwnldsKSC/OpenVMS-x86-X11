@@ -62,24 +62,23 @@ SOFTWARE.
 
 int
 XCloseDevice(dpy, dev)
-    register Display 	*dpy;
-    register XDevice	*dev;
-    {	
-    xCloseDeviceReq 	*req;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+    register Display *dpy;
+    register XDevice *dev;
+{
+    xCloseDeviceReq *req;
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
 	return (NoSuchExtension);
 
-    GetReq(CloseDevice,req);		
+    GetReq(CloseDevice, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_CloseDevice;
     req->deviceid = dev->device_id;
 
-    XFree ((char *)dev);
-    UnlockDisplay (dpy);
+    XFree((char *)dev);
+    UnlockDisplay(dpy);
     SyncHandle();
     return (Success);
-    }
-
+}

@@ -1141,6 +1141,7 @@ xkbset_repeatrate(Display *dpy, int delay, int interval)
   xkb->ctrls->repeat_delay = delay;
   xkb->ctrls->repeat_interval = interval;
   XkbSetControls(dpy, XkbRepeatKeysMask, xkb);
+  XkbFreeKeyboard(xkb, 0, True);
 }
 #endif
 
@@ -1222,6 +1223,7 @@ set_lock(Display *dpy, Bool onoff)
   else
     mods = XDeleteModifiermapEntry(mods, (KeyCode) XK_Caps_Lock, LockMapIndex);
   XSetModifierMapping(dpy, mods);
+  XFreeModifiermap(mods);
   return;
 }
 

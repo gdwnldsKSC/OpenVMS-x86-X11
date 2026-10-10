@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc.h,v 1.5tsi Exp $ */
 /*
  * $Workfile: nsc.h $
- * $Revision: 1.3 $
- * $Author: daniels $
+ * $Revision$
+ * $Author$
  *
  * File Contents: This file contains the data structures Geode driver.
  *
@@ -141,6 +141,9 @@
 
 #ifndef _NSC_GEODE_H_
 #define _NSC_GEODE_H_
+
+#include <string.h>
+#include <stdio.h>
 
 #include "xaa.h"
 #include "xf86Cursor.h"

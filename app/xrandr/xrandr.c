@@ -1,4 +1,4 @@
-/*
+/* $XdotOrg: app/xrandr/xrandr.c,v 1.6 2006/04/25 22:54:01 alanc Exp $
  * $XFree86: xc/programs/xrandr/xrandr.c,v 1.11 2002/10/14 18:01:43 keithp Exp $
  *
  * Copyright © 2001 Keith Packard, member of The XFree86 Project, Inc.
@@ -191,7 +191,7 @@ main (int argc, char **argv)
   dpy = XOpenDisplay (display_name);
 
   if (dpy == NULL) {
-      fprintf (stderr, "Can't open display %s\n", display_name);
+      fprintf (stderr, "Can't open display %s\n", XDisplayName(display_name));
       exit (1);
   }
   if (screen < 0)
@@ -219,11 +219,14 @@ main (int argc, char **argv)
       if (sizes[size].width == width && sizes[size].height == height)
 	break;
     }
+    if (size >= nsize) {
+      fprintf (stderr,
+	       "Size %dx%d not found in available modes\n", width, height);
+      exit (1);
+    }
   }
   else if (size < 0)
     size = current_size;
-
-  if (size >= nsize) usage();
 
   if (rot < 0)
   {
@@ -240,6 +243,17 @@ main (int argc, char **argv)
 	rate = current_rate;
     else
 	rate = 0;
+  }
+  else
+  {
+    rates = XRRConfigRates (sc, size, &nrate);
+    for (i = 0; i < nrate; i++)
+      if (rate == rates[i])
+	break;
+    if (i == nrate) {
+      fprintf (stderr, "Rate %d not available for this size\n", rate);
+      exit (1);
+    }
   }
 
   if (version) {

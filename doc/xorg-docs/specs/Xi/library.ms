@@ -1,5 +1,5 @@
 .\" $Xorg: library.ms,v 1.3 2000/08/17 19:42:38 cpqbld Exp $
-.\" $XdotOrg: xc/doc/specs/Xi/library.ms,v 1.2 2004/04/23 18:42:18 eich Exp $
+.\" $XdotOrg: doc/xorg-docs/specs/Xi/library.ms,v 1.3 2004/09/03 16:18:21 kem Exp $
 .\" Input Extension			now coded to macros.t
 .\" edited for DP edits and code consistency w/ core protocol/xlib 4/5/96
 .EH ''''

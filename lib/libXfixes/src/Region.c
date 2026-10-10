@@ -1,5 +1,5 @@
 /*
- * $Id: Region.c,v 1.3 2005/07/03 07:00:56 daniels Exp $
+ * $Id: Region.c,v 1.1 2004/07/31 05:50:39 anholt Exp $
  *
  * Copyright © 2003 Keith Packard
  *

@@ -32,7 +32,6 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 
 #include "compiler.h"
 
@@ -55,7 +54,7 @@ static void S3QueryBestSize(ScrnInfoPtr, Bool, short, short, short, short,
                             unsigned int *, unsigned int *, pointer);
 static int  S3PutImage(ScrnInfoPtr, short, short, short, short, short,
                        short, short, short, int, unsigned char*, short,
-                       short, Bool, RegionPtr, pointer);
+                       short, Bool, RegionPtr, pointer, DrawablePtr);
 static int  S3QueryImageAttributes(ScrnInfoPtr, int, unsigned short *,
                         	   unsigned short *,  int *, int *);
 static void S3ResetVideoOverlay(ScrnInfoPtr);
@@ -360,7 +359,7 @@ static int S3PutImage(ScrnInfoPtr pScrn, short src_x, short src_y,
 		  short drw_x, short drw_y, short src_w, short src_h,
 		  short drw_w, short drw_h, int id, unsigned char *buf,
 		  short width, short height, Bool sync, RegionPtr clipBoxes,
-		  pointer data)
+		  pointer data, DrawablePtr pDraw)
 {
 	S3Ptr pS3 = S3PTR(pScrn);
 	S3PortPrivPtr pPriv = pS3->portPrivate;

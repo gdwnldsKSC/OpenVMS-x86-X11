@@ -34,6 +34,7 @@
 #include "config.h"
 #endif
 
+#include "via.h"
 #include "via_driver.h"
 #include "via_vgahw.h"
 #include "via_id.h"
@@ -1643,15 +1644,13 @@ ViaModePrimary(ScrnInfoPtr pScrn, DisplayModePtr mode)
     pBIOSInfo->Clock = ViaModeDotClockTranslate(pScrn, mode);
     pBIOSInfo->ClockExternal = FALSE;
 
-    /* Don't do this before the Sequencer is set: locks up KM400 and K8M800 */
-    if (pVia->FirstInit)
-	memset(pVia->FBBase, 0x00, pVia->videoRambytes);
-    
     /* Enable MMIO & PCI burst (1 wait state) */
     ViaSeqMask(hwp, 0x1A, 0x06, 0x06);
     
     if (!pBIOSInfo->CrtActive)
 	ViaCrtcMask(hwp, 0x36, 0x30, 0x30);
+    else
+	ViaSeqMask(hwp, 0x16, 0x00, 0x40);
 
     if (pBIOSInfo->PanelActive && ViaPanelGetIndex(pScrn, mode)) {
 	VIASetLCDMode(pScrn, mode);

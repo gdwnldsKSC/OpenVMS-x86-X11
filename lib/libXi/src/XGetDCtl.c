@@ -61,113 +61,111 @@ SOFTWARE.
 #include <X11/extensions/extutil.h>
 #include "XIint.h"
 
-XDeviceControl
-*XGetDeviceControl (dpy, dev, control)
-    register	Display 	*dpy;
-    XDevice			*dev;
-    int				control;
-    {
-    int	size = 0;
-    int	nbytes, i;
+XDeviceControl * XGetDeviceControl(dpy, dev, control)
+    register Display *
+	dpy;
+    XDevice *
+	dev;
+    int
+	control;
+{
+    int size = 0;
+    int nbytes, i;
     XDeviceControl *Device = NULL;
     XDeviceControl *Sav = NULL;
     xDeviceState *d = NULL;
     xDeviceState *sav = NULL;
     xGetDeviceControlReq *req;
     xGetDeviceControlReply rep;
-    XExtDisplayInfo *info = XInput_find_display (dpy);
+    XExtDisplayInfo *info = XInput_find_display(dpy);
 
-    LockDisplay (dpy);
+    LockDisplay(dpy);
     if (_XiCheckExtInit(dpy, XInput_Add_XChangeDeviceControl) == -1)
 	return ((XDeviceControl *) NoSuchExtension);
 
-    GetReq(GetDeviceControl,req);
+    GetReq(GetDeviceControl, req);
     req->reqType = info->codes->major_opcode;
     req->ReqType = X_GetDeviceControl;
     req->deviceid = dev->device_id;
     req->control = control;
 
-    if (! _XReply (dpy, (xReply *) &rep, 0, xFalse)) 
-	{
+    if (!_XReply(dpy, (xReply *) & rep, 0, xFalse)) {
 	UnlockDisplay(dpy);
 	SyncHandle();
 	return (XDeviceControl *) NULL;
-	}
-    if (rep.length > 0) 
-	{
+    }
+    if (rep.length > 0) {
 	nbytes = (long)rep.length << 2;
-	d = (xDeviceState *) Xmalloc((unsigned) nbytes);
-        if (!d)
-	    {
-	    _XEatData (dpy, (unsigned long) nbytes);
+	d = (xDeviceState *) Xmalloc((unsigned)nbytes);
+	if (!d) {
+	    _XEatData(dpy, (unsigned long)nbytes);
 	    UnlockDisplay(dpy);
 	    SyncHandle();
 	    return (XDeviceControl *) NULL;
-	    }
+	}
 	sav = d;
-	_XRead (dpy, (char *) d, nbytes);
+	_XRead(dpy, (char *)d, nbytes);
 
-	switch (d->control)
-	    {
-	    case DEVICE_RESOLUTION:
-		{
-		xDeviceResolutionState *r;
+	switch (d->control) {
+	case DEVICE_RESOLUTION:
+	{
+	    xDeviceResolutionState *r;
 
-		r = (xDeviceResolutionState *) d;
-		size += sizeof (XDeviceResolutionState) + 
-			(3 * sizeof(int) * r->num_valuators);
-		break;
-		}
-	    default:
-		size += d->length;
-		break;
-	    }
+	    r = (xDeviceResolutionState *) d;
+	    size += sizeof(XDeviceResolutionState) +
+		(3 * sizeof(int) * r->num_valuators);
+	    break;
+	}
+	default:
+	    size += d->length;
+	    break;
+	}
 
-	Device = (XDeviceControl *) Xmalloc((unsigned) size);
-        if (!Device)
-	    {
+	Device = (XDeviceControl *) Xmalloc((unsigned)size);
+	if (!Device) {
 	    UnlockDisplay(dpy);
 	    SyncHandle();
 	    return (XDeviceControl *) NULL;
-	    }
+	}
 	Sav = Device;
 
 	d = sav;
-	switch (control)
-	    {
-	    case DEVICE_RESOLUTION:
-		{
-		int *iptr, *iptr2;
-		xDeviceResolutionState *r;
-		XDeviceResolutionState *R;
-		r = (xDeviceResolutionState *) d;
-		R = (XDeviceResolutionState *) Device;
+	switch (control) {
+	case DEVICE_RESOLUTION:
+	{
+	    int *iptr, *iptr2;
+	    xDeviceResolutionState *r;
+	    XDeviceResolutionState *R;
 
-		R->control = DEVICE_RESOLUTION;
-		R->length = sizeof (XDeviceResolutionState);
-		R->num_valuators = r->num_valuators;
-		iptr = (int *) (R+1);
-		iptr2 = (int *) (r+1);
-		R->resolutions = iptr;
-		R->min_resolutions = iptr + R->num_valuators;
-		R->max_resolutions = iptr + (2 * R->num_valuators);
-		for (i=0; i < (3 * R->num_valuators); i++)
-		    *iptr++ = *iptr2++;
-		break;
-		}
-	    default:
-		break;
-	    }
-	XFree (sav);
+	    r = (xDeviceResolutionState *) d;
+	    R = (XDeviceResolutionState *) Device;
+
+	    R->control = DEVICE_RESOLUTION;
+	    R->length = sizeof(XDeviceResolutionState);
+	    R->num_valuators = r->num_valuators;
+	    iptr = (int *)(R + 1);
+	    iptr2 = (int *)(r + 1);
+	    R->resolutions = iptr;
+	    R->min_resolutions = iptr + R->num_valuators;
+	    R->max_resolutions = iptr + (2 * R->num_valuators);
+	    for (i = 0; i < (3 * R->num_valuators); i++)
+		*iptr++ = *iptr2++;
+	    break;
 	}
+	default:
+	    break;
+	}
+	XFree(sav);
+    }
 
     UnlockDisplay(dpy);
     SyncHandle();
     return (Sav);
-    }
+}
 
-void XFreeDeviceControl (control)
+void
+XFreeDeviceControl(control)
     XDeviceControl *control;
-    {
-    XFree (control);
-    }
+{
+    XFree(control);
+}

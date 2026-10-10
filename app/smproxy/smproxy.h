@@ -1,5 +1,5 @@
 /* $Xorg: smproxy.h,v 1.4 2001/02/09 02:05:36 xorgcvs Exp $ */
-/* $XdotOrg: $ */
+/* $XdotOrg: app/smproxy/smproxy.h,v 1.3 2005/07/16 22:07:13 alanc Exp $ */
 /******************************************************************************
 
 Copyright 1994, 1998  The Open Group

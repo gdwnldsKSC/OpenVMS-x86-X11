@@ -11,13 +11,13 @@
 #define BUILDERADDR "xorg@lists.freedesktop.org"
 
 /* Operating System Name */
-#define OSNAME "Linux 2.6.15-rc6-gdf7addbb ia64"
+#define OSNAME "Linux 2.6.16-1.2122_FC6smp i686"
 
 /* Operating System Vendor */
 #define OSVENDOR ""
 
 /* Default font path */
-#define COMPILEDDEFAULTFONTPATH "/opt/debrix/lib/X11/fonts/misc/,/opt/debrix/lib/X11/fonts/TTF/,/opt/debrix/lib/X11/fonts/OTF,/opt/debrix/lib/X11/fonts/Type1/,/opt/debrix/lib/X11/fonts/CID/,/opt/debrix/lib/X11/fonts/100dpi/,/opt/debrix/lib/X11/fonts/75dpi/"
+#define COMPILEDDEFAULTFONTPATH "/usr/local/lib/X11/fonts/misc/,/usr/local/lib/X11/fonts/TTF/,/usr/local/lib/X11/fonts/OTF,/usr/local/lib/X11/fonts/Type1/,/usr/local/lib/X11/fonts/CID/,/usr/local/lib/X11/fonts/100dpi/,/usr/local/lib/X11/fonts/75dpi/"
 
 /* Support Composite Extension */
 #define COMPOSITE 1
@@ -54,6 +54,12 @@
 /* Build GLX extension */
 #define GLXEXT 1
 
+/* Build GLX DRI loader */
+/* #undef GLX_DRI */
+
+/* Path to DRI drivers */
+#define DRI_DRIVER_PATH "/usr/local/lib/dri"
+
 /* Include handhelds.org h3600 touchscreen driver */
 /* #undef H3600_TS */
 
@@ -72,6 +78,9 @@
 /* Define to 1 if you have the `getpeerucred' function. */
 /* #undef HAS_GETPEERUCRED */
 
+/* Define to 1 if you have the `mmap' function. */
+#define HAS_MMAP 1
+
 /* Support SHM */
 #define HAS_SHM 1
 
@@ -83,7 +92,7 @@
 #define HAVE_ALLOCA_H 1
 
 /* Define to 1 if you have the <asm/mtrr.h> header file. */
-/* #undef HAVE_ASM_MTRR_H */
+#define HAVE_ASM_MTRR_H 1
 
 /* Define to 1 if you have the <dbm.h> header file. */
 /* #undef HAVE_DBM_H */
@@ -177,7 +186,7 @@
 #define HAVE_STRTOL 1
 
 /* Define to 1 if SYSV IPC is available */
-/* #undef HAVE_SYSV_IPC */
+#define HAVE_SYSV_IPC 1
 
 /* Define to 1 if you have the <sys/agpio.h> header file. */
 /* #undef HAVE_SYS_AGPIO_H */
@@ -233,7 +242,7 @@
 #define PIXPRIV 1
 
 /* Overall prefix */
-#define PROJECTROOT "/opt/debrix"
+#define PROJECTROOT "/usr/local"
 
 /* Support RANDR extension */
 #define RANDR 1
@@ -337,13 +346,13 @@
 #define XKB_IN_SERVER 1
 
 /* Vendor release */
-#define XORG_RELEASE "Release 7.0"
+#define XORG_RELEASE "Release 7.1"
 
 /* Current Xorg version */
-#define XORG_VERSION_CURRENT (((7) * 10000000) + ((0) * 100000) + ((0) * 1000) + 0)
+#define XORG_VERSION_CURRENT (((7) * 10000000) + ((1) * 100000) + ((0) * 1000) + 0)
 
 /* Xorg release date */
-#define XORG_DATE "21 December 2005"
+#define XORG_DATE "22 May 2006"
 
 /* Build Xv Extension */
 #define XvExtension 1
@@ -367,7 +376,7 @@
 #define XV 1
 
 /* Build LBX extension */
-#define LBX 1
+/* #undef LBX */
 
 /* Build APPGROUP extension */
 #define XAPPGROUP 1
@@ -414,12 +423,18 @@
 /* #undef ROOTLESS */
 
 /* Define to 1 if unsigned long is 64 bits. */
-#define _XSERVER64 1
+/* #undef _XSERVER64 */
 
 /* Define to location of RGB database */
-#define RGB_DB "/opt/debrix/share/X11/rgb"
+#define RGB_DB "/usr/local/share/X11/rgb"
 
 /* System is BSD-like */
 /* #undef CSRG_BASED */
+
+/* Define to 1 if `struct sockaddr_in' has a `sin_len' member */
+/* #undef BSD44SOCKETS */
+
+/* Define to 1 if modules should avoid the libcwrapper */
+#define NO_LIBCWRAPPER 1
 
 #endif /* _DIX_CONFIG_H_ */

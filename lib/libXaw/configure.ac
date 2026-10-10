@@ -3,7 +3,7 @@ dnl Process this file with autoconf to create configure.
 AC_PREREQ([2.57])
 
 AC_INIT([libXaw],
-	1.0.1,
+	1.0.2,
 	[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
 	libXaw)
 
@@ -33,6 +33,17 @@ q
 EOF
 	AC_MSG_RESULT([fixed])
 fi
+
+# Win32 DLL rules are different.
+case $host_os in
+    cygwin*|mingw*)
+	platform_win32=yes
+	;;
+    *)
+	platform_win32=no
+	;;
+esac
+AM_CONDITIONAL(PLATFORM_WIN32, test "x$platform_win32" = "xyes")
 
 # Whether to build Xaw6
 

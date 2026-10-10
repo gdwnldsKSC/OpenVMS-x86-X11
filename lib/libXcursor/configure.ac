@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id: configure.ac,v 1.14 2005/12/15 00:24:29 kem Exp $
+dnl  $Id: configure.ac,v 1.13 2005/12/08 17:55:18 kem Exp $
 dnl 
 dnl  Copyright © 2003 Keith Packard
 dnl 
@@ -30,7 +30,7 @@ dnl version.  This same version number must appear in Xcursor.h
 dnl Yes, it is a pain to synchronize version numbers.  Unfortunately, it's
 dnl not possible to extract the version number here from Xcursor.h
 dnl
-AC_INIT([libXcursor],1.1.5.2,[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],[libXcursor])
+AC_INIT([libXcursor],1.1.6,[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],[libXcursor])
 AM_INIT_AUTOMAKE([dist-bzip2])
 AC_CONFIG_SRCDIR([Makefile.am])
 AM_MAINTAINER_MODE

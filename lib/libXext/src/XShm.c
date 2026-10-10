@@ -1,4 +1,4 @@
-/* $XdotOrg: $ */
+/* $XdotOrg: lib/Xext/src/XShm.c,v 1.5 2005/07/30 21:07:25 alanc Exp $ */
 /*
  * $Xorg: XShm.c,v 1.4 2001/02/09 02:03:49 xorgcvs Exp $
  *

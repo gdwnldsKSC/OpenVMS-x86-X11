@@ -74,7 +74,7 @@ static void S3VQueryBestSize(ScrnInfoPtr, Bool, short, short, short, short,
 			unsigned int *, unsigned int *, pointer);
 static int  S3VPutImage(ScrnInfoPtr, short, short, short, short, short, 
 			short, short, short, int, unsigned char*, short, 
-			short, Bool, RegionPtr, pointer);
+			short, Bool, RegionPtr, pointer, DrawablePtr);
 static int  S3VQueryImageAttributes(ScrnInfoPtr, int, unsigned short *, 
 			unsigned short *,  int *, int *);
 
@@ -788,7 +788,8 @@ S3VPutImage(
   int id, unsigned char* buf, 
   short width, short height, 
   Bool sync,
-  RegionPtr clipBoxes, pointer data
+  RegionPtr clipBoxes, pointer data,
+  DrawablePtr pDraw
 ){
    S3VPtr ps3v = S3VPTR(pScrn);
    S3VPortPrivPtr pPriv = ps3v->portPrivate;

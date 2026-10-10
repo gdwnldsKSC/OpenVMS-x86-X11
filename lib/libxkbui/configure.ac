@@ -23,7 +23,7 @@ dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
 
-AC_INIT(libxkbui, 1.0.1, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libxkbui)
+AC_INIT(libxkbui, 1.0.2, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libxkbui)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

@@ -1,4 +1,4 @@
-.\" $XdotOrg: $
+.\" $XdotOrg: lib/Xext/man/XcupQueryVersion.man,v 1.1 2005/01/22 05:12:08 alanc Exp $
 .\" 
 .\" Copyright \(co 1986-1997   The Open Group    All Rights Reserved
 .\" Copyright 1999, 2005 Sun Microsystems, Inc.  All Rights Reserved

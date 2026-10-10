@@ -31,9 +31,11 @@ authorization from the XFree86 Project and Silicon Motion.
 #ifndef _SMI_H
 #define _SMI_H
 
+#include <string.h>
+#include <stdio.h>
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
 #include "xf86Cursor.h"
@@ -151,9 +153,6 @@ typedef struct
 							   vgaHWMapMem was used
 							   successfully for
 							   this screen */
-	int			dacSpeedBpp;	/* Clock value */
-	int			minClock;	/* Mimimum clock */
-	int			maxClock;	/* Maximum clock */
 	int			MCLK;		/* Memory Clock  */
 	int			GEResetCnt;	/* Limit the number of errors
 						   printed using a counter */

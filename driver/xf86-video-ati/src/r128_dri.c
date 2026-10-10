@@ -32,6 +32,8 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 /*
  * Authors:
  *   Kevin E. Martin <martin@valinux.com>
@@ -52,7 +54,7 @@
 				/* X and server generic header files */
 #include "xf86.h"
 #include "windowstr.h"
-#include "xf86PciInfo.h"
+#include "atipciids.h"
 
 #include "shadowfb.h"
 				/* GLX/DRI/DRM definitions */

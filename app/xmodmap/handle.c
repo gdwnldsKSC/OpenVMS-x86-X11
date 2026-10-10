@@ -906,10 +906,9 @@ do_pointer(char *line, int len)
     }
     
     if (i > 0 && i != nbuttons) {
-	badheader ();
-	fprintf (stderr, "number of buttons, must have %d instead of %d\n",
-		 nbuttons, i);
-	return;
+	fprintf (stderr, "Warning: Only changing the first %d of %d buttons.\n",
+		 i, nbuttons);
+	i = nbuttons;
     }
 
     uop = AllocStruct (union op);

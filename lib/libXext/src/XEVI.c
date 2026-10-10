@@ -120,7 +120,7 @@ Status XeviGetVisualInfo(
     *n_info_return = 0;
     *evi_return = NULL;
     vinfo = XGetVisualInfo(dpy, 0, NULL, &sz_info);
-    if (!vinfo) {
+    if (!vinfo || !evi_return) {
 	return BadValue;
     }
     if (!n_visual || !visual) {		/* copy the all visual */

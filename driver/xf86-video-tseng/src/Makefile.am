@@ -30,15 +30,9 @@ tseng_drv_ladir = @moduledir@/drivers
 
 tseng_drv_la_SOURCES = \
          tseng_accel.c \
-         tseng_acl.c \
-         tseng_acl.h \
-         tseng_bank.c \
-         tseng_clock.c \
-         tseng_colexp.c \
+         tseng_accel.h \
          tseng_cursor.c \
          tseng_dga.c \
-         tseng_dpms.c \
          tseng_driver.c \
          tseng.h \
-         tseng_inline.h \
-         tseng_ramdac.c
+         tseng_mode.c

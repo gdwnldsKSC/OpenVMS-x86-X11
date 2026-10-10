@@ -25,6 +25,11 @@
 #ifndef _VIA_H_
 #define _VIA_H_ 1
 
+#include <errno.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
+
 /* Video status flag */
 
 #define VIDEO_MPEG_INUSE        0x08000000  /*Video is used with MPEG */
@@ -334,6 +339,7 @@
 #define V3_FIFO_PRETHRESHOLD56  0x00000038   
 #define V3_FIFO_PRETHRESHOLD61  0x0000003D   
 #define V3_FIFO_MASK            0x0000007F
+#define V3_FIFO_MASK_3314       0x000000FF
 #define ALPHA_FIFO_DEPTH8       0x00070000
 #define ALPHA_FIFO_THRESHOLD4   0x04000000
 #define ALPHA_FIFO_MASK         0xffff0000
@@ -483,6 +489,7 @@
 #define HQV_TRIPLE_BUFF     0x04000000
 #define HQV_SUBPIC_FLIP     0x00008000
 #define HQV_FIFO_STATUS     0x00001000  
+#define HQV_FIFO_DEPTH_1    0x00010000
 
 /* HQV_FILTER_CONTROL      0x3E4 */
 #define HQV_H_LOWPASS_2TAP  0x00000001

@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/310vtbl.h,v 1.21 2005/09/07 19:44:14 twini Exp $ */
 /*
  * Register settings for SiS 315/330/340 series
  *

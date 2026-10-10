@@ -1,7 +1,7 @@
-# $Id: configure.ac,v 1.10 2005/12/15 00:24:31 kem Exp $
+# $Id: configure.ac,v 1.9 2005/12/03 05:49:44 kem Exp $
 
 AC_PREREQ(2.57)
-AC_INIT([libXpm], 3.5.4.2, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXpm)
+AC_INIT([libXpm], 3.5.5, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXpm)
 AC_CONFIG_SRCDIR([Makefile.am])
 AM_INIT_AUTOMAKE([dist-bzip2])
 

@@ -1,5 +1,5 @@
 /* $Xorg: xclock.c,v 1.4 2001/02/09 02:05:39 xorgcvs Exp $ */
-/* $XdotOrg: $ */
+/* $XdotOrg: app/xclock/xclock.c,v 1.4 2005/07/16 17:31:45 alanc Exp $ */
 
 /*
  * xclock --  Hacked from Tony Della Fera's much hacked clock program.

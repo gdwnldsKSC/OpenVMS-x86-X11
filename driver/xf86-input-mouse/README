@@ -1,4 +1,4 @@
-  Mouse Support in X11R6.9
+  Mouse Support in X11R6.8
   Kazutaka Yokota
   17 December 2002
   ____________________________________________________________
@@ -29,7 +29,7 @@
   4. Configuring Your Mouse
   5. xorg.conf Options
      5.1 Buttons
-     5.2 ZAxisMapping
+     5.2 ZAxisMappping
      5.3 Resolution
      5.4 Drag Lock Buttons
 
@@ -52,10 +52,10 @@
 
   ______________________________________________________________________
 
-  11..  IInnttrroodduuccttiioonn
+  [1m1.  Introduction[0m
 
 
-  This document describes mouse support in X.Org Foundation's X11R6.9
+  This document describes mouse support in X.org Foundation's X11R6.8
   server.
 
   Mouse configuration has often been mysterious task for novice users.
@@ -64,15 +64,14 @@
 
 
 
-  22..  SSuuppppoorrtteedd HHaarrddwwaarree
+  [1m2.  Supported Hardware[0m
 
 
-  The X.Org Foundation X server supports four classes of mice: serial,
-  bus and PS/2 mice, and additional mouse types supported by specific
-  operating systems, such as USB mice.
+  The X.org Foundation X server supports three classes of mice: serial,
+  bus and PS/2 mice.
 
 
-     SSeerriiaall mmoouussee
+     [1mSerial mouse[0m
         The serial mouse has been the most popular pointing device for
         PCs.  There have been numerous serial mouse models from a number
         of manufactures.  Despite the wide range of variations, there
@@ -86,7 +85,7 @@
         models on most platforms.
 
 
-     BBuuss mmoouussee
+     [1mBus mouse[0m
         The bus mouse connects to a dedicated interface card in an
         expansion slot.  Some video cards, notably those from ATI, and
         integrated I/O cards may also have a bus mouse connector.  Some
@@ -97,7 +96,7 @@
         type of products with the genuine bus mouse.
 
 
-     PPSS//22 mmoouussee
+     [1mPS/2 mouse[0m
         They are sometimes called `Mouse-port mouse'.  The PS/2 mouse is
         becoming increasingly common and popular.
 
@@ -110,12 +109,12 @@
         behaves as though it were an ordinary two or three button mouse.
 
 
-     UUSSBB mmoouussee
+     [1mUSB mouse[0m
         USB (Universal Serial Bus) ports are present on most modern
         computers. Several devices can be plugged into this bus,
-        including mice and keyboards.
+        including mices and keyboards.
 
-        The server includes support for USB mice on some systems.
+        The server includes support for USB mices on some systems.
 
   Many mice nowadays can be used both as a serial mouse and as a PS/2
   mouse.  They has a logic to distinguish which interface it is
@@ -125,19 +124,17 @@
   with which you can connect the PS/2 mouse to a serial port or visa
   versa.
 
-  X11R6.9 supports the mouse with a wheel, a roller or a knob.  Its
+  X11R6.8 supports the mouse with a wheel, a roller or a knob.  Its
   action is detected as the Z (third) axis motion of the mouse.  As the
   X server or clients normally do not use the Z axis movement of the
   pointing device, a configuration option, "ZAxisMapping", is provided
   to assign the Z axis movement to another axis or a pair of buttons
   (see below).
-
-
-  33..  OOSS SSuuppppoorrtt ffoorr MMiiccee
+  [1m3.  OS Support for Mice[0m
 
 
 
-  33..11..  SSuummmmaarryy ooff SSuuppppoorrtteedd MMoouussee PPrroottooccooll TTyyppeess
+  [1m3.1.  Summary of Supported Mouse Protocol Types[0m
 
 
                                   Protocol Types
@@ -165,17 +162,17 @@
   SP: support is available in a different form
 
   *1 Refer to the following sections for details.
-  *2 X11R6.9/OS2 will support any type of mouse that the OS supports,
+  *2 X11R6.8/OS2 will support any type of mouse that the OS supports,
      whether it is serial, bus mouse, or PnP type.
 
 
 
-  33..22..  BBSSDD//OOSS
+  [1m3.2.  BSD/OS[0m
 
   No testing has been done with BSD/OS.
 
 
-  33..33..  FFrreeeeBBSSDD
+  [1m3.3.  FreeBSD[0m
 
   FreeBSD supports the "SysMouse" protocol which must be specified when
   the moused daemon is running in versions 2.2.1 or later.
@@ -198,19 +195,18 @@
   FreeBSD versions 2.2.5 or earlier do not support extended PS/2 mouse
   protocols ("xxxPS/2").  Always specify the "PS/2" protocol for any
   PS/2 mouse in these versions regardless of the brand of the mouse.
-
   FreeBSD versions 3.1 or later have support for USB mice.  Specify the
   "Auto" protocol for the /dev/ums0 device.  (If the moused daemon is
   running for the USB mouse, you must use /dev/sysmouse instead of
-  /dev/ums0 as explained above.) See the _u_m_s_(_4_) manual page for details.
+  /dev/ums0 as explained above.) See the [4mums(4)[24m manual page for details.
 
 
-  33..44..  FFrreeeeBBSSDD((9988))
+  [1m3.4.  FreeBSD(98)[0m
 
   The PS/2 mouse is not supported.
 
 
-  33..55..  IInntteerraaccttiivvee UUnniixx
+  [1m3.5.  Interactive Unix[0m
 
   The PnP serial mouse support (the "Auto" protocol) is not supported
   for the moment.
@@ -222,23 +218,23 @@
   <michael.rohleder@stadt-frankfurt.de>.
 
 
-  33..66..  LLiinnuuxx
+  [1m3.6.  Linux[0m
 
   All protocol types should work.
 
 
-  33..77..  LLiinnuuxx//9988
+  [1m3.7.  Linux/98[0m
 
   The PS/2 mouse is not supported.
 
 
-  33..88..  LLyynnxxOOSS
+  [1m3.8.  LynxOS[0m
 
   The PnP serial mouse support (the "Auto" protocol) is disabled in
   LynxOS, because of limited TTY device driver functionality.
 
 
-  33..99..  NNeettBBSSDD
+  [1m3.9.  NetBSD[0m
 
   NetBSD 1.3.x and former does not support extended PS/2 mouse protocols
   ("xxxPS/2").  The PS/2 mouse device driver /dev/pms emulates the bus
@@ -248,20 +244,19 @@
   The "wsmouse" protocol introduced in NetBSD 1.4 along with the wscons
   console driver is supported. You need to run binaries compiled on
   NetBSD 1.4 to have support for it though. Use "/dev/wsmouse0" for the
-  device. Refer to the _w_s_m_o_u_s_e_(_4_) manual page for kernel configuration
+  device. Refer to the [4mwsmouse(4)[24m manual page for kernel configuration
   informations.
 
-  This driver also provides support for USB mice. See the _u_m_s_(_4_) manual
+  This driver also provides support for USB mices. See the [4mums(4)[24m manual
   page for details.
 
 
-  33..1100..  NNeettBBSSDD//ppcc9988
+  [1m3.10.  NetBSD/pc98[0m
 
   The PS/2 mouse is not supported.
 
 
-
-  33..1111..  OOppeennBBSSDD
+  [1m3.11.  OpenBSD[0m
 
   The raw PS/2 mouse device driver /dev/psm0 uses the raw PS/2 mouse
   protocol.
@@ -278,46 +273,39 @@
   emulates the bus mouse.  Specify the "BusMouse" protocol for any PS/2
   mouse regardless of the brand of the mouse when using this device.
 
-  XFree86 3.3.6 support USB mice on OpenBSD 2.6 and later though the
+  XFree86 3.3.6 support USB mices on OpenBSD 2.6 and later though the
   generic Human Interface Device (hid) /dev/uhid*. Select the "usb"
   protocol and the /dev/uhid* instance corresponding to your mouse as
   the device name.
 
 
-  33..1122..  OOSS//22
+  [1m3.12.  OS/2[0m
 
-  X11R6.9/OS2 always uses the native mouse driver of the operating
+  X11R6.8/OS2 always uses the native mouse driver of the operating
   system and will support any type of pointer that the OS supports,
   whether it is serial, bus mouse, or PnP type.  If the mouse works
-  under Presentation Manager, it will also work under X11R6.9/OS2.
+  under Presentation Manager, it will also work under X11R6.8/OS2.
 
   Always specify "OSMouse" as the protocol type.
 
 
-  33..1133..  SSCCOO
+  [1m3.13.  SCO[0m
 
   The bus and PS/2 mouse are supported with the "OSMouse" protocol type.
 
   The "OSMouse" may also be used with the serial mouse.
 
 
-  33..1144..  SSoollaarriiss
+  [1m3.14.  Solaris[0m
 
-  Testing has been done with Solaris 2.5.1, 2.6, 7, 8, 9 and 10.
-
-  On Solaris 10 1/06 and later versions with "virtual mouse" support,
-  all PS/2 and USB mice connected to the system can be accessed via the
-  /dev/mouse device using the VUID protocol, including USB mice plugged
-  in after the X server is started.   On older releases or to address
-  mice individually, specific devices and protocols may be used.
-
-  Logitech and Microsoft bus mice have not been tested, but might work
-  with the /dev/logi and /dev/msm devices.  Standard 2 and 3 button PS/2
-  mice work with the "PS/2" protocol type and the /dev/kdmouse device.
-  USB mice work with the "VUID" protocol type and the /dev/mouse device.
-  The PnP serial mouse support via the "Auto" protocol has been tested
-  and does not work.  The "Auto" protocol can however detect PS/2 and
-  USB mice correctly.
+  Testing has been done with Solaris 2.5.1, 2.6, 7, 8, 9 and pre-release
+  versions of Solaris 10.  Logitech and Microsoft bus mice have not been
+  tested, but might work with the /dev/logi and /dev/msm devices.
+  Standard 2 and 3 button PS/2 mice work with the "PS/2" protocol type
+  and the /dev/kdmouse device.  USB mice work with the "VUID" protocol
+  type and the /dev/mouse device.  The PnP serial mouse support (the
+  "Auto" protocol) has been tested and does not work.  The "Auto"
+  protocol can however detect PS/2 and USB mice correctly.
 
   Additional USB mice can be connected using the "VUID" protocol type
   and the appropriate "/dev/usb/hid" device with the Option
@@ -325,8 +313,7 @@
   section.
 
 
-
-  33..1155..  SSVVRR44
+  [1m3.15.  SVR4[0m
 
   The bus and PS/2 mouse may be supported with the "Xqueue" protocol
   type.
@@ -336,14 +323,14 @@
   The PnP serial mouse support (the "Auto" protocol) is not tested.
 
 
-  33..1166..  PPAANNIIXX
+  [1m3.16.  PANIX[0m
 
   The PC/AT version of PANIX supports the bus and PS/2 mouse with the
   "Xqueue" protocol type.  The PC-98 version of PANIX supports the bus
   mouse with the "Xqueue" protocol type.
 
 
-  44..  CCoonnffiigguurriinngg YYoouurr MMoouussee
+  [1m4.  Configuring Your Mouse[0m
 
 
   Before using the xorgconfig program to set up mouse configuration, you
@@ -356,11 +343,10 @@
   connector of the mouse.  The serial mouse has a D-Sub female 9- or
   25-pin connector.  The bus mice have either a D-Sub male 9-pin
   connector or a round DIN 9-pin connector.  The PS/2 mouse is equipped
-  with a small, round DIN 6-pin connector.  USB mice have a thin
-  rectangular connector.  Some mice come with adapters with which the
-  connector can be converted to another.  If you are to use such an
-  adapter, remember that the connector at the very end of the
-  mouse/adapter pair is what matters.
+  with a small, round DIN 6-pin connector.  Some mice come with adapters
+  with which the connector can be converted to another.  If you are to
+  use such an adapter, remember that the connector at the very end of
+  the mouse/adapter pair is what matters.
 
   The next thing to decide is a device node to use for the given
   interface.  For the bus and PS/2 mice, there is little choice; your OS
@@ -374,7 +360,7 @@
   manually.  Follow the guidelines below.
 
 
-     BBuuss mmoouussee
+     [1mBus mouse[0m
         The bus and InPort mice always use "BusMouse" protocol
         regardless of the brand of the mouse.
 
@@ -382,7 +368,7 @@
         for the bus mouse.
 
 
-     PPSS//22 mmoouussee
+     [1mPS/2 mouse[0m
         The "PS/2" protocol should always be tried first for the PS/2
         mouse regardless of the brand of the mouse.  Any PS/2 mouse
         should work with this protocol type, although wheels and other
@@ -401,7 +387,7 @@
         itself.
 
 
-     SSeerriiaall mmoouussee
+     [1mSerial mouse[0m
         The server supports a wide range of mice, both old and new.  If
         your mouse is of a relatively new model, it may conform to the
         PnP COM device specification and the X server may be able to
@@ -469,24 +455,24 @@
            work with the "IntelliMouse" protocol, you have to use it as
            a regular 2- or 3-button serial mouse.
 
-     If the "Auto" protocol is specified and the mouse seems to be
-     working, but you find that not all features of the mouse are
-     available, that is because the X server does not have native
-     support for that model of mouse and is using a ``compatible''
-     protocol according to PnP information.
+     If the "Auto" protocol is specified and the mouse seems working,
+     but you find that not all features of the mouse is available, that
+     is because the X server does not have native support for that model
+     of mouse and is using a ``compatible'' protocol according to PnP
+     information.
 
-     If you suspect this is the case with your mouse, please enter a bug
-     report at http://bugzilla.freedesktop.org, using the xorg product.
+     If you suspect this is the case with your mouse, please enter a
+     bugreport in bugzilla.freedesktop.org, using the xorg product.
 
 
-     UUSSBB mmoouussee
+     [1mUSB mouse[0m
         If your mouse is connected to the USB port, it can either be
         supported by the "Auto" protocol, or by an OS-specific protocol
         (see below), or as a generic Human Interface Device by the "usb"
         protocol.
 
 
-     SSttaannddaarrddiizzeedd pprroottooccoollss
+     [1mStandardized protocols[0m
         Mouse device drivers in your OS may use the standardized
         protocol regardless of the model or the class of the mouse.  For
         example, SVR4 systems may support "Xqueue" protocol.  In FreeBSD
@@ -496,7 +482,7 @@
 
 
 
-  55..  xxoorrgg..ccoonnff OOppttiioonnss
+  [1m5.  xorg.conf Options[0m
 
 
   The old Pointer section has been replaced by a more general
@@ -518,12 +504,13 @@
   The mouse driver supports the following config file options:
 
 
-  55..11..  BBuuttttoonnss
+  [1m5.1.  Buttons[0m
 
   This option tells the X server the number of buttons on the mouse.
   Currently there is no reliable way to automatically detect the correct
   number.  This option is the only means for the X server to obtain it.
   The default value is three.
+
   Note that if you intend to assign Z axis movement to button events
   using the ZAxisMapping option below, you need to take account of those
   buttons into N too.
@@ -533,12 +520,10 @@
 
 
 
-  55..22..  ZZAAxxiissMMaappppiinngg
+  [1m5.2.  ZAxisMappping[0m
 
   This option maps the Z axis (wheel) motion to buttons or to another
   axis.
-
-
           Option  "ZAxisMapping"      "X"
           Option  "ZAxisMapping"      "Y"
           Option  "ZAxisMapping"      "N1 N2"
@@ -563,7 +548,7 @@
   mouse, their actions won't be detected by the X server.
 
   NOTE #1: horizontal movement may not always be detected by the current
-  version of the X11R6.9 X servers, because there appears to be no
+  version of the X11R6.8 X servers, because there appears to be no
   accepted standard as to how the horizontal direction is encoded in
   mouse data.
 
@@ -577,7 +562,7 @@
   configuration.
 
 
-  55..33..  RReessoolluuttiioonn
+  [1m5.3.  Resolution[0m
 
   The following option will set the mouse device resolution to N counts
   per inch, if possible:
@@ -589,7 +574,8 @@
 
   Not all mice and OSs can support this option.
 
-  55..44..  DDrraagg LLoocckk BBuuttttoonnss
+
+  [1m5.4.  Drag Lock Buttons[0m
 
   Some people find it difficult or inconvenient to hold a trackball
   button down, while at the same time moving the ball. Drag lock buttons
@@ -602,7 +588,6 @@
 
 
           Option  "DragLockButtons"   "W X Y Z"
-
 
 
   This option consists of pairs of buttons. Each lock button number is
@@ -624,14 +609,14 @@
   Since button "M" is unpaired it is a master drag lock button.
 
 
-  66..  MMoouussee GGaalllleerryy
+  [1m6.  Mouse Gallery[0m
 
 
   In all of the examples below, it is assumed that /dev/mouse is a link
   to the appropriate serial port or PS/2 mouse device.
 
 
-  66..11..  MMSS IInntteelllliiMMoouussee  ((sseerriiaall,, PPSS//22))
+  [1m6.1.  MS IntelliMouse  (serial, PS/2)[0m
 
   This mouse has a wheel which also acts as the button 2 (middle
   button).  The wheel movement is recognized as the Z axis motion.  This
@@ -655,6 +640,7 @@
 
   To use this mouse as the PS/2 device and the OS supports PS/2 mouse
   initialization:
+
           Option  "Protocol"  "IMPS/2"
 
 
@@ -669,11 +655,12 @@
   To use this mouse as the PS/2 device and the OS supports automatic
   PS/2 mouse detection:
 
+
           Option  "Protocol"  "Auto"
 
 
 
-  66..22..  MMSS IInntteelllliiMMoouussee EExxpplloorreerr ((PPSS//22,, UUSSBB))
+  [1m6.2.  MS IntelliMouse Explorer (PS/2, USB)[0m
 
   This mouse has a wheel which also acts as the button 2 (middle
   button).  There are two side buttons; they are recognized as the
@@ -716,8 +703,8 @@
 
 
 
-  66..33..  KKeennssiinnggttoonn TThhiinnkkiinngg MMoouussee aanndd KKeennssiinnggttoonn EExxppeerrtt MMoouussee ((sseerriiaall,,
-  PPSS//22))
+  [1m6.3.  Kensington Thinking Mouse and Kensington Expert Mouse (serial,[0m
+  [1mPS/2)[0m
 
   These mice have four buttons.  The Kensington Expert Mouse is really a
   trackball.  Both Thinking mice  support the PnP COM device
@@ -731,7 +718,6 @@
   or:
 
           Option  "Protocol"  "ThinkingMouse"
-
 
 
   To use this mouse as the PS/2 device and the OS supports PS/2 mouse
@@ -756,7 +742,7 @@
 
 
 
-  66..44..  GGeenniiuuss NNeettSSccrroollll ((PPSS//22))
+  [1m6.4.  Genius NetScroll (PS/2)[0m
 
   This mouse has four buttons and a roller.  The roller movement is
   recognized as the Z axis motion.
@@ -781,7 +767,8 @@
           Option  "Protocol"  "Auto"
 
 
-  66..55..  GGeenniiuuss NNeettMMoouussee aanndd NNeettMMoouussee PPrroo ((sseerriiaall,, PPSS//22))
+
+  [1m6.5.  Genius NetMouse and NetMouse Pro (serial, PS/2)[0m
 
   These mice have a "magic button" which is used like a wheel or a
   roller.  The "magic button" action is recognized as the Z axis motion.
@@ -794,6 +781,7 @@
   To use these mice as a serial device:
 
           Option  "Protocol"  "Auto"
+
 
 
   or:
@@ -824,7 +812,7 @@
 
 
 
-  66..66..  GGeenniiuuss NNeettSSccrroollll OOppttiiccaall ((PPSS//22,, UUSSBB))
+  [1m6.6.  Genius NetScroll Optical (PS/2, USB)[0m
 
   This mouse has a wheel which also acts as the button 2 (middle
   button), and two side buttons which are recognized as the buttons 4
@@ -846,6 +834,7 @@
 
   To use this mouse as the PS/2 device and the OS supports automatic
   PS/2 mouse detection:
+
           Option  "Protocol"  "Auto"
 
 
@@ -864,7 +853,7 @@
 
 
 
-  66..77..  AALLPPSS GGlliiddeePPooiinntt ((sseerriiaall,, PPSS//22))
+  [1m6.7.  ALPS GlidePoint (serial, PS/2)[0m
 
   The serial version of this pad device has been supported since XFree86
   3.2.  `Tapping' action is interpreted as the fourth button press.
@@ -899,7 +888,7 @@
 
 
 
-  66..88..  AASSCCIIII MMiieeMMoouussee ((sseerriiaall,, PPSS//22))
+  [1m6.8.  ASCII MieMouse (serial, PS/2)[0m
 
   This mouse appears to be OEM from Genius.  Although its shape is quite
   different, it works like Genius NetMouse Pro.  This mouse has a "knob"
@@ -908,7 +897,6 @@
 
   MieMouse supports the PnP COM device specification.  When used as a
   serial mouse, it is compatible with MS IntelliMouse.
-
 
   To use this mouse as a serial device:
 
@@ -923,6 +911,7 @@
 
   To use this mouse as the PS/2 device and the OS supports PS/2 mouse
   initialization:
+
 
           Option  "Protocol"  "NetMousePS/2"
 
@@ -942,7 +931,7 @@
 
 
 
-  66..99..  LLooggiitteecchh MMoouusseeMMaann++ aanndd FFiirrssttMMoouussee++ ((sseerriiaall,, PPSS//22))
+  [1m6.9.  Logitech MouseMan+ and FirstMouse+ (serial, PS/2)[0m
 
   MouseMan+ has two buttons on top, one side button and a roller.
   FirstMouse+ has two buttons and a roller.  The roller movement is
@@ -975,6 +964,8 @@
 
           Option  "Protocol"  "PS/2"
 
+
+
   To use this mouse as the PS/2 device and the OS supports automatic
   PS/2 mouse detection:
 
@@ -982,7 +973,7 @@
 
 
 
-  66..1100..  IIBBMM SSccrroollllPPooiinntt ((PPSS//22))
+  [1m6.10.  IBM ScrollPoint (PS/2)[0m
 
   ScrollPoint has a "stick" in between the two buttons.  This "stick" is
   the same as the stick-shaped pointing device often found on notebook
@@ -1013,7 +1004,7 @@
 
 
 
-  66..1111..  88DD SSccrroollllMMoouussee ((sseerriiaall,, PPSS//22))
+  [1m6.11.  8D ScrollMouse (serial, PS/2)[0m
 
   ScrollMouse, also known as GyroMouse, has a "stick" similar to IBM
   ScrollPoint.  The stick movement is recognized as the Z axis motion.
@@ -1038,7 +1029,6 @@
   To use this mouse as the PS/2 device and the OS supports PS/2 mouse
   initialization:
 
-
           Option  "Protocol"  "IMPS/2"
 
 
@@ -1052,12 +1042,11 @@
 
   To use this mouse as the PS/2 device and the OS supports automatic
   PS/2 mouse detection:
-
           Option  "Protocol"  "Auto"
 
 
 
-  66..1122..  AA44 TTeecchh 44DD mmiiccee ((sseerriiaall,, PPSS//22,, UUSSBB))
+  [1m6.12.  A4 Tech 4D mice (serial, PS/2, USB)[0m
 
   A4 Tech produces quit a number of mice with one or two wheels.  Their
   mice may have 2, 3, or 4 buttons.  The wheels movement is recognized
@@ -1104,6 +1093,8 @@
 
           Option  "Protocol"  "usb"
 
+
+
   To use this mouse as the USB device and the OS supports automatic
   mouse detection:
 
@@ -1111,7 +1102,8 @@
 
 
 
-  77..  CCoonnffiigguurraattiioonn EExxaammpplleess
+  [1m7.  Configuration Examples[0m
+
 
 
   This section shows some example InputDevice section for popular mice.
@@ -1162,12 +1154,6 @@
   6 Wheel Positive Move     Button 5
 
 
-
-  Starting in the Xorg 6.9 release, you can also achieve this in your
-  configuration file by adding this to the "InputDevice" section in
-  xorg.conf:
-
-          Option "ButtonMapping" "1 6 3 2 4 5"
 
   For the MS IntelliMouse Explorer which as a wheel and 5 buttons, you
   may have the following InputDevice section.
@@ -1233,7 +1219,6 @@
   may have the following InputDevice section.
 
 
-
   ______________________________________________________________________
   Section "InputDevice"
           Identifier      "WinEasy"
@@ -1252,7 +1237,6 @@
 
   The Kensington Expert mouse is really a trackball. It has 4 buttons
   arranged in a rectangle around the ball.
-
 
   ______________________________________________________________________
   Section "InputDevice"

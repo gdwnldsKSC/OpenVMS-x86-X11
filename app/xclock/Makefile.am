@@ -1,4 +1,4 @@
-# $Id: Makefile.am,v 1.13 2005/12/07 16:17:59 kem Exp $
+# $Id: Makefile.am,v 1.12 2005/12/06 22:48:19 kem Exp $
 # 
 #  Copyright 2005  Red Hat, Inc.
 # 

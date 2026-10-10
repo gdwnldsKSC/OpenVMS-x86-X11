@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/panel.c,v 1.2 2002/12/11 22:51:00 dawes Exp $ */
 /*
  * $Workfile: panel.c $
- * $Revision: 1.4 $
- * $Author: ajax $
+ * $Revision: 1.3 $
+ * $Author: daniels $
  *
  * File Contents: This file contailns the panel include files and 
  *                external pointer to the hardware.

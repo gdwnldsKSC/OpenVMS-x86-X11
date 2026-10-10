@@ -26,9 +26,10 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Version.h"
 #include "mipointer.h"
 #include "mibstore.h"
@@ -63,11 +64,11 @@ static ModeStatus CG14ValidMode(int scrnIndex, DisplayModePtr mode,
 
 void CG14Sync(ScrnInfoPtr pScrn);
 
-#define VERSION 4000
+#define CG14_VERSION 4000
 #define CG14_NAME "SUNCG14"
 #define CG14_DRIVER_NAME "suncg14"
 #define CG14_MAJOR_VERSION 1
-#define CG14_MINOR_VERSION 0
+#define CG14_MINOR_VERSION 1
 #define CG14_PATCHLEVEL 0
 
 /* 
@@ -79,7 +80,7 @@ void CG14Sync(ScrnInfoPtr pScrn);
  */
 
 _X_EXPORT DriverRec SUNCG14 = {
-    VERSION,
+    CG14_VERSION,
     CG14_DRIVER_NAME,
     CG14Identify,
     CG14Probe,
@@ -257,7 +258,7 @@ CG14Probe(DriverPtr drv, int flags)
 	    pScrn = xf86AllocateScreen(drv, 0);
 
 	    /* Fill in what we can of the ScrnInfoRec */
-	    pScrn->driverVersion = VERSION;
+	    pScrn->driverVersion = CG14_VERSION;
 	    pScrn->driverName	 = CG14_DRIVER_NAME;
 	    pScrn->name		 = CG14_NAME;
 	    pScrn->Probe	 = CG14Probe;

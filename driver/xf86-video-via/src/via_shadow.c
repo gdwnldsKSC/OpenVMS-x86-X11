@@ -26,6 +26,7 @@
 #include "config.h"
 #endif
 
+#include "via.h"
 #include "via_driver.h"
 #include "shadowfb.h"
 #include "servermd.h"

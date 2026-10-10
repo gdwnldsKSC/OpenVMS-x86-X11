@@ -1,6 +1,6 @@
-# OpenVMS x86 X11 R7.0 Port Effort  
+# OpenVMS x86 X11 R7.1 Port Effort  
   
-Currently, this is the complete modular X11 R7.0 source tree.  
+Currently, this is the complete modular X11 R7.1 source tree, with the bundled dependencies required by the native build.  
   
 As parts become buildable, they will be updated and documented here.  
   
@@ -36,17 +36,16 @@ FONTTOSFNT. Produces `FONTTOSFNT.EXE` - all five upstream bitmap-to-sfnt convert
 REVPATH. Produces `REVPATH.EXE` - the unchanged upstream imake relative-path helper.  
 UCS2ANY. Produces `UCS2ANY.EXE` - the unchanged upstream font-util BDF character-encoding converter; use one mapping per invocation because of an upstream multi-mapping cleanup defect.  
 DAMAGE. Produces `DAMAGE.OLB` - the unchanged internal server damage-tracking library from `xserver/xorg-server/miext/damage`; static profile with pixmap privates, excluding Render, Composite, and rootless hooks.  
-MI. Produces `MI.OLB` - all 38 unchanged machine-independent server modules from `xserver/xorg-server/mi`; static core profile with pixmap privates and native CRTL cube roots, excluding optional extensions and loadable hooks; upstream bank-separation limits remain.  
+MI. Produces `MI.OLB` - all 37 unchanged machine-independent server modules from `xserver/xorg-server/mi`; static core profile with pixmap privates and native CRTL cube roots, excluding optional extensions and loadable hooks; upstream bank-separation limits remain.  
 CBRT. Produces `CBRT.OLB` - the separate unchanged upstream cube-root fallback from `xserver/xorg-server/mi`.  
 FB. Produces `FB.OLB` - all 35 upstream framebuffer modules from `xserver/xorg-server/fb`, with an essential P64 24-bit alignment adaptation; static Render-enabled profile including 24-bit and 24/32 conversion paths, excluding loadable hooks and GCC MMX.  
-RENDER. Produces `RENDER.OLB` - all 12 unchanged upstream Render extension modules from `xserver/xorg-server/render`; static profile excluding optional extension hooks; upstream triangle-strip/fan allocation and sampling/edge-stepping defects remain.  
-DIX. Produces `DIX.OLB` - all 23 upstream device-independent server modules from `xserver/xorg-server/dix`, with minimal pointer-initialization and optional-Shape fixes, plus a native entry adapter for the 64-bit environment-vector boundary; static Render-enabled profile excluding optional extension hooks.  
+RENDER. Produces `RENDER.OLB` - all 12 unchanged upstream Render extension modules from `xserver/xorg-server/render`; static profile excluding optional extension hooks; upstream sampling/edge-stepping defects remain.  
+DIX. Produces `DIX.OLB` - all 23 upstream device-independent server modules from `xserver/xorg-server/dix`, with a minimal optional-Shape fix, plus a native entry adapter for the 64-bit environment-vector boundary; static Render-enabled profile excluding optional extension hooks.  
 XPSTUBS. Produces `XPSTUBS.OLB` - the separate unchanged upstream non-Xprint server auxiliary from `xserver/xorg-server/dix`.  
-SHADOW. Produces `SHADOW.OLB` - all 15 unchanged upstream shadow-framebuffer modules from `xserver/xorg-server/miext/shadow`; static Render-enabled profile with packed, planar, and rotation paths, excluding loadable hooks.  
+SHADOW. Produces `SHADOW.OLB` - all 20 unchanged upstream shadow-framebuffer modules from `xserver/xorg-server/miext/shadow`; static Render-enabled profile with packed, planar, and rotation paths, excluding loadable hooks.  
 RANDR. Produces `RANDR.OLB` - both unchanged upstream Resize and Rotate extension modules from `xserver/xorg-server/randr`; static Render-enabled profile; MI fallback does not change display modes, and the upstream rate-array cleanup defect remains.  
 DBE. Produces `DBE.OLB` - both unchanged upstream Double Buffer Extension modules from `xserver/xorg-server/dbe`; static profile with the machine-independent implementation, excluding loadable hooks.  
 RECORD. Produces `RECORD.OLB` - both unchanged upstream protocol-recording extension modules from `xserver/xorg-server/record`; static profile with the range-set implementation, excluding loadable hooks.  
-LAYER. Produces `LAYER.OLB` - all four unchanged upstream screen-layer modules from `xserver/xorg-server/miext/layer`, with native internal-symbol aliases; static Render-enabled profile excluding loadable hooks; upstream window-loop defects remain.  
 XFIXES. Produces `XFIXES.OLB` - all five unchanged upstream X Fixes extension modules from `xserver/xorg-server/xfixes`; static Render-enabled profile; linking requires an XFIXES-enabled server core.  
 COMPOSITE. Produces `COMPOSITE.OLB` - all four unchanged upstream Composite extension modules from `xserver/xorg-server/composite`; static Render-enabled profile; linking requires matching COMPOSITE/XFIXES server layouts and Damage extension support.  
 CW. Produces `CW.OLB` - all three unchanged upstream Composite wrapper modules from `xserver/xorg-server/miext/cw`; static Render-enabled profile with native C99 assertion-name mapping; requires matching Composite server layouts and screen initialization.  
@@ -56,11 +55,10 @@ XINPUT. Produces `XINPUT.OLB` - all 37 upstream server X Input extension modules
 OS. Produces `OS.OLB` - all 16 modules of the upstream TCP/XDMCP, MIT-cookie and text-RGB profile, with minimal VMS/P64 fixes and one native process adapter; process helpers use DCL and reject images installed with added privileges or rights.  
 MFB. Produces `MFB.OLB` - all 47 standard monochrome framebuffer objects, with corrected upstream weak-callback declarations, including specialized drawing variants; static profile excluding banked and loadable hooks.  
 VFB. Produces `VFB.OLB` - all four upstream virtual-framebuffer DDx objects from unchanged sources; malloc framebuffer with Render, excluding SHM, MMAP, and DPMS; not a standalone Xvfb executable.  
-XKB. Produces `XKB.OLB` - all 35 upstream keyboard-extension objects from unchanged sources, including generic DDx hooks and X Input event support; requires matching XKB/XINPUT server layouts, keymaps, and xkbcomp for runtime use.  
+XKB. Produces `XKB.OLB` - all 31 upstream keyboard-extension and generic DDX stub objects, with a minimal rules-parser correction, including X Input event support; requires matching XKB/XINPUT server layouts, keymaps, and xkbcomp for runtime use.  
 LBX. Produces `LBX.OLB` - all 12 upstream Low Bandwidth X server extension objects from unchanged sources; requires matching LBX server layouts, `LBXUTIL.OLB`, and `Z.OLB`.  
 CFB. Produces `CFB.OLB` - all 57 standard 8-bit color-framebuffer objects, with minimal P64 address-alignment and glyph-store sequencing fixes; static profile excluding banked, assembly, and loadable hooks; native support supplies 32-bit unaligned loads and RTL declarations.  
 CFB16. Produces `CFB16.OLB` - all 52 standard 16-bit color-framebuffer objects, with minimal P64 address-alignment fixes; the same static profile and native support as CFB.  
-CFB24. Produces `CFB24.OLB` - all 52 standard 24-bit color-framebuffer objects, with minimal P64 address-alignment fixes; the same static profile and native support as CFB.  
 CFB32. Produces `CFB32.OLB` - all 52 standard 32-bit color-framebuffer objects, with minimal P64 address-alignment fixes; the same static profile and native support as CFB.  
 XKBFILE. Produces `XKBFILE.OLB` - all 13 unchanged upstream keyboard-file library modules; client profile requiring native Xlib when linked.  
 XKBUI. Produces `XKBUI.OLB` - the unchanged upstream keyboard user-interface library module; requires native Xlib and `XKBFILE.OLB` when linked.  
@@ -154,7 +152,6 @@ $ @[.VMS-SUPPORT]BUILD SHADOW
 $ @[.VMS-SUPPORT]BUILD RANDR  
 $ @[.VMS-SUPPORT]BUILD DBE  
 $ @[.VMS-SUPPORT]BUILD RECORD  
-$ @[.VMS-SUPPORT]BUILD LAYER  
 $ @[.VMS-SUPPORT]BUILD XFIXES  
 $ @[.VMS-SUPPORT]BUILD COMPOSITE  
 $ @[.VMS-SUPPORT]BUILD CW  
@@ -168,7 +165,6 @@ $ @[.VMS-SUPPORT]BUILD XKB
 $ @[.VMS-SUPPORT]BUILD LBX  
 $ @[.VMS-SUPPORT]BUILD CFB  
 $ @[.VMS-SUPPORT]BUILD CFB16  
-$ @[.VMS-SUPPORT]BUILD CFB24  
 $ @[.VMS-SUPPORT]BUILD CFB32  
 $ @[.VMS-SUPPORT]BUILD XKBFILE  
 $ @[.VMS-SUPPORT]BUILD XKBUI  

@@ -1,5 +1,5 @@
 /*
- * $Id: xfstrans.c,v 1.1 2005/07/12 18:45:45 sandmann Exp $
+ * $Id: icetrans.c,v 1.2 2005/06/09 15:54:47 ago Exp $
  *
  * Copyright © 2003 Keith Packard
  *

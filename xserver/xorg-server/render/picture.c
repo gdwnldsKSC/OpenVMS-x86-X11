@@ -42,7 +42,7 @@
 #include "servermd.h"
 #include "picturestr.h"
 
-int		PictureScreenPrivateIndex = -1;
+_X_EXPORT int	PictureScreenPrivateIndex = -1;
 int		PictureWindowPrivateIndex;
 int		PictureGeneration;
 RESTYPE		PictureType;
@@ -136,6 +136,7 @@ PictureCloseScreen (int index, ScreenPtr pScreen)
     for (n = 0; n < ps->nformats; n++)
 	if (ps->formats[n].type == PictTypeIndexed)
 	    (*ps->CloseIndexed) (pScreen, &ps->formats[n]);
+    GlyphUninit (pScreen);
     SetPictureScreen(pScreen, 0);
     if (ps->PicturePrivateSizes)
 	xfree (ps->PicturePrivateSizes);
@@ -233,10 +234,14 @@ PictureCreateDefaultFormats (ScreenPtr pScreen, int *nformatp)
     formats[nformats].format = PICT_a1;
     formats[nformats].depth = 1;
     nformats++;
-    formats[nformats].format = PICT_a8;
+    formats[nformats].format = PICT_FORMAT(BitsPerPixel(8),
+					   PICT_TYPE_A,
+					   8, 0, 0, 0);
     formats[nformats].depth = 8;
     nformats++;
-    formats[nformats].format = PICT_a4;
+    formats[nformats].format = PICT_FORMAT(BitsPerPixel(4),
+					   PICT_TYPE_A,
+					   4, 0, 0, 0);
     formats[nformats].depth = 4;
     nformats++;
     formats[nformats].format = PICT_a8r8g8b8;
@@ -493,6 +498,8 @@ PictureFinishInit (void)
 
     for (s = 0; s < screenInfo.numScreens; s++)
     {
+	if (!GlyphFinishInit (screenInfo.screens[s]))
+	    return FALSE;
 	if (!PictureInitIndexedFormats (screenInfo.screens[s]))
 	    return FALSE;
 	(void) AnimCurInit (screenInfo.screens[s]);
@@ -501,7 +508,7 @@ PictureFinishInit (void)
     return TRUE;
 }
 
-Bool
+_X_EXPORT Bool
 PictureSetSubpixelOrder (ScreenPtr pScreen, int subpixel)
 {
     PictureScreenPtr    ps = GetPictureScreenIfSet(pScreen);
@@ -513,7 +520,7 @@ PictureSetSubpixelOrder (ScreenPtr pScreen, int subpixel)
     
 }
 
-int
+_X_EXPORT int
 PictureGetSubpixelOrder (ScreenPtr pScreen)
 {
     PictureScreenPtr    ps = GetPictureScreenIfSet(pScreen);
@@ -613,7 +620,7 @@ PictureParseCmapPolicy (const char *name)
 	return PictureCmapPolicyInvalid;
 }
 
-Bool
+_X_EXPORT Bool
 PictureInit (ScreenPtr pScreen, PictFormatPtr formats, int nformats)
 {
     PictureScreenPtr	ps;
@@ -860,12 +867,12 @@ static CARD32 xRenderColorToCard32(xRenderColor c)
 static unsigned int premultiply(unsigned int x)
 {
     unsigned int a = x >> 24;
-    unsigned int t = (x & 0xff00ff) * a;
-    t = (t + ((t >> 8) & 0xff00ff) + 0x800080) >> 8;
+    unsigned int t = (x & 0xff00ff) * a + 0x800080;
+    t = (t + ((t >> 8) & 0xff00ff)) >> 8;
     t &= 0xff00ff;
 
-    x = ((x >> 8) & 0xff) * a;
-    x = (x + ((x >> 8) & 0xff) + 0x80);
+    x = ((x >> 8) & 0xff) * a + 0x80;
+    x = (x + ((x >> 8) & 0xff));
     x &= 0xff00;
     x |= t | (a << 24);
     return x;
@@ -974,8 +981,10 @@ static PicturePtr createSourcePicture(void)
     PicturePtr pPicture;
     pPicture = (PicturePtr) xalloc(sizeof(PictureRec));
     pPicture->pDrawable = 0;
+    pPicture->format = PICT_a8r8g8b8;
     pPicture->pFormat = 0;
     pPicture->pNext = 0;
+    pPicture->devPrivates = 0;
 
     SetPictureToDefaults(pPicture);
     return pPicture;
@@ -1460,6 +1469,9 @@ SetPictureTransform (PicturePtr	    pPicture,
 	{ 0x00000, xFixed1, 0x00000 },
 	{ 0x00000, 0x00000, xFixed1 },
     } };
+    ScreenPtr		pScreen = pPicture->pDrawable->pScreen;
+    PictureScreenPtr	ps = GetPictureScreen(pScreen);
+    int			result;
 
     if (transform && memcmp (transform, &identity, sizeof (PictTransform)) == 0)
 	transform = 0;
@@ -1484,7 +1496,9 @@ SetPictureTransform (PicturePtr	    pPicture,
     }
     pPicture->serialNumber |= GC_CHANGE_SERIAL_BIT;
 
-    return Success;
+    result = (*ps->ChangePictureTransform) (pPicture, transform);
+
+    return result;
 }
 
 void
@@ -1649,6 +1663,99 @@ FreePictFormat (pointer	pPictFormat,
     return Success;
 }
 
+/**
+ * ReduceCompositeOp is used to choose simpler ops for cases where alpha
+ * channels are always one and so math on the alpha channel per pixel becomes
+ * unnecessary.  It may also avoid destination reads sometimes if apps aren't
+ * being careful to avoid these cases.
+ */
+static Bool
+ReduceCompositeOp (CARD8 op, PicturePtr pSrc, PicturePtr pMask, PicturePtr pDst)
+{
+    Bool no_src_alpha, no_dst_alpha;
+
+    no_src_alpha = PICT_FORMAT_COLOR(pSrc->format) &&
+                   PICT_FORMAT_A(pSrc->format) == 0 &&
+                   pSrc->alphaMap == NULL &&
+                   pMask == NULL;
+    no_dst_alpha = PICT_FORMAT_COLOR(pDst->format) &&
+                   PICT_FORMAT_A(pDst->format) == 0 &&
+                   pDst->alphaMap == NULL;
+
+    /* TODO, maybe: Conjoint and Disjoint op reductions? */
+ 
+    /* Deal with simplifications where the source alpha is always 1. */
+    if (no_src_alpha)
+    {
+	switch (op) {
+	case PictOpOver:
+	    op = PictOpSrc;
+	    break;
+	case PictOpInReverse:
+	    op = PictOpDst;
+	    break;
+	case PictOpOutReverse:
+	    op = PictOpClear;
+	    break;
+	case PictOpAtop:
+	    op = PictOpIn;
+	    break;
+	case PictOpAtopReverse:
+	    op = PictOpOverReverse;
+	    break;
+	case PictOpXor:
+	    op = PictOpOut;
+	    break;
+	default:
+	    break;
+	}
+    }
+
+    /* Deal with simplifications when the destination alpha is always 1 */
+    if (no_dst_alpha)
+    {
+	switch (op) {
+	case PictOpOverReverse:
+	    op = PictOpDst;
+	    break;
+	case PictOpIn:
+	    op = PictOpSrc;
+	    break;
+	case PictOpOut:
+	    op = PictOpClear;
+	    break;
+	case PictOpAtop:
+	    op = PictOpOver;
+	    break;
+	case PictOpXor:
+	    op = PictOpOutReverse;
+	    break;
+	default:
+	    break;
+	}
+    }
+
+    /* Reduce some con/disjoint ops to the basic names. */
+    switch (op) {
+    case PictOpDisjointClear:
+    case PictOpConjointClear:
+	op = PictOpClear;
+	break;
+    case PictOpDisjointSrc:
+    case PictOpConjointSrc:
+	op = PictOpSrc;
+	break;
+    case PictOpDisjointDst:
+    case PictOpConjointDst:
+	op = PictOpDst;
+	break;
+    default:
+	break;
+    }
+
+    return op;
+}
+
 void
 CompositePicture (CARD8		op,
 		  PicturePtr	pSrc,
@@ -1669,6 +1776,11 @@ CompositePicture (CARD8		op,
     if (pMask)
 	ValidatePicture (pMask);
     ValidatePicture (pDst);
+
+    op = ReduceCompositeOp (op, pSrc, pMask, pDst);
+    if (op == PictOpDst)
+	return;
+
     (*ps->Composite) (op,
 		       pSrc,
 		       pMask,
@@ -1798,7 +1910,7 @@ AddTraps (PicturePtr	pPicture,
 #define MAX_FIXED_48_16	    ((xFixed_48_16) 0x7fffffff)
 #define MIN_FIXED_48_16	    (-((xFixed_48_16) 1 << 31))
 
-Bool
+_X_EXPORT Bool
 PictureTransformPoint3d (PictTransformPtr transform,
                          PictVectorPtr	vector)
 {
@@ -1827,7 +1939,7 @@ PictureTransformPoint3d (PictTransformPtr transform,
 }
 
 
-Bool
+_X_EXPORT Bool
 PictureTransformPoint (PictTransformPtr transform,
 		       PictVectorPtr	vector)
 {

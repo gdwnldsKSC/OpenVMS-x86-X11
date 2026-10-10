@@ -1,5 +1,25 @@
 /*
- * $Id: xcompositeint.h,v 1.3 2005/07/12 03:10:35 keithp Exp $
+ * $Id: xcompositeint.h,v 1.1.1.1 2003/11/07 04:22:59 keithp Exp $
+ *
+ * Copyright © 2006 Sun Microsystems
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of Sun Microsystems not be used in
+ * advertising or publicity pertaining to distribution of the software without
+ * specific, written prior permission.  Sun Microsystems makes no
+ * representations about the suitability of this software for any purpose.  It
+ * is provided "as is" without express or implied warranty.
+ *
+ * SUN MICROSYSTEMS DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+ * EVENT SHALL SUN MICROSYSTEMS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
  *
  * Copyright © 2003 Keith Packard
  *
@@ -22,8 +42,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _XDAMAGEINT_H_
-#define _XDAMAGEINT_H_
+#ifndef _XCOMPOSITEINT_H_
+#define _XCOMPOSITEINT_H_
 
 #define NEED_EVENTS
 #define NEED_REPLIES
@@ -63,4 +83,4 @@ XCompositeFindDisplay (Display *dpy);
 #define XCompositeSimpleCheckExtension(dpy,i) \
   if (!XCompositeHasExtension(i)) { return; }
 
-#endif /* _XDAMAGEINT_H_ */
+#endif /* _XCOMPOSITEINT_H_ */

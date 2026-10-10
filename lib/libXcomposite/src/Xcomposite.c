@@ -1,6 +1,26 @@
 /*
  * $Id: Xcomposite.c,v 1.2 2005/07/03 07:00:56 daniels Exp $
  *
+ * Copyright © 2006 Sun Microsystems
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of Sun Microsystems not be used in
+ * advertising or publicity pertaining to distribution of the software without
+ * specific, written prior permission.  Sun Microsystems makes no
+ * representations about the suitability of this software for any purpose.  It
+ * is provided "as is" without express or implied warranty.
+ *
+ * SUN MICROSYSTEMS DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+ * EVENT SHALL SUN MICROSYSTEMS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ * PERFORMANCE OF THIS SOFTWARE.
+ *
  * Copyright © 2003 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -83,7 +103,6 @@ XCompositeExtAddDisplay (XCompositeExtInfo	*extinfo,
 			 const char		*ext_name)
 {
     XCompositeExtDisplayInfo    *info;
-    int			    ev;
 
     info = (XCompositeExtDisplayInfo *) Xmalloc (sizeof (XCompositeExtDisplayInfo));
     if (!info) return NULL;
@@ -113,6 +132,7 @@ XCompositeExtAddDisplay (XCompositeExtInfo	*extinfo,
 	{
 	    UnlockDisplay (dpy);
 	    SyncHandle ();
+	    Xfree(info);
 	    return 0;
 	}
 	info->major_version = rep.majorVersion;
@@ -330,4 +350,46 @@ XCompositeNameWindowPixmap (Display *dpy, Window window)
     UnlockDisplay (dpy);
     SyncHandle ();
     return pixmap;
+}
+
+Window
+XCompositeGetOverlayWindow (Display *dpy, Window window)
+{
+    XCompositeExtDisplayInfo	    *info = XCompositeFindDisplay (dpy);
+    xCompositeGetOverlayWindowReq   *req;
+    xCompositeGetOverlayWindowReply rep;
+
+    XCompositeCheckExtension (dpy, info, 0);
+    LockDisplay (dpy);
+    GetReq (CompositeGetOverlayWindow, req);
+    req->reqType = info->codes->major_opcode;
+    req->compositeReqType = X_CompositeGetOverlayWindow;
+    req->window = window;
+    if (!_XReply (dpy, (xReply *) &rep, 0, xFalse))
+    {
+	UnlockDisplay (dpy);
+	SyncHandle ();
+	return 0;
+    }
+   
+    UnlockDisplay (dpy);
+    SyncHandle ();
+
+    return rep.overlayWin;
+}
+
+void
+XCompositeReleaseOverlayWindow (Display *dpy, Window window)
+{
+    XCompositeExtDisplayInfo	    *info = XCompositeFindDisplay (dpy);
+    xCompositeReleaseOverlayWindowReq   *req;
+
+    XCompositeSimpleCheckExtension (dpy, info);
+    LockDisplay (dpy);
+    GetReq (CompositeReleaseOverlayWindow, req);
+    req->reqType = info->codes->major_opcode;
+    req->compositeReqType = X_CompositeReleaseOverlayWindow;
+    req->window = window;
+    UnlockDisplay (dpy);
+    SyncHandle ();
 }

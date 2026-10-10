@@ -1,5 +1,5 @@
 ! $Xorg: xdm-conf.cpp,v 1.3 2000/08/17 19:54:17 cpqbld Exp $
-! $XdotOrg: $    
+! $XdotOrg: app/xdm/config/xdm-config.cpp,v 1.5 2005/12/11 20:46:25 alanc Exp $    
 !
 !
 !

@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/programs/xdm/session.c,v 1.1.4.4 2003/12/06 13:24:29 kaleb Exp $ */
+/* $XdotOrg: app/xdm/session.c,v 1.6 2006/04/08 00:22:23 alanc Exp $ */
 /* $Xorg: session.c,v 1.8 2001/02/09 02:05:40 xorgcvs Exp $ */
 /*
 
@@ -55,7 +55,9 @@ from The Open Group.
 #ifdef SECURE_RPC
 # include <rpc/rpc.h>
 # include <rpc/key_prot.h>
+# if !HAVE_DECL_KEY_SETNET
 extern int key_setnet(struct key_netstarg *arg);
+# endif
 #endif
 #ifdef K5AUTH
 # include <krb5/krb5.h>
@@ -74,7 +76,7 @@ extern int key_setnet(struct key_netstarg *arg);
 
 static	int	runAndWait (char **args, char **environ);
 
-#if defined(CSRG_BASED) || defined(__osf__) || defined(__DARWIN__) || defined(__QNXNTO__) || defined(sun) || defined(__GLIBC__) || defined(__SCO__)
+#ifdef HAVE_GRP_H
 # include <sys/types.h>
 # include <grp.h>
 #else
@@ -568,17 +570,6 @@ StartClient (
 
 	/* Do system-dependent login setup here */
 
-#ifdef USE_PAM
-	/* pass in environment variables set by libpam and modules it called */
-	if (pamh) {
-	    long i;
-	    char **pam_env = pam_getenvlist(pamh);
-	    for(i = 0; pam_env && pam_env[i]; i++) {
-		verify->userEnviron = putEnv(pam_env[i], verify->userEnviron);
-	    }
-	}
-#endif
-
 #ifdef USESECUREWARE
         Debug ("set_identity: uid=%d\n", userp->pw.pw_uid);
         ret = smp_set_identity (userp, &reason, &smpenv, &smpshell);
@@ -630,12 +621,22 @@ StartClient (
 #endif   /* QNX4 doesn't support multi-groups, no initgroups() */
 #ifdef USE_PAM
 	if (pamh) {
+	    long i;
+	    char **pam_env;
+
 	    pam_error = pam_setcred (pamh, PAM_ESTABLISH_CRED);
 	    if (pam_error != PAM_SUCCESS) {
 		LogError ("pam_setcred for \"%s\" failed: %s\n",
 			 name, pam_strerror(pamh, pam_error));
 		return(0);
 	    }
+
+	    /* pass in environment variables set by libpam and modules it called */
+	    pam_env = pam_getenvlist(pamh);
+	    for(i = 0; pam_env && pam_env[i]; i++) {
+		verify->userEnviron = putEnv(pam_env[i], verify->userEnviron);
+	    }
+
 	}
 #endif
 	if (setuid(verify->uid) < 0) {

@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_driver.c,v 1.4tsi Exp $ */
 /*
  * $Workfile: nsc_driver.c $
- * $Revision: 1.7 $
- * $Author: ajax $
+ * $Revision: 1.6 $
+ * $Author: daniels $
  *
  * File Contents: This is the main module configures the interfacing 
  *                with the X server. The individual modules will be 
@@ -154,7 +154,6 @@
 /* Includes that are used by all drivers */
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Resources.h"
 
 /* We may want inb() and outb() */
@@ -212,10 +211,10 @@
 /* This should match the durango code version.
  * The patchlevel may be used to indicate changes in geode.c 
  */
-#define NSC_VERSION_NAME    "2.7.6"
+#define NSC_VERSION_NAME    "2.8.1"
 #define NSC_VERSION_MAJOR   2
-#define NSC_VERSION_MINOR   7
-#define NSC_PATCHLEVEL      6
+#define NSC_VERSION_MINOR   8
+#define NSC_PATCHLEVEL      1
 
 #define NSC_VERSION_CURRENT ((NSC_VERSION_MAJOR << 24) | \
 		(NSC_VERSION_MINOR << 16) | NSC_PATCHLEVEL)

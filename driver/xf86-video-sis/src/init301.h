@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/init301.h,v 1.25 2005/09/17 23:07:17 twini Exp $ */
 /*
  * Data and prototypes for init301.c
  *

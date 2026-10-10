@@ -135,11 +135,11 @@ Display *		dpy;
 char *			alternate;
 
     xkb= result->xkb;
-    dpy= xkb->dpy;
     if ((!xkb)||(!xkb->names)||(!xkb->names->keys)) {
 	_XkbLibError(_XkbErrMissingNames,"XkbWriteXKBKeycodes",0);
 	return False;
     }
+    dpy= xkb->dpy;
     kcName= xkb->names->keycodes;
     if (kcName!=None)
 	 fprintf(file,"xkb_keycodes \"%s\" {\n",
@@ -199,11 +199,11 @@ XkbKTMapEntryPtr	entry;
 XkbDescPtr		xkb;
 
     xkb= result->xkb;
-    dpy= xkb->dpy;
     if ((!xkb)||(!xkb->map)||(!xkb->map->types)) {
 	_XkbLibError(_XkbErrMissingTypes,"XkbWriteXKBKeyTypes",0);
 	return False;
     }
+    dpy= xkb->dpy;
     if (xkb->map->num_types<XkbNumRequiredTypes) {
 	_XkbLibError(_XkbErrMissingReqTypes,"XkbWriteXKBKeyTypes",0);
 	return 0;
@@ -263,9 +263,12 @@ WriteXKBIndicatorMap(	FILE *			file,
 			void *			priv)
 {
 XkbDescPtr	xkb;
+char *tmp;
 
     xkb= result->xkb;
-    fprintf(file,"    indicator \"%s\" {\n",XkbAtomGetString(xkb->dpy,name));
+    tmp = XkbAtomGetString(xkb->dpy, name);
+    fprintf(file,"    indicator \"%s\" {\n",tmp);
+    _XkbFree(tmp);
     if (led->flags&XkbIM_NoExplicit)
 	fprintf(file,"        !allowExplicit;\n");
     if (led->flags&XkbIM_LEDDrivesKB)
@@ -311,11 +314,11 @@ XkbSymInterpretPtr	interp;
 XkbDescPtr		xkb;
 
     xkb= result->xkb;
-    dpy= xkb->dpy;
     if ((!xkb)||(!xkb->compat)||(!xkb->compat->sym_interpret)) {
 	_XkbLibError(_XkbErrMissingCompatMap,"XkbWriteXKBCompatMap",0);
 	return False;
     }
+    dpy= xkb->dpy;
     if ((xkb->names==NULL)||(xkb->names->compat==None))
 	 fprintf(file,"xkb_compatibility {\n\n");
     else fprintf(file,"xkb_compatibility \"%s\" {\n\n",
@@ -392,10 +395,8 @@ XkbServerMapPtr		srv;
 Bool			showActions;
 
     xkb= result->xkb;
-    map= xkb->map;
-    srv= xkb->server;
-    dpy= xkb->dpy;
-    if ((!xkb)||(!map)||(!map->syms)||(!map->key_sym_map)) {
+
+    if ((!xkb)||(!xkb->map)||(!xkb->map->syms)||(!xkb->map->key_sym_map)) {
 	_XkbLibError(_XkbErrMissingSymbols,"XkbWriteXKBSymbols",0);
 	return False;
     }
@@ -403,6 +404,11 @@ Bool			showActions;
 	_XkbLibError(_XkbErrMissingNames,"XkbWriteXKBSymbols",0);
 	return False;
     }
+
+    map= xkb->map;
+    srv= xkb->server;
+    dpy= xkb->dpy;
+
     if ((xkb->names==NULL)||(xkb->names->symbols==None))
 	 fprintf(file,"xkb_symbols {\n\n");
     else fprintf(file,"xkb_symbols \"%s\" {\n\n",
@@ -772,7 +778,7 @@ int		dfltKeyColor = 0;
 	fprintf(file,"        angle=  %s;\n",
 					XkbGeomFPText(s->angle,XkbXKBFile));
     }
-    for (i=0,row=s->rows;i<s->num_rows;i++,row++) {
+    for (i=0,row=s->rows;row&&i<s->num_rows;i++,row++) {
 	fprintf(file,"        row {\n");
 	fprintf(file,"            top=  %s;\n",
 					XkbGeomFPText(row->top,XkbXKBFile));

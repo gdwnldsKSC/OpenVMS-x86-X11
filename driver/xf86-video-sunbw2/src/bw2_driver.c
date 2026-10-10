@@ -28,7 +28,6 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "xf86Version.h"
 #include "mipointer.h"
 #include "mibstore.h"
@@ -61,11 +60,11 @@ static ModeStatus BW2ValidMode(int scrnIndex, DisplayModePtr mode,
 
 void BW2Sync(ScrnInfoPtr pScrn);
 
-#define VERSION 4000
+#define BW2_VERSION 4000
 #define BW2_NAME "SUNBW2"
 #define BW2_DRIVER_NAME "sunbw2"
 #define BW2_MAJOR_VERSION 1
-#define BW2_MINOR_VERSION 0
+#define BW2_MINOR_VERSION 1
 #define BW2_PATCHLEVEL 0
 
 /* 
@@ -77,7 +76,7 @@ void BW2Sync(ScrnInfoPtr pScrn);
  */
 
 _X_EXPORT DriverRec SUNBW2 = {
-    VERSION,
+    BW2_VERSION,
     BW2_DRIVER_NAME,
     BW2Identify,
     BW2Probe,
@@ -251,7 +250,7 @@ BW2Probe(DriverPtr drv, int flags)
 	    pScrn = xf86AllocateScreen(drv, 0);
 
 	    /* Fill in what we can of the ScrnInfoRec */
-	    pScrn->driverVersion = VERSION;
+	    pScrn->driverVersion = BW2_VERSION;
 	    pScrn->driverName	 = BW2_DRIVER_NAME;
 	    pScrn->name		 = BW2_NAME;
 	    pScrn->Probe	 = BW2Probe;

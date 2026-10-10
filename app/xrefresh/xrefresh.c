@@ -1,3 +1,4 @@
+/* $XdotOrg: app/xrefresh/xrefresh.c,v 1.3 2006/03/10 01:32:05 alanc Exp $ */
 /***********************************************************
 
 Copyright 1987, 1988, 1998  The Open Group
@@ -80,22 +81,6 @@ Syntax(void)
     fprintf (stderr, "    -none                   no background in window\n");
     fprintf (stderr, "\nThe default is:  %s -none\n\n", ProgramName);
     exit (1);
-}
-
-static char *
-copystring(char *s)
-{
-    int len = (s ? strlen (s) : 0) + 1;
-    char *retval;
-
-    retval = malloc (len);
-    if (!retval) {
-	fprintf (stderr, "%s:  unable to allocate %d bytes for string.\n",
-		 ProgramName, len);
-	exit (1);
-    }
-    (void) strcpy (retval, s);
-    return (retval);
 }
 
 /*
@@ -235,7 +220,13 @@ main(int argc, char *argv[])
 	char *def;
 
 	if ((def = XGetDefault (dpy, ProgramName, "Solid")) != NULL) {
-	    solidcolor = copystring (def);
+	    solidcolor = strdup (def);
+	    if (solidcolor == NULL) {
+		fprintf (stderr,
+			 "%s:  unable to allocate memory for string.\n",
+			 ProgramName);
+		exit (1);
+	    }
 	    action = doSolid;
 	} else {
 	    struct s_pair *pp;

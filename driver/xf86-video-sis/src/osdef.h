@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg$ */
+/* $XdotOrg: driver/xf86-video-sis/src/osdef.h,v 1.10 2005/07/04 10:57:08 twini Exp $ */
 /*
  * OS depending defines
  *

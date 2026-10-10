@@ -105,6 +105,7 @@ XT. Produces `XT.OLB` — complete static Xt, with P64 host types and generated 
 XMU. Produces `XMU.OLB` — complete static Xmu.  
 XVFB. Produces `XVFB.EXE` — headless core/Render/XKB/X Input server.  
 XF86_VIDEO_VMWARE. Produces `VMWARE_DRV.OLB` — all six unchanged xf86-video-vmware 10.13.0 driver modules, static/no-loader with 64-bit pointers; the consuming server supplies XFree86 services. Does not link or activate the driver.  
+SHADOWFB. Produces `SHADOWFB.OLB` — the unchanged static XFree86 shadowfb module with Render and before/after drawing callbacks used by VMware; loader-only metadata excluded. Separate from `SHADOW`.  
 MKFONTDIR. Produces the native font-index launcher.  
 FONTS. Builds 1,006 PCF fonts and scalable-font/encoding indexes.  
 NLS. Builds locale and Compose data for 57 locales.  
@@ -211,6 +212,7 @@ $ @[.VMS-SUPPORT]BUILD XT
 $ @[.VMS-SUPPORT]BUILD XMU  
 $ @[.VMS-SUPPORT]BUILD XVFB  
 $ @[.VMS-SUPPORT]BUILD XF86_VIDEO_VMWARE  
+$ @[.VMS-SUPPORT]BUILD SHADOWFB  
 $ @[.VMS-SUPPORT]BUILD MKFONTDIR  
 $ @[.VMS-SUPPORT]BUILD FONTS  
 $ @[.VMS-SUPPORT]BUILD NLS  

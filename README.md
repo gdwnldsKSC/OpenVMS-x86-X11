@@ -115,6 +115,8 @@ COMMON. Produces `COMMON.OLB` — all 32 objects of the selected static XFree86 
 INIT. Produces `INIT.OLB` — the separate upstream XFree86 initialization object, with a VMS guard rejecting unsupported Unix VTInit commands; the consuming server supplies OS and device-dependent services.  
 BUS. Produces `BUS.OLB` — the unchanged generic XFree86 PCI bus module with 64-bit pointers; the consuming platform supplies PCI access, resource sizes and address translation. Native hardware backends and generic domain/mapping assumptions are not selected.  
 MISC. Produces `MISC.OLB` — all five unchanged portable C modules of XFree86 OS-support libmisc; the consuming platform supplies port I/O, delay and interrupt exclusion.  
+SCANPCI. Produces `SCANPCI.OLB` — the unchanged full XFree86 PCI identification and reporting module with 64-bit pointers; regenerates its tables using the upstream Perl generator. The consuming server supplies PCI enumeration and diagnostics.  
+XORGXKB. Produces `XORGXKB.OLB` — all three unchanged XFree86 keyboard-action modules with 64-bit pointers; the consuming server supplies action dispatch. Replaces, rather than accompanies, the generic XKB DDX stubs at link time.  
 MKFONTDIR. Produces the native font-index launcher.  
 FONTS. Builds 1,006 PCF fonts and scalable-font/encoding indexes.  
 NLS. Builds locale and Compose data for 57 locales.  
@@ -231,6 +233,8 @@ $ @[.VMS-SUPPORT]BUILD COMMON
 $ @[.VMS-SUPPORT]BUILD INIT  
 $ @[.VMS-SUPPORT]BUILD BUS  
 $ @[.VMS-SUPPORT]BUILD MISC  
+$ @[.VMS-SUPPORT]BUILD SCANPCI  
+$ @[.VMS-SUPPORT]BUILD XORGXKB  
 $ @[.VMS-SUPPORT]BUILD MKFONTDIR  
 $ @[.VMS-SUPPORT]BUILD FONTS  
 $ @[.VMS-SUPPORT]BUILD NLS  

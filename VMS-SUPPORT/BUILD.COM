@@ -19,7 +19,7 @@ $ targets = targets + "XSET|XMODMAP|XEV|BISON|XKBCOMP|SETXKBMAP|XKB_DATA|XVFB|XS
 $ targets = targets + "XT|XMU|MKFONTDIR|FONTS|FONTS_BDF|FONTS_MISC|FONTS_75DPI|FONTS_100DPI|FONTS_CYRILLIC|"
 $ targets = targets + "FONTS_ENCODINGS|FONTS_SCALED|FONTS_SPEEDO|FONTS_TYPE1|FONTS_TTF|FONTS_OTF|FONTS_CID|"
 $ targets = targets + "NLS|NLS_XLC_LOCALE|NLS_COMPOSE|X11_DATA|RUNTIME|"
-$ targets = targets + "XF86_VIDEO_VMWARE|"
+$ targets = targets + "XF86_VIDEO_VMWARE|SHADOWFB|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -317,6 +317,9 @@ $ directory = profile + ".TOOLS]"
 $ IF F$SEARCH(profile + "]TOOLS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".TOOLS.BISON]"
 $ IF F$SEARCH(profile + ".TOOLS]BISON.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.SHADOWFB]"
+$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86]SHADOWFB.DIR") .EQS. "" -
+    THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".DRIVER]"
 $ IF F$SEARCH(profile + "]DRIVER.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".DRIVER.XF86-VIDEO-VMWARE]"

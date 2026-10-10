@@ -113,6 +113,8 @@ XF86CONFIG. Produces `XF86CONFIG.OLB` — all 17 upstream XFree86 configuration-
 RAC. Produces `RAC.OLB` — the unchanged static XFree86 resource-access control module with Render, framebuffer, cursor, colormap and viewport wrappers; loader-only metadata excluded. The consuming server supplies device-access and core services; upstream CloseScreen omits CreatePixmap restoration.  
 COMMON. Produces `COMMON.OLB` — all 32 objects of the selected static XFree86 common profile, including generated default modes and generic keyboard mapping; XKB, X Input and Render enabled, loader and XVideo excluded. The consuming server supplies OS, PCI and core services.  
 INIT. Produces `INIT.OLB` — the separate upstream XFree86 initialization object, with a VMS guard rejecting unsupported Unix VTInit commands; the consuming server supplies OS and device-dependent services.  
+BUS. Produces `BUS.OLB` — the unchanged generic XFree86 PCI bus module with 64-bit pointers; the consuming platform supplies PCI access, resource sizes and address translation. Native hardware backends and generic domain/mapping assumptions are not selected.  
+MISC. Produces `MISC.OLB` — all five unchanged portable C modules of XFree86 OS-support libmisc; the consuming platform supplies port I/O, delay and interrupt exclusion.  
 MKFONTDIR. Produces the native font-index launcher.  
 FONTS. Builds 1,006 PCF fonts and scalable-font/encoding indexes.  
 NLS. Builds locale and Compose data for 57 locales.  
@@ -227,6 +229,8 @@ $ @[.VMS-SUPPORT]BUILD XF86CONFIG
 $ @[.VMS-SUPPORT]BUILD RAC  
 $ @[.VMS-SUPPORT]BUILD COMMON  
 $ @[.VMS-SUPPORT]BUILD INIT  
+$ @[.VMS-SUPPORT]BUILD BUS  
+$ @[.VMS-SUPPORT]BUILD MISC  
 $ @[.VMS-SUPPORT]BUILD MKFONTDIR  
 $ @[.VMS-SUPPORT]BUILD FONTS  
 $ @[.VMS-SUPPORT]BUILD NLS  

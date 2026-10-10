@@ -26,7 +26,7 @@ $ profiles = profiles + "X11|X11_MAKEKEYS|"
 $ profiles = profiles + "XAUTH|XDPYINFO|XWININFO|"
 $ profiles = profiles + "XSET|XMODMAP|XEV|XKBCOMP|SETXKBMAP|"
 $ profiles = profiles + "XT|XMU|"
-$ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|RAC|COMMON|INIT|"
+$ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|RAC|COMMON|INIT|BUS|MISC|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -186,7 +186,7 @@ $ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.UTIL.MAKEDEPEND],[.UTIL.IMAKE]"
 $ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|CFB|ROOTLESS|XTRAP|"
-$ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|RAC|COMMON|INIT|"
+$ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|RAC|COMMON|INIT|BUS|MISC|"
 $! Native case folding makes server xfixes.h collide with client Xfixes.h.
 $! Keep the server header ahead of the exported client extension directory.
 $ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
@@ -226,7 +226,8 @@ $ IF P4 .EQS. "RAC" THEN include_directory = include_directory + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.BUS]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.RAC]"
-$ IF (P4 .EQS. "COMMON") .OR. (P4 .EQS. "INIT") THEN include_directory = include_directory + -
+$ xf86common_profile = F$LOCATE("|" + P4 + "|","|COMMON|INIT|BUS|MISC|") .LT. F$LENGTH("|COMMON|INIT|BUS|MISC|")
+$ IF xf86common_profile THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XSERVER.HW.XFREE86.COMMON]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT]," + -
@@ -238,8 +239,8 @@ $ IF (P4 .EQS. "COMMON") .OR. (P4 .EQS. "INIT") THEN include_directory = include
     "[.XSERVER.XORG-SERVER.HW.XFREE86.VGAHW],[.XSERVER.XORG-SERVER.HW.XFREE86.DIXMODS.EXTMOD]," + -
     "[.XSERVER.XORG-SERVER.XEXT],[.XSERVER.XORG-SERVER.RANDR],[.XSERVER.XORG-SERVER.XKB]," + -
     "[.XSERVER.XORG-SERVER.XI],[.XSERVER.XORG-SERVER.OS]"
-$ IF (P4 .EQS. "COMMON") .OR. (P4 .EQS. "INIT") THEN GOSUB xf86common_native
-$ IF ((P4 .EQS. "COMMON") .OR. (P4 .EQS. "INIT")) .AND. -
+$ IF xf86common_profile THEN GOSUB xf86common_native
+$ IF xf86common_profile .AND. -
     (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
 $ IF (P4 .EQS. "FB") .OR. (P4 .EQS. "RENDER") .OR. -
     (P4 .EQS. "SHADOW") THEN include_directory = include_directory + -

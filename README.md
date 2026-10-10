@@ -107,6 +107,7 @@ XVFB. Produces `XVFB.EXE` — headless core/Render/XKB/X Input server.
 XF86_VIDEO_VMWARE. Produces `VMWARE_DRV.OLB` — all six unchanged xf86-video-vmware 10.13.0 driver modules, static/no-loader with 64-bit pointers; the consuming server supplies XFree86 services. Does not link or activate the driver.  
 SHADOWFB. Produces `SHADOWFB.OLB` — the unchanged static XFree86 shadowfb module with Render and before/after drawing callbacks used by VMware; loader-only metadata excluded. Separate from `SHADOW`.  
 VGAHW. Produces `VGAHW.OLB` — the unchanged static XFree86 VGA hardware support module with 64-bit pointers; loader-only metadata excluded. The consuming server supplies port I/O and XFree86 services. Does not access hardware during the build.  
+RAMDAC. Produces `RAMDAC.OLB` — all eight unchanged static XFree86 RAMDAC/cursor objects, including IBM, BT, TI, and the upstream bit-order wrapper; loader-only metadata and optional ARGB cursors excluded. The consuming server supplies XFree86 and cursor services.  
 MKFONTDIR. Produces the native font-index launcher.  
 FONTS. Builds 1,006 PCF fonts and scalable-font/encoding indexes.  
 NLS. Builds locale and Compose data for 57 locales.  
@@ -215,6 +216,7 @@ $ @[.VMS-SUPPORT]BUILD XVFB
 $ @[.VMS-SUPPORT]BUILD XF86_VIDEO_VMWARE  
 $ @[.VMS-SUPPORT]BUILD SHADOWFB  
 $ @[.VMS-SUPPORT]BUILD VGAHW  
+$ @[.VMS-SUPPORT]BUILD RAMDAC  
 $ @[.VMS-SUPPORT]BUILD MKFONTDIR  
 $ @[.VMS-SUPPORT]BUILD FONTS  
 $ @[.VMS-SUPPORT]BUILD NLS  

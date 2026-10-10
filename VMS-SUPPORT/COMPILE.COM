@@ -23,7 +23,7 @@ $ profiles = profiles + "X11|X11_MAKEKEYS|"
 $ profiles = profiles + "XAUTH|XDPYINFO|XWININFO|"
 $ profiles = profiles + "XSET|XMODMAP|XEV|XKBCOMP|SETXKBMAP|"
 $ profiles = profiles + "XT|XMU|"
-$ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|"
+$ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -39,6 +39,8 @@ $ inherited_x11 = F$TRNLNM("X11")
 $ inherited_table = F$TRNLNM("X11",,,,,"TABLE_NAME")
 $ IF F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]"
+$ IF P4 .EQS. "XF86CONFIG" THEN include_directory = include_directory + -
+    ",[.XSERVER.XORG-SERVER.HW.XFREE86.PARSER]"
 $ IF (P4 .EQS. "X11") .OR. (P4 .EQS. "X11_MAKEKEYS") THEN -
     include_directory = include_directory + ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]"
 $ IF P4 .EQS. "X11" THEN include_directory = include_directory + -

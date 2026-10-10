@@ -109,6 +109,7 @@ SHADOWFB. Produces `SHADOWFB.OLB` — the unchanged static XFree86 shadowfb modu
 VGAHW. Produces `VGAHW.OLB` — the unchanged static XFree86 VGA hardware support module with 64-bit pointers; loader-only metadata excluded. The consuming server supplies port I/O and XFree86 services. Does not access hardware during the build.  
 RAMDAC. Produces `RAMDAC.OLB` — all eight unchanged static XFree86 RAMDAC/cursor objects, including IBM, BT, TI, and the upstream bit-order wrapper; loader-only metadata and optional ARGB cursors excluded. The consuming server supplies XFree86 and cursor services.  
 XAA. Produces `XAA.OLB` — all 54 static XFree86 acceleration objects, including bit-order, fixed-base, triple-bit and polysegment variants; Render enabled, with minimal P64 address-alignment fixes. Loadable hooks, Xinerama and architecture assembly excluded.  
+XF86CONFIG. Produces `XF86CONFIG.OLB` — all 17 unchanged upstream XFree86 configuration-parser modules. Reads, validates and writes configuration data; the consuming program supplies diagnostics. Uses current-process file permissions without Unix saved-ID switching; upstream Vendor-subsection Identifier and built-in scanner-reset defects remain.  
 MKFONTDIR. Produces the native font-index launcher.  
 FONTS. Builds 1,006 PCF fonts and scalable-font/encoding indexes.  
 NLS. Builds locale and Compose data for 57 locales.  
@@ -219,6 +220,7 @@ $ @[.VMS-SUPPORT]BUILD SHADOWFB
 $ @[.VMS-SUPPORT]BUILD VGAHW  
 $ @[.VMS-SUPPORT]BUILD RAMDAC  
 $ @[.VMS-SUPPORT]BUILD XAA  
+$ @[.VMS-SUPPORT]BUILD XF86CONFIG  
 $ @[.VMS-SUPPORT]BUILD MKFONTDIR  
 $ @[.VMS-SUPPORT]BUILD FONTS  
 $ @[.VMS-SUPPORT]BUILD NLS  

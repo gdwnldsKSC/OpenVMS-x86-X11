@@ -22,7 +22,7 @@ dnl
 dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
-AC_INIT(xdbedizzy,[1.0.1], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xdbedizzy)
+AC_INIT(xdbedizzy,[1.0.2], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xdbedizzy)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
@@ -33,23 +33,20 @@ AC_PROG_INSTALL
 
 # Boiler plate xprint checks
 
-AC_ARG_ENABLE(xprint, AC_HELP_STRING([--enable-xprint], [Enable XPrint support]),
-						[use_xprint=$enableval],[use_xprint=auto])
-if test "x$use_xprint" = "xauto"; then
-   PKG_CHECK_MODULES(XPRINT, xp, use_xprint=yes, use_xprint=no)
-fi
-
-echo use xprint: $use_xprint
-
-AM_CONDITIONAL([USE_XPRINT], [test "$use_xprint" = yes])
+AC_ARG_ENABLE(xprint, AC_HELP_STRING([--enable-xprint],
+				     [Enable XPrint support]),
+	      [use_xprint=$enableval],[use_xprint=no])
 
 # Checks for pkg-config packages
 
-if test x$use_xprint = xyes ; then
-   PKG_CHECK_MODULES(XDBEDIZZY, xext xprintutil xp xau)
+if test "x$use_xprint" = "xyes"; then
+   xprintmodules="xprintutil xp xau"
+   AC_DEFINE(USE_XPRINT, 1, [Define to enable Xprint])
 else
-   PKG_CHECK_MODULES(XDBEDIZZY, xext)
+  xprintmodules=""
 fi
+
+PKG_CHECK_MODULES(XDBEDIZZY, $xprintmodules xext x11)
 
 AC_SUBST(XDBEDIZZY_CFLAGS)
 AC_SUBST(XDBEDIZZY_LIBS)

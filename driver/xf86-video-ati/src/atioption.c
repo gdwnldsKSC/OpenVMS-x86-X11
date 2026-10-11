@@ -219,6 +219,20 @@ const OptionInfoRec ATIPublicOptions[] =
         FALSE,
     },
     {
+        ATI_OPTION_ACCELMETHOD,
+        "AccelMethod",
+        OPTV_STRING,
+        {0, },
+        FALSE
+    },
+    {
+        ATI_OPTION_RENDER_ACCEL,
+        "RenderAccel",
+        OPTV_BOOLEAN,
+        {0, },
+        FALSE
+    },
+    {
         -1,
         NULL,
         OPTV_NONE,

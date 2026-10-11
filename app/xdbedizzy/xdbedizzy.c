@@ -37,6 +37,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/Xdbe.h>
@@ -701,8 +705,8 @@ int main(int argc, char *argv[])
         /* Obtain some info about page geometry */
         XpGetPageDimensions(dpy, pcontext, &dummy, &dummy, &winrect);
     }
-#endif
     else
+#endif
     {
         dpy = XOpenDisplay(display_name);
         if (dpy == NULL) {

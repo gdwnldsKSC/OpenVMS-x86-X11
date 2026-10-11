@@ -387,12 +387,6 @@ For example, Option "MetaModes" "1024x768-1024x768 800x600-1024x768 640x480-800x
 The default value is
 .B undefined.
 .TP
-.BI "Option \*qOverlayOnCRTC2\*q \*q" boolean \*q
-Force hardware overlay to clone head.
-.br
-The default value is
-.B off.
-.TP
 .BI "Option \*qMergedXinerama\*q \*q" boolean \*q
 Since merged framebuffer mode does not use Xinerama, apps are not able to intelligently
 place windows.  Merged framebuffer mode provides its own pseudo-Xinerama.  This allows
@@ -512,6 +506,15 @@ the Render and Composite extensions, but the rendering code for it is newer and
 possibly unstable.  The default is
 .B XAA.
 .TP
+.BI "Option \*qAccelDFS\*q \*q" boolean \*q
+Use or don't use accelerated EXA DownloadFromScreen hook when possible (only
+when Direct Rendering is enabled, e.g.).
+Default:
+.B off
+with AGP due to issues with GPU->host transfers with some AGP bridges,
+.B on
+otherwise.
+.TP
 .BI "Option \*qFBTexPercent\*q \*q" integer \*q
 Amount of video RAM to reserve for OpenGL textures, in percent. With EXA, the
 remainder of video RAM is reserved for EXA offscreen management. Specifying 0
@@ -523,6 +526,14 @@ this option has no effect, but the driver tries to increase the video RAM
 reserved for textures to the amount specified roughly.
 Default:
 .B 50.
+.TP
+.BI "Option \*qDepthBits\*q \*q" integer \*q
+Precision in bits per pixel of the shared depth buffer used for 3D acceleration.
+Valid values are 16 and 24. When this is 24, there will also be a hardware
+accelerated stencil buffer, but the combined depth/stencil buffer will take up
+twice as much video RAM as when it's 16.
+Default:
+.B The same as the screen depth.
 .TP
 .BI "Option \*qDMAForXv\*q \*q" boolean \*q
 Try or don't try to use DMA for Xv image transfers. This will reduce CPU
@@ -611,6 +622,7 @@ Kevin E. Martin          \fIkem@freedesktop.org\fP
 Alan Hourihane           \fIalanh@fairlite.demon.co.uk\fP
 Marc Aurele La France    \fItsi@xfree86.org\fP
 Benjamin Herrenschmidt   \fIbenh@kernel.crashing.org\fP
+Michel Dänzer            \fImichel@tungstengraphics.com\fP
 Alex Deucher             \fIalexdeucher@gmail.com\fP
 Bogdan D.                \fIbogdand@users.sourceforge.net\fP
 Eric Anholt              \fIeric@anholt.net\fP

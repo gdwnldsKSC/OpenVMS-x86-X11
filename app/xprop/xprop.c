@@ -1199,6 +1199,8 @@ Get_Window_Property_Data_And_Type (Atom atom,
 	nbytes = sizeof(short);
     else if (actual_format == 8)
 	nbytes = 1;
+    else if (actual_format == 0)
+        nbytes = 0;
     else
 	abort();
     *length = min(nitems * nbytes, max_len);

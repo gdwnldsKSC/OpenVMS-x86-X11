@@ -1,7 +1,4 @@
 /*
- * $Xorg: sessreg.c,v 1.5 2000/08/17 19:54:15 cpqbld Exp $
- * $XdotOrg: $
- *
  * Copyright 1990, 1998  The Open Group
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -62,8 +59,6 @@
  *   by Andreas Stolcke <stolcke@icsi.berkeley.edu>
  */
 
-/* $XFree86: xc/programs/xdm/sessreg.c,v 3.18 2001/12/14 20:01:24 dawes Exp $ */
-
 /*
  * sessreg
  *
@@ -79,9 +74,7 @@
  * one of -a or -d must be specified
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "sessreg.h"
 
 # include	<X11/Xos.h>
 # include	<X11/Xfuncs.h>
@@ -89,83 +82,8 @@
 # include	<stdlib.h>
 # include	<utmp.h>
 
-#ifndef HAVE_CONFIG_H /* Imake fallback - hardcode platforms with utmpx */
-# if (defined(sun) && defined (__SVR4))
-#  define HAVE_UTMPX_H
-#  define HAVE_UTMPX_UT_SYSLEN 1
-# endif
-#endif
-
-#ifdef HAVE_UTMPX_H
-# if HAVE_UTMPX_UT_SYSLEN
-#  include <utmpx.h>
-#  define USE_UTMPX
-# endif
-#endif
-
-#ifdef HAVE_CONFIG_H
-# ifndef HAVE_LASTLOG_H
-#  define NO_LASTLOG
-# endif
-#else /* Imake */
-# if defined(SYSV) || (defined(SVR4) && !defined(sun)) || defined(Lynx) || defined(__QNX__) || defined(__DARWIN__) || defined(_SEQUENT_)
-#  define NO_LASTLOG
-# endif
-#endif
-
-#if defined(CSRG_BASED) || defined(HAVE_SYS_PARAM_H)
-#include <sys/param.h>
-#endif
-
-#ifndef NO_LASTLOG
-# ifdef CSRG_BASED
-#  if (BSD < 199103)
-#   include	<lastlog.h>
-#  endif
-# else
-#  include	<lastlog.h>
-# endif
-# include	<pwd.h>
-#endif
-
 #if defined(__SVR4) || defined(SVR4) || defined(linux) || defined(__GLIBC__)
-#define SYSV
-#endif
-
-#ifdef CSRG_BASED
-#if !defined(__FreeBSD__) && !defined(__OpenBSD__)
-/* *BSD doesn't like a ':0' type entry in utmp */
-#define NO_UTMP
-#endif
-#endif
-
-#ifndef WTMP_FILE
-# ifdef _PATH_WTMP
-#  define WTMP_FILE	_PATH_WTMP
-# else
-#  define WTMP_FILE	"/usr/adm/wtmp"
-# endif
-#endif
-#ifndef UTMP_FILE
-# ifdef _PATH_UTMP
-#  define UTMP_FILE	_PATH_UTMP
-# else
-#  define UTMP_FILE	"/etc/utmp"
-# endif
-#endif
-#ifndef NO_LASTLOG
-# ifndef LLOG_FILE
-#  ifdef _PATH_LASTLOG
-#   define LLOG_FILE	_PATH_LASTLOG
-#  else
-#   define LLOG_FILE	"/usr/adm/lastlog"
-#  endif
-# endif
-#endif
-#ifndef SYSV
-# ifndef TTYS_FILE
-#  define TTYS_FILE	"/etc/ttys"
-# endif
+# define SYSV
 #endif
 
 #include <time.h>
@@ -270,11 +188,12 @@ main (int argc, char **argv)
 	int		utmp;
 #endif
 	char		*line_tmp;
+#ifndef USE_UTMPX	
 	int		wtmp;
+#endif	
 	Time_t		current_time;
 	struct utmp	utmp_entry;
 #ifdef USE_UTMPX
-	int		wtmpx;	
 	struct utmpx	utmpx_entry;
 #endif
 

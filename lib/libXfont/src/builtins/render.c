@@ -1,4 +1,4 @@
-/* $XdotOrg: lib/Xfont/src/builtins/render.c,v 1.5 2005/07/30 18:56:32 alanc Exp $ */
+/* $XdotOrg: $ */
 /*
  * Id: render.c,v 1.2 1999/11/02 06:16:48 keithp Exp $
  *
@@ -101,9 +101,38 @@ BuiltinGetInfoBitmap (fpe, pFontInfo, entry, fileName)
     return ret;
 }
 
+static int
+BuiltinOpenScalable (FontPathElementPtr fpe,
+		     FontPtr *pFont,
+		     int flags,
+		     FontEntryPtr entry,
+		     char *fileName,
+		     FontScalablePtr vals,
+		     fsBitmapFormat format,
+		     fsBitmapFormatMask fmask,
+		     FontPtr non_cachable_font)	/* We don't do licensing */
+{
+    return BadFontName;
+}
+
+static int
+BuiltinGetInfoScalable (FontPathElementPtr fpe,
+			FontInfoPtr pFontInfo,
+			FontEntryPtr entry,
+			FontNamePtr fontName,
+			char *fileName,
+			FontScalablePtr vals)
+{
+    return BadFontName;
+}
+
 static FontRendererRec renderers[] = {
     ".builtin", 8,
-    BuiltinOpenBitmap, 0, BuiltinGetInfoBitmap, 0, 0
+    BuiltinOpenBitmap,
+    BuiltinOpenScalable,
+    BuiltinGetInfoBitmap,
+    BuiltinGetInfoScalable,
+    0
 };
 
 #define numRenderers	(sizeof renderers / sizeof renderers[0])

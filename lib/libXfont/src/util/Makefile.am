@@ -1,5 +1,6 @@
 INCLUDES =			\
-	-I${top_srcdir}/include
+	-I${top_srcdir}/include \
+	-I$(top_srcdir)/src/stubs
 
 noinst_LTLIBRARIES = libutil.la
 

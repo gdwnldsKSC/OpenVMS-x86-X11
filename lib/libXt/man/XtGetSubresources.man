@@ -1,5 +1,5 @@
 .\" $Xorg: XtGetSres.man,v 1.3 2000/08/17 19:42:01 cpqbld Exp $
-.\" $XdotOrg: lib/Xt/man/XtGetSubresources.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
+.\" $XdotOrg: $
 .\"
 .\" Copyright 1993 X Consortium
 .\"
@@ -128,7 +128,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtGetSubresources 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtGetSubresources __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtGetSubresources, XtVaGetSubresources \- obtain subresources
 .SH SYNTAX

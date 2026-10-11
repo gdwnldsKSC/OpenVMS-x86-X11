@@ -19,6 +19,7 @@
 
 #include "compiler.h"
 #include "xaa.h"
+#include "exa.h"
 #include "xf86Cursor.h"
 #include "vgaHW.h"
 #include "colormapst.h"
@@ -80,7 +81,8 @@ typedef enum {
     OPTION_MONITOR2POS,
     OPTION_METAMODES,
     OPTION_OLDDMA,
-    OPTION_PCIDMA
+    OPTION_PCIDMA,
+    OPTION_ACCELMETHOD
 } MGAOpts;
 
 
@@ -152,9 +154,6 @@ void MGAdbg_outreg32(ScrnInfoPtr, int,int, char*);
 #define MGA_C_NAME MGA
 #define MGA_MODULE_DATA mgaModuleData
 #define MGA_DRIVER_NAME "mga"
-#define MGA_MAJOR_VERSION 1
-#define MGA_MINOR_VERSION 4
-#define MGA_PATCHLEVEL 1
 
 typedef struct {
     unsigned char	ExtVga[6];
@@ -191,13 +190,20 @@ typedef struct {
    int          contrast;
    Bool         doubleBuffer;
    unsigned char currentBuffer;
-   FBLinearPtr	linear;
    RegionRec	clip;
    CARD32	colorKey;
    CARD32	videoStatus;
    Time		offTime;
    Time		freeTime;
    int		lastPort;
+
+#ifdef USE_EXA
+   int              size;
+   ExaOffscreenArea *off_screen;
+#endif
+
+   void         *video_memory;
+   int           video_offset;
 } MGAPortPrivRec, *MGAPortPrivPtr;
 
 typedef struct {
@@ -382,6 +388,11 @@ typedef struct {
     xf86AccessRec	Access;
     int			Chipset;
     int                 ChipRev;
+
+    int is_Gx50:1;
+    int is_G200SE:1;
+    int is_HAL_chipset:1;
+
     Bool		Primary;
     Bool		Interleave;
     int			HwBpp;
@@ -408,6 +419,8 @@ typedef struct {
     MGARamdacRec	Dac;
     Bool		HasSDRAM;
     Bool		NoAccel;
+    Bool		Exa;
+    ExaDriverPtr 	ExaDriver;
     Bool		SyncOnGreen;
     Bool		Dac6Bit;
     Bool		HWCursor;
@@ -528,6 +541,18 @@ typedef struct {
     Bool                HALLoaded;
 #endif
     OptionInfoPtr	Options;
+
+    /* Exa */
+    PicturePtr currentSrcPicture;
+    PicturePtr currentMaskPicture;
+    PixmapPtr currentSrc;
+    PixmapPtr currentMask;
+    int src_w2;
+    int src_h2;
+    int mask_w2;
+    int mask_h2;
+    CARD32 src_pitch; /* FIXME kill me */
+
 /* Merged Framebuffer data */
     Bool                MergedFB;
 
@@ -588,12 +613,19 @@ void MGAAdjustGranularity(ScrnInfoPtr pScrn, int* x, int* y);
 void MGA2064SetupFuncs(ScrnInfoPtr pScrn);
 void MGAGSetupFuncs(ScrnInfoPtr pScrn);
 
+/* #ifdef USE_XAA */
 void MGAStormSync(ScrnInfoPtr pScrn);
 void MGAStormEngineInit(ScrnInfoPtr pScrn);
 Bool MGAStormAccelInit(ScreenPtr pScreen);
+Bool mgaAccelInit(ScreenPtr pScreen);
+/* #endif */
+
+#ifdef USE_EXA
+Bool mgaExaInit(ScreenPtr pScreen);
+#endif
+
 Bool MGAHWCursorInit(ScreenPtr pScreen);
 
-Bool mgaAccelInit(ScreenPtr pScreen);
 
 void MGAPolyArcThinSolid(DrawablePtr, GCPtr, int, xArc*);
 
@@ -681,5 +713,31 @@ extern void MGAExecuteEscCmd(ScrnInfoPtr pScrn, char *cmdline , char *sResult, D
 void MGAFillDisplayModeStruct(DisplayModePtr pMode, LPMGAMODEINFO pModeInfo);
 /************************************************/
 #endif
+
+static __inline__ void
+MGA_MARK_SYNC(MGAPtr pMga, ScrnInfoPtr pScrn)
+{
+#ifdef USE_EXA
+    if (pMga->Exa)
+        exaMarkSync(pScrn->pScreen);
+#endif
+#ifdef USE_XAA
+    if (!pMga->Exa)
+        SET_SYNC_FLAG(pMga->AccelInfoRec);
+#endif
+}
+
+static __inline__ void
+MGA_SYNC(MGAPtr pMga, ScrnInfoPtr pScrn)
+{
+#ifdef USE_EXA
+    if (pMga->Exa)
+        exaWaitSync(pScrn->pScreen);
+#endif
+#ifdef USE_XAA
+    if (!pMga->Exa && pMga->AccelInfoRec && pMga->AccelInfoRec->NeedToSync)
+        pMga->AccelInfoRec->Sync(pScrn);
+#endif
+}
 
 #endif

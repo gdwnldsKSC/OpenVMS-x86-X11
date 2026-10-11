@@ -1,4 +1,4 @@
-# $Id: Makefile.am,v 1.15 2005/12/07 16:17:57 kem Exp $
+# $Id$
 # 
 #  Copyright 2005  Red Hat, Inc.
 # 
@@ -26,15 +26,12 @@ beforelight_CFLAGS = $(BEFORELIGHT_CFLAGS)
 beforelight_LDADD = $(BEFORELIGHT_LIBS)
 
 beforelight_SOURCES =	\
-        b4light.c \
-        config.h
+        b4light.c
 
 appman_PRE = \
         beforelight.man
 
 # App default files  (*.ad)
-
-appdefaultdir = @appdefaultdir@
 
 EXTRA_DIST = \
         Beforelight.ad
@@ -50,7 +47,6 @@ SUFFIXES = .ad
 appdefault_DATA = $(APPDEFAULTFILES)
 
 CLEANFILES = $(APPDEFAULTFILES)
-
 
 appmandir = $(APP_MAN_DIR)
 

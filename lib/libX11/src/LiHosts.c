@@ -52,7 +52,7 @@ XHostAddress *XListHosts (
     int *nhosts,	/* RETURN */
     Bool *enabled)	/* RETURN */
 {
-    register XHostAddress *outbuf = 0, *op;
+    register XHostAddress *outbuf = NULL, *op;
     xListHostsReply reply;
     long nbytes;
     unsigned char *buf, *bp;
@@ -71,11 +71,8 @@ XHostAddress *XListHosts (
     }
 
     if (reply.nHosts) {
-	unsigned int l;
 	nbytes = reply.length << 2;	/* compute number of bytes in reply */
-	l = (unsigned) (nbytes + 
-	      (reply.nHosts * sizeof(XHostAddress)) +
-	  (reply.nHosts * sizeof(XServerInterpretedAddress)));
+
 	op = outbuf = (XHostAddress *)
 	    Xmalloc((unsigned) (nbytes + 
 	      (reply.nHosts * sizeof(XHostAddress)) +

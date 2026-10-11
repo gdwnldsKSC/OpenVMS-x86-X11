@@ -1,5 +1,4 @@
-/* $Xorg: kbd_mode.c,v 1.3 2000/08/17 19:48:29 cpqbld Exp $ */
-/* $XdotOrg: xserver/xorg/hw/xfree86/utils/kbd_mode/sun-kbd_mode.c,v 1.3 2005/09/28 01:57:47 alanc Exp $ */
+/* $XdotOrg: $ */
 /************************************************************
 Copyright 1987 by Sun Microsystems, Inc. Mountain View, CA.
 
@@ -28,7 +27,6 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION  WITH
 THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ********************************************************/
-/* $XFree86: kbd_mode.c,v 3.11 2002/10/23 16:23:36 tsi Exp $ */
 
 /*
 static  char sccsid[] = "@(#)kbd_mode.c 7.1 87/04/13";

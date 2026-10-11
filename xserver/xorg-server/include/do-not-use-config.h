@@ -2,7 +2,10 @@
 /* include/do-not-use-config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Build AIGLX loader */
-#define AIGLX 1
+/* #undef AIGLX */
+
+/* Default base font path */
+#define BASE_FONT_PATH "/usr/local/lib/X11/fonts"
 
 /* Support BigRequests extension */
 #define BIGREQS 1
@@ -14,7 +17,7 @@
 #define BUILDERADDR "xorg@lists.freedesktop.org"
 
 /* Default font path */
-#define COMPILEDDEFAULTFONTPATH "/usr/local/lib/X11/fonts/misc/,/usr/local/lib/X11/fonts/TTF/,/usr/local/lib/X11/fonts/OTF,/usr/local/lib/X11/fonts/Type1/,/usr/local/lib/X11/fonts/CID/,/usr/local/lib/X11/fonts/100dpi/,/usr/local/lib/X11/fonts/75dpi/"
+#define COMPILEDDEFAULTFONTPATH "/usr/local/lib/X11/fonts/misc/,/usr/local/lib/X11/fonts/TTF/,/usr/local/lib/X11/fonts/OTF,/usr/local/lib/X11/fonts/Type1/,/usr/local/lib/X11/fonts/100dpi/,/usr/local/lib/X11/fonts/75dpi/"
 
 /* Support Composite Extension */
 #define COMPOSITE 1
@@ -60,6 +63,9 @@
 /* Use GetTimeInMillis */
 /* #undef DDXTIME */
 
+/* Default library install path */
+#define DEFAULT_LIBRARY_PATH "/usr/local/lib"
+
 /* Default log location */
 #define DEFAULT_LOGPREFIX "/usr/local/var/log/Xorg."
 
@@ -68,12 +74,6 @@
 
 /* Support DGA extension */
 #define DGA 1
-
-/* Prefer dlloader modules to elfloader */
-#define DLOPEN_HACK 1
-
-/* Use libdl-based loader */
-#define DLOPEN_SUPPORT 1
 
 /* Support DPMS extension */
 #define DPMSExtension 1
@@ -91,7 +91,7 @@
 /* #undef FONTCACHE */
 
 /* Build GLX extension */
-#define GLXEXT 1
+/* #undef GLXEXT */
 
 /* Support XDM-AUTH*-1 */
 #define HASXDMAUTH 1
@@ -148,6 +148,9 @@
 /* Has backtrace support */
 #define HAVE_BACKTRACE 1
 
+/* Define to 1 if you have the `clock_gettime' function. */
+/* #undef HAVE_CLOCK_GETTIME */
+
 /* Define to 1 if you have the <dbm.h> header file. */
 /* #undef HAVE_DBM_H */
 
@@ -161,11 +164,17 @@
 /* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
 /* #undef HAVE_DOPRNT */
 
+/* Have execinfo.h */
+#define HAVE_EXECINFO_H 1
+
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
 
 /* Define to 1 if you have the `geteuid' function. */
 #define HAVE_GETEUID 1
+
+/* Define to 1 if you have the `getisax' function. */
+/* #undef HAVE_GETISAX */
 
 /* Define to 1 if you have the `getopt' function. */
 #define HAVE_GETOPT 1
@@ -304,14 +313,17 @@
 /* Build VESA-based kdrive servers */
 /* #undef KDRIVEVESA */
 
-/* Support LBX extension */
-/* #undef LBX */
+/* Name of the period field in struct kbd_repeat */
+#define LNX_KBD_PERIOD_NAME period
 
 /* Support MIT Misc extension */
 #define MITMISC 1
 
 /* Support MIT-SHM extension */
 #define MITSHM 1
+
+/* Have monotonic clock from clock_gettime() */
+#define MONOTONIC_CLOCK 1
 
 /* Build Multibuffer extension */
 /* #undef MULTIBUFFER */
@@ -332,7 +344,7 @@
 #define NO_LIBCWRAPPER 1
 
 /* Operating System Name */
-#define OSNAME "Linux 2.6.16-1.2122_FC6smp i686"
+#define OSNAME "Linux 2.6.17-1.2647.fc6PAE i686"
 
 /* Operating System Vendor */
 #define OSVENDOR ""
@@ -347,13 +359,22 @@
 #define PACKAGE_NAME "xorg-server"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "xorg-server 1.1.0"
+#define PACKAGE_STRING "xorg-server 1.2.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "xorg-server"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.1.0"
+#define PACKAGE_VERSION "1.2.0"
+
+/* Major version of this package */
+#define PACKAGE_VERSION_MAJOR 1
+
+/* Minor version of this package */
+#define PACKAGE_VERSION_MINOR 2
+
+/* Patch version of this package */
+#define PACKAGE_VERSION_PATCHLEVEL 0
 
 /* Internal define for Xinerama */
 #define PANORAMIX 1
@@ -432,6 +453,9 @@
 /* Build TOG-CUP extension */
 #define TOGCUP 1
 
+/* Have tslib support */
+/* #undef TSLIB */
+
 /* Support UNIX socket connections */
 #define UNIXCONN 1
 
@@ -454,7 +478,7 @@
 #define USE_RGB_TXT 1
 
 /* Version number of package */
-#define VERSION "1.1.0"
+#define VERSION "1.2.0"
 
 /* Building vgahw module */
 #define WITH_VGAHW 1
@@ -462,8 +486,14 @@
 /* System has wscons console */
 /* #undef WSCONS_SUPPORT */
 
+/* Build X-ACE extension */
+#define XACE 1
+
 /* Build APPGROUP extension */
 #define XAPPGROUP 1
+
+/* Build XCalibrate extension */
+/* #undef XCALIBRATE */
 
 /* Support XCMisc extension */
 #define XCMISC 1
@@ -494,6 +524,9 @@
 
 /* Support XFixes extension */
 #define XFIXES 1
+
+/* Building loadable XFree86 server */
+#define XFree86LOADER 1
 
 /* Building XFree86 server */
 #define XFree86Server 1
@@ -535,19 +568,19 @@
 #define XORGSERVER 1
 
 /* Vendor release */
-#define XORG_DATE "22 May 2006"
+#define XORG_DATE "22 January 2007"
 
 /* Vendor man version */
-#define XORG_MAN_VERSION "Version 7.1"
+#define XORG_MAN_VERSION "Version 7.2"
 
 /* Vendor release */
-#define XORG_RELEASE "Release 7.1"
+#define XORG_RELEASE "Release 7.2"
 
 /* Building Xorg server */
 #define XORG_SERVER 1
 
 /* Current Xorg version */
-#define XORG_VERSION_CURRENT (((7) * 10000000) + ((1) * 100000) + ((0) * 1000) + 0)
+#define XORG_VERSION_CURRENT (((7) * 10000000) + ((2) * 100000) + ((0) * 1000) + 0)
 
 /* Build Print extension */
 #define XPRINT 1
@@ -595,14 +628,8 @@
    `char[]'. */
 #define YYTEXT_POINTER 1
 
-/* BSD-compliant source */
-#define _BSD_SOURCE 1
-
-/* POSIX-compliant source */
-#define _POSIX_SOURCE 1
-
-/* X/Open-compliant source */
-#define _XOPEN_SOURCE 500
+/* Enable GNU and other extensions to the C environment for glibc */
+#define _GNU_SOURCE 1
 
 /* Define to 1 if unsigned long is 64 bits. */
 /* #undef _XSERVER64 */

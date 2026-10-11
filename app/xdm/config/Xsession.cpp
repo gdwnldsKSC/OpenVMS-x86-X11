@@ -1,6 +1,6 @@
 XCOMM!SHELL_CMD
 XCOMM
-XCOMM $XdotOrg: app/xdm/config/Xsession.cpp,v 1.4 2006/03/18 03:43:18 alanc Exp $
+XCOMM $XdotOrg: $
 XCOMM $Xorg: Xsession,v 1.4 2000/08/17 19:54:17 cpqbld Exp $
 XCOMM $XFree86: xc/programs/xdm/config/Xsession,v 1.2 1998/01/11 03:48:32 dawes Exp $
 

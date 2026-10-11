@@ -60,11 +60,10 @@ SOFTWARE.
 #include <X11/extensions/extutil.h>
 #include "XIint.h"
 
-XModifierKeymap * XGetDeviceModifierMapping(dpy, dev)
-    register Display *
-	dpy;
-    XDevice *
-	dev;
+XModifierKeymap *
+XGetDeviceModifierMapping(dpy, dev)
+    register Display *dpy;
+    XDevice *dev;
 {
     unsigned long nbytes;
     XModifierKeymap *res;
@@ -73,7 +72,7 @@ XModifierKeymap * XGetDeviceModifierMapping(dpy, dev)
     XExtDisplayInfo *info = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
+    if (_XiCheckExtInit(dpy, XInput_Initial_Release, info) == -1)
 	return ((XModifierKeymap *) NoSuchExtension);
 
     GetReq(GetDeviceModifierMapping, req);

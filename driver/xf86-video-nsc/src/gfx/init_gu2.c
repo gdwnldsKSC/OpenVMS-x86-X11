@@ -1,4 +1,4 @@
-/* $XFree86$ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/gfx/init_gu2.c,v 1.1 2002/12/10 15:12:27 alanh Exp $ */
 /*
  * $Workfile: init_gu2.c $
  *

@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtDisplay 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtDisplay __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtDisplay, XtDisplayOfObject, XtScreen, XtScreenOfObject, XtWindow, XtWindowOfObject \- obtain window information about a widget
 .SH SYNTAX

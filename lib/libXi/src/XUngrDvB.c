@@ -73,7 +73,7 @@ XUngrabDeviceButton(dpy, dev, button, modifiers, modifier_dev, grab_window)
     XExtDisplayInfo *info = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
+    if (_XiCheckExtInit(dpy, XInput_Initial_Release, info) == -1)
 	return (NoSuchExtension);
     GetReq(UngrabDeviceButton, req);
 

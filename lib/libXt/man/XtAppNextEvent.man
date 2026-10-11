@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAppNextEvent 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAppNextEvent __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAppNextEvent, XtAppPending, XtAppPeekEvent, XtAppProcessEvent, XtDispatchEvent, XtAppMainLoop \- query and process events and input
 .SH SYNTAX

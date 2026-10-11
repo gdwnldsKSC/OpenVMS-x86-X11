@@ -3,6 +3,9 @@
 /* Define to 1 if `struct sockaddr_in' has a `sin_len' member */
 #undef BSD44SOCKETS
 
+/* Include compose table cache support */
+#undef COMPOSECACHE
+
 /* Has getresuid() & getresgid() functions */
 #undef HASGETRESUID
 
@@ -27,11 +30,17 @@
 /* Define to 1 if you have the <dl.h> header file. */
 #undef HAVE_DL_H
 
+/* Define to 1 if you have the `getpagesize' function. */
+#undef HAVE_GETPAGESIZE
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if you have a working `mmap' system call. */
+#undef HAVE_MMAP
 
 /* Use shl_load to load shared libraries */
 #undef HAVE_SHL_LOAD
@@ -84,6 +93,15 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Major version of this package */
+#undef PACKAGE_VERSION_MAJOR
+
+/* Minor version of this package */
+#undef PACKAGE_VERSION_MINOR
+
+/* Patch version of this package */
+#undef PACKAGE_VERSION_PATCHLEVEL
+
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
 
@@ -108,11 +126,17 @@
 /* poll() function is available */
 #undef USE_POLL
 
+/* Use XCB for low-level protocol implementation */
+#undef USE_XCB
+
 /* Version number of package */
 #undef VERSION
 
 /* Location of libX11 data */
 #undef X11_DATADIR
+
+/* Location of libX11 library data */
+#undef X11_LIBDIR
 
 /* Include support for XCMS */
 #undef XCMS
@@ -133,7 +157,13 @@
 #undef XLOCALE
 
 /* Location of libX11 locale data */
+#undef XLOCALEDATADIR
+
+/* Location of libX11 locale data */
 #undef XLOCALEDIR
+
+/* Location of libX11 locale libraries */
+#undef XLOCALELIBDIR
 
 /* Whether libX11 is compiled with thread support */
 #undef XTHREADS

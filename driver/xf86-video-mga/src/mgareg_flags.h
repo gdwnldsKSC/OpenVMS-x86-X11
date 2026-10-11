@@ -19,7 +19,7 @@
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/* $XFree86$ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mgareg_flags.h,v 1.2 2003/01/12 03:55:47 tsi Exp $ */
 
 #ifndef _MGAREGS_H_
 #define _MGAREGS_H_

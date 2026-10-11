@@ -1,6 +1,6 @@
-# OpenVMS x86 X11 R7.1 Port Effort  
+# OpenVMS x86 X11 R7.2 Port Effort  
   
-Currently, this is the complete modular X11 R7.1 source tree, with the bundled dependencies required by the native build.  
+Currently, this is the complete modular X11 R7.2 source tree, with the bundled dependencies required by the native build.  
   
 As parts become buildable, they will be updated and documented here.  
   
@@ -30,7 +30,7 @@ MAKEDEPEND. Produces `MAKEDEPEND.EXE` - all six upstream C dependency-generator 
 LNDIR. Produces `LNDIR.EXE` - the upstream shadow symbolic-link tree generator, with OpenVMS directory traversal and case-preserving names; requires symbolic-link support and Unix-style paths.  
 ATOBM. Produces `ATOBM.EXE` - the upstream bitmap package's ASCII-to-bitmap converter.  
 GTF. Produces `GTF.EXE` - the upstream server's Generalized Timing Formula calculator.  
-FREETYPE2. Produces `FREETYPE.OLB` - the complete 34-object upstream Unix profile of bundled FreeType 2.1.9, with an essential P64 PostScript-table relocation adaptation; upstream variation-loader allocation-error assignment defect remains.  
+FREETYPE2. Produces `FREETYPE.OLB` - 39 objects from bundled FreeType 2.3.1: the complete 38-object default Unix profile plus retained FTAPI compatibility, with P64 relocation/address-membership changes in `psobjs.c` and a pointer-sized cache-hash conversion in `ftcache.h`.  
 MKFONTSCALE. Produces `MKFONTSCALE.EXE` - all four upstream font-index generator modules, using `FONTENC.OLB`, `FREETYPE.OLB`, and `Z.OLB`.  
 FONTTOSFNT. Produces `FONTTOSFNT.EXE` - all five upstream bitmap-to-sfnt converter modules, with essential fixed-field initializer and C99 varargs retry adaptations, using `FREETYPE.OLB`, `FONTENC.OLB`, and `Z.OLB`.  
 REVPATH. Produces `REVPATH.EXE` - the unchanged upstream imake relative-path helper.  
@@ -40,7 +40,7 @@ MI. Produces `MI.OLB` - all 37 unchanged machine-independent server modules from
 CBRT. Produces `CBRT.OLB` - the separate unchanged upstream cube-root fallback from `xserver/xorg-server/mi`.  
 FB. Produces `FB.OLB` - all 35 upstream framebuffer modules from `xserver/xorg-server/fb`, with an essential P64 24-bit alignment adaptation; static Render-enabled profile including 24-bit and 24/32 conversion paths, excluding loadable hooks and GCC MMX.  
 RENDER. Produces `RENDER.OLB` - all 12 unchanged upstream Render extension modules from `xserver/xorg-server/render`; static profile excluding optional extension hooks; upstream sampling/edge-stepping defects remain.  
-DIX. Produces `DIX.OLB` - all 23 upstream device-independent server modules from `xserver/xorg-server/dix`, with a minimal optional-Shape fix, plus a native entry adapter for the 64-bit environment-vector boundary; static Render-enabled profile excluding optional extension hooks.  
+DIX. Produces `DIX.OLB` - 23 selected upstream device-independent server modules from `xserver/xorg-server/dix`, with a minimal optional-Shape fix, plus a native entry adapter for the 64-bit environment-vector boundary; native CRTL supplies `ffs` and `strcasecmp`. Static Render-enabled profile excluding optional extension hooks.  
 XPSTUBS. Produces `XPSTUBS.OLB` - the separate unchanged upstream non-Xprint server auxiliary from `xserver/xorg-server/dix`.  
 SHADOW. Produces `SHADOW.OLB` - all 20 unchanged upstream shadow-framebuffer modules from `xserver/xorg-server/miext/shadow`; static Render-enabled profile with packed, planar, and rotation paths, excluding loadable hooks.  
 RANDR. Produces `RANDR.OLB` - both unchanged upstream Resize and Rotate extension modules from `xserver/xorg-server/randr`; static Render-enabled profile; MI fallback does not change display modes, and the upstream rate-array cleanup defect remains.  
@@ -50,13 +50,12 @@ XFIXES. Produces `XFIXES.OLB` - all five unchanged upstream X Fixes extension mo
 COMPOSITE. Produces `COMPOSITE.OLB` - all four unchanged upstream Composite extension modules from `xserver/xorg-server/composite`; static Render-enabled profile; linking requires matching COMPOSITE/XFIXES server layouts and Damage extension support.  
 CW. Produces `CW.OLB` - all three unchanged upstream Composite wrapper modules from `xserver/xorg-server/miext/cw`; static Render-enabled profile with native C99 assertion-name mapping; requires matching Composite server layouts and screen initialization.  
 DAMAGEEXT. Produces `DAMAGE.OLB` in the separate damageext output directory - the unchanged upstream Damage protocol extension module; requires internal Damage tracking and matching server layouts.  
-EXT. Produces `EXT.OLB` - all 22 unchanged modules of the selected upstream static Xext profile, including ScreenSaver, FontCache, DPMS, XVideo/XvMC, X Resource, Multibuffer, EVI, CUP, and XEvIE; remaining optional and loadable extensions excluded. Runtime use requires matching core feature flags, `XFONT.OLB` for FontCache, and device-specific DPMS/video hooks. XEvIE requires matching XKB/XEVIE core event support; its upstream swapped SelectInput request-size defect remains.  
+EXT. Produces `EXT.OLB` - all 20 unchanged modules of the selected upstream static Xext profile, including ScreenSaver, FontCache, DPMS, XVideo/XvMC, X Resource, Multibuffer, EVI, CUP, and XEvIE; retains the Xprint protocol object without building a print server. Remaining optional and loadable extensions excluded. Runtime use requires matching core feature flags, `XFONT.OLB` for FontCache, and device-specific DPMS/video hooks. XEvIE requires matching XKB/XEVIE core event support; its upstream swapped SelectInput request-size defect remains.  
 XINPUT. Produces `XINPUT.OLB` - all 37 upstream server X Input extension modules; requires an XINPUT-enabled server core and device-dependent hooks; upstream lint-only stubs excluded.  
 OS. Produces `OS.OLB` - all 16 modules of the upstream TCP/XDMCP, MIT-cookie and text-RGB profile, with minimal VMS/P64 fixes and one native process adapter; process helpers use DCL and reject images installed with added privileges or rights.  
 MFB. Produces `MFB.OLB` - all 47 standard monochrome framebuffer objects, with corrected upstream weak-callback declarations, including specialized drawing variants; static profile excluding banked and loadable hooks.  
 VFB. Produces `VFB.OLB` - all four upstream virtual-framebuffer DDx objects from unchanged sources; malloc framebuffer with Render, excluding SHM, MMAP, and DPMS; not a standalone Xvfb executable.  
-XKB. Produces `XKB.OLB` - all 31 upstream keyboard-extension and generic DDX stub objects, with a minimal rules-parser correction, including X Input event support; requires matching XKB/XINPUT server layouts, keymaps, and xkbcomp for runtime use.  
-LBX. Produces `LBX.OLB` - all 12 upstream Low Bandwidth X server extension objects from unchanged sources; requires matching LBX server layouts, `LBXUTIL.OLB`, and `Z.OLB`.  
+XKB. Produces `XKB.OLB` - all 33 upstream keyboard-extension and generic DDX stub objects, with a native string-function declaration adaptation, including X Input event support; requires matching XKB/XINPUT server layouts, keymaps, and xkbcomp for runtime use.  
 CFB. Produces `CFB.OLB` - all 57 standard 8-bit color-framebuffer objects, with minimal P64 address-alignment and glyph-store sequencing fixes; static profile excluding banked, assembly, and loadable hooks; native support supplies 32-bit unaligned loads and RTL declarations.  
 CFB16. Produces `CFB16.OLB` - all 52 standard 16-bit color-framebuffer objects, with minimal P64 address-alignment fixes; the same static profile and native support as CFB.  
 CFB32. Produces `CFB32.OLB` - all 52 standard 32-bit color-framebuffer objects, with minimal P64 address-alignment fixes; the same static profile and native support as CFB.  
@@ -88,7 +87,7 @@ OLDX. Produces `OLDX.OLB` - all six unchanged upstream X10 compatibility library
 XMUU. Produces `XMUU.OLB` - all five unchanged upstream mini-Xmu library modules, using native snprintf; requires matching native 64-bit Xlib when linked; remains a separate upstream library from Xmu.  
 XPM. Produces `XPM.OLB` - all 28 unchanged upstream X PixMap library modules, using native snprintf, upstream string helpers, and plain-file I/O without compressed-file subprocesses; retains upstream 32-bit count fields; requires matching native 64-bit Xlib when linked.  
 XPRINTAPPUTIL. Produces `XPRINTAPPUTIL.OLB` - the unchanged upstream Xprint application utility module; requires XprintUtil, `XP.OLB`, and matching native 64-bit Xlib when linked; upstream license grant remains unresolved.  
-X11. Produces `X11.OLB` - static Xlib with XKB and TCP.  
+X11. Produces `X11.OLB` - static Xlib with XKB and TCP, including a P64 Compose-table relocation adaptation.  
 XAUTH. Produces `XAUTH.EXE`.  
 XDPYINFO. Produces `XDPYINFO.EXE`.  
 XWININFO. Produces `XWININFO.EXE`.  
@@ -104,14 +103,14 @@ XKB_DATA. Stages 356 upstream keyboard-data files and the native compiler togeth
 XT. Produces `XT.OLB` — complete static Xt, with P64 host types and generated string tables.  
 XMU. Produces `XMU.OLB` — complete static Xmu.  
 XVFB. Produces `XVFB.EXE` — headless core/Render/XKB/X Input server.  
-XF86_VIDEO_VMWARE. Produces `VMWARE_DRV.OLB` — all six unchanged xf86-video-vmware 10.13.0 driver modules, static/no-loader with 64-bit pointers; the consuming server supplies XFree86 services. Does not link or activate the driver.  
+XF86_VIDEO_VMWARE. Produces `VMWARE_DRV.OLB` — all seven unchanged xf86-video-vmware 10.14.1 driver modules, static/no-loader with 64-bit pointers; the consuming server supplies XFree86 services. Does not link or activate the driver.  
 SHADOWFB. Produces `SHADOWFB.OLB` — the unchanged static XFree86 shadowfb module with Render and before/after drawing callbacks used by VMware; loader-only metadata excluded. Separate from `SHADOW`.  
 VGAHW. Produces `VGAHW.OLB` — the unchanged static XFree86 VGA hardware support module with 64-bit pointers; loader-only metadata excluded. The consuming server supplies port I/O and XFree86 services. Does not access hardware during the build.  
 RAMDAC. Produces `RAMDAC.OLB` — all eight unchanged static XFree86 RAMDAC/cursor objects, including IBM, BT, TI, and the upstream bit-order wrapper; loader-only metadata and optional ARGB cursors excluded. The consuming server supplies XFree86 and cursor services.  
 XAA. Produces `XAA.OLB` — all 54 static XFree86 acceleration objects, including bit-order, fixed-base, triple-bit and polysegment variants; Render enabled, with minimal P64 address-alignment fixes. Loadable hooks, Xinerama and architecture assembly excluded.  
 XF86CONFIG. Produces `XF86CONFIG.OLB` — all 17 upstream XFree86 configuration-parser C sources unchanged, with VMS-only external-name aliases in headers. Reads, validates and writes configuration data; the consuming program supplies diagnostics. Uses current-process file permissions without Unix saved-ID switching; upstream Vendor-subsection Identifier and built-in scanner-reset defects remain.  
 RAC. Produces `RAC.OLB` — the unchanged static XFree86 resource-access control module with Render, framebuffer, cursor, colormap and viewport wrappers; loader-only metadata excluded. The consuming server supplies device-access and core services; upstream CloseScreen omits CreatePixmap restoration.  
-COMMON. Produces `COMMON.OLB` — all 32 objects of the selected static XFree86 common profile, including generated default modes and generic keyboard mapping; XKB, X Input and Render enabled, loader and XVideo excluded. The consuming server supplies OS, PCI and core services.  
+COMMON. Produces `COMMON.OLB` — all 33 objects of the selected static XFree86 common profile, including generated default modes, CVT and generic keyboard mapping; XKB, X Input and Render enabled, loader and XVideo excluded. The consuming server supplies OS, PCI and core services.  
 INIT. Produces `INIT.OLB` — the separate upstream XFree86 initialization object, with a VMS guard rejecting unsupported Unix VTInit commands; the consuming server supplies OS and device-dependent services.  
 BUS. Produces `BUS.OLB` — the unchanged generic XFree86 PCI bus module with 64-bit pointers; the consuming platform supplies PCI access, resource sizes and address translation. Native hardware backends and generic domain/mapping assumptions are not selected.  
 MISC. Produces `MISC.OLB` — all five unchanged portable C modules of XFree86 OS-support libmisc; the consuming platform supplies port I/O, delay and interrupt exclusion.  
@@ -175,7 +174,6 @@ $ @[.VMS-SUPPORT]BUILD OS
 $ @[.VMS-SUPPORT]BUILD MFB  
 $ @[.VMS-SUPPORT]BUILD VFB  
 $ @[.VMS-SUPPORT]BUILD XKB  
-$ @[.VMS-SUPPORT]BUILD LBX  
 $ @[.VMS-SUPPORT]BUILD CFB  
 $ @[.VMS-SUPPORT]BUILD CFB16  
 $ @[.VMS-SUPPORT]BUILD CFB32  
@@ -242,5 +240,5 @@ $ @[.VMS-SUPPORT]BUILD X11_DATA
   
 Native x86-64 with 64-bit pointers. Requires VSI C and DECset MMS.  
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  
-COMMON requires native Perl configured as the `PERL` foreign command to generate default modes.  
+COMMON and SCANPCI require native Perl configured as the `PERL` foreign command to generate default modes and PCI identification tables.  
 XKBCOMP builds bundled GNU Bison 1.35 automatically; no separate download or BISON command setup is required.  

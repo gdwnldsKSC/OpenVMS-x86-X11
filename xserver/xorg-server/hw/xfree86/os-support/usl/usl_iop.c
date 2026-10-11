@@ -1,4 +1,3 @@
-/* $XdotOrg: xserver/xorg/hw/xfree86/os-support/usl/usl_iop.c,v 1.3 2006/03/25 19:52:05 ajax Exp $ */
 /*
  * Copyright 2001,2005 by Kean Johnston <jkj@sco.com>
  *

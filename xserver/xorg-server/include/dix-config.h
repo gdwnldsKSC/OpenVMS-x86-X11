@@ -11,13 +11,13 @@
 #define BUILDERADDR "xorg@lists.freedesktop.org"
 
 /* Operating System Name */
-#define OSNAME "Linux 2.6.16-1.2122_FC6smp i686"
+#define OSNAME "Linux 2.6.17-1.2647.fc6PAE i686"
 
 /* Operating System Vendor */
 #define OSVENDOR ""
 
 /* Default font path */
-#define COMPILEDDEFAULTFONTPATH "/usr/local/lib/X11/fonts/misc/,/usr/local/lib/X11/fonts/TTF/,/usr/local/lib/X11/fonts/OTF,/usr/local/lib/X11/fonts/Type1/,/usr/local/lib/X11/fonts/CID/,/usr/local/lib/X11/fonts/100dpi/,/usr/local/lib/X11/fonts/75dpi/"
+#define COMPILEDDEFAULTFONTPATH "/usr/local/lib/X11/fonts/misc/,/usr/local/lib/X11/fonts/TTF/,/usr/local/lib/X11/fonts/OTF,/usr/local/lib/X11/fonts/Type1/,/usr/local/lib/X11/fonts/100dpi/,/usr/local/lib/X11/fonts/75dpi/"
 
 /* Support Composite Extension */
 #define COMPOSITE 1
@@ -52,7 +52,7 @@
 #define DPMSExtension 1
 
 /* Build GLX extension */
-#define GLXEXT 1
+/* #undef GLXEXT */
 
 /* Build GLX DRI loader */
 /* #undef GLX_DRI */
@@ -112,6 +112,9 @@
 
 /* Define to 1 if you have the `geteuid' function. */
 #define HAVE_GETEUID 1
+
+/* Define to 1 if you have the `getisax' function. */
+/* #undef HAVE_GETISAX */
 
 /* Define to 1 if you have the `getopt' function. */
 #define HAVE_GETOPT 1
@@ -223,6 +226,9 @@
 /* Support IPv6 for TCP connections */
 #define IPv6 1
 
+/* Support os-specific local connections */
+/* #undef LOCALCONN */
+
 /* Support MIT Misc extension */
 #define MITMISC 1
 
@@ -231,6 +237,9 @@
 
 /* Disable some debugging code */
 #define NDEBUG 1
+
+/* Enable some debugging code */
+/* #undef DEBUG */
 
 /* Name of package */
 #define PACKAGE "xorg-server"
@@ -303,6 +312,9 @@
 /* unaligned word accesses behave as expected */
 /* #undef WORKING_UNALIGNED_INT */
 
+/* Build X-ACE extension */
+#define XACE 1
+
 /* Support XCMisc extension */
 #define XCMISC 1
 
@@ -346,13 +358,13 @@
 #define XKB_IN_SERVER 1
 
 /* Vendor release */
-#define XORG_RELEASE "Release 7.1"
+#define XORG_RELEASE "Release 7.2"
 
 /* Current Xorg version */
-#define XORG_VERSION_CURRENT (((7) * 10000000) + ((1) * 100000) + ((0) * 1000) + 0)
+#define XORG_VERSION_CURRENT (((7) * 10000000) + ((2) * 100000) + ((0) * 1000) + 0)
 
 /* Xorg release date */
-#define XORG_DATE "22 May 2006"
+#define XORG_DATE "22 January 2007"
 
 /* Build Xv Extension */
 #define XvExtension 1
@@ -374,9 +386,6 @@
 
 /* Support Xv extension */
 #define XV 1
-
-/* Build LBX extension */
-/* #undef LBX */
 
 /* Build APPGROUP extension */
 #define XAPPGROUP 1
@@ -402,16 +411,8 @@
 /* Endian order */
 #define X_BYTE_ORDER X_LITTLE_ENDIAN
 
-/* BSD-compliant source */
-#define _BSD_SOURCE 1
-
-/* POSIX-compliant source */
-#define _POSIX_SOURCE 1
-
-#ifndef _XOPEN_SOURCE
-/* X/Open-compliant source */
-#define _XOPEN_SOURCE 500
-#endif
+/* Enable GNU and other extensions to the C environment for GLIBC */
+#define _GNU_SOURCE 1
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
@@ -436,5 +437,8 @@
 
 /* Define to 1 if modules should avoid the libcwrapper */
 #define NO_LIBCWRAPPER 1
+
+/* Have a monotonic clock from clock_gettime() */
+#define MONOTONIC_CLOCK 1
 
 #endif /* _DIX_CONFIG_H_ */

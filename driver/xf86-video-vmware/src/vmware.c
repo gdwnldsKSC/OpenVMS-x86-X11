@@ -81,14 +81,14 @@ char rcsId_vmware[] =
 #define VMWARE_NAME "VMWARE"
 #define VMWARE_DRIVER_NAME "vmware"
 #define VMWARE_MAJOR_VERSION	10
-#define VMWARE_MINOR_VERSION	13
-#define VMWARE_PATCHLEVEL	0
+#define VMWARE_MINOR_VERSION	14
+#define VMWARE_PATCHLEVEL	1
 #define VMWARE_DRIVER_VERSION \
    (VMWARE_MAJOR_VERSION * 65536 + VMWARE_MINOR_VERSION * 256 + VMWARE_PATCHLEVEL)
 
 static const char VMWAREBuildStr[] = "VMware Guest X Server " 
     VMW_STRING(VMWARE_MAJOR_VERSION) "." VMW_STRING(VMWARE_MINOR_VERSION)
-    "." VMW_STRING(VMWARE_PATCHLEVEL) " - build=$Name:  $\n";
+    "." VMW_STRING(VMWARE_PATCHLEVEL) " - build=$Name$\n";
 
 static SymTabRec VMWAREChipsets[] = {
     { PCI_CHIP_VMWARE0405, "vmware0405" },
@@ -164,12 +164,16 @@ static XF86ModuleVersionInfo vmwareVersRec = {
 
 typedef enum {
     OPTION_HW_CURSOR,
-    OPTION_NOACCEL
+    OPTION_NOACCEL,
+    OPTION_XINERAMA,
+    OPTION_STATIC_XINERAMA
 } VMWAREOpts;
 
 static const OptionInfoRec VMWAREOptions[] = {
     { OPTION_HW_CURSOR, "HWcursor",     OPTV_BOOLEAN,   {0},    FALSE },
     { OPTION_NOACCEL,   "NoAccel",      OPTV_BOOLEAN,   {0},    FALSE },
+    { OPTION_XINERAMA,  "Xinerama",     OPTV_BOOLEAN,   {0},    FALSE },
+    { OPTION_STATIC_XINERAMA, "StaticXinerama", OPTV_STRING, {0}, FALSE },
     { -1,               NULL,           OPTV_NONE,      {0},    FALSE }
 };
 
@@ -277,12 +281,18 @@ vmwareSendSVGACmdUpdateFullScreen(VMWAREPtr pVMWARE)
 }
 
 static void
-vmwareSendSVGACmdPitchLock(VMWAREPtr pVMWARE, unsigned long fbPitch)
+vmwareSetPitchLock(VMWAREPtr pVMWARE, unsigned long fbPitch)
 {
    CARD32 *vmwareFIFO = pVMWARE->vmwareFIFO;
 
-   if (pVMWARE->canPitchLock && vmwareFIFO[SVGA_FIFO_MIN] >=
-                                (vmwareReadReg(pVMWARE, SVGA_REG_MEM_REGS) << 2)) {
+   VmwareLog(("Attempting to set pitchlock\n"));
+
+   if (pVMWARE->vmwareCapability & SVGA_CAP_PITCHLOCK) {
+      VmwareLog(("Using PitchLock register\n"));
+      vmwareWriteReg(pVMWARE, SVGA_REG_PITCHLOCK, fbPitch);
+   } else if (pVMWARE->hasPitchLockFIFOReg &&
+              vmwareFIFO[SVGA_FIFO_MIN] >= (vmwareReadReg(pVMWARE, SVGA_REG_MEM_REGS) << 2)) {
+      VmwareLog(("Using PitchLock FIFO register\n"));
       vmwareFIFO[SVGA_FIFO_PITCHLOCK] = fbPitch;
    }
 }
@@ -361,7 +371,7 @@ VMXGetVMwareSvgaId(VMWAREPtr pVMWARE)
  *
  *  RewriteTagString --
  *
- *      Rewrites the given string, removing the $Name:  $, and
+ *      Rewrites the given string, removing the $Name$, and
  *      replacing it with the contents.  The output string must
  *      have enough room, or else.
  *
@@ -414,6 +424,129 @@ VMWAREAvailableOptions(int chipid, int busid)
     return VMWAREOptions;
 }
 
+static int
+VMWAREParseTopologyElement(ScrnInfoPtr pScrn,
+                           unsigned int output,
+                           const char *elementName,
+                           const char *element,
+                           const char *expectedTerminators,
+                           Bool needTerminator,
+                           unsigned int *outValue)
+{
+   char buf[10] = {0, };
+   size_t i = 0;
+   int retVal = -1;
+   const char *str = element;
+
+   for (i = 0; str[i] >= '0' && str[i] <= '9'; i++);
+   if (i == 0) {
+      xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Output %u: unable to parse %s.\n",
+                 output, elementName);
+      goto exit;
+   }
+
+   strncpy(buf, str, i);
+   *outValue = atoi(buf);
+
+   if (*outValue > (unsigned short)-1) {
+      xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Output %u: %s must be less than %hu.\n",
+                 output, elementName, (unsigned short)-1);
+      goto exit;
+   }
+
+   str += i;
+
+   if (needTerminator || str[0] != '\0') {
+      Bool unexpected = TRUE;
+
+      for (i = 0; i < strlen(expectedTerminators); i++) {
+         if (str[0] == expectedTerminators[i]) {
+            unexpected = FALSE;
+         }
+      }
+
+      if (unexpected) {
+         xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                    "Output %u: unexpected character '%c' after %s.\n",
+                    output, str[0], elementName);
+         goto exit;
+      } else {
+         str++;
+      }
+   }
+
+   retVal = str - element;
+
+ exit:
+   return retVal;
+}
+
+static xXineramaScreenInfo *
+VMWAREParseTopologyString(ScrnInfoPtr pScrn,
+                          const char *topology,
+                          unsigned int *retNumOutputs)
+{
+   xXineramaScreenInfo *extents = NULL;
+   unsigned int numOutputs = 0;
+   const char *str = topology;
+
+   xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Parsing static Xinerama topology: Starting...\n");
+
+   do {
+      unsigned int x, y, width, height;
+      int i;
+
+      i = VMWAREParseTopologyElement(pScrn, numOutputs, "width", str, "xX", TRUE, &width);
+      if (i == -1) {
+         goto error;
+      }
+      str += i;
+
+      i = VMWAREParseTopologyElement(pScrn, numOutputs, "height", str, "+", TRUE, &height);
+      if (i == -1) {
+         goto error;
+      }
+      str += i;
+
+      i= VMWAREParseTopologyElement(pScrn, numOutputs, "X offset", str, "+", TRUE, &x);
+      if (i == -1) {
+         goto error;
+      }
+      str += i;
+
+      i = VMWAREParseTopologyElement(pScrn, numOutputs, "Y offset", str, ";", FALSE, &y);
+      if (i == -1) {
+         goto error;
+      }
+      str += i;
+
+      xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Output %u: %ux%u+%u+%u\n",
+                 numOutputs, width, height, x, y);
+
+      numOutputs++;
+      extents = xrealloc(extents, numOutputs * sizeof (xXineramaScreenInfo));
+      extents[numOutputs - 1].x_org = x;
+      extents[numOutputs - 1].y_org = y;
+      extents[numOutputs - 1].width = width;
+      extents[numOutputs - 1].height = height;
+   } while (*str != 0);
+
+   xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Parsing static Xinerama topology: Succeeded.\n");
+   goto exit;
+
+ error:
+   xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Parsing static Xinerama topology: Failed.\n");
+
+   xfree(extents);
+   extents = NULL;
+   numOutputs = 0;
+
+ exit:
+   *retNumOutputs = numOutputs;
+   return extents;
+}
+
+
 static Bool
 VMWAREPreInit(ScrnInfoPtr pScrn, int flags)
 {
@@ -425,6 +558,7 @@ VMWAREPreInit(ScrnInfoPtr pScrn, int flags)
     int i;
     ClockRange* clockRanges;
     IOADDRESS domainIOBase = 0;
+    Bool useXinerama = TRUE;
 
 #ifndef BUILD_FOR_420
     domainIOBase = pScrn->domainIOBase;
@@ -737,6 +871,31 @@ VMWAREPreInit(ScrnInfoPtr pScrn, int flags)
     }
     pScrn->videoRam = pVMWARE->videoRam / 1024;
     pScrn->memPhysBase = pVMWARE->memPhysBase;
+
+    /*
+     * Init xinerama preferences.
+     */
+    useXinerama = xf86ReturnOptValBool(options, OPTION_XINERAMA,
+                                       pVMWARE->vmwareCapability & SVGA_CAP_MULTIMON);
+    if (useXinerama && !(pVMWARE->vmwareCapability & SVGA_CAP_MULTIMON)) {
+       xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+                  "Xinerama is not safely supported by the current virtual hardware. "
+                  "Do not request resolutions that require > 16MB of framebuffer.\n");
+    }
+
+
+    if (useXinerama && xf86IsOptionSet(options, OPTION_STATIC_XINERAMA)) {
+       char *topology = xf86GetOptValString(options, OPTION_STATIC_XINERAMA);
+       if (topology) {
+          pVMWARE->xineramaState =
+             VMWAREParseTopologyString(pScrn, topology, &pVMWARE->xineramaNumOutputs);
+
+         pVMWARE->xineramaStatic = pVMWARE->xineramaState != NULL;
+
+         xfree(topology);
+       }
+    }
+
     xfree(options);
 
     {
@@ -807,6 +966,20 @@ VMWAREPreInit(ScrnInfoPtr pScrn, int flags)
             return FALSE;
         }
         xf86LoaderReqSymLists(vmwareXaaSymbols, NULL);
+    }
+
+    /* Initialise VMWARE_CTRL extension. */
+    VMwareCtrl_ExtInit(pScrn);
+
+    /* Initialise Xinerama extension. */
+    if (useXinerama) {
+       VMwareXinerama_ExtInit(pScrn);
+    }
+
+    if (pVMWARE->xinerama && pVMWARE->xineramaStatic) {
+       xf86DrvMsg(pScrn->scrnIndex, X_INFO, pVMWARE->xineramaState ?
+                                            "Using static Xinerama.\n" :
+                                            "Failed to configure static Xinerama.\n");
     }
 
     return TRUE;
@@ -983,6 +1156,33 @@ VMWAREModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
         }
     }
 
+    /*
+     * Update Xinerama info appropriately.
+     */
+    if (pVMWARE->xinerama && !pVMWARE->xineramaStatic) {
+       if (pVMWARE->xineramaNextState) {
+          xfree(pVMWARE->xineramaState);
+          pVMWARE->xineramaState = pVMWARE->xineramaNextState;
+          pVMWARE->xineramaNumOutputs = pVMWARE->xineramaNextNumOutputs;
+
+          pVMWARE->xineramaNextState = NULL;
+          pVMWARE->xineramaNextNumOutputs = 0;
+       } else {
+          VMWAREXineramaPtr basicState =
+             (VMWAREXineramaPtr)xcalloc(1, sizeof (VMWAREXineramaRec));
+          if (basicState) {
+             basicState->x_org = 0;
+             basicState->y_org = 0;
+             basicState->width = vmwareReg->svga_reg_width;
+             basicState->height = vmwareReg->svga_reg_height;
+
+             xfree(pVMWARE->xineramaState);
+             pVMWARE->xineramaState = basicState;
+             pVMWARE->xineramaNumOutputs = 1;
+          }
+       }
+    }
+
     return TRUE;
 }
 
@@ -1019,7 +1219,7 @@ VMWAREInitFIFO(ScrnInfoPtr pScrn)
     vmwareFIFO[SVGA_FIFO_STOP] = min * sizeof(CARD32);
     vmwareWriteReg(pVMWARE, SVGA_REG_CONFIG_DONE, 1);
 
-    pVMWARE->canPitchLock =
+    pVMWARE->hasPitchLockFIFOReg =
         extendedFifo && (vmwareFIFO[SVGA_FIFO_CAPABILITIES] & SVGA_FIFO_CAP_PITCHLOCK);
 }
 
@@ -1052,7 +1252,7 @@ VMWARECloseScreen(int scrnIndex, ScreenPtr pScreen)
             vmwareXAACloseScreen(pScreen);
         }
 
-        vmwareSendSVGACmdPitchLock(pVMWARE, 0);
+        vmwareSetPitchLock(pVMWARE, 0);
 
         VMWARERestore(pScrn);
         VMWAREUnmapMem(pScrn);
@@ -1164,7 +1364,7 @@ VMWARELoadPalette(ScrnInfoPtr pScrn, int numColors, int* indices,
 }
 
 
-static DisplayModeRec *
+DisplayModeRec *
 VMWAREAddDisplayMode(ScrnInfoPtr pScrn,
                      const char *name,
                      int width,
@@ -1252,7 +1452,7 @@ VMWAREScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     /* Initialise the first mode */
     VMWAREModeInit(pScrn, pScrn->currentMode);
 
-    vmwareSendSVGACmdPitchLock(pVMWARE, pVMWARE->fbPitch);
+    vmwareSetPitchLock(pVMWARE, pVMWARE->fbPitch);
 
     /* Set the viewport if supported */
     VMWAREAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
@@ -1414,10 +1614,13 @@ VMWAREScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
      * at ScreenInit time.
      */
     pVMWARE->initialMode = pScrn->currentMode;
-    pVMWARE->dynMode1 = VMWAREAddDisplayMode(pScrn, "DynMode1", 1, 1);
-    pVMWARE->dynMode2 = VMWAREAddDisplayMode(pScrn, "DynMode2", 2, 2);
-       
-    VMwareCtrl_ExtInit(pScrn);
+
+    /*
+     * We will lazily add the dynamic modes as the are needed when new
+     * modes are requested through the control extension.
+     */
+    pVMWARE->dynMode1 = NULL;
+    pVMWARE->dynMode2 = NULL;
 
 #if VMWARE_DRIVER_FUNC
     pScrn->DriverFunc = VMWareDriverFunc;
@@ -1448,7 +1651,7 @@ VMWAREEnterVT(int scrnIndex, int flags)
         VMWAREInitFIFO(pScrn);
     }
 
-    vmwareSendSVGACmdPitchLock(pVMWARE, pVMWARE->fbPitch);
+    vmwareSetPitchLock(pVMWARE, pVMWARE->fbPitch);
 
     return VMWAREModeInit(pScrn, pScrn->currentMode);
 }
@@ -1459,7 +1662,7 @@ VMWARELeaveVT(int scrnIndex, int flags)
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VMWAREPtr pVMWARE = VMWAREPTR(pScrn);
 
-    vmwareSendSVGACmdPitchLock(pVMWARE, 0);
+    vmwareSetPitchLock(pVMWARE, 0);
 
     VMWARERestore(pScrn);
 }

@@ -47,7 +47,7 @@ XdmcpReadARRAY8 (buffer, array)
 	/* Must set array->data to NULL to guarantee safe call of
  	 * XdmcpDisposeARRAY*(array) (which calls Xfree(array->data));
          * see defect 7329 */
- 	array->data = 0;
+ 	array->data = NULL;
 	return FALSE;
     }
     if (!array->length)

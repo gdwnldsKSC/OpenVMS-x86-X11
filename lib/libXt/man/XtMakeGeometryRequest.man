@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtMakeGeometryRequest 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtMakeGeometryRequest __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtMakeGeometryRequest, XtMakeResizeRequest \- make geometry manager request
 .SH SYNTAX

@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtToolkitThreadInitialize 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtToolkitThreadInitialize __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtToolkitThreadInitialize \- initialize the toolkit for multiple threads
 .SH SYNTAX

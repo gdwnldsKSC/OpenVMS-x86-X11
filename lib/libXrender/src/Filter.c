@@ -129,7 +129,7 @@ XRenderQueryFilters (Display *dpy, Drawable drawable)
 void
 XRenderSetPictureFilter  (Display   *dpy,
 			  Picture   picture,
-			  char	    *filter,
+			  const char *filter,
 			  XFixed    *params,
 			  int	    nparams)
 {

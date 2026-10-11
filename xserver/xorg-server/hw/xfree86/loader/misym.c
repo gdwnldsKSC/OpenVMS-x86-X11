@@ -1,6 +1,3 @@
-/* $XdotOrg: xserver/xorg/hw/xfree86/loader/misym.c,v 1.10 2006/01/06 17:05:26 ajax Exp $ */
-/* $XFree86: xc/programs/Xserver/hw/xfree86/loader/misym.c,v 1.38 2003/10/15 16:29:04 dawes Exp $ */
-
 /*
  *
  * Copyright 1995,96 by Metro Link, Inc.
@@ -23,7 +20,6 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-
 /*
  * Copyright (c) 1997-2003 by The XFree86 Project, Inc.
  *
@@ -87,7 +83,7 @@
 
 extern miPointerSpriteFuncRec miSpritePointerFuncs;
 
-LOOKUP miLookupTab[] = {
+_X_HIDDEN void *miLookupTab[] = {
     SYMFUNC(miClearToBackground)
     SYMFUNC(miSendGraphicsExpose)
     SYMFUNC(miModifyPixmapHeader)
@@ -220,6 +216,4 @@ LOOKUP miLookupTab[] = {
 #ifdef DAMAGE
     SYMFUNC(DamageDamageRegion)
 #endif
-
-    {0, 0}
 };

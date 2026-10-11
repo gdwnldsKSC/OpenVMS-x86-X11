@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 # 
-#  $Id: Makefile.am,v 1.6 2005/07/02 21:22:31 keithp Exp $
+#  $Id$
 # 
 #  Copyright © 2003 Keith Packard, Noah Levitt
 # 
@@ -92,11 +92,13 @@ am__vpath_adj = case $$p in \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(pkgconfigdir)" \
+	"$(DESTDIR)$(libXfontincludedir)" \
 	"$(DESTDIR)$(libXfontincludedir)"
 pkgconfigDATA_INSTALL = $(INSTALL_DATA)
 DATA = $(pkgconfig_DATA)
 libXfontincludeHEADERS_INSTALL = $(INSTALL_HEADER)
-HEADERS = $(libXfontinclude_HEADERS)
+nodist_libXfontincludeHEADERS_INSTALL = $(INSTALL_HEADER)
+HEADERS = $(libXfontinclude_HEADERS) $(nodist_libXfontinclude_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = $(SUBDIRS)
@@ -168,6 +170,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -179,8 +182,6 @@ XFONT_BITMAP_TRUE = @XFONT_BITMAP_TRUE@
 XFONT_BUILTINS_FALSE = @XFONT_BUILTINS_FALSE@
 XFONT_BUILTINS_TRUE = @XFONT_BUILTINS_TRUE@
 XFONT_CFLAGS = @XFONT_CFLAGS@
-XFONT_CID_FALSE = @XFONT_CID_FALSE@
-XFONT_CID_TRUE = @XFONT_CID_TRUE@
 XFONT_FC_FALSE = @XFONT_FC_FALSE@
 XFONT_FC_TRUE = @XFONT_FC_TRUE@
 XFONT_FONTCACHE_FALSE = @XFONT_FONTCACHE_FALSE@
@@ -254,7 +255,6 @@ libXfontinclude_HEADERS = \
 	include/X11/fonts/fntfil.h   \
 	include/X11/fonts/fntfilio.h \
 	include/X11/fonts/fntfilst.h \
-	include/X11/fonts/fontconf.h \
 	include/X11/fonts/fontencc.h \
 	include/X11/fonts/fontmisc.h \
 	include/X11/fonts/fontmod.h  \
@@ -265,9 +265,13 @@ libXfontinclude_HEADERS = \
 	src/FreeType/ft.h	     \
 	src/FreeType/ftfuncs.h
 
+nodist_libXfontinclude_HEADERS = \
+	include/X11/fonts/fontconf.h
+
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xfont.pc
-EXTRA_DIST = xfont.pc.in autogen.sh include/X11/fonts/fontconf.h.in
+EXTRA_DIST = xfont.pc.in autogen.sh include/X11/fonts/fontconf.h.in ChangeLog
+CLEANFILES = ChangeLog
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -374,6 +378,23 @@ install-libXfontincludeHEADERS: $(libXfontinclude_HEADERS)
 uninstall-libXfontincludeHEADERS:
 	@$(NORMAL_UNINSTALL)
 	@list='$(libXfontinclude_HEADERS)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(libXfontincludedir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(libXfontincludedir)/$$f"; \
+	done
+install-nodist_libXfontincludeHEADERS: $(nodist_libXfontinclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	test -z "$(libXfontincludedir)" || $(mkdir_p) "$(DESTDIR)$(libXfontincludedir)"
+	@list='$(nodist_libXfontinclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(nodist_libXfontincludeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(libXfontincludedir)/$$f'"; \
+	  $(nodist_libXfontincludeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(libXfontincludedir)/$$f"; \
+	done
+
+uninstall-nodist_libXfontincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_libXfontinclude_HEADERS)'; for p in $$list; do \
 	  f=$(am__strip_dir) \
 	  echo " rm -f '$(DESTDIR)$(libXfontincludedir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(libXfontincludedir)/$$f"; \
@@ -556,6 +577,9 @@ distdir: $(DISTFILES)
 	      || exit 1; \
 	  fi; \
 	done
+	$(MAKE) $(AM_MAKEFLAGS) \
+	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
+	  dist-hook
 	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
@@ -658,7 +682,7 @@ check: check-recursive
 all-am: Makefile $(DATA) $(HEADERS) config.h
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(libXfontincludedir)"; do \
+	for dir in "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(libXfontincludedir)" "$(DESTDIR)$(libXfontincludedir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-recursive
@@ -678,6 +702,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -705,7 +730,8 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-libXfontincludeHEADERS install-pkgconfigDATA
+install-data-am: install-libXfontincludeHEADERS \
+	install-nodist_libXfontincludeHEADERS install-pkgconfigDATA
 
 install-exec-am:
 
@@ -734,6 +760,7 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am: uninstall-info-am uninstall-libXfontincludeHEADERS \
+	uninstall-nodist_libXfontincludeHEADERS \
 	uninstall-pkgconfigDATA
 
 uninstall-info: uninstall-info-recursive
@@ -741,21 +768,29 @@ uninstall-info: uninstall-info-recursive
 .PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am am--refresh check \
 	check-am clean clean-generic clean-libtool clean-recursive \
 	ctags ctags-recursive dist dist-all dist-bzip2 dist-gzip \
-	dist-shar dist-tarZ dist-zip distcheck distclean \
+	dist-hook dist-shar dist-tarZ dist-zip distcheck distclean \
 	distclean-generic distclean-hdr distclean-libtool \
 	distclean-recursive distclean-tags distcleancheck distdir \
 	distuninstallcheck dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-exec \
 	install-exec-am install-info install-info-am \
 	install-libXfontincludeHEADERS install-man \
-	install-pkgconfigDATA install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic maintainer-clean-recursive \
-	mostlyclean mostlyclean-generic mostlyclean-libtool \
-	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-info-am \
-	uninstall-libXfontincludeHEADERS uninstall-pkgconfigDATA
+	install-nodist_libXfontincludeHEADERS install-pkgconfigDATA \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	maintainer-clean-recursive mostlyclean mostlyclean-generic \
+	mostlyclean-libtool mostlyclean-recursive pdf pdf-am ps ps-am \
+	tags tags-recursive uninstall uninstall-am uninstall-info-am \
+	uninstall-libXfontincludeHEADERS \
+	uninstall-nodist_libXfontincludeHEADERS \
+	uninstall-pkgconfigDATA
 
+
+.PHONY: ChangeLog
+ChangeLog:
+	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || (touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
+
+dist-hook: ChangeLog
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

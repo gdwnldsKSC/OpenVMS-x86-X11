@@ -63,11 +63,10 @@ SOFTWARE.
 #include <X11/extensions/extutil.h>
 #include "XIint.h"
 
-XDeviceInfo * XListInputDevices(dpy, ndevices)
-    register Display *
-	dpy;
-    int *
-	ndevices;
+XDeviceInfo *
+XListInputDevices(dpy, ndevices)
+    register Display *dpy;
+    int *ndevices;
 {
     int size;
     xListInputDevicesReq *req;
@@ -83,7 +82,7 @@ XDeviceInfo * XListInputDevices(dpy, ndevices)
     XExtDisplayInfo *info = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
+    if (_XiCheckExtInit(dpy, XInput_Initial_Release, info) == -1)
 	return ((XDeviceInfo *) NULL);
 
     GetReq(ListInputDevices, req);

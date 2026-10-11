@@ -113,11 +113,12 @@ am__atimisc_drv_la_SOURCES_DIST = atiaccel.c atiadjust.c atiaudio.c \
 	atimach64io.c atimach64xv.c atimode.c atipreinit.c atiprint.c \
 	atirgb514.c atiscreen.c atituner.c atiutil.c ativalid.c \
 	atixv.c atiload.c atimisc.c atidri.c atidga.c ativga.c \
-	atibank.c atiwonder.c atiwonderio.c
+	atibank.c atiwonder.c atiwonderio.c atimach64exa.c
 @DRI_TRUE@am__objects_2 = atidri.lo
 @ATIMISC_DGA_TRUE@am__objects_3 = atidga.lo
 @ATIMISC_CPIO_TRUE@am__objects_4 = ativga.lo atibank.lo atiwonder.lo \
 @ATIMISC_CPIO_TRUE@	atiwonderio.lo
+@USE_EXA_TRUE@am__objects_5 = atimach64exa.lo
 am_atimisc_drv_la_OBJECTS = atiaccel.lo atiadjust.lo atiaudio.lo \
 	aticlock.lo aticonfig.lo aticonsole.lo aticursor.lo atidac.lo \
 	atidecoder.lo atidsp.lo atifillin.lo atii2c.lo atilock.lo \
@@ -125,26 +126,27 @@ am_atimisc_drv_la_OBJECTS = atiaccel.lo atiadjust.lo atiaudio.lo \
 	atimach64i2c.lo atimach64io.lo atimach64xv.lo atimode.lo \
 	atipreinit.lo atiprint.lo atirgb514.lo atiscreen.lo \
 	atituner.lo atiutil.lo ativalid.lo atixv.lo atiload.lo \
-	atimisc.lo $(am__objects_2) $(am__objects_3) $(am__objects_4)
+	atimisc.lo $(am__objects_2) $(am__objects_3) $(am__objects_4) \
+	$(am__objects_5)
 atimisc_drv_la_OBJECTS = $(am_atimisc_drv_la_OBJECTS)
 r128_drv_la_LIBADD =
 am__r128_drv_la_SOURCES_DIST = r128_accel.c r128_cursor.c r128_dga.c \
 	r128_driver.c r128_video.c r128_misc.c r128_dri.c
-@DRI_TRUE@am__objects_5 = r128_dri.lo
+@DRI_TRUE@am__objects_6 = r128_dri.lo
 am_r128_drv_la_OBJECTS = r128_accel.lo r128_cursor.lo r128_dga.lo \
-	r128_driver.lo r128_video.lo r128_misc.lo $(am__objects_5)
+	r128_driver.lo r128_video.lo r128_misc.lo $(am__objects_6)
 r128_drv_la_OBJECTS = $(am_r128_drv_la_OBJECTS)
 radeon_drv_la_LIBADD =
 am__radeon_drv_la_SOURCES_DIST = radeon_accel.c radeon_mergedfb.c \
 	radeon_cursor.c radeon_dga.c radeon_driver.c radeon_video.c \
 	radeon_bios.c radeon_mm_i2c.c radeon_vip.c radeon_misc.c \
 	radeon_dri.c radeon_exa.c
-@DRI_TRUE@am__objects_6 = radeon_dri.lo
-@USE_EXA_TRUE@am__objects_7 = radeon_exa.lo
+@DRI_TRUE@am__objects_7 = radeon_dri.lo
+@USE_EXA_TRUE@am__objects_8 = radeon_exa.lo
 am_radeon_drv_la_OBJECTS = radeon_accel.lo radeon_mergedfb.lo \
 	radeon_cursor.lo radeon_dga.lo radeon_driver.lo \
 	radeon_video.lo radeon_bios.lo radeon_mm_i2c.lo radeon_vip.lo \
-	radeon_misc.lo $(am__objects_6) $(am__objects_7)
+	radeon_misc.lo $(am__objects_7) $(am__objects_8)
 radeon_drv_la_OBJECTS = $(am_radeon_drv_la_OBJECTS)
 theatre200_drv_la_LIBADD =
 am_theatre200_drv_la_OBJECTS = theatre200_drv_la-theatre200.lo \
@@ -268,6 +270,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PS2PDF = @PS2PDF@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -327,6 +330,7 @@ target_alias = @target_alias@
 @ATIMISC_CPIO_TRUE@ATI_CPIO_SOURCES = ativgaio.c
 @ATIMISC_CPIO_TRUE@ATIMISC_CPIO_SOURCES = ativga.c atibank.c atiwonder.c atiwonderio.c
 @ATIMISC_DGA_TRUE@ATIMISC_DGA_SOURCES = atidga.c
+@USE_EXA_TRUE@ATIMISC_EXA_SOURCES = atimach64exa.c
 @USE_EXA_TRUE@RADEON_EXA_SOURCES = radeon_exa.c
 AM_CFLAGS = @XORG_CFLAGS@ @DRI_CFLAGS@
 ati_drv_la_LTLIBRARIES = ati_drv.la
@@ -347,7 +351,7 @@ atimisc_drv_la_SOURCES = \
 	atimach64i2c.c atimach64io.c atimach64xv.c atimode.c atipreinit.c \
 	atiprint.c atirgb514.c atiscreen.c atituner.c atiutil.c ativalid.c \
 	atixv.c atiload.c atimisc.c $(ATIMISC_DRI_SRCS) $(ATIMISC_DGA_SOURCES) \
-	$(ATIMISC_CPIO_SOURCES)
+	$(ATIMISC_CPIO_SOURCES) $(ATIMISC_EXA_SOURCES)
 
 r128_drv_la_LTLIBRARIES = r128_drv.la
 r128_drv_la_LDFLAGS = -module -avoid-version
@@ -419,6 +423,7 @@ EXTRA_DIST = \
 	atimach64.h \
 	atimach64i2c.h \
 	atimach64io.h \
+	atimach64render.c \
 	atimach64xv.h \
 	atimode.h \
 	atimodule.h \
@@ -744,6 +749,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atimach64.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atimach64accel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atimach64cursor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atimach64exa.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atimach64i2c.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atimach64io.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atimach64xv.Plo@am__quote@

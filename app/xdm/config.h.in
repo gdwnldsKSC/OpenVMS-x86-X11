@@ -78,6 +78,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define to 1 if you have the `sigaction' function. */
+#undef HAVE_SIGACTION
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -132,6 +135,15 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Major version of this package */
+#undef PACKAGE_VERSION_MAJOR
+
+/* Minor version of this package */
+#undef PACKAGE_VERSION_MINOR
+
+/* Patch version of this package */
+#undef PACKAGE_VERSION_PATCHLEVEL
+
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
 
@@ -152,6 +164,9 @@
 
 /* Use PAM for authentication */
 #undef USE_PAM
+
+/* Define to 1 to use Xft for text on greeter screen */
+#undef USE_XFT
 
 /* Define to 1 to use XINERAMA in greeter & chooser */
 #undef USE_XINERAMA

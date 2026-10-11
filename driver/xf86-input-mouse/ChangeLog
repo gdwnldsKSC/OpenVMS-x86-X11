@@ -1,3 +1,23 @@
+2006-05-15  Matthias Hopf  <mhopf@suse.de>
+
+	* configure.ac,src/mouse.c:
+	Bump to 1.1.1.
+
+2006-04-21  Matthias Hopf  <mhopf@suse.de>
+
+	* man/mouse.man:
+	Fixed default for YAxisMapping.
+	Changed default for ZAxisMapping. Added short explanation.
+	* src/mouse.c: (MouseCommonOptions), (MouseReadInput):
+	Autodetect (one way only) single wheel only for EXPS2.
+	Use singlebit protocol for multiwheel EXPS2 mice.
+
+2006-04-20  Matthias Hopf  <mhopf@suse.de>
+
+	* src/mouse.c: (MousePostEvent):
+	Overhaul of wheel processing. Does work correctly with multibit
+	zaxis events now.
+
 2006-04-06  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

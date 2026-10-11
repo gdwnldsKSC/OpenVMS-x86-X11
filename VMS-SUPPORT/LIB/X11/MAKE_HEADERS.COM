@@ -1,4 +1,4 @@
-$! Configure the xproto Xpoll header for the native fd_set member name.
+$! Configure xproto headers for native fd_set and standard wide prototypes.
 $ SET NOON
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
@@ -6,7 +6,7 @@ $ result = 2
 $ input_open = 0
 $ output_open = 0
 $ mode = F$EDIT(P1,"UPCASE,TRIM")
-$ IF mode .NES. "XPOLL" THEN GOTO done
+$ IF (mode .NES. "XPOLL") .AND. (mode .NES. "XFUNCPROTO") THEN GOTO done
 $ IF (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ IF (P4 .NES. "") .OR. (P5 .NES. "") .OR. (P6 .NES. "") .OR. -
      (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
@@ -19,13 +19,16 @@ $ OPEN/READ source 'P2'
 $ input_open = 1
 $ replacements = 0
 $ token = "@USE_FDS_BITS@"
+$ replacement = "fds_bits"
+$ IF mode .EQS. "XFUNCPROTO" THEN token = "#undef FUNCPROTO"
+$ IF mode .EQS. "XFUNCPROTO" THEN replacement = "#define FUNCPROTO 15"
 $next_line:
 $ READ/END=template_done source record
 $replace_token:
 $ position = F$LOCATE(token,record)
 $ IF position .EQ. F$LENGTH(record) THEN GOTO write_line
 $ tail = position + F$LENGTH(token)
-$ record = F$EXTRACT(0,position,record) + "fds_bits" + -
+$ record = F$EXTRACT(0,position,record) + replacement + -
     F$EXTRACT(tail,F$LENGTH(record)-tail,record)
 $ replacements = replacements + 1
 $ GOTO replace_token

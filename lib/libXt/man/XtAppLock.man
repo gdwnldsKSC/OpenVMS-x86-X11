@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAppLock 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAppLock __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAppLock, XtAppUnlock \- lock and unlock application context
 .SH SYNTAX

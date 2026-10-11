@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAddActions 3Xt __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
+.TH XtAddActions __libmansuffix__ __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
 .SH NAME
 XtAddActions \- register an action table
 .SH SYNTAX

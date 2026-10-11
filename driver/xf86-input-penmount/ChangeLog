@@ -1,3 +1,12 @@
+2006-06-03  Daniel Stone  <daniel@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.2.0.
+
+	* src/xf86PM.c:
+	* src/xf86PM.h:
+	Bug #4495: Add DMC9000 support (Jaya Kumar).
+
 2006-04-06  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

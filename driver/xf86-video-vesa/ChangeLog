@@ -1,3 +1,12 @@
+2006-06-03  Daniel Stone  <daniel@freedesktop.org>
+
+	* configure.ac:
+	Bump to 1.2.1.
+
+	* src/vesa.c:
+	Don't call VBEGetSetDACPaletteFormat when running in direct colour or
+	YUV modes.  (David Sterratt)
+
 2006-05-19  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

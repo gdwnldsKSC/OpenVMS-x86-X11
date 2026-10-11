@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/vmware/vm_basic_types.h,v 1.4 2001/04/25 16:44:58 tsi Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/vmware/vm_basic_types.h,v 1.5 2002/01/07 20:38:29 dawes Exp $ */
 /* **********************************************************
  * Copyright (C) 1998-2001 VMware, Inc.
  * All Rights Reserved

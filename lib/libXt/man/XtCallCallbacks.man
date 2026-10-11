@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtCallCallbacks 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtCallCallbacks __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtCallCallbacks, XtCallCallbackList, XtHasCallbacks \- process callbacks
 .SH SYNTAX

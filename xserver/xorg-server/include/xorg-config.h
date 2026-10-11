@@ -17,7 +17,7 @@
 #define XORGSERVER 1
 
 /* Current X.Org version. */
-#define XORG_VERSION_CURRENT (((7) * 10000000) + ((1) * 100000) + ((0) * 1000) + 0)
+#define XORG_VERSION_CURRENT (((7) * 10000000) + ((2) * 100000) + ((0) * 1000) + 0)
 
 /* Need XFree86 libc-replacement typedefs. */
 #define NEED_XF86_TYPES 1
@@ -30,12 +30,6 @@
 
 /* URL to go to for support. */
 #define __VENDORDWEBSUPPORT__ "http://wiki.x.org"
-
-/* Prefer dlloader modules to elfloader */
-#define DLOPEN_HACK 1
-
-/* Use libdl-based loader. */
-#define DLOPEN_SUPPORT 1
 
 /* Built-in output drivers. */
 #define DRIVERS {}
@@ -51,6 +45,9 @@
 
 /* Path to loadable modules. */
 #define DEFAULT_MODULE_PATH "/usr/local/lib/xorg/modules"
+
+/* Path to installed libraries. */
+#define DEFAULT_LIBRARY_PATH "/usr/local/lib"
 
 /* Path to server log file. */
 #define DEFAULT_LOGPREFIX "/usr/local/var/log/Xorg."
@@ -112,5 +109,11 @@
 
 /* Has backtrace support */
 #define HAVE_BACKTRACE 1
+
+/* Name of the period field in struct kbd_repeat */
+#define LNX_KBD_PERIOD_NAME period
+
+/* Have execinfo.h */
+#define HAVE_EXECINFO_H 1
 
 #endif /* _XORG_CONFIG_H_ */

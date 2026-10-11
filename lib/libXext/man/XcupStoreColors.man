@@ -1,4 +1,4 @@
-.\" $XdotOrg: lib/Xext/man/XcupStoreColors.man,v 1.1 2005/01/22 05:12:08 alanc Exp $
+.\" $XdotOrg: $
 .\" 
 .\" Copyright \(co 1986-1997   The Open Group    All Rights Reserved
 .\" Copyright 1999, 2005 Sun Microsystems, Inc.  All Rights Reserved
@@ -33,7 +33,7 @@
 .ie t \fB\^\\$1\^\fR\\$2
 .el \fI\^\\$1\^\fP\\$2
 ..
-.TH XcupStoreColors 3Xext __xorgversion__ "X FUNCTIONS"
+.TH XcupStoreColors __libmansuffix__ __xorgversion__ "X FUNCTIONS"
 .SH NAME
 XcupStoreColors \- initialize shareable colormap entries at specific locations
 .SH SYNOPSIS

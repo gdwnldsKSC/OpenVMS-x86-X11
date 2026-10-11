@@ -1,3 +1,13 @@
+2006-04-11  Luc Verhaegen  <libv@skynet.be>
+
+	* src/tseng_mode.c: (TsengSave), (TsengRestore):
+
+	Fix dotclock breakage on ET6000.
+	The fish crawled out of the swamp, but still had gills and fins.
+	The internal ramdac still has multiple dotclock registers, and the
+	previous change only fixed up the external ramdacs of ET4000W32ps.
+	(Reported by the other tseng owner: Adam Jackson)
+
 2006-03-08  Luc Verhaegen  <libv@skynet.be>
 
 	* src/tseng_mode.c: (STG1703Restore), (CH8398Store),

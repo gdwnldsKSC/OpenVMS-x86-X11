@@ -1,5 +1,5 @@
 /*************************************************************************************
- * $Id: theatre_detect.h,v 1.2 2005/07/01 22:43:11 daniels Exp $
+ * $Id$
  * 
  * Copyright (C) 2005 Bogdan D. bogdand@users.sourceforge.net
  *
@@ -22,7 +22,10 @@
  * otherwise to promote the sale, use or other dealings in this Software without prior written 
  * authorization from the author.
  *
- * $Log: theatre_detect.h,v $
+ * $Log$
+ * Revision 1.3  2005/08/28 18:00:23  bogdand
+ * Modified the licens type from GPL to a X/MIT one
+ *
  * Revision 1.2  2005/07/01 22:43:11  daniels
  * Change all misc.h and os.h references to <X11/foo.h>.
  *

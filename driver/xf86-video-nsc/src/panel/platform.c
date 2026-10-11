@@ -193,8 +193,8 @@ static unsigned char get_sys_board_type(SYS_BOARD_INFO *, SYS_BOARD_INFO *);
 
 #if defined(linux) && !defined(__KERNEL__)
 #if !defined(XFree86Server)
-static void protected_mode_access(unsigned int, unsigned int,
-				  unsigned long, unsigned char *);
+static void platform_protected_mode_access(unsigned int, unsigned int,
+					   unsigned long, unsigned char *);
 static void setup_pma();
 static void close_pma();
 static int fd;
@@ -310,7 +310,7 @@ FindStringInSeg(unsigned int segment_address, char *string_ptr)
    /* Fill the segment_buffer with 16 page accesses */
 
    for (cursor = 0; (cursor * PAGE_LENGTH) < SEGMENT_LENGTH; cursor++) {
-      protected_mode_access(PLT_READ_BYTES, PAGE_LENGTH, mem_ptr +
+      platform_protected_mode_access(PLT_READ_BYTES, PAGE_LENGTH, mem_ptr +
 			    (cursor * PAGE_LENGTH),
 			    &(segment_buffer[(cursor * PAGE_LENGTH)]));
    }
@@ -403,7 +403,7 @@ get_sys_board_type(SYS_BOARD_INFO * sys_info,
 
 /******************************************************************
  *
- * protected_mode_access( unsigned int mode, unsigned int width,
+ * platform_protected_mode_access( unsigned int mode, unsigned int width,
  * unsigned long addr, unsigned char* pdata )
  * This function provides access to physical memory
  * at the requested address.
@@ -428,7 +428,7 @@ get_sys_board_type(SYS_BOARD_INFO * sys_info,
  */
 
 static void
-protected_mode_access(unsigned int mode, unsigned int width,
+platform_protected_mode_access(unsigned int mode, unsigned int width,
 		      unsigned long addr, unsigned char *pdata)
 {
 

@@ -3,11 +3,11 @@
 
 AC_PREREQ(2.57)
 AC_INIT([libX11],
-        1.0.1,
+        1.1.1,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         libX11)
 AC_CONFIG_SRCDIR([Makefile.am])
-AM_INIT_AUTOMAKE([dist-bzip2])
+AM_INIT_AUTOMAKE([dist-bzip2 foreign])
 
 AM_MAINTAINER_MODE
 
@@ -20,15 +20,33 @@ AC_PROG_CC
 
 XORG_PROG_RAWCPP
 
+# Build with XCB support?
+AC_ARG_WITH(xcb,
+	AC_HELP_STRING([--with-xcb], [use XCB for low-level protocol implementation]),
+	[ac_cv_use_xcb=$withval], [ac_cv_use_xcb=yes])
+AC_CACHE_CHECK([whether to use XCB], [ac_cv_use_xcb], [ac_cv_use_xcb=yes])
+AM_CONDITIONAL(XCB, test x$ac_cv_use_xcb != xno)
+
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XPROTO, xproto)
+PKG_CHECK_MODULES(XPROTO, [xproto >= 7.0.6])
 AC_SUBST(XPROTO_CFLAGS)
 
-PKG_CHECK_MODULES(X11, xextproto xtrans xau xcmiscproto bigreqsproto)
-
-PKG_CHECK_MODULES(XDMCP, xdmcp)
-AC_SUBST(XDMCP_CFLAGS)
-AC_SUBST(XDMCP_LIBS)
+case "$ac_cv_use_xcb" in
+no)
+	X11_REQUIRES="xau xcmiscproto bigreqsproto"
+	PKG_CHECK_MODULES(XDMCP, xdmcp)
+	AC_CHECK_LIB(Xdmcp, XdmcpWrap, [xdmauth="yes"], [xdmauth="no"], [$XDMCP_LIBS])
+	AC_DEFINE(USE_XCB, 0, [Use XCB for low-level protocol implementation])
+	;;
+*)
+	X11_REQUIRES="xcb-xlib >= 0.9.92"
+	X11_EXTRA_DEPS="xcb-xlib"
+	xdmauth="no" # XCB handles all auth
+	AC_DEFINE(USE_XCB, 1, [Use XCB for low-level protocol implementation])
+	;;
+esac
+AC_SUBST(X11_EXTRA_DEPS)
+PKG_CHECK_MODULES(X11, xextproto xtrans $X11_REQUIRES)
 
 dnl Issue an error if xtrans.m4 was not found and XTRANS_CONNECTION_FLAGS macro
 dnl was not expanded, since libX11 with no transport types is rather useless.
@@ -153,10 +171,12 @@ AM_CONDITIONAL(THRSTUBS, test x$thrstubs = xyes)
 dnl XXX incomplete, please fill this in
 if test x$xthreads = xyes ; then
     case $host_os in
-    linux*|openbsd*)
+    linux*|openbsd*|gnu*|k*bsd*-gnu)
         XTHREADLIB=-lpthread ;;
     freebsd*)
         XTHREAD_CFLAGS="-D_THREAD_SAFE"
+        XTHREADLIB="-pthread" ;;
+    dragonfly*)
         XTHREADLIB="-pthread" ;;
     solaris*)
 	XTHREAD_CFLAGS="-D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS" ;;
@@ -165,8 +185,6 @@ fi
 AC_SUBST(XTHREADLIB)
 AC_SUBST(XTHREAD_CFLAGS)
 X11_CFLAGS="$X11_CFLAGS $XTHREAD_CFLAGS"
-
-AC_CHECK_LIB(Xdmcp, XdmcpWrap, [xdmauth="yes"], [xdmauth="no"], [$XDMCP_LIBS])
 
 case x$xdmauth in
 xyes)
@@ -276,8 +294,8 @@ AM_CONDITIONAL(MANPAGES, [ test x$LIBMAN '!=' xno ])
 
 AM_CONDITIONAL(XKB, [ test x$XKB = xyes ])
 if test x"$XKB" = "xyes"; then
-   XKBPROTO_REQUIRES="kbproto inputproto"
-   PKG_CHECK_MODULES(XKBPROTO, $XKBPROTO_REQUIRES)
+   XKBPROTO_REQUIRES="kbproto"
+   PKG_CHECK_MODULES(XKBPROTO, kbproto inputproto)
    AC_DEFINE(XKB,1,[Use XKB])
    X11_CFLAGS="$X11_CFLAGS $XKBPROTO_CFLAGS"
    X11_LIBS="$X11_LIBS $XKBPROTO_LIBS"
@@ -285,6 +303,21 @@ else
    XKBPROTO_REQUIRES=""
 fi
 AC_SUBST(XKBPROTO_REQUIRES)
+
+AC_FUNC_MMAP()
+composecache_default=$ac_cv_func_mmap_fixed_mapped
+AC_CHECK_FUNC(nl_langinfo, , [composecache_default=no])
+AC_ARG_ENABLE(composecache, 
+              AC_HELP_STRING([--disable-composecache],
+                [Disable compose table cache support]),
+              [COMPOSECACHE=$enableval],[COMPOSECACHE=$composecache_default])
+if test x"$COMPOSECACHE" = "xyes"; then
+	AC_DEFINE(COMPOSECACHE,1,[Include compose table cache support])
+fi
+
+dnl Allow checking code with lint, sparse, etc.
+XORG_WITH_LINT
+LINT_FLAGS="${LINT_FLAGS} ${X11_CFLAGS} ${XPROTO_CFLAGS}"
 
 if test "x$GCC" = "xyes"; then
 	GCC_WARNINGS="-Wall -Wpointer-arith -Wstrict-prototypes \
@@ -294,7 +327,12 @@ if test "x$GCC" = "xyes"; then
 fi
 
 X11_DATADIR="${datadir}/X11"
+AC_DEFINE_DIR(X11_DATADIR, X11_DATADIR, [Location of libX11 data])
+AC_SUBST(X11_DATADIR)
+
 X11_LIBDIR="${libdir}/X11"
+AC_DEFINE_DIR(X11_LIBDIR, X11_LIBDIR, [Location of libX11 library data])
+AC_SUBST(X11_LIBDIR)
 
 X11_CFLAGS="$X11_CFLAGS $XPROTO_CFLAGS"
 AC_SUBST(X11_CFLAGS)
@@ -308,20 +346,24 @@ AC_SUBST(X11_LIBS)
 # in ${libdir}
 #
 
-X11_LOCALEDATADIR="${X11_LIBDIR}/locale"
-X11_LOCALELIBDIR="${X11_LIBDIR}/locale/lib"
-X11_LOCALEDIR="${X11_LOCALEDATADIR}"
-XKEYSYMDB="${X11_DATADIR}/XKeysymDB"
-XERRORDB="${X11_DATADIR}/XErrorDB"
-
-AC_SUBST(X11_DATADIR)
-AC_SUBST(X11_LIBDIR)
+X11_LOCALEDATADIR="${X11_DATADIR}/locale"
+AC_DEFINE_DIR(XLOCALEDATADIR, X11_LOCALEDATADIR, [Location of libX11 locale data])
 AC_SUBST(X11_LOCALEDATADIR)
+
+X11_LOCALELIBDIR="${X11_LIBDIR}/locale"
+AC_DEFINE_DIR(XLOCALELIBDIR, X11_LOCALELIBDIR, [Location of libX11 locale libraries])
 AC_SUBST(X11_LOCALELIBDIR)
-AC_DEFINE_DIR(X11_DATADIR, X11_DATADIR, [Location of libX11 data])
-AC_DEFINE_DIR(XKEYSYMDB, XKEYSYMDB, [Location of keysym database])
-AC_DEFINE_DIR(XERRORDB, XERRORDB, [Location of error message database])
+
+X11_LOCALEDIR="${X11_LOCALEDATADIR}"
 AC_DEFINE_DIR(XLOCALEDIR, X11_LOCALEDIR, [Location of libX11 locale data])
+AC_SUBST(X11_LOCALEDIR)
+
+XKEYSYMDB="${X11_DATADIR}/XKeysymDB"
+AC_DEFINE_DIR(XKEYSYMDB, XKEYSYMDB, [Location of keysym database])
+
+XERRORDB="${X11_DATADIR}/XErrorDB"
+AC_DEFINE_DIR(XERRORDB, XERRORDB, [Location of error message database])
+
 
 XORG_CHECK_MALLOC_ZERO
 XORG_RELEASE_VERSION
@@ -402,12 +444,14 @@ AC_OUTPUT([Makefile
 	   nls/zh_TW/Makefile
 	   nls/zh_TW.big5/Makefile
 	   nls/zh_TW.UTF-8/Makefile
-	   x11.pc])
+	   x11.pc
+	   x11-xcb.pc])
 
 echo ""
 echo "X11 will be built with the following settings:"
 echo " Loadable i18n module support:            "$XLIB_LOADABLE_I18N
 echo " Loadable xcursor library support:        "$XLIB_LOADABLE_XCURSOR
+echo " Use XCB:                                 "$ac_cv_use_xcb
 echo " Threading support:                       "$xthreads
 echo " Use Threads safe API:                    "$mtsafeapi
 echo " Threads stubs in libX11:                 "$thrstubs
@@ -417,4 +461,5 @@ echo " XF86BigFont support:                     "$XF86BIGFONT
 echo " XKB support:                             "$XKB
 echo " XLOCALEDIR environment variable support: "$ENABLE_XLOCALEDIR
 echo " Manual pages installed:                  "$LIBMAN_SUFFIX
+echo " Compose table cache enabled:             "$COMPOSECACHE
 echo ""

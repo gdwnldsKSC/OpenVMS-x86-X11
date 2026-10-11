@@ -128,7 +128,7 @@ XFixesGetCursorImage (Display *dpy)
     image->atom = rep.cursorName;
     name = (char *) (image->pixels + npixels);
     image->name = name;
-    _XRead32 (dpy, image->pixels, npixels << 2);
+    _XRead32 (dpy, (long *) image->pixels, npixels << 2);
     _XRead (dpy, name, nbytes_name);
     name[nbytes_name] = '\0';	/* null-terminate */
     /* skip any padding */

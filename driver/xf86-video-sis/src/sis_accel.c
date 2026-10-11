@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/sis_accel.c,v 1.23 2006/03/09 06:06:25 anholt Exp $ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis_accel.c,v 1.23 2006-03-09 06:06:25 anholt Exp $ */
 /*
  * 2D acceleration for SiS5597/5598 and 6326
  *
@@ -769,7 +769,7 @@ SiSAccelInit(ScreenPtr pScreen)
 #ifdef SIS_USE_EXA	/* ----------------------- EXA ----------------------- */
        if(pSiS->useEXA) {
 	  pSiS->EXADriverPtr->exa_major = 2;
-	  pSiS->EXADriverPtr->exa_major = 0;
+	  pSiS->EXADriverPtr->exa_minor = 0;
 
 	  /* data */
 	  pSiS->EXADriverPtr->memoryBase = pSiS->FbBase;

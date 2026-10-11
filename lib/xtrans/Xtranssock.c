@@ -1,4 +1,4 @@
-/* $XdotOrg: xc/lib/xtrans/Xtranssock.c,v 1.6 2005/06/22 22:36:51 alanc Exp $ */
+/* $XdotOrg: lib/xtrans/Xtranssock.c,v 1.11 2005/11/08 06:33:26 jkj Exp $ */
 /* $Xorg: Xtranssock.c,v 1.11 2001/02/09 02:04:06 xorgcvs Exp $ */
 /*
 
@@ -351,6 +351,8 @@ TRANS(SocketINETGetAddr) (XtransConnInfo ciptr)
 	socknamePtr = &socknamev4;
     }
 
+    bzero(socknamePtr, namelen);
+    
     if (getsockname (ciptr->fd,(struct sockaddr *) socknamePtr,
 		     (void *)&namelen) < 0)
     {
@@ -424,6 +426,8 @@ TRANS(SocketINETGetPeerAddr) (XtransConnInfo ciptr)
 	socknamePtr = &socknamev4;
     }
 
+    bzero(socknamePtr, namelen);
+    
     PRMSG (3,"SocketINETGetPeerAddr(%p)\n", ciptr, 0, 0);
 
     if (getpeername (ciptr->fd, (struct sockaddr *) socknamePtr,
@@ -1055,7 +1059,7 @@ TRANS(SocketINETCreateListener) (XtransConnInfo ciptr, char *port, unsigned int 
     return 0;
 }
 
-#endif /* SOCKCONN */
+#endif /* TCPCONN */
 
 
 #ifdef UNIXCONN
@@ -1100,14 +1104,18 @@ TRANS(SocketUNIXCreateListener) (XtransConnInfo ciptr, char *port,
 	    return TRANS_CREATE_LISTENER_FAILED;
 	}
     } else {
-	sprintf (sockname.sun_path, "%s%ld", UNIX_PATH, (long)getpid());
+	snprintf (sockname.sun_path, sizeof(sockname.sun_path),
+		  "%s%ld", UNIX_PATH, (long)getpid());
     }
 
 #if (defined(BSD44SOCKETS) || defined(__UNIXWARE__)) && !defined(Lynx)
     sockname.sun_len = strlen(sockname.sun_path);
+#endif
+
+#if defined(BSD44SOCKETS) || defined(SUN_LEN)
     namelen = SUN_LEN(&sockname);
 #else
-    namelen = strlen(sockname.sun_path) + sizeof(sockname.sun_family);
+    namelen = strlen(sockname.sun_path) + offsetof(struct sockaddr_un, sun_path);
 #endif
 
     unlink (sockname.sun_path);
@@ -1995,9 +2003,12 @@ TRANS(SocketUNIXConnect) (XtransConnInfo ciptr, char *host, char *port)
 
 #if (defined(BSD44SOCKETS) || defined(__UNIXWARE__)) && !defined(Lynx)
     sockname.sun_len = strlen (sockname.sun_path);
+#endif
+
+#if defined(BSD44SOCKETS) || defined(SUN_LEN)
     namelen = SUN_LEN (&sockname);
 #else
-    namelen = strlen (sockname.sun_path) + sizeof (sockname.sun_family);
+    namelen = strlen (sockname.sun_path) + offsetof(struct sockaddr_un, sun_path);
 #endif
 
 
@@ -2011,7 +2022,7 @@ TRANS(SocketUNIXConnect) (XtransConnInfo ciptr, char *host, char *port)
 	return TRANS_CONNECT_FAILED;
     }
     old_namelen = strlen (old_sockname.sun_path) +
-	sizeof (old_sockname.sun_family);
+	offsetof(struct sockaddr_un, sun_path);
 #endif
 
 

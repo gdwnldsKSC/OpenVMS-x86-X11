@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/gfx/vid_5530.c,v 1.1 2002/12/10 15:12:27 alanh Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/gfx/vid_5530.c,v 1.2 2003/02/21 16:51:10 alanh Exp $ */
 /*
  * $Workfile: vid_5530.c $
  *

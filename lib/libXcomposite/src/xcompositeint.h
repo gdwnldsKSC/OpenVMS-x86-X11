@@ -1,5 +1,5 @@
 /*
- * $Id: xcompositeint.h,v 1.1.1.1 2003/11/07 04:22:59 keithp Exp $
+ * $Id$
  *
  * Copyright © 2006 Sun Microsystems
  *

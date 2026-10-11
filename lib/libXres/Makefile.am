@@ -1,5 +1,5 @@
 # 
-#  $Id: Makefile.am,v 1.5 2005/04/18 02:02:51 ajax Exp $
+#  $Id$
 # 
 #  Copyright © 2003 Keith Packard, Noah Levitt
 # 
@@ -30,4 +30,11 @@ AM_CFLAGS = $(RESOURCEEXT_CFLAGS) $(XRES_CFLAGS)
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xres.pc
 
-EXTRA_DIST = xres.pc.in autogen.sh
+EXTRA_DIST = xres.pc.in autogen.sh ChangeLog
+
+CLEANFILES = ChangeLog
+
+ChangeLog:
+	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || (touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
+
+dist-hook: ChangeLog

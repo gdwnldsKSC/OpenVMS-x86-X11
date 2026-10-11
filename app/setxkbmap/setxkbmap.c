@@ -1,4 +1,4 @@
-/* $XdotOrg: app/setxkbmap/setxkbmap.c,v 1.3 2006/03/10 09:09:12 daniels Exp $ */
+/* $XdotOrg: app/setxkbmap/setxkbmap.c,v 1.2 2004/04/23 19:54:37 eich Exp $ */
 /************************************************************
  Copyright (c) 1996 by Silicon Graphics Computer Systems, Inc.
 
@@ -47,7 +47,7 @@
 #endif
 
 #ifndef DFLT_XKB_CONFIG_ROOT
-#define	DFLT_XKB_CONFIG_ROOT "/usr/X11R6/lib/X11/xkb"
+#define	DFLT_XKB_CONFIG_ROOT "/usr/share/X11/xkb"
 #endif
 #ifndef DFLT_XKB_RULES_FILE
 #define	DFLT_XKB_RULES_FILE __XKBDEFRULES__
@@ -56,7 +56,7 @@
 #define	DFLT_XKB_LAYOUT "us"
 #endif
 #ifndef DFLT_XKB_MODEL
-#define	DFLT_XKB_MODEL "pc101"
+#define	DFLT_XKB_MODEL "pc105"
 #endif
 
 #define	UNDEFINED	0
@@ -117,6 +117,8 @@ int			numInclPath= 0;
 char **			inclPath= NULL;
 
 XkbDescPtr		xkb= NULL;
+
+int                     deviceSpec = XkbUseCoreKbd;
 
 /***====================================================================***/
 
@@ -204,6 +206,7 @@ usage(int argc,char **argv)
     MSG("-?,-help            Print this message\n");
     MSG("-compat <name>      Specifies compatibility map component name\n");
     MSG("-config <file>      Specifies configuration file to use\n");
+    MSG("-device <deviceid>  Specifies the device ID to use\n");
     MSG("-display <dpy>      Specifies display to use\n");
     MSG("-geometry <name>    Specifies geometry component name\n");
     MSG("-I[<dir>]           Add <dir> to list of directories to be used\n");
@@ -334,6 +337,8 @@ unsigned	present;
 	    ok= setOptString(&i,argc,argv,COMPAT_NDX,FROM_CMD_LINE);
 	else if (streq(argv[i],"-config"))
 	    ok= setOptString(&i,argc,argv,CONFIG_NDX,FROM_CMD_LINE);
+        else if (streq(argv[i],"-device"))
+            deviceSpec= atoi(argv[++i]);
 	else if (streq(argv[i],"-display"))
 	    ok= setOptString(&i,argc,argv,DISPLAY_NDX,FROM_CMD_LINE);
 	else if (streq(argv[i],"-geometry"))
@@ -811,7 +816,7 @@ applyComponentNames(void)
 	cmdNames.keycodes= svValue[KEYCODES_NDX];
 	cmdNames.geometry= svValue[GEOMETRY_NDX];
 	cmdNames.keymap= svValue[KEYMAP_NDX];
-	xkb= XkbGetKeyboardByName(dpy,XkbUseCoreKbd,&cmdNames,
+	xkb= XkbGetKeyboardByName(dpy,deviceSpec,&cmdNames,
 			XkbGBN_AllComponentsMask, 
 			XkbGBN_AllComponentsMask&(~XkbGBN_GeometryMask),
 			True);

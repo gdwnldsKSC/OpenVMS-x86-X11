@@ -44,6 +44,8 @@
  * Requests and Replies
  */
 
+/* Version 0.1 definitions. */
+
 typedef struct {
    CARD8  reqType;           /* always X_VMwareCtrlReqCode */
    CARD8  VMwareCtrlReqType; /* always X_VMwareCtrlQueryVersion */
@@ -85,11 +87,36 @@ typedef struct {
    CARD32 screen B32;
    CARD32 x B32;
    CARD32 y B32;
-   CARD32  pad2 B32;
-   CARD32  pad3 B32;
-   CARD32  pad4 B32;
+   CARD32 pad2 B32;
+   CARD32 pad3 B32;
+   CARD32 pad4 B32;
 } xVMwareCtrlSetResReply;
 #define sz_xVMwareCtrlSetResReply 32
 
+/* Version 0.2 definitions. */
+
+typedef struct {
+   CARD8  reqType;           /* always X_VMwareCtrlReqCode */
+   CARD8  VMwareCtrlReqType; /* always X_VMwareCtrlSetTopology */
+   CARD16 length B16;
+   CARD32 screen B32;
+   CARD32 number B32;
+   CARD32 pad1   B32;
+} xVMwareCtrlSetTopologyReq;
+#define sz_xVMwareCtrlSetTopologyReq 16
+
+typedef struct {
+   BYTE   type; /* X_Reply */
+   BYTE   pad1;
+   CARD16 sequenceNumber B16;
+   CARD32 length B32;
+   CARD32 screen B32;
+   CARD32 pad2   B32;
+   CARD32 pad3   B32;
+   CARD32 pad4   B32;
+   CARD32 pad5   B32;
+   CARD32 pad6   B32;
+} xVMwareCtrlSetTopologyReply;
+#define sz_xVMwareCtrlSetTopologyReply 32
 
 #endif /* _VMWARE_CTRL_PROTO_H_ */

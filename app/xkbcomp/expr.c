@@ -1,4 +1,4 @@
-/* $XdotOrg: app/xkbcomp/expr.c,v 1.2 2004/04/23 19:54:50 eich Exp $ */
+/* $XdotOrg: expr.c,v 1.5 2000/08/17 19:54:30 cpqbld Exp $ */
 /* $Xorg: expr.c,v 1.5 2000/08/17 19:54:30 cpqbld Exp $ */
 /************************************************************
  Copyright (c) 1994 by Silicon Graphics Computer Systems, Inc.

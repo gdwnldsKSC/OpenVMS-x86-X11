@@ -31,7 +31,7 @@
 .SH NAME
 Xfontcache \- X-TrueType font cache extension client library
 .SH SYNOPSIS
-.B #include <X11/extension/FontCache.h>
+.B #include <X11/extensions/FontCache.h>
 .PP
 .nf
 .ta .5i 2i

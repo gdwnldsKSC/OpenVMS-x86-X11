@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAppAddBlockHook 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAppAddBlockHook __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAppAddBlockHook, XtRemoveBlockHook \- register a block hook procedure
 .SH SYNTAX

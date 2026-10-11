@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtDisplayToApplicationContext 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtDisplayToApplicationContext __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtDisplayToApplicationContext \- obtain an application context
 .SH SYNTAX

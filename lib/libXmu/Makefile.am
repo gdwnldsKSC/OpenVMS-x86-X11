@@ -1,4 +1,4 @@
-# $Id: Makefile.am,v 1.1 2005/05/18 19:38:35 sandmann Exp $
+# $Id$
 
 SUBDIRS = include src
 

@@ -39,9 +39,10 @@
 #define VMWARE_CTRL_PROTOCOL_NAME "VMWARE_CTRL"
 
 #define VMWARE_CTRL_MAJOR_VERSION 0
-#define VMWARE_CTRL_MINOR_VERSION 1
+#define VMWARE_CTRL_MINOR_VERSION 2
 
 #define X_VMwareCtrlQueryVersion 0
 #define X_VMwareCtrlSetRes 1
+#define X_VMwareCtrlSetTopology 2
 
 #endif /* _VMWARE_CTRL_H_ */

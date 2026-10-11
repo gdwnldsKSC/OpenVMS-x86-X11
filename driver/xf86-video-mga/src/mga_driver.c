@@ -86,7 +86,10 @@
 #include "mga_macros.h"
 #include "mga_maven.h"
 
+#ifdef USE_XAA
 #include "xaa.h"
+#endif
+
 #include "xf86cmap.h"
 #include "shadowfb.h"
 #include "fbdevhw.h"
@@ -96,6 +99,8 @@
 #ifdef XF86DRI
 #include "dri.h"
 #endif
+
+#include <unistd.h>
 
 /*
  * Forward definitions for the functions that make up the driver.
@@ -230,6 +235,7 @@ static const OptionInfoRec MGAOptions[] = {
     { OPTION_METAMODES,   "MetaModes",  	OPTV_ANYSTR,	{0}, FALSE },
     { OPTION_OLDDMA,		"OldDmaInit",	OPTV_BOOLEAN,	{0}, FALSE },
     { OPTION_PCIDMA,		"ForcePciDma",	OPTV_BOOLEAN,	{0}, FALSE },
+    { OPTION_ACCELMETHOD,	"AccelMethod",	OPTV_ANYSTR,	{0}, FALSE },
     { -1,			NULL,		OPTV_NONE,	{0}, FALSE }
 };
 
@@ -274,6 +280,17 @@ static const char *xf8_32bppSymbols[] = {
     NULL
 };
 
+#ifdef USE_EXA
+static const char *exaSymbols[] = {
+    "exaDriverInit",
+    "exaDriverFini",
+    "exaGetPixmapOffset",
+    "exaGetVersion",
+    NULL
+};
+#endif
+
+#ifdef USE_XAA
 static const char *xaaSymbols[] = {
     "XAACachePlanarMonoStipple",
     "XAACreateInfoRec",
@@ -284,6 +301,7 @@ static const char *xaaSymbols[] = {
     "XAA_888_plus_PICT_a8_to_8888",
     NULL
 };
+#endif
 
 static const char *ramdacSymbols[] = {
     "xf86CreateCursorInfoRec",
@@ -422,7 +440,7 @@ static XF86ModuleVersionInfo mgaVersRec =
 	MODINFOSTRING1,
 	MODINFOSTRING2,
 	XORG_VERSION_CURRENT,
-	MGA_MAJOR_VERSION, MGA_MINOR_VERSION, MGA_PATCHLEVEL,
+    PACKAGE_VERSION_MAJOR, PACKAGE_VERSION_MINOR, PACKAGE_VERSION_PATCHLEVEL,
 	ABI_CLASS_VIDEODRV,			/* This is a video driver */
 	ABI_VIDEODRV_VERSION,
 	MOD_CLASS_VIDEODRV,
@@ -451,7 +469,13 @@ mgaSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 	 * Tell the loader about symbols from other modules that this module
 	 * might refer to.
 	 */
-	LoaderRefSymLists(vgahwSymbols, xaaSymbols,
+	LoaderRefSymLists(vgahwSymbols,
+#ifdef USE_XAA
+                          xaaSymbols,
+#endif
+#ifdef USE_EXA
+                          exaSymbols,
+#endif
 			  xf8_32bppSymbols, ramdacSymbols,
 			  ddcSymbols, i2cSymbols, shadowSymbols,
 			  fbdevHWSymbols, vbeSymbols,
@@ -803,9 +827,7 @@ MGACountRam(ScrnInfoPtr pScrn)
 	OUTREG8(MGAREG_CRTCEXT_DATA, tmp | 0x80);
 
 	/* apparently the G200SE doesn't have a BIOS to read */
-	if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
-	    (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
-
+	if (pMga->is_G200SE) {
 	    CARD32 MemoryAt0, MemoryAt1, Offset;
 	    CARD32 FirstMemoryVal1, FirstMemoryVal2;
 	    CARD32 SecondMemoryVal1, SecondMemoryVal2;
@@ -1259,6 +1281,18 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     } else {
 	xf86ErrorF("\n");
     }
+
+    pMga->is_Gx50 = ((pMga->Chipset == PCI_CHIP_MGAG400) && (pMga->ChipRev >= 0x80))
+	|| (pMga->Chipset == PCI_CHIP_MGAG550);
+    pMga->is_G200SE = (pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI)
+	|| (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI);
+    pMga->is_HAL_chipset = ((pMga->Chipset == PCI_CHIP_MGAG200_PCI) ||
+		  (pMga->Chipset == PCI_CHIP_MGAG200) ||
+		  (pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
+		  (pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI) ||
+		  (pMga->Chipset == PCI_CHIP_MGAG400) ||
+		  (pMga->Chipset == PCI_CHIP_MGAG550));
+
 #ifdef USEMGAHAL
     if (HAL_CHIPSETS) {
 	Bool loadHal = TRUE;
@@ -1495,6 +1529,21 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
     if (xf86ReturnOptValBool(pMga->Options, OPTION_NOACCEL, FALSE)) {
 	pMga->NoAccel = TRUE;
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Acceleration disabled\n");
+    } else {
+	int from = X_DEFAULT;
+#ifdef USE_EXA
+	char *s = xf86GetOptValString(pMga->Options, OPTION_ACCELMETHOD);
+#endif
+	pMga->NoAccel = FALSE;
+	pMga->Exa = FALSE;
+#ifdef USE_EXA
+	if (!xf86NameCmp(s, "EXA")) {
+	    pMga->Exa = TRUE;
+	    from = X_CONFIG;
+	}
+#endif
+	xf86DrvMsg(pScrn->scrnIndex, from, "Using %s acceleration\n",
+		   pMga->Exa ? "EXA" : "XAA");
     }
     if (xf86ReturnOptValBool(pMga->Options, OPTION_PCI_RETRY, FALSE)) {
 	pMga->UsePCIRetry = TRUE;
@@ -2324,11 +2373,23 @@ MGAPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Load XAA if needed */
     if (!pMga->NoAccel) {
-	if (!xf86LoadSubModule(pScrn, "xaa")) {
-	    MGAFreeRec(pScrn);
-	    return FALSE;
+#ifdef USE_EXA
+	if (pMga->Exa) {
+	    if (!xf86LoadSubModule(pScrn, "exa")) {
+		MGAFreeRec(pScrn);
+		return FALSE;
+	    } else xf86LoaderReqSymLists(exaSymbols, NULL);
+	} else {
+#endif
+#ifdef USE_XAA
+	    if (!xf86LoadSubModule(pScrn, "xaa")) {
+		MGAFreeRec(pScrn);
+		return FALSE;
+	    } else xf86LoaderReqSymLists(xaaSymbols, NULL);
+#endif
+#ifdef USE_EXA
 	}
-	xf86LoaderReqSymLists(xaaSymbols, NULL);
+#endif
     }
 
     /* Load ramdac if needed */
@@ -2884,8 +2945,8 @@ void MGARestoreSecondCrtc(ScrnInfoPtr pScrn)
              */
             CARD8 ucXDispCtrl = inMGAdac(MGA1064_DISP_CTL);
             
-            ucXDispCtrl &= ~0x0c;   /* dac2outsel mask */
-            ucXDispCtrl |=  0x04;   /* dac2 -> crtc1   */
+            ucXDispCtrl &= ~MGA1064_DISP_CTL_DAC2OUTSEL_MASK;
+            ucXDispCtrl |= MGA1064_DISP_CTL_DAC2OUTSEL_CRTC1;
                 
             outMGAdac(MGA1064_DISP_CTL, ucXDispCtrl);
             
@@ -2893,9 +2954,13 @@ void MGARestoreSecondCrtc(ScrnInfoPtr pScrn)
             CARD8 ucXDispCtrl = inMGAdac(MGA1064_DISP_CTL);
             CARD32 ulC2CTL = INREG(MGAREG_C2CTL);
                 
-            ucXDispCtrl &= ~0x0c;   /* dac2outsel mask */
-            ucXDispCtrl |= 0x5;     /* dac1outsel -> crtcdacsel, dac2 -> crtc1 */
-            ulC2CTL &= ~0x00100000; /* crtcdacsel -> crtc1 */
+            ucXDispCtrl &= ~MGA1064_DISP_CTL_DAC2OUTSEL_MASK;
+            ucXDispCtrl |= MGA1064_DISP_CTL_DAC1OUTSEL_EN;
+            ucXDispCtrl |= MGA1064_DISP_CTL_DAC2OUTSEL_CRTC1;
+
+            /* crtcdacsel -> crtc1 */
+            ulC2CTL &= ~MGAREG_C2CTL_CRTCDACSEL_CRTC2;
+            ulC2CTL |= MGAREG_C2CTL_CRTCDACSEL_CRTC1;
                 
             outMGAdac(MGA1064_DISP_CTL, ucXDispCtrl);
             OUTREG(MGAREG_C2CTL, ulC2CTL);
@@ -2905,12 +2970,10 @@ void MGARestoreSecondCrtc(ScrnInfoPtr pScrn)
         /* Force to close second crtc */
         CARD32 ulC2CTL = INREG(MGAREG_C2CTL);
         
-        ulC2CTL &= ~0x1;            /* crtc2 disabled */
+        ulC2CTL &= ~MGAREG_C2CTL_C2_EN;
 
         OUTREG(MGAREG_C2CTL, ulC2CTL);
     }
-
-    return;
 }
 
 /*
@@ -3016,8 +3079,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     pMga = MGAPTR(pScrn);
     MGAdac = &pMga->Dac;
 
-    if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
-	(pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+    if (pMga->is_G200SE) {
 	VRTemp = pScrn->videoRam;
 	FBTemp = pMga->FbMapSize;
 	pScrn->videoRam = 4096;
@@ -3101,8 +3163,7 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	  );	/* MGA_HAL */
 #endif
     }
-    if ((pMga->Chipset == PCI_CHIP_MGAG200_SE_A_PCI) ||
-	(pMga->Chipset == PCI_CHIP_MGAG200_SE_B_PCI)) {
+    if (pMga->is_G200SE) {
 	pScrn->videoRam = VRTemp;
 	pMga->FbMapSize = FBTemp;
     }
@@ -3335,8 +3396,16 @@ MGAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if(!pMga->ShadowFB) /* hardware cursor needs to wrap this layer */
 	MGADGAInit(pScreen);
 
-    if (!pMga->NoAccel)
-	MGAStormAccelInit(pScreen);
+    if (!pMga->NoAccel) {
+#ifdef USE_EXA
+	if (pMga->Exa)
+	    mgaExaInit(pScreen);
+	else
+#endif
+#ifdef USE_XAA
+	    MGAStormAccelInit(pScreen);
+#endif
+    }
 
     miInitializeBackingStore(pScreen);
     xf86SetBackingStore(pScreen);
@@ -3625,8 +3694,6 @@ MGAAdjustFrame(int scrnIndex, int x, int y, int flags)
 
 }
 
-#define C2STARTADD0 0x3C28
-
 void
 MGAAdjustFrameCrtc2(int scrnIndex, int x, int y, int flags)
 {
@@ -3656,7 +3723,7 @@ MGAAdjustFrameCrtc2(int scrnIndex, int x, int y, int flags)
         Base = (y * pLayout->displayWidth + x) * pLayout->bitsPerPixel >> 3;
         Base += pMga->DstOrg;
         Base &= 0x01ffffc0;
-        OUTREG(C2STARTADD0, Base);
+        OUTREG(MGAREG_C2STARTADD0, Base);
     );
 }
 
@@ -3841,8 +3908,16 @@ MGACloseScreen(int scrnIndex, ScreenPtr pScreen)
    );	/* MGA_HAL */
 #endif
 
+#ifdef USE_XAA
     if (pMga->AccelInfoRec)
 	XAADestroyInfoRec(pMga->AccelInfoRec);
+#endif
+#ifdef USE_EXA
+    if (pMga->ExaDriver) {
+	exaDriverFini(pScreen);
+	xfree(pMga->ExaDriver);
+    }
+#endif
     if (pMga->CursorInfoRec)
     	xf86DestroyCursorInfoRec(pMga->CursorInfoRec);
     if (pMga->ShadowPtr)
@@ -4004,8 +4079,8 @@ MGADisplayPowerManagementSetCrtc2(ScrnInfoPtr pScrn, int PowerManagementMode,
 
 	if (PowerManagementMode==DPMSModeOn) {
 		/* Enable CRTC2 */
-		val |= 0x1;
-		val &= ~(0x8);
+		val |= MGAREG_C2CTL_C2_EN;
+		val &= ~MGAREG_C2CTL_PIXCLKDIS_DISABLE;
 		OUTREG(MGAREG_C2CTL, val);
 		/* Restore normal MAVEN values */
 		if (pMga->Maven) {
@@ -4033,8 +4108,8 @@ MGADisplayPowerManagementSetCrtc2(ScrnInfoPtr pScrn, int PowerManagementMode,
 	}
 	else {
 		/* Disable CRTC2 video */
-		val |= 0x8;
-		val &= ~(0x1);
+		val |= MGAREG_C2CTL_PIXCLKDIS_DISABLE;
+		val &= ~MGAREG_C2CTL_C2_EN;
 		OUTREG(MGAREG_C2CTL, val);
 
 		/* Disable MAVEN display */

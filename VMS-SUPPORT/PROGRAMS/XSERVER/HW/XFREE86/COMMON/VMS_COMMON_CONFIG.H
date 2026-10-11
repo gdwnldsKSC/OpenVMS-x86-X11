@@ -44,6 +44,9 @@
 #ifndef DEFAULT_MODULE_PATH
 #define DEFAULT_MODULE_PATH "./lib/xorg/modules"
 #endif
+#ifndef DEFAULT_LIBRARY_PATH
+#define DEFAULT_LIBRARY_PATH "./lib"
+#endif
 #ifndef DEFAULT_LOGPREFIX
 #define DEFAULT_LOGPREFIX "./Xorg."
 #endif
@@ -60,7 +63,7 @@
 #define __XKBDEFRULES__ "xorg"
 #endif
 #ifndef XORG_RELEASE
-#define XORG_RELEASE "Release 7.1"
+#define XORG_RELEASE "Release 7.2"
 #endif
 #ifndef ARCH_PCI_INIT
 #define ARCH_PCI_INIT vmsPciInit

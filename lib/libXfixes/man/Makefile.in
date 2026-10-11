@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# $Id: Makefile.am,v 1.4 2005/11/28 22:03:05 alanc Exp $
+# $Id$
 #
 # Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
 # 
@@ -152,6 +152,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
+SED = sed
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -207,7 +208,6 @@ libman_PRE = Xfixes.man
 libman_DATA = $(libman_PRE:man=@LIB_MAN_SUFFIX@)
 EXTRA_DIST = $(libman_PRE)
 CLEANFILES = $(libman_DATA)
-SED = sed
 
 # Strings to replace in man pages
 XORGRELSTRING = @PACKAGE_STRING@

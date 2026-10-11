@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/sis_common.h,v 1.7 2005/07/04 10:57:08 twini Exp $ */
+/* $XdotOrg$ */
 /*
  * Common header definitions for SiS 2D/3D/DRM suite
  *

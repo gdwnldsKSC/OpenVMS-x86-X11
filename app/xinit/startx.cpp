@@ -40,7 +40,7 @@ case $PATH in
   *) PATH=$PATH:$scobindir ;;
 esac
 
-XCOMM Bourne shell doesn't automatically export modified environment variables
+XCOMM Bourne shell does not automatically export modified environment variables
 XCOMM so export the new PATH just in case the user changes the shell
 export PATH
 
@@ -197,7 +197,7 @@ EOF
 serverargs=${serverargs}" -auth "${xserverauthfile}
 
 XCOMM now add the same credentials to the client authority file
-XCOMM if '$displayname' already exists don't overwrite it as another
+XCOMM if '$displayname' already exists do not overwrite it as another
 XCOMM server man need it. Add them to the '$xserverauthfile' instead.
 for displayname in $authdisplay $hostname$authdisplay; do
      authcookie=`XAUTH list "$displayname" @@

@@ -146,7 +146,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-sgmlentdir = $(prefix)/share/X11/sgml
+sgmlentdir = $(prefix)/share/sgml/X11
 dist_sgmlent_DATA = defs.ent
 all: all-am
 

@@ -1,5 +1,5 @@
 # 
-#  $Id: Makefile.am,v 1.6 2004/01/15 04:32:39 harold Exp $
+#  $Id$
 # 
 #  Copyright © 2003 Keith Packard, Noah Levitt
 # 
@@ -29,3 +29,8 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xcursor.pc
 
 EXTRA_DIST = xcursor.pc.in autogen.sh
+
+if LINT
+lint:
+	(cd src && $(MAKE) $(MFLAGS) lint)
+endif LINT

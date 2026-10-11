@@ -39,7 +39,8 @@ host_triplet = @host@
 subdir = man
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -127,6 +128,10 @@ PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 RAWCPP = @RAWCPP@
 RAWCPPFLAGS = @RAWCPPFLAGS@
+
+# Rules for generating files using the C pre-processor
+# (Replaces CppFileTarget from Imake)
+SED = sed
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRINGSABIOPTIONS = @STRINGSABIOPTIONS@
@@ -299,10 +304,6 @@ libman_DATA = $(libman_PRE:man=@LIB_MAN_SUFFIX@) \
 BUILT_SOURCES = shadows.DONE
 EXTRA_DIST = $(libman_PRE)
 CLEANFILES = $(libman_DATA)
-
-# Rules for generating files using the C pre-processor
-# (Replaces CppFileTarget from Imake)
-SED = sed
 SUFFIXES = .$(LIB_MAN_SUFFIX) .man
 
 # Translate XCOMM into pound sign with sed, rather than passing -DXCOMM=XCOMM

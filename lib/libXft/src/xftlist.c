@@ -1,5 +1,5 @@
 /*
- * $Id: xftlist.c,v 1.4 2005/07/03 07:00:57 daniels Exp $
+ * $Id$
  *
  * Copyright © 2000 Keith Packard
  *
@@ -24,7 +24,7 @@
 
 #include "xftint.h"
 
-FcFontSet *
+_X_HIDDEN FcFontSet *
 XftListFontsPatternObjects (Display	    *dpy,
 			    int		    screen,
 			    FcPattern	    *pattern,
@@ -33,7 +33,7 @@ XftListFontsPatternObjects (Display	    *dpy,
     return FcFontList (0, pattern, os);
 }
 
-FcFontSet *
+_X_EXPORT FcFontSet *
 XftListFonts (Display	*dpy,
 	      int	screen,
 	      ...)

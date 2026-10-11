@@ -2,7 +2,7 @@
  * Copyright (C) 1998-2002 VMware, Inc.
  * All Rights Reserved
  * **********************************************************/
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/vmware/offscreen_manager.h,v 1.1 2002/12/10 04:17:19 dawes Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/vmware/offscreen_manager.h,v 1.2 2002/12/11 17:07:58 dawes Exp $ */
 
 #ifndef OFFSCREEN_MANAGER_H
 #define OFFSCREEN_MANAGER_H

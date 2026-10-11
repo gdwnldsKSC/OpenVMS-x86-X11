@@ -1,4 +1,7 @@
-SUBDIRS=util xcms xlibi18n xkb
+if XKB
+XKB_SUBDIRS = xkb
+endif
+SUBDIRS = util xcms xlibi18n $(XKB_SUBDIRS)
 
 lib_LTLIBRARIES=libX11.la
 
@@ -77,7 +80,6 @@ libX11_la_SOURCES = \
                   Clear.c \
 		  Cmap.h \
                   ConfWind.c \
-                  ConnDis.c \
                   Context.c \
                   ConvSel.c \
                   CopyArea.c \
@@ -303,7 +305,6 @@ libX11_la_SOURCES = \
                   WMGeom.c \
                   WMProps.c \
                   WrBitF.c \
-                  x11_trans.c \
                   Xatomtype.h \
                   Xintatom.h \
                   Xintconn.h \
@@ -339,6 +340,23 @@ EXTRA_DIST = \
 	udcInf.c \
 	UIThrStubs.c 
 
+if XCB
+libX11_la_SOURCES += \
+                  xcb_lock.c \
+                  xcb_disp.c \
+                  xcb_io.c \
+                  Xxcbint.h
+
+lib_LTLIBRARIES += libX11-xcb.la
+libX11_xcb_la_SOURCES = x11_xcb.c Xxcbint.h
+libX11_xcb_la_LDFLAGS = -version-info 1:0:0 -no-undefined
+libX11_xcb_la_LIBADD = libX11.la
+else
+libX11_la_SOURCES += \
+                  ConnDis.c \
+                  x11_trans.c
+endif
+
 #
 # Figure out which sub-libraries to link into Xlib
 #
@@ -367,6 +385,22 @@ libX11_la_LIBADD = \
 preprocess: $(patsubst %.c,%.ii,$(libX11_la_SOURCES))
 .c.ii:
 	$(COMPILE) -E -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+
+if LINT
+# Check source code with tools like lint & sparse
+
+ALL_LINT_FLAGS=$(LINT_FLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+		$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS)
+
+lint:	$(BUILT_SOURCES)
+	for f in $(libX11_la_SOURCES) ; do \
+		$(LINT) $(ALL_LINT_FLAGS) $$f ; \
+	done
+	@for subdir in $(SUBDIRS) ; do \
+		echo "Making $@ in src/$$subdir"; \
+		(cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) lint) ; \
+	done
+endif LINT
 
 #
 # Building ks_tables.h requires the makekeys utility

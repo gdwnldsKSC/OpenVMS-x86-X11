@@ -1,4 +1,3 @@
-/* $XdotOrg: xserver/xorg/miext/rootless/safeAlpha/safeAlphaWindow.c,v 1.4 2005/07/01 22:43:42 daniels Exp $ */
 /*
  * Specialized window functions to protect the alpha channel
  */
@@ -32,7 +31,6 @@
  *
  * Copyright © 1998 Keith Packard
  */
-/* $XFree86: xc/programs/Xserver/miext/rootless/safeAlpha/safeAlphaWindow.c,v 1.1 2003/09/16 00:36:20 torrey Exp $ */
 
 #include "fb.h"
 #include "safeAlpha.h"

@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtGetActionList 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtGetActionList __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtGetActionList \- obtain class action list
 .SH SYNTAX

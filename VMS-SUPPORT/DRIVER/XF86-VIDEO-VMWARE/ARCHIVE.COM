@@ -1,4 +1,4 @@
-$! Archive the six ordinary driver objects, retaining compiler diagnostics.
+$! Archive the seven ordinary driver objects, retaining compiler diagnostics.
 $ SET NOON
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
@@ -6,7 +6,7 @@ $ result = 2
 $ IF P1 .EQS. "" THEN GOTO done
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. -
      (P5 .NES. "") .OR. (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
-$ modules = "BITS2PIXELS|OFFSCREEN_MANAGER|VMWARE|VMWARECURS|VMWAREXAA|VMWARECTRL"
+$ modules = "BITS2PIXELS|OFFSCREEN_MANAGER|VMWARE|VMWARECURS|VMWAREXAA|VMWARECTRL|VMWAREXINERAMA"
 $ index = 0
 $check_objects:
 $ module = F$ELEMENT(index,"|",modules)

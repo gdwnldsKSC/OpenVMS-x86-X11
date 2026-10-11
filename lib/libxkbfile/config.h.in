@@ -30,7 +30,7 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Do not have have `strcasecmp'. */
+/* Do not have `strcasecmp'. */
 #undef NEED_STRCASECMP
 
 /* Name of package */
@@ -50,6 +50,15 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Major version of this package */
+#undef PACKAGE_VERSION_MAJOR
+
+/* Minor version of this package */
+#undef PACKAGE_VERSION_MINOR
+
+/* Patch version of this package */
+#undef PACKAGE_VERSION_PATCHLEVEL
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

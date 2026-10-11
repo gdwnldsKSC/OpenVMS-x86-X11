@@ -179,6 +179,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PS2PDF = @PS2PDF@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -234,7 +235,10 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 AUTOMAKE_OPTIONS = foreign
 SUBDIRS = src man
-EXTRA_DIST = README.ati README.r128 README.ati.sgml README.r128.sgml
+EXTRA_DIST = README.ati README.r128 README.ati.sgml README.r128.sgml ChangeLog
+
+# Always regenerate the changelog
+CLEANFILES = ChangeLog
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -595,6 +599,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -675,6 +680,9 @@ uninstall-info: uninstall-info-recursive
 
 @BUILD_LINUXDOC_TRUE@README.r128: README.r128.sgml
 @BUILD_LINUXDOC_TRUE@	$(MAKE_TEXT) README.r128.sgml && mv README.r128.txt README.r128
+ChangeLog: FORCE
+	git-log > ChangeLog
+FORCE:
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

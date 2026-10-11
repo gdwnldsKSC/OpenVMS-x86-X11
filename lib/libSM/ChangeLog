@@ -1,3 +1,9 @@
+2006-06-26  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* src/sm_genid.c: 
+	From Patch #6046 <https://bugs.freedesktop.org/attachment.cgi?id=6046>
+	freeaddrinfo() in error handling return (Peter Breitenlohner)
+
 2006-04-26  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

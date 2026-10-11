@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtNameToWidget 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtNameToWidget __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtNameToWidget, XtWindowToWidget \- translating strings to widgets or widgets to windows
 .SH SYNTAX

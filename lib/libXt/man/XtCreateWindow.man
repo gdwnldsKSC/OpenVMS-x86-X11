@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtCreateWindow 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtCreateWindow __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtCreateWindow \- window creation convenience function
 .SH SYNTAX

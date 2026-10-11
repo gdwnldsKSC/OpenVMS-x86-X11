@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAppAddTimeOut 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAppAddTimeOut __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAppAddTimeOut, XtRemoveTimeOut \- register and remove timeouts
 .SH SYNTAX

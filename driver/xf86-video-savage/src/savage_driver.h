@@ -1,7 +1,33 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/savage/savage_driver.h,v 1.16 2003/01/18 15:22:30 eich Exp $ */
+/*
+ * Copyright (C) 1994-2000 The XFree86 Project, Inc.  All Rights Reserved.
+ * Copyright (c) 2003-2006, X.Org Foundation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER(S) OR AUTHOR(S) BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ *
+ * Except as contained in this notice, the name of the copyright holder(s)
+ * and author(s) shall not be used in advertising or otherwise to promote
+ * the sale, use or other dealings in this Software without prior written
+ * authorization from the copyright holder(s) and author(s).
+ */
 
-#ifndef SAVAGE_VGAHWMMIO_H
-#define SAVAGE_VGAHWMMIO_H
+#ifndef SAVAGE_DRIVER_H
+#define SAVAGE_DRIVER_H
 
 #include <stdio.h>
 #include <string.h>
@@ -24,6 +50,7 @@
 #include "xf86cmap.h"
 #include "vbe.h"
 #include "xaa.h"
+#include "exa.h"
 #include "xf86xv.h"
 
 #include "savage_regs.h"
@@ -151,10 +178,10 @@ typedef struct
 #define SAVAGE_TV_ON	4
 
 #define SAVAGE_DRIVER_NAME	"savage"
-#define SAVAGE_DRIVER_VERSION	"2.1.1"
+#define SAVAGE_DRIVER_VERSION	"2.1.2"
 #define SAVAGE_VERSION_MAJOR	2
 #define SAVAGE_VERSION_MINOR	1
-#define SAVAGE_PATCHLEVEL	1
+#define SAVAGE_PATCHLEVEL	2
 #define SAVAGE_VERSION	((SAVAGE_VERSION_MAJOR << 24) | \
 			 (SAVAGE_VERSION_MINOR << 16) | \
 			 SAVAGE_PATCHLEVEL)
@@ -239,6 +266,11 @@ typedef struct _StatInfo {
     int     realOff;
 } StatInfoRec,*StatInfoPtr;
 
+struct savage_region {
+    unsigned        bar;
+    unsigned long   offset;
+};
+
 typedef struct _Savage {
     SavageRegRec	SavedReg;
     SavageRegRec	ModeReg;
@@ -266,9 +298,15 @@ typedef struct _Savage {
     unsigned long	ShadowPhysical;
 
     /* These are linear addresses. */
+    struct savage_region   MmioRegion;
+    struct savage_region   FbRegion;
+    struct savage_region   ApertureRegion;
+    unsigned               last_bar;
+
+    unsigned char*         bar_mappings[3];
+
     unsigned char*	MapBase;
     unsigned char*	BciMem;
-    unsigned char*	MapBaseDense;
     unsigned char*	FBBase;
     unsigned char*	ApertureMap;
     unsigned char*	FBStart;
@@ -345,6 +383,15 @@ typedef struct _Savage {
     int			ShadowPitch;
     void		(*PointerMoved)(int index, int x, int y);
 
+    /* support for EXA */
+    ExaDriverPtr        EXADriverPtr;
+    Bool		useEXA;
+    unsigned long	EXAendfb;
+    unsigned long 	pbd_offset;
+    unsigned long	sbd_offset;
+    unsigned long	pbd_high;
+    unsigned long	sbd_high;
+
     /* Support for XAA acceleration */
     XAAInfoRecPtr	AccelInfoRec;
     xRectangle		Rect;
@@ -397,7 +444,8 @@ typedef struct _Savage {
     __GLXvisualConfig*	pVisualConfigs;
     SAVAGEConfigPrivPtr 	pVisualConfigsPriv;
     SAVAGEDRIServerPrivatePtr DRIServerInfo;
-
+    ScreenWakeupHandlerProcPtr coreWakeupHandler;
+    ScreenBlockHandlerProcPtr  coreBlockHandler;
 
 #if 0
     Bool		haveQuiescense;
@@ -534,6 +582,10 @@ void SavageSetGBD(ScrnInfoPtr);
 void SavageAccelSync(ScrnInfoPtr);
 /*int SavageHelpSolidROP(ScrnInfoPtr pScrn, int *fg, int pm, int *rop);*/
 
+/* XAA and EXA */
+Bool SavageXAAInit(ScreenPtr);
+Bool SavageEXAInit(ScreenPtr);
+
 /* In savage_i2c.c. */
 
 Bool SavageI2CInit(ScrnInfoPtr pScrn);
@@ -587,5 +639,5 @@ void SavageInitStreams2000(ScrnInfoPtr pScrn);
 #define DEPTH_2ND(pScrn) (pScrn->depth > 8 ? pScrn->depth\
                               : SAVPTR(pScrn)->overlayDepth)
 
-#endif /* SAVAGE_VGAHWMMIO_H */
+#endif /* SAVAGE_DRIVER_H */
 

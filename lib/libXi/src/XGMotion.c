@@ -66,10 +66,9 @@ XDeviceTimeCoord
 	dpy;
     XDevice *
 	dev;
-    Time
-	start;
-    Time
-	stop;
+
+Time start;
+Time stop;
     int *
 	nEvents;
     int *
@@ -86,7 +85,7 @@ XDeviceTimeCoord
     XExtDisplayInfo *info = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
+    if (_XiCheckExtInit(dpy, XInput_Initial_Release, info) == -1)
 	return ((XDeviceTimeCoord *) NoSuchExtension);
 
     GetReq(GetDeviceMotionEvents, req);

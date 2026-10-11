@@ -583,7 +583,7 @@ SymInterpInfo		si;
     si= info->dflt;
     si.defs.merge= merge;
     si.interp.sym= def->sym;
-    si.interp.match= (si.interp.match&(~XkbSI_OpMask))|(pred&XkbSI_OpMask);
+    si.interp.match= pred & XkbSI_OpMask;
     si.interp.mods= mods;
     if (!HandleInterpBody(def->def,xkb,&si,info)) {
 	info->errorCount++;

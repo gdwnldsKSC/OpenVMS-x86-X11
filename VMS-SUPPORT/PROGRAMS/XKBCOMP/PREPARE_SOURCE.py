@@ -64,7 +64,7 @@ def package(root):
     support = "VMS-SUPPORT/PROGRAMS/XKBCOMP/"
     if (root / support / "DATA.LIST").read_text(encoding="ascii") != listing(mappings):
         raise ValueError("DATA.LIST does not match the upstream Makefile.am files")
-    files = sorted(set(makefiles + ["data/xkbdata/" + source for source, _ in mappings]
+    files = sorted(set(makefiles + ["deprecated/xkbdata/" + source for source, _ in mappings]
                        + [support + name for name in controls]))
     payload = io.BytesIO()
     manifest = []

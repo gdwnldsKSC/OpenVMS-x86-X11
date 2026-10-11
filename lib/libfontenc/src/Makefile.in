@@ -118,6 +118,10 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
+LINT = @LINT@
+LINT_FALSE = @LINT_FALSE@
+LINT_FLAGS = @LINT_FLAGS@
+LINT_TRUE = @LINT_TRUE@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -134,6 +138,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -198,6 +203,9 @@ libfontenc_la_LDFLAGS = -version-number 1:0:0 -no-undefined
 libfontencincludedir = $(includedir)/X11/fonts
 libfontencinclude_HEADERS = \
     $(top_srcdir)/include/X11/fonts/fontenc.h
+
+@LINT_TRUE@ALL_LINT_FLAGS = $(LINT_FLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+@LINT_TRUE@		$(AM_CPPFLAGS) $(CPPFLAGS)
 
 all: all-am
 
@@ -492,6 +500,9 @@ uninstall-am: uninstall-info-am uninstall-libLTLIBRARIES \
 	uninstall-am uninstall-info-am uninstall-libLTLIBRARIES \
 	uninstall-libfontencincludeHEADERS
 
+
+@LINT_TRUE@lint:
+@LINT_TRUE@	$(LINT) $(ALL_LINT_FLAGS) $(libfontenc_la_SOURCES) $(libfontenc_la_LIBADD) $(LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

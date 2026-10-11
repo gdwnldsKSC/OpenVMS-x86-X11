@@ -52,6 +52,9 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define DRM_I830_INIT_HEAP                0x0a
 #define DRM_I830_CMDBUFFER                0x0b
 #define DRM_I830_DESTROY_HEAP             0x0c
+#define DRM_I830_SET_VBLANK_PIPE	  0x0d
+#define DRM_I830_GET_VBLANK_PIPE	  0x0e
+
 
 typedef struct {
    enum {
@@ -81,7 +84,7 @@ typedef struct {
 	drmTextureRegion texList[I830_NR_TEX_REGIONS+1];
         int last_upload;	/* last time texture was uploaded */
         int last_enqueue;	/* last time a buffer was enqueued */
-	int last_dispatch;	/* age of the most recently dispatched buffer */
+	volatile int last_dispatch;	/* age of the most recently dispatched buffer */
 	int ctxOwner;		/* last context to upload state */
 	int texAge;
         int pf_enabled;		/* is pageflipping allowed? */
@@ -112,6 +115,12 @@ typedef struct {
 	int rotated_size;
 	int rotated_pitch;
 	int virtualX, virtualY;
+
+        unsigned int front_tiled;
+        unsigned int back_tiled;
+        unsigned int depth_tiled;
+        unsigned int rotated_tiled;
+        unsigned int rotated2_tiled;
 } drmI830Sarea;
 
 /* Flags for perf_boxes
@@ -193,5 +202,11 @@ typedef struct {
 	int region;
 } drmI830MemDestroyHeap;
 
+#define	DRM_I830_VBLANK_PIPE_A	1
+#define	DRM_I830_VBLANK_PIPE_B	2
+
+typedef struct {
+	int pipe;
+} drmI830VBlankPipe;
 
 #endif /* _I830_DRM_H_ */

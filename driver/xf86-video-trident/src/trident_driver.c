@@ -117,7 +117,7 @@ static int pix24bpp = 0;
 #define TRIDENT_DRIVER_NAME "trident"
 #define TRIDENT_MAJOR_VERSION 1
 #define TRIDENT_MINOR_VERSION 2
-#define TRIDENT_PATCHLEVEL 1
+#define TRIDENT_PATCHLEVEL 3
 
 /* 
  * This contains the functions needed by the server after loading the driver

@@ -539,4 +539,4 @@ the first bits of the next scanline should use them.
 
 The bitmap data as a whole must be 4 byte aligned.
 
-$XFree86: xc/programs/Xserver/hw/xfree86/drivers/vmware/README,v 1.2 2001/04/05 21:09:37 dawes Exp $
+$XFree86: xc/programs/Xserver/hw/xfree86/drivers/vmware/README,v 1.5 2002/10/16 22:12:53 alanh Exp $

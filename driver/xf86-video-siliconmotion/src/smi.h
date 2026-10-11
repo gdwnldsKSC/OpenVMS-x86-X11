@@ -94,6 +94,11 @@ typedef struct
 	CARD32	VPR00, VPR0C, VPR10;
 	CARD32	CPR00;
 	CARD32	FPR00_, FPR0C_, FPR10_;
+	/* LCD FIFO regs, etc. - dualhead */
+	CARD8   SR22, SR40, SR41, SR42, SR43, SR44, SR45, SR48, SR49,
+		SR4A, SR4B, SR4C;
+	/* PLL controls */
+	CARD8   SR68, SR69, SR6C, SR6D, SR6E, SR6F;
 
 } SMIRegRec, *SMIRegPtr;
 
@@ -241,6 +246,9 @@ typedef struct
 	GCPtr			videoGC;
 	OptionInfoPtr		Options;
         CARD8 DACmask;
+
+	Bool			Dualhead;
+
 } SMIRec, *SMIPtr;
 
 #define SMIPTR(p) ((SMIPtr)((p)->driverPrivate))

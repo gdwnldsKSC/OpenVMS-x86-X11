@@ -27,7 +27,7 @@
 .\"
 .\" $XFree86: xc/doc/man/Xext/Xevi.man,v 1.2 2001/01/27 18:20:19 dawes Exp $
 .\"
-.TH XEVI 3X11 __xorgversion__ "X FUNCTIONS"
+.TH XEVI __libmansuffix__ __xorgversion__ "X FUNCTIONS"
 .SH NAME
 XeviQueryExtension, XeviQueryVersion, XeviGetVisualInfo - X Extended Visual Information functions
 .SH SYNOPSIS

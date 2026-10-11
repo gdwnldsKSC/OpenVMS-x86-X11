@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAddGrab 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAddGrab __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAddGrab, XtRemoveGrab \- redirect user input to a modal widget
 .SH SYNTAX

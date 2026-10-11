@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtParent 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtParent __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtParent \- obtain widget's parent widget id
 .SH SYNTAX

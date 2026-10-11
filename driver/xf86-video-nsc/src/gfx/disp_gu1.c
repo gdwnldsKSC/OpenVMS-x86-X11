@@ -410,9 +410,6 @@ gu1_video_shutdown(void)
 
    gfx_reset_video();
 
-   /* Cyrix Corporation 5530 Video [Kahlua] rev 0 needs some more time */
-   gfx_delay_milliseconds(1);
-
    /* UNLOCK THE DISPLAY CONTROLLER REGISTERS */
 
    unlock = READ_REG32(DC_UNLOCK);

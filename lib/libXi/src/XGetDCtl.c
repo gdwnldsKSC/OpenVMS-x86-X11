@@ -80,7 +80,7 @@ XDeviceControl * XGetDeviceControl(dpy, dev, control)
     XExtDisplayInfo *info = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, XInput_Add_XChangeDeviceControl) == -1)
+    if (_XiCheckExtInit(dpy, XInput_Add_XChangeDeviceControl, info) == -1)
 	return ((XDeviceControl *) NoSuchExtension);
 
     GetReq(GetDeviceControl, req);

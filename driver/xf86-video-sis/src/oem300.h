@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/oem300.h,v 1.11 2005/07/04 10:57:08 twini Exp $ */
+/* $XdotOrg$ */
 /*
  * OEM Data for 300 series
  *

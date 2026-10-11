@@ -1,4 +1,4 @@
-/* $XdotOrg: driver/xf86-video-i810/src/i830_randr.c,v 1.1 2006/01/24 15:20:34 alanh Exp $ */
+/* $XdotOrg: xc/programs/Xserver/hw/xfree86/common/xf86RandR.c,v 1.3 2004/07/30 21:53:09 eich Exp $ */
 /*
  * $XFree86: xc/programs/Xserver/hw/xfree86/common/xf86RandR.c,v 1.7tsi Exp $
  *
@@ -313,7 +313,6 @@ I830RandRInit (ScreenPtr    pScreen, int rotation)
 {
     rrScrPrivPtr	rp;
     XF86RandRInfoPtr	randrp;
-    ScrnInfoPtr		scrp = XF86SCRNINFO(pScreen);
     
 #ifdef PANORAMIX
     /* XXX disable RandR when using Xinerama */

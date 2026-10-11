@@ -52,7 +52,12 @@
 
 #endif /* TV_OUT */
 
+#ifdef USE_EXA
+#include "exa.h"
+#endif
+#ifdef USE_XAA
 #include "xaa.h"
+#endif
 #include "xf86Cursor.h"
 #include "xf86Pci.h"
 #include "xf86Resources.h"
@@ -110,7 +115,7 @@ typedef struct _ATIHWRec
     /* Mach64 CPIO registers */
     CARD32 crtc_h_total_disp, crtc_h_sync_strt_wid,
            crtc_v_total_disp, crtc_v_sync_strt_wid,
-           crtc_off_pitch, crtc_gen_cntl, dsp_config, dsp_on_off,
+           crtc_off_pitch, crtc_gen_cntl, dsp_config, dsp_on_off, mem_buf_cntl,
            ovr_clr, ovr_wid_left_right, ovr_wid_top_bottom,
            cur_clr0, cur_clr1, cur_offset,
            cur_horz_vert_posn, cur_horz_vert_off,
@@ -142,6 +147,8 @@ typedef struct _ATIHWRec
     CARD32 clr_cmp_clr, clr_cmp_msk, clr_cmp_cntl;
     CARD32 context_mask, context_load_cntl;
 
+    CARD32 scale_3d_cntl, tex_size_pitch, tex_cntl, tex_offset;
+
     /* Mach64 MMIO Block 1 registers */
     CARD32 overlay_y_x_start, overlay_y_x_end, overlay_graphics_key_clr,
            overlay_graphics_key_msk, overlay_key_cntl, overlay_scale_inc,
@@ -170,6 +177,38 @@ typedef struct _ATIHWRec
 #endif /* AVOID_CPIO */
 
 } ATIHWRec;
+
+#ifdef USE_EXA
+/*
+ * Card engine state for communication across RENDER acceleration hooks.
+ */
+typedef struct _Mach64ContextRegs3D
+{
+    CARD32	dp_mix;
+    CARD32	dp_src;
+    CARD32	dp_write_mask;
+    CARD32	dp_pix_width;
+    CARD32	dst_pitch_offset;
+
+    CARD32	scale_3d_cntl;
+
+    CARD32	tex_cntl;
+    CARD32	tex_size_pitch;
+    CARD32	tex_offset;
+
+    int		tex_width;	/* src/mask texture width (pixels) */
+    int		tex_height;	/* src/mask texture height (pixels) */
+
+    Bool	frag_src;	/* solid src uses fragment color */
+    Bool	frag_mask;	/* solid mask uses fragment color */
+    CARD32	frag_color;	/* solid src/mask color */
+
+    Bool	color_alpha;	/* the alpha value is contained in the color
+				   channels instead of the alpha channel */
+
+    PictTransform *transform;
+} Mach64ContextRegs3D;
+#endif /* USE_EXA */
 
 /*
  * This structure defines the driver's private area.
@@ -296,15 +335,27 @@ typedef struct _ATIRec
     /*
      * XAA interface.
      */
+    Bool useEXA;
+#ifdef USE_EXA
+    ExaDriverPtr pExa;
+#endif
+#ifdef USE_XAA
     XAAInfoRecPtr pXAAInfo;
+#endif
     int nAvailableFIFOEntries, nFIFOEntries, nHostFIFOEntries;
     CARD8 EngineIsBusy, EngineIsLocked, XModifier;
     CARD32 dst_cntl;    /* For SetupFor/Subsequent communication */
     CARD32 sc_left_right, sc_top_bottom;
     CARD16 sc_left, sc_right, sc_top, sc_bottom;        /* Current scissors */
     pointer pHOST_DATA; /* Current HOST_DATA_* transfer window address */
+#ifdef USE_XAA
     CARD32 *ExpansionBitmapScanlinePtr[2];
     int ExpansionBitmapWidth;
+#endif
+#ifdef USE_EXA
+    Bool RenderAccelEnabled;
+    Mach64ContextRegs3D m3d;
+#endif
 
     /*
      * Cursor-related definitions.
@@ -382,7 +433,8 @@ typedef struct _ATIRec
      * XVideo-related data.
      */
     DevUnion XVPortPrivate[1];
-    FBLinearPtr pXVBuffer;
+    pointer pXVBuffer;		/* USE_EXA: ExaOffscreenArea*
+				   USE_XAA: FBLinearPtr */
     RegionRec VideoClip;
     int SurfacePitch, SurfaceOffset;
     CARD8 AutoPaint, DoubleBuffer, CurrentBuffer, ActiveSurface;
@@ -430,16 +482,16 @@ typedef struct _ATIRec
     /*
      * Driver options.
      */
-    CARD8 OptionAccel:1;        /* Use hardware draw engine */
-    CARD8 OptionBIOSDisplay:1;  /* Allow BIOS interference */
-    CARD8 OptionBlend:1;        /* Force horizontal blending */
-    CARD8 OptionCRTDisplay:1;   /* Display on both CRT and digital panel */
-    CARD8 OptionCSync:1;        /* Use composite sync */
-    CARD8 OptionDevel:1;        /* Intentionally undocumented */
+    unsigned int OptionAccel:1;        /* Use hardware draw engine */
+    unsigned int OptionBIOSDisplay:1;  /* Allow BIOS interference */
+    unsigned int OptionBlend:1;        /* Force horizontal blending */
+    unsigned int OptionCRTDisplay:1;   /* Display on both CRT & DFP */
+    unsigned int OptionCSync:1;        /* Use composite sync */
+    unsigned int OptionDevel:1;        /* Intentionally undocumented */
 
 #ifndef AVOID_CPIO
 
-    CARD8 OptionLinear:1;       /* Use linear fb aperture when available */
+    unsigned int OptionLinear:1;       /* Use linear aperture if available */
 
 #endif /* AVOID_CPIO */
  
@@ -450,12 +502,12 @@ typedef struct _ATIRec
 
 #endif /* TV_OUT */
 
-    CARD8 OptionMMIOCache:1;    /* Cache MMIO writes */
-    CARD8 OptionTestMMIOCache:1;/* Test MMIO cache integrity */
-    CARD8 OptionPanelDisplay:1; /* Prefer digital panel over CRT */
-    CARD8 OptionProbeClocks:1;  /* Force probe for fixed clocks */
-    CARD8 OptionShadowFB:1;     /* Use shadow frame buffer */
-    CARD8 OptionLCDSync:1;      /* Temporary */
+    unsigned int OptionMMIOCache:1;    /* Cache MMIO writes */
+    unsigned int OptionTestMMIOCache:1;/* Test MMIO cache integrity */
+    unsigned int OptionPanelDisplay:1; /* Prefer digital panel over CRT */
+    unsigned int OptionProbeClocks:1;  /* Force probe for fixed clocks */
+    unsigned int OptionShadowFB:1;     /* Use shadow frame buffer */
+    unsigned int OptionLCDSync:1;      /* Temporary */
 
     /*
      * State flags.
@@ -485,10 +537,12 @@ typedef struct _ATIRec
     Bool have3DWindows;
                                                                                 
     /* offscreen memory management */
+#ifdef USE_XAA
     int               backLines;
     FBAreaPtr         backArea;
     int               depthTexLines;
     FBAreaPtr         depthTexArea;
+#endif
     CARD8 OptionIsPCI;           /* Force PCI mode */
     CARD8 OptionDMAMode;         /* async, sync, mmio */
     CARD8 OptionAGPMode;         /* AGP mode */

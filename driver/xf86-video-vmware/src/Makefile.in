@@ -76,7 +76,8 @@ vmware_drv_laLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(vmware_drv_la_LTLIBRARIES)
 vmware_drv_la_LIBADD =
 am_vmware_drv_la_OBJECTS = bits2pixels.lo offscreen_manager.lo \
-	vmware.lo vmwarecurs.lo vmwarexaa.lo vmwarectrl.lo
+	vmware.lo vmwarecurs.lo vmwarexaa.lo vmwarectrl.lo \
+	vmwarexinerama.lo
 vmware_drv_la_OBJECTS = $(am_vmware_drv_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -160,6 +161,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -239,7 +241,8 @@ vmware_drv_la_SOURCES = \
          vmwarexaa.c \
          vmwarectrl.c \
          vmwarectrl.h \
-         vmwarectrlproto.h
+         vmwarectrlproto.h \
+         vmwarexinerama.c
 
 all: all-am
 
@@ -316,6 +319,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vmwarectrl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vmwarecurs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vmwarexaa.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vmwarexinerama.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

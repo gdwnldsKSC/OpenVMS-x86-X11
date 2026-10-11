@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-nv],
-        1.1.1,
+        1.2.2.1,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-nv)
 
@@ -53,8 +53,14 @@ XORG_DRIVER_CHECK_EXT(RENDER, renderproto)
 XORG_DRIVER_CHECK_EXT(XV, videoproto)
 XORG_DRIVER_CHECK_EXT(DPMSExtension, xextproto)
 
+# Determine whether XV PutImage takes a DrawablePtr and whether or not to use
+# the libcwrapper.
+PKG_CHECK_EXISTS([xorg-server >= 1.0.99.901],
+                 [AC_DEFINE(HAVE_XV_DRAWABLE,1,[XV hooks take a DrawablePtr])],
+                 [AC_DEFINE(USE_LIBC_WRAPPER,1,[Use the libc wrapper])])
+
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XORG, [xorg-server >= 1.0.99.901 xproto fontsproto $REQUIRED_MODULES])
+PKG_CHECK_MODULES(XORG, [xorg-server xproto fontsproto $REQUIRED_MODULES])
 sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 
 # Checks for libraries.

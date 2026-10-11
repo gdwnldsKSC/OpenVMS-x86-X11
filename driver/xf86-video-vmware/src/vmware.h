@@ -14,6 +14,8 @@
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
 
+#include <X11/extensions/panoramiXproto.h>
+
 #include "compiler.h"	        /* inb/outb */
 
 #include "xf86PciInfo.h"	/* pci vendor id */
@@ -51,6 +53,8 @@ typedef struct {
 
     CARD32 svga_reg_id;
 } VMWARERegRec, *VMWARERegPtr;
+
+typedef xXineramaScreenInfo VMWAREXineramaRec, *VMWAREXineramaPtr;
 
 typedef struct {
     EntityInfoPtr pEnt;
@@ -103,7 +107,7 @@ typedef struct {
 
     unsigned char* mmioVirtBase;
     CARD32* vmwareFIFO;
-    Bool canPitchLock;
+    Bool hasPitchLockFIFOReg;
 
     xf86CursorInfoPtr CursorInfoRec;
     struct {
@@ -137,6 +141,18 @@ typedef struct {
 
     SVGASurface* curPict;
     int op;
+
+    /*
+     * Xinerama state
+     */
+    Bool xinerama;
+    Bool xineramaStatic;
+
+    VMWAREXineramaPtr xineramaState;
+    unsigned int xineramaNumOutputs;
+
+    VMWAREXineramaPtr xineramaNextState;
+    unsigned int xineramaNextNumOutputs;
 
 } VMWARERec, *VMWAREPtr;
 
@@ -209,6 +225,13 @@ void vmwareSendSVGACmdUpdate(
    VMWAREPtr pVMWARE, BoxPtr pBB
    );
 
+DisplayModeRec *VMWAREAddDisplayMode(
+    ScrnInfoPtr pScrn,
+    const char *name,
+    int width,
+    int height
+   );
+
 /* vmwarecurs.c */
 Bool vmwareCursorInit(
    ScreenPtr pScr
@@ -247,8 +270,10 @@ void vmwareXAACloseScreen(
    ScreenPtr pScreen
    );
 
-/* vmware_ctl.c */
+/* vmwarectrl.c */
 void VMwareCtrl_ExtInit(ScrnInfoPtr pScrn);
 
+/* vmwarexinerama.c */
+void VMwareXinerama_ExtInit(ScrnInfoPtr pScrn);
 
 #endif

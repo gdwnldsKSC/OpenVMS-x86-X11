@@ -52,10 +52,10 @@ Productiva G100
 Millennium G200 and Mystique G200
 .TP
 .B G400
-Millenium G400, Millenium G400 MAX, Millenium G450, and Marvel G450 eTV
+Millennium G400, Millennium G400 MAX, Millennium G450, and Marvel G450 eTV
 .TP 
 .B G550
-Millenium G550 and Millenium G550 Dual DVI
+Millennium G550 and Millennium G550 Dual DVI
 .SH "CONFIGURATION DETAILS"
 Please refer to __xconfigfile__(__filemansuffix__) for general configuration
 details.  This section only covers configuration details specific to this
@@ -74,7 +74,7 @@ section, and will override the auto\-detection:
 .PP
 The G450 is Chipset "mgag400" with ChipRev 0x80.
 .PP
-The driver will aut\o-detect the amount of video memory present for all
+The driver will auto\-detect the amount of video memory present for all
 chips except the Millennium II.  In the Millennium II case it defaults
 to 4096\ kBytes.  When using a Millennium II, the actual amount of video
 memory should be specified with a
@@ -106,6 +106,17 @@ specified in multihead configurations.  Default: auto\-detected.
 .TP
 .BI "Option \*qNoAccel\*q \*q" boolean \*q
 Disable or enable acceleration.  Default: acceleration is enabled.
+.TP
+.BI "Option \*qAccelMethod\*q \*q" "string" \*q
+Chooses between available acceleration architectures.  Valid options are
+.B XAA
+and
+.B EXA.
+XAA is the traditional acceleration architecture and support for it is very
+stable.  EXA is a newer acceleration architecture with better performance for
+the Render and Composite extensions, but the rendering code for it is newer and
+possibly unstable.  The default is
+.B XAA.
 .TP
 .BI "Option \*qNoHal\*q \*q" boolean \*q
 Disable or enable loading the "mga_hal" module.  Default: the module is

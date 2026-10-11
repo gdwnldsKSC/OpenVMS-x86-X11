@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAppGetErrorDatabase 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAppGetErrorDatabase __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAppGetErrorDatabase, XtAppGetErrorDatabaseText \- obtain error database
 .SH SYNTAX

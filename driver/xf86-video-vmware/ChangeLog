@@ -1,3 +1,12 @@
+2006-09-03  Philip langdale <plangdale@vmware.com>
+
+	* src/vmware.c:
+	* src/vmware.h:
+	* src/vmwarectrl.c:
+	Fix https://bugs.freedesktop.org/show_bug.cgi?id=8094
+	Lazily allocate the dynamic modes used for pixel precise guest
+	resizing. They will not appear until they are neeed.
+
 2006-04-07  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

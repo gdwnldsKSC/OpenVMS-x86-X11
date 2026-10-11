@@ -87,7 +87,11 @@ from The Open Group.
 #include <sys/ptms.h>
 #endif
 #endif
-#include <sys/stropts.h>
+#ifdef sun
+# include <stropts.h>
+#else
+# include <sys/stropts.h>
+#endif
 #include <sys/wait.h>
 #include <sys/types.h>
 
@@ -107,6 +111,28 @@ from The Open Group.
 typedef unsigned short  mode_t;
 /* POSIX needed for mode_t define in sys/types.h */
 #endif
+
+/* Types of local connections supported:
+ *  - PTS
+ *  - named pipes
+ *  - ISC
+ *  - SCO
+ */
+#if !defined(sun)
+# define LOCAL_TRANS_PTS
+#endif
+#if defined(SVR4) || defined(__SVR4)
+# define LOCAL_TRANS_NAMED
+#endif
+#if !defined(sun) && !defined(__SCO__) && !defined(__UNIXWARE__)
+/* SCO doesnt use the ISC transport type - it causes problems */
+# define LOCAL_TRANS_ISC
+#endif
+#if defined(__SCO__) || defined(__UNIXWARE__)
+# define LOCAL_TRANS_SCO
+#endif
+
+static int TRANS(LocalClose)(XtransConnInfo ciptr);
 
 /*
  * These functions actually implement the local connection mechanisms.
@@ -195,6 +221,7 @@ TRANS(FillAddrInfo)(XtransConnInfo ciptr, char *sun_path, char *peer_sun_path)
 
 
 
+#ifdef LOCAL_TRANS_PTS
 /* PTS */
 
 #if defined(SYSV) && !defined(__SCO__) && !defined(ISC)
@@ -215,6 +242,7 @@ static void _dummy(int sig)
 
 {
 }
+#endif /* LOCAL_TRANS_PTS */
 
 #ifndef sun
 #define X_STREAMS_DIR	"/dev/X"
@@ -236,11 +264,10 @@ static void _dummy(int sig)
 #if defined(X11_t)
 
 #define PTSNODENAME "/dev/X/server."
-#ifndef sun
-#define NAMEDNODENAME "/dev/X/Nserver."
-#else
+#ifdef sun
 #define NAMEDNODENAME "/tmp/.X11-pipe/X"
-#endif
+#else
+#define NAMEDNODENAME "/dev/X/Nserver."
 
 /*
  * ISC is only defined for X11 since they are there for
@@ -252,14 +279,22 @@ static void _dummy(int sig)
 #define ISCTMPNODENAME	"/tmp/.X11-unix/X%s"
 #define SCORNODENAME	"/dev/X%1sR"
 #define SCOSNODENAME	"/dev/X%1sS"
+#endif /* !sun */
 #endif
 #if defined(XIM_t)
+#ifdef sun
+#define NAMEDNODENAME "/tmp/.XIM-pipe/XIM"
+#else
 #define PTSNODENAME	"/dev/X/XIM."
 #define NAMEDNODENAME	"/dev/X/NXIM."
 #define SCORNODENAME	"/dev/XIM.%sR"
 #define SCOSNODENAME	"/dev/XIM.%sS"
 #endif
+#endif
 #if defined(FS_t) || defined (FONT_t)
+#ifdef sun
+#define NAMEDNODENAME	"/tmp/.font-pipe/fs"
+#else
 /*
  * USL has already defined something here. We need to check with them
  * and see if their choice is usable here.
@@ -269,13 +304,21 @@ static void _dummy(int sig)
 #define SCORNODENAME	"/dev/fontserver.%sR"
 #define SCOSNODENAME	"/dev/fontserver.%sS"
 #endif
+#endif
 #if defined(ICE_t)
+#ifdef sun
+#define NAMEDNODENAME	"/tmp/.ICE-pipe/"
+#else
 #define PTSNODENAME	"/dev/X/ICE."
 #define NAMEDNODENAME	"/dev/X/NICE."
 #define SCORNODENAME	"/dev/ICE.%sR"
 #define SCOSNODENAME	"/dev/ICE.%sS"
 #endif
+#endif
 #if defined(TEST_t)
+#ifdef sun
+#define NAMEDNODENAME	"/tmp/.Test-unix/test"
+#endif
 #define PTSNODENAME	"/dev/X/transtest."
 #define NAMEDNODENAME	"/dev/X/Ntranstest."
 #define SCORNODENAME	"/dev/transtest.%sR"
@@ -284,7 +327,7 @@ static void _dummy(int sig)
 
 
 
-#ifndef sun
+#ifdef LOCAL_TRANS_PTS
 #ifdef TRANS_CLIENT
 
 static int
@@ -360,7 +403,10 @@ TRANS(PTSOpenClient)(XtransConnInfo ciptr, char *port)
 	uid_t       saved_euid;
 
 	saved_euid = geteuid();
-	setuid( getuid() ); /** sets the euid to the actual/real uid **/
+	/** sets the euid to the actual/real uid **/
+	if (setuid( getuid() ) == -1) {
+		exit(1);
+	}
 	if( chown( slave, saved_euid, -1 ) < 0 ) {
 		exit( 1 );
 		}
@@ -369,7 +415,13 @@ TRANS(PTSOpenClient)(XtransConnInfo ciptr, char *port)
     }
 
     waitpid(saved_pid, &exitval, 0);
-
+    if (WIFEXITED(exitval) && WEXITSTATUS(exitval) != 0) {
+	close(fd);
+	close(server);
+	PRMSG(1, "PTSOpenClient: cannot set the owner of %s\n",
+	      slave, 0, 0);
+	return(-1);
+    }
     if (chmod(slave, 0666) < 0) {
 	close(fd);
 	close(server);
@@ -621,10 +673,10 @@ TRANS(PTSAccept)(XtransConnInfo ciptr, XtransConnInfo newciptr, int *status)
 }
 
 #endif /* TRANS_SERVER */
-#endif /* sun */
+#endif /* LOCAL_TRANS_PTS */
 
 
-#ifdef SVR4
+#ifdef LOCAL_TRANS_NAMED
 
 /* NAMED */
 
@@ -638,7 +690,9 @@ TRANS(NAMEDOpenClient)(XtransConnInfo ciptr, char *port)
     int			fd;
     char		server_path[64];
     struct stat		filestat;
-    extern int		isastream();
+# ifndef sun    
+    extern int		isastream(int);
+# endif
 #endif
 
     PRMSG(2,"NAMEDOpenClient(%s)\n", port, 0,0 );
@@ -649,29 +703,32 @@ TRANS(NAMEDOpenClient)(XtransConnInfo ciptr, char *port)
 #else
     if ( port && *port ) {
 	if( *port == '/' ) { /* A full pathname */
-		(void) sprintf(server_path, "%s", port);
+		(void) snprintf(server_path, sizeof(server_path), "%s", port);
 	    } else {
-		(void) sprintf(server_path, "%s%s", NAMEDNODENAME, port);
+		(void) snprintf(server_path, sizeof(server_path), "%s%s", NAMEDNODENAME, port);
 	    }
     } else {
-	(void) sprintf(server_path, "%s%ld", NAMEDNODENAME, (long)getpid());
-    }
-
-    if (stat(server_path, &filestat) < 0 ) {
-	PRMSG(1,"NAMEDOpenClient: No device %s for NAMED connection\n", server_path, 0,0 );
-	return -1;
-    }
-
-    if ((filestat.st_mode & S_IFMT) != S_IFIFO) {
-	PRMSG(1,"NAMEDOpenClient: Device %s is not a FIFO\n", server_path, 0,0 );
-	/* Is this really a failure? */
-	return -1;
+	(void) snprintf(server_path, sizeof(server_path), "%s%ld", NAMEDNODENAME, (long)getpid());
     }
 
     if ((fd = open(server_path, O_RDWR)) < 0) {
 	PRMSG(1,"NAMEDOpenClient: Cannot open %s for NAMED connection\n", server_path, 0,0 );
 	return -1;
     }
+
+    if (fstat(fd, &filestat) < 0 ) {
+	PRMSG(1,"NAMEDOpenClient: Cannot stat %s for NAMED connection\n", server_path, 0,0 );
+	(void) close(fd);
+	return -1;
+    }
+
+    if ((filestat.st_mode & S_IFMT) != S_IFIFO) {
+	PRMSG(1,"NAMEDOpenClient: Device %s is not a FIFO\n", server_path, 0,0 );
+	/* Is this really a failure? */
+	(void) close(fd);	
+	return -1;
+    }
+
 
     if (isastream(fd) <= 0) {
 	PRMSG(1,"NAMEDOpenClient: %s is not a streams device\n", server_path, 0,0 );
@@ -701,15 +758,78 @@ TRANS(NAMEDOpenClient)(XtransConnInfo ciptr, char *port)
 
 #ifdef TRANS_SERVER
 
-static int
-TRANS(NAMEDOpenServer)(XtransConnInfo ciptr, char *port)
 
-{
 #ifdef NAMEDNODENAME
+static int
+TRANS(NAMEDOpenPipe)(const char *server_path)
+{
+    PRMSG(2,"NAMEDOpenPipe(%s)\n", server_path, 0,0 );
+
     int			fd, pipefd[2];
-    char		server_path[64];
     struct stat		sbuf;
     int			mode;
+    
+#if defined(sun) && defined(X11_t)
+    mode = 0775;	/* Solaris requires uid or gid 0 to create X11 pipes */
+#else    
+#ifdef HAS_STICKY_DIR_BIT
+    mode = 01777;
+#else
+    mode = 0777;
+#endif
+#endif
+    if (trans_mkdir(X_STREAMS_DIR, mode) == -1) {
+	PRMSG (1, "NAMEDOpenPipe: mkdir(%s) failed, errno = %d\n",
+	       X_STREAMS_DIR, errno, 0);
+	return(-1);
+    }
+
+    if(stat(server_path, &sbuf) != 0) {
+	if (errno == ENOENT) {
+	    if ((fd = creat(server_path, (mode_t)0666)) == -1) {
+		PRMSG(1, "NAMEDOpenPipe: Can't open %s\n", server_path, 0,0 );
+		return(-1);
+	    }
+	    close(fd);
+	    if (chmod(server_path, (mode_t)0666) < 0) {
+		PRMSG(1, "NAMEDOpenPipe: Can't open %s\n", server_path, 0,0 );
+		return(-1);
+	    }
+	} else {
+	    PRMSG(1, "NAMEDOpenPipe: stat on %s failed\n", server_path, 0,0 );
+	    return(-1);
+	}
+    }
+
+    if( pipe(pipefd) != 0) {
+	PRMSG(1, "NAMEDOpenPipe: pipe() failed, errno=%d\n",errno, 0,0 );
+	return(-1);
+    }
+
+    if( ioctl(pipefd[0], I_PUSH, "connld") != 0) {
+	PRMSG(1, "NAMEDOpenPipe: ioctl(I_PUSH,\"connld\") failed, errno=%d\n",errno, 0,0 );
+	close(pipefd[0]);
+	close(pipefd[1]);
+	return(-1);
+    }
+
+    if( fattach(pipefd[0], server_path) != 0) {
+	PRMSG(1, "NAMEDOpenPipe: fattach(%s) failed, errno=%d\n", server_path,errno, 0 );
+	close(pipefd[0]);
+	close(pipefd[1]);
+	return(-1);
+    }
+
+    return(pipefd[1]);
+}
+#endif
+
+static int
+TRANS(NAMEDOpenServer)(XtransConnInfo ciptr, char *port)
+{
+#ifdef NAMEDNODENAME
+    int			fd;
+    char		server_path[64];
 #endif
 
     PRMSG(2,"NAMEDOpenServer(%s)\n", port, 0,0 );
@@ -720,61 +840,21 @@ TRANS(NAMEDOpenServer)(XtransConnInfo ciptr, char *port)
 #else
     if ( port && *port ) {
 	if( *port == '/' ) { /* A full pathname */
-	    (void) sprintf(server_path, "%s", port);
+	    (void) snprintf(server_path, sizeof(server_path), "%s", port);
 	} else {
-	    (void) sprintf(server_path, "%s%s", NAMEDNODENAME, port);
+	    (void) snprintf(server_path, sizeof(server_path), "%s%s",
+			    NAMEDNODENAME, port);
 	}
     } else {
-	(void) sprintf(server_path, "%s%ld", NAMEDNODENAME, (long)getpid());
+	(void) sprintf(server_path, sizeof(server_path), "%s%ld",
+		       NAMEDNODENAME, (long)getpid());
     }
 
-#ifdef HAS_STICKY_DIR_BIT
-    mode = 01777;
-#else
-    mode = 0777;
-#endif
-    if (trans_mkdir(X_STREAMS_DIR, mode) == -1) {
-	PRMSG (1, "NAMEDOpenServer: mkdir(%s) failed, errno = %d\n",
-	       X_STREAMS_DIR, errno, 0);
-	return(-1);
+    fd = TRANS(NAMEDOpenPipe)(server_path);
+    if (fd < 0) {
+	return -1;
     }
-
-    if(stat(server_path, &sbuf) != 0) {
-	if (errno == ENOENT) {
-	    if ((fd = creat(server_path, (mode_t)0666)) == -1) {
-		PRMSG(1, "NAMEDOpenServer: Can't open %s\n", server_path, 0,0 );
-		return(-1);
-	    }
-	    close(fd);
-	    if (chmod(server_path, (mode_t)0666) < 0) {
-		PRMSG(1, "NAMEDOpenServer: Can't open %s\n", server_path, 0,0 );
-		return(-1);
-	    }
-	} else {
-	    PRMSG(1, "NAMEDOpenServer: stat on %s failed\n", server_path, 0,0 );
-	    return(-1);
-	}
-    }
-
-    if( pipe(pipefd) != 0) {
-	PRMSG(1, "NAMEDOpenServer: pipe() failed, errno=%d\n",errno, 0,0 );
-	return(-1);
-    }
-
-    if( ioctl(pipefd[0], I_PUSH, "connld") != 0) {
-	PRMSG(1, "NAMEDOpenServer: ioctl(I_PUSH,\"connld\") failed, errno=%d\n",errno, 0,0 );
-	close(pipefd[0]);
-	close(pipefd[1]);
-	return(-1);
-    }
-
-    if( fattach(pipefd[0], server_path) != 0) {
-	PRMSG(1, "NAMEDOpenServer: fattach(%s) failed, errno=%d\n", server_path,errno, 0 );
-	close(pipefd[0]);
-	close(pipefd[1]);
-	return(-1);
-    }
-
+    
     /*
      * Everything looks good: fill in the XtransConnInfo structure.
      */
@@ -782,12 +862,42 @@ TRANS(NAMEDOpenServer)(XtransConnInfo ciptr, char *port)
     if (TRANS(FillAddrInfo) (ciptr, server_path, server_path) == 0)
     {
 	PRMSG(1,"NAMEDOpenServer: failed to fill in addr info\n", 0,0,0);
+	TRANS(LocalClose)(fd);
 	return -1;
     }
 
-    return(pipefd[1]);
+    return fd;
 
 #endif /* !NAMEDNODENAME */
+}
+
+static int
+TRANS(NAMEDResetListener) (XtransConnInfo ciptr)
+
+{
+  int status = TRANS_RESET_NOOP;
+  struct sockaddr_un      *sockname=(struct sockaddr_un *) ciptr->addr;
+  struct stat     statb;
+  
+  PRMSG(2,"NAMEDResetListener(%p, %d)\n", ciptr, ciptr->fd, 0 );
+  
+  if (ciptr->fd != -1) {
+    /*
+     * see if the pipe has disappeared
+     */
+
+    if (stat (sockname->sun_path, &statb) == -1 ||
+	(statb.st_mode & S_IFMT) != S_IFIFO) {
+      PRMSG(3, "Pipe %s trashed, recreating\n", sockname->sun_path, 0, 0);
+      TRANS(LocalClose)(ciptr);
+      ciptr->fd = TRANS(NAMEDOpenPipe)(sockname->sun_path);
+      if (ciptr->fd >= 0)
+	  return TRANS_RESET_NEW_FD;
+      else
+	  return TRANS_CREATE_LISTENER_FAILED;
+    }
+  }
+  return TRANS_RESET_NOOP;
 }
 
 static int
@@ -807,11 +917,11 @@ TRANS(NAMEDAccept)(XtransConnInfo ciptr, XtransConnInfo newciptr, int *status)
     /*
      * Everything looks good: fill in the XtransConnInfo structure.
      */
-
+    newciptr->family=ciptr->family;
     newciptr->addrlen=ciptr->addrlen;
     if( (newciptr->addr=(char *)xalloc(newciptr->addrlen)) == NULL ) {
 	PRMSG(1,
-	      "NAMEDAccept: failed to allocate memory for peer addr\n",
+	      "NAMEDAccept: failed to allocate memory for pipe addr\n",
 									0,0,0);
 	close(str.fd);
 	*status = TRANS_ACCEPT_BAD_MALLOC;
@@ -840,11 +950,11 @@ TRANS(NAMEDAccept)(XtransConnInfo ciptr, XtransConnInfo newciptr, int *status)
 
 #endif /* TRANS_SERVER */
 
-#endif /* SVR4 */
+#endif /* LOCAL_TRANS_NAMED */
 
 
 
-#ifndef sun
+#if defined(LOCAL_TRANS_ISC) || defined(LOCAL_TRANS_SCO)
 
 /*
  * connect_spipe is used by the SCO and ISC connection types.
@@ -898,8 +1008,10 @@ named_spipe(int fd, char *path)
     return(ret);
 }
 
-/* SCO doesnt use the ISC transport type - it causes problems */
-#if !defined(__SCO__) && !defined(__UNIXWARE__)
+#endif /* defined(LOCAL_TRANS_ISC) || defined(LOCAL_TRANS_SCO) */
+
+
+#if defined(LOCAL_TRANS_ISC)
 
 
 /* ISC */
@@ -1183,9 +1295,10 @@ TRANS(ISCAccept)(XtransConnInfo ciptr, XtransConnInfo newciptr, int *status)
 }
 
 #endif /* TRANS_SERVER */
-#endif /* !__SCO__  && !__UNIXWARE__ */
+#endif /* LOCAL_TRANS_ISC */
 
 
+#ifdef LOCAL_TRANS_SCO
 /* SCO */
 
 /*
@@ -1460,12 +1573,12 @@ TRANS(SCOAccept)(XtransConnInfo ciptr, XtransConnInfo newciptr, int *status)
 }
 
 #endif /* TRANS_SERVER */
-#endif /* sun */
+#endif /* LOCAL_TRANS_SCO */
 
 
 
 #ifdef TRANS_REOPEN
-#ifndef sun
+#ifdef LOCAL_TRANS_PTS
 
 static int
 TRANS(PTSReopenServer)(XtransConnInfo ciptr, int fd, char *port)
@@ -1503,7 +1616,9 @@ TRANS(PTSReopenServer)(XtransConnInfo ciptr, int fd, char *port)
 #endif /* !PTSNODENAME */
 }
 
-#endif /* !sun */
+#endif /* LOCAL_TRANS_PTS */
+
+#ifdef LOCAL_TRANS_NAMED
 
 static int
 TRANS(NAMEDReopenServer)(XtransConnInfo ciptr, int fd, char *port)
@@ -1541,8 +1656,9 @@ TRANS(NAMEDReopenServer)(XtransConnInfo ciptr, int fd, char *port)
 #endif /* !NAMEDNODENAME */
 }
 
-#ifndef sun
-#if !defined(__SCO__) && !defined(__UNIXWARE__)
+#endif /* LOCAL_TRANS_NAMED */
+
+#ifdef LOCAL_TRANS_ISC
 static int
 TRANS(ISCReopenServer)(XtransConnInfo ciptr, int fd, char *port)
 
@@ -1570,8 +1686,9 @@ TRANS(ISCReopenServer)(XtransConnInfo ciptr, int fd, char *port)
 
 #endif /* !ISCDEVNODENAME */
 }
-#endif /* !__SCO__  && !__UNIXWARE__ */
+#endif /* LOCAL_TRANS_ISC */
 
+#ifdef LOCAL_TRANS_SCO
 static int
 TRANS(SCOReopenServer)(XtransConnInfo ciptr, int fd, char *port)
 
@@ -1605,7 +1722,7 @@ TRANS(SCOReopenServer)(XtransConnInfo ciptr, int fd, char *port)
 #endif /* SCORNODENAME */
 }
 
-#endif /* !sun */
+#endif /* LOCAL_TRANS_SCO */
 
 #endif /* TRANS_REOPEN */
 
@@ -1669,6 +1786,10 @@ typedef struct _LOCALtrans2dev {
 
 #ifdef TRANS_SERVER
 
+    int (*devreset)(
+	XtransConnInfo /* ciptr */
+);
+
     int	(*devaccept)(
 	XtransConnInfo, XtransConnInfo, int *
 );
@@ -1678,7 +1799,7 @@ typedef struct _LOCALtrans2dev {
 } LOCALtrans2dev;
 
 static LOCALtrans2dev LOCALtrans2devtab[] = {
-#ifndef sun
+#ifdef LOCAL_TRANS_PTS
 {"",
 #ifdef TRANS_CLIENT
      TRANS(PTSOpenClient),
@@ -1697,6 +1818,7 @@ static LOCALtrans2dev LOCALtrans2devtab[] = {
      TRANS(ReopenFail),
 #endif
 #ifdef TRANS_SERVER
+     NULL,		/* ResetListener */
      TRANS(PTSAccept)
 #endif /* TRANS_SERVER */
 },
@@ -1719,6 +1841,7 @@ static LOCALtrans2dev LOCALtrans2devtab[] = {
      TRANS(ReopenFail),
 #endif
 #ifdef TRANS_SERVER
+     NULL,		/* ResetListener */
      TRANS(PTSAccept)
 #endif /* TRANS_SERVER */
 },
@@ -1741,10 +1864,11 @@ static LOCALtrans2dev LOCALtrans2devtab[] = {
      TRANS(ReopenFail),
 #endif
 #ifdef TRANS_SERVER
+     NULL,		/* ResetListener */
      TRANS(PTSAccept)
 #endif /* TRANS_SERVER */
 },
-#else /* sun */
+#else /* !LOCAL_TRANS_PTS */
 {"",
 #ifdef TRANS_CLIENT
      TRANS(NAMEDOpenClient),
@@ -1763,6 +1887,7 @@ static LOCALtrans2dev LOCALtrans2devtab[] = {
      TRANS(ReopenFail),
 #endif
 #ifdef TRANS_SERVER
+     TRANS(NAMEDResetListener),
      TRANS(NAMEDAccept)
 #endif /* TRANS_SERVER */
 },
@@ -1785,12 +1910,13 @@ static LOCALtrans2dev LOCALtrans2devtab[] = {
      TRANS(ReopenFail),
 #endif
 #ifdef TRANS_SERVER
+     TRANS(NAMEDResetListener),
      TRANS(NAMEDAccept)
 #endif /* TRANS_SERVER */
 },
-#endif /* sun */
+#endif /* !LOCAL_TRANS_PTS */
 
-#ifdef SVR4
+#ifdef LOCAL_TRANS_NAMED
 {"named",
 #ifdef TRANS_CLIENT
      TRANS(NAMEDOpenClient),
@@ -1809,13 +1935,38 @@ static LOCALtrans2dev LOCALtrans2devtab[] = {
      TRANS(ReopenFail),
 #endif
 #ifdef TRANS_SERVER
+     TRANS(NAMEDResetListener),
      TRANS(NAMEDAccept)
 #endif /* TRANS_SERVER */
 },
-#endif /* SVR4 */
 
-#ifndef sun
-#if !defined(__SCO__) && !defined(__UNIXWARE__)
+#ifdef sun /* Alias "pipe" to named, since that's what Solaris called it */
+{"pipe",
+#ifdef TRANS_CLIENT
+     TRANS(NAMEDOpenClient),
+#endif /* TRANS_CLIENT */
+#ifdef TRANS_SERVER
+     TRANS(NAMEDOpenServer),
+#endif /* TRANS_SERVER */
+#ifdef TRANS_CLIENT
+     TRANS(OpenFail),
+#endif /* TRANS_CLIENT */
+#ifdef TRANS_SERVER
+     TRANS(OpenFail),
+#endif /* TRANS_SERVER */
+#ifdef TRANS_REOPEN
+     TRANS(NAMEDReopenServer),
+     TRANS(ReopenFail),
+#endif
+#ifdef TRANS_SERVER
+     TRANS(NAMEDResetListener),
+     TRANS(NAMEDAccept)
+#endif /* TRANS_SERVER */
+},
+#endif /* sun */
+#endif /* LOCAL_TRANS_NAMED */
+
+#ifdef LOCAL_TRANS_ISC
 {"isc",
 #ifdef TRANS_CLIENT
      TRANS(ISCOpenClient),
@@ -1834,11 +1985,13 @@ static LOCALtrans2dev LOCALtrans2devtab[] = {
      TRANS(ReopenFail),
 #endif
 #ifdef TRANS_SERVER
+     NULL,		/* ResetListener */
      TRANS(ISCAccept)
 #endif /* TRANS_SERVER */
 },
-#endif /* !__SCO__  && !__UNIXWARE__ */
+#endif /* LOCAL_TRANS_ISC */
 
+#ifdef LOCAL_TRANS_SCO
 {"sco",
 #ifdef TRANS_CLIENT
      TRANS(SCOOpenClient),
@@ -1857,10 +2010,11 @@ static LOCALtrans2dev LOCALtrans2devtab[] = {
      TRANS(ReopenFail),
 #endif
 #ifdef TRANS_SERVER
+     NULL,		/* ResetListener */
      TRANS(SCOAccept)
 #endif /* TRANS_SERVER */
 },
-#endif /* sun */
+#endif /* LOCAL_TRANS_SCO */
 };
 
 #define NUMTRANSPORTS	(sizeof(LOCALtrans2devtab)/sizeof(LOCALtrans2dev))
@@ -1873,6 +2027,8 @@ static	char	*freeXLOCAL=NULL;
 #define DEF_XLOCAL "SCO:UNIX:PTS"
 #elif defined(__UNIXWARE__)
 #define DEF_XLOCAL "UNIX:PTS:NAMED:SCO"
+#elif defined(sun)
+#define DEF_XLOCAL "UNIX:NAMED"
 #else
 #define DEF_XLOCAL "UNIX:PTS:NAMED:ISC:SCO"
 #endif
@@ -1933,7 +2089,7 @@ TRANS(LocalGetNextTransport)(void)
 	for(i=0;i<NUMTRANSPORTS;i++)
 	{
 	    /*
-	     * This is equivilent to a case insensitive strcmp(),
+	     * This is equivalent to a case insensitive strcmp(),
 	     * but should be more portable.
 	     */
 	    strncpy(typebuf,typetocheck,TYPEBUFSIZE);
@@ -2364,6 +2520,22 @@ TRANS(LocalCreateListener)(XtransConnInfo ciptr, char *port, unsigned int flags)
     return 0;
 }
 
+static int
+TRANS(LocalResetListener)(XtransConnInfo ciptr)
+
+{
+    LOCALtrans2dev	*transptr;
+    
+    PRMSG(2,"LocalResetListener(%x)\n",ciptr,0,0);
+
+    transptr=(LOCALtrans2dev *)ciptr->priv;
+    if (transptr->devreset != NULL) {
+	return transptr->devreset(ciptr);
+    }
+    return TRANS_RESET_NOOP;
+}
+
+
 static XtransConnInfo
 TRANS(LocalAccept)(XtransConnInfo ciptr, int *status)
 
@@ -2525,14 +2697,17 @@ TRANS(LocalCloseForCloning)(XtransConnInfo ciptr)
 
 #ifdef TRANS_SERVER
 static char * local_aliases[] = {
-# ifndef sun
+# ifdef LOCAL_TRANS_PTS
                                   "pts",
 # endif
 				  "named",
-# ifndef sun
-#  if !defined(__SCO__) && !defined(__UNIXWARE__)
+# ifdef sun
+				  "pipe", /* compatibility with Solaris Xlib */
+# endif				  
+# ifdef LOCAL_TRANS_ISC
 				  "isc",
-#  endif
+# endif
+# ifdef LOCAL_TRANS_SCO				  
 				  "sco",
 # endif
 				  NULL };
@@ -2562,7 +2737,7 @@ Xtransport	TRANS(LocalFuncs) = {
 	TRANS(LocalSetOption),
 #ifdef TRANS_SERVER
 	TRANS(LocalCreateListener),
-	NULL,					/* ResetListener */
+	TRANS(LocalResetListener),
 	TRANS(LocalAccept),
 #endif /* TRANS_SERVER */
 #ifdef TRANS_CLIENT
@@ -2578,7 +2753,7 @@ Xtransport	TRANS(LocalFuncs) = {
 	TRANS(LocalCloseForCloning),
 };
 
-#ifndef sun
+#ifdef LOCAL_TRANS_PTS
 
 Xtransport	TRANS(PTSFuncs) = {
 	/* Local Interface */
@@ -2604,7 +2779,7 @@ Xtransport	TRANS(PTSFuncs) = {
 	TRANS(LocalSetOption),
 #ifdef TRANS_SERVER
 	TRANS(LocalCreateListener),
-	NULL,					/* ResetListener */
+	TRANS(LocalResetListener),
 	TRANS(LocalAccept),
 #endif /* TRANS_SERVER */
 #ifdef TRANS_CLIENT
@@ -2620,7 +2795,9 @@ Xtransport	TRANS(PTSFuncs) = {
 	TRANS(LocalCloseForCloning),
 };
 
-#endif /* sun */
+#endif /* LOCAL_TRANS_PTS */
+
+#ifdef LOCAL_TRANS_NAMED
 
 Xtransport	TRANS(NAMEDFuncs) = {
 	/* Local Interface */
@@ -2646,7 +2823,7 @@ Xtransport	TRANS(NAMEDFuncs) = {
 	TRANS(LocalSetOption),
 #ifdef TRANS_SERVER
 	TRANS(LocalCreateListener),
-	NULL,					/* ResetListener */
+	TRANS(LocalResetListener),
 	TRANS(LocalAccept),
 #endif /* TRANS_SERVER */
 #ifdef TRANS_CLIENT
@@ -2662,8 +2839,50 @@ Xtransport	TRANS(NAMEDFuncs) = {
 	TRANS(LocalCloseForCloning),
 };
 
-#ifndef sun
-#if !defined(__SCO__) && !defined(__UNIXWARE__)
+#ifdef sun
+Xtransport	TRANS(PIPEFuncs) = {
+	/* Local Interface */
+	"pipe",
+	TRANS_ALIAS | TRANS_LOCAL,
+#ifdef TRANS_CLIENT
+	TRANS(LocalOpenCOTSClient),
+#endif /* TRANS_CLIENT */
+#ifdef TRANS_SERVER
+	NULL,
+	TRANS(LocalOpenCOTSServer),
+#endif /* TRANS_SERVER */
+#ifdef TRANS_CLIENT
+	TRANS(LocalOpenCLTSClient),
+#endif /* TRANS_CLIENT */
+#ifdef TRANS_SERVER
+	TRANS(LocalOpenCLTSServer),
+#endif /* TRANS_SERVER */
+#ifdef TRANS_REOPEN
+	TRANS(LocalReopenCOTSServer),
+	TRANS(LocalReopenCLTSServer),
+#endif
+	TRANS(LocalSetOption),
+#ifdef TRANS_SERVER
+	TRANS(LocalCreateListener),
+	TRANS(LocalResetListener),
+	TRANS(LocalAccept),
+#endif /* TRANS_SERVER */
+#ifdef TRANS_CLIENT
+	TRANS(LocalConnect),
+#endif /* TRANS_CLIENT */
+	TRANS(LocalBytesReadable),
+	TRANS(LocalRead),
+	TRANS(LocalWrite),
+	TRANS(LocalReadv),
+	TRANS(LocalWritev),
+	TRANS(LocalDisconnect),
+	TRANS(LocalClose),
+	TRANS(LocalCloseForCloning),
+};
+#endif /* sun */
+#endif /* LOCAL_TRANS_NAMED */
+
+#ifdef LOCAL_TRANS_ISC
 Xtransport	TRANS(ISCFuncs) = {
 	/* Local Interface */
 	"isc",
@@ -2688,7 +2907,7 @@ Xtransport	TRANS(ISCFuncs) = {
 	TRANS(LocalSetOption),
 #ifdef TRANS_SERVER
 	TRANS(LocalCreateListener),
-	NULL,					/* ResetListener */
+	TRANS(LocalResetListener),
 	TRANS(LocalAccept),
 #endif /* TRANS_SERVER */
 #ifdef TRANS_CLIENT
@@ -2703,7 +2922,9 @@ Xtransport	TRANS(ISCFuncs) = {
 	TRANS(LocalClose),
 	TRANS(LocalCloseForCloning),
 };
-#endif /* !__SCO__  && !__UNIXWARE__ */
+#endif /* LOCAL_TRANS_ISC */
+
+#ifdef LOCAL_TRANS_SCO
 Xtransport	TRANS(SCOFuncs) = {
 	/* Local Interface */
 	"sco",
@@ -2728,7 +2949,7 @@ Xtransport	TRANS(SCOFuncs) = {
 	TRANS(LocalSetOption),
 #ifdef TRANS_SERVER
 	TRANS(LocalCreateListener),
-	NULL,					/* ResetListener */
+	TRANS(LocalResetListener),
 	TRANS(LocalAccept),
 #endif /* TRANS_SERVER */
 #ifdef TRANS_CLIENT
@@ -2743,4 +2964,4 @@ Xtransport	TRANS(SCOFuncs) = {
 	TRANS(LocalClose),
 	TRANS(LocalCloseForCloning),
 };
-#endif /* sun */
+#endif /* LOCAL_TRANS_SCO */

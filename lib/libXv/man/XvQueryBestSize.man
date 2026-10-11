@@ -24,13 +24,7 @@ XvQueryBestSize \- determine the optimum drawable region size
 .SH Arguments
 .\"
 .IP \fIdpy\fR 15
-Specifies the display screen on which the
-Xv Server is to accept requests from Xv clients.  If the
-display option is not specified, Xv uses the display screen
-specified by your DISPLAY environment variable.  The display
-option has the format hostname:number.  Using two colons
-(::) instead of one (:) indicates that DECnet is to be used
-for transport.
+Specifies the connection to the X server.
 .IP \fIport\fR 15
 Defines the port associated with the display and adaptor for which 
 the optimum size is to be calculated.

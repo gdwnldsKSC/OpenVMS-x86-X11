@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/oem310.h,v 1.11 2005/07/07 00:46:01 twini Exp $ */
+/* $XdotOrg$ */
 /*
  * OEM Data for 315/330/340 series
  *

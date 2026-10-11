@@ -12,11 +12,17 @@
 #include "v1krisc.h"
 #include "vloaduc.h"
 #include "vos.h"
-#include "elf.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdio.h>
+#ifdef HAVE_ELF_H
+#include <elf.h>
+#endif
+#ifdef HAVE_ELF_ABI_H
+#include <elf_abi.h>
+#endif
 
 /*
  * defines 

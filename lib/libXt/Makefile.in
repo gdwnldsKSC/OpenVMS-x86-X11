@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 # 
-#  $Id: Makefile.am,v 1.4 2005/06/10 12:19:31 ago Exp $
+#  $Id$
 # 
 #  Copyright © 2003 Keith Packard, Noah Levitt
 # 
@@ -66,7 +66,8 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	missing
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -175,6 +176,7 @@ PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 RAWCPP = @RAWCPP@
 RAWCPPFLAGS = @RAWCPPFLAGS@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRINGSABIOPTIONS = @STRINGSABIOPTIONS@

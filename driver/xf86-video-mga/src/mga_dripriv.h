@@ -1,4 +1,4 @@
-/* $XFree86$ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/mga_dripriv.h,v 1.4 2001/04/10 16:08:01 dawes Exp $ */
 
 /*
  * Copyright 2000 VA Linux Systems Inc., Fremont, California.

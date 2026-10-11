@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id: configure.ac,v 1.13 2005/12/08 17:55:18 kem Exp $
+dnl  $Id$
 dnl 
 dnl  Copyright © 2003 Keith Packard
 dnl 
@@ -30,11 +30,15 @@ dnl version.  This same version number must appear in Xcursor.h
 dnl Yes, it is a pain to synchronize version numbers.  Unfortunately, it's
 dnl not possible to extract the version number here from Xcursor.h
 dnl
-AC_INIT([libXcursor],1.1.6,[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],[libXcursor])
+AC_INIT([libXcursor],1.1.8,[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],[libXcursor])
 AM_INIT_AUTOMAKE([dist-bzip2])
 AC_CONFIG_SRCDIR([Makefile.am])
 AM_MAINTAINER_MODE
 AM_CONFIG_HEADER(config.h)
+
+# Require xorg-macros version 1.1.0 or newer for XORG_WITH_LINT macro
+m4_ifndef([XORG_MACROS_VERSION], [AC_FATAL([must install xorg-macros 1.1 or later before running autoconf/autogen])])
+XORG_MACROS_VERSION(1.1)
 
 # Check for progs
 AC_PROG_CC
@@ -47,7 +51,7 @@ AC_ARG_WITH(icondir,
         [ICONDIR=${datadir}/icons])
 AC_SUBST([ICONDIR])
 
-DEF_CURSORPATH="~/.icons:/usr/share/icons:/usr/share/pixmaps:$ICONDIR"
+DEF_CURSORPATH="~/.icons:${datadir}/icons:${datadir}/pixmaps:$ICONDIR"
 AC_ARG_WITH(cursorpath,
         AC_HELP_STRING([--with-cursorpath=<paths>],
                        [Set default search path for cursors]),
@@ -64,6 +68,9 @@ AC_SUBST(XCURSOR_LIBS)
 
 XORG_MANPAGE_SECTIONS
 XORG_RELEASE_VERSION
+
+dnl Allow checking code with lint, sparse, etc.
+XORG_WITH_LINT
 
 AC_OUTPUT([Makefile
 	   src/Makefile

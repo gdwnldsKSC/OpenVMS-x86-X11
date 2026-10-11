@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id: configure.ac,v 1.10 2005/12/03 05:49:43 kem Exp $
+dnl  $Id$
 dnl 
 dnl  Copyright © 2003 Keith Packard, Noah Levitt
 dnl 
@@ -34,7 +34,7 @@ dnl protocol, so Xcomposite version l.n.m corresponds to protocol version l.n
 dnl that 'revision' number appears in Xcomposite.h and has to be manually
 dnl synchronized.
 dnl
-AC_INIT(libXcomposite, 0.3, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXcomposite)
+AC_INIT(libXcomposite, 0.3.1, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXcomposite)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

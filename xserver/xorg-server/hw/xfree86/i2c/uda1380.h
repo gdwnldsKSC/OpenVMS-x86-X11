@@ -1,5 +1,5 @@
 /*************************************************************************************
- * $Id: uda1380.h,v 1.2 2005/07/01 22:43:11 daniels Exp $
+ * $Id$
  * 
  * Copyright (C) 2005 Bogdan D. bogdand@users.sourceforge.net
  *
@@ -22,7 +22,10 @@
  * otherwise to promote the sale, use or other dealings in this Software without prior written 
  * authorization from the author.
  *
- * $Log: uda1380.h,v $
+ * $Log$
+ * Revision 1.3  2005/09/24 21:56:00  bogdand
+ * Changed the license to a X/MIT one
+ *
  * Revision 1.2  2005/07/01 22:43:11  daniels
  * Change all misc.h and os.h references to <X11/foo.h>.
  *
@@ -63,8 +66,6 @@ void uda1380_dumpstatus(UDA1380Ptr t);
 		"uda1380_getstatus", \
 		"uda1380_dumpstatus"
 
-#ifdef XFree86LOADER
-
 #define xf86_Detect_uda1380       ((UDA1380Ptr (*)(I2CBusPtr, I2CSlaveAddr))LoaderSymbol("Detect_uda1380"))
 #define xf86_uda1380_init         ((Bool (*)(UDA1380Ptr))LoaderSymbol("uda1380_init"))
 #define xf86_uda1380_shutdown     ((void (*)(UDA1380Ptr))LoaderSymbol("uda1380_shutdown"))
@@ -73,18 +74,5 @@ void uda1380_dumpstatus(UDA1380Ptr t);
 #define xf86_uda1380_setparameters     ((void (*)(UDA1380Ptr))LoaderSymbol("uda1380_setparameters"))
 #define xf86_uda1380_getstatus    ((void (*)(UDA1380Ptr))LoaderSymbol("uda1380_getstatus"))
 #define xf86_uda1380_dumpstatus    ((void (*)(UDA1380Ptr))LoaderSymbol("uda1380_dumpstatus"))
-
-#else
-
-#define xf86_Detect_uda1380       Detect_uda1380
-#define xf86_uda1380_init         uda1380_init
-#define xf86_uda1380_shutdown         uda1380_shutdown
-#define xf86_uda1380_setvolume    uda1380_setvolume
-#define xf86_uda1380_mute         uda1380_mute
-#define xf86_uda1380_setparameters     uda1380_setparameters
-#define xf86_uda1380_getstatus    uda1380_getstatus
-#define xf86_uda1380_dumpstatus    uda1380_dumpstatus
-
-#endif
 
 #endif

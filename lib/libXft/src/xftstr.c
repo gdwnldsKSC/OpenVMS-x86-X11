@@ -1,5 +1,5 @@
 /*
- * $Id: xftstr.c,v 1.4 2005/07/03 07:00:57 daniels Exp $
+ * $Id$
  *
  * Copyright © 2000 Keith Packard
  *
@@ -24,7 +24,7 @@
 
 #include "xftint.h"
 
-int
+_X_HIDDEN int
 _XftMatchSymbolic (XftSymbolic *s, int n, const char *name, int def)
 {
     while (n--)

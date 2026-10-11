@@ -6,7 +6,6 @@ ENCODING_FILES =		\
 	adobe-dingbats.enc	\
 	adobe-standard.enc	\
 	adobe-symbol.enc	\
-	ansi-1251.enc		\
 	armscii-8.enc		\
 	ascii-0.enc		\
 	dec-special.enc		\
@@ -38,17 +37,33 @@ ENCODING_FILES =		\
 	tis620-2.enc		\
 	viscii1.1-1.enc
 
-EXTRA_DIST = $(ENCODING_FILES)
+EXTRA_DIST = $(ENCODING_FILES) ChangeLog
 
 COMPRESSED = $(ENCODING_FILES:%=%.gz)
+
+CLEANFILES = encodings.dir
+
+if GZIP_SMALL
+DATA_FILES = $(COMPRESSED)
+CLEANFILES += $(COMPRESSED)
+else
+DATA_FILES = $(ENCODING_FILES) encodings.dir
+endif
 
 SUFFIXES = .enc .enc.gz
 
 .enc.enc.gz:
 	@GZIP@ -c < $< > $@
 
-encodings.dir:
+encodings.dir: $(DATA_FILES)
 	@MKFONTSCALE@ -b -s -l -n -r -p $(encodingsdir) -e . -e large .
 
-encodings_DATA = $(COMPRESSED) encodings.dir
-CLEANFILES = $(COMPRESSED) encodings.dir
+encodings_DATA = $(DATA_FILES) encodings.dir
+
+MAINTAINERCLEANFILES=ChangeLog
+
+ChangeLog:
+	git-log > ChangeLog
+
+dist-hook: ChangeLog
+

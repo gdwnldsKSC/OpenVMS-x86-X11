@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtGetClassExtension 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtGetClassExtension __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtGetClassExtension \- locate a class extension record
 .SH SYNTAX

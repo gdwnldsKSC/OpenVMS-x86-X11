@@ -1,3 +1,9 @@
+2006-04-06  Eric Anholt  <anholt@FreeBSD.org>
+
+	* src/i128_driver.c: (I128PreInit):
+	Don't forget to zero the xf86ModReqInfo before using it.
+	Noticed by Alex Deucher.
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

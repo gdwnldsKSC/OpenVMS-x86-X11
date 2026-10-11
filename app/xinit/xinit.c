@@ -1,5 +1,5 @@
 /* $Xorg: xinit.c,v 1.5 2001/02/09 02:05:49 xorgcvs Exp $ */
-/* $XdotOrg: app/xinit/xinit.c,v 1.4 2005/10/04 01:27:34 ajax Exp $ */
+/* $XdotOrg: $ */
 
 /*
 
@@ -692,7 +692,10 @@ static int
 startClient(char *client[])
 {
 	if ((clientpid = vfork()) == 0) {
-		setuid(getuid());
+		if (setuid(getuid()) == -1) {
+			Error("cannot change uid: %s\n", strerror(errno));
+			_exit(ERR_EXIT);
+		}
 		setpgrp(0, getpid());
 		environ = newenviron;
 #ifdef __UNIXOS2__

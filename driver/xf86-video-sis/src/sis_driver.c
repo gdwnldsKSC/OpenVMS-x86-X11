@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/sis_driver.c,v 1.73 2006/04/07 04:15:34 anholt Exp $ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis_driver.c,v 1.72 2006/03/09 06:06:25 anholt Exp $ */
 /*
  * SiS driver main code
  *

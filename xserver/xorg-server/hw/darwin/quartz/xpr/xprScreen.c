@@ -1,4 +1,3 @@
-/* $XdotOrg: xserver/xorg/hw/darwin/quartz/xpr/xprScreen.c,v 1.6 2005/07/01 22:43:08 daniels Exp $ */
 /*
  * Xplugin rootless implementation screen functions
  */
@@ -28,7 +27,6 @@
  * holders shall not be used in advertising or otherwise to promote the sale,
  * use or other dealings in this Software without prior written authorization.
  */
-/* $XFree86: xc/programs/Xserver/hw/darwin/quartz/xpr/xprScreen.c,v 1.11 2004/07/15 18:53:25 torrey Exp $ */
 
 #include "quartzCommon.h"
 #include "quartz.h"

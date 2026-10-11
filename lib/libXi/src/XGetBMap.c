@@ -81,7 +81,7 @@ XGetDeviceButtonMapping(dpy, device, map, nmap)
     xGetDeviceButtonMappingReply rep;
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
+    if (_XiCheckExtInit(dpy, XInput_Initial_Release, info) == -1)
 	return (NoSuchExtension);
     GetReq(GetDeviceButtonMapping, req);
 

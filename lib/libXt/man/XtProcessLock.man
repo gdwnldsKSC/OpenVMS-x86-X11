@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtProcessLock 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtProcessLock __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtProcessLock, XtProcessUnlock \- lock and unlock process
 .SH SYNTAX

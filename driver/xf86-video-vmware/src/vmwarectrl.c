@@ -39,9 +39,10 @@
 
 #define NEED_REPLIES
 #define NEED_EVENTS
-#include <X11/X.h>
 #include "dixstruct.h"
 #include "extnsionst.h"
+#include <X11/X.h>
+#include <X11/extensions/panoramiXproto.h>
 
 #include "vmware.h"
 #include "vmwarectrlproto.h"
@@ -134,6 +135,13 @@ VMwareCtrlDoSetRes(ScrnInfoPtr pScrn,
       mode = pVMWARE->dynMode1;
       pVMWARE->dynMode1 = pVMWARE->dynMode2;
       pVMWARE->dynMode2 = mode;
+
+      /*
+       * Initialise the dynamic mode if it hasn't been used before.
+       */
+      if (!pVMWARE->dynMode1) {
+         pVMWARE->dynMode1 = VMWAREAddDisplayMode(pScrn, "DynMode", 1, 1);
+      }
       mode = pVMWARE->dynMode1;
 
       mode->HDisplay = x;
@@ -209,6 +217,119 @@ VMwareCtrlSetRes(ClientPtr client)
 /*
  *----------------------------------------------------------------------------
  *
+ * VMwareCtrlDoSetTopology --
+ *
+ *      Set the custom topology and set a dynamic mode to the bounding box
+ *      of the passed topology.
+ *
+ * Results:
+ *      TRUE on success, FALSE otherwise.
+ *
+ * Side effects:
+ *      One dynamic mode and the pending xinerama state will be updated if
+ *      successful.
+ *
+ *----------------------------------------------------------------------------
+ */
+
+static Bool
+VMwareCtrlDoSetTopology(ScrnInfoPtr pScrn,
+                        xXineramaScreenInfo *extents,
+                        unsigned long number)
+{
+   VMWAREPtr pVMWARE = VMWAREPTR(pScrn);
+
+   if (pVMWARE && pVMWARE->xinerama) { 
+      VMWAREXineramaPtr xineramaState;
+      short maxX = 0;
+      short maxY = 0;
+      size_t i;
+
+      for (i = 0; i < number; i++) {
+         maxX = MAX(maxX, extents[i].x_org + extents[i].width);
+         maxY = MAX(maxY, extents[i].y_org + extents[i].height);
+      }
+
+      xineramaState = (VMWAREXineramaPtr)xcalloc(number, sizeof(VMWAREXineramaRec));
+      if (xineramaState) {
+         memcpy(xineramaState, extents, number * sizeof (VMWAREXineramaRec));
+
+         xfree(pVMWARE->xineramaNextState);
+         pVMWARE->xineramaNextState = xineramaState;
+         pVMWARE->xineramaNextNumOutputs = number;
+
+         return VMwareCtrlDoSetRes(pScrn, maxX, maxY);
+      } else {
+         return FALSE;
+      }
+   } else {
+      return FALSE;
+   }
+}
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * VMwareCtrlSetTopology --
+ *
+ *      Implementation of SetTopology command handler. Initialises and sends a
+ *      reply.
+ *
+ * Results:
+ *      Standard response codes.
+ *
+ * Side effects:
+ *      Writes reply to client
+ *
+ *----------------------------------------------------------------------------
+ */
+
+static int
+VMwareCtrlSetTopology(ClientPtr client)
+{
+   REQUEST(xVMwareCtrlSetTopologyReq);
+   xVMwareCtrlSetTopologyReply rep = { 0, };
+   ScrnInfoPtr pScrn;
+   ExtensionEntry *ext;
+   register int n;
+   xXineramaScreenInfo *extents;
+   size_t i;
+
+   REQUEST_AT_LEAST_SIZE(xVMwareCtrlSetTopologyReq);
+
+   if (!(ext = CheckExtension(VMWARE_CTRL_PROTOCOL_NAME))) {
+      return BadMatch;
+   }
+
+   pScrn = ext->extPrivate;
+   if (pScrn->scrnIndex != stuff->screen) {
+      return BadMatch;
+   }
+
+   extents = (xXineramaScreenInfo *)(stuff + 1);
+   if (!VMwareCtrlDoSetTopology(pScrn, extents, stuff->number)) {
+      return BadValue;
+   }
+
+   rep.type = X_Reply;
+   rep.length = (sizeof(xVMwareCtrlSetTopologyReply) - sizeof(xGenericReply)) >> 2;
+   rep.sequenceNumber = client->sequence;
+   rep.screen = stuff->screen;
+   if (client->swapped) {
+      swaps(&rep.sequenceNumber, n);
+      swapl(&rep.length, n);
+      swapl(&rep.screen, n);
+   }
+   WriteToClient(client, sizeof(xVMwareCtrlSetTopologyReply), (char *)&rep);
+
+   return client->noClientException;
+}
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
  * VMwareCtrlDispatch --
  *
  *      Dispatcher for VMWARE_CTRL commands. Calls the correct handler for
@@ -233,6 +354,8 @@ VMwareCtrlDispatch(ClientPtr client)
       return VMwareCtrlQueryVersion(client);
    case X_VMwareCtrlSetRes:
       return VMwareCtrlSetRes(client);
+   case X_VMwareCtrlSetTopology:
+      return VMwareCtrlSetTopology(client);
    }
    return BadRequest;
 }
@@ -306,6 +429,41 @@ SVMwareCtrlSetRes(ClientPtr client)
 /*
  *----------------------------------------------------------------------------
  *
+ * SVMwareCtrlSetTopology --
+ *
+ *      Wrapper for SetTopology handler that handles input from other-endian
+ *      clients.
+ *
+ * Results:
+ *      Standard response codes.
+ *
+ * Side effects:
+ *      Side effects of unswapped implementation.
+ *
+ *----------------------------------------------------------------------------
+ */
+
+static int
+SVMwareCtrlSetTopology(ClientPtr client)
+{
+   register int n;
+
+   REQUEST(xVMwareCtrlSetTopologyReq);
+   REQUEST_SIZE_MATCH(xVMwareCtrlSetTopologyReq);
+
+   swaps(&stuff->length, n);
+   swapl(&stuff->screen, n);
+   swapl(&stuff->number, n);
+   /* Each extent is a struct of shorts. */
+   SwapRestS(stuff);
+
+   return VMwareCtrlSetTopology(client);
+}
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
  * SVMwareCtrlDispatch --
  *
  *      Wrapper for dispatcher that handles input from other-endian clients.
@@ -329,6 +487,8 @@ SVMwareCtrlDispatch(ClientPtr client)
       return SVMwareCtrlQueryVersion(client);
    case X_VMwareCtrlSetRes:
       return SVMwareCtrlSetRes(client);
+   case X_VMwareCtrlSetTopology:
+      return SVMwareCtrlSetTopology(client);
    }
    return BadRequest;
 }

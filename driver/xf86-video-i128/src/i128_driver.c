@@ -117,8 +117,8 @@ static unsigned int I128DDC1Read(ScrnInfoPtr pScrn);
 #define I128_NAME "I128"
 #define I128_DRIVER_NAME "i128"
 #define I128_MAJOR_VERSION 1
-#define I128_MINOR_VERSION 1
-#define I128_PATCHLEVEL 0
+#define I128_MINOR_VERSION 2
+#define I128_PATCHLEVEL 1
 
 /* 
  * This contains the functions needed by the server after loading the
@@ -1192,6 +1192,7 @@ I128PreInit(ScrnInfoPtr pScrn, int flags)
 	    XF86ModReqInfo req;
 	    int errmaj, errmin;
 
+	    memset(&req, 0, sizeof(req));
 	    req.majorversion = 2;
 	    req.minorversion = 0;
             if (!LoadSubModule(pScrn->module, "exa", NULL, NULL, NULL, &req,

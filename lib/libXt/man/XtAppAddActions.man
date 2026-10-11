@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAppAddActions 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAppAddActions __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAppAddActions \- register an action table
 .SH SYNTAX

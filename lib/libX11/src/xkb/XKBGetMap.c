@@ -718,7 +718,10 @@ XkbGetKeyExplicitComponents(	Display *	dpy,
 	if ((num>0)&&(first>=xkb->min_key_code)&&(first+num<=xkb->max_key_code))
 	    bzero(&xkb->server->explicit[first],num);
     }
-    status= _XkbHandleGetMapReply(dpy, xkb);
+    if (xkb)
+        status= _XkbHandleGetMapReply(dpy, xkb);
+    else
+        status = BadMatch;
 
     UnlockDisplay(dpy);
     SyncHandle();
@@ -747,7 +750,10 @@ XkbGetKeyModifierMap(Display *dpy,unsigned first,unsigned num,XkbDescPtr xkb)
 	if ((num>0)&&(first>=xkb->min_key_code)&&(first+num<=xkb->max_key_code))
 	    bzero(&xkb->map->modmap[first],num);
     }
-    status= _XkbHandleGetMapReply(dpy, xkb);
+    if (xkb)
+        status= _XkbHandleGetMapReply(dpy, xkb);
+    else
+        status = BadMatch;
 
     UnlockDisplay(dpy);
     SyncHandle();
@@ -776,7 +782,11 @@ XkbGetKeyVirtualModMap(Display *dpy,unsigned first,unsigned num,XkbDescPtr xkb)
 	if ((num>0)&&(first>=xkb->min_key_code)&&(first+num<=xkb->max_key_code))
 	    bzero(&xkb->server->vmodmap[first],num*sizeof(unsigned short));
     }
-    status= _XkbHandleGetMapReply(dpy, xkb);
+
+    if (xkb)
+        status= _XkbHandleGetMapReply(dpy, xkb);
+    else
+        status = BadMatch;
 
     UnlockDisplay(dpy);
     SyncHandle();
@@ -813,8 +823,8 @@ XkbGetMapChanges(Display *dpy,XkbDescPtr xkb,XkbMapChangesPtr changes)
 	req->firstVModMapKey = changes->first_vmodmap_key;
 	req->nVModMapKeys = changes->num_vmodmap_keys;
 	status= _XkbHandleGetMapReply(dpy, xkb);
-	SyncHandle();
 	UnlockDisplay(dpy);
+	SyncHandle();
 	return status;
     }
     UnlockDisplay(dpy);

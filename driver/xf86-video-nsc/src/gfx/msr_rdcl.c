@@ -1,4 +1,4 @@
-/* $XFree86$ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/gfx/msr_rdcl.c,v 1.1 2002/12/10 15:12:27 alanh Exp $ */
 /*
  * $Workfile: msr_rdcl.c $
  *

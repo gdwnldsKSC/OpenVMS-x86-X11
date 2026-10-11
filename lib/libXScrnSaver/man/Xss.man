@@ -1,6 +1,6 @@
 .\"
 .\" $XFree86: xc/lib/Xss/Xss.man,v 1.1 2003/10/26 19:00:24 herrb Exp $
-.\" $XdotOrg: lib/XScrnSaver/man/Xss.man,v 1.3 2006/03/31 18:43:09 fredrik Exp $
+.\" $XdotOrg: lib/XScrnSaver/man/Xss.man,v 1.2 2004/04/23 18:43:51 eich Exp $
 .\"
 .\" Copyright (C) 2003 The XFree86 Project, Inc.  All Rights Reserved.
 .\"
@@ -32,7 +32,7 @@
 .SH NAME
 XScreenSaver \- X11 Screen Saver extension client library
 .SH SYNOPSIS
-.B #include <X11/extension/scrnsaver.h>
+.B #include <X11/extensions/scrnsaver.h>
 .PP
 .nf
 .ta .5i 2i

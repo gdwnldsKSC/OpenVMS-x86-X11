@@ -27,7 +27,7 @@
 .\"
 .\" $XFree86: xc/doc/man/Xext/dbe/XdbeGetV.man,v 3.5 2001/02/07 22:35:22 tsi Exp $
 .\"
-.TH XdbeGetVisualInfo 3X11 __xorgversion__ "X FUNCTIONS"
+.TH XdbeGetVisualInfo __libmansuffix__ __xorgversion__ "X FUNCTIONS"
 .SH NAME
 XdbeGetVisualInfo - Get dbe Visual Informations
 .SH SYNOPSIS

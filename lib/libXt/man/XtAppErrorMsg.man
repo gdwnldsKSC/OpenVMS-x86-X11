@@ -1,5 +1,5 @@
 .\" $Xorg: XtAppEM.man,v 1.3 2000/08/17 19:41:58 cpqbld Exp $
-.\" $XdotOrg: lib/Xt/man/XtAppErrorMsg.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
+.\" $XdotOrg: $
 .\"
 .\" Copyright 1993 X Consortium
 .\"
@@ -128,7 +128,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAppErrorMsg 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAppErrorMsg __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAppErrorMsg, XtAppSetErrorMsgHandler, XtAppSetWarningMsgHandler, XtAppWarningMsg \- high-level error handlers
 .SH SYNTAX

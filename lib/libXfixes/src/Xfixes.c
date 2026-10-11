@@ -322,8 +322,6 @@ XFixesQueryVersion (Display *dpy,
 
     *major_versionp = info->major_version;
     *minor_versionp = info->minor_version;
-    UnlockDisplay (dpy);
-    SyncHandle ();
     return 1;
 }
 

@@ -27,7 +27,7 @@
 .\"
 .\" $XFree86: xc/doc/man/Xext/dbe/XdbeFree.man,v 3.4 2001/01/27 18:20:20 dawes Exp $
 .\"
-.TH XdbeFreeVisualInfo 3X11 __xorgversion__ "X FUNCTIONS"
+.TH XdbeFreeVisualInfo __libmansuffix__ __xorgversion__ "X FUNCTIONS"
 .SH NAME
 XdbeFreeVisualInfo - frees information returned by
 .B XdbeGetVisualInfo().

@@ -22,13 +22,21 @@ EXTRA_DIST = $(ENCODING_FILES)
 
 COMPRESSED = $(ENCODING_FILES:%=%.gz)
 
+CLEANFILES = encodings.dir
+
+if GZIP_LARGE
+DATA_FILES = $(COMPRESSED)
+CLEANFILES += $(COMPRESSED)
+else
+DATA_FILES = $(ENCODING_FILES)
+endif
+
 SUFFIXES = .enc .enc.gz
 
 .enc.enc.gz:
 	@GZIP@ -c < $< > $@
 
-encodings.dir:
+encodings.dir: $(DATA_FILES)
 	@MKFONTSCALE@ -b -s -l -n -r -p $(encodingsdir) -e . .
 
-encodings_DATA = $(COMPRESSED) encodings.dir
-CLEANFILES = $(COMPRESSED) encodings.dir
+encodings_DATA = $(DATA_FILES) encodings.dir

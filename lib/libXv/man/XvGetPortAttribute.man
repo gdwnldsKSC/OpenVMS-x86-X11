@@ -20,13 +20,7 @@ XvGetPortAttribute \- return current port attribute value
 .SH Arguments
 .\"
 .IP \fIdpy\fR 8
-Specifies the display screen on which the
-X Server is to accept requests from X clients.  If the
-display option is not specified, X uses the display screen
-specified by your DISPLAY environment variable.  The display
-option has the format hostname:number.  Using two colons
-(::) instead of one (:) indicates that DECnet is to be used
-for transport.
+Specifies the connection to the X server.
 .IP \fIport\fR 8
 Specifies the port, associated with the given display, for
 which the attribute values are to be returned. 
@@ -93,7 +87,4 @@ supported by the adaptor.
 .\"
 XvSetPortAttribute(__libmansuffix__), XvPortNotify(__libmansuffix__)
 .br
-
-
-
 

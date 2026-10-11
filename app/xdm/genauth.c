@@ -1,4 +1,4 @@
-/* $XdotOrg: app/xdm/genauth.c,v 1.2 2004/04/23 19:54:42 eich Exp $ */
+/* $XdotOrg: xc/programs/xdm/genauth.c,v 1.1.4.5 2003/12/20 00:28:31 kaleb Exp $ */
 /* $Xorg: genauth.c,v 1.5 2001/02/09 02:05:40 xorgcvs Exp $ */
 /*
 

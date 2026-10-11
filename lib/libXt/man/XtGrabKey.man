@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtGrabKey 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtGrabKey __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtGrabKey, XtUngrabKey, XtGrabKeyboard, XtUngrabKeyboard, XtGrabButton, XtUngrabButton, XtGrabPointer, XtUngrabPointer \- manage grabs
 .SH SYNTAX

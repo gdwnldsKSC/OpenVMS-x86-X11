@@ -1,4 +1,4 @@
-/* $XdotOrg: app/xdm/auth.c,v 1.5 2005/11/08 06:33:31 jkj Exp $ */
+/* $XdotOrg: xc/programs/xdm/auth.c,v 1.2 2004/04/23 19:54:42 eich Exp $ */
 /* $Xorg: auth.c,v 1.5 2001/02/09 02:05:40 xorgcvs Exp $ */
 /*
 
@@ -183,7 +183,7 @@ static Xauth *
 GenerateAuthorization (unsigned short name_length, char *name)
 {
     struct AuthProtocol	*a;
-    Xauth   *auth = 0;
+    Xauth   *auth = NULL;
     int	    i;
 
     Debug ("GenerateAuthorization %*.*s\n",
@@ -228,7 +228,7 @@ SetProtoDisplayAuthorization (
     Xauth   *auth;
 
     a = findProtocol (authorizationNameLen, authorizationName);
-    pdpy->xdmcpAuthorization = pdpy->fileAuthorization = 0;
+    pdpy->xdmcpAuthorization = pdpy->fileAuthorization = NULL;
     if (a)
     {
 	if (!a->inited)
@@ -245,7 +245,7 @@ SetProtoDisplayAuthorization (
 	{
 	    auth = (*a->GetAuth) (authorizationNameLen, authorizationName);
 	    pdpy->fileAuthorization = auth;
-	    pdpy->xdmcpAuthorization = 0;
+	    pdpy->xdmcpAuthorization = NULL;
 	}
 	if (auth)
 	    Debug ("Got %p (%d %*.*s)\n", auth,
@@ -372,7 +372,7 @@ SaveServerAuthorizations (
     int		    count)
 {
     FILE	*auth_file;
-    int		mask;
+    mode_t	mask;
     int		ret;
     int		i;
 
@@ -495,7 +495,7 @@ SetAuthorization (struct display *d)
 static int
 openFiles (char *name, char *new_name, FILE **oldp, FILE **newp)
 {
-	int	mask;
+	mode_t	mask;
 
 	strcpy (new_name, name);
 	strcat (new_name, "-n");
@@ -563,7 +563,7 @@ static struct addrList	*addrs;
 static void
 initAddrs (void)
 {
-	addrs = 0;
+	addrs = NULL;
 }
 
 static void
@@ -601,7 +601,7 @@ saveEntry (Xauth *auth)
 		}
 		memmove( new->address, auth->address, (int) auth->address_length);
 	} else
-		new->address = 0;
+		new->address = NULL;
 	if ((new->number_length = auth->number_length) > 0) {
 		new->number = malloc (auth->number_length);
 		if (!new->number) {
@@ -612,7 +612,7 @@ saveEntry (Xauth *auth)
 		}
 		memmove( new->number, auth->number, (int) auth->number_length);
 	} else
-		new->number = 0;
+		new->number = NULL;
 	if ((new->name_length = auth->name_length) > 0) {
 		new->name = malloc (auth->name_length);
 		if (!new->name) {
@@ -624,7 +624,7 @@ saveEntry (Xauth *auth)
 		}
 		memmove( new->name, auth->name, (int) auth->name_length);
 	} else
-		new->name = 0;
+		new->name = NULL;
 	new->family = auth->family;
 	new->next = addrs;
 	addrs = new;
@@ -1211,9 +1211,9 @@ SetUserAuthorization (struct display *d, struct verify_info *verify)
 {
     FILE	*old = NULL, *new;
     char	home_name[1024], backup_name[1024], new_name[1024];
-    char	*name = 0;
+    char	*name = NULL;
     char	*home;
-    char	*envname = 0;
+    char	*envname = NULL;
     int	lockStatus;
     Xauth	*entry, **auths;
     int		setenv = 0;

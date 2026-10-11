@@ -22,9 +22,18 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-ati],
-        6.6.0,
+        6.6.3,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-ati)
+AC_DEFINE_UNQUOTED([ATI_VERSION_MAJOR],
+		   [$(echo $PACKAGE_VERSION | sed -e 's/^\([[0-9]]\)\.[[0-9]]\.[[0-9]]/\1/')],
+		   [Major version])
+AC_DEFINE_UNQUOTED([ATI_VERSION_MINOR],
+		   [$(echo $PACKAGE_VERSION | sed -e 's/^[[0-9]]\.\([[0-9]]\)\.[[0-9]]/\1/')],
+		   [Minor version])
+AC_DEFINE_UNQUOTED([ATI_VERSION_PATCH],
+		   [$(echo $PACKAGE_VERSION | sed -e 's/^[[0-9]]\.[[0-9]]\.\([[0-9]]\)/\1/')],
+		   [Patch version])
 
 AC_CONFIG_SRCDIR([Makefile.am])
 AM_CONFIG_HEADER([config.h])
@@ -126,7 +135,7 @@ case $host_cpu in
     ATIMISC_TV_OUT=yes
     ATIMISC_CPIO=yes
     ;;
-  x86_64|amd64|alpha)
+  x86_64|amd64|alpha|ia64)
     ATIMISC_CPIO=yes
     ;;
   sparc)
@@ -142,19 +151,19 @@ esac
 AC_MSG_CHECKING([whether to include PIO support])
 AM_CONDITIONAL(ATIMISC_CPIO, test "x$ATIMISC_CPIO" = xyes)
 if test "x$ATIMISC_CPIO" = xyes; then
-	echo "yes, PIO"
+	AC_MSG_RESULT([yes, PIO])
 else
 	AC_DEFINE(AVOID_CPIO, 1, [Avoid PIO and use MMIO for atimisc.])
-	echo "no, MMIO"
+	AC_MSG_RESULT([no, MMIO])
 fi
 
 AC_MSG_CHECKING([whether to include support for non-PCI devices])
 AM_CONDITIONAL(ATIMISC_NON_PCI, test "x$ATIMISC_NON_PCI" = xyes)
 if test "x$ATI_AVOID_NON_PCI" = xyes; then
-	echo "yes, PCI and ISA"
+	AC_MSG_RESULT([yes, PCI and ISA])
 else
 	AC_DEFINE(AVOID_NON_PCI, 1, [Only probe PCI cards; do not probe ISA.])
-	echo "no, PCI only"
+	AC_MSG_RESULT([no, PCI only])
 fi
 
 AC_MSG_CHECKING([whether to include DGA support])
@@ -176,30 +185,36 @@ AC_DEFINE(USE_XAA, 1, [Build support for XAA])
 # Properly handle EXA.
 AC_MSG_CHECKING([whether to enable EXA support])
 if test "x$EXA" = xyes; then
-        echo "yes"
-        AC_CHECK_FILE([${sdkdir}/exa.h],
-                      [have_exa_h="yes"], [have_exa_h="no"])
+        AC_MSG_RESULT(yes)
+
+        SAVE_CPPFLAGS="$CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS $XORG_CFLAGS"
+        AC_CHECK_HEADER(exa.h,
+                       [have_exa_h="yes"], [have_exa_h="no"])
+        CPPFLAGS="$SAVE_CPPFLAGS"
 else
-        echo "no"
+        AC_MSG_RESULT(no)
 fi 
 
+SAVE_CPPFLAGS="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS $XORG_CFLAGS"
 if test "x$have_exa_h" = xyes; then
-        AC_MSG_CHECKING([wether EXA version is at least 2.0.0])
+        AC_MSG_CHECKING([whether EXA version is at least 2.0.0])
         AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[
-#include "${sdkdir}/exa.h"
+#include "exa.h"
 #if EXA_VERSION_MAJOR < 2
 #error OLD EXA!
 #endif
                           ]])],
                           [USE_EXA=yes],
                           [USE_EXA=no])
+        AC_MSG_RESULT($USE_EXA)
+
         if test "x$USE_EXA" = xyes; then
-                echo "yes."
                 AC_DEFINE(USE_EXA, 1, [Build support for Exa])
-        else
-                echo "no."
         fi
 fi
+CPPFLAGS="$SAVE_CPPFLAGS"
 
 AM_CONDITIONAL(USE_EXA, test "x$USE_EXA" = xyes)
 

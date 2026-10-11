@@ -434,6 +434,17 @@ convert(int ifd, int ofd)
     return 0;
 }
         
+static void
+sigwinchHandler(int sig)
+{
+    sigwinch_queued = 1;
+}
+
+static void
+sigchldHandler(int sig)
+{
+    sigchld_queued = 1;
+}
 
 static int
 condom(int argc, char **argv)
@@ -444,6 +455,7 @@ condom(int argc, char **argv)
     char *path;
     char **child_argv;
     int rc;
+    int val;
 
     rc = parseArgs(argc, argv, child_argv0,
                    &path, &child_argv);
@@ -461,6 +473,29 @@ condom(int argc, char **argv)
         perror("Couldn't drop priviledges");
         exit(1);
     }
+#ifdef SIGWINCH
+    installHandler(SIGWINCH, sigwinchHandler);
+#endif
+    installHandler(SIGCHLD, sigchldHandler);
+
+    rc = copyTermios(0, pty);
+    if(rc < 0)
+        FatalError("Couldn't copy terminal settings\n");
+
+    rc = setRawTermios();
+    if(rc < 0)
+        FatalError("Couldn't set terminal to raw\n");
+
+    val = fcntl(0, F_GETFL, 0);
+    if(val >= 0) {
+        fcntl(0, F_SETFL, val | O_NONBLOCK);
+    }
+    val = fcntl(pty, F_GETFL, 0);
+    if(val >= 0) {
+        fcntl(pty, F_SETFL, val | O_NONBLOCK);
+    }
+
+    setWindowSize(0, pty);
 
     pid = fork();
     if(pid < 0) {
@@ -470,6 +505,10 @@ condom(int argc, char **argv)
 
     if(pid == 0) {
         close(pty);
+#ifdef SIGWINCH
+        installHandler(SIGWINCH, SIG_DFL);
+#endif
+        installHandler(SIGCHLD, SIG_DFL);
         child(line, path, child_argv);
     } else {
         free(child_argv);
@@ -490,6 +529,7 @@ child(char *line, char *path, char **argv)
     close(0);
     close(1);
     close(2);
+
     pgrp = setsid();
     if(pgrp < 0) {
         kill(getppid(), SIGABRT);
@@ -517,52 +557,16 @@ child(char *line, char *path, char **argv)
     exit(1);
 }
 
-static void
-sigwinchHandler(int sig) {
-    sigwinch_queued = 1;
-}
-
-static void
-sigchldHandler(int sig)
-{
-    sigchld_queued = 1;
-}
-
 void
 parent(int pid, int pty)
 {
     unsigned char buf[BUFFER_SIZE];
     int i;
-    int val;
     int rc;
 
     if(verbose) {
         reportIso2022(outputState);
     }
-
-#ifdef SIGWINCH
-    installHandler(SIGWINCH, sigwinchHandler);
-#endif
-    installHandler(SIGCHLD, sigchldHandler);
-
-    rc = copyTermios(0, pty);
-    if(rc < 0)
-        FatalError("Couldn't copy terminal settings\n");
-
-    rc = setRawTermios();
-    if(rc < 0)
-        FatalError("Couldn't set terminal to raw\n");
-
-    val = fcntl(0, F_GETFL, 0);
-    if(val >= 0) {
-        fcntl(0, F_SETFL, val | O_NONBLOCK);
-    }
-    val = fcntl(pty, F_GETFL, 0);
-    if(val >= 0) {
-        fcntl(pty, F_SETFL, val | O_NONBLOCK);
-    }
-
-    setWindowSize(0, pty);
 
     for(;;) {
         rc = waitForInput(0, pty);

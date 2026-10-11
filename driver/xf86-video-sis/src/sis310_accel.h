@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/sis310_accel.h,v 1.9 2005/07/04 10:57:08 twini Exp $ */
+/* $XdotOrg$ */
 /*
  * 2D Acceleration for SiS 315 and Xabre series
  * Definitions for the SIS engine communication.

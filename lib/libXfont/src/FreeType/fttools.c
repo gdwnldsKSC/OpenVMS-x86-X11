@@ -77,7 +77,7 @@ FTu2a(int slen, FT_Byte *from, char *to, int byte, int max)
 
     n = 0;
     for (i = 0; i < slen; i += 2) {
-        if(n >= max)
+        if(n >= max - 1)
             break;
         if(HIBYTE(from+i, byte)!=0)
             *to++='?';
@@ -143,9 +143,10 @@ FTGetEnglishName(FT_Face face, int nid, char *name_return, int name_len)
     /* Pretend that Apple Roman is ISO 8859-1. */
     if(FTGetName(face, nid, TT_PLATFORM_MACINTOSH, TT_MAC_ID_ROMAN, &name)) {
         len = name.string_len;
-        if(len > name_len)
-            len = name_len;
+        if(len > name_len  - 1)
+            len = name_len - 1;
         memcpy(name_return, name.string, len);
+        name_return[len] = '\0'; /* ensure nul terminaison */
         return len;
     }
 

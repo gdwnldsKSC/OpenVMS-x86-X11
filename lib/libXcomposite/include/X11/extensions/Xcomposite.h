@@ -1,5 +1,5 @@
 /*
- * $Id: Xcomposite.h,v 1.5 2005/11/09 21:31:19 kem Exp $
+ * $Id$
  *
  * Copyright © 2006 Sun Microsystems
  *

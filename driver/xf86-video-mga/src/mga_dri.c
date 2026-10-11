@@ -363,7 +363,6 @@ void MGAGetQuiescence( ScrnInfoPtr pScrn )
 {
    MGAPtr pMga = MGAPTR(pScrn);
 
-   DRILock( screenInfo.screens[pScrn->scrnIndex], 0 );
    pMga->haveQuiescense = 1;
 
    if ( pMga->directRenderingEnabled ) {
@@ -371,6 +370,9 @@ void MGAGetQuiescence( ScrnInfoPtr pScrn )
 
       MGAWaitForIdleDMA( pScrn );
 
+        /* FIXME what about EXA? */
+#ifdef USE_XAA
+        if (!pMga->Exa && pMga->AccelInfoRec) {
       WAITFIFO( 11 );
       OUTREG( MGAREG_MACCESS, pMga->MAccess );
       OUTREG( MGAREG_PITCH, pLayout->displayWidth );
@@ -391,7 +393,9 @@ void MGAGetQuiescence( ScrnInfoPtr pScrn )
       OUTREG( MGAREG_YTOP, 0x00000000 );    /* minPixelPointer */
       OUTREG( MGAREG_YBOT, 0x007FFFFF );    /* maxPixelPointer */
 
-      pMga->AccelFlags &= ~CLIPPER_ON;
+            pMga->AccelFlags &= ~CLIPPER_ON;
+        }
+#endif
    }
 }
 
@@ -401,15 +405,18 @@ void MGAGetQuiescenceShared( ScrnInfoPtr pScrn )
    MGAEntPtr pMGAEnt = pMga->entityPrivate;
    MGAPtr pMGA2 = MGAPTR(pMGAEnt->pScrn_2);
 
-   DRILock( screenInfo.screens[pMGAEnt->pScrn_1->scrnIndex], 0 );
-
    pMga = MGAPTR(pMGAEnt->pScrn_1);
    pMga->haveQuiescense = 1;
    pMGA2->haveQuiescense = 1;
 
    if ( pMGAEnt->directRenderingEnabled ) {
       MGAWaitForIdleDMA( pMGAEnt->pScrn_1 );
-      pMga->RestoreAccelState( pScrn );
+
+        /* FIXME what about EXA? */
+#ifdef USE_XAA
+        if (!pMga->Exa && pMga->AccelInfoRec)
+            pMga->RestoreAccelState( pScrn );
+#endif
       xf86SetLastScrnFlag( pScrn->entityList[0], pScrn->scrnIndex );
    }
 }
@@ -423,7 +430,8 @@ static void MGASwapContext( ScreenPtr pScreen )
     * appropriate.
     */
    pMga->haveQuiescense = 0;
-   pMga->AccelInfoRec->NeedToSync = TRUE;
+
+   MGA_MARK_SYNC(pMga, pScrn);
 }
 
 static void MGASwapContextShared( ScreenPtr pScreen )
@@ -435,14 +443,17 @@ static void MGASwapContextShared( ScreenPtr pScreen )
 
    pMga = MGAPTR(pMGAEnt->pScrn_1);
 
-   pMga->haveQuiescense = 0;
-   pMga->AccelInfoRec->NeedToSync = TRUE;
+   pMga->haveQuiescense = pMGA2->haveQuiescense = 0;
 
-   pMGA2->haveQuiescense = 0;
-   pMGA2->AccelInfoRec->NeedToSync = TRUE;
+   MGA_MARK_SYNC(pMga, pScrn);
+   MGA_MARK_SYNC(pMGA2, pMGAEnt->pScrn_2);
 }
 
-/* This is really only called from validate/postvalidate as we
+/* FIXME: This comment is out of date, since we aren't overriding
+ * Block/Wakeuphandler anymore.
+ *
+ *
+ * This is really only called from validate/postvalidate as we
  * override the dri lock/unlock.  Want to remove validate/postvalidate
  * processing, but need to remove all client-side use of drawable lock
  * first (otherwise there is noone recover when a client dies holding
@@ -464,14 +475,12 @@ MGADRISwapContext( ScreenPtr pScreen, DRISyncType syncType,
 		   DRIContextType oldContextType, void *oldContext,
 		   DRIContextType newContextType, void *newContext )
 {
-#if 0
    if ( syncType == DRI_3D_SYNC &&
 	oldContextType == DRI_2D_CONTEXT &&
 	newContextType == DRI_2D_CONTEXT )
    {
       MGASwapContext( pScreen );
    }
-#endif
 }
 
 static void
@@ -479,60 +488,15 @@ MGADRISwapContextShared( ScreenPtr pScreen, DRISyncType syncType,
 			  DRIContextType oldContextType, void *oldContext,
 			  DRIContextType newContextType, void *newContext )
 {
-#if 0
    if ( syncType == DRI_3D_SYNC &&
 	oldContextType == DRI_2D_CONTEXT &&
 	newContextType == DRI_2D_CONTEXT )
    {
       MGASwapContextShared( pScreen );
    }
-#endif
 }
 
-
-static void MGAWakeupHandler( int screenNum, pointer wakeupData,
-			      unsigned long result, pointer pReadmask )
-{
-    ScreenPtr pScreen = screenInfo.screens[screenNum];
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
-    MGAPtr pMga = MGAPTR(pScrn);
-
-    if ( xf86IsEntityShared( pScrn->entityList[0] ) 
-		&& pMga->DualHeadEnabled) {
-        MGASwapContextShared( pScreen );
-    } else {
-        MGASwapContext( pScreen );
-    }
-}
-
-static void MGABlockHandler( int screenNum, pointer blockData,
-			     pointer pTimeout, pointer pReadmask )
-
-{
-   ScreenPtr pScreen = screenInfo.screens[screenNum];
-   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
-   MGAPtr pMga = MGAPTR(pScrn);
-   MGAEntPtr pMGAEnt;
-
-   if ( pMga->haveQuiescense ) {
-      if ( xf86IsEntityShared( pScrn->entityList[0] ) ) {
-	 /* Restore to first screen */
-	 pMga->RestoreAccelState( pScrn );
-	 xf86SetLastScrnFlag( pScrn->entityList[0], pScrn->scrnIndex );
-	 pMGAEnt = pMga->entityPrivate;
-
-	 if ( pMGAEnt->directRenderingEnabled ) {
-	    DRIUnlock( screenInfo.screens[pMGAEnt->pScrn_1->scrnIndex] );
-	 }
-      } else {
-	 if ( pMga->directRenderingEnabled ) {
-	    DRIUnlock( pScreen );
-	 }
-      }
-      pMga->haveQuiescense = 0;
-   }
-}
-
+#ifdef USE_XAA
 void MGASelectBuffer( ScrnInfoPtr pScrn, int which )
 {
    MGAPtr pMga = MGAPTR(pScrn);
@@ -554,6 +518,7 @@ void MGASelectBuffer( ScrnInfoPtr pScrn, int which )
       break;
    }
 }
+#endif
 
 
 static unsigned int mylog2( unsigned int n )
@@ -1022,16 +987,14 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 	       ((pciConfigPtr)pMga->PciInfo->thisCard)->devnum,
 	       ((pciConfigPtr)pMga->PciInfo->thisCard)->funcnum );
    }
-   pDRIInfo->ddxDriverMajorVersion = MGA_MAJOR_VERSION;
-   pDRIInfo->ddxDriverMinorVersion = MGA_MINOR_VERSION;
-   pDRIInfo->ddxDriverPatchVersion = MGA_PATCHLEVEL;
-   pDRIInfo->frameBufferPhysicalAddress = pMga->FbAddress;
+   pDRIInfo->ddxDriverMajorVersion = PACKAGE_VERSION_MAJOR;
+   pDRIInfo->ddxDriverMinorVersion = PACKAGE_VERSION_MINOR;
+   pDRIInfo->ddxDriverPatchVersion = PACKAGE_VERSION_PATCHLEVEL;
+   pDRIInfo->frameBufferPhysicalAddress = (void *) pMga->FbAddress;
    pDRIInfo->frameBufferSize = pMga->FbMapSize;
    pDRIInfo->frameBufferStride = pScrn->displayWidth*(pScrn->bitsPerPixel/8);
    pDRIInfo->ddxDrawableTableEntry = MGA_MAX_DRAWABLES;
 
-   pDRIInfo->wrap.BlockHandler = MGABlockHandler;
-   pDRIInfo->wrap.WakeupHandler = MGAWakeupHandler;
    pDRIInfo->wrap.ValidateTree = NULL;
    pDRIInfo->wrap.PostValidateTree = NULL;
 

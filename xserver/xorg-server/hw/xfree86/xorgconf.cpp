@@ -1,4 +1,4 @@
-XCOMM $XdotOrg: xserver/xorg/hw/xfree86/xorgconf.cpp,v 1.2 2004/04/23 19:20:02 eich Exp $
+XCOMM $XdotOrg$
 XCOMM
 XCOMM Copyright (c) 1994-1998 by The XFree86 Project, Inc.
 XCOMM
@@ -54,12 +54,8 @@ XCOMM command (or a combination of both methods)
 
     FontPath	LOCALFONTPATH
     FontPath	MISCFONTPATH
-    FontPath	DPI75USFONTPATH
-    FontPath	DPI100USFONTPATH
     FontPath	T1FONTPATH
-    FontPath    TRUETYPEFONTPATH
-    FontPath	CIDFONTPATH
-    FontPath	SPFONTPATH
+    FontPath	TRUETYPEFONTPATH
     FontPath	DPI75FONTPATH
     FontPath	DPI100FONTPATH
 

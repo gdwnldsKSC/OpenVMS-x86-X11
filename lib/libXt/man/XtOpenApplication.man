@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtOpenApplication 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtOpenApplication __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtOpenApplication, XtVaOpenApplication \- initialize, open, or close a display
 .SH SYNTAX

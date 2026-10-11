@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtCreateApplicationShell 3Xt __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
+.TH XtCreateApplicationShell __libmansuffix__ __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
 .SH NAME
 XtCreateApplicationShell \- create top-level widget instance
 .SH SYNTAX

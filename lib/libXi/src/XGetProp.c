@@ -61,13 +61,12 @@ SOFTWARE.
 #include <X11/extensions/extutil.h>
 #include "XIint.h"
 
-XEventClass * XGetDeviceDontPropagateList(dpy, window, count)
-    register Display *
-	dpy;
-    Window
-	window;
-    int *
-	count;
+XEventClass *
+XGetDeviceDontPropagateList(dpy, window, count)
+    register Display *dpy;
+
+Window window;
+    int *count;
 {
     XEventClass *list = NULL;
     int rlen;
@@ -76,7 +75,7 @@ XEventClass * XGetDeviceDontPropagateList(dpy, window, count)
     XExtDisplayInfo *info = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
+    if (_XiCheckExtInit(dpy, XInput_Initial_Release, info) == -1)
 	return ((XEventClass *) NoSuchExtension);
 
     GetReq(GetDeviceDontPropagateList, req);

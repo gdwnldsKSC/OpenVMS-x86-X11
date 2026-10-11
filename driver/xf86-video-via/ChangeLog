@@ -1,3 +1,9 @@
+2006-05-23  Thomas Hellstrom  <thomas-at-tungstengraphics.com>
+
+	* src/via_dri.c: (VIADRIFinishScreenInit):
+	Bugzilla #6668 <https://bugs.freedesktop.org/show_bug.cgi?id=6668>	
+	Fix critical unlibcwrap breakage. ("Morgoth")
+	
 2006-04-07  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

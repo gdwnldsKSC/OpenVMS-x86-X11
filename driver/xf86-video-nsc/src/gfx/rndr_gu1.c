@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/gfx/rndr_gu1.c,v 1.1 2002/12/10 15:12:27 alanh Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/gfx/rndr_gu1.c,v 1.2 2003/01/14 09:34:34 alanh Exp $ */
 /*
  * $Workfile: rndr_gu1.c $
  *

@@ -1,3 +1,14 @@
+2006-06-03  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* src/session.c (ReadWinConfigEntry): 
+	Coverity #369: If malloc of entry->wm_command fails, error cleanup
+	was still trying to read pointers from it to free.
+
+2006-06-02  Alan Coopersmith  <alan.coopersmith@sun.com>
+
+	* src/menus.c (ExecuteFunction): 
+	Coverity #1508: Variable "action" not freed or pointed-to
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

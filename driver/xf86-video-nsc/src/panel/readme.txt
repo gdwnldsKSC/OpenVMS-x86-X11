@@ -1,4 +1,4 @@
-/* $XFree86$ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/panel/readme.txt,v 1.2 2002/12/10 15:41:27 alanh Exp $ */
 Panel Library
 Release 1.3.2
 OS - Can be used in all OS's.

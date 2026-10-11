@@ -390,11 +390,11 @@ Status XRRQueryVersion (Display *dpy,
       xrri->major_version = rep.majorVersion;
       xrri->minor_version = rep.minorVersion;
       xrri->has_rates = _XRRHasRates (xrri->major_version, xrri->minor_version);
+      UnlockDisplay (dpy);
+      SyncHandle ();
     }
     *major_versionp = xrri->major_version;
     *minor_versionp = xrri->minor_version;
-    UnlockDisplay (dpy);
-    SyncHandle ();
     return 1;
 }
 

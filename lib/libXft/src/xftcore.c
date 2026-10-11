@@ -1,5 +1,5 @@
 /*
- * $Id: xftcore.c,v 1.4 2005/07/03 07:00:57 daniels Exp $
+ * $Id$
  *
  * Copyright © 2000 Keith Packard
  *
@@ -24,7 +24,7 @@
 
 #include "xftint.h"
 
-void
+_X_HIDDEN void
 XftRectCore (XftDraw		*draw,
 	     _Xconst XftColor	*color,
 	     int		x, 
@@ -921,7 +921,7 @@ _XftGlyphDefault (Display *dpy, XftFont   *public)
     if (XftFontCheckGlyph (dpy, public, FcTrue, 0, missing, &nmissing))
 	glyphs_loaded = FcTrue;
     if (nmissing)
-	XftFontLoadGlyphs (dpy, public, FcTrue, missing, nmissing);
+	XftFontLoadGlyphs (dpy, public, glyphs_loaded, missing, nmissing);
     return font->glyphs[0];
 }
 
@@ -930,7 +930,7 @@ static int XftGetImageErrorHandler (Display *dpy, XErrorEvent *error_event)
     return 0;
 }
 
-void
+_X_HIDDEN void
 XftGlyphCore (XftDraw		*draw,
 	      _Xconst XftColor	*color,
 	      XftFont		*public,
@@ -1066,7 +1066,7 @@ bail1:
 
 #define NUM_LOCAL   1024
 
-void
+_X_HIDDEN void
 XftGlyphSpecCore (XftDraw		*draw,
 		  _Xconst XftColor	*color,
 		  XftFont		*public,
@@ -1215,7 +1215,7 @@ bail1:
 	_XftFontManageMemory (dpy, public);
 }
 
-void
+_X_HIDDEN void
 XftGlyphFontSpecCore (XftDraw			*draw,
 		      _Xconst XftColor		*color,
 		      _Xconst XftGlyphFontSpec	*glyphs,

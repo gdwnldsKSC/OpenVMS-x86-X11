@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/sis.h,v 1.68 2006/04/08 01:47:22 ajax Exp $ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis.h,v 1.67 2006/04/07 21:05:21 ajax Exp $ */
 /*
  * Main global data and definitions
  *

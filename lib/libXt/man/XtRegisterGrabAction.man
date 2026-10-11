@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtRegisterGrabAction 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtRegisterGrabAction __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtRegisterGrabAction \- register button and key grabs
 .SH SYNTAX

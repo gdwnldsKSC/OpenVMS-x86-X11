@@ -138,6 +138,10 @@ FontencCharsetRec fontencCharsets[] = {
     {"CP 1251", T_128, 0, "microsoft-cp1251", 0x80, 0, 0},
     {"CP 1250", T_128, 0, "microsoft-cp1250", 0x80, 0, 0},
 
+    {"CP 437", T_128, 0, "ibm-cp437", 0x80, 0, 0},
+    {"CP 850", T_128, 0, "ibm-cp850", 0x80, 0, 0},
+    {"CP 866", T_128, 0, "ibm-cp866", 0x80, 0, 0},
+
     {"Big 5", T_94192, 0, "big5.eten-0", 0x8000, 0, 0},
     {0, 0, 0, 0, 0, 0, 0}
 };

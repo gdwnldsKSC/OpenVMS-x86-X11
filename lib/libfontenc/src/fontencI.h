@@ -29,7 +29,7 @@ typedef struct _FontEncSimpleMap {
     unsigned len;                 /* might be 0x10000 */
     unsigned short row_size;
     unsigned short first;
-    unsigned short *map;
+    const unsigned short *map;
 } FontEncSimpleMapRec, *FontEncSimpleMapPtr;
 
 typedef struct _FontEncSimpleName {

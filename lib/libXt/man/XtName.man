@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtName 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtName __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtName \- obtain widget's name
 .SH SYNTAX

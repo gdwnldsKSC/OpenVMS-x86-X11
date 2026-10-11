@@ -1,3 +1,15 @@
+2006-06-06  Donnie Berkholz  <spyderous@gentoo.org>
+
+	* src/sis_dri.c:
+	Add missing #include <assert.h>.
+
+2006-04-30  Alex Deucher  <agd5f@yahoo.com>
+
+	* src/sis300_accel.c: (SiS300AccelInit):
+	* src/sis310_accel.c:
+	* src/sis_accel.c: (SiSAccelInit):
+	- fix minor typo
+
 2006-04-07  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

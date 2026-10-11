@@ -125,7 +125,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAppAddInput 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAppAddInput __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAppAddInput, XtRemoveInput \- register and remove an input source
 .SH SYNTAX

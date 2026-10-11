@@ -4,6 +4,7 @@
 # Preserve independently acquired modular upstream source bytes on every host.
 app/** -text
 data/** -text
+deprecated/** -text
 doc/** -text
 driver/** -text
 extras/** -text

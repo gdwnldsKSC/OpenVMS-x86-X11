@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAppSetExitFlag 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAppSetExitFlag __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAppSetExitFlag, XtAppGetExitFlag \- thread support functions
 .SH SYNTAX

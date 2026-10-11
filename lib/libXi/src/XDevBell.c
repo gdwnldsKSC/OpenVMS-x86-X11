@@ -71,7 +71,7 @@ XDeviceBell(dpy, dev, feedbackclass, feedbackid, percent)
     XExtDisplayInfo *info = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, XInput_Add_XDeviceBell) == -1)
+    if (_XiCheckExtInit(dpy, XInput_Add_XDeviceBell, info) == -1)
 	return (NoSuchExtension);
 
     GetReq(DeviceBell, req);

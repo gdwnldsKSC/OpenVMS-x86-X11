@@ -5,6 +5,7 @@ RTL = SYS$LIBRARY:DECC$RTLDEF.TLB
 ! Override these Unix-style paths with MMS /MACRO for an installed Xlib.
 X11_LIBDIR = lib/X11
 X11_LOCALEDIR = nls
+X11_LOCALELIBDIR = $(X11_LOCALEDIR)
 NLS_COMPOSE_INDEX = [.LIB.LIBX11.NLS]COMPOSE^.DIR.PRE
 ! Upstream uses separate compiled paths for XKB data and xkbcomp.
 ! RUN_SERVER sets the default to the runtime root; -xkbdir changes only data.

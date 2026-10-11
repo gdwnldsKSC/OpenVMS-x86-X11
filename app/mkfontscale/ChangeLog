@@ -1,3 +1,10 @@
+2006-05-25  Jeremy C. Reed  <reed@reedmedia.net>
+
+	reviewed by: Adam Jackson
+
+	* configure.ac:
+	Check for xproto not x11 (libX11 is not needed).
+
 2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
 
 	* configure.ac:

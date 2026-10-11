@@ -1,11 +1,9 @@
-/* $XFree86: xc/lib/font/stubs/regfpefunc.c,v 1.1 1999/01/11 05:13:20 dawes Exp $ */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 #include "stubs.h"
 
-int 
+weak int 
 RegisterFPEFunctions(NameCheckFunc name_func, 
 		     InitFpeFunc init_func, 
 		     FreeFpeFunc free_func, 
@@ -24,5 +22,3 @@ RegisterFPEFunctions(NameCheckFunc name_func,
 {
     return 0;
 }
-
-/* end of file */

@@ -1,5 +1,5 @@
 .\" $Xorg: XtGetSTO.man,v 1.3 2000/08/17 19:42:00 cpqbld Exp $
-.\" $XdotOrg: lib/Xt/man/XtGetSelectionTimeout.man,v 1.3 2005/01/19 19:27:34 alanc Exp $
+.\" $XdotOrg: $
 .\"
 .\" Copyright (c) 1993, 1994  X Consortium
 .\" 
@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtGetSelectionTimeout 3Xt __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
+.TH XtGetSelectionTimeout __libmansuffix__ __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
 .SH NAME
 XtGetSelectionTimeout, XtSetSelectionTimeout \- set and obtain selection timeout values
 .SH SYNTAX

@@ -10,7 +10,7 @@ STARTENCODING iso8859-6.8x
 # $XdotOrg: xc/fonts/encodings/iso8859-6.8x.enc,v 1.2 2003/12/08 15:35:04 dawes Exp $
 # $XFree86$
 STARTMAPPING unicode
-UNDEFINE 0x0000 0xFFFF
+UNDEFINE 0x00 0xFF
 0x8D	0xFEEF
 0x8E	0xFE94
 0x8F	0xFEB2

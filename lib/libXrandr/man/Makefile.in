@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# $Id: Makefile.am,v 1.7 2005/12/06 22:48:44 kem Exp $
+# $Id$
 #
 # Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
 # 
@@ -153,6 +153,7 @@ RANDR_CFLAGS = @RANDR_CFLAGS@
 RANDR_LIBS = @RANDR_LIBS@
 RANDR_VERSION = @RANDR_VERSION@
 RANLIB = @RANLIB@
+SED = sed
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -214,7 +215,6 @@ libman_DATA = $(libman_PRE:man=@LIB_MAN_SUFFIX@) \
 BUILT_SOURCES = shadows.DONE
 EXTRA_DIST = $(libman_PRE)
 CLEANFILES = $(libman_DATA) $(BUILT_SOURCES)
-SED = sed
 
 # Strings to replace in man pages
 XORGRELSTRING = @PACKAGE_STRING@

@@ -81,15 +81,16 @@ am__installdirs = "$(DESTDIR)$(savage_drv_ladir)"
 savage_drv_laLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(savage_drv_la_LTLIBRARIES)
 savage_drv_la_LIBADD =
-am__savage_drv_la_SOURCES_DIST = savage_accel.c savage_bci.h \
-	savage_common.h savage_cursor.c savage_dga.c savage_driver.c \
-	savage_driver.h savage_drm.h savage_i2c.c savage_image.c \
-	savage_regs.h savage_sarea.h savage_shadow.c savage_streams.c \
-	savage_streams.h savage_vbe.c savage_vbe.h savage_video.c \
-	savage_hwmc.c savage_dri.c savage_dri.h savage_dripriv.h
+am__savage_drv_la_SOURCES_DIST = savage_accel.c savage_xaa.c \
+	savage_exa.c savage_bci.h savage_common.h savage_cursor.c \
+	savage_dga.c savage_driver.c savage_driver.h savage_drm.h \
+	savage_i2c.c savage_regs.h savage_sarea.h savage_shadow.c \
+	savage_streams.c savage_streams.h savage_vbe.c savage_vbe.h \
+	savage_video.c savage_hwmc.c savage_dri.c savage_dri.h \
+	savage_dripriv.h
 @DRI_TRUE@am__objects_1 = savage_hwmc.lo savage_dri.lo
-am_savage_drv_la_OBJECTS = savage_accel.lo savage_cursor.lo \
-	savage_dga.lo savage_driver.lo savage_i2c.lo savage_image.lo \
+am_savage_drv_la_OBJECTS = savage_accel.lo savage_xaa.lo savage_exa.lo \
+	savage_cursor.lo savage_dga.lo savage_driver.lo savage_i2c.lo \
 	savage_shadow.lo savage_streams.lo savage_vbe.lo \
 	savage_video.lo $(am__objects_1)
 savage_drv_la_OBJECTS = $(am_savage_drv_la_OBJECTS)
@@ -179,6 +180,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -240,10 +242,10 @@ AM_CFLAGS = @XORG_CFLAGS@ @DRI_CFLAGS@
 savage_drv_la_LTLIBRARIES = savage_drv.la
 savage_drv_la_LDFLAGS = -module -avoid-version
 savage_drv_ladir = @moduledir@/drivers
-savage_drv_la_SOURCES = savage_accel.c savage_bci.h savage_common.h \
-	savage_cursor.c savage_dga.c savage_driver.c savage_driver.h \
-	savage_drm.h savage_i2c.c savage_image.c savage_regs.h \
-	savage_sarea.h savage_shadow.c savage_streams.c \
+savage_drv_la_SOURCES = savage_accel.c savage_xaa.c savage_exa.c \
+	savage_bci.h savage_common.h savage_cursor.c savage_dga.c \
+	savage_driver.c savage_driver.h savage_drm.h savage_i2c.c \
+	savage_regs.h savage_sarea.h savage_shadow.c savage_streams.c \
 	savage_streams.h savage_vbe.c savage_vbe.h savage_video.c \
 	$(am__append_1)
 all: all-am
@@ -320,13 +322,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_dga.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_dri.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_driver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_exa.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_hwmc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_i2c.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_image.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_shadow.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_streams.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_vbe.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_video.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/savage_xaa.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

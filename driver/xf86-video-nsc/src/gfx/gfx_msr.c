@@ -1,4 +1,4 @@
-/* $XFree86$ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/gfx/gfx_msr.c,v 1.1 2002/12/10 15:12:25 alanh Exp $ */
 /*
  * $Workfile: gfx_msr.c $
  *

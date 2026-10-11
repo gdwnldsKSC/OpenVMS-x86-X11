@@ -84,7 +84,6 @@ ATIMach64PreInit
 )
 {
     CARD32 bus_cntl, config_cntl;
-    int    tmp;
 
 #ifndef AVOID_CPIO
 
@@ -183,6 +182,7 @@ ATIMach64PreInit
 
     if (pATI->Chip >= ATI_CHIP_264VTB)
     {
+        pATIHW->mem_buf_cntl = inr(MEM_BUF_CNTL) | INVALIDATE_RB_CACHE;
         pATIHW->mem_cntl = (pATI->LockData.mem_cntl &
             ~(CTL_MEM_LOWER_APER_ENDIAN | CTL_MEM_UPPER_APER_ENDIAN)) |
             SetBits(CTL_MEM_APER_BYTE_ENDIAN, CTL_MEM_LOWER_APER_ENDIAN);
@@ -257,12 +257,29 @@ ATIMach64PreInit
         pATIHW->src_cntl = SRC_LINE_X_DIR;
 
         /* Initialise scissor, allowing for offscreen areas */
-        pATIHW->sc_right = (pATI->displayWidth * pATI->XModifier) - 1;
-        tmp = pATI->displayWidth * pATI->bitsPerPixel;
-        tmp = (((pScreenInfo->videoRam * (1024 * 8)) + tmp - 1) / tmp) - 1;
-        if (tmp > ATIMach64MaxY)
-            tmp = ATIMach64MaxY;
-        pATIHW->sc_bottom = tmp;
+#ifdef USE_XAA
+        if (!pATI->useEXA)
+        {
+            int width, height, total;
+
+            pATIHW->sc_right = (pATI->displayWidth * pATI->XModifier) - 1;
+            width = pATI->displayWidth * pATI->bitsPerPixel;
+            total = pScreenInfo->videoRam * (1024 * 8);
+            height = (total + width - 1) / width;
+            if (height > ATIMach64MaxY + 1)
+                height = ATIMach64MaxY + 1;
+            pATIHW->sc_bottom = height - 1;
+        }
+#endif /* USE_XAA */
+
+#ifdef USE_EXA
+        if (pATI->useEXA)
+        {
+            pATIHW->sc_right = ATIMach64MaxX;
+            pATIHW->sc_bottom = ATIMach64MaxY;
+        }
+#endif /* USE_EXA */
+
         pATI->sc_left_right = SetWord(pATI->NewHW.sc_right, 1) |
             SetWord(pATI->NewHW.sc_left, 0);
         pATI->sc_top_bottom = SetWord(pATI->NewHW.sc_bottom, 1) |
@@ -424,6 +441,7 @@ ATIMach64Save
 
     if (pATI->Chip >= ATI_CHIP_264VTB)
     {
+        pATIHW->mem_buf_cntl = inr(MEM_BUF_CNTL) | INVALIDATE_RB_CACHE;
         pATIHW->mem_cntl = inr(MEM_CNTL);
         pATIHW->mpp_config = inr(MPP_CONFIG);
         pATIHW->mpp_strobe_seq = inr(MPP_STROBE_SEQ);
@@ -465,6 +483,15 @@ ATIMach64Save
         pATIHW->src_height2 = inm(SRC_HEIGHT2);
         pATIHW->src_cntl = inm(SRC_CNTL);
 
+        if (pATI->Chip >= ATI_CHIP_264GTPRO)
+        {
+            CARD32 offset = TEX_LEVEL(inm(TEX_SIZE_PITCH));
+
+            /* Save 3D control & texture registers */
+            pATIHW->tex_offset = inm(TEX_0_OFF + offset);
+            pATIHW->scale_3d_cntl = inm(SCALE_3D_CNTL);
+        }
+
         /* Save host data register */
         pATIHW->host_cntl = inm(HOST_CNTL);
 
@@ -495,6 +522,13 @@ ATIMach64Save
 
         /* Save context */
         pATIHW->context_mask = inm(CONTEXT_MASK);
+
+        if (pATI->Chip >= ATI_CHIP_264GTPRO)
+        {
+            /* Save texture setup registers */
+            pATIHW->tex_size_pitch = inm(TEX_SIZE_PITCH);
+            pATIHW->tex_cntl = inm(TEX_CNTL);
+        }
 
         if (pATI->Block1Base)
         {
@@ -835,6 +869,14 @@ ATIMach64Set
         outf(DST_BRES_DEC, pATIHW->dst_bres_dec);
         outf(DST_CNTL, pATIHW->dst_cntl);
 
+        if (pATI->Chip >= ATI_CHIP_264GTPRO)
+        {
+            /* Load ROP unit registers */
+            ATIMach64WaitForFIFO(pATI, 2);
+            outf(Z_CNTL, 0);
+            outf(ALPHA_TST_CNTL, 0);
+        }
+
         /* Load source registers */
         ATIMach64WaitForFIFO(pATI, 6);
         outf(SRC_OFF_PITCH, pATIHW->src_off_pitch);
@@ -847,14 +889,22 @@ ATIMach64Set
             SetWord(pATIHW->src_width2, 1) | SetWord(pATIHW->src_height2, 0));
         outf(SRC_CNTL, pATIHW->src_cntl);
 
+        if (pATI->Chip >= ATI_CHIP_264GTPRO)
+        {
+            CARD32 offset = TEX_LEVEL(pATIHW->tex_size_pitch);
+
+            /* Load 3D control & texture registers */
+            ATIMach64WaitForFIFO(pATI, 2);
+            outf(TEX_0_OFF + offset, pATIHW->tex_offset);
+            outf(SCALE_3D_CNTL, pATIHW->scale_3d_cntl);
+        }
+
         /* Load host data register */
         ATIMach64WaitForFIFO(pATI, 1);
         outf(HOST_CNTL, pATIHW->host_cntl);
 
         /* Set host transfer window address and size clamp */
-        pATI->pHOST_DATA =
-            (CARD8 *)pATI->pBlock[GetBits(HOST_DATA_0, BLOCK_SELECT)] +
-            (HOST_DATA_0 & MM_IO_SELECT);
+        pATI->pHOST_DATA = ATIHostDataAddr(HOST_DATA_0);
         pATI->nHostFIFOEntries = pATI->nFIFOEntries >> 1;
         if (pATI->nHostFIFOEntries > 16)
             pATI->nHostFIFOEntries = 16;
@@ -895,6 +945,14 @@ ATIMach64Set
         /* Load context mask */
         ATIMach64WaitForFIFO(pATI, 1);
         outf(CONTEXT_MASK, pATIHW->context_mask);
+
+        if (pATI->Chip >= ATI_CHIP_264GTPRO)
+        {
+            /* Load texture setup registers */
+            ATIMach64WaitForFIFO(pATI, 2);
+            outf(TEX_SIZE_PITCH, pATIHW->tex_size_pitch);
+            outf(TEX_CNTL, pATIHW->tex_cntl);
+        }
 
         if (pATI->Block1Base)
         {
@@ -966,6 +1024,11 @@ ATIMach64Set
 
             CacheRegister(SRC_CNTL);
 
+            if (pATI->Chip >= ATI_CHIP_264GTPRO)
+            {
+                CacheRegister(SCALE_3D_CNTL);
+            }
+
             CacheRegister(HOST_CNTL);
 
             CacheRegister(PAT_REG0);
@@ -977,12 +1040,17 @@ ATIMach64Set
 
             CacheRegister(DP_BKGD_CLR);
             CacheRegister(DP_FRGD_CLR);
-            CacheRegister(DP_WRITE_MASK);
+            CacheRegister(DP_PIX_WIDTH);
             CacheRegister(DP_MIX);
 
             CacheRegister(CLR_CMP_CLR);
             CacheRegister(CLR_CMP_MSK);
             CacheRegister(CLR_CMP_CNTL);
+
+            if (pATI->Chip >= ATI_CHIP_264GTPRO)
+            {
+                CacheRegister(TEX_SIZE_PITCH);
+            }
 
             if (pATI->Block1Base)
             {
@@ -1057,6 +1125,7 @@ ATIMach64Set
 
         if (pATI->Chip >= ATI_CHIP_264VTB)
         {
+            outr(MEM_BUF_CNTL, pATIHW->mem_buf_cntl);
             outr(MEM_CNTL, pATIHW->mem_cntl);
             outr(MPP_CONFIG, pATIHW->mpp_config);
             outr(MPP_STROBE_SEQ, pATIHW->mpp_strobe_seq);

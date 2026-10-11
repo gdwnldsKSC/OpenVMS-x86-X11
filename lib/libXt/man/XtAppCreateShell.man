@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAppCreateShell 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAppCreateShell __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAppCreateShell, XtVaAppCreateShell \- create top-level widget instance
 .SH SYNTAX

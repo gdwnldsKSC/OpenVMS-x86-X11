@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtStringConversionWarning 3Xt __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
+.TH XtStringConversionWarning __libmansuffix__ __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
 .SH NAME
 XtStringConversionWarning \- issue a conversion warning message
 .SH SYNTAX

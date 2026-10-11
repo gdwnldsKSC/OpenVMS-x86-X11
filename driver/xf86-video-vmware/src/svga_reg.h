@@ -1,7 +1,7 @@
 /* **********************************************************
  * Copyright (C) 1998-2001 VMware, Inc.
  * All Rights Reserved
- * $Id: svga_reg.h,v 1.3 2005/07/01 22:43:21 daniels Exp $
+ * $Id$
  * **********************************************************/
 
 /*
@@ -116,8 +116,9 @@ enum {
    SVGA_REG_HOST_BITS_PER_PIXEL = 28, /* Current bpp in the host */
    SVGA_REG_SCRATCH_SIZE = 29,     /* Number of scratch registers */
    SVGA_REG_MEM_REGS = 30,         /* Number of FIFO registers */
-
-   SVGA_REG_TOP = 31,		   /* Must be 1 more than the last register */
+   SVGA_REG_NUM_DISPLAYS = 31,     /* Number of guest displays */
+   SVGA_REG_PITCHLOCK = 32,        /* Fixed pitch for all modes */
+   SVGA_REG_TOP = 33,		   /* Must be 1 more than the last register */
 
    SVGA_PALETTE_BASE = 1024,	   /* Base of SVGA color map */
    /* Next 768 (== 256*3) registers exist for colormap */
@@ -133,23 +134,25 @@ enum {
  *  Capabilities
  */
 
-#define	SVGA_CAP_NONE               0x0000
-#define	SVGA_CAP_RECT_FILL	    0x0001
-#define	SVGA_CAP_RECT_COPY	    0x0002
-#define	SVGA_CAP_RECT_PAT_FILL      0x0004
-#define	SVGA_CAP_LEGACY_OFFSCREEN   0x0008
-#define	SVGA_CAP_RASTER_OP	    0x0010
-#define	SVGA_CAP_CURSOR		    0x0020
-#define	SVGA_CAP_CURSOR_BYPASS	    0x0040
-#define	SVGA_CAP_CURSOR_BYPASS_2    0x0080
-#define	SVGA_CAP_8BIT_EMULATION     0x0100
-#define SVGA_CAP_ALPHA_CURSOR       0x0200
-#define SVGA_CAP_GLYPH              0x0400
-#define SVGA_CAP_GLYPH_CLIPPING     0x0800
-#define SVGA_CAP_OFFSCREEN_1        0x1000
-#define SVGA_CAP_ALPHA_BLEND        0x2000
-#define SVGA_CAP_3D                 0x4000
-#define SVGA_CAP_EXTENDED_FIFO      0x8000
+#define	SVGA_CAP_NONE               0x00000
+#define	SVGA_CAP_RECT_FILL	    0x00001
+#define	SVGA_CAP_RECT_COPY	    0x00002
+#define	SVGA_CAP_RECT_PAT_FILL      0x00004
+#define	SVGA_CAP_LEGACY_OFFSCREEN   0x00008
+#define	SVGA_CAP_RASTER_OP	    0x00010
+#define	SVGA_CAP_CURSOR		    0x00020
+#define	SVGA_CAP_CURSOR_BYPASS	    0x00040
+#define	SVGA_CAP_CURSOR_BYPASS_2    0x00080
+#define	SVGA_CAP_8BIT_EMULATION     0x00100
+#define SVGA_CAP_ALPHA_CURSOR       0x00200
+#define SVGA_CAP_GLYPH              0x00400
+#define SVGA_CAP_GLYPH_CLIPPING     0x00800
+#define SVGA_CAP_OFFSCREEN_1        0x01000
+#define SVGA_CAP_ALPHA_BLEND        0x02000
+#define SVGA_CAP_3D                 0x04000
+#define SVGA_CAP_EXTENDED_FIFO      0x08000
+#define SVGA_CAP_MULTIMON           0x10000
+#define SVGA_CAP_PITCHLOCK          0x20000
 
 /*
  *  Raster op codes (same encoding as X) used by FIFO drivers.

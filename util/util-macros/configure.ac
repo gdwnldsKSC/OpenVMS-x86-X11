@@ -23,7 +23,7 @@ dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
 AC_INIT([util-macros],
-        [1.0.2],
+        [1.1.5],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg])
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
 
@@ -41,4 +41,4 @@ if test "x$RELEASE_VERSION" != "x"; then
 	AC_MSG_NOTICE([Building with package name set to $PACKAGE])
 fi
 
-AC_OUTPUT([Makefile])
+AC_OUTPUT([Makefile xorg-macros.m4])

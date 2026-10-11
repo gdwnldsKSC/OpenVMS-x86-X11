@@ -1,5 +1,5 @@
 .\"
-.\" $Id: $
+.\" $Id$
 .\"
 .\" Copyright © 2002 Keith Packard
 .\"
@@ -26,7 +26,7 @@
 .ns
 .TP \\$1
 ..
-.TH XCURSOR 3 "Version 1.0" "Keith Packard"
+.TH XCURSOR __LIB_MAN_SUFFIX__ __xorgversion__ "Keith Packard"
 
 .SH NAME
 XCURSOR \- Cursor management library
@@ -71,6 +71,7 @@ and position in the file of each chunk.  The file header looks like:
 \fIversion\fP\^: CARD32 file version number
 .br
 \fIntoc\fP\^: CARD32 number of toc entries
+.br
 \fItoc\fP\^: LISTofTOC table of contents
 .in -.2i
 .P
@@ -78,7 +79,9 @@ Each table of contents entry looks like:
 .LP
 .in +.2i
 \fItype\fP\^: CARD32 entry type
+.br
 \fIsubtype\fP\^: CARD32 type-specific label - size for images
+.br
 \fIposition\fP\^: CARD32 absolute byte position of table in file
 .in -.2i
 .P
@@ -139,9 +142,9 @@ Images look like:
 
 .SS THEMES
 Xcursor (mostly) follows the freedesktop.org spec for theming icons.  The
-default search path it uses is $HOME/.icons, /usr/share/icons,
-/usr/share/pimaps, /usr/X11R6/lib/X11/icons.  Within each of these
-directorys, it searches for a directory using the theme name.  Within the
+default search path it uses is $HOME/.icons, __prefix__/share/icons,
+__prefix__/share/pixmaps, __ICONDIR__.  Within each of these
+directories, it searches for a directory using the theme name.  Within the
 theme directory, it looks for cursor files in the 'cursors' subdirectory.
 It uses the first cursor file found along  the path.
 .PP
@@ -362,12 +365,11 @@ int XcursorGetDefaultSize (Display *dpy)
 Gets the default cursor size.
 
 .TP
-XcursorBool
-XcursorSetTheme (Display *dpy, const char *theme)
+XcursorBool XcursorSetTheme (Display *dpy, const char *theme)
 Sets the current theme name.
 
-char *
-XcursorGetTheme (Display *dpy)
+.TP
+char *XcursorGetTheme (Display *dpy)
 Gets the current theme name.
 
 .SH RESTRICTIONS

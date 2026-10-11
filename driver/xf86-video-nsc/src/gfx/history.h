@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/gfx/history.h,v 1.1 2002/12/10 15:12:26 alanh Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/gfx/history.h,v 1.2 2003/02/05 18:38:43 alanh Exp $ */
 /*
  * $Workfile: history.h $
  *

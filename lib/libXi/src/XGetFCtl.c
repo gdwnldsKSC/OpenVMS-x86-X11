@@ -61,13 +61,11 @@ SOFTWARE.
 #include <X11/extensions/extutil.h>
 #include "XIint.h"
 
-XFeedbackState * XGetFeedbackControl(dpy, dev, num_feedbacks)
-    register Display *
-	dpy;
-    XDevice *
-	dev;
-    int *
-	num_feedbacks;
+XFeedbackState *
+XGetFeedbackControl(dpy, dev, num_feedbacks)
+    register Display *dpy;
+    XDevice *dev;
+    int *num_feedbacks;
 {
     int size = 0;
     int nbytes, i;
@@ -80,7 +78,7 @@ XFeedbackState * XGetFeedbackControl(dpy, dev, num_feedbacks)
     XExtDisplayInfo *info = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, XInput_Initial_Release) == -1)
+    if (_XiCheckExtInit(dpy, XInput_Initial_Release, info) == -1)
 	return ((XFeedbackState *) NoSuchExtension);
 
     GetReq(GetFeedbackControl, req);

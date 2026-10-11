@@ -31,7 +31,7 @@
  * Converted to common header format:
  *   Jens Owen <jens@tungstengraphics.com>
  *
- * $XdotOrg: driver/xf86-video-ati/src/radeon_common.h,v 1.8 2006/02/16 23:27:44 benh Exp $
+ * $XdotOrg: driver/xf86-video-ati/src/radeon_common.h,v 1.7 2005/09/11 08:51:38 airlied Exp $
  * $XFree86: xc/programs/Xserver/hw/xfree86/drivers/ati/radeon_common.h,v 1.8tsi Exp $
  *
  */

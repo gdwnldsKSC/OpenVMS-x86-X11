@@ -702,12 +702,12 @@ xpmParseData(data, image, info)
 	xpmGetCmt(data, &hints_cmt);
 
     /*
-     * init the hastable
+     * init the hashtable
      */
     if (USE_HASHTABLE) {
 	ErrorStatus = xpmHashTableInit(&hashtable);
 	if (ErrorStatus != XpmSuccess)
-	    return (ErrorStatus);
+	    RETURN(ErrorStatus);
     }
 
     /*

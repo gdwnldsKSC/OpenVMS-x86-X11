@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtSetKeyTranslator 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtSetKeyTranslator __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtSetKeyTranslator, XtTranslateKeycode, XtRegisterCaseConverter, XtConvertCase \- convert KeySym to KeyCodes
 .SH SYNTAX

@@ -1,4 +1,4 @@
-/* $XdotOrg: driver/xf86-input-mouse/src/mouse.c,v 1.27 2006/04/07 17:59:54 ajax Exp $ */
+/* $XdotOrg: driver/xf86-input-mouse/src/mouse.c,v 1.29 2006/04/21 11:15:23 mhopf Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/mouse/mouse.c,v 1.79 2003/11/03 05:11:48 tsi Exp $ */
 /*
  *
@@ -52,6 +52,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #define NEED_EVENTS
 #include <X11/X.h>
 #include <X11/Xproto.h>
@@ -70,7 +71,11 @@
 #include "xf86Xinput.h"
 #include "xf86_OSproc.h"
 #include "xf86OSmouse.h"
+
+#ifndef NEED_XF86_TYPES
 #define NEED_XF86_TYPES	/* for xisb.h when !XFree86LOADER */
+#endif
+
 #include "compiler.h"
 
 #include "xisb.h"
@@ -543,18 +548,18 @@ MouseCommonOptions(InputInfoPtr pInfo)
 	xfree(s);
     }
 
-    s = xf86SetStrOption(pInfo->options, "ZAxisMapping", "4 5 6 7");
+    s = xf86SetStrOption(pInfo->options, "ZAxisMapping", "4 5");
     if (s) {
 	int b1 = 0, b2 = 0, b3 = 0, b4 = 0;
 	char *msg = NULL;
 
+	pMse->negativeZ = pMse->positiveZ = MSE_NOAXISMAP;
+	pMse->negativeW = pMse->positiveW = MSE_NOAXISMAP;
 	if (!xf86NameCmp(s, "x")) {
 	    pMse->negativeZ = pMse->positiveZ = MSE_MAPTOX;
-	    pMse->negativeW = pMse->positiveW = MSE_MAPTOX;
 	    msg = xstrdup("X axis");
 	} else if (!xf86NameCmp(s, "y")) {
 	    pMse->negativeZ = pMse->positiveZ = MSE_MAPTOY;
-	    pMse->negativeW = pMse->positiveW = MSE_MAPTOY;
 	    msg = xstrdup("Y axis");
 	} else if (sscanf(s, "%d %d %d %d", &b1, &b2, &b3, &b4) >= 2 &&
 		 b1 > 0 && b1 <= MSE_MAXBUTTONS &&
@@ -562,8 +567,8 @@ MouseCommonOptions(InputInfoPtr pInfo)
 	    msg = xstrdup("buttons XX and YY");
 	    if (msg)
 		sprintf(msg, "buttons %d and %d", b1, b2);
-	    pMse->negativeZ = pMse->negativeW = 1 << (b1-1);
-	    pMse->positiveZ = pMse->positiveW = 1 << (b2-1);
+	    pMse->negativeZ = 1 << (b1-1);
+	    pMse->positiveZ = 1 << (b2-1);
 	    if (b3 > 0 && b3 <= MSE_MAXBUTTONS &&
 		b4 > 0 && b4 <= MSE_MAXBUTTONS) {
 		if (msg)
@@ -578,9 +583,6 @@ MouseCommonOptions(InputInfoPtr pInfo)
 	    if (b2 > pMse->buttons) pMse->buttons = b2;
 	    if (b3 > pMse->buttons) pMse->buttons = b3;
 	    if (b4 > pMse->buttons) pMse->buttons = b4;
-	} else {
-	    pMse->negativeZ = pMse->positiveZ = MSE_NOZMAP;
-	    pMse->negativeW = pMse->positiveW = MSE_NOZMAP;
 	}
 	if (msg) {
 	    xf86Msg(X_CONFIG, "%s: ZAxisMapping: %s\n", pInfo->name, msg);
@@ -1506,7 +1508,21 @@ MouseReadInput(InputInfoPtr pInfo)
 		      (pBuf[3] & 0x20) >> 1;        /* button 5 */
 	    dx = (pBuf[0] & 0x10) ?    pBuf[1]-256  :  pBuf[1];
 	    dy = (pBuf[0] & 0x20) ?  -(pBuf[2]-256) : -pBuf[2];
-	    dz = (pBuf[3] & 0x08) ? (pBuf[3] & 0x0f) - 16 : (pBuf[3] & 0x0f);
+	    if (pMse->negativeW != MSE_NOAXISMAP) {
+		switch (pBuf[3] & 0x0f) {
+		case 0x00:          break;
+		case 0x01: dz =  1; break;
+		case 0x02: dw =  1; break;
+		case 0x0e: dw = -1; break;
+		case 0x0f: dz = -1; break;
+		default:
+		    xf86Msg(X_INFO,
+			    "Mouse autoprobe: Disabling secondary wheel\n");
+		    pMse->negativeW = pMse->positiveW = MSE_NOAXISMAP;
+		}
+	    }
+	    if (pMse->negativeW == MSE_NOAXISMAP)
+	        dz = (pBuf[3]&0x08) ? (pBuf[3]&0x0f) - 16 : (pBuf[3]&0x0f);
 	    break;
 
 	case PROT_MMPS2:	/* MouseMan+ PS/2 */
@@ -2332,7 +2348,7 @@ MousePostEvent(InputInfoPtr pInfo, int truebuttons,
 	       int dx, int dy, int dz, int dw)
 {
     MouseDevPtr pMse;
-    int zbutton = 0;
+    int zbutton = 0, wbutton = 0, zbuttoncount = 0, wbuttoncount = 0;
     int i, b, buttons = 0;
 
     pMse = pInfo->private;
@@ -2353,6 +2369,7 @@ MousePostEvent(InputInfoPtr pInfo, int truebuttons,
     /* XXX Could this go in the conversion_proc? */
     switch (pMse->negativeZ) {
     case MSE_NOZMAP:	/* do nothing */
+	dz = 0;
 	break;
     case MSE_MAPTOX:
 	if (dz != 0) {
@@ -2367,20 +2384,46 @@ MousePostEvent(InputInfoPtr pInfo, int truebuttons,
 	}
 	break;
     default:	/* buttons */
-	buttons &= ~(pMse->negativeZ | pMse->positiveZ
-		   | pMse->negativeW | pMse->positiveW);
-	if (dw < 0 || dz < -1)
-	    zbutton = pMse->negativeW;
-	else if (dz < 0)
+	buttons &= ~(pMse->negativeZ | pMse->positiveZ);
+	if (dz < 0) {
 	    zbutton = pMse->negativeZ;
-	else if (dw > 0 || dz > 1)
-	    zbutton = pMse->positiveW;
-	else if (dz > 0)
+	    zbuttoncount = -dz;
+	} else if (dz > 0) {
 	    zbutton = pMse->positiveZ;
-	buttons |= zbutton;
+	    zbuttoncount = dz;
+	}
 	dz = 0;
 	break;
     }
+    switch (pMse->negativeW) {
+    case MSE_NOZMAP:	/* do nothing */
+	dw = 0;
+	break;
+    case MSE_MAPTOX:
+	if (dw != 0) {
+	    dx = dw;
+	    dw = 0;
+	}
+	break;
+    case MSE_MAPTOY:
+	if (dw != 0) {
+	    dy = dw;
+	    dw = 0;
+	}
+	break;
+    default:	/* buttons */
+	buttons &= ~(pMse->negativeW | pMse->positiveW);
+	if (dw < 0) {
+	    wbutton = pMse->negativeW;
+	    wbuttoncount = -dw;
+	} else if (dw > 0) {
+	    wbutton = pMse->positiveW;
+	    wbuttoncount = dw;
+	}
+	dw = 0;
+	break;
+    }
+
 
     /* Apply angle offset */
     if (pMse->angleOffset != 0) {
@@ -2397,16 +2440,19 @@ MousePostEvent(InputInfoPtr pInfo, int truebuttons,
 	dx = dy;
 	dy = tmp;
     }
-    MouseDoPostEvent(pInfo, buttons, dx, dy);
 
-    /*
-     * If dz has been mapped to a button `down' event, we need to cook up
-     * a corresponding button `up' event.
-     */
-    if (zbutton) {
-	buttons &= ~zbutton;
-	MouseDoPostEvent(pInfo, buttons, 0, 0);
-    }
+    /* If mouse wheel movement has to be mapped on a button, we need to
+     * loop for button press and release events. */
+    do {
+        MouseDoPostEvent(pInfo, buttons | zbutton | wbutton, dx, dy);
+	dx = dy = 0;
+	if (zbutton || wbutton)
+	    MouseDoPostEvent(pInfo, buttons, 0, 0);
+	if (--zbuttoncount <= 0)
+	    zbutton = 0;
+	if (--wbuttoncount <= 0)
+	    wbutton = 0;
+    } while (zbutton || wbutton);
 
     pMse->lastButtons = truebuttons;
 }
@@ -3728,7 +3774,7 @@ static XF86ModuleVersionInfo xf86MouseVersionRec =
     MODINFOSTRING1,
     MODINFOSTRING2,
     XORG_VERSION_CURRENT,
-    1, 1, 0,
+    1, 1, 1,
     ABI_CLASS_XINPUT,
     ABI_XINPUT_VERSION,
     MOD_CLASS_XINPUT,

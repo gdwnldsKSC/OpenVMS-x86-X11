@@ -245,7 +245,6 @@ XP4SetupForScreenToScreenCopy(ScrnInfoPtr pScrn,
 	dst |= 3<<16;
     	MMIO_OUT32(pTrident->IOBase, 0x2134, transparency_color);
     }
-    pTrident->BltScanDirection = 0;
 
     ropcode = rop;
 

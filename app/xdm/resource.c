@@ -1,4 +1,4 @@
-/* $XdotOrg: app/xdm/resource.c,v 1.4 2005/11/08 06:33:31 jkj Exp $ */
+/* $XdotOrg: xc/programs/xdm/resource.c,v 1.2 2004/04/23 19:54:42 eich Exp $ */
 /* $Xorg: resource.c,v 1.4 2001/02/09 02:05:40 xorgcvs Exp $ */
 /*
 
@@ -468,7 +468,7 @@ ReinitResources (void)
 	LogPanic ("no space for argument realloc\n");
     for (argc = 0; argc < originalArgc; argc++)
 	argv[argc] = originalArgv[argc];
-    argv[argc] = 0;
+    argv[argc] = NULL;
     if (DmResourceDB)
 	XrmDestroyDatabase (DmResourceDB);
     DmResourceDB = XrmGetStringDatabase ("");

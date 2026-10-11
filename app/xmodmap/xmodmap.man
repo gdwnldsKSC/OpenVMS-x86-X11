@@ -140,7 +140,7 @@ The \fIKEYSYMNAME\fP on the left hand side is translated into matching keycodes
 used to perform the corresponding set of \fBkeycode\fP expressions.
 The list of keysym names may be
 found in the header file \fI<X11/keysymdef.h>\fP (without the \fIXK_\fP prefix)
-or the keysym database\fI __projectroot__/lib/X11/XKeysymDB\fP.  Note that
+or the keysym database \fI __projectroot__/lib/X11/XKeysymDB\fP.  Note that
 if the same keysym is bound to multiple keys, the expression is executed
 for each matching keycode.
 .TP 8
@@ -252,6 +252,9 @@ keysym Caps_Lock = Control_L
 add Lock = Caps_Lock
 add Control = Control_L
 .EE
+.PP
+This example can be run again to swap the keys back to their previous 
+assignments.
 .PP
 The \fIkeycode\fP command is useful for assigning the same keysym to
 multiple keycodes.  Although unportable, it also makes it possible to write

@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtCreatePopupShell 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtCreatePopupShell __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtCreatePopupShell, XtVaCreatePopupShell \- create a popup shell
 .SH SYNTAX

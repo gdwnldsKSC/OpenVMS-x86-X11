@@ -1,5 +1,5 @@
 /*
- * $Id: xdamageint.h,v 1.1.1.1 2003/10/24 06:20:27 keithp Exp $
+ * $Id$
  *
  * Copyright © 2003 Keith Packard
  *

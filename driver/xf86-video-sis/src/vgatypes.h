@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/vgatypes.h,v 1.14 2005/09/05 14:26:16 twini Exp $ */
+/* $XdotOrg$ */
 /*
  * General type definitions for universal mode switching modules
  *

@@ -1,4 +1,4 @@
-.\" $XdotOrg: lib/Xext/man/DPMSQueryExtension.man,v 1.2 2005/09/24 00:59:00 alanc Exp $
+.\" $XdotOrg: $
 .\" 
 .\" Copyright \(co Digital Equipment Corporation, 1996
 .\" 

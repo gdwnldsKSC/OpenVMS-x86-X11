@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-rendition],
-        4.1.0,
+        4.1.3,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-rendition)
 
@@ -60,6 +60,7 @@ sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 
 # Checks for header files.
 AC_HEADER_STDC
+AC_CHECK_HEADERS([elf.h] [elf_abi.h])
 
 AC_SUBST([XORG_CFLAGS])
 AC_SUBST([moduledir])

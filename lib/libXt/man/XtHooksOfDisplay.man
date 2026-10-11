@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtHooksOfDisplay 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtHooksOfDisplay __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtHooksOfDisplay \- external agent access points
 .SH SYNTAX

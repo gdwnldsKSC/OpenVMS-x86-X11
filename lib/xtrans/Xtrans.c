@@ -80,6 +80,7 @@ from The Open Group.
 #define TRANS_LOCAL_ISC_INDEX		12
 #define TRANS_LOCAL_SCO_INDEX		13
 #define TRANS_SOCKET_INET6_INDEX	14
+#define TRANS_LOCAL_PIPE_INDEX		15
 
 
 static
@@ -116,7 +117,9 @@ Xtransport_table Xtransports[] = {
 #ifdef SVR4
     { &TRANS(NAMEDFuncs),	TRANS_LOCAL_NAMED_INDEX },
 #endif
-#ifndef sun
+#ifdef sun
+    { &TRANS(PIPEFuncs),	TRANS_LOCAL_PIPE_INDEX },
+#else /* !sun */
 #if !defined(__SCO__) && !defined(__UNIXWARE__)
     { &TRANS(ISCFuncs),		TRANS_LOCAL_ISC_INDEX },
 #endif
@@ -1067,7 +1070,8 @@ TRANS(MakeAllCOTSServerListeners) (char *port, int *partial, int *count_ret,
 	if (trans->flags&TRANS_ALIAS || trans->flags&TRANS_NOLISTEN)
 	    continue;
 
-	sprintf(buffer,"%s/:%s", trans->TransName, port ? port : "");
+	snprintf(buffer, sizeof(buffer), "%s/:%s",
+		 trans->TransName, port ? port : "");
 
 	PRMSG (5,"MakeAllCOTSServerListeners: opening %s\n",
 	       buffer, 0, 0);
@@ -1179,7 +1183,8 @@ TRANS(MakeAllCLTSServerListeners) (char *port, int *partial, int *count_ret,
 	if (trans->flags&TRANS_ALIAS || trans->flags&TRANS_NOLISTEN)
 	    continue;
 
-	sprintf(buffer,"%s/:%s", trans->TransName, port ? port : "");
+	snprintf(buffer, sizeof(buffer), "%s/:%s",
+		 trans->TransName, port ? port : "");
 
 	PRMSG (5,"MakeAllCLTSServerListeners: opening %s\n",
 	    buffer, 0, 0);
@@ -1303,7 +1308,7 @@ static int TRANS(WriteV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
 
 #endif /* CRAY */
 
-#if (defined(SYSV) && defined(i386) && !defined(__SCO__)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__)
+#if (defined(SYSV) && defined(i386) && !defined(__SCO__) && !defined(sun)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__)
 
 /*
  * emulate readv
@@ -1335,7 +1340,7 @@ static int TRANS(ReadV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
 
 #endif /* SYSV && i386 || WIN32 || __sxg__ */
 
-#if (defined(SYSV) && defined(i386) && !defined(__SCO__)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__) || defined(__VMS)
+#if (defined(SYSV) && defined(i386) && !defined(__SCO__) && !defined(sun)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__) || defined(__VMS)
 
 /*
  * emulate writev

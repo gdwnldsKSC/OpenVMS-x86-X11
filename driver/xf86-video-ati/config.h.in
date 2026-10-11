@@ -2,6 +2,15 @@
 
 #include "xorg-server.h"
 
+/* Major version */
+#undef ATI_VERSION_MAJOR
+
+/* Minor version */
+#undef ATI_VERSION_MINOR
+
+/* Patch version */
+#undef ATI_VERSION_PATCH
+
 /* Avoid PIO and use MMIO for atimisc. */
 #undef AVOID_CPIO
 
@@ -58,6 +67,15 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Major version of this package */
+#undef PACKAGE_VERSION_MAJOR
+
+/* Minor version of this package */
+#undef PACKAGE_VERSION_MINOR
+
+/* Patch version of this package */
+#undef PACKAGE_VERSION_PATCHLEVEL
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

@@ -71,10 +71,10 @@ viaWaitVideoCommandFire(VIAPtr pVia)
 {
 /*
  * Assume uncached PCI reading throughputs about 9MB/s. 8Bytes / loop means
- * Appox 1Mloops / second. We want to time out after 25 ms which means 25000 loops.
+ * Appox 1Mloops / second. We want to time out after 50 ms which means 50000 loops.
  */
 
-    unsigned count = 25000;
+    unsigned count = 50000;
     CARD32 volatile *pdwState =
 	(CARD32 volatile *)(pVia->VidMapBase + V_COMPOSE_MODE);
 

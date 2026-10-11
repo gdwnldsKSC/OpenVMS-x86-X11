@@ -114,16 +114,16 @@ static void TDFXResetFifo(ScrnInfoPtr pScrn)
   /* Toggle the reset bits */
   oldValue=TDFXReadLongMMIO(pTDFX, MISCINIT0);
   TDFXWriteLongMMIO(pTDFX, MISCINIT0, oldValue|0x23);
-  getsecs(&start_sec, &dummy);
+  xf86getsecs(&start_sec, &dummy);
   do {
-    getsecs(&end_sec, &dummy);
+    xf86getsecs(&end_sec, &dummy);
   } while (end_sec-start_sec<2);
   TDFXWriteLongMMIO(pTDFX, MISCINIT0, oldValue);
   oldValue=TDFXReadLongMMIO(pTDFX, MISCINIT1);
   TDFXWriteLongMMIO(pTDFX, MISCINIT1, oldValue|BIT(19));
-  getsecs(&start_sec, &dummy);
+  xf86getsecs(&start_sec, &dummy);
   do {
-    getsecs(&end_sec, &dummy);
+    xf86getsecs(&end_sec, &dummy);
   } while (end_sec-start_sec<2);
   TDFXWriteLongMMIO(pTDFX, MISCINIT1, oldValue);
   InstallFifo(pScrn);
@@ -158,9 +158,9 @@ static void TDFXSyncFifo(ScrnInfoPtr pScrn)
     cnt++;
     if (cnt==1000) {
       if (!start_sec) {
-	getsecs(&start_sec, &dummy);
+	xf86getsecs(&start_sec, &dummy);
       } else {
-	getsecs(&end_sec, &dummy);
+	xf86getsecs(&end_sec, &dummy);
 	if (end_sec-start_sec>3) {
 	  dummy=TDFXReadLongMMIO(pTDFX, SST_FIFO_RDPTRL0);
 	  if (dummy==readptr) {

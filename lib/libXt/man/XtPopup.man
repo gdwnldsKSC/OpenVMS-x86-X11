@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtPopup 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtPopup __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtPopup, XtPopupSpringLoaded, XtCallbackNone, XtCallbackNonexclusive, XtCallbackExclusive \- map a pop-up
 .SH SYNTAX

@@ -1,4 +1,4 @@
-/* $XdotOrg: driver/xf86-input-keyboard/src/kbd.c,v 1.20 2006/04/07 17:47:17 ajax Exp $ */
+/* $XdotOrg: driver/xf86-input-keyboard/src/kbd.c,v 1.19 2005/11/09 21:31:23 kem Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/keyboard/kbd.c,v 1.8 2003/11/03 05:11:47 tsi Exp $ */
 
 /*
@@ -12,13 +12,16 @@
  * xf86Events.c and xf86Io.c which are
  * Copyright 1990,91 by Thomas Roell, Dinkelscherben, Germany.
  */
-/* $XdotOrg: driver/xf86-input-keyboard/src/kbd.c,v 1.20 2006/04/07 17:47:17 ajax Exp $ */
+/* $XdotOrg: driver/xf86-input-keyboard/src/kbd.c,v 1.19 2005/11/09 21:31:23 kem Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
   
 #define NEED_EVENTS
 #include <X11/X.h>

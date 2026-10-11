@@ -66,8 +66,17 @@ extern void GlxSetVisualConfigs(
     void **configprivs
 );
 
+typedef struct {
+    int major;
+    int minor;
+    int patchlevel;
+} ViaDRMVersion;
+
 static char VIAKernelDriverName[] = "via";
 static char VIAClientDriverName[] = "unichrome";
+static const ViaDRMVersion drmExpected = {1, 3, 0};
+static const ViaDRMVersion drmCompat = {2, 0, 0};
+
 int test_alloc_FB(ScreenPtr pScreen, VIAPtr pVia, int Size);
 int test_alloc_AGP(ScreenPtr pScreen, VIAPtr pVia, int Size);
 static Bool VIAInitVisualConfigs(ScreenPtr pScreen);
@@ -161,7 +170,7 @@ VIADRIRingBufferInit(ScrnInfoPtr pScrn)
     if (pVia->agpEnable) {
 	drm_via_dma_init_t ringBufInit;
 
-	if (((pVia->drmVerMajor <= 1) && (pVia->drmVerMinor <= 3))) {
+	if (((pVia->drmVerMajor == 1) && (pVia->drmVerMinor <= 3))) {
 	    return FALSE;
 	} 
 
@@ -352,7 +361,7 @@ static Bool VIADRIFBInit(ScreenPtr pScreen, VIAPtr pVia)
     }
 
     pVia->driOffScreenMem.pool = 0;
-    if (Success != VIAAllocLinear(&pVia->driOffScreenMem, pScrn, FBSize)) {
+    if (Success != viaOffScreenLinear(&pVia->driOffScreenMem, pScrn, FBSize)) {
         xf86DrvMsg(pScreen->myNum, X_ERROR,
 		   "[drm] failed to allocate offscreen frame buffer area\n");
 	return FALSE;
@@ -727,6 +736,26 @@ Bool VIADRIScreenInit(ScreenPtr pScreen)
     pVia->drmVerMajor = drmVer->version_major;
     pVia->drmVerMinor = drmVer->version_minor;
     pVia->drmVerPL = drmVer->version_patchlevel;
+
+    if ((drmVer->version_major < drmExpected.major) || 
+	(drmVer->version_major > drmCompat.major) ||
+	((drmVer->version_major == drmExpected.major ) && 
+	(drmVer->version_minor < drmExpected.minor))) {
+	xf86DrvMsg(pScrn->scrnIndex, X_WARNING, 
+		   "[dri] Kernel drm is not compatible with this driver.\n"); 
+	xf86DrvMsg(pScrn->scrnIndex, X_WARNING, 
+		   "[dri] Kernel drm version: %d.%d.%d "
+		   "and I can work with versions %d.%d.x - %d.x.x\n",
+		   drmVer->version_major,drmVer->version_minor,
+		   drmVer->version_patchlevel, drmExpected.major, 
+		   drmExpected.minor, drmCompat.major); 	
+	xf86DrvMsg(pScrn->scrnIndex, X_WARNING, 
+		   "[dri] Please update either this 2D driver or your kernel DRM. "
+		   "Disabling DRI.\n");
+	drmFreeVersion(drmVer);
+	VIADRICloseScreen(pScreen);
+	return FALSE;
+    } 
     drmFreeVersion(drmVer);
 
 	   
@@ -850,7 +879,6 @@ VIADRIFinishScreenInit(ScreenPtr pScreen)
 	drm_via_sarea_t *saPriv;
 
 	saPriv=(drm_via_sarea_t *)DRIGetSAREAPrivate(pScreen);
-	assert(saPriv);
 	memset(saPriv, 0, sizeof(*saPriv));
 	saPriv->ctxOwner = -1;
     }

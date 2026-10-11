@@ -17,13 +17,18 @@ $ destination = F$PARSE(P2,,,"DEVICE","SYNTAX_ONLY") + F$PARSE(P2,,,"DIRECTORY",
 $ name = F$PARSE(P2,,,"NAME","SYNTAX_ONLY")
 $ type = F$PARSE(P2,,,"TYPE","SYNTAX_ONLY")
 $ raw = destination + name + "_" + F$EXTRACT(1,F$LENGTH(type),type) + "_CPP.TMP"
+$ prepared = destination + name + "_" + F$EXTRACT(1,F$LENGTH(type),type) + "_INPUT.TMP"
 $ CREATE/DIRECTORY 'destination'
-$ defines = ""
-$ IF P3 .EQS. "WCHAR32" THEN defines = "/DEFINE=(WCHAR32=1)"
-$ CC/PREPROCESS_ONLY='raw' 'defines' 'source'
+$! Shield literal ## data comments without changing cpp directives or source.
+$ nls_filter :== $'filter'
+$ nls_filter "''source'" "''prepared'" "CPP"
 $ result = $STATUS
 $ IF .NOT. (result .AND. 1) THEN GOTO done
-$ nls_filter :== $'filter'
+$ defines = ""
+$ IF P3 .EQS. "WCHAR32" THEN defines = "/DEFINE=(WCHAR32=1)"
+$ CC/PREPROCESS_ONLY='raw' 'defines' 'prepared'
+$ result = $STATUS
+$ IF .NOT. (result .AND. 1) THEN GOTO done
 $ IF P4 .EQS. "R63" THEN GOTO compatibility
 $ nls_filter "''raw'" "''P2'"
 $ result = $STATUS

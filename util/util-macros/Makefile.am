@@ -22,4 +22,13 @@
 aclocaldir = $(datadir)/aclocal
 aclocal_DATA = xorgversion.m4 xorg-macros.m4
 
-EXTRA_DIST = $(aclocal_DATA)
+EXTRA_DIST = $(aclocal_DATA) ChangeLog
+
+.PHONY: ChangeLog
+
+ChangeLog:
+	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || (touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
+
+dist-hook: ChangeLog
+
+DISTCLEANFILES = ChangeLog

@@ -249,6 +249,12 @@ TDFXDoWakeupHandler(int screenNum, pointer wakeupData, unsigned long result,
 {
   ScreenPtr pScreen = screenInfo.screens[screenNum];
   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+  TDFXPtr pTDFX = TDFXPTR(pScrn);
+
+  pTDFX->pDRIInfo->wrap.WakeupHandler = pTDFX->coreWakeupHandler;
+  (*pTDFX->pDRIInfo->wrap.WakeupHandler) (screenNum, wakeupData, result, pReadmask);
+  pTDFX->pDRIInfo->wrap.WakeupHandler = TDFXDoWakeupHandler;
+
 
   TDFXNeedSync(pScrn);
 }
@@ -259,8 +265,14 @@ TDFXDoBlockHandler(int screenNum, pointer blockData, pointer pTimeout,
 {
   ScreenPtr pScreen = screenInfo.screens[screenNum];
   ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+  TDFXPtr pTDFX = TDFXPTR(pScrn);
 
   TDFXCheckSync(pScrn);
+
+  pTDFX->pDRIInfo->wrap.BlockHandler = pTDFX->coreBlockHandler;
+  (*pTDFX->pDRIInfo->wrap.BlockHandler) (screenNum, blockData, pTimeout, pReadmask);
+  pTDFX->pDRIInfo->wrap.BlockHandler = TDFXDoBlockHandler;
+
 }
 
 Bool TDFXDRIScreenInit(ScreenPtr pScreen)
@@ -352,7 +364,9 @@ Bool TDFXDRIScreenInit(ScreenPtr pScreen)
 
   pDRIInfo->wrap.ValidateTree = 0;
   pDRIInfo->wrap.PostValidateTree = 0;
+  pTDFX->coreBlockHandler = pDRIInfo->wrap.BlockHandler;
   pDRIInfo->wrap.BlockHandler = TDFXDoBlockHandler;
+  pTDFX->coreWakeupHandler = pDRIInfo->wrap.WakeupHandler;
   pDRIInfo->wrap.WakeupHandler = TDFXDoWakeupHandler;
 
   if (SAREA_MAX_DRAWABLES < TDFX_MAX_DRAWABLES)

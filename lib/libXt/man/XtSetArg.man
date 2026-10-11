@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtSetArg 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtSetArg __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtSetArg, XtMergeArgLists \- set and merge ArgLists
 .SH SYNTAX

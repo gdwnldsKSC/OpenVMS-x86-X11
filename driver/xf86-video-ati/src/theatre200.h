@@ -1,5 +1,5 @@
 /*************************************************************************************
- * $Id: theatre200.h,v 1.4 2005/11/07 19:28:40 bogdand Exp $
+ * $Id$
  * 
  * Copyright (C) 2005 Bogdan D. bogdand@users.sourceforge.net
  *
@@ -22,7 +22,10 @@
  * otherwise to promote the sale, use or other dealings in this Software without prior written 
  * authorization from the author.
  *
- * $Log: theatre200.h,v $
+ * $Log$
+ * Revision 1.5  2005/12/08 17:54:40  kem
+ * 	Allow hard-coded paths to be configurable.
+ *
  * Revision 1.4  2005/11/07 19:28:40  bogdand
  * Replaced the variadic macros(gcc) by macros according to C99 standard
  *
@@ -59,14 +62,14 @@
 #define ERROR_3(str,param1,param2,param3) xf86DrvMsg(screen, X_ERROR, str, param1, param2, param3)
 #define DEBUG_3(str,param1,param2,param3) xf86DrvMsg(screen, X_INFO, str, param1, param2, param3) 
 #else
-#define ERROR_0(str)
-#define DEBUG_0(str)
-#define ERROR(str,param1)
-#define DEBUG(str,param1)
-#define ERROR_2(str,param1,param2)
-#define DEBUG_2(str,param1,param2)
-#define ERROR_3(str,param1,param2,param3)
-#define DEBUG_3(str,param1,param2,param3)
+#define ERROR_0(str) (void)screen
+#define DEBUG_0(str) (void)screen
+#define ERROR(str,param1) (void)screen
+#define DEBUG(str,param1) (void)screen
+#define ERROR_2(str,param1,param2) (void)screen
+#define DEBUG_2(str,param1,param2) (void)screen
+#define ERROR_3(str,param1,param2,param3) (void)screen
+#define DEBUG_3(str,param1,param2,param3) (void)screen
 #endif
 
 

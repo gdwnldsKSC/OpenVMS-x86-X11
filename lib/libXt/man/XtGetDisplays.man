@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtGetDisplays 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtGetDisplays __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtGetDisplays \- retrieve a list of displays associated with an application context
 .SH SYNTAX

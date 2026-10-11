@@ -1,4 +1,4 @@
-/* $XdotOrg: lib/SM/src/sm_manager.c,v 1.9 2006/03/17 03:05:32 alanc Exp $ */
+/* $XdotOrg: $ */
 /* $Xorg: sm_manager.c,v 1.4 2001/02/09 02:03:30 xorgcvs Exp $ */
 
 /*

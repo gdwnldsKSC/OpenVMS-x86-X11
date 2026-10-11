@@ -19,7 +19,7 @@ On the Voodoo 1 the driver uses a shadow buffer in system memory as
 the video adapter has only 3D acceleration. Selected portions of the shadow 
 framebuffer are copied out to the Voodoo board at the right time. Because 
 of this, the speed of the driver is very dependent on the CPU. Processors 
-nowdays are actually rather fast at moving data so we get very good speed 
+nowadays are actually rather fast at moving data so we get very good speed 
 anyway as the shadow framebuffer is in cached RAM.
 .PP
 The Voodoo2 has 16bpp acceleration and the driver provides accelerated

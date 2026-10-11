@@ -1,4 +1,30 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/savage/savage_video.c,v 1.17tsi Exp $ */
+/*
+ * Copyright (C) 1994-2000 The XFree86 Project, Inc.  All Rights Reserved.
+ * Copyright (c) 2003-2006, X.Org Foundation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER(S) OR AUTHOR(S) BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ *
+ * Except as contained in this notice, the name of the copyright holder(s)
+ * and author(s) shall not be used in advertising or otherwise to promote
+ * the sale, use or other dealings in this Software without prior written
+ * authorization from the copyright holder(s) and author(s).
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -38,6 +64,7 @@ static int SavagePutImage( ScrnInfoPtr,
 	DrawablePtr);
 static int SavageQueryImageAttributes(ScrnInfoPtr, 
 	int, unsigned short *, unsigned short *,  int *, int *);
+static void SavageFreeMemory(ScrnInfoPtr pScrn, void *mem_struct);
 
 void SavageResetVideo(ScrnInfoPtr pScrn); 
 
@@ -206,13 +233,18 @@ typedef struct {
    int		hue;		/* -128 .. 127 */
    Bool		interpolation; /* on/off */
 
-   FBAreaPtr	area;
+   /*FBAreaPtr	area;*/
    RegionRec	clip;
    CARD32	colorKey;
    CARD32	videoStatus;
    Time		offTime;
    Time		freeTime;
    int		lastKnownPitch;
+
+   int          size;
+   void         *video_memory;
+   int          video_offset;
+
 } SavagePortPrivRec, *SavagePortPrivPtr;
 
 
@@ -1005,10 +1037,10 @@ SavageStopVideo(ScrnInfoPtr pScrn, pointer data, Bool shutdown)
     if(shutdown) {
       /*SavageClipVWindow(pScrn);*/
  	SavageStreamsOff( pScrn );
-	if(pPriv->area) {
-	    xf86FreeOffscreenArea(pPriv->area);
-	    pPriv->area = NULL;
-	}
+        if (pPriv->video_memory != NULL) {
+	    SavageFreeMemory(pScrn, pPriv->video_memory);
+	    pPriv->video_memory = NULL;
+        }
 	pPriv->videoStatus = 0;
     } else {
 	if(pPriv->videoStatus & CLIENT_VIDEO_ON) {
@@ -1266,15 +1298,87 @@ SavageCopyPlanarData(
    }
 }
 
-static FBAreaPtr
+static void
+SavageVideoSave(ScreenPtr pScreen, ExaOffscreenArea *area)
+{
+    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    SavagePtr psav = SAVPTR(pScrn);
+    SavagePortPrivPtr pPriv = psav->adaptor->pPortPrivates[0].ptr;
+
+    if (pPriv->video_memory == area)
+        pPriv->video_memory = NULL;
+}
+
+static CARD32
 SavageAllocateMemory(
     ScrnInfoPtr pScrn,
-    FBAreaPtr area,
-    int numlines
+    void **mem_struct,
+    int size
 ){
-    ScreenPtr pScreen;
-    FBAreaPtr new_area;
+    ScreenPtr pScreen = screenInfo.screens[pScrn->scrnIndex];
+    SavagePtr psav = SAVPTR(pScrn);
+    int offset = 0;
 
+    if (psav->useEXA) {
+	ExaOffscreenArea *area = *mem_struct;
+
+	if (area != NULL) {
+	    if (area->size >= size)
+		return area->offset;
+
+	    exaOffscreenFree(pScrn->pScreen, area);
+	}
+
+	area = exaOffscreenAlloc(pScrn->pScreen, size, 64, TRUE, SavageVideoSave,
+				 NULL);
+	*mem_struct = area;
+	if (area == NULL)
+	    return 0;
+	offset = area->offset;
+    }
+
+    if (!psav->useEXA) {
+	FBLinearPtr linear = *mem_struct;
+	int cpp = pScrn->bitsPerPixel / 8;
+
+	/* XAA allocates in units of pixels at the screen bpp, so adjust size
+	 * appropriately.
+	 */
+	size = (size + cpp - 1) / cpp;
+
+	if (linear) {
+	    if(linear->size >= size)
+		return linear->offset * cpp;
+
+	    if(xf86ResizeOffscreenLinear(linear, size))
+		return linear->offset * cpp;
+
+	    xf86FreeOffscreenLinear(linear);
+	}
+
+	linear = xf86AllocateOffscreenLinear(pScreen, size, 16,
+						NULL, NULL, NULL);
+	*mem_struct = linear;
+
+	if (!linear) {
+	    int max_size;
+
+	    xf86QueryLargestOffscreenLinear(pScreen, &max_size, 16,
+					    PRIORITY_EXTREME);
+
+	    if(max_size < size)
+		return 0;
+
+	    xf86PurgeUnlockedOffscreenAreas(pScreen);
+	    linear = xf86AllocateOffscreenLinear(pScreen, size, 16,
+						     NULL, NULL, NULL);
+	    *mem_struct = linear;
+	    if (!linear)
+		return 0;
+	}
+	offset = linear->offset * cpp;
+    }
+#if 0
     if(area) {
 	if((area->box.y2 - area->box.y1) >= numlines) 
 	   return area;
@@ -1306,6 +1410,29 @@ SavageAllocateMemory(
     }
 
     return new_area;
+#endif
+    return offset;
+}
+
+static void
+SavageFreeMemory(
+   ScrnInfoPtr pScrn,
+   void *mem_struct
+){
+    SavagePtr psav = SAVPTR(pScrn);
+
+    if (psav->useEXA) {
+	ExaOffscreenArea *area = mem_struct;
+
+	if (area != NULL)
+	    exaOffscreenFree(pScrn->pScreen, area);
+    }
+    if (!psav->useEXA) {
+	FBLinearPtr linear = mem_struct;
+
+	if (linear != NULL)
+	    xf86FreeOffscreenLinear(linear);
+    }
 }
 
 static void
@@ -1752,7 +1879,7 @@ SavagePutImage(
     ScreenPtr pScreen = pScrn->pScreen;
     INT32 x1, x2, y1, y2;
     unsigned char *dst_start;
-    int pitch, new_h, offset, offsetV=0, offsetU=0;
+    int pitch, new_size, offset, offsetV=0, offsetU=0;
     int srcPitch, srcPitch2=0, dstPitch;
     int top, left, npixels, nlines;
     BoxRec dstBox;
@@ -1790,7 +1917,8 @@ SavagePutImage(
     pitch = pScrn->bitsPerPixel * pScrn->displayWidth >> 3;
 
     dstPitch = ((width << 1) + 15) & ~15;
-    new_h = ((dstPitch * height) + pitch - 1) / pitch;
+    /*new_h = ((dstPitch * height) + pitch - 1) / pitch;*/
+    new_size = dstPitch * height;
 
     switch(id) {
     case FOURCC_Y211:		/* Y211 */
@@ -1816,8 +1944,12 @@ SavagePutImage(
 	break;
     }  
 
-    if(!(pPriv->area = SavageAllocateMemory(pScrn, pPriv->area, new_h)))
-	return BadAlloc;
+/*    if(!(pPriv->area = SavageAllocateMemory(pScrn, pPriv->area, new_h)))
+	return BadAlloc;*/
+    pPriv->video_offset = SavageAllocateMemory(pScrn, &pPriv->video_memory,
+					      new_size);
+    if (pPriv->video_offset == 0)
+        return BadAlloc;
 
     /* copy data */
     top = y1 >> 16;
@@ -1825,8 +1957,8 @@ SavagePutImage(
     npixels = ((((x2 + 0xffff) >> 16) + 1) & ~1) - left;
     left <<= 1;
 
-    /*offset = ((pPriv->area->box.y1 * pitch)) + (top * dstPitch);*/
-    offset = pPriv->area->box.y1 * psav->lDelta;
+    offset = (pPriv->video_offset) + (top * dstPitch);
+    /*offset = pPriv->area->box.y1 * psav->lDelta;*/
     dst_start = (psav->FBBase + ((offset + left) & ~BASE_PAD));
 
     switch(id) {
@@ -1837,8 +1969,7 @@ SavagePutImage(
 	offsetU += tmp;
 	offsetV += tmp;
 	nlines = ((((y2 + 0xffff) >> 16) + 1) & ~1) - top;
-        if (S3_SAVAGE4_SERIES(psav->Chipset) && psav->BCIforXv 
-	    /*&& (!psav->disableCOB)*/) {
+        if (S3_SAVAGE4_SERIES(psav->Chipset) && psav->BCIforXv) {
             SavageCopyPlanarDataBCI(
                 pScrn,
 	    	buf + (top * srcPitch) + (left >> 1), 
@@ -1938,7 +2069,7 @@ SavageQueryImageAttributes(
 /****************** Offscreen stuff ***************/
 
 typedef struct {
-  FBAreaPtr area;
+  void *surface_memory;
   Bool isOn;
 } OffscreenPrivRec, * OffscreenPrivPtr;
 
@@ -1950,8 +2081,9 @@ SavageAllocateSurface(
     unsigned short h,
     XF86SurfacePtr surface
 ){
-    FBAreaPtr area;
+    int offset, size;
     int pitch, fbpitch, numlines;
+    void *surface_memory = NULL;
     OffscreenPrivPtr pPriv;
 
     if((w > 1024) || (h > 1024))
@@ -1961,32 +2093,38 @@ SavageAllocateSurface(
     pitch = ((w << 1) + 15) & ~15;
     fbpitch = pScrn->bitsPerPixel * pScrn->displayWidth >> 3;
     numlines = ((pitch * h) + fbpitch - 1) / fbpitch;
+    size = pitch * h;
 
-    if(!(area = SavageAllocateMemory(pScrn, NULL, numlines)))
+    offset = SavageAllocateMemory(pScrn, &surface_memory, size);
+    if (offset == 0)
 	return BadAlloc;
 
     surface->width = w;
     surface->height = h;
 
-    if(!(surface->pitches = xalloc(sizeof(int))))
+    if(!(surface->pitches = xalloc(sizeof(int)))) {
+	SavageFreeMemory(pScrn, surface_memory);
 	return BadAlloc;
+    }
     if(!(surface->offsets = xalloc(sizeof(int)))) {
 	xfree(surface->pitches);
+	SavageFreeMemory(pScrn, surface_memory);
 	return BadAlloc;
     }
     if(!(pPriv = xalloc(sizeof(OffscreenPrivRec)))) {
 	xfree(surface->pitches);
 	xfree(surface->offsets);
+	SavageFreeMemory(pScrn, surface_memory);
 	return BadAlloc;
     }
 
-    pPriv->area = area;
+    pPriv->surface_memory = surface_memory;
     pPriv->isOn = FALSE;
 
     surface->pScrn = pScrn;
     surface->id = id;   
     surface->pitches[0] = pitch;
-    surface->offsets[0] = area->box.y1 * fbpitch;
+    surface->offsets[0] = offset; /*area->box.y1 * fbpitch;*/
     surface->devPrivate.ptr = (pointer)pPriv;
 
     return Success;
@@ -2014,11 +2152,12 @@ static int
 SavageFreeSurface(
     XF86SurfacePtr surface
 ){
+    ScrnInfoPtr pScrn = surface->pScrn;
     OffscreenPrivPtr pPriv = (OffscreenPrivPtr)surface->devPrivate.ptr;
 
     if(pPriv->isOn)
 	SavageStopSurface(surface);
-    xf86FreeOffscreenArea(pPriv->area);
+    SavageFreeMemory(pScrn, pPriv->surface_memory);
     xfree(surface->pitches);
     xfree(surface->offsets);
     xfree(surface->devPrivate.ptr);

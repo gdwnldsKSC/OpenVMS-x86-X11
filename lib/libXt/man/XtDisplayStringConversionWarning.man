@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtDisplayStringConversionWarning 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtDisplayStringConversionWarning __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtDisplayStringConversionWarning \- issue a conversion warning message
 .SH SYNTAX

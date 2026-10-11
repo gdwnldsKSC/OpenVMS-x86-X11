@@ -23,7 +23,7 @@ dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
 
-AC_INIT(libxkbfile, 1.0.3, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libxkbfile)
+AC_INIT(libxkbfile, 1.0.4, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libxkbfile)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
@@ -34,7 +34,7 @@ AC_PROG_CC
 AC_PROG_LIBTOOL
 
 AC_CHECK_FUNC(strcasecmp, [], AC_DEFINE([NEED_STRCASECMP], 1,
-                                        [Do not have have `strcasecmp'.]))
+                                        [Do not have `strcasecmp'.]))
 
 # Check for dependencies
 PKG_CHECK_MODULES(XKBFILE, x11 kbproto)

@@ -1,5 +1,5 @@
 /*
- * $Id: Xcomposite.c,v 1.2 2005/07/03 07:00:56 daniels Exp $
+ * $Id$
  *
  * Copyright © 2006 Sun Microsystems
  *
@@ -235,8 +235,6 @@ XCompositeQueryVersion (Display *dpy,
     XCompositeCheckExtension (dpy, info, 0);
     *major_versionp = info->major_version;
     *minor_versionp = info->minor_version;
-    UnlockDisplay (dpy);
-    SyncHandle ();
     return 1;
 }
 

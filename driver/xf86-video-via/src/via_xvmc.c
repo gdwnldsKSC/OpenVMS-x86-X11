@@ -349,13 +349,6 @@ ViaInitXVMC(ScreenPtr pScreen)
 	    "[XvMC] Please update. Disabling XvMC.\n");
 	return;
     }
-    if ((pVia->drmVerMajor >= 3)) {
-	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-	    "[XvMC] XvMC X driver may not be compatible "
-	    "with kernel drm.\n");
-	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-	    "[XvMC] Continuing, but strange things may happen.\n");
-    }
 
     vXvMC->mmioBase = pVia->registerHandle;
 

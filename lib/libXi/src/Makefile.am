@@ -1,4 +1,4 @@
-# $XdotOrg: lib/Xi/src/Makefile.am,v 1.7 2006/03/20 19:54:58 ajax Exp $
+# $XdotOrg: lib/Xi/src/Makefile.am,v 1.6 2005/12/03 04:41:49 kem Exp $
 
 lib_LTLIBRARIES = libXi.la
 

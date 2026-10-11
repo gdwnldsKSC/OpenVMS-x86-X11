@@ -105,6 +105,10 @@ LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LIB_MAN_DIR = @LIB_MAN_DIR@
 LIB_MAN_SUFFIX = @LIB_MAN_SUFFIX@
+LINT = @LINT@
+LINT_FALSE = @LINT_FALSE@
+LINT_FLAGS = @LINT_FLAGS@
+LINT_TRUE = @LINT_TRUE@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -123,6 +127,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -180,6 +185,9 @@ libman_DATA = $(libman_PRE:man=@LIB_MAN_SUFFIX@)
 EXTRA_DIST = $(libman_PRE)
 CLEANFILES = $(libman_DATA)
 SUFFIXES = .$(LIB_MAN_SUFFIX) .man
+
+# Strings to replace in man pages
+XORGRELSTRING = @PACKAGE_STRING@
 all: all-am
 
 .SUFFIXES:
@@ -368,7 +376,7 @@ all-local: $(libman_DATA)
 
 .man.$(LIB_MAN_SUFFIX):
 	-rm -f $@
-	$(LN_S) $< $@
+	sed 's/__xorgversion__/"$(XORGRELSTRING)"/;  s/__LIB_MAN_SUFFIX__/$(LIB_MAN_SUFFIX)/; s%__prefix__%$(prefix)%g; s%__ICONDIR__%$(ICONDIR)%g' < $< > $@
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

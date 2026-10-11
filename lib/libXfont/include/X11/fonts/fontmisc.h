@@ -47,7 +47,7 @@ extern int close();
 
 #endif /* FONTMODULE */
 
-#include "X11/Xdefs.h"
+#include <X11/Xdefs.h>
 
 
 #ifndef LSBFirst

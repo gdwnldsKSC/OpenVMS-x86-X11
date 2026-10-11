@@ -212,6 +212,12 @@ RADEONCopyModeNLink(ScrnInfoPtr pScrn, DisplayModePtr dest,
     mode->VSyncEnd += dy;
     mode->VTotal += dy;
 
+    /* This is needed for not generating negative refesh rates in xrandr with the
+       faked DotClock below
+     */
+    if (!(mode->VRefresh))
+        mode->VRefresh = mode->Clock * 1000.0 / mode->HTotal / mode->VTotal;
+
      /* Provide a sophisticated fake DotClock in order to trick the vidmode
       * extension to allow selecting among a number of modes whose merged result
       * looks identical but consists of different modes for CRT1 and CRT2
@@ -347,8 +353,6 @@ RADEONGenerateModeListFromLargestModes(ScrnInfoPtr pScrn,
     DisplayModePtr mode3 = NULL;
     DisplayModePtr mode4 = NULL;
     DisplayModePtr result = NULL;
-    int p = 0;
-    int count = 0;
 
     info->AtLeastOneNonClone = FALSE;
 
@@ -533,15 +537,27 @@ RADEONGenerateModeList(ScrnInfoPtr pScrn, char* str,
    if(str != NULL) {
       return(RADEONGenerateModeListFromMetaModes(pScrn, str, i, j, srel));
    } else {
-      xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-	"No MetaModes given, linking %s modes by default\n",
-	(srel == radeonClone) ? "largest common" :
-	   (info->NonRect ?
+        if (srel == radeonClone ) {
+           DisplayModePtr p, q, result = NULL;
+
+           xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "Clone mode, list all common modes\n");
+           for (p = i; p->next != i; p = p->next)
+                for (q = j; q->next != j; q = q->next)
+                   if ((p->HDisplay == q->HDisplay) &&
+                        (p->VDisplay == q->VDisplay))
+                        result = RADEONCopyModeNLink(pScrn, result, p, q, srel);
+           return result;
+        } else {
+           xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                "No MetaModes given, linking %s modes by default\n",
+                (info->NonRect ?
 		(((srel == radeonLeftOf) || (srel == radeonRightOf)) ? "widest" :  "tallest")
 		:
 		(((srel == radeonLeftOf) || (srel == radeonRightOf)) ? "widest common" :  "tallest common")) );
-      return(RADEONGenerateModeListFromLargestModes(pScrn, i, j, srel));
-   }
+           return(RADEONGenerateModeListFromLargestModes(pScrn, i, j, srel));
+        }
+    }
 }
 
 void
@@ -2026,14 +2042,7 @@ RADEONSetCursorPositionMerged(ScrnInfoPtr pScrn, int x, int y)
     OUTREG(RADEON_CUR_HORZ_VERT_POSN, (RADEON_CUR_LOCK
 				   | ((xorigin ? 0 : x1) << 16)
 				   | (yorigin ? 0 : y1)));
-#ifdef USE_EXA
-    if (info->useEXA)
-	OUTREG(RADEON_CUR_OFFSET, info->cursor_offset + yorigin * stride);
-#endif /* USE_EXA */
-#ifdef USE_XAA
-    if (!info->useEXA)
-	OUTREG(RADEON_CUR_OFFSET, info->cursor_offset + yorigin * stride);
-#endif /* USE_XAA */
+    OUTREG(RADEON_CUR_OFFSET, info->cursor_offset + yorigin * stride);
 		/* cursor2 */
     OUTREG(RADEON_CUR2_HORZ_VERT_OFF,  (RADEON_CUR2_LOCK
 				    | (xorigin << 16)
@@ -2041,14 +2050,7 @@ RADEONSetCursorPositionMerged(ScrnInfoPtr pScrn, int x, int y)
     OUTREG(RADEON_CUR2_HORZ_VERT_POSN, (RADEON_CUR2_LOCK
 				    | ((xorigin ? 0 : x2) << 16)
 				    | (yorigin ? 0 : y2)));
-#ifdef USE_EXA
-    if (info->useEXA)
-	OUTREG(RADEON_CUR2_OFFSET, info->cursor_offset + yorigin * stride);
-#endif /* USE_EXA */
-#ifdef USE_XAA
-    if (!info->useEXA)
-	OUTREG(RADEON_CUR2_OFFSET, info->cursor_offset + yorigin * stride);
-#endif /* USE_XAA */
+    OUTREG(RADEON_CUR2_OFFSET, info->cursor_offset + yorigin * stride);
 }
 
 /* radeon Xv helpers */

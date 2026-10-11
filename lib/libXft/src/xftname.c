@@ -1,5 +1,5 @@
 /*
- * $Id: xftname.c,v 1.4 2005/07/03 07:00:57 daniels Exp $
+ * $Id$
  *
  * Copyright © 2000 Keith Packard
  *
@@ -32,9 +32,9 @@ static const FcObjectType	_XftObjectTypes[] = {
 
 #define NUM_OBJECT_TYPES    (sizeof _XftObjectTypes / sizeof _XftObjectTypes[0])
 
-FcBool	_XftNameInitialized;
+_X_HIDDEN FcBool	_XftNameInitialized;
 
-void 
+_X_HIDDEN void 
 _XftNameInit (void)
 {
     if (_XftNameInitialized)
@@ -43,14 +43,14 @@ _XftNameInit (void)
     FcNameRegisterObjectTypes (_XftObjectTypes, NUM_OBJECT_TYPES);
 }
 
-FcPattern 
+_X_EXPORT FcPattern 
 *XftNameParse (const char *name)
 { 
     _XftNameInit ();
     return FcNameParse ((FcChar8 *) name); 
 }
 
-FcBool
+_X_EXPORT FcBool
 XftNameUnparse (FcPattern *pat, char *dest, int len)
 {
     FcChar8 *name;

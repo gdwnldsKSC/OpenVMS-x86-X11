@@ -1,5 +1,5 @@
 dnl 
-dnl  $Id: configure.ac,v 1.21 2005/12/09 06:55:26 kem Exp $
+dnl  $Id$
 dnl 
 dnl  Copyright © 2003 Keith Packard
 dnl 
@@ -26,7 +26,7 @@ dnl Process this file with autoconf to create configure.
 AC_PREREQ([2.57])
 
 AC_INIT([libXfont],
-	1.1.0,
+	1.2.7,
 	[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
 	libXfont)
 dnl
@@ -106,27 +106,11 @@ AC_SUBST(FREETYPE_LIBS)
 AC_SUBST(FREETYPE_CFLAGS)
 AC_SUBST(FREETYPE_REQUIRES)
 
-#
-# A bit tricky here; CID font support uses the IBM Type1 rasterizer,
-# but it's generally better to use FreeType for regular Type1 files,
-# so we make CID build the IBM rasterizer, but not also make the Type1
-# rasterizer used for normal Type1 files
-#
-
-AC_ARG_ENABLE(type1, [ --enable-type1 ], [XFONT_TYPE1=$enableval], [XFONT_TYPE1=no])
+AC_ARG_ENABLE(type1, [ --enable-type1 ], [XFONT_TYPE1=$enableval], [XFONT_TYPE1=yes])
 if test "x$XFONT_TYPE1" = xyes; then
 	AC_DEFINE(XFONT_TYPE1,1,[Support IBM Type 1 rasterizer for Type1 font files])
 	XFONT_FONTFILE=yes
 fi
-
-AC_ARG_ENABLE(cid, [ --disable-cid ], [XFONT_CID=$enableval], [XFONT_CID=yes])
-AM_CONDITIONAL(XFONT_CID, [test "x$XFONT_CID" = xyes ])
-if test "x$XFONT_CID" = xyes; then
-	AC_DEFINE(XFONT_CID,1,[Support Type 1 CID font files])
-	XFONT_TYPE1=yes
-	XFONT_FONTFILE=yes
-fi
-
 AM_CONDITIONAL(XFONT_TYPE1, [test "x$XFONT_TYPE1" = xyes ])
 
 AC_ARG_ENABLE(speedo, [ --disable-speedo ], [XFONT_SPEEDO=$enableval], [XFONT_SPEEDO=yes])
@@ -152,32 +136,29 @@ AC_ARG_ENABLE(builtins, [ --disable-builtins ], [XFONT_BUILTINS=$enableval], [XF
 AM_CONDITIONAL(XFONT_BUILTINS, [test "x$XFONT_BUILTINS" = xyes ])
 if test "x$XFONT_BUILTINS" = xyes; then
 	AC_DEFINE(XFONT_BUILTINS,1,[Support built-in fonts])
-	XFONT_PCFFORMAT=yes
+	XFONT_BITMAP=yes
 fi
 
 AC_ARG_ENABLE(pcfformat, [ --disable-pcfformat ], [XFONT_PCFFORMAT=$enableval], [XFONT_PCFFORMAT=yes])
 AM_CONDITIONAL(XFONT_PCFFORMAT, [test "x$XFONT_PCFFORMAT" = xyes])
-if test "x$XFONT_BUILTINS" = xyes; then
+if test "x$XFONT_PCFFORMAT" = xyes; then
 	AC_DEFINE(XFONT_PCFFORMAT,1,[Support pcf format bitmap font files])
 	XFONT_BITMAP=yes
 fi
 
 AC_ARG_ENABLE(bdfformat, [ --disable-bdfformat ], [XFONT_BDFFORMAT=$enableval], [XFONT_BDFFORMAT=yes])
 AM_CONDITIONAL(XFONT_BDFFORMAT, [test "x$XFONT_BDFFORMAT" = xyes])
-if test "x$XFONT_BUILTINS" = xyes; then
+if test "x$XFONT_BDFFORMAT" = xyes; then
 	AC_DEFINE(XFONT_BDFFORMAT,1,[Support bdf format bitmap font files])
 	XFONT_BITMAP=yes
 fi
 
 AC_ARG_ENABLE(snfformat, [ --disable-snfformat ], [XFONT_SNFFORMAT=$enableval], [XFONT_SNFFORMAT=yes])
 AM_CONDITIONAL(XFONT_SNFFORMAT, [test "x$XFONT_SNFFORMAT" = xyes])
-if test "x$XFONT_BUILTINS" = xyes; then
+if test "x$XFONT_SNFFORMAT" = xyes; then
 	AC_DEFINE(XFONT_SNFFORMAT,1,[Support snf format bitmap font files])
 	XFONT_BITMAP=yes
 fi
-
-AC_ARG_ENABLE(bdfformat, [ --disable-bdfformat ], [XFONT_BDFFORMAT=$enableval], [XFONT_BDFFORMAT=yes])
-AC_ARG_ENABLE(snfformat, [ --disable-snfformat ], [XFONT_SNFFORMAT=$enableval], [XFONT_SNFFORMAT=yes])
 
 AM_CONDITIONAL(XFONT_BITMAP, [test "x$XFONT_BITMAP" = xyes ])
 if test "x$XFONT_BITMAP" = xyes; then
@@ -187,7 +168,7 @@ fi
 
 AM_CONDITIONAL(XFONT_FONTFILE, [test "x$XFONT_FONTFILE" = xyes])
 if test "x$XFONT_FONTFILE" = xyes; then
-	AC_DEFINE(XFONT_FONTFILE,,[Support fonts in files])
+	AC_DEFINE(XFONT_FONTFILE,1,[Support fonts in files])
 fi
 
 #

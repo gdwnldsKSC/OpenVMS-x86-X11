@@ -1,4 +1,4 @@
-/* $XFree86$ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/gfx/gfx_tv.h,v 1.1 2002/12/10 15:12:26 alanh Exp $ */
 
 typedef struct tagTVDISPLAYMODE
 {

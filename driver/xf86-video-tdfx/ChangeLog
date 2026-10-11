@@ -1,3 +1,9 @@
+2006-06-17  Donnie Berkholz  <spyderous@gentoo.org>
+
+	* src/tdfx_priv.c: (TDFXResetFifo), (TDFXSyncFifo):
+	Bug #7149 <https://bugs.freedesktop.org/show_bug.cgi?id=7149>
+	Change use of getsecs to xf86getsecs (Gustavo Pichorim Boiko).
+
 2006-04-07  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

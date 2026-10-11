@@ -37,6 +37,7 @@ in this Software without prior written authorization from The Open Group.
 #include <config.h>
 #endif
 #include <X11/fonts/fontmisc.h>
+#include "stubs.h"
 
 typedef struct _AtomList {
     char		*name;
@@ -145,7 +146,7 @@ NameEqual (const char *a, const char *b, int l)
     return TRUE;
 }
 
-Atom 
+weak Atom 
 MakeAtom(char *string, unsigned len, int makeit)
 {
     AtomListPtr	a;
@@ -218,13 +219,13 @@ MakeAtom(char *string, unsigned len, int makeit)
     return a->atom;
 }
 
-int 
+weak int 
 ValidAtom(Atom atom)
 {
     return (atom != None) && (atom <= lastAtom);
 }
 
-char *
+weak char *
 NameForAtom(Atom atom)
 {
     if (atom != None && atom <= lastAtom)

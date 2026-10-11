@@ -1,5 +1,5 @@
 /*
- * $Id: XftCompat.h,v 1.4 2005/07/03 07:00:57 daniels Exp $
+ * $Id$
  *
  * Copyright © 2001 Keith Packard
  *

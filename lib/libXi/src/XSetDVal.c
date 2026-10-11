@@ -74,7 +74,7 @@ XSetDeviceValuators(dpy, dev, valuators, first_valuator, num_valuators)
     XExtDisplayInfo *info = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, XInput_Add_XSetDeviceValuators) == -1)
+    if (_XiCheckExtInit(dpy, XInput_Add_XSetDeviceValuators, info) == -1)
 	return (NoSuchExtension);
 
     GetReq(SetDeviceValuators, req);

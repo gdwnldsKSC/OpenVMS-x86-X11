@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtRealizeWidget 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtRealizeWidget __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtRealizeWidget, XtIsRealized, XtUnrealizeWidget \- realize and unrealize widgets
 .SH SYNTAX

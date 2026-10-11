@@ -35,22 +35,22 @@ from The Open Group.
 #include <X11/Xosdefs.h>
 #include <stdlib.h>
 #include <X11/fonts/fontmisc.h>
+#include "stubs.h"
 
 #define XK_LATIN1
 #include    <X11/keysymdef.h>
-/* #include    <X11/Xmu/CharSet.h> */
 
 /* make sure everything initializes themselves at least once */
 
-long serverGeneration = 1;
+weak long serverGeneration = 1;
 
-void *
+weak void *
 Xalloc (unsigned long m)
 {
     return malloc (m);
 }
 
-void *
+weak void *
 Xrealloc (void *n, unsigned long m)
 {
     if (!n)
@@ -59,20 +59,20 @@ Xrealloc (void *n, unsigned long m)
 	return realloc (n, m);
 }
 
-void
+weak void
 Xfree (void *n)
 {
     if (n)
 	free (n);
 }
 
-void *
+weak void *
 Xcalloc (unsigned long n)
 {
     return calloc (n, 1);
 }
 
-void
+weak void
 CopyISOLatin1Lowered (char *dst, char *src, int len)
 {
     register unsigned char *dest, *source;
@@ -93,7 +93,7 @@ CopyISOLatin1Lowered (char *dst, char *src, int len)
     *dest = '\0';
 }
 
-void
+weak void
 register_fpe_functions ()
 {
 }

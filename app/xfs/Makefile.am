@@ -127,6 +127,7 @@ MAN_SUBSTS = \
 	-e 's|__xconfigfile__|xorg.conf|g' \
 	-e 's|__projectroot__|$(prefix)|g' \
 	-e 's|__apploaddir__|$(appdefaultdir)|' \
+	-e 's|__configdir__|$(configdir)|' \
 	-e 's|__appmansuffix__|$(APP_MAN_SUFFIX)|g' \
 	-e 's|__libmansuffix__|$(LIB_MAN_SUFFIX)|g' \
 	-e 's|__adminmansuffix__|$(ADMIN_MAN_SUFFIX)|g' \

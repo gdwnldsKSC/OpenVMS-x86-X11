@@ -1,5 +1,5 @@
 /* x-list.c
-   $Id: x-list.c,v 1.16 2003/07/18 00:52:19 jharper Exp $
+   $Id$
 
    Copyright (c) 2002 Apple Computer, Inc. All rights reserved.
 
@@ -27,7 +27,6 @@
    copyright holders shall not be used in advertising or otherwise to
    promote the sale, use or other dealings in this Software without
    prior written authorization. */
-/* $XFree86: xc/programs/Xserver/hw/darwin/quartz/xpr/x-list.c,v 1.1 2003/04/30 23:15:42 torrey Exp $ */
 
 #include "x-list.h"
 #include <stdlib.h>

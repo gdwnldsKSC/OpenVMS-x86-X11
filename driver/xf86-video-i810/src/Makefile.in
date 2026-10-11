@@ -82,19 +82,22 @@ am__installdirs = "$(DESTDIR)$(i810_drv_ladir)"
 i810_drv_laLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(i810_drv_la_LTLIBRARIES)
 i810_drv_la_LIBADD =
-am__i810_drv_la_SOURCES_DIST = common.h i810_accel.c i810_common.h \
-	i810_cursor.c i810_dga.c i810_driver.c i810.h i810_io.c \
-	i810_memory.c i810_reg.h i810_video.c i810_wmark.c \
-	i830_accel.c i830_common.h i830_cursor.c i830_dga.c \
-	i830_driver.c i830.h i830_io.c i830_memory.c i830_modes.c \
-	i830_video.c i830_rotate.c i830_randr.c i810_dri.c i810_dri.h \
+am__i810_drv_la_SOURCES_DIST = brw_defines.h brw_structs.h wm_prog.h \
+	common.h i810_accel.c i810_common.h i810_cursor.c i810_dga.c \
+	i810_driver.c i810.h i810_io.c i810_memory.c i810_reg.h \
+	i810_video.c i810_wmark.c i830_accel.c i830_common.h \
+	i830_cursor.c i830_dga.c i830_driver.c i830.h i830_io.c \
+	i830_memory.c i830_modes.c i830_video.c i830_video.h \
+	i830_rotate.c i830_randr.c i830_3d.c i830_reg.h i915_3d.c \
+	i915_3d.h i915_reg.h i915_video.c i810_dri.c i810_dri.h \
 	i830_dri.c i810_hwmc.c i830_dri.h
 @DRI_TRUE@am__objects_1 = i810_dri.lo i830_dri.lo i810_hwmc.lo
 am_i810_drv_la_OBJECTS = i810_accel.lo i810_cursor.lo i810_dga.lo \
 	i810_driver.lo i810_io.lo i810_memory.lo i810_video.lo \
 	i810_wmark.lo i830_accel.lo i830_cursor.lo i830_dga.lo \
 	i830_driver.lo i830_io.lo i830_memory.lo i830_modes.lo \
-	i830_video.lo i830_rotate.lo i830_randr.lo $(am__objects_1)
+	i830_video.lo i830_rotate.lo i830_randr.lo i830_3d.lo \
+	i915_3d.lo i915_video.lo $(am__objects_1)
 i810_drv_la_OBJECTS = $(am_i810_drv_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -199,6 +202,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PS2PDF = @PS2PDF@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -260,12 +264,14 @@ AM_CFLAGS = @XORG_CFLAGS@ @DRI_CFLAGS@ -DI830_XV
 i810_drv_la_LTLIBRARIES = i810_drv.la
 i810_drv_la_LDFLAGS = -module -avoid-version
 i810_drv_ladir = @moduledir@/drivers
-i810_drv_la_SOURCES = common.h i810_accel.c i810_common.h \
-	i810_cursor.c i810_dga.c i810_driver.c i810.h i810_io.c \
-	i810_memory.c i810_reg.h i810_video.c i810_wmark.c \
-	i830_accel.c i830_common.h i830_cursor.c i830_dga.c \
-	i830_driver.c i830.h i830_io.c i830_memory.c i830_modes.c \
-	i830_video.c i830_rotate.c i830_randr.c $(am__append_1)
+i810_drv_la_SOURCES = brw_defines.h brw_structs.h wm_prog.h common.h \
+	i810_accel.c i810_common.h i810_cursor.c i810_dga.c \
+	i810_driver.c i810.h i810_io.c i810_memory.c i810_reg.h \
+	i810_video.c i810_wmark.c i830_accel.c i830_common.h \
+	i830_cursor.c i830_dga.c i830_driver.c i830.h i830_io.c \
+	i830_memory.c i830_modes.c i830_video.c i830_video.h \
+	i830_rotate.c i830_randr.c i830_3d.c i830_reg.h i915_3d.c \
+	i915_3d.h i915_reg.h i915_video.c $(am__append_1)
 all: all-recursive
 
 .SUFFIXES:
@@ -345,6 +351,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i810_memory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i810_video.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i810_wmark.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i830_3d.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i830_accel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i830_cursor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i830_dga.Plo@am__quote@
@@ -356,6 +363,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i830_randr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i830_rotate.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i830_video.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i915_3d.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i915_video.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

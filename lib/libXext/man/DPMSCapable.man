@@ -1,4 +1,4 @@
-.\" $XdotOrg: lib/Xext/man/DPMSCapable.man,v 1.1 2005/06/28 23:21:40 alanc Exp $
+.\" $XdotOrg: $
 .\" 
 .\" Copyright \(co Digital Equipment Corporation, 1996
 .\" 

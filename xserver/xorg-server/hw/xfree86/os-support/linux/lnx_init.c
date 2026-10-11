@@ -1,5 +1,3 @@
-/* $XdotOrg: xserver/xorg/hw/xfree86/os-support/linux/lnx_init.c,v 1.9 2005/08/26 07:35:55 daniels Exp $ */
-/* $XFree86: xc/programs/Xserver/hw/xfree86/os-support/linux/lnx_init.c,v 3.14 2001/10/31 22:50:30 tsi Exp $ */
 /*
  * Copyright 1992 by Orest Zborowski <obz@Kodak.com>
  * Copyright 1993 by David Wexelblat <dwex@goblin.org>

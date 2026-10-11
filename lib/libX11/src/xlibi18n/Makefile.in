@@ -157,6 +157,10 @@ LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LIB_MAN_DIR = @LIB_MAN_DIR@
 LIB_MAN_SUFFIX = @LIB_MAN_SUFFIX@
+LINT = @LINT@
+LINT_FALSE = @LINT_FALSE@
+LINT_FLAGS = @LINT_FLAGS@
+LINT_TRUE = @LINT_TRUE@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -182,6 +186,7 @@ PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 RAWCPP = @RAWCPP@
 RAWCPPFLAGS = @RAWCPPFLAGS@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -193,10 +198,14 @@ VERSION = @VERSION@
 WCHAR32 = @WCHAR32@
 X11_CFLAGS = @X11_CFLAGS@
 X11_DATADIR = @X11_DATADIR@
+X11_EXTRA_DEPS = @X11_EXTRA_DEPS@
 X11_LIBDIR = @X11_LIBDIR@
 X11_LIBS = @X11_LIBS@
 X11_LOCALEDATADIR = @X11_LOCALEDATADIR@
+X11_LOCALEDIR = @X11_LOCALEDIR@
 X11_LOCALELIBDIR = @X11_LOCALELIBDIR@
+XCB_FALSE = @XCB_FALSE@
+XCB_TRUE = @XCB_TRUE@
 XCMS_FALSE = @XCMS_FALSE@
 XCMS_TRUE = @XCMS_TRUE@
 XDMCP_CFLAGS = @XDMCP_CFLAGS@
@@ -210,7 +219,9 @@ XKB_TRUE = @XKB_TRUE@
 XKEYSYMDB = @XKEYSYMDB@
 XLIB_LOADABLE_I18N_FALSE = @XLIB_LOADABLE_I18N_FALSE@
 XLIB_LOADABLE_I18N_TRUE = @XLIB_LOADABLE_I18N_TRUE@
+XLOCALEDATADIR = @XLOCALEDATADIR@
 XLOCALEDIR = @XLOCALEDIR@
+XLOCALELIBDIR = @XLOCALELIBDIR@
 XLOCALE_FALSE = @XLOCALE_FALSE@
 XLOCALE_TRUE = @XLOCALE_TRUE@
 XMALLOC_ZERO_CFLAGS = @XMALLOC_ZERO_CFLAGS@
@@ -399,6 +410,11 @@ EXTRA_DIST = \
 	lcUniConv/8bit_tab_to_h.c \
 	lcUniConv/cjk_tab_to_h.c
 
+
+# Check source code with tools like lint & sparse
+@LINT_TRUE@ALL_LINT_FLAGS = $(LINT_FLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+@LINT_TRUE@		$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS)
+
 all: all-am
 
 .SUFFIXES:
@@ -412,9 +428,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/xlibi18n/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/xlibi18n/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/xlibi18n/Makefile
+	  $(AUTOMAKE) --foreign  src/xlibi18n/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -679,6 +695,9 @@ uninstall-am: uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-info-am
 
+
+@LINT_TRUE@lint:
+@LINT_TRUE@	$(LINT) $(ALL_LINT_FLAGS) $(libi18n_la_SOURCES)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

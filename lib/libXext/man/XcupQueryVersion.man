@@ -1,4 +1,4 @@
-.\" $XdotOrg: lib/Xext/man/XcupQueryVersion.man,v 1.1 2005/01/22 05:12:08 alanc Exp $
+.\" $XdotOrg: $
 .\" 
 .\" Copyright \(co 1986-1997   The Open Group    All Rights Reserved
 .\" Copyright 1999, 2005 Sun Microsystems, Inc.  All Rights Reserved
@@ -33,7 +33,7 @@
 .ie t \fB\^\\$1\^\fR\\$2
 .el \fI\^\\$1\^\fP\\$2
 ..
-.TH XcupQueryVersion 3Xext __xorgversion__ "X FUNCTIONS"
+.TH XcupQueryVersion __libmansuffix__ __xorgversion__ "X FUNCTIONS"
 .SH NAME
 XcupQueryVersion \- Returns TOG-CUP protocol version supported by the X server
 .SH SYNOPSIS

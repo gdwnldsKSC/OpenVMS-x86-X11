@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/sis_accel.h,v 1.8 2005/07/04 10:57:08 twini Exp $ */
+/* $XdotOrg$ */
 /*
  * 2D acceleration for 5597/5598 and 6326
  * Definitions for the SIS engine communication

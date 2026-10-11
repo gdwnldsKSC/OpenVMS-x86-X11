@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-via],
-        0.2.1,
+        0.2.2,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-via)
 
@@ -67,6 +67,7 @@ sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 
 # Checks for header files.
 AC_HEADER_STDC
+AC_CHECK_HEADERS([inttypes.h])
 
 
 if test "x$DRI" != xno; then

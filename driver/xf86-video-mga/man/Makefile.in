@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# $Id: Makefile.am,v 1.5 2005/11/28 22:04:09 alanc Exp $
+# $Id$
 #
 # Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
 # 
@@ -154,9 +154,14 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
+SED = sed
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USE_EXA_FALSE = @USE_EXA_FALSE@
+USE_EXA_TRUE = @USE_EXA_TRUE@
+USE_XAA_FALSE = @USE_XAA_FALSE@
+USE_XAA_TRUE = @USE_XAA_TRUE@
 VERSION = @VERSION@
 XORG_CFLAGS = @XORG_CFLAGS@
 XORG_LIBS = @XORG_LIBS@
@@ -210,7 +215,6 @@ driverman_PRE = @DRIVER_NAME@.man
 driverman_DATA = $(driverman_PRE:man=@DRIVER_MAN_SUFFIX@)
 EXTRA_DIST = @DRIVER_NAME@.man
 CLEANFILES = $(driverman_DATA)
-SED = sed
 
 # Strings to replace in man pages
 XORGRELSTRING = @PACKAGE_STRING@

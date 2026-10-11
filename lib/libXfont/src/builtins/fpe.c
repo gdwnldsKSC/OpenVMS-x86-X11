@@ -1,4 +1,4 @@
-/* $XdotOrg: lib/Xfont/src/builtins/fpe.c,v 1.5 2005/07/30 18:56:32 alanc Exp $ */
+/* $XdotOrg: $ */
 /*
  * Id: fpe.c,v 1.2 1999/11/02 06:16:48 keithp Exp $
  *

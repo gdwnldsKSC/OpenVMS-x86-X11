@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtGetErrorDatabase 3Xt __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
+.TH XtGetErrorDatabase __libmansuffix__ __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
 .SH NAME
 XtGetErrorDatabase, XtGetErrorDatabaseText \- obtain error database
 .SH SYNTAX

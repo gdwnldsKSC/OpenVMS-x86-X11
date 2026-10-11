@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtGetKeysymTable 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtGetKeysymTable __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtGetKeysymTable, XtKeysymToKeycodeList \- query keysyms and keycodes 
 .SH SYNTAX

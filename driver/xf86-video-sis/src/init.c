@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/init.c,v 1.42 2005/09/28 23:12:53 twini Exp $ */
+/* $XdotOrg$ */
 /*
  * Mode initializing code (CRT1 section) for
  * for SiS 300/305/540/630/730,

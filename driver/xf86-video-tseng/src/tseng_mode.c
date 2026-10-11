@@ -1082,7 +1082,7 @@ TsengSave(ScrnInfoPtr pScrn)
 	}
     } else {
 	/* Save ET6000 CLKDAC PLL registers */
-	ET6000IOWrite(pTseng, 0x67, 0x02);
+	ET6000IOWrite(pTseng, 0x67, 0x03);
 	tsengReg->ET6K_PLL = ET6000IORead(pTseng, 0x69);
 	tsengReg->ET6K_PLL |= ET6000IORead(pTseng, 0x69) << 8;
 
@@ -1134,7 +1134,7 @@ TsengRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, TsengRegPtr tsengReg,
 	}
     } else {
 	/* Restore ET6000 CLKDAC PLL registers */
-	ET6000IOWrite(pTseng, 0x67, 0x02);
+	ET6000IOWrite(pTseng, 0x67, 0x03);
 	ET6000IOWrite(pTseng, 0x69, tsengReg->ET6K_PLL & 0xFF);
 	ET6000IOWrite(pTseng, 0x69, tsengReg->ET6K_PLL >> 8);
 

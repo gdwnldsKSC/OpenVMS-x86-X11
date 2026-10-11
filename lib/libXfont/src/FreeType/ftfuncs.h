@@ -47,6 +47,7 @@ typedef struct _FTFace {
     char *filename;
     FT_Face face;
     int bitmap;
+    FT_UInt num_hmetrics;
     struct _FTInstance *instances;
     struct _FTInstance *active_instance;
     struct _FTFace *next;       /* link to next face in bucket */

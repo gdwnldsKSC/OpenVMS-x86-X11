@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtGetSelectionRequest 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtGetSelectionRequest __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtGetSelectionRequest \- retrieve the event that triggered the XtConvertSelectionProc
 .SH SYNTAX

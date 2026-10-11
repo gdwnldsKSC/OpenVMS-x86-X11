@@ -1,3 +1,6 @@
-/* $XFree86$ */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+#include "stubs.h"
 
-void *serverClient = 0;
+weak void *serverClient = 0;

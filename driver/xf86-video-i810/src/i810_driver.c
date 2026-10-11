@@ -140,6 +140,10 @@ static SymTabRec I810Chipsets[] = {
    {PCI_CHIP_I915_GM,		"915GM"},
    {PCI_CHIP_I945_G,		"945G"},
    {PCI_CHIP_I945_GM,		"945GM"},
+   {PCI_CHIP_I965_G,		"965G"},
+   {PCI_CHIP_I965_G_1,		"965G"},
+   {PCI_CHIP_I965_Q,		"965Q"},
+   {PCI_CHIP_I946_GZ,		"946GZ"},
    {-1,				NULL}
 };
 
@@ -159,6 +163,10 @@ static PciChipsets I810PciChipsets[] = {
    {PCI_CHIP_I915_GM,		PCI_CHIP_I915_GM,	RES_SHARED_VGA},
    {PCI_CHIP_I945_G,		PCI_CHIP_I945_G,	RES_SHARED_VGA},
    {PCI_CHIP_I945_GM,		PCI_CHIP_I945_GM,	RES_SHARED_VGA},
+   {PCI_CHIP_I965_G,		PCI_CHIP_I965_G,	RES_SHARED_VGA},
+   {PCI_CHIP_I965_G_1,		PCI_CHIP_I965_G_1,	RES_SHARED_VGA},
+   {PCI_CHIP_I965_Q,		PCI_CHIP_I965_Q,	RES_SHARED_VGA},
+   {PCI_CHIP_I946_GZ,		PCI_CHIP_I946_GZ,	RES_SHARED_VGA},
    {-1,				-1, RES_UNDEFINED }
 };
 
@@ -324,16 +332,15 @@ const char *I810driSymbols[] = {
    "DRICreatePCIBusID",
    NULL
 };
-#endif 
 
 const char *I810shadowSymbols[] = {
     "shadowInit",
     "shadowSetup",
     "shadowAdd",
-    "shadowRemove",
-    "shadowUpdateRotatePacked",
     NULL
 };
+
+#endif /* I830_ONLY */
 
 #ifndef I810_DEBUG
 int I810_DEBUG = (0
@@ -372,7 +379,7 @@ static XF86ModuleVersionInfo i810VersRec = {
    MODINFOSTRING1,
    MODINFOSTRING2,
    XORG_VERSION_CURRENT,
-   I810_MAJOR_VERSION, I810_MINOR_VERSION, I810_PATCHLEVEL,
+   INTEL_VERSION_MAJOR, INTEL_VERSION_MINOR, INTEL_VERSION_PATCH,
    ABI_CLASS_VIDEODRV,
    ABI_VIDEODRV_VERSION,
    MOD_CLASS_VIDEODRV,
@@ -578,6 +585,10 @@ I810Probe(DriverPtr drv, int flags)
 	    case PCI_CHIP_I915_GM:
 	    case PCI_CHIP_I945_G:
 	    case PCI_CHIP_I945_GM:
+	    case PCI_CHIP_I965_G:
+	    case PCI_CHIP_I965_G_1:
+	    case PCI_CHIP_I965_Q:
+	    case PCI_CHIP_I946_GZ:
     	       xf86SetEntitySharable(usedChips[i]);
 
     	       /* Allocate an entity private if necessary */		
@@ -1093,7 +1104,7 @@ I810PreInit(ScrnInfoPtr pScrn, int flags)
 #ifdef XF86DRI
    if (!pI810->directRenderingDisabled) {
      pI810->allowPageFlip = enable;
-     if (pI810->allowPageFlip == enable)
+     if (pI810->allowPageFlip == TRUE)
      {
        if (!xf86LoadSubModule(pScrn, "shadowfb")) {
 	 pI810->allowPageFlip = 0;

@@ -58,8 +58,9 @@ AC_DEFUN([XTRANS_TCP_FLAGS],[
 # -------------------------
 # Standard checks for which Xtrans transports to use by the Xorg packages
 # that use Xtrans functions
-AC_DEFUN([XTRANS_CONNECTION_FLAGS],
-[AC_REQUIRE([AC_TYPE_SIGNAL])
+AC_DEFUN([XTRANS_CONNECTION_FLAGS],[
+ AC_REQUIRE([AC_CANONICAL_HOST])
+ AC_REQUIRE([AC_TYPE_SIGNAL])
  AC_ARG_ENABLE(unix-transport,
 	AC_HELP_STRING([--enable-unix-transport],[Enable UNIX domain socket transport]),
 	[UNIXCONN=$enableval], [UNIXCONN=yes])
@@ -77,6 +78,19 @@ AC_DEFUN([XTRANS_CONNECTION_FLAGS],
 	AC_DEFINE(TCPCONN,1,[Support TCP socket connections])
 	XTRANS_TCP_FLAGS
  fi
+ [case $host_os in
+	solaris*|sco*|sysv4*)	localdef="yes" ;;
+	*)			localdef="no"  ;;
+ esac]
+ AC_ARG_ENABLE(local-transport,
+	AC_HELP_STRING([--enable-local-transport],[Enable os-specific local transport]),
+	[LOCALCONN=$enableval], [LOCALCONN=$localdef])
+ AC_MSG_CHECKING([if Xtrans should support os-specific local connections])
+ AC_MSG_RESULT($LOCALCONN)
+ if test "$LOCALCONN" = "yes"; then
+	AC_DEFINE(LOCALCONN,1,[Support os-specific local connections])
+ fi
+ 
 ]) # XTRANS_CONNECTION_FLAGS
 
 

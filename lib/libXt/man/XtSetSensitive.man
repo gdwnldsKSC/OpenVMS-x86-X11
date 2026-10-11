@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtSetSensitive 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtSetSensitive __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtSetSensitive, XtIsSensitive \- set and check a widget's sensitivity state
 .SH SYNTAX

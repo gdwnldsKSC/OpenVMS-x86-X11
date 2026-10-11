@@ -54,7 +54,6 @@ mga_drv_la_SOURCES = \
          mga_reg.h \
          mga_sarea.h \
          mga_shadow.c \
-         mga_storm.c \
          mga_ucode.h \
 	 mga_vga.c \
          mga_video.c
@@ -64,4 +63,14 @@ mga_drv_la_SOURCES += \
 	mga_dri.c \
         mga_dri.h \
         mga_dripriv.h
+endif
+
+if USE_EXA
+mga_drv_la_SOURCES += \
+    mga_exa.c
+endif
+
+if USE_XAA
+mga_drv_la_SOURCES += \
+    mga_storm.c
 endif

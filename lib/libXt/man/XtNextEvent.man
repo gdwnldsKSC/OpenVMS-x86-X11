@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtNextEvent 3Xt __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
+.TH XtNextEvent __libmansuffix__ __xorgversion__ "XT COMPATIBILITY FUNCTIONS"
 .SH NAME
 XtNextEvent, XtPending, XtPeekEvent, XtProcessEvent, XtMainLoop \- query and process events and input
 .SH SYNTAX

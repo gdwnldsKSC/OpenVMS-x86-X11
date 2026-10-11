@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtBuildEventMask 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtBuildEventMask __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtBuildEventMask \- retrieve a widget's event mask
 .SH SYNTAX

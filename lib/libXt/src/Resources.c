@@ -1031,7 +1031,7 @@ XtCacheRef *_XtGetResources(
     XrmQuarkList    quark_args;
     WidgetClass     wc;
     ConstraintWidgetClass   cwc;
-    XtCacheRef	    *cache_refs;
+    XtCacheRef	    *cache_refs, *cache_refs_core;
     Cardinal	    count;
 
     wc = XtClass(w);
@@ -1057,10 +1057,14 @@ XtCacheRef *_XtGetResources(
 
     if (w->core.constraints != NULL) {
 	cwc = (ConstraintWidgetClass) XtClass(w->core.parent);
-	(void) GetResources(w, (char*)w->core.constraints, names, classes,
+	cache_refs_core =
+	    GetResources(w, (char*)w->core.constraints, names, classes,
 	    (XrmResourceList *) cwc->constraint_class.resources,
 	    cwc->constraint_class.num_resources,
 	    quark_args, args, num_args, typed_args, num_typed_args, False);
+	if (cache_refs_core) {
+	    XtFree((char *)cache_refs_core);
+	}
     }
     FreeCache(quark_cache, quark_args);
     UNLOCK_PROCESS;
@@ -1088,6 +1092,7 @@ void _XtGetSubresources (
     XrmQuarkList  quark_args;
     XrmResourceList* table;
     Cardinal	  count, ntyped_args = num_typed_args;
+    XtCacheRef    *Resrc = NULL;
     WIDGET_TO_APPCON(w);
 
     if (num_resources == 0) return;
@@ -1117,11 +1122,12 @@ void _XtGetSubresources (
 	XrmCompileResourceListEphem(resources, num_resources);
     }
     table = _XtCreateIndirectionTable(resources, num_resources); 
-    (void) GetResources(w, (char*)base, names, classes, table, num_resources,
+    Resrc = GetResources(w, (char*)base, names, classes, table, num_resources,
 			quark_args, args, num_args,
 			typed_args, &ntyped_args, False);
     FreeCache(quark_cache, quark_args);
     XtFree((char *)table);
+    XtFree((char *)Resrc);
     XtStackFree((XtPointer)names, names_s);
     XtStackFree((XtPointer)classes, classes_s);
     UNLOCK_APP(app);
@@ -1160,6 +1166,7 @@ void _XtGetApplicationResources (
 #ifdef XTHREADS
     XtAppContext    app;
 #endif
+    XtCacheRef	    *Resrc = NULL;
 
     if (num_resources == 0) return;
 
@@ -1206,11 +1213,12 @@ void _XtGetApplicationResources (
     }
     table = _XtCreateIndirectionTable(resources,num_resources);
 
-    (void) GetResources(w, (char*)base, names, classes, table, num_resources,
+    Resrc = GetResources(w, (char*)base, names, classes, table, num_resources,
 			quark_args, args, num_args,
 			typed_args, &ntyped_args, False);
     FreeCache(quark_cache, quark_args);
     XtFree((char *)table);
+    XtFree((char *)Resrc);
     if (w != NULL) {
 	XtStackFree((XtPointer)names, names_s);
 	XtStackFree((XtPointer)classes, classes_s);

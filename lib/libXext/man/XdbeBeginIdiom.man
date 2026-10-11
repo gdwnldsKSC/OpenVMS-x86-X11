@@ -27,7 +27,7 @@
 .\"
 .\" $XFree86: xc/doc/man/Xext/dbe/XdbeBegi.man,v 3.4 2001/01/27 18:20:20 dawes Exp $
 .\"
-.TH DBE 3X11 __xorgversion__ "X FUNCTIONS"
+.TH DBE __libmansuffix__ __xorgversion__ "X FUNCTIONS"
 .SH NAME
 XdbeBeginIdiom - marks the beginning of a DBE idiom sequence.
 .SH SYNOPSIS

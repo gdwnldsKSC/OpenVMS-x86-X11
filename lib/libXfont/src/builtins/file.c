@@ -121,7 +121,7 @@ BuiltinFileOpen (name)
 	xfree (io);
 	return NULL;
     }
-    if (cooked = BufFilePushCompressed (raw))
+    if (cooked = BufFilePushZIP (raw))
 	raw = cooked;
     else
     {

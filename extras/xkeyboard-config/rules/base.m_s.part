@@ -1,0 +1,3 @@
+  $inetkbds     =       +inet(%m)
+  $maclaptop	=	+inet(apple)+level3(enter_switch)
+  $macs	        =	+inet(apple)

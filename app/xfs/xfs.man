@@ -62,7 +62,7 @@ private font servers for specific sets of fonts.
 .TP 8
 .B \-config configuration_file
 Specifies the configuration file the font server will use.  If this
-parameter is not specified, the default file, \fI/usr/X11R6/lib/X11/fs/config\fR
+parameter is not specified, the default file, \fI__configdir__/config\fR
 will be used.
 .TP 8
 .B \-ls listen_socket

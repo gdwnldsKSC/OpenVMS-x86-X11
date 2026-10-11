@@ -11,7 +11,7 @@
 #endif
 
 #include "newport.h"
-#include <values.h>
+#include <limits.h>
 
 #ifdef NEWPORT_ACCEL
 
@@ -1286,7 +1286,7 @@ NewportPolyArc(DrawablePtr pDraw,
  	    box.x2 = x2;
  	    y2 = box.y1 + (int)arc->height + 1;
  	    box.y2 = y2;
- 	    if ( (x2 <= MAXSHORT) && (y2 <= MAXSHORT) &&
+ 	    if ( (x2 <= SHRT_MAX) && (y2 <= SHRT_MAX) &&
  		    (RECT_IN_REGION(pDraw->pScreen, cclip, &box) == rgnIN) )
 		miZeroPolyArc(pDraw, pGC, 1, arc);
 	}

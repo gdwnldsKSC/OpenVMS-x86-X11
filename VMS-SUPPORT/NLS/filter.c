@@ -76,15 +76,32 @@ static int compatibility_line(char *line)
     return 1;
 }
 
+static int cpp_input_line(FILE *output, const char *line)
+{
+    /* Preserve literal data comments through cpp's existing XHASH convention. */
+    while (*line == ' ' || *line == '\t') {
+        if (fputc(*line++, output) == EOF)
+            return 1;
+    }
+    if (line[0] == '#' && line[1] == '#') {
+        if (fputs("XHASH", output) == EOF)
+            return 1;
+        ++line;
+    }
+    return fputs(line, output) == EOF || fputc('\n', output) == EOF;
+}
+
 int main(int argc, char **argv)
 {
     FILE *input, *output;
     char *buffer = NULL;
     size_t capacity = 0;
-    int compatibility, pass, status = 0;
-    if (argc < 3 || argc > 4 || (argc == 4 && strcmp(argv[3], "R63")))
+    int compatibility, cpp_input, pass, status = 0;
+    if (argc < 3 || argc > 4 ||
+        (argc == 4 && strcmp(argv[3], "R63") && strcmp(argv[3], "CPP")))
         return 1;
-    compatibility = argc == 4;
+    compatibility = argc == 4 && !strcmp(argv[3], "R63");
+    cpp_input = argc == 4 && !strcmp(argv[3], "CPP");
     input = fopen(argv[1], "r");
     if (!input)
         return 1;
@@ -100,6 +117,12 @@ int main(int argc, char **argv)
             break;
         }
         while ((read_status = read_line(input, &buffer, &capacity)) > 0) {
+            if (cpp_input) {
+                status = cpp_input_line(output, buffer);
+                if (status)
+                    break;
+                continue;
+            }
             if (!clean_line(buffer) || (!pass && !compatibility_line(buffer)))
                 continue;
             if (fputs(buffer, output) == EOF || fputc('\n', output) == EOF) {

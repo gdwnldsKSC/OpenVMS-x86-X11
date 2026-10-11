@@ -107,12 +107,17 @@
 #define BCI_BD_TILE_NONE             0x00000000
 #define BCI_BD_TILE_16               0x02000000
 #define BCI_BD_TILE_32               0x03000000
+#define BCI_BD_TILE_DESTINATION      0x01000000
+
 #define BCI_BD_GET_BPP(bd)           (((bd) >> 16) & 0xFF)
 #define BCI_BD_SET_BPP(bd, bpp)      ((bd) |= (((bpp) & 0xFF) << 16))
 #define BCI_BD_GET_STRIDE(bd)        ((bd) & 0xFFFF)
 #define BCI_BD_SET_STRIDE(bd, st)    ((bd) |= ((st) & 0xFFFF))
 
 #define BCI_SET_REGISTER             0x96000000
+#define BCI_SET_REGISTER_COUNT(count) ((count) << 16)
+#define BCI_BITPLANE_WRITE_MASK	     0xD7
+#define BCI_BITPLANE_READ_MASK	     0xD8
 
 #define BCI_W_H(w, h)                ((((h) << 16) | (w)) & 0x0FFF0FFF)
 #define BCI_X_Y(x, y)                ((((y) << 16) | (x)) & 0x0FFF0FFF)

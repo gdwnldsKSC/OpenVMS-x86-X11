@@ -1,5 +1,5 @@
 /*
- * $Id: Region.c,v 1.1 2004/07/31 05:50:39 anholt Exp $
+ * $Id$
  *
  * Copyright © 2003 Keith Packard
  *
@@ -251,6 +251,10 @@ XFixesInvertRegion (Display *dpy, XserverRegion dst,
     GetReq (XFixesInvertRegion, req);
     req->reqType = info->codes->major_opcode;
     req->xfixesReqType = X_XFixesInvertRegion;
+    req->x = rect->x;
+    req->y = rect->y;
+    req->width = rect->width;
+    req->height = rect->height;
     req->source = src;
     req->destination = dst;
     UnlockDisplay (dpy);
@@ -320,6 +324,7 @@ XFixesFetchRegionAndBounds (Display	    *dpy,
     req->reqType = info->codes->major_opcode;
     req->xfixesReqType = X_XFixesFetchRegion;
     req->region = region;
+    *nrectanglesRet = 0;
     if (!_XReply (dpy, (xReply *) &rep, 0, xFalse))
     {
 	UnlockDisplay (dpy);

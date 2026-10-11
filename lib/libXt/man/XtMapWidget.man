@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtMapWidget 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtMapWidget __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtMapWidget, XtSetMappedWhenManaged, XtUnmapWidget \- map and unmap widgets
 .SH SYNTAX

@@ -27,7 +27,7 @@
 .\"
 .\" $XFree86: xc/doc/man/Xext/dbe/XdbeGetB.man,v 3.4 2001/01/27 18:20:20 dawes Exp $
 .\"
-.TH XdbeGetBackBufferAttributes 3X11 __xorgversion__ "X FUNCTIONS"
+.TH XdbeGetBackBufferAttributes __libmansuffix__ __xorgversion__ "X FUNCTIONS"
 .SH NAME
 XdbeGetBackBufferAttributes - returns attributes of a DBE buffer.
 .SH SYNOPSIS

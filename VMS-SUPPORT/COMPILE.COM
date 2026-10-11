@@ -15,7 +15,7 @@ $ inherited_loader_table = ""
 $ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|ICE|SM|BDFTOPCF|ICEAUTH|SHOWRGB|MAKEDEPEND|GTF|RTL|"
-$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|"
+$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|"
 $ profiles = profiles + "CFB|XKBFILE|XKBUI|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ profiles = profiles + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ profiles = profiles + "XSS|XVMC|XXF86VM|XXF86MISC|"
@@ -65,7 +65,8 @@ $ IF P4 .EQS. "LBXUTIL" THEN include_directory = include_directory + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
     "[.XSERVER.XORG-SERVER.INCLUDE],[.LIB.LIBLBXUTIL.SRC.LBX_ZLIB]"
 $ IF P4 .EQS. "FONT_UTIL" THEN include_directory = include_directory + -
-    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS],[.LIB.LIBXFONT.INCLUDE.X11.FONTS]"
+    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
+    "[.LIB.LIBXFONT.INCLUDE.X11.FONTS],[.LIB.LIBXFONT.SRC.STUBS]"
 $ font_renderers = "|FONT_BUILTINS|FONT_FONTCACHE|FONT_FREETYPE|FONT_SPEEDO|"
 $ IF F$LOCATE("|" + P4 + "|",font_renderers) .LT. F$LENGTH(font_renderers) -
     THEN include_directory = include_directory + -
@@ -185,7 +186,7 @@ $ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.INCLUDE]"
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.UTIL.MAKEDEPEND],[.UTIL.IMAKE]"
-$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|LBX|CFB|ROOTLESS|XTRAP|"
+$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|CFB|ROOTLESS|XTRAP|"
 $ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|RAC|COMMON|INIT|BUS|MISC|SCANPCI|XORGXKB|"
 $! Native case folding makes server xfixes.h collide with client Xfixes.h.
 $! Keep the server header ahead of the exported client extension directory.
@@ -262,18 +263,19 @@ $ IF P4 .EQS. "COMPOSITE" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.COMPOSITE],[.XSERVER.XORG-SERVER.XFIXES]," + -
     "[.XSERVER.XORG-SERVER.DAMAGEEXT],[.XSERVER.XORG-SERVER.XEXT]"
 $ IF P4 .EQS. "DIX" THEN include_directory = include_directory + -
-    ",[.XSERVER.XORG-SERVER.DIX],[.XSERVER.XORG-SERVER.XEXT],[.XSERVER.XORG-SERVER.LBX]"
+    ",[.XSERVER.XORG-SERVER.DIX],[.XSERVER.XORG-SERVER.XEXT]"
 $ IF P4 .EQS. "CW" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.MIEXT.CW],[.XSERVER.XORG-SERVER.FB]," + -
     "[.XSERVER.XORG-SERVER.COMPOSITE],[.XSERVER.XORG-SERVER.XEXT]"
 $ IF P4 .EQS. "DAMAGEEXT" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.DAMAGEEXT],[.XSERVER.XORG-SERVER.XFIXES],[.XSERVER.XORG-SERVER.XEXT]"
 $ IF P4 .EQS. "EXT" THEN include_directory = include_directory + -
-    ",[.XSERVER.XORG-SERVER.XEXT],[.XSERVER.XORG-SERVER.HW.XFREE86.DIXMODS.EXTMOD],[.XSERVER.XORG-SERVER.XPRINT]"
+    ",[.XSERVER.XORG-SERVER.XEXT],[.XSERVER.XORG-SERVER.HW.XFREE86.DIXMODS.EXTMOD]," + -
+    "[.XSERVER.XORG-SERVER.HW.XPRINT]"
 $ IF P4 .EQS. "XINPUT" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.XI],[.XSERVER.XORG-SERVER.XEXT]"
 $ IF P4 .EQS. "OS" THEN include_directory = include_directory + -
-    ",[.XSERVER.XORG-SERVER.OS],[.XSERVER.XORG-SERVER.XEXT],[.XSERVER.XORG-SERVER.LBX]," + -
+    ",[.XSERVER.XORG-SERVER.OS],[.XSERVER.XORG-SERVER.XEXT]," + -
     "[.LIB.LIBXFONT.INCLUDE.X11.FONTS],[.LIB.LIBXAU],[.LIB.XTRANS]"
 $ IF P4 .EQS. "MFB" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.MFB]"
@@ -287,8 +289,6 @@ $ IF P4 .EQS. "XKB" THEN include_directory = include_directory + -
 $! Slash-bearing upstream includes require a Unix-style search directory.
 $ IF P4 .EQS. "XKB" THEN include_directory = include_directory + -
     ",""./VMS-SUPPORT/_BUILD/P64/INCLUDE/X11"""
-$ IF P4 .EQS. "LBX" THEN include_directory = include_directory + -
-    ",[.XSERVER.XORG-SERVER.LBX],[.XSERVER.XORG-SERVER.XEXT],[.LIB.LIBXFONT.INCLUDE.X11.FONTS]"
 $ IF P4 .EQS. "CFB" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.CFB]," + -
     "[.XSERVER.XORG-SERVER.MFB],[.XSERVER.XORG-SERVER.XEXT]"

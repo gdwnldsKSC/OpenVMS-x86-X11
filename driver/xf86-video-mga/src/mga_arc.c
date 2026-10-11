@@ -29,7 +29,7 @@ in this Software without prior written authorization from The Open Group.
 #include "config.h"
 #endif
 
-#include <values.h>
+#include <limits.h>
 #include <X11/X.h>
 #include "gcstruct.h"
 #include "windowstr.h"
@@ -215,7 +215,7 @@ MGAPolyArcThinSolid (
  	    box.x2 = x2;
  	    y2 = box.y1 + (int)arc->height + 1;
  	    box.y2 = y2;
- 	    if ( (x2 <= MAXSHORT) && (y2 <= MAXSHORT) &&
+ 	    if ( (x2 <= SHRT_MAX) && (y2 <= SHRT_MAX) &&
  		    (RECT_IN_REGION(pDraw->pScreen, cclip, &box) == rgnIN) )
 		MGAZeroArc (pDraw, pGC, arc);
 	    else

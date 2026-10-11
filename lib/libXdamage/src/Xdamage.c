@@ -1,5 +1,5 @@
 /*
- * $Id: Xdamage.c,v 1.1 2004/07/31 05:50:39 anholt Exp $
+ * $Id$
  *
  * Copyright © 2003 Keith Packard
  *
@@ -305,8 +305,6 @@ XDamageQueryVersion (Display *dpy,
 
     *major_versionp = info->major_version;
     *minor_versionp = info->minor_version;
-    UnlockDisplay (dpy);
-    SyncHandle ();
     return 1;
 }
 

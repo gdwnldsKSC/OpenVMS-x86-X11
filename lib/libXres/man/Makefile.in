@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# $Id: Makefile.am,v 1.6 2005/12/06 22:48:42 kem Exp $
+# $Id$
 #
 # Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
 # 
@@ -149,6 +149,7 @@ PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 RESOURCEEXT_CFLAGS = @RESOURCEEXT_CFLAGS@
 RESOURCEEXT_LIBS = @RESOURCEEXT_LIBS@
+SED = sed
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -210,7 +211,6 @@ CLEANFILES = $(libman_DATA) $(BUILT_SOURCES)
 libman_DATA = $(libman_PRE:man=@LIB_MAN_SUFFIX@) \
 	      $(XRes_shadows:=.@LIB_MAN_SUFFIX@)
 
-SED = sed
 
 # Strings to replace in man pages
 XORGRELSTRING = @PACKAGE_STRING@

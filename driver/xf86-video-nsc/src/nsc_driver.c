@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_driver.c,v 1.4tsi Exp $ */
 /*
  * $Workfile: nsc_driver.c $
- * $Revision: 1.6 $
- * $Author: daniels $
+ * $Revision$
+ * $Author$
  *
  * File Contents: This is the main module configures the interfacing 
  *                with the X server. The individual modules will be 

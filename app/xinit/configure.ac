@@ -22,7 +22,7 @@ dnl
 dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
-AC_INIT(xinit,[1.0.2], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xinit)
+AC_INIT(xinit,[1.0.3], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xinit)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
@@ -104,8 +104,8 @@ AC_SUBST(XINIT_LIBS)
 
 AC_PATH_PROGS(MCOOKIE, [mcookie], [$MCOOKIE],
   [$PATH:/bin:/usr/bin:/usr/lib:/usr/libexec:/usr/local/bin])
-if test x$MCOOKIE != x ; then
-	STARTX_COOKIE_FLAGS='-DHAS_COOKIE_MAKER -DMK_COOKIE=$(MCOOKIE)'
+if test "x$MCOOKIE" != x ; then
+	STARTX_COOKIE_FLAGS='-DHAS_COOKIE_MAKER -DMK_COOKIE="$(MCOOKIE)"'
 fi
 AC_SUBST(STARTX_COOKIE_FLAGS)
 

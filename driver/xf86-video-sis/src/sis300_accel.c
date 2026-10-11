@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/sis300_accel.c,v 1.23 2006/03/09 06:06:25 anholt Exp $ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis300_accel.c,v 1.23 2006-03-09 06:06:25 anholt Exp $ */
 /*
  * 2D Acceleration for SiS 530, 620, 300, 540, 630, 730.
  *
@@ -1234,7 +1234,7 @@ SiS300AccelInit(ScreenPtr pScreen)
 	   if(pSiS->useEXA) {
 
 	      pSiS->EXADriverPtr->exa_major = 2;
-	      pSiS->EXADriverPtr->exa_major = 0;
+	      pSiS->EXADriverPtr->exa_minor = 0;
 
 	      if(pSiS->scrnOffset < 8192) {
 

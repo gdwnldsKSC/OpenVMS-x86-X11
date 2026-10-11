@@ -1,4 +1,3 @@
-/* $XdotOrg: xserver/xorg/hw/xfree86/common/xorgVersion.h,v 1.6 2005/08/24 11:18:35 daniels Exp $ */
 
 /*
  * Copyright (c) 2004, X.Org Foundation
@@ -48,4 +47,3 @@
 # define XORG_VERSION_SNAP	XORG_GET_SNAP_VERSION(XORG_VERSION_CURRENT)
 
 #endif
-/* $XdotOrg: xserver/xorg/hw/xfree86/common/xorgVersion.h,v 1.6 2005/08/24 11:18:35 daniels Exp $ */

@@ -66,6 +66,7 @@ ignore scalable fonts.  By default, scalable fonts are read.  If
 is set, this flag has the side effect of enabling the reading of
 .B fonts.scale
 files.
+.TP
 .BI \-o " filename"
 send program output to
 .IR filename ;
@@ -82,7 +83,7 @@ output is written to standard output.
 .TP
 .BI \-x " suffix"
 exclude all files with the specified
-.I suffix
+.IR suffix .
 .TP
 .BI \-a " encoding"
 add
@@ -118,6 +119,8 @@ writing the "encodings.dir" file.  The default is to convert relative
 encoding directories to absolute directories by prepending the current
 directory.  The positioning of this options is significant, as this
 option only applies to subsequent
+.B \-e
+options.
 .TP
 .B \-n
 do not scan for fonts, do not write font directory files.  This option
@@ -146,8 +149,8 @@ is equivalent to
 .SH AUTHOR
 The version of
 .B mkfontscale
-included in this X.Org Foundataion release 
-was originally written by Juliusz Chroboczek <jch@xfree86.org> for the XFree86
-project.  The functionality of this program was inspired by the
+included in this X.Org Foundataion release was originally written by
+Juliusz Chroboczek <jch@freedesktop.org> for the XFree86 project.  The
+functionality of this program was inspired by the
 .B ttmkfdir
 utility by Joerg Pommnitz.

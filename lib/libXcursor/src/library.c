@@ -1,5 +1,5 @@
 /*
- * $Id: library.c,v 1.5 2005/07/03 07:00:56 daniels Exp $
+ * $Id$
  *
  * Copyright © 2002 Keith Packard
  *
@@ -98,13 +98,13 @@ _XcursorBuildThemeDir (const char *dir, const char *theme)
 
     themelen = tcolon - theme;
     
-    home = 0;
+    home = NULL;
     homelen = 0;
     if (*dir == '~')
     {
 	home = getenv ("HOME");
 	if (!home)
-	    return 0;
+	    return NULL;
 	homelen = strlen (home);
 	dir++;
 	dirlen--;
@@ -118,7 +118,7 @@ _XcursorBuildThemeDir (const char *dir, const char *theme)
     
     full = malloc (len);
     if (!full)
-	return 0;
+	return NULL;
     full[0] = '\0';
 
     if (home)
@@ -138,7 +138,7 @@ _XcursorBuildFullname (const char *dir, const char *subdir, const char *file)
 
     full = malloc (strlen (dir) + 1 + strlen (subdir) + 1 + strlen (file) + 1);
     if (!full)
-	return 0;
+	return NULL;
     full[0] = '\0';
     _XcursorAddPathElt (full, dir, -1);
     _XcursorAddPathElt (full, subdir, -1);
@@ -152,7 +152,7 @@ _XcursorNextPath (const char *path)
     char    *colon = strchr (path, ':');
 
     if (!colon)
-	return 0;
+	return NULL;
     return colon + 1;
 }
 
@@ -163,7 +163,7 @@ static char *
 _XcursorThemeInherits (const char *full)
 {
     char    line[8192];
-    char    *result = 0;
+    char    *result = NULL;
     FILE    *f;
 
     if (!full)
@@ -212,11 +212,11 @@ _XcursorThemeInherits (const char *full)
 static FILE *
 XcursorScanTheme (const char *theme, const char *name)
 {
-    FILE	*f = 0;
+    FILE	*f = NULL;
     char	*full;
     char	*dir;
     const char  *path;
-    char	*inherits = 0;
+    char	*inherits = NULL;
     const char	*i;
 
     if (!theme || !name)
@@ -263,7 +263,7 @@ XcursorScanTheme (const char *theme, const char *name)
      */
     for (i = inherits; i && f == 0; i = _XcursorNextPath (i))
 	f = XcursorScanTheme (i, name);
-    if (inherits)
+    if (inherits != NULL)
 	free (inherits);
     return f;
 }
@@ -271,8 +271,8 @@ XcursorScanTheme (const char *theme, const char *name)
 XcursorImage *
 XcursorLibraryLoadImage (const char *file, const char *theme, int size)
 {
-    FILE	    *f = 0;
-    XcursorImage    *image = 0;
+    FILE	    *f = NULL;
+    XcursorImage    *image = NULL;
 
     if (!file)
         return NULL;
@@ -282,7 +282,7 @@ XcursorLibraryLoadImage (const char *file, const char *theme, int size)
     if (!f)
 	f = XcursorScanTheme ("default", file);
     if (f == XCURSOR_SCAN_CORE)
-	return 0;
+	return NULL;
     if (f)
     {
 	image = XcursorFileLoadImage (f, size);
@@ -294,8 +294,8 @@ XcursorLibraryLoadImage (const char *file, const char *theme, int size)
 XcursorImages *
 XcursorLibraryLoadImages (const char *file, const char *theme, int size)
 {
-    FILE	    *f = 0;
-    XcursorImages   *images = 0;
+    FILE	    *f = NULL;
+    XcursorImages   *images = NULL;
 
     if (!file)
         return NULL;
@@ -305,7 +305,7 @@ XcursorLibraryLoadImages (const char *file, const char *theme, int size)
     if (!f)
 	f = XcursorScanTheme ("default", file);
     if (f == XCURSOR_SCAN_CORE)
-	return 0;
+	return NULL;
     if (f)
     {
 	images = XcursorFileLoadImages (f, size);
@@ -368,14 +368,14 @@ XcursorLibraryLoadCursors (Display *dpy, const char *file)
 		if (cursors->cursors[0] == None)
 		{
 		    XcursorCursorsDestroy (cursors);
-		    cursors = 0;
+		    cursors = NULL;
 		}
 		else
 		    cursors->ncursor = 1;
 	    }
 	}
 	else
-	    cursors = 0;
+	    cursors = NULL;
     }
     else
     {
@@ -428,7 +428,7 @@ XcursorShapeLoadImage (unsigned int shape, const char *theme, int size)
 	return XcursorLibraryLoadImage (_XcursorStandardNames[id],
 					theme, size);
     else
-	return 0;
+	return NULL;
 }
 
 XcursorImages *
@@ -440,7 +440,7 @@ XcursorShapeLoadImages (unsigned int shape, const char *theme, int size)
 	return XcursorLibraryLoadImages (_XcursorStandardNames[id],
 					 theme, size);
     else
-	return 0;
+	return NULL;
 }
 
 Cursor
@@ -462,7 +462,7 @@ XcursorShapeLoadCursors (Display *dpy, unsigned int shape)
     if (id < NUM_STANDARD_NAMES)
 	return XcursorLibraryLoadCursors (dpy, _XcursorStandardNames[id]);
     else
-	return 0;
+	return NULL;
 }
 
 int

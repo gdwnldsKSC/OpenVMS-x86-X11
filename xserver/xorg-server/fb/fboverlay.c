@@ -1,5 +1,4 @@
 /*
- * $XFree86: xc/programs/Xserver/fb/fboverlay.c,v 1.7 2003/11/10 18:21:47 tsi Exp $
  *
  * Copyright © 2000 SuSE, Inc.
  *
@@ -23,7 +22,6 @@
  * Author:  Keith Packard, SuSE, Inc.
  */
 
-/* $XdotOrg: xserver/xorg/fb/fboverlay.c,v 1.8 2006/02/10 22:00:21 anholt Exp $ */
 
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>

@@ -10,6 +10,9 @@ CLEANFILES = $(libman_DATA)
 
 SUFFIXES = .$(LIB_MAN_SUFFIX) .man
 
+# Strings to replace in man pages
+XORGRELSTRING = @PACKAGE_STRING@
+
 .man.$(LIB_MAN_SUFFIX):
 	-rm -f $@
-	$(LN_S) $< $@
+	sed 's/__xorgversion__/"$(XORGRELSTRING)"/;  s/__LIB_MAN_SUFFIX__/$(LIB_MAN_SUFFIX)/; s%__prefix__%$(prefix)%g; s%__ICONDIR__%$(ICONDIR)%g' < $< > $@

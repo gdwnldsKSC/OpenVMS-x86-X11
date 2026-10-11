@@ -2,7 +2,7 @@
 
     FreeType font driver for bdf files
 
-    Copyright (C) 2001, 2002, 2003, 2004 by
+    Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006 by
     Francesco Zappa Nardelli
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -248,7 +248,12 @@ THE SOFTWARE.
     }
 
     if ( !parts || !len )
-      face->style_name = (char *)"Regular";
+    {
+      if ( FT_ALLOC( face->style_name, ft_strlen( "Regular" ) + 1 ) )
+        return error;
+
+      ft_strcpy( face->style_name, "Regular" );
+    }
     else
     {
       char          *style, *s;
@@ -311,6 +316,7 @@ THE SOFTWARE.
     FT_FREE( face->charset_encoding );
     FT_FREE( face->charset_registry );
     FT_FREE( bdfface->family_name );
+    FT_FREE( bdfface->style_name );
 
     FT_FREE( bdfface->available_sizes );
 
@@ -331,7 +337,7 @@ THE SOFTWARE.
     BDF_Face       face   = (BDF_Face)bdfface;
     FT_Memory      memory = FT_FACE_MEMORY( face );
 
-    bdf_font_t*    font;
+    bdf_font_t*    font = NULL;
     bdf_options_t  options;
 
     FT_UNUSED( num_params );
@@ -416,19 +422,21 @@ THE SOFTWARE.
 
         FT_MEM_ZERO( bsize, sizeof ( FT_Bitmap_Size ) );
 
-        bsize->height = font->font_ascent + font->font_descent;
+        bsize->height = (FT_Short)( font->font_ascent + font->font_descent );
 
         prop = bdf_get_font_property( font, "AVERAGE_WIDTH" );
         if ( prop )
           bsize->width = (FT_Short)( ( prop->value.int32 + 5 ) / 10 );
         else
-          bsize->width = bsize->height * 2/3;
+          bsize->width = (FT_Short)( bsize->height * 2/3 );
 
         prop = bdf_get_font_property( font, "POINT_SIZE" );
         if ( prop )
           /* convert from 722.7 decipoints to 72 points per inch */
           bsize->size =
             (FT_Pos)( ( prop->value.int32 * 64 * 7200 + 36135L ) / 72270L );
+        else
+          bsize->size = bsize->width << 6;
 
         prop = bdf_get_font_property( font, "PIXEL_SIZE" );
         if ( prop )
@@ -469,7 +477,7 @@ THE SOFTWARE.
           (face->en_table[n]).enc = cur[n].encoding;
           FT_TRACE4(( "idx %d, val 0x%lX\n", n, cur[n].encoding ));
           (face->en_table[n]).glyph = (FT_Short)n;
-  
+
           if ( cur[n].encoding == font->default_char )
             face->default_glyph = n;
         }
@@ -578,49 +586,60 @@ THE SOFTWARE.
 
 
   FT_CALLBACK_DEF( FT_Error )
-  BDF_Set_Pixel_Size( FT_Size  size,
-                      FT_UInt  char_width,
-                      FT_UInt  char_height )
+  BDF_Size_Select( FT_Size   size,
+                   FT_ULong  strike_index )
   {
-    BDF_Face  face = (BDF_Face)FT_SIZE_FACE( size );
-    FT_Face   root = FT_FACE( face );
-
-    FT_UNUSED( char_width );
-    FT_UNUSED( char_height );
+    bdf_font_t*  bdffont = ( (BDF_Face)size->face )->bdffont;
 
 
-    FT_TRACE4(( "rec %d - pres %d\n",
-                size->metrics.y_ppem, root->available_sizes->y_ppem ));
+    FT_Select_Metrics( size->face, strike_index );
 
-    if ( size->metrics.y_ppem == root->available_sizes->y_ppem >> 6 )
-    {
-      size->metrics.ascender    = face->bdffont->font_ascent << 6;
-      size->metrics.descender   = -face->bdffont->font_descent << 6;
-      size->metrics.height      = ( face->bdffont->font_ascent +
-                                    face->bdffont->font_descent ) << 6;
-      size->metrics.max_advance = face->bdffont->bbx.width << 6;
+    size->metrics.ascender    = bdffont->font_ascent << 6;
+    size->metrics.descender   = -bdffont->font_descent << 6;
+    size->metrics.max_advance = bdffont->bbx.width << 6;
 
-      return BDF_Err_Ok;
-    }
-    else
-      return BDF_Err_Invalid_Pixel_Size;
+    return BDF_Err_Ok;
   }
 
 
   FT_CALLBACK_DEF( FT_Error )
-  BDF_Set_Point_Size( FT_Size     size,
-                      FT_F26Dot6  char_width,
-                      FT_F26Dot6  char_height,
-                      FT_UInt     horz_resolution,
-                      FT_UInt     vert_resolution )
+  BDF_Size_Request( FT_Size          size,
+                    FT_Size_Request  req )
   {
-    FT_UNUSED( char_width );
-    FT_UNUSED( char_height );
-    FT_UNUSED( horz_resolution );
-    FT_UNUSED( vert_resolution );
+    FT_Face          face    = size->face;
+    FT_Bitmap_Size*  bsize   = face->available_sizes;
+    bdf_font_t*      bdffont = ( (BDF_Face)face )->bdffont;
+    FT_Error         error   = BDF_Err_Invalid_Pixel_Size;
+    FT_Long          height;
 
-    return BDF_Set_Pixel_Size( size, 0, 0 );
+
+    height = FT_REQUEST_HEIGHT( req );
+    height = ( height + 32 ) >> 6;
+
+    switch ( req->type )
+    {
+    case FT_SIZE_REQUEST_TYPE_NOMINAL:
+      if ( height == ( bsize->y_ppem + 32 ) >> 6 )
+        error = BDF_Err_Ok;
+      break;
+
+    case FT_SIZE_REQUEST_TYPE_REAL_DIM:
+      if ( height == ( bdffont->font_ascent +
+                       bdffont->font_descent ) )
+        error = BDF_Err_Ok;
+      break;
+
+    default:
+      error = BDF_Err_Unimplemented_Feature;
+      break;
+    }
+
+    if ( error )
+      return error;
+    else
+      return BDF_Size_Select( size, 0 );
   }
+
 
 
   FT_CALLBACK_DEF( FT_Error )
@@ -629,18 +648,17 @@ THE SOFTWARE.
                   FT_UInt       glyph_index,
                   FT_Int32      load_flags )
   {
-    BDF_Face        face   = (BDF_Face)FT_SIZE_FACE( size );
-    FT_Error        error  = BDF_Err_Ok;
-    FT_Bitmap*      bitmap = &slot->bitmap;
-    bdf_glyph_t     glyph;
-    int             bpp    = face->bdffont->bpp;
-    int             i, j, count;
-    unsigned char   *p, *pp;
+    BDF_Face     bdf    = (BDF_Face)FT_SIZE_FACE( size );
+    FT_Face      face   = FT_FACE( bdf );
+    FT_Error     error  = BDF_Err_Ok;
+    FT_Bitmap*   bitmap = &slot->bitmap;
+    bdf_glyph_t  glyph;
+    int          bpp    = bdf->bdffont->bpp;
 
     FT_UNUSED( load_flags );
 
 
-    if ( !face )
+    if ( !face || glyph_index >= (FT_UInt)face->num_glyphs )
     {
       error = BDF_Err_Invalid_Argument;
       goto Exit;
@@ -648,132 +666,54 @@ THE SOFTWARE.
 
     /* index 0 is the undefined glyph */
     if ( glyph_index == 0 )
-      glyph_index = face->default_glyph;
+      glyph_index = bdf->default_glyph;
     else
       glyph_index--;
 
     /* slot, bitmap => freetype, glyph => bdflib */
-    glyph = face->bdffont->glyphs[glyph_index];
+    glyph = bdf->bdffont->glyphs[glyph_index];
 
     bitmap->rows  = glyph.bbx.height;
     bitmap->width = glyph.bbx.width;
+    bitmap->pitch = glyph.bpr;
 
-    if ( bpp == 1 )
+    /* note: we don't allocate a new array to hold the bitmap; */
+    /*       we can simply point to it                         */
+    ft_glyphslot_set_bitmap( slot, glyph.bitmap );
+
+    switch ( bpp )
     {
+    case 1:
       bitmap->pixel_mode = FT_PIXEL_MODE_MONO;
-      bitmap->pitch      = glyph.bpr;
-
-     /* note: we don't allocate a new array to hold the bitmap, we */
-     /*       can simply point to it                               */
-      ft_glyphslot_set_bitmap( slot, glyph.bitmap );
-    }
-    else
-    {
-      /* blow up pixmap to have 8 bits per pixel */
+      break;
+    case 2:
+      bitmap->pixel_mode = FT_PIXEL_MODE_GRAY2;
+      break;
+    case 4:
+      bitmap->pixel_mode = FT_PIXEL_MODE_GRAY4;
+      break;
+    case 8:
       bitmap->pixel_mode = FT_PIXEL_MODE_GRAY;
-      bitmap->pitch      = bitmap->width;
-
-      error = ft_glyphslot_alloc_bitmap( slot, bitmap->rows * bitmap->pitch );
-      if ( error )
-        goto Exit;
-
-      switch ( bpp )
-      {
-      case 2:
-        bitmap->num_grays = 4;
-
-        count = 0;
-        p     = glyph.bitmap;
-
-        for ( i = 0; i < bitmap->rows; i++ )
-        {
-          pp = p;
-
-          /* get the full bytes */
-          for ( j = 0; j < ( bitmap->width >> 2 ); j++ )
-          {
-            bitmap->buffer[count++] = (FT_Byte)( ( *pp & 0xC0 ) >> 6 );
-            bitmap->buffer[count++] = (FT_Byte)( ( *pp & 0x30 ) >> 4 );
-            bitmap->buffer[count++] = (FT_Byte)( ( *pp & 0x0C ) >> 2 );
-            bitmap->buffer[count++] = (FT_Byte)(   *pp & 0x03 );
-
-            pp++;
-          }
-
-          /* get remaining pixels (if any) */
-          switch ( bitmap->width & 3 )
-          {
-          case 3:
-            bitmap->buffer[count++] = (FT_Byte)( ( *pp & 0xC0 ) >> 6 );
-            /* fall through */
-          case 2:
-            bitmap->buffer[count++] = (FT_Byte)( ( *pp & 0x30 ) >> 4 );
-            /* fall through */
-          case 1:
-            bitmap->buffer[count++] = (FT_Byte)( ( *pp & 0x0C ) >> 2 );
-            /* fall through */
-          case 0:
-            break;
-          }
-
-          p += glyph.bpr;
-        }
-        break;
-
-      case 4:
-        bitmap->num_grays = 16;
-
-        count = 0;
-        p     = glyph.bitmap;
-
-        for ( i = 0; i < bitmap->rows; i++ )
-        {
-          pp = p;
-
-          /* get the full bytes */
-          for ( j = 0; j < ( bitmap->width >> 1 ); j++ )
-          {
-            bitmap->buffer[count++] = (FT_Byte)( ( *pp & 0xF0 ) >> 4 );
-            bitmap->buffer[count++] = (FT_Byte)(   *pp & 0x0F );
-
-            pp++;
-          }
-
-          /* get remaining pixel (if any) */
-          switch ( bitmap->width & 1 )
-          {
-          case 1:
-            bitmap->buffer[count++] = (FT_Byte)( ( *pp & 0xF0 ) >> 4 );
-            /* fall through */
-          case 0:
-            break;
-          }
-
-          p += glyph.bpr;
-        }
-        break;
-
-      case 8:
-        bitmap->num_grays = 256;
-
-        FT_MEM_COPY( bitmap->buffer, glyph.bitmap,
-                     bitmap->rows * bitmap->pitch );
-        break;
-      }
+      bitmap->num_grays  = 256;
+      break;
     }
 
+    slot->format      = FT_GLYPH_FORMAT_BITMAP;
     slot->bitmap_left = glyph.bbx.x_offset;
     slot->bitmap_top  = glyph.bbx.ascent;
 
-    /* FZ XXX: TODO: vertical metrics */
     slot->metrics.horiAdvance  = glyph.dwidth << 6;
     slot->metrics.horiBearingX = glyph.bbx.x_offset << 6;
     slot->metrics.horiBearingY = glyph.bbx.ascent << 6;
     slot->metrics.width        = bitmap->width << 6;
     slot->metrics.height       = bitmap->rows << 6;
 
-    slot->linearHoriAdvance = (FT_Fixed)glyph.dwidth << 16;
-    slot->format            = FT_GLYPH_FORMAT_BITMAP;
+    /*
+     * XXX DWIDTH1 and VVECTOR should be parsed and
+     * used here, provided such fonts do exist.
+     */
+    ft_synthesize_vertical_metrics( &slot->metrics,
+                                    bdf->bdffont->bbx.height << 6 );
 
   Exit:
     return error;
@@ -901,14 +841,18 @@ THE SOFTWARE.
     0,                          /* FT_Slot_InitFunc */
     0,                          /* FT_Slot_DoneFunc */
 
-    BDF_Set_Point_Size,
-    BDF_Set_Pixel_Size,
-
+#ifdef FT_CONFIG_OPTION_OLD_INTERNALS
+    ft_stub_set_char_sizes,
+    ft_stub_set_pixel_sizes,
+#endif
     BDF_Glyph_Load,
 
     0,                          /* FT_Face_GetKerningFunc   */
     0,                          /* FT_Face_AttachFunc       */
     0,                          /* FT_Face_GetAdvancesFunc  */
+
+    BDF_Size_Request,
+    BDF_Size_Select
   };
 
 

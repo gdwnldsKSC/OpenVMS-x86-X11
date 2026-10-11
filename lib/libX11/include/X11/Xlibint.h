@@ -184,6 +184,7 @@ struct _XDisplay
 	int xcmisc_opcode;	/* major opcode for XC-MISC */
 	struct _XkbInfoRec *xkb_info; /* XKB info */
 	struct _XtransConnInfo *trans_conn; /* transport connection object */
+	struct _X11XCBPrivate *xcb; /* XCB glue private data */
 };
 
 #define XAllocIDs(dpy,ids,n) (*(dpy)->idlist_alloc)(dpy,ids,n)
@@ -958,6 +959,9 @@ extern void _XGetAsyncData(
     int		/* datalen */,
     int		/* discardtotal */
 );
+extern void _XSetSeqSyncFunction(
+    Display*	/* dpy */
+);
 extern void _XFlush(
     Display*	/* dpy */
 );
@@ -1214,6 +1218,11 @@ extern void _XUnregisterInternalConnection(
     int				/* fd */
 );
 
+extern void _XProcessInternalConnection(
+    Display*			/* dpy */,
+    struct _XConnectionInfo*	/* conn_info */
+);
+
 /* Display structure has pointers to these */
 
 struct _XConnectionInfo {	/* info from _XRegisterInternalConnection */
@@ -1255,6 +1264,12 @@ extern int _XOpenFile(
     int			/* flags */
 );
 
+extern int _XOpenFileMode(
+    _Xconst char*	/* path */,
+    int			/* flags */,
+    mode_t              /* mode */
+);
+
 extern void* _XFopenFile(
     _Xconst char*	/* path */,
     _Xconst char*	/* mode */
@@ -1265,6 +1280,7 @@ extern int _XAccessFile(
 );
 #else
 #define _XOpenFile(path,flags) open(path,flags)
+#define _XOpenFileMode(path,flags,mode) open(path,flags,mode)
 #define _XFopenFile(path,mode) fopen(path,mode)
 #endif
 

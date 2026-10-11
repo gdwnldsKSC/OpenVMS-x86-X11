@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtGetSelectionValueIncremental 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtGetSelectionValueIncremental __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtGetSelectionValueIncremental, XtGetSelectionValuesIncremental \- obtain selection values
 .SH SYNTAX

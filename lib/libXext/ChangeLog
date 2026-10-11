@@ -1,3 +1,24 @@
+2006-08-26  David Nusinow  <dnusinow@debian.org>
+
+	* man/DBE.man:
+	* man/XShape.man:
+	* man/XcupGetReservedColormapEntries.man:
+	* man/XcupQueryVersion.man:
+	* man/XcupStoreColors.man:
+	* man/XdbeAllocateBackBufferName.man:
+	* man/XdbeBeginIdiom.man:
+	* man/XdbeDeallocateBackBufferName.man:
+	* man/XdbeEndIdiom.man:
+	* man/XdbeFreeVisualInfo.man:
+	* man/XdbeGetBackBufferAttributes.man:
+	* man/XdbeGetVisualInfo.man:
+	* man/XdbeQueryExtension.man:
+	* man/XdbeSwapBuffers.man:
+	* man/Xevi.man:
+	* man/Xmbuf.man:
+	Fix various manpages that didn't have their section generated from
+	__libmansuffix__. 
+
 2006-04-26  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

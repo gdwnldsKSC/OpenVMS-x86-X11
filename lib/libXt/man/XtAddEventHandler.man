@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAddEventHandler 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAddEventHandler __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAddEventHandler, XtAddRawEventHandler, XtRemoveEventHandler, XtRemoveRawEventHandler, XtInsertEventHandler, XtInsertRawEventHandler \- add and remove event handlers
 .SH SYNTAX

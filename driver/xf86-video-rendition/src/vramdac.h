@@ -1,4 +1,4 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/rendition/vramdac.h,v 1.4 2000/02/25 21:03:07 dawes Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/rendition/vramdac.h,v 1.6 2002/04/04 14:05:45 eich Exp $ */
 /*
  * file vramdac.h
  *

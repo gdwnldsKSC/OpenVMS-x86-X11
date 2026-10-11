@@ -21,10 +21,14 @@
 # Process this file with autoconf to produce a configure script
 
 AC_PREREQ(2.57)
+
+# When the version number is modified here, also modify it in src/mga.h.
 AC_INIT([xf86-video-mga],
-        1.4.1,
+        1.4.6.1,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-mga)
+
+XORG_RELEASE_VERSION
 
 AC_CONFIG_SRCDIR([Makefile.am])
 AM_CONFIG_HEADER([config.h])
@@ -51,6 +55,11 @@ AC_ARG_ENABLE(dri, AC_HELP_STRING([--disable-dri],
                                   [Disable DRI support [[default=auto]]]),
               [DRI="$enableval"],
               [DRI=auto])
+AC_ARG_ENABLE(exa,
+              AC_HELP_STRING([--disable-exa],
+                             [Disable EXA support [[default=enabled]]]),
+              [EXA="$enableval"],
+              [EXA=yes])
 
 # Checks for extensions
 XORG_DRIVER_CHECK_EXT(RANDR, randrproto)
@@ -59,7 +68,7 @@ XORG_DRIVER_CHECK_EXT(XV, videoproto)
 XORG_DRIVER_CHECK_EXT(DPMSExtension, xextproto)
 
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XORG, [xorg-server >= 1.0.99.901 xproto fontsproto $REQUIRED_MODULES])
+PKG_CHECK_MODULES(XORG, [xorg-server >= 1.1.0 xproto fontsproto $REQUIRED_MODULES])
 sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 
 # Checks for libraries.
@@ -94,6 +103,45 @@ if test "x$DRI" = xyes; then
         AC_DEFINE(XF86DRI,1,[Enable DRI driver support])
         AC_DEFINE(XF86DRI_DEVEL,1,[Enable developmental DRI driver support])
 fi
+
+AM_CONDITIONAL(USE_XAA, true)
+AC_DEFINE(USE_XAA, 1, [Build support for XAA])
+
+# Properly handle EXA.
+AC_MSG_CHECKING([whether to enable EXA support])
+if test "x$EXA" = xyes; then
+    AC_MSG_RESULT(yes)
+
+    SAVE_CPPFLAGS="$CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $XORG_CFLAGS"
+    AC_CHECK_HEADER(exa.h,
+                   [have_exa_h="yes"], [have_exa_h="no"])
+    CPPFLAGS="$SAVE_CPPFLAGS"
+else
+    AC_MSG_RESULT(no)
+fi 
+
+SAVE_CPPFLAGS="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS $XORG_CFLAGS"
+if test "x$have_exa_h" = xyes; then
+    AC_MSG_CHECKING([whether EXA version is at least 2.0.0])
+    AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[
+#include "exa.h"
+#if EXA_VERSION_MAJOR < 2
+#error OLD EXA!
+#endif
+                      ]])],
+                      [USE_EXA=yes],
+                      [USE_EXA=no])
+    AC_MSG_RESULT($USE_EXA)
+
+    if test "x$USE_EXA" = xyes; then
+        AC_DEFINE(USE_EXA, 1, [Build support for Exa])
+    fi
+fi
+CPPFLAGS="$SAVE_CPPFLAGS"
+
+AM_CONDITIONAL(USE_EXA, test "x$USE_EXA" = xyes)
 
 AC_SUBST([DRI_CFLAGS])
 AC_SUBST([XORG_CFLAGS])

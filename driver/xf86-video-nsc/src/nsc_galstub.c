@@ -1,8 +1,8 @@
 /* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nsc/nsc_galstub.c,v 1.1 2002/12/10 15:12:23 alanh Exp $ */
 /*
  * $Workfile: nsc_galstub.c $
- * $Revision: 1.3 $
- * $Author: daniels $
+ * $Revision$
+ * $Author$
  *
  * File Contents: This file contains the file inclusions of the GAL
  *

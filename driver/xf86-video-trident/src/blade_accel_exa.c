@@ -155,10 +155,6 @@ static Bool PrepareCopy(PixmapPtr pSrcPixmap, PixmapPtr pDstPixmap,
 
     pTrident->BltScanDirection = 0;
 
-    /* Blade only supports +xdir,+ydir && -xdir,-ydir */
-    if ((xdir * ydir) < 0)
-	return FALSE;
-
     REPLICATE(planemask, pSrcPixmap->drawable.bitsPerPixel);
     if (planemask != (unsigned int)-1) {
 	BLADE_OUT(GER_BITMASK, ~planemask);
@@ -318,6 +314,8 @@ Bool BladeExaInit(ScreenPtr pScreen)
     ExaDriver->pixmapPitchAlign = 32;
     ExaDriver->maxX = 2047;
     ExaDriver->maxY = 2047;
+
+    ExaDriver->flags |= EXA_TWO_BITBLT_DIRECTIONS;
 
     ExaDriver->MarkSync = MarkSync;
     ExaDriver->WaitMarker = WaitMarker;

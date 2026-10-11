@@ -310,7 +310,7 @@ register char	 *ptr;
 			process = &iceConn->process_msg_info[
 			    i - iceConn->his_min_opcode];
 
-			if (process->in_use)
+			if ((process != NULL) && process->in_use)
 			{
 			    IceIOErrorProc IOErrProc = process->accept_flag ?
 			      process->protocol->accept_client->io_error_proc :

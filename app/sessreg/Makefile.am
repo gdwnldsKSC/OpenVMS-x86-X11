@@ -23,6 +23,7 @@ bin_PROGRAMS = sessreg
 sessreg_CFLAGS = $(SESSREG_CFLAGS)
 
 sessreg_SOURCES =	\
+	sessreg.h	\
         sessreg.c
 
 appman_PRE = sessreg.man
@@ -31,8 +32,8 @@ appmandir = $(APP_MAN_DIR)
 
 appman_DATA = $(appman_PRE:man=@APP_MAN_SUFFIX@)
 
-EXTRA_DIST = $(appman_PRE)
-CLEANFILES = $(appman_DATA)
+EXTRA_DIST = $(appman_PRE) filenames.sed.c ChangeLog
+CLEANFILES = $(appman_DATA) filenames.sed
 
 SED = sed
 
@@ -40,7 +41,7 @@ SED = sed
 XORGRELSTRING = @PACKAGE_STRING@
   XORGMANNAME = X Version 11
 
-MAN_SUBSTS = \
+MAN_SUBSTS = -f filenames.sed \
 	-e 's|__vendorversion__|"$(XORGRELSTRING)" "$(XORGMANNAME)"|' \
 	-e 's|__xorgversion__|"$(XORGRELSTRING)" "$(XORGMANNAME)"|' \
 	-e 's|__xservername__|Xorg|g' \
@@ -57,3 +58,24 @@ SUFFIXES = .$(APP_MAN_SUFFIX) .man
 
 .man.$(APP_MAN_SUFFIX):
 	sed $(MAN_SUBSTS) < $< > $@
+
+sessreg.$(APP_MAN_SUFFIX): filenames.sed
+
+filenames.sed: filenames.sed.c
+	$(CPP) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	    $(CPPFLAGS) $(srcdir)/filenames.sed.c | grep 's|__' > $@
+
+if LINT
+ALL_LINT_FLAGS=$(LINT_FLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+                $(AM_CPPFLAGS) $(CPPFLAGS)
+
+lint:
+	$(LINT) $(ALL_LINT_FLAGS) $(sessreg_SOURCES)
+endif LINT
+
+MAINTAINERCLEANFILES=ChangeLog
+
+ChangeLog:
+	git-log > ChangeLog
+
+dist-hook: ChangeLog

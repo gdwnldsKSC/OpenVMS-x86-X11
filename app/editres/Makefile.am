@@ -1,4 +1,4 @@
-# $Id: Makefile.am,v 1.13 2005/12/07 16:17:58 kem Exp $
+# $Id$
 # 
 #  Copyright 2005  Red Hat, Inc.
 # 
@@ -28,7 +28,6 @@ editres_LDADD = $(EDITRES_LIBS)
 editres_SOURCES =	\
         actions.c \
         comm.c \
-        config.h \
         editres.c \
         editresP.h \
         geometry.c \

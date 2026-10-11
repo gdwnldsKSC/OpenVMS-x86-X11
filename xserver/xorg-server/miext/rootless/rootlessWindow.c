@@ -1,4 +1,3 @@
-/* $XdotOrg: xserver/xorg/miext/rootless/rootlessWindow.c,v 1.6 2005/07/03 07:02:02 daniels Exp $ */
 /*
  * Rootless window management
  */
@@ -29,7 +28,6 @@
  * holders shall not be used in advertising or otherwise to promote the sale,
  * use or other dealings in this Software without prior written authorization.
  */
-/* $XFree86: xc/programs/Xserver/miext/rootless/rootlessWindow.c,v 1.12 2004/07/02 01:30:33 torrey Exp $ */
 
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>

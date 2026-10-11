@@ -2,10 +2,10 @@
 
 
 
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/dwg.c,v 1.1 1997/03/06 23:15:58 hohndel Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/mga/util/stormdwg.c,v 1.1 1997/04/12 14:11:29 hohndel Exp $ */
 
 #include <stdio.h>
-/* #include <stdlib.h> */
+#include <stdlib.h>
 
 char *opcodes[] = {
 	"line_open",		/* 0000 */
@@ -95,9 +95,7 @@ char *bitmod[] = {
 	"BU24RGB - source is color, or for ILOAD, it's in 24 bpp RGB"		/* 1111 */
 };
 
-main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char **argv)
 {
 	unsigned long val, tmp;
 
@@ -109,7 +107,7 @@ char *argv[];
 
 	val = strtoul(argv[1], NULL, 16);
 
-	printf("the val is : %d\n", val);
+	printf("the val is : %lu\n", val);
 
 	/* opcode */
 

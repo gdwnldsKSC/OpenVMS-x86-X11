@@ -40,6 +40,8 @@
 #include "config.h"
 #endif
 
+#include <assert.h>
+
 #include "sis.h"
 #include "sis_regs.h"
 

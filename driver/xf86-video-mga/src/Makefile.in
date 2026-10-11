@@ -61,6 +61,12 @@ host_triplet = @host@
 @DRI_TRUE@        mga_dri.h \
 @DRI_TRUE@        mga_dripriv.h
 
+@USE_EXA_TRUE@am__append_2 = \
+@USE_EXA_TRUE@    mga_exa.c
+
+@USE_XAA_TRUE@am__append_3 = \
+@USE_XAA_TRUE@    mga_storm.c
+
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -85,14 +91,16 @@ am__mga_drv_la_SOURCES_DIST = binding.h client.h clientlx.c mga_arc.c \
 	mga_dh.c mga_driver.c mga_esc.c mga_g450pll.c mga.h \
 	mga_halmod.c mga_hwcurs.c mga_macros.h mga_maven.h mga_merge.c \
 	mga_merge.h mgareg_flags.h mga_reg.h mga_sarea.h mga_shadow.c \
-	mga_storm.c mga_ucode.h mga_vga.c mga_video.c mga_dri.c \
-	mga_dri.h mga_dripriv.h
+	mga_ucode.h mga_vga.c mga_video.c mga_dri.c mga_dri.h \
+	mga_dripriv.h mga_exa.c mga_storm.c
 @DRI_TRUE@am__objects_1 = mga_dri.lo
+@USE_EXA_TRUE@am__objects_2 = mga_exa.lo
+@USE_XAA_TRUE@am__objects_3 = mga_storm.lo
 am_mga_drv_la_OBJECTS = clientlx.lo mga_arc.lo mga_bios.lo \
 	mga_dac3026.lo mga_dacG.lo mga_dga.lo mga_dh.lo mga_driver.lo \
 	mga_esc.lo mga_g450pll.lo mga_halmod.lo mga_hwcurs.lo \
-	mga_merge.lo mga_shadow.lo mga_storm.lo mga_vga.lo \
-	mga_video.lo $(am__objects_1)
+	mga_merge.lo mga_shadow.lo mga_vga.lo mga_video.lo \
+	$(am__objects_1) $(am__objects_2) $(am__objects_3)
 mga_drv_la_OBJECTS = $(am_mga_drv_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -180,9 +188,14 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USE_EXA_FALSE = @USE_EXA_FALSE@
+USE_EXA_TRUE = @USE_EXA_TRUE@
+USE_XAA_FALSE = @USE_XAA_FALSE@
+USE_XAA_TRUE = @USE_XAA_TRUE@
 VERSION = @VERSION@
 XORG_CFLAGS = @XORG_CFLAGS@
 XORG_LIBS = @XORG_LIBS@
@@ -247,7 +260,8 @@ mga_drv_la_SOURCES = binding.h client.h clientlx.c mga_arc.c \
 	mga_dh.c mga_driver.c mga_esc.c mga_g450pll.c mga.h \
 	mga_halmod.c mga_hwcurs.c mga_macros.h mga_maven.h mga_merge.c \
 	mga_merge.h mgareg_flags.h mga_reg.h mga_sarea.h mga_shadow.c \
-	mga_storm.c mga_ucode.h mga_vga.c mga_video.c $(am__append_1)
+	mga_ucode.h mga_vga.c mga_video.c $(am__append_1) \
+	$(am__append_2) $(am__append_3)
 all: all-am
 
 .SUFFIXES:
@@ -327,6 +341,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mga_dri.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mga_driver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mga_esc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mga_exa.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mga_g450pll.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mga_halmod.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mga_hwcurs.Plo@am__quote@

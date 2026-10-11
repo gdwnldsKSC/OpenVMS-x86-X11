@@ -27,7 +27,7 @@
 .\"
 .\" $XFree86: xc/doc/man/Xext/dbe/XdbeSwap.man,v 3.5 2001/02/07 22:35:22 tsi Exp $
 .\"
-.TH XdbeSwapBuffers 3X11 __xorgversion__ "X FUNCTIONS"
+.TH XdbeSwapBuffers __libmansuffix__ __xorgversion__ "X FUNCTIONS"
 .SH NAME
 XdbeSwapBuffers - swaps front and back DBE buffers.
 .SH SYNOPSIS

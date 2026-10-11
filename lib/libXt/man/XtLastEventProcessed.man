@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtLastEventProcessed 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtLastEventProcessed __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtLastEventProcessed, XtLastTimestampProcessed \- last event, last timestamp processed
 .SH SYNTAX

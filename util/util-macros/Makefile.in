@@ -56,9 +56,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 subdir = .
-DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/configure COPYING \
-	ChangeLog install-sh missing
+DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in $(srcdir)/xorg-macros.m4.in \
+	$(top_srcdir)/configure COPYING ChangeLog install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -66,7 +66,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(install_sh) -d
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = xorg-macros.m4
 SOURCES =
 DIST_SOURCES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -145,7 +145,8 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 aclocaldir = $(datadir)/aclocal
 aclocal_DATA = xorgversion.m4 xorg-macros.m4
-EXTRA_DIST = $(aclocal_DATA)
+EXTRA_DIST = $(aclocal_DATA) ChangeLog
+DISTCLEANFILES = ChangeLog
 all: all-am
 
 .SUFFIXES:
@@ -182,6 +183,8 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+xorg-macros.m4: $(top_builddir)/config.status $(srcdir)/xorg-macros.m4.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
 install-aclocalDATA: $(aclocal_DATA)
 	@$(NORMAL_INSTALL)
@@ -210,6 +213,7 @@ CTAGS:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
+	$(mkdir_p) $(distdir)/.
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -236,6 +240,9 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
+	$(MAKE) $(AM_MAKEFLAGS) \
+	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
+	  dist-hook
 	-find $(distdir) -type d ! -perm -777 -exec chmod a+rwx {} \; -o \
 	  ! -type d ! -perm -444 -links 1 -exec chmod a+r {} \; -o \
 	  ! -type d ! -perm -400 -exec chmod a+r {} \; -o \
@@ -360,6 +367,7 @@ clean-generic:
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -414,10 +422,10 @@ ps-am:
 uninstall-am: uninstall-aclocalDATA uninstall-info-am
 
 .PHONY: all all-am am--refresh check check-am clean clean-generic dist \
-	dist-all dist-bzip2 dist-gzip dist-shar dist-tarZ dist-zip \
-	distcheck distclean distclean-generic distcleancheck distdir \
-	distuninstallcheck dvi dvi-am html html-am info info-am \
-	install install-aclocalDATA install-am install-data \
+	dist-all dist-bzip2 dist-gzip dist-hook dist-shar dist-tarZ \
+	dist-zip distcheck distclean distclean-generic distcleancheck \
+	distdir distuninstallcheck dvi dvi-am html html-am info \
+	info-am install install-aclocalDATA install-am install-data \
 	install-data-am install-exec install-exec-am install-info \
 	install-info-am install-man install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
@@ -425,6 +433,13 @@ uninstall-am: uninstall-aclocalDATA uninstall-info-am
 	pdf-am ps ps-am uninstall uninstall-aclocalDATA uninstall-am \
 	uninstall-info-am
 
+
+.PHONY: ChangeLog
+
+ChangeLog:
+	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || (touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
+
+dist-hook: ChangeLog
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

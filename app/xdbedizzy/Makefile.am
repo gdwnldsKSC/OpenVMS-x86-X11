@@ -24,10 +24,6 @@ bin_PROGRAMS = xdbedizzy
 xdbedizzy_CFLAGS = $(XDBEDIZZY_CFLAGS) $(EXTRA)
 xdbedizzy_LDADD = $(XDBEDIZZY_LIBS) -lm
 
-if USE_XPRINT
-xdbedizzy_CFLAGS += -DUSE_XPRINT
-endif
-
 xdbedizzy_SOURCES =	\
         xdbedizzy.c
 

@@ -1,5 +1,5 @@
 /*
- * $Id: display.c,v 1.5 2005/07/03 07:00:56 daniels Exp $
+ * $Id$
  *
  * Copyright © 2002 Keith Packard
  *
@@ -118,15 +118,15 @@ _XcursorGetDisplayInfo (Display *dpy)
         return info;
     info = (XcursorDisplayInfo *) malloc (sizeof (XcursorDisplayInfo));
     if (!info)
-	return 0;
-    info->next = 0;
+	return NULL;
+    info->next = NULL;
     info->display = dpy;
     
     info->codes = XAddExtension (dpy);
     if (!info->codes)
     {
 	free (info);
-	return 0;
+	return NULL;
     }
     (void) XESetCloseDisplay (dpy, info->codes->extension, _XcursorCloseDisplay);
 
@@ -200,8 +200,8 @@ _XcursorGetDisplayInfo (Display *dpy)
 	info->size = dim / 48;
     }
     
-    info->theme = 0;
-    info->theme_from_config = 0;
+    info->theme = NULL;
+    info->theme_from_config = NULL;
 
     /*
      * Get the desired theme
@@ -258,7 +258,7 @@ _XcursorGetDisplayInfo (Display *dpy)
 	    info->theme_core = i;
     }
 
-    info->fonts = 0;
+    info->fonts = NULL;
     for (i = 0; i < NUM_BITMAPS; i++)
 	info->bitmaps[i].bitmap = None;
 
@@ -343,7 +343,7 @@ XcursorSetTheme (Display *dpy, const char *theme)
 	strcpy (copy, theme);
     }
     else
-	copy = 0;
+	copy = NULL;
     if (info->theme)
 	free (info->theme);
     info->theme = copy;
@@ -356,7 +356,7 @@ XcursorGetTheme (Display *dpy)
     XcursorDisplayInfo	*info = _XcursorGetDisplayInfo (dpy);
 
     if (!info)
-	return 0;
+	return NULL;
     return info->theme;
 }
 

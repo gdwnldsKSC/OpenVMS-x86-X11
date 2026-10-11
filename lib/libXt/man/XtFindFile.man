@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtFindFile 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtFindFile __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtFindFile \- search for a file using substitutions in the path list
 .SH SYNTAX

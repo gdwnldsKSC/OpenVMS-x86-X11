@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/sis310_accel.c,v 1.31 2006/03/09 06:06:25 anholt Exp $ */
+/* $XdotOrg: driver/xf86-video-sis/src/sis310_accel.c,v 1.31 2006-03-09 06:06:25 anholt Exp $ */
 /*
  * 2D Acceleration for SiS 315, 330 and 340 series
  *
@@ -2262,7 +2262,7 @@ SiS315AccelInit(ScreenPtr pScreen)
 #ifdef SIS_USE_EXA	/* ----------------------- EXA ----------------------- */
 	   if(pSiS->useEXA) {
 	      pSiS->EXADriverPtr->exa_major = 2;
-	      pSiS->EXADriverPtr->exa_major = 0;
+	      pSiS->EXADriverPtr->exa_minor = 0;
 
 	      /* data */
 	      pSiS->EXADriverPtr->memoryBase = pSiS->FbBase;

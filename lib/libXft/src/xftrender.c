@@ -1,5 +1,5 @@
 /*
- * $Id: xftrender.c,v 1.4 2005/07/03 07:00:57 daniels Exp $
+ * $Id$
  *
  * Copyright © 2000 Keith Packard
  *
@@ -31,7 +31,7 @@
  * Use the Render extension to draw the glyphs
  */
 
-void
+_X_EXPORT void
 XftGlyphRender (Display		*dpy,
 		int		op,
 		Picture		src,
@@ -141,7 +141,7 @@ bail1:
 	_XftFontManageMemory (dpy, pub);
 }
 
-void
+_X_EXPORT void
 XftGlyphSpecRender (Display		    *dpy,
 		    int			    op,
 		    Picture		    src,
@@ -350,7 +350,7 @@ bail1:
 	_XftFontManageMemory (dpy, pub);
 }
 
-void
+_X_EXPORT void
 XftCharSpecRender (Display		*dpy,
 		   int			op,
 		   Picture		src,
@@ -410,7 +410,7 @@ XftPreferFormat (Display *dpy, XRenderPictFormat *a, XRenderPictFormat *b)
     return prefer;
 }
 
-void
+_X_EXPORT void
 XftGlyphFontSpecRender (Display			    *dpy,
 			int			    op,
 			Picture			    src,
@@ -518,7 +518,7 @@ XftGlyphFontSpecRender (Display			    *dpy,
 	    break;
 	}
     }
-    if (i == nglyphs)
+    if (i == nglyphs || !firstFont)
 	goto bail2;
     glyph = firstFont->glyphs[g];
     format = firstFont->format;
@@ -641,7 +641,7 @@ bail1:
 	    _XftFontManageMemory (dpy, glyphs[i].font);
 }
 
-void
+_X_EXPORT void
 XftCharFontSpecRender (Display			*dpy,
 		       int			op,
 		       Picture			src,
@@ -675,7 +675,7 @@ XftCharFontSpecRender (Display			*dpy,
 	free (glyphs);
 }
 
-void
+_X_EXPORT void
 XftTextRender8 (Display		*dpy,
 		int		op,
 		Picture		src,
@@ -707,7 +707,7 @@ XftTextRender8 (Display		*dpy,
 	free (glyphs);
 }
 
-void
+_X_EXPORT void
 XftTextRender16 (Display	    *dpy,
 		 int		    op,
 		 Picture	    src,
@@ -739,7 +739,7 @@ XftTextRender16 (Display	    *dpy,
 	free (glyphs);
 }
 
-void
+_X_EXPORT void
 XftTextRender16BE (Display	    *dpy,
 		   int		    op,
 		   Picture	    src,
@@ -772,7 +772,7 @@ XftTextRender16BE (Display	    *dpy,
 	free (glyphs);
 }
 
-void
+_X_EXPORT void
 XftTextRender16LE (Display	    *dpy,
 		   int		    op,
 		   Picture	    src,
@@ -805,7 +805,7 @@ XftTextRender16LE (Display	    *dpy,
 	free (glyphs);
 }
 
-void
+_X_EXPORT void
 XftTextRender32 (Display	    *dpy,
 		 int		    op,
 		 Picture	    src,
@@ -837,7 +837,7 @@ XftTextRender32 (Display	    *dpy,
 	free (glyphs);
 }
 
-void
+_X_EXPORT void
 XftTextRender32BE (Display	    *dpy,
 		   int		    op,
 		   Picture	    src,
@@ -873,7 +873,7 @@ XftTextRender32BE (Display	    *dpy,
 	free (glyphs);
 }
 
-void
+_X_EXPORT void
 XftTextRender32LE (Display	    *dpy,
 		   int		    op,
 		   Picture	    src,
@@ -909,7 +909,7 @@ XftTextRender32LE (Display	    *dpy,
 	free (glyphs);
 }
 
-void
+_X_EXPORT void
 XftTextRenderUtf8 (Display	    *dpy,
 		   int		    op,
 		   Picture	    src,
@@ -958,7 +958,7 @@ XftTextRenderUtf8 (Display	    *dpy,
 	free (glyphs);
 }
 
-void
+_X_EXPORT void
 XftTextRenderUtf16 (Display	    *dpy,
 		    int		    op,
 		    Picture	    src,

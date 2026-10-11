@@ -36,9 +36,10 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@XCB_TRUE@am__append_1 = X11/Xlib-xcb.h
 subdir = include
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(x11include_HEADERS)
+DIST_COMMON = $(am__x11include_HEADERS_DIST) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/configure.ac
@@ -50,6 +51,10 @@ CONFIG_HEADER = $(top_builddir)/src/config.h \
 CONFIG_CLEAN_FILES =
 SOURCES =
 DIST_SOURCES =
+am__x11include_HEADERS_DIST = X11/XKBlib.h X11/Xcms.h X11/Xlib.h \
+	X11/Xlibint.h X11/Xlocale.h X11/Xresource.h X11/Xutil.h \
+	X11/cursorfont.h X11/Xregion.h X11/ImUtil.h X11/XlibConf.h \
+	X11/Xlib-xcb.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -113,6 +118,10 @@ LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LIB_MAN_DIR = @LIB_MAN_DIR@
 LIB_MAN_SUFFIX = @LIB_MAN_SUFFIX@
+LINT = @LINT@
+LINT_FALSE = @LINT_FALSE@
+LINT_FLAGS = @LINT_FLAGS@
+LINT_TRUE = @LINT_TRUE@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -138,6 +147,7 @@ PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 RAWCPP = @RAWCPP@
 RAWCPPFLAGS = @RAWCPPFLAGS@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -149,10 +159,14 @@ VERSION = @VERSION@
 WCHAR32 = @WCHAR32@
 X11_CFLAGS = @X11_CFLAGS@
 X11_DATADIR = @X11_DATADIR@
+X11_EXTRA_DEPS = @X11_EXTRA_DEPS@
 X11_LIBDIR = @X11_LIBDIR@
 X11_LIBS = @X11_LIBS@
 X11_LOCALEDATADIR = @X11_LOCALEDATADIR@
+X11_LOCALEDIR = @X11_LOCALEDIR@
 X11_LOCALELIBDIR = @X11_LOCALELIBDIR@
+XCB_FALSE = @XCB_FALSE@
+XCB_TRUE = @XCB_TRUE@
 XCMS_FALSE = @XCMS_FALSE@
 XCMS_TRUE = @XCMS_TRUE@
 XDMCP_CFLAGS = @XDMCP_CFLAGS@
@@ -166,7 +180,9 @@ XKB_TRUE = @XKB_TRUE@
 XKEYSYMDB = @XKEYSYMDB@
 XLIB_LOADABLE_I18N_FALSE = @XLIB_LOADABLE_I18N_FALSE@
 XLIB_LOADABLE_I18N_TRUE = @XLIB_LOADABLE_I18N_TRUE@
+XLOCALEDATADIR = @XLOCALEDATADIR@
 XLOCALEDIR = @XLOCALEDIR@
+XLOCALELIBDIR = @XLOCALELIBDIR@
 XLOCALE_FALSE = @XLOCALE_FALSE@
 XLOCALE_TRUE = @XLOCALE_TRUE@
 XMALLOC_ZERO_CFLAGS = @XMALLOC_ZERO_CFLAGS@
@@ -222,19 +238,9 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 x11includedir = ${includedir}/X11
-x11include_HEADERS = \
-	X11/XKBlib.h \
-	X11/Xcms.h \
-	X11/Xlib.h \
-	X11/Xlibint.h \
-	X11/Xlocale.h \
-	X11/Xresource.h \
-	X11/Xutil.h \
-	X11/cursorfont.h \
-	X11/Xregion.h \
-	X11/ImUtil.h \
-	X11/XlibConf.h
-
+x11include_HEADERS = X11/XKBlib.h X11/Xcms.h X11/Xlib.h X11/Xlibint.h \
+	X11/Xlocale.h X11/Xresource.h X11/Xutil.h X11/cursorfont.h \
+	X11/Xregion.h X11/ImUtil.h X11/XlibConf.h $(am__append_1)
 EXTRA_DIST = \
 	X11/XlibConf.h.in
 
@@ -250,9 +256,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  include/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  include/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  include/Makefile
+	  $(AUTOMAKE) --foreign  include/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

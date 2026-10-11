@@ -27,7 +27,7 @@
 .\"
 .\" $XFree86: xc/doc/man/Xext/dbe/XdbeQuer.man,v 3.4 2001/01/27 18:20:20 dawes Exp $
 .\"
-.TH XdbeQueryExtension 3X11 __xorgversion__ "X FUNCTIONS"
+.TH XdbeQueryExtension __libmansuffix__ __xorgversion__ "X FUNCTIONS"
 .SH NAME
 XdbeQueryExtension - returns the version of DBE supported by the server.
 .SH SYNOPSIS

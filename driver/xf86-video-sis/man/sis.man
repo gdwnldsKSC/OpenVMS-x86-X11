@@ -1,5 +1,5 @@
 .\" $XFree86$
-.\" $XdotOrg: driver/xf86-video-sis/man/sis.man,v 1.10 2005/07/05 14:00:53 twini Exp $
+.\" $XdotOrg$
 .\" shorthand for double quote that works everywhere.
 .ds q \N'34'
 #ifdef __xservername__

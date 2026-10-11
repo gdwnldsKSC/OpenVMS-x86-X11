@@ -35,7 +35,6 @@ THE SOFTWARE.
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include FT_INTERNAL_OBJECTS_H
 #include FT_BDF_H
 #include "X11/Xos.h"
 #include "fonttosfnt.h"

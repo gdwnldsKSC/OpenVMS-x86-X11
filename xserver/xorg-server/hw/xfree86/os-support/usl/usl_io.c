@@ -1,4 +1,3 @@
-/* $XdotOrg: xserver/xorg/hw/xfree86/os-support/usl/usl_io.c,v 1.3 2006/03/25 19:52:05 ajax Exp $ */
 /*
  * Copyright 2001-2005 by Kean Johnston <jkj@sco.com>
  * Copyright 1990,91 by Thomas Roell, Dinkelscherben, Germany

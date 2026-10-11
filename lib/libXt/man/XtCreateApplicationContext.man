@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtCreateApplicationContext 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtCreateApplicationContext __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtCreateApplicationContext, XtDestroyApplicationContext, XtWidgetToApplicationContext, XtToolkitInitialize \- create, destroy, and obtain an application context
 .SH SYNTAX

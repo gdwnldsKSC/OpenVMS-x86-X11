@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/sis_utility.c,v 1.15 2005/09/20 16:34:32 twini Exp $ */
+/* $XdotOrg$ */
 /*
  * SiS driver utility interface & routines
  *

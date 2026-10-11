@@ -1,3 +1,20 @@
+2006-06-20  Matthieu Herrb <matthieu.herrb@laas.fr>
+
+	* xinit.c:
+	Check setuid() return value. Bugzilla #7116.
+
+2006-05-27  Jeremy C. Reed  <reed@reedmedia.net>
+
+	* startx.cpp:
+	In comments, change contractions to be spelled out to fix
+	cpp "missing terminating" errors with single quotes.
+
+2006-04-30  Matthieu Herrb <matthieu.herrb@laas.fr>
+
+	* configure.ac:
+	Quote MCOOKIE to allow to specify a command with args (ie
+	MCOOKIE="/usr/sbin/openssl rand -hex 16" ./configure ...)
+
 2006-04-01  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

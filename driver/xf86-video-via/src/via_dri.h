@@ -35,7 +35,7 @@
 #define VIA_DRIDDX_VERSION_MINOR  0
 #define VIA_DRIDDX_VERSION_PATCH  0
 
-#ifndef XFree86Server
+#if ! defined(XFree86Server) && ! defined(_XTYPEDEF_BOOL)
 typedef int Bool;
 #endif
 

@@ -127,7 +127,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtConfigureWidget 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtConfigureWidget __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtConfigureWidget, XtMoveWidget, XtResizeWidget \- move and resize widgets
 .SH SYNTAX

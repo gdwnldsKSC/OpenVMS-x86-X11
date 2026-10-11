@@ -300,7 +300,7 @@ TRANS(GetMyNetworkId) (XtransConnInfo ciptr)
 #endif
 	    portnum = ntohs (saddr->sin_port);
 
-	sprintf (portnumbuf, "%d", portnum);
+	snprintf (portnumbuf, sizeof(portnumbuf), "%d", portnum);
 	networkId = (char *) xalloc (3 + strlen (transName) +
 	    strlen (hostnamebuf) + strlen (portnumbuf));
 	sprintf (networkId, "%s/%s:%s", transName, hostnamebuf, portnumbuf);

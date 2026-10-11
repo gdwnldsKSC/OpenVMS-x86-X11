@@ -1,5 +1,5 @@
 # 
-#  $Id: Makefile.am,v 1.6 2005/07/02 21:22:31 keithp Exp $
+#  $Id$
 # 
 #  Copyright © 2003 Keith Packard, Noah Levitt
 # 
@@ -31,7 +31,6 @@ libXfontinclude_HEADERS = \
 	include/X11/fonts/fntfil.h   \
 	include/X11/fonts/fntfilio.h \
 	include/X11/fonts/fntfilst.h \
-	include/X11/fonts/fontconf.h \
 	include/X11/fonts/fontencc.h \
 	include/X11/fonts/fontmisc.h \
 	include/X11/fonts/fontmod.h  \
@@ -41,8 +40,19 @@ libXfontinclude_HEADERS = \
 	include/X11/fonts/pcf.h      \
 	src/FreeType/ft.h	     \
 	src/FreeType/ftfuncs.h
+nodist_libXfontinclude_HEADERS = \
+	include/X11/fonts/fontconf.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xfont.pc
 
-EXTRA_DIST = xfont.pc.in autogen.sh include/X11/fonts/fontconf.h.in
+EXTRA_DIST = xfont.pc.in autogen.sh include/X11/fonts/fontconf.h.in ChangeLog
+
+.PHONY: ChangeLog
+
+CLEANFILES = ChangeLog
+ChangeLog:
+	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || (touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
+
+dist-hook: ChangeLog
+

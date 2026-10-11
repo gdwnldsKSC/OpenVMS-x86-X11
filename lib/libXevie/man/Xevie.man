@@ -1,5 +1,5 @@
 .\"
-.\" $XdotOrg: lib/Xevie/man/Xevie.man,v 1.2 2005/04/04 02:41:49 alanc Exp $
+.\" $XdotOrg: xc/lib/Xevie/Xevie.man,v $
 .\"
 .\"
 .de TQ
@@ -24,8 +24,7 @@ Status XevieStart     \^(\^Display *\fIdpy\fp\^);
 Status XevieSelectInput     \^(\^Display *\fIdpy\fP,
 	long \fIevent_mask\fP\^);
 .sp
-Status XevieSendEvent \^(\^
-    \^(\^Display *\fIdpy\fP,
+Status XevieSendEvent  \^(\^Display *\fIdpy\fP,
     XEvent *\fIevent\fP,
     char   *fIdataType\fP\^);
 .sp
@@ -41,9 +40,6 @@ Specifies the mask of events to redirect.
 
 XEVIE_MODIFIED or XEVIE_UNMODIFIED - whether the Xevie client
 has changed or synthesised this event.
-
-.SH DATATYPES
-
 
 .SH DESCRIPTION
 .B X Event Interception Extension (XEvIE) 

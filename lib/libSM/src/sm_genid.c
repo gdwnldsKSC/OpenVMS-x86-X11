@@ -179,8 +179,12 @@ SmsGenerateClientID (smsConn)
     {
 	ptr2 = strchr (ptr1, '.');
 	len = ptr2 - ptr1;
-	if (!ptr2 || len > 3)
+	if (!ptr2 || len > 3) {
+#if defined(IPv6) && defined(AF_INET6)
+	    freeaddrinfo(first_ai);
+#endif
 	    return (NULL);
+	}
 	strncpy (temp, ptr1, len);
 	temp[len] = '\0';
 	decimal[i] = atoi (temp);

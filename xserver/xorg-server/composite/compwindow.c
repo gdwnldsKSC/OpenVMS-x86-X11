@@ -1,5 +1,5 @@
 /*
- * $Id: compwindow.c,v 1.11 2005/07/03 07:37:34 daniels Exp $
+ * $Id$
  *
  * Copyright © 2006 Sun Microsystems
  *
@@ -301,7 +301,7 @@ compIsAlternateVisual (ScreenPtr    pScreen,
     CompScreenPtr	cs = GetCompScreen (pScreen);
     int			i;
 
-    for (i = 0; i < NUM_COMP_ALTERNATE_VISUALS; i++)
+    for (i = 0; i < cs->numAlternateVisuals; i++)
 	if (cs->alternateVisuals[i] == visual)
 	    return TRUE;
     return FALSE;

@@ -128,6 +128,10 @@ LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LIB_MAN_DIR = @LIB_MAN_DIR@
 LIB_MAN_SUFFIX = @LIB_MAN_SUFFIX@
+LINT = @LINT@
+LINT_FALSE = @LINT_FALSE@
+LINT_FLAGS = @LINT_FLAGS@
+LINT_TRUE = @LINT_TRUE@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -146,6 +150,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -211,6 +216,9 @@ INCLUDES = -I$(top_srcdir)/include/X11/Xcursor
 libXcursor_la_LDFLAGS = -version-number 1:0:2 -no-undefined
 libXcursorincludedir = $(includedir)/X11/Xcursor
 libXcursorinclude_HEADERS = $(top_srcdir)/include/X11/Xcursor/Xcursor.h 
+@LINT_TRUE@ALL_LINT_FLAGS = $(LINT_FLAGS) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+@LINT_TRUE@		$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS)
+
 all: all-am
 
 .SUFFIXES:
@@ -507,6 +515,9 @@ uninstall-am: uninstall-info-am uninstall-libLTLIBRARIES \
 	uninstall-am uninstall-info-am uninstall-libLTLIBRARIES \
 	uninstall-libXcursorincludeHEADERS
 
+
+@LINT_TRUE@lint:
+@LINT_TRUE@	$(LINT) $(ALL_LINT_FLAGS) $(libXcursor_la_SOURCES) $(XCURSOR_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

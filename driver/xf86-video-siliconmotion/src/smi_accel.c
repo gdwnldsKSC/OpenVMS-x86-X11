@@ -343,8 +343,8 @@ SMI_EngineReset(ScrnInfoPtr pScrn)
 	WRITE_DPR(pSmi, 0x24, 0xFFFFFFFF);
 	WRITE_DPR(pSmi, 0x28, 0xFFFFFFFF);
 	WRITE_DPR(pSmi, 0x3C, (pSmi->Stride << 16) | pSmi->Stride);
-	WRITE_DPR(pSmi, 0x40, 0);
-	WRITE_DPR(pSmi, 0x44, 0);
+	WRITE_DPR(pSmi, 0x40, pSmi->FBOffset);
+	WRITE_DPR(pSmi, 0x44, pSmi->FBOffset);
 
 	SMI_DisableClipping(pScrn);
 

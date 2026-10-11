@@ -338,7 +338,9 @@ static void SAVAGEWakeupHandler( int screenNum, pointer wakeupData,
    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
    SavagePtr psav = SAVPTR(pScrn);
 
-   DRILock(pScreen, 0);
+   psav->pDRIInfo->wrap.WakeupHandler = psav->coreWakeupHandler;
+   (*psav->pDRIInfo->wrap.WakeupHandler) (screenNum, wakeupData, result, pReadmask);
+   psav->pDRIInfo->wrap.WakeupHandler = SAVAGEWakeupHandler;
    psav->LockHeld = 1;
    if (psav->ShadowStatus) {
       /* fetch the global shadow counter */
@@ -350,7 +352,10 @@ static void SAVAGEWakeupHandler( int screenNum, pointer wakeupData,
 #endif
       psav->ShadowCounter = psav->ShadowVirtual[1023] & 0xffff;
    }
-   psav->AccelInfoRec->NeedToSync = TRUE;
+   if (psav->useEXA)
+	exaMarkSync(pScreen);
+   else
+	psav->AccelInfoRec->NeedToSync = TRUE;
    /* FK: this flag doesn't seem to be used. */
 }
 
@@ -376,7 +381,9 @@ static void SAVAGEBlockHandler( int screenNum, pointer blockData,
       psav->ShadowVirtual[1023] = globalShadowCounter;
    }
    psav->LockHeld = 0;
-   DRIUnlock(pScreen);
+   psav->pDRIInfo->wrap.BlockHandler = psav->coreBlockHandler;
+   (*psav->pDRIInfo->wrap.BlockHandler) (screenNum, blockData, pTimeout, pReadmask);
+   psav->pDRIInfo->wrap.BlockHandler = SAVAGEBlockHandler;
 }
 
 void SAVAGESelectBuffer( ScrnInfoPtr pScrn, int which )
@@ -882,18 +889,15 @@ Bool SAVAGEDRIScreenInit( ScreenPtr pScreen )
    pDRIInfo->ddxDriverMinorVersion = SAVAGE_VERSION_MINOR;
    pDRIInfo->ddxDriverPatchVersion = SAVAGE_PATCHLEVEL;
 
-#if DRIINFO_MAJOR_VERSION < 5
-   pDRIInfo->frameBufferPhysicalAddress = psav->FrameBufferBase;
-#else
    pDRIInfo->frameBufferPhysicalAddress = (pointer) psav->FrameBufferBase;
-#endif
-
    pDRIInfo->frameBufferSize = psav->videoRambytes;
    pDRIInfo->frameBufferStride = pScrn->displayWidth*(pScrn->bitsPerPixel/8);
    pDRIInfo->ddxDrawableTableEntry = SAVAGE_MAX_DRAWABLES;
 
    /* override default DRI block and wakeup handler */
+   psav->coreBlockHandler = pDRIInfo->wrap.BlockHandler;
    pDRIInfo->wrap.BlockHandler = SAVAGEBlockHandler;
+   psav->coreWakeupHandler = pDRIInfo->wrap.WakeupHandler;
    pDRIInfo->wrap.WakeupHandler = SAVAGEWakeupHandler;
 
    pDRIInfo->wrap.ValidateTree = NULL;
@@ -1534,7 +1538,10 @@ SAVAGEDRIMoveBuffers(WindowPtr pParent, DDXPointRec ptOldOrg,
     }
 
     BCI_SEND(0xc0020000); /* wait for 2D idle */
-    psav->AccelInfoRec->NeedToSync = TRUE;
+    if (psav->useEXA)
+	exaMarkSync(pScreen);
+    else
+	psav->AccelInfoRec->NeedToSync = TRUE;
 }
 
 static void 

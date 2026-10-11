@@ -1,5 +1,5 @@
 /* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sis/src/sis_dac.c,v 1.23 2005/07/13 17:17:00 twini Exp $ */
+/* $XdotOrg$ */
 /*
  * DAC helper functions (Save/Restore, MemClk, etc)
  *

@@ -27,7 +27,7 @@
 .\"
 .\" $XFree86: xc/doc/man/Xext/dbe/XdbeAllo.man,v 3.4 2001/01/27 18:20:20 dawes Exp $
 .\"
-.TH XdbeAllocateBackBufferName 3X11 __xorgversion__ "X FUNCTIONS"
+.TH XdbeAllocateBackBufferName __libmansuffix__ __xorgversion__ "X FUNCTIONS"
 .SH NAME
 XdbeAllocateBackBufferName - allocates a DBE buffer.
 .SH SYNOPSIS

@@ -22,9 +22,19 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-i810],
-        1.6.0,
+        1.6.5,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-i810)
+
+AC_DEFINE_UNQUOTED([INTEL_VERSION_MAJOR],
+		   [$(echo $PACKAGE_VERSION | sed -e 's/^\([[0-9]]\)\.[[0-9]]\.[[0-9]]/\1/')],
+		   [Major version])
+AC_DEFINE_UNQUOTED([INTEL_VERSION_MINOR],
+		   [$(echo $PACKAGE_VERSION | sed -e 's/^[[0-9]]\.\([[0-9]]\)\.[[0-9]]/\1/')],
+		   [Minor version])
+AC_DEFINE_UNQUOTED([INTEL_VERSION_PATCH],
+		   [$(echo $PACKAGE_VERSION | sed -e 's/^[[0-9]]\.[[0-9]]\.\([[0-9]]\)/\1/')],
+		   [Patch version])
 
 AC_CONFIG_SRCDIR([Makefile.am])
 AM_CONFIG_HEADER([config.h])
@@ -54,6 +64,7 @@ AC_ARG_ENABLE(dri, AC_HELP_STRING([--disable-dri],
 
 
 # Checks for extensions
+XORG_DRIVER_CHECK_EXT(XINERAMA, xineramaproto)
 XORG_DRIVER_CHECK_EXT(RANDR, randrproto)
 XORG_DRIVER_CHECK_EXT(RENDER, renderproto)
 XORG_DRIVER_CHECK_EXT(XF86DRI, xextproto x11)
@@ -88,6 +99,18 @@ if test x$DRI = xauto; then
         fi
 fi
 AC_MSG_RESULT([$DRI])
+
+dnl Use lots of warning flags with GCC
+
+WARN_CFLAGS=""
+
+if test "x$GCC" = "xyes"; then
+	WARN_CFLAGS="-Wall -Wpointer-arith -Wstrict-prototypes \
+	-Wmissing-prototypes -Wmissing-declarations \
+	-Wnested-externs -fno-strict-aliasing"
+fi
+
+CFLAGS="$CFLAGS $WARN_CFLAGS"
 
 AM_CONDITIONAL(DRI, test x$DRI = xyes)
 if test "$DRI" = yes; then

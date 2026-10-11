@@ -189,12 +189,12 @@ _xidevicebusy(dpy, error)
  */
 
 int
-_XiCheckExtInit(dpy, version_index)
+_XiCheckExtInit(dpy, version_index, info)
     register Display *dpy;
     register int version_index;
+    XExtDisplayInfo *info;
 {
     XExtensionVersion *ext;
-    XExtDisplayInfo *info = XInput_find_display(dpy);
 
     XInputCheckExtension(dpy, info, -1);
 

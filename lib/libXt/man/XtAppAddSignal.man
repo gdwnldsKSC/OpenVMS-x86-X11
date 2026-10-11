@@ -126,7 +126,7 @@
 .el .sp 10p
 ..
 .ny0
-.TH XtAppAddSignal 3Xt __xorgversion__ "XT FUNCTIONS"
+.TH XtAppAddSignal __libmansuffix__ __xorgversion__ "XT FUNCTIONS"
 .SH NAME
 XtAppAddSignal, XtRemoveSignal, XtNoticeSignal \- register and remove a signal source
 .SH SYNTAX

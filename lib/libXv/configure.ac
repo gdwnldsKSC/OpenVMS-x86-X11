@@ -1,4 +1,3 @@
-dnl  $Id: configure.ac,v 1.13 2005/12/21 02:30:06 kem Exp $
 dnl
 dnl  Copyright 2005 Red Hat, Inc.
 dnl 
@@ -24,11 +23,15 @@ dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
 
-AC_INIT(libXv, 1.0.1, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXv)
+AC_INIT(libXv, 1.0.3, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXv)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
 AM_CONFIG_HEADER(config.h)
+
+# Require xorg-macros version 1.1.0 or newer for XORG_WITH_LINT macro
+m4_ifndef([XORG_MACROS_VERSION], [AC_FATAL([must install xorg-macros 1.1 or later before running autoconf/autogen])])
+XORG_MACROS_VERSION(1.1)
 
 # Check for progs
 AC_PROG_CC
@@ -43,6 +46,11 @@ AC_SUBST(XV_LIBS)
 XORG_CHECK_MALLOC_ZERO
 XORG_MANPAGE_SECTIONS
 XORG_RELEASE_VERSION
+
+dnl Allow checking code with lint, sparse, etc.
+XORG_WITH_LINT
+XORG_LINT_LIBRARY([Xv])
+LINT_FLAGS="${LINT_FLAGS} ${XV_CFLAGS}"
 
 AC_OUTPUT([Makefile
            include/Makefile

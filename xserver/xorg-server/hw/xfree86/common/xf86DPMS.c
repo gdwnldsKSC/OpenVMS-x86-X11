@@ -1,5 +1,3 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/common/xf86DPMS.c,v 1.11 2003/11/11 21:02:28 dawes Exp $ */
-/* $XdotOrg: xserver/xorg/hw/xfree86/common/xf86DPMS.c,v 1.9 2006/03/25 19:52:03 ajax Exp $ */
 
 /*
  * Copyright (c) 1997-2003 by The XFree86 Project, Inc.

@@ -1,3 +1,45 @@
+2006-05-09  Alex Deucher  <agd5f@yahoo.com>
+
+	* man/savage.man:
+	* src/savage_exa.c: (SavageEXAInit), (SavageDownloadFromScreen):
+	- add AccelMethod to savage.man
+	- fix bug 6847
+	- add memcpy based DFS
+
+2006-04-30  Alex Deucher  <agd5f@yahoo.com>
+
+	* src/Makefile.am:
+	* src/savage_accel.c: (SavageSetGBD_M7), (SavageSetGBD_PM),
+	(SavageSetGBD_2000), (SavageInitAccel):
+	* src/savage_bci.h:
+	* src/savage_driver.c: (SavageSetup), (SavagePreInit):
+	* src/savage_driver.h:
+	* src/savage_exa.c: (SavageGetCopyROP), (SavageGetCopyROP_PM),
+	(SavageEXAInit), (SavageEXASync), (SavageSetBD),
+	(SavagePrepareSolid), (SavageSolid), (SavageDoneSolid),
+	(SavagePrepareCopy), (SavageCopy), (SavageDoneCopy),
+	(SavageUploadToScreen), (SavageDownloadFromScreen):
+	* src/savage_image.c:
+	* src/savage_video.c: (SavageStopVideo), (SavageVideoSave),
+	(SavageAllocateMemory), (SavageFreeMemory), (SavagePutImage),
+	(SavageAllocateSurface), (SavageFreeSurface):
+	* src/savage_xaa.c: (SavageRestoreAccelState), (SavageXAAInit),
+	(SavageAccelSync), (SavageHelpPatternROP), (SavageHelpSolidROP),
+	(SavageSetupForScreenToScreenCopy),
+	(SavageSubsequentScreenToScreenCopy), (SavageSetupForSolidFill),
+	(SavageSubsequentSolidFillRect),
+	(SavageSetupForCPUToScreenColorExpandFill),
+	(SavageSubsequentScanlineCPUToScreenColorExpandFill),
+	(SavageSubsequentColorExpandScanline),
+	(SavageSetupForMono8x8PatternFill),
+	(SavageSubsequentMono8x8PatternFillRect),
+	(SavageSetupForColor8x8PatternFill),
+	(SavageSubsequentColor8x8PatternFillRect),
+	(SavageSubsequentSolidBresenhamLine), (SavageSetClippingRectangle),
+	(SavageDisableClipping), (SavageWriteBitmapCPUToScreenColorExpand),
+	(SavageSetupForImageWrite), (SavageSubsequentImageWriteRect):
+	- Add EXA support (Solid, Copy, UTS)
+
 2006-04-07  Adam Jackson  <ajax@freedesktop.org>
 
 	* configure.ac:

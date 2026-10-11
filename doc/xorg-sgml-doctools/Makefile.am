@@ -19,6 +19,6 @@
 #  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 #  PERFORMANCE OF THIS SOFTWARE.
 
-sgmlentdir = $(prefix)/share/X11/sgml
+sgmlentdir = $(prefix)/share/sgml/X11
 
 dist_sgmlent_DATA = defs.ent

@@ -408,7 +408,8 @@ void VIAVidAdjustFrame(ScrnInfoPtr pScrn, int x, int y);
 
 /* In via_memory.c */
 void VIAFreeLinear(VIAMemPtr);
-unsigned long VIAAllocLinear(VIAMemPtr, ScrnInfoPtr, unsigned long);
+int VIAAllocLinear(VIAMemPtr, ScrnInfoPtr, unsigned long);
+int viaOffscreenLinear(VIAMemPtr, ScrnInfoPtr, unsigned long);
 void VIAInitLinear(ScreenPtr pScreen);
 
 /* In via_xwmc.c */

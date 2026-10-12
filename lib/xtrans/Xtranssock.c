@@ -69,21 +69,14 @@ from the copyright holders.
 
 #ifdef UNIXCONN
 #ifndef X_NO_SYS_UN
-#ifndef Lynx
 #include <sys/un.h>
-#else
-#include <un.h>
-#endif
 #endif
 #include <sys/stat.h>
 #endif
 
-#if defined(hpux) || (defined(MOTOROLA) && defined(SYSV))
-#define NO_TCP_H
-#endif 
 
 #ifndef NO_TCP_H
-#if defined(__osf__) || defined(linux) || defined(__GLIBC__) || defined(AIXV5)
+#if defined(linux) || defined(__GLIBC__) 
 #include <sys/param.h>
 #endif /* osf */
 #if defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__DragonFly__)
@@ -94,7 +87,7 @@ from the copyright holders.
 #endif /* !NO_TCP_H */
 
 #include <sys/ioctl.h>
-#if defined(SVR4) && !defined(DGUX) && !defined(_SEQUENT_)
+#if defined(SVR4) || defined(__SVR4)
 #include <sys/filio.h>
 #endif
 
@@ -102,9 +95,11 @@ from the copyright holders.
 #include <net/errno.h>
 #endif 
 
-#if (defined(__i386__) && defined(SYSV)) && (!defined(ISC) || !defined(I_NREAD) || defined(SCO325)) || defined(_SEQUENT_)
+#if defined(__i386__) && defined(SYSV) 
 #include <sys/stropts.h>
 #endif 
+
+#include <unistd.h>
 
 #else /* !WIN32 */
 
@@ -130,33 +125,8 @@ from the copyright holders.
 #undef SO_DONTLINGER
 #endif
 
-#if defined(__UNIXOS2__)
-#if defined(NOT_EMX09A)
-static int IBMsockInit = 0;
-#define SocketInitOnce()\
-    if (!IBMsockInit) {\
-	sock_init();\
-	IBMsockInit = 1;\
-    }
-#undef EINTR
-#define EINTR SOCEINTR
-#undef EINVAL
-#define EINVAL SOCEINVAL
-#undef errno
-#define errno sock_errno()
-#undef close
-#define close soclose
-#undef ioctl
-#define ioctl sockioctl
-#else
-#define SocketInitOnce() /**/
-#endif
-/* this is still not there */
-#define SOCKET int
-#else
 /* others don't need this */
 #define SocketInitOnce() /**/
-#endif
 
 #ifdef linux
 #define HAVE_ABSTRACT_SOCKETS
@@ -215,36 +185,6 @@ static int TRANS(SocketINETClose) (XtransConnInfo ciptr);
 
 #ifdef UNIXCONN
 
-#ifdef hpux
-
-#if defined(X11_t)
-#define UNIX_PATH "/usr/spool/sockets/X11/"
-#define UNIX_DIR "/usr/spool/sockets/X11"
-#define OLD_UNIX_PATH "/tmp/.X11-unix/X"
-#endif /* X11_t */
-#if defined(XIM_t)
-#define UNIX_PATH "/usr/spool/sockets/XIM/"
-#define UNIX_DIR "/usr/spool/sockets/XIM"
-#define OLD_UNIX_PATH "/tmp/.XIM-unix/XIM"
-#endif /* XIM_t */
-#if defined(FS_t) || defined(FONT_t)
-#define UNIX_PATH "/usr/spool/sockets/fontserv/"
-#define UNIX_DIR "/usr/spool/sockets/fontserv"
-#endif /* FS_t || FONT_t */
-#if defined(ICE_t)
-#define UNIX_PATH "/usr/spool/sockets/ICE/"
-#define UNIX_DIR "/usr/spool/sockets/ICE"
-#endif /* ICE_t */
-#if defined(TEST_t)
-#define UNIX_PATH "/usr/spool/sockets/xtrans_test/"
-#define UNIX_DIR "/usr/spool/sockets/xtrans_test"
-#endif
-#if defined(LBXPROXY_t)
-#define UNIX_PATH "/usr/spool/sockets/X11/"
-#define UNIX_DIR  "/usr/spool/sockets/X11"
-#endif
-
-#else /* !hpux */
 
 #if defined(X11_t)
 #define UNIX_PATH "/tmp/.X11-unix/X"
@@ -271,7 +211,6 @@ static int TRANS(SocketINETClose) (XtransConnInfo ciptr);
 #define UNIX_DIR  "/tmp/.X11-unix"
 #endif
 
-#endif /* hpux */
 
 #endif /* UNIXCONN */
 
@@ -283,23 +222,10 @@ static int TRANS(SocketINETClose) (XtransConnInfo ciptr);
 
 #if defined HAVE_SOCKLEN_T || (defined(IPv6) && defined(AF_INET6))
 # define SOCKLEN_T socklen_t
-#elif defined(SVR4) || defined(__SCO__)
+#elif defined(SVR4) || defined(__SVR4) || defined(__SCO__)
 # define SOCKLEN_T size_t 
 #else
 # define SOCKLEN_T int
-#endif
-
-/*
- * This provides compatibility for apps linked against system libraries
- * that don't have IPv6 support.
- */
-#if defined(IPv6) && defined(AF_INET6)
-static const struct in6_addr local_in6addr_any = IN6ADDR_ANY_INIT;
-#pragma weak in6addr_any = local_in6addr_any
-#ifndef __USLC__
-#pragma weak getaddrinfo
-#endif
-static int haveIPv6 = 1;
 #endif
 
 /*
@@ -335,25 +261,21 @@ TRANS(SocketINETGetAddr) (XtransConnInfo ciptr)
 {
 #if defined(IPv6) && defined(AF_INET6)
     struct sockaddr_storage socknamev6;
-#endif
+#else
     struct sockaddr_in socknamev4;
+#endif
     void *socknamePtr;
     SOCKLEN_T namelen;
 
     PRMSG (3,"SocketINETGetAddr(%p)\n", ciptr, 0, 0);
 
 #if defined(IPv6) && defined(AF_INET6)
-    if (haveIPv6)
-    {
-	namelen = sizeof(socknamev6);
-	socknamePtr = &socknamev6;
-    }
-    else
+    namelen = sizeof(socknamev6);
+    socknamePtr = &socknamev6;
+#else
+    namelen = sizeof(socknamev4);
+    socknamePtr = &socknamev4;
 #endif
-    {
-	namelen = sizeof(socknamev4);
-	socknamePtr = &socknamev4;
-    }
 
     bzero(socknamePtr, namelen);
     
@@ -381,15 +303,10 @@ TRANS(SocketINETGetAddr) (XtransConnInfo ciptr)
     }
 
 #if defined(IPv6) && defined(AF_INET6)
-    if (haveIPv6)
-    {
-	ciptr->family = ((struct sockaddr *)socknamePtr)->sa_family;
-    }
-    else
+    ciptr->family = ((struct sockaddr *)socknamePtr)->sa_family;
+#else
+    ciptr->family = socknamev4.sin_family;
 #endif
-    {
-	ciptr->family = socknamev4.sin_family;
-    }
     ciptr->addrlen = namelen;
     memcpy (ciptr->addr, socknamePtr, ciptr->addrlen);
 
@@ -414,7 +331,7 @@ TRANS(SocketINETGetPeerAddr) (XtransConnInfo ciptr)
     SOCKLEN_T namelen;
 
 #if defined(IPv6) && defined(AF_INET6)
-    if (haveIPv6 && ciptr->family == AF_INET6)
+    if (ciptr->family == AF_INET6)
     {
 	namelen = sizeof(socknamev6);
 	socknamePtr = &socknamev6;
@@ -468,14 +385,6 @@ TRANS(SocketOpen) (int i, int type)
 
     PRMSG (3,"SocketOpen(%d,%d)\n", i, type, 0);
 
-#if defined(IPv6) && defined(AF_INET6)
-    if (getaddrinfo == NULL)
-	haveIPv6 = 0;
-
-    if (!haveIPv6 && Sockettrans2devtab[i].family == AF_INET6)
-	return NULL;
-#endif
-
     if ((ciptr = (XtransConnInfo) xcalloc (
 	1, sizeof(struct _XtransConnInfo))) == NULL)
     {
@@ -487,7 +396,7 @@ TRANS(SocketOpen) (int i, int type)
 	Sockettrans2devtab[i].protocol)) < 0
 #ifndef WIN32
 #if (defined(X11_t) && !defined(USE_POLL)) || defined(FS_t) || defined(FONT_t)
-       || ciptr->fd >= TRANS_OPEN_MAX
+       || ciptr->fd >= sysconf(_SC_OPEN_MAX)
 #endif
 #endif
       ) {
@@ -589,7 +498,14 @@ TRANS(SocketReopen) (int i, int type, int fd, char *port)
     ciptr->family = AF_UNIX;
     memcpy(ciptr->peeraddr, ciptr->addr, sizeof(struct sockaddr));
     ciptr->port = rindex(addr->sa_data, ':');
-    if (ciptr->port[0] == ':') ciptr->port++; /* port should now point to portnum or NULL */
+    if (ciptr->port == NULL) {
+	if (is_numeric(addr->sa_data)) {
+	    ciptr->port = addr->sa_data;
+	}
+    } else if (ciptr->port[0] == ':') {
+	ciptr->port++;
+    }
+    /* port should now point to portnum or NULL */
     return ciptr;
 }
 
@@ -616,8 +532,12 @@ TRANS(SocketOpenCOTSClientBase) (char *transname, char *protocol,
 
     while ((i = TRANS(SocketSelectFamily) (i, transname)) >= 0) {
 	if ((ciptr = TRANS(SocketOpen) (
-		 i, Sockettrans2devtab[i].devcotsname)) != NULL)
+		i, Sockettrans2devtab[i].devcotsname)) != NULL) {
+	    /* Save the index for later use */
+
+	    ciptr->index = i;
 	    break;
+	}
     }
     if (i < 0) {
 	if (i == -1)
@@ -628,10 +548,6 @@ TRANS(SocketOpenCOTSClientBase) (char *transname, char *protocol,
 		   transname, 0, 0);
 	return NULL;
     }
-
-    /* Save the index for later use */
-
-    ciptr->index = i;
 
     return ciptr;
 }
@@ -1168,7 +1084,7 @@ TRANS(SocketUNIXCreateListener) (XtransConnInfo ciptr, char *port,
 	return TRANS_CREATE_LISTENER_FAILED;
     }
 
-#if (defined(BSD44SOCKETS) || defined(__UNIXWARE__)) && !defined(Lynx)
+#if (defined(BSD44SOCKETS) || defined(__UNIXWARE__)) 
     sockname.sun_len = strlen(sockname.sun_path);
 #endif
 
@@ -1248,7 +1164,7 @@ TRANS(SocketUNIXResetListener) (XtransConnInfo ciptr)
     if (!abstract && (
 	stat (unsock->sun_path, &statb) == -1 ||
         ((statb.st_mode & S_IFMT) !=
-#if (defined (sun) && defined(SVR4)) || defined(NCR) || defined(SCO325) || !defined(S_IFSOCK)
+#if defined(NCR) || defined(SCO325) || !defined(S_IFSOCK)
 	  		S_IFIFO
 #else
 			S_IFSOCK
@@ -1537,7 +1453,7 @@ TRANS(SocketINETConnect) (XtransConnInfo ciptr, char *host, char *port)
 #endif
 
 #if defined(IPv6) && defined(AF_INET6)
-    if (haveIPv6) {
+    {
 	if (addrlist != NULL) {
 	    if (strcmp(host,addrlist->host) || strcmp(port,addrlist->port)) {
 		if (addrlist->firstaddr)
@@ -1679,8 +1595,8 @@ TRANS(SocketINETConnect) (XtransConnInfo ciptr, char *host, char *port)
 		addrlist->addr = addrlist->addr->ai_next;
 	    }
 	} 
-    } else
-#endif
+    }
+#else
     {
 	/*
 	 * Build the socket name.
@@ -1722,25 +1638,11 @@ TRANS(SocketINETConnect) (XtransConnInfo ciptr, char *host, char *port)
 		return TRANS_CONNECT_FAILED;
 	    }
 	
-#if defined(CRAY) && defined(OLDTCP)
-	    /* Only Cray UNICOS3 and UNICOS4 will define this */
-	    {
-		long t;
-		memcpy ((char *)&t, (char *) hostp->h_addr, sizeof (t));
-		sockname.sin_addr = t;
-	    }
-#else
 	    memcpy ((char *) &sockname.sin_addr, (char *) hostp->h_addr,
 		    sizeof (sockname.sin_addr));
-#endif /* CRAY and OLDTCP */
 
 	} else {
-#if defined(CRAY) && defined(OLDTCP)
-	    /* Only Cray UNICOS3 and UNICOS4 will define this */
-	    sockname.sin_addr = tmpaddr;
-#else
 	    sockname.sin_addr.s_addr = tmpaddr;
-#endif /* CRAY and OLDTCP */
         }
 
 	/*
@@ -1768,6 +1670,7 @@ TRANS(SocketINETConnect) (XtransConnInfo ciptr, char *host, char *port)
 	socketaddr = (struct sockaddr *) &sockname;
 	socketaddrlen = sizeof(sockname);
     }
+#endif
 
     /*
      * Turn on socket keepalive so the client process will eventually
@@ -1818,7 +1721,7 @@ TRANS(SocketINETConnect) (XtransConnInfo ciptr, char *host, char *port)
 
 	if (olderrno == ECONNREFUSED || olderrno == EINTR
 #if defined(IPv6) && defined(AF_INET6)
-	  || (haveIPv6 && ((addrlist->addr->ai_next != NULL) || 
+	  || (((addrlist->addr->ai_next != NULL) ||
 	        (addrlist->addr != addrlist->firstaddr)) &&
                (olderrno == ENETUNREACH || olderrno == EAFNOSUPPORT ||
 		 olderrno == EADDRNOTAVAIL || olderrno == ETIMEDOUT
@@ -1864,7 +1767,7 @@ TRANS(SocketINETConnect) (XtransConnInfo ciptr, char *host, char *port)
     }
 
 #if defined(IPv6) && defined(AF_INET6)
-   if (haveIPv6 && res != 0) { 
+   if (res != 0) {
 	addrlist->addr = addrlist->addr->ai_next;
    }
 #endif
@@ -1888,20 +1791,13 @@ UnixHostReallyLocal (char *host)
 {
     char hostnamebuf[256];
 
-#if defined(IPv6) && defined(AF_INET6)
-    if (getaddrinfo == NULL)
-	haveIPv6 = 0;
-#endif
-
     TRANS(GetHostname) (hostnamebuf, sizeof (hostnamebuf));
 
     if (strcmp (hostnamebuf, host) == 0)
     {
 	return (1);
-    }
+    } else {
 #if defined(IPv6) && defined(AF_INET6)
-    else if (haveIPv6)
-    {
 	struct addrinfo *localhostaddr;
 	struct addrinfo *otherhostaddr;
 	struct addrinfo *i, *j;
@@ -1947,10 +1843,7 @@ UnixHostReallyLocal (char *host)
 	freeaddrinfo(localhostaddr);
 	freeaddrinfo(otherhostaddr);
 	return equiv;
-    }
-#endif
-    else
-    {
+#else
 	/*
 	 * A host may have more than one network address.  If any of the
 	 * network addresses of 'host' (specified to the connect call)
@@ -2019,6 +1912,7 @@ UnixHostReallyLocal (char *host)
 	    i++;
 	}
 	return (equiv);
+#endif
     }
 }
 
@@ -2029,10 +1923,6 @@ TRANS(SocketUNIXConnect) (XtransConnInfo ciptr, char *host, char *port)
     struct sockaddr_un	sockname;
     SOCKLEN_T		namelen;
 
-#if defined(hpux) && defined(X11_t)
-    struct sockaddr_un	old_sockname;
-    SOCKLEN_T		old_namelen;
-#endif
 
     int abstract = 0;
 #ifdef HAVE_ABSTRACT_SOCKETS
@@ -2080,7 +1970,7 @@ TRANS(SocketUNIXConnect) (XtransConnInfo ciptr, char *host, char *port)
 	return TRANS_CONNECT_FAILED;
     }
 
-#if (defined(BSD44SOCKETS) || defined(__UNIXWARE__)) && !defined(Lynx)
+#if (defined(BSD44SOCKETS) || defined(__UNIXWARE__)) 
     sockname.sun_len = strlen (sockname.sun_path);
 #endif
 
@@ -2091,18 +1981,6 @@ TRANS(SocketUNIXConnect) (XtransConnInfo ciptr, char *host, char *port)
 #endif
 
 
-#if defined(hpux) && defined(X11_t)
-    /*
-     * This is gross, but it was in Xlib
-     */
-    old_sockname.sun_family = AF_UNIX;
-    if (set_sun_path(port, OLD_UNIX_PATH, old_sockname.sun_path, abstract) != 0) {
-	PRMSG (1, "SocketUNIXConnect: path too long\n", 0, 0, 0);
-	return TRANS_CONNECT_FAILED;
-    }
-    old_namelen = strlen (old_sockname.sun_path) +
-	offsetof(struct sockaddr_un, sun_path);
-#endif
 
     /*
      * Adjust the socket path if using abstract sockets.
@@ -2111,9 +1989,6 @@ TRANS(SocketUNIXConnect) (XtransConnInfo ciptr, char *host, char *port)
 
     if (abstract) {
 	sockname.sun_path[0] = '\0';
-#if defined(hpux) && defined(X11_t)
-	old_sockname.sun_path[0] = '\0';
-#endif
     }
 
     /*
@@ -2125,18 +2000,6 @@ TRANS(SocketUNIXConnect) (XtransConnInfo ciptr, char *host, char *port)
 	int olderrno = errno;
 	int connected = 0;
 	
-#if defined(hpux) && defined(X11_t)
-	if (olderrno == ENOENT)
-	{
-	    if (connect (ciptr->fd,
-		(struct sockaddr *) &old_sockname, old_namelen) >= 0)
-	    {
-		connected = 1;
-	    }
-	    else
-		olderrno = errno;
-	}
-#endif
 	if (!connected)
 	{
 	    errno = olderrno;
@@ -2215,9 +2078,6 @@ TRANS(SocketBytesReadable) (XtransConnInfo ciptr, BytesReadable_t *pend)
 {
     PRMSG (2,"SocketBytesReadable(%p,%d,%p)\n",
 	ciptr, ciptr->fd, pend);
-#if defined(QNX4)
-    *pend = 0L; /* FIONREAD only returns a short. Zero out upper bits */
-#endif
 #ifdef WIN32
     {
 	int ret = ioctlsocket ((SOCKET) ciptr->fd, FIONREAD, (u_long *) pend);
@@ -2225,11 +2085,8 @@ TRANS(SocketBytesReadable) (XtransConnInfo ciptr, BytesReadable_t *pend)
 	return ret;
     }
 #else
-#if (defined(__i386__) && defined(SYSV) && !defined(SCO325)) || (defined(_SEQUENT_) && _SOCKET_VERSION == 1)
+#if defined(__i386__) && defined(SYSV) && !defined(SCO325) 
     return ioctl (ciptr->fd, I_NREAD, (char *) pend);
-#else
-#if defined(__UNIXOS2__)
-    return ioctl (ciptr->fd, FIONREAD, (char*) pend, sizeof(int));
 #else
 #if defined(__VMS) && defined(__INITIAL_POINTER_SIZE) && __INITIAL_POINTER_SIZE == 64
     {
@@ -2244,7 +2101,6 @@ TRANS(SocketBytesReadable) (XtransConnInfo ciptr, BytesReadable_t *pend)
 #else
     return ioctl (ciptr->fd, FIONREAD, (char *) pend);
 #endif
-#endif /* __UNIXOS2__ */
 #endif /* __i386__ && SYSV || _SEQUENT_ && _SOCKET_VERSION == 1 */
 #endif /* WIN32 */
 }
@@ -2256,7 +2112,7 @@ TRANS(SocketRead) (XtransConnInfo ciptr, char *buf, int size)
 {
     PRMSG (2,"SocketRead(%d,%p,%d)\n", ciptr->fd, buf, size);
 
-#if defined(WIN32) || defined(__UNIXOS2__)
+#if defined(WIN32) 
     {
 	int ret = recv ((SOCKET)ciptr->fd, buf, size, 0);
 #ifdef WIN32
@@ -2276,7 +2132,7 @@ TRANS(SocketWrite) (XtransConnInfo ciptr, char *buf, int size)
 {
     PRMSG (2,"SocketWrite(%d,%p,%d)\n", ciptr->fd, buf, size);
 
-#if defined(WIN32) || defined(__UNIXOS2__)
+#if defined(WIN32) 
     {
 	int ret = send ((SOCKET)ciptr->fd, buf, size, 0);
 #ifdef WIN32

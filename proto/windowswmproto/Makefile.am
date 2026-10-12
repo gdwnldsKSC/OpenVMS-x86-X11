@@ -6,4 +6,14 @@ windowswm_HEADERS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = windowswmproto.pc
 
-EXTRA_DIST = autogen.sh windowswmproto.pc.in
+EXTRA_DIST = windowswmproto.pc.in
+
+EXTRA_DIST += ChangeLog
+MAINTAINERCLEANFILES = ChangeLog
+
+.PHONY: ChangeLog
+
+ChangeLog:
+	$(CHANGELOG_CMD)
+
+dist-hook: ChangeLog

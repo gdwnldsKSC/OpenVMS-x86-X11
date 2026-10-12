@@ -30,7 +30,8 @@
 .SH NAME
 XConsortium \- X Consortium information
 .SH SYNOPSIS
-Release 6.3 of X Version 11 was brought to you by X Consortium, Inc.
+Releases 6.0 through 6.3 of X Version 11 were brought to you by the
+X Consortium, Inc.
 .SH DESCRIPTION
 The X Consortium was an independent, not-for-profit Delaware membership
 corporation.  It was formed in 1993 as the successor to the MIT X Consortium.

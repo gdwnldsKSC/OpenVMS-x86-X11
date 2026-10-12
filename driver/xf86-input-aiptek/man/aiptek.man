@@ -150,7 +150,7 @@ sets the level of debugging info reported.
 This driver is currently Linux specific.
 .PP
 .SH "SEE ALSO"
-__xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__), hyperpen(__drivermansuffix__).
+__xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__), hyperpen(__drivermansuffix__).
 .SH AUTHORS
 Bryan W. Headley <bheadley@earthlink.net>
 .SH PROJECT PAGE

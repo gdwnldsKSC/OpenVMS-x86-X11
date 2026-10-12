@@ -1,6 +1,4 @@
 /*
- * $XFree86: xc/lib/Xrandr/Xrandr.c,v 1.13tsi Exp $
- *
  * Copyright © 2000 Compaq Computer Corporation, Inc.
  * Copyright © 2002 Hewlett Packard Company, Inc.
  *
@@ -36,7 +34,7 @@
 #include <X11/extensions/Xrender.h>
 #include "Xrandrint.h"
 
-_X_HIDDEN XExtensionInfo XRRExtensionInfo;
+static XExtensionInfo XRRExtensionInfo;
 _X_HIDDEN char XRRExtensionName[] = RANDR_NAME;
 
 static Bool     XRRWireToEvent(Display *dpy, XEvent *event, xEvent *wire);
@@ -88,18 +86,16 @@ static Bool XRRWireToEvent(Display *dpy, XEvent *event, xEvent *wire)
 	return True;
       }
       case RRNotify: {
-	XRRNotifyEvent *aevent = (XRRNotifyEvent *) event;
-	xRRCrtcChangeNotifyEvent *awire = (xRRCrtcChangeNotifyEvent *) wire;
-	aevent->type = awire->type & 0x7F;
-	aevent->serial = _XSetLastRequestRead(dpy, (xGenericReply *) wire);
-	aevent->send_event = (awire->type & 0x80) != 0;
-	aevent->display = dpy;
-	aevent->window = awire->window;
-	aevent->subtype = awire->subCode;
-	switch (aevent->subtype) {
+	switch (wire->u.u.detail) {
 	case RRNotify_OutputChange: {
 	    XRROutputChangeNotifyEvent *aevent = (XRROutputChangeNotifyEvent *) event;
 	    xRROutputChangeNotifyEvent *awire = (xRROutputChangeNotifyEvent *) wire;
+	    aevent->type = awire->type & 0x7F;
+	    aevent->serial = _XSetLastRequestRead(dpy, (xGenericReply *) wire);
+	    aevent->send_event = (awire->type & 0x80) != 0;
+	    aevent->display = dpy;
+	    aevent->window = awire->window;
+	    aevent->subtype = awire->subCode;
 	    aevent->output = awire->output;
 	    aevent->crtc = awire->crtc;
 	    aevent->mode = awire->mode;
@@ -111,6 +107,12 @@ static Bool XRRWireToEvent(Display *dpy, XEvent *event, xEvent *wire)
 	case RRNotify_CrtcChange: {
 	    XRRCrtcChangeNotifyEvent *aevent = (XRRCrtcChangeNotifyEvent *) event;
 	    xRRCrtcChangeNotifyEvent *awire = (xRRCrtcChangeNotifyEvent *) wire;
+	    aevent->type = awire->type & 0x7F;
+	    aevent->serial = _XSetLastRequestRead(dpy, (xGenericReply *) wire);
+	    aevent->send_event = (awire->type & 0x80) != 0;
+	    aevent->display = dpy;
+	    aevent->window = awire->window;
+	    aevent->subtype = awire->subCode;
 	    aevent->crtc = awire->crtc;
 	    aevent->mode = awire->mode;
 	    aevent->rotation = awire->rotation;
@@ -123,6 +125,12 @@ static Bool XRRWireToEvent(Display *dpy, XEvent *event, xEvent *wire)
 	case RRNotify_OutputProperty: {
 	    XRROutputPropertyNotifyEvent *aevent = (XRROutputPropertyNotifyEvent *) event;
 	    xRROutputPropertyNotifyEvent *awire = (xRROutputPropertyNotifyEvent *) wire;
+	    aevent->type = awire->type & 0x7F;
+	    aevent->serial = _XSetLastRequestRead(dpy, (xGenericReply *) wire);
+	    aevent->send_event = (awire->type & 0x80) != 0;
+	    aevent->display = dpy;
+	    aevent->window = awire->window;
+	    aevent->subtype = awire->subCode;
 	    aevent->output = awire->output;
 	    aevent->property = awire->atom;
 	    aevent->timestamp = awire->timestamp;
@@ -169,12 +177,12 @@ static Status XRREventToWire(Display *dpy, XEvent *event, xEvent *wire)
 	XRRNotifyEvent *aevent = (XRRNotifyEvent *) event;
 	awire->type = aevent->type | (aevent->send_event ? 0x80 : 0);
 	awire->sequenceNumber = aevent->serial & 0xFFFF;
-	awire->window = aevent->window;
 	awire->subCode = aevent->subtype;
 	switch (aevent->subtype) {
 	case RRNotify_OutputChange: {
 	    xRROutputChangeNotifyEvent *awire = (xRROutputChangeNotifyEvent *) wire;
 	    XRROutputChangeNotifyEvent *aevent = (XRROutputChangeNotifyEvent *) event;
+	    awire->window = aevent->window;
 	    awire->output = aevent->output;
 	    awire->crtc = aevent->crtc;
 	    awire->mode = aevent->mode;
@@ -186,6 +194,7 @@ static Status XRREventToWire(Display *dpy, XEvent *event, xEvent *wire)
 	case RRNotify_CrtcChange: {
 	    xRRCrtcChangeNotifyEvent *awire = (xRRCrtcChangeNotifyEvent *) wire;
 	    XRRCrtcChangeNotifyEvent *aevent = (XRRCrtcChangeNotifyEvent *) event;
+	    awire->window = aevent->window;
 	    awire->crtc = aevent->crtc;
 	    awire->mode = aevent->mode;
 	    awire->rotation = aevent->rotation;
@@ -198,6 +207,7 @@ static Status XRREventToWire(Display *dpy, XEvent *event, xEvent *wire)
 	case RRNotify_OutputProperty: {
 	    xRROutputPropertyNotifyEvent *awire = (xRROutputPropertyNotifyEvent *) wire;
 	    XRROutputPropertyNotifyEvent *aevent = (XRROutputPropertyNotifyEvent *) event;
+	    awire->window = aevent->window;
 	    awire->output = aevent->output;
 	    awire->atom = aevent->property;
 	    awire->timestamp = aevent->timestamp;
@@ -222,7 +232,7 @@ XRRFindDisplay (Display *dpy)
 	dpyinfo = XextAddDisplay (&XRRExtensionInfo, dpy, 
 				  XRRExtensionName,
 				  &rr_extension_hooks,
-				  RRNumberEvents, 0);
+				  RRNumberEvents, NULL);
 	numscreens = ScreenCount(dpy);
 	xrri = Xmalloc (sizeof(XRandRInfo) + 
 				 sizeof(char *) * numscreens);

@@ -276,7 +276,7 @@ xgiOptions(ScrnInfoPtr pScrn)
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "2D Acceleration disabled\n");
     }
 
-	if (PCI_CHIP_XGIXG20 == pXGI->Chipset)
+	if ((pXGI->Chipset== PCI_CHIP_XGIXG20)||(pXGI->Chipset== PCI_CHIP_XGIXG21)||(pXGI->Chipset== PCI_CHIP_XGIXG27))
 		pXGI->NoXvideo = TRUE;
 		
     /* SWCursor

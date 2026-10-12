@@ -1,37 +1,135 @@
-2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit 59a5a7257b9d98e49ac6913f0dd74f03008ff273
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Oct 8 00:01:36 2009 -0700
 
-	* configure.ac:
-	Update package version number for final X11R7 release candidate.
+    libWindowsWM 1.0.1
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
 
-2005-12-05  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit fe83e7331c147d76daa2bb5f61879d69a919aeca
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Oct 8 00:00:52 2009 -0700
 
-	* configure.ac:
-	Add missing XORG_RELEASE_VERSION to configure.ac.
+    Migrate to xorg macros 1.3 & XORG_DEFAULT_OPTIONS
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
 
-2005-12-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit 960aa044e0667d10b7a09bcdc4d3ad6f8597481d
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Mon Feb 2 20:34:30 2009 -0800
 
-	* configure.ac:
-	Update package version number for X11R7 RC3 release.
+    Add README with pointers to mailing list, bugzilla & git repos
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
 
-2005-12-02  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit 94de42346e098f3893c11da769050ab7ed5d0798
+Author: Paulo Cesar Pereira de Andrade <pcpa@mandriva.com.br>
+Date:   Wed Jan 28 19:00:27 2009 -0200
 
-	* configure.ac:
-	* src/Makefile.am:
-	Add check and cflags for malloc(0) returning NULL.
+    Janitor: ansification, make distcheck, compiler warnings.
 
-2005-11-19  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit 77a3ccd6b05029223630cd9fb9b0c97b1196db89
+Author: Paulo Cesar Pereira de Andrade <pcpa@mandriva.com.br>
+Date:   Sat Nov 29 04:06:43 2008 -0200
 
-	* windowswm.pc.in:
-	Update pkgconfig files to separate library build-time dependencies
-	from application build-time dependencies.
-	* configure.ac:
-	Update dependencies to work with separate build roots.
+    libWindowsWM manpage is from libAppleWM
+    
+    http://bugs.freedesktop.org/show_bug.cgi?id=6405
 
-2005-11-09  Adam Jackson  <ajax@freedesktop.org>
+commit 9ff0739051e7cdb7bd9069d5fff5a3e1a41f562e
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Thu Dec 6 16:38:18 2007 -0500
 
-	* configure.ac:
-	* NEWS:
-	* README:
-	* man/Makefile.am:
-	* src/Makefile.am:
-	Build fixes.  Version bump for RC2 release.
+    Replace static ChangeLog with dist-hook to generate from git log
+
+commit f673293f8aba6e52b9638be931070bf2e0c8cb69
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Sep 3 05:53:31 2007 -0400
+
+    Add *~ to .gitignore to skip patch/emacs droppings
+
+commit e6dff98f690de0b55b1c212346c45a19d48427aa
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Jul 13 14:58:45 2006 -0700
+
+    renamed: .cvsignore -> .gitignore
+
+commit ac87a4bfe209e8164f200b10137327fc29f1853f
+Author: Kevin E Martin <kem@kem.org>
+Date:   Thu Dec 15 00:24:28 2005 +0000
+
+    Update package version number for final X11R7 release candidate.
+
+commit d788fa29cc0497279d82fb991ca1ef1c94105ca8
+Author: Kevin E Martin <kem@kem.org>
+Date:   Mon Dec 5 19:08:21 2005 +0000
+
+    Add missing XORG_RELEASE_VERSION to configure.ac.
+
+commit abda96e2857a48529637b878b478e516614eb29d
+Author: Kevin E Martin <kem@kem.org>
+Date:   Sat Dec 3 05:49:42 2005 +0000
+
+    Update package version number for X11R7 RC3 release.
+
+commit 6c82c873fe14a7c1273b16368674698d35a402ab
+Author: Kevin E Martin <kem@kem.org>
+Date:   Sat Dec 3 04:41:47 2005 +0000
+
+    Add check and cflags for malloc(0) returning NULL.
+
+commit ee7b5feaa2d5dca9170bcf26b9aadd936d4f6129
+Author: Eric Anholt <anholt@freebsd.org>
+Date:   Sun Nov 20 23:17:39 2005 +0000
+
+    Add/improve libs .cvsignores.
+
+commit f7dd4c4ce6d4782511c1955bb5d5a22e63d810a3
+Author: Kevin E Martin <kem@kem.org>
+Date:   Sat Nov 19 07:15:39 2005 +0000
+
+    Update pkgconfig files to separate library build-time dependencies from
+        application build-time dependencies, and update package deps to work
+        with separate build roots.
+
+commit 5cf68db52b166f6f71f2d3266bb8adf7d6ddfd3c
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Wed Nov 9 22:49:47 2005 +0000
+
+    Build fixes. Version bump for RC2 release.
+
+commit 0b23050f12dbb8e58e0301ab9f321f9cfb165d48
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Wed Nov 9 22:41:32 2005 +0000
+
+    Likewise for extutil.h
+
+commit fcf7eee8248f0029f73927861e640984b2efe0c3
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Wed Nov 9 22:31:56 2005 +0000
+
+    #include "foowmstr.h" -> #include <X11/extensions/foowmstr.h>
+
+commit 4e76e346fc73c6650cee2882be993105acf0bd2e
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Oct 19 02:48:08 2005 +0000
+
+    Update package version number for RC1 release.
+
+commit 427b8cbd08e59db30783f54ece3add718140ae3c
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Fri Sep 30 22:43:54 2005 +0000
+
+    Build system for WindowsWM
+
+commit 06bcf0b9da17322016a6075b19236fdf83ddb3b9
+Author: Alexander Gottwald <alexander.gottwald@s1999.tu-chemnitz.de>
+Date:   Mon Jul 26 19:15:48 2004 +0000
+
+    Import lib/windows from CYGWIN branch.
+
+commit 6f564203648e425349efb83a8994ddabd52b1630
+Author: Kensuke Matsuzaki <zakki@peppermint.jp>
+Date:   Fri Dec 5 03:37:26 2003 +0000
+
+    file windowswm.c was initially added on branch CYGWIN.

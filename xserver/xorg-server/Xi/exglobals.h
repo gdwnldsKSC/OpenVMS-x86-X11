@@ -31,25 +31,31 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
+#include "privates.h"
 
 #ifndef EXGLOBALS_H
 #define EXGLOBALS_H 1
 
 extern int IReqCode;
+extern int IEventBase;
 extern int BadDevice;
 extern int BadMode;
 extern int DeviceBusy;
 extern int BadClass;
 
-extern Mask DevicePointerMotionMask;
-extern Mask DevicePointerMotionHintMask;
-extern Mask DeviceFocusChangeMask;
-extern Mask DeviceStateNotifyMask;
-extern Mask DeviceMappingNotifyMask;
-extern Mask DeviceOwnerGrabButtonMask;
-extern Mask DeviceButtonGrabMask;
-extern Mask DeviceButtonMotionMask;
-extern Mask DevicePresenceNotifyMask;
+/* Note: only the ones needed in files other than extinit.c are declared */
+extern const Mask DevicePointerMotionMask;
+extern const Mask DevicePointerMotionHintMask;
+extern const Mask DeviceFocusChangeMask;
+extern const Mask DeviceStateNotifyMask;
+extern const Mask DeviceMappingNotifyMask;
+extern const Mask DeviceOwnerGrabButtonMask;
+extern const Mask DeviceButtonGrabMask;
+extern const Mask DeviceButtonMotionMask;
+extern const Mask DevicePresenceNotifyMask;
+extern const Mask DevicePropertyNotifyMask;
+extern const Mask XIAllMasks;
+
 extern Mask PropagateMask[];
 
 extern int DeviceValuator;
@@ -68,7 +74,9 @@ extern int DeviceButtonStateNotify;
 extern int DeviceMappingNotify;
 extern int ChangeDeviceNotify;
 extern int DevicePresenceNotify;
+extern int DevicePropertyNotify;
 
 extern int RT_INPUTCLIENT;
 
+extern DevPrivateKey XIClientPrivateKey;
 #endif /* EXGLOBALS_H */

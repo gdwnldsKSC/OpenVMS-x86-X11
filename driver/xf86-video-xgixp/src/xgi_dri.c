@@ -34,7 +34,7 @@
 #include "xgi.h"
 #include "xgi_version.h"
 
-#include <drm/xgi_drm.h>
+#include "xgi_drm.h"
 #include "sarea.h"
 #include "xgi_dri.h"
 
@@ -170,10 +170,11 @@ Bool XGIDRIScreenInit(ScreenPtr pScreen)
     }
 
 	
-    if ((kernel_version->version_major != 1)) {
+    if ((kernel_version->version_major != 1)
+	&& (kernel_version->version_minor != 2)) {
         xf86DrvMsg(pScreen->myNum, X_ERROR,
                    "[dri] Kernel module version mismatch.  "
-		   "Version 1.0.x or later required!  Disabling DRI.\n");
+		   "Version 1.2.x or later required!  Disabling DRI.\n");
 	drmFreeVersion(kernel_version);
         XGIDRICloseScreen(pScreen);
         return FALSE;

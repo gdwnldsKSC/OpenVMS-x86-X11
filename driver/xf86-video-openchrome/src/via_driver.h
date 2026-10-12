@@ -36,7 +36,11 @@
 
 #include "vgaHW.h"
 #include "xf86.h"
+
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6 
 #include "xf86Resources.h"
+#endif
+
 #include "xf86Pci.h"
 #include "xf86PciInfo.h"
 #include "xf86_OSproc.h"
@@ -65,6 +69,7 @@
 #include "via_swov.h"
 #include "via_dmabuffer.h"
 #include "via_3d.h"
+#include "via_video.h"
 
 #ifdef XSERVER_LIBPCIACCESS
 #include <pciaccess.h>
@@ -78,7 +83,6 @@
 #include "via_dri.h"
 #endif
 
-#ifdef VIA_HAVE_EXA
 #include "exa.h"
 #define VIA_AGP_UPL_SIZE    (1024*128)
 #define VIA_DMA_DL_SIZE     (1024*128)
@@ -92,7 +96,6 @@
 #define VIA_MIN_UPLOAD 4000
 #define VIA_MIN_TEX_UPLOAD 200
 #define VIA_MIN_DOWNLOAD 200
-#endif
 
 #define AGP_PAGE_SIZE 4096
 #define AGP_PAGES 8192
@@ -101,15 +104,18 @@
 #define DRIVER_NAME     "openchrome"
 #define VERSION_MAJOR   0
 #define VERSION_MINOR   2
-#ifdef USE_NEW_XVABI
-#define PATCHLEVEL      903
-#else
-#define PATCHLEVEL      0
-#endif
+#define PATCHLEVEL      904
 #define VIA_VERSION     ((VERSION_MAJOR<<24) | (VERSION_MINOR<<16) | PATCHLEVEL)
 
-#define VIA_CURSOR_SIZE         (4 * 1024)
 #define VIA_VQ_SIZE             (256 * 1024)
+
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6 
+#define VIA_RES_SHARED RES_SHARED_VGA
+#define VIA_RES_UNDEF RES_UNDEFINED
+#else
+#define VIA_RES_SHARED NULL
+#define VIA_RES_UNDEF NULL
+#endif
 
 typedef struct {
     CARD8   SR08, SR0A, SR0F;
@@ -120,7 +126,7 @@ typedef struct {
     CARD8   SR1F, SR20, SR21, SR22,SR23,SR24,SR25,SR26;
     CARD8   SR27, SR28, SR29, SR2A,SR2B,SR2C,SR2D,SR2E;
     CARD8   SR2F, SR30, SR31, SR32,SR33,SR34,SR40,SR41;
-    CARD8   SR42, SR43, SR44, SR45,SR46,SR47;
+    CARD8   SR42, SR43, SR44, SR45,SR46,SR47,SR48,SR49;
     CARD8   SR4A, SR4B, SR4C;
 
     /*   extended CRTC registers */
@@ -130,6 +136,9 @@ typedef struct {
     CARD8   CR97, CR99, CR9B, CR9F, CRA0, CRA1, CRA2;
     CARD8   CRTCRegs[68];
 /*    CARD8   LCDRegs[0x40];*/
+
+    /* TMDS/LVDS Control */
+    CARD8   CRD2;
 } VIARegRec, *VIARegPtr;
 
 /*
@@ -211,7 +220,6 @@ typedef struct _VIA {
     int                 FBFreeEnd;
     int                 driSize;
     int                 maxDriSize;
-    int                 CursorStart;
     int                 VQStart;
     int                 VQEnd;
 
@@ -230,10 +238,10 @@ typedef struct _VIA {
 
     /* Here are all the Options */
     Bool                VQEnable;
-    Bool                hwcursor;
+    Bool		hwcursor;
     Bool                NoAccel;
     Bool                shadowFB;
-    int                 rotate;
+    Rotation            rotate;
     Bool                vbeSR;
     int                 agpMem;
 
@@ -276,7 +284,7 @@ typedef struct _VIA {
     CARD32              lastMarkerRead;
     Bool                agpDMA;
     Bool                nPOT[VIA_NUM_TEXUNITS];
-#ifdef VIA_HAVE_EXA
+    const unsigned     *TwodRegs;
     ExaDriverPtr        exaDriverPtr;
     ExaOffscreenArea   *exa_scratch;
     unsigned int        exa_scratch_next;
@@ -298,7 +306,9 @@ typedef struct _VIA {
     char *              texAddr;
     char *              dBounce;
 #endif
-#endif
+
+    /* Rotation */
+    Bool    RandRRotation;
 
     /* BIOS Info Ptr */
     VIABIOSInfoPtr      pBIOSInfo;
@@ -354,11 +364,32 @@ typedef struct _VIA {
     Bool                dmaXV;
 
     CARD8               ActiveDevice;	/* Option */
-    unsigned char       *CursorImage;
-    CARD32		CursorFG;
-    CARD32		CursorBG;
-    CARD32		CursorMC;
 
+    unsigned char       *CursorImage;
+    CARD32              CursorFG;
+    CARD32              CursorBG;
+    Bool                CursorARGB;
+    Bool                CursorARGBSupported;
+    CARD8               CursorPipe;
+    int                 CursorStart;
+	int					CursorMaxWidth;
+	int					CursorMaxHeight;
+	int					CursorSize;
+
+    CARD32              CursorRegControl;
+    CARD32              CursorRegBase;
+    CARD32              CursorRegPos;
+    CARD32              CursorRegOffset;
+    CARD32              CursorRegFifo;
+    CARD32              CursorRegTransKey;
+
+    CARD32              CursorControl0;
+    CARD32              CursorControl1;
+    CARD32              CursorFifo;
+    CARD32              CursorTransparentKey;
+    CARD32              CursorPrimHiInvtColor;
+    CARD32              CursorV327HiInvtColor; 
+    
     /* Video */
     int                 VideoEngine;
     swovRec		swov;
@@ -375,12 +406,21 @@ typedef struct _VIA {
     
     ViaSharedPtr	sharedData;
     Bool                useDmaBlit;
+
+    void                *displayMap;
+    CARD32              displayOffset;
+    void                *cursorMap;
+    CARD32              cursorOffset;
+
 #ifdef HAVE_DEBUG
     Bool                disableXvBWCheck;
     Bool                DumpVGAROM;
     Bool                PrintVGARegs;
     Bool                PrintTVRegs;
     Bool                I2CScan;
+    
+    Bool                UseLegacyModeSwitch ;
+    video_via_regs*     VideoRegs ;
 #endif /* HAVE_DEBUG */
 } VIARec, *VIAPtr;
 
@@ -402,16 +442,17 @@ typedef struct
 } VIAEntRec, *VIAEntPtr;
 
 /* Prototypes. */
-#if defined(XF86DRI) || defined(VIA_HAVE_EXA)
 void VIAInitialize3DEngine(ScrnInfoPtr pScrn);
-#endif 
 
 /* In via_cursor.c. */
-Bool VIAHWCursorInit(ScreenPtr pScreen);
-void VIAShowCursor(ScrnInfoPtr);
-void VIAHideCursor(ScrnInfoPtr);
-void ViaCursorStore(ScrnInfoPtr pScrn);
-void ViaCursorRestore(ScrnInfoPtr pScrn);
+Bool viaCursorHWInit(ScreenPtr pScreen);
+void viaCursorShow(ScrnInfoPtr);
+void viaCursorHide(ScrnInfoPtr);
+void viaCursorStore(ScrnInfoPtr pScrn);
+void viaCursorRestore(ScrnInfoPtr pScrn);
+Bool viaCursorRecInit(ScrnInfoPtr pScrn);
+void viaCursorRecDestroy(ScrnInfoPtr pScrn);
+void viaCursorSetFB(ScrnInfoPtr pScrn);
 
 /* In via_accel.c. */
 Bool viaInitAccel(ScreenPtr);

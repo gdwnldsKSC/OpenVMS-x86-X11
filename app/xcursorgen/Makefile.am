@@ -2,9 +2,9 @@ bin_PROGRAMS = xcursorgen
 
 xcursorgen_SOURCES = xcursorgen.c
 
-AM_CFLAGS = @XCURSORGEN_CFLAGS@
+AM_CFLAGS = $(CWARNFLAGS) $(XCURSORGEN_CFLAGS)
 
-xcursorgen_LDADD = @XCURSORGEN_LIBS@
+xcursorgen_LDADD = $(XCURSORGEN_LIBS)
 
 appmandir = $(APP_MAN_DIR)
 
@@ -18,13 +18,15 @@ MAINTAINERCLEANFILES = ChangeLog
 .PHONY: ChangeLog
 
 ChangeLog:
-	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || (touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
+	$(CHANGELOG_CMD)
 
 dist-hook: ChangeLog
 
 # Strings to replace in man pages
 XORGRELSTRING = @PACKAGE_STRING@
   XORGMANNAME = X Version 11
+
+SED = sed
 
 MAN_SUBSTS = \
 	-e 's|__vendorversion__|"$(XORGRELSTRING)" "$(XORGMANNAME)"|' \
@@ -34,4 +36,4 @@ MAN_SUBSTS = \
 SUFFIXES = .$(APP_MAN_SUFFIX) .man
 
 .man.$(APP_MAN_SUFFIX):
-	sed $(MAN_SUBSTS) < $< > $@
+	$(AM_V_GEN)$(SED) $(MAN_SUBSTS) < $< > $@

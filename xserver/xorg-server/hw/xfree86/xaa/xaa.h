@@ -2,6 +2,10 @@
 #ifndef _XAA_H
 #define _XAA_H
 
+#define XAA_VERSION_MAJOR   1
+#define XAA_VERSION_MINOR   2
+#define XAA_VERSION_RELEASE 1
+
 /*
 
    ******** OPERATION SPECIFIC FLAGS *********
@@ -1375,22 +1379,22 @@ typedef struct _XAAInfoRec {
 #define SET_SYNC_FLAG(infoRec)	(infoRec)->NeedToSync = TRUE
 
 
-Bool 
+extern _X_EXPORT Bool
 XAAInit(
     ScreenPtr pScreen,
     XAAInfoRecPtr infoRec
 );
 
-XAAInfoRecPtr XAACreateInfoRec(void);
+extern _X_EXPORT XAAInfoRecPtr XAACreateInfoRec(void);
 
-void
+extern _X_EXPORT void
 XAADestroyInfoRec(
     XAAInfoRecPtr infoRec
 );
 
 typedef void (*DepthChangeFuncPtr) (ScrnInfoPtr pScrn, int depth);
 
-Bool
+extern _X_EXPORT Bool
 XAAInitDualFramebufferOverlay(
    ScreenPtr pScreen, 
    DepthChangeFuncPtr callback

@@ -43,8 +43,8 @@ need to touch any of the xkb configuration files.
 
 <Para>
 The easiest and the most natural way to specify a keyboard mapping is to use
-the <Literal remap="tt">rules</Literal> component. As its name suggests it describes a number of 
-general rules to combine all bits and pieces into a valid and useful keyboard 
+the <Literal remap="tt">rules</Literal> component. As its name suggests it describes a number of
+general rules to combine all bits and pieces into a valid and useful keyboard
 mapping. All you need to do is to select a suitable rules file and then to
 feed it with a few parameters that will adjust the keyboard behaviour to
 fulfill your needs.
@@ -57,7 +57,7 @@ The parameters are:
 <ListItem>
 
 <Para>
-<Literal remap="tt">XkbRules </Literal>- files of rules to be used for keyboard mapping 
+<Literal remap="tt">XkbRules </Literal>- files of rules to be used for keyboard mapping
 composition
 </Para>
 </ListItem>
@@ -93,8 +93,8 @@ composition
 <Para>
 The proper rules file depends on your vendor. In reality, the commonest
 file of rules is <Literal remap="tt">xorg</Literal>. For each rules file there is a description
-file named <Literal remap="tt">&lt;vendor-rules&gt;.lst</Literal>, for instance <Literal remap="tt">xorg.lst</Literal> 
-which is located in the xkb configuration subdirectory <Literal remap="tt">rules</Literal> 
+file named <Literal remap="tt">&lt;vendor-rules&gt;.lst</Literal>, for instance <Literal remap="tt">xorg.lst</Literal>
+which is located in the xkb configuration subdirectory <Literal remap="tt">rules</Literal>
 (for example <Literal remap="tt">/etc/X11/xkb/rules</Literal>).
 </Para>
 
@@ -118,9 +118,9 @@ Section "InputDevice"
 EndSection
 </Screen>
 
-The values of <Literal remap="tt">XkbModel</Literal> and <Literal remap="tt">XkbLayout</Literal> are really 
-not surprising. The <Literal remap="tt">XkbOptions</Literal> has been explicitly set to 
-the empty set of parameters. The <Literal remap="tt">XkbVariant</Literal> option has been left out. 
+The values of <Literal remap="tt">XkbModel</Literal> and <Literal remap="tt">XkbLayout</Literal> are really
+not surprising. The <Literal remap="tt">XkbOptions</Literal> has been explicitly set to
+the empty set of parameters. The <Literal remap="tt">XkbVariant</Literal> option has been left out.
 That means the default variant named <Literal remap="tt">basic</Literal> is loaded.
 </Para>
 
@@ -133,7 +133,7 @@ setxkbmap -rules xorg -model pc104 -layout us -option ""
 </Screen>
 
 The configuration and the shell command would be very analogous
-for most other layouts (internationalized mappings). 
+for most other layouts (internationalized mappings).
 </Para>
 
 </Sect2>
@@ -205,8 +205,8 @@ EndSection
 
 That seems tricky but it is not. The logic for settings of variants
 is the same as for layouts, that means the first and the third variant
-settings are left out (set to <Literal remap="tt">basic</Literal>), the second is set to 
-<Literal remap="tt">bksl</Literal> (a special variant with an enhanced definition of the backslash 
+settings are left out (set to <Literal remap="tt">basic</Literal>), the second is set to
+<Literal remap="tt">bksl</Literal> (a special variant with an enhanced definition of the backslash
 key).
 </Para>
 
@@ -229,7 +229,7 @@ setxkbmap -rules xorg -model logicordless -layout "us,cz,de" \
 See rules/*.lst files.
 </Para>
 
-<!-- 
+<!--
   TODO: More detailed descriptions of options. Users often get confused.
 -->
 
@@ -244,7 +244,7 @@ See rules/*.lst files.
 Generally, you can directly prescribe what configuration of each of basic
 xkb components should be used to form the resulting keyboard mapping.
 This method is rather "brute force". You precisely need to know the structure
-and the meaning of all of used configuration components. 
+and the meaning of all of used configuration components.
 </Para>
 
 <Para>
@@ -263,15 +263,15 @@ There are five basic components used to form a keyboard mapping:
 <ListItem>
 
 <Para>
-<Emphasis>key codes</Emphasis> - a translation of the scan codes produced by the 
+<Emphasis>key codes</Emphasis> - a translation of the scan codes produced by the
 keyboard into a suitable symbolic form
-              
+
 </Para>
 </ListItem>
 <ListItem>
 
 <Para>
-<Emphasis>types</Emphasis> - a specification of what various combinations of 
+<Emphasis>types</Emphasis> - a specification of what various combinations of
 modifiers produce
 
 </Para>
@@ -279,7 +279,7 @@ modifiers produce
 <ListItem>
 
 <Para>
-<Emphasis>key symbols</Emphasis> - a translation of symbolic key codes into actual 
+<Emphasis>key symbols</Emphasis> - a translation of symbolic key codes into actual
 symbols
 
 </Para>

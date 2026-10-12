@@ -1,5 +1,6 @@
 /*
  * Copyright © 2006 Keith Packard
+ * Copyright © 2008 Red Hat, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -379,6 +380,9 @@ RROutputDestroyResource (pointer value, XID pid)
     {
 	rrScrPriv(pScreen);
 	int		i;
+
+	if (pScrPriv->primaryOutput == output)
+	    pScrPriv->primaryOutput = NULL;
     
 	for (i = 0; i < pScrPriv->numOutputs; i++)
 	{
@@ -426,7 +430,7 @@ RROutputInit (void)
 }
 
 #define OutputInfoExtra	(SIZEOF(xRRGetOutputInfoReply) - 32)
-				
+
 int
 ProcRRGetOutputInfo (ClientPtr client)
 {
@@ -444,20 +448,14 @@ ProcRRGetOutputInfo (ClientPtr client)
     int				i, n;
     
     REQUEST_SIZE_MATCH(xRRGetOutputInfoReq);
-    output = LookupOutput(client, stuff->output, DixReadAccess);
-
-    if (!output)
-    {
-	client->errorValue = stuff->output;
-	return RRErrorBase + BadRROutput;
-    }
+    VERIFY_RR_OUTPUT(stuff->output, output, DixReadAccess);
 
     pScreen = output->pScreen;
     pScrPriv = rrGetScrPriv(pScreen);
 
     rep.type = X_Reply;
     rep.sequenceNumber = client->sequence;
-    rep.length = OutputInfoExtra >> 2;
+    rep.length = bytes_to_int32(OutputInfoExtra);
     rep.timestamp = pScrPriv->lastSetTime.milliseconds;
     rep.crtc = output->crtc ? output->crtc->id : None;
     rep.mmWidth = output->mmWidth;
@@ -470,14 +468,14 @@ ProcRRGetOutputInfo (ClientPtr client)
     rep.nClones = output->numClones;
     rep.nameLength = output->nameLength;
     
-    extraLen = ((output->numCrtcs + 
+    extraLen = ((output->numCrtcs +
 		 output->numModes + output->numUserModes +
 		 output->numClones +
-		 ((rep.nameLength + 3) >> 2)) << 2);
+		 bytes_to_int32(rep.nameLength)) << 2);
 
     if (extraLen)
     {
-	rep.length += extraLen >> 2;
+	rep.length += bytes_to_int32(extraLen);
 	extra = xalloc (extraLen);
 	if (!extra)
 	    return BadAlloc;
@@ -531,5 +529,95 @@ ProcRRGetOutputInfo (ClientPtr client)
 	xfree (extra);
     }
     
+    return client->noClientException;
+}
+
+static void
+RRSetPrimaryOutput(ScreenPtr pScreen, rrScrPrivPtr pScrPriv,
+		   RROutputPtr output)
+{
+    if (pScrPriv->primaryOutput == output)
+	return;
+
+    /* clear the old primary */
+    if (pScrPriv->primaryOutput) {
+	RROutputChanged(pScrPriv->primaryOutput, 0);
+	pScrPriv->primaryOutput = NULL;
+    }
+
+    /* set the new primary */
+    if (output) {
+	pScrPriv->primaryOutput = output;
+	RROutputChanged(output, 0);
+    }
+
+    pScrPriv->layoutChanged = TRUE;
+
+    RRTellChanged(pScreen);
+}
+
+int
+ProcRRSetOutputPrimary(ClientPtr client)
+{
+    REQUEST(xRRSetOutputPrimaryReq);
+    RROutputPtr output = NULL;
+    WindowPtr pWin;
+    rrScrPrivPtr pScrPriv;
+    int rc;
+
+    REQUEST_SIZE_MATCH(xRRSetOutputPrimaryReq);
+
+    rc = dixLookupWindow(&pWin, stuff->window, client, DixGetAttrAccess);
+    if (rc != Success)
+	return rc;
+
+    if (stuff->output) {
+	VERIFY_RR_OUTPUT(stuff->output, output, DixReadAccess);
+
+	if (output->pScreen != pWin->drawable.pScreen) {
+	    client->errorValue = stuff->window;
+	    return BadMatch;
+	}
+    }
+
+    pScrPriv = rrGetScrPriv(pWin->drawable.pScreen);
+    RRSetPrimaryOutput(pWin->drawable.pScreen, pScrPriv, output);
+
+    return client->noClientException;
+}
+
+int
+ProcRRGetOutputPrimary(ClientPtr client)
+{
+    REQUEST(xRRGetOutputPrimaryReq);
+    WindowPtr pWin;
+    rrScrPrivPtr pScrPriv;
+    xRRGetOutputPrimaryReply rep;
+    RROutputPtr primary = NULL;
+    int rc;
+
+    REQUEST_SIZE_MATCH(xRRGetOutputPrimaryReq);
+
+    rc = dixLookupWindow(&pWin, stuff->window, client, DixGetAttrAccess);
+    if (rc != Success)
+	return rc;
+
+    pScrPriv = rrGetScrPriv(pWin->drawable.pScreen);
+    if (pScrPriv)
+	primary = pScrPriv->primaryOutput;
+
+    memset(&rep, 0, sizeof(rep));
+    rep.type = X_Reply;
+    rep.sequenceNumber = client->sequence;
+    rep.output = primary ? primary->id : None;
+
+    if (client->swapped) {
+	int n;
+	swaps(&rep.sequenceNumber, n);
+	swapl(&rep.output, n);
+    }
+
+    WriteToClient(client, sizeof(xRRGetOutputPrimaryReply), &rep);
+
     return client->noClientException;
 }

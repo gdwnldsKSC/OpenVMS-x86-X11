@@ -21,8 +21,6 @@
  *
  */
 
-/* $XFree86: xc/programs/Xserver/hw/xfree86/input/void/void.c,v 1.1 1999/11/19 13:54:57 hohndel Exp $ */
-
 /* Input device which doesn't output any event. This device can be used
  * as a core pointer or as a core keyboard.
  */
@@ -52,11 +50,17 @@
 #include <xf86Module.h>
 #endif
 
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+#include <X11/Xatom.h>
+#include <xserver-properties.h>
+#endif
+
 #define MAXBUTTONS 3
 
 /******************************************************************************
  * Function/Macro keys variables
  *****************************************************************************/
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 5
 static KeySym void_map[] = 
 {
 	NoSymbol,	NoSymbol,	NoSymbol,	NoSymbol,
@@ -130,6 +134,7 @@ static KeySymsRec void_keysyms = {
   /* map	minKeyCode	maxKeyCode	width */
   void_map,	8,		255,		1
 };
+#endif	/* GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 5 */
 
 static const char *DEFAULTS[] = {
     NULL
@@ -172,7 +177,19 @@ xf86VoidControlProc(DeviceIntPtr device, int what)
     InputInfoPtr pInfo;
     unsigned char map[MAXBUTTONS + 1];
     int i;
-    
+    Bool result;
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+    Atom btn_labels[MAXBUTTONS] = {0};
+    Atom axes_labels[2] = {0};
+
+    axes_labels[0] = XIGetKnownProperty(AXIS_LABEL_PROP_REL_X);
+    axes_labels[1] = XIGetKnownProperty(AXIS_LABEL_PROP_REL_Y);
+
+    btn_labels[0] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_LEFT);
+    btn_labels[1] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_MIDDLE);
+    btn_labels[2] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_RIGHT);
+#endif
+
     pInfo = device->public.devicePrivate;
     
     switch (what)
@@ -186,40 +203,50 @@ xf86VoidControlProc(DeviceIntPtr device, int what)
 	
 	if (InitButtonClassDeviceStruct(device,
 					MAXBUTTONS,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+					btn_labels,
+#endif
 					map) == FALSE) {
 	  ErrorF("unable to allocate Button class device\n");
 	  return !Success;
 	}
-      
-/*
-	if (InitFocusClassDeviceStruct(device) == FALSE) {
-	  ErrorF("unable to init Focus class device\n");
-	  return !Success;
-	}
-          
-	if (InitKeyClassDeviceStruct(device, &void_keysyms, NULL) == FALSE) {
-	  ErrorF("unable to init key class device\n"); 
-	  return !Success;
-	}
-*/
-	if (InitKeyboardDeviceStruct((DevicePtr)device, &void_keysyms, NULL, BellProc, KeyControlProc) == FALSE) {
+
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 5
+	result = InitKeyboardDeviceStruct(device, NULL,
+					  BellProc, KeyControlProc);
+#else
+	result = InitKeyboardDeviceStruct((DevicePtr)device, &void_keysyms,
+					  NULL, BellProc, KeyControlProc);
+#endif
+	if (!result) {
 	  ErrorF("unable to init keyboard device\n");
 	  return !Success;
 	}
 
 	if (InitValuatorClassDeviceStruct(device, 
 					  2,
-					  xf86GetMotionEvents, 
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+					  axes_labels,
+#endif
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
+					  xf86GetMotionEvents,
+#endif
 					  0,
 					  Absolute) == FALSE) {
 	  InitValuatorAxisStruct(device,
 				 0,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+				 axes_labels[0],
+#endif
 				 0, /* min val */1, /* max val */
 				 1, /* resolution */
 				 0, /* min_res */
 				 1); /* max_res */
 	  InitValuatorAxisStruct(device,
 				 1,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+				 axes_labels[1],
+#endif
 				 0, /* min val */1, /* max val */
 				 1, /* resolution */
 				 0, /* min_res */
@@ -375,11 +402,3 @@ _X_EXPORT XF86ModuleData voidModuleData = {
 };
 
 #endif /* XFree86LOADER */
-
-/*
- * Local variables:
- * change-log-default-name: "~/xinput.log"
- * c-file-style: "bsd"
- * End:
- */
-/* end of void.c */

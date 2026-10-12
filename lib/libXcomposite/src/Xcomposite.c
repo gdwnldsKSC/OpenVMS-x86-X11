@@ -133,7 +133,7 @@ XCompositeExtAddDisplay (XCompositeExtInfo	*extinfo,
 	    UnlockDisplay (dpy);
 	    SyncHandle ();
 	    Xfree(info);
-	    return 0;
+	    return NULL;
 	}
 	info->major_version = rep.majorVersion;
 	info->minor_version = rep.minorVersion;
@@ -211,14 +211,16 @@ XCompositeFindDisplay (Display *dpy)
     
 
 Bool 
-XCompositeQueryExtension (Display *dpy, int *event_basep, int *error_basep)
+XCompositeQueryExtension (Display *dpy,
+			  int *event_base_return,
+			  int *error_base_return)
 {
     XCompositeExtDisplayInfo *info = XCompositeFindDisplay (dpy);
 
     if (XCompositeHasExtension(info)) 
     {
-	*event_basep = info->codes->first_event;
-	*error_basep = info->codes->first_error;
+	*event_base_return = info->codes->first_event;
+	*error_base_return = info->codes->first_error;
 	return True;
     } 
     else
@@ -227,14 +229,14 @@ XCompositeQueryExtension (Display *dpy, int *event_basep, int *error_basep)
 
 Status 
 XCompositeQueryVersion (Display *dpy,
-		    int	    *major_versionp,
-		    int	    *minor_versionp)
+		    int	    *major_version_return,
+		    int	    *minor_version_return)
 {
     XCompositeExtDisplayInfo	*info = XCompositeFindDisplay (dpy);
 
     XCompositeCheckExtension (dpy, info, 0);
-    *major_versionp = info->major_version;
-    *minor_versionp = info->minor_version;
+    *major_version_return = info->major_version;
+    *minor_version_return = info->minor_version;
     return 1;
 }
 

@@ -13,8 +13,7 @@ echo
 
 for i in $CURSORS; do
 	echo -n "${i}:"
-	for j in 16 24 32 48 64; do
-		png="${i}-${j}.png"
+	for png in $(cut -d" " -f4 ${i}.cfg); do
 		EXTRA_DIST="${EXTRA_DIST} ${png}"
 		echo -n " \$(srcdir)/${png}"
 	done

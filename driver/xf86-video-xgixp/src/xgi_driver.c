@@ -32,12 +32,15 @@
 /* X and server generic header files */
 #include "xf86.h"
 #include "xf86_OSproc.h"
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
 #include "xf86RAC.h"
 #include "xf86Resources.h"
+#endif
 #include "xf86cmap.h"
 #include "xf86xv.h"
 #include <xf86i2c.h>
 #include <xf86Crtc.h>
+#include <xf86RandR12.h>
 #include "vbe.h"
 
 /* PCI vendor/device definitions */
@@ -58,10 +61,14 @@
 /* colormap initialization */
 #include "micmap.h"
 
-#include "xf86Version.h"
+#include "xorgVersion.h"
 
 #include "xgi_debug.h"
 
+//#define FB_ACCESS_WRAPPER
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+#include "wfbrename.h"
+#endif
 #include "fb.h"
 
 /* Driver data structures */
@@ -85,6 +92,8 @@
 #include "xg47_regs.h"
 #include "xg47_cmdlist.h"
 #include "xg47_i2c.h"
+
+#include <byteswap.h>
 
 /* Jong 09/20/2006; support dual view */
 extern int		g_DualViewMode;
@@ -138,6 +147,12 @@ static Bool     XGIModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode);
 
 static void     XGIBlockHandler(int, pointer, pointer, pointer);
 
+static void xg47_write_memory_func(void *dst, uint32_t value, int size);
+static uint32_t xg47_read_memory_func(const void *src, int size);
+static void xg47_setup_fb_wrap(ReadMemoryProcPtr *read_ptr, 
+    WriteMemoryProcPtr *write_ptr, DrawablePtr pDraw);
+static void xg47_finish_fb_wrap(DrawablePtr pDraw);
+
 
 static const char *vgahwSymbols[] = {
     "vgaHWBlankScreen",
@@ -173,8 +188,13 @@ static const char *i2cSymbols[] = {
 };
 
 static const char *fbSymbols[] = {
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+    "wfbPictureInit",
+    "wfbScreenInit",
+#else
     "fbPictureInit",
     "fbScreenInit",
+#endif
     NULL
 };
 
@@ -357,7 +377,7 @@ static XF86ModuleVersionInfo XGIVersionRec =
     MODULEVENDORSTRING,
     MODINFOSTRING1,
     MODINFOSTRING2,
-    XF86_VERSION_CURRENT,
+    XORG_VERSION_CURRENT,
     XGI_VERSION_MAJOR, XGI_VERSION_MINOR, XGI_VERSION_PATCH,
     ABI_CLASS_VIDEODRV,
     ABI_VIDEODRV_VERSION,
@@ -396,7 +416,13 @@ static pointer XGISetup(pointer module,
         isInited = TRUE;
         xf86AddDriver(&XGI, module, 1);
 
-        if (!LoadSubModule(module, "fb", NULL, NULL, NULL, NULL,
+        if (!LoadSubModule(module, 
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+			   "wfb",
+#else
+			   "fb",
+#endif
+			   NULL, NULL, NULL, NULL,
                            NULL, NULL)) {
             return NULL;
         }
@@ -662,36 +688,6 @@ static void XGIFreeRec(ScrnInfoPtr pScrn)
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "-- Leave %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
 #endif
 
-}
-
-/* XGI Display Power Management Set */
-static void XGIDPMSSet(ScrnInfoPtr pScrn, int PowerManagementMode, int flags)
-{
-    XGIPtr  pXGI = XGIPTR(pScrn);
-
-
-    if (!pScrn->vtSema) {
-        return;
-    }
-
-    if (pXGI->isFBDev) {
-        fbdevHWDPMSSet(pScrn, PowerManagementMode, flags);
-    } else if (pXGI->pVbe) {
-	/* I don't know if the bug is in XGI's BIOS or in VBEDPMSSet, but
-	 * cx must be set to 0 here, or the mode will not be set.
-	 */
-        pXGI->pInt10->cx = 0x0000;
-        VBEDPMSSet(pXGI->pVbe, PowerManagementMode);
-    } else {
-        const uint8_t power_status = (IN3CFB(0x23) & ~0x03) 
-	    | (PowerManagementMode);
-        const uint8_t pm_ctrl = (IN3C5B(0x24) & ~0x01)
-            | ((PowerManagementMode == DPMSModeOn) ? 0x01 : 0x00);
-
-
-        OUT3CFB(0x23, power_status);
-        OUT3C5B(0x24, pm_ctrl);
-    }
 }
 
 /**
@@ -1567,7 +1563,9 @@ Bool XGIPreInit(ScrnInfoPtr pScrn, int flags)
     /* Get the entity, and make sure it is PCI. */
     pXGI->pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
 
+#ifndef XSERVER_LIBPCIACCESS
     if (pXGI->pEnt->resources) return FALSE;
+#endif
     if (pXGI->pEnt->location.type != BUS_PCI)   goto fail;
 
 /* Jong 09/06/2006; support dual view */
@@ -1621,13 +1619,14 @@ Bool XGIPreInit(ScrnInfoPtr pScrn, int flags)
      * xf86SetOperatingState().
      */
 
+#ifndef XSERVER_LIBPCIACCESS
     /* Register the PCI-assigned resources. */
     if (xf86RegisterResources(pXGI->pEnt->index, NULL, ResExclusive))
     {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "xf86RegisterResources() found resource conflicts\n");
         return FALSE;
     }
-
+#endif
     /*
      * Set the depth/bpp.  Use the globally preferred depth/bpp.  If the driver
      * has special default depth/bpp requirements, the defaults should be specified
@@ -1708,14 +1707,6 @@ Bool XGIPreInit(ScrnInfoPtr pScrn, int flags)
     }
 
 
-    /* Free the video bios (if applicable) */
-    if (pXGI->biosBase)
-    {
-        xfree(pXGI->biosBase);
-        pXGI->biosBase = NULL;
-    }
-
-
     /* Decide which operations need to be placed under resource access control.
      * The classes of operations are the frame buffer operations (RAC_FB),
      * the pointer operations (RAC_CURSOR), the viewport change operations (RAC_VIEWPORT)
@@ -1724,7 +1715,7 @@ Bool XGIPreInit(ScrnInfoPtr pScrn, int flags)
      * This can be specified separately for memory and IO resources (the racMemFlags
      * and racIoFlags fields of the ScrnInfoRec respectively).
      */
-
+#ifndef XSERVER_LIBPCIACCESS
     pScrn->racMemFlags = RAC_FB | RAC_COLORMAP | RAC_CURSOR | RAC_VIEWPORT;
 
     if (pXGI->isMmioOnly)
@@ -1735,7 +1726,7 @@ Bool XGIPreInit(ScrnInfoPtr pScrn, int flags)
     {
         pScrn->racIoFlags = RAC_FB | RAC_COLORMAP | RAC_CURSOR | RAC_VIEWPORT;
     }
-
+#endif
 /* Jong 09/11/2006; support dual view */
 #ifdef XGIDUALVIEW
     xf86SetPrimInitDone(pScrn->entityList[0]);
@@ -1744,12 +1735,6 @@ Bool XGIPreInit(ScrnInfoPtr pScrn, int flags)
     return TRUE;
 fail:
     XGIUnmapMem(pScrn);
-    /* Free the video bios (if applicable) */
-    if (pXGI->biosBase)
-    {
-      xfree(pXGI->biosBase);
-      pXGI->biosBase = NULL;
-    }
 
     if (pXGI->pVbe) {
         vbeFree(pXGI->pVbe);
@@ -1845,7 +1830,9 @@ static void XGIRestore(ScrnInfoPtr pScrn)
     vgaRegPtr   pVgaReg = &VGAHWPTR(pScrn)->SavedReg;
 
     xg47_mode_restore(pScrn, pVgaReg, pXGIReg);
+#if !defined(__powerpc__)
     vgaHWRestore(pScrn, pVgaReg, VGA_SR_FONTS);
+#endif
 }
 
 Bool XGIFBManagerInit(ScreenPtr pScreen)
@@ -2027,11 +2014,19 @@ Bool XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 pScrn->xDpi = 72;
 pScrn->yDpi = 72;
 pScrn->pScreen = pScreen;
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+    retValue = wfbScreenInit(pScreen, pFBStart, width, height,
+			     pScrn->xDpi, pScrn->yDpi, displayWidth,
+			     pScrn->bitsPerPixel,
+			     xg47_setup_fb_wrap, xg47_finish_fb_wrap);
+#else
     retValue = fbScreenInit(pScreen, pFBStart, width, height,
-                            pScrn->xDpi, pScrn->yDpi, displayWidth,
-                            pScrn->bitsPerPixel);
+			    pScrn->xDpi, pScrn->yDpi, displayWidth,
+			    pScrn->bitsPerPixel);
+#endif
 
     if (!retValue)  goto fail;
+
     /*
      * Set initial black & white colourmap indices.
      */
@@ -2054,7 +2049,11 @@ pScrn->pScreen = pScreen;
     }
 
     /* must be after RGB order fixed */
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+    wfbPictureInit(pScreen, 0, 0);
+#else
     fbPictureInit(pScreen, 0, 0);
+#endif
 
     if (!XGIFBManagerInit(pScreen))
     {
@@ -2238,14 +2237,7 @@ fail:
     PDEBUG(ErrorF("Jong-After-XGIInitMC-7\n"));
     XGIUnmapMem(pScrn);
     PDEBUG(ErrorF("Jong-After-XGIInitMC-8\n"));
-    /* Free the video bios (if applicable) */
-    if (pXGI->biosBase)
-    {
-        xfree(pXGI->biosBase);
-        pXGI->biosBase = NULL;
-    }
 
-    PDEBUG(ErrorF("Jong-After-XGIInitMC-9\n"));
     if (pXGI->pVbe) {
         vbeFree(pXGI->pVbe);
         pXGI->pVbe = NULL;
@@ -2603,3 +2595,137 @@ xg47_crtc_config_resize(ScrnInfoPtr scrn, int width, int height)
  
     return TRUE;
 }
+
+
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+uint32_t
+xg47_read_memory_swap_func(const void *src, int size)
+{
+    switch (size) {
+    case 1: {
+	const uint8_t *const ptr = src;
+	return *ptr;
+    }
+
+    case 2: {
+	const uint16_t *const ptr = src;
+	return bswap_16(*ptr);
+    }
+
+    case 4: {
+	const uint32_t *const ptr = src;
+	return bswap_32(*ptr);
+    }
+    }
+
+    return 0;
+}
+
+
+void
+xg47_write_memory_swap_func(void *dst, uint32_t value, int size)
+{
+    switch (size) {
+    case 1: {
+	uintptr_t addr = (uintptr_t) dst;
+	uint8_t *const ptr = (uint8_t *)(addr ^ 3);
+
+	*ptr = value;
+	break;
+    }
+
+    case 2: {
+	uint16_t *const ptr = dst;
+	*ptr = bswap_16(value);
+	break;
+    }
+
+    case 4: {
+	uint32_t *const ptr = dst;
+	*ptr = bswap_32(value);
+	break;
+    }
+    }
+}
+
+
+uint32_t
+xg47_read_memory_func(const void *src, int size)
+{
+    switch (size) {
+    case 1: {
+#if 0
+	uintptr_t addr = (uintptr_t) src;
+	const uint8_t *const ptr = (uint8_t *)(addr ^ 3);
+#else
+	const uint8_t *const ptr = (const uint8_t *) src;
+#endif
+	return *ptr;
+    }
+
+    case 2: {
+	const uint16_t *const ptr = src;
+	return *ptr;
+    }
+
+    case 4: {
+	const uint32_t *const ptr = src;
+	return *ptr;
+    }
+    }
+
+    return 0;
+}
+
+
+void
+xg47_write_memory_func(void *dst, uint32_t value, int size)
+{
+    switch (size) {
+    case 1: {
+	uint8_t *const ptr = dst;
+	*ptr = value;
+	break;
+    }
+
+    case 2: {
+	uint16_t *const ptr = dst;
+	*ptr = value;
+	break;
+    }
+
+    case 4: {
+	uint32_t *const ptr = dst;
+	*ptr = value;
+	break;
+    }
+    }
+}
+
+
+void
+xg47_setup_fb_wrap(ReadMemoryProcPtr *read_ptr, 
+		   WriteMemoryProcPtr *write_ptr,
+		   DrawablePtr pDraw)
+{
+    switch (pDraw->type) {
+    case DRAWABLE_WINDOW:
+    case DRAWABLE_BUFFER:
+	*read_ptr = xg47_read_memory_swap_func;
+	*write_ptr = xg47_write_memory_swap_func;
+	break;
+	
+    default:
+	*read_ptr = xg47_read_memory_func;
+	*write_ptr = xg47_write_memory_func;
+	break;
+    }
+}
+
+
+void
+xg47_finish_fb_wrap(DrawablePtr pDraw)
+{
+    (void) pDraw;
+}
+#endif /* X_BYTE_ORDER == X_BIG_ENDIAN */

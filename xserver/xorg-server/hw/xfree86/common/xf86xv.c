@@ -110,8 +110,10 @@ static void xf86XVAdjustFrame(int index, int x, int y, int flags);
 static Bool xf86XVInitAdaptors(ScreenPtr, XF86VideoAdaptorPtr*, int);
 
 
-static DevPrivateKey XF86XVWindowKey = &XF86XVWindowKey;
-DevPrivateKey XF86XvScreenKey;
+static int XF86XVWindowKeyIndex;
+static DevPrivateKey XF86XVWindowKey = &XF86XVWindowKeyIndex;
+static int XF86XvScreenKeyIndex;
+DevPrivateKey XF86XvScreenKey = &XF86XvScreenKeyIndex;
 static unsigned long PortResource = 0;
 
 DevPrivateKey (*XvGetScreenKeyProc)(void) = NULL;
@@ -130,7 +132,7 @@ int (*XvScreenInitProc)(ScreenPtr) = NULL;
 static xf86XVInitGenericAdaptorPtr *GenDrivers = NULL;
 static int NumGenDrivers = 0;
 
-_X_EXPORT int
+int
 xf86XVRegisterGenericAdaptorDriver(
     xf86XVInitGenericAdaptorPtr InitFunc
 ){
@@ -147,7 +149,7 @@ xf86XVRegisterGenericAdaptorDriver(
   return 1;
 }
 
-_X_EXPORT int
+int
 xf86XVListGenericAdaptors(
     ScrnInfoPtr pScrn,
     XF86VideoAdaptorPtr **adaptors
@@ -186,7 +188,7 @@ typedef struct {
 
 static OffscreenImageRec OffscreenImages[MAXSCREENS];
 
-_X_EXPORT Bool
+Bool
 xf86XVRegisterOffscreenImages(
     ScreenPtr pScreen,
     XF86OffscreenImagePtr images,
@@ -198,7 +200,7 @@ xf86XVRegisterOffscreenImages(
     return TRUE;
 }
 
-_X_EXPORT XF86OffscreenImagePtr
+XF86OffscreenImagePtr
 xf86XVQueryOffscreenImages(
    ScreenPtr pScreen,
    int *num
@@ -208,20 +210,20 @@ xf86XVQueryOffscreenImages(
 }
 
 
-_X_EXPORT XF86VideoAdaptorPtr
+XF86VideoAdaptorPtr
 xf86XVAllocateVideoAdaptorRec(ScrnInfoPtr pScrn)
 {
     return xcalloc(1, sizeof(XF86VideoAdaptorRec));
 }
 
-_X_EXPORT void
+void
 xf86XVFreeVideoAdaptorRec(XF86VideoAdaptorPtr ptr)
 {
     xfree(ptr);
 }
 
 
-_X_EXPORT Bool
+Bool
 xf86XVScreenInit(
    ScreenPtr pScreen,
    XF86VideoAdaptorPtr *adaptors,
@@ -962,9 +964,8 @@ xf86XVEnlistPortInWindow(WindowPtr pWin, XvPortRecPrivatePtr portPriv)
    }
 
    if(!winPriv) {
-	winPriv = xalloc(sizeof(XF86XVWindowRec));
+	winPriv = xcalloc(1, sizeof(XF86XVWindowRec));
 	if(!winPriv) return BadAlloc;
-	memset(winPriv, 0, sizeof(XF86XVWindowRec));
 	winPriv->PortRec = portPriv;
 	winPriv->next = PrivRoot;
 	dixSetPrivate(&pWin->devPrivates, XF86XVWindowKey, winPriv);
@@ -1122,6 +1123,10 @@ xf86XVClipNotify(WindowPtr pWin, int dx, int dy)
 
      pPriv->pCompositeClip = NULL;
 
+     if (pPriv->AdaptorRec->ClipNotify)
+        (*pPriv->AdaptorRec->ClipNotify)(pPriv->pScrn, pPriv->DevPriv.ptr,
+                                         pWin, dx, dy);
+
      /* Stop everything except images, but stop them too if the
 	window isn't visible.  But we only remove the images. */
 
@@ -1173,7 +1178,7 @@ xf86XVCloseScreen(int i, ScreenPtr pScreen)
   int c;
 
   /* Clear offscreen images */
-  (void)memset(&OffscreenImages[pScreen->myNum], 0, sizeof(OffscreenImages[0]));
+  memset(&OffscreenImages[pScreen->myNum], 0, sizeof(OffscreenImages[0]));
 
   if(!ScreenPriv) return TRUE;
 
@@ -1813,7 +1818,7 @@ xf86XVQueryImageAttributes(
 }
 
 
-_X_EXPORT void
+void
 xf86XVFillKeyHelperDrawable (DrawablePtr pDraw, CARD32 key, RegionPtr clipboxes)
 {
    ScreenPtr pScreen = pDraw->pScreen;
@@ -1863,7 +1868,7 @@ xf86XVFillKeyHelperDrawable (DrawablePtr pDraw, CARD32 key, RegionPtr clipboxes)
    xfree(rects);
 }
 
-_X_EXPORT void
+void
 xf86XVFillKeyHelper (ScreenPtr pScreen, CARD32 key, RegionPtr clipboxes)
 {
    DrawablePtr root = &WindowTable[pScreen->myNum]->drawable;
@@ -1908,7 +1913,7 @@ xf86XVFillKeyHelper (ScreenPtr pScreen, CARD32 key, RegionPtr clipboxes)
 
 #define DummyScreen screenInfo.screens[0]
 
-_X_EXPORT Bool
+Bool
 xf86XVClipVideoHelper(
     BoxPtr dst,
     INT32 *xa,
@@ -1990,7 +1995,7 @@ xf86XVClipVideoHelper(
     return TRUE;
 }
 
-_X_EXPORT void
+void
 xf86XVCopyYUV12ToPacked(
     const void *srcy,
     const void *srcv,
@@ -2048,7 +2053,7 @@ xf86XVCopyYUV12ToPacked(
     }
 }
 
-_X_EXPORT void
+void
 xf86XVCopyPacked(
     const void *src,
     void *dst,

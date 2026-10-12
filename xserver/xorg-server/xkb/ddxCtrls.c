@@ -29,7 +29,6 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #include <stdio.h>
-#define	NEED_EVENTS 1
 #include <X11/X.h>
 #include <X11/Xproto.h>
 #include <X11/keysym.h>
@@ -57,27 +56,7 @@ int realRepeat;
 int
 XkbDDXUsesSoftRepeat(DeviceIntPtr pXDev)
 {
-#ifndef XKB_ALWAYS_USES_SOFT_REPEAT
-    if (pXDev && pXDev->kbdfeed ) {
-	if (pXDev->kbdfeed->ctrl.autoRepeat) {
-	    if (pXDev->key && pXDev->key->xkbInfo) {
-		XkbDescPtr	xkb;
-		xkb= pXDev->key->xkbInfo->desc;
-		if ((xkb->ctrls->repeat_delay == 660) &&
-		    (xkb->ctrls->repeat_interval == 40) &&
-		    ((xkb->ctrls->enabled_ctrls&(XkbSlowKeysMask|
-						 XkbBounceKeysMask|
-						 XkbMouseKeysMask))==0)) {
-			return 0;
-		}
-		return ((xkb->ctrls->enabled_ctrls&XkbRepeatKeysMask)!=0);
-	    }
-	}
-    }
-    return 0;
-#else
     return 1;
-#endif
 }
 
 void

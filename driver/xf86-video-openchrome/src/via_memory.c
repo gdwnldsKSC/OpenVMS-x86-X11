@@ -52,7 +52,6 @@
  *	2  -  DRM
  */
 
-#ifdef VIA_HAVE_EXA
 static void
 viaExaFBSave(ScreenPtr pScreen, ExaOffscreenArea * exa)
 {
@@ -61,7 +60,6 @@ viaExaFBSave(ScreenPtr pScreen, ExaOffscreenArea * exa)
                "\t\thttp://wiki.openchrome.org/tikiwiki/tiki-index"
                ".php?page=EXAAcceleration .\n");
 }
-#endif
 
 void
 VIAFreeLinear(VIAMemPtr mem)
@@ -71,7 +69,6 @@ VIAFreeLinear(VIAMemPtr mem)
         case 0:
             return;
         case 1:
-#ifdef VIA_HAVE_EXA
             {
                 VIAPtr pVia = VIAPTR(mem->pScrn);
 
@@ -82,7 +79,6 @@ VIAFreeLinear(VIAMemPtr mem)
                     return;
                 }
             }
-#endif
             xf86FreeOffscreenLinear(mem->linear);
             mem->linear = NULL;
             mem->pool = 0;
@@ -103,7 +99,6 @@ viaOffScreenLinear(VIAMemPtr mem, ScrnInfoPtr pScrn, unsigned long size)
 {
     int depth = pScrn->bitsPerPixel >> 3;
 
-#ifdef VIA_HAVE_EXA
     VIAPtr pVia = VIAPTR(pScrn);
 
     if (pVia->useEXA && !pVia->NoAccel) {
@@ -118,7 +113,6 @@ viaOffScreenLinear(VIAMemPtr mem, ScrnInfoPtr pScrn, unsigned long size)
         mem->pScrn = pScrn;
         return Success;
     }
-#endif
 
     mem->linear = xf86AllocateOffscreenLinear(pScrn->pScreen,
                                               (size + depth - 1) / depth,
@@ -175,11 +169,9 @@ VIAInitLinear(ScreenPtr pScreen)
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     VIAPtr pVia = VIAPTR(pScrn);
 
-#ifdef VIA_HAVE_EXA
     if (pVia->useEXA && !pVia->NoAccel)
         return;
     else
-#endif
     {
         unsigned long offset = (pVia->FBFreeStart + pVia->Bpp - 1) / pVia->Bpp;
         long size = pVia->FBFreeEnd / pVia->Bpp - offset;

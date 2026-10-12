@@ -24,11 +24,10 @@ miscmandir = $(MISC_MAN_DIR)
 
 miscman_PRE = \
 	Consortium.man \
-	security.man \
+	Xsecurity.man \
 	Standards.man \
 	X.man \
 	XOrgFoundation.man \
-	Xprint.man \
 	XProjectTeam.man
 
 miscman_DATA = $(miscman_PRE:man=@MISC_MAN_SUFFIX@)
@@ -44,14 +43,16 @@ XORGRELSTRING = @PACKAGE_STRING@
 MAN_SUBSTS = \
 	-e 's|__vendorversion__|"$(XORGRELSTRING)" "$(XORGMANNAME)"|' \
 	-e 's|__xorgversion__|"$(XORGRELSTRING)" "$(XORGMANNAME)"|' \
-	-e 's|__projectroot__|$(prefix)|g' \
+	-e 's|__datadir__|$(datadir)|g' \
+	-e 's|__libdir__|$(libdir)|g' \
+	-e 's|__sysconfdir__|$(sysconfdir)|g' \
 	-e 's|__appmansuffix__|$(APP_MAN_SUFFIX)|g' \
-	-e 's|__libmansuffix__|$(APP_LIB_SUFFIX)|g' \
+	-e 's|__libmansuffix__|$(LIB_MAN_SUFFIX)|g' \
 	-e 's|__miscmansuffix__|$(MISC_MAN_SUFFIX)|g'
 
 SUFFIXES = .$(MISC_MAN_SUFFIX) .man
 
 .man.$(MISC_MAN_SUFFIX):
-	sed $(MAN_SUBSTS) < $< > $@
+	$(AM_V_GEN)$(SED) $(MAN_SUBSTS) < $< > $@
 
-EXTRA_DIST = $(miscman_PRE) Xprint.sgml
+EXTRA_DIST = $(miscman_PRE)

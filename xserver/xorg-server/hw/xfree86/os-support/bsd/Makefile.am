@@ -1,18 +1,21 @@
 noinst_LTLIBRARIES = libbsd.la
 
-# FIXME: Add USB mouse support?
-
-# FIXME: APM support.
+# APM support.
+if BSD_KQUEUE_APM
+APM_SOURCES = $(srcdir)/bsd_kqueue_apm.c
+else 
+if BSD_APM
+APM_SOURCES = $(srcdir)/bsd_apm.c
+else
 APM_SOURCES = $(srcdir)/../shared/pm_noop.c
+endif
+endif
 
 if FREEBSD_KLDLOAD
 KMOD_SOURCES = bsd_kmod.c
 else
 KMOD_SOURCES = $(srcdir)/../shared/kmod_noop.c
 endif
-
-# FIXME: Non-i386/ia64 resource support.
-RES_SOURCES = $(srcdir)/../shared/stdResource.c
 
 if AGP
 AGP_SOURCES = $(srcdir)/../linux/lnx_agp.c
@@ -59,7 +62,6 @@ libbsd_la_SOURCES = \
 	$(srcdir)/../shared/vidmem.c \
 	bsd_VTsw.c \
 	bsd_init.c \
-	bsd_mouse.c \
 	bsd_bell.c \
 	$(ARCH_SOURCES) \
 	$(AGP_SOURCES) \
@@ -71,16 +73,4 @@ libbsd_la_SOURCES = \
 
 # FIXME: Add these files to the build as needed
 EXTRA_DIST = \
-	bsd_apm.c \
-	bsd_jstk.c \
-	bsd_kqueue_apm.c \
-	bsdResource.c \
-	memrange.h \
-	libusb/data.c \
-	libusb/descr.c \
-	libusb/parse.c \
-	libusb/usage.c \
-	libusb/usb.3 \
-	libusb/usb.h \
-	libusb/usb_hid_usages \
-	libusb/usbvar.h
+	memrange.h

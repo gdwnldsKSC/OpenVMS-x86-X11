@@ -1,23 +1,30 @@
 /*
- * Copyright © 2006 Sun Microsystems
+ * Copyright © 2006 Sun Microsystems, Inc.  All rights reserved.
  *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of Sun Microsystems not be used in
- * advertising or publicity pertaining to distribution of the software without
- * specific, written prior permission.  Sun Microsystems makes no
- * representations about the suitability of this software for any purpose.  It
- * is provided "as is" without express or implied warranty.
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, and/or sell copies of the Software, and to permit persons
+ * to whom the Software is furnished to do so, provided that the above
+ * copyright notice(s) and this permission notice appear in all copies of
+ * the Software and that both the above copyright notice(s) and this
+ * permission notice appear in supporting documentation.
  *
- * SUN MICROSYSTEMS DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
- * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
- * EVENT SHALL SUN MICROSYSTEMS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
- * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
- * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+ * OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+ * INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+ * FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+ * NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+ * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Except as contained in this notice, the name of a copyright holder
+ * shall not be used in advertising or otherwise to promote the sale, use
+ * or other dealings in this Software without prior written authorization
+ * of the copyright holder.
  *
  * Copyright © 2003 Keith Packard
  *
@@ -45,10 +52,14 @@
 #endif
 
 #include "compint.h"
+#include "compositeext.h"
 
-DevPrivateKey CompScreenPrivateKey = &CompScreenPrivateKey;
-DevPrivateKey CompWindowPrivateKey = &CompWindowPrivateKey;
-DevPrivateKey CompSubwindowsPrivateKey = &CompSubwindowsPrivateKey;
+static int CompScreenPrivateKeyIndex;
+DevPrivateKey CompScreenPrivateKey = &CompScreenPrivateKeyIndex;
+static int CompWindowPrivateKeyIndex;
+DevPrivateKey CompWindowPrivateKey = &CompWindowPrivateKeyIndex;
+static int CompSubwindowsPrivateKeyIndex;
+DevPrivateKey CompSubwindowsPrivateKey = &CompSubwindowsPrivateKeyIndex;
 
 
 static Bool
@@ -75,14 +86,6 @@ compCloseScreen (int index, ScreenPtr pScreen)
     pScreen->CreateWindow = cs->CreateWindow;
     pScreen->CopyWindow = cs->CopyWindow;
     pScreen->PositionWindow = cs->PositionWindow;
-
-    deleteCompOverlayClientsForScreen(pScreen);
-
-    /* 
-    ** Note: no need to call DeleteWindow; the server has
-    ** already destroyed it.
-    */
-    cs->pOverlayWin = NULL;
 
     xfree (cs);
     dixSetPrivate(&pScreen->devPrivates, CompScreenPrivateKey, NULL);
@@ -123,11 +126,11 @@ compChangeWindowAttributes(WindowPtr pWin, unsigned long mask)
 	    pScreen->backingStoreSupport != NotUseful) {
 	if (pWin->backingStore != NotUseful) {
 	    compRedirectWindow(serverClient, pWin, CompositeRedirectAutomatic);
-	    pWin->backStorage = (pointer)TRUE;
+	    pWin->backStorage = (pointer) (intptr_t) 1;
 	} else {
 	    compUnredirectWindow(serverClient, pWin,
 				 CompositeRedirectAutomatic);
-	    pWin->backStorage = FALSE;
+	    pWin->backStorage = NULL;
 	}
     }
 
@@ -218,7 +221,6 @@ compRegisterAlternateVisuals (CompScreenPtr cs, VisualID *vids, int nVisuals)
     return TRUE;
 }
 
-_X_EXPORT
 Bool CompositeRegisterAlternateVisuals (ScreenPtr pScreen, VisualID *vids,
 					int nVisuals)
 {
@@ -245,15 +247,9 @@ static Bool
 compAddAlternateVisual(ScreenPtr pScreen, CompScreenPtr cs,
 		       CompAlternateVisual *alt)
 {
-    VisualPtr	    visual, visuals;
-    int		    i;
-    int		    numVisuals;
-    XID		    *installedCmaps;
-    ColormapPtr	    installedCmap;
-    int		    numInstalledCmaps;
+    VisualPtr	    visual;
     DepthPtr	    depth;
     PictFormatPtr   pPictFormat;
-    VisualID	    *vid;
     unsigned long   alphaMask;
 
     /*
@@ -273,52 +269,13 @@ compAddAlternateVisual(ScreenPtr pScreen, CompScreenPtr cs,
     if (!pPictFormat)
 	return FALSE;
 
-    vid = xalloc(sizeof(VisualID));
-    if (!vid)
-	return FALSE;
-
-    /* Find the installed colormaps */
-    installedCmaps = xalloc (pScreen->maxInstalledCmaps * sizeof (XID));
-    if (!installedCmaps) {
-	xfree(vid);
-	return FALSE;
-    }
-    numInstalledCmaps = pScreen->ListInstalledColormaps(pScreen, 
-	    installedCmaps);
-
-    /* realloc the visual array to fit the new one in place */
-    numVisuals = pScreen->numVisuals;
-    visuals = xrealloc(pScreen->visuals, (numVisuals + 1) * sizeof(VisualRec));
-    if (!visuals) {
-	xfree(vid);
-	xfree(installedCmaps);
-	return FALSE;
+    if (ResizeVisualArray(pScreen, 1, depth) == FALSE) {
+        return FALSE;
     }
 
-    /*
-     * Fix up any existing installed colormaps -- we'll assume that
-     * the only ones created so far have been installed.  If this
-     * isn't true, we'll have to walk the resource database looking
-     * for all colormaps.
-     */
-    for (i = 0; i < numInstalledCmaps; i++) {
-	int j;
-
-	installedCmap = LookupIDByType (installedCmaps[i], RT_COLORMAP);
-	if (!installedCmap)
-	    continue;
-	j = installedCmap->pVisual - pScreen->visuals;
-	installedCmap->pVisual = &visuals[j];
-    }
-
-    xfree(installedCmaps);
-
-    pScreen->visuals = visuals;
-    visual = visuals + pScreen->numVisuals; /* the new one */
-    pScreen->numVisuals++;
+    visual = pScreen->visuals + (pScreen->numVisuals - 1); /* the new one */
 
     /* Initialize the visual */
-    visual->vid = FakeClientID (0);
     visual->bitsPerRGBValue = 8;
     if (PICT_FORMAT_TYPE(alt->format) == PICT_TYPE_COLOR) {
 	visual->class = PseudoColor;
@@ -351,10 +308,6 @@ compAddAlternateVisual(ScreenPtr pScreen, CompScreenPtr cs,
     /* remember the visual ID to detect auto-update windows */
     compRegisterAlternateVisuals(cs, &visual->vid, 1);
 
-    /* Fix up the depth */
-    *vid = visual->vid;
-    depth->numVids = 1;
-    depth->vids = vid;
     return TRUE;
 }
 
@@ -381,6 +334,7 @@ compScreenInit (ScreenPtr pScreen)
 	return FALSE;
 
     cs->damaged = FALSE;
+    cs->overlayWid = FakeClientID(0);
     cs->pOverlayWin = NULL;
     cs->pOverlayClients = NULL;
 

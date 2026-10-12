@@ -33,5 +33,8 @@ extern void XGINew_SetModeScratch(PXGI_HW_DEVICE_INFO HwDeviceExtension,
     PVB_DEVICE_INFO pVBInfo);
 
 extern void ReadVBIOSTablData(UCHAR ChipType, PVB_DEVICE_INFO pVBInfo);
+
+extern XGI21_LVDSCapStruct  XGI21_LCDCapList;
+
 #endif
 

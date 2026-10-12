@@ -23,6 +23,30 @@ OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION  WITH
 THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ********************************************************/
+/*
+
+Copyright © 2008 Red Hat Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice (including the next
+paragraph) shall be included in all copies or substantial portions of the
+Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+*/
 
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
@@ -32,20 +56,18 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>
-#define NEED_EVENTS 1
 #include <X11/X.h>
 #include <X11/Xproto.h>
 #define	XK_CYRILLIC
 #include <X11/keysym.h>
 #include "misc.h"
 #include "inputstr.h"
+#include "eventstr.h"
 
 #define	XKBSRV_NEED_FILE_FUNCS
 #include <xkbsrv.h>
 #include "xkbgeom.h"
 #include "xkb.h"
-
-int	XkbDisableLockActions = 0;
 
 /***====================================================================***/
 
@@ -55,22 +77,15 @@ _XkbLookupAnyDevice(DeviceIntPtr *pDev, int id, ClientPtr client,
 {
     int rc = XkbKeyboardErrorCode;
 
-    if (id == XkbUseCoreKbd) {
-	if (inputInfo.keyboard)
-	    id = inputInfo.keyboard->id;
-	else
-	    goto out;
-    }
-    if (id == XkbUseCorePtr) {
-	if (inputInfo.pointer)
-	    id = inputInfo.pointer->id;
-	else
-	    goto out;
-    }
+    if (id == XkbUseCoreKbd)
+        id = PickKeyboard(client)->id;
+    else if (id == XkbUseCorePtr)
+        id = PickPointer(client)->id;
+
     rc = dixLookupDevice(pDev, id, client, access_mode);
-out:
     if (rc != Success)
 	*xkb_err = XkbErr_BadDevice;
+
     return rc;
 }
 
@@ -199,13 +214,13 @@ register unsigned mask;
 
 void
 XkbUpdateKeyTypesFromCore(	DeviceIntPtr	pXDev,
+                                KeySymsPtr      pCore,
 				KeyCode	 	first,
 				CARD8	 	num,
 				XkbChangesPtr	changes)
 {
 XkbDescPtr		xkb;
 unsigned		key,nG,explicit;
-KeySymsPtr		pCore;
 int			types[XkbNumKbdGroups];
 KeySym			tsyms[XkbMaxSymsPerKey],*syms;
 XkbMapChangesPtr	mc;
@@ -218,8 +233,7 @@ XkbMapChangesPtr	mc;
 
     mc= (changes?(&changes->map):NULL);
 
-    pCore= &pXDev->key->curKeySyms;
-    syms= &pCore->map[(first-xkb->min_key_code)*pCore->mapWidth];
+    syms= &pCore->map[(first - pCore->minKeyCode) * pCore->mapWidth];
     for (key=first; key<(first+num); key++,syms+= pCore->mapWidth) {
         explicit= xkb->server->explicit[key]&XkbExplicitKeyTypesMask;
         types[XkbGroup1Index]= XkbKeyKeyTypeIndex(xkb,key,XkbGroup1Index);
@@ -341,59 +355,24 @@ CARD8 *			repeat;
     return;
 }
 
-void
-XkbUpdateCoreDescription(DeviceIntPtr keybd,Bool resize)
+KeySymsPtr
+XkbGetCoreMap(DeviceIntPtr keybd)
 {
 register int		key,tmp;
-int			maxSymsPerKey,maxKeysPerMod;
-int			first,last,firstCommon,lastCommon;
+int			maxSymsPerKey, maxGroup1Width;
 XkbDescPtr		xkb;
-KeyClassPtr		keyc;
-CARD8			keysPerMod[XkbNumModifiers];
+KeySymsPtr              syms;
+int			maxNumberOfGroups;
 
     if (!keybd || !keybd->key || !keybd->key->xkbInfo)
-	return;
+	return NULL;
+
     xkb= keybd->key->xkbInfo->desc;
-    keyc= keybd->key;
-    maxSymsPerKey= maxKeysPerMod= 0;
-    bzero(keysPerMod,sizeof(keysPerMod));
-    memcpy(keyc->modifierMap,xkb->map->modmap,xkb->max_key_code+1);
-    if ((xkb->min_key_code==keyc->curKeySyms.minKeyCode)&&
-	(xkb->max_key_code==keyc->curKeySyms.maxKeyCode)) {
-	first= firstCommon= xkb->min_key_code;
-	last= lastCommon= xkb->max_key_code;
-    }
-    else if (resize) {
-	keyc->curKeySyms.minKeyCode= xkb->min_key_code;
-	keyc->curKeySyms.maxKeyCode= xkb->max_key_code;
-	tmp= keyc->curKeySyms.mapWidth*_XkbCoreNumKeys(keyc);
-	keyc->curKeySyms.map= _XkbTypedRealloc(keyc->curKeySyms.map,tmp,KeySym);
-	if (!keyc->curKeySyms.map)
-	   FatalError("Couldn't allocate keysyms\n");
-	first= firstCommon= xkb->min_key_code;
-	last= lastCommon= xkb->max_key_code;
-    }
-    else {
-	if (xkb->min_key_code<keyc->curKeySyms.minKeyCode) {
-	    first= xkb->min_key_code;
-	    firstCommon= keyc->curKeySyms.minKeyCode;
-	}
-	else {
-	    firstCommon= xkb->min_key_code;
-	    first= keyc->curKeySyms.minKeyCode;
-	}
-	if (xkb->max_key_code>keyc->curKeySyms.maxKeyCode) {
-	    lastCommon= keyc->curKeySyms.maxKeyCode;
-	    last= xkb->max_key_code;
-	}
-	else {
-	    lastCommon= xkb->max_key_code;
-	    last= keyc->curKeySyms.maxKeyCode;
-	}
-    }
+    maxSymsPerKey= maxGroup1Width= 0;
+    maxNumberOfGroups = 0;
 
     /* determine sizes */
-    for (key=first;key<=last;key++) {
+    for (key=xkb->min_key_code;key<=xkb->max_key_code;key++) {
 	if (XkbKeycodeInRange(xkb,key)) {
 	    int	nGroups;
 	    int	w;
@@ -403,6 +382,9 @@ CARD8			keysPerMod[XkbNumModifiers];
 		if ((w=XkbKeyGroupWidth(xkb,key,XkbGroup1Index))<=2)
 		     tmp+= 2;
 		else tmp+= w + 2;
+                /* remember highest G1 width */
+                if (w > maxGroup1Width)
+                    maxGroup1Width = w;
 	    }
 	    if (nGroups>1) {
                 if (tmp <= 2) {
@@ -420,112 +402,113 @@ CARD8			keysPerMod[XkbNumModifiers];
 		tmp+= XkbKeyGroupWidth(xkb,key,XkbGroup4Index);
 	    if (tmp>maxSymsPerKey)
 		maxSymsPerKey= tmp;
+            if (nGroups > maxNumberOfGroups)
+		maxNumberOfGroups = nGroups;
 	}
-	if (_XkbCoreKeycodeInRange(keyc,key)) {
-	    if (keyc->modifierMap[key]!=0) {
-		register unsigned bit,i,mask;
-		mask= keyc->modifierMap[key];
-		for (i=0,bit=1;i<XkbNumModifiers;i++,bit<<=1) {
-		    if (mask&bit) {
-			keysPerMod[i]++;
-			if (keysPerMod[i]>maxKeysPerMod)
-			    maxKeysPerMod= keysPerMod[i];
-		    }
-		}
+    }
+
+    if (maxSymsPerKey <= 0)
+        return NULL;
+
+    syms = xcalloc(1, sizeof(*syms));
+    if (!syms)
+        return NULL;
+
+    /* See Section 12.4 of the XKB Protocol spec. Because of the
+     * single-group distribution for multi-group keyboards, we have to
+     * have enough symbols for the largest group 1 to replicate across the
+     * number of groups on the keyboard. e.g. a single-group key with 4
+     * symbols on a keyboard that has 3 groups -> 12 syms per key */
+    if (maxSymsPerKey < maxNumberOfGroups * maxGroup1Width)
+        maxSymsPerKey = maxNumberOfGroups * maxGroup1Width;
+
+    syms->mapWidth = maxSymsPerKey;
+    syms->minKeyCode = xkb->min_key_code;
+    syms->maxKeyCode = xkb->max_key_code;
+
+    tmp = syms->mapWidth * (xkb->max_key_code - xkb->min_key_code + 1);
+    syms->map = xcalloc(tmp, sizeof(*syms->map));
+    if (!syms->map) {
+        xfree(syms);
+        return NULL;
+    }
+
+    for (key=xkb->min_key_code;key<=xkb->max_key_code;key++) {
+        KeySym *pCore,*pXKB;
+        unsigned nGroups,groupWidth,n,nOut;
+
+        nGroups= XkbKeyNumGroups(xkb,key);
+        n= (key-xkb->min_key_code)*syms->mapWidth;
+        pCore= &syms->map[n];
+        pXKB= XkbKeySymsPtr(xkb,key);
+        nOut= 2;
+        if (nGroups>0) {
+            groupWidth= XkbKeyGroupWidth(xkb,key,XkbGroup1Index);
+            if (groupWidth>0)   pCore[0]= pXKB[0];
+            if (groupWidth>1)   pCore[1]= pXKB[1];
+            for (n=2;n<groupWidth;n++)
+                pCore[2+n]= pXKB[n];
+            if (groupWidth>2)
+                nOut= groupWidth;
+        }
+
+	/* See XKB Protocol Sec, Section 12.4.
+           A 1-group key with ABCDE on a 2 group keyboard must be
+	   duplicated across all groups as ABABCDECDE.
+	 */
+	if (nGroups == 1)
+	{
+	    int idx, j;
+
+	    groupWidth = XkbKeyGroupWidth(xkb, key, XkbGroup1Index);
+
+	    /* AB..CDE... -> ABABCDE... */
+	    if (groupWidth > 0 && syms->mapWidth >= 3)
+	        pCore[2] = pCore[0];
+	    if (groupWidth > 1 && syms->mapWidth >= 4)
+	        pCore[3] = pCore[1];
+
+	    /* ABABCDE... -> ABABCDECDE */
+	    idx = 2 + groupWidth;
+	    while (groupWidth > 2 && idx < syms->mapWidth &&
+		   idx < groupWidth * 2)
+	    {
+		pCore[idx] = pCore[idx - groupWidth + 2];
+		idx++;
 	    }
+	    idx = 2 * groupWidth;
+	    if (idx < 4)
+		idx = 4;
+	    /* 3 or more groups: ABABCDECDEABCDEABCDE */
+	    for (j = 3; j <= maxNumberOfGroups; j++)
+		for (n = 0; n < groupWidth && idx < maxSymsPerKey; n++)
+		    pCore[idx++] = pXKB[n];
 	}
-    }
 
-    if (maxKeysPerMod>0) {
-	tmp= maxKeysPerMod*XkbNumModifiers;
-	if (keyc->modifierKeyMap==NULL)
-	    keyc->modifierKeyMap= (KeyCode *)_XkbCalloc(1, tmp);
-	else if (keyc->maxKeysPerModifier<maxKeysPerMod)
-	    keyc->modifierKeyMap= (KeyCode *)_XkbRealloc(keyc->modifierKeyMap,tmp);
-	if (keyc->modifierKeyMap==NULL)
-	    FatalError("Couldn't allocate modifierKeyMap in UpdateCore\n");
-	bzero(keyc->modifierKeyMap,tmp);
-    }
-    else if ((keyc->maxKeysPerModifier>0)&&(keyc->modifierKeyMap!=NULL)) {
-	_XkbFree(keyc->modifierKeyMap);
-	keyc->modifierKeyMap= NULL;
-    }
-    keyc->maxKeysPerModifier= maxKeysPerMod;
-
-    if (maxSymsPerKey>0) {
-	tmp= maxSymsPerKey*_XkbCoreNumKeys(keyc);
-	keyc->curKeySyms.map= _XkbTypedRealloc(keyc->curKeySyms.map,tmp,KeySym);
-	if (keyc->curKeySyms.map==NULL)
-	    FatalError("Couldn't allocate symbols map in UpdateCore\n");
-    }
-    else if ((keyc->curKeySyms.mapWidth>0)&&(keyc->curKeySyms.map!=NULL)) {
-	_XkbFree(keyc->curKeySyms.map);
-	keyc->curKeySyms.map= NULL;
-    }
-    keyc->curKeySyms.mapWidth= maxSymsPerKey;
-
-    bzero(keysPerMod,sizeof(keysPerMod));
-    for (key=firstCommon;key<=lastCommon;key++) {
-	if (keyc->curKeySyms.map!=NULL) {
-	    KeySym *pCore,*pXKB;
-	    unsigned nGroups,groupWidth,n,nOut;
-
-	    nGroups= XkbKeyNumGroups(xkb,key);
-	    n= (key-keyc->curKeySyms.minKeyCode)*maxSymsPerKey;
-	    pCore= &keyc->curKeySyms.map[n];
-	    bzero(pCore,maxSymsPerKey*sizeof(KeySym));
-	    pXKB= XkbKeySymsPtr(xkb,key);
-	    nOut= 2;
-	    if (nGroups>0) {
-		groupWidth= XkbKeyGroupWidth(xkb,key,XkbGroup1Index);
-		if (groupWidth>0)	pCore[0]= pXKB[0];
-		if (groupWidth>1)	pCore[1]= pXKB[1];
-		for (n=2;n<groupWidth;n++) {
-		    pCore[2+n]= pXKB[n];
-		}
-		if (groupWidth>2)
-		    nOut= groupWidth;
+	pXKB+= XkbKeyGroupsWidth(xkb,key);
+	nOut+= 2;
+	if (nGroups>1) {
+	    groupWidth= XkbKeyGroupWidth(xkb,key,XkbGroup2Index);
+	    if (groupWidth>0)	pCore[2]= pXKB[0];
+	    if (groupWidth>1)	pCore[3]= pXKB[1];
+	    for (n=2;n<groupWidth;n++) {
+		pCore[nOut+(n-2)]= pXKB[n];
+	    }
+	    if (groupWidth>2)
+		nOut+= (groupWidth-2);
+	}
+	pXKB+= XkbKeyGroupsWidth(xkb,key);
+	for (n=XkbGroup3Index;n<nGroups;n++) {
+	    register int s;
+	    groupWidth= XkbKeyGroupWidth(xkb,key,n);
+	    for (s=0;s<groupWidth;s++) {
+		pCore[nOut++]= pXKB[s];
 	    }
 	    pXKB+= XkbKeyGroupsWidth(xkb,key);
-	    nOut+= 2;
-	    if (nGroups>1) {
-		groupWidth= XkbKeyGroupWidth(xkb,key,XkbGroup2Index);
-		if (groupWidth>0)	pCore[2]= pXKB[0];
-		if (groupWidth>1)	pCore[3]= pXKB[1];
-		for (n=2;n<groupWidth;n++) {
-		    pCore[nOut+(n-2)]= pXKB[n];
-		}
-		if (groupWidth>2)
-		    nOut+= (groupWidth-2);
-	    }
-	    pXKB+= XkbKeyGroupsWidth(xkb,key);
-	    for (n=XkbGroup3Index;n<nGroups;n++) {
-		register int s;
-		groupWidth= XkbKeyGroupWidth(xkb,key,n);
-		for (s=0;s<groupWidth;s++) {
-		    pCore[nOut++]= pXKB[s];
-		}
-		pXKB+= XkbKeyGroupsWidth(xkb,key);
-	    }
-	    if (!pCore[2] && !pCore[3] && maxSymsPerKey >= 6 &&
-                (pCore[4] || pCore[5])) {
-                pCore[2] = pCore[4];
-                pCore[3] = pCore[5];
-	    }
-	}
-	if (keyc->modifierMap[key]!=0) {
-	    register unsigned bit,i,mask;
-	    mask= keyc->modifierMap[key];
-	    for (i=0,bit=1;i<XkbNumModifiers;i++,bit<<=1) {
-		if (mask&bit) {
-		    tmp= i*maxKeysPerMod+keysPerMod[i];
-		    keyc->modifierKeyMap[tmp]= key;
-		    keysPerMod[i]++;
-		}
-	    }
 	}
     }
-    return;
+
+    return syms;
 }
 
 void
@@ -552,46 +535,50 @@ XkbSetRepeatKeys(DeviceIntPtr pXDev,int key,int onoff)
     return;
 }
 
+/* Applies a change to a single device, does not traverse the device tree. */
 void
-XkbApplyMappingChange(	DeviceIntPtr	kbd,
-			CARD8		 request,
-			KeyCode		 firstKey,
-			CARD8		 num,
-			ClientPtr	 client)
+XkbApplyMappingChange(DeviceIntPtr kbd, KeySymsPtr map, KeyCode first_key,
+                      CARD8 num_keys, CARD8 *modmap, ClientPtr client)
 {
-XkbEventCauseRec	cause;
-XkbChangesRec	 	changes;
-unsigned	 	check;
+    XkbDescPtr xkb = kbd->key->xkbInfo->desc;
+    XkbEventCauseRec cause;
+    XkbChangesRec changes;
+    unsigned int check;
 
-    if (kbd->key->xkbInfo==NULL)
-	XkbInitDevice(kbd);
-    bzero(&changes,sizeof(XkbChangesRec));
-    check= 0;
-    if (request==MappingKeyboard) {
-	XkbSetCauseCoreReq(&cause,X_ChangeKeyboardMapping,client);
-	XkbUpdateKeyTypesFromCore(kbd,firstKey,num,&changes);
-	XkbUpdateActions(kbd,firstKey,num,&changes,&check,&cause);
-	if (check)
-	    XkbCheckSecondaryEffects(kbd->key->xkbInfo,check,&changes,&cause);
+    memset(&changes, 0, sizeof(changes));
+    memset(&cause, 0, sizeof(cause));
+
+    if (map && first_key && num_keys) {
+        check = 0;
+        XkbSetCauseCoreReq(&cause, X_ChangeKeyboardMapping, client);
+
+        XkbUpdateKeyTypesFromCore(kbd, map, first_key, num_keys, &changes);
+        XkbUpdateActions(kbd, first_key, num_keys, &changes, &check, &cause);
+
+        if (check)
+            XkbCheckSecondaryEffects(kbd->key->xkbInfo, 1, &changes, &cause);
     }
-    else if (request==MappingModifier) {
-	XkbDescPtr	xkb= kbd->key->xkbInfo->desc;
 
-	XkbSetCauseCoreReq(&cause,X_SetModifierMapping,client);
+    if (modmap) {
+        /* A keymap change can imply a modmap change, se we prefer the
+         * former. */
+        if (!cause.mjr)
+            XkbSetCauseCoreReq(&cause,X_SetModifierMapping,client);
 
-	num = xkb->max_key_code-xkb->min_key_code+1;
-	memcpy(xkb->map->modmap,kbd->key->modifierMap,xkb->max_key_code+1);
+        check = 0;
+        num_keys = xkb->max_key_code - xkb->min_key_code + 1;
+        changes.map.changed |= XkbModifierMapMask;
+        changes.map.first_modmap_key = xkb->min_key_code;
+        changes.map.num_modmap_keys = num_keys;
+        memcpy(kbd->key->xkbInfo->desc->map->modmap, modmap, MAP_LENGTH);
+        XkbUpdateActions(kbd, xkb->min_key_code, num_keys, &changes, &check,
+                         &cause);
 
-	changes.map.changed|= XkbModifierMapMask;
-	changes.map.first_modmap_key= xkb->min_key_code;
-	changes.map.num_modmap_keys= num;
-	XkbUpdateActions(kbd,xkb->min_key_code,num,&changes,&check,&cause);
-	if (check)
-	    XkbCheckSecondaryEffects(kbd->key->xkbInfo,check,&changes,&cause);
+        if (check)
+            XkbCheckSecondaryEffects(kbd->key->xkbInfo, 1, &changes, &cause);
     }
-    /* 3/26/94 (ef) -- XXX! Doesn't deal with input extension requests */
-    XkbSendNotification(kbd,&changes,&cause);
-    return;
+
+    XkbSendNotification(kbd, &changes, &cause);
 }
 
 void
@@ -705,8 +692,7 @@ unsigned char	grp;
     if (!state || !ctrls)
         return;
 
-    state->mods= (state->base_mods|state->latched_mods);
-    state->mods|= state->locked_mods;
+    state->mods= (state->base_mods|state->latched_mods|state->locked_mods);
     state->lookup_mods= state->mods&(~ctrls->internal.mask);
     state->grab_mods= state->lookup_mods&(~ctrls->ignore_lock.mask);
     state->grab_mods|= 
@@ -796,7 +782,7 @@ XkbSrvLedInfoPtr	sli;
 
 #define	MAX_TOC	16
 
-XkbGeometryPtr 
+XkbGeometryPtr
 XkbLookupNamedGeometry(DeviceIntPtr dev,Atom name,Bool *shouldFree)
 {
 XkbSrvInfoPtr	xkbi=	dev->key->xkbInfo;
@@ -915,41 +901,12 @@ XkbConvertCase(register KeySym sym, KeySym *lower, KeySym *upper)
     }
 }
 
-
-/**
- * Copy an XKB map from src to dst, reallocating when necessary: if some
- * map components are present in one, but not in the other, the destination
- * components will be allocated or freed as necessary.
- *
- * Basic map consistency is assumed on both sides, so maps with random
- * uninitialised data (e.g. names->radio_grous == NULL, names->num_rg == 19)
- * _will_ cause failures.  You've been warned.
- *
- * Returns TRUE on success, or FALSE on failure.  If this function fails,
- * dst may be in an inconsistent state: all its pointers are guaranteed
- * to remain valid, but part of the map may be from src and part from dst.
- *
- * FIXME: This function wants to be broken up into multiple functions.
- */
-Bool
-XkbCopyKeymap(XkbDescPtr src, XkbDescPtr dst, Bool sendNotifies)
+static Bool
+_XkbCopyClientMap(XkbDescPtr src, XkbDescPtr dst)
 {
-    int i = 0, j = 0, k = 0;
     void *tmp = NULL;
-    XkbColorPtr scolor = NULL, dcolor = NULL;
-    XkbDoodadPtr sdoodad = NULL, ddoodad = NULL;
+    int i;
     XkbKeyTypePtr stype = NULL, dtype = NULL;
-    XkbOutlinePtr soutline = NULL, doutline = NULL;
-    XkbPropertyPtr sprop = NULL, dprop = NULL;
-    XkbRowPtr srow = NULL, drow = NULL;
-    XkbSectionPtr ssection = NULL, dsection = NULL;
-    XkbShapePtr sshape = NULL, dshape = NULL;
-    DeviceIntPtr pDev = NULL, tmpDev = NULL;
-    xkbMapNotify mn;
-    xkbNewKeyboardNotify nkn;
-
-    if (!src || !dst || src == dst)
-        return FALSE;
 
     /* client map */
     if (src->map) {
@@ -1198,6 +1155,14 @@ XkbCopyKeymap(XkbDescPtr src, XkbDescPtr dst, Bool sendNotifies)
             XkbFreeClientMap(dst, XkbAllClientInfoMask, True);
     }
 
+    return TRUE;
+}
+
+static Bool
+_XkbCopyServerMap(XkbDescPtr src, XkbDescPtr dst)
+{
+    void *tmp = NULL;
+
     /* server map */
     if (src->server) {
         if (!dst->server) {
@@ -1326,37 +1291,13 @@ XkbCopyKeymap(XkbDescPtr src, XkbDescPtr dst, Bool sendNotifies)
             XkbFreeServerMap(dst, XkbAllServerInfoMask, True);
     }
 
-    /* indicators */
-    if (src->indicators) {
-        if (!dst->indicators) {
-            dst->indicators = xalloc(sizeof(XkbIndicatorRec));
-            if (!dst->indicators)
-                return FALSE;
-        }
-        memcpy(dst->indicators, src->indicators, sizeof(XkbIndicatorRec));
-    }
-    else {
-        if (dst->indicators) {
-            xfree(dst->indicators);
-            dst->indicators = NULL;
-        }
-    }
+    return TRUE;
+}
 
-    /* controls */
-    if (src->ctrls) {
-        if (!dst->ctrls) {
-            dst->ctrls = xalloc(sizeof(XkbControlsRec));
-            if (!dst->ctrls)
-                return FALSE;
-        }
-        memcpy(dst->ctrls, src->ctrls, sizeof(XkbControlsRec));
-    }
-    else {
-        if (dst->ctrls) {
-            xfree(dst->ctrls);
-            dst->ctrls = NULL;
-        }
-    }
+static Bool
+_XkbCopyNames(XkbDescPtr src, XkbDescPtr dst)
+{
+    void *tmp = NULL;
 
     /* names */
     if (src->names) {
@@ -1451,6 +1392,14 @@ XkbCopyKeymap(XkbDescPtr src, XkbDescPtr dst, Bool sendNotifies)
             XkbFreeNames(dst, XkbAllNamesMask, True);
     }
 
+    return TRUE;
+}
+
+static Bool
+_XkbCopyCompat(XkbDescPtr src, XkbDescPtr dst)
+{
+    void *tmp = NULL;
+
     /* compat */
     if (src->compat) {
         if (!dst->compat) {
@@ -1494,6 +1443,22 @@ XkbCopyKeymap(XkbDescPtr src, XkbDescPtr dst, Bool sendNotifies)
         if (dst->compat)
             XkbFreeCompatMap(dst, XkbAllCompatMask, True);
     }
+
+    return TRUE;
+}
+
+static Bool
+_XkbCopyGeom(XkbDescPtr src, XkbDescPtr dst)
+{
+    void *tmp = NULL;
+    int i = 0, j = 0, k = 0;
+    XkbColorPtr scolor = NULL, dcolor = NULL;
+    XkbDoodadPtr sdoodad = NULL, ddoodad = NULL;
+    XkbOutlinePtr soutline = NULL, doutline = NULL;
+    XkbPropertyPtr sprop = NULL, dprop = NULL;
+    XkbRowPtr srow = NULL, drow = NULL;
+    XkbSectionPtr ssection = NULL, dsection = NULL;
+    XkbShapePtr sshape = NULL, dshape = NULL;
 
     /* geometry */
     if (src->geom) {
@@ -1991,9 +1956,9 @@ XkbCopyKeymap(XkbDescPtr src, XkbDescPtr dst, Bool sendNotifies)
 
             strcpy(dst->geom->label_font, src->geom->label_font);
             i = XkbGeomColorIndex(src->geom, src->geom->label_color);
-            dst->geom->label_color = &(src->geom->colors[i]);
+            dst->geom->label_color = &(dst->geom->colors[i]);
             i = XkbGeomColorIndex(src->geom, src->geom->base_color);
-            dst->geom->base_color = &(src->geom->colors[i]);
+            dst->geom->base_color = &(dst->geom->colors[i]);
         }
         else {
             if (dst->geom->label_font) {
@@ -2017,77 +1982,174 @@ XkbCopyKeymap(XkbDescPtr src, XkbDescPtr dst, Bool sendNotifies)
         }
     }
 
-    if (inputInfo.keyboard->key->xkbInfo &&
-        inputInfo.keyboard->key->xkbInfo->desc == dst) {
-        pDev = inputInfo.keyboard;
+    return TRUE;
+}
+
+static Bool
+_XkbCopyIndicators(XkbDescPtr src, XkbDescPtr dst)
+{
+    /* indicators */
+    if (src->indicators) {
+        if (!dst->indicators) {
+            dst->indicators = xalloc(sizeof(XkbIndicatorRec));
+            if (!dst->indicators)
+                return FALSE;
+        }
+        memcpy(dst->indicators, src->indicators, sizeof(XkbIndicatorRec));
     }
     else {
-        for (tmpDev = inputInfo.devices; tmpDev && !pDev;
-             tmpDev = tmpDev->next) {
-            if (tmpDev->key && tmpDev->key->xkbInfo &&
-                tmpDev->key->xkbInfo->desc == dst) {
-                pDev = tmpDev;
-                break;
-            }
-        }
-        for (tmpDev = inputInfo.off_devices; tmpDev && !pDev;
-             tmpDev = tmpDev->next) {
-            if (tmpDev->key && tmpDev->key->xkbInfo &&
-                tmpDev->key->xkbInfo->desc == dst) {
-                pDev = tmpDev;
-                break;
-            }
+        if (dst->indicators) {
+            xfree(dst->indicators);
+            dst->indicators = NULL;
         }
     }
+    return TRUE;
+}
 
-    if (sendNotifies) {
-        if (!pDev) {
-            ErrorF("XkbCopyKeymap: asked for notifies, but can't find device!\n");
+static Bool
+_XkbCopyControls(XkbDescPtr src, XkbDescPtr dst)
+{
+    /* controls */
+    if (src->ctrls) {
+        if (!dst->ctrls) {
+            dst->ctrls = xalloc(sizeof(XkbControlsRec));
+            if (!dst->ctrls)
+                return FALSE;
         }
-        else {
-            /* send NewKeyboardNotify if the keycode range changed, else
-             * just MapNotify.  we also need to send NKN if the geometry
-             * changed (obviously ...). */
-            if ((src->min_key_code != dst->min_key_code ||
-                 src->max_key_code != dst->max_key_code) && sendNotifies) {
-                nkn.oldMinKeyCode = dst->min_key_code;
-                nkn.oldMaxKeyCode = dst->max_key_code;
-                nkn.deviceID = nkn.oldDeviceID = pDev->id;
-                nkn.minKeyCode = src->min_key_code;
-                nkn.maxKeyCode = src->max_key_code;
-                nkn.requestMajor = XkbReqCode;
-                nkn.requestMinor = X_kbSetMap; /* XXX bare-faced lie */
-                nkn.changed = XkbAllNewKeyboardEventsMask;
-                XkbSendNewKeyboardNotify(pDev, &nkn);
-            }
-            else if (sendNotifies) {
-                mn.deviceID = pDev->id;
-                mn.minKeyCode = src->min_key_code;
-                mn.maxKeyCode = src->max_key_code;
-                mn.firstType = 0;
-                mn.nTypes = src->map->num_types;
-                mn.firstKeySym = src->min_key_code;
-                mn.nKeySyms = XkbNumKeys(src);
-                mn.firstKeyAct = src->min_key_code;
-                mn.nKeyActs = XkbNumKeys(src);
-                /* Cargo-culted from ProcXkbGetMap. */
-                mn.firstKeyBehavior = src->min_key_code;
-                mn.nKeyBehaviors = XkbNumKeys(src);
-                mn.firstKeyExplicit = src->min_key_code;
-                mn.nKeyExplicit = XkbNumKeys(src);
-                mn.firstModMapKey = src->min_key_code;
-                mn.nModMapKeys = XkbNumKeys(src);
-                mn.firstVModMapKey = src->min_key_code;
-                mn.nVModMapKeys = XkbNumKeys(src);
-                mn.virtualMods = ~0; /* ??? */
-                mn.changed = XkbAllMapComponentsMask;                
-                XkbSendMapNotify(pDev, &mn);
-            }
+        memcpy(dst->ctrls, src->ctrls, sizeof(XkbControlsRec));
+    }
+    else {
+        if (dst->ctrls) {
+            xfree(dst->ctrls);
+            dst->ctrls = NULL;
         }
+    }
+    return TRUE;
+}
+
+/**
+ * Copy an XKB map from src to dst, reallocating when necessary: if some
+ * map components are present in one, but not in the other, the destination
+ * components will be allocated or freed as necessary.
+ *
+ * Basic map consistency is assumed on both sides, so maps with random
+ * uninitialised data (e.g. names->radio_grous == NULL, names->num_rg == 19)
+ * _will_ cause failures.  You've been warned.
+ *
+ * Returns TRUE on success, or FALSE on failure.  If this function fails,
+ * dst may be in an inconsistent state: all its pointers are guaranteed
+ * to remain valid, but part of the map may be from src and part from dst.
+ *
+ */
+
+Bool
+XkbCopyKeymap(XkbDescPtr dst, XkbDescPtr src)
+{
+
+    if (!src || !dst) {
+        DebugF("XkbCopyKeymap: src (%p) or dst (%p) is NULL\n", src, dst);
+        return FALSE;
+    }
+
+    if (src == dst)
+        return TRUE;
+
+    if (!_XkbCopyClientMap(src, dst)) {
+        DebugF("XkbCopyKeymap: failed to copy client map\n");
+        return FALSE;
+    }
+    if (!_XkbCopyServerMap(src, dst)) {
+        DebugF("XkbCopyKeymap: failed to copy server map\n");
+        return FALSE;
+    }
+    if (!_XkbCopyIndicators(src, dst)) {
+        DebugF("XkbCopyKeymap: failed to copy indicators\n");
+        return FALSE;
+    }
+    if (!_XkbCopyControls(src, dst)) {
+        DebugF("XkbCopyKeymap: failed to copy controls\n");
+        return FALSE;
+    }
+    if (!_XkbCopyNames(src, dst)) {
+        DebugF("XkbCopyKeymap: failed to copy names\n");
+        return FALSE;
+    }
+    if (!_XkbCopyCompat(src, dst)) {
+        DebugF("XkbCopyKeymap: failed to copy compat map\n");
+        return FALSE;
+    }
+    if (!_XkbCopyGeom(src, dst)) {
+        DebugF("XkbCopyKeymap: failed to copy geometry\n");
+        return FALSE;
     }
 
     dst->min_key_code = src->min_key_code;
     dst->max_key_code = src->max_key_code;
 
     return TRUE;
+}
+
+Bool
+XkbCopyDeviceKeymap(DeviceIntPtr dst, DeviceIntPtr src)
+{
+    xkbNewKeyboardNotify nkn;
+    Bool ret;
+
+    if (!dst->key || !src->key)
+        return FALSE;
+
+    memset(&nkn, 0, sizeof(xkbNewKeyboardNotify));
+    nkn.oldMinKeyCode = dst->key->xkbInfo->desc->min_key_code;
+    nkn.oldMaxKeyCode = dst->key->xkbInfo->desc->max_key_code;
+    nkn.deviceID = dst->id;
+    nkn.oldDeviceID = dst->id; /* maybe src->id? */
+    nkn.minKeyCode = src->key->xkbInfo->desc->min_key_code;
+    nkn.maxKeyCode = src->key->xkbInfo->desc->max_key_code;
+    nkn.requestMajor = XkbReqCode;
+    nkn.requestMinor = X_kbSetMap; /* Near enough's good enough. */
+    nkn.changed = XkbNKN_KeycodesMask;
+    if (src->key->xkbInfo->desc->geom)
+        nkn.changed |= XkbNKN_GeometryMask;
+
+    ret = XkbCopyKeymap(dst->key->xkbInfo->desc, src->key->xkbInfo->desc);
+    if (ret)
+        XkbSendNewKeyboardNotify(dst, &nkn);
+
+    return ret;
+}
+
+int
+XkbGetEffectiveGroup(XkbSrvInfoPtr xkbi, XkbStatePtr xkbState, CARD8 keycode)
+{
+    XkbDescPtr xkb = xkbi->desc;
+    int effectiveGroup = xkbState->group;
+
+    if (!XkbKeycodeInRange(xkb, keycode))
+        return -1;
+
+    if (effectiveGroup == XkbGroup1Index)
+        return effectiveGroup;
+
+    if (XkbKeyNumGroups(xkb,keycode) > 1U) {
+        if (effectiveGroup >= XkbKeyNumGroups(xkb,keycode)) {
+            unsigned int gi = XkbKeyGroupInfo(xkb,keycode);
+            switch (XkbOutOfRangeGroupAction(gi)) {
+                default:
+                case XkbWrapIntoRange:
+                    effectiveGroup %= XkbKeyNumGroups(xkb, keycode);
+                    break;
+                case XkbClampIntoRange:
+                    effectiveGroup = XkbKeyNumGroups(xkb, keycode) - 1;
+                    break;
+                case XkbRedirectIntoRange:
+                    effectiveGroup = XkbOutOfRangeGroupInfo(gi);
+                    if (effectiveGroup >= XkbKeyNumGroups(xkb, keycode))
+                        effectiveGroup = 0;
+                    break;
+            }
+        }
+    }
+    else effectiveGroup = XkbGroup1Index;
+
+    return effectiveGroup;
 }

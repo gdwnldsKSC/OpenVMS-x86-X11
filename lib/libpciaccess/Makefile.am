@@ -21,19 +21,20 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+# Include autoconf macros from m4 subdir
+ACLOCAL_AMFLAGS = -I m4
+
 SUBDIRS = src
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = pciaccess.pc
 
-EXTRA_DIST = pciaccess.pc.in autogen.sh src/scanpci.c
-
-EXTRA_DIST += ChangeLog
+EXTRA_DIST = pciaccess.pc.in src/scanpci.c src/scanpci.man ChangeLog
 MAINTAINERCLEANFILES = ChangeLog
 
 .PHONY: ChangeLog
 
 ChangeLog:
-	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || (touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
+	$(CHANGELOG_CMD)
 
 dist-hook: ChangeLog

@@ -1613,7 +1613,7 @@ InsertWidget(ProtocolStream *stream, Widget w)
   _XmuWidgetId *widget_list;
     register int i, num_widgets;
 
-  for (temp = w, i = 0; temp != 0; temp = XtParent(temp), i++)
+  for (temp = w, i = 0; temp != NULL; temp = XtParent(temp), i++)
     ;
 
     num_widgets = i;
@@ -2128,7 +2128,7 @@ _XEditresGetStringValues(Widget w, Arg *warg, int numargs)
   /* try to get the value in the proper size */
   switch (res->resource_size)
     {
-#if defined(LONG_64) || defined(_XMU_P64_WIDGET_IDS)
+#if defined(LONG64) || defined(_XMU_P64_WIDGET_IDS)
       XtArgVal v8;
 #endif
       int v4;
@@ -2150,7 +2150,7 @@ _XEditresGetStringValues(Widget w, Arg *warg, int numargs)
       XtGetValues(w, args, 1);
       value = (int)v4;
       break;
-#if defined(LONG_64) || defined(_XMU_P64_WIDGET_IDS)
+#if defined(LONG64) || defined(_XMU_P64_WIDGET_IDS)
     case 8:
       XtSetArg(args[0], res->resource_name, &v8);
       XtGetValues(w, args, 1);
@@ -2207,7 +2207,7 @@ _XEditresGetStringValues(Widget w, Arg *warg, int numargs)
 	      XmuSnprintf(buffer, sizeof(buffer), "0x%016llx",
 	                  (unsigned long long)value);
 	      break;
-#elif defined(LONG_64)
+#elif defined(LONG64)
 	    case sizeof(long):
 	      XmuSnprintf(buffer, sizeof(buffer), "0x%016lx", value);
 	      break;

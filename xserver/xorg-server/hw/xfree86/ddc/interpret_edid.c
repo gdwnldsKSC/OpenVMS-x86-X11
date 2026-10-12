@@ -3,22 +3,23 @@
  * Copyright 2007 Red Hat, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software")
- * to deal in the software without restriction, including without limitation
- * on the rights to use, copy, modify, merge, publish, distribute, sub
- * license, and/or sell copies of the Software, and to permit persons to whom
- * them Software is furnished to do so, subject to the following conditions:
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
  *
  * The above copyright notice and this permission notice (including the next
  * paragraph) shall be included in all copies or substantial portions of the
  * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTIBILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.  IN NO EVENT SHALL
- * THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
  *
  * interpret_edid.c: interpret a primary EDID block
  */
@@ -85,6 +86,51 @@ handle_edid_quirks(xf86MonPtr m)
 	    }
 	}
     }
+
+    /*
+     * some monitors encode the aspect ratio instead of the physical size.
+     * try to find the largest detailed timing that matches that aspect
+     * ratio and use that to fill in the feature section.
+     */
+    if ((m->features.hsize == 16 && m->features.vsize == 9) ||
+	(m->features.hsize == 16 && m->features.vsize == 10) ||
+	(m->features.hsize == 4 && m->features.vsize == 3) ||
+	(m->features.hsize == 5 && m->features.vsize == 4)) {
+	int real_hsize = 0, real_vsize = 0;
+	float target_aspect, timing_aspect;
+	
+	target_aspect = (float)m->features.hsize / (float)m->features.vsize;
+	for (i = 0; i < 4; i++) {
+	    if (m->det_mon[i].type == DT) {
+		struct detailed_timings *timing;
+		timing = &m->det_mon[i].section.d_timings;
+
+		if (!timing->v_size)
+		    continue;
+
+		timing_aspect = (float)timing->h_size / (float)timing->v_size;
+		if (fabs(1 - (timing_aspect / target_aspect)) < 0.05) {
+		    real_hsize = max(real_hsize, timing->h_size);
+		    real_vsize = max(real_vsize, timing->v_size);
+		}
+	    }
+	}
+
+	if (!real_hsize || !real_vsize) {
+	    m->features.hsize = m->features.vsize = 0;
+	} else if ((m->features.hsize * 10 == real_hsize) &&
+		   (m->features.vsize * 10 == real_vsize)) {
+	    /* exact match is just unlikely, should do a better check though */
+	    m->features.hsize = m->features.vsize = 0;
+	} else {
+	    /* convert mm to cm */
+	    m->features.hsize = (real_hsize + 5) / 10;
+	    m->features.vsize = (real_vsize + 5) / 10;
+	}
+	
+	xf86Msg(X_INFO, "Quirked EDID physical size to %dx%d cm\n",
+		m->features.hsize, m->features.vsize);
+    }
 }
 
 xf86MonPtr
@@ -116,6 +162,20 @@ xf86InterpretEDID(int scrnIndex, Uchar *block)
  error:
     xfree(m);
     return NULL;
+}
+
+xf86MonPtr
+xf86InterpretEEDID(int scrnIndex, Uchar *block)
+{
+    xf86MonPtr m;
+
+    m = xf86InterpretEDID(scrnIndex, block);
+    if (!m)
+	return NULL;
+
+    /* extension parse */
+
+    return m;
 }
 
 static void
@@ -225,6 +285,8 @@ get_std_timing_section(Uchar *c, struct std_timings *r,
     }
 }
 
+static const unsigned char empty_block[18];
+
 static void
 get_dt_md_section(Uchar *c, struct edid_version *ver, 
 		  struct detailed_monitor_section *det_mon)
@@ -268,6 +330,7 @@ get_dt_md_section(Uchar *c, struct edid_version *ver,
 	break;
       case ADD_EST_TIMINGS:
 	det_mon[i].type = DS_EST_III;
+	memcpy(det_mon[i].section.est_iii, c + 6, 6);
 	break;
       case ADD_DUMMY:
 	det_mon[i].type = DS_DUMMY;
@@ -276,10 +339,10 @@ get_dt_md_section(Uchar *c, struct edid_version *ver,
         det_mon[i].type = DS_UNKOWN;
         break;
       }
-      if (c[3] <= 0x0F) {
+      if (c[3] <= 0x0F && memcmp(c, empty_block, sizeof(empty_block))) {
 	det_mon[i].type = DS_VENDOR + c[3];
       }
-    } else { 
+    } else {
       det_mon[i].type = DT;
       get_detailed_timing_section(c,&det_mon[i].section.d_timings);
     }
@@ -349,14 +412,14 @@ get_monitor_ranges(Uchar *c, struct monitor_ranges *r)
 static void
 get_whitepoint_section(Uchar *c, struct whitePoints *wp)
 {
-    wp[1].white_x = WHITEX1;
-    wp[1].white_y = WHITEY1;
-    wp[2].white_x = WHITEX2;
-    wp[2].white_y = WHITEY2;
-    wp[1].index  = WHITE_INDEX1;
-    wp[2].index  = WHITE_INDEX2;
-    wp[1].white_gamma  = WHITE_GAMMA1;
-    wp[2].white_gamma  = WHITE_GAMMA2;
+    wp[0].white_x = WHITEX1;
+    wp[0].white_y = WHITEY1;
+    wp[1].white_x = WHITEX2;
+    wp[1].white_y = WHITEY2;
+    wp[0].index  = WHITE_INDEX1;
+    wp[1].index  = WHITE_INDEX2;
+    wp[0].white_gamma  = WHITE_GAMMA1;
+    wp[1].white_gamma  = WHITE_GAMMA2;
 }
 
 static void
@@ -399,4 +462,57 @@ validate_version(int scrnIndex, struct edid_version *r)
 		   r->revision, MAX_EDID_MINOR);
 
     return TRUE;
+}
+
+/*
+ * Returns true if HDMI, false if definitely not or unknown.
+ */
+Bool
+xf86MonitorIsHDMI(xf86MonPtr mon)
+{
+    int i = 0, version, offset;
+    char *edid = NULL;
+
+    if (!mon)
+       return FALSE;
+
+    if (!(mon->flags & EDID_COMPLETE_RAWDATA))
+       return FALSE;
+
+    if (!mon->no_sections)
+       return FALSE;
+
+    edid = (char *)mon->rawData;
+    if (!edid)
+       return FALSE;
+
+    /* find the CEA extension block */
+    for (i = 1; i <= mon->no_sections; i++)
+       if (edid[i * 128] == 0x02)
+           break;
+    if (i == mon->no_sections + 1)
+       return FALSE;
+    edid += (i * 128);
+
+    version = edid[1];
+    offset = edid[2];
+    if (version < 3 || offset < 4)
+       return FALSE;
+
+    /* walk the cea data blocks */
+    for (i = 4; i < offset; i += (edid[i] & 0x1f) + 1) {
+       char *x = edid + i;
+
+       /* find a vendor specific block */
+       if ((x[0] & 0xe0) >> 5 == 0x03) {
+           int oui = (x[3] << 16) + (x[2] << 8) + x[1];
+
+           /* find the HDMI vendor OUI */
+           if (oui == 0x000c03)
+               return TRUE;
+       }
+    }
+
+    /* guess it's not HDMI after all */
+    return FALSE;
 }

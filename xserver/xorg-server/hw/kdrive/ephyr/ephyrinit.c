@@ -64,7 +64,7 @@ InitInput (int argc, char **argv)
 {
   KdKeyboardInfo *ki;
   KdPointerInfo *pi;
-        
+
   KdAddKeyboardDriver(&EphyrKeyboardDriver);
 #ifdef linux
   KdAddKeyboardDriver(&LinuxEvdevKeyboardDriver);
@@ -110,6 +110,7 @@ ddxUseMsg (void)
 #endif
   ErrorF("-noxv                do not use XV\n");
   ErrorF("-name [name]         define the name in the WM_CLASS property\n");
+  ErrorF("-title [title]       set the window title in the WM_NAME property\n");
   ErrorF("\n");
 
   exit(1);
@@ -147,6 +148,7 @@ processScreenArg (char *screen_size, char *parent_id)
 int
 ddxProcessArgument (int argc, char **argv, int i)
 {
+  static char* parent = NULL;
   EPHYR_DBG("mark argv[%d]='%s'", i, argv[i] );
 
   if (i == 1)
@@ -158,6 +160,18 @@ ddxProcessArgument (int argc, char **argv, int i)
     {
       if(i+1 < argc)
 	{
+	  int j;
+	  /* If parent is specified and a screen argument follows, don't do
+           * anything, let the -screen handling init the rest */
+	  for (j = i; j < argc; j++)
+	    {
+	      if (!strcmp(argv[j], "-screen"))
+		{
+		  parent = argv[i + 1];
+		  return 2;
+		}
+	    }
+
 	  processScreenArg ("100x100", argv[i+1]);
 	  return 2;
 	}
@@ -169,7 +183,8 @@ ddxProcessArgument (int argc, char **argv, int i)
     {
       if ((i+1) < argc)
 	{
-	  processScreenArg (argv[i+1], NULL);
+	  processScreenArg (argv[i+1], parent);
+	  parent = NULL;
 	  return 2;
 	}
 
@@ -242,10 +257,44 @@ ddxProcessArgument (int argc, char **argv, int i)
            return 0;
          }
    }
+  else if (!strcmp (argv[i], "-title"))
+   {
+       if (i+1 < argc && argv[i+1][0] != '-')
+         {
+           hostx_set_title(argv[i+1]);
+           return 2;
+         }
+       else
+         {
+           UseMsg();
+           return 0;
+         }
+   }
   else if (argv[i][0] == ':')
     {
       hostx_set_display_name(argv[i]);
     }
+  /* Xnest compatibility */
+  else if (!strcmp(argv[i], "-display"))
+  {
+      hostx_set_display_name(argv[i+1]);
+      return 2;
+  }
+  else if (!strcmp(argv[i], "-sync") ||
+	   !strcmp(argv[i], "-full") ||
+	   !strcmp(argv[i], "-sss") ||
+	   !strcmp(argv[i], "-install"))
+  {
+      return 1;
+  }
+  else if (!strcmp(argv[i], "-bw") ||
+	   !strcmp(argv[i], "-class") ||
+	   !strcmp(argv[i], "-geometry") ||
+	   !strcmp(argv[i], "-scrns"))
+  {
+      return 2;
+  }
+  /* end Xnest compat */
 
   return KdProcessArgument (argc, argv, i);
 }
@@ -267,27 +316,33 @@ OsVendorInit (void)
 /* 'Fake' cursor stuff, could be improved */
 
 static Bool
-ephyrRealizeCursor(ScreenPtr pScreen, CursorPtr pCursor)
+ephyrRealizeCursor(DeviceIntPtr pDev, ScreenPtr pScreen, CursorPtr pCursor)
 {
   return TRUE;
 }
 
 static Bool
-ephyrUnrealizeCursor(ScreenPtr pScreen, CursorPtr pCursor)
+ephyrUnrealizeCursor(DeviceIntPtr pDev, ScreenPtr pScreen, CursorPtr pCursor)
 {
   return TRUE;
 }
 
 static void
-ephyrSetCursor(ScreenPtr pScreen, CursorPtr pCursor, int x, int y)
+ephyrSetCursor(DeviceIntPtr pDev, ScreenPtr pScreen, CursorPtr pCursor, int x, int y)
 {
   ;
 }
 
 static void
-ephyrMoveCursor(ScreenPtr pScreen, int x, int y)
+ephyrMoveCursor(DeviceIntPtr pDev, ScreenPtr pScreen, int x, int y)
 {
   ;
+}
+
+static Bool
+ephyrDeviceCursorInitialize(DeviceIntPtr pDev, ScreenPtr pScreen)
+{
+  return TRUE;
 }
 
 miPointerSpriteFuncRec EphyrPointerSpriteFuncs = {
@@ -295,15 +350,17 @@ miPointerSpriteFuncRec EphyrPointerSpriteFuncs = {
 	ephyrUnrealizeCursor,
 	ephyrSetCursor,
 	ephyrMoveCursor,
+	ephyrDeviceCursorInitialize,
+	NULL
 };
 
 
 Bool
 ephyrCursorInit(ScreenPtr pScreen)
 {
-  miPointerInitialize(pScreen, 
+  miPointerInitialize(pScreen,
 		      &EphyrPointerSpriteFuncs,
-		      &ephyrPointerScreenFuncs, 
+		      &ephyrPointerScreenFuncs,
 		      FALSE);
 
   return TRUE;
@@ -328,18 +385,18 @@ KdCardFuncs ephyrFuncs = {
     ephyrRestore,	    /* restore */
     ephyrScreenFini,	    /* scrfini */
     ephyrCardFini,	    /* cardfini */
-    
-    0,	                    /* initCursor */
-    0,          	    /* enableCursor */
+
+    0,			    /* initCursor */
+    0,			    /* enableCursor */
     0,			    /* disableCursor */
     0,			    /* finiCursor */
     0,			    /* recolorCursor */
-    
+
     0,			    /* initAccel */
     0,			    /* enableAccel */
     0,			    /* disableAccel */
     0,			    /* finiAccel */
-    
-    ephyrGetColors,    	    /* getColors */
+
+    ephyrGetColors,/* getColors */
     ephyrPutColors,	    /* putColors */
 };

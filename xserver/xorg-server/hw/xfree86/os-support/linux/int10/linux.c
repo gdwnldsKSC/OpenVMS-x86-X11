@@ -1,6 +1,6 @@
 /*
  * linux specific part of the int10 module
- * Copyright 1999, 2000, 2001, 2002, 2003, 2004 Egbert Eich
+ * Copyright 1999, 2000, 2001, 2002, 2003, 2004, 2008 Egbert Eich
  */
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
@@ -115,9 +115,7 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
     if ((!vidMem) || (!sysMem)) {
 	if ((fd = open(DEV_MEM, O_RDWR, 0)) >= 0) {
 	    if (!sysMem) {
-#ifdef DEBUG
-		ErrorF("Mapping sys bios area\n");
-#endif
+		DebugF("Mapping sys bios area\n");
 		if ((sysMem = mmap((void *)(SYS_BIOS), BIOS_SIZE,
 				   PROT_READ | PROT_EXEC,
 				   MAP_SHARED | MAP_FIXED, fd, SYS_BIOS))
@@ -128,9 +126,7 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
 		}
 	    }
 	    if (!vidMem) {
-#ifdef DEBUG
-		ErrorF("Mapping VRAM area\n");
-#endif
+		DebugF("Mapping VRAM area\n");
 		if ((vidMem = mmap((void *)(V_RAM), VRAM_SIZE,
 				   PROT_READ | PROT_WRITE | PROT_EXEC,
 				   MAP_SHARED | MAP_FIXED, fd, V_RAM))
@@ -162,9 +158,7 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
 	(pointer)xnfcalloc(1, ALLOC_ENTRIES(pagesize));
 
     if (!xf86IsEntityPrimary(entityIndex)) {
-#ifdef DEBUG
-	ErrorF("Mapping high memory area\n");
-#endif
+	DebugF("Mapping high memory area\n");
 	if ((high_mem = shmget(counter++, HIGH_MEM_SIZE,
 			       IPC_CREAT | SHM_R | SHM_W)) == -1) {
 	    if (errno == ENOSYS)
@@ -176,9 +170,7 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
 	    goto error1;
 	}
     } else {
-#ifdef DEBUG
-	ErrorF("Mapping Video BIOS\n");
-#endif
+	DebugF("Mapping Video BIOS\n");
 	videoBiosMapped = TRUE;
 	if ((fd = open(DEV_MEM, O_RDWR, 0)) >= 0) {
 	    if ((vMem = mmap((void *)(V_BIOS), SYS_BIOS - V_BIOS,
@@ -195,9 +187,7 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
     }
     ((linuxInt10Priv*)pInt->private)->highMem = high_mem;
     
-#ifdef DEBUG
-    ErrorF("Mapping 640kB area\n");
-#endif
+    DebugF("Mapping 640kB area\n");
     if ((low_mem = shmget(counter++, V_RAM,
 			  IPC_CREAT | SHM_R | SHM_W)) == -1) {
 	xf86DrvMsg(screen, X_ERROR,
@@ -229,33 +219,26 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
     
     Int10Current = pInt;
 
-#ifdef DEBUG
-    ErrorF("Mapping int area\n");
-#endif
+    DebugF("Mapping int area\n");
     if (xf86ReadBIOS(0, 0, (unsigned char *)0, LOW_PAGE_SIZE) < 0) {
 	xf86DrvMsg(screen, X_ERROR, "Cannot read int vect\n");
 	goto error3;
     }
-#ifdef DEBUG
-    ErrorF("done\n");
-#endif
+    DebugF("done\n");
     /*
      * Read in everything between V_BIOS and SYS_BIOS as some system BIOSes
      * have executable code there.  Note that xf86ReadBIOS() can only bring in
      * 64K bytes at a time.
      */
     if (!videoBiosMapped) {
-	(void)memset((pointer)V_BIOS, 0, SYS_BIOS - V_BIOS);
-#ifdef DEBUG
-	ErrorF("Reading BIOS\n");
-#endif
+	memset((pointer)V_BIOS, 0, SYS_BIOS - V_BIOS);
+	DebugF("Reading BIOS\n");
 	for (cs = V_BIOS;  cs < SYS_BIOS;  cs += V_BIOS_SIZE)
 	    if (xf86ReadBIOS(cs, 0, (pointer)cs, V_BIOS_SIZE) < V_BIOS_SIZE)
 		xf86DrvMsg(screen, X_WARNING,
-			   "Unable to retrieve all of segment 0x%06lX.\n", cs);
-#ifdef DEBUG
-	ErrorF("done\n");
-#endif
+			   "Unable to retrieve all of segment 0x%06lX.\n",
+			   (long)cs);
+	DebugF("done\n");
     }
 
     if (xf86IsEntityPrimary(entityIndex) && !(initPrimary(options))) {
@@ -292,10 +275,6 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
 	    pInt->BIOSseg = V_BIOS >> 4;
 	    break;
 	}
-	case BUS_ISA:
-	    if (!xf86int10GetBiosSegment(pInt, NULL))
-		goto error3;
-	    break;
 	default:
 	    goto error3;
 	}
@@ -357,7 +336,10 @@ MapCurrentInt10(xf86Int10InfoPtr pInt)
 		   "shmat(low_mem) error: %s\n",strerror(errno));
 	return FALSE;
     }
-    
+    if (mprotect((void*)0, V_RAM, PROT_READ|PROT_WRITE|PROT_EXEC) != 0)
+        xf86DrvMsg(pInt->scrnIndex, X_ERROR,
+		   "Cannot set EXEC bit on low memory: %s\n", strerror(errno));
+
     if (((linuxInt10Priv*)pInt->private)->highMem >= 0) {
 	addr = shmat(((linuxInt10Priv*)pInt->private)->highMem,
 		     (char*)HIGH_MEM, 0);
@@ -368,6 +350,11 @@ MapCurrentInt10(xf86Int10InfoPtr pInt)
 		       "shmget error: %s\n",strerror(errno));
 	    return FALSE;
 	}
+	if (mprotect((void*)HIGH_MEM, HIGH_MEM_SIZE,
+		     PROT_READ|PROT_WRITE|PROT_EXEC) != 0)
+	    xf86DrvMsg(pInt->scrnIndex, X_ERROR,
+		       "Cannot set EXEC bit on high memory: %s\n",
+		       strerror(errno));
     } else {
 	if ((fd = open(DEV_MEM, O_RDWR, 0)) >= 0) {
 	    if (mmap((void *)(V_BIOS), SYS_BIOS - V_BIOS,

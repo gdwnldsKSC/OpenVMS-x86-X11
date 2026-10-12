@@ -46,10 +46,15 @@ typedef struct _damage {
     DrawablePtr		pDrawable;
     
     DamageReportFunc	damageReport;
+    DamageReportFunc	damageReportPostRendering;
     DamageDestroyFunc	damageDestroy;
+    DamageMarkerFunc	damageMarker;
 
     Bool		reportAfter;
-    RegionRec		pendingDamage;
+    RegionRec		pendingDamage; /* will be flushed post submission at the latest */
+    RegionRec		backupDamage; /* for use with damageMarker */
+    ScreenPtr		pScreen;
+    PrivateRec		*devPrivates;
 } DamageRec;
 
 typedef struct _damageScrPriv {
@@ -72,6 +77,9 @@ typedef struct _damageScrPriv {
     GlyphsProcPtr		Glyphs;
     AddTrapsProcPtr		AddTraps;
 #endif
+
+    /* Table of wrappable function pointers */
+    DamageScreenFuncsRec	funcs;
 } DamageScrPrivRec, *DamageScrPrivPtr;
 
 typedef struct _damageGCPriv {

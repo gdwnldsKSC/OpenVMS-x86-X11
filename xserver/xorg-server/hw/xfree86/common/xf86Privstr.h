@@ -34,31 +34,13 @@
 #ifndef _XF86PRIVSTR_H
 #define _XF86PRIVSTR_H
 
-#include "xf86Pci.h"
 #include "xf86str.h"
-
-/* PCI probe flags */
-
-typedef enum {
-    PCIProbe1		= 0,
-    PCIProbe2,
-    PCIForceConfig1,
-    PCIForceConfig2,
-    PCIForceNone,
-    PCIOsConfig
-} PciProbeType;
 
 typedef enum {
     LogNone,
     LogFlush,
     LogSync
 } Log;
-
-typedef enum {
-    SKNever,
-    SKWhenNeeded,
-    SKAlways
-} SpecialKeysInDDX;
 
 typedef enum {
     XF86_GlxVisualsMinimal,
@@ -76,18 +58,13 @@ typedef struct {
     int			consoleFd;
     int			vtno;
     Bool		vtSysreq;
-    SpecialKeysInDDX	ddxSpecialKeys;
-
-    /* mouse part */
-    DeviceIntPtr	pMouse;
-#ifdef XINPUT
-    pointer		mouseLocal;
-#endif
 
     /* event handler part */
     int			lastEventTime;
     Bool		vtRequestsPending;
-    Bool		inputPending;
+#ifdef sun
+    int			vtPendingNum;
+#endif
     Bool		dontVTSwitch;
     Bool		dontZap;
     Bool		dontZoom;
@@ -95,7 +72,6 @@ typedef struct {
     Bool		caughtSignal;
 
     /* graphics part */
-    Bool		sharedMonitor;
     ScreenPtr		currentScreen;
 #if defined(CSRG_BASED) || defined(__FreeBSD_kernel__)
     int			screenFd;	/* fd for memory mapped access to
@@ -111,7 +87,8 @@ typedef struct {
     Bool		miscModInDevEnabled;	/* Allow input devices to be
 						 * changed */
     Bool		miscModInDevAllowNonLocal;
-    PciProbeType	pciFlags;
+    Bool		useSIGIO;		/* Use SIGIO for handling
+						   input device events */
     Pix24Flags		pixmap24;
     MessageType		pix24From;
 #ifdef __i386__
@@ -119,7 +96,6 @@ typedef struct {
 #endif
     Bool		pmFlag;
     Log			log;
-    int			estimateSizesAggressively;
     Bool		kbdCustomKeycodes;
     Bool		disableRandR;
     MessageType		randRFrom;
@@ -131,18 +107,6 @@ typedef struct {
     Bool		useDefaultFontPath;
     MessageType		useDefaultFontPathFrom;
     Bool        ignoreABI;
-    struct {
-	Bool		disabled;		/* enable/disable deactivating
-						 * grabs or closing the
-						 * connection to the grabbing
-						 * client */
-	ClientPtr	override;		/* client that disabled
-						 * grab deactivation.
-						 */
-	Bool		allowDeactivate;
-	Bool		allowClosedown;
-	ServerGrabInfoRec server;
-    } grabInfo;
 
     Bool        allowEmptyInput;  /* Allow the server to start with no input
                                    * devices. */

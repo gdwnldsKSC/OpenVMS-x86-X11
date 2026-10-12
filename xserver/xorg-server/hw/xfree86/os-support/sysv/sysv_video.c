@@ -283,7 +283,7 @@ xf86OSInitVidMem(VidMemInfoPtr pVidMem)
 static Bool ExtendedEnabled = FALSE;
 static Bool InitDone = FALSE;
 
-_X_EXPORT Bool
+Bool
 xf86EnableIO()
 {
 	int i;
@@ -302,7 +302,7 @@ xf86EnableIO()
 	return TRUE;
 }
 	
-_X_EXPORT void
+void
 xf86DisableIO()
 {
 	if (!ExtendedEnabled)
@@ -311,57 +311,5 @@ xf86DisableIO()
 	RESET_IOPL();
 	ExtendedEnabled = FALSE;
 
-	return;
-}
-
-/***************************************************************************/
-/* Interrupt Handling section                                              */
-/***************************************************************************/
-
-_X_EXPORT Bool
-xf86DisableInterrupts()
-{
-	if (!ExtendedEnabled)
-	{
-		if (SET_IOPL() < 0)
-		{
-			return(FALSE);
-		}
-	}
-
-#ifdef __GNUC__
-	__asm__ __volatile__("cli");
-#else 
-	asm("cli");
-#endif /* __GNUC__ */
-
-	if (!ExtendedEnabled)
-	{
-		RESET_IOPL();
-	}
-	return(TRUE);
-}
-
-_X_EXPORT void
-xf86EnableInterrupts()
-{
-	if (!ExtendedEnabled)
-	{
-		if (SET_IOPL() < 0)
-		{
-			return;
-		}
-	}
-
-#ifdef __GNUC__
-	__asm__ __volatile__("sti");
-#else 
-	asm("sti");
-#endif /* __GNUC__ */
-
-	if (!ExtendedEnabled)
-	{
-		RESET_IOPL();
-	}
 	return;
 }

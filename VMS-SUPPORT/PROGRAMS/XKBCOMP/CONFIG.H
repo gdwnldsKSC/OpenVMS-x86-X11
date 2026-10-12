@@ -1,0 +1,7 @@
+#ifndef VMS_XKBCOMP_CONFIG_H
+#define VMS_XKBCOMP_CONFIG_H
+
+#define HAVE_STRDUP 1
+#define HAVE_STRCASECMP 1
+
+#endif

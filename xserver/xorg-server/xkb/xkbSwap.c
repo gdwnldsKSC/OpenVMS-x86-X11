@@ -30,8 +30,6 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "stdio.h"
 #include <X11/X.h>
-#define	NEED_EVENTS
-#define	NEED_REPLIES
 #include <X11/Xproto.h>
 #include "misc.h"
 #include "inputstr.h"
@@ -129,7 +127,7 @@ register int n;
 	    dataLeft-= (size*2);
 	}
 	if (dataLeft>2) {
-	    ErrorF("Extra data (%d bytes) after SelectEvents\n",dataLeft);
+	    ErrorF("[xkb] Extra data (%d bytes) after SelectEvents\n",dataLeft);
 	    return BadLength;
 	}
     }

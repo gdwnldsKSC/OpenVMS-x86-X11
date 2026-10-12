@@ -6,14 +6,21 @@
 #include "apm.h"
 #include "xf86cmap.h"
 #include "shadowfb.h"
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
 #include "xf86Resources.h"
-#include "xf86int10.h"
 #include "xf86RAC.h"
+#endif
+#include "xf86int10.h"
 #include "vbe.h"
 
 #include "opaque.h"
+#ifdef HAVE_XEXTPROTO_71
+#include <X11/extensions/dpmsconst.h>
+#else
 #define DPMS_SERVER
 #include <X11/extensions/dpms.h>
+#endif
+
 
 #define APM_VERSION		4000
 #define APM_NAME		"APM"
@@ -53,9 +60,10 @@ static void	ApmDisplayPowerManagementSet(ScrnInfoPtr pScrn,
 					     int flags);
 static void	ApmProbeDDC(ScrnInfoPtr pScrn, int index);
 
-
+#ifdef XF86RUSH
 int ApmPixmapIndex = -1;
 static unsigned long ApmGeneration = 0;
+#endif
 
 _X_EXPORT DriverRec APM = {
 	APM_VERSION,
@@ -81,10 +89,12 @@ static PciChipsets ApmPciChipsets[] = {
     { -1,			-1,		RES_UNDEFINED }
 };
 
+#ifdef HAVE_ISA
 static IsaChipsets ApmIsaChipsets[] = {
     { PCI_CHIP_AP6422,	RES_EXCLUSIVE_VGA},
     {-1,		RES_UNDEFINED}
 };
+#endif
 
 typedef enum {
     OPTION_SET_MCLK,
@@ -131,102 +141,6 @@ static const OptionInfoRec ApmOptions[] =
 	{0}, FALSE}
 };
 
-/*
- * List of symbols from other modules that this module references.  This
- * list is used to tell the loader that it is OK for symbols here to be
- * unresolved providing that it hasn't been told that they haven't been
- * told that they are essential via a call to xf86LoaderReqSymbols() or
- * xf86LoaderReqSymLists().  The purpose is this is to avoid warnings about
- * unresolved symbols that are not required.
- */
-
-static const char *vgahwSymbols[] = {
-    "vgaHWBlankScreen",
-    "vgaHWCursor",
-    "vgaHWFreeHWRec",
-    "vgaHWGetHWRec",
-    "vgaHWGetIOBase",
-    "vgaHWInit",
-    "vgaHWLock",
-    "vgaHWMapMem",
-    "vgaHWProtect",
-    "vgaHWRestore",
-    "vgaHWSave",
-    "vgaHWSetMmioFuncs",
-    "vgaHWUnlock",
-    NULL
-};
-
-static const char *xaaSymbols[] = {
-    "XAACreateInfoRec",
-    "XAACursorInfoRec",
-    "XAACursorInit",
-    "XAADestroyInfoRec",
-    "XAAGlyphScanlineFuncLSBFirst",
-    "XAAInit",
-    "XAAReverseBitOrder",
-    "XAAStippleScanlineFuncMSBFirst",
-    NULL
-};
-
-static const char *ramdacSymbols[] = {
-    "xf86CreateCursorInfoRec",
-    "xf86DestroyCursorInfoRec",
-    "xf86InitCursor",
-    NULL
-};
-
-#ifdef XFree86LOADER
-static const char *vbeSymbols[] = {
-    "VBEInit",
-    "vbeDoEDID",
-    "vbeFree",
-    NULL
-};
-#endif
-
-static const char *ddcSymbols[] = {
-    "xf86DoEDID_DDC1",
-    "xf86DoEDID_DDC2",
-    "xf86PrintEDID",
-    NULL
-};
-
-static const char *i2cSymbols[] = {
-    "xf86CreateI2CBusRec",
-    "xf86I2CBusInit",
-    NULL
-};
-
-static const char *shadowSymbols[] = {
-    "ShadowFBInit",
-    NULL
-};
-
-#ifdef XFree86LOADER
-static const char *miscfbSymbols[] = {
-#ifdef HAVE_XF1BPP
-    "xf1bppScreenInit",
-#endif
-#ifdef HAVE_XF4BPP
-    "xf4bppScreenInit",
-#endif
-    NULL
-};
-#endif
-
-static const char *fbSymbols[] = {
-    "fbPictureInit",
-    "fbScreenInit",
-    NULL
-};
-
-static const char *int10Symbols[] = {
-    "xf86Free10",
-    "xf86InitInt10",
-    NULL
-};
-
 #ifdef XFree86LOADER
 
 static XF86ModuleVersionInfo apmVersRec = {
@@ -258,11 +172,6 @@ apmSetup(pointer module, pointer opts, int *errmaj, int *errmain)
     if (!setupDone) {
 	setupDone = TRUE;
 	xf86AddDriver(&APM, module, 0);
-
-	LoaderRefSymLists(vgahwSymbols, fbSymbols, xaaSymbols, 
-			  miscfbSymbols, ramdacSymbols, vbeSymbols,
-			  ddcSymbols, i2cSymbols, shadowSymbols, 
-			  int10Symbols, NULL);
 
 	return (pointer)1;
     }
@@ -327,6 +236,7 @@ ApmAvailableOptions(int chipid, int busid)
     return ApmOptions;
 }
 
+#ifdef HAVE_ISA
 static int
 ApmFindIsaDevice(GDevPtr dev)
 {
@@ -375,6 +285,7 @@ ApmFindIsaDevice(GDevPtr dev)
 
     return apmChip;
 }
+#endif
 
 static void
 ApmAssignFPtr(ScrnInfoPtr pScrn)
@@ -446,6 +357,7 @@ ApmProbe(DriverPtr drv, int flags)
 	}
     }
 
+#ifdef HAVE_ISA
     /* Check for non-PCI cards */
     numUsed = xf86MatchIsaInstances(APM_NAME, ApmChipsets,
 			ApmIsaChipsets, drv, ApmFindIsaDevice, DevSections,
@@ -466,6 +378,8 @@ ApmProbe(DriverPtr drv, int flags)
 	    }
 	}
     }
+#endif
+
     xfree(DevSections);
     return foundScreen;
 }
@@ -575,8 +489,6 @@ ApmPreInit(ScrnInfoPtr pScrn, int flags)
     /* The vgahw module should be allocated here when needed */
     if (!xf86LoadSubModule(pScrn, "vgahw"))
 	return FALSE;
-
-    xf86LoaderReqSymLists(vgahwSymbols, NULL);
 
     /*
      * Allocate a vgaHWRec
@@ -846,9 +758,7 @@ ApmPreInit(ScrnInfoPtr pScrn, int flags)
 	       (unsigned long)pApm->LinAddress);
 
     if (xf86LoadSubModule(pScrn, "ddc")) {
-	xf86LoaderReqSymLists(ddcSymbols, NULL);
 	if (xf86LoadSubModule(pScrn, "i2c")) {
-	    xf86LoaderReqSymLists(i2cSymbols, NULL);
 	    pApm->I2C = TRUE;
 	}
     }
@@ -874,13 +784,13 @@ ApmPreInit(ScrnInfoPtr pScrn, int flags)
     if (xf86LoadSubModule(pScrn, "int10")) {
 	void	*ptr;
 
-	xf86LoaderReqSymLists(int10Symbols, NULL);
 	xf86DrvMsg(pScrn->scrnIndex,X_INFO,"initializing int10\n");
 	ptr = xf86InitInt10(pEnt->index);
 	if (ptr)
 	    xf86FreeInt10(ptr);
     }
 
+#ifndef XSERVER_LIBPCIACCESS
     xf86RegisterResources(pEnt->index, NULL, ResNone);
     xf86SetOperatingState(resVga, pEnt->index, ResDisableOpr);
     pScrn->racMemFlags = 0;	/* For noLinear, access to 0xA0000 */
@@ -888,7 +798,7 @@ ApmPreInit(ScrnInfoPtr pScrn, int flags)
 	pScrn->racIoFlags = 0;
     else
 	pScrn->racIoFlags = RAC_COLORMAP | RAC_VIEWPORT;
-
+#endif
     if (pEnt->device->videoRam != 0) {
 	pScrn->videoRam = pEnt->device->videoRam;
 	from = X_CONFIG;
@@ -974,8 +884,10 @@ ApmPreInit(ScrnInfoPtr pScrn, int flags)
 	}
 	if (0 && !MonInfo)
 	    MonInfo = xf86DoEDID_DDC1(pScrn->scrnIndex,vgaHWddc1SetSpeed,ddc1Read);
-	if (MonInfo)
+	if (MonInfo) {
 	    xf86PrintEDID(MonInfo);
+	    xf86SetDDCproperties(pScrn, MonInfo);
+	}
 	pScrn->monitor->DDC = MonInfo;
     }
 
@@ -1166,7 +1078,7 @@ ApmPreInit(ScrnInfoPtr pScrn, int flags)
 	req = "xf1bppScreenInit";
 	break;
 #endif
-#ifndef HAVE_XF4BPP
+#ifdef HAVE_XF4BPP
     case 4:
 	mod = "xf4bpp";
 	req = "xf4bppScreenInit";
@@ -1185,21 +1097,12 @@ ApmPreInit(ScrnInfoPtr pScrn, int flags)
 	return FALSE;
     }
 
-    if (mod) {
-	if (req) {
-	    xf86LoaderReqSymbols(req, NULL);
-	} else {
-	    xf86LoaderReqSymLists(fbSymbols, NULL);
-	}
-    }
-
     /* Load XAA if needed */
     if (!pApm->NoAccel) {
 	if (!xf86LoadSubModule(pScrn, "xaa")) {
 	    ApmFreeRec(pScrn);
 	    return FALSE;
 	}
-	xf86LoaderReqSymLists(xaaSymbols, NULL);
     }
 
     /* Load ramdac if needed */
@@ -1208,7 +1111,6 @@ ApmPreInit(ScrnInfoPtr pScrn, int flags)
 	    ApmFreeRec(pScrn);
 	    return FALSE;
 	}
-	xf86LoaderReqSymLists(ramdacSymbols, NULL);
     }
 
     /* Load shadowfb if needed */
@@ -1217,7 +1119,6 @@ ApmPreInit(ScrnInfoPtr pScrn, int flags)
 	    ApmFreeRec(pScrn);
 	    return FALSE;
 	}
-	xf86LoaderReqSymLists(shadowSymbols, NULL);
     }
 
     pApm->CurrentLayout.displayWidth	= pScrn->virtualX;
@@ -1998,7 +1899,7 @@ ApmScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     miSetPixmapDepths();
 
     switch (pScrn->bitsPerPixel) {
-#ifndef HAVE_XF1BPP
+#ifdef HAVE_XF1BPP
     case 1:
 	ret = xf1bppScreenInit(pScreen, FbBase,
 			pScrn->virtualX, pScrn->virtualY,
@@ -2120,6 +2021,7 @@ ApmScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	xf86ShowUnusedOptions(pScrn->scrnIndex, pScrn->options);
     }
 
+#ifdef XF86RUSH
     if (ApmGeneration != serverGeneration) {
 	if ((ApmPixmapIndex = AllocatePixmapPrivateIndex()) < 0)
 	    return FALSE;
@@ -2128,6 +2030,7 @@ ApmScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     if (!AllocatePixmapPrivate(pScreen, ApmPixmapIndex, sizeof(ApmPixmapRec)))
 	return FALSE;
+#endif
 
     /* Done */
     return TRUE;

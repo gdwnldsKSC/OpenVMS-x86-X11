@@ -35,7 +35,7 @@ URL="http://www.x-docs.org/XKB/XKBproto.pdf"
 >) at least
 to clarify for himself some xkb-specific terms used in this document
 and elsewhere in xkb configuration. Also it shows wise to understand
-how the X server and a client digest their keyboard inputs 
+how the X server and a client digest their keyboard inputs
 (with and without xkb).
 </Para>
 
@@ -43,7 +43,7 @@ how the X server and a client digest their keyboard inputs
 A useful source is also <ULink
 URL="http://www.tsu.ru/~pascal/en/xkb"
 >Ivan  Pascal's text about xkb configuration</ULink
-> often referenced throughout this 
+> often referenced throughout this
 document.
 </Para>
 
@@ -65,10 +65,10 @@ file.
 
 <Para>
 This compiled configuration file is prepared by the program <Literal remap="tt">xkbcomp</Literal>
-which behaves altogether as an ordinary compiler (see <Literal remap="tt">man xkbcomp</Literal>). 
+which behaves altogether as an ordinary compiler (see <Literal remap="tt">man xkbcomp</Literal>).
 Its input are human readable xkb configuration files which are verified and
 then composed into a useful xkb configuration. Users don't need to mess with
-<Literal remap="tt">xkbcomp</Literal> themselves, for them it is invisible. Usually, it is started 
+<Literal remap="tt">xkbcomp</Literal> themselves, for them it is invisible. Usually, it is started
 upon X server startup.
 </Para>
 
@@ -83,25 +83,25 @@ main modules:
 <Para>
 Tables that defines translation from keyboard scan codes into reasonable
 symbolic names, maximum, minimum legal keycodes, symbolic aliases and
-description of physically present LED-indicators. The primary sence of 
-this component is to allow definitions of maps of symbols (see below) 
-to be independent of physical keyboard scancodes. There are two main 
-naming conventions for symbolic names (always four bytes long): 
+description of physically present LED-indicators. The primary sence of
+this component is to allow definitions of maps of symbols (see below)
+to be independent of physical keyboard scancodes. There are two main
+naming conventions for symbolic names (always four bytes long):
 
 <ItemizedList>
 <ListItem>
 
 <Para>
- names which express some traditional meaning like 
-<Literal remap="tt">&lt;SPCE&gt;</Literal> (stands for space bar) or 
+ names which express some traditional meaning like
+<Literal remap="tt">&lt;SPCE&gt;</Literal> (stands for space bar) or
 </Para>
 </ListItem>
 <ListItem>
 
 <Para>
- names which express some relative positioning on a keyboard, for 
-example <Literal remap="tt">&lt;AE01&gt;</Literal> (an exclamation mark on US keyboards), on 
-the right there are keys <Literal remap="tt">&lt;AE02&gt;</Literal>, <Literal remap="tt">&lt;AE03&gt;</Literal> 
+ names which express some relative positioning on a keyboard, for
+example <Literal remap="tt">&lt;AE01&gt;</Literal> (an exclamation mark on US keyboards), on
+the right there are keys <Literal remap="tt">&lt;AE02&gt;</Literal>, <Literal remap="tt">&lt;AE03&gt;</Literal>
 etc.
 </Para>
 </ListItem>
@@ -109,6 +109,7 @@ etc.
 </ItemizedList>
 
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>Types</Term>
@@ -118,6 +119,7 @@ Types describe how the produced key is changed by active modifiers (like
 Shift, Control, Alt, ...). There are several predefined types which
 cover most of used combinations.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>Compat</Term>
@@ -128,6 +130,7 @@ compat component you can assign various actions (elaborately described
 in xkb specification) to key events. This is also the place where
 LED-indicators behaviour is defined.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>Symbols</Term>
@@ -139,6 +142,7 @@ symbolic name, see above). There may be defined more than one value
 for each key and then it depends on a key type and on modifiers state
 (respective compat component) which value will be the resulting one.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>Geometry</Term>
@@ -147,6 +151,7 @@ for each key and then it depends on a key type and on modifiers state
 Geometry files aren't used by xkb itself but they may be used by some
 external programs to depict a keyboard image.
 </Para>
+</ListItem>
 </VarListEntry>
 </VariableList>
 All these components have the files located in xkb configuration tree
@@ -203,7 +208,7 @@ concepts and used tricks.
 <Title>Levels And Groups</Title>
 
 <Para>
-Since XFree86 4.3.0 and X11R6.7.0 you can use <Emphasis remap="bf">multi-layout</Emphasis> concept of xkb 
+Since XFree86 4.3.0 and X11R6.7.0 you can use <Emphasis remap="bf">multi-layout</Emphasis> concept of xkb
 configuration.
 Though it is still in boundaries of xkb protocol and general ideas, the
 keymap designer must obey new rules when creating new maps. In exchange
@@ -230,7 +235,7 @@ modifiers so it its row has only one column defined.
 
 <Para>
 Note that in XKB there is no prior assumption that certain modifiers are bound
-to certain columns. By editing proper files (see <XRef LinkEnd="keytypes">) this 
+to certain columns. By editing proper files (see <XRef LinkEnd="keytypes">) this
 mapping can be changed as well.
 </Para>
 
@@ -243,8 +248,8 @@ for? The group is not very useful unless you intend to use more than one
 logically different set of symbols (like more than one alphabet) defined in a
 single mapping table. But then, the group has a natural meaning - each symbol
 set has its own group and changing it means selecting a different one.
-XKB approach allows up to four different groups. The columns inside each group 
-are called (shift) levels. The X server knows the current group and reports it 
+XKB approach allows up to four different groups. The columns inside each group
+are called (shift) levels. The X server knows the current group and reports it
 together with modifier set and with a keycode in key events.
 </Para>
 
@@ -265,8 +270,8 @@ tables - groups (logically different symbol sets)
 <ListItem>
 
 <Para>
- for each group of a keycode XKB keyboard map contains some columns 
-- shift levels (values reached by combinations of Shift, Ctrl, Alt, ... 
+ for each group of a keycode XKB keyboard map contains some columns
+- shift levels (values reached by combinations of Shift, Ctrl, Alt, ...
 modifiers)
 </Para>
 </ListItem>
@@ -285,7 +290,7 @@ modifiers)
 <ListItem>
 
 <Para>
- the current group number is tracked by X server 
+ the current group number is tracked by X server
 </Para>
 </ListItem>
 
@@ -301,7 +306,7 @@ four different symbol sets where each of them would reside in its own group.
 
 <Para>
 The multi-layout concept provides a facility to manipulate xkb groups
-and symbol definitions in a way that allows almost arbitrary composition of 
+and symbol definitions in a way that allows almost arbitrary composition of
 predefined symbol tables. To keep it fully functional you have to:
 
 <ItemizedList>
@@ -330,7 +335,7 @@ behaviour
 <Sect1>
 <Title>Defining New Layouts</Title>
 
-<!-- 
+<!--
   TODO: It may be better to merge IP01 docs and this guide.
 -->
 
@@ -346,7 +351,7 @@ addressed by XKB extension.
 See <ULink
 URL="http://www.tsu.ru/~pascal/en/xkb/gram-common.html"
 >Common  notes about XKB configuration files language</ULink
-> for more precise explanation of 
+> for more precise explanation of
 syntax of xkb configuration files.
 </Para>
 
@@ -366,7 +371,7 @@ want to use on of four predefined latin alphabet layouts.
 
 <Para>
 Okay, let's assume you want extend an existing keymap and you want to override
-a few keys. Let's take a simple U.K. keyboard as an example (defined in 
+a few keys. Let's take a simple U.K. keyboard as an example (defined in
 <Literal remap="tt">pc/gb</Literal>):
 </Para>
 
@@ -394,24 +399,24 @@ xkb_symbols "basic" {
 </Para>
 
 <!--
-    TODO: ref IP01 file syntax TODO: some words about symbolic names like 
+    TODO: ref IP01 file syntax TODO: some words about symbolic names like
     'sterling' and also about
      TODO: unicode characters (for non-latin alphabets),
      TODO: ref to compatibility symbolic names vs. unicode
 -->
 
 <Para>
-It defines a new layout in <Literal remap="tt">basic</Literal> variant as an extension of common 
+It defines a new layout in <Literal remap="tt">basic</Literal> variant as an extension of common
 latin alphabet layout. The layout (symbol set) name is set to "Great Britain".
-Then there are redefinitions of a few keycodes and a modifiers binding. As you 
-can see the number of shift levels is the same for <Literal remap="tt">&lt;AE02&gt;</Literal>, 
-<Literal remap="tt">&lt;AE03&gt;</Literal>, <Literal remap="tt">&lt;AC11&gt;</Literal>, <Literal remap="tt">&lt;TLDE&gt;</Literal> and 
-<Literal remap="tt">&lt;BKSL&gt;</Literal> keys but it differs from number of shift levels of 
+Then there are redefinitions of a few keycodes and a modifiers binding. As you
+can see the number of shift levels is the same for <Literal remap="tt">&lt;AE02&gt;</Literal>,
+<Literal remap="tt">&lt;AE03&gt;</Literal>, <Literal remap="tt">&lt;AC11&gt;</Literal>, <Literal remap="tt">&lt;TLDE&gt;</Literal> and
+<Literal remap="tt">&lt;BKSL&gt;</Literal> keys but it differs from number of shift levels of
 <Literal remap="tt">&lt;RALT&gt;</Literal>.
 </Para>
 
 <Para>
-Note that the <Literal remap="tt">&lt;RALT&gt;</Literal> key itself is a binding key for Mod5 and 
+Note that the <Literal remap="tt">&lt;RALT&gt;</Literal> key itself is a binding key for Mod5 and
 that it
 serves like a shift modifier for LevelThree, together with Shift
 as a multi-key. It is a good habit to respect this rule in a new similar
@@ -420,7 +425,7 @@ layout.
 
 <Para>
 Okay, you could now define more variants of your new layout besides
-<Literal remap="tt">basic</Literal> simply by including (augmenting/overriding/...) the basic 
+<Literal remap="tt">basic</Literal> simply by including (augmenting/overriding/...) the basic
 definition and altering what may be needed.
 </Para>
 
@@ -430,19 +435,19 @@ definition and altering what may be needed.
 <Title>Key Types</Title>
 
 <Para>
-The differences in the number of columns (shift levels) are caused by 
-a different types of keys (see the types definition in section basics).  Most 
-keycodes have implicitly set the keytype in the included 
-<quote><Literal remap="tt">pc/latin</Literal></quote> file to 
-<quote><Literal remap="tt">FOUR&lowbar;LEVEL&lowbar;ALPHABETIC</Literal></quote>. The only exception is 
-<Literal remap="tt">&lt;RALT&gt;</Literal> keycode which is explicitly set 
+The differences in the number of columns (shift levels) are caused by
+a different types of keys (see the types definition in section basics).  Most
+keycodes have implicitly set the keytype in the included
+<quote><Literal remap="tt">pc/latin</Literal></quote> file to
+<quote><Literal remap="tt">FOUR&lowbar;LEVEL&lowbar;ALPHABETIC</Literal></quote>. The only exception is
+<Literal remap="tt">&lt;RALT&gt;</Literal> keycode which is explicitly set
 <quote><Literal remap="tt">TWO&lowbar;LEVEL</Literal></quote> keytype.
 </Para>
 
 <Para>
 All those names refer to pre-defined shift level schemes. Usually you can
 choose a suitable shift level scheme from <Literal remap="tt">default</Literal> types scheme list
-in proper xkb component's subdirectory. 
+in proper xkb component's subdirectory.
 </Para>
 
 <Para>
@@ -456,6 +461,7 @@ The most used schemes are:
 The key does not depend on any modifiers. The symbol from first level
 is always chosen.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>TWO&lowbar;LEVEL</Term>
@@ -468,6 +474,7 @@ system-specific capitalization rules. If both Shift+Lock modifier apply the
 symbol from the second level is taken and capitalization rules are applied
 (and usually have no effect).
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>ALPHABETIC</Term>
@@ -481,6 +488,7 @@ modifier apply the symbol from the first level is taken and no
 capitalization rules applied. This is often called shift-cancels-caps
 behaviour.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>THREE&lowbar;LEVEL</Term>
@@ -494,6 +502,7 @@ the resulting level. Only Shift and LevelThree are taken into that
 consideration. If the Lock modifier is active capitalization rules
 are applied on the resulting symbol.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>FOUR&lowbar;LEVEL</Term>
@@ -502,6 +511,7 @@ are applied on the resulting symbol.
 Is the same as THREE&lowbar;LEVEL but unlike LEVEL&lowbar;THREE if both Shift+LevelThree
 modifiers apply the symbol is taken from the fourth level.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>FOUR&lowbar;LEVEL&lowbar;ALPHABETIC</Term>
@@ -513,6 +523,7 @@ third level is taken and the capitalization rules are applied.
 If Lock+Shift+LevelThree apply the symbol from the third level is taken
 and no capitalization rules are applied.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>KEYPAD</Term>
@@ -520,11 +531,12 @@ and no capitalization rules are applied.
 <Para>
 As the name suggest this scheme is primarily used for numeric keypads.
 The scheme considers two modifiers - Shift and NumLock. If none
-of modifiers applies the symbol from the first level is taken. If either 
+of modifiers applies the symbol from the first level is taken. If either
 Shift or NumLock modifiers apply the symbol from the second level is taken.
 If both Shift+NumLock modifiers apply the symbol from the first level
 is taken. Again, shift-cancels-caps variant.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>FOUR&lowbar;LEVEL&lowbar;KEYPAD</Term>
@@ -536,6 +548,7 @@ If Shift+LevelThree or NumLock+LevelThree apply the symbol from the fourth
 level is taken. If all Shift+NumLock+LevelThree modifiers apply the symbol
 from the third level is taken. This also, shift-cancels-caps variant.
 </Para>
+</ListItem>
 </VarListEntry>
 </VariableList>
 </Para>
@@ -552,15 +565,17 @@ It is similar to TWO&lowbar;LEVEL scheme but it considers the Control
 modifier rather than Shift. That means, the symbol from the second level
 is chosen by Control rather than by Shift.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>PC&lowbar;SYSRQ</Term>
 <ListItem>
 <Para>
-It is similar to TWO&lowbar;LEVEL scheme but it considers the Alt modifier rather 
+It is similar to TWO&lowbar;LEVEL scheme but it considers the Alt modifier rather
 than Shift. That means, the symbol from the second level
 is chosen by Alt rather than by Shift.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>CTRL+ALT</Term>
@@ -571,6 +586,7 @@ values. If only one modifier (Alt or Control) applies the symbol
 from the first level is chosen. Only if both Alt+Control modifiers apply
 the symbol from the second level is chosen.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term>SHIFT+ALT</Term>
@@ -581,13 +597,14 @@ If only one modifier (Alt or Shift) applies the symbol
 from the first level is chosen. Only if both Alt+Shift modifiers apply
 the symbol from the second level is chosen.
 </Para>
+</ListItem>
 </VarListEntry>
 </VariableList>
 </Para>
 
 <Para>
-If needed, special <Literal remap="tt">caps</Literal> schemes may be used. They redefine the 
-standard behaviour of all <Literal remap="tt">*ALPHABETIC</Literal> types. The layouts (maps of 
+If needed, special <Literal remap="tt">caps</Literal> schemes may be used. They redefine the
+standard behaviour of all <Literal remap="tt">*ALPHABETIC</Literal> types. The layouts (maps of
 symbols) with keys defined in respective types then automatically change
 their behaviour accordingly. Possible redefinitions are:
 
@@ -620,7 +637,7 @@ shift&lowbar;nocancel
 </ItemizedList>
 
 None of these schemes should be used directly. They are defined merely
-for <Literal remap="tt">'caps:'</Literal> xkb options (used to globally change the layouts 
+for <Literal remap="tt">'caps:'</Literal> xkb options (used to globally change the layouts
 behaviour).
 </Para>
 
@@ -634,11 +651,11 @@ create a new one.
 
 <Para>
 When the XKB software deals with a separate type description it gets
-a complete list of modifiers that should be taken into account from the 
+a complete list of modifiers that should be taken into account from the
 <Literal remap="tt">'modifiers=&lt;list of modifiers&gt;'</Literal> list and expects that a set
 of <Literal remap="tt">'map[&lt;combination of modifiers&gt;]=&lt;list of modifiers&gt;'</Literal>
-instructions that contain the mapping for each combination of modifiers 
-mentioned in that list. Modifiers that are not explicitly listed are NOT taken 
+instructions that contain the mapping for each combination of modifiers
+mentioned in that list. Modifiers that are not explicitly listed are NOT taken
 into account
 when the resulting shift level is computed.
 If some combination is omitted the program (subroutine) should choose the first
@@ -656,9 +673,9 @@ type "..." {
 };
 </Screen>
 
-In this case the map statements for <Literal remap="tt">ModTwo</Literal> only and 
-<Literal remap="tt">ModOne+ModTwo</Literal> are omitted.  It means that if the <Literal remap="tt">ModTwo</Literal> is 
-active the subroutine can't found explicit mapping for such combination an will 
+In this case the map statements for <Literal remap="tt">ModTwo</Literal> only and
+<Literal remap="tt">ModOne+ModTwo</Literal> are omitted.  It means that if the <Literal remap="tt">ModTwo</Literal> is
+active the subroutine can't found explicit mapping for such combination an will
 use the <Emphasis>default level</Emphasis> i.e. Level1.
 </Para>
 
@@ -673,23 +690,23 @@ type "..." {
 };
 </Screen>
 
-the ModTwo will not be taken into account and the resulting level depends on 
-the ModOne state only. That means, ModTwo alone produces the Level1 but the 
+the ModTwo will not be taken into account and the resulting level depends on
+the ModOne state only. That means, ModTwo alone produces the Level1 but the
 combination ModOne+ModTwo produces the Level2 as well as ModOne alone.
 </Para>
 
 <Para>
 What does it mean if the second modifier is the Lock? It means that in
-the first case (the Lock itself is included in the list of modifiers but 
-combinations with this modifier aren't mentioned in the map statements) 
-the internal capitalization rules will be applied to the symbol from the first 
+the first case (the Lock itself is included in the list of modifiers but
+combinations with this modifier aren't mentioned in the map statements)
+the internal capitalization rules will be applied to the symbol from the first
 level. But in the second case the capitalization will be applied to the symbol
 chosen accordingly to he first modifier - and this can be the symbol from the
 first as well as from the second level.
 </Para>
 
 <Para>
-Usually, all modifiers introduced in <Literal remap="tt">'modifiers=&lt;list of modifiers&gt;'</Literal> list are used for shift level calculation and then 
+Usually, all modifiers introduced in <Literal remap="tt">'modifiers=&lt;list of modifiers&gt;'</Literal> list are used for shift level calculation and then
 discarded. Sometimes this is not desirable. If you want to use a modifier
 for shift level calculation but you don't want to discard it, you may
 list in '<Literal remap="tt">preserve[&lt;combination of modifiers&gt;]=&lt;list of modifiers&gt;'</Literal>. That means, for a given combination all listed modifiers
@@ -699,8 +716,8 @@ it has been used for a shift level calculation or not.
 </Para>
 
 <Para>
-Any key type description can use both real and virtual modifiers. Since real 
-modifiers always have standard names it is not necessary to explicitly declare  
+Any key type description can use both real and virtual modifiers. Since real
+modifiers always have standard names it is not necessary to explicitly declare
 them. Virtual modifiers can have arbitrary names and can be declared (prior
 using them) directly in key type definition:
 
@@ -708,7 +725,7 @@ using them) directly in key type definition:
 virtual_modifiers &lt;comma-separated list of modifiers&gt;  ;
 </Screen>
 
-as seen in for example <Literal remap="tt">basic</Literal>, <Literal remap="tt">pc</Literal> or <Literal remap="tt">mousekeys</Literal> key 
+as seen in for example <Literal remap="tt">basic</Literal>, <Literal remap="tt">pc</Literal> or <Literal remap="tt">mousekeys</Literal> key
 type definitions.
 </Para>
 
@@ -734,7 +751,7 @@ into predefined templates.
 </Para>
 
 <Para>
-A pattern in a rules file (often located in 
+A pattern in a rules file (often located in
 <Literal remap="tt">/usr/lib/X11/xkb/rules</Literal>) can be parameterized with four other arguments:
 <Literal remap="tt">Model</Literal>, <Literal remap="tt">Layout</Literal>, <Literal remap="tt">Variant</Literal> and <Literal remap="tt">Options</Literal>.
 For most cases parameters <Literal remap="tt">model</Literal> and <Literal remap="tt">layout</Literal> should
@@ -742,8 +759,8 @@ be sufficient for choosing a functional keyboard mapping.
 </Para>
 
 <Para>
-The rules file itself is composed of pattern lines and lines with rules. The pattern line starts with an exclamation mark ('<Literal remap="tt">!</Literal>') 
-and describes how will the xkb interpret the following lines (rules). A sample 
+The rules file itself is composed of pattern lines and lines with rules. The pattern line starts with an exclamation mark ('<Literal remap="tt">!</Literal>')
+and describes how will the xkb interpret the following lines (rules). A sample
 rules file looks like this:
 
 <Screen>
@@ -751,7 +768,7 @@ rules file looks like this:
   macintosh_old	                =	macintosh
   ...
   *		                =	xorg
-  
+
 ! model		                =	symbols
   hp		                =	+inet(&percnt;m)
   microsoftpro	                =	+inet(&percnt;m)
@@ -760,11 +777,11 @@ rules file looks like this:
 ! model	    layout[1]	        =	symbols
   macintosh	us	        =	macintosh/us&percnt;(v[1])
   *             *               =       pc/pc(&percnt;m)+pc/&percnt;l[1]&percnt;(v[1])
-  
+
 ! model     layout[2]	        =	symbols
   macintosh     us              =	+macintosh/us[2]&percnt;(v[2]):2
   *		*               =	+pc/&percnt;l[2]&percnt;(v[2]):2
-  
+
 ! option			=	types
   caps:internal			=	+caps(internal)
   caps:internal_nocancel	=	+caps(internal_nocancel)
@@ -774,36 +791,36 @@ rules file looks like this:
 
 <Para>
 Each rule defines what certain combination of values on the left side
-of equal sign ('<Literal remap="tt">=</Literal>') results in. For example a (keyboard) model 
+of equal sign ('<Literal remap="tt">=</Literal>') results in. For example a (keyboard) model
 <Literal remap="tt">macintosh&lowbar;old</Literal> instructs xkb to take definitions of keycodes
 from file <Literal remap="tt">keycodes/macintosh</Literal> while the rest of models
 (represented by a wild card '<Literal remap="tt">*</Literal>') instructs it to take them from
 file <Literal remap="tt">keycodes/xorg</Literal>. The wild card represents all possible
 values on the left side which were not found in any of the previous rules.
-The more specialized (more complete) rules have higher precedence than general 
+The more specialized (more complete) rules have higher precedence than general
 ones, i.e. the more general rules supply reasonable default values.
 </Para>
 
 <Para>
-As you can see some lines contain substitution parameters - the parameters 
-preceded by the percent sign ('<Literal remap="tt">&percnt;</Literal>'). The first alphabetical character 
-after the percent sign expands to the value which has been found on the left 
-side. For example <Literal remap="tt">+&percnt;l&percnt;(v)</Literal> expands into <Literal remap="tt">+cz(bksl)</Literal> if the 
-respective values on the left side were <Literal remap="tt">cz</Literal> layout in its <Literal remap="tt">bksl</Literal> 
-variant. More, if the layout resp. variant  parameter is followed by a pair of 
-brackets ('<Literal remap="tt">[</Literal>', '<Literal remap="tt">]</Literal>') it means that xkb should <Emphasis>place the 
+As you can see some lines contain substitution parameters - the parameters
+preceded by the percent sign ('<Literal remap="tt">&percnt;</Literal>'). The first alphabetical character
+after the percent sign expands to the value which has been found on the left
+side. For example <Literal remap="tt">+&percnt;l&percnt;(v)</Literal> expands into <Literal remap="tt">+cz(bksl)</Literal> if the
+respective values on the left side were <Literal remap="tt">cz</Literal> layout in its <Literal remap="tt">bksl</Literal>
+variant. More, if the layout resp. variant  parameter is followed by a pair of
+brackets ('<Literal remap="tt">[</Literal>', '<Literal remap="tt">]</Literal>') it means that xkb should <Emphasis>place the
 layout resp. variant into specified xkb group</Emphasis>. If the brackets are omitted
 the first group is the default value.
 </Para>
 
 <Para>
-So the second block of rules enhances symbol definitions for some particular 
-keyboard models with extra keys (for internet, multimedia, ...) . Other models 
+So the second block of rules enhances symbol definitions for some particular
+keyboard models with extra keys (for internet, multimedia, ...) . Other models
 are left intact. Similarly, the last block overrides some key type definitions,
-so the common global behaviour ''shift cancels caps'' or ''shift doesn't cancel 
-caps'' can be selected. The rest of rules produces special symbols for each 
-variant <Literal remap="tt">us</Literal> layout of <Literal remap="tt">macintosh</Literal> keyboard and standard pc 
-symbols in appropriate variants as a default. 
+so the common global behaviour ''shift cancels caps'' or ''shift doesn't cancel
+caps'' can be selected. The rest of rules produces special symbols for each
+variant <Literal remap="tt">us</Literal> layout of <Literal remap="tt">macintosh</Literal> keyboard and standard pc
+symbols in appropriate variants as a default.
 </Para>
 
 </Sect2>
@@ -821,12 +838,12 @@ symbols in appropriate variants as a default.
 <Title>Descriptive Files of Rules</Title>
 
 <Para>
-Now you just need to add a detailed description to <Literal remap="tt">&lt;rules&gt;.xml</Literal> 
-description file so the other users (and external programs which often parse 
+Now you just need to add a detailed description to <Literal remap="tt">&lt;rules&gt;.xml</Literal>
+description file so the other users (and external programs which often parse
 this file) know what is your work about.
 </Para>
 
-<!-- 
+<!--
     TODO: format and semantics
 -->
 
@@ -836,14 +853,14 @@ this file) know what is your work about.
 <Para>
 The formerly used descriptive files were named <Literal remap="tt">&lt;rules&gt;.lst</Literal>
 Its structure is very simple and quite self descriptive but such simplicity
-had also some cavities, for example there was no way how to describe local 
-variants of layouts and there were problems with the localization of 
+had also some cavities, for example there was no way how to describe local
+variants of layouts and there were problems with the localization of
 descriptions. To preserve compatibility with some older programs,
 new XML descriptive files can be converted to old format '.lst'.
 </Para>
 
 <Para>
-For each parameter of rules file should be described its meaning. For the rules 
+For each parameter of rules file should be described its meaning. For the rules
 file described above the <Literal remap="tt">.lst</Literal> file could look like:
 
 <Screen>
@@ -862,8 +879,8 @@ file described above the <Literal remap="tt">.lst</Literal> file could look like
 
 ! option
   caps:internal		 uses internal capitalization. Shift cancels Caps
-  caps:internal_nocancel uses internal capitalization. Shift doesn't cancel Caps  
-  
+  caps:internal_nocancel uses internal capitalization. Shift doesn't cancel Caps
+
 </Screen>
 
 </Para>

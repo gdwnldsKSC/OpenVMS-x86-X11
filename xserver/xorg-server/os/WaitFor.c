@@ -92,6 +92,8 @@ SOFTWARE.
 #define GetErrno() errno
 #endif
 
+/* like ffs, but uses fd_mask instead of int as argument, so it works
+   when fd_mask is longer than an int, such as common 64-bit platforms */
 /* modifications by raphael */
 int
 mffs(fd_mask mask)
@@ -109,8 +111,7 @@ mffs(fd_mask mask)
 }
 
 #ifdef DPMSExtension
-#define DPMS_SERVER
-#include <X11/extensions/dpms.h>
+#include <X11/extensions/dpmsconst.h>
 #endif
 
 struct _OsTimerRec {
@@ -155,9 +156,7 @@ WaitForSomething(int *pClientsReady)
     int nready;
     fd_set devicesReadable;
     CARD32 now = 0;
-#ifdef SMART_SCHEDULE
     Bool    someReady = FALSE;
-#endif
 
     FD_ZERO(&clientsReadable);
 
@@ -170,7 +169,6 @@ WaitForSomething(int *pClientsReady)
 	    ProcessWorkQueue();
 	if (XFD_ANYSET (&ClientsWithInput))
 	{
-#ifdef SMART_SCHEDULE
 	    if (!SmartScheduleDisable)
 	    {
 		someReady = TRUE;
@@ -179,13 +177,11 @@ WaitForSomething(int *pClientsReady)
 		wt = &waittime;
 	    }
 	    else
-#endif
 	    {
 		XFD_COPYSET (&ClientsWithInput, &clientsReadable);
 		break;
 	    }
 	}
-#ifdef SMART_SCHEDULE
 	if (someReady)
 	{
 	    XFD_COPYSET(&AllSockets, &LastSelectMask);
@@ -193,7 +189,6 @@ WaitForSomething(int *pClientsReady)
 	}
 	else
 	{
-#endif
         wt = NULL;
 	if (timers)
         {
@@ -215,11 +210,9 @@ WaitForSomething(int *pClientsReady)
 	    }
 	}
 	XFD_COPYSET(&AllSockets, &LastSelectMask);
-#ifdef SMART_SCHEDULE
 	}
 	SmartScheduleStopTimer ();
 
-#endif
 	BlockHandler((pointer)&wt, (pointer)&LastSelectMask);
 	if (NewOutputPending)
 	    FlushAllOutput();
@@ -237,9 +230,7 @@ WaitForSomething(int *pClientsReady)
 	}
 	selecterr = GetErrno();
 	WakeupHandler(i, (pointer)&LastSelectMask);
-#ifdef SMART_SCHEDULE
 	SmartScheduleStartTimer ();
-#endif
 	if (i <= 0) /* An error or timeout occurred */
 	{
 	    if (dispatchException)
@@ -263,7 +254,6 @@ WaitForSomething(int *pClientsReady)
 			strerror(selecterr));
 		}
 	    }
-#ifdef SMART_SCHEDULE
 	    else if (someReady)
 	    {
 		/*
@@ -273,7 +263,6 @@ WaitForSomething(int *pClientsReady)
 		XFD_COPYSET(&ClientsWithInput, &clientsReadable);
 		break;
 	    }
-#endif
 	    if (*checkForInput[0] != *checkForInput[1])
 		return 0;
 
@@ -310,10 +299,8 @@ WaitForSomething(int *pClientsReady)
                         return 0;
 	        }
 	    }
-#ifdef SMART_SCHEDULE
 	    if (someReady)
 		XFD_ORSET(&LastSelectMask, &ClientsWithInput, &LastSelectMask);
-#endif	    
 	    if (AnyClientsWriteBlocked && XFD_ANYSET (&clientsWritable))
 	    {
 		NewOutputPending = TRUE;
@@ -350,7 +337,7 @@ WaitForSomething(int *pClientsReady)
 	    {
 	        int client_priority, client_index;
 
-		curclient = ffs (clientsReadable.fds_bits[i]) - 1;
+		curclient = mffs (clientsReadable.fds_bits[i]) - 1;
 		client_index = /* raphael: modified */
 			ConnectionTranslation[curclient + (i * (sizeof(fd_mask) * 8))];
 #else
@@ -364,7 +351,6 @@ WaitForSomething(int *pClientsReady)
 	    curclient = XFD_FD(&savedClientsReadable, i);
 	    client_index = GetConnectionTranslation(curclient);
 #endif
-#ifdef XSYNC
 		/*  We implement "strict" priorities.
 		 *  Only the highest priority client is returned to
 		 *  dix.  If multiple clients at the same priority are
@@ -391,7 +377,6 @@ WaitForSomething(int *pClientsReady)
 		 *  clients get batched together
 		 */
 		else if (client_priority == highest_priority)
-#endif
 		{
 		    pClientsReady[nready++] = client_index;
 		}
@@ -437,7 +422,7 @@ DoTimer(OsTimerPtr timer, CARD32 now, OsTimerPtr *prev)
 	TimerSet(timer, 0, newTime, timer->callback, timer->arg);
 }
 
-_X_EXPORT OsTimerPtr
+OsTimerPtr
 TimerSet(OsTimerPtr timer, int flags, CARD32 millis, 
     OsTimerCallback func, pointer arg)
 {
@@ -446,7 +431,7 @@ TimerSet(OsTimerPtr timer, int flags, CARD32 millis,
 
     if (!timer)
     {
-	timer = (OsTimerPtr)xalloc(sizeof(struct _OsTimerRec));
+	timer = xalloc(sizeof(struct _OsTimerRec));
 	if (!timer)
 	    return NULL;
     }
@@ -508,7 +493,7 @@ TimerForce(OsTimerPtr timer)
 }
 
 
-_X_EXPORT void
+void
 TimerCancel(OsTimerPtr timer)
 {
     OsTimerPtr *prev;
@@ -525,7 +510,7 @@ TimerCancel(OsTimerPtr timer)
     }
 }
 
-_X_EXPORT void
+void
 TimerFree(OsTimerPtr timer)
 {
     if (!timer)

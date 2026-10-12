@@ -36,16 +36,10 @@
 
 #include "rootlessCommon.h"
 
-#ifdef __APPLE__
-#include <Xplugin.h>
-#endif
-
 Bool RootlessCreateWindow(WindowPtr pWin);
 Bool RootlessDestroyWindow(WindowPtr pWin);
 
-#ifdef SHAPE
 void RootlessSetShape(WindowPtr pWin);
-#endif // SHAPE
 
 Bool RootlessChangeWindowAttributes(WindowPtr pWin, unsigned long vmask);
 Bool RootlessPositionWindow(WindowPtr pWin, int x, int y);
@@ -60,7 +54,7 @@ void RootlessReparentWindow(WindowPtr pWin, WindowPtr pPriorParent);
 void RootlessChangeBorderWidth(WindowPtr pWin, unsigned int width);
 #ifdef __APPLE__
 void RootlessNativeWindowMoved (WindowPtr pWin);
-void RootlessNativeWindowStateChanged (xp_window_id id, unsigned int state); 
+void RootlessNativeWindowStateChanged (WindowPtr pWin, unsigned int state); 
 #endif
 
 #endif

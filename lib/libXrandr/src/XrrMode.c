@@ -54,7 +54,6 @@ XRRCreateMode (Display *dpy, Window window, XRRModeInfo *mode_info)
     XExtDisplayInfo	    *info = XRRFindDisplay(dpy);
     xRRCreateModeReq	    *req;
     xRRCreateModeReply	    rep;
-    long		    channelSize;
 
     RRCheckExtension (dpy, info, None);
 

@@ -30,7 +30,6 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdio.h>
 #include <ctype.h>
-#define	NEED_EVENTS 1
 #include <X11/X.h>
 #include <X11/Xos.h>
 #include <X11/Xproto.h>
@@ -62,7 +61,7 @@ extern int Win32System(const char *cmdline);
 /***====================================================================***/
 
 static char *componentDirs[_XkbListNumComponents] = {
-	"keymap", "keycodes", "types", "compat", "symbols", "geometry"
+	"keycodes", "types", "compat", "symbols", "geometry"
 };
 
 /***====================================================================***/
@@ -192,9 +191,9 @@ char	tmpname[PATH_MAX];
 	in= Popen(buf,"r");
 #else
         if (xkbDebugFlags)
-            DebugF("xkbList executes: %s\n",buf);
+            DebugF("[xkb] xkbList executes: %s\n",buf);
 	if (System(buf) < 0)
-	    ErrorF("Could not invoke keymap compiler\n");
+	    ErrorF("[xkb] Could not invoke keymap compiler\n");
 	else
 	    in= fopen(tmpname, "r");
 #endif
@@ -262,7 +261,7 @@ char	tmpname[PATH_MAX];
 	fclose(in);
     else if ((rval=Pclose(in))!=0) {
 	if (xkbDebugFlags)
-	    ErrorF("xkbcomp returned exit code %d\n",rval);
+	    ErrorF("[xkb] xkbcomp returned exit code %d\n",rval);
     }
 #else
     fclose(in);
@@ -281,9 +280,7 @@ XkbDDXList(DeviceIntPtr	dev,XkbSrvListInfoPtr list,ClientPtr client)
 {
 Status	status;
 
-    status= XkbDDXListComponent(dev,_XkbListKeymaps,list,client);
-    if (status==Success)
-	status= XkbDDXListComponent(dev,_XkbListKeycodes,list,client);
+    status= XkbDDXListComponent(dev,_XkbListKeycodes,list,client);
     if (status==Success)
 	status= XkbDDXListComponent(dev,_XkbListTypes,list,client);
     if (status==Success)

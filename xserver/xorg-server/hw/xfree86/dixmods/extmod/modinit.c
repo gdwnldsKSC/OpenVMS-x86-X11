@@ -47,56 +47,11 @@ static ExtensionModule extensionModules[] = {
 	NULL
     },
 #endif
-#ifdef SHAPE
-    {
-	ShapeExtensionInit,
-	SHAPENAME,
-	&noShapeExtension,
-	NULL,
-	NULL
-    },
-#endif
 #ifdef MULTIBUFFER
     {
 	MultibufferExtensionInit,
 	MULTIBUFFER_PROTOCOL_NAME,
 	&noMultibufferExtension,
-	NULL,
-	NULL
-    },
-#endif
-#ifdef MITMISC
-    {
-	MITMiscExtensionInit,
-	MITMISCNAME,
-	&noMITMiscExtension,
-	NULL,
-	NULL
-    },
-#endif
-#ifdef notyet
-    {
-	XTestExtensionInit,
-	XTestExtensionName,
-	&noTestExtensions,
-	NULL,
-	NULL
-    },
-#endif
-#ifdef BIGREQS
-     {
-	BigReqExtensionInit,
-	XBigReqExtensionName,
-	&noBigReqExtension,
-	NULL,
-	NULL
-     },
-#endif
-#ifdef XSYNC
-    {
-	SyncExtensionInit,
-	SYNC_NAME,
-	&noSyncExtension,
 	NULL,
 	NULL
     },
@@ -110,29 +65,11 @@ static ExtensionModule extensionModules[] = {
 	NULL
     },
 #endif
-#ifdef XCMISC
-    {
-	XCMiscExtensionInit,
-	XCMiscExtensionName,
-	&noXCMiscExtension,
-	NULL,
-	NULL
-    },
-#endif
 #ifdef XF86VIDMODE
     {
 	XFree86VidModeExtensionInit,
 	XF86VIDMODENAME,
 	&noXFree86VidModeExtension,
-	NULL,
-	NULL
-    },
-#endif
-#ifdef XF86MISC
-    {
-	XFree86MiscExtensionInit,
-	XF86MISCNAME,
-	&noXFree86MiscExtension,
 	NULL,
 	NULL
     },
@@ -151,33 +88,6 @@ static ExtensionModule extensionModules[] = {
 	DPMSExtensionInit,
 	DPMSExtensionName,
 	&noDPMSExtension,
-	NULL,
-	NULL
-    },
-#endif
-#ifdef FONTCACHE
-    {
-	FontCacheExtensionInit,
-	FONTCACHENAME,
-	&noFontCacheExtension,
-	NULL,
-	NULL
-    },
-#endif
-#ifdef TOGCUP
-    {
-	XcupExtensionInit,
-	XCUPNAME,
-	&noXcupExtension,
-	NULL,
-	NULL
-    },
-#endif
-#ifdef EVI
-    {
-	EVIExtensionInit,
-	EVINAME,
-	&noEVIExtension,
 	NULL,
 	NULL
     },

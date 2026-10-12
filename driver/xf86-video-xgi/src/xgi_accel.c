@@ -80,6 +80,9 @@ static void Volari_InitCmdQueue(ScrnInfoPtr pScrn) ;
 static void Volari_DisableDualPipe(ScrnInfoPtr pScrn) ;
 static void Volari_DisableCmdQueue(ScrnInfoPtr pScrn) ;
 
+/* Jong 01/07/2008; force to disable 2D */
+extern Bool ForceToDisable2DEngine(ScrnInfoPtr pScrn);
+
 extern int FbDevExist;
 
 #if X_BYTE_ORDER == X_BIG_ENDIAN
@@ -203,14 +206,28 @@ Volari_EnableAccelerator(ScrnInfoPtr pScrn)
     PDEBUG(ErrorF("Volari_EnableAccelerator()\n")) ;
 
     switch (pXGI->Chipset) {
-    case PCI_CHIP_XGIXG40:
-    default:
-        orXGIIDXREG(XGISR, 0x1E,
-                    SR1E_ENABLE_3D_TRANSFORM_ENGINE
-                    | SR1E_ENABLE_2D
-                    | SR1E_ENABLE_3D_AGP_VERTEX_FETCH
-                    | SR1E_ENABLE_3D_COMMAND_PARSER
-                    | SR1E_ENABLE_3D);
+		case PCI_CHIP_XGIXG20:
+		case PCI_CHIP_XGIXG21: /* Jong 01/07/2008; support new XG21 */
+		case PCI_CHIP_XGIXG27:
+		case PCI_CHIP_XGIXG40:
+		default:
+			orXGIIDXREG(XGISR, 0x1E, 
+						SR1E_ENABLE_3D_TRANSFORM_ENGINE
+						| SR1E_ENABLE_2D
+						| SR1E_ENABLE_3D_AGP_VERTEX_FETCH
+						| SR1E_ENABLE_3D_COMMAND_PARSER
+						| SR1E_ENABLE_3D);
+
+			/* Jong 01/07/2008; force to disable 2D */
+			if(pXGI->Chipset == PCI_CHIP_XGIXG21)
+			{
+				if(ForceToDisable2DEngine(pScrn))
+				{
+				   andXGIIDXREG(XGISR, 0x1E, 0xBF) ;
+				}
+			}
+
+			break;
     }
 
 
@@ -243,7 +260,7 @@ Volari_InitCmdQueue(ScrnInfoPtr pScrn)
     w_port = Volari_GetSwWP() ;      /* GuardBand()  Init   */
     r_port = Volari_GetHwRP() ;
 
-    if( pXGI->Chipset == PCI_CHIP_XGIXG20 )
+    if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 ))
     {
         Alignment = 1 ;		/* 64 bits   */
 
@@ -260,7 +277,9 @@ Volari_InitCmdQueue(ScrnInfoPtr pScrn)
 
             pXGI->cmdQueueSize = 128*1024 ; /* reset the command queue */
             pXGI->cmdQueueSizeMask = pXGI->cmdQueueSize - 1 ;
-            if( FbDevExist )
+
+            /* Jong 09/18/2007; bug fixing for ??? */
+            if( FbDevExist && (pXGI->Chipset != PCI_CHIP_XGIXG20 ) && (pXGI->Chipset != PCI_CHIP_XGIXG21 ) && (pXGI->Chipset != PCI_CHIP_XGIXG27 ) )
             {
                 if( pScrn->videoRam < 8*1024 )
                 {
@@ -311,7 +330,9 @@ Volari_InitCmdQueue(ScrnInfoPtr pScrn)
 
             pXGI->cmdQueueSize = 512*1024 ; /* reset the command queue */
             pXGI->cmdQueueSizeMask = pXGI->cmdQueueSize - 1 ;
-            if( FbDevExist )
+
+            /* Jong 09/18/2007; bug fixing for ??? */
+            if( FbDevExist && (pXGI->Chipset != PCI_CHIP_XGIXG20 ) && (pXGI->Chipset != PCI_CHIP_XGIXG21 ) && (pXGI->Chipset != PCI_CHIP_XGIXG27 ))
             {
                 if( pScrn->videoRam < 8*1024 )
                 {
@@ -401,7 +422,7 @@ Volari_DisableDualPipe(ScrnInfoPtr pScrn)
 
         ulTemp += 0x10 ;
     }
-    else if( pXGI->Chipset == PCI_CHIP_XGIXG20 )
+    else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 ) || ( pXGI->Chipset == PCI_CHIP_XGIXG21 ) || ( pXGI->Chipset == PCI_CHIP_XGIXG27 ))
         ulTemp += 0x08 ;
 
     ulTemp &= pXGI->cmdQueueSizeMask ;
@@ -483,11 +504,18 @@ Volari_AccelInit(ScreenPtr pScreen)
         return FALSE;
     }
 
+	/* Jong 01/07/2008; force to disable 2D based on SR3A[6] for XG21 */
+	if( !((pXGI->Chipset == PCI_CHIP_XGIXG21) && ForceToDisable2DEngine(pScrn)) ) 
+	{
 #ifdef XGIG2_SCR2SCRCOPY
     /* BitBlt */
-    infoPtr->SetupForScreenToScreenCopy = Volari_SetupForScreenToScreenCopy;
-    infoPtr->SubsequentScreenToScreenCopy = Volari_SubsequentScreenToScreenCopy;
-    infoPtr->ScreenToScreenCopyFlags = NO_PLANEMASK | NO_TRANSPARENCY;
+    /* Jong 08/24/2007; cause an extra rectangle drawing at top-left corner while clicking "Computer" on Suse SP1 (Xorg6.9.0) */
+    if(pScrn->bitsPerPixel != 8)
+    {
+       infoPtr->SetupForScreenToScreenCopy = Volari_SetupForScreenToScreenCopy;
+       infoPtr->SubsequentScreenToScreenCopy = Volari_SubsequentScreenToScreenCopy;
+       infoPtr->ScreenToScreenCopyFlags = NO_PLANEMASK | NO_TRANSPARENCY;
+    }
 #endif
 
 #ifdef XGIG2_SOLIDFILL
@@ -510,6 +538,7 @@ Volari_AccelInit(ScreenPtr pScreen)
                                  /*~ jjtseng 2005/08/15 */
                                  BIT_ORDER_IN_BYTE_MSBFIRST ;
 #endif /* XGIG2_8X8MONOPATFILL */
+	}
 
     /* init Frame Buffer Manager */
     reservedFbSize = 0;
@@ -551,8 +580,8 @@ Volari_AccelInit(ScreenPtr pScreen)
     Avail.x2 = pScrn->displayWidth;
 
     ErrorF("FbDevExist=%s\n",FbDevExist?"TRUE":"FALSE");
-
-    if (FbDevExist)
+ 
+    if( FbDevExist && (pXGI->Chipset != PCI_CHIP_XGIXG20 ) && (pXGI->Chipset != PCI_CHIP_XGIXG27 ) )
     {
         if( UsableFbSize >= 8*1024*1024 )
         {

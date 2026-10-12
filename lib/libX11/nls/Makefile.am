@@ -16,6 +16,7 @@ SUBDIRS= \
 	C			\
 	el_GR.UTF-8		\
 	en_US.UTF-8		\
+	fi_FI.UTF-8		\
 	georgian-academy	\
 	georgian-ps		\
 	ibm-cp1133		\
@@ -53,6 +54,7 @@ SUBDIRS= \
 	mulelao-1		\
 	nokhchi-1		\
 	pt_BR.UTF-8		\
+	ru_RU.UTF-8		\
 	tatar-cyr		\
 	th_TH			\
 	th_TH.UTF-8		\
@@ -73,19 +75,19 @@ SUBDIRS= \
 include $(top_srcdir)/cpprules.in
 
 locale.alias: locale.alias.pre
-	$(RAWCPP) $(RAWCPPFLAGS) $(CPP_FILES_FLAGS) < $(srcdir)/locale.alias.pre | $(CPP_SED_MAGIC) > locale.alias.l1
+	$(AM_V_GEN)$(RAWCPP) $(RAWCPPFLAGS) $(CPP_FILES_FLAGS) < $(srcdir)/locale.alias.pre | $(CPP_SED_MAGIC) > locale.alias.l1
 	sed -e '/^[^#][^        ]*:/s/://' -e '/^[^#].*[        ].*:/d' \
         < locale.alias.l1 > locale.alias.l2
 	cat locale.alias.l2 locale.alias.l1 > locale.alias
 
 compose.dir: compose.dir.pre
-	$(RAWCPP) $(RAWCPPFLAGS) $(CPP_FILES_FLAGS) < $(srcdir)/compose.dir.pre | $(CPP_SED_MAGIC) > compose.dir.l1
+	$(AM_V_GEN)$(RAWCPP) $(RAWCPPFLAGS) $(CPP_FILES_FLAGS) < $(srcdir)/compose.dir.pre | $(CPP_SED_MAGIC) > compose.dir.l1
 	sed -e '/^[^#][^        ]*:/s/://' -e '/^[^#].*[        ].*:/d' \
         < compose.dir.l1 > compose.dir.l2
 	cat compose.dir.l2 compose.dir.l1 > compose.dir
 
 locale.dir: locale.dir.pre
-	$(RAWCPP) $(RAWCPPFLAGS) $(CPP_FILES_FLAGS) < $(srcdir)/locale.dir.pre | $(CPP_SED_MAGIC) > locale.dir.l1
+	$(AM_V_GEN)$(RAWCPP) $(RAWCPPFLAGS) $(CPP_FILES_FLAGS) < $(srcdir)/locale.dir.pre | $(CPP_SED_MAGIC) > locale.dir.l1
 	sed -e '/^[^#][^        ]*:/s/://' -e '/^[^#].*[        ].*:/d' \
         < locale.dir.l1 > locale.dir.l2
 	cat locale.dir.l2 locale.dir.l1 > locale.dir

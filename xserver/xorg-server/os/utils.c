@@ -56,6 +56,11 @@ OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __CYGWIN__
 #include <stdlib.h>
 #include <signal.h>
+/*
+   Sigh... We really need a prototype for this to know it is stdcall,
+   but #include-ing <windows.h> here is not a good idea...
+*/
+__stdcall unsigned long GetTickCount(void);
 #endif
 
 #if defined(WIN32) && !defined(__CYGWIN__)
@@ -83,7 +88,7 @@ OR PERFORMANCE OF THIS SOFTWARE.
 #include <signal.h>
 #undef _POSIX_C_SOURCE
 #else
-#if defined(X_NOT_POSIX) || defined(_POSIX_SOURCE)
+#if defined(_POSIX_SOURCE)
 #include <signal.h>
 #else
 #define _POSIX_SOURCE
@@ -94,17 +99,12 @@ OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef WIN32
 #include <sys/wait.h>
 #endif
-#if !defined(SYSV) && !defined(WIN32) && !defined(Lynx) && !defined(QNX4)
+#if !defined(SYSV) && !defined(WIN32) 
 #include <sys/resource.h>
 #endif
 #include <sys/stat.h>
 #include <ctype.h>    /* for isspace */
 #include <stdarg.h>
-
-#if defined(DGUX)
-#include <sys/resource.h>
-#include <netdb.h>
-#endif
 
 #include <stdlib.h>	/* for malloc() */
 
@@ -116,133 +116,84 @@ OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "opaque.h"
 
-#ifdef SMART_SCHEDULE
 #include "dixstruct.h"
-#endif
 
-#ifdef XKB
-#include <xkbsrv.h>
-#endif
+#include "xkbsrv.h"
 
 #ifdef RENDER
-#include "privates.h"
 #include "picture.h"
 #endif
 
-#ifdef XPRINT
-#include "DiPrint.h"
-#endif
-
-_X_EXPORT Bool noTestExtensions;
-#ifdef BIGREQS
-_X_EXPORT Bool noBigReqExtension = FALSE;
-#endif
+Bool noTestExtensions;
 #ifdef COMPOSITE
-_X_EXPORT Bool noCompositeExtension = FALSE;
+Bool noCompositeExtension = FALSE;
 #endif
 
 #ifdef DAMAGE
-_X_EXPORT Bool noDamageExtension = FALSE;
+Bool noDamageExtension = FALSE;
 #endif
 #ifdef DBE
-_X_EXPORT Bool noDbeExtension = FALSE;
+Bool noDbeExtension = FALSE;
 #endif
 #ifdef DPMSExtension
-_X_EXPORT Bool noDPMSExtension = FALSE;
-#endif
-#ifdef EVI
-_X_EXPORT Bool noEVIExtension = FALSE;
-#endif
-#ifdef FONTCACHE
-_X_EXPORT Bool noFontCacheExtension = FALSE;
+Bool noDPMSExtension = FALSE;
 #endif
 #ifdef GLXEXT
-_X_EXPORT Bool noGlxExtension = FALSE;
-_X_EXPORT Bool noGlxVisualInit = FALSE;
+Bool noGlxExtension = FALSE;
+Bool noGlxVisualInit = FALSE;
 #endif
 #ifdef SCREENSAVER
-_X_EXPORT Bool noScreenSaverExtension = FALSE;
+Bool noScreenSaverExtension = FALSE;
 #endif
 #ifdef MITSHM
-_X_EXPORT Bool noMITShmExtension = FALSE;
-#endif
-#ifdef MITMISC
-_X_EXPORT Bool noMITMiscExtension = FALSE;
+Bool noMITShmExtension = FALSE;
 #endif
 #ifdef MULTIBUFFER
-_X_EXPORT Bool noMultibufferExtension = FALSE;
+Bool noMultibufferExtension = FALSE;
 #endif
 #ifdef RANDR
-_X_EXPORT Bool noRRExtension = FALSE;
+Bool noRRExtension = FALSE;
 #endif
 #ifdef RENDER
-_X_EXPORT Bool noRenderExtension = FALSE;
-#endif
-#ifdef SHAPE
-_X_EXPORT Bool noShapeExtension = FALSE;
+Bool noRenderExtension = FALSE;
 #endif
 #ifdef XCSECURITY
-_X_EXPORT Bool noSecurityExtension = FALSE;
-#endif
-#ifdef XSYNC
-_X_EXPORT Bool noSyncExtension = FALSE;
-#endif
-#ifdef TOGCUP
-_X_EXPORT Bool noXcupExtension = FALSE;
+Bool noSecurityExtension = FALSE;
 #endif
 #ifdef RES
-_X_EXPORT Bool noResExtension = FALSE;
-#endif
-#ifdef XAPPGROUP
-_X_EXPORT Bool noXagExtension = FALSE;
-#endif
-#ifdef XCMISC
-_X_EXPORT Bool noXCMiscExtension = FALSE;
-#endif
-#ifdef XEVIE
-/* Xevie is disabled by default for now until the
- * interface is stable */
-_X_EXPORT Bool noXevieExtension = TRUE;
+Bool noResExtension = FALSE;
 #endif
 #ifdef XF86BIGFONT
-_X_EXPORT Bool noXFree86BigfontExtension = FALSE;
+Bool noXFree86BigfontExtension = FALSE;
 #endif
 #ifdef XFreeXDGA
-_X_EXPORT Bool noXFree86DGAExtension = FALSE;
+Bool noXFree86DGAExtension = FALSE;
 #endif
 #ifdef XF86DRI
-_X_EXPORT Bool noXFree86DRIExtension = FALSE;
-#endif
-#ifdef XF86MISC
-_X_EXPORT Bool noXFree86MiscExtension = FALSE;
+Bool noXFree86DRIExtension = FALSE;
 #endif
 #ifdef XF86VIDMODE
-_X_EXPORT Bool noXFree86VidModeExtension = FALSE;
+Bool noXFree86VidModeExtension = FALSE;
 #endif
 #ifdef XFIXES
-_X_EXPORT Bool noXFixesExtension = FALSE;
+Bool noXFixesExtension = FALSE;
 #endif
-/* |noXkbExtension| is defined in xc/programs/Xserver/xkb/xkbInit.c */
 #ifdef PANORAMIX
 /* Xinerama is disabled by default unless enabled via +xinerama */
-_X_EXPORT Bool noPanoramiXExtension = TRUE;
-#endif
-#ifdef XINPUT
-_X_EXPORT Bool noXInputExtension = FALSE;
-#endif
-#ifdef XIDLE
-_X_EXPORT Bool noXIdleExtension = FALSE;
+Bool noPanoramiXExtension = TRUE;
 #endif
 #ifdef XSELINUX
-_X_EXPORT Bool noSELinuxExtension = TRUE;
-_X_EXPORT int selinuxEnforcingState = SELINUX_MODE_DEFAULT;
+Bool noSELinuxExtension = FALSE;
+int selinuxEnforcingState = SELINUX_MODE_DEFAULT;
 #endif
 #ifdef XV
-_X_EXPORT Bool noXvExtension = FALSE;
+Bool noXvExtension = FALSE;
 #endif
 #ifdef DRI2
-_X_EXPORT Bool noDRI2Extension = FALSE;
+Bool noDRI2Extension = FALSE;
 #endif
+
+Bool noGEExtension = FALSE;
 
 #define X_INCLUDE_NETDB_H
 #include <X11/Xos_r.h>
@@ -257,33 +208,15 @@ Bool PanoramiXExtensionDisabledHack = FALSE;
 
 int auditTrailLevel = 1;
 
-_X_EXPORT Bool Must_have_memory = FALSE;
-
-#ifdef AIXV3
-int SyncOn  = 0;
-extern int SelectWaitTime;
-#endif
-
 #if defined(SVR4) || defined(__linux__) || defined(CSRG_BASED)
 #define HAS_SAVED_IDS_AND_SETEUID
-#endif
-
-#ifdef MEMBUG
-#define MEM_FAIL_SCALE 100000
-long Memory_fail = 0;
-#include <stdlib.h>  /* for random() */
 #endif
 
 static char *dev_tty_from_init = NULL;	/* since we need to parse it anyway */
 
 OsSigHandlerPtr
-OsSignal(sig, handler)
-    int sig;
-    OsSigHandlerPtr handler;
+OsSignal(int sig, OsSigHandlerPtr handler)
 {
-#ifdef X_NOT_POSIX
-    return signal(sig, handler);
-#else
     struct sigaction act, oact;
 
     sigemptyset(&act.sa_mask);
@@ -294,10 +227,8 @@ OsSignal(sig, handler)
     if (sigaction(sig, &act, &oact))
       perror("sigaction");
     return oact.sa_handler;
-#endif
 }
-	
-#ifdef SERVER_LOCK
+
 /*
  * Explicit support for a server lock file like the ones used for UUCP.
  * For architectures with virtual terminals that can run more than one
@@ -309,17 +240,8 @@ OsSignal(sig, handler)
 #define LOCK_PREFIX "/.X"
 #define LOCK_SUFFIX "-lock"
 
-#if defined(DGUX)
-#include <limits.h>
-#include <sys/param.h>
-#endif
-
 #ifndef PATH_MAX
-#ifndef Lynx
 #include <sys/param.h>
-#else
-#include <param.h>
-#endif
 #ifndef PATH_MAX
 #ifdef MAXPATHLEN
 #define PATH_MAX MAXPATHLEN
@@ -393,11 +315,7 @@ LockServer(void)
     FatalError("Could not create lock file in %s\n", tmp);
   (void) sprintf(pid_str, "%10ld\n", (long)getpid());
   (void) write(lfd, pid_str, 11);
-#ifndef USE_CHMOD
-  (void) fchmod(lfd, 0444);
-#else
   (void) chmod(tmp, 0444);
-#endif
   (void) close(lfd);
 
   /*
@@ -479,53 +397,39 @@ UnlockServer(void)
   (void) unlink(LockFile);
   }
 }
-#endif /* SERVER_LOCK */
 
 /* Force connections to close on SIGHUP from init */
 
-/*ARGSUSED*/
-SIGVAL
+void
 AutoResetServer (int sig)
 {
     int olderrno = errno;
 
     dispatchException |= DE_RESET;
     isItTimeToYield = TRUE;
-#ifdef GPROF
-    chdir ("/tmp");
-    exit (0);
-#endif
-#if defined(SYSV) && defined(X_NOT_POSIX)
-    OsSignal (SIGHUP, AutoResetServer);
-#endif
     errno = olderrno;
 }
 
 /* Force connections to close and then exit on SIGTERM, SIGINT */
 
-/*ARGSUSED*/
-_X_EXPORT SIGVAL
+void
 GiveUp(int sig)
 {
     int olderrno = errno;
 
     dispatchException |= DE_TERMINATE;
     isItTimeToYield = TRUE;
-#if defined(SYSV) && defined(X_NOT_POSIX)
-    if (sig)
-	OsSignal(sig, SIG_IGN);
-#endif
     errno = olderrno;
 }
 
-#if defined WIN32 && defined __MINGW32__
-_X_EXPORT CARD32
+#if (defined WIN32 && defined __MINGW32__) || defined(__CYGWIN__)
+CARD32
 GetTimeInMillis (void)
 {
   return GetTickCount ();
 }
 #else
-_X_EXPORT CARD32
+CARD32
 GetTimeInMillis(void)
 {
     struct timeval tv;
@@ -541,7 +445,7 @@ GetTimeInMillis(void)
 }
 #endif
 
-_X_EXPORT void
+void
 AdjustWaitForDelay (pointer waitTime, unsigned long newdelay)
 {
     static struct timeval   delay_val;
@@ -567,13 +471,9 @@ AdjustWaitForDelay (pointer waitTime, unsigned long newdelay)
 
 void UseMsg(void)
 {
-#if !defined(AIXrt) && !defined(AIX386)
     ErrorF("use: X [:<display>] [option]\n");
     ErrorF("-a #                   mouse acceleration (pixels)\n");
     ErrorF("-ac                    disable access control restrictions\n");
-#ifdef MEMBUG
-    ErrorF("-alloc int             chance alloc should fail\n");
-#endif
     ErrorF("-audit int             set audit trail level\n");	
     ErrorF("-auth file             select authorization file\n");	
     ErrorF("-br                    create root window with black background\n");
@@ -582,13 +482,10 @@ void UseMsg(void)
     ErrorF("-c                     turns off key-click\n");
     ErrorF("c #                    key-click volume (0-100)\n");
     ErrorF("-cc int                default color visual class\n");
-#ifdef COMMANDLINE_CHALLENGED_OPERATING_SYSTEMS
-    ErrorF("-config file           read options from file\n");
-#endif
+    ErrorF("-nocursor              disable the cursor\n");
     ErrorF("-core                  generate core dump on fatal error\n");
     ErrorF("-dpi int               screen resolution in dots per inch\n");
 #ifdef DPMSExtension
-    ErrorF("dpms                   enables VESA DPMS monitor control\n");
     ErrorF("-dpms                  disables VESA DPMS monitor control\n");
 #endif
     ErrorF("-deferglyphs [none|all|16] defer loading of [no|all|16-bit] glyphs\n");
@@ -625,11 +522,8 @@ void UseMsg(void)
 #ifdef RENDER
     ErrorF("-render [default|mono|gray|color] set render color alloc policy\n");
 #endif
+    ErrorF("-retro                 start with classic stipple and cursor\n");
     ErrorF("-s #                   screen-saver timeout (minutes)\n");
-#ifdef XPRINT
-    PrinterUseMsg();
-#endif
-    ErrorF("-su                    disable any save under support\n");
     ErrorF("-t #                   mouse threshold (pixels)\n");
     ErrorF("-terminate             terminate at server reset\n");
     ErrorF("-to #                  connection time out\n");
@@ -639,25 +533,19 @@ void UseMsg(void)
     ErrorF("-v                     screen-saver without video blanking\n");
     ErrorF("-wm                    WhenMapped default backing-store\n");
     ErrorF("-wr                    create root window with white background\n");
-    ErrorF("-x string              loads named extension at init time \n");
     ErrorF("-maxbigreqsize         set maximal bigrequest size \n");
 #ifdef PANORAMIX
     ErrorF("+xinerama              Enable XINERAMA extension\n");
     ErrorF("-xinerama              Disable XINERAMA extension\n");
 #endif
-#ifdef SMART_SCHEDULE
     ErrorF("-dumbSched             Disable smart scheduling, enable old behavior\n");
     ErrorF("-schedInterval int     Set scheduler interval in msec\n");
-#endif
     ErrorF("+extension name        Enable extension\n");
     ErrorF("-extension name        Disable extension\n");
 #ifdef XDMCP
     XdmcpUseMsg();
 #endif
-#endif /* !AIXrt && ! AIX386 */
-#ifdef XKB
     XkbUseMsg();
-#endif
     ddxUseMsg();
 }
 
@@ -678,17 +566,6 @@ VerifyDisplayName(const char *d)
     if ( strchr(d, '/') != (char *)0 ) return( 0 );  /*  very important!!!  */
     return( 1 );
 }
-
-/*
- * This function is responsible for doing initalisation of any global
- * variables at an very early point of server startup (even before
- * |ProcessCommandLine()|. 
- */
-void InitGlobals(void)
-{
-    ddxInitGlobals();
-}
-
 
 /*
  * This function parses the command line. Handles device-independent fields
@@ -737,15 +614,6 @@ ProcessCommandLine(int argc, char *argv[])
 	{
 	    defeatAccessControl = TRUE;
 	}
-#ifdef MEMBUG
-	else if ( strcmp( argv[i], "-alloc") == 0)
-	{
-	    if(++i < argc)
-	        Memory_fail = atoi(argv[i]);
-	    else
-		UseMsg();
-	}
-#endif
 	else if ( strcmp( argv[i], "-audit") == 0)
 	{
 	    if(++i < argc)
@@ -760,8 +628,7 @@ ProcessCommandLine(int argc, char *argv[])
 	    else
 		UseMsg();
 	}
-	else if ( strcmp( argv[i], "-br") == 0)
-	    blackRoot = TRUE;
+	else if ( strcmp( argv[i], "-br") == 0) ; /* default */
 	else if ( strcmp( argv[i], "+bs") == 0)
 	    enableBackingStore = TRUE;
 	else if ( strcmp( argv[i], "-bs") == 0)
@@ -786,15 +653,19 @@ ProcessCommandLine(int argc, char *argv[])
 	}
 	else if ( strcmp( argv[i], "-core") == 0)
 	{
-	    CoreDump = TRUE;
 #if (!defined(WIN32) || !defined(__MINGW32__)) && !defined(__VMS)
 	    struct rlimit   core_limit;
 	    getrlimit (RLIMIT_CORE, &core_limit);
 	    core_limit.rlim_cur = core_limit.rlim_max;
 	    setrlimit (RLIMIT_CORE, &core_limit);
 #endif
+	    CoreDump = TRUE;
 	}
-	else if ( strcmp( argv[i], "-dpi") == 0)
+        else if ( strcmp( argv[i], "-nocursor") == 0)
+        {
+            EnableCursor = FALSE;
+        }
+        else if ( strcmp( argv[i], "-dpi") == 0)
 	{
 	    if(++i < argc)
 	        monitorResolution = atoi(argv[i]);
@@ -803,7 +674,7 @@ ProcessCommandLine(int argc, char *argv[])
 	}
 #ifdef DPMSExtension
 	else if ( strcmp( argv[i], "dpms") == 0)
-	    DPMSEnabledSwitch = TRUE;
+	    /* ignored for compatibility */ ;
 	else if ( strcmp( argv[i], "-dpms") == 0)
 	    DPMSDisabledSwitch = TRUE;
 #endif
@@ -847,13 +718,11 @@ ProcessCommandLine(int argc, char *argv[])
 	    UseMsg();
 	    exit(0);
 	}
-#ifdef XKB
         else if ( (skip=XkbProcessArguments(argc,argv,i))!=0 ) {
 	    if (skip>0)
 		 i+= skip-1;
 	    else UseMsg();
 	}
-#endif
 #ifdef RLIMIT_DATA
 	else if ( strcmp( argv[i], "-ld") == 0)
 	{
@@ -947,6 +816,8 @@ ProcessCommandLine(int argc, char *argv[])
 	    defaultKeyboardControl.autoRepeat = TRUE;
 	else if ( strcmp( argv[i], "-r") == 0)
 	    defaultKeyboardControl.autoRepeat = FALSE;
+	else if ( strcmp( argv[i], "-retro") == 0)
+	    party_like_its_1989 = TRUE;
 	else if ( strcmp( argv[i], "-s") == 0)
 	{
 	    if(++i < argc)
@@ -955,8 +826,6 @@ ProcessCommandLine(int argc, char *argv[])
 	    else
 		UseMsg();
 	}
-	else if ( strcmp( argv[i], "-su") == 0)
-	    disableSaveUnders = TRUE;
 	else if ( strcmp( argv[i], "-t") == 0)
 	{
 	    if(++i < argc)
@@ -1016,14 +885,6 @@ ProcessCommandLine(int argc, char *argv[])
 	    PanoramiXExtensionDisabledHack = TRUE;
 	}
 #endif
-	else if ( strcmp( argv[i], "-x") == 0)
-	{
-	    if(++i >= argc)
-		UseMsg();
-	    /* For U**x, which doesn't support dynamic loading, there's nothing
-	     * to do when we see a -x.  Either the extension is linked in or
-	     * it isn't */
-	}
 	else if ( strcmp( argv[i], "-I") == 0)
 	{
 	    /* ignore all remaining arguments */
@@ -1040,26 +901,6 @@ ProcessCommandLine(int argc, char *argv[])
 	    i = skip - 1;
 	}
 #endif
-#ifdef XPRINT
-	else if ((skip = PrinterOptions(argc, argv, i)) != i)
-	{
-	    i = skip - 1;
-	}
-#endif
-#ifdef AIXV3
-        else if ( strcmp( argv[i], "-timeout") == 0)
-        {
-            if(++i < argc)
-                SelectWaitTime = atoi(argv[i]);
-            else
-                UseMsg();
-        }
-        else if ( strcmp( argv[i], "-sync") == 0)
-        {
-            SyncOn++;
-        }
-#endif
-#ifdef SMART_SCHEDULE
 	else if ( strcmp( argv[i], "-dumbSched") == 0)
 	{
 	    SmartScheduleDisable = TRUE;
@@ -1083,7 +924,6 @@ ProcessCommandLine(int argc, char *argv[])
 	    else
 		UseMsg();
 	}
-#endif
 #ifdef RENDER
 	else if ( strcmp( argv[i], "-render" ) == 0)
 	{
@@ -1128,118 +968,6 @@ ProcessCommandLine(int argc, char *argv[])
         }
     }
 }
-
-#ifdef COMMANDLINE_CHALLENGED_OPERATING_SYSTEMS
-static void
-InsertFileIntoCommandLine(
-    int *resargc, char ***resargv, 
-    int prefix_argc, char **prefix_argv,
-    char *filename, 
-    int suffix_argc, char **suffix_argv)
-{
-    struct stat     st;
-    FILE           *f;
-    char           *p;
-    char           *q;
-    int             insert_argc;
-    char           *buf;
-    int             len;
-    int             i;
-
-    f = fopen(filename, "r");
-    if (!f)
-	FatalError("Can't open option file %s\n", filename);
-
-    fstat(fileno(f), &st);
-
-    buf = (char *) xalloc((unsigned) st.st_size + 1);
-    if (!buf)
-	FatalError("Out of Memory\n");
-
-    len = fread(buf, 1, (unsigned) st.st_size, f);
-
-    fclose(f);
-
-    if (len < 0)
-	FatalError("Error reading option file %s\n", filename);
-
-    buf[len] = '\0';
-
-    p = buf;
-    q = buf;
-    insert_argc = 0;
-
-    while (*p)
-    {
-	while (isspace(*p))
-	    p++;
-	if (!*p)
-	    break;
-	if (*p == '#')
-	{
-	    while (*p && *p != '\n')
-		p++;
-	} else
-	{
-	    while (*p && !isspace(*p))
-		*q++ = *p++;
-	    /* Since p and q might still be pointing at the same place, we	 */
-	    /* need to step p over the whitespace now before we add the null.	 */
-	    if (*p)
-		p++;
-	    *q++ = '\0';
-	    insert_argc++;
-	}
-    }
-
-    buf = (char *) xrealloc(buf, q - buf);
-    if (!buf)
-	FatalError("Out of memory reallocing option buf\n");
-
-    *resargc = prefix_argc + insert_argc + suffix_argc;
-    *resargv = (char **) xalloc((*resargc + 1) * sizeof(char *));
-    if (!*resargv)
-	FatalError("Out of Memory\n");
-
-    memcpy(*resargv, prefix_argv, prefix_argc * sizeof(char *));
-
-    p = buf;
-    for (i = 0; i < insert_argc; i++)
-    {
-	(*resargv)[prefix_argc + i] = p;
-	p += strlen(p) + 1;
-    }
-
-    memcpy(*resargv + prefix_argc + insert_argc,
-	   suffix_argv, suffix_argc * sizeof(char *));
-
-    (*resargv)[*resargc] = NULL;
-} /* end InsertFileIntoCommandLine */
-
-
-void
-ExpandCommandLine(int *pargc, char ***pargv)
-{
-    int i;
-
-#if !defined(WIN32) && !defined(__CYGWIN__)
-    if (getuid() != geteuid())
-	return;
-#endif
-
-    for (i = 1; i < *pargc; i++)
-    {
-	if ( (0 == strcmp((*pargv)[i], "-config")) && (i < (*pargc - 1)) )
-	{
-	    InsertFileIntoCommandLine(pargc, pargv,
-					  i, *pargv,
-					  (*pargv)[i+1], /* filename */
-					  *pargc - i - 2, *pargv + i + 2);
-	    i--;
-	}
-    }
-} /* end ExpandCommandLine */
-#endif
 
 /* Implement a simple-minded font authorization scheme.  The authorization
    name is "hp-hostname-1", the contents are simply the host name. */
@@ -1308,79 +1036,54 @@ set_font_authorizations(char **authorizations, int *authlen, pointer client)
 #endif /* TCPCONN */
 }
 
-/* XALLOC -- X's internal memory allocator.  Why does it return unsigned
- * long * instead of the more common char *?  Well, if you read K&R you'll
- * see they say that alloc must return a pointer "suitable for conversion"
- * to whatever type you really want.  In a full-blown generic allocator
- * there's no way to solve the alignment problems without potentially
- * wasting lots of space.  But we have a more limited problem. We know
- * we're only ever returning pointers to structures which will have to
- * be long word aligned.  So we are making a stronger guarantee.  It might
- * have made sense to make Xalloc return char * to conform with people's
- * expectations of malloc, but this makes lint happier.
- */
-
 #ifndef INTERNAL_MALLOC
 
-_X_EXPORT void * 
+void *
 Xalloc(unsigned long amount)
 {
-    register pointer  ptr;
-	
+    void *ptr;
+
     if ((long)amount <= 0) {
-	return (unsigned long *)NULL;
+	return NULL;
     }
     /* aligned extra on long word boundary */
     amount = (amount + (sizeof(long) - 1)) & ~(sizeof(long) - 1);
-#ifdef MEMBUG
-    if (!Must_have_memory && Memory_fail &&
-	((random() % MEM_FAIL_SCALE) < Memory_fail))
-	return (unsigned long *)NULL;
-#endif
-    if ((ptr = (pointer)malloc(amount))) {
-	return (unsigned long *)ptr;
-    }
-    if (Must_have_memory)
-	FatalError("Out of memory");
-    return (unsigned long *)NULL;
+    ptr = malloc(amount);
+    return ptr;
 }
 
 /*****************
  * XNFalloc 
- * "no failure" realloc, alternate interface to Xalloc w/o Must_have_memory
+ * "no failure" realloc
  *****************/
 
-_X_EXPORT void *
+void *
 XNFalloc(unsigned long amount)
 {
-    register pointer ptr;
+    void *ptr;
 
     if ((long)amount <= 0)
-    {
-        return (unsigned long *)NULL;
-    }
+        return NULL;
     /* aligned extra on long word boundary */
     amount = (amount + (sizeof(long) - 1)) & ~(sizeof(long) - 1);
-    ptr = (pointer)malloc(amount);
+    ptr = malloc(amount);
     if (!ptr)
-    {
         FatalError("Out of memory");
-    }
-    return ((unsigned long *)ptr);
+    return ptr;
 }
 
 /*****************
  * Xcalloc
  *****************/
 
-_X_EXPORT void *
+void *
 Xcalloc(unsigned long amount)
 {
-    unsigned long   *ret;
+    void *ret;
 
     ret = Xalloc (amount);
     if (ret)
-	bzero ((char *) ret, (int) amount);
+	bzero (ret, (int) amount);
     return ret;
 }
 
@@ -1388,14 +1091,14 @@ Xcalloc(unsigned long amount)
  * XNFcalloc
  *****************/
 
-_X_EXPORT void *
+void *
 XNFcalloc(unsigned long amount)
 {
-    unsigned long   *ret;
+    void *ret;
 
     ret = Xalloc (amount);
     if (ret)
-	bzero ((char *) ret, (int) amount);
+	bzero (ret, (int) amount);
     else if ((long)amount > 0)
         FatalError("Out of memory");
     return ret;
@@ -1405,46 +1108,38 @@ XNFcalloc(unsigned long amount)
  * Xrealloc
  *****************/
 
-_X_EXPORT void *
+void *
 Xrealloc(pointer ptr, unsigned long amount)
 {
-#ifdef MEMBUG
-    if (!Must_have_memory && Memory_fail &&
-	((random() % MEM_FAIL_SCALE) < Memory_fail))
-	return (unsigned long *)NULL;
-#endif
     if ((long)amount <= 0)
     {
 	if (ptr && !amount)
 	    free(ptr);
-	return (unsigned long *)NULL;
+	return NULL;
     }
     amount = (amount + (sizeof(long) - 1)) & ~(sizeof(long) - 1);
     if (ptr)
-        ptr = (pointer)realloc((char *)ptr, amount);
+        ptr = realloc(ptr, amount);
     else
-	ptr = (pointer)malloc(amount);
-    if (ptr)
-        return (unsigned long *)ptr;
-    if (Must_have_memory)
-	FatalError("Out of memory");
-    return (unsigned long *)NULL;
+	ptr = malloc(amount);
+
+    return ptr;
 }
                     
 /*****************
  * XNFrealloc 
- * "no failure" realloc, alternate interface to Xrealloc w/o Must_have_memory
+ * "no failure" realloc
  *****************/
 
-_X_EXPORT void *
+void *
 XNFrealloc(pointer ptr, unsigned long amount)
 {
-    if (( ptr = (pointer)Xrealloc( ptr, amount ) ) == NULL)
+    if ((ptr = Xrealloc(ptr, amount)) == NULL)
     {
 	if ((long)amount > 0)
             FatalError( "Out of memory" );
     }
-    return ((unsigned long *)ptr);
+    return ptr;
 }
 
 /*****************
@@ -1452,25 +1147,11 @@ XNFrealloc(pointer ptr, unsigned long amount)
  *    calls free 
  *****************/    
 
-_X_EXPORT void
+void
 Xfree(pointer ptr)
 {
     if (ptr)
-	free((char *)ptr); 
-}
-
-void
-OsInitAllocator (void)
-{
-#ifdef MEMBUG
-    static int	been_here;
-
-    /* Check the memory system after each generation */
-    if (been_here)
-	CheckMemory ();
-    else
-	been_here = 1;
-#endif
+	free(ptr); 
 }
 #endif /* !INTERNAL_MALLOC */
 
@@ -1483,14 +1164,14 @@ Xstrdup(const char *s)
     if (s == NULL)
 	return NULL;
 
-    sd = (char *)Xalloc(strlen(s) + 1);
+    sd = Xalloc(strlen(s) + 1);
     if (sd != NULL)
 	strcpy(sd, s);
     return sd;
 }
 
 
-_X_EXPORT char *
+char *
 XNFstrdup(const char *s)
 {
     char *sd;
@@ -1498,12 +1179,11 @@ XNFstrdup(const char *s)
     if (s == NULL)
 	return NULL;
 
-    sd = (char *)XNFalloc(strlen(s) + 1);
+    sd = XNFalloc(strlen(s) + 1);
     strcpy(sd, s);
     return sd;
 }
 
-#ifdef SMART_SCHEDULE
 
 #ifdef SIGVTALRM
 #define SMART_SCHEDULE_POSSIBLE
@@ -1579,7 +1259,6 @@ SmartScheduleInit (void)
     return FALSE;
 #endif
 }
-#endif
 
 #ifdef SIG_BLOCK
 static sigset_t	PreviousSignalMask;
@@ -1703,7 +1382,7 @@ static struct pid {
     int pid;
 } *pidlist;
 
-void (*old_alarm)(int) = NULL; /* XXX horrible awful hack */
+OsSigHandlerPtr old_alarm = NULL; /* XXX horrible awful hack */
 
 pointer
 Popen(char *command, char *type)
@@ -1718,7 +1397,7 @@ Popen(char *command, char *type)
     if ((*type != 'r' && *type != 'w') || type[1])
 	return NULL;
 
-    if ((cur = (struct pid *)xalloc(sizeof(struct pid))) == NULL)
+    if ((cur = xalloc(sizeof(struct pid))) == NULL)
 	return NULL;
 
     if (pipe(pdes) < 0) {
@@ -1727,7 +1406,7 @@ Popen(char *command, char *type)
     }
 
     /* Ignore the smart scheduler while this is going on */
-    old_alarm = signal(SIGALRM, SIG_IGN);
+    old_alarm = OsSignal(SIGALRM, SIG_IGN);
     if (old_alarm == SIG_ERR) {
       perror("signal");
       return NULL;
@@ -1738,7 +1417,7 @@ Popen(char *command, char *type)
 	close(pdes[0]);
 	close(pdes[1]);
 	xfree(cur);
-	if (signal(SIGALRM, old_alarm) == SIG_ERR)
+	if (OsSignal(SIGALRM, old_alarm) == SIG_ERR)
 	  perror("signal");
 	return NULL;
     case 0:	/* child */
@@ -1804,7 +1483,7 @@ Fopen(char *file, char *type)
     if ((*type != 'r' && *type != 'w') || type[1])
 	return NULL;
 
-    if ((cur = (struct pid *)xalloc(sizeof(struct pid))) == NULL)
+    if ((cur = xalloc(sizeof(struct pid))) == NULL)
 	return NULL;
 
     if (pipe(pdes) < 0) {
@@ -1915,7 +1594,7 @@ Pclose(pointer iop)
     /* allow EINTR again */
     OsReleaseSignals ();
     
-    if (old_alarm && signal(SIGALRM, old_alarm) == SIG_ERR) {
+    if (old_alarm && OsSignal(SIGALRM, old_alarm) == SIG_ERR) {
       perror("signal");
       return -1;
     }
@@ -1923,7 +1602,7 @@ Pclose(pointer iop)
     return pid == -1 ? -1 : pstat;
 }
 
-int 
+int
 Fclose(pointer iop)
 {
 #ifdef HAS_SAVED_IDS_AND_SETEUID
@@ -1933,7 +1612,7 @@ Fclose(pointer iop)
 #endif
 }
 
-#endif /* !WIN32 && !__VMS */
+#endif /* !WIN32 */
 
 
 /*
@@ -2016,9 +1695,6 @@ CheckUserParameters(int argc, char **argv, char **envp)
     enum BadCode bad = NotBad;
     int i = 0, j;
     char *a, *e = NULL;
-#if defined(__QNX__) && !defined(__QNXNTO__)
-    char cmd_name[64];
-#endif
 
 #if CHECK_EUID
     if (geteuid() == 0 && getuid() != geteuid())

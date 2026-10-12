@@ -69,7 +69,7 @@ XdmAuthenticationValidator (ARRAY8Ptr privateData, ARRAY8Ptr incomingData,
 {
     XdmAuthKeyPtr	incoming;
 
-    XdmcpUnwrap (incomingData->data, &privateKey,
+    XdmcpUnwrap (incomingData->data, (unsigned char *)&privateKey,
 			      incomingData->data,incomingData->length);
     if (packet_type == ACCEPT) {
     	if (incomingData->length != 8)
@@ -89,7 +89,8 @@ XdmAuthenticationGenerator (ARRAY8Ptr privateData, ARRAY8Ptr outgoingData,
     outgoingData->data = 0;
     if (packet_type == REQUEST) {
 	if (XdmcpAllocARRAY8 (outgoingData, 8))
-	    XdmcpWrap (&rho, &privateKey, outgoingData->data, 8);
+	    XdmcpWrap ((unsigned char *)&rho, (unsigned char *)&privateKey,
+		       outgoingData->data, 8);
     }
     return TRUE;
 }
@@ -99,7 +100,8 @@ XdmAuthenticationAddAuth (int name_len, char *name,
     int data_len, char *data)
 {
     Bool    ret;
-    XdmcpUnwrap (data, (unsigned char *)&privateKey, data, data_len);
+    XdmcpUnwrap ((unsigned char *)data, (unsigned char *)&privateKey,
+		 (unsigned char *)data, data_len);
     authFromXDMCP = TRUE;
     ret = AddAuthorization (name_len, name, data_len, data);
     authFromXDMCP = FALSE;
@@ -152,7 +154,7 @@ XdmAuthenticationInit (char *cookie, int cookie_len)
     }
     XdmcpGenerateKey (&rho);
     XdmcpRegisterAuthentication (XdmAuthenticationName, XdmAuthenticationNameLen,
-				 (unsigned char *)&rho,
+				 (char *)&rho,
 				 sizeof (rho),
 				 (ValidatorFunc)XdmAuthenticationValidator,
 				 (GeneratorFunc)XdmAuthenticationGenerator,
@@ -257,7 +259,7 @@ XdmAuthorizationValidate (unsigned char *plain, int length,
 	    *reason = "Bad XDM authorization key length";
 	return NULL;
     }
-    client = (XdmClientAuthPtr) xalloc (sizeof (XdmClientAuthRec));
+    client = xalloc (sizeof (XdmClientAuthRec));
     if (!client)
 	return NULL;
     XdmClientAuthDecode (plain, client);
@@ -361,7 +363,7 @@ XdmAddCookie (unsigned short data_length, char *data, XID id)
     /* the first octet of the key must be zero */
     if (key_bits[0] != '\0')
 	return 0;
-    new = (XdmAuthorizationPtr) xalloc (sizeof (XdmAuthorizationRec));
+    new = xalloc (sizeof (XdmAuthorizationRec));
     if (!new)
 	return 0;
     new->next = xdmAuth;
@@ -383,11 +385,11 @@ XdmCheckCookie (unsigned short cookie_length, char *cookie,
     /* Auth packets must be a multiple of 8 bytes long */
     if (cookie_length & 7)
 	return (XID) -1;
-    plain = (unsigned char *) xalloc (cookie_length);
+    plain = xalloc (cookie_length);
     if (!plain)
 	return (XID) -1;
     for (auth = xdmAuth; auth; auth=auth->next) {
-	XdmcpUnwrap (cookie, (unsigned char *)&auth->key, plain, cookie_length);
+	XdmcpUnwrap ((unsigned char *)cookie, (unsigned char *)&auth->key, plain, cookie_length);
 	if ((client = XdmAuthorizationValidate (plain, cookie_length, &auth->rho, xclient, reason)) != NULL)
 	{
 	    client->next = xdmClients;
@@ -428,11 +430,11 @@ XdmToID (unsigned short cookie_length, char *cookie)
     XdmClientAuthPtr	client;
     unsigned char	*plain;
 
-    plain = (unsigned char *) xalloc (cookie_length);
+    plain = xalloc (cookie_length);
     if (!plain)
 	return (XID) -1;
     for (auth = xdmAuth; auth; auth=auth->next) {
-	XdmcpUnwrap (cookie, (unsigned char *)&auth->key, plain, cookie_length);
+	XdmcpUnwrap ((unsigned char *)cookie, (unsigned char *)&auth->key, plain, cookie_length);
 	if ((client = XdmAuthorizationValidate (plain, cookie_length, &auth->rho, NULL, NULL)) != NULL)
 	{
 	    xfree (client);

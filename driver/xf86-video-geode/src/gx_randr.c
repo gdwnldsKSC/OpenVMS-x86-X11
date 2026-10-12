@@ -36,6 +36,7 @@
 #include "xf86Module.h"
 #include "mipointer.h"
 #include "windowstr.h"
+#include "inputstr.h"
 #include <X11/extensions/randr.h>
 #include <randrstr.h>
 
@@ -55,20 +56,17 @@ typedef struct _GXRandRInfo
     Rotation supported_rotations;      /* driver supported */
 } XF86RandRInfoRec, *XF86RandRInfoPtr;
 
-#define AMD_OLDPRIV (GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 4)
-
-#if AMD_OLDPRIV
-
 static int GXRandRIndex;
 
-#define XF86RANDRINFO(p) ((XF86RandRInfoPtr) (p)->devPrivates[GXRandRIndex].ptr)
+#define OLD_VIDEODRV_INTERFACE (GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 4)
+
+#if OLD_VIDEODRV_INTERFACE
+#define XF86RANDRINFO(p)   ((XF86RandRInfoPtr) (p)->devPrivates[GXRandRIndex].ptr)
+#define XF86RANDRSET(p, v) (p)->devPrivates[GXRandRIndex].ptr = v
 #else
-
-static DevPrivateKey GXRandRKey;
-
-#define XF86RANDRINFO(p) ((XF86RandRInfoPtr) \
-			  dixLookupPrivate(&(p)->devPrivates, GXRandRKey));
-
+#define XF86RANDRINFO(p) ((XF86RandRInfoPtr)						\
+			  dixLookupPrivate(&(p)->devPrivates, &GXRandRIndex))
+#define XF86RANDRSET(p, v) dixSetPrivate(&(p)->devPrivates, &GXRandRIndex, v)
 #endif
 
 static int
@@ -209,7 +207,7 @@ GXRandRSetMode(ScreenPtr pScreen,
      * Get the new Screen pixmap ptr as SwitchMode might have called
      * ModifyPixmapHeader and xf86EnableDisableFBAccess will put it back...
      * Unfortunately.
-
+     
      */
 
     pspix = (*pScreen->GetScreenPixmap) (pScreen);
@@ -248,7 +246,7 @@ GXRandRSetConfig(ScreenPtr pScreen, Rotation rotation,
     }
 
 /* FIXME: we don't have a new video ABI yet */
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 3
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 3
     miPointerGetPosition(inputInfo.pointer, &px, &py);
 #else
     miPointerPosition(&px, &py);
@@ -292,7 +290,7 @@ GXRandRSetConfig(ScreenPtr pScreen, Rotation rotation,
     }
 
 /* FIXME: we don't have a new video ABI yet */
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 3
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 3
     if (pScreen == miPointerGetScreen(inputInfo.pointer))
 #else
     if (pScreen == miPointerCurrentScreen())
@@ -305,12 +303,10 @@ GXRandRSetConfig(ScreenPtr pScreen, Rotation rotation,
 
 /* FIXME: we don't have a new video ABI yet */
 	(*pScreen->SetCursorPosition) (
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 3
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 3
                                         inputInfo.pointer,
 #endif
-                                        pScreen,
-                                        px, py,
-                                        FALSE);
+	    pScreen, px, py, FALSE);
     }
 
     return TRUE;
@@ -333,10 +329,8 @@ GXRandRInit(ScreenPtr pScreen, int rotation)
     if (GXRandRGeneration != serverGeneration) {
 	GXRandRGeneration = serverGeneration;
     }
-#if AMD_OLDPRIV
+#if OLD_VIDEODRV_INTERFACE
     GXRandRIndex = AllocateScreenPrivateIndex();
-#else
-    GXRandRKey = &GXRandRKey;
 #endif
 
     pRandr = xcalloc(sizeof(XF86RandRInfoRec), 1);
@@ -362,10 +356,7 @@ GXRandRInit(ScreenPtr pScreen, int rotation)
     pRandr->supported_rotations = rotation;
     pRandr->maxX = pRandr->maxY = 0;
 
-#if AMD_OLDPRIV
-    pScreen->devPrivates[GXRandRIndex].ptr = pRandr;
-#else
-    dixSetPrivate(&pScreen->devPrivates, GXRandRKey, pRandr);
-#endif
+    XF86RANDRSET(pScreen, pRandr);
+
     return TRUE;
 }

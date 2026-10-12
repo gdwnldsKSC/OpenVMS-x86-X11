@@ -87,10 +87,15 @@ Bool XG47HWCursorInit(ScreenPtr pScreen)
 
     pCursorInfo->MaxWidth          = CURSOR_WIDTH;
     pCursorInfo->MaxHeight         = CURSOR_HEIGHT;
-    pCursorInfo->Flags             = HARDWARE_CURSOR_BIT_ORDER_MSBFIRST        |
-                                     HARDWARE_CURSOR_SWAP_SOURCE_AND_MASK      |
-                                     HARDWARE_CURSOR_SOURCE_MASK_INTERLEAVE_32 |
-                                     HARDWARE_CURSOR_TRUECOLOR_AT_8BPP;
+    pCursorInfo->Flags = 
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+	0
+#else
+	HARDWARE_CURSOR_BIT_ORDER_MSBFIRST
+#endif
+	| HARDWARE_CURSOR_SWAP_SOURCE_AND_MASK
+	| HARDWARE_CURSOR_SOURCE_MASK_INTERLEAVE_32
+	| HARDWARE_CURSOR_TRUECOLOR_AT_8BPP;
     pCursorInfo->SetCursorColors   = XG47SetCursorColors;
     pCursorInfo->SetCursorPosition = XG47SetCursorPosition;
     pCursorInfo->LoadCursorImage   = XG47LoadCursorImage;
@@ -148,12 +153,6 @@ static void XG47LoadCursorImage(ScrnInfoPtr pScrn, CARD8 *src)
     XGIPtr pXGI = XGIPTR(pScrn);
     xf86CursorInfoPtr pCursor = pXGI->pCursorInfo;
     uint32_t *d = (uint32_t *)(pXGI->fbBase + pXGI->cursorStart);
-#if X_BYTE_ORDER == X_BIG_ENDIAN
-    const uint32_t *s = (const uint32_t *)src;
-    const unsigned cursor_longs =
-        ((pCursor->MaxWidth * pCursor->MaxHeight) + 15) / 16;
-    unsigned i;
-#endif
 
 
 #ifdef CURSOR_DEBUG
@@ -168,13 +167,7 @@ static void XG47LoadCursorImage(ScrnInfoPtr pScrn, CARD8 *src)
     enableMonoCursorOfSecondView(pXGI, FALSE);
     enableMonoCursor(pXGI, FALSE);
 
-#if X_BYTE_ORDER == X_BIG_ENDIAN
-    for (i = 0; i < cursor_longs; i++) {
-        d[i] = lswapl(s[i]);
-    }
-#else
     memcpy(d, src, pCursor->MaxWidth * pCursor->MaxHeight / 4);
-#endif
 
     setMonoCursorPatternOfSecondView(pXGI, pXGI->cursorStart);
     setCursorSize(pXGI, 64, FALSE, FALSE);

@@ -37,12 +37,11 @@
 #define _ROOTLESSCOMMON_H
 
 #include <stdint.h>
+#include "misc.h"
 #include "rootless.h"
 #include "fb.h"
 
-#ifdef SHAPE
 #include "scrnintstr.h"
-#endif /* SHAPE */
 
 #ifdef RENDER
 #include "picturestr.h"
@@ -100,9 +99,7 @@ typedef struct _RootlessScreenRec {
     MarkOverlappedWindowsProcPtr MarkOverlappedWindows;
     ValidateTreeProcPtr ValidateTree;
 
-#ifdef SHAPE
     SetShapeProcPtr SetShape;
-#endif
 
 #ifdef RENDER
     CompositeProcPtr Composite;
@@ -124,12 +121,6 @@ typedef struct _RootlessScreenRec {
     unsigned int redisplay_expired :1;
     unsigned int colormap_changed :1;
 } RootlessScreenRec, *RootlessScreenPtr;
-
-
-#undef MIN
-#define MIN(x,y) ((x) < (y) ? (x) : (y))
-#undef MAX
-#define MAX(x,y) ((x) > (y) ? (x) : (y))
 
 // "Definition of the Porting Layer for the X11 Sample Server" says
 // unwrap and rewrap of screen functions is unnecessary, but
@@ -243,8 +234,8 @@ extern RegionRec rootlessHugeRoot;
                             ((int)(_x) * _pPix->drawable.bitsPerPixel/8 +   \
                              (int)(_y) * _pPix->devKind);                   \
     if (_pPix->drawable.bitsPerPixel != FB_UNIT) {                          \
-        unsigned _diff = (unsigned) ((uintptr_t) _pPix->devPrivate.ptr &    \
-                                    (FB_UNIT / CHAR_BIT - 1));             \
+        size_t _diff = ((uintptr_t) _pPix->devPrivate.ptr) &            \
+                         (FB_UNIT / CHAR_BIT - 1);                          \
         _pPix->devPrivate.ptr = (char *) (_pPix->devPrivate.ptr) -          \
                                 _diff;                                      \
         _pPix->drawable.x = _diff /                                         \
@@ -275,9 +266,7 @@ ColormapPtr RootlessGetColormap (ScreenPtr pScreen);
 Bool RootlessResolveColormap (ScreenPtr pScreen, int first_color,
 			      int n_colors, uint32_t *colors);
 
-#ifdef __APPLE__
 void RootlessFlushWindowColormap (WindowPtr pWin);
-#endif
 void RootlessFlushScreenColormaps (ScreenPtr pScreen);
 
 // Move a window to its proper location on the screen.
@@ -285,5 +274,15 @@ void RootlessRepositionWindow(WindowPtr pWin);
 
 // Move the window to it's correct place in the physical stacking order.
 void RootlessReorderWindow(WindowPtr pWin);
+
+void RootlessScreenExpose (ScreenPtr pScreen);
+void RootlessHideAllWindows (void);
+void RootlessShowAllWindows (void);
+void RootlessUpdateRooted (Bool state);
+
+void RootlessEnableRoot (ScreenPtr pScreen);
+void RootlessDisableRoot (ScreenPtr pScreen);
+
+void RootlessSetPixmapOfAncestors(WindowPtr pWin);
 
 #endif /* _ROOTLESSCOMMON_H */

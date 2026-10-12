@@ -50,8 +50,6 @@ SOFTWARE.
  *
  */
 
-#define	 NEED_EVENTS
-#define	 NEED_REPLIES
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -86,7 +84,7 @@ SProcXGrabDevice(ClientPtr client)
     swapl(&stuff->time, n);
     swaps(&stuff->event_count, n);
 
-    if (stuff->length != (sizeof(xGrabDeviceReq) >> 2) + stuff->event_count)
+    if (stuff->length != bytes_to_int32(sizeof(xGrabDeviceReq)) + stuff->event_count)
        return BadLength;
     
     SwapLongs((CARD32 *) (&stuff[1]), stuff->event_count);
@@ -106,12 +104,13 @@ ProcXGrabDevice(ClientPtr client)
     int rc;
     xGrabDeviceReply rep;
     DeviceIntPtr dev;
+    GrabMask mask;
     struct tmask tmp[EMASKSIZE];
 
     REQUEST(xGrabDeviceReq);
     REQUEST_AT_LEAST_SIZE(xGrabDeviceReq);
 
-    if (stuff->length != (sizeof(xGrabDeviceReq) >> 2) + stuff->event_count)
+    if (stuff->length != bytes_to_int32(sizeof(xGrabDeviceReq)) + stuff->event_count)
 	return BadLength;
 
     rep.repType = X_Reply;
@@ -128,10 +127,13 @@ ProcXGrabDevice(ClientPtr client)
 				 X_GrabDevice)) != Success)
 	return rc;
 
-    rc = GrabDevice(client, dev, stuff->this_device_mode,
-		    stuff->other_devices_mode, stuff->grabWindow,
+    mask.xi = tmp[stuff->deviceid].mask;
+
+    rc = GrabDevice(client, dev, stuff->other_devices_mode,
+                    stuff->this_device_mode, stuff->grabWindow,
 		    stuff->ownerEvents, stuff->time,
-		    tmp[stuff->deviceid].mask, &rep.status);
+		    &mask, GRABTYPE_XI, None, None,
+		    &rep.status);
 
     if (rc != Success)
 	return rc;
@@ -144,6 +146,24 @@ ProcXGrabDevice(ClientPtr client)
  *
  * This procedure creates an event mask from a list of XEventClasses.
  *
+ * Procedure is as follows:
+ * An XEventClass is (deviceid << 8 | eventtype). For each entry in the list,
+ * get the device. Then run through all available event indices (those are
+ * set when XI starts up) and binary OR's the device's mask to whatever the
+ * event mask for the given event type was.
+ * If an error occurs, it is sent to the client. Errors are generated if
+ *  - if the device given in the event classs is invalid
+ *  - if the device in the class list is not the device given as parameter (no
+ *  error if parameter is NULL)
+ *
+ * mask has to be size EMASKSIZE and pre-allocated.
+ *
+ * @param client The client to send the error to (if one occurs)
+ * @param list List of event classes as sent from the client.
+ * @param count Number of elements in list.
+ * @param mask Preallocated mask (size EMASKSIZE).
+ * @param dev The device we're creating masks for.
+ * @param req The request we're processing. Used to fill in error fields.
  */
 
 int
@@ -164,7 +184,7 @@ CreateMaskFromList(ClientPtr client, XEventClass * list, int count,
 	if (device > 255)
 	    return BadClass;
 
-	rc = dixLookupDevice(&tdev, device, client, DixReadAccess);
+	rc = dixLookupDevice(&tdev, device, client, DixUseAccess);
 	if (rc != BadDevice && rc != Success)
 	    return rc;
 	if (rc == BadDevice || (dev != NULL && tdev != dev))

@@ -43,7 +43,6 @@
 #include <sys/utsname.h>
 #endif
 
-#define NEED_EVENTS
 #include <X11/X.h>
 #include <X11/Xmd.h>
 #include <X11/Xproto.h>
@@ -68,15 +67,10 @@
 #include "xf86Config.h"
 #include "xf86_OSlib.h"
 #include "xorgVersion.h"
-#include "xf86Date.h"
 #include "xf86Build.h"
 #include "mipointer.h"
-#ifdef XINPUT
 #include <X11/extensions/XI.h>
 #include <X11/extensions/XIproto.h>
-#else
-#include "inputstr.h"
-#endif
 #include "xf86DDC.h"
 #include "xf86Xinput.h"
 #include "xf86InPriv.h"
@@ -84,11 +78,11 @@
 #include "picturestr.h"
 #endif
 
+#include "xf86VGAarbiter.h"
 #include "globals.h"
 
 #ifdef DPMSExtension
-#define DPMS_SERVER
-#include <X11/extensions/dpms.h>
+#include <X11/extensions/dpmsconst.h>
 #include "dpmsproc.h"
 #endif
 
@@ -97,15 +91,8 @@
 #include "xf86Bus.h"
 
 /* forward declarations */
-
-static void xf86PrintBanner(void);
-static void xf86PrintMarkers(void);
-static void xf86PrintDefaultModulePath(void);
-static void xf86PrintDefaultLibraryPath(void);
-
 static Bool probe_devices_from_device_sections(DriverPtr drvp);
 static Bool add_matching_devices_to_configure_list(DriverPtr drvp);
-static Bool check_for_matching_devices(DriverPtr drvp);
 
 #ifdef XF86PM
 void (*xf86OSPMClose)(void) = NULL;
@@ -131,6 +118,131 @@ static int numFormats = 6;
 #endif
 static Bool formatsDone = FALSE;
 
+#ifndef OSNAME
+#define OSNAME " unknown"
+#endif
+#ifndef OSVENDOR
+#define OSVENDOR ""
+#endif
+#ifndef PRE_RELEASE
+#define PRE_RELEASE XORG_VERSION_SNAP
+#endif
+
+static void
+xf86PrintBanner(void)
+{
+#if PRE_RELEASE
+  ErrorF("\n"
+    "This is a pre-release version of the X server from " XVENDORNAME ".\n"
+    "It is not supported in any way.\n"
+    "Bugs may be filed in the bugzilla at http://bugs.freedesktop.org/.\n"
+    "Select the \"xorg\" product for bugs you find in this release.\n"
+    "Before reporting bugs in pre-release versions please check the\n"
+    "latest version in the X.Org Foundation git repository.\n"
+    "See http://wiki.x.org/wiki/GitPage for git access instructions.\n");
+#endif
+  ErrorF("\nX.Org X Server %d.%d.%d",
+	 XORG_VERSION_MAJOR,
+	 XORG_VERSION_MINOR,
+	 XORG_VERSION_PATCH);
+#if XORG_VERSION_SNAP > 0
+  ErrorF(".%d", XORG_VERSION_SNAP);
+#endif
+
+#if XORG_VERSION_SNAP >= 900
+  /* When the minor number is 99, that signifies that the we are making
+   * a release candidate for a major version.  (X.0.0)
+   * When the patch number is 99, that signifies that the we are making
+   * a release candidate for a minor version.  (X.Y.0)
+   * When the patch number is < 99, then we are making a release
+   * candidate for the next point release.  (X.Y.Z)
+   */
+#if XORG_VERSION_MINOR >= 99
+  ErrorF(" (%d.0.0 RC %d)", XORG_VERSION_MAJOR+1, XORG_VERSION_SNAP - 900);
+#elif XORG_VERSION_PATCH == 99
+  ErrorF(" (%d.%d.0 RC %d)", XORG_VERSION_MAJOR, XORG_VERSION_MINOR + 1,
+				XORG_VERSION_SNAP - 900);
+#else
+  ErrorF(" (%d.%d.%d RC %d)", XORG_VERSION_MAJOR, XORG_VERSION_MINOR,
+ 			 XORG_VERSION_PATCH + 1, XORG_VERSION_SNAP - 900);
+#endif
+#endif
+
+#ifdef XORG_CUSTOM_VERSION
+  ErrorF(" (%s)", XORG_CUSTOM_VERSION);
+#endif
+#ifndef XORG_DATE
+# define XORG_DATE "Unknown"
+#endif
+  ErrorF("\nRelease Date: %s\n", XORG_DATE);
+  ErrorF("X Protocol Version %d, Revision %d\n",
+         X_PROTOCOL, X_PROTOCOL_REVISION);
+  ErrorF("Build Operating System: %s %s\n", OSNAME, OSVENDOR);
+#ifdef HAS_UTSNAME
+  {
+    struct utsname name;
+
+    /* Linux & BSD state that 0 is success, SysV (including Solaris, HP-UX,
+       and Irix) and Single Unix Spec 3 just say that non-negative is success.
+       All agree that failure is represented by a negative number.
+     */
+    if (uname(&name) >= 0) {
+      ErrorF("Current Operating System: %s %s %s %s %s\n",
+	name.sysname, name.nodename, name.release, name.version, name.machine);
+#ifdef linux
+      do {
+	  char buf[80];
+	  int fd = open("/proc/cmdline", O_RDONLY);
+	  if (fd != -1) {
+	    ErrorF("Kernel command line: ");
+	    memset(buf, 0, 80);
+	    while (read(fd, buf, 80) > 0) {
+		ErrorF("%.80s", buf);
+		memset(buf, 0, 80);
+	    }
+	    close(fd);
+	  } 
+      } while (0);
+#endif
+    }
+  }
+#endif
+#if defined(BUILD_DATE) && (BUILD_DATE > 19000000)
+  {
+    struct tm t;
+    char buf[100];
+
+    bzero(&t, sizeof(t));
+    bzero(buf, sizeof(buf));
+    t.tm_mday = BUILD_DATE % 100;
+    t.tm_mon = (BUILD_DATE / 100) % 100 - 1;
+    t.tm_year = BUILD_DATE / 10000 - 1900;
+#if defined(BUILD_TIME)
+    t.tm_sec = BUILD_TIME % 100;
+    t.tm_min = (BUILD_TIME / 100) % 100;
+    t.tm_hour = (BUILD_TIME / 10000) % 100;
+    if (strftime(buf, sizeof(buf), "%d %B %Y  %I:%M:%S%p", &t))
+       ErrorF("Build Date: %s\n", buf);
+#else
+    if (strftime(buf, sizeof(buf), "%d %B %Y", &t))
+       ErrorF("Build Date: %s\n", buf);
+#endif
+  }
+#endif
+#if defined(BUILDERSTRING)
+  ErrorF("%s \n",BUILDERSTRING);
+#endif
+  ErrorF("Current version of pixman: %s\n", pixman_version_string());
+  ErrorF("\tBefore reporting problems, check "__VENDORDWEBSUPPORT__"\n"
+	 "\tto make sure that you have the latest version.\n");
+}
+
+static void
+xf86PrintMarkers(void)
+{
+  LogPrintMarkers();
+}
+
 static Bool
 xf86CreateRootWindow(WindowPtr pWin)
 {
@@ -141,9 +253,7 @@ xf86CreateRootWindow(WindowPtr pWin)
   CreateWindowProcPtr CreateWindow = (CreateWindowProcPtr)
       dixLookupPrivate(&pScreen->devPrivates, xf86CreateRootWindowKey);
 
-#ifdef DEBUG
-  ErrorF("xf86CreateRootWindow(%p)\n", pWin);
-#endif
+  DebugF("xf86CreateRootWindow(%p)\n", pWin);
 
   if ( pScreen->CreateWindow != xf86CreateRootWindow ) {
     /* Can't find hook we are hung on */
@@ -178,10 +288,10 @@ xf86CreateRootWindow(WindowPtr pWin)
 					pProp->size, pProp->data,
 					FALSE);
 	}
-      
+
       /* Look at err */
       ret &= (err==Success);
-      
+
     } else {
       xf86Msg(X_ERROR, "xf86CreateRootWindow unexpectedly called with "
 	      "non-root window %p (parent %p)\n",
@@ -190,47 +300,40 @@ xf86CreateRootWindow(WindowPtr pWin)
     }
   }
 
-#ifdef DEBUG
-  ErrorF("xf86CreateRootWindow() returns %d\n", ret);
-#endif
+  DebugF("xf86CreateRootWindow() returns %d\n", ret);
   return (ret);
 }
 
 
 static void
-PostConfigInit(void)
+InstallSignalHandlers(void)
 {
     /*
      * Install signal handler for unexpected signals
      */
     xf86Info.caughtSignal=FALSE;
     if (!xf86Info.notrapSignals) {
-       signal(SIGSEGV,xf86SigHandler);
-       signal(SIGILL,xf86SigHandler);
+	OsRegisterSigWrapper(xf86SigWrapper);
+    } else {
+	signal(SIGSEGV, SIG_DFL);
+	signal(SIGILL, SIG_DFL);
 #ifdef SIGEMT
-       signal(SIGEMT,xf86SigHandler);
+	signal(SIGEMT, SIG_DFL);
 #endif
-       signal(SIGFPE,xf86SigHandler);
+	signal(SIGFPE, SIG_DFL);
 #ifdef SIGBUS
-       signal(SIGBUS,xf86SigHandler);
+	signal(SIGBUS, SIG_DFL);
 #endif
 #ifdef SIGSYS
-       signal(SIGSYS,xf86SigHandler);
+	signal(SIGSYS, SIG_DFL);
 #endif
 #ifdef SIGXCPU
-       signal(SIGXCPU,xf86SigHandler);
+	signal(SIGXCPU, SIG_DFL);
 #endif
 #ifdef SIGXFSZ
-       signal(SIGXFSZ,xf86SigHandler);
+	signal(SIGXFSZ, SIG_DFL);
 #endif
     }
-
-#ifdef XF86PM
-    xf86OSPMClose = xf86OSPMOpen();
-#endif
-    
-    /* Do this after XF86Config is read (it's normally in OsInit()) */
-    OsInitColors();
 }
 
 
@@ -258,7 +361,7 @@ probe_devices_from_device_sections(DriverPtr drvp)
 	iter = pci_id_match_iterator_create(NULL);
 	while ((pPci = pci_device_next(iter)) != NULL) {
 	    if (devList[i]->busID && *devList[i]->busID) {
-		if (xf86ComparePciBusString(devList[i]->busID, 
+		if (xf86ComparePciBusString(devList[i]->busID,
 					    ((pPci->domain << 8)
 					     | pPci->bus),
 					    pPci->dev,
@@ -301,11 +404,9 @@ probe_devices_from_device_sections(DriverPtr drvp)
 		if ( (devList[i]->screen == 0) && !xf86CheckPciSlot( pPci ) )
 		  continue;
 
-#ifdef DEBUG
-		ErrorF("%s: card at %d:%d:%d is claimed by a Device section\n",
+		DebugF("%s: card at %d:%d:%d is claimed by a Device section\n",
 		       drvp->driverName, pPci->bus, pPci->dev, pPci->func);
-#endif
-	
+
 		/* Allocate an entry in the lists to be returned */
 		entry = xf86ClaimPciSlot(pPci, drvp, device_id,
 					  devList[i], devList[i]->active);
@@ -315,7 +416,7 @@ probe_devices_from_device_sections(DriverPtr drvp)
 
 		    for ( k = 0; k < xf86NumEntities; k++ ) {
 			EntityPtr pEnt = xf86Entities[k];
-			if (pEnt->busType != BUS_PCI)
+			if (pEnt->bus.type != BUS_PCI)
 			  continue;
 
 			if (pEnt->bus.id.pci == pPci) {
@@ -325,20 +426,21 @@ probe_devices_from_device_sections(DriverPtr drvp)
 			}
 		    }
 		}
-		
+
 		if (entry != -1) {
 		    if ((*drvp->PciProbe)(drvp, entry, pPci,
 					  devices[j].match_data)) {
 			foundScreen = TRUE;
-		    }
+		    } else
+			xf86UnclaimPciSlot(pPci);
 		}
 
 		break;
 	    }
 	}
     }
+    xfree(devList);
 
-	
     return foundScreen;
 }
 
@@ -364,8 +466,8 @@ add_matching_devices_to_configure_list(DriverPtr drvp)
 		 && ((devices[j].device_class_mask & pPci->device_class)
 		     == devices[j].device_class) ) {
 		if (xf86CheckPciSlot(pPci)) {
-		    GDevPtr pGDev = 
-		      xf86AddDeviceToConfigure(drvp->driverName, pPci, -1);
+		    GDevPtr pGDev = xf86AddBusDeviceToConfigure(
+					drvp->driverName, BUS_PCI, pPci, -1);
 		    if (pGDev != NULL) {
 			/* After configure pass 1, chipID and chipRev are
 			 * treated as over-rides, so clobber them here.
@@ -388,32 +490,6 @@ add_matching_devices_to_configure_list(DriverPtr drvp)
     return (numFound != 0);
 }
 
-
-Bool
-check_for_matching_devices(DriverPtr drvp)
-{
-    const struct pci_id_match * const devices = drvp->supported_devices;
-    int j;
-
-
-    for (j = 0; ! END_OF_MATCHES(devices[j]); j++) {
-	struct pci_device_iterator *iter;
-	struct pci_device *dev;
-	
-	iter = pci_id_match_iterator_create(& devices[j]);
-	dev = pci_device_next(iter);
-	pci_iterator_destroy(iter);
-	
-	if (dev != NULL) {
-	    return TRUE;
-	}
-    }
-
-
-    return FALSE;
-}
-
-
 /**
  * Call the driver's correct probe function.
  *
@@ -422,9 +498,9 @@ check_for_matching_devices(DriverPtr drvp)
  * is found, it is called.  If \c DriverRec::PciProbe or no devices can be
  * successfully probed with it (e.g., only non-PCI devices are available),
  * the driver's \c DriverRec::Probe function is called.
- * 
+ *
  * \param drv   Driver to probe
- * 
+ *
  * \return
  * If a device can be successfully probed by the driver, \c TRUE is
  * returned.  Otherwise, \c FALSE is returned.
@@ -435,11 +511,7 @@ xf86CallDriverProbe( DriverPtr drv, Bool detect_only )
     Bool     foundScreen = FALSE;
 
     if ( drv->PciProbe != NULL ) {
-	if ( xf86DoProbe ) {
-	    assert( detect_only );
-	    foundScreen = check_for_matching_devices( drv );
-	}
-	else if ( xf86DoConfigure && xf86DoConfigurePass1 ) {
+	if ( xf86DoConfigure && xf86DoConfigurePass1 ) {
 	    assert( detect_only );
 	    foundScreen = add_matching_devices_to_configure_list( drv );
 	}
@@ -452,7 +524,7 @@ xf86CallDriverProbe( DriverPtr drv, Bool detect_only )
     if ( ! foundScreen && (drv->Probe != NULL) ) {
 	xf86Msg( X_WARNING, "Falling back to old probe method for %s\n",
 		 drv->driverName );
-	foundScreen = (*drv->Probe)( drv, (detect_only) ? PROBE_DETECT 
+	foundScreen = (*drv->Probe)( drv, (detect_only) ? PROBE_DETECT
 				     : PROBE_DEFAULT );
     }
 
@@ -476,7 +548,8 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
   MessageType		 pix24From = X_DEFAULT;
   Bool			 pix24Fail = FALSE;
   Bool			 autoconfig = FALSE;
-  
+  GDevPtr		 configured_device;
+
   xf86Initialising = TRUE;
 
   if (serverGeneration == 1) {
@@ -488,19 +561,19 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
     else
       xf86ServerName = argv[0];
 
-    xf86PrintBanner();
-    xf86PrintMarkers();
-    if (xf86LogFile)  {
-	time_t t;
-	const char *ct;
-	t = time(NULL);
-	ct = ctime(&t);
-	xf86MsgVerb(xf86LogFileFrom, 0, "Log file: \"%s\", Time: %s",
-		    xf86LogFile, ct);
-    }
+	xf86PrintBanner();
+	xf86PrintMarkers();
+	if (xf86LogFile)  {
+	    time_t t;
+	    const char *ct;
+	    t = time(NULL);
+	    ct = ctime(&t);
+	    xf86MsgVerb(xf86LogFileFrom, 0, "Log file: \"%s\", Time: %s",
+			xf86LogFile, ct);
+	}
 
     /* Read and parse the config file */
-    if (!xf86DoProbe && !xf86DoConfigure) {
+    if (!xf86DoConfigure && !xf86DoShowOptions) {
       switch (xf86HandleConfigFile(FALSE)) {
       case CONFIG_OK:
 	break;
@@ -513,8 +586,7 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
       }
     }
 
-    if (!autoconfig)
-	PostConfigInit();
+    InstallSignalHandlers();
 
     /* Initialise the loader */
     LoaderInit();
@@ -526,13 +598,13 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
         LoaderSetOptions(LDR_OPT_ABI_MISMATCH_NONFATAL);
     }
 
+    if (xf86DoShowOptions)
+        DoShowOptions();
+
     xf86OpenConsole();
 
     /* Do a general bus probe.  This will be a PCI probe for x86 platforms */
     xf86BusProbe();
-
-    if (xf86DoProbe)
-	DoProbe();
 
     if (xf86DoConfigure)
 	DoConfigure();
@@ -542,11 +614,11 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 	    xf86Msg(X_ERROR, "Auto configuration failed\n");
 	    return;
 	}
-	PostConfigInit();
     }
 
-    /* Initialise the resource broker */
-    xf86ResourceBrokerInit();
+#ifdef XF86PM
+    xf86OSPMClose = xf86OSPMOpen();
+#endif
 
     /* Load all modules specified explicitly in the config file */
     if ((modulelist = xf86ModulelistFromConfig(&optionlist))) {
@@ -559,7 +631,7 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
     /* If there aren't any specified in the config file, autoconfig them */
     /* FIXME: Does not handle multiple active screen sections, but I'm not
      * sure if we really want to handle that case*/
-    GDevPtr configured_device = xf86ConfigLayout.screens->screen->device;
+    configured_device = xf86ConfigLayout.screens->screen->device;
     if ((!configured_device) || (!configured_device->driver)) {
         if (!autoConfigDevice(configured_device)) {
             xf86Msg(X_ERROR, "Automatic driver configuration failed\n");
@@ -605,14 +677,10 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 
     for (i = 0; i < xf86NumDrivers; i++) {
 	xorgHWFlags flags;
-      /* The Identify function is mandatory, but if it isn't there continue */
+
 	if (xf86DriverList[i]->Identify != NULL)
 	    xf86DriverList[i]->Identify(0);
-	else {
-	    xf86Msg(X_WARNING, "Driver `%s' has no Identify function\n",
-		  xf86DriverList[i]->driverName ? xf86DriverList[i]->driverName
-					     : "noname");
-	}
+
 	if (!xorgHWAccess
 	    && (!xf86DriverList[i]->driverFunc
 		|| !xf86DriverList[i]->driverFunc(NULL,
@@ -623,19 +691,16 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
     }
 
     /* Enable full I/O access */
-    if (xorgHWAccess) {
-	if(!xf86EnableIO())
-	    /* oops, we have failed */
-	    xorgHWAccess = FALSE;
-    }
+    if (xorgHWAccess)
+	xorgHWAccess = xf86EnableIO();
 
     /*
      * Locate bus slot that had register IO enabled at server startup
      */
-
-    xf86AccessInit();
-    xf86FindPrimaryDevice();
-
+    if (xorgHWAccess) {
+        xf86AccessInit();
+        xf86FindPrimaryDevice();
+    }
     /*
      * Now call each of the Probe functions.  Each successful probe will
      * result in an extra entry added to the xf86Screens[] list for each
@@ -649,7 +714,7 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 		|| !xf86DriverList[i]->driverFunc(NULL,
 						 GET_REQUIRED_HW_INTERFACES,
 						  &flags)
-		|| NEED_IO_ENABLED(flags)) 
+		|| NEED_IO_ENABLED(flags))
 		continue;
 	}
 
@@ -664,6 +729,8 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
       xf86Msg(X_ERROR, "No devices detected.\n");
       return;
     }
+
+    xf86VGAarbiterInit();
 
     /*
      * Match up the screens found by the probes against those specified
@@ -685,7 +752,7 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 	   layout++) {
 	  Bool found = FALSE;
 	  for (j = 0; j < xf86Screens[i]->numEntities; j++) {
-	
+
 	      GDevPtr dev =
 		xf86GetDevFromEntity(xf86Screens[i]->entityList[j],
 				     xf86Screens[i]->entityInstanceList[j]);
@@ -743,17 +810,19 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
      * Call the driver's PreInit()'s to complete initialisation for the first
      * generation.
      */
-    
+
     for (i = 0; i < xf86NumScreens; i++) {
-	xf86EnableAccess(xf86Screens[i]);
+	xf86VGAarbiterScrnInit(xf86Screens[i]);
+	xf86VGAarbiterLock(xf86Screens[i]);
 	if (xf86Screens[i]->PreInit &&
 	    xf86Screens[i]->PreInit(xf86Screens[i], 0))
 	    xf86Screens[i]->configured = TRUE;
+	xf86VGAarbiterUnlock(xf86Screens[i]);
     }
     for (i = 0; i < xf86NumScreens; i++)
 	if (!xf86Screens[i]->configured)
 	    xf86DeleteScreen(i--, 0);
-    
+
     /*
      * If no screens left, return now.
      */
@@ -764,55 +833,14 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
       return;
     }
 
-    /* This could be moved into a separate function */
-
-    /*
-     * Check that all screens have initialised the mandatory function
-     * entry points.  Delete those which have not.
-     */
-
-#define WARN_SCREEN(func) \
-    xf86Msg(X_ERROR, "Driver `%s' has no %s function, deleting.\n", \
-	   xf86Screens[i]->name, (warned++, func))
-
     for (i = 0; i < xf86NumScreens; i++) {
-      int warned = 0;
       if (xf86Screens[i]->name == NULL) {
-	xf86Screens[i]->name = xnfalloc(strlen("screen") + 1 + 1);
-	if (i < 10)
-	  sprintf(xf86Screens[i]->name, "screen%c", i + '0');
-	else
-	  sprintf(xf86Screens[i]->name, "screen%c", i - 10 + 'A');
+	xf86Screens[i]->name = xnfalloc(strlen("screen") + 10 + 1);
+	sprintf(xf86Screens[i]->name, "screen%d", i);
 	xf86MsgVerb(X_WARNING, 0,
 		    "Screen driver %d has no name set, using `%s'.\n",
 		    i, xf86Screens[i]->name);
       }
-      if (xf86Screens[i]->ScreenInit == NULL)
-	WARN_SCREEN("ScreenInit");
-      if (xf86Screens[i]->EnterVT == NULL)
-	WARN_SCREEN("EnterVT");
-      if (xf86Screens[i]->LeaveVT == NULL)
-	WARN_SCREEN("LeaveVT");
-      if (warned)
-	xf86DeleteScreen(i--, 0);
-    }
-
-    /*
-     * If no screens left, return now.
-     */
-
-    if (xf86NumScreens == 0) {
-      xf86Msg(X_ERROR, "Screen(s) found, but drivers were unusable.\n");
-      return;
-    }
-
-    /* XXX Should this be before or after loading dependent modules? */
-    if (xf86ProbeOnly)
-    {
-      OsCleanup(TRUE);
-      AbortDDX();
-      fflush(stderr);
-      exit(0);
     }
 
     /* Remove (unload) drivers that are not required */
@@ -830,7 +858,6 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
     /*
      * Collect all pixmap formats and check for conflicts at the display
      * level.  Should we die here?  Or just delete the offending screens?
-     * Also, should this be done for -probeonly?
      */
     screenpix24 = Pix24DontCare;
     for (i = 0; i < xf86NumScreens; i++) {
@@ -914,12 +941,12 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 	FatalError("Unable to make VT property - out of memory. Exiting...\n");
       }
       *VT = xf86Info.vtno;
-    
+
       VTAtom = MakeAtom(VT_ATOM_NAME, sizeof(VT_ATOM_NAME) - 1, TRUE);
 
       for (i = 0, ret = Success; i < xf86NumScreens && ret == Success; i++) {
 	ret = xf86RegisterRootWindowProperty(xf86Screens[i]->scrnIndex,
-					     VTAtom, XA_INTEGER, 32, 
+					     VTAtom, XA_INTEGER, 32,
 					     1, VT );
 	if (ret != Success)
 	  xf86DrvMsg(xf86Screens[i]->scrnIndex, X_WARNING,
@@ -935,15 +962,6 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 	    break;
 	}
     }
-
-#ifdef XKB
-    xf86InitXkb();
-#endif
-    /* set up the proper access funcs */
-    xf86PostPreInit();
-
-    AddCallback(&ServerGrabCallback, xf86GrabServerCallback, NULL);
-    
   } else {
     /*
      * serverGeneration != 1; some OSs have to do things here, too.
@@ -967,34 +985,6 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 	xf86EnableIO();
   }
 
-#if 0
-  /*
-   * Install signal handler for unexpected signals
-   */
-  xf86Info.caughtSignal=FALSE;
-  if (!xf86Info.notrapSignals)
-  {
-     signal(SIGSEGV,xf86SigHandler);
-     signal(SIGILL,xf86SigHandler);
-#ifdef SIGEMT
-     signal(SIGEMT,xf86SigHandler);
-#endif
-     signal(SIGFPE,xf86SigHandler);
-#ifdef SIGBUS
-     signal(SIGBUS,xf86SigHandler);
-#endif
-#ifdef SIGSYS
-     signal(SIGSYS,xf86SigHandler);
-#endif
-#ifdef SIGXCPU
-     signal(SIGXCPU,xf86SigHandler);
-#endif
-#ifdef SIGXFSZ
-     signal(SIGXFSZ,xf86SigHandler);
-#endif
-  }
-#endif
-
   /*
    * Use the previously collected parts to setup pScreenInfo
    */
@@ -1008,7 +998,7 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
     pScreenInfo->formats[i] = formats[i];
 
   /* Make sure the server's VT is active */
-    
+
   if (serverGeneration != 1) {
     xf86Resetting = TRUE;
     /* All screens are in the same state, so just check the first */
@@ -1018,7 +1008,7 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 #endif
       xf86AccessEnter();
       xf86EnterServerState(SETUP);
-    } 
+    }
   }
 #ifdef SCO325
   else {
@@ -1035,20 +1025,23 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
   }
 #endif /* SCO325 */
 
-  for (i = 0; i < xf86NumScreens; i++) {    
-   	xf86EnableAccess(xf86Screens[i]);
+  for (i = 0; i < xf86NumScreens; i++) {
+	xf86VGAarbiterLock(xf86Screens[i]);
 	/*
 	 * Almost everything uses these defaults, and many of those that
 	 * don't, will wrap them.
 	 */
 	xf86Screens[i]->EnableDisableFBAccess = xf86EnableDisableFBAccess;
+#ifdef XFreeXDGA
 	xf86Screens[i]->SetDGAMode = xf86SetDGAMode;
+#endif
 	xf86Screens[i]->DPMSSet = NULL;
-	xf86Screens[i]->LoadPalette = NULL; 
+	xf86Screens[i]->LoadPalette = NULL;
 	xf86Screens[i]->SetOverscan = NULL;
 	xf86Screens[i]->DriverFunc = NULL;
 	xf86Screens[i]->pScreen = NULL;
 	scr_index = AddScreen(xf86Screens[i]->ScreenInit, argc, argv);
+	xf86VGAarbiterUnlock(xf86Screens[i]);
       if (scr_index == i) {
 	/*
 	 * Hook in our ScrnInfoRec, and initialise some other pScreen
@@ -1064,12 +1057,10 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 	FatalError("AddScreen/ScreenInit failed for driver %d\n", i);
       }
 
-#ifdef DEBUG
-      ErrorF("InitOutput - xf86Screens[%d]->pScreen = %p\n",
+      DebugF("InitOutput - xf86Screens[%d]->pScreen = %p\n",
 	     i, xf86Screens[i]->pScreen );
-      ErrorF("xf86Screens[%d]->pScreen->CreateWindow = %p\n",
+      DebugF("xf86Screens[%d]->pScreen->CreateWindow = %p\n",
 	     i, xf86Screens[i]->pScreen->CreateWindow );
-#endif
 
       dixSetPrivate(&screenInfo.screens[scr_index]->devPrivates,
 		    xf86CreateRootWindowKey,
@@ -1079,7 +1070,7 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
 #ifdef RENDER
     if (PictureGetSubpixelOrder (xf86Screens[i]->pScreen) == SubPixelUnknown)
     {
-	xf86MonPtr DDC = (xf86MonPtr)(xf86Screens[i]->monitor->DDC); 
+	xf86MonPtr DDC = (xf86MonPtr)(xf86Screens[i]->monitor->DDC);
 	PictureSetSubpixelOrder (xf86Screens[i]->pScreen,
 				 DDC ?
 				 (DDC->features.input_type ?
@@ -1112,16 +1103,16 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
  */
 
 void
-InitInput(argc, argv)
-     int     	  argc;
-     char    	  **argv;
+InitInput(int argc, char **argv)
 {
     IDevPtr* pDev;
-    InputDriverPtr pDrv;
-    InputInfoPtr pInfo;
+    DeviceIntPtr dev;
 
     xf86Info.vtRequestsPending = FALSE;
-    xf86Info.inputPending = FALSE;
+
+    mieqInit();
+
+    GetEventList(&xf86Events);
 
     /* Call the PreInit function for each input device instance. */
     for (pDev = xf86ConfigLayout.inputs; pDev && *pDev; pDev++) {
@@ -1130,75 +1121,36 @@ InitInput(argc, argv)
             strcpy((*pDev)->driver, "kbd");
         }
 
-        if ((pDrv = xf86LookupInputDriver((*pDev)->driver)) == NULL) {
-            xf86Msg(X_ERROR, "No Input driver matching `%s'\n", (*pDev)->driver);
-            /* XXX For now, just continue. */
-            continue;
-        }
-        if (!pDrv->PreInit) {
-            xf86MsgVerb(X_WARNING, 0,
-                    "Input driver `%s' has no PreInit function (ignoring)\n",
-                    pDrv->driverName);
-            continue;
-        }
-        pInfo = pDrv->PreInit(pDrv, *pDev, 0);
-        if (!pInfo) {
-            xf86Msg(X_ERROR, "PreInit returned NULL for \"%s\"\n",
-                    (*pDev)->identifier);
-            continue;
-        } else if (!(pInfo->flags & XI86_CONFIGURED)) {
-            xf86Msg(X_ERROR, "PreInit failed for input device \"%s\"\n",
-                    (*pDev)->identifier);
-            xf86DeleteInput(pInfo, 0);
-            continue;
-        }
+        /* If one fails, the others will too */
+        if (xf86NewInputDevice(*pDev, &dev, TRUE) == BadAlloc)
+            break;
     }
-
-    /* Initialise all input devices. */
-    pInfo = xf86InputDevs;
-    while (pInfo) {
-        xf86Msg(X_INFO, "evaluating device (%s)\n", pInfo->name);
-	xf86ActivateDevice(pInfo);
-	pInfo = pInfo->next;
-    }
-
-    mieqInit();
 }
-
-#ifndef SET_STDERR_NONBLOCKING
-#define SET_STDERR_NONBLOCKING 1
-#endif
 
 /*
  * OsVendorInit --
  *      OS/Vendor-specific initialisations.  Called from OsInit(), which
  *      is called by dix before establishing the well known sockets.
  */
- 
+
 void
-OsVendorInit()
+OsVendorInit(void)
 {
   static Bool beenHere = FALSE;
 
 #ifdef SIGCHLD
   signal(SIGCHLD, SIG_DFL);	/* Need to wait for child processes */
 #endif
-  OsDelayInitColors = TRUE;
-#ifndef BUILTIN_FONTS
-  loadableFonts = TRUE;
-#endif
 
   if (!beenHere)
     xf86LogInit();
 
-#if SET_STDERR_NONBLOCKING
         /* Set stderr to non-blocking. */
 #ifndef O_NONBLOCK
 #if defined(FNDELAY)
 #define O_NONBLOCK FNDELAY
 #elif defined(O_NDELAY)
 #define O_NONBLOCK O_NDELAY
-#endif
 #endif
 
 #ifdef O_NONBLOCK
@@ -1227,9 +1179,11 @@ OsVendorInit()
  */
 
 void
-ddxGiveUp()
+ddxGiveUp(void)
 {
     int i;
+
+    xf86VGAarbiterFini();
 
 #ifdef XF86PM
     if (xf86OSPMClose)
@@ -1237,21 +1191,14 @@ ddxGiveUp()
     xf86OSPMClose = NULL;
 #endif
 
-    xf86AccessLeaveState();
-
     for (i = 0; i < xf86NumScreens; i++) {
 	/*
 	 * zero all access functions to
 	 * trap calls when switched away.
 	 */
 	xf86Screens[i]->vtSema = FALSE;
-	xf86Screens[i]->access = NULL;
-	xf86Screens[i]->busAccess = NULL;
     }
 
-#ifdef USE_XF86_SERVERLOCK
-    xf86UnlockServer();
-#endif
 #ifdef XFreeXDGA
     DGAShutdown();
 #endif
@@ -1275,7 +1222,7 @@ ddxGiveUp()
  */
 
 void
-AbortDDX()
+AbortDDX(void)
 {
   int i;
 
@@ -1296,13 +1243,12 @@ AbortDDX()
 	       * we might not have been wrapped yet. Therefore enable
 	       * screen explicitely.
 	       */
-	      xf86EnableAccess(xf86Screens[i]);
 	      (xf86Screens[i]->LeaveVT)(i, 0);
 	  }
   }
-  
+
   xf86AccessLeave();
-  
+
   /*
    * This is needed for an abnormal server exit, since the normal exit stuff
    * MUST also be performed (i.e. the vt must be left in a defined state)
@@ -1311,7 +1257,7 @@ AbortDDX()
 }
 
 void
-OsVendorFatalError()
+OsVendorFatalError(void)
 {
 #ifdef VENDORSUPPORT
     ErrorF("\nPlease refer to your Operating System Vendor support pages\n"
@@ -1346,6 +1292,18 @@ xf86SetLogVerbosity(int verb)
     return save;
 }
 
+static void
+xf86PrintDefaultModulePath(void)
+{
+  ErrorF("%s\n", DEFAULT_MODULE_PATH);
+}
+
+static void
+xf86PrintDefaultLibraryPath(void)
+{
+  ErrorF("%s\n", DEFAULT_LIBRARY_PATH);
+}
+
 /*
  * ddxProcessArgument --
  *	Process device-dependent command line args. Returns 0 if argument is
@@ -1353,8 +1311,6 @@ xf86SetLogVerbosity(int verb)
  *      that are part of a device dependent commandline option.
  *
  */
-
-
 
 /* ARGSUSED */
 int
@@ -1371,11 +1327,13 @@ ddxProcessArgument(int argc, char **argv, int i)
       UseMsg(); 							\
       FatalError("Required argument to %s not specified\n", argv[i]);	\
     }
-  
+
   /* First the options that are only allowed for root */
-  if (getuid() == 0 || geteuid() != 0)
-  {
-    if (!strcmp(argv[i], "-modulepath"))
+  if (!strcmp(argv[i], "-modulepath") || !strcmp(argv[i], "-logfile")) {
+    if ( (geteuid() == 0) && (getuid() != 0) ) {
+      FatalError("The '%s' option can only be used by root.\n", argv[i]);
+    }
+    else if (!strcmp(argv[i], "-modulepath"))
     {
       char *mp;
       CHECK_FOR_REQUIRED_ARGUMENT();
@@ -1399,8 +1357,6 @@ ddxProcessArgument(int argc, char **argv, int i)
       xf86LogFileFrom = X_CMDLINE;
       return 2;
     }
-  } else if (!strcmp(argv[i], "-modulepath") || !strcmp(argv[i], "-logfile")) {
-    FatalError("The '%s' option can only be used by root.\n", argv[i]);
   }
   if (!strcmp(argv[i], "-config") || !strcmp(argv[i], "-xf86config"))
   {
@@ -1414,16 +1370,6 @@ ddxProcessArgument(int argc, char **argv, int i)
     }
     xf86ConfigFile = argv[i + 1];
     return 2;
-  }
-  if (!strcmp(argv[i],"-showunresolved"))
-  {
-    xf86ShowUnresolved = TRUE;
-    return 1;
-  }
-  if (!strcmp(argv[i],"-probeonly"))
-  {
-    xf86ProbeOnly = TRUE;
-    return 1;
   }
   if (!strcmp(argv[i],"-flipPixels"))
   {
@@ -1442,26 +1388,9 @@ ddxProcessArgument(int argc, char **argv, int i)
     return 1;
   }
 #endif
-#ifdef XF86MISC
-  if (!strcmp(argv[i],"-disableModInDev"))
-  {
-    xf86MiscModInDevDisabled = TRUE;
-    return 1;
-  }
-  if (!strcmp(argv[i],"-allowNonLocalModInDev"))
-  {
-    xf86MiscModInDevAllowNonLocal = TRUE;
-    return 1;
-  }
-#endif
   if (!strcmp(argv[i],"-allowMouseOpenFail"))
   {
     xf86AllowMouseOpenFail = TRUE;
-    return 1;
-  }
-  if (!strcmp(argv[i],"-bestRefresh"))
-  {
-    xf86BestRefresh = TRUE;
     return 1;
   }
   if (!strcmp(argv[i],"-ignoreABI"))
@@ -1525,12 +1454,6 @@ ddxProcessArgument(int argc, char **argv, int i)
   if (!strcmp(argv[i], "-fp"))
   {
     xf86fpFlag = TRUE;
-    return 0;
-  }
-  /* Notice the -co flag, but allow it to pass to the dix layer */
-  if (!strcmp(argv[i], "-co"))
-  {
-    xf86coFlag = TRUE;
     return 0;
   }
   /* Notice the -bs flag, but allow it to pass to the dix layer */
@@ -1608,11 +1531,11 @@ ddxProcessArgument(int argc, char **argv, int i)
       return 0;
     }
   }
-  if (!strcmp(argv[i], "-gamma")  || !strcmp(argv[i], "-rgamma") || 
+  if (!strcmp(argv[i], "-gamma")  || !strcmp(argv[i], "-rgamma") ||
       !strcmp(argv[i], "-ggamma") || !strcmp(argv[i], "-bgamma"))
   {
     double gamma;
-    CHECK_FOR_REQUIRED_ARGUMENT();    
+    CHECK_FOR_REQUIRED_ARGUMENT();
     if (sscanf(argv[++i], "%lf", &gamma) == 1) {
        if (gamma < GAMMA_MIN || gamma > GAMMA_MAX) {
 	  ErrorF("gamma out of range, only  %.2f <= gamma_value <= %.1f"
@@ -1647,7 +1570,7 @@ ddxProcessArgument(int argc, char **argv, int i)
   }
   if (!strcmp(argv[i], "-keyboard"))
   {
-    CHECK_FOR_REQUIRED_ARGUMENT();    
+    CHECK_FOR_REQUIRED_ARGUMENT();
     xf86KeyboardName = argv[++i];
     return 2;
   }
@@ -1663,11 +1586,6 @@ ddxProcessArgument(int argc, char **argv, int i)
     return 1;
   }
 #endif
-  if (!strcmp(argv[i], "-probe"))
-  {
-    xf86DoProbe = TRUE;
-    return 1;
-  }
   if (!strcmp(argv[i], "-configure"))
   {
     if (getuid() != 0 && geteuid() == 0) {
@@ -1676,6 +1594,15 @@ ddxProcessArgument(int argc, char **argv, int i)
     }
     xf86DoConfigure = TRUE;
     xf86AllowMouseOpenFail = TRUE;
+    return 1;
+  }
+  if (!strcmp(argv[i], "-showopts"))
+  {
+    if (getuid() != 0 && geteuid() == 0) {
+    ErrorF("The '-showopts' option can only be used by root.\n");
+    exit(1);
+    }
+    xf86DoShowOptions = TRUE;
     return 1;
   }
   if (!strcmp(argv[i], "-isolateDevice"))
@@ -1695,13 +1622,15 @@ ddxProcessArgument(int argc, char **argv, int i)
        FatalError("Invalid isolated device specification\n");
     }
   }
+  /* Notice cmdline xkbdir, but pass to dix as well */
+  if (!strcmp(argv[i], "-xkbdir"))
+  {
+    xf86xkbdirFlag = TRUE;
+    return 0;
+  }
+
   /* OS-specific processing */
   return xf86ProcessArgument(argc, argv, i);
-}
-
-/* ddxInitGlobals - called by |InitGlobals| from os/util.c */
-void ddxInitGlobals(void)
-{
 }
 
 /*
@@ -1711,7 +1640,7 @@ void ddxInitGlobals(void)
  */
 
 void
-ddxUseMsg()
+ddxUseMsg(void)
 {
   ErrorF("\n");
   ErrorF("\n");
@@ -1721,10 +1650,10 @@ ddxUseMsg()
     ErrorF("-modulepath paths      specify the module search path\n");
     ErrorF("-logfile file          specify a log file name\n");
     ErrorF("-configure             probe for devices and write an "__XCONFIGFILE__"\n");
+    ErrorF("-showopts              print available options for all installed drivers\n");
   }
   ErrorF("-config file           specify a configuration file, relative to the\n");
   ErrorF("                       "__XCONFIGFILE__" search path, only root can use absolute\n");
-  ErrorF("-probeonly             probe for devices, then exit\n");
   ErrorF("-verbose [n]           verbose startup messages\n");
   ErrorF("-logverbose [n]        verbose log messages\n");
   ErrorF("-quiet                 minimal startup messages\n");
@@ -1747,13 +1676,7 @@ ddxUseMsg()
   ErrorF("-disableVidMode        disable mode adjustments with xvidtune\n");
   ErrorF("-allowNonLocalXvidtune allow xvidtune to be run as a non-local client\n");
 #endif
-#ifdef XF86MISC
-  ErrorF("-disableModInDev       disable dynamic modification of input device settings\n");
-  ErrorF("-allowNonLocalModInDev allow changes to keyboard and mouse settings\n");
-  ErrorF("                       from non-local clients\n");
   ErrorF("-allowMouseOpenFail    start server even if the mouse can't be initialized\n");
-#endif
-  ErrorF("-bestRefresh           choose modes with the best refresh rate\n");
   ErrorF("-ignoreABI             make module ABI mismatches non-fatal\n");
   ErrorF("-isolateDevice bus_id  restrict device resets to bus_id (PCI only)\n");
   ErrorF("-version               show the server version\n");
@@ -1765,145 +1688,9 @@ ddxUseMsg()
 }
 
 
-#ifndef OSNAME
-#define OSNAME " unknown"
-#endif
-#ifndef OSVENDOR
-#define OSVENDOR ""
-#endif
-#ifndef PRE_RELEASE
-#define PRE_RELEASE XORG_VERSION_SNAP
-#endif
-
-static void
-xf86PrintBanner()
-{
-#if PRE_RELEASE
-  ErrorF("\n"
-    "This is a pre-release version of the X server from " XVENDORNAME ".\n"
-    "It is not supported in any way.\n"
-    "Bugs may be filed in the bugzilla at http://bugs.freedesktop.org/.\n"
-    "Select the \"xorg\" product for bugs you find in this release.\n"
-    "Before reporting bugs in pre-release versions please check the\n"
-    "latest version in the X.Org Foundation git repository.\n"
-    "See http://wiki.x.org/wiki/GitPage for git access instructions.\n");
-#endif
-  ErrorF("\nX.Org X Server %d.%d.%d",
-	 XORG_VERSION_MAJOR,
-	 XORG_VERSION_MINOR,
-	 XORG_VERSION_PATCH);
-#if XORG_VERSION_SNAP > 0
-  ErrorF(".%d", XORG_VERSION_SNAP);
-#endif
-
-#if XORG_VERSION_SNAP >= 900
-  /* When the minor number is 99, that signifies that the we are making
-   * a release candidate for a major version.  (X.0.0)
-   * When the patch number is 99, that signifies that the we are making
-   * a release candidate for a minor version.  (X.Y.0)
-   * When the patch number is < 99, then we are making a release
-   * candidate for the next point release.  (X.Y.Z)
-   */
-#if XORG_VERSION_MINOR >= 99
-  ErrorF(" (%d.0.0 RC %d)", XORG_VERSION_MAJOR+1, XORG_VERSION_SNAP - 900);
-#elif XORG_VERSION_PATCH == 99
-  ErrorF(" (%d.%d.0 RC %d)", XORG_VERSION_MAJOR, XORG_VERSION_MINOR + 1,
-				XORG_VERSION_SNAP - 900);
-#else
-  ErrorF(" (%d.%d.%d RC %d)", XORG_VERSION_MAJOR, XORG_VERSION_MINOR,
- 			 XORG_VERSION_PATCH + 1, XORG_VERSION_SNAP - 900);
-#endif
-#endif
-
-#ifdef XORG_CUSTOM_VERSION
-  ErrorF(" (%s)", XORG_CUSTOM_VERSION);
-#endif
-#ifndef XORG_DATE
-#define XORG_DATE XF86_DATE
-#endif
-  ErrorF("\nRelease Date: %s\n", XORG_DATE);
-  ErrorF("X Protocol Version %d, Revision %d\n",
-         X_PROTOCOL, X_PROTOCOL_REVISION);
-  ErrorF("Build Operating System: %s %s\n", OSNAME, OSVENDOR);
-#ifdef HAS_UTSNAME
-  {
-    struct utsname name;
-
-    /* Linux & BSD state that 0 is success, SysV (including Solaris, HP-UX,
-       and Irix) and Single Unix Spec 3 just say that non-negative is success.
-       All agree that failure is represented by a negative number.
-     */
-    if (uname(&name) >= 0) {
-      ErrorF("Current Operating System: %s %s %s %s %s\n",
-	name.sysname, name.nodename, name.release, name.version, name.machine);
-    }
-  }
-#endif
-#if defined(BUILD_DATE) && (BUILD_DATE > 19000000)
-  {
-    struct tm t;
-    char buf[100];
-
-    bzero(&t, sizeof(t));
-    bzero(buf, sizeof(buf));
-    t.tm_mday = BUILD_DATE % 100;
-    t.tm_mon = (BUILD_DATE / 100) % 100 - 1;
-    t.tm_year = BUILD_DATE / 10000 - 1900;
-#if defined(BUILD_TIME)
-    t.tm_sec = BUILD_TIME % 100;
-    t.tm_min = (BUILD_TIME / 100) % 100;
-    t.tm_hour = (BUILD_TIME / 10000) % 100;
-    if (strftime(buf, sizeof(buf), "%d %B %Y  %I:%M:%S%p", &t))
-       ErrorF("Build Date: %s\n", buf);
-#else
-    if (strftime(buf, sizeof(buf), "%d %B %Y", &t))
-       ErrorF("Build Date: %s\n", buf);
-#endif
-  }
-#endif
-#if defined(CLOG_DATE) && (CLOG_DATE > 19000000)
-  {
-    struct tm t;
-    char buf[100];
-
-    bzero(&t, sizeof(t));
-    bzero(buf, sizeof(buf));
-    t.tm_mday = CLOG_DATE % 100;
-    t.tm_mon = (CLOG_DATE / 100) % 100 - 1;
-    t.tm_year = CLOG_DATE / 10000 - 1900;
-    if (strftime(buf, sizeof(buf), "%d %B %Y", &t))
-       ErrorF("Changelog Date: %s\n", buf);
-  }
-#endif
-#if defined(BUILDERSTRING)
-  ErrorF("%s \n",BUILDERSTRING);
-#endif
-  ErrorF("\tBefore reporting problems, check "__VENDORDWEBSUPPORT__"\n"
-	 "\tto make sure that you have the latest version.\n");
-  ErrorF("Module Loader present\n");
-}
-
-static void
-xf86PrintMarkers()
-{
-  LogPrintMarkers();
-}
-
-static void
-xf86PrintDefaultModulePath(void)
-{
-  ErrorF("%s\n", DEFAULT_MODULE_PATH);
-}
-
-static void
-xf86PrintDefaultLibraryPath(void)
-{
-  ErrorF("%s\n", DEFAULT_LIBRARY_PATH);
-}
-
 /*
  * xf86LoadModules iterates over a list that is being passed in.
- */             
+ */
 Bool
 xf86LoadModules(char **list, pointer *optlist)
 {
@@ -1946,7 +1733,7 @@ xf86LoadModules(char **list, pointer *optlist)
 
 /* Pixmap format stuff */
 
-_X_EXPORT PixmapFormatPtr
+PixmapFormatPtr
 xf86GetPixFormat(ScrnInfoPtr pScrn, int depth)
 {
     int i;
@@ -1974,7 +1761,7 @@ xf86GetPixFormat(ScrnInfoPtr pScrn, int depth)
 	    return &format;
 	}
     }
-	
+
     for (i = 0; i < numFormats; i++)
 	if (formats[i].depth == depth)
 	   break;
@@ -1991,16 +1778,15 @@ xf86GetPixFormat(ScrnInfoPtr pScrn, int depth)
     return NULL;
 }
 
-_X_EXPORT int
+int
 xf86GetBppFromDepth(ScrnInfoPtr pScrn, int depth)
 {
     PixmapFormatPtr format;
 
-   
+
     format = xf86GetPixFormat(pScrn, depth);
     if (format)
 	return format->bitsPerPixel;
     else
 	return 0;
 }
-

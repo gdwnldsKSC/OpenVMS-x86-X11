@@ -92,12 +92,9 @@ bitsizeof(int) padding and sacnline unit == bitsizeof(int).)
  * in order to have both (MSB_FIRST and LSB_FIRST) versions of this
  * in the server, we need to rename one of them
  */
-_X_EXPORT void
-miPushPixels(pGC, pBitMap, pDrawable, dx, dy, xOrg, yOrg)
-    GCPtr	pGC;
-    PixmapPtr	pBitMap;
-    DrawablePtr pDrawable;
-    int		dx, dy, xOrg, yOrg;
+void
+miPushPixels(GCPtr pGC, PixmapPtr pBitMap, DrawablePtr pDrawable,
+             int dx, int dy, int xOrg, int yOrg)
 {
     int		h, dxDivPPW, ibEnd;
     MiBits 	*pwLineStart;
@@ -126,7 +123,7 @@ miPushPixels(pGC, pBitMap, pDrawable, dx, dy, xOrg, yOrg)
             LONG2CHARSDIFFORDER((MiBits)(-1) >> 1);
 #endif
 
-    pwLineStart = (MiBits *)xalloc(BitmapBytePad(dx));
+    pwLineStart = xalloc(BitmapBytePad(dx));
     if (!pwLineStart)
 	return;
     ipt = 0;

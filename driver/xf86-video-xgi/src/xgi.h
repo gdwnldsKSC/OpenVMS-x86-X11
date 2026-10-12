@@ -33,7 +33,6 @@
 #define _XGI_H_
 
 /***************
-
 #define DEBUG2
 #define DEBUG 
 #define DEBUG1
@@ -108,7 +107,7 @@
 #ifdef XF86DRI
 #define XGINEWDRI
 #undef XGINEWDRI2
-#if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,4,99,99,0)	/* Adapt this when the time has come */
+#if XORG_VERSION_CURRENT >= XORG_VERSION_NUMERIC(4,4,99,99,0)	/* Adapt this when the time has come */
 #define XGINEWDRI2
 #endif
 #include "xf86drm.h"
@@ -152,7 +151,8 @@
 #define XGIGAMMA		/* Include code for gamma correction */
 #endif
 
-#if 1				/* Include code for color hardware cursors */
+/* Jong 09/28/2007; disable this because it causes cursor drawing incorrectly */
+#if 0				/* Include code for color hardware cursors */
 #define XGI_ARGB_CURSOR
 #endif
 
@@ -176,13 +176,23 @@
 #undef XGI315DRI		/* define this if dri is adapted for 315/330 series */
 
 #ifndef PCI_VENDOR_XGI
-#define PCI_VENDOR_XGI 		        0x18CA
+#define PCI_VENDOR_XGI 		    0x18CA
 #endif
 #ifndef PCI_CHIP_XGIXG40
 #define PCI_CHIP_XGIXG40 		0x0040
 #endif
 #ifndef PCI_CHIP_XGIXG20
 #define PCI_CHIP_XGIXG20 		0x0020
+#endif
+
+/* Jong 09/18/2007; patch to GIT */
+#ifndef PCI_CHIP_XGIXG27
+#define PCI_CHIP_XGIXG27 		0x0027
+#endif
+
+/* Jong 01/07/2008; support New XG21 */
+#ifndef PCI_CHIP_XGIXG21
+#define PCI_CHIP_XGIXG21 		0x0021
 #endif
 
 #define CONFIG_DRM_XGI
@@ -549,7 +559,7 @@ typedef struct {
     int                 CommandReg;
 
     Bool                HWCursor;
-    CARD16		CursorSize;  		/* Size of HWCursor area (bytes) */
+    CARD16		        CursorSize;  		/* Size of HWCursor area (bytes) */
     xf86CursorInfoPtr   CursorInfoPtr;
     unsigned            CursorOffset;
 
@@ -704,6 +714,8 @@ typedef struct {
 #endif
     unsigned long       ChipFlags;
     unsigned long       XGI_SD_Flags;
+    BOOLEAN		UseHWARGBCursor;
+    BOOLEAN		HWARGBCursor;
     int                 vb;
     BOOLEAN		restorebyset;
     BOOLEAN		nocrt2ddcdetection;
@@ -724,6 +736,8 @@ typedef struct {
     BOOLEAN		enablexgictrl;
     short		Video_MaxWidth, Video_MaxHeight;
     short               scrnPitch2;
+    int	                CurXPreset ;
+    int                 CurYPreset ;
     unsigned long	mmioSize;
 #ifdef XGIMERGED
     Bool		MergedFB, MergedFBAuto;

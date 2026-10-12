@@ -1,9 +1,105 @@
-2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit cc6c87d9467c5c6880e7bba84580c99487febd71
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Oct 2 20:17:29 2009 -0700
 
-	* configure.ac:
-	Update package version for X11R7 release.
+    windowswmproto 1.0.4
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
 
-2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit 7c4f6d6c2189eb677ae0c8e629096d56f86483ee
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Oct 2 20:17:03 2009 -0700
 
-	* configure.ac:
-	Update package version number for final X11R7 release candidate.
+    Migrate to xorg macros 1.3 & XORG_DEFAULT_OPTIONS
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 70fb0454a8a50aaa4962cb91fe11807d5dd3a6d9
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Oct 2 20:06:30 2009 -0700
+
+    Add pointers to mailing list, git repo, wiki, and cygwin/x website to README
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit cc73dda549da6a4fd0a5721315d0dba3f5030fc3
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Mon Aug 3 20:49:59 2009 -0700
+
+    Bug 21939: windowswmproto has applewmproto leftovers in .pc.in
+    
+    X.Org Bugzilla #21939: http://bugs.freedesktop.org/show_bug.cgi?id=21939
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 2e4d41ee5cc14034d4485fb395d0a1b324fc98a0
+Author: Paulo Cesar Pereira de Andrade <pcpa@mandriva.com.br>
+Date:   Tue Jan 27 20:06:28 2009 -0200
+
+    Janitor: Correct make distcheck and dont distribute autogen.sh
+
+commit 88f1641fe4f04382ff15201dc1329282d4390038
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Thu Dec 6 16:39:09 2007 -0500
+
+    Replace static ChangeLog with dist-hook to generate from git log
+
+commit 734df1b37c3c7c51698866bb67bc5e519dcafb67
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Sep 3 05:54:23 2007 -0400
+
+    Add *~ to .gitignore to skip patch/emacs droppings
+
+commit c62fc741fd050ce7df15c5e88482de9268351553
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Jul 14 18:56:37 2006 -0700
+
+    renamed: .cvsignore -> .gitignore
+
+commit 4760e8d79f2738208a0f59a77f57bac7f07185ee
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Dec 21 02:30:07 2005 +0000
+
+    Update package version for X11R7 release.
+
+commit 325b4607fb415742e1b56eebe4f217291710cb1c
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Mon Dec 19 16:32:25 2005 +0000
+
+    Stub COPYING files
+
+commit 521c3ef29e3defbe9e4d40c474afc046b63da244
+Author: Kevin E Martin <kem@kem.org>
+Date:   Thu Dec 15 00:24:39 2005 +0000
+
+    Update package version number for final X11R7 release candidate.
+
+commit 9e1f026c9b3f38113ffd9feb7886efe19bab6106
+Author: Eric Anholt <anholt@freebsd.org>
+Date:   Mon Nov 21 10:50:58 2005 +0000
+
+    Add missing .cvsignores for protos.
+
+commit 0877cd202a528d9366d9296047ec35a74f43729e
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Oct 19 02:48:15 2005 +0000
+
+    Update package version number for RC1 release.
+
+commit cf7f62a5886eaeb10c5479cb231a417388de872b
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Fri Sep 30 22:36:30 2005 +0000
+
+    Protocol module for WindowsWM
+
+commit 65d9ace55bd7cfa8e2158c9cb17455be8d9bdea9
+Author: Alexander Gottwald <alexander.gottwald@s1999.tu-chemnitz.de>
+Date:   Mon Jul 26 19:15:48 2004 +0000
+
+    Import lib/windows from CYGWIN branch.
+
+commit 8cc7287fd11cd746020ce2aa8032f3fbc5f16f6b
+Author: Kensuke Matsuzaki <zakki@peppermint.jp>
+Date:   Fri Dec 5 03:37:26 2003 +0000
+
+    file windowswmstr.h was initially added on branch CYGWIN.

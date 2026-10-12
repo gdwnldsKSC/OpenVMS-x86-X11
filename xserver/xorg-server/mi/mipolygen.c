@@ -66,11 +66,12 @@ SOFTWARE.
  */
 
 Bool
-miFillGeneralPoly(dst, pgc, count, ptsIn)
-    DrawablePtr dst;
-    GCPtr	pgc;
-    int		count;              /* number of points        */
-    DDXPointPtr ptsIn;              /* the points              */
+miFillGeneralPoly(
+    DrawablePtr dst,
+    GCPtr	pgc,
+    int		count,              /* number of points        */
+    DDXPointPtr ptsIn               /* the points              */
+    )
 {
     EdgeTableEntry *pAET;  /* the Active Edge Table   */
     int y;                 /* the current scanline    */
@@ -91,8 +92,7 @@ miFillGeneralPoly(dst, pgc, count, ptsIn)
     if (count < 3)
 	return(TRUE);
 
-    if(!(pETEs = (EdgeTableEntry *)
-        xalloc(sizeof(EdgeTableEntry) * count)))
+    if(!(pETEs = xalloc(sizeof(EdgeTableEntry) * count)))
 	return(FALSE);
     ptsOut = FirstPoint;
     width = FirstWidth;

@@ -40,14 +40,9 @@ xnestRealizeFont(ScreenPtr pScreen, FontPtr pFont)
   int nprops;
   FontPropPtr props;
   int i;
-  char *name;
+  const char *name;
 
   FontSetPrivate(pFont, xnestFontPrivateIndex, NULL);
-
-#ifdef XPRINT
-  if (requestingClient && XpClientIsPrintClient(requestingClient, NULL))
-      return True;
-#endif
 
   name_atom = MakeAtom("FONT", 4, True);
   value_atom = 0L;
@@ -63,7 +58,7 @@ xnestRealizeFont(ScreenPtr pScreen, FontPtr pFont)
 
   if (!value_atom) return False;
 
-  name = (char *)NameForAtom(value_atom);
+  name = NameForAtom(value_atom);
 
   if (!name) return False;
 

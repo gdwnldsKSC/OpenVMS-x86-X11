@@ -47,6 +47,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* xextproto 7.1 available */
+#undef HAVE_XEXTPROTO_71
+
 /* Name of package */
 #undef PACKAGE
 
@@ -68,14 +71,8 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Use new Xv ABI (7.1RC1+) */
-#undef USE_NEW_XVABI
-
 /* Version number of package */
 #undef VERSION
-
-/* Build support for Exa */
-#undef VIA_HAVE_EXA
 
 /* Enable DRI driver support */
 #undef XF86DRI

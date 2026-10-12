@@ -17,6 +17,7 @@ sdk_HEADERS =		\
 	dixfontstr.h	\
 	dixgrabs.h	\
 	dixstruct.h	\
+	events.h	\
 	exevents.h	\
 	extension.h	\
 	extinit.h	\
@@ -35,6 +36,7 @@ sdk_HEADERS =		\
 	privates.h	\
 	property.h	\
 	propertyst.h	\
+	ptrveloc.h  \
 	region.h	\
 	regionstr.h	\
 	registry.h	\
@@ -52,11 +54,16 @@ sdk_HEADERS =		\
 	windowstr.h	\
 	xkbfile.h	\
 	xkbsrv.h	\
-	xkbstr.h	\
-	xorg-server.h
+	xkbstr.h        \
+	xkbrules.h      \
+	xserver-properties.h
+
+nodist_sdk_HEADERS = xorg-server.h
 endif
 
 AM_CFLAGS = $(DIX_CFLAGS)
 
-EXTRA_DIST = $(sdk_HEADERS) do-not-use-config.h dix-config.h xorg-config.h \
-	xkb-config.h
+EXTRA_DIST = 	\
+	dix-config-apple-verbatim.h \
+	eventconvert.h eventstr.h \
+	protocol-versions.h

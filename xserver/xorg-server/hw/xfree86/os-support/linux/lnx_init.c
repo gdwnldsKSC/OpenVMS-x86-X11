@@ -39,12 +39,6 @@
 
 #include <sys/stat.h>
 
-#ifdef USE_DEV_FB
-extern char *getenv(const char *);
-#include <linux/fb.h>
-char *fb_dev_name;
-#endif
-
 static Bool KeepTty = FALSE;
 static int VTnum = -1;
 static Bool VTSwitch = TRUE;
@@ -53,6 +47,8 @@ static int activeVT = -1;
 
 static int vtPermSave[4];
 static char vtname[11];
+static struct termios tty_attr; /* tty state to restore */
+static int tty_mode; /* kbd mode to restore */
 
 static int
 saveVtPerms(void)
@@ -78,9 +74,19 @@ saveVtPerms(void)
 static void
 restoreVtPerms(void)
 {
-    /* Set the terminal permissions back to before we started. */
-    chown("/dev/tty0", vtPermSave[0], vtPermSave[1]);
-    chown(vtname, vtPermSave[2], vtPermSave[3]);
+    if (geteuid() == 0) {
+	 /* Set the terminal permissions back to before we started. */
+	 (void)chown("/dev/tty0", vtPermSave[0], vtPermSave[1]);
+	 (void)chown(vtname, vtPermSave[2], vtPermSave[3]);
+    }
+}
+
+static void *console_handler;
+
+static void
+drain_console(int fd, void *closure)
+{
+    tcflush(fd, TCIOFLUSH);
 }
 
 void
@@ -90,10 +96,6 @@ xf86OpenConsole(void)
     struct vt_mode VT;
     struct vt_stat vts;
     MessageType from = X_PROBED;
-#ifdef USE_DEV_FB
-    struct fb_var_screeninfo var;
-    int fbfd;
-#endif
     char *tty0[] = { "/dev/tty0", "/dev/vc/0", NULL };
     char *vcs[] = { "/dev/vc/%d", "/dev/tty%d", NULL };
 
@@ -140,22 +142,6 @@ xf86OpenConsole(void)
 	    close(fd);
 	}
 
-#ifdef USE_DEV_FB
-        if (!ShareVTs)
-        {
-	    fb_dev_name=getenv("FRAMEBUFFER");
-	    if (!fb_dev_name)
-	        fb_dev_name="/dev/fb0current";
-	
-	    if ((fbfd = open(fb_dev_name, O_RDONLY)) < 0)
-	        FatalError("xf86OpenConsole: Cannot open %s (%s)\n",
-		           fb_dev_name, strerror(errno));
-
-	    if (ioctl(fbfd, FBIOGET_VSCREENINFO, &var) < 0)
-	        FatalError("xf86OpenConsole: Unable to get screen info %s\n",
-		           strerror(errno));
-        }
-#endif
 	xf86Msg(from, "using VT number %d\n\n", xf86Info.vtno);
 
 	if (!KeepTty) {
@@ -200,20 +186,22 @@ xf86OpenConsole(void)
 	        xf86Msg(X_WARNING,
 		        "xf86OpenConsole: Could not save ownership of VT\n");
 
-	    /* change ownership of the vt */
-	    if (chown(vtname, getuid(), getgid()) < 0)
-	        xf86Msg(X_WARNING,"xf86OpenConsole: chown %s failed: %s\n",
-		        vtname, strerror(errno));
+	    if (geteuid() == 0) {
+		    /* change ownership of the vt */
+		    if (chown(vtname, getuid(), getgid()) < 0)
+			    xf86Msg(X_WARNING,"xf86OpenConsole: chown %s failed: %s\n",
+				    vtname, strerror(errno));
 
-	    /*
-	     * the current VT device we're running on is not "console", we want
-	     * to grab all consoles too
-	     *
-	     * Why is this needed??
-	     */
-	    if (chown("/dev/tty0", getuid(), getgid()) < 0)
-	        xf86Msg(X_WARNING,"xf86OpenConsole: chown /dev/tty0 failed: %s\n",
-                    strerror(errno));
+		    /*
+		     * the current VT device we're running on is not
+		     * "console", we want to grab all consoles too
+		     *
+		     * Why is this needed??
+		     */
+		    if (chown("/dev/tty0", getuid(), getgid()) < 0)
+			    xf86Msg(X_WARNING,"xf86OpenConsole: chown /dev/tty0 failed: %s\n",
+				    strerror(errno));
+	    }
         }
 
 	/*
@@ -240,6 +228,8 @@ xf86OpenConsole(void)
 
         if (!ShareVTs)
         {
+            struct termios nTty;
+
 #if defined(DO_OS_FONTRESTORE)
 	    lnx_savefont();
 #endif
@@ -272,21 +262,31 @@ xf86OpenConsole(void)
 	        FatalError("xf86OpenConsole: KDSETMODE KD_GRAPHICS failed %s\n",
 		           strerror(errno));
 
+            tcgetattr(xf86Info.consoleFd, &tty_attr);
+            ioctl(xf86Info.consoleFd, KDGKBMODE, &tty_mode);
+
+            if (ioctl(xf86Info.consoleFd, KDSKBMODE, K_RAW) < 0)
+                FatalError("xf86OpenConsole: KDSKBMODE K_RAW failed %s\n",
+                        strerror(errno));
+
+            nTty = tty_attr;
+            nTty.c_iflag = (IGNPAR | IGNBRK) & (~PARMRK) & (~ISTRIP);
+            nTty.c_oflag = 0;
+            nTty.c_cflag = CREAD | CS8;
+            nTty.c_lflag = 0;
+            nTty.c_cc[VTIME]=0;
+            nTty.c_cc[VMIN]=1;
+            cfsetispeed(&nTty, 9600);
+            cfsetospeed(&nTty, 9600);
+            tcsetattr(xf86Info.consoleFd, TCSANOW, &nTty);
+
+            /* need to keep the buffer clean, else the kernel gets angry */
+            console_handler = xf86AddGeneralHandler(xf86Info.consoleFd,
+                    drain_console, NULL);
+
 	    /* we really should have a InitOSInputDevices() function instead
 	     * of Init?$#*&Device(). So I just place it here */
-	
-#ifdef USE_DEV_FB
-	    /* copy info to new console */
-	    var.yoffset=0;
-	    var.xoffset=0;
-	    if (ioctl(fbfd, FBIOPUT_VSCREENINFO, &var))
-	        FatalError("Unable to set screen info\n");
-	    close(fbfd);
-#endif
-        } else { /* ShareVTs */
-            close(xf86Info.consoleFd);
         }
-	signal(SIGUSR2, xf86ReloadInputDevs);
     } else { 	/* serverGeneration != 1 */
         if (!ShareVTs && VTSwitch)
         {
@@ -296,17 +296,17 @@ xf86OpenConsole(void)
 	    if (ioctl(xf86Info.consoleFd, VT_ACTIVATE, xf86Info.vtno) < 0)
 	        xf86Msg(X_WARNING, "xf86OpenConsole: VT_ACTIVATE failed %s\n",
 		        strerror(errno));
-        }
 
 	    if (ioctl(xf86Info.consoleFd, VT_WAITACTIVE, xf86Info.vtno) < 0)
 	        xf86Msg(X_WARNING, "xf86OpenConsole: VT_WAITACTIVE failed %s\n",
 		        strerror(errno));
+        }
     }
     return;
 }
 
 void
-xf86CloseConsole()
+xf86CloseConsole(void)
 {
     struct vt_mode   VT;
 #if defined(DO_OS_FONTRESTORE)
@@ -314,7 +314,15 @@ xf86CloseConsole()
     int vtno = -1;
 #endif
 
-    if (ShareVTs) return;
+    if (ShareVTs) {
+        close(xf86Info.consoleFd);
+        return;
+    }
+
+    if (console_handler) {
+	xf86RemoveGeneralHandler(console_handler);
+	console_handler = NULL;
+    };
 
 #if defined(DO_OS_FONTRESTORE)
     if (ioctl(xf86Info.consoleFd, VT_GETSTATE, &vts) < 0)
@@ -328,7 +336,10 @@ xf86CloseConsole()
     if (ioctl(xf86Info.consoleFd, KDSETMODE, KD_TEXT) < 0)
 	xf86Msg(X_WARNING, "xf86CloseConsole: KDSETMODE failed: %s\n",
 		strerror(errno));
-	
+
+    ioctl(xf86Info.consoleFd, KDSKBMODE, tty_mode);
+    tcsetattr(xf86Info.consoleFd, TCSANOW, &tty_attr);
+
     if (ioctl(xf86Info.consoleFd, VT_GETMODE, &VT) < 0) 
 	xf86Msg(X_WARNING, "xf86CloseConsole: VT_GETMODE failed: %s\n",
 		strerror(errno));
@@ -405,7 +416,7 @@ xf86ProcessArgument(int argc, char *argv[], int i)
 }
 
 void
-xf86UseMsg()
+xf86UseMsg(void)
 {
 	ErrorF("vtXX                   use the specified VT number\n");
 	ErrorF("-keeptty               ");

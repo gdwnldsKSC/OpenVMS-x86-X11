@@ -235,7 +235,7 @@ Core Widgets
 \*(SN Core Widgets
 .XE
 .LP
-.IN "Core" "" "@DEF"
+.IN "Core" "" "@DEF@"
 The 
 Core 
 widget class contains the definitions of fields common to all widgets.
@@ -306,7 +306,7 @@ and
 .PN CoreWidgetClass
 are defined with only this set of fields.
 .LP
-.IN "Core" "" "@DEF@"
+.IN "Core"
 .IN "WidgetClass" "" "@DEF@"
 .IN "CoreWidgetClass" "" "@DEF@"
 .sM
@@ -1701,7 +1701,7 @@ void LabelSetText(w, text)
 	Widget w;
 	String text;
 {
-	Label WidgetClass lwc = (Label WidgetClass)XtClass(w);
+	LabelWidgetClass lwc = (Label WidgetClass)XtClass(w);
 	XtCheckSubclass(w, labelWidgetClass, NULL);
 	*(lwc->label_class.set_text)(w, text)
 }

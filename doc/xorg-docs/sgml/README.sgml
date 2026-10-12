@@ -8,20 +8,21 @@
 
 <title>README for X11R&relvers;</title>
 
-<author>
-<firstname>The X.Org Foundation</firstname>
-</author>
+<corpauthor><ulink url="http://www.x.org/wiki/XorgFoundation">
+The X.Org Foundation
+</ulink></corpauthor>
 
 <pubdate>&reldate;</pubdate>
 
 <abstract>
 
 <para>
-X11R&relvers; is an Open Source versions of the X Window
-System that supports many UNIX(R) and UNIX-like operating systems (such
-as Linux, FreeBSD, NetBSD, OpenBSD and Solaris x86) on Intel and other
-platforms.  This version is compatible with X11R&prevrelvers; and other
-X window system implementations which support the X11 standard.
+X11R&relvers; is an Open Source version of the X Window System that
+supports many <trademark class="registered">UNIX</trademark> and UNIX-like
+operating systems (such as Linux, FreeBSD, NetBSD, OpenBSD, and Solaris)
+on a variety of platforms.  This version is compatible with
+X11R&prevrelvers; and other X Window System implementations which support
+the X11 standard.
 </para>
 
 </abstract>
@@ -33,7 +34,7 @@ X window system implementations which support the X11 standard.
 
 <![ %updaterel [
 <para>
-X11R&relvers; is the &which updaterel; update to X11R&majorvers;, the
+X11R&relvers; is the &whichupdaterel; update to X11R&majorvers;, the
 &whichfullrel; full release in the <![ %earlyrel; [new]]> X11R&relvers;
 series.
 </para>
@@ -47,7 +48,7 @@ issues, fixes for driver bugs, and fixes that improve stability.
 
 <![ %minorrel [
 <para>
-X11R&relvers; is the second release in the X11R&majorvers; series.
+X11R&relvers; is the &whichfullrel; release in the X11R&majorvers; series.
 Tarballs for packages that have had updates since the &prevrelvers; release
 are included in this release. To build this release, you will first need to
 get the packages from X11R&prevrelvers; and then add the new packages from
@@ -66,18 +67,12 @@ install snapshots if you're comfortable dealing with possibly unstable
 beta-level software. If you find problems with this snapshot, you are
 encouraged to report your findings to the public X.Org server mailing list:
 <email>xorg@lists.freedesktop.org</email>.
-
-<![ %relcandidate [
-X11R&relvers; is a feature-complete snapshot of X11R&fullrelvers;.
-]]>
-]]>
-
-<![ %majorrel [
-X11R&relvers; is the first release in the new X11R&majorvers; series.
+</para>
 ]]>
 
 <para>
 <![ %majorrel [
+X11R&relvers; is the first release in the new X11R&majorvers; series.
 The &relvers; version is a new major release that includes additional
 hardware support, functional enhancements and bug fixes.
 ]]>
@@ -112,12 +107,13 @@ in the X.Org Foundation is free to all participants. Applications for
 Membership are now being accepted, and active participants in the
 further development of the X Window Technology are invited to complete a
 <ulink
-url="http://www.x.org/XOrg_Foundation_Membership.html"
->membership application</ulink>.  The X11R&relvers;
-codebase forms the sixth full X Window System release since the formation of
+url="http://www.x.org/wiki/Membership"
+>membership application</ulink>.  The X11R&relvers; release has been
+produced by the many contributors to the X.Org community and members of
 the X.Org Foundation and includes code from the X Consortium, the Open
-Group and the XFree86&trade; project.  This release is dedicated to the
-greater X community, developers and users alike.
+Group and the <trademark class="registered">XFree86</trademark> Project.
+This release is dedicated to the greater X community, developers and
+users alike.
 </para>
 
 </sect1>
@@ -189,20 +185,14 @@ url="http://www.fsf.org/philosophy/free-sw.html"
 Copyright and Licensing information for X, including the reproduction
 of copyright and/or license notices and attributions required by some
 of the licenses for binary distributions, can be found in the <ulink
-url="LICENSE.html"
->License Document</ulink
->.  If you find any omissions
+url="LICENSE.html">License Document</ulink>.  If you find any omissions
 in that document, please contact us with details at
-<email
->xf&lowbar;board@x.org</email
->.
+<email>xorg@lists.freedesktop.org</email>.
 While the current licenses are all open source licenses, the
-X.Org Foundation is attempting, with time, to bring as much as 
-possible of the code's licenses in the distribution into compliance with the 
-<ulink
-url="http://www.debian.org/social_contract#guidelines"
->Debian Free Software Guidelines</ulink
->.
+X.Org Foundation is attempting, with time, to bring as much as
+possible of the code's licenses in the distribution into compliance with the
+<ulink url="http://www.debian.org/social_contract#guidelines"
+>Debian Free Software Guidelines</ulink>.
 </para>
 
 </sect1>
@@ -232,9 +222,10 @@ Additional information may be available at the <ulink url="http://wiki.x.org/"
 
 <para>
 Current information about the X.Org Foundation public mailing lists is
-available on <ulink url="http://lists.x.org/mailman/listinfo/">the X.Org mailing list page</ulink> and related desktop
+available on <ulink url="http://www.x.org/wiki/XorgMailingLists">the X.Org
+mailing list page</ulink> and related desktop
 technology mailing lists can be found on <ulink
-url="http://freedesktop.org/mailman/listinfo">Freedesktop.org's mailing list 
+url="http://freedesktop.org/mailman/listinfo">Freedesktop.org's mailing list
 page</ulink>.
 </para>
 
@@ -245,10 +236,14 @@ page</ulink>.
 
 <para>
 If you have any new work or enhancements/bug fixes for existing work,
-please send them to <EMAIL>xorg@lists.freedesktop.org</EMAIL> or to our
+please send them as git format patches to
+<EMAIL>xorg-devel@lists.freedesktop.org</EMAIL> or to our
 <ulink url="https://bugs.freedesktop.org/">bug tracking system</ulink>
 using the xorg component.  This will help ensure that they are included
-in future releases.
+in future releases.   More details on patch submission and review
+process are available on the
+<ulink url="http://www.x.org/wiki/Development/Documentation/SubmittingPatches">
+SubmittingPatches</ulink> page of the X.Org wiki.
 </para>
 
 </sect1>
@@ -277,7 +272,7 @@ mirrors of this server.
 <title>X11R&relvers;</title>
 
 <para>
-This is the second release of the new modular source code tree.  The
+This is the &whichfullrel; release of the new modular source code tree.  The
 source code has been split into nine logical modules: app, data, doc,
 driver, font, lib. proto, util and xserver.  Each of these modules
 contain one or more packages that can be configured, built and installed
@@ -301,15 +296,12 @@ build system and modular code base.
 
 <para>
 The X source code for this and all releases/snapshots as well as
-development versions can also be accessed via the Freedesktop.org CVS
+development versions can also be accessed via the Freedesktop.org git
 repository.  It's also possible to browse the <ulink
-url="http://cvs.freedesktop.org/xorg/"
->freedesktop CVS repository</ulink
->.  The CVS tag for
-the &relvers; version is "&reltag;".
+url="http://cgit.freedesktop.org/xorg/"
+>freedesktop git repository</ulink
+>.
 </para>
-<![ %notsnapshot [
-]]>
 
 <para>
 To check out the latest development version, don't specify any tag.
@@ -323,13 +315,12 @@ To check out the latest development version, don't specify any tag.
 <title>Reporting Bugs</title>
 
 <para>
-Bugs should be reported to <ulink
-url="https://bugs.freedesktop.org/"
->bug tracking system</ulink
-> using the xorg component.  Before
+Bugs should be reported to freedesktop.org's <ulink
+url="https://bugs.freedesktop.org/">bug tracking system</ulink>
+using the xorg component.  Before
 reporting bugs, please check the server log file, which can be found at
-<literal remap="tt">/var/log/Xorg.0.log</literal> on most platforms.  If you can't resolve
-the problem yourself, send the entire log file with your bug report but
+<filename>/var/log/Xorg.0.log</filename> on most platforms.  If you can't
+resolve the problem yourself, send the entire log file with your bug report but
 not the operating system core dump.  Do not edit the log file as our
 developers use it to reproduce and debug your problem.  Please attach it
 to your bug report.

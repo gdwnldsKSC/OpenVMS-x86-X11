@@ -467,7 +467,6 @@ typedef struct {
 #endif
     unsigned char *     IOBase;
     unsigned char *     fbBase;
-    unsigned char *     biosBase;
     unsigned long       fbSize;
     unsigned long       PIOBase;
 
@@ -537,6 +536,7 @@ typedef struct {
     struct xgi_regs           modeReg;
 
     I2CBusPtr           pI2C;
+    I2CBusPtr           pI2C_dvi;
 
     CARD16              engineOperation;
     CARD32              bltScanDirection;

@@ -23,24 +23,29 @@ dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
 
-AC_INIT(libAppleWM, 1.0.0, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libAppleWM)
+AC_INIT(libAppleWM, 1.4.0, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libAppleWM)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
+# Require xorg-macros: XORG_CWARNFLAGS, XORG_CHANGELOG
+m4_ifndef([XORG_MACROS_VERSION], [AC_FATAL([must install xorg-macros 1.2 or later before running autoconf/autogen])])
+XORG_MACROS_VERSION(1.2)
 AM_CONFIG_HEADER(config.h)
 
 # Check for progs
 AC_PROG_CC
 AC_PROG_LIBTOOL
+XORG_CWARNFLAGS
 
 # Check for dependencies
-PKG_CHECK_MODULES(APPLEWM, x11 xext xextproto applewmproto)
-
+PKG_CHECK_MODULES(APPLEWM, x11 xext xextproto [applewmproto >= 1.4])
+APPLEWM_CFLAGS="$CWARNFLAGS $APPLEWM_CFLAGS"
 AC_SUBST(APPLEWM_CFLAGS)
 AC_SUBST(APPLEWM_LIBS)
 		  
 XORG_CHECK_MALLOC_ZERO
 XORG_RELEASE_VERSION
+XORG_CHANGELOG
 
 AC_OUTPUT([Makefile
 	   src/Makefile

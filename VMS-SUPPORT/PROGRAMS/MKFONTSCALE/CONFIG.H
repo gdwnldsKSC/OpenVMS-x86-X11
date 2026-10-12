@@ -1,0 +1,6 @@
+#ifndef VMS_MKFONTSCALE_CONFIG_H
+#define VMS_MKFONTSCALE_CONFIG_H
+
+#define HAVE_LIBZ 1
+
+#endif

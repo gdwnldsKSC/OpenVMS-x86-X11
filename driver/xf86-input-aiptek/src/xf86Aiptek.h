@@ -56,7 +56,7 @@
 #   endif
 #endif
 
-#include <xf86Version.h>
+#include <xorgVersion.h>
 
 #ifndef XFree86LOADER
 #   include <unistd.h>

@@ -1,23 +1,30 @@
 /*
- * Copyright © 2006 Sun Microsystems
+ * Copyright © 2006 Sun Microsystems, Inc.  All rights reserved.
  *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of Sun Microsystems not be used in
- * advertising or publicity pertaining to distribution of the software without
- * specific, written prior permission.  Sun Microsystems makes no
- * representations about the suitability of this software for any purpose.  It
- * is provided "as is" without express or implied warranty.
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, and/or sell copies of the Software, and to permit persons
+ * to whom the Software is furnished to do so, provided that the above
+ * copyright notice(s) and this permission notice appear in all copies of
+ * the Software and that both the above copyright notice(s) and this
+ * permission notice appear in supporting documentation.
  *
- * SUN MICROSYSTEMS DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
- * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
- * EVENT SHALL SUN MICROSYSTEMS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
- * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
- * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
+ * OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL
+ * INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING
+ * FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+ * NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+ * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Except as contained in this notice, the name of a copyright holder
+ * shall not be used in advertising or otherwise to promote the sale, use
+ * or other dealings in this Software without prior written authorization
+ * of the copyright holder.
  *
  * Copyright © 2002 Keith Packard
  *
@@ -56,21 +63,28 @@
 static RESTYPE		CursorClientType;
 static RESTYPE		CursorHideCountType;
 static RESTYPE		CursorWindowType;
-static DevPrivateKey	CursorScreenPrivateKey = &CursorScreenPrivateKey;
-static CursorPtr	CursorCurrent;
+static CursorPtr	CursorCurrent[MAXDEVICES];
 static CursorPtr        pInvisibleCursor = NULL;
+
+static int CursorScreenPrivateKeyIndex;
+static DevPrivateKey CursorScreenPrivateKey = &CursorScreenPrivateKeyIndex;
 
 static void deleteCursorHideCountsForScreen (ScreenPtr pScreen);
 
-#define VERIFY_CURSOR(pCursor, cursor, client, access) { \
-    pCursor = (CursorPtr)SecurityLookupIDByType((client), (cursor), \
-					RT_CURSOR, (access)); \
-    if (!pCursor) { \
-	(client)->errorValue = (cursor); \
-	return BadCursor; \
-    } \
-}
-	
+#define VERIFY_CURSOR(pCursor, cursor, client, access)			\
+    do {								\
+	int err;							\
+	err = dixLookupResourceByType((pointer *) &pCursor, cursor,	\
+				      RT_CURSOR, client, access);	\
+	if (err == BadValue) {						\
+	    client->errorValue = cursor;				\
+	    return BadCursor;						\
+	} else if (err != Success) {					\
+	    client->errorValue = cursor;				\
+	    return err;							\
+	}								\
+    } while (0)
+
 /*
  * There is a global list of windows selecting for cursor events
  */
@@ -117,28 +131,43 @@ typedef struct _CursorScreen {
 #define GetCursorScreenIfSet(s) GetCursorScreen(s)
 #define SetCursorScreen(s,p) dixSetPrivate(&(s)->devPrivates, CursorScreenPrivateKey, p)
 #define Wrap(as,s,elt,func)	(((as)->elt = (s)->elt), (s)->elt = func)
-#define Unwrap(as,s,elt)	((s)->elt = (as)->elt)
+#define Unwrap(as,s,elt,backup)	(((backup) = (s)->elt), (s)->elt = (as)->elt)
+
+/* The cursor doesn't show up until the first XDefineCursor() */
+static Bool CursorVisible = FALSE;
+
+Bool EnableCursor = TRUE;
 
 static Bool
-CursorDisplayCursor (ScreenPtr pScreen,
+CursorDisplayCursor (DeviceIntPtr pDev,
+                     ScreenPtr pScreen,
 		     CursorPtr pCursor)
 {
     CursorScreenPtr	cs = GetCursorScreen(pScreen);
     Bool		ret;
+    DisplayCursorProcPtr backupProc;
 
-    Unwrap (cs, pScreen, DisplayCursor);
+    Unwrap (cs, pScreen, DisplayCursor, backupProc);
 
-    if (cs->pCursorHideCounts != NULL) {
-	ret = (*pScreen->DisplayCursor) (pScreen, pInvisibleCursor);
+    /*
+     * Have to check ConnectionInfo to distinguish client requests from
+     * initial root window setup.  Not a great way to do it, I admit.
+     */
+    if (ConnectionInfo)
+	CursorVisible = EnableCursor;
+
+    if (cs->pCursorHideCounts != NULL || !CursorVisible) {
+        ret = ((*pScreen->RealizeCursor)(pDev, pScreen, pInvisibleCursor) &&
+	       (*pScreen->DisplayCursor) (pDev, pScreen, pInvisibleCursor));
     } else {
-	ret = (*pScreen->DisplayCursor) (pScreen, pCursor);
+	ret = (*pScreen->DisplayCursor) (pDev, pScreen, pCursor);
     }
 
-    if (pCursor != CursorCurrent)
+    if (pCursor != CursorCurrent[pDev->id])
     {
 	CursorEventPtr	e;
 
-	CursorCurrent = pCursor;
+	CursorCurrent[pDev->id] = pCursor;
 	for (e = cursorEvents; e; e = e->next)
 	{
 	    if ((e->eventMask & XFixesDisplayCursorNotifyMask) &&
@@ -156,7 +185,8 @@ CursorDisplayCursor (ScreenPtr pScreen,
 	    }
 	}
     }
-    Wrap (cs, pScreen, DisplayCursor, CursorDisplayCursor);
+    Wrap (cs, pScreen, DisplayCursor, backupProc);
+
     return ret;
 }
 
@@ -165,9 +195,11 @@ CursorCloseScreen (int index, ScreenPtr pScreen)
 {
     CursorScreenPtr	cs = GetCursorScreen (pScreen);
     Bool		ret;
+    CloseScreenProcPtr	close_proc;
+    DisplayCursorProcPtr display_proc;
 
-    Unwrap (cs, pScreen, CloseScreen);
-    Unwrap (cs, pScreen, DisplayCursor);
+    Unwrap (cs, pScreen, CloseScreen, close_proc);
+    Unwrap (cs, pScreen, DisplayCursor, display_proc);
     deleteCursorHideCountsForScreen(pScreen);
     ret = (*pScreen->CloseScreen) (index, pScreen);
     xfree (cs);
@@ -182,6 +214,8 @@ XFixesSelectCursorInput (ClientPtr	pClient,
 			 CARD32		eventMask)
 {
     CursorEventPtr	*prev, e;
+    pointer val;
+    int rc;
 
     for (prev = &cursorEvents; (e = *prev); prev = &e->next)
     {
@@ -214,7 +248,10 @@ XFixesSelectCursorInput (ClientPtr	pClient,
 	 * Add a resource hanging from the window to
 	 * catch window destroy
 	 */
-	if (!LookupIDByType(pWindow->drawable.id, CursorWindowType))
+	rc = dixLookupResourceByType( &val, pWindow->drawable.id,
+				      CursorWindowType, serverClient,
+				      DixGetAttrAccess);
+	if (rc != Success)
 	    if (!AddResource (pWindow->drawable.id, CursorWindowType,
 			      (pointer) pWindow))
 	    {
@@ -347,14 +384,14 @@ ProcXFixesGetCursorImage (ClientPtr client)
     int				npixels, width, height, rc, x, y;
 
     REQUEST_SIZE_MATCH(xXFixesGetCursorImageReq);
-    pCursor = CursorCurrent;
+    pCursor = CursorCurrent[PickPointer(client)->id];
     if (!pCursor)
 	return BadCursor;
     rc = XaceHook(XACE_RESOURCE_ACCESS, client, pCursor->id, RT_CURSOR,
 		  pCursor, RT_NONE, NULL, DixReadAccess);
     if (rc != Success)
 	return rc;
-    GetSpritePosition (&x, &y);
+    GetSpritePosition (PickPointer(client), &x, &y);
     width = pCursor->bits->width;
     height = pCursor->bits->height;
     npixels = width * height;
@@ -390,7 +427,7 @@ ProcXFixesGetCursorImage (ClientPtr client)
 	swapl (&rep->cursorSerial, n);
 	SwapLongs (image, npixels);
     }
-    (void) WriteToClient(client, sizeof (xXFixesGetCursorImageReply) +
+    WriteToClient(client, sizeof (xXFixesGetCursorImageReply) +
 			 (npixels << 2), (char *) rep);
     xfree (rep);
     return client->noClientException;
@@ -443,7 +480,7 @@ ProcXFixesGetCursorName (ClientPtr client)
     CursorPtr			pCursor;
     xXFixesGetCursorNameReply	reply;
     REQUEST(xXFixesGetCursorNameReq);
-    char *str;
+    const char *str;
     int len;
 
     REQUEST_SIZE_MATCH(xXFixesGetCursorNameReq);
@@ -455,7 +492,7 @@ ProcXFixesGetCursorName (ClientPtr client)
     len = strlen (str);
     
     reply.type = X_Reply;
-    reply.length = (len + 3) >> 2;
+    reply.length = bytes_to_int32(len);
     reply.sequenceNumber = client->sequence;
     reply.atom = pCursor->name;
     reply.nbytes = len;
@@ -468,7 +505,7 @@ ProcXFixesGetCursorName (ClientPtr client)
 	swaps (&reply.nbytes, n);
     }
     WriteReplyToClient(client, sizeof(xXFixesGetCursorNameReply), &reply);
-    (void)WriteToClient(client, len, str);
+    WriteToClient(client, len, str);
     
     return(client->noClientException);
 }
@@ -493,26 +530,26 @@ ProcXFixesGetCursorImageAndName (ClientPtr client)
     CursorPtr			pCursor;
     CARD32			*image;
     int				npixels;
-    char			*name;
+    const char			*name;
     int				nbytes, nbytesRound;
     int				width, height;
     int				rc, x, y;
 
     REQUEST_SIZE_MATCH(xXFixesGetCursorImageAndNameReq);
-    pCursor = CursorCurrent;
+    pCursor = CursorCurrent[PickPointer(client)->id];
     if (!pCursor)
 	return BadCursor;
     rc = XaceHook(XACE_RESOURCE_ACCESS, client, pCursor->id, RT_CURSOR,
 		  pCursor, RT_NONE, NULL, DixReadAccess|DixGetAttrAccess);
     if (rc != Success)
 	return rc;
-    GetSpritePosition (&x, &y);
+    GetSpritePosition (PickPointer(client), &x, &y);
     width = pCursor->bits->width;
     height = pCursor->bits->height;
     npixels = width * height;
     name = pCursor->name ? NameForAtom (pCursor->name) : "";
     nbytes = strlen (name);
-    nbytesRound = (nbytes + 3) & ~3;
+    nbytesRound = pad_to_int32(nbytes);
     rep = xalloc (sizeof (xXFixesGetCursorImageAndNameReply) +
 		  npixels * sizeof (CARD32) + nbytesRound);
     if (!rep)
@@ -520,7 +557,7 @@ ProcXFixesGetCursorImageAndName (ClientPtr client)
 
     rep->type = X_Reply;
     rep->sequenceNumber = client->sequence;
-    rep->length = npixels + (nbytesRound >> 2);
+    rep->length = npixels + bytes_to_int32(nbytesRound);
     rep->width = width;
     rep->height = height;
     rep->x = x;
@@ -550,7 +587,7 @@ ProcXFixesGetCursorImageAndName (ClientPtr client)
 	swaps (&rep->nbytes, n);
 	SwapLongs (image, npixels);
     }
-    (void) WriteToClient(client, sizeof (xXFixesGetCursorImageAndNameReply) +
+    WriteToClient(client, sizeof (xXFixesGetCursorImageAndNameReply) +
 			 (npixels << 2) + nbytesRound, (char *) rep);
     xfree (rep);
     return client->noClientException;
@@ -849,7 +886,7 @@ ProcXFixesHideCursor (ClientPtr client)
 
     REQUEST_SIZE_MATCH (xXFixesHideCursorReq);
 
-    ret = dixLookupResource((pointer *)&pWin, stuff->window, RT_WINDOW,
+    ret = dixLookupResourceByType((pointer *)&pWin, stuff->window, RT_WINDOW,
 			    client, DixGetAttrAccess);
     if (ret != Success) {
 	client->errorValue = stuff->window;
@@ -879,7 +916,12 @@ ProcXFixesHideCursor (ClientPtr client)
     ret = createCursorHideCount(client, pWin->drawable.pScreen);
 
     if (ret == Success) {
-        (void) CursorDisplayCursor(pWin->drawable.pScreen, CursorCurrent);
+	DeviceIntPtr dev;
+	for (dev = inputInfo.devices; dev; dev = dev->next)
+	{
+	    if (IsMaster(dev) && IsPointerDevice(dev))
+		CursorDisplayCursor(dev, pWin->drawable.pScreen, CursorCurrent[dev->id]);
+	}
     }
 
     return ret;
@@ -907,7 +949,7 @@ ProcXFixesShowCursor (ClientPtr client)
 
     REQUEST_SIZE_MATCH (xXFixesShowCursorReq);
 
-    rc = dixLookupResource((pointer *)&pWin, stuff->window, RT_WINDOW,
+    rc = dixLookupResourceByType((pointer *)&pWin, stuff->window, RT_WINDOW,
 			   client, DixGetAttrAccess);
     if (rc != Success) {
 	client->errorValue = stuff->window;
@@ -971,9 +1013,14 @@ CursorFreeHideCount (pointer data, XID id)
 {
     CursorHideCountPtr pChc = (CursorHideCountPtr) data;
     ScreenPtr pScreen = pChc->pScreen;
+    DeviceIntPtr dev;
 
     deleteCursorHideCount(pChc, pChc->pScreen);
-    (void) CursorDisplayCursor(pScreen, CursorCurrent);
+    for (dev = inputInfo.devices; dev; dev = dev->next)
+    {
+        if (IsMaster(dev) && IsPointerDevice(dev))
+            CursorDisplayCursor(dev, pScreen, CursorCurrent[dev->id]);
+    }
 
     return 1;
 }
@@ -999,26 +1046,21 @@ static CursorPtr
 createInvisibleCursor (void)
 {
     CursorPtr pCursor;
-    static unsigned int *psrcbits, *pmaskbits;
+    unsigned char *psrcbits, *pmaskbits;
     CursorMetricRec cm;
-    int rc;
 
-    psrcbits = (unsigned int *) xalloc(4);
-    pmaskbits = (unsigned int *) xalloc(4);
+    psrcbits = (unsigned char *) xcalloc(4, 1);
+    pmaskbits = (unsigned char *) xcalloc(4, 1);
     if (psrcbits == NULL || pmaskbits == NULL) {
 	return NULL;
     }
-    *psrcbits = 0;
-    *pmaskbits = 0;
 
     cm.width = 1;
     cm.height = 1;
     cm.xhot = 0;
     cm.yhot = 0;
 
-    rc = AllocARGBCursor(
-	        (unsigned char *)psrcbits,
-		(unsigned char *)pmaskbits,
+    AllocARGBCursor(psrcbits, pmaskbits,
 		NULL, &cm,
 		0, 0, 0,
 		0, 0, 0,
@@ -1031,6 +1073,9 @@ Bool
 XFixesCursorInit (void)
 {
     int	i;
+
+    if (party_like_its_1989)
+	CursorVisible = EnableCursor;
     
     for (i = 0; i < screenInfo.numScreens; i++)
     {

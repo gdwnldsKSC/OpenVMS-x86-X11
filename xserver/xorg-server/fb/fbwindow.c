@@ -31,10 +31,8 @@
 Bool
 fbCreateWindow(WindowPtr pWin)
 {
-#ifndef FB_NO_WINDOW_PIXMAPS
     dixSetPrivate(&pWin->devPrivates, fbGetWinPrivateKey(),
 		  fbGetScreenPixmap(pWin->drawable.pScreen));
-#endif
 #ifdef FB_SCREEN_PRIVATE
     if (pWin->drawable.bitsPerPixel == 32)
 	pWin->drawable.bitsPerPixel = fbGetScreenPrivate(pWin->drawable.pScreen)->win32bpp;
@@ -117,7 +115,7 @@ fbCopyWindowProc (DrawablePtr	pSrcDrawable,
     fbFinishAccess (pSrcDrawable);
 }
 
-void 
+void
 fbCopyWindow(WindowPtr	    pWin, 
 	     DDXPointRec    ptOldOrg, 
 	     RegionPtr	    prgnSrc)
@@ -142,7 +140,7 @@ fbCopyWindow(WindowPtr	    pWin,
 			  -pPixmap->screen_x, -pPixmap->screen_y);
 #endif
 
-    fbCopyRegion (pDrawable, pDrawable,
+    miCopyRegion (pDrawable, pDrawable,
 		  0,
 		  &rgnDst, dx, dy, fbCopyWindowProc, 0, 0);
     

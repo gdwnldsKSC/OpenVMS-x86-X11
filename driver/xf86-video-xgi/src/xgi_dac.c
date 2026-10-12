@@ -47,7 +47,7 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86Version.h"
+#include "xorgVersion.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
 #include "xf86DDC.h"
@@ -359,7 +359,7 @@ Volari_Restore(ScrnInfoPtr pScrn, XGIRegPtr xgiReg)
     int vgaIOBase;
     int i;
 
-PDEBUG(ErrorF("--- Volari_Restore(). \n")) ;
+	PDEBUG(ErrorF("--- Volari_Restore(). \n")) ;
     xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 4,
                 "Volari_Restore(ScrnInfoPtr pScrn, XGIRegPtr xgiReg)\n");
 
@@ -386,8 +386,12 @@ PDEBUG(ErrorF("--- Volari_Restore(). \n")) ;
                    | SR1E_ENABLE_3D));
     PDEBUG(XGIDumpRegs(pScrn));
 #endif
- PDEBUG(XGIDumpRegs(pScrn)) ; //yilin
+
+	PDEBUG(XGIDumpRegs(pScrn)) ; //yilin
+
     for (i = 0x19; i < 0x5C; i++)  {
+     /* Jong 09/19/2007; added for ??? */
+     if((i!=0x48 && i!=0x4a)|| ((pXGI->Chipset != PCI_CHIP_XGIXG20)&&(pXGI->Chipset != PCI_CHIP_XGIXG21)&&(pXGI->Chipset != PCI_CHIP_XGIXG27)))
         outXGIIDXREG(XGICR, i, xgiReg->xgiRegs3D4[i]);
     }
 
@@ -407,7 +411,7 @@ PDEBUG(ErrorF("--- Volari_Restore(). \n")) ;
     }
 
 
-// yilin restore the VB register
+	// yilin restore the VB register
     outXGIIDXREG(XGIPART1, 0x2f, 0x01);
     for (i=0; i<0x50; i++)  
     {
@@ -432,7 +436,7 @@ PDEBUG(ErrorF("--- Volari_Restore(). \n")) ;
     /* MemClock needs this to take effect */
 
     outw(VGA_SEQ_INDEX, 0x0100);        /* Synchronous Reset */
- PDEBUG(XGIDumpRegs(pScrn)) ; //yilin
+	PDEBUG(XGIDumpRegs(pScrn)) ; //yilin
     xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 4,
                 "Volari_Restore(ScrnInfoPtr pScrn, XGIRegPtr xgiReg) Done\n");
 
@@ -452,7 +456,7 @@ Volari_Threshold(ScrnInfoPtr pScrn, DisplayModePtr mode,
 /**
  * Calculate available memory bandwidth for an XG40 series chip.
  *
- * \sa XG20_MemBandWidth
+ * \sa XG40_MemBandWidth
  */
 static int XG40_MemBandWidth(ScrnInfoPtr pScrn)
 {
@@ -480,7 +484,7 @@ static int XG40_MemBandWidth(ScrnInfoPtr pScrn)
 /**
  * Calculate available memory bandwidth for an XG20 series chip.
  *
- * \sa XG40_MemBandWidth
+ * \sa XG20_MemBandWidth
  */
 static int XG20_MemBandWidth(ScrnInfoPtr pScrn)
 {
@@ -491,8 +495,35 @@ static int XG20_MemBandWidth(ScrnInfoPtr pScrn)
     const float magic = 1.44;
     float  total  = (mclk * bus) / bpp;
 
+    /* Jong 09/19/2007; support DDRII and double pixel clock */
+    unsigned long SR39, CR97 ;
+
     PDEBUG5(ErrorF("mclk: %d, bus: %d, magic: %f, bpp: %d\n",
                    mclk, bus, magic, bpp));
+
+    total = mclk*bus/bpp;
+
+    /* Jong 04/26/2007; support DDRII and double pixel clock */
+    /*-------------------------------------------------------*/
+    inXGIIDXREG(XGISR, 0x39, SR39);
+    inXGIIDXREG(XGICR, 0x97, CR97);
+
+    if (CR97 & 0x10)
+    {
+   		if (CR97 & 0x01)
+		{
+    		total *= 2;
+		}
+    }
+    else
+    {
+        if (SR39 & 0x2)
+ 		{
+  			total *= 2;
+		}
+    }
+    /*-------------------------------------------------------*/
+
     PDEBUG5(ErrorF("Total Adapter Bandwidth is %fM\n", total/1000));
 
     return (int)(total / magic);
@@ -606,7 +637,7 @@ PDEBUG(ErrorF("XGIDACPreInit()\n"));
     pXGI->XGIRestore = Volari_Restore;
     pXGI->SetThreshold = Volari_Threshold;
 
-    pXGI->MaxClock = (pXGI->Chipset == PCI_CHIP_XGIXG20)
+    pXGI->MaxClock = ((pXGI->Chipset == PCI_CHIP_XGIXG20) || (pXGI->Chipset == PCI_CHIP_XGIXG21) || (pXGI->Chipset == PCI_CHIP_XGIXG27))
 	? XG20_MemBandWidth(pScrn) : XG40_MemBandWidth(pScrn);
 }
 

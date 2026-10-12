@@ -73,15 +73,16 @@ extern int ffs(int);
  *     set them in the destination with SetSpans
  * We let SetSpans worry about clipping to the destination.
  */
-_X_EXPORT RegionPtr
-miCopyArea(pSrcDrawable, pDstDrawable,
-	    pGC, xIn, yIn, widthSrc, heightSrc, xOut, yOut)
-    DrawablePtr 	pSrcDrawable;
-    DrawablePtr 	pDstDrawable;
-    GCPtr 		pGC;
-    int 		xIn, yIn;
-    int 		widthSrc, heightSrc;
-    int 		xOut, yOut;
+RegionPtr
+miCopyArea(DrawablePtr  pSrcDrawable,
+           DrawablePtr  pDstDrawable,
+           GCPtr        pGC,
+           int          xIn,
+           int          yIn,
+           int          widthSrc,
+           int          heightSrc,
+           int          xOut,
+           int          yOut)
 {
     DDXPointPtr		ppt, pptFirst;
     unsigned int	*pwidthFirst, *pwidth, *pbits;
@@ -103,7 +104,7 @@ miCopyArea(pSrcDrawable, pDstDrawable,
     /* If the destination isn't realized, this is easy */
     if (pDstDrawable->type == DRAWABLE_WINDOW &&
 	!((WindowPtr)pDstDrawable)->realized)
-	return (RegionPtr)NULL;
+	return NULL;
 
     /* clip the source */
     if (pSrcDrawable->type == DRAWABLE_PIXMAP)
@@ -142,14 +143,11 @@ miCopyArea(pSrcDrawable, pDstDrawable,
 	dsty += pDstDrawable->y;
     }
 
-    pptFirst = ppt = (DDXPointPtr)
-        xalloc(heightSrc * sizeof(DDXPointRec));
-    pwidthFirst = pwidth = (unsigned int *)
-        xalloc(heightSrc * sizeof(unsigned int));
+    pptFirst = ppt = xalloc(heightSrc * sizeof(DDXPointRec));
+    pwidthFirst = pwidth = xalloc(heightSrc * sizeof(unsigned int));
     numRects = REGION_NUM_RECTS(prgnSrcClip);
     boxes = REGION_RECTS(prgnSrcClip);
-    ordering = (unsigned int *)
-        xalloc(numRects * sizeof(unsigned int));
+    ordering = xalloc(numRects * sizeof(unsigned int));
     if(!pptFirst || !pwidthFirst || !ordering)
     {
        if (ordering)
@@ -158,7 +156,7 @@ miCopyArea(pSrcDrawable, pDstDrawable,
            xfree(pwidthFirst);
        if (pptFirst)
            xfree(pptFirst);
-       return (RegionPtr)NULL;
+       return NULL;
     }
 
     /* If not the same drawable then order of move doesn't matter.
@@ -237,8 +235,7 @@ miCopyArea(pSrcDrawable, pDstDrawable,
 	    ppt++->y = y++;
 	    *pwidth++ = width;
 	}
-	pbits = (unsigned int *)xalloc(height * PixmapBytePad(width,
-					     pSrcDrawable->depth));
+	pbits = xalloc(height * PixmapBytePad(width, pSrcDrawable->depth));
 	if (pbits)
 	{
 	    (*pSrcDrawable->pScreen->GetSpans)(pSrcDrawable, width, pptFirst,
@@ -316,11 +313,10 @@ miGetPlane(
     sy += pDraw->y;
     widthInBytes = BitmapBytePad(w);
     if(!result)
-        result = (MiBits *)xalloc(h * widthInBytes);
+        result = xcalloc(h, widthInBytes);
     if (!result)
-	return (MiBits *)NULL;
+	return NULL;
     bitsPerPixel = pDraw->bitsPerPixel;
-    bzero((char *)result, h * widthInBytes);
     pOut = (OUT_TYPE *) result;
     if(bitsPerPixel == 1)
     {
@@ -433,8 +429,8 @@ miOpqStipDrawable(DrawablePtr pDraw, GCPtr pGC, RegionPtr prgnSrc,
     dixChangeGC(NullClient, pGCT, GCBackground, NULL, gcv);
     ValidateGC((DrawablePtr)pPixmap, pGCT);
     miClearDrawable((DrawablePtr)pPixmap, pGCT);
-    ppt = pptFirst = (DDXPointPtr)xalloc(h * sizeof(DDXPointRec));
-    pwidth = pwidthFirst = (int *)xalloc(h * sizeof(int));
+    ppt = pptFirst = xalloc(h * sizeof(DDXPointRec));
+    pwidth = pwidthFirst = xalloc(h * sizeof(int));
     if(!pptFirst || !pwidthFirst)
     {
 	if (pwidthFirst) xfree(pwidthFirst);
@@ -548,16 +544,17 @@ miOpqStipDrawable(DrawablePtr pDraw, GCPtr pGC, RegionPtr prgnSrc,
  * build a source clip
  * Use the bitmap we've built up as a Stipple for the destination 
  */
-_X_EXPORT RegionPtr
-miCopyPlane(pSrcDrawable, pDstDrawable,
-	    pGC, srcx, srcy, width, height, dstx, dsty, bitPlane)
-    DrawablePtr 	pSrcDrawable;
-    DrawablePtr		pDstDrawable;
-    GCPtr		pGC;
-    int 		srcx, srcy;
-    int 		width, height;
-    int 		dstx, dsty;
-    unsigned long	bitPlane;
+RegionPtr
+miCopyPlane( DrawablePtr pSrcDrawable,
+             DrawablePtr pDstDrawable,
+             GCPtr pGC,
+             int srcx,
+             int srcy,
+             int width,
+             int height,
+             int dstx,
+             int dsty,
+             unsigned long bitPlane)
 {
     MiBits	*ptile;
     BoxRec 		box;
@@ -642,19 +639,15 @@ miCopyPlane(pSrcDrawable, pDstDrawable,
  * XY format:
  * get the single plane specified in planemask
  */
-_X_EXPORT void
-miGetImage(pDraw, sx, sy, w, h, format, planeMask, pDst)
-    DrawablePtr 	pDraw;
-    int			sx, sy, w, h;
-    unsigned int 	format;
-    unsigned long 	planeMask;
-    char *              pDst;
+void
+miGetImage( DrawablePtr pDraw, int sx, int sy, int w, int h,
+            unsigned int format, unsigned long planeMask, char *pDst)
 {
     unsigned char	depth;
     int			i, linelength, width, srcx, srcy;
     DDXPointRec		pt = {0, 0};
     XID			gcv[2];
-    PixmapPtr		pPixmap = (PixmapPtr)NULL;
+    PixmapPtr		pPixmap = NULL;
     GCPtr		pGC = NULL;
 
     depth = pDraw->depth;
@@ -744,13 +737,10 @@ miGetImage(pDraw, sx, sy, w, h, format, planeMask, pDst)
  * ZPixmap format:
  *	This part is simple, just call SetSpans
  */
-_X_EXPORT void
-miPutImage(pDraw, pGC, depth, x, y, w, h, leftPad, format, pImage)
-    DrawablePtr		pDraw;
-    GCPtr		pGC;
-    int 		depth, x, y, w, h, leftPad;
-    int			format;
-    char		*pImage;
+void
+miPutImage( DrawablePtr pDraw, GCPtr pGC, int depth,
+            int x, int y, int w, int h,
+            int leftPad, int format, char *pImage)
 {
     DDXPointPtr		pptFirst, ppt;
     int			*pwidthFirst, *pwidth;
@@ -808,8 +798,8 @@ miPutImage(pDraw, pGC, depth, x, y, w, h, leftPad, format, pImage)
 	break;
 
       case ZPixmap:
-    	ppt = pptFirst = (DDXPointPtr)xalloc(h * sizeof(DDXPointRec));
-    	pwidth = pwidthFirst = (int *)xalloc(h * sizeof(int));
+    	ppt = pptFirst = xalloc(h * sizeof(DDXPointRec));
+    	pwidth = pwidthFirst = xalloc(h * sizeof(int));
 	if(!pptFirst || !pwidthFirst)
         {
 	   if (pwidthFirst)

@@ -561,7 +561,7 @@ SISUSBSetupImageVideo(ScreenPtr pScreen)
 }
 
 #ifdef SIS_ENABLEXV
-#if XF86_VERSION_CURRENT < XF86_VERSION_NUMERIC(4,3,99,3,0)
+#if XF86_VERSION_CURRENT < XF86_VERSION_NUMERIC(4,3,99,3)
 static Bool
 RegionsEqual(RegionPtr A, RegionPtr B)
 {
@@ -1654,7 +1654,7 @@ SISUSBPutImage(
    /* update cliplist */
    if(pPriv->autopaintColorKey &&
       (pPriv->grabbedByV4L ||
-#if XF86_VERSION_CURRENT < XF86_VERSION_NUMERIC(4,3,99,3,0)
+#if XF86_VERSION_CURRENT < XF86_VERSION_NUMERIC(4,3,99,3)
        (!RegionsEqual(&pPriv->clip, clipBoxes)) ||
 #else
        (!REGION_EQUAL(pScrn->pScreen, &pPriv->clip, clipBoxes)) ||

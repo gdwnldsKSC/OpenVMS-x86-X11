@@ -3,22 +3,23 @@
  * Copyright 2007 Red Hat, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software")
- * to deal in the software without restriction, including without limitation
- * on the rights to use, copy, modify, merge, publish, distribute, sub
- * license, and/or sell copies of the Software, and to permit persons to whom
- * them Software is furnished to do so, subject to the following conditions:
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
  *
  * The above copyright notice and this permission notice (including the next
  * paragraph) shall be included in all copies or substantial portions of the
  * Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTIBILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.  IN NO EVENT SHALL
- * THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
  *
  * print_edid.c: print out all information retrieved from display device  
  */
@@ -168,7 +169,7 @@ print_dpms_features(int scrnIndex, struct disp_features *c,
     } else if (v->revision == 3) {
 	xf86DrvMsg(scrnIndex,X_INFO,
 		   "First detailed timing not preferred "
-		   "mode in violation of standard!");
+		   "mode in violation of standard!\n");
     }
 
     if (v->revision >= 4) {
@@ -230,7 +231,7 @@ print_established_timings(int scrnIndex, struct established_timings *t)
     unsigned char c;
 
     if (t->t1 || t->t2 || t->t_manu)
-	xf86DrvMsg(scrnIndex,X_INFO,"Supported VESA Video Modes:\n");
+	xf86DrvMsg(scrnIndex,X_INFO,"Supported established timings:\n");
     c=t->t1;
     if (c&0x80) xf86DrvMsg(scrnIndex,X_INFO,"720x400@70Hz\n");
     if (c&0x40) xf86DrvMsg(scrnIndex,X_INFO,"720x400@88Hz\n");
@@ -250,7 +251,7 @@ print_established_timings(int scrnIndex, struct established_timings *t)
     if (c&0x02) xf86DrvMsg(scrnIndex,X_INFO,"1024x768@75Hz\n");
     if (c&0x01) xf86DrvMsg(scrnIndex,X_INFO,"1280x1024@75Hz\n");
     c=t->t_manu;
-    if (c&0x80) xf86DrvMsg(scrnIndex,X_INFO,"1152x870@75Hz\n");
+    if (c&0x80) xf86DrvMsg(scrnIndex,X_INFO,"1152x864@75Hz\n");
     xf86DrvMsg(scrnIndex,X_INFO,"Manufacturer's mask: %X\n",c&0x7F);
 }
   
@@ -262,7 +263,7 @@ print_std_timings(int scrnIndex, struct std_timings *t)
     for (i=0;i<STD_TIMINGS;i++) {
 	if (t[i].hsize > 256) {  /* sanity check */
 	    if (!done) {
-		xf86DrvMsg(scrnIndex,X_INFO,"Supported Future Video Modes:\n");
+		xf86DrvMsg(scrnIndex,X_INFO,"Supported standard timings:\n");
 		done = 1;
 	    }
 	    xf86DrvMsg(scrnIndex,X_INFO,
@@ -295,7 +296,7 @@ print_detailed_timings(int scrnIndex, struct detailed_timings *t)
 {
 
     if (t->clock > 15000000) {  /* sanity check */
-	xf86DrvMsg(scrnIndex,X_INFO,"Supported additional Video Mode:\n");
+	xf86DrvMsg(scrnIndex,X_INFO,"Supported detailed timing:\n");
 	xf86DrvMsg(scrnIndex,X_INFO,"clock: %.1f MHz   ",t->clock/1000000.0);
 	xf86ErrorF("Image Size:  %i x %i mm\n",t->h_size,t->v_size); 
 	xf86DrvMsg(scrnIndex,X_INFO,
@@ -397,8 +398,12 @@ print_detailed_monitor_section(int scrnIndex,
 		if (r->supported_scaling & SCALING_VSTRETCH)
 		    xf86ErrorF(" vstretch");
 		xf86ErrorF("\n");
-		xf86DrvMsg(scrnIndex, X_INFO, "Preferred refresh rate: %d\n",
-			   r->preferred_refresh);
+		if (r->preferred_refresh)
+		    xf86DrvMsg(scrnIndex, X_INFO, "Preferred refresh rate: %d\n",
+			       r->preferred_refresh);
+		else
+		    xf86DrvMsg(scrnIndex, X_INFO, "Buggy monitor, no preferred "
+			       "refresh rate given\n");
 	    } else if (r->max_clock != 0) {
 		xf86ErrorF(" PixClock max %i MHz\n", r->max_clock);
 	    } else {
@@ -445,7 +450,7 @@ print_detailed_monitor_section(int scrnIndex,
 	    break;
 	}
 	if (m[i].type >= DS_VENDOR && m[i].type <= DS_VENDOR_MAX) {
-	    xf86DrvMsg(scrnIndex, X_WARNING,
+	    xf86DrvMsg(scrnIndex, X_INFO,
 		       "Unknown vendor-specific block %hx\n",
 		       m[i].type - DS_VENDOR);
 	}
@@ -463,22 +468,28 @@ print_number_sections(int scrnIndex, int num)
 xf86MonPtr
 xf86PrintEDID(xf86MonPtr m)
 {
-    CARD16 i, j;
+    CARD16 i, j, n;
     char buf[EDID_WIDTH * 2 + 1];
 
-    if (!(m)) return NULL;
+    if (!m) return NULL;
 
-    print_vendor(m->scrnIndex,&m->vendor);
-    print_version(m->scrnIndex,&m->ver);
-    print_display(m->scrnIndex,&m->features, &m->ver);
-    print_established_timings(m->scrnIndex,&m->timings1);
-    print_std_timings(m->scrnIndex,m->timings2);
-    print_detailed_monitor_section(m->scrnIndex,m->det_mon);
-    print_number_sections(m->scrnIndex,m->no_sections);
+    print_vendor(m->scrnIndex, &m->vendor);
+    print_version(m->scrnIndex, &m->ver);
+    print_display(m->scrnIndex, &m->features, &m->ver);
+    print_established_timings(m->scrnIndex, &m->timings1);
+    print_std_timings(m->scrnIndex, m->timings2);
+    print_detailed_monitor_section(m->scrnIndex, m->det_mon);
+    print_number_sections(m->scrnIndex, m->no_sections);
+
+    /* extension block section stuff */
 
     xf86DrvMsg(m->scrnIndex, X_INFO, "EDID (in hex):\n");
- 
-    for (i = 0; i < 128; i += j) {
+
+    n = 128;
+    if (m->flags & EDID_COMPLETE_RAWDATA)
+	n += m->no_sections * 128;
+
+    for (i = 0; i < n; i += j) {
 	for (j = 0; j < EDID_WIDTH; ++j) {
 	    sprintf(&buf[j * 2], "%02x", m->rawData[i + j]);
 	}

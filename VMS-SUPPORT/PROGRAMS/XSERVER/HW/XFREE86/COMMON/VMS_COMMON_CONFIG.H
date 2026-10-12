@@ -3,7 +3,7 @@
 
 /* Native build configuration only; platform services are supplied at link. */
 #if !defined(__VMS) || !defined(__INITIAL_POINTER_SIZE) || __INITIAL_POINTER_SIZE != 64
-#error COMMON and INIT require native OpenVMS with 64-bit pointers.
+#error COMMON requires native OpenVMS with 64-bit pointers.
 #endif
 #ifndef XFree86Server
 #define XFree86Server 1
@@ -63,10 +63,13 @@
 #define __XKBDEFRULES__ "xorg"
 #endif
 #ifndef XORG_RELEASE
-#define XORG_RELEASE "Release 7.4"
+#define XORG_RELEASE "Release 7.5"
 #endif
 #ifndef ARCH_PCI_INIT
 #define ARCH_PCI_INIT vmsPciInit
+#endif
+#ifndef USE_SIGIO_BY_DEFAULT
+#define USE_SIGIO_BY_DEFAULT 0
 #endif
 
 #endif

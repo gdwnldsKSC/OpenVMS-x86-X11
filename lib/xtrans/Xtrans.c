@@ -92,24 +92,18 @@ Xtransport_table Xtransports[] = {
 #endif /* IPv6 */
     { &TRANS(SocketINETFuncs),	TRANS_SOCKET_INET_INDEX },
 #endif /* TCPCONN */
-#if defined(DNETCONN)
-    { &TRANS(DNETFuncs),	TRANS_DNET_INDEX },
-#endif /* DNETCONN */
 #if defined(UNIXCONN)
 #if !defined(LOCALCONN)
     { &TRANS(SocketLocalFuncs),	TRANS_SOCKET_LOCAL_INDEX },
 #endif /* !LOCALCONN */
     { &TRANS(SocketUNIXFuncs),	TRANS_SOCKET_UNIX_INDEX },
 #endif /* UNIXCONN */
-#if defined(OS2PIPECONN)
-    { &TRANS(OS2LocalFuncs),	TRANS_LOCAL_LOCAL_INDEX },
-#endif /* OS2PIPECONN */
 #if defined(LOCALCONN)
     { &TRANS(LocalFuncs),	TRANS_LOCAL_LOCAL_INDEX },
 #ifndef sun
     { &TRANS(PTSFuncs),		TRANS_LOCAL_PTS_INDEX },
 #endif /* sun */
-#ifdef SVR4
+#if defined(SVR4) || defined(__SVR4)
     { &TRANS(NAMEDFuncs),	TRANS_LOCAL_NAMED_INDEX },
 #endif
 #ifdef sun
@@ -430,7 +424,7 @@ TRANS(Open) (int type, char *address)
 
     PRMSG (2,"Open(%d,%s)\n", type, address, 0);
 
-#if defined(WIN32) && (defined(TCPCONN) || defined(DNETCONN))
+#if defined(WIN32) && defined(TCPCONN) 
     if (TRANS(WSAStartup)())
     {
 	PRMSG (1,"Open: WSAStartup failed\n", 0, 0, 0);
@@ -719,7 +713,7 @@ TRANS(SetOption) (XtransConnInfo ciptr, int option, int arg)
 	    break;
 	case 1: /* Set to non-blocking mode */
 
-#if defined(O_NONBLOCK) && (!defined(ultrix) && !defined(hpux) && !defined(AIXV3) && !defined(uniosu) && !defined(__UNIXOS2__) && !defined(SCO325)) && !defined(__QNX__)
+#if defined(O_NONBLOCK) && !defined(SCO325) 
 	    ret = fcntl (fd, F_GETFL, 0);
 	    if (ret != -1)
 		ret = fcntl (fd, F_SETFL, ret | O_NONBLOCK);
@@ -731,7 +725,7 @@ TRANS(SetOption) (XtransConnInfo ciptr, int option, int arg)
 	    ret = ioctl (fd, FIOSNBIO, &arg);
 	}
 #else
-#if (defined(AIXV3) || defined(uniosu) || defined(WIN32) || defined(__UNIXOS2__) || defined(__QNX__)) && defined(FIONBIO)
+#if defined(WIN32) 
 	{
 #ifdef WIN32
 	    u_long arg;
@@ -741,11 +735,7 @@ TRANS(SetOption) (XtransConnInfo ciptr, int option, int arg)
 	    arg = 1;
 /* IBM TCP/IP understands this option too well: it causes TRANS(Read) to fail
  * eventually with EWOULDBLOCK */
-#ifndef __UNIXOS2__
 	    ret = ioctl (fd, FIONBIO, &arg);
-#else
-/*	    ret = ioctl(fd, FIONBIO, &arg, sizeof(int));*/
-#endif
 	}
 #else
 	    ret = fcntl (fd, F_GETFL, 0);
@@ -1052,6 +1042,9 @@ complete_network_count (void)
 }
 
 
+#ifdef XQUARTZ_EXPORTS_LAUNCHD_FD
+extern int xquartz_launchd_fd;
+#endif
 
 int
 TRANS(MakeAllCOTSServerListeners) (char *port, int *partial, int *count_ret, 
@@ -1069,6 +1062,17 @@ TRANS(MakeAllCOTSServerListeners) (char *port, int *partial, int *count_ret,
 	   port ? port : "NULL", ciptrs_ret, 0);
 
     *count_ret = 0;
+
+#ifdef XQUARTZ_EXPORTS_LAUNCHD_FD
+    fprintf(stderr, "Launchd socket fd: %d\n", xquartz_launchd_fd);
+    if(xquartz_launchd_fd != -1) {
+        if((ciptr = TRANS(ReopenCOTSServer(TRANS_SOCKET_LOCAL_INDEX,
+                                           xquartz_launchd_fd, getenv("DISPLAY"))))==NULL)
+            fprintf(stderr,"Got NULL while trying to Reopen launchd port\n");
+        else 
+            temp_ciptrs[(*count_ret)++] = ciptr;
+    }
+#endif
 
     for (i = 0; i < NUMTRANS; i++)
     {
@@ -1278,45 +1282,8 @@ TRANS(MakeAllCLTSServerListeners) (char *port, int *partial, int *count_ret,
  * may be used by it.
  */
 
-#ifdef CRAY
 
-/*
- * Cray UniCOS does not have readv and writev so we emulate
- */
-
-static int TRANS(ReadV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
-
-{
-    struct msghdr hdr;
-
-    hdr.msg_iov = iov;
-    hdr.msg_iovlen = iovcnt;
-    hdr.msg_accrights = 0;
-    hdr.msg_accrightslen = 0;
-    hdr.msg_name = 0;
-    hdr.msg_namelen = 0;
-
-    return (recvmsg (ciptr->fd, &hdr, 0));
-}
-
-static int TRANS(WriteV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
-
-{
-    struct msghdr hdr;
-
-    hdr.msg_iov = iov;
-    hdr.msg_iovlen = iovcnt;
-    hdr.msg_accrights = 0;
-    hdr.msg_accrightslen = 0;
-    hdr.msg_name = 0;
-    hdr.msg_namelen = 0;
-
-    return (sendmsg (ciptr->fd, &hdr, 0));
-}
-
-#endif /* CRAY */
-
-#if (defined(SYSV) && defined(__i386__) && !defined(__SCO__) && !defined(sun)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__)
+#if defined(SYSV) && defined(__i386__) && !defined(__SCO__) && !defined(sun) || defined(WIN32) 
 
 /*
  * emulate readv
@@ -1348,7 +1315,7 @@ static int TRANS(ReadV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
 
 #endif /* SYSV && __i386__ || WIN32 || __sxg__ */
 
-#if (defined(SYSV) && defined(__i386__) && !defined(__SCO__) && !defined(sun)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__) || defined(__VMS)
+#if (defined(SYSV) && defined(__i386__) && !defined(__SCO__) && !defined(sun)) || defined(WIN32) || defined(__VMS)
 
 /*
  * emulate writev
@@ -1381,7 +1348,7 @@ static int TRANS(WriteV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
 #endif /* SYSV && __i386__ || WIN32 || __sxg__ */
 
 
-#if (defined(_POSIX_SOURCE) && !defined(AIXV3) && !defined(__QNX__)) || defined(hpux) || defined(USG) || defined(SVR4) || defined(__SCO__)
+#if defined(_POSIX_SOURCE) || defined(USG) || defined(SVR4) || defined(__SVR4) || defined(__SCO__)
 #ifndef NEED_UTSNAME
 #define NEED_UTSNAME
 #endif

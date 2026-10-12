@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-glint],
-        1.2.1,
+        1.2.4,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-glint)
 
@@ -61,6 +61,10 @@ XORG_DRIVER_CHECK_EXT(XFreeXDGA, xf86dgaproto)
 
 # Checks for pkg-config packages
 PKG_CHECK_MODULES(XORG, [xorg-server >= 1.0.99.901 xproto fontsproto $REQUIRED_MODULES])
+PKG_CHECK_MODULES(XEXT, [xextproto >= 7.0.99.1],
+                  HAVE_XEXTPROTO_71="yes"; AC_DEFINE(HAVE_XEXTPROTO_71, 1, [xextproto 7.1 available]),
+                  HAVE_XEXTPROTO_71="no")
+AM_CONDITIONAL(HAVE_XEXTPROTO_71, [ test "$HAVE_XEXTPROTO_71" = "yes" ])
 sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 
 # Checks for libraries.
@@ -69,6 +73,7 @@ CPPFLAGS="$CPPFLAGS $XORG_CFLAGS"
 AC_CHECK_DECL(XSERVER_LIBPCIACCESS,
               [XSERVER_LIBPCIACCESS=yes],[XSERVER_LIBPCIACCESS=no],
               [#include "xorg-server.h"])
+AC_CHECK_HEADER(cfb8_32.h,[AC_DEFINE(HAVE_CFB8_32, 1, [Have cfb8_32 support])],[])
 CPPFLAGS="$SAVE_CPPFLAGS"
 
 # Checks for header files.

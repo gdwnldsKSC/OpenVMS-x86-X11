@@ -1,0 +1,34 @@
+This module provides the definition of the WindowsWM extension to the
+X11 protocol, used for coordination between an X11 server and the
+Microsoft Windows native window manager.
+
+WindowsWM is only intended to be used on Cygwin when running a
+rootless XWin server.
+
+All questions regarding this software should be directed at the
+Xorg mailing list:
+
+        http://lists.freedesktop.org/mailman/listinfo/xorg
+
+or to the Cygwin/X project:
+
+	http://x.cygwin.com/
+
+Please submit bug reports to the Xorg bugzilla:
+
+        https://bugs.freedesktop.org/enter_bug.cgi?product=xorg
+
+The master development code repository can be found at:
+
+        git://anongit.freedesktop.org/git/xorg/proto/windowswmproto
+
+        http://cgit.freedesktop.org/xorg/proto/windowswmproto
+
+For patch submission instructions, see:
+
+	http://www.x.org/wiki/Development/Documentation/SubmittingPatches
+
+For more information on the git code manager, see:
+
+        http://wiki.x.org/wiki/GitPage
+

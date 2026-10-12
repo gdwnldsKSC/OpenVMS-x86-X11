@@ -127,6 +127,7 @@ development leading up to version 6.8:
 <Para>
 The first snapshot of the pre-6.8 development branch.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term><Literal remap="tt">6.7.99.23</Literal></Term>
@@ -134,6 +135,7 @@ The first snapshot of the pre-6.8 development branch.
 <Para>
 The twenty-third snapshot of the pre-6.8 development branch.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term><Literal remap="tt">6.7.99.900</Literal></Term>
@@ -141,6 +143,7 @@ The twenty-third snapshot of the pre-6.8 development branch.
 <Para>
 The start of the 6.8 feature freeze.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term><Literal remap="tt">6.7.99.903</Literal></Term>
@@ -148,6 +151,7 @@ The start of the 6.8 feature freeze.
 <Para>
 The third 6.8 release candidate.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term><Literal remap="tt">6.8.0</Literal></Term>
@@ -155,6 +159,7 @@ The third 6.8 release candidate.
 <Para>
 The 6.8 release.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term><Literal remap="tt">6.8.99.1</Literal></Term>
@@ -163,6 +168,7 @@ The 6.8 release.
 The first pre-6.9 development snapshot, which  is the first main
 branch snapshot after creating the 6.8 stable branch.
 </Para>
+</ListItem>
 </VarListEntry>
 </VariableList>
 </Para>
@@ -196,6 +202,7 @@ stable branch:
 <Para>
 The 6.8 release.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term><Literal remap="tt">6.8.0.901</Literal></Term>
@@ -203,6 +210,7 @@ The 6.8 release.
 <Para>
 The first pre 6.8.1 snapshot.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term><Literal remap="tt">6.8.0.903</Literal></Term>
@@ -211,6 +219,7 @@ The first pre 6.8.1 snapshot.
 The third pre 6.8.1 snapshot, also known as the third 6.8.1 release
 candidate.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term><Literal remap="tt">6.8.1</Literal></Term>
@@ -218,6 +227,7 @@ candidate.
 <Para>
 The 6.8.1 release.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term><Literal remap="tt">6.8.1.901</Literal></Term>
@@ -225,6 +235,7 @@ The 6.8.1 release.
 <Para>
 The first pre 6.8.2 snapshot.
 </Para>
+</ListItem>
 </VarListEntry>
 <VarListEntry>
 <Term><Literal remap="tt">6.8.2</Literal></Term>
@@ -232,6 +243,7 @@ The first pre 6.8.2 snapshot.
 <Para>
 The 6.8.2 release.
 </Para>
+</ListItem>
 </VarListEntry>
 </VariableList>
 </Para>

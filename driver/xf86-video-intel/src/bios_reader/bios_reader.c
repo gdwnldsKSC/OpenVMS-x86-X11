@@ -38,6 +38,8 @@
 
 #include "../i830_bios.h"
 
+#include <X11/Xfuncproto.h>
+#include <X11/Xmd.h>
 #define _PARSE_EDID_
 #include "edid.h"
 
@@ -53,47 +55,71 @@ struct _fake_i830 *pI830 = &I830;
 #define INTEL_BIOS_16(_addr)	(pI830->VBIOS[_addr] | \
 				 (pI830->VBIOS[_addr + 1] << 8))
 #define INTEL_BIOS_32(_addr)	(pI830->VBIOS[_addr] | \
-				 (pI830->VBIOS[_addr + 1] << 8) \
-				 (pI830->VBIOS[_addr + 2] << 16) \
+				 (pI830->VBIOS[_addr + 1] << 8) | \
+				 (pI830->VBIOS[_addr + 2] << 16) | \
 				 (pI830->VBIOS[_addr + 3] << 24))
 
 #define YESNO(val) ((val) ? "yes" : "no")
 
+struct bdb_block {
+    uint8_t id;
+    uint16_t size;
+    void *data;
+};
+
+struct bdb_header *bdb;
 static int tv_present;
 static int lvds_present;
 static int panel_type;
 
-static void *find_section(struct bdb_header *bdb, int section_id)
+static struct bdb_block *find_section(int section_id)
 {
-	unsigned char *base = (unsigned char *)bdb;
-	int index = 0;
-	uint16_t total, current_size;
-	unsigned char current_id;
+    struct bdb_block *block;
+    unsigned char *base = (unsigned char *)bdb;
+    int index = 0;
+    uint16_t total, current_size;
+    unsigned char current_id;
 
-	/* skip to first section */
-	index += bdb->header_size;
-	total = bdb->bdb_size;
+    /* skip to first section */
+    index += bdb->header_size;
+    total = bdb->bdb_size;
 
-	/* walk the sections looking for section_id */
-	while (index < total) {
-		current_id = *(base + index);
-		index++;
-		current_size = *((uint16_t *)(base + index));
-		index += 2;
-		if (current_id == section_id)
-			return base + index;
-		index += current_size;
+    block = malloc(sizeof(*block));
+    if (!block) {
+	fprintf(stderr, "out of memory\n");
+	exit(-1);
+    }
+
+    /* walk the sections looking for section_id */
+    while (index < total) {
+	current_id = *(base + index);
+	index++;
+	current_size = *((uint16_t *)(base + index));
+	index += 2;
+	if (current_id == section_id) {
+	    block->id = current_id;
+	    block->size = current_size;
+	    block->data = base + index;
+	    return block;
 	}
+	index += current_size;
+    }
 
-	return NULL;
+    free(block);
+    return NULL;
 }
 
-static void dump_general_features(void *data)
+static void dump_general_features(void)
 {
-    struct bdb_general_features *features = data;
+    struct bdb_general_features *features;
+    struct bdb_block *block;
 
-    if (!data)
+    block = find_section(BDB_GENERAL_FEATURES);
+
+    if (!block)
 	return;
+
+    features = block->data;
 
     printf("General features block:\n");
 
@@ -133,15 +159,58 @@ static void dump_general_features(void *data)
 
     tv_present = 1; /* should be based on whether TV DAC exists */
     lvds_present = 1; /* should be based on IS_MOBILE() */
+
+    free(block);
 }
 
-static void dump_general_definitions(void *data)
+static void dump_backlight_info(void)
 {
-    struct bdb_general_definitions *defs = data;
-    unsigned char *lvds_data = defs->tv_or_lvds_info;
+    struct bdb_block *block;
+    struct bdb_lvds_backlight *backlight;
+    struct blc_struct *blc;
 
-    if (!data)
+    block = find_section(BDB_LVDS_BACKLIGHT);
+
+    if (!block)
 	return;
+
+    backlight = block->data;
+
+    printf("Backlight info block (len %d):\n", block->size);
+
+    if (sizeof(struct blc_struct) != backlight->blcstruct_size) {
+	printf("\tBacklight struct sizes don't match (expected %d, got %d), skipping\n",
+	       sizeof(struct blc_struct), backlight->blcstruct_size);
+	return;
+    }
+
+    blc = &backlight->panels[panel_type];
+
+    printf("\tInverter type: %d\n", blc->inverter_type);
+    printf("\t     polarity: %d\n", blc->inverter_polarity);
+    printf("\t    GPIO pins: %d\n", blc->gpio_pins);
+    printf("\t  GMBUS speed: %d\n", blc->gmbus_speed);
+    printf("\t     PWM freq: %d\n", blc->pwm_freq);
+    printf("\tMinimum brightness: %d\n", blc->min_brightness);
+    printf("\tI2C slave addr: 0x%02x\n", blc->i2c_slave_addr);
+    printf("\tI2C command: 0x%02x\n", blc->i2c_cmd);
+}
+
+static void dump_general_definitions(void)
+{
+    struct bdb_block *block;
+    struct bdb_general_definitions *defs;
+    struct child_device_config *child;
+    int i;
+    char child_id[11];
+    int child_device_num;
+
+    block = find_section(BDB_GENERAL_DEFINITIONS);
+
+    if (!block)
+	return;
+
+    defs = block->data;
 
     printf("General definitions block:\n");
 
@@ -153,18 +222,72 @@ static void dump_general_definitions(void *data)
     printf("\tBoot display type: 0x%02x%02x\n", defs->boot_display[1],
 	   defs->boot_display[0]);
     printf("\tTV data block present: %s\n", YESNO(tv_present));
-    if (tv_present)
-	lvds_data += 33;
-    if (lvds_present)
-	printf("\tLFP DDC GMBUS addr: 0x%02x\n", lvds_data[19]);
+    child_device_num = (block->size - sizeof(*defs)) / sizeof(*child);
+    for (i = 0; i < child_device_num; i++) {
+	child = &defs->devices[i];
+	if (!child->device_type) {
+	    printf("\tChild device %d not present\n", i);
+	    continue;
+	}
+	strncpy(child_id, (char *)child->device_id, 10);
+	child_id[10] = 0;
+	printf("\tChild %d device info:\n", i);
+	printf("\t\tSignature: %s\n", child_id);
+	printf("\t\tAIM offset: %d\n", child->addin_offset);
+	printf("\t\tDVO port: 0x%02x\n", child->dvo_port);
+    }
+
+    free(block);
 }
 
-static void dump_lvds_options(void *data)
+#if 0
+static void dump_child_devices(void)
 {
-    struct bdb_lvds_options *options = data;
+    struct bdb_block *block;
+    struct bdb_child_devices *child_devs;
+    struct child_device_config *child;
+    int i;
 
-    if (!data)
+    block = find_section(BDB_CHILD_DEVICE_TABLE);
+    if (!block) {
+	printf("No child device table found\n");
 	return;
+    }
+
+    child_devs = block->data;
+
+    printf("Child devices block:\n");
+    for (i = 0; i < DEVICE_CHILD_SIZE; i++) {
+	child = &child_devs->children[i];
+	/* Skip nonexistent children */
+	if (!child->device_type)
+	    continue;
+	printf("\tChild device %d\n", i);
+	printf("\t\tType: 0x%04x\n", child->device_type);
+	printf("\t\tDVO port: 0x%02x\n", child->dvo_port);
+	printf("\t\tI2C pin: 0x%02x\n", child->i2c_pin);
+	printf("\t\tSlave addr: 0x%02x\n", child->slave_addr);
+	printf("\t\tDDC pin: 0x%02x\n", child->ddc_pin);
+	printf("\t\tDVO config: 0x%02x\n", child->dvo_cfg);
+	printf("\t\tDVO wiring: 0x%02x\n", child->dvo_wiring);
+    }
+
+    free(block);
+}
+#endif
+
+static void dump_lvds_options(void)
+{
+    struct bdb_block *block;
+    struct bdb_lvds_options *options;
+
+    block = find_section(BDB_LVDS_OPTIONS);
+    if (!block) {
+	printf("No LVDS options block\n");
+	return;
+    }
+
+    options = block->data;
 
     printf("LVDS options block:\n");
 
@@ -178,21 +301,86 @@ static void dump_lvds_options(void *data)
     printf("\tPFIT enhanced text mode: %s\n",
 	   YESNO(options->pfit_text_mode_enhanced));
     printf("\tPFIT mode: %d\n", options->pfit_mode);
+
+    free(block);
 }
 
-static void dump_lvds_data(void *data, unsigned char *base)
+static void dump_lvds_ptr_data(void)
 {
-    struct bdb_lvds_lfp_data *lvds_data = data;
-    int i;
+    struct bdb_block *block;
+    struct bdb_lvds_lfp_data *lvds_data;
+    struct bdb_lvds_lfp_data_ptrs *ptrs;
+    struct lvds_fp_timing *fp_timing;
+    struct bdb_lvds_lfp_data_entry *entry;
+    int lfp_data_size;
 
-    if (!data)
+    block = find_section(BDB_LVDS_LFP_DATA_PTRS);
+    if (!block) {
+	printf("No LFP data pointers block\n");
 	return;
+    }
+    ptrs = block->data;
+
+    block = find_section(BDB_LVDS_LFP_DATA);
+    if (!block) {
+	printf("No LVDS data block\n");
+	return;
+    }
+    lvds_data = block->data;
+
+    lfp_data_size = ptrs->ptr[1].fp_timing_offset - ptrs->ptr[0].fp_timing_offset;
+    entry = (struct bdb_lvds_lfp_data_entry *)((uint8_t *)lvds_data->data +
+					       (lfp_data_size * panel_type));
+    fp_timing = &entry->fp_timing;
+
+    printf("LVDS timing pointer data:\n");
+    printf("  Number of entries: %d\n", ptrs->lvds_entries);
+
+    printf("\tpanel type %02i: %dx%d\n", panel_type, fp_timing->x_res,
+	   fp_timing->y_res);
+
+    free(block);
+}
+
+static void dump_lvds_data(void)
+{
+    struct bdb_block *block;
+    struct bdb_lvds_lfp_data *lvds_data;
+    struct bdb_lvds_lfp_data_ptrs *ptrs;
+    int num_entries;
+    int i;
+    int hdisplay, hsyncstart, hsyncend, htotal;
+    int vdisplay, vsyncstart, vsyncend, vtotal;
+    float clock;
+    int lfp_data_size, dvo_offset;
+
+    block = find_section(BDB_LVDS_LFP_DATA_PTRS);
+    if (!block) {
+	printf("No LVDS ptr block\n");
+        return;
+    }
+    ptrs = block->data;
+    lfp_data_size = ptrs->ptr[1].fp_timing_offset - ptrs->ptr[0].fp_timing_offset;
+    dvo_offset = ptrs->ptr[0].dvo_timing_offset - ptrs->ptr[0].fp_timing_offset;
+    free(block);
+
+    block = find_section(BDB_LVDS_LFP_DATA);
+    if (!block) {
+	printf("No LVDS data block\n");
+	return;
+    }
+
+    lvds_data = block->data;
+    num_entries = block->size / lfp_data_size;
 
     printf("LVDS panel data block (preferred block marked with '*'):\n");
+    printf("  Number of entries: %d\n", num_entries);
 
-    for (i = 0; i < 16; i++) {
-	struct bdb_lvds_lfp_data_entry *lfp_data = &lvds_data->data[i];
-	uint8_t *timing_data = (uint8_t *)&lfp_data->dvo_timing;
+    for (i = 0; i < num_entries; i++) {
+	uint8_t *lfp_data_ptr = (uint8_t *)lvds_data->data + lfp_data_size * i;
+	uint8_t *timing_data = lfp_data_ptr + dvo_offset;
+	struct bdb_lvds_lfp_data_entry *lfp_data =
+			(struct bdb_lvds_lfp_data_entry *)lfp_data_ptr;
 	char marker;
 
 	if (i == panel_type)
@@ -200,36 +388,117 @@ static void dump_lvds_data(void *data, unsigned char *base)
 	else
 	    marker = ' ';
 
+	hdisplay   = _H_ACTIVE(timing_data);
+	hsyncstart = hdisplay + _H_SYNC_OFF(timing_data);
+	hsyncend   = hsyncstart + _H_SYNC_WIDTH(timing_data);
+	htotal     = hdisplay + _H_BLANK(timing_data);
+
+	vdisplay   = _V_ACTIVE(timing_data);
+	vsyncstart = vdisplay + _V_SYNC_OFF(timing_data);
+	vsyncend   = vsyncstart + _V_SYNC_WIDTH(timing_data);
+	vtotal     = vdisplay + _V_BLANK(timing_data);
+	clock      = _PIXEL_CLOCK(timing_data) / 1000;
+
 	printf("%c\tpanel type %02i: %dx%d clock %d\n", marker,
 	       i, lfp_data->fp_timing.x_res, lfp_data->fp_timing.y_res,
 	       _PIXEL_CLOCK(timing_data));
-	printf("\t\ttimings: %d %d %d %d %d %d %d %d\n",
-	       _H_ACTIVE(timing_data),
-	       _H_BLANK(timing_data),
-	       _H_SYNC_OFF(timing_data),
-	       _H_SYNC_WIDTH(timing_data),
-	       _V_ACTIVE(timing_data),
-	       _V_BLANK(timing_data),
-	       _V_SYNC_OFF(timing_data),
-	       _V_SYNC_WIDTH(timing_data));
+	printf("\t\tinfo:\n");
+	printf("\t\t  LVDS: 0x%08lx\n",
+	       (unsigned long)lfp_data->fp_timing.lvds_reg_val);
+	printf("\t\t  PP_ON_DELAYS: 0x%08lx\n",
+	       (unsigned long)lfp_data->fp_timing.pp_on_reg_val);
+	printf("\t\t  PP_OFF_DELAYS: 0x%08lx\n",
+	       (unsigned long)lfp_data->fp_timing.pp_off_reg_val);
+	printf("\t\t  PP_DIVISOR: 0x%08lx\n",
+	       (unsigned long)lfp_data->fp_timing.pp_cycle_reg_val);
+	printf("\t\t  PFIT: 0x%08lx\n",
+	       (unsigned long)lfp_data->fp_timing.pfit_reg_val);
+	printf("\t\ttimings: %d %d %d %d %d %d %d %d %.2f (%s)\n",
+	       hdisplay, hsyncstart, hsyncend, htotal,
+	       vdisplay, vsyncstart, vsyncend, vtotal, clock,
+	       (hsyncend > htotal || vsyncend > vtotal) ?
+	       "BAD!" : "good");
     }
+    free(block);
+}
 
+static void dump_driver_feature(void)
+{
+    struct bdb_block *block;
+    struct bdb_driver_feature *feature;
+
+    block = find_section(BDB_DRIVER_FEATURES);
+    if (!block) {
+	printf("No Driver feature data block\n");
+	return;
+    }
+    feature = block->data;
+
+    printf("Driver feature Data Block:\n");
+    printf("\tBoot Device Algorithm: %s\n", feature->boot_dev_algorithm ?
+	    "driver default": "os default");
+    printf("\tBlock display switching when DVD active: %s\n",
+	    YESNO(feature->block_display_switch));
+    printf("\tAllow display switching when in Full Screen DOS: %s\n",
+	    YESNO(feature->allow_display_switch));
+    printf("\tHot Plug DVO: %s\n", YESNO(feature->hotplug_dvo));
+    printf("\tDual View Zoom: %s\n", YESNO(feature->dual_view_zoom));
+    printf("\tDriver INT 15h hook: %s\n", YESNO(feature->int15h_hook));
+    printf("\tEnable Sprite in Clone Mode: %s\n", YESNO(feature->sprite_in_clone));
+    printf("\tUse 00000110h ID for Primary LFP: %s\n", YESNO(feature->primary_lfp_id));
+    printf("\tBoot Mode X: %u\n", feature->boot_mode_x);
+    printf("\tBoot Mode Y: %u\n", feature->boot_mode_y);
+    printf("\tBoot Mode Bpp: %u\n", feature->boot_mode_bpp);
+    printf("\tBoot Mode Refresh: %u\n", feature->boot_mode_refresh);
+    printf("\tEnable LFP as primary: %s\n", YESNO(feature->enable_lfp_primary));
+    printf("\tSelective Mode Pruning: %s\n", YESNO(feature->selective_mode_pruning));
+    printf("\tDual-Frequency Graphics Technology: %s\n", YESNO(feature->dual_frequency));
+    printf("\tDefault Render Clock Frequency: %s\n", feature->render_clock_freq ? "low" : "high");
+    printf("\tNT 4.0 Dual Display Clone Support: %s\n", YESNO(feature->nt_clone_support));
+    printf("\tDefault Power Scheme user interface: %s\n", feature->power_scheme_ui ? "3rd party":"CUI");
+    printf("\tSprite Display Assignment when Overlay is Active in Clone Mode: %s\n",
+	    feature->sprite_display_assign ? "primary" : "secondary");
+    printf("\tDisplay Maintain Aspect Scaling via CUI: %s\n", YESNO(feature->cui_aspect_scaling));
+    printf("\tPreserve Aspect Ratio: %s\n", YESNO(feature->preserve_aspect_ratio));
+    printf("\tEnable SDVO device power down: %s\n", YESNO(feature->sdvo_device_power_down));
+    printf("\tCRT hotplug: %s\n", YESNO(feature->crt_hotplug));
+    printf("\tLVDS config: ");
+    switch (feature->lvds_config) {
+	case BDB_DRIVER_NO_LVDS:
+	    printf("No LVDS\n");
+	    break;
+	case BDB_DRIVER_INT_LVDS:
+	    printf("Integrated LVDS\n");
+	    break;
+	case BDB_DRIVER_SDVO_LVDS:
+	    printf("SDVO LVDS\n");
+	    break;
+	case BDB_DRIVER_EDP:
+	    printf("Embedded DisplayPort\n");
+	    break;
+    }
+    printf("\tDefine Display statically: %s\n", YESNO(feature->static_display));
+    printf("\tLegacy CRT max X: %d\n", feature->legacy_crt_max_x);
+    printf("\tLegacy CRT max Y: %d\n", feature->legacy_crt_max_y);
+    printf("\tLegacy CRT max refresh: %d\n", feature->legacy_crt_max_refresh);
+    free(block);
 }
 
 int main(int argc, char **argv)
 {
     int fd;
     struct vbt_header *vbt = NULL;
-    struct bdb_header *bdb;
     int vbt_off, bdb_off, i;
     char *filename = "bios";
     struct stat finfo;
+    struct bdb_block *block;
+    char signature[17];
 
     if (argc != 2) {
 	printf("usage: %s <rom file>\n", argv[0]);
 	return 1;
     }
-	
+
     filename = argv[1];
 
     fd = open(filename, O_RDONLY);
@@ -267,13 +536,30 @@ int main(int argc, char **argv)
 
     bdb_off = vbt_off + vbt->bdb_offset;
     bdb = (struct bdb_header *)(pI830->VBIOS + bdb_off);
-    printf("BDB sig: %16s\n", bdb->signature);
+    strncpy(signature, (char *)bdb->signature, 16);
+    signature[16] = 0;
+    printf("BDB sig: %s\n", signature);
     printf("BDB vers: %d.%d\n", bdb->version / 100, bdb->version % 100);
 
-    dump_general_features(find_section(bdb, BDB_GENERAL_FEATURES));
-    dump_general_definitions(find_section(bdb, BDB_GENERAL_DEFINITIONS));
-    dump_lvds_options(find_section(bdb, BDB_LVDS_OPTIONS));
-    dump_lvds_data(find_section(bdb, BDB_LVDS_LFP_DATA), bdb);
+    printf("Available sections: ");
+    for (i = 0; i < 256; i++) {
+	block = find_section(i);
+	if (!block)
+	    continue;
+	printf("%d ", i);
+	free(block);
+    }
+    printf("\n");
+
+    dump_general_features();
+    dump_general_definitions();
+//    dump_child_devices();
+    dump_lvds_options();
+    dump_lvds_data();
+    dump_lvds_ptr_data();
+    dump_backlight_info();
+
+    dump_driver_feature();
 
     return 0;
 }

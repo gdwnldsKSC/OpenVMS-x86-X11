@@ -19,12 +19,14 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86Resources.h"
+
 
 #include <X11/extensions/panoramiXproto.h>
 
 #ifdef XSERVER_LIBPCIACCESS
 #include <pciaccess.h>
+#else
+#include "xf86Resources.h"
 #endif
 
 #include "compiler.h"	        /* inb/outb */
@@ -43,8 +45,17 @@
 #include "svga_reg.h"
 #include "svga_struct.h"
 
-/* Arbitrarily choose max cursor dimensions.  The emulation doesn't care. */
-#define MAX_CURS        32
+/*
+ * The virtual hardware's cursor limits are pretty big. Some VMware
+ * product versions limit to 1024x1024 pixels, others limit to 128
+ * kilobytes of cursor data. We just choose an arbitrary maximum
+ * cursor size. 64x64 is a common value for real hardware, so we'll go
+ * with that.
+ */
+#define MAX_CURS        64
+
+#define NUM_DYN_MODES   2
+
 
 typedef struct {
     CARD32 svga_reg_enable;
@@ -93,9 +104,9 @@ typedef struct {
 
     VMWARERegRec SavedReg;
     VMWARERegRec ModeReg;
+    CARD32 suspensionSavedRegId;
 
-    DisplayModePtr dynMode1;
-    DisplayModePtr dynMode2;
+    DisplayModePtr dynModes[NUM_DYN_MODES];
 
     Bool* pvtSema;
 
@@ -236,6 +247,10 @@ void vmwareSendSVGACmdUpdate(
    VMWAREPtr pVMWARE, BoxPtr pBB
    );
 
+void vmwareSendSVGACmdUpdateFullScreen(
+   VMWAREPtr pVMWARE
+   );
+
 DisplayModeRec *VMWAREAddDisplayMode(
     ScrnInfoPtr pScrn,
     const char *name,
@@ -246,6 +261,10 @@ DisplayModeRec *VMWAREAddDisplayMode(
 Bool vmwareIsRegionEqual(
     const RegionPtr reg1,
     const RegionPtr reg2
+   );
+
+void vmwareNextXineramaState(
+   VMWAREPtr pVMWARE
    );
 
 /* vmwarecurs.c */
@@ -294,4 +313,8 @@ void vmwareCheckVideoSanity(
    ScrnInfoPtr pScrn
    );
 
+/* vmwaremode.c */
+void vmwareGetSupportedModelines(
+   DisplayModePtr *monitorModes
+   );
 #endif

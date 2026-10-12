@@ -33,3 +33,13 @@ compositedocdir = $(datadir)/doc/$(PACKAGE)
 compositedoc_DATA = compositeproto.txt
 
 EXTRA_DIST = autogen.sh compositeproto.pc.in $(compositedoc_DATA)
+
+EXTRA_DIST += ChangeLog
+MAINTAINERCLEANFILES = ChangeLog
+
+.PHONY: ChangeLog
+
+ChangeLog:
+	$(CHANGELOG_CMD)
+
+dist-hook: ChangeLog

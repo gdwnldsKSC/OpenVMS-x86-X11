@@ -34,8 +34,8 @@ extern   void     XGI_LongWait( PVB_DEVICE_INFO );
 extern   void     XGI_SetCRT2ModeRegs(USHORT ModeNo,PXGI_HW_DEVICE_INFO,  PVB_DEVICE_INFO  );
 extern   void     XGI_DisableBridge(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO );
 extern   void  	  XGI_EnableBridge(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO );
-extern   void     XGI_DisplayOff( PVB_DEVICE_INFO );
-extern   void     XGI_DisplayOn( PVB_DEVICE_INFO );
+extern   void     XGI_DisplayOff( PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO );
+extern   void     XGI_DisplayOn( PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO );
 extern   void     XGI_GetVBType(PVB_DEVICE_INFO);
 extern   void     XGI_SenseCRT1(PVB_DEVICE_INFO );
 extern   void     XGI_GetVGAType(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO );
@@ -44,6 +44,9 @@ extern   void     XGI_GetTVInfo(USHORT ModeNo,USHORT ModeIdIndex, PVB_DEVICE_INF
 extern   void     XGI_SetCRT1Offset(USHORT ModeNo,USHORT ModeIdIndex,USHORT RefreshRateTableIndex,PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO );
 extern   void     XGI_SetLCDAGroup(USHORT ModeNo,USHORT ModeIdIndex,PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO );
 
+/* Jong 10/04/2007; merge code */
+extern   USHORT   XGI_GetResInfo(USHORT ModeNo,USHORT ModeIdIndex, PVB_DEVICE_INFO pVBInfo);
+
 extern BOOLEAN XGISetModeNew(PXGI_HW_DEVICE_INFO HwDeviceExtension,
     PVB_DEVICE_INFO pVBInfo, USHORT ModeNo);
 
@@ -51,7 +54,7 @@ extern   BOOLEAN  CheckDualChip(PVB_DEVICE_INFO );
 extern   BOOLEAN  XGI_GetLCDInfo(USHORT ModeNo,USHORT ModeIdIndex,PVB_DEVICE_INFO );
 extern   BOOLEAN  XGI_BridgeIsOn( PVB_DEVICE_INFO );
 extern   BOOLEAN  XGI_SetCRT2Group301(USHORT ModeNo, PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO);
-extern   USHORT   XGI_GetRatePtrCRT2( USHORT ModeNo,USHORT ModeIdIndex, PVB_DEVICE_INFO );
+extern   USHORT   XGI_GetRatePtrCRT2( PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT ModeNo,USHORT ModeIdIndex, PVB_DEVICE_INFO );
 
 extern USHORT XGI_GetColorDepth(USHORT ModeNo, USHORT ModeIdIndex,
     const VB_DEVICE_INFO *pVBInfo);
@@ -72,6 +75,15 @@ extern void XGI_SetGRCRegs(unsigned StandTableIndex,
     const VB_DEVICE_INFO *pVBInfo);
 
 extern void XGI_ClearExt1Regs(unsigned ModeNo, const VB_DEVICE_INFO *pVBInfo);
+
+extern   void     XGI_SetXG21FPBits(PVB_DEVICE_INFO pVBInfo);
+extern   void     XGI_SetXG27FPBits(PVB_DEVICE_INFO pVBInfo);
+extern   void     XGI_XG21BLSignalVDD(USHORT tempbh,USHORT tempbl, PVB_DEVICE_INFO pVBInfo);
+extern   void     XGI_XG27BLSignalVDD(USHORT tempbh,USHORT tempbl, PVB_DEVICE_INFO pVBInfo);
+extern   void     XGI_XG21SetPanelDelay(USHORT tempbl, PVB_DEVICE_INFO pVBInfo);
+extern   BOOLEAN  XGI_XG21CheckLVDSMode(USHORT ModeNo,USHORT ModeIdIndex, PVB_DEVICE_INFO pVBInfo );
+extern   void     XGI_SetXG21LVDSPara(USHORT ModeNo,USHORT ModeIdIndex, PVB_DEVICE_INFO pVBInfo );
+extern   USHORT XGI_GetLVDSOEMTableIndex(PVB_DEVICE_INFO pVBInfo);
 
 extern void XGI_SetSync(unsigned RefreshRateTableIndex,
     const VB_DEVICE_INFO *pVBInfo);

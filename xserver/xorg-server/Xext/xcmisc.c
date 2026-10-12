@@ -26,8 +26,6 @@ from The Open Group.
 
 */
 
-#define NEED_EVENTS
-#define NEED_REPLIES
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -39,7 +37,7 @@ from The Open Group.
 #include "dixstruct.h"
 #include "extnsionst.h"
 #include "swaprep.h"
-#include <X11/extensions/xcmiscstr.h>
+#include <X11/extensions/xcmiscproto.h>
 #include "modinit.h"
 
 #if HAVE_STDINT_H
@@ -47,10 +45,6 @@ from The Open Group.
 #elif !defined(UINT32_MAX)
 #define UINT32_MAX 0xffffffffU
 #endif
-
-static void XCMiscResetProc(
-    ExtensionEntry * /* extEntry */
-);
 
 static DISPATCH_PROC(ProcXCMiscDispatch);
 static DISPATCH_PROC(ProcXCMiscGetVersion);
@@ -61,27 +55,21 @@ static DISPATCH_PROC(SProcXCMiscGetVersion);
 static DISPATCH_PROC(SProcXCMiscGetXIDList);
 static DISPATCH_PROC(SProcXCMiscGetXIDRange);
 
+void XCMiscExtensionInit(INITARGS);
+
 void
 XCMiscExtensionInit(INITARGS)
 {
     AddExtension(XCMiscExtensionName, 0, 0,
 		 ProcXCMiscDispatch, SProcXCMiscDispatch,
-		 XCMiscResetProc, StandardMinorOpcode);
-}
-
-/*ARGSUSED*/
-static void
-XCMiscResetProc (extEntry)
-    ExtensionEntry	*extEntry;
-{
+		 NULL, StandardMinorOpcode);
 }
 
 static int
-ProcXCMiscGetVersion(client)
-    register ClientPtr client;
+ProcXCMiscGetVersion(ClientPtr client)
 {
     xXCMiscGetVersionReply rep;
-    register int n;
+    int n;
 
     REQUEST_SIZE_MATCH(xXCMiscGetVersionReq);
     rep.type = X_Reply;
@@ -99,11 +87,10 @@ ProcXCMiscGetVersion(client)
 }
 
 static int
-ProcXCMiscGetXIDRange(client)
-    register ClientPtr client;
+ProcXCMiscGetXIDRange(ClientPtr client)
 {
     xXCMiscGetXIDRangeReply rep;
-    register int n;
+    int n;
     XID min_id, max_id;
 
     REQUEST_SIZE_MATCH(xXCMiscGetXIDRangeReq);
@@ -123,12 +110,11 @@ ProcXCMiscGetXIDRange(client)
 }
 
 static int
-ProcXCMiscGetXIDList(client)
-    register ClientPtr client;
+ProcXCMiscGetXIDList(ClientPtr client)
 {
     REQUEST(xXCMiscGetXIDListReq);
     xXCMiscGetXIDListReply rep;
-    register int n;
+    int n;
     XID *pids;
     unsigned int count;
 
@@ -163,8 +149,7 @@ ProcXCMiscGetXIDList(client)
 }
 
 static int
-ProcXCMiscDispatch (client)
-    register ClientPtr	client;
+ProcXCMiscDispatch (ClientPtr client)
 {
     REQUEST(xReq);
     switch (stuff->data)
@@ -181,10 +166,9 @@ ProcXCMiscDispatch (client)
 }
 
 static int
-SProcXCMiscGetVersion(client)
-    register ClientPtr	client;
+SProcXCMiscGetVersion(ClientPtr client)
 {
-    register int n;
+    int n;
     REQUEST(xXCMiscGetVersionReq);
 
     swaps(&stuff->length, n);
@@ -195,10 +179,9 @@ SProcXCMiscGetVersion(client)
 }
 
 static int
-SProcXCMiscGetXIDRange(client)
-    register ClientPtr	client;
+SProcXCMiscGetXIDRange(ClientPtr client)
 {
-    register int n;
+    int n;
     REQUEST(xReq);
 
     swaps(&stuff->length, n);
@@ -206,10 +189,9 @@ SProcXCMiscGetXIDRange(client)
 }
 
 static int
-SProcXCMiscGetXIDList(client)
-    register ClientPtr	client;
+SProcXCMiscGetXIDList(ClientPtr client)
 {
-    register int n;
+    int n;
     REQUEST(xXCMiscGetXIDListReq);
 
     swaps(&stuff->length, n);
@@ -218,8 +200,7 @@ SProcXCMiscGetXIDList(client)
 }
 
 static int
-SProcXCMiscDispatch (client)
-    register ClientPtr	client;
+SProcXCMiscDispatch (ClientPtr client)
 {
     REQUEST(xReq);
     switch (stuff->data)

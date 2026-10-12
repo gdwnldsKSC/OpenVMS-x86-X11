@@ -56,7 +56,7 @@
 #include "osdef.h"
 
 #ifdef LINUX_XF86
-#include "xf86Version.h"
+#include "xorgVersion.h"
 #include "xf86Pci.h"
 #endif
 
@@ -150,6 +150,7 @@ typedef enum _XGI_CHIP_TYPE {
     XG45,
     XG20 = 48,
     XG21,
+    XG27,
     MAX_XGI_CHIP
 } XGI_CHIP_TYPE;
 #endif
@@ -279,6 +280,25 @@ struct _XGI_HW_DEVICE_INFO
 
     UCHAR  szVBIOSVer[VBIOS_VER_MAX_LENGTH];
 
+    /* Jong 09/18/2007; patch to GIT */
+    /* Jong 08/17/2007; Alan's code to support custom mode of modeline */
+    /* --------------------------------------------------------------------- */
+    UCHAR   BPP;
+    UCHAR   Frequency;
+    USHORT  Horizontal_ACTIVE;
+    USHORT  Vertical_ACTIVE;
+    UCHAR   SpecialMode;
+
+    UCHAR   SpecifyTiming; /* Set 1 for specifying timing*/
+    USHORT  Horizontal_FP; /* Alan 08/10/2007; HSyncStart - HDisplay */
+    USHORT  Horizontal_BP; /* Alan 08/10/2007; HTotal - HSyncEnd */
+    USHORT  Horizontal_SYNC; /* Alan 08/10/2007; HSyncEnd - HSyncStart */
+    USHORT  Vertical_FP;
+    USHORT  Vertical_BP;
+    USHORT  Vertical_SYNC;
+    double  DCLK;
+    UCHAR   Interlace; /* Alan 08/10/2007; specify interlace or not */
+    /* --------------------------------------------------------------------- */
 };
 #endif
 

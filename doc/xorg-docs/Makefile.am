@@ -20,7 +20,7 @@
 #
 #  Process this file with autoconf to create configure.
 
-SUBDIRS = hardcopy man sgml
+SUBDIRS = man sgml
 x11docdir = @X11DOCDIR@
 
 dist_x11doc_DATA = MAINTAINERS
@@ -35,102 +35,17 @@ EXTRA_DIST = \
 	specs/CTEXT/ctext.tbl.ms \
 	specs/FSProtocol/protocol.ms \
 	specs/GL/libGL.txt \
-	specs/i18n/Framework.ms \
-	specs/i18n/LocaleDB.ms \
-	specs/i18n/Trans.ms \
 	specs/ICCCM/icccm.ms \
 	specs/ICCCM/indexmacros.t \
 	specs/ICE/ICElib.ms \
 	specs/ICE/ice.ms \
-	specs/PM/PM_spec \
-	specs/Render/library \
-	specs/rstart/fix.awk \
-	specs/rstart/fix.nawk \
-	specs/rstart/fix.sed \
-	specs/rstart/rstartd.txt \
-	specs/rstart/rstart.ms \
-	specs/rstart/tmac.rfc \
 	specs/RX/RX.mif \
 	specs/saver/saver.ms \
 	specs/SIAddresses/hostname.txt \
 	specs/SIAddresses/IPv6.txt \
 	specs/SIAddresses/localuser.txt \
 	specs/SIAddresses/README \
-	specs/SM/SMlib.ms \
-	specs/SM/xsmp.ms \
 	specs/specindex.html \
-	specs/X11/abstract.t \
-	specs/X11/AppA \
-	specs/X11/AppB \
-	specs/X11/AppC \
-	specs/X11/AppD \
-	specs/X11/CH01 \
-	specs/X11/CH02 \
-	specs/X11/CH03 \
-	specs/X11/CH04 \
-	specs/X11/CH05 \
-	specs/X11/CH06 \
-	specs/X11/CH07 \
-	specs/X11/CH08 \
-	specs/X11/CH09 \
-	specs/X11/CH10 \
-	specs/X11/CH11 \
-	specs/X11/CH12 \
-	specs/X11/CH13 \
-	specs/X11/CH14 \
-	specs/X11/CH15 \
-	specs/X11/CH16 \
-	specs/X11/credits.t \
-	specs/X11/glossary \
-	specs/X11/indexmacros.t \
-	specs/X11/postproc \
-	specs/Xaw/AsciiSink \
-	specs/Xaw/AsciiSource \
-	specs/Xaw/AsciiText \
-	specs/Xaw/block.awk \
-	specs/Xaw/Box \
-	specs/Xaw/CH1 \
-	specs/Xaw/CH2 \
-	specs/Xaw/CH3.intro \
-	specs/Xaw/CH4.intro \
-	specs/Xaw/CH5.intro \
-	specs/Xaw/CH6.intro \
-	specs/Xaw/CH7.intro \
-	specs/Xaw/Command \
-	specs/Xaw/Dialog \
-	specs/Xaw/fixindex.awk \
-	specs/Xaw/Form \
-	specs/Xaw/Grip \
-	specs/Xaw/Label \
-	specs/Xaw/List \
-	specs/Xaw/MenuButton \
-	specs/Xaw/Paned \
-	specs/Xaw/Panner \
-	specs/Xaw/Porthole \
-	specs/Xaw/Repeater \
-	specs/Xaw/Scrollbar \
-	specs/Xaw/Simple \
-	specs/Xaw/SimpleMenu \
-	specs/Xaw/Sme \
-	specs/Xaw/SmeBSB \
-	specs/Xaw/SmeLine \
-	specs/Xaw/strings.mit \
-	specs/Xaw/strings.xaw \
-	specs/Xaw/StripChart \
-	specs/Xaw/Template \
-	specs/Xaw/Text \
-	specs/Xaw/TextActions \
-	specs/Xaw/TextCustom \
-	specs/Xaw/TextFuncs \
-	specs/Xaw/TextSink \
-	specs/Xaw/TextSource \
-	specs/Xaw/Toggle \
-	specs/Xaw/TPage_Credits \
-	specs/Xaw/Tree \
-	specs/Xaw/Viewport \
-	specs/Xaw/widg.idxmac.t \
-	specs/Xaw/Xtk.widgets \
-	specs/Xaw/Xtk.widg.front \
 	specs/XDMCP/xdmcp.ms \
 	specs/Xext/AppGroup.mif \
 	specs/Xext/bigreq.ms \
@@ -157,13 +72,10 @@ EXTRA_DIST = \
 	specs/Xext/xtest1.mm \
 	specs/Xext/xtestlib.ms \
 	specs/Xext/xtest.ms \
-	specs/xfs/design.ms \
-	specs/xfs/FSlib.doc \
 	specs/Xi/encoding.ms \
 	specs/Xi/library.ms \
-	specs/XIM/xim.ms \
 	specs/Xi/porting.ms \
-	specs/Xi/protocol.ms \
+	specs/Xi/protocol.txt \
 	specs/XKB/Proto/dflttrns.fm5 \
 	specs/XKB/Proto/encoding.fm5 \
 	specs/XKB/Proto/keysyms.fm5 \
@@ -183,16 +95,6 @@ EXTRA_DIST = \
 	specs/XKB/XKBlib/XKBlib.book \
 	specs/XLFD/xlfd.tbl.ms \
 	specs/Xmu/Xmu.ms \
-	specs/XPRINT/xp_library.book \
-	specs/XPRINT/xp_library_cov.mif \
-	specs/XPRINT/xp_libraryIX.doc \
-	specs/XPRINT/xp_library.mif \
-	specs/XPRINT/xp_libraryTOC.doc \
-	specs/XPRINT/xp_proto.book \
-	specs/XPRINT/xp_proto_cov.mif \
-	specs/XPRINT/xp_protoIX.doc \
-	specs/XPRINT/xp_proto.mif \
-	specs/XPRINT/xp_protoTOC.doc \
 	specs/XProtocol/glossary \
 	specs/XProtocol/indexmacros.t \
 	specs/XProtocol/postproc \
@@ -201,13 +103,7 @@ EXTRA_DIST = \
 	specs/XProtocol/X11.protocol \
 	specs/Xserver/analysis.tex \
 	specs/Xserver/appgroup.ms \
-	specs/Xserver/fontlib.ms \
 	specs/Xserver/secint.tex \
-	specs/Xserver/Xprt.book \
-	specs/Xserver/Xprt_cov.mif \
-	specs/Xserver/XprtIX.doc \
-	specs/Xserver/Xprt.mif \
-	specs/Xserver/XprtTOC.doc \
 	specs/Xt/appA \
 	specs/Xt/appB \
 	specs/Xt/appC \
@@ -229,12 +125,19 @@ EXTRA_DIST = \
 	specs/Xt/CH13 \
 	specs/Xt/intr.idxmac.t \
 	specs/Xt/postproc \
-	specs/xtrans/Xtrans.mm \
 	specs/Xt/strings.mit \
 	specs/Xt/Xtk.intr.front \
-	specs/XvMC/XvMC_API.txt \
-	specs/Xv/xv-protocol-v2.txt \
 	util/block.awk \
 	util/fixindex.awk \
 	util/indexmacros.t \
 	util/macros.t
+
+EXTRA_DIST += ChangeLog
+MAINTAINERCLEANFILES = ChangeLog
+
+.PHONY: ChangeLog
+
+ChangeLog:
+	$(CHANGELOG_CMD)
+
+dist-hook: ChangeLog

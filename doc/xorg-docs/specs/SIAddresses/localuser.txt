@@ -18,4 +18,3 @@ Examples:
         xhost +SI:localgroup:wheel
         xhost +SI:localgroup:#0 
 
-$XdotOrg:  $

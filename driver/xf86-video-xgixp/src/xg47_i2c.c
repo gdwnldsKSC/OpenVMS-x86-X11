@@ -50,6 +50,19 @@
 #include "xg47_i2c.h"
 
 
+struct xg47_i2c_private {
+    XGIPtr pXGI;
+    unsigned port;
+};
+
+
+#define XGIPTR_FROM_I2CBUS(b) \
+    ((struct xg47_i2c_private *) b->DriverPrivate.ptr)->pXGI
+
+#define IOPORT_FROM_I2CBUS(b) \
+    ((struct xg47_i2c_private *) b->DriverPrivate.ptr)->port
+
+
 /**
  * Write a single value to the I2C bus
  *
@@ -63,11 +76,12 @@ i2c_Write(I2CBusPtr b, uint8_t input)
 {
     static const uint8_t mask = ~(I2C_SCL_HIGH | I2C_WRITE_MODE
 				  | I2C_SDA_HIGH);
-    XGIPtr pXGI = b->DriverPrivate.ptr;
+    XGIPtr pXGI = XGIPTR_FROM_I2CBUS(b);
+    const unsigned port = IOPORT_FROM_I2CBUS(b);
     uint8_t    output;
 
-    output = (IN3X5B(0x37) & mask) | input;
-    OUT3X5B(0x37, output);
+    output = (IN3X5B(port) & mask) | input;
+    OUT3X5B(port, output);
     b->I2CUDelay(b, b->RiseFallTime);
 
     return output;
@@ -81,9 +95,12 @@ i2c_Write(I2CBusPtr b, uint8_t input)
  * Actual bits in I2C I/O port.  Includes clock, data, and mode.
  */
 static uint8_t
-i2c_Read(XGIPtr pXGI)
+i2c_Read(I2CBusPtr b)
 {
-    return IN3X5B(0x37);
+    XGIPtr pXGI = XGIPTR_FROM_I2CBUS(b);
+    const unsigned port = IOPORT_FROM_I2CBUS(b);
+
+    return IN3X5B(port);
 }
 
 
@@ -96,7 +113,7 @@ i2c_Read(XGIPtr pXGI)
 static Bool
 xg47_i2c_PutByte(I2CDevPtr d, I2CByte data)
 {
-    XGIPtr pXGI = d->pI2CBus->DriverPrivate.ptr;
+    XGIPtr pXGI = XGIPTR_FROM_I2CBUS(d->pI2CBus);
     uint8_t   output;
     uint8_t   input;
     int  i;
@@ -116,7 +133,7 @@ xg47_i2c_PutByte(I2CDevPtr d, I2CByte data)
 
 
     for (i = 0; i < 10; i++) {
-        input = i2c_Read(pXGI);
+        input = i2c_Read(d->pI2CBus);
         if ((input & 0x01) == 0) {
             break;
         }
@@ -147,7 +164,7 @@ xg47_i2c_GetByte(I2CDevPtr d, I2CByte *data, Bool last)
         i2c_Write(d->pI2CBus, I2C_READ_MODE);
         i2c_Write(d->pI2CBus, I2C_SCL_HIGH);
 
-        input = i2c_Read(pXGI);
+        input = i2c_Read(d->pI2CBus);
         *data = *data | ((input & 0x01) << i);
 
         i2c_Write(d->pI2CBus, input & ~0x01 & ~I2C_SCL_HIGH);
@@ -224,29 +241,86 @@ xg47_i2c_Address(I2CDevPtr d, I2CSlaveAddr addr)
 Bool xg47_InitI2C(ScrnInfoPtr pScrn)
 {
     XGIPtr pXGI = XGIPTR(pScrn);
-
+    struct xg47_i2c_private *i2c_priv;
 
     pXGI->pI2C = xf86CreateI2CBusRec();
-    if (pXGI->pI2C != NULL) {
-        pXGI->pI2C->BusName = "DDC";
-        pXGI->pI2C->scrnIndex = pScrn->scrnIndex;
-        pXGI->pI2C->I2CPutBits = NULL;
-        pXGI->pI2C->I2CGetBits = NULL;
-	pXGI->pI2C->I2CPutByte = xg47_i2c_PutByte;
-	pXGI->pI2C->I2CGetByte = xg47_i2c_GetByte;
-	pXGI->pI2C->I2CAddress = xg47_i2c_Address;
-	pXGI->pI2C->I2CStart   = xg47_i2c_Start;
-	pXGI->pI2C->I2CStop    = xg47_i2c_Stop;
-        pXGI->pI2C->AcknTimeout = 5;
-        pXGI->pI2C->DriverPrivate.ptr = pXGI;
-
-        if (!xf86I2CBusInit(pXGI->pI2C)) {
-	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		       "xf86I2CBusInit failed.\n");
-            xf86DestroyI2CBusRec(pXGI->pI2C, TRUE, TRUE);
-            pXGI->pI2C = NULL;
-        }
+    if (pXGI->pI2C == NULL) {
+	goto fail;
     }
 
-    return (pXGI->pI2C != NULL);
+    pXGI->pI2C->BusName = "DDC (CRT)";
+    pXGI->pI2C->scrnIndex = pScrn->scrnIndex;
+    pXGI->pI2C->I2CPutBits = NULL;
+    pXGI->pI2C->I2CGetBits = NULL;
+    pXGI->pI2C->I2CPutByte = xg47_i2c_PutByte;
+    pXGI->pI2C->I2CGetByte = xg47_i2c_GetByte;
+    pXGI->pI2C->I2CAddress = xg47_i2c_Address;
+    pXGI->pI2C->I2CStart   = xg47_i2c_Start;
+    pXGI->pI2C->I2CStop    = xg47_i2c_Stop;
+    pXGI->pI2C->AcknTimeout = 5;
+
+
+    i2c_priv = malloc(sizeof(struct xg47_i2c_private));
+    if (i2c_priv == NULL) {
+	goto fail;
+    }
+
+    i2c_priv->pXGI = pXGI;
+    i2c_priv->port = 0x37;
+    pXGI->pI2C->DriverPrivate.ptr = i2c_priv;
+
+    if (!xf86I2CBusInit(pXGI->pI2C)) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "xf86I2CBusInit (for CRT) failed.\n");
+	goto fail;
+    }
+
+
+    pXGI->pI2C_dvi = xf86CreateI2CBusRec();
+    if (pXGI->pI2C_dvi == NULL) {
+	goto fail;
+    }
+
+    pXGI->pI2C_dvi->BusName = "DDC (DVI)";
+    pXGI->pI2C_dvi->scrnIndex = pScrn->scrnIndex;
+    pXGI->pI2C_dvi->I2CPutBits = NULL;
+    pXGI->pI2C_dvi->I2CGetBits = NULL;
+    pXGI->pI2C_dvi->I2CPutByte = xg47_i2c_PutByte;
+    pXGI->pI2C_dvi->I2CGetByte = xg47_i2c_GetByte;
+    pXGI->pI2C_dvi->I2CAddress = xg47_i2c_Address;
+    pXGI->pI2C_dvi->I2CStart   = xg47_i2c_Start;
+    pXGI->pI2C_dvi->I2CStop    = xg47_i2c_Stop;
+    pXGI->pI2C_dvi->AcknTimeout = 5;
+
+
+    i2c_priv = malloc(sizeof(struct xg47_i2c_private));
+    if (i2c_priv == NULL) {
+	goto fail;
+    }
+
+    i2c_priv->pXGI = pXGI;
+    i2c_priv->port = 0x30;
+    pXGI->pI2C_dvi->DriverPrivate.ptr = i2c_priv;
+
+    if (!xf86I2CBusInit(pXGI->pI2C_dvi)) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "xf86I2CBusInit (for DVI) failed.\n");
+	goto fail;
+    }
+
+    return TRUE; 
+
+
+fail:
+    if (pXGI->pI2C != NULL) {
+	xf86DestroyI2CBusRec(pXGI->pI2C, TRUE, TRUE);	
+	pXGI->pI2C = NULL;
+    }
+
+    if (pXGI->pI2C_dvi != NULL) {
+	xf86DestroyI2CBusRec(pXGI->pI2C_dvi, TRUE, TRUE);	
+	pXGI->pI2C_dvi = NULL;
+    }
+
+    return FALSE;
 }

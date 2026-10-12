@@ -1,4 +1,4 @@
-AM_CFLAGS= \
+AM_CPPFLAGS= \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/include/X11 \
 	-I$(top_builddir)/include \
@@ -7,10 +7,12 @@ AM_CFLAGS= \
 	-I$(top_srcdir)/src/xkb \
 	-I$(top_srcdir)/src/xlibi18n \
 	-I$(top_srcdir)/src \
+	-D_BSD_SOURCE
+
+AM_CFLAGS= \
 	$(X11_CFLAGS) \
 	$(BIGFONT_CFLAGS) \
 	$(XDMCP_CFLAGS) \
-	-D_BSD_SOURCE \
 	$(XMALLOC_ZERO_CFLAGS)
 
 noinst_LTLIBRARIES = libi18n.la
@@ -91,11 +93,13 @@ libi18n_la_SOURCES = \
 	lcUniConv/ascii.h\
 	lcUniConv/big5.h\
 	lcUniConv/big5_emacs.h\
+	lcUniConv/big5hkscs.h\
 	lcUniConv/cp1133.h\
 	lcUniConv/cp1251.h\
 	lcUniConv/cp1255.h\
 	lcUniConv/cp1256.h\
 	lcUniConv/gb2312.h\
+	lcUniConv/gbk.h\
 	lcUniConv/georgian_academy.h\
 	lcUniConv/georgian_ps.h\
 	lcUniConv/iso8859_1.h\

@@ -28,15 +28,18 @@
 #include "config.h"
 #endif
 
-#define SYNAPTICS_PRIVATE
+#include <xorg-server.h>
 #include "eventcomm.h"
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <dirent.h>
+#include <string.h>
 #include <stdio.h>
 #include "synproto.h"
 #include "synaptics.h"
+#include "synapticsstr.h"
 #include <xf86.h>
 
 
@@ -53,8 +56,16 @@
  ****************************************************************************/
 
 static void
-EventDeviceOnHook(LocalDevicePtr local, SynapticsSHM *para)
+EventDeviceOnHook(LocalDevicePtr local, SynapticsParameters *para)
 {
+    SynapticsPrivate *priv = (SynapticsPrivate *)local->private;
+    BOOL *need_grab;
+
+    if (!priv->proto_data)
+        priv->proto_data = xcalloc(1, sizeof(BOOL));
+
+    need_grab = (BOOL*)priv->proto_data;
+
     if (para->grab_event_device) {
 	/* Try to grab the event device so that data don't leak to /dev/input/mice */
 	int ret;
@@ -64,104 +75,196 @@ EventDeviceOnHook(LocalDevicePtr local, SynapticsSHM *para)
 		    local->name, errno);
 	}
     }
-}
 
-static void
-EventDeviceOffHook(LocalDevicePtr local)
-{
+    *need_grab = FALSE;
 }
 
 static Bool
-event_query_is_touchpad(int fd)
+event_query_is_touchpad(int fd, BOOL grab)
 {
-    int ret;
-    unsigned long evbits[NBITS(KEY_MAX)];
+    int ret = FALSE, rc;
+    unsigned long evbits[NBITS(EV_MAX)] = {0};
+    unsigned long absbits[NBITS(ABS_MAX)] = {0};
+    unsigned long keybits[NBITS(KEY_MAX)] = {0};
+
+    if (grab)
+    {
+        SYSCALL(rc = ioctl(fd, EVIOCGRAB, (pointer)1));
+        if (rc < 0)
+            return FALSE;
+    }
 
     /* Check for ABS_X, ABS_Y, ABS_PRESSURE and BTN_TOOL_FINGER */
 
-    SYSCALL(ret = ioctl(fd, EVIOCGBIT(0, sizeof(evbits)), evbits));
-    if (ret < 0)
-	return FALSE;
+    SYSCALL(rc = ioctl(fd, EVIOCGBIT(0, sizeof(evbits)), evbits));
+    if (rc < 0)
+	goto unwind;
     if (!TEST_BIT(EV_SYN, evbits) ||
 	!TEST_BIT(EV_ABS, evbits) ||
 	!TEST_BIT(EV_KEY, evbits))
-	return FALSE;
+	goto unwind;
 
-    SYSCALL(ret = ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(evbits)), evbits));
-    if (ret < 0)
-	return FALSE;
-    if (!TEST_BIT(ABS_X, evbits) ||
-	!TEST_BIT(ABS_Y, evbits) ||
-	!TEST_BIT(ABS_PRESSURE, evbits))
-	return FALSE;
+    SYSCALL(rc = ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(absbits)), absbits));
+    if (rc < 0)
+	goto unwind;
+    if (!TEST_BIT(ABS_X, absbits) ||
+	!TEST_BIT(ABS_Y, absbits))
+	goto unwind;
 
-    SYSCALL(ret = ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(evbits)), evbits));
-    if (ret < 0)
-	return FALSE;
-    if (!TEST_BIT(BTN_TOOL_FINGER, evbits))
-	return FALSE;
-    if (TEST_BIT(BTN_TOOL_PEN, evbits))
-	return FALSE;			    /* Don't match wacom tablets */
+    SYSCALL(rc = ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybits)), keybits));
+    if (rc < 0)
+	goto unwind;
 
-    return TRUE;
+    /* we expect touchpad either report raw pressure or touches */
+    if (!TEST_BIT(ABS_PRESSURE, absbits) && !TEST_BIT(BTN_TOUCH, keybits))
+	goto unwind;
+    /* all Synaptics-like touchpad report BTN_TOOL_FINGER */
+    if (!TEST_BIT(BTN_TOOL_FINGER, keybits))
+	goto unwind;
+    if (TEST_BIT(BTN_TOOL_PEN, keybits))
+	goto unwind;			    /* Don't match wacom tablets */
+
+    ret = TRUE;
+
+unwind:
+    if (grab)
+        SYSCALL(ioctl(fd, EVIOCGRAB, (pointer)0));
+
+    return (ret == TRUE);
 }
 
-/* Query device for axis ranges and store outcome in the default parameter. */
+typedef struct {
+	short vendor;
+	short product;
+	enum TouchpadModel model;
+} model_lookup_t;
+#define PRODUCT_ANY 0x0000
+
+static model_lookup_t model_lookup_table[] = {
+	{0x0002, 0x0007, MODEL_SYNAPTICS},
+	{0x0002, 0x0008, MODEL_ALPS},
+	{0x05ac, PRODUCT_ANY, MODEL_APPLETOUCH},
+	{0x0, 0x0, 0x0}
+};
+
 static void
-event_query_axis_ranges(int fd, LocalDevicePtr local)
+event_query_info(LocalDevicePtr local)
 {
-    SynapticsSHM *pars = &((SynapticsPrivate *)local->private)->synpara_default;
-    struct input_absinfo abs;
+    SynapticsPrivate *priv = (SynapticsPrivate *)local->private;
+    short id[4];
+    int rc;
+    model_lookup_t *model_lookup;
+
+    SYSCALL(rc = ioctl(local->fd, EVIOCGID, id));
+    if (rc < 0)
+        return;
+
+    for(model_lookup = model_lookup_table; model_lookup->vendor; model_lookup++) {
+        if(model_lookup->vendor == id[ID_VENDOR] &&
+           (model_lookup->product == id[ID_PRODUCT] || model_lookup->product == PRODUCT_ANY))
+            priv->model = model_lookup->model;
+    }
+}
+
+/* Query device for axis ranges */
+static void
+event_query_axis_ranges(LocalDevicePtr local)
+{
+    SynapticsPrivate *priv = (SynapticsPrivate *)local->private;
+    struct input_absinfo abs = {0};
+    unsigned long absbits[NBITS(ABS_MAX)] = {0};
+    unsigned long keybits[NBITS(KEY_MAX)] = {0};
+    char buf[256];
     int rc;
 
-    SYSCALL(rc = ioctl(fd, EVIOCGABS(ABS_X), &abs));
-    if (rc == 0)
+    SYSCALL(rc = ioctl(local->fd, EVIOCGABS(ABS_X), &abs));
+    if (rc >= 0)
     {
 	xf86Msg(X_INFO, "%s: x-axis range %d - %d\n", local->name,
 		abs.minimum, abs.maximum);
-	pars->left_edge  = abs.minimum;
-	pars->right_edge = abs.maximum;
+	priv->minx = abs.minimum;
+	priv->maxx = abs.maximum;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,30)
+	priv->resx = abs.resolution;
+#endif
     } else
 	xf86Msg(X_ERROR, "%s: failed to query axis range (%s)\n", local->name,
 		strerror(errno));
 
-    SYSCALL(rc = ioctl(fd, EVIOCGABS(ABS_Y), &abs));
-    if (rc == 0)
+    SYSCALL(rc = ioctl(local->fd, EVIOCGABS(ABS_Y), &abs));
+    if (rc >= 0)
     {
 	xf86Msg(X_INFO, "%s: y-axis range %d - %d\n", local->name,
 		abs.minimum, abs.maximum);
-	pars->top_edge    = abs.minimum;
-	pars->bottom_edge = abs.maximum;
+	priv->miny = abs.minimum;
+	priv->maxy = abs.maximum;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,30)
+	priv->resy = abs.resolution;
+#endif
     } else
 	xf86Msg(X_ERROR, "%s: failed to query axis range (%s)\n", local->name,
 		strerror(errno));
+
+    priv->has_pressure = FALSE;
+    SYSCALL(rc = ioctl(local->fd, EVIOCGBIT(EV_ABS, sizeof(absbits)), absbits));
+    if (rc >= 0)
+	priv->has_pressure = TEST_BIT(ABS_PRESSURE, absbits);
+    else
+	xf86Msg(X_ERROR, "%s: failed to query ABS bits (%s)\n", local->name,
+		strerror(errno));
+
+    if (priv->has_pressure)
+    {
+	SYSCALL(rc = ioctl(local->fd, EVIOCGABS(ABS_PRESSURE), &abs));
+	if (rc >= 0)
+	{
+	    xf86Msg(X_INFO, "%s: pressure range %d - %d\n", local->name,
+		    abs.minimum, abs.maximum);
+	    priv->minp = abs.minimum;
+	    priv->maxp = abs.maximum;
+	}
+    } else
+	xf86Msg(X_INFO,
+		"%s: device does not report pressure, will use touch data.\n",
+		local->name);
+
+    SYSCALL(rc = ioctl(local->fd, EVIOCGABS(ABS_TOOL_WIDTH), &abs));
+    if (rc >= 0)
+    {
+	xf86Msg(X_INFO, "%s: finger width range %d - %d\n", local->name,
+		abs.minimum, abs.maximum);
+	priv->minw = abs.minimum;
+	priv->maxw = abs.maximum;
+    }
+
+    SYSCALL(rc = ioctl(local->fd, EVIOCGBIT(EV_KEY, sizeof(keybits)), keybits));
+    if (rc >= 0)
+    {
+	buf[0] = 0;
+	if ((priv->has_left = (TEST_BIT(BTN_LEFT, keybits) != 0)))
+	   strcat(buf, " left");
+	if ((priv->has_right = (TEST_BIT(BTN_RIGHT, keybits) != 0)))
+	   strcat(buf, " right");
+	if ((priv->has_middle = (TEST_BIT(BTN_MIDDLE, keybits) != 0)))
+	   strcat(buf, " middle");
+	if ((priv->has_double = (TEST_BIT(BTN_TOOL_DOUBLETAP, keybits) != 0)))
+	   strcat(buf, " double");
+	if ((priv->has_triple = (TEST_BIT(BTN_TOOL_TRIPLETAP, keybits) != 0)))
+	   strcat(buf, " triple");
+	xf86Msg(X_INFO, "%s: buttons:%s\n", local->name, buf);
+    }
 }
 
 static Bool
-EventQueryHardware(LocalDevicePtr local, struct SynapticsHwInfo *synhw)
+EventQueryHardware(LocalDevicePtr local)
 {
-    if (!event_query_is_touchpad(local->fd))
+    SynapticsPrivate *priv = (SynapticsPrivate *)local->private;
+    BOOL *need_grab = (BOOL*)priv->proto_data;
+
+    if (!event_query_is_touchpad(local->fd, (need_grab) ? *need_grab : TRUE))
 	return FALSE;
 
-    xf86Msg(X_PROBED, "%s touchpad found\n", local->name);
-
-    /* awful */
-    if (strstr(local->name, "ALPS")) {
-	SynapticsSHM *pars = ((SynapticsPrivate *)local->private)->synpara;
-	void *opts = local->options;
-
-	pars->left_edge = xf86SetIntOption(opts, "LeftEdge", 120);
-	pars->right_edge = xf86SetIntOption(opts, "RightEdge", 830);
-	pars->top_edge = xf86SetIntOption(opts, "TopEdge", 120);
-	pars->bottom_edge = xf86SetIntOption(opts, "BottomEdge", 650);
-	pars->finger_low = xf86SetIntOption(opts, "FingerLow", 14);
-	pars->finger_high = xf86SetIntOption(opts, "FingerHigh", 15);
-	pars->tap_move = xf86SetIntOption(opts, "MaxTapMove", 110);
-	pars->scroll_dist_vert = xf86SetIntOption(opts, "VertScrollDelta", 20);
-	pars->scroll_dist_horiz = xf86SetIntOption(opts, "HorizScrollDelta", 20);
-	pars->min_speed = xf86SetRealOption(opts, "MinSpeed", 0.3);
-	pars->max_speed = xf86SetRealOption(opts, "MaxSpeed", 0.75);
-    }
+    xf86Msg(X_PROBED, "%s: touchpad found\n", local->name);
 
     return TRUE;
 }
@@ -183,13 +286,15 @@ SynapticsReadEvent(struct CommData *comm, struct input_event *ev)
 }
 
 static Bool
-EventReadHwState(LocalDevicePtr local, struct SynapticsHwInfo *synhw,
+EventReadHwState(LocalDevicePtr local,
 		 struct SynapticsProtocolOperations *proto_ops,
 		 struct CommData *comm, struct SynapticsHwState *hwRet)
 {
     struct input_event ev;
     Bool v;
     struct SynapticsHwState *hw = &(comm->hwState);
+    SynapticsPrivate *priv = (SynapticsPrivate *)local->private;
+    SynapticsParameters *para = &priv->synpara;
 
     while (SynapticsReadEvent(comm, &ev)) {
 	switch (ev.type) {
@@ -265,6 +370,10 @@ EventReadHwState(LocalDevicePtr local, struct SynapticsHwInfo *synhw,
 	    case BTN_B:
 		hw->guest_right = v;
 		break;
+	    case BTN_TOUCH:
+		if (!priv->has_pressure)
+			hw->z = v ? para->finger_high + 1 : 0;
+		break;
 	    }
 	    break;
 	case EV_ABS:
@@ -298,61 +407,81 @@ EventReadHwState(LocalDevicePtr local, struct SynapticsHwInfo *synhw,
     return FALSE;
 }
 
+/* filter for the AutoDevProbe scandir on /dev/input */
+static int EventDevOnly(const struct dirent *dir) {
+	return strncmp(EVENT_DEV_NAME, dir->d_name, 5) == 0;
+}
+
+/**
+ * Probe the open device for dimensions.
+ */
+static void
+EventReadDevDimensions(LocalDevicePtr local)
+{
+    SynapticsPrivate *priv = (SynapticsPrivate *)local->private;
+    BOOL *need_grab = (BOOL*)priv->proto_data;
+
+    if (event_query_is_touchpad(local->fd, (need_grab) ? *need_grab : TRUE))
+	event_query_axis_ranges(local);
+    event_query_info(local);
+}
+
 static Bool
 EventAutoDevProbe(LocalDevicePtr local)
 {
     /* We are trying to find the right eventX device or fall back to
        the psaux protocol and the given device from XF86Config */
     int i;
-    Bool have_evdev = FALSE;
-    int noent_cnt = 0;
-    const int max_skip = 10;
+    Bool touchpad_found = FALSE;
+    struct dirent **namelist;
 
-    for (i = 0; ; i++) {
-	char fname[64];
-	int fd = -1;
-	Bool is_touchpad;
-
-	sprintf(fname, "%s/%s%d", DEV_INPUT_EVENT, EVENT_DEV_NAME, i);
-	SYSCALL(fd = open(fname, O_RDONLY));
-	if (fd < 0) {
-	    if (errno == ENOENT) {
-		if (++noent_cnt >= max_skip)
-		    break;
-		else
-		    continue;
-	    } else {
-		continue;
-	    }
-	}
-	noent_cnt = 0;
-	have_evdev = TRUE;
-	is_touchpad = event_query_is_touchpad(fd);
-	if (is_touchpad) {
-	    xf86Msg(X_PROBED, "%s auto-dev sets device to %s\n",
-		    local->name, fname);
-	    xf86ReplaceStrOption(local->options, "Device", fname);
-
-	    event_query_axis_ranges(fd, local);
-	    SYSCALL(close(fd));
-	    return TRUE;
-	}
-	SYSCALL(close(fd));
+    i = scandir(DEV_INPUT_EVENT, &namelist, EventDevOnly, alphasort);
+    if (i < 0) {
+		ErrorF("Couldn't open %s\n", DEV_INPUT_EVENT);
+		return FALSE;
     }
-    ErrorF("%s no synaptics event device found (checked %d nodes)\n",
-	   local->name, i + 1);
-    if (i <= max_skip)
-	ErrorF("%s The /dev/input/event* device nodes seem to be missing\n",
-	       local->name);
-    if (i > max_skip && !have_evdev)
-	ErrorF("%s The evdev kernel module seems to be missing\n", local->name);
-    return FALSE;
+    else if (i == 0) {
+		ErrorF("%s The /dev/input/event* device nodes seem to be missing\n",
+				local->name);
+		free(namelist);
+		return FALSE;
+    }
+
+    while (i--) {
+		char fname[64];
+		int fd = -1;
+
+		if (!touchpad_found) {
+			sprintf(fname, "%s/%s", DEV_INPUT_EVENT, namelist[i]->d_name);
+			SYSCALL(fd = open(fname, O_RDONLY));
+			if (fd < 0)
+				continue;
+
+			if (event_query_is_touchpad(fd, TRUE)) {
+				touchpad_found = TRUE;
+			    xf86Msg(X_PROBED, "%s auto-dev sets device to %s\n",
+				    local->name, fname);
+			    local->options =
+			    	xf86ReplaceStrOption(local->options, "Device", fname);
+			}
+			SYSCALL(close(fd));
+		}
+		free(namelist[i]);
+    }
+	free(namelist);
+
+	if (!touchpad_found) {
+		ErrorF("%s no synaptics event device found\n", local->name);
+		return FALSE;
+	}
+    return TRUE;
 }
 
 struct SynapticsProtocolOperations event_proto_operations = {
     EventDeviceOnHook,
-    EventDeviceOffHook,
+    NULL,
     EventQueryHardware,
     EventReadHwState,
-    EventAutoDevProbe
+    EventAutoDevProbe,
+    EventReadDevDimensions
 };

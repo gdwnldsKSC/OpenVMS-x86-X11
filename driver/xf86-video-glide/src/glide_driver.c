@@ -54,14 +54,18 @@
 #include "colormapst.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86_ansic.h"
 #include "mipointer.h"
 #include "mibstore.h"
 #include "micmap.h"
 #include "xf86DDC.h"
 #include "globals.h"
+#ifdef HAVE_XEXTPROTO_71
+#include <X11/extensions/dpmsconst.h>
+#else
 #define DPMS_SERVER
 #include <X11/extensions/dpms.h>
+#endif
+
 #include "fb.h"
 #include "xf86cmap.h"
 #include "shadowfb.h"
@@ -390,14 +394,14 @@ GLIDEProbe(DriverPtr drv, int flags)
       GlideDevice = xf86SetIntOption(dev->options, "GlideDevice", 0);
       if (GlideDevice == sst)
       {
-        int entity;
+        int entityIndex;
         /* Match */
-        entity = xf86ClaimIsaSlot(drv, 0, dev, TRUE);
+        entityIndex = xf86ClaimNoSlot(drv, 0, dev, TRUE);
         pScrn = NULL;
 
         /* Allocate a ScrnInfoRec and claim the slot */
-        if ((pScrn = xf86ConfigIsaEntity(pScrn, 0, entity, NULL, NULL,
-					       NULL, NULL, NULL, NULL))) {
+        if ((pScrn = xf86AllocateScreen(drv, 0))) {
+	    xf86AddEntityToScreen(pScrn, entityIndex);
 	    
 	    /* I'm not going to "claim" the glide device since no other driver than this can drive it */
 	    /* (A glide device is not a PCI device) */

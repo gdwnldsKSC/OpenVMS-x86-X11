@@ -1,3 +1,72 @@
+commit 5b9a71341522cee5984061affb1a8d38c220c414
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Thu Aug 27 13:07:33 2009 +0300
+
+    Bump to 1.0.3
+
+commit c8b97d2f53501903bfa06cc396e97443e5bfe8e3
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Thu Aug 27 13:06:02 2009 +0300
+
+    Remove inclusion of obsolete and now inexistent xf86_ansic.h
+
+commit 48fddeb136aba247e06688d8127ee133ae3b8dd2
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Jul 16 11:38:29 2009 +1000
+
+    Update to xextproto 7.1 support.
+    
+    DPMS header was split into dpms.h (client) and dpmsconst.h (server). Drivers
+    need to include dpmsconst.h if xextproto 7.1 is available.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit e20cb5035996b392b010f2b52aa14d004868825a
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Feb 25 01:23:03 2009 +0200
+
+    Bump to 1.0.2
+
+commit 542f21b2465c80d78aa154fa75d61c793342f3d8
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Feb 25 01:17:52 2009 +0200
+
+    Use XORG_CHANGELOG and CHANGELOG_CMD to generate the ChangeLog file
+    
+    Require at least xorg-macros 1.2 for XORG_CHANGELOG.
+
+commit 65c779a41c3ae1c66b7de2ecbd5904a25009f5ca
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Feb 25 01:12:33 2009 +0200
+
+    Make ChangeLog a .PHONY target
+
+commit e9a6a763f3b08dce0a8815ce0e7bbe3843fe08d2
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Feb 25 01:11:03 2009 +0200
+
+    Add UTF-8 copyright symbol to copyright statements
+
+commit 0cdda109b9fc3deb5ad860f144d3061551ad6058
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Feb 25 01:09:52 2009 +0200
+
+    Rename entity to entityIndex to fix build failure
+    
+    Regression introduced in commit 62922e27c80ac392fc35a347b2c8163fcec7decf.
+
+commit 7703441867c3d80eb89fca466c30cef024fd39bc
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Jan 9 16:28:20 2009 -0800
+
+    Remove xorgconfig & xorgcfg from See Also list in man page
+
+commit 62922e27c80ac392fc35a347b2c8163fcec7decf
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Sun Nov 23 20:07:24 2008 -0500
+
+    Use "no" bus, not ISA.
+
 commit ce31b3e87032253ef8c77a8738014b8e981f01e5
 Author: Guillem Jover <guillem@hadrons.org>
 Date:   Wed Jun 18 07:53:55 2008 +0300
@@ -41,7 +110,7 @@ Date:   Wed Jun 18 00:55:32 2008 +0300
     Add license and copyright information to COPYING
 
 commit 39e0cf20ca7be389009a3598d1e6e5c3751c0cf0
-Merge: 3db677c... eca9f6d...
+Merge: 3db677c eca9f6d
 Author: James Cloos <cloos@jhcloos.com>
 Date:   Mon Sep 3 06:06:54 2007 -0400
 

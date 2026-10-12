@@ -52,16 +52,11 @@
 #ifndef _xf86Xinput_h
 #define _xf86Xinput_h
 
-#ifndef NEED_EVENTS
-#define NEED_EVENTS
-#endif
 #include "xf86str.h"
 #include "inputstr.h"
-#ifdef XINPUT
 #include <X11/extensions/XI.h>
 #include <X11/extensions/XIproto.h>
 #include "XIstubs.h"
-#endif
 
 /* Input device flags */
 #define XI86_OPEN_ON_INIT       0x01 /* open the device at startup time */
@@ -85,11 +80,18 @@
 #define XI_PRIVATE(dev) \
 	(((LocalDevicePtr)((dev)->public.devicePrivate))->private)
 
+/* Valuator verification macro */
+#define XI_VERIFY_VALUATORS(num_valuators)					\
+	if (num_valuators > MAX_VALUATORS) {					\
+		xf86Msg(X_ERROR, "%s: num_valuator %d is greater than"		\
+			" MAX_VALUATORS\n", __FUNCTION__, num_valuators);	\
+		return;								\
+	}
+
 /* Stupid API backwards-compatibility. */
 #define TS_Raw 60
 #define TS_Scaled 61
 
-#ifdef XINPUT
 /* This holds the input driver entry and module information. */
 typedef struct _InputDriverRec {
     int			    driverVersion;
@@ -103,7 +105,6 @@ typedef struct _InputDriverRec {
     pointer		    module;
     int			    refCount;
 } InputDriverRec, *InputDriverPtr;
-#endif
 
 /* This is to input devices what the ScrnInfoRec is to screens. */
 
@@ -156,55 +157,58 @@ typedef struct _DeviceAssocRec
 } DeviceAssocRec, *DeviceAssocPtr;
 
 /* xf86Globals.c */
-extern InputInfoPtr xf86InputDevs;
+extern _X_EXPORT InputInfoPtr xf86InputDevs;
 
 /* xf86Xinput.c */
-void InitExtInput(void);
-void xf86PostMotionEvent(DeviceIntPtr device, int is_absolute,
+extern _X_EXPORT void xf86PostMotionEvent(DeviceIntPtr device, int is_absolute,
 			 int first_valuator, int num_valuators, ...);
-void xf86PostMotionEventP(DeviceIntPtr device, int is_absolute,
+extern _X_EXPORT void xf86PostMotionEventP(DeviceIntPtr device, int is_absolute,
 			 int first_valuator, int num_valuators, int *valuators);
-void xf86PostProximityEvent(DeviceIntPtr device, int is_in,
+extern _X_EXPORT void xf86PostProximityEvent(DeviceIntPtr device, int is_in,
 			    int first_valuator, int num_valuators, ...);
-void xf86PostButtonEvent(DeviceIntPtr device, int is_absolute, int button,
+extern _X_EXPORT void xf86PostProximityEventP(DeviceIntPtr device, int is_in, int first_valuator,
+			     int num_valuators, int *valuators);
+extern _X_EXPORT void xf86PostButtonEvent(DeviceIntPtr device, int is_absolute, int button,
 		    	 int is_down, int first_valuator, int num_valuators,
 			 ...);
-void xf86PostKeyEvent(DeviceIntPtr device, unsigned int key_code, int is_down,
+extern _X_EXPORT void xf86PostButtonEventP(DeviceIntPtr device, int is_absolute, int button,
+			  int is_down, int first_valuator, int num_valuators,
+			  int *valuators);
+extern _X_EXPORT void xf86PostKeyEvent(DeviceIntPtr device, unsigned int key_code, int is_down,
 		      int is_absolute, int first_valuator, int num_valuators,
 		      ...);
-void xf86PostKeyboardEvent(DeviceIntPtr device, unsigned int key_code,
+extern _X_EXPORT void xf86PostKeyEventP(DeviceIntPtr device, unsigned int key_code, int is_down,
+		       int is_absolute, int first_valuator, int num_valuators,
+		       int *valuators);
+extern _X_EXPORT void xf86PostKeyboardEvent(DeviceIntPtr device, unsigned int key_code,
                            int is_down);
-void xf86XinputFinalizeInit(DeviceIntPtr dev);
-void xf86ActivateDevice(LocalDevicePtr local);
-Bool xf86CheckButton(int button, int down);
-void xf86SwitchCoreDevice(LocalDevicePtr device, DeviceIntPtr core);
-LocalDevicePtr xf86FirstLocalDevice(void);
-int xf86ScaleAxis(int Cx, int Sxhigh, int Sxlow, int Rxhigh, int Rxlow);
-void xf86XInputSetScreen(LocalDevicePtr local, int screen_number, int x, int y);
-void xf86ProcessCommonOptions(InputInfoPtr pInfo, pointer options);
-void xf86InitValuatorAxisStruct(DeviceIntPtr dev, int axnum, int minval,
+extern _X_EXPORT int xf86ActivateDevice(LocalDevicePtr local);
+extern _X_EXPORT LocalDevicePtr xf86FirstLocalDevice(void);
+extern _X_EXPORT int xf86ScaleAxis(int Cx, int Sxhigh, int Sxlow, int Rxhigh, int Rxlow);
+extern _X_EXPORT void xf86XInputSetScreen(LocalDevicePtr local, int screen_number, int x, int y);
+extern _X_EXPORT void xf86ProcessCommonOptions(InputInfoPtr pInfo, pointer options);
+extern _X_EXPORT void xf86InitValuatorAxisStruct(DeviceIntPtr dev, int axnum, Atom label, int minval,
 				int maxval, int resolution, int min_res,
 				int max_res);
-void xf86InitValuatorDefaults(DeviceIntPtr dev, int axnum);
-void xf86AddEnabledDevice(InputInfoPtr pInfo);
-void xf86RemoveEnabledDevice(InputInfoPtr pInfo);
-void xf86DisableDevice(DeviceIntPtr dev, Bool panic);
-void xf86EnableDevice(DeviceIntPtr dev);
+extern _X_EXPORT void xf86InitValuatorDefaults(DeviceIntPtr dev, int axnum);
+extern _X_EXPORT void xf86AddEnabledDevice(InputInfoPtr pInfo);
+extern _X_EXPORT void xf86RemoveEnabledDevice(InputInfoPtr pInfo);
+extern _X_EXPORT void xf86DisableDevice(DeviceIntPtr dev, Bool panic);
+extern _X_EXPORT void xf86EnableDevice(DeviceIntPtr dev);
+/* not exported */
+int xf86NewInputDevice(IDevPtr idev, DeviceIntPtr *pdev, BOOL is_auto);
 
 /* xf86Helper.c */
-void xf86AddInputDriver(InputDriverPtr driver, pointer module, int flags);
-void xf86DeleteInputDriver(int drvIndex);
-InputInfoPtr xf86AllocateInput(InputDriverPtr drv, int flags);
-InputDriverPtr xf86LookupInputDriver(const char *name);
-InputInfoPtr xf86LookupInput(const char *name);
-void xf86DeleteInput(InputInfoPtr pInp, int flags);
-void xf86MotionHistoryAllocate(LocalDevicePtr local);
-int xf86GetMotionEvents(DeviceIntPtr dev, xTimecoord *buff,
-                        unsigned long start, unsigned long stop,
-                        ScreenPtr pScreen);
+extern _X_EXPORT void xf86AddInputDriver(InputDriverPtr driver, pointer module, int flags);
+extern _X_EXPORT void xf86DeleteInputDriver(int drvIndex);
+extern _X_EXPORT InputInfoPtr xf86AllocateInput(InputDriverPtr drv, int flags);
+extern _X_EXPORT InputDriverPtr xf86LookupInputDriver(const char *name);
+extern _X_EXPORT InputInfoPtr xf86LookupInput(const char *name);
+extern _X_EXPORT void xf86DeleteInput(InputInfoPtr pInp, int flags);
+extern _X_EXPORT void xf86MotionHistoryAllocate(LocalDevicePtr local);
 
 /* xf86Option.c */
-void xf86CollectInputOptions(InputInfoPtr pInfo, const char **defaultOpts,
+extern _X_EXPORT void xf86CollectInputOptions(InputInfoPtr pInfo, const char **defaultOpts,
 			     pointer extraOpts);
 
 

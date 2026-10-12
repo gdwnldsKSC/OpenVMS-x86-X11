@@ -179,7 +179,7 @@ HSV spaces.  The latter three widgets are documented in &lsqb;DPTX]; some
 summary Scrolling Widget documentation is available in the <Literal remap="tt">doc</Literal>
 subdirectory of the <Literal remap="tt">DPS.tar.gz</Literal> file, available from <ULink
 URL="ftp://dps.sourceforge.net/pub/dps/DPS.tar.gz"
->&#65533;</ULink
+>ftp://dps.sourceforge.net/pub/dps/DPS.tar.gz</ULink
 >.
 </Para>
 
@@ -257,7 +257,7 @@ respective manual pages.
 <Para>
 A number of sample clients that depend on Motif are available in <ULink
 URL="ftp://dps.sourceforge.net/pub/ftp/DPS.tar.gz"
->&#65533;</ULink
+>ftp://dps.sourceforge.net/pub/ftp/DPS.tar.gz</ULink
 >.  Additional
 sample clients can be found as part of GtkDPS (see above).
 </Para>
@@ -341,7 +341,7 @@ URL="http://dps.sourceforge.net"
 </Para>
 
 <Para>
-&lsqb;PLRM2] PostScript language reference manual. Adobe Systems, 2nd ed. Addison-Wesley, 1990. ISBN 0-201-18127-4. 
+&lsqb;PLRM2] PostScript language reference manual. Adobe Systems, 2nd ed. Addison-Wesley, 1990. ISBN 0-201-18127-4.
 </Para>
 
 <Para>

@@ -1,6 +1,4 @@
 # 
-#  $Id$
-# 
 #  Copyright © 2003 Keith Packard, Noah Levitt
 # 
 #  Permission to use, copy, modify, distribute, and sell this software and its
@@ -21,11 +19,17 @@
 #  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 #  PERFORMANCE OF THIS SOFTWARE.
 
-AM_CFLAGS = $(FIXESEXT_CFLAGS) $(X_CFLAGS)
-
 SUBDIRS = src man
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xfixes.pc
 
-EXTRA_DIST = xfixes.pc.in autogen.sh
+EXTRA_DIST = xfixes.pc.in ChangeLog
+MAINTAINERCLEANFILES = ChangeLog
+
+.PHONY: ChangeLog
+
+ChangeLog:
+	$(CHANGELOG_CMD)
+
+dist-hook: ChangeLog

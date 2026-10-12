@@ -49,21 +49,6 @@ int xnestNumScreens = 0;
 Bool xnestDoDirectColormaps = False;
 Window xnestParentWindow = 0;
 
-/* ddxInitGlobals - called by |InitGlobals| from os/util.c */
-void ddxInitGlobals(void)
-{
-#ifdef COMPOSITE
-    /* XXX terrible hack */
-    extern Bool noCompositeExtension;
-    noCompositeExtension = TRUE;
-#endif
-
-#ifdef XKB
-    extern Bool noXkbExtension;
-    noXkbExtension = TRUE;
-#endif
-}
-
 int
 ddxProcessArgument (int argc, char *argv[], int i)
 {
@@ -189,7 +174,7 @@ ddxProcessArgument (int argc, char *argv[], int i)
   return 0;
 }
 
-void ddxUseMsg()
+void ddxUseMsg(void)
 {
   ErrorF("-display string        display name of the real server\n");
   ErrorF("-sync                  sinchronize with the real server\n");

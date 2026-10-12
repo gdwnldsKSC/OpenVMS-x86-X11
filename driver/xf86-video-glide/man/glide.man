@@ -274,6 +274,6 @@ $ xinit -- +xinerama
 .SH FILES
 glide_drv.o
 .SH "SEE ALSO"
-__xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__)
+__xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__)
 .SH AUTHORS
 Author: Henrik Harmsen.

@@ -40,7 +40,9 @@ Equipment Corporation.
 #ifndef _PANORAMIX_H_
 #define _PANORAMIX_H_
 
-#include <X11/extensions/panoramiXext.h>
+#define _PANORAMIX_SERVER
+#include <X11/extensions/panoramiXproto.h>
+#undef _PANORAMIX_SERVER
 #include "gcstruct.h"
 
 
@@ -94,7 +96,5 @@ typedef struct {
 }
 
 #define IS_SHARED_PIXMAP(r) (((r)->type == XRT_PIXMAP) && (r)->u.pix.shared)
-
-#define SKIP_FAKE_WINDOW(a) if(!LookupIDByType(a, XRT_WINDOW)) return
 
 #endif /* _PANORAMIX_H_ */

@@ -190,4 +190,27 @@
 		XGIMMIOLONG(0x8520) =BE_SWAP32(ulTemp) ;\
 	}
 
+/* Jong 09/19/2007; added for ??? */
+#define xgiG2CRT1_EnableARGBHWCursor(cursor_base,pat_id)\
+	{\
+	    CARD32 ulTemp ;\
+		ulTemp = XGIMMIOLONG(0x8500) ;\
+		ulTemp &= 0x00FC0000 ;\
+		ulTemp |= 0xE<<28 ;\
+		ulTemp |= (cursor_base) & 0x3FFFF ;\
+		ulTemp |= ((pat_id)&0xF)<<24 ;\
+		XGIMMIOLONG(0x8500) = ulTemp ;\
+	}
+
+#define xgiG2CRT2_EnableARGBHWCursor(cursor_base,pat_id)\
+	{\
+	    CARD32 ulTemp ;\
+		ulTemp = XGIMMIOLONG(0x8500) ;\
+		ulTemp &= 0x00FC0000 ;\
+		ulTemp |= 0xE<<28 ;\
+		ulTemp |= (cursor_base) & 0x3FFFF ;\
+		ulTemp |= ((pat_id)&0xF)<<24 ;\
+		XGIMMIOLONG(0x8500) = ulTemp ;\
+	}
+
 /*******************************************************************/

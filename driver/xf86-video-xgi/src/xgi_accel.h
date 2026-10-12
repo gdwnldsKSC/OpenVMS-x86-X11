@@ -116,6 +116,8 @@
 
 #define BandSize 		0x10
 
+/* Jong 09/27/2007; recover for compiler error */
+typedef unsigned long ulong ; 
 /* typedef unsigned long ulong ; */
 
 unsigned long    r_port, w_port ;
@@ -248,7 +250,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateHwWP(ulTemp) ;\
@@ -280,7 +282,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -314,7 +316,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -346,7 +348,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -379,7 +381,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -412,7 +414,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -445,7 +447,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -488,7 +490,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -538,7 +540,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -564,7 +566,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -589,7 +591,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -614,7 +616,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -647,7 +649,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -672,7 +674,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -709,7 +711,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -734,7 +736,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -759,7 +761,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -830,7 +832,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -855,7 +857,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -880,7 +882,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -905,7 +907,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -930,7 +932,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
@@ -955,7 +957,7 @@ extern void Volari_Idle(XGIPtr pXGI);
                 (CARD32)BE_SWAP32(GR_NIL_CMD) ;\
             ulTemp += 0x10 ;\
         } \
-        else if( pXGI->Chipset == PCI_CHIP_XGIXG20 ) \
+        else if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) \
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\

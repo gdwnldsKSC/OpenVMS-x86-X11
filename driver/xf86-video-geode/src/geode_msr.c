@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include "os.h"
 #include "geode.h"
 

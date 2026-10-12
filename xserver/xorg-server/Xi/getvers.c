@@ -50,8 +50,6 @@ SOFTWARE.
  *
  */
 
-#define	 NEED_EVENTS
-#define	 NEED_REPLIES
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -59,11 +57,12 @@ SOFTWARE.
 #include "inputstr.h"	/* DeviceIntPtr      */
 #include <X11/extensions/XI.h>
 #include <X11/extensions/XIproto.h>
+#include "exevents.h"
 #include "exglobals.h"
 
 #include "getvers.h"
 
-XExtensionVersion AllExtensionVersions[128];
+XExtensionVersion XIVersion;
 
 /***********************************************************************
  *
@@ -85,7 +84,7 @@ SProcXGetExtensionVersion(ClientPtr client)
 
 /***********************************************************************
  *
- * This procedure lists the input devices available to the server.
+ * This procedure returns the major/minor version of the X Input extension.
  *
  */
 
@@ -97,22 +96,19 @@ ProcXGetExtensionVersion(ClientPtr client)
     REQUEST(xGetExtensionVersionReq);
     REQUEST_AT_LEAST_SIZE(xGetExtensionVersionReq);
 
-    if (stuff->length != (sizeof(xGetExtensionVersionReq) +
-			  stuff->nbytes + 3) >> 2)
+    if (stuff->length != bytes_to_int32(sizeof(xGetExtensionVersionReq) +
+			  stuff->nbytes))
 	return BadLength;
 
+    memset(&rep, 0, sizeof(xGetExtensionVersionReply));
     rep.repType = X_Reply;
     rep.RepType = X_GetExtensionVersion;
     rep.length = 0;
     rep.sequenceNumber = client->sequence;
-    rep.major_version = 0;
-    rep.minor_version = 0;
-
     rep.present = TRUE;
-    if (rep.present) {
-	rep.major_version = AllExtensionVersions[IReqCode - 128].major_version;
-	rep.minor_version = AllExtensionVersions[IReqCode - 128].minor_version;
-    }
+    rep.major_version = XIVersion.major_version;
+    rep.minor_version = XIVersion.minor_version;
+
     WriteReplyToClient(client, sizeof(xGetExtensionVersionReply), &rep);
 
     return Success;

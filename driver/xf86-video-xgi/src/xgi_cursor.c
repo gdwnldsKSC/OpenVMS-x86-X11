@@ -67,10 +67,24 @@ Volari_ShowCursor(ScrnInfoPtr pScrn)
  /*   unsigned long cursor_addr = pXGI->CursorOffset ;  */
     unsigned long cursor_base = pXGI->CursorOffset/1024 ;
 
-    xgiG2CRT1_EnableHWCursor(cursor_base, 0);
-    if (pXGI->VBFlags & CRT2_ENABLE)  {
-    	xgiG2CRT2_EnableHWCursor(cursor_base, 0);
+    /* Jong 09/19/2007; bug fixing for ??? */
+    if( pXGI->HWARGBCursor )
+    {
+        xgiG2CRT1_EnableARGBHWCursor(cursor_base, 0);
+        if (pXGI->VBFlags & CRT2_ENABLE)  
+        {
+    		xgiG2CRT2_EnableARGBHWCursor(cursor_base, 0);
+        }
     }
+    else
+    {
+        xgiG2CRT1_EnableHWCursor(cursor_base, 0);
+        if (pXGI->VBFlags & CRT2_ENABLE)  
+        {
+    	    xgiG2CRT2_EnableHWCursor(cursor_base, 0);
+        }
+    }
+
     XGIG1_SetCursorPosition(pScrn, currX, currY) ;
     XGI_WaitEndRetrace(pXGI->RelIO);
 }
@@ -163,6 +177,66 @@ Volari_UseHWCursor(ScreenPtr pScreen, CursorPtr pCurs)
     return TRUE;
 }
 
+/* Jong 09/19/2007; Is this required? */
+Bool
+Volari_UseHWCursorARGB(ScreenPtr pScreen, CursorPtr pCurs)
+{
+    ScrnInfoPtr       pScrn = xf86Screens[pScreen->myNum];
+    DisplayModePtr     mode = pScrn->currentMode;
+    XGIPtr pXGI = XGIPTR(pScrn);
+
+    if (mode->Flags & V_INTERLACE)
+    {
+        return FALSE;
+    }
+
+	/* DumpDDIName("Volari_UserHWCursorARGB()\n") ; */
+
+	return TRUE ;
+}
+
+/* Jong 09/19/2007; Is this required? */
+static void
+Volari_LoadCursorARGB(ScrnInfoPtr pScrn, CursorPtr pCursor)
+{
+    XGIPtr pXGI = XGIPTR(pScrn);
+    unsigned long cursor_addr = pXGI->CursorOffset ;
+    unsigned long cursor_base = pXGI->CursorOffset/1024 ;
+    unsigned char *pCursorShape ;
+	int i , j ; CARD32 *pDest,*pSrc ;
+	CursorBitsPtr pCursorBits = pCursor->bits ;
+
+
+	/* DumpDDIName("Volari_LoadCursorARGB()\n") ; */
+	pXGI->HWARGBCursor = TRUE ;
+    pCursorShape = pXGI->FbBase + cursor_addr ;
+
+	pSrc = pCursorBits->argb ;
+
+	pXGI->CurXPreset = 64-pCursorBits->width ;
+	pXGI->CurYPreset = 64-pCursorBits->height ;
+
+	for( i = 64 - pCursorBits->height ; i< 64 ; i++ )
+	{
+		pDest = (CARD32 *)(pCursorShape + i*64*4 ) ;
+		for( j = 64-pCursorBits->width ; j < 64 ; j++, pSrc++ )
+		{
+			pDest[j] = *pSrc ;
+		}
+	}
+
+    xgiG2CRT1_SetCursorAddressPattern(cursor_base,0) ;
+
+    if (pXGI->VBFlags & CRT2_ENABLE)  {
+        xgiG2CRT2_SetCursorAddressPattern(cursor_base,0) ;
+        /* xgiG1CRT2_SetCursorAddress(cursor_base) ; */
+        /* xgiG1CRT2_SetCursorPatternSelect(0) ; */
+    }
+    XGIG1_SetCursorPosition(pScrn, currX, currY) ;
+	PDEBUG4(vWaitCRT1VerticalRetrace(pScrn)) ;
+	PDEBUG4(XGIDumpMMIO(pScrn));
+}
+
 Bool
 XGIHWCursorInit(ScreenPtr pScreen)
 {
@@ -179,6 +253,8 @@ XGIHWCursorInit(ScreenPtr pScreen)
 
       case PCI_CHIP_XGIXG40:
       case PCI_CHIP_XGIXG20:
+      case PCI_CHIP_XGIXG21:
+    case PCI_CHIP_XGIXG27:
         default:
     PDEBUG(ErrorF("--- HWCursorInit() \n"));
         infoPtr->MaxWidth  = 64;
@@ -192,6 +268,13 @@ XGIHWCursorInit(ScreenPtr pScreen)
         infoPtr->LoadCursorImage = Volari_LoadCursorImage;
         infoPtr->UseHWCursor = Volari_UseHWCursor;
 /* infoPtr->RealizeCursor = XGIRealizeCursorColor ; // */
+
+        /* Jong 09/19/2007; Is this required */
+	#ifdef XGI_ARGB_CURSOR
+		infoPtr->UseHWCursorARGB = Volari_UseHWCursorARGB ;
+		infoPtr->LoadCursorARGB = Volari_LoadCursorARGB ;
+	#endif
+
         infoPtr->Flags =
             HARDWARE_CURSOR_TRUECOLOR_AT_8BPP |
             HARDWARE_CURSOR_INVERT_MASK |

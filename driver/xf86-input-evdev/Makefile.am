@@ -19,16 +19,22 @@
 #  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = src man
 
-EXTRA_DIST = ChangeLog autogen.sh
+# Ensure headers are installed below $(prefix) for distcheck
+DISTCHECK_CONFIGURE_FLAGS = --with-sdkdir='$${includedir}/xorg'
+
+SUBDIRS = src man include
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = xorg-evdev.pc
+
+EXTRA_DIST = ChangeLog
 
 MAINTAINERCLEANFILES=ChangeLog
 
 .PHONY: ChangeLog
 
 ChangeLog:
-	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || \
-	(touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
+	$(CHANGELOG_CMD)
 
 dist-hook: ChangeLog

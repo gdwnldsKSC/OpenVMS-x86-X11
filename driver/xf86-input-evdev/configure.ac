@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-input-evdev],
-        2.0.4,
+        2.3.0,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-input-evdev)
 
@@ -32,35 +32,18 @@ AM_INIT_AUTOMAKE([dist-bzip2])
 
 AM_MAINTAINER_MODE
 
-DRIVER_NAME=evdev
-AC_SUBST([DRIVER_NAME])
-
+# Require xorg-macros: XORG_DEFAULT_OPTIONS
+m4_ifndef([XORG_MACROS_VERSION], [AC_FATAL([must install xorg-macros 1.3 or later before running autoconf/autogen])])
+XORG_MACROS_VERSION(1.3)
 AM_CONFIG_HEADER([config.h])
 
 # Checks for programs.
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 AC_PROG_CC
+XORG_DEFAULT_OPTIONS
 
 AH_TOP([#include "xorg-server.h"])
-
-#AC_DEFINE(XFree86LOADER,1,[Stub define for loadable drivers])
-#
-#AC_ARG_ENABLE(XINPUT, AS_HELP_STRING([--enable-xinput],
-#              [Build XInput support (default: yes)]),
-#              [XINPUT=$enableval],[XINPUT=yes])
-#AM_CONDITIONAL(XINPUT, test "x$XINPUT" = "xyes")
-#if test "x$XINPUT" = "xyes" ; then
-#    AC_DEFINE(XINPUT,1,[Enable XInput support])
-#fi
-#
-#AC_ARG_ENABLE(XKB, AS_HELP_STRING([--enable-xkb],
-#              [Build XKB support (default: yes)]),
-#              [XKB=$enableval],[XKB=yes])
-#AM_CONDITIONAL(XKB, test "x$XKB" = "xyes")
-#if test "x$XKB" = "xyes" ; then
-#    AC_DEFINE(XKB,1,[Enable XKB support])
-#fi
 
 AC_ARG_WITH(xorg-module-dir,
             AC_HELP_STRING([--with-xorg-module-dir=DIR],
@@ -70,23 +53,25 @@ AC_ARG_WITH(xorg-module-dir,
 inputdir=${moduledir}/input
 AC_SUBST(inputdir)
 
-# Checks for extensions
-XORG_DRIVER_CHECK_EXT(RANDR, randrproto)
-XORG_DRIVER_CHECK_EXT(XINPUT, inputproto)
-
-# Checks for pkg-config packages
+# Checks for pkg-config packages. We need to be able to override sdkdir
+# to satisfy silly distcheck requirements.
 PKG_CHECK_MODULES(XORG, xorg-server xproto $REQUIRED_MODULES)
-sdkdir=$(pkg-config --variable=sdkdir xorg-server)
-
-CFLAGS="$CFLAGS $XORG_CFLAGS "' -I$(top_srcdir)/src'
-AC_SUBST([CFLAGS])
+XORG_CFLAGS="$CWARNFLAGS $XORG_CFLAGS"
+AC_ARG_WITH([sdkdir], [],
+    [sdkdir="$withval"],
+    [sdkdir=`$PKG_CONFIG --variable=sdkdir xorg-server`])
+AC_SUBST([sdkdir])
 
 # Checks for libraries.
 
 # Checks for header files.
 AC_HEADER_STDC
 
-XORG_MANPAGE_SECTIONS
-XORG_RELEASE_VERSION
+DRIVER_NAME=evdev
+AC_SUBST([DRIVER_NAME])
 
-AC_OUTPUT([Makefile src/Makefile man/Makefile])
+AC_OUTPUT([Makefile
+           src/Makefile
+           man/Makefile
+           include/Makefile
+           xorg-evdev.pc])

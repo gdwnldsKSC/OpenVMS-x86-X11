@@ -54,22 +54,14 @@
     XModifierKeymap         *savedModMap;   \
     int                     stateSaved
 
-#ifdef XKB
 #define DMX_COMMON_XKB                      \
     DMX_COMMON_OTHER;                       \
     XkbDescPtr              xkb;            \
     XkbIndicatorRec         savedIndicators
-#else
-#define DMX_COMMON_XKB      DMX_COMMON_OTHER
-#endif
 
-#ifdef XINPUT
 #define DMX_COMMON_PRIVATE                  \
     DMX_COMMON_XKB;                         \
     XDevice                 *xi
-#else
-#define DMX_COMMON_PRIVATE  DMX_COMMON_OTHER
-#endif
 
 #define GETONLYPRIVFROMPRIVATE                                          \
     myPrivate            *priv     = private

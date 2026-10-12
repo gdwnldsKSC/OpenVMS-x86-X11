@@ -34,8 +34,9 @@ typedef struct {
     Bool		kbdActive;	/* Have we set kbd modes for X? */
     int 		otranslation;	/* Original translation mode */
     int 		odirect;	/* Original "direct" mode setting */
-    unsigned char	oleds;		/* Original LED state */
+    int			oleds;		/* Original LED state */
     const char *	strmod;		/* Streams module pushed on kbd device */
+    OsTimerPtr		remove_timer;	/* Callback for removal on ENODEV */
 } sunKbdPrivRec, *sunKbdPrivPtr;
 
 /* sun_kbdMap.c */

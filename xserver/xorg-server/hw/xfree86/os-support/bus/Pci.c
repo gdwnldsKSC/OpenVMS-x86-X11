@@ -136,55 +136,20 @@
 
 #include <pciaccess.h>
 
-#define PCI_MFDEV_SUPPORT   1 /* Include PCI multifunction device support */
-#define PCI_BRIDGE_SUPPORT  1 /* Include support for PCI-to-PCI bridges */
+/* Global data */
 
-/*
- * Global data
- */
-
-pciBusInfo_t  *pciBusInfo[MAX_PCI_BUSES] = { NULL, };
-_X_EXPORT int            pciNumBuses = 0;     /* Actual number of PCI buses */
-int            pciMaxBusNum = MAX_PCI_BUSES;
-
-
-_X_EXPORT ADDRESS
-pciBusAddrToHostAddr(PCITAG tag, PciAddrType type, ADDRESS addr)
-{
-  int bus = PCI_BUS_FROM_TAG(tag);
-
-  if ((bus >= 0) && (bus < pciNumBuses) && pciBusInfo[bus] &&
-	pciBusInfo[bus]->funcs->pciAddrBusToHost)
-	  return (*pciBusInfo[bus]->funcs->pciAddrBusToHost)(tag, type, addr);
-  else
-	  return(addr);
-}
-
-_X_EXPORT PCITAG
+PCITAG
 pciTag(int busnum, int devnum, int funcnum)
 {
 	return(PCI_MAKE_TAG(busnum,devnum,funcnum));
 }
 
-ADDRESS
-pciAddrNOOP(PCITAG tag, PciAddrType type, ADDRESS addr)
-{
-	return(addr);
-}
-
-_X_EXPORT Bool
+Bool
 xf86scanpci(void)
 {
     Bool  success = FALSE;
 
     success = (pci_system_init() == 0);
-
-	/* XXX */
-#if defined(DEBUGPCI)
-	if (DEBUGPCI >= xf86Verbose) {
-	    xf86Verbose = DEBUGPCI;
-	}
-#endif
 
     /* choose correct platform/OS specific PCI init routine */
 	ARCH_PCI_INIT();

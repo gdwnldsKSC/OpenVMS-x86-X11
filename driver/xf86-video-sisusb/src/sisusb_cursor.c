@@ -166,7 +166,7 @@ SiSUSBUseHWCursor(ScreenPtr pScreen, CursorPtr pCurs)
     return TRUE;
 }
 
-#if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,2,99,0,0)
+#if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,2,99,0)
 #ifdef ARGB_CURSOR
 #ifdef SIS_ARGB_CURSOR
 static Bool
@@ -279,7 +279,7 @@ SiSUSBHWCursorInit(ScreenPtr pScreen)
     infoPtr->SetCursorColors = SiSUSBSetCursorColors;
     infoPtr->LoadCursorImage = SiSUSBLoadCursorImage;
     infoPtr->UseHWCursor = SiSUSBUseHWCursor;
-#if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,2,99,0,0)
+#if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,2,99,0)
 #ifdef ARGB_CURSOR
 #ifdef SIS_ARGB_CURSOR
     if(pSiSUSB->OptUseColorCursor) {

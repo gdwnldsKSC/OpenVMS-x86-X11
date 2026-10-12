@@ -84,7 +84,7 @@ URL="ftp://ftp.sco.com/pub/openserver5/opensrc"
 If you are not using OSR 5.0.7 or later, you need to get an updated
 console driver.  See <ULink
 URL="http://www.sco.com"
->&#65533;</ULink
+>http://www.sco.com</ULink
 > for details on
 OpenServer supplements.  If you can't or don't want to upgrade your
 console driver, X11R&relvers; will still compile, but you may run into
@@ -154,7 +154,7 @@ Go to the top level of the source tree and execute the command
 <Literal remap="tt">CC=gcc make World BOOTSTRAPCFLAGS=-DSCO5 2&gt;&amp;1 &verbar; tee world.log</Literal>.
 This will do a full build, and send all of the build results to the
 file <Literal remap="tt">world.log</Literal>.
-    
+
 </Para>
 </ListItem>
 <ListItem>
@@ -194,11 +194,11 @@ in the R5 distribution.
 
 <Para>
 To use a Bus/Keyboard or PS2 mouse you should configure the mouse drivers
-using '<Literal remap="tt">mkdev mouse</Literal>'.  You may then use the 
+using '<Literal remap="tt">mkdev mouse</Literal>'.  You may then use the
 <Literal remap="tt">OsMouse</Literal> option in your <Literal remap="tt">xorg.conf</Literal> to specify that X
 should use the SCO mouse drivers.  To do this, set the <Literal remap="tt">Protocol</Literal> to
 "<Literal remap="tt">OsMouse</Literal>" in the <Literal remap="tt">Pointer</Literal> section of your
-<Literal remap="tt">xorg.conf</Literal> file.  You can also use "<Literal remap="tt">OsMouse</Literal>" for your 
+<Literal remap="tt">xorg.conf</Literal> file.  You can also use "<Literal remap="tt">OsMouse</Literal>" for your
 serial mouse, especially if you are having trouble getting your mouse to
 work using the X mouse drivers.
 </Para>
@@ -235,9 +235,9 @@ applications to terminate in an unpredictable way.  You can set the
 
 <Para>
 After compiling the tree, or after installing the binary distribution you
-can get <Literal remap="tt">man</Literal> to recognise the Xorg man pages by adding 
+can get <Literal remap="tt">man</Literal> to recognise the Xorg man pages by adding
 <Literal remap="tt">/usr/X11R6/man</Literal> to
-the <Literal remap="tt">MANPATH</Literal> in <Literal remap="tt">/etc/default/man</Literal>. The line should 
+the <Literal remap="tt">MANPATH</Literal> in <Literal remap="tt">/etc/default/man</Literal>. The line should
 look similar to:
 
 <Screen>

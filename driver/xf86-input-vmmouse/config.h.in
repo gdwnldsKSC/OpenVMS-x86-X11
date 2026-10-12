@@ -2,6 +2,9 @@
 
 #include "xorg-server.h"
 
+/* Define absolute valuator axes */
+#undef ABS_VALUATOR_AXES
+
 /* Call conversion_proc from within the driver, as Xserver doesn't */
 #undef CALL_CONVERSION_PROC
 
@@ -38,6 +41,9 @@
 /* Has version 1.1.0 or greater of the Xserver */
 #undef HAVE_XORG_SERVER_1_1_0
 
+/* Do not include built-in mouse module fallback */
+#undef NO_MOUSE_MODULE
+
 /* Name of package */
 #undef PACKAGE
 
@@ -55,6 +61,15 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Major version of this package */
+#undef PACKAGE_VERSION_MAJOR
+
+/* Minor version of this package */
+#undef PACKAGE_VERSION_MINOR
+
+/* Patch version of this package */
+#undef PACKAGE_VERSION_PATCHLEVEL
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

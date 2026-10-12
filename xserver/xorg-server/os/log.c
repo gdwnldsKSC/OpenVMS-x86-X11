@@ -98,6 +98,10 @@ OR PERFORMANCE OF THIS SOFTWARE.
 #define getpid(x) _getpid(x)
 #endif
 
+#ifdef XF86BIGFONT
+#define _XF86BIGFONT_SERVER_
+#include <X11/extensions/xf86bigfont.h>
+#endif
 
 #ifdef DDXOSVERRORF
 void (*OsVendorVErrorFProc)(const char *, va_list args) = NULL;
@@ -249,7 +253,7 @@ LogSetParameter(LogParameter param, int value)
 
 /* This function does the actual log message writes. */
 
-_X_EXPORT void
+void
 LogVWrite(int verb, const char *f, va_list args)
 {
     static char tmpBuffer[1024];
@@ -298,7 +302,7 @@ LogVWrite(int verb, const char *f, va_list args)
     }
 }
 
-_X_EXPORT void
+void
 LogWrite(int verb, const char *f, ...)
 {
     va_list args;
@@ -308,11 +312,11 @@ LogWrite(int verb, const char *f, ...)
     va_end(args);
 }
 
-_X_EXPORT void
+void
 LogVMessageVerb(MessageType type, int verb, const char *format, va_list args)
 {
     const char *s  = X_UNKNOWN_STRING;
-    char *tmpBuf = NULL;
+    char tmpBuf[1024];
 
     /* Ignore verbosity for X_ERROR */
     if (logVerbosity >= verb || logFileVerbosity >= verb || type == X_ERROR) {
@@ -354,26 +358,16 @@ LogVMessageVerb(MessageType type, int verb, const char *format, va_list args)
 	    break;
 	}
 
-	/*
-	 * Prefix the format string with the message type.  We do it this way
-	 * so that LogVWrite() is only called once per message.
-	 */
-	if (s) {
-	    tmpBuf = malloc(strlen(format) + strlen(s) + 1 + 1);
-	    /* Silently return if malloc fails here. */
-	    if (!tmpBuf)
-		return;
-	    sprintf(tmpBuf, "%s ", s);
-	    strcat(tmpBuf, format);
-	    LogVWrite(verb, tmpBuf, args);
-	    free(tmpBuf);
-	} else
-	    LogVWrite(verb, format, args);
+        /* if s is not NULL we need a space before format */
+        snprintf(tmpBuf, sizeof(tmpBuf), "%s%s%s", s ? s : "",
+                                                   s ? " " : "",
+                                                   format);
+        LogVWrite(verb, tmpBuf, args);
     }
 }
 
 /* Log message with verbosity level specified. */
-_X_EXPORT void
+void
 LogMessageVerb(MessageType type, int verb, const char *format, ...)
 {
     va_list ap;
@@ -384,7 +378,7 @@ LogMessageVerb(MessageType type, int verb, const char *format, ...)
 }
 
 /* Log a message with the standard verbosity level of 1. */
-_X_EXPORT void
+void
 LogMessage(MessageType type, const char *format, ...)
 {
     va_list ap;
@@ -401,6 +395,10 @@ void AbortServer(void) __attribute__((noreturn));
 void
 AbortServer(void)
 {
+#ifdef XF86BIGFONT
+    XF86BigfontCleanup();
+#endif
+    CloseWellKnownConnections();
     OsCleanup(TRUE);
     CloseDownDevices();
     AbortDDX();
@@ -410,9 +408,7 @@ AbortServer(void)
     exit (1);
 }
 
-#ifndef AUDIT_PREFIX
-#define AUDIT_PREFIX "AUDIT: %s: %ld %s: "
-#endif
+#define AUDIT_PREFIX "AUDIT: %s: %ld: "
 #ifndef AUDIT_TIMEOUT
 #define AUDIT_TIMEOUT ((CARD32)(120 * 1000)) /* 2 mn */
 #endif
@@ -421,7 +417,7 @@ static int nrepeat = 0;
 static int oldlen = -1;
 static OsTimerPtr auditTimer = NULL;
 
-void 
+void
 FreeAuditTimer(void)
 {
     if (auditTimer != NULL) {
@@ -444,15 +440,11 @@ AuditPrefix(void)
     autime = ctime(&tm);
     if ((s = strchr(autime, '\n')))
 	*s = '\0';
-    if ((s = strrchr(argvGlobal[0], '/')))
-	s++;
-    else
-	s = argvGlobal[0];
-    len = strlen(AUDIT_PREFIX) + strlen(autime) + 10 + strlen(s) + 1;
+    len = strlen(AUDIT_PREFIX) + strlen(autime) + 10 + 1;
     tmpBuf = malloc(len);
     if (!tmpBuf)
 	return NULL;
-    snprintf(tmpBuf, len, AUDIT_PREFIX, autime, (unsigned long)getpid(), s);
+    snprintf(tmpBuf, len, AUDIT_PREFIX, autime, (unsigned long)getpid());
     return tmpBuf;
 }
 
@@ -498,15 +490,6 @@ VAuditF(const char *f, va_list args)
     prefix = AuditPrefix();
     len = vsnprintf(buf, sizeof(buf), f, args);
 
-#if 1
-    /* XXX Compressing duplicated messages is temporarily disabled to
-     * work around bugzilla 964:
-     *     https://freedesktop.org/bugzilla/show_bug.cgi?id=964
-     */
-    ErrorF("%s%s", prefix != NULL ? prefix : "", buf);
-    oldlen = -1;
-    nrepeat = 0;
-#else
     if (len == oldlen && strcmp(buf, oldbuf) == 0) {
 	/* Message already seen */
 	nrepeat++;
@@ -520,12 +503,11 @@ VAuditF(const char *f, va_list args)
 	nrepeat = 0;
 	auditTimer = TimerSet(auditTimer, 0, AUDIT_TIMEOUT, AuditFlush, NULL);
     }
-#endif
     if (prefix != NULL)
 	free(prefix);
 }
 
-_X_EXPORT void
+void
 FatalError(const char *f, ...)
 {
     va_list args;
@@ -540,13 +522,8 @@ FatalError(const char *f, ...)
     VErrorF(f, args);
     va_end(args);
     ErrorF("\n");
-#ifdef DDXOSFATALERROR
     if (!beenhere)
 	OsVendorFatalError();
-#endif
-#ifdef ABORTONFATALERROR
-    abort();
-#endif
     if (!beenhere) {
 	beenhere = TRUE;
 	AbortServer();
@@ -555,7 +532,7 @@ FatalError(const char *f, ...)
     /*NOTREACHED*/
 }
 
-_X_EXPORT void
+void
 VErrorF(const char *f, va_list args)
 {
 #ifdef DDXOSVERRORF
@@ -568,7 +545,7 @@ VErrorF(const char *f, va_list args)
 #endif
 }
 
-_X_EXPORT void
+void
 ErrorF(const char * f, ...)
 {
     va_list args;
@@ -580,22 +557,7 @@ ErrorF(const char * f, ...)
 
 /* A perror() workalike. */
 
-#ifndef NEED_STRERROR
-#ifdef SYSV
-#if !defined(ISC) || defined(ISC202) || defined(ISC22)
-#define NEED_STRERROR
-#endif
-#endif
-#endif
-
-#if defined(NEED_STRERROR) && !defined(strerror)
-extern char *sys_errlist[];
-extern int sys_nerr;
-#define strerror(n) \
-	((n) >= 0 && (n) < sys_nerr) ? sys_errlist[(n)] : "unknown error"
-#endif
-
-_X_EXPORT void
+void
 Error(char *str)
 {
     char *err = NULL;
@@ -607,9 +569,10 @@ Error(char *str)
 	    return;
 	sprintf(err, "%s: ", str);
 	strcat(err, strerror(saveErrno));
-	LogWrite(-1, err);
+	LogWrite(-1, "%s", err);
+	free(err);
     } else
-	LogWrite(-1, strerror(saveErrno));
+	LogWrite(-1, "%s", strerror(saveErrno));
 }
 
 void

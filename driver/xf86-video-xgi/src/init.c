@@ -72,7 +72,8 @@
 /*********************************************/
 /*            HELPER: Get ModeID             */
 /*********************************************/
-
+/* Jong 09/18/2007; patch to GIT */
+/* VGAEngine is not used; FSTN is always FALSE */
 USHORT
 XGI_GetModeID(ULONG VBFlags, int HDisplay, int VDisplay,
               int Depth, int LCDwidth, int LCDheight)
@@ -85,8 +86,9 @@ XGI_GetModeID(ULONG VBFlags, int HDisplay, int VDisplay,
        if(VDisplay == 200)
 	   ModeIndex = ModeIndex_320x200[Depth];
        else if(VDisplay == 240)
-	   ModeIndex = ModeIndex_320x240[Depth];
-
+	   {
+	     ModeIndex = ModeIndex_320x240[Depth];
+       }
        break;
      case 400:
           if(VDisplay == 300) ModeIndex = ModeIndex_400x300[Depth];
@@ -287,10 +289,13 @@ XGI_New_DisplayOff(VB_DEVICE_INFO *XGI_Pr)
 static void
 XGIInitPCIetc(VB_DEVICE_INFO *XGI_Pr, PXGI_HW_DEVICE_INFO HwInfo)
 {
+   CARD8  bForce=0x00; /* Jong 01/07/2008; force to disable 2D */
+
    switch(HwInfo->jChipType) {
    case XG40:
    case XG42:
    case XG20:
+   case XG21:
       XGI_SetReg(XGI_Pr->P3c4,0x20,0xa1);
       /*  - Enable 2D (0x40)
        *  - Enable 3D (0x02)
@@ -304,7 +309,18 @@ XGIInitPCIetc(VB_DEVICE_INFO *XGI_Pr, PXGI_HW_DEVICE_INFO HwInfo)
 		   | SR1E_ENABLE_3D_AGP_VERTEX_FETCH
 		   | SR1E_ENABLE_3D_COMMAND_PARSER
 		   | SR1E_ENABLE_3D);
-      break;
+
+	  /* Jong 01/07/2008; support forcing to disable 2D engine */
+	  if(HwInfo->jChipType == XG21)
+	  {
+  			inXGIIDXREG(XGI_Pr->P3c4, 0x3A, bForce) ;
+			bForce &= 0x40;
+
+			if(bForce != 0x00)
+			  XGI_SetRegAND(XGI_Pr->P3c4,0x1E,0xBF);
+	  }
+
+	  break;
    }
 }
 
@@ -911,6 +927,31 @@ XGIBIOSSetMode(VB_DEVICE_INFO *XGI_Pr, PXGI_HW_DEVICE_INFO HwInfo,
 #endif
     {
         PDEBUG(ErrorF("XGI_USING_C_code_SETMODE \n"));
+		/* Jong 08/21/2007; support external modeline in X configuration file */
+		/* ------------------------------------------------------------------ */
+		HwInfo->BPP = pScrn->bitsPerPixel;
+		HwInfo->Frequency = mode->VRefresh;
+		HwInfo->Horizontal_ACTIVE = mode->HDisplay;
+		HwInfo->Vertical_ACTIVE = mode->VDisplay;
+		HwInfo->Interlace=FALSE; 
+
+		if(mode->type == M_T_USERDEF) /* custom mode */
+		{
+			HwInfo->SpecifyTiming = TRUE;
+			HwInfo->Horizontal_FP = mode->HSyncStart - mode->HDisplay; /* HSyncStart - HDisplay */
+			HwInfo->Horizontal_BP = mode->HTotal - mode->HSyncEnd; /* HTotal - HSyncEnd */
+			HwInfo->Horizontal_SYNC = mode->HSyncEnd - mode->HSyncStart; /* HSyncEnd - HSyncStart */
+			HwInfo->Vertical_FP =  mode->VSyncStart - mode->VDisplay;
+			HwInfo->Vertical_BP = mode->VTotal - mode->VSyncEnd;
+			HwInfo->Vertical_SYNC = mode->VSyncEnd - mode->VSyncStart;
+			HwInfo->DCLK = mode->Clock;
+		}
+		else
+		{
+			HwInfo->SpecifyTiming = FALSE;
+		}
+		/* ------------------------------------------------------------------ */
+
         SetModeRet = XGISetModeNew(HwInfo, XGI_Pr, ModeNo);
         PDEBUG(ErrorF("out_of_C_code_SETMODE \n"));
     }

@@ -140,9 +140,7 @@ extern void dmxInputLogDevices(void);
 extern void dmxUpdateWindowInfo(DMXUpdateType type, WindowPtr pWindow);
 
 /* These functions are defined in input/dmxeq.c */
-extern Bool dmxeqInitialized(void);
-extern void dmxeqEnqueue(xEvent *e);
-extern void dmxeqSwitchScreen(ScreenPtr pScreen, Bool fromDIX);
+extern void dmxeqSwitchScreen(DeviceIntPtr pDev, ScreenPtr pScreen, Bool fromDIX);
 
 /* This type is used in input/dmxevents.c.  Also, these functions are
  * defined in input/dmxevents.c */

@@ -298,7 +298,7 @@ written under Release 3 will not encounter unexpected errors if an
 application attempts to create a nonwidget child.  In Release 4 there
 is no requirement that all composite widgets implement the extra
 functionality required to manage windowless children, so the
-\fIaccept_objects\fP field allows a composite widget to declare that it
+\fIaccepts_objects\fP field allows a composite widget to declare that it
 is not prepared to do so.
 
 .NH 2

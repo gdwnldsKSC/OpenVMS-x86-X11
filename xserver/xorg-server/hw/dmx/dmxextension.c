@@ -41,6 +41,8 @@
 #include <dmx-config.h>
 #endif
 
+#include <stdlib.h>
+
 #include "dmx.h"
 #include "dmxinit.h"
 #include "dmxextension.h"
@@ -1121,11 +1123,10 @@ static void dmxBERestoreRenderGlyph(pointer value, XID id, pointer n)
     }
 
     /* Now allocate the memory we need */
-    images = xalloc(len_images*sizeof(char));
-    gids   = xalloc(glyphSet->hash.tableEntries*sizeof(Glyph));
-    glyphs = xalloc(glyphSet->hash.tableEntries*sizeof(XGlyphInfo));
+    images = calloc(len_images, sizeof(char));
+    gids   = malloc(glyphSet->hash.tableEntries*sizeof(Glyph));
+    glyphs = malloc(glyphSet->hash.tableEntries*sizeof(XGlyphInfo));
 
-    memset(images, 0, len_images * sizeof(char));
     pos = images;
     ctr = 0;
     
@@ -1159,9 +1160,9 @@ static void dmxBERestoreRenderGlyph(pointer value, XID id, pointer n)
 		     len_images);
 
     /* Clean up */
-    xfree(len_images);
-    xfree(gids);
-    xfree(glyphs);    
+    free(len_images);
+    free(gids);
+    free(glyphs);    
 }
 #endif
 
@@ -1350,7 +1351,6 @@ int dmxAttachScreen(int idx, DMXScreenAttributesPtr attr)
  * RTContext
  * TagResType
  * StalledResType
- * RT_APPGROUP
  * SecurityAuthorizationResType
  * RTEventClient
  * __glXContextRes

@@ -56,8 +56,8 @@ static char *windowswm_extension_name = WINDOWSWMNAME;
  *****************************************************************************/
 
 static int close_display (Display *dpy, XExtCodes *extCodes);
-static Bool wire_to_event ();
-static Status event_to_wire ();
+static Bool wire_to_event (Display *dpy, XEvent  *re, xEvent  *event);
+static Status event_to_wire (Display *dpy, XEvent  *re, xEvent  *event);
 
 static /* const */ XExtensionHooks windowswm_extension_hooks = {
   NULL,				/* create_gc */

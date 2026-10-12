@@ -22,3 +22,13 @@
 sgmlentdir = $(prefix)/share/sgml/X11
 
 dist_sgmlent_DATA = defs.ent
+
+EXTRA_DIST = ChangeLog
+MAINTAINERCLEANFILES = ChangeLog
+
+.PHONY: ChangeLog
+
+ChangeLog:
+	$(CHANGELOG_CMD)
+
+dist-hook: ChangeLog

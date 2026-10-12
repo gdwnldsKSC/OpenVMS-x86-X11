@@ -25,20 +25,16 @@
 #endif
 
 #include "damageextint.h"
+#include "protocol-versions.h"
 
 static unsigned char	DamageReqCode;
 static int		DamageEventBase;
 static int		DamageErrorBase;
-static DevPrivateKey	DamageClientPrivateKey = &DamageClientPrivateKey;
 static RESTYPE		DamageExtType;
 static RESTYPE		DamageExtWinType;
 
-/* Version of the damage extension supported by the server, as opposed to the
- * DAMAGE_* defines from damageproto for what version the proto header
- * supports.
- */
-#define SERVER_DAMAGE_MAJOR	1
-#define SERVER_DAMAGE_MINOR	1
+static int DamageClientPrivateKeyIndex;
+static DevPrivateKey DamageClientPrivateKey = &DamageClientPrivateKeyIndex;
 
 #define prScreen	screenInfo.screens[0]
 
@@ -90,9 +86,7 @@ DamageExtNotify (DamageExtPtr pDamageExt, BoxPtr pBoxes, int nBoxes)
     if (pDamageClient->critical > 0)
     {
 	SetCriticalOutputPending ();
-#ifdef SMART_SCHEDULE
 	pClient->smart_priority = SMART_MAX_PRIORITY;
-#endif
     }
 }
 
@@ -148,16 +142,16 @@ ProcDamageQueryVersion(ClientPtr client)
     rep.type = X_Reply;
     rep.length = 0;
     rep.sequenceNumber = client->sequence;
-    if (stuff->majorVersion < SERVER_DAMAGE_MAJOR) {
+    if (stuff->majorVersion < SERVER_DAMAGE_MAJOR_VERSION) {
 	rep.majorVersion = stuff->majorVersion;
 	rep.minorVersion = stuff->minorVersion;
     } else {
-	rep.majorVersion = SERVER_DAMAGE_MAJOR;
-	if (stuff->majorVersion == SERVER_DAMAGE_MAJOR && 
-	    stuff->minorVersion < SERVER_DAMAGE_MINOR)
+	rep.majorVersion = SERVER_DAMAGE_MAJOR_VERSION;
+	if (stuff->majorVersion == SERVER_DAMAGE_MAJOR_VERSION &&
+	    stuff->minorVersion < SERVER_DAMAGE_MINOR_VERSION)
 	    rep.minorVersion = stuff->minorVersion;
 	else
-	    rep.minorVersion = SERVER_DAMAGE_MINOR;
+	    rep.minorVersion = SERVER_DAMAGE_MINOR_VERSION;
     }
     pDamageClient->major_version = rep.majorVersion;
     pDamageClient->minor_version = rep.minorVersion;
@@ -233,7 +227,7 @@ ProcDamageCreate (ClientPtr client)
     if (pDrawable->type == DRAWABLE_WINDOW)
     {
 	pRegion = &((WindowPtr) pDrawable)->borderClip;
-	DamageDamageRegion (pDrawable, pRegion);
+	DamageRegionAppend(pDrawable, pRegion);
     }
 
     return (client->noClientException);
@@ -303,7 +297,7 @@ ProcDamageAdd (ClientPtr client)
      * screen coordinates like damage expects.
      */
     REGION_TRANSLATE(pScreen, pRegion, pDrawable->x, pDrawable->y);
-    DamageDamageRegion(pDrawable, pRegion);
+    DamageRegionAppend(pDrawable, pRegion);
     REGION_TRANSLATE(pScreen, pRegion, -pDrawable->x, -pDrawable->y);
 
     return (client->noClientException);

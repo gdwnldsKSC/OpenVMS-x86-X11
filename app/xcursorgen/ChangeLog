@@ -1,3 +1,36 @@
+commit 32dc0bbbd067bfe27f506a510da3c5344964ee23
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Oct 16 17:41:51 2009 -0700
+
+    xcursorgen 1.0.3
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 47428dfabe933239919dfb4a51a9187ad4e2cb48
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Oct 16 17:41:20 2009 -0700
+
+    Migrate to xorg macros 1.3 & XORG_DEFAULT_OPTIONS
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 334aca2e5ab6d046659fdd60b16b0109aa0fe441
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Oct 1 14:54:22 2009 -0700
+
+    Add README with pointers to mailing lists, bugzilla, & git
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit c4c3d77ea9a89b2c5c23518b5cf235d4f7e017bf
+Author: Paulo Cesar Pereira de Andrade <pcpa@mandriva.com.br>
+Date:   Mon Jan 19 20:40:12 2009 -0200
+
+    Ansification and compile warning fixes.
+    
+      This also uses XORG_CHANGELOG and XORG_CWARNFLAGS, corrects
+    make distcheck and all gcc 4.3 and sparse warnings.
+
 commit 5aca565a857da642bc3f9dc89e88bfa3c1b13f11
 Author: Alan Coopersmith <alan.coopersmith@sun.com>
 Date:   Mon Aug 20 18:14:28 2007 -0700

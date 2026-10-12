@@ -26,7 +26,6 @@ from The Open Group.
 
 */
 
-#define NEED_EVENTS
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -37,38 +36,28 @@ from The Open Group.
 #include "os.h"
 #include "dixstruct.h"
 #include "extnsionst.h"
-#include <X11/extensions/bigreqstr.h>
+#include <X11/extensions/bigreqsproto.h>
 #include "opaque.h"
 #include "modinit.h"
 
-static void BigReqResetProc(
-    ExtensionEntry * /* extEntry */
-);
-
 static DISPATCH_PROC(ProcBigReqDispatch);
+
+void BigReqExtensionInit(INITARGS);
 
 void
 BigReqExtensionInit(INITARGS)
 {
     AddExtension(XBigReqExtensionName, 0, 0,
 		 ProcBigReqDispatch, ProcBigReqDispatch,
-		 BigReqResetProc, StandardMinorOpcode);
-}
-
-/*ARGSUSED*/
-static void
-BigReqResetProc (extEntry)
-    ExtensionEntry	*extEntry;
-{
+		 NULL, StandardMinorOpcode);
 }
 
 static int
-ProcBigReqDispatch (client)
-    register ClientPtr	client;
+ProcBigReqDispatch (ClientPtr client)
 {
     REQUEST(xBigReqEnableReq);
     xBigReqEnableReply rep;
-    register int n;
+     int n;
 
     if (client->swapped) {
 	swaps(&stuff->length, n);
@@ -77,6 +66,7 @@ ProcBigReqDispatch (client)
 	return BadRequest;
     REQUEST_SIZE_MATCH(xBigReqEnableReq);
     client->big_requests = TRUE;
+    memset(&rep, 0, sizeof(xBigReqEnableReply));
     rep.type = X_Reply;
     rep.length = 0;
     rep.sequenceNumber = client->sequence;

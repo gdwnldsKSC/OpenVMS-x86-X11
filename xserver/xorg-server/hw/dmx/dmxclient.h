@@ -84,23 +84,17 @@ typedef XID           KeySym64;
 #include <X11/cursorfont.h>
 #include <X11/Xmu/SysUtil.h>    /* For XmuSnprintf */
 
-#ifdef SHAPE
 #include <X11/extensions/shape.h>
-#endif
 
 #ifdef RENDER
 #include <X11/extensions/Xrender.h>
 #undef PictFormatType
 #endif
 
-#ifdef XKB
 #include <X11/extensions/XKB.h>
-#include <X11/extensions/XKBstr.h>
-#endif
+#include "xkbstr.h"
 
-#ifdef XINPUT
 #include <X11/extensions/XI.h>
-#endif
 
 /* Always include these, since we query them even if we don't export XINPUT. */
 #include <X11/extensions/XInput.h> /* For XDevice */
@@ -138,14 +132,9 @@ extern int ChangeDeviceNotify;
 
 /* Some protocol gets included last, after undefines. */
 #include <X11/XKBlib.h>
-#ifdef XKB
 #include <X11/extensions/XKBproto.h>
-#ifndef XKB_IN_SERVER
-#define XKB_IN_SERVER
-#endif
-#include <xkbsrv.h>
+#include "xkbstr.h"
 #undef XPointer
-#endif
 #include <X11/extensions/XIproto.h>
 
 #endif

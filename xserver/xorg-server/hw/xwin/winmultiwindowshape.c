@@ -32,7 +32,6 @@
 #ifdef HAVE_XWIN_CONFIG_H
 #include <xwin-config.h>
 #endif
-#ifdef SHAPE
 
 #include "win.h"
 
@@ -45,7 +44,6 @@ void
 winSetShapeMultiWindow (WindowPtr pWin)
 {
   ScreenPtr		pScreen = pWin->drawable.pScreen;
-  winWindowPriv(pWin);
   winScreenPriv(pScreen);
 
 #if CYGMULTIWINDOW_DEBUG
@@ -208,4 +206,3 @@ winReshapeMultiWindow (WindowPtr pWin)
   
   return;
 }
-#endif

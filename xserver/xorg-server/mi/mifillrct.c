@@ -66,12 +66,13 @@ SOFTWARE.
  * then call FillSpans to fill each rectangle.  We let FillSpans worry about
  * clipping to the destination
  */
-_X_EXPORT void
-miPolyFillRect(pDrawable, pGC, nrectFill, prectInit)
-    DrawablePtr	pDrawable;
-    GCPtr	pGC;
-    int		nrectFill; 	/* number of rectangles to fill */
-    xRectangle	*prectInit;  	/* Pointer to first rectangle to fill */
+void
+miPolyFillRect(
+    DrawablePtr	pDrawable,
+    GCPtr	pGC,
+    int		nrectFill,	/* number of rectangles to fill */
+    xRectangle	*prectInit	/* Pointer to first rectangle to fill */
+    )
 {
     int i;
     int	height;
@@ -106,8 +107,8 @@ miPolyFillRect(pDrawable, pGC, nrectFill, prectInit)
 	    maxheight = max(maxheight, prect->height);
     }
 
-    pptFirst = (DDXPointPtr) xalloc(maxheight * sizeof(DDXPointRec));
-    pwFirst = (int *) xalloc(maxheight * sizeof(int));
+    pptFirst = xalloc(maxheight * sizeof(DDXPointRec));
+    pwFirst = xalloc(maxheight * sizeof(int));
     if(!pptFirst || !pwFirst)
     {
 	if (pwFirst) xfree(pwFirst);

@@ -42,6 +42,7 @@ from The Open Group.
 #include <X11/Xauth.h>
 #include "misc.h"
 #include "os.h"
+#include "osdep.h"
 #include "dixstruct.h"
 
 #include <rpc/rpc.h>
@@ -49,16 +50,6 @@ from The Open Group.
 #ifdef sun
 /* <rpc/auth.h> only includes this if _KERNEL is #defined... */
 extern bool_t xdr_opaque_auth(XDR *, struct opaque_auth *);
-#endif
-
-#if defined(DGUX)
-#include <time.h>
-#include <rpc/auth_des.h>
-#endif /* DGUX */
-
-#ifdef ultrix
-#include <time.h>
-#include <rpc/auth_des.h>
 #endif
 
 static enum auth_stat why;
@@ -75,7 +66,7 @@ authdes_ezdecode(char *inmsg, int len)
     XDR             xdr;
     SVCXPRT         xprt;
 
-    temp_inmsg = (char *) xalloc(len);
+    temp_inmsg = xalloc(len);
     memmove(temp_inmsg, inmsg, len);
 
     memset((char *)&msg, 0, sizeof(msg));
@@ -88,7 +79,7 @@ authdes_ezdecode(char *inmsg, int len)
     why = AUTH_FAILED; 
     xdrmem_create(&xdr, temp_inmsg, len, XDR_DECODE);
 
-    if ((r.rq_clntcred = (caddr_t) xalloc(MAX_AUTH_BYTES)) == NULL)
+    if ((r.rq_clntcred = xalloc(MAX_AUTH_BYTES)) == NULL)
         goto bad1;
     r.rq_xprt = &xprt;
 

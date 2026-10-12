@@ -41,7 +41,6 @@
 
 #include <misc.h>
 #include <xf86.h>
-#include <xf86Version.h>
 #include <xf86_OSproc.h>
 #include <xf86_OSlib.h>
 #include <xf86Xinput.h>
@@ -63,7 +62,7 @@
  *	Function Definitions
  ****************************************************************************/
 
-_X_EXPORT XISBuffer *
+XISBuffer *
 XisbNew (int fd, ssize_t size)
 {
 	XISBuffer *b;
@@ -87,14 +86,14 @@ XisbNew (int fd, ssize_t size)
 	return (b);
 }
 
-_X_EXPORT void
+void
 XisbFree (XISBuffer *b)
 {
 	xfree (b->buf);
 	xfree (b);
 }
 
-_X_EXPORT int
+int
 XisbRead (XISBuffer *b)
 {
 	int ret;
@@ -137,7 +136,7 @@ XisbRead (XISBuffer *b)
 }
 
 /* the only purpose of this function is to provide output tracing */
-_X_EXPORT ssize_t
+ssize_t
 XisbWrite (XISBuffer *b, unsigned char *msg, ssize_t len)
 {
     if (b->trace)
@@ -150,7 +149,7 @@ XisbWrite (XISBuffer *b, unsigned char *msg, ssize_t len)
 }
 
 /* turn tracing of this buffer on (1) or off (0) */
-_X_EXPORT void
+void
 XisbTrace (XISBuffer *b, int trace)
 {
 	b->trace = trace;
@@ -168,7 +167,7 @@ XisbTrace (XISBuffer *b, int trace)
  * give duration in usecs.
  */
 
-_X_EXPORT void
+void
 XisbBlockDuration (XISBuffer *b, int block_duration)
 {
 	b->block_duration = block_duration;

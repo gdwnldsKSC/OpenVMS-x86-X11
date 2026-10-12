@@ -456,6 +456,11 @@
 #define		VB_XGI301LV                  0x0008
 #define		VB_XGI302LV                  0x0010
 #define		VB_LVDS_NS                   0x0001       /* 3rd party chip */
+
+/* Jong 10/04/2007; merge code */
+#define		VB_CH7017                    0x0002
+#define         VB_CH7007                    0x0080       /* [Billy] 07/05/03 */
+
 /* #define VB_LVDS_SI 0x0004 */
 
 #define		ModeInfoFlag                 0x0007
@@ -973,6 +978,19 @@
 #define		CHTVVCLK26_2         0x57
 #define		CHTVVCLK39           0x58
 #define		CHTVVCLK36           0x59
+
+/* Jong 10/04/2007; merge code */
+#define		CH7007TVVCLK30_2     0x00                 /* [Billy] 2007/05/18 For CH7007 */
+#define		CH7007TVVCLK28_1     0x01
+#define		CH7007TVVCLK43_6     0x02
+#define		CH7007TVVCLK26_4     0x03
+#define		CH7007TVVCLK24_6     0x04
+#define		CH7007TVVCLK47_8     0x05
+#define		CH7007TVVCLK31_5     0x06
+#define		CH7007TVVCLK26_2     0x07
+#define		CH7007TVVCLK39       0x08
+#define		CH7007TVVCLK36       0x09
+
 #define		RES320x200                   0x00
 #define		RES320x240                   0x01
 #define		RES400x300                   0x02

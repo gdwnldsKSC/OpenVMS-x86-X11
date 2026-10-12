@@ -87,10 +87,12 @@ static struct ViaCardIdStruct ViaCardId[] = {
     {"Asustek K8V-MX",                        VIA_K8M800,  0x1043, 0x8129, VIA_DEVICE_CRT},
     {"Mitac 8399",                            VIA_K8M800,  0x1071, 0x8399, VIA_DEVICE_CRT | VIA_DEVICE_LCD | VIA_DEVICE_TV}, /* aka "Pogolinux Konabook 3100" */
     {"Mitac 8889",                            VIA_K8M800,  0x1071, 0x8889, VIA_DEVICE_CRT | VIA_DEVICE_LCD | VIA_DEVICE_TV},
+    {"MSI K8M Neo-V (broken pci id)",         VIA_K8M800,  0x1106, 0x0204, VIA_DEVICE_CRT},
     {"VIA VT3108 (K8M800)",                   VIA_K8M800,  0x1106, 0x3108, VIA_DEVICE_CRT}, /* borrowed by Asustek A8V-MX */ 
     {"Shuttle FX21",                          VIA_K8M800,  0x1297, 0x3052, VIA_DEVICE_CRT},
     {"Shuttle FX83",                          VIA_K8M800,  0x1297, 0xF683, VIA_DEVICE_CRT | VIA_DEVICE_TV},
     {"Sharp Actius AL27",                     VIA_K8M800,  0x13BD, 0x1044, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
+    {"Sharp PC-AE30J",                        VIA_K8M800,  0x13BD, 0x104B, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Giga-byte GA-K8VM800M",                 VIA_K8M800,  0x1458, 0xD000, VIA_DEVICE_CRT},
     {"MSI K8M Neo-V",                         VIA_K8M800,  0x1462, 0x0320, VIA_DEVICE_CRT},
     {"MSI K8MM-V",                            VIA_K8M800,  0x1462, 0x7142, VIA_DEVICE_CRT},
@@ -113,6 +115,7 @@ static struct ViaCardIdStruct ViaCardId[] = {
     {"Packard Bell Imedia 2097",              VIA_K8M800,  0x1631, 0xD007, VIA_DEVICE_CRT},
     {"Fujitsu-Siemens Amilo K7610",           VIA_K8M800,  0x1734, 0x10B3, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"ASRock K8Upgrade-VM800",                VIA_K8M800,  0x1849, 0x3108, VIA_DEVICE_CRT},
+    {"Axper XP-M8VM800",                      VIA_K8M800,  0x1940, 0xD000, VIA_DEVICE_CRT},
 
     /*** PM800, PM880, PN800, CN400 ***/
     {"VIA VT3118 (PM800)",                    VIA_PM800,   0x1106, 0x3118, VIA_DEVICE_CRT}, /* borrowed by ECS PM800-M2 */
@@ -132,12 +135,14 @@ static struct ViaCardIdStruct ViaCardId[] = {
 
     /*** P4M800Pro, VN800, CN700 ***/
     {"Clevo/RoverBook Partner E419L",         VIA_VM800,   0x1019, 0x0F75, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
+    {"Haier A60-440256080BD",                 VIA_VM800,   0x1019, 0x0F79, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"PCChips P23G",                          VIA_VM800,   0x1019, 0x1623, VIA_DEVICE_CRT},
     {"ECS P4M800PRO-M",                       VIA_VM800,   0x1019, 0x2122, VIA_DEVICE_CRT},
     {"ECS C7VCM",                             VIA_VM800,   0x1019, 0xAA2D, VIA_DEVICE_CRT},
     {"PCChips V21G",                          VIA_VM800,   0x1019, 0xAA51, VIA_DEVICE_CRT},
     {"Asustek P5VDC-MX",                      VIA_VM800,   0x1043, 0x3344, VIA_DEVICE_CRT},
     {"Asustek P5VDC-TVM",                     VIA_VM800,   0x1043, 0x81CE, VIA_DEVICE_CRT},
+    {"Foxconn P4M800P7MB-RS2H",               VIA_VM800,   0x105B, 0x0CF0, VIA_DEVICE_CRT},
     {"Gateway MX3210",                        VIA_VM800,   0x107B, 0x0216, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"VIA VT3344 (VM800) - EPIA EN",          VIA_VM800,   0x1106, 0x3344, VIA_DEVICE_CRT | VIA_DEVICE_TV},
     {"Gigabyte GA-8VM800M-775",               VIA_VM800,   0x1458, 0xD000, VIA_DEVICE_CRT},
@@ -145,11 +150,13 @@ static struct ViaCardIdStruct ViaCardId[] = {
     {"MSI Fuzzy CN700/CN700T/CN700G",         VIA_VM800,   0x1462, 0x7199, VIA_DEVICE_CRT | VIA_DEVICE_TV},
     {"MSI PM8M3-V",                           VIA_VM800,   0x1462, 0x7211, VIA_DEVICE_CRT},
     {"MSI PM8PM",                             VIA_VM800,   0x1462, 0x7222, VIA_DEVICE_CRT},
+    {"Twinhead M6",                           VIA_VM800,   0x14FF, 0xA007, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"RoverBook Partner W500",                VIA_VM800,   0x1509, 0x4330, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Clevo/RoverBook Voyager V511L",         VIA_VM800,   0x1558, 0x0662, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Clevo M5xxS",                           VIA_VM800,   0x1558, 0x5406, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Biostar P4M80-M4 / P4VMA-M",            VIA_VM800,   0x1565, 0x1202, VIA_DEVICE_CRT},
     {"Biostar P4M800 Pro-M7",                 VIA_VM800,   0x1565, 0x1206, VIA_DEVICE_CRT},
+    {"Packard Bell Lima (ASUS MBP5VDZ-NVM)",  VIA_VM800,   0x1631, 0xE018, VIA_DEVICE_CRT},
     {"Fujitsu/Siemens Amilo Pro V2030",       VIA_VM800,   0x1734, 0x109B, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Fujitsu/Siemens Amilo Pro V2035",       VIA_VM800,   0x1734, 0x10AE, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Fujitsu/Siemens Amilo Pro V2055",       VIA_VM800,   0x1734, 0x10CA, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
@@ -158,6 +165,7 @@ static struct ViaCardIdStruct ViaCardId[] = {
     {"Asustek P5V800-MX",                     VIA_VM800,   0x3344, 0x1122, VIA_DEVICE_CRT},
 
     /*** K8M890 ***/
+    {"IBM AnyPlace Kiosk 3xx",                VIA_K8M890,  0x1106, 0x3230, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Asustek A8V-VM",                        VIA_K8M890,  0x1043, 0x81B5, VIA_DEVICE_CRT},
     {"Asustek M2V-MX SE",                     VIA_K8M890,  0x1043, 0x8297, VIA_DEVICE_CRT},
     {"Foxconn K8M890M2MA-RS2H",               VIA_K8M890,  0x105B, 0x0C84, VIA_DEVICE_CRT},
@@ -179,6 +187,8 @@ static struct ViaCardIdStruct ViaCardId[] = {
     {"Gigabyte GA-VM900M",                    VIA_P4M900,  0x1458, 0xD000, VIA_DEVICE_CRT},
     {"MSI VR321",                             VIA_P4M900,  0x1462, 0x3355, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"MSI P4M900M / P4M900M2-F/L",            VIA_P4M900,  0x1462, 0x7255, VIA_DEVICE_CRT},
+    {"MSI P4M900M3-L",                        VIA_P4M900,  0x1462, 0x7387, VIA_DEVICE_CRT},
+    {"Twinhead H12V",                         VIA_P4M900,  0x14FF, 0xA00F, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Everex NC1501/NC1503",                  VIA_P4M900,  0x1509, 0x1E30, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Clevo M660SE",                          VIA_P4M900,  0x1558, 0x0664, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Clevo M660SR",                          VIA_P4M900,  0x1558, 0x0669, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
@@ -196,18 +206,31 @@ static struct ViaCardIdStruct ViaCardId[] = {
     {"Samsung Q1B",                           VIA_CX700,   0x144D, 0xC02C, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"FIC CE260",                             VIA_CX700,   0x1509, 0x2D30, VIA_DEVICE_LCD},
     {"FIC CE261",                             VIA_CX700,   0x1509, 0x2F07, VIA_DEVICE_LCD},
+    {"Gigabyte M704 / RoverPC A700GQ",        VIA_CX700,   0x161F, 0x2060, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"Packard Bell EasyNote XS",              VIA_CX700,   0x1631, 0xC201, VIA_DEVICE_LCD}, /* aka Everex Cloudbook CE1200V */
 
     /*** P4M890, VN890 ***/
     {"PCChips P29G",                          VIA_P4M890,  0x1019, 0x1629, VIA_DEVICE_CRT},
+    {"ECS P4M890T-M v2.0",                    VIA_P4M890,  0x1019, 0x2171, VIA_DEVICE_CRT},
     {"PCChips ????",                          VIA_P4M890,  0x1019, 0x2174, VIA_DEVICE_CRT},
     {"Asustek P5V-VM ULTRA",                  VIA_P4M890,  0x1043, 0x81B5, VIA_DEVICE_CRT},
     {"Asustek P5V-VM DH",                     VIA_P4M890,  0x1043, 0x81CE, VIA_DEVICE_CRT},
     {"Mitac 8615",                            VIA_P4M890,  0x1071, 0x8615, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
+    {"Mitac 8624 (Joybook R41E)",             VIA_P4M890,  0x1071, 0x8624, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
     {"VIA VT3343 (P4M890)",                   VIA_P4M890,  0x1106, 0x3343, VIA_DEVICE_CRT},
     {"MSI P4M890M-L/IL (MS-7255)",            VIA_P4M890,  0x1462, 0x7255, VIA_DEVICE_CRT},
     {"Biostar P4M890-M7 TE",                  VIA_P4M890,  0x1565, 0x1207, VIA_DEVICE_CRT},
     {"ASRock P4VM890",                        VIA_P4M890,  0x1849, 0x3343, VIA_DEVICE_CRT},
+
+    /*** VX800 ***/
+    {"VIA Epia M700",                         VIA_VX800,   0x1106, 0x1122, VIA_DEVICE_CRT},
+    {"VIA OpenBook",                          VIA_VX800,   0x1170, 0x0311, VIA_DEVICE_CRT | VIA_DEVICE_LCD}, /* VIA OpenBook eNote VBE8910 */
+    {"Samsung NC20",                          VIA_VX800,   0x144d, 0xc04e, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
+    {"Quanta DreamBook Light IL1",            VIA_VX800,   0x152d, 0x0771, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
+    {"Lenovo S12",                            VIA_VX800,   0x17aa, 0x388c, VIA_DEVICE_CRT | VIA_DEVICE_LCD},
+
+    /*** VX855 ***/
+    {"VIA VT8562C",                           VIA_VX855,   0x1106, 0x5122, VIA_DEVICE_CRT},
 
     /* keep this */
     {NULL,                                    VIA_UNKNOWN, 0x0000, 0x0000, VIA_DEVICE_NONE}
@@ -251,15 +274,15 @@ ViaCheckCardId(ScrnInfoPtr pScrn)
 	if ((Id->Chip == pVia->Chipset) && 
            (Id->Vendor == SUBVENDOR_ID(pVia->PciInfo)) &&
            (Id->Device == SUBSYS_ID(pVia->PciInfo))) {
-	    xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Detected %s.\n", Id->String);
+	    xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Detected %s. Card-Ids (%4X|%4X)\n", Id->String, SUBVENDOR_ID(pVia->PciInfo), SUBSYS_ID(pVia->PciInfo));
 	    pVia->Id = Id;
 	    return;
 	}
     }
     
     xf86DrvMsg(pScrn->scrnIndex, X_ERROR, 
-	       "Unknown Card-Ids (%4X|%4X|%4X); please report to openchrome-users@openchrome.org\n",
-               DEVICE_ID(pVia->PciInfo), SUBVENDOR_ID(pVia->PciInfo), SUBSYS_ID(pVia->PciInfo));
+	       "Unknown Card-Ids (%4X|%4X|%4X), Chipset: %s; please report to openchrome-users@openchrome.org\n", 
+               DEVICE_ID(pVia->PciInfo), SUBVENDOR_ID(pVia->PciInfo), SUBSYS_ID(pVia->PciInfo), pScrn->chipset);
     pVia->Id = NULL;
 }
 

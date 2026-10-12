@@ -3,7 +3,7 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
  
-Name: AppleWMProto
-Description: AppleWM extension headers
+Name: WindowsWMProto
+Description: WindowsWM extension headers
 Version: @PACKAGE_VERSION@
 Cflags: -I${includedir}

@@ -39,11 +39,8 @@
 #include "xf86Pci.h"
 #include "xf86.h"
 #include "fb.h"
-#include "xf1bpp.h"
-#include "xf4bpp.h"
 #include "xf86_OSproc.h"
-#include "xf86Resources.h"
-#include "xf86Version.h"
+#include "xorgVersion.h"
 
 #include "xf86cmap.h"
 
@@ -56,8 +53,13 @@
 #include <X11/extensions/xf86dgastr.h>
 
 #include "globals.h"
+#ifdef HAVE_XEXTPROTO_71
+#include <X11/extensions/dpmsconst.h>
+#else
 #define DPMS_SERVER
 #include <X11/extensions/dpms.h>
+#endif
+
 
 #include "vb_def.h"
 extern  int  FbDevExist;
@@ -69,6 +71,241 @@ static Bool bAccessNBridgePCIInfo(PXGI_HW_DEVICE_INFO pHwDevInfo,
 static Bool XGI_IsXG21(ScrnInfoPtr pScrn);
 
 static void XGI_InitHwDevInfo(ScrnInfoPtr pScrn);
+
+/* Jong 10/16/2007; merge code */
+static void
+xgiXG2X_Setup(ScrnInfoPtr pScrn)
+{
+
+/*********************************************************************
+ * Setup
+ * Decide the following item of execution data:
+ *
+ * pXGI->BusWidth
+ * pXGI->videoRam (with KB unit)
+ * pXGI->CursorOffset (with Byte Unit)
+ * pXGI->cmdQueueSize (with Byte Unit)
+ * pXGI->cmdQueueSizeMask (with Byte Unit)
+ * pXGI->cmdQueueOffset (with Byte Unit)
+ * pXGI->cmdQueueLen = 0 ; // init value
+ * pXGI->cmdQueueLenMin = 0x200 ; // init value
+ * pXGI->cmdQueueLenMax = pXGI->cmdQueueSize -  pXGI->cmdQueueLenMin ;
+ *********************************************************************/
+
+    XGIPtr        pXGI = XGIPTR(pScrn);
+    unsigned int  ulMemConfig = 0;
+    unsigned long ulMemSize   = 0;
+    unsigned long ulDramType  = 0;
+    char *dramTypeStr ;
+    unsigned long ulTemp ;
+
+    /* DumpDDIName("xgiXG2X_Setup()\n") ; */
+
+    inXGIIDXREG(XGICR, 0x48, ulTemp) ;
+    if(ulTemp & (1<<0)) /* GPIOH, CR48 D[0] read */
+    {
+        dramTypeStr = "DDRII DRAM" ;
+    }
+    else
+    {
+        dramTypeStr = "DDR DRAM" ;
+    }
+
+
+    pXGI->MemClock = XG40Mclk(pXGI);
+
+    /*********************************************************************************************************
+     * SR14 DRAM Size Register
+     *     Default value: XXh
+     *     D[7:4]    Memory size per channel {BChMemSize}
+     *         0011: 8 MB
+     *         0100: 16 MB
+     *         0101: 32 MB
+     *         0110: 64 MB
+     *         0111: 128 MB
+     *         1000: 256MB
+     *        others: reserved
+     *     D[3:2]    Number of  dram channels [1:0] {BChNum}
+     *         00: uni-channel
+     *         01: reserved
+     *         10: dual-channel.
+     *         11: quad-channel
+     *     D1  Data width per channel selection {BDataWidth}
+     *         0: 32-bits
+     *         1: 64-bits
+     *     D0  Dram channel mapping {BReverseChMapping}
+     *         0: Normal mapping
+     *         1: Reversal mapping
+     *             Dual-channel: Logical channel A/B to physical channel B/A
+     *             Quad-channel: Logical  channel A/B/C/D to physical channel C/D/A/B
+     *
+     *********************************************************************************************************/
+
+    outXGIIDXREG(XGISR, 0x5, 0x86) ;
+    inXGIIDXREG(XGISR, 0x14, ulMemConfig) ;
+    inXGIIDXREG(XGISR, 0x3A, ulDramType) ;
+
+    PDEBUG(ErrorF("xg40_Setup(): ulMemConfig = %02X\n",ulMemConfig)) ;
+    PDEBUG(ErrorF("xg40_Setup(): ulDramType = %02X\n",ulDramType)) ;
+
+    pXGI->BusWidth = (ulMemConfig & (1<<1) )?64:32 ;
+
+    switch(ulMemConfig>>4)
+    {
+    case 8:
+        ulMemSize = 256*1024 ;
+        break ;
+    case 7:
+        ulMemSize = 128*1024 ;
+        break ;
+    case 6:
+        ulMemSize = 64*1024 ;
+        break ;
+    case 5:
+        ulMemSize = 32*1024 ;
+        break ;
+    case 4:
+        ulMemSize = 16*1024 ;
+        break ;
+    case 3:
+        ulMemSize = 8*1024 ;
+        break ;
+    default:
+        ulMemSize = 8*1024 ;
+    }
+
+    if (pXGI->Chipset == PCI_CHIP_XGIXG40) {
+	const unsigned revision =
+#ifdef XSERVER_LIBPCIACCESS
+	    pXGI->PciInfo->revision
+#else
+	    pciReadLong(pXGI->PciTag, 0x08) & 0x0FF
+#endif
+	    ;
+
+	/* Revision 2 cards encode the memory config bits slightly differently
+	 * from revision 1 cards.
+	 */
+        if (revision == 2) {
+            switch((ulMemConfig>>2)&0x1)
+            {
+            case 0:
+                /* Uni channel */
+                ulMemSize *= 1 ;
+       	        break ;
+            case 1:
+                /* Dual channel */
+                ulMemSize *= 2 ;
+    	        break ;
+            }
+        }
+        else
+        {
+            switch((ulMemConfig>>2)&0x3)
+            {
+            case 2:
+                /* Dual channel */
+                ulMemSize *= 2 ;
+        	break ;
+            case 3:
+                /* Quad channel */
+                ulMemSize *= 4 ;
+    	        break ;
+           }
+        }
+    }
+
+    pScrn->videoRam = ulMemSize ;
+
+    /*********************************************************************************************************
+     * SR15 DRAM Address Mapping Register
+     * Default value: XXh
+     *     D7  Channel  interleaving configuration { BChConfig }
+     *         0: Divide the whole memory  into 2/4 equal-sized regions , each mapped to one channel
+     *         1: Divide the whole memory into 2 regions according to BTilingSize[1:0] . The low-address region
+     *         will be channel-interleaved as per BFineGranSize; the high-address region will be channel-
+     *         interleaved  as per BCoarseGranSize[1:0]
+     *     D[6:5]    Memory size of tile-mapped region {BTilingSize}
+     *         00: 4 MB
+     *         01: 8 MB
+     *         10: 16 MB
+     *         11: 32 MB
+     *         The following bits are effective only when D7=1
+     *     D4  Channel-interleaving granularity for tile-mapped region {BFineGranSize}
+     *         0:  64 B
+     *         1:  128 B
+     *     D[3:2] Channel-interleaving granularity for linearly mapped region {BCoarseGranSize}
+     *         00: 1KB
+     *         01: 2KB
+     *         10: 4KB
+     *         11: 1MB
+     *     D[1:0] reserved
+     *********************************************************************************************************/
+
+    /* Accelerator parameter Initialization */
+    if(( pXGI->Chipset == PCI_CHIP_XGIXG20 )||( pXGI->Chipset == PCI_CHIP_XGIXG21 )||( pXGI->Chipset == PCI_CHIP_XGIXG27 ))
+    {
+        pXGI->cmdQueueSize = VOLARI_CQSIZEXG20;
+    /* XgiMode = XG20_Mode ; */
+        PDEBUG(ErrorF(" ---XG20_Mode \n"));
+    }
+
+
+    pXGI->cmdQueueSizeMask = pXGI->cmdQueueSize - 1 ;
+    pXGI->pCQ_shareWritePort = &(pXGI->cmdQueue_shareWP_only2D);
+
+
+    /*
+     If FbDevExist, XFree86 driver use the 8MB only. The rest
+     frame buffer is used by other AP.
+     */
+
+    if( FbDevExist && (pXGI->Chipset != PCI_CHIP_XGIXG20 ) && (pXGI->Chipset != PCI_CHIP_XGIXG21 ) && (pXGI->Chipset != PCI_CHIP_XGIXG27 ) )
+    {
+        if( pScrn->videoRam < 8*1024 )
+        {
+            pXGI->cmdQueueOffset = 4*1024*1024 - pXGI->cmdQueueSize ;
+        }
+        else if( pScrn->videoRam < 16*1024 )
+        {
+            pXGI->cmdQueueOffset = 8*1024*1024 - pXGI->cmdQueueSize ;
+        }
+        else
+        {
+            pXGI->cmdQueueOffset = 13*1024*1024 - pXGI->cmdQueueSize ;
+        }
+    }
+    else
+    {
+        pXGI->cmdQueueOffset = (pScrn->videoRam)*1024 - pXGI->cmdQueueSize ;
+    }
+
+    pXGI->CursorOffset = pXGI->cmdQueueOffset - 64*1024 ;
+    PDEBUG4(ErrorF("pScrn->videoRam = %08lX pXGI->cmdQueueSize = %08lX\n",
+			pScrn->videoRam, pXGI->cmdQueueSize)) ;
+    PDEBUG4(ErrorF("pXGI->cmdQueueOffset = %08lX pXGI->CursorOffset = %08lX\n",
+		pXGI->cmdQueueOffset, pXGI->CursorOffset)) ;
+
+    pXGI->cmdQueueLen = 0 ;
+    pXGI->cmdQueueLenMin = 0x200 ;
+    pXGI->cmdQueueLenMax = pXGI->cmdQueueSize -  pXGI->cmdQueueLenMin ;
+
+    /*****************************************************************
+     * Dual Chip support put here                                    *
+     *****************************************************************/
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+            "Detected DRAM type : %s\n", dramTypeStr);
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+            "Detected memory clock : %3.3fMHz\n",
+            pXGI->MemClock/1000.0);
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+            "Detected VRAM bus width is %d\n", pXGI->BusWidth);
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+            "Detected Cmd Queue size is %d KB\n", pXGI->cmdQueueSize / 1024);
+    xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+            "Detected Cmd Queue Offset is %d\n", pXGI->cmdQueueOffset ) ;
+    XGI_InitHwDevInfo(pScrn);
+}
 
 static void
 xgiXG40_Setup(ScrnInfoPtr pScrn)
@@ -214,7 +451,7 @@ xgiXG40_Setup(ScrnInfoPtr pScrn)
 
     /* Accelerator parameter Initialization */
     
-    pXGI->cmdQueueSize = (pXGI->Chipset == PCI_CHIP_XGIXG20)
+    pXGI->cmdQueueSize = ((pXGI->Chipset == PCI_CHIP_XGIXG20)||(pXGI->Chipset == PCI_CHIP_XGIXG21||(pXGI->Chipset == PCI_CHIP_XGIXG27)))
 	? VOLARI_CQSIZEXG20 : VOLARI_CQSIZE;
     pXGI->cmdQueueSizeMask = pXGI->cmdQueueSize - 1 ;
     pXGI->pCQ_shareWritePort = &(pXGI->cmdQueue_shareWP_only2D);
@@ -276,13 +513,46 @@ XGISetup(ScrnInfoPtr pScrn)
     pXGI->Flags = 0;
     pXGI->VBFlags = 0;
 
+	/* Jong 10/16/2007; merge code */
     switch (pXGI->Chipset) {
-    case PCI_CHIP_XGIXG40:
-    case PCI_CHIP_XGIXG20:
-    default:
-        xgiXG40_Setup(pScrn);
-        break;
+		case PCI_CHIP_XGIXG20:
+		case PCI_CHIP_XGIXG21:
+		case PCI_CHIP_XGIXG27:
+			xgiXG2X_Setup(pScrn);
+			break;
+
+		case PCI_CHIP_XGIXG40:
+		default:
+			xgiXG40_Setup(pScrn);
+			break;
     }
+}
+
+/* Jong 01/07/2008; Force to disable 2D engine by SR3A[6]=1 */
+Bool ForceToDisable2DEngine(ScrnInfoPtr pScrn)
+{
+    XGIPtr pXGI ;
+	Bool   bReturn=FALSE;
+    CARD8  bForce;
+
+    pXGI = XGIPTR(pScrn); 
+
+	if(pXGI->Chipset == PCI_CHIP_XGIXG21)
+	{
+	    inXGIIDXREG(XGISR, 0x3A, bForce) ;
+		bForce &= 0x40;
+
+		if(bForce == 0)
+			bReturn=FALSE;
+		else
+			bReturn=TRUE;
+	}
+	else
+	{
+		bReturn=FALSE;
+	}
+
+	return(bReturn);
 }
 
 Bool
@@ -292,12 +562,12 @@ XGI_IsXG21(ScrnInfoPtr pScrn)
     Bool is_XG21 = FALSE;
 
     if (pXGI->Chipset == PCI_CHIP_XGIXG20) {
-	int temp;
+		int temp;
 
         orXGIIDXREG(XGICR, Index_CR_GPIO_Reg3, GPIOG_EN);
         inXGIIDXREG(XGICR, Index_CR_GPIO_Reg1, temp);
 
-	is_XG21 = ((temp & GPIOG_READ) != 0);
+		is_XG21 = ((temp & GPIOG_READ) != 0);
     }
     
     return is_XG21;
@@ -326,6 +596,12 @@ XGI_InitHwDevInfo(ScrnInfoPtr pScrn)
     case PCI_CHIP_XGIXG20:
         pHwDevInfo->jChipType = XGI_IsXG21(pScrn)?XG21:XG20 ;
         break ;
+    case PCI_CHIP_XGIXG27:
+    pHwDevInfo->jChipType = XG27;
+        break;
+    case PCI_CHIP_XGIXG21:
+	pHwDevInfo->jChipType = XG21;
+	break;
     default:
         pHwDevInfo->jChipType = XG40 ;
         break ;

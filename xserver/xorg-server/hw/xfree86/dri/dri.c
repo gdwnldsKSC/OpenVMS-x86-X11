@@ -45,8 +45,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sys/ioctl.h>
 #include <errno.h>
 
-#define NEED_REPLIES
-#define NEED_EVENTS
 #include <X11/X.h>
 #include <X11/Xproto.h>
 #include "xf86drm.h"
@@ -59,7 +57,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "windowstr.h"
 #include "servermd.h"
 #define _XF86DRI_SERVER_
-#include "xf86dristr.h"
+#include <X11/dri/xf86driproto.h>
 #include "swaprep.h"
 #include "xf86str.h"
 #include "dri.h"
@@ -70,16 +68,16 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "mi.h"
 #include "mipointer.h"
 #include "xf86_OSproc.h"
+#include "inputstr.h"
+#include "xf86VGAarbiter.h"
 
 #define PCI_BUS_NO_DOMAIN(bus) ((bus) & 0xffu)
 
-#if !defined(PANORAMIX)
-extern Bool noPanoramiXExtension;
-#endif
-
 static int DRIEntPrivIndex = -1;
-static DevPrivateKey DRIScreenPrivKey = &DRIScreenPrivKey;
-static DevPrivateKey DRIWindowPrivKey = &DRIWindowPrivKey;
+static int DRIScreenPrivKeyIndex;
+static DevPrivateKey DRIScreenPrivKey = &DRIScreenPrivKeyIndex;
+static int DRIWindowPrivKeyIndex;
+static DevPrivateKey DRIWindowPrivKey = &DRIWindowPrivKeyIndex;
 static unsigned long DRIGeneration = 0;
 static unsigned int DRIDrawableValidationStamp = 0;
 
@@ -299,6 +297,18 @@ DRIOpenDRMMaster(ScrnInfoPtr pScrn,
     return FALSE;
 }
 
+static void
+DRIClipNotifyAllDrawables(ScreenPtr pScreen);
+
+static void
+dri_crtc_notify(ScreenPtr pScreen)
+{
+    DRIScreenPrivPtr  pDRIPriv = DRI_SCREEN_PRIV(pScreen);
+    DRIClipNotifyAllDrawables(pScreen);
+    xf86_unwrap_crtc_notify(pScreen, pDRIPriv->xf86_crtc_notify);
+    xf86_crtc_notify(pScreen);
+    pDRIPriv->xf86_crtc_notify = xf86_wrap_crtc_notify(pScreen, dri_crtc_notify);
+}
 
 Bool
 DRIScreenInit(ScreenPtr pScreen, DRIInfoPtr pDRIInfo, int *pDRMFD)
@@ -307,7 +317,6 @@ DRIScreenInit(ScreenPtr pScreen, DRIInfoPtr pDRIInfo, int *pDRMFD)
     drm_context_t *       reserved;
     int                 reserved_count;
     int                 i;
-    Bool                xineramaInCore = FALSE;
     DRIEntPrivPtr       pDRIEntPriv;
     ScrnInfoPtr         pScrn = xf86Screens[pScreen->myNum];
     DRIContextFlags	flags    = 0;
@@ -320,20 +329,23 @@ DRIScreenInit(ScreenPtr pScreen, DRIInfoPtr pDRIInfo, int *pDRMFD)
 	return FALSE;
     }
 
+    if (!xf86VGAarbiterAllowDRI(pScreen)) {
+        DRIDrvMsg(pScreen->myNum, X_WARNING,
+                  "Direct rendering is not supported when VGA arb is necessary for the device\n");
+	return FALSE;
+    }
+
+#ifdef PANORAMIX
     /*
      * If Xinerama is on, don't allow DRI to initialise.  It won't be usable
      * anyway.
      */
-    if (xf86LoaderCheckSymbol("noPanoramiXExtension"))
-	xineramaInCore = TRUE;
-
-    if (xineramaInCore) {
 	if (!noPanoramiXExtension) {
 	    DRIDrvMsg(pScreen->myNum, X_WARNING,
 		"Direct rendering is not supported when Xinerama is enabled\n");
 	    return FALSE;
 	}
-    }
+#endif
 
     if (!DRIOpenDRMMaster(pScrn, pDRIInfo->SAREASize,
 			  pDRIInfo->busIdString,
@@ -342,14 +354,12 @@ DRIScreenInit(ScreenPtr pScreen, DRIInfoPtr pDRIInfo, int *pDRMFD)
 
     pDRIEntPriv = DRI_ENT_PRIV(pScrn);
 
-    DRIScreenPrivKey = &DRIScreenPrivKey;
     if (DRIGeneration != serverGeneration)
 	DRIGeneration = serverGeneration;
 
     pDRIPriv = (DRIScreenPrivPtr) xcalloc(1, sizeof(DRIScreenPrivRec));
     if (!pDRIPriv) {
 	dixSetPrivate(&pScreen->devPrivates, DRIScreenPrivKey, NULL);
-        DRIScreenPrivKey = NULL;
         return FALSE;
     }
 
@@ -604,6 +614,9 @@ DRIFinishScreenInit(ScreenPtr pScreen)
     pDRIPriv->DestroyWindow             = pScreen->DestroyWindow;
     pScreen->DestroyWindow              = DRIDestroyWindow;
 
+    pDRIPriv->xf86_crtc_notify = xf86_wrap_crtc_notify(pScreen,
+						       dri_crtc_notify);
+						       
     if (pDRIInfo->wrap.CopyWindow) {
 	pDRIPriv->wrap.CopyWindow       = pScreen->CopyWindow;
 	pScreen->CopyWindow             = pDRIInfo->wrap.CopyWindow;
@@ -657,6 +670,9 @@ DRICloseScreen(ScreenPtr pScreen)
 		pScreen->DestroyWindow          = pDRIPriv->DestroyWindow;
 		pDRIPriv->DestroyWindow         = NULL;
 	    }
+
+	    xf86_unwrap_crtc_notify(pScreen, pDRIPriv->xf86_crtc_notify);
+
 	    if (pDRIInfo->wrap.CopyWindow) {
 		pScreen->CopyWindow             = pDRIPriv->wrap.CopyWindow;
 		pDRIPriv->wrap.CopyWindow       = NULL;
@@ -670,6 +686,7 @@ DRICloseScreen(ScreenPtr pScreen)
 		pScrn->AdjustFrame              = pDRIPriv->wrap.AdjustFrame;
 		pDRIPriv->wrap.AdjustFrame      = NULL;
 	    }
+	    
 	    pDRIPriv->wrapped = FALSE;
 	}
 
@@ -742,7 +759,6 @@ DRICloseScreen(ScreenPtr pScreen)
 
 	xfree(pDRIPriv);
 	dixSetPrivate(&pScreen->devPrivates, DRIScreenPrivKey, NULL);
-	DRIScreenPrivKey = NULL;
     }
 }
 
@@ -1272,7 +1288,7 @@ DRICreateDrawable(ScreenPtr pScreen, ClientPtr client, DrawablePtr pDrawable,
 	    *hHWDrawable = pDRIDrawablePriv->hwDrawable;
 	}
     }
-    else { /* pixmap (or for GLX 1.3, a PBuffer) */
+    else if (pDrawable->type != DRAWABLE_PIXMAP) { /* PBuffer */
 	/* NOT_DONE */
 	return FALSE;
     }
@@ -1346,11 +1362,12 @@ Bool
 DRIDrawablePrivDelete(pointer pResource, XID id)
 {
     WindowPtr pWin;
+    int rc;
 
     id = (XID)pResource;
-    pWin = LookupIDByType(id, RT_WINDOW);
+    rc = dixLookupWindow(&pWin, id, serverClient, DixGetAttrAccess);
 
-    if (pWin) {
+    if (rc == Success) {
 	DRIDrawablePrivPtr pDRIDrwPriv = DRI_DRAWABLE_PRIV_FROM_WINDOW(pWin);
 
 	if (!pDRIDrwPriv)
@@ -1816,7 +1833,7 @@ DRISwapContext(int drmFD, void *oldctx, void *newctx)
 					  newContextStore);
 }
 
-void* 
+void*
 DRIGetContextStore(DRIContextPrivPtr context)
 {
     return((void *)context->pContextStore);
@@ -2300,12 +2317,12 @@ DRIAdjustFrame(int scrnIndex, int x, int y, int flags)
 	pScrn->frameY1 = pScrn->frameY0 + pDRIPriv->pSAREA->frame.height - 1;
 
 				/* Fix up cursor */
-	miPointerPosition(&px, &py);
+    miPointerGetPosition(inputInfo.pointer, &px, &py);
 	if (px < pScrn->frameX0) px = pScrn->frameX0;
 	if (px > pScrn->frameX1) px = pScrn->frameX1;
 	if (py < pScrn->frameY0) py = pScrn->frameY0;
 	if (py > pScrn->frameY1) py = pScrn->frameY1;
-	pScreen->SetCursorPosition(pScreen, px, py, TRUE);
+	pScreen->SetCursorPosition(inputInfo.pointer, pScreen, px, py, TRUE);
 	return;
     }
 
@@ -2436,7 +2453,7 @@ static void drmSIGIOHandler(int interrupt, void *closure)
 #if 0
 	    fprintf(stderr, "Trying %d\n", entry->fd);
 #endif
-	    if ((count = read(entry->fd, buf, sizeof(buf))) > 0) {
+	    if ((count = read(entry->fd, buf, sizeof(buf) - 1)) > 0) {
 		buf[count] = '\0';
 #if 0
 		fprintf(stderr, "Got %s\n", buf);

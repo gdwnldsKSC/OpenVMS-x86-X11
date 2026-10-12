@@ -1,4 +1,7 @@
 .\" $Xorg: $
+.\" missing symbols are:
+.\"     All of the 0xFExx block
+.\"     The Braille keysyms in 0xFFFx
 \&
 .sp 1
 .ps 11

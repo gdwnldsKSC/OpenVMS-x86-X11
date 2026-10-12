@@ -47,20 +47,27 @@
 #include "config.h"
 #endif
 
+/* Jong 09/27/2007; added for PACKAGE_VERSION_MAJOR,... */
+#define  PACKAGE_VERSION_MAJOR   1
+#define  PACKAGE_VERSION_MINOR   1
+#define  PACKAGE_VERSION_PATCHLEVEL   0
+
 #include "fb.h"
 #include "mibank.h"
 #include "micmap.h"
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSproc.h"
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
 #include "xf86Resources.h"
+#include "xf86RAC.h"
+#endif
 #include "dixstruct.h"
-#include "xf86Version.h"
+#include "xorgVersion.h"
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
 #include "xf86cmap.h"
 #include "vgaHW.h"
-#include "xf86RAC.h"
 #include "shadowfb.h"
 #include "vbe.h"
 
@@ -80,8 +87,13 @@
 
 #include "globals.h"
 
+#ifdef HAVE_XEXTPROTO_71
+#include <X11/extensions/dpmsconst.h>
+#else
 #define DPMS_SERVER
 #include <X11/extensions/dpms.h>
+#endif
+
 
 #if defined(XvExtension)
 #include "xf86xv.h"
@@ -112,6 +124,10 @@ void Volari_EnableAccelerator(ScrnInfoPtr pScrn);
 #ifdef XGIDUALHEAD
 static int XGIEntityIndex = -1;
 #endif
+
+/* Jong 09/19/2007; support modeline */
+int g_CountOfUserDefinedModes=0;
+xf86MonPtr  g_pMonitorDVI=NULL; /* Jong 12/04/2007; used for filtering of CRT1 modes */
 
 /*
  * This is intentionally screen-independent.  It indicates the binding
@@ -150,7 +166,8 @@ struct fb_fix_screeninfo
 static const struct pci_id_match xgi_device_match[] = {
     XGI_DEVICE_MATCH(PCI_CHIP_XGIXG40, 0),
     XGI_DEVICE_MATCH(PCI_CHIP_XGIXG20, 1),
-
+    XGI_DEVICE_MATCH(PCI_CHIP_XGIXG21, 2),
+    XGI_DEVICE_MATCH(PCI_CHIP_XGIXG27, 3),
     { 0, 0, 0 },
 };
 #endif
@@ -185,13 +202,17 @@ DriverRec XGI = {
 
 static SymTabRec XGIChipsets[] = {
     {PCI_CHIP_XGIXG40, "Volari V8_V5_V3XT"},
-    {PCI_CHIP_XGIXG20, "Volari Z7"},
+    {PCI_CHIP_XGIXG20, "Volari Z7_Z9_Z9s"},
+    {PCI_CHIP_XGIXG21, "Volari Z9_Z9s"},
+    {PCI_CHIP_XGIXG27, "Volari Z11"},
     {-1, NULL}
 };
 
 static PciChipsets XGIPciChipsets[] = {
     {PCI_CHIP_XGIXG40, PCI_CHIP_XGIXG40, RES_SHARED_VGA},
     {PCI_CHIP_XGIXG20, PCI_CHIP_XGIXG20, RES_SHARED_VGA},
+    {PCI_CHIP_XGIXG21, PCI_CHIP_XGIXG21, RES_SHARED_VGA },
+    {PCI_CHIP_XGIXG27, PCI_CHIP_XGIXG27, RES_SHARED_VGA },
     {-1, -1, RES_UNDEFINED}
 };
 
@@ -440,6 +461,11 @@ static void xgiSaveUnlockExtRegisterLock(XGIPtr pXGI, unsigned char *reg1,
 static void xgiRestoreExtRegisterLock(XGIPtr pXGI, unsigned char reg1,
                                       unsigned char reg2);
 
+/* Jong 12/05/2007; check mode with monitor DDC */
+static bool XGICheckModeByDDC(DisplayModePtr pMode, xf86MonPtr pMonitorDDC);
+
+/* Jong 12/05/2007; filter mode list by monitor DDC */
+static void XGIFilterModeByDDC(DisplayModePtr pModeList, xf86MonPtr pMonitorDDC);
 
 static pointer
 xgiSetup(pointer module, pointer opts, int *errmaj, int *errmin)
@@ -1409,6 +1435,10 @@ XGIInternalDDC(ScrnInfoPtr pScrn, int crtno)
     xf86MonPtr pMonitor = NULL;
     xf86Int10InfoPtr pInt = NULL;       /* Our int10 */
 
+	/*yilin 03/10/2008: set the monitor default size to 310mm x 240mm to fix KDE font too small problem*/
+	pScrn->monitor->widthmm = 310;
+	pScrn->monitor->heightmm = 240;
+
     static char *crtno_means_str[] = {
         "CRT1", "DVI", "CRT2"
     };
@@ -1478,7 +1508,21 @@ XGIInternalDDC(ScrnInfoPtr pScrn, int crtno)
 #endif /* DEBUG3 */
 
             xf86LoaderReqSymLists(ddcSymbols, NULL);
-            pMonitor = xf86InterpretEDID(pScrn->scrnIndex, buffer);
+
+	    /* Jong 09/04/2007; Alan fixed abnormal EDID data */
+	    /* pMonitor = xf86InterpretEDID(pScrn->scrnIndex, buffer) ; */
+            if ( (buffer[0]==0) && (buffer[7]==0) )
+            {
+                for (i=1;i<7;i++)
+                {
+                    if (buffer[i]!=0xFF)
+                        break;
+                }
+                if (i==7)
+                {
+                    pMonitor = xf86InterpretEDID(pScrn->scrnIndex, buffer);
+                }
+            }
 
             if (pMonitor == NULL) {
                 xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
@@ -1739,12 +1783,15 @@ XGIGetMonitorRangeByDDC(MonitorRangePtr range, xf86MonPtr pMonitor)
     PDEBUG5(ErrorF
             ("establish timing t1 = %02x t2=%02x\n", pMonitor->timings1.t1,
              pMonitor->timings1.t2));
-    for (i = 0, j = 0; i < 8; i++, j++) {
+
+    for (i = 0, j = 0; i < 8; i++, j++) 
+	{
         if (establish_timing[j].width == -1) {
             continue;
         }
 
-        if (pMonitor->timings1.t1 & (1 << i)) {
+        if (pMonitor->timings1.t1 & (1 << i)) 
+		{
             PDEBUG5(ErrorF("Support %dx%d@%4.1fHz Hseq = %8.3fKHz\n",
                            establish_timing[j].width,
                            establish_timing[j].height,
@@ -1768,6 +1815,7 @@ XGIGetMonitorRangeByDDC(MonitorRangePtr range, xf86MonPtr pMonitor)
             }
         }
     }
+
     PDEBUG5(ErrorF
             ("check establish timing t1:range ( %8.3f %8.3f %8.3f %8.3f )\n",
              range->loH, range->loV, range->hiH, range->hiV));
@@ -1985,6 +2033,8 @@ XGIDDCPreInit(ScrnInfoPtr pScrn)
                     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                                "Could not retrieve DVI DDC data\n");
                 }
+				else /* Jong 12/04/2007; used for filtering of CRT1 modes */
+					g_pMonitorDVI=pMonitorDVI;
 
                 if ((pMonitor == NULL) && (pMonitorDVI != NULL)) {
                     pMonitor = pMonitorDVI;
@@ -2215,6 +2265,28 @@ XGIDumpMonPtr(MonPtr pMonitor)
 #endif /* DEBUG5 */
 }
 
+/* Jong 09/19/2007; support modeline of custom modes */
+int	ModifyTypeOfSupportMode(DisplayModePtr availModes)
+{
+	int CountOfModifiedModes=0;
+	DisplayModePtr p=availModes;
+
+	while(p)
+	{
+		/* if( (p->HDisplay == 1440) && (p->VDisplay == 900)) */
+		if( p->type == 0) /* externel support modeline */
+		{
+			p->type = M_T_USERDEF;
+			CountOfModifiedModes++;
+		}
+
+		p=p->next;
+	}
+
+	return(CountOfModifiedModes);
+}
+
+
 /* Mandatory */
 static Bool
 XGIPreInit(ScrnInfoPtr pScrn, int flags)
@@ -2383,12 +2455,14 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 #endif /* !defined(__alpha__) */
     }
 
+#ifndef XSERVER_LIBPCIACCESS
     xf86SetOperatingState(resVgaMem, pXGI->pEnt->index, ResUnusedOpr);
 
     /* Operations for which memory access is required */
     pScrn->racMemFlags = RAC_FB | RAC_COLORMAP | RAC_CURSOR | RAC_VIEWPORT;
     /* Operations for which I/O access is required */
     pScrn->racIoFlags = RAC_COLORMAP | RAC_CURSOR | RAC_VIEWPORT;
+#endif
 
     /* The ramdac module should be loaded here when needed */
     if (!xf86LoadSubModule(pScrn, "ramdac")) {
@@ -2407,6 +2481,9 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Set pScrn->monitor */
     pScrn->monitor = pScrn->confScreen->monitor;
+
+    /* Jong 09/19/2007; modify type of support modes to M_T_USERDEF */
+    g_CountOfUserDefinedModes=ModifyTypeOfSupportMode(pScrn->monitor->Modes);
 
     /*
      * Set the Chipset and ChipRev, allowing config file entries to
@@ -2485,10 +2562,18 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
     switch (pXGI->Chipset) {
     case PCI_CHIP_XGIXG40:
     case PCI_CHIP_XGIXG20:
+    case PCI_CHIP_XGIXG21:
         pXGI->xgi_HwDevExt.jChipType = XG40;
         pXGI->myCR63 = 0x63;
         pXGI->mmioSize = 64;
         break;
+
+    case PCI_CHIP_XGIXG27:
+    	pXGI->xgi_HwDevExt.jChipType = XG27;
+    	pXGI->myCR63 = 0x63;
+    	pXGI->mmioSize = 64;
+        break;
+
     default:
         /* This driver currently only supports V3XE, V3XT, V5, V8 (all of
          * which are XG40 chips) and Z7 (which is XG20).
@@ -2503,8 +2588,9 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 /* load frame_buffer */
 
     FbDevExist = FALSE;
-    if (pXGI->Chipset != PCI_CHIP_XGIXG20) {
-        if ((fd = open("/dev/fb", 'r')) != -1) {
+   if((pXGI->Chipset != PCI_CHIP_XGIXG20)&&(pXGI->Chipset != PCI_CHIP_XGIXG21)&&( pXGI->Chipset != PCI_CHIP_XGIXG27 ))
+   {
+        if ((fd = open("/dev/fb", O_RDONLY)) != -1) {
             PDEBUG(ErrorF("--- open /dev/fb....   \n"));
             ioctl(fd, FBIOGET_FSCREENINFO, &fix);
             if (fix.accel == FB_ACCEL_XGI_GLAMOUR) {
@@ -2848,6 +2934,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
                (unsigned long) pXGI->IOAddress, pXGI->mmioSize);
     pXGI->xgi_HwDevExt.bIntegratedMMEnabled = TRUE;
 
+#ifndef XSERVER_LIBPCIACCESS
     /* Register the PCI-assigned resources. */
     if (xf86RegisterResources(pXGI->pEnt->index, NULL, ResExclusive)) {
         XGIErrorLog(pScrn,
@@ -2862,6 +2949,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
         XGIFreeRec(pScrn);
         return FALSE;
     }
+#endif
 
     from = X_PROBED;
     if (pXGI->pEnt->device->videoRam != 0) {
@@ -3322,6 +3410,10 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
     pXGI->CheckForCRT2 = FALSE;
 #endif
     XGIDumpMonPtr(pScrn->monitor);
+
+	/* Jong 12/05/2007; filter support modes of CRT1 by CRT2 DDC */
+	/* XGIFilterModeByDDC(pScrn->monitor->Modes, g_pMonitorDVI); */ /* Do it in XGIValidMode() */
+
     i = xf86ValidateModes(pScrn, pScrn->monitor->Modes, pScrn->display->modes, clockRanges, NULL, 256, 2048,    /* min / max pitch */
                           pScrn->bitsPerPixel * 8, 128, 2048,   /* min / max height */
                           pScrn->display->virtualX,
@@ -3579,6 +3671,13 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
     else
 #endif
         xf86SetDpi(pScrn, 0, 0);
+
+	/*yilin@20080407 fix the font too small problem at low resolution*/
+	if((pScrn->xDpi < 65)||(pScrn->yDpi < 65)) 
+	{
+		  pScrn->xDpi = 75;
+		  pScrn->yDpi = 75;
+	}
 
     /* Load fb module */
     switch (pScrn->bitsPerPixel) {
@@ -4009,8 +4108,8 @@ XGIModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     }
 
 
-    if (pXGI->Chipset == PCI_CHIP_XGIXG40 ||
-        pXGI->Chipset == PCI_CHIP_XGIXG20) {
+	if((pXGI->Chipset == PCI_CHIP_XGIXG40)||(pXGI->Chipset == PCI_CHIP_XGIXG20)||(pXGI->Chipset == PCI_CHIP_XGIXG21)||(pXGI->Chipset == PCI_CHIP_XGIXG27))
+	   {
         /* PDEBUG(XGIDumpRegs(pScrn)) ; */
         PDEBUG(ErrorF(" *** PreSetMode(). \n"));
         XGIPreSetMode(pScrn, mode, XGI_MODE_SIMU);
@@ -4073,6 +4172,12 @@ XGIRestore(ScrnInfoPtr pScrn)
 
     (*pXGI->XGIRestore) (pScrn, xgiReg);
 
+	/* Jong 11/14/2007; resolve no display of DVI after leaving VT */
+	/* But there's no int10 for PPC... */
+	/* XGIRestorePrevMode(pScrn) ; */
+	/* works but mode is not exactly right because there're more than one mode 0x03 in table XGI330_SModeIDTable[] */
+	XGISetModeNew( &pXGI->xgi_HwDevExt, pXGI->XGI_Pr, 0x03); 
+
     vgaHWProtect(pScrn, TRUE);
     if (pXGI->Primary) {
         vgaHWRestore(pScrn, vgaReg, VGA_SR_ALL);
@@ -4127,6 +4232,19 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     ErrorF("XGIScreenInit\n");
     pScrn = xf86Screens[pScreen->myNum];
+
+    /* Jong 08/30/2007; no virtual screen for all cases */
+    /* Jong 08/22/2007; support modeline */
+    /* if(g_CountOfUserDefinedModes > 0) */
+    {
+    	pScrn->virtualX=pScrn->currentMode->HDisplay;
+	pScrn->virtualY=pScrn->currentMode->VDisplay;
+	pScrn->displayWidth=pScrn->currentMode->HDisplay;
+	pScrn->frameX0=0;
+	pScrn->frameY0=0;
+	pScrn->frameX1=pScrn->currentMode->HDisplay-1;
+	pScrn->frameY1=pScrn->currentMode->VDisplay-1;
+    }
 
     hwp = VGAHWPTR(pScrn);
 
@@ -4286,7 +4404,7 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
             xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                        "DRI not supported in Dual Head mode\n");
         }
-        else if (pXGI->Chipset == PCI_CHIP_XGIXG20) {
+        else if ((pXGI->Chipset == PCI_CHIP_XGIXG20)||(pXGI->Chipset == PCI_CHIP_XGIXG21)||(pXGI->Chipset == PCI_CHIP_XGIXG27)) {
             PDEBUG(ErrorF("--- DRI not supported   \n"));
             xf86DrvMsg(pScrn->scrnIndex, X_NOT_IMPLEMENTED,
                        "DRI not supported on this chipset\n");
@@ -4475,7 +4593,9 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         pXGI->XGI_SD_Flags &= ~XGI_SD_SUPPORTXVGAMMA1;
     }
     PDEBUG(ErrorF("XGIScreenInit() End.  \n"));
-    XGIDumpPalette(pScrn);
+    PDEBUG(XGIDumpPalette(pScrn)); 
+	PDEBUG(XGIDumpRegs(pScrn));
+
     return TRUE;
 }
 
@@ -4795,6 +4915,9 @@ XGIAdjustFrame(int scrnIndex, int x, int y, int flags)
 
     switch (pXGI->Chipset) {
     case PCI_CHIP_XGIXG40:
+    case PCI_CHIP_XGIXG20:
+    case PCI_CHIP_XGIXG21:
+    case PCI_CHIP_XGIXG27:
     default:
 
         ucTemp = base & 0xFF;
@@ -5026,6 +5149,11 @@ XGIValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
         (int) ((float) (Clock * 1000) /
                (float) (mode->VTotal * mode->HTotal) + 0.5);
 
+    /* Jong 08/21/2007; support modeline */
+    /* We skip mode checking here and need improvement further */
+    if(mode->type == M_T_USERDEF)
+	return(MODE_OK); 
+
     PDEBUG5(ErrorF("XGIValidMode()."));
     PDEBUG5(ErrorF
             ("CLK=%5.3fMhz %dx%d@%d ", (float) Clock / 1000, HDisplay,
@@ -5055,7 +5183,7 @@ XGIValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
         }
     }
 
-    if (pXGI->Chipset == PCI_CHIP_XGIXG20) {
+    if ((pXGI->Chipset == PCI_CHIP_XGIXG20) ||(pXGI->Chipset == PCI_CHIP_XGIXG21) ||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) {
         XgiMode = XG20_Mode;
     }
     else {
@@ -5075,6 +5203,13 @@ XGIValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
             i++;
     }
     PDEBUG5(ErrorF("Mode OK\n"));
+
+	/* Jong 12/05/2007; filter mode of CRT1 with CRT2 DDC for XG21 */
+	if(g_pMonitorDVI)
+	{
+		if(XGICheckModeByDDC(mode, g_pMonitorDVI) == FALSE)
+            return (MODE_NOMODE);
+	}
 
     return (MODE_OK);
 }
@@ -5592,7 +5727,7 @@ XGICalcVRate(DisplayModePtr mode)
 unsigned char
 XGISearchCRT1Rate(ScrnInfoPtr pScrn, DisplayModePtr mode)
 {
-/*   XGIPtr         pXGI = XGIPTR(pScrn);  */
+    XGIPtr         pXGI = XGIPTR(pScrn);  
     int i = 0;
     int irefresh;
     unsigned short xres = mode->HDisplay;
@@ -5651,6 +5786,128 @@ XGISearchCRT1Rate(ScrnInfoPtr pScrn, DisplayModePtr mode)
         }
         i++;
     }
+
+	/* Jong 10/19/2007; merge code */
+	/* Adjust to match table of VBIOS */
+	switch(pXGI->Chipset)
+	{
+		case PCI_CHIP_XGIXG20: 
+		case PCI_CHIP_XGIXG21: 
+                if((xres == 640) && (yres == 480))
+                {
+                  if (xgix_vrate[index].refresh>85)
+                  {
+                    index = 4;
+                  }
+                }    
+
+                if((xres == 800) && (yres == 600))
+                {
+                  if (xgix_vrate[index].refresh>85)
+                  {
+                    index = 5;
+                  }
+
+                  if (index>0)
+                  {
+                    index --;
+                  }       
+                }
+
+                if((xres == 1024) && (yres == 768))
+                {
+                  if (xgix_vrate[index].refresh>85)
+                  {
+                    index = 5;
+                  }
+
+                  if (index>0)
+                  {
+                    index --;
+                  }
+                }
+
+                if((xres == 1280) && (yres == 1024))
+                {
+                  if (index>0)
+                  {
+                    index --;
+                  }
+                }
+
+                if((xres == 1600) && (yres == 1200))
+                {
+                  if (xgix_vrate[index].refresh>85)
+                  {
+                    index = 5;
+                  }
+                }
+
+                if((xres >= 1920) && (yres >= 1440))
+                {
+                  index = 0;
+                }
+
+                break;
+
+		case PCI_CHIP_XGIXG27:
+
+               if((xres == 640) && (yres == 480))
+                {
+                  if (xgix_vrate[index].refresh>85)
+                  {
+                    index = 4;
+                  }
+                }    
+
+                if((xres == 800) && (yres == 600))
+                {
+                  if (xgix_vrate[index].refresh>85)
+                  {
+                    index = 5;
+                  }
+
+                  if (index>0)
+                  {
+                    index --;
+                  }             
+                }
+
+                if((xres == 1024) && (yres == 768))
+                {
+                  if (xgix_vrate[index].refresh>85)
+                  {
+                    index = 5;
+                  }
+
+                  if (index>0)
+                  {
+                    index --;
+                  }
+                }
+
+                if((xres == 1280) && (yres == 1024))
+                {
+                  if (index>0)
+                  {
+                    index --;
+                  }
+                }
+
+                if((xres == 1600) && (yres == 1200))
+                {
+                  if (xgix_vrate[index].refresh>85)
+                  {
+                    index = 5;
+                  }
+                }
+
+                break;
+
+		default:
+            break;
+	}
+
     if (index > 0)
         return index;
     else {
@@ -5751,6 +6008,179 @@ xgiRestoreExtRegisterLock(XGIPtr pXGI, unsigned char reg1, unsigned char reg2)
 #endif
 }
 
+/* Jong 12/03/2007; */
+/*
+void XGICheckModeForMonitor(ScrnInfoPtr pScrn, )
+{
+	DisplayModePtr pCRT1Modes=pScrn->monitor->Modes;
+
+    if ((p = first = pScrn->monitor->Modes)) {
+        do {
+			xf86CheckModeForMonitor(p, 
+            n = p->next;
+            p = n;
+        } while (p != NULL && p != first);
+    }
+
+    xf86PruneDriverModes(pXGI->CRT2pScrn);
+}
+*/
+
+/* Jong 12/05/2007; filter mode list by monitor DDC */
+static void XGIFilterModeByDDC(DisplayModePtr pModeList, xf86MonPtr pMonitorDDC)
+{
+    DisplayModePtr first, p;
+
+    if ((p = first = pModeList)) 
+	{
+        do 
+		{
+			if(XGICheckModeByDDC(p, pMonitorDDC) == FALSE)
+				xf86DeleteMode(&pModeList, pModeList);
+
+            p = p->next;
+        } while (p != NULL && p != first);
+    }
+}
+
+/* Jong 12/05/2007; filter mode list by monitor DDC */
+static bool XGICheckModeByDDC(DisplayModePtr pMode, xf86MonPtr pMonitorDDC)
+{
+    int i, j;
+    float VF, HF;
+    struct detailed_timings *pd_timings;
+    struct monitor_ranges *pranges;
+    struct std_timings *pstd_t;
+
+	int VRefresh=pMode->VRefresh;
+
+    if ((pMode == NULL) || (pMonitorDDC == NULL)) {
+        return(FALSE);                 /* ignore */
+    }
+
+	if( pMode->VRefresh == 0)
+		VRefresh = (int)((float)(pMode->Clock*1000)/(float)(pMode->VTotal*pMode->HTotal)+0.5);
+
+
+    for (i = 0, j = 0; i < 8; i++, j++) 
+	{
+        if (establish_timing[j].width == -1) 
+		{
+            continue;
+        }
+
+        if (pMonitorDDC->timings1.t1 & (1 << i)) 
+		{
+			if( (establish_timing[j].width == pMode->HDisplay) && 
+				(establish_timing[j].height == pMode->VDisplay) && 
+				(establish_timing[j].VRefresh == VRefresh) )
+				return(TRUE);
+        }
+    }
+
+    for (i = 0; i < 8; i++, j++) 
+	{
+        if (establish_timing[j].width == -1) 
+		{
+            continue;
+        }
+
+        if (pMonitorDDC->timings1.t2 & (1 << i)) 
+		{
+			if( (establish_timing[j].width == pMode->HDisplay) && 
+				(establish_timing[j].height == pMode->VDisplay) && 
+				(establish_timing[j].VRefresh == VRefresh) )
+				return(TRUE);
+        }
+    }
+
+    for (i = 0; i < 8; i++) 
+	{
+        if ((pMode->HDisplay == pMonitorDDC->timings2[i].hsize) &&
+            (pMode->VDisplay == pMonitorDDC->timings2[i].vsize) &&
+            (VRefresh == pMonitorDDC->timings2[i].refresh)) 
+			return(TRUE);
+    }
+
+/* Jong 12/05/2007; Don't know how to do? */
+#if 0
+    for (i = 0; i < 4; i++) 
+	{
+        switch (pMonitorDDC->det_mon[i].type) 
+		{
+			case DS_RANGES:
+				pranges = &(pMonitorDDC->det_mon[i].section.ranges);
+				PDEBUG5(ErrorF
+						("min_v = %d max_v = %d min_h = %d max_h = %d max_clock = %d\n",
+						 pranges->min_v, pranges->max_v, pranges->min_h,
+						 pranges->max_h, pranges->max_clock));
+
+				if (range->loH > pranges->min_h)
+					range->loH = pranges->min_h;
+				if (range->loV > pranges->min_v)
+					range->loV = pranges->min_v;
+				if (range->hiH < pranges->max_h)
+					range->hiH = pranges->max_h;
+				if (range->hiV < pranges->max_v)
+					range->hiV = pranges->max_v;
+				PDEBUG5(ErrorF
+						("range(%8.3f %8.3f %8.3f %8.3f)\n", range->loH,
+						 range->loV, range->hiH, range->hiV));
+				break;
+
+			case DS_STD_TIMINGS:
+				pstd_t = pMonitorDDC->det_mon[i].section.std_t;
+				for (j = 0; j < 5; j++) {
+					int k;
+					PDEBUG5(ErrorF
+							("std_t[%d] hsize = %d vsize = %d refresh = %d id = %d\n",
+							 j, pstd_t[j].hsize, pstd_t[j].vsize,
+							 pstd_t[j].refresh, pstd_t[j].id));
+					for (k = 0; StdTiming[k].width != -1; k++) {
+						if ((StdTiming[k].width == pstd_t[j].hsize) &&
+							(StdTiming[k].height == pstd_t[j].vsize) &&
+							(StdTiming[k].VRefresh == pstd_t[j].refresh)) {
+							if (range->loH > StdTiming[k].HSync)
+								range->loH = StdTiming[k].HSync;
+							if (range->hiH < StdTiming[k].HSync)
+								range->hiH = StdTiming[k].HSync;
+							if (range->loV > StdTiming[k].VRefresh)
+								range->loV = StdTiming[k].VRefresh;
+							if (range->hiV < StdTiming[k].VRefresh)
+								range->hiV = StdTiming[k].VRefresh;
+							break;
+						}
+
+					}
+				}
+				break;
+
+			case DT:
+
+				pd_timings = &pMonitorDDC->det_mon[i].section.d_timings;
+
+				HF = pd_timings->clock / (pd_timings->h_active +
+										  pd_timings->h_blanking);
+				VF = HF / (pd_timings->v_active + pd_timings->v_blanking);
+				HF /= 1000;         /* into KHz Domain */
+				if (range->loH > HF)
+					range->loH = HF;
+				if (range->hiH < HF)
+					range->hiH = HF;
+				if (range->loV > VF)
+					range->loV = VF;
+				if (range->hiV < VF)
+					range->hiV = VF;
+				PDEBUG(ErrorF
+					   ("Detailing Timing: HF = %f VF = %f range (%8.3f %8.3f %8.3f %8.3f)\n",
+						HF, VF, range->loH, range->loV, range->hiH, range->hiV));
+				break;
+		}
+    }
+#endif
+
+	return(FALSE);
+}
 
 #ifdef DEBUG
 void
@@ -5821,7 +6251,7 @@ XGIDumpGR(ScrnInfoPtr pScrn)
     ErrorF("\n");
 }
 
-
+#if 0
 void
 XGIDumpPart0(ScrnInfoPtr pScrn)
 {
@@ -5957,6 +6387,7 @@ XGIDumpPart4(ScrnInfoPtr pScrn)
         ErrorF("\n");
     }
 }
+#endif
 
 void
 XGIDumpMMIO(ScrnInfoPtr pScrn)
@@ -5993,6 +6424,8 @@ XGIDumpRegs(ScrnInfoPtr pScrn)
 //      XGIDumpGR(pScrn);
 //      XGIDumpPalette(pScrn);
     XGIDumpMMIO(pScrn);
+
+	/*
     if (pXGI->Chipset != PCI_CHIP_XGIXG20) {
         XGIDumpPart0(pScrn);
         XGIDumpPart05(pScrn);
@@ -6000,7 +6433,7 @@ XGIDumpRegs(ScrnInfoPtr pScrn)
         XGIDumpPart2(pScrn);
         XGIDumpPart3(pScrn);
         XGIDumpPart4(pScrn);
-    }
+    } */
 
 #endif /* DEBUG */
 }

@@ -52,7 +52,6 @@
 #include "ephyrlog.h"
 #include "hostx.h"
 
-#ifdef XEPHYR_DRI
 enum VisualConfRequestType {
     EPHYR_GET_FB_CONFIG,
     EPHYR_VENDOR_PRIV_GET_FB_CONFIG_SGIX,
@@ -429,7 +428,7 @@ ephyrHostGLXSendClientInfo (int32_t a_major, int32_t a_minor,
     req->minor = a_minor;
 
     size = strlen (a_extension_list) + 1;
-    req->length += (size + 3) >> 2;
+    req->length += bytes_to_int32(size);
     req->numbytes = size;
     Data (dpy, a_extension_list, size);
 
@@ -698,6 +697,3 @@ out:
     EPHYR_LOG ("leave\n") ;
     return is_ok ;
 }
-
-#endif /*XEPHYR_DRI*/
-

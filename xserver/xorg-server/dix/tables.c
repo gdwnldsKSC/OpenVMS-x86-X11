@@ -50,8 +50,6 @@ SOFTWARE.
 #endif
 
 #include <X11/X.h>
-#define NEED_EVENTS
-#define NEED_REPLIES
 #include <X11/Xproto.h>
 #include "windowstr.h"
 #include "extnsionst.h"
@@ -70,7 +68,7 @@ int (* InitialVector[3]) (
     ProcEstablishConnection
 };
 
-_X_EXPORT int (* ProcVector[256]) (
+int (* ProcVector[256]) (
 	ClientPtr /* client */
     ) =
 {
@@ -338,7 +336,7 @@ int (* SwappedProcVector[256]) (
     SProcNoOperation
 };
 
-_X_EXPORT EventSwapPtr EventSwapVector[128] =
+EventSwapPtr EventSwapVector[128] =
 {
     (EventSwapPtr)SErrorEvent,
     NotImplemented,
@@ -378,7 +376,7 @@ _X_EXPORT EventSwapPtr EventSwapVector[128] =
 };
 
 
-_X_EXPORT ReplySwapPtr ReplySwapVector[256] =
+ReplySwapPtr ReplySwapVector[256] =
 {
     ReplyNotSwappd,
     ReplyNotSwappd,

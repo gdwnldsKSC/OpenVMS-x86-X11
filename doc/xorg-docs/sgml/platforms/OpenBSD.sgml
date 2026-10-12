@@ -20,7 +20,7 @@
 <Title>What and Where is X11R7&relvers;?</Title>
 
 <Para>
-The X.Org Foundation X11R7&relvers; is an Open Source version of 
+The X.Org Foundation X11R&relvers; is an Open Source version of
 the X Window System that supports
 several UNIX(R) and UNIX-like operating systems (such as Linux, the BSDs
 and Solaris x86) on Intel and other platforms.
@@ -28,13 +28,13 @@ and Solaris x86) on Intel and other platforms.
 
 <Para>
 See the <ULink
-URL="COPYRIGHT.html"
+URL="../LICENSE.html"
 >Copyright Notice</ULink
 >.
 </Para>
 
 <Para>
-The sources for X11R7&relvers; are available from 
+The sources for X11R&relvers; are available from
 <ULink
 URL="http://wiki.x.org"
 >http://wiki.x.org</ULink
@@ -42,7 +42,7 @@ URL="http://wiki.x.org"
 </Para>
 
 <Para>
-X11R7&relvers; builds on most architectures supported by OpenBSD. See section
+X11R&relvers; builds on most architectures supported by OpenBSD. See section
 <XRef LinkEnd="otherarch"> for details.
 </Para>
 
@@ -55,7 +55,7 @@ X11R7&relvers; builds on most architectures supported by OpenBSD. See section
 Use the X.Org Bugzilla at <ULink
 URL="http://bugs.freedesktop.org"
 >http://bugs.freedesktop.org</ULink
-> 
+>
 to submit comments or suggestions about this file, using the xorg product.
 </Para>
 
@@ -69,7 +69,7 @@ See the <ULink
 URL="RELNOTES.html"
 >Release Notes</ULink
 > for
-non-OS dependent new features in X11R7&relvers;.
+non-OS dependent new features in X11R&relvers;.
 </Para>
 
 <Para>
@@ -118,7 +118,7 @@ Server support for OpenBSD/amd64.
 
 <Para>
 The <Literal remap="tt">/etc/X11/xorg.conf</Literal> file tells the X server what kind of
-monitor, 
+monitor,
 video card and mouse you have.  You <Emphasis>must</Emphasis> create it to tell the
 server what specific hardware you have.
 </Para>
@@ -168,15 +168,15 @@ URL="xorg.conf.5.html"
 
 <Para>
 Once you've set up a xorg.conf file, you can fine tune the video
-modes with the <Literal remap="tt">xvidtune</Literal> utility. 
+modes with the <Literal remap="tt">xvidtune</Literal> utility.
 </Para>
 
 <Sect2>
 <Title>About mouse configuration</Title>
 
 <Para>
-X11R7&relvers; has support for the mouse driver included in
-the new <Emphasis remap="bf">wscons</Emphasis> console driver. 
+X11R&relvers; has support for the mouse driver included in
+the new <Emphasis remap="bf">wscons</Emphasis> console driver.
 Specify ``<Literal remap="tt">wsmouse</Literal>'' as the protocol and
 ``<Literal remap="tt">/dev/wsmouse</Literal>'' as the  device in <Literal remap="tt">/etc/X11/xorg.conf</Literal>
 with a PS/2 or USB mouse.
@@ -212,7 +212,7 @@ You can start xdm automatically on bootup by adding the line:
 xdm_flags=""            # for normal use: xdm_flags=""
 </Screen>
 
-in <Literal remap="tt">/etc/rc.conf.local</Literal>. 
+in <Literal remap="tt">/etc/rc.conf.local</Literal>.
 </Para>
 
 </Sect2>
@@ -248,7 +248,7 @@ OpenBSD's GENERIC kernels have all support for running X enabled.
 <Title>Console drivers</Title>
 
 <Para>
-The server supports wscons, the standard OpenBSD/i386 console driver. 
+The server supports wscons, the standard OpenBSD/i386 console driver.
 </Para>
 
 </Sect2>
@@ -273,7 +273,7 @@ I/O ports of the video boards.
 To enable the aperture driver, once included in the kernel, set
 
 <Screen>
-machdep.allowaperture=2     
+machdep.allowaperture=2
 </Screen>
 
 in <Literal remap="tt">/etc/sysctl.conf</Literal>.  See the
@@ -281,12 +281,12 @@ in <Literal remap="tt">/etc/sysctl.conf</Literal>.  See the
 URL="http://www.openbsd.org/cgi-bin/man.cgi?query=xf86&#38;apropos=0&#38;sektion=4&#38;manpath=OpenBSD+Current&#38;arch=i386&#38;format=html"
 >xf86(4)</ULink
 >
-manual page for details. 
+manual page for details.
 </Para>
 
 <Para>
 Another (less recommended) way to enable linear memory and I/O ports
-access is to disable the kernel security feature by 
+access is to disable the kernel security feature by
 initializing <Literal remap="tt">securelevel</Literal> to -1 in <Literal remap="tt">/etc/rc.securelevel</Literal>.
 </Para>
 
@@ -316,14 +316,11 @@ extension.
 </Sect1>
 
 <Sect1>
-<Title>Rebuilding the X Distribution
-You should configure the distribution by editing
-<Literal remap="tt">xc/config/cf/host.def</Literal>  before compiling.  To compile the
-sources, invoke ``<Literal remap="tt">make World</Literal>'' in the xc directory.</Title>
+<Title>Rebuilding the X Distribution</Title>
 
 <Para>
- 
-Note that OpenBSD project now has its own source tree, 
+
+Note that OpenBSD project now has its own source tree,
 with some local modifications. You may want
 to start with this tree to rebuild from sources.  The OpenBSD XF4
 source tree is available by anoncvs from all OpenBSD anoncvs
@@ -338,10 +335,10 @@ URL="http://www.openbsd.org/anoncvs.html"
 </Para>
 
 <Para>
-X11R7&relvers; compiles on most OpenBSD architectures. The X.Org
+X11R&relvers; compiles on most OpenBSD architectures. The X.Org
 X server builds and run on the following systems. On other
 architectures supported by OpenBSD, only client side libraries and
-applications are supported.  
+applications are supported.
 </Para>
 
 <Sect2>
@@ -349,7 +346,7 @@ applications are supported.
 
 <Para>
 The X server is known to work on some VGA cards in alpha
-machines that support BWX I/O, with OpenBSD 3.2 and higher. 
+machines that support BWX I/O, with OpenBSD 3.2 and higher.
 </Para>
 
 <Para>
@@ -359,7 +356,7 @@ The following cards have been successfully tested for now:
 <ListItem>
 
 <Para>
-3DLabs Permedia 2 (8, 15, 16 and 24 bits depth) 
+3DLabs Permedia 2 (8, 15, 16 and 24 bits depth)
 </Para>
 </ListItem>
 <ListItem>
@@ -394,7 +391,7 @@ Matrox MGA 2064 (8, 16 and 24 bits depth)
 <Para>
 Note that this version of doesn't work on TGA cards. The
 version shipped with OpenBSD 3.1 and higher includes an OS-specific
-driver <Emphasis>wsfb</Emphasis> that is used to support TGA cards. 
+driver <Emphasis>wsfb</Emphasis> that is used to support TGA cards.
 </Para>
 
 </Sect2>
@@ -409,8 +406,8 @@ Other machines are more or less untested.
 </Para>
 
 <Para>
-Use xorgconfig to build a /etc/X11/xorg.conf file before starting 
-the server for the first time. 
+Use xorgconfig to build a /etc/X11/xorg.conf file before starting
+the server for the first time.
 </Para>
 
 <Para>
@@ -434,8 +431,8 @@ Modeline "1152x768" 64.995 1152 1213 1349 1472  768 771 777 806 -HSync -VSync
 <Para>
 OpenBSD 3.2 on sparc switched to the wscons device driver and now uses
 the OS specific <Emphasis>wsfb</Emphasis> driver in the X server. This driver is
-not included in X11R7&relvers;. Please use the version shipped with
-OpenBSD instead. 
+not included in X11R&relvers;. Please use the version shipped with
+OpenBSD instead.
 </Para>
 
 </Sect2>
@@ -444,9 +441,9 @@ OpenBSD instead.
 <Title>OpenBSD/sparc64</Title>
 
 <Para>
-This version only has support PCI based machines using ATI cards on 
+This version only has support PCI based machines using ATI cards on
 OpenBSD/sparc64. Note that the version shipped with OpenBSD has
-support for the X server on both SBus and UPA (unaccelerated) based cards. 
+support for the X server on both SBus and UPA (unaccelerated) based cards.
 </Para>
 
 </Sect2>
@@ -457,14 +454,14 @@ support for the X server on both SBus and UPA (unaccelerated) based cards.
 <Title>Thanks</Title>
 
 <Para>
-Many thanks to all people who contributed to make X11R7&relvers; work on
+Many thanks to all people who contributed to make X11R&relvers; work on
 *BSD, in particular:
 <Emphasis remap="bf">David Dawes</Emphasis>,
 <Emphasis remap="bf">Todd Fries</Emphasis>,
 <Emphasis remap="bf">Miodrag Vallat</Emphasis>,
 <Emphasis remap="bf">Rod Grimes</Emphasis>,
 <Emphasis remap="bf">Charles Hannum</Emphasis>,
-<Emphasis remap="bf">Amancio Hasty</Emphasis>, 
+<Emphasis remap="bf">Amancio Hasty</Emphasis>,
 <Emphasis remap="bf">Christoph Robitschko</Emphasis>,
 <Emphasis remap="bf">Matthias Scheler</Emphasis>,
 <Emphasis remap="bf">Michael Smith</Emphasis>,

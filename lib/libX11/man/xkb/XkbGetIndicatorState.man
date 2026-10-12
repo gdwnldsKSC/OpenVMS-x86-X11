@@ -30,18 +30,11 @@
 .SH NAME
 XkbGetIndicatorState \- Obtains the current state of the keyboard indicators
 .SH SYNOPSIS
+.HP
 .B Status XkbGetIndicatorState
-(
-.I display,
-.I device_spec,
-.I state_return
-)
-.br
-      Display *\fIdisplay\fP\^;
-.br
-      unsigned int \fIdevice_spec\fP\^;
-.br
-      unsigned int \fIstate_return\fP\^;
+.BI "(\^Display *" "display" "\^,"
+.BI "unsigned int " "device_spec" "\^,"
+.BI "unsigned int " "state_return" "\^);"
 .if n .ti +5n
 .if t .ti +.5i
 .SH ARGUMENTS
@@ -75,8 +68,8 @@ for the state of the indicators on the device specified by the
 For each indicator that is "turned on" on the device, the associated bit is set 
 in 
 .I state_return. 
-If a compatible version of the Xkb extension is not available in the server, .I 
-XkbGetIndicatorState 
+If a compatible version of the Xkb extension is not available in the server,
+.I XkbGetIndicatorState
 returns a BadMatch error. Otherwise, it sends the request to the X server, 
 places the state of the indicators into 
 .I state_return, 

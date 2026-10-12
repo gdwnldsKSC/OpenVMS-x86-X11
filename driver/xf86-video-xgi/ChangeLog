@@ -1,3 +1,136 @@
+commit a33ffd84e82c1edef6863a2af850960218a82170
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Mon Sep 7 15:03:21 2009 +1000
+
+    bump to 1.5.1
+
+commit a737574ac99c8eb4ac0b98afc073b8c73031d94d
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Sep 7 09:00:39 2009 +1000
+
+    Remove xgi-xg20-21-27.patch (#23752)
+    
+    Patch was basis for f9f7b2a7457744f9abc99626ee992a6886a6fbe5 but should be
+    in the repo itself.
+    
+    X.Org Bug 23752 <http://bugs.freedesktop.org/show_bug.cgi?id=23752>
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit b085ad2f3e68667e625eb60a675ff77180c0c288
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Jul 28 21:52:34 2009 -0400
+
+    video-xgi: fix incorrect function call to open() #23010
+    
+    call to ‘__open_missing_mode’
+    declared with attribute error: open with O_CREAT in second argument needs 3
+    arguments
+    
+    fd = open("/dev/fb", 'r') Second parm is incorrect,
+    changed to O_RDONLY as other distros did.
+    
+    Tested for correct compilation on AMD64
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit fff5d8cf8e078159cc915562726cd6366eb05cc8
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Tue Jul 28 15:22:42 2009 +1000
+
+    xgi: change to using ABI version check
+
+commit 2de661a49fc6cef9e069ecbe964b520971210551
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Tue Jul 28 13:47:49 2009 +1000
+
+    xgi: fix resources/rac rework
+
+commit 48b614fd26484ff3390b0290f9f60630e6f959d2
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Tue Jul 28 13:32:41 2009 +1000
+
+    xgi: update for resources/RAC API removal
+
+commit 6e3d664fd37b657800efc107ca63834cd5d14151
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jul 21 13:48:05 2009 +1000
+
+    xf86-video-xgi: Uninclude xf1bpp.h and xf4bpp.h.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 4ecc827754a69c14d27e60ef27578e46152eecbc
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jul 21 13:46:42 2009 +1000
+
+    xf86-video-xgi: Rename xf86Version includes and defines to xorgVersion.
+    
+    s/xf86Version.h/xorgVersion.h/
+    s/XF86_VERSION/XORG_VERSION_/
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit c7ef9a719168aa563f95245df9037792be663e4d
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jul 15 15:11:00 2009 -0400
+
+    Use XORG_CHANGELOG macro to create ChangeLog. #22611
+    
+    Adding the macro in configure.ac and use it in Makefile.am
+        Refer to: https://bugs.freedesktop.org/show_bug.cgi?id=22611
+        Global maintenance on all modules
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit a365343b076852a2a58cb02db49d6c888dd4c356
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Jul 16 12:00:04 2009 +1000
+
+    Update to xextproto 7.1 support.
+    
+    DPMS header was split into dpms.h (client) and dpmsconst.h (server). Drivers
+    need to include dpmsconst.h if xextproto 7.1 is available.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 0009607e1d43edadfd3e2fd732aa0f7230f85fb1
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Jan 30 21:07:52 2009 -0800
+
+    Add README with pointers to mailing list, bugzilla & git repos
+
+commit 55cc78e4eb15fde0e9239736c75313a1b24b65ef
+Author: Ian Romanick <idr@us.ibm.com>
+Date:   Fri May 30 11:30:11 2008 -0700
+
+    Fix build for libpciaccess X servers
+
+commit f9f7b2a7457744f9abc99626ee992a6886a6fbe5
+Author: root <root@linux.site>
+Date:   Mon Apr 28 10:46:29 2008 +0800
+
+    XGI:Add support for XG21/27
+
+commit 0b28672591001e1448cfc65f928d0b5f0ec79138
+Merge: d832b8a... f9980c8...
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Sep 3 06:09:25 2007 -0400
+
+    Merge branch 'master' of ssh://git.freedesktop.org/git/xorg/driver/xf86-video-xgi
+
+commit d832b8a0af950cf573894406c43155d10f6dfcea
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Sep 3 05:52:52 2007 -0400
+
+    Add *~ to .gitignore to skip patch/emacs droppings
+
+commit f9980c852641184df43f91dfed8fdf8ea02dfdf8
+Author: Ian Romanick <idr@us.ibm.com>
+Date:   Mon Aug 27 16:13:48 2007 -0700
+
+    Eliminiate remaining bits xgi_ver.h cruft.
+
 commit 9d9c5718d41ca9fe330f7030f45251bb869cd40e
 Author: Ian Romanick <idr@us.ibm.com>
 Date:   Mon Aug 27 16:02:24 2007 -0700

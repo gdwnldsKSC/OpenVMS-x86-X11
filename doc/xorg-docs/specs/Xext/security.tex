@@ -363,6 +363,10 @@ by a trusted client, all attempts to map the window will be ignored.
 This includes mapping attempts resulting from MapWindow,
 MapSubwindows, ReparentWindow, and save-set processing.
 
+However, if the parent of an InputOnly window owned by an untrusted
+client is the root window, attempts to map that window will be performed
+as expected.  This is in line with the root window exceptions above.
+
 \subsection{Image Security}
 
 It should be impossible for an untrusted client to retrieve the image

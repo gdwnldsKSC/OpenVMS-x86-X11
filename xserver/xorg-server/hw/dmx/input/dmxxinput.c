@@ -40,7 +40,6 @@
 #include <dmx-config.h>
 #endif
 
-#define	 NEED_EVENTS
 #include <X11/X.h>
 #include <X11/Xproto.h>
 #include "inputstr.h"
@@ -93,18 +92,10 @@ int ChangePointerDevice(DeviceIntPtr old_dev,
 
                                 /* Switch the motion history buffers */
     if (dmxLocalOld->savedMotionProc) {
-        old_dev->valuator->GetMotionProc   = dmxLocalOld->savedMotionProc;
         old_dev->valuator->numMotionEvents = dmxLocalOld->savedMotionEvents;
     }
-    dmxLocalNew->savedMotionProc       = new_dev->valuator->GetMotionProc;
     dmxLocalNew->savedMotionEvents     = new_dev->valuator->numMotionEvents;
-#if 00 /*BP*/
-    new_dev->valuator->GetMotionProc   = miPointerGetMotionEvents;
-    new_dev->valuator->numMotionEvents = miPointerGetMotionBufferSize();
-#else
-    new_dev->valuator->GetMotionProc   = GetMotionHistory;
     new_dev->valuator->numMotionEvents = GetMaximumEventsNum();
-#endif
                                 /* Switch our notion of core pointer */
     dmxLocalOld->isCore         = 0;
     dmxLocalOld->sendsCore      = dmxLocalOld->savedSendsCore;

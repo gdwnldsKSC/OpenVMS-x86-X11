@@ -74,4 +74,5 @@ xgixp_drv_la_SOURCES = \
 	xgi_debug.c \
 	xgi_debug.h \
 	xgi_regs.h \
-	xgi_version.h
+	xgi_version.h \
+	xgi_drm.h

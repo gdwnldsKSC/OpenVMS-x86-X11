@@ -3,7 +3,7 @@
 .\"
 .\" Copyright (c) 1994, 2004  The Open Group
 .\" Copyright \(co 2000  The XFree86 Project, Inc.
-.\" 
+.\"
 .\" All rights reserved.
 .\"
 .\" Permission is hereby granted, free of charge, to any person obtaining a
@@ -76,7 +76,7 @@ X supports overlapping hierarchical subwindows and text and
 graphics operations, on both monochrome and color
 displays.
 For a full explanation of the functions that are available, see
-the \fIXlib - C Language X Interface\fP manual, 
+the \fIXlib - C Language X Interface\fP manual,
 the \fIX Window System Protocol\fP specification,
 the \fIX Toolkit Intrinsics - C Language Interface\fP manual,
 and various toolkit documents.
@@ -84,7 +84,7 @@ and various toolkit documents.
 The number of programs that use \fIX\fP is quite large.
 Programs provided in the core X.Org Foundation distribution include:
 a terminal emulator, \fIxterm\fP;
-a window manager, \fItwm\fP; 
+a window manager, \fItwm\fP;
 a display manager, \fIxdm\fP;
 a console redirect program, \fIxconsole\fP;
 a mail interface, \fIxmh\fP;
@@ -94,7 +94,7 @@ access control programs, \fIxauth\fP, \fIxhost\fP, and \fIiceauth\fP;
 user preference setting programs, \fIxrdb\fP, \fIxcmsdb\fP,
 \fIxset\fP, \fIxsetroot\fP, \fIxstdcmap\fP, and \fIxmodmap\fP;
 clocks, \fIxclock\fP and \fIoclock\fP;
-a font displayer, (\fIxfd\fP;
+a font displayer, \fIxfd\fP;
 utilities for listing information about fonts, windows, and displays,
 \fIxlsfonts\fP, \fIxwininfo\fP, \fIxlsclients\fP,
 \fIxdpyinfo\fP, \fIxlsatoms\fP, and \fIxprop\fP;
@@ -103,59 +103,53 @@ a performance measurement utility, \fIx11perf\fP;
 a font compiler, \fIbdftopcf\fP;
 a font server and related utilities, \fIxfs\fP, \fIfsinfo\fP, \fIfslsfonts\fP, \fIfstobdf\fP;
 a display server and related utilities, \fIXserver\fP, \fIrgb\fP, \fImkfontdir\fP;
-a print server and related utilities, \fIXprt\fP, \fIxplsprinters\fP, and \fIxprehashprinterlist\fP;
-remote execution utilities, \fIrstart\fP and \fIxon\fP;
 a clipboard manager, \fIxclipboard\fP;
 keyboard description compiler and related utilities, \fIxkbcomp\fP, \fIsetxkbmap\fP
 \fIxkbprint\fP, \fIxkbbell\fP, \fIxkbevd\fP, \fIxkbvleds\fP, and \fIxkbwatch\fP;
-a utility to terminate clients, \fIxkill\fP; 
-an optimized X protocol proxy, \fIlbxproxy\fP;
+a utility to terminate clients, \fIxkill\fP;
 a firewall security proxy, \fIxfwp\fP;
 a proxy manager to control them, \fIproxymngr\fP;
 a utility to find proxies, \fIxfindproxy\fP;
 web browser plug-ins, \fIlibxrx.so\fP and \fIlibxrxnest.so\fP;
 an RX MIME-type helper program, \fIxrx\fP;
-and a utility to cause part or all of the screen to be redrawn, \fIxrefresh\fP. 
+and a utility to cause part or all of the screen to be redrawn, \fIxrefresh\fP.
 .PP
 Many other utilities, window managers, games, toolkits, etc. are included
 as user-contributed software in the X.Org Foundation distribution, or are
 available on the Internet.
 See your site administrator for details.
 .SH "STARTING UP"
-.PP 
+.PP
 There are two main ways of getting the X server and an initial set of
 client applications started.  The particular method used depends on what
 operating system you are running and whether or not you use other window
 systems in addition to X.
 .TP 8
-.B "\fIxdm\fP (the X Display Manager)"
+.B "Display Manager"
 If you want to always have X running on your display, your site administrator
-can set your machine up to use the X Display Manager \fIxdm\fP.  This program
+can set your machine up to use a Display Manager such as \fIxdm\fP, \fIgdm\fP,
+or \fIkdm\fP.  This program
 is typically started by the system at boot time and takes care of keeping the
-server running and getting users logged in.  If you are running
-\fIxdm\fP, you will see a window on the screen welcoming you to the system and
-asking for your username and password.  Simply type them in as you would at
-a normal terminal, pressing the Return key after each.  If you make a mistake,
-\fIxdm\fP will display an error message and ask you to try again.  After you
-have successfully logged in, \fIxdm\fP will start up your X environment.  By
-default, if you have an executable file named \fI.xsession\fP in your
-home directory,
-\fIxdm\fP will treat it as a program (or shell script) to run to start up 
-your initial clients (such as terminal emulators, clocks, a window manager,
-user settings for things like the background, the speed of the pointer, etc.).
-Your site administrator can provide details.
+server running and getting users logged in.  If you are running one of these
+display managers, you will normally see a window on the screen welcoming you
+to the system and asking for your login information.  Simply type them in as
+you would at a normal terminal.  If you make a mistake, the display manager
+will display an error message and ask you to try again.  After you
+have successfully logged in, the display manager will start up your X
+environment.  The documentation for the display manager you use can provide
+more details.
 .TP 8
 .B "\fIxinit\fP (run manually from the shell)"
 Sites that support more than one window system might choose to use the
-\fIxinit\fP program for starting X manually.  If this is true for your 
-machine, your site administrator will probably have provided a program 
+\fIxinit\fP program for starting X manually.  If this is true for your
+machine, your site administrator will probably have provided a program
 named "x11", "startx", or "xstart" that will do site-specific initialization
-(such as loading convenient default resources, running a window manager, 
+(such as loading convenient default resources, running a window manager,
 displaying a clock, and starting several terminal emulators) in a nice
 way.  If not, you can build such a script using the \fIxinit\fP program.
 This utility simply runs one user-specified program to start the server,
 runs another to start up any desired clients, and then waits for either to
-finish.  Since either or both of the user-specified programs may be a shell 
+finish.  Since either or both of the user-specified programs may be a shell
 script, this gives substantial flexibility at the expense of a
 nice interface.  For this reason, \fIxinit\fP is not intended for end users.
 .SH "DISPLAY NAMES"
@@ -172,14 +166,13 @@ connect to the server and which screen it should use by default
 .TP 8
 .I hostname
 The \fIhostname\fP specifies the name of the machine to which the display is
-physically connected.  If the hostname is not given, the most efficient way of 
+physically connected.  If the hostname is not given, the most efficient way of
 communicating to a server on the same machine will be used.
 .TP 8
 .I displaynumber
 The phrase "display" is usually used to refer to collection of monitors that
-share a common keyboard and pointer (mouse, tablet, etc.).  Most workstations
-tend to only have one keyboard, and therefore, only one display.  Larger, 
-multi-user
+share a common set of input devices (keyboard, mouse, tablet, etc.).
+Most workstations tend to only have one display.  Larger, multi-user
 systems, however, frequently have several displays so that more than
 one person can be doing graphics work at once.  To avoid confusion, each
 display on a machine is assigned a \fIdisplay number\fP (beginning at 0)
@@ -187,28 +180,31 @@ when the X server for that display is started.  The display number must always
 be given in a display name.
 .TP 8
 .I screennumber
-Some displays share a single keyboard and pointer among two or more monitors.
-Since each monitor has its own set of windows, each screen is assigned a
+Some displays share their input devices among two or more monitors.
+These may be configured as a single logical screen, which allows windows to
+move across screens, or as individual screens, each with their own set of
+windows.  If configured such that each monitor has its own set of windows,
+each screen is assigned a
 \fIscreen number\fP (beginning at 0) when the X server for that display is
 started.  If the screen number is not given, screen 0 will be used.
 .PP
-On POSIX systems, the default display name is stored 
+On POSIX systems, the default display name is stored
 in your DISPLAY environment variable.  This variable is set automatically
 by the \fIxterm\fP terminal emulator.  However, when you log into another
-machine on a network, you will need to set DISPLAY by hand to point to your
+machine on a network, you may need to set DISPLAY by hand to point to your
 display.  For example,
 .sp
 .nf
     % setenv DISPLAY myws:0
     $ DISPLAY=myws:0; export DISPLAY
 .fi
-The \fIxon\fP script can be used to start an X program on a remote machine;
+The \fIssh\fP program can be used to start an X program on a remote machine;
 it automatically sets the DISPLAY variable correctly.
 .PP
-Finally, most X programs accept a command line option of 
+Finally, most X programs accept a command line option of
 \fB-display \fIdisplayname\fR to temporarily override the contents of
 DISPLAY.  This is most commonly used to pop windows on another person's
-screen or as part of a "remote shell" command to start an xterm pointing back 
+screen or as part of a "remote shell" command to start an xterm pointing back
 to your display.  For example,
 .sp
 .nf
@@ -216,11 +212,11 @@ to your display.  For example,
     % rsh big xterm -display myws:0 -ls </dev/null &
 .fi
 .PP
-X servers listen for connections on a variety of different 
+X servers listen for connections on a variety of different
 communications channels (network byte streams, shared memory, etc.).
 Since there can be more than one way of contacting a given server,
 The \fIhostname\fP part of the display name is used to determine the
-type of channel 
+type of channel
 (also called a transport layer) to be used.  X servers generally
 support the following types of connections:
 .TP 8
@@ -233,19 +229,20 @@ local transport will be chosen.
 .I TCP\/IP
 .br
 The hostname part of the display name should be the server machine's
-IP address name.  Full Internet names, abbreviated names, and IP addresses
-are all allowed.  For example:  \fIx.org:0\fP, \fIexpo:0\fP,
+hostname or IP address.  Full Internet names, abbreviated names, IPv4
+addresses, and IPv6 addresses are all allowed.  For example:
+\fIx.org:0\fP, \fIexpo:0\fP, \fI[::1]:0\fP,
 \fI198.112.45.11:0\fP, \fIbigmachine:1\fP, and \fIhydra:0.1\fP.
 .TP 8
 .I DECnet
 .br
-The hostname part of the display name should be the server machine's 
+The hostname part of the display name should be the server machine's
 nodename, followed by two colons instead of one.
 For example:  \fImyws::0\fP, \fIbig::1\fP, and \fIhydra::0.1\fP.
 .PP
 .SH "ACCESS CONTROL"
 An X server can use several types of access control.  Mechanisms provided
-in Release 6 are:
+in Release 7 are:
 .nf
 .br
 .ta 3.4i
@@ -253,7 +250,7 @@ in Release 6 are:
     MIT-MAGIC-COOKIE-1	Shared plain-text "cookies".
     XDM-AUTHORIZATION-1	Secure DES based private-keys.
     SUN-DES-1	Based on Sun's secure rpc system.
-    MIT-KERBEROS-5	Kerberos Version 5 user-to-user.
+    Server Interpreted	Server-dependent methods of access control
 .fi
 .PP
 \fIXdm\fP initializes access control for the server and also places
@@ -293,11 +290,11 @@ data to know if this is actually a problem.
 For more information on access control, see the \fIXsecurity\fP manual page.
 .SH "GEOMETRY SPECIFICATIONS"
 One of the advantages of using window systems instead of
-hardwired terminals is that 
+hardwired terminals is that
 applications don't have to be restricted to a particular size or location
 on the screen.
 Although the layout of windows on a display is controlled
-by the window manager that the user is running (described below), 
+by the window manager that the user is running (described below),
 most X programs accept
 a command line argument of the form \fB-geometry \fIWIDTHxHEIGHT+XOFF+YOFF\fR
 (where \fIWIDTH\fP, \fIHEIGHT\fP, \fIXOFF\fP, and \fIYOFF\fP are numbers)
@@ -314,13 +311,13 @@ offset may be specified in the following ways:
 .TP 8
 .I +XOFF
 The left edge of the window is to be placed \fIXOFF\fP pixels in from the
-left edge of the screen (i.e., the X coordinate of the window's origin will be 
-\fIXOFF\fP).  \fIXOFF\fP may be negative, in which case the window's left edge 
+left edge of the screen (i.e., the X coordinate of the window's origin will be
+\fIXOFF\fP).  \fIXOFF\fP may be negative, in which case the window's left edge
 will be off the screen.
 .TP 8
 .I -XOFF
 The right edge of the window is to be placed \fIXOFF\fP pixels in from the
-right edge of the screen.  \fIXOFF\fP may be negative, in which case the 
+right edge of the screen.  \fIXOFF\fP may be negative, in which case the
 window's right edge will be off the screen.
 .PP
 The Y offset has similar meanings:
@@ -328,12 +325,12 @@ The Y offset has similar meanings:
 .I +YOFF
 The top edge of the window is to be \fIYOFF\fP pixels below the
 top edge of the screen (i.e., the Y coordinate of the window's origin will be
-\fIYOFF\fP).  \fIYOFF\fP may be negative, in which case the window's top edge 
+\fIYOFF\fP).  \fIYOFF\fP may be negative, in which case the window's top edge
 will be off the screen.
 .TP 8
 .I -YOFF
 The bottom edge of the window is to be \fIYOFF\fP pixels above the
-bottom edge of the screen.  \fIYOFF\fP may be negative, in which case 
+bottom edge of the screen.  \fIYOFF\fP may be negative, in which case
 the window's bottom edge will be off the screen.
 .PP
 Offsets must be given as pairs; in other words, in order to specify either
@@ -354,7 +351,7 @@ lower left hand corner.
 .PP
 In the following examples, a terminal emulator is placed in roughly
 the center of the screen and
-a load average monitor, mailbox, and clock are placed in the upper right 
+a load average monitor, mailbox, and clock are placed in the upper right
 hand corner:
 .sp
 .nf
@@ -368,7 +365,7 @@ hand corner:
 The layout of windows on the screen is controlled by special programs called
 \fIwindow managers\fP.  Although many window managers will honor geometry
 specifications as given, others may choose to ignore them (requiring the user
-to explicitly draw the window's region on the screen with the pointer, for 
+to explicitly draw the window's region on the screen with the pointer, for
 example).
 .PP
 Since window managers are regular (albeit complex) client programs,
@@ -384,8 +381,8 @@ Collections of characters for displaying text and symbols in X are known as
 \fIfonts\fP.  A font typically contains images that share a common appearance
 and look nice together (for example, a single size, boldness, slant, and
 character set).  Similarly, collections of fonts that are based on a common
-type face (the variations are usually called roman, bold, italic, bold italic, 
-oblique, and bold oblique) are called \fIfamilies\fP.  
+type face (the variations are usually called roman, bold, italic, bold italic,
+oblique, and bold oblique) are called \fIfamilies\fP.
 .PP
 Fonts come in various sizes.  The X server supports \fIscalable\fP fonts,
 meaning it is possible to create a font of arbitrary size from a single
@@ -416,7 +413,7 @@ to add a font to a private directory, the following commands could be used:
 .nf
     % cp newfont.pcf ~/myfonts
     % mkfontdir ~/myfonts
-    % xset fp rehash 
+    % xset fp rehash
 .fi
 .PP
 The \fIxfontsel\fP and \fIxlsfonts\fP programs can be used to browse
@@ -513,7 +510,7 @@ implementation dependent.
 If the name is not found, the color is looked up in the
 X server's database.
 The text form of this database is commonly stored in the file
-\fI\__projectroot__/lib/X11/rgb.txt\fP.
+\fI\__datadir__/X11/rgb.txt\fP.
 .PP
 A numerical color specification
 consists of a color space name and a set of values in the following syntax:
@@ -531,7 +528,7 @@ the prefix "rgb:" and has the following syntax:
         \fI<red>\fP, \fI<green>\fP, \fI<blue>\fP := \fIh\fP | \fIhh\fP | \fIhhh\fP | \fIhhhh\fP
         \fIh\fP := single hexadecimal digits
 .fi
-Note that \fIh\fP indicates the value scaled in 4 bits, 
+Note that \fIh\fP indicates the value scaled in 4 bits,
 \fIhh\fP the value scaled in 8 bits,
 \fIhhh\fP the value scaled in 12 bits,
 and \fIhhhh\fP the value scaled in 16 bits, respectively.
@@ -566,7 +563,7 @@ a numeric specification, in one of the following formats:
 .fi
 .PP
 The R, G, and B represent single hexadecimal digits.
-When fewer than 16 bits each are specified, 
+When fewer than 16 bits each are specified,
 they represent the most-significant bits of the value
 (unlike the "rgb:" syntax, in which values are scaled).
 For example, #3a7 is the same as #3000a0007000.
@@ -586,7 +583,7 @@ These values will be gamma corrected by \fIXlib\fP
 before being sent to the X server.
 The input format for these values is an optional sign,
 a string of numbers possibly containing a decimal point,
-and an optional exponent field containing an E or e 
+and an optional exponent field containing an E or e
 followed by a possibly signed integer string.
 .PP
 The standard device-independent string specifications have
@@ -616,9 +613,9 @@ see the \fIXlib\fP reference manual.
 .SH KEYBOARDS
 .PP
 The X keyboard model is broken into two layers:  server-specific codes
-(called \fIkeycodes\fP) which represent the physical keys, and 
+(called \fIkeycodes\fP) which represent the physical keys, and
 server-independent symbols (called \fIkeysyms\fP) which
-represent the letters or words that appear on the keys.  
+represent the letters or words that appear on the keys.
 Two tables are kept in the server for converting keycodes to keysyms:
 .TP 8
 .I "modifier list"
@@ -626,11 +623,11 @@ Some keys (such as Shift, Control, and Caps Lock) are known as \fImodifier\fP
 and are used to select different symbols that are attached to a single key
 (such as Shift-a generates a capital A, and Control-l generates a control
 character ^L).  The server keeps a list of keycodes corresponding to the
-various modifier keys.  Whenever a key is pressed or released, the server 
-generates an \fIevent\fP that contains the keycode of the indicated key as 
+various modifier keys.  Whenever a key is pressed or released, the server
+generates an \fIevent\fP that contains the keycode of the indicated key as
 well as a mask that specifies which of the modifier keys are currently pressed.
 Most servers set up this list to initially contain
-the various shift, control, and shift lock keys on the keyboard.  
+the various shift, control, and shift lock keys on the keyboard.
 .TP 8
 .I "keymap table"
 Applications translate event keycodes and modifier masks into keysyms
@@ -697,9 +694,9 @@ Either option specifies the font to use for displaying text.
 .B \-iconic
 .br
 This option indicates that the user would prefer that the application's
-windows initially not be visible as if the windows had be immediately 
+windows initially not be visible as if the windows had be immediately
 iconified by the user.  Window managers may choose not to honor the
-application's request.  
+application's request.
 .TP 8
 .B \-name
 .br
@@ -709,14 +706,14 @@ aliases to distinguish between invocations of an application,
 without resorting to creating links to alter the executable file name.
 .TP 8
 .B \-rv\fP, \fB\-reverse\fP
-Either option indicates that the program should simulate reverse video if 
+Either option indicates that the program should simulate reverse video if
 possible, often by swapping the foreground and background colors.  Not all
 programs honor this or implement it correctly.  It is usually only used on
 monochrome displays.
 .TP 8
 .B \+rv
 .br
-This option indicates that the program should not simulate reverse video.  
+This option indicates that the program should not simulate reverse video.
 This is used to
 override any defaults since reverse video doesn't always work properly.
 .TP 8
@@ -726,16 +723,16 @@ communicating applications must respond to one another for a selection
 request.
 .TP 8
 .B \-synchronous
-This option indicates that requests to the X server should be sent 
-synchronously, instead of asynchronously.  Since 
+This option indicates that requests to the X server should be sent
+synchronously, instead of asynchronously.  Since
 .I Xlib
 normally buffers requests to the server, errors do not necessarily get reported
 immediately after they occur.  This option turns off the buffering so that
-the application can be debugged.  It should never be used with a working 
+the application can be debugged.  It should never be used with a working
 program.
 .TP 8
 .B \-title \fIstring\fP
-This option specifies the title to be used for this window.  This information 
+This option specifies the title to be used for this window.  This information
 is sometimes
 used by a window manager to provide some sort of header identifying the window.
 .TP 8
@@ -744,13 +741,15 @@ This option specifies the language, territory, and codeset for use in
 resolving resource and other filenames.
 .TP 8
 .B \-xrm \fIresourcestring\fP
-This option specifies a resource name and value to override any defaults.  It 
-is also very useful for setting resources that don't have explicit command 
+This option specifies a resource name and value to override any defaults.  It
+is also very useful for setting resources that don't have explicit command
 line arguments.
 .SH RESOURCES
-To make the tailoring of applications to personal preferences easier, X 
+To make the tailoring of applications to personal preferences easier, X
 provides a mechanism for storing default values for program resources
-(e.g. background color, window title, etc.)
+(e.g. background color, window title, etc.) that is used by programs that
+use toolkits based on the X Toolkit Intrinsics library libXt.  (Programs
+using the common Gtk+ and Qt toolkits use other configuration mechanisms.)
 Resources are specified as strings
 that are read in from various places when an application is run.
 Program components are named in a hierarchical fashion,
@@ -861,12 +860,12 @@ entries that match using "?".
 An entry preceded by a tight binding takes precedence over entries
 preceded by a loose binding.
 .PP
-Programs based on the X Tookit Intrinsics
+Programs based on the X Toolkit Intrinsics
 obtain resources from the following sources
 (other programs usually support some subset of these sources):
 .TP 8
 .B "RESOURCE_MANAGER root window property"
-Any global resources that should be available to clients on all machines 
+Any global resources that should be available to clients on all machines
 should be stored in the RESOURCE_MANAGER property on the
 root window of the first screen using the \fIxrdb\fP program.
 This is frequently taken care
@@ -874,7 +873,7 @@ of when the user starts up X through the display manager or \fIxinit\fP.
 .TP 8
 .B "SCREEN_RESOURCES root window property"
 Any resources specific to a given screen (e.g. colors)
-that should be available to clients on all machines 
+that should be available to clients on all machines
 should be stored in the SCREEN_RESOURCES property on the
 root window of that screen.
 The \fIxrdb\fP program will sort resources automatically and place them
@@ -884,11 +883,11 @@ in RESOURCE_MANAGER or SCREEN_RESOURCES, as appropriate.
 Directories named by the environment variable XUSERFILESEARCHPATH
 or the environment variable XAPPLRESDIR (which names a single
 directory and should end with a '/' on POSIX systems), plus directories in a
-standard place (usually under __projectroot__/lib/X11/,
+standard place (usually under __datadir__/X11/,
 but this can be overridden with the XFILESEARCHPATH environment variable)
 are searched for for application-specific resources.
 For example, application default resources are usually kept in
-__projectroot__/lib/X11/app-defaults/.
+__datadir__/X11/app-defaults/.
 See the \fIX Toolkit Intrinsics - C Language Interface\fP manual for
 details.
 .TP 8
@@ -901,19 +900,19 @@ where \fIhostname\fP is the name of the host where the application
 is executing.
 .TP 8
 .B \-xrm \fIresourcestring\fP
-Resources can also be specified from the 
+Resources can also be specified from the
 command line.  The \fIresourcestring\fP is a single resource name and value as
 shown above.  Note that if the string contains characters interpreted by
 the shell (e.g., asterisk), they must be quoted.
 Any number of \fB\-xrm\fP arguments may be given on the
 command line.
 .PP
-Program resources are organized into groups called \fIclasses\fP, so that 
-collections of individual resources (each of which are 
+Program resources are organized into groups called \fIclasses\fP, so that
+collections of individual resources (each of which are
 called \fIinstances\fP)
 can be set all at once.  By convention, the instance name of a resource
 begins with a lowercase letter and class name with an upper case letter.
-Multiple word resources are concatenated with the first letter of the 
+Multiple word resources are concatenated with the first letter of the
 succeeding words capitalized.  Applications written with the X Toolkit
 Intrinsics will have at least the following resources:
 .PP
@@ -934,7 +933,7 @@ Most applications using the X Toolkit Intrinsics also have the resource
 (class \fBForeground\fP), specifying the color to use for text
 and graphics within the window.
 .PP
-By combining class and instance specifications, application preferences 
+By combining class and instance specifications, application preferences
 can be set quickly and easily.  Users of color displays will frequently
 want to set Background and Foreground classes to particular defaults.
 Specific color instances such as text cursors can then be overridden
@@ -978,10 +977,10 @@ the following command:
     % xrdb -merge $HOME/.Xresources
 .fi
 .sp
-This is frequently how user-friendly startup scripts merge user-specific 
+This is frequently how user-friendly startup scripts merge user-specific
 defaults
 into any site-wide defaults.  All sites are encouraged to set up convenient
-ways of automatically loading resources. See the \fIXlib\fP 
+ways of automatically loading resources. See the \fIXlib\fP
 manual section \fIResource Manager Functions\fP for more information.
 .SH ENVIRONMENT
 .TP
@@ -995,8 +994,8 @@ X server. See section "Display Names" above.
 This must point to a file that contains authorization data. The default
 is \fI$HOME/.Xauthority\fP. See
 .BR Xsecurity (__miscmansuffix__),
-.BR xauth (1),
-.BR xdm (1),
+.BR xauth (__appmansuffix__),
+.BR xdm (__appmansuffix__),
 .BR Xau (3).
 .TP
 .SM
@@ -1018,18 +1017,18 @@ text encoding. See
 This variable can be set to contain additional information important
 for the current locale setting. Typically set to \fI@im=<input-method>\fP
 to enable a particular input method. See
-.BR XSetLocaleModifiers (3).
+.BR XSetLocaleModifiers (__libmansuffix__).
 .TP
 .SM
 .B XLOCALEDIR
 This must point to a directory containing the locale.alias file and
 Compose and XLC_LOCALE file hierarchies for all locales. The default value
-is\fI __projectroot__/lib/X11/locale\fP.
+is\fI __datadir__/X11/locale\fP.
 .TP
 .SM
 .B XENVIRONMENT
 This must point to a file containing X resources. The default is
-\fI$HOME/.Xdefaults-<hostname>\fP. Unlike\fI __projectroot__/lib/X11/Xresources\fP,
+\fI$HOME/.Xdefaults-<hostname>\fP. Unlike \fI$HOME/.Xresources\fP,
 it is consulted each time an X application starts.
 .TP
 .SM
@@ -1038,17 +1037,30 @@ This must contain a colon separated list of path templates, where libXt
 will search for resource files. The default value consists of
 .sp
 .nf
-    __projectroot__/lib/X11/%L/%T/%N%C%S:\\
-    __projectroot__/lib/X11/%l/%T/%N%C%S:\\
-    __projectroot__/lib/X11/%T/%N%C%S:\\
-    __projectroot__/lib/X11/%L/%T/%N%S:\\
-    __projectroot__/lib/X11/%l/%T/%N%S:\\
-    __projectroot__/lib/X11/%T/%N%S
+    __sysconfdir__/X11/%L/%T/%N%C%S:\\
+    __sysconfdir__/X11/%l/%T/%N%C%S:\\
+    __sysconfdir__/X11/%T/%N%C%S:\\
+    __sysconfdir__/X11/%L/%T/%N%S:\\
+    __sysconfdir__/X11/%l/%T/%N%S:\\
+    __sysconfdir__/X11/%T/%N%S:\\
+    __datadir__/X11/%L/%T/%N%C%S:\\
+    __datadir__/X11/%l/%T/%N%C%S:\\
+    __datadir__/X11/%T/%N%C%S:\\
+    __datadir__/X11/%L/%T/%N%S:\\
+    __datadir__/X11/%l/%T/%N%S:\\
+    __datadir__/X11/%T/%N%S:\\
+    __libdir__/X11/%L/%T/%N%C%S:\\
+    __libdir__/X11/%l/%T/%N%C%S:\\
+    __libdir__/X11/%T/%N%C%S:\\
+    __libdir__/X11/%L/%T/%N%S:\\
+    __libdir__/X11/%l/%T/%N%S:\\
+    __libdir__/X11/%T/%N%S
 .fi
 .sp
 A path template is transformed to a pathname by substituting:
 .sp
 .nf
+    %D => the implementation-specific default path
     %N => name (basename) being searched for
     %T => type (dirname) being searched for
     %S => suffix being searched for
@@ -1082,6 +1094,7 @@ $XAPPLRESDIR defaults to \fI$HOME\fP, see below.
 A path template is transformed to a pathname by substituting:
 .sp
 .nf
+    %D => the implementation-specific default path
     %N => name (basename) being searched for
     %T => type (dirname) being searched for
     %S => suffix being searched for
@@ -1102,17 +1115,12 @@ XUSERFILESEARCHPATH is not set.
 .SM
 .B XKEYSYMDB
 This must point to a file containing nonstandard keysym definitions.
-The default value is\fI __projectroot__/lib/X11/XKeysymDB\fP.
+The default value is\fI __datadir__/X11/XKeysymDB\fP.
 .TP
 .SM
 .B XCMSDB
 This must point to a color name database file. The default value is
-\fI\__projectroot__/lib/X11/Xcms.txt\fP.
-.TP
-.SM
-.B XFT_CONFIG
-This must point to a configuration file for the Xft library. The default
-value is\fI __projectroot__/lib/X11/XftConfig\fP.
+\fI __libdir__/X11/Xcms.txt\fP.
 .TP
 .SM
 .B RESOURCE_NAME
@@ -1121,9 +1129,9 @@ being executed. It defaults to the basename of pathname of the program.
 .TP
 .SM
 .B SESSION_MANAGER
-Denotes the session manager the application should connect. See
-.BR xsm (1),
-.BR rstart (1).
+Denotes the session manager to which the application should connect. See
+.BR xsm (__appmansuffix__),
+.BR rstart (__appmansuffix__).
 .TP
 .SM
 .B XF86BIGFONT_DISABLE
@@ -1157,10 +1165,9 @@ of big fonts by use of shared memory.
 .B _XKB_COMP_FAIL_BEEP
 .TP
 .SM
-.I ""
 These variables influence the X Keyboard Extension.
 .SH EXAMPLES
-The following is a collection of sample command lines for some of the 
+The following is a collection of sample command lines for some of the
 more frequently used commands.  For more information on a particular command,
 please refer to that command's manual page.
 .sp
@@ -1170,14 +1177,14 @@ please refer to that command's manual page.
     %  mkfontdir /usr/local/lib/X11/otherfonts
     %  xset fp+ /usr/local/lib/X11/otherfonts
     %  xmodmap $HOME/.keymap.km
-    %  xsetroot -solid 'rgbi:.8/.8/.8' 
+    %  xsetroot -solid 'rgbi:.8/.8/.8'
     %  xset b 100 400 c 50 s 1800 r on
     %  xset q
     %  twm
     %  xmag
     %  xclock -geometry 48x48-0+0 -bg blue -fg white
     %  xeyes -geometry 48x48-48+0
-    %  xbiff -update 20 
+    %  xbiff -update 20
     %  xlsfonts '*helvetica*'
     %  xwininfo -root
     %  xdpyinfo -display joesworkstation:0
@@ -1187,14 +1194,13 @@ please refer to that command's manual page.
     %  bitmap companylogo.bm 32x32
     %  xcalc -bg blue -fg magenta
     %  xterm -geometry 80x66-0-0 -name myxterm $*
-    %  xon filesysmachine xload
 .fi
 .SH DIAGNOSTICS
 A wide variety of error messages are generated from various programs.
 The default error handler in \fIXlib\fP (also used by many toolkits) uses
 standard resources to construct diagnostic messages when errors occur.  The
 defaults for these messages are usually stored in
-\fI\__projectroot__/lib/X11/XErrorDB\fP.  If this file is not present,
+\fI\__datadir__/X11/XErrorDB\fP.  If this file is not present,
 error messages will be rather terse and cryptic.
 .PP
 When the X Toolkit Intrinsics encounter errors converting resource strings to
@@ -1204,7 +1210,7 @@ convenient when it is desirable to have one set of resources across a variety
 of displays (e.g. color vs. monochrome, lots of fonts vs. very few, etc.),
 although it can pose problems for trying to determine why an application might
 be failing.  This behavior can be overridden by the setting the
-\fIStringConversionsWarning\fP resource.
+\fIStringConversionWarnings\fP resource.
 .PP
 To force the X Toolkit Intrinsics to always print string conversion error
 messages,
@@ -1229,82 +1235,76 @@ the appropriate instance name can be placed before the asterisk:
 .BR XOrgFoundation (__miscmansuffix__),
 .BR XStandards (__miscmansuffix__),
 .BR Xsecurity (__miscmansuffix__),
-.BR Xprint (__miscmansuffix__),
 .\" clients, utilities, and demos
-.BR appres (1),
-.BR bdftopcf (1),
-.BR bitmap (1),
-.BR editres (1),
-.BR fsinfo (1),
-.BR fslsfonts (1),
-.BR fstobdf (1),
-.BR iceauth (1),
-.BR imake (1),
-.BR lbxproxy (1),
-.BR kbd_mode (1),
-.BR makedepend (1),
-.BR mkfontdir (1),
-.BR oclock (1),
-.BR proxymngr (1),
-.BR rgb (1), 
-.BR resize (1),
-.BR rstart (1),
-.BR smproxy (1),
-.BR twm (1),
-.BR x11perf (1),
-.BR x11perfcomp (1), 
-.BR xauth (1),
-.BR xclipboard (1),
-.BR xclock (1),
-.BR xcmsdb (1),
-.BR xconsole (1),
-.BR xdm (1),
-.BR xdpyinfo (1),
-.BR xfd (1),
-.BR xfindproxy (1),
-.BR xfs (1),
-.BR xfwp (1),
-.BR xhost (1),
-.BR xinit (1),
-.BR xkbbell (1),
-.BR xkbcomp (1),
-.BR xkbevd (1),
-.BR xkbprint (1),
-.BR xkbvleds (1),
-.BR xkbwatch (1),
-.BR xkill (1),
-.BR xlogo (1),
-.BR xlsatoms (1),
-.BR xlsclients (1),
-.BR xlsfonts (1),
-.BR xmag (1),
-.BR xmh (1),
-.BR xmodmap (1),
-.BR xon (1),
-.BR xplsprinters (1),
-.BR xprop (1),
-.BR xrdb (1),
-.BR xrefresh (1),
-.BR xrx (1),
-.BR xset (1),
-.BR xsetroot (1),
-.BR xsm (1),
-.BR xstdcmap (1),
-.BR xterm (1),
-.BR xwd (1),
-.BR xwininfo (1),
-.BR xwud (1).
+.BR appres (__appmansuffix__),
+.BR bdftopcf (__appmansuffix__),
+.BR bitmap (__appmansuffix__),
+.BR editres (__appmansuffix__),
+.BR fsinfo (__appmansuffix__),
+.BR fslsfonts (__appmansuffix__),
+.BR fstobdf (__appmansuffix__),
+.BR iceauth (__appmansuffix__),
+.BR imake (__appmansuffix__),
+.BR makedepend (__appmansuffix__),
+.BR mkfontdir (__appmansuffix__),
+.BR oclock (__appmansuffix__),
+.BR proxymngr (__appmansuffix__),
+.BR rgb (__appmansuffix__),
+.BR resize (__appmansuffix__),
+.BR rstart (__appmansuffix__),
+.BR smproxy (__appmansuffix__),
+.BR twm (__appmansuffix__),
+.BR x11perf (__appmansuffix__),
+.BR x11perfcomp (__appmansuffix__),
+.BR xauth (__appmansuffix__),
+.BR xclipboard (__appmansuffix__),
+.BR xclock (__appmansuffix__),
+.BR xcmsdb (__appmansuffix__),
+.BR xconsole (__appmansuffix__),
+.BR xdm (__appmansuffix__),
+.BR xdpyinfo (__appmansuffix__),
+.BR xfd (__appmansuffix__),
+.BR xfindproxy (__appmansuffix__),
+.BR xfs (__appmansuffix__),
+.BR xfwp (__appmansuffix__),
+.BR xhost (__appmansuffix__),
+.BR xinit (__appmansuffix__),
+.BR xkbbell (__appmansuffix__),
+.BR xkbcomp (__appmansuffix__),
+.BR xkbevd (__appmansuffix__),
+.BR xkbprint (__appmansuffix__),
+.BR xkbvleds (__appmansuffix__),
+.BR xkbwatch (__appmansuffix__),
+.BR xkill (__appmansuffix__),
+.BR xlogo (__appmansuffix__),
+.BR xlsatoms (__appmansuffix__),
+.BR xlsclients (__appmansuffix__),
+.BR xlsfonts (__appmansuffix__),
+.BR xmag (__appmansuffix__),
+.BR xmh (__appmansuffix__),
+.BR xmodmap (__appmansuffix__),
+.BR xprop (__appmansuffix__),
+.BR xrdb (__appmansuffix__),
+.BR xrefresh (__appmansuffix__),
+.BR xrx (__appmansuffix__),
+.BR xset (__appmansuffix__),
+.BR xsetroot (__appmansuffix__),
+.BR xsm (__appmansuffix__),
+.BR xstdcmap (__appmansuffix__),
+.BR xterm (__appmansuffix__),
+.BR xwd (__appmansuffix__),
+.BR xwininfo (__appmansuffix__),
+.BR xwud (__appmansuffix__).
 .\" servers
-.BR Xserver (1),
-.BR Xdec (1),
-.BR Xdmx (1),
-.BR XmacII (1),
-.BR Xsun (1),
-.BR Xnest (1),
-.BR Xvfb (1),
-.BR Xorg (1),
-.BR XDarwin (1),
-.BR Xprt (1).
+.BR Xserver (__appmansuffix__),
+.BR Xorg (__appmansuffix__),
+.BR Xdmx (__appmansuffix__),
+.BR Xephyr (__appmansuffix__),
+.BR Xnest (__appmansuffix__),
+.BR Xquartz (__appmansuffix__),
+.BR Xvfb (__appmansuffix__),
+.BR Xvnc (__appmansuffix__),
+.BR XWin (__appmansuffix__).
 .\" specifications
 .I "Xlib \- C Language X Interface\fR,\fP"
 and
@@ -1314,9 +1314,9 @@ and
 X Window System is a trademark of The Open Group.
 .SH AUTHORS
 .PP
-A cast of thousands, literally.  Releases 6.7 and later are 
-brought to you by the X.Org Foundation, LLC. The names of all people who 
-made it a reality will be found in the individual documents and 
+A cast of thousands, literally.  Releases 6.7 and later are
+brought to you by the X.Org Foundation. The names of all people who
+made it a reality will be found in the individual documents and
 source files.
 .PP
 Releases 6.6 and 6.5 were done by The X.Org Group.  Release 6.4 was done by
@@ -1327,8 +1327,8 @@ Matt Landau (emeritus), Ralph Mor (emeritus), Janet O'Halloran, Bob
 Scheifler, Ralph Swick, Dave Wiggins (emeritus), and Reed Augliere.
 .PP
 The X Window System standard was originally developed at the
-Laboratory for Computer Science at the Massachusetts Institute 
-of Technology, and all rights thereto were assigned to the X Consortium 
+Laboratory for Computer Science at the Massachusetts Institute
+of Technology, and all rights thereto were assigned to the X Consortium
 on January 1, 1994.
 X Consortium, Inc. closed its doors on December 31, 1996.  All rights to the
 X Window System have been assigned to The Open Group.

@@ -90,33 +90,38 @@ writeDense32(int Value, pointer Base, register unsigned long Offset)
 }
 
 
-#ifndef INCLUDE_XF86_NO_DOMAIN
 
 void
 _dense_outb(char val, unsigned long port)
 {
-  if ((port & ~0xffff) == 0) return _outb(val, port);
-
+  if ((port & ~0xffff) == 0) {
+  _outb(val, port);
+  } else {
   write_mem_barrier();
   *(volatile CARD8 *)port = val;
+  }
 }
 
 void
 _dense_outw(short val, unsigned long port)
 {
-  if ((port & ~0xffff) == 0) return _outw(val, port);
-
+  if ((port & ~0xffff) == 0) {
+  _outw(val, port);
+  } else {
   write_mem_barrier();
   *(volatile CARD16 *)port = val;
+  }
 }
 
 void
 _dense_outl(int val, unsigned long port)
 {
-  if ((port & ~0xffff) == 0) return _outl(val, port);
-
+  if ((port & ~0xffff) == 0) {
+  _outl(val, port);
+  } else {
   write_mem_barrier();
   *(volatile CARD32 *)port = val;
+  }
 }
 
 unsigned int
@@ -146,5 +151,4 @@ _dense_inl(unsigned long port)
   return *(volatile CARD32 *)port;
 }
 
-#endif /* !INCLUDE_XF86_NO_DOMAIN */
 

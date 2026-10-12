@@ -300,6 +300,24 @@ typedef struct _XGI_TimingVStruct
   UCHAR data[7];
 } XGI_TimingVStruct;
 
+/* Jong 10/04/2007; merge code */
+typedef struct _XGI_CH7007TV_TimingHStruct
+{
+  UCHAR data[10];
+} XGI_CH7007TV_TimingHStruct;
+
+/* Jong 10/04/2007; merge code */
+typedef struct _XGI_CH7007TV_TimingVStruct
+{
+  UCHAR data[10];
+} XGI_CH7007TV_TimingVStruct;
+
+/* Jong 10/04/2007; merge code */
+typedef struct _XGI_XG21CRT1Struct
+{
+ UCHAR ModeID,CR02,CR03,CR15,CR16;
+} XGI_XG21CRT1Struct;
+
 typedef struct _XGI330_CHTVRegDataStruct
 {
  UCHAR Reg[16];
@@ -333,6 +351,27 @@ typedef struct _XGI330_LCDCapStruct
                 UCHAR      Spectrum_33;
                 UCHAR      Spectrum_34;
 } XGI330_LCDCapStruct;
+
+/* Jong 10/04/2007; merge code */
+typedef struct _XGI21_LVDSCapStruct
+{
+                USHORT     LVDS_Capability;
+                USHORT     LVDSHT;
+                USHORT     LVDSVT;
+                USHORT     LVDSHDE;
+                USHORT     LVDSVDE;
+                USHORT     LVDSHFP;
+                USHORT     LVDSVFP;
+                USHORT     LVDSHSYNC;
+                USHORT     LVDSVSYNC;
+                UCHAR      VCLKData1;
+                UCHAR      VCLKData2;
+                UCHAR      PSC_S1;
+                UCHAR      PSC_S2;
+                UCHAR      PSC_S3;
+                UCHAR      PSC_S4;
+                UCHAR      PSC_S5;
+} XGI21_LVDSCapStruct;
 
 typedef struct _XGI_CRT1TableStruct
 {
@@ -397,9 +436,10 @@ struct _VB_DEVICE_INFO
     USHORT   ModeType;
     USHORT   IF_DEF_TRUMPION,IF_DEF_DSTN;
     USHORT   IF_DEF_CRT2Monitor,IF_DEF_VideoCapture;
-    USHORT   IF_DEF_LCDA,IF_DEF_YPbPr,IF_DEF_ScaleLCD,IF_DEF_OEMUtil,IF_DEF_PWD;
+    USHORT   IF_DEF_CH7017,IF_DEF_LCDA,IF_DEF_YPbPr,IF_DEF_ScaleLCD,IF_DEF_OEMUtil,IF_DEF_PWD;
     USHORT   IF_DEF_ExpLink;
-    USHORT   IF_DEF_HiVision;
+    USHORT   IF_DEF_CH7005,IF_DEF_HiVision; /* Jong 10/08/2007; merge code */
+    USHORT   IF_DEF_CH7007; /* Jong 10/04/2007; merge code */
     USHORT   LCDResInfo,LCDTypeInfo, VBType;/*301b*/
     USHORT   VBInfo,TVInfo,LCDInfo;
     USHORT   VBExtInfo;/*301lv*/
@@ -425,6 +465,8 @@ struct _VB_DEVICE_INFO
     UCHAR  SoftSetting;
     UCHAR  OutputSelect;
 
+	USHORT IF_DEF_LVDS; /* Jong 10/05/2007; merge code */
+
     const USHORT *pRGBSenseData;
     const USHORT *pRGBSenseData2; /*301b*/
     const USHORT *pVideoSenseData;
@@ -445,7 +487,21 @@ struct _VB_DEVICE_INFO
     UCHAR  SR31;
     UCHAR  SR32;
     UCHAR  SR33;
+
+	/* Jong 10/05/2007; merge code */
+    UCHAR  *pSR36;      
     UCHAR  CRCF;
+    UCHAR  *pCRD0;      
+    UCHAR  *pCRDE;      
+    UCHAR  *pCR8F;      
+    UCHAR  *pSR40;      
+    UCHAR  *pSR41;      
+    UCHAR  *pDVOSetting;
+    UCHAR  *pCR2E;
+    UCHAR  *pCR2F;
+    UCHAR  *pCR46;
+    UCHAR  *pCR47;
+
     UCHAR  CRT2Data_1_2;
     UCHAR  CRT2Data_4_D;
     UCHAR  CRT2Data_4_E;
@@ -479,6 +535,7 @@ struct _VB_DEVICE_INFO
     UCHAR   CR97;
 
     const XGI330_LCDCapStruct  *LCDCapList;
+    XGI21_LVDSCapStruct  *XG21_LVDSCapList; /* Jong 10/05/2007; merge code */
 
     XGI_TimingHStruct  TimingH;
     XGI_TimingVStruct  TimingV;
@@ -493,7 +550,25 @@ struct _VB_DEVICE_INFO
     const XGI_VBVCLKDataStruct  *VBVCLKData;
     const XGI_StResInfoStruct   *StResInfo;
     const XGI_ModeResInfoStruct *ModeResInfo;
+    XGI_XG21CRT1Struct			*UpdateCRT1;  /* Jong 10/05/2007; merge code */
 };  /* _VB_DEVICE_INFO */
+
+/* Jong 10/04/2007; merge code */
+typedef struct 
+{
+    USHORT    Horizontal_ACTIVE;
+    USHORT    Horizontal_FP;
+    USHORT    Horizontal_SYNC;
+    USHORT    Horizontal_BP;
+    USHORT    Vertical_ACTIVE;
+    USHORT    Vertical_FP;
+    USHORT    Vertical_SYNC;
+    USHORT    Vertical_BP;
+    double    DCLK;
+    UCHAR     FrameRate;
+    UCHAR     Interlace;
+    USHORT    Margin;    
+} TimingInfo;
 
 #define _VB_STRUCT_
 #endif /* _VB_STRUCT_ */

@@ -52,10 +52,8 @@ Author:  Bob Scheifler, MIT X Consortium
 #define Dsin(d)	sin((double)d*(M_PI/11520.0))
 #define Dcos(d)	cos((double)d*(M_PI/11520.0))
 
-_X_EXPORT void
-miFillArcSetup(arc, info)
-    xArc *arc;
-    miFillArcRec *info;
+void
+miFillArcSetup(xArc *arc, miFillArcRec *info)
 {
     info->y = arc->height >> 1;
     info->dy = arc->height & 1;
@@ -306,11 +304,8 @@ miGetPieEdge(
     miGetArcEdge(arc, edge, k, top, left);
 }
 
-_X_EXPORT void
-miFillArcSliceSetup(arc, slice, pGC)
-    xArc *arc;
-    miArcSliceRec *slice;
-    GCPtr pGC;
+void
+miFillArcSliceSetup(xArc *arc, miArcSliceRec *slice, GCPtr pGC)
 {
     int angle1, angle2;
 
@@ -551,10 +546,10 @@ miFillEllipseI(
     int *widths;
     int *wids;
 
-    points = (DDXPointPtr)xalloc(sizeof(DDXPointRec) * arc->height);
+    points = xalloc(sizeof(DDXPointRec) * arc->height);
     if (!points)
 	return;
-    widths = (int *)xalloc(sizeof(int) * arc->height);
+    widths = xalloc(sizeof(int) * arc->height);
     if (!widths)
     {
 	xfree(points);
@@ -594,10 +589,10 @@ miFillEllipseD(
     int *widths;
     int *wids;
 
-    points = (DDXPointPtr)xalloc(sizeof(DDXPointRec) * arc->height);
+    points = xalloc(sizeof(DDXPointRec) * arc->height);
     if (!points)
 	return;
-    widths = (int *)xalloc(sizeof(int) * arc->height);
+    widths = xalloc(sizeof(int) * arc->height);
     if (!widths)
     {
 	xfree(points);
@@ -666,10 +661,10 @@ miFillArcSliceI(
     slw = arc->height;
     if (slice.flip_top || slice.flip_bot)
 	slw += (arc->height >> 1) + 1;
-    points = (DDXPointPtr)xalloc(sizeof(DDXPointRec) * slw);
+    points = xalloc(sizeof(DDXPointRec) * slw);
     if (!points)
 	return;
-    widths = (int *)xalloc(sizeof(int) * slw);
+    widths = xalloc(sizeof(int) * slw);
     if (!widths)
     {
 	xfree(points);
@@ -730,10 +725,10 @@ miFillArcSliceD(
     slw = arc->height;
     if (slice.flip_top || slice.flip_bot)
 	slw += (arc->height >> 1) + 1;
-    points = (DDXPointPtr)xalloc(sizeof(DDXPointRec) * slw);
+    points = xalloc(sizeof(DDXPointRec) * slw);
     if (!points)
 	return;
-    widths = (int *)xalloc(sizeof(int) * slw);
+    widths = xalloc(sizeof(int) * slw);
     if (!widths)
     {
 	xfree(points);
@@ -775,12 +770,8 @@ miFillArcSliceD(
  * Since we don't have to worry about overlapping segments, we can just
  * fill each arc as it comes.
  */
-_X_EXPORT void
-miPolyFillArc(pDraw, pGC, narcs, parcs)
-    DrawablePtr	pDraw;
-    GCPtr	pGC;
-    int		narcs;
-    xArc	*parcs;
+void
+miPolyFillArc(DrawablePtr pDraw, GCPtr pGC, int narcs, xArc *parcs)
 {
     int i;
     xArc *arc;
@@ -788,7 +779,7 @@ miPolyFillArc(pDraw, pGC, narcs, parcs)
     for(i = narcs, arc = parcs; --i >= 0; arc++)
     {
 	if (miFillArcEmpty(arc))
-	    continue;;
+	    continue;
 	if ((arc->angle2 >= FULLCIRCLE) || (arc->angle2 <= -FULLCIRCLE))
 	{
 	    if (miCanFillArc(arc))

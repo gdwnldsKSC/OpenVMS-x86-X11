@@ -32,7 +32,6 @@
 
 #if __OBJC__
 
-#import <Cocoa/Cocoa.h>
 #import "X11Controller.h"
 
 @interface X11Application : NSApplication {
@@ -48,6 +47,7 @@
 - (const char *) prefs_get_string:(NSString *)key default:(const char *)def;
 - (float) prefs_get_float:(NSString *)key default:(float)def;
 - (int) prefs_get_boolean:(NSString *)key default:(int)def;
+- (NSURL *) prefs_copy_url:(NSString *)key default:(NSURL *)def;
 - (NSArray *) prefs_get_array:(NSString *)key;
 - (void) prefs_set_integer:(NSString *)key value:(int)value;
 - (void) prefs_set_float:(NSString *)key value:(float)value;
@@ -56,8 +56,8 @@
 - (void) prefs_set_string:(NSString *)key value:(NSString *)value;
 - (void) prefs_synchronize;
 
-- (BOOL) x_active;
-
+- (X11Controller *) controller;
+- (OSX_BOOL) x_active;
 @end
 
 extern X11Application *X11App;
@@ -72,18 +72,17 @@ void X11ApplicationSetCanQuit (int state);
 void X11ApplicationServerReady (void);
 void X11ApplicationShowHideMenubar (int state);
 
-void X11ApplicationMain(int argc, const char **argv, void (*server_thread) (void *), void *server_arg);
+void X11ApplicationMain(int argc, char **argv, char **envp);
 
 extern int X11EnableKeyEquivalents;
-extern int quartzHasRoot, quartzEnableRootless;
-
-#define APP_PREFS "org.x.X11"
+extern int quartzHasRoot, quartzEnableRootless, quartzFullscreenMenu;
 
 #define PREFS_APPSMENU              "apps_menu"
 #define PREFS_FAKEBUTTONS           "enable_fake_buttons"
 #define PREFS_SYSBEEP               "enable_system_beep"
 #define PREFS_KEYEQUIVS             "enable_key_equivalents"
-#define PREFS_KEYMAP_FILE           "keymap_file"
+#define PREFS_FULLSCREEN_HOTKEYS    "fullscreen_hotkeys"
+#define PREFS_FULLSCREEN_MENU       "fullscreen_menu"
 #define PREFS_SYNC_KEYMAP           "sync_keymap"
 #define PREFS_DEPTH                 "depth"
 #define PREFS_NO_AUTH               "no_auth"
@@ -92,12 +91,21 @@ extern int quartzHasRoot, quartzEnableRootless;
 #define PREFS_NO_QUIT_ALERT         "no_quit_alert"
 #define PREFS_FAKE_BUTTON2          "fake_button2"
 #define PREFS_FAKE_BUTTON3          "fake_button3"
+#define PREFS_APPKIT_MODIFIERS      "appkit_modifiers"
+#define PREFS_WINDOW_ITEM_MODIFIERS "window_item_modifiers"
 #define PREFS_ROOTLESS              "rootless"
-#define PREFS_FULLSCREEN_HOTKEYS    "fullscreen_hotkeys"
-#define PREFS_SWAP_ALT_META         "swap_alt_meta"
+#define PREFS_TEST_EXTENSIONS       "enable_test_extensions"
 #define PREFS_XP_OPTIONS            "xp_options"
-#define PREFS_ENABLE_STEREO         "enable_stereo"
 #define PREFS_LOGIN_SHELL           "login_shell"
-#define PREFS_QUARTZ_WM_CLICK_THROUGH "wm_click_through"
+#define PREFS_UPDATE_FEED           "update_feed"
+#define PREFS_CLICK_THROUGH         "wm_click_through"
+#define PREFS_FFM                   "wm_ffm"
+#define PREFS_FOCUS_ON_NEW_WINDOW   "wm_focus_on_new_window"
+
+#define PREFS_SYNC_PB                "sync_pasteboard"
+#define PREFS_SYNC_PB_TO_CLIPBOARD   "sync_pasteboard_to_clipboard"
+#define PREFS_SYNC_PB_TO_PRIMARY     "sync_pasteboard_to_primary"
+#define PREFS_SYNC_CLIPBOARD_TO_PB   "sync_clipboard_to_pasteboard"
+#define PREFS_SYNC_PRIMARY_ON_SELECT "sync_primary_on_select"
 
 #endif /* X11APPLICATION_H */

@@ -76,6 +76,25 @@ static int XGINew_Is301B(PVB_DEVICE_INFO pVBInfo)
     return !(XGI_GetReg((XGIIOADDRESS)pVBInfo->Part4Port, 0x01) > 0x0B0);
 }
 
+/* --------------------------------------------------------------------- */
+/* Function : XGI_Is301C */
+/* Input : */
+/* Output : */
+/* Description : */
+/* --------------------------------------------------------------------- */
+BOOLEAN XGI_Is301C( PVB_DEVICE_INFO pVBInfo )
+{
+    if ( ( XGI_GetReg( (XGIIOADDRESS) pVBInfo->Part4Port , 0x01 ) & 0xF0 ) == 0xC0 )
+        return( 1 ) ;
+
+    if ( XGI_GetReg( (XGIIOADDRESS) pVBInfo->Part4Port , 0x01 ) >= 0xD0 )
+    {
+        if ( XGI_GetReg( (XGIIOADDRESS) pVBInfo->Part4Port , 0x39 ) == 0xE0 )
+            return( 1 ) ;
+    }
+
+    return( 0 ) ;
+}
 
 /* --------------------------------------------------------------------- */
 /* Function : XGINew_Sense */

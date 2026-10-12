@@ -32,7 +32,7 @@ in this Software without prior written authorization from The Open Group.
 #endif
 #include "Xlibint.h"
 
-/* 
+/*
  * Flush output and (wait for and) return the next event matching the
  * predicate in the queue.
  */
@@ -50,7 +50,7 @@ XIfEvent (
 {
 	register _XQEvent *qelt, *prev;
 	unsigned long qe_serial = 0;
-	
+
         LockDisplay(dpy);
 	prev = NULL;
 	while (1) {
@@ -61,6 +61,7 @@ XIfEvent (
 		   && (*predicate)(dpy, &qelt->event, arg)) {
 		    *event = qelt->event;
 		    _XDeq(dpy, prev, qelt);
+		    _XStoreEventCookie(dpy, event);
 		    UnlockDisplay(dpy);
 		    return 0;
 		}

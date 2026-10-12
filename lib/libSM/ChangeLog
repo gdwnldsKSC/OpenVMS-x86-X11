@@ -1,3 +1,78 @@
+commit 82bbf42a2ba0401a8346505b1292ddb7b58f4507
+Author: Rémi Cardona <remi@gentoo.org>
+Date:   Fri Aug 7 14:19:50 2009 +0200
+
+    libSM 1.1.1, update libtool version
+
+commit 45720a2e266748ac15bc0544b56e035383695588
+Author: Diego Elio 'Flameeyes' Pettenò <flameeyes@gmail.com>
+Date:   Sat May 16 01:01:39 2009 +0200
+
+    Use FreeBSD uuid functions when available.
+    
+    If the system provide the uuid_create function assume building on FreeBSD
+    or another OS with a compatible uuid interface. If that's the case, ignore
+    libuuid and just use the system functions without extra deps.
+
+commit 0389dbec3b738fa7e1dbef2b5317124b95bdfb20
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Mon Feb 16 01:27:24 2009 +0100
+
+    Typo fix
+    
+    This makes us really error out if we want libuuid but can't find it.
+
+commit b75eae83221465bd0da4d21d0bab5af379dc31c1
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Mon Feb 2 20:34:30 2009 -0800
+
+    Add README with pointers to mailing list, bugzilla & git repos
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 896aeb5dd128fc8e489106fa7aaa5cee1e589106
+Author: Paulo Cesar Pereira de Andrade <pcpa@mandriva.com.br>
+Date:   Wed Jan 28 18:48:47 2009 -0200
+
+    Janitor: ansification, make distcheck, compiler warnings.
+
+commit 1dcf5502137efe36d01b30169d4387438ad47be0
+Author: Paulo Cesar Pereira de Andrade <pcpa@mandriva.com.br>
+Date:   Sat Nov 29 04:55:58 2008 -0200
+
+    avoid gcc warnings for libSM
+    
+      Patch from http://bugs.freedesktop.org/show_bug.cgi?id=17968 adapted
+    to current sources.
+      This corrects a potential (hypothetical) segmentation fault.
+
+commit 8bed01275a7c7caf8f777e4074a5ee1ba1c2b3e7
+Author: Caolan McNamara <caolanm@redhat.com>
+Date:   Fri Oct 17 17:21:49 2008 -0400
+
+    Bug #17644: Fix valgrind warning in _SmcProcessMessage
+
+commit 8ce4f47adb343aed069862a05b5e315173b17823
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Fri Jul 18 16:35:57 2008 +0200
+
+    If we don't have libuuid, build without it instead of failing
+    
+    Only error out if configure was given --with-libuuid but we
+    don't find it.
+
+commit e3166eecfe7a04f0f622bd93e8a6a1faa672a029
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed Jul 2 14:24:24 2008 -0400
+
+    Avoid memcpy(foo, NULL, n), that's just nonsense.
+
+commit 27ebe517cabaf038fa65edff0140317f9438adec
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed Jul 2 14:00:54 2008 -0400
+
+    libSM 1.1.0
+
 commit 2e8a41efb10ae462e5e43e13e479ca4da0fb0103
 Author: Alan Coopersmith <alan.coopersmith@sun.com>
 Date:   Wed Jun 25 09:55:14 2008 -0700

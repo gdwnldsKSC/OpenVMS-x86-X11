@@ -83,10 +83,6 @@ static Bool	SISUSBDriverFunc(ScrnInfoPtr pScrn, xorgDriverFuncOp op, pointer p);
 #endif
 
 /* Optional functions */
-#ifdef X_XF86MiscPassMessage
-extern int	SISUSBHandleMessage(int scrnIndex, const char *msgtype,
-				const char *msgval, char **retmsg);
-#endif
 static void       SISUSBFreeScreen(int scrnIndex, int flags);
 static ModeStatus SISUSBValidMode(int scrnIndex, DisplayModePtr mode,
 				Bool verbose, int flags);

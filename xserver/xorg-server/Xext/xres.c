@@ -2,8 +2,6 @@
    Copyright (c) 2002  XFree86 Inc
 */
 
-#define NEED_EVENTS
-#define NEED_REPLIES
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -23,6 +21,7 @@
 #include "windowstr.h"
 #include "gcstruct.h"
 #include "modinit.h"
+#include "protocol-versions.h"
 
 static int
 ProcXResQueryVersion (ClientPtr client)
@@ -41,8 +40,8 @@ ProcXResQueryVersion (ClientPtr client)
     rep.type = X_Reply;
     rep.length = 0;
     rep.sequenceNumber = client->sequence;
-    rep.server_major = XRES_MAJOR_VERSION;
-    rep.server_minor = XRES_MINOR_VERSION;   
+    rep.server_major = SERVER_XRES_MAJOR_VERSION;
+    rep.server_minor = SERVER_XRES_MINOR_VERSION;
     if (client->swapped) { 
         int n;
         swaps(&rep.sequenceNumber, n);
@@ -77,7 +76,7 @@ ProcXResQueryClients (ClientPtr client)
     rep.type = X_Reply;
     rep.sequenceNumber = client->sequence;
     rep.num_clients = num_clients;
-    rep.length = rep.num_clients * sz_xXResClient >> 2;
+    rep.length = bytes_to_int32(rep.num_clients * sz_xXResClient);
     if (client->swapped) {
         int n;
         swaps (&rep.sequenceNumber, n);
@@ -94,7 +93,7 @@ ProcXResQueryClients (ClientPtr client)
             scratch.resource_mask = RESOURCE_ID_MASK;
         
             if(client->swapped) {
-                register int n;
+                int n;
                 swapl (&scratch.resource_base, n);
                 swapl (&scratch.resource_mask, n);
             }
@@ -133,9 +132,7 @@ ProcXResQueryClientResources (ClientPtr client)
         return BadValue;
     }
 
-    counts = xalloc((lastResourceType + 1) * sizeof(int));
-
-    memset(counts, 0, (lastResourceType + 1) * sizeof(int));
+    counts = xcalloc(lastResourceType + 1, sizeof(int));
 
     FindAllClientResources(clients[clientID], ResFindAllRes, counts);
 
@@ -148,7 +145,7 @@ ProcXResQueryClientResources (ClientPtr client)
     rep.type = X_Reply;
     rep.sequenceNumber = client->sequence;
     rep.num_types = num_types;
-    rep.length = rep.num_types * sz_xXResType >> 2;
+    rep.length = bytes_to_int32(rep.num_types * sz_xXResType);
     if (client->swapped) {
         int n;
         swaps (&rep.sequenceNumber, n);
@@ -177,7 +174,7 @@ ProcXResQueryClientResources (ClientPtr client)
             scratch.count = counts[i];
 
             if(client->swapped) {
-                register int n;
+                int n;
                 swapl (&scratch.resource_type, n);
                 swapl (&scratch.count, n);
             }
@@ -301,10 +298,6 @@ ProcXResQueryClientPixmapBytes (ClientPtr client)
     return (client->noClientException);
 }
 
-
-static void
-ResResetProc (ExtensionEntry *extEntry) { }
-
 static int
 ProcResDispatch (ClientPtr client)
 {
@@ -386,5 +379,5 @@ ResExtensionInit(INITARGS)
 {
     (void) AddExtension(XRES_NAME, 0, 0,
                             ProcResDispatch, SProcResDispatch,
-                            ResResetProc, StandardMinorOpcode);
+                            NULL, StandardMinorOpcode);
 }

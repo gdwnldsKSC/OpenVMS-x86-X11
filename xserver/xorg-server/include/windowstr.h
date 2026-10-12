@@ -71,6 +71,13 @@ SOFTWARE.
 #define SameBorder(as, a, bs, b)				\
     EqualPixUnion(as, a, bs, b)
 
+/* used as NULL-terminated list */
+typedef struct _DevCursorNode {
+    CursorPtr                   cursor;
+    DeviceIntPtr                dev;
+    struct _DevCursorNode*      next;
+} DevCursNodeRec, *DevCursNodePtr, *DevCursorList;
+
 typedef struct _WindowOpt {
     VisualID		visual;		   /* default: same as parent */
     CursorPtr		cursor;		   /* default: window.cursorNone */
@@ -82,14 +89,11 @@ typedef struct _WindowOpt {
     PropertyPtr		userProps;	   /* default: NULL */
     unsigned long	backingBitPlanes;  /* default: ~0L */
     unsigned long	backingPixel;	   /* default: 0 */
-#ifdef SHAPE
     RegionPtr		boundingShape;	   /* default: NULL */
     RegionPtr		clipShape;	   /* default: NULL */
     RegionPtr		inputShape;	   /* default: NULL */
-#endif
-#ifdef XINPUT
     struct _OtherInputMasks *inputMasks;   /* default: NULL */
-#endif
+    DevCursorList       deviceCursors;     /* default: NULL */
 } WindowOptRec, *WindowOptPtr;
 
 #define BackgroundPixel	    2L
@@ -137,8 +141,8 @@ typedef struct _Window {
     RegionRec		borderSize;
     DDXPointRec		origin;		/* position relative to parent */
     unsigned short	borderWidth;
-    unsigned short	deliverableEvents;
-    Mask		eventMask;
+    unsigned short	deliverableEvents; /* all masks from all clients */
+    Mask		eventMask;      /* mask from the creating client */
     PixUnion		background;
     PixUnion		border;
     pointer		backStorage;	/* null when BS disabled */
@@ -160,6 +164,9 @@ typedef struct _Window {
     unsigned		forcedBS:1;	/* system-supplied backingStore */
     unsigned		redirectDraw:2;	/* COMPOSITE rendering redirect */
     unsigned		forcedBG:1;	/* must have an opaque background */
+#ifdef ROOTLESS
+    unsigned		rootlessUnhittable:1;	/* doesn't hit-test */
+#endif
 } WindowRec;
 
 /*
@@ -167,7 +174,7 @@ typedef struct _Window {
  * fields (or filling the appropriate default value)
  */
 
-extern Mask	    DontPropagateMasks[];
+extern _X_EXPORT Mask	DontPropagateMasks[];
 
 #define wTrackParent(w,field)	((w)->optional ? \
 				    (w)->optional->field \
@@ -182,30 +189,20 @@ extern Mask	    DontPropagateMasks[];
 #define wDontPropagateMask(w)	wUseDefault(w, dontPropagateMask, DontPropagateMasks[(w)->dontPropagate])
 #define wOtherEventMasks(w)	wUseDefault(w, otherEventMasks, 0)
 #define wOtherClients(w)	wUseDefault(w, otherClients, NULL)
-#ifdef XINPUT
 #define wOtherInputMasks(w)	wUseDefault(w, inputMasks, NULL)
-#else
-#define wOtherInputMasks(w)	NULL
-#endif
 #define wPassiveGrabs(w)	wUseDefault(w, passiveGrabs, NULL)
 #define wUserProps(w)		wUseDefault(w, userProps, NULL)
 #define wBackingBitPlanes(w)	wUseDefault(w, backingBitPlanes, ~0L)
 #define wBackingPixel(w)	wUseDefault(w, backingPixel, 0)
-#ifdef SHAPE
 #define wBoundingShape(w)	wUseDefault(w, boundingShape, NULL)
 #define wClipShape(w)		wUseDefault(w, clipShape, NULL)
 #define wInputShape(w)          wUseDefault(w, inputShape, NULL)
-#endif
 #define wClient(w)		(clients[CLIENT_ID((w)->drawable.id)])
 #define wBorderWidth(w)		((int) (w)->borderWidth)
 
 /* true when w needs a border drawn. */
 
-#ifdef SHAPE
 #define HasBorder(w)	((w)->borderWidth || wClipShape(w))
-#else
-#define HasBorder(w)	((w)->borderWidth)
-#endif
 
 typedef struct _ScreenSaverStuff {
     WindowPtr pWindow;
@@ -224,30 +221,7 @@ typedef struct _ScreenSaverStuff {
 
 #define HasSaverWindow(i)   (savedScreenInfo[i].pWindow != NullWindow)
 
-extern int screenIsSaved;
-extern ScreenSaverStuffRec savedScreenInfo[MAXSCREENS];
-
-/*
- * this is the configuration parameter "NO_BACK_SAVE"
- * it means that any existant backing store should not 
- * be used to implement save unders.
- */
-
-#ifndef NO_BACK_SAVE
-#define DO_SAVE_UNDERS(pWin)	((pWin)->drawable.pScreen->saveUnderSupport ==\
-				 USE_DIX_SAVE_UNDERS)
-/*
- * saveUnderSupport is set to this magic value when using DIXsaveUnders
- */
-
-#define USE_DIX_SAVE_UNDERS	0x40
-#endif
-
-extern int numSaveUndersViewable;
-extern int deltaSaveUndersViewable;
-
-#ifdef XEVIE
-extern WindowPtr xeviewin;
-#endif
+extern _X_EXPORT int screenIsSaved;
+extern _X_EXPORT ScreenSaverStuffRec savedScreenInfo[MAXSCREENS];
 
 #endif /* WINDOWSTRUCT_H */

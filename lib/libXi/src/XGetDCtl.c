@@ -1,5 +1,3 @@
-/* $Xorg: XGetDCtl.c,v 1.4 2001/02/09 02:03:50 xorgcvs Exp $ */
-
 /************************************************************
 
 Copyright 1989, 1998  The Open Group
@@ -45,7 +43,6 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 SOFTWARE.
 
 ********************************************************/
-/* $XFree86: xc/lib/Xi/XGetDCtl.c,v 3.3 2001/12/14 19:55:13 dawes Exp $ */
 
 /***********************************************************************
  *
@@ -62,10 +59,10 @@ SOFTWARE.
 #include "XIint.h"
 
 XDeviceControl *
-XGetDeviceControl(dpy, dev, control)
-    register Display *dpy;
-    XDevice *dev;
-    int control;
+XGetDeviceControl(
+    register Display	*dpy,
+    XDevice		*dev,
+    int			 control)
 {
     int size = 0;
     int nbytes, i;
@@ -104,6 +101,12 @@ XGetDeviceControl(dpy, dev, control)
 	sav = d;
 	_XRead(dpy, (char *)d, nbytes);
 
+        /* In theory, we should just be able to use d->length to get the size.
+         * Turns out that a number of X servers (up to and including server
+         * 1.4) sent the wrong length value down the wire. So to not break
+         * apps that run against older servers, we have to calculate the size
+         * manually.
+         */
 	switch (d->control) {
 	case DEVICE_RESOLUTION:
 	{
@@ -116,17 +119,18 @@ XGetDeviceControl(dpy, dev, control)
 	}
         case DEVICE_ABS_CALIB:
         {
-            size += sizeof(xDeviceAbsCalibState);
+            size += sizeof(XDeviceAbsCalibState);
             break;
         }
         case DEVICE_ABS_AREA:
         {
-            size += sizeof(xDeviceAbsAreaState);
+            size += sizeof(XDeviceAbsAreaState);
             break;
         }
         case DEVICE_CORE:
         {
-            size += sizeof(xDeviceCoreState);
+            size += sizeof(XDeviceCoreState);
+            break;
         }
 	default:
 	    size += d->length;
@@ -170,7 +174,7 @@ XGetDeviceControl(dpy, dev, control)
             XDeviceAbsCalibState *C = (XDeviceAbsCalibState *) Device;
 
             C->control = DEVICE_ABS_CALIB;
-            C->length = sizeof(C);
+            C->length = sizeof(XDeviceAbsCalibState);
             C->min_x = c->min_x;
             C->max_x = c->max_x;
             C->min_y = c->min_y;
@@ -188,7 +192,7 @@ XGetDeviceControl(dpy, dev, control)
             XDeviceAbsAreaState *A = (XDeviceAbsAreaState *) Device;
 
             A->control = DEVICE_ABS_AREA;
-            A->length = sizeof(A);
+            A->length = sizeof(XDeviceAbsAreaState);
             A->offset_x = a->offset_x;
             A->offset_y = a->offset_y;
             A->width = a->width;
@@ -204,7 +208,7 @@ XGetDeviceControl(dpy, dev, control)
             XDeviceCoreState *C = (XDeviceCoreState *) Device;
 
             C->control = DEVICE_CORE;
-            C->length = sizeof(C);
+            C->length = sizeof(XDeviceCoreState);
             C->status = c->status;
             C->iscore = c->iscore;
 
@@ -233,8 +237,7 @@ XGetDeviceControl(dpy, dev, control)
 }
 
 void
-XFreeDeviceControl(control)
-    XDeviceControl *control;
+XFreeDeviceControl(XDeviceControl *control)
 {
     XFree(control);
 }

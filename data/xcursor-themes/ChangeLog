@@ -1,34 +1,143 @@
-2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit a0209fb0eb221bc72af78f238ad69372d3b2a8d2
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Sep 24 17:12:31 2009 -0700
 
-	* configure.ac:
-	Update package version for X11R7 release.
+    xcursor-themes 1.0.2
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
 
-2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit f682dfcb3c5ef0051c96f4116d85fd54999b8fbc
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Sep 24 17:16:00 2009 -0700
 
-	* configure.ac:
-	Update package version number for final X11R7 release candidate.
+    Fill in COPYING and README
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
 
-2005-12-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit 5bc5c8c768c80cf7ca8c09f6a1a0f2f4f5dfa0ae
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Sep 24 17:10:10 2009 -0700
 
-	* configure.ac:
-	Get the cursor install dir from xcursor.pc.
+    Remove unnecessary configure steps, since no C code is compiled here
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
 
-2005-10-18  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit c734aa47795aa1bdbcbd01872a8b0d1a99cd4dd4
+Author: Paulo Cesar Pereira de Andrade <pcpa@mandriva.com.br>
+Date:   Tue Jan 27 15:37:07 2009 -0200
 
-	* configure.ac:
-	Update package version number for RC1 release.
+    Correct make distcheck.
 
-2005-10-07  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit 423873fb23e4a12a9745d13d8967956db7e5b28e
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Thu Dec 6 15:51:12 2007 -0500
 
-	* genmakefile.sh:
-	Add .xcf files to dist
+    Add missing PHONY line for automatic ChangeLog generation
 
-	* redglass/Makefile.cfg:
-	* whiteglass/Makefile.cfg:
-	* redglass/Makefile.cursors:
-	* whiteglass/Makefile.cursors:
-	Add missing files to DIST and regenerate */Makefile.cursors
+commit 3d4f1cbe3f54f0acbecef5c45d8082b631b67ae4
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Tue Apr 10 19:22:15 2007 -0700
 
-2005-07-11  Daniel Stone  <daniel@freedesktop.org>
+    Add a .gitignore file
 
-	* Initial autotooling.
+commit 31f21b77706a614cf1f47ee25f42848cfa5198cb
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Tue Apr 10 19:14:13 2007 -0700
+
+    Replace static ChangeLog with dist-hook to generate from git log
+
+commit 45a939aa4c555133dc11780be1ea66887e8667ae
+Author: Marcin 'Qrczak' Kowalczyk <qrczak@knm.org.pl>
+Date:   Tue Apr 10 19:06:38 2007 -0700
+
+    Bug #10492: Redglass xcursor theme doesn't package the "watch" cursor
+    
+    X.Org Bugzilla #10492 <http://bugs.freedesktop.org/show_bug.cgi?id=10492>
+    Patch #9402 <http://bugs.freedesktop.org/attachment.cgi?id=9402>
+
+commit e7a729e215ffaca3e60e7850ea0e36d75379d1f9
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Dec 21 02:29:55 2005 +0000
+
+    Update package version for X11R7 release.
+
+commit d2c98c9221f0e3663b33d4bfa0b026646146b854
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Mon Dec 19 16:23:39 2005 +0000
+
+    Stub COPYING files
+
+commit 2a9294b2b1ce44b0c8fe0be10515f57ac6689df8
+Author: Kevin E Martin <kem@kem.org>
+Date:   Thu Dec 15 00:24:12 2005 +0000
+
+    Update package version number for final X11R7 release candidate.
+
+commit 13b59109807b4ab636a46834c7e8d39a37225cb7
+Author: Kevin E Martin <kem@kem.org>
+Date:   Fri Dec 9 19:29:13 2005 +0000
+
+    Get the cursor install dir from xcursor.pc.
+
+commit 416b5c221c4cbe8697f7f9ca0aa722519f470084
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Oct 19 02:47:59 2005 +0000
+
+    Update package version number for RC1 release.
+
+commit e3326d84a18767e9b95633f59f920b60f08b0b41
+Author: Kevin E Martin <kem@kem.org>
+Date:   Fri Oct 7 04:56:48 2005 +0000
+
+    Add .xcf files to dist
+    Add missing files to DIST and regenerate */Makefile.cursors
+
+commit 7531a3a643176b99cd9aacd9394e584a81b6cb68
+Author: Kevin E Martin <kem@kem.org>
+Date:   Fri Jul 29 21:22:39 2005 +0000
+
+    Various changes preparing packages for RC0:
+    - Verify and update package version numbers as needed
+    - Implement versioning scheme
+    - Change bug address to point to bugzilla bug entry form
+    - Disable loadable i18n in libX11 by default (use --enable-loadable-i18n to
+        reenable it)
+    - Fix makedepend to use pkgconfig and pass distcheck
+    - Update build script to build macros first
+    - Update modular Xorg version
+
+commit 95697dbcfdbb3f44bc7497a898609ca8b00547be
+Author: Kevin E Martin <kem@kem.org>
+Date:   Thu Jul 28 03:39:50 2005 +0000
+
+    Fix handhelds cursor dependencies and EXTRA_DIST
+
+commit 7d8b88a2609a95f2098e5439692443a6f5860788
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Mon Jul 11 04:09:02 2005 +0000
+
+    Initial autotooling.
+
+commit e32abb2360340093637c69c0df940cac2db7e59a
+Author: Keith Packard <keithp@keithp.com>
+Date:   Thu Aug 12 23:29:18 2004 +0000
+
+    Avoid gumby trademark and copyright
+
+commit 6086d0f16db9e0075b24a365f6a4aff56dbcad5d
+Author: Kaleb Keithley <kaleb@freedesktop.org>
+Date:   Tue Nov 25 19:29:11 2003 +0000
+
+    XFree86 4.3.99.16 Bring the tree up to date for the Cygwin folks
+
+commit 374c8f856a8b875d77f039001c2c4e2ada0d3d9d
+Author: Kaleb Keithley <kaleb@freedesktop.org>
+Date:   Fri Nov 14 16:49:21 2003 +0000
+
+    XFree86 4.3.0.1
+
+commit f818e6a5bcaecdd898824d62867a1d89283d051d
+Author: Kaleb Keithley <kaleb@freedesktop.org>
+Date:   Fri Nov 14 16:49:21 2003 +0000
+
+    Initial revision

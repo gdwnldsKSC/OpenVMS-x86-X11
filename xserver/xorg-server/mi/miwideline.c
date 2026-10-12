@@ -95,10 +95,10 @@ miFillPolyHelper (DrawablePtr pDrawable, GCPtr pGC, unsigned long pixel,
     
     if (!spanData)
     {
-    	pptInit = (DDXPointPtr) xalloc (overall_height * sizeof(*ppt));
+    	pptInit = xalloc (overall_height * sizeof(*ppt));
     	if (!pptInit)
 	    return;
-    	pwidthInit = (int *) xalloc (overall_height * sizeof(*pwidth));
+    	pwidthInit = xalloc (overall_height * sizeof(*pwidth));
     	if (!pwidthInit)
     	{
 	    xfree (pptInit);
@@ -116,10 +116,10 @@ miFillPolyHelper (DrawablePtr pDrawable, GCPtr pGC, unsigned long pixel,
     }
     else
     {
-	spanRec.points = (DDXPointPtr) xalloc (overall_height * sizeof (*ppt));
+	spanRec.points = xalloc (overall_height * sizeof (*ppt));
 	if (!spanRec.points)
 	    return;
-	spanRec.widths = (int *) xalloc (overall_height * sizeof (int));
+	spanRec.widths = xalloc (overall_height * sizeof (int));
 	if (!spanRec.widths)
 	{
 	    xfree (spanRec.points);
@@ -221,10 +221,10 @@ miFillRectPolyHelper (
     }
     else
     {
-	spanRec.points = (DDXPointPtr) xalloc (h * sizeof (*ppt));
+	spanRec.points = xalloc (h * sizeof (*ppt));
 	if (!spanRec.points)
 	    return;
-	spanRec.widths = (int *) xalloc (h * sizeof (int));
+	spanRec.widths = xalloc (h * sizeof (int));
 	if (!spanRec.widths)
 	{
 	    xfree (spanRec.points);
@@ -251,14 +251,17 @@ miFillRectPolyHelper (
     }
 }
 
-_X_EXPORT /* static */ int
-miPolyBuildEdge (x0, y0, k, dx, dy, xi, yi, left, edge)
-    double	x0, y0;
-    double	k;  /* x0 * dy - y0 * dx */
-    int 	dx, dy;
-    int		xi, yi;
-    int		left;
-    PolyEdgePtr edge;
+/* static */ int
+miPolyBuildEdge (
+    double	x0,
+    double	y0,
+    double	k,  /* x0 * dy - y0 * dx */
+    int		dx,
+    int		dy,
+    int		xi,
+    int		yi,
+    int		left,
+    PolyEdgePtr edge)
 {
     int	    x, y, e;
     int	    xady;
@@ -310,15 +313,18 @@ miPolyBuildEdge (x0, y0, k, dx, dy, xi, yi, left, edge)
 
 #define StepAround(v, incr, max) (((v) + (incr) < 0) ? (max - 1) : ((v) + (incr) == max) ? 0 : ((v) + (incr)))
 
-_X_EXPORT /* static */ int
-miPolyBuildPoly (vertices, slopes, count, xi, yi, left, right, pnleft, pnright, h)
-    PolyVertexPtr 	vertices;
-    PolySlopePtr	slopes;
-    int			count;
-    int		   	xi, yi;
-    PolyEdgePtr	    	left, right;
-    int		    	*pnleft, *pnright;
-    int		    	*h;
+/* static */ int
+miPolyBuildPoly (
+    PolyVertexPtr	vertices,
+    PolySlopePtr	slopes,
+    int			count,
+    int			xi,
+    int			yi,
+    PolyEdgePtr		left,
+    PolyEdgePtr		right,
+    int			*pnleft,
+    int			*pnright,
+    int			*h)
 {
     int 	top, bottom;
     double 	miny, maxy;
@@ -909,12 +915,10 @@ miRoundJoinFace (LineFacePtr face, PolyEdgePtr edge, Bool *leftEdge)
     return y;
 }
 
-_X_EXPORT void
-miRoundJoinClip (pLeft, pRight, edge1, edge2, y1, y2, left1, left2)
-    LineFacePtr pLeft, pRight;
-    PolyEdgePtr	edge1, edge2;
-    int		*y1, *y2;
-    Bool	*left1, *left2;
+void
+miRoundJoinClip (LineFacePtr pLeft, LineFacePtr pRight,
+		 PolyEdgePtr edge1, PolyEdgePtr edge2,
+		 int *y1, int *y2, Bool *left1, Bool *left2)
 {
     double	denom;
 
@@ -934,12 +938,8 @@ miRoundJoinClip (pLeft, pRight, edge1, edge2, y1, y2, left1, left2)
     *y2 = miRoundJoinFace (pRight, edge2, left2);
 }
 
-_X_EXPORT int
-miRoundCapClip (face, isInt, edge, leftEdge)
-    LineFacePtr face;
-    Bool	isInt;
-    PolyEdgePtr edge;
-    Bool	*leftEdge;
+int
+miRoundCapClip (LineFacePtr face, Bool isInt, PolyEdgePtr edge, Bool *leftEdge)
 {
     int		y;
     int 	dx, dy;
@@ -1045,10 +1045,10 @@ miLineArc (
     }
     if (!spanData)
     {
-    	points = (DDXPointPtr)xalloc(sizeof(DDXPointRec) * pGC->lineWidth);
+    	points = xalloc(sizeof(DDXPointRec) * pGC->lineWidth);
     	if (!points)
 	    return;
-    	widths = (int *)xalloc(sizeof(int) * pGC->lineWidth);
+    	widths = xalloc(sizeof(int) * pGC->lineWidth);
     	if (!widths)
     	{
 	    xfree(points);
@@ -1064,10 +1064,10 @@ miLineArc (
     }
     else
     {
-	points = (DDXPointPtr) xalloc (pGC->lineWidth * sizeof (DDXPointRec));
+	points = xalloc (pGC->lineWidth * sizeof (DDXPointRec));
 	if (!points)
 	    return;
-	widths = (int *) xalloc (pGC->lineWidth * sizeof (int));
+	widths = xalloc (pGC->lineWidth * sizeof (int));
 	if (!widths)
 	{
 	    xfree (points);
@@ -1524,15 +1524,11 @@ miCleanupSpanData (DrawablePtr pDrawable, GCPtr pGC, SpanDataPtr spanData)
     miFreeSpanGroup (&spanData->fgGroup);
 }
 
-_X_EXPORT void
-miWideLine (pDrawable, pGC, mode, npt, pPts)
-    DrawablePtr	pDrawable;
-    GCPtr 	pGC;
-    int		mode;
-    int 	npt;
-    DDXPointPtr pPts;
+void
+miWideLine (DrawablePtr pDrawable, GCPtr pGC,
+	    int mode, int npt, DDXPointPtr pPts)
 {
-    int		x1, y1, x2, y2;
+ int x1, y1, x2, y2;
     SpanDataRec	spanDataRec;
     SpanDataPtr	spanData;
     long   	pixel;
@@ -2022,13 +2018,9 @@ miWideDashSegment (
     *pDashOffset = pDash[dashIndex] - dashRemain;
 }
 
-_X_EXPORT void
-miWideDash (pDrawable, pGC, mode, npt, pPts)
-    DrawablePtr	pDrawable;
-    GCPtr 	pGC;
-    int		mode;
-    int 	npt;
-    DDXPointPtr pPts;
+void
+miWideDash (DrawablePtr pDrawable, GCPtr pGC,
+	    int mode, int npt, DDXPointPtr pPts)
 {
     int			x1, y1, x2, y2;
     unsigned long	pixel;

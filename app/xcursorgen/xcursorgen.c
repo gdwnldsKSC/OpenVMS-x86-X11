@@ -372,8 +372,8 @@ main (int argc, char *argv[])
 {
   struct flist *list;
   int count;
-  char *in = 0, *out = 0;
-  char *prefix = 0;
+  char *in = NULL, *out = NULL;
+  char *prefix = NULL;
   int i;
 
   for (i = 1; i < argc; i++)
@@ -404,7 +404,7 @@ main (int argc, char *argv[])
       if (strcmp (argv[i], "-p") == 0 || strcmp (argv[i], "--prefix") == 0)
         {
 	  i++;
-	  if (argv[i] == 0)
+	  if (argv[i] == NULL)
 	    {
 	      usage (argv[0]);
 	      return 1;

@@ -56,10 +56,10 @@ SOFTWARE.
 #define BUFSIZE 4096
 #define BUFWATERMARK 8192
 
+#if defined(XDMCP) || defined(HASXDMAUTH)
 #include <X11/Xdmcp.h>
+#endif
 
-#ifndef sgi	    /* SGI defines OPEN_MAX in a useless way */
-#ifndef X_NOT_POSIX
 #ifdef _POSIX_SOURCE
 #include <limits.h>
 #else
@@ -67,18 +67,7 @@ SOFTWARE.
 #include <limits.h>
 #undef _POSIX_SOURCE
 #endif
-#else /* X_NOT_POSIX */
-#ifdef WIN32
-#define _POSIX_
-#include <limits.h>
-#undef _POSIX_
-#endif
-#endif /* X_NOT_POSIX */
-#endif
 
-#ifdef __QNX__
-#define NOFILES_MAX 256
-#endif
 #ifndef OPEN_MAX
 #ifdef SVR4
 #define OPEN_MAX 256
@@ -115,16 +104,18 @@ SOFTWARE.
 #define MAXSELECT (sizeof(fd_set) * NBBY)
 
 #ifndef HAS_GETDTABLESIZE
-#if !defined(hpux) && !defined(SVR4) && !defined(SYSV)
+#if !defined(SVR4) && !defined(SYSV)
 #define HAS_GETDTABLESIZE
 #endif
 #endif
 
 #include <stddef.h>
 
+#if defined(XDMCP) || defined(HASXDMAUTH)
 typedef Bool (*ValidatorFunc)(ARRAY8Ptr Auth, ARRAY8Ptr Data, int packet_type);
 typedef Bool (*GeneratorFunc)(ARRAY8Ptr Auth, ARRAY8Ptr Data, int packet_type);
 typedef Bool (*AddAuthorFunc)(unsigned name_length, char *name, unsigned data_length, char *data);
+#endif
 
 typedef struct _connectionInput {
     struct _connectionInput *next;
@@ -184,7 +175,7 @@ typedef struct _osComm {
 extern int FlushClient(
     ClientPtr /*who*/,
     OsCommPtr /*oc*/,
-    char* /*extraBuf*/,
+    const void * /*extraBuf*/,
     int /*extraCount*/
 );
 
@@ -217,7 +208,7 @@ extern Bool AnyClientsWriteBlocked;
 
 extern WorkQueuePtr workQueue;
 
-/* added by raphael */
+/* in WaitFor.c */
 #ifdef WIN32
 typedef long int fd_mask;
 #endif
@@ -257,6 +248,7 @@ extern int  SecureRPCRemove   (AuthRemCArgs);
 extern int  SecureRPCReset    (AuthRstCArgs);
 #endif
 
+#ifdef XDMCP
 /* in xdmcp.c */
 extern void XdmcpUseMsg (void);
 extern int XdmcpOptions(int argc, char **argv, int i);
@@ -281,6 +273,7 @@ extern void XdmcpRegisterAuthentication (
 
 struct sockaddr_in;
 extern void XdmcpRegisterBroadcastAddress (struct sockaddr_in *addr);
+#endif
 
 #ifdef HASXDMAUTH
 extern void XdmAuthenticationInit (char *cookie, int cookie_length);

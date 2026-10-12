@@ -29,8 +29,7 @@
 #include <xorg-config.h>
 #endif
 
-#if defined(_XOPEN_SOURCE) || defined(__QNXNTO__) \
-	|| (defined(sun) && defined(__SVR4))
+#if defined(_XOPEN_SOURCE) || defined(sun) && defined(__SVR4)
 #include <math.h>
 #else
 #define _XOPEN_SOURCE   /* to get prototype for pow on some systems */
@@ -50,10 +49,10 @@
 #include "xf86_OSproc.h"
 #include "xf86str.h"
 #include "micmap.h"
+#include "xf86Crtc.h"
 
 #ifdef XFreeXDGA
-#define _XF86DGA_SERVER_
-#include <X11/extensions/xf86dgastr.h>
+#include <X11/extensions/xf86dgaproto.h>
 #include "dgaproc.h"
 #endif
 
@@ -85,6 +84,7 @@ typedef struct {
   Bool				(*EnterVT)(int, int);
   Bool				(*SwitchMode)(int, DisplayModePtr, int);
   int				(*SetDGAMode)(int, int, DGADevicePtr);
+  xf86ChangeGammaProc		*ChangeGamma;
   int				maxColors;
   int				sigRGBbits;
   int				gammaElements;
@@ -102,8 +102,10 @@ typedef struct {
   int		overscan;
 } CMapColormapRec, *CMapColormapPtr;
 
-static DevPrivateKey CMapScreenKey = NULL;
-static DevPrivateKey CMapColormapKey = &CMapColormapKey;
+static int CMapScreenKeyIndex;
+static DevPrivateKey CMapScreenKey;
+static int CMapColormapKeyIndex;
+static DevPrivateKey CMapColormapKey = &CMapColormapKeyIndex;
 
 static void CMapInstallColormap(ColormapPtr);
 static void CMapStoreColors(ColormapPtr, int, xColorItem *);
@@ -113,7 +115,9 @@ static void CMapDestroyColormap (ColormapPtr);
 
 static Bool CMapEnterVT(int, int);
 static Bool CMapSwitchMode(int, DisplayModePtr, int);
+#ifdef XFreeXDGA
 static int  CMapSetDGAMode(int, int, DGADevicePtr);
+#endif
 static int  CMapChangeGamma(int, Gamma);
 
 static void ComputeGamma(CMapScreenPtr);
@@ -125,7 +129,7 @@ static void CMapUnwrapScreen(ScreenPtr pScreen);
 
 
 
-_X_EXPORT Bool xf86HandleColormaps(
+Bool xf86HandleColormaps(
     ScreenPtr pScreen,
     int maxColors,
     int sigRGBbits,
@@ -140,10 +144,14 @@ _X_EXPORT Bool xf86HandleColormaps(
     int *indices; 
     int elements;
 
+    /* If we support a better colormap system, then pretend we succeeded. */
+    if (xf86_crtc_supports_gamma(pScrn))
+	return TRUE;
+
     if(!maxColors || !sigRGBbits || !loadPalette)
 	return FALSE;
 
-    CMapScreenKey = &CMapScreenKey;
+    CMapScreenKey = &CMapScreenKeyIndex;
 
     elements = 1 << sigRGBbits;
 
@@ -189,6 +197,7 @@ _X_EXPORT Bool xf86HandleColormaps(
     pScreenPriv->EnterVT = pScrn->EnterVT;
     pScreenPriv->SwitchMode = pScrn->SwitchMode;
     pScreenPriv->SetDGAMode = pScrn->SetDGAMode;    
+    pScreenPriv->ChangeGamma = pScrn->ChangeGamma;
 
     if (!(flags & CMAP_LOAD_EVEN_IF_OFFSCREEN)) {
 	pScrn->EnterVT = CMapEnterVT;
@@ -203,8 +212,8 @@ _X_EXPORT Bool xf86HandleColormaps(
     ComputeGamma(pScreenPriv);
 
     /* get the default map */
-
-    pDefMap = (ColormapPtr) LookupIDByType(pScreen->defColormap, RT_COLORMAP);
+    dixLookupResourceByType((pointer *)&pDefMap, pScreen->defColormap,
+			    RT_COLORMAP, serverClient, DixInstallAccess);
     
     if(!CMapAllocateColormapPrivate(pDefMap)) {
         CMapUnwrapScreen(pScreen);
@@ -556,8 +565,8 @@ CMapRefreshColors(ColormapPtr pmap, int defs, int* indices)
 
     switch(pVisual->class) {
     case StaticGray:
-	for(i = 0; i <= numColors - 1; i++) { 
-	    index = i * maxValue / numColors;
+	for(i = 0; i < numColors; i++) { 
+	    index = (i+1) * maxValue / numColors;
 	    colors[i].red   = gamma[index].red;
 	    colors[i].green = gamma[index].green;
 	    colors[i].blue  = gamma[index].blue;
@@ -818,6 +827,7 @@ CMapUnwrapScreen(ScreenPtr pScreen)
     pScrn->EnterVT = pScreenPriv->EnterVT; 
     pScrn->SwitchMode = pScreenPriv->SwitchMode; 
     pScrn->SetDGAMode = pScreenPriv->SetDGAMode; 
+    pScrn->ChangeGamma = pScreenPriv->ChangeGamma;
 
     xfree(pScreenPriv->gamma);
     xfree(pScreenPriv->PreAllocIndices);
@@ -883,6 +893,7 @@ CMapChangeGamma(
    int index,
    Gamma gamma
 ){
+    int ret = Success;
     ScrnInfoPtr pScrn = xf86Screens[index];
     ScreenPtr pScreen = pScrn->pScreen;
     CMapColormapPtr pColPriv;
@@ -948,7 +959,12 @@ CMapChangeGamma(
 	    CMapReinstallMap(pMap);
     }
 
-    return Success;
+    pScrn->ChangeGamma = pScreenPriv->ChangeGamma;
+    if (pScrn->ChangeGamma)
+	ret = pScrn->ChangeGamma(index, gamma);
+    pScrn->ChangeGamma = CMapChangeGamma;
+
+    return ret;
 }
 
 
@@ -971,7 +987,7 @@ ComputeGammaRamp (
     }
 }
 
-_X_EXPORT int
+int
 xf86ChangeGammaRamp(
    ScreenPtr pScreen,
    int size,
@@ -983,6 +999,18 @@ xf86ChangeGammaRamp(
     CMapColormapPtr pColPriv;
     CMapScreenPtr pScreenPriv;
     CMapLinkPtr pLink;
+
+    if (xf86_crtc_supports_gamma(pScrn)) {
+	xf86CrtcConfigPtr config = XF86_CRTC_CONFIG_PTR(pScrn);
+	RRCrtcPtr crtc = config->output[config->compat_output]->crtc->randr_crtc;
+
+	if (crtc->gammaSize != size)
+	    return BadValue;
+
+	RRCrtcGammaSet(crtc, red, green, blue);
+
+	return Success;
+    }
 
     if(CMapScreenKey == NULL)
         return BadImplementation;
@@ -1039,10 +1067,18 @@ xf86ChangeGammaRamp(
     return Success;
 }
 
-_X_EXPORT int
+int
 xf86GetGammaRampSize(ScreenPtr pScreen)
 {
+    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     CMapScreenPtr pScreenPriv;
+
+    if (xf86_crtc_supports_gamma(pScrn)) {
+	xf86CrtcConfigPtr config = XF86_CRTC_CONFIG_PTR(pScrn);
+	RRCrtcPtr crtc = config->output[config->compat_output]->crtc->randr_crtc;
+
+	return crtc->gammaSize;
+    }
 
     if(CMapScreenKey == NULL) return 0;
 
@@ -1053,7 +1089,7 @@ xf86GetGammaRampSize(ScreenPtr pScreen)
     return pScreenPriv->gammaElements;
 }
 
-_X_EXPORT int
+int
 xf86GetGammaRamp(
    ScreenPtr pScreen,
    int size,
@@ -1061,9 +1097,27 @@ xf86GetGammaRamp(
    unsigned short *green,
    unsigned short *blue
 ){
+    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     CMapScreenPtr pScreenPriv;
     LOCO *entry;
     int shift, sigbits;
+
+    if (xf86_crtc_supports_gamma(pScrn)) {
+	xf86CrtcConfigPtr config = XF86_CRTC_CONFIG_PTR(pScrn);
+	RRCrtcPtr crtc = config->output[config->compat_output]->crtc->randr_crtc;
+
+	if (crtc->gammaSize < size)
+	    return BadValue;
+
+	if (!RRCrtcGammaGet(crtc))
+	    return BadImplementation;
+
+	memcpy(red, crtc->gammaRed, size * sizeof(*red));
+	memcpy(green, crtc->gammaGreen, size * sizeof(*green));
+	memcpy(blue, crtc->gammaBlue, size * sizeof(*blue));
+
+	return Success;
+    }
 
     if(CMapScreenKey == NULL) 
 	return BadImplementation;
@@ -1107,5 +1161,5 @@ xf86ChangeGamma(
     if(pScrn->ChangeGamma)
 	return (*pScrn->ChangeGamma)(pScreen->myNum, gamma);
 
-    return Success; /* Success? */
+    return BadImplementation;
 }

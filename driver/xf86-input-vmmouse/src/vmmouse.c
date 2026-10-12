@@ -68,6 +68,10 @@
 #include "xf86OSmouse.h"
 #include "compiler.h"
 
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+#include <xserver-properties.h>
+#endif
+
 #include "xisb.h"
 #include "mipointer.h"
 
@@ -94,8 +98,8 @@
  * Version constants
  */
 #define VMMOUSE_MAJOR_VERSION 12
-#define VMMOUSE_MINOR_VERSION 5
-#define VMMOUSE_PATCHLEVEL 1
+#define VMMOUSE_MINOR_VERSION 6
+#define VMMOUSE_PATCHLEVEL 5
 #define VMMOUSE_DRIVER_VERSION \
    (VMMOUSE_MAJOR_VERSION * 65536 + VMMOUSE_MINOR_VERSION * 256 + VMMOUSE_PATCHLEVEL)
 #define VMMOUSE_DRIVER_VERSION_STRING \
@@ -116,9 +120,6 @@ const char vm_mouse_version[] __attribute__((section(".modinfo"),unused)) =
 /*****************************************************************************
  *	static function header
  ****************************************************************************/
-#ifdef XFree86LOADER
-static const OptionInfoRec *VMMouseAvailableOptions(void *unused);
-#endif
 static InputInfoPtr VMMousePreInit(InputDriverPtr drv, IDevPtr dev, int flags);
 static void VMMouseUnInit(InputDriverPtr drv, InputInfoPtr pInfo, int flags);
 static void MouseCommonOptions(InputInfoPtr pInfo);
@@ -138,9 +139,11 @@ static void MouseCtrl(DeviceIntPtr device, PtrCtrl *ctrl);
  *		Definitions
  *****************************************************************************/
 typedef struct {
-   int 		screenNum;
-   Bool 	vmmouseAvailable;
-   Bool		relative;
+   int                 screenNum;
+   Bool                vmmouseAvailable;
+   VMMOUSE_INPUT_DATA  vmmousePrevInput;
+   Bool                isCurrRelative;
+   Bool                absoluteRequested;
 } VMMousePrivRec, *VMMousePrivPtr;
 
 static const char *reqSymbols[] = {
@@ -200,68 +203,6 @@ InputDriverRec VMMOUSE = {
    0
 };
 
-typedef enum {
-    OPTION_ALWAYS_CORE,
-    OPTION_SEND_CORE_EVENTS,
-    OPTION_CORE_POINTER,
-    OPTION_SEND_DRAG_EVENTS,
-    OPTION_HISTORY_SIZE,
-    OPTION_DEVICE,
-    OPTION_PROTOCOL,
-    OPTION_BUTTONS,
-    OPTION_EMULATE_3_BUTTONS,
-    OPTION_EMULATE_3_TIMEOUT,
-    OPTION_CHORD_MIDDLE,
-    OPTION_FLIP_XY,
-    OPTION_INV_X,
-    OPTION_INV_Y,
-    OPTION_ANGLE_OFFSET,
-    OPTION_Z_AXIS_MAPPING,
-    OPTION_SAMPLE_RATE,
-    OPTION_RESOLUTION,
-    OPTION_EMULATE_WHEEL,
-    OPTION_EMU_WHEEL_BUTTON,
-    OPTION_EMU_WHEEL_INERTIA,
-    OPTION_X_AXIS_MAPPING,
-    OPTION_Y_AXIS_MAPPING,
-    OPTION_AUTO_SOFT,
-    OPTION_DRAGLOCKBUTTONS
-} MouseOpts;
-
-/*
- * Define the acceptable mouse options
- * Currently not all of those options are supported
- *
- */
-static const OptionInfoRec mouseOptions[] = {
-    { OPTION_ALWAYS_CORE,	"AlwaysCore",	  OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_SEND_CORE_EVENTS,	"SendCoreEvents", OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_CORE_POINTER,	"CorePointer",	  OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_SEND_DRAG_EVENTS,	"SendDragEvents", OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_HISTORY_SIZE,	"HistorySize",	  OPTV_INTEGER,	{0}, FALSE },
-    { OPTION_DEVICE,		"Device",	  OPTV_STRING,	{0}, FALSE },
-    { OPTION_PROTOCOL,		"Protocol",	  OPTV_STRING,	{0}, FALSE },
-    { OPTION_BUTTONS,		"Buttons",	  OPTV_INTEGER,	{0}, FALSE },
-    { OPTION_EMULATE_3_BUTTONS,	"Emulate3Buttons",OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_EMULATE_3_TIMEOUT,	"Emulate3Timeout",OPTV_INTEGER,	{0}, FALSE },
-    { OPTION_CHORD_MIDDLE,	"ChordMiddle",	  OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_FLIP_XY,		"FlipXY",	  OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_INV_X,		"InvX",		  OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_INV_Y,		"InvY",		  OPTV_BOOLEAN,	{0}, FALSE },
-    { OPTION_ANGLE_OFFSET,	"AngleOffset",	  OPTV_INTEGER,	{0}, FALSE },
-    { OPTION_Z_AXIS_MAPPING,	"ZAxisMapping",	  OPTV_STRING,	{0}, FALSE },
-    { OPTION_SAMPLE_RATE,	"SampleRate",	  OPTV_INTEGER,	{0}, FALSE },
-    { OPTION_RESOLUTION,	"Resolution",	  OPTV_INTEGER,	{0}, FALSE },
-    { OPTION_EMULATE_WHEEL,	"EmulateWheel",	  OPTV_BOOLEAN, {0}, FALSE },
-    { OPTION_EMU_WHEEL_BUTTON,	"EmulateWheelButton", OPTV_INTEGER, {0}, FALSE },
-    { OPTION_EMU_WHEEL_INERTIA,	"EmulateWheelInertia", OPTV_INTEGER, {0}, FALSE },
-    { OPTION_X_AXIS_MAPPING,	"XAxisMapping",	  OPTV_STRING,	{0}, FALSE },
-    { OPTION_Y_AXIS_MAPPING,	"YAxisMapping",	  OPTV_STRING,	{0}, FALSE },
-    { OPTION_AUTO_SOFT,		"AutoSoft",	  OPTV_BOOLEAN, {0}, FALSE },
-    { OPTION_DRAGLOCKBUTTONS,	"DragLockButtons",OPTV_STRING,	{0}, FALSE },
-    { -1,			NULL,		  OPTV_NONE,	{0}, FALSE }
-};
-
 static char reverseMap[32] = { 0,  4,  2,  6,  1,  5,  3,  7,
 			       8, 12, 10, 14,  9, 13, 11, 15,
 			      16, 20, 18, 22, 17, 21, 19, 23,
@@ -295,6 +236,9 @@ VMMousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
    InputInfoPtr pInfo;
    MouseDevPtr pMse;
    VMMousePrivPtr mPriv;
+
+#ifndef NO_MOUSE_MODULE
+{
    OSMouseInfoPtr osInfo = NULL;
 
    /*
@@ -303,6 +247,8 @@ VMMousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
    osInfo = xf86OSMouseInit(0);
    if (!osInfo)
       return FALSE;
+}
+#endif
 
    mPriv = xcalloc (1, sizeof (VMMousePrivRec));
 
@@ -310,6 +256,9 @@ VMMousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
    if (!mPriv) {
       return NULL;
    }
+
+   mPriv->absoluteRequested = FALSE;
+
    /*
     * try to enable vmmouse here
     */
@@ -411,14 +360,6 @@ VMMousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
    return pInfo;
 }
 
-#ifdef XFree86LOADER
-static const OptionInfoRec *
-VMMouseAvailableOptions(void *unused)
-{
-    return (mouseOptions);
-}
-#endif
-
 
 /*
  *----------------------------------------------------------------------
@@ -476,6 +417,7 @@ VMMouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
     VMMousePrivPtr mPriv;
     int truebuttons;
     int id, change;
+    Bool mouseMoved = FALSE;
 
     pMse = pInfo->private;
     mPriv = (VMMousePrivPtr)pMse->mousePriv;
@@ -489,7 +431,14 @@ VMMouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
 
     buttons = reverseBits(reverseMap, buttons);
 
-    if (dx || dy) {
+    if (mPriv->isCurrRelative) {
+       mouseMoved = dx || dy;
+    } else {
+       mouseMoved = (dx != mPriv->vmmousePrevInput.X) ||
+                    (dy != mPriv->vmmousePrevInput.Y) ||
+                    (mPriv->vmmousePrevInput.Flags & VMMOUSE_MOVE_RELATIVE);
+    }
+    if (mouseMoved) {
 
 #ifdef CALL_CONVERSION_PROC
         /*
@@ -498,7 +447,7 @@ VMMouseDoPostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy)
          */
         VMMouseConvertProc(pInfo, 0, 2, dx, dy, 0, 0, 0, 0, &dx, &dy);
 #endif
-        xf86PostMotionEvent(pInfo->dev, !mPriv->relative, 0, 2, dx, dy);
+        xf86PostMotionEvent(pInfo->dev, !mPriv->isCurrRelative, 0, 2, dx, dy);
     }
 
     if (truebuttons != pMse->lastButtons) {
@@ -546,7 +495,7 @@ VMMousePostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy, int dz, int dw
 	break;
     case MSE_MAPTOX:
 	if (dz != 0) {
-	   if(mPriv->relative)
+	   if(mPriv->isCurrRelative)
 	      dx = dz;
 	   else
 	      dx += dz;
@@ -555,7 +504,7 @@ VMMousePostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy, int dz, int dw
 	break;
     case MSE_MAPTOY:
 	if (dz != 0) {
-	   if(mPriv->relative)
+	   if(mPriv->isCurrRelative)
 	      dy = dz;
 	   else
 	      dy += dz;
@@ -590,7 +539,7 @@ VMMousePostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy, int dz, int dw
      */
     if (zbutton) {
 	buttons &= ~zbutton;
-	if(mPriv->relative)
+	if(mPriv->isCurrRelative)
 	   VMMouseDoPostEvent(pInfo, buttons, 0, 0);
 	else
 	   VMMouseDoPostEvent(pInfo, buttons, dx, dy);
@@ -603,8 +552,7 @@ VMMousePostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy, int dz, int dw
  *
  * FlushButtons --
  *
- * 	FlushButtons -- send button up events for sanity. It is called
- *	during DEVICE_ON in VMMouseDeviceControl
+ * 	FlushButtons -- reset button states.
  *
  * Results:
  * 	None
@@ -618,18 +566,7 @@ VMMousePostEvent(InputInfoPtr pInfo, int buttons, int dx, int dy, int dz, int dw
 static void
 FlushButtons(MouseDevPtr pMse)
 {
-
-    /* If no button down is pending xf86PostButtonEvent()
-     * will discard them. So we are on the safe side. */
-
-    int i, blocked;
-
     pMse->lastButtons = 0;
-
-    blocked = xf86BlockSIGIO ();
-    for (i = 1; i <= 5; i++)
-	xf86PostButtonEvent(pMse->device,0,i,0,0,0);
-    xf86UnblockSIGIO (blocked);
 }
 
 
@@ -675,7 +612,7 @@ MouseCommonOptions(InputInfoPtr pInfo)
    /*
     * Process option for ZAxisMapping
     */
-   s = xf86SetStrOption(pInfo->options, "ZAxisMapping", NULL);
+   s = xf86SetStrOption(pInfo->options, "ZAxisMapping", "4 5");
    if (s) {
       int b1 = 0, b2 = 0, b3 = 0, b4 = 0;
       char *msg = NULL;
@@ -775,6 +712,10 @@ VMMouseDeviceControl(DeviceIntPtr device, int mode)
    VMMousePrivPtr mPriv;
    unsigned char map[MSE_MAXBUTTONS + 1];
    int i;
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+   Atom btn_labels[MSE_MAXBUTTONS] = {0};
+   Atom axes_labels[2] = { 0, 0 };
+#endif
 
    pInfo = device->public.devicePrivate;
    pMse = pInfo->private;
@@ -790,12 +731,33 @@ VMMouseDeviceControl(DeviceIntPtr device, int mode)
        */
       for (i = 0; i < MSE_MAXBUTTONS; i++)
 	 map[i + 1] = i + 1;
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+      btn_labels[0] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_LEFT);
+      btn_labels[1] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_MIDDLE);
+      btn_labels[2] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_RIGHT);
+      btn_labels[4] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_WHEEL_UP);
+      btn_labels[5] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_WHEEL_DOWN);
+      btn_labels[6] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_HWHEEL_LEFT);
+      btn_labels[7] = XIGetKnownProperty(BTN_LABEL_PROP_BTN_HWHEEL_RIGHT);
+      /* other buttons are unknown */
+
+#ifdef ABS_VALUATOR_AXES
+      axes_labels[0] = XIGetKnownProperty(AXIS_LABEL_PROP_ABS_X);
+      axes_labels[1] = XIGetKnownProperty(AXIS_LABEL_PROP_ABS_Y);
+#else
+      axes_labels[0] = XIGetKnownProperty(AXIS_LABEL_PROP_REL_X);
+      axes_labels[1] = XIGetKnownProperty(AXIS_LABEL_PROP_REL_Y);
+#endif /* ABS_VALUATOR_AXES */
+#endif
 
       InitPointerDeviceStruct((DevicePtr)device, map,
 			      min(pMse->buttons, MSE_MAXBUTTONS),
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+				btn_labels,
+#endif
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
 				miPointerGetMotionEvents,
-#else
+#elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
                                 GetMotionHistory,
 #endif
                                 pMse->Ctrl,
@@ -804,13 +766,40 @@ VMMouseDeviceControl(DeviceIntPtr device, int mode)
 #else
                                 GetMotionHistorySize(), 2
 #endif
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+				, axes_labels
+#endif
                                 );
 
       /* X valuator */
-      xf86InitValuatorAxisStruct(device, 0, 0, -1, 1, 0, 1);
+#ifdef ABS_VALUATOR_AXES
+      xf86InitValuatorAxisStruct(device, 0,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+				axes_labels[0],
+#endif
+				0, 65535, 10000, 0, 10000);
+#else
+      xf86InitValuatorAxisStruct(device, 0,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+				axes_labels[0],
+#endif
+				0, -1, 1, 0, 1);
+#endif
       xf86InitValuatorDefaults(device, 0);
       /* Y valuator */
-      xf86InitValuatorAxisStruct(device, 1, 0, -1, 1, 0, 1);
+#ifdef ABS_VALUATOR_AXES
+      xf86InitValuatorAxisStruct(device, 1,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+				axes_labels[1],
+#endif
+				0, 65535, 10000, 0, 10000);
+#else
+      xf86InitValuatorAxisStruct(device, 1,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+				axes_labels[1],
+#endif
+				0, -1, 1, 0, 1);
+#endif
       xf86InitValuatorDefaults(device, 1);
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
       xf86MotionHistoryAllocate(pInfo);
@@ -846,8 +835,6 @@ VMMouseDeviceControl(DeviceIntPtr device, int mode)
 		  return FALSE;
 	       } else {
 		  mPriv->vmmouseAvailable = TRUE;
-		  VMMouseClient_RequestAbsolute();
-		  mPriv->relative = FALSE;
 		  xf86Msg(X_INFO, "VMWARE(0): vmmouse enabled\n");
 	       }
 	    }
@@ -867,7 +854,8 @@ VMMouseDeviceControl(DeviceIntPtr device, int mode)
 	 VMMousePrivPtr mPriv = (VMMousePrivPtr)pMse->mousePriv;
 	 if( mPriv->vmmouseAvailable ) {
 	    VMMouseClient_Disable();
-	    mPriv->vmmouseAvailable = FALSE;
+            mPriv->vmmouseAvailable = FALSE;
+            mPriv->absoluteRequested = FALSE;
 	 }
 
 	 xf86RemoveEnabledDevice(pInfo);
@@ -916,6 +904,17 @@ VMMouseReadInput(InputInfoPtr pInfo)
 
    pMse = pInfo->private;
    mPriv = pMse->mousePriv;
+
+   if (!mPriv->absoluteRequested) {
+      /*
+       * We can request for absolute mode, but it depends on
+       * host whether it will send us absolute or relative
+       * position.
+       */
+      VMMouseClient_RequestAbsolute();
+      mPriv->absoluteRequested = TRUE;
+      xf86Msg(X_INFO, "VMWARE(0): vmmouse enable absolute mode\n");
+   }
 
    /*
     * First read the bytes in input device to clear the regular PS/2 fd so
@@ -968,12 +967,14 @@ VMMouseReadInput(InputInfoPtr pInfo)
 static void
 GetVMMouseMotionEvent(InputInfoPtr pInfo){
    MouseDevPtr pMse;
+   VMMousePrivPtr mPriv;
    int buttons, dx, dy, dz, dw;
    VMMOUSE_INPUT_DATA  vmmouseInput;
    int ps2Buttons = 0;
    int numPackets;
 
    pMse = pInfo->private;
+   mPriv = (VMMousePrivPtr)pMse->mousePriv;
    while((numPackets = VMMouseClient_GetInput(&vmmouseInput))){
       if (numPackets == VMMOUSE_ERROR) {
          VMMouseClient_Disable();
@@ -998,8 +999,13 @@ GetVMMouseMotionEvent(InputInfoPtr pInfo){
       dy = vmmouseInput.Y;
       dz = (char)vmmouseInput.Z;
       dw = 0;
+      /*
+       * Get the per package relative or absolute information.
+       */
+      mPriv->isCurrRelative = vmmouseInput.Flags & VMMOUSE_MOVE_RELATIVE;
       /* post an event */
       pMse->PostEvent(pInfo, buttons, dx, dy, dz, dw);
+      mPriv->vmmousePrevInput = vmmouseInput;
    }
 }
 
@@ -1101,7 +1107,7 @@ VMMouseConvertProc(InputInfoPtr pInfo, int first, int num, int v0, int v1, int v
    if (first != 0 || num != 2)
       return FALSE;
 
-   if(mPriv->relative) {
+   if(mPriv->isCurrRelative) {
       *x = v0;
       *y = v1;
    } else {
@@ -1120,14 +1126,6 @@ VMMouseConvertProc(InputInfoPtr pInfo, int first, int num, int v0, int v1, int v
 
 
 #ifdef XFree86LOADER
-ModuleInfoRec VMMouseInfo = {
-    1,
-    "VMMOUSE",
-    NULL,
-    0,
-    VMMouseAvailableOptions,
-};
-
 
 /*
  *----------------------------------------------------------------------
@@ -1176,21 +1174,18 @@ VMMousePlug(pointer	module,
 	    int		*errmin)
 {
    static Bool Initialised = FALSE;
-   char *name;
 
    xf86LoaderReqSymLists(reqSymbols, NULL);
 
-   if (!Initialised) {
+   if (!Initialised)
       Initialised = TRUE;
-#ifndef REMOVE_LOADER_CHECK_MODULE_INFO
-      if (xf86LoaderCheckSymbol("xf86AddModuleInfo"))
-#endif
-	 xf86AddModuleInfo(&VMMouseInfo, module);
-   }
 
    xf86Msg(X_INFO, "VMWARE(0): VMMOUSE module was loaded\n");
    xf86AddInputDriver(&VMMOUSE, module, 0);
 
+#ifndef NO_MOUSE_MODULE
+{
+   char *name;
    /*
     * Load the normal mouse module as submodule
     * If we fail in PreInit later, this allows us to fall back to normal mouse module
@@ -1206,6 +1201,8 @@ VMMousePlug(pointer	module,
       LoaderErrorMsg(NULL, name, *errmaj, *errmin);
    }
    xfree(name);
+}
+#endif
 
    return module;
 }
@@ -1226,7 +1223,7 @@ static XF86ModuleVersionInfo VMMouseVersionRec = {
 /*
  * The variable contains the necessary information to load and initialize the module
  */
-XF86ModuleData vmmouseModuleData = {
+_X_EXPORT XF86ModuleData vmmouseModuleData = {
    &VMMouseVersionRec,
    VMMousePlug,
    VMMouseUnplug

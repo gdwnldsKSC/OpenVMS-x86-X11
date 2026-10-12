@@ -32,7 +32,7 @@ in this Software without prior written authorization from The Open Group.
 #endif
 #include "Xlibint.h"
 
-/* 
+/*
  * Check existing events in queue to find if any match.  If so, return.
  * If not, flush buffer and see if any more events are readable. If one
  * matches, return.  If all else fails, tell the user no events found.
@@ -62,6 +62,7 @@ Bool XCheckIfEvent (
 		   && (*predicate)(dpy, &qelt->event, arg)) {
 		    *event = qelt->event;
 		    _XDeq(dpy, prev, qelt);
+		    _XStoreEventCookie(dpy, event);
 		    UnlockDisplay(dpy);
 		    return True;
 		}

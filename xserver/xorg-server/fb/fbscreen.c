@@ -90,11 +90,7 @@ _fbGetWindowPixmap (WindowPtr pWindow)
 void
 _fbSetWindowPixmap (WindowPtr pWindow, PixmapPtr pPixmap)
 {
-#ifdef FB_NO_WINDOW_PIXMAPS
-    FatalError ("Attempted to set window pixmap without fb support\n");
-#else
     dixSetPrivate(&pWindow->devPrivates, fbGetWinPrivateKey(), pPixmap);
-#endif
 }
 
 Bool
@@ -245,14 +241,6 @@ fbFinishScreenInit(ScreenPtr	pScreen,
 	pScreen->ModifyPixmapHeader = fb24_32ModifyPixmapHeader;
 	pScreen->CreateScreenResources = fb24_32CreateScreenResources;
     }
-#endif
-#if 0
-    /* leave backing store initialization to the enclosing code so
-     * it can choose the correct order of wrappers
-     */
-    /* init backing store here so we can overwrite CloseScreen without stepping
-     * on the backing store wrapped version */
-    fbInitializeBackingStore (pScreen);
 #endif
     return TRUE;
 }

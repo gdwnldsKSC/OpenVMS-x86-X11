@@ -23,7 +23,6 @@
  *
  *
  */
-/* $XFree86: xc/programs/Xserver/hw/xfree86/input/acecad/acecad.h,v 1.2tsi Exp $ */
 
 #ifndef _ACECAD_H_
 #define _ACECAD_H_
@@ -63,7 +62,7 @@
 
 #define NOTAVAIL ((errno == ENODEV) || (errno == ENXIO) || (errno == ENOENT))
 
-#define milisleep(ms) xf86usleep (ms * 1000)
+#define milisleep(ms) usleep (ms * 1000)
 
 #define SYSCALL(call) while(((call) == -1) && (errno == EINTR))
 

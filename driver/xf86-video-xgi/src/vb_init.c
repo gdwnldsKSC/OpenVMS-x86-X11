@@ -105,6 +105,23 @@ static const USHORT XGINew_DDRDRAM_TYPE340[4][5]=
     { 2,11, 8, 8,0x21}
 };
 
+/* Jong 10/05/2007; merge code */
+USHORT XGINew_DDRDRAM_TYPE20[12][5]=
+{
+{ 2,14,11,128,0x5D},
+{ 2,14,10,64,0x59},
+{ 2,13,11,64,0x4D},
+{ 2,14, 9,32,0x55},
+{ 2,13,10,32,0x49},
+{ 2,12,11,32,0x3D},
+{ 2,14, 8,16,0x51},
+{ 2,13, 9,16,0x45},
+{ 2,12,10,16,0x39},
+{ 2,13, 8, 8,0x41},
+{ 2,12, 9, 8,0x35},
+{ 2,12, 8, 4,0x31}
+};
+
 static void XGINew_SetDRAMSize_340(PXGI_HW_DEVICE_INFO, PVB_DEVICE_INFO);
 static void XGINew_SetDRAMSize_XG45(PXGI_HW_DEVICE_INFO, PVB_DEVICE_INFO);
 static void XGINew_SetMemoryClock(PXGI_HW_DEVICE_INFO, PVB_DEVICE_INFO);
@@ -145,6 +162,12 @@ static int XGINew_DDRSizing340(PXGI_HW_DEVICE_INFO, PVB_DEVICE_INFO);
 static int XGINew_DDRSizingXG45(PXGI_HW_DEVICE_INFO, PVB_DEVICE_INFO);
 static int XGINew_SDRSizing(PVB_DEVICE_INFO);
 static int XGINew_DDRSizing(PVB_DEVICE_INFO);
+
+/* Jong 10/05/2007; merge code */
+static void     XGINew_GetXG21Sense(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo) ;
+static UCHAR    GetXG21FPBits(PVB_DEVICE_INFO pVBInfo);
+static void     XGINew_GetXG27Sense(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo) ;
+static UCHAR    GetXG27FPBits(PVB_DEVICE_INFO pVBInfo);
 
 static void XGINew_DDR_MRS(PVB_DEVICE_INFO pVBInfo);
 static void XGINew_SDR_MRS(PVB_DEVICE_INFO pVBInfo);
@@ -291,14 +314,22 @@ BOOLEAN XGIInitNew(PXGI_HW_DEVICE_INFO HwDeviceExtension,
     for( i = 0x79 ; i <= 0x7C ; i++ )
         XGI_SetReg((XGIIOADDRESS) pVBInfo->P3d4 , i , 0 ) ;		/* shampoo 0208 */
 
+    /* Jong 10/01/2007; SetDefPCIRegs */                                   /* alan 12/07/2006 */
+    if ( HwDeviceExtension->jChipType == XG27 )
+    {
+      for( i = 0xD0 ; i <= 0xDB ; i++ )
+        XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , i , pVBInfo->pCRD0[i-0xd0] ) ;
+      for( i = 0xDE ; i <= 0xDF ; i++ )
+        XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , i , pVBInfo->pCRDE[i-0xdE] ) ;
+    }
 
 
-    if ( HwDeviceExtension->jChipType == XG20 )
+    if ( HwDeviceExtension->jChipType >= XG20 )
         XGI_SetReg((XGIIOADDRESS) pVBInfo->P3d4, 0x97, pVBInfo->CR97);
 
     /* 3.SetMemoryClock */
     if (!(pVBInfo->SoftSetting & SoftDRAMType)) {
-        if ( HwDeviceExtension->jChipType == XG20 )
+        if (( HwDeviceExtension->jChipType == XG20 )||( HwDeviceExtension->jChipType == XG21 )||( HwDeviceExtension->jChipType == XG27 ))
         {
             temp = ( UCHAR )XGI_GetReg((XGIIOADDRESS) pVBInfo->P3d4 , 0x97 ) ;
         }
@@ -328,23 +359,37 @@ BOOLEAN XGIInitNew(PXGI_HW_DEVICE_INFO HwDeviceExtension,
 
     if ( UNIROM == 1 ) XGINew_RAMType = 0;
 
-
     if ( HwDeviceExtension->jChipType < XG40 )
         XGINew_SetMemoryClock( HwDeviceExtension , pVBInfo ) ;
 
     /* 4.SetDefExt1Regs begin */
     XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x07, pVBInfo->SR07);
+
+    /* Jong 10/01/2007; add for ??? */
+    if ( HwDeviceExtension->jChipType == XG27 )
+    {
+        XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3c4 , 0x40 , *pVBInfo->pSR40 ) ;
+        XGI_SetReg( (XGIIOADDRESS)pVBInfo->P3c4 , 0x41 , *pVBInfo->pSR41 ) ;
+    }
+
     XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x11, 0x0F);
     XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x1F, pVBInfo->SR1F);
     /* XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x20, 0x20); */
     XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x20, 0xA0);  /* alan, 2001/6/26 Frame buffer can read/write SR20 */
 
+    /* Jong 10/01/2007; added for ??? */
+    XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3c4 , 0x36 , 0x70 ) ;	/* Hsuan, 2006/01/01 H/W request for slow corner chip */
+    if ( HwDeviceExtension->jChipType == XG27 )         /* Alan 12/07/2006 */
+    XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3c4 , 0x36 , *pVBInfo->pSR36 ) ;
 
     /* SR11 = 0x0F ; */
     /* XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x11 , SR11 ) ; */
 
 
-    if ( (HwDeviceExtension->jChipType != XG20) || (HwDeviceExtension->jChipType != XG45) )		/* kuku 2004/06/25 */
+    if ( (HwDeviceExtension->jChipType != XG20)
+		&&(HwDeviceExtension->jChipType != XG21)
+		&&(HwDeviceExtension->jChipType != XG27)
+		&&(HwDeviceExtension->jChipType != XG45) )		/* kuku 2004/06/25 */
     {
     /* Set AGP Rate */
     temp1 = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x3B ) ;
@@ -414,7 +459,9 @@ BOOLEAN XGIInitNew(PXGI_HW_DEVICE_INFO HwDeviceExtension,
     XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x24, pVBInfo->SR24);
     XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x25, pVBInfo->SR25[0]);
 
-    if ( HwDeviceExtension->jChipType != XG20 )		/* kuku 2004/06/25 */
+    if ( (HwDeviceExtension->jChipType != XG20) &&
+		 (HwDeviceExtension->jChipType != XG21) &&
+		 (HwDeviceExtension->jChipType != XG27)	)		/* kuku 2004/06/25 */
     {
     /* Set VB */
     XGI_UnLockCRT2( HwDeviceExtension, pVBInfo) ;
@@ -451,7 +498,9 @@ BOOLEAN XGIInitNew(PXGI_HW_DEVICE_INFO HwDeviceExtension,
     if ( HwDeviceExtension->jChipType >= XG40 )
       SetPowerConsume ( HwDeviceExtension , pVBInfo->P3c4);
 
-    if ( HwDeviceExtension->jChipType != XG20 )		/* kuku 2004/06/25 */
+    if ( (HwDeviceExtension->jChipType != XG20) &&
+		 (HwDeviceExtension->jChipType != XG21) &&
+		 (HwDeviceExtension->jChipType != XG27) )		/* kuku 2004/06/25 */
     {
     if ( XGI_BridgeIsOn( pVBInfo ) == 1 )
     {
@@ -471,6 +520,28 @@ BOOLEAN XGIInitNew(PXGI_HW_DEVICE_INFO HwDeviceExtension,
         XGI_SetReg((XGIIOADDRESS) pVBInfo->P3d4 , 0x83 , 0x00 ) ;
 
 
+    /* Jong 10/01/2007; added for ??? */
+    if ( HwDeviceExtension->bSkipSense == FALSE )
+    {
+        XGI_SenseCRT1(pVBInfo) ;
+        /* XGINew_DetectMonitor( HwDeviceExtension ) ; */
+        if ( ( HwDeviceExtension->jChipType == XG21 ) && (pVBInfo->IF_DEF_CH7007) )
+        {
+           XGI_GetSenseStatus( HwDeviceExtension , pVBInfo ) ; 	/* sense CRT2 */
+        }
+        if ( HwDeviceExtension->jChipType == XG21 )
+        {
+          XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x32 , ~Monitor1Sense , Monitor1Sense ) ;	/* Z9 default has CRT */
+       	  temp = GetXG21FPBits( pVBInfo ) ;
+          XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x37 , ~0x01, temp ) ;
+        }
+        if ( HwDeviceExtension->jChipType == XG27 )
+        {
+          XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x32 , ~Monitor1Sense , Monitor1Sense ) ;	/* Z9 default has CRT */
+       	  temp = GetXG27FPBits( pVBInfo ) ;
+          XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x37 , ~0x03, temp ) ;
+        }
+    }
 
     if ( HwDeviceExtension->jChipType >= XG40 )
     {
@@ -547,12 +618,15 @@ BOOLEAN XGIInitNew(PXGI_HW_DEVICE_INFO HwDeviceExtension,
         /* SetDefExt2Regs end */
     }
 
+    /* Jong 10/01/2007; be removed and recoded */
+#if 0
     if ( HwDeviceExtension->bSkipSense == FALSE )
     {
         XGI_SenseCRT1(pVBInfo) ;
         /* XGINew_DetectMonitor( HwDeviceExtension ) ; */
         XGI_GetSenseStatus( HwDeviceExtension , pVBInfo ) ;	/* sense CRT2 */
     }
+#endif
 
     XGINew_ChkSenseStatus ( HwDeviceExtension , pVBInfo ) ;
     XGINew_SetModeScratch ( HwDeviceExtension , pVBInfo ) ;
@@ -704,9 +778,9 @@ void DualChipInit( PXGI_HW_DEVICE_INFO HwDeviceExtension ,PVB_DEVICE_INFO pVBInf
 /* --------------------------------------------------------------------- */
 UCHAR XGINew_Get340DRAMType( PXGI_HW_DEVICE_INFO HwDeviceExtension , PVB_DEVICE_INFO pVBInfo)
 {
-    UCHAR data ;
+    UCHAR data, temp ; /* Jong 10/05/2007; merge code */
 
-    if ( HwDeviceExtension->jChipType != XG20 )
+    if ( HwDeviceExtension->jChipType < XG20 )
     {
         if (pVBInfo->SoftSetting & SoftDRAMType) {
             return (pVBInfo->SoftSetting & 0x07);
@@ -720,6 +794,39 @@ UCHAR XGINew_Get340DRAMType( PXGI_HW_DEVICE_INFO HwDeviceExtension , PVB_DEVICE_
 
             return( data ) ;
         }
+    }
+    else if ( HwDeviceExtension->jChipType == XG27 )
+    {
+        if ( pVBInfo->SoftSetting & SoftDRAMType )
+        {
+            data = pVBInfo->SoftSetting & 0x07 ;
+            return( data ) ;
+        }
+        temp = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3c4 , 0x3B ) ;
+
+     	if (( temp & 0x88 )==0x80)		/* SR3B[7][3]MAA15 MAA11 (Power on Trapping) */
+       	  data = 0 ;					/*DDR*/
+        else
+       	  data = 1 ; 					/*DDRII*/
+       	return( data ) ;
+    }
+    else if ( HwDeviceExtension->jChipType == XG21 )
+    {
+        XGI_SetRegAND( (XGIIOADDRESS) pVBInfo->P3d4 , 0xB4 , ~0x02 ) ;     		/* Independent GPIO control */
+     	DelayUS(800);
+        XGI_SetRegOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , 0x80 ) ;		/* Enable GPIOH read */
+        temp = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x48 ) ;       		/* GPIOF 0:DVI 1:DVO */
+
+        /* HOTPLUG_SUPPORT   */
+        /* for current XG20 & XG21, GPIOH is floating, driver will fix DDR temporarily 	*/
+     	if ( temp & 0x01 )						/* DVI read GPIOH */
+       	  data = 1 ;							/*DDRII*/
+        else
+       	  data = 0 ; 							/*DDR*/      	
+
+        /*~HOTPLUG_SUPPORT    */
+       	XGI_SetRegOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0xB4 , 0x02 ) ;
+       	return( data ) ;
     }
     else
     {
@@ -926,6 +1033,214 @@ void XGINew_DDR2_MRS_340(PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT P3c4,
     DelayUS( 1 ) ;
 }
 
+/* --------------------------------------------------------------------- */
+/* Function : XGINew_DDRII_Bootup_XG27 */
+/* Input : */
+/* Output : */
+/* Description : */
+/* --------------------------------------------------------------------- */
+void XGINew_DDRII_Bootup_XG27( PXGI_HW_DEVICE_INFO HwDeviceExtension ,  USHORT P3c4 , PVB_DEVICE_INFO pVBInfo)
+{
+    USHORT P3d4 = P3c4 + 0x10 ;
+    UCHAR data ;
+    XGINew_RAMType = ( int )XGINew_GetXG20DRAMType( HwDeviceExtension , pVBInfo ) ;
+    XGINew_SetMemoryClock( HwDeviceExtension , pVBInfo ) ;
+
+   /* Set Double Frequency */
+    /* XGINew_SetReg1( P3d4 , 0x97 , 0x11 ) ; */		/* CR97 */
+    XGI_SetReg( (XGIIOADDRESS) P3d4 , 0x97 , pVBInfo->CR97 ) ;    /* CR97 */
+
+    DelayUS( 200 ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x00 ) ;   /* Set SR18 */ /*EMRS2*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x80 ) ;   /* Set SR19 */ 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x20 ) ;   /* Set SR16 */
+    DelayUS( 15 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0xA0 ) ;   /* Set SR16 */  
+    DelayUS( 15 ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x00 ) ;   /* Set SR18 */ /*EMRS3*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0xC0 ) ;   /* Set SR19 */ 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x20 ) ;   /* Set SR16 */
+    DelayUS( 15 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0xA0 ) ;   /* Set SR16 */  
+    DelayUS( 15) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x00 ) ;   /* Set SR18 */ /*EMRS1*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x40 ) ;   /* Set SR19 */ 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x20 ) ;   /* Set SR16 */
+    DelayUS( 30 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0xA0 ) ;   /* Set SR16 */  
+    DelayUS( 15 ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x42 ) ;   /* Set SR18 */ /*MRS, DLL Enable*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x0A ) ;   /* Set SR19 */ 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x00 ) ;   /* Set SR16 */
+    DelayUS( 30 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x00 ) ;   /* Set SR16 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x80 ) ;   /* Set SR16 */  
+    /* DelayUS( 15 ) ; */
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x1B , 0x04 ) ;   /* Set SR1B */ 
+    DelayUS( 60 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x1B , 0x00 ) ;   /* Set SR1B */ 
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x42 ) ;   /* Set SR18 */ /*MRS, DLL Reset*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x08 ) ;   /* Set SR19 */ 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x00 ) ;   /* Set SR16 */
+    
+    DelayUS( 30 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x83 ) ;   /* Set SR16 */  
+    DelayUS( 15 ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x80 ) ;   /* Set SR18 */ /*MRS, ODT*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x46 ) ;   /* Set SR19 */ 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x20 ) ;   /* Set SR16 */
+    DelayUS( 30 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0xA0 ) ;   /* Set SR16 */  
+    DelayUS( 15 ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x00 ) ;   /* Set SR18 */ /*EMRS*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x40 ) ;   /* Set SR19 */ 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x20 ) ;   /* Set SR16 */
+    DelayUS( 30 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0xA0 ) ;   /* Set SR16 */  
+    DelayUS( 15 ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x1B , 0x04 ) ;   /* Set SR1B refresh control 000:close; 010:open */ 
+    DelayUS( 200 ) ;	
+}
+/* --------------------------------------------------------------------- */
+/* Function : XGINew_DDR2_MRS_XG20 */
+/* Input : */
+/* Output : */
+/* Description : */
+/* --------------------------------------------------------------------- */
+void XGINew_DDR2_MRS_XG20( PXGI_HW_DEVICE_INFO HwDeviceExtension ,  USHORT P3c4 , PVB_DEVICE_INFO pVBInfo)
+{
+    USHORT P3d4 = P3c4 + 0x10 ;
+    UCHAR data ;
+
+    XGINew_RAMType = ( int )XGINew_GetXG20DRAMType( HwDeviceExtension , pVBInfo ) ;
+    XGINew_SetMemoryClock( HwDeviceExtension , pVBInfo ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3d4 , 0x97 , 0x11 ) ; 	         	/* CR97 */
+
+    DelayUS( 200 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x00 ) ;			/* EMRS2 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x80 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x05 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x85 ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x00 ) ;			/* EMRS3 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0xC0 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x05 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x85 ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x00 ) ;			/* EMRS1 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x40 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x05 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x85 ) ;
+
+   /* XGINew_SetReg1( P3c4 , 0x18 , 0x52 ) ;*/			/* MRS1 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x42 ) ;			/* MRS1 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x02 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x05 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x85 ) ;
+
+    DelayUS( 15 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x1B , 0x04 ) ;			/* SR1B */
+    DelayUS( 30 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x1B , 0x00 ) ;			/* SR1B */
+    DelayUS( 100 ) ;
+
+    /*XGINew_SetReg1( P3c4 , 0x18 , 0x52 ) ;*/			/* MRS2 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x42 ) ;			/* MRS1 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x00 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x05 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x85 ) ;
+
+    DelayUS( 200 ) ;
+}
+
+/* --------------------------------------------------------------------- */
+/* Function : XGINew_DDR2_MRS_XG27 */
+/* Input : */
+/* Output : */
+/* Description : */
+/* --------------------------------------------------------------------- */
+void XGINew_DDR2_MRS_XG27( PXGI_HW_DEVICE_INFO HwDeviceExtension ,  USHORT P3c4 , PVB_DEVICE_INFO pVBInfo)
+{
+    USHORT P3d4 = P3c4 + 0x10 ;
+    UCHAR data ;
+
+     XGINew_RAMType = ( int )XGINew_GetXG20DRAMType( HwDeviceExtension , pVBInfo ) ;
+     XGINew_SetMemoryClock( HwDeviceExtension , pVBInfo ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3d4 , 0x97 , 0x11 ) ;			/* CR97 */
+    DelayUS( 200 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x00 ) ;			/* EMRS2 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x80 ) ;
+    
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x10 ) ;
+    DelayUS( 15 ) ;                          /* 06/11/23 XG27 A0 for CKE enable*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x90 ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x00 ) ;			/* EMRS3 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0xC0 ) ;
+    
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x00 ) ;
+    DelayUS( 15 ) ;                          /*06/11/22 XG27 A0*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x80 ) ;
+ 
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x00 ) ;			/* EMRS1 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x40 ) ;
+    
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x00 ) ;
+    DelayUS( 15 ) ;                          /*06/11/22 XG27 A0 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x80 ) ;
+ 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x42 ) ;			/* MRS1 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x06 ) ;   /*[Billy]06/11/22 DLL Reset for XG27 Hynix DRAM*/
+    
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x00 ) ;
+    DelayUS( 15 ) ;                          /*06/11/23 XG27 A0*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x80 ) ;
+
+    DelayUS( 30 ) ;                          /*06/11/23 XG27 A0 Start Auto-PreCharge*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x1B , 0x04 ) ;			/* SR1B */
+    DelayUS( 60 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x1B , 0x00 ) ;			/* SR1B */
+
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x42 ) ;			/* MRS1 */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x04 ) ;   /* DLL without Reset for XG27 Hynix DRAM*/
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x00 ) ;
+    DelayUS( 30 ) ; 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x80 ) ;
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x80 );     /*XG27 OCD ON */
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x46 );
+   
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x00 ) ;        
+    DelayUS( 30 ) ; 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x80 ) ;
+ 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x18 , 0x00 );    
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x19 , 0x40 );
+
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x00 ) ;
+    DelayUS( 30 ) ; 
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x16 , 0x80 ) ;
+
+    DelayUS( 15 ) ;                         /*Start Auto-PreCharge*/
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x1B , 0x04 ) ;			/* SR1B */
+    DelayUS( 200 ) ;
+    XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x1B , 0x03 ) ;			/* SR1B */
+}
+
 
 /* --------------------------------------------------------------------- */
 /* Function : XGINew_DDR1x_DefaultRegister */
@@ -941,7 +1256,7 @@ void XGINew_DDR1x_DefaultRegister(PXGI_HW_DEVICE_INFO HwDeviceExtension,
 #ifndef LINUX_XF86
     UCHAR  data ;
 #endif
-    if ( HwDeviceExtension->jChipType == XG20 )
+    if ( HwDeviceExtension->jChipType >= XG20 )
     {
         XGINew_SetMemoryClock( HwDeviceExtension , pVBInfo ) ;
         XGI_SetReg((XGIIOADDRESS) P3d4 , 0x82 , pVBInfo->CR40[ 11 ][ XGINew_RAMType ] ) ;	/* CR82 */
@@ -1075,7 +1390,14 @@ void XGINew_DDR2_DefaultRegister(PXGI_HW_DEVICE_INFO HwDeviceExtension,
 
     XGI_SetReg((XGIIOADDRESS) P3d4 , 0x98 , 0x03 ) ;
     XGI_SetReg((XGIIOADDRESS) P3d4 , 0x9A , 0x02 ) ;
-    XGINew_DDR2_MRS_340( HwDeviceExtension , P3c4, pVBInfo ) ;
+
+    /* Jong 10/01/2007 */
+    if ( HwDeviceExtension->jChipType == XG27 )
+       XGINew_DDRII_Bootup_XG27( HwDeviceExtension ,  P3c4 , pVBInfo) ;
+    else if ( HwDeviceExtension->jChipType >= XG20 )
+       XGINew_DDR2_MRS_XG20( HwDeviceExtension , P3c4, pVBInfo ) ;
+    else 
+       XGINew_DDR2_MRS_340( HwDeviceExtension , P3c4, pVBInfo ) ;
 }
 
 
@@ -1178,6 +1500,10 @@ void XGINew_SetDRAMDefaultRegister340( PXGI_HW_DEVICE_INFO HwDeviceExtension ,  
     XGI_SetRegOR((XGIIOADDRESS) P3d4 , 0x40 , temp3 ) ;	/* CR40_D[7] */
     XGI_SetReg((XGIIOADDRESS) P3d4 , 0x41 , pVBInfo->CR40[ 0 ][ XGINew_RAMType ] ) ;	/* CR41 */
 
+    /* Jong 10/01/2007; */
+    if ( HwDeviceExtension->jChipType == XG27 )
+      XGI_SetReg( (XGIIOADDRESS) P3d4 , 0x8F , *pVBInfo->pCR8F ) ;	/* CR8F */
+
     for( j = 0 ; j <= 6 ; j++ )
         XGI_SetReg((XGIIOADDRESS) P3d4 , ( 0x90 + j ) , pVBInfo->CR40[ 14 + j ][ XGINew_RAMType ] ) ;	/* CR90 - CR96 */
 
@@ -1195,6 +1521,19 @@ void XGINew_SetDRAMDefaultRegister340( PXGI_HW_DEVICE_INFO HwDeviceExtension ,  
     XGI_SetReg((XGIIOADDRESS) P3d4, 0x83, 0x09);          /* CR83 */
     XGI_SetReg((XGIIOADDRESS) P3d4, 0x87, 0x00);          /* CR87 */
     XGI_SetReg((XGIIOADDRESS) P3d4, 0xCF, pVBInfo->CRCF); /* CRCF */
+
+    /* Jong 10/01/2007 */
+    if ( XGINew_RAMType )
+    {
+      /*XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x17 , 0xC0 ) ;*/		/* SR17 DDRII */
+      XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x17 , 0x80 ) ;		/* SR17 DDRII */
+      if ( HwDeviceExtension->jChipType == XG27 )
+        XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x17 , 0x02 ) ;		/* SR17 DDRII */
+
+    }
+    else
+      XGI_SetReg( (XGIIOADDRESS) P3c4 , 0x17 , 0x00 ) ;		/* SR17 DDR */
+
     XGI_SetReg((XGIIOADDRESS) P3c4, 0x1A, 0x87);          /* SR1A */
 
     temp = XGINew_Get340DRAMType( HwDeviceExtension, pVBInfo) ;
@@ -1409,9 +1748,11 @@ void XGINew_SetDRAMSize_340( PXGI_HW_DEVICE_INFO HwDeviceExtension , PVB_DEVICE_
     data = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x21 ) ;
     XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x21 , ( USHORT )( data & 0xDF ) ) ;	/* disable read cache */
 
-    data = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x1 ) ;
+    /* Jong 10/03/2007; add support for DVO, XG27, ...*/
+    XGI_DisplayOff(HwDeviceExtension, pVBInfo );
+    /* data = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x1 ) ;
     data |= 0x20 ;
-    XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x01 , data ) ;			/* Turn OFF Display */
+    XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x01 , data ) ;	*/		/* Turn OFF Display */
 
     XGINew_DDRSizing340( HwDeviceExtension, pVBInfo ) ;
 
@@ -1921,6 +2262,55 @@ USHORT XGINew_SetDRAMSizeReg(int index, const USHORT DRAMTYPE_TABLE[][5],
     return( memsize ) ;
 }
 
+/* --------------------------------------------------------------------- */
+/* Function : XGINew_SetDRAMSize20Reg */
+/* Input : */
+/* Output : */
+/* Description : */
+/* --------------------------------------------------------------------- */
+USHORT XGINew_SetDRAMSize20Reg( int index , USHORT DRAMTYPE_TABLE[][ 5 ], PVB_DEVICE_INFO pVBInfo)
+{
+    USHORT data = 0 , memsize = 0 ;
+    int RankSize ;
+    UCHAR ChannelNo ;
+
+    RankSize = DRAMTYPE_TABLE[ index ][ 3 ] * XGINew_DataBusWidth / 8 ;
+    data = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3c4 , 0x13 ) ;
+    data &= 0x80 ;
+
+    if ( data == 0x80 )
+        RankSize *= 2 ;
+
+    data = 0 ;
+
+    if( XGINew_ChannelAB == 3 )
+        ChannelNo = 4 ;
+    else
+        ChannelNo = XGINew_ChannelAB ;
+
+    if ( ChannelNo * RankSize <= 256 )
+    {
+        while( ( RankSize >>= 1 ) > 0 )
+        {
+            data += 0x10 ;
+        }
+
+        memsize = data >> 4 ;
+
+        /* [2004/03/25] Vicent, Fix DRAM Sizing Error */
+        XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , ( XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3c4 , 0x14 ) & 0x0F ) | ( data & 0xF0 ) ) ;
+	DelayUS( 15 ) ;
+
+       /* data |= XGINew_ChannelAB << 2 ; */
+       /* data |= ( XGINew_DataBusWidth / 64 ) << 1 ; */
+       /* XGINew_SetReg1( pVBInfo->P3c4 , 0x14 , data ) ; */
+
+        /* should delay */
+        /* XGINew_SetDRAMModeRegister340( pVBInfo ) ; */
+    }
+    return( memsize ) ;
+}
+
 
 /* --------------------------------------------------------------------- */
 /* Function : XGINew_ReadWriteRest */
@@ -2046,61 +2436,101 @@ void XGINew_CheckChannel(PXGI_HW_DEVICE_INFO HwDeviceExtension,
     switch( HwDeviceExtension->jChipType )
     {
       case XG20:
-          data = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3d4 , 0x97 ) ;
+      case XG21:
+          data = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x97 ) ;
           data = data & 0x01;
           XGINew_ChannelAB = 1 ;		/* XG20 "JUST" one channel */
           
           if ( data == 0 )  /* Single_32_16 */
           {
+            /* Jong 10/03/2007 */ 
+	    if (( HwDeviceExtension->ulVideoMemorySize - 1 ) > 0x1000000)
+	    {
+
               XGINew_DataBusWidth = 32 ;	/* 32 bits */
               XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0xB1 ) ;  /* 22bit + 2 rank + 32bit */
               XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x52 ) ;
+              DelayUS( 15 ) ;
 
               if ( XGINew_ReadWriteRest( 24 , 23 , pVBInfo ) == 1 )
                   return ;
 
-              XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0x31 ) ;  /* 22bit + 1 rank + 32bit */
-              XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x42 ) ;
+              /* Jong 10/03/2007 */ 
+	      if (( HwDeviceExtension->ulVideoMemorySize - 1 ) > 0x800000)
+	      {
+                  XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0x31 ) ;  /* 22bit + 1 rank + 32bit */
+                  XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x42 ) ;
+                  DelayUS( 15 ) ;
 
-              if ( XGINew_ReadWriteRest( 23 , 23 , pVBInfo ) == 1 )
-                  return ;
-	      
-	      XGINew_DataBusWidth = 16 ;	/* 16 bits */
-              XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0xB1 ) ;  /* 22bit + 2 rank + 16bit */
-              XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x41 ) ;
+                  if ( XGINew_ReadWriteRest( 23 , 23 , pVBInfo ) == 1 )
+                       return ;
+              }
+            }
 
-              if ( XGINew_ReadWriteRest( 23 , 22 , pVBInfo ) == 1 )
-                  return ;
-              else
-                  XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0x31 ) ;
+            /* Jong 10/03/2007 */ 
+	    if (( HwDeviceExtension->ulVideoMemorySize - 1 ) > 0x800000)
+	    {      
+	        XGINew_DataBusWidth = 16 ;	/* 16 bits */
+                XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0xB1 ) ;  /* 22bit + 2 rank + 16bit */
+                XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x41 ) ;
+                DelayUS( 15 ) ;
 
+                if ( XGINew_ReadWriteRest( 23 , 22 , pVBInfo ) == 1 )
+                    return ;
+                else
+                    XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0x31 ) ;
+
+                DelayUS( 15 ) ;
+            }
           }
           else  /* Dual_16_8 */
           {					
-              XGINew_DataBusWidth = 16 ;	/* 16 bits */
-              XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0xB1 ) ;
-              XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x41 ) ;
+              if (( HwDeviceExtension->ulVideoMemorySize - 1 ) > 0x800000)
+              {
 
-              if ( XGINew_ReadWriteRest( 23 , 22 , pVBInfo ) == 1 )
+                XGINew_DataBusWidth = 16 ;	/* 16 bits */
+                XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0xB1 ) ;
+                XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x41 ) ;
+                DelayUS( 15 ) ;
+
+                if ( XGINew_ReadWriteRest( 23 , 22 , pVBInfo ) == 1 )
                   return ;
 
-              XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0x31 ) ;
-              XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x31 ) ;
+		if (( HwDeviceExtension->ulVideoMemorySize - 1 ) > 0x400000)
+		{
 
-              if ( XGINew_ReadWriteRest( 22 , 22 , pVBInfo ) == 1 )
-                  return ;
+                   XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0x31 ) ;
+                   XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x31 ) ;
+                   DelayUS( 15 ) ;
 
-	      XGINew_DataBusWidth = 8 ;	/* 8 bits */
-              XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0xB1 ) ;
-              XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x30 ) ;
+                   if ( XGINew_ReadWriteRest( 22 , 22 , pVBInfo ) == 1 )
+                      return ;
+                }
+	      }
 
-              if ( XGINew_ReadWriteRest( 22 , 21 , pVBInfo ) == 1 )
-                  return ;
-              else
-                  XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0x31 ) ;
+
+	      if (( HwDeviceExtension->ulVideoMemorySize - 1 ) > 0x400000)
+	      {
+	          XGINew_DataBusWidth = 8 ;	/* 8 bits */
+                  XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0xB1 ) ;
+                  XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x30 ) ;
+                  DelayUS( 15 ) ;
+
+                  if ( XGINew_ReadWriteRest( 22 , 21 , pVBInfo ) == 1 )
+                      return ;
+                  else
+                      XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x13 , 0x31 ) ;
+                      DelayUS( 15 ) ;
+              }
           }
           break ;
       
+      case XG27:
+          XGINew_DataBusWidth = 16 ;	/* 16 bits */
+          XGINew_ChannelAB = 1 ;		/* Single channel */
+          XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3c4 , 0x14 , 0x51 ) ;  /* 32Mx16 bit*/
+          break ;
+
       case XG41:
           if ( XGINew_CheckFrequence(pVBInfo) == 1 )
           {
@@ -2352,8 +2782,28 @@ int XGINew_DDRSizing340( PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO 
     XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x1C , 0x00 ) ;	/* nontiling */
     XGINew_CheckChannel( HwDeviceExtension, pVBInfo ) ;
 
-    for( i = 0 ; i < 4 ; i++ )
+    /* Jong 10/03/2007 */
+    if ( HwDeviceExtension->jChipType >= XG20 )
     {
+      for( i = 0 ; i < 12 ; i++ )
+      {
+        XGINew_SetDRAMSizingType( i , XGINew_DDRDRAM_TYPE20, pVBInfo ) ;
+        memsize = XGINew_SetDRAMSize20Reg( i , XGINew_DDRDRAM_TYPE20, pVBInfo ) ;
+        if ( memsize == 0 )
+            continue ;
+
+        addr = memsize + ( XGINew_ChannelAB - 2 ) + 20 ;
+        if ( ( HwDeviceExtension->ulVideoMemorySize - 1 ) < ( ULONG )( 1 << addr ) )
+            continue ;
+
+        if ( XGINew_ReadWriteRest( addr , 5, pVBInfo ) == 1 )
+            return( 1 ) ;
+      }
+    }
+    else
+    {
+      for( i = 0 ; i < 4 ; i++ )
+      {
         XGINew_SetDRAMSizingType( i , XGINew_DDRDRAM_TYPE340, pVBInfo ) ;
         memsize = XGINew_SetDRAMSizeReg( i , XGINew_DDRDRAM_TYPE340, pVBInfo ) ;
         if ( memsize == 0 )
@@ -2365,6 +2815,7 @@ int XGINew_DDRSizing340( PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO 
 
         if ( XGINew_ReadWriteRest( addr , 9, pVBInfo ) == 1 )
             return( 1 ) ;
+      }
     }
     return( 0 ) ;
 }
@@ -2539,7 +2990,7 @@ void XGINew_InitVBIOSData(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO
     pVBInfo->IF_DEF_OEMUtil = 0 ;
     pVBInfo->IF_DEF_PWD = 0 ;
 
-    if ( HwDeviceExtension->jChipType == XG20 )			/* kuku 2004/06/25 */
+    if ( HwDeviceExtension->jChipType >= XG20 )			/* kuku 2004/06/25 */
     {
     	pVBInfo->IF_DEF_YPbPr = 0 ;
         pVBInfo->IF_DEF_HiVision = 0 ;
@@ -2558,9 +3009,11 @@ void XGINew_InitVBIOSData(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO
         pVBInfo->IF_DEF_CRT2Monitor = 0 ;
     }
 
-    if (HwDeviceExtension->jChipType != XG20) {
-	/* alan, disable VideoCapture */
-	XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->Part0Port, 0x3F, 0xEF, 0x00);
+    if ( (HwDeviceExtension->jChipType != XG20) &&
+		 (HwDeviceExtension->jChipType != XG21) &&
+		 (HwDeviceExtension->jChipType != XG27)) {
+		/* alan, disable VideoCapture */
+		XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->Part0Port, 0x3F, 0xEF, 0x00);
     }
 
     XGI_GetVBType( pVBInfo ) ;         /* Run XGI_GetVBType before InitTo330Pointer */
@@ -2735,13 +3188,186 @@ void ReadVBIOSTablData( UCHAR ChipType , PVB_DEVICE_INFO pVBInfo)
         for( j = 0 ; j < 4 ; j++ )
             pVBInfo->SR16[ j ] = pVideoMemory[ i + j ] ;
 
+        /* Jong 10/03/2007 */
+        /*
         pVBInfo->CRCF = pVideoMemory[0x1CA];
         pVBInfo->DRAMTypeDefinition = pVideoMemory[0x1CB];
         pVBInfo->I2CDefinition = pVideoMemory[0x1D1];
         if ( ChipType == XG20 )
-           pVBInfo->CR97 = pVideoMemory[0x1D2];
+           pVBInfo->CR97 = pVideoMemory[0x1D2]; */
+        if ( ChipType == XG21 )
+        {
+            if (pVideoMemory[ 0x67 ] & 0x80)
+            {
+                *pVBInfo->pDVOSetting = pVideoMemory[ 0x67 ];            
+            }
+            if ( (pVideoMemory[ 0x67 ] & 0xC0) == 0xC0 )
+            {
+                *pVBInfo->pCR2E = pVideoMemory[ i + 4 ] ;
+                *pVBInfo->pCR2F = pVideoMemory[ i + 5 ] ;
+                *pVBInfo->pCR46 = pVideoMemory[ i + 6 ] ;
+                *pVBInfo->pCR47 = pVideoMemory[ i + 7 ] ;
+            }
+        }
+
+        if ( ChipType == XG27 )
+        {
+            jj = i+j;
+            for( i = 0 ; i <= 0xB ; i++,jj++ )
+              pVBInfo->pCRD0[i] = pVideoMemory[ jj ] ;
+            for( i = 0x0 ; i <= 0x1 ; i++,jj++ )
+              pVBInfo->pCRDE[i] = pVideoMemory[ jj ] ;
+
+            *pVBInfo->pSR40 = pVideoMemory[ jj ] ;
+            jj++;
+            *pVBInfo->pSR41 = pVideoMemory[ jj ] ;
+
+            if (pVideoMemory[ 0x67 ] & 0x80)
+            {
+                *pVBInfo->pDVOSetting = pVideoMemory[ 0x67 ];            
+            }
+            if ( (pVideoMemory[ 0x67 ] & 0xC0) == 0xC0 )
+            {
+                jj++;
+                *pVBInfo->pCR2E = pVideoMemory[ jj ] ;
+                *pVBInfo->pCR2F = pVideoMemory[ jj + 1 ] ;
+                *pVBInfo->pCR46 = pVideoMemory[ jj + 2 ] ;
+                *pVBInfo->pCR47 = pVideoMemory[ jj + 3 ] ;
+            }
+
+        }
+
+        pVBInfo->CRCF = pVideoMemory[ 0x1CA ] ;
+        pVBInfo->DRAMTypeDefinition = pVideoMemory[ 0x1CB ] ;
+        pVBInfo->I2CDefinition = pVideoMemory[ 0x1D1 ] ;
+        if ( ChipType >= XG20 )
+        {
+           pVBInfo->CR97 = pVideoMemory[ 0x1D2 ] ;
+           if ( ChipType == XG27 )
+           {
+             *pVBInfo->pSR36 = pVideoMemory[ 0x1D3 ] ;
+             *pVBInfo->pCR8F = pVideoMemory[ 0x1D5 ] ;
+           }
+        }
     }
     /* Volari customize data area end */
+
+    if ( ChipType == XG21 )
+    {
+        pVBInfo->IF_DEF_LVDS = 0 ;
+        if (pVideoMemory[ 0x65 ] & 0x1)
+        {
+            pVBInfo->IF_DEF_LVDS = 1 ;
+            i = pVideoMemory[ 0x316 ] | ( pVideoMemory[ 0x317 ] << 8 );
+            j = pVideoMemory[ i-1 ] ;
+            if ( j != 0xff )
+            {
+              k = 0;
+              do
+              {
+                pVBInfo->XG21_LVDSCapList[k].LVDS_Capability = pVideoMemory[ i ] | ( pVideoMemory[ i + 1 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSHT = pVideoMemory[ i + 2 ] | ( pVideoMemory[ i + 3 ] << 8 ) ;
+                pVBInfo->XG21_LVDSCapList[k].LVDSVT = pVideoMemory[ i + 4 ] | ( pVideoMemory[ i + 5 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSHDE = pVideoMemory[ i + 6 ] | ( pVideoMemory[ i + 7 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSVDE = pVideoMemory[ i + 8 ] | ( pVideoMemory[ i + 9 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSHFP = pVideoMemory[ i + 10 ] | ( pVideoMemory[ i + 11 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSVFP = pVideoMemory[ i + 12 ] | ( pVideoMemory[ i + 13 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSHSYNC = pVideoMemory[ i + 14 ] | ( pVideoMemory[ i + 15 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSVSYNC = pVideoMemory[ i + 16 ] | ( pVideoMemory[ i + 17 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].VCLKData1 = pVideoMemory[ i + 18 ] ;
+                pVBInfo->XG21_LVDSCapList[k].VCLKData2 = pVideoMemory[ i + 19 ] ;
+                pVBInfo->XG21_LVDSCapList[k].PSC_S1 = pVideoMemory[ i + 20 ] ;
+                pVBInfo->XG21_LVDSCapList[k].PSC_S2 = pVideoMemory[ i + 21 ] ;
+                pVBInfo->XG21_LVDSCapList[k].PSC_S3 = pVideoMemory[ i + 22 ] ;
+                pVBInfo->XG21_LVDSCapList[k].PSC_S4 = pVideoMemory[ i + 23 ] ;
+                pVBInfo->XG21_LVDSCapList[k].PSC_S5 = pVideoMemory[ i + 24 ] ;
+                i += 25;
+                j--;
+                k++;
+              } while ( (j>0) && ( k < (sizeof(XGI21_LCDCapList)/sizeof(XGI21_LVDSCapStruct)) ) );
+            }
+            else
+            {
+            pVBInfo->XG21_LVDSCapList[0].LVDS_Capability = pVideoMemory[ i ] | ( pVideoMemory[ i + 1 ] << 8 );
+            pVBInfo->XG21_LVDSCapList[0].LVDSHT = pVideoMemory[ i + 2 ] | ( pVideoMemory[ i + 3 ] << 8 ) ;
+            pVBInfo->XG21_LVDSCapList[0].LVDSVT = pVideoMemory[ i + 4 ] | ( pVideoMemory[ i + 5 ] << 8 );
+            pVBInfo->XG21_LVDSCapList[0].LVDSHDE = pVideoMemory[ i + 6 ] | ( pVideoMemory[ i + 7 ] << 8 );
+            pVBInfo->XG21_LVDSCapList[0].LVDSVDE = pVideoMemory[ i + 8 ] | ( pVideoMemory[ i + 9 ] << 8 );
+            pVBInfo->XG21_LVDSCapList[0].LVDSHFP = pVideoMemory[ i + 10 ] | ( pVideoMemory[ i + 11 ] << 8 );
+            pVBInfo->XG21_LVDSCapList[0].LVDSVFP = pVideoMemory[ i + 12 ] | ( pVideoMemory[ i + 13 ] << 8 );
+            pVBInfo->XG21_LVDSCapList[0].LVDSHSYNC = pVideoMemory[ i + 14 ] | ( pVideoMemory[ i + 15 ] << 8 );
+            pVBInfo->XG21_LVDSCapList[0].LVDSVSYNC = pVideoMemory[ i + 16 ] | ( pVideoMemory[ i + 17 ] << 8 );
+            pVBInfo->XG21_LVDSCapList[0].VCLKData1 = pVideoMemory[ i + 18 ] ;
+            pVBInfo->XG21_LVDSCapList[0].VCLKData2 = pVideoMemory[ i + 19 ] ;
+            pVBInfo->XG21_LVDSCapList[0].PSC_S1 = pVideoMemory[ i + 20 ] ;
+            pVBInfo->XG21_LVDSCapList[0].PSC_S2 = pVideoMemory[ i + 21 ] ;
+            pVBInfo->XG21_LVDSCapList[0].PSC_S3 = pVideoMemory[ i + 22 ] ;
+            pVBInfo->XG21_LVDSCapList[0].PSC_S4 = pVideoMemory[ i + 23 ] ;
+            pVBInfo->XG21_LVDSCapList[0].PSC_S5 = pVideoMemory[ i + 24 ] ;
+        }
+        }
+        pVBInfo->IF_DEF_CH7007 = 0 ;
+        if ( ( pVideoMemory[ 0x65 ] & 0x02 ) )			/* For XG21 CH7007 */
+        {
+            /* VideoDebugPrint((0, "ReadVBIOSTablData: pVideoMemory[ 0x65 ] =%x\n",pVideoMemory[ 0x65 ])); */
+            pVBInfo->IF_DEF_CH7007 = 1 ;                            /* [Billy] 07/05/03 */
+        }
+    }
+
+    if ( ChipType == XG27 )
+    {
+        if (pVideoMemory[ 0x65 ] & 0x1)
+        {
+            i = pVideoMemory[ 0x316 ] | ( pVideoMemory[ 0x317 ] << 8 );
+            j = pVideoMemory[ i-1 ] ;
+            if ( j != 0xff )
+            {
+              k = 0;
+              do
+              {
+                pVBInfo->XG21_LVDSCapList[k].LVDS_Capability = pVideoMemory[ i ] | ( pVideoMemory[ i + 1 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSHT = pVideoMemory[ i + 2 ] | ( pVideoMemory[ i + 3 ] << 8 ) ;
+                pVBInfo->XG21_LVDSCapList[k].LVDSVT = pVideoMemory[ i + 4 ] | ( pVideoMemory[ i + 5 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSHDE = pVideoMemory[ i + 6 ] | ( pVideoMemory[ i + 7 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSVDE = pVideoMemory[ i + 8 ] | ( pVideoMemory[ i + 9 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSHFP = pVideoMemory[ i + 10 ] | ( pVideoMemory[ i + 11 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSVFP = pVideoMemory[ i + 12 ] | ( pVideoMemory[ i + 13 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSHSYNC = pVideoMemory[ i + 14 ] | ( pVideoMemory[ i + 15 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].LVDSVSYNC = pVideoMemory[ i + 16 ] | ( pVideoMemory[ i + 17 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[k].VCLKData1 = pVideoMemory[ i + 18 ] ;
+                pVBInfo->XG21_LVDSCapList[k].VCLKData2 = pVideoMemory[ i + 19 ] ;
+                pVBInfo->XG21_LVDSCapList[k].PSC_S1 = pVideoMemory[ i + 20 ] ;
+                pVBInfo->XG21_LVDSCapList[k].PSC_S2 = pVideoMemory[ i + 21 ] ;
+                pVBInfo->XG21_LVDSCapList[k].PSC_S3 = pVideoMemory[ i + 22 ] ;
+                pVBInfo->XG21_LVDSCapList[k].PSC_S4 = pVideoMemory[ i + 23 ] ;
+                pVBInfo->XG21_LVDSCapList[k].PSC_S5 = pVideoMemory[ i + 24 ] ;
+                i += 25;
+                j--;
+                k++;
+              } while ( (j>0) && ( k < (sizeof(XGI21_LCDCapList)/sizeof(XGI21_LVDSCapStruct)) ) );
+            }
+            else
+            {
+                pVBInfo->XG21_LVDSCapList[0].LVDS_Capability = pVideoMemory[ i ] | ( pVideoMemory[ i + 1 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[0].LVDSHT = pVideoMemory[ i + 2 ] | ( pVideoMemory[ i + 3 ] << 8 ) ;
+                pVBInfo->XG21_LVDSCapList[0].LVDSVT = pVideoMemory[ i + 4 ] | ( pVideoMemory[ i + 5 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[0].LVDSHDE = pVideoMemory[ i + 6 ] | ( pVideoMemory[ i + 7 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[0].LVDSVDE = pVideoMemory[ i + 8 ] | ( pVideoMemory[ i + 9 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[0].LVDSHFP = pVideoMemory[ i + 10 ] | ( pVideoMemory[ i + 11 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[0].LVDSVFP = pVideoMemory[ i + 12 ] | ( pVideoMemory[ i + 13 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[0].LVDSHSYNC = pVideoMemory[ i + 14 ] | ( pVideoMemory[ i + 15 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[0].LVDSVSYNC = pVideoMemory[ i + 16 ] | ( pVideoMemory[ i + 17 ] << 8 );
+                pVBInfo->XG21_LVDSCapList[0].VCLKData1 = pVideoMemory[ i + 18 ] ;
+                pVBInfo->XG21_LVDSCapList[0].VCLKData2 = pVideoMemory[ i + 19 ] ;
+                pVBInfo->XG21_LVDSCapList[0].PSC_S1 = pVideoMemory[ i + 20 ] ;
+                pVBInfo->XG21_LVDSCapList[0].PSC_S2 = pVideoMemory[ i + 21 ] ;
+                pVBInfo->XG21_LVDSCapList[0].PSC_S3 = pVideoMemory[ i + 22 ] ;
+                pVBInfo->XG21_LVDSCapList[0].PSC_S4 = pVideoMemory[ i + 23 ] ;
+                pVBInfo->XG21_LVDSCapList[0].PSC_S5 = pVideoMemory[ i + 24 ] ;
+            }
+        }
+    }
+
 }
 
 /* --------------------------------------------------------------------- */
@@ -2801,6 +3427,51 @@ void XGINew_SetDRAMModeRegister_XG20(PXGI_HW_DEVICE_INFO HwDeviceExtension,
         XGINew_DDR2x_MRS_340( HwDeviceExtension,  pVBInfo->P3c4, pVBInfo ) ;
 
     XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x1B , 0x03 ) ;
+}
+
+void XGINew_SetDRAMModeRegister_XG27( PXGI_HW_DEVICE_INFO HwDeviceExtension )
+{
+#ifndef LINUX_XF86
+    UCHAR data ;
+#endif
+    VB_DEVICE_INFO VBINF;
+    PVB_DEVICE_INFO pVBInfo = &VBINF;
+    pVBInfo->ROMAddr = HwDeviceExtension->pjVirtualRomBase ;
+    pVBInfo->FBAddr = HwDeviceExtension->pjVideoMemoryAddress ;
+    pVBInfo->BaseAddr = ( USHORT )HwDeviceExtension->pjIOAddress ;
+    pVBInfo->ISXPDOS = 0 ;
+
+    pVBInfo->P3c4 = pVBInfo->BaseAddr + 0x14 ;
+    pVBInfo->P3d4 = pVBInfo->BaseAddr + 0x24 ;
+    pVBInfo->P3c0 = pVBInfo->BaseAddr + 0x10 ;
+    pVBInfo->P3ce = pVBInfo->BaseAddr + 0x1e ;
+    pVBInfo->P3c2 = pVBInfo->BaseAddr + 0x12 ;
+    pVBInfo->P3ca = pVBInfo->BaseAddr + 0x1a ;
+    pVBInfo->P3c6 = pVBInfo->BaseAddr + 0x16 ;
+    pVBInfo->P3c7 = pVBInfo->BaseAddr + 0x17 ;
+    pVBInfo->P3c8 = pVBInfo->BaseAddr + 0x18 ;
+    pVBInfo->P3c9 = pVBInfo->BaseAddr + 0x19 ;
+    pVBInfo->P3da = pVBInfo->BaseAddr + 0x2A ;
+    pVBInfo->Part0Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_00 ;
+    pVBInfo->Part1Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_04 ;
+    pVBInfo->Part2Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_10 ;
+    pVBInfo->Part3Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_12 ;
+    pVBInfo->Part4Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_14 ;
+    pVBInfo->Part5Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_14 + 2 ;
+
+    InitTo330Pointer(HwDeviceExtension->jChipType,pVBInfo);
+
+    ReadVBIOSTablData( HwDeviceExtension->jChipType , pVBInfo) ;
+
+    if ( XGINew_GetXG20DRAMType( HwDeviceExtension, pVBInfo) == 0 )
+        XGINew_DDR1x_MRS_XG20( pVBInfo->P3c4, pVBInfo ) ;
+    else
+        /*XGINew_DDR2_MRS_XG27( HwDeviceExtension , pVBInfo->P3c4 , pVBInfo ) ;*/
+        XGINew_DDRII_Bootup_XG27( HwDeviceExtension , pVBInfo->P3c4 , pVBInfo) ;
+
+    /*XGINew_SetReg1( pVBInfo->P3c4 , 0x1B , 0x03 ) ;*/
+    XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3c4 , 0x1B , pVBInfo->SR15[ 3 ][ XGINew_RAMType ] ) ;	/* SR1B */
+
 }
 
 /* -------------------------------------------------------- */
@@ -2935,7 +3606,6 @@ void XGINew_SetModeScratch ( PXGI_HW_DEVICE_INFO HwDeviceExtension , PVB_DEVICE_
     	}
     }
 
-
     tempcl |= SetSimuScanMode ;
     if ( (!( temp & ActiveCRT1 )) && ( ( temp & ActiveLCD ) || ( temp & ActiveTV ) || ( temp & ActiveCRT2 ) ) )
        tempcl ^= ( SetSimuScanMode | SwitchToCRT2 ) ;
@@ -2958,3 +3628,115 @@ void XGINew_SetModeScratch ( PXGI_HW_DEVICE_INFO HwDeviceExtension , PVB_DEVICE_
     XGI_SetReg((XGIIOADDRESS) pVBInfo->P3d4, 0x38 , CR38Data ) ;
 
 }
+
+/* -------------------------------------------------------- */
+/* Function : XGINew_GetXG21Sense */
+/* Input : */
+/* Output : */
+/* Description : */
+/* -------------------------------------------------------- */
+void XGINew_GetXG21Sense(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo)
+{
+    UCHAR Temp;
+    PUCHAR  volatile pVideoMemory = ( PUCHAR )pVBInfo->ROMAddr ;
+
+    pVBInfo->IF_DEF_LVDS = 0 ;
+     
+    if ( ( pVideoMemory[ 0x65 ] & 0x01 ) )			/* For XG21 LVDS */
+    {
+        pVBInfo->IF_DEF_LVDS = 1 ;
+        XGI_SetRegOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x32 , LCDSense ) ;
+        XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x38 , ~0xE0 , 0xC0 ) ; /* LVDS on chip */
+    }
+    else
+    {
+        XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , ~0x03 , 0x03 ) ; /* Enable GPIOA/B read  */
+        Temp = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x48 ) & 0xC0;
+        if ( Temp == 0xC0 )
+        {								/* DVI & DVO GPIOA/B pull high */
+          XGINew_SenseLCD( HwDeviceExtension, pVBInfo ) ;
+          XGI_SetRegOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x32 , LCDSense ) ;
+          XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , ~0x20 , 0x20 ) ;   /* Enable read GPIOF */
+          Temp = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x48 ) & 0x04 ;
+          if ( !Temp )
+            XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x38 , ~0xE0 , 0x80 ) ; /* TMDS on chip */
+          else
+            XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x38 , ~0xE0 , 0xA0 ) ; /* Only DVO on chip */
+
+          XGI_SetRegAND( (XGIIOADDRESS)pVBInfo->P3d4 , 0x4A , ~0x20 ) ;	    /* Disable read GPIOF */
+        }
+    }
+}
+
+/* -------------------------------------------------------- */
+/* Function : XGINew_GetXG27Sense */
+/* Input : */
+/* Output : */
+/* Description : */
+/* -------------------------------------------------------- */
+void XGINew_GetXG27Sense(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo)
+{
+    UCHAR Temp,bCR4A;
+    PUCHAR  volatile pVideoMemory = ( PUCHAR )pVBInfo->ROMAddr ;
+
+    pVBInfo->IF_DEF_LVDS = 0 ;
+    bCR4A = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A ) ;
+    XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , ~0x07 , 0x07 ) ; /* Enable GPIOA/B/C read  */
+    Temp = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x48 ) & 0x07;
+    XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4, 0x4A , bCR4A ) ;
+        
+     if ( Temp <= 0x02 )
+     {
+            pVBInfo->IF_DEF_LVDS = 1 ;
+            XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x38 , ~0xE0 , 0xC0 ) ; /* LVDS setting */
+            XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4, 0x30 , 0x21 ) ;
+     }
+     else
+     {
+            XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x38 , ~0xE0 , 0xA0 ) ; /* TMDS/DVO setting */
+     }        
+
+     XGI_SetRegOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x32 , LCDSense ) ;       
+}
+
+UCHAR GetXG21FPBits(PVB_DEVICE_INFO pVBInfo)
+{
+    UCHAR CR38,CR4A,temp;
+    
+    CR4A = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A ) ;
+    XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , ~0x10 , 0x10 ) ; /* enable GPIOE read */
+    CR38 = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x38 ) ;
+    temp =0;
+    if ( ( CR38 & 0xE0 ) > 0x80 )
+    {
+        temp = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x48 ) ;
+        temp &= 0x08;
+        temp >>= 3;
+    }
+    
+    XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4, 0x4A , CR4A ) ;
+    
+    return temp;
+}
+
+UCHAR GetXG27FPBits(PVB_DEVICE_INFO pVBInfo)
+{
+    UCHAR CR38,CR4A,temp;
+    
+    CR4A = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A ) ;
+    XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , ~0x03 , 0x03 ) ; /* enable GPIOA/B/C read */
+    temp = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x48 ) ;
+    if ( temp <= 2 )
+    {
+       temp &= 0x03;
+    }
+    else
+    {
+    	temp = ((temp&0x04)>>1) || ((~temp)&0x01);
+    }
+
+    XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4, 0x4A , CR4A ) ;
+    
+    return temp;
+}
+

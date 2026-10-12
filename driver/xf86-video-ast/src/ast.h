@@ -40,10 +40,17 @@
 #define PCI_CHIP_AST2000		0x2000		
 #endif
 
+#ifndef	PCI_CHIP_AST2100
+#define PCI_CHIP_AST2100		0x2010
+#endif
+
 typedef enum _CHIP_ID {
     VGALegacy,
     AST2000,
-    AST2100	
+    AST2100,
+    AST1100,
+    AST2200,
+    AST2150
 } CHIP_ID;
 
 /* AST REC Info */
@@ -125,7 +132,8 @@ typedef struct {
     USHORT   		offset_y;
     ULONG		fg;
     ULONG		bg;
-    
+
+    UCHAR               cursorpattern[1024];    
         
 } HWCINFO, *PHWCINFO;
 
@@ -150,12 +158,14 @@ typedef struct _ASTRec {
     ScreenBlockHandlerProcPtr BlockHandler;
 
     UCHAR		jChipType;
+    UCHAR		jDRAMType;
              
     Bool 		noAccel;
     Bool 		noHWC;
     Bool 		MMIO2D;
     int			ENGCaps;
     int			DBGSelect;
+    Bool		VGA2Clone;
               	
     ULONG     		FBPhysAddr;		/* Frame buffer physical address     */
     ULONG     		MMIOPhysAddr;     	/* MMIO region physical address      */
@@ -177,6 +187,11 @@ typedef struct _ASTRec {
     HWCINFO    		HWCInfo;
     ULONG		ulCMDReg;   
     Bool		EnableClip;
+
+    int			clip_left;    
+    int			clip_top;
+    int			clip_right;    
+    int			clip_bottom;    	
    		
 } ASTRec, *ASTRecPtr;
 	

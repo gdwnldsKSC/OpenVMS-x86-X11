@@ -82,10 +82,16 @@ struct xg47_CmdList
 
     int		_fd;            /**< DRM file handle. */
     
-    struct _drmFence  top_fence;
-    int top_fence_set;
-    struct _drmFence  bottom_fence;
-    int bottom_fence_set;
+    /**
+     * \name Fence values for the top and bottom halves of the command buffer
+     *
+     * Each fence will either contain a fence breadcrumb number or zero if
+     * not set.
+     */
+    /*@{*/
+    uint32_t top_fence;         /**< Fence protecting the top half */
+    uint32_t bottom_fence;      /**< Fence protecting the bottom half */
+    /*@}*/
 };
 
 
@@ -110,22 +116,6 @@ xg47_Initialize(ScrnInfoPtr pScrn, unsigned int cmdBufSize, int fd)
     XGIDebug(DBG_CMDLIST, "cmdBuf VAddr=0x%p  HAddr=0x%p buffsize=0x%x\n",
              list->command.ptr, list->command.hw_addr, list->command.size);
 
-    ret = drmFenceCreate(list->_fd, 0, 0, DRM_FENCE_TYPE_EXE,
-                         & list->top_fence);
-    if (ret) {
-        xf86DrvMsg(0, X_ERROR, "Unable to create top-half fence (%s, %d)!\n",
-                   strerror(-ret), -ret);
-        goto err;
-    }
-
-    drmFenceCreate(list->_fd, 0, 0, DRM_FENCE_TYPE_EXE,
-                   & list->bottom_fence);
-    if (ret) {
-        xf86DrvMsg(0, X_ERROR, "Unable to create bottom-half fence "
-                   "(%s, %d)!\n", strerror(-ret), -ret);
-        goto err;
-    }
-
     xg47_Reset(list);
 
     return list;
@@ -138,17 +128,6 @@ err:
 void xg47_Cleanup(ScrnInfoPtr pScrn, struct xg47_CmdList *s_pCmdList)
 {
     if (s_pCmdList) {
-        if (s_pCmdList->top_fence_set) {
-            drmFenceWait(s_pCmdList->_fd, 0, & s_pCmdList->top_fence, 0);
-        }
-
-        if (s_pCmdList->bottom_fence_set) {
-            drmFenceWait(s_pCmdList->_fd, 0, & s_pCmdList->bottom_fence, 0);
-        }
-
-        drmFenceUnreference(s_pCmdList->_fd, & s_pCmdList->top_fence);
-        drmFenceUnreference(s_pCmdList->_fd, & s_pCmdList->bottom_fence);
-
         if (s_pCmdList->command.bus_addr) {
             XGIDebug(DBG_CMDLIST, "[DBG Free]cmdBuf VAddr=0x%x  HAddr=0x%x\n",
                      s_pCmdList->command.ptr,
@@ -187,6 +166,31 @@ uint32_t s_emptyBegin[AGPCMDLIST_BEGIN_SIZE] =
 };
 
 
+static void
+xg47_set_fence(int fd, uint32_t *fence)
+{
+    int ret;
+    
+    
+    ret = drmCommandWriteRead(fd, DRM_XGI_SET_FENCE, fence, sizeof(uint32_t));
+    if (ret) {
+	/* Do something? */
+    }
+}
+
+static void
+xg47_wait_fence(int fd, uint32_t fence)
+{
+    uint32_t temp = fence;
+    int ret;
+
+    ret = drmCommandWriteRead(fd, DRM_XGI_WAIT_FENCE, &temp, sizeof(uint32_t));
+    if (ret) {
+	/* Do something? */
+    }
+}
+
+
 /**
  * Reserve space in the command buffer
  * 
@@ -221,9 +225,9 @@ int xg47_BeginCmdListType(struct xg47_CmdList *pCmdList, unsigned req_size,
      * wait on the bottom half's fence.
      */
     if ((begin_cmd < mid_point) && (end_cmd > mid_point)) {
-        if (pCmdList->bottom_fence_set) {
-            drmFenceWait(pCmdList->_fd, 0, & pCmdList->bottom_fence, 0);
-            pCmdList->bottom_fence_set = 0;
+        if (pCmdList->bottom_fence != 0) {
+	    xg47_wait_fence(pCmdList->_fd, pCmdList->bottom_fence);
+            pCmdList->bottom_fence = 0;
         }
     } else {
         /* If the command won't fit at the end of the list and we need to wrap
@@ -236,13 +240,12 @@ int xg47_BeginCmdListType(struct xg47_CmdList *pCmdList, unsigned req_size,
         if (end_cmd > end_point) {
             begin_cmd = pCmdList->command.ptr;
 
-            if (pCmdList->top_fence_set) {
-                drmFenceWait(pCmdList->_fd, 0, & pCmdList->top_fence, 0);
-                pCmdList->top_fence_set = 0;
+            if (pCmdList->top_fence != 0) {
+		xg47_wait_fence(pCmdList->_fd, pCmdList->top_fence);
+		pCmdList->top_fence = 0;
             }
 
-            drmFenceEmit(pCmdList->_fd, 0, & pCmdList->bottom_fence, 0);
-            pCmdList->bottom_fence_set = 1;
+	    xg47_set_fence(pCmdList->_fd, & pCmdList->bottom_fence);
         }
     }
 
@@ -412,8 +415,7 @@ void xg47_EndCmdList(struct xg47_CmdList *pCmdList)
          * half's fence.
          */
         if ((begin_cmd < mid_point) && (end_cmd >= mid_point)) {
-            drmFenceEmit(pCmdList->_fd, 0, & pCmdList->top_fence, 0);
-            pCmdList->top_fence_set = 1;
+	    xg47_set_fence(pCmdList->_fd, & pCmdList->top_fence);
         }
     } else {
         ErrorF("[2D] ioctl -- cmdList error (%d, %s)!\n",

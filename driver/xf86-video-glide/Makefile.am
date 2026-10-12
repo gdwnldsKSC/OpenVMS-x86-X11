@@ -1,4 +1,4 @@
-#  Copyright 2005 Adam Jackson.
+#  Copyright © 2005 Adam Jackson.
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -23,11 +23,9 @@ SUBDIRS = src man
 EXTRA_DIST = README ChangeLog
 MAINTAINERCLEANFILES = ChangeLog
 
+.PHONY: ChangeLog
+
 ChangeLog:
-	( GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && \
-	  mv .changelog.tmp ChangeLog; \
-	  rm -f .changelog.tmp ) || \
-	( touch ChangeLog; \
-	  echo 'git directory not found: installing possibly empty changelog.' >&2 )
+	$(CHANGELOG_CMD)
 
 dist-hook: ChangeLog

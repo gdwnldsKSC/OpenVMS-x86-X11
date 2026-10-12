@@ -27,25 +27,28 @@
  * use or other dealings in this Software without prior written authorization.
  */
 
+#include "sanitizedCarbon.h"
+
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
 
 #include "quartzCommon.h"
+#include "inputstr.h"
 #include "quartz.h"
 #include "xpr.h"
+#include "xprEvent.h"
 #include "pseudoramiX.h"
 #include "darwin.h"
+#include "darwinEvents.h"
 #include "rootless.h"
-#include "safeAlpha/safeAlpha.h"
 #include "dri.h"
 #include "globals.h"
-#include "Xplugin.h"
+#include <Xplugin.h>
 #include "applewmExt.h"
 #include "micmap.h"
 
-// From xprFrame.c
-WindowPtr xprGetXWindow(xp_window_id wid);
+#include "rootlessCommon.h"
 
 #ifdef DAMAGE
 # include "damage.h"
@@ -64,10 +67,11 @@ static const char *xprOpenGLBundle = "glxCGL.bundle";
  */
 static void eventHandler(unsigned int type, const void *arg,
                          unsigned int arg_size, void *data) {
+    
     switch (type) {
         case XP_EVENT_DISPLAY_CHANGED:
             DEBUG_LOG("XP_EVENT_DISPLAY_CHANGED\n");
-            QuartzMessageServerThread(kXDarwinDisplayChanged, 0);
+            DarwinSendDDXEvent(kXquartzDisplayChanged, 0);
             break;
             
         case XP_EVENT_WINDOW_STATE_CHANGED:
@@ -75,7 +79,7 @@ static void eventHandler(unsigned int type, const void *arg,
                 const xp_window_state_event *ws_arg = arg;
                 
                 DEBUG_LOG("XP_EVENT_WINDOW_STATE_CHANGED: id=%d, state=%d\n", ws_arg->id, ws_arg->state);
-                QuartzMessageServerThread(kXDarwinWindowState, 2,
+                DarwinSendDDXEvent(kXquartzWindowState, 2,
                                           ws_arg->id, ws_arg->state);
             } else {
                 DEBUG_LOG("XP_EVENT_WINDOW_STATE_CHANGED: ignored\n");
@@ -86,8 +90,7 @@ static void eventHandler(unsigned int type, const void *arg,
             DEBUG_LOG("XP_EVENT_WINDOW_MOVED\n");
             if (arg_size == sizeof(xp_window_id))  {
                 xp_window_id id = * (xp_window_id *) arg;
-                WindowPtr pWin = xprGetXWindow(id);
-                QuartzMessageServerThread(kXDarwinWindowMoved, 1, pWin);
+                DarwinSendDDXEvent(kXquartzWindowMoved, 1, id);
             }
             break;
             
@@ -106,6 +109,15 @@ static void eventHandler(unsigned int type, const void *arg,
                 DRISurfaceNotify(*(xp_surface_id *) arg, kind);
             }
             break;
+#ifdef XP_EVENT_SPACE_CHANGED
+        case  XP_EVENT_SPACE_CHANGED:
+            DEBUG_LOG("XP_EVENT_SPACE_CHANGED\n");
+            if(arg_size == sizeof(uint32_t)) {
+                uint32_t space_id = *(uint32_t *)arg;
+                DarwinSendDDXEvent(kXquartzSpaceChanged, 1, space_id);
+            }
+            break;
+#endif
         default:
             ErrorF("Unknown XP_EVENT type (%d) in xprScreen:eventHandler\n", type);
     }
@@ -140,13 +152,20 @@ displayScreenBounds(CGDirectDisplayID id)
 
     frame = CGDisplayBounds(id);
 
+    DEBUG_LOG("    %dx%d @ (%d,%d).\n",
+              (int)frame.size.width, (int)frame.size.height,
+              (int)frame.origin.x, (int)frame.origin.y);
+    
     /* Remove menubar to help standard X11 window managers. */
-
-    if (frame.origin.x == 0 && frame.origin.y == 0)
-    {
+    if (quartzEnableRootless && 
+        frame.origin.x == 0 && frame.origin.y == 0) {
         frame.origin.y += aquaMenuBarHeight;
         frame.size.height -= aquaMenuBarHeight;
     }
+
+    DEBUG_LOG("    %dx%d @ (%d,%d).\n",
+              (int)frame.size.width, (int)frame.size.height,
+              (int)frame.origin.x, (int)frame.origin.y);
 
     return frame;
 }
@@ -169,8 +188,7 @@ xprAddPseudoramiXScreens(int *x, int *y, int *width, int *height)
     CGGetActiveDisplayList(displayCount, displayList, &displayCount);
 
     /* Get the union of all screens */
-    for (i = 0; i < displayCount; i++)
-    {
+    for (i = 0; i < displayCount; i++) {
         CGDirectDisplayID dpy = displayList[i];
         frame = displayScreenBounds(dpy);
         unionRect = CGRectUnion(unionRect, frame);
@@ -182,22 +200,20 @@ xprAddPseudoramiXScreens(int *x, int *y, int *width, int *height)
     *width = unionRect.size.width;
     *height = unionRect.size.height;
 
+    DEBUG_LOG("  screen union origin: (%d,%d) size: (%d,%d).\n",
+              *x, *y, *width, *height);
+
     /* Tell PseudoramiX about the real screens. */
     for (i = 0; i < displayCount; i++)
     {
         CGDirectDisplayID dpy = displayList[i];
 
         frame = displayScreenBounds(dpy);
-
-	/*        ErrorF("PseudoramiX screen %d added: %dx%d @ (%d,%d).\n", i,
-               (int)frame.size.width, (int)frame.size.height,
-               (int)frame.origin.x, (int)frame.origin.y); */
-
         frame.origin.x -= unionRect.origin.x;
         frame.origin.y -= unionRect.origin.y;
 
-	/*        ErrorF("PseudoramiX screen %d placed at X11 coordinate (%d,%d).\n",
-		  i, (int)frame.origin.x, (int)frame.origin.y); */
+        DEBUG_LOG("    placed at X11 coordinate (%d,%d).\n",
+                  (int)frame.origin.x, (int)frame.origin.y);
 
         PseudoramiXAddScreen(frame.origin.x, frame.origin.y,
                              frame.size.width, frame.size.height);
@@ -215,7 +231,7 @@ xprDisplayInit(void)
 {
     CGDisplayCount displayCount;
 
-    //    ErrorF("Display mode: Rootless Quartz -- Xplugin implementation\n");
+    DEBUG_LOG("");
 
     CGGetActiveDisplayList(0, NULL, &displayCount);
 
@@ -233,12 +249,18 @@ xprDisplayInit(void)
     xp_select_events(XP_EVENT_DISPLAY_CHANGED
                      | XP_EVENT_WINDOW_STATE_CHANGED
                      | XP_EVENT_WINDOW_MOVED
+#ifdef XP_EVENT_SPACE_CHANGED
+                     | XP_EVENT_SPACE_CHANGED
+#endif
                      | XP_EVENT_SURFACE_CHANGED
                      | XP_EVENT_SURFACE_DESTROYED,
                      eventHandler, NULL);
 
     AppleDRIExtensionInit();
     xprAppleWMInit();
+
+    if (!quartzEnableRootless)
+        RootlessHideAllWindows();
 }
 
 /*
@@ -250,27 +272,15 @@ xprAddScreen(int index, ScreenPtr pScreen)
 {
     DarwinFramebufferPtr dfb = SCREEN_PRIV(pScreen);
     int depth = darwinDesiredDepth;
+
+    DEBUG_LOG("index=%d depth=%d\n", index, depth);
     
     if(depth == -1) {
         depth = CGDisplaySamplesPerPixel(kCGDirectMainDisplay) * CGDisplayBitsPerSample(kCGDirectMainDisplay);
-        //dfb->depth = CGDisplaySamplesPerPixel(kCGDirectMainDisplay) * CGDisplayBitsPerSample(kCGDirectMainDisplay);
-        //dfb->bitsPerRGB = CGDisplayBitsPerSample(kCGDirectMainDisplay);
-        //dfb->bitsPerPixel = CGDisplayBitsPerPixel(kCGDirectMainDisplay);
     }
     
     switch(depth) {
-        case -8: // broken
-            FatalError("Unsupported color depth %d\n", darwinDesiredDepth);
-            dfb->visuals = (1 << StaticGray) | (1 << GrayScale);
-            dfb->preferredCVC = GrayScale;
-            dfb->depth = 8;
-            dfb->bitsPerRGB = 8;
-            dfb->bitsPerPixel = 8;
-            dfb->redMask = 0;
-            dfb->greenMask = 0;
-            dfb->blueMask = 0;
-            break;
-        case 8: // broken
+        case 8: // pseudo-working
             dfb->visuals = PseudoColorMask;
             dfb->preferredCVC = PseudoColor;
             dfb->depth = 8;
@@ -281,27 +291,28 @@ xprAddScreen(int index, ScreenPtr pScreen)
             dfb->blueMask = 0;
             break;
         case 15:
-            dfb->visuals = LARGE_VISUALS;
+            dfb->visuals = TrueColorMask; //LARGE_VISUALS;
             dfb->preferredCVC = TrueColor;
             dfb->depth = 15;
             dfb->bitsPerRGB = 5;
             dfb->bitsPerPixel = 16;
-            dfb->redMask   = 0x7c00;
-            dfb->greenMask = 0x03e0;
-            dfb->blueMask  = 0x001f;
+            dfb->redMask   = RM_ARGB(0,5,5,5);
+            dfb->greenMask = GM_ARGB(0,5,5,5);
+            dfb->blueMask  = BM_ARGB(0,5,5,5);
             break;
-        case 24:
-            dfb->visuals = LARGE_VISUALS;
+//        case 24:
+        default:
+            if(depth != 24)
+                ErrorF("Unsupported color depth requested.  Defaulting to 24bit. (depth=%d darwinDesiredDepth=%d CGDisplaySamplesPerPixel=%d CGDisplayBitsPerSample=%d)\n",  darwinDesiredDepth, depth, (int)CGDisplaySamplesPerPixel(kCGDirectMainDisplay), (int)CGDisplayBitsPerSample(kCGDirectMainDisplay));
+            dfb->visuals = TrueColorMask; //LARGE_VISUALS;
             dfb->preferredCVC = TrueColor;
             dfb->depth = 24;
             dfb->bitsPerRGB = 8;
             dfb->bitsPerPixel = 32;
-            dfb->redMask   = 0x00ff0000;
-            dfb->greenMask = 0x0000ff00;
-            dfb->blueMask  = 0x000000ff;
+            dfb->redMask   = RM_ARGB(0,8,8,8);
+            dfb->greenMask = GM_ARGB(0,8,8,8);
+            dfb->blueMask  = BM_ARGB(0,8,8,8);
             break;
-        default:
-            FatalError("Unsupported color depth %d\n", darwinDesiredDepth);
     }
 
     if (noPseudoramiXExtension)
@@ -309,6 +320,8 @@ xprAddScreen(int index, ScreenPtr pScreen)
         CGDirectDisplayID dpy;
         CGRect frame;
 
+        ErrorF("Warning: noPseudoramiXExtension!\n");
+        
         dpy = displayAtIndex(index);
 
         frame = displayScreenBounds(dpy);
@@ -341,18 +354,11 @@ xprAddScreen(int index, ScreenPtr pScreen)
 static Bool
 xprSetupScreen(int index, ScreenPtr pScreen)
 {
-    // Add alpha protecting replacements for fb screen functions
-
-#ifdef RENDER
-    {
-        PictureScreenPtr ps = GetPictureScreen(pScreen);
-        ps->Composite = SafeAlphaComposite;
-    }
-#endif /* RENDER */
-
     // Initialize accelerated rootless drawing
     // Note that this must be done before DamageSetup().
-    RootlessAccelInit(pScreen);
+
+    // These are crashing ugly... better to be stable and not crash for now.
+    //RootlessAccelInit(pScreen);
 
 #ifdef DAMAGE
     // The Damage extension needs to wrap underneath the
@@ -409,12 +415,8 @@ static QuartzModeProcsRec xprModeProcs = {
     xprSetupScreen,
     xprInitInput,
     QuartzInitCursor,
-    NULL,               // No need to update cursor
     QuartzSuspendXCursor,
     QuartzResumeXCursor,
-    NULL,               // No capture or release in rootless mode
-    NULL,
-    NULL,               // Xplugin sends screen change events directly
     xprAddPseudoramiXScreens,
     xprUpdateScreen,
     xprIsX11Window,

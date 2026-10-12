@@ -81,14 +81,16 @@ with the sample server.
 	use the bitmap in a call to PushPixels
 */
 
-_X_EXPORT void
-miPolyGlyphBlt(pDrawable, pGC, x, y, nglyph, ppci, pglyphBase)
-    DrawablePtr pDrawable;
-    GC 		*pGC;
-    int 	 x, y;
-    unsigned int nglyph;
-    CharInfoPtr *ppci;		/* array of character info */
-    pointer      pglyphBase;	/* start of array of glyphs */
+void
+miPolyGlyphBlt(
+    DrawablePtr pDrawable,
+    GC		*pGC,
+    int		x,
+    int		y,
+    unsigned int nglyph,
+    CharInfoPtr *ppci,		/* array of character info */
+    pointer      pglyphBase	/* start of array of glyphs */
+    )
 {
     int width, height;
     PixmapPtr pPixmap;
@@ -139,7 +141,7 @@ miPolyGlyphBlt(pDrawable, pGC, x, y, nglyph, ppci, pglyphBase)
     DoChangeGC(pGCtmp, GCFunction|GCForeground|GCBackground, gcvals, 0);
 
     nbyLine = BitmapBytePad(width);
-    pbits = (unsigned char *)xalloc(height*nbyLine);
+    pbits = xalloc(height*nbyLine);
     if (!pbits)
     {
 	(*pDrawable->pScreen->DestroyPixmap)(pPixmap);
@@ -195,14 +197,16 @@ miPolyGlyphBlt(pDrawable, pGC, x, y, nglyph, ppci, pglyphBase)
 }
 
 
-_X_EXPORT void
-miImageGlyphBlt(pDrawable, pGC, x, y, nglyph, ppci, pglyphBase)
-    DrawablePtr pDrawable;
-    GC 		*pGC;
-    int 	 x, y;
-    unsigned int nglyph;
-    CharInfoPtr *ppci;		/* array of character info */
-    pointer      pglyphBase;	/* start of array of glyphs */
+void
+miImageGlyphBlt(
+    DrawablePtr pDrawable,
+    GC		*pGC,
+    int		 x,
+    int		 y,
+    unsigned int nglyph,
+    CharInfoPtr *ppci,		/* array of character info */
+    pointer      pglyphBase	/* start of array of glyphs */
+    )
 {
     ExtentInfoRec info;		/* used by QueryGlyphExtents() */
     XID gcvals[3];

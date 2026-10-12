@@ -35,7 +35,7 @@
 #include "win.h"
 #include <winuser.h>
 #define _WINDOWSWM_SERVER_
-#include "windowswmstr.h"
+#include <X11/extensions/windowswmstr.h>
 #include "dixevents.h"
 #include "propertyst.h"
 #include <X11/Xatom.h>
@@ -48,7 +48,6 @@
  * Constant defines
  */
 
-#define MOUSE_POLLING_INTERVAL		500
 #define MOUSE_ACTIVATE_DEFAULT		TRUE
 #define RAISE_ON_CLICK_DEFAULT		FALSE
 
@@ -300,7 +299,9 @@ IsRaiseOnClick (WindowPtr pWin)
 
   struct _Window	*pwin;
   struct _Property	*prop;  
-  WindowPtr		pRoot = GetCurrentRootWindow ();
+  /* XXX We're getting inputInfo.poniter here, but this might be really wrong.
+   * Which pointer's current window do we want? */
+  WindowPtr		pRoot = GetCurrentRootWindow (inputInfo.pointer);
 
   if (!pWin)
     {
@@ -353,7 +354,9 @@ IsMouseActive (WindowPtr pWin)
 
   struct _Window	*pwin;
   struct _Property	*prop;
-  WindowPtr		pRoot = GetCurrentRootWindow ();
+  /* XXX We're getting inputInfo.poniter here, but this might be really wrong.
+   * Which pointer's current window do we want? */
+  WindowPtr		pRoot = GetCurrentRootWindow (inputInfo.pointer);
 
   if (!pWin)
     {
@@ -567,9 +570,9 @@ winMWExtWMWindowProc (HWND hwnd, UINT message,
 	}
 
       /* Deliver absolute cursor position to X Server */
-      miPointerAbsoluteCursor (ptMouse.x - pScreenInfo->dwXOffset,
-			       ptMouse.y - pScreenInfo->dwYOffset,
-			       g_c32LastInputEventTime = GetTickCount ());
+      winEnqueueMotion(ptMouse.x - pScreenInfo->dwXOffset,
+		       ptMouse.y - pScreenInfo->dwYOffset);
+
       return 0;
       
     case WM_NCMOUSEMOVE:
@@ -779,6 +782,17 @@ winMWExtWMWindowProc (HWND hwnd, UINT message,
       /* Pass the message to the root window */
       SendMessage (hwndScreen, message, wParam, lParam);
       return 0;
+
+    case WM_ERASEBKGND:
+#if CYGDEBUG
+      winDebug ("winMWExtWMWindowProc - WM_ERASEBKGND\n");
+#endif
+      /*
+       * Pretend that we did erase the background but we don't care,
+       * since we repaint the entire region anyhow
+       * This avoids some flickering when resizing.
+       */
+      return TRUE;
 
     case WM_PAINT:
     

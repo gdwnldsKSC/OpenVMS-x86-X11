@@ -83,9 +83,9 @@ XFree86)されており、従来のボード/チップセット毎のサーバもなくなりました。
 <tag>scanpci</tag>
         厳格な動作確認を行っていませんが、動作するようです。
 <tag>デフォルトのコンパイル時の設定</tag>
-	昔のPC98用サーバと異なり、XFree86は、GetValuesBC NO,BuildPexExt 
+	昔のPC98用サーバと異なり、XFree86は、GetValuesBC NO,BuildPexExt
 	YES,BuildXIE YESと定義されています。ご注意下さい。xengine等で
-	はGetValuesについてソースの修正が必要です。 
+	はGetValuesについてソースの修正が必要です。
 <tag>16MBシステム空間の設定</tag>
 	ボード/チップセットによっては、15M-16Mの領域を使用する物があります。
 	その様なボードを使用している場合、システムセットアップメニューで、

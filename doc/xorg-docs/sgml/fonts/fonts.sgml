@@ -6,11 +6,11 @@
 
 <articleinfo>
 
-<Title>Fonts in X11R</Title>
+<Title>Fonts in X11R&relvers;</Title>
 <AUTHOR><firstname>Juliusz</firstname><surname>Chroboczek</surname>
 <EMAIL>jch@freedesktop.org</EMAIL>
 </AUTHOR>
-<PubDate>30 October 2006</PubDate>
+<PubDate>23 October 2009</PubDate>
 
 </articleinfo>
 
@@ -18,9 +18,9 @@
 <Title>Introduction</Title>
 
 <Para>
-This document describes the support for fonts in X11R.
-<XRef LinkEnd="sec-installing"> is aimed at the 
-casual user wishing to install fonts in X11R the rest of the
+This document describes the support for fonts in X11R&relvers;.
+<XRef LinkEnd="sec-installing"> is aimed at the
+casual user wishing to install fonts in X11R&relvers; the rest of the
 document describes the font support in more detail.
 </Para>
 
@@ -82,7 +82,8 @@ system to access newly-installed fonts.
 
 <Para>
 Xft has no configuration mechanism itself, it relies upon the
-fontconfig library to configure and customise fonts.  That library is
+<ULink URL="http://www.fontconfig.org/">fontconfig</ULink>
+library to configure and customise fonts.  That library is
 not specific to the X Window system, and does not rely on any
 particular font output mechanism.
 </Para>
@@ -92,8 +93,8 @@ particular font output mechanism.
 
 <Para>
 Fontconfig looks for fonts in a set of well-known directories that
-include all of X11R's standard font directories
-(`<Literal remap="tt">/usr/X11R6/lib/X11/lib/fonts/*</Literal>') by default) as well as a
+include all of X11R&relvers;'s standard font directories
+(`<Literal remap="tt">/usr/share/fonts/X11/*</Literal>') by default) as well as a
 directory called `<Literal remap="tt">.fonts/</Literal>' in the user's home directory.
 Installing a font for use by Xft applications is as simple
 as copying a font file into one of these directories.
@@ -197,7 +198,7 @@ Anti-aliasing can be disabled for all fonts by the following incantation:
 </Para>
 
 <Para>
-Xft supports sub-pixel rasterisation on LCD displays.  X11R should
+Xft supports sub-pixel rasterisation on LCD displays.  X11R&relvers; should
 automatically enable this feature on laptops and when using an LCD
 monitor connected with a DVI cable; you can check whether this was
 done by typing
@@ -285,16 +286,16 @@ including it in the <Emphasis remap="it">font path</Emphasis>.
 <Title>Installing bitmap fonts</Title>
 
 <Para>
-The X11R server can use bitmap fonts in both the cross-platform
+The X11R&relvers; server can use bitmap fonts in both the cross-platform
 BDF format and the somewhat more efficient binary PCF format.
-(X11R also supports the obsolete SNF format.)
+(X11R&relvers; also supports the obsolete SNF format.)
 </Para>
 
 <Para>
 Bitmap fonts are normally distributed in the BDF format.  Before
 installing such fonts, it is desirable (but not absolutely necessary)
 to convert the font files to the PCF format.  This is done by using the
-command `<Literal remap="tt">bdftopcf</Literal>', <Emphasis remap="it">e.g.</Emphasis> 
+command `<Literal remap="tt">bdftopcf</Literal>', <Emphasis remap="it">e.g.</Emphasis>
 
 <Screen>
 $ bdftopcf courier12.bdf
@@ -338,14 +339,10 @@ new font directory; see <XRef LinkEnd="sec-set-font-path"> below.
 <Title>Installing scalable fonts</Title>
 
 <Para>
-The X11R server supports scalable fonts in multiple
-formats, including Type&nbsp;1, TrueType, OpenType/CFF and CIDFont.
-This section only applies to the first three; for information on
-CIDFonts, please see <XRef LinkEnd="sec-cid-fonts">
-later in this document.  (Earlier versions of X11 also included
-support for the Speedo scalable font format, but that is disabled in
-the default builds of X11R6.9 and not included in X11R7.0 and later
-releases.)
+The X11R&relvers; server supports scalable fonts in multiple
+formats, including Type&nbsp;1, TrueType, and OpenType/CFF.
+(Earlier versions of X11 also included support for the Speedo and
+CID scalable font formats, but that is not included in current releases.)
 </Para>
 
 <Para>
@@ -381,93 +378,13 @@ later in this document.
 </Sect3>
 
 <Sect3 id="sec-cid-fonts" xreflabel="Installing CIDFonts">
-<Title>Installing CID-keyed fonts </Title>
+<Title>CID-keyed fonts </Title>
 
 <Para>
 The CID-keyed font format was designed by Adobe Systems for fonts
 with large character sets.  The CID-keyed format is obsolete, as it
-has been superseded by other formats such as OpenType/CFF; however,
-support for CID-keyed fonts is still provided in X11.
-</Para>
-
-<Para>
-A CID-keyed font, or CIDFont for short, contains a collection of
-glyphs indexed by <Emphasis remap="it">character ID</Emphasis> (CID).
-</Para>
-
-<Para>
-In order to map such glyphs to meaningful indices, Adobe provide a set
-of <Emphasis remap="it">CMap</Emphasis> files.  The PostScript name of a font generated from a
-CIDFont consists of the name of the CIDFont and the name of the CMap
-separated by two dashes.  For example, the font generated from the
-CIDFont `<Literal remap="tt">Munhwa-Regular</Literal>' using the CMap `<Literal remap="tt">UniKS-UCS2-H</Literal>' is
-called
-
-<Screen>
-Munhwa-Regular--UniKS-UCS2-H
-</Screen>
-
-</Para>
-
-<Para>
-The CIDFont code in X11R requires a very rigid directory
-structure.  The main directory must be called `<Literal remap="tt">CID</Literal>' (its location
-defaults to `<Literal remap="tt">/usr/X11R6/lib/X11/fonts/CID</Literal>' but it may be
-located anywhere), and it should contain a subdirectory for every CID
-collection.  Every subdirectory <Emphasis remap="it">must</Emphasis> contain subdirectories
-called <Literal remap="tt">CIDFont</Literal> (containing the actual CIDFont files), <Literal remap="tt">CMap</Literal>
-(containing all the needed CMaps), <Literal remap="tt">AFM</Literal> (containing the font
-metric files) and <Literal remap="tt">CFM</Literal> (initially empty).  For example, in the
-case of the font <Literal remap="tt">Munhwa-Regular</Literal> that uses the CID collection
-<Literal remap="tt">Adobe-Korea1-0</Literal>, the directory structure should be as follows:
-
-<Screen>
-CID/Adobe-Korea1/CIDFont/Munhwa-Regular
-CID/Adobe-Korea1/CMap/UniKS-UCS2-H
-CID/Adobe-Korea1/AFM/Munhwa-Regular.afm
-CID/Adobe-Korea1/CFM/
-CID/fonts.dir
-CID/fonts.scale
-</Screen>
-
-</Para>
-
-<Para>
-After creating this directory structure and copying the relevant
-files, you should create a `<Literal remap="tt">fonts.scale</Literal>' file.  This file has the
-same format as in the case of (non-CID) scalable fonts, except that
-its first column contains PostScript font names with the extension
-`<Literal remap="tt">.cid</Literal>' appended rather than actual filenames:
-
-<Screen>
-1
-Adobe-Korea1/Munhwa-Regular--UniKS-UCS2-H.cid \
-  -adobe-munhwa-medium-r-normal--0-0-0-0-p-0-iso10646-1
-</Screen>
-
-(both names on the same line).  Running `<Literal remap="tt">mkfontdir</Literal>'
-creates the `<Literal remap="tt">fonts.dir</Literal>' file:
-
-<Screen>
-$ cd /usr/local/share/fonts/CID
-$ mkfontdir
-</Screen>
-
-</Para>
-
-<Para>
-Finally, you should create the font metrics summary files in the
-directory `<Literal remap="tt">CFM</Literal>' by running the command `<Literal remap="tt">mkcfm</Literal>':
-
-<Screen>
-$ mkcfm /usr/local/share/fonts/CID
-</Screen>
-
-If no CFM files are available, the server will still be able to use
-the CID fonts but querying them will take a long time.  You should run
-`<Literal remap="tt">mkcfm</Literal>' again whenever a change is made to any of the CID-keyed
-fonts, or when the CID-keyed fonts are copied to a machine with a
-different architecture.
+has been superseded by other formats such as OpenType/CFF and
+support for CID-keyed fonts has been removed from X11.
 </Para>
 
 </Sect3>
@@ -494,7 +411,7 @@ For best results, scalable fonts should appear in the font path before
 the bitmap fonts; this way, the server will prefer bitmap fonts to
 scalable fonts when an exact match is possible, but will avoid scaling
 bitmap fonts when a scalable font can be used.  (The `<Literal remap="tt">:unscaled</Literal>'
-hack, while still supported, should no longer be necessary in X11R.)
+hack, while still supported, should no longer be necessary in X11R&relvers;.)
 </Para>
 
 <Para>
@@ -505,6 +422,51 @@ $ xset q
 </Screen>
 
 </Para>
+
+<Sect4>
+<Title>Font path catalogue directories</Title>
+
+<Para>
+You can specify a special kind of font path directory in the form
+<Literal remap="tt">catalogue:&lt;dir&gt;</Literal>.
+The directory specified after the <Literal remap="tt">catalogue:</Literal>
+prefix will be scanned for symlinks  and  each  symlink destination will be
+added as a local font path entry.
+</Para>
+
+<Para>
+The symlink can be suffixed by attributes such as
+'<Literal remap="tt">unscaled</Literal>', which will be passed through
+to the underlying font path entry. The only exception is the newly
+introduced '<Literal remap="tt">pri</Literal>' attribute, which will be
+used for ordering the font paths specified by the symlinks.
+</Para>
+
+<Para>
+An example configuration:
+<Screen>
+         75dpi:unscaled:pri=20 -&gt; /usr/share/X11/fonts/75dpi
+         ghostscript:pri=60 -&gt; /usr/share/fonts/default/ghostscript
+         misc:unscaled:pri=10 -&gt; /usr/share/X11/fonts/misc
+         type1:pri=40 -&gt; /usr/share/X11/fonts/Type1
+         type1:pri=50 -&gt; /usr/share/fonts/default/Type1
+</Screen>
+</Para>
+
+<Para>
+This will add <Literal remap="tt">/usr/share/X11/fonts/misc</Literal> as the
+first font path entry with the attribute
+<Literal remap="tt">unscaled</Literal>. This is functionally equivalent to
+setting the following font path:
+<Screen>
+         /usr/share/X11/fonts/misc:unscaled,
+         /usr/share/X11/fonts/75dpi:unscaled,
+         /usr/share/X11/fonts/Type1,
+         /usr/share/fonts/default/Type1,
+         /usr/share/fonts/default/ghostscript
+</Screen>
+</Para>
+</Sect4>
 
 <Sect4>
 <Title>Temporary modification of the font path</Title>
@@ -525,7 +487,7 @@ $ xset fp+ /usr/local/fonts/bitmap
 <Para>
 Conversely, an element may be removed from the front of the font path
 with `<Literal remap="tt">xset -fp</Literal>', and removed from the end with `<Literal remap="tt">xset fp-</Literal>'.
-You may reset the font path to its default value with 
+You may reset the font path to its default value with
 `<Literal remap="tt">xset fp default</Literal>'.
 </Para>
 
@@ -543,10 +505,12 @@ URL="xset.1.html"
 
 <Para>
 The default font path (the one used just after server startup or
-after `<Literal remap="tt">xset fp default</Literal>') is specified in the X server's
+after `<Literal remap="tt">xset fp default</Literal>') may be specified in the
+X server's
 `<Literal remap="tt">xorg.conf</Literal>' file.  It is computed by appending all the
 directories mentioned in the `<Literal remap="tt">FontPath</Literal>' entries of the
-`<Literal remap="tt">Files</Literal>' section in the order in which they appear.
+`<Literal remap="tt">Files</Literal>' section in the order in which they appear.   If no font path is specified in a config file, the server uses a default
+value specified when it was built.
 
 <Screen>
 FontPath "/usr/local/fonts/Type1"
@@ -580,61 +544,42 @@ font in a format that is not supported by your server.
 </Para>
 
 <Para>
-X11R supports the BDF, PCF, SNF, Type 1, TrueType, OpenType
-and CIDFont font formats.  However, not all X11R servers
+X11R&relvers; supports the BDF, PCF, SNF, Type 1, TrueType, and OpenType
+font formats.  However, not all X11R&relvers; servers
 come with all the font backends configured in.
 </Para>
 
 <Para>
-On most platforms, the X11R servers are <Emphasis remap="it">modular</Emphasis>: the font
-backends are included in modules that are loaded at runtime.  The
-modules to be loaded are specified in the `<Literal remap="tt">xorg.conf</Literal>' file using
-the `<Literal remap="tt">Load</Literal>' directive:
+On most platforms, the X11R&relvers; servers no longer uses font
+backends from modules that are loaded at runtime.   The built in
+font support corresponds to the functionality formerly provided by
+these modules:
 
-<Screen>
-Load "type1"
-</Screen>
+	  <ItemizedList>
+	    <ListItem>
 
-If you have trouble installing fonts in a specific format, you may
-want to check the server's log file in order to see whether the
-relevant modules are properly loaded.  The list of font modules
-distributed with X11R is as follows:
+	      <Para>
+		<Literal remap="tt">"bitmap"</Literal>:
+		bitmap fonts (`<Literal remap="tt">*.bdf</Literal>',
+		`<Literal remap="tt">*.pcf</Literal>'
+		and `<Literal remap="tt">*.snf</Literal>');
+	      </Para>
+	    </ListItem>
+	    <ListItem>
 
-<ItemizedList>
-<ListItem>
+	      <Para>
+		<Literal remap="tt">"freetype"</Literal>:
+		TrueType fonts (`<Literal remap="tt">*.ttf</Literal>' and
+		`<Literal remap="tt">*.ttc</Literal>'),
+		OpenType fonts (`<Literal remap="tt">*.otf</Literal>' and
+		`<Literal remap="tt">*.otc</Literal>') and
+		Type&nbsp;1 fonts (`<Literal remap="tt">*.pfa</Literal>'
+		and `<Literal remap="tt">*.pfb</Literal>').
+	      </Para>
+	    </ListItem>
 
-<Para>
- <Literal remap="tt">"bitmap"</Literal>: bitmap fonts (`<Literal remap="tt">*.bdf</Literal>', `<Literal remap="tt">*.pcf</Literal>'
-and `<Literal remap="tt">*.snf</Literal>');
-</Para>
-</ListItem>
-<ListItem>
+	  </ItemizedList>
 
-<Para>
- <Literal remap="tt">"freetype"</Literal>: TrueType fonts (`<Literal remap="tt">*.ttf</Literal>' and
-`<Literal remap="tt">*.ttc</Literal>'), OpenType fonts (`<Literal remap="tt">*.otf</Literal>' and `<Literal remap="tt">*.otc</Literal>') and
-Type&nbsp;1 fonts (`<Literal remap="tt">*.pfa</Literal>' and `<Literal remap="tt">*.pfb</Literal>');
-</Para>
-</ListItem>
-<ListItem>
-
-<Para>
- <Literal remap="tt">"type1"</Literal>: alternate Type&nbsp;1 backend (`<Literal remap="tt">*.pfa</Literal>' and
-`<Literal remap="tt">*.pfb</Literal>') and CIDFont backend;
-</Para>
-</ListItem>
-<ListItem>
-
-<Para>
- <Literal remap="tt">"xtt"</Literal>: alternate TrueType backend (`<Literal remap="tt">*.ttf</Literal>' and
-`<Literal remap="tt">*.ttc</Literal>').
-</Para>
-</ListItem>
-
-</ItemizedList>
-
-Please note that the argument of the `<Literal remap="tt">Load</Literal>' directive is
-case-sensitive.
 </Para>
 
 </Sect3>
@@ -644,7 +589,7 @@ case-sensitive.
 </Sect1>
 
 <Sect1>
-<Title>Fonts included with X11R</Title>
+<Title>Fonts included with X11R&relvers;</Title>
 
 <Sect2>
 <Title>Standard bitmap fonts</Title>
@@ -652,14 +597,12 @@ case-sensitive.
 <Para>
 The Sample Implementation of X11 (SI) comes with a large number of
 bitmap fonts, including the `<Literal remap="tt">fixed</Literal>' family, and bitmap versions
-of Courier, Times, Helvetica and some members of the Lucida family.  In
-the SI, these fonts are provided in the ISO&nbsp;8859-1 encoding (ISO
-Latin Western-European).
+of Courier, Times, Helvetica and some members of the Lucida family.
 </Para>
 
 <Para>
-In X11R, a number of these fonts are provided in Unicode-encoded
-font files instead.  At build time, these fonts are split into font
+In X11R&relvers;, a number of these fonts are provided in Unicode-encoded
+font files now.  At build time, these fonts are split into font
 files encoded according to legacy encodings, a process which allows
 us to provide the standard fonts in a number of regional encodings
 with no duplication of work.
@@ -669,7 +612,7 @@ with no duplication of work.
 For example, the font file
 
 <Screen>
-/usr/X11R6/lib/X11/fonts/misc/6x13.bdf
+/usr/share/fonts/X11/misc/6x13.bdf
 </Screen>
 
 with XLFD
@@ -729,19 +672,19 @@ Unicode text.  Together, the fonts contain approximately 7500 glyphs.
 The main ClearlyU font has the XLFD
 
 <Screen>
--mutt-clearlyu-medium-r-normal--17-120-100-100-p-101-iso10646-1 
+-mutt-clearlyu-medium-r-normal--17-120-100-100-p-101-iso10646-1
 </Screen>
 
 and resides in the font file
 
 <Screen>
-/usr/X11R6/lib/X11/fonts/misc/cu12.pcf.gz 
+/usr/share/fonts/X11/misc/cu12.pcf.gz
 </Screen>
 
 Additional ClearlyU fonts include
 
 <Screen>
--mutt-clearlyu alternate glyphs-medium-r-normal--17-120-100-100-p-91-iso10646-1 
+-mutt-clearlyu alternate glyphs-medium-r-normal--17-120-100-100-p-91-iso10646-1
 -mutt-clearlyu pua-medium-r-normal--17-120-100-100-p-111-iso10646-1
 -mutt-clearlyu arabic extra-medium-r-normal--17-120-100-100-p-103-fontspecific-0
 -mutt-clearlyu ligature-medium-r-normal--17-120-100-100-p-141-fontspecific-0
@@ -779,7 +722,7 @@ may be useful for improved presentation of text.
 <Title>Standard scalable fonts</Title>
 
 <Para>
-X11R includes all the scalable fonts distributed with X11R6.
+X11R&relvers; includes all the scalable fonts distributed with X11R6.
 </Para>
 
 <Sect3>
@@ -797,7 +740,7 @@ XLFD
 and reside in the font files
 
 <Screen>
-/usr/X11R6/lib/X11/fonts/Type1/cour*.pfa
+/usr/share/fonts/X11/Type1/cour*.pfa
 </Screen>
 
 </Para>
@@ -813,13 +756,13 @@ Adobe Standard Encoding.  These fonts have XLFD
 and reside in the font files
 
 <Screen>
-/usr/X11R6/lib/X11/fonts/Type1/UT*.pfa
+/usr/share/fonts/X11/Type1/UT*.pfa
 </Screen>
 
 </Para>
 
 <Para>
-Finally, X11R also comes with Type&nbsp;1 versions of Bitstream
+Finally, X11R&relvers; also comes with Type&nbsp;1 versions of Bitstream
 Courier and Charter.  These fonts have XLFD
 
 <Screen>
@@ -830,7 +773,7 @@ Courier and Charter.  These fonts have XLFD
 and reside in the font files
 
 <Screen>
-/usr/X11R6/lib/X11/fonts/Type1/c*bt_.pfb
+/usr/share/fonts/X11/Type1/c*bt_.pfb
 </Screen>
 
 </Para>
@@ -843,7 +786,7 @@ and reside in the font files
 <Title>The Bigelow &amp; Holmes Luxi family</Title>
 
 <Para>
-X11R includes the <Emphasis remap="it">Luxi</Emphasis> family of scalable fonts, in both
+X11R&relvers; includes the <Emphasis remap="it">Luxi</Emphasis> family of scalable fonts, in both
 TrueType and Type&nbsp;1 format.  This family consists of the fonts
 <Emphasis remap="it">Luxi Serif</Emphasis>, with XLFD
 
@@ -879,34 +822,32 @@ Standard encoding.
 </Para>
 
 <Para>
-The Luxi fonts are original designs by Kris Holmes and Charles 
-Bigelow.  Luxi fonts include seriffed, sans serif, and monospaced 
-styles, in roman and oblique, and normal and bold weights. The fonts 
-share stem weight, x-height, capital height, ascent and descent, for 
+The Luxi fonts are original designs by Kris Holmes and Charles
+Bigelow.  Luxi fonts include seriffed, sans serif, and monospaced
+styles, in roman and oblique, and normal and bold weights. The fonts
+share stem weight, x-height, capital height, ascent and descent, for
 graphical harmony.
 </Para>
 
 <Para>
-The character width metrics of Luxi roman and bold fonts match those 
+The character width metrics of Luxi roman and bold fonts match those
 of core fonts bundled with popular operating and window systems.
 </Para>
 
 <Para>
 The license terms for the Luxi fonts are included in the file
 `<Literal remap="tt">COPYRIGHT.BH</Literal>', as well as in the <ULink
-URL="LICENSE.html"
->License document</ULink
->.
+URL="../LICENSE.html">License document</ULink>.
 </Para>
 
 <Para>
-Charles Bigelow and Kris Holmes from Bigelow and Holmes Inc. 
+Charles Bigelow and Kris Holmes from Bigelow and Holmes Inc.
 developed the Luxi typeface designs in Ikarus digital format.
 </Para>
 
 <Para>
-URW++ Design and Development GmbH converted the Ikarus format fonts 
-to TrueType and Type1 font programs and implemented the grid-fitting 
+URW++ Design and Development GmbH converted the Ikarus format fonts
+to TrueType and Type1 font programs and implemented the grid-fitting
 "hints" and kerning tables in the Luxi fonts.
 </Para>
 
@@ -914,10 +855,10 @@ to TrueType and Type1 font programs and implemented the grid-fitting
 For more information, please contact
 <EMAIL
 >design@bigelowandholmes.com</EMAIL
-> or 
+> or
 <EMAIL
 >info@urwpp.de</EMAIL
->, or consult 
+>, or consult
 <ULink
 URL="http://www.urwpp.de"
 >the URW++ web site</ULink
@@ -928,7 +869,7 @@ URL="http://www.urwpp.de"
 An earlier version of the Luxi fonts was made available under the
 name <Emphasis>Lucidux</Emphasis>.  This name should no longer be used due to trademark
 uncertainties, and all traces of the <Emphasis>Lucidux</Emphasis> name have been
-removed from X11R.
+removed from X11R&relvers;.
 </Para>
 
 </Sect2>
@@ -939,7 +880,7 @@ removed from X11R.
 <Title>More about core fonts </Title>
 
 <Para>
-This section describes X11R-specific enhancements to the core
+This section describes X11R&relvers;-specific enhancements to the core
 X11 fonts system.
 </Para>
 
@@ -954,7 +895,7 @@ XLFD in `<Literal remap="tt">fonts.dir</Literal>'.  For example, a `<Literal rem
 contain entries for the Type&nbsp;1 Courier font such as
 
 <Screen>
-cour.pfa -adobe-courier-medium-r-normal--0-0-0-0-m-0-iso8859-1 
+cour.pfa -adobe-courier-medium-r-normal--0-0-0-0-m-0-iso8859-1
 cour.pfa -adobe-courier-medium-r-normal--0-0-0-0-m-0-iso8859-2
 </Screen>
 
@@ -975,7 +916,7 @@ font type.
 
 <Para>
 <Emphasis remap="it">Please note:</Emphasis> the X-TrueType (X-TT) backend is not included
-in X11R.  That functionality has been merged into the FreeType
+in X11R&relvers;.  That functionality has been merged into the FreeType
 backend.&#62;
 </Para>
 
@@ -1129,7 +1070,7 @@ manual page for more details.
 
 <Para>
 A number of encoding files for common encodings are included with
-X11R.  Information on writing new encoding files can be found in
+X11R&relvers;.  Information on writing new encoding files can be found in
 <XRef LinkEnd="sec-format-encoding-directory-files"> and <XRef LinkEnd="sec-format-encoding-files"> later in this document.
 </Para>
 
@@ -1170,17 +1111,6 @@ ISO&nbsp;8859-1.
 
 </Sect4>
 
-<Sect4>
-<Title>Type&nbsp;1</Title>
-
-<Para>
-The Type&nbsp;1 backend behaves similarly to the FreeType backend
-with Type&nbsp;1 fonts, except that it limits all encodings to 8-bit
-codes.
-</Para>
-
-</Sect4>
-
 </Sect3>
 
 <Sect3 id="sec-format-encoding-directory-files" xreflabel="Format of
@@ -1191,7 +1121,7 @@ encodings directory files">
 In order to use a font in an encoding that the font backend does
 not know about, you need to have an `<Literal remap="tt">encodings.dir</Literal>' file either
 in the same directory as the font file used or in a system-wide
-location (`<Literal remap="tt">/usr/X11R6/lib/X11/fonts/encodings/</Literal>' by default).
+location (`<Literal remap="tt">/usr/share/fonts/X11/encodings/</Literal>' by default).
 </Para>
 
 <Para>
@@ -1207,9 +1137,9 @@ encoding name defined in the encoding file.  For example,
 
 <Screen>
 3
-mulearabic-0 /usr/X11R6/lib/X11/fonts/encodings/mulearabic-0.enc
-mulearabic-1 /usr/X11R6/lib/X11/fonts/encodings/mulearabic-1.enc
-mulearabic-2 /usr/X11R6/lib/X11/fonts/encodings/mulearabic-2.enc
+mulearabic-0 /usr/share/fonts/X11/encodings/mulearabic-0.enc
+mulearabic-1 /usr/share/fonts/X11/encodings/mulearabic-1.enc
+mulearabic-2 /usr/share/fonts/X11/encodings/mulearabic-2.enc
 </Screen>
 
 </Para>
@@ -1555,7 +1485,7 @@ remap them to their proper names.
 
 <Para>
 This is done by writing a `<Literal remap="tt">fonts.alias</Literal>' file. The format of this file
-is very simple: it consists of a series of lines each mapping an alias 
+is very simple: it consists of a series of lines each mapping an alias
 name to a font name.  A `<Literal remap="tt">fonts.alias</Literal>' file might look as follows:
 
 <Screen>
@@ -1580,25 +1510,12 @@ URL="mkfontdir.1.html"
 <Sect2>
 <Title>Additional notes about scalable core fonts</Title>
 
-<Para>
-The FreeType (libfreetype-xtt2) backend (module `<Literal remap="tt">freetype</Literal>',
-formerly known as <Emphasis remap="it">xfsft</Emphasis>) is able to deal with both TrueType and
-Type&nbsp;1 fonts.  This puts it in conflict with the X-TT and Type&nbsp;1
-backends respectively.
-</Para>
-
-<Para>
-If both the FreeType and the Type&nbsp;1 backends are loaded, the
-FreeType backend will be used for Type&nbsp;1 fonts.  If both the
-FreeType and X-TT backends are loaded, X-TT will be used for TrueType
-fonts.
-</Para>
 
 <Sect3>
 <Title>About the <Emphasis remap="it">FreeType</Emphasis> backend</Title>
 
 <Para>
-The <Emphasis remap="it">FreeType</Emphasis> (libfreetype-xtt2) backend (formerly <Emphasis remap="it">xfsft</Emphasis>)
+The <Emphasis remap="it">FreeType</Emphasis> backend (formerly <Emphasis remap="it">xfsft</Emphasis>)
 is a backend based on version 2 of the FreeType library (see <ULink
 URL="http://www.freetype.org/"
 >the FreeType web site</ULink
@@ -1607,7 +1524,7 @@ the X-TT functionalities for CJKV support provided by the After X-TT
 Project (see <ULink
 URL="http://x-tt.sourceforge.jp/"
 >the After X-TT Project web site</ULink
->).  The <Emphasis remap="it">FreeType</Emphasis> module has support for the
+>).  The <Emphasis remap="it">FreeType</Emphasis> backend has support for the
 ``fontenc'' style of internationalisation (see <XRef LinkEnd="sec-fontenc">).  This backend supports TrueType font files
 (`<Literal remap="tt">*.ttf</Literal>'), OpenType font files (`<Literal remap="tt">*.otf</Literal>'), TrueType Collections
 (`<Literal remap="tt">*.ttc</Literal>'), OpenType Collections (`<Literal remap="tt">*.otc</Literal>') and Type 1 font
@@ -1681,31 +1598,6 @@ URL="http://x-tt.sourceforge.jp/"
 <Para>
 The <Emphasis remap="it">FreeType</Emphasis> backend uses the <Emphasis remap="it">fontenc</Emphasis> layer in order to support
 recoding of fonts; this was described in <XRef LinkEnd="sec-fontenc"> and especially <XRef LinkEnd="sec-fontenc-freetype"> earlier in this document.
-</Para>
-
-</Sect3>
-
-<Sect3 id="sec-X-TT">
-<Title>About the <Emphasis remap="it">X-TrueType</Emphasis> TrueType backend </Title>
-
-<Para>
-The `X-TrueType' backend is a backend based on version 1 of the FreeType
-library.  X-TrueType doesn't use the `fontenc' layer for managing font
-encodings, but instead uses its own database of encodings.
-</Para>
-
-<Para>
-Since the functionalities for CJKV support introduced by X-TT have been
-merged into the new <Emphasis remap="it">FreeType</Emphasis> backend, the X-TT backend will be
-removed from X11R's tree near the future.  Therefore, the use of
-<Emphasis remap="it">FreeType</Emphasis> backend is preferred over the X-TT backend.
-</Para>
-
-<Para>
-General information on X-TrueType may be found at <ULink
-URL="http://x-tt.sourceforge.jp/"
->the After X-TT Project page</ULink
->.
 </Para>
 
 </Sect3>
@@ -1907,7 +1799,7 @@ Short names are usually implemented as aliases to XLFDs; the
 standard `<Literal remap="tt">fixed</Literal>' and `<Literal remap="tt">cursor</Literal>' aliases are defined in
 
 <Screen>
-/usr/X11R6/lib/X11/font/misc/fonts.alias
+/usr/share/font/X11/misc/fonts.alias
 </Screen>
 
 </Para>
@@ -1920,7 +1812,7 @@ standard `<Literal remap="tt">fixed</Literal>' and `<Literal remap="tt">cursor</
 <Para>
 Unicode (<ULink
 URL="http://www.unicode.org"
->&#65533;</ULink
+>http://www.unicode.org</ULink
 >) is a coded character
 set with the goal of uniquely identifying all characters for all
 scripts, current and historical.  While Unicode was explicitly not
@@ -1956,7 +1848,7 @@ have the last two fields of their XLFD set to `<Literal remap="tt">iso10646-1</L
 <Title>References</Title>
 
 <Para>
-X11R comes with extensive documentation in the form of manual
+X11R&relvers; comes with extensive documentation in the form of manual
 pages and typeset documents.  Before installing fonts, you really should
 read the <ULink
 URL="fontconfig.3.html"
@@ -1994,7 +1886,7 @@ Font Description document, by Jim Flowers, which is provided in the file
 The <ULink
 URL="http://www.faqs.org/faqs/by-newsgroup/comp/comp.fonts.html"
 >comp.fonts FAQ</ULink
->, 
+>,
 which is unfortunately no longer being maintained, contains a wealth
 of information about digital fonts.
 </Para>
@@ -2008,7 +1900,7 @@ URL="http://www.fontconfig.org"
 </Para>
 
 <Para>
-The 
+The
 <ULink
 URL="http://www.dcs.ed.ac.uk/home/jec/programs/xfsft/"
 >xfsft home page</ULink
@@ -2018,7 +1910,7 @@ however still find some of the information that it contains useful.
 <ULink
 URL="http://www.joerg-pommnitz.de/TrueType/xfsft.html"
 >Joerg Pommnitz' xfsft page</ULink
-> 
+>
 is the canonical source for the `<Literal remap="tt">ttmkfdir</Literal>' utility, which is the
 ancestor of <Literal remap="tt">mkfontscale</Literal>.
 </Para>
@@ -2037,14 +1929,6 @@ The documentation of <Emphasis remap="it">X-TrueType</Emphasis> is available fro
 URL="http://x-tt.sourceforge.jp/"
 >the After X-TT Project page</ULink
 >.
-</Para>
-
-<Para>
-A number of East-Asian CIDFonts are available from 
-<ULink
-URL="ftp://ftp.oreilly.com/pub/examples/nutshell/cjkv/adobe/"
->O'Reilly's FTP site</ULink
->. 
 </Para>
 
 <Para>

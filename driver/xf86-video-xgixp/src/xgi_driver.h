@@ -29,7 +29,7 @@
 #define _XGI_DRIVER_H_
 
 #include <inttypes.h>
-#include <drm/xgi_drm.h>
+#include "xgi_drm.h"
 #include <sys/ioctl.h>
 
 #define IsPrimaryCard   (xf86IsPrimaryPci(pXGI->pPciInfo))

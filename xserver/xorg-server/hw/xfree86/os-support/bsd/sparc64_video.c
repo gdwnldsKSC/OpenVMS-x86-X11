@@ -82,28 +82,10 @@ sparc64UnmapVidMem(int ScreenNum, pointer Base, unsigned long Size)
 	munmap(Base, Size);
 }
 
-_X_EXPORT int
+int
 xf86ReadBIOS(unsigned long Base, unsigned long Offset, unsigned char *Buf,
 	     int Len)
 {
 
 	return (0);
-}
-
-/***************************************************************************/
-/* Interrupt Handling section                                              */
-/***************************************************************************/
-
-_X_EXPORT Bool
-xf86DisableInterrupts()
-{
-
-	return(TRUE);
-}
-
-_X_EXPORT void
-xf86EnableInterrupts()
-{
-
-	return;
 }

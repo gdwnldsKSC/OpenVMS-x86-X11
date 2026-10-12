@@ -65,8 +65,7 @@ Written by Joel McCormack, Summer 1989.
 */
 
 
-void miInitSpanGroup(spanGroup)
-    SpanGroup *spanGroup;
+void miInitSpanGroup(SpanGroup *spanGroup)
 {
     spanGroup->size = 0;
     spanGroup->count = 0;
@@ -180,11 +179,8 @@ static void miSubtractSpans (SpanGroup *spanGroup, Spans *sub)
 	}
     }
 }
-    
-void miAppendSpans(spanGroup, otherGroup, spans)
-    SpanGroup   *spanGroup;
-    SpanGroup	*otherGroup;
-    Spans       *spans;
+
+void miAppendSpans(SpanGroup *spanGroup, SpanGroup *otherGroup, Spans *spans)
 {
     int ymin, ymax;
     int spansCount;
@@ -217,8 +213,7 @@ void miAppendSpans(spanGroup, otherGroup, spans)
     }
 } /* AppendSpans */
 
-void miFreeSpanGroup(spanGroup)
-    SpanGroup   *spanGroup;
+void miFreeSpanGroup(SpanGroup *spanGroup)
 {
     if (spanGroup->group != NULL) xfree(spanGroup->group);
 }
@@ -376,10 +371,7 @@ miDisposeSpanGroup (SpanGroup *spanGroup)
     }
 }
 
-void miFillUniqueSpanGroup(pDraw, pGC, spanGroup)
-    DrawablePtr pDraw;
-    GCPtr	pGC;
-    SpanGroup   *spanGroup;
+void miFillUniqueSpanGroup(DrawablePtr pDraw, GCPtr pGC, SpanGroup *spanGroup)
 {
     int    		i;
     Spans  		*spans;
@@ -413,8 +405,8 @@ void miFillUniqueSpanGroup(pDraw, pGC, spanGroup)
 	ylength = spanGroup->ymax - ymin + 1;
 
 	/* Allocate Spans for y buckets */
-	yspans = (Spans *) xalloc(ylength * sizeof(Spans));
-	ysizes = (int *) xalloc(ylength * sizeof (int));
+	yspans = xalloc(ylength * sizeof(Spans));
+	ysizes = xalloc(ylength * sizeof (int));
 
 	if (!yspans || !ysizes)
 	{
@@ -487,8 +479,8 @@ void miFillUniqueSpanGroup(pDraw, pGC, spanGroup)
 	} /* for i thorough Spans */
 
 	/* Now sort by x and uniquify each bucket into the final array */
-	points = (DDXPointPtr) xalloc(count * sizeof(DDXPointRec));
-	widths = (int *)       xalloc(count * sizeof(int));
+	points = xalloc(count * sizeof(DDXPointRec));
+	widths = xalloc(count * sizeof(int));
 	if (!points || !widths)
 	{
 	    int	i;

@@ -64,7 +64,7 @@ typedef struct _S3RegRec {
 typedef struct {
         unsigned char brightness;
         unsigned char contrast;
-        FBAreaPtr     area;
+        FBLinearPtr   area;
         RegionRec     clip;
         CARD32        colorKey;
         CARD32        videoStatus;
@@ -98,12 +98,15 @@ typedef struct _S3Rec {
         OptionInfoPtr           Options;
         unsigned int            Flags;
         Bool                    NoAccel;
-	Bool			SWCursor;
+	Bool			HWCursor;
 	Bool			SlowDRAMRefresh;
 	Bool			SlowDRAM;
 	Bool			SlowEDODRAM;
 	Bool			SlowVRAM;
 	Bool			S3NewMMIO;
+	Bool                    hasStreams;
+	int                     Streams_FIFO;
+	Bool                    XVideo;
 	Bool			PCIRetry;
 	Bool			ColorExpandBug;
 
@@ -159,7 +162,14 @@ typedef struct _S3Rec {
 	unsigned char		*imageBuffer;
 	int			imageWidth;
 	int			imageHeight;
-    Bool			hwCursor;
+	Bool			hwCursor;
+    
+	Bool                    shadowFB;
+	int                     rotate;
+	unsigned char           * ShadowPtr;
+	int                     ShadowPitch;
+	void	                (*PointerMoved)(int index, int x, int y);
+    
 } S3Rec, *S3Ptr;
 
 #define S3PTR(p)		((S3Ptr)((p)->driverPrivate))
@@ -221,6 +231,15 @@ void S3OutTiIndReg(ScrnInfoPtr pScrn, CARD32 reg, unsigned char mask,
 /* s3 gen cursor */
 Bool S3_CursorInit(ScreenPtr pScreen);
 
+/* in s3_shadow.c */
+void S3PointerMoved(int index, int x, int y);
+void S3RefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
+void S3RefreshArea8(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
+void S3RefreshArea16(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
+void S3RefreshArea24(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
+void S3RefreshArea32(ScrnInfoPtr pScrn, int num, BoxPtr pbox);
+
+
 #define TRIO64_RAMDAC	0x8811
 #define	TI3025_RAMDAC	0x3025
 #define	TI3020_RAMDAC	0x3020
@@ -234,9 +253,9 @@ Bool S3_CursorInit(ScreenPtr pScreen);
 
 #define S3_964_SERIES()		((pS3->Chipset == PCI_CHIP_964_0) ||	\
 			 	 (pS3->Chipset == PCI_CHIP_964_1))
+
 #define	S3_TRIO_SERIES()	((pS3->Chipset == PCI_CHIP_TRIO) ||	\
 			 	 (pS3->Chipset == PCI_CHIP_AURORA64VP) || \
 				 (pS3->Chipset == PCI_CHIP_TRIO64UVP) || \
 				 (pS3->Chipset == PCI_CHIP_TRIO64V2_DXGX))
-
 #endif /* _S3_H */

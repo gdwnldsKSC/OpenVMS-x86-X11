@@ -50,8 +50,6 @@ SOFTWARE.
  *
  */
 
-#define	 NEED_EVENTS
-#define	 NEED_REPLIES
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -106,7 +104,7 @@ ProcXSetDeviceMode(ClientPtr client)
 	return rc;
     if (dev->valuator == NULL)
 	return BadMatch;
-    if ((dev->grab) && !SameClient(dev->grab, client))
+    if ((dev->deviceGrab.grab) && !SameClient(dev->deviceGrab.grab, client))
 	rep.status = AlreadyGrabbed;
     else
 	rep.status = SetDeviceMode(client, dev, stuff->mode);

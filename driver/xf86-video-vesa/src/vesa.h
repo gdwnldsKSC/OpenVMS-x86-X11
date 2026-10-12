@@ -35,7 +35,11 @@
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
+
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
 #include "xf86Resources.h"
+#include "xf86RAC.h"
+#endif
 
 /* All drivers need this */
 
@@ -66,8 +70,7 @@
 /* Dga definitions */
 #include "dgaproc.h"
 
-#include "xf86Resources.h"
-#include "xf86RAC.h"
+
 
 #include "fb.h"
 
@@ -78,9 +81,9 @@
 #define VESA_VERSION		4000
 #define VESA_NAME		"VESA"
 #define VESA_DRIVER_NAME	"vesa"
-#define VESA_MAJOR_VERSION	1
-#define VESA_MINOR_VERSION	3
-#define VESA_PATCHLEVEL		0
+#define VESA_MAJOR_VERSION	PACKAGE_VERSION_MAJOR
+#define VESA_MINOR_VERSION	PACKAGE_VERSION_MINOR
+#define VESA_PATCHLEVEL		PACKAGE_VERSION_PATCHLEVEL
 
 /*XXX*/
 

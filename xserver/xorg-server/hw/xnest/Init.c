@@ -45,7 +45,7 @@ is" without express or implied warranty.
 
 Bool xnestDoFullGeneration = True;
 
-xEvent *xnestEvents = NULL;
+EventList *xnestEvents = NULL;
 
 void
 InitOutput(ScreenInfo *screenInfo, int argc, char *argv[])
@@ -89,16 +89,18 @@ InitOutput(ScreenInfo *screenInfo, int argc, char *argv[])
 void
 InitInput(int argc, char *argv[])
 {
-  xnestPointerDevice = AddInputDevice(xnestPointerProc, TRUE);
-  xnestKeyboardDevice = AddInputDevice(xnestKeyboardProc, TRUE);
+  int rc;
+  rc = AllocDevicePair(serverClient, "Xnest",
+                       &xnestPointerDevice,
+                       &xnestKeyboardDevice,
+                       xnestPointerProc,
+                       xnestKeyboardProc,
+                       FALSE);
 
-  if (!xnestEvents)
-      xnestEvents = (xEvent *) xcalloc(sizeof(xEvent), GetMaximumEventsNum());
-  if (!xnestEvents)
-      FatalError("couldn't allocate room for events\n");
+  if (rc != Success)
+      FatalError("Failed to init Xnest default devices.\n");
 
-  RegisterPointerDevice(xnestPointerDevice);
-  RegisterKeyboardDevice(xnestKeyboardDevice);
+  GetEventList(&xnestEvents);
 
   mieqInit();
 
@@ -110,14 +112,14 @@ InitInput(int argc, char *argv[])
 /*
  * DDX - specific abort routine.  Called by AbortServer().
  */
-void AbortDDX()
+void AbortDDX(void)
 {
   xnestDoFullGeneration = True;
   xnestCloseDisplay();
 }
 
 /* Called by GiveUp(). */
-void ddxGiveUp()
+void ddxGiveUp(void)
 {
   AbortDDX();
 }
@@ -129,22 +131,19 @@ DarwinHandleGUI(int argc, char *argv[])
 }
 #endif
 
-void OsVendorInit()
+void OsVendorInit(void)
 {
     return;
 }
 
-void OsVendorFatalError()
+void OsVendorFatalError(void)
 {
     return;
 }
 
+#if defined(DDXBEFORERESET)
 void ddxBeforeReset(void)
 {
     return;
 }
-
-/* this is just to get the server to link on AIX */
-#ifdef AIXV3
-int SelectWaitTime = 10000; /* usec */
 #endif

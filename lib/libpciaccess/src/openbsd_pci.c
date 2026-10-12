@@ -33,11 +33,18 @@
 #include "pciaccess.h"
 #include "pciaccess_private.h"
 
-static int pcifd;
+/*
+ * This should allow for 16 domains, which should cover everything
+ * except perhaps the really big fridge-sized sparc64 server machines
+ * that are unlikely to have any graphics hardware in them.
+ */
+static int pcifd[16];
+static int ndomains;
+
 static int aperturefd = -1;
 
 static int
-pci_read(int bus, int dev, int func, uint32_t reg, uint32_t *val)
+pci_read(int domain, int bus, int dev, int func, uint32_t reg, uint32_t *val)
 {
 	struct pci_io io;
 	int err;
@@ -49,17 +56,17 @@ pci_read(int bus, int dev, int func, uint32_t reg, uint32_t *val)
 	io.pi_reg = reg;
 	io.pi_width = 4;
 
-	err = ioctl(pcifd, PCIOCREAD, &io);
+	err = ioctl(pcifd[domain], PCIOCREAD, &io);
 	if (err)
 		return (err);
 
 	*val = io.pi_data;
 
-	return (0);
+	return 0;
 }
 
 static int
-pci_write(int bus, int dev, int func, uint32_t reg, uint32_t val)
+pci_write(int domain, int bus, int dev, int func, uint32_t reg, uint32_t val)
 {
 	struct pci_io io;
 
@@ -71,15 +78,83 @@ pci_write(int bus, int dev, int func, uint32_t reg, uint32_t val)
 	io.pi_width = 4;
 	io.pi_data = val;
 
-	return ioctl(pcifd, PCIOCWRITE, &io);
+	return ioctl(pcifd[domain], PCIOCWRITE, &io);
+}
+
+/**
+ * Read a VGA ROM
+ *
+ */
+static int
+pci_device_openbsd_read_rom(struct pci_device *device, void *buffer)
+{
+	struct pci_device_private *priv = (struct pci_device_private *)device;
+	unsigned char *bios;
+	pciaddr_t rom_base;
+	pciaddr_t rom_size;
+	u_int32_t csr, rom;
+	int pci_rom, domain, bus, dev, func;
+
+	domain = device->domain;
+	if (domain < 0 || domain >= ndomains)
+		return ENXIO;
+
+	bus = device->bus;
+	dev = device->dev;
+	func = device->func;
+
+	if (aperturefd == -1)
+		return ENOSYS;
+
+	if (priv->base.rom_size == 0) {
+#if defined(__alpha__) || defined(__amd64__) || defined(__i386__)
+		if ((device->device_class & 0x00ffff00) ==
+		    ((PCI_CLASS_DISPLAY << 16) |
+			(PCI_SUBCLASS_DISPLAY_VGA << 8))) {
+			rom_base = 0xc0000;
+			rom_size = 0x10000;
+			pci_rom = 0;
+		} else
+#endif
+			return ENOSYS;
+	} else {
+		rom_base = priv->rom_base;
+		rom_size = priv->base.rom_size;
+		pci_rom = 1;
+
+		pci_read(domain, bus, dev, func, PCI_COMMAND_STATUS_REG, &csr);
+		pci_write(domain, bus, dev, func, PCI_COMMAND_STATUS_REG,
+		    csr | PCI_COMMAND_MEM_ENABLE);
+		pci_read(domain, bus, dev, func, PCI_ROM_REG, &rom);
+		pci_write(domain, bus, dev, func, PCI_ROM_REG,
+		    rom | PCI_ROM_ENABLE);
+	}
+
+	bios = mmap(NULL, rom_size, PROT_READ, MAP_SHARED,
+	    aperturefd, (off_t)rom_base);
+	if (bios == MAP_FAILED)
+		return errno;
+
+	memcpy(buffer, bios, rom_size);
+	munmap(bios, rom_size);
+
+	if (pci_rom) {
+		/* Restore PCI config space */
+		pci_write(domain, bus, dev, func, PCI_ROM_REG, rom);
+		pci_write(domain, bus, dev, func, PCI_COMMAND_STATUS_REG, csr);
+	}
+	return 0;
 }
 
 static int
-pci_nfuncs(int bus, int dev)
+pci_nfuncs(int domain, int bus, int dev)
 {
 	uint32_t hdr;
 
-	if (pci_read(bus, dev, 0, PCI_BHLC_REG, &hdr) != 0)
+	if (domain < 0 || domain >= ndomains)
+		return ENXIO;
+
+	if (pci_read(domain, bus, dev, 0, PCI_BHLC_REG, &hdr) != 0)
 		return -1;
 
 	return (PCI_HDRTYPE_MULTIFN(hdr) ? 8 : 1);
@@ -100,7 +175,7 @@ pci_device_openbsd_map_range(struct pci_device *dev,
 	    map->base);
 	if (map->memory == MAP_FAILED)
 		return  errno;
-
+#if defined(__i386__) || defined(__amd64__)
 	/* No need to set an MTRR if it's the default mode. */
 	if ((map->flags & PCI_DEV_MAP_FLAG_CACHABLE) ||
 	    (map->flags & PCI_DEV_MAP_FLAG_WRITE_COMBINE)) {
@@ -117,9 +192,10 @@ pci_device_openbsd_map_range(struct pci_device *dev,
 		mo.mo_arg[0] = MEMRANGE_SET_UPDATE;
 
 		if (ioctl(aperturefd, MEMRANGE_SET, &mo))
-			return errno;
+			(void)fprintf(stderr, "mtrr set failed: %s\n",
+			    strerror(errno));
 	}
-
+#endif
 	return 0;
 }
 
@@ -127,6 +203,7 @@ static int
 pci_device_openbsd_unmap_range(struct pci_device *dev,
     struct pci_device_mapping *map)
 {
+#if defined(__i386__) || defined(__amd64__)
 	struct mem_range_desc mr;
 	struct mem_range_op mo;
 
@@ -142,7 +219,7 @@ pci_device_openbsd_unmap_range(struct pci_device *dev,
 
 		(void)ioctl(aperturefd, MEMRANGE_SET, &mo);
 	}
-
+#endif
 	return pci_device_generic_unmap_range(dev, map);
 }
 
@@ -163,7 +240,7 @@ pci_device_openbsd_read(struct pci_device *dev, void *data,
 		io.pi_reg = (offset & ~0x3);
 		io.pi_width = 4;
 
-		if (ioctl(pcifd, PCIOCREAD, &io) == -1)
+		if (ioctl(pcifd[dev->domain], PCIOCREAD, &io) == -1)
 			return errno;
 
 		io.pi_data = htole32(io.pi_data);
@@ -186,7 +263,7 @@ pci_device_openbsd_write(struct pci_device *dev, const void *data,
 {
 	struct pci_io io;
 
-	if ((offset % 4) == 0 || (size % 4) == 0)
+	if ((offset % 4) != 0 || (size % 4) != 0)
 		return EINVAL;
 
 	io.pi_sel.pc_bus = dev->bus;
@@ -199,7 +276,7 @@ pci_device_openbsd_write(struct pci_device *dev, const void *data,
 		io.pi_width = 4;
 		memcpy(&io.pi_data, data, 4);
 
-		if (ioctl(pcifd, PCIOCWRITE, &io) == -1) 
+		if (ioctl(pcifd[dev->domain], PCIOCWRITE, &io) == -1)
 			return errno;
 
 		offset += 4;
@@ -214,10 +291,11 @@ pci_device_openbsd_write(struct pci_device *dev, const void *data,
 static void
 pci_system_openbsd_destroy(void)
 {
-	close(aperturefd);
-	close(pcifd);
-	free(pci_sys);
-	pci_sys = NULL;
+	int domain;
+
+	for (domain = 0; domain < ndomains; domain++)
+		close(pcifd[domain]);
+	ndomains = 0;
 }
 
 static int
@@ -227,13 +305,14 @@ pci_device_openbsd_probe(struct pci_device *device)
 	struct pci_mem_region *region;
 	uint64_t reg64, size64;
 	uint32_t bar, reg, size;
-	int bus, dev, func, err;
+	int domain, bus, dev, func, err;
 
+	domain = device->domain;
 	bus = device->bus;
 	dev = device->dev;
 	func = device->func;
 
-	err = pci_read(bus, dev, func, PCI_BHLC_REG, &reg);
+	err = pci_read(domain, bus, dev, func, PCI_BHLC_REG, &reg);
 	if (err)
 		return err;
 
@@ -244,16 +323,16 @@ pci_device_openbsd_probe(struct pci_device *device)
 	region = device->regions;
 	for (bar = PCI_MAPREG_START; bar < PCI_MAPREG_END;
 	     bar += sizeof(uint32_t), region++) {
-		err = pci_read(bus, dev, func, bar, &reg);
+		err = pci_read(domain, bus, dev, func, bar, &reg);
 		if (err)
 			return err;
 
 		/* Probe the size of the region. */
-		err = pci_write(bus, dev, func, bar, ~0);
+		err = pci_write(domain, bus, dev, func, bar, ~0);
 		if (err)
 			return err;
-		pci_read(bus, dev, func, bar, &size);
-		pci_write(bus, dev, func, bar, reg);
+		pci_read(domain, bus, dev, func, bar, &size);
+		pci_write(domain, bus, dev, func, bar, reg);
 
 		if (PCI_MAPREG_TYPE(reg) == PCI_MAPREG_TYPE_IO) {
 			region->is_IO = 1;
@@ -276,16 +355,16 @@ pci_device_openbsd_probe(struct pci_device *device)
 
 				bar += sizeof(uint32_t);
 
-				err = pci_read(bus, dev, func, bar, &reg);
+				err = pci_read(domain, bus, dev, func, bar, &reg);
 				if (err)
 					return err;
 				reg64 |= (uint64_t)reg << 32;
 
-				err = pci_write(bus, dev, func, bar, ~0);
+				err = pci_write(domain, bus, dev, func, bar, ~0);
 				if (err)
 					return err;
-				pci_read(bus, dev, func, bar, &size);
-				pci_write(bus, dev, func, bar, reg64 >> 32);
+				pci_read(domain, bus, dev, func, bar, &size);
+				pci_write(domain, bus, dev, func, bar, reg64 >> 32);
 				size64 |= (uint64_t)size << 32;
 
 				region->base_addr = PCI_MAPREG_MEM64_ADDR(reg64);
@@ -296,13 +375,29 @@ pci_device_openbsd_probe(struct pci_device *device)
 		}
 	}
 
+	/* Probe expansion ROM if present */
+	err = pci_read(domain, bus, dev, func, PCI_ROM_REG, &reg);
+	if (err)
+		return err;
+	if (reg != 0) {
+		err = pci_write(domain, bus, dev, func, PCI_ROM_REG, ~PCI_ROM_ENABLE);
+		if (err)
+			return err;
+		pci_read(domain, bus, dev, func, PCI_ROM_REG, &size);
+		pci_write(domain, bus, dev, func, PCI_ROM_REG, reg);
+
+		if (PCI_ROM_ADDR(reg) != 0) {
+			priv->rom_base = PCI_ROM_ADDR(reg);
+			device->rom_size = PCI_ROM_SIZE(size);
+		}
+	}
 	return 0;
 }
 
 static const struct pci_system_methods openbsd_pci_methods = {
 	pci_system_openbsd_destroy,
 	NULL,
-	NULL,
+	pci_device_openbsd_read_rom,
 	pci_device_openbsd_probe,
 	pci_device_openbsd_map_range,
 	pci_device_openbsd_unmap_range,
@@ -315,35 +410,49 @@ int
 pci_system_openbsd_create(void)
 {
 	struct pci_device_private *device;
-	int bus, dev, func, ndevs, nfuncs;
+	int domain, bus, dev, func, ndevs, nfuncs;
+	char path[MAXPATHLEN];
 	uint32_t reg;
 
-	pcifd = open("/dev/pci", O_RDWR);
-	if (pcifd == -1)
+	if (ndomains > 0)
+		return 0;
+
+	for (domain = 0; domain < sizeof(pcifd) / sizeof(pcifd[0]); domain++) {
+		snprintf(path, sizeof(path), "/dev/pci%d", domain);
+	        pcifd[domain] = open(path, O_RDWR);
+		if (pcifd[domain] == -1)
+			break;
+		ndomains++;
+	}
+
+	if (ndomains == 0)
 		return ENXIO;
 
 	pci_sys = calloc(1, sizeof(struct pci_system));
 	if (pci_sys == NULL) {
-		close(aperturefd);
-		close(pcifd);
+		for (domain = 0; domain < ndomains; domain++)
+			close(pcifd[domain]);
+		ndomains = 0;
 		return ENOMEM;
 	}
 
 	pci_sys->methods = &openbsd_pci_methods;
 
 	ndevs = 0;
-	for (bus = 0; bus < 256; bus++) {
-		for (dev = 0; dev < 32; dev++) {
-			nfuncs = pci_nfuncs(bus, dev);
-			for (func = 0; func < nfuncs; func++) {
-				if (pci_read(bus, dev, func, PCI_ID_REG,
-				    &reg) != 0)
-					continue;
-				if (PCI_VENDOR(reg) == PCI_VENDOR_INVALID ||
-				    PCI_VENDOR(reg) == 0)
-					continue;
+	for (domain = 0; domain < ndomains; domain++) {
+		for (bus = 0; bus < 256; bus++) {
+			for (dev = 0; dev < 32; dev++) {
+				nfuncs = pci_nfuncs(domain, bus, dev);
+				for (func = 0; func < nfuncs; func++) {
+					if (pci_read(domain, bus, dev, func,
+					    PCI_ID_REG, &reg) != 0)
+						continue;
+					if (PCI_VENDOR(reg) == PCI_VENDOR_INVALID ||
+					    PCI_VENDOR(reg) == 0)
+						continue;
 
-				ndevs++;
+					ndevs++;
+				}
 			}
 		}
 	}
@@ -352,46 +461,52 @@ pci_system_openbsd_create(void)
 	pci_sys->devices = calloc(ndevs, sizeof(struct pci_device_private));
 	if (pci_sys->devices == NULL) {
 		free(pci_sys);
-		close(pcifd);
+		pci_sys = NULL;
+		for (domain = 0; domain < ndomains; domain++)
+			close(pcifd[domain]);
+		ndomains = 0;
 		return ENOMEM;
 	}
 
 	device = pci_sys->devices;
-	for (bus = 0; bus < 256; bus++) {
-		for (dev = 0; dev < 32; dev++) {
-			nfuncs = pci_nfuncs(bus, dev);
-			for (func = 0; func < nfuncs; func++) {
-				if (pci_read(bus, dev, func, PCI_ID_REG,
-				    &reg) != 0)
-					continue;
-				if (PCI_VENDOR(reg) == PCI_VENDOR_INVALID ||
-				    PCI_VENDOR(reg) == 0)
-					continue;
+	for (domain = 0; domain < ndomains; domain++) {
+		for (bus = 0; bus < 256; bus++) {
+			for (dev = 0; dev < 32; dev++) {
+				nfuncs = pci_nfuncs(domain, bus, dev);
+				for (func = 0; func < nfuncs; func++) {
+					if (pci_read(domain, bus, dev, func,
+					    PCI_ID_REG, &reg) != 0)
+						continue;
+					if (PCI_VENDOR(reg) == PCI_VENDOR_INVALID ||
+					    PCI_VENDOR(reg) == 0)
+						continue;
 
-				device->base.domain = 0;
-				device->base.bus = bus;
-				device->base.dev = dev;
-				device->base.func = func;
-				device->base.vendor_id = PCI_VENDOR(reg);
-				device->base.device_id = PCI_PRODUCT(reg);
+					device->base.domain = domain;
+					device->base.bus = bus;
+					device->base.dev = dev;
+					device->base.func = func;
+					device->base.vendor_id = PCI_VENDOR(reg);
+					device->base.device_id = PCI_PRODUCT(reg);
 
-				if (pci_read(bus, dev, func, PCI_CLASS_REG,
-				    &reg) != 0)
-					continue;
+					if (pci_read(domain, bus, dev, func,
+					    PCI_CLASS_REG, &reg) != 0)
+						continue;
 
-				device->base.device_class =
-				    PCI_INTERFACE(reg) | PCI_CLASS(reg) << 16 |
-				    PCI_SUBCLASS(reg) << 8;
-				device->base.revision = PCI_REVISION(reg);
+					device->base.device_class =
+					    PCI_INTERFACE(reg) |
+					    PCI_CLASS(reg) << 16 |
+					    PCI_SUBCLASS(reg) << 8;
+					device->base.revision = PCI_REVISION(reg);
 
-				if (pci_read(bus, dev, func, PCI_SUBVEND_0,
-				    &reg) != 0)
-					continue;
+					if (pci_read(domain, bus, dev, func,
+					    PCI_SUBVEND_0, &reg) != 0)
+						continue;
 
-				device->base.subvendor_id = PCI_VENDOR(reg);
-				device->base.subdevice_id = PCI_PRODUCT(reg);
+					device->base.subvendor_id = PCI_VENDOR(reg);
+					device->base.subdevice_id = PCI_PRODUCT(reg);
 
-				device++;
+					device++;
+				}
 			}
 		}
 	}

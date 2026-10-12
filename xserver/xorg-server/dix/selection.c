@@ -65,10 +65,10 @@ SOFTWARE.
  *
  *****************************************************************/
 
-_X_EXPORT Selection *CurrentSelections;
+Selection *CurrentSelections;
 CallbackListPtr SelectionCallback;
 
-_X_EXPORT int
+int
 dixLookupSelection(Selection **result, Atom selectionName,
 		   ClientPtr client, Mask access_mode)
 {
@@ -189,7 +189,7 @@ ProcSetSelectionOwner(ClientPtr client)
 	    event.u.selectionClear.time = time.milliseconds;
 	    event.u.selectionClear.window = pSel->window;
 	    event.u.selectionClear.atom = pSel->selection;
-	    TryClientEvents(pSel->client, &event, 1, NoEventMask,
+	    TryClientEvents(pSel->client, NULL, &event, 1, NoEventMask,
 			    NoEventMask /* CantBeFiltered */, NullGrab);
 	}
     }
@@ -243,6 +243,7 @@ ProcGetSelectionOwner(ClientPtr client)
         return BadAtom;
     }
 
+    memset(&reply, 0, sizeof(xGetSelectionOwnerReply));
     reply.type = X_Reply;
     reply.length = 0;
     reply.sequenceNumber = client->sequence;
@@ -284,6 +285,7 @@ ProcConvertSelection(ClientPtr client)
 
     rc = dixLookupSelection(&pSel, stuff->selection, client, DixReadAccess);
 
+    memset(&event, 0, sizeof(xEvent));
     if (rc != Success && rc != BadMatch)
 	return rc;
     else if (rc == Success && pSel->window != None) {
@@ -294,7 +296,7 @@ ProcConvertSelection(ClientPtr client)
 	event.u.selectionRequest.selection = stuff->selection;
 	event.u.selectionRequest.target = stuff->target;
 	event.u.selectionRequest.property = stuff->property;
-	if (TryClientEvents(pSel->client, &event, 1, NoEventMask,
+	if (TryClientEvents(pSel->client, NULL, &event, 1, NoEventMask,
 			    NoEventMask /* CantBeFiltered */, NullGrab))
 	    return client->noClientException;
     }
@@ -305,7 +307,7 @@ ProcConvertSelection(ClientPtr client)
     event.u.selectionNotify.selection = stuff->selection;
     event.u.selectionNotify.target = stuff->target;
     event.u.selectionNotify.property = None;
-    TryClientEvents(client, &event, 1, NoEventMask,
+    TryClientEvents(client, NULL, &event, 1, NoEventMask,
 		    NoEventMask /* CantBeFiltered */, NullGrab);
     return client->noClientException;
 }

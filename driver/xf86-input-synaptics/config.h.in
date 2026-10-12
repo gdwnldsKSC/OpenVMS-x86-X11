@@ -1,12 +1,13 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-#include "xorg-server.h"
-
 /* Optional backend eventcomm enabled */
 #undef BUILD_EVENTCOMM
 
 /* Optional backend psmcomm enabled */
 #undef BUILD_PSMCOMM
+
+/* "Build synclient and syndaemon" */
+#undef BUILD_TOOLS
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -16,6 +17,9 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* "Input Device Property support" */
+#undef HAVE_PROPERTIES
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -37,6 +41,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Use XRecord */
+#undef HAVE_XRECORD
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */

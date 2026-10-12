@@ -34,10 +34,9 @@ KdCardInfoAdd (KdCardFuncs  *funcs,
 {
     KdCardInfo	*ci, **prev;
 
-    ci = (KdCardInfo *) xalloc (sizeof (KdCardInfo));
+    ci = xcalloc (1, sizeof (KdCardInfo));
     if (!ci)
 	return 0;
-    bzero (ci, sizeof (KdCardInfo));
     for (prev = &kdCardInfo; *prev; prev = &(*prev)->next);
     *prev = ci;
     ci->cfuncs = funcs;
@@ -80,10 +79,9 @@ KdScreenInfoAdd (KdCardInfo *ci)
     KdScreenInfo    *si, **prev;
     int		    n;
 
-    si = (KdScreenInfo *) xalloc (sizeof (KdScreenInfo));
+    si = xcalloc (1, sizeof (KdScreenInfo));
     if (!si)
 	return 0;
-    bzero (si, sizeof (KdScreenInfo));
     for (prev = &ci->screenList, n = 0; *prev; prev = &(*prev)->next, n++);
     *prev = si;
     si->next = 0;
@@ -120,7 +118,7 @@ KdNewPointer (void)
     if (!pi)
         return NULL;
 
-    pi->name = KdSaveString("Generic Pointer");
+    pi->name = strdup("Generic Pointer");
     pi->path = NULL;
     pi->inputClass = KD_MOUSE;
     pi->driver = NULL;
@@ -168,6 +166,12 @@ KdFreeKeyboard(KdKeyboardInfo *ki)
         xfree(ki->name);
     if (ki->path)
         xfree(ki->path);
+    if (ki->xkbRules)
+        xfree(ki->xkbRules);
+    if (ki->xkbModel)
+        xfree(ki->xkbModel);
+    if (ki->xkbLayout)
+        xfree(ki->xkbLayout);
     ki->next = NULL;
     xfree(ki);
 }

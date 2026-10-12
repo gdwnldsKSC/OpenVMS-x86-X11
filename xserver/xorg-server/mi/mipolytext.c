@@ -66,13 +66,8 @@ SOFTWARE.
 #include	"dixfontstr.h"
 #include	"mi.h"
 
-_X_EXPORT int
-miPolyText8(pDraw, pGC, x, y, count, chars)
-    DrawablePtr pDraw;
-    GCPtr	pGC;
-    int		x, y;
-    int 	count;
-    char	*chars;
+int
+miPolyText8(DrawablePtr pDraw, GCPtr pGC, int x, int y, int count, char *chars)
 {
     unsigned long n, i;
     int w;
@@ -88,13 +83,8 @@ miPolyText8(pDraw, pGC, x, y, count, chars)
     return x+w;
 }
 
-_X_EXPORT int
-miPolyText16(pDraw, pGC, x, y, count, chars)
-    DrawablePtr pDraw;
-    GCPtr	pGC;
-    int		x, y;
-    int		count;
-    unsigned short *chars;
+int
+miPolyText16(DrawablePtr pDraw, GCPtr pGC, int x, int y, int count, unsigned short *chars)
 {
     unsigned long n, i;
     int w;
@@ -111,13 +101,8 @@ miPolyText16(pDraw, pGC, x, y, count, chars)
     return x+w;
 }
 
-_X_EXPORT void
-miImageText8(pDraw, pGC, x, y, count, chars)
-    DrawablePtr pDraw;
-    GCPtr	pGC;
-    int		x, y;
-    int		count;
-    char	*chars;
+void
+miImageText8(DrawablePtr pDraw, GCPtr pGC, int x, int y, int count, char *chars)
 {
     unsigned long n;
     FontPtr font = pGC->font;
@@ -129,13 +114,9 @@ miImageText8(pDraw, pGC, x, y, count, chars)
         (*pGC->ops->ImageGlyphBlt)(pDraw, pGC, x, y, n, charinfo, FONTGLYPHS(font));
 }
 
-_X_EXPORT void
-miImageText16(pDraw, pGC, x, y, count, chars)
-    DrawablePtr pDraw;
-    GCPtr	pGC;
-    int		x, y;
-    int		count;
-    unsigned short *chars;
+void
+miImageText16(DrawablePtr pDraw, GCPtr pGC, int x, int y,
+		int count, unsigned short *chars)
 {
     unsigned long n;
     FontPtr font = pGC->font;

@@ -25,8 +25,6 @@ in this Software without prior written authorization from The Open Group.
 */
 
 
-#define NEED_REPLIES
-#define NEED_EVENTS
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -47,6 +45,7 @@ in this Software without prior written authorization from The Open Group.
 #include "gcstruct.h"
 #include "inputstr.h"
 #include "validate.h"
+#include "globals.h"
 #include <sys/time.h>
 
 #define _MULTIBUF_SERVER_	/* don't want Xlib structures */
@@ -199,8 +198,6 @@ static Bool bufChangeWindowAttributes();
 static void bufClearToBackground();
 static void bufCopyWindow();
 
-extern WindowPtr *WindowTable;
-
 static Bool
 bufMultibufferInit(pScreen, pMBScreen)
     ScreenPtr pScreen;
@@ -224,7 +221,7 @@ bufMultibufferInit(pScreen, pMBScreen)
     pMBScreen->WrapScreenFuncs = bufWrapScreenFuncs;
     pMBScreen->ResetProc = bufResetProc;
     /* Create devPrivate part */
-    pMBPriv = (mbufBufferPrivPtr) xalloc(sizeof *pMBPriv);
+    pMBPriv = xalloc(sizeof *pMBPriv);
     if (!pMBPriv)
 	return (FALSE);
 
@@ -600,9 +597,9 @@ bufDrawSelectPlane(pScreen, selectPlane, prgn, bufferNum)
 {
     DrawablePtr pDrawable;
     GCPtr pGC;
-    register int i;
-    register BoxPtr pbox;
-    register xRectangle *prect;
+    int i;
+    BoxPtr pbox;
+    xRectangle *prect;
     int numRects;
     XID	value;
 
@@ -614,8 +611,7 @@ bufDrawSelectPlane(pScreen, selectPlane, prgn, bufferNum)
     if (!pGC)
 	return;
 
-    prect = (xRectangle *)xalloc(REGION_NUM_RECTS(prgn) *
-					 sizeof(xRectangle));
+    prect = xalloc(REGION_NUM_RECTS(prgn) * sizeof(xRectangle));
     if (!prect)
     {
 	FreeScratchGC(pGC);
@@ -882,7 +878,7 @@ bufChangeWindowAttributes(pWin, mask)
 static void 
 bufWindowExposures(pWin, prgn, other_exposed)
     WindowPtr pWin;
-    register RegionPtr prgn, other_exposed;
+    RegionPtr prgn, other_exposed;
 {
     ScreenPtr pScreen = pWin->drawable.pScreen;
     mbufWindowPtr pMBWindow = MB_WINDOW_PRIV(pWin);

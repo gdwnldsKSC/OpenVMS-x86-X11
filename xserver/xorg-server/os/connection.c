@@ -74,46 +74,20 @@ SOFTWARE.
 #define TRANS_SERVER
 #define TRANS_REOPEN
 #include <X11/Xtrans/Xtrans.h>
-#ifdef HAVE_LAUNCHD
 #include <X11/Xtrans/Xtransint.h>
-#endif
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #ifndef WIN32
-#if defined(Lynx)
-#include <socket.h>
-#else
 #include <sys/socket.h>
-#endif
-
-#ifdef hpux
-#include <sys/utsname.h>
-#include <sys/ioctl.h>
-#endif
-
-#if defined(DGUX)
-#include <sys/ioctl.h>
-#include <sys/utsname.h>
-#include <sys/socket.h>
-#include <sys/uio.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <sys/param.h>
-#include <unistd.h>
-#endif
 
 
-#ifdef AIXV3
-#include <sys/ioctl.h>
-#endif
 
 #if defined(TCPCONN) || defined(STREAMSCONN)
 # include <netinet/in.h>
 # include <arpa/inet.h>
-# if !defined(hpux)
 #  ifdef apollo
 #   ifndef NO_TCP_H
 #    include <netinet/tcp.h>
@@ -124,31 +98,20 @@ SOFTWARE.
 #   endif
 #   include <netinet/tcp.h>
 #  endif
-# endif
 # include <arpa/inet.h>
 #endif
 
-#ifndef Lynx
 #include <sys/uio.h>
-#else
-#include <uio.h>
-#endif
+
 #endif /* WIN32 */
 #include "misc.h"		/* for typedef of pointer */
 #include "osdep.h"
 #include <X11/Xpoll.h>
 #include "opaque.h"
 #include "dixstruct.h"
-#ifdef XAPPGROUP
-#include "appgroup.h"
-#endif
 #include "xace.h"
 
-#ifdef X_NOT_POSIX
-#define Pid_t int
-#else
 #define Pid_t pid_t
-#endif
 
 #ifdef DNETCONN
 #include <netdnet/dn.h>
@@ -183,7 +146,7 @@ Bool NewOutputPending;		/* not yet attempted to write some new output */
 Bool AnyClientsWriteBlocked;	/* true if some client blocked on write */
 
 static Bool RunFromSmartParent;	/* send SIGUSR1 to parent process */
-Bool PartialNetwork;		/* continue even if unable to bind all addrs */
+Bool PartialNetwork;	/* continue even if unable to bind all addrs */
 static Pid_t ParentProcess;
 
 static Bool debug_conns = FALSE;
@@ -193,7 +156,7 @@ static fd_set GrabImperviousClients;
 static fd_set SavedAllClients;
 static fd_set SavedAllSockets;
 static fd_set SavedClientsWithInput;
-_X_EXPORT int GrabInProgress = 0;
+int GrabInProgress = 0;
 
 #if !defined(WIN32)
 int *ConnectionTranslation = NULL;
@@ -209,7 +172,6 @@ int *ConnectionTranslation = NULL;
 #define MAXSOCKS 500
 #undef MAXSELECT
 #define MAXSELECT 500
-#define MAXFD 500
 
 struct _ct_node {
     struct _ct_node *next;
@@ -264,7 +226,7 @@ void SetConnectionTranslation(int conn, int client)
             }
             node = &((*node)->next);
         }
-        *node = (struct _ct_node*)xalloc(sizeof(struct _ct_node));
+        *node = xalloc(sizeof(struct _ct_node));
         (*node)->next = NULL;
         (*node)->key = conn;
         (*node)->value = client;
@@ -383,15 +345,6 @@ InitParentProcess(void)
 	RunFromSmartParent = TRUE;
     OsSignal(SIGUSR1, handler);
     ParentProcess = getppid ();
-#ifdef __UNIXOS2__
-    /*
-     * fg030505: under OS/2, xinit is not the parent process but
-     * the "grant parent" process of the server because execvpe()
-     * presents us an additional process number;
-     * GetPPID(pid) is part of libemxfix
-     */
-    ParentProcess = GetPPID (ParentProcess);
-#endif /* __UNIXOS2__ */
 #endif
 }
 
@@ -444,7 +397,7 @@ CreateWellKnownSockets(void)
 	}
 	else
 	{
-	    ListenTransFds = (int *) xalloc (ListenTransCount * sizeof (int));
+	    ListenTransFds = xalloc (ListenTransCount * sizeof (int));
 
 	    for (i = 0; i < ListenTransCount; i++)
 	    {
@@ -639,8 +592,8 @@ AuthAudit (ClientPtr client, Bool letin,
     
 #ifdef XSERVER_DTRACE
     XSERVER_CLIENT_AUTH(client->index, addr, client_pid, client_zid);
-    if (auditTrailLevel > 1) {
 #endif
+    if (auditTrailLevel > 1) {
       if (proto_n)
 	AuditF("client %d %s from %s%s\n  Auth name: %.*s ID: %d\n", 
 	       client->index, letin ? "connected" : "rejected", addr,
@@ -650,9 +603,7 @@ AuthAudit (ClientPtr client, Bool letin,
 	       client->index, letin ? "connected" : "rejected", addr,
 	       client_uid_string);
 
-#ifdef XSERVER_DTRACE
     }
-#endif	
 }
 
 XID
@@ -684,7 +635,7 @@ AuthorizationIDOfClient(ClientPtr client)
  *
  *****************************************************************/
 
-char * 
+char *
 ClientAuthorized(ClientPtr client, 
     unsigned int proto_n, char *auth_proto, 
     unsigned int string_n, char *auth_string)
@@ -696,23 +647,17 @@ ClientAuthorized(ClientPtr client,
     XID	 		auth_id;
     char	 	*reason = NULL;
     XtransConnInfo	trans_conn;
-#ifdef HAVE_LAUNCHD
-    struct sockaddr     *saddr;
-#endif
 
     priv = (OsCommPtr)client->osPrivate;
     trans_conn = priv->trans_conn;
 
-#ifdef HAVE_LAUNCHD
-    saddr = (struct sockaddr *) (trans_conn->addr);
     /* Allow any client to connect without authorization on a launchd socket,
        because it is securely created -- this prevents a race condition on launch */
-    if (saddr->sa_len > 11 && saddr->sa_family == AF_UNIX &&
-        !strncmp(saddr->sa_data, "/tmp/launch", 11)) goto done;
-#endif
-
-    auth_id = CheckAuthorization (proto_n, auth_proto,
-				  string_n, auth_string, client, &reason);
+    if(trans_conn->flags & TRANS_NOXAUTH) {
+        auth_id = (XID) 0L;
+    } else {
+        auth_id = CheckAuthorization (proto_n, auth_proto, string_n, auth_string, client, &reason);
+    }
 
     if (auth_id == (XID) ~0L)
     {
@@ -734,7 +679,7 @@ ClientAuthorized(ClientPtr client,
 			proto_n, auth_proto, auth_id);
 	    }
 
-	    xfree ((char *) from);
+	    xfree (from);
 	}
 
 	if (auth_id == (XID) ~0L) {
@@ -756,11 +701,10 @@ ClientAuthorized(ClientPtr client,
 	    AuthAudit(client, TRUE, (struct sockaddr *) from, fromlen,
 		      proto_n, auth_proto, auth_id);
 
-	    xfree ((char *) from);
+	    xfree (from);
 	}
     }
     priv->auth_id = auth_id;
- done:
     priv->conn_time = 0;
 
 #ifdef XDMCP
@@ -793,7 +737,7 @@ AllocNewConnection (XtransConnInfo trans_conn, int fd, CARD32 conn_time)
 #endif
 	)
 	return NullClient;
-    oc = (OsCommPtr)xalloc(sizeof(OsCommRec));
+    oc = xalloc(sizeof(OsCommRec));
     if (!oc)
 	return NullClient;
     oc->trans_conn = trans_conn;
@@ -883,7 +827,7 @@ EstablishNewConnections(ClientPtr clientUnused, pointer closure)
 	int status;
 
 #ifndef WIN32
-	curconn = ffs (readyconnections.fds_bits[i]) - 1;
+	curconn = mffs (readyconnections.fds_bits[i]) - 1;
 	readyconnections.fds_bits[i] &= ~((fd_mask)1 << curconn);
 	curconn += (i * (sizeof(fd_mask)*8));
 #else
@@ -917,6 +861,10 @@ EstablishNewConnections(ClientPtr clientUnused, pointer closure)
 	    ErrorConnMax(new_trans_conn);
 	    _XSERVTransClose(new_trans_conn);
 	}
+
+	if(trans_conn->flags & TRANS_NOXAUTH)
+	    new_trans_conn->flags = new_trans_conn->flags | TRANS_NOXAUTH;
+
       }
 #ifndef WIN32
     }
@@ -1044,7 +992,7 @@ CheckConnections(void)
 	mask = AllClients.fds_bits[i];
         while (mask)
     	{
-	    curoff = ffs (mask) - 1;
+	    curoff = mffs (mask) - 1;
 	    curclient = curoff + (i * (sizeof(fd_mask)*8));
             FD_ZERO(&tmask);
             FD_SET(curclient, &tmask);
@@ -1098,7 +1046,7 @@ CloseDownConnection(ClientPtr client)
 	AuditF("client %d disconnected\n", client->index);
 }
 
-_X_EXPORT void
+void
 AddGeneralSocket(int fd)
 {
     FD_SET(fd, &AllSockets);
@@ -1106,14 +1054,14 @@ AddGeneralSocket(int fd)
 	FD_SET(fd, &SavedAllSockets);
 }
 
-_X_EXPORT void
+void
 AddEnabledDevice(int fd)
 {
     FD_SET(fd, &EnabledDevices);
     AddGeneralSocket(fd);
 }
 
-_X_EXPORT void
+void
 RemoveGeneralSocket(int fd)
 {
     FD_CLR(fd, &AllSockets);
@@ -1121,7 +1069,7 @@ RemoveGeneralSocket(int fd)
 	FD_CLR(fd, &SavedAllSockets);
 }
 
-_X_EXPORT void
+void
 RemoveEnabledDevice(int fd)
 {
     FD_CLR(fd, &EnabledDevices);
@@ -1193,7 +1141,7 @@ ListenToAllClients(void)
  *    Must have cooresponding call to AttendClient.
  ****************/
 
-_X_EXPORT void
+void
 IgnoreClient (ClientPtr client)
 {
     OsCommPtr oc = (OsCommPtr)client->osPrivate;
@@ -1228,7 +1176,7 @@ IgnoreClient (ClientPtr client)
  *    Adds one client back into the input masks.
  ****************/
 
-_X_EXPORT void
+void
 AttendClient (ClientPtr client)
 {
     OsCommPtr oc = (OsCommPtr)client->osPrivate;
@@ -1253,7 +1201,7 @@ AttendClient (ClientPtr client)
 
 /* make client impervious to grabs; assume only executing client calls this */
 
-_X_EXPORT void
+void
 MakeClientGrabImpervious(ClientPtr client)
 {
     OsCommPtr oc = (OsCommPtr)client->osPrivate;
@@ -1272,7 +1220,7 @@ MakeClientGrabImpervious(ClientPtr client)
 
 /* make client pervious to grabs; assume only executing client calls this */
 
-_X_EXPORT void
+void
 MakeClientGrabPervious(ClientPtr client)
 {
     OsCommPtr oc = (OsCommPtr)client->osPrivate;
@@ -1300,3 +1248,52 @@ MakeClientGrabPervious(ClientPtr client)
     }
 }
 
+#ifdef XQUARTZ
+/* Add a fd (from launchd) to our listeners */
+void ListenOnOpenFD(int fd, int noxauth) {
+    char port[256];
+    XtransConnInfo ciptr;
+
+    if(!strncmp(getenv("DISPLAY"), "/tmp/launch", 11)) {
+        /* Make the path the launchd socket if our DISPLAY is set right */
+        strcpy(port, getenv("DISPLAY"));
+    } else {
+        /* Just some default so things don't break and die. */
+        sprintf(port, ":%d", atoi(display));
+    }
+
+    /* Make our XtransConnInfo
+     * TRANS_SOCKET_LOCAL_INDEX = 5 from Xtrans.c
+     */
+    ciptr = _XSERVTransReopenCOTSServer(5, fd, port);
+    if(ciptr == NULL) {
+        ErrorF("Got NULL while trying to Reopen launchd port.\n");
+        return;
+    }
+    
+    if(noxauth)
+        ciptr->flags = ciptr->flags | TRANS_NOXAUTH;
+
+    /* Allocate space to store it */
+    ListenTransFds = (int *) xrealloc(ListenTransFds, (ListenTransCount + 1) * sizeof (int));
+    ListenTransConns = (XtransConnInfo *) xrealloc(ListenTransConns, (ListenTransCount + 1) * sizeof (XtransConnInfo));
+    
+    /* Store it */
+    ListenTransConns[ListenTransCount] = ciptr;
+    ListenTransFds[ListenTransCount] = fd;
+
+    FD_SET(fd, &WellKnownConnections);
+    FD_SET(fd, &AllSockets);
+    
+    /* Increment the count */
+    ListenTransCount++;
+
+    /* This *might* not be needed... /shrug */
+    ResetAuthorization();
+    ResetHosts(display);
+#ifdef XDMCP
+    XdmcpReset();
+#endif
+}
+
+#endif

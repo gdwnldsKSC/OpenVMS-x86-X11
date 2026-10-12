@@ -27,7 +27,34 @@
 #ifndef  _VBEXT_
 #define  _VBEXT_
 
+/* Jong 10/04/2007; merge code */
+struct DWORDREGS {
+    ULONG    Eax, Ebx, Ecx, Edx, Esi, Edi, Ebp;
+};
+
+/* Jong 10/04/2007; merge code */
+struct WORDREGS {
+    USHORT    ax, hi_ax, bx, hi_bx, cx, hi_cx, dx, hi_dx, si, hi_si, di ,hi_di, bp, hi_bp;
+};
+
+/* Jong 10/04/2007; merge code */
+struct BYTEREGS {
+    UCHAR   al, ah, hi_al, hi_ah, bl, bh, hi_bl, hi_bh, cl, ch, hi_cl, hi_ch, dl, dh, hi_dl, hi_dh;
+};
+
+/* Jong 10/04/2007; merge code */
+typedef union   _X86_REGS    {
+    struct  DWORDREGS e;    
+    struct  WORDREGS x;
+    struct  BYTEREGS h;
+} X86_REGS, *PX86_REGS;
+
 extern void XGI_GetSenseStatus(PXGI_HW_DEVICE_INFO HwDeviceExtension,
     PVB_DEVICE_INFO pVBInfo);
+
+/* Jong 10/04/2007; merge code */
+extern   void     XGINew_SetModeScratch ( PXGI_HW_DEVICE_INFO HwDeviceExtension , PVB_DEVICE_INFO pVBInfo ) ;
+extern   void 	  ReadVBIOSTablData( UCHAR ChipType , PVB_DEVICE_INFO pVBInfo);
+extern   USHORT   XGINew_SenseLCD(PXGI_HW_DEVICE_INFO,PVB_DEVICE_INFO pVBInfo);
 
 #endif

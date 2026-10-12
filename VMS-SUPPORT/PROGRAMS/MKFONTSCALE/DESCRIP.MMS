@@ -1,9 +1,9 @@
-! Complete programs/mkfontscale/Imakefile executable, using existing native libraries.
+! Complete app/mkfontscale/Makefile.am executable, using existing native libraries.
 MKFONTSCALE_HEADERS = $(COMMON_HEADERS), $(FONTENC_HEADERS), -
     $(FREETYPE2_HEADERS), $(ZLIB_HEADERS)
 MKFONTSCALE_PRIVATE_HEADERS = [.APP.MKFONTSCALE]LIST.H, -
     [.APP.MKFONTSCALE]HASH.H, [.APP.MKFONTSCALE]DATA.H, -
-    [.APP.MKFONTSCALE]IDENT.H
+    [.APP.MKFONTSCALE]IDENT.H, [.VMS-SUPPORT.PROGRAMS.MKFONTSCALE]CONFIG.H
 MKFONTSCALE_BUILD_RULES = [.VMS-SUPPORT]CONFIG.MMS, [.VMS-SUPPORT]COMPILE_MKFONTSCALE.COM, -
     [.VMS-SUPPORT]HEADERS.MMS, [.VMS-SUPPORT.PROGRAMS.MKFONTSCALE]DESCRIP.MMS
 ! Match the Unix FreeType build defines; native C99 supplies snprintf.

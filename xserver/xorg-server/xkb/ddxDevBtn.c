@@ -29,72 +29,49 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #include <stdio.h>
-#define	NEED_EVENTS 1
 #include <X11/X.h>
 #include <X11/Xproto.h>
 #include <X11/keysym.h>
 #include "inputstr.h"
 #include "scrnintstr.h"
 #include "windowstr.h"
+#include "eventstr.h"
 #include <xkbsrv.h>
+#include "mi.h"
 #include <X11/extensions/XI.h>
 #include <X11/extensions/XIproto.h>
-
-extern	int	DeviceValuator;
 
 void
 XkbDDXFakeDeviceButton(DeviceIntPtr dev,Bool press,int button)
 {
-int *			devVal;
-INT32 *			evVal;
-xEvent			events[2];
-deviceKeyButtonPointer *btn;
-deviceValuator *	val;
-int			x,y;
-int			nAxes, i, count;
+    EventListPtr        events;
+    int                 nevents, i;
+    DeviceIntPtr        ptr;
 
-    if (dev == inputInfo.pointer || !dev->public.on)
-	return;
+    /* If dev is a slave device, and the SD is attached, do nothing. If we'd
+     * post through the attached master pointer we'd get duplicate events.
+     *
+     * if dev is a master keyboard, post through the master pointer.
+     *
+     * if dev is a floating slave, post through the device itself.
+     */
 
-    nAxes = (dev->valuator?dev->valuator->numAxes:0);
-    if (nAxes > 6)
-	nAxes = 6;
+    if (IsMaster(dev))
+        ptr = GetMaster(dev, MASTER_POINTER);
+    else if (!dev->u.master)
+        ptr = dev;
+    else
+        return;
 
-    GetSpritePosition(&x,&y);
-    btn= (deviceKeyButtonPointer *) &events[0];
-    val= (deviceValuator *) &events[1];
-    if (press)		btn->type= DeviceButtonPress;
-    else		btn->type= DeviceButtonRelease;
-    btn->detail= 	button;
-    btn->time= 		GetTimeInMillis();
-    btn->root_x=	x;
-    btn->root_y=	y;
-    btn->deviceid= 	dev->id;
-    count= 1;
-    if (nAxes>0) {
-	btn->deviceid|=	0x80;
-	val->type = DeviceValuator;
-	val->deviceid = dev->id;
-	val->first_valuator = 0;
+    events = InitEventList(GetMaximumEventsNum());
+    nevents = GetPointerEvents(events, ptr,
+                               press ? ButtonPress : ButtonRelease, button,
+                               0 /* flags */, 0 /* first */,
+                               0 /* num_val */, NULL);
 
-	evVal=	&val->valuator0;
-	devVal= dev->valuator->axisVal;
-	for (i=nAxes;i>0;i--) {
-	    *evVal++ = *devVal++;
-	    if (evVal > &val->valuator5) {
-		int	tmp = val->first_valuator+6;
-		val->num_valuators = 6;
-		val++;
-		evVal= &val->valuator0;
-		val->first_valuator= tmp;
-	    }
-	}
-	if ((nAxes % 6) != 0) {
-	    val->num_valuators = (nAxes % 6);
-	}
-	count= 1+((nAxes+5)/6);
-    }
 
-    (*dev->public.processInputProc)((xEventPtr)btn, dev, count);
-    return;
+    for (i = 0; i < nevents; i++)
+        mieqProcessDeviceEvent(ptr, (InternalEvent*)events[i].event, NULL);
+
+    FreeEventList(events, GetMaximumEventsNum());
 }

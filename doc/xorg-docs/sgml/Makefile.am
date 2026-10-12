@@ -20,9 +20,16 @@
 #
 #  Process this file with autoconf to create configure.
 
-SUBDIRS = core ddx fonts graphics input output platforms registry security
+SUBDIRS = core fonts graphics input platforms security
 
 x11docdir = @X11DOCDIR@
+SGML_FILES = \
+	Install.sgml \
+	LICENSE.sgml \
+	README.sgml \
+	RELNOTES.sgml \
+	Versions.sgml
+
 include $(top_srcdir)/sgmlrules.in
 
 EXTRA_DIST = \

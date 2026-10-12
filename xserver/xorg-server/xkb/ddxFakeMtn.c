@@ -29,7 +29,6 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #include <stdio.h>
-#define	NEED_EVENTS 1
 #include <X11/X.h>
 #include <X11/Xproto.h>
 #include <X11/keysym.h>
@@ -53,8 +52,8 @@ XkbDDXFakePointerMotion(unsigned flags,int x,int y)
 int 		   oldX,oldY;
 ScreenPtr	   pScreen, oldScreen;
 
-    GetSpritePosition(&oldX, &oldY);
-    pScreen = oldScreen = GetSpriteWindow()->drawable.pScreen;
+    GetSpritePosition(inputInfo.pointer, &oldX, &oldY);
+    pScreen = oldScreen = GetSpriteWindow(inputInfo.pointer)->drawable.pScreen;
 
 #ifdef PANORAMIX
     if (!noPanoramiXExtension) {
@@ -113,7 +112,7 @@ ScreenPtr	   pScreen, oldScreen;
     }
 
     if (pScreen != oldScreen)
-	NewCurrentScreen(pScreen, oldX, oldY);
+	NewCurrentScreen(inputInfo.pointer, pScreen, oldX, oldY);
     if (pScreen->SetCursorPosition)
-	(*pScreen->SetCursorPosition)(pScreen, oldX, oldY, TRUE);
+	(*pScreen->SetCursorPosition)(inputInfo.pointer, pScreen, oldX, oldY, TRUE);
 }

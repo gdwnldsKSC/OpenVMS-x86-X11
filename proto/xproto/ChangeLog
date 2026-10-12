@@ -1,3 +1,313 @@
+commit 4253e208088d166a8666f673360ef69a3c86f8b0
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Wed Sep 23 17:04:09 2009 -0700
+
+    xproto 7.0.16
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 05914c82696432126a72845dd061c7f5e24963c5
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Wed Sep 23 17:00:18 2009 -0700
+
+    Don't need an #ifdef when both cases just include the same file
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit ef37625372546efb32cdb37823b9927cf16b0840
+Author: Jon TURNEY <jon.turney@dronecode.org.uk>
+Date:   Wed Jun 17 15:28:54 2009 +0100
+
+    Restore macro definition of sleep(), needed by Xming
+    
+    Removed in error by commit 1defe6b37c23941fe2a67ad4fa66e8ab5f37f9b3
+    
+    Signed-off-by: Jon TURNEY <jon.turney@dronecode.org.uk>
+
+commit e9df99b12ef9fefdbc1c05ff51bddffe723051e9
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Sun Jun 14 09:54:58 2009 -0700
+
+    Drop #ifdef USG checks for some truly ancient (pre-SVR4) SysV's
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 385c1343f7e0782b89e40fa17e378bc1f75ce62e
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Sun Jun 14 09:43:53 2009 -0700
+
+    Get rid of unneeded && clause in list of LP64 ifdefs in Xmd.h
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 5aaec3c7a583354a07ec765327fd0edd6216981f
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Sun Jun 14 09:33:16 2009 -0700
+
+    Drop support for SunOS 4 and Solaris releases older than 2.5 (1995)
+    
+    Includes changing remaining sun ifdef's to check for standard-conformant /
+    non-namespace-polluting #ifdef __sun instead of older #ifdef sun.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 5bad478221c54c0dbf682ef2569f6ca5ac050049
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Sun Jun 14 09:10:06 2009 -0700
+
+    Use indentation to provide a map through the twisty maze of ifdefs, all alike
+    
+    git diff -w shows no changes other than whitespace in this patch
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 1f59b5f8eac522bb0a5155393224496c39deca42
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Sun Jun 14 08:31:13 2009 -0700
+
+    Removing dangling #else block from X_NOT_STDC_ENV removal
+    
+    Fixes mass damage caused by ced38e880b54f2aae31a5354aecb4235a129f0a4
+    moving the includes for unistd.h, fcntl.h, etc. from the else for
+    X_NOT_STDC_ENV into the #else for #ifndef _XOS_H_, which made them
+    go away for everyone.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 4435ea3d806f5b9cd66b563a6b751ac5020404e3
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Fri Jun 12 12:41:57 2009 -0400
+
+    Use ## catenation not /**/
+
+commit 74d18e89a3a315ae9ee4fb3efcaf515abd339b1d
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Fri Jun 12 12:39:06 2009 -0400
+
+    __STDC__ is always defined in C89.
+
+commit bab9c572cd4dc916ff0acab99de8bb526212d77f
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Fri Jun 12 12:33:22 2009 -0400
+
+    Remove a bunch of garbage for unsupported platforms.
+
+commit ced38e880b54f2aae31a5354aecb4235a129f0a4
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Fri Jun 12 11:55:37 2009 -0400
+
+    Remove all trace of X_NOT_STDC_ENV (#6527)
+    
+    Seriously C89 already you guys.
+
+commit 3fc87608d4b3f85d0dbd44ee9040d5ab60130bea
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Fri Jun 12 11:43:45 2009 -0400
+
+    Death to RCS tags.
+
+commit a2a0f01d367050ca182927b8219deb581a497c2c
+Author: Jeremy Huddleston <jeremyhu@freedesktop.org>
+Date:   Tue Jun 9 00:47:25 2009 -0700
+
+    Apple: Only define _DARWIN_C_SOURCE if it isn't already defined
+
+commit 1defe6b37c23941fe2a67ad4fa66e8ab5f37f9b3
+Author: Jon TURNEY <jon.turney@dronecode.org.uk>
+Date:   Fri Jun 5 18:04:58 2009 +0100
+
+    Cygwin/X: Don't destroy min/max macros in Xwindows.h
+    
+    Now that macros named min/max rather than MIN/MAX are used consistently in the
+    X server, we need to ensure they work for Xwin builds.  Change Xwindows.h from
+    simply destroying any definition of min/max, to avoiding defining them but
+    allowing any pre-existing definition to stand.
+    
+    Also, try to improve the comment describing why this madness is needed in the
+    first place, and remove a no-longer needed macro definition of sleep()
+
+commit 32d14e349964c5b16e83eda902d9724aac380b59
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Mar 5 15:12:26 2009 -0800
+
+    Remove #ifdef macII code left over from ancient A/UX 3.0 support
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 034319189648eaaa483f9546c62451edb7be0c28
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Mar 2 12:54:41 2009 -0500
+
+    Bump to 7.0.15.
+
+commit 391f302a7d71b9169ce4c18794251ea3ccc95904
+Author: Paulo Cesar Pereira de Andrade <pcpa@mandriva.com.br>
+Date:   Tue Jan 27 20:06:28 2009 -0200
+
+    Janitor: Correct make distcheck and dont distribute autogen.sh
+
+commit 1e33337d4dd151da4f0898a86608a1ee67588163
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Oct 27 16:36:34 2008 +1030
+
+    Add XF86XK_Suspend and XF86XK_Hibernate keysym defs.
+    
+    At the moment, we have the following keysyms defined to put a computer into a
+    sleep state:
+    
+    XF86XK_Standby    0x1008FF10   /* System into standby mode   */
+    XF86XK_PowerDown  0x1008FF21   /* Deep sleep the system      */
+    XF86XK_Sleep      0x1008FF2F   /* Put system to sleep        */
+    
+    Proposed change by Richard Hughes:
+        "The nomenclature I've been trying to make stick
+        (most projects now use this) for a few years now is:
+    
+        standby: high sleep state, nobody uses this any more
+        hibernate: sleep to disk - slow, but can remove power
+        suspend: sleep to ram - fast, but can't remove power
+        hybrid sleep: sleep to both, slow, and can remove power, but quick to
+        resume if you don't - most users don't use this"
+    
+    This patch adds XF86XK_Suspend and XF86XK_Hibernate. The behaviour of
+    XF86XK_Sleep can then be configured on a per-session basis.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@redhat.com>
+
+commit 2563153ed69d3d6f052ba275ff79df3cbe54b76d
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Tue Nov 11 16:26:28 2008 -0500
+
+    [keysymdef.h] Add dead_currency symbol.
+    
+    As requested for the Bépo keyboard layout (http://clavier-dvorak.org/wiki/).
+    
+    Cf. bugs:
+    
+      http://bugs.freedesktop.org/show_bug.cgi?id=17821
+      http://bugs.freedesktop.org/show_bug.cgi?id=17822
+
+commit 735d745e17a6180f569f24f9792513b44e100aef
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Oct 13 03:11:33 2008 -0400
+
+    Add a dead_belowcomma keysym
+    
+    Requested by the Bépo group.
+    
+    The belowcomma is only used for:
+    
+     U+0218 [Ș] LATIN CAPITAL LETTER S WITH COMMA BELOW
+     U+0219 [ș] LATIN SMALL LETTER S WITH COMMA BELOW
+     U+021A [Ț] LATIN CAPITAL LETTER T WITH COMMA BELOW
+     U+021B [ț] LATIN SMALL LETTER T WITH COMMA BELOW
+    
+    (aka 0xAA, 0xBA, 0xDE and 0xFE from iso-8859-16).
+    
+    Cf: http://bugs.freedesktop.org/show_bug.cgi?id=17822
+        http://bugs.freedesktop.org/show_bug.cgi?id=17821
+        http://clavier-dvorak.org/wiki/
+
+commit 935dd37be409bd616ef46a4d3b62c44327b3f710
+Author: Sayamindu Dasgupta <sayamindu@gmail.com>
+Date:   Mon Oct 13 03:00:53 2008 -0400
+
+    Add dead vowels in keysymdef.h
+    
+    At OLPC, we are using an XKB based Amharic keyboard layout, which requires the
+    use of dead vowels to generate the various consonant + vowel combinations (see
+    http://en.wikipedia.org/wiki/Ge%27ez_alphabet#Syllable_signs for a detailed
+    explanation).
+    
+    [Patch modified to use available keysym codes.  -JimC]
+    
+    Cf: http://bugs.freedesktop.org/show_bug.cgi?id=17437
+    
+    Signed-off-by: James Cloos <cloos@jhcloos.com>
+
+commit c43f804f44ba3d751f343c2e27d9b491a1ebb458
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Wed Sep 17 04:09:39 2008 -0400
+
+    Add dead keysyms for DOUBLE GRAVE and INVERTED BREVE accents
+    
+    Several COMBINING characters are used in libX11's Compose tables
+    where dead keys should be used; these are the two most-used which
+    so far have not had equivalent dead keys.
+
+commit 33a7de5cdacb59503b26c6523ffb33dba118faed
+Author: Peter Hutterer <peter.hutterer@redhat.com>
+Date:   Thu Oct 23 22:41:01 2008 +1030
+
+    Bump to 7.0.14.
+
+commit 1cf41088ff751e60071a519466b5a51b65c7626a
+Author: Bastien Nocera <bnocera@redhat.com>
+Date:   Wed Oct 15 14:20:45 2008 +1030
+
+    Keysyms needed for some HID remote controls to work under X. #16519
+    
+    In particular, this enables Sony Ericsson phones and PS3 BD remotes.
+    
+    X.Org Bug 16519 <https://bugs.freedesktop.org/show_bug.cgi?id=16519>
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@redhat.com>
+
+commit 0b541b3fa282531c97c6ecee574c8b92b1489bfc
+Author: Peter Hutterer <peter.hutterer@redhat.com>
+Date:   Tue Oct 14 21:56:14 2008 +1030
+
+    Fix typos in comments (UP/DOWN TACK and LEFT/RIGHT TACK wrong way round).
+    
+    Spotted by Erik Streb and Julien Cristau.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@redhat.com>
+
+commit c94477f16356790741ebc139d2d0b15d79c83e28
+Author: Peter Hutterer <peter.hutterer@redhat.com>
+Date:   Tue Oct 14 21:54:16 2008 +1030
+
+    Revert "Fix typos in comments (UP/DOWN TACK and LEFT/RIGHT TACK wrong way round)."
+    
+    Codepoints should have moved with the comments. See next commit for correct
+    patch.
+    
+    This reverts commit 2945d2f97c264783e4050a8f6c3016290014b9e2.
+
+commit 2945d2f97c264783e4050a8f6c3016290014b9e2
+Author: Peter Hutterer <peter.hutterer@redhat.com>
+Date:   Tue Oct 14 21:04:08 2008 +1030
+
+    Fix typos in comments (UP/DOWN TACK and LEFT/RIGHT TACK wrong way round).
+    
+    Spotted by Erik Streb.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@redhat.com>
+
+commit 610eb9698316b7cdfe378ce7776c4520f8b061ff
+Author: Peter Hutterer <peter.hutterer@redhat.com>
+Date:   Mon Oct 13 12:01:16 2008 +1030
+
+    Add keysyms for XF86XK_Battery, XF86XK_Bluetooth, XF86XK_WLAN, XF86XK_UWB.
+
+commit 0846d7adfe790897e879c5ed53d4f81db459a20d
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Sun Jul 13 17:57:09 2008 -0400
+
+    Add dead_perispomeni to keysymdef.h
+    
+    Make the dead_perispomeni keysym an alias to dead_tilde
+    (which is currently used for entering characters with
+    perispomeni).
+    
+    Cf: https://bugs.freedesktop.org/show_bug.cgi?id=14013
+
+commit 38edd9839fa8495602378af36c67b2477b24eca2
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Sun Jul 13 17:54:47 2008 -0400
+
+    fix typo in commit 40ed4eef
+
 commit 53859ee4e431c21000e282971894dbe9384ed205
 Author: Peter Hutterer <peter@cs.unisa.edu.au>
 Date:   Wed May 28 17:17:38 2008 +0930

@@ -88,10 +88,15 @@ Equipment Corporation.
 #include <pixman.h>
 
 #undef assert
-#ifdef DEBUG
-#define assert(expr) {if (!(expr)) \
-		FatalError("Assertion failed file %s, line %d: expr\n", \
-			__FILE__, __LINE__); }
+#ifdef REGION_DEBUG
+#define assert(expr) { \
+            CARD32 *foo = NULL; \
+            if (!(expr)) { \
+                ErrorF("Assertion failed file %s, line %d: %s\n", \
+                       __FILE__, __LINE__, #expr); \
+                *foo = 0xdeadbeef; /* to get a backtrace */ \
+            } \
+        }
 #else
 #define assert(expr)
 #endif
@@ -166,7 +171,7 @@ Equipment Corporation.
         ((r1)->y1 <= (r2)->y1) && \
         ((r1)->y2 >= (r2)->y2) )
 
-#define xallocData(n) (RegDataPtr)xalloc(REGION_SZOF(n))
+#define xallocData(n) xalloc(REGION_SZOF(n))
 #define xfreeData(reg) if ((reg)->data && (reg)->data->size) xfree((reg)->data)
 
 #define RECTALLOC_BAIL(pReg,n,bail) \
@@ -213,13 +218,13 @@ if (((numRects) < ((reg)->data->size >> 1)) && ((reg)->data->size > 50)) \
 }
 
 
-_X_EXPORT BoxRec miEmptyBox = {0, 0, 0, 0};
-_X_EXPORT RegDataRec miEmptyData = {0, 0};
+BoxRec miEmptyBox = {0, 0, 0, 0};
+RegDataRec miEmptyData = {0, 0};
 
 RegDataRec  miBrokenData = {0, 0};
 static RegionRec   miBrokenRegion = { { 0, 0, 0, 0 }, &miBrokenData };
 
-extern void
+void
 InitRegions (void)
 {
     pixman_region_set_static_pointers (&miEmptyBox, &miEmptyData, &miBrokenData);
@@ -231,10 +236,8 @@ InitRegions (void)
  *     REGION of "size" number of rectangles.
  *****************************************************************/
 
-_X_EXPORT RegionPtr
-miRegionCreate(rect, size)
-    BoxPtr rect;
-    int size;
+RegionPtr
+miRegionCreate(BoxPtr rect, int size)
 {
     RegionPtr pReg;
    
@@ -247,18 +250,16 @@ miRegionCreate(rect, size)
     return(pReg);
 }
 
-_X_EXPORT void
-miRegionDestroy(pReg)
-    RegionPtr pReg;
+void
+miRegionDestroy(RegionPtr pReg)
 {
     pixman_region_fini (pReg);
     if (pReg != &miBrokenRegion)
 	xfree(pReg);
 }
 
-_X_EXPORT void
-miPrintRegion(rgn)
-    RegionPtr rgn;
+void
+miPrintRegion(RegionPtr rgn)
 {
     int num, size;
     int i;
@@ -267,27 +268,24 @@ miPrintRegion(rgn)
     num = REGION_NUM_RECTS(rgn);
     size = REGION_SIZE(rgn);
     rects = REGION_RECTS(rgn);
-    ErrorF("num: %d size: %d\n", num, size);
-    ErrorF("extents: %d %d %d %d\n",
+    ErrorF("[mi] num: %d size: %d\n", num, size);
+    ErrorF("[mi] extents: %d %d %d %d\n",
 	   rgn->extents.x1, rgn->extents.y1, rgn->extents.x2, rgn->extents.y2);
     for (i = 0; i < num; i++)
-      ErrorF("%d %d %d %d \n",
+      ErrorF("[mi] %d %d %d %d \n",
 	     rects[i].x1, rects[i].y1, rects[i].x2, rects[i].y2);
-    ErrorF("\n");
+    ErrorF("[mi] \n");
 }
 
-_X_EXPORT Bool
-miRegionEqual(reg1, reg2)
-    RegionPtr reg1;
-    RegionPtr reg2;
+Bool
+miRegionEqual(RegionPtr reg1, RegionPtr reg2)
 {
     return pixman_region_equal (reg1, reg2);
 }
 
 #ifdef DEBUG
 Bool
-miValidRegion(reg)
-    RegionPtr reg;
+miValidRegion(RegionPtr reg)
 {
     int i, numRects;
     
@@ -337,11 +335,8 @@ miValidRegion(reg)
  *     Outer region rect is statically allocated.
  *****************************************************************/
 
-_X_EXPORT void
-miRegionInit(pReg, rect, size)
-    RegionPtr pReg;
-    BoxPtr rect;
-    int size;
+void
+miRegionInit(RegionPtr pReg, BoxPtr rect, int size)
 {
     if (rect)
 	pixman_region_init_with_extents (pReg, rect);
@@ -349,16 +344,14 @@ miRegionInit(pReg, rect, size)
 	pixman_region_init (pReg);
 }
 
-_X_EXPORT void
-miRegionUninit(pReg)
-    RegionPtr pReg;
+void
+miRegionUninit(RegionPtr pReg)
 {
     pixman_region_fini (pReg);
 }
 
 Bool
-miRegionBreak (pReg)
-    RegionPtr pReg;
+miRegionBreak (RegionPtr pReg)
 {
     xfreeData (pReg);
     pReg->extents = miEmptyBox;
@@ -366,10 +359,8 @@ miRegionBreak (pReg)
     return FALSE;
 }
 
-_X_EXPORT Bool
-miRectAlloc(
-    RegionPtr pRgn,
-    int n)
+Bool
+miRectAlloc(RegionPtr pRgn, int n)
 {
     RegDataPtr	data;
     
@@ -407,10 +398,8 @@ miRectAlloc(
     return TRUE;
 }
 
-_X_EXPORT Bool
-miRegionCopy(dst, src)
-    RegionPtr dst;
-    RegionPtr src;
+Bool
+miRegionCopy(RegionPtr dst, RegionPtr src)
 {
     return pixman_region_copy (dst, src);
 }
@@ -665,7 +654,7 @@ miRegionOp(
     assert(r1 != r1End);
     assert(r2 != r2End);
 
-    oldData = (RegDataPtr)NULL;
+    oldData = NULL;
     if (((newReg == reg1) && (newSize > 1)) ||
 	((newReg == reg2) && (numRects > 1)))
     {
@@ -819,7 +808,7 @@ miRegionOp(
     {
 	newReg->extents = *REGION_BOXPTR(newReg);
 	xfreeData(newReg);
-	newReg->data = (RegDataPtr)NULL;
+	newReg->data = NULL;
     }
     else
     {
@@ -902,11 +891,12 @@ miSetExtents (RegionPtr pReg)
  *-----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-_X_EXPORT Bool
-miIntersect(newReg, reg1, reg2)
-    RegionPtr 	newReg;     /* destination Region */
-    RegionPtr 	reg1;
-    RegionPtr	reg2;       /* source regions     */
+Bool
+miIntersect(
+    RegionPtr	newReg,     /* destination Region */
+    RegionPtr	reg1,
+    RegionPtr	reg2        /* source regions     */
+    )
 {
     return pixman_region_intersect (newReg, reg1, reg2);
 }
@@ -1005,11 +995,12 @@ miUnionO (
     return TRUE;
 }
 
-_X_EXPORT Bool 
-miUnion(newReg, reg1, reg2)
-    RegionPtr		newReg;                  /* destination Region */
-    RegionPtr 	reg1;
-    RegionPtr	reg2;             /* source regions     */
+Bool
+miUnion(
+    RegionPtr	newReg,          /* destination Region */
+    RegionPtr	reg1,
+    RegionPtr	reg2             /* source regions     */
+    )
 {
     return pixman_region_union (newReg, reg1, reg2);
 }
@@ -1035,10 +1026,8 @@ miUnion(newReg, reg1, reg2)
  *      dstrgn is modified if rgn has rectangles.
  *
  */
-_X_EXPORT Bool
-miRegionAppend(dstrgn, rgn)
-    RegionPtr dstrgn;
-    RegionPtr rgn;
+Bool
+miRegionAppend(RegionPtr dstrgn, RegionPtr rgn)
 {
     int numRects, dnumRects, size;
     BoxPtr new, old;
@@ -1050,7 +1039,7 @@ miRegionAppend(dstrgn, rgn)
     if (!rgn->data && (dstrgn->data == &miEmptyData))
     {
 	dstrgn->extents = rgn->extents;
-	dstrgn->data = (RegDataPtr)NULL;
+	dstrgn->data = NULL;
 	return TRUE;
     }
 
@@ -1221,10 +1210,8 @@ QuickSortRects(
  *-----------------------------------------------------------------------
  */
 
-_X_EXPORT Bool
-miRegionValidate(badreg, pOverlap)
-    RegionPtr badreg;
-    Bool *pOverlap;
+Bool
+miRegionValidate(RegionPtr badreg, Bool *pOverlap)
 {
     /* Descriptor for regions under construction  in Step 2. */
     typedef struct {
@@ -1356,7 +1343,7 @@ miRegionValidate(badreg, pOverlap)
 	rit->prevBand = 0;
 	rit->curBand = 0;
 	rit->reg.extents = *box;
-	rit->reg.data = (RegDataPtr)NULL;
+	rit->reg.data = NULL;
 	if (!miRectAlloc(&rit->reg, (i+numRI) / numRI)) /* MUST force allocation */
 	    goto bail;
 NextRect: ;
@@ -1375,7 +1362,7 @@ NextRect: ;
 	if (reg->data->numRects == 1) /* keep unions happy below */
 	{
 	    xfreeData(reg);
-	    reg->data = (RegDataPtr)NULL;
+	    reg->data = NULL;
 	}
     }
 
@@ -1412,11 +1399,8 @@ bail:
     return miRegionBreak (badreg);
 }
 
-_X_EXPORT RegionPtr
-miRectsToRegion(nrects, prect, ctype)
-    int			nrects;
-    xRectangle		*prect;
-    int			ctype;
+RegionPtr
+miRectsToRegion(int nrects, xRectangle *prect, int ctype)
 {
     
     RegionPtr		pRgn;
@@ -1444,7 +1428,7 @@ miRectsToRegion(nrects, prect, ctype)
 	    pRgn->extents.y1 = y1;
 	    pRgn->extents.x2 = x2;
 	    pRgn->extents.y2 = y2;
-	    pRgn->data = (RegDataPtr)NULL;
+	    pRgn->data = NULL;
 	}
 	return pRgn;
     }
@@ -1529,11 +1513,8 @@ miRectsToRegion(nrects, prect, ctype)
  *
  *-----------------------------------------------------------------------
  */
-_X_EXPORT Bool
-miSubtract(regD, regM, regS)
-    RegionPtr	regD;               
-    RegionPtr 	regM;
-    RegionPtr	regS;          
+Bool
+miSubtract(RegionPtr regD, RegionPtr regM, RegionPtr regS)
 {
     return pixman_region_subtract (regD, regM, regS);
 }
@@ -1557,18 +1538,17 @@ miSubtract(regD, regM, regS)
  *
  *-----------------------------------------------------------------------
  */
-_X_EXPORT Bool
-miInverse(newReg, reg1, invRect)
-    RegionPtr 	  newReg;       /* Destination region */
-    RegionPtr 	  reg1;         /* Region to invert */
-    BoxPtr     	  invRect; 	/* Bounding box for inversion */
+Bool
+miInverse(
+    RegionPtr	  newReg,       /* Destination region */
+    RegionPtr	  reg1,         /* Region to invert */
+    BoxPtr	  invRect	/* Bounding box for inversion */
+    )
 {
     return pixman_region_inverse (newReg, reg1, invRect);
 }
-_X_EXPORT int
-miRectIn(region, prect)
-    RegionPtr  region;
-    BoxPtr     prect;
+int
+miRectIn(RegionPtr region, BoxPtr prect)
 {
     return pixman_region_contains_rectangle (region, prect);
 }
@@ -1577,35 +1557,31 @@ miRectIn(region, prect)
    translates in place
 */
 
-_X_EXPORT void
-miTranslateRegion(pReg, x, y)
-    RegionPtr pReg;
-    int x;
-    int y;
+void
+miTranslateRegion(RegionPtr pReg, int x, int y)
 {
     pixman_region_translate (pReg, x, y);
 }
 
-_X_EXPORT void
-miRegionReset(pReg, pBox)
-    RegionPtr pReg;
-    BoxPtr pBox;
+void
+miRegionReset(RegionPtr pReg, BoxPtr pBox)
 {
     pixman_region_reset (pReg, pBox);
 }
 
-_X_EXPORT Bool
-miPointInRegion(pReg, x, y, box)
-    RegionPtr pReg;
-    int x, y;
-    BoxPtr box;     /* "return" value */
+Bool
+miPointInRegion(
+    RegionPtr pReg,
+    int x,
+    int y,
+    BoxPtr box      /* "return" value */
+    )
 {
     return pixman_region_contains_point (pReg, x, y, box);
 }
 
-_X_EXPORT Bool
-miRegionNotEmpty(pReg)
-    RegionPtr pReg;
+Bool
+miRegionNotEmpty(RegionPtr pReg)
 {
     return pixman_region_not_empty (pReg);
 }
@@ -1617,9 +1593,8 @@ miRegionBroken(RegionPtr pReg)
     return (REGION_NAR(pReg));
 }
 
-_X_EXPORT void
-miRegionEmpty(pReg)
-    RegionPtr pReg;
+void
+miRegionEmpty(RegionPtr pReg)
 {
     good(pReg);
     xfreeData(pReg);
@@ -1628,9 +1603,8 @@ miRegionEmpty(pReg)
     pReg->data = &miEmptyData;
 }
 
-_X_EXPORT BoxPtr
-miRegionExtents(pReg)
-    RegionPtr pReg;
+BoxPtr
+miRegionExtents(RegionPtr pReg)
 {
     good(pReg);
     return(&pReg->extents);
@@ -1754,7 +1728,7 @@ static void QuickSortSpans(
     returns the number of new, clipped scanlines.
 */
 
-_X_EXPORT int
+int
 miClipSpans(
     RegionPtr	prgnDst,
     DDXPointPtr ppt,
@@ -1868,35 +1842,4 @@ miClipSpans(
 	}
     }
     return (pwidthNew - pwidthNewStart);
-}
-
-/* find the band in a region with the most rectangles */
-_X_EXPORT int
-miFindMaxBand(prgn)
-    RegionPtr prgn;
-{
-    int nbox;
-    BoxPtr pbox;
-    int nThisBand;
-    int nMaxBand = 0;
-    short yThisBand;
-
-    good(prgn);
-    nbox = REGION_NUM_RECTS(prgn);
-    pbox = REGION_RECTS(prgn);
-
-    while(nbox > 0)
-    {
-	yThisBand = pbox->y1;
-	nThisBand = 0;
-	while((nbox > 0) && (pbox->y1 == yThisBand))
-	{
-	    nbox--;
-	    pbox++;
-	    nThisBand++;
-	}
-	if (nThisBand > nMaxBand)
-	    nMaxBand = nThisBand;
-    }
-    return (nMaxBand);
 }

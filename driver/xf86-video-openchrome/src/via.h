@@ -327,6 +327,12 @@
 #define VIDEO_FIFO_PRETHRESHOLD_VT3336      250
 #define VIDEO_EXPIRE_NUM_VT3336             31
 
+/* Those values are only valid for IGA1 */
+#define VIDEO_FIFO_DEPTH_VT3409		400
+#define VIDEO_FIFO_THRESHOLD_VT3409	320
+#define VIDEO_FIFO_PRETHRESHOLD_VT3409	230
+#define VIDEO_EXPIRE_NUM_VT3409		160
+
 /* ALPHA_V3_FIFO_CONTROL        0x278
  * IA2 has 32 level FIFO for packet mode video format
  *         32 level FIFO for planar mode video YV12. with extension reg 230 bit 21 enable
@@ -561,9 +567,6 @@
 #define HQV_V_FILTER_DEFAULT    0x00420000
 #define HQV_H_FILTER_DEFAULT    0x00000040
 
-
-
-
 /* HQV_MINI_CONTROL        0x3E8 */
 #define HQV_H_MINIFY_ENABLE 0x00000800
 #define HQV_H_MINIFY_DOWN   0x00001000
@@ -572,6 +575,19 @@
 #define HQV_VDEBLOCK_FILTER 0x80000000
 #define HQV_HDEBLOCK_FILTER 0x00008000
 
+/* Add new HQV Registers for VT3353: */
+#define HQV_SRC_DATA_OFFSET_CONTROL1        0x180
+#define HQV_SRC_DATA_OFFSET_CONTROL2        0x184
+#define HQV_SRC_DATA_OFFSET_CONTROL3        0x188
+#define HQV_SRC_DATA_OFFSET_CONTROL4        0x18C
+#define HQV_HW_TUNING_PERFORMANCE           0x190
+#define HQV_EXTENDED_CONTROL                0x194
+#define HQV_STATIC_RECORD_FB_STARTADDR      0x198
+#define HQV_STATIC_RECORD_FB_STRIDE         0x19C
+#define HQV_COLOR_ADJUSTMENT_CONTROL1       0x1A0
+#define HQV_COLOR_ADJUSTMENT_CONTROL2       0x1A4
+#define HQV_COLOR_ADJUSTMENT_CONTROL3       0x1A8
+#define HQV_COLOR_ADJUSTMENT_CONTROL5       0x1AC
 
 #define CHROMA_KEY_LOW          0x00FFFFFF
 #define CHROMA_KEY_HIGH         0x00FFFFFF

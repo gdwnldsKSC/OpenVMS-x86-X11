@@ -8,15 +8,14 @@ $ saved_default = F$ENVIRONMENT("DEFAULT")
 $ section = F$EDIT(P1,"UPCASE,TRIM")
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. -
      (P5 .NES. "") .OR. (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
-$ IF (section .NES. "SPEEDO") .AND. (section .NES. "TYPE1") .AND. -
-     (section .NES. "TTF") .AND. (section .NES. "OTF") .AND. (section .NES. "CID") THEN GOTO done
+$ IF (section .NES. "TYPE1") .AND. (section .NES. "TTF") .AND. -
+     (section .NES. "OTF") THEN GOTO done
 $ executable = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.PROGRAMS.MKFONTSCALE]MKFONTSCALE.EXE")
 $ IF executable .EQS. "" THEN GOTO done
 $ mkfontscale = "$" + executable
 $ output = "[.VMS-SUPPORT._BUILD.P64.FONTS." + section + "]"
 $ GOSUB stage_packages
 $ SET DEFAULT 'output'
-$ IF section .EQS. "SPEEDO" THEN GOTO fonts_dir
 $ ignored = F$SEARCH("",2)
 $ previous = F$SEARCH("FONTS.SCALE;0",2)
 $ DEFINE/USER_MODE FONT_ENCODINGS_DIRECTORY "../encodings/encodings.dir"
@@ -25,7 +24,6 @@ $ mkfontscale -r -e "../encodings" -e "../encodings/large" "."
 $ ignored = F$SEARCH("",2)
 $ current = F$SEARCH("FONTS.SCALE;0",2)
 $ GOSUB check_index
-$fonts_dir:
 $ ignored = F$SEARCH("",2)
 $ previous = F$SEARCH("FONTS.DIR;0",2)
 $ DEFINE/USER_MODE DECC$EFS_CHARSET ENABLE
@@ -37,9 +35,7 @@ $ WRITE SYS$OUTPUT "Scaled ", section, ": ", count, " font names; index ", curre
 $ result = 1
 $ GOTO done
 $stage_packages:
-$ IF section .EQS. "CID" THEN RETURN
 $ extensions = "PFA|PFB|AFM"
-$ IF section .EQS. "SPEEDO" THEN extensions = "SPD"
 $ IF section .EQS. "TTF" THEN extensions = "TTF"
 $ IF section .EQS. "OTF" THEN extensions = "OTF"
 $ OPEN/READ listing [.VMS-SUPPORT.FONTS.SCALED]PACKAGES.LIST
@@ -82,7 +78,6 @@ $notice_pattern_done:
 $ notice_index = notice_index + 1
 $ GOTO next_notice_pattern
 $notices_done:
-$ IF section .EQS. "SPEEDO" THEN COPY/NOLOG 'source'FONTS.SCALE 'output'FONTS.SCALE;0
 $ GOTO next_package
 $packages_done:
 $ CLOSE listing
@@ -93,8 +88,7 @@ $ IF (current .EQS. "") .OR. (current .EQS. previous) THEN GOTO done
 $ OPEN/READ index_file 'current'
 $ READ/END=bad_index index_file count
 $ CLOSE index_file
-$ IF (section .NES. "CID") .AND. (F$INTEGER(count) .LE. 0) THEN GOTO done
-$ IF F$INTEGER(count) .LT. 0 THEN GOTO done
+$ IF F$INTEGER(count) .LE. 0 THEN GOTO done
 $ RETURN
 $bad_index:
 $ CLOSE index_file

@@ -1,46 +1,440 @@
-2006-04-06  Adam Jackson  <ajax@freedesktop.org>
+commit 19ab688471916b0b4ab780ea39b60f2199234f54
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri Sep 11 12:04:00 2009 +1000
 
-	* configure.ac:
-	* src/xf86Aiptek.c:
-	* src/xf86Aiptek.h:
-	Unlibcwrap.  Bump server version requirement.  Bump to 1.1.0.
+    aiptek 1.3.0
 
-2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit c6628efe89ba9f6d5274e4d5677c039cef89eb6f
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri Sep 11 12:03:35 2009 +1000
 
-	* configure.ac:
-	Update package version for X11R7 release.
+    Require xorg-macros 1.3 for XORG_DEFAULT_OPTIONS.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
 
-2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit 51ded98cc9643c6789d3297b4e60097fcb342cd5
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri Sep 11 12:02:53 2009 +1000
 
-	* configure.ac:
-	Update package version number for final X11R7 release candidate.
+    Remove some unused crap from configure.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
 
-2005-12-06  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit ca98d5b84fa7e4ed4ea0ae09226728ba137f7c46
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Aug 25 21:03:39 2009 +1000
 
-	* man/Makefile.am:
-	Change *man_SOURCES ==> *man_PRE to fix autotools warnings.
+    Hide the InitKeyClassDeviceStruct behind ABI ifdefs.
+    
+    Function was removed from the server a while ago.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
 
-2005-12-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit 3337f41ca5af021fb7ed8db0efc5e39f04e3d012
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed Aug 19 15:11:42 2009 +1000
 
-	* configure.ac:
-	Update package version number for X11R7 RC3 release.
+    Reset local->private to NULL after freeing it. (#22693)
+    
+    If it's not NULL, xf86DeleteInput will try to free it again.
+    
+    X.Org Bug 22693 <http://bugs.freedesktop.org/show_bug.cgi?id=22693>
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
 
-2005-12-01  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit f440e333bb535854ed25e258fc502b1b6a8d5e44
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Jun 22 14:12:23 2009 +1000
 
-	* configure.ac:
-	Remove extraneous AC_MSG_RESULT.
+    Cope with ABI_XINPUT_VERSION 7 - requires button/axes labeling
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
 
-2005-11-29  Adam Jackson  <ajax@freedesktop.org>
+commit b4dfb51ee61f5c54134e5731e0581f9f74bc6829
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Feb 24 13:44:25 2009 +1000
 
-	* configure.ac:
-	Only build dlloader modules by default.
+    aiptek 1.2.0
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
 
-2005-11-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit acfbb985d63861cf414f568001a4bce89b75b0d9
+Author: Paulo Cesar Pereira de Andrade <pcpa@mandriva.com.br>
+Date:   Mon Feb 2 18:13:44 2009 -0200
 
-	* configure.ac:
-	Update package version number for X11R7 RC2 release.
+    Janitor: rework make distcheck
+    
+      Don't use a static ChangeLog, and distribute the generated one.
+      Use only one .gitignore file.
+      Minor cleanup on configure.ac, aiming as similar as possible
+    drivers configure.ac's.
 
-2005-11-01  Kevin E. Martin  <kem-at-freedesktop-dot-org>
+commit 3c0327e190e134a4435b4c22238749fed12a6709
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Jan 29 15:11:26 2009 -0800
 
-	* configure.ac:
-	Update pkgcheck depedencies to work with separate build roots.
+    Add README with pointers to mailing list, bugzilla & git repos
+
+commit 8d05f481f0219dafed821b7cc89784afe73a5e24
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Jan 9 16:10:14 2009 -0800
+
+    Remove xorgconfig & xorgcfg from See Also list in man page
+
+commit 9caf1a8372b5c9bae4032d256bb6065d8dbf26ba
+Author: Peter Hutterer <peter.hutterer@redhat.com>
+Date:   Thu Aug 14 15:01:28 2008 +0930
+
+    Fix build, xf86Version.h has been superseeded by xorgVersion.h
+
+commit 87a3bd344129c06e4f4f90b10d13347b77f2be93
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Thu Jul 17 18:25:05 2008 +0200
+
+    Link against -lm for sqrt()
+
+commit 056b2a86085fd68f6408c53eb148284e2b506e77
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Mon May 26 22:01:29 2008 +0930
+
+    Check for XINPUT ABI 3.
+
+commit a92bf3b53a277928c94aa87f245ccf301c1e7a2d
+Author: René van Paassen <Rene.vanPaassen@gmail.com>
+Date:   Tue Jan 29 22:42:40 2008 +0100
+
+    Bumped the version to 1.1.1
+    
+    This version is actually being tested/used by someone with a tablet (me)
+
+commit 4a8945d179f3ca9c6ca3553d36ce9840228cf84f
+Author: René van Paassen <repa@pascua.localdomain>
+Date:   Tue Jan 29 22:32:04 2008 +0100
+
+    added #if to handle MiPointer{Current|Get}Screen cases
+
+commit 28269504679fd705f5666c450dbf862f91c8ca84
+Author: René van Paassen <repa@pascua.localdomain>
+Date:   Tue Jan 29 22:29:41 2008 +0100
+
+    moved xf86AiptekClose after RemoveEnabled.., fixes crash VT switch
+
+commit a23587a1eef2c256ae9d4184405efb74135e13d5
+Author: René van Paassen <repa@pascua.localdomain>
+Date:   Tue Jan 29 22:24:34 2008 +0100
+
+    Converted xf86msg into debug messages, to prevent filling the log
+
+commit 51a90b36853a98f6ec5f04c54a9d76fddcfa8ad6
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Thu Jan 17 17:21:38 2008 +1030
+
+    Don't worry about being core pointer if XInput API is > 0.
+    
+    Server 1.4 and above let all devices be XI devices and the core devices are
+    virtual. So we don't have to worry about it in the driver.
+    
+    This should make the code compatible with both 1.3 and 1.4.
+
+commit f424235dd26fa22bc3830cf9d884d7643abf3568
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Thu Jan 17 13:24:46 2008 +1030
+
+    Revert "Driver's don't have to worry about being core pointers anymore."
+    There's a better way of doing things. See next commit.
+    
+    This reverts commit 66e0fbb24377ac14b9cf8a80a55253cff13d7913.
+
+commit e34bc8e774d92bd81dcefbcd341ab3f040a7f144
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Thu Jan 10 11:27:39 2008 +1030
+
+    Remove redefinition of NEED_XF86_TYPES.
+
+commit a88dafb63b0e0f3e4557ae75a3ee9a377ea4ef68
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Thu Jan 10 11:26:49 2008 +1030
+
+    miPointerCurrentScreen is deprecated, miPointerGetScreen is all the rage now.
+    
+    Untested due to lack of device.
+
+commit 66e0fbb24377ac14b9cf8a80a55253cff13d7913
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Thu Jan 10 11:25:58 2008 +1030
+
+    Driver's don't have to worry about being core pointers anymore.
+    
+    The DDX will do the right job, no matter what events we post, so we don't need
+    in-driver checks for whether to post proximity events or not.
+    
+    Untested due to a lack of device.
+
+commit 3cb825cb4a633132de10df77e792fcbadf082385
+Author: Rene van Paassen <rene.vanpaassen@gmail.com>
+Date:   Thu Jan 10 11:23:06 2008 +1030
+
+    Patch with a load of fixes, backported from aiptektablet.sourceforge.net
+    
+    Tested with re-branded aiptek 12000U
+
+commit afedccae164668128c6228542585cc27d241b7e6
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Sep 3 05:52:01 2007 -0400
+
+    Add *~ to .gitignore to skip patch/emacs droppings
+
+commit 432145c8c4ec06710f139112aeee96fdc19c5f92
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Thu Aug 23 19:25:19 2007 -0400
+
+    Rename .cvsignore to .gitignore
+
+commit 1733fc06082f982b0f0d57bac9632f3ece8f4c34
+Author: Brice Goglin <bgoglin@debian.org>
+Date:   Mon Aug 6 19:32:29 2007 +0200
+
+    Use PACKAGE_VERSION_MAJOR/MINOR/PATCHLEVEL in xf86AiptekVersionRec
+
+commit c0f5a94625ed8e7ab326b3b604e8f7461921c027
+Author: Brice Goglin <bgoglin@debian.org>
+Date:   Mon Aug 6 19:32:26 2007 +0200
+
+    Fix 1.1.0 version in configure.ac
+
+commit e65a8abb1da2058a5fefa60950054ed01ae2f467
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Fri Apr 7 16:50:50 2006 +0000
+
+    Unlibcwrap. Bump server version requirement. Bump to 1.1.0.
+
+commit 10f7f22a718f2242bda8d378795d3061767cbc4b
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Dec 21 02:29:55 2005 +0000
+
+    Update package version for X11R7 release.
+
+commit 4331da985ae9d6a7b5d21eb0307827fb64aea1d1
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Mon Dec 19 16:25:49 2005 +0000
+
+    Stub COPYING files
+
+commit eaa1babb65d3db249f58526c26f78c98a4921a14
+Author: Alan Coopersmith <Alan.Coopersmith@sun.com>
+Date:   Mon Dec 19 09:07:49 2005 +0000
+
+    Typo fixes, mailing list & url updates, and other changes to prepare for
+        X11R6.9 & 7.0 releases.
+
+commit c49c2d18eb645a863ca824bd898a512221ae6a0f
+Author: Kevin E Martin <kem@kem.org>
+Date:   Thu Dec 15 00:24:13 2005 +0000
+
+    Update package version number for final X11R7 release candidate.
+
+commit 9faf2cecf235ef95c9e2700d3b2bd42633dc2b69
+Author: Kevin E Martin <kem@kem.org>
+Date:   Tue Dec 6 22:48:27 2005 +0000
+
+    Change *man_SOURCES ==> *man_PRE to fix autotools warnings.
+
+commit 5914bf9f7767403d884c86b9157f8280a4eb8bc1
+Author: Kevin E Martin <kem@kem.org>
+Date:   Sat Dec 3 05:49:29 2005 +0000
+
+    Update package version number for X11R7 RC3 release.
+
+commit 6b51e42175b57bf88ded3f66e1354d7c1dbe281b
+Author: Kevin E Martin <kem@kem.org>
+Date:   Fri Dec 2 02:16:04 2005 +0000
+
+    Remove extraneous AC_MSG_RESULT.
+
+commit 8c4ba228719a927a1a409fef1d59b5f1ae6320a3
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Tue Nov 29 23:29:54 2005 +0000
+
+    Only build dlloader modules by default.
+
+commit 9ca454714cd4643f4dd5568124bbdd1e704f9ea0
+Author: Alan Coopersmith <Alan.Coopersmith@sun.com>
+Date:   Mon Nov 28 22:04:05 2005 +0000
+
+    Change *mandir targets to use new *_MAN_DIR variables set by xorg-macros.m4
+        update to fix bug #5167 (Linux prefers *.1x man pages in man1 subdir)
+
+commit 7cebf35a1a62dd986f05f94ef075f748e6771b35
+Author: Eric Anholt <anholt@freebsd.org>
+Date:   Mon Nov 21 10:49:00 2005 +0000
+
+    Add .cvsignores for drivers.
+
+commit 09d0e1f5174d9379a6a62f6fcd421e40acb49600
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Nov 9 21:15:10 2005 +0000
+
+    Update package version number for X11R7 RC2 release.
+
+commit d514546c3203b78ee5925e1f081353971f2c492d
+Author: Kevin E Martin <kem@kem.org>
+Date:   Tue Nov 1 15:08:48 2005 +0000
+
+    Update pkgcheck depedencies to work with separate build roots.
+
+commit 97fd7aa3dc51fb0e3b7a6b27c3c73eb06cfbcbdd
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Oct 19 02:47:59 2005 +0000
+
+    Update package version number for RC1 release.
+
+commit 9204bcbe32e91f7880b90a7a33f7372f3240fef6
+Author: Alan Coopersmith <Alan.Coopersmith@sun.com>
+Date:   Tue Oct 18 00:01:50 2005 +0000
+
+    Use @DRIVER_MAN_SUFFIX@ instead of $(DRIVER_MAN_SUFFIX) in macro
+        substitutions to work better with BSD make
+
+commit a6934ae32c03ee0cbb7df9ce86176862ae579be3
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Mon Oct 17 22:57:25 2005 +0000
+
+    More 1.7 braindamage: define EXTRA_DIST in terms of @DRIVER_NAME@ instead
+        of indirectly
+
+commit 06c97358d8fbc15458a229ed6d6e5f3ee328201f
+Author: Alan Coopersmith <Alan.Coopersmith@sun.com>
+Date:   Mon Oct 17 00:08:53 2005 +0000
+
+    Use sed & cpp to substitute variables in driver man pages
+
+commit a58366783c50bd424e7ac36691e5b914d30771e4
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Thu Aug 18 09:03:37 2005 +0000
+
+    Update autogen.sh to one that does objdir != srcdir.
+
+commit 9ee61601ca5b5f51f94a252676240031695f6678
+Author: Søren Sandmann Pedersen <sandmann@daimi.au.dk>
+Date:   Wed Aug 10 14:07:22 2005 +0000
+
+    Don\'t lose existing CFLAGS in all the input drivers and some of the video
+        drivers
+
+commit 28ae25b20902189d5f7ad4a6f2d0932aa18be7b1
+Author: Kevin E Martin <kem@kem.org>
+Date:   Fri Jul 29 21:22:39 2005 +0000
+
+    Various changes preparing packages for RC0:
+    - Verify and update package version numbers as needed
+    - Implement versioning scheme
+    - Change bug address to point to bugzilla bug entry form
+    - Disable loadable i18n in libX11 by default (use --enable-loadable-i18n to
+        reenable it)
+    - Fix makedepend to use pkgconfig and pass distcheck
+    - Update build script to build macros first
+    - Update modular Xorg version
+
+commit a0bc41b3458c985aff5fc745dd8ff10e04310c20
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Jul 13 20:03:20 2005 +0000
+
+    Make the module dir configurable
+
+commit f9627bd4e6cb2a88c46fa7799def0bd1b99b186d
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Jul 13 02:20:57 2005 +0000
+
+    Update all input drivers to pass distcheck
+
+commit b00537ba24d2ffc713faa71383e009518d2b5e42
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Jul 13 02:18:12 2005 +0000
+
+    Change input drivers to get keysym's from <X11/keysym.h>.
+
+commit da137dba6b2601717e3ff760e885eed7755c5a9a
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Tue Jul 12 06:15:07 2005 +0000
+
+    Build skeletons for input drivers. Should basically work.
+
+commit 4733f1c8fd451306b09c017bd7741a4e0fe337e4
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Mon Jul 11 02:37:58 2005 +0000
+
+    Prep input drivers for modularizing by adding guarded #include "config.h"
+
+commit 46d19bbd14e3a09222979cee955991e74458e668
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Fri Jul 1 22:43:22 2005 +0000
+
+    Change all misc.h and os.h references to <X11/foo.h>.
+
+commit 58696f4a73aac4d0c43094e20d59477ff1da8031
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Mon Jun 27 18:32:53 2005 +0000
+
+    Various input drivers set their InputDriverRec to be static when doing a
+        loadable build, and the same symbol can't be both static and _X_EXPORT.
+        Pointed out by Alan Coopersmith.
+
+commit d6531729f026d500516a9740c22b2b7800917a5e
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Sat Jun 25 21:17:00 2005 +0000
+
+    Bug #3626: _X_EXPORT tags for video and input drivers.
+
+commit 71b8c6c2fcc8dcb899c641e405d60434d0add0c0
+Author: Egbert Eich <eich@suse.de>
+Date:   Fri Apr 23 19:54:02 2004 +0000
+
+    Merging XORG-CURRENT into trunk
+
+commit 1d4b40f72f30d327e7bd8728e17779e1bbd683fa
+Author: Egbert Eich <eich@suse.de>
+Date:   Sun Mar 14 08:33:51 2004 +0000
+
+    Importing vendor version xf86-4_4_99_1 on Sun Mar 14 00:26:39 PST 2004
+
+commit f6478217d3b9ad9d36e6f83a7704338f17b0a5f3
+Author: Egbert Eich <eich@suse.de>
+Date:   Wed Mar 3 12:12:30 2004 +0000
+
+    Importing vendor version xf86-4_4_0 on Wed Mar 3 04:09:24 PST 2004
+
+commit 58ee10b7d9fe3d1f3dc8063de302de33d1438002
+Author: Egbert Eich <eich@suse.de>
+Date:   Thu Feb 26 13:36:00 2004 +0000
+
+    readding XFree86's cvs IDs
+
+commit 376ac8a52977f29d59d42a723a567d6babba56f6
+Author: Egbert Eich <eich@suse.de>
+Date:   Thu Feb 26 09:23:34 2004 +0000
+
+    Importing vendor version xf86-4_3_99_903 on Wed Feb 26 01:21:00 PST 2004
+
+commit cec2b7afe6e877d2a83bfdfc991aad605ae081e8
+Author: Egbert Eich <eich@suse.de>
+Date:   Thu Jan 29 08:08:45 2004 +0000
+
+    Importing vendor version xf86-012804-2330 on Thu Jan 29 00:06:33 PST 2004
+
+commit dcc03ba32debfb3bf1dcc7da024ad8199bd71d50
+Author: Kaleb Keithley <kaleb@freedesktop.org>
+Date:   Fri Dec 19 20:55:25 2003 +0000
+
+    XFree86 4.3.99.902 (RC 2)
+
+commit 5d8fba55f40bef3e4e8aa70a86ed0bfd001145c7
+Author: Kaleb Keithley <kaleb@freedesktop.org>
+Date:   Tue Nov 25 19:28:46 2003 +0000
+
+    XFree86 4.3.99.16 Bring the tree up to date for the Cygwin folks
+
+commit 4b1ef06b77c87bb5bd943a607130e556042bd61c
+Author: Kaleb Keithley <kaleb@freedesktop.org>
+Date:   Tue Nov 25 19:28:46 2003 +0000
+
+    Initial revision

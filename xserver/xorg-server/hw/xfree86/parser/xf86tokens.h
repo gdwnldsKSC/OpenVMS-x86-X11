@@ -70,6 +70,7 @@
 
 typedef enum {
     /* errno-style tokens */
+    OBSOLETE_TOKEN	= -5,
     EOF_TOKEN		= -4,
     LOCK_TOKEN		= -3,
     ERROR_TOKEN		= -2,
@@ -98,8 +99,8 @@ typedef enum {
     /* File tokens */
     FONTPATH,
     MODULEPATH,
-    INPUTDEVICES,
     LOGFILEPATH,
+    XKBDIR,
 
     /* Server Flag tokens.  These are deprecated in favour of generic Options */
     NOTRAPSIGNALS,

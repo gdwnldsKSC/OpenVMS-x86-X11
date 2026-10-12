@@ -7,7 +7,7 @@
 #include "os.h"
 #include "xf86.h"
 #include "xf86Priv.h"
-#include "xf86Axp.h"
+#include "shared/xf86Axp.h"
 #include <sys/param.h>
 #include "xf86_OSlib.h"
 #include <stdio.h>
@@ -36,7 +36,7 @@ static _AXP axpList[] = {
 	{"lca",LCA},
 	{"t2",T2},
 	{"tsunami",TSUNAMI},
-	{NULL,NONE}
+	{NULL,SYS_NONE}
 };
 
 axpDevice
@@ -65,7 +65,7 @@ bsdGetAXP(void)
 #endif
 	for (i=0;;i++) {
 		if (axpList[i].name == NULL)
-			return NONE;
+			return SYS_NONE;
 		if (!strcmp(sysname, axpList[i].name))
 			return axpList[i].type;
 	}

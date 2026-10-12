@@ -1,3 +1,703 @@
+commit 97d677746cd70ec9eb1f33483cc829a0063953bc
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Sep 25 10:25:56 2009 +1000
+
+    shutup stupid gcc warning, strtok_r ignores the first parameter
+
+commit 2a10d510d24c7c0aebb03914dd887f9e92cfa754
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Sep 25 10:19:07 2009 +1000
+
+    libpciaccess 0.10.9
+
+commit 1714046ef08ef685bcf1d6c154e64809b12e8d7f
+Author: Tiago Vignatti <tiago.vignatti@nokia.com>
+Date:   Fri Sep 18 15:21:19 2009 +0300
+
+    vgaarb: fix newbie typo
+    
+    Eh, we don't need to check for the fd anyway. Kudos jcristau for reporting.
+    
+    Signed-off-by: Tiago Vignatti <tiago.vignatti@nokia.com>
+
+commit 13c7e6c8f100882718f995f5bf1d478a012cdbdd
+Author: Tiago Vignatti <tiago.vignatti@nokia.com>
+Date:   Wed Sep 16 12:56:53 2009 +0300
+
+    vgaarb: check for fd before close it
+    
+    Signed-off-by: Tiago Vignatti <tiago.vignatti@nokia.com>
+
+commit cdbdfaf61c05d0d18eae6815b10666f93162148f
+Author: Keith Packard <keithp@keithp.com>
+Date:   Thu Sep 17 17:38:56 2009 -0700
+
+    Free return value from scandir instead of leaking it.
+    
+    Scandir is defined to return pointers to malloc'd storage, so make
+    sure that memory is nicely freed.
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+
+commit 42b879a203c1c16daa9d0c610c6a217ead7a5829
+Author: Dave Airlie <airlied@linux.ie>
+Date:   Wed Sep 2 19:03:11 2009 +1000
+
+    vgaarb: check pci_sys exists before initing vga arb
+
+commit 312cde3c2f3530b031134cfb53a8a54731f02b1b
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Mon Aug 31 09:14:16 2009 +1000
+
+    pciaccess: bump to 0.10.8
+
+commit 566a67767e9fea463c24421d99dc12db590a7b5f
+Author: Thomas Klausner <wiz@netbsd.org>
+Date:   Mon Aug 31 09:13:27 2009 +1000
+
+    pciaccess: fix vga arb stubs
+
+commit d062dd78baeb28ef2cc59f4fb4a7d82ecd5adf60
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Aug 28 11:29:00 2009 +1000
+
+    libpciaccess: bump to 0.10.7 for vga arb interface addition
+
+commit 81b4705525bdf82d75f5b3c740c53fa4a866d9c3
+Merge: f514852... 2f997f9...
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Aug 28 11:25:15 2009 +1000
+
+    Merge branch 'vga'
+
+commit 2f997f90c8d0b54baab85285703550e8df28325e
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Aug 28 11:24:53 2009 +1000
+
+    vgaarb: update stub interface
+
+commit b229acdfd10fd61f46d8e711910b5c1bdb727857
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Aug 28 11:21:11 2009 +1000
+
+    Revert "vgaarb: delete stub functions"
+    
+    This reverts commit b7fd4d06890d801aae93fe1a1af7ab110fd388fd.
+
+commit e70767cb2e574f8544a04903eea3afee33345eea
+Author: Tiago Vignatti <tiago.vignatti@nokia.com>
+Date:   Wed Aug 26 11:14:03 2009 +0300
+
+    Revert "vgaarb: fix pci_device_vgaarb_get_info() return value."
+    
+    This reverts commit ef8aca5da46155e9ea0d1227215921ad9ce59150.
+
+commit f5148525d546015c12b703a768b5e6c3726446a3
+Merge: 7636348... ef8aca5...
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Aug 21 13:27:11 2009 +1000
+
+    Merge remote branch 'origin/vga-arbiter'
+
+commit ef8aca5da46155e9ea0d1227215921ad9ce59150
+Author: Tiago Vignatti <tiago.vignatti@nokia.com>
+Date:   Sun Aug 16 19:11:15 2009 +0300
+
+    vgaarb: fix pci_device_vgaarb_get_info() return value.
+    
+    Signed-off-by: Tiago Vignatti <tiago.vignatti@nokia.com>
+
+commit 25be96885671d22ee3f932769d72cf3a31f355ee
+Author: Tiago Vignatti <tiago.vignatti@nokia.com>
+Date:   Sun Aug 16 19:09:35 2009 +0300
+
+    vgaarb: fix indentation and remove trailing white spaces
+    
+    Signed-off-by: Tiago Vignatti <tiago.vignatti@nokia.com>
+
+commit b7fd4d06890d801aae93fe1a1af7ab110fd388fd
+Author: Tiago Vignatti <tiago.vignatti@nokia.com>
+Date:   Sun Aug 16 18:59:21 2009 +0300
+
+    vgaarb: delete stub functions
+    
+    Such stub functions is already with API outdated. Moreover, if some operating
+    system doesn't have arbiter's implementation then the app can set some
+    autoconf tricks like "ifdef HAVE_PCI_DEVICE_VGAARB_INIT".
+    
+    Signed-off-by: Tiago Vignatti <tiago.vignatti@nokia.com>
+
+commit 76363486864b325b8f156ece35736ddb64c4e697
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sun Aug 9 11:28:38 2009 +0200
+
+    Silence compiler warning about pci_id_file_open definition
+    
+    src/common_device_name.c:59: warning: function declaration isn't a prototype
+    src/common_device_name.c: In function 'pci_id_file_open':
+    src/common_device_name.c:59: warning: old-style function definition
+
+commit 4eac0173588ab9ef67fcadb47b531abb114aa0a7
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sat Aug 8 18:12:08 2009 +0200
+
+    configure.ac: fix help text for the linux-rom-fallback option
+    
+    LINUX_ROM defaults to no, fix the help text to reflect that
+    
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+
+commit e9f2db8b867cba8d91a040a0db9be56099fba680
+Merge: 706201e... dedd31b...
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Thu Aug 6 09:43:08 2009 +1000
+
+    Merge branch 'master' into vga-arbiter
+
+commit dedd31b3bcdeea12955bf565b8e3f2a9d3c66057
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Thu Aug 6 09:39:01 2009 +1000
+
+    pciaccess: make linux rom reading fallback optional
+    
+    On kernels which have ROM files, the boot VGA rom file
+    will contain the 0xc0000 file anyways. If another card
+    is missing a rom file there is no need for this.
+    
+    This is fallback is disabled by default, on the premise
+    that distro shipping this new a pciaccess will be running
+    on kernels with working rom support which is been upstream
+    for a long time
+
+commit 706201e900b5664ea35ec498784590275b98c23a
+Merge: 57cf6f1... 8aa06cf...
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Thu Aug 6 09:42:06 2009 +1000
+
+    Merge branch 'master' into vga-arbiter
+
+commit 8aa06cf7ef5e88c53bf6778336ba1a6036b16cc0
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Thu Aug 6 09:39:01 2009 +1000
+
+    pciaccess: make linux rom reading fallback optional
+    
+    On kernels which have ROM files, the boot VGA rom file
+    will contain the 0xc0000 file anyways. If another card
+    is missing a rom file there is no need for this.
+    
+    This is fallback is disabled by default, on the premise
+    that distro shipping this new a pciaccess will be running
+    on kernels with working rom support which is been upstream
+    for a long time
+
+commit 57cf6f1f428ab73fb2a88c39c694e7d14c2c96c6
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Thu Aug 6 09:39:01 2009 +1000
+
+    pciaccess: make linux rom reading fallback optional
+    
+    On kernels which have ROM files, the boot VGA rom file
+    will contain the 0xc0000 file anyways. If another card
+    is missing a rom file there is no need for this.
+    
+    This is fallback is disabled by default, on the premise
+    that distro shipping this new a pciaccess will be running
+    on kernels with working rom support which is been upstream
+    for a long time
+
+commit 7b7999a302c70f1ad9a5c8fc7517e24ab95c3a95
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Mon Aug 3 12:43:26 2009 +1000
+
+    vgaarb: add vga count + resource accessor
+
+commit 3a6c1be79c05517cfddbce88157bb352237058ab
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Mon Aug 3 09:39:22 2009 +1000
+
+    vgaarb: more api changes + cleanup
+    
+    add a comma for ease of parsing,
+    use hex on the interface in both directions instead of hex on one
+    and decimal on the other
+
+commit e5127339c6c48ae6f63f9dc841a94fe960d11496
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Jul 31 16:15:55 2009 +1000
+
+    vgaarb: change API to target taking a device + lock/unlock not taking one
+    
+    working on the target device - a target device of NULL
+    reselects the target that existed when we started.
+    
+    this is mainly to allow a udev posting tool to return to the
+    state of what happened before it ran.
+
+commit 0596c559af5ca277a069b04a6402d21724464cda
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Jul 31 15:34:32 2009 +1000
+
+    vgaarb: add support for targetting default device
+
+commit 453928b8485bc7beff69996abe12628efc09405f
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Jul 31 11:17:21 2009 +1000
+
+    vgaarb: clean up debug output
+
+commit d22d7c0d5e48d130c89282514e378819e0b98636
+Merge: e360c11... 2bda5b7...
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Jul 31 11:16:16 2009 +1000
+
+    Merge remote branch 'main/master' into vga-arbiter
+
+commit e360c11c37a219534bfd7266caf163870dddced0
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Mon Jul 20 13:26:41 2009 +1000
+
+    vgaarb: fixup api for new count reporting + decodes interface was wrong.
+    
+    decodes is a information setting interface so it takes new decodes
+    and sends them to the kernel
+
+commit 5d1bdf0cb51c19efd6e2b2c0a463ace9443c48d9
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Thu Jul 16 15:36:30 2009 +1000
+
+    add support for finding if something has a kernel driver
+
+commit 2bda5b733bb12854760750c08138db95e77aea0c
+Author: Jesse Barnes <jbarnes@virtuousgeek.org>
+Date:   Tue Jun 30 15:24:45 2009 -0700
+
+    Don't try to use bogus bridge data
+    
+    If, for whatever reason, we weren't able to read bridge data (therefore
+    leaving bridge.pci or bridge.pcmcia empty), we shouldn't try to look at
+    the bus data inside the pci/pcmcia struct.
+
+commit 9ae22c87743c624bda593a1ef4bd4eca01c65655
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Fri Jun 5 09:32:10 2009 +1000
+
+    vgaarb: fixup api and decode rsrc.
+    
+    This fixes up the API and stores the vga arb fd in the sys_pci structure,
+    instead of hiding it in a random dev struct.
+    
+    It also reads back after setting the target and works out the decodes.
+    
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+
+commit 9ae66143550a6aee25d9a9620c5bebf93fa196e5
+Author: Tiago Vignatti <vignatti@freedesktop.org>
+Date:   Thu May 14 17:30:17 2009 -0300
+
+    Comment typo.
+
+commit 6ae00a992714639fd725efd8817dca69b28276c8
+Author: Tiago Vignatti <vignatti@freedesktop.org>
+Date:   Thu May 14 17:28:05 2009 -0300
+
+    Reorganize the code.
+
+commit 6ef4e7aebfd2b83e2346e9f8f4ef3c890a6ea73d
+Author: Tiago Vignatti <vignatti@freedesktop.org>
+Date:   Thu May 14 03:42:56 2009 -0300
+
+    Fix typo in vgaarb stubs.
+
+commit 18a186804bc4e496a392cb31003cef25798f6c7b
+Author: Tiago Vignatti <vignatti@freedesktop.org>
+Date:   Thu May 14 03:40:25 2009 -0300
+
+    Delete vga_arb_rec.
+
+commit 812ad80018d49f6e4f1be8256d86488690c3ba52
+Author: Tiago Vignatti <vignatti@freedesktop.org>
+Date:   Wed May 13 18:31:09 2009 -0300
+
+    vgaarb: a bunch of clean ups to fit in libpciaccess style.
+
+commit b77b0fc3fbacc46d55998889f09326d1233339fc
+Author: Tiago Vignatti <vignatti@freedesktop.org>
+Date:   Wed May 13 17:55:31 2009 -0300
+
+    vgaarb: make it compile.
+
+commit 67af888bcc5667eadf1e9e9bf15305f742416daf
+Author: Tiago Vignatti <vignatti@freedesktop.org>
+Date:   Wed May 13 17:44:46 2009 -0300
+
+    Import libvgaaccess (VGA Arbiter) implementation from C3SL repository:
+        http://git.c3sl.ufpr.br/
+
+commit 8ba6b02ecfa5b03bbf2807e8262bb1253a026493
+Author: Aaron Plattner <aplattner@nvidia.com>
+Date:   Fri May 1 15:04:19 2009 -0700
+
+    Don't try to write boot_vga since that fails with EACCES
+
+commit b2838fb61c3542f107014b285cbda097acae1e12
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Wed Mar 4 15:55:11 2009 +1000
+
+    pciaccess: provide a method to detect if a device is boot VGA
+    
+    When the linux kernel exposes this information, we can use this interface
+    in the X server to detect whether the kernel believes the device we
+    are looking at is the boot VGA device.
+    
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+
+commit f14c6cd626273bd2f8b102ff661d11926619a99b
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Apr 24 16:32:12 2009 -0700
+
+    Version bump: 0.10.6
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 6df3387173c3ab25e8a618d9ccf628682d8336d5
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Apr 24 16:19:34 2009 -0700
+
+    Resync COPYING file with code copyright notices
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 7f08a1e19b49c9ffdc62e1dff340b392ac7c42d1
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Apr 17 22:05:03 2009 -0700
+
+    Fix unused variable warnings in Solaris code
+    
+    solx_devfs.c: In function `find_target_node':
+    solx_devfs.c:672: warning: unused variable `prop'
+    solx_devfs.c:673: warning: unused variable `i'
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 0edb2392ede59cadd75915873b52baa188bfa273
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Apr 17 21:59:25 2009 -0700
+
+    Fix $CWARNFLAGS addition
+    
+    Original addition to configure.ac had typo (missing N) - moving to
+    Makefile.am allows easier override at build time
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 146dc2f4ac232bb9d63225c8e72b214dc3120ea6
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Apr 17 21:56:31 2009 -0700
+
+    Move included m4 to a subdir so we can more easily update from upstream
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit a7f8e58d44716a01f4a8dc9826996a0fa78e4196
+Author: Owain Ainsworth <zerooa@googlemail.com>
+Date:   Sat Apr 18 06:38:46 2009 +0200
+
+    openbsd_pci.c: use the correct size when mapping the legacy vga rom.
+    
+    fixes errors (and probably bugs) on intel hardware (at the least).
+    
+    Signed-off-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+
+commit be748a7b512bf5597e162694a3b1769132938fe1
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Wed Apr 15 10:06:49 2009 -0700
+
+    Sun bug 6811468: pci_device_solx_devfs_probe accesses freed memory
+    
+    di_fini() is being called in pci_device_solx_devfs_probe()
+    The di_fini (3DEVINFO) man page says "All  handles associated with this
+    snapshot become invalid after the  call to di_fini()".  But after that,
+    eight lines down, the subroutine was calling di_prop_lookup_ints with
+    a handle args.node which was stored from walking the device tree, and
+    then using the pointers that returned even further down.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit c56da48ee806f73c8ed81afb4a251b24de304620
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Tue Apr 14 17:29:10 2009 -0700
+
+    Fix const mismatch compiler warnings in Solaris backend
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit f6084593c275c5dc1d6154f292991b20bffd68c2
+Author: edward shu <edward.shu@sun.com>
+Date:   Tue Apr 14 17:19:09 2009 -0700
+
+    Sun bug 6785726: libpciaccess needs to use the correct BAR index on solaris
+    
+    <http://bugs.opensolaris.org/bugdatabase/view_bug.do?bug_id=6785726>
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 2355e720ef3c285a44c88f914ebdc163a1c591a7
+Author: Mark Kettenis <mark.kettenis@xs4all.nl>
+Date:   Tue Apr 14 21:53:26 2009 +0200
+
+    Make libpciaccess on OpenBSD domain-aware.
+    
+    Makes X capable of discovering PCI devices
+    in other domains (on macppc or sparc64 for example).
+
+commit 9ba94caf57e3a8c3e9c6f3f5f068f4a7a7b3ff9d
+Author: Darren Smith <darren.smith@juno.com>
+Date:   Tue Apr 14 10:46:26 2009 -0400
+
+    Be more paranoid about reading bridge info (#20786)
+
+commit 72e75b00e4f3f7df3badb10c916126253204ae45
+Author: Robert Noland <rnoland@2hip.net>
+Date:   Fri Feb 27 00:34:28 2009 -0600
+
+    FreeBSD: Incorporate several fixes that have accumulated.
+    
+    	-Don't frob the BARs while they are enabled
+    	-Find proper pci bios address / length
+    	-Use the new PCIOCGETBAR ioctl if it exists
+    	  rather than frob the BARs ourself
+    	-Write must also be a power of two
+
+commit 5855cf5a2cc7ee920b42052372ab734003799d00
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Mon Feb 2 20:34:38 2009 -0800
+
+    Add README with pointers to mailing list, bugzilla & git repos
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 42b493490e90e1c5461d36beb3f2dc2580c7d25e
+Author: Paulo Cesar Pereira de Andrade <pcpa@mandriva.com.br>
+Date:   Wed Jan 28 18:03:21 2009 -0200
+
+    Janitor: Correct make distcheck and compiler warnings.
+
+commit 5bf4b32c2b3844c50e720be5820f2ce657ddea12
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Jan 22 16:14:22 2009 -0800
+
+    Solaris: Use bus-range properties to limit busses scanned on each node
+    
+    Based on code provided by Dan.Mick@sun.com
+
+commit 0488a2830a6a0d27d9be032607eda954a8c99801
+Author: Matthieu Herrb <matthieu.herrb@laas.fr>
+Date:   Sun Dec 7 19:18:29 2008 +0100
+
+    Fix a logic error in pci_device_netbsd_write()
+    
+    This is the same error as in pci_device_openbsd_write() that actually
+    prevented it to write anything.
+
+commit 565c8fcbf39a56319cee4f77f689dfc79e0c6614
+Author: Matthieu Herrb <matthieu.herrb@laas.fr>
+Date:   Sun Dec 7 19:00:22 2008 +0100
+
+    Sync with OpenBSD code.
+    
+    - implement pci_read_rom()
+    - only set MTRR on x86 cpus
+    - failure to set non-cacheable attributes is not fatal
+    - fix a logic error in pci_write()
+
+commit 8222fb8534cf09e433f0f3d68c35d6c390fbba5e
+Author: Matthieu Herrb <matthieu.herrb@laas.fr>
+Date:   Tue Nov 25 12:42:15 2008 +0100
+
+    Fix a logic error in pci_device_openbsd_write().
+
+commit 613c1e6d09930bab47f2c6983f220df002c2e2ce
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Wed Nov 19 09:37:49 2008 -0800
+
+    Add AC_SYS_LARGEFILE to configure.ac
+
+commit 0821f3b4eae5428cf1af5c4c056240f8991758f6
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Wed Nov 19 08:22:22 2008 -0800
+
+    Don't open/gzopen pci.ids if we're not going to read it
+
+commit ccbfd4cf2a7d203344bd1ffcb9d0024536a0eefa
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Tue Nov 18 19:54:42 2008 -0800
+
+    Fill in byte swapping routines for big-endian Solaris machines
+
+commit 7aca9465a61934d57781352f4fcc42b779392cd0
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Fri Oct 31 18:07:52 2008 +0100
+
+    Bump to 0.10.5
+
+commit 8b0be8751279f9bc8f15ced4e5384fa2b0f78711
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Fri Oct 31 17:33:50 2008 +0100
+
+    Make --without-zlib work
+
+commit 7a5ed759f13c3fc5f379cce2ca02c9ebfae5eae9
+Author: Robert Noland <rnoland@2hip.net>
+Date:   Wed Oct 29 22:20:35 2008 -0400
+
+    Fix FreeBSD systems which support pci domains.
+    
+    Support for FreeBSD based systems which support pci domains was broken
+    in the commit to support kFreeBSD.  Include config.h so that things are
+    happy again.
+
+commit 067f979cbd410ddb82aee702d8434552e35c7154
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Oct 17 14:09:52 2008 -0700
+
+    Version 0.10.4
+
+commit 714fef70e66b651e9a535d3d3cb20d055595a12d
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Oct 17 14:09:43 2008 -0700
+
+    Add scanpci.man to EXTRA_DIST
+
+commit 77f274b6386301cb31c074061a8c947a78b49da9
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Oct 17 13:51:28 2008 -0700
+
+    Update COPYING with the rest of the copyright/license notices from the code
+
+commit 482d1da02498a6a31a6d829a5be41727f6333f94
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Oct 17 13:48:46 2008 -0700
+
+    Add scanpci man page from Xorg
+
+commit f537fc50e014063d1a1297bfd82680ae3f170281
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Oct 16 21:17:24 2008 -0700
+
+    More minor Solaris cleanups
+
+commit 9a5565c72c13aa107167c9c4a4469dd11ac13714
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Oct 16 18:18:09 2008 -0700
+
+    Clean up formatting of solx_devfs.c
+
+commit de97e7e4c63146032c0badb9e0f0b1899dc8debf
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Oct 16 16:55:27 2008 -0700
+
+    Fix bus probing on Solaris/SPARC
+
+commit 110cdac97ca1bca3ec811ce0a71b2b24c1f80525
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Oct 16 13:33:01 2008 -0700
+
+    Correct Sun license notice
+
+commit 4c0d050c72a38e66a7b4ccb134e7e872eb0bf557
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Wed Oct 15 18:23:03 2008 -0700
+
+    scanpci: add -v flag to enable verbose mode like old scanpci
+
+commit 64d0c836d547847b752da6539792b94c803f206b
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Wed Oct 15 16:14:18 2008 -0700
+
+    Correct comment about devices used on Solaris
+
+commit d43d21c8cb0f917b65228852a03a7d501636f227
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Wed Oct 15 15:35:25 2008 -0700
+
+    Fix various typos (mostly in comments)
+
+commit 4c1c607c602e5e8d9277b9c01edfa7a8d10333cd
+Author: Juan RP <xtraeme@gmail.com>
+Date:   Sat Oct 11 20:28:03 2008 +0200
+
+    Add NetBSD support
+    
+    It's based in the OpenBSD code, but with differences because on NetBSD,
+    to set MTRRs we have to use i386/x86_64_set_mtrr() and link to libi386
+    or libx86_64.
+    
+    X.Org bug#17931 <http://bugs.freedesktop.org/show_bug.cgi?id=17931>
+
+commit 6ae378611bb4caaf57311734d3adcb7e10ac3622
+Author: Petr Salinger <petr.salinger@seznam.cz>
+Date:   Sat Oct 11 20:22:28 2008 +0200
+
+    Add support for GNU/kFreeBSD
+    
+    We need to initialize the FreeBSD backend on GNU/kFreeBSD and detect
+    whether pci_io.pi_sel.pc_domain member exists.
+    
+    X.Org bug#17882 <http://bugs.freedesktop.org/show_bug.cgi?id=17882>
+
+commit 968289fc3137ac0863c62d3c343153fa3e4aeb10
+Author: John Tapsell <johnflux@gmail.com>
+Date:   Tue Sep 23 17:26:09 2008 +0300
+
+    configure.ac: Make mtrr.h test more portable
+    
+    Use the standard AC_CHECK_HEADERS, which works for cross-compiling as
+    well as in various other locations.
+
+commit 79ed41882fd721a15c8b0bea7efeb98864d85dfb
+Author: Matthieu Herrb <matthieu.herrb@laas.fr>
+Date:   Sat Sep 20 18:28:59 2008 +0200
+
+    OpenBSD: allow 2 successives calls to pci_system_init().
+    
+    And fix pci_system_cleanup() to make it possible to call pci_system_init()
+    again.
+    ok kettenis at openbsd.
+
+commit 45015ab30b36bdaefd3f3aeab73d287023928826
+Author: Kel Modderman <kel@otaku42.de>
+Date:   Tue Jul 8 13:09:52 2008 +0200
+
+    Handle compressed pci.ids
+    
+    Add an option to build with zlib support so we can find
+    vendor/device information if the pci.ids file is gzipped.
+    
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+
+commit 32c64bb2386c55d5c7a3878ae9e3f95577f00875
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Wed Mar 12 15:00:26 2008 +0100
+
+    Hide one more private symbol
+
+commit 7282b53c47c2435c1ea23948272c9ccf1798178a
+Author: Jesse Barnes <jbarnes@hobbes.(none)>
+Date:   Mon Jun 23 11:24:04 2008 -0700
+
+    Support write combine resource files in Linux sysfs
+    
+    Starting with version 2.6.26, Linux will support resourceN_wc files which
+    export write combining mappings of PCI resource ranges, so support them if
+    present in libpciaccess.
+
+commit f49f66710b6c3cc5edfd0681cf7b69063cb4b893
+Author: Stefan Dirsch <sndirsch@suse.de>
+Date:   Mon Jun 23 10:50:30 2008 +0200
+
+    Fixed typo in output ("performace" --> "performance").
+
 commit ed0555e4225aec26aaaa40f4f3c15fd914390817
 Author: Adam Jackson <ajax@redhat.com>
 Date:   Tue Jun 10 15:24:56 2008 -0400

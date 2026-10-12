@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <sys/ioctl.h>
 
 #define SISUSBDRIVERVERSIONYEAR    5
 #define SISUSBDRIVERVERSIONMONTH   9
@@ -82,7 +83,6 @@
 #include "compiler.h"
 #include "xf86Priv.h"
 #include "xf86_OSproc.h"
-#include "xf86Resources.h"
 #include "xf86.h"
 #include "xf86Cursor.h"
 #include "xf86cmap.h"
@@ -94,7 +94,7 @@
 #include "xorgVersion.h"
 #define SISUSBMYSERVERNAME "X.org"
 #ifndef XF86_VERSION_NUMERIC
-#define XF86_VERSION_NUMERIC(major,minor,patch,snap,dummy) \
+#define XF86_VERSION_NUMERIC(major,minor,patch,snap) \
 	(((major) * 10000000) + ((minor) * 100000) + ((patch) * 1000) + snap)
 #define XF86_VERSION_CURRENT XF86_VERSION_NUMERIC(4,3,99,902)
 #endif
@@ -108,7 +108,7 @@
 #define SISUSBMYSERVERNAME "XFree86"
 #endif
 
-#if (XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,3,99,0,0)) || (defined(XvExtension))
+#if (XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,3,99,0)) || (defined(XvExtension))
 #include "xf86xv.h"
 #include <X11/extensions/Xv.h>
 #endif

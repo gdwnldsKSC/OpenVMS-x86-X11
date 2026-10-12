@@ -47,7 +47,8 @@
 #include "vidmodeproc.h"
 #include "xf86cmap.h"
 
-static DevPrivateKey VidModeKey = NULL;
+static int VidModeKeyIndex;
+static DevPrivateKey VidModeKey;
 static int VidModeCount = 0;
 static Bool VidModeClose(int i, ScreenPtr pScreen);
 
@@ -55,28 +56,22 @@ static Bool VidModeClose(int i, ScreenPtr pScreen);
 
 #endif
 
-#ifdef DEBUG
-# define DEBUG_P(x) ErrorF(x"\n");
-#else
-# define DEBUG_P(x) /**/
-#endif
-
-_X_EXPORT Bool
+Bool
 VidModeExtensionInit(ScreenPtr pScreen)
 {
 #ifdef XF86VIDMODE
     VidModePtr pVidMode;
     
     if (!xf86GetVidModeEnabled()) {
-	DEBUG_P("!xf86GetVidModeEnabled()");
+	DebugF("!xf86GetVidModeEnabled()\n");
 	return FALSE;
     }
 
-    VidModeKey = &VidModeKey;
+    VidModeKey = &VidModeKeyIndex;
 
     if (!dixSetPrivate(&pScreen->devPrivates, VidModeKey,
 		       xcalloc(sizeof(VidModeRec), 1))) {
-	DEBUG_P("xcalloc failed");
+	DebugF("xcalloc failed\n");
 	return FALSE;
     }
 
@@ -88,7 +83,7 @@ VidModeExtensionInit(ScreenPtr pScreen)
     VidModeCount++;
     return TRUE;
 #else
-    DEBUG_P("no vidmode extension");
+    DebugF("no vidmode extension\n");
     return FALSE;
 #endif
 }
@@ -122,13 +117,13 @@ VidModeAvailable(int scrnIndex)
     VidModePtr pVidMode;
 
     if (VidModeKey == NULL) {
-	DEBUG_P("VidModeKey == NULL");
+	DebugF("VidModeKey == NULL\n");
 	return FALSE;
     }
  
     pScrn = xf86Screens[scrnIndex];
     if (pScrn == NULL) {
-	DEBUG_P("pScrn == NULL");
+	DebugF("pScrn == NULL\n");
 	return FALSE;
     }
     
@@ -136,12 +131,12 @@ VidModeAvailable(int scrnIndex)
     if (pVidMode)
 	return TRUE;
     else {
-	DEBUG_P("pVidMode == NULL");
+	DebugF("pVidMode == NULL\n");
 	return FALSE;
     }
 }
 
-_X_EXPORT Bool
+Bool
 VidModeGetCurrentModeline(int scrnIndex, pointer *mode, int *dotClock)
 {
     ScrnInfoPtr pScrn;
@@ -160,7 +155,7 @@ VidModeGetCurrentModeline(int scrnIndex, pointer *mode, int *dotClock)
     return FALSE;
 }
 
-_X_EXPORT int
+int
 VidModeGetDotClock(int scrnIndex, int Clock)
 {
     ScrnInfoPtr pScrn;
@@ -175,7 +170,7 @@ VidModeGetDotClock(int scrnIndex, int Clock)
 	return pScrn->clock[Clock];
 }
 
-_X_EXPORT int
+int
 VidModeGetNumOfClocks(int scrnIndex, Bool *progClock)
 {
     ScrnInfoPtr pScrn;
@@ -193,7 +188,7 @@ VidModeGetNumOfClocks(int scrnIndex, Bool *progClock)
     }
 }
 
-_X_EXPORT Bool
+Bool
 VidModeGetClocks(int scrnIndex, int *Clocks)
 {
     ScrnInfoPtr pScrn;
@@ -214,7 +209,7 @@ VidModeGetClocks(int scrnIndex, int *Clocks)
 }
 
 
-_X_EXPORT Bool
+Bool
 VidModeGetFirstModeline(int scrnIndex, pointer *mode, int *dotClock)
 {
     ScrnInfoPtr pScrn;
@@ -237,7 +232,7 @@ VidModeGetFirstModeline(int scrnIndex, pointer *mode, int *dotClock)
     return VidModeGetNextModeline(scrnIndex, mode, dotClock);
 }
 
-_X_EXPORT Bool
+Bool
 VidModeGetNextModeline(int scrnIndex, pointer *mode, int *dotClock)
 {
     ScrnInfoPtr pScrn;
@@ -262,7 +257,7 @@ VidModeGetNextModeline(int scrnIndex, pointer *mode, int *dotClock)
     return FALSE;
 }
 
-_X_EXPORT Bool
+Bool
 VidModeDeleteModeline(int scrnIndex, pointer mode)
 {
     ScrnInfoPtr pScrn;
@@ -275,7 +270,7 @@ VidModeDeleteModeline(int scrnIndex, pointer mode)
     return TRUE;
 }
 
-_X_EXPORT Bool
+Bool
 VidModeZoomViewport(int scrnIndex, int zoom)
 {
     ScrnInfoPtr pScrn;
@@ -288,7 +283,7 @@ VidModeZoomViewport(int scrnIndex, int zoom)
     return TRUE;
 }
 
-_X_EXPORT Bool
+Bool
 VidModeSetViewPort(int scrnIndex, int x, int y)
 {
     ScrnInfoPtr pScrn;
@@ -309,7 +304,7 @@ VidModeSetViewPort(int scrnIndex, int x, int y)
     return TRUE;
 }
 
-_X_EXPORT Bool
+Bool
 VidModeGetViewPort(int scrnIndex, int *x, int *y)
 {
     ScrnInfoPtr pScrn;
@@ -323,7 +318,7 @@ VidModeGetViewPort(int scrnIndex, int *x, int *y)
     return TRUE;
 }
 
-_X_EXPORT Bool
+Bool
 VidModeSwitchMode(int scrnIndex, pointer mode)
 {
     ScrnInfoPtr pScrn;
@@ -345,7 +340,7 @@ VidModeSwitchMode(int scrnIndex, pointer mode)
     return retval;
 }
 
-_X_EXPORT Bool
+Bool
 VidModeLockZoom(int scrnIndex, Bool lock)
 {
     ScrnInfoPtr pScrn;
@@ -362,7 +357,7 @@ VidModeLockZoom(int scrnIndex, Bool lock)
     return TRUE;
 }
 
-_X_EXPORT Bool
+Bool
 VidModeGetMonitor(int scrnIndex, pointer *monitor)
 {
     ScrnInfoPtr pScrn;
@@ -376,7 +371,7 @@ VidModeGetMonitor(int scrnIndex, pointer *monitor)
     return TRUE;
 }
 
-_X_EXPORT ModeStatus
+ModeStatus
 VidModeCheckModeForMonitor(int scrnIndex, pointer mode)
 {
     ScrnInfoPtr pScrn;
@@ -389,7 +384,7 @@ VidModeCheckModeForMonitor(int scrnIndex, pointer mode)
     return xf86CheckModeForMonitor((DisplayModePtr)mode, pScrn->monitor);
 }
 
-_X_EXPORT ModeStatus
+ModeStatus
 VidModeCheckModeForDriver(int scrnIndex, pointer mode)
 {
     ScrnInfoPtr pScrn;
@@ -402,7 +397,7 @@ VidModeCheckModeForDriver(int scrnIndex, pointer mode)
     return xf86CheckModeForDriver(pScrn, (DisplayModePtr)mode, 0);
 }
 
-_X_EXPORT void
+void
 VidModeSetCrtcForMode(int scrnIndex, pointer mode)
 {
     ScrnInfoPtr pScrn;
@@ -421,7 +416,7 @@ VidModeSetCrtcForMode(int scrnIndex, pointer mode)
     return;
 }
 
-_X_EXPORT Bool
+Bool
 VidModeAddModeline(int scrnIndex, pointer mode)
 {
     ScrnInfoPtr pScrn;
@@ -442,7 +437,7 @@ VidModeAddModeline(int scrnIndex, pointer mode)
     return TRUE;
 }
 
-_X_EXPORT int
+int
 VidModeGetNumOfModes(int scrnIndex)
 {
     pointer mode = NULL;
@@ -458,7 +453,7 @@ VidModeGetNumOfModes(int scrnIndex)
     } while (TRUE);
 }
 
-_X_EXPORT Bool
+Bool
 VidModeSetGamma(int scrnIndex, float red, float green, float blue)
 {
     ScrnInfoPtr pScrn;
@@ -477,7 +472,7 @@ VidModeSetGamma(int scrnIndex, float red, float green, float blue)
 	return TRUE;
 }
 
-_X_EXPORT Bool
+Bool
 VidModeGetGamma(int scrnIndex, float *red, float *green, float *blue)
 {
     ScrnInfoPtr pScrn;
@@ -492,7 +487,7 @@ VidModeGetGamma(int scrnIndex, float *red, float *green, float *blue)
     return TRUE;
 }
 
-_X_EXPORT Bool
+Bool
 VidModeSetGammaRamp(int scrnIndex, int size, CARD16 *r, CARD16 *g, CARD16 *b)
 {
     ScrnInfoPtr pScrn;
@@ -505,7 +500,7 @@ VidModeSetGammaRamp(int scrnIndex, int size, CARD16 *r, CARD16 *g, CARD16 *b)
     return TRUE;
 }
 
-_X_EXPORT Bool
+Bool
 VidModeGetGammaRamp(int scrnIndex, int size, CARD16 *r, CARD16 *g, CARD16 *b)
 {
     ScrnInfoPtr pScrn;
@@ -518,7 +513,7 @@ VidModeGetGammaRamp(int scrnIndex, int size, CARD16 *r, CARD16 *g, CARD16 *b)
     return TRUE;
 }
 
-_X_EXPORT int
+int
 VidModeGetGammaRampSize(int scrnIndex)
 {
     if (!VidModeAvailable(scrnIndex))
@@ -527,7 +522,7 @@ VidModeGetGammaRampSize(int scrnIndex)
     return xf86GetGammaRampSize(xf86Screens[scrnIndex]->pScreen);
 }
 
-_X_EXPORT pointer
+pointer
 VidModeCreateMode(void)
 {
     DisplayModePtr mode;
@@ -543,14 +538,14 @@ VidModeCreateMode(void)
     return mode;
 }
 
-_X_EXPORT void
+void
 VidModeCopyMode(pointer modefrom, pointer modeto)
 {
   memcpy(modeto, modefrom, sizeof(DisplayModeRec));
 }
 
 
-_X_EXPORT int
+int
 VidModeGetModeValue(pointer mode, int valtyp)
 {
   int ret = 0;
@@ -593,7 +588,7 @@ VidModeGetModeValue(pointer mode, int valtyp)
   return ret;
 }
 
-_X_EXPORT void
+void
 VidModeSetModeValue(pointer mode, int valtyp, int val)
 {
   switch (valtyp) {
@@ -634,7 +629,7 @@ VidModeSetModeValue(pointer mode, int valtyp, int val)
   return;
 }
 
-_X_EXPORT vidMonitorValue
+vidMonitorValue
 VidModeGetMonitorValue(pointer monitor, int valtyp, int indx)
 {
   vidMonitorValue ret;

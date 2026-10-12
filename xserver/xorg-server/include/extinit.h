@@ -32,12 +32,12 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "extnsionst.h"
 
-void
+extern void
 XInputExtensionInit(
 	void
 	);
 
-void
+extern _X_EXPORT void
 AssignTypeAndName (
 	DeviceIntPtr           /* dev */,
 	Atom                   /* type */,

@@ -147,7 +147,7 @@ XCreateColormap, XCopyColormapAndFree, XFreeColormap, XColor \- create, copy, or
 .SH SYNTAX
 .HP
 Colormap XCreateColormap\^(\^Display *\fIdisplay\fP\^, Window \fIw\fP\^,
-Visual *\fIvisual\fP\^, int \fIalloc\fP\^,); 
+Visual *\fIvisual\fP\^, int \fIalloc\fP\^);
 .HP
 Colormap XCopyColormapAndFree\^(\^Display *\fIdisplay\fP\^, Colormap
 \fIcolormap\fP\^); 
@@ -360,10 +360,10 @@ alternatives can generate this error.
 .ZN BadWindow
 A value for a Window argument does not name a defined Window.
 .SH "SEE ALSO"
-XAllocColor(3X11),
-XChangeWindowAttributes(3X11),
-XCreateWindow(3X11),
-XQueryColor(3X11),
-XStoreColors(3X11)
+XAllocColor(__libmansuffix__),
+XChangeWindowAttributes(__libmansuffix__),
+XCreateWindow(__libmansuffix__),
+XQueryColor(__libmansuffix__),
+XStoreColors(__libmansuffix__)
 .br
 \fI\*(xL\fP

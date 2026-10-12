@@ -22,52 +22,46 @@ dnl DEALINGS IN THE SOFTWARE.
 dnl
 dnl Process this file with autoconf to create configure.
 
-# AC_DEFINE_DIR macro from autoconf-archive.cryp.to
-AC_DEFUN([AC_DEFINE_DIR], [
-  prefix_NONE=
-  exec_prefix_NONE=
-  test "x$prefix" = xNONE && prefix_NONE=yes && prefix=$ac_default_prefix
-  test "x$exec_prefix" = xNONE && exec_prefix_NONE=yes && exec_prefix=$prefix
-dnl In Autoconf 2.60, ${datadir} refers to ${datarootdir}, which in turn
-dnl refers to ${prefix}.  Thus we have to use `eval' twice.
-  eval ac_define_dir="\"[$]$2\""
-  eval ac_define_dir="\"$ac_define_dir\""
-  AC_SUBST($1, "$ac_define_dir")
-  AC_DEFINE_UNQUOTED($1, "$ac_define_dir", [$3])
-  test "$prefix_NONE" && prefix=NONE
-  test "$exec_prefix_NONE" && exec_prefix=NONE
-])
-
 AC_PREREQ([2.57])
 
-AC_INIT(libpciaccess, 0.10.3, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg&component=libpciaccess], libpciaccess)
+AC_INIT(libpciaccess, 0.10.9, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg&component=libpciaccess], libpciaccess)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
+# Require xorg-macros: XORG_CWARNFLAGS, XORG_CHANGELOG
+m4_ifndef([XORG_MACROS_VERSION], [AC_FATAL([must install xorg-macros 1.2 or later before running autoconf/autogen])])
+XORG_MACROS_VERSION(1.2)
 AM_CONFIG_HEADER(config.h)
 
 # Check for progs
 AC_PROG_CC
 AC_PROG_LIBTOOL
+XORG_CWARNFLAGS
 
-m4_ifdef([AS_HELP_STRING], , [m4_define([AS_HELP_STRING], m4_defn([AC_HELP_STRING]))])
+pciids_path=/usr/share/hwdata
+AC_ARG_WITH(pciids-path, AC_HELP_STRING([--with-pciids-path=PCIIDS_PATH],
+	[Path to pci.ids file]), [pciids_path="$withval"])
+AC_DEFINE_DIR(PCIIDS_PATH, pciids_path, [Path to pci.ids])
 
-DEFAULT_PCIIDS_PATH=/usr/share/hwdata
-AC_ARG_WITH(pciids-path,
-	AS_HELP_STRING([--with-pciids-path=PCIIDS_PATH], [Path to pci.ids file]),
-	[PCIIDS_PATH="$withval"],
-	[PCIIDS_PATH="$DEFAULT_PCIIDS_PATH"])
-AC_DEFINE_DIR(PCIIDS_PATH, PCIIDS_PATH, [Path to pci.ids])
+AC_ARG_ENABLE(linux-rom-fallback, AS_HELP_STRING([--enable-linux-rom-fallback],
+		[Enable support for falling back to /dev/mem for roms (default: disabled)]),
+		[LINUX_ROM=$enableval],[LINUX_ROM=no])
 
-if test "x$GCC" = "xyes"; then
-       GCC_WARNINGS1="-Wall -Wpointer-arith -Wstrict-prototypes"
-       GCC_WARNINGS2="-Wmissing-prototypes -Wmissing-declarations"
-       GCC_WARNINGS3="-Wnested-externs"
-       GCC_WARNINGS="$GCC_WARNINGS1 $GCC_WARNINGS2 $GCC_WARNINGS3"
-       if test "x$WERROR" = "xyes"; then
-               GCC_WARNINGS="${GCC_WARNINGS} -Werror"
-       fi
-       PCIACCESS_CFLAGS="$PCIACCESS_CFLAGS $GCC_WARNINGS"
+if test "x$LINUX_ROM" = xyes; then
+	AC_DEFINE(LINUX_ROM, 1, [Linux ROM read fallback])
+fi
+
+use_zlib=no
+AC_ARG_WITH(zlib, AC_HELP_STRING([--with-zlib],
+	[Enable zlib support to read gzip compressed pci.ids]),
+	[use_zlib="$withval"])
+if test "x$use_zlib" = xyes; then
+	AC_CHECK_LIB(z, gzopen,
+	[PCIACCESS_LIBS="$PCIACCESS_LIBS -lz"],
+	[AC_MSG_ERROR(Check for zlib library failed)])
+	AC_CHECK_HEADER([zlib.h],
+	[AC_DEFINE(HAVE_ZLIB, 1, [Use zlib to read gzip compressed pci.ids])],
+	[AC_MSG_ERROR(Check for zlib.h header file failed)])
 fi
 
 case $host_os in
@@ -76,6 +70,17 @@ case $host_os in
 		;;
 	*linux*)
 		linux=yes
+		;;
+	*netbsd*)
+		case $host in
+		*i386*)
+			PCIACCESS_LIBS="-li386"
+			;;
+		*x86_64*|*amd64*)
+			PCIACCESS_LIBS="-lx86_64"
+			;;
+		esac
+		netbsd=yes
 		;;
 	*openbsd*)
 		openbsd=yes
@@ -88,19 +93,31 @@ esac
 
 AM_CONDITIONAL(LINUX, [test "x$linux" = xyes])
 AM_CONDITIONAL(FREEBSD, [test "x$freebsd" = xyes])
+AM_CONDITIONAL(NETBSD, [test "x$netbsd" = xyes])
 AM_CONDITIONAL(OPENBSD, [test "x$openbsd" = xyes])
 AM_CONDITIONAL(SOLARIS, [test "x$solaris" = xyes])
 
-AC_CHECK_FILE([/usr/include/asm/mtrr.h],
-              [have_mtrr_h="yes"], [have_mtrr_h="no"])
+AC_SYS_LARGEFILE
+
+AC_CHECK_HEADER([asm/mtrr.h], [have_mtrr_h="yes"], [have_mtrr_h="no"])
+
 if test "x$have_mtrr_h" = xyes; then
     AC_DEFINE(HAVE_MTRR, 1, [Use MTRRs on mappings])
 fi
+
+dnl check for the pci_io.pi_sel.pc_domain
+AC_CHECK_MEMBER([struct pci_io.pi_sel.pc_domain],
+               [AC_DEFINE(HAVE_PCI_IO_PC_DOMAIN,1,[Have the pci_io.pi_sel.pc_domain member.])],
+               [],
+               [ #include <sys/types.h>
+                 #include <sys/pciio.h>
+               ])
 
 AC_SUBST(PCIACCESS_CFLAGS)
 AC_SUBST(PCIACCESS_LIBS)
 		  
 XORG_RELEASE_VERSION
+XORG_CHANGELOG
 
 AC_OUTPUT([Makefile
 	   src/Makefile

@@ -66,24 +66,30 @@
 #include "xf86Optrec.h"
 
 #include <sys/types.h>
+#ifndef XORG_STATIC_MODULES
 #include <regex.h>
 #include <dirent.h>
+#endif
 #include <limits.h>
 
 #define TestFree(a) if (a) { xfree (a); a = NULL; }
 
+#ifndef XORG_STATIC_MODULES
 typedef struct _pattern {
     const char *pattern;
     regex_t rex;
 } PatternRec, *PatternPtr;
+#endif
 
 /* Prototypes for static functions */
+#ifndef XORG_STATIC_MODULES
 static char *FindModule(const char *, const char *, const char **,
 			PatternPtr);
+static char *LoaderGetCanonicalName(const char *, PatternPtr);
+#endif
 static Bool CheckVersion(const char *, XF86ModuleVersionInfo *,
 			 const XF86ModReqInfo *);
 static void UnloadModuleOrDriver(ModuleDescPtr mod);
-static char *LoaderGetCanonicalName(const char *, PatternPtr);
 static void RemoveChild(ModuleDescPtr);
 static ModuleDescPtr doLoadModule(const char *, const char *, const char **,
 				  const char **, pointer,
@@ -113,7 +119,9 @@ FreeStringList(char **paths)
     xfree(paths);
 }
 
+#ifndef XORG_STATIC_MODULES
 static char **defaultPathList = NULL;
+#endif
 
 static Bool
 PathIsAbsolute(const char *path)
@@ -131,6 +139,7 @@ PathIsAbsolute(const char *path)
  * elements, rejecting any that are not full absolute paths, and appending
  * a '/' when it isn't already present.
  */
+#ifndef XORG_STATIC_MODULES
 static char **
 InitPathList(const char *path)
 {
@@ -569,6 +578,20 @@ LoaderListDirs(const char **subdirlist, const char **patternlist)
 	listing[n] = NULL;
     return listing;
 }
+#else
+void
+LoaderSetPath(const char *path)
+{
+    /* Discovery belongs to the platform's linked-provider backend. */
+    (void)path;
+}
+
+_X_EXPORT char **
+LoaderListDirs(const char **subdirlist, const char **patternlist)
+{
+    return LoaderStaticListDirs(subdirlist, patternlist);
+}
+#endif
 
 _X_EXPORT void
 LoaderFreeDirList(char **list)
@@ -846,19 +869,31 @@ doLoadModule(const char *module, const char *path, const char **subdirlist,
 	     int *errmaj, int *errmin, int flags)
 {
     XF86ModuleData *initdata = NULL;
-    char **pathlist = NULL;
     char *found = NULL;
     char *name = NULL;
-    char **path_elem = NULL;
     char *p = NULL;
     ModuleDescPtr ret = NULL;
     int wasLoaded = 0;
+#ifndef XORG_STATIC_MODULES
+    char **pathlist = NULL;
+    char **path_elem = NULL;
     PatternPtr patterns = NULL;
     int noncanonical = 0;
     char *m = NULL;
+#endif
 
     xf86MsgVerb(X_INFO, 3, "LoadModule: \"%s\"", module);
 
+#ifdef XORG_STATIC_MODULES
+    found = LoaderStaticFindModule(module, path, subdirlist, patternlist);
+    if (found)
+	name = xstrdup(module);
+    if (found && !name) {
+	if (errmaj) *errmaj = LDR_NOMEM;
+	if (errmin) *errmin = 0;
+	goto LoadModule_fail;
+    }
+#else
     patterns = InitPatterns(patternlist);
     name = LoaderGetCanonicalName(module, patterns);
     noncanonical = (name && strcmp(module, name) != 0);
@@ -879,8 +914,10 @@ doLoadModule(const char *module, const char *path, const char **subdirlist,
 	    *errmin = 0;
 	goto LoadModule_fail;
     }
-    ret = NewModuleDesc(name);
-    if (!ret) {
+#endif
+    if (name)
+	ret = NewModuleDesc(name);
+    if (name && !ret) {
 	if (errmaj)
 	    *errmaj = LDR_NOMEM;
 	if (errmin)
@@ -888,6 +925,7 @@ doLoadModule(const char *module, const char *path, const char **subdirlist,
 	goto LoadModule_fail;
     }
 
+#ifndef XORG_STATIC_MODULES
     pathlist = InitPathList(path);
     if (!pathlist) {
 	/* This could be a malloc failure too */
@@ -918,6 +956,7 @@ doLoadModule(const char *module, const char *path, const char **subdirlist,
 	}
     }
 
+#endif
     /* 
      * did we find the module?
      */
@@ -1021,8 +1060,10 @@ doLoadModule(const char *module, const char *path, const char **subdirlist,
     ret = NULL;
 
   LoadModule_exit:
+#ifndef XORG_STATIC_MODULES
     FreePathList(pathlist);
     FreePatterns(patterns);
+#endif
     TestFree(found);
     TestFree(name);
     TestFree(p);
@@ -1299,6 +1340,7 @@ LoaderErrorMsg(const char *name, const char *modname, int errmaj, int errmin)
 		modname, msg, errmin);
 }
 
+#ifndef XORG_STATIC_MODULES
 /* Given a module path or file name, return the module's canonical name */
 static char *
 LoaderGetCanonicalName(const char *modname, PatternPtr patterns)
@@ -1331,6 +1373,7 @@ LoaderGetCanonicalName(const char *modname, PatternPtr patterns)
     /* If there is no match, return the whole name minus the leading path */
     return xstrdup(s);
 }
+#endif
 
 /*
  * Return the module version information.

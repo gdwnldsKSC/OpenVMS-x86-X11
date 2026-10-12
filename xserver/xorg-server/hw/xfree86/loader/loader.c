@@ -111,10 +111,12 @@ LoaderInit(void)
         xf86Msg(X_ERROR, "LD_BIND_NOW is set, dlloader will NOT work!\n");
     }
 
+#ifndef XORG_STATIC_MODULES
     xf86MsgVerb(X_INFO, 2, "Loader magic: %p\n", (void *)
 		((long)dixLookupTab ^ (long)extLookupTab
 	        ^ (long)fontLookupTab ^ (long)miLookupTab
 		^ (long)xfree86LookupTab));
+#endif
     xf86MsgVerb(X_INFO, 2, "Module ABI versions:\n");
     xf86ErrorFVerb(2, "\t%s: %d.%d\n", ABI_CLASS_ANSIC,
 		   GET_ABI_MAJOR(LoaderVersionInfo.ansicVersion),
@@ -470,6 +472,9 @@ LoaderResetOptions(void)
 void
 LoaderSetOptions(unsigned long opts)
 {
+#ifdef XORG_STATIC_MODULES
+    LoaderStaticSetOptions(opts);
+#endif
     LoaderOptions |= opts;
 }
 

@@ -103,6 +103,15 @@ ModuleDescPtr AddSibling(ModuleDescPtr head, ModuleDescPtr new);
 void LoaderSetPath(const char *path);
 void LoaderSortExtensions(void);
 
+#ifdef XORG_STATIC_MODULES
+/* Platform-owned discovery for statically linked modules.  Returned strings
+ * are allocated with the server allocator and released by the loader. */
+char *LoaderStaticFindModule(const char *, const char *, const char **,
+                            const char **);
+char **LoaderStaticListDirs(const char **, const char **);
+void LoaderStaticSetOptions(unsigned long);
+#endif
+
 int LoaderUnload(int);
 unsigned long LoaderGetModuleVersion(ModuleDescPtr mod);
 

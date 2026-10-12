@@ -103,19 +103,23 @@ XKB_DATA. Stages 356 upstream keyboard-data files and the native compiler togeth
 XT. Produces `XT.OLB` — complete static Xt, with P64 host types and generated string tables.  
 XMU. Produces `XMU.OLB` — complete static Xmu.  
 XVFB. Produces `XVFB.EXE` — headless core/Render/XKB/X Input server.  
-XF86_VIDEO_VMWARE. Produces `VMWARE_DRV.OLB` — all seven unchanged xf86-video-vmware 10.14.1 driver modules, static/no-loader with 64-bit pointers; the consuming server supplies XFree86 services. Does not link or activate the driver.  
-SHADOWFB. Produces `SHADOWFB.OLB` — the unchanged static XFree86 shadowfb module with Render and before/after drawing callbacks used by VMware; loader-only metadata excluded. Separate from `SHADOW`.  
-VGAHW. Produces `VGAHW.OLB` — the unchanged static XFree86 VGA hardware support module with 64-bit pointers; loader-only metadata excluded. The consuming server supplies port I/O and XFree86 services. Does not access hardware during the build.  
-RAMDAC. Produces `RAMDAC.OLB` — all eight unchanged static XFree86 RAMDAC/cursor objects, including IBM, BT, TI, and the upstream bit-order wrapper; loader-only metadata and optional ARGB cursors excluded. The consuming server supplies XFree86 and cursor services.  
+XF86_VIDEO_VMWARE. Produces `VMWARE_DRV.OLB` — all seven unchanged xf86-video-vmware 10.14.1 driver modules with 64-bit pointers and module metadata; the consuming server supplies XFree86 and loader services. Does not link or activate the driver.  
+SHADOWFB. Produces `SHADOWFB.OLB` — both unchanged upstream XFree86 shadowfb objects, including module metadata and Render before/after drawing callbacks used by VMware. Separate from `SHADOW`.  
+VGAHW. Produces `VGAHW.OLB` — both unchanged upstream XFree86 VGA hardware support objects with 64-bit pointers, including module metadata. The consuming server supplies port I/O and XFree86 services. Does not access hardware during the build.  
+RAMDAC. Produces `RAMDAC.OLB` — all nine unchanged upstream XFree86 RAMDAC/cursor objects, including module metadata, IBM, BT, TI, and the upstream bit-order wrapper; optional ARGB cursors excluded. The consuming server supplies XFree86 and cursor services.  
 XAA. Produces `XAA.OLB` — all 54 static XFree86 acceleration objects, including bit-order, fixed-base, triple-bit and polysegment variants; Render enabled, with minimal P64 address-alignment fixes. Loadable hooks, Xinerama and architecture assembly excluded.  
 XF86CONFIG. Produces `XF86CONFIG.OLB` — all 17 upstream XFree86 configuration-parser C sources unchanged, with VMS-only external-name aliases in headers. Reads, validates and writes configuration data; the consuming program supplies diagnostics. Uses current-process file permissions without Unix saved-ID switching; upstream Vendor-subsection Identifier and built-in scanner-reset defects remain.  
 RAC. Produces `RAC.OLB` — the unchanged static XFree86 resource-access control module with Render, framebuffer, cursor, colormap and viewport wrappers; loader-only metadata excluded. The consuming server supplies device-access and core services; upstream CloseScreen omits CreatePixmap restoration.  
 COMMON. Produces `COMMON.OLB` — all 33 objects of the selected static XFree86 common profile, including generated default modes, CVT and generic keyboard mapping; XKB, X Input and Render enabled, loader and XVideo excluded. The consuming server supplies OS, PCI and core services.  
 INIT. Produces `INIT.OLB` — the separate upstream XFree86 initialization object, with a VMS guard rejecting unsupported Unix VTInit commands; the consuming server supplies OS and device-dependent services.  
+LOADER. Produces `LOADER.OLB` — five upstream loader objects with a minimal static-module platform boundary, retaining upstream module and ABI checks; the consuming server supplies native module discovery and loading. Dynamic image loading and Unix symbol tables excluded.  
 BUS. Produces `BUS.OLB` — the unchanged generic XFree86 PCI bus module with 64-bit pointers; the consuming platform supplies PCI access, resource sizes and address translation. Native hardware backends and generic domain/mapping assumptions are not selected.  
 MISC. Produces `MISC.OLB` — all five unchanged portable C modules of XFree86 OS-support libmisc; the consuming platform supplies port I/O, delay and interrupt exclusion.  
 SCANPCI. Produces `SCANPCI.OLB` — the unchanged full XFree86 PCI identification and reporting module with 64-bit pointers; regenerates its tables using the upstream Perl generator. The consuming server supplies PCI enumeration and diagnostics.  
 XORGXKB. Produces `XORGXKB.OLB` — all three unchanged XFree86 keyboard-action modules with 64-bit pointers; the consuming server supplies action dispatch. Replaces, rather than accompanies, the generic XKB DDX stubs at link time.  
+XORGFB. Produces `FB.OLB` — the 36-object Xorg framebuffer variant with module metadata and XFree86 colormaps, retaining the P64 alignment adaptation. Generic `FB` and `XSERVER_CORE` builds remain separate.  
+XF86_INPUT_KEYBOARD. Produces `KBD_DRV.OLB` — the unchanged upstream keyboard driver and AT scan-code helper with 64-bit pointers and module metadata; `COMMON.OLB` supplies the generic key map, and the consuming server supplies native keyboard services.  
+XF86_INPUT_MOUSE. Produces `MOUSE_DRV.OLB` — both unchanged upstream mouse driver sources with 64-bit pointers and module metadata; `COMMON.OLB` supplies input buffering, and the consuming server supplies native mouse and serial services.  
 MKFONTDIR. Produces the native font-index launcher.  
 FONTS. Builds 1,006 PCF fonts and scalable-font/encoding indexes.  
 NLS. Builds locale and Compose data for 57 locales.  
@@ -229,10 +233,14 @@ $ @[.VMS-SUPPORT]BUILD XF86CONFIG
 $ @[.VMS-SUPPORT]BUILD RAC  
 $ @[.VMS-SUPPORT]BUILD COMMON  
 $ @[.VMS-SUPPORT]BUILD INIT  
+$ @[.VMS-SUPPORT]BUILD LOADER  
 $ @[.VMS-SUPPORT]BUILD BUS  
 $ @[.VMS-SUPPORT]BUILD MISC  
 $ @[.VMS-SUPPORT]BUILD SCANPCI  
 $ @[.VMS-SUPPORT]BUILD XORGXKB  
+$ @[.VMS-SUPPORT]BUILD XORGFB  
+$ @[.VMS-SUPPORT]BUILD XF86_INPUT_KEYBOARD  
+$ @[.VMS-SUPPORT]BUILD XF86_INPUT_MOUSE  
 $ @[.VMS-SUPPORT]BUILD MKFONTDIR  
 $ @[.VMS-SUPPORT]BUILD FONTS  
 $ @[.VMS-SUPPORT]BUILD NLS  

@@ -38,7 +38,9 @@
  */
 
 #undef OSNAME
-#if defined(__linux__)
+#if defined(__VMS)
+#define OSNAME "openvms"
+#elif defined(__linux__)
 #define OSNAME "linux"
 #elif defined(__FreeBSD__)
 #define OSNAME "freebsd"

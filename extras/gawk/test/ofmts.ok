@@ -1,0 +1,2 @@
+gawk: ofmts.awk:1: warning: bad `OFMT' specification `%s'
+1.2 2.2

@@ -1,0 +1,207 @@
+2026-07-08         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.4.1: Release tar ball made.
+
+2026-07-03         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* config_h.com, generate_config_vms_h_gawk.com, vms_args.c,
+	vms_cli.c, vms_fwrite.c, vms_gawk.c, vms_misc.c,
+	vms_popen.c: Update copyright year.
+
+2026-03-12         Arnold D. Robbins     <arnold@skeeve.com>
+
+	All files updated, replacing the FSF address with a
+	link to the licenses: https://www.gnu.org/licenses/.
+	Thanks to Xose Vazquez Perez <xose.vazquez@gmail.com>
+	for pointing out the need.
+
+2026-02-22         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.4.0: Release tar ball made.
+
+2026-02-12         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* gawkmisc.vms: Update copyright year.
+
+2026-02-03         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* descrip.mms: Removing GCC and VAX C support.
+	  Disable build attempts for modules not compiling using VAX/VMS.
+	  Add vms_printf to convert %z to %l formatting.
+	  Use static config_vms.h instead of generating it.
+	* vms/gawk_build_steps.txt: Minor updates.
+	* vms/gawk_release_note_start.txt:
+	  gawk 5.0.1 is the last version that supports building on VAX/VMS.
+	* redirect.h: Deprecation started, starting to move anything still
+	  needed to config_vms.h.
+	* vms/config_vms.h: New file, used to be generated.
+	* vms/vms_printf.c: New file to handle %z format modifiers.
+	* vms/inttypes.h: From gnulib-assist.
+	  gnulib-assist is a project to simplify porting GNU code to OpenVMS
+	  by providing missing header definitions and compatibility modules.
+	  gnulib-assist is still incomplete and is being developed.
+	* vms/math.h: From gnulib-assist.
+	* vms/stdint.h From gnulib-assist.
+	* vms/stdio.h from gnulib-assist.
+
+2026-01-18         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* descrip.mms: Update to match current source tree.
+	* gawk_release_note_start.txt: Add MMS version for x86.
+	Encompasserve has gone back to its historical decsusserve name.
+	* pcsi_gawk_file_list.txt: Comment out info files for now.
+	* redirect.h: Update to match current source tree.
+
+2026-01-18         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* redirect.h remove broken getopt prototype.
+
+2026-01-18         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* gawk_build_steps.txt: Updates for X86_64.
+	* gawkmisc.vms: Spelling fixes.
+
+2025-04-02         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.3.2: Release tar made.
+
+2025-02-24         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* vms_fwrite.c, vms_misc.c: Update copyright year.
+
+2025-01-03         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* vms_fwrite: Fix alloca define conflict.
+	* vmstest.com: Fix colontest properly.
+
+2025-01-01         John E. Malmberg      <wb8tyw@qsl.net>
+
+	First build on OpenVMS 9.2-2 x86_64.
+
+	* descrip.mms: Work around MMS 4.0 bugs.
+	* generate_config_vms_h_gawk.com: Changes for V9.2-2
+	* pcsi_product_gawk.com: Support MMS if MMK not present
+	* make_pcsi_gawk_kit_name.com: Support x86_64 hardware
+	* vmstest.com: Fix colontest, skip profile2 for VMS bug.
+
+2024-12-15         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* vms_misc.c, vms_popen.c: Adjust calls of emalloc().
+
+2024-09-17         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.3.1: Release tar made.
+
+2024-08-11         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* vmsbuild.com, descrip.mms: Add printf.c to build.
+
+2023-11-02         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.3.0: Release tar ball made.
+
+2023-05-07         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.2.2: Release tar ball made.
+
+2023-04-14         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* vms_args.c, vms_cli.c, vms_fwrite.c, vms_gawk.c, vms_misc.c,
+	vms_popen.c: Update copyright year.
+
+2023-03-18         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* redirect.h: Fix prototype for read()
+	* generate_config_vms_h_gawk.com: Disable OpenVMS stat.h extensions
+	  define HAVE_STRPTIME=1
+
+2023-02-03         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* config_h.com: Handle HAVE_C_BOOL
+
+2022-11-23         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* vms_misc.c, vms_popen.c, vms_fwrite.c, vms_cli.c, vms_gawk.c,
+	vms_args.c: Update to GPL 3. Thanks to Corinna Vinschen for
+	noticing the GPL version issue.
+
+2022-11-17         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.2.1: Release tar ball made.
+
+2022-09-04         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.2.0: Release tar ball made.
+
+2022-08-06         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* config_h.com: Update for new VMS versions.
+	* descrip.mms: mbsupport.h no longer exists.
+	* generate_vms_h_gawk.com: Update for new VMS versions.
+	* vmstest.com: Fix symtab10 test.
+
+2022-07-14         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* gawkmisc.vms: Update copyright.
+
+2021-12-01         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* gawkmisc.vms (os_maybe_set_errno): New, empty function.
+
+2021-10-27         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.1.1: Release tar ball made.
+
+2021-07-26         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* descrip.mms: Add dynarray_resize to build.
+	* vmsbuild.com: Add dynarray_resize to build.
+
+2021-01-08         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* gawkmisc.vms (quote): Make const char *.
+	(defpath): Make const char *.
+	(deflibpath): Make const char *.
+	(envsep): Make const char *.
+	(gawk_name): Now returns const char *.
+
+2020-04-14         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.1.0: Release tar ball made.
+
+2020-03-07         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* vmstest.com: Fix profile5 test.
+
+2020-02-11         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* vmstest.com: Fix profile5 test.
+
+2020-02-11         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* vmstest.com: Simplify test error handling.
+
+2020-02-04         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* vmstest.com: Fix manyfile test cleanup to handle a search list.
+
+2020-02-04         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* generate_config_vms_h_gawk.com:
+	Create stdint.h if not supplied by OpenVMS and
+	add in the definitions required by support/dfa.h
+
+2020-02-03         John E. Malmberg      <wb8tyw@qsl.net>
+
+	* vmstest.com: Fix some issues where a test failure would stop the
+	entire test run.
+
+2019-06-18         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.0.1: Release tar ball made.
+
+2019-04-12         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* ChangeLog.1: Rotated ChangeLog into this file.
+	* ChangeLog: Created anew for gawk 5.0.0 and on.
+	* 5.0.0: Release tar ball made.

@@ -32,9 +32,6 @@
 /* Build DPMS extension */
 #define DPMSExtension 1
 
-/* Built-in output drivers */
-#define DRIVERS {}
-
 /* Build GLX extension */
 #define GLXEXT 1
 
@@ -46,9 +43,6 @@
 
 /* Support SHM */
 #define HAS_SHM 1
-
-/* Built-in input drivers */
-#define IDRIVERS {}
 
 /* Support IPv6 for TCP connections */
 #define IPv6 1
@@ -70,9 +64,6 @@
 
 /* Internal define for Xinerama */
 #define PANORAMIX 1
-
-/* Support pixmap privates */
-#define PIXPRIV 1
 
 /* Support RANDR extension */
 #define RANDR 1
@@ -110,12 +101,6 @@
 /* Support UNIX socket connections */
 #define UNIXCONN 1
 
-/* Use builtin rgb color database */
-/* #undef USE_RGB_BUILTIN */
-
-/* Use rgb.txt directly */
-#define USE_RGB_TXT 1
-
 /* unaligned word accesses behave as expected */
 /* #undef WORKING_UNALIGNED_INT */
 
@@ -126,7 +111,7 @@
 #define XDMCP 1
 
 /* Build XFree86 BigFont extension */
-#define XF86BIGFONT 1
+/* #undef XF86BIGFONT */
 
 /* Support XFree86 miscellaneous extensions */
 #define XF86MISC 1
@@ -158,6 +143,9 @@
 /* Build DRI extension */
 #define XF86DRI 1
 
+/* Build DRI2 extension */
+/* #undef DRI2 */
+
 /* Build Xorg server */
 #define XORGSERVER 1
 
@@ -165,7 +153,7 @@
 /* #undef XORG_RELEASE */
 
 /* Current Xorg version */
-#define XORG_VERSION_CURRENT (((1) * 10000000) + ((4) * 100000) + ((0) * 1000) + 0)
+#define XORG_VERSION_CURRENT (((1) * 10000000) + ((5) * 100000) + ((1) * 1000) + 0)
 
 /* Build Xv Extension */
 #define XvExtension 1
@@ -183,7 +171,7 @@
 #define XTEST 1
 
 /* Support XTrap extension */
-#define XTRAP 1
+/* #undef XTRAP */
 
 /* Support Xv Extension */
 #define XV 1
@@ -232,24 +220,27 @@
 #define WITH_VGAHW 1
 
 /* System is BSD-like */
-#define CSRG_BASED 1
+/* #undef CSRG_BASED */
 
 /* Solaris 8 or later? */
 /* #undef __SOL8__ */
 
 /* System has PC console */
-#define PCCONS_SUPPORT 1
+/* #undef PCCONS_SUPPORT */
 
 /* System has PCVT console */
-#define PCVT_SUPPORT 1
+/* #undef PCVT_SUPPORT */
 
 /* System has syscons console */
-#define SYSCONS_SUPPORT 1
+/* #undef SYSCONS_SUPPORT */
 
 /* System has wscons console */
 /* #undef WSCONS_SUPPORT */
 
 /* Loadable XFree86 server awesomeness */
 #define XFree86LOADER 1
+
+/* Use libpciaccess */
+#define XSERVER_LIBPCIACCESS 1
 
 #endif /* _XORG_SERVER_H_ */

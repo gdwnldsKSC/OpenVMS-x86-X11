@@ -1,5 +1,3 @@
-/* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sisusb/src/sisusb_types.h,v 1.7 2005/08/15 22:57:51 twini Exp $ */
 /*
  * General type definitions for universal mode switching modules
  *

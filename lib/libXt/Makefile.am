@@ -1,6 +1,4 @@
 # 
-#  $Id$
-# 
 #  Copyright © 2003 Keith Packard, Noah Levitt
 # 
 #  Permission to use, copy, modify, distribute, and sell this software and its
@@ -29,5 +27,11 @@ AM_CFLAGS = $(XT_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/X11 -I$
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xt.pc
 
-EXTRA_DIST = xt.pc.in autogen.sh
+EXTRA_DIST = xt.pc.in ChangeLog autogen.sh
+MAINTAINERCLEANFILES=ChangeLog
+
+ChangeLog:
+	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || (touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
+
+dist-hook: ChangeLog
 

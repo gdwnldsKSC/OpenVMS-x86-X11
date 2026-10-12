@@ -1,4 +1,4 @@
-$! Archive the seven ordinary driver objects, retaining compiler diagnostics.
+$! Archive the six ordinary driver objects, retaining compiler diagnostics.
 $ SET NOON
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
@@ -6,7 +6,7 @@ $ result = 2
 $ IF P1 .EQS. "" THEN GOTO done
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. -
      (P5 .NES. "") .OR. (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
-$ modules = "BITS2PIXELS|OFFSCREEN_MANAGER|VMWARE|VMWARECURS|VMWAREXAA|VMWARECTRL|VMWAREXINERAMA"
+$ modules = "BITS2PIXELS|VMWARE|VMWARECURS|VMWARECTRL|VMWAREXINERAMA|VMWAREVIDEO"
 $ index = 0
 $check_objects:
 $ module = F$ELEMENT(index,"|",modules)
@@ -24,7 +24,7 @@ $insert_object:
 $ module = F$ELEMENT(index,"|",modules)
 $ IF module .EQS. "|" THEN GOTO publish
 $ object = P1 + module + ".OBJ"
-$ expected_warning = (module .EQS. "OFFSCREEN_MANAGER") .OR. (module .EQS. "VMWAREXAA")
+$ expected_warning = 0
 $ IF expected_warning THEN ON WARNING THEN CONTINUE
 $ LIBRARY/INSERT/OBJECT 'work_library' 'object'
 $ result = $STATUS

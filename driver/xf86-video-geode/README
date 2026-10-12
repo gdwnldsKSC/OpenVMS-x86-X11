@@ -1,0 +1,72 @@
+AMD Geode GX and LX graphics driver for X.Org
+=============================================
+Last updated:  2008-08-13
+
+= Introduction =
+
+This is the X graphics driver for the AMD Geode GX and LX processors.
+The GX driver features XAA and EXA support for graphics acceleration,
+and the LX driver supports EXA (including compositing).  Both drivers
+support dynamic rotation with XRandR, and Xv overlay support.
+
+http://wiki.x.org/wiki/AMDGeodeDriver
+
+= Roadmap =
+
+Support for X servers older than 1.4 is expected to be dropped in the
+near future.  If your distribution still hasn't upgraded, please urge 
+them to get around it soon.
+
+Support for old GX1 Geodes by Cyrix and NSC will be reintroduced soon,
+at which point xf86-video-cyrix and xf86-video-nsc will be retired.
+
+= Dependencies =
+
+As of version 2.9.0, this driver depends on X.Org server 1.3 or newer,
+because it utilizes the new common DDC probing libraries from X.Org.
+
+If necessary, it might be possible to create autoconf macros to make 
+this driver compile against older X servers, following this example:
+
+http://lists.freedesktop.org/archives/xorg-commit/2007-February/010341.html
+
+Patches accomplishing the same trick for the Geode driver are welcome.
+
+= Configuration options =
+
+You can specify the Geode driver in the normal fashion:
+
+Section "Device"
+	Identifier "AMD Geode"
+	Driver "geode"
+	Option "blah" "blah"
+	...
+EndSection
+
+The following options may be added to the section:
+
+== GX ==
+
+SWCursor: Enable software cursors (essentially disabling HW cursor support)
+NoCompression: Disable video bandwidth compression
+NoAccel: Disable hardware assisted acceleration
+AccelMethod: "EXA" (default) or "XAA"
+Rotate: Select a orientation to start with - LEFT, INVERT, CCW
+NoPanel: Disable panel support
+OSMImageBuffers: Set the number of image buffers (XAA only)
+OSMColorExpBuffers: Set the number of color expansion buffers (XAA only)
+FBSize: Specify the size of the video space (in bytes)
+PanelGeometry: Specify the geometry of the attached panel ("<width>x<height>")
+
+== LX ==
+
+SWCursor: Enable software cursors (essentially disabling HW cursor support)
+NoCompression: Disable video bandwidth compression
+NoAccel: Disable hardware assisted acceleration
+Rotate: Select a orientation to start with - LEFT, INVERT, CCW
+NoPanel: Disable panel support
+ExaScratch: Specify the amount of extra EXA scratch buffer (in bytes)
+FBSize: Specify the size of the video space (in bytes)
+PanelGeometry: Specify the geometry of the attached panel ("<width>x<height>")
+
+= EOF =

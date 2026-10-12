@@ -1,0 +1,258 @@
+2026-07-08         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.4.1: Release tar ball made.
+
+2026-05-13         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* c-bool.m4, codeset.m4, extern-inline.m4, fcntl-o.m4,
+	host-cpu-c-abi.m4, iconv.m4, intlmacosx.m4, intmax_t.m4,
+	inttypes.m4, inttypes_h.m4, lcmessage.m4, lib-ld.m4, lib-link.m4,
+	lib-prefix.m4, lock.m4, longlong.m4, nls.m4, printf-posix.m4,
+	progtest.m4, size_max.m4, stdint_h.m4, threadlib.m4,
+	visibility.m4, wint_t.m4, xsize.m4: Updated from GNULIB.
+
+2026-04-28  Paul Eggert  <eggert@cs.ucla.edu>
+
+	* ulonglong.m4: Remove; no longer needed.
+
+2026-03-12         Arnold D. Robbins     <arnold@skeeve.com>
+
+	All files updated, replacing the FSF address with a
+	link to the licenses: https://www.gnu.org/licenses/.
+	Thanks to Xose Vazquez Perez <xose.vazquez@gmail.com>
+	for pointing out the need.
+
+2026-02-22         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.4.0: Release tar ball made.
+
+2026-02-18         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* arch.m4: Change value of -qlanglvl for z/OS. Thanks to
+	Daniel Richard G. <skunk@iskunk.org> for the fix.
+
+2026-02-15         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Enable FreeBSD 12-15 and MidnightBSD 3 and 4.
+
+2026-02-12         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Enable NetBSD 11 too.
+
+2026-02-04         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Add FreeBSD support for PMA. For now, just FreeBSD 16.
+
+2026-02-03         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Add correct NetBSD support for PMA.
+
+2026-01-17         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: FreeBSD and NetBSD don't support PMA. Remove them.
+
+2026-01-06         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Add FreeBSD 14 to list of non-PIE systems.
+
+2026-01-05         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4. Use [[xx]] to get [xx]; simplifies the script.
+
+2025-10-27         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: OpenBSD requires -no-pie. Add NetBSD 10 and 11 to the
+	list of systems that don't have PIE executables. Thanks to
+	Nelson H.F. Beebe for all the testing.
+
+2025-08-11         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* libtool.m4: Add support for slimcc C compiler.
+
+2025-04-02         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.3.2: Release tar made.
+
+2025-03-20         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Use AC_COMPILE_IF_ELSE instead of AC_TRY_COMPILE.
+	Thanks to autoreconf.
+
+2025-02-16         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Add compilation check for ADDR_NO_RANDOMIZE. It's an
+	enum, not a define.  It's not available on really old Linux
+	systems, like CentOS 5.
+
+2025-02-01         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: On macos, no longer need to do anything special,
+	but we do have to have a case for it so that PMA is enabled.
+
+2025-01-29         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: On Linux, no longer need to do anything special,
+	but we do have to have a case for it so that PMA is enabled.
+
+2024-09-17         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.3.1: Release tar made.
+
+2024-09-17         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* readline.m4: Update copyright year.
+
+2024-05-26         Ross Burton           <ross.burton@arm.com>
+
+	* readline.m4: Add more needed includes for cross-compiling case.
+
+2023-11-02         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.3.0: Release tar ball made.
+
+2023-05-07         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.2.2: Release tar ball made.
+
+2023-04-14         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Update copyright year, switch to `dnl' as comment
+	marker in the copyright statement.
+
+2022-12-01         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* libsigsegv.m4: Removed.
+
+2022-11-27         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Don't build an x86 binary on non-x86 macOS systems.
+	See https://trac.macports.org/ticket/66329. Thanks to
+	Marius Schamschula <lists@schamschula.com> for the report.
+
+2022-11-17         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.2.1: Release tar ball made.
+
+2022-10-23         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: On all macOS, build an Intel binary, even on M1.
+
+2022-09-30         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Disable pma on M1 mac. It doesn't work there. We hope
+	that this is just temporary.
+
+2022-09-21         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Allow FreeBSD 13 and OpenBSD 7.
+
+2022-09-04         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.2.0: Release tar ball made.
+
+2022-08-23         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Use AX_CHECK_COMPILE_FLAG to look for -no-pie instead
+	of hardcoding gcc and clang. Thanks to Sam James <sam@gentoo.org>
+	for the suggestion.
+	* ax_check_compile_flag.m4: New file.
+
+2022-08-11         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Logic fix. Don't define USE_PERSITENT_MALLOC until
+	after all the tests.
+
+2022-07-21         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* libtool.m4, ltoptions.m4, ltsugar.m4, ltversion.m4,
+	lt~obsolete.m4: Updated to Libtool 2.4.7.
+
+2022-07-13         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Add a check for Solaris. It works fine there.
+
+2022-06-29         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Check sizeof(void *) is 8. PMA only works on
+	64-bit systems.
+
+2022-06-15         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Add case for Cygwin.
+
+2022-06-14         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Put -no-pie inside additional check for gcc and clang.
+	Tinycc and PCC are no-PIE anyway.  Add support for --disable-pma.
+	Add the right magic for Mac OS.
+
+2022-06-13         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Put -no-pie inside check for Linux.
+
+2022-06-10         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: Add -no-pie to LDFLAGS for persistent malloc.
+
+2022-06-09         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* pma.m4: New file.
+
+2021-10-27         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.1.1: Release tar ball made.
+
+2021-09-10         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* mpfr.m4, readline.m4, threadlib.m4: Update for Autoconf 2.71.
+	Removes various warnings when Autoconf runs.
+
+2020-07-22         Arnold D. Robbins     <arnold@skeeve.com>
+	
+	* fcntl-o.m4, glibc2.m4, glibc21.m4, intdiv0.m4, intldir.m4,
+	intmax.m4, inttypes-pri.m4, inttypes_h.m4, lcmessage.m4, lock.m4,
+	longlong.m4, printf-posix.m4, size_max.m4, stdint_h.m4, threadlib.m4,
+	uintmax_t.m4, visibility.m4, wchar_t.m4, wint_t.m4,
+	xsize.m4: Copyright updated.
+	* dirfd.m4, libtool.m4, ltoptions.m4, ltsugar.m4, ltversion.m4,
+	lt~obsolete.m4: New files, from extension/m4.
+
+2020-07-20  gettextize  <bug-gnu-gettext@gnu.org>
+
+	* gettext.m4: Upgrade to gettext-0.20.2.
+	* host-cpu-c-abi.m4: New file, from gettext-0.20.2.
+	* iconv.m4: Upgrade to gettext-0.20.2.
+	* intlmacosx.m4: Upgrade to gettext-0.20.2.
+	* lib-ld.m4: Upgrade to gettext-0.20.2.
+	* lib-link.m4: Upgrade to gettext-0.20.2.
+	* lib-prefix.m4: Upgrade to gettext-0.20.2.
+	* nls.m4: Upgrade to gettext-0.20.2.
+	* po.m4: Upgrade to gettext-0.20.2.
+	* progtest.m4: Upgrade to gettext-0.20.2.
+
+2020-04-14         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.1.0: Release tar ball made.
+
+2020-03-06         Jannick               <thirdedition@gmx.net>
+
+	* triplet-transformation.m4: New file.
+
+2019-11-09         Alexey Pawlow        <alexey.pawlow@gmail.com>
+
+	* threadlib.m4: Add check for MSYS.
+
+2019-09-10  Florian Weimer  <fweimer@redhat.com>
+
+	* readline.m4 (GAWK_CHECK_READLINE): Include <fcntl.h>, <unistd.h>
+	for close, open, dup.
+
+2019-06-18         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.0.1: Release tar ball made.
+
+2019-04-12         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* ChangeLog.1: Rotated ChangeLog into this file.
+	* ChangeLog: Created anew for gawk 5.0.0 and on.
+	* 5.0.0: Release tar ball made.

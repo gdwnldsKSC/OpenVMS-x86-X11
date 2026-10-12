@@ -29,6 +29,7 @@
 #endif
 #include "xf86Modes.h"
 #include "xf86Cursor.h"
+#include "xf86i2c.h"
 #include "damage.h"
 #include "picturestr.h"
 
@@ -38,6 +39,9 @@
 #endif
 #ifndef M_T_DRIVER
 #define M_T_DRIVER	0x40
+#endif
+#ifndef M_T_USERPREF
+#define M_T_USERPREF	0x80
 #endif
 #ifndef HARDWARE_CURSOR_ARGB
 #define HARDWARE_CURSOR_ARGB				0x00004000
@@ -58,12 +62,14 @@ typedef enum _xf86ConnectorType {
    XF86ConnectorComponent,
    XF86ConnectorLFP,
    XF86ConnectorProprietary,
+   XF86ConnectorHDMI,
+   XF86ConnectorDisplayPort,
 } xf86ConnectorType;
 
 typedef enum _xf86OutputStatus {
    XF86OutputStatusConnected,
    XF86OutputStatusDisconnected,
-   XF86OutputStatusUnknown,
+   XF86OutputStatusUnknown
 } xf86OutputStatus;
 
 typedef struct _xf86CrtcFuncs {
@@ -200,9 +206,23 @@ typedef struct _xf86CrtcFuncs {
      */
     void
     (*destroy) (xf86CrtcPtr	crtc);
+
+    /**
+     * Less fine-grained mode setting entry point for kernel modesetting
+     */
+    Bool
+    (*set_mode_major)(xf86CrtcPtr crtc, DisplayModePtr mode,
+		      Rotation rotation, int x, int y);
 } xf86CrtcFuncsRec, *xf86CrtcFuncsPtr;
 
+#define XF86_CRTC_VERSION 1
+
 struct _xf86Crtc {
+    /**
+     * ABI versioning
+     */
+    int version;
+
     /**
      * Associated ScrnInfo
      */
@@ -397,6 +417,21 @@ typedef struct _xf86OutputFuncs {
 		    Atom property,
 		    RRPropertyValuePtr value);
 #endif
+#ifdef RANDR_13_INTERFACE
+    /**
+     * Callback to get an updated property value
+     */
+    Bool
+    (*get_property)(xf86OutputPtr output,
+		    Atom property);
+#endif
+#ifdef RANDR_GET_CRTC_INTERFACE
+    /**
+     * Callback to get current CRTC for a given output
+     */
+    xf86CrtcPtr
+    (*get_crtc)(xf86OutputPtr output);
+#endif
     /**
      * Clean up driver-specific bits of the output
      */
@@ -404,7 +439,15 @@ typedef struct _xf86OutputFuncs {
     (*destroy) (xf86OutputPtr	    output);
 } xf86OutputFuncsRec, *xf86OutputFuncsPtr;
 
+
+#define XF86_OUTPUT_VERSION 1
+
 struct _xf86Output {
+    /**
+     * ABI versioning
+     */
+    int version;
+
     /**
      * Associated ScrnInfo
      */
@@ -622,6 +665,12 @@ Bool
 xf86CrtcRotate (xf86CrtcPtr crtc, DisplayModePtr mode, Rotation rotation);
 
 /*
+ * free shadow memory allocated for all crtcs
+ */
+void
+xf86RotateFreeShadow(ScrnInfoPtr pScrn);
+
+/*
  * Clean up rotation during CloseScreen
  */
 void
@@ -656,7 +705,11 @@ xf86ProbeOutputModes (ScrnInfoPtr pScrn, int maxX, int maxY);
 void
 xf86SetScrnInfoModes (ScrnInfoPtr pScrn);
 
+#ifdef RANDR_13_INTERFACE
+int
+#else
 Bool
+#endif
 xf86CrtcScreenInit (ScreenPtr pScreen);
 
 Bool
@@ -765,5 +818,24 @@ xf86_hide_cursors (ScrnInfoPtr scrn);
  */
 void
 xf86_cursors_fini (ScreenPtr screen);
+
+/*
+ * For overlay video, compute the relevant CRTC and
+ * clip video to that.
+ * wraps xf86XVClipVideoHelper()
+ */
+
+Bool
+xf86_crtc_clip_video_helper(ScrnInfoPtr pScrn,
+			    xf86CrtcPtr *crtc_ret,
+			    xf86CrtcPtr desired_crtc,
+			    BoxPtr      dst,
+			    INT32	*xa,
+			    INT32	*xb,
+			    INT32	*ya,
+			    INT32	*yb,
+			    RegionPtr   reg,
+			    INT32	width,
+			    INT32	height);
     
 #endif /* _XF86CRTC_H_ */

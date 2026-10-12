@@ -36,7 +36,6 @@
  * use i830_debug.c mostly unmodified.
  */
 
-typedef uint32_t CARD32;
 typedef char Bool;
 
 #define FALSE 0
@@ -69,6 +68,8 @@ typedef struct _scrn {
 } ScrnInfoRec, *ScrnInfoPtr;
 
 #define I830PTR(pScrn) (pScrn->pI830)
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 #define INREG8(reg) (*(volatile uint8_t *)((pI830)->mmio + (reg)))
 #define INREG16(reg) (*(volatile uint16_t *)((pI830)->mmio + (reg)))

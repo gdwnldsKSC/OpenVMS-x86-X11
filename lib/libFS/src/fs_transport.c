@@ -1,6 +1,4 @@
 /*
- * $Id: fs_transport.c,v 1.3 2005/07/30 19:09:37 alanc Exp $
- *
  * Copyright © 2005 Red Hat, Inc
  *
  * Permission to use, copy, modify, distribute, and sell this software and its

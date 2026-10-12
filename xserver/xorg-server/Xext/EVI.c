@@ -34,10 +34,8 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <X11/extensions/XEVIstr.h>
 #include "EVIstruct.h"
 #include "modinit.h"
+#include "scrnintstr.h"
 
-#if 0
-static unsigned char XEVIReqCode = 0;
-#endif
 static EviPrivPtr eviPriv;
 
 static int
@@ -87,10 +85,22 @@ ProcEVIGetVisualInfo(ClientPtr client)
 {
     REQUEST(xEVIGetVisualInfoReq);
     xEVIGetVisualInfoReply rep;
-    int n, n_conflict, n_info, sz_info, sz_conflict;
+    int i, n, n_conflict, n_info, sz_info, sz_conflict;
     VisualID32 *conflict;
+    unsigned int total_visuals = 0;
     xExtendedVisualInfo *eviInfo;
     int status;
+
+    /*
+     * do this first, otherwise REQUEST_FIXED_SIZE can overflow.  we assume
+     * here that you don't have more than 2^32 visuals over all your screens;
+     * this seems like a safe assumption.
+     */
+    for (i = 0; i < screenInfo.numScreens; i++)
+	total_visuals += screenInfo.screens[i]->numVisuals;
+    if (stuff->n_visual > total_visuals)
+	return BadValue;
+
     REQUEST_FIXED_SIZE(xEVIGetVisualInfoReq, stuff->n_visual * sz_VisualID32);
     status = eviPriv->getVisualInfo((VisualID32 *)&stuff[1], (int)stuff->n_visual,
 		&eviInfo, &n_info, &conflict, &n_conflict);
@@ -182,19 +192,9 @@ EVIResetProc(ExtensionEntry *extEntry)
 void
 EVIExtensionInit(INITARGS)
 {
-#if 0
-    ExtensionEntry *extEntry;
-
-    if ((extEntry = AddExtension(EVINAME, 0, 0,
-				ProcEVIDispatch,
-				SProcEVIDispatch,
-				EVIResetProc, StandardMinorOpcode))) {
-	XEVIReqCode = (unsigned char)extEntry->base;
-#else
     if (AddExtension(EVINAME, 0, 0,
 		     ProcEVIDispatch, SProcEVIDispatch,
 		     EVIResetProc, StandardMinorOpcode)) {
-#endif
 	eviPriv = eviDDXInit();
     }
 }

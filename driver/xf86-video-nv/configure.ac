@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-nv],
-        2.1.3,
+        2.1.12,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-nv)
 
@@ -70,8 +70,20 @@ AC_HEADER_STDC
 
 save_CFLAGS="$CFLAGS"
 CFLAGS="$XORG_CFLAGS"
+
+# RandR 1.2
 AC_CHECK_HEADER(xf86Modes.h,[BUILD_XMODES=no],[BUILD_XMODES=yes],[#include "xorg-server.h"])
+
+# PCI rework
+AC_CHECK_DECL(XSERVER_LIBPCIACCESS,
+              [XSERVER_LIBPCIACCESS=yes],[XSERVER_LIBPCIACCESS=no],
+              [#include "xorg-server.h"])
+if test "x$XSERVER_LIBPCIACCESS" = "xyes"; then
+    PKG_CHECK_MODULES(PCIACCESS, [pciaccess >= 0.8.0])
+fi
+
 CFLAGS="$save_CFLAGS"
+
 AM_CONDITIONAL(BUILD_XMODES, test "x$BUILD_XMODES" = xyes)
 if test "x$XSERVER_SOURCE" != x; then
     if test -d "$XSERVER_SOURCE"; then

@@ -86,7 +86,11 @@ FTPickMapping(char *xlfd, int length, char *filename, FT_Face face,
 
     symbol = FTEncFontSpecific(encoding_name);
 
+#if XFONT_BDFFORMAT
     ftrc = FT_Get_BDF_Charset_ID(face, &enc, &reg);
+#else
+    ftrc = -1;
+#endif
     if(ftrc == 0) {
         /* Disable reencoding for non-Unicode fonts.  This will
            currently only work for BDFs. */

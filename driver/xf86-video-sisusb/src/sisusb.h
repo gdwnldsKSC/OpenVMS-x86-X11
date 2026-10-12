@@ -1,5 +1,3 @@
-/* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sisusb/src/sisusb.h,v 1.16 2006/04/07 21:10:49 ajax Exp $ */
 /*
  * Main global data and definitions
  *
@@ -70,9 +68,9 @@
 #define SISUSB_NAME                "SISUSB"
 #define SISUSB_DRIVER_NAME         "sisusb"
 
-#define SISUSB_MAJOR_VERSION       0
-#define SISUSB_MINOR_VERSION       8
-#define SISUSB_PATCHLEVEL          1
+#define SISUSB_MAJOR_VERSION       PACKAGE_VERSION_MAJOR
+#define SISUSB_MINOR_VERSION       PACKAGE_VERSION_MINOR
+#define SISUSB_PATCHLEVEL          PACKAGE_VERSION_PATCHLEVEL
 #define SISUSB_CURRENT_VERSION     ((SISUSB_MAJOR_VERSION << 16) | 	\
                                    (SISUSB_MINOR_VERSION << 8)   |	\
 				   SISUSB_PATCHLEVEL)
@@ -150,7 +148,7 @@
 
 #undef SISGAMMARAMP
 #ifdef XORG_VERSION_CURRENT
-#if XORG_VERSION_CURRENT >= XORG_VERSION_NUMERIC(6,8,99,13,0)
+#if XORG_VERSION_CURRENT >= XORG_VERSION_NUMERIC(6,8,99,13,0) || XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(4,0,0,0,0)
 #define SISGAMMARAMP		/* Driver can set gamma ramp; requires additional symbols in xf86sym.h */
 #endif
 #endif

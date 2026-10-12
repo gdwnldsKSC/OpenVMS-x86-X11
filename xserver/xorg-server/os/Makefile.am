@@ -1,12 +1,8 @@
-noinst_LTLIBRARIES = libos.la libcwrapper.la
+noinst_LTLIBRARIES = libos.la
 
 AM_CFLAGS = $(DIX_CFLAGS)
 
-# FIXME: Add support for these in configure.ac
 SECURERPC_SRCS = rpcauth.c
-INTERNALMALLOC_SRCS = xalloc.c
-
-XCSECURITY_SRCS = secauth.c
 XDMCP_SRCS = xdmcp.c
 STRLCAT_SRCS = strlcat.c strlcpy.c
 XORG_SRCS = log.c
@@ -28,8 +24,8 @@ libos_la_SOURCES = 	\
 	xprintf.c	\
 	$(XORG_SRCS)
 
-if XCSECURITY
-libos_la_SOURCES += $(XCSECURITY_SRCS)
+if SECURE_RPC
+libos_la_SOURCES += $(SECURERPC_SRCS)
 endif
 
 if XDMCP
@@ -40,15 +36,8 @@ if NEED_STRLCAT
 libos_la_SOURCES += $(STRLCAT_SRCS)
 endif
 
-libcwrapper_la_SOURCES = \
-	$(top_srcdir)/hw/xfree86/os-support/shared/libc_wrapper.c
-libcwrapper_la_CFLAGS = \
-	-DSELF_CONTAINED_WRAPPER \
-	-I$(top_srcdir)/hw/xfree86/os-support \
-	$(AM_CFLAGS)
-
 EXTRA_DIST = $(SECURERPC_SRCS) $(INTERNALMALLOC_SRCS) \
-     $(XCSECURITY_SRCS) $(XDMCP_SRCS) $(STRLCAT_SRCS)
+     $(XDMCP_SRCS) $(STRLCAT_SRCS)
 
 if XSERVER_DTRACE
 # Generate dtrace object code for probes in libos & libdix

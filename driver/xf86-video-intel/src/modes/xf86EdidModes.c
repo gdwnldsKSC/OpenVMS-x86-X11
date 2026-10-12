@@ -239,6 +239,12 @@ DDCModeFromDetailedTiming(int scrnIndex, struct detailed_timings *timing,
     Mode->VSyncEnd = Mode->VSyncStart + timing->v_sync_width;
     Mode->VTotal = timing->v_active + timing->v_blanking;
 
+    /* perform basic check on the detail timing */
+    if (Mode->HSyncEnd > Mode->HTotal || Mode->VSyncEnd > Mode->VTotal) {
+	xfree(Mode);
+	return NULL;
+    }
+
     xf86SetModeDefaultName(Mode);
 
     /* We ignore h/v_size and h/v_border for now. */
@@ -303,7 +309,7 @@ DDCGuessRangesFromModes(int scrnIndex, MonPtr Monitor, DisplayModePtr Modes)
     }
 }
 
-DisplayModePtr
+_X_EXPORT DisplayModePtr
 xf86DDCGetModes(int scrnIndex, xf86MonPtr DDC)
 {
     int preferred, i;
@@ -389,7 +395,7 @@ xf86DDCGetModes(int scrnIndex, xf86MonPtr DDC)
 /*
  * Fill out MonPtr with xf86MonPtr information.
  */
-void
+_X_EXPORT void
 xf86DDCMonitorSet(int scrnIndex, MonPtr Monitor, xf86MonPtr DDC)
 {
     DisplayModePtr Modes = NULL, Mode;

@@ -1,0 +1,41 @@
+Thu Jun 25 12:42:50 PM IDT 2026
+===============================
+Contributed by Tim Rice <trice@posteo.net>.
+
+This file applies to POSIX style systems where users have to install
+non-default locales on their own, not to MS-Windows systems.
+
+The test suite assumes the presence of certain locales which may not
+be present on your machine. You can compile a list of required locales
+by surveying the output of 'grep -r GAWKLOCALE'. The list of locales
+currently needed to run the test suite include:
+
+* C
+* el_GR
+* en_US
+* fr_FR
+* ja_JP
+* ru_RU
+
+You can just follow your operating system or distro's documentation for
+adding new locales, but you can also create a development environment
+using a procedure like so:
+
+    export LOCPATH=$HOME/src/gnu/locales/gawk
+    mkdir -p $LOCPATH
+    for L in \
+    C        \
+    el_GR    \
+    en_US    \
+    fr_FR    \
+    ja_JP    \
+    ru_RU; do
+        localedef -f UTF-8 -i $L $LOCPATH/${L}.UTF-8
+    done
+
+You may also need to add the locale which matches your usual environment,
+e.g., if you have 'export LANG=en_AU.UTF-8' in your shell profile then
+insert en_AU into the above 'for' loop.
+
+From now on, whenever you want to do development on Gawk, just export
+LOCPATH again as above and the locale-based tests should pass.

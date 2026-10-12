@@ -290,6 +290,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # define GPIO_DATA_VAL_IN		(1 << 12)
 # define GPIO_DATA_PULLUP_DISABLE	(1 << 13)
 
+/* GMBus registers for hardware-assisted (non-bitbanging) I2C access */
+#define GMBUS0			0x5100
+#define GMBUS1			0x5104
+#define GMBUS2			0x5108
+#define GMBUS3			0x510c
+#define GMBUS4			0x5110
+#define GMBUS5			0x5120
+
 /* p317, 319
  */
 #define VCLK2_VCO_M        0x6008 /* treat as 16 bit? (includes msbs) */
@@ -345,19 +353,78 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #define IPEIR                  0x2088
 #define IPEHR                  0x208C
+
 #define INST_DONE                0x2090
+# define IDCT_DONE			(1 << 30)
+# define IQ_DONE			(1 << 29)
+# define PR_DONE			(1 << 28)
+# define VLD_DONE			(1 << 27)
+# define IP_DONE			(1 << 26)
+# define FBC_DONE			(1 << 25)
+# define BINNER_DONE			(1 << 24)
+# define SF_DONE			(1 << 23)
+# define SE_DONE			(1 << 22)
+# define WM_DONE			(1 << 21)
+# define IZ_DONE			(1 << 20)
+# define PERSPECTIVE_INTERP_DONE	(1 << 19)
+# define DISPATCHER_DONE		(1 << 18)
+# define PROJECTION_DONE		(1 << 17)
+# define DEPENDENT_ADDRESS_DONE		(1 << 16)
+# define QUAD_CACHE_DONE		(1 << 15)
+# define TEXTURE_FETCH_DONE		(1 << 14)
+# define TEXTURE_DECOMPRESS_DONE	(1 << 13)
+# define SAMPLER_CACHE_DONE		(1 << 12)
+# define FILTER_DONE			(1 << 11)
+# define BYPASS_FIFO_DONE		(1 << 10)
+# define PS_DONE			(1 << 9)
+# define CC_DONE			(1 << 8)
+# define MAP_FILTER_DONE		(1 << 7)
+# define MAP_L2_IDLE			(1 << 6)
+# define RING_2_ENABLE			(1 << 2)
+# define RING_1_ENABLE			(1 << 1)
+# define RING_0_ENABLE			(1 << 0)
+
+#define SCPD0                    0x209c	/* debug */
 #define INST_PS                  0x20c4
 #define IPEIR_I965                  0x2064 /* i965 */
 #define IPEHR_I965                  0x2068 /* i965 */
 #define INST_DONE_I965              0x206c
+# define I965_SF_DONE			(1 << 23)
+# define I965_SE_DONE			(1 << 22)
+# define I965_WM_DONE			(1 << 21)
+# define I965_TEXTURE_FETCH_DONE	(1 << 14)
+# define I965_SAMPLER_CACHE_DONE	(1 << 12)
+# define I965_FILTER_DONE		(1 << 11)
+# define I965_PS_DONE			(1 << 9)
+# define I965_CC_DONE			(1 << 8)
+# define I965_MAP_FILTER_DONE		(1 << 7)
+# define I965_MAP_L2_IDLE		(1 << 6)
+# define I965_CP_DONE			(1 << 1)
+# define I965_RING_0_ENABLE		(1 << 0)
 #define INST_PS_I965                0x2070
+
+/* Current active ring head address: 
+ */
 #define ACTHD                 0x2074
+
+/* Current primary/secondary DMA fetch addresses:
+ */
 #define DMA_FADD_P             0x2078
+#define DMA_FADD_S               0x20d4
 #define INST_DONE_1              0x207c
 
 #define CACHE_MODE_0           0x2120
 #define CACHE_MODE_1           0x2124
+#define MI_MODE		       0x209c
+#define MI_DISPLAY_POWER_DOWN  0x20e0
 #define MI_ARB_STATE           0x20e4
+#define MI_RDRET_STATE	       0x20fc
+
+/* Start addresses for each of the primary rings:
+ */
+#define PR0_STR                  0x20f0
+#define PR1_STR                  0x20f4
+#define PR2_STR                  0x20f8
 
 #define WIZ_CTL                0x7c00
 #define WIZ_CTL_SINGLE_SUBSPAN  (1<<6)
@@ -423,6 +490,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *   - new bits for i810
  *   - new register hwstam (mask)
  */
+#define PWRCTXA		     0x2088 /* 965GM+ only */
+#define   PWRCTX_EN	     (1<<0)
 #define HWSTAM               0x2098 /* p290 */
 #define IER                  0x20a0 /* p291 */
 #define IIR                  0x20a4 /* p292 */
@@ -525,6 +594,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PGETBL_SIZE_512KB   (0 << 1)
 #define PGETBL_SIZE_256KB   (1 << 1)
 #define PGETBL_SIZE_128KB   (2 << 1)
+#define PGETBL_SIZE_1MB     (3 << 1)
+#define PGETBL_SIZE_2MB     (4 << 1)
+#define PGETBL_SIZE_1_5MB   (5 << 1)
 #define G33_PGETBL_SIZE_MASK		(3 << 8)
 #define G33_PGETBL_SIZE_1M		(1 << 8)
 #define G33_PGETBL_SIZE_2M		(2 << 8)
@@ -831,8 +903,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define PFIT_CONTROL	0x61230
 # define PFIT_ENABLE				(1 << 31)
-# define PFIT_PIPE_MASK				(3 << 29)
-# define PFIT_PIPE_SHIFT			29
+/* Pre-965 */
 # define VERT_INTERP_DISABLE			(0 << 10)
 # define VERT_INTERP_BILINEAR			(1 << 10)
 # define VERT_INTERP_MASK			(3 << 10)
@@ -842,12 +913,30 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # define HORIZ_INTERP_MASK			(3 << 6)
 # define HORIZ_AUTO_SCALE			(1 << 5)
 # define PANEL_8TO6_DITHER_ENABLE		(1 << 3)
+/* 965+ */
+# define PFIT_PIPE_MASK				(3 << 29)
+# define PFIT_PIPE_SHIFT			29
+# define PFIT_SCALING_MODE_MASK			(7 << 26)
+#  define PFIT_SCALING_AUTO			(0 << 26)
+#  define PFIT_SCALING_PROGRAMMED		(1 << 26)
+#  define PFIT_SCALING_PILLAR			(2 << 26)
+#  define PFIT_SCALING_LETTER			(3 << 26)
+# define PFIT_FILTER_SELECT_MASK		(3 << 24)
+#  define PFIT_FILTER_FUZZY			(0 << 24)
+#  define PFIT_FILTER_CRISP			(1 << 24)
+#  define PFIT_FILTER_MEDIAN			(2 << 24)
 
 #define PFIT_PGM_RATIOS	0x61234
+/* Pre-965 */
+# define PFIT_VERT_SCALE_SHIFT			20
 # define PFIT_VERT_SCALE_MASK			0xfff00000
+# define PFIT_HORIZ_SCALE_SHIFT			4
 # define PFIT_HORIZ_SCALE_MASK			0x0000fff0
-
-#define PFIT_AUTO_RATIOS	0x61238
+/* 965+ */
+# define PFIT_VERT_SCALE_SHIFT_965		16
+# define PFIT_VERT_SCALE_MASK_965		0x1fff0000
+# define PFIT_HORIZ_SCALE_SHIFT_965		0
+# define PFIT_HORIZ_SCALE_MASK_965		0x00001fff
 
 #define DPLL_A		0x06014
 #define DPLL_B		0x06018
@@ -959,6 +1048,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define D_STATE			0x6104
 #define DSPCLK_GATE_D		0x6200
+# define DPUNIT_B_CLOCK_GATE_DISABLE		(1 << 30) /* 965 */
+# define VSUNIT_CLOCK_GATE_DISABLE		(1 << 29) /* 965 */
+# define VRHUNIT_CLOCK_GATE_DISABLE		(1 << 28) /* 965 */
+# define VRDUNIT_CLOCK_GATE_DISABLE		(1 << 27) /* 965 */
+# define AUDUNIT_CLOCK_GATE_DISABLE		(1 << 26) /* 965 */
+# define DPUNIT_A_CLOCK_GATE_DISABLE		(1 << 25) /* 965 */
+# define DPCUNIT_CLOCK_GATE_DISABLE		(1 << 24) /* 965 */
 # define TVRUNIT_CLOCK_GATE_DISABLE		(1 << 23) /* 915-945 */
 # define TVCUNIT_CLOCK_GATE_DISABLE		(1 << 22) /* 915-945 */
 # define TVFUNIT_CLOCK_GATE_DISABLE		(1 << 21) /* 915-945 */
@@ -973,7 +1069,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # define DPLUNIT_CLOCK_GATE_DISABLE		(1 << 12) /* 915-945 */
 # define DPOUNIT_CLOCK_GATE_DISABLE		(1 << 11)
 # define DPBUNIT_CLOCK_GATE_DISABLE		(1 << 10)
-# define DPCUNIT_CLOCK_GATE_DISABLE		(1 << 9)
+# define DCUNIT_CLOCK_GATE_DISABLE		(1 << 9)
 # define DPUNIT_CLOCK_GATE_DISABLE		(1 << 8)
 # define VRUNIT_CLOCK_GATE_DISABLE		(1 << 7) /* 915+: reserved */
 # define OVHUNIT_CLOCK_GATE_DISABLE		(1 << 6) /* 830-865 */
@@ -1056,6 +1152,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define RENCLK_GATE_D2		0x6208
 #define RAMCLK_GATE_D		0x6210		/* CRL only */
+#define DEUC			0x6214          /* CRL only */
 
 /*
  * This is a PCI config space register to manipulate backlight brightness
@@ -1119,6 +1216,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # define FP_M2_DIV_SHIFT			0
 
 #define PORT_HOTPLUG_EN		0x61110
+# define HDMIB_HOTPLUG_INT_EN			(1 << 29)
+# define HDMIC_HOTPLUG_INT_EN			(1 << 28)
+# define HDMID_HOTPLUG_INT_EN			(1 << 27)
 # define SDVOB_HOTPLUG_INT_EN			(1 << 26)
 # define SDVOC_HOTPLUG_INT_EN			(1 << 25)
 # define TV_HOTPLUG_INT_EN			(1 << 18)
@@ -1126,6 +1226,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # define CRT_HOTPLUG_FORCE_DETECT		(1 << 3)
 
 #define PORT_HOTPLUG_STAT	0x61114
+# define HDMIB_HOTPLUG_INT_STATUS		(1 << 29)
+# define HDMIC_HOTPLUG_INT_STATUS		(1 << 28)
+# define HDMID_HOTPLUG_INT_STATUS		(1 << 27)
 # define CRT_HOTPLUG_INT_STATUS			(1 << 11)
 # define TV_HOTPLUG_INT_STATUS			(1 << 10)
 # define CRT_HOTPLUG_MONITOR_MASK		(3 << 8)
@@ -1154,7 +1257,16 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define SDVO_PHASE_SELECT_DEFAULT		(6 << 19)
 #define SDVO_CLOCK_OUTPUT_INVERT		(1 << 18)
 #define SDVOC_GANG_MODE				(1 << 16)
+#define SDVO_ENCODING_SDVO			(0x0 << 10)
+#define SDVO_ENCODING_HDMI			(0x2 << 10)
+/** Requird for HDMI operation */
+#define SDVO_NULL_PACKETS_DURING_VSYNC		(1 << 9)
 #define SDVO_BORDER_ENABLE			(1 << 7)
+/** New with 965, default is to be set */
+#define SDVO_VSYNC_ACTIVE_HIGH			(1 << 4)
+/** New with 965, default is to be set */
+#define SDVO_HSYNC_ACTIVE_HIGH			(1 << 3)
+/** 915/945 only, read-only bit */
 #define SDVOB_PCIE_CONCURRENCY			(1 << 3)
 #define SDVO_DETECTED				(1 << 2)
 /* Bits to be preserved when writing */
@@ -1349,6 +1461,30 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # define LVDS_B0B3_POWER_UP		(3 << 2)
 
 /** @} */
+
+#define DP_B			0x64100
+#define DPB_AUX_CH_CTL		0x64110
+#define DPB_AUX_CH_DATA1	0x64114
+#define DPB_AUX_CH_DATA2	0x64118
+#define DPB_AUX_CH_DATA3	0x6411c
+#define DPB_AUX_CH_DATA4	0x64120
+#define DPB_AUX_CH_DATA5	0x64124
+
+#define DP_C			0x64200
+#define DPC_AUX_CH_CTL		0x64210
+#define DPC_AUX_CH_DATA1	0x64214
+#define DPC_AUX_CH_DATA2	0x64218
+#define DPC_AUX_CH_DATA3	0x6421c
+#define DPC_AUX_CH_DATA4	0x64220
+#define DPC_AUX_CH_DATA5	0x64224
+
+#define DP_D			0x64300
+#define DPD_AUX_CH_CTL		0x64310
+#define DPD_AUX_CH_DATA1	0x64314
+#define DPD_AUX_CH_DATA2	0x64318
+#define DPD_AUX_CH_DATA3	0x6431c
+#define DPD_AUX_CH_DATA4	0x64320
+#define DPD_AUX_CH_DATA5	0x64324
 
 /*
  * Two channel clock control. Turn this on if you need clkb for two channel mode
@@ -1978,8 +2114,38 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PIPEAGCMAXGREEN		0x70014
 #define PIPEAGCMAXBLUE		0x70018
 #define PIPEASTAT		0x70024
+# define FIFO_UNDERRUN		(1 << 31)
+# define CRC_ERROR_ENABLE	(1 << 29)
+# define CRC_DONE_ENABLE	(1 << 28)
+# define GMBUS_EVENT_ENABLE	(1 << 27)
+# define VSYNC_INT_ENABLE	(1 << 25)
+# define DLINE_COMPARE_ENABLE	(1 << 24)
+# define DPST_EVENT_ENABLE	(1 << 23)
+# define LBLC_EVENT_ENABLE	(1 << 22)
+# define OFIELD_INT_ENABLE	(1 << 21)
+# define EFIELD_INT_ENABLE	(1 << 20)
+# define SVBLANK_INT_ENABLE	(1 << 18)
+# define VBLANK_INT_ENABLE	(1 << 17)
+# define OREG_UPDATE_ENABLE	(1 << 16)
+# define CRC_ERROR_INT_STATUS	(1 << 13)
+# define CRC_DONE_INT_STATUS	(1 << 12)
+# define GMBUS_INT_STATUS	(1 << 11)
+# define VSYNC_INT_STATUS	(1 << 9)
+# define DLINE_COMPARE_STATUS	(1 << 8)
+# define DPST_EVENT_STATUS	(1 << 7)
+# define LBLC_EVENT_STATUS	(1 << 6)
+# define OFIELD_INT_STATUS	(1 << 5)
+# define EFIELD_INT_STATUS	(1 << 4)
+# define SVBLANK_INT_STATUS	(1 << 2)
+# define VBLANK_INT_STATUS	(1 << 1)
+# define OREG_UPDATE_STATUS	(1 << 0)
+				 
 
 #define DSPARB			0x70030
+#define   DSPARB_CSTART_SHIFT	7
+#define   DSPARB_BSTART_SHIFT	0
+#define   DSPARB_BEND_SHIFT	9 /* on 855 */
+#define   DSPARB_AEND_SHIFT	0
 #define DSPFW1			0x70034
 #define DSPFW2			0x70038
 #define DSPFW3			0x7003c
@@ -2029,6 +2195,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define DSPBCNTR		0x71180
 #define DISPLAY_PLANE_ENABLE 			(1<<31)
 #define DISPLAY_PLANE_DISABLE			0
+#define DISPLAY_PLANE_TILED			(1<<10)
 #define DISPPLANE_GAMMA_ENABLE			(1<<30)
 #define DISPPLANE_GAMMA_DISABLE			0
 #define DISPPLANE_PIXFORMAT_MASK		(0xf<<26)
@@ -2116,7 +2283,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define I830_GMCH_MEM_64M	0x1
 #define I830_GMCH_MEM_128M	0
 
-#define I830_GMCH_GMS_MASK			0xF0
+#define I830_GMCH_GMS_MASK			0x70
 #define I830_GMCH_GMS_DISABLED			0x00
 #define I830_GMCH_GMS_LOCAL			0x10
 #define I830_GMCH_GMS_STOLEN_512		0x20
@@ -2127,7 +2294,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define I830_RDRAM_ND(x)			(((x) & 0x20) >> 5)
 #define I830_RDRAM_DDT(x)			(((x) & 0x18) >> 3)
 
-#define I855_GMCH_GMS_MASK			(0x7 << 4)
+#define I855_GMCH_GMS_MASK			(0xF << 4)
 #define I855_GMCH_GMS_DISABLED			0x00
 #define I855_GMCH_GMS_STOLEN_1M			(0x1 << 4)
 #define I855_GMCH_GMS_STOLEN_4M			(0x2 << 4)
@@ -2138,6 +2305,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define I915G_GMCH_GMS_STOLEN_64M		(0x7 << 4)
 #define G33_GMCH_GMS_STOLEN_128M		(0x8 << 4)
 #define G33_GMCH_GMS_STOLEN_256M		(0x9 << 4)
+#define INTEL_GMCH_GMS_STOLEN_96M		(0xa << 4)
+#define INTEL_GMCH_GMS_STOLEN_160M		(0xb << 4)
+#define INTEL_GMCH_GMS_STOLEN_224M		(0xc << 4)
+#define INTEL_GMCH_GMS_STOLEN_352M		(0xd << 4)
+
 
 #define I85X_CAPID			0x44
 #define I85X_VARIANT_MASK			0x7
@@ -2168,12 +2340,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define XY_COLOR_BLT_CMD		((2<<29)|(0x50<<22)|(0x4))
 #define XY_COLOR_BLT_WRITE_ALPHA	(1<<21)
 #define XY_COLOR_BLT_WRITE_RGB		(1<<20)
+#define XY_COLOR_BLT_TILED		(1<<11)
 
 #define XY_SETUP_CLIP_BLT_CMD		((2<<29)|(3<<22)|1)
 
 #define XY_SRC_COPY_BLT_CMD		((2<<29)|(0x53<<22)|6)
 #define XY_SRC_COPY_BLT_WRITE_ALPHA	(1<<21)
 #define XY_SRC_COPY_BLT_WRITE_RGB	(1<<20)
+#define XY_SRC_COPY_BLT_SRC_TILED	(1<<15)
+#define XY_SRC_COPY_BLT_DST_TILED	(1<<11)
 
 #define SRC_COPY_BLT_CMD		((2<<29)|(0x43<<22)|0x4)
 #define SRC_COPY_BLT_WRITE_ALPHA	(1<<21)
@@ -2228,6 +2403,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define MI_FLUSH			(0x04<<23)
 #define MI_WRITE_DIRTY_STATE		(1<<4)
 #define MI_END_SCENE			(1<<3)
+#define MI_GLOBAL_SNAPSHOT_COUNT_RESET	(1<<3)
 #define MI_INHIBIT_RENDER_CACHE_FLUSH	(1<<2)
 #define MI_STATE_INSTRUCTION_CACHE_FLUSH (1<<1)
 #define MI_INVALIDATE_MAP_CACHE		(1<<0)
@@ -2262,6 +2438,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define BRW_STATE_BASE_ADDRESS			BRW_3D(0, 1, 1)
 #define BRW_STATE_SIP				BRW_3D(0, 1, 2)
 #define BRW_PIPELINE_SELECT			BRW_3D(0, 1, 4)
+
+#define NEW_PIPELINE_SELECT			BRW_3D(1, 1, 4)
 
 #define BRW_MEDIA_STATE_POINTERS		BRW_3D(2, 0, 0)
 #define BRW_MEDIA_OBJECT			BRW_3D(2, 1, 0)
@@ -2577,5 +2755,64 @@ typedef enum {
  */
 #define PALETTE_A		0x0a000
 #define PALETTE_B		0x0a800
+
+/* Framebuffer compression */
+#define FBC_CFB_BASE		0x03200 /* 4k page aligned */
+#define FBC_LL_BASE		0x03204 /* 4k page aligned */
+#define FBC_CONTROL		0x03208
+#define   FBC_CTL_EN		(1<<31)
+#define   FBC_CTL_PERIODIC	(1<<30)
+#define   FBC_CTL_INTERVAL_SHIFT (16)
+#define   FBC_CTL_UNCOMPRESSIBLE (1<<14)
+#define   FBC_CTL_STRIDE_SHIFT	(5)
+#define   FBC_CTL_FENCENO	(1<<0)
+#define FBC_COMMAND		0x0320c
+#define   FBC_CMD_COMPRESS	(1<<0)
+#define FBC_STATUS		0x03210
+#define   FBC_STAT_COMPRESSING	(1<<31)
+#define   FBC_STAT_COMPRESSED	(1<<30)
+#define   FBC_STAT_MODIFIED	(1<<29)
+#define   FBC_STAT_CURRENT_LINE	(1<<0)
+#define FBC_CONTROL2		0x03214
+#define   FBC_CTL_FENCE_DBL	(0<<4)
+#define   FBC_CTL_IDLE_IMM	(0<<2)
+#define   FBC_CTL_IDLE_FULL	(1<<2)
+#define   FBC_CTL_IDLE_LINE	(2<<2)
+#define   FBC_CTL_IDLE_DEBUG	(3<<2)
+#define   FBC_CTL_CPU_FENCE	(1<<1)
+#define   FBC_CTL_PLANEA	(0<<0)
+#define   FBC_CTL_PLANEB	(1<<0)
+#define FBC_FENCE_OFF		0x0321b
+#define FBC_MOD_NUM		0x03220
+#define FBC_TAG_DEBUG		0x03300
+
+#define FBC_LL_SIZE		(1536)
+#define FBC_LL_PAD		(32)
+
+/* Framebuffer compression version 2 */
+#define DPFC_CB_BASE		0x3200
+#define DPFC_CONTROL		0x3208
+#define   DPFC_CTL_EN		(1<<31)
+#define   DPFC_CTL_PLANEA	(0<<30)
+#define   DPFC_CTL_PLANEB	(1<<30)
+#define   DPFC_CTL_FENCE_EN	(1<<29)
+#define   DPFC_CTL_LIMIT_1X	(0<<6)
+#define   DPFC_CTL_LIMIT_2X	(1<<6)
+#define   DPFC_CTL_LIMIT_4X	(2<<6)
+#define DPFC_RECOMP_CTL		0x320c
+#define   DPFC_RECOMP_STALL_EN	(1<<27)
+#define   DPFC_RECOMP_STALL_WM_SHIFT (16)
+#define   DPFC_RECOMP_STALL_WM_MASK (0x07ff0000)
+#define   DPFC_RECOMP_TIMER_COUNT_SHIFT (0)
+#define   DPFC_RECOMP_TIMER_COUNT_MASK (0x0000003f)
+#define DPFC_STATUS		0x3210
+#define   DPFC_INVAL_SEG_SHIFT  (16)
+#define   DPFC_INVAL_SEG_MASK	(0x07ff0000)
+#define   DPFC_COMP_SEG_SHIFT	(0)
+#define   DPFC_COMP_SEG_MASK	(0x000003ff)
+#define DPFC_STATUS2		0x3214
+#define DPFC_FENCE_YOFF		0x3218
+
+#define PEG_BAND_GAP_DATA	0x14d68
 
 #endif /* _I810_REG_H */

@@ -7,7 +7,6 @@
  * Used here with the explicit permission of the original author, Alan Cox.
  *				<alan@lxorguk.ukuu.org.uk>
  */
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/v4l/videodev.h,v 1.7tsi Exp $ */
 
 #include <X11/Xmd.h>
 

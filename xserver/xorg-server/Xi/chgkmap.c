@@ -56,13 +56,9 @@ SOFTWARE.
 #include <dix-config.h>
 #endif
 
-#include <X11/X.h>	/* for inputstr.h    */
-#include <X11/Xproto.h>	/* Request macro     */
 #include "inputstr.h"	/* DeviceIntPtr      */
 #include <X11/extensions/XI.h>
 #include <X11/extensions/XIproto.h>
-#include "extnsionst.h"
-#include "extinit.h"	/* LookupDeviceIntRec */
 #include "exevents.h"
 #include "exglobals.h"
 
@@ -79,18 +75,14 @@ int
 SProcXChangeDeviceKeyMapping(ClientPtr client)
 {
     char n;
-    long *p;
-    int i, count;
+    unsigned int count;
 
     REQUEST(xChangeDeviceKeyMappingReq);
     swaps(&stuff->length, n);
     REQUEST_AT_LEAST_SIZE(xChangeDeviceKeyMappingReq);
-    p = (long *)&stuff[1];
     count = stuff->keyCodes * stuff->keySymsPerKeyCode;
-    for (i = 0; i < count; i++) {
-	swapl(p, n);
-	p++;
-    }
+    REQUEST_FIXED_SIZE(xChangeDeviceKeyMappingReq, count * sizeof(CARD32));
+    SwapLongs((CARD32 *) (&stuff[1]), count);
     return (ProcXChangeDeviceKeyMapping(client));
 }
 
@@ -106,23 +98,22 @@ ProcXChangeDeviceKeyMapping(ClientPtr client)
     int ret;
     unsigned len;
     DeviceIntPtr dev;
+    unsigned int count;
 
     REQUEST(xChangeDeviceKeyMappingReq);
     REQUEST_AT_LEAST_SIZE(xChangeDeviceKeyMappingReq);
 
-    dev = LookupDeviceIntRec(stuff->deviceid);
-    if (dev == NULL) {
-	SendErrorToClient(client, IReqCode, X_ChangeDeviceKeyMapping, 0,
-			  BadDevice);
-	return Success;
-    }
+    count = stuff->keyCodes * stuff->keySymsPerKeyCode;
+    REQUEST_FIXED_SIZE(xChangeDeviceKeyMappingReq, count * sizeof(CARD32));
+
+    ret = dixLookupDevice(&dev, stuff->deviceid, client, DixManageAccess);
+    if (ret != Success)
+	return ret;
     len = stuff->length - (sizeof(xChangeDeviceKeyMappingReq) >> 2);
 
     ret = ChangeKeyMapping(client, dev, len, DeviceMappingNotify,
 			   stuff->firstKeyCode, stuff->keyCodes,
 			   stuff->keySymsPerKeyCode, (KeySym *) & stuff[1]);
 
-    if (ret != Success)
-	SendErrorToClient(client, IReqCode, X_ChangeDeviceKeyMapping, 0, ret);
-    return Success;
+    return ret;
 }

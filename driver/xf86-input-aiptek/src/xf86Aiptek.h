@@ -34,7 +34,7 @@
  * TORTIOUS ACTIONS, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-/* $XdotOrg: driver/xf86-input-aiptek/src/xf86Aiptek.h,v 1.5 2006/04/07 16:50:50 ajax Exp $ */
+/* $XdotOrg: driver/xf86-input-aiptek/src/xf86Aiptek.h,v 1.4 2005/07/13 02:18:12 kem Exp $ */
 /* $XFree86: xc/programs/Xserver/hw/xfree86/input/aiptek/xf86Aiptek.h,v 1.2 2003/11/03 05:36:32 tsi Exp $ */
 
 #ifndef _AIPTEK_H_
@@ -66,8 +66,6 @@
 #include <misc.h>
 #include <xf86.h>
 
-#define NEED_XF86_TYPES
-
 #if !defined(DGUX)
 #   include <xisb.h>
 #endif
@@ -97,6 +95,12 @@
 #define XI_STYLUS           "STYLUS"    /* X device name for the stylus */
 #define XI_CURSOR           "CURSOR"    /* X device name for the cursor */
 #define XI_ERASER           "ERASER"    /* X device name for the eraser */
+
+/***********************************************************************
+ * We ship the proximity bit through EV_MISC, ORed with information
+ * as to whether report came from the stylus or tablet mouse.
+ */
+#define PROXIMITY(flags)            ((flags) & 0x0F)
 
 /* macro from counts/inch to counts/meter */
 #define LPI2CPM(res)    (res * 1000 / 25.4)

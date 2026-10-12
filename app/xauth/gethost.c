@@ -307,7 +307,15 @@ struct addrlist *get_address_info (
 		family = FamilyInternet6;
 	    }
 
-	    if (len > 0 && src != NULL) {
+	    struct addrlist *duplicate;
+	    for(duplicate = retval; duplicate != NULL; duplicate = duplicate->next) {
+		if(duplicate->family == family && duplicate->len == len &&
+                   memcmp(duplicate->address, src, len) == 0) {
+		    break;
+                }
+	    }
+
+	    if (len > 0 && src != NULL && duplicate == NULL) {
 		struct addrlist *newrv = malloc (sizeof(struct addrlist));
 		if (newrv) {
 		    newrv->address = malloc (len);

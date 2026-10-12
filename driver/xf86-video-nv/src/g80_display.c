@@ -191,15 +191,14 @@ G80DispCommand(ScrnInfoPtr pScrn, CARD32 addr, CARD32 data)
         if(super) {
             if(super == 2) {
                 xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
-                const CARD32 r = pNv->reg[0x00610030/4];
                 int i;
 
                 for(i = 0; i < xf86_config->num_crtc; i++)
                 {
                     xf86CrtcPtr crtc = xf86_config->crtc[i];
-                    G80CrtcPrivPtr pPriv = crtc->driver_private;
+                    const int headOff = 0x800 * G80CrtcGetHead(crtc);
 
-                    if(r & (0x200 << pPriv->head))
+                    if((pNv->reg[(0x00614200+headOff)/4] & 0xc0) == 0x80)
                         G80CrtcSetPClk(crtc);
                 }
             }
@@ -250,6 +249,7 @@ Bool
 G80DispInit(ScrnInfoPtr pScrn)
 {
     G80Ptr pNv = G80PTR(pScrn);
+    CARD32 val;
 
     if(pNv->reg[0x00610024/4] & 0x100) {
         pNv->reg[0x00610024/4] = 0x100;
@@ -258,7 +258,15 @@ G80DispInit(ScrnInfoPtr pScrn)
     }
 
     pNv->reg[0x00610200/4] = 0x2b00;
-    while((pNv->reg[0x00610200/4] & 0x1e0000) != 0);
+    do {
+        val = pNv->reg[0x00610200/4];
+
+        if ((val & 0x9f0000) == 0x20000)
+            pNv->reg[0x00610200/4] = val | 0x800000;
+
+        if ((val & 0x3f0000) == 0x30000)
+            pNv->reg[0x00610200/4] = val | 0x200000;
+    } while ((val & 0x1e0000) != 0);
     pNv->reg[0x00610300/4] = 1;
     pNv->reg[0x00610200/4] = 0x1000b03;
     while(!(pNv->reg[0x00610200/4] & 0x40000000));
@@ -398,7 +406,7 @@ G80CrtcBlankScreen(xf86CrtcPtr crtc, Bool blank)
         C(0x00000860 + headOff, 0);
         C(0x00000864 + headOff, 0);
         pNv->reg[0x00610380/4] = 0;
-        pNv->reg[0x00610384/4] = pNv->RamAmountKBytes * 1024 - 1;
+        pNv->reg[0x00610384/4] = pNv->videoRam * 1024 - 1;
         pNv->reg[0x00610388/4] = 0x150000;
         pNv->reg[0x0061038C/4] = 0;
         C(0x00000884 + headOff, (pNv->videoRam << 2) - 0x40);
@@ -414,7 +422,7 @@ G80CrtcBlankScreen(xf86CrtcPtr crtc, Bool blank)
     }
 }
 
-void
+static void
 G80CrtcDPMSSet(xf86CrtcPtr crtc, int mode)
 {
 }
@@ -433,12 +441,12 @@ static void G80CrtcShowHideCursor(xf86CrtcPtr crtc, Bool show, Bool update)
     }
 }
 
-void G80CrtcShowCursor(xf86CrtcPtr crtc)
+static void G80CrtcShowCursor(xf86CrtcPtr crtc)
 {
     G80CrtcShowHideCursor(crtc, TRUE, TRUE);
 }
 
-void G80CrtcHideCursor(xf86CrtcPtr crtc)
+static void G80CrtcHideCursor(xf86CrtcPtr crtc)
 {
     G80CrtcShowHideCursor(crtc, FALSE, TRUE);
 }
@@ -514,6 +522,7 @@ void G80CrtcSetScale(xf86CrtcPtr crtc, DisplayModePtr mode,
     int outX, outY;
 
     switch(scale) {
+        default:
         case G80_SCALE_ASPECT:
             ComputeAspectScale(mode, &outX, &outY);
             break;

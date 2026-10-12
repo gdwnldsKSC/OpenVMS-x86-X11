@@ -27,7 +27,6 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef _XKBSRV_H_
 #define	_XKBSRV_H_
 
-#ifdef XKB_IN_SERVER
 #define XkbAllocClientMap		SrvXkbAllocClientMap
 #define XkbAllocServerMap		SrvXkbAllocServerMap
 #define XkbChangeTypesOfKey		SrvXkbChangeTypesOfKey
@@ -52,10 +51,9 @@ THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define XkbVirtualModsToReal		SrvXkbVirtualModsToReal
 #define	XkbChangeKeycodeRange		SrvXkbChangeKeycodeRange
 #define	XkbApplyVirtualModChanges	SrvXkbApplyVirtualModChanges
-#endif
 
-#include <X11/extensions/XKBstr.h>
 #include <X11/extensions/XKBproto.h>
+#include "xkbstr.h"
 #include "inputstr.h"
 
 typedef struct _XkbInterest {
@@ -126,6 +124,22 @@ typedef struct	_XkbEventCause {
 #define	_BEEP_LED_CHANGE	14
 #define	_BEEP_BOUNCE_REJECT	15
 
+typedef struct _XkbFilter {
+	CARD16			  keycode;
+	CARD8			  what;
+	CARD8			  active;
+	CARD8			  filterOthers;
+	CARD32			  priv;
+	XkbAction		  upAction;
+	int			(*filter)(
+					struct _XkbSrvInfo* 	/* xkbi */,
+					struct _XkbFilter *	/* filter */,
+					unsigned		/* keycode */,
+					XkbAction *		/* action */
+				  );
+	struct _XkbFilter	 *next;
+} XkbFilterRec,*XkbFilterPtr;
+
 typedef struct _XkbSrvInfo {
 	XkbStateRec	 prev_state;
 	XkbStateRec	 state;
@@ -169,6 +183,9 @@ typedef struct _XkbSrvInfo {
 	OsTimerPtr	 bounceKeysTimer;
 	OsTimerPtr	 repeatKeyTimer;
 	OsTimerPtr	 krgTimer;
+
+	int		 szFilters;
+	XkbFilterPtr	 filters;
 } XkbSrvInfoRec, *XkbSrvInfoPtr;
 
 #define	XkbSLI_IsDefault	(1L<<0)
@@ -220,6 +237,14 @@ typedef struct	_XkbSrvLedInfo {
 typedef struct
 {
     ProcessInputProc processInputProc;
+    /* If processInputProc is set to something different than realInputProc,
+     * UNWRAP and COND_WRAP will not touch processInputProc and update only
+     * realInputProc.  This ensures that
+     *   processInputProc == (frozen ? EnqueueEvent : realInputProc)
+     *
+     * WRAP_PROCESS_INPUT_PROC should only be called during initialization,
+     * since it may destroy this invariant.
+     */
     ProcessInputProc realInputProc;
     DeviceUnwrapProc unwrapProc;
 } xkbDeviceInfoRec, *xkbDeviceInfoPtr;
@@ -241,12 +266,17 @@ typedef struct
 	oldprocs->unwrapProc = device->unwrapProc; \
 	device->unwrapProc = unwrapproc;
 
-#define UNWRAP_PROCESS_INPUT_PROC(device, oldprocs) \
-	device->public.processInputProc = oldprocs->processInputProc; \
+#define UNWRAP_PROCESS_INPUT_PROC(device, oldprocs, backupproc) \
+        backupproc = device->public.realInputProc; \
+	if (device->public.processInputProc == device->public.realInputProc)\
+	    device->public.processInputProc = oldprocs->realInputProc; \
 	device->public.realInputProc = oldprocs->realInputProc; \
 	device->unwrapProc = oldprocs->unwrapProc;
 
-#define XKBDEVICEINFO(dev) ((xkbDeviceInfoPtr) (dev)->devPrivates[xkbDevicePrivateIndex].ptr)
+extern DevPrivateKey xkbDevicePrivateKey;
+#define XKBDEVICEINFO(dev) ((xkbDeviceInfoPtr)dixLookupPrivate(&(dev)->devPrivates, xkbDevicePrivateKey))
+
+extern void xkbUnwrapProc(DeviceIntPtr, DeviceHandleProc, pointer);
 
 /***====================================================================***/
 
@@ -262,6 +292,7 @@ typedef struct
 extern int	XkbReqCode;
 extern int	XkbEventBase;
 extern int	XkbDisableLockActions;
+extern int	XkbKeyboardErrorCode;
 extern char *	XkbBaseDirectory;
 extern char *	XkbBinDirectory;
 extern char *	XkbInitialMap;
@@ -283,22 +314,17 @@ extern CARD32	xkbDebugFlags;
 #define	_XkbClearElems(a,f,l,t)	bzero(&(a)[f],((l)-(f)+1)*sizeof(t))
 #define	_XkbFree(p)		Xfree(p)
 
-#define	_XkbLibError(c,l,d) \
-	{ _XkbErrCode= (c); _XkbErrLocation= (l); _XkbErrData= (d); }
+#define	_XkbLibError(c,l,d) /* Epoch fail */
 #define	_XkbErrCode2(a,b) ((XID)((((unsigned int)(a))<<24)|((b)&0xffffff)))
 #define	_XkbErrCode3(a,b,c)	_XkbErrCode2(a,(((unsigned int)(b))<<16)|(c))
 #define	_XkbErrCode4(a,b,c,d) _XkbErrCode3(a,b,((((unsigned int)(c))<<8)|(d)))
 
-extern	int	DeviceKeyPress,DeviceKeyRelease;
+extern	int	DeviceKeyPress,DeviceKeyRelease,DeviceMotionNotify;
 extern	int	DeviceButtonPress,DeviceButtonRelease;
+extern	int	DeviceEnterNotify,DeviceLeaveNotify;
 
-#ifdef XINPUT
 #define	_XkbIsPressEvent(t)	(((t)==KeyPress)||((t)==DeviceKeyPress))
 #define	_XkbIsReleaseEvent(t)	(((t)==KeyRelease)||((t)==DeviceKeyRelease))
-#else
-#define	_XkbIsPressEvent(t)	((t)==KeyPress)
-#define	_XkbIsReleaseEvent(t)	((t)==KeyRelease)
-#endif
 
 #define	_XkbCoreKeycodeInRange(c,k)	(((k)>=(c)->curKeySyms.minKeyCode)&&\
 					 ((k)<=(c)->curKeySyms.maxKeyCode))
@@ -310,20 +336,10 @@ extern	int	DeviceButtonPress,DeviceButtonRelease;
 #define	IsKeypadKey(s)		XkbKSIsKeypad(s)
 
 #define	Status		int
-#define	XPointer	pointer
-#define	Display		struct _XDisplay
 
 #ifndef True
-#define	True	1
-#define	False	0
-#endif
-
-#ifndef PATH_MAX
-#ifdef MAXPATHLEN
-#define	PATH_MAX MAXPATHLEN
-#else
-#define	PATH_MAX 1024
-#endif
+#define	True	TRUE
+#define	False	FALSE
 #endif
 
 _XFUNCPROTOBEGIN
@@ -352,29 +368,44 @@ extern	void XkbFreeNames(
 	Bool			/* freeMap */
 );
 
-extern DeviceIntPtr _XkbLookupAnyDevice(
-    int			/* id */,
-    int *		/* why_rtrn */
+extern int _XkbLookupAnyDevice(
+    DeviceIntPtr *pDev,
+    int id,
+    ClientPtr client,
+    Mask access_mode,
+    int *xkb_err
 );
 
-extern DeviceIntPtr _XkbLookupKeyboard(
-    int			/* id */,
-    int *		/* why_rtrn */
+extern int _XkbLookupKeyboard(
+    DeviceIntPtr *pDev,
+    int id,
+    ClientPtr client,
+    Mask access_mode,
+    int *xkb_err
 );
 
-extern DeviceIntPtr _XkbLookupBellDevice(
-    int			/* id */,
-    int *		/* why_rtrn */
+extern int _XkbLookupBellDevice(
+    DeviceIntPtr *pDev,
+    int id,
+    ClientPtr client,
+    Mask access_mode,
+    int *xkb_err
 );
 
-extern DeviceIntPtr _XkbLookupLedDevice(
-    int			/* id */,
-    int *		/* why_rtrn */
+extern int _XkbLookupLedDevice(
+    DeviceIntPtr *pDev,
+    int id,
+    ClientPtr client,
+    Mask access_mode,
+    int *xkb_err
 );
 
-extern DeviceIntPtr _XkbLookupButtonDevice(
-    int			/* id */,
-    int *		/* why_rtrn */
+extern int _XkbLookupButtonDevice(
+    DeviceIntPtr *pDev,
+    int id,
+    ClientPtr client,
+    Mask access_mode,
+    int *xkb_err
 );
 
 extern	XkbDescPtr XkbAllocKeyboard(
@@ -947,10 +978,8 @@ extern void XkbSendNewKeyboardNotify(
 	xkbNewKeyboardNotify *	/* pNKN */
 );
 
-#ifdef XKBSRV_NEED_FILE_FUNCS
-
+#include "xkbfile.h"
 #include <X11/extensions/XKMformat.h>
-#include <X11/extensions/XKBfile.h>
 #include <X11/extensions/XKBrules.h>
 
 #define	_XkbListKeymaps		0
@@ -984,7 +1013,7 @@ extern	unsigned int XkbDDXLoadKeymapByNames(
 	XkbComponentNamesPtr	/* names */,
 	unsigned int		/* want */,
 	unsigned int		/* need */,
-	XkbFileInfoPtr		/* finfoRtrn */,
+	XkbDescPtr *		/* finfoRtrn */,
 	char *			/* keymapNameRtrn */,
 	int 			/* keymapNameRtrnLen */
 );
@@ -997,15 +1026,8 @@ extern	Bool XkbDDXNamesFromRules(
 );
 
 extern	Bool XkbDDXApplyConfig(
-	XPointer	/* cfg_in */,
+	void *	/* cfg_in */,
 	XkbSrvInfoPtr	/* xkbi */
-);
-
-extern XPointer XkbDDXPreloadConfig(
-	char **			/* rulesFileRtrn */,
-	XkbRF_VarDefsPtr	/* defs */,
-	XkbComponentNamesPtr	/* names */,
-	DeviceIntPtr		/* dev */
 );
 
 extern	int _XkbStrCaseCmp(
@@ -1013,10 +1035,8 @@ extern	int _XkbStrCaseCmp(
 	char *			/* str2 */
 );
 
-#endif /* XKBSRV_NEED_FILE_FUNCS */
-
 _XFUNCPROTOEND
 
-#define	XkbAtomGetString(d,s)	NameForAtom(s)
+#define	XkbAtomGetString(s)	NameForAtom(s)
 
 #endif /* _XKBSRV_H_ */

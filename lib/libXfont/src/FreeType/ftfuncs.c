@@ -42,6 +42,7 @@ THE SOFTWARE.
 #include "Xdefs.h"
 #include "xf86_ansic.h"
 #endif
+#include <ctype.h>
 
 #include <X11/fonts/fntfilst.h>
 #include <X11/fonts/fontutil.h>

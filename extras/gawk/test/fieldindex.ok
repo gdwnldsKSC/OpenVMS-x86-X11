@@ -1,0 +1,7 @@
+<89123e+4567> typeof(i) = string
+<89123e+4567> typeof(j) = string
+i = 89123e+4567, j = 89123e+4567
+<89123e+4567> typeof(i) = string
+<1289e+76543> typeof(j) = string
+i = 89123e+4567, j = 1289e+76543
+(i < j) = 0, (i < "" j) = 0

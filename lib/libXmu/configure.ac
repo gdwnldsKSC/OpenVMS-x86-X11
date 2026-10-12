@@ -5,7 +5,7 @@
 AC_PREREQ(2.57)
 
 AC_INIT([libXmu],
-        1.0.3,
+        1.0.4,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         libXmu)
 
@@ -16,6 +16,11 @@ AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
 AM_CONFIG_HEADER([config.h])
+
+# Require xorg-macros version 1.1.0 or newer for XORG_WITH_LINT macro
+m4_ifndef([XORG_MACROS_VERSION], [AC_FATAL([must install xorg-macros 1.1 or later before running autoconf/autogen])])
+XORG_MACROS_VERSION(1.1)
+
 
 # Checks for programs.
 AC_PROG_LIBTOOL
@@ -50,6 +55,18 @@ XTRANS_CONNECTION_FLAGS
 
 AC_DEFINE(HAS_SNPRINTF, [], [Whether we have snprintf()])
 AC_SUBST(HAS_SNPRINTF)
+
+dnl Allow checking code with lint, sparse, etc.
+XORG_WITH_LINT
+XORG_LINT_LIBRARY([Xmu])
+LINTLIBUU=`echo $LINTLIB | sed s/Xmu/Xmuu/`
+AC_SUBST(LINTLIBUU)
+
+if test "x$GCC" = "xyes"; then
+        GCC_WARNINGS="-Wall -Wpointer-arith -Wstrict-prototypes \
+        -Wmissing-prototypes -Wmissing-declarations -Wnested-externs"
+        XMU_CFLAGS="$GCC_WARNINGS $XMU_CFLAGS"
+fi
 
 XORG_RELEASE_VERSION
 

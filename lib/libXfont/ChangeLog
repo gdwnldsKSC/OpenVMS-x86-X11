@@ -1,3 +1,118 @@
+commit 684c000e57f30344777cf763f2f1b540ef008b38
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed Jul 2 15:30:03 2008 -0400
+
+    libXfont 1.3.3
+
+commit 11edbc3a818e15ea2b622b31e6f87159ee68ae4a
+Author: Maarten ter Huurne <maarten.ter.huurne@philips.com>
+Date:   Sat Jun 28 15:34:50 2008 -0400
+
+    Do not call FT_Get_BDF_Charset_ID() if configured with --disable-bdfformat
+    
+    When I configure libXfont-1.3.2 with --disable-bdfformat and link it against
+    FreeType that is built without BDF support, I get the following link error:
+    
+    libXfont.so: undefined reference to ‘FT_Get_BDF_Charset_ID’
+    
+    I fixed it by checking XFONT_BDFFORMAT and if BDF support is disabled, the call
+    to FT_Get_BDF_Charset_ID() is omitted and the result code is set as if the call
+    had failed.
+    
+    Signed-off-by: James Cloos <cloos@jhcloos.com>
+
+commit 1ab07ce0eec4f6c7ed66c7aba3edf8c4315dd907
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Tue May 13 17:26:57 2008 -0700
+
+    FontFileDirectoryChanged: check length of "fonts.alias" as well as "fonts.dir"
+
+commit 0f9db4aa7de6e0644ac9c5811b949e5f936c9d61
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri May 9 12:36:30 2008 -0700
+
+    Don't allow a font alias to point to itself and create a loop
+    
+    Part of fix for Sun bug 4258475
+    <http://bugs.opensolaris.org/bugdatabase/view_bug.do?bug_id=4258475>
+
+commit 67311922a2e02d8a763831831b65bb4833db58b5
+Author: Colin Harrison <colin.harrison-at-virgin.net>
+Date:   Mon May 5 22:17:55 2008 +0100
+
+    Fix build for WIN32
+
+commit 6ba408c956ca8e241d10d463c45b4e987b757333
+Author: Matthieu Herrb <matthieu.herrb@laas.fr>
+Date:   Sun Mar 9 08:21:34 2008 +0100
+
+    nuke RCS Ids
+
+commit 754cabe62e91b9ad50c3027c063f4269775f7add
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Fri Mar 7 12:19:22 2008 +0100
+
+    Add missing include in src/FreeType/ftfuncs.c
+    
+    Fixes compiler warning:
+    ../../../src/FreeType/ftfuncs.c: In function 'restrict_code_range_by_str':
+    ../../../src/FreeType/ftfuncs.c:2081: warning: implicit declaration of function 'isspace'
+
+commit 0fd2a1428df56d8b29e148b08dcec2dfed9302fa
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed Mar 5 22:04:06 2008 -0500
+
+    libXfont 1.3.2
+
+commit b76df66d2c507898472bba0f9986ef5700029a36
+Author: Matthieu Herrb <matthieu@bluenote.herrb.com>
+Date:   Thu Jan 17 15:30:37 2008 +0100
+
+    Fix for CVE-2008-0006 - PCF Font parser buffer overflow.
+
+commit 2297c6390a1609fe810c2cd5b3443f3722610944
+Author: Matthieu Herrb <matthieu@bluenote.herrb.com>
+Date:   Thu Oct 18 21:46:49 2007 +0200
+
+    ftsystem.c is not needed anymore.
+
+commit 5bf703700ee4a5d6eae20da07cb7a29369667aef
+Author: Matthieu Herrb <matthieu@bluenote.herrb.com>
+Date:   Fri Sep 28 08:17:57 2007 +0200
+
+    catalogue.c: prevent a one character overflow
+    
+    this occurs if readlink writes a result that's exactly the
+    size of the buffer that's passed to it. Reported by
+    Joerg Sonnenberger.
+    
+    Re
+
+commit fd8a03fbbd74f5cbaa740e5d50fccdf5c1f78b5b
+Author: Jens Granseuer <jensgr@gmx.net>
+Date:   Thu Sep 27 23:12:00 2007 +0200
+
+    fix build with gcc 2.95.
+    
+    In addition to fixing the C89 issue, the patch also flags a few functions as
+    static to avoid "no previous prototype" warnings.
+
+commit 268f1bb1859e97944e8b63a5bb12677e874ed144
+Author: Tilman Sauerbeck <tilman@code-monkey.de>
+Date:   Thu Sep 13 20:40:26 2007 +0200
+
+    Replaced one instance of bcopy() with memcpy().
+    
+    f->buffer cannot overlap with io->file->bits, so it's safe to
+    use memcpy() rather than memmove().
+    Compile-tested only.
+
+commit f2725a5c9da771fb610d503ebfda3b4d1553bac4
+Author: Eric Anholt <eric@anholt.net>
+Date:   Wed Sep 5 13:10:43 2007 -0700
+
+    Bump version to 1.3.1.
+
 commit aca95d12a8b35de7ae914632fc9e8a723d58a860
 Author: Matthieu Herrb <matthieu@bluenote.herrb.com>
 Date:   Sat Aug 25 23:32:54 2007 +0200

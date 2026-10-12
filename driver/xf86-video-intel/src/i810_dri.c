@@ -354,9 +354,15 @@ I810DRIScreenInit(ScreenPtr pScreen)
    } else {
       pDRIInfo->busIdString = xalloc(64);
       sprintf(pDRIInfo->busIdString, "PCI:%d:%d:%d",
+#if XSERVER_LIBPCIACCESS
+	      ((pI810->PciInfo->domain << 8) | pI810->PciInfo->bus),
+	      pI810->PciInfo->dev, pI810->PciInfo->func
+#else
 	      ((pciConfigPtr) pI810->PciInfo->thisCard)->busnum,
 	      ((pciConfigPtr) pI810->PciInfo->thisCard)->devnum,
-	      ((pciConfigPtr) pI810->PciInfo->thisCard)->funcnum);
+	      ((pciConfigPtr) pI810->PciInfo->thisCard)->funcnum
+#endif
+	      );
    }
    pDRIInfo->ddxDriverMajorVersion = I810_MAJOR_VERSION;
    pDRIInfo->ddxDriverMinorVersion = I810_MINOR_VERSION;
@@ -972,12 +978,20 @@ I810DRIScreenInit(ScreenPtr pScreen)
 
    if (!pI810DRI->irq) {
       pI810DRI->irq = drmGetInterruptFromBusID(pI810->drmSubFD,
+#if XSERVER_LIBPCIACCESS
+					       ((pI810->PciInfo->domain << 8) |
+						pI810->PciInfo->bus),
+					       pI810->PciInfo->dev,
+					       pI810->PciInfo->func
+#else
 					       ((pciConfigPtr) pI810->
 						PciInfo->thisCard)->busnum,
 					       ((pciConfigPtr) pI810->
 						PciInfo->thisCard)->devnum,
 					       ((pciConfigPtr) pI810->
-						PciInfo->thisCard)->funcnum);
+						PciInfo->thisCard)->funcnum
+#endif
+					       );
       if ((drmCtlInstHandler(pI810->drmSubFD, pI810DRI->irq)) != 0) {
 	 xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		    "[drm] failure adding irq handler, there is a device "
@@ -991,7 +1005,7 @@ I810DRIScreenInit(ScreenPtr pScreen)
    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 	      "[drm] dma control initialized, using IRQ %d\n", pI810DRI->irq);
 
-   pI810DRI->deviceID = pI810->PciInfo->chipType;
+   pI810DRI->deviceID = DEVICE_ID(pI810->PciInfo);
    pI810DRI->width = pScrn->virtualX;
    pI810DRI->height = pScrn->virtualY;
    pI810DRI->mem = pScrn->videoRam * 1024;
@@ -1194,7 +1208,7 @@ I810DRIMoveBuffers(WindowPtr pParent, DDXPointRec ptOldOrg,
    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
    I810Ptr pI810 = I810PTR(pScrn);
    BoxPtr pboxTmp, pboxNext, pboxBase;
-   DDXPointPtr pptTmp, pptNew2;
+   DDXPointPtr pptTmp, pptNew2 = NULL;
    int xdir, ydir;
 
    int screenwidth = pScrn->virtualX;
@@ -1217,12 +1231,12 @@ I810DRIMoveBuffers(WindowPtr pParent, DDXPointRec ptOldOrg,
 
       if (nbox > 1) {
 	 /* Keep ordering in each band, reverse order of bands */
-	 pboxNew1 = (BoxPtr) ALLOCATE_LOCAL(sizeof(BoxRec) * nbox);
+	 pboxNew1 = (BoxPtr) xalloc(sizeof(BoxRec) * nbox);
 	 if (!pboxNew1)
 	    return;
-	 pptNew1 = (DDXPointPtr) ALLOCATE_LOCAL(sizeof(DDXPointRec) * nbox);
+	 pptNew1 = (DDXPointPtr) xalloc(sizeof(DDXPointRec) * nbox);
 	 if (!pptNew1) {
-	    DEALLOCATE_LOCAL(pboxNew1);
+	    xfree(pboxNew1);
 	    return;
 	 }
 	 pboxBase = pboxNext = pbox + nbox - 1;
@@ -1253,16 +1267,16 @@ I810DRIMoveBuffers(WindowPtr pParent, DDXPointRec ptOldOrg,
 
       if (nbox > 1) {
 	 /*reverse orderof rects in each band */
-	 pboxNew2 = (BoxPtr) ALLOCATE_LOCAL(sizeof(BoxRec) * nbox);
-	 pptNew2 = (DDXPointPtr) ALLOCATE_LOCAL(sizeof(DDXPointRec) * nbox);
+	 pboxNew2 = (BoxPtr) xalloc(sizeof(BoxRec) * nbox);
+	 pptNew2 = (DDXPointPtr) xalloc(sizeof(DDXPointRec) * nbox);
 	 if (!pboxNew2 || !pptNew2) {
 	    if (pptNew2)
-	       DEALLOCATE_LOCAL(pptNew2);
+	       xfree(pptNew2);
 	    if (pboxNew2)
-	       DEALLOCATE_LOCAL(pboxNew2);
+	       xfree(pboxNew2);
 	    if (pboxNew1) {
-	       DEALLOCATE_LOCAL(pptNew1);
-	       DEALLOCATE_LOCAL(pboxNew1);
+	       xfree(pptNew1);
+	       xfree(pboxNew1);
 	    }
 	    return;
 	 }
@@ -1327,12 +1341,12 @@ I810DRIMoveBuffers(WindowPtr pParent, DDXPointRec ptOldOrg,
    I810EmitFlush(pScrn);
 
    if (pboxNew2) {
-      DEALLOCATE_LOCAL(pptNew2);
-      DEALLOCATE_LOCAL(pboxNew2);
+      xfree(pptNew2);
+      xfree(pboxNew2);
    }
    if (pboxNew1) {
-      DEALLOCATE_LOCAL(pptNew1);
-      DEALLOCATE_LOCAL(pboxNew1);
+      xfree(pptNew1);
+      xfree(pboxNew1);
    }
 
    if (pI810->AccelInfoRec)

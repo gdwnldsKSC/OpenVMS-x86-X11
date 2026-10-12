@@ -30,6 +30,8 @@
 #include "config.h"
 #endif
 
+#include <stdint.h>
+
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "xf86Resources.h"
@@ -44,25 +46,44 @@
 #include "tfp410.h"
 #include "tfp410_reg.h"
 
+typedef struct _TFP410SaveRec {
+    uint8_t ctl1;
+    uint8_t ctl2;
+} TFP410SaveRec;
+
+typedef struct {
+    I2CDevRec d;
+    Bool quiet;
+
+    TFP410SaveRec SavedReg;
+    TFP410SaveRec ModeReg;
+} TFP410Rec, *TFP410Ptr;
+
+#define TFPPTR(d) ((TFP410Ptr)(d->DriverPrivate.ptr))
+
 static Bool
-tfp410ReadByte(TFP410Ptr tfp, int addr, CARD8 *ch)
+tfp410ReadByte(TFP410Ptr tfp, int addr, uint8_t *ch)
 {
     if (!xf86I2CReadByte(&(tfp->d), addr, ch)) {
-	xf86DrvMsg(tfp->d.pI2CBus->scrnIndex, X_ERROR,
-		   "Unable to read from %s Slave %d.\n",
-		   tfp->d.pI2CBus->BusName, tfp->d.SlaveAddr);
+	if (!tfp->quiet) {
+	    xf86DrvMsg(tfp->d.pI2CBus->scrnIndex, X_ERROR,
+		       "Unable to read from %s Slave %d.\n",
+		       tfp->d.pI2CBus->BusName, tfp->d.SlaveAddr);
+	}
 	return FALSE;
     }
     return TRUE;
 }
 
 static Bool
-tfp410WriteByte(TFP410Ptr tfp, int addr, CARD8 ch)
+tfp410WriteByte(TFP410Ptr tfp, int addr, uint8_t ch)
 {
     if (!xf86I2CWriteByte(&(tfp->d), addr, ch)) {
-	xf86DrvMsg(tfp->d.pI2CBus->scrnIndex, X_ERROR,
-		   "Unable to write to %s Slave %d.\n",
-		   tfp->d.pI2CBus->BusName, tfp->d.SlaveAddr);
+	if (!tfp->quiet) {
+	    xf86DrvMsg(tfp->d.pI2CBus->scrnIndex, X_ERROR,
+		       "Unable to write to %s Slave %d.\n",
+		       tfp->d.pI2CBus->BusName, tfp->d.SlaveAddr);
+	}
 	return FALSE;
     }
     return TRUE;
@@ -89,8 +110,6 @@ tfp410_init(I2CBusPtr b, I2CSlaveAddr addr)
     TFP410Ptr tfp;
     int id;
 
-    xf86DrvMsg(b->scrnIndex, X_INFO, "detecting tfp410\n");
-
     tfp = xcalloc(1, sizeof(TFP410Rec));
     if (tfp == NULL)
 	return NULL;
@@ -103,11 +122,14 @@ tfp410_init(I2CBusPtr b, I2CSlaveAddr addr)
     tfp->d.AcknTimeout = b->AcknTimeout;
     tfp->d.ByteTimeout = b->ByteTimeout;
     tfp->d.DriverPrivate.ptr = tfp;
+    tfp->quiet = TRUE;
 
     if ((id = tfp410GetID(tfp, TFP410_VID_LO)) != TFP410_VID) {
-	xf86DrvMsg(tfp->d.pI2CBus->scrnIndex, X_ERROR,
-		   "tfp410 not detected got VID %X: from %s Slave %d.\n",
-		   id, tfp->d.pI2CBus->BusName, tfp->d.SlaveAddr);
+	if (id != 0xffffffff) {
+	    xf86DrvMsg(tfp->d.pI2CBus->scrnIndex, X_ERROR,
+		       "tfp410 not detected got VID %X: from %s Slave %d.\n",
+		       id, tfp->d.pI2CBus->BusName, tfp->d.SlaveAddr);
+	}
 	goto out;
     }
 
@@ -117,6 +139,7 @@ tfp410_init(I2CBusPtr b, I2CSlaveAddr addr)
 		   id, tfp->d.pI2CBus->BusName, tfp->d.SlaveAddr);
 	goto out;
     }
+    tfp->quiet = FALSE;
 
     if (!xf86I2CDevInit(&(tfp->d))) {
 	goto out;
@@ -185,7 +208,7 @@ static void
 tfp410_dump_regs(I2CDevPtr d)
 {
     TFP410Ptr tfp = TFPPTR(d);
-    CARD8 val, val2;
+    uint8_t val, val2;
 
     tfp410ReadByte(tfp, TFP410_REV, &val);
     xf86DrvMsg(tfp->d.pI2CBus->scrnIndex, X_INFO,
@@ -253,7 +276,7 @@ tfp410_restore(I2CDevPtr d)
     tfp410WriteByte(tfp, TFP410_CTL_1, tfp->SavedReg.ctl1);
 }
 
-I830I2CVidOutputRec TFP410VidOutput = {
+_X_EXPORT I830I2CVidOutputRec TFP410VidOutput = {
     .init = tfp410_init,
     .detect = tfp410_detect,
     .mode_valid = tfp410_mode_valid,

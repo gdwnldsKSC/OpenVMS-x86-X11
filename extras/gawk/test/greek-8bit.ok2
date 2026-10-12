@@ -1,0 +1,11 @@
+"b\323" ~ /\323/: expect true, got true
+"b\363" ~ /\323/: expect true, got true
+"b\362" ~ /\323/: expect false, got false
+
+"b\323" ~ /\363/: expect true, got true
+"b\363" ~ /\363/: expect true, got true
+"b\362" ~ /\363/: expect false, got false
+
+"b\323" ~ /\362/: expect true, got false
+"b\363" ~ /\362/: expect false, got false
+"b\362" ~ /\362/: expect true, got true

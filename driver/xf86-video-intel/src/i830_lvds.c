@@ -29,95 +29,350 @@
 #include "config.h"
 #endif
 
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include "xf86.h"
 #include "i830.h"
 #include "i830_bios.h"
 #include "i830_display.h"
 #include "X11/Xatom.h"
 
+/*
+ * Three panel fitting modes:
+ * CENTER - center image on screen, don't scale
+ * FULL_ASPECT - scale image to fit screen, but preserve aspect ratio
+ * FULL - scale image to fit screen without regard to aspect ratio
+ */
+enum pfit_mode {
+    CENTER = 0,
+    FULL_ASPECT,
+    FULL,
+};
+
 struct i830_lvds_priv {
-    /* The BIOS's fixed timings for the LVDS */
-    DisplayModePtr panel_fixed_mode;
-    
-    /* The panel needs dithering enabled */
-    Bool	    panel_wants_dither;
+    /* The panel is in DPMS off */
+    Bool           dpmsoff;
 
     /* restore backlight to this value */
     int		    backlight_duty_cycle;
+
+    void (*set_backlight)(xf86OutputPtr output, int level);
+    int (*get_backlight)(xf86OutputPtr output);
+    int backlight_max;
+    enum pfit_mode fitting_mode;
+    uint32_t pfit_control;
+    uint32_t pfit_pgm_ratios;
 };
 
-/**
- * Use legacy backlight controls?
- *
- * \param pI830 device in question
- *
- * Returns TRUE if legacy backlight should be used, false otherwise.
- */
-static int
-i830_lvds_backlight_legacy(I830Ptr pI830)
-{
-    CARD32 blc_pwm_ctl, blc_pwm_ctl2;
+#define BACKLIGHT_CLASS "/sys/class/backlight"
 
-    /* 965GM+ change the location of the legacy control bit */
-    if (IS_I965GM(pI830)) {
-	blc_pwm_ctl2 = INREG(BLC_PWM_CTL2);
-	if (blc_pwm_ctl2 & BLM_LEGACY_MODE2)
-	    return TRUE;
-    } else {
-	blc_pwm_ctl = INREG(BLC_PWM_CTL);
-	if (blc_pwm_ctl & BLM_LEGACY_MODE)
-	    return TRUE;
+/*
+ * List of available kernel interfaces in priority order
+ */
+static char *backlight_interfaces[] = {
+    "asus-laptop",
+    "eeepc",
+    "thinkpad_screen",
+    "acpi_video1",
+    "acpi_video0",
+    "fujitsu-laptop",
+    NULL,
+};
+
+/*
+ * Must be long enough for BACKLIGHT_CLASS + '/' + longest in above table +
+ * '/' + "max_backlight"
+ */
+#define BACKLIGHT_PATH_LEN 80
+/* Enough for 8 digits of backlight + '\n' + '\0' */
+#define BACKLIGHT_VALUE_LEN 10
+
+static int backlight_index;
+
+static Bool
+i830_kernel_backlight_available(xf86OutputPtr output)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    struct stat buf;
+    char path[BACKLIGHT_PATH_LEN];
+    int i;
+
+    for (i = 0; backlight_interfaces[i] != NULL; i++) {
+	sprintf(path, "%s/%s", BACKLIGHT_CLASS, backlight_interfaces[i]);
+	if (!stat(path, &buf)) {
+	    backlight_index = i;
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "found backlight control "
+		       "method %s\n", path);
+	    return 1;
+	}
     }
-    return FALSE;
+
+    return 0;
 }
 
-/**
- * Sets the backlight level.
- *
- * \param level backlight level, from 0 to i830_lvds_get_max_backlight().
- */
+/* Try to figure out which backlight control method to use */
 static void
-i830_lvds_set_backlight(xf86OutputPtr output, int level)
+i830_set_lvds_backlight_method(xf86OutputPtr output)
 {
     ScrnInfoPtr pScrn = output->scrn;
     I830Ptr pI830 = I830PTR(pScrn);
-    CARD32 blc_pwm_ctl;
+    uint32_t blc_pwm_ctl, blc_pwm_ctl2;
+    enum backlight_control method = BCM_NATIVE; /* Default to native */
 
-    if (i830_lvds_backlight_legacy(pI830))
-	pciWriteByte(pI830->PciTag, LEGACY_BACKLIGHT_BRIGHTNESS, 0xfe);
+    if (i830_kernel_backlight_available(output)) {
+	    method = BCM_KERNEL;
+    } else if (IS_I965GM(pI830) || IS_GM45(pI830)) {
+	blc_pwm_ctl2 = INREG(BLC_PWM_CTL2);
+	if (blc_pwm_ctl2 & BLM_LEGACY_MODE2)
+	    method = BCM_COMBO;
+    } else {
+	blc_pwm_ctl = INREG(BLC_PWM_CTL);
+	if (blc_pwm_ctl & BLM_LEGACY_MODE)
+	    method = BCM_COMBO;
+    }
+
+    pI830->backlight_control_method = method;
+}
+
+/*
+ * Native methods
+ */
+static void
+i830_lvds_set_backlight_native(xf86OutputPtr output, int level)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+    uint32_t blc_pwm_ctl;
 
     blc_pwm_ctl = INREG(BLC_PWM_CTL);
     blc_pwm_ctl &= ~BACKLIGHT_DUTY_CYCLE_MASK;
     OUTREG(BLC_PWM_CTL, blc_pwm_ctl | (level << BACKLIGHT_DUTY_CYCLE_SHIFT));
 }
 
-/**
- * Returns the maximum level of the backlight duty cycle field.
- */
-static CARD32
-i830_lvds_get_max_backlight(xf86OutputPtr output)
+static int
+i830_lvds_get_backlight_native(xf86OutputPtr output)
 {
     ScrnInfoPtr pScrn = output->scrn;
-    I830Ptr	pI830 = I830PTR(pScrn);
-    CARD32	pwm_ctl = INREG(BLC_PWM_CTL);
-    CARD32	val;
+    I830Ptr pI830 = I830PTR(pScrn);
+    uint32_t blc_pwm_ctl;
 
-    if (IS_I965GM(pI830)) {
+    blc_pwm_ctl = INREG(BLC_PWM_CTL);
+    blc_pwm_ctl &= BACKLIGHT_DUTY_CYCLE_MASK;
+    return blc_pwm_ctl;
+}
+
+static int
+i830_lvds_get_backlight_max_native(xf86OutputPtr output)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+    uint32_t pwm_ctl = INREG(BLC_PWM_CTL);
+    int val;
+
+    if (IS_I965GM(pI830) || IS_GM45(pI830)) {
 	val = ((pwm_ctl & BACKLIGHT_MODULATION_FREQ_MASK2) >>
 	       BACKLIGHT_MODULATION_FREQ_SHIFT2);
     } else {
 	val = ((pwm_ctl & BACKLIGHT_MODULATION_FREQ_MASK) >>
 	       BACKLIGHT_MODULATION_FREQ_SHIFT) * 2;
     }
-    
-    /*
-     * In legacy control mode, backlight value is calculated:
-     * if (LBB[7:0] != 0xff)
-     *     backlight = BLC_PWM_CTL[15:0] *  BPC[7:0]
-     * else
-     *     backlight = BLC_PWM_CTL[15:0]
-     */
+
     return val;
+}
+
+/*
+ * Legacy methods
+ */
+static void
+i830_lvds_set_backlight_legacy(xf86OutputPtr output, int level)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+
+#if XSERVER_LIBPCIACCESS
+    pci_device_cfg_write_u8(pI830->PciInfo, level,
+			    LEGACY_BACKLIGHT_BRIGHTNESS);
+#else
+    pciWriteByte(pI830->PciTag, LEGACY_BACKLIGHT_BRIGHTNESS, level);
+#endif
+}
+
+static int
+i830_lvds_get_backlight_legacy(xf86OutputPtr output)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+    uint8_t lbb;
+
+#if XSERVER_LIBPCIACCESS
+    pci_device_cfg_read_u8(pI830->PciInfo, &lbb, LEGACY_BACKLIGHT_BRIGHTNESS);
+#else
+    lbb = pciReadByte(pI830->PciTag, LEGACY_BACKLIGHT_BRIGHTNESS);
+#endif
+
+    return lbb;
+}
+
+/*
+ * Combo methods
+ */
+static void
+i830_lvds_set_backlight_combo(xf86OutputPtr output, int level)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+    uint32_t blc_pwm_ctl;
+    uint8_t lbb;
+
+#if XSERVER_LIBPCIACCESS
+    pci_device_cfg_read_u8(pI830->PciInfo, &lbb, LEGACY_BACKLIGHT_BRIGHTNESS);
+#else
+    lbb = pciReadByte(pI830->PciTag, LEGACY_BACKLIGHT_BRIGHTNESS);
+#endif
+    /*
+     * If LBB is zero and we're shooting for a non-zero brightness level,
+     * we have to increase LBB by at least 1.
+     */
+    if (!lbb && level) {
+#if XSERVER_LIBPCIACCESS
+	pci_device_cfg_write_u8(pI830->PciInfo, 1,
+				LEGACY_BACKLIGHT_BRIGHTNESS);
+#else
+	pciWriteByte(pI830->PciTag, LEGACY_BACKLIGHT_BRIGHTNESS, 1);
+#endif
+    }
+
+    /*
+     * Don't set the lowest bit in combo configs since it can act as a flag for
+     * max brightness.
+     */
+    level <<= 1;
+
+    blc_pwm_ctl = INREG(BLC_PWM_CTL);
+    blc_pwm_ctl &= ~BACKLIGHT_DUTY_CYCLE_MASK;
+    OUTREG(BLC_PWM_CTL, blc_pwm_ctl | (level << BACKLIGHT_DUTY_CYCLE_SHIFT));
+}
+
+static int
+i830_lvds_get_backlight_combo(xf86OutputPtr output)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+    uint32_t blc_pwm_ctl;
+
+    blc_pwm_ctl = INREG(BLC_PWM_CTL);
+    blc_pwm_ctl &= BACKLIGHT_DUTY_CYCLE_MASK;
+
+    /* Since we don't use the low bit when using combo, the value is halved */
+
+    return blc_pwm_ctl >> 1;
+}
+
+static int
+i830_lvds_get_backlight_max_combo(xf86OutputPtr output)
+{
+    /* Since we don't set the low bit when using combo, the range is halved */
+    return i830_lvds_get_backlight_max_native(output) >> 1;
+}
+
+/*
+ * Kernel methods
+ */
+static void
+i830_lvds_set_backlight_kernel(xf86OutputPtr output, int level)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    char path[BACKLIGHT_PATH_LEN], val[BACKLIGHT_VALUE_LEN];
+    int fd, len, ret;
+
+    len = snprintf(val, BACKLIGHT_VALUE_LEN, "%d\n", level);
+    if (len > BACKLIGHT_VALUE_LEN) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "backlight value too large: %d\n",
+		   level);
+	return;
+    }
+
+    sprintf(path, "%s/%s/brightness", BACKLIGHT_CLASS,
+	    backlight_interfaces[backlight_index]);
+    fd = open(path, O_RDWR);
+    if (fd == -1) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "failed to open %s for backlight "
+		   "control: %s\n", path, strerror(errno));
+	return;
+    }
+
+    ret = write(fd, val, len);
+    if (ret == -1) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "write to %s for backlight "
+		   "control failed: %s\n", path, strerror(errno));
+    }
+
+    close(fd);
+}
+
+static int
+i830_lvds_get_backlight_kernel(xf86OutputPtr output)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    char path[BACKLIGHT_PATH_LEN], val[BACKLIGHT_VALUE_LEN];
+    int fd;
+
+    sprintf(path, "%s/%s/actual_brightness", BACKLIGHT_CLASS,
+	    backlight_interfaces[backlight_index]);
+    fd = open(path, O_RDONLY);
+    if (fd == -1) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "failed to open %s for backlight "
+		   "control: %s\n", path, strerror(errno));
+	return 0;
+    }
+
+    memset(val, 0, sizeof(val));
+    if (read(fd, val, BACKLIGHT_VALUE_LEN) == -1)
+	goto out_err;
+
+    close(fd);
+    return atoi(val);
+
+out_err:
+    close(fd);
+    return 0;
+}
+
+static int
+i830_lvds_get_backlight_max_kernel(xf86OutputPtr output)
+{
+    ScrnInfoPtr pScrn = output->scrn;
+    char path[BACKLIGHT_PATH_LEN], val[BACKLIGHT_VALUE_LEN];
+    int fd, max = 0;
+
+    sprintf(path, "%s/%s/max_brightness", BACKLIGHT_CLASS,
+	    backlight_interfaces[backlight_index]);
+    fd = open(path, O_RDONLY);
+    if (fd == -1) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "failed to open %s for backlight "
+		   "control: %s\n", path, strerror(errno));
+	return 0;
+    }
+
+    if (read(fd, val, BACKLIGHT_VALUE_LEN) == -1)
+	goto out_err;
+
+    close(fd);
+
+    max = atoi(val);
+    
+    return max;
+
+out_err:
+    close(fd);
+    return 0;
 }
 
 /**
@@ -130,22 +385,46 @@ i830SetLVDSPanelPower(xf86OutputPtr output, Bool on)
     struct i830_lvds_priv   *dev_priv = intel_output->dev_priv;
     ScrnInfoPtr		    pScrn = output->scrn;
     I830Ptr		    pI830 = I830PTR(pScrn);
-    CARD32		    pp_status;
+    uint32_t		    pp_status;
 
     if (on) {
+	/* if we're going from on->on, be aware to current level. */
+	if ((INREG(PP_CONTROL) & POWER_TARGET_ON) && !dev_priv->dpmsoff) 
+	    dev_priv->backlight_duty_cycle = dev_priv->get_backlight(output);
+
+	/*
+	 * If we're going from off->on we may need to turn on the backlight.
+	 * We should use the saved value whenever possible, but on some
+	 * machines 0 is a valid backlight value (due to an external backlight
+	 * controller for example), so on them, when turning LVDS back on,
+	 * they'll always re-maximize the brightness.
+	 */
+	if (!(INREG(PP_CONTROL) & POWER_TARGET_ON) &&
+	    dev_priv->backlight_duty_cycle == 0)
+	    dev_priv->backlight_duty_cycle = dev_priv->backlight_max;
+
 	OUTREG(PP_CONTROL, INREG(PP_CONTROL) | POWER_TARGET_ON);
 	do {
 	    pp_status = INREG(PP_STATUS);
 	} while ((pp_status & PP_ON) == 0);
 
-	i830_lvds_set_backlight(output, dev_priv->backlight_duty_cycle);
+	dev_priv->set_backlight(output, dev_priv->backlight_duty_cycle);
+	dev_priv->dpmsoff = FALSE;
     } else {
-	i830_lvds_set_backlight(output, 0);
+	/*
+	 * Only save the current backlight value if we're going from
+	 * on to off.
+	 */
+	if ((INREG(PP_CONTROL) & POWER_TARGET_ON) && !dev_priv->dpmsoff)
+	    dev_priv->backlight_duty_cycle = dev_priv->get_backlight(output);
+	dev_priv->set_backlight(output, 0);
 
 	OUTREG(PP_CONTROL, INREG(PP_CONTROL) & ~POWER_TARGET_ON);
 	do {
 	    pp_status = INREG(PP_STATUS);
 	} while (pp_status & PP_ON);
+
+	dev_priv->dpmsoff = TRUE;
     }
 }
 
@@ -168,21 +447,15 @@ i830_lvds_save (xf86OutputPtr output)
     ScrnInfoPtr		    pScrn = output->scrn;
     I830Ptr		    pI830 = I830PTR(pScrn);
 
-    if (IS_I965GM(pI830))
+    if (IS_I965GM(pI830) || IS_GM45(pI830))
 	pI830->saveBLC_PWM_CTL2 = INREG(BLC_PWM_CTL2);
     pI830->savePP_ON = INREG(LVDSPP_ON);
     pI830->savePP_OFF = INREG(LVDSPP_OFF);
     pI830->savePP_CONTROL = INREG(PP_CONTROL);
     pI830->savePP_CYCLE = INREG(PP_CYCLE);
     pI830->saveBLC_PWM_CTL = INREG(BLC_PWM_CTL);
-    dev_priv->backlight_duty_cycle = (pI830->saveBLC_PWM_CTL &
-				      BACKLIGHT_DUTY_CYCLE_MASK);
-
-    /*
-     * If the light is off at server startup, just make it full brightness
-     */
-    if (dev_priv->backlight_duty_cycle == 0)
-	dev_priv->backlight_duty_cycle = i830_lvds_get_max_backlight(output);
+    if ((INREG(PP_CONTROL) & POWER_TARGET_ON) && !dev_priv->dpmsoff) 
+	dev_priv->backlight_duty_cycle = dev_priv->get_backlight(output);
 }
 
 static void
@@ -191,7 +464,7 @@ i830_lvds_restore(xf86OutputPtr output)
     ScrnInfoPtr	pScrn = output->scrn;
     I830Ptr	pI830 = I830PTR(pScrn);
 
-    if (IS_I965GM(pI830))
+    if (IS_I965GM(pI830) || IS_GM45(pI830))
 	OUTREG(BLC_PWM_CTL2, pI830->saveBLC_PWM_CTL2);
     OUTREG(BLC_PWM_CTL, pI830->saveBLC_PWM_CTL);
     OUTREG(LVDSPP_ON, pI830->savePP_ON);
@@ -207,9 +480,9 @@ i830_lvds_restore(xf86OutputPtr output)
 static int
 i830_lvds_mode_valid(xf86OutputPtr output, DisplayModePtr pMode)
 {
-    I830OutputPrivatePtr    intel_output = output->driver_private;
-    struct i830_lvds_priv   *dev_priv = intel_output->dev_priv;
-    DisplayModePtr	    pFixedMode = dev_priv->panel_fixed_mode;
+    ScrnInfoPtr	pScrn = output->scrn;
+    I830Ptr	pI830 = I830PTR(pScrn);
+    DisplayModePtr	    pFixedMode = pI830->lvds_fixed_mode;
 
     if (pFixedMode)
     {
@@ -231,7 +504,13 @@ i830_lvds_mode_fixup(xf86OutputPtr output, DisplayModePtr mode,
     ScrnInfoPtr		    pScrn = output->scrn;
     xf86CrtcConfigPtr	    xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
     I830CrtcPrivatePtr	    intel_crtc = output->crtc->driver_private;
+    I830Ptr		    pI830 = I830PTR(pScrn);
+    uint32_t		    pfit_control = 0, pfit_pgm_ratios = 0;
+    float		    panel_ratio, desired_ratio, vert_scale, horiz_scale;
+    float		    horiz_ratio, vert_ratio;
+    int left_border = 0, right_border = 0, top_border = 0, bottom_border = 0;
     int i;
+    Bool border = 0;
 
     for (i = 0; i < xf86_config->num_output; i++) {
 	xf86OutputPtr other_output = xf86_config->output[i];
@@ -250,30 +529,221 @@ i830_lvds_mode_fixup(xf86OutputPtr output, DisplayModePtr mode,
 	return FALSE;
     }
 
+    /* If we don't have a panel mode there's not much we can do */
+    if (pI830->lvds_fixed_mode == NULL)
+	return TRUE;
+
     /* If we have timings from the BIOS for the panel, put them in
      * to the adjusted mode.  The CRTC will be set up for this mode,
      * with the panel scaling set up to source from the H/VDisplay
      * of the original mode.
      */
-    if (dev_priv->panel_fixed_mode != NULL) {
-	adjusted_mode->HDisplay = dev_priv->panel_fixed_mode->HDisplay;
-	adjusted_mode->HSyncStart = dev_priv->panel_fixed_mode->HSyncStart;
-	adjusted_mode->HSyncEnd = dev_priv->panel_fixed_mode->HSyncEnd;
-	adjusted_mode->HTotal = dev_priv->panel_fixed_mode->HTotal;
-	adjusted_mode->VDisplay = dev_priv->panel_fixed_mode->VDisplay;
-	adjusted_mode->VSyncStart = dev_priv->panel_fixed_mode->VSyncStart;
-	adjusted_mode->VSyncEnd = dev_priv->panel_fixed_mode->VSyncEnd;
-	adjusted_mode->VTotal = dev_priv->panel_fixed_mode->VTotal;
-	adjusted_mode->Clock = dev_priv->panel_fixed_mode->Clock;
-	xf86SetModeCrtc(adjusted_mode, INTERLACE_HALVE_V);
+    adjusted_mode->HDisplay = pI830->lvds_fixed_mode->HDisplay;
+    adjusted_mode->HSyncStart = pI830->lvds_fixed_mode->HSyncStart;
+    adjusted_mode->HSyncEnd = pI830->lvds_fixed_mode->HSyncEnd;
+    adjusted_mode->HTotal = pI830->lvds_fixed_mode->HTotal;
+    adjusted_mode->VDisplay = pI830->lvds_fixed_mode->VDisplay;
+    adjusted_mode->VSyncStart = pI830->lvds_fixed_mode->VSyncStart;
+    adjusted_mode->VSyncEnd = pI830->lvds_fixed_mode->VSyncEnd;
+    adjusted_mode->VTotal = pI830->lvds_fixed_mode->VTotal;
+    adjusted_mode->Clock = pI830->lvds_fixed_mode->Clock;
+    xf86SetModeCrtc(adjusted_mode, INTERLACE_HALVE_V);
+
+    /* Make sure pre-965s set dither correctly */
+    if (!IS_I965G(pI830) && pI830->lvds_dither)
+	pfit_control |= PANEL_8TO6_DITHER_ENABLE;
+
+    /* Native modes don't need fitting */
+    if (adjusted_mode->HDisplay == mode->HDisplay &&
+	adjusted_mode->VDisplay == mode->VDisplay) {
+	pfit_pgm_ratios = 0;
+	border = 0;
+	goto out;
     }
 
+    /* 965+ wants fuzzy fitting */
+    if (IS_I965G(pI830))
+	pfit_control |= (intel_crtc->pipe << PFIT_PIPE_SHIFT) |
+	    PFIT_FILTER_FUZZY;
+
+    /*
+     * Deal with panel fitting options.  Figure out how to stretch the image
+     * based on its aspect ratio & the current panel fitting mode.
+     */
+    panel_ratio = (float)adjusted_mode->HDisplay /
+ 	(float)adjusted_mode->VDisplay;
+    desired_ratio = (float)mode->HDisplay /
+	(float)mode->VDisplay;
+
+    /*
+     * Enable automatic panel scaling for non-native modes so that they fill
+     * the screen.  Should be enabled before the pipe is enabled, according to
+     * register description and PRM.
+     */
+    /* Change the value here to see the borders for debugging */
+    OUTREG(BCLRPAT_A, 0);
+    OUTREG(BCLRPAT_B, 0);
+    switch (dev_priv->fitting_mode) {
+    case CENTER:
+	/*
+	 * For centered modes, we have to calculate border widths & heights and
+	 * modify the values programmed into the CRTC.  Also need to make sure
+	 * LVDS borders are enabled (see i830_display.c).
+	 */
+	left_border =
+	    (pI830->lvds_fixed_mode->HDisplay - mode->HDisplay) / 2;
+	right_border = left_border;
+	if (mode->HDisplay & 1)
+	    right_border++;
+	top_border =
+	    (pI830->lvds_fixed_mode->VDisplay - mode->VDisplay) / 2;
+	bottom_border = top_border;
+	if (mode->VDisplay & 1)
+	    bottom_border++;
+
+	/* Set active & border values */
+	adjusted_mode->CrtcHDisplay = mode->HDisplay;
+	adjusted_mode->CrtcHBlankStart = mode->HDisplay + right_border - 1;
+	adjusted_mode->CrtcHBlankEnd = adjusted_mode->CrtcHTotal -
+	    left_border - 1;
+	adjusted_mode->CrtcHSyncStart = adjusted_mode->CrtcHBlankStart;
+	adjusted_mode->CrtcHSyncEnd = adjusted_mode->CrtcHBlankEnd;
+	adjusted_mode->CrtcVDisplay = mode->VDisplay;
+	adjusted_mode->CrtcVBlankStart = mode->VDisplay + bottom_border - 1;
+	adjusted_mode->CrtcVBlankEnd = adjusted_mode->CrtcVTotal -
+	    top_border - 1;
+	adjusted_mode->CrtcVSyncStart = adjusted_mode->CrtcVBlankStart;
+	adjusted_mode->CrtcVSyncEnd = adjusted_mode->CrtcVBlankEnd;
+	border = 1;
+	break;
+    case FULL_ASPECT:
+	/* Scale but preserve aspect ratio */
+	pfit_control |= PFIT_ENABLE;
+	if (IS_I965G(pI830)) {
+	    /*
+	     * 965+ is easy, it does everything in hw
+	     */
+	    if (panel_ratio > desired_ratio)
+		pfit_control |= PFIT_SCALING_PILLAR;
+	    else if (panel_ratio < desired_ratio)
+		pfit_control |= PFIT_SCALING_LETTER;
+	    else
+		pfit_control |= PFIT_SCALING_AUTO;
+	} else {
+	    /*
+	     * For earlier chips we have to calculate the scaling ratio
+	     * by hand and program it into the PFIT_PGM_RATIOS reg.
+	     */
+	    uint32_t horiz_bits, vert_bits, bits = 12;
+
+	    horiz_ratio = ((float)mode->HDisplay) /
+		((float)adjusted_mode->HDisplay);
+	    vert_ratio = ((float)mode->VDisplay) /
+		((float)adjusted_mode->VDisplay);
+
+	    horiz_scale = ((float)adjusted_mode->HDisplay) /
+		((float)mode->HDisplay);
+	    vert_scale = ((float)adjusted_mode->VDisplay) /
+		((float)mode->VDisplay);
+
+	    /* Retain aspect ratio */
+	    if (panel_ratio > desired_ratio) { /* Pillar */
+		unsigned long scaled_width = (float)mode->HDisplay * vert_scale;
+
+		horiz_ratio = vert_ratio;
+		pfit_control |= VERT_AUTO_SCALE | VERT_INTERP_BILINEAR |
+		    HORIZ_INTERP_BILINEAR;
+
+		/* Pillar will have left/right borders */
+		left_border =  (pI830->lvds_fixed_mode->HDisplay -
+				scaled_width) / 2;
+		right_border = left_border;
+		if (mode->HDisplay & 1) /* odd resolutions */
+		    right_border++;
+
+		adjusted_mode->CrtcHDisplay = scaled_width;
+		adjusted_mode->CrtcHBlankStart = scaled_width +
+		    right_border - 1;
+		adjusted_mode->CrtcHBlankEnd = adjusted_mode->CrtcHTotal -
+		    left_border - 1;
+		adjusted_mode->CrtcHSyncStart = adjusted_mode->CrtcHBlankStart;
+		adjusted_mode->CrtcHSyncEnd = adjusted_mode->CrtcHBlankEnd;
+		border = 1;
+	    } else if (panel_ratio < desired_ratio) { /* Letter */
+		unsigned long scaled_height = (float)mode->VDisplay *
+		    horiz_scale;
+
+		vert_ratio = horiz_ratio;
+		pfit_control |= HORIZ_AUTO_SCALE | VERT_INTERP_BILINEAR |
+		    HORIZ_INTERP_BILINEAR;
+
+		/* Letterbox will have top/bottom borders */
+		top_border = (pI830->lvds_fixed_mode->VDisplay -
+			      scaled_height) / 2;
+		bottom_border = top_border;
+		if (mode->VDisplay & 1)
+		    bottom_border++;
+
+		adjusted_mode->CrtcVDisplay = scaled_height;
+		adjusted_mode->CrtcVBlankStart = scaled_height +
+		    bottom_border - 1;
+		adjusted_mode->CrtcVBlankEnd = adjusted_mode->CrtcVTotal -
+		    top_border - 1;
+		adjusted_mode->CrtcVSyncStart = adjusted_mode->CrtcVBlankStart;
+		adjusted_mode->CrtcVSyncEnd = adjusted_mode->CrtcVBlankEnd;
+		border = 1;
+	    } else { /* Aspects match, let hw scale both directions */
+		pfit_control |= VERT_AUTO_SCALE | HORIZ_AUTO_SCALE |
+		    VERT_INTERP_BILINEAR | HORIZ_INTERP_BILINEAR;
+	    }
+
+	    horiz_bits = 0.5 + (1 << bits) * horiz_ratio;
+	    vert_bits = 0.5 + (1 << bits) * vert_ratio;
+
+	    pfit_pgm_ratios = (((vert_bits << PFIT_VERT_SCALE_SHIFT) &
+				PFIT_VERT_SCALE_MASK) |
+			       ((horiz_bits << PFIT_HORIZ_SCALE_SHIFT) &
+				PFIT_HORIZ_SCALE_MASK));
+	}
+	break;
+    case FULL:
+	/*
+	 * Full scaling, even if it changes the aspect ratio.  Fortunately
+	 * this is all done for us in hw.
+	 */
+	pfit_control |= PFIT_ENABLE;
+	if (IS_I965G(pI830))
+	    pfit_control |= PFIT_SCALING_AUTO;
+	else
+	    pfit_control |= VERT_AUTO_SCALE | HORIZ_AUTO_SCALE |
+		VERT_INTERP_BILINEAR | HORIZ_INTERP_BILINEAR;
+	break;
+    default:
+	/* shouldn't happen */
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "error: bad fitting mode\n");
+	break;
+    }
+  
+out:
+    dev_priv->pfit_control = pfit_control;
+    dev_priv->pfit_pgm_ratios = pfit_pgm_ratios;
+
+    if (border)
+	intel_output->lvds_bits |= LVDS_BORDER_ENABLE;
+    else
+	intel_output->lvds_bits &= ~LVDS_BORDER_ENABLE;
     /* XXX: It would be nice to support lower refresh rates on the
      * panels to reduce power consumption, and perhaps match the
      * user's requested refresh rate.
      */
 
     return TRUE;
+}
+
+static void
+i830_lvds_prepare(xf86OutputPtr output)
+{
+    i830_lvds_dpms(output, DPMSModeOff);
 }
 
 static void
@@ -284,35 +754,12 @@ i830_lvds_mode_set(xf86OutputPtr output, DisplayModePtr mode,
     struct i830_lvds_priv   *dev_priv = intel_output->dev_priv;
     ScrnInfoPtr		    pScrn = output->scrn;
     I830Ptr		    pI830 = I830PTR(pScrn);
-    I830CrtcPrivatePtr	    intel_crtc = output->crtc->driver_private;
-    CARD32		    pfit_control;
 
-    /* The LVDS pin pair will already have been turned on in
-     * i830_crtc_mode_set since it has a large impact on the DPLL settings.
+    /*
+     * PFIT must be enabled/disabled while LVDS is on but pipes are still off
      */
-
-    /* Enable automatic panel scaling for non-native modes so that they fill
-     * the screen.  Should be enabled before the pipe is enabled, according to
-     * register description and PRM.
-     */
-    if (mode->HDisplay != adjusted_mode->HDisplay ||
-	mode->VDisplay != adjusted_mode->VDisplay)
-    {
-	pfit_control = PFIT_ENABLE |
-	    VERT_AUTO_SCALE | HORIZ_AUTO_SCALE |
-	    VERT_INTERP_BILINEAR | HORIZ_INTERP_BILINEAR;
-    } else {
-	pfit_control = 0;
-    }
-
-    if (!IS_I965G(pI830)) {
-	if (dev_priv->panel_wants_dither)
-	    pfit_control |= PANEL_8TO6_DITHER_ENABLE;
-    } else {
-	pfit_control |= intel_crtc->pipe << PFIT_PIPE_SHIFT;
-    }
-
-    OUTREG(PFIT_CONTROL, pfit_control);
+    OUTREG(PFIT_PGM_RATIOS, dev_priv->pfit_pgm_ratios);
+    OUTREG(PFIT_CONTROL, dev_priv->pfit_control);
 }
 
 /**
@@ -333,8 +780,9 @@ i830_lvds_detect(xf86OutputPtr output)
 static DisplayModePtr
 i830_lvds_get_modes(xf86OutputPtr output)
 {
+    ScrnInfoPtr	pScrn = output->scrn;
+    I830Ptr	pI830 = I830PTR(pScrn);
     I830OutputPrivatePtr    intel_output = output->driver_private;
-    struct i830_lvds_priv   *dev_priv = intel_output->dev_priv;
     xf86MonPtr		    edid_mon;
     DisplayModePtr	    modes;
 
@@ -363,8 +811,8 @@ i830_lvds_get_modes(xf86OutputPtr output)
 	}
     }
 
-    if (dev_priv->panel_fixed_mode != NULL)
-	return xf86DuplicateMode(dev_priv->panel_fixed_mode);
+    if (pI830->lvds_fixed_mode != NULL)
+	return xf86DuplicateMode(pI830->lvds_fixed_mode);
 
     return NULL;
 }
@@ -372,45 +820,140 @@ i830_lvds_get_modes(xf86OutputPtr output)
 static void
 i830_lvds_destroy (xf86OutputPtr output)
 {
+    ScrnInfoPtr	pScrn = output->scrn;
+    I830Ptr	pI830 = I830PTR(pScrn);
     I830OutputPrivatePtr    intel_output = output->driver_private;
 
+    xf86DeleteMode (&pI830->lvds_fixed_mode, pI830->lvds_fixed_mode);
     if (intel_output)
-    {
-	struct i830_lvds_priv	*dev_priv = intel_output->dev_priv;
-	
-        xf86DeleteMode (&dev_priv->panel_fixed_mode, dev_priv->panel_fixed_mode);
 	xfree (intel_output);
-    }
 }
 
 #ifdef RANDR_12_INTERFACE
 #define BACKLIGHT_NAME	"BACKLIGHT"
 static Atom backlight_atom;
+
+/*
+ * Backlight control lets the user select how the driver should manage
+ * backlight changes:  using the legacy interface, the native interface,
+ * or not at all.
+ */
+#define BACKLIGHT_CONTROL_NAME "BACKLIGHT_CONTROL"
+#define NUM_BACKLIGHT_CONTROL_METHODS 4
+static char *backlight_control_names[] = {
+    "native",
+    "legacy",
+    "combination",
+    "kernel",
+};
+static Atom backlight_control_atom;
+static Atom backlight_control_name_atoms[NUM_BACKLIGHT_CONTROL_METHODS];
+
+#define PANEL_FITTING_NAME "PANEL_FITTING"
+#define NUM_PANEL_FITTING_TYPES 3
+static char *panel_fitting_names[] = {
+    "center",
+    "full_aspect",
+    "full",
+};
+static Atom panel_fitting_atom;
+static Atom panel_fitting_name_atoms[NUM_PANEL_FITTING_TYPES];
+
+
+static int
+i830_backlight_control_lookup(char *name)
+{
+    int i;
+
+    for (i = 0; i < NUM_BACKLIGHT_CONTROL_METHODS; i++)
+	if (!strcmp(name, backlight_control_names[i]))
+	    return i;
+
+    return -1;
+}
+
+static Bool
+i830_lvds_set_backlight_control(xf86OutputPtr output)
+{
+    ScrnInfoPtr		    pScrn = output->scrn;
+    I830Ptr		    pI830 = I830PTR(pScrn);
+    I830OutputPrivatePtr    intel_output = output->driver_private;
+    struct i830_lvds_priv   *dev_priv = intel_output->dev_priv;
+
+    switch (pI830->backlight_control_method) {
+    case BCM_NATIVE:
+	dev_priv->set_backlight = i830_lvds_set_backlight_native;
+	dev_priv->get_backlight = i830_lvds_get_backlight_native;
+	dev_priv->backlight_max =
+	    i830_lvds_get_backlight_max_native(output);
+	break;
+    case BCM_LEGACY:
+	dev_priv->set_backlight = i830_lvds_set_backlight_legacy;
+	dev_priv->get_backlight = i830_lvds_get_backlight_legacy;
+	dev_priv->backlight_max = 0xff;
+	break;
+    case BCM_COMBO:
+	dev_priv->set_backlight = i830_lvds_set_backlight_combo;
+	dev_priv->get_backlight = i830_lvds_get_backlight_combo;
+	dev_priv->backlight_max =
+	    i830_lvds_get_backlight_max_combo(output);
+	break;
+    case BCM_KERNEL:
+	dev_priv->set_backlight = i830_lvds_set_backlight_kernel;
+	dev_priv->get_backlight = i830_lvds_get_backlight_kernel;
+	dev_priv->backlight_max =
+	    i830_lvds_get_backlight_max_kernel(output);
+	break;
+    default:
+	/*
+	 * Should be impossible to get here unless the caller set a bogus
+	 * backlight_control_method
+	 */
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "error: bad backlight control "
+		   "method\n");
+	break;
+    }
+
+    return Success;
+}
+
+static int
+i830_panel_fitting_lookup(char *name)
+{
+    int i;
+
+    for (i = 0; i < NUM_PANEL_FITTING_TYPES; i++)
+	if (!strcmp(name, panel_fitting_names[i]))
+	    return i;
+
+    return -1;
+}
 #endif /* RANDR_12_INTERFACE */
 
 static void
 i830_lvds_create_resources(xf86OutputPtr output)
 {
 #ifdef RANDR_12_INTERFACE
+    ScrnInfoPtr		    pScrn = output->scrn;
+    I830Ptr		    pI830 = I830PTR(pScrn);
     I830OutputPrivatePtr    intel_output = output->driver_private;
     struct i830_lvds_priv   *dev_priv = intel_output->dev_priv;
-    ScrnInfoPtr		    pScrn = output->scrn;
-    INT32		    range[2];
-    int			    data, err;
+    INT32		    backlight_range[2];
+    int			    data, err, i;
 
     /* Set up the backlight property, which takes effect immediately
-     * and accepts values only within the range.
+     * and accepts values only within the backlight_range.
      *
      * XXX: Currently, RandR doesn't verify that properties set are
-     * within the range.
+     * within the backlight_range.
      */
     backlight_atom = MakeAtom(BACKLIGHT_NAME, sizeof(BACKLIGHT_NAME) - 1,
 	TRUE);
 
-    range[0] = 0;
-    range[1] = i830_lvds_get_max_backlight(output);
+    backlight_range[0] = 0;
+    backlight_range[1] = dev_priv->backlight_max;
     err = RRConfigureOutputProperty(output->randr_output, backlight_atom,
-				    FALSE, TRUE, FALSE, 2, range);
+				    FALSE, TRUE, FALSE, 2, backlight_range);
     if (err != 0) {
 	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 		   "RRConfigureOutputProperty error, %d\n", err);
@@ -425,6 +968,64 @@ i830_lvds_create_resources(xf86OutputPtr output)
 		   "RRChangeOutputProperty error, %d\n", err);
     }
 
+    /*
+     * Now setup the control selection property
+     */
+    backlight_control_atom = MakeAtom(BACKLIGHT_CONTROL_NAME,
+				      sizeof(BACKLIGHT_CONTROL_NAME) - 1, TRUE);
+    for (i = 0; i < NUM_BACKLIGHT_CONTROL_METHODS; i++) {
+	backlight_control_name_atoms[i] =
+	    MakeAtom(backlight_control_names[i],
+		     strlen(backlight_control_names[i]), TRUE);
+    }
+    err = RRConfigureOutputProperty(output->randr_output,
+				    backlight_control_atom, TRUE, FALSE, FALSE,
+				    NUM_BACKLIGHT_CONTROL_METHODS,
+				    (INT32 *)backlight_control_name_atoms);
+    if (err != 0) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "RRConfigureOutputProperty error, %d\n", err);
+    }
+    err = RRChangeOutputProperty(output->randr_output, backlight_control_atom,
+				 XA_ATOM, 32, PropModeReplace, 1,
+				 &backlight_control_name_atoms[pI830->backlight_control_method],
+				 FALSE, TRUE);
+    if (err != 0) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "failed to set backlight control, %d\n", err);
+    }
+
+    /*
+     * Panel fitting control
+     */
+
+    /* XXX Disable panel fitting setting on pre-915. */
+    if (!IS_I9XX(pI830))
+	return;
+
+    panel_fitting_atom = MakeAtom(PANEL_FITTING_NAME,
+				  sizeof(PANEL_FITTING_NAME) - 1, TRUE);
+    for (i = 0; i < NUM_PANEL_FITTING_TYPES; i++) {
+	panel_fitting_name_atoms[i] = MakeAtom(panel_fitting_names[i],
+					       strlen(panel_fitting_names[i]),
+					       TRUE);
+    }
+    err = RRConfigureOutputProperty(output->randr_output,
+				    panel_fitting_atom, TRUE, FALSE, FALSE,
+				    NUM_PANEL_FITTING_TYPES,
+				    (INT32 *)panel_fitting_name_atoms);
+    if (err != 0) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "RRConfigureOutputProperty error, %d\n", err);
+    }
+    err = RRChangeOutputProperty(output->randr_output, panel_fitting_atom,
+				 XA_ATOM, 32, PropModeReplace, 1,
+				 &panel_fitting_name_atoms[dev_priv->fitting_mode],
+				 FALSE, TRUE);
+    if (err != 0) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "failed to set panel fitting mode, %d\n", err);
+    }   
 #endif /* RANDR_12_INTERFACE */
 }
 
@@ -433,6 +1034,8 @@ static Bool
 i830_lvds_set_property(xf86OutputPtr output, Atom property,
 		       RRPropertyValuePtr value)
 {
+    ScrnInfoPtr		    pScrn = output->scrn;
+    I830Ptr		    pI830 = I830PTR(pScrn);
     I830OutputPrivatePtr    intel_output = output->driver_private;
     struct i830_lvds_priv   *dev_priv = intel_output->dev_priv;
     
@@ -446,13 +1049,85 @@ i830_lvds_set_property(xf86OutputPtr output, Atom property,
 	}
 
 	val = *(INT32 *)value->data;
-	if (val < 0 || val > i830_lvds_get_max_backlight(output))
+	if (val < 0 || val > dev_priv->backlight_max)
 	    return FALSE;
 
-	if (val != dev_priv->backlight_duty_cycle)
-	{
-	    i830_lvds_set_backlight(output, val);
+	if (val != dev_priv->backlight_duty_cycle) {
+	    dev_priv->set_backlight(output, val);
 	    dev_priv->backlight_duty_cycle = val;
+	}
+	return TRUE;
+    } else if (property == backlight_control_atom) {
+	INT32		    	backlight_range[2];
+	Atom			atom;
+	char			*name;
+	int			ret, data;
+
+	if (value->type != XA_ATOM || value->format != 32 || value->size != 1)
+	    return FALSE;
+
+	memcpy(&atom, value->data, 4);
+	name = NameForAtom(atom);
+	
+	ret = i830_backlight_control_lookup(name);
+	if (ret < 0)
+	    return FALSE;
+
+	pI830->backlight_control_method = ret;
+	i830_lvds_set_backlight_control(output);
+
+	/*
+	 * Update the backlight atom since the range and value may have changed
+	 */
+	backlight_range[0] = 0;
+	backlight_range[1] = dev_priv->backlight_max;
+	ret = RRConfigureOutputProperty(output->randr_output, backlight_atom,
+					FALSE, TRUE, FALSE, 2, backlight_range);
+	if (ret != 0) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		       "RRConfigureOutputProperty error, %d\n", ret);
+	}
+	/* Set the current value of the backlight property */
+	if ((INREG(PP_CONTROL) & POWER_TARGET_ON) && !dev_priv->dpmsoff) 
+	    data = dev_priv->get_backlight(output);
+	else
+	    data = dev_priv->backlight_duty_cycle;
+	ret = RRChangeOutputProperty(output->randr_output, backlight_atom,
+				     XA_INTEGER, 32, PropModeReplace, 1, &data,
+				     FALSE, TRUE);
+	if (ret != 0) {
+	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		       "RRChangeOutputProperty error, %d\n", ret);
+	}
+	return TRUE;
+    } else if (property == panel_fitting_atom) {
+	Atom			atom;
+	char			*name;
+	int			ret;
+
+	if (value->type != XA_ATOM || value->format != 32 || value->size != 1)
+	    return FALSE;
+
+	memcpy(&atom, value->data, 4);
+	name = NameForAtom(atom);
+	
+	ret = i830_panel_fitting_lookup(name);
+	if (ret < 0)
+	    return FALSE;
+
+	dev_priv->fitting_mode = ret;
+
+	if (output->crtc) {
+	    xf86CrtcPtr crtc = output->crtc;
+	    if (crtc->enabled) {
+		if (!xf86CrtcSetMode(crtc, &crtc->desiredMode,
+				     crtc->desiredRotation,
+				     crtc->desiredX, crtc->desiredY)) {
+		    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+			       "Failed to set mode after panel fitting change!\n");
+		    return FALSE;
+		}
+	    }
 	}
 	return TRUE;
     }
@@ -461,6 +1136,50 @@ i830_lvds_set_property(xf86OutputPtr output, Atom property,
 }
 #endif /* RANDR_12_INTERFACE */
 
+#ifdef RANDR_13_INTERFACE
+static Bool
+i830_lvds_get_property(xf86OutputPtr output, Atom property)
+{
+    ScrnInfoPtr		    pScrn = output->scrn;
+    I830Ptr		    pI830 = I830PTR(pScrn);
+    I830OutputPrivatePtr    intel_output = output->driver_private;
+    struct i830_lvds_priv   *dev_priv = intel_output->dev_priv;
+    int ret;
+
+    /*
+     * Only need to update properties that might change out from under
+     * us.  The others will be cached by the randr core code.
+     */
+    if (property == backlight_atom) {
+	int val;
+	if ((INREG(PP_CONTROL) & POWER_TARGET_ON) && !dev_priv->dpmsoff) {
+	    val = dev_priv->get_backlight(output);
+	    dev_priv->backlight_duty_cycle = val;
+	} else
+	    val = dev_priv->backlight_duty_cycle;
+	ret = RRChangeOutputProperty(output->randr_output, backlight_atom,
+				     XA_INTEGER, 32, PropModeReplace, 1, &val,
+				     FALSE, TRUE);
+	if (ret != Success)
+	    return FALSE;
+    }
+
+    return TRUE;
+}
+#endif /* RANDR_13_INTERFACE */
+
+#ifdef RANDR_GET_CRTC_INTERFACE
+static xf86CrtcPtr
+i830_lvds_get_crtc(xf86OutputPtr output)
+{
+    ScrnInfoPtr	pScrn = output->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+    int pipe = !!(INREG(LVDS) & LVDS_PIPEB_SELECT);
+   
+    return i830_pipe_to_crtc(pScrn, pipe);
+}
+#endif
+
 static const xf86OutputFuncsRec i830_lvds_output_funcs = {
     .create_resources = i830_lvds_create_resources,
     .dpms = i830_lvds_dpms,
@@ -468,7 +1187,7 @@ static const xf86OutputFuncsRec i830_lvds_output_funcs = {
     .restore = i830_lvds_restore,
     .mode_valid = i830_lvds_mode_valid,
     .mode_fixup = i830_lvds_mode_fixup,
-    .prepare = i830_output_prepare,
+    .prepare = i830_lvds_prepare,
     .mode_set = i830_lvds_mode_set,
     .commit = i830_output_commit,
     .detect = i830_lvds_detect,
@@ -476,7 +1195,13 @@ static const xf86OutputFuncsRec i830_lvds_output_funcs = {
 #ifdef RANDR_12_INTERFACE
     .set_property = i830_lvds_set_property,
 #endif
-    .destroy = i830_lvds_destroy
+#ifdef RANDR_13_INTERFACE
+    .get_property = i830_lvds_get_property,
+#endif
+    .destroy = i830_lvds_destroy,
+#ifdef RANDR_GET_CRTC_INTERFACE
+    .get_crtc = i830_lvds_get_crtc,
+#endif
 };
 
 void
@@ -485,7 +1210,8 @@ i830_lvds_init(ScrnInfoPtr pScrn)
     I830Ptr		    pI830 = I830PTR(pScrn);
     xf86OutputPtr	    output;
     I830OutputPrivatePtr    intel_output;
-    DisplayModePtr	    modes, scan, bios_mode;
+    DisplayModePtr	    modes, scan;
+    DisplayModePtr	    lvds_ddc_mode = NULL;
     struct i830_lvds_priv   *dev_priv;
 
     if (pI830->quirk_flag & QUIRK_IGNORE_LVDS)
@@ -512,11 +1238,29 @@ i830_lvds_init(ScrnInfoPtr pScrn)
 
     dev_priv = (struct i830_lvds_priv *) (intel_output + 1);
     intel_output->dev_priv = dev_priv;
+    
+    /*
+     * Mode detection algorithms for LFP:
+     *  1) if EDID present, use it, done
+     *  2) if VBT present, use it, done
+     *  3) if current mode is programmed, use it, done
+     *  4) check for Mac mini & other quirks
+     *  4) fail, assume no LFP
+     */
 
     /* Set up the LVDS DDC channel.  Most panels won't support it, but it can
      * be useful if available.
      */
     I830I2CInit(pScrn, &intel_output->pDDCBus, GPIOC, "LVDSDDC_C");
+
+    if (pI830->skip_panel_detect) {
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "Skipping any attempt to determine panel fixed mode.\n");
+	goto found_mode;
+    }
+
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+	       "Attempting to determine panel fixed mode.\n");
 
     /* Attempt to get the fixed panel mode from DDC.  Assume that the preferred
      * mode is the right one.
@@ -534,72 +1278,47 @@ i830_lvds_init(ScrnInfoPtr pScrn)
 	    scan->prev = scan->next;
 	if (scan->next != NULL)
 	    scan->next = scan->prev;
-	dev_priv->panel_fixed_mode = scan;
+	lvds_ddc_mode = scan;
     }
     /* Delete the mode list */
     while (modes != NULL)
 	xf86DeleteMode(&modes, modes);
 
-    /* If we didn't get EDID, try checking if the panel is already turned on.
-     * If so, assume that whatever is currently programmed is the correct mode.
-     */
-    if (dev_priv->panel_fixed_mode == NULL) {
-	CARD32 lvds = INREG(LVDS);
-	int pipe = (lvds & LVDS_PIPEB_SELECT) ? 1 : 0;
-	xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
-	xf86CrtcPtr crtc = xf86_config->crtc[pipe];
-
-	if (lvds & LVDS_PORT_EN) {
-	    dev_priv->panel_fixed_mode = i830_crtc_mode_get(pScrn, crtc);
-	    if (dev_priv->panel_fixed_mode != NULL)
-		dev_priv->panel_fixed_mode->type |= M_T_PREFERRED;
-	}
+    if (lvds_ddc_mode) {
+	    pI830->lvds_fixed_mode = lvds_ddc_mode;
+	    goto found_mode;
     }
 
     /* Get the LVDS fixed mode out of the BIOS.  We should support LVDS with
      * the BIOS being unavailable or broken, but lack the configuration options
      * for now.
      */
-    bios_mode = i830_bios_get_panel_mode(pScrn, &dev_priv->panel_wants_dither);
-    if (bios_mode != NULL) {
-	if (dev_priv->panel_fixed_mode != NULL) {
-	    /* Fixup for a 1280x768 panel with the horizontal trimmed
-	     * down to 1024 for text mode.
-	     */
-	    if (!xf86ModesEqual(dev_priv->panel_fixed_mode, bios_mode) &&
-		dev_priv->panel_fixed_mode->HDisplay == 1024 &&
-		dev_priv->panel_fixed_mode->HSyncStart == 1200 &&
-		dev_priv->panel_fixed_mode->HSyncEnd == 1312 &&
-		dev_priv->panel_fixed_mode->HTotal == 1688 &&
-		dev_priv->panel_fixed_mode->VDisplay == 768)
-	    {
-		dev_priv->panel_fixed_mode->HDisplay = 1280;
-		dev_priv->panel_fixed_mode->HSyncStart = 1328;
-		dev_priv->panel_fixed_mode->HSyncEnd = 1440;
-		dev_priv->panel_fixed_mode->HTotal = 1688;
-	    }
+    if (pI830->lvds_fixed_mode)
+	    goto found_mode;
 
-	    if (pI830->debug_modes &&
-		!xf86ModesEqual(dev_priv->panel_fixed_mode, bios_mode))
-	    {
-		xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-			   "BIOS panel mode data doesn't match probed data, "
-			   "continuing with probed.\n");
-		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "BIOS mode:\n");
-		xf86PrintModeline(pScrn->scrnIndex, bios_mode);
-		xf86DrvMsg(pScrn->scrnIndex, X_INFO, "probed mode:\n");
-		xf86PrintModeline(pScrn->scrnIndex, dev_priv->panel_fixed_mode);
-		xfree(bios_mode->name);
-		xfree(bios_mode);
+    /* If we *still* don't have a mode, try checking if the panel is already
+     * turned on.  If so, assume that whatever is currently programmed is the
+     * correct mode.
+     */
+    if (!pI830->lvds_fixed_mode) {
+	uint32_t lvds = INREG(LVDS);
+	int pipe = (lvds & LVDS_PIPEB_SELECT) ? 1 : 0;
+	xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
+	xf86CrtcPtr crtc = xf86_config->crtc[pipe];
+
+	if (lvds & LVDS_PORT_EN) {
+	    pI830->lvds_fixed_mode = i830_crtc_mode_get(pScrn, crtc);
+	    if (pI830->lvds_fixed_mode != NULL) {
+		pI830->lvds_fixed_mode->type |= M_T_PREFERRED;
+		goto found_mode;
 	    }
-	}  else {
-	    dev_priv->panel_fixed_mode = bios_mode;
 	}
-    } else {
-	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-		   "Couldn't detect panel mode.  Disabling panel\n");
-	goto disable_exit;
     }
+
+    if (!pI830->lvds_fixed_mode)
+	    goto disable_exit;
+
+found_mode:
 
     /* Blacklist machines with BIOSes that list an LVDS panel without actually
      * having one.
@@ -614,15 +1333,52 @@ i830_lvds_init(ScrnInfoPtr pScrn)
 	 * display.
 	 */
 
-	if (dev_priv->panel_fixed_mode != NULL &&
-		dev_priv->panel_fixed_mode->HDisplay == 800 &&
-		dev_priv->panel_fixed_mode->VDisplay == 600)
+	if (pI830->lvds_fixed_mode != NULL &&
+		pI830->lvds_fixed_mode->HDisplay == 800 &&
+		pI830->lvds_fixed_mode->VDisplay == 600)
 	{
 	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		    "Suspected Mac Mini, ignoring the LVDS\n");
 	    goto disable_exit;
 	}
     }
+
+    i830_set_lvds_backlight_method(output);
+
+    switch (pI830->backlight_control_method) {
+    case BCM_NATIVE:
+	dev_priv->set_backlight = i830_lvds_set_backlight_native;
+	dev_priv->get_backlight = i830_lvds_get_backlight_native;
+	dev_priv->backlight_max = i830_lvds_get_backlight_max_native(output);
+	break;
+    case BCM_LEGACY:
+	dev_priv->set_backlight = i830_lvds_set_backlight_legacy;
+	dev_priv->get_backlight = i830_lvds_get_backlight_legacy;
+	dev_priv->backlight_max = 0xff;
+	break;
+    case BCM_COMBO:
+	dev_priv->set_backlight = i830_lvds_set_backlight_combo;
+	dev_priv->get_backlight = i830_lvds_get_backlight_combo;
+	dev_priv->backlight_max = i830_lvds_get_backlight_max_combo(output);
+	break;
+    case BCM_KERNEL:
+	dev_priv->set_backlight = i830_lvds_set_backlight_kernel;
+	dev_priv->get_backlight = i830_lvds_get_backlight_kernel;
+	dev_priv->backlight_max = i830_lvds_get_backlight_max_kernel(output);
+	break;
+    default:
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "bad backlight control method\n");
+	break;
+    }
+
+    dev_priv->backlight_duty_cycle = dev_priv->get_backlight(output);
+
+    /*
+     * Default to filling the whole screen if the mode is less than the
+     * native size. (Change default to origin FULL mode, i8xx can only work
+     * in that mode for now.)
+     */
+    dev_priv->fitting_mode = FULL;
 
     return;
 

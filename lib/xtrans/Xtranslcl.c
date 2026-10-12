@@ -1,4 +1,3 @@
-/* $Xorg: Xtranslcl.c,v 1.6 2001/02/09 02:04:06 xorgcvs Exp $ */
 /*
 
 Copyright 1993, 1994, 1998  The Open Group
@@ -25,10 +24,7 @@ not be used in advertising or otherwise to promote the sale, use or
 other dealings in this Software without prior written authorization
 from The Open Group.
 
-*/
-/* $XFree86: xc/lib/xtrans/Xtranslcl.c,v 3.40tsi Exp $ */
-
-/* Copyright 1993, 1994 NCR Corporation - Dayton, Ohio, USA
+ * Copyright 1993, 1994 NCR Corporation - Dayton, Ohio, USA
  *
  * All Rights Reserved
  *
@@ -862,7 +858,7 @@ TRANS(NAMEDOpenServer)(XtransConnInfo ciptr, char *port)
     if (TRANS(FillAddrInfo) (ciptr, server_path, server_path) == 0)
     {
 	PRMSG(1,"NAMEDOpenServer: failed to fill in addr info\n", 0,0,0);
-	TRANS(LocalClose)(fd);
+	TRANS(LocalClose)(ciptr);
 	return -1;
     }
 

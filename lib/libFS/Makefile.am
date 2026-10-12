@@ -1,6 +1,4 @@
 # 
-#  $Id: Makefile.am,v 1.1 2005/05/25 21:47:55 sandmann Exp $
-# 
 #  Copyright © 2003 Keith Packard, Noah Levitt
 # 
 #  Permission to use, copy, modify, distribute, and sell this software and its
@@ -27,3 +25,18 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libfs.pc
 
 EXTRA_DIST = libfs.pc.in autogen.sh
+
+EXTRA_DIST += ChangeLog
+MAINTAINERCLEANFILES = ChangeLog
+
+.PHONY: ChangeLog
+
+ChangeLog:
+	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || (touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
+
+dist-hook: ChangeLog
+
+if LINT
+lint:
+	(cd src && $(MAKE) $(MFLAGS) lint)
+endif LINT

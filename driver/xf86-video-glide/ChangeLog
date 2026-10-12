@@ -1,0 +1,178 @@
+commit ce31b3e87032253ef8c77a8738014b8e981f01e5
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Jun 18 07:53:55 2008 +0300
+
+    Bump to 1.0.1
+
+commit ff45582f61a34b9bfa2833c4098f9618156a5752
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Jun 18 07:06:05 2008 +0300
+
+    Remove redefinition of NULL
+
+commit 07576fbeb79bc3ae199ae13de3cb09e216efca0e
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Jun 18 07:05:38 2008 +0300
+
+    Remove unused MIN and MAX macros
+
+commit a8a63bee3d5b73fd261d5d543332ee8ee8199071
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Jun 18 04:01:08 2008 +0300
+
+    Generate the ChangeLog file from git history
+
+commit e86333b890407033431041febe216319ab319a76
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Jun 18 02:46:40 2008 +0300
+
+    Add generated glide.4 to .gitignore
+
+commit 7a2b55e4ce5817a39829db478d42a860d2649e80
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Jun 18 02:43:48 2008 +0300
+
+    Remove RCS tags
+
+commit 838ad3bc77dcbc1b481ae891bc4f314b421a82d8
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Wed Jun 18 00:55:32 2008 +0300
+
+    Add license and copyright information to COPYING
+
+commit 39e0cf20ca7be389009a3598d1e6e5c3751c0cf0
+Merge: 3db677c... eca9f6d...
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Sep 3 06:06:54 2007 -0400
+
+    Merge branch 'master' of ssh://git.freedesktop.org/git/xorg/driver/xf86-video-glide
+
+commit 3db677c4d9bd52b40197dad6e96956a437787b77
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Sep 3 05:52:32 2007 -0400
+
+    Add *~ to .gitignore to skip patch/emacs droppings
+
+commit eca9f6d16e6f919c719c45c9161eb8f205c4e1df
+Author: Brice Goglin <bgoglin@debian.org>
+Date:   Thu Aug 30 04:41:28 2007 +0300
+
+    Move build time information from the man page to a README
+
+commit 3a3b11dcf342ce6cba7317fb56f8bac619d65ff2
+Author: Brice Goglin <bgoglin@debian.org>
+Date:   Sat Aug 25 03:16:39 2007 +0300
+
+    Check for glide.h presence in configure
+
+commit 58a6efb43e64d02fc0430df2ff459f7f14786fe3
+Author: Brice Goglin <bgoglin@debian.org>
+Date:   Tue Aug 7 10:52:50 2007 +0200
+
+    Define GLIDE_*_VERSION* using PACKAGE_VERSION_*
+
+commit d4a7e2b6db58723cfd840b9b86db4a16ecda7ace
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Sat Mar 10 17:10:00 2007 +0200
+
+    Rename .cvsignore to .gitignore
+
+commit 91684920c528f485fef04ddc260e842d4e5f4361
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Sat Mar 10 16:35:18 2007 +0200
+
+    Use system include dir by default for glide.h
+
+commit 41034f5df4d2d276834f14756a5980c8d53db8bd
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Fri Feb 9 04:00:53 2007 +0200
+
+    Modularize xf86-video-glide
+
+commit 102f8f06f91f207e195558d2297443a5b89fa557
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Mon Dec 19 16:25:53 2005 +0000
+
+    Stub COPYING files
+
+commit 59cc1984e27c3273cdd29bd7f7070fae8882afc7
+Author: Eric Anholt <anholt@freebsd.org>
+Date:   Mon Nov 21 10:49:13 2005 +0000
+
+    Add .cvsignores for drivers.
+
+commit 3543730a41ee2e2ead3d53fc7ede183c3fa97f45
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Mon Jul 11 02:29:47 2005 +0000
+
+    Prep for modular builds by adding guarded #include "config.h" everywhere.
+
+commit af8d8cff1136fb4bf1083723e5e047d7b836e4c3
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Sat Jun 25 21:16:54 2005 +0000
+
+    Bug #3626: _X_EXPORT tags for video and input drivers.
+
+commit 9e65e081d775b3c56e2c2dbac67512a74a9ed2d6
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Wed Apr 20 12:25:23 2005 +0000
+
+    Fix includes right throughout the Xserver tree:
+    change "foo.h" to <X11/foo.h> for core headers, e.g. X.h, Xpoll.h;
+    change "foo.h", "extensions/foo.h" and "X11/foo.h" to
+        <X11/extensions/foo.h> for extension headers, e.g. Xv.h;
+    change "foo.[ch]" to <X11/Xtrans/foo.[ch]> for Xtrans files.
+
+commit 4b4b6cbc1bc8a68fe42b1f97c389817320b6b6fa
+Author: Markus Kuhn <Markus.Kuhn@cl.cam.ac.uk>
+Date:   Sat Dec 4 00:43:08 2004 +0000
+
+    Encoding of numerous files changed to UTF-8
+
+commit 8a9d5ba0d4903e37116d4fa2cca2edbcaf1f0078
+Author: Eric Anholt <anholt@freebsd.org>
+Date:   Wed Jun 16 09:23:04 2004 +0000
+
+    DRI XFree86-4_3_99_12-merge import
+
+commit aed6abaee9518abda1964c68ca0b25c2b6360a8a
+Author: Egbert Eich <eich@suse.de>
+Date:   Fri Apr 23 19:33:02 2004 +0000
+
+    Merging XORG-CURRENT into trunk
+
+commit 532d3636f31d45fef7b1b0ba8bc3cc61e429c90e
+Author: Egbert Eich <eich@suse.de>
+Date:   Sun Mar 14 08:33:20 2004 +0000
+
+    Importing vendor version xf86-4_4_99_1 on Sun Mar 14 00:26:39 PST 2004
+
+commit bd31dbb2e3ad9c69df80dd2a6f35092869533e36
+Author: Egbert Eich <eich@suse.de>
+Date:   Wed Mar 3 12:12:18 2004 +0000
+
+    Importing vendor version xf86-4_4_0 on Wed Mar 3 04:09:24 PST 2004
+
+commit 165b5bd933379a8759f1024d1a0061cc80adfdae
+Author: Egbert Eich <eich@suse.de>
+Date:   Thu Feb 26 13:35:52 2004 +0000
+
+    readding XFree86's cvs IDs
+
+commit aae439e34ae5f8becc2358222ffdbe2584cb82d1
+Author: Egbert Eich <eich@suse.de>
+Date:   Thu Feb 26 09:23:18 2004 +0000
+
+    Importing vendor version xf86-4_3_99_903 on Wed Feb 26 01:21:00 PST 2004
+
+commit 14789a39b4bf2695b938e505c4d069f2ef9d47d1
+Author: Kaleb Keithley <kaleb@freedesktop.org>
+Date:   Fri Nov 14 16:48:55 2003 +0000
+
+    XFree86 4.3.0.1
+
+commit c5aeaa75075f2bace017bd6a55384f5bb8766eab
+Author: Kaleb Keithley <kaleb@freedesktop.org>
+Date:   Fri Nov 14 16:48:55 2003 +0000
+
+    Initial revision

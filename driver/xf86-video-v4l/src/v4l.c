@@ -2,7 +2,6 @@
  *  video4linux Xv Driver 
  *  based on Michael Schimek's permedia 2 driver.
  */
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/v4l/v4l.c,v 1.33 2003/12/05 03:55:32 dawes Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -593,7 +592,8 @@ V4lSetPortAttribute(ScrnInfoPtr pScrn,
 	    if (-1 == ioctl(V4L_FD,VIDIOCSAUDIO,&pPPriv->audio))
 		perror("ioctl VIDIOCSAUDIO");
     } else if (attribute == xvFreq) {
-	if (-1 == ioctl(V4L_FD,VIDIOCSFREQ,&value))
+	unsigned long freq = value;
+	if (-1 == ioctl(V4L_FD,VIDIOCSFREQ,&freq))
 	    perror("ioctl VIDIOCSFREQ");
     } else if (0 != pPPriv->yuv_format &&
 	       pPPriv->myfmt->setAttribute) {
@@ -645,7 +645,9 @@ V4lGetPortAttribute(ScrnInfoPtr pScrn,
 	    ret = BadValue;
 	}
     } else if (attribute == xvFreq) {
-	ioctl(V4L_FD,VIDIOCGFREQ,value);
+	unsigned long freq;
+	ioctl(V4L_FD,VIDIOCGFREQ,&freq);
+	*value = freq;
     } else if (0 != pPPriv->yuv_format &&
 	       pPPriv->myfmt->getAttribute) {
 	/* not mine -> pass to yuv scaler driver */

@@ -1,4 +1,3 @@
-# $Id: Makefile.am,v 1.6 2005/12/06 22:48:45 kem Exp $
 #
 # Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
 # 

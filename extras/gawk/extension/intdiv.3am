@@ -1,0 +1,73 @@
+.TH INTDIV 3am "Apr 15 2026" "Free Software Foundation" "GNU Awk Extension Modules"
+.SH NAME
+intdiv \- perform integer division in one operation
+.SH SYNOPSIS
+.ft CW
+@load "intdiv"
+.sp
+success = intdiv(numerator, denominator, result)
+.ft R
+.SH DESCRIPTION
+The
+.I intdiv
+extension
+provides a single function that performs
+integer division, similar to the standard C
+\f(CWdiv()\fP function.
+.TP
+.BI intdiv( numerator\^ ", " denominator\^ ", " result\^ )
+First, truncate
+.I numerator
+and
+.I denominator
+towards zero, creating integer values.  Clear the 
+.I result
+array, and then set
+.B result["quotient"]
+to the result of
+.IR "numerator / denominator" ,
+truncated towards zero to an integer,
+and set
+.B result["remainder"]
+to the result of
+.IR "numerator % denominator" ,
+truncated towards zero to an integer.
+Attempting division by zero causes a fatal error.
+The function returns zero upon success, and \-1 upon error.
+.PP
+This function is useful
+primarily with GMP arbitrary length integers; it avoids
+creating MPFR arbitrary precision floating-point values.
+.SH "SEE ALSO"
+.IR "GAWK: Effective AWK Programming" ,
+and the man pages for the other extensions shipped with
+.IR gawk .
+.PP
+.IR div (3).
+.SH AUTHOR
+Arnold Robbins,
+.BR arnold@skeeve.com .
+.SH COPYING PERMISSIONS
+Copyright \(co 2026,
+Free Software Foundation, Inc.
+.PP
+Permission is granted to make and distribute verbatim copies of
+this manual page provided the copyright notice and this permission
+notice are preserved on all copies.
+.ig
+Permission is granted to process this file through troff and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual page).
+..
+.PP
+Permission is granted to copy and distribute modified versions of this
+manual page under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+.PP
+Permission is granted to copy and distribute translations of this
+manual page into another language, under the above conditions for
+modified versions, except that this permission notice may be stated in
+a translation approved by the Foundation.
+.\" vim: set filetype=nroff :

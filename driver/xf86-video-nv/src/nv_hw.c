@@ -1,41 +1,25 @@
- /***************************************************************************\
-|*                                                                           *|
-|*       Copyright 1993-2003 NVIDIA, Corporation.  All rights reserved.      *|
-|*                                                                           *|
-|*     NOTICE TO USER:   The source code  is copyrighted under  U.S. and     *|
-|*     international laws.  Users and possessors of this source code are     *|
-|*     hereby granted a nonexclusive,  royalty-free copyright license to     *|
-|*     use this code in individual and commercial software.                  *|
-|*                                                                           *|
-|*     Any use of this source code must include,  in the user documenta-     *|
-|*     tion and  internal comments to the code,  notices to the end user     *|
-|*     as follows:                                                           *|
-|*                                                                           *|
-|*       Copyright 1993-2003 NVIDIA, Corporation.  All rights reserved.      *|
-|*                                                                           *|
-|*     NVIDIA, CORPORATION MAKES NO REPRESENTATION ABOUT THE SUITABILITY     *|
-|*     OF  THIS SOURCE  CODE  FOR ANY PURPOSE.  IT IS  PROVIDED  "AS IS"     *|
-|*     WITHOUT EXPRESS OR IMPLIED WARRANTY OF ANY KIND.  NVIDIA, CORPOR-     *|
-|*     ATION DISCLAIMS ALL WARRANTIES  WITH REGARD  TO THIS SOURCE CODE,     *|
-|*     INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY, NONINFRINGE-     *|
-|*     MENT,  AND FITNESS  FOR A PARTICULAR PURPOSE.   IN NO EVENT SHALL     *|
-|*     NVIDIA, CORPORATION  BE LIABLE FOR ANY SPECIAL,  INDIRECT,  INCI-     *|
-|*     DENTAL, OR CONSEQUENTIAL DAMAGES,  OR ANY DAMAGES  WHATSOEVER RE-     *|
-|*     SULTING FROM LOSS OF USE,  DATA OR PROFITS,  WHETHER IN AN ACTION     *|
-|*     OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,  ARISING OUT OF     *|
-|*     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOURCE CODE.     *|
-|*                                                                           *|
-|*     U.S. Government  End  Users.   This source code  is a "commercial     *|
-|*     item,"  as that  term is  defined at  48 C.F.R. 2.101 (OCT 1995),     *|
-|*     consisting  of "commercial  computer  software"  and  "commercial     *|
-|*     computer  software  documentation,"  as such  terms  are  used in     *|
-|*     48 C.F.R. 12.212 (SEPT 1995)  and is provided to the U.S. Govern-     *|
-|*     ment only as  a commercial end item.   Consistent with  48 C.F.R.     *|
-|*     12.212 and  48 C.F.R. 227.7202-1 through  227.7202-4 (JUNE 1995),     *|
-|*     all U.S. Government End Users  acquire the source code  with only     *|
-|*     those rights set forth herein.                                        *|
-|*                                                                           *|
- \***************************************************************************/
+/*
+ * Copyright (c) 1993-2003 NVIDIA, Corporation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -669,6 +653,15 @@ static void nv30UpdateArbitrationSettings (
     *lwm = graphics_lwm >> 3;
 }
 
+#if XSERVER_LIBPCIACCESS
+static inline uint32_t
+pciaccessReadLong(struct pci_device *const dev, pciaddr_t offset) {
+    uint32_t tmp;
+    pci_device_cfg_read_u32(dev, &tmp, offset);
+    return tmp;
+}
+#endif
+
 static void nForceUpdateArbitrationSettings (
     unsigned      VClk,
     unsigned      pixelDepth,
@@ -677,6 +670,15 @@ static void nForceUpdateArbitrationSettings (
     NVPtr        pNv
 )
 {
+#if XSERVER_LIBPCIACCESS
+    struct pci_device *const dev1 = pci_device_find_by_slot(0, 0, 0, 1);
+    struct pci_device *const dev2 = pci_device_find_by_slot(0, 0, 0, 2);
+    struct pci_device *const dev3 = pci_device_find_by_slot(0, 0, 0, 3);
+    struct pci_device *const dev5 = pci_device_find_by_slot(0, 0, 0, 5);
+#   define READ_LONG(num, offset) pciaccessReadLong(dev##num, (offset))
+#else
+    #define READ_LONG(num, offset) pciReadLong(pciTag(0, 0, num), (offset))
+#endif
     nv10_fifo_info fifo_data;
     nv10_sim_state sim_data;
     unsigned int M, N, P, pll, MClk, NVClk, memctrl;
@@ -684,11 +686,11 @@ static void nForceUpdateArbitrationSettings (
     if((pNv->Chipset & 0x0FF0) == 0x01A0) {
        unsigned int uMClkPostDiv;
 
-       uMClkPostDiv = (pciReadLong(pciTag(0, 0, 3), 0x6C) >> 8) & 0xf;
+       uMClkPostDiv = (READ_LONG(3, 0x6C) >> 8) & 0xf;
        if(!uMClkPostDiv) uMClkPostDiv = 4; 
        MClk = 400000 / uMClkPostDiv;
     } else {
-       MClk = pciReadLong(pciTag(0, 0, 5), 0x4C) / 1000;
+       MClk = READ_LONG(5, 0x4C) / 1000;
     }
 
     pll = pNv->PRAMDAC0[0x0500/4];
@@ -697,17 +699,17 @@ static void nForceUpdateArbitrationSettings (
     sim_data.pix_bpp        = (char)pixelDepth;
     sim_data.enable_video   = 0;
     sim_data.enable_mp      = 0;
-    sim_data.memory_type    = (pciReadLong(pciTag(0, 0, 1), 0x7C) >> 12) & 1;
+    sim_data.memory_type    = (READ_LONG(1, 0x7C) >> 12) & 1;
     sim_data.memory_width   = 64;
 
-    memctrl = pciReadLong(pciTag(0, 0, 3), 0x00) >> 16;
+    memctrl = READ_LONG(3, 0x00) >> 16;
 
     if((memctrl == 0x1A9) || (memctrl == 0x1AB) || (memctrl == 0x1ED)) {
         int dimm[3];
 
-        dimm[0] = (pciReadLong(pciTag(0, 0, 2), 0x40) >> 8) & 0x4F;
-        dimm[1] = (pciReadLong(pciTag(0, 0, 2), 0x44) >> 8) & 0x4F;
-        dimm[2] = (pciReadLong(pciTag(0, 0, 2), 0x48) >> 8) & 0x4F;
+        dimm[0] = (READ_LONG(2, 0x40) >> 8) & 0x4F;
+        dimm[1] = (READ_LONG(2, 0x44) >> 8) & 0x4F;
+        dimm[2] = (READ_LONG(2, 0x48) >> 8) & 0x4F;
 
         if((dimm[0] + dimm[1]) != dimm[2]) {
              ErrorF("WARNING: "
@@ -730,6 +732,8 @@ static void nForceUpdateArbitrationSettings (
         while (b >>= 1) (*burst)++;
         *lwm   = fifo_data.graphics_lwm >> 3;
     }
+
+#undef READ_LONG
 }
 
 

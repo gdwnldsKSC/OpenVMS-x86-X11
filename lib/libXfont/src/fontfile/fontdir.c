@@ -811,6 +811,10 @@ FontFileAddFontAlias (FontDirectoryPtr dir, char *aliasName, char *fontName)
 {
     FontEntryRec	entry;
 
+    if (strcmp(aliasName,fontName) == 0) {
+        /* Don't allow an alias to point to itself and create a loop */
+        return FALSE;
+    }
     entry.name.length = strlen (aliasName);
     CopyISOLatin1Lowered (aliasName, aliasName, entry.name.length);
     entry.name.name = aliasName;

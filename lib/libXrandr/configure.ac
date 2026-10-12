@@ -1,6 +1,4 @@
 dnl 
-dnl  $Id$
-dnl 
 dnl  Copyright © 2003 Keith Packard, Noah Levitt
 dnl 
 dnl  Permission to use, copy, modify, distribute, and sell this software and its
@@ -32,7 +30,7 @@ dnl try to keep these the same.  Note that the library has an extra
 dnl digit in the version number to track changes which don't affect the
 dnl protocol, so Xrandr version l.n.m corresponds to protocol version l.n
 dnl
-AC_INIT(libXrandr, 1.2.2, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXrandr)
+AC_INIT(libXrandr, 1.2.3, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXrandr)
 AC_CONFIG_AUX_DIR(.)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE

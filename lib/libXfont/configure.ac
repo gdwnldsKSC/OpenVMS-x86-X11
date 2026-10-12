@@ -1,6 +1,3 @@
-dnl 
-dnl  $Id$
-dnl 
 dnl  Copyright © 2003 Keith Packard
 dnl 
 dnl  Permission to use, copy, modify, distribute, and sell this software and its
@@ -26,7 +23,7 @@ dnl Process this file with autoconf to create configure.
 AC_PREREQ([2.57])
 
 AC_INIT([libXfont],
-	1.3.1,
+	1.3.3,
 	[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
 	libXfont)
 dnl

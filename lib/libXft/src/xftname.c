@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright © 2000 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -28,6 +26,7 @@ static const FcObjectType	_XftObjectTypes[] = {
     { XFT_CORE,		FcTypeBool, },
     { XFT_XLFD,		FcTypeString, },
     { XFT_RENDER,	FcTypeBool, },
+    { XFT_MAX_GLYPH_MEMORY, FcTypeInteger, },
 };
 
 #define NUM_OBJECT_TYPES    (sizeof _XftObjectTypes / sizeof _XftObjectTypes[0])

@@ -1,0 +1,533 @@
+   Copyright (C) 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026
+   Free Software Foundation, Inc.
+   
+   Copying and distribution of this file, with or without modification,
+   are permitted in any medium without royalty provided the copyright
+   notice and this notice are preserved.
+
+Changes from 5.4.0 to 5.4.1
+---------------------------
+
+1. A performance problem in PMA with backing store files 1G or more in
+   size has been fixed, by disabling assertions in support/pma.c.
+
+2. A bug in gensub() when using MinRX has been fixed.
+
+3. All files that referred to the FSF's old address have been revised.
+
+4. After careful review of the POSIX standard and how MinRX handles
+   matching when ignoring case, it was decided that the way it worked
+   was already correct, even for cases where one character can have
+   multiple alternative case variants. README_d/README.matchers has
+   been updated, and several new tests for this issue have been added
+   to the test suite.
+
+5. Unary plus and minus now force their operands to be numeric.
+
+6. The intdiv extension has been in the distribution for several years,
+   but was lacking both a man page and a description in the manual.
+   These flaws have been corrected.
+
+7. The Georgian translation (ka.po) was accidentally disabled. It's now
+   enabled, and also updated.
+
+8. Parse time division by zero is no longer a fatal error, but rather
+   a lint warning.  Division by zero at runtime remains fatal.
+
+9. Some subtle issues with respect to formatting numeric fields have
+   been fixed.
+
+10. The manual now states that contributions of code created by LLMs won't
+    be accepted.
+
+11. As usual, a number of small bugs have been fixed; see the ChangeLog
+    for the details.
+
+Changes from 5.3.x to 5.4.0
+---------------------------
+
+1. This release now uses Mike Haertel's MinRX regular expression matcher
+   as the default regexp engine. The old regex and dfa engines are still
+   available. More detail is available in the manual, and in the file
+   README_d/README.matchers. At the very least, read that file!
+
+2. The manual, in the Bugs section, now makes it explicit that
+   (a) Ad hominem attacks on the lists will not be tolerated, and
+   (b) Discussion of proprietary software is strongly discouraged.
+   Repeated offenses are grounds for being banned from the lists.
+
+3. There is now a new directive, @nsinclude, which works like @include
+   but does not reset the namespace for the included file to "awk". See
+   the manual for details.
+
+4. When using lshift() or rshift() and attempting to shift by as many
+   or more bits than in a uintmax_t, gawk returns zero, instead of
+   whatever the C compiler and hardware might have done.
+
+5. Gawk's use of persistent memory has changed somewhat:
+   A. Gawk now stores additional meta-information in the backing file.
+      This means that if you have a backing file with important data
+      in it, you should dump the data to a text file using the old version,
+      create a new backing file, and then read your data back in with
+      the new version, to a *brand new* backing file.
+   B. Gawk generates a warning if the version of gawk saved in the backing
+      file doesn't match that of the current running gawk.
+   C. It's now possible to use persistent memory and dynamic extensions
+      without problems. Gawk notices if an extension is being loaded from
+      a different path than what was first used and produces a fatal error
+      in this case.
+
+6. The ordchr extension now supports multibyte / wide characters.
+
+7. Per the 2024 POSIX standard, `length(array)' is no longer an extension,
+   but a regular feature.  Thus --posix no longer rejects it and --lint
+   no longer warns about it.
+
+8. The --traditional option has been rationalized to bring gawk into
+   sync with BWK awk. It no longer affects the return code from system(),
+   and it no longer prevents using a regexp for RS. Internally, the
+   code was cleaned up some as well.
+
+9. Assertions in the C code are now enabled.  To disable them, manually
+   edit the various Makefiles after running configure and before
+   running make. You will need to add -DNDEBUG to the CFLAGS variable.
+
+10. PMA should now work on OpenBSD 7, FreeBSD 12 - 16, NetBSD 10 and 11,
+    and MidnightBSD 3 and 4.
+
+11. Hexadecimal floating-point values may now be used in program source code,
+    with strtonum(), and with the -n/--non-decimal-data option.  See the
+    manual for details.
+
+12. A large number of small "replacement" files for standard functions
+    have been removed. These functions are now so standard that we
+    simply expect them to always be available. This simplifies the
+    distribution and the code maintenance.
+
+13. Support for UDP in gawk's networking support is now obsolete.
+    It never worked very well. It will be removed in version 6.0.
+    Gawk issues a warning when attempting to use it.
+
+14. Reading regular disk input files should be somewhat faster now,
+    since gawk no longer checks for timeouts on such files.  On one
+    very large file, gawk '{ print }' saw approximately a 9% speedup.
+
+15. The MinGW port of gawk for MS-Windows now supports UTF-8 encoded
+    non-ASCII text when the console window where gawk runs uses the
+    Windows codepage 65001 for output, even if the system-wide locale
+    specifies another codepage.
+
+    Similarly, the Cygwin port now also fully supports UTF-8.
+
+16. There is a new option to configure: --enable-O3.  This causes gcc to
+    use -O3 instead of -O2 when compiling gawk.  This is not the default
+    because experience in some projects has shown (sadly) that -O3 can cause
+    bugs.
+
+17. There is a new translation: Arabic. The .gmo files for the ca, da, fi,
+    ja, ka, ms, and vi translations are no longer built or included in
+    the distribution, as those translations have gone too long without
+    being updated.  The .po files remain in the distribution, should
+    any volunteers wish to come forward to update them.
+
+18. OpenVMS support has been updated. This release builds on
+    Alpha, Itanium and x86_64.
+
+19. As usual, a number of small bugs have been fixed; see the ChangeLog
+    for the details.
+
+Changes from 5.3.2 to 5.3.x
+---------------------------
+
+1. The Hebrew translation has been revived.
+
+2. All non-standard variables are now not installed for --traditional
+   and --posix.
+
+3. It's been discovered that persistent memory and dynamic extensions don't mix.
+   For now, trying this combination produces a fatal error. It may one day
+   get fixed. Or, it may not.
+
+4. A bug in the API has been fixed whereby using a numeric index to set an
+   array element will work. As a result, the API minor version was increased to 1.
+
+Changes from 5.3.1 to 5.3.2
+---------------------------
+
+1. The pretty printer now produces fewer spurious newlines; at the
+   outermost level it now adds newlines between block comments and
+   the block or function that follows them. The extra final newline
+   is no longer produced.
+
+2. OpenVMS 9.2-2 x86_64 is now supported.
+
+3. On Linux and macos systems, the -no-pie linker flag is no longer required.
+   PMA now works on macos systems with Apple silicon, and not just
+   Intel systems.
+
+4. Still more subtle issues related to uninitialized array elements have
+   been fixed.
+
+5. Associative arrays should now not grow quite as fast as they used to.
+
+6. The code and documentation are now consistent with each other with
+   respect to path searching and adding .awk to the filename. Both
+   are always done, even with --posix and --traditional.
+
+7. As usual, there have been several minor code cleanups and bug fixes.
+   See the ChangeLog for details.
+
+Changes from 5.3.0 to 5.3.1
+---------------------------
+
+1. More subtle issues related to uninitialized array elements have
+   been fixed.
+
+2. A number of bugs in the debugger related to handling of arrays
+   have been fixed.
+
+3. Some subtle bugs in the API have been fixed.
+
+4. Use of MPFR is now possible again on 32-bit Power PC Mac systems.
+
+5. Race conditions around broken pipes for system() and read and write
+   pipes should now be closed off.
+
+6. Support for OSF/1 has been removed.
+
+7. The never-documented --nostalgia option has been removed. It was
+   causing bug reports.
+
+8. The implementation of printf/sprintf has been thoroughly reworked
+   in order to make the code more maintainable and to fix a goodly
+   number of corner cases.
+
+9. As usual, there have been several minor code cleanups and bug fixes.
+   See the ChangeLog for details.
+
+Changes from 5.2.x to 5.3.0
+---------------------------
+
+1. Infrastructure changes: Removed the use of libsigsegv. The
+   value-add was never very much and it caused problems in some
+   environments.
+
+2. In keeping with new features in BWK awk, gawk now has built-in
+   CSV file parsing. The behavior is intended to be identical to
+   that of the "One True AWK" when --csv is applied. See the
+   manual for details.
+
+3. Also in keeping with BWK awk, gawk now supports a new \u escape
+   sequence. This should be followed by 1-8 hexadecimal digits. The
+   given code point is converted to its corresponding multibyte encoding
+   for storage inside gawk. See the manual.
+
+4. If PROCINFO["BUFFERPIPE"] exists, then pipe output is buffered.
+   You can also use PROCINFO["command", "BUFFERPIPE"]. See the manual
+   for details.
+
+5. Because of the additional `do_csv' variable in the API, which breaks
+   binary compatibility, the API major version was updated to 4 and
+   the minor version was reset to zero.  The API remains source code
+   compatible; that is, existing extensions should only require recompilation.
+
+6. The manual now requires Texinfo 7.1 and its texinfo.tex for formatting.
+   As a result, we no longer need to pre-process it, removing the need
+   for gawktexi.in and leaving just gawk.texi.
+
+7. And of course, there have been several minor code cleanups and bug fixes.
+   See the ChangeLog for details.
+
+Changes from 5.2.2 to 5.2.x
+---------------------------
+
+1. The readdir extension has been updated with additonal code and
+   features, see the manual or its man page. As a result, the
+   readdir_test.c extension has been removed.
+
+2. We have a new translation: Ukrainian.
+
+3. Several subtle issues related to null regexp matches around
+   multibyte characters have been fixed.
+
+Changes from 5.2.1 to 5.2.2
+---------------------------
+
+1. Infrastructure upgrades: makeinfo 7.0.1 must be used to format
+   the manual.  As a result, the manual can also now be formatted
+   with LaTeX by running it through `makeinfo --latex'.
+
+2. Gawk no longer builds an x86_64 executable on M1 macOS systems.
+   This means that PMA is unavailable on those systems.
+
+3. Gawk will now diagnose if a heap file was created with a different
+   setting of -M/--bignum than in the current invocation and exit with
+   a fatal message if so.
+
+4. Gawk no longer "leaks" its free list of NODEs in the heap file, resulting
+   in much more efficient usage of persistent storage.
+
+5. PROCINFO["pma"] exists if the PMA allocator is compiled into gawk.
+   Its value is the PMA version.
+
+6. The time extension is no longer deprecated. The strptime() function
+   from gawkextlib's timex extension has been added to it.
+
+7. Better information is passed to input parsers for when they want to
+   decide whether or not to take control of a file. In particular, the
+   readdir extension is simplified for Windows because of this.
+
+8. The various PNG files are now installed for Info and HTML. The
+   images files now have gawk_ prefixed names to avoid any conflicts
+   with other installed PNG file names.
+
+9. As usual, there have been several minor code cleanups and bug fixes.
+   See the ChangeLog for details.
+
+Changes from 5.2.0 to 5.2.1
+---------------------------
+
+1. Infrastructure upgrades: PMA version Avon 8.
+
+2. Issues related to the sign of NaN and Inf values on RiscV have
+   been fixed; gawk now gives identical results on that platform as
+   it does on others.
+
+3. A few issues with the debugger have been fixed.
+
+4. More subtle issues with untyped array elements being passed to
+   functions have been fixed.
+
+5. The rwarray extension's readall() function has had some bugs fixed.
+
+6. The PMA allocator is now supported on FreeBSD, OpenBSD and Linux on S/390x.
+   It is now supported also on both Intel and M1 macOS systems.
+
+7. There have been several minor code cleanups and bug fixes. See the
+   ChangeLog for details.
+
+Changes from 5.1.x to 5.2.0
+---------------------------
+
+*****************************************************************************
+* MPFR mode (the -M option) is now ON PAROLE.  This feature is now being    *
+* supported by a volunteer in the development team and not by the primary   *
+* maintainer.  If this situation changes, then the feature will be removed. *
+* For more information see this section in the manual:                      *
+* https://www.gnu.org/software/gawk/manual/html_node/MPFR-On-Parole.html    *
+*****************************************************************************
+
+1. Infrastructure upgrades: Libtool 2.4.7, Bison 3.8.2.
+
+2. Numeric scalars now compare in the same way as C for the relational
+   operators. Comparison order for sorting has not changed.  This only
+   makes a difference when comparing Infinity and NaN values with
+   regular numbers; it should not be noticeable most of the time.
+
+3. If the AWK_HASH environment variable is set to "fnv1a" gawk will
+   use the FNV1-A hash function for associative arrays.
+
+4. The CMake infrastructure has been removed. In the five years it was in
+   the tree, nobody used it, and it was not updated.
+
+5. There is now a new function, mkbool(), that creates Boolean-typed
+   values.  These values *are* numbers, but they are also tagged as
+   Boolean. This is mainly for use with data exchange to/from languages
+   or environments that support real Boolean values. See the manual
+   for details.
+
+6. As BWK awk has supported interval expressions since 2019, they are
+   now enabled even if --traditional is supplied. The -r/--re-interval option
+   remains, but it does nothing.
+
+7. The rwarray extension has two new functions, writeall() and readall(),
+   for saving / restoring all of gawk's variables and arrays.
+
+8. The new `gawkbug' script should be used for reporting bugs.
+
+9. The manual page (doc/gawk.1) has been considerably reduced in size.
+   Wherever possible, details were replaced with references to the online
+   copy of the manual.
+
+10. Gawk now supports Terence Kelly's "persistent malloc" (pma),
+    allowing gawk to preserve its variables, arrays and user-defined
+    functions between runs. THIS IS AN EXPERIMENTAL FEATURE!
+   
+    For more information, see the manual. A new pm-gawk.1 man page
+    is included, as is a separate user manual that focuses on the feature.
+
+11. Support for OS/2 has been removed. It was not being actively
+    maintained.
+
+12. Similarly, support for DJGPP has been removed. It also was not
+    being actively maintained.
+
+13. VAX/VMS is no longer supported, as it can no longer be tested.
+    The files for it remain in the distribution but will be removed
+    eventually.
+
+14. Some subtle issues with untyped array elements being passed to
+    functions have been fixed.
+
+15. Syntax errors are now immediately fatal. This prevents problems
+    with errors from fuzzers and other such things.
+
+16. There have been numerous minor code cleanups and bug fixes. See the
+    ChangeLog for details.
+
+Changes from 5.1.1 to 5.1.x
+---------------------------
+
+1. Infrastructure upgrades: Automake 1.16.5, Texinfo 6.8.
+
+2. The rwarray extension now supports writing and reading GMP and
+   MPFR values. As a result, a bug in the API code was fixed.
+
+Changes from 5.1.0 to 5.1.1
+---------------------------
+
+1. Infrastructure upgrades: Bison 3.8, Gettext 0.20.2, Automake 1.16.4,
+   and (will wonders never cease) Autoconf 2.71.
+
+2. asort and asorti now allow FUNCTAB and SYMTAB as the first argument if a
+   second destination array is supplied. Similarly, using either array as
+   the second argument is now a fatal error. Additionally, using either
+   array as the destination for split(), match(), etc. also causes a
+   fatal error.
+
+3. The new -I/--trace option prints a trace of the byte codes as they
+   are executed.
+
+4. A number of subtle bugs relating to MPFR mode that caused differences
+   between regular operation and MPFR mode have been fixed.
+
+5. The API now handles MPFR/GMP values slightly differently, requiring
+   different memory management for those values. See the manual for the
+   details if you have an extension using those values.  As a result,
+   the minor version was incremented.
+
+6. $0 and the fields are now cleared before starting a BEGINFILE rule.
+
+7. The duplication of m4 and build-aux directories between the main
+   directory and the extension directory has been removed. This
+   simplifies the distribution.
+
+8. The test suite has been improved, making it easier to run the entire
+   suite with -M. Use `GAWK_TEST_ARGS=-M make check' to do so.
+
+9. Profiling and pretty-printing output has been modified slightly so
+   that functions are presented in a reasonable order with respect
+   to the namespaces that contain them.
+
+10. Several example programs in the manual have been updated to their
+    modern POSIX equivalents.
+
+11. A number of examples in doc/gawkinet.texi have been updated for
+    current times. Thanks to Juergen Kahrs for the work.
+
+12. Handling of Infinity and NaN values has been improved.
+
+13. There has been a general tightening up of the use of const and
+    of types.
+
+14. The "no effect" lint warnings have been fixed up and now behave
+    more sanely.
+
+15. The manual has been updated with much more information about what is
+    and is not a bug, and the changes in the gawk mailing lists.
+
+16. The behavior of strongly-typed regexp constants when passed as the
+    third argument to sub() or gsub() has been clarified in the code and
+    in the manual.
+
+17. Similar to item #4 above, division by zero is now fatal in MPFR
+    mode, as it is in regular mode.
+
+18. There have been numerous minor code cleanups and bug fixes. See the
+    ChangeLog for details.
+
+Changes from 5.0.1 to 5.1.0
+---------------------------
+
+1. The major version of the API is bumped to 3, something that should
+   have happened at the 5.0.0 release but didn't.
+
+2. A number of memory leak issues have been fixed.
+
+3. Infrastructure upgrades: Bison 3.5.4, Texinfo 6.7, Gettext 0.20.1,
+   Automake 1.16.2.
+
+4. The indexing in the manual has been thoroughly revised, in particular
+   making use of the facilities in Texinfo 6.7.  That version (or newer)
+   must be used to format the manual.
+
+5. MSYS2 is now supported out-of-the-box by configure.
+
+6. Several bugs have been fixed.  See the ChangeLog for details.
+
+Changes from 5.0.0 to 5.0.1
+---------------------------
+
+1. A number of ChangeLog.1 files that were left out of the distribution
+   have been restored.
+
+2. Multiple syntax errors should no longer be able to cause a core dump.
+
+3. Sandbox mode now disallows assigning new filename values in ARGV that
+   were not there when gawk was invoked.
+
+4. There are many small documentation improvements in the manual.
+
+5. The new argument "no-ext" to --lint disables ``XXX is a gawk extension''
+   lint warnings.
+
+6. Infrastructure upgrades: Bison 3.4.
+
+7. A number of bugs, some of them quite significant, have been fixed.
+   See the ChangeLog for details.
+
+Changes from 4.2.1 to 5.0.0
+---------------------------
+
+1. Support for the POSIX standard %a and %A printf formats has been added.
+
+2. The test infrastructure has been greatly improved, simplifying the
+   contents of test/Makefile.am and making it possible to generate
+   pc/Makefile.tst from test/Makefile.in.
+
+3. The regex routines have been replaced with those from GNULIB, allowing
+   me to stop carrying forward decades of changes against the original
+   ones from GLIBC.
+
+4. Infrastructure upgrades: Bison 3.3, Automake 1.16.1, Gettext 0.19.8.1,
+   makeinfo 6.5.
+
+5. The undocumented configure option and code that enabled the use of
+   non-English "letters" in identifiers is now gone.
+
+6. The `--with-whiny-user-strftime' configuration option is now gone.
+
+7. The code now makes some stronger assumptions about a C99 environment.
+
+8. PROCINFO["platform"] yields a string indicating the platform for
+   which gawk was compiled.
+
+9. Writing to elements of SYMTAB that are not variable names now
+   causes a fatal error. THIS CHANGES BEHAVIOR.
+
+10. Comment handling in the pretty-printer has been reworked almost completely
+    from scratch. As a result, comments in many corner cases that were
+    previously lost are now included in the formatted output.
+
+11. Namespaces have been implemented! See the manual.  One consequence of this
+    is that files included with -i, read with -f, and command line program
+    segments must all be self-contained syntactic units. E.g., you can no
+    longer do something like this:
+
+   	gawk -e 'BEGIN {' -e 'print "hello" }'
+
+12. Gawk now uses the locale settings for ignoring case in single byte
+    locales, instead of hardwiring in Latin-1.
+
+13. A number of bugs, some of them quite significant, have been fixed.
+    See the ChangeLog for details.

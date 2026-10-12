@@ -14,19 +14,19 @@ $ inherited_loader = ""
 $ inherited_loader_table = ""
 $ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
-$ profiles = "||ZLIB|FONTENC|EXPAT|LBXUTIL_IMAGE|LBXUTIL|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|ICE|SM|BDFTOPCF|ICEAUTH|SHOWRGB|MAKEDEPEND|GTF|RTL|"
+$ profiles = "||ZLIB|FONTENC|EXPAT|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|ICE|SM|ICEAUTH|MAKEDEPEND|GTF|RTL|"
 $ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|"
-$ profiles = profiles + "CFB|XKBFILE|XKBUI|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
+$ profiles = profiles + "CFB|XKBFILE|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ profiles = profiles + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ profiles = profiles + "XSS|XVMC|XXF86VM|XXF86MISC|"
-$ profiles = profiles + "XEVIE|XFONTCACHE|DMX|XP|"
-$ profiles = profiles + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
+$ profiles = profiles + "XFONTCACHE|DMX|"
+$ profiles = profiles + "XMUU|XPM|"
 $ profiles = profiles + "FONT_BUILTINS|FONT_FONTCACHE|FONT_FREETYPE|FONT_SPEEDO|"
 $ profiles = profiles + "X11|X11_MAKEKEYS|"
 $ profiles = profiles + "XAUTH|XDPYINFO|XWININFO|"
 $ profiles = profiles + "XSET|XMODMAP|XEV|XKBCOMP|SETXKBMAP|"
 $ profiles = profiles + "XT|XMU|"
-$ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|RAC|COMMON|INIT|BUS|MISC|SCANPCI|XORGXKB|"
+$ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|RAC|COMMON|INIT|BUS|MISC|XORGXKB|"
 $ profiles = profiles + "XORGFB|"
 $ profiles = profiles + "LOADER|"
 $ profiles = profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
@@ -62,13 +62,6 @@ $ IF P4 .EQS. "XKB" THEN include_directory = -
     "[.XSERVER.XORG-SERVER.XKB]," + include_directory
 $ IF P4 .EQS. "EXPAT" THEN include_directory = include_directory + -
     ",[.EXTRAS.EXPAT.LIB],[.EXTRAS.EXPAT.VMS]"
-$ IF P4 .EQS. "LBXUTIL_IMAGE" THEN include_directory = include_directory + -
-    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
-    "[.VMS-SUPPORT._BUILD.P64.LIB.LBXUTIL.IMAGE],[.LIB.LIBLBXUTIL.SRC.IMAGE]"
-$ IF P4 .EQS. "LBXUTIL" THEN include_directory = include_directory + -
-    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
-    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
-    "[.XSERVER.XORG-SERVER.INCLUDE],[.LIB.LIBLBXUTIL.SRC.LBX_ZLIB]"
 $ IF P4 .EQS. "FONT_UTIL" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.LIB.LIBXFONT.INCLUDE.X11.FONTS],[.LIB.LIBXFONT.SRC.STUBS]"
@@ -98,16 +91,14 @@ $ IF P4 .EQS. "ICE" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.ICE],[.LIB.LIBICE.SRC],[.LIB.XTRANS]"
 $ IF P4 .EQS. "SM" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.SM],[.LIB.LIBSM.SRC]"
-$ IF (P4 .EQS. "XKBFILE") .OR. (P4 .EQS. "XKBUI") THEN -
+$ IF P4 .EQS. "XKBFILE" THEN -
     include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
     "[.LIB.LIBXKBFILE.SRC]"
-$ IF (P4 .EQS. "XKBFILE") .OR. (P4 .EQS. "XKBUI") THEN GOSUB xkbfile_native
-$ IF ((P4 .EQS. "XKBFILE") .OR. (P4 .EQS. "XKBUI")) .AND. -
+$ IF P4 .EQS. "XKBFILE" THEN GOSUB xkbfile_native
+$ IF (P4 .EQS. "XKBFILE") .AND. -
     (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
-$ IF P4 .EQS. "XKBUI" THEN include_directory = include_directory + -
-    ",[.LIB.LIBXKBUI.SRC]"
 $ IF P4 .EQS. "XT" THEN include_directory = -
     "[.VMS-SUPPORT._BUILD.P64.LIB.XT],[.LIB.LIBXT.SRC]," + include_directory
 $ IF P4 .EQS. "XMU" THEN include_directory = -
@@ -116,8 +107,8 @@ $ IF P4 .EQS. "XMU" THEN include_directory = -
 $ client_extensions = "|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ client_extensions = client_extensions + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ client_extensions = client_extensions + "XSS|XVMC|XXF86VM|XXF86MISC|"
-$ client_extensions = client_extensions + "XEVIE|XFONTCACHE|DMX|XP|"
-$ client_extensions = client_extensions + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
+$ client_extensions = client_extensions + "XFONTCACHE|DMX|"
+$ client_extensions = client_extensions + "XMUU|XPM|"
 $ client_extensions = client_extensions + "XAUTH|XDPYINFO|XWININFO|"
 $ client_extensions = client_extensions + "XSET|XMODMAP|XEV|XKBCOMP|SETXKBMAP|"
 $ client_extensions = client_extensions + "XT|XMU|"
@@ -158,56 +149,45 @@ $ IF P4 .EQS. "XXF86VM" THEN include_directory = include_directory + -
     ",[.LIB.LIBXXF86VM.SRC]"
 $ IF P4 .EQS. "XXF86MISC" THEN include_directory = include_directory + -
     ",[.LIB.LIBXXF86MISC.SRC]"
-$ IF P4 .EQS. "XEVIE" THEN include_directory = include_directory + -
-    ",[.LIB.LIBXEVIE.SRC]"
 $ IF P4 .EQS. "XFONTCACHE" THEN include_directory = include_directory + -
     ",[.LIB.LIBXFONTCACHE.SRC]"
 $ IF P4 .EQS. "DMX" THEN include_directory = include_directory + -
     ",[.LIB.LIBDMX.SRC]"
-$ IF P4 .EQS. "XP" THEN include_directory = include_directory + -
-    ",[.LIB.LIBXP.SRC]"
-$ IF P4 .EQS. "OLDX" THEN include_directory = include_directory + -
-    ",[.LIB.LIBOLDX.SRC]"
 $ IF P4 .EQS. "XMUU" THEN include_directory = include_directory + -
     ",[.LIB.LIBXMU.SRC]"
 $ IF P4 .EQS. "XPM" THEN include_directory = include_directory + -
     ",[.LIB.LIBXPM.SRC]"
-$ IF P4 .EQS. "XPRINTAPPUTIL" THEN include_directory = include_directory + -
-    ",[.LIB.LIBXPRINTAPPUTIL.SRC]"
-$ IF P4 .EQS. "XPRINTAPPUTIL" THEN GOSUB xprintapputil_native
-$ IF (P4 .EQS. "XPRINTAPPUTIL") .AND. (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
 $ IF P4 .EQS. "ICEAUTH" THEN include_directory = include_directory + -
     ",[.APP.ICEAUTH]"
 $ IF P4 .EQS. "XAUTH" THEN include_directory = -
     "[.APP.XAUTH]," + include_directory
 $ IF P4 .EQS. "XWININFO" THEN include_directory = -
     "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XWININFO]," + include_directory + -
-    ",[.APP.XWININFO],[.APP.XLSFONTS]"
+    ",[.APP.XWININFO]"
 $ IF P4 .EQS. "XSET" THEN include_directory = include_directory + ",[.APP.XSET]"
 $ IF P4 .EQS. "XMODMAP" THEN include_directory = -
     "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XMODMAP]," + include_directory + ",[.APP.XMODMAP]"
 $ IF P4 .EQS. "XEV" THEN include_directory = include_directory + ",[.APP.XEV]"
 $ IF P4 .EQS. "XKBCOMP" THEN include_directory = -
     "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XKBCOMP],[.APP.XKBCOMP]," + include_directory
-$ IF P4 .EQS. "SHOWRGB" THEN include_directory = include_directory + -
-    ",[.XSERVER.XORG-SERVER.INCLUDE]"
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
-    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.UTIL.MAKEDEPEND],[.UTIL.IMAKE]"
+    ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.UTIL.MAKEDEPEND]"
 $ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|CFB|ROOTLESS|XTRAP|"
-$ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|RAC|COMMON|INIT|BUS|MISC|SCANPCI|XORGXKB|"
+$ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|RAC|COMMON|INIT|BUS|MISC|XORGXKB|"
 $ server_profiles = server_profiles + "XORGFB|"
 $ server_profiles = server_profiles + "LOADER|"
 $ server_profiles = server_profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ server_profiles = server_profiles + "CONFIG|"
-$! Native case folding makes server xfixes.h collide with client Xfixes.h.
-$! Keep the server header ahead of the exported client extension directory.
+$! Native case folding makes server headers collide with client Xfixes/XKB files.
+$! Keep server include directories ahead of exported client extension headers.
 $ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
     THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.XSERVER.XORG-SERVER.XFIXES]," + -
+    "[.XSERVER.XORG-SERVER.INCLUDE]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
-    "[.XSERVER.XORG-SERVER.MIEXT.DAMAGE],[.XSERVER.XORG-SERVER.INCLUDE]," + -
+    "[.XSERVER.XORG-SERVER.MIEXT.DAMAGE]," + -
     "[.XSERVER.XORG-SERVER.MI],[.XSERVER.XORG-SERVER.RENDER]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.PIXMAN],[.XSERVER.XORG-SERVER.XI]"
 $ IF P4 .EQS. "MI" THEN include_directory = include_directory + -
@@ -245,12 +225,10 @@ $ IF P4 .EQS. "RAC" THEN include_directory = include_directory + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.BUS]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.RAC]"
-$ common_profiles = "|COMMON|INIT|BUS|MISC|SCANPCI|XORGXKB|"
+$ common_profiles = "|COMMON|INIT|BUS|MISC|XORGXKB|"
 $ common_profiles = common_profiles + "LOADER|"
 $ common_profiles = common_profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ xf86common_profile = F$LOCATE("|" + P4 + "|",common_profiles) .LT. F$LENGTH(common_profiles)
-$ IF P4 .EQS. "SCANPCI" THEN include_directory = -
-    "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XSERVER.HW.XFREE86.SCANPCI]," + include_directory
 $ IF xf86common_profile THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XSERVER.HW.XFREE86.COMMON]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]," + -
@@ -258,7 +236,7 @@ $ IF xf86common_profile THEN include_directory = include_directory + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.BUS]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.DDC],[.XSERVER.XORG-SERVER.HW.XFREE86.I2C]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.LOADER],[.XSERVER.XORG-SERVER.HW.XFREE86.RAC]," + -
-    "[.XSERVER.XORG-SERVER.HW.XFREE86.PARSER],[.XSERVER.XORG-SERVER.HW.XFREE86.SCANPCI]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.PARSER]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.VBE],[.XSERVER.XORG-SERVER.HW.XFREE86.INT10]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.VGAHW],[.XSERVER.XORG-SERVER.HW.XFREE86.DIXMODS.EXTMOD]," + -
     "[.XSERVER.XORG-SERVER.XEXT],[.XSERVER.XORG-SERVER.RANDR],[.XSERVER.XORG-SERVER.XKB]," + -
@@ -277,7 +255,7 @@ $ IF P4 .EQS. "SHADOW" THEN include_directory = include_directory + -
 $ IF P4 .EQS. "RANDR" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.RANDR]"
 $ IF P4 .EQS. "DBE" THEN include_directory = include_directory + -
-    ",[.XSERVER.XORG-SERVER.DBE]"
+    ",[.XSERVER.XORG-SERVER.DBE],[.XSERVER.XORG-SERVER.XEXT]"
 $ IF P4 .EQS. "RECORD" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.RECORD],[.XSERVER.XORG-SERVER.XEXT]"
 $ IF P4 .EQS. "XFIXES" THEN include_directory = include_directory + -
@@ -328,7 +306,7 @@ $ IF P4 .EQS. "XTRAP" THEN include_directory = include_directory + -
 $ IF P4 .EQS. "FONT_FONTFILE" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.LIB.LIBXFONT.INCLUDE.X11.FONTS],[.LIB.LIBXFONT.SRC.FONTFILE]"
-$ IF (P4 .EQS. "FONT_BITMAP") .OR. (P4 .EQS. "BDFTOPCF") THEN -
+$ IF P4 .EQS. "FONT_BITMAP" THEN -
     include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.LIB.LIBXFONT.INCLUDE.X11.FONTS],[.LIB.LIBXFONT.SRC.BITMAP]"
@@ -338,6 +316,7 @@ $ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN include_directory = -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
     "[.XSERVER.XORG-SERVER.XFIXES]," + -
+    "[.XSERVER.XORG-SERVER.INCLUDE]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT]," + -
@@ -348,8 +327,8 @@ $ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN include_directory = -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.XAA]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.DDC]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.I2C]," + -
-    "[.XSERVER.XORG-SERVER.INCLUDE],[.XSERVER.XORG-SERVER.MI]," + -
-    "[.XSERVER.XORG-SERVER.FB],[.XSERVER.XORG-SERVER.RENDER]," + -
+    "[.XSERVER.XORG-SERVER.MI]," + -
+    "[.XSERVER.XORG-SERVER.FB],[.XSERVER.XORG-SERVER.RENDER],[.XSERVER.XORG-SERVER.XEXT]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.PIXMAN]"
 $ IF header .EQS. "" THEN GOTO done
 $ headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")
@@ -438,10 +417,6 @@ $ RETURN
 $rootless_config:
 $ rootless_config_header = F$SEARCH("[.VMS-SUPPORT.PROGRAMS.XSERVER.MIEXT.ROOTLESS]VMS_ROOTLESS_CONFIG.H")
 $ IF rootless_config_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + rootless_config_header
-$ RETURN
-$xprintapputil_native:
-$ xprintapputil_native_header = F$SEARCH("[.VMS-SUPPORT.LIB.XPRINTAPPUTIL]VMS_XPRINTAPPUTIL_NATIVE.H")
-$ IF xprintapputil_native_header .NES. "" THEN first_include = "/FIRST_INCLUDE=" + xprintapputil_native_header
 $ RETURN
 $xkbfile_native:
 $ xkbfile_native_header = F$SEARCH("[.VMS-SUPPORT.LIB.XKBFILE]VMS_XKBFILE_NATIVE.H")

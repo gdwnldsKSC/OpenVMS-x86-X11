@@ -30,6 +30,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "config.h"
 #endif
 
+#include <stdint.h>
 #include <string.h>
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -50,31 +51,34 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 static struct ch7xxx_id_struct {
-    int vid;
+    uint8_t vid;
     char *name;
 } ch7xxx_ids[] = { 
 	{ CH7011_VID, "CH7011" },
 	{ CH7009A_VID, "CH7009A" },
 	{ CH7009B_VID, "CH7009B" },
+	{ CH7301_VID, "CH7301" },
 };
 
 #define ID_ARRAY_SIZE (sizeof(ch7xxx_ids) / sizeof(ch7xxx_ids[0]))
 
 struct ch7xxx_reg_state {
-    CARD8 regs[CH7xxx_NUM_REGS];
+    uint8_t regs[CH7xxx_NUM_REGS];
 };
 
 struct ch7xxx_priv {
     I2CDevRec d;
+    Bool quiet;
+
     struct ch7xxx_reg_state SavedReg;
     struct ch7xxx_reg_state ModeReg;
-    CARD8 save_TCTL, save_TPCP, save_TPD, save_TPVT;
-    CARD8 save_TLPF, save_TCT, save_PM, save_IDF;
+    uint8_t save_TCTL, save_TPCP, save_TPD, save_TPVT;
+    uint8_t save_TLPF, save_TCT, save_PM, save_IDF;
 };
 
 static void ch7xxx_save(I2CDevPtr d);
 
-static char *ch7xxx_get_id(int vid)
+static char *ch7xxx_get_id(uint8_t vid)
 {
     int i;
 
@@ -91,9 +95,11 @@ static Bool
 ch7xxx_read(struct ch7xxx_priv *dev_priv, int addr, unsigned char *ch)
 {
     if (!xf86I2CReadByte(&dev_priv->d, addr, ch)) {
-	xf86DrvMsg(dev_priv->d.pI2CBus->scrnIndex,
-		   X_ERROR, "Unable to read from %s Slave %d.\n",
-		   dev_priv->d.pI2CBus->BusName, dev_priv->d.SlaveAddr);
+	if (!dev_priv->quiet) {
+	    xf86DrvMsg(dev_priv->d.pI2CBus->scrnIndex,
+		       X_ERROR, "Unable to read from %s Slave %d.\n",
+		       dev_priv->d.pI2CBus->BusName, dev_priv->d.SlaveAddr);
+	}
 	return FALSE;
     }
 
@@ -105,9 +111,11 @@ static Bool
 ch7xxx_write(struct ch7xxx_priv *dev_priv, int addr, unsigned char ch)
 {
     if (!xf86I2CWriteByte(&dev_priv->d, addr, ch)) {
-	xf86DrvMsg(dev_priv->d.pI2CBus->scrnIndex, X_ERROR,
-		   "Unable to write to %s Slave %d.\n",
-		   dev_priv->d.pI2CBus->BusName, dev_priv->d.SlaveAddr);
+	if (!dev_priv->quiet) {
+	    xf86DrvMsg(dev_priv->d.pI2CBus->scrnIndex, X_ERROR,
+		       "Unable to write to %s Slave %d.\n",
+		       dev_priv->d.pI2CBus->BusName, dev_priv->d.SlaveAddr);
+	}
 	return FALSE;
     }
 
@@ -119,7 +127,7 @@ ch7xxx_init(I2CBusPtr b, I2CSlaveAddr addr)
 {
     /* this will detect the CH7xxx chip on the specified i2c bus */
     struct ch7xxx_priv *dev_priv;
-    CARD8 vendor, device;
+    uint8_t vendor, device;
     char *name;
 
     dev_priv = xcalloc(1, sizeof(struct ch7xxx_priv));
@@ -135,6 +143,7 @@ ch7xxx_init(I2CBusPtr b, I2CSlaveAddr addr)
     dev_priv->d.ByteTimeout = b->ByteTimeout;
     dev_priv->d.DriverPrivate.ptr = dev_priv;
 
+    dev_priv->quiet = TRUE;
     if (!ch7xxx_read(dev_priv, CH7xxx_REG_VID, &vendor))
 	goto out;
 
@@ -158,9 +167,11 @@ ch7xxx_init(I2CBusPtr b, I2CSlaveAddr addr)
 		   dev_priv->d.SlaveAddr);
 	goto out;
     }
-	xf86DrvMsg(dev_priv->d.pI2CBus->scrnIndex, X_INFO,
-		   "Detected %s chipset, vendor/device ID 0x%02x/0x%02x\n",
-		   name, vendor, device);
+    dev_priv->quiet = FALSE;
+
+    xf86DrvMsg(dev_priv->d.pI2CBus->scrnIndex, X_INFO,
+	       "Detected %s chipset, vendor/device ID 0x%02x/0x%02x\n",
+	       name, vendor, device);
 
     if (!xf86I2CDevInit(&dev_priv->d)) {
 	goto out;
@@ -177,7 +188,7 @@ static xf86OutputStatus
 ch7xxx_detect(I2CDevPtr d)
 {
     struct ch7xxx_priv *dev_priv = d->DriverPrivate.ptr;
-    CARD8 cdet, orig_pm, pm;
+    uint8_t cdet, orig_pm, pm;
 
     ch7xxx_read(dev_priv, CH7xxx_PM, &orig_pm);
 
@@ -209,7 +220,7 @@ static void
 ch7xxx_mode_set(I2CDevPtr d, DisplayModePtr mode, DisplayModePtr adjusted_mode)
 {
     struct ch7xxx_priv *dev_priv = d->DriverPrivate.ptr;
-    CARD8 tvco, tpcp, tpd, tlpf, idf;
+    uint8_t tvco, tpcp, tpd, tlpf, idf;
 
     if (mode->Clock <= 65000) {
 	tvco = 0x23;
@@ -296,7 +307,7 @@ ch7xxx_restore(I2CDevPtr d)
     ch7xxx_write(dev_priv, CH7xxx_PM, dev_priv->save_PM);
 }
 
-I830I2CVidOutputRec CH7xxxVidOutput = {
+_X_EXPORT I830I2CVidOutputRec CH7xxxVidOutput = {
     .init = ch7xxx_init,
     .detect = ch7xxx_detect,
     .mode_valid = ch7xxx_mode_valid,

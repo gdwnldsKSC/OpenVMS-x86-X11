@@ -35,6 +35,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
+#include <sys/ioctl.h>
 
 #include "xf86.h"
 #include "i830.h"
@@ -99,14 +100,26 @@ typedef struct {
 #define I9XX_DOT_MAX		 400000
 #define I9XX_VCO_MIN		1400000
 #define I9XX_VCO_MAX		2800000
-#define I9XX_N_MIN		      3
-#define I9XX_N_MAX		      8
+
+/* Haven't found any reason to go this fast, but newer chips support it */
+#define I96X_VCO_MAX		3200000
+
+/*
+ * These values are taken from the broadwater/crestline PLL spreadsheet.
+ * All of the defines here are for the programmed register value, not
+ * the 'counter' value (e.g. Ncounter = Nregister + 2)
+ */
+#define I9XX_N_MIN		      1
+#define I9XX_N_MAX		      6
 #define I9XX_M_MIN		     70
 #define I9XX_M_MAX		    120
+
+/* these two come from the calm1 macro */
 #define I9XX_M1_MIN		     10
-#define I9XX_M1_MAX		     20
+#define I9XX_M1_MAX		     22
 #define I9XX_M2_MIN		      5
 #define I9XX_M2_MAX		      9
+
 #define I9XX_P_SDVO_DAC_MIN	      5
 #define I9XX_P_SDVO_DAC_MAX	     80
 #define I9XX_P_LVDS_MIN		      7
@@ -223,19 +236,21 @@ static void i9xx_clock(int refclk, intel_clock_t *clock)
 static void intel_clock(I830Ptr pI830, int refclk, intel_clock_t *clock)
 {
     if (IS_I9XX(pI830))
-	return i9xx_clock (refclk, clock);
+	i9xx_clock (refclk, clock);
     else
-	return i8xx_clock (refclk, clock);
+	i8xx_clock (refclk, clock);
 }
 
 static void
-i830PrintPll(char *prefix, intel_clock_t *clock)
+i830PrintPll(ScrnInfoPtr pScrn, char *prefix, intel_clock_t *clock)
 {
-    ErrorF("%s: dotclock %d vco %d ((m %d, m1 %d, m2 %d), n %d, (p %d, p1 %d, p2 %d))\n",
-	   prefix, clock->dot, clock->vco,
-	   clock->m, clock->m1, clock->m2,
-	   clock->n, 
-	   clock->p, clock->p1, clock->p2);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+	       "%s: dotclock %d vco %d ((m %d, m1 %d, m2 %d), n %d, "
+	       "(p %d, p1 %d, p2 %d))\n",
+	       prefix, clock->dot, clock->vco,
+	       clock->m, clock->m1, clock->m2,
+	       clock->n,
+	       clock->p, clock->p1, clock->p2);
 }
 
 /**
@@ -371,9 +386,11 @@ i830PipeSetBase(xf86CrtcPtr crtc, int x, int y)
     I830Ptr pI830 = I830PTR(pScrn);
     I830CrtcPrivatePtr	intel_crtc = crtc->driver_private;
     int pipe = intel_crtc->pipe;
+    int plane = intel_crtc->plane;
     unsigned long Start, Offset;
-    int dspbase = (pipe == 0 ? DSPABASE : DSPBBASE);
-    int dspsurf = (pipe == 0 ? DSPASURF : DSPBSURF);
+    int dspbase = (plane == 0 ? DSPABASE : DSPBBASE);
+    int dspsurf = (plane == 0 ? DSPASURF : DSPBSURF);
+    int dsptileoff = (plane == 0 ? DSPATILEOFF : DSPBTILEOFF);
 
     Offset = ((y * pScrn->displayWidth + x) * pI830->cpp);
     if (pI830->front_buffer == NULL) {
@@ -398,6 +415,7 @@ i830PipeSetBase(xf86CrtcPtr crtc, int x, int y)
 	POSTING_READ(dspbase);
         OUTREG(dspsurf, Start);
 	POSTING_READ(dspsurf);
+	OUTREG(dsptileoff, (y << 16) | x);
     } else {
 	OUTREG(dspbase, Start + Offset);
 	POSTING_READ(dspbase);
@@ -410,14 +428,14 @@ i830PipeSetBase(xf86CrtcPtr crtc, int x, int y)
 	if (!sPriv)
 	    return;
 
-	switch (pipe) {
+	switch (plane) {
 	case 0:
-	    sPriv->pipeA_x = x;
-	    sPriv->pipeA_y = y;
+	    sPriv->planeA_x = x;
+	    sPriv->planeA_y = y;
 	    break;
 	case 1:
-	    sPriv->pipeB_x = x;
-	    sPriv->pipeB_y = y;
+	    sPriv->planeB_x = x;
+	    sPriv->planeB_y = y;
 	    break;
 	default:
 	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
@@ -497,6 +515,266 @@ i830_pipe_a_require_deactivate (ScrnInfoPtr scrn)
     return;
 }
 
+/* FIXME: use pixmap private instead if possible */
+static Bool
+i830_display_tiled(xf86CrtcPtr crtc)
+{
+    ScrnInfoPtr pScrn = crtc->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+
+    /* Rotated data is currently linear, allocated either via XAA or EXA */
+    if (crtc->rotatedData)
+	return FALSE;
+
+    if (pI830->front_buffer && pI830->front_buffer->tiling != TILE_NONE)
+	return TRUE;
+
+    return FALSE;
+}
+
+/*
+ * Several restrictions:
+ *   - DSP[AB]CNTR - no line duplication && no pixel multiplier
+ *   - pixel format == 15 bit, 16 bit, or 32 bit xRGB_8888
+ *   - no alpha buffer discard
+ *   - no dual wide display
+ *   - progressive mode only (DSP[AB]CNTR)
+ *   - uncompressed fb is <= 2048 in width, 0 mod 8
+ *   - uncompressed fb is <= 1536 in height, 0 mod 2
+ *   - SR display watermarks must be equal between 16bpp and 32bpp?
+ *
+ * FIXME: verify above conditions are true
+ *
+ * Enable 8xx style FB compression
+ */
+static void
+i830_enable_fb_compression_8xx(xf86CrtcPtr crtc)
+{
+    ScrnInfoPtr pScrn = crtc->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+    I830CrtcPrivatePtr	intel_crtc = crtc->driver_private;
+    uint32_t fbc_ctl = 0;
+    unsigned long compressed_stride;
+    int plane = (intel_crtc->plane == 0 ? FBC_CTL_PLANEA : FBC_CTL_PLANEB);
+    unsigned long uncompressed_stride = pScrn->displayWidth * pI830->cpp;
+    unsigned long interval = 1000;
+
+    if (INREG(FBC_CONTROL) & FBC_CTL_EN)
+	return;
+
+    compressed_stride = pI830->compressed_front_buffer->size /
+	FBC_LL_SIZE;
+
+    if (uncompressed_stride < compressed_stride)
+	compressed_stride = uncompressed_stride;
+
+    /* FBC_CTL wants 64B units */
+    compressed_stride = (compressed_stride / 64) - 1;
+
+    /* Set it up... */
+    /* Wait for compressing bit to clear */
+    while (INREG(FBC_STATUS) & FBC_STAT_COMPRESSING)
+	; /* nothing */
+    i830WaitForVblank(pScrn);
+    OUTREG(FBC_CFB_BASE, pI830->compressed_front_buffer->bus_addr);
+    OUTREG(FBC_LL_BASE, pI830->compressed_ll_buffer->bus_addr + 6);
+    OUTREG(FBC_CONTROL2, FBC_CTL_FENCE_DBL | FBC_CTL_IDLE_IMM |
+	   FBC_CTL_CPU_FENCE | plane);
+    OUTREG(FBC_FENCE_OFF, crtc->y);
+
+    /* Zero buffers */
+    memset(pI830->FbBase + pI830->compressed_front_buffer->offset, 0,
+	   pI830->compressed_front_buffer->size);
+    memset(pI830->FbBase + pI830->compressed_ll_buffer->offset, 0,
+	   pI830->compressed_ll_buffer->size);
+
+    /* enable it... */
+    fbc_ctl |= FBC_CTL_EN | FBC_CTL_PERIODIC;
+    fbc_ctl |= (compressed_stride & 0xff) << FBC_CTL_STRIDE_SHIFT;
+    fbc_ctl |= (interval & 0x2fff) << FBC_CTL_INTERVAL_SHIFT;
+    fbc_ctl |= FBC_CTL_UNCOMPRESSIBLE;
+    fbc_ctl |= pI830->front_buffer->fence_nr;
+    OUTREG(FBC_CONTROL, fbc_ctl);
+}
+
+/*
+ * Disable 8xx style FB compression
+ */
+static void
+i830_disable_fb_compression_8xx(xf86CrtcPtr crtc)
+{
+    ScrnInfoPtr pScrn = crtc->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+    uint32_t fbc_ctl;
+
+    /* Disable compression */
+    fbc_ctl = INREG(FBC_CONTROL);
+    fbc_ctl &= ~FBC_CTL_EN;
+    OUTREG(FBC_CONTROL, fbc_ctl);
+
+    /* Wait for compressing bit to clear */
+    while (INREG(FBC_STATUS) & FBC_STAT_COMPRESSING)
+	; /* nothing */
+}
+
+static void
+i830_disable_fb_compression2(xf86CrtcPtr crtc)
+{
+    ScrnInfoPtr pScrn = crtc->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+    uint32_t dpfc_ctl;
+
+    /* Disable compression */
+    dpfc_ctl = INREG(DPFC_CONTROL);
+    dpfc_ctl &= ~DPFC_CTL_EN;
+    OUTREG(DPFC_CONTROL, dpfc_ctl);
+    i830WaitForVblank(pScrn);
+}
+
+static void
+i830_enable_fb_compression2(xf86CrtcPtr crtc)
+{
+    ScrnInfoPtr pScrn = crtc->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+    I830CrtcPrivatePtr	intel_crtc = crtc->driver_private;
+    int plane = (intel_crtc->plane == 0 ? DPFC_CTL_PLANEA : DPFC_CTL_PLANEB);
+    unsigned long stall_watermark = 200, frames = 50;
+
+    if (INREG(DPFC_CONTROL) & DPFC_CTL_EN)
+	return;
+
+    /* Set it up... */
+    i830_disable_fb_compression2(crtc);
+    OUTREG(DPFC_CB_BASE, pI830->compressed_front_buffer->offset);
+    /* Update i830_memory.c too if compression ratio changes */
+    OUTREG(DPFC_CONTROL, plane | DPFC_CTL_FENCE_EN | DPFC_CTL_LIMIT_4X |
+	   pI830->front_buffer->fence_nr);
+    OUTREG(DPFC_RECOMP_CTL, DPFC_RECOMP_STALL_EN |
+	   (stall_watermark << DPFC_RECOMP_STALL_WM_SHIFT) |
+	   (frames << DPFC_RECOMP_TIMER_COUNT_SHIFT));
+    OUTREG(DPFC_FENCE_YOFF, crtc->y);
+
+    /* Zero buffers */
+    memset(pI830->FbBase + pI830->compressed_front_buffer->offset, 0,
+	   pI830->compressed_front_buffer->size);
+
+    /* enable it... */
+    OUTREG(DPFC_CONTROL, INREG(DPFC_CONTROL) | DPFC_CTL_EN);
+}
+
+static void
+i830_enable_fb_compression(xf86CrtcPtr crtc)
+{
+    ScrnInfoPtr pScrn = crtc->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+
+    if (IS_GM45(pI830))
+	return i830_enable_fb_compression2(crtc);
+
+    i830_enable_fb_compression_8xx(crtc);
+}
+
+static void
+i830_disable_fb_compression(xf86CrtcPtr crtc)
+{
+    ScrnInfoPtr pScrn = crtc->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+
+    if (IS_GM45(pI830))
+	return i830_disable_fb_compression2(crtc);
+
+    i830_disable_fb_compression_8xx(crtc);
+}
+
+static Bool
+i830_use_fb_compression(xf86CrtcPtr crtc)
+{
+    ScrnInfoPtr pScrn = crtc->scrn;
+    xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
+    I830Ptr pI830 = I830PTR(pScrn);
+    I830CrtcPrivatePtr	intel_crtc = crtc->driver_private;
+    unsigned long uncompressed_size;
+    int plane = (intel_crtc->plane == 0 ? FBC_CTL_PLANEA : FBC_CTL_PLANEB);
+    int i, count = 0;
+
+    /* Only available on one pipe at a time */
+    for (i = 0; i < xf86_config->num_crtc; i++) {
+	if (xf86_config->crtc[i]->enabled)
+	    count++;
+    }
+
+    /* Here we disable it to catch one->two pipe enabled configs */
+    if (count > 1) {
+	if (i830_fb_compression_supported(pI830))
+	    i830_disable_fb_compression(crtc);
+	return FALSE;
+    }
+
+    if (!pI830->fb_compression)
+	return FALSE;
+
+    if (!i830_display_tiled(crtc))
+	return FALSE;
+
+    /* Pre-965 only supports plane A */
+    if (!IS_I965GM(pI830) && plane != FBC_CTL_PLANEA)
+	return FALSE;
+
+    /* Need 15, 16, or 32 (w/alpha) pixel format */
+    if (!(pScrn->bitsPerPixel == 16 || /* covers 15 bit mode as well */
+	  pScrn->bitsPerPixel == 32)) /* mode_set dtrt if fbc is in use */
+	return FALSE;
+
+    /* Can't cache more lines than we can track */
+    if (crtc->mode.VDisplay > FBC_LL_SIZE)
+	return FALSE;
+
+    /*
+     * Make sure the compressor doesn't go past the end of our compressed
+     * buffer if the uncompressed size is large.
+     */
+    uncompressed_size = crtc->mode.HDisplay * crtc->mode.VDisplay *
+	pI830->cpp;
+    if (pI830->compressed_front_buffer->size < uncompressed_size)
+	return FALSE;
+
+    /*
+     * No checks for pixel multiply, incl. horizontal, or interlaced modes
+     * since they're currently unused.
+     */
+    return TRUE;
+}
+
+#if defined(DRM_IOCTL_MODESET_CTL) && defined(XF86DRI)
+static void i830_modeset_ctl(xf86CrtcPtr crtc, int pre)
+{
+    ScrnInfoPtr pScrn = crtc->scrn;
+    I830Ptr pI830 = I830PTR(pScrn);
+    I830CrtcPrivatePtr intel_crtc = crtc->driver_private;
+    struct drm_modeset_ctl modeset;
+
+    modeset.crtc = intel_crtc->plane;
+
+    /*
+     * DPMS will be called many times (especially off), but we only
+     * want to catch the transition from on->off and off->on.
+     */
+    if (pre && intel_crtc->dpms_mode != DPMSModeOff) {
+	/* On -> off is a pre modeset */
+	modeset.cmd = _DRM_PRE_MODESET;
+	ioctl(pI830->drmSubFD, DRM_IOCTL_MODESET_CTL, &modeset);
+    } else if (!pre && intel_crtc->dpms_mode == DPMSModeOff) {
+	/* Off -> on means post modeset */
+	modeset.cmd = _DRM_POST_MODESET;
+	ioctl(pI830->drmSubFD, DRM_IOCTL_MODESET_CTL, &modeset);
+    }
+}
+#else
+static void i830_modeset_ctl(xf86CrtcPtr crtc, int dpms_state)
+{
+    return;
+}
+#endif /* DRM_IOCTL_MODESET_CTL && XF86DRI */
 
 /**
  * Sets the power management mode of the pipe and plane.
@@ -511,11 +789,12 @@ i830_crtc_dpms(xf86CrtcPtr crtc, int mode)
     I830Ptr pI830 = I830PTR(pScrn);
     I830CrtcPrivatePtr intel_crtc = crtc->driver_private;
     int pipe = intel_crtc->pipe;
+    int plane = intel_crtc->plane;
     int dpll_reg = (pipe == 0) ? DPLL_A : DPLL_B;
-    int dspcntr_reg = (pipe == 0) ? DSPACNTR : DSPBCNTR;
-    int dspbase_reg = (pipe == 0) ? DSPABASE : DSPBBASE;
     int pipeconf_reg = (pipe == 0) ? PIPEACONF : PIPEBCONF;
-    CARD32 temp;
+    int dspcntr_reg = (plane == 0) ? DSPACNTR : DSPBCNTR;
+    int dspbase_reg = (plane == 0) ? DSPABASE : DSPBBASE;
+    uint32_t temp;
 
     /* XXX: When our outputs are all unaware of DPMS modes other than off and
      * on, we should map those modes to DPMSModeOff in the CRTC.
@@ -560,45 +839,58 @@ i830_crtc_dpms(xf86CrtcPtr crtc, int mode)
 
 	/* Give the overlay scaler a chance to enable if it's on this pipe */
 	i830_crtc_dpms_video(crtc, TRUE);
+
+	/* Reenable compression if needed */
+	if (i830_use_fb_compression(crtc))
+	    i830_enable_fb_compression(crtc);
+	i830_modeset_ctl(crtc, 0);
 	break;
     case DPMSModeOff:
+	i830_modeset_ctl(crtc, 1);
+	/* Shut off compression if in use */
+	if (i830_use_fb_compression(crtc))
+	    i830_disable_fb_compression(crtc);
+
 	/* Give the overlay scaler a chance to disable if it's on this pipe */
 	i830_crtc_dpms_video(crtc, FALSE);
 
 	/* Disable the VGA plane that we never use */
 	OUTREG(VGACNTRL, VGA_DISP_DISABLE);
 
-	/* Disable display plane */
-	temp = INREG(dspcntr_reg);
-	if ((temp & DISPLAY_PLANE_ENABLE) != 0)
+	/* May need to leave pipe A on */
+	if ((pipe != 0) || !(pI830->quirk_flag & QUIRK_PIPEA_FORCE))
 	{
-	    OUTREG(dspcntr_reg, temp & ~DISPLAY_PLANE_ENABLE);
-	    /* Flush the plane changes */
-	    OUTREG(dspbase_reg, INREG(dspbase_reg));
-	    POSTING_READ(dspbase_reg);
+		/* Disable display plane */
+		temp = INREG(dspcntr_reg);
+		if ((temp & DISPLAY_PLANE_ENABLE) != 0)
+		{
+		    OUTREG(dspcntr_reg, temp & ~DISPLAY_PLANE_ENABLE);
+		    /* Flush the plane changes */
+		    OUTREG(dspbase_reg, INREG(dspbase_reg));
+		    POSTING_READ(dspbase_reg);
+		}
+
+		if (!IS_I9XX(pI830)) {
+		    /* Wait for vblank for the disable to take effect */
+		    i830WaitForVblank(pScrn);
+		}
+
+		/* Next, disable display pipes */
+		temp = INREG(pipeconf_reg);
+		if ((temp & PIPEACONF_ENABLE) != 0) {
+		    OUTREG(pipeconf_reg, temp & ~PIPEACONF_ENABLE);
+		    POSTING_READ(pipeconf_reg);
+		}
+
+		/* Wait for vblank for the disable to take effect. */
+		i830WaitForVblank(pScrn);
+
+		temp = INREG(dpll_reg);
+		if ((temp & DPLL_VCO_ENABLE) != 0) {
+		    OUTREG(dpll_reg, temp & ~DPLL_VCO_ENABLE);
+		    POSTING_READ(dpll_reg);
+		}
 	}
-
-	if (!IS_I9XX(pI830)) {
-	    /* Wait for vblank for the disable to take effect */
-	    i830WaitForVblank(pScrn);
-	}
-
-	/* Next, disable display pipes */
-	temp = INREG(pipeconf_reg);
-	if ((temp & PIPEACONF_ENABLE) != 0) {
-	    OUTREG(pipeconf_reg, temp & ~PIPEACONF_ENABLE);
-	    POSTING_READ(pipeconf_reg);
-	}
-
-	/* Wait for vblank for the disable to take effect. */
-	i830WaitForVblank(pScrn);
-
-	temp = INREG(dpll_reg);
-	if ((temp & DPLL_VCO_ENABLE) != 0) {
-	    OUTREG(dpll_reg, temp & ~DPLL_VCO_ENABLE);
-	    POSTING_READ(dpll_reg);
-	}
-
 	/* Wait for the clocks to turn off. */
 	usleep(150);
 	break;
@@ -616,14 +908,14 @@ i830_crtc_dpms(xf86CrtcPtr crtc, int mode)
 	if (!sPriv)
 	    return;
 
-	switch (pipe) {
+	switch (plane) {
 	case 0:
-	    sPriv->pipeA_w = enabled ? crtc->mode.HDisplay : 0;
-	    sPriv->pipeA_h = enabled ? crtc->mode.VDisplay : 0;
+	    sPriv->planeA_w = enabled ? crtc->mode.HDisplay : 0;
+	    sPriv->planeA_h = enabled ? crtc->mode.VDisplay : 0;
 	    break;
 	case 1:
-	    sPriv->pipeB_w = enabled ? crtc->mode.HDisplay : 0;
-	    sPriv->pipeB_h = enabled ? crtc->mode.VDisplay : 0;
+	    sPriv->planeB_w = enabled ? crtc->mode.HDisplay : 0;
+	    sPriv->planeB_h = enabled ? crtc->mode.VDisplay : 0;
 	    break;
 	default:
 	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
@@ -658,6 +950,12 @@ i830_crtc_unlock (xf86CrtcPtr crtc)
 static void
 i830_crtc_prepare (xf86CrtcPtr crtc)
 {
+    I830CrtcPrivatePtr	intel_crtc = crtc->driver_private;
+    /* Temporarily turn off FB compression during modeset */
+    if (i830_use_fb_compression(crtc))
+        i830_disable_fb_compression(crtc);
+    if (intel_crtc->enabled)
+	crtc->funcs->hide_cursor (crtc);
     crtc->funcs->dpms (crtc, DPMSModeOff);
 }
 
@@ -677,6 +975,10 @@ i830_crtc_commit (xf86CrtcPtr crtc)
 	xf86_reload_cursors (crtc->scrn->pScreen);
     if (deactivate)
 	i830_pipe_a_require_deactivate (crtc->scrn);
+
+    /* Reenable FB compression if possible */
+    if (i830_use_fb_compression(crtc))
+	i830_enable_fb_compression(crtc);
 }
 
 void
@@ -714,9 +1016,14 @@ i830_get_core_clock_speed(ScrnInfoPtr pScrn)
     else if (IS_I945GM(pI830) || IS_845G(pI830))
 	return 200000;
     else if (IS_I915GM(pI830)) {
-	CARD16 gcfgc = pciReadWord(pI830->PciTag, I915_GCFGC);
+	uint16_t gcfgc;
 
-	if (gcfgc & I915_LOW_FREQUENCY_ENABLE)
+#if XSERVER_LIBPCIACCESS
+      pci_device_cfg_read_u16 (pI830->PciInfo, &gcfgc, I915_GCFGC);
+#else
+      gcfgc = pciReadWord(pI830->PciTag, I915_GCFGC);
+#endif
+      if (gcfgc & I915_LOW_FREQUENCY_ENABLE)
 	    return 133000;
 	else {
 	    switch (gcfgc & I915_DISPLAY_CLOCK_MASK) {
@@ -730,8 +1037,14 @@ i830_get_core_clock_speed(ScrnInfoPtr pScrn)
     } else if (IS_I865G(pI830))
 	return 266000;
     else if (IS_I855(pI830)) {
+#if XSERVER_LIBPCIACCESS
+        struct pci_device *bridge = intel_host_bridge ();
+	uint16_t hpllcc;
+	pci_device_cfg_read_u16 (bridge, &hpllcc, I855_HPLLCC);
+#else
 	PCITAG bridge = pciTag(0, 0, 0); /* This is always the host bridge */
-	CARD16 hpllcc = pciReadWord(bridge, I855_HPLLCC);
+	uint16_t hpllcc = pciReadWord(bridge, I855_HPLLCC);
+#endif
 
 	/* Assume that the hardware is in the high speed state.  This
 	 * should be the default.
@@ -758,7 +1071,7 @@ i830_get_core_clock_speed(ScrnInfoPtr pScrn)
 static int
 i830_panel_fitter_pipe(I830Ptr pI830)
 {
-    CARD32  pfit_control;
+    uint32_t pfit_control;
 
     /* i830 doesn't have a panel fitter */
     if (IS_I830(pI830))
@@ -779,6 +1092,69 @@ i830_panel_fitter_pipe(I830Ptr pI830)
 }
 
 /**
+ * Sets up the DSPARB register to split the display fifo appropriately between
+ * the display planes.
+ *
+ * Adjusting this register requires that the planes be off.
+ */
+static void
+i830_update_dsparb(ScrnInfoPtr pScrn)
+{
+   xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
+   I830Ptr pI830 = I830PTR(pScrn);
+   int total_hdisplay = 0, planea_hdisplay = 0, planeb_hdisplay = 0;
+   int fifo_entries = 0, planea_entries = 0, planeb_entries = 0, i;
+
+   if ((INREG(DSPACNTR) & DISPLAY_PLANE_ENABLE) &&
+       (INREG(DSPBCNTR) & DISPLAY_PLANE_ENABLE))
+       xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		  "tried to update DSPARB with both planes enabled!\n");
+
+  /*
+    * FIFO entries will be split based on programmed modes
+    */
+   if (IS_I965GM(pI830) || IS_GM45(pI830))
+       fifo_entries = 127;
+   else if (IS_I9XX(pI830))
+       fifo_entries = 95;
+   else if (IS_MOBILE(pI830)) {
+       fifo_entries = 255;
+   } else {
+	/* The 845/865 only have a AEND field.  Though the field size would
+	* allow 128 entries, the 865 rendered the cursor wrong then.
+	* The BIOS set it up for 96.
+	*/
+	fifo_entries = 95;
+   }
+
+   for (i = 0; i < xf86_config->num_crtc; i++) {
+      xf86CrtcPtr crtc = xf86_config->crtc[i];
+      I830CrtcPrivatePtr intel_crtc = crtc->driver_private;
+      if (crtc->enabled) {
+	  total_hdisplay += crtc->mode.HDisplay;
+	  if (intel_crtc->plane == 0)
+	      planea_hdisplay = crtc->mode.HDisplay;
+	  else
+	      planeb_hdisplay = crtc->mode.HDisplay;
+      }
+   }
+
+   planea_entries = fifo_entries * planea_hdisplay / total_hdisplay;
+   planeb_entries = fifo_entries * planeb_hdisplay / total_hdisplay;
+
+   if (IS_I9XX(pI830))
+       OUTREG(DSPARB,
+	      ((planea_entries + planeb_entries) << DSPARB_CSTART_SHIFT) |
+	      (planea_entries << DSPARB_BSTART_SHIFT));
+   else if (IS_MOBILE(pI830))
+       OUTREG(DSPARB,
+	      ((planea_entries + planeb_entries) << DSPARB_BEND_SHIFT) |
+	      (planea_entries << DSPARB_AEND_SHIFT));
+   else
+       OUTREG(DSPARB, planea_entries << DSPARB_AEND_SHIFT);
+}
+
+/**
  * Sets up registers for the given mode/adjusted_mode pair.
  *
  * The clocks, CRTCs and outputs attached to this CRTC must be off.
@@ -795,11 +1171,12 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
     xf86CrtcConfigPtr   xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
     I830Ptr pI830 = I830PTR(pScrn);
     I830CrtcPrivatePtr intel_crtc = crtc->driver_private;
+    I830OutputPrivatePtr intel_output;
     int pipe = intel_crtc->pipe;
+    int plane = intel_crtc->plane;
     int fp_reg = (pipe == 0) ? FPA0 : FPB0;
     int dpll_reg = (pipe == 0) ? DPLL_A : DPLL_B;
-    int dpll_md_reg = (intel_crtc->pipe == 0) ? DPLL_A_MD : DPLL_B_MD;
-    int dspcntr_reg = (pipe == 0) ? DSPACNTR : DSPBCNTR;
+    int dpll_md_reg = (pipe == 0) ? DPLL_A_MD : DPLL_B_MD;
     int pipeconf_reg = (pipe == 0) ? PIPEACONF : PIPEBCONF;
     int htot_reg = (pipe == 0) ? HTOTAL_A : HTOTAL_B;
     int hblank_reg = (pipe == 0) ? HBLANK_A : HBLANK_B;
@@ -807,14 +1184,16 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
     int vtot_reg = (pipe == 0) ? VTOTAL_A : VTOTAL_B;
     int vblank_reg = (pipe == 0) ? VBLANK_A : VBLANK_B;
     int vsync_reg = (pipe == 0) ? VSYNC_A : VSYNC_B;
-    int dspsize_reg = (pipe == 0) ? DSPASIZE : DSPBSIZE;
-    int dspstride_reg = (pipe == 0) ? DSPASTRIDE : DSPBSTRIDE;
-    int dsppos_reg = (pipe == 0) ? DSPAPOS : DSPBPOS;
     int pipesrc_reg = (pipe == 0) ? PIPEASRC : PIPEBSRC;
-    int i;
+    int dspcntr_reg = (plane == 0) ? DSPACNTR : DSPBCNTR;
+    int dspstride_reg = (plane == 0) ? DSPASTRIDE : DSPBSTRIDE;
+    int dsppos_reg = (plane == 0) ? DSPAPOS : DSPBPOS;
+    int dspsize_reg = (plane == 0) ? DSPASIZE : DSPBSIZE;
+    int pipestat_reg = (pipe == 0) ? PIPEASTAT : PIPEBSTAT;
+    int i, num_outputs = 0;
     int refclk;
     intel_clock_t clock;
-    CARD32 dpll = 0, fp = 0, dspcntr, pipeconf;
+    uint32_t dpll = 0, fp = 0, dspcntr, pipeconf, lvds_bits = 0;
     Bool ok, is_sdvo = FALSE, is_dvo = FALSE;
     Bool is_crt = FALSE, is_lvds = FALSE, is_tv = FALSE;
 
@@ -823,7 +1202,7 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
      */
     for (i = 0; i < xf86_config->num_output; i++) {
 	xf86OutputPtr  output = xf86_config->output[i];
-	I830OutputPrivatePtr intel_output = output->driver_private;
+	intel_output = output->driver_private;
 
 	if (output->crtc != crtc)
 	    continue;
@@ -831,9 +1210,13 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
 	switch (intel_output->type) {
 	case I830_OUTPUT_LVDS:
 	    is_lvds = TRUE;
+	    lvds_bits = intel_output->lvds_bits;
 	    break;
 	case I830_OUTPUT_SDVO:
+	case I830_OUTPUT_HDMI:
 	    is_sdvo = TRUE;
+	    if (intel_output->needs_tv_clock)
+		is_tv = TRUE;
 	    break;
 	case I830_OUTPUT_DVO_TMDS:
 	case I830_OUTPUT_DVO_LVDS:
@@ -847,9 +1230,19 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
 	    is_crt = TRUE;
 	    break;
 	}
+
+	num_outputs++;
     }
 
-    if (IS_I9XX(pI830)) {
+    if (num_outputs > 1)
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "clone detected, disabling SSC\n");
+
+    /* Don't use SSC when cloned */
+    if (is_lvds && pI830->lvds_use_ssc && num_outputs < 2) {
+	refclk = pI830->lvds_ssc_freq * 1000;
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		   "using SSC reference clock of %d MHz\n", refclk / 1000);
+    } else if (IS_I9XX(pI830)) {
 	refclk = 96000;
     } else {
 	refclk = 48000;
@@ -858,6 +1251,14 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
     ok = i830FindBestPLL(crtc, adjusted_mode->Clock, refclk, &clock);
     if (!ok)
 	FatalError("Couldn't find PLL settings for mode!\n");
+
+    if (fabs(adjusted_mode->Clock - clock.dot) / clock.dot > .02) {
+	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+		   "Chosen PLL clock of %.1f Mhz more than 2%% away from "
+		   "desired %.1f Mhz\n",
+		   (float)clock.dot / 1000,
+		   (float)adjusted_mode->Clock / 1000);
+    }
 
     fp = clock.n << 16 | clock.m1 << 8 | clock.m2;
 
@@ -870,7 +1271,8 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
 	if (is_sdvo)
 	{
 	    dpll |= DPLL_DVO_HIGH_SPEED;
-	    if (IS_I945G(pI830) || IS_I945GM(pI830) || IS_G33CLASS(pI830))
+	    if ((IS_I945G(pI830) || IS_I945GM(pI830) || IS_G33CLASS(pI830)) &&
+		!is_tv)
 	    {
 		int sdvo_pixel_multiply = adjusted_mode->Clock / mode->Clock;
 		dpll |= (sdvo_pixel_multiply - 1) << SDVO_MULTIPLIER_SHIFT_HIRES;
@@ -893,7 +1295,7 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
 	    dpll |= DPLLB_LVDS_P2_CLOCK_DIV_14;
 	    break;
 	}
-	if (IS_I965G(pI830))
+	if (IS_I965G(pI830) && !IS_GM45(pI830))
 	    dpll |= (6 << PLL_LOAD_PULSE_PHASE_SHIFT);
     } else {
 	if (is_lvds) {
@@ -908,16 +1310,16 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
 	}
     }
 
-    if (is_tv)
+    if (is_sdvo && is_tv)
+	dpll |= PLL_REF_INPUT_TVCLKINBC;
+    else if (is_tv)
     {
 	/* XXX: just matching BIOS for now */
 /*	dpll |= PLL_REF_INPUT_TVCLKINBC; */
 	dpll |= 3;
     }
-#if 0
-    else if (is_lvds)
+    else if (is_lvds && pI830->lvds_use_ssc && num_outputs < 2)
 	dpll |= PLLB_REF_INPUT_SPREADSPECTRUMIN;
-#endif
     else
 	dpll |= PLL_REF_INPUT_DREFCLK;
 
@@ -944,6 +1346,9 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
 	dspcntr |= DISPPLANE_SEL_PIPE_A;
     else
 	dspcntr |= DISPPLANE_SEL_PIPE_B;
+
+    if (IS_I965G(pI830) && i830_display_tiled(crtc))
+	dspcntr |= DISPLAY_PLANE_TILED;
 
     pipeconf = INREG(pipeconf_reg);
     if (pipe == 0 && !IS_I965G(pI830))
@@ -982,9 +1387,9 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
 	if (!xf86ModesEqual(mode, adjusted_mode)) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		       "Adjusted mode for pipe %c:\n", pipe == 0 ? 'A' : 'B');
-	    xf86PrintModeline(pScrn->scrnIndex, mode);
+	    xf86PrintModeline(pScrn->scrnIndex, adjusted_mode);
 	}
-	i830PrintPll("chosen", &clock);
+	i830PrintPll(pScrn, "chosen", &clock);
     }
 
     if (dpll & DPLL_VCO_ENABLE)
@@ -1001,7 +1406,7 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
      */
     if (is_lvds)
     {
-	CARD32 lvds = INREG(LVDS);
+	uint32_t lvds = INREG(LVDS);
 
 	lvds |= LVDS_PORT_EN | LVDS_A0A2_CLKA_POWER_UP | LVDS_PIPEB_SELECT;
 	/* Set the B0-B3 data pairs corresponding to whether we're going to
@@ -1012,10 +1417,21 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
 	else
 	    lvds &= ~(LVDS_B0B3_POWER_UP | LVDS_CLKB_POWER_UP);
 
-	/* It would be nice to set 24 vs 18-bit mode (LVDS_A3_POWER_UP)
-	 * appropriately here, but we need to look more thoroughly into how
-	 * panels behave in the two modes.
-	 */
+	if (pI830->lvds_24_bit_mode) {
+	    /* Option set which requests 24-bit mode
+	     * (LVDS_A3_POWER_UP, as opposed to 18-bit mode) here; we
+	     * still need to look more thoroughly into how panels
+	     * behave in the two modes.  This option enables that
+	     * experimentation.
+	     */
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		       "Selecting less common 24 bit TMDS pixel format.\n");
+	    lvds |= LVDS_A3_POWER_UP;
+	    lvds |= LVDS_DATA_FORMAT_DOT_ONE;
+	} else {
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		       "Selecting standard 18 bit TMDS pixel format.\n");
+	}
 
 	/* Enable dithering if we're in 18-bit mode. */
 	if (IS_I965G(pI830))
@@ -1025,6 +1441,8 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
 	    else
 		lvds |= LVDS_DITHER_ENABLE;
 	}
+
+	lvds |= lvds_bits;
 
 	OUTREG(LVDS, lvds);
 	POSTING_READ(LVDS);
@@ -1047,6 +1465,9 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
     POSTING_READ(dpll_reg);
     /* Wait for the clocks to stabilize. */
     usleep(150);
+
+    if (!DSPARB_HWCONTROL(pI830))
+	i830_update_dsparb(pScrn);
 
     OUTREG(htot_reg, (adjusted_mode->CrtcHDisplay - 1) |
 	((adjusted_mode->CrtcHTotal - 1) << 16));
@@ -1080,6 +1501,9 @@ i830_crtc_mode_set(xf86CrtcPtr crtc, DisplayModePtr mode,
 #endif
     
     i830WaitForVblank(pScrn);
+
+    /* Clear any FIFO underrun status that may have occurred normally */
+    OUTREG(pipestat_reg, INREG(pipestat_reg) | FIFO_UNDERRUN);
 }
 
 
@@ -1133,59 +1557,25 @@ static void *
 i830_crtc_shadow_allocate (xf86CrtcPtr crtc, int width, int height)
 {
     ScrnInfoPtr pScrn = crtc->scrn;
-    ScreenPtr pScreen = pScrn->pScreen;
     I830Ptr pI830 = I830PTR(pScrn);
     I830CrtcPrivatePtr intel_crtc = crtc->driver_private;
     unsigned long rotate_pitch;
-    unsigned long rotate_offset;
     int align = KB(4), size;
 
     rotate_pitch = pScrn->displayWidth * pI830->cpp;
     size = rotate_pitch * height;
 
-#ifdef I830_USE_EXA
-    /* We could get close to what we want here by just creating a pixmap like
-     * normal, but we have to lock it down in framebuffer, and there is no
-     * setter for offscreen area locking in EXA currently.  So, we just
-     * allocate offscreen memory and fake up a pixmap header for it.
-     */
-    if (pI830->useEXA) {
-	assert(intel_crtc->rotate_mem_exa == NULL);
-
-	intel_crtc->rotate_mem_exa = exaOffscreenAlloc(pScreen, size, align,
-						       TRUE, NULL, NULL);
-	if (intel_crtc->rotate_mem_exa == NULL) {
-	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		       "Couldn't allocate shadow memory for rotated CRTC\n");
-	    return NULL;
-	}
-	rotate_offset = intel_crtc->rotate_mem_exa->offset;
+    assert(intel_crtc->rotate_mem == NULL);
+    intel_crtc->rotate_mem = i830_allocate_memory(pScrn, "rotated crtc",
+						  size, align, 0);
+    if (intel_crtc->rotate_mem == NULL) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "Couldn't allocate shadow memory for rotated CRTC\n");
+	return NULL;
     }
-#endif /* I830_USE_EXA */
-#ifdef I830_USE_XAA
-    if (!pI830->useEXA) {
-	/* The XFree86 linear allocator operates in units of screen pixels,
-	 * sadly.
-	 */
-	size = (size + pI830->cpp - 1) / pI830->cpp;
-	align = (align + pI830->cpp - 1) / pI830->cpp;
+    memset(pI830->FbBase + intel_crtc->rotate_mem->offset, 0, size);
 
-	assert(intel_crtc->rotate_mem_xaa == NULL);
-
-	intel_crtc->rotate_mem_xaa =
-	    i830_xf86AllocateOffscreenLinear(pScreen, size, align,
-					     NULL, NULL, NULL);
-	if (intel_crtc->rotate_mem_xaa == NULL) {
-	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		       "Couldn't allocate shadow memory for rotated CRTC\n");
-	    return NULL;
-	}
-	rotate_offset = pI830->front_buffer->offset +
-	    intel_crtc->rotate_mem_xaa->offset * pI830->cpp;
-    }
-#endif /* I830_USE_XAA */
-
-    return pI830->FbBase + rotate_offset;
+    return pI830->FbBase + intel_crtc->rotate_mem->offset;
 }
     
 /**
@@ -1222,26 +1612,16 @@ static void
 i830_crtc_shadow_destroy(xf86CrtcPtr crtc, PixmapPtr rotate_pixmap, void *data)
 {
     ScrnInfoPtr pScrn = crtc->scrn;
-    I830Ptr pI830 = I830PTR(pScrn);
     I830CrtcPrivatePtr intel_crtc = crtc->driver_private;
 
     if (rotate_pixmap)
 	FreeScratchPixmapHeader(rotate_pixmap);
-    
-    if (data)
-    {
-#ifdef I830_USE_EXA
-	if (pI830->useEXA && intel_crtc->rotate_mem_exa != NULL) {
-	    exaOffscreenFree(pScrn->pScreen, intel_crtc->rotate_mem_exa);
-	    intel_crtc->rotate_mem_exa = NULL;
-	}
-#endif /* I830_USE_EXA */
-#ifdef I830_USE_XAA
-	if (!pI830->useEXA) {
-	    xf86FreeOffscreenLinear(intel_crtc->rotate_mem_xaa);
-	    intel_crtc->rotate_mem_xaa = NULL;
-	}
-#endif /* I830_USE_XAA */
+
+    if (data) {
+	/* Be sure to sync acceleration before the memory gets unbound. */
+	I830Sync(pScrn);
+	i830_free_memory(pScrn, intel_crtc->rotate_mem);
+	intel_crtc->rotate_mem = NULL;
     }
 }
 
@@ -1257,8 +1637,11 @@ i830DescribeOutputConfiguration(ScrnInfoPtr pScrn)
 
     for (i = 0; i < xf86_config->num_crtc; i++) {
 	xf86CrtcPtr crtc = xf86_config->crtc[i];
-	CARD32 dspcntr = INREG(DSPACNTR + (DSPBCNTR - DSPACNTR) * i);
-	CARD32 pipeconf = INREG(PIPEACONF + (PIPEBCONF - PIPEACONF) * i);
+	I830CrtcPrivatePtr intel_crtc = crtc ? crtc->driver_private : NULL;
+	uint32_t dspcntr = intel_crtc->plane == 0 ? INREG(DSPACNTR) :
+	    INREG(DSPBCNTR);
+	uint32_t pipeconf = i == 0 ? INREG(PIPEACONF) :
+	    INREG(PIPEBCONF);
 	Bool hw_plane_enable = (dspcntr & DISPLAY_PLANE_ENABLE) != 0;
 	Bool hw_pipe_enable = (pipeconf & PIPEACONF_ENABLE) != 0;
 
@@ -1267,8 +1650,8 @@ i830DescribeOutputConfiguration(ScrnInfoPtr pScrn)
 		   'A' + i, crtc->enabled ? "on" : "off");
 	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 		   "  Display plane %c is now %s and connected to pipe %c.\n",
-		   'A' + i,
-		   crtc->enabled ? "enabled" : "disabled",
+		   'A' + intel_crtc->plane,
+		   hw_plane_enable ? "enabled" : "disabled",
 		   dspcntr & DISPPLANE_SEL_PIPE_MASK ? 'B' : 'A');
 	if (hw_pipe_enable != crtc->enabled) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
@@ -1433,8 +1816,8 @@ i830_crtc_clock_get(ScrnInfoPtr pScrn, xf86CrtcPtr crtc)
     I830Ptr pI830 = I830PTR(pScrn);
     I830CrtcPrivatePtr	intel_crtc = crtc->driver_private;
     int pipe = intel_crtc->pipe;
-    CARD32 dpll = INREG((pipe == 0) ? DPLL_A : DPLL_B);
-    CARD32 fp;
+    uint32_t dpll = INREG((pipe == 0) ? DPLL_A : DPLL_B);
+    uint32_t fp;
     intel_clock_t clock;
 
     if ((dpll & DISPLAY_RATE_SELECT_FPA1) == 0)
@@ -1463,15 +1846,22 @@ i830_crtc_clock_get(ScrnInfoPtr pScrn, xf86CrtcPtr crtc)
 	    return 0;
 	}
 
-	/* XXX: Handle the 100Mhz refclk */
-	i9xx_clock(96000, &clock);
+	if ((dpll & PLL_REF_INPUT_MASK) == PLLB_REF_INPUT_SPREADSPECTRUMIN)
+	    i9xx_clock(100000, &clock);
+	else
+	    i9xx_clock(96000, &clock);
     } else {
 	Bool is_lvds = (pipe == 1) && (INREG(LVDS) & LVDS_PORT_EN);
 
 	if (is_lvds) {
 	    clock.p1 = ffs((dpll & DPLL_FPA01_P1_POST_DIV_MASK_I830_LVDS) >>
 			   DPLL_FPA01_P1_POST_DIV_SHIFT);
-	    clock.p2 = 14;
+
+	    /* if LVDS is dual-channel, p2 = 7 */
+	    if ((INREG(LVDS) & LVDS_CLKB_POWER_MASK) == LVDS_CLKB_POWER_UP)
+		clock.p2 = 7;
+	    else
+		clock.p2 = 14;
 
 	    if ((dpll & PLL_REF_INPUT_MASK) == PLLB_REF_INPUT_SPREADSPECTRUMIN)
 		i8xx_clock(66000, &clock); /* XXX: might not be 66MHz */
@@ -1498,7 +1888,7 @@ i830_crtc_clock_get(ScrnInfoPtr pScrn, xf86CrtcPtr crtc)
      * configuration being accurate, which it isn't necessarily.
      */
     if (0)
-	i830PrintPll("probed", &clock);
+	i830PrintPll(pScrn, "probed", &clock);
 
     return clock.dot;
 }
@@ -1572,6 +1962,7 @@ i830_crtc_init(ScrnInfoPtr pScrn, int pipe)
     intel_crtc = xnfcalloc (sizeof (I830CrtcPrivateRec), 1);
     intel_crtc->pipe = pipe;
     intel_crtc->dpms_mode = DPMSModeOff;
+    intel_crtc->plane = pipe;
 
     /* Initialize the LUTs for when we turn on the CRTC. */
     for (i = 0; i < 256; i++) {

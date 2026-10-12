@@ -42,6 +42,7 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/Xdmcp.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #if !defined(WIN32)
 #ifndef Lynx
@@ -303,7 +304,11 @@ _X11TransConnectDisplay (
 
 #if defined(TCPCONN) || defined(UNIXCONN) || defined(LOCALCONN) || defined(MNX_TCPCONN) || defined(OS2PIPECONN)
     if (!pprotocol) {
+#ifdef HAVE_LAUNCHD
+	if (!phostname || phostname[0]=='/') {
+#else
 	if (!phostname) {
+#endif
 #if defined(UNIXCONN) || defined(LOCALCONN) || defined(OS2PIPECONN)
 	    pprotocol = copystring ("local", 5);
 #if defined(TCPCONN)
@@ -374,24 +379,21 @@ _X11TransConnectDisplay (
      * too many times).
      */
     for(retry=X_CONNECTION_RETRIES; retry>=0; retry-- )
-	{
+    {
 	if ( (trans_conn = _X11TransOpenCOTSClient(address)) == NULL )
-	    {
+	{
 	    break;
-	    }
+	}
 	if ((connect_stat = _X11TransConnect(trans_conn,address)) < 0 )
-	    {
+	{
 	    _X11TransClose(trans_conn);
 	    trans_conn = NULL;
 
 	    if (connect_stat == TRANS_TRY_CONNECT_AGAIN)
-	    {
-		sleep(1);
 		continue;
-	    }
 	    else
 		break;
-	    }
+	}
 
 	_X11TransGetPeerAddr(trans_conn, &family, &saddrlen, &saddr);
 
@@ -402,20 +404,19 @@ _X11TransConnectDisplay (
 	 */
 
 	if( _X11TransConvertAddress(&family, &saddrlen, &saddr) < 0 )
-	    {
+	{
 	    _X11TransClose(trans_conn);
 	    trans_conn = NULL;
-	    sleep(1);
 	    if (saddr)
 	    {
 		free ((char *) saddr);
 		saddr = NULL;
 	    }
 	    continue;
-	    }
+	}
 
 	break;
-	}
+    }
 
     if (address != addrbuf) Xfree (address);
     address = addrbuf;
@@ -449,6 +450,14 @@ _X11TransConnectDisplay (
     *fullnamep = (char *) Xmalloc (len);
     if (!*fullnamep) goto bad;
 
+#ifdef HAVE_LAUNCHD
+    if (phostname && strlen(phostname) > 11 && !strncmp(phostname, "/tmp/launch", 11)) 
+    	sprintf (*fullnamep, "%s%s%d",
+	     (phostname ? phostname : ""),
+	     (dnet ? "::" : ":"),
+	     idisplay);
+    else
+#endif
     sprintf (*fullnamep, "%s%s%d.%d",
 	     (phostname ? phostname : ""),
 	     (dnet ? "::" : ":"),
@@ -1109,7 +1118,7 @@ GetAuthorization(
 	{
 #ifdef AF_INET
 	case AF_INET:
-	{
+	  {
 	    /*
 	     * addr will contain a sockaddr_in with all
 	     * of the members already in network byte order.
@@ -1120,18 +1129,18 @@ GetAuthorization(
 	    for(i=2; i<4; i++)	/* do sin_port */
 		xdmcp_data[j++] = ((char *)addr)[i];
 	    break;
-	}
+	  }
 #endif /* AF_INET */
 #if defined(IPv6) && defined(AF_INET6)
 	case AF_INET6:
 	  /* XXX This should probably never happen */
-	{
+	  {
 	    unsigned char ipv4mappedprefix[] = {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff };
 	    
 	    /* In the case of v4 mapped addresses send the v4 
 	       part of the address - addr is already in network byte order */
-	    if (memcmp(addr+8, ipv4mappedprefix, 12) == 0) {
+	    if (memcmp((char*)addr+8, ipv4mappedprefix, 12) == 0) {
 		for (i = 20 ; i < 24; i++)
 		    xdmcp_data[j++] = ((char *)addr)[i];
 	    
@@ -1146,11 +1155,11 @@ GetAuthorization(
 		}
 	    }
 	    break;
-	}
+	  }
 #endif /* AF_INET6 */
 #ifdef AF_UNIX
 	case AF_UNIX:
-	{
+	  {
 	    /*
 	     * We don't use the sockaddr_un for this encoding.
 	     * Instead, we create a sockaddr_in filled with
@@ -1179,7 +1188,7 @@ GetAuthorization(
 	    xdmcp_data[j++] = (the_port >>  8) & 0xFF;
 	    xdmcp_data[j++] = (the_port >>  0) & 0xFF;
 	    break;
-	}
+	  }
 #endif /* AF_UNIX */
 #ifdef AF_DECnet
 	case AF_DECnet:

@@ -55,7 +55,7 @@
 #endif
 #endif
 
-#if defined(__OpenBSD__) && defined(__amd64__)
+#if defined(__OpenBSD__) && (defined(__amd64__) || defined(__x86_64__))
 #include <machine/mtrr.h>
 #include <machine/sysarch.h>
 #endif
@@ -108,7 +108,7 @@ static pointer NetBSDsetWC(int, unsigned long, unsigned long, Bool,
 			   MessageType);
 static void NetBSDundoWC(int, pointer);
 #endif
-#if defined(__amd64__) && defined(__OpenBSD__)
+#if (defined(__amd64__) || defined(__x86_64__)) && defined(__OpenBSD__)
 static pointer amd64setWC(int, unsigned long, unsigned long, Bool, 
     MessageType);
 static void amd64undoWC(int, pointer);
@@ -212,6 +212,11 @@ xf86OSInitVidMem(VidMemInfoPtr pVidMem)
 	pVidMem->mapMem = mapVidMem;
 	pVidMem->unmapMem = unmapVidMem;
 
+#if HAVE_PCI_SYSTEM_INIT_DEV_MEM
+	if (useDevMem)
+		pci_system_init_dev_mem(devMemFd);
+#endif
+
 #ifdef HAS_MTRR_SUPPORT
 	if (useDevMem) {
 		if (cleanMTRR()) {
@@ -224,7 +229,7 @@ xf86OSInitVidMem(VidMemInfoPtr pVidMem)
 	pVidMem->setWC = NetBSDsetWC;
 	pVidMem->undoWC = NetBSDundoWC;
 #endif
-#if defined(__amd64__) && defined(__OpenBSD__)
+#if (defined(__amd64__) || defined(__x86_64__))  && defined(__OpenBSD__)
 	pVidMem->setWC = amd64setWC;
 	pVidMem->undoWC = amd64undoWC;
 #endif
@@ -301,7 +306,7 @@ xf86ReadBIOS(unsigned long Base, unsigned long Offset, unsigned char *Buf,
 	    return(-1);
 	}
 
-	psize = xf86getpagesize();
+	psize = getpagesize();
 	Offset += Base & (psize - 1);
 	Base &= ~(psize - 1);
 	mlen = (Offset + Len + psize - 1) & ~(psize - 1);
@@ -602,7 +607,7 @@ cleanMTRR()
 #ifdef DEBUG
 			ErrorF("Clean for (0x%lx,0x%lx)\n",
 				(unsigned long)mrd[i].mr_base,
-				(unsigned long)rd[i].mr_len);
+				(unsigned long)mrd[i].mr_len);
 #endif
 			if (mrd[i].mr_flags & MDF_FIXACTIVE) {
 				mro.mo_arg[0] = MEMRANGE_SET_UPDATE;
@@ -948,7 +953,7 @@ NetBSDundoWC(int screenNum, pointer list)
 }
 #endif
 
-#if defined(__OpenBSD__) && defined(__amd64__)
+#if defined(__OpenBSD__) && (defined(__amd64__) || defined(__x86_64__))
 static pointer
 amd64setWC(int screenNum, unsigned long base, unsigned long size, Bool enable,
 	    MessageType from)

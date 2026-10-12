@@ -25,6 +25,8 @@
  *
  */
 
+#include <inttypes.h>
+
 #ifdef REG_DUMPER
 #include "reg_dumper/reg_dumper.h"
 
@@ -43,7 +45,8 @@
 
 #include "i810_reg.h"
 
-#define DEBUGSTRING(func) static char *func(I830Ptr pI830, int reg, CARD32 val)
+#define DEBUGSTRING(func) static char *func(I830Ptr pI830, int reg, \
+					    uint32_t val)
 
 DEBUGSTRING(i830_debug_xyminus1)
 {
@@ -84,6 +87,61 @@ DEBUGSTRING(i830_debug_pipeconf)
     else
 	bit30 = val & PIPEACONF_DOUBLE_WIDE ? "double-wide" : "single-wide";
     return XNFprintf("%s, %s", enabled, bit30);
+}
+
+DEBUGSTRING(i830_debug_pipestat)
+{
+    char *_FIFO_UNDERRUN = val & FIFO_UNDERRUN ? " FIFO_UNDERRUN" : "";
+    char *_CRC_ERROR_ENABLE = val & CRC_ERROR_ENABLE ? " CRC_ERROR_ENABLE" : "";
+    char *_CRC_DONE_ENABLE = val & CRC_DONE_ENABLE ? " CRC_DONE_ENABLE" : "";
+    char *_GMBUS_EVENT_ENABLE = val & GMBUS_EVENT_ENABLE ? " GMBUS_EVENT_ENABLE" : "";
+    char *_VSYNC_INT_ENABLE = val & VSYNC_INT_ENABLE ? " VSYNC_INT_ENABLE" : "";
+    char *_DLINE_COMPARE_ENABLE = val & DLINE_COMPARE_ENABLE ? " DLINE_COMPARE_ENABLE" : "";
+    char *_DPST_EVENT_ENABLE = val & DPST_EVENT_ENABLE ? " DPST_EVENT_ENABLE" : "";
+    char *_LBLC_EVENT_ENABLE = val & LBLC_EVENT_ENABLE ? " LBLC_EVENT_ENABLE" : "";
+    char *_OFIELD_INT_ENABLE = val & OFIELD_INT_ENABLE ? " OFIELD_INT_ENABLE" : "";
+    char *_EFIELD_INT_ENABLE = val & EFIELD_INT_ENABLE ? " EFIELD_INT_ENABLE" : "";
+    char *_SVBLANK_INT_ENABLE = val & SVBLANK_INT_ENABLE ? " SVBLANK_INT_ENABLE" : "";
+    char *_VBLANK_INT_ENABLE = val & VBLANK_INT_ENABLE ? " VBLANK_INT_ENABLE" : "";
+    char *_OREG_UPDATE_ENABLE = val & OREG_UPDATE_ENABLE ? " OREG_UPDATE_ENABLE" : "";
+    char *_CRC_ERROR_INT_STATUS = val & CRC_ERROR_INT_STATUS ? " CRC_ERROR_INT_STATUS" : "";
+    char *_CRC_DONE_INT_STATUS = val & CRC_DONE_INT_STATUS ? " CRC_DONE_INT_STATUS" : "";
+    char *_GMBUS_INT_STATUS = val & GMBUS_INT_STATUS ? " GMBUS_INT_STATUS" : "";
+    char *_VSYNC_INT_STATUS = val & VSYNC_INT_STATUS ? " VSYNC_INT_STATUS" : "";
+    char *_DLINE_COMPARE_STATUS = val & DLINE_COMPARE_STATUS ? " DLINE_COMPARE_STATUS" : "";
+    char *_DPST_EVENT_STATUS = val & DPST_EVENT_STATUS ? " DPST_EVENT_STATUS" : "";
+    char *_LBLC_EVENT_STATUS = val & LBLC_EVENT_STATUS ? " LBLC_EVENT_STATUS" : "";
+    char *_OFIELD_INT_STATUS = val & OFIELD_INT_STATUS ? " OFIELD_INT_STATUS" : "";
+    char *_EFIELD_INT_STATUS = val & EFIELD_INT_STATUS ? " EFIELD_INT_STATUS" : "";
+    char *_SVBLANK_INT_STATUS = val & SVBLANK_INT_STATUS ? " SVBLANK_INT_STATUS" : "";
+    char *_VBLANK_INT_STATUS = val & VBLANK_INT_STATUS ? " VBLANK_INT_STATUS" : "";
+    char *_OREG_UPDATE_STATUS = val & OREG_UPDATE_STATUS ? " OREG_UPDATE_STATUS" : "";
+    return XNFprintf("status:%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+		     _FIFO_UNDERRUN,
+		     _CRC_ERROR_ENABLE,
+		     _CRC_DONE_ENABLE,
+		     _GMBUS_EVENT_ENABLE,
+		     _VSYNC_INT_ENABLE,
+		     _DLINE_COMPARE_ENABLE,
+		     _DPST_EVENT_ENABLE,
+		     _LBLC_EVENT_ENABLE,
+		     _OFIELD_INT_ENABLE,
+		     _EFIELD_INT_ENABLE,
+		     _SVBLANK_INT_ENABLE,
+		     _VBLANK_INT_ENABLE,
+		     _OREG_UPDATE_ENABLE,
+		     _CRC_ERROR_INT_STATUS,
+		     _CRC_DONE_INT_STATUS,
+		     _GMBUS_INT_STATUS,
+		     _VSYNC_INT_STATUS,
+		     _DLINE_COMPARE_STATUS,
+		     _DPST_EVENT_STATUS,
+		     _LBLC_EVENT_STATUS,
+		     _OFIELD_INT_STATUS,
+		     _EFIELD_INT_STATUS,
+		     _SVBLANK_INT_STATUS,
+		     _VBLANK_INT_STATUS,
+		     _OREG_UPDATE_STATUS);
 }
 
 DEBUGSTRING(i830_debug_hvtotal)
@@ -191,7 +249,11 @@ DEBUGSTRING(i830_debug_dpll)
 	    mode = "LVDS";
 	    p1 = ffs((val & DPLL_FPA01_P1_POST_DIV_MASK_I830_LVDS) >>
 		     DPLL_FPA01_P1_POST_DIV_SHIFT);
-	    p2 = 14;
+	    if ((INREG(LVDS) & LVDS_CLKB_POWER_MASK) == LVDS_CLKB_POWER_UP)
+		p2 = 7;
+	    else
+		p2 = 14;
+
 	} else {
 	    mode = "DAC/serial";
 	    if (val & PLL_P1_DIVIDE_BY_TWO) {
@@ -334,6 +396,89 @@ DEBUGSTRING(i830_debug_sdvo)
 		     enable, pipe, stall, detected, sdvoextra, gang);
 }
 
+DEBUGSTRING(i830_debug_dspclk_gate_d)
+{
+    char *DPUNIT_B = val & DPUNIT_B_CLOCK_GATE_DISABLE ? " DPUNIT_B" : "";
+    char *VSUNIT = val & VSUNIT_CLOCK_GATE_DISABLE ? " VSUNIT" : "";
+    char *VRHUNIT = val & VRHUNIT_CLOCK_GATE_DISABLE ? " VRHUNIT" : "";
+    char *VRDUNIT = val & VRDUNIT_CLOCK_GATE_DISABLE ? " VRDUNIT" : "";
+    char *AUDUNIT = val & AUDUNIT_CLOCK_GATE_DISABLE ? " AUDUNIT" : "";
+    char *DPUNIT_A = val & DPUNIT_A_CLOCK_GATE_DISABLE ? " DPUNIT_A" : "";
+    char *DPCUNIT = val & DPCUNIT_CLOCK_GATE_DISABLE ? " DPCUNIT" : "";
+    char *TVRUNIT = val & TVRUNIT_CLOCK_GATE_DISABLE ? " TVRUNIT" : "";
+    char *TVCUNIT = val & TVCUNIT_CLOCK_GATE_DISABLE ? " TVCUNIT" : "";
+    char *TVFUNIT = val & TVFUNIT_CLOCK_GATE_DISABLE ? " TVFUNIT" : "";
+    char *TVEUNIT = val & TVEUNIT_CLOCK_GATE_DISABLE ? " TVEUNIT" : "";
+    char *DVSUNIT = val & DVSUNIT_CLOCK_GATE_DISABLE ? " DVSUNIT" : "";
+    char *DSSUNIT = val & DSSUNIT_CLOCK_GATE_DISABLE ? " DSSUNIT" : "";
+    char *DDBUNIT = val & DDBUNIT_CLOCK_GATE_DISABLE ? " DDBUNIT" : "";
+    char *DPRUNIT = val & DPRUNIT_CLOCK_GATE_DISABLE ? " DPRUNIT" : "";
+    char *DPFUNIT = val & DPFUNIT_CLOCK_GATE_DISABLE ? " DPFUNIT" : "";
+    char *DPBMUNIT = val & DPBMUNIT_CLOCK_GATE_DISABLE ? " DPBMUNIT" : "";
+    char *DPLSUNIT = val & DPLSUNIT_CLOCK_GATE_DISABLE ? " DPLSUNIT" : "";
+    char *DPLUNIT = val & DPLUNIT_CLOCK_GATE_DISABLE ? " DPLUNIT" : "";
+    char *DPOUNIT = val & DPOUNIT_CLOCK_GATE_DISABLE ? " DPOUNIT" : "";
+    char *DPBUNIT = val & DPBUNIT_CLOCK_GATE_DISABLE ? " DPBUNIT" : "";
+    char *DCUNIT = val & DCUNIT_CLOCK_GATE_DISABLE ? " DCUNIT" : "";
+    char *DPUNIT = val & DPUNIT_CLOCK_GATE_DISABLE ? " DPUNIT" : "";
+    char *VRUNIT = val & VRUNIT_CLOCK_GATE_DISABLE ? " VRUNIT" : "";
+    char *OVHUNIT = val & OVHUNIT_CLOCK_GATE_DISABLE ? " OVHUNIT" : "";
+    char *DPIOUNIT = val & DPIOUNIT_CLOCK_GATE_DISABLE ? " DPIOUNIT" : "";
+    char *OVFUNIT = val & OVFUNIT_CLOCK_GATE_DISABLE ? " OVFUNIT" : "";
+    char *OVBUNIT = val & OVBUNIT_CLOCK_GATE_DISABLE ? " OVBUNIT" : "";
+    char *OVRUNIT = val & OVRUNIT_CLOCK_GATE_DISABLE ? " OVRUNIT" : "";
+    char *OVCUNIT = val & OVCUNIT_CLOCK_GATE_DISABLE ? " OVCUNIT" : "";
+    char *OVUUNIT = val & OVUUNIT_CLOCK_GATE_DISABLE ? " OVUUNIT" : "";
+    char *OVLUNIT = val & OVLUNIT_CLOCK_GATE_DISABLE ? " OVLUNIT" : "";
+
+    return XNFprintf ("clock gates disabled:%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+		      DPUNIT_B,
+		      VSUNIT,
+		      VRHUNIT,
+		      VRDUNIT,
+		      AUDUNIT,
+		      DPUNIT_A,
+		      DPCUNIT,
+		      TVRUNIT,
+		      TVCUNIT,
+		      TVFUNIT,
+		      TVEUNIT,
+		      DVSUNIT,
+		      DSSUNIT,
+		      DDBUNIT,
+		      DPRUNIT,
+		      DPFUNIT,
+		      DPBMUNIT,
+		      DPLSUNIT,
+		      DPLUNIT,
+		      DPOUNIT,
+		      DPBUNIT,
+		      DCUNIT,
+		      DPUNIT,
+		      VRUNIT,
+		      OVHUNIT,
+		      DPIOUNIT,
+		      OVFUNIT,
+		      OVBUNIT,
+		      OVRUNIT,
+		      OVCUNIT,
+		      OVUUNIT,
+		      OVLUNIT);
+}
+
+#if 0
+DEBUGSTRING(i810_debug_fence_new)
+{
+    char *enable = (val & FENCE_VALID) ? "enabled" : "disabled";
+    char format = (val & I965_FENCE_Y_MAJOR) ? 'Y' : 'X';
+    int pitch = ((val & 0xffc) >> 2) * 128;
+    unsigned int offset = val & 0xfffff000;
+
+    return XNFprintf("%s, %c tile walk, %d pitch, 0x%08x offset",
+		     enable, format, pitch, offset);
+}
+#endif
+
 #define DEFINEREG(reg) \
 	{ reg, #reg, NULL, 0 }
 #define DEFINEREG2(reg, func) \
@@ -342,15 +487,16 @@ DEBUGSTRING(i830_debug_sdvo)
 static struct i830SnapshotRec {
     int reg;
     char *name;
-    char *(*debug_output)(I830Ptr pI830, int reg, CARD32 val);
-    CARD32 val;
+    char *(*debug_output)(I830Ptr pI830, int reg, uint32_t val);
+    uint32_t val;
 } i830_snapshot[] = {
     DEFINEREG2(VCLK_DIVISOR_VGA0, i830_debug_fp),
     DEFINEREG2(VCLK_DIVISOR_VGA1, i830_debug_fp),
     DEFINEREG2(VCLK_POST_DIV, i830_debug_vga_pd),
     DEFINEREG2(DPLL_TEST, i830_debug_dpll_test),
+    DEFINEREG(CACHE_MODE_0),
     DEFINEREG(D_STATE),
-    DEFINEREG(DSPCLK_GATE_D),
+    DEFINEREG2(DSPCLK_GATE_D, i830_debug_dspclk_gate_d),
     DEFINEREG(RENCLK_GATE_D1),
     DEFINEREG(RENCLK_GATE_D2),
 /*  DEFINEREG(RAMCLK_GATE_D),	CRL only */
@@ -389,6 +535,7 @@ static struct i830SnapshotRec {
     DEFINEREG(DSPATILEOFF),
     DEFINEREG2(PIPEACONF, i830_debug_pipeconf),
     DEFINEREG2(PIPEASRC, i830_debug_yxminus1),
+    DEFINEREG2(PIPEASTAT, i830_debug_pipestat),
 
     DEFINEREG2(FPA0, i830_debug_fp),
     DEFINEREG2(FPA1, i830_debug_fp),
@@ -412,6 +559,7 @@ static struct i830SnapshotRec {
     DEFINEREG(DSPBTILEOFF),
     DEFINEREG2(PIPEBCONF, i830_debug_pipeconf),
     DEFINEREG2(PIPEBSRC, i830_debug_yxminus1),
+    DEFINEREG2(PIPEBSTAT, i830_debug_pipestat),
 
     DEFINEREG2(FPB0, i830_debug_fp),
     DEFINEREG2(FPB1, i830_debug_fp),
@@ -465,6 +613,64 @@ static struct i830SnapshotRec {
     DEFINEREG(TV_H_LUMA_59),
     DEFINEREG(TV_H_CHROMA_0),
     DEFINEREG(TV_H_CHROMA_59),
+
+    DEFINEREG(FBC_CFB_BASE),
+    DEFINEREG(FBC_LL_BASE),
+    DEFINEREG(FBC_CONTROL),
+    DEFINEREG(FBC_COMMAND),
+    DEFINEREG(FBC_STATUS),
+    DEFINEREG(FBC_CONTROL2),
+    DEFINEREG(FBC_FENCE_OFF),
+    DEFINEREG(FBC_MOD_NUM),
+
+    DEFINEREG(MI_MODE),
+    /* DEFINEREG(MI_DISPLAY_POWER_DOWN), CRL only */
+    DEFINEREG(MI_ARB_STATE),
+    DEFINEREG(MI_RDRET_STATE),
+    DEFINEREG(ECOSKPD),
+
+    DEFINEREG(DP_B),
+    DEFINEREG(DPB_AUX_CH_CTL),
+    DEFINEREG(DPB_AUX_CH_DATA1),
+    DEFINEREG(DPB_AUX_CH_DATA2),
+    DEFINEREG(DPB_AUX_CH_DATA3),
+    DEFINEREG(DPB_AUX_CH_DATA4),
+    DEFINEREG(DPB_AUX_CH_DATA5),
+
+    DEFINEREG(DP_C),
+    DEFINEREG(DPC_AUX_CH_CTL),
+    DEFINEREG(DPC_AUX_CH_DATA1),
+    DEFINEREG(DPC_AUX_CH_DATA2),
+    DEFINEREG(DPC_AUX_CH_DATA3),
+    DEFINEREG(DPC_AUX_CH_DATA4),
+    DEFINEREG(DPC_AUX_CH_DATA5),
+
+    DEFINEREG(DP_D),
+    DEFINEREG(DPD_AUX_CH_CTL),
+    DEFINEREG(DPD_AUX_CH_DATA1),
+    DEFINEREG(DPD_AUX_CH_DATA2),
+    DEFINEREG(DPD_AUX_CH_DATA3),
+    DEFINEREG(DPD_AUX_CH_DATA4),
+    DEFINEREG(DPD_AUX_CH_DATA5),
+
+#if 0
+    DEFINEREG2(FENCE_NEW + 0, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 8, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 16, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 24, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 32, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 40, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 48, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 56, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 64, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 72, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 80, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 88, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 96, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 104, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 112, i810_debug_fence_new),
+    DEFINEREG2(FENCE_NEW + 120, i810_debug_fence_new),
+#endif
 };
 #undef DEFINEREG
 #define NUM_I830_SNAPSHOTREGS (sizeof(i830_snapshot) / sizeof(i830_snapshot[0]))
@@ -488,7 +694,7 @@ void i830CompareRegsToSnapshot(ScrnInfoPtr pScrn, char *where)
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 	       "Comparing regs from server start up to %s\n", where);
     for (i = 0; i < NUM_I830_SNAPSHOTREGS; i++) {
-	CARD32 val = INREG(i830_snapshot[i].reg);
+	uint32_t val = INREG(i830_snapshot[i].reg);
 	if (i830_snapshot[i].val == val)
 	    continue;
 
@@ -516,6 +722,7 @@ void i830CompareRegsToSnapshot(ScrnInfoPtr pScrn, char *where)
 }
 #endif /* !REG_DUMPER */
 
+#if 0
 static void i830DumpIndexed (ScrnInfoPtr pScrn, char *name, int id, int val, int min, int max)
 {
     I830Ptr pI830 = I830PTR(pScrn);
@@ -528,6 +735,36 @@ static void i830DumpIndexed (ScrnInfoPtr pScrn, char *name, int id, int val, int
     }
 }
 
+static void i830DumpAR(ScrnInfoPtr pScrn)
+{
+    I830Ptr pI830 = I830PTR(pScrn);
+    int i;
+    uint16_t st01;
+    unsigned char orig_arx, msr;
+
+    msr = INREG8(0x3cc);
+    if (msr & 1)
+	st01 = 0x3da;
+    else
+	st01 = 0x3ba;
+
+    INREG8(st01); /* make sure index/write register is in index mode */
+    orig_arx = INREG8(0x3c0);
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "%19.19sX: 0x%02x\n",
+	       "AR", orig_arx);
+    
+    for (i = 0; i <= 0x14; i++) {
+	INREG8(st01);
+	OUTREG8(0x3c0, i);
+	xf86DrvMsg(pScrn->scrnIndex, X_INFO, "%18.18s%02x: 0x%02x\n",
+		   "AR", i, INREG8(0x3c1));
+    }
+    INREG8(st01);
+    OUTREG8(0x3c0, orig_arx);
+    INREG8(st01); /* switch back to index mode */
+}
+#endif
+
 void i830DumpRegs (ScrnInfoPtr pScrn)
 {
     I830Ptr pI830 = I830PTR(pScrn);
@@ -538,12 +775,14 @@ void i830DumpRegs (ScrnInfoPtr pScrn)
     int ref;
     int	dot;
     int phase;
+#if 0
     int msr;
     int crt;
+#endif
 
     xf86DrvMsg (pScrn->scrnIndex, X_INFO, "DumpRegsBegin\n");
     for (i = 0; i < NUM_I830_SNAPSHOTREGS; i++) {
-	CARD32 val = INREG(i830_snapshot[i].reg);
+	uint32_t val = INREG(i830_snapshot[i].reg);
 
 	if (i830_snapshot[i].debug_output != NULL) {
 	    char *debug = i830_snapshot[i].debug_output(pI830,
@@ -557,23 +796,26 @@ void i830DumpRegs (ScrnInfoPtr pScrn)
 			i830_snapshot[i].name, (unsigned int)val);
 	}
     }
+#if 0
     i830DumpIndexed (pScrn, "SR", 0x3c4, 0x3c5, 0, 7);
     msr = INREG8(0x3cc);
     xf86DrvMsg (pScrn->scrnIndex, X_INFO, "%20.20s: 0x%02x\n",
 		    "MSR", (unsigned int) msr);
 
+    i830DumpAR (pScrn);
     if (msr & 1)
 	crt = 0x3d0;
     else
 	crt = 0x3b0;
     i830DumpIndexed (pScrn, "CR", crt + 4, crt + 5, 0, 0x24);
+#endif
     for (pipe = 0; pipe <= 1; pipe++)
     {
 	fp = INREG(pipe == 0 ? FPA0 : FPB0);
 	dpll = INREG(pipe == 0 ? DPLL_A : DPLL_B);
 	if (IS_I9XX(pI830)) 
 	{
-	    CARD32  lvds = INREG(LVDS);
+	    uint32_t lvds = INREG(LVDS);
 	    if ((lvds & LVDS_PORT_EN) &&
 		(lvds & LVDS_PIPEB_SELECT) == (pipe << 30))
 	    {
@@ -619,10 +861,23 @@ void i830DumpRegs (ScrnInfoPtr pScrn)
 		xf86DrvMsg (pScrn->scrnIndex, X_WARNING, "p1 out of range\n");
 		break;
 	    }
+	    
+	    switch ((dpll >> 13) & 0x3) {
+	    case 0:
+		ref = 96000;
+		break;
+	    case 3:
+		ref = 100000;
+		break;
+	    default:
+		ref = 0;
+		xf86DrvMsg (pScrn->scrnIndex, X_WARNING, "ref out of range\n");
+		break;
+	    }
 	}
 	else
 	{
-	    CARD32  lvds = INREG(LVDS);
+	    uint32_t lvds = INREG(LVDS);
 	    if (IS_I85X (pI830) && 
 		(lvds & LVDS_PORT_EN) &&
 		(lvds & LVDS_PIPEB_SELECT) == (pipe << 30))
@@ -656,18 +911,19 @@ void i830DumpRegs (ScrnInfoPtr pScrn)
 		else
 		    p1 = ((dpll >> 16) & 0x3f) + 2;
 	    }
-	}
-	switch ((dpll >> 13) & 0x3) {
-	case 0:
-	    ref = 96000;
-	    break;
-	case 3:
-	    ref = 100000;
-	    break;
-	default:
-	    ref = 0;
-	    xf86DrvMsg (pScrn->scrnIndex, X_WARNING, "ref out of range\n");
-	    break;
+
+	    switch ((dpll >> 13) & 0x3) {
+	    case 0:
+		ref = 48000;
+		break;
+	    case 3:
+		ref = 66000;
+		break;
+	    default:
+		ref = 0;
+		xf86DrvMsg (pScrn->scrnIndex, X_WARNING, "ref out of range\n");
+		break;
+	    }
 	}
 	if (IS_I965G(pI830)) {
 	    phase = (dpll >> 9) & 0xf;
@@ -702,13 +958,542 @@ void i830DumpRegs (ScrnInfoPtr pScrn)
 
 #ifndef REG_DUMPER
 
-#define NUM_RING_DUMP	64
+static char *mi_cmds[0x40] = {
+    "MI_NOOP",		    /* 00 */
+    "Reserved 01",
+    "MI_USER_INTERRUPT",
+    "MI_WAIT_FOR_EVENT",
+    
+    "MI_FLUSH",		    /* 04 */
+    "MI_ARB_CHECK",
+    NULL,
+    "MI_REPORT_HEAD",
 
-static void
-i830_dump_ring(ScrnInfoPtr pScrn)
+    NULL,		    /* 08 */
+    NULL,
+    "MI_BATCH_BUFFER_END",
+    NULL,
+
+    NULL,		    /* 0c */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,		    /* 10 */
+    "MI_OVERLAY_FLIP",
+    "MI_LOAD_SCAN_LINES_INCL",
+    "MI_LOAD_SCAN_LINES_EXCL",
+
+    "MI_DISPLAY_BUFFER_INFO",	/* 14 */
+    NULL,
+    NULL,
+    NULL,
+
+    "MI_SET_CONTEXT",		/* 18 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 1c */
+    NULL,
+    NULL,
+    NULL,
+    
+    "MI_STORE_DATA_IMM",	/* 20 */
+    "MI_STORE_DATA_INDEX",
+    "MI_LOAD_REGISTER_IMM",
+    NULL,
+
+    "MI_STORE_REGISTER_MEM",	/* 24 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 28 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 2c */
+    NULL,
+    NULL,
+    NULL,
+    
+    NULL,			/* 30 */
+    "MI_BATCH_BUFFER_START",
+    NULL,
+    NULL,
+
+    NULL,			/* 34 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 38 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 3c */
+    NULL,
+    NULL,
+    NULL,
+};
+
+static char *_2d_cmds[0x80] = {
+    NULL,			/* 00 */
+    "XY_SETUP_BLT",
+    NULL,
+    "XY_SETUP_CLIP_BLT",
+
+    NULL,			/* 04 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 08 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 0c */
+    NULL,
+    NULL,
+    NULL,
+    
+    NULL,			/* 10 */
+    "XY_SETUP_MONO_PATTERN_SL_BLT",
+    NULL,
+    NULL,
+
+    NULL,			/* 14 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 18 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 1c */
+    NULL,
+    NULL,
+    NULL,
+    
+    NULL,			/* 20 */
+    NULL,
+    NULL,
+    NULL,
+
+    "XY_PIXEL_BLT",    		/* 24 */
+    "XY_SCANLINE_BLT",
+    "XY_TEXT_BLT",
+    NULL,
+
+    NULL,			/* 28 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 2c */
+    NULL,
+    NULL,
+    NULL,
+    
+    NULL,			/* 30 */
+    "XY_TEXT_IMMEDIATE_BLT",
+    NULL,
+    NULL,
+
+    NULL,			/* 34 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 38 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 3c */
+    NULL,
+    NULL,
+    NULL,
+    
+    "COLOR_BLT",    		/* 40 */
+    NULL,
+    NULL,
+    "SRC_COPY_BLT",
+
+    NULL,			/* 44 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 48 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 4c */
+    NULL,
+    NULL,
+    NULL,
+    
+    "XY_COLOR_BLT",    		/* 50 */
+    "XY_PAT_BLT",
+    "XY_MONO_PAT_BLT",
+    "XY_SRC_COPY_BLT",
+
+    "XY_MONO_SRC_COPY_BLT",    	/* 54 */
+    "XY_FULL_BLT",
+    "XY_FULL_MONO_SRC_BLT",
+    "XY_FULL_MONO_PATTERN_BLT",
+
+    "XY_FULL_MONO_PATTERN_MONO_SRC_BLT", /* 58 */
+    "XY_MONO_PAT_FIXED_BLT",
+    NULL,
+    NULL,
+
+    NULL,			/* 5c */
+    NULL,
+    NULL,
+    NULL,
+    
+    NULL,			/* 60 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 64 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 68 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 6c */
+    NULL,
+    NULL,
+    NULL,
+    
+    NULL,			/* 70 */
+    "XY_MONO_SRC_COPY_IMMEDIATE_BLT",
+    "XY_PAT_BLT_IMMEDIATE",
+    "XY_SRC_COPY_CHROMA_BLT",
+
+    "XY_FULL_IMMEDIATE_PATTERN_BLT", /* 74 */
+    "XY_FULL_MONO_SRC_IMMEDIATE_PATTERN_BLT",
+    "XY_PAT_CHROMA_BLT",
+    "XY_PAT_CHROMA_BLT_IMMEDIATE",
+
+    NULL,			/* 78 */
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,			/* 7c */
+    NULL,
+    NULL,
+    NULL,
+    
+};
+
+#define _3D_ONE_WORD	1
+
+static struct {
+    char    *name;
+    int	    flags;
+} _3d_cmds[0x4][0x8][0x100] = {
+    {		/* Pipeline Type 00 (Common) */
+	{	    /* Opcode 0 */
+	    { "URB_FENCE", 0 },			/* 00 */
+	    { "CS_URB_STATE", 0 },
+	    { "CONSTANT_BUFFER", 0 },
+	    { "STATE_PREFETCH", 0 },
+	},
+	{	    /* Opcode 1 */
+	    { NULL, 0 },				/* 00 */
+	    { "STATE_BASE_ADDRESS", 0 },
+	    { "STATE_SIP", 0 },
+	    { NULL, 0 },
+
+	    { "PIPELINE_SELECT", _3D_ONE_WORD },	/* 04 */
+	},
+    },
+    {		/* Pipeline Type 01 (Single DW) */
+	{	    /* Opcode 0 */
+	},
+	{	    /* Opcode 1 */
+	    { NULL, 0 },				/* 00 */
+	    { NULL, 0 },
+	    { NULL, 0 },
+	    { NULL, 0 },
+
+	    { "PIPELINE_SELECT", 0 },			/* 04 */
+	    { NULL, 0 },
+	    { NULL, 0 },
+	    { NULL, 0 },
+	},
+    },
+    {		/* Pipeline Type 02 (Media) */
+	{	    /* Opcode 0 */
+	    { "MEDIA_STATE_POINTERS", 0 },		/* 00 */
+	},
+	{	    /* Opcode 1 */
+	    { "MEDIA_OBJECT", 0 },			/* 00 */
+	    { "MEDIA_OBJECT_EX", 0 },
+	    { "MEDIA_OBJECT_PTR", 0 },
+	},
+    },
+    {		/* Pipeline Type 03 (3D) */
+	{	    /* Opcode 0 */
+	    { "3DSTATE_PIPELINED_POINTERS", 0 },	/* 00 */
+	    { "3DSTATE_BINDING_TABLE_POINTERS", 0 },
+	    { NULL, 0 },
+	    { NULL, 0 },
+
+	    { NULL, 0 },				/* 04 */
+	    { "3DSTATE_URB", 0 },
+	    { NULL, 0 },
+	    { NULL, 0 },
+
+	    { "3DSTATE_VERTEX_BUFFERS", 0 },		/* 08 */
+	    { "3DSTATE_VERTEX_ELEMENTS", 0 },
+	    { "3DSTATE_INDEX_BUFFER", 0 },
+	    { "3DSTATE_VF_STATISTICS", _3D_ONE_WORD },
+
+	    { NULL, 0 },				/* 0c */
+	    { "3DSTATE_VIEWPORT_STATE_POINTERS", 0 },
+	},
+	{	    /* Opcode 1 */
+	    { "3DSTATE_DRAWING_RECTANGLE", 0 },	/* 00 */
+	    { "3DSTATE_CONSTANT_COLOR", 0 },
+	    { "3DSTATE_SAMPLER_PALETTE_LOAD0", 0 },
+	    { NULL, 0 },
+
+	    { "3DSTATE_CHROMA_KEY", 0 },		/* 04 */
+	    { "3DSTATE_DEPTH_BUFFER", 0 },
+	    { "3DSTATE_POLY_STIPPLE_OFFSET", 0 },
+	    { "3DSTATE_POLY_STIPPLE_PATTERN", 0 },
+	    
+	    { "3DSTATE_LINE_STIPPLE", 0 },		/* 08 */
+	    { "3DSTATE_GLOBAL_DEPTH_OFFSET_CLAMP", 0 },
+	},
+	{	    /* Opcode 2 */
+	    { "PIPE_CONTROL", 0 },			/* 00 */
+	},
+	{	    /* Opcode 3 */
+	    { "3DPRIMITIVE", 0 },			/* 00 */
+	},
+    },
+};
+
+static int
+i830_valid_command (uint32_t cmd)
+{
+    uint32_t	type = (cmd >> 29) & 0x7;
+    uint32_t	pipeline_type;
+    uint32_t	opcode;
+    uint32_t	subopcode;
+    uint32_t	count;
+    
+    switch (type) {
+    case 0:			    /* Memory Interface */
+	opcode = (cmd >> 23) & 0x3f;
+	if (opcode < 0x10)
+	    count = 1;
+	else
+	    count = (cmd & 0x3f) + 2;
+	if (opcode == 0x00 && cmd != 0x00000000)
+	    return -1;
+	if (!mi_cmds[opcode])
+	    return -1;
+	break;
+    case 2:			    /* 2D */
+	count = (cmd & 0x1f) + 2;
+	opcode = (cmd >> 22) & 0x7f;
+	if (!_2d_cmds[opcode])
+	    return -1;
+	break;
+    case 3:			    /* 3D */
+	pipeline_type = (cmd >> 27) & 0x3;
+	opcode = (cmd >> 24) & 0x7;
+	subopcode = (cmd >> 16) & 0xff;
+	if (_3d_cmds[pipeline_type][opcode][subopcode].flags & _3D_ONE_WORD)
+	    count = 1;
+	else
+	    count = (cmd & 0xff) + 2;
+	if (pipeline_type <= 3)
+	    return count;
+	if (!_3d_cmds[pipeline_type][opcode][subopcode].name)
+	    return -1;
+	break;
+    default:
+	return -1;
+    }
+    return count;
+}
+
+static int
+i830_dump_cmd (uint32_t cmd, int count)
+{
+    uint32_t	type = (cmd >> 29) & 0x7;
+    uint32_t	pipeline_type;
+    uint32_t	opcode;
+    uint32_t	subopcode;
+    int		ret = 1;
+    
+    ErrorF ("\t");
+    switch (type) {
+    case 0:			    /* Memory Interface */
+	opcode = (cmd >> 23) & 0x3f;
+	if (mi_cmds[opcode])
+	    ErrorF ("%-40.40s %d\n", mi_cmds[opcode], count);
+	else
+	    ErrorF ("Memory Interface Reserved\n");
+	break;
+    case 1:
+	break;
+    case 2:			    /* 2D */
+	opcode = (cmd >> 22) & 0x7f;
+	if (_2d_cmds[opcode])
+	    ErrorF ("%-40.40s %d\n", _2d_cmds[opcode], count);
+	else
+	    ErrorF ("2D Reserved\n");
+	break;
+    case 3:			    /* 3D */
+	pipeline_type = (cmd >> 27) & 0x3;
+	opcode = (cmd >> 24) & 0x7;
+	subopcode = (cmd >> 16) & 0xff;
+	if (_3d_cmds[pipeline_type][opcode][subopcode].name) {
+	    ErrorF ("%-40.40s %d\n",
+		    _3d_cmds[pipeline_type][opcode][subopcode].name,
+		    count);
+	} else {
+	    ErrorF ("3D/Media Reserved (pipe %d op %d sub %d)\n", pipeline_type, opcode, subopcode);
+	}
+	break;
+    default:
+	ErrorF ("Reserved\n");
+	break;
+    }
+    return ret;
+}
+
+static int
+i830_valid_chain (ScrnInfoPtr pScrn, unsigned int ring, unsigned int end)
 {
     I830Ptr pI830 = I830PTR(pScrn);
-    unsigned int head, tail, ring, mask;
+    unsigned int head, tail, mask;
+    volatile unsigned char *virt;
+    uint32_t		data;
+    int			count;
+    volatile uint32_t	*ptr;
+    
+    head = (INREG (LP_RING + RING_HEAD)) & I830_HEAD_MASK;
+    tail = INREG (LP_RING + RING_TAIL) & I830_TAIL_MASK;
+    mask = pI830->LpRing->tail_mask;
+    
+    virt = pI830->LpRing->virtual_start;
+    ErrorF ("Ring at virtual %p head 0x%x tail 0x%x count %d\n",
+	    virt, head, tail, (((tail + mask + 1) - head) & mask) >> 2);
+
+    for (;;)
+    {
+	ptr = (volatile uint32_t *) (virt + ring);
+	data = *ptr;
+	count = i830_valid_command (data);
+	if (count < 0)
+	    return 0;
+	while (count > 0 && ring != end) 
+	{
+	    ring = (ring + 4) & mask;
+	    count--;
+	}
+	if (ring == end) {
+	    if (count == 0)
+		return 1;
+	    else
+		return 0;
+	}
+    }
+}
+
+static void
+i830_dump_cmds (ScrnInfoPtr		pScrn,
+		volatile unsigned char	*virt,
+		uint32_t		start,
+		uint32_t		stop,
+		uint32_t		mask,
+		uint32_t		acthd)
+{
+    I830Ptr		pI830 = I830PTR(pScrn);
+    uint32_t		ring = start;
+    uint32_t		cmd = start;
+    uint32_t		data;
+    uint32_t		batch_start_mask = ((0x7 << 29) |
+					    (0x3f << 23) |
+					    (0x7ff << 12) |
+					    (1 << 11) |
+					    (1 << 7) |
+					    (1 << 6) |
+					    (0x3f << 0));
+    uint32_t		batch_start_cmd  = ((0x0 << 29) |
+					    (0x31 << 23) |
+					    (0x00 << 12) |
+					    (0 << 11) |
+					    (1 << 7) |
+					    (0 << 6) |
+					    (0 << 0));
+    int			count;
+    volatile uint32_t	*ptr;
+
+    while (ring != stop)
+    {
+	if (ring == acthd)
+	    ErrorF ("****");
+	ErrorF ("\t%08x: %08x", ring, *(volatile unsigned int *) (virt + ring));
+	if (ring == cmd)
+	{
+	    ptr = (volatile uint32_t *) (virt + ring);
+	    data = *ptr;
+	    count = i830_valid_command (data);
+	    i830_dump_cmd (data, count);
+
+	    /* check for MI_BATCH_BUFFER_END */
+	    if (data == (0x0a << 23))
+		stop = (ring + 4) & mask;
+	    /* check for MI_BATCH_BUFFER_START */
+	    if ((data & batch_start_mask) == batch_start_cmd)
+	    {
+		uint32_t    batch = ptr[1];
+		if (batch < pI830->FbMapSize) {
+		    ErrorF ("\t%08x: %08x\n", (ring + 4) & mask, batch);
+		    ErrorF ("Batch buffer at 0x%08x {\n", batch);
+		    i830_dump_cmds (pScrn, pI830->FbBase, batch,
+				    pI830->FbMapSize - batch,
+				    0xffffffff, acthd);
+		    ErrorF ("}\n");
+		    ring = (ring + (count - 1) * 4) & mask;
+		}
+	    }
+	    cmd = (cmd + count * 4) & mask;
+	} else
+	     ErrorF ("\n");
+	ring = (ring + 4) & mask;
+    }
+}
+
+static void
+i830_dump_ring(ScrnInfoPtr pScrn, uint32_t acthd)
+{
+    I830Ptr pI830 = I830PTR(pScrn);
+    unsigned int head, tail, mask, cmd;
     volatile unsigned char *virt;
     
     head = (INREG (LP_RING + RING_HEAD)) & I830_HEAD_MASK;
@@ -716,13 +1501,20 @@ i830_dump_ring(ScrnInfoPtr pScrn)
     mask = pI830->LpRing->tail_mask;
     
     virt = pI830->LpRing->virtual_start;
-    ErrorF ("Ring at virtual 0x%x head 0x%x tail 0x%x count %d\n",
-	    (unsigned int) virt, head, tail, (((tail + mask + 1) - head) & mask) >> 2);
-    for (ring = (head - 128) & mask; ring != ((head + 4) & mask);
-	 ring = (ring + 4) & mask)
+    ErrorF ("Ring at virtual %p head 0x%x tail 0x%x count %d\n",
+	    virt, head, tail, (((tail + mask + 1) - head) & mask) >> 2);
+
+    /* walk back by instructions */
+    for (cmd = (head - 256) & mask;
+	 cmd != (head & mask);
+	 cmd = (cmd + 4) & mask)
     {
-	ErrorF ("\t%08x: %08x\n", ring, *(volatile unsigned int *) (virt + ring));
+	if (i830_valid_chain (pScrn, cmd, (head & mask)))
+	    break;
     }
+
+    i830_dump_cmds (pScrn, virt, cmd, head, mask, acthd);
+
     ErrorF ("Ring end\n");
 }
 
@@ -733,103 +1525,113 @@ i830_dump_error_state(ScrnInfoPtr pScrn)
 {
     I830Ptr pI830 = I830PTR(pScrn);
 
-    ErrorF("pgetbl_ctl: 0x%lx pgetbl_err: 0x%lx\n",
-	   (unsigned long)INREG(PGETBL_CTL), (unsigned long)INREG(PGE_ERR));
+    ErrorF("pgetbl_ctl: 0x%08x getbl_err: 0x%08x\n",
+	   INREG(PGETBL_CTL), INREG(PGE_ERR));
 
-    ErrorF("ipeir: %lx iphdr: %lx\n", (unsigned long)INREG(IPEIR),
-	   (unsigned long)INREG(IPEHR));
+    ErrorF("ipeir: 0x%08x iphdr: 0x%08x\n", INREG(IPEIR), INREG(IPEHR));
 
-    ErrorF("LP ring tail: %lx head: %lx len: %lx start %lx\n",
-	   (unsigned long)INREG(LP_RING + RING_TAIL),
-	   (unsigned long)INREG(LP_RING + RING_HEAD) & HEAD_ADDR,
-	   (unsigned long)INREG(LP_RING + RING_LEN),
-	   (unsigned long)INREG(LP_RING + RING_START));
+    ErrorF("LP ring tail: 0x%08x head: 0x%08x len: 0x%08x start 0x%08x\n",
+	   INREG(LP_RING + RING_TAIL),
+	   INREG(LP_RING + RING_HEAD) & HEAD_ADDR,
+	   INREG(LP_RING + RING_LEN),
+	   INREG(LP_RING + RING_START));
 
-    ErrorF("eir: %x esr: %x emr: %x\n",
+    ErrorF("eir: 0x%04x esr: 0x%04x emr: 0x%04x\n",
 	   INREG16(EIR), INREG16(ESR), INREG16(EMR));
 
-    ErrorF("instdone: %x instpm: %x\n", INREG16(INST_DONE), INREG8(INST_PM));
+    ErrorF("instdone: 0x%04x instpm: 0x%04x\n",
+	   INREG16(INST_DONE), INREG8(INST_PM));
 
-    ErrorF("memmode: %lx instps: %lx\n", (unsigned long)INREG(MEMMODE),
-	   (unsigned long)INREG(INST_PS));
+    ErrorF("memmode: 0x%08x instps: 0x%08x\n",
+	   INREG(MEMMODE), INREG(INST_PS));
 
-    ErrorF("hwstam: %x ier: %x imr: %x iir: %x\n",
+    ErrorF("hwstam: 0x%04x ier: 0x%04x imr: 0x%04x iir: 0x%04x\n",
 	   INREG16(HWSTAM), INREG16(IER), INREG16(IMR), INREG16(IIR));
-    i830_dump_ring (pScrn);
+    i830_dump_ring (pScrn, 0);
 }
 
 void
 i965_dump_error_state(ScrnInfoPtr pScrn)
 {
     I830Ptr pI830 = I830PTR(pScrn);
+    uint32_t	acthd;
 
-    ErrorF("pgetbl_ctl: 0x%lx pgetbl_err: 0x%lx\n",
+    ErrorF("pgetbl_ctl: 0x%08x pgetbl_err: 0x%08x\n",
 	   INREG(PGETBL_CTL), INREG(PGE_ERR));
 
-    ErrorF("ipeir: %lx iphdr: %lx\n", INREG(IPEIR_I965), INREG(IPEHR_I965));
+    ErrorF("ipeir: 0x%08x iphdr: 0x%08x\n",
+	   INREG(IPEIR_I965), INREG(IPEHR_I965));
 
-    ErrorF("LP ring tail: %lx head: %lx len: %lx start %lx\n",
+    ErrorF("LP ring tail: 0x%08x head: %x len: 0x%08x start 0x%08x\n",
 	   INREG(LP_RING + RING_TAIL),
 	   INREG(LP_RING + RING_HEAD) & HEAD_ADDR,
-	   INREG(LP_RING + RING_LEN), INREG(LP_RING + RING_START));
+	   INREG(LP_RING + RING_LEN),
+	   INREG(LP_RING + RING_START));
 
-    ErrorF("Err ID (eir): %x Err Status (esr): %x Err Mask (emr): %x\n",
-	   (int)INREG(EIR), (int)INREG(ESR), (int)INREG(EMR));
+    ErrorF("Err ID (eir): 0x%08x\n"
+	   "Err Status (esr): 0x%08x\n"
+	   "Err Mask (emr): 0x%08x\n",
+	   INREG(EIR), INREG(ESR), INREG(EMR));
 
-    ErrorF("instdone: %x instdone_1: %x\n", (int)INREG(INST_DONE_I965),
-	   (int)INREG(INST_DONE_1));
-    ErrorF("instpm: %x\n", (int)INREG(INST_PM));
+    ErrorF("instdone: 0x%08x instdone_1: 0x%08x\n",
+	   INREG(INST_DONE_I965), INREG(INST_DONE_1));
+    ErrorF("instpm: 0x%08x\n", INREG(INST_PM));
 
-    ErrorF("memmode: %lx instps: %lx\n", INREG(MEMMODE), INREG(INST_PS_I965));
+    ErrorF("memmode: 0x%08x instps: 0x%08x\n",
+	   INREG(MEMMODE), INREG(INST_PS_I965));
 
-    ErrorF("HW Status mask (hwstam): %x\nIRQ enable (ier): %x "
-	   "imr: %x iir: %x\n",
-	   (int)INREG(HWSTAM), (int)INREG(IER), (int)INREG(IMR),
-	   (int)INREG(IIR));
+    ErrorF("HW Status mask (hwstam): 0x%08x\nIRQ enable (ier): 0x%08x "
+	   "imr: 0x%08x iir: 0x%08x\n",
+	   INREG(HWSTAM), INREG(IER), INREG(IMR), INREG(IIR));
 
-    ErrorF("acthd: %lx dma_fadd_p: %lx\n", INREG(ACTHD), INREG(DMA_FADD_P));
-    ErrorF("ecoskpd: %lx excc: %lx\n", INREG(ECOSKPD), INREG(EXCC));
+    acthd = INREG(ACTHD);
+    ErrorF("acthd: 0x%08x dma_fadd_p: 0x%08x\n",
+	   acthd, INREG(DMA_FADD_P));
+    ErrorF("ecoskpd: 0x%08x excc: 0x%08x\n",
+	   INREG(ECOSKPD), INREG(EXCC));
 
-    ErrorF("cache_mode: %x/%x\n", (int)INREG(CACHE_MODE_0),
-	   (int)INREG(CACHE_MODE_1));
-    ErrorF("mi_arb_state: %x\n", (int)INREG(MI_ARB_STATE));
+    ErrorF("cache_mode: 0x%08x/0x%08x\n", INREG(CACHE_MODE_0),
+	   INREG(CACHE_MODE_1));
+    ErrorF("mi_arb_state: 0x%08x\n", INREG(MI_ARB_STATE));
 
-    ErrorF("IA_VERTICES_COUNT_QW %x/%x\n",
-	   (int)INREG(IA_VERTICES_COUNT_QW),
-	   (int)INREG(IA_VERTICES_COUNT_QW+4));
-    ErrorF("IA_PRIMITIVES_COUNT_QW %x/%x\n",
-	   (int)INREG(IA_PRIMITIVES_COUNT_QW),
-	   (int)INREG(IA_PRIMITIVES_COUNT_QW+4));
+    ErrorF("IA_VERTICES_COUNT_QW 0x%08x/0x%08x\n",
+	   INREG(IA_VERTICES_COUNT_QW),
+	   INREG(IA_VERTICES_COUNT_QW+4));
+    ErrorF("IA_PRIMITIVES_COUNT_QW 0x%08x/0x%08x\n",
+	   INREG(IA_PRIMITIVES_COUNT_QW),
+	   INREG(IA_PRIMITIVES_COUNT_QW+4));
 
-    ErrorF("VS_INVOCATION_COUNT_QW %x/%x\n",
-	   (int)INREG(VS_INVOCATION_COUNT_QW),
-	   (int)INREG(VS_INVOCATION_COUNT_QW+4));
+    ErrorF("VS_INVOCATION_COUNT_QW 0x%08x/0x%08x\n",
+	   INREG(VS_INVOCATION_COUNT_QW),
+	   INREG(VS_INVOCATION_COUNT_QW+4));
 
-    ErrorF("GS_INVOCATION_COUNT_QW %x/%x\n",
-	   (int)INREG(GS_INVOCATION_COUNT_QW),
-	   (int)INREG(GS_INVOCATION_COUNT_QW+4));
-    ErrorF("GS_PRIMITIVES_COUNT_QW %x/%x\n",
-	   (int)INREG(GS_PRIMITIVES_COUNT_QW),
-	   (int)INREG(GS_PRIMITIVES_COUNT_QW+4));
+    ErrorF("GS_INVOCATION_COUNT_QW 0x%08x/0x%08x\n",
+	   INREG(GS_INVOCATION_COUNT_QW),
+	   INREG(GS_INVOCATION_COUNT_QW+4));
+    ErrorF("GS_PRIMITIVES_COUNT_QW 0x%08x/0x%08x\n",
+	   INREG(GS_PRIMITIVES_COUNT_QW),
+	   INREG(GS_PRIMITIVES_COUNT_QW+4));
 
-    ErrorF("CL_INVOCATION_COUNT_QW %x/%x\n",
-	   (int)INREG(CL_INVOCATION_COUNT_QW),
-	   (int)INREG(CL_INVOCATION_COUNT_QW+4));
-    ErrorF("CL_PRIMITIVES_COUNT_QW %x/%x\n",
-	   (int)INREG(CL_PRIMITIVES_COUNT_QW),
-	   (int)INREG(CL_PRIMITIVES_COUNT_QW+4));
+    ErrorF("CL_INVOCATION_COUNT_QW 0x%08x/0x%08x\n",
+	   INREG(CL_INVOCATION_COUNT_QW),
+	   INREG(CL_INVOCATION_COUNT_QW+4));
+    ErrorF("CL_PRIMITIVES_COUNT_QW 0x%08x/0x%08x\n",
+	   INREG(CL_PRIMITIVES_COUNT_QW),
+	   INREG(CL_PRIMITIVES_COUNT_QW+4));
 
-    ErrorF("PS_INVOCATION_COUNT_QW %x/%x\n",
-	   (int)INREG(PS_INVOCATION_COUNT_QW),
-	   (int)INREG(PS_INVOCATION_COUNT_QW+4));
-    ErrorF("PS_DEPTH_COUNT_QW %x/%x\n",
-	   (int)INREG(PS_DEPTH_COUNT_QW),
-	   (int)INREG(PS_DEPTH_COUNT_QW+4));
+    ErrorF("PS_INVOCATION_COUNT_QW 0x%08x/0x%08x\n",
+	   INREG(PS_INVOCATION_COUNT_QW),
+	   INREG(PS_INVOCATION_COUNT_QW+4));
+    ErrorF("PS_DEPTH_COUNT_QW 0x%08x/0x%08x\n",
+	   INREG(PS_DEPTH_COUNT_QW),
+	   INREG(PS_DEPTH_COUNT_QW+4));
 
-    ErrorF("WIZ_CTL %x\n", (int)INREG(WIZ_CTL));
-    ErrorF("TS_CTL %x  TS_DEBUG_DATA %x\n", (int)INREG(TS_CTL),
-	   (int)INREG(TS_DEBUG_DATA));
-    ErrorF("TD_CTL %x / %x\n", (int)INREG(TD_CTL), (int)INREG(TD_CTL2));
+    ErrorF("WIZ_CTL 0x%08x\n", INREG(WIZ_CTL));
+    ErrorF("TS_CTL 0x%08x  TS_DEBUG_DATA 0x%08x\n", INREG(TS_CTL),
+	   INREG(TS_DEBUG_DATA));
+    ErrorF("TD_CTL 0x%08x / 0x%08x\n",
+	   INREG(TD_CTL), INREG(TD_CTL2));
+    i830_dump_ring (pScrn, acthd);
 }
 
 /**

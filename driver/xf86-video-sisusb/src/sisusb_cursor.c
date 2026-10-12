@@ -1,5 +1,3 @@
-/* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sisusb/src/sisusb_cursor.c,v 1.7 2005/09/28 18:59:22 twini Exp $ */
 /*
  * SiS 315/USB hardware cursor handling
  *

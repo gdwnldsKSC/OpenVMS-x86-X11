@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([libSM],
-        1.0.3,
+        1.1.0,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         libSM)
 
@@ -34,6 +34,13 @@ AC_HEADER_STDC
 
 # Needed to check for TCP & IPv6 support and set flags appropriately
 XTRANS_CONNECTION_FLAGS
+
+AC_ARG_WITH(libuuid, AC_HELP_STRING([--with-libuuid], [Build with libuuid support for client IDs]))
+AM_CONDITIONAL(WITH_LIBUUID, test x"$with_libuuid" != xno)
+
+if test x"$with_libuuid" != xno; then
+	PKG_CHECK_MODULES(LIBUUID, uuid)
+fi
 
 if test "x$GCC" = "xyes"; then
 	GCC_WARNINGS="-Wall -Wpointer-arith -Wstrict-prototypes \

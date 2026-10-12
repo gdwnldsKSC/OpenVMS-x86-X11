@@ -1,0 +1,140 @@
+2026-07-08         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.4.1: Release tar ball made.
+
+2026-07-03         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* fnmatch.c, fnmatch.h strftime.c strncasecmp.c: Update copyright
+	year.
+
+2026-03-12         Arnold D. Robbins     <arnold@skeeve.com>
+
+	All files updated, replacing the FSF address with a
+	link to the licenses: https://www.gnu.org/licenses/.
+	Thanks to Xose Vazquez Perez <xose.vazquez@gmail.com>
+	for pointing out the need.
+
+	* COPYING.LIB: Updated FSF address.
+
+2026-02-22         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.4.0: Release tar ball made.
+
+2025-12-15         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* strftime.c: Restored. It's needed on MinGW.
+
+2025-11-04         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* system.c: Removed.
+
+2025-11-03         Arnold D. Robbins     <arnold@skeeve.com>
+
+	Remove a bunch of replacement files that are no longer needed.
+
+	* README: Updated.
+	* memcmp.c, memcpy.c, memmove.c, memset.c, mktime-internal.h,
+	mktime.c, setenv.c, snprintf.c, strchr.c, strerror.c, strftime.c,
+	strtod.c, strtoul.c, system.c, tzset.c, usleep.c: Removed.
+
+2025-11-02         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* wcmisc.c: Removed. Not needed anymore.
+
+2025-04-02         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.3.2: Release tar made.
+
+2025-03-23         Khem Raj              <raj.khem@gmail.com>
+
+	* fnmatch.c, getopt.h, getopt.c: Add parameter signatures
+	for getenv() and getopt(). Needed for Musl libc.
+
+2024-09-17         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.3.1: Release tar made.
+
+2023-11-02         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.3.0: Release tar ball made.
+
+2023-05-07         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.2.2: Release tar ball made.
+
+2023-04-15         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* strptime.c (strptime_internal): Rework a bit to use localtime()
+	instead of localtime_r(). This lets it work for MinGW and maybe
+	other systems. Thanks to Eli Zaretskii <eliz@gnu.org> for the report.
+
+2023-03-12         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* strptime.c: New file, from GNULIB, with a few slight mods.
+
+2022-11-23         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* strerror.c, system.c: Update to GPL 3. Move code to ISO C
+	style function definitions. Thanks to Corinna Vinschen for
+	noticing the GPL version issue.
+
+2022-11-17         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.2.1: Release tar ball made.
+
+2022-10-20  Paul Eggert  <eggert@cs.ucla.edu>
+
+	Port to current Gnulib
+	Adjust to current Gnulib, which uses C23 style keywords for bool,
+	true, false and static_assert, and assumes that <config.h>
+	supplies compatibility macros on older systems.
+
+	* missing_d/mktime.c: Sync from Gnulib.
+
+2022-09-04         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.2.0: Release tar ball made.
+
+2022-07-22         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* strsignal.c (strsignal): Fix return type to match Linux header.
+
+2022-07-19         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* strsignal.c: New file.
+
+2022-07-14         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* snprintf.c: Update copyright.
+
+2022-07-06         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* snprintf.c: Remove stuff related to __DJGPP__.
+
+2022-07-03         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* snprintf.c: Remove stuff related to __EMX__.
+
+2021-10-27         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.1.1: Release tar ball made.
+
+2020-06-10         Arnold D. Robbins     <arnold@skeeve.com>
+
+	Miscellaneous fixes from Michael Builov <mbuilov@gmail.com>.
+
+	* fnmatch.c (internal_fnmatch): Misc small fixes.
+
+2020-04-14         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.1.0: Release tar ball made.
+
+2019-06-18         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* 5.0.1: Release tar ball made.
+
+2019-04-12         Arnold D. Robbins     <arnold@skeeve.com>
+
+	* ChangeLog.1: Rotated ChangeLog into this file.
+	* ChangeLog: Created anew for gawk 5.0.0 and on.
+	* 5.0.0: Release tar ball made.

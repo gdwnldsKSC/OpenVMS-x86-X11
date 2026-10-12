@@ -1,319 +1,1665 @@
-2006-04-30  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* configure.ac:
-	xf86-input-evdev v1.1.2
-	* src/evdev_brain.c: (evdevControl):
-	Bugzilla #6734 <https://bugs.freedesktop.org/show_bug.cgi=6734>
-	Apply patch from Philip Langdale which causes us to make sure that
-	O_NONBLOCK is set on the inotify device.
-
-2006-04-15  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* configure.ac:
-	* src/Makefile.am:
-	xf86-input-evdev v1.1.1
-
-2006-04-14  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* src/evdev.h:
-	evdevAbsRec: Remove the scale bool, rename scale_x and scale_y
-	to scale[2].
-	evdevAxesRec: Make btnMap an int array instead of a Card8 array.
-	* src/evdev_axes.c: (EvdevAxesAbsSyn), (EvdevAxesAbsProcess),
-	(EvdevAxisAbsNew), (EvdevAxesInit):
-	Make abs support and non-core stuff actually work.
-
-	Relative emulation for abs mode is still a bit broken, but that's far
-	less critical.
-
-	* src/evdev_btn.c: (EvdevBtnInit):
-	How many buttons we've registered is configuration information, not an
-	error message.
-
-2006-04-08  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* src/evdev.c: (EvdevCorePreInit):
-	Remove a debugging message.
-	* src/evdev_axes.c: (EvdevAxesNew), (EvdevAxesInit):
-	Actually, well, _work_.
-	Note, abs support still segfaults, I'll debug it after I've slept.
-	But I should get it tomorrow.
-
-2006-04-08  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* configure.ac:
-	Dropped the xorg-xserver 1.0.99.901 requirement.
-	(Things were tweaked to mostly work for older servers again.)
-	* src/evdev.c: (EvdevReadInput):
-	Close the device properly on read errer.
-	* src/evdev_brain.c: (evdevReadInput), (evdevControl):
-	Minimal inotify support, not ideal yet, but...
-	* src/inotify-syscalls.h:
-	Minimal inotify support, not ideal yet, but...
-	* src/inotify.h:
-	Minimal inotify support, not ideal yet, but...
-
-2006-04-08  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* src/Makefile.am:
-	Remove evdev_abs.c and evdev_rel.c.
-	Added evdev_axes.c.
-	* src/evdev.c: (EvdevReadInput), (EvdevProc), (EvdevNew),
-	(EvdevPtrCtrlProc):
-	Change the calls to refer to EvdevAxes instead of Abs and Rel.
-	Include mipointer.h. (Fixes a compile error.)
-	Remove an unused variable from EvdevReadInput.
-	* src/evdev.h:
-	Removed evdev_abs.c and evdev_rel.c, added evdev_axes.c.
-	Added count to rel and abs.
-	Moved btnMap from rel to the new axes.
-	Shuffle some includes, and include stdarg.h.
-	* src/evdev_abs.c:
-	Removed.
-	* src/evdev_axes.c: (EvdevConvert), (EvdevAxesRealSyn),
-	(EvdevAxesAbsSyn), (EvdevAxesRelSyn), (EvdevAxesSyn),
-	(EvdevAxesAbsProcess), (EvdevAxesRelProcess), (EvdevAxesOn),
-	(EvdevAxesOff), (EvdevAxisAbsNew), (EvdevAxisRelNew),
-	(EvdevAxesNew), (EvdevPtrCtrlProc), (EvdevAxesInit):
-	New, a mix of rel and abs that should actually work in the
-	rel case.
-	* src/evdev_btn.c: (EvdevBtnCalcRemap):
-	Rearrange include order.
-	btnMap was moved from being part of rel to being part of axes.
-	* src/evdev_rel.c:
-	Removed.
-	* src/evdev_brain.c:
-	Rearrange include order.
-	* src/evdev_key.c:
-	Rearrange include order.
-
-	NOTE: This commit has been compile tested, not run tested.
-
-	I have some other changes to make before I can do more heavy testing.
-
-2006-04-06  Adam Jackson  <ajax@freedesktop.org>
-
-	* configure.ac:
-	* src/evdev.c:
-	* src/evdev.h:
-	* src/evdev_abs.c:
-	* src/evdev_btn.c:
-	* src/evdev_key.c:
-	* src/evdev_rel.c:
-	Unlibcwrap.  Bump server version requirement.  Bump to 1.1.0.
+commit ed1382866c54ffa34e3d0352ad65414650497f78
+Author: Peter Hutterer <peter.hutterer@redhat.com>
+Date:   Thu Aug 14 23:17:16 2008 +0930
+
+    evdev 2.0.4
+
+commit 8fe38b228702bddebe26a6d2c5c170a2a91d6ebc
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Thu Aug 7 09:21:26 2008 +0930
+
+    Print a warning if a keycode exceeds the range accepted by the server.
+    
+    Keycodes over 255 are silently ignored in the server. The least we can do is
+    put a warning in the logs.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    (cherry picked from commit c1f7f8c3d22ecae7839f82ea8b584069f54f1f5e)
+
+commit ef607b6cce8e1feb6632c6bc1e7f322095ce54d9
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Mon Aug 4 09:16:53 2008 +0930
+
+    Actually close the fd on DEVICE_CLOSE (bug#16948)
+    
+    Fixes file descriptor leak.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    (cherry picked from commit d9097df01b01afaf946fa04fca8ae8ab7108ff21)
+
+commit 906a5d6add75d3bf3077d0542352534256b734d4
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Wed Jul 30 10:40:47 2008 +0200
+
+    Print the device name when we get a read error
+    (cherry picked from commit 5c074af5a9abba138023e3bc6954d1062f7c36dd)
+
+commit 5152d616cab6912a45e09c37c0330064d2f412f2
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri Aug 1 17:29:24 2008 +0930
+
+    evdev 2.0.3
+
+commit 2e9a71df5f8e8cdcdb80eec9e17501a75d5bd669
+Author: Michel Dänzer <michel@tungstengraphics.com>
+Date:   Tue Jul 29 10:06:07 2008 +0200
+
+    xf86-input-evdev: Fix EVIOCGBIT ioctl usage on big endian platforms.
+    
+    With this fix, on my PowerBook HAL hotplugging correctly detects my USB mouse,
+    and no longer thinks keyboards have random numbers of mouse buttons. :)
+    
+    The LONG_BITS and NBITS macro definitions are stolen from xf86-input-synaptics.
+    
+    Signed-off-by: Michel Dänzer <michel@tungstengraphics.com>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    [cherry-picked from master and fixed the trivial conflict -- jcristau]
+
+commit 49de32e70f833628554342ef4225a4174158b412
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sun Jul 20 11:33:37 2008 +0200
+
+    Fill up the version info
+    
+    Report correct versions instead of
+    "compiled for 0.0.0, module version = 1.0.0"
+    (cherry picked from commit 2b7edaa4ab88e192d7285d39b4834d1e535b94d0)
+
+commit f135e074629c7cba01bbe9ff6bce77883c22bb29
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Jul 14 13:34:36 2008 +0930
+
+    evdev 2.0.2
+
+commit e926356eb0dfd218e88d47d8ed1e3ccfb2f1c85a
+Author: Peter Hutterer <whot@possum.(none)>
+Date:   Mon Jul 14 13:06:32 2008 +0930
+
+    Don't enable the device if the grab failed with ENODEV.
+    
+    After suspend/resume, sometimes the device doesn't come back up on the same
+    node. Since we do not call PreInit for the device (which would detect this
+    situation), we continue to try to read a nonexisting file, spamming the log
+    file with "Read Error".
+    (cherry picked from commit bf0d81011e19a8bb5bbd80c6b496c8ae257b4f2c)
+
+commit bd56ab3d72c7baafd2ecd27cdadcef333fb39262
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Jul 10 19:32:22 2008 +0930
+
+    Add .gitignore file.
+    (cherry picked from commit ef4bb69c1a64e784fef1c758ee439372ba329b0a)
+
+commit 2b30413598663b75acff0cafb21c2e3d8a727c9a
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Jul 3 15:01:32 2008 +0930
+
+    Remove static ChangeLog, autogenerate as part of make dist.
+    
+    Hook taken from xserver's Makefile.am
+    (cherry picked from commit ec23c6b2f550f2679226da907c1d022295d453f1)
+
+commit 52fc8ee84656728a82073eae16da9e878cc3b39f
+Author: Ander Conselvan de Oliveira <ander@mandriva.com.br>
+Date:   Thu Jun 26 14:36:58 2008 -0300
 
-2006-03-31  Zephaniah E. Hull  <warp@aehallh.com>
+    Mice with a lot of buttons (e.g. Logitech MX1000) generate button events greater than BTN_TASK.
+    
+    Signed-off-by: Peter Hutterer <peter@cs.unisa.edu.au>
+    (cherry picked from commit 0830676a0ce3618eae9cf4c072998c16e164c687)
+
+commit b125b834f4ce4877204b9c8e98ad2641e2c7b082
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Sun Jun 22 17:52:58 2008 +0930
+
+    evdev 2.0.1
+
+commit 05b20db8dbfb47bc370fe24e50ef563f1879be61
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Sat Jun 21 16:42:12 2008 +0930
+
+    No need to finalize MB emulation after EvdevProbe anymore.
+    
+    Follow-up to 76800bfa75807e49398380b902f6c0f547cd4c0e.
+    (cherry picked from commit 5a0ea39b79b27b7c3117661a21e7ab5eba3c9b24)
 
-	* src/evdev_brain.c: (FillDevInfo), (evdevRescanDevices):
-	Fix the fd pointer leak reported by primer.  (Not the same patch.)
-	* src/evdev_key.c: (EvdevKeyNew):
-	Disable the undocumented xkb guts options in the key driver.
-	(Requested by Daniel Stone.)
+commit 43768d59da2c519dde5a8efaf0ff2b12b6c47fcc
+Author: Simon Munton <simon@munton.demon.co.uk>
+Date:   Sat Jun 21 10:19:07 2008 +0930
 
-2006-03-16  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* src/evdev_brain.c: (MatchDriver):
-	Switch from my own globbing function to fnmatch.
-
-	* src/evdev_key.c: (EvdevKeyNew):
-	Detect keys numbered higher then buttons.
-	Remove the (depreciated since long before xkb support was added to
-	evdev) XkbKeymap option.
-
-2006-03-16  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* man/evdev.man:
-	Update to include all the new device matching options.
-
-2006-02-27  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* src/evdev_key.c: (EvdevKeyOff):
-	Don't leave keys in the down state when we get turned off.
-	(VT switching, getting unplugged, that sort of stuff.)
-
-2006-02-27  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* src/evdev.c: (EvdevReadInput):
-	Better error reporting if the read fails.
-
-	* src/evdev_brain.c: (evdevNewDriver):
-	Work properly if we're defining entirely by capability maps.
-
-2006-02-24  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* src/Makefile.am:
-	Compile with -Wall now.
-	Add evdev.h to the sources so that make distcheck gets it.
-
-	* src/evdev.h:
-	Bugzilla #5943 <https://bugs.freedesktop.org/show_bug.cgi=5943>
-	Make sure we include errno.h.
-
-	Reduce EVDEV_MAXBUTTONS to 96.
-
-	Split up evdevStateRec into a struct with pointers to new structs
-	for btn, abs, rel, and key.
-
-	New structure type for handling the device capability bitmaps.
-
-	Add device bits and struct input_id to evdevDeviceRec.
-
-	Add matching device bits, struct input_id, and pass number to
-	evdevDriverRec.
-
-	Prototype for evdevGetBits from evdev_brain.c.
-
-	* src/evdev.c: (EvdevProc), (EvdevSwitchMode), (EvdevNew),
-	(EvdevParseBits), (EvdevParseBitOption), (EvdevCorePreInit):
-	Conversion for the evdevStateRec split.
-
-	Remove the errno.h include, it's in evdev.h for now.
-
-	Move the bit getting from the drivers to here, into evdevDeviceRec.
-
-	Fix a rare case of fd leakage.
-
-	Add several new (and somewhat ugly) device matching options:
-	<map>Bits: Where map is one of ev, key, rel, abs, msc, led, snd, or
-	ff.
-	In the format of '+0 +3 -1-2 ~5-10', requires bits 0 and 3 be set,
-	bits 1 and 2 to not be set, and at least one bit in the range of 5 to
-	10 be set.
-	bustype, vendor, product, and version: Simple integer options for
-	matching the struct device_id fields, must be 0 (the default) or the
-	exact value you wish to match against.
-	pass: Bounded to 0-3, devices are matched to the first matching entry
-	found, order for multiple matching entries in the same pass is
-	undefined, but it starts with pass 0 and goes to pass 3.
-
-	* src/evdev_abs.c: (EvdevAbsSyn), (EvdevAbsProcess),
-	(EvdevAbsInit), (EvdevAbsNew):
-	Adaptation for the evdevStateRec split and the change in capability
-	bitmap handling.
-
-	* src/evdev_brain.c: (MatchAll), (MatchNot), (MatchAny),
-	(MatchDriver), (MatchDevice), (evdevScanDevice), (FillDevInfo),
-	(evdevRescanDevices), (evdevGetBits):
-	Add evdevGetBits to fill the new evdevBitsRec struct type.
-
-	Lots of somewhat ugly code for matching by capability bits.
-
-	Split out of evdevRescanDevices to smaller handling functions.
-	The new design should be better if I decide to handle arbitrary Device
-	fields again.
-
-	* src/evdev_btn.c: (EvdevBtnInit), (EvdevBtnOn),
-	(EvdevBtnCalcRemap), (EvdevBtnNew), (EvdevBtnProcess):
-	Adaptation for the evdevStateRec split and the change in capability
-	bitmap handling.
-
-	Handle all buttons, no button compression at this time, however we
-	reorder things so that BTN_MOUSE comes before BTN_MISC, somewhat
-	evily.
-
-	Support for the new btn->state[] array of int pointers.
-
-	* src/evdev_key.c: (EvdevKeyInit), (SetXkbOption), (EvdevKeyNew):
-	Adaptation for the evdevStateRec split and the change in capability
-	bitmap handling.
-
-	* src/evdev_rel.c: (EvdevRelSyn), (EvdevRelProcess),
-	(EvdevRelInit), (EvdevRelNew):
-	Adaptation for the evdevStateRec split and the change in capability
-	bitmap handling.
-
-2006-02-20  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* src/evdev_btn.c: (EvdevBtnInit):
-	Bugzilla #5950 <https://bugs.freedesktop.org/show_bug.cgi=5950>
-	Possible (maybe) fix for bug #5950.
-	Though, I'm not convinced and still don't see how this bug could
-	be happening, especially if this doesn't do it.
-
-2006-02-19  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* src/evdev_key.c: (EvdevKbdBell):
-	Add bell support.
-
-2006-02-16  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* src/evdev_btn.c: (EvdevBtnCalcRemap):
-	Bugzilla #5914 <https://bugs.freedesktop.org/show_bug.cgi?id=5914>
-	Stupid little bug, properly handle wheels on 3 button mice.
-
-2006-02-14  Zephaniah E. Hull  <warp@aehallh.com>
-
-	* configure.ac:
-	* man/evdev.man:
-	* src/Makefile.am:
-	* src/evdev.c: (EvdevReadInput), (EvdevSigioReadInput),
-	(EvdevProc), (EvdevSwitchMode), (EvdevNew), (EvdevCorePreInit):
-	* src/evdev.h:
-	* src/evdev_abs.c: (EvdevPtrCtrlProc), (EvdevConvert),
-	(EvdevAbsSyn), (EvdevAbsProcess), (EvdevAbsInit), (EvdevAbsOn),
-	(EvdevAbsOff), (EvdevAbsNew):
-	* src/evdev_brain.c: (glob_match), (evdevGetFDForDevice),
-	(evdevRescanDevices), (evdevReadInput), (evdevControl),
-	(evdevStart), (evdevNewDriver):
-	* src/evdev_btn.c: (EvdevBtnPostFakeClicks), (EvdevBtnInit),
-	(EvdevBtnOn), (EvdevBtnOff), (EvdevBtnCalcRemap), (EvdevBtnNew),
-	(EvdevBtnProcess):
-	* src/evdev_key.c: (EvdevKbdBell), (EvdevKbdCtrl), (EvdevKeyInit),
-	(SetXkbOption), (EvdevKeyNew), (EvdevKeyOn), (EvdevKeyOff),
-	(EvdevKeyProcess):
-	* src/evdev_rel.c: (EvdevPtrCtrlProc), (EvdevConvert),
-	(EvdevRelSyn), (EvdevRelProcess), (EvdevRelInit), (EvdevRelOn),
-	(EvdevRelOff), (EvdevRelNew):
-	Bugzilla #5696 <https://bugs.freedesktop.org/show_bug.cgi?id=5696>
-	Slightly updated version of the patch listed.
-	Basicly a rewrite of the driver, with a few pieces of the old.
-	XKB support, proper device matching, basic absolute pointer support.
-	Lots more, will require some user config changes.
-
-2006-01-09  David Nusinow,,,  <set EMAIL_ADDRESS environment variable>
-
-	* man/Makefile.am:
-	* man/evdev.man:
-	Bugzilla #968 <https://bugs.freedesktop.org/show_bug.cgi?id=968>
-	Patch #4301 <https://bugs.freedesktop.org/attachment.cgi?id=4301>
-	Add evdev manpage
-
-2005-12-20  Kevin E. Martin  <kem-at-freedesktop-dot-org>
-
-	* configure.ac:
-	Update package version for X11R7 release.
-
-2005-12-14  Kevin E. Martin  <kem-at-freedesktop-dot-org>
-
-	* configure.ac:
-	Update package version number for final X11R7 release candidate.
-
-2005-12-06  Kevin E. Martin  <kem-at-freedesktop-dot-org>
-
-	* man/Makefile.am:
-	Change *man_SOURCES ==> *man_PRE to fix autotools warnings.
-
-2005-12-03  Kevin E. Martin  <kem-at-freedesktop-dot-org>
-
-	* configure.ac:
-	Update package version number for X11R7 RC3 release.
-
-2005-12-01  Kevin E. Martin  <kem-at-freedesktop-dot-org>
-
-	* configure.ac:
-	Remove extraneous AC_MSG_RESULT.
-
-2005-11-29  Adam Jackson  <ajax@freedesktop.org>
-
-	* configure.ac:
-	Only build dlloader modules by default.
-
-2005-11-09  Kevin E. Martin  <kem-at-freedesktop-dot-org>
-
-	* configure.ac:
-	Update package version number for X11R7 RC2 release.
-
-2005-11-01  Kevin E. Martin  <kem-at-freedesktop-dot-org>
-
-	* configure.ac:
-	Update pkgcheck dependencies to work with separate build roots.
+    Close file descriptor if EvdevProbe fails.
+    
+    Signed-off-by: Peter Hutterer <peter@cs.unisa.edu.au>
+    (cherry picked from commit 373e13ae353d1e0022f8821adc528ebc5411d47d)
+
+commit 9c524f6963645bf42bbd41d4189d6319020a133d
+Author: Keith Packard <keithp@keithp.com>
+Date:   Fri Jun 20 18:20:55 2008 -0700
+
+    Enable middle button emulation at DEVICE_ON instead of DEVICE_INIT.
+    
+    This ensures that the middle button emulation is re-enabled after VT switch,
+    otherwise the block handler that deals with the timeouts would not get
+    re-registered.
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+    (cherry picked from commit 76800bfa75807e49398380b902f6c0f547cd4c0e)
+
+commit 04003a98a9ca1b4b0c32d319fab07ee7afc83c75
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Tue Jun 17 14:01:49 2008 +0930
+
+    evdev 2.0.0
+
+commit 0443fb430f2481c1f0d0d83730a9145b5794f559
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Tue Jun 17 13:59:15 2008 +0930
+
+    Shut up compiler warning "implicit declaration of function 'xf86Msg'"
+
+commit 998f52010f92dc79f2ace6048a2f3fd600a97582
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Thu Jun 12 11:23:10 2008 +0930
+
+    Finalize MB emulation if EvdevProbe fails.
+    
+    This avoids segfaults when HAL is restarted behind our backs. Also, only init
+    MB emulation when the device actually has a button.
+
+commit de07c04f5c2874b8e407913c3121e715e46653d2
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Wed Jun 11 11:24:07 2008 +0930
+
+    evdev 1.99.4
+    
+    1.99.3 had a nasty bug, so here's a quick update.
+
+commit 01355b9d4b3ed92da42f90fb69384eb22cdcb3d9
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Wed Jun 11 11:19:04 2008 +0930
+
+    If Emulate3Buttons is specified in the config, don't auto-deactivate it.
+    
+    Default setting is still "on" until middle button is pressed.  If the options
+    is however explicitly stated in the config file, it takes the value from the
+    config file, no matter if a middle button is present.
+
+commit 9591dc1f6cc89208805b120eabd055e8dabd3e40
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Wed Jun 11 10:36:00 2008 +0930
+
+    Remove wakeup handlers when device is closed.
+    
+    Less SIGABRTs are less exciting, but sometimes boredom is what we want.
+
+commit 08ba40b2532bd61b60c9cf994b21300f596f7ebd
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Jun 10 17:35:33 2008 -0400
+
+    evdev 1.99.3
+
+commit 39dc453691804648f34dbd856bd7e66cfdc59d66
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Tue Jun 10 22:48:01 2008 +0930
+
+    Disable middle mouse button emulation when a real middle MB event is detected.
+    
+    Devices may report middle mouse buttons even if they don't have one (PS/2
+    devices just don't know any better), so we can't be sure until we see the
+    event.
+
+commit e8887435ac065ec3071b2d8bf0895e8cb196ec3d
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Tue Jun 10 15:55:40 2008 +0930
+
+    Enable middle-mouse button emulation.
+    
+    Ported from xf86-input-mouse, with a few cleanups.
+
+commit b0f6987ee6b133e28f3af18da62cfb5ca79fbe07
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Tue Jun 10 22:41:43 2008 +0930
+
+    Plug a memory leak, we allocated pEvdev twice, dropping the first memory area.
+
+commit fec73e1418a4da1b64496faca27b06fef0aa5206
+Author: Sven Wegener <swegener@gentoo.org>
+Date:   Sat Jun 7 13:01:22 2008 +0200
+
+    evdev: Port b4a5a204 "Fix pointer crossing screen bug." to current master branch
+    
+    The commit b4a5a204 fixed an issue, where we can't move the pointer to
+    other screens and this happens in current master branch again. This commit
+    ports the old commit to the current master branch.
+    
+    Signed-off-by: Sven Wegener <swegener@gentoo.org>
+    Signed-off-by: Peter Hutterer <peter@cs.unisa.edu.au>
+
+commit da112737eb109dc263169e820b7ef903b7f8624f
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Sun Jun 8 00:12:03 2008 +0930
+
+    Check for XINPUT ABI < 3 (corrected version)
+    
+    Thanks to Sven Wegener for pointing out the incorrect previous version.
+
+commit d40125ea8c2ce6ec0f98bdc0655f79aa7274152e
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Sun Jun 8 00:09:40 2008 +0930
+
+    Revert "Check for XINPUT ABI, parameters of InitValuatorClassRec have changed."
+    
+    GetMotionEvents() doesn't exist, led to compile errors with servers pre-MPX
+    merge. Thanks to Sven Wegener for pointing this out.
+    
+    This reverts commit 42422d8f69e6806e1adfd93017cac064a75041c7.
+
+commit 42422d8f69e6806e1adfd93017cac064a75041c7
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Mon May 26 19:17:19 2008 +0930
+
+    Check for XINPUT ABI, parameters of InitValuatorClassRec have changed.
+
+commit 15e0091f0b4b0d7dff29da143d405255a1c3bc12
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Wed May 21 16:48:32 2008 +0930
+
+    Fail if the device cannot be grabbed during the probe.
+    
+    If the grab fails, this is most likely a sign that the device has been grabbed
+    already (probably by a device specified in xorg.conf). So let's not add the
+    device to the server's input device list, since it won't generate events
+    anyway.
+    
+    Exception: keyboards and kernel 2.4 are not affected.
+
+commit d45f315845e19a720af25dc5f6c8a4c654c6e225
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed May 21 15:05:10 2008 -0400
+
+    evdev 1.99.2
+
+commit a4a7003f7c82ddf05d3aa88fa40698058648dbf6
+Author: Dan A. Dickey <dan.dickey@savvis.net>
+Date:   Tue May 20 10:57:06 2008 +0930
+
+    Fix a trivial bug in testing for absolute axes.
+    
+    Signed-off-by: Peter Hutterer <peter@cs.unisa.edu.au>
+
+commit 3e0dc9945d795cfd51ffe176100fa9416b6d3c4d
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Mon May 19 08:36:20 2008 +0930
+
+    Shut up two compiler warnings.
+
+commit ff6251a2bd347eef7b3cd80825e84d983eeecfd3
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Mon May 19 08:24:55 2008 +0930
+
+    Remove unused EvdevOpts and EvdevOptions.
+    
+    In the mouse driver, these options are only used if XFree86LOADER is
+    undefined. configure.ac in the xserver forces said define to 1 if we're
+    building the xfree86 DDX, so I don't see the point of having them around.
+    Especially since they weren't used in evdev anyway.
+
+commit e9222a828582e560f9c3a29f0d3d9e1e46d973bd
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Sun May 18 11:04:43 2008 +0930
+
+    man: Option "Path" is supported in the code, add it to man page.
+
+commit 8b7738457feef13e1fab88bb30c94093dd8bfcc5
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Wed Apr 30 18:10:08 2008 +0930
+
+    Don't allow relative and absolute axes on the same device.
+    
+    This is a bit of a mess. The MS Optical Desktop 2000 registers both relative
+    and absolute axes on the same device (the mouse). The absolute axes have a
+    valid min/max range for x/y and thus overwrite the x/y relative axes in the
+    server (no, this is not a server bug). And I wouldn't be surprised if other
+    devices have similar issues.
+    
+    Since the device only sends relative events after that, the mouse is
+    essentially restricted to the min..max range of 0..255. The server simply
+    doesn't do unrestricted relative axis and restricted absolute axis on the same
+    device (not for the same axis numbers anyway).
+
+commit 1b9deb8e7e50a905f94a371ab0aa39e09a703052
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Tue Apr 1 17:24:13 2008 +0200
+
+    Add XK_Meta_L and XK_Meta_R to list of modifiers
+    
+    Stopps meta/super key from autorepeating
+
+commit 0ec391f51cef4550daef041110ed93699089bea3
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Fri Mar 28 17:45:05 2008 +0200
+
+    Keyboard: Don't allow arbitrary keymap settings
+    
+    Pretty much dead code anyway.
+
+commit f77410e1f97d394e98c854fd174f712666b0544c
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Fri Mar 14 11:15:01 2008 -0400
+
+    Map REL_DIAL to REL_HWHEEL.
+    
+    Some Microsoft mice have this wrong.  And it seems like a sensible thing
+    to do anyway.
+
+commit d28c2e1efba9fd3e79d9dfecf23cdbded30b93f5
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed Mar 12 13:54:10 2008 -0400
+
+    Filter out repeat events for mouse buttons.
+    
+    Not many mice do this, but some do, Apple Mighty Mouse in particular, and
+    it makes click-and-drag pretty much impossible to use.
+    
+    Arguably we should filter _all_ repeat events from the kernel and handle
+    synthesizing them in the server.
+
+commit 697e850a6387cf1e0a0a35ca8c694804a6c2427f
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Mar 11 19:07:58 2008 -0400
+
+    Fix middle/right button munging.
+    
+    Don't do this in the button map.  That's writeable by clients, which means
+    they have the chance to get it wrong.  Just swap right and middle around
+    in event dispatch before you get to the user's map.
+
+commit 87037b9953ebd47e9dbd99b3653050517aa490ff
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Mon Mar 10 17:16:38 2008 -0400
+
+    Force xkb_model to be "evdev".
+    
+    Or at least, refuse to recognise the config option.  It's nonsensical to
+    use a model of something other than evdev, and it'll just break if you try.
+
+commit 71f4eaec7713643a7e2d07e27b9afeabd6f1ce02
+Author: Dan Nicholson <dbn.lists@gmail.com>
+Date:   Sun Mar 9 14:46:56 2008 -0700
+
+    Fix cut-and-paste errors in xkb alternate spellings code
+    
+    Fixes 2b334d6b69d7dde5d553c638e134ebdf974749f3.
+
+commit 72083976127a1ff15f79b0316570a947e6dd2b42
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Sun Mar 9 16:15:14 2008 -0400
+
+    Fix cut-and-paste error in abs-to-rel translation.
+
+commit c250f843833b1aac3732ca97af5b1c0076996598
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Sun Mar 9 15:54:27 2008 -0400
+
+    Fix the default XKB rules to be "base" instead of "xfree86".
+
+commit 2b334d6b69d7dde5d553c638e134ebdf974749f3
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Sun Mar 9 15:53:40 2008 -0400
+
+    Handle the alternate spellings of the xkb options.
+
+commit 9773dac6238b64cab1d42b2231097b23058c44ee
+Merge: 11cf9c9... 1a0bc8e...
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Sat Mar 8 20:18:02 2008 -0500
+
+    Merge branch 'evdev-2.0-branch'
+    
+    This resets to before the ad-hoc input hotplug state, ports that to
+    current server ABI, adds input hotplug integration, and re-adds support
+    for absolute coordinate events and XKB.  Several other small fixes were
+    cherry-picked from the new 1.2 branch.
+
+commit 1a0bc8e64a9ba6e8647b5908673b57710518f6c2
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Sat Mar 8 20:01:15 2008 -0500
+
+    Force maximum keycode to be 255
+    
+    Even though we don't have keycodes for anything above 127, make sure our
+    map always covers up to 255.  This ensures that the keycode range never
+    changes.
+    
+    Spiritually cherry-picked from a9e87f29ccdadebb0742317bb57d66eaaca4b593
+    and 6db4a9fb84f828f745202c3fddc58d389fca220b.
+
+commit 6271494faa4c45f4fa10509f72e0515f2cef36c6
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Sat Mar 8 19:54:44 2008 -0500
+
+    Add absolute coordinate event support.
+    
+    There are two major classes here, touchscreens and touchpads.  Touchpads
+    are logically more like relative devices, in that your initial touch
+    should not warp the cursor.  So attempt to detect touchpads (via the
+    existence of BTN_TOUCH) and translate absolute events from those devices
+    to relative motion.
+
+commit f5bfc7ec3c132276ab7152b283f75387ee656ec2
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Sat Mar 8 16:52:17 2008 -0500
+
+    Nuke the keyboard bell code.
+    
+    It did nothing, and the core won't invoke it anymore anyway.
+
+commit bf0848ec8e1ab45cb72fc8da0cc5dc47eefd0760
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Sat Mar 8 16:37:42 2008 -0500
+
+    Re-add XKB support.
+    
+    Almost entirely taken from a patch I did ages ago in bug #3912, with
+    slight cleanups, and with the KcCGST options removed as per evdev 1.x.
+
+commit f1445feac77af65098eef1c2d86ae067d81fc6cb
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Sat Mar 8 16:09:47 2008 -0500
+
+    Parse Option "Path" as well as Option "Device".
+    
+    The hotplug core passes Path not Device.  With this change, hotplugging
+    works.
+
+commit ad5bdcb50f511b1cd3bd0118d2b1f4fe58c4ab72
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Fri Mar 7 20:29:58 2008 -0500
+
+    Ignore button events above BTN_TASK for now.
+
+commit bb36ca65c64d1d863f8fa4e6f058a384fbc80eb0
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Fri Mar 7 19:43:07 2008 -0500
+
+    Support the new DIX motion history API
+    
+    Spiritually cherry-picked from 036b457c1b3f7d2d174da890cb8598d907181f8e
+
+commit 40a1e1439c120d791a2f106293f4a712c452fcc5
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Sun Jul 9 18:08:50 2006 +0100
+
+    remove XFree86LOADER usage
+    Build evdevModuleData, et al, unconditionally.
+
+commit 946beb16f8002e8f52af082d424aac74e6fd34a9
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Fri Mar 7 19:09:35 2008 -0500
+
+    Unlibcwrap.
+
+commit 305f90d37ad200063589c5ecf946474a09f0349b
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Fri Mar 7 19:06:14 2008 -0500
+
+    Branch for evdev 2.0
+
+commit 11cf9c92c0d31d1058ec6c013b7126bd8909beba
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Mon Mar 3 13:40:52 2008 +0200
+
+    Updated manpage to reflect current state
+    
+    Large parts of the manpage were obsolete and confused users. Current state should reflect all available driver options. Some details are still missing.
+
+commit 7f1e8146d4b13929a86a4b80f783a720c1b5573a
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Feb 20 20:41:08 2008 +0100
+
+    More accurate error messages on device open fail.
+    
+    The message "cannot open input pEvdev" resulted in a lot of bug reports of confused users that did not
+    supply a device path. Now we tell them when it is missing or print out a reason when device open fails.
+
+commit 8ae4d17ca3fb9ec06b16df5c737cd9021453a020
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Tue Feb 19 22:49:51 2008 +0100
+
+    Let kernel autorepeat pass when set on default values
+    
+    xorg-server won't generate soft autorepeat, when interval/delay are at default of 40/660 (see xkb/ddxCtrls.c:
+    XkbDDXUsesSoftRepeat). When we hit the defaults, we let the kernel autorepeat pass, if we differ, we swallow them all
+    and let the server figure out autorepeat in software.
+
+commit 134ce2e493882ce411d17ea97ebb243a7d574144
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Tue Feb 19 21:12:36 2008 +0100
+
+    Set repeat_delay and repeat_interval to default values
+    
+    Set ctrls->repeat_delay and ctrls->repeat_interval so that keys will be automatically repeated in software.
+
+commit 10e7c3fbdf4e94c212c0807844721064e7490729
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Tue Feb 19 21:09:13 2008 +0100
+
+    Filter all incoming repeated key events
+    
+    Not just filter modifiers but every repeated key, because the software implementation will take care of what key to
+    repeat and what not. Otherwise the kernel's autorepeated keys interfere with the software generated ones.
+
+commit f766404fd94851ea8b3cedc5c7336a5524b7a7ae
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Tue Feb 19 21:05:49 2008 +0100
+
+    Don't inform kernel evdev driver about autorepeat change
+    
+    We do autorepeat in software now. Informing the kernel would change the autorepeat speed on virtual terminals, which is
+    probably not wanted so we leave the settings untouched.
+
+commit d032d3c8b40e152cc0fd8409f910f23559873aaf
+Author: Vinay Bondhugula <vinayb@vmware.com>
+Date:   Tue Jan 29 22:15:22 2008 -0800
+
+    Clear EV_ABS_V_USE_TOUCH for devices without a touch button
+    
+    VMware's absolute pointing device does not have a pressure/touch button.
+    Although evdev correctly recognizes this, it sets "use_touch" for X and Y axes
+    regardless of the touch button. This patch clears the USE_TOUCH flag for the X
+    and Y axes if the device does not have a touch button.
+
+commit 5adbc6b98ca1da9a426528ce0df64a992feff3bd
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Tue Jan 29 14:07:49 2008 +1030
+
+    Initialise b_map_data to correct size. Bug #13991
+    
+    X.Org Bug 13991 <http://bugs.freedesktop.org/show_bug.cgi?id=13991>
+
+commit eeb3727004327bc4d83192a7956c1835b3bd6161
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Fri Nov 9 00:38:54 2007 +0100
+
+    Don't flush buttons on init (bug#12630)
+
+commit fa15e909933252d5cc0a2a272506effbcf21d6f9
+Author: Peter Samuelson <peter@p12n.org>
+Date:   Thu Oct 11 07:27:30 2007 +0200
+
+    Fix one additional typo in evdev.man (axis named BRAKE, not BREAK).
+
+commit 12a27693b9bb41b9222c5c2256815d225ee75929
+Author: Peter Samuelson <peter@p12n.org>
+Date:   Thu Oct 11 00:09:40 2007 +0200
+
+    evdev.man minor fixes
+    
+    * Use \- (ASCII dash) instead of - (hyphen), where appropriate
+    * Use a roff escape instead of a UTF-8 character.
+    * Consistent use of quote characters.
+    * Consistent use of typographic conventions:
+      italic "n" in place of "<N>" or "integer" or "number",
+      bold for option names, bit maps, etc.
+    
+    Debian bug #446118
+
+commit 1c40c7db188bc9030aaf256004b914815e821940
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Sep 3 05:52:08 2007 -0400
+
+    Add *~ to .gitignore to skip patch/emacs droppings
+
+commit e2be2ffa473583b98b93a319163bb54eb5d83ed6
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Wed Aug 1 00:02:33 2007 +0300
+
+    Options: Accept differently-named options
+    
+    Take some differently-named options for device and the XKB options.  These
+    should really be better-handled, but eh.
+
+commit e86aab93c56ad72f3798169ea94dc6b91dab6ab6
+Author: Brice Goglin <Brice.Goglin@ens-lyon.org>
+Date:   Thu Jul 26 18:31:58 2007 +0200
+
+    Multiple typos in evdev.man
+    
+    Reported by "A. Costa" <agcosta@gis.net> in
+    http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=432063
+
+commit c69f4bd5707093a4f998c3fad508f466edbe8334
+Author: Tiago Vignatti <vignatti@c3sl.ufpr.br>
+Date:   Fri Jun 15 01:35:29 2007 -0300
+
+    Clean up a little bit the code.
+
+commit 64677ecc76d6eae530960b714712921e1bb9d4a7
+Author: Tiago Vignatti <vignatti@c3sl.ufpr.br>
+Date:   Fri Jun 15 01:33:49 2007 -0300
+
+    Remove inotify things.
+
+commit 08a09682f5b6d43181e98bc72782e2b2eec180e5
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Wed Jun 13 11:05:07 2007 -0400
+
+    Update version using PACKAGE_VERSION_*.
+
+commit 9c9a47210a6c7146f29fd6d05b6f46955a3bee5a
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Jun 12 11:59:16 2007 -0400
+
+    Move the mode option handling to the Init stage.
+    (Sorta ugly placement wise, but the other segfaults.)
+
+commit 2d2c4804f925505e737c2c812687f47840218c93
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Mon Jun 11 09:08:24 2007 -0400
+
+    evdev.c:
+    
+        Set and use the X mode control, letting XInput see it properly.
+    
+        Kill some cruft.
+    
+    evdev.h:
+    
+        Set and use the X mode control, letting XInput see it properly.
+    
+    evdev_axes.c:
+    
+        Set and use the X mode control, letting XInput see it properly.
+    
+    evdev_key.c:
+    
+        Remove some cruft, the bell func can be NULL now, so do so.
+    
+        Don't bother looking for keys above 0xF7 until we can actually do
+        something with them.
+
+commit 6b97bf7a4eaa34ebde4ac7250f660da5bab8164d
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Wed Jun 6 05:00:29 2007 -0400
+
+    Handle default remapping around existing button targets better.
+
+commit 5c6b3dd86feef58ccf43a710624404031df72f2c
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Wed Jun 6 04:42:51 2007 -0400
+
+    Move MapButtons_t closer to where it's used.
+
+commit f15636ac529481a9d83e0250ff89690296f96a3d
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Wed Jun 6 04:41:54 2007 -0400
+
+    Wheel mice work again!
+    (Old configs don't.)
+    
+    evdev.c:
+    
+        Add EvdevParseMapToButton and EvdevParseMapToButtons to evdev_map_parsers.
+    
+        Add EvdevParseMapOption to search through evdev_map_parsers.
+    
+        Fix up EvdevTokenize to handle the evdev_option_token_t changes.
+    
+        EvdevAxesNew0 after BtnNew0 instead of before now.
+        (This isn't the right fix.)
+    
+    evdev.h:
+    
+        EVDEV_MAXBUTTONS -> BTN_MAX.
+    
+        Redid evdevBtnRec with the new mapping goodness.
+    
+        Removed v_min and v_max from evdevAbsRec.
+    
+        Reworked evdev_option_token_t, no union, no is_chain.
+        If it's a chain, it still has a string, but the chain pointer is set.
+    
+        EvdevParseMapToButton, EvdevParseMapToButtons, and EvdevParseMapOption.
+    
+    evdev_axes.c:
+    
+        Kill off EvdevAxesMapButton, a variant lives in evdev_btn.c now.
+    
+        Changes for the evdev_option_token_t changes.
+    
+        Use EvdevParseMapOption instead of repeating the contents twice.
+    
+        Disable EV_ABS_V_INVERT for the moment. (Better fix maybe needed.)
+    
+    evdev_btn.c:
+    
+        s/Ptr /Rec */g
+    
+        EvdevMapButton and parser.
+    
+        EvdevMapButtons and parser.
+    
+        Nuke EvdevBtnCalcRemap as a whole.
+    
+        Move everything but the alloc to New1 from New0.
+    
+        New mapping code, same guts os the axes mapping code even.
+
+commit 276685fa1dfc7c2d78178173545df3e28bc82544
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Jun 5 23:55:50 2007 -0400
+
+    Fix REL mode.
+    
+    Make buttons mostly work again. (Short term fix.)
+    
+    NOTE: Wheel to button remapping is still missing!
+
+commit 27a86f81683794c1f7cd3bc6d474898ff69a7b6e
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Jun 5 23:19:59 2007 -0400
+
+    Update the copyright notices for me to include 2007.
+    
+    Finish merging copyright notices. (evdev_key.c was missed.)
+
+commit 26dbf38041ebe67e7ab399a6746684a404ea2121
+Merge: 2943558... 9eb546e...
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Jun 5 23:14:46 2007 -0400
+
+    Merge branch 'master' of git+ssh://git.freedesktop.org/git/xorg/driver/xf86-input-evdev
+    
+    Conflicts:
+    
+    	src/evdev.h
+
+commit 294355842ba9fb3cb3bbd7bfd60c9ca3ce704475
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Jun 5 23:12:58 2007 -0400
+
+    Alright, this is a really big commit that breaks stuff.
+    
+    evdev.h:
+    
+        Switch to flags in the abs and rel structs.
+    
+        Add the axes struct, and defines.
+    
+        Rework the abs and rel structs, moving stuff to the axes struct and moving
+        everything to the new mapping handling.
+    
+        Add the structs and function declarations for the new tokenization stuff,
+        parsing stuff, and mapping stuff.
+    
+    evdev.c: Add EvdevTokenize, and the evdev_map_parsers list.
+    
+    evdev_axes.c:
+    
+        Basicly a full rewrite, big, messy.
+    
+        We now use a completely different mapping setup for axes, and mapping to
+        buttons is currently missing.
+    
+        However we now handle ABS_CALIB and ABS_AREA, including rotation in both
+        rel and abs modes.
+    
+    evdev_btn.c:
+    
+        Disable lots of code and break things horribly, we compile but we don't
+        work very well.
+    
+        Fixing this is next on my todo list.
+
+commit 9eb546e0e00be30ac6e767b196b17651df2e3d96
+Author: Kristian Høgsberg <krh@redhat.com>
+Date:   Tue Jun 5 18:26:07 2007 -0400
+
+    Fix header file #ifdef guard.
+
+commit daf926081d1524a8d4980578d5254c42c2791462
+Author: Kristian Høgsberg <krh@redhat.com>
+Date:   Tue Jun 5 18:24:33 2007 -0400
+
+    Merge copyright notices.
+
+commit c22c955c482df9a7645662023b6d1cf0f33aff15
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Tue Apr 24 23:20:43 2007 +0930
+
+    Disable and remove the device when a read error occurs.
+
+commit f87c44b90cb48a846160b16ff910545f5a659d15
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Apr 24 07:44:26 2007 -0400
+
+    Try harder to make unplugging work.
+
+commit 23309b334c1fe892f7afa735d04569e210497dc3
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Apr 24 07:34:53 2007 -0400
+
+    Kill some more unused bits.
+
+commit 1716ec88bbc980507aa7afeb133b552f77a91a01
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Apr 24 07:34:25 2007 -0400
+
+    Handle driver removal cleanly, we now xfree everything we Xcalloc.
+    
+    NOTE: Someone needs to check for memory leaks, I'd be willing to bet
+    a fair bit that we've got tons in the mouse and xkb code, but.
+
+commit 246812bfbcd856ac0dea237cdbe252706fe17688
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Apr 24 07:01:54 2007 -0400
+
+    Remove the evil xf86ActivateDevice declaration, don't need it anymore.
+    
+    Fix the crash on device unplug.
+    
+    NOTE: We still don't properly get rid of ourselves.
+
+commit a0ea7363f51ff6c2bb81006b7220b7daa9ee9221
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Apr 24 06:49:11 2007 -0400
+
+    Remove all of evdev_brain.c and all callers.
+    
+    Remove the non-functional 2.4 kernel compiling compatibility.
+    
+    Remove the XInput 1.4+ SendCoreEvents/DontSendCoreEvents define replacements.
+    
+    Remove evdevDriver, some stuff from evdevDevice, all users.
+    
+    NOTE: This WILL BREAK all existing configurations.
+    
+    NOTE: Device read failure segfaults, don't unplug stuff.
+
+commit 3c4a96fbd851e46830fe82570d04e191bae5e8e3
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Apr 24 06:12:14 2007 -0400
+
+    Updated configure to 1.2.0, no changes yet.
+    
+    This branch is the great xserver input-hotplug rewrite, consider it unstable
+    but usable with the 'current' (as of this commit) git xserver.
+    
+    (Once it's more done that is.)
+    
+    NOTE: This branch will _not_ remain source or binary compatable with
+    pre-input-hotplug xservers, you have been warned.
+
+commit ba65c34068a836ae393565a6a8260a4e96709816
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Mon Apr 23 10:08:48 2007 +0930
+
+    Remove driver from list if no device is associated any more.
+    
+    This effectively stops the driver from hotplugging new devices. Devices have
+    to be added with the dbus hotplugging events.
+
+commit 9644a4afbfd8ac4cb51facf0409f73f55743d8a3
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Thu Apr 19 15:40:25 2007 +0930
+
+    Remove direct call to DEVICE_INIT, ActivateDevice() takes care of that.
+
+commit d37ba205bba0be782e3cd02ca7cedb98a304482d
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Thu Apr 19 15:38:26 2007 +0930
+
+    Add some documentation to evdev.c and evdev_brain.c.
+
+commit 9875e2f7f96c6bfc4f01fffc7e1127724bbd0b7d
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Thu Apr 19 11:28:13 2007 +0930
+
+    ActivateDevice() before EnableDevice() in EvdevNew.
+
+commit 6db4a9fb84f828f745202c3fddc58d389fca220b
+Author: Peter Hutterer <peter@cs.unisa.edu.au>
+Date:   Sun Mar 25 15:40:26 2007 +0930
+
+    Key: Remove duplicate of keycode 0x6f, remove index 0xf8 to get a
+    maxKeyCode of 255. This way keycode range is in sync with core keyboard range.
+
+commit a9e87f29ccdadebb0742317bb57d66eaaca4b593
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Wed Mar 21 12:19:48 2007 +0200
+
+    Key: Force maximum keycode to be 255
+    Even though we don't have keycodes for anything above 127, make sure our
+    map always covers up to 255.  This ensures that the keycode range never
+    changes.
+
+commit b4a5a20476f7bc77d54a860d7cdd81c223bdb81f
+Author: Tiago Vignatti <vignatti@c3sl.ufpr.br>
+Date:   Wed Feb 14 19:23:21 2007 -0200
+
+    Fix pointer crossing screen bug. Possibly the others input drivers must update
+    this on the same manner.
+
+commit 24f9e67a8f9729fa7cb10f0479a3be9c16c5d13a
+Author: Philip Langdale <philipl@fido2.homeip.net>
+Date:   Sat Feb 10 22:17:01 2007 -0800
+
+    Stop caching the screen size for scaling.
+    
+    Do be able to correctly scale absolute inputs, the actual
+    screen size must be used as this changes when the screen
+    resizes.
+
+commit d8d8f114caece4c26c777ae6eee57e66b1f499e7
+Author: root <root@agamemnon.b5>
+Date:   Wed Jan 17 19:27:40 2007 -0500
+
+    For reasons related to handling pathological remapping cases, and
+    differences between HID and X, pretend a middle button exists
+    whenever a right button exists.
+
+commit ebb30a554fe084a50c7281defea80c38bc1b0ddd
+Author: root <root@agamemnon.b5>
+Date:   Sat Jan 13 07:33:49 2007 -0500
+
+    Fix a bug where we potentially wrote garbage events when LEDs change.
+    
+    Support setting keyboard repeat rate/period.
+
+commit 3d8bb262e42b1c5442aebb4048c71b4dc8ce24a0
+Author: root <root@agamemnon.b5>
+Date:   Thu Jan 11 22:42:19 2007 -0500
+
+    Handle swapping of right and middle buttons better in some odder cases.
+
+commit 987c6b1597f184e035c3ecef15a776f7c64cd4fe
+Author: root <root@agamemnon.b5>
+Date:   Thu Jan 11 22:41:23 2007 -0500
+
+    No more call to xf86OSRingBell in any cases,
+     maybe do some conditional stuff later.
+
+commit 8155e49e76aa2d1d953fb71ead6a5c3110f3d80c
+Author: root <root@agamemnon.b5>
+Date:   Mon Jan 8 08:59:44 2007 -0500
+
+    Pad out button_names so we can loop over things more sanely.
+    
+    Support for ignoring the existance of buttons,
+    and for not telling X about them.
+    
+    By default don't tell X about tools and touch as buttons.
+    TODO: Revisit this choice later.
+
+commit e1fe72e7fe663a479a5be1b5e16ecbba52f511a8
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Sat Dec 16 01:42:18 2006 +0200
+
+    bump to 1.1.5
+
+commit 9f3be57929048950ad0e03cfef44b5336c38aab3
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Wed Dec 6 18:50:15 2006 +0200
+
+    Makefile.am: make ChangeLog hook safer
+    Make ChangeLog hook as safe as possible.
+
+commit 5a5457e69c719980334cb662e5abcb77cd09bc7a
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Thu Nov 2 03:42:57 2006 +0200
+
+    bump to 1.1.4
+
+commit 3fc70342aaba5f95d01b6e51164ae207532fa8f4
+Merge: 1a8cea3... ef01c2e...
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Thu Nov 2 03:42:14 2006 +0200
+
+    Merge branch 'input-hotplug'
+
+commit 1a8cea3dc4d8336b61a071a52479e71d7dd619d4
+Merge: 51d21a3... 4c72fb7...
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Thu Nov 2 03:42:13 2006 +0200
+
+    Merge branch 'master' of git+ssh://git.freedesktop.org/git/xorg/driver/xf86-input-evdev
+
+commit ef01c2ef65fa64cb213dc3adfa30c75635d1fe03
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Thu Nov 2 03:41:48 2006 +0200
+
+    key: use os bell-ringing function
+    Use the OS bell-ringing function to ding the bell.
+
+commit 036b457c1b3f7d2d174da890cb8598d907181f8e
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Wed Oct 25 02:22:46 2006 +0300
+
+    support new DIX motion history API
+    Use the DIX motion history if we have ABI version 1 or higher.
+
+commit 79eb7dcac8cdbecc07be08737388a8a6574e3d76
+Merge: d7f686b... 63f7edf...
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Tue Oct 17 11:32:39 2006 +0300
+
+    Merge branch 'input-hotplug' of git+ssh://git.freedesktop.org/git/xorg/driver/xf86-input-evdev into input-hotplug
+
+commit d7f686bfa3e773cfc7740c707da9fc64196e143c
+Merge: ec09e0d... 4c72fb7...
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Tue Oct 17 11:31:58 2006 +0300
+
+    Merge branch 'master' of git+ssh://git.freedesktop.org/git/xorg/driver/xf86-input-evdev into input-hotplug
+
+commit ec09e0d55dd14164cc46a68a71d439cc550df063
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Sun Oct 15 19:37:46 2006 +0300
+
+    brain: call xf86DeleteInput when removing device
+    Call xf86DeleteInput from evdevRemoveDevice, so it also gets removed from
+    xf86InputDevs in the DDX.
+
+commit 4c72fb7b769b78cfa2b4cc39eb03fdacd2b5039c
+Author: Adam Jackson <ajax@benzedrine.nwnk.net>
+Date:   Fri Oct 13 18:25:10 2006 -0400
+
+    Bump to 1.1.3
+
+commit 77cbbc20b60fd564f8add39bfb840c85d5cad51d
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Sun Oct 8 16:14:12 2006 +0300
+
+    key: remove usage of OS keyboard layer for bell
+    Right now, bell is a no-op.
+
+commit 5c5ef3fbd6eb0b668139df3ff5eda67766e86dcd
+Author: Drew Parsons <dparsons@debian.org>
+Date:   Fri Oct 6 10:56:24 2006 +1000
+
+    m68k support (thanks Geert Uytterhoeven for the inotify codes).
+
+commit a96b048e560782399a98c57cad255df778471ea1
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Mon Oct 2 17:50:55 2006 -0400
+
+    Make some debugging messages optional.
+    
+    Correctly handle emulating relative mode from absolute data in the case where
+    we do not get X and Y data at the same time on touching.
+
+commit d8ea40dc4a78a6197d474d806ac5367dae83655a
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Mon Oct 2 17:49:20 2006 -0400
+
+    Use XORG_VERSION_CURRENT in the module version struct.
+
+commit ab65184d472614d2664e6cd7bca2d6dbc28fad07
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Sun Sep 10 06:47:15 2006 -0400
+
+    Fix compilation.
+
+commit 63f7edf7862032221e25de3c59fee1158d616597
+Merge: 7b91f92... 771eee9...
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Jul 25 16:00:44 2006 -0400
+
+    Merge branch 'master' of git+ssh://git.freedesktop.org/git/xorg/driver/xf86-input-evdev into input-hotplug
+
+commit 771eee968282e308d997adfa78bd39e7429d2c1c
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Sun Jul 23 22:40:51 2006 -0400
+
+    Replace the old two buffer approach to handling rel emulation of abs axes,
+    should help with some of the reported jitter problems.
+
+commit e4681504487151553894ae0d513b9e833d2597d1
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Fri Jul 21 14:38:12 2006 -0400
+
+    fix InitValuatorClassDeviceStruct call
+    I don't know how the last parameter got there.  Sorry.
+
+commit fa03de438ea0ae0f07424235f4972e73ff88ef17
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Wed Jul 19 23:06:23 2006 -0400
+
+    Move the axis to button map code back into the rel code.
+    
+    This might solve some problems, but should at least prevent some odd behavior.
+
+commit 7b91f9277afb4bd9e557f9600bd92c68dd2435c9
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Wed Jul 19 19:45:27 2006 -0400
+
+    pass maxval correctly to xf86InitValuatorAxisDeviceStruct
+    Pass a maxval of -1 (i.e., fill this in appropriately), rather than 0 (0).
+
+commit 7defeb0aefb216d203b495a53a6d1d505f7dece4
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Wed Jul 19 19:43:08 2006 -0400
+
+    pass number of axes to InitValuatorClassDeviceStruct
+    This is now required with the input-hotplug server.
+
+commit 1cb568c0a6c18ec62ebb89ca21a22a77c78cad24
+Author: Daniel Stone <daniel.stone@nokia.com>
+Date:   Wed Jul 19 19:41:54 2006 -0400
+
+    prune device list on DEVICE_CLOSE
+    Remove a device from the device list when we get DEVICE_CLOSE.
+
+commit dc88668839f4613d60526aa78aed3e74eebe64ad
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Thu Jul 13 11:59:25 2006 -0400
+
+    Split the New functions so that structs can be allocated and buttons
+    detected, and then stuff that depends on _other_ areas.
+    (Specificly, axes and btn have a circular dependency on which one has to
+    run first, this solves that.)
+    
+    Add button names, and a way to get a button number from a name.
+    
+    Add a function for checking to see if a button exists, takes the number from the previous function.
+    
+    Change the (unused) state array of pointers in the button struct to an array of pointers to functions for callback.
+    
+    Implemented the 'touch' feature, on by default if BTN_DIGI_TOUCH exists,
+    won't, in rel mode, process x/y data unless it's down, and is used to
+    try and make 'pick up stencil, move to other side of digitizer, set back
+    down' not jump to the other side of the screen in rel mode.
+    (This doesn't work as well as it could, but I'm fairly sure that it's
+    due to the quality of the absolute input device I'm using, but feedback
+    would be really nice.)
+    
+    FIXME: Update the manpage for this.
+
+commit 090d43acf315283effe8a1c858cac8167ebe4d08
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Jul 11 16:47:15 2006 -0400
+
+    Update the .gitignore files to remove some more noise.
+
+commit 1b9a9599a4df85b0e925086d12bd48626b09bb45
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Jul 11 16:44:43 2006 -0400
+
+    Rename .cvsignore to .gitignore.
+
+commit f7a9c74fbccd79bf406b0afc41237303642b75c2
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Jul 11 16:42:41 2006 -0400
+
+    Grab the ChangeLog generation rule from libX11.
+
+commit 9cb7c3dbad1a4afdb84c338e83f597455022dcdc
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Jul 11 12:48:10 2006 -0400
+
+    (Hope this works.)
+    Remove the ChangeLog file, as the entire contents can be gotten via 'git log'.
+
+commit eba5ea8d5a19f2b1984cbf20c95d22e243f19567
+Author: Zephaniah E. Hull <warp@agamemnon.b5>
+Date:   Tue Jul 11 03:08:30 2006 -0400
+
+    Set pInfo->fd to -1 when we close it in EvdevProc.
+
+commit 51d21a369416bb0a45a2894e83a1cb092cc307d8
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Sun Jul 9 18:08:50 2006 +0100
+
+    remove XFree86LOADER usage
+    Build evdevModuleData, et al, unconditionally.
+
+commit 4645247d45b1653c56d8c99d5685960159e464be
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Thu Jun 22 21:16:44 2006 +0000
+
+    MIPS support. (Joshua Kinard)
+
+commit 57a7f2844108072bf03c9f82baf92e3447d18fbe
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Fri Jun 2 19:39:52 2006 +0000
+
+    Fix an obvious bogon to avoid crashing on absolute axis setup.
+
+commit 1b03250797daa0ac98323a9f43e895dd0b5c7761
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Mon May 15 22:47:23 2006 +0000
+
+    Hopefully fix the bitops stuff to actually _work_.
+
+commit e9c60da89a9c55b81b2dedcf6ee3d1aefb4ff591
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Sun May 14 11:55:50 2006 +0000
+
+    Tweak credits and references.
+    Change the longs to unsigned longs in the bitfields.
+    Cleanup our includes.
+    Stop pulling in asm/types.h and asm/bitops.h.
+    Conditionally define the stuff that used to come from the above, including
+        our own test_bit, set_bit and clear_bit.
+    Change the longs to unsigned longs in the bitfields.
+    Change the longs to unsigned longs in the bitfields.
+    Use the bitop defines in evdev.h properly.
+    Change the longs to unsigned longs in the bitfields.
+    Change the longs to unsigned longs in the bitfields.
+    Use the bitop defines in evdev.h properly.
+    Change the longs to unsigned longs in the bitfields.
+    Use the bitop defines in evdev.h properly.
+    Add HPPA/HPPA64 entries. (Thanks to Fabio M. Di Nitto
+        <fabbione@ubuntu.com>)
+
+commit eca922bd95fbcf09dd0839e571dc30263c94172f
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Sun Apr 30 21:39:08 2006 +0000
+
+    xf86-input-evdev v1.1.2
+    Bugzilla #6734 <https://bugs.freedesktop.org/show_bug.cgi=6734> Apply patch
+        from Philip Langdale which causes us to make sure that O_NONBLOCK is
+        set on the inotify device.
+
+commit f75aadfd628db727e6732c2f0df0c17e75bdeda6
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Sat Apr 15 13:01:36 2006 +0000
+
+    xf86-input-evdev v1.1.1
+
+commit cffc51e04aba0090dfb663d2927117318b5ea00c
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Fri Apr 14 07:01:37 2006 +0000
+
+    evdevAbsRec: Remove the scale bool, rename scale_x and scale_y to scale[2].
+        evdevAxesRec: Make btnMap an int array instead of a Card8 array.
+    Make abs support and non-core stuff actually work.
+    Relative emulation for abs mode is still a bit broken, but that's far less
+        critical.
+    How many buttons we've registered is configuration information, not an
+        error message.
+
+commit c968040cde4e1a7c73332701008f6abfb1fa3ab3
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Sun Apr 9 00:41:42 2006 +0000
+
+    Remove a debugging message.
+    Actually, well, _work_. Note, abs support still segfaults, I'll debug it
+        after I've slept. But I should get it tomorrow.
+
+commit 880879015bf1eec49d374274d644ba015a6a4610
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Sat Apr 8 21:55:17 2006 +0000
+
+    Dropped the xorg-xserver 1.0.99.901 requirement. (Things were tweaked to
+        mostly work for older servers again.)
+    Close the device properly on read errer.
+    Minimal inotify support, not ideal yet, but...
+    Minimal inotify support, not ideal yet, but...
+    Minimal inotify support, not ideal yet, but...
+
+commit c97fdb44493e55f3456222855293016a596ff56e
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Sat Apr 8 17:23:06 2006 +0000
+
+    Remove evdev_abs.c and evdev_rel.c. Added evdev_axes.c.
+    Change the calls to refer to EvdevAxes instead of Abs and Rel. Include
+        mipointer.h. (Fixes a compile error.) Remove an unused variable from
+        EvdevReadInput.
+    Removed evdev_abs.c and evdev_rel.c, added evdev_axes.c. Added count to rel
+        and abs. Moved btnMap from rel to the new axes. Shuffle some includes,
+        and include stdarg.h.
+    Removed.
+    New, a mix of rel and abs that should actually work in the rel case.
+    Rearrange include order. btnMap was moved from being part of rel to being
+        part of axes.
+    Removed.
+    Rearrange include order.
+    Rearrange include order.
+    NOTE: This commit has been compile tested, not run tested.
+    I have some other changes to make before I can do more heavy testing.
+
+commit ad4d62e1d318c629f994883e3b9926627bec16f0
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Fri Apr 7 17:30:27 2006 +0000
+
+    Unlibcwrap. Bump server version requirement. Bump to 1.1.0.
+
+commit e9a6f6d1a0b5cf6f7dc4fb122f6d28cbf3929960
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Fri Mar 31 18:11:52 2006 +0000
+
+    Fix the fd pointer leak reported by primer. (Not the same patch.)
+    Disable the undocumented xkb guts options in the key driver. (Requested by
+        Daniel Stone.)
+
+commit 05b56eeb5c74aebe81de7550c41546d7d6f3fb0c
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Thu Mar 16 13:09:19 2006 +0000
+
+    Switch from my own globbing function to fnmatch.
+    Detect keys numbered higher then buttons. Remove the (depreciated since
+        long before xkb support was added to evdev) XkbKeymap option.
+
+commit a3149dc44a36a46cc117a2fde43ee348a2371304
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Thu Mar 16 13:05:04 2006 +0000
+
+    Update to include all the new device matching options.
+
+commit 9972f2b1c77eefe5fb6a2ba7baacaf6b273228a8
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Mon Feb 27 13:22:35 2006 +0000
+
+    Don't leave keys in the down state when we get turned off. (VT switching,
+        getting unplugged, that sort of stuff.)
+
+commit 94cb4aa1f8caf1ba141ab0839c9eb0b2b5357470
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Mon Feb 27 10:48:40 2006 +0000
+
+    Better error reporting if the read fails.
+    Work properly if we're defining entirely by capability maps.
+
+commit 47482dad76ab74c0b5c9e8d455f04935651173ec
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Fri Feb 24 13:44:56 2006 +0000
+
+    Compile with -Wall now. Add evdev.h to the sources so that make distcheck
+        gets it.
+    Bugzilla #5943 <https://bugs.freedesktop.org/show_bug.cgi=5943> Make sure
+        we include errno.h.
+    Reduce EVDEV_MAXBUTTONS to 96.
+    Split up evdevStateRec into a struct with pointers to new structs for btn,
+        abs, rel, and key.
+    New structure type for handling the device capability bitmaps.
+    Add device bits and struct input_id to evdevDeviceRec.
+    Add matching device bits, struct input_id, and pass number to
+        evdevDriverRec.
+    Prototype for evdevGetBits from evdev_brain.c.
+    Conversion for the evdevStateRec split.
+    Remove the errno.h include, it's in evdev.h for now.
+    Move the bit getting from the drivers to here, into evdevDeviceRec.
+    Fix a rare case of fd leakage.
+    Add several new (and somewhat ugly) device matching options: <map>Bits:
+        Where map is one of ev, key, rel, abs, msc, led, snd, or ff. In the
+        format of '+0 +3 -1-2 ~5-10', requires bits 0 and 3 be set, bits 1 and
+        2 to not be set, and at least one bit in the range of 5 to
+    10 be set. bustype, vendor, product, and version: Simple integer options
+        for matching the struct device_id fields, must be 0 (the default) or
+        the exact value you wish to match against. pass: Bounded to 0-3,
+        devices are matched to the first matching entry found, order for
+        multiple matching entries in the same pass is undefined, but it starts
+        with pass 0 and goes to pass 3.
+    Adaptation for the evdevStateRec split and the change in capability bitmap
+        handling.
+    Add evdevGetBits to fill the new evdevBitsRec struct type.
+    Lots of somewhat ugly code for matching by capability bits.
+    Split out of evdevRescanDevices to smaller handling functions. The new
+        design should be better if I decide to handle arbitrary Device fields
+        again.
+    Adaptation for the evdevStateRec split and the change in capability bitmap
+        handling.
+    Handle all buttons, no button compression at this time, however we reorder
+        things so that BTN_MOUSE comes before BTN_MISC, somewhat evily.
+    Support for the new btn->state[] array of int pointers.
+    Adaptation for the evdevStateRec split and the change in capability bitmap
+        handling.
+    Adaptation for the evdevStateRec split and the change in capability bitmap
+        handling.
+    I really hope I didn't miss any changes.
+
+commit 739a0f51b07bd3fdccc156358bf9fca302477042
+Author: Lars Knoll <lars@trolltech.com>
+Date:   Fri Feb 24 12:14:32 2006 +0000
+
+    include errno.h to make it compile.
+
+commit 763edd37305e789bcc31746e5ea41f4df9d0b2a4
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Mon Feb 20 09:18:56 2006 +0000
+
+    Bugzilla #5950 <https://bugs.freedesktop.org/show_bug.cgi=5950> Possible
+        (maybe) fix for bug #5950. Though, I'm not convinced and still don't
+        see how this bug could be happening, especially if this doesn't do it.
+
+commit c6dbf89d9d40fcbce72493404ea02b7e7957513f
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Sun Feb 19 19:11:04 2006 +0000
+
+    Add bell support.
+
+commit 28ee08ef0810ad48c612280838be3e952c41971d
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Fri Feb 17 01:17:41 2006 +0000
+
+    Bugzilla #5914 <https://bugs.freedesktop.org/show_bug.cgi?id=5914> Stupid
+        little bug, properly handle wheels on 3 button mice.
+
+commit e7d4e6b11eb4cc026e91fd561fda24d9cf19adc4
+Author: Zephaniah E. Hull <warp@aehallh.com>
+Date:   Tue Feb 14 14:57:37 2006 +0000
+
+    Bugzilla #5696 <https://bugs.freedesktop.org/show_bug.cgi?id=5696> Slightly
+        updated version of the patch listed. Basicly a rewrite of the driver,
+        with a few pieces of the old. XKB support, proper device matching,
+        basic absolute pointer support. Lots more, will require some user
+        config changes.
+
+commit edbe44da9ae05469d28502af585cd2259d57d104
+Author: gravity <gravity>
+Date:   Mon Jan 9 05:19:26 2006 +0000
+
+    Add evdev manpage
+
+commit 6808674886a13c866bfeeb3ca5f3b8db72e3d5ca
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Dec 21 02:29:56 2005 +0000
+
+    Update package version for X11R7 release.
+
+commit 5ae3abc1b3fda25d60a207c08b510c3a4f8c0148
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Mon Dec 19 16:25:50 2005 +0000
+
+    Stub COPYING files
+
+commit c58133445ee112901ea69023cac7afb3ca8d8064
+Author: Kevin E Martin <kem@kem.org>
+Date:   Thu Dec 15 00:24:14 2005 +0000
+
+    Update package version number for final X11R7 release candidate.
+
+commit b82e57a082662311cc47abbfc6a15b358be539d6
+Author: Kevin E Martin <kem@kem.org>
+Date:   Tue Dec 6 22:48:29 2005 +0000
+
+    Change *man_SOURCES ==> *man_PRE to fix autotools warnings.
+
+commit f56f4462f605348f90387308c028f622a5585231
+Author: Kevin E Martin <kem@kem.org>
+Date:   Sat Dec 3 05:49:30 2005 +0000
+
+    Update package version number for X11R7 RC3 release.
+
+commit 36fc29d0103707676b3d1ddfb3700457812779f8
+Author: Kevin E Martin <kem@kem.org>
+Date:   Fri Dec 2 02:16:05 2005 +0000
+
+    Remove extraneous AC_MSG_RESULT.
+
+commit 27690c112a2a890e7b556e51bbc5a42864671fc4
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Tue Nov 29 23:29:55 2005 +0000
+
+    Only build dlloader modules by default.
+
+commit a8ca6bc2d461288928f8ec907fb3dd40dc1642ca
+Author: Alan Coopersmith <Alan.Coopersmith@sun.com>
+Date:   Mon Nov 28 22:04:06 2005 +0000
+
+    Change *mandir targets to use new *_MAN_DIR variables set by xorg-macros.m4
+        update to fix bug #5167 (Linux prefers *.1x man pages in man1 subdir)
+
+commit 753e3320afd033122c9186382866ad8334bc7b7f
+Author: Eric Anholt <anholt@freebsd.org>
+Date:   Mon Nov 21 10:49:03 2005 +0000
+
+    Add .cvsignores for drivers.
+
+commit abcef337586d3862323ea5f77803a369d28aa90b
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Nov 9 21:15:11 2005 +0000
+
+    Update package version number for X11R7 RC2 release.
+
+commit e7fa7d71e5c341027b6bfe47d8c6356d6ed7e92e
+Author: Kevin E Martin <kem@kem.org>
+Date:   Tue Nov 1 15:08:49 2005 +0000
+
+    Update pkgcheck depedencies to work with separate build roots.
+
+commit f8c131fff1a2adcb772aa5808559e93df2d442c3
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Oct 19 02:48:00 2005 +0000
+
+    Update package version number for RC1 release.
+
+commit b543623997a1a7eda5c681bd431778e0a8da1347
+Author: Kevin E Martin <kem@kem.org>
+Date:   Tue Oct 18 15:46:36 2005 +0000
+
+    Do the following to make the drivers pass distcheck:
+    - Only define EXTRA_DIST when there are actually man pages to be processed
+    - Add missing man pages to keyboard and ati drivers EXTRA_DIST
+
+commit efcacda000e3020cf1c5348aec8e19f68f268a4b
+Author: Alan Coopersmith <Alan.Coopersmith@sun.com>
+Date:   Tue Oct 18 00:01:51 2005 +0000
+
+    Use @DRIVER_MAN_SUFFIX@ instead of $(DRIVER_MAN_SUFFIX) in macro
+        substitutions to work better with BSD make
+
+commit 1d4cfdd373207d685c89e240c611a0197bce18ec
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Mon Oct 17 22:57:27 2005 +0000
+
+    More 1.7 braindamage: define EXTRA_DIST in terms of @DRIVER_NAME@ instead
+        of indirectly
+
+commit ae0f10570960fc87c566d9084c7a3e78b05ce5ce
+Author: Alan Coopersmith <Alan.Coopersmith@sun.com>
+Date:   Mon Oct 17 00:08:55 2005 +0000
+
+    Use sed & cpp to substitute variables in driver man pages
+
+commit ce0cafa1151841b46dedce616472cf5f38ffde83
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Fri Sep 23 22:32:23 2005 +0000
+
+    Bug #3913: Suppress kernel-generated repeat events for chording keys.
+
+commit 7d5839eb992e0a217b8368762cab80fa7a15faa2
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Thu Aug 18 09:03:38 2005 +0000
+
+    Update autogen.sh to one that does objdir != srcdir.
+
+commit 88befc6f4b58a0353984a85a46c0107c8a3a4067
+Author: Søren Sandmann Pedersen <sandmann@daimi.au.dk>
+Date:   Wed Aug 10 14:07:22 2005 +0000
+
+    Don\'t lose existing CFLAGS in all the input drivers and some of the video
+        drivers
+
+commit 8c4fcc1acdbd9e27e8e039c333f5abf77f81e6cf
+Author: Kevin E Martin <kem@kem.org>
+Date:   Fri Jul 29 21:22:40 2005 +0000
+
+    Various changes preparing packages for RC0:
+    - Verify and update package version numbers as needed
+    - Implement versioning scheme
+    - Change bug address to point to bugzilla bug entry form
+    - Disable loadable i18n in libX11 by default (use --enable-loadable-i18n to
+        reenable it)
+    - Fix makedepend to use pkgconfig and pass distcheck
+    - Update build script to build macros first
+    - Update modular Xorg version
+
+commit b446f59cc56494f1d3052c587ab9e3bfee89cd48
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Thu Jul 28 01:48:14 2005 +0000
+
+    Yet more 2.4 build fixes, this time for BTN_TASK.
+
+commit f745d59b6c03aec59b5f4c8d0f279296270f0b72
+Author: Kristian Høgsberg <krh@redhat.com>
+Date:   Mon Jul 25 16:07:34 2005 +0000
+
+    Handle BTN_TASK too (#3859).
+
+commit 0656b4a517b41c047830553d412bc2575f537d46
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Jul 13 20:03:21 2005 +0000
+
+    Make the module dir configurable
+
+commit d1dd2dfe4d49cae4b813c83301b3bddadd704e85
+Author: Kevin E Martin <kem@kem.org>
+Date:   Wed Jul 13 02:20:59 2005 +0000
+
+    Update all input drivers to pass distcheck
+
+commit 29621860ab38f318d8b19551391ac7997b8af2de
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Tue Jul 12 06:15:08 2005 +0000
+
+    Build skeletons for input drivers. Should basically work.
+
+commit 74021126a6e5e9075025911cb9c0b5273f70fda2
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Mon Jul 11 02:37:59 2005 +0000
+
+    Prep input drivers for modularizing by adding guarded #include "config.h"
+
+commit 672f8cd6616cd8cf97e9d01b4c408d9c59f09a7f
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Sun Jul 3 00:06:01 2005 +0000
+
+    Add some build compatibility for 2.6 linux systems with 2.4 kernel headers
+        installed. Allow the use of evdev for mice on 2.4 kernels.
+
+commit 0145e216a7321011dc3bef7f9a0833ffbb61b953
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Sat Jun 25 21:17:01 2005 +0000
+
+    Bug #3626: _X_EXPORT tags for video and input drivers.
+
+commit df1b2f476dde1f6cbc13e9731d772a42baf97adb
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Wed May 11 00:13:15 2005 +0000
+
+    Bug #968: Grab the event device used by the evdev driver to avoid weird
+        issues when input goes to multiple places. Restrict building the evdev
+        driver to 2.6 kernels since EVIOCGRAB didn't exist in 2.4.
+
+commit 319e1b28a37c3b5511f0cf8ab627f9e4f0924634
+Author: Kristian Høgsberg <krh@redhat.com>
+Date:   Tue Jan 18 20:18:09 2005 +0000
+
+    Handle horizontal wheel events and move mapping of extra buttons up so they
+        don't overlap the wheel buttons. Patch from Alan Swanson (#968).
+
+commit 4ada85ef11c56d5d998a4187d5ed1c557b7098bd
+Author: Adam Jackson <ajax@nwnk.net>
+Date:   Fri Jan 14 17:14:07 2005 +0000
+
+    Build fixes for static server.
+
+commit bdd94f37b31f78ebd2b13e7d263e8ee0dbbb0fb3
+Author: Kristian Høgsberg <krh@redhat.com>
+Date:   Wed Jan 12 20:15:52 2005 +0000
+
+    Add new evdev input driver. This driver uses the linux input layer directly
+        and can handle both mice and keyboards.
+    Convert this to UTF-8 again. The ChangeLog should be kept in UTF-8.

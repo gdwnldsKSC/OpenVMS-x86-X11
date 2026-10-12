@@ -34,6 +34,10 @@
 
 #include "xf86xv.h"
 
+#ifdef XSERVER_LIBPCIACCESS
+#include <pciaccess.h>
+#endif
+
 static Bool debug = 0;
 
 #define TRACE_ENTER(str) \
@@ -49,6 +53,10 @@ static Bool debug = 0;
 static const OptionInfoRec * FBDevAvailableOptions(int chipid, int busid);
 static void	FBDevIdentify(int flags);
 static Bool	FBDevProbe(DriverPtr drv, int flags);
+#ifdef XSERVER_LIBPCIACCESS
+static Bool	FBDevPciProbe(DriverPtr drv, int entity_num,
+     struct pci_device *dev, intptr_t match_data);
+#endif
 static Bool	FBDevPreInit(ScrnInfoPtr pScrn, int flags);
 static Bool	FBDevScreenInit(int Index, ScreenPtr pScreen, int argc,
 				char **argv);
@@ -76,6 +84,17 @@ static int pix24bpp = 0;
 #define FBDEV_NAME		"FBDEV"
 #define FBDEV_DRIVER_NAME	"fbdev"
 
+#ifdef XSERVER_LIBPCIACCESS
+static const struct pci_id_match fbdev_device_match[] = {
+    {
+	PCI_MATCH_ANY, PCI_MATCH_ANY, PCI_MATCH_ANY, PCI_MATCH_ANY,
+	0x00030000, 0x00ffffff, 0
+    },
+
+    { 0, 0, 0 },
+};
+#endif
+
 _X_EXPORT DriverRec FBDEV = {
 	FBDEV_VERSION,
 	FBDEV_DRIVER_NAME,
@@ -87,7 +106,12 @@ _X_EXPORT DriverRec FBDEV = {
 	FBDevAvailableOptions,
 	NULL,
 	0,
-	FBDevDriverFunc
+	FBDevDriverFunc,
+
+#ifdef XSERVER_LIBPCIACCESS
+    fbdev_device_match,
+    FBDevPciProbe
+#endif
 };
 
 /* Supported "chipsets" */
@@ -273,6 +297,55 @@ FBDevIdentify(int flags)
 	xf86PrintChipsets(FBDEV_NAME, "driver for framebuffer", FBDevChipsets);
 }
 
+
+#ifdef XSERVER_LIBPCIACCESS
+static Bool FBDevPciProbe(DriverPtr drv, int entity_num,
+			  struct pci_device *dev, intptr_t match_data)
+{
+    ScrnInfoPtr pScrn = NULL;
+
+    if (!xf86LoadDrvSubModule(drv, "fbdevhw"))
+	return FALSE;
+	    
+    xf86LoaderReqSymLists(fbdevHWSymbols, NULL);
+
+    pScrn = xf86ConfigPciEntity(NULL, 0, entity_num, NULL, NULL,
+				NULL, NULL, NULL, NULL);
+    if (pScrn) {
+	char *device;
+	GDevPtr devSection = xf86GetDevFromEntity(pScrn->entityList[0],
+						  pScrn->entityInstanceList[0]);
+
+	device = xf86FindOptionValue(devSection->options, "fbdev");
+	if (fbdevHWProbe(NULL, device, NULL)) {
+	    pScrn->driverVersion = FBDEV_VERSION;
+	    pScrn->driverName    = FBDEV_DRIVER_NAME;
+	    pScrn->name          = FBDEV_NAME;
+	    pScrn->Probe         = FBDevProbe;
+	    pScrn->PreInit       = FBDevPreInit;
+	    pScrn->ScreenInit    = FBDevScreenInit;
+	    pScrn->SwitchMode    = fbdevHWSwitchModeWeak();
+	    pScrn->AdjustFrame   = fbdevHWAdjustFrameWeak();
+	    pScrn->EnterVT       = fbdevHWEnterVTWeak();
+	    pScrn->LeaveVT       = fbdevHWLeaveVTWeak();
+	    pScrn->ValidMode     = fbdevHWValidModeWeak();
+
+	    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
+		       "claimed PCI slot %d@%d:%d:%d\n", 
+		       dev->bus, dev->domain, dev->dev, dev->func);
+	    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+		       "using %s\n", device ? device : "default device");
+	}
+	else {
+	    pScrn = NULL;
+	}
+    }
+
+    return (pScrn != NULL);
+}
+#endif
+
+
 static Bool
 FBDevProbe(DriverPtr drv, int flags)
 {
@@ -300,21 +373,27 @@ FBDevProbe(DriverPtr drv, int flags)
 	
 	for (i = 0; i < numDevSections; i++) {
 	    Bool isIsa = FALSE;
+#ifndef XSERVER_LIBPCIACCESS
 	    Bool isPci = FALSE;
+#endif
 
 	    dev = xf86FindOptionValue(devSections[i]->options,"fbdev");
 	    if (devSections[i]->busID) {
+#ifndef XSERVER_LIBPCIACCESS
 	        if (xf86ParsePciBusString(devSections[i]->busID,&bus,&device,
 					  &func)) {
 		    if (!xf86CheckPciSlot(bus,device,func))
 		        continue;
 		    isPci = TRUE;
-		} else if (xf86ParseIsaBusString(devSections[i]->busID))
+		} else
+#endif
+		if (xf86ParseIsaBusString(devSections[i]->busID))
 		    isIsa = TRUE;
 		  
 	    }
 	    if (fbdevHWProbe(NULL,dev,NULL)) {
 		pScrn = NULL;
+#ifndef XSERVER_LIBPCIACCESS
 		if (isPci) {
 		    /* XXX what about when there's no busID set? */
 		    int entity;
@@ -331,7 +410,9 @@ FBDevProbe(DriverPtr drv, int flags)
 		    xf86DrvMsg(pScrn->scrnIndex, X_CONFIG,
 			       "claimed PCI slot %d:%d:%d\n",bus,device,func);
 
-		} else if (isIsa) {
+		} else
+#endif
+		if (isIsa) {
 		    int entity;
 		    
 		    entity = xf86ClaimIsaSlot(drv, 0,
@@ -523,15 +604,8 @@ FBDevPreInit(ScrnInfoPtr pScrn, int flags)
 		fbdevHWUseBuildinMode(pScrn);
 	pScrn->currentMode = pScrn->modes;
 
-	if (fPtr->shadowFB)
-		pScrn->displayWidth = pScrn->virtualX;	/* ShadowFB handles this correctly */
-	else {
-		int fbbpp;
-		/* FIXME: this doesn't work for all cases, e.g. when each scanline
-			has a padding which is independent from the depth (controlfb) */
-		fbdevHWGetDepth(pScrn,&fbbpp);
-		pScrn->displayWidth = fbdevHWGetLineLength(pScrn)/(fbbpp >> 3);
-	}
+	/* First approximation, may be refined in ScreenInit */
+	pScrn->displayWidth = pScrn->virtualX;
 
 	xf86PrintModes(pScrn);
 
@@ -719,6 +793,17 @@ FBDevScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	  int tmp = pScrn->virtualX;
 	  pScrn->virtualX = pScrn->displayWidth = pScrn->virtualY;
 	  pScrn->virtualY = tmp;
+	} else if (!fPtr->shadowFB) {
+		/* FIXME: this doesn't work for all cases, e.g. when each scanline
+			has a padding which is independent from the depth (controlfb) */
+		pScrn->displayWidth = fbdevHWGetLineLength(pScrn) /
+				      (pScrn->bitsPerPixel / 8);
+
+		if (pScrn->displayWidth != pScrn->virtualX) {
+			xf86DrvMsg(scrnIndex, X_INFO,
+				   "Pitch updated to %d after ModeInit\n",
+				   pScrn->displayWidth);
+		}
 	}
 
 	if(fPtr->rotate && !fPtr->PointerMoved) {

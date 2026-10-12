@@ -27,7 +27,7 @@ AC_PREREQ([2.57])
 
 dnl
 dnl
-AC_INIT(libXt, 1.0.4, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXt)
+AC_INIT(libXt, 1.0.5, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXt)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

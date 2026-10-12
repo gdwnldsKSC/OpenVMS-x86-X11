@@ -23,7 +23,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-glide],
-        1.0.0,
+        1.0.1,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-glide)
 
@@ -66,7 +66,10 @@ sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 # Checks for libraries.
 
 # Checks for header files.
+CPPFLAGS="$CPPFLAGS -I$glideincludedir"
 AC_HEADER_STDC
+AC_HEADER_CHECK([glide.h], [],
+                [AC_MSG_ERROR([<glide.h> is required])])
 
 GLIDE_CFLAGS="-I$glideincludedir"
 AC_SUBST([GLIDE_CFLAGS])

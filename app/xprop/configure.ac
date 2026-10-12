@@ -1,4 +1,3 @@
-
 dnl  Copyright 2005 Red Hat, Inc.
 dnl 
 dnl  Permission to use, copy, modify, distribute, and sell this software and its
@@ -22,7 +21,7 @@ dnl
 dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
-AC_INIT(xprop,[1.0.3], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xprop)
+AC_INIT(xprop,[1.0.4], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xprop)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
@@ -35,10 +34,10 @@ XORG_MACROS_VERSION(1.1)
 AC_PROG_CC
 AC_PROG_INSTALL
 
-AC_CHECK_HEADERS_ONCE([wchar.h wctype.h])
+AC_CHECK_HEADERS([wchar.h wctype.h])
 
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XPROP, xmuu x11)
+PKG_CHECK_MODULES(XPROP, x11)
 AC_SUBST(XPROP_CFLAGS)
 AC_SUBST(XPROP_LIBS)
 

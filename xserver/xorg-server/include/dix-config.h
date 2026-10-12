@@ -11,7 +11,7 @@
 #define BUILDERADDR "xorg@lists.freedesktop.org"
 
 /* Operating System Name */
-#define OSNAME "FreeBSD 7.0-CURRENT i386"
+#define OSNAME "Linux 2.6.27-0.314.rc5.git9.fc10.i686 i686"
 
 /* Operating System Vendor */
 #define OSVENDOR ""
@@ -21,6 +21,9 @@
 
 /* Default font path */
 #define COMPILEDDEFAULTFONTPATH "/usr/local/lib/X11/fonts/misc/,/usr/local/lib/X11/fonts/TTF/,/usr/local/lib/X11/fonts/OTF,/usr/local/lib/X11/fonts/Type1/,/usr/local/lib/X11/fonts/100dpi/,/usr/local/lib/X11/fonts/75dpi/"
+
+/* Miscellaneous server configuration files path */
+#define SERVER_MISC_CONFIG_PATH "/usr/local/lib/xorg"
 
 /* Support Composite Extension */
 #define COMPOSITE 1
@@ -79,7 +82,7 @@
 #define HAS_GETIFADDRS 1
 
 /* Define to 1 if you have the `getpeereid' function. */
-#define HAS_GETPEEREID 1
+/* #undef HAS_GETPEEREID */
 
 /* Define to 1 if you have the `getpeerucred' function. */
 /* #undef HAS_GETPEERUCRED */
@@ -95,13 +98,13 @@
 
 /* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
    */
-/* #undef HAVE_ALLOCA_H */
+#define HAVE_ALLOCA_H 1
 
 /* Define to 1 if you have the <asm/mtrr.h> header file. */
-/* #undef HAVE_ASM_MTRR_H */
+#define HAVE_ASM_MTRR_H 1
 
 /* Define to 1 if you have the <byteswap.h> header file. */
-/* #undef HAVE_BYTESWAP_H */
+#define HAVE_BYTESWAP_H 1
 
 /* Define to 1 if you have cbrt */
 #define HAVE_CBRT 1
@@ -137,11 +140,17 @@
 /* Define to 1 if you have the `getuid' function. */
 #define HAVE_GETUID 1
 
+/* Define to 1 if you have the `getzoneid' function. */
+/* #undef HAVE_GETZONEID */
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have version 2.2 (or newer) of the drm library */
 #define HAVE_LIBDRM_2_2 1
+
+/* Have Quartz */
+/* #undef XQUARTZ */
 
 /* Define to 1 if you have the `m' library (-lm). */
 #define HAVE_LIBM 1
@@ -150,13 +159,13 @@
 #define HAVE_LINK 1
 
 /* Define to 1 if you have the <linux/agpgart.h> header file. */
-/* #undef HAVE_LINUX_AGPGART_H */
+#define HAVE_LINUX_AGPGART_H 1
 
 /* Define to 1 if you have the <linux/apm_bios.h> header file. */
-/* #undef HAVE_LINUX_APM_BIOS_H */
+#define HAVE_LINUX_APM_BIOS_H 1
 
 /* Define to 1 if you have the <linux/fb.h> header file. */
-/* #undef HAVE_LINUX_FB_H */
+#define HAVE_LINUX_FB_H 1
 
 /* Define to 1 if you have the <linux/h3600_ts.h> header file. */
 /* #undef HAVE_LINUX_H3600_TS_H */
@@ -174,13 +183,16 @@
 #define HAVE_MKSTEMP 1
 
 /* Define to 1 if you have the <ndbm.h> header file. */
-#define HAVE_NDBM_H 1
+/* #undef HAVE_NDBM_H */
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 /* #undef HAVE_NDIR_H */
 
 /* Define to 1 if you have the <rpcsvc/dbm.h> header file. */
 /* #undef HAVE_RPCSVC_DBM_H */
+
+/* Define to 1 if you have the `shmctl64' function. */
+/* #undef HAVE_SHMCTL64 */
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
@@ -207,7 +219,7 @@
 #define HAVE_SYSV_IPC 1
 
 /* Define to 1 if you have the <sys/agpio.h> header file. */
-#define HAVE_SYS_AGPIO_H 1
+/* #undef HAVE_SYS_AGPIO_H */
 
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
@@ -234,6 +246,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
+
+/* Have /dev/urandom */
+#define HAVE_URANDOM 1
 
 /* Define to 1 if you have the `vprintf' function. */
 #define HAVE_VPRINTF 1
@@ -262,9 +277,6 @@
 /* Internal define for Xinerama */
 #define PANORAMIX 1
 
-/* Support pixmap privates */
-#define PIXPRIV 1
-
 /* Overall prefix */
 #define PROJECTROOT "/usr/local"
 
@@ -272,7 +284,7 @@
 #define RANDR 1
 
 /* Support Record extension */
-#define XRECORD 1
+/* #undef XRECORD */
 
 /* Support RENDER extension */
 #define RENDER 1
@@ -282,6 +294,9 @@
 
 /* Support MIT-SCREEN-SAVER extension */
 #define SCREENSAVER 1
+
+/* Support Secure RPC ("SUN-DES-1") authentication for X11 clients */
+#define SECURE_RPC 1
 
 /* Use a lock to prevent multiple servers on a display */
 #define SERVER_LOCK 1
@@ -318,26 +333,26 @@
 /* Support UNIX socket connections */
 #define UNIXCONN 1
 
-/* Use builtin rgb color database */
-/* #undef USE_RGB_BUILTIN */
-
-/* Use rgb.txt directly */
-#define USE_RGB_TXT 1
-
 /* Define to use byteswap macros from <sys/endian.h> */
-#define USE_SYS_ENDIAN_H 1
+/* #undef USE_SYS_ENDIAN_H */
 
 /* unaligned word accesses behave as expected */
 /* #undef WORKING_UNALIGNED_INT */
 
+/* Build X string registry */
+#define XREGISTRY 1
+
 /* Build X-ACE extension */
 #define XACE 1
+
+/* Build SELinux extension */
+/* #undef XSELINUX */
 
 /* Support XCMisc extension */
 #define XCMISC 1
 
 /* Build Security extension */
-#define XCSECURITY 1
+/* #undef XCSECURITY */
 
 /* Support Xdmcp */
 #define XDMCP 1
@@ -346,7 +361,7 @@
 #define XEVIE 1
 
 /* Build XFree86 BigFont extension */
-#define XF86BIGFONT 1
+/* #undef XF86BIGFONT */
 
 /* Support XFree86 miscellaneous extensions */
 #define XF86MISC 1
@@ -379,10 +394,10 @@
 /* #undef XORG_RELEASE */
 
 /* Current Xorg version */
-#define XORG_VERSION_CURRENT (((1) * 10000000) + ((4) * 100000) + ((0) * 1000) + 0)
+#define XORG_VERSION_CURRENT (((1) * 10000000) + ((5) * 100000) + ((1) * 1000) + 0)
 
 /* Xorg release date */
-#define XORG_DATE "5 September 2007"
+#define XORG_DATE "23 September 2008"
 
 /* Build Xv Extension */
 #define XvExtension 1
@@ -400,13 +415,13 @@
 #define XTEST 1
 
 /* Support XTrap extension */
-#define XTRAP 1
+/* #undef XTRAP */
 
 /* Support Xv extension */
 #define XV 1
 
 /* Build APPGROUP extension */
-#define XAPPGROUP 1
+/* #undef XAPPGROUP */
 
 /* Build TOG-CUP extension */
 #define TOGCUP 1
@@ -419,6 +434,11 @@
 
 /* Support DRI extension */
 #define XF86DRI 1
+
+/* #undef XEPHYR_DRI */
+
+/* Build DRI2 extension */
+/* #undef DRI2 */
 
 /* Build DBE support */
 #define DBE 1
@@ -440,7 +460,7 @@
 #endif
 
 /* Enable GNU and other extensions to the C environment for GLIBC */
-/* #undef _GNU_SOURCE */
+#define _GNU_SOURCE 1
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
@@ -454,14 +474,11 @@
 /* Define to 1 if unsigned long is 64 bits. */
 /* #undef _XSERVER64 */
 
-/* Define to location of RGB database */
-#define RGB_DB "/usr/local/share/X11/rgb"
-
 /* System is BSD-like */
-#define CSRG_BASED 1
+/* #undef CSRG_BASED */
 
 /* Define to 1 if `struct sockaddr_in' has a `sin_len' member */
-#define BSD44SOCKETS 1
+/* #undef BSD44SOCKETS */
 
 /* Define to 1 if modules should avoid the libcwrapper */
 #define NO_LIBCWRAPPER 1
@@ -485,21 +502,27 @@
 /* #undef NULL_ROOT_CURSOR */
 
 /* Have a monotonic clock from clock_gettime() */
-/* #undef MONOTONIC_CLOCK */
+#define MONOTONIC_CLOCK 1
 
 /* Define to 1 if the DTrace Xserver provider probes should be built in */
 /* #undef XSERVER_DTRACE */
 
-/* Path to XErrorDB file */
-#define XERRORDB_PATH "/usr/local/share/X11/XErrorDB"
-
 /* Define to 16-bit byteswap macro */
-#define bswap_16 bswap16
+/* #undef bswap_16 */
 
 /* Define to 32-bit byteswap macro */
-#define bswap_32 bswap32
+/* #undef bswap_32 */
 
 /* Define to 64-bit byteswap macro */
-#define bswap_64 bswap64
+/* #undef bswap_64 */
+
+/* Need the strcasecmp function. */
+/* #undef NEED_STRCASECMP */
+
+/* Need the strncasecmp function. */
+/* #undef NEED_STRNCASECMP */
+
+/* Need the strcasestr function. */
+/* #undef NEED_STRCASESTR */
 
 #endif /* _DIX_CONFIG_H_ */

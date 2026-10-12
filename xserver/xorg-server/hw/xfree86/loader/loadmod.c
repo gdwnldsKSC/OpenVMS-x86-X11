@@ -186,6 +186,7 @@ InitPathList(const char *path)
     }
     if (list)
 	list[n] = NULL;
+    xfree(fullpath);
     return list;
 }
 
@@ -809,12 +810,7 @@ NewModuleDesc(const char *name)
 	mdp->child = NULL;
 	mdp->sib = NULL;
 	mdp->parent = NULL;
-	mdp->demand_next = NULL;
 	mdp->name = xstrdup(name);
-	mdp->filename = NULL;
-	mdp->identifier = NULL;
-	mdp->client_id = 0;
-	mdp->in_use = 0;
 	mdp->handle = -1;
 	mdp->SetupProc = NULL;
 	mdp->TearDownProc = NULL;
@@ -839,15 +835,10 @@ DuplicateModule(ModuleDescPtr mod, ModuleDescPtr parent)
     if (LoaderHandleOpen(mod->handle) == -1)
 	return NULL;
 
-    ret->filename = xstrdup(mod->filename);
-    ret->identifier = mod->identifier;
-    ret->client_id = mod->client_id;
-    ret->in_use = mod->in_use;
     ret->handle = mod->handle;
     ret->SetupProc = mod->SetupProc;
     ret->TearDownProc = mod->TearDownProc;
     ret->TearDownData = NULL;
-    ret->path = mod->path;
     ret->child = DuplicateModule(mod->child, ret);
     ret->sib = DuplicateModule(mod->sib, parent);
     ret->parent = parent;
@@ -884,12 +875,12 @@ doLoadModule(const char *module, const char *path, const char **subdirlist,
 #endif
     const char **cim;
 
-    xf86MsgVerb(X_INFO, 3, "LoadModule: \"%s\"", module);
+    xf86MsgVerb(X_INFO, 3, "LoadModule: \"%s\"\n", module);
 
     for (cim = compiled_in_modules; *cim; cim++)
 	if (!strcmp (module, *cim))
 	{
-	    xf86MsgVerb(X_INFO, 0, "Module \"%s\" already built-in\n", module);
+	    xf86MsgVerb(X_INFO, 3, "Module \"%s\" already built-in\n", module);
 	    return (ModuleDescPtr) 1;
 	}
 
@@ -982,8 +973,6 @@ doLoadModule(const char *module, const char *path, const char **subdirlist,
     if (ret->handle < 0)
 	goto LoadModule_fail;
 
-    ret->filename = xstrdup(found);
-
     /* drop any explicit suffix from the module name */
     p = strchr(name, '.');
     if (p)
@@ -1037,7 +1026,6 @@ doLoadModule(const char *module, const char *path, const char **subdirlist,
 	    ret->SetupProc = setup;
 	if (teardown)
 	    ret->TearDownProc = teardown;
-	ret->path = path;
 	ret->VersionInfo = vers;
     } else {
 	/* No initdata is OK for external modules */
@@ -1161,7 +1149,6 @@ UnloadModuleOrDriver(ModuleDescPtr mod)
     if (mod->sib)
 	UnloadModuleOrDriver(mod->sib);
     TestFree(mod->name);
-    TestFree(mod->filename);
     xfree(mod);
 #ifdef __alpha__
     istream_mem_barrier();
@@ -1186,7 +1173,6 @@ UnloadSubModule(ModuleDescPtr mod)
 	UnloadModuleOrDriver(mod->child);
 
     TestFree(mod->name);
-    TestFree(mod->filename);
     xfree(mod);
 }
 
@@ -1196,12 +1182,6 @@ FreeModuleDesc(ModuleDescPtr head)
     ModuleDescPtr sibs, prev;
 
     if (head == (ModuleDescPtr) 1)
-	return;
-    /*
-     * only free it if it's not marked as in use. In use means that it may
-     * be unloaded someday, and UnloadModule will free it
-     */
-    if (head->in_use)
 	return;
     if (head->child)
 	FreeModuleDesc(head->child);

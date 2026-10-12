@@ -77,7 +77,6 @@
 typedef struct
 {
 	char *file_logfile;
-	char *file_rgbpath;
 	char *file_modulepath;
 	char *file_inputdevs;
 	char *file_fontpath;
@@ -314,6 +313,7 @@ typedef struct
 	XF86ConfDisplayPtr scrn_display_lst;
 	XF86OptionPtr scrn_option_lst;
 	char *scrn_comment;
+	int scrn_virtualX, scrn_virtualY;
 }
 XF86ConfScreenRec, *XF86ConfScreenPtr;
 

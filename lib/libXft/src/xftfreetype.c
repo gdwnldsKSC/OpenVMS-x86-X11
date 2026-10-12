@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright © 2000 Keith Packard
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -392,6 +390,13 @@ XftFontInfoFill (Display *dpy, _Xconst FcPattern *pattern, XftFontInfo *fi)
 	return FcFalse;
 
     /*
+     * Initialize the whole XftFontInfo so that padding doesn't interfere with
+     * hash or XftFontInfoEqual().
+     */
+ 
+    memset (fi, '\0', sizeof(*fi));
+
+    /*
      * Find the associated file
      */
     switch (FcPatternGetString (pattern, FC_FILE, 0, &filename)) {
@@ -419,8 +424,6 @@ XftFontInfoFill (Display *dpy, _Xconst FcPattern *pattern, XftFontInfo *fi)
     else if (FcPatternGetFTFace (pattern, FC_FT_FACE, 0, &face) == FcResultMatch
 	     && face)
 	fi->file = _XftGetFaceFile (face);
-    else
-	fi->file = 0;
     if (!fi->file)
         goto bail0;
 

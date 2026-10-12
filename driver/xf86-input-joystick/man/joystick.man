@@ -13,8 +13,15 @@ joystick \- Joystick input driver
 .fi
 .SH DESCRIPTION
 .B joystick
-is an __xservername__ input driver for Joysticks, using either Linux's
-joystick devices or *BSD's uhid devices. The driver reports cursor movement
+is an __xservername__ input driver for Joysticks. There are 3 backends available that are used in the following order, if support was found:
+
+.nf
+.B - Linux's evdev interface
+.B - Linux's joystick interface
+.B - BSD's usbhid interface
+.fi
+
+The driver reports cursor movement
 as well as raw axis values through valuators. 
 
 .SH SUPPORTED HARDWARE
@@ -35,13 +42,22 @@ The following Driver
 are supported:
 .TP 7
 .BI "Option \*qDevice\*q \*q" string \*q
+.TP 7
+.BI "Option \*qPath\*q \*q" string \*q
 Specifies the device through which the joystick can be accessed. This option is mandatory and there is no default setting.
 
 For Linux, joysticks are mostly accessible as
-.IR /dev/input/jsX .
+.IR /dev/input/jsX " or " /dev/input/eventX .
 
-For *BSD, joysticks are recognized as 
+In *BSD, joysticks are usually recognized as 
 .IR /dev/uhidX .
+.TP 7
+.BI "Option \*qAutoRepeat\*q \*q" "delay rate" \*q
+Sets the auto repeat behaviour for key events.
+.I delay
+is the time in milliseconds before a key starts repeating.
+.I rate
+is the number of times a key repeats per second.  Default: Xorg default
 .TP 7
 .BI "Option \*qDebugLevel\*q \*q" integer \*q
 If compiled with debugging information, controls the verbosity of the driver.
@@ -64,7 +80,7 @@ The joystick button will generate a click with the specified button (starting wi
 Where
 .I <axis>
 is one of:
-.B X, Y, ZX, ZY
+.B x, y, zx, zy
 
 and 
 .I <factor>
@@ -76,10 +92,10 @@ Use positive and negative values to control the direction. Default: 1.0
 Amplifies the movement of all axes by the given factor when pressed. Different
 factors can be combined.
 .TP 7
-.BI "\*qkey="<keycode>[,<keycode>[,<keycode>[,<keycode>]]]
-When button is pressed, a series of keydown events with the specified keycode is
-generated. When the button is released, there are keyup events in the opposite
-order generated. You can specify up to 4 keycodes per button. 
+.BI "\*qkey="<keysym>[,<keysym>[,<keysym>[,<keysym>]]]
+When button is pressed, a series of keydown events with the specified keysym is
+generated. When the button is released, keyup events in the opposite
+order are generated. You can specify up to 4 keysyms per button.
 
 See special section about key events below.
 .TP 7
@@ -91,7 +107,6 @@ See special section about key events below.
 Disables either the generation of mouse events, key events or the generation of
 all X events by the driver. Press button again to allow the driver to generate 
 events again.
-
 .RE
 .PP
 .TP 7
@@ -116,7 +131,7 @@ will be reported as an additional valuator.
 Where
 .I <axis>
 is one of:
-.B X, Y, ZX, ZY, KEY (see keylow/keyhigh)
+.B x, y, zx, zy, key (see keylow/keyhigh)
 
 and 
 .I <factor>
@@ -124,11 +139,12 @@ is an optional amplifier of the axis, like
 .B -, +, -5, 0.4, 1.3, ...
 Negative values will invert the movement. Default: 1.0
 .TP 7
-.BI "\*qkeylow= "<keycode>[,<keycode>[,<keycode>[,<keycode>]]]
+.BI "\*qkeylow= "<keysym>[,<keysym>[,<keysym>[,<keysym>]]]
 .TP 7
-.BI "\*qkeyhigh="<keycode>[,<keycode>[,<keycode>[,<keycode>]]]
+.BI "\*qkeyhigh="<keysym>[,<keysym>[,<keysym>[,<keysym>]]]
 When the axis is moved out of the deadzone, a series of keydown events according 
-to the direction of the movement is generated. When the axis is released, keyup events will be generated. You can specify up to 4 keycodes for each direction. 
+to the direction of the movement is generated. When the axis is released, keyup 
+events will be generated. You can specify up to 4 keysyms for each direction. 
 
 .B keylow
 defines the keys to be generated when the axis is moved in negative direction (ie. left or up),
@@ -156,21 +172,46 @@ Sets the unresponsive range of the axis to
 .IR <number> .
 This can be between
 .IR "0" " and " "30000" .
-Default: 1000
+Default: 5000
 .RE
-
 .PP
-The default configuration looks as follows:
+.TP 7
+.BI "Option \*qStartKeysEnabled\*q \*q" "boolean" \*q
+Set to
+.I False
+to disable key event generation after startup. You can toggle key event generation with the 
+.I disable-keys
+button mapping. Default: enabled
+.TP 7
+.BI "Option \*qStartMouseEnabled\*q \*q" "boolean" \*q
+Set to
+.I False
+to disable mouse event generation after startup. You can toggle mouse event generation with the 
+.I disable-mouse
+button mapping. Default: enabled
+.RE
+.PP
+
+
+.SH "DEFAULT CONFIGURATION"
+The default configuration is as follows:
 
 .nf
-.BI "  Option \*qMapButton1\*q   \*q" button=1 \*q
-.BI "  Option \*qMapButton2\*q   \*q" button=2 \*q
-.BI "  Option \*qMapButton3\*q   \*q" button=3 \*q
-.BI "  Option \*qMapButton4\*q   \*q" none \*q
+.BI "  Option \*qDebugLevel\*q        \*q" 0 \*q
+.BI "  Option \*qStartKeysEnabled\*q  \*q" True \*q
+.BI "  Option \*qStartMouseEnabled\*q \*q" True \*q
+.BI "  Option \*qMapButton1\*q        \*q" button=1 \*q
+.BI "  Option \*qMapButton2\*q        \*q" button=2 \*q
+.BI "  Option \*qMapButton3\*q        \*q" button=3 \*q
+.BI "  Option \*qMapButton4\*q        \*q" none \*q
 \ \ ...
-.BI "  Option \*qMapAxis1\*q     \*q" "mode=relative axis=+1x deadzone=1000" \*q
-.BI "  Option \*qMapAxis2\*q     \*q" "mode=relative axis=+1y deadzone=1000" \*q
-.BI "  Option \*qMapAxis3\*q     \*q" "mode=none" \*q
+.BI "  Option \*qMapAxis1\*q          \*q" "mode=relative    axis=+1x  deadzone=5000" \*q
+.BI "  Option \*qMapAxis2\*q          \*q" "mode=relative    axis=+1y  deadzone=5000" \*q
+.BI "  Option \*qMapAxis3\*q          \*q" "mode=relative    axis=+1zx deadzone=5000" \*q
+.BI "  Option \*qMapAxis4\*q          \*q" "mode=relative    axis=+1zy deadzone=5000" \*q
+.BI "  Option \*qMapAxis5\*q          \*q" "mode=accelerated axis=+1x  deadzone=5000" \*q
+.BI "  Option \*qMapAxis6\*q          \*q" "mode=accelerated axis=+1y  deadzone=5000" \*q
+.BI "  Option \*qMapAxis7\*q          \*q" "mode=none" \*q
 \ \ ...
 .fi
 
@@ -214,38 +255,45 @@ total range of 200 pixels, 100 to the top and 100 to the bottom:
 .fi
 
 .SH "GENERATING KEY EVENTS"
-Proving a \*qkey=<keycode>[,<keycode>[...]]\*q option will generate X Events with the specified keycodes in order,
+Providing a \*qkey=<keysym>[,<keysym>[...]]\*q option will generate X Events with the specified keysyms
 when the joystick button is pressed or the axis changed it's position. When the button/axis is released, the keys are released in the reverse order.
-To lookup keycodes for KeySyms, you can use 
-.BR "xmodmap -pk" .
-You can use unused keycodes and map them to a KeySym of your choice using xmodmap(1).
-You can specify up to 4 keycodes per joystick button/axis. 
+
+The keysym parameter can be defined as a numerical value, which can be looked up in the file
+.IR /usr/include/X11/keysymdef.h ,
+or as the symbolic identifier (case sensitive, without the leading XK_).
+
+You can specify up to 4 keysyms per joystick button/axis, which is useful to use modificators. Make sure you use the modificators
+that are necessary to get a certain keysym.
 
 Examples:
 .nf
-.BI "  Option \*qMapButton1\*q     \*q" "key=64,23" \*q
+.BI "  Option \*qMapButton1\*q     \*q" "key=0xffe9,0xff09" \*q
+.BI "  Option \*qMapButton1\*q     \*q" "key=Alt_L,Tab" \*q
 .fi
 will generate
 .I "Alt_L+Tab"
 when the button is pressed.
 
 .nf
-.BI "  Option \*qMapButton1\*q     \*q" "key=40" \*q
+.BI "  Option \*qMapButton1\*q     \*q" "key=0xffe1,0x0064" \*q
+.BI "  Option \*qMapButton1\*q     \*q" "key=Shift_L,d" \*q
 .fi
-will generate a lowercase 
+will generate an uppercase 
 .IR d .
 
 .nf
-.BI "  Option \*qMapButton1\*q     \*q" "key=65" \*q
+.BI "  Option \*qMapButton1\*q     \*q" "key=0x0020" \*q
+.BI "  Option \*qMapButton1\*q     \*q" "key=32" \*q
+.BI "  Option \*qMapButton1\*q     \*q" "key=space" \*q
 .fi
 is for the  
 .IR "space " key.
 
 .nf
-.BI "  Option  \*qMapAxis1\*q      \*q" "mode=relative    keylow=100 keyhigh=102 axis=0.5key" \*q
-.BI "  Option  \*qMapAxis2\*q      \*q" "mode=relative    keylow=98  keyhigh=104" \*q
-.BI "  Option  \*qMapAxis3\*q      \*q" "mode=accelerated keylow=100 keyhigh=102" \*q
-.BI "  Option  \*qMapAxis4\*q      \*q" "mode=accelerated keylow=98  keyhigh=104" \*q
+.BI "  Option  \*qMapAxis1\*q      \*q" "mode=relative    keylow=Left keyhigh=Right axis=0.5key" \*q
+.BI "  Option  \*qMapAxis2\*q      \*q" "mode=relative    keylow=Up   keyhigh=Down" \*q
+.BI "  Option  \*qMapAxis3\*q      \*q" "mode=accelerated keylow=Left keyhigh=Right" \*q
+.BI "  Option  \*qMapAxis4\*q      \*q" "mode=accelerated keylow=Up   keyhigh=Down" \*q
 .fi
 will map the first and third axis to the arrow keys
 .IR left " and " right
@@ -266,8 +314,14 @@ Axes in the mode
 will be ignored. The mode has no effect on the reported value. The axis does not need to be assigned to a direction.
 
 .SH "NOTES"
-The driver does not do hotplugging. The joystick needs to be plugged in when the driver is loaded.
-If the joystick is unplugged, the driver deactivates itself.
+The driver does not do hotplugging on it's own. The joystick needs to be plugged in when the driver is loaded.
+If the joystick is unplugged, the device will be automatically deactivated.
+.P
+There is an example hal policy in
+.I ${sourcecode}/config/50-x11-input-joystick.fdi
+which will take care of hotplugging. Place it in
+.I /etc/hal/fdi/policy 
+and customize it to your needs. This is HIGHLY experimental and you can't pass any options to the driver, yet.
 .P
 Make sure you add the 
 .I \*qSendCoreEvents\*q
@@ -286,6 +340,6 @@ Example:
 .SH "SEE ALSO"
 __xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__), xmodmap(1)
 .SH AUTHORS
-Sascha Hlusiak (2007),
+Sascha Hlusiak (2007-2008),
 .fi
 Frederic Lepied (1995-1999)

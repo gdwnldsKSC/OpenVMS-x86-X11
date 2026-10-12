@@ -1,4 +1,3 @@
-/* $Xorg: sm_genid.c,v 1.4 2001/02/09 02:03:30 xorgcvs Exp $ */
 /*
 
 Copyright 1993, 1998  The Open Group
@@ -25,7 +24,6 @@ used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from The Open Group.
 
 */
-/* $XFree86: xc/lib/SM/sm_genid.c,v 3.17 2003/07/09 15:27:28 tsi Exp $ */
 
 /*
  * Author: Ralph Mor, X Consortium
@@ -78,11 +76,31 @@ in this Software without prior written authorization from The Open Group.
 #define TCPCONN
 #endif
 
+#if defined(HAVE_LIBUUID)
+#include <uuid/uuid.h>
+#endif
+
 
 char *
 SmsGenerateClientID (smsConn)
     SmsConn smsConn;
 {
+#if defined(HAVE_LIBUUID)
+    char *id;
+    char temp[256];
+    uuid_t uuid;
+
+    uuid_generate(uuid);
+
+    temp[0] = '2';
+    temp[1] = '\0';
+    uuid_unparse_lower(uuid, &temp[1]);
+
+    if ((id = malloc (strlen (temp) + 1)) != NULL)
+	strcpy (id, temp);
+
+    return id;
+#else
 #if defined(TCPCONN) || defined(STREAMSCONN)
     static const char hex[] = "0123456789abcdef";
     char hostname[256];
@@ -186,5 +204,6 @@ SmsGenerateClientID (smsConn)
     return (id);
 #else
     return (NULL);
+#endif
 #endif
 }

@@ -1,3 +1,252 @@
+commit 0961ffa84825f3f32d9c973f054400ab9d2b7c08
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sun Apr 27 19:16:29 2008 +0200
+
+    Bumped to version 1.3.2
+
+commit c3e3fb8795c19a292ca37ab4d67b308fbb20911b
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Apr 9 15:09:46 2008 +0200
+
+    Display evdev bus/vendor/product/version in separate line
+
+commit edcc8c26dfa3f89672a66c47665d89c7c9200b13
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sun Mar 30 13:21:22 2008 +0200
+
+    Fixed keymap size to 8-256 to prevent crash
+    
+    Newer xservers don't like keymaps that are smaller than 248 keys.
+
+commit fac2c42a01cf030a05d2305a01700f3677f6a8dc
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sun Mar 30 13:05:35 2008 +0200
+
+    Clear complete keymap instead of only the first element
+
+commit a44e15ad7576b77b48ecb13aae1faeb2ec25d922
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sun Mar 30 13:03:57 2008 +0200
+
+    Fixed off-by-one in keymap generation code
+
+commit 2aeaf7b7f3a5117db5cde9f704a2c612fbab75c8
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sun Mar 30 12:44:39 2008 +0200
+
+    Allow '+' as separator for key mapping as in "key=Alt_L+Tab"
+
+commit ce01777488a0f1f9ba2d22d7315aebd431e9cb65
+Author: Matthieu Herrb <matthieu@bluenote.herrb.net>
+Date:   Sat Mar 8 23:02:08 2008 +0100
+
+    Makefile.am: nuke RCS Id
+
+commit 94cc174cd80952418614dc9b2fbc95ad21b8598c
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sun Jan 6 18:58:47 2008 +0100
+
+    Added "StartMouseEnabled" and "StartKeysEnabled" options
+    
+    With the disable-mouse and disable-keys button mapping the event generation can be toggled.
+    These two options will start X with the event generation already disabled, so it can be
+    enabled later with the appropriate button mapping. Default: Event generation is enabled.
+
+commit c968077dcb3e7dec4886e9bc60faa63e750695e2
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Mon Dec 31 20:21:30 2007 +0100
+
+    Changed copyrights to include year 2008
+
+commit 4bf88166207c79662fba45773c300f05ae5e00d7
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sun Dec 9 19:22:59 2007 +0100
+
+    Changed default deadzone in manpage from 1000 to 5000
+
+commit 1f61022d4d08c1dc07717576bcb31ace03d93060
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sun Dec 9 18:18:45 2007 +0100
+
+    Increased default deadzone from 1000 to 5000
+
+commit 847c36e1134e7fe5f9af69f49b8ed12d2aa0cb85
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sun Dec 9 11:54:38 2007 +0100
+
+    Typo in man page
+    
+    Last axis of default axis configurations was #3 instead of #7
+
+commit 01637abd2b059923f5c41ab80c80ab93579cbe9b
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Fri Dec 7 00:17:56 2007 +0100
+
+    Mentioned hotplugging and hal policy in man page
+
+commit 47cd8141f9bf3e69d5418f3b5f448366f500cf0d
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Thu Dec 6 23:55:20 2007 +0100
+
+    Bumped to version 1.3.1
+
+commit c463776b8b35e6e721128a7348e088d306c4ee02
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Thu Dec 6 23:48:49 2007 +0100
+
+    Added example hal policy file for input hotplugging of joysticks
+    
+    Hal policy config/50-x11-input-joystick.fdi is not installed by default and you probably
+    don't want to.
+
+commit 833454bd7bea04924b85105bf38ed57dd2b5e5c2
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Thu Dec 6 23:22:43 2007 +0100
+
+    Looking for Path parameter besides Device (used by HAL+input hotplug)
+
+commit dca42ff25dde490073a798dc873b048c4bfeb0f4
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Thu Dec 6 23:22:06 2007 +0100
+
+    Fixed default button mappings
+    
+    Default button mappings were set to buttons 4, 5 and 6 instead of 1, 2 and 3.
+
+commit fba24465bc4867568cbefc3d554bae756abc1204
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Thu Dec 6 22:56:26 2007 +0100
+
+    Return NULL on device configure fail instead of unconfigured device, which made X segfault.
+
+commit 2fba11efcafdbc2002bc7083a2b74cb7d908b3a9
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Thu Dec 6 22:28:12 2007 +0100
+
+    New: evdev backend
+
+commit 78616fb8174e93a2c3c523bd425acc33a4b8773c
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Dec 5 22:17:36 2007 +0100
+
+    Mentioned multiple backends in man page
+
+commit 9e5f4e6fccb8c9e1b6c4dfccb39f1f0c89f79b60
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Dec 5 21:33:27 2007 +0100
+
+    Fixed implicit declaration warnings because of missed header files
+
+commit 43790502b5d1077fc74e81b7eedd9c880673463c
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Dec 5 21:30:12 2007 +0100
+
+    Renamed backend files from *_jstk.{c,h} to backend_*.{c,h}
+
+commit 032138d7712f6d1e6a50bf83a2dde911b7f3d752
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Dec 5 21:22:50 2007 +0100
+
+    Added backend selection code.
+    
+    From all available backends they are tried in the order: evdev, linux joystick, bsd
+    usbhid. This needed to separate the backends which were usually used to replace each
+    other.
+
+commit 37aae4731320d4e1301f17a065bc5f1d5a3d1596
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Dec 5 18:00:12 2007 +0100
+
+    configure.ac: Checking for available kernel backends instead of OS
+    
+    The configure script now checks for availability of several backends like Linux's
+    joystick, Linux's evdev, BSD's usbhid. This way several backends can be compiled in and
+    used with the same binary module.
+    Backend selection code still missing!
+
+commit f581e2b0daf6c79c74728ab2e21a0836ff252a65
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sun Nov 11 18:02:42 2007 +0100
+
+    Add check for kbproto in configure script
+    
+    On systems without kbproto installed, the XKB headers might be missing and the build fails. Fixes Debian bug
+    http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=448770
+
+commit c9e359fda611778da578f3699b8f2f4c9122852c
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sat Oct 27 18:50:08 2007 +0200
+
+    Added missing headerfiles to Makefile.am
+    
+    Files StrKeysym.h and ks_tables.h were missing. Sorry, guys.
+
+commit 8668189c26956922a9a10a80289162cfd5741bdf
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sat Oct 27 15:38:09 2007 +0200
+
+    Debug output of AutoRepeat option
+
+commit 68e4850b28c34d8e7a41fe2682a115183e3a22d4
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Oct 10 18:00:59 2007 +0200
+
+    Added AutoRepeat option to specify rate and delay for key events.
+    
+    So far the autorepeat settings of xorg were used, thus sharing the settings with all other keyboard. This is still the default but the
+    rate and delay can be changed per device, not conflicting with the settings of other keyboards.
+
+commit 15870ef9bf57475ad79b839613fabd951daceac6
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sat Oct 6 17:28:59 2007 +0200
+
+    Use XStringToKeysym to parse symbolic keys defined in xorg.conf.
+    
+    Users can map buttons to "key=space" or "key=Left" to map them to XK_space or XK_Left. As
+    fallback the numerical expression still works.
+
+commit 0897d8acdecf30f9496578019487263a22ed984b
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Sat Oct 6 17:07:19 2007 +0200
+
+    Integrated XStringToKeysym from libX11 in the module.
+    
+    To look up Keysyms from Strings the method XStringToKeysym comes in handy, which would
+    require linking against libX11. By integrating the method in the module, this can be
+    avoided until similar functionallity get's included in xorg-server.
+
+commit 9e8f8d54bd300b562b9fe0a1b1e3bf8d45773651
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Oct 3 22:46:30 2007 +0200
+
+    Updated manpage to reflect keymap changes
+
+commit c2270222a88f8152c28568e4212ccc9937dccbbd
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Oct 3 22:13:37 2007 +0200
+
+    Prepared for 1.3.0 release. Raised dependency of xorg-server to at least 1.3.99.901 for new keymap
+    behaviour.
+
+commit a62abe36b8b0af91539cf7e7dfa90795a73434bb
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Oct 3 21:37:25 2007 +0200
+
+    Readded own keymap for Joystick keys. This changes meaning of key, keylow and
+    keyhigh values in xorg.conf from scancodes to keysyms!
+    
+    New xorg-server 1.4 fixes a lot of keyboard things. This makes it necessary to
+    provide an own mapping rather than using the mapping of the current keyboard. A
+    keymap is built dynamically from the options provided. The options now need to
+    provide a keysym for each button instead of the scancodes of another keyboard
+    attached keyboard.
+
+commit 65009ab568500fac9980239a752d346a0d9b5ff1
+Author: Sascha Hlusiak <saschahlusiak@arcor.de>
+Date:   Wed Oct 3 00:33:09 2007 +0200
+
+    Added little check if device is enabled before disabling it
+
 commit 13c850fe77b0a9a8a719bedfa1439e96972a730b
 Author: Sascha Hlusiak <saschahlusiak@arcor.de>
 Date:   Sun Aug 12 13:01:16 2007 +0200

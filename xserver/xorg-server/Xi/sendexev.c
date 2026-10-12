@@ -57,14 +57,11 @@ SOFTWARE.
 #include <dix-config.h>
 #endif
 
-#include <X11/X.h>	/* for inputstr.h    */
-#include <X11/Xproto.h>	/* Request macro     */
 #include "inputstr.h"	/* DeviceIntPtr      */
 #include "windowstr.h"	/* Window            */
+#include "extnsionst.h" /* EventSwapPtr      */
 #include <X11/extensions/XI.h>
 #include <X11/extensions/XIproto.h>
-#include "extnsionst.h"
-#include "extinit.h"	/* LookupDeviceIntRec */
 #include "exevents.h"
 #include "exglobals.h"
 
@@ -83,7 +80,7 @@ int
 SProcXSendExtensionEvent(ClientPtr client)
 {
     char n;
-    long *p;
+    CARD32 *p;
     int i;
     xEvent eventT;
     xEvent *eventP;
@@ -94,6 +91,11 @@ SProcXSendExtensionEvent(ClientPtr client)
     REQUEST_AT_LEAST_SIZE(xSendExtensionEventReq);
     swapl(&stuff->destination, n);
     swaps(&stuff->count, n);
+
+    if (stuff->length != (sizeof(xSendExtensionEventReq) >> 2) + stuff->count +
+       (stuff->num_events * (sizeof(xEvent) >> 2)))
+       return BadLength;
+
     eventP = (xEvent *) & stuff[1];
     for (i = 0; i < stuff->num_events; i++, eventP++) {
 	proc = EventSwapVector[eventP->u.u.type & 0177];
@@ -103,11 +105,8 @@ SProcXSendExtensionEvent(ClientPtr client)
 	*eventP = eventT;
     }
 
-    p = (long *)(((xEvent *) & stuff[1]) + stuff->num_events);
-    for (i = 0; i < stuff->count; i++) {
-	swapl(p, n);
-	p++;
-    }
+    p = (CARD32 *)(((xEvent *) & stuff[1]) + stuff->num_events);
+    SwapLongs(p, stuff->count);
     return (ProcXSendExtensionEvent(client));
 }
 
@@ -131,38 +130,29 @@ ProcXSendExtensionEvent(ClientPtr client)
     REQUEST_AT_LEAST_SIZE(xSendExtensionEventReq);
 
     if (stuff->length != (sizeof(xSendExtensionEventReq) >> 2) + stuff->count +
-	(stuff->num_events * (sizeof(xEvent) >> 2))) {
-	SendErrorToClient(client, IReqCode, X_SendExtensionEvent, 0, BadLength);
-	return Success;
-    }
+	(stuff->num_events * (sizeof(xEvent) >> 2)))
+	return BadLength;
 
-    dev = LookupDeviceIntRec(stuff->deviceid);
-    if (dev == NULL) {
-	SendErrorToClient(client, IReqCode, X_SendExtensionEvent, 0, BadDevice);
-	return Success;
-    }
+    ret = dixLookupDevice(&dev, stuff->deviceid, client, DixWriteAccess);
+    if (ret != Success)
+	return ret;
 
     /* The client's event type must be one defined by an extension. */
 
     first = ((xEvent *) & stuff[1]);
     if (!((EXTENSION_EVENT_BASE <= first->u.u.type) &&
-	  (first->u.u.type < lastEvent))) {
+	  (first->u.u.type < lastEvent)))
 	client->errorValue = first->u.u.type;
-	SendErrorToClient(client, IReqCode, X_SendExtensionEvent, 0, BadValue);
-	return Success;
-    }
+	return BadValue;
 
     list = (XEventClass *) (first + stuff->num_events);
     if ((ret = CreateMaskFromList(client, list, stuff->count, tmp, dev,
 				  X_SendExtensionEvent)) != Success)
-	return Success;
+	return ret;
 
     ret = (SendEvent(client, dev, stuff->destination,
 		     stuff->propagate, (xEvent *) & stuff[1],
 		     tmp[stuff->deviceid].mask, stuff->num_events));
 
-    if (ret != Success)
-	SendErrorToClient(client, IReqCode, X_SendExtensionEvent, 0, ret);
-
-    return Success;
+    return ret;
 }

@@ -77,7 +77,7 @@ $ CREATE/DIRECTORY 'target_directory'
 $ ignored = F$SEARCH("",1)
 $ font_count = 0
 $font_next:
-$ input = F$SEARCH(source_directory + "*.PCF;0",1)
+$ input = F$SEARCH(source_directory + "*.BDF;0",1)
 $ IF input .EQS. "" THEN GOTO font_files_done
 $ output = target_directory + F$PARSE(input,,,"NAME") + F$PARSE(input,,,"TYPE")
 $ GOSUB copy_file
@@ -147,10 +147,6 @@ $ IF .NOT. (result .AND. 1) THEN GOTO done
 $ database_index = database_index + 1
 $ GOTO database_next
 $databases_done:
-$ input = "[.APP.RGB]RGB.TXT"
-$ output = xlib + "RGB.TXT"
-$ GOSUB copy_file
-$ IF .NOT. (result .AND. 1) THEN GOTO done
 $ locale_indices = "LOCALE.ALIAS|LOCALE.DIR|COMPOSE.DIR"
 $ locale_index = 0
 $locale_index_next:

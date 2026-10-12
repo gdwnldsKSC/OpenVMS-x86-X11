@@ -1,5 +1,5 @@
 ! programs/Xserver/hw/xfree86/etc/Imakefile's complete GTF utility target.
-GTF_HEADERS = $(RTL)
+GTF_HEADERS = $(PCIACCESS_HEADERS), $(RTL)
 GTF_BUILD_RULES = [.VMS-SUPPORT]CONFIG.MMS, [.VMS-SUPPORT]COMPILE.COM, -
                   [.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.ETC]DESCRIP.MMS
 ! Retain the upstream ConfigDefines server name; expose native RTL rint.

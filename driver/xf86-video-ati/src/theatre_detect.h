@@ -1,6 +1,4 @@
 /*************************************************************************************
- * $Id$
- * 
  * Copyright (C) 2005 Bogdan D. bogdand@users.sourceforge.net
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this 
@@ -40,20 +38,9 @@
  */
 
 
-TheatrePtr DetectTheatre(GENERIC_BUS_Ptr b);
+#define xf86_DetectTheatre	DetectTheatre
+_X_EXPORT TheatrePtr DetectTheatre(GENERIC_BUS_Ptr b);
 
 
-#define TheatreDetectSymbolsList  \
-		"DetectTheatre"
-
-#ifdef XFree86LOADER
-
-#define xf86_DetectTheatre         ((TheatrePtr (*)(GENERIC_BUS_Ptr))LoaderSymbol("DetectTheatre"))
-
-#else
-
-#define xf86_DetectTheatre             DetectTheatre
-
-#endif		
 
 #endif

@@ -45,8 +45,6 @@
    * Support static loading.  
 */
 
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/glide/glide_driver.c,v 1.27 2001/08/07 07:04:46 keithp Exp $ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -72,12 +70,6 @@
 
 #define TRUE 1
 #define FALSE 0
-#ifdef NULL
-#undef NULL
-#endif
-#define NULL 0
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 typedef signed char        s8;
 typedef unsigned char      u8;
@@ -166,9 +158,9 @@ static int LoadGlide(void);
 #define GLIDE_VERSION 4000
 #define GLIDE_NAME "GLIDE"
 #define GLIDE_DRIVER_NAME "glide"
-#define GLIDE_MAJOR_VERSION 1
-#define GLIDE_MINOR_VERSION 0
-#define GLIDE_PATCHLEVEL 0
+#define GLIDE_MAJOR_VERSION PACKAGE_VERSION_MAJOR
+#define GLIDE_MINOR_VERSION PACKAGE_VERSION_MINOR
+#define GLIDE_PATCHLEVEL PACKAGE_VERSION_PATCHLEVEL
 
 /* 
  * This contains the functions needed by the server after loading the

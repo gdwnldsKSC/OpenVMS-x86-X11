@@ -173,6 +173,9 @@ I830Sync(ScrnInfoPtr pScrn)
    if (I810_DEBUG & (DEBUG_VERBOSE_ACCEL | DEBUG_VERBOSE_SYNC))
       ErrorF("I830Sync\n");
 
+   if (pI830->noAccel)
+       return;
+
 #ifdef XF86DRI
    /* VT switching tries to do this.
     */
@@ -192,13 +195,13 @@ I830Sync(ScrnInfoPtr pScrn)
     */
    
    {
-      BEGIN_LP_RING(2);
-      OUT_RING(MI_FLUSH | flags);
-      OUT_RING(MI_NOOP);		/* pad to quadword */
-      ADVANCE_LP_RING();
+      BEGIN_BATCH(2);
+      OUT_BATCH(MI_FLUSH | flags);
+      OUT_BATCH(MI_NOOP);		/* pad to quadword */
+      ADVANCE_BATCH();
    }
 
-   I830WaitLpRing(pScrn, pI830->LpRing->mem->size - 8, 0);
+   i830_wait_ring_idle(pScrn);
 
    pI830->LpRing->space = pI830->LpRing->mem->size - 8;
    pI830->nextColorExpandBuf = 0;
@@ -214,10 +217,10 @@ I830EmitFlush(ScrnInfoPtr pScrn)
       flags = 0;
 
    {
-       BEGIN_LP_RING(2);
-       OUT_RING(MI_FLUSH | flags);
-       OUT_RING(MI_NOOP);		/* pad to quadword */
-       ADVANCE_LP_RING();
+       BEGIN_BATCH(2);
+       OUT_BATCH(MI_FLUSH | flags);
+       OUT_BATCH(MI_NOOP);		/* pad to quadword */
+       ADVANCE_BATCH();
    }
 }
 
@@ -247,19 +250,6 @@ I830SelectBuffer(ScrnInfoPtr pScrn, int buffer)
    if (I810_DEBUG & DEBUG_VERBOSE_ACCEL)
       ErrorF("I830SelectBuffer %d --> offset %x\n",
 	     buffer, pI830->bufferOffset);
-}
-
-void
-I830RefreshRing(ScrnInfoPtr pScrn)
-{
-   I830Ptr pI830 = I830PTR(pScrn);
-
-   pI830->LpRing->head = INREG(LP_RING + RING_HEAD) & I830_HEAD_MASK;
-   pI830->LpRing->tail = INREG(LP_RING + RING_TAIL);
-   pI830->LpRing->space = pI830->LpRing->head - (pI830->LpRing->tail + 8);
-   if (pI830->LpRing->space < 0)
-      pI830->LpRing->space += pI830->LpRing->mem->size;
-   i830MarkSync(pScrn);
 }
 
 /* The following function sets up the supported acceleration. Call it

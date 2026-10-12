@@ -1,5 +1,3 @@
-/* $XdotOrg: xc/lib/xtrans/Xtrans.c,v 1.4 2004/11/15 15:06:56 ago Exp $ */
-/* $Xorg: Xtrans.c,v 1.4 2001/02/09 02:04:06 xorgcvs Exp $ */
 /*
 
 Copyright 1993, 1994, 1998  The Open Group
@@ -26,10 +24,7 @@ not be used in advertising or otherwise to promote the sale, use or
 other dealings in this Software without prior written authorization
 from The Open Group.
 
-*/
-/* $XFree86: xc/lib/xtrans/Xtrans.c,v 3.33 2003/08/11 17:41:29 eich Exp $ */
-
-/* Copyright 1993, 1994 NCR Corporation - Dayton, Ohio, USA
+ * Copyright 1993, 1994 NCR Corporation - Dayton, Ohio, USA
  *
  * All Rights Reserved
  *
@@ -358,6 +353,15 @@ TRANS(ParseAddress) (char *address, char **protocol, char **host, char **port)
      *
      * _catalogue = mybuf;
      */
+#endif
+
+#ifdef HAVE_LAUNCHD
+    /* launchd sockets will look like 'local//tmp/launch-XgkNns/:0' */
+    if(address != NULL && strlen(address)>8 && (!strncmp(address,"local//",7))) {
+      _protocol="local";
+      _host="";
+      _port=address+6;
+    }
 #endif
 
     /*
@@ -858,6 +862,10 @@ TRANS(Connect) (XtransConnInfo ciptr, char *address)
 	return -1;
     }
 
+#ifdef HAVE_LAUNCHD
+    if (!host) host=strdup("");
+#endif
+
     if (!port || !*port)
     {
 	PRMSG (1,"Connect: Missing port specification in %s\n",
@@ -1053,10 +1061,10 @@ TRANS(MakeAllCOTSServerListeners) (char *port, int *partial, int *count_ret,
     char		buffer[256]; /* ??? What size ?? */
     XtransConnInfo	ciptr, temp_ciptrs[NUMTRANS];
     int			status, i, j;
+
 #if defined(IPv6) && defined(AF_INET6)
     int		ipv6_succ = 0;
 #endif
-
     PRMSG (2,"MakeAllCOTSServerListeners(%s,%p)\n",
 	   port ? port : "NULL", ciptrs_ret, 0);
 
@@ -1308,7 +1316,7 @@ static int TRANS(WriteV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
 
 #endif /* CRAY */
 
-#if (defined(SYSV) && defined(i386) && !defined(__SCO__) && !defined(sun)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__)
+#if (defined(SYSV) && defined(__i386__) && !defined(__SCO__) && !defined(sun)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__)
 
 /*
  * emulate readv
@@ -1338,9 +1346,9 @@ static int TRANS(ReadV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
     return total;
 }
 
-#endif /* SYSV && i386 || WIN32 || __sxg__ */
+#endif /* SYSV && __i386__ || WIN32 || __sxg__ */
 
-#if (defined(SYSV) && defined(i386) && !defined(__SCO__) && !defined(sun)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__) || defined(__VMS)
+#if (defined(SYSV) && defined(__i386__) && !defined(__SCO__) && !defined(sun)) || defined(WIN32) || defined(__sxg__) || defined(__UNIXOS2__) || defined(__VMS)
 
 /*
  * emulate writev
@@ -1370,7 +1378,7 @@ static int TRANS(WriteV) (XtransConnInfo ciptr, struct iovec *iov, int iovcnt)
     return total;
 }
 
-#endif /* SYSV && i386 || WIN32 || __sxg__ */
+#endif /* SYSV && __i386__ || WIN32 || __sxg__ */
 
 
 #if (defined(_POSIX_SOURCE) && !defined(AIXV3) && !defined(__QNX__)) || defined(hpux) || defined(USG) || defined(SVR4) || defined(__SCO__)

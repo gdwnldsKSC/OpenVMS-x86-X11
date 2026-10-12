@@ -1,4 +1,4 @@
-Render is built with the traditional configure script:
+libXdamage is built with the traditional configure script:
 
 	$ ./configure --prefix=/usr/X11R6
 

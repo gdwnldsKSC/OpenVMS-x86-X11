@@ -36,8 +36,8 @@
 #include <X11/extensions/Xrender.h>
 #include "Xrandrint.h"
 
-XExtensionInfo XRRExtensionInfo;
-char XRRExtensionName[] = RANDR_NAME;
+_X_HIDDEN XExtensionInfo XRRExtensionInfo;
+_X_HIDDEN char XRRExtensionName[] = RANDR_NAME;
 
 static Bool     XRRWireToEvent(Display *dpy, XEvent *event, xEvent *wire);
 static Status   XRREventToWire(Display *dpy, XEvent *event, xEvent *wire);
@@ -210,7 +210,7 @@ static Status XRREventToWire(Display *dpy, XEvent *event, xEvent *wire)
     return False;
 }
 
-XExtDisplayInfo *
+_X_HIDDEN XExtDisplayInfo *
 XRRFindDisplay (Display *dpy)
 {
     XExtDisplayInfo *dpyinfo;
@@ -272,20 +272,22 @@ int XRRRootToScreen(Display *dpy, Window root)
 }
 
 
-Bool XRRQueryExtension (Display *dpy, int *event_basep, int *error_basep)
+Bool XRRQueryExtension (Display *dpy,
+			int *event_base_return,
+			int *error_base_return)
 {
   XExtDisplayInfo *info = XRRFindDisplay (dpy);
 
     if (XextHasExtension(info)) {
-	*event_basep = info->codes->first_event;
-	*error_basep = info->codes->first_error;
+	*event_base_return = info->codes->first_event;
+	*error_base_return = info->codes->first_error;
 	return True;
     } else {
 	return False;
     }
 }
 
-Bool
+_X_HIDDEN Bool
 _XRRHasRates (int major, int minor)
 {
     return major > 1 || (major == 1 && minor >= 1);
@@ -330,7 +332,7 @@ Status XRRQueryVersion (Display *dpy,
     return 1;
 }
 
-Bool
+_X_HIDDEN Bool
 _XRRVersionHandler (Display	    *dpy,
 			xReply	    *rep,
 			char	    *buf,
@@ -393,9 +395,11 @@ int XRRUpdateConfiguration(XEvent *event)
     if (event->type == ConfigureNotify) {
 	rcevent = (XConfigureEvent *) event;
 	snum = XRRRootToScreen(dpy, rcevent->window);
-	dpy->screens[snum].width   = rcevent->width;
-	dpy->screens[snum].height  = rcevent->height;
-	return 1;
+	if (snum != -1) {
+	    dpy->screens[snum].width   = rcevent->width;
+	    dpy->screens[snum].height  = rcevent->height;
+	    return 1;
+	}
     }
 
     info = XRRFindDisplay(dpy);

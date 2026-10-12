@@ -1,5 +1,5 @@
 /*
- * Copyright 2007      by Sascha Hlusiak. <saschahlusiak@freedesktop.org>     
+ * Copyright 2007-2008 by Sascha Hlusiak. <saschahlusiak@freedesktop.org>     
  *                                                                            
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is  hereby granted without fee, provided that
@@ -379,37 +379,5 @@ jstkHandleAbsoluteAxis(LocalDevicePtr device, int number)
     if ((x != 0) || (y != 0)) {
         DBG(4, ErrorF("Moving mouse by %dx%d pixels\n", x, y));
         xf86PostMotionEvent(device->dev, 0, 0, 2, x, y);
-    }
-}
-
-
-
-
-/*
- ***************************************************************************
- *
- * jstkGenerateKeys
- *
- * Generates a series of keydown or keyup events of the specified 
- * KEYSCANCODES
- *
- ***************************************************************************
- */
-void
-jstkGenerateKeys(DeviceIntPtr device, KEYSCANCODES keys, char pressed)
-{
-    int i;
-    unsigned int k;
-
-    for (i=0;i<MAXKEYSPERBUTTON;i++) {
-        if (pressed != 0) 
-            k = keys[i];
-        else k = keys[MAXKEYSPERBUTTON - i - 1];
-
-        if (k != 0) {
-            DBG(2, ErrorF("Generating key %s event with keycode %d\n", 
-                (pressed)?"press":"release", k));
-            xf86PostKeyboardEvent(device, k, pressed);
-        }
     }
 }

@@ -385,7 +385,7 @@ WSReadInput(InputInfoPtr pInfo)
 static void
 printWsType(char *type, char *devname)
 {
-    xf86Msg(X_PROBED, "%s: Keyboard type: %s\n", type, devname); 
+    xf86Msg(X_PROBED, "%s: Keyboard type: %s\n", devname, type); 
 }
 #endif
 

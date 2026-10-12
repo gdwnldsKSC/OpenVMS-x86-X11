@@ -5,10 +5,12 @@ $ ON CONTROL_Y THEN GOTO interrupted
 $ result = 2
 $ IF (P1 .NES. "") .OR. (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. -
      (P5 .NES. "") .OR. (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
-$ IF F$TYPE(PERL) .NES. "STRING" THEN GOTO missing_perl
+$ awk_image = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.TOOLS.GAWK]GAWK.EXE")
+$ IF awk_image .EQS. "" THEN GOTO missing_awk
+$ AWK = "$" + awk_image
 $ source = "[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]"
 $ base = "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XSERVER.HW.XFREE86.COMMON]"
-$ generator = source + "MODELINE2C.PL"
+$ generator = source + "MODELINE2C.AWK"
 $ vesa = source + "VESAMODES."
 $ extra = source + "EXTRAMODES."
 $ modes = base + "MODELINES.DAT"
@@ -19,7 +21,7 @@ $ IF F$SEARCH(vesa) .EQS. "" THEN GOTO done
 $ IF F$SEARCH(extra) .EQS. "" THEN GOTO done
 $ COPY/NOLOG/CONCATENATE 'vesa','extra' 'modes'
 $ DEFINE/USER_MODE/NOLOG SYS$OUTPUT 'raw'
-$ PERL 'generator' 'modes'
+$ AWK "-f" 'generator' 'modes'
 $ result = $STATUS
 $ IF .NOT. (result .AND. 1) THEN GOTO done
 $ result = 2
@@ -31,8 +33,8 @@ RECORD
 $ result = $STATUS
 $ IF F$SEARCH(target) .EQS. "" THEN result = 2
 $ GOTO done
-$missing_perl:
-$ WRITE SYS$OUTPUT "COMMON requires the installed Perl setup to define the PERL foreign command."
+$missing_awk:
+$ WRITE SYS$OUTPUT "COMMON requires the source-built GAWK target."
 $ GOTO done
 $interrupted:
 $ result = 2

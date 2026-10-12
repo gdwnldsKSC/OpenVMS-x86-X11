@@ -1,4 +1,3 @@
-# $Id: Makefile.am,v 1.5 2005/11/28 22:04:10 alanc Exp $
 #
 # Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
 # 

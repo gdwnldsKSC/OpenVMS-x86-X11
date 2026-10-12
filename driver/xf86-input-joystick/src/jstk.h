@@ -1,5 +1,5 @@
 /*
- * Copyright 2007      by Sascha Hlusiak. <saschahlusiak@freedesktop.org>     
+ * Copyright 2007-2008 by Sascha Hlusiak. <saschahlusiak@freedesktop.org>     
  *                                                                            
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is  hereby granted without fee, provided that
@@ -28,6 +28,7 @@
 #define MAXBUTTONS 32
 #define MAXAXES 32
 #define MAXKEYSPERBUTTON 4
+#define MIN_KEYCODE 8
 
 
 /******************************************************************************
@@ -43,6 +44,18 @@
 #else
     #define DBG(lvl, f)
 #endif
+
+typedef enum _JOYSTICKEVENT {
+    EVENT_NONE=0,
+    EVENT_BUTTON,
+    EVENT_AXIS
+} JOYSTICKEVENT;
+
+typedef struct _JoystickDevRec *JoystickDevPtr;
+
+typedef void(*jstkCloseDeviceProc)(JoystickDevPtr joystick);
+typedef int(*jstkReadDataProc)(JoystickDevPtr joystick,
+                               JOYSTICKEVENT *event, int *number);
 
 
 typedef enum _JOYSTICKTYPE{
@@ -94,6 +107,8 @@ typedef struct _BUTTON {
 
 typedef struct _JoystickDevRec {
     int          fd;          /* Actual file descriptor */
+    jstkCloseDeviceProc close_proc; /* Callback for closing the backend */
+    jstkReadDataProc read_proc; /* Callback for reading data from the backend */
     void         *devicedata; /* Extra platform device dependend data */
     char         *device;     /* Name of the device */
 
@@ -103,6 +118,8 @@ typedef struct _JoystickDevRec {
     Bool         mouse_enabled, keys_enabled;
     float        amplify;     /* Global amplifier of axis movement */
 
+    int          repeat_delay, repeat_interval; /* Key autorepeat */
+
     struct _BUTTONMAP {
         int size;
         CARD8 scrollbutton[4];     /* Logical button numbers for scrollwheel */
@@ -110,11 +127,11 @@ typedef struct _JoystickDevRec {
     } buttonmap;
     struct _KEYMAP {
         int size;
-        KeySym map[MAXBUTTONS+1];
+        KeySym map[256-MIN_KEYCODE];
     } keymap;
 
     AXIS axis[MAXAXES];           /* Configuration per axis */
     BUTTON button[MAXBUTTONS];    /* Configuration per button */
-} JoystickDevRec, *JoystickDevPtr;
+} JoystickDevRec;
 
 #endif

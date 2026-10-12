@@ -1,41 +1,25 @@
- /***************************************************************************\
-|*                                                                           *|
-|*       Copyright 2003 NVIDIA, Corporation.  All rights reserved.           *|
-|*                                                                           *|
-|*     NOTICE TO USER:   The source code  is copyrighted under  U.S. and     *|
-|*     international laws.  Users and possessors of this source code are     *|
-|*     hereby granted a nonexclusive,  royalty-free copyright license to     *|
-|*     use this code in individual and commercial software.                  *|
-|*                                                                           *|
-|*     Any use of this source code must include,  in the user documenta-     *|
-|*     tion and  internal comments to the code,  notices to the end user     *|
-|*     as follows:                                                           *|
-|*                                                                           *|
-|*       Copyright 2003 NVIDIA, Corporation.  All rights reserved.           *|
-|*                                                                           *|
-|*     NVIDIA, CORPORATION MAKES NO REPRESENTATION ABOUT THE SUITABILITY     *|
-|*     OF  THIS SOURCE  CODE  FOR ANY PURPOSE.  IT IS  PROVIDED  "AS IS"     *|
-|*     WITHOUT EXPRESS OR IMPLIED WARRANTY OF ANY KIND.  NVIDIA, CORPOR-     *|
-|*     ATION DISCLAIMS ALL WARRANTIES  WITH REGARD  TO THIS SOURCE CODE,     *|
-|*     INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY, NONINFRINGE-     *|
-|*     MENT,  AND FITNESS  FOR A PARTICULAR PURPOSE.   IN NO EVENT SHALL     *|
-|*     NVIDIA, CORPORATION  BE LIABLE FOR ANY SPECIAL,  INDIRECT,  INCI-     *|
-|*     DENTAL, OR CONSEQUENTIAL DAMAGES,  OR ANY DAMAGES  WHATSOEVER RE-     *|
-|*     SULTING FROM LOSS OF USE,  DATA OR PROFITS,  WHETHER IN AN ACTION     *|
-|*     OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,  ARISING OUT OF     *|
-|*     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOURCE CODE.     *|
-|*                                                                           *|
-|*     U.S. Government  End  Users.   This source code  is a "commercial     *|
-|*     item,"  as that  term is  defined at  48 C.F.R. 2.101 (OCT 1995),     *|
-|*     consisting  of "commercial  computer  software"  and  "commercial     *|
-|*     computer  software  documentation,"  as such  terms  are  used in     *|
-|*     48 C.F.R. 12.212 (SEPT 1995)  and is provided to the U.S. Govern-     *|
-|*     ment only as  a commercial end item.   Consistent with  48 C.F.R.     *|
-|*     12.212 and  48 C.F.R. 227.7202-1 through  227.7202-4 (JUNE 1995),     *|
-|*     all U.S. Government End Users  acquire the source code  with only     *|
-|*     those rights set forth herein.                                        *|
-|*                                                                           *|
- \***************************************************************************/
+/*
+ * Copyright (c) 2003 NVIDIA, Corporation
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -298,6 +282,24 @@ static void nv10GetConfig (NVPtr pNv)
     }
 #endif
 
+#if XSERVER_LIBPCIACCESS
+    {
+    /* [AGP]: I don't know if this is correct */
+    struct pci_device *dev = pci_device_find_by_slot(0, 0, 0, 1);
+
+    if(implementation == 0x01a0) {
+        uint32_t amt;
+        pci_device_cfg_read_u32(dev, &amt, 0x7C);
+        pNv->RamAmountKBytes = (((amt >> 6) & 31) + 1) * 1024;
+    } else if(implementation == 0x01f0) {
+        uint32_t amt;
+        pci_device_cfg_read_u32(dev, &amt, 0x84);
+        pNv->RamAmountKBytes = (((amt >> 4) & 127) + 1) * 1024;
+    } else {
+        pNv->RamAmountKBytes = (pNv->PFB[0x020C/4] & 0xFFF00000) >> 10;
+    }
+    }
+#else
     if(implementation == 0x01a0) {
         int amt = pciReadLong(pciTag(0, 0, 1), 0x7C);
         pNv->RamAmountKBytes = (((amt >> 6) & 31) + 1) * 1024;
@@ -307,6 +309,7 @@ static void nv10GetConfig (NVPtr pNv)
     } else {
         pNv->RamAmountKBytes = (pNv->PFB[0x020C/4] & 0xFFF00000) >> 10;
     }
+#endif
 
     if(pNv->RamAmountKBytes > 256*1024)
         pNv->RamAmountKBytes = 256*1024;
@@ -337,7 +340,11 @@ NVCommonSetup(ScrnInfoPtr pScrn)
     Bool tvB = FALSE;
     int FlatPanel = -1;   /* really means the CRTC is slaved */
     Bool Television = FALSE;
-    
+    void *tmp;
+#if XSERVER_LIBPCIACCESS
+    int err;
+#endif
+
     /*
      * Override VGA I/O routines.
      */
@@ -365,10 +372,19 @@ NVCommonSetup(ScrnInfoPtr pScrn)
      */
     pVga->MMIOBase   = (CARD8 *)pNv;
     pVga->MMIOOffset = 0;
-    
-    pNv->REGS = xf86MapPciMem(pScrn->scrnIndex, 
-                              VIDMEM_MMIO | VIDMEM_READSIDEEFFECT, 
-                              pNv->PciTag, pNv->IOAddress, 0x01000000);
+
+#if XSERVER_LIBPCIACCESS
+    err = pci_device_map_range(pNv->PciInfo, pNv->IOAddress, 0x01000000,
+			       PCI_DEV_MAP_FLAG_WRITABLE, &tmp);
+    if (err != 0) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "pci_device_map_range failed: %s\n", strerror(err));
+    }
+#else
+    tmp = xf86MapPciMem(pScrn->scrnIndex, VIDMEM_MMIO | VIDMEM_READSIDEEFFECT,
+                        pNv->PciTag, pNv->IOAddress, 0x01000000);
+#endif
+    pNv->REGS = tmp;
 
     pNv->PRAMIN   = pNv->REGS + (0x00710000/4);
     pNv->PCRTC0   = pNv->REGS + (0x00600000/4);
@@ -689,6 +705,10 @@ NVCommonSetup(ScrnInfoPtr pScrn)
        pNv->fpSyncs = pNv->PRAMDAC[0x0848/4] & 0x30000033;
        xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Panel size is %i x %i\n",
                   pNv->fpWidth, pNv->fpHeight);
+       xf86DrvMsg(pScrn->scrnIndex, X_INFO, "NOTE: This driver cannot "
+                  "reconfigure the BIOS-programmed size.\n");
+       xf86DrvMsg(pScrn->scrnIndex, X_INFO, "These dimensions will be used as "
+                  "the panel size for mode validation.\n");
     }
 
     if(monitorA)

@@ -12,21 +12,21 @@ $ IF .NOT. $STATUS THEN GOTO failed
 $ step = "arguments"
 $ target = F$EDIT(P1,"UPCASE,TRIM")
 $ IF target .EQS. "" THEN target = "ALL"
-$ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|XFONT|FNTSTUBS|FS|ICE|SM|BDFTOPCF|FSLSFONTS|SHOWFONT|XFSINFO|ICEAUTH|SHOWRGB|MAKESTRS|MAKEDEPEND|LNDIR|ATOBM|GTF|FREETYPE2|MKFONTSCALE|FONTTOSFNT|REVPATH|"
+$ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|XFONT|FNTSTUBS|FS|ICE|SM|ICEAUTH|MAKESTRS|MAKEDEPEND|ATOBM|GTF|FREETYPE2|MKFONTSCALE|"
 $ targets = targets + "UCS2ANY|DAMAGE|MI|FB|RENDER|DIX|XPSTUBS|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|"
-$ targets = targets + "CFB|CFB16|CFB32|XKBFILE|XKBUI|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
+$ targets = targets + "CFB|CFB16|CFB32|XKBFILE|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ targets = targets + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ targets = targets + "XSS|XVMC|XXF86VM|XXF86MISC|"
-$ targets = targets + "XEVIE|XFONTCACHE|DMX|XP|"
-$ targets = targets + "OLDX|XMUU|XPM|XPRINTAPPUTIL|"
+$ targets = targets + "XFONTCACHE|DMX|"
+$ targets = targets + "XMUU|XPM|"
 $ targets = targets + "X11|XAUTH|XDPYINFO|XWININFO|"
 $ targets = targets + "XSET|XMODMAP|XEV|BISON|XKBCOMP|SETXKBMAP|XKB_DATA|XVFB|XSERVER_CORE|XSERVER|"
 $ targets = targets + "XT|XMU|MKFONTDIR|FONTS|FONTS_BDF|FONTS_MISC|FONTS_75DPI|FONTS_100DPI|FONTS_CYRILLIC|"
 $ targets = targets + "FONTS_ENCODINGS|FONTS_SCALED|FONTS_SPEEDO|FONTS_TYPE1|FONTS_TTF|FONTS_OTF|FONTS_CID|"
 $ targets = targets + "NLS|NLS_XLC_LOCALE|NLS_COMPOSE|X11_DATA|RUNTIME|"
-$ targets = targets + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|RAC|COMMON|INIT|BUS|MISC|SCANPCI|XORGXKB|"
+$ targets = targets + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|RAC|COMMON|INIT|BUS|MISC|XORGXKB|"
 $ targets = targets + "LOADER|XORGFB|XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
-$ targets = targets + "PIXMAN|CONFIG|FBCMAP|"
+$ targets = targets + "PIXMAN|CONFIG|FBCMAP|GAWK|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -75,10 +75,6 @@ $ directory = profile + ".INCLUDE.X11.XCURSOR]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]XCURSOR.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11.XMU]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]XMU.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".INCLUDE.X11.XPRINTUTIL]"
-$ IF F$SEARCH(profile + ".INCLUDE.X11]XPRINTUTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".INCLUDE.X11.XPRINTAPPUTIL]"
-$ IF F$SEARCH(profile + ".INCLUDE.X11]XPRINTAPPUTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB]"
 $ pixman_directory = profile + ".LIB.PIXMAN]"
 $ IF F$SEARCH(profile + "]LIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
@@ -97,10 +93,6 @@ $ directory = profile + ".LIB.EXPAT]"
 $ IF F$SEARCH(profile + ".LIB]EXPAT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FREETYPE2]"
 $ IF F$SEARCH(profile + ".LIB]FREETYPE2.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".LIB.LBXUTIL]"
-$ IF F$SEARCH(profile + ".LIB]LBXUTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".LIB.LBXUTIL.IMAGE]"
-$ IF F$SEARCH(profile + ".LIB.LBXUTIL]IMAGE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FNTSTUBS]"
 $ IF F$SEARCH(profile + ".LIB]FNTSTUBS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FS]"
@@ -111,8 +103,6 @@ $ directory = profile + ".LIB.SM]"
 $ IF F$SEARCH(profile + ".LIB]SM.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XKBFILE]"
 $ IF F$SEARCH(profile + ".LIB]XKBFILE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".LIB.XKBUI]"
-$ IF F$SEARCH(profile + ".LIB]XKBUI.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XEXT]"
 $ IF F$SEARCH(profile + ".LIB]XEXT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XRENDER]"
@@ -145,22 +135,14 @@ $ directory = profile + ".LIB.XXF86VM]"
 $ IF F$SEARCH(profile + ".LIB]XXF86VM.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XXF86MISC]"
 $ IF F$SEARCH(profile + ".LIB]XXF86MISC.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".LIB.XEVIE]"
-$ IF F$SEARCH(profile + ".LIB]XEVIE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XFONTCACHE]"
 $ IF F$SEARCH(profile + ".LIB]XFONTCACHE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.DMX]"
 $ IF F$SEARCH(profile + ".LIB]DMX.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".LIB.XP]"
-$ IF F$SEARCH(profile + ".LIB]XP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".LIB.OLDX]"
-$ IF F$SEARCH(profile + ".LIB]OLDX.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XMUU]"
 $ IF F$SEARCH(profile + ".LIB]XMUU.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XPM]"
 $ IF F$SEARCH(profile + ".LIB]XPM.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".LIB.XPRINTAPPUTIL]"
-$ IF F$SEARCH(profile + ".LIB]XPRINTAPPUTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT]"
 $ IF F$SEARCH(profile + ".LIB]FONT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONT.UTIL]"
@@ -191,14 +173,6 @@ $ directory = profile + ".FONTS.UTIL]"
 $ IF F$SEARCH(profile + ".FONTS]UTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS]"
 $ IF F$SEARCH(profile + "]PROGRAMS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".PROGRAMS.BDFTOPCF]"
-$ IF F$SEARCH(profile + ".PROGRAMS]BDFTOPCF.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".PROGRAMS.FSLSFONTS]"
-$ IF F$SEARCH(profile + ".PROGRAMS]FSLSFONTS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".PROGRAMS.SHOWFONT]"
-$ IF F$SEARCH(profile + ".PROGRAMS]SHOWFONT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".PROGRAMS.XFSINFO]"
-$ IF F$SEARCH(profile + ".PROGRAMS]XFSINFO.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XAUTH]"
 $ IF F$SEARCH(profile + ".PROGRAMS]XAUTH.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XDPYINFO]"
@@ -207,14 +181,10 @@ $ directory = profile + ".PROGRAMS.XWININFO]"
 $ IF F$SEARCH(profile + ".PROGRAMS]XWININFO.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.ICEAUTH]"
 $ IF F$SEARCH(profile + ".PROGRAMS]ICEAUTH.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".PROGRAMS.SHOWRGB]"
-$ IF F$SEARCH(profile + ".PROGRAMS]SHOWRGB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.BITMAP]"
 $ IF F$SEARCH(profile + ".PROGRAMS]BITMAP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.MKFONTSCALE]"
 $ IF F$SEARCH(profile + ".PROGRAMS]MKFONTSCALE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".PROGRAMS.FONTTOSFNT]"
-$ IF F$SEARCH(profile + ".PROGRAMS]FONTTOSFNT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER]"
 $ config_directory = profile + ".PROGRAMS.XSERVER.CONFIG]"
 $ IF F$SEARCH(profile + ".PROGRAMS]XSERVER.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
@@ -329,6 +299,8 @@ $ directory = profile + ".TOOLS]"
 $ IF F$SEARCH(profile + "]TOOLS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".TOOLS.BISON]"
 $ IF F$SEARCH(profile + ".TOOLS]BISON.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".TOOLS.GAWK]"
+$ IF F$SEARCH(profile + ".TOOLS]GAWK.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.SHADOWFB]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86]SHADOWFB.DIR") .EQS. "" -
     THEN CREATE/DIRECTORY 'directory'
@@ -361,9 +333,6 @@ $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86.OS-SUPPORT]BUS.DIR") .EQS.
     THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.OS-SUPPORT.MISC]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86.OS-SUPPORT]MISC.DIR") .EQS. "" -
-    THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.SCANPCI]"
-$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86]SCANPCI.DIR") .EQS. "" -
     THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.DIXMODS]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86]DIXMODS.DIR") .EQS. "" -

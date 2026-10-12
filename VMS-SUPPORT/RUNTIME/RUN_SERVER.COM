@@ -58,7 +58,6 @@ $ GOTO check_filespec
 $filespecs_checked:
 $ IF F$SEARCH(prefix + ".LIB.X11.XKB]XKBCOMP.EXE;0") .EQS. "" THEN GOTO missing
 $ IF F$SEARCH(prefix + ".LIB.X11.XKB.RULES]XORG.;0") .EQS. "" THEN GOTO missing
-$ IF F$SEARCH(prefix + ".LIB.X11]RGB.TXT;0") .EQS. "" THEN GOTO missing
 $ device = F$PARSE(root,,,"DEVICE","SYNTAX_ONLY")
 $ unix_root = "/" + F$EXTRACT(0,F$LENGTH(device)-1,device)
 $ directory = F$PARSE(root,,,"DIRECTORY","SYNTAX_ONLY")
@@ -84,17 +83,16 @@ $ section_index = section_index + 1
 $ GOTO font_next
 $fonts_done:
 $ xkb_path = unix_root + "/LIB/X11/XKB"
-$ rgb_path = unix_root + "/LIB/X11/rgb"
 $ screen = ":" + display_number
 $ server = "$" + image
 $! The default compiled XKB_BIN_DIRECTORY is relative to this runtime root.
 $ SET DEFAULT 'root'
 $ IF no_listen .NES. "" THEN GOTO restricted
-$ server "''screen'" "-auth" "''authority'" "-fp" "''font_path'" "-xkbdir" "''xkb_path'" "-co" "''rgb_path'"
+$ server "''screen'" "-auth" "''authority'" "-fp" "''font_path'" "-xkbdir" "''xkb_path'"
 $ result = $STATUS
 $ GOTO done
 $restricted:
-$ server "''screen'" "-auth" "''authority'" "-fp" "''font_path'" "-xkbdir" "''xkb_path'" "-co" "''rgb_path'" "-nolisten" "''no_listen'"
+$ server "''screen'" "-auth" "''authority'" "-fp" "''font_path'" "-xkbdir" "''xkb_path'" "-nolisten" "''no_listen'"
 $ result = $STATUS
 $ GOTO done
 $missing:

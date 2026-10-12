@@ -1,0 +1,2 @@
+gawk: divzero.awk:1: warning: division by zero may occur at runtime
+0

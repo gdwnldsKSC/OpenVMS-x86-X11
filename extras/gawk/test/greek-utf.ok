@@ -1,0 +1,11 @@
+"bΣ" ~ /Σ/: expect true, got true
+"bσ" ~ /Σ/: expect true, got true
+"bς" ~ /Σ/: expect false, got false
+
+"bΣ" ~ /σ/: expect true, got true
+"bσ" ~ /σ/: expect true, got true
+"bς" ~ /σ/: expect false, got false
+
+"bΣ" ~ /ς/: expect true, got true
+"bσ" ~ /ς/: expect false, got false
+"bς" ~ /ς/: expect true, got true

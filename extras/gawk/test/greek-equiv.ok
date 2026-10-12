@@ -1,0 +1,21 @@
+IGNORECASE = 0
+Σ ~ /[=Σ=]/ = true
+Σ ~ /[=σ=]/ = false
+Σ ~ /[=ς=]/ = false
+σ ~ /[=Σ=]/ = false
+σ ~ /[=σ=]/ = true
+σ ~ /[=ς=]/ = false
+ς ~ /[=Σ=]/ = false
+ς ~ /[=σ=]/ = false
+ς ~ /[=ς=]/ = true
+
+IGNORECASE = 1
+Σ ~ /[=Σ=]/ = true
+Σ ~ /[=σ=]/ = true
+Σ ~ /[=ς=]/ = true
+σ ~ /[=Σ=]/ = true
+σ ~ /[=σ=]/ = true
+σ ~ /[=ς=]/ = false
+ς ~ /[=Σ=]/ = false
+ς ~ /[=σ=]/ = false
+ς ~ /[=ς=]/ = true

@@ -57,14 +57,10 @@ SOFTWARE.
 #include <dix-config.h>
 #endif
 
-#include <X11/X.h>	/* for inputstr.h    */
-#include <X11/Xproto.h>	/* Request macro     */
 #include "inputstr.h"	/* DeviceIntPtr      */
 #include "windowstr.h"	/* window structure  */
 #include <X11/extensions/XI.h>
 #include <X11/extensions/XIproto.h>
-#include "extnsionst.h"
-#include "extinit.h"	/* LookupDeviceIntRec */
 #include "exevents.h"
 #include "exglobals.h"
 
@@ -131,19 +127,16 @@ int
 SProcXSelectExtensionEvent(ClientPtr client)
 {
     char n;
-    long *p;
-    int i;
 
     REQUEST(xSelectExtensionEventReq);
     swaps(&stuff->length, n);
     REQUEST_AT_LEAST_SIZE(xSelectExtensionEventReq);
     swapl(&stuff->window, n);
     swaps(&stuff->count, n);
-    p = (long *)&stuff[1];
-    for (i = 0; i < stuff->count; i++) {
-	swapl(p, n);
-	p++;
-    }
+    REQUEST_FIXED_SIZE(xSelectExtensionEventReq,
+                      stuff->count * sizeof(CARD32));
+    SwapLongs((CARD32 *) (&stuff[1]), stuff->count);
+
     return (ProcXSelectExtensionEvent(client));
 }
 
@@ -164,40 +157,29 @@ ProcXSelectExtensionEvent(ClientPtr client)
     REQUEST(xSelectExtensionEventReq);
     REQUEST_AT_LEAST_SIZE(xSelectExtensionEventReq);
 
-    if (stuff->length != (sizeof(xSelectExtensionEventReq) >> 2) + stuff->count) {
-	SendErrorToClient(client, IReqCode, X_SelectExtensionEvent, 0,
-			  BadLength);
-	return Success;
-    }
+    if (stuff->length != (sizeof(xSelectExtensionEventReq) >> 2) + stuff->count)
+	return BadLength;
 
-    ret = dixLookupWindow(&pWin, stuff->window, client, DixUnknownAccess);
-    if (ret != Success) {
-	SendErrorToClient(client, IReqCode, X_SelectExtensionEvent, 0, ret);
-	return Success;
-    }
+    ret = dixLookupWindow(&pWin, stuff->window, client, DixReceiveAccess);
+    if (ret != Success)
+	return ret;
 
     if (HandleDevicePresenceMask(client, pWin, (XEventClass *) & stuff[1],
-                                &stuff->count) != Success) {
-       SendErrorToClient(client, IReqCode, X_SelectExtensionEvent, 0,
-                         BadAlloc);
-       return Success;
-    }
+                                &stuff->count) != Success)
+	return BadAlloc;
 
     if ((ret = CreateMaskFromList(client, (XEventClass *) & stuff[1],
 				  stuff->count, tmp, NULL,
 				  X_SelectExtensionEvent)) != Success)
-	return Success;
+	return ret;
 
     for (i = 0; i < EMASKSIZE; i++)
 	if (tmp[i].dev != NULL) {
 	    if ((ret =
 		 SelectForWindow((DeviceIntPtr) tmp[i].dev, pWin, client,
 				 tmp[i].mask, ExtExclusiveMasks[i],
-				 ExtValidMasks[i])) != Success) {
-		SendErrorToClient(client, IReqCode, X_SelectExtensionEvent, 0,
-				  ret);
-		return Success;
-	    }
+				 ExtValidMasks[i])) != Success)
+		return ret;
 	}
 
     return Success;

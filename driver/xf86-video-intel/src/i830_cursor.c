@@ -1,4 +1,4 @@
-/* -*- c-basic-offset: 3 -*- */
+/* -*- c-basic-offset: 4 -*- */
 /**************************************************************************
 
 Copyright 1998-1999 Precision Insight, Inc., Cedar Park, Texas.
@@ -90,7 +90,7 @@ I830InitHWCursor(ScrnInfoPtr pScrn)
 {
     xf86CrtcConfigPtr   xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
     I830Ptr		pI830 = I830PTR(pScrn);
-    CARD32		temp;
+    uint32_t		temp;
     int			i;
 
     DPRINTF(PFX, "I830InitHWCursor\n");
@@ -141,7 +141,7 @@ i830_crtc_load_cursor_image (xf86CrtcPtr crtc, unsigned char *src)
 {
     I830Ptr		pI830 = I830PTR(crtc->scrn);
     I830CrtcPrivatePtr	intel_crtc = crtc->driver_private;
-    CARD8		*pcurs;
+    uint8_t		*pcurs;
 
     pcurs = pI830->FbBase + intel_crtc->cursor_offset;
 
@@ -155,9 +155,9 @@ i830_crtc_load_cursor_argb (xf86CrtcPtr crtc, CARD32 *image)
 {
     I830Ptr		pI830 = I830PTR(crtc->scrn);
     I830CrtcPrivatePtr	intel_crtc = crtc->driver_private;
-    CARD32		*pcurs;
+    uint32_t		*pcurs;
 
-    pcurs = (CARD32 *) (pI830->FbBase + intel_crtc->cursor_argb_offset);
+    pcurs = (uint32_t *) (pI830->FbBase + intel_crtc->cursor_argb_offset);
 
     intel_crtc->cursor_is_argb = TRUE;
     memcpy (pcurs, image, I810_CURSOR_Y * I810_CURSOR_X * 4);
@@ -170,7 +170,7 @@ i830_crtc_set_cursor_position (xf86CrtcPtr crtc, int x, int y)
     ScrnInfoPtr		scrn = crtc->scrn;
     I830Ptr		pI830 = I830PTR(scrn);
     I830CrtcPrivatePtr	intel_crtc = I830CrtcPrivate(crtc);
-    CARD32		temp;
+    uint32_t		temp;
 
     temp = 0;
     if (x < 0) {
@@ -204,7 +204,7 @@ i830_crtc_show_cursor (xf86CrtcPtr crtc)
     I830Ptr		pI830 = I830PTR(scrn);
     I830CrtcPrivatePtr	intel_crtc = I830CrtcPrivate(crtc);
     int			pipe = intel_crtc->pipe;
-    CARD32		temp;
+    uint32_t		temp;
     int			cursor_control = (pipe == 0 ? CURSOR_A_CONTROL :
 					  CURSOR_B_CONTROL);
     
@@ -242,7 +242,7 @@ i830_crtc_hide_cursor (xf86CrtcPtr crtc)
     I830Ptr		pI830 = I830PTR(scrn);
     I830CrtcPrivatePtr	intel_crtc = I830CrtcPrivate(crtc);
     int			pipe = intel_crtc->pipe;
-    CARD32		temp;
+    uint32_t		temp;
     int			cursor_control = (pipe == 0 ? CURSOR_A_CONTROL :
 					  CURSOR_B_CONTROL);
     
@@ -274,4 +274,60 @@ i830_crtc_set_cursor_colors (xf86CrtcPtr crtc, int bg, int fg)
     OUTREG(pal0 +  4, fg & 0x00ffffff);
     OUTREG(pal0 +  8, fg & 0x00ffffff);
     OUTREG(pal0 + 12, bg & 0x00ffffff);
+}
+
+void
+i830_update_cursor_offsets (ScrnInfoPtr pScrn)
+{
+    I830Ptr pI830 = I830PTR(pScrn);
+    xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
+    int i;
+
+    if (pI830->cursor_mem) {
+	unsigned long cursor_offset_base = pI830->cursor_mem->offset;
+	unsigned long cursor_addr_base, offset = 0;
+
+	/* Single memory buffer for cursors */
+	if (pI830->CursorNeedsPhysical) {
+	    /* On any hardware that requires physical addresses for cursors,
+	     * the PTEs don't support memory above 4GB, so we can safely
+	     * ignore the top 32 bits of cursor_mem->bus_addr.
+	     */
+	    cursor_addr_base = (unsigned long)pI830->cursor_mem->bus_addr;
+	} else
+	    cursor_addr_base = pI830->cursor_mem->offset;
+
+	for (i = 0; i < xf86_config->num_crtc; i++) {
+	    xf86CrtcPtr crtc = xf86_config->crtc[i];
+	    I830CrtcPrivatePtr intel_crtc = crtc->driver_private;
+
+	    intel_crtc->cursor_argb_addr = cursor_addr_base + offset;
+	    intel_crtc->cursor_argb_offset = cursor_offset_base + offset;
+	    offset += HWCURSOR_SIZE_ARGB;
+
+	    intel_crtc->cursor_addr = cursor_addr_base + offset;
+	    intel_crtc->cursor_offset = cursor_offset_base + offset;
+	    offset += HWCURSOR_SIZE;
+	}
+    } else {
+	/* Separate allocations per cursor */
+	for (i = 0; i < xf86_config->num_crtc; i++) {
+	    xf86CrtcPtr crtc = xf86_config->crtc[i];
+	    I830CrtcPrivatePtr intel_crtc = crtc->driver_private;
+
+	    if (pI830->CursorNeedsPhysical) {
+		intel_crtc->cursor_addr =
+		    pI830->cursor_mem_classic[i]->bus_addr;
+		intel_crtc->cursor_argb_addr =
+		    pI830->cursor_mem_argb[i]->bus_addr;
+	    } else {
+		intel_crtc->cursor_addr =
+		    pI830->cursor_mem_classic[i]->offset;
+		intel_crtc->cursor_argb_addr =
+		    pI830->cursor_mem_argb[i]->offset;
+	    }
+	    intel_crtc->cursor_offset = pI830->cursor_mem_classic[i]->offset;
+	    intel_crtc->cursor_argb_offset = pI830->cursor_mem_argb[i]->offset;
+	}
+    }
 }

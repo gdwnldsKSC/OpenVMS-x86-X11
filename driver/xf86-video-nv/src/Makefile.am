@@ -41,11 +41,9 @@ nv_sources = \
          nv_include.h \
          nv_local.h \
          nv_proto.h \
-         nvreg.h \
          nv_setup.c \
          nv_shadow.c \
          nv_type.h \
-         nvvga.h \
          nv_video.c \
          nv_xaa.c
 
@@ -94,6 +92,7 @@ xmode_sources = \
          @modes_dir@/xf86Crtc.c \
          @modes_dir@/xf86Cursors.c \
          @modes_dir@/xf86EdidModes.c \
+         @modes_dir@/xf86gtf.c \
          @modes_dir@/xf86RandR12.c \
          @modes_dir@/xf86RandR12.h \
          @modes_dir@/xf86Rename.h \

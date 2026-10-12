@@ -1,0 +1,13 @@
+Mon Nov  3 12:18:03 PM IST 2025
+===============================
+
+The files fnmatch.c, fnmatch.h, strncasecmp.c, strptime.c, and system.c
+are copyright by the Free Software Foundation. They are licensed under
+the GPL or the LGPL. See the COPYING.LIB file in this directory and the
+COPYING file in the parent directory for licensing information.
+
+All other files are public domain.
+
+Arnold Robbins
+arnold@skeeve.com
+

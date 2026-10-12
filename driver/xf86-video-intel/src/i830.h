@@ -1,4 +1,3 @@
-
 /**************************************************************************
 
 Copyright 1998-1999 Precision Insight, Inc., Cedar Park, Texas.
@@ -40,6 +39,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define I830DEBUG
 #endif
 
+#include <stdint.h>
+
 #ifndef REMAP_RESERVED
 #define REMAP_RESERVED 0
 #endif
@@ -61,8 +62,16 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "xf86Crtc.h"
 #include "xf86RandR12.h"
 
+#include "xorg-server.h"
+#ifdef XSERVER_LIBPCIACCESS
+#include <pciaccess.h>
+#endif
+
 #ifdef XF86DRI
 #include "xf86drm.h"
+#ifdef XF86DRI_MM
+#include "xf86mm.h"
+#endif
 #include "sarea.h"
 #define _XF86DRI_SERVER_
 #include "dri.h"
@@ -76,7 +85,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifdef I830_USE_EXA
 #include "exa.h"
 Bool I830EXAInit(ScreenPtr pScreen);
-#define EXA_LINEAR_EXTRA	(64*1024)
 unsigned long long I830TexOffsetStart(PixmapPtr pPix);
 #endif
 
@@ -87,6 +95,7 @@ Bool I830XAAInit(ScreenPtr pScreen);
 typedef struct _I830OutputRec I830OutputRec, *I830OutputPtr;
 
 #include "common.h"
+#include "i830_ring.h"
 #include "i830_sdvo.h"
 #include "i2c_vid.h"
 
@@ -108,14 +117,27 @@ typedef struct _I830OutputRec I830OutputRec, *I830OutputPtr;
 #define I830_KERNEL_TEX (1 << 1) /* Allocate texture memory pool */
 #endif
 
+#ifdef XvMCExtension
+#ifdef ENABLE_XVMC
+#define INTEL_XVMC 1
+#endif
+#endif
+
 typedef struct _I830Rec *I830Ptr;
 
 typedef void (*I830WriteIndexedByteFunc)(I830Ptr pI830, IOADDRESS addr,
-                                         CARD8 index, CARD8 value);
-typedef CARD8(*I830ReadIndexedByteFunc)(I830Ptr pI830, IOADDRESS addr,
-                                        CARD8 index);
-typedef void (*I830WriteByteFunc)(I830Ptr pI830, IOADDRESS addr, CARD8 value);
-typedef CARD8(*I830ReadByteFunc)(I830Ptr pI830, IOADDRESS addr);
+                                         uint8_t index, uint8_t value);
+typedef uint8_t(*I830ReadIndexedByteFunc)(I830Ptr pI830, IOADDRESS addr,
+					  uint8_t index);
+typedef void (*I830WriteByteFunc)(I830Ptr pI830, IOADDRESS addr,
+				  uint8_t value);
+typedef uint8_t(*I830ReadByteFunc)(I830Ptr pI830, IOADDRESS addr);
+
+enum tile_format {
+    TILE_NONE,
+    TILE_XMAJOR,
+    TILE_YMAJOR
+};
 
 /** Record of a linear allocation in the aperture. */
 typedef struct _i830_memory i830_memory;
@@ -130,6 +152,11 @@ struct _i830_memory {
      * Any bound memory will cover offset to (offset + size).
      */
     unsigned long size;
+    /**
+     * Allocated aperture size, taking into account padding to allow for
+     * tiling.
+     */
+    unsigned long allocated_size;
     /**
      * Physical (or more properly, bus) address of the allocation.
      * Only set if requested during allocation.
@@ -148,6 +175,15 @@ struct _i830_memory {
      */
     unsigned long agp_offset;
 
+    enum tile_format tiling;
+    /**
+     * Index of the fence register representing the tiled surface, when
+     * bound.
+     */
+    int fence_nr;
+    /** Pitch value in bytes for tiled surfaces */
+    unsigned int pitch;
+
     /** Description of the allocation, for logging */
     char *name;
 
@@ -158,6 +194,10 @@ struct _i830_memory {
     i830_memory *prev;
     /** @} */
 
+#ifdef XF86DRI_MM
+    drmBO bo;
+    Bool lifetime_fixed_offset;
+#endif
 };
 
 typedef struct {
@@ -198,39 +238,35 @@ typedef struct {
 #define I830_OUTPUT_SDVO 5
 #define I830_OUTPUT_LVDS 6
 #define I830_OUTPUT_TVOUT 7
+#define I830_OUTPUT_HDMI 8
 
 struct _I830DVODriver {
    int type;
    char *modulename;
    char *fntablename;
    unsigned int dvo_reg;
+   uint32_t gpio;
    int address;
    const char **symbols;
    I830I2CVidOutputRec *vid_rec;
    void *dev_priv;
    pointer modhandle;
-   DisplayModePtr panel_fixed_mode;
-   Bool panel_wants_dither;
 };
 
 extern const char *i830_output_type_names[];
 
 typedef struct _I830CrtcPrivateRec {
     int			    pipe;
+    int			    plane;
 
     Bool    		    enabled;
     
     int			    dpms_mode;
     
     /* Lookup table values to be set when the CRTC is enabled */
-    CARD8 lut_r[256], lut_g[256], lut_b[256];
+    uint8_t lut_r[256], lut_g[256], lut_b[256];
 
-#ifdef I830_USE_XAA
-    FBLinearPtr rotate_mem_xaa;
-#endif
-#ifdef I830_USE_EXA
-    ExaOffscreenArea *rotate_mem_exa;
-#endif
+    i830_memory *rotate_mem;
     /* Card virtual address of the cursor */
     unsigned long cursor_offset;
     unsigned long cursor_argb_offset;
@@ -250,6 +286,8 @@ typedef struct _I830OutputPrivateRec {
    I2CBusPtr		    pDDCBus;
    struct _I830DVODriver    *i2c_drv;
    Bool			    load_detect_temp;
+   Bool			    needs_tv_clock;
+   uint32_t		    lvds_bits;
    int                      pipe_mask;
    int			    clone_mask;
    /** Output-private structure.  Should replace i2c_drv */
@@ -264,6 +302,57 @@ enum last_3d {
     LAST_3D_VIDEO,
     LAST_3D_RENDER,
     LAST_3D_ROTATION
+};
+
+/*
+ * Backlight control has some unfortunate properties:
+ *   - many machines won't give us brightness change notifications
+ *     o brightness hotkeys
+ *     o events like AC plug/unplug (can be controlled via _DOS setting)
+ *     o ambient light sensor triggered changes
+ *   - some machines use the so-called "legacy" backlight interface
+ *     o resulting brightness is a combo of LBB and PWM values
+ *     o LBB sits in config space
+ *   - some machines have ACPI methods for changing brightness
+ *     o one of the few ways the X server and firmware can stay in sync
+ *   - new machines have the IGD OpRegion interface available
+ *     o a reliable way of keeping the firmware and X in sync
+ *
+ * So the real problem is on machines where ACPI or OpRegion methods aren't
+ * available.  In that case, problems can occur:
+ *   1) the BIOS and X will have different ideas of what the brightness is,
+ *      leading to unexpected results when the brightness is increased or
+ *      decreased via hotkey or X protocol
+ *   2) unless X takes the legacy register into account, machines using it
+ *      may prevent X from raising the brightness above 0 if the firmware
+ *      set LBB to 0
+ * Given these problems, we provide the user with a selection of methods,
+ * so they can choose an ideal one for their platform (assuming our quirk
+ * code picks the wrong one).
+ *
+ * Four different backlight control methods are available:
+ *   BCM_NATIVE:  only ever touch the native backlight control registers
+ *     This method may be susceptible to problem (2) above if the firmware
+ *     modifies the legacy registers.
+ *   BCM_LEGACY:  only ever touch the legacy backlight control registers
+ *     This method may be susceptible to problem (1) above if the firmware
+ *     also modifies the legacy registers.
+ *   BCM_COMBO:  try to use both sets
+ *     In this case, the driver will try to modify both sets of registers
+ *     if needed.  To avoid problem (2) above it may set the LBB register
+ *     to a non-zero value if the brightness is to be increased.  It's still
+ *     susceptible to problem (1), but to a lesser extent than the LEGACY only
+ *     method.
+ *   BCM_KERNEL:  use kernel methods for controlling the backlight
+ *     This is only available on some platforms, but where present this can
+ *     provide the best user experience.
+ */
+
+enum backlight_control {
+    BCM_NATIVE = 0,
+    BCM_LEGACY,
+    BCM_COMBO,
+    BCM_KERNEL,
 };
 
 typedef struct _I830Rec {
@@ -282,13 +371,22 @@ typedef struct _I830Rec {
 
    /* These are set in PreInit and never changed. */
    long FbMapSize;
+   long GTTMapSize;
 
-   i830_memory *memory_list;	/**< Linked list of video memory allocations */
+   /**
+    * Linked list of video memory allocations.  The head and tail are
+    * dummy entries that bound the allocation area.
+    */
+   i830_memory *memory_list;
+   /** Linked list of buffer object memory allocations */
+   i830_memory *bo_list;
    long stolen_size;		/**< bytes of pre-bound stolen memory */
    int gtt_acquired;		/**< whether we currently own the AGP */
 
    i830_memory *front_buffer;
    i830_memory *front_buffer_2;
+   i830_memory *compressed_front_buffer;
+   i830_memory *compressed_ll_buffer;
    /* One big buffer for all cursors for kernels that support this */
    i830_memory *cursor_mem;
    /* separate small buffers for kernels that support this */
@@ -298,15 +396,27 @@ typedef struct _I830Rec {
    i830_memory *xaa_scratch_2;
 #ifdef I830_USE_EXA
    i830_memory *exa_offscreen;
-   i830_memory *exa_965_state;
+   i830_memory *gen4_render_state_mem;
 #endif
    /* Regions allocated either from the above pools, or from agpgart. */
    I830RingBuffer *LpRing;
+
+   /** Number of bytes being emitted in the current BEGIN_LP_RING */
+   unsigned int ring_emitting;
+   /** Number of bytes that have been emitted in the current BEGIN_LP_RING */
+   unsigned int ring_used;
+   /** Offset in the ring for the next DWORD emit */
+   uint32_t ring_next;
 
 #ifdef I830_XV
    /* For Xvideo */
    i830_memory *overlay_regs;
 #endif
+#ifdef INTEL_XVMC
+   /* For XvMC */
+   Bool XvMCEnabled;
+#endif
+
    XF86ModReqInfo shadowReq; /* to test for later libshadow */
    Rotation rotation;
    void (*PointerMoved)(int, int, int);
@@ -314,7 +424,7 @@ typedef struct _I830Rec {
 
    i830_memory *logical_context;
 
-   unsigned int front_tiled;
+   i830_memory *power_context;
 
 #ifdef XF86DRI
    i830_memory *back_buffer;
@@ -326,12 +436,7 @@ typedef struct _I830Rec {
 
    int TexGranularity;
    int drmMinor;
-   int mmModeFlags;
-   int mmSize;
-
-   unsigned int back_tiled;
-   unsigned int third_tiled;
-   unsigned int depth_tiled;
+   Bool allocate_classic_textures;
 
    Bool want_vblank_interrupts;
 #ifdef DAMAGE
@@ -343,7 +448,8 @@ typedef struct _I830Rec {
    Bool NeedRingBufferLow;
    Bool allowPageFlip;
    Bool TripleBuffer;
-   Bool disableTiling;
+   Bool tiling;
+   Bool fb_compression;
 
    int backPitch;
 
@@ -359,9 +465,13 @@ typedef struct _I830Rec {
    unsigned long MMIOAddr;
    IOADDRESS ioBase;
    EntityInfoPtr pEnt;
+#if XSERVER_LIBPCIACCESS
+   struct pci_device *PciInfo;
+#else
    pciVideoPtr PciInfo;
    PCITAG PciTag;
-   CARD8 variant;
+#endif
+   uint8_t variant;
 
    unsigned int BR[20];
 
@@ -369,17 +479,7 @@ typedef struct _I830Rec {
    int NumScanlineColorExpandBuffers;
    int nextColorExpandBuf;
 
-    /**
-     * Values to be programmed into the fence registers.
-     *
-     * Pre-965, this is a list of FENCE_NR (8) CARD32 registers that
-     * contain their start, size, and pitch.  On the 965, it is a list of
-     * FENCE_NEW_NR CARD32s for the start and pitch fields (low 32 bits) of
-     * the fence registers followed by FENCE_NEW_NR CARD32s for the end fields
-     * (high 32 bits) of the fence registers.
-     */
-   unsigned int fence[FENCE_NEW_NR * 2];
-   unsigned int next_fence;
+   Bool fence_used[FENCE_NEW_NR];
 
    Bool useEXA;
    Bool noAccel;
@@ -402,9 +502,8 @@ typedef struct _I830Rec {
    CloseScreenProcPtr CloseScreen;
 
 #ifdef I830_USE_EXA
-   unsigned int copy_src_pitch;
-   unsigned int copy_src_off;
    ExaDriverPtr	EXADriverPtr;
+   PixmapPtr pSrcPixmap;
 #endif
 
    I830WriteIndexedByteFunc writeControl;
@@ -426,9 +525,13 @@ typedef struct _I830Rec {
    float scale_units[2][2];
   /** Transform pointers for src/mask, or NULL if identity */
    PictTransform *transform[2];
+   float coord_adjust;
    /* i915 EXA render state */
-   CARD32 mapstate[6];
-   CARD32 samplerstate[6];
+   uint32_t mapstate[6];
+   uint32_t samplerstate[6];
+
+   /* 965 render acceleration state */
+   struct gen4_render_state *gen4_render_state;
 
    Bool directRenderingDisabled;	/* DRI disabled in PreInit. */
    Bool directRenderingEnabled;		/* DRI enabled this generation. */
@@ -448,11 +551,16 @@ typedef struct _I830Rec {
    /* Broken-out options. */
    OptionInfoPtr Options;
 
-   Bool StolenOnly;
+   Bool lvds_24_bit_mode;
+   Bool lvds_use_ssc;
+   int lvds_ssc_freq; /* in MHz */
+   Bool lvds_dither;
+   DisplayModePtr lvds_fixed_mode;
+   Bool skip_panel_detect;
 
-   Bool swfSaved;
-   CARD32 saveSWF0;
-   CARD32 saveSWF4;
+   Bool tv_present; /* TV connector present (from VBIOS) */
+
+   Bool StolenOnly;
 
    Bool checkDevices;
 
@@ -473,63 +581,84 @@ typedef struct _I830Rec {
 
    int ddc2;
 
-   CARD32 saveDSPACNTR;
-   CARD32 saveDSPBCNTR;
-   CARD32 savePIPEACONF;
-   CARD32 savePIPEBCONF;
-   CARD32 savePIPEASRC;
-   CARD32 savePIPEBSRC;
-   CARD32 saveFPA0;
-   CARD32 saveFPA1;
-   CARD32 saveDPLL_A;
-   CARD32 saveDPLL_A_MD;
-   CARD32 saveHTOTAL_A;
-   CARD32 saveHBLANK_A;
-   CARD32 saveHSYNC_A;
-   CARD32 saveVTOTAL_A;
-   CARD32 saveVBLANK_A;
-   CARD32 saveVSYNC_A;
-   CARD32 saveBCLRPAT_A;
-   CARD32 saveDSPASTRIDE;
-   CARD32 saveDSPASIZE;
-   CARD32 saveDSPAPOS;
-   CARD32 saveDSPABASE;
-   CARD32 saveDSPASURF;
-   CARD32 saveFPB0;
-   CARD32 saveFPB1;
-   CARD32 saveDPLL_B;
-   CARD32 saveDPLL_B_MD;
-   CARD32 saveHTOTAL_B;
-   CARD32 saveHBLANK_B;
-   CARD32 saveHSYNC_B;
-   CARD32 saveVTOTAL_B;
-   CARD32 saveVBLANK_B;
-   CARD32 saveVSYNC_B;
-   CARD32 saveBCLRPAT_B;
-   CARD32 saveDSPBSTRIDE;
-   CARD32 saveDSPBSIZE;
-   CARD32 saveDSPBPOS;
-   CARD32 saveDSPBBASE;
-   CARD32 saveDSPBSURF;
-   CARD32 saveVCLK_DIVISOR_VGA0;
-   CARD32 saveVCLK_DIVISOR_VGA1;
-   CARD32 saveVCLK_POST_DIV;
-   CARD32 saveVGACNTRL;
-   CARD32 saveADPA;
-   CARD32 saveLVDS;
-   CARD32 saveDVOA;
-   CARD32 saveDVOB;
-   CARD32 saveDVOC;
-   CARD32 savePP_ON;
-   CARD32 savePP_OFF;
-   CARD32 savePP_CONTROL;
-   CARD32 savePP_CYCLE;
-   CARD32 savePFIT_CONTROL;
-   CARD32 savePaletteA[256];
-   CARD32 savePaletteB[256];
-   CARD32 saveSWF[17];
-   CARD32 saveBLC_PWM_CTL;
-   CARD32 saveBLC_PWM_CTL2;
+   enum backlight_control backlight_control_method;
+
+   uint32_t saveDSPARB;
+   uint32_t saveDSPACNTR;
+   uint32_t saveDSPBCNTR;
+   uint32_t savePIPEACONF;
+   uint32_t savePIPEBCONF;
+   uint32_t savePIPEASRC;
+   uint32_t savePIPEBSRC;
+   uint32_t saveFPA0;
+   uint32_t saveFPA1;
+   uint32_t saveDPLL_A;
+   uint32_t saveDPLL_A_MD;
+   uint32_t saveHTOTAL_A;
+   uint32_t saveHBLANK_A;
+   uint32_t saveHSYNC_A;
+   uint32_t saveVTOTAL_A;
+   uint32_t saveVBLANK_A;
+   uint32_t saveVSYNC_A;
+   uint32_t saveBCLRPAT_A;
+   uint32_t saveDSPASTRIDE;
+   uint32_t saveDSPASIZE;
+   uint32_t saveDSPAPOS;
+   uint32_t saveDSPABASE;
+   uint32_t saveDSPASURF;
+   uint32_t saveDSPATILEOFF;
+   uint32_t saveFPB0;
+   uint32_t saveFPB1;
+   uint32_t saveDPLL_B;
+   uint32_t saveDPLL_B_MD;
+   uint32_t saveHTOTAL_B;
+   uint32_t saveHBLANK_B;
+   uint32_t saveHSYNC_B;
+   uint32_t saveVTOTAL_B;
+   uint32_t saveVBLANK_B;
+   uint32_t saveVSYNC_B;
+   uint32_t saveBCLRPAT_B;
+   uint32_t saveDSPBSTRIDE;
+   uint32_t saveDSPBSIZE;
+   uint32_t saveDSPBPOS;
+   uint32_t saveDSPBBASE;
+   uint32_t saveDSPBSURF;
+   uint32_t saveDSPBTILEOFF;
+   uint32_t saveVCLK_DIVISOR_VGA0;
+   uint32_t saveVCLK_DIVISOR_VGA1;
+   uint32_t saveVCLK_POST_DIV;
+   uint32_t saveVGACNTRL;
+   uint32_t saveCURSOR_A_CONTROL;
+   uint32_t saveCURSOR_A_BASE;
+   uint32_t saveCURSOR_A_POSITION;
+   uint32_t saveCURSOR_B_CONTROL;
+   uint32_t saveCURSOR_B_BASE;
+   uint32_t saveCURSOR_B_POSITION;
+   uint32_t saveADPA;
+   uint32_t saveLVDS;
+   uint32_t saveDVOA;
+   uint32_t saveDVOB;
+   uint32_t saveDVOC;
+   uint32_t savePP_ON;
+   uint32_t savePP_OFF;
+   uint32_t savePP_CONTROL;
+   uint32_t savePP_CYCLE;
+   uint32_t savePFIT_CONTROL;
+   uint32_t savePaletteA[256];
+   uint32_t savePaletteB[256];
+   uint32_t saveSWF[17];
+   uint32_t saveBLC_PWM_CTL;
+   uint32_t saveBLC_PWM_CTL2;
+   uint32_t saveFBC_CFB_BASE;
+   uint32_t saveFBC_LL_BASE;
+   uint32_t saveFBC_CONTROL2;
+   uint32_t saveFBC_CONTROL;
+   uint32_t saveFBC_FENCE_OFF;
+   uint32_t saveRENCLK_GATE_D1;
+   uint32_t saveRENCLK_GATE_D2;
+   uint32_t saveDSPCLK_GATE_D;
+   uint32_t saveRAMCLK_GATE_D;
+   uint32_t savePWRCTXA;
 
    enum last_3d *last_3d;
 
@@ -539,6 +668,8 @@ typedef struct _I830Rec {
 } I830Rec;
 
 #define I830PTR(p) ((I830Ptr)((p)->driverPrivate))
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 #define I830_SELECT_FRONT	0
 #define I830_SELECT_BACK	1
@@ -557,6 +688,7 @@ extern void IntelEmitInvarientState(ScrnInfoPtr pScrn);
 extern void I830EmitInvarientState(ScrnInfoPtr pScrn);
 extern void I915EmitInvarientState(ScrnInfoPtr pScrn);
 extern void I830SelectBuffer(ScrnInfoPtr pScrn, int buffer);
+void i830_update_cursor_offsets(ScrnInfoPtr pScrn);
 
 /* CRTC-based cursor functions */
 void
@@ -579,7 +711,7 @@ i830_crtc_hide_cursor (xf86CrtcPtr crtc);
 void
 i830_crtc_set_cursor_colors (xf86CrtcPtr crtc, int bg, int fg);
 
-extern void I830RefreshRing(ScrnInfoPtr pScrn);
+extern void i830_refresh_ring(ScrnInfoPtr pScrn);
 extern void I830EmitFlush(ScrnInfoPtr pScrn);
 
 #ifdef I830_XV
@@ -589,6 +721,8 @@ extern void i830_crtc_dpms_video(xf86CrtcPtr crtc, Bool on);
 
 int
 i830_crtc_pipe (xf86CrtcPtr crtc);
+
+extern xf86CrtcPtr i830_pipe_to_crtc(ScrnInfoPtr pScrn, int pipe);
 
 Bool
 i830_pipe_a_require_activate (ScrnInfoPtr scrn);
@@ -605,12 +739,12 @@ extern Bool I830DRIDoMappings(ScreenPtr pScreen);
 extern Bool I830DRIResume(ScreenPtr pScreen);
 extern void I830DRICloseScreen(ScreenPtr pScreen);
 extern Bool I830DRIFinishScreenInit(ScreenPtr pScreen);
-extern Bool I830UpdateDRIBuffers(ScrnInfoPtr pScrn, drmI830Sarea *sarea);
-extern void I830DRIUnmapScreenRegions(ScrnInfoPtr pScrn, drmI830Sarea *sarea);
-extern Bool I830DRIMapScreenRegions(ScrnInfoPtr pScrn, drmI830Sarea *sarea);
 extern void I830DRIUnlock(ScrnInfoPtr pScrn);
 extern Bool I830DRILock(ScrnInfoPtr pScrn);
 extern Bool I830DRISetVBlankInterrupt (ScrnInfoPtr pScrn, Bool on);
+extern Bool i830_update_dri_buffers(ScrnInfoPtr pScrn);
+extern Bool I830DRISetHWS(ScrnInfoPtr pScrn);
+extern Bool I830DRIInstIrqHandler(ScrnInfoPtr pScrn);
 #endif
 
 unsigned long intel_get_pixmap_offset(PixmapPtr pPix);
@@ -630,6 +764,15 @@ extern void I830SubsequentSolidFillRect(ScrnInfoPtr pScrn, int x, int y,
 
 Bool i830_allocator_init(ScrnInfoPtr pScrn, unsigned long offset,
 			 unsigned long size);
+void i830_allocator_fini(ScrnInfoPtr pScrn);
+i830_memory * i830_allocate_memory(ScrnInfoPtr pScrn, const char *name,
+				   unsigned long size, unsigned long alignment,
+				   int flags);
+i830_memory *i830_allocate_memory_tiled(ScrnInfoPtr pScrn, const char *name,
+					unsigned long size,
+					unsigned long pitch,
+					unsigned long alignment, int flags,
+					enum tile_format tile_format);
 void i830_describe_allocations(ScrnInfoPtr pScrn, int verbosity,
 			       const char *prefix);
 void i830_reset_allocations(ScrnInfoPtr pScrn);
@@ -638,7 +781,12 @@ void i830_free_memory(ScrnInfoPtr pScrn, i830_memory *mem);
 extern long I830CheckAvailableMemory(ScrnInfoPtr pScrn);
 Bool i830_allocate_2d_memory(ScrnInfoPtr pScrn);
 Bool i830_allocate_texture_memory(ScrnInfoPtr pScrn);
+Bool i830_allocate_pwrctx(ScrnInfoPtr pScrn);
 Bool i830_allocate_3d_memory(ScrnInfoPtr pScrn);
+#ifdef INTEL_XVMC
+Bool i830_allocate_xvmc_buffer(ScrnInfoPtr pScrn, const char *name,
+                               i830_memory **buffer, unsigned long size, int flags);
+#endif
 
 extern Bool I830IsPrimary(ScrnInfoPtr pScrn);
 
@@ -658,6 +806,9 @@ void i830_crt_init(ScrnInfoPtr pScrn);
 /* i830_dvo.c */
 void i830_dvo_init(ScrnInfoPtr pScrn);
 
+/* i830_hdmi.c */
+void i830_hdmi_init(ScrnInfoPtr pScrn, int output_reg);
+
 /* i830_lvds.c */
 void i830_lvds_init(ScrnInfoPtr pScrn);
 
@@ -670,14 +821,6 @@ Bool i830_unbind_all_memory(ScrnInfoPtr pScrn);
 
 Bool I830BindAGPMemory(ScrnInfoPtr pScrn);
 Bool I830UnbindAGPMemory(ScrnInfoPtr pScrn);
-#ifdef I830_USE_XAA
-FBLinearPtr
-i830_xf86AllocateOffscreenLinear(ScreenPtr pScreen, int length,
-				 int granularity,
-				 MoveLinearCallbackProcPtr moveCB,
-				 RemoveLinearCallbackProcPtr removeCB,
-				 pointer privData);
-#endif /* I830_USE_EXA */
 
 /* i830_modes.c */
 DisplayModePtr i830_ddc_get_modes(xf86OutputPtr output);
@@ -691,6 +834,9 @@ Bool i830_check_composite(int op, PicturePtr pSrc, PicturePtr pMask,
 Bool i830_prepare_composite(int op, PicturePtr pSrc, PicturePtr pMask,
 			    PicturePtr pDst, PixmapPtr pSrcPixmap,
 			    PixmapPtr pMaskPixmap, PixmapPtr pDstPixmap);
+Bool
+i830_transform_is_affine (PictTransformPtr t);
+
 void i830_composite(PixmapPtr pDst, int srcX, int srcY,
 		    int maskX, int maskY, int dstX, int dstY, int w, int h);
 void i830_done_composite(PixmapPtr pDst);
@@ -701,6 +847,9 @@ Bool i915_prepare_composite(int op, PicturePtr pSrc, PicturePtr pMask,
 			    PicturePtr pDst, PixmapPtr pSrcPixmap,
 			    PixmapPtr pMaskPixmap, PixmapPtr pDstPixmap);
 /* i965_render.c */
+unsigned int gen4_render_state_size(ScrnInfoPtr pScrn);
+void gen4_render_state_init(ScrnInfoPtr pScrn);
+void gen4_render_state_cleanup(ScrnInfoPtr pScrn);
 Bool i965_check_composite(int op, PicturePtr pSrc, PicturePtr pMask,
 			  PicturePtr pDst);
 Bool i965_prepare_composite(int op, PicturePtr pSrc, PicturePtr pMask,
@@ -709,11 +858,57 @@ Bool i965_prepare_composite(int op, PicturePtr pSrc, PicturePtr pMask,
 void i965_composite(PixmapPtr pDst, int srcX, int srcY,
 		    int maskX, int maskY, int dstX, int dstY, int w, int h);
 
-void
+Bool
 i830_get_transformed_coordinates(int x, int y, PictTransformPtr transform,
 				 float *x_out, float *y_out);
 
+Bool
+i830_get_transformed_coordinates_3d(int x, int y, PictTransformPtr transform,
+				    float *x_out, float *y_out, float *z_out);
+
 void i830_enter_render(ScrnInfoPtr);
+
+static inline void
+i830_wait_ring_idle(ScrnInfoPtr pScrn)
+{
+   I830Ptr pI830 = I830PTR(pScrn);
+
+   I830WaitLpRing(pScrn, pI830->LpRing->mem->size - 8, 0);
+}
+
+static inline int i830_fb_compression_supported(I830Ptr pI830)
+{
+    if (!IS_MOBILE(pI830))
+	return FALSE;
+    if (IS_I810(pI830) || IS_I815(pI830) || IS_I830(pI830))
+	return FALSE;
+    /* fbc depends on tiled surface. And we don't support tiled
+     * front buffer with XAA now.
+     */
+    if (!pI830->tiling || (IS_I965G(pI830) && !pI830->useEXA))
+	return FALSE;
+    return TRUE;
+}
+
+Bool i830_pixmap_tiled(PixmapPtr p);
+
+#define i830_exa_check_pitch_2d(p) do {\
+    uint32_t pitch = intel_get_pixmap_pitch(p);\
+    if (pitch > KB(32)) I830FALLBACK("pitch exceeds 2d limit 32K\n");\
+} while(0)
+
+/* For pre-965 chip only, as they have 8KB limit for 3D */
+#define i830_exa_check_pitch_3d(p) do {\
+    uint32_t pitch = intel_get_pixmap_pitch(p);\
+    if (pitch > KB(8)) I830FALLBACK("pitch exceeds 3d limit 8K\n");\
+} while(0)
+
+/* Batchbuffer compatibility handling */
+#define BEGIN_BATCH(n) BEGIN_LP_RING(n)
+#define ENSURE_BATCH(n)
+#define OUT_BATCH(d) OUT_RING(d)
+#define OUT_BATCH_F(x) OUT_RING_F(x)
+#define ADVANCE_BATCH() ADVANCE_LP_RING()
 
 extern const int I830PatternROP[16];
 extern const int I830CopyROP[16];
@@ -721,6 +916,9 @@ extern const int I830CopyROP[16];
 /* Flags for memory allocation function */
 #define NEED_PHYSICAL_ADDR		0x00000001
 #define ALIGN_BOTH_ENDS			0x00000002
+#define NEED_NON_STOLEN			0x00000004
+#define NEED_LIFETIME_FIXED		0x00000008
+#define ALLOW_SHARING			0x00000010
 
 /* Chipset registers for VIDEO BIOS memory RW access */
 #define _855_DRAM_RW_CONTROL 0x58
@@ -731,6 +929,9 @@ extern const int I830CopyROP[16];
 #define QUIRK_IGNORE_TV			0x00000001
 #define QUIRK_IGNORE_LVDS		0x00000002
 #define QUIRK_IGNORE_MACMINI_LVDS 	0x00000004
+#define QUIRK_PIPEA_FORCE		0x00000008
+#define QUIRK_IVCH_NEED_DVOB		0x00000010
+#define QUIRK_RESET_MODES		0x00000020
 extern void i830_fixup_devices(ScrnInfoPtr);
 
 #endif /* _I830_H_ */

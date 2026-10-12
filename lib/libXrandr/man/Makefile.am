@@ -1,4 +1,3 @@
-# $Id$
 #
 # Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
 # 
@@ -71,8 +70,6 @@ Xrandr_shadows =                            \
     XRRConfigCurrentConfiguration           \
     XRRConfigCurrentRate                    \
     XRRRootToScreen                         \
-    XRRScreenConfig                         \
-    XRRConfig                               \
     XRRSelectInput
 
 shadows.DONE:

@@ -1,5 +1,3 @@
-/* $XFree86$ */
-/* $XdotOrg: driver/xf86-video-sisusb/src/sisusb_driver.c,v 1.16 2005/09/28 18:48:30 twini Exp $ */
 /*
  * SiSUSB driver main code
  *
@@ -509,7 +507,7 @@ SiSUSB_SiSFB_Lock(ScrnInfoPtr pScrn, Bool lock)
     if(!pSiSUSB->sisfbfound) return;
     if(!pSiSUSB->sisfb_havelock) return;
 
-    if((fd = open(pSiSUSB->sisfbdevname, 'r')) != -1) {
+    if((fd = open(pSiSUSB->sisfbdevname, O_RDONLY)) != -1) {
        parm = lock ? 1 : 0;
        ioctl(fd, SISUSBFB_SET_LOCK, &parm);
        close(fd);
@@ -932,7 +930,7 @@ SISUSBPreInit(ScrnInfoPtr pScrn, int flags)
 	     sprintf(name, "/dev/fb/%1d", i-8);
 	  }
 
-          if((fd = open(name, 'r')) != -1) {
+          if((fd = open(name, O_RDONLY)) != -1) {
 
 	     Bool gotit = FALSE;
 

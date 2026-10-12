@@ -12,10 +12,8 @@ $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. -
      (P5 .NES. "") .OR. (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
 $ IF (section .NES. "MISC") .AND. (section .NES. "75DPI") .AND. -
      (section .NES. "100DPI") .AND. (section .NES. "CYRILLIC") THEN GOTO done
-$ converter = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.PROGRAMS.BDFTOPCF]BDFTOPCF.EXE")
 $ deriver = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.FONTS.UTIL]UCS2ANY.EXE")
-$ IF (converter .EQS. "") .OR. (deriver .EQS. "") THEN GOTO done
-$ bdftopcf = "$" + converter
+$ IF deriver .EQS. "" THEN GOTO done
 $ ucs2any = "$" + deriver
 $ output = "[.VMS-SUPPORT._BUILD.P64.FONTS." + section + "]"
 $ absolute_output = F$PARSE(output,,,"DEVICE") + F$PARSE(output,,,"DIRECTORY")
@@ -72,7 +70,7 @@ $ IF .NOT. (result .AND. 1) THEN GOTO done
 $ name = leaf + "-" + encoding
 $ IF encoding .EQS. "JISX0201.1976-0" THEN name = leaf + "-JISX0201^.1976-0"
 $ input = generated + name + ".BDF"
-$ destination = absolute_output + name + ".PCF"
+$ destination = absolute_output + name + ".BDF"
 $ GOSUB convert_font
 $ GOTO next_derived
 $ derived_done:
@@ -98,12 +96,11 @@ $ convert_next:
 $ input = F$SEARCH(pattern,1)
 $ IF input .EQS. "" THEN RETURN
 $ name = F$PARSE(input,,,"NAME")
-$ destination = output + name + ".PCF"
+$ destination = output + name + ".BDF"
 $ GOSUB convert_font
 $ GOTO convert_next
 $ convert_font:
-$ DEFINE/USER_MODE DECC$EFS_CHARSET ENABLE
-$ bdftopcf -o "''destination'" "''input'"
+$ COPY/NOLOG 'input' 'destination';0
 $ ignored = F$SEARCH("",2)
 $ IF F$SEARCH(destination,2) .EQS. "" THEN GOTO failed
 $ count = count + 1

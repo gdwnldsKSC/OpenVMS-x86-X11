@@ -106,14 +106,16 @@ typedef enum {
     OPTION_NOACCEL,
     OPTION_ACCEL_METHOD,
     OPTION_FP_DITHER,
+    OPTION_ALLOW_DUAL_LINK,
 } G80Opts;
 
 static const OptionInfoRec G80Options[] = {
-    { OPTION_HW_CURSOR,         "HWCursor",     OPTV_BOOLEAN,   {0}, FALSE },
-    { OPTION_NOACCEL,           "NoAccel",      OPTV_BOOLEAN,   {0}, FALSE },
-    { OPTION_ACCEL_METHOD,      "AccelMethod",  OPTV_STRING,    {0}, FALSE },
-    { OPTION_FP_DITHER,         "FPDither",     OPTV_BOOLEAN,   {0}, FALSE },
-    { -1,                       NULL,           OPTV_NONE,      {0}, FALSE }
+    { OPTION_HW_CURSOR,         "HWCursor",             OPTV_BOOLEAN,   {0}, FALSE },
+    { OPTION_NOACCEL,           "NoAccel",              OPTV_BOOLEAN,   {0}, FALSE },
+    { OPTION_ACCEL_METHOD,      "AccelMethod",          OPTV_STRING,    {0}, FALSE },
+    { OPTION_FP_DITHER,         "FPDither",             OPTV_BOOLEAN,   {0}, FALSE },
+    { OPTION_ALLOW_DUAL_LINK,   "AllowDualLinkModes",   OPTV_BOOLEAN,   {0}, FALSE },
+    { -1,                       NULL,                   OPTV_NONE,      {0}, FALSE }
 };
 
 static Bool
@@ -188,8 +190,14 @@ G80PreInit(ScrnInfoPtr pScrn, int flags)
 {
     G80Ptr pNv;
     EntityInfoPtr pEnt;
+#if XSERVER_LIBPCIACCESS
+    struct pci_device *pPci;
+    int err;
+    void *p;
+#else
     pciVideoPtr pPci;
     PCITAG pcitag;
+#endif
     MessageType from;
     Bool primary;
     const rgb zeros = {0, 0, 0};
@@ -218,13 +226,22 @@ G80PreInit(ScrnInfoPtr pScrn, int flags)
     pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
     if(pEnt->location.type != BUS_PCI) goto fail;
     pPci = xf86GetPciInfoForEntity(pEnt->index);
-    pcitag = pciTag(pPci->bus, pPci->device, pPci->func);
+#if XSERVER_LIBPCIACCESS
+    /* Need this to unmap */
+    pNv->pPci = pPci;
+#endif
     primary = xf86IsPrimaryPci(pPci);
 
     /* The ROM size sometimes isn't read correctly, so fix it up here. */
+#if XSERVER_LIBPCIACCESS
+    if(pPci->rom_size == 0)
+        /* The BIOS is 64k */
+        pPci->rom_size = 64 * 1024;
+#else
     if(pPci->biosSize == 0)
         /* The BIOS is 64k */
         pPci->biosSize = 16;
+#endif
 
     pNv->int10 = NULL;
     pNv->int10Mode = 0;
@@ -316,6 +333,7 @@ G80PreInit(ScrnInfoPtr pScrn, int flags)
     }
 
     pNv->Dither = xf86ReturnOptValBool(pNv->Options, OPTION_FP_DITHER, FALSE);
+    pNv->AllowDualLink = xf86ReturnOptValBool(pNv->Options, OPTION_ALLOW_DUAL_LINK, FALSE);
 
     /* Set the bits per RGB for 8bpp mode */
     if(pScrn->depth == 8)
@@ -324,16 +342,24 @@ G80PreInit(ScrnInfoPtr pScrn, int flags)
     if(!xf86SetGamma(pScrn, gzeros)) goto fail;
 
     /* Map memory */
-    xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "MMIO registers at 0x%lx\n",
-               pPci->memBase[0]);
-    xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Linear framebuffer at 0x%lx\n",
-               pPci->memBase[1]);
-    pScrn->memPhysBase = pPci->memBase[1];
+    pScrn->memPhysBase = MEMBASE(pPci, 1);
     pScrn->fbOffset = 0;
 
+#if XSERVER_LIBPCIACCESS
+    err = pci_device_map_range(pPci, pPci->regions[0].base_addr, G80_REG_SIZE,
+                               PCI_DEV_MAP_FLAG_WRITABLE, &p);
+    if(err) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                   "Failed to map MMIO registers: %s\n", strerror(err));
+        goto fail;
+    }
+    pNv->reg = p;
+#else
+    pcitag = pciTag(pPci->bus, pPci->device, pPci->func);
     pNv->reg = xf86MapPciMem(pScrn->scrnIndex,
                              VIDMEM_MMIO | VIDMEM_READSIDEEFFECT,
                              pcitag, pPci->memBase[0], G80_REG_SIZE);
+#endif
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "MMIO registers mapped at %p\n",
                (void*)pNv->reg);
 
@@ -344,12 +370,16 @@ G80PreInit(ScrnInfoPtr pScrn, int flags)
     }
 
     pNv->architecture = pNv->reg[0] >> 20 & 0x1ff;
-    pNv->RamAmountKBytes = pNv->RamAmountKBytes = (pNv->reg[0x0010020C/4] & 0xFFF00000) >> 10;
-    pNv->videoRam = pNv->RamAmountKBytes;
+    tmp = pNv->reg[0x0010020C/4];
+    pNv->videoRam = pNv->RamAmountKBytes = tmp >> 10 | (tmp & 1) << 22;
 
     /* Determine the size of BAR1 */
     /* Some configs have BAR1 < total RAM < 256 MB */
+#if XSERVER_LIBPCIACCESS
+    BAR1sizeKB = pPci->regions[1].size / 1024;
+#else
     BAR1sizeKB = 1UL << (pPci->size[1] - 10);
+#endif
     if(BAR1sizeKB > 256 * 1024) {
         xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "BAR1 is > 256 MB, which is "
                    "probably wrong.  Clamping to 256 MB.\n");
@@ -375,9 +405,23 @@ G80PreInit(ScrnInfoPtr pScrn, int flags)
     xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "  Mapped memory: %.1f MB\n",
                pScrn->videoRam / 1024.0);
 
+#if XSERVER_LIBPCIACCESS
+    err = pci_device_map_range(pPci, pPci->regions[1].base_addr,
+                               pScrn->videoRam * 1024,
+                               PCI_DEV_MAP_FLAG_WRITABLE |
+                               PCI_DEV_MAP_FLAG_WRITE_COMBINE,
+                               &p);
+    if(err) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                   "Failed to map framebuffer: %s\n", strerror(err));
+        goto fail;
+    }
+    pNv->mem = p;
+#else
     pNv->mem = xf86MapPciMem(pScrn->scrnIndex,
                              VIDMEM_MMIO | VIDMEM_READSIDEEFFECT,
                              pcitag, pPci->memBase[1], pScrn->videoRam * 1024);
+#endif
     xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Linear framebuffer mapped at %p\n",
                (void*)pNv->mem);
 
@@ -520,8 +564,13 @@ G80CloseScreen(int scrnIndex, ScreenPtr pScreen)
 
     if(xf86ServerIsExiting()) {
         if(pNv->int10) xf86FreeInt10(pNv->int10);
+#if XSERVER_LIBPCIACCESS
+        pci_device_unmap_range(pNv->pPci, pNv->mem, pNv->videoRam * 1024);
+        pci_device_unmap_range(pNv->pPci, (void*)pNv->reg, G80_REG_SIZE);
+#else
         xf86UnMapVidMem(pScrn->scrnIndex, pNv->mem, pNv->videoRam * 1024);
         xf86UnMapVidMem(pScrn->scrnIndex, (void*)pNv->reg, G80_REG_SIZE);
+#endif
         pNv->reg = NULL;
         pNv->mem = NULL;
     }
@@ -865,13 +914,6 @@ G80ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
        Must precede creation of the default colormap */
     miDCInitialize(pScreen, xf86GetPointerScreenFuncs());
 
-    /* Initialize hardware cursor.  Must follow software cursor initialization. */
-    if(pNv->HWCursor && !G80CursorInit(pScreen)) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                   "Hardware cursor initialization failed\n");
-        pNv->HWCursor = FALSE;
-    }
-
     /* Initialize default colormap */
     if(!miCreateDefColormap(pScreen))
         return FALSE;
@@ -899,6 +941,13 @@ G80ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     /* Initialize the display */
     if(!AcquireDisplay(pScrn))
         return FALSE;
+
+    /* Initialize hardware cursor.  Must follow software cursor initialization. */
+    if(pNv->HWCursor && !G80CursorInit(pScreen)) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                   "Hardware cursor initialization failed\n");
+        pNv->HWCursor = FALSE;
+    }
 
     pScreen->SaveScreen = G80SaveScreen;
 

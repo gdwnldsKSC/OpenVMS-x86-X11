@@ -1,3 +1,697 @@
+commit 5b7f3b98079ab730b037b33893521dbaa61f5234
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Fri Sep 5 00:39:01 2008 +0300
+
+    Update to 1.1.5
+    
+    Small bugfix and i18n-improvement release.
+
+commit 8c1dfc976a29f981f601503b9768d3414a70ba50
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Thu Jul 17 21:01:42 2008 -0400
+
+    Add more <Multi_key> <cedilla> Compose tuples
+    
+    The last commit missed the el_GR UTF-8 Compose.pre as well as
+    the various ISO 8859 locales which have compose sequences
+    generating ‘WITH CEDILLA’ characters.
+    
+    (Interestingly, some of the 8859 locales already supported
+    <Multi_key> <cedilla> for some CEDILLA characters, but not
+    for Ç or ç.)
+    
+    This is further work on bug 10397.
+    (cherry picked from commit 55248e5c84c3fd8c349a3bb4cb15a1ec86989d74)
+
+commit b11ea7ab3a436745e5244599048516600e47ab5d
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Thu Jul 17 17:16:50 2008 -0400
+
+    Work on making the en_US and pt_BR UTF-8 Compose as similar as possible.
+    
+    The eventual goal here is to have a single primary UTF-8 Compose
+    file which the locale-specific UTF-8 Compose.pre files can #include.
+    (cherry picked from commit 4ba091255bb953d53078ba5619d6751052c739f7)
+
+commit 04828f15866aa7cf43a03b399ac12a393f14f4f7
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Thu Jul 17 17:13:36 2008 -0400
+
+    Add <Multi_key> <cedilla> Compose tuples
+    
+    The en_US and pt_BR UTF-8 Compose tables had support for using <comma>
+    with <Multi_key> to enter CEDILLA characters.  Bug 10397 requests
+    support for using <cedilla> instead of <comma> in said sequences.
+    
+    This commit makes both styles work.
+    (cherry picked from commit 254522d3c24e0590732fc03cdd61ff4564819d94)
+
+commit 685933616eb0d80644d26f092fd0a82339fe23da
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Sat Jun 28 15:25:23 2008 -0400
+
+    Fix commit 21e464ec682ab23ba20ddf6bd72c6db214cfbe01
+    
+    The new block was added twice to the en_US.UTF-8 Compose.pre;
+    delete the duplicate.
+    (cherry picked from commit 7dc907f6032e1d5cbe4da0e414bdf2c569c04b44)
+
+commit 692f6ecc691e83c2601b90e32b1dc395e9dbe8c6
+Author: Khaled Hosny <khaledhosny@eglug.org>
+Date:   Thu Jun 19 18:26:11 2008 -0400
+
+    NLS: Add Arabic Lam-Alef ligature compose sequences (bug #16426)
+    
+    Add some Arabic digraphs to utf-8 locales with a Compose.pre
+    
+    Signed-off-by: James Cloos <cloos@jhcloos.com>
+    (cherry picked from commit 21e464ec682ab23ba20ddf6bd72c6db214cfbe01)
+
+commit 9b2ab1130e273f6e25cb58d5a2aa7a87e909759e
+Author: Jens Herden <jens@khmeros.info>
+Date:   Tue Jun 10 20:07:30 2008 +0300
+
+    NLS: Add Khmer compose sequences (bug #5706)
+    
+    Add some Khmer digraphs to all locales with a Compose.pre.
+    (cherry picked from commit fca0b0ba3f72b7284601d4690bba99fc80a92614)
+
+commit 30f37e249d148c5dd557f114c9b44616a0b12b32
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Mon May 19 19:22:31 2008 +0300
+
+    gitignore: Update with loads more bits from server
+    (cherry picked from commit 19802ccd3909145e3ba2f6c073271cb5f3701685)
+
+commit a7f85567a3e850fba0c44571453d2852ab1a09be
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue May 13 10:28:39 2008 -0400
+
+    Bug #15884: Remove useless sleep()'s from the connection code.
+    
+    For network transports, there's enough delay in the network layer
+    already without adding more.  For local transports, just hurry up
+    and fail if the server isn't there.
+
+commit 9129057bdbff0ec9cd8bb780cf7f85f134a291eb
+Author: Teemu Likonen <tlikonen@iki.fi>
+Date:   Wed May 7 21:44:22 2008 +0300
+
+    Change <dead_belowdot> to <dead_belowring> for U+1E00 and U+U1E01
+    
+    Commit 6b6caeea830a977bdb54688cfb648d879821e752 added <dead_belowdot>
+    <A> and <dead_belowdot> <a> compose sequences for letters U+1E00 and
+    U+U1E01 (LATIN CAPITAL/SMALL LETTER A WITH RING BELOW). This caused
+    duplicate compose sequences since these have already been defined. Also,
+    using <dead_belowring> is more logical since the diacritic is indeed
+    a "RING BELOW".
+
+commit 01a9cb58888d290cc3d319feec4ee4a0297a844c
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Wed May 7 20:04:44 2008 +0300
+
+    NLS: Make UTF-8 the default for Russian
+    
+    No-one uses 8859-5 anymore, so make the default for Russian UTF-8; the
+    only other possible answer would be KOI8-R.
+    
+    Signed-off-by: Sergey V. Udaltsov <sergey.udaltsov@gmail.com>
+
+commit 407b81bfbbabf6feb565d6da22f9ef9a69016ab8
+Author: Ross Burton <ross@burtonini.com>
+Date:   Tue Apr 29 13:38:10 2008 +0300
+
+    NLS: Add interrobang to UTF-8 compose tables (bug #15653)
+    
+    It is what it says on the box.
+
+commit 0b6682303e9c61fefc3818acfda616b1e3691abf
+Author: Theppitak Karoonboonyanan <thep@linux.thai.net>
+Date:   Mon Apr 28 11:51:25 2008 +0300
+
+    IM: Respect XMODIFIERS for Thai locale (bug #15719)
+    
+    When looking at Thai input methods, make sure XMODIFIERS is checked
+    before jumping straight into built-in Thai processing, so external XIM
+    servers such as SCIM can be used with Thai.
+
+commit c13aded1b2f830ba5004abb0ec5518f9ea16087e
+Author: Colin Harrison <colin.harrison-at-virgin.net>
+Date:   Sat Apr 26 18:56:05 2008 +0100
+
+    Fix missing error condition
+
+commit f5c5ffc175cb383c92ea0fa8c08cfb087c5f3083
+Author: Colin Harrison <colin.harrison-at-virgin.net>
+Date:   Mon Apr 21 17:24:33 2008 +0100
+
+    Xlib warning fixes
+
+commit 6b6caeea830a977bdb54688cfb648d879821e752
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Fri Apr 18 02:50:55 2008 -0400
+
+    Add some dead_key sequences to en_US.UTF-8 Compose table
+    
+    Make use of the new dead key symbols added to x11proto’s
+    commit 44e24a27bca023cf7b799f191fe6d52e12efbe5f (which
+    was in responce to bug #15446).
+
+commit 8f9b039580deaf658e464b7d6254064fcf183df6
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Mon Apr 14 19:09:42 2008 -0700
+
+    Update ac_define_dir macro in acinclude.m4 to 2008-04-12 version
+
+commit 9f5e96eb91ab55dd441c3e94b75caf48c588778f
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Mon Apr 14 18:21:14 2008 -0700
+
+    Fix mismatched brace indenting
+
+commit a19f9c65ee9e5e5d783feaa84998c36439b0288b
+Author: Bart Massey <bart@cs.pdx.edu>
+Date:   Fri Apr 4 18:58:45 2008 -0700
+
+    added error check in Xcms color file parser; closes bug #15305
+
+commit 12e8d0d01dd72ce98e7683ddb1bde181b7ed246f
+Author: Christian Weisgerber <naddy@mips.inka.de>
+Date:   Tue Mar 18 07:30:05 2008 +0100
+
+    ConnDis: properly cast 'addr' before accessing it as a byte array.
+    
+    If you use XDM-AUTHORIZATION-1 authorization keys for remote X11
+    clients over IPv6, the clients are liable to segfaults.
+
+commit 64325f38bab082a8e0e9ce779a8e582de5c8588e
+Author: Josh Triplett <josh@freedesktop.org>
+Date:   Sat Mar 15 12:29:33 2008 -0700
+
+    Fix fd.o bug 15023: make Xlib sync correctly given many void requests
+    
+    If given many requests without replies, Xlib may not sync until it flushes
+    the output buffer.  Thus, if Xlib can fit enough requests in the buffer to
+    pass by the number of requests it would normally sync after (65536 -
+    BUFSIZE/sizeof(xReq)), it will sync too late.  The test case in bug 15023
+    demonstrated this by issuing a request with a reply (ListExtensions) at
+    just the right time to get confused with the GetInputFocus reply issued in
+    response to the sync 65,536 requests later; the test case used an async
+    handler to watch the replies, since otherwise it could not issue a request
+    without waiting for the response.  When the test case failed, Xlib's sync
+    handler would eat the ListExtensions reply, and the test case's async
+    handler would see the GetInputFocus reply.
+    
+    Fix this by replacing SEQLIMIT with a function sync_hazard() that uses the
+    buffer size to figure out when the sequence numbers could potentially wrap
+    before the next flush.
+    
+    With this commit, the test case consistently passed, and the async reply
+    handler always saw the ListExtensions reply.
+    
+    Commit by Jamey Sharp and Josh Triplett.
+
+commit a5395563bbee15fabe1e8fd7aa86f9f314d8d30e
+Author: Colin Harrison <colin.harrison@virgin.net>
+Date:   Sat Mar 15 13:39:13 2008 -0400
+
+    Fix typo
+    
+    Signed-off-by: James Cloos <cloos@jhcloos.com>
+
+commit f07585ca27a8487bc66dfe41486c823f0fdcea7d
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Sat Mar 15 17:32:57 2008 +0200
+
+    configure.ac: Don't search for legacy X11 headers
+    
+    This can actually break cross-compiles, so don't do it anymore.
+
+commit bf69541238c7df6606340c0f389e5c47149b29c7
+Author: Matthieu Herrb <matthieu.herrb@laas.fr>
+Date:   Sun Mar 9 09:08:07 2008 +0100
+
+    nuke RCS Ids
+
+commit 5e98aed13e529638df744e45893c471d5f2014fb
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Thu Mar 6 16:10:33 2008 -0500
+
+    libX11 1.1.4
+
+commit 8e085971dc661da9f80ff6b67747459c0fb15c08
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Feb 28 20:17:41 2008 -0800
+
+    Man page typo fixes
+
+commit 1a1a42a3ca1dfaf42f1094936b71c140fc030fcb
+Author: Søren Sandmann Pedersen <sandmann@redhat.com>
+Date:   Sun Feb 24 20:03:35 2008 -0500
+
+    XIM: Fix a hand when switching input context.
+    
+    Red Hat bug #201284.
+
+commit e02e4ccafcaf3eb8993152dfcbfbee0240ea2db2
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Sun Feb 24 20:00:43 2008 -0500
+
+    Bug #14029: Don't LockDisplay() recursively.
+    
+    See also Red Hat bugzilla #326461.
+
+commit e5892467ae3308c8651be76e06db322dcbc08522
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Feb 15 17:27:53 2008 -0800
+
+    Add support for building lint library with --enable-lint-library
+
+commit e3eb83ec6a9bffa63cdffd94f077c12f85ad7240
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Mon Feb 11 20:11:43 2008 -0800
+
+    Spell out number in XkbGetKeyVirtualModMap man page to avoid cpp errors from #
+
+commit d5ceed7a73a6b61758ddb6ff4e194955fbd5c185
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Feb 8 16:46:46 2008 -0800
+
+    Add WM_LOCALE_NAME to list of properties set in XSetWMProperties comment
+
+commit 416a812200f24d19149dcc497e5c51a0608120f6
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Feb 8 15:31:31 2008 -0800
+
+    XErrorDB updates for Render 0.9 & XFixes 4.0
+
+commit 16a76091cd632e5a3708e235ff864b58f3e4613e
+Author: Kim Woelders <kim@woelders.dk>
+Date:   Sat Dec 22 21:45:23 2007 +0100
+
+    Fix bs_BA entries in locale.dir.pre
+    
+    X.Org bug#13786 <http://bugs.freedesktop.org/show_bug.cgi?id=13786>
+
+commit 32115c563b87d2f37e3f9de70fbd0f4d9e424aea
+Merge: 8f0bd3f... e8d4cef...
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Fri Dec 14 22:43:47 2007 -0500
+
+    Merge branch 'master' of ssh://git.freedesktop.org/git/xorg/lib/libX11
+
+commit 8f0bd3f445cbdcc67650f6e8e3baf2ed89cb3695
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Fri Dec 14 22:42:59 2007 -0500
+
+    add a comment to en_US.UTF-8/Compose
+
+commit 4d6c45e60ed13d3b0fea10413873d6a74f9d6a3b
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Fri Dec 14 22:40:13 2007 -0500
+
+    Add <dead_stroke> compose sequences
+    
+    The added sequences match the existing <Multi_key> <slash> sequences.
+    
+    This is related to bug #12765¹.
+    
+    1] https://bugs.freedesktop.org/show_bug.cgi?id=12765
+
+commit e8d4cefa0837afa149a10e981528b368485a9e38
+Author: Jeremy Huddleston <jeremy@yuffie.local>
+Date:   Mon Dec 10 23:00:44 2007 -0800
+
+    Added launchd support.
+
+commit 13ac80469f6958cabac596834e203bd9cb6d4c94
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Wed Dec 5 20:14:03 2007 -0500
+
+    Update the currency symbols block of en_US.UTF-8/Compose.pre
+    Add XCOMM lines a la the existing NEW SHEQEL SIGN entry for
+    the KIP, TUGRIK, DRACHMA. GERMAN PENNY, PESO, GUARANI,
+    AUSTRAL, HRYVNIA and CEDI SIGNs.
+
+commit b0a8f2ec4ba698841683f8ce389f9d72e6bce53e
+Author: Anton Zinoviev <anton@lml.bas.bg>
+Date:   Wed Dec 5 19:56:03 2007 -0500
+
+    Additions to the Compose file for UTF-8
+    From bug #5371¹
+    
+    Commit 5cf5bc76642bfece7cb5b76faf414bf445f14489 left out this change
+    from those in attachment #4122².  The post³ on xorg resulted in only
+    a positive reply⁴ from Daniel, so this block is now also commited.
+    
+    1] https://bugs.freedesktop.org/show_bug.cgi?id=5371
+    2] https://bugs.freedesktop.org/attachment.cgi?id=4122
+    3] http://article.gmane.org/gmane.comp.freedesktop.xorg/20628
+    4] http://article.gmane.org/gmane.comp.freedesktop.xorg/23966
+    
+    Signed-off-by: James Cloos <cloos@jhcloos.com>
+    Acked-by:  Daniel Stone <daniel@fooishbar.org>
+
+commit 438d02ebc08ee171cf1d3936f4c81050d428ab92
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Tue Dec 4 17:25:39 2007 -0500
+
+    Fix the <U\x+> keysyms in the en_US.UTF-8 Compose file
+    
+    Based on src/KeysymStr.c and src/StrKeysym.c and comments in
+    bugs #11930¹ and #5129² it is clear that <U100XXXXX> is invalid;
+    those should be in the form U plus the hex of the UCS Code Point.
+    
+    The 0x01000000 is ORed in by the code.
+    
+    This update fixes all of those.
+    
+    1] https://bugs.freedesktop.org/show_bug.cgi?id=11930
+    2] https://bugs.freedesktop.org/show_bug.cgi?id=5129
+
+commit 02e04059c89e175f51647e3b031344f743286b34
+Merge: 1254c57... b57129e...
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Tue Dec 4 06:55:04 2007 -0500
+
+    Merge branch 'master' of ssh://git.freedesktop.org/git/xorg/lib/libX11
+
+commit 1254c57dd3a8d6ea87041b2f63024f99094f290f
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Tue Dec 4 06:53:55 2007 -0500
+
+    Use the new dead_psili and dead_dasia keysyms added to proto/x11proto 7.0.11
+    Inspired by bug 11930¹:
+    
+    Commit 40ed4eef92e31fcf7ea0a436e1a00cdf49484c1b to x11proto added dead_psili
+    and dead_dasia keysyms.  Make use of them in the en_US.UTF-8 and el_GR.UTF-8
+    Compose files.
+    
+    This was done with a pair of perl scripts based on the one quoted in the
+    log for commit c76d30253f1483ac8200ad5c032a818907e65030.
+    
+    1] https://bugs.freedesktop.org/show_bug.cgi?id=11930
+
+commit b57129ef324c73ee91c2a796b800c4b45f4d4855
+Author: Jeremy Huddleston <jeremy@yuffie.local>
+Date:   Mon Dec 3 20:04:19 2007 -0800
+
+    Use __APPLE__ instead of __DARWIN__
+
+commit b9c032e1d5ed08510863dfb91b8bda588e6c8c9e
+Author: Jeremy Huddleston <jeremy@yuffie.local>
+Date:   Wed Nov 28 16:43:49 2007 -0800
+
+    Define __DARWIN__ when host_os == darwin* as needed in SetLocale.c
+
+commit 4b91ed099554626f1ec17d5bdf7bd77ce1a70037
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Wed Nov 21 16:50:04 2007 -0800
+
+    X.Org Bug #4312: incorrect comment asterisk in XAnyEvent.3x man page
+    
+    X.Org Bugzilla #4312 <http://bugs.freedesktop.org/show_bug.cgi?id=4312>
+    
+    Protect /* sequences from cpp pre-processor removal without transforming
+    to Unicode mathematical asterisk character
+
+commit 2af660c2fcd15c86c66459bfc074c190ea1462e6
+Author: Jamey Sharp <jamey@minilop.net>
+Date:   Mon Oct 29 10:46:20 2007 -0700
+
+    Two threads can request sequence sync and XID fetch simultaneously.
+    
+    So don't assert that they can't.
+    
+    This makes the Xlib/XCB implementation of _XAllocID more closely
+    resemble the traditional Xlib version.
+
+commit 6e5485e0a5e3ab738becad12193e760c5fee83a4
+Author: Samuel Thibault <samuel.thibault@ens-lyon.org>
+Date:   Sun Oct 28 04:44:00 2007 -0800
+
+    X.Org Bug #12983: Typos in ./man/XChangeKeyboardControl.man
+    
+    <http://bugs.freedesktop.org/show_bug.cgi?id=12983>
+
+commit 24527c92fd1f433ea135e85ec876a94a529fe500
+Author: Yann Droneaud <ydroneaud@mandriva.com>
+Date:   Wed Oct 24 19:26:07 2007 +0300
+
+    XIM: Properly initialise client event
+    
+    Make sure all ClientMessage fields are initialised to 0 before we send it.
+
+commit e41477f37b0d9b74a056d22dbf0073a94eecb9d6
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Wed Oct 24 19:22:22 2007 +0300
+
+    Colours: Fix --disable-xcms
+    
+    Disable large tracts of colour management code when passing
+    --disable-xcms.
+
+commit 11ea09745efa8de7dc82fe30ebd2393f08390957
+Author: Eric Anholt <eric@anholt.net>
+Date:   Fri Aug 31 17:30:33 2007 -0700
+
+    Bug #2081: Note the range limitation of XSetScreenSaver arguments.
+
+commit 31540f1438ec63faf37044f2fd654b335ddf80f0
+Author: Kristian Høgsberg <krh@redhat.com>
+Date:   Wed Aug 29 19:50:57 2007 -0400
+
+    Add GLX 1.4 requests and errors.
+
+commit 7c996f78914c77fe17e9f4feede980d895d9df51
+Author: Eric Anholt <eric@anholt.net>
+Date:   Tue Aug 28 15:15:11 2007 -0700
+
+    Add XF86 keyboard/monitor brightness keysyms to the keysymbdb.
+
+commit fa4effe82759f864a22a2dc6c920fa72ddb175a8
+Author: Eric S. Raymond <esr@thyrsus.com>
+Date:   Sun Jan 14 10:48:00 2007 -0800
+
+    Bug #9658: Bad markup on XIfEvent.3x
+    
+    X.Org Bugzilla #9658 <https://bugs.freedesktop.org/show_bug.cgi?id=9658>
+
+commit 74cba78daa738ef4d92096107d95c1a585933666
+Author: Eric S. Raymond <esr@thyrsus.com>
+Date:   Sun Jan 14 10:43:00 2007 -0800
+
+    Bug #9655: Bad markup in XrmUniqueQuark.3x
+    
+    X.Org Bugzilla #9655 <https://bugs.freedesktop.org/show_bug.cgi?id=9655>
+
+commit 4341d1a34b2a2e460b58131b6fd81935f3355bbc
+Author: Eric S. Raymond <esr@thyrsus.com>
+Date:   Sun Jan 14 10:43:00 2007 -0800
+
+    Bug #9654: Bad markup in XrmGetFileDatabase.3x
+    
+    X.Org Bugzilla #9654 <https://bugs.freedesktop.org/show_bug.cgi?id=9654>
+
+commit 2db713252090cae08f0200fecad4fc25fb64c8b1
+Author: Eric S. Raymond <esr@thyrsus.com>
+Date:   Sun Jan 14 10:40:00 2007 -0800
+
+    Bug #9653: Bad markup in XQueryColor.3x
+    
+    X.Org Bugzilla #9653 <https://bugs.freedesktop.org/show_bug.cgi?id=9653>
+
+commit 9d3ceea4b902e0471824c1e07ad64342b9a1114e
+Author: Eric S. Raymond <esr@thyrsus.com>
+Date:   Sun Jan 14 10:40:00 2007 -0800
+
+    Bug #9652: Bad markup in XDrawArc.3x
+    
+    X.Org Bugzilla #9652 <https://bugs.freedesktop.org/show_bug.cgi?id=9652>
+
+commit 2e7e0748d353d7f53bbd65ec6bf0df8758528ddc
+Author: Eric S. Raymond <esr@thyrsus.com>
+Date:   Sun Jan 14 10:39:00 2007 -0800
+
+    Bug #9651: Bad markup in XcmsColor.3x
+    
+    X.Org Bugzilla #9651 <https://bugs.freedesktop.org/show_bug.cgi?id=9651>
+
+commit c316aaf0aab06951db9dc5c9c1148bfea835d885
+Author: Eric S. Raymond <esr@thyrsus.com>
+Date:   Sun Jan 14 10:38:00 2007 -0800
+
+    Bug #9650: Bad markup in XLoadFont.3x manual page
+    
+    X.Org Bugzilla #9650 <https://bugs.freedesktop.org/show_bug.cgi?id=9650>
+
+commit ca5d9a625ea0965853fa9e74a448b8c29c78ec95
+Author: Eric S. Raymond <esr@thyrsus.com>
+Date:   Tue Jan 2 10:18:00 2007 -0800
+
+    Bug 9523: Markup problems in XQueryExtension.3x
+    
+    X.Org Bugzilla #9523 <https://bugs.freedesktop.org/show_bug.cgi?id=9523>
+
+commit fe713c616e29ba19c179b43c18eca1035079ce18
+Author: Ian Romanick <idr@us.ibm.com>
+Date:   Tue Aug 21 14:56:33 2007 -0700
+
+    Make sure nls/am_ET.UTF-8/Makefile is created by configure.
+
+commit e3430616f26b68e1439143cbe10732f3fc329d20
+Author: Eric S. Raymond <esr@thyrsus.com>
+Date:   Tue Jan 2 08:40:00 2007 -0800
+
+    Bug #9516: Markup error in XAllocWMHints.3x
+    
+    X.Org Bugzilla #9516 <https://bugs.freedesktop.org/show_bug.cgi?id=9516>
+
+commit d8fe979fc929833e8c754aed32641786d5a0622b
+Merge: 21ca953... 4ec1723...
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Aug 20 15:34:50 2007 -0400
+
+    Merge branch 'master' of ssh://git.freedesktop.org/git/xorg/lib/libX11
+
+commit 21ca953337fb221b85345bf35ce1a98a0dcb2bf2
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Aug 20 15:34:03 2007 -0400
+
+    Fix typo
+    The code <U1000000D> was used where <U10000DC> was obviously intended.
+    
+    It is possible that <Udiaeresis> should be used instead, if that will
+    not break anyone’s setup.
+
+commit 4ec1723fff729440cd3349c1f95d87d2a6ba89cf
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Mon Aug 20 15:25:48 2007 -0400
+
+    Add compose file for Ethiopic to match new keyboard in xkeyboard-config
+    From bug report:
+    
+      https://bugs.freedesktop.org/show_bug.cgi?id=11307
+
+commit eff33ae525337ce2026be135a26464c7b1237113
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Sat Aug 18 17:58:23 2007 -0400
+
+    Patch for Catalan locales
+    From bugzilla bug 10943¹:
+    
+      There are several Catalan locale codes which presently can
+      be used in X11 systems; especially after they were accepted
+      in belocs-locale-data².
+    
+      In the following patches, I³ add ca_AD, ca_FR and ca_IT Catalan
+      locale codes.  For instance, without this, using ca_AD (actually
+      a quite used locale⁴) some applications (eg. Emacs or Skype)
+      cannot display Catalan diacritic marks as you type them.
+    
+    1] https://bugs.freedesktop.org/show_bug.cgi?id=10943
+    2] http://lists.debian.org/debian-devel-changes/2005/07/msg01429.html
+    3] Toni Hermoso Pulido <toniher@softcatala.org>
+    4] https://launchpad.net/~ubuntu.cat/+members
+
+commit 1f980cb7d022f53d0aee9e793b08203fb888e86e
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Sat Aug 18 17:47:04 2007 -0400
+
+    Add additional Euro signs to compose
+    Inspired by bug 7419¹ make all of:
+    
+        C=, =C, c=, =c, E=, =E, e=, E=
+    
+    after <Multi_key> generate € U+20AC EURO SIGN.
+    
+    1] https://bugs.freedesktop.org/show_bug.cgi?id=7419
+
+commit 4b0a14521449dfce8b4347bd17243efd1d3eae2d
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Sat Aug 18 17:29:08 2007 -0400
+
+    Compose fix for Latin-1 (from Debian)
+    The description from bugzilla bug 7417¹ is:
+    
+      We've been shipping this patch for some time in Debian now. The
+      problem description from the patch header is reproduced below. You
+      may want to note the licensing issue mentioned below, but we've been
+      shipping it because the method by which this particular patch was
+      generated and updated was also given below.
+    
+      This patch by Denis Barbier.
+    
+      The X11 protocol states that Unicode keysyms are in the range
+      0x01000100 - 0x0110FFFF.  If the result of composing characters is a
+      Unicode codepoint, X returns the corresponding Unicode keysym, which
+      is its Unicode codepoint augmented by 0x01000000.  Latin-1
+      characters must not appear with their Unicode codepoints in compose
+      files, otherwise the returned composed character lies in the range
+      0x01000000 - 0x010000FF which is not valid.
+    
+      There are two solutions: either fix composing routines to return
+      0xZZ instead of 0x010000ZZ (where Z is an hexadecimal digit), or
+      replace U00ZZ by their corresponding keysyms in compose files.  The
+      latter is more logical and less error prone, so compose files will
+      be patched.  Many applications accept these invalid Unicode keysyms,
+      but few of them don't, most notably xemacs.  Only UTF-8 locales are
+      affected.
+    
+      This has been fixed very recently in XFree86 CVS (but not xorg), but
+      for licensing reasons, this patch is not grabbed.  Instead automatic
+      conversion is performed by:
+    
+        sed -e '/XK_LATIN1/,/XK_LATIN1/!d' /usr/include/X11/keysymdef.h \
+        | grep -v deprecated | grep 0x0 \
+        | sed -e 's/0x0/U0/' -e 's/XK_//' \
+        | awk '{ printf "s/\\b%s\\b/%s/ig\n", $3, $2; }' > sedfile
+        for f in nls/*.UTF-8/Compose.pre
+        do
+          sed -f sedfile $f > $f.tmp && mv $f.tmp $f
+        done
+    
+    [I edited the quoted script to update it for the current location of
+    the installed keysymdef.h and the current layout of the libX11
+    repo. -JimC]
+    
+    I applied the script, not the patch attached to the bugreport.
+    
+    1] https://bugs.freedesktop.org/show_bug.cgi?id=7417
+
+commit 5cf5bc76642bfece7cb5b76faf414bf445f14489
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Sat Aug 18 17:13:41 2007 -0400
+
+    Add some compose sequences
+    
+    Add some compose sequences from the patch in bug 5371 (attachment 4122).
+    
+    Cf:
+    
+    https://bugs.freedesktop.org/show_bug.cgi?id=5371
+    https://bugs.freedesktop.org/attachment.cgi?id=4122
+
+commit d4002e389dd69780dfc7c2f7bd3cb0c57f05d4f8
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Sat Aug 18 13:57:31 2007 -0400
+
+    Fix SMP Compose targets
+    The compose targets from the SMP (plane 1) were incorrect.
+    
+    At some point the 0x10000 bit had been lost.
+
+commit f1ed3da9a30a1f0264fdc7d1c6466f27fe2a3d7d
+Author: Jeremy C. Reed <reed@glacier.reedmedia.net>
+Date:   Thu Aug 16 17:37:22 2007 -0500
+
+    Fix a mutex reference-counting bug.
+    
+    I was told that some systems have a much more permissive libpthread.
+    I was asked to commit this. This is from NetBSD's X source.
+    (I didn't receive any feedback on xorg list for over two weeks
+    about this.)
+
 commit ac00a44b4875de70382da5a40dd87f976e5b9327
 Author: Tilman Sauerbeck <tilman@code-monkey.de>
 Date:   Wed Aug 1 20:36:03 2007 +0200

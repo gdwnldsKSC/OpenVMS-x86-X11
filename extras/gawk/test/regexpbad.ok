@@ -1,0 +1,2 @@
+gawk: regexpbad.awk:1: error: unbalanced [: /^[^[]\x5b/
+EXIT CODE: 1

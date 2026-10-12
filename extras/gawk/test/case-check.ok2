@@ -1,0 +1,24 @@
+case (i):
+	Σ ~ σ: expect true,  got true
+	σ ~ Σ: expect true,  got true
+	Σ ~ ς: expect true,  got true
+	ς ~ Σ: expect false, got false
+	σ ~ ς: expect false, got false
+	ς ~ σ: expect false, got false
+case (ii)
+	Ω ~ ω: expect true,  got true
+	ω ~ Ω: expect true,  got true
+	Ω ~ ω: expect false, got false
+	ω ~ Ω: expect true,  got true
+	Ω ~ Ω: expect false, got false
+	Ω ~ Ω: expect false, got false
+case (iii)
+	ẞ ~ ß: expect false, got false
+	ß ~ ẞ: expect true,  got true
+case (iv)
+	Ǆ ~ ǆ: expect true,  got true
+	ǆ ~ Ǆ: expect true,  got true
+	Ǆ ~ ǅ: expect true,  got true
+	ǅ ~ Ǆ: expect false, got false
+	ǆ ~ ǅ: expect true,  got false
+	ǅ ~ ǆ: expect false, got false

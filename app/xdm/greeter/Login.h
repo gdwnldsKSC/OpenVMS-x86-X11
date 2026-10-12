@@ -114,29 +114,30 @@ from The Open Group.
 # define XtRXftFont		"XftFont"
 # define XtRXftColor		"XftColor"
 
-#ifdef XPM
 /* added by Amit Margalit Oct 1996 */
 # define XtNhiColor		"hiColor"
 # define XtNshdColor		"shdColor"
 # define XtNframeWidth		"frameWidth"
+# define XtCFrameWidth		"FrameWidth"
 # define XtNinnerFramesWidth	"innerFramesWidth"
 # define XtNsepWidth		"sepWidth"
 
+#ifdef DANCING
 /* caolan begin */
 #define XtNlastEventTime "lastEventTime"
 #define XtCLastEventTime "LastEventTime"
 /* caolan end */
+#endif /* DANCING */
 
+#ifdef XPM
 #define XtNuseShape "useShape"
 #define XtCUseShape "UseShape"
 #define XtNlogoFileName "logoFileName"
 #define XtCLogoFileName "LogoFileName"
 #define XtNlogoPadding "logoPadding"
 #define XtCLogoPadding "LogoPadding"
-
-# define XtCFrameWidth		"FrameWidth"
-
 #endif /* XPM */
+
 # define XtCGreeting		"Greeting"
 # define XtCNamePrompt		"NamePrompt"
 # define XtCPasswdPrompt	"PasswdPrompt"
@@ -155,29 +156,38 @@ from The Open Group.
 
 #ifdef __OpenBSD__
 # include <sys/param.h>
-/* 2.8 (200012) doesn't have _PW_NAME_LEN */
-# if OpenBSD > 200012
-#  include <pwd.h>
-#  define NAME_LEN	(_PW_NAME_LEN + 2)
-#  define PASSWORD_LEN	(_PASSWORD_LEN + 2)
-# endif
 #endif
+
+#include <pwd.h>
+#include <limits.h>
 
 #ifdef USE_PAM
 # define NAME_LEN	PAM_MAX_RESP_SIZE
 # define PASSWORD_LEN	PAM_MAX_RESP_SIZE
 #endif
 
+/* Defined to be in <limits.h> by SUSv2 */
+#if !defined(PASSWORD_LEN) && defined(PASS_MAX)
+# define PASSWORD_LEN PASS_MAX
+#endif
+
+/* _PW_NAME_LEN is found in <pwd.h> on OpenBSD > 2.8 (200012) */
+#if !defined(NAME_LEN) && defined(_PW_NAME_LEN)
+# define NAME_LEN	(_PW_NAME_LEN + 2)
+#endif
+
+/* _PASSWORD_LEN appears to come from 4.4BSD-Lite <pwd.h> */
+#if !defined(PASSWORD_LEN) && defined(_PASSWORD_LEN)
+# define PASSWORD_LEN	(_PASSWORD_LEN + 2)
+#endif
+
+/* Fallbacks if no other definition found */
 #ifndef NAME_LEN
 # define NAME_LEN	32
 #endif
 
 #ifndef PASSWORD_LEN
-# ifdef PASS_MAX
-#  define PASSWORD_LEN PASS_MAX
-# else
-#  define PASSWORD_LEN 32
-# endif
+# define PASSWORD_LEN	32
 #endif
 
 typedef struct _LoginData { 

@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-input-joystick],
-        1.1.0,
+        1.2.3,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-input-joystick)
 
@@ -44,29 +44,42 @@ AC_PROG_CC
 
 AH_TOP([#include "xorg-server.h"])
 
-#AC_DEFINE(XFree86LOADER,1,[Stub define for loadable drivers])
-#
-#AC_ARG_ENABLE(XINPUT, AS_HELP_STRING([--enable-xinput],
-#              [Build XInput support (default: yes)]),
-#              [XINPUT=$enableval],[XINPUT=yes])
-#AM_CONDITIONAL(XINPUT, test "x$XINPUT" = "xyes")
-#if test "x$XINPUT" = "xyes" ; then
-#    AC_DEFINE(XINPUT,1,[Enable XInput support])
-#fi
-#
-#AC_ARG_ENABLE(XKB, AS_HELP_STRING([--enable-xkb],
-#              [Build XKB support (default: yes)]),
-#              [XKB=$enableval],[XKB=yes])
-#AM_CONDITIONAL(XKB, test "x$XKB" = "xyes")
-#if test "x$XKB" = "xyes" ; then
-#    AC_DEFINE(XKB,1,[Enable XKB support])
-#fi
+case $host_os in
+  linux*)
+    IS_LINUX="yes"
+    ;;
+
+  freebsd* | kfreebsd-gnu* | netbsd* | openbsd*)
+    IS_BSD="yes"
+    ;;
+
+  *)
+    AC_MSG_ERROR([Your operating system is not supported by the joystick
+                  driver. Contact xorg@lists.freedesktop.org if you are 
+                  interested in porting it.])
+    ;;
+esac
+AM_CONDITIONAL(LINUX, [test "x$IS_LINUX" = xyes])
+AM_CONDITIONAL(BSD, [test "x$IS_BSD" = xyes])
 
 AC_ARG_WITH(xorg-module-dir,
             AC_HELP_STRING([--with-xorg-module-dir=DIR],
-                           [Default xorg module directory [[default=$libdir/xorg/modules]]]),
+                           [Default xorg module directory 
+                           [[default=$libdir/xorg/modules]]]),
             [moduledir="$withval"],
             [moduledir="$libdir/xorg/modules"])
+
+AC_ARG_ENABLE(debug,
+            AS_HELP_STRING([--enable-debug],
+                           [Enable debugging (default: enabled)]),
+			   [DEBUGGING=$enableval], [DEBUGGING=yes])
+if test "x$DEBUGGING" = xyes; then
+    AC_DEFINE(DEBUG, 1, [Enable debugging code])
+else
+    AC_DEFINE(NDEBUG, 1, [Disable some debugging code])
+fi
+AM_CONDITIONAL(DEBUG, [test "x$DEBUGGING" = xyes])	   
+
 inputdir=${moduledir}/input
 AC_SUBST(inputdir)
 
@@ -75,7 +88,8 @@ XORG_DRIVER_CHECK_EXT(RANDR, randrproto)
 XORG_DRIVER_CHECK_EXT(XINPUT, inputproto)
 
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XORG, [xorg-server >= 1.0.99.901] xproto $REQUIRED_MODULES)
+PKG_CHECK_MODULES(XORG, 
+               [xorg-server >= 1.0.99.901] xproto $REQUIRED_MODULES)
 sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 
 CFLAGS="$CFLAGS $XORG_CFLAGS "' -I$(top_srcdir)/src'

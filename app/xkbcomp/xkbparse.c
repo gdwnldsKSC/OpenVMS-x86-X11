@@ -200,7 +200,7 @@
 
 
 /* Copy the first part of user declarations.  */
-#line 93 "xkbparse.y"
+#line 93 "../xkbparse.y"
 
 #ifdef DEBUG
 #define	YYDEBUG 1
@@ -234,7 +234,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 111 "xkbparse.y"
+#line 111 "../xkbparse.y"
 {
 	int		 ival;
 	unsigned	 uval;
@@ -1866,167 +1866,167 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 170 "xkbparse.y"
+#line 170 "../xkbparse.y"
     { (yyval.file)= rtrnValue= (yyvsp[(1) - (1)].file); }
     break;
 
   case 3:
-#line 172 "xkbparse.y"
+#line 172 "../xkbparse.y"
     { (yyval.file)= rtrnValue= (yyvsp[(1) - (1)].file);  }
     break;
 
   case 4:
-#line 174 "xkbparse.y"
+#line 174 "../xkbparse.y"
     { (yyval.file)= rtrnValue= (yyvsp[(1) - (1)].file); }
     break;
 
   case 5:
-#line 178 "xkbparse.y"
+#line 178 "../xkbparse.y"
     { (yyval.file)= (XkbFile *)AppendStmt(&(yyvsp[(1) - (2)].file)->common,&(yyvsp[(2) - (2)].file)->common); }
     break;
 
   case 6:
-#line 180 "xkbparse.y"
+#line 180 "../xkbparse.y"
     { (yyval.file)= (yyvsp[(1) - (1)].file); }
     break;
 
   case 7:
-#line 186 "xkbparse.y"
+#line 186 "../xkbparse.y"
     { (yyval.file)= CreateXKBFile((yyvsp[(2) - (7)].uval),(yyvsp[(3) - (7)].str),&(yyvsp[(5) - (7)].file)->common,(yyvsp[(1) - (7)].uval)); }
     break;
 
   case 8:
-#line 189 "xkbparse.y"
+#line 189 "../xkbparse.y"
     { (yyval.uval)= XkmKeymapFile; }
     break;
 
   case 9:
-#line 190 "xkbparse.y"
+#line 190 "../xkbparse.y"
     { (yyval.uval)= XkmSemanticsFile; }
     break;
 
   case 10:
-#line 191 "xkbparse.y"
+#line 191 "../xkbparse.y"
     { (yyval.uval)= XkmLayoutFile; }
     break;
 
   case 11:
-#line 195 "xkbparse.y"
+#line 195 "../xkbparse.y"
     { (yyval.file)= (XkbFile *)AppendStmt(&(yyvsp[(1) - (2)].file)->common,&(yyvsp[(2) - (2)].file)->common); }
     break;
 
   case 12:
-#line 197 "xkbparse.y"
+#line 197 "../xkbparse.y"
     { (yyval.file)= (yyvsp[(1) - (1)].file); }
     break;
 
   case 13:
-#line 203 "xkbparse.y"
+#line 203 "../xkbparse.y"
     { (yyval.file)= CreateXKBFile((yyvsp[(2) - (7)].uval),(yyvsp[(3) - (7)].str),(yyvsp[(5) - (7)].any),(yyvsp[(1) - (7)].uval)); }
     break;
 
   case 14:
-#line 207 "xkbparse.y"
+#line 207 "../xkbparse.y"
     { (yyval.file)= CreateXKBFile((yyvsp[(2) - (4)].uval),(yyvsp[(3) - (4)].str),(yyvsp[(4) - (4)].any),(yyvsp[(1) - (4)].uval)); }
     break;
 
   case 15:
-#line 211 "xkbparse.y"
+#line 211 "../xkbparse.y"
     { (yyval.uval)= XkmKeyNamesIndex; }
     break;
 
   case 16:
-#line 212 "xkbparse.y"
+#line 212 "../xkbparse.y"
     { (yyval.uval)= XkmTypesIndex; }
     break;
 
   case 17:
-#line 213 "xkbparse.y"
+#line 213 "../xkbparse.y"
     { (yyval.uval)= XkmCompatMapIndex; }
     break;
 
   case 18:
-#line 214 "xkbparse.y"
+#line 214 "../xkbparse.y"
     { (yyval.uval)= XkmSymbolsIndex; }
     break;
 
   case 19:
-#line 215 "xkbparse.y"
+#line 215 "../xkbparse.y"
     { (yyval.uval)= XkmGeometryIndex; }
     break;
 
   case 20:
-#line 218 "xkbparse.y"
+#line 218 "../xkbparse.y"
     { (yyval.uval)= (yyvsp[(1) - (1)].uval); }
     break;
 
   case 21:
-#line 219 "xkbparse.y"
+#line 219 "../xkbparse.y"
     { (yyval.uval)= 0; }
     break;
 
   case 22:
-#line 222 "xkbparse.y"
+#line 222 "../xkbparse.y"
     { (yyval.uval)= (((yyvsp[(1) - (2)].uval))|((yyvsp[(2) - (2)].uval))); }
     break;
 
   case 23:
-#line 223 "xkbparse.y"
+#line 223 "../xkbparse.y"
     { (yyval.uval)= (yyvsp[(1) - (1)].uval); }
     break;
 
   case 24:
-#line 226 "xkbparse.y"
+#line 226 "../xkbparse.y"
     { (yyval.uval)= XkbLC_Partial; }
     break;
 
   case 25:
-#line 227 "xkbparse.y"
+#line 227 "../xkbparse.y"
     { (yyval.uval)= XkbLC_Default; }
     break;
 
   case 26:
-#line 228 "xkbparse.y"
+#line 228 "../xkbparse.y"
     { (yyval.uval)= XkbLC_Hidden; }
     break;
 
   case 27:
-#line 229 "xkbparse.y"
+#line 229 "../xkbparse.y"
     { (yyval.uval)= XkbLC_AlphanumericKeys; }
     break;
 
   case 28:
-#line 230 "xkbparse.y"
+#line 230 "../xkbparse.y"
     { (yyval.uval)= XkbLC_ModifierKeys; }
     break;
 
   case 29:
-#line 231 "xkbparse.y"
+#line 231 "../xkbparse.y"
     { (yyval.uval)= XkbLC_KeypadKeys; }
     break;
 
   case 30:
-#line 232 "xkbparse.y"
+#line 232 "../xkbparse.y"
     { (yyval.uval)= XkbLC_FunctionKeys; }
     break;
 
   case 31:
-#line 233 "xkbparse.y"
+#line 233 "../xkbparse.y"
     { (yyval.uval)= XkbLC_AlternateGroup; }
     break;
 
   case 32:
-#line 237 "xkbparse.y"
+#line 237 "../xkbparse.y"
     { (yyval.any)= AppendStmt((yyvsp[(1) - (2)].any),(yyvsp[(2) - (2)].any)); }
     break;
 
   case 33:
-#line 238 "xkbparse.y"
+#line 238 "../xkbparse.y"
     { (yyval.any)= NULL; }
     break;
 
   case 34:
-#line 242 "xkbparse.y"
+#line 242 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].var)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].var)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].var)->common;
@@ -2034,7 +2034,7 @@ yyreduce:
     break;
 
   case 35:
-#line 247 "xkbparse.y"
+#line 247 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].vmod)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].vmod)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].vmod)->common;
@@ -2042,7 +2042,7 @@ yyreduce:
     break;
 
   case 36:
-#line 252 "xkbparse.y"
+#line 252 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].interp)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].interp)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].interp)->common;
@@ -2050,7 +2050,7 @@ yyreduce:
     break;
 
   case 37:
-#line 257 "xkbparse.y"
+#line 257 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].keyName)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].keyName)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].keyName)->common;
@@ -2058,7 +2058,7 @@ yyreduce:
     break;
 
   case 38:
-#line 262 "xkbparse.y"
+#line 262 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].keyAlias)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].keyAlias)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].keyAlias)->common;
@@ -2066,7 +2066,7 @@ yyreduce:
     break;
 
   case 39:
-#line 267 "xkbparse.y"
+#line 267 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].keyType)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].keyType)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].keyType)->common;
@@ -2074,7 +2074,7 @@ yyreduce:
     break;
 
   case 40:
-#line 272 "xkbparse.y"
+#line 272 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].syms)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].syms)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].syms)->common;
@@ -2082,7 +2082,7 @@ yyreduce:
     break;
 
   case 41:
-#line 277 "xkbparse.y"
+#line 277 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].modMask)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].modMask)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].modMask)->common;
@@ -2090,7 +2090,7 @@ yyreduce:
     break;
 
   case 42:
-#line 282 "xkbparse.y"
+#line 282 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].groupCompat)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].groupCompat)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].groupCompat)->common;
@@ -2098,7 +2098,7 @@ yyreduce:
     break;
 
   case 43:
-#line 287 "xkbparse.y"
+#line 287 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].ledMap)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].ledMap)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].ledMap)->common;
@@ -2106,7 +2106,7 @@ yyreduce:
     break;
 
   case 44:
-#line 292 "xkbparse.y"
+#line 292 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].ledName)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].ledName)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].ledName)->common;
@@ -2114,7 +2114,7 @@ yyreduce:
     break;
 
   case 45:
-#line 297 "xkbparse.y"
+#line 297 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].shape)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].shape)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].shape)->common;
@@ -2122,7 +2122,7 @@ yyreduce:
     break;
 
   case 46:
-#line 302 "xkbparse.y"
+#line 302 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].section)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].section)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].section)->common;
@@ -2130,7 +2130,7 @@ yyreduce:
     break;
 
   case 47:
-#line 307 "xkbparse.y"
+#line 307 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (2)].doodad)->merge= StmtSetMerge(&(yyvsp[(2) - (2)].doodad)->common,(yyvsp[(1) - (2)].uval));
 			    (yyval.any)= &(yyvsp[(2) - (2)].doodad)->common;
@@ -2138,7 +2138,7 @@ yyreduce:
     break;
 
   case 48:
-#line 312 "xkbparse.y"
+#line 312 "../xkbparse.y"
     {
 			    if ((yyvsp[(1) - (2)].uval)==MergeAltForm) {
 				yyerror("cannot use 'alternate' to include other maps");
@@ -2151,22 +2151,22 @@ yyreduce:
     break;
 
   case 49:
-#line 324 "xkbparse.y"
+#line 324 "../xkbparse.y"
     { (yyval.var)= VarCreate((yyvsp[(1) - (4)].expr),(yyvsp[(3) - (4)].expr)); }
     break;
 
   case 50:
-#line 326 "xkbparse.y"
+#line 326 "../xkbparse.y"
     { (yyval.var)= BoolVarCreate((yyvsp[(1) - (2)].sval),1); }
     break;
 
   case 51:
-#line 328 "xkbparse.y"
+#line 328 "../xkbparse.y"
     { (yyval.var)= BoolVarCreate((yyvsp[(2) - (3)].sval),0); }
     break;
 
   case 52:
-#line 332 "xkbparse.y"
+#line 332 "../xkbparse.y"
     {
 			    KeycodeDef *def;
 
@@ -2178,7 +2178,7 @@ yyreduce:
     break;
 
   case 53:
-#line 343 "xkbparse.y"
+#line 343 "../xkbparse.y"
     { 
 			    KeyAliasDef	*def;
 			    def= KeyAliasCreate((yyvsp[(2) - (5)].str),(yyvsp[(4) - (5)].str)); 
@@ -2189,32 +2189,32 @@ yyreduce:
     break;
 
   case 54:
-#line 353 "xkbparse.y"
+#line 353 "../xkbparse.y"
     { (yyval.vmod)= (yyvsp[(2) - (3)].vmod); }
     break;
 
   case 55:
-#line 357 "xkbparse.y"
+#line 357 "../xkbparse.y"
     { (yyval.vmod)= (VModDef *)AppendStmt(&(yyvsp[(1) - (3)].vmod)->common,&(yyvsp[(3) - (3)].vmod)->common); }
     break;
 
   case 56:
-#line 359 "xkbparse.y"
+#line 359 "../xkbparse.y"
     { (yyval.vmod)= (yyvsp[(1) - (1)].vmod); }
     break;
 
   case 57:
-#line 363 "xkbparse.y"
+#line 363 "../xkbparse.y"
     { (yyval.vmod)= VModCreate((yyvsp[(1) - (1)].sval),NULL); }
     break;
 
   case 58:
-#line 365 "xkbparse.y"
+#line 365 "../xkbparse.y"
     { (yyval.vmod)= VModCreate((yyvsp[(1) - (3)].sval),(yyvsp[(3) - (3)].expr)); }
     break;
 
   case 59:
-#line 371 "xkbparse.y"
+#line 371 "../xkbparse.y"
     {
 			    (yyvsp[(2) - (6)].interp)->def= (yyvsp[(4) - (6)].var);
 			    (yyval.interp)= (yyvsp[(2) - (6)].interp);
@@ -2222,117 +2222,117 @@ yyreduce:
     break;
 
   case 60:
-#line 378 "xkbparse.y"
+#line 378 "../xkbparse.y"
     { (yyval.interp)= InterpCreate((KeySym)(yyvsp[(1) - (3)].uval),(yyvsp[(3) - (3)].expr)); }
     break;
 
   case 61:
-#line 380 "xkbparse.y"
+#line 380 "../xkbparse.y"
     { (yyval.interp)= InterpCreate((KeySym)(yyvsp[(1) - (1)].uval),NULL); }
     break;
 
   case 62:
-#line 384 "xkbparse.y"
+#line 384 "../xkbparse.y"
     { (yyval.var)= (VarDef *)AppendStmt(&(yyvsp[(1) - (2)].var)->common,&(yyvsp[(2) - (2)].var)->common); }
     break;
 
   case 63:
-#line 386 "xkbparse.y"
+#line 386 "../xkbparse.y"
     { (yyval.var)= (yyvsp[(1) - (1)].var); }
     break;
 
   case 64:
-#line 392 "xkbparse.y"
+#line 392 "../xkbparse.y"
     { (yyval.keyType)= KeyTypeCreate((yyvsp[(2) - (6)].sval),(yyvsp[(4) - (6)].var)); }
     break;
 
   case 65:
-#line 398 "xkbparse.y"
+#line 398 "../xkbparse.y"
     { (yyval.syms)= SymbolsCreate((yyvsp[(2) - (6)].str),(ExprDef *)(yyvsp[(4) - (6)].var)); }
     break;
 
   case 66:
-#line 402 "xkbparse.y"
+#line 402 "../xkbparse.y"
     { (yyval.var)= (VarDef *)AppendStmt(&(yyvsp[(1) - (3)].var)->common,&(yyvsp[(3) - (3)].var)->common); }
     break;
 
   case 67:
-#line 404 "xkbparse.y"
+#line 404 "../xkbparse.y"
     { (yyval.var)= (yyvsp[(1) - (1)].var); }
     break;
 
   case 68:
-#line 405 "xkbparse.y"
+#line 405 "../xkbparse.y"
     { (yyval.var)= NULL; }
     break;
 
   case 69:
-#line 409 "xkbparse.y"
+#line 409 "../xkbparse.y"
     { (yyval.var)= VarCreate((yyvsp[(1) - (3)].expr),(yyvsp[(3) - (3)].expr)); }
     break;
 
   case 70:
-#line 411 "xkbparse.y"
+#line 411 "../xkbparse.y"
     { (yyval.var)= VarCreate((yyvsp[(1) - (3)].expr),(yyvsp[(3) - (3)].expr)); }
     break;
 
   case 71:
-#line 413 "xkbparse.y"
+#line 413 "../xkbparse.y"
     { (yyval.var)= BoolVarCreate((yyvsp[(1) - (1)].sval),1); }
     break;
 
   case 72:
-#line 415 "xkbparse.y"
+#line 415 "../xkbparse.y"
     { (yyval.var)= BoolVarCreate((yyvsp[(2) - (2)].sval),0); }
     break;
 
   case 73:
-#line 417 "xkbparse.y"
+#line 417 "../xkbparse.y"
     { (yyval.var)= VarCreate(NULL,(yyvsp[(1) - (1)].expr)); }
     break;
 
   case 74:
-#line 421 "xkbparse.y"
+#line 421 "../xkbparse.y"
     { (yyval.expr)= (yyvsp[(2) - (3)].expr); }
     break;
 
   case 75:
-#line 423 "xkbparse.y"
+#line 423 "../xkbparse.y"
     { (yyval.expr)= ExprCreateUnary(ExprActionList,TypeAction,(yyvsp[(2) - (3)].expr)); }
     break;
 
   case 76:
-#line 427 "xkbparse.y"
+#line 427 "../xkbparse.y"
     { (yyval.groupCompat)= GroupCompatCreate((yyvsp[(2) - (5)].ival),(yyvsp[(4) - (5)].expr)); }
     break;
 
   case 77:
-#line 431 "xkbparse.y"
+#line 431 "../xkbparse.y"
     { (yyval.modMask)= ModMapCreate((yyvsp[(2) - (6)].sval),(yyvsp[(4) - (6)].expr)); }
     break;
 
   case 78:
-#line 435 "xkbparse.y"
+#line 435 "../xkbparse.y"
     { (yyval.ledMap)= IndicatorMapCreate((yyvsp[(2) - (6)].sval),(yyvsp[(4) - (6)].var)); }
     break;
 
   case 79:
-#line 439 "xkbparse.y"
+#line 439 "../xkbparse.y"
     { (yyval.ledName)= IndicatorNameCreate((yyvsp[(2) - (5)].ival),(yyvsp[(4) - (5)].expr),False); }
     break;
 
   case 80:
-#line 441 "xkbparse.y"
+#line 441 "../xkbparse.y"
     { (yyval.ledName)= IndicatorNameCreate((yyvsp[(3) - (6)].ival),(yyvsp[(5) - (6)].expr),True); }
     break;
 
   case 81:
-#line 445 "xkbparse.y"
+#line 445 "../xkbparse.y"
     { (yyval.shape)= ShapeDeclCreate((yyvsp[(2) - (6)].sval),(OutlineDef *)&(yyvsp[(4) - (6)].outline)->common); }
     break;
 
   case 82:
-#line 447 "xkbparse.y"
+#line 447 "../xkbparse.y"
     { 
 			    OutlineDef *outlines;
 			    outlines= OutlineCreate(None,(yyvsp[(4) - (6)].expr));
@@ -2341,92 +2341,92 @@ yyreduce:
     break;
 
   case 83:
-#line 455 "xkbparse.y"
+#line 455 "../xkbparse.y"
     { (yyval.section)= SectionDeclCreate((yyvsp[(2) - (6)].sval),(yyvsp[(4) - (6)].row)); }
     break;
 
   case 84:
-#line 459 "xkbparse.y"
+#line 459 "../xkbparse.y"
     { (yyval.row)=(RowDef *)AppendStmt(&(yyvsp[(1) - (2)].row)->common,&(yyvsp[(2) - (2)].row)->common);}
     break;
 
   case 85:
-#line 461 "xkbparse.y"
+#line 461 "../xkbparse.y"
     { (yyval.row)= (yyvsp[(1) - (1)].row); }
     break;
 
   case 86:
-#line 465 "xkbparse.y"
+#line 465 "../xkbparse.y"
     { (yyval.row)= RowDeclCreate((yyvsp[(3) - (5)].key)); }
     break;
 
   case 87:
-#line 467 "xkbparse.y"
+#line 467 "../xkbparse.y"
     { (yyval.row)= (RowDef *)(yyvsp[(1) - (1)].var); }
     break;
 
   case 88:
-#line 469 "xkbparse.y"
+#line 469 "../xkbparse.y"
     { (yyval.row)= (RowDef *)(yyvsp[(1) - (1)].doodad); }
     break;
 
   case 89:
-#line 471 "xkbparse.y"
+#line 471 "../xkbparse.y"
     { (yyval.row)= (RowDef *)(yyvsp[(1) - (1)].ledMap); }
     break;
 
   case 90:
-#line 473 "xkbparse.y"
+#line 473 "../xkbparse.y"
     { (yyval.row)= (RowDef *)(yyvsp[(1) - (1)].overlay); }
     break;
 
   case 91:
-#line 477 "xkbparse.y"
+#line 477 "../xkbparse.y"
     { (yyval.key)=(KeyDef *)AppendStmt(&(yyvsp[(1) - (2)].key)->common,&(yyvsp[(2) - (2)].key)->common);}
     break;
 
   case 92:
-#line 479 "xkbparse.y"
+#line 479 "../xkbparse.y"
     { (yyval.key)= (yyvsp[(1) - (1)].key); }
     break;
 
   case 93:
-#line 483 "xkbparse.y"
+#line 483 "../xkbparse.y"
     { (yyval.key)= (yyvsp[(3) - (5)].key); }
     break;
 
   case 94:
-#line 485 "xkbparse.y"
+#line 485 "../xkbparse.y"
     { (yyval.key)= (KeyDef *)(yyvsp[(1) - (1)].var); }
     break;
 
   case 95:
-#line 489 "xkbparse.y"
+#line 489 "../xkbparse.y"
     { (yyval.key)=(KeyDef *)AppendStmt(&(yyvsp[(1) - (3)].key)->common,&(yyvsp[(3) - (3)].key)->common);}
     break;
 
   case 96:
-#line 491 "xkbparse.y"
+#line 491 "../xkbparse.y"
     { (yyval.key)= (yyvsp[(1) - (1)].key); }
     break;
 
   case 97:
-#line 495 "xkbparse.y"
+#line 495 "../xkbparse.y"
     { (yyval.key)= KeyDeclCreate((yyvsp[(1) - (1)].str),NULL); }
     break;
 
   case 98:
-#line 497 "xkbparse.y"
+#line 497 "../xkbparse.y"
     { (yyval.key)= KeyDeclCreate(NULL,(yyvsp[(2) - (3)].expr)); }
     break;
 
   case 99:
-#line 501 "xkbparse.y"
+#line 501 "../xkbparse.y"
     { (yyval.overlay)= OverlayDeclCreate((yyvsp[(2) - (6)].sval),(yyvsp[(4) - (6)].olKey)); }
     break;
 
   case 100:
-#line 505 "xkbparse.y"
+#line 505 "../xkbparse.y"
     { 
 			    (yyval.olKey)= (OverlayKeyDef *)
 				AppendStmt(&(yyvsp[(1) - (3)].olKey)->common,&(yyvsp[(3) - (3)].olKey)->common);
@@ -2434,52 +2434,52 @@ yyreduce:
     break;
 
   case 101:
-#line 510 "xkbparse.y"
+#line 510 "../xkbparse.y"
     { (yyval.olKey)= (yyvsp[(1) - (1)].olKey); }
     break;
 
   case 102:
-#line 514 "xkbparse.y"
+#line 514 "../xkbparse.y"
     { (yyval.olKey)= OverlayKeyCreate((yyvsp[(1) - (3)].str),(yyvsp[(3) - (3)].str)); }
     break;
 
   case 103:
-#line 518 "xkbparse.y"
+#line 518 "../xkbparse.y"
     { (yyval.outline)=(OutlineDef *)AppendStmt(&(yyvsp[(1) - (3)].outline)->common,&(yyvsp[(3) - (3)].outline)->common);}
     break;
 
   case 104:
-#line 520 "xkbparse.y"
+#line 520 "../xkbparse.y"
     { (yyval.outline)= (yyvsp[(1) - (1)].outline); }
     break;
 
   case 105:
-#line 524 "xkbparse.y"
+#line 524 "../xkbparse.y"
     { (yyval.outline)= OutlineCreate(None,(yyvsp[(2) - (3)].expr)); }
     break;
 
   case 106:
-#line 526 "xkbparse.y"
+#line 526 "../xkbparse.y"
     { (yyval.outline)= OutlineCreate((yyvsp[(1) - (5)].sval),(yyvsp[(4) - (5)].expr)); }
     break;
 
   case 107:
-#line 528 "xkbparse.y"
+#line 528 "../xkbparse.y"
     { (yyval.outline)= OutlineCreate((yyvsp[(1) - (3)].sval),(yyvsp[(3) - (3)].expr)); }
     break;
 
   case 108:
-#line 532 "xkbparse.y"
+#line 532 "../xkbparse.y"
     { (yyval.expr)= (ExprDef *)AppendStmt(&(yyvsp[(1) - (3)].expr)->common,&(yyvsp[(3) - (3)].expr)->common); }
     break;
 
   case 109:
-#line 534 "xkbparse.y"
+#line 534 "../xkbparse.y"
     { (yyval.expr)= (yyvsp[(1) - (1)].expr); }
     break;
 
   case 110:
-#line 538 "xkbparse.y"
+#line 538 "../xkbparse.y"
     {
 			    ExprDef *expr;
 			    expr= ExprCreate(ExprCoord,TypeUnknown);
@@ -2490,237 +2490,237 @@ yyreduce:
     break;
 
   case 111:
-#line 548 "xkbparse.y"
+#line 548 "../xkbparse.y"
     { (yyval.doodad)= DoodadCreate((yyvsp[(1) - (6)].uval),(yyvsp[(2) - (6)].sval),(yyvsp[(4) - (6)].var)); }
     break;
 
   case 112:
-#line 551 "xkbparse.y"
+#line 551 "../xkbparse.y"
     { (yyval.uval)= XkbTextDoodad; }
     break;
 
   case 113:
-#line 552 "xkbparse.y"
+#line 552 "../xkbparse.y"
     { (yyval.uval)= XkbOutlineDoodad; }
     break;
 
   case 114:
-#line 553 "xkbparse.y"
+#line 553 "../xkbparse.y"
     { (yyval.uval)= XkbSolidDoodad; }
     break;
 
   case 115:
-#line 554 "xkbparse.y"
+#line 554 "../xkbparse.y"
     { (yyval.uval)= XkbLogoDoodad; }
     break;
 
   case 116:
-#line 557 "xkbparse.y"
+#line 557 "../xkbparse.y"
     { (yyval.sval)= (yyvsp[(1) - (1)].sval); }
     break;
 
   case 117:
-#line 558 "xkbparse.y"
+#line 558 "../xkbparse.y"
     { (yyval.sval)= (yyvsp[(1) - (1)].sval); }
     break;
 
   case 118:
-#line 562 "xkbparse.y"
+#line 562 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,"action",False); }
     break;
 
   case 119:
-#line 564 "xkbparse.y"
+#line 564 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,"interpret",False); }
     break;
 
   case 120:
-#line 566 "xkbparse.y"
+#line 566 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,"type",False); }
     break;
 
   case 121:
-#line 568 "xkbparse.y"
+#line 568 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,"key",False); }
     break;
 
   case 122:
-#line 570 "xkbparse.y"
+#line 570 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,"group",False); }
     break;
 
   case 123:
-#line 572 "xkbparse.y"
+#line 572 "../xkbparse.y"
     {(yyval.sval)=XkbInternAtom(NULL,"modifier_map",False);}
     break;
 
   case 124:
-#line 574 "xkbparse.y"
+#line 574 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,"indicator",False); }
     break;
 
   case 125:
-#line 576 "xkbparse.y"
+#line 576 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,"shape",False); }
     break;
 
   case 126:
-#line 578 "xkbparse.y"
+#line 578 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,"row",False); }
     break;
 
   case 127:
-#line 580 "xkbparse.y"
+#line 580 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,"section",False); }
     break;
 
   case 128:
-#line 582 "xkbparse.y"
+#line 582 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,"text",False); }
     break;
 
   case 129:
-#line 585 "xkbparse.y"
+#line 585 "../xkbparse.y"
     { (yyval.uval)= (yyvsp[(1) - (1)].uval); }
     break;
 
   case 130:
-#line 586 "xkbparse.y"
+#line 586 "../xkbparse.y"
     { (yyval.uval)= MergeDefault; }
     break;
 
   case 131:
-#line 589 "xkbparse.y"
+#line 589 "../xkbparse.y"
     { (yyval.uval)= MergeDefault; }
     break;
 
   case 132:
-#line 590 "xkbparse.y"
+#line 590 "../xkbparse.y"
     { (yyval.uval)= MergeAugment; }
     break;
 
   case 133:
-#line 591 "xkbparse.y"
+#line 591 "../xkbparse.y"
     { (yyval.uval)= MergeOverride; }
     break;
 
   case 134:
-#line 592 "xkbparse.y"
+#line 592 "../xkbparse.y"
     { (yyval.uval)= MergeReplace; }
     break;
 
   case 135:
-#line 593 "xkbparse.y"
+#line 593 "../xkbparse.y"
     { (yyval.uval)= MergeAltForm; }
     break;
 
   case 136:
-#line 596 "xkbparse.y"
+#line 596 "../xkbparse.y"
     { (yyval.expr)= (yyvsp[(1) - (1)].expr); }
     break;
 
   case 137:
-#line 597 "xkbparse.y"
+#line 597 "../xkbparse.y"
     { (yyval.expr)= NULL; }
     break;
 
   case 138:
-#line 601 "xkbparse.y"
+#line 601 "../xkbparse.y"
     { (yyval.expr)= (ExprDef *)AppendStmt(&(yyvsp[(1) - (3)].expr)->common,&(yyvsp[(3) - (3)].expr)->common); }
     break;
 
   case 139:
-#line 603 "xkbparse.y"
+#line 603 "../xkbparse.y"
     { (yyval.expr)= (yyvsp[(1) - (1)].expr); }
     break;
 
   case 140:
-#line 607 "xkbparse.y"
+#line 607 "../xkbparse.y"
     { (yyval.expr)= ExprCreateBinary(OpDivide,(yyvsp[(1) - (3)].expr),(yyvsp[(3) - (3)].expr)); }
     break;
 
   case 141:
-#line 609 "xkbparse.y"
+#line 609 "../xkbparse.y"
     { (yyval.expr)= ExprCreateBinary(OpAdd,(yyvsp[(1) - (3)].expr),(yyvsp[(3) - (3)].expr)); }
     break;
 
   case 142:
-#line 611 "xkbparse.y"
+#line 611 "../xkbparse.y"
     { (yyval.expr)= ExprCreateBinary(OpSubtract,(yyvsp[(1) - (3)].expr),(yyvsp[(3) - (3)].expr)); }
     break;
 
   case 143:
-#line 613 "xkbparse.y"
+#line 613 "../xkbparse.y"
     { (yyval.expr)= ExprCreateBinary(OpMultiply,(yyvsp[(1) - (3)].expr),(yyvsp[(3) - (3)].expr)); }
     break;
 
   case 144:
-#line 615 "xkbparse.y"
+#line 615 "../xkbparse.y"
     { (yyval.expr)= ExprCreateBinary(OpAssign,(yyvsp[(1) - (3)].expr),(yyvsp[(3) - (3)].expr)); }
     break;
 
   case 145:
-#line 617 "xkbparse.y"
+#line 617 "../xkbparse.y"
     { (yyval.expr)= (yyvsp[(1) - (1)].expr); }
     break;
 
   case 146:
-#line 621 "xkbparse.y"
+#line 621 "../xkbparse.y"
     { (yyval.expr)= ExprCreateUnary(OpNegate,(yyvsp[(2) - (2)].expr)->type,(yyvsp[(2) - (2)].expr)); }
     break;
 
   case 147:
-#line 623 "xkbparse.y"
+#line 623 "../xkbparse.y"
     { (yyval.expr)= ExprCreateUnary(OpUnaryPlus,(yyvsp[(2) - (2)].expr)->type,(yyvsp[(2) - (2)].expr)); }
     break;
 
   case 148:
-#line 625 "xkbparse.y"
+#line 625 "../xkbparse.y"
     { (yyval.expr)= ExprCreateUnary(OpNot,TypeBoolean,(yyvsp[(2) - (2)].expr)); }
     break;
 
   case 149:
-#line 627 "xkbparse.y"
+#line 627 "../xkbparse.y"
     { (yyval.expr)= ExprCreateUnary(OpInvert,(yyvsp[(2) - (2)].expr)->type,(yyvsp[(2) - (2)].expr)); }
     break;
 
   case 150:
-#line 629 "xkbparse.y"
+#line 629 "../xkbparse.y"
     { (yyval.expr)= (yyvsp[(1) - (1)].expr);  }
     break;
 
   case 151:
-#line 631 "xkbparse.y"
+#line 631 "../xkbparse.y"
     { (yyval.expr)= ActionCreate((yyvsp[(1) - (4)].sval),(yyvsp[(3) - (4)].expr)); }
     break;
 
   case 152:
-#line 633 "xkbparse.y"
+#line 633 "../xkbparse.y"
     { (yyval.expr)= (yyvsp[(1) - (1)].expr);  }
     break;
 
   case 153:
-#line 635 "xkbparse.y"
+#line 635 "../xkbparse.y"
     { (yyval.expr)= (yyvsp[(2) - (3)].expr);  }
     break;
 
   case 154:
-#line 639 "xkbparse.y"
+#line 639 "../xkbparse.y"
     { (yyval.expr)= (ExprDef *)AppendStmt(&(yyvsp[(1) - (3)].expr)->common,&(yyvsp[(3) - (3)].expr)->common); }
     break;
 
   case 155:
-#line 641 "xkbparse.y"
+#line 641 "../xkbparse.y"
     { (yyval.expr)= (yyvsp[(1) - (1)].expr); }
     break;
 
   case 156:
-#line 645 "xkbparse.y"
+#line 645 "../xkbparse.y"
     { (yyval.expr)= ActionCreate((yyvsp[(1) - (4)].sval),(yyvsp[(3) - (4)].expr)); }
     break;
 
   case 157:
-#line 649 "xkbparse.y"
+#line 649 "../xkbparse.y"
     {
 			    ExprDef *expr;
                             expr= ExprCreate(ExprIdent,TypeUnknown);
@@ -2730,7 +2730,7 @@ yyreduce:
     break;
 
   case 158:
-#line 656 "xkbparse.y"
+#line 656 "../xkbparse.y"
     {
                             ExprDef *expr;
                             expr= ExprCreate(ExprFieldRef,TypeUnknown);
@@ -2741,7 +2741,7 @@ yyreduce:
     break;
 
   case 159:
-#line 664 "xkbparse.y"
+#line 664 "../xkbparse.y"
     {
 			    ExprDef *expr;
 			    expr= ExprCreate(ExprArrayRef,TypeUnknown);
@@ -2753,7 +2753,7 @@ yyreduce:
     break;
 
   case 160:
-#line 673 "xkbparse.y"
+#line 673 "../xkbparse.y"
     {
 			    ExprDef *expr;
 			    expr= ExprCreate(ExprArrayRef,TypeUnknown);
@@ -2765,7 +2765,7 @@ yyreduce:
     break;
 
   case 161:
-#line 684 "xkbparse.y"
+#line 684 "../xkbparse.y"
     {
 			    ExprDef *expr;
                             expr= ExprCreate(ExprValue,TypeString);
@@ -2775,7 +2775,7 @@ yyreduce:
     break;
 
   case 162:
-#line 691 "xkbparse.y"
+#line 691 "../xkbparse.y"
     {
 			    ExprDef *expr;
                             expr= ExprCreate(ExprValue,TypeInt);
@@ -2785,7 +2785,7 @@ yyreduce:
     break;
 
   case 163:
-#line 698 "xkbparse.y"
+#line 698 "../xkbparse.y"
     {
 			    ExprDef *expr;
 			    expr= ExprCreate(ExprValue,TypeFloat);
@@ -2795,7 +2795,7 @@ yyreduce:
     break;
 
   case 164:
-#line 705 "xkbparse.y"
+#line 705 "../xkbparse.y"
     {
 			    ExprDef *expr;
 			    expr= ExprCreate(ExprValue,TypeKeyName);
@@ -2806,27 +2806,27 @@ yyreduce:
     break;
 
   case 165:
-#line 714 "xkbparse.y"
+#line 714 "../xkbparse.y"
     { (yyval.expr)= (yyvsp[(1) - (1)].expr); }
     break;
 
   case 166:
-#line 715 "xkbparse.y"
+#line 715 "../xkbparse.y"
     { (yyval.expr)= NULL; }
     break;
 
   case 167:
-#line 719 "xkbparse.y"
+#line 719 "../xkbparse.y"
     { (yyval.expr)= AppendKeysymList((yyvsp[(1) - (3)].expr),(KeySym)(yyvsp[(3) - (3)].uval)); }
     break;
 
   case 168:
-#line 721 "xkbparse.y"
+#line 721 "../xkbparse.y"
     { (yyval.expr)= CreateKeysymList((KeySym)(yyvsp[(1) - (1)].uval)); }
     break;
 
   case 169:
-#line 725 "xkbparse.y"
+#line 725 "../xkbparse.y"
     { 
 			    KeySym sym;
 			    if (LookupKeysym(scanStr,&sym))
@@ -2843,14 +2843,14 @@ yyreduce:
     break;
 
   case 170:
-#line 739 "xkbparse.y"
+#line 739 "../xkbparse.y"
     {
 			    (yyval.uval)= XK_section;
 			}
     break;
 
   case 171:
-#line 743 "xkbparse.y"
+#line 743 "../xkbparse.y"
     {
 			    if ((yyvsp[(1) - (1)].ival)<10)	(yyval.uval)= (yyvsp[(1) - (1)].ival)+'0';	/* XK_0 .. XK_9 */
 			    else	(yyval.uval)= (yyvsp[(1) - (1)].ival);
@@ -2858,67 +2858,67 @@ yyreduce:
     break;
 
   case 172:
-#line 749 "xkbparse.y"
+#line 749 "../xkbparse.y"
     { (yyval.ival)= -(yyvsp[(2) - (2)].ival); }
     break;
 
   case 173:
-#line 750 "xkbparse.y"
+#line 750 "../xkbparse.y"
     { (yyval.ival)= (yyvsp[(1) - (1)].ival); }
     break;
 
   case 174:
-#line 753 "xkbparse.y"
+#line 753 "../xkbparse.y"
     { (yyval.ival)= scanInt; }
     break;
 
   case 175:
-#line 754 "xkbparse.y"
+#line 754 "../xkbparse.y"
     { (yyval.ival)= scanInt*XkbGeomPtsPerMM; }
     break;
 
   case 176:
-#line 757 "xkbparse.y"
+#line 757 "../xkbparse.y"
     { (yyval.ival)= scanInt; }
     break;
 
   case 177:
-#line 760 "xkbparse.y"
+#line 760 "../xkbparse.y"
     { (yyval.ival)= scanInt; }
     break;
 
   case 178:
-#line 763 "xkbparse.y"
+#line 763 "../xkbparse.y"
     { (yyval.str)= scanStr; scanStr= NULL; }
     break;
 
   case 179:
-#line 766 "xkbparse.y"
+#line 766 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,scanStr,False); }
     break;
 
   case 180:
-#line 767 "xkbparse.y"
+#line 767 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,"default",False); }
     break;
 
   case 181:
-#line 770 "xkbparse.y"
+#line 770 "../xkbparse.y"
     { (yyval.sval)= XkbInternAtom(NULL,scanStr,False); }
     break;
 
   case 182:
-#line 773 "xkbparse.y"
+#line 773 "../xkbparse.y"
     { (yyval.str)= (yyvsp[(1) - (1)].str); }
     break;
 
   case 183:
-#line 774 "xkbparse.y"
+#line 774 "../xkbparse.y"
     { (yyval.str)= NULL; }
     break;
 
   case 184:
-#line 777 "xkbparse.y"
+#line 777 "../xkbparse.y"
     { (yyval.str)= scanStr; scanStr= NULL; }
     break;
 
@@ -3138,7 +3138,7 @@ yyreturn:
 }
 
 
-#line 779 "xkbparse.y"
+#line 779 "../xkbparse.y"
 
 void
 yyerror(char *s)

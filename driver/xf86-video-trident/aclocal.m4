@@ -219,11 +219,54 @@ AC_ARG_WITH([pic],
     [pic_mode=default])
 test -z "$pic_mode" && pic_mode=default
 
+# Check if we have a version mismatch between libtool.m4 and ltmain.sh.
+#
+# Note:  This should be in AC_LIBTOOL_SETUP, _after_ $ltmain have been defined.
+#        We also should do it _before_ AC_LIBTOOL_LANG_C_CONFIG that actually
+#        calls AC_LIBTOOL_CONFIG and creates libtool.
+#
+_LT_VERSION_CHECK
+
 # Use C for the default configuration in the libtool script
 tagname=
 AC_LIBTOOL_LANG_C_CONFIG
 _LT_AC_TAGCONFIG
 ])# AC_LIBTOOL_SETUP
+
+
+# _LT_VERSION_CHECK
+# -----------------
+AC_DEFUN([_LT_VERSION_CHECK],
+[AC_MSG_CHECKING([for correct ltmain.sh version])
+if test "x$ltmain" = "x" ; then
+  AC_MSG_RESULT(no)
+  AC_MSG_ERROR([
+
+*** @<:@Gentoo@:>@ sanity check failed! ***
+*** \$ltmain is not defined, please check the patch for consistency! ***
+])
+fi
+gentoo_lt_version="1.5.22"
+gentoo_ltmain_version=`sed -n '/^[[ 	]]*VERSION=/{s/^[[ 	]]*VERSION=//;p;q;}' "$ltmain"`
+if test "x$gentoo_lt_version" != "x$gentoo_ltmain_version" ; then
+  AC_MSG_RESULT(no)
+  AC_MSG_ERROR([
+
+*** @<:@Gentoo@:>@ sanity check failed! ***
+*** libtool.m4 and ltmain.sh have a version mismatch! ***
+*** (libtool.m4 = $gentoo_lt_version, ltmain.sh = $gentoo_ltmain_version) ***
+
+Please run:
+
+  libtoolize --copy --force
+
+if appropriate, please contact the maintainer of this
+package (or your distribution) for help.
+])
+else
+  AC_MSG_RESULT(yes)
+fi
+])# _LT_VERSION_CHECK
 
 
 # _LT_AC_SYS_COMPILER
@@ -1356,6 +1399,30 @@ cygwin* | mingw* | pw32*)
     esac
     ;;
 
+  linux*)
+    if $LD --help 2>&1 | egrep ': supported targets:.* elf' > /dev/null; then
+      archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname -o $lib'
+      supports_anon_versioning=no
+      case `$LD -v 2>/dev/null` in
+        *\ [01].* | *\ 2.[[0-9]].* | *\ 2.10.*) ;; # catch versions < 2.11
+        *\ 2.11.93.0.2\ *) supports_anon_versioning=yes ;; # RH7.3 ...
+        *\ 2.11.92.0.12\ *) supports_anon_versioning=yes ;; # Mandrake 8.2 ...
+        *\ 2.11.*) ;; # other 2.11 versions
+        *) supports_anon_versioning=yes ;;
+      esac
+      if test $supports_anon_versioning = yes; then
+        archive_expsym_cmds='$echo "{ global:" > $output_objdir/$libname.ver~
+cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
+$echo "local: *; };" >> $output_objdir/$libname.ver~
+        $CC -shared $libobjs $deplibs $compiler_flags ${wl}-soname $wl$soname ${wl}-version-script ${wl}$output_objdir/$libname.ver -o $lib'
+      else
+        $archive_expsym_cmds="$archive_cmds"
+      fi
+    else
+      ld_shlibs=no
+    fi
+    ;;
+
   *)
     library_names_spec='${libname}`echo ${release} | $SED -e 's/[[.]]/-/g'`${versuffix}${shared_ext} $libname.lib'
     ;;
@@ -1420,7 +1487,14 @@ freebsd* | dragonfly*)
     *) objformat=elf ;;
     esac
   fi
-  version_type=freebsd-$objformat
+  # Handle Gentoo/FreeBSD as it was Linux
+  case $host_vendor in
+    gentoo)
+      version_type=linux ;;
+    *)
+      version_type=freebsd-$objformat ;;
+  esac
+
   case $version_type in
     freebsd-elf*)
       library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext} $libname${shared_ext}'
@@ -1430,6 +1504,12 @@ freebsd* | dragonfly*)
     freebsd-*)
       library_names_spec='${libname}${release}${shared_ext}$versuffix $libname${shared_ext}$versuffix'
       need_version=yes
+      ;;
+    linux)
+      library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
+      soname_spec='${libname}${release}${shared_ext}$major'
+      need_lib_prefix=no
+      need_version=no
       ;;
   esac
   shlibpath_var=LD_LIBRARY_PATH
@@ -1578,27 +1658,10 @@ linux*)
   # before this can be enabled.
   hardcode_into_libs=yes
 
-  # find out which ABI we are using
-  libsuff=
-  case "$host_cpu" in
-  x86_64*|s390x*|powerpc64*)
-    echo '[#]line __oline__ "configure"' > conftest.$ac_ext
-    if AC_TRY_EVAL(ac_compile); then
-      case `/usr/bin/file conftest.$ac_objext` in
-      *64-bit*)
-        libsuff=64
-        sys_lib_search_path_spec="/lib${libsuff} /usr/lib${libsuff} /usr/local/lib${libsuff}"
-        ;;
-      esac
-    fi
-    rm -rf conftest*
-    ;;
-  esac
-
   # Append ld.so.conf contents to the search path
   if test -f /etc/ld.so.conf; then
-    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \[$]2)); skip = 1; } { if (!skip) print \[$]0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib${libsuff} /usr/lib${libsuff} $lt_ld_extra"
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s", \[$]2)); skip = 1; } { if (!skip) print \[$]0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -4305,9 +4368,6 @@ CC=$lt_[]_LT_AC_TAGVAR(compiler, $1)
 # Is the compiler the GNU C compiler?
 with_gcc=$_LT_AC_TAGVAR(GCC, $1)
 
-gcc_dir=\`gcc -print-file-name=. | $SED 's,/\.$,,'\`
-gcc_ver=\`gcc -dumpversion\`
-
 # An ERE matcher.
 EGREP=$lt_EGREP
 
@@ -4441,11 +4501,11 @@ striplib=$lt_striplib
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
-predep_objects=\`echo $lt_[]_LT_AC_TAGVAR(predep_objects, $1) | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+predep_objects=$lt_[]_LT_AC_TAGVAR(predep_objects, $1)
 
 # Dependencies to place after the objects being linked to create a
 # shared library.
-postdep_objects=\`echo $lt_[]_LT_AC_TAGVAR(postdep_objects, $1) | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+postdep_objects=$lt_[]_LT_AC_TAGVAR(postdep_objects, $1)
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
@@ -4457,7 +4517,7 @@ postdeps=$lt_[]_LT_AC_TAGVAR(postdeps, $1)
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path=\`echo $lt_[]_LT_AC_TAGVAR(compiler_lib_search_path, $1) | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+compiler_lib_search_path=$lt_[]_LT_AC_TAGVAR(compiler_lib_search_path, $1)
 
 # Method to check whether dependent libraries are shared objects.
 deplibs_check_method=$lt_deplibs_check_method
@@ -4537,7 +4597,7 @@ variables_saved_for_relink="$variables_saved_for_relink"
 link_all_deplibs=$_LT_AC_TAGVAR(link_all_deplibs, $1)
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=\`echo $lt_sys_lib_search_path_spec | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+sys_lib_search_path_spec=$lt_sys_lib_search_path_spec
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec=$lt_sys_lib_dlsearch_path_spec
@@ -6373,7 +6433,6 @@ do
     done
   done
 done
-IFS=$as_save_IFS
 lt_ac_max=0
 lt_ac_count=0
 # Add /usr/xpg4/bin/sed as it is typically found on Solaris
@@ -6406,7 +6465,6 @@ for lt_ac_sed in $lt_ac_sed_list /usr/xpg4/bin/sed; do
 done
 ])
 SED=$lt_cv_path_SED
-AC_SUBST([SED])
 AC_MSG_RESULT([$SED])
 ])
 
@@ -6548,8 +6606,7 @@ installed software in a non-standard prefix.
 
 _PKG_TEXT
 ])],
-		[AC_MSG_RESULT([no])
-                $4])
+		[$4])
 elif test $pkg_failed = untried; then
 	ifelse([$4], , [AC_MSG_FAILURE(dnl
 [The pkg-config script could not be found or is too old.  Make sure it
@@ -6615,7 +6672,7 @@ AC_DEFUN([XORG_MACROS_VERSION],[
 	XORG_MACROS_needed_major=`echo $XORG_MACROS_needed_version | sed 's/\..*$//'`
 	XORG_MACROS_needed_minor=`echo $XORG_MACROS_needed_version | sed -e 's/^[0-9]*\.//' -e 's/\..*$//'`]
 	AC_MSG_CHECKING([if xorg-macros used to generate configure is at least ${XORG_MACROS_needed_major}.${XORG_MACROS_needed_minor}])
-	[XORG_MACROS_version=1.1.5
+	[XORG_MACROS_version=1.1.0
 	XORG_MACROS_major=`echo $XORG_MACROS_version | sed 's/\..*$//'`
 	XORG_MACROS_minor=`echo $XORG_MACROS_version | sed -e 's/^[0-9]*\.//' -e 's/\..*$//'`]
 	if test $XORG_MACROS_major -ne $XORG_MACROS_needed_major ; then
@@ -6684,47 +6741,75 @@ AC_DEFUN([XORG_MANPAGE_SECTIONS],[
 AC_REQUIRE([AC_CANONICAL_HOST])
 
 if test x$APP_MAN_SUFFIX = x    ; then
-    APP_MAN_SUFFIX=1
+    case $host_os in
+	linux* | gnu* | k*bsd*-gnu)	APP_MAN_SUFFIX=1x ;;
+	*)	APP_MAN_SUFFIX=1  ;;
+    esac
 fi
 if test x$APP_MAN_DIR = x    ; then
-    APP_MAN_DIR='$(mandir)/man$(APP_MAN_SUFFIX)'
+    case $host_os in
+	linux* | gnu* | k*bsd*-gnu)	APP_MAN_DIR='$(mandir)/man1' ;;
+	*)	APP_MAN_DIR='$(mandir)/man$(APP_MAN_SUFFIX)' ;;
+    esac
 fi
 
 if test x$LIB_MAN_SUFFIX = x    ; then
-    LIB_MAN_SUFFIX=3
+    case $host_os in
+	linux* | gnu* | k*bsd*-gnu)	LIB_MAN_SUFFIX=3x ;;
+	*)	LIB_MAN_SUFFIX=3  ;;
+    esac
 fi
 if test x$LIB_MAN_DIR = x    ; then
-    LIB_MAN_DIR='$(mandir)/man$(LIB_MAN_SUFFIX)'
+    case $host_os in
+	linux* | gnu* | k*bsd*-gnu)	LIB_MAN_DIR='$(mandir)/man3' ;;
+	*)	LIB_MAN_DIR='$(mandir)/man$(LIB_MAN_SUFFIX)' ;;
+    esac
 fi
 
 if test x$FILE_MAN_SUFFIX = x    ; then
     case $host_os in
+	linux* | gnu* | k*bsd*-gnu)		FILE_MAN_SUFFIX=5x ;;
 	solaris*)	FILE_MAN_SUFFIX=4  ;;
 	*)		FILE_MAN_SUFFIX=5  ;;
     esac
 fi
 if test x$FILE_MAN_DIR = x    ; then
-    FILE_MAN_DIR='$(mandir)/man$(FILE_MAN_SUFFIX)'
+    case $host_os in
+	linux* | gnu* | k*bsd*-gnu)	FILE_MAN_DIR='$(mandir)/man5' ;;
+	*)	FILE_MAN_DIR='$(mandir)/man$(FILE_MAN_SUFFIX)' ;;
+    esac
 fi
 
+# In Imake's linux.cf, the misc man suffix & dir was only changed for 
+# LinuxDebian, not other Linuxes, so we leave it unchanged here
 if test x$MISC_MAN_SUFFIX = x    ; then
     case $host_os in
+#	linux* | gnu* | k*bsd*-gnu)		MISC_MAN_SUFFIX=7x ;;
 	solaris*)	MISC_MAN_SUFFIX=5  ;;
 	*)		MISC_MAN_SUFFIX=7  ;;
     esac
 fi
 if test x$MISC_MAN_DIR = x    ; then
-    MISC_MAN_DIR='$(mandir)/man$(MISC_MAN_SUFFIX)'
+    case $host_os in
+#	linux* | gnu* | k*bsd*-gnu)	MISC_MAN_DIR='$(mandir)/man7' ;;
+	*)	MISC_MAN_DIR='$(mandir)/man$(MISC_MAN_SUFFIX)' ;;
+    esac
 fi
 
+# In Imake's linux.cf, the driver man suffix & dir was only changed for 
+# LinuxDebian, not other Linuxes, so we leave it unchanged here
 if test x$DRIVER_MAN_SUFFIX = x    ; then
     case $host_os in
+#	linux* | gnu* | k*bsd*-gnu)		DRIVER_MAN_SUFFIX=4x ;;
 	solaris*)	DRIVER_MAN_SUFFIX=7  ;;
 	*)		DRIVER_MAN_SUFFIX=4  ;;
     esac
 fi
 if test x$DRIVER_MAN_DIR = x    ; then
-    DRIVER_MAN_DIR='$(mandir)/man$(DRIVER_MAN_SUFFIX)'
+    case $host_os in
+#	linux* | gnu* | k*bsd*-gnu)	DRIVER_MAN_DIR='$(mandir)/man4' ;;
+	*)	DRIVER_MAN_DIR='$(mandir)/man$(DRIVER_MAN_SUFFIX)' ;;
+    esac
 fi
 
 if test x$ADMIN_MAN_SUFFIX = x    ; then
@@ -6761,17 +6846,18 @@ AC_SUBST([ADMIN_MAN_DIR])
 # Whether or not the necessary tools and files are found can be checked
 # with the AM_CONDITIONAL "BUILD_LINUXDOC"
 AC_DEFUN([XORG_CHECK_LINUXDOC],[
-XORG_SGML_PATH=$prefix/share/sgml
-HAVE_DEFS_ENT=
-
-AC_CHECK_FILE([$XORG_SGML_PATH/X11/defs.ent], [HAVE_DEFS_ENT=yes])
+AC_CHECK_FILE(
+	[$prefix/share/X11/sgml/defs.ent], 
+	[DEFS_ENT_PATH=$prefix/share/X11/sgml],
+	[DEFS_ENT_PATH=]
+)
 
 AC_PATH_PROG(LINUXDOC, linuxdoc)
 AC_PATH_PROG(PS2PDF, ps2pdf)
 
 AC_MSG_CHECKING([Whether to build documentation])
 
-if test x$HAVE_DEFS_ENT != x && test x$LINUXDOC != x ; then
+if test x$DEFS_ENT_PATH != x && test x$LINUXDOC != x ; then
    BUILDDOC=yes
 else
    BUILDDOC=no
@@ -6783,7 +6869,7 @@ AC_MSG_RESULT([$BUILDDOC])
 
 AC_MSG_CHECKING([Whether to build pdf documentation])
 
-if test x$PS2PDF != x && test x$BUILD_PDFDOC != xno; then
+if test x$PS2PDF != x ; then
    BUILDPDFDOC=yes
 else
    BUILDPDFDOC=no
@@ -6793,82 +6879,16 @@ AM_CONDITIONAL(BUILD_PDFDOC, [test x$BUILDPDFDOC = xyes])
 
 AC_MSG_RESULT([$BUILDPDFDOC])
 
-MAKE_TEXT="SGML_SEARCH_PATH=$XORG_SGML_PATH GROFF_NO_SGR=y $LINUXDOC -B txt"
-MAKE_PS="SGML_SEARCH_PATH=$XORG_SGML_PATH $LINUXDOC -B latex --papersize=letter --output=ps"
+MAKE_TEXT="SGML_SEARCH_PATH=$DEFS_ENT_PATH GROFF_NO_SGR=y $LINUXDOC -B txt"
+MAKE_PS="SGML_SEARCH_PATH=$DEFS_ENT_PATH $LINUXDOC -B latex --papersize=letter --output=ps"
 MAKE_PDF="$PS2PDF"
-MAKE_HTML="SGML_SEARCH_PATH=$XORG_SGML_PATH $LINUXDOC  -B html --split=0"
+MAKE_HTML="SGML_SEARCH_PATH=$DEFS_ENT_PATH $LINUXDOC  -B html --split=0"
 
 AC_SUBST(MAKE_TEXT)
 AC_SUBST(MAKE_PS)
 AC_SUBST(MAKE_PDF)
 AC_SUBST(MAKE_HTML)
 ]) # XORG_CHECK_LINUXDOC
-
-# XORG_CHECK_DOCBOOK
-# -------------------
-# Minimum version: 1.0.0
-#
-# Checks for the ability to build output formats from SGML DocBook source.
-# For XXX in {TXT, PDF, PS, HTML}, the AM_CONDITIONAL "BUILD_XXXDOC"
-# indicates whether the necessary tools and files are found and, if set,
-# $(MAKE_XXX) blah.sgml will produce blah.xxx.
-AC_DEFUN([XORG_CHECK_DOCBOOK],[
-XORG_SGML_PATH=$prefix/share/sgml
-HAVE_DEFS_ENT=
-BUILDTXTDOC=no
-BUILDPDFDOC=no
-BUILDPSDOC=no
-BUILDHTMLDOC=no
-
-AC_CHECK_FILE([$XORG_SGML_PATH/X11/defs.ent], [HAVE_DEFS_ENT=yes])
-
-AC_PATH_PROG(DOCBOOKPS, docbook2ps)
-AC_PATH_PROG(DOCBOOKPDF, docbook2pdf)
-AC_PATH_PROG(DOCBOOKHTML, docbook2html)
-AC_PATH_PROG(DOCBOOKTXT, docbook2txt)
-
-AC_MSG_CHECKING([Whether to build text documentation])
-if test x$HAVE_DEFS_ENT != x && test x$DOCBOOKTXT != x &&
-   test x$BUILD_TXTDOC != xno; then
-	BUILDTXTDOC=yes
-fi
-AM_CONDITIONAL(BUILD_TXTDOC, [test x$BUILDTXTDOC = xyes])
-AC_MSG_RESULT([$BUILDTXTDOC])
-
-AC_MSG_CHECKING([Whether to build PDF documentation])
-if test x$HAVE_DEFS_ENT != x && test x$DOCBOOKPDF != x &&
-   test x$BUILD_PDFDOC != xno; then
-	BUILDPDFDOC=yes
-fi
-AM_CONDITIONAL(BUILD_PDFDOC, [test x$BUILDPDFDOC = xyes])
-AC_MSG_RESULT([$BUILDPDFDOC])
-
-AC_MSG_CHECKING([Whether to build PostScript documentation])
-if test x$HAVE_DEFS_ENT != x && test x$DOCBOOKPS != x &&
-   test x$BUILD_PSDOC != xno; then
-	BUILDPSDOC=yes
-fi
-AM_CONDITIONAL(BUILD_PSDOC, [test x$BUILDPSDOC = xyes])
-AC_MSG_RESULT([$BUILDPSDOC])
-
-AC_MSG_CHECKING([Whether to build HTML documentation])
-if test x$HAVE_DEFS_ENT != x && test x$DOCBOOKHTML != x &&
-   test x$BUILD_HTMLDOC != xno; then
-	BUILDHTMLDOC=yes
-fi
-AM_CONDITIONAL(BUILD_HTMLDOC, [test x$BUILDHTMLDOC = xyes])
-AC_MSG_RESULT([$BUILDHTMLDOC])
-
-MAKE_TEXT="SGML_SEARCH_PATH=$XORG_SGML_PATH $DOCBOOKTXT"
-MAKE_PS="SGML_SEARCH_PATH=$XORG_SGML_PATH $DOCBOOKPS"
-MAKE_PDF="SGML_SEARCH_PATH=$XORG_SGML_PATH $DOCBOOKPDF"
-MAKE_HTML="SGML_SEARCH_PATH=$XORG_SGML_PATH $DOCBOOKHTML"
-
-AC_SUBST(MAKE_TEXT)
-AC_SUBST(MAKE_PS)
-AC_SUBST(MAKE_PDF)
-AC_SUBST(MAKE_HTML)
-]) # XORG_CHECK_DOCBOOK
 
 # XORG_CHECK_MALLOC_ZERO
 # ----------------------
@@ -7068,8 +7088,7 @@ dnl
 # --------------------
 # Adds --with/without-release-string and changes the PACKAGE and
 # PACKAGE_TARNAME to use "$PACKAGE{_TARNAME}-$RELEASE_VERSION".  If
-# no option is given, PACKAGE and PACKAGE_TARNAME are unchanged.  Also
-# defines PACKAGE_VERSION_{MAJOR,MINOR,PATCHLEVEL} for modules to use.
+# no option is given, PACKAGE and PACKAGE_TARNAME are unchanged.
  
 AC_DEFUN([XORG_RELEASE_VERSION],[
 	AC_ARG_WITH(release-version,
@@ -7082,23 +7101,6 @@ AC_DEFUN([XORG_RELEASE_VERSION],[
 		PACKAGE_TARNAME="$PACKAGE_TARNAME-$RELEASE_VERSION"
 		AC_MSG_NOTICE([Building with package name set to $PACKAGE])
 	fi
-	AC_DEFINE_UNQUOTED([PACKAGE_VERSION_MAJOR],
-		[`echo $PACKAGE_VERSION | cut -d . -f 1`],
-		[Major version of this package])
-	PVM=`echo $PACKAGE_VERSION | cut -d . -f 2`
-	if test "x$PVM" = "x"; then
-		PVM="0"
-	fi
-	AC_DEFINE_UNQUOTED([PACKAGE_VERSION_MINOR],
-		[$PVM],
-		[Minor version of this package])
-	PVP=`echo $PACKAGE_VERSION | cut -d . -f 3`
-	if test "x$PVP" = "x"; then
-		PVP="0"
-	fi
-	AC_DEFINE_UNQUOTED([PACKAGE_VERSION_PATCHLEVEL],
-		[$PVP],
-		[Patch version of this package])
 ])
 
 # Copyright (C) 2002, 2003, 2005  Free Software Foundation, Inc.

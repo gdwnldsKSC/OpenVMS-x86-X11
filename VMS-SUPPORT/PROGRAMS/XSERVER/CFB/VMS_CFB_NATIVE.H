@@ -5,6 +5,11 @@
 #include <string.h>
 #include <strings.h>
 
+#ifndef NO_INLINE
+#define NO_INLINE 1
+#endif
+#include "compiler.h"
+
 /* Upstream Xfuncs.h supplies these legacy aliases for the CFB profile. */
 #undef bcopy
 #undef bzero

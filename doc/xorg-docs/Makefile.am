@@ -43,9 +43,7 @@ EXTRA_DIST = \
 	specs/ICE/ICElib.ms \
 	specs/ICE/ice.ms \
 	specs/PM/PM_spec \
-	specs/Randr/protocol.txt \
 	specs/Render/library \
-	specs/Render/protocol \
 	specs/rstart/fix.awk \
 	specs/rstart/fix.nawk \
 	specs/rstart/fix.sed \
@@ -203,7 +201,6 @@ EXTRA_DIST = \
 	specs/XProtocol/X11.protocol \
 	specs/Xserver/analysis.tex \
 	specs/Xserver/appgroup.ms \
-	specs/Xserver/ddx.tbl.ms \
 	specs/Xserver/fontlib.ms \
 	specs/Xserver/secint.tex \
 	specs/Xserver/Xprt.book \

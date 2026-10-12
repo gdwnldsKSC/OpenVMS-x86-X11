@@ -1,6 +1,6 @@
 ! Complete internal damage library from programs/Xserver/miext/damage/Imakefile.
 ! Static server profile; Render, Composite and rootless hooks are excluded.
-DAMAGE_HEADERS = $(FONT_UTIL_HEADERS), $(OUT).INCLUDE.X11]XALLOCA.H, -
+DAMAGE_HEADERS = $(FONT_UTIL_HEADERS), $(PIXMAN_HEADERS), $(OUT).INCLUDE.X11]XALLOCA.H, -
     $(OUT).INCLUDE.X11.EXTENSIONS]RENDER.H, -
     $(OUT).INCLUDE.X11.EXTENSIONS]RENDERPROTO.H
 DAMAGE_PRIVATE_HEADERS = [.XSERVER.XORG-SERVER.MIEXT.DAMAGE]DAMAGE.H, -

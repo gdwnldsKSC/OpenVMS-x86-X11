@@ -63,7 +63,7 @@
 #define __XKBDEFRULES__ "xorg"
 #endif
 #ifndef XORG_RELEASE
-#define XORG_RELEASE "Release 7.2"
+#define XORG_RELEASE "Release 7.3"
 #endif
 #ifndef ARCH_PCI_INIT
 #define ARCH_PCI_INIT vmsPciInit

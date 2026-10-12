@@ -28,6 +28,10 @@ in this Software without prior written authorization from The Open Group.
 
 /* $XFree86: xc/programs/xconsole/xconsole.c,v 3.31tsi Exp $ */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <X11/Intrinsic.h>
 #include <X11/StringDefs.h>
 #include <X11/Xatom.h>
@@ -61,6 +65,14 @@ extern char *_XawTextGetSTRING(TextWidget ctx, XawTextPosition left,
 #include <X11/Shell.h>
 #include <ctype.h>
 #include <stdlib.h>
+#ifdef HAS_OPENPTY
+# ifdef HAS_UTIL_H
+#  include <util.h>
+# endif
+# ifdef HAS_PTY_H
+#  include <pty.h>
+# endif
+#endif
 
 /* Fix ISC brain damage.  When using gcc fdopen isn't declared in <stdio.h>. */
 #if defined(ISC) && __STDC__ && !defined(ISC30)
@@ -822,7 +834,12 @@ ScrollLine(Widget w)
 static int
 get_pty(int *pty, int *tty, char *ttydev, char *ptydev)
 {
-#if defined (SVR4) || defined (USE_PTS)
+#ifdef HAS_OPENPTY
+	if (openpty(pty, tty, NULL, NULL, NULL) == -1) {
+		return 1;
+	}
+	return 0;
+#elif defined (SVR4) || defined (USE_PTS)
 #if defined (_AIX)
 	if ((*pty = open ("/dev/ptc", O_RDWR)) < 0)
 #else

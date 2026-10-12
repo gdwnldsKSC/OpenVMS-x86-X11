@@ -21,7 +21,7 @@ dnl
 dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
-AC_INIT(xorg-sgml-doctools,[1.1.1], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xorg-sgml-doctools)
+AC_INIT(xorg-sgml-doctools,[1.2], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xorg-sgml-doctools)
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
 AM_MAINTAINER_MODE
 

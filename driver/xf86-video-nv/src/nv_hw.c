@@ -36,7 +36,6 @@
 |*     those rights set forth herein.                                        *|
 |*                                                                           *|
  \***************************************************************************/
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nv/nv_hw.c,v 1.21 2006/06/16 00:19:33 mvojkovi Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -844,7 +843,7 @@ void NVCalcStateExt (
     int		   flags 
 )
 {
-    int pixelDepth, VClk;
+    int pixelDepth, VClk = 0;
     /*
      * Save mode parameters.
      */
@@ -878,6 +877,10 @@ void NVCalcStateExt (
             state->general  = bpp == 16 ? 0x00101100 : 0x00100100;
             state->repaint1 = hDisplaySize < 1280 ? 0x04 : 0x00;
             break;
+        case NV_ARCH_40:
+            if(!pNv->FlatPanel)
+                state->control = pNv->PRAMDAC0[0x0580/4] & 0xeffffeff;
+            /* fallthrough */
         case NV_ARCH_10:
         case NV_ARCH_20:
         case NV_ARCH_30:
@@ -944,7 +947,8 @@ void NVLoadStateExt (
     pNv->PTIMER[0x0100] = 0xFFFFFFFF;
 
     if(pNv->Architecture == NV_ARCH_04) {
-        pNv->PFB[0x0200/4] = state->config;
+        if (state)
+            pNv->PFB[0x0200/4] = state->config;
     } else 
     if((pNv->Architecture < NV_ARCH_40) ||
        ((pNv->Chipset & 0xfff0) == 0x0040))
@@ -1186,6 +1190,7 @@ void NVLoadStateExt (
               pNv->PGRAPH[0x008C/4] = 0x60de8051;
               pNv->PGRAPH[0x0090/4] = 0x00008000;
               pNv->PGRAPH[0x0610/4] = 0x00be3c5f;
+              pNv->PGRAPH[0x0bc4/4] |= 0x00008000;
 
               j = pNv->REGS[0x1540/4] & 0xff;
               if(j) {
@@ -1406,6 +1411,11 @@ void NVLoadStateExt (
     pNv->PFIFO[0x0495] = 0x00000001;
     pNv->PFIFO[0x0140] = 0x00000001;
 
+    if(!state) {
+        pNv->CurrentState = NULL;
+        return;
+    }
+
     if(pNv->Architecture >= NV_ARCH_10) {
         if(pNv->twoHeads) {
            pNv->PCRTC0[0x0860/4] = state->head;
@@ -1475,6 +1485,10 @@ void NVLoadStateExt (
     VGA_WR08(pNv->PCIO, 0x03D5, state->interlace);
 
     if(!pNv->FlatPanel) {
+       if(pNv->Architecture >= NV_ARCH_40) {
+           pNv->PRAMDAC0[0x0580/4] = state->control;
+       }
+
        pNv->PRAMDAC0[0x050C/4] = state->pllsel;
        pNv->PRAMDAC0[0x0508/4] = state->vpll;
        if(pNv->twoHeads)
@@ -1486,6 +1500,7 @@ void NVLoadStateExt (
     } else {
        pNv->PRAMDAC[0x0848/4] = state->scale;
        pNv->PRAMDAC[0x0828/4] = state->crtcSync;
+       pNv->PRAMDAC[0x0808/4] = state->crtcVSync;
     }
     pNv->PRAMDAC[0x0600/4] = state->general;
 
@@ -1541,6 +1556,10 @@ void NVUnloadStateExt
     state->scale        = pNv->PRAMDAC[0x0848/4];
     state->config       = pNv->PFB[0x0200/4];
 
+    if(pNv->Architecture >= NV_ARCH_40 && !pNv->FlatPanel) {
+        state->control  = pNv->PRAMDAC0[0x0580/4];
+    }
+
     if(pNv->Architecture >= NV_ARCH_10) {
         if(pNv->twoHeads) {
            state->head     = pNv->PCRTC0[0x0860/4];
@@ -1569,6 +1588,7 @@ void NVUnloadStateExt
 
     if(pNv->FlatPanel) {
        state->crtcSync = pNv->PRAMDAC[0x0828/4];
+       state->crtcVSync = pNv->PRAMDAC[0x0808/4];
     }
 }
 
@@ -1577,7 +1597,10 @@ void NVSetStartAddress (
     CARD32 start
 )
 {
-    pNv->PCRTC[0x800/4] = start;
+    if (pNv->VBEDualhead) {
+        pNv->PCRTC0[0x800/4] = start;
+        pNv->PCRTC0[0x2800/4] = start + pNv->vbeCRTC1Offset;
+    } else {
+        pNv->PCRTC[0x800/4] = start;
+    }
 }
-
-

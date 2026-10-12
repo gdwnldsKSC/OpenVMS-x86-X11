@@ -1578,27 +1578,10 @@ linux*)
   # before this can be enabled.
   hardcode_into_libs=yes
 
-  # find out which ABI we are using
-  libsuff=
-  case "$host_cpu" in
-  x86_64*|s390x*|powerpc64*)
-    echo '[#]line __oline__ "configure"' > conftest.$ac_ext
-    if AC_TRY_EVAL(ac_compile); then
-      case `/usr/bin/file conftest.$ac_objext` in
-      *64-bit*)
-        libsuff=64
-        sys_lib_search_path_spec="/lib${libsuff} /usr/lib${libsuff} /usr/local/lib${libsuff}"
-        ;;
-      esac
-    fi
-    rm -rf conftest*
-    ;;
-  esac
-
   # Append ld.so.conf contents to the search path
   if test -f /etc/ld.so.conf; then
     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s", \[$]2)); skip = 1; } { if (!skip) print \[$]0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib${libsuff} /usr/lib${libsuff} $lt_ld_extra"
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -6543,7 +6526,8 @@ installed software in a non-standard prefix.
 
 _PKG_TEXT
 ])],
-		[$4])
+		[AC_MSG_RESULT([no])
+                $4])
 elif test $pkg_failed = untried; then
 	ifelse([$4], , [AC_MSG_FAILURE(dnl
 [The pkg-config script could not be found or is too old.  Make sure it
@@ -6643,40 +6627,40 @@ AC_REQUIRE([AC_CANONICAL_HOST])
 
 if test x$APP_MAN_SUFFIX = x    ; then
     case $host_os in
-	linux*)	APP_MAN_SUFFIX=1x ;;
+	linux* | k*bsd*-gnu)	APP_MAN_SUFFIX=1x ;;
 	*)	APP_MAN_SUFFIX=1  ;;
     esac
 fi
 if test x$APP_MAN_DIR = x    ; then
     case $host_os in
-	linux*)	APP_MAN_DIR='$(mandir)/man1' ;;
+	linux* | k*bsd*-gnu)	APP_MAN_DIR='$(mandir)/man1' ;;
 	*)	APP_MAN_DIR='$(mandir)/man$(APP_MAN_SUFFIX)' ;;
     esac
 fi
 
 if test x$LIB_MAN_SUFFIX = x    ; then
     case $host_os in
-	linux*)	LIB_MAN_SUFFIX=3x ;;
+	linux* | k*bsd*-gnu)	LIB_MAN_SUFFIX=3x ;;
 	*)	LIB_MAN_SUFFIX=3  ;;
     esac
 fi
 if test x$LIB_MAN_DIR = x    ; then
     case $host_os in
-	linux*)	LIB_MAN_DIR='$(mandir)/man3' ;;
+	linux* | k*bsd*-gnu)	LIB_MAN_DIR='$(mandir)/man3' ;;
 	*)	LIB_MAN_DIR='$(mandir)/man$(LIB_MAN_SUFFIX)' ;;
     esac
 fi
 
 if test x$FILE_MAN_SUFFIX = x    ; then
     case $host_os in
-	linux*)		FILE_MAN_SUFFIX=5x ;;
+	linux* | k*bsd*-gnu)		FILE_MAN_SUFFIX=5x ;;
 	solaris*)	FILE_MAN_SUFFIX=4  ;;
 	*)		FILE_MAN_SUFFIX=5  ;;
     esac
 fi
 if test x$FILE_MAN_DIR = x    ; then
     case $host_os in
-	linux*)	FILE_MAN_DIR='$(mandir)/man5' ;;
+	linux* | k*bsd*-gnu)	FILE_MAN_DIR='$(mandir)/man5' ;;
 	*)	FILE_MAN_DIR='$(mandir)/man$(FILE_MAN_SUFFIX)' ;;
     esac
 fi
@@ -6685,14 +6669,14 @@ fi
 # LinuxDebian, not other Linuxes, so we leave it unchanged here
 if test x$MISC_MAN_SUFFIX = x    ; then
     case $host_os in
-#	linux*)		MISC_MAN_SUFFIX=7x ;;
+#	linux* | k*bsd*-gnu)		MISC_MAN_SUFFIX=7x ;;
 	solaris*)	MISC_MAN_SUFFIX=5  ;;
 	*)		MISC_MAN_SUFFIX=7  ;;
     esac
 fi
 if test x$MISC_MAN_DIR = x    ; then
     case $host_os in
-#	linux*)	MISC_MAN_DIR='$(mandir)/man7' ;;
+#	linux* | k*bsd*-gnu)	MISC_MAN_DIR='$(mandir)/man7' ;;
 	*)	MISC_MAN_DIR='$(mandir)/man$(MISC_MAN_SUFFIX)' ;;
     esac
 fi
@@ -6701,14 +6685,14 @@ fi
 # LinuxDebian, not other Linuxes, so we leave it unchanged here
 if test x$DRIVER_MAN_SUFFIX = x    ; then
     case $host_os in
-#	linux*)		DRIVER_MAN_SUFFIX=4x ;;
+#	linux* | k*bsd*-gnu)		DRIVER_MAN_SUFFIX=4x ;;
 	solaris*)	DRIVER_MAN_SUFFIX=7  ;;
 	*)		DRIVER_MAN_SUFFIX=4  ;;
     esac
 fi
 if test x$DRIVER_MAN_DIR = x    ; then
     case $host_os in
-#	linux*)	DRIVER_MAN_DIR='$(mandir)/man4' ;;
+#	linux* | k*bsd*-gnu)	DRIVER_MAN_DIR='$(mandir)/man4' ;;
 	*)	DRIVER_MAN_DIR='$(mandir)/man$(DRIVER_MAN_SUFFIX)' ;;
     esac
 fi

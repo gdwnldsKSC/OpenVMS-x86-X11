@@ -1,14 +1,19 @@
 $! Original component build entry point. No system installation or driver actions.
 $ SET NOON
+$ saved_default = F$ENVIRONMENT("DEFAULT")
+$ saved_parse_style = ""
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
-$ saved_default = F$ENVIRONMENT("DEFAULT")
 $ result = 2
+$ step = "extended filename parsing"
+$ saved_parse_style = F$GETJPI("","PARSE_STYLE_PERM")
+$ SET PROCESS/PARSE_STYLE=EXTENDED
+$ IF .NOT. $STATUS THEN GOTO failed
 $ step = "arguments"
 $ target = F$EDIT(P1,"UPCASE,TRIM")
 $ IF target .EQS. "" THEN target = "ALL"
 $ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|LBXUTIL|XFONT|FNTSTUBS|FS|ICE|SM|BDFTOPCF|FSLSFONTS|SHOWFONT|XFSINFO|ICEAUTH|SHOWRGB|MAKESTRS|MAKEDEPEND|LNDIR|ATOBM|GTF|FREETYPE2|MKFONTSCALE|FONTTOSFNT|REVPATH|"
-$ targets = targets + "UCS2ANY|DAMAGE|MI|CBRT|FB|RENDER|DIX|XPSTUBS|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|"
+$ targets = targets + "UCS2ANY|DAMAGE|MI|FB|RENDER|DIX|XPSTUBS|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|MFB|VFB|XKB|"
 $ targets = targets + "CFB|CFB16|CFB32|XKBFILE|XKBUI|ROOTLESS|XTRAP|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ targets = targets + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ targets = targets + "XSS|XVMC|XXF86VM|XXF86MISC|"
@@ -21,6 +26,7 @@ $ targets = targets + "FONTS_ENCODINGS|FONTS_SCALED|FONTS_SPEEDO|FONTS_TYPE1|FON
 $ targets = targets + "NLS|NLS_XLC_LOCALE|NLS_COMPOSE|X11_DATA|RUNTIME|"
 $ targets = targets + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|RAC|COMMON|INIT|BUS|MISC|SCANPCI|XORGXKB|"
 $ targets = targets + "LOADER|XORGFB|XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
+$ targets = targets + "PIXMAN|CONFIG|FBCMAP|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -52,6 +58,8 @@ $ IF F$SEARCH(profile + ".INCLUDE.FREETYPE2.FREETYPE]INTERNAL.DIR") .EQS. "" THE
 $ directory = profile + ".INCLUDE.FREETYPE2.FREETYPE.INTERNAL.SERVICES]"
 $ IF F$SEARCH(profile + ".INCLUDE.FREETYPE2.FREETYPE.INTERNAL]SERVICES.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11]"
+$ pixman_directory = profile + ".INCLUDE.PIXMAN]"
+$ IF F$SEARCH(profile + ".INCLUDE]PIXMAN.DIR") .EQS. "" THEN CREATE/DIRECTORY 'pixman_directory'
 $ IF F$SEARCH(profile + ".INCLUDE]X11.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11.FONTS]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]FONTS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
@@ -72,7 +80,9 @@ $ IF F$SEARCH(profile + ".INCLUDE.X11]XPRINTUTIL.DIR") .EQS. "" THEN CREATE/DIRE
 $ directory = profile + ".INCLUDE.X11.XPRINTAPPUTIL]"
 $ IF F$SEARCH(profile + ".INCLUDE.X11]XPRINTAPPUTIL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB]"
+$ pixman_directory = profile + ".LIB.PIXMAN]"
 $ IF F$SEARCH(profile + "]LIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ IF F$SEARCH(profile + ".LIB]PIXMAN.DIR") .EQS. "" THEN CREATE/DIRECTORY 'pixman_directory'
 $ directory = profile + ".LIB.X11]"
 $ IF F$SEARCH(profile + ".LIB]X11.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XAU]"
@@ -206,6 +216,9 @@ $ IF F$SEARCH(profile + ".PROGRAMS]MKFONTSCALE.DIR") .EQS. "" THEN CREATE/DIRECT
 $ directory = profile + ".PROGRAMS.FONTTOSFNT]"
 $ IF F$SEARCH(profile + ".PROGRAMS]FONTTOSFNT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER]"
+$ config_directory = profile + ".PROGRAMS.XSERVER.CONFIG]"
+$ IF F$SEARCH(profile + ".PROGRAMS]XSERVER.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER]CONFIG.DIR") .EQS. "" THEN CREATE/DIRECTORY 'config_directory'
 $ IF F$SEARCH(profile + ".PROGRAMS]XSERVER.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.MI]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER]MI.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
@@ -367,7 +380,8 @@ $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS
 $ GOTO done
 $usage:
-$ WRITE SYS$OUTPUT "Usage: @BUILD [", F$EXTRACT(1,F$LENGTH(targets)-2,targets), "]"
+$ WRITE SYS$OUTPUT "Usage: @BUILD [target] (default: ALL)"
+$ WRITE SYS$OUTPUT "See README.md for the component targets."
 $ GOTO done
 $unsupported:
 $ WRITE SYS$OUTPUT "This initial build profile supports OpenVMS x86-64 only."
@@ -385,4 +399,9 @@ $ WRITE SYS$OUTPUT "X11 build failed at " + step + ": " + F$MESSAGE(result)
 $done:
 $ SET NOON
 $ SET DEFAULT 'saved_default'
+$ IF saved_parse_style .EQS. "" THEN GOTO restored
+$ SET PROCESS/PARSE_STYLE='saved_parse_style'
+$ parse_restore_result = $STATUS
+$ IF .NOT. parse_restore_result THEN result = parse_restore_result
+$restored:
 $ EXIT result

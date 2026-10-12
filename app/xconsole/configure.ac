@@ -22,7 +22,7 @@ dnl
 dnl Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
-AC_INIT(xconsole,[1.0.2], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xconsole)
+AC_INIT(xconsole,[1.0.3], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xconsole)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
@@ -39,6 +39,14 @@ AC_SUBST(XCONSOLE_LIBS)
 PKG_CHECK_MODULES(APPDEFS, xt)
 appdefaultdir=$(pkg-config --variable=appdefaultdir xt)
 AC_SUBST(appdefaultdir)
+
+AC_SEARCH_LIBS(openpty, [util])
+AC_CHECK_FUNC(openpty, [HAS_OPENPTY="yes"])
+if test "x$HAS_OPENPTY" = "xyes" ; then
+	AC_DEFINE([HAS_OPENPTY], 1, 
+		[Define to 1 if you have the 'openpty' function.])
+	AC_CHECK_HEADERS([util.h pty.h], [break])
+fi
 
 XORG_MANPAGE_SECTIONS
 XORG_RELEASE_VERSION

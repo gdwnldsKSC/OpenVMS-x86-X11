@@ -138,7 +138,7 @@ xpmParseValues(data, width, height, ncolors, cpp,
 	    ptr = buf;
 	    got_one = False;
 	    while (!got_one) {
-		ptr = index(ptr, '_');
+		ptr = strchr(ptr, '_');
 		if (!ptr)
 		    return (XpmFileInvalid);
 		switch (l - (ptr - buf)) {

@@ -107,8 +107,12 @@ DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ADMIN_MAN_DIR = @ADMIN_MAN_DIR@
 ADMIN_MAN_SUFFIX = @ADMIN_MAN_SUFFIX@
+AMCMDECHO = @AMCMDECHO@
+AMDEPSHOWCMDSAT = @AMDEPSHOWCMDSAT@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
+AMPRETTYECHO = @AMPRETTYECHO@
+AMSHOWCMDSAT = @AMSHOWCMDSAT@
 AMTAR = @AMTAR@
 APP_MAN_DIR = @APP_MAN_DIR@
 APP_MAN_SUFFIX = @APP_MAN_SUFFIX@
@@ -144,6 +148,7 @@ LIBS = @LIBS@
 LIB_MAN_DIR = @LIB_MAN_DIR@
 LIB_MAN_SUFFIX = @LIB_MAN_SUFFIX@
 LTLIBOBJS = @LTLIBOBJS@
+LT_QUIET = @LT_QUIET@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
@@ -166,9 +171,8 @@ TWM_CFLAGS = @TWM_CFLAGS@
 TWM_LIBS = @TWM_LIBS@
 VERSION = @VERSION@
 YACC = @YACC@
+YFLAGS = @YFLAGS@
 ac_ct_CC = @ac_ct_CC@
-ac_ct_STRIP = @ac_ct_STRIP@
-ac_pt_PKG_CONFIG = @ac_pt_PKG_CONFIG@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__include = @am__include@
@@ -183,23 +187,30 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
+datarootdir = @datarootdir@
+docdir = @docdir@
+dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 host = @host@
 host_alias = @host_alias@
 host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
+htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
+localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
+pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
+psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
@@ -261,7 +272,8 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/Makefile'; \
+	@AMPRETTYECHO@ '  [AUTOMAKE  ]  src/Makefile'; \
+	@AMCMDECHO@ ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/Makefile'; \
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  src/Makefile
 .PRECIOUS: Makefile
@@ -270,26 +282,31 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	  *config.status*) \
 	    cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh;; \
 	  *) \
-	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
+	    @AMPRETTYECHO@ '  [SH        ]  config.status $(subdir)/$@'; \
+	    @AMCMDECHO@ ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
 	esac;
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
-	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+	@@AMPRETTYECHO@ '  [SH        ]  config.status'
+	@AMSHOWCMDSAT@cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
 $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
-	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+	@@AMPRETTYECHO@ '  [AUTOCONF  ]  Regenerate'
+	@AMSHOWCMDSAT@cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
-	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+	@@AMPRETTYECHO@ '  [ACLOCAL   ]  Regenerate'
+	@AMSHOWCMDSAT@cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
-	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
+	@AMSHOWCMDSAT@test -z "$(bindir)" || ( @AMPRETTYECHO@ '  [MKDIR     ]  $(DESTDIR)$(bindir)'; $(mkdir_p) "$(DESTDIR)$(bindir)" )
 	@list='$(bin_PROGRAMS)'; for p in $$list; do \
 	  p1=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
 	  if test -f $$p \
 	  ; then \
 	    f=`echo "$$p1" | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'`; \
-	   echo " $(INSTALL_PROGRAM_ENV) $(binPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(bindir)/$$f'"; \
+	   @AMPRETTYECHO@ "  [INSTALL   ]  $$p -> $(DESTDIR)$(bindir)/$$f"; \
+	   @AMCMDECHO@ " $(INSTALL_PROGRAM_ENV) $(binPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(bindir)/$$f'"; \
 	   $(INSTALL_PROGRAM_ENV) $(binPROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(bindir)/$$f" || exit 1; \
 	  else :; fi; \
 	done
@@ -298,21 +315,25 @@ uninstall-binPROGRAMS:
 	@$(NORMAL_UNINSTALL)
 	@list='$(bin_PROGRAMS)'; for p in $$list; do \
 	  f=`echo "$$p" | sed 's,^.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/'`; \
-	  echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
+	  @AMPRETTYECHO@ "  [RM        ]  $(DESTDIR)$(bindir)/$$f"; \
+	  @AMCMDECHO@ " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(bindir)/$$f"; \
 	done
 
 clean-binPROGRAMS:
-	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+	@AMSHOWCMDSAT@-test -z "$(bin_PROGRAMS)" || ( @AMPRETTYECHO@ '  [RM        ]  $(bin_PROGRAMS)'; rm -f $(bin_PROGRAMS) )
 twm$(EXEEXT): $(twm_OBJECTS) $(twm_DEPENDENCIES) 
+	@@AMPRETTYECHO@ '  [LD        ]  twm$(EXEEXT)'
 	@rm -f twm$(EXEEXT)
-	$(LINK) $(twm_LDFLAGS) $(twm_OBJECTS) $(twm_LDADD) $(LIBS)
+	@AMSHOWCMDSAT@$(LINK) $(twm_LDFLAGS) $(twm_OBJECTS) $(twm_LDADD) $(LIBS)
 
 mostlyclean-compile:
-	-rm -f *.$(OBJEXT)
+	@@AMPRETTYECHO@ '  [RM        ]  *.$(OBJEXT)'
+	@AMSHOWCMDSAT@-rm -f *.$(OBJEXT)
 
 distclean-compile:
-	-rm -f *.tab.c
+	@@AMPRETTYECHO@ '  [RM        ]  *.tab.c'
+	@AMSHOWCMDSAT@-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/twm-add_window.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/twm-cursor.Po@am__quote@
@@ -333,265 +354,302 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/twm-version.Po@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+	@@AMPRETTYECHO@ '  [C         ]  $<'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(COMPILE) -c $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+	@@AMPRETTYECHO@ '  [C         ]  $<'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
 twm-add_window.o: add_window.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-add_window.o -MD -MP -MF "$(DEPDIR)/twm-add_window.Tpo" -c -o twm-add_window.o `test -f 'add_window.c' || echo '$(srcdir)/'`add_window.c; \
+	@@AMPRETTYECHO@ '  [C         ]  add_window.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-add_window.o -MD -MP -MF "$(DEPDIR)/twm-add_window.Tpo" -c -o twm-add_window.o `test -f 'add_window.c' || echo '$(srcdir)/'`add_window.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-add_window.Tpo" "$(DEPDIR)/twm-add_window.Po"; else rm -f "$(DEPDIR)/twm-add_window.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='add_window.c' object='twm-add_window.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='add_window.c' object='twm-add_window.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-add_window.o `test -f 'add_window.c' || echo '$(srcdir)/'`add_window.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-add_window.o `test -f 'add_window.c' || echo '$(srcdir)/'`add_window.c
 
 twm-add_window.obj: add_window.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-add_window.obj -MD -MP -MF "$(DEPDIR)/twm-add_window.Tpo" -c -o twm-add_window.obj `if test -f 'add_window.c'; then $(CYGPATH_W) 'add_window.c'; else $(CYGPATH_W) '$(srcdir)/add_window.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  add_window.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-add_window.obj -MD -MP -MF "$(DEPDIR)/twm-add_window.Tpo" -c -o twm-add_window.obj `if test -f 'add_window.c'; then $(CYGPATH_W) 'add_window.c'; else $(CYGPATH_W) '$(srcdir)/add_window.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-add_window.Tpo" "$(DEPDIR)/twm-add_window.Po"; else rm -f "$(DEPDIR)/twm-add_window.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='add_window.c' object='twm-add_window.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='add_window.c' object='twm-add_window.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-add_window.obj `if test -f 'add_window.c'; then $(CYGPATH_W) 'add_window.c'; else $(CYGPATH_W) '$(srcdir)/add_window.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-add_window.obj `if test -f 'add_window.c'; then $(CYGPATH_W) 'add_window.c'; else $(CYGPATH_W) '$(srcdir)/add_window.c'; fi`
 
 twm-cursor.o: cursor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-cursor.o -MD -MP -MF "$(DEPDIR)/twm-cursor.Tpo" -c -o twm-cursor.o `test -f 'cursor.c' || echo '$(srcdir)/'`cursor.c; \
+	@@AMPRETTYECHO@ '  [C         ]  cursor.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-cursor.o -MD -MP -MF "$(DEPDIR)/twm-cursor.Tpo" -c -o twm-cursor.o `test -f 'cursor.c' || echo '$(srcdir)/'`cursor.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-cursor.Tpo" "$(DEPDIR)/twm-cursor.Po"; else rm -f "$(DEPDIR)/twm-cursor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cursor.c' object='twm-cursor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='cursor.c' object='twm-cursor.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-cursor.o `test -f 'cursor.c' || echo '$(srcdir)/'`cursor.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-cursor.o `test -f 'cursor.c' || echo '$(srcdir)/'`cursor.c
 
 twm-cursor.obj: cursor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-cursor.obj -MD -MP -MF "$(DEPDIR)/twm-cursor.Tpo" -c -o twm-cursor.obj `if test -f 'cursor.c'; then $(CYGPATH_W) 'cursor.c'; else $(CYGPATH_W) '$(srcdir)/cursor.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  cursor.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-cursor.obj -MD -MP -MF "$(DEPDIR)/twm-cursor.Tpo" -c -o twm-cursor.obj `if test -f 'cursor.c'; then $(CYGPATH_W) 'cursor.c'; else $(CYGPATH_W) '$(srcdir)/cursor.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-cursor.Tpo" "$(DEPDIR)/twm-cursor.Po"; else rm -f "$(DEPDIR)/twm-cursor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cursor.c' object='twm-cursor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='cursor.c' object='twm-cursor.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-cursor.obj `if test -f 'cursor.c'; then $(CYGPATH_W) 'cursor.c'; else $(CYGPATH_W) '$(srcdir)/cursor.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-cursor.obj `if test -f 'cursor.c'; then $(CYGPATH_W) 'cursor.c'; else $(CYGPATH_W) '$(srcdir)/cursor.c'; fi`
 
 twm-deftwmrc.o: deftwmrc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-deftwmrc.o -MD -MP -MF "$(DEPDIR)/twm-deftwmrc.Tpo" -c -o twm-deftwmrc.o `test -f 'deftwmrc.c' || echo '$(srcdir)/'`deftwmrc.c; \
+	@@AMPRETTYECHO@ '  [C         ]  deftwmrc.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-deftwmrc.o -MD -MP -MF "$(DEPDIR)/twm-deftwmrc.Tpo" -c -o twm-deftwmrc.o `test -f 'deftwmrc.c' || echo '$(srcdir)/'`deftwmrc.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-deftwmrc.Tpo" "$(DEPDIR)/twm-deftwmrc.Po"; else rm -f "$(DEPDIR)/twm-deftwmrc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='deftwmrc.c' object='twm-deftwmrc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='deftwmrc.c' object='twm-deftwmrc.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-deftwmrc.o `test -f 'deftwmrc.c' || echo '$(srcdir)/'`deftwmrc.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-deftwmrc.o `test -f 'deftwmrc.c' || echo '$(srcdir)/'`deftwmrc.c
 
 twm-deftwmrc.obj: deftwmrc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-deftwmrc.obj -MD -MP -MF "$(DEPDIR)/twm-deftwmrc.Tpo" -c -o twm-deftwmrc.obj `if test -f 'deftwmrc.c'; then $(CYGPATH_W) 'deftwmrc.c'; else $(CYGPATH_W) '$(srcdir)/deftwmrc.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  deftwmrc.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-deftwmrc.obj -MD -MP -MF "$(DEPDIR)/twm-deftwmrc.Tpo" -c -o twm-deftwmrc.obj `if test -f 'deftwmrc.c'; then $(CYGPATH_W) 'deftwmrc.c'; else $(CYGPATH_W) '$(srcdir)/deftwmrc.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-deftwmrc.Tpo" "$(DEPDIR)/twm-deftwmrc.Po"; else rm -f "$(DEPDIR)/twm-deftwmrc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='deftwmrc.c' object='twm-deftwmrc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='deftwmrc.c' object='twm-deftwmrc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-deftwmrc.obj `if test -f 'deftwmrc.c'; then $(CYGPATH_W) 'deftwmrc.c'; else $(CYGPATH_W) '$(srcdir)/deftwmrc.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-deftwmrc.obj `if test -f 'deftwmrc.c'; then $(CYGPATH_W) 'deftwmrc.c'; else $(CYGPATH_W) '$(srcdir)/deftwmrc.c'; fi`
 
 twm-events.o: events.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-events.o -MD -MP -MF "$(DEPDIR)/twm-events.Tpo" -c -o twm-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c; \
+	@@AMPRETTYECHO@ '  [C         ]  events.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-events.o -MD -MP -MF "$(DEPDIR)/twm-events.Tpo" -c -o twm-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-events.Tpo" "$(DEPDIR)/twm-events.Po"; else rm -f "$(DEPDIR)/twm-events.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='events.c' object='twm-events.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='events.c' object='twm-events.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
 
 twm-events.obj: events.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-events.obj -MD -MP -MF "$(DEPDIR)/twm-events.Tpo" -c -o twm-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  events.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-events.obj -MD -MP -MF "$(DEPDIR)/twm-events.Tpo" -c -o twm-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-events.Tpo" "$(DEPDIR)/twm-events.Po"; else rm -f "$(DEPDIR)/twm-events.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='events.c' object='twm-events.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='events.c' object='twm-events.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
 
 twm-gc.o: gc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-gc.o -MD -MP -MF "$(DEPDIR)/twm-gc.Tpo" -c -o twm-gc.o `test -f 'gc.c' || echo '$(srcdir)/'`gc.c; \
+	@@AMPRETTYECHO@ '  [C         ]  gc.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-gc.o -MD -MP -MF "$(DEPDIR)/twm-gc.Tpo" -c -o twm-gc.o `test -f 'gc.c' || echo '$(srcdir)/'`gc.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-gc.Tpo" "$(DEPDIR)/twm-gc.Po"; else rm -f "$(DEPDIR)/twm-gc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gc.c' object='twm-gc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='gc.c' object='twm-gc.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-gc.o `test -f 'gc.c' || echo '$(srcdir)/'`gc.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-gc.o `test -f 'gc.c' || echo '$(srcdir)/'`gc.c
 
 twm-gc.obj: gc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-gc.obj -MD -MP -MF "$(DEPDIR)/twm-gc.Tpo" -c -o twm-gc.obj `if test -f 'gc.c'; then $(CYGPATH_W) 'gc.c'; else $(CYGPATH_W) '$(srcdir)/gc.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  gc.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-gc.obj -MD -MP -MF "$(DEPDIR)/twm-gc.Tpo" -c -o twm-gc.obj `if test -f 'gc.c'; then $(CYGPATH_W) 'gc.c'; else $(CYGPATH_W) '$(srcdir)/gc.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-gc.Tpo" "$(DEPDIR)/twm-gc.Po"; else rm -f "$(DEPDIR)/twm-gc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gc.c' object='twm-gc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='gc.c' object='twm-gc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-gc.obj `if test -f 'gc.c'; then $(CYGPATH_W) 'gc.c'; else $(CYGPATH_W) '$(srcdir)/gc.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-gc.obj `if test -f 'gc.c'; then $(CYGPATH_W) 'gc.c'; else $(CYGPATH_W) '$(srcdir)/gc.c'; fi`
 
 twm-iconmgr.o: iconmgr.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-iconmgr.o -MD -MP -MF "$(DEPDIR)/twm-iconmgr.Tpo" -c -o twm-iconmgr.o `test -f 'iconmgr.c' || echo '$(srcdir)/'`iconmgr.c; \
+	@@AMPRETTYECHO@ '  [C         ]  iconmgr.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-iconmgr.o -MD -MP -MF "$(DEPDIR)/twm-iconmgr.Tpo" -c -o twm-iconmgr.o `test -f 'iconmgr.c' || echo '$(srcdir)/'`iconmgr.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-iconmgr.Tpo" "$(DEPDIR)/twm-iconmgr.Po"; else rm -f "$(DEPDIR)/twm-iconmgr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='iconmgr.c' object='twm-iconmgr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='iconmgr.c' object='twm-iconmgr.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-iconmgr.o `test -f 'iconmgr.c' || echo '$(srcdir)/'`iconmgr.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-iconmgr.o `test -f 'iconmgr.c' || echo '$(srcdir)/'`iconmgr.c
 
 twm-iconmgr.obj: iconmgr.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-iconmgr.obj -MD -MP -MF "$(DEPDIR)/twm-iconmgr.Tpo" -c -o twm-iconmgr.obj `if test -f 'iconmgr.c'; then $(CYGPATH_W) 'iconmgr.c'; else $(CYGPATH_W) '$(srcdir)/iconmgr.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  iconmgr.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-iconmgr.obj -MD -MP -MF "$(DEPDIR)/twm-iconmgr.Tpo" -c -o twm-iconmgr.obj `if test -f 'iconmgr.c'; then $(CYGPATH_W) 'iconmgr.c'; else $(CYGPATH_W) '$(srcdir)/iconmgr.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-iconmgr.Tpo" "$(DEPDIR)/twm-iconmgr.Po"; else rm -f "$(DEPDIR)/twm-iconmgr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='iconmgr.c' object='twm-iconmgr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='iconmgr.c' object='twm-iconmgr.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-iconmgr.obj `if test -f 'iconmgr.c'; then $(CYGPATH_W) 'iconmgr.c'; else $(CYGPATH_W) '$(srcdir)/iconmgr.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-iconmgr.obj `if test -f 'iconmgr.c'; then $(CYGPATH_W) 'iconmgr.c'; else $(CYGPATH_W) '$(srcdir)/iconmgr.c'; fi`
 
 twm-icons.o: icons.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-icons.o -MD -MP -MF "$(DEPDIR)/twm-icons.Tpo" -c -o twm-icons.o `test -f 'icons.c' || echo '$(srcdir)/'`icons.c; \
+	@@AMPRETTYECHO@ '  [C         ]  icons.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-icons.o -MD -MP -MF "$(DEPDIR)/twm-icons.Tpo" -c -o twm-icons.o `test -f 'icons.c' || echo '$(srcdir)/'`icons.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-icons.Tpo" "$(DEPDIR)/twm-icons.Po"; else rm -f "$(DEPDIR)/twm-icons.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icons.c' object='twm-icons.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='icons.c' object='twm-icons.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-icons.o `test -f 'icons.c' || echo '$(srcdir)/'`icons.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-icons.o `test -f 'icons.c' || echo '$(srcdir)/'`icons.c
 
 twm-icons.obj: icons.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-icons.obj -MD -MP -MF "$(DEPDIR)/twm-icons.Tpo" -c -o twm-icons.obj `if test -f 'icons.c'; then $(CYGPATH_W) 'icons.c'; else $(CYGPATH_W) '$(srcdir)/icons.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  icons.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-icons.obj -MD -MP -MF "$(DEPDIR)/twm-icons.Tpo" -c -o twm-icons.obj `if test -f 'icons.c'; then $(CYGPATH_W) 'icons.c'; else $(CYGPATH_W) '$(srcdir)/icons.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-icons.Tpo" "$(DEPDIR)/twm-icons.Po"; else rm -f "$(DEPDIR)/twm-icons.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='icons.c' object='twm-icons.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='icons.c' object='twm-icons.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-icons.obj `if test -f 'icons.c'; then $(CYGPATH_W) 'icons.c'; else $(CYGPATH_W) '$(srcdir)/icons.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-icons.obj `if test -f 'icons.c'; then $(CYGPATH_W) 'icons.c'; else $(CYGPATH_W) '$(srcdir)/icons.c'; fi`
 
 twm-list.o: list.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-list.o -MD -MP -MF "$(DEPDIR)/twm-list.Tpo" -c -o twm-list.o `test -f 'list.c' || echo '$(srcdir)/'`list.c; \
+	@@AMPRETTYECHO@ '  [C         ]  list.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-list.o -MD -MP -MF "$(DEPDIR)/twm-list.Tpo" -c -o twm-list.o `test -f 'list.c' || echo '$(srcdir)/'`list.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-list.Tpo" "$(DEPDIR)/twm-list.Po"; else rm -f "$(DEPDIR)/twm-list.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='list.c' object='twm-list.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='list.c' object='twm-list.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-list.o `test -f 'list.c' || echo '$(srcdir)/'`list.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-list.o `test -f 'list.c' || echo '$(srcdir)/'`list.c
 
 twm-list.obj: list.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-list.obj -MD -MP -MF "$(DEPDIR)/twm-list.Tpo" -c -o twm-list.obj `if test -f 'list.c'; then $(CYGPATH_W) 'list.c'; else $(CYGPATH_W) '$(srcdir)/list.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  list.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-list.obj -MD -MP -MF "$(DEPDIR)/twm-list.Tpo" -c -o twm-list.obj `if test -f 'list.c'; then $(CYGPATH_W) 'list.c'; else $(CYGPATH_W) '$(srcdir)/list.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-list.Tpo" "$(DEPDIR)/twm-list.Po"; else rm -f "$(DEPDIR)/twm-list.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='list.c' object='twm-list.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='list.c' object='twm-list.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-list.obj `if test -f 'list.c'; then $(CYGPATH_W) 'list.c'; else $(CYGPATH_W) '$(srcdir)/list.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-list.obj `if test -f 'list.c'; then $(CYGPATH_W) 'list.c'; else $(CYGPATH_W) '$(srcdir)/list.c'; fi`
 
 twm-menus.o: menus.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-menus.o -MD -MP -MF "$(DEPDIR)/twm-menus.Tpo" -c -o twm-menus.o `test -f 'menus.c' || echo '$(srcdir)/'`menus.c; \
+	@@AMPRETTYECHO@ '  [C         ]  menus.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-menus.o -MD -MP -MF "$(DEPDIR)/twm-menus.Tpo" -c -o twm-menus.o `test -f 'menus.c' || echo '$(srcdir)/'`menus.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-menus.Tpo" "$(DEPDIR)/twm-menus.Po"; else rm -f "$(DEPDIR)/twm-menus.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='menus.c' object='twm-menus.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='menus.c' object='twm-menus.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-menus.o `test -f 'menus.c' || echo '$(srcdir)/'`menus.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-menus.o `test -f 'menus.c' || echo '$(srcdir)/'`menus.c
 
 twm-menus.obj: menus.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-menus.obj -MD -MP -MF "$(DEPDIR)/twm-menus.Tpo" -c -o twm-menus.obj `if test -f 'menus.c'; then $(CYGPATH_W) 'menus.c'; else $(CYGPATH_W) '$(srcdir)/menus.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  menus.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-menus.obj -MD -MP -MF "$(DEPDIR)/twm-menus.Tpo" -c -o twm-menus.obj `if test -f 'menus.c'; then $(CYGPATH_W) 'menus.c'; else $(CYGPATH_W) '$(srcdir)/menus.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-menus.Tpo" "$(DEPDIR)/twm-menus.Po"; else rm -f "$(DEPDIR)/twm-menus.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='menus.c' object='twm-menus.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='menus.c' object='twm-menus.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-menus.obj `if test -f 'menus.c'; then $(CYGPATH_W) 'menus.c'; else $(CYGPATH_W) '$(srcdir)/menus.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-menus.obj `if test -f 'menus.c'; then $(CYGPATH_W) 'menus.c'; else $(CYGPATH_W) '$(srcdir)/menus.c'; fi`
 
 twm-parse.o: parse.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-parse.o -MD -MP -MF "$(DEPDIR)/twm-parse.Tpo" -c -o twm-parse.o `test -f 'parse.c' || echo '$(srcdir)/'`parse.c; \
+	@@AMPRETTYECHO@ '  [C         ]  parse.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-parse.o -MD -MP -MF "$(DEPDIR)/twm-parse.Tpo" -c -o twm-parse.o `test -f 'parse.c' || echo '$(srcdir)/'`parse.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-parse.Tpo" "$(DEPDIR)/twm-parse.Po"; else rm -f "$(DEPDIR)/twm-parse.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='parse.c' object='twm-parse.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='parse.c' object='twm-parse.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-parse.o `test -f 'parse.c' || echo '$(srcdir)/'`parse.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-parse.o `test -f 'parse.c' || echo '$(srcdir)/'`parse.c
 
 twm-parse.obj: parse.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-parse.obj -MD -MP -MF "$(DEPDIR)/twm-parse.Tpo" -c -o twm-parse.obj `if test -f 'parse.c'; then $(CYGPATH_W) 'parse.c'; else $(CYGPATH_W) '$(srcdir)/parse.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  parse.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-parse.obj -MD -MP -MF "$(DEPDIR)/twm-parse.Tpo" -c -o twm-parse.obj `if test -f 'parse.c'; then $(CYGPATH_W) 'parse.c'; else $(CYGPATH_W) '$(srcdir)/parse.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-parse.Tpo" "$(DEPDIR)/twm-parse.Po"; else rm -f "$(DEPDIR)/twm-parse.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='parse.c' object='twm-parse.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='parse.c' object='twm-parse.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-parse.obj `if test -f 'parse.c'; then $(CYGPATH_W) 'parse.c'; else $(CYGPATH_W) '$(srcdir)/parse.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-parse.obj `if test -f 'parse.c'; then $(CYGPATH_W) 'parse.c'; else $(CYGPATH_W) '$(srcdir)/parse.c'; fi`
 
 twm-resize.o: resize.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-resize.o -MD -MP -MF "$(DEPDIR)/twm-resize.Tpo" -c -o twm-resize.o `test -f 'resize.c' || echo '$(srcdir)/'`resize.c; \
+	@@AMPRETTYECHO@ '  [C         ]  resize.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-resize.o -MD -MP -MF "$(DEPDIR)/twm-resize.Tpo" -c -o twm-resize.o `test -f 'resize.c' || echo '$(srcdir)/'`resize.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-resize.Tpo" "$(DEPDIR)/twm-resize.Po"; else rm -f "$(DEPDIR)/twm-resize.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='resize.c' object='twm-resize.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='resize.c' object='twm-resize.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-resize.o `test -f 'resize.c' || echo '$(srcdir)/'`resize.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-resize.o `test -f 'resize.c' || echo '$(srcdir)/'`resize.c
 
 twm-resize.obj: resize.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-resize.obj -MD -MP -MF "$(DEPDIR)/twm-resize.Tpo" -c -o twm-resize.obj `if test -f 'resize.c'; then $(CYGPATH_W) 'resize.c'; else $(CYGPATH_W) '$(srcdir)/resize.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  resize.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-resize.obj -MD -MP -MF "$(DEPDIR)/twm-resize.Tpo" -c -o twm-resize.obj `if test -f 'resize.c'; then $(CYGPATH_W) 'resize.c'; else $(CYGPATH_W) '$(srcdir)/resize.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-resize.Tpo" "$(DEPDIR)/twm-resize.Po"; else rm -f "$(DEPDIR)/twm-resize.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='resize.c' object='twm-resize.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='resize.c' object='twm-resize.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-resize.obj `if test -f 'resize.c'; then $(CYGPATH_W) 'resize.c'; else $(CYGPATH_W) '$(srcdir)/resize.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-resize.obj `if test -f 'resize.c'; then $(CYGPATH_W) 'resize.c'; else $(CYGPATH_W) '$(srcdir)/resize.c'; fi`
 
 twm-session.o: session.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-session.o -MD -MP -MF "$(DEPDIR)/twm-session.Tpo" -c -o twm-session.o `test -f 'session.c' || echo '$(srcdir)/'`session.c; \
+	@@AMPRETTYECHO@ '  [C         ]  session.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-session.o -MD -MP -MF "$(DEPDIR)/twm-session.Tpo" -c -o twm-session.o `test -f 'session.c' || echo '$(srcdir)/'`session.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-session.Tpo" "$(DEPDIR)/twm-session.Po"; else rm -f "$(DEPDIR)/twm-session.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='session.c' object='twm-session.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='session.c' object='twm-session.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-session.o `test -f 'session.c' || echo '$(srcdir)/'`session.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-session.o `test -f 'session.c' || echo '$(srcdir)/'`session.c
 
 twm-session.obj: session.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-session.obj -MD -MP -MF "$(DEPDIR)/twm-session.Tpo" -c -o twm-session.obj `if test -f 'session.c'; then $(CYGPATH_W) 'session.c'; else $(CYGPATH_W) '$(srcdir)/session.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  session.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-session.obj -MD -MP -MF "$(DEPDIR)/twm-session.Tpo" -c -o twm-session.obj `if test -f 'session.c'; then $(CYGPATH_W) 'session.c'; else $(CYGPATH_W) '$(srcdir)/session.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-session.Tpo" "$(DEPDIR)/twm-session.Po"; else rm -f "$(DEPDIR)/twm-session.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='session.c' object='twm-session.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='session.c' object='twm-session.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-session.obj `if test -f 'session.c'; then $(CYGPATH_W) 'session.c'; else $(CYGPATH_W) '$(srcdir)/session.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-session.obj `if test -f 'session.c'; then $(CYGPATH_W) 'session.c'; else $(CYGPATH_W) '$(srcdir)/session.c'; fi`
 
 twm-twm.o: twm.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-twm.o -MD -MP -MF "$(DEPDIR)/twm-twm.Tpo" -c -o twm-twm.o `test -f 'twm.c' || echo '$(srcdir)/'`twm.c; \
+	@@AMPRETTYECHO@ '  [C         ]  twm.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-twm.o -MD -MP -MF "$(DEPDIR)/twm-twm.Tpo" -c -o twm-twm.o `test -f 'twm.c' || echo '$(srcdir)/'`twm.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-twm.Tpo" "$(DEPDIR)/twm-twm.Po"; else rm -f "$(DEPDIR)/twm-twm.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='twm.c' object='twm-twm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='twm.c' object='twm-twm.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-twm.o `test -f 'twm.c' || echo '$(srcdir)/'`twm.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-twm.o `test -f 'twm.c' || echo '$(srcdir)/'`twm.c
 
 twm-twm.obj: twm.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-twm.obj -MD -MP -MF "$(DEPDIR)/twm-twm.Tpo" -c -o twm-twm.obj `if test -f 'twm.c'; then $(CYGPATH_W) 'twm.c'; else $(CYGPATH_W) '$(srcdir)/twm.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  twm.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-twm.obj -MD -MP -MF "$(DEPDIR)/twm-twm.Tpo" -c -o twm-twm.obj `if test -f 'twm.c'; then $(CYGPATH_W) 'twm.c'; else $(CYGPATH_W) '$(srcdir)/twm.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-twm.Tpo" "$(DEPDIR)/twm-twm.Po"; else rm -f "$(DEPDIR)/twm-twm.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='twm.c' object='twm-twm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='twm.c' object='twm-twm.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-twm.obj `if test -f 'twm.c'; then $(CYGPATH_W) 'twm.c'; else $(CYGPATH_W) '$(srcdir)/twm.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-twm.obj `if test -f 'twm.c'; then $(CYGPATH_W) 'twm.c'; else $(CYGPATH_W) '$(srcdir)/twm.c'; fi`
 
 twm-util.o: util.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-util.o -MD -MP -MF "$(DEPDIR)/twm-util.Tpo" -c -o twm-util.o `test -f 'util.c' || echo '$(srcdir)/'`util.c; \
+	@@AMPRETTYECHO@ '  [C         ]  util.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-util.o -MD -MP -MF "$(DEPDIR)/twm-util.Tpo" -c -o twm-util.o `test -f 'util.c' || echo '$(srcdir)/'`util.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-util.Tpo" "$(DEPDIR)/twm-util.Po"; else rm -f "$(DEPDIR)/twm-util.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='util.c' object='twm-util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='util.c' object='twm-util.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-util.o `test -f 'util.c' || echo '$(srcdir)/'`util.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-util.o `test -f 'util.c' || echo '$(srcdir)/'`util.c
 
 twm-util.obj: util.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-util.obj -MD -MP -MF "$(DEPDIR)/twm-util.Tpo" -c -o twm-util.obj `if test -f 'util.c'; then $(CYGPATH_W) 'util.c'; else $(CYGPATH_W) '$(srcdir)/util.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  util.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-util.obj -MD -MP -MF "$(DEPDIR)/twm-util.Tpo" -c -o twm-util.obj `if test -f 'util.c'; then $(CYGPATH_W) 'util.c'; else $(CYGPATH_W) '$(srcdir)/util.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-util.Tpo" "$(DEPDIR)/twm-util.Po"; else rm -f "$(DEPDIR)/twm-util.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='util.c' object='twm-util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='util.c' object='twm-util.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-util.obj `if test -f 'util.c'; then $(CYGPATH_W) 'util.c'; else $(CYGPATH_W) '$(srcdir)/util.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-util.obj `if test -f 'util.c'; then $(CYGPATH_W) 'util.c'; else $(CYGPATH_W) '$(srcdir)/util.c'; fi`
 
 twm-version.o: version.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-version.o -MD -MP -MF "$(DEPDIR)/twm-version.Tpo" -c -o twm-version.o `test -f 'version.c' || echo '$(srcdir)/'`version.c; \
+	@@AMPRETTYECHO@ '  [C         ]  version.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-version.o -MD -MP -MF "$(DEPDIR)/twm-version.Tpo" -c -o twm-version.o `test -f 'version.c' || echo '$(srcdir)/'`version.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-version.Tpo" "$(DEPDIR)/twm-version.Po"; else rm -f "$(DEPDIR)/twm-version.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='version.c' object='twm-version.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='version.c' object='twm-version.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-version.o `test -f 'version.c' || echo '$(srcdir)/'`version.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-version.o `test -f 'version.c' || echo '$(srcdir)/'`version.c
 
 twm-version.obj: version.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-version.obj -MD -MP -MF "$(DEPDIR)/twm-version.Tpo" -c -o twm-version.obj `if test -f 'version.c'; then $(CYGPATH_W) 'version.c'; else $(CYGPATH_W) '$(srcdir)/version.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  version.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-version.obj -MD -MP -MF "$(DEPDIR)/twm-version.Tpo" -c -o twm-version.obj `if test -f 'version.c'; then $(CYGPATH_W) 'version.c'; else $(CYGPATH_W) '$(srcdir)/version.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-version.Tpo" "$(DEPDIR)/twm-version.Po"; else rm -f "$(DEPDIR)/twm-version.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='version.c' object='twm-version.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='version.c' object='twm-version.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-version.obj `if test -f 'version.c'; then $(CYGPATH_W) 'version.c'; else $(CYGPATH_W) '$(srcdir)/version.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-version.obj `if test -f 'version.c'; then $(CYGPATH_W) 'version.c'; else $(CYGPATH_W) '$(srcdir)/version.c'; fi`
 
 twm-gram.o: gram.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-gram.o -MD -MP -MF "$(DEPDIR)/twm-gram.Tpo" -c -o twm-gram.o `test -f 'gram.c' || echo '$(srcdir)/'`gram.c; \
+	@@AMPRETTYECHO@ '  [C         ]  gram.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-gram.o -MD -MP -MF "$(DEPDIR)/twm-gram.Tpo" -c -o twm-gram.o `test -f 'gram.c' || echo '$(srcdir)/'`gram.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-gram.Tpo" "$(DEPDIR)/twm-gram.Po"; else rm -f "$(DEPDIR)/twm-gram.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gram.c' object='twm-gram.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='gram.c' object='twm-gram.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-gram.o `test -f 'gram.c' || echo '$(srcdir)/'`gram.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-gram.o `test -f 'gram.c' || echo '$(srcdir)/'`gram.c
 
 twm-gram.obj: gram.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-gram.obj -MD -MP -MF "$(DEPDIR)/twm-gram.Tpo" -c -o twm-gram.obj `if test -f 'gram.c'; then $(CYGPATH_W) 'gram.c'; else $(CYGPATH_W) '$(srcdir)/gram.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  gram.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-gram.obj -MD -MP -MF "$(DEPDIR)/twm-gram.Tpo" -c -o twm-gram.obj `if test -f 'gram.c'; then $(CYGPATH_W) 'gram.c'; else $(CYGPATH_W) '$(srcdir)/gram.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-gram.Tpo" "$(DEPDIR)/twm-gram.Po"; else rm -f "$(DEPDIR)/twm-gram.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gram.c' object='twm-gram.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='gram.c' object='twm-gram.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-gram.obj `if test -f 'gram.c'; then $(CYGPATH_W) 'gram.c'; else $(CYGPATH_W) '$(srcdir)/gram.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-gram.obj `if test -f 'gram.c'; then $(CYGPATH_W) 'gram.c'; else $(CYGPATH_W) '$(srcdir)/gram.c'; fi`
 
 twm-lex.o: lex.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-lex.o -MD -MP -MF "$(DEPDIR)/twm-lex.Tpo" -c -o twm-lex.o `test -f 'lex.c' || echo '$(srcdir)/'`lex.c; \
+	@@AMPRETTYECHO@ '  [C         ]  lex.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-lex.o -MD -MP -MF "$(DEPDIR)/twm-lex.Tpo" -c -o twm-lex.o `test -f 'lex.c' || echo '$(srcdir)/'`lex.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-lex.Tpo" "$(DEPDIR)/twm-lex.Po"; else rm -f "$(DEPDIR)/twm-lex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='lex.c' object='twm-lex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='lex.c' object='twm-lex.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-lex.o `test -f 'lex.c' || echo '$(srcdir)/'`lex.c
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-lex.o `test -f 'lex.c' || echo '$(srcdir)/'`lex.c
 
 twm-lex.obj: lex.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-lex.obj -MD -MP -MF "$(DEPDIR)/twm-lex.Tpo" -c -o twm-lex.obj `if test -f 'lex.c'; then $(CYGPATH_W) 'lex.c'; else $(CYGPATH_W) '$(srcdir)/lex.c'; fi`; \
+	@@AMPRETTYECHO@ '  [C         ]  lex.c'
+@am__fastdepCC_TRUE@	@AMSHOWCMDSAT@if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -MT twm-lex.obj -MD -MP -MF "$(DEPDIR)/twm-lex.Tpo" -c -o twm-lex.obj `if test -f 'lex.c'; then $(CYGPATH_W) 'lex.c'; else $(CYGPATH_W) '$(srcdir)/lex.c'; fi`; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/twm-lex.Tpo" "$(DEPDIR)/twm-lex.Po"; else rm -f "$(DEPDIR)/twm-lex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='lex.c' object='twm-lex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	@AMSHOWCMDSAT@source='lex.c' object='twm-lex.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-lex.obj `if test -f 'lex.c'; then $(CYGPATH_W) 'lex.c'; else $(CYGPATH_W) '$(srcdir)/lex.c'; fi`
+@am__fastdepCC_FALSE@	@AMDEPSHOWCMDSAT@$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(twm_CFLAGS) $(CFLAGS) -c -o twm-lex.obj `if test -f 'lex.c'; then $(CYGPATH_W) 'lex.c'; else $(CYGPATH_W) '$(srcdir)/lex.c'; fi`
 
 .l.c:
-	$(LEXCOMPILE) $<
-	sed '/^#/ s|$(LEX_OUTPUT_ROOT)\.c|$@|' $(LEX_OUTPUT_ROOT).c >$@
-	rm -f $(LEX_OUTPUT_ROOT).c
+	@AMSHOWCMDSAT@$(LEXCOMPILE) $<
+	@AMSHOWCMDSAT@sed '/^#/ s|$(LEX_OUTPUT_ROOT)\.c|$@|' $(LEX_OUTPUT_ROOT).c >$@
+	@AMSHOWCMDSAT@rm -f $(LEX_OUTPUT_ROOT).c
 
 .y.c:
-	$(YACCCOMPILE) $<
-	if test -f y.tab.h; then \
+	@@AMPRETTYECHO@ '  [YACC      ]  %SOURCE'
+	@AMSHOWCMDSAT@$(YACCCOMPILE) $<
+	@AMSHOWCMDSAT@if test -f y.tab.h; then \
 	  to=`echo "$*_H" | sed \
                 -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/' \
                 -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'`; \
@@ -604,19 +662,21 @@ twm-lex.obj: lex.c
 	    mv $*.ht $*.h; \
 	  fi; \
 	fi
-	if test -f y.output; then \
+	@AMSHOWCMDSAT@if test -f y.output; then \
 	  mv y.output $*.output; \
 	fi
-	sed '/^#/ s|y\.tab\.c|$@|' y.tab.c >$@t && mv $@t $@
-	rm -f y.tab.c
+	@AMSHOWCMDSAT@sed '/^#/ s|y\.tab\.c|$@|' y.tab.c >$@t && mv $@t $@
+	@AMSHOWCMDSAT@rm -f y.tab.c
 uninstall-info-am:
 install-dist_rcDATA: $(dist_rc_DATA)
 	@$(NORMAL_INSTALL)
-	test -z "$(rcdir)" || $(mkdir_p) "$(DESTDIR)$(rcdir)"
+	@@AMPRETTYECHO@ '  [MKDIR     ]  $(DESTDIR)$(rcdir)'
+	@AMSHOWCMDSAT@test -z "$(rcdir)" || $(mkdir_p) "$(DESTDIR)$(rcdir)"
 	@list='$(dist_rc_DATA)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f=$(am__strip_dir) \
-	  echo " $(dist_rcDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(rcdir)/$$f'"; \
+	  @AMPRETTYECHO@ "  [INSTALL   ]  '$$d$$p' -> '$(DESTDIR)$(rcdir)/$$f'"; \
+	  @AMCMDECHO@ " $(dist_rcDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(rcdir)/$$f'"; \
 	  $(dist_rcDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(rcdir)/$$f"; \
 	done
 
@@ -624,23 +684,25 @@ uninstall-dist_rcDATA:
 	@$(NORMAL_UNINSTALL)
 	@list='$(dist_rc_DATA)'; for p in $$list; do \
 	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(rcdir)/$$f'"; \
+	  @AMPRETTYECHO@ "  [RM        ]  $(DESTDIR)$(rcdir)/$$f"; \
+	  @AMCMDECHO@ " rm -f '$(DESTDIR)$(rcdir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(rcdir)/$$f"; \
 	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
-	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
+	@AMSHOWCMDSAT@list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
 	  $(AWK) '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
+	@AMPRETTYECHO@ '  [MKID      ]  $$unique'; \
 	mkid -fID $$unique
 tags: TAGS
 
 TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
-	tags=; \
+	@AMSHOWCMDSAT@tags=; \
 	here=`pwd`; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
@@ -650,13 +712,14 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	       END { for (i in files) print i; }'`; \
 	if test -z "$(ETAGS_ARGS)$$tags$$unique"; then :; else \
 	  test -n "$$unique" || unique=$$empty_fix; \
+	  @AMPRETTYECHO@ "  [ETAGS     ]  $$tags"; \
 	  $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
 	    $$tags $$unique; \
 	fi
 ctags: CTAGS
 CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
-	tags=; \
+	@AMSHOWCMDSAT@tags=; \
 	here=`pwd`; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
@@ -665,18 +728,23 @@ CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	  $(AWK) '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(CTAGS_ARGS)$$tags$$unique" \
-	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
-	     $$tags $$unique
+	  || ( \
+	     @AMPRETTYECHO@ "  [CTAGS     ]  $$tags"; \
+	     $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
+	     $$tags $$unique )
 
 GTAGS:
-	here=`$(am__cd) $(top_builddir) && pwd` \
+	@@AMPRETTYECHO@ '  [GTAGS     ]'
+	@AMSHOWCMDSAT@here=`$(am__cd) $(top_builddir) && pwd` \
 	  && cd $(top_srcdir) \
 	  && gtags -i $(GTAGS_ARGS) $$here
 
 distclean-tags:
-	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
+	@@AMPRETTYECHO@ '  [RM        ]  TAGS ID GTAGS GRTAGS GSYMS GPATH tags'
+	@AMSHOWCMDSAT@-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	@@AMPRETTYECHO@ '  [MKDIR     ]  '
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -708,8 +776,8 @@ check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-am
 all-am: Makefile $(PROGRAMS) $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)"; do \
-	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
+	@AMSHOWCMDSAT@for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(rcdir)"; do \
+	  test -z "$$dir" || ( @AMPRETTYECHO@ "  [MKDIR     ]  $$dir"; $(mkdir_p) "$$dir" ); \
 	done
 install: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) install-am
@@ -722,7 +790,7 @@ install-am: all-am
 
 installcheck: installcheck-am
 install-strip:
-	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+	@AMSHOWCMDSAT@$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
@@ -731,23 +799,31 @@ mostlyclean-generic:
 clean-generic:
 
 distclean-generic:
-	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+	@@AMPRETTYECHO@ '  [RM        ]  $(CONFIG_CLEAN_FILES)'
+	@AMSHOWCMDSAT@-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-rm -f gram.c
-	-rm -f gram.h
-	-rm -f lex.c
+	@@AMPRETTYECHO@ '  [RM        ]  $(BUILT_SOURCES)'
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
+	@@AMPRETTYECHO@ '  [RM        ]  $(MAINTAINERCLEANFILES)'
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+	@@AMPRETTYECHO@ '  [RM        ]  gram.c'
+	-rm -f gram.c
+	@@AMPRETTYECHO@ '  [RM        ]  gram.h'
+	-rm -f gram.h
+	@@AMPRETTYECHO@ '  [RM        ]  lex.c'
+	-rm -f lex.c
 clean: clean-am
 
 clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
-	-rm -f Makefile
+	@@AMPRETTYECHO@ '  [RM        ]  ./$(DEPDIR)'
+	@AMSHOWCMDSAT@-rm -rf ./$(DEPDIR)
+	@@AMPRETTYECHO@ '  [RM        ]  Makefile'
+	@AMSHOWCMDSAT@-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
 
@@ -772,8 +848,10 @@ install-man:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
-	-rm -f Makefile
+	@@AMPRETTYECHO@ '  [RM        ]  ./$(DEPDIR)'
+	@AMSHOWCMDSAT@-rm -rf ./$(DEPDIR)
+	@@AMPRETTYECHO@ '  [RM        ]  Makefile'
+	@AMSHOWCMDSAT@-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am

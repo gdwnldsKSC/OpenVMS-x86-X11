@@ -1,3 +1,23 @@
+commit da1b5f42fcb1bd0bc9b80f6f1ab7ebb9eb506554
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Aug 17 14:30:31 2007 -0700
+
+    Version bump: 1.0.3
+
+commit 12982c07b44c15a621fc548a4448f9a04bf5907e
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Aug 16 17:17:06 2007 -0700
+
+    Change sessreg_CFLAGS to AM_CFLAGS to make automake-1.10 happier
+
+commit 136525f01e4ce8e60e8c78b44654d8f6861233d2
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Mon Jun 11 16:38:00 2007 -0700
+
+    X.Org Bug #9887: sessreg should include sys/types.h on FreeBSD
+    
+    X.Org Bugzilla #9887: <https://bugs.freedesktop.org/show_bug.cgi?id=9887>
+
 commit 9b2ddf6c779553c2cb5e185d2046e8817a89e03e
 Author: Daniel Stone <daniel@fooishbar.org>
 Date:   Thu Nov 30 19:44:25 2006 +0200

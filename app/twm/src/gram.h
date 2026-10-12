@@ -192,7 +192,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 104 "gram.y"
+#line 104 "../../src/gram.y"
 {
     int num;
     char *ptr;

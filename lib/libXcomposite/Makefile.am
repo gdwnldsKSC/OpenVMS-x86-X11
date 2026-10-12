@@ -21,9 +21,15 @@
 #  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 #  PERFORMANCE OF THIS SOFTWARE.
 
-SUBDIRS = src
+SUBDIRS = src man
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xcomposite.pc
 
-EXTRA_DIST = xcomposite.pc.in autogen.sh
+EXTRA_DIST = xcomposite.pc.in autogen.sh ChangeLog
+
+ChangeLog:
+	(GIT_DIR=$(top_srcdir)/.git git-log > .changelog.tmp && mv .changelog.tmp ChangeLog; rm -f .changelog.tmp) || (touch ChangeLog; echo 'git directory not found: installing possibly empty changelog.' >&2)
+
+dist-hook: ChangeLog
+

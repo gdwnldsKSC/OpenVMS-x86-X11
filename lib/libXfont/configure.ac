@@ -26,7 +26,7 @@ dnl Process this file with autoconf to create configure.
 AC_PREREQ([2.57])
 
 AC_INIT([libXfont],
-	1.2.7,
+	1.3.1,
 	[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
 	libXfont)
 dnl
@@ -171,6 +171,14 @@ if test "x$XFONT_FONTFILE" = xyes; then
 	AC_DEFINE(XFONT_FONTFILE,1,[Support fonts in files])
 fi
 
+AC_ARG_ENABLE(loadable-font-modules, 
+  AC_HELP_STRING([--disable-loadable-font-modules], 
+       	 [support dynamically loaded font modules (default is enabled)]),
+	[LOADABLE_FONTS=$enableval], [LOADABLE_FONTS=yes])
+if test "x$LOADABLE_FONTS" = xyes; then
+	AC_DEFINE(LOADABLEFONTS,1,[Support dynamically loaded font modules])
+fi
+
 #
 # Font cache extension support?
 #
@@ -218,6 +226,9 @@ case $host_os in
     linux*)
         OS_CFLAGS="-D_XOPEN_SOURCE"
         ;;
+    darwin*)
+        OS_CFLAGS="-Wl,-flat_namespace"
+	;;
     *)
         OS_CFLAGS=
         ;;

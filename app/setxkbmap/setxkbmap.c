@@ -101,7 +101,6 @@ char *	svName[NUM_STRING_VALS]= {
 int	svSrc[NUM_STRING_VALS];
 char *	svValue[NUM_STRING_VALS];
 
-XkbConfigFieldsRec	cfgDflts;
 XkbConfigRtrnRec	cfgResult;
 
 XkbRF_RulesPtr		rules= NULL;
@@ -532,9 +531,8 @@ addStringToOptions(char *opt_str,int *sz_opts,int *num_opts,char ***opts)
 char 	*tmp,*str,*next;
 Bool	ok= True;
 
-    if ((str= malloc(strlen(opt_str)+1))!=NULL)
-	 strcpy(str,opt_str);
-    else return False;
+    if ((str = strdup(opt_str)) == NULL)
+	return False;
     for (tmp= str,next=NULL;(tmp && *tmp!='\0')&&ok;tmp=next) {
 	next= strchr(str,',');
 	if (next) {

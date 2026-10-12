@@ -18,15 +18,6 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Major version of this package */
-#undef PACKAGE_VERSION_MAJOR
-
-/* Minor version of this package */
-#undef PACKAGE_VERSION_MINOR
-
-/* Patch version of this package */
-#undef PACKAGE_VERSION_PATCHLEVEL
-
 /* Define to enable Xprint */
 #undef USE_XPRINT
 

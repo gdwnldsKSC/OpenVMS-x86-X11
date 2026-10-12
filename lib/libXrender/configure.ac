@@ -32,7 +32,7 @@ dnl try to keep these the same.  Note that the library has an extra
 dnl digit in the version number to track changes which don't affect the
 dnl protocol, so Xrender version l.n.m corresponds to protocol version l.n
 dnl
-AC_INIT(libXrender, 0.9.2, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXrender)
+AC_INIT(libXrender, 0.9.4, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], libXrender)
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 

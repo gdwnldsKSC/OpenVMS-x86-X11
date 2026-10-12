@@ -627,6 +627,8 @@ StartClient (
 	    return (0);
 	}
 #endif   /* QNX4 doesn't support multi-groups, no initgroups() */
+#endif /* !HAS_SETUSERCONTEXT */
+
 #ifdef USE_PAM
 	if (pamh) {
 	    long i;
@@ -647,6 +649,8 @@ StartClient (
 
 	}
 #endif
+
+#ifndef HAS_SETUSERCONTEXT
 	if (setuid(verify->uid) < 0) {
 	    LogError ("setuid %d (user \"%s\") failed, errno=%d\n",
 		     verify->uid, name, errno);
@@ -769,6 +773,10 @@ StartClient (
 	}
 #endif /* K5AUTH */
 #endif /* !USE_PAM */
+
+	if (d->windowPath)
+		verify->userEnviron = setEnv(verify->userEnviron, "WINDOWPATH", d->windowPath);
+
 	if (passwd != NULL)
 	    bzero(passwd, strlen(passwd));
 
@@ -961,6 +969,8 @@ systemEnv (struct display *d, char *user, char *home)
     env = setEnv (env, "SHELL", d->systemShell);
     if (d->authFile)
 	    env = setEnv (env, "XAUTHORITY", d->authFile);
+    if (d->windowPath)
+	    env = setEnv (env, "WINDOWPATH", d->windowPath);
     return env;
 }
 

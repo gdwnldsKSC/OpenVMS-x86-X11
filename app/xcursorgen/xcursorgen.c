@@ -23,6 +23,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,8 +35,6 @@
 #include <X11/Xcursor/Xcursor.h>
 
 #include <png.h>
-
-#define VERSION_STR "0.1"
 
 struct flist
 {
@@ -48,7 +48,7 @@ struct flist
 static void
 usage (char *name)
 {
-  fprintf (stderr, "usage: %s [-Vh] [--version] [--help] [-p <dir>] [--prefix <dir>] [CONFIG [OUT]]\n",
+  fprintf (stderr, "usage: %s [-V] [--version] [-?] [--help] [-p <dir>] [--prefix <dir>] [CONFIG [OUT]]\n",
 	   name);
 
   fprintf (stderr, "Generate an Xcursor file from a series of PNG images\n");
@@ -117,15 +117,14 @@ read_config_file (char *config, struct flist **list)
 
       curr->delay = delay;
 
-      curr->pngfile = malloc (strlen (pngfile) + 1);
+      curr->pngfile = strdup (pngfile);
       if (curr->pngfile == NULL)
 	{
-          fprintf (stderr, "malloc() failed\n");
+          fprintf (stderr, "strdup() failed\n");
 	  fclose (fp);
+	  free(curr);
           return 0;
 	}
-    
-      strcpy (curr->pngfile, pngfile);
 
       curr->next = NULL;
 
@@ -319,6 +318,7 @@ write_cursors (int count, struct flist *list, char *filename, char *prefix)
       if (image == NULL)
 	{
 	  fprintf (stderr, "PNG error while reading %s!\n", list->pngfile);
+	  fclose(fp);
 	  return 1;
 	}
 
@@ -380,7 +380,7 @@ main (int argc, char *argv[])
     {
       if (strcmp (argv[i], "-V") == 0 || strcmp (argv[i], "--version") == 0)
         {
-          printf ("xcursorgen version %s\n", VERSION_STR);
+          printf ("xcursorgen version %s\n", PACKAGE_VERSION);
           return 0;
         }
 

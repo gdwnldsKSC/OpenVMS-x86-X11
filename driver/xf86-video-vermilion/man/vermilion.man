@@ -1,0 +1,74 @@
+.\" shorthand for double quote that works everywhere.
+.ds q \N'34'
+.TH VERMILION __drivermansuffix__ __vendorversion__
+.SH NAME
+vermilion \- Generic VERMILION video driver
+.SH SYNOPSIS
+.nf
+.B "Section \*qDevice\*q"
+.BI "  Identifier \*q"  devname \*q
+.B  "  Driver \*qvermilion\*q"
+\ \ ...
+.B EndSection
+.fi
+.SH DESCRIPTION
+.B vermilion
+is an __xservername__ driver for generic VERMILION video cards.  It can drive most
+VERMILION-compatible video cards, but only makes use of the basic standard
+VERMILION core that is common to these cards.  The driver supports depths 15
+and 24.
+.SH SUPPORTED HARDWARE
+The
+.B vermilion
+driver supports most VERMILION-compatible video cards.  There are some known
+exceptions, and those should be listed here.
+.SH CONFIGURATION DETAILS
+Please refer to __xconfigfile__(__filemansuffix__) for general configuration
+details.  This section only covers configuration details specific to this
+driver.
+.PP
+The driver auto-detects the presence of VERMILION-compatible hardware.  The
+.B ChipSet
+name may optionally be specified in the config file
+.B \*qDevice\*q
+section, and will override the auto-detection:
+.PP
+.RS 4
+"vermilion"
+.RE
+.PP
+The following driver
+.B Options
+are supported:
+.TP
+.BI "Option \*qShadowFB\*q \*q" boolean \*q
+Enable or disable use of the shadow framebuffer layer. This is currently
+enabled for depth 15 because of hardware restrictions, but disabled for
+depth 24 where the accelerator is used to give higher performance. 
+.TP
+.BI "Option \*qPanelType\*q \*q" integer \*q
+Sets the panel timing constraints to the timing of one of the
+pre-programmed panel types, and makes sure that the panel and panel
+backlight are switched on an off as appropriate. If this value is set
+to \*q-1\*q the driver ignores any panel timings and avoids trying to
+manipulate panel and backlight power. The currently supported values are:
+\*q-1\*q; don't assmume any panel timing constraints and
+\*q0\*q, assume that the connected panel is a SHARP LQ150X1LGN2A. Default: \*q0\*q.
+.TP
+.BI "Option \*qFusedClock\*q \*q" integer \*q
+The driver by default supports a set of 9 discrete dotclocks. These
+clocks are: (given as MHz (index)): 6.75(0), 13.5(1), 27.0(2), 29.7(3),
+37.125(4), 54.0(5), 59.4(6), 74.25(7) and 120.0(8). The driver can be
+forced to support only one of these clocks by giving the corresponding
+index as argument to this option. If an index of \*q-1\*q is given,
+the driver will support all of the above clocks. Default: \*q-1\* (All
+clocks supported).
+.TP
+.BI "Option \*qDebug\*q \*q" boolean \*q
+Enable a debug printout of the modesetting registers. Default: false.
+
+.SH "SEE ALSO"
+__xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), xorgcfg(__appmansuffix__), xorgconfig(__appmansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__)
+.SH AUTHORS
+Authors include: Michel Danzer <michel-at-tungstengraphics-dot-com>, Thomas Hellstrom <thomas-at-tungstengraphics-dot-com> and Alan Hourihane <alanh-at-tungstengraphics-dot-com>
+.TP

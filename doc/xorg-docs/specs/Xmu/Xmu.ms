@@ -1,4 +1,4 @@
-.\" $XdotOrg: doc/xorg-docs/specs/Xmu/Xmu.ms,v 1.3 2004/09/03 16:18:22 kem Exp $
+.\" $XdotOrg: xc/doc/specs/Xmu/Xmu.ms,v 1.2 2004/04/23 18:42:19 eich Exp $
 .\" $XFree86$
 .\"
 .sp 8

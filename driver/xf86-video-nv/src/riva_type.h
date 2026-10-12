@@ -1,5 +1,3 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nv/riva_type.h $ */
-
 #ifndef __Riva_STRUCT_H__
 #define __Riva_STRUCT_H__
 

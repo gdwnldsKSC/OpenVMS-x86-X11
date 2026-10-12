@@ -23,8 +23,6 @@
 /* Hacked together from mga driver and 3.3.4 NVIDIA driver by Jarno Paananen
    <jpaana@s2.org> */
 
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nv/riva_driver.c,v 1.5 2003/11/03 05:11:26 tsi Exp $ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -115,15 +113,6 @@ static const char *ddcSymbols[] = {
     NULL
 };
 
-#ifdef XFree86LOADER
-static const char *vbeSymbols[] = {
-    "VBEInit",
-    "vbeFree",
-    "vbeDoEDID",
-    NULL
-};
-#endif
-
 static const char *i2cSymbols[] = {
     "xf86CreateI2CBusRec",
     "xf86I2CBusInit",
@@ -165,27 +154,6 @@ static const char *int10Symbols[] = {
     NULL
 };
 
-
-#ifdef XFree86LOADER
-
-static MODULESETUPPROTO(rivaSetup);
-
-static XF86ModuleVersionInfo rivaVersRec =
-{
-    "riva",
-    MODULEVENDORSTRING,
-    MODINFOSTRING1,
-    MODINFOSTRING2,
-    XORG_VERSION_CURRENT,
-    PACKAGE_VERSION_MAJOR, PACKAGE_VERSION_MINOR, PACKAGE_VERSION_PATCHLEVEL,
-    ABI_CLASS_VIDEODRV,                     /* This is a video driver */
-    ABI_VIDEODRV_VERSION,
-    MOD_CLASS_VIDEODRV,
-    {0,0,0,0}
-};
-
-_X_EXPORT XF86ModuleData riva128ModuleData = { &rivaVersRec, rivaSetup, NULL };
-#endif
 
 
 typedef enum {
@@ -252,30 +220,6 @@ RivaFreeRec(ScrnInfoPtr pScrn)
     xfree(pScrn->driverPrivate);
     pScrn->driverPrivate = NULL;
 }
-
-
-#ifdef XFree86LOADER
-
-static pointer
-rivaSetup(pointer module, pointer opts, int *errmaj, int *errmin)
-{
-    static Bool setupDone = FALSE;
-
-    /* This module should be loaded only once, but check to be sure. */
-
-    if (!setupDone) {
-        setupDone = TRUE;
-
-        LoaderRefSymLists(vgahwSymbols, xaaSymbols, fbSymbols,
-                          ramdacSymbols, shadowSymbols,
-                          i2cSymbols, ddcSymbols, vbeSymbols,
-                          fbdevHWSymbols, int10Symbols, NULL);
-    } 
-    return (pointer)1;
-}
-
-
-#endif /* XFree86LOADER */
 
 _X_EXPORT const OptionInfoRec *
 RivaAvailableOptions(int chipid, int busid)
@@ -1396,4 +1340,3 @@ RivaSave(ScrnInfoPtr pScrn)
 
     (*pRiva->Save)(pScrn, vgaReg, rivaReg, pRiva->Primary);
 }
-

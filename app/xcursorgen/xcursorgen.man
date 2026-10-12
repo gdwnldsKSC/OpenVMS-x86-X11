@@ -21,17 +21,19 @@
 .\"
 .\" $XFree86: xc/programs/xcursorgen/xcursorgen.man,v 1.1 2002/09/03 06:48:28 keithp Exp $
 .\"
-.TH XCURSORGEN 1 __vendorversion__
+.TH XCURSORGEN __appmansuffix__ __vendorversion__
 .SH NAME
 xcursorgen \- create an X cursor file from a collection of PNG images
 .SH SYNOPSIS
 .B "xcursorgen"
-.RI [ config-file ]
-.RI [ output-file ]
+[ \fB\-V\fP ] [ \fB\-\-version\fP ] [ \fB\-?\fP ] [ \fB\-\-help\fP ]
+[ \fB\-p\fP \fIdir\fP ] [ \fB\-\-prefix\fP \fIdir\fP ]
+.RI "[ " config-file
+.RI "[ " output-file " ] ]"
 .SH DESCRIPTION
-Xcursorgen reads the config-file to find the list of cursor images along
+Xcursorgen reads the \fIconfig-file\fP to find the list of cursor images along
 with their hotspot and nominal size information.  Xcursorgen converts all of
-the images to Xcursor format and writes them to the output-file.
+the images to Xcursor format and writes them to the \fIoutput-file\fP.
 .P
 Each line in the config file is of the form:
 .br
@@ -42,5 +44,21 @@ Multiple images with the same <size> are used to create animated cursors,
 the <ms-delay> value on each line indicates how long each image should be
 displayed before switching to the next.  <ms-delay> can be elided for static
 cursors.
+.P
+If \fIconfig-file\fP is not specified, or is specified as "-",
+standard input is used for the configuration file.
+If \fIoutput-file\fP is not specified, or is specified as "-",
+standard output is used for the output file.
+.SH OPTIONS
+.TP 8
+.BR \-V ", " \-\-version
+Display the version number and exit.
+.TP 8
+.BR \-? ", " \-\-help
+Display the usage message and exit.
+.TP 8
+.BR "\-p \fIdir\fP" ", " "\-\-prefix \fIdir\fP"
+Find cursor images in the directory specified by \fIdir\fP.   If not specified,
+the current directory is used.
 .SH "SEE ALSO"
-Xcursor(3x)
+Xcursor(__libmansuffix__)

@@ -40,8 +40,7 @@ dnl
 # --------------------
 # Adds --with/without-release-string and changes the PACKAGE and
 # PACKAGE_TARNAME to use "$PACKAGE{_TARNAME}-$RELEASE_VERSION".  If
-# no option is given, PACKAGE and PACKAGE_TARNAME are unchanged.  Also
-# defines PACKAGE_VERSION_{MAJOR,MINOR,PATCHLEVEL} for modules to use.
+# no option is given, PACKAGE and PACKAGE_TARNAME are unchanged.
  
 AC_DEFUN([XORG_RELEASE_VERSION],[
 	AC_ARG_WITH(release-version,
@@ -54,23 +53,6 @@ AC_DEFUN([XORG_RELEASE_VERSION],[
 		PACKAGE_TARNAME="$PACKAGE_TARNAME-$RELEASE_VERSION"
 		AC_MSG_NOTICE([Building with package name set to $PACKAGE])
 	fi
-	AC_DEFINE_UNQUOTED([PACKAGE_VERSION_MAJOR],
-		[`echo $PACKAGE_VERSION | cut -d . -f 1`],
-		[Major version of this package])
-	PVM=`echo $PACKAGE_VERSION | cut -d . -f 2`
-	if test "x$PVM" = "x"; then
-		PVM="0"
-	fi
-	AC_DEFINE_UNQUOTED([PACKAGE_VERSION_MINOR],
-		[$PVM],
-		[Minor version of this package])
-	PVP=`echo $PACKAGE_VERSION | cut -d . -f 3`
-	if test "x$PVP" = "x"; then
-		PVP="0"
-	fi
-	AC_DEFINE_UNQUOTED([PACKAGE_VERSION_PATCHLEVEL],
-		[$PVP],
-		[Patch version of this package])
 ])
 
 # Copyright (C) 2002, 2003, 2005  Free Software Foundation, Inc.
@@ -269,6 +251,7 @@ AC_PROVIDE_IFELSE([AC_PROG_CXX],
                   [define([AC_PROG_CXX],
                           defn([AC_PROG_CXX])[_AM_DEPENDENCIES(CXX)])])dnl
 ])
+AC_REQUIRE([AM_PRETTY_CMDS])
 ])
 
 
@@ -486,6 +469,42 @@ AC_DEFUN([_AM_SET_OPTIONS],
 # Execute IF-SET if OPTION is set, IF-NOT-SET otherwise.
 AC_DEFUN([_AM_IF_OPTION],
 [m4_ifset(_AM_MANGLE_OPTION([$1]), [$2], [$3])])
+
+
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005
+# Free Software Foundation, Inc.
+#
+# This file is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# serial 8
+
+
+# AM_PRETTY_CMDS
+# ------------
+AC_DEFUN([AM_PRETTY_CMDS],
+[AC_ARG_ENABLE(pretty-cmds,
+[  --disable-pretty-cmds          show all commands executed
+  --enable-pretty-cmds           do not output the entire command lines])
+AMSHOWCMDSAT=''
+AMDEPSHOWCMDSAT=''
+AMPRETTYECHO=true
+AMCMDECHO=echo
+if test "x$enable_pretty_cmds" == xyes;
+then
+  AMSHOWCMDSAT='@'
+  _AM_IF_OPTION([no-dependencies],,test x$enable_dependency_tracking == xno &&) AMDEPSHOWCMDSAT='@'
+  AMPRETTYECHO=echo
+  AMCMDECHO=true
+  LT_QUIET='--quiet'
+fi
+AC_SUBST([AMSHOWCMDSAT])
+AC_SUBST([AMDEPSHOWCMDSAT])
+AC_SUBST([AMPRETTYECHO])
+AC_SUBST([AMCMDECHO])
+AC_SUBST([LT_QUIET])
+])
 
 # Check to make sure that the build environment is sane.    -*- Autoconf -*-
 

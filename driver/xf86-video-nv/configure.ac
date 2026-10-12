@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-video-nv],
-        1.2.2.1,
+        2.1.3,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-video-nv)
 
@@ -41,11 +41,17 @@ AC_PROG_CC
 
 AH_TOP([#include "xorg-server.h"])
 
+# Options
 AC_ARG_WITH(xorg-module-dir,
             AC_HELP_STRING([--with-xorg-module-dir=DIR],
                            [Default xorg module directory [[default=$libdir/xorg/modules]]]),
             [moduledir="$withval"],
             [moduledir="$libdir/xorg/modules"])
+
+AC_ARG_WITH(xserver-source,AC_HELP_STRING([--with-xserver-source=XSERVER_SOURCE],
+                                          [Path to X server source tree]),
+                           [ XSERVER_SOURCE="$withval" ],
+                           [ XSERVER_SOURCE="" ])
 
 # Checks for extensions
 XORG_DRIVER_CHECK_EXT(RANDR, randrproto)
@@ -53,14 +59,8 @@ XORG_DRIVER_CHECK_EXT(RENDER, renderproto)
 XORG_DRIVER_CHECK_EXT(XV, videoproto)
 XORG_DRIVER_CHECK_EXT(DPMSExtension, xextproto)
 
-# Determine whether XV PutImage takes a DrawablePtr and whether or not to use
-# the libcwrapper.
-PKG_CHECK_EXISTS([xorg-server >= 1.0.99.901],
-                 [AC_DEFINE(HAVE_XV_DRAWABLE,1,[XV hooks take a DrawablePtr])],
-                 [AC_DEFINE(USE_LIBC_WRAPPER,1,[Use the libc wrapper])])
-
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XORG, [xorg-server xproto fontsproto $REQUIRED_MODULES])
+PKG_CHECK_MODULES(XORG, [xorg-server >= 1.2 xproto fontsproto $REQUIRED_MODULES])
 sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 
 # Checks for libraries.
@@ -68,6 +68,47 @@ sdkdir=$(pkg-config --variable=sdkdir xorg-server)
 # Checks for header files.
 AC_HEADER_STDC
 
+save_CFLAGS="$CFLAGS"
+CFLAGS="$XORG_CFLAGS"
+AC_CHECK_HEADER(xf86Modes.h,[BUILD_XMODES=no],[BUILD_XMODES=yes],[#include "xorg-server.h"])
+CFLAGS="$save_CFLAGS"
+AM_CONDITIONAL(BUILD_XMODES, test "x$BUILD_XMODES" = xyes)
+if test "x$XSERVER_SOURCE" != x; then
+    if test -d "$XSERVER_SOURCE"; then
+        XSERVER_SOURCE=`cd "$XSERVER_SOURCE" && pwd`
+        if test -f "$XSERVER_SOURCE/hw/xfree86/modes/xf86Modes.h" -a -f "$XSERVER_SOURCE/hw/xfree86/parser/xf86Parser.h"; then
+            :
+        else
+            AC_ERROR([Server source at $XSERVER_SOURCE doesn't have the new mode code])
+        fi
+    else
+        AC_ERROR([Can't find xserver-source path $XSERVER_SOURCE])
+    fi
+fi
+if test "x$BUILD_XMODES" = xno; then
+    AC_MSG_NOTICE([X server has new mode code])
+    XMODES_CFLAGS=
+    parser_dir=
+    modes_dir=
+else
+    if test "x$XSERVER_SOURCE" = x; then
+            AC_MSG_NOTICE([X server is missing new mode code and --with-xserver-source not specified, using local copy])
+            AC_MSG_NOTICE([If you're building from git, please read compat/README])
+            parser_dir='$(top_srcdir)/compat/parser'
+            modes_dir='$(top_srcdir)/compat/modes'
+    else
+            AC_MSG_NOTICE([Using mode code from $XSERVER_SOURCE])
+            parser_dir="$XSERVER_SOURCE/hw/xfree86/parser"
+            modes_dir="$XSERVER_SOURCE/hw/xfree86/modes"
+    fi
+    XMODES_CFLAGS="-DXF86_MODES_RENAME -I\"$modes_dir\" -I\"$parser_dir\""
+    AC_DEFINE(BUILD_XMODES, 1,[X server doesn't have built-in mode code, so we need to build it])
+fi
+AC_SUBST([XMODES_CFLAGS])
+AC_SUBST([parser_dir])
+AC_SUBST([modes_dir])
+
+# Substitutions
 AC_SUBST([XORG_CFLAGS])
 AC_SUBST([moduledir])
 
@@ -81,4 +122,5 @@ AC_OUTPUT([
 	Makefile
 	src/Makefile
 	man/Makefile
+	compat/Makefile
 ])

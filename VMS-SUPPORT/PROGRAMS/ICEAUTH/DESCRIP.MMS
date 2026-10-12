@@ -5,10 +5,10 @@ ICEAUTH_BUILD_RULES = [.VMS-SUPPORT]CONFIG.MMS, [.VMS-SUPPORT]COMPILE.COM, -
                      [.VMS-SUPPORT]HEADERS.MMS, -
                      [.VMS-SUPPORT.PROGRAMS.ICEAUTH]DESCRIP.MMS
 ! Expose the installed RTL's fileno, isascii and link declarations in C99.
-ICEAUTH_CFLAGS = $(CFLAGS)/DEFINE=_XOPEN_SOURCE=600/MAIN=POSIX_EXIT
+ICEAUTH_CFLAGS = $(CFLAGS)/UNDEFINE=__HIDE_FORBIDDEN_NAMES/MAIN=POSIX_EXIT
 ! Rename upstream main so native permission setup runs before file operations.
 ! Every path in the renamed upstream main terminates through exit.
-ICEAUTH_MAIN_CFLAGS = $(ICEAUTH_CFLAGS)/DEFINE=(_XOPEN_SOURCE=600,""main""=VMS_ICEAUTH_MAIN) -
+ICEAUTH_MAIN_CFLAGS = $(ICEAUTH_CFLAGS)/DEFINE=(""main""=VMS_ICEAUTH_MAIN) -
     /WARNINGS=(ENABLE=LEVEL4,DISABLE=MISSINGRETURN)
 ! Pass the actual main's argv onward as an ordinary 64-bit pointer array.
 ICEAUTH_ENTRY_CFLAGS = $(ICEAUTH_CFLAGS)/POINTER_SIZE=64=ARGV

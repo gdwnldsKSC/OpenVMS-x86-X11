@@ -1,5 +1,3 @@
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nv/nv_type.h,v 1.51 2005/04/16 23:57:26 mvojkovi Exp $ */
-
 #ifndef __NV_STRUCT_H__
 #define __NV_STRUCT_H__
 
@@ -56,6 +54,7 @@ typedef struct _riva_hw_state
     U032 vpllB;
     U032 vpll2B;
     U032 pllsel;
+    U032 control;
     U032 general;
     U032 crtcOwner;
     U032 head;
@@ -69,6 +68,7 @@ typedef struct _riva_hw_state
     U032 timingV;
     U032 displayV;
     U032 crtcSync;
+    U032 crtcVSync;
 } RIVA_HW_STATE, *NVRegPtr;
 
 
@@ -132,6 +132,8 @@ typedef struct {
     void		(*PointerMoved)(int index, int x, int y);
     ScreenBlockHandlerProcPtr BlockHandler;
     CloseScreenProcPtr  CloseScreen;
+    xf86EnableDisableFBAccessProc *EnableDisableFBAccess;
+    Bool                accessEnabled;
     Bool                FBDev;
     int			Rotate;
     NVFBLayout		CurrentLayout;
@@ -158,6 +160,7 @@ typedef struct {
     Bool                fpScaler;
     int                 fpWidth;
     int                 fpHeight;
+    CARD32              fpVTotal;
     CARD32              fpSyncs;
     Bool                usePanelTweak;
     int                 PanelTweak;
@@ -173,6 +176,13 @@ typedef struct {
     Bool                WaitVSyncPossible;
     Bool                BlendingPossible;
     Bool                RandRRotation;
+
+    /* VBE dual-head */
+    Bool                VBEDualhead;
+    vbeInfoPtr          pVbe;
+    VbeInfoBlock       *pVbeInfo;
+    int                 vbeMode;
+    CARD32              vbeCRTC1Offset;
 } NVRec, *NVPtr;
 
 #define NVPTR(p) ((NVPtr)((p)->driverPrivate))

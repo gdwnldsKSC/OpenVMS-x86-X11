@@ -81,7 +81,7 @@
  */
 #define VMMOUSE_MAJOR_VERSION 12
 #define VMMOUSE_MINOR_VERSION 4
-#define VMMOUSE_PATCHLEVEL 0
+#define VMMOUSE_PATCHLEVEL 1
 
 /*****************************************************************************
  *	static function header
@@ -919,9 +919,18 @@ GetVMMouseMotionEvent(InputInfoPtr pInfo){
    int buttons, dx, dy, dz, dw;
    VMMOUSE_INPUT_DATA  vmmouseInput;
    int ps2Buttons = 0;
+   int numPackets;
 
    pMse = pInfo->private;  
-   while(VMMouseClient_GetInput(&vmmouseInput)){
+   while((numPackets = VMMouseClient_GetInput(&vmmouseInput))){
+      if (numPackets == VMMOUSE_ERROR) {
+         VMMouseClient_Disable();
+         VMMouseClient_Enable();
+         VMMouseClient_RequestAbsolute();
+         xf86Msg(X_INFO, "VMWARE(0): re-requesting absolute mode after reset\n");
+         break;
+      }
+
       if(vmmouseInput.Buttons & VMMOUSE_MIDDLE_BUTTON)
 	 ps2Buttons |= 0x04; 			/* Middle*/
       if(vmmouseInput.Buttons & VMMOUSE_RIGHT_BUTTON)

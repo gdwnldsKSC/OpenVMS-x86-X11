@@ -21,7 +21,7 @@ dnl
 dnl  Process this file with autoconf to create configure.
 
 AC_PREREQ([2.57])
-AC_INIT([xorg-docs], [1.2], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg])
+AC_INIT([xorg-docs], [1.4], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg])
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
 
 DEFAULT_X11DOCDIR=${datadir}/X11/doc
@@ -34,10 +34,27 @@ HARDCOPYDIR=$X11DOCDIR/hardcopy
 AC_SUBST([X11DOCDIR])
 AC_SUBST([HARDCOPYDIR])
 
+AC_ARG_ENABLE(txt, AS_HELP_STRING([--enable-txt],
+                [Build TXT versions of documents (default: enabled)]),
+                [BUILD_TXTDOC=$enableval], [BUILD_TXTDOC=yes])
+AC_ARG_ENABLE(pdf, AS_HELP_STRING([--enable-pdf],
+                [Build PDF versions of documents (default: enabled)]),
+                [BUILD_PDFDOC=$enableval], [BUILD_PDFDOC=yes])
+AC_ARG_ENABLE(ps, AS_HELP_STRING([--enable-ps],
+                [Build PostScript versions of documents (default: disabled)]),
+                [BUILD_PSDOC=$enableval], [BUILD_PSDOC=no])
+AC_ARG_ENABLE(html, AS_HELP_STRING([--enable-html],
+                [Build HTML versions of documents (default: disabled)]),
+                [BUILD_HTMLDOC=$enableval], [BUILD_HTMLDOC=no])
+
 XORG_MANPAGE_SECTIONS
 XORG_RELEASE_VERSION
 
-XORG_CHECK_LINUXDOC
+AM_CONDITIONAL(BUILD_TXTDOC, test "x$BUILD_TXTDOC" = xyes)
+AM_CONDITIONAL(BUILD_PDFDOC, test "x$BUILD_PDFDOC" = xyes)
+AM_CONDITIONAL(BUILD_PSDOC, test "x$BUILD_PSDOC" = xyes)
+AM_CONDITIONAL(BUILD_HTMLDOC, test "x$BUILD_HTMLDOC" = xyes)
+XORG_CHECK_DOCBOOK
 
 AC_OUTPUT([Makefile
            hardcopy/Makefile
@@ -70,4 +87,13 @@ AC_OUTPUT([Makefile
            hardcopy/Xv/Makefile
            man/Makefile
            man/general/Makefile
-           sgml/Makefile])
+           sgml/Makefile
+	   sgml/core/Makefile
+	   sgml/ddx/Makefile
+	   sgml/fonts/Makefile
+	   sgml/graphics/Makefile
+	   sgml/input/Makefile
+	   sgml/output/Makefile
+	   sgml/platforms/Makefile
+	   sgml/registry/Makefile
+	   sgml/security/Makefile])

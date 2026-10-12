@@ -144,25 +144,6 @@
 #include "config.h"
 #endif
 
-#if defined(linux)			/* Linux */
-
-#ifdef __KERNEL__
-
-#include <linux/string.h>
-#include <asm/io.h>
-
-#elif !defined(XFree86Server)
-
-#include <linux/fs.h>
-#include <asm/mman.h>
-
-#endif /* __KERNEL__ */
-#elif defined(_WIN32)			/* windows */
-
-#include <windows.h>
-
-#endif
-
 #include "panel.h"
 #include "gfx_defs.h"
 #include "nsc.h"

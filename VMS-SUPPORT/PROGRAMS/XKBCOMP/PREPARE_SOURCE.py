@@ -9,11 +9,15 @@ import re
 import zipfile
 
 
+PROVIDER = "extras/xkeyboard-config"
+
+
 def input_mappings(root):
-    """Follow the modular xkbdata distributed-data installation rules."""
-    base = root / "data" / "xkbdata"
+    """Follow xkeyboard-config's distributed component and rules installation."""
+    base = root / PROVIDER
     mappings = []
-    makefiles = []
+    makefiles = [PROVIDER + "/" + name for name in
+                 ("Makefile.am", "configure.in", "xkbrules.am", "rules/Makefile.am")]
     visited = set()
 
     def words(value, filename):
@@ -23,12 +27,17 @@ def input_mappings(root):
             raise ValueError("Unsupported Automake input: " + str(filename))
         return result
 
+    def assignments(text, name, filename):
+        values = re.findall(r"^" + re.escape(name) + r"\s*=([^\n]*)", text, re.M)
+        if len(values) != 1:
+            raise ValueError("Missing or ambiguous " + name + ": " + str(filename))
+        return values[0]
+
     def visit(relative):
         if relative in visited:
             raise ValueError("Repeated XKB data directory: " + relative)
         visited.add(relative)
-        directory = base / relative
-        filename = directory / "Makefile.am"
+        filename = base / relative / "Makefile.am"
         makefiles.append(filename.relative_to(root).as_posix())
         text = filename.read_text(encoding="ascii").replace("\\\n", " ")
         for match in re.finditer(r"^dist_[A-Za-z0-9_]+_DATA\s*=([^\n]*)", text, re.M):
@@ -41,7 +50,40 @@ def input_mappings(root):
         for child in words(subdirs[0] if subdirs else "", filename):
             visit((Path(relative) / child).as_posix())
 
-    visit("")
+    top = base / "Makefile.am"
+    top_text = top.read_text(encoding="ascii").replace("\\\n", " ")
+    subdirs = words(assignments(top_text, "SUBDIRS", top), top)
+    components = ("compat", "geometry", "keycodes", "keymap", "semantics", "symbols", "types")
+    if any(component not in subdirs for component in components) or "rules" not in subdirs:
+        raise ValueError("Missing upstream XKB installation section")
+    for component in components:
+        visit(component)
+
+    rules = base / "rules" / "Makefile.am"
+    rules_text = rules.read_text(encoding="ascii").replace("\\\n", " ")
+    variables = {}
+    for name in ("rules_files", "lst_files", "all_rules_files", "rules_DATA"):
+        value = assignments(rules_text, name, rules)
+        def expand(match):
+            if match[1] not in variables:
+                raise ValueError("Unsupported rules variable: " + match[1])
+            return variables[match[1]]
+        variables[name] = re.sub(r"\$\(([A-Za-z0-9_]+)\)", expand, value)
+    for leaf in words(variables["rules_DATA"], rules):
+        mappings.append(("rules/" + leaf, "rules/" + leaf))
+
+    # Upstream --with-xkb-rules-symlink=xorg installs these aliases. Native
+    # staging uses byte-identical copies; the XML-only consumer is not built.
+    for source, suffix, variable in (("base", "", "extra_rules_file"),
+                                     ("base.lst", ".lst", "extra_lst_file")):
+        pattern = (r"ln\s+-sf\s+" + re.escape(source) +
+                   r"\s+\$\(DESTDIR\)\$\(rulesdir\)/\$\$" + variable + r"\s*;")
+        if not re.search(pattern, rules_text):
+            raise ValueError("Upstream rules alias hook changed")
+        if ("rules/" + source, "rules/" + source) not in mappings:
+            raise ValueError("Alias source is not distributed: " + source)
+        mappings.append(("rules/" + source, "rules/xorg" + suffix))
+
     mappings.sort(key=lambda pair: pair[1].casefold())
     destinations = [destination.casefold() for _, destination in mappings]
     if len(destinations) != len(set(destinations)):
@@ -54,7 +96,7 @@ def input_mappings(root):
 
 
 def listing(mappings):
-    return "! Upstream xkbdata Makefile.am distributed-data installation: source|destination\n" + "".join(
+    return "! Upstream xkeyboard-config distributed-data installation and xorg aliases: source|destination\n" + "".join(
         source + "|" + destination + "\n" for source, destination in mappings)
 
 
@@ -64,7 +106,7 @@ def package(root):
     support = "VMS-SUPPORT/PROGRAMS/XKBCOMP/"
     if (root / support / "DATA.LIST").read_text(encoding="ascii") != listing(mappings):
         raise ValueError("DATA.LIST does not match the upstream Makefile.am files")
-    files = sorted(set(makefiles + ["deprecated/xkbdata/" + source for source, _ in mappings]
+    files = sorted(set(makefiles + [PROVIDER + "/" + source for source, _ in mappings]
                        + [support + name for name in controls]))
     payload = io.BytesIO()
     manifest = []

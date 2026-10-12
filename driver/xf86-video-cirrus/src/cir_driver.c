@@ -303,7 +303,7 @@ CIRProbe(DriverPtr drv, int flags)
  	if (pScrn) {
  	    foundScreen = TRUE;
  	    /* Fill in what we can of the ScrnInfoRec */
- 	    pScrn->driverVersion = CIR_VERSION;
+ 	    pScrn->driverVersion = VERSION;
  	    pScrn->driverName	 = CIR_DRIVER_NAME;
  	    pScrn->name		 = CIR_NAME;
  	    pScrn->Probe	 = NULL;

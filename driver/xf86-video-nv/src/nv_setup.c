@@ -37,8 +37,6 @@
 |*                                                                           *|
  \***************************************************************************/
 
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/nv/nv_setup.c,v 1.48 2005/09/14 02:28:03 mvojkovi Exp $ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -174,7 +172,7 @@ NVIsConnected (ScrnInfoPtr pScrn, int output)
 {
     NVPtr pNv = NVPTR(pScrn);
     volatile U032 *PRAMDAC = pNv->PRAMDAC0;
-    CARD32 reg52C, reg608, dac0_reg608;
+    CARD32 reg52C, reg608, dac0_reg608 = 0;
     Bool present;
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
@@ -687,6 +685,7 @@ NVCommonSetup(ScrnInfoPtr pScrn)
     if(pNv->FlatPanel && !pNv->Television) {
        pNv->fpWidth = pNv->PRAMDAC[0x0820/4] + 1;
        pNv->fpHeight = pNv->PRAMDAC[0x0800/4] + 1;
+       pNv->fpVTotal = pNv->PRAMDAC[0x804/4] + 1;
        pNv->fpSyncs = pNv->PRAMDAC[0x0848/4] & 0x30000033;
        xf86DrvMsg(pScrn->scrnIndex, X_PROBED, "Panel size is %i x %i\n",
                   pNv->fpWidth, pNv->fpHeight);
@@ -707,4 +706,3 @@ NVCommonSetup(ScrnInfoPtr pScrn)
                    pNv->LVDS ? "LVDS" : "TMDS");
     }
 }
-

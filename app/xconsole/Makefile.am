@@ -21,7 +21,7 @@
 
 bin_PROGRAMS = xconsole
 
-xconsole_CFLAGS = $(XCONSOLE_CFLAGS)
+AM_CFLAGS = $(XCONSOLE_CFLAGS)
 xconsole_LDADD = $(XCONSOLE_LIBS)
 
 xconsole_SOURCES =	\
@@ -80,3 +80,10 @@ SUFFIXES += .$(APP_MAN_SUFFIX) .man
 
 .man.$(APP_MAN_SUFFIX):
 	sed $(MAN_SUBSTS) < $< > $@
+
+.PHONY: ChangeLog
+
+ChangeLog:
+	GIT_DIR=${srcdir}/.git git-log --name-only > ChangeLog
+
+dist-hook: ChangeLog

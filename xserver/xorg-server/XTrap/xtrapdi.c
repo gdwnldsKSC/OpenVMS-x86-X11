@@ -1060,7 +1060,7 @@ int XETrapRequestVector(ClientPtr client)
     int status = True;
     XETrapDatum *pdata, *spdata = NULL;
     REQUEST(xResourceReq);
-    WindowPtr window_ptr;
+    DrawablePtr window_ptr;
     XETrapEnv *penv;
     BYTE *tptr;
     ClientList *ioc = &io_clients;
@@ -1092,17 +1092,17 @@ int XETrapRequestVector(ClientPtr client)
             pdata->hdr.client = client->index;  /* stuff client index in hdr */
             if (BitIsTrue(penv->cur.data_config_flags_data,XETrapWinXY))
             {
-                window_ptr = (WindowPtr) LookupDrawable(stuff->id, client);
-                if (window_ptr == 0L)
+		if (Success != dixLookupDrawable(&window_ptr, stuff->id,
+						 client, 0, DixUnknownAccess))
                 {   /* Failed...invalidate the X and Y coordinate data. */
                     pdata->hdr.win_x = -1L;
                     pdata->hdr.win_y = -1L;
                 }
                 else
                 {
-                    pdata->hdr.screen = window_ptr->drawable.pScreen->myNum;
-                    pdata->hdr.win_x = window_ptr->drawable.x;
-                    pdata->hdr.win_y = window_ptr->drawable.y;
+                    pdata->hdr.screen = window_ptr->pScreen->myNum;
+                    pdata->hdr.win_x = window_ptr->x;
+                    pdata->hdr.win_y = window_ptr->y;
                 }
             }
             if (BitIsTrue(penv->cur.data_config_flags_data,XETrapTimestamp))

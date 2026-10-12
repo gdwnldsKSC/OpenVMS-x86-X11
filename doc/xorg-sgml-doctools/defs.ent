@@ -4,24 +4,24 @@
 
 <!-- Xorg version string -->
 <!ENTITY majorvers CDATA "7">
-<!ENTITY reldate CDATA "22 May 2006">
-<!ENTITY relvers CDATA "7.1">
-<!ENTITY prevrelvers CDATA "7.0">
-<!ENTITY fullrelvers CDATA "7.1.0">
-<!ENTITY prevfullrelvers CDATA "7.0.0">
-<!ENTITY nextrelvers CDATA "7.2">
-<!ENTITY nextfullrelvers CDATA "7.2.0">
-<!ENTITY nextfullreldate CDATA "late 2006">
-<!ENTITY nextupdrelvers CDATA "7.1.1">
+<!ENTITY reldate CDATA "15 February 2007">
+<!ENTITY relvers CDATA "7.2">
+<!ENTITY prevrelvers CDATA "7.1">
+<!ENTITY fullrelvers CDATA "7.2.0">
+<!ENTITY prevfullrelvers CDATA "7.1.0">
+<!ENTITY nextrelvers CDATA "7.3">
+<!ENTITY nextfullrelvers CDATA "7.3.0">
+<!ENTITY nextfullreldate CDATA "mid 2007">
+<!ENTITY nextupdrelvers CDATA "7.2.1">
 
 <!ENTITY srcvers CDATA "440">
 <!ENTITY prevsrcvers CDATA "660">
 <!ENTITY fullsrcvers CDATA "440">
 <!ENTITY prevfullsrcvers CDATA "660">
-<!ENTITY whichfullrel CDATA "ninth">
+<!ENTITY whichfullrel CDATA "tenth">
 <!ENTITY whichupdaterel CDATA "none">
-<!ENTITY reltag CDATA "XORG-7_1">
-<!ENTITY relbranchtag CDATA "XORG-7_1-branch">
+<!ENTITY reltag CDATA "XORG-7_2">
+<!ENTITY relbranchtag CDATA "XORG-7_2-branch">
 <!ENTITY rcnum CDATA "0">
 
 <!-- Version of the most recent 3.3.x release -->

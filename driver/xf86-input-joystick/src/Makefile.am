@@ -28,4 +28,20 @@
 @DRIVER_NAME@_drv_la_LDFLAGS = -module -avoid-version
 @DRIVER_NAME@_drv_ladir = @inputdir@
 
-@DRIVER_NAME@_drv_la_SOURCES = xf86Jstk.c
+@DRIVER_NAME@_drv_la_SOURCES = jstk.c jstk.h jstk_hw.h \
+    			       jstk_axis.c jstk_axis.h \
+    			       jstk_options.c jstk_options.h
+
+BSD_SRCS   = bsd_jstk.c
+LINUX_SRCS = linux_jstk.c
+
+if BSD
+@DRIVER_NAME@_drv_la_SOURCES += $(BSD_SRCS)
+@DRIVER_NAME@_drv_la_LDFLAGS += -lusbhid
+endif
+
+if LINUX
+@DRIVER_NAME@_drv_la_SOURCES += $(LINUX_SRCS)
+endif
+
+EXTRA_DIST = $(BSD_SRCS) $(LINUX_SRCS)

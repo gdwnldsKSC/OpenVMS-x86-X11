@@ -211,10 +211,10 @@
 /* This should match the durango code version.
  * The patchlevel may be used to indicate changes in geode.c 
  */
-#define NSC_VERSION_NAME    "2.8.1"
-#define NSC_VERSION_MAJOR   2
-#define NSC_VERSION_MINOR   8
-#define NSC_PATCHLEVEL      1
+#define NSC_VERSION_NAME    PACKAGE_VERSION
+#define NSC_VERSION_MAJOR   PACKAGE_VERSION_MAJOR
+#define NSC_VERSION_MINOR   PACKAGE_VERSION_MINOR
+#define NSC_PATCHLEVEL      PACKAGE_VERSION_PATCHLEVEL
 
 #define NSC_VERSION_CURRENT ((NSC_VERSION_MAJOR << 24) | \
 		(NSC_VERSION_MINOR << 16) | NSC_PATCHLEVEL)

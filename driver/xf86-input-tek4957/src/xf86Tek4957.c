@@ -1,4 +1,4 @@
-/* $XdotOrg: driver/xf86-input-tek4957/src/xf86Tek4957.c,v 1.10 2006/04/07 18:12:40 ajax Exp $ */
+/* $XdotOrg: driver/xf86-input-tek4957/src/xf86Tek4957.c,v 1.9 2005/07/13 02:18:12 kem Exp $ */
 /*
  * Copyright 2002 by Olivier DANET <odanet@caramail.com>
  *

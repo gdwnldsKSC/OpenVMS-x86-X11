@@ -20,56 +20,12 @@
 #
 #  Process this file with autoconf to create configure.
 
-SGML_FILES = \
-	Darwin.sgml \
-	dps.sgml \
-	fonts.sgml \
-	Install.sgml \
-	LICENSE.sgml \
-	LynxOS.sgml \
-	NetBSD.sgml \
-	OpenBSD.sgml \
-	OS2Notes.sgml \
-	README.sgml \
-	RELNOTES.sgml \
-	SCO.sgml \
-	Solaris.sgml \
-	Versions.sgml \
-	XKB-Config.sgml \
-	XKB-Enhancing.sgml
+SUBDIRS = core ddx fonts graphics input output platforms registry security
 
-if BUILD_LINUXDOC
-TXT_FILES  = $(SGML_FILES:%.sgml=%.txt)
-PS_FILES   = $(SGML_FILES:%.sgml=%.ps)
-if BUILD_PDFDOC
-PDF_FILES  = $(SGML_FILES:%.sgml=%.pdf)
-endif
-HTML_FILES = $(SGML_FILES:%.sgml=%.html)
-
-SUFFIXES = .sgml .txt .html .ps .pdf
-
-.sgml.txt:
-	@rm -f $@
-	$(MAKE_TEXT) $<
-
-.sgml.ps:
-	@rm -f $@
-	$(MAKE_PS) $<
-
-.ps.pdf:
-	@rm -f $@
-	$(MAKE_PDF) $<
-
-.sgml.html:
-	@rm -f $@
-	$(MAKE_HTML) $<
-
-noinst_DATA = $(TXT_FILES) $(PS_FILES) $(PDF_FILES) $(HTML_FILES)
-CLEANFILES = $(TXT_FILES) $(PS_FILES) $(PDF_FILES) $(HTML_FILES)
-endif
+x11docdir = @X11DOCDIR@
+include $(top_srcdir)/sgmlrules.in
 
 EXTRA_DIST = \
-	$(SGML_FILES) \
 	add.sh \
 	index.post \
 	index.pre \

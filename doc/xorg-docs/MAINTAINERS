@@ -236,6 +236,13 @@ L:	xorg@lists.freedesktop.org
 W:	http://wiki.x.org
 S:	Obsolete
 
+XACE subsystem (security policy extensions framework)
+P:	Eamon Walsh
+M:	ewalsh@tycho.nsa.gov
+L:	xorg@lists.freedesktop.org
+W:	http://people.freedesktop.org/~ewalsh/xace_proposal.html
+S:	Maintained
+
 Xfixes extension
 P:	Keith Packard
 M:	keith.packard@intel.com

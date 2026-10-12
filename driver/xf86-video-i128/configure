@@ -20248,37 +20248,11 @@ fi;
 echo "$as_me: Building with package name set to $PACKAGE" >&6;}
 	fi
 
-cat >>confdefs.h <<_ACEOF
-#define PACKAGE_VERSION_MAJOR `echo $PACKAGE_VERSION | cut -d . -f 1`
-_ACEOF
-
-	PVM=`echo $PACKAGE_VERSION | cut -d . -f 2`
-	if test "x$PVM" = "x"; then
-		PVM="0"
-	fi
-
-cat >>confdefs.h <<_ACEOF
-#define PACKAGE_VERSION_MINOR $PVM
-_ACEOF
-
-	PVP=`echo $PACKAGE_VERSION | cut -d . -f 3`
-	if test "x$PVP" = "x"; then
-		PVP="0"
-	fi
-
-cat >>confdefs.h <<_ACEOF
-#define PACKAGE_VERSION_PATCHLEVEL $PVP
-_ACEOF
 
 
-
-
-XORG_SGML_PATH=$prefix/share/sgml
-HAVE_DEFS_ENT=
-
-as_ac_File=`echo "ac_cv_file_$XORG_SGML_PATH/X11/defs.ent" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $XORG_SGML_PATH/X11/defs.ent" >&5
-echo $ECHO_N "checking for $XORG_SGML_PATH/X11/defs.ent... $ECHO_C" >&6
+as_ac_File=`echo "ac_cv_file_$prefix/share/X11/sgml/defs.ent" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $prefix/share/X11/sgml/defs.ent" >&5
+echo $ECHO_N "checking for $prefix/share/X11/sgml/defs.ent... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -20286,7 +20260,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "$XORG_SGML_PATH/X11/defs.ent"; then
+if test -r "$prefix/share/X11/sgml/defs.ent"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -20295,7 +20269,10 @@ fi
 echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
 echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
-  HAVE_DEFS_ENT=yes
+  DEFS_ENT_PATH=$prefix/share/X11/sgml
+else
+  DEFS_ENT_PATH=
+
 fi
 
 
@@ -20381,7 +20358,7 @@ fi
 echo "$as_me:$LINENO: checking Whether to build documentation" >&5
 echo $ECHO_N "checking Whether to build documentation... $ECHO_C" >&6
 
-if test x$HAVE_DEFS_ENT != x && test x$LINUXDOC != x ; then
+if test x$DEFS_ENT_PATH != x && test x$LINUXDOC != x ; then
    BUILDDOC=yes
 else
    BUILDDOC=no
@@ -20404,7 +20381,7 @@ echo "${ECHO_T}$BUILDDOC" >&6
 echo "$as_me:$LINENO: checking Whether to build pdf documentation" >&5
 echo $ECHO_N "checking Whether to build pdf documentation... $ECHO_C" >&6
 
-if test x$PS2PDF != x && test x$BUILD_PDFDOC != xno; then
+if test x$PS2PDF != x ; then
    BUILDPDFDOC=yes
 else
    BUILDPDFDOC=no
@@ -20424,10 +20401,10 @@ fi
 echo "$as_me:$LINENO: result: $BUILDPDFDOC" >&5
 echo "${ECHO_T}$BUILDPDFDOC" >&6
 
-MAKE_TEXT="SGML_SEARCH_PATH=$XORG_SGML_PATH GROFF_NO_SGR=y $LINUXDOC -B txt"
-MAKE_PS="SGML_SEARCH_PATH=$XORG_SGML_PATH $LINUXDOC -B latex --papersize=letter --output=ps"
+MAKE_TEXT="SGML_SEARCH_PATH=$DEFS_ENT_PATH GROFF_NO_SGR=y $LINUXDOC -B txt"
+MAKE_PS="SGML_SEARCH_PATH=$DEFS_ENT_PATH $LINUXDOC -B latex --papersize=letter --output=ps"
 MAKE_PDF="$PS2PDF"
-MAKE_HTML="SGML_SEARCH_PATH=$XORG_SGML_PATH $LINUXDOC  -B html --split=0"
+MAKE_HTML="SGML_SEARCH_PATH=$DEFS_ENT_PATH $LINUXDOC  -B html --split=0"
 
 
 

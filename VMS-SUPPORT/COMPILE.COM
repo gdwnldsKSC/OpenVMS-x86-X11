@@ -30,6 +30,7 @@ $ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|
 $ profiles = profiles + "XORGFB|"
 $ profiles = profiles + "LOADER|"
 $ profiles = profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
+$ profiles = profiles + "PIXMAN|CONFIG|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -41,6 +42,7 @@ $ IF rtl_headers .EQS. "" THEN GOTO done
 $ IF (P4 .EQS. "GTF") .OR. (P4 .EQS. "RTL") THEN GOTO rtl_headers
 $ IF P4 .EQS. "ZLIB" THEN GOTO zlib_headers
 $ IF P4 .EQS. "FONTENC" THEN GOTO fontenc_headers
+$ IF P4 .EQS. "PIXMAN" THEN GOTO pixman_headers
 $ inherited_x11 = F$TRNLNM("X11")
 $ inherited_table = F$TRNLNM("X11",,,,,"TABLE_NAME")
 $ IF F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
@@ -178,10 +180,12 @@ $ IF P4 .EQS. "ICEAUTH" THEN include_directory = include_directory + -
     ",[.APP.ICEAUTH]"
 $ IF P4 .EQS. "XAUTH" THEN include_directory = -
     "[.APP.XAUTH]," + include_directory
-$ IF P4 .EQS. "XWININFO" THEN include_directory = include_directory + -
+$ IF P4 .EQS. "XWININFO" THEN include_directory = -
+    "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XWININFO]," + include_directory + -
     ",[.APP.XWININFO],[.APP.XLSFONTS]"
 $ IF P4 .EQS. "XSET" THEN include_directory = include_directory + ",[.APP.XSET]"
-$ IF P4 .EQS. "XMODMAP" THEN include_directory = include_directory + ",[.APP.XMODMAP]"
+$ IF P4 .EQS. "XMODMAP" THEN include_directory = -
+    "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XMODMAP]," + include_directory + ",[.APP.XMODMAP]"
 $ IF P4 .EQS. "XEV" THEN include_directory = include_directory + ",[.APP.XEV]"
 $ IF P4 .EQS. "XKBCOMP" THEN include_directory = -
     "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XKBCOMP],[.APP.XKBCOMP]," + include_directory
@@ -194,6 +198,7 @@ $ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|RAC|COMMON|INIT
 $ server_profiles = server_profiles + "XORGFB|"
 $ server_profiles = server_profiles + "LOADER|"
 $ server_profiles = server_profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
+$ server_profiles = server_profiles + "CONFIG|"
 $! Native case folding makes server xfixes.h collide with client Xfixes.h.
 $! Keep the server header ahead of the exported client extension directory.
 $ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
@@ -203,10 +208,17 @@ $ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
     "[.XSERVER.XORG-SERVER.XFIXES]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
     "[.XSERVER.XORG-SERVER.MIEXT.DAMAGE],[.XSERVER.XORG-SERVER.INCLUDE]," + -
-    "[.XSERVER.XORG-SERVER.MI],[.XSERVER.XORG-SERVER.RENDER]"
+    "[.XSERVER.XORG-SERVER.MI],[.XSERVER.XORG-SERVER.RENDER]," + -
+    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.PIXMAN],[.XSERVER.XORG-SERVER.XI]"
 $ IF P4 .EQS. "MI" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.MFB],[.XSERVER.XORG-SERVER.XEXT]," + -
     "[.XSERVER.XORG-SERVER.XFIXES],[.XSERVER.XORG-SERVER.DAMAGEEXT]"
+$ IF P4 .EQS. "CONFIG" THEN include_directory = include_directory + -
+    ",[.XSERVER.XORG-SERVER.CONFIG]"
+$ IF P4 .EQS. "XF86_INPUT_KEYBOARD" THEN include_directory = include_directory + -
+    ",[.DRIVER.XF86-INPUT-KEYBOARD.SRC]"
+$ IF P4 .EQS. "XF86_INPUT_MOUSE" THEN include_directory = include_directory + -
+    ",[.DRIVER.XF86-INPUT-MOUSE.SRC]"
 $ IF P4 .EQS. "SHADOWFB" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.BUS]," + -
@@ -302,7 +314,8 @@ $ IF P4 .EQS. "XKB" THEN include_directory = include_directory + -
     ",""./VMS-SUPPORT/_BUILD/P64/INCLUDE/X11"""
 $ IF P4 .EQS. "CFB" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.CFB]," + -
-    "[.XSERVER.XORG-SERVER.MFB],[.XSERVER.XORG-SERVER.XEXT]"
+    "[.XSERVER.XORG-SERVER.MFB],[.XSERVER.XORG-SERVER.XEXT]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]"
 $ IF P4 .EQS. "CFB" THEN GOSUB cfb_native
 $ IF (P4 .EQS. "CFB") .AND. (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done
 $ IF P4 .EQS. "ROOTLESS" THEN include_directory = include_directory + -
@@ -336,7 +349,8 @@ $ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN include_directory = -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.DDC]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.I2C]," + -
     "[.XSERVER.XORG-SERVER.INCLUDE],[.XSERVER.XORG-SERVER.MI]," + -
-    "[.XSERVER.XORG-SERVER.FB],[.XSERVER.XORG-SERVER.RENDER]"
+    "[.XSERVER.XORG-SERVER.FB],[.XSERVER.XORG-SERVER.RENDER]," + -
+    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.PIXMAN]"
 $ IF header .EQS. "" THEN GOTO done
 $ headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")
 $ DEFINE/USER_MODE/TABLE=LNM$PROCESS X11 'headers'
@@ -372,6 +386,10 @@ $rtl_headers:
 $! These utilities need only the explicit native RTL header library, not X11.
 $ include_directory = """"""
 $ GOTO compile
+$pixman_headers:
+$ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.PIXMAN]PIXMAN.H") .EQS. "" THEN GOTO done
+$ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE.PIXMAN],[.EXTRAS.PIXMAN.PIXMAN]"
+$ GOTO compile
 $zlib_headers:
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]ZLIB.H") .EQS. "" THEN GOTO done
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]ZCONF.H") .EQS. "" THEN GOTO done
@@ -391,24 +409,13 @@ $ IF (P4 .NES. "GTF") .AND. (P4 .NES. "RTL") THEN -
     F$PARSE(P1,,,"DEVICE") + F$PARSE(P1,,,"DIRECTORY")
 $ IF (P4 .EQS. "MI") .OR. (P4 .EQS. "EXT") .OR. -
      (P4 .EQS. "RAMDAC") .OR. (P4 .EQS. "XAA") THEN GOSUB mi_context
-$! Retain reviewed upstream pointer-difference warnings in the native logs.
-$! Only the named source files' MAYLOSEDATA3 status is an accepted warning.
-$ offset_warning = 0
-$ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN -
-    offset_warning = (F$PARSE(P1,,,"NAME") .EQS. "OFFSCREEN_MANAGER") .OR. -
-                     (F$PARSE(P1,,,"NAME") .EQS. "VMWAREXAA")
-$! These are same-string font-path lengths, not pointer-to-address casts.
-$ IF P4 .EQS. "COMMON" THEN -
-    offset_warning = F$PARSE(P1,,,"NAME") .EQS. "XF86CONFIG"
-$ IF offset_warning THEN ON WARNING THEN CONTINUE
+$! Recipes scope reviewed diagnostics; unexpected warnings remain fatal.
 $ CC 'P3' 'P5' 'first_include' /NESTED_INCLUDE_DIRECTORY=NONE -
     /INCLUDE_DIRECTORY=('include_directory',"") -
     /LIST='P2'.LIS/SHOW=INCLUDE -
     /MMS_DEPENDENCIES=(FILE='P2'.MMS,SYSTEM_INCLUDE_FILES) -
     /OBJECT='P2'.OBJ 'P1' + 'rtl_headers'/LIBRARY
 $ result = $STATUS
-$ ON WARNING THEN GOTO failed
-$ IF offset_warning .AND. (result .EQ. %X10B91260) THEN result = 1
 $ IF .NOT. result THEN GOTO done
 $ IF .NOT. scoped THEN GOTO done
 $ IF F$TRNLNM("X11") .NES. inherited_x11 THEN result = 2

@@ -213,7 +213,8 @@ typedef enum {
     OPTION_VMIN,
     OPTION_DRAGLOCKBUTTONS,
     OPTION_DOUBLECLICK_BUTTONS,
-    OPTION_BUTTON_MAPPING
+    OPTION_BUTTON_MAPPING,
+    OPTION_SENSITIVITY
 } MouseOpts;
 
 #ifdef XFree86LOADER
@@ -257,6 +258,7 @@ static const OptionInfoRec mouseOptions[] = {
     { OPTION_DRAGLOCKBUTTONS,	"DragLockButtons",OPTV_STRING,	{0}, FALSE },
     { OPTION_DOUBLECLICK_BUTTONS,"DoubleClickButtons", OPTV_STRING, {0}, FALSE },
     { OPTION_BUTTON_MAPPING,   "ButtonMapping",   OPTV_STRING,  {0}, FALSE },
+    { OPTION_SENSITIVITY,      "Sensitivity",     OPTV_REAL,    {0}, FALSE },
     { -1,			NULL,		  OPTV_NONE,	{0}, FALSE }
 };
 #endif
@@ -799,6 +801,12 @@ MouseHWOptions(InputInfoPtr pInfo)
 	xf86Msg(X_CONFIG, "%s: Resolution: %d\n", pInfo->name,
 		pMse->resolution);
     }
+
+    if (mPriv->sensitivity 
+	= xf86SetRealOption(pInfo->options, "Sensitivity", 1.0)) {
+	xf86Msg(X_CONFIG, "%s: Sensitivity: %g\n", pInfo->name,
+		mPriv->sensitivity);
+    }
 }
 
 static void
@@ -983,8 +991,10 @@ MousePreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     pInfo->flags = XI86_POINTER_CAPABLE | XI86_SEND_DRAG_EVENTS;
     pInfo->device_control = MouseProc;
     pInfo->read_input = MouseReadInput;
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
     pInfo->motion_history_proc = xf86GetMotionEvents;
     pInfo->history_size = 0;
+#endif
     pInfo->control_proc = NULL;
     pInfo->close_proc = NULL;
     pInfo->switch_mode = NULL;
@@ -1163,6 +1173,9 @@ MouseReadInput(InputInfoPtr pInfo)
     pMse = pInfo->private;
     pBufP = pMse->protoBufTail;
     pBuf = pMse->protoBuf;
+
+    if (pInfo->fd == -1)
+	return;
 
     /*
      * Set blocking to -1 on the first call because we know there is data to
@@ -1713,8 +1726,18 @@ MouseProc(DeviceIntPtr device, int what)
 
 	InitPointerDeviceStruct((DevicePtr)device, map,
 				min(pMse->buttons, MSE_MAXBUTTONS),
-				miPointerGetMotionEvents, pMse->Ctrl,
-				miPointerGetMotionBufferSize());
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
+				miPointerGetMotionEvents,
+#else
+                                GetMotionHistory,
+#endif
+                                pMse->Ctrl,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
+				miPointerGetMotionBufferSize()
+#else
+                                GetMotionHistorySize(), 2
+#endif
+                                );
 
 	/* X valuator */
 	xf86InitValuatorAxisStruct(device, 0, 0, -1, 1, 0, 1);
@@ -1722,7 +1745,9 @@ MouseProc(DeviceIntPtr device, int what)
 	/* Y valuator */
 	xf86InitValuatorAxisStruct(device, 1, 0, -1, 1, 0, 1);
 	xf86InitValuatorDefaults(device, 1);
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
 	xf86MotionHistoryAllocate(pInfo);
+#endif
 
 #ifdef EXTMOUSEDEBUG
 	ErrorF("assigning %p atom=%d name=%s\n", device, pInfo->atom,
@@ -2348,10 +2373,13 @@ MousePostEvent(InputInfoPtr pInfo, int truebuttons,
 	       int dx, int dy, int dz, int dw)
 {
     MouseDevPtr pMse;
+    mousePrivPtr mousepriv;
     int zbutton = 0, wbutton = 0, zbuttoncount = 0, wbuttoncount = 0;
     int i, b, buttons = 0;
 
     pMse = pInfo->private;
+    mousepriv = (mousePrivPtr)pMse->mousePriv;
+    
     if (pMse->protocolID == PROT_MMHIT)
 	b = reverseBits(hitachMap, truebuttons);
     else
@@ -2441,6 +2469,15 @@ MousePostEvent(InputInfoPtr pInfo, int truebuttons,
 	dy = tmp;
     }
 
+    /* Accumulate the scaled dx, dy in the private variables 
+       fracdx,fracdy and return the integer number part */
+    if (mousepriv) {
+	mousepriv->fracdx += mousepriv->sensitivity*dx;
+	mousepriv->fracdy += mousepriv->sensitivity*dy;
+	mousepriv->fracdx -= ( dx=(int)(mousepriv->fracdx) );
+	mousepriv->fracdy -= ( dy=(int)(mousepriv->fracdy) );
+    }
+    
     /* If mouse wheel movement has to be mapped on a button, we need to
      * loop for button press and release events. */
     do {
@@ -3774,7 +3811,7 @@ static XF86ModuleVersionInfo xf86MouseVersionRec =
     MODINFOSTRING1,
     MODINFOSTRING2,
     XORG_VERSION_CURRENT,
-    1, 1, 1,
+    PACKAGE_VERSION_MAJOR, PACKAGE_VERSION_MINOR, PACKAGE_VERSION_PATCHLEVEL,
     ABI_CLASS_XINPUT,
     ABI_XINPUT_VERSION,
     MOD_CLASS_XINPUT,

@@ -37,8 +37,6 @@
 #include "config.h"
 #endif
 
-#define NEED_REPLIES
-#define NEED_EVENTS
 #include "dixstruct.h"
 #include "extnsionst.h"
 #include <X11/X.h>
@@ -47,6 +45,10 @@
 #include "vmware.h"
 #include "vmwarectrlproto.h"
 
+#ifndef HAVE_XORG_SERVER_1_5_0
+#include <xf86_ansic.h>
+#include <xf86_libc.h>
+#endif
 
 /*
  *----------------------------------------------------------------------------
@@ -124,7 +126,7 @@ VMwareCtrlDoSetRes(ScrnInfoPtr pScrn,
       VmwareLog(("DoSetRes: %d %d\n", x, y));
 
       if (resetXinerama) {
-         xfree(pVMWARE->xineramaNextState);
+         free(pVMWARE->xineramaNextState);
          pVMWARE->xineramaNextState = NULL;
          pVMWARE->xineramaNextNumOutputs = 0;
       }
@@ -278,7 +280,7 @@ VMwareCtrlDoSetTopology(ScrnInfoPtr pScrn,
 
       VmwareLog(("DoSetTopology: %d %d\n", maxX, maxY));
 
-      xineramaState = (VMWAREXineramaPtr)xcalloc(number, sizeof(VMWAREXineramaRec));
+      xineramaState = (VMWAREXineramaPtr)calloc(number, sizeof(VMWAREXineramaRec));
       if (xineramaState) {
          memcpy(xineramaState, extents, number * sizeof (VMWAREXineramaRec));
 
@@ -291,7 +293,7 @@ VMwareCtrlDoSetTopology(ScrnInfoPtr pScrn,
           * will be no mode change. In this case, push it out
           * immediately.
           */
-         xfree(pVMWARE->xineramaNextState);
+         free(pVMWARE->xineramaNextState);
          pVMWARE->xineramaNextState = xineramaState;
          pVMWARE->xineramaNextNumOutputs = number;
 

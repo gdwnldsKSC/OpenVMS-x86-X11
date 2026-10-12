@@ -1,10 +1,14 @@
-# $XdotOrg: lib/X11/src/util/Makefile.am,v 1.4 2006-02-19 02:14:12 jamey Exp $
 
 noinst_PROGRAMS=makekeys
 
-makekeys_CFLAGS=$(X11_CFLAGS)
+makekeys_CFLAGS = \
+	$(X11_CFLAGS) \
+	$(CWARNFLAGS)
 
 CC = @CC_FOR_BUILD@
+CPPFLAGS = @CPPFLAGS_FOR_BUILD@
+CFLAGS = @CFLAGS_FOR_BUILD@
+LDFLAGS = @LDFLAGS_FOR_BUILD@
 
 EXTRA_DIST = mkks.sh
 

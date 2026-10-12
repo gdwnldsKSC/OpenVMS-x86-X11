@@ -59,8 +59,11 @@
 #define BOB_ODD  2
 
 typedef struct {
+#ifdef XGI_USE_XAA
     FBLinearPtr     linear;
     FBAreaPtr       fbAreaPtr;
+#endif
+
     int             fbSize;
     CARD32          bufAddr[2];
 

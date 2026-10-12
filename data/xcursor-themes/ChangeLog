@@ -1,3 +1,102 @@
+commit 287d4bac2826de32365afcb2cbe0ec24abd2eecd
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Oct 30 08:57:22 2010 -0700
+
+    xcursor-themes 1.0.3
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit fd7401bab073b95c2e8d4d45569f03afffda8ee2
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Oct 30 08:54:40 2010 -0700
+
+    config: update AC_PREREQ statement to 2.60
+    
+    Unrelated to the previous patches, the new value simply reflects
+    the reality that the minimum level for autoconf to configure
+    all x.org modules is 2.60 dated June 2006.
+    
+    ftp://ftp.gnu.org/gnu/autoconf/autoconf-2.60.tar.gz
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 2c8a072222d0cbb7ccf63470af76738b33f1b11f
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Jan 1 13:33:12 2010 -0500
+
+    configure: use "$PKG_CONFIG" rather than hard coded "pkg-config"
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 1eabbd976f21f5922e4a2c125c6ed51ebf936763
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Dec 19 17:35:07 2009 -0500
+
+    configure.ac: use backticks rather than $() for cmd subs
+    
+    Use "$PKG_CONFIG" rather than hard coded "pkg-config"
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit c43cf46600ae8c93b85d4e3c956864691e55395e
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Nov 29 19:31:54 2009 -0500
+
+    Makefile.am: add ChangeLog and INSTALL on MAINTAINERCLEANFILES
+    
+    Now that the INSTALL file is generated.
+    Allows running make maintainer-clean.
+
+commit 3cc6cb2fe3142b22931e411e3df5d495f3f57ff5
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Nov 29 19:29:06 2009 -0500
+
+    INSTALL, NEWS, README or AUTHORS files are missing/incorrect #24206
+    
+    Automake 'foreign' option is specified in configure.ac.
+    Remove from Makefile.am
+
+commit b6cb39282a530930672da3c58132a8cabe54a05b
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Oct 28 14:09:09 2009 -0400
+
+    INSTALL, NEWS, README or AUTHORS files are missing/incorrect #24206
+    
+    Add missing INSTALL file. Use standard GNU file on building tarball
+    README may have been updated
+    Remove AUTHORS file as it is empty and no content available yet.
+    Remove NEWS file as it is empty and no content available yet.
+
+commit 9c250e804fbf7042acc1ab972d93f7f9cf2a128c
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Oct 27 15:07:25 2009 -0400
+
+    Deploy the new XORG_DEFAULT_OPTIONS #24242
+    
+    This macro aggregate a number of existing macros that sets commmon
+    X.Org components configuration options. It shields the configuration file from
+    future changes.
+
+commit 3ece73c962880db4913100211cb9bbe4c02a6b6f
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Oct 26 22:08:40 2009 -0400
+
+    Makefile.am: ChangeLog not required: EXTRA_DIST or *CLEANFILES #24432
+    
+    ChangeLog filename is known to Automake and requires no further
+    coding in the makefile.
+
+commit 52f78d845879524d66e733e75ef27fec7898bc6e
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Oct 22 12:44:09 2009 -0400
+
+    .gitignore: use common defaults with custom section # 24239
+    
+    Using common defaults will reduce errors and maintenance.
+    Only the very small or inexistent custom section need periodic maintenance
+    when the structure of the component changes. Do not edit defaults.
+
 commit a0209fb0eb221bc72af78f238ad69372d3b2a8d2
 Author: Alan Coopersmith <alan.coopersmith@sun.com>
 Date:   Thu Sep 24 17:12:31 2009 -0700

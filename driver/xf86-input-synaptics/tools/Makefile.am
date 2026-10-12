@@ -18,19 +18,15 @@
 #  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 #  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-if BUILD_TOOLS
-bin_PROGRAMS = \
-	synclient \
-	syndaemon
+bin_PROGRAMS = synclient syndaemon
 
-INCLUDES=-I$(top_srcdir)/include/
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(sdkdir)
+AM_CFLAGS = $(XI_CFLAGS)
+AM_LDFLAGS = $(XI_LIBS)
 
 synclient_SOURCES = synclient.c
-synclient_LDFLAGS = -lm $(XI_LIBS)
 
 syndaemon_SOURCES = syndaemon.c
-syndaemon_LDFLAGS = $(XTST_1_1_LIBS) $(RECORDPROTO_1_13_LIBS) $(XI_LIBS)
-else
-all:
-	@echo "Not building syndaemon and synclient."
-endif
+syndaemon_CFLAGS = $(AM_CFLAGS) $(XTST_CFLAGS)
+syndaemon_LDFLAGS = $(AM_LDFLAGS) $(XTST_LIBS)
+

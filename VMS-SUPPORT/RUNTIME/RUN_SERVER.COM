@@ -3,7 +3,6 @@ $ SET NOON
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
 $ saved_default = F$ENVIRONMENT("DEFAULT")
-$ keysym_defined = 0
 $ result = 2
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO usage
 $ IF (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
@@ -59,8 +58,6 @@ $ GOTO check_filespec
 $filespecs_checked:
 $ IF F$SEARCH(prefix + ".LIB.X11.XKB]XKBCOMP.EXE;0") .EQS. "" THEN GOTO missing
 $ IF F$SEARCH(prefix + ".LIB.X11.XKB.RULES]XORG.;0") .EQS. "" THEN GOTO missing
-$ keysym_db = F$SEARCH(prefix + ".LIB.X11]XKEYSYMDB.;0")
-$ IF keysym_db .EQS. "" THEN GOTO missing
 $ device = F$PARSE(root,,,"DEVICE","SYNTAX_ONLY")
 $ unix_root = "/" + F$EXTRACT(0,F$LENGTH(device)-1,device)
 $ directory = F$PARSE(root,,,"DIRECTORY","SYNTAX_ONLY")
@@ -90,9 +87,6 @@ $ screen = ":" + display_number
 $ server = "$" + image
 $! The default compiled XKB_BIN_DIRECTORY is relative to this runtime root.
 $ SET DEFAULT 'root'
-$! xkbcomp changes directory; use an image-scoped absolute database path.
-$ DEFINE/USER_MODE/TABLE=LNM$PROCESS_TABLE/NOLOG XKEYSYMDB "''keysym_db'"
-$ keysym_defined = 1
 $ IF no_listen .NES. "" THEN GOTO restricted
 $ server "''screen'" "-auth" "''authority'" "-fp" "''font_path'" "-xkbdir" "''xkb_path'"
 $ result = $STATUS
@@ -117,8 +111,5 @@ $ result = $STATUS
 $ IF result .AND. 1 THEN result = 2
 $done:
 $ SET NOON
-$ IF keysym_defined .AND. -
-     (F$TRNLNM("XKEYSYMDB","LNM$PROCESS_TABLE",0,"USER",,"ACCESS_MODE") .EQS. "USER") -
-     THEN DEASSIGN/USER_MODE/TABLE=LNM$PROCESS_TABLE XKEYSYMDB
 $ SET DEFAULT 'saved_default'
 $ EXIT result

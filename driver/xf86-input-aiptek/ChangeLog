@@ -1,3 +1,276 @@
+commit 209b9147799079981db4abebdbac093dec59d5a5
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu May 27 19:35:46 2010 -0400
+
+    config: use AC_PROG_INSTALL now supplied by XORG_DEFAULT_OPTIONS
+    
+    It depends on util-macros 1.8
+    The existing statement can now be removed from the configuration file.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 7a08e526ad7ebe2702269d5a0a048f62b1bfbca1
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu May 27 19:34:40 2010 -0400
+
+    config: upgrade to util-macros 1.8 for additional man page support
+    
+    Use MAN_SUBST now supplied in XORG_MANPAGE_SECTIONS
+    The value of MAN_SUBST is the same for all X.Org packages.
+    
+    Use AC_PROG_SED now supplied by XORG_DEFAULT_OPTIONS
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit e4976108867158f0c90cd1023595f858bea1ea56
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Apr 17 18:52:54 2010 -0400
+
+    man: Use Autoconf provided $(AM_V_GEN)$(SED)
+    
+    Enables silent rule and use platform appropriate version of sed.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 39f1c78b01fb8f2c0450f02c8f5a6329dff6dd04
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 15 10:46:42 2010 -0400
+
+    config: fix warnings, m4 quoting and layout
+    
+    Fix some m4 quoting
+    Fix some autoconf warnings
+    Regroup statements per section
+    Add comments
+    Upgrade X.Org macros to 1.4 for INSTALL file copying
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 43cdbc01fb1f7197134434b7db00705e4e6c8d56
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 15 10:24:16 2010 -0400
+
+    config: remove AC_PROG_CC as it overrides AC_PROG_C_C99
+    
+    XORG_STRICT_OPTION from XORG_DEFAULT_OPTIONS calls
+    AC_PROG_C_C99. This sets gcc with -std=gnu99.
+    If AC_PROG_CC macro is called afterwards, it resets CC to gcc.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit e97e0199a722bdfa30ef0ba070f421e01987ce25
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 15 10:22:35 2010 -0400
+
+    config: replace deprecated AM_CONFIG_HEADER with AC_CONFIG_HEADERS
+    
+    Regroup AC statements at the top.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit a4da6aa6996c7030b48b39eafbadeed8e512010e
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 15 10:20:43 2010 -0400
+
+    config: update AC_PREREQ statement to 2.60
+    
+    Unrelated to the previous patches, the new value simply reflects
+    the reality that the minimum level for autoconf to configure
+    all x.org modules is 2.60 dated June 2006.
+    
+    ftp://ftp.gnu.org/gnu/autoconf/autoconf-2.60.tar.gz
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit c0aa30c9d92617d0febe521780588e095569216a
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Apr 11 14:04:39 2010 -0400
+
+    config: use AC_CHECK_LIB to verify library and add -lm to LIBS
+    
+    Ensures library is present and contains the desired symbol.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 0d88d9fb6f1200126212dd45cbddc08f3b75ebfb
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Apr 11 10:59:21 2010 -0400
+
+    config: replace hard-coded -DLINUX_INPUT with proper AC_CHECK_HEADERS
+    
+    Not all platforms have Linux kernel input subsystem.
+    Automake AC_CHECK_HEADERS is designed for that purpose.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2996458c2fc88671ba8626de984b2f082042dc62
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Apr 11 10:21:40 2010 -0400
+
+    config: remove AH_TOP autoheader statement
+    
+    The generated config.h does not need to include xorg-server.h
+    for the content it provides.
+    Add #include <xorg-server.h> in .[hc] files as needed.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit be8297b5edd06e8cbf41b06da4588d5f548e627b
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Jun 12 09:41:05 2010 -0400
+
+    COPYING: replace stub file with Copyright notices
+    
+    Copyright 2003 by Bryan W. Headley
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit d87747df73114953ac39f3d77ca146adc3b80088
+Author: Olivier Samyn <code@oleastre.be>
+Date:   Wed Feb 24 00:24:02 2010 +0100
+
+    aiptek: Add keyboard feedback struct initialization.
+    
+    Without a call to InitKbdFeedbackClassDeviceStruct, no keyboard events
+    are seen by xev. This adds the call and required callback functions.
+    
+    Signed-off-by: Olivier Samyn <code@oleastre.be>
+    
+    [This patch only fixes the case for X server 1.6 and earlier.]
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit deb7cb9c89c64f61c870b5eaf8029a600077aecc
+Author: Olivier Samyn <code@oleastre.be>
+Date:   Wed Feb 24 00:12:42 2010 +0100
+
+    aiptek: Initialize the keymap with 256 items.
+    
+    X.Org keymap requires at least 256 defined entries. This patch
+    initialize the keymap with the required entries count.
+    
+    Signed-off-by: Olivier Samyn <code@oleastre.be>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 01d39e1efea68797b27231fecc8535b440e87ae4
+Author: Olivier Samyn <code@oleastre.be>
+Date:   Sun Feb 21 00:22:28 2010 +0100
+
+    aiptek: Change index offset for generated key events.
+    
+    Since the first 8 elements in the xorg key map are NoSymbol, and the first
+    linux kernel element index is 0, the first keysym is at offset 8 and not 7.
+    
+    Signed-off-by: Olivier Samyn <code@oleastre.be>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 823d606ca716253ac55ed46ee1559fd17adc0988
+Author: Olivier Samyn <code@oleastre.be>
+Date:   Sun Feb 21 00:17:57 2010 +0100
+
+    aiptek: Correct linux keymap to keysym index loop.
+    
+    Makes the loop iterate over all elements of the linux key map, and if the
+    current macroKey matches, generate a key event.
+    
+    Signed-off-by: Olivier Samyn <code@oleastre.be>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 8b2eb587cc2ec96e54c28def4fa9388d7bd49c91
+Author: Olivier Samyn <code@oleastre.be>
+Date:   Wed Feb 17 21:35:11 2010 +0100
+
+    aiptek: Uses event->code instead of event->value
+    
+    From the Linux input documentation, on a key press or release event,
+    the actual key code is contained in the event->code field.
+    
+    Signed-off-by: Olivier Samyn <code@oleastre.be>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit a7460d35743b7343a6dcce13f14cfd28428385bf
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Feb 11 10:08:07 2010 -0500
+
+    config: move CWARNFLAGS from configure.ac to Makefile.am
+    
+    Compiler warning flags should be explicitly set in the makefile
+    rather than being merged with other packages compiler flags.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2701762143f7ccdfb95e2b19f963b80d011a3f72
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Jan 15 15:05:05 2010 -0800
+
+    Update Sun license notices to current X.Org standard form
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 77d46f0a4527ba7919c58b13934a7b9a07a7a810
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Dec 15 22:01:02 2009 -0500
+
+    configure.ac: remove unused sdkdir=$(pkg-config...) statement
+    
+    The sdkdir variable isn't use, so remove the statement.
+    
+    Acked-by: Dan Nicholson <dbn.lists@gmail.com>
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 7de1580b327e2395ae1e393c59c2e6900680981b
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Nov 23 09:25:05 2009 -0500
+
+    Makefile.am: add ChangeLog and INSTALL on MAINTAINERCLEANFILES
+    
+    Now that the INSTALL file is generated.
+    Allows running make maintainer-clean.
+
+commit 4c6d7d9a91d35473de9fe8a2aac93747c0d794d1
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Oct 28 14:41:40 2009 -0400
+
+    INSTALL, NEWS, README or AUTHORS files are missing/incorrect #24206
+    
+    Automake 'foreign' option is specified in configure.ac.
+    Remove from Makefile.am
+
+commit 80327029754b63738ee21709b3847681df6278c5
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Oct 28 14:09:09 2009 -0400
+
+    INSTALL, NEWS, README or AUTHORS files are missing/incorrect #24206
+    
+    Add missing INSTALL file. Use standard GNU file on building tarball
+    README may have been updated
+    Remove AUTHORS file as it is empty and no content available yet.
+    Remove NEWS file as it is empty and no content available yet.
+
+commit 59bc379e87489f95f89851e2b5b27bdc680c656f
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Oct 26 12:54:20 2009 -0400
+
+    Several driver modules do not have a ChangeLog target in Makefile.am #23814
+    
+    The git generated ChangeLog replaces the hand written one.
+    Update configure.ac to xorg-macros level 1.3.
+    Use XORG_DEFAULT_OPTIONS which replaces four XORG_* macros
+    Update Makefile.am to add ChangeLog target if missing
+    Remove ChangeLog from EXTRA_DIST or *CLEAN variables
+    This is a pre-req for the INSTALL_CMD
+
+commit 7e2a262db906b8ac2d59c4ce3ba24312f3b5259f
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Oct 22 12:34:16 2009 -0400
+
+    .gitignore: use common defaults with custom section # 24239
+    
+    Using common defaults will reduce errors and maintenance.
+    Only the very small or inexistent custom section need periodic maintenance
+    when the structure of the component changes. Do not edit defaults.
+
 commit 19ab688471916b0b4ab780ea39b60f2199234f54
 Author: Peter Hutterer <peter.hutterer@who-t.net>
 Date:   Fri Sep 11 12:04:00 2009 +1000

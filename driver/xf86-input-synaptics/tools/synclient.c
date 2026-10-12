@@ -97,8 +97,8 @@ static struct Parameter params[] = {
     {"CornerCoasting",        PT_BOOL,   0, 1,     SYNAPTICS_PROP_SCROLL_EDGE,	8,	2},
     {"VertTwoFingerScroll",   PT_BOOL,   0, 1,     SYNAPTICS_PROP_SCROLL_TWOFINGER,	8,	0},
     {"HorizTwoFingerScroll",  PT_BOOL,   0, 1,     SYNAPTICS_PROP_SCROLL_TWOFINGER,	8,	1},
-    {"MinSpeed",              PT_DOUBLE, 0, 1.0,   SYNAPTICS_PROP_SPEED,	0, /*float */	0},
-    {"MaxSpeed",              PT_DOUBLE, 0, 1.0,   SYNAPTICS_PROP_SPEED,	0, /*float */	1},
+    {"MinSpeed",              PT_DOUBLE, 0, 255.0,   SYNAPTICS_PROP_SPEED,	0, /*float */	0},
+    {"MaxSpeed",              PT_DOUBLE, 0, 255.0,   SYNAPTICS_PROP_SPEED,	0, /*float */	1},
     {"AccelFactor",           PT_DOUBLE, 0, 1.0,   SYNAPTICS_PROP_SPEED,	0, /*float */	2},
     {"TrackstickSpeed",       PT_DOUBLE, 0, 200.0, SYNAPTICS_PROP_SPEED,	0, /*float */ 3},
     {"EdgeMotionMinZ",        PT_INT,    1, 255,   SYNAPTICS_PROP_EDGEMOTION_PRESSURE,  32,	0},
@@ -112,7 +112,6 @@ static struct Parameter params[] = {
     {"LeftRightScrollRepeat", PT_BOOL,   0, 1,     SYNAPTICS_PROP_BUTTONSCROLLING_REPEAT,   8,	1},
     {"ScrollButtonRepeat",    PT_INT,    SBR_MIN , SBR_MAX, SYNAPTICS_PROP_BUTTONSCROLLING_TIME, 32,	0},
     {"TouchpadOff",           PT_INT,    0, 2,     SYNAPTICS_PROP_OFF,		8,	0},
-    {"GuestMouseOff",         PT_BOOL,   0, 1,     SYNAPTICS_PROP_GUESTMOUSE,	8,	0},
     {"LockedDrags",           PT_BOOL,   0, 1,     SYNAPTICS_PROP_LOCKED_DRAGS,	8,	0},
     {"LockedDragTimeout",     PT_INT,    0, 30000, SYNAPTICS_PROP_LOCKED_DRAGS_TIMEOUT,	32,	0},
     {"RTCornerButton",        PT_INT,    0, SYN_MAX_BUTTONS, SYNAPTICS_PROP_TAP_ACTION,	8,	0},
@@ -133,6 +132,7 @@ static struct Parameter params[] = {
     {"PalmMinWidth",          PT_INT,    0, 15,    SYNAPTICS_PROP_PALM_DIMENSIONS,	32,	0},
     {"PalmMinZ",              PT_INT,    0, 255,   SYNAPTICS_PROP_PALM_DIMENSIONS,	32,	1},
     {"CoastingSpeed",         PT_DOUBLE, 0, 20,    SYNAPTICS_PROP_COASTING_SPEED,	0 /* float*/,	0},
+    {"CoastingFriction",      PT_DOUBLE, 0, 255,   SYNAPTICS_PROP_COASTING_SPEED,	0 /* float*/,	1},
     {"PressureMotionMinZ",    PT_INT,    1, 255,   SYNAPTICS_PROP_PRESSURE_MOTION,	32,	0},
     {"PressureMotionMaxZ",    PT_INT,    1, 255,   SYNAPTICS_PROP_PRESSURE_MOTION,	32,	1},
     {"PressureMotionMinFactor", PT_DOUBLE, 0, 10.0,SYNAPTICS_PROP_PRESSURE_MOTION_FACTOR,	0 /*float*/,	0},
@@ -196,12 +196,7 @@ is_equal(SynapticsSHM *s1, SynapticsSHM *s2)
 	(s1->right       != s2->right) ||
 	(s1->up          != s2->up) ||
 	(s1->down        != s2->down) ||
-	(s1->middle      != s2->middle) ||
-	(s1->guest_left  != s2->guest_left) ||
-	(s1->guest_mid   != s2->guest_mid) ||
-	(s1->guest_right != s2->guest_right) ||
-	(s1->guest_dx    != s2->guest_dx) ||
-	(s1->guest_dy    != s2->guest_dy))
+	(s1->middle      != s2->middle))
 	return 0;
 
     for (i = 0; i < 8; i++)
@@ -240,15 +235,12 @@ shm_monitor(SynapticsSHM *synshm, int delay)
 		header = 20;
 	    }
 	    header--;
-	    printf("%8.3f  %4d %4d %3d %d %2d %2d %d %d %d %d  %d%d%d%d%d%d%d%d  "
-		   "%2d %2d %2d %3d %3d\n",
+	    printf("%8.3f  %4d %4d %3d %d %2d %2d %d %d %d %d  %d%d%d%d%d%d%d%d\n",
 		   get_time() - t0,
 		   cur.x, cur.y, cur.z, cur.numFingers, cur.fingerWidth,
 		   cur.left, cur.right, cur.up, cur.down, cur.middle,
 		   cur.multi[0], cur.multi[1], cur.multi[2], cur.multi[3],
-		   cur.multi[4], cur.multi[5], cur.multi[6], cur.multi[7],
-		   cur.guest_left, cur.guest_mid, cur.guest_right,
-		   cur.guest_dx, cur.guest_dy);
+		   cur.multi[4], cur.multi[5], cur.multi[6], cur.multi[7]);
 	    fflush(stdout);
 	    old = cur;
 	}
@@ -505,11 +497,8 @@ dp_show_settings(Display *dpy, XDevice *dev)
     for (j = 0; params[j].name; j++) {
 	struct Parameter *par = &params[j];
 	a = XInternAtom(dpy, par->prop_name, True);
-	if (!a) {
-	    fprintf(stderr, "    %-23s = missing\n",
-		    par->name);
+	if (!a)
 	    continue;
-	}
 
 	len = 1 + ((par->prop_offset * (par->prop_format ? par->prop_format : 32)/8))/4;
 
@@ -580,6 +569,9 @@ main(int argc, char *argv[])
 
     Display *dpy;
     XDevice *dev;
+
+    if (argc == 1)
+        dump_settings = 1;
 
     /* Parse command line parameters */
     while ((c = getopt(argc, argv, "sm:hlV")) != -1) {

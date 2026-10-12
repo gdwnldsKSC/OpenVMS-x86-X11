@@ -789,7 +789,7 @@ static int input (void );
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
 		{ \
 		int c = '*'; \
-		unsigned n; \
+		int n; \
 		for ( n = 0; n < max_size && \
 			     (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
 			buf[n] = (char) c; \
@@ -1092,7 +1092,7 @@ YY_RULE_SETUP
 case 25:
 YY_RULE_SETUP
 #line 91 "winprefslex.l"
-{ return DEBUG; }
+{ return DEBUGOUTPUT; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP

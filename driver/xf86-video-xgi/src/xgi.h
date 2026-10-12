@@ -32,50 +32,112 @@
 #ifndef _XGI_H_
 #define _XGI_H_
 
-/***************
-#define DEBUG2
 #define DEBUG 
 #define DEBUG1
+#define DEBUG2
 #define DEBUG3
 #define DEBUG4
 #define DEBUG5
+
+/***************
+#define DEBUG 
+#define DEBUG1
+#define DEBUG2
+#define DEBUG3
+#define DEBUG4
+#define DEBUG5
+#define DEBUGI2C
 *****************/
 
+#ifndef XGI_VIDEO_HW /* avoid compile error in xgi_videohw.c; weird!  */
+/* Jong 07/27/2009; use run-time debug instead except for HW acceleration routines */
+extern BOOL g_bRunTimeDebug;
+#define RUNTIMEDEBUG(p)		if(g_bRunTimeDebug)p;
+
+/* Jong@08052009 */
+#ifdef  DEBUGI2C
+#define PDEBUGI2C(p)       p
+#else
+#define PDEBUGI2C(p)
+#endif
 
 #ifdef  DEBUG
-#define PDEBUG(p)       p
+#define PDEBUG(p)       RUNTIMEDEBUG(p)
 #else
 #define PDEBUG(p)
 #endif
 
 #ifdef DEBUG1
-#define PDEBUG1(p) p
+#define PDEBUG1(p)		RUNTIMEDEBUG(p)
 #else
 #define PDEBUG1(p)
 #endif
 
 #ifdef DEBUG2
-#define PDEBUG2(p) p
+#define PDEBUG2(p)		RUNTIMEDEBUG(p)
 #else
 #define PDEBUG2(p)
 #endif
 
 #ifdef DEBUG3
-#define PDEBUG3(p) p
+#define PDEBUG3(p)		RUNTIMEDEBUG(p)
 #else
 #define PDEBUG3(p)
 #endif
 
 #ifdef DEBUG4
-#define PDEBUG4(p) p
+#define PDEBUG4(p)		RUNTIMEDEBUG(p)
 #else
 #define PDEBUG4(p)
 #endif
 
 #ifdef  DEBUG5
-#define PDEBUG5(p)       p
+#define PDEBUG5(p)		RUNTIMEDEBUG(p)
 #else
 #define PDEBUG5(p)
+#endif
+
+#ifdef  CDEBUG
+#define CPDEBUG(p)       p
+#else
+#define CPDEBUG(p)
+#endif
+
+#ifdef CDEBUG1
+#define CPDEBUG1(p) p
+#else
+#define CPDEBUG1(p)
+#endif
+
+#ifdef CDEBUG2
+#define CPDEBUG2(p) p
+#else
+#define CPDEBUG2(p)
+#endif
+
+#ifdef CDEBUG3
+#define CPDEBUG3(p) p
+#else
+#define CPDEBUG3(p)
+#endif
+
+#ifdef CDEBUG4
+#define CPDEBUG4(p) p
+#else
+#define CPDEBUG4(p)
+#endif
+
+#ifdef  CDEBUG5
+#define CPDEBUG5(p)       p
+#else
+#define CPDEBUG5(p)
+#endif
+
+#ifdef  ACCELDEBUG
+#define PACCELDEBUG(p)       p
+#else
+#define PACCELDEBUG(p)
+#endif
 #endif
 
 /* Always unlock the registers (should be set!) */
@@ -91,13 +153,41 @@
 #include "xf86Cursor.h"
 #include "xf86xv.h"
 #include "compiler.h"
-#include "xaa.h"
-#include "vgaHW.h"
-#include "vbe.h"
 
 #ifdef XORG_VERSION_CURRENT
 #include "xorgVersion.h"
+
+/* #if XORG_VERSION_CURRENT > XORG_VERSION_NUMERIC(7,0,0,0,0) */
+#if ((XORG_VERSION_CURRENT > XORG_VERSION_NUMERIC(7,0,0,0,0)) || (XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(2,0,0,0,0)) )
+#define XGIISXORGPOST70
 #endif
+
+#if (XORG_VERSION_CURRENT >= XORG_VERSION_NUMERIC(6,9,0,0,0) )
+#define XGI_USE_EXA
+#endif
+
+#endif
+
+/* Jong 01/13/2009; support EXA */
+#define XGI_USE_XAA 
+/* #define XGI_USE_EXA */
+
+#ifdef XGI_USE_XAA
+#include "xaa.h"
+#endif
+#ifdef XGI_USE_EXA
+#include "exa.h"
+#endif
+
+#include "vgaHW.h"
+#include "vbe.h"
+
+/*
+#ifdef XORG_VERSION_CURRENT
+#include "xorgVersion.h"
+#endif */
+
+/* #define XGIISXORGPOST70 */
 
 #include "xgi_pci.h"
 #include "osdef.h"
@@ -107,13 +197,26 @@
 #ifdef XF86DRI
 #define XGINEWDRI
 #undef XGINEWDRI2
-#if XORG_VERSION_CURRENT >= XORG_VERSION_NUMERIC(4,4,99,99,0)	/* Adapt this when the time has come */
+
+#ifdef XF86_VERSION_CURRENT
+#if XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4,4,99,99,0)	/* Adapt this when the time has come */
 #define XGINEWDRI2
 #endif
+#endif /* XF86_VERSION_CURRENT */
+
 #include "xf86drm.h"
 #include "sarea.h"
 #define _XF86DRI_SERVER_
+
+/* Jong@09032009 */
+#ifdef XORG_VERSION_CURRENT
+#if ( (XORG_VERSION_CURRENT >= XORG_VERSION_NUMERIC(6,9,0,0,0)) || (XORG_VERSION_CURRENT <= XORG_VERSION_NUMERIC(2,0,0,0,0)) )
+#include "X11/dri/xf86dri.h"
+#else
 #include "xf86dri.h"
+#endif
+#endif
+
 #include "dri.h"
 #include "GL/glxint.h"
 #include "xgi_dri.h"
@@ -162,7 +265,6 @@
 
 #ifdef XGIMERGED
 #ifdef XGIXINERAMA
-#define NEED_REPLIES  		/* ? */
 #define EXTENSION_PROC_ARGS void *
 #include "extnsionst.h"  	/* required */
 #include <X11/extensions/panoramiXproto.h>  	/* required */
@@ -541,6 +643,7 @@ typedef struct {
     int                 numDGAModes;
     Bool                DGAactive;
     Bool                NoAccel;
+    Bool				useEXA;  /* Jong 01/13/2009; support EXA */
     Bool                NoXvideo;
     Bool                TurboQueue;
     int                 ForceCRT1Type;
@@ -570,7 +673,22 @@ typedef struct {
 
     XGIRegRec           SavedReg;
     XGIRegRec           ModeReg;
+
+#ifdef XGI_USE_XAA
     XAAInfoRecPtr       AccelInfoPtr;
+#endif
+#ifdef XGI_USE_EXA /* Jong 01/13/2009; support EXA */
+    ExaDriverPtr		EXADriverPtr;
+    int			fillPitch, fillBpp;
+    CARD32		fillDstBase;
+    int			copyBpp;
+    int			copySPitch, copyDPitch;
+    CARD32		copySrcBase, copyDstBase;
+    int			copyXdir, copyYdir;
+    ExaOffscreenArea*	exa_scratch;
+    unsigned int 		exa_scratch_next;
+#endif
+
     CloseScreenProcPtr  CloseScreen;
     Bool        	(*ModeInit)(ScrnInfoPtr pScrn, DisplayModePtr mode);
     void        	(*XGISave)(ScrnInfoPtr pScrn, XGIRegPtr xgireg);
@@ -636,6 +754,8 @@ typedef struct {
     unsigned char 	*ImageWriteBufferAddr;
 
     int 		Rotate;
+
+    BOOLEAN		HaveCustomModes; /* Jong 07/27/2009; support customer modes */
 
     /* ShadowFB support */
     Bool 		ShadowFB;
@@ -729,7 +849,11 @@ typedef struct {
     BOOLEAN		disablecolorkeycurrent;
     CARD32		colorKey;
     CARD32		MiscFlags;
+
+#ifdef XGI_USE_XAA
     FBLinearPtr		AccelLinearScratch;
+#endif
+
     float		zClearVal;
     unsigned long	bClrColor, dwColor;
     int			AllowHotkey;
@@ -781,6 +905,14 @@ typedef struct {
     Bool		v4l_videoin;
     int			v4l_devnum;	/* v4l device number, 0,1,2....*/
 //~::::    
+
+	int			TargetRefreshRate; 
+	Bool		IgnoreDDC; 
+
+	Bool		Non_DDC_DefaultMode;
+	int			Non_DDC_DefaultResolutionX ;
+	int			Non_DDC_DefaultResolutionY ;
+	int			Non_DDC_DefaultRefreshRate ;
 } XGIRec, *XGIPtr;
 
 #ifdef XGIDUALHEAD
@@ -885,6 +1017,7 @@ extern void XGI_SetRegANDOR(XGIIOADDRESS Port, USHORT Index, USHORT DataAND,
 extern void XGI_SetRegAND(XGIIOADDRESS Port, USHORT Index, USHORT DataAND);
 extern void XGI_SetRegOR(XGIIOADDRESS Port, USHORT Index, USHORT DataOR);
 
+#define uint8_t	CARD8
 extern void XGI_WriteDAC(XGIIOADDRESS dac_data, unsigned shift,
     unsigned ordering, uint8_t red, uint8_t green, uint8_t blue);
 

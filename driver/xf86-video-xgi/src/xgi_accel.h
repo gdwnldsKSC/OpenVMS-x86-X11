@@ -117,7 +117,6 @@
 #define BandSize 		0x10
 
 /* Jong 09/27/2007; recover for compiler error */
-typedef unsigned long ulong ; 
 /* typedef unsigned long ulong ; */
 
 unsigned long    r_port, w_port ;
@@ -133,25 +132,27 @@ extern void Volari_Idle(XGIPtr pXGI);
 #define Volari_GetSwWP() (unsigned long)(*(pXGI->pCQ_shareWritePort))
 #define Volari_GetHwRP() (unsigned long)(MMIO_IN32(pXGI->IOBase, 0x85c8))
 
+void XGIDumpCMDQueue(ScrnInfoPtr pScrn);
+
 #define Volari_SyncWP\
     {\
         unsigned long p ;\
         \
         p = *(pXGI->pCQ_shareWritePort);\
-        PDEBUG4(ErrorF("Volari_SyncWP(%08lx)\n",(p)));\
+        PACCELDEBUG(ErrorF("Volari_SyncWP(%08lx)\n",(p)));\
         MMIO_OUT32(pXGI->IOBase, 0x85c4,(p)) ;\
     }
 
 #define Volari_UpdateHwWP(p)\
     {\
-        PDEBUG4(ErrorF("Volari_UpdateHwWP(%08lx)\n",(p)));\
+        PACCELDEBUG(ErrorF("Volari_UpdateHwWP(%08lx)\n",(p)));\
         *(pXGI->pCQ_shareWritePort) = (p) ;\
         MMIO_OUT32(pXGI->IOBase, 0x85c4, (p)) ;\
     }
 
 #define Volari_UpdateSwWP(p)\
     {\
-        PDEBUG4(ErrorF("Volari_UpdateSwWP(%08lx)\n",(p)));\
+        PACCELDEBUG(ErrorF("Volari_UpdateSwWP(%08lx)\n",(p)));\
         *(pXGI->pCQ_shareWritePort) = (p) ;\
     }
 
@@ -234,7 +235,7 @@ extern void Volari_Idle(XGIPtr pXGI);
     {\
         unsigned long ulTemp ;\
         \
-        PDEBUG4(ErrorF("pXGI->CommandReg = %08lX\n", pXGI->CommandReg));\
+        PACCELDEBUG(ErrorF("pXGI->CommandReg = %08lX\n", pXGI->CommandReg));\
         \
         ulTemp = Volari_GetSwWP() ;\
         \
@@ -268,6 +269,9 @@ extern void Volari_Idle(XGIPtr pXGI);
     {\
         unsigned long ulTemp ;\
         \
+		if(base != g_srcbase) \
+		{ \
+			g_srcbase = base; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -286,7 +290,7 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
-        \
+		} \
     }
 
 
@@ -301,6 +305,9 @@ extern void Volari_Idle(XGIPtr pXGI);
 #define Volari_SetupSRCPitch(pitch) \
         {\
         unsigned long ulTemp ;\
+		if(pitch != g_SrcPitch)	\
+		{	\
+		g_SrcPitch = pitch;	\
         \
         ulTemp = Volari_GetSwWP() ;\
         \
@@ -320,6 +327,7 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
+		}	\
         \
     }
 
@@ -334,6 +342,10 @@ extern void Volari_Idle(XGIPtr pXGI);
         {\
         unsigned long ulTemp ;\
         \
+			if((x != g_src_x) || (y != g_src_y)) \
+			{ \
+				g_src_x = x; \
+				g_src_y = y; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -352,7 +364,7 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
-        \
+			} \
     }
 
 /***********************************************************************
@@ -367,6 +379,9 @@ extern void Volari_Idle(XGIPtr pXGI);
         {\
         unsigned long ulTemp ;\
         \
+			if(base != g_dstbase) \
+			{ \
+				g_dstbase=base; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -385,7 +400,7 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
-        \
+			} \
     }
 
 /***********************************************************************
@@ -400,6 +415,10 @@ extern void Volari_Idle(XGIPtr pXGI);
         {\
         unsigned long ulTemp ;\
         \
+			if((x != g_dst_x) || (y != g_dst_y)) \
+			{ \
+				g_dst_x = x; \
+				g_dst_y = y; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -418,7 +437,7 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
-        \
+			} \
     }
 
 /***********************************************************************
@@ -433,6 +452,10 @@ extern void Volari_Idle(XGIPtr pXGI);
         {\
         unsigned long ulTemp ;\
         \
+		if( (x != g_DstRectX) || (y != g_DstRectY)) \
+		{ \
+		g_DstRectX = x; \
+		g_DstRectY = y; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -452,6 +475,7 @@ extern void Volari_Idle(XGIPtr pXGI);
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
 	Volari_UpdateHwWP(ulTemp) ;\
+		}	\
         \
     }
 
@@ -476,6 +500,10 @@ extern void Volari_Idle(XGIPtr pXGI);
         {\
         unsigned long ulTemp ;\
         \
+		if( (w != g_width) || (h != g_height)) \
+		{ \
+			g_width = w; \
+			g_height = h; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -494,7 +522,7 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
-        \
+		} \
     }
 
 /***********************************************************************
@@ -526,6 +554,9 @@ extern void Volari_Idle(XGIPtr pXGI);
         {\
         unsigned long ulTemp ;\
         \
+		if( color != g_MonoPatFgColor) \
+		{ \
+		g_MonoPatFgColor = color; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -545,6 +576,7 @@ extern void Volari_Idle(XGIPtr pXGI);
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
 	Volari_UpdateHwWP(ulTemp) ;\
+		}	\
         \
     }
 
@@ -552,6 +584,9 @@ extern void Volari_Idle(XGIPtr pXGI);
         {\
         unsigned long ulTemp ;\
         \
+		if( color != g_MonoPatBgColor) \
+		{ \
+		g_MonoPatBgColor = color; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -570,6 +605,7 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
+		}	\
         \
     }
 
@@ -818,6 +854,10 @@ extern void Volari_Idle(XGIPtr pXGI);
         {\
         unsigned long ulTemp ;\
         \
+		if((x != g_src_y) || (y != g_src_x)) \
+		{ \
+			g_src_x = y; \
+			g_src_y = x; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -836,13 +876,17 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
-        \
+		} \
     }
 
 #define Volari_SetupX1Y1(x,y) \
         {\
         unsigned long ulTemp ;\
         \
+		if((x != g_dst_y) || (y != g_dst_x)) \
+		{ \
+			g_dst_x = y; \
+			g_dst_y = x; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -861,7 +905,7 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
-        \
+		} \
     }
 
 #define Volari_SetupLineCount(c) \
@@ -870,6 +914,9 @@ extern void Volari_Idle(XGIPtr pXGI);
         \
         ulTemp = Volari_GetSwWP() ;\
         \
+		if(c != g_width) \
+		{ \
+			g_width = c; \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
             (CARD32)BE_SWAP32(GR_SKPC_HEADER + BR(6) + 0x30000 ) ;\
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp+4) =\
@@ -886,13 +933,16 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
-        \
+		} \
     }
 
 #define Volari_SetupStylePeriod(p) \
     {\
         unsigned long ulTemp ;\
         \
+		if(p != g_height) \
+		{ \
+			g_height = c; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -911,13 +961,17 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
-        \
+		} \
     }
 
 #define Volari_SetupStylePeriodCount(p,c) \
         {\
         unsigned long ulTemp ;\
         \
+		if((c != g_width) || (p != g_height)) \
+		{ \
+			g_width = c; \
+			g_height = p; \
         ulTemp = Volari_GetSwWP() ;\
         \
         *(CARD32 *)(pXGI->cmdQueueBase+ulTemp) = \
@@ -936,7 +990,7 @@ extern void Volari_Idle(XGIPtr pXGI);
             ulTemp += 0x08 ;\
         ulTemp &= pXGI->cmdQueueSizeMask ;\
         Volari_UpdateSwWP(ulTemp) ;\
-        \
+		} \
     }
 
 #define Volari_SetupStyle(ls,hs) \

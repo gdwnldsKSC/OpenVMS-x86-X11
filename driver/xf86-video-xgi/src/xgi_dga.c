@@ -307,11 +307,13 @@ XGI_FillRect (
 ){
     XGIPtr pXGI = XGIPTR(pScrn);
 
+#ifdef XGI_USE_XAA
     if(pXGI->AccelInfoPtr) {
       (*pXGI->AccelInfoPtr->SetupForSolidFill)(pScrn, color, GXcopy, ~0);
       (*pXGI->AccelInfoPtr->SubsequentSolidFillRect)(pScrn, x, y, w, h);
       SET_SYNC_FLAG(pXGI->AccelInfoPtr);
     }
+#endif
 }
 
 static void
@@ -320,9 +322,11 @@ XGI_Sync(
 ){
     XGIPtr pXGI = XGIPTR(pScrn);
 
+#ifdef XGI_USE_XAA
     if(pXGI->AccelInfoPtr) {
       (*pXGI->AccelInfoPtr->Sync)(pScrn);
     }
+#endif
 }
 
 static void
@@ -334,6 +338,7 @@ XGI_BlitRect(
 ){
     XGIPtr pXGI = XGIPTR(pScrn);
 
+#ifdef XGI_USE_XAA
     if(pXGI->AccelInfoPtr) {
       int xdir = ((srcx < dstx) && (srcy == dsty)) ? -1 : 1;
       int ydir = (srcy < dsty) ? -1 : 1;
@@ -344,6 +349,7 @@ XGI_BlitRect(
           pScrn, srcx, srcy, dstx, dsty, w, h);
       SET_SYNC_FLAG(pXGI->AccelInfoPtr);
     }
+#endif
 }
 
 static Bool

@@ -19,16 +19,21 @@
 #  TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 #  PERFORMANCE OF THIS SOFTWARE.
 
-sgmlentdir = $(prefix)/share/sgml/X11
+sgmldir = $(sgmlrootdir)/X11
 
-dist_sgmlent_DATA = defs.ent
+dist_sgml_DATA = defs.ent xorg.css xorg.xsl
 
-EXTRA_DIST = ChangeLog
-MAINTAINERCLEANFILES = ChangeLog
+pkgconfigdir = $(datadir)/pkgconfig
+pkgconfig_DATA = xorg-sgml-doctools.pc
 
-.PHONY: ChangeLog
+MAINTAINERCLEANFILES = ChangeLog INSTALL
+
+.PHONY: ChangeLog INSTALL
+
+INSTALL:
+	$(INSTALL_CMD)
 
 ChangeLog:
 	$(CHANGELOG_CMD)
 
-dist-hook: ChangeLog
+dist-hook: ChangeLog INSTALL

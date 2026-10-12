@@ -110,9 +110,9 @@ FreeStringList(char **paths)
 	return;
 
     for (p = paths; *p; p++)
-	xfree(*p);
+	free(*p);
 
-    xfree(paths);
+    free(paths);
 }
 
 #ifndef XORG_STATIC_MODULES
@@ -122,7 +122,7 @@ static char **defaultPathList = NULL;
 static Bool
 PathIsAbsolute(const char *path)
 {
-    return (*path == '/');
+    return *path == '/';
 }	
 
 /*
@@ -144,7 +144,7 @@ InitPathList(const char *path)
     if (!path)
 	return defaultPathList;
 
-    fullpath = xstrdup(path);
+    fullpath = strdup(path);
     if (!fullpath)
 	return NULL;
     elem = strtok(fullpath, ",");
@@ -156,19 +156,19 @@ InitPathList(const char *path)
 	    if (addslash)
 		len++;
 	    save = list;
-	    list = xrealloc(list, (n + 2) * sizeof(char *));
+	    list = realloc(list, (n + 2) * sizeof(char *));
 	    if (!list) {
 		if (save) {
 		    save[n] = NULL;
 		    FreeStringList(save);
 		}
-		xfree(fullpath);
+		free(fullpath);
 		return NULL;
 	    }
-	    list[n] = xalloc(len + 1);
+	    list[n] = malloc(len + 1);
 	    if (!list[n]) {
 		FreeStringList(list);
-		xfree(fullpath);
+		free(fullpath);
 		return NULL;
 	    }
 	    strcpy(list[n], elem);
@@ -182,7 +182,7 @@ InitPathList(const char *path)
     }
     if (list)
 	list[n] = NULL;
-    xfree(fullpath);
+    free(fullpath);
     return list;
 }
 
@@ -253,7 +253,7 @@ InitPatterns(const char **patternlist)
 	for (i = 0, s = patternlist; *s; i++, s++)
 	    if (*s == DEFAULT_LIST)
 		i += sizeof(stdPatterns) / sizeof(stdPatterns[0]) - 1 - 1;
-	patterns = xalloc((i + 1) * sizeof(PatternRec));
+	patterns = malloc((i + 1) * sizeof(PatternRec));
 	if (!patterns) {
 	    return NULL;
 	}
@@ -283,7 +283,7 @@ static void
 FreePatterns(PatternPtr patterns)
 {
     if (patterns && patterns != stdPatterns)
-	xfree(patterns);
+	free(patterns);
 }
 
 static const char **
@@ -299,7 +299,7 @@ InitSubdirs(const char **subdirlist)
     Bool indefault;
 
     if (subdirlist == NULL) {
-	subdirlist = tmp_subdirlist = xalloc(2 * sizeof(char *));
+	subdirlist = tmp_subdirlist = malloc(2 * sizeof(char *));
 	if (subdirlist == NULL)
 	    return NULL;
 	subdirlist[0] = DEFAULT_LIST;
@@ -324,16 +324,14 @@ InitSubdirs(const char **subdirlist)
 		if (**s == '/' || **s == '\\' || strchr(*s, ':') ||
 		    strstr(*s, "..")) {
 		    xf86Msg(X_ERROR, "InitSubdirs: Bad subdir: \"%s\"\n", *s);
-		    if (tmp_subdirlist)
-			xfree(tmp_subdirlist);
+		    free(tmp_subdirlist);
 		    return NULL;
 		}
 	    }
 	}
-	subdirs = xalloc((i * 2 + 1) * sizeof(char *));
+	subdirs = malloc((i * 2 + 1) * sizeof(char *));
 	if (!subdirs) {
-	    if (tmp_subdirlist)
-		xfree(tmp_subdirlist);
+	    free(tmp_subdirlist);
 	    return NULL;
 	}
 	i = 0;
@@ -353,19 +351,18 @@ InitSubdirs(const char **subdirlist)
 	    } else
 		slash = "";
 	    len += oslen + 2;
-	    if (!(subdirs[i] = xalloc(len))) {
+	    if (!(subdirs[i] = malloc(len))) {
 		while (--i >= 0)
-		    xfree(subdirs[i]);
-		xfree(subdirs);
-		if (tmp_subdirlist)
-		    xfree(tmp_subdirlist);
+		    free(subdirs[i]);
+		free(subdirs);
+		free(tmp_subdirlist);
 		return NULL;
 	    }
 	    /* tack on the OS name */
 	    sprintf(subdirs[i], "%s%s%s/", *s, slash, osname);
 	    i++;
 	    /* path as given */
-	    subdirs[i] = xstrdup(*s);
+	    subdirs[i] = strdup(*s);
 	    i++;
 	    s++;
 	    if (indefault && !s) {
@@ -376,8 +373,7 @@ InitSubdirs(const char **subdirlist)
 	}
 	subdirs[i] = NULL;
     }
-    if (tmp_subdirlist)
-	xfree(tmp_subdirlist);
+    free(tmp_subdirlist);
     return (const char **)subdirs;
 }
 
@@ -388,8 +384,8 @@ FreeSubdirs(const char **subdirs)
 
     if (subdirs) {
 	for (s = subdirs; *s; s++)
-	    xfree(*s);
-	xfree(subdirs);
+	    free(*s);
+	free(subdirs);
     }
 }
 
@@ -408,8 +404,11 @@ FindModuleInSubdir(const char *dirpath, const char *module)
     while ((direntry = readdir(dir))) {
         if (direntry->d_name[0] == '.')
             continue;
-        if ((stat(direntry->d_name, &stat_buf) == 0) && S_ISDIR(stat_buf.st_mode)) {
-            snprintf(tmpBuf, PATH_MAX, "%s/%s", dirpath, direntry->d_name);
+        snprintf(tmpBuf, PATH_MAX, "%s%s/", dirpath, direntry->d_name);
+	/* the stat with the appended / fails for normal files,
+	   and works for sub dirs fine, looks a bit strange in strace
+	   but does seem to work */
+        if ((stat(tmpBuf, &stat_buf) == 0) && S_ISDIR(stat_buf.st_mode)) {
             if ((ret = FindModuleInSubdir(tmpBuf, module)))
                 break;
             continue;
@@ -471,7 +470,7 @@ FindModule(const char *module, const char *dirname, const char **subdirlist,
 
     FreeSubdirs(subdirs);
     if (dirpath != dirname)
-	xfree(dirpath);
+	free(dirpath);
 
     return name;
 }
@@ -533,7 +532,7 @@ LoaderListDirs(const char **subdirlist, const char **patternlist)
 			    match[1].rm_so != -1) {
 			    len = match[1].rm_eo - match[1].rm_so;
 			    save = listing;
-			    listing = xrealloc(listing,
+			    listing = realloc(listing,
 					       (n + 2) * sizeof(char *));
 			    if (!listing) {
 				if (save) {
@@ -545,7 +544,7 @@ LoaderListDirs(const char **subdirlist, const char **patternlist)
 				FreePatterns(patterns);
 				return NULL;
 			    }
-			    listing[n] = xalloc(len + 1);
+			    listing[n] = malloc(len + 1);
 			    if (!listing[n]) {
 				FreeStringList(listing);
 				FreePathList(pathlist);
@@ -763,7 +762,7 @@ static ModuleDescPtr
 AddSibling(ModuleDescPtr head, ModuleDescPtr new)
 {
     new->sib = head;
-    return (new);
+    return new;
 }
 
 pointer
@@ -800,7 +799,7 @@ LoadSubModule(pointer _parent, const char *module,
 static ModuleDescPtr
 NewModuleDesc(const char *name)
 {
-    ModuleDescPtr mdp = xalloc(sizeof(ModuleDesc));
+    ModuleDescPtr mdp = malloc(sizeof(ModuleDesc));
 
     if (mdp) {
 	mdp->child = NULL;
@@ -813,7 +812,7 @@ NewModuleDesc(const char *name)
 	mdp->TearDownData = NULL;
     }
 
-    return (mdp);
+    return mdp;
 }
 
 ModuleDescPtr
@@ -876,7 +875,7 @@ doLoadModule(const char *module, const char *path, const char **subdirlist,
 #ifdef XORG_STATIC_MODULES
     found = LoaderStaticFindModule(module, path, subdirlist, patternlist);
     if (found)
-	name = xstrdup(module);
+	name = strdup(module);
     if (found && !name) {
 	if (errmaj) *errmaj = LDR_NOMEM;
 	if (errmin) *errmin = 0;
@@ -980,7 +979,7 @@ doLoadModule(const char *module, const char *path, const char **subdirlist,
      * now check if the special data object <modulename>ModuleData is
      * present.
      */
-    p = xalloc(strlen(name) + strlen("ModuleData") + 1);
+    p = malloc(strlen(name) + strlen("ModuleData") + 1);
     if (!p) {
 	if (errmaj)
 	    *errmaj = LDR_NOMEM;
@@ -1059,9 +1058,9 @@ doLoadModule(const char *module, const char *path, const char **subdirlist,
     FreePathList(pathlist);
     FreePatterns(patterns);
 #endif
-    xfree(found);
-    xfree(name);
-    xfree(p);
+    free(found);
+    free(name);
+    free(p);
 
     return ret;
 }
@@ -1137,8 +1136,8 @@ UnloadModuleOrDriver(ModuleDescPtr mod)
 	UnloadModuleOrDriver(mod->child);
     if (mod->sib)
 	UnloadModuleOrDriver(mod->sib);
-    xfree(mod->name);
-    xfree(mod);
+    free(mod->name);
+    free(mod);
 }
 
 void
@@ -1160,8 +1159,8 @@ UnloadSubModule(pointer _mod)
     if (mod->child)
 	UnloadModuleOrDriver(mod->child);
 
-    xfree(mod->name);
-    xfree(mod);
+    free(mod->name);
+    free(mod);
 }
 
 static void
@@ -1280,7 +1279,7 @@ LoaderGetCanonicalName(const char *modname, PatternPtr patterns)
     for (p = patterns; p->pattern; p++)
 	if (regexec(&p->rex, s, 2, match, 0) == 0 && match[1].rm_so != -1) {
 	    len = match[1].rm_eo - match[1].rm_so;
-	    str = xalloc(len + 1);
+	    str = malloc(len + 1);
 	    if (!str)
 		return NULL;
 	    strncpy(str, s + match[1].rm_so, len);
@@ -1289,7 +1288,7 @@ LoaderGetCanonicalName(const char *modname, PatternPtr patterns)
 	}
 
     /* If there is no match, return the whole name minus the leading path */
-    return xstrdup(s);
+    return strdup(s);
 }
 #endif
 

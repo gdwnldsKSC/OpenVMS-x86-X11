@@ -1,4 +1,3 @@
-/* $Xorg: Xdbe.c,v 1.4 2000/08/17 19:45:53 cpqbld Exp $ */
 /******************************************************************************
  * 
  * Copyright (c) 1994, 1995  Hewlett-Packard Company
@@ -30,10 +29,7 @@
  *     Xlib DBE code
  *
  *****************************************************************************/
-/* $XFree86: xc/lib/Xext/Xdbe.c,v 3.7 2002/10/16 02:19:22 dawes Exp $ */
 
-#define NEED_EVENTS
-#define NEED_REPLIES
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -184,14 +180,11 @@ XdbeBackBuffer XdbeAllocateBackBufferName(
      */
     DbeCheckExtension (dpy, info, (XdbeBackBuffer)0);
 
-    /* allocate the id */
-    buffer = XAllocID (dpy);
-
     LockDisplay(dpy);
     DbeGetReq(DbeAllocateBackBufferName, req, info);
     req->window = window;
     req->swapAction = (unsigned char)swap_action;
-    req->buffer = buffer;
+    req->buffer = buffer = XAllocID (dpy);
 
     UnlockDisplay (dpy);
     SyncHandle ();

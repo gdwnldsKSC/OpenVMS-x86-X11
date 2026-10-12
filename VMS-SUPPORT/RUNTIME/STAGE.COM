@@ -135,7 +135,7 @@ $ WRITE SYS$OUTPUT "RUNTIME_FONTS=",section,"|FILES=",font_count
 $ section_index = section_index + 1
 $ GOTO font_section
 $fonts_done:
-$ databases = "XERRORDB.|XKEYSYMDB.|XCMS.TXT"
+$ databases = "XERRORDB.|XCMS.TXT"
 $ database_index = 0
 $database_next:
 $ database = F$ELEMENT(database_index,"|",databases)

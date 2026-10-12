@@ -117,10 +117,6 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "xf86Aiptek.h"
 #include <errno.h>
 #include <string.h>
@@ -174,7 +170,7 @@ static int linux_inputDevice_keyMap[] =
  *
  * This is a list of X keystrokes the macro keys can send.
  */
-static KeySym aiptek_map[] =
+static KeySym aiptek_map[256] =
 {
     /* 0x00 .. 0x07 */
     NoSymbol,NoSymbol,NoSymbol,NoSymbol,NoSymbol,NoSymbol,NoSymbol,NoSymbol,
@@ -192,7 +188,7 @@ static KeySym aiptek_map[] =
 static KeySymsRec keysyms =
 {
   /* map        minKeyCode  maxKC   width */
-  aiptek_map,   8,          0x27,   1
+  aiptek_map,   8,          0xff,   1
 };
 #endif
 
@@ -452,26 +448,26 @@ xf86AiptekSendEvents(LocalDevicePtr local, int r_z)
                  sizeof(linux_inputDevice_keyMap[0]);
              ++i)
         {
-            if (linux_inputDevice_keyMap[0]==common->currentValues.macroKey)
+            if (linux_inputDevice_keyMap[i]==common->currentValues.macroKey)
             {
+                /* First available Keycode begins at 8 => macro+8.
+                 * It's pervasive throughout the Xinput drivers, and
+                 * no, I don't know why they purposively waste the first 8
+                 * positions of the KeySym map...
+                 */
+
+                /* Keyboard 'make' (press) event */
+                xf86PostKeyEvent(local->dev, i+8, TRUE,
+                                 bAbsolute, 0, 5,
+                                 x, y, common->currentValues.button, xTilt, yTilt);
+                /* Keyboard 'break' (depress) event */
+                xf86PostKeyEvent(local->dev, i+8, FALSE,
+                                 bAbsolute, 0, 5,
+                                 x, y, common->currentValues.button, xTilt, yTilt);
                 break;
             }
         }
 
-        /* First available Keycode begins at 8 => macro+7.
-         * It's pervasive throughout the Xinput drivers, and
-         * no, I don't know why they purposively waste the first 8
-         * positions of the KeySym map...
-         */
-
-        /* Keyboard 'make' (press) event */
-        xf86PostKeyEvent(local->dev, i+7, TRUE,
-                         bAbsolute, 0, 5,
-                         x, y, common->currentValues.button, xTilt, yTilt);
-        /* Keyboard 'break' (depress) event */
-        xf86PostKeyEvent(local->dev, i+7, FALSE,
-                         bAbsolute, 0, 5,
-                         x, y, common->currentValues.button, xTilt, yTilt);
     }
 
     /* As the coordinates are ready, we can send events to X */
@@ -866,7 +862,7 @@ xf86AiptekHIDReadInput(LocalDevicePtr local)
                     default:
                     {
                         ++eventsInMessage;
-                        common->currentValues.macroKey = event->value;
+                        common->currentValues.macroKey = event->code;
                     }
                     break;
                 }
@@ -1569,6 +1565,23 @@ xf86AiptekOpenDevice(DeviceIntPtr pDriver)
 }
 
 /*
+ * xf86AiptekBellCallback
+ */
+static void
+xf86AiptekBellCallback(int pct, DeviceIntPtr di, pointer ctrl, int x)
+{
+}
+
+/*
+ * xf86AiptekKbdCtrlCallback
+ */
+static void
+xf86AiptekKbdCtrlCallback(DeviceIntPtr di, KeybdCtrl* ctrl)
+{
+}
+
+
+/*
  * xf86AiptekProc
  *
  *  Call dispatcher for this driver.
@@ -1648,6 +1661,15 @@ xf86AiptekProc(DeviceIntPtr pAiptek, int requestCode)
                 ErrorF("Unable to init Key Class Device\n");
                 return !Success;
             }
+
+            if(InitKbdFeedbackClassDeviceStruct(pAiptek,
+                xf86AiptekBellCallback,
+                xf86AiptekKbdCtrlCallback) == FALSE)
+            {
+                ErrorF("Unable to init Keyboard Feedback Class Device\n");
+                return !Success;
+            }
+
 #endif
 
             /* we don't label the axes here, done later in
@@ -2238,7 +2260,7 @@ xf86AiptekInit(InputDriverPtr    drv,
     xf86Msg(X_CONFIG, "%s is in %s mode\n", local->name,
         (device->flags & ABSOLUTE_FLAG) ? "absolute" : "relative");
 
-#ifdef LINUX_INPUT
+#ifdef HAVE_LINUX_INPUT_H
     /* The define-name is accurate; the XFree86 keyword is not. We are
      * reading from a Linux kernel "Input" device. The Input device
      * layer generally supports mice, joysticks, and keyboards. As

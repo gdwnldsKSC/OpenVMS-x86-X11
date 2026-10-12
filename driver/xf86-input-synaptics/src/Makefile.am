@@ -28,7 +28,8 @@
 @DRIVER_NAME@_drv_la_LDFLAGS = -module -avoid-version
 @DRIVER_NAME@_drv_ladir = @inputdir@
 
-INCLUDES=-I$(top_srcdir)/include/
+AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = $(XORG_CFLAGS)
 
 @DRIVER_NAME@_drv_la_SOURCES = @DRIVER_NAME@.c synapticsstr.h \
 	alpscomm.c alpscomm.h \
@@ -43,6 +44,6 @@ endif
 
 if BUILD_PSMCOMM
 @DRIVER_NAME@_drv_la_SOURCES += \
-	psmcomm.c psmcomm.h
+	psmcomm.c
 endif
 

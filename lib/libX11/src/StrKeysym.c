@@ -1,4 +1,3 @@
-/* $Xorg: StrKeysym.c,v 1.5 2001/02/09 02:03:37 xorgcvs Exp $ */
 /*
 
 Copyright 1985, 1987, 1990, 1998  The Open Group
@@ -24,11 +23,11 @@ used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from The Open Group.
 
 */
-/* $XFree86: xc/lib/X11/StrKeysym.c,v 3.7 2003/04/13 19:22:18 dawes Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+#include <limits.h>
 #include "Xlibint.h"
 #include <X11/Xresource.h>
 #include <X11/keysymdef.h>
@@ -154,5 +153,29 @@ XStringToKeysym(_Xconst char *s)
 	    return val;
         return val | 0x01000000;
     }
+
+    if (strlen(s) > 2 && s[0] == '0' && s[1] == 'x') {
+        char *tmp = NULL;
+        val = strtoul(s, &tmp, 16);
+        if (val == ULONG_MAX || (tmp && *tmp != '\0'))
+            return NoSymbol;
+        else
+            return val;
+    }
+
+    /* Stupid inconsistency between the headers and XKeysymDB: the former has
+     * no separating underscore, while some XF86* syms in the latter did.
+     * As a last ditch effort, try without. */
+    if (strncmp(s, "XF86_", 5) == 0) {
+        KeySym ret;
+        char *tmp = strdup(s);
+        if (!tmp)
+            return NoSymbol;
+        memmove(&tmp[4], &tmp[5], strlen(s) - 5 + 1);
+        ret = XStringToKeysym(tmp);
+        free(tmp);
+        return ret;
+    }
+
     return NoSymbol;
 }

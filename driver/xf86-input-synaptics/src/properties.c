@@ -29,7 +29,6 @@
 
 #include <xorg-server.h>
 #include "xf86Module.h"
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 3
 
 #include <X11/Xatom.h>
 #include <xf86.h>
@@ -65,7 +64,6 @@ Atom prop_buttonscroll          = 0;
 Atom prop_buttonscroll_repeat   = 0;
 Atom prop_buttonscroll_time     = 0;
 Atom prop_off                   = 0;
-Atom prop_guestmouse            = 0;
 Atom prop_lockdrags             = 0;
 Atom prop_lockdrags_time        = 0;
 Atom prop_tapaction             = 0;
@@ -208,16 +206,19 @@ InitDeviceProperties(LocalDevicePtr local)
     prop_edgemotion_speed = InitAtom(local->dev, SYNAPTICS_PROP_EDGEMOTION_SPEED, 32, 2, values);
     prop_edgemotion_always = InitAtom(local->dev, SYNAPTICS_PROP_EDGEMOTION, 8, 1, &para->edge_motion_use_always);
 
-    values[0] = para->updown_button_scrolling;
-    values[1] = para->leftright_button_scrolling;
-    prop_buttonscroll = InitAtom(local->dev, SYNAPTICS_PROP_BUTTONSCROLLING, 8, 2, values);
+    if (priv->has_scrollbuttons)
+    {
+        values[0] = para->updown_button_scrolling;
+        values[1] = para->leftright_button_scrolling;
+        prop_buttonscroll = InitAtom(local->dev, SYNAPTICS_PROP_BUTTONSCROLLING, 8, 2, values);
 
-    values[0] = para->updown_button_repeat;
-    values[1] = para->leftright_button_repeat;
-    prop_buttonscroll_repeat = InitAtom(local->dev, SYNAPTICS_PROP_BUTTONSCROLLING_REPEAT, 8, 2, values);
-    prop_buttonscroll_time = InitAtom(local->dev, SYNAPTICS_PROP_BUTTONSCROLLING_TIME, 32, 1, &para->scroll_button_repeat);
+        values[0] = para->updown_button_repeat;
+        values[1] = para->leftright_button_repeat;
+        prop_buttonscroll_repeat = InitAtom(local->dev, SYNAPTICS_PROP_BUTTONSCROLLING_REPEAT, 8, 2, values);
+        prop_buttonscroll_time = InitAtom(local->dev, SYNAPTICS_PROP_BUTTONSCROLLING_TIME, 32, 1, &para->scroll_button_repeat);
+    }
+
     prop_off = InitAtom(local->dev, SYNAPTICS_PROP_OFF, 8, 1, &para->touchpad_off);
-    prop_guestmouse = InitAtom(local->dev, SYNAPTICS_PROP_GUESTMOUSE, 8, 1, &para->guestmouse_off);
     prop_lockdrags = InitAtom(local->dev, SYNAPTICS_PROP_LOCKED_DRAGS, 8, 1, &para->locked_drags);
     prop_lockdrags_time = InitAtom(local->dev, SYNAPTICS_PROP_LOCKED_DRAGS_TIMEOUT, 32, 1, &para->locked_drag_time);
 
@@ -242,7 +243,8 @@ InitDeviceProperties(LocalDevicePtr local)
     prop_palm_dim = InitAtom(local->dev, SYNAPTICS_PROP_PALM_DIMENSIONS, 32, 2, values);
 
     fvalues[0] = para->coasting_speed;
-    prop_coastspeed = InitFloatAtom(local->dev, SYNAPTICS_PROP_COASTING_SPEED, 1, fvalues);
+    fvalues[1] = para->coasting_friction;
+    prop_coastspeed = InitFloatAtom(local->dev, SYNAPTICS_PROP_COASTING_SPEED, 2, fvalues);
 
     values[0] = para->press_motion_min_z;
     values[1] = para->press_motion_max_z;
@@ -263,7 +265,9 @@ InitDeviceProperties(LocalDevicePtr local)
     values[2] = priv->has_right;
     values[3] = priv->has_double;
     values[4] = priv->has_triple;
-    prop_capabilities = InitAtom(local->dev, SYNAPTICS_PROP_CAPABILITIES, 8, 5, values);
+    values[5] = priv->has_pressure;
+    values[6] = priv->has_width;
+    prop_capabilities = InitAtom(local->dev, SYNAPTICS_PROP_CAPABILITIES, 8, 7, values);
 
     values[0] = para->resolution_vert;
     values[1] = para->resolution_horiz;
@@ -454,6 +458,9 @@ SetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
     {
         BOOL *scroll;
 
+        if (!priv->has_scrollbuttons)
+            return BadMatch;
+
         if (prop->size != 2 || prop->format != 8 || prop->type != XA_INTEGER)
             return BadMatch;
 
@@ -465,6 +472,9 @@ SetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
     {
         BOOL *repeat;
 
+        if (!priv->has_scrollbuttons)
+            return BadMatch;
+
         if (prop->size != 2 || prop->format != 8 || prop->type != XA_INTEGER)
             return BadMatch;
 
@@ -473,6 +483,9 @@ SetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
         para->leftright_button_repeat = repeat[1];
     } else if (property == prop_buttonscroll_time)
     {
+        if (!priv->has_scrollbuttons)
+            return BadMatch;
+
         if (prop->size != 1 || prop->format != 32 || prop->type != XA_INTEGER)
             return BadMatch;
 
@@ -490,12 +503,6 @@ SetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
             return BadValue;
 
         para->touchpad_off = off;
-    } else if (property == prop_guestmouse)
-    {
-        if (prop->size != 1 || prop->format != 8 || prop->type != XA_INTEGER)
-            return BadMatch;
-
-        para->guestmouse_off = *(BOOL*)prop->data;
     } else if (property == prop_gestures)
     {
         BOOL *gestures;
@@ -594,14 +601,14 @@ SetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
         para->palm_min_z     = dim[1];
     } else if (property == prop_coastspeed)
     {
-        float speed;
+        float *coast_speeds;
 
-        if (prop->size != 1 || prop->format != 32 || prop->type != float_type)
+        if (prop->size != 2 || prop->format != 32 || prop->type != float_type)
             return BadMatch;
 
-        speed = *(float*)prop->data;
-        para->coasting_speed = speed;
-
+        coast_speeds = (float*)prop->data;
+        para->coasting_speed = coast_speeds[0];
+        para->coasting_friction = coast_speeds[1];
     } else if (property == prop_pressuremotion)
     {
         float *press;
@@ -646,6 +653,4 @@ SetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
 
     return Success;
 }
-
-#endif
 

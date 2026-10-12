@@ -20,8 +20,11 @@ dnl  PERFORMANCE OF THIS SOFTWARE.
 dnl
 dnl Process this file with autoconf to create configure.
 
-AC_PREREQ([2.57])
-AC_INIT(xorg-sgml-doctools,[1.3], [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],xorg-sgml-doctools)
+AC_PREREQ([2.60])
+AC_INIT(xorg-sgml-doctools,
+	[1.6],
+	[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
+	xorg-sgml-doctools)
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
 AM_MAINTAINER_MODE
 
@@ -31,8 +34,11 @@ m4_ifndef([XORG_MACROS_VERSION],
 XORG_MACROS_VERSION(1.3)
 XORG_DEFAULT_OPTIONS
 
+AC_SUBST([sgmlrootdir],['${datarootdir}/sgml'])
+
 AC_PROG_INSTALL
 
 AC_OUTPUT([
 	Makefile
+	xorg-sgml-doctools.pc
 ])

@@ -38,7 +38,6 @@ from The Open Group.
 #include <X11/Xos.h>
 #include "mibstore.h"
 #include "mipointer.h"
-#include "lk201kbd.h"
 #include "xkbsrv.h"
 #include <X11/keysym.h>
 #include "xserver-properties.h"
@@ -63,7 +62,6 @@ void DDXRingBell(int volume, int pitch, int duration)
 
 #define VFB_MIN_KEY 8
 #define VFB_MAX_KEY 255
-KeySym  map[MAP_LENGTH * LK201_GLYPHS_PER_KEY];
 
 static int
 vfbKeybdProc(DeviceIntPtr pDevice, int onoff)
@@ -147,4 +145,9 @@ InitInput(int argc, char *argv[])
     xiclass = MakeAtom(XI_KEYBOARD, sizeof(XI_KEYBOARD) - 1, TRUE);
     AssignTypeAndName(k, xiclass, "Xvfb keyboard");
     (void)mieqInit();
+}
+
+void
+CloseInput (void)
+{
 }

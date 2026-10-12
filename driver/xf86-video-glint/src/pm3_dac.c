@@ -115,8 +115,9 @@ Permedia3MemorySizeDetect(ScrnInfoPtr pScrn)
 	for(i=0;i<32;i++) {
 	    /* Clear first 32MB */
 	    MMIO_OUT32(pGlint->FbBase, i*1024*1024, 0);
-	    mem_barrier();
 	}
+	mem_barrier();
+
         for(i=32;i<64;i++) {
     	    /* write test pattern */
 	    MMIO_OUT32(pGlint->FbBase, i*1024*1024, i*0x00345678);

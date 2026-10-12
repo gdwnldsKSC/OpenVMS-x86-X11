@@ -20,7 +20,7 @@
 
 bin_PROGRAMS = @DRIVER_NAME@_detect
 
-INCLUDES = -I$(top_srcdir)/shared
+AM_CPPFLAGS = -I$(top_srcdir)/shared $(XORG_CFLAGS)
 
 @DRIVER_NAME@_detect_SOURCES = vmmouse_detect.c
 @DRIVER_NAME@_detect_LDADD = $(top_builddir)/shared/lib@DRIVER_NAME@.la
@@ -28,11 +28,32 @@ INCLUDES = -I$(top_srcdir)/shared
 calloutsdir=$(HAL_CALLOUTS_DIR)
 callouts_SCRIPTS = hal-probe-vmmouse
 
-hal-probe-vmmouse:
-	sed -e 's|__BIN_PREFIX__|$(bindir)|g' \
+hal-probe-vmmouse: hal-probe-vmmouse.in
+	$(AM_V_GEN)$(SED) -e 's|__BIN_PREFIX__|$(bindir)|g' \
 	    -e 's|__HAL_BIN_PREFIX__|$(HAL_BIN_DIR)|g' \
-	    < $(srcdir)/$@.in > $@
+	    < $< > $@
 
 EXTRA_DIST = hal-probe-vmmouse.in
 
 CLEANFILES = hal-probe-vmmouse
+
+if HAS_XORG_CONF_DIR
+
+confdir=$(XORG_CONF_DIR)
+dist_conf_DATA = 50-vmmouse.conf
+
+endif
+
+if HAS_UDEV_RULES_DIR
+
+udevdir=$(UDEV_RULES_DIR)
+udev_DATA = 69-xorg-vmmouse.rules
+
+$(udev_DATA): $(udev_DATA).in
+	sed -e 's|__BIN_PREFIX__|$(bindir)|g' < $< > $@
+
+CLEANFILES += $(udev_DATA)
+
+endif # HAS_UDEV_RULES_DIR
+
+EXTRA_DIST = $(udev_DATA).in hal-probe-vmmouse.in

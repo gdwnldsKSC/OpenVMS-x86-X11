@@ -66,7 +66,7 @@
 
 #include "xgi_accel.h"
 #include "xgi_common.h"
-#include <drm.h>
+#include "drm.h"
 
 extern void GlxSetVisualConfigs(
     int nconfigs,

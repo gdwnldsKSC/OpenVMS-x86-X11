@@ -49,6 +49,7 @@
  *      Linuxcare Inc. David Kennedy <dkennedy@linuxcare.com>
  *      Fred Hucht <fred@thp.Uni-Duisburg.de>
  *      Fedor P. Goncharov <fedgo@gorodok.net>
+ *      Simon Thum <simon.thum@gmx.de>
  *
  * Trademarks are the property of their respective owners.
  */
@@ -69,10 +70,6 @@
 #include <xf86Xinput.h>
 #include <exevents.h>
 
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
-#include "mipointer.h"
-#endif
-
 #include "synaptics.h"
 #include "synapticsstr.h"
 #include "synaptics-properties.h"
@@ -80,9 +77,11 @@
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
 #include <X11/Xatom.h>
 #include <xserver-properties.h>
+#include <ptrveloc.h>
 #endif
 
 typedef enum {
+    NO_EDGE = 0,
     BOTTOM_EDGE = 1,
     TOP_EDGE = 2,
     LEFT_EDGE = 4,
@@ -107,9 +106,7 @@ typedef enum {
 #define M_SQRT1_2  0.70710678118654752440  /* 1/sqrt(2) */
 #endif
 
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 1
-#define DBG(a,b)
-#endif
+#define INPUT_BUFFER_SIZE 200
 
 /*****************************************************************************
  * Forward declaration
@@ -132,11 +129,9 @@ static void ReadDevDimensions(LocalDevicePtr);
 static void ScaleCoordinates(SynapticsPrivate *priv, struct SynapticsHwState *hw);
 static void CalculateScalingCoeffs(SynapticsPrivate *priv);
 
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 3
 void InitDeviceProperties(LocalDevicePtr local);
 int SetProperty(DeviceIntPtr dev, Atom property, XIPropertyValuePtr prop,
                 BOOL checkonly);
-#endif
 
 InputDriverRec SYNAPTICS = {
     1,
@@ -178,6 +173,62 @@ _X_EXPORT XF86ModuleData synapticsModuleData = {
 /*****************************************************************************
  *	Function Definitions
  ****************************************************************************/
+/**
+ * Fill in default dimensions for backends that cannot query the hardware.
+ * Eventually, we want the edges to be 1900/5400 for x, 1900/4000 for y.
+ * These values are based so that calculate_edge_widths() will give us the
+ * right values.
+ *
+ * The default values 1900, etc. come from the dawn of time, when men where
+ * men, or possibly apes.
+ */
+void
+SynapticsDefaultDimensions(LocalDevicePtr local)
+{
+    SynapticsPrivate *priv = (SynapticsPrivate *)local->private;
+
+    if (priv->minx >= priv->maxx)
+    {
+	priv->minx = 1615;
+	priv->maxx = 5685;
+	priv->resx = 0;
+
+	xf86Msg(X_PROBED,
+		"%s: invalid x-axis range.  defaulting to %d - %d\n",
+		local->name, priv->minx, priv->maxx);
+    }
+
+    if (priv->miny >= priv->maxy)
+    {
+	priv->miny = 1729;
+	priv->maxy = 4171;
+	priv->resx = 0;
+
+	xf86Msg(X_PROBED,
+		"%s: invalid y-axis range.  defaulting to %d - %d\n",
+		local->name, priv->miny, priv->maxy);
+    }
+
+    if (priv->minp >= priv->maxp)
+    {
+	priv->minp = 0;
+	priv->maxp = 256;
+
+	xf86Msg(X_PROBED,
+		"%s: invalid pressure range.  defaulting to %d - %d\n",
+		local->name, priv->minp, priv->maxp);
+    }
+
+    if (priv->minw >= priv->maxw)
+    {
+	priv->minw = 0;
+	priv->maxw = 16;
+
+	xf86Msg(X_PROBED,
+		"%s: invalid finger width range.  defaulting to %d - %d\n",
+		local->name, priv->minw, priv->maxw);
+    }
+}
 
 static void
 SetDeviceAndProtocol(LocalDevicePtr local)
@@ -266,7 +317,7 @@ alloc_param_data(LocalDevicePtr local)
 	    return FALSE;
 	}
     } else {
-	priv->synshm = xcalloc(1, sizeof(SynapticsSHM));
+	priv->synshm = calloc(1, sizeof(SynapticsSHM));
 	if (!priv->synshm)
 	    return FALSE;
     }
@@ -289,7 +340,7 @@ free_param_data(SynapticsPrivate *priv)
 	if ((shmid = shmget(SHM_SYNAPTICS, 0, 0)) != -1)
 	    shmctl(shmid, IPC_RMID, NULL);
     } else {
-	xfree(priv->synshm);
+	free(priv->synshm);
     }
 
     priv->synshm = NULL;
@@ -328,6 +379,28 @@ calculate_edge_widths(SynapticsPrivate *priv, int *l, int *r, int *t, int *b)
     *b = priv->maxy - eheight;
 }
 
+/* Area options support both percent values and absolute values. This is
+ * awkward. The xf86Set* calls will print to the log, but they'll
+ * also print an error if we request a percent value but only have an
+ * int. So - check first for percent, then call xf86Set* again to get
+ * the log message.
+ */
+static int set_percent_option(pointer options, const char* optname,
+                              const int range, const int offset)
+{
+    int result;
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 11
+    int percent = xf86CheckPercentOption(options, optname, -1);
+
+    if (percent != -1) {
+        percent = xf86SetPercentOption(options, optname, -1);
+        result = percent/100.0 * range + offset;
+    } else
+#endif
+        result = xf86SetIntOption(options, optname, 0);
+
+    return result;
+}
 
 static void set_default_parameters(LocalDevicePtr local)
 {
@@ -352,6 +425,7 @@ static void set_default_parameters(LocalDevicePtr local)
     Bool vertTwoFingerScroll, horizTwoFingerScroll;
     int horizResolution = 1;
     int vertResolution = 1;
+    int width, height, diag, range;
 
     /* read the parameters */
     if (priv->synshm)
@@ -367,83 +441,56 @@ static void set_default_parameters(LocalDevicePtr local)
      * If the range was autodetected, apply these edge widths to all four
      * sides.
      */
-    if (priv->minx < priv->maxx && priv->miny < priv->maxy)
-    {
-        int width, height, diag;
+    SynapticsDefaultDimensions(local);
 
-        width = abs(priv->maxx - priv->minx);
-        height = abs(priv->maxy - priv->miny);
-        diag = sqrt(width * width + height * height);
+    width = abs(priv->maxx - priv->minx);
+    height = abs(priv->maxy - priv->miny);
+    diag = sqrt(width * width + height * height);
 
-        calculate_edge_widths(priv, &l, &r, &t, &b);
+    calculate_edge_widths(priv, &l, &r, &t, &b);
 
-        /* Again, based on typical x/y range and defaults */
-        horizScrollDelta = diag * .020;
-        vertScrollDelta = diag * .020;
-        tapMove = diag * .044;
-        edgeMotionMinSpeed = 1;
-        edgeMotionMaxSpeed = diag * .080;
-        accelFactor = 50.0 / diag;
-    } else {
-        l = 1900;
-        r = 5400;
-        t = 1900;
-        b = 4000;
+    /* Again, based on typical x/y range and defaults */
+    horizScrollDelta = diag * .020;
+    vertScrollDelta = diag * .020;
+    tapMove = diag * .044;
+    edgeMotionMinSpeed = 1;
+    edgeMotionMaxSpeed = diag * .080;
+    accelFactor = 200.0 / diag; /* trial-and-error */
 
-        horizScrollDelta = 100;
-        vertScrollDelta = 100;
-        tapMove = 220;
-        edgeMotionMinSpeed = 1;
-        edgeMotionMaxSpeed = 400;
-        accelFactor = 0.010;
-    }
+    range = priv->maxp - priv->minp;
 
-    if (priv->minp < priv->maxp) {
-	int range = priv->maxp - priv->minp;
+    /* scaling based on defaults and a pressure of 256 */
+    fingerLow = priv->minp + range * (25.0/256);
+    fingerHigh = priv->minp + range * (30.0/256);
+    fingerPress = priv->minp + range * 1.000;
+    edgeMotionMinZ = priv->minp + range * (30.0/256);
+    edgeMotionMaxZ = priv->minp + range * (160.0/256);
+    pressureMotionMinZ = priv->minp + range * (30.0/256);
+    pressureMotionMaxZ = priv->minp + range * (160.0/256);
+    palmMinZ = priv->minp + range * (200.0/256);
 
-	/* scaling based on defaults below and a pressure of 256 */
-	fingerLow = priv->minp + range * (25.0/256);
-	fingerHigh = priv->minp + range * (30.0/256);
-	fingerPress = priv->minp + range * 1.000;
+    /* Enable emulation when hw supports both pressure and width. */
+    if (!priv->has_double && priv->has_width)
+	emulateTwoFingerMinZ = fingerHigh;
+    else
 	emulateTwoFingerMinZ = priv->minp + range * (282.0/256);
-	edgeMotionMinZ = priv->minp + range * (30.0/256);
-	edgeMotionMaxZ = priv->minp + range * (160.0/256);
-	pressureMotionMinZ = priv->minp + range * (30.0/256);
-	pressureMotionMaxZ = priv->minp + range * (160.0/256);
-	palmMinZ = priv->minp + range * (200.0/256);
-    } else {
-	fingerLow = 25;
-	fingerHigh = 30;
-	fingerPress = 256;
-	emulateTwoFingerMinZ = 257;
-	edgeMotionMinZ = 30;
-	edgeMotionMaxZ = 160;
-	pressureMotionMinZ = 30;
-	pressureMotionMaxZ = 160;
-	palmMinZ = 200;
-    }
 
-    if (priv->minw < priv->maxw) {
-	int range = priv->maxw - priv->minw;
+    range = priv->maxw - priv->minw;
 
-	/* scaling based on defaults below and a tool width of 16 */
-	palmMinWidth = priv->minw + range * (10.0/16);
-	emulateTwoFingerMinW = priv->minw + range * (7.0/16);
-    } else {
-	palmMinWidth = 10;
-	emulateTwoFingerMinW = 7;
-    }
+    /* scaling based on defaults below and a tool width of 16 */
+    palmMinWidth = priv->minw + range * (10.0/16);
+    emulateTwoFingerMinW = priv->minw + range * (7.0/16);
 
     /* Enable tap if we don't have a phys left button */
     tapButton1 = priv->has_left ? 0 : 1;
     tapButton2 = priv->has_left ? 0 : 3;
     tapButton3 = priv->has_left ? 0 : 2;
 
-    /* Enable multifinger-click if we don't have right/middle button,
+    /* Enable multifinger-click if only have one physical button,
        otherwise clickFinger is always button 1. */
     clickFinger1 = 1;
-    clickFinger2 = priv->has_right ? 1 : 3;
-    clickFinger3 = priv->has_middle ? 1 : 2;
+    clickFinger2 = (priv->has_right || priv->has_middle) ? 1 : 3;
+    clickFinger3 = (priv->has_right || priv->has_middle) ? 1 : 2;
 
     /* Enable vert edge scroll if we can't detect doubletap */
     vertEdgeScroll = priv->has_double ? FALSE : TRUE;
@@ -465,10 +512,10 @@ static void set_default_parameters(LocalDevicePtr local)
     pars->top_edge = xf86SetIntOption(opts, "TopEdge", t);
     pars->bottom_edge = xf86SetIntOption(opts, "BottomEdge", b);
 
-    pars->area_top_edge = xf86SetIntOption(opts, "AreaTopEdge", 0);
-    pars->area_bottom_edge = xf86SetIntOption(opts, "AreaBottomEdge", 0);
-    pars->area_left_edge = xf86SetIntOption(opts, "AreaLeftEdge", 0);
-    pars->area_right_edge = xf86SetIntOption(opts, "AreaRightEdge", 0);
+    pars->area_top_edge = set_percent_option(opts, "AreaTopEdge", height, priv->miny);
+    pars->area_bottom_edge = set_percent_option(opts, "AreaBottomEdge", height, priv->miny);
+    pars->area_left_edge = set_percent_option(opts, "AreaLeftEdge", width, priv->minx);
+    pars->area_right_edge = set_percent_option(opts, "AreaRightEdge", width, priv->minx);
 
     pars->finger_low = xf86SetIntOption(opts, "FingerLow", fingerLow);
     pars->finger_high = xf86SetIntOption(opts, "FingerHigh", fingerHigh);
@@ -493,13 +540,14 @@ static void set_default_parameters(LocalDevicePtr local)
     pars->edge_motion_min_speed = xf86SetIntOption(opts, "EdgeMotionMinSpeed", edgeMotionMinSpeed);
     pars->edge_motion_max_speed = xf86SetIntOption(opts, "EdgeMotionMaxSpeed", edgeMotionMaxSpeed);
     pars->edge_motion_use_always = xf86SetBoolOption(opts, "EdgeMotionUseAlways", FALSE);
-    pars->updown_button_scrolling = xf86SetBoolOption(opts, "UpDownScrolling", TRUE);
-    pars->leftright_button_scrolling = xf86SetBoolOption(opts, "LeftRightScrolling", TRUE);
-    pars->updown_button_repeat = xf86SetBoolOption(opts, "UpDownScrollRepeat", TRUE);
-    pars->leftright_button_repeat = xf86SetBoolOption(opts, "LeftRightScrollRepeat", TRUE);
+    if (priv->has_scrollbuttons) {
+	pars->updown_button_scrolling = xf86SetBoolOption(opts, "UpDownScrolling", TRUE);
+	pars->leftright_button_scrolling = xf86SetBoolOption(opts, "LeftRightScrolling", TRUE);
+	pars->updown_button_repeat = xf86SetBoolOption(opts, "UpDownScrollRepeat", TRUE);
+	pars->leftright_button_repeat = xf86SetBoolOption(opts, "LeftRightScrollRepeat", TRUE);
+    }
     pars->scroll_button_repeat = xf86SetIntOption(opts,"ScrollButtonRepeat", 100);
     pars->touchpad_off = xf86SetIntOption(opts, "TouchpadOff", 0);
-    pars->guestmouse_off = xf86SetBoolOption(opts, "GuestMouseOff", FALSE);
     pars->locked_drags = xf86SetBoolOption(opts, "LockedDrags", FALSE);
     pars->locked_drag_time = xf86SetIntOption(opts, "LockedDragTimeout", 5000);
     pars->tap_action[RT_TAP] = xf86SetIntOption(opts, "RTCornerButton", 0);
@@ -527,7 +575,8 @@ static void set_default_parameters(LocalDevicePtr local)
     pars->accl = xf86SetRealOption(opts, "AccelFactor", accelFactor);
     pars->trackstick_speed = xf86SetRealOption(opts, "TrackstickSpeed", 40);
     pars->scroll_dist_circ = xf86SetRealOption(opts, "CircScrollDelta", 0.1);
-    pars->coasting_speed = xf86SetRealOption(opts, "CoastingSpeed", 0.0);
+    pars->coasting_speed = xf86SetRealOption(opts, "CoastingSpeed", 20.0);
+    pars->coasting_friction = xf86SetRealOption(opts, "CoastingFriction", 50);
     pars->press_motion_min_factor = xf86SetRealOption(opts, "PressureMotionMinFactor", 1.0);
     pars->press_motion_max_factor = xf86SetRealOption(opts, "PressureMotionMaxFactor", 1.0);
     pars->grab_event_device = xf86SetBoolOption(opts, "GrabEventDevice", TRUE);
@@ -545,6 +594,50 @@ static void set_default_parameters(LocalDevicePtr local)
     }
 }
 
+static float SynapticsAccelerationProfile(DeviceIntPtr dev,
+                                          DeviceVelocityPtr vel,
+                                          float velocity,
+                                          float thr,
+                                          float acc) {
+    LocalDevicePtr local = (LocalDevicePtr) dev->public.devicePrivate;
+    SynapticsPrivate *priv = (SynapticsPrivate *) (local->private);
+    SynapticsParameters* para = &priv->synpara;
+
+    double accelfct;
+
+    /*
+     * synaptics accel was originally base on device coordinate based
+     * velocity, which we recover this way so para->accl retains its scale.
+     */
+    velocity /= vel->const_acceleration;
+
+    /* speed up linear with finger velocity */
+    accelfct = velocity * para->accl;
+
+    /* clip acceleration factor */
+    if (accelfct > para->max_speed * acc)
+	accelfct = para->max_speed * acc;
+    else if (accelfct < para->min_speed)
+	accelfct = para->min_speed;
+
+    /* modify speed according to pressure */
+    if (priv->moving_state == MS_TOUCHPAD_RELATIVE) {
+	int minZ = para->press_motion_min_z;
+	int maxZ = para->press_motion_max_z;
+	double minFctr = para->press_motion_min_factor;
+	double maxFctr = para->press_motion_max_factor;
+	if (priv->hwState.z <= minZ) {
+	    accelfct *= minFctr;
+	} else if (priv->hwState.z >= maxZ) {
+	    accelfct *= maxFctr;
+	} else {
+	    accelfct *= minFctr + (priv->hwState.z - minZ) * (maxFctr - minFctr) / (maxZ - minZ);
+	}
+    }
+
+    return accelfct;
+}
+
 /*
  *  called by the module loader for initialization
  */
@@ -555,22 +648,22 @@ SynapticsPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     SynapticsPrivate *priv;
 
     /* allocate memory for SynapticsPrivateRec */
-    priv = xcalloc(1, sizeof(SynapticsPrivate));
+    priv = calloc(1, sizeof(SynapticsPrivate));
     if (!priv)
 	return NULL;
 
     /* allocate now so we don't allocate in the signal handler */
     priv->timer = TimerSet(NULL, 0, 0, NULL, NULL);
     if (!priv->timer) {
-	xfree(priv);
+	free(priv);
 	return NULL;
     }
 
     /* Allocate a new InputInfoRec and add it to the head xf86InputDevs. */
     local = xf86AllocateInput(drv, 0);
     if (!local) {
-	xfree(priv->timer);
-	xfree(priv);
+	free(priv->timer);
+	free(priv);
 	return NULL;
     }
 
@@ -589,10 +682,6 @@ SynapticsPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     local->private_flags           = 0;
     local->flags                   = XI86_POINTER_CAPABLE | XI86_SEND_DRAG_EVENTS;
     local->conf_idev               = dev;
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
-    local->motion_history_proc     = xf86GetMotionEvents;
-    local->history_size            = 0;
-#endif
     local->always_core_feedback    = 0;
 
     xf86Msg(X_INFO, "Synaptics touchpad driver version %s\n", PACKAGE_VERSION);
@@ -613,7 +702,6 @@ SynapticsPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     xf86ErrorFVerb(6, "port opened successfully\n");
 
     /* initialize variables */
-    priv->timer = NULL;
     priv->repeatButtons = 0;
     priv->nextRepeat = 0;
     priv->count_packet_finger = 0;
@@ -635,17 +723,12 @@ SynapticsPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     if (!alloc_param_data(local))
 	goto SetupProc_fail;
 
-    priv->comm.buffer = XisbNew(local->fd, 200);
-    DBG(9, XisbTrace(priv->comm.buffer, 1));
+    priv->comm.buffer = XisbNew(local->fd, INPUT_BUFFER_SIZE);
 
     if (!QueryHardware(local)) {
 	xf86Msg(X_ERROR, "%s Unable to query/initialize Synaptics hardware.\n", local->name);
 	goto SetupProc_fail;
     }
-
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
-    local->history_size = xf86SetIntOption(local->options, "HistorySize", 0);
-#endif
 
     xf86ProcessCommonOptions(local, local->options);
     local->flags |= XI86_CONFIGURED;
@@ -670,9 +753,9 @@ SynapticsPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     if (priv->comm.buffer)
 	XisbFree(priv->comm.buffer);
     free_param_data(priv);
-    xfree(priv->proto_data);
-    xfree(priv->timer);
-    xfree(priv);
+    free(priv->proto_data);
+    free(priv->timer);
+    free(priv);
     local->private = NULL;
     return local;
 }
@@ -687,10 +770,10 @@ static void SynapticsUnInit(InputDriverPtr drv,
 {
     SynapticsPrivate *priv = ((SynapticsPrivate *)local->private);
     if (priv && priv->timer)
-        xfree(priv->timer);
+        free(priv->timer);
     if (priv && priv->proto_data)
-        xfree(priv->proto_data);
-    xfree(local->private);
+        free(priv->proto_data);
+    free(local->private);
     local->private = NULL;
     xf86DeleteInput(local, 0);
 }
@@ -703,15 +786,6 @@ static void SynapticsUnInit(InputDriverPtr drv,
 static void
 SynapticsCtrl(DeviceIntPtr device, PtrCtrl *ctrl)
 {
-    DBG(3, ErrorF("SynapticsCtrl called.\n"));
-    /*
-      pInfo = device->public.devicePrivate;
-      pMse = pInfo->private;
-
-      pMse->num       = ctrl->num;
-      pMse->den       = ctrl->den;
-      pMse->threshold = ctrl->threshold;
-    */
 }
 
 static Bool
@@ -745,7 +819,7 @@ DeviceOn(DeviceIntPtr dev)
     LocalDevicePtr local = (LocalDevicePtr) dev->public.devicePrivate;
     SynapticsPrivate *priv = (SynapticsPrivate *) (local->private);
 
-    DBG(3, ErrorF("Synaptics DeviceOn called\n"));
+    DBG(3, "Synaptics DeviceOn called\n");
 
     SetDeviceAndProtocol(local);
     local->fd = xf86OpenSerial(local->options);
@@ -757,7 +831,7 @@ DeviceOn(DeviceIntPtr dev)
     if (priv->proto_ops->DeviceOnHook)
         priv->proto_ops->DeviceOnHook(local, &priv->synpara);
 
-    priv->comm.buffer = XisbNew(local->fd, 64);
+    priv->comm.buffer = XisbNew(local->fd, INPUT_BUFFER_SIZE);
     if (!priv->comm.buffer) {
 	xf86CloseSerial(local->fd);
 	local->fd = -1;
@@ -788,11 +862,10 @@ DeviceOff(DeviceIntPtr dev)
     LocalDevicePtr local = (LocalDevicePtr) dev->public.devicePrivate;
     SynapticsPrivate *priv = (SynapticsPrivate *) (local->private);
 
-    DBG(3, ErrorF("Synaptics DeviceOff called\n"));
+    DBG(3, "Synaptics DeviceOff called\n");
 
     if (local->fd != -1) {
-	TimerFree(priv->timer);
-	priv->timer = NULL;
+	TimerCancel(priv->timer);
 	xf86RemoveEnabledDevice(local);
         if (priv->proto_ops->DeviceOffHook)
             priv->proto_ops->DeviceOffHook(local);
@@ -801,6 +874,7 @@ DeviceOff(DeviceIntPtr dev)
 	    priv->comm.buffer = NULL;
 	}
 	xf86CloseSerial(local->fd);
+	local->fd = -1;
     }
     dev->public.on = FALSE;
     return Success;
@@ -814,6 +888,8 @@ DeviceClose(DeviceIntPtr dev)
     SynapticsPrivate *priv = (SynapticsPrivate *) local->private;
 
     RetValue = DeviceOff(dev);
+    TimerFree(priv->timer);
+    priv->timer = NULL;
     free_param_data(priv);
     return RetValue;
 }
@@ -863,18 +939,21 @@ DeviceInit(DeviceIntPtr dev)
 {
     LocalDevicePtr local = (LocalDevicePtr) dev->public.devicePrivate;
     SynapticsPrivate *priv = (SynapticsPrivate *) (local->private);
+    Atom float_type, prop;
+    float tmpf;
     unsigned char map[SYN_MAX_BUTTONS + 1];
     int i;
     int min, max;
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
     Atom btn_labels[SYN_MAX_BUTTONS] = { 0 };
     Atom axes_labels[2] = { 0 };
+    DeviceVelocityPtr pVel;
 
     InitAxesLabels(axes_labels, 2);
     InitButtonLabels(btn_labels, SYN_MAX_BUTTONS);
 #endif
 
-    DBG(3, ErrorF("Synaptics DeviceInit called\n"));
+    DBG(3, "Synaptics DeviceInit called\n");
 
     for (i = 0; i <= SYN_MAX_BUTTONS; i++)
 	map[i] = i;
@@ -886,21 +965,56 @@ DeviceInit(DeviceIntPtr dev)
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                             btn_labels,
 #endif
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
-			    miPointerGetMotionEvents,
-#elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
-			    GetMotionHistory,
-#endif
 			    SynapticsCtrl,
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
-			    miPointerGetMotionBufferSize()
-#else
 			    GetMotionHistorySize(), 2
-#endif
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                             , axes_labels
 #endif
 			    );
+
+    /*
+     * setup dix acceleration to match legacy synaptics settings, and
+     * etablish a device-specific profile to do stuff like pressure-related
+     * acceleration.
+     */
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+    if (NULL != (pVel = GetDevicePredictableAccelData(dev))) {
+	SetDeviceSpecificAccelerationProfile(pVel,
+	                                     SynapticsAccelerationProfile);
+
+	/* float property type */
+	float_type = XIGetKnownProperty(XATOM_FLOAT);
+
+	/* translate MinAcc to constant deceleration.
+	 * May be overridden in xf86InitValuatorDefaults */
+	tmpf = 1.0 / priv->synpara.min_speed;
+
+	xf86Msg(X_CONFIG, "%s: (accel) MinSpeed is now constant deceleration "
+	        "%.1f\n", dev->name, tmpf);
+	prop = XIGetKnownProperty(ACCEL_PROP_CONSTANT_DECELERATION);
+	XIChangeDeviceProperty(dev, prop, float_type, 32,
+	                       PropModeReplace, 1, &tmpf, FALSE);
+
+	/* adjust accordingly */
+	priv->synpara.max_speed /= priv->synpara.min_speed;
+	priv->synpara.min_speed = 1.0;
+
+	/* synaptics seems to report 80 packet/s, but dix scales for
+	 * 100 packet/s by default. */
+	pVel->corr_mul = 12.5f; /*1000[ms]/80[/s] = 12.5 */
+
+	xf86Msg(X_CONFIG, "%s: MaxSpeed is now %.2f\n",
+		dev->name, priv->synpara.max_speed);
+	xf86Msg(X_CONFIG, "%s: AccelFactor is now %.3f\n",
+		dev->name, priv->synpara.accl);
+
+	prop = XIGetKnownProperty(ACCEL_PROP_PROFILE_NUMBER);
+	i = AccelProfileDeviceSpecific;
+	XIChangeDeviceProperty(dev, prop, XA_INTEGER, 32,
+	                       PropModeReplace, 1, &i, FALSE);
+    }
+#endif
+
     /* X valuator */
     if (priv->minx < priv->maxx)
     {
@@ -937,26 +1051,15 @@ DeviceInit(DeviceIntPtr dev)
             min, max, priv->resy * 1000, 0, priv->resy * 1000);
     xf86InitValuatorDefaults(dev, 1);
 
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) == 0
-    xf86MotionHistoryAllocate(local);
-#endif
-
     if (!alloc_param_data(local))
 	return !Success;
 
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 3
     InitDeviceProperties(local);
     XIRegisterPropertyHandler(local->dev, SetProperty, NULL, NULL);
-#endif
 
     return Success;
 }
 
-static int
-move_distance(int dx, int dy)
-{
-    return sqrt(SQR(dx) + SQR(dy));
-}
 
 /*
  * Convert from absolute X/Y coordinates to a coordinate system where
@@ -1033,7 +1136,7 @@ circular_edge_detection(SynapticsPrivate *priv, int x, int y)
 static edge_type
 edge_detection(SynapticsPrivate *priv, int x, int y)
 {
-    edge_type edge = 0;
+    edge_type edge = NO_EDGE;
 
     if (priv->synpara.circular_pad)
 	return circular_edge_detection(priv, x, y);
@@ -1087,7 +1190,6 @@ timerFunc(OsTimerPtr timer, CARD32 now, pointer arg)
     sigstate = xf86BlockSIGIO();
 
     hw = priv->hwState;
-    hw.guest_dx = hw.guest_dy = 0;
     hw.millis = now;
     delay = HandleState(local, &hw);
 
@@ -1302,33 +1404,33 @@ SelectTapButton(SynapticsPrivate *priv, edge_type edge)
     default:
 	switch (edge) {
 	case RIGHT_TOP_EDGE:
-	    DBG(7, ErrorF("right top edge\n"));
+	    DBG(7, "right top edge\n");
 	    tap = RT_TAP;
 	    break;
 	case RIGHT_BOTTOM_EDGE:
-	    DBG(7, ErrorF("right bottom edge\n"));
+	    DBG(7, "right bottom edge\n");
 	    tap = RB_TAP;
 	    break;
 	case LEFT_TOP_EDGE:
-	    DBG(7, ErrorF("left top edge\n"));
+	    DBG(7, "left top edge\n");
 	    tap = LT_TAP;
 	    break;
 	case LEFT_BOTTOM_EDGE:
-	    DBG(7, ErrorF("left bottom edge\n"));
+	    DBG(7, "left bottom edge\n");
 	    tap = LB_TAP;
 	    break;
 	default:
-	    DBG(7, ErrorF("no edge\n"));
+	    DBG(7, "no edge\n");
 	    tap = F1_TAP;
 	    break;
 	}
 	break;
     case 2:
-	DBG(7, ErrorF("two finger tap\n"));
+	DBG(7, "two finger tap\n");
 	tap = F2_TAP;
 	break;
     case 3:
-	DBG(7, ErrorF("three finger tap\n"));
+	DBG(7, "three finger tap\n");
 	tap = F3_TAP;
 	break;
     }
@@ -1341,7 +1443,7 @@ static void
 SetTapState(SynapticsPrivate *priv, enum TapState tap_state, int millis)
 {
     SynapticsParameters *para = &priv->synpara;
-    DBG(7, ErrorF("SetTapState - %d -> %d (millis:%d)\n", priv->tap_state, tap_state, millis));
+    DBG(7, "SetTapState - %d -> %d (millis:%d)\n", priv->tap_state, tap_state, millis);
     switch (tap_state) {
     case TS_START:
 	priv->tap_button_state = TBS_BUTTON_UP;
@@ -1381,8 +1483,8 @@ SetTapState(SynapticsPrivate *priv, enum TapState tap_state, int millis)
 static void
 SetMovingState(SynapticsPrivate *priv, enum MovingState moving_state, int millis)
 {
-    DBG(7, ErrorF("SetMovingState - %d -> %d center at %d/%d (millis:%d)\n", priv->moving_state,
-		  moving_state,priv->hwState.x, priv->hwState.y, millis));
+    DBG(7, "SetMovingState - %d -> %d center at %d/%d (millis:%d)\n", priv->moving_state,
+		  moving_state,priv->hwState.x, priv->hwState.y, millis);
 
     if (moving_state == MS_TRACKSTICK) {
 	priv->trackstick_neutral_x = priv->hwState.x;
@@ -1428,9 +1530,10 @@ HandleTapProcessing(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 
     touch = finger && !priv->finger_state;
     release = !finger && priv->finger_state;
-    move = ((priv->tap_max_fingers <= ((priv->horiz_scroll_twofinger_on || priv->vert_scroll_twofinger_on)? 2 : 1)) &&
+    move = (finger &&
+	     (priv->tap_max_fingers <= ((priv->horiz_scroll_twofinger_on || priv->vert_scroll_twofinger_on)? 2 : 1)) &&
 	     ((abs(hw->x - priv->touch_on.x) >= para->tap_move) ||
-	     (abs(hw->y - priv->touch_on.y) >= para->tap_move)) && finger);
+	     (abs(hw->y - priv->touch_on.y) >= para->tap_move)));
 
     if (touch) {
 	priv->touch_on.x = hw->x;
@@ -1591,14 +1694,13 @@ estimate_delta(double x0, double x1, double x2, double x3)
 }
 
 static int
-ComputeDeltas(SynapticsPrivate *priv, struct SynapticsHwState *hw,
-	      edge_type edge, int *dxP, int *dyP)
+ComputeDeltas(SynapticsPrivate *priv, const struct SynapticsHwState *hw,
+	      edge_type edge, int *dxP, int *dyP, Bool inside_area)
 {
     SynapticsParameters *para = &priv->synpara;
     enum MovingState moving_state;
-    int dist;
     double dx, dy;
-    double speed, integral;
+    double integral;
     int delay = 1000000000;
 
     dx = dy = 0;
@@ -1620,10 +1722,11 @@ ComputeDeltas(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 	    break;
 	}
     }
-    if (moving_state && !priv->palm &&
+    if (inside_area && moving_state && !priv->palm &&
 	!priv->vert_scroll_edge_on && !priv->horiz_scroll_edge_on &&
 	!priv->vert_scroll_twofinger_on && !priv->horiz_scroll_twofinger_on &&
-	!priv->circ_scroll_on) {
+	!priv->circ_scroll_on && priv->prevFingers == hw->numFingers) {
+	/* FIXME: Wtf?? what's with 13? */
 	delay = MIN(delay, 13);
 	if (priv->count_packet_finger > 3) { /* min. 3 packets */
 	    double tmpf;
@@ -1678,36 +1781,12 @@ ComputeDeltas(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 		}
 	    }
 
-	    /* speed depending on distance/packet */
-	    dist = move_distance(dx, dy);
-	    speed = dist * para->accl;
-	    if (speed > para->max_speed) {  /* set max speed factor */
-		speed = para->max_speed;
-	    } else if (speed < para->min_speed) { /* set min speed factor */
-		speed = para->min_speed;
-	    }
-
-	    /* modify speed according to pressure */
-	    if (priv->moving_state == MS_TOUCHPAD_RELATIVE) {
-		int minZ = para->press_motion_min_z;
-		int maxZ = para->press_motion_max_z;
-		double minFctr = para->press_motion_min_factor;
-		double maxFctr = para->press_motion_max_factor;
-
-		if (hw->z <= minZ) {
-		    speed *= minFctr;
-		} else if (hw->z >= maxZ) {
-		    speed *= maxFctr;
-		} else {
-		    speed *= minFctr + (hw->z - minZ) * (maxFctr - minFctr) / (maxZ - minZ);
-		}
-	    }
-
-	    /* save the fraction, report the integer part */
-	    tmpf = dx * speed + x_edge_speed * dtime + priv->frac_x;
+	    /* report edge speed as synthetic motion. Of course, it would be
+	     * cooler to report floats than to buffer, but anyway. */
+	    tmpf = dx + x_edge_speed * dtime + priv->frac_x;
 	    priv->frac_x = modf(tmpf, &integral);
 	    dx = integral;
-	    tmpf = dy * speed + y_edge_speed * dtime + priv->frac_y;
+	    tmpf = dy + y_edge_speed * dtime + priv->frac_y;
 	    priv->frac_y = modf(tmpf, &integral);
 	    dy = integral;
 	}
@@ -1716,18 +1795,10 @@ ComputeDeltas(SynapticsPrivate *priv, struct SynapticsHwState *hw,
     } else {				    /* reset packet counter */
 	priv->count_packet_finger = 0;
     }
-
-    /* Add guest device movements */
-    if (!para->guestmouse_off) {
-	dx += hw->guest_dx;
-	dy += hw->guest_dy;
-    }
+    priv->prevFingers = hw->numFingers;
 
     *dxP = dx;
     *dyP = dy;
-
-    /* generate a history of the absolute positions */
-    store_history(priv, hw->x, hw->y, hw->millis);
 
     return delay;
 }
@@ -1747,20 +1818,21 @@ start_coasting(SynapticsPrivate *priv, struct SynapticsHwState *hw, edge_type ed
 
     if ((priv->scroll_packet_count > 3) && (para->coasting_speed > 0.0)) {
 	double pkt_time = (HIST(0).millis - HIST(3).millis) / 1000.0;
-	if (vertical) {
+	if (para->scroll_twofinger_vert || vertical) {
 	    double dy = estimate_delta(HIST(0).y, HIST(1).y, HIST(2).y, HIST(3).y);
 	    int sdelta = para->scroll_dist_vert;
-	    if ((edge & RIGHT_EDGE) && pkt_time > 0 && sdelta > 0) {
+	    if ((para->scroll_twofinger_vert || (edge & RIGHT_EDGE)) && pkt_time > 0 && sdelta > 0) {
 		double scrolls_per_sec = dy / pkt_time / sdelta;
 		if (fabs(scrolls_per_sec) >= para->coasting_speed) {
 		    priv->autoscroll_yspd = scrolls_per_sec;
 		    priv->autoscroll_y = (hw->y - priv->scroll_y) / (double)sdelta;
 		}
 	    }
-	} else {
+	}
+	if (para->scroll_twofinger_horiz || !vertical){
 	    double dx = estimate_delta(HIST(0).x, HIST(1).x, HIST(2).x, HIST(3).x);
 	    int sdelta = para->scroll_dist_horiz;
-	    if ((edge & BOTTOM_EDGE) && pkt_time > 0 && sdelta > 0) {
+	    if ((para->scroll_twofinger_horiz || (edge & BOTTOM_EDGE)) && pkt_time > 0 && sdelta > 0) {
 		double scrolls_per_sec = dx / pkt_time / sdelta;
 		if (fabs(scrolls_per_sec) >= para->coasting_speed) {
 		    priv->autoscroll_xspd = scrolls_per_sec;
@@ -1815,7 +1887,7 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 		priv->circ_scroll_on = TRUE;
 		priv->circ_scroll_vert = TRUE;
 		priv->scroll_a = angle(priv, hw->x, hw->y);
-		DBG(7, ErrorF("circular scroll detected on edge\n"));
+		DBG(7, "circular scroll detected on edge\n");
 	    }
 	}
     }
@@ -1827,14 +1899,14 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 		    priv->vert_scroll_twofinger_on = TRUE;
 		    priv->vert_scroll_edge_on = FALSE;
 		    priv->scroll_y = hw->y;
-		    DBG(7, ErrorF("vert two-finger scroll detected\n"));
+		    DBG(7, "vert two-finger scroll detected\n");
 		}
 		if (!priv->horiz_scroll_twofinger_on &&
 		    (para->scroll_twofinger_horiz) && (para->scroll_dist_horiz != 0)) {
 		    priv->horiz_scroll_twofinger_on = TRUE;
 		    priv->horiz_scroll_edge_on = FALSE;
 		    priv->scroll_x = hw->x;
-		    DBG(7, ErrorF("horiz two-finger scroll detected\n"));
+		    DBG(7, "horiz two-finger scroll detected\n");
 		}
 	    }
 	}
@@ -1844,43 +1916,45 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 		    (edge & RIGHT_EDGE)) {
 		    priv->vert_scroll_edge_on = TRUE;
 		    priv->scroll_y = hw->y;
-		    DBG(7, ErrorF("vert edge scroll detected on right edge\n"));
+		    DBG(7, "vert edge scroll detected on right edge\n");
 		}
 		if ((para->scroll_edge_horiz) && (para->scroll_dist_horiz != 0) &&
 		    (edge & BOTTOM_EDGE)) {
 		    priv->horiz_scroll_edge_on = TRUE;
 		    priv->scroll_x = hw->x;
-		    DBG(7, ErrorF("horiz edge scroll detected on bottom edge\n"));
+		    DBG(7, "horiz edge scroll detected on bottom edge\n");
 		}
 	    }
 	}
     }
     {
-	Bool oldv = priv->vert_scroll_edge_on || (priv->circ_scroll_on && priv->circ_scroll_vert);
-	Bool oldh = priv->horiz_scroll_edge_on || (priv->circ_scroll_on && !priv->circ_scroll_vert);
+	Bool oldv = priv->vert_scroll_twofinger_on || priv->vert_scroll_edge_on ||
+	              (priv->circ_scroll_on && priv->circ_scroll_vert);
+	Bool oldh = priv->horiz_scroll_twofinger_on || priv->horiz_scroll_edge_on ||
+	              (priv->circ_scroll_on && !priv->circ_scroll_vert);
 	if (priv->circ_scroll_on && !finger) {
 	    /* circular scroll locks in until finger is raised */
-	    DBG(7, ErrorF("cicular scroll off\n"));
+	    DBG(7, "cicular scroll off\n");
 	    priv->circ_scroll_on = FALSE;
 	}
 
 	if (!finger || hw->numFingers < 2) {
 	    if (priv->vert_scroll_twofinger_on) {
-		DBG(7, ErrorF("vert two-finger scroll off\n"));
+		DBG(7, "vert two-finger scroll off\n");
 		priv->vert_scroll_twofinger_on = FALSE;
 	    }
 	    if (priv->horiz_scroll_twofinger_on) {
-		DBG(7, ErrorF("horiz two-finger scroll off\n"));
+		DBG(7, "horiz two-finger scroll off\n");
 		priv->horiz_scroll_twofinger_on = FALSE;
 	    }
 	}
 
 	if (priv->vert_scroll_edge_on && (!(edge & RIGHT_EDGE) || !finger)) {
-	    DBG(7, ErrorF("vert edge scroll off\n"));
+	    DBG(7, "vert edge scroll off\n");
 	    priv->vert_scroll_edge_on = FALSE;
 	}
 	if (priv->horiz_scroll_edge_on && (!(edge & BOTTOM_EDGE) || !finger)) {
-	    DBG(7, ErrorF("horiz edge scroll off\n"));
+	    DBG(7, "horiz edge scroll off\n");
 	    priv->horiz_scroll_edge_on = FALSE;
 	}
 	/* If we were corner edge scrolling (coasting),
@@ -1890,7 +1964,7 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 		((edge & RIGHT_EDGE)  && (edge & (TOP_EDGE | BOTTOM_EDGE))) ||
 		((edge & BOTTOM_EDGE) && (edge & (LEFT_EDGE | RIGHT_EDGE))) ;
 	    if (!is_in_corner || !finger) {
-		DBG(7, ErrorF("corner edge scroll off\n"));
+		DBG(7, "corner edge scroll off\n");
 		stop_coasting(priv);
 	    }
 	}
@@ -1898,7 +1972,8 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 	 * and are no longer scrolling, then start coasting */
 	if ((oldv || oldh) && !para->scroll_edge_corner &&
 	    !(priv->circ_scroll_on || priv->vert_scroll_edge_on ||
-	      priv->horiz_scroll_edge_on)) {
+	      priv->horiz_scroll_edge_on || priv->horiz_scroll_twofinger_on ||
+	      priv->vert_scroll_twofinger_on)) {
 	    start_coasting(priv, hw, edge, oldv);
 	}
     }
@@ -1913,7 +1988,7 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 		/* FYI: We can generate multiple start_coasting requests if
 		 * we're in the corner, but we were moving so slowly when we
 		 * got here that we didn't actually start coasting. */
-		DBG(7, ErrorF("corner edge scroll on\n"));
+		DBG(7, "corner edge scroll on\n");
 		start_coasting(priv, hw, edge, TRUE);
 	    }
 	} else if (para->circular_scrolling) {
@@ -1921,7 +1996,7 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 	    priv->circ_scroll_on = TRUE;
 	    priv->circ_scroll_vert = TRUE;
 	    priv->scroll_a = angle(priv, hw->x, hw->y);
-	    DBG(7, ErrorF("switching to circular scrolling\n"));
+	    DBG(7, "switching to circular scrolling\n");
 	}
     }
     /* Same treatment for horizontal scrolling */
@@ -1932,7 +2007,7 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 		/* FYI: We can generate multiple start_coasting requests if
 		 * we're in the corner, but we were moving so slowly when we
 		 * got here that we didn't actually start coasting. */
-		DBG(7, ErrorF("corner edge scroll on\n"));
+		DBG(7, "corner edge scroll on\n");
 		start_coasting(priv, hw, edge, FALSE);
 	    }
 	} else if (para->circular_scrolling) {
@@ -1940,7 +2015,7 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 	    priv->circ_scroll_on = TRUE;
 	    priv->circ_scroll_vert = FALSE;
 	    priv->scroll_a = angle(priv, hw->x, hw->y);
-	    DBG(7, ErrorF("switching to circular scrolling\n"));
+	    DBG(7, "switching to circular scrolling\n");
 	}
     }
 
@@ -2005,6 +2080,7 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 
     if (priv->autoscroll_yspd) {
 	double dtime = (hw->millis - HIST(0).millis) / 1000.0;
+	double ddy = para->coasting_friction * dtime;
 	priv->autoscroll_y += priv->autoscroll_yspd * dtime;
 	delay = MIN(delay, 20);
 	while (priv->autoscroll_y > 1.0) {
@@ -2015,9 +2091,17 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 	    sd->up++;
 	    priv->autoscroll_y += 1.0;
 	}
+	if (abs(priv->autoscroll_yspd) < ddy) {
+	    priv->autoscroll_yspd = 0;
+	    priv->scroll_packet_count = 0;
+	} else {
+	    priv->autoscroll_yspd += (priv->autoscroll_yspd < 0 ? ddy : -1*ddy);
+	}
     }
+
     if (priv->autoscroll_xspd) {
 	double dtime = (hw->millis - HIST(0).millis) / 1000.0;
+	double ddx = para->coasting_friction * dtime;
 	priv->autoscroll_x += priv->autoscroll_xspd * dtime;
 	delay = MIN(delay, 20);
 	while (priv->autoscroll_x > 1.0) {
@@ -2028,13 +2112,19 @@ HandleScrolling(SynapticsPrivate *priv, struct SynapticsHwState *hw,
 	    sd->left++;
 	    priv->autoscroll_x += 1.0;
 	}
+	if (abs(priv->autoscroll_xspd) < ddx) {
+	    priv->autoscroll_xspd = 0;
+	    priv->scroll_packet_count = 0;
+	} else {
+	    priv->autoscroll_xspd += (priv->autoscroll_xspd < 0 ? ddx : -1*ddx);
+	}
     }
 
     return delay;
 }
 
 static void
-HandleClickWithFingers(SynapticsParameters *para, struct SynapticsHwState *hw)
+handle_clickfinger(SynapticsParameters *para, struct SynapticsHwState *hw)
 {
     int action = 0;
     switch(hw->numFingers){
@@ -2064,81 +2154,45 @@ HandleClickWithFingers(SynapticsParameters *para, struct SynapticsHwState *hw)
 }
 
 
-/*
- * React on changes in the hardware state. This function is called every time
- * the hardware state changes. The return value is used to specify how many
- * milliseconds to wait before calling the function again if no state change
- * occurs.
+/* Update the hardware state in shared memory. This is read-only these days,
+ * nothing in the driver reads back from SHM. SHM configuration is a thing of the past.
  */
-static int
-HandleState(LocalDevicePtr local, struct SynapticsHwState *hw)
+static void
+update_shm(const LocalDevicePtr local, const struct SynapticsHwState *hw)
 {
+    int i;
     SynapticsPrivate *priv = (SynapticsPrivate *) (local->private);
     SynapticsSHM *shm = priv->synshm;
+
+    if (!shm)
+	    return;
+
+    shm->x = hw->x;
+    shm->y = hw->y;
+    shm->z = hw->z;
+    shm->numFingers = hw->numFingers;
+    shm->fingerWidth = hw->fingerWidth;
+    shm->left = hw->left;
+    shm->right = hw->right;
+    shm->up = hw->up;
+    shm->down = hw->down;
+    for (i = 0; i < 8; i++)
+	    shm->multi[i] = hw->multi[i];
+    shm->middle = hw->middle;
+}
+
+/* Adjust the hardware state according to the extra buttons (if the touchpad
+ * has any and not many touchpads do these days). These buttons are up/down
+ * tilt buttons and/or left/right buttons that then map into a specific
+ * function (or scrolling into).
+ */
+static Bool
+adjust_state_from_scrollbuttons(const LocalDevicePtr local, struct SynapticsHwState *hw)
+{
+    SynapticsPrivate *priv = (SynapticsPrivate *) (local->private);
     SynapticsParameters *para = &priv->synpara;
-    int finger;
-    int dx, dy, buttons, rep_buttons, id;
-    edge_type edge;
-    int change;
-    struct ScrollData scroll;
-    int double_click, repeat_delay;
-    int delay = 1000000000;
-    int timeleft;
-    int i;
-    Bool inside_active_area;
+    Bool double_click = FALSE;
 
-    /* update hardware state in shared memory */
-    if (shm)
-    {
-        shm->x = hw->x;
-        shm->y = hw->y;
-        shm->z = hw->z;
-        shm->numFingers = hw->numFingers;
-        shm->fingerWidth = hw->fingerWidth;
-        shm->left = hw->left;
-        shm->right = hw->right;
-        shm->up = hw->up;
-        shm->down = hw->down;
-        for (i = 0; i < 8; i++)
-            shm->multi[i] = hw->multi[i];
-        shm->middle = hw->middle;
-        shm->guest_left = hw->guest_left;
-        shm->guest_mid = hw->guest_mid;
-        shm->guest_right = hw->guest_right;
-        shm->guest_dx = hw->guest_dx;
-        shm->guest_dy = hw->guest_dy;
-    }
-
-    /* If touchpad is switched off, we skip the whole thing and return delay */
-    if (para->touchpad_off == 1)
-	return delay;
-
-    /* Treat the first two multi buttons as up/down for now. */
-    hw->up |= hw->multi[0];
-    hw->down |= hw->multi[1];
-
-    if (!para->guestmouse_off) {
-	hw->left |= hw->guest_left;
-	hw->middle |= hw->guest_mid;
-	hw->right |= hw->guest_right;
-    }
-
-    /* 3rd button emulation */
-    hw->middle |= HandleMidButtonEmulation(priv, hw, &delay);
-
-    /* Fingers emulate other buttons */
-    if(hw->left && hw->numFingers >= 1){
-        HandleClickWithFingers(para, hw);
-    }
-
-    /* Two finger emulation */
-    if (hw->numFingers == 1 && hw->z >= para->emulate_twofinger_z &&
-        hw->fingerWidth >= para->emulate_twofinger_w) {
-	hw->numFingers = 2;
-    }
-
-    /* Up/Down button scrolling or middle/double click */
-    double_click = FALSE;
     if (!para->updown_button_scrolling) {
 	if (hw->down) {		/* map down button to middle button */
 	    hw->middle = TRUE;
@@ -2163,113 +2217,68 @@ HandleState(LocalDevicePtr local, struct SynapticsHwState *hw)
 	hw->multi[2] = hw->multi[3] = FALSE;
     }
 
-    edge = edge_detection(priv, hw->x, hw->y);
-    inside_active_area = is_inside_active_area(priv, hw->x, hw->y);
+    return double_click;
+}
 
-    finger = SynapticsDetectFinger(priv, hw);
+static void
+update_hw_button_state(const LocalDevicePtr local, struct SynapticsHwState *hw, int *delay)
+{
+    SynapticsPrivate *priv = (SynapticsPrivate *) (local->private);
+    SynapticsParameters *para = &priv->synpara;
 
-    /* tap and drag detection */
-    timeleft = HandleTapProcessing(priv, hw, edge, finger, inside_active_area);
-    if (timeleft > 0)
-	delay = MIN(delay, timeleft);
+    /* Treat the first two multi buttons as up/down for now. */
+    hw->up |= hw->multi[0];
+    hw->down |= hw->multi[1];
 
-    timeleft = HandleScrolling(priv, hw, edge, finger, &scroll);
-    if (timeleft > 0)
-	delay = MIN(delay, timeleft);
+    /* 3rd button emulation */
+    hw->middle |= HandleMidButtonEmulation(priv, hw, delay);
 
-    /*
-     * Compensate for unequal x/y resolution. This needs to be done after
-     * calculations that require unadjusted coordinates, for example edge
-     * detection.
-     */
-    ScaleCoordinates(priv, hw);
-
-    timeleft = ComputeDeltas(priv, hw, edge, &dx, &dy);
-    delay = MIN(delay, timeleft);
-
-    rep_buttons = ((para->updown_button_repeat ? 0x18 : 0) |
-		   (para->leftright_button_repeat ? 0x60 : 0));
-
-    buttons = ((hw->left     ? 0x01 : 0) |
-	       (hw->middle   ? 0x02 : 0) |
-	       (hw->right    ? 0x04 : 0) |
-	       (hw->up       ? 0x08 : 0) |
-	       (hw->down     ? 0x10 : 0) |
-	       (hw->multi[2] ? 0x20 : 0) |
-	       (hw->multi[3] ? 0x40 : 0));
-
-    if (priv->tap_button > 0) {
-	int tap_mask = 1 << (priv->tap_button - 1);
-	if (priv->tap_button_state == TBS_BUTTON_DOWN_UP) {
-	    if (tap_mask != (priv->lastButtons & tap_mask)) {
-		xf86PostButtonEvent(local->dev, FALSE, priv->tap_button, TRUE, 0, 0);
-		priv->lastButtons |= tap_mask;
-	    }
-	    priv->tap_button_state = TBS_BUTTON_UP;
-	}
-	if (priv->tap_button_state == TBS_BUTTON_DOWN)
-	    buttons |= tap_mask;
+    /* Fingers emulate other buttons */
+    if(hw->left && hw->numFingers >= 1){
+        handle_clickfinger(para, hw);
     }
 
-    /* Post events */
-
-    /* Process movements only if coordinates are
-     * in the Synaptics Area
-     */
-    if (!inside_active_area)
-	dx = dy = 0;
-
-    if (dx || dy)
-	xf86PostMotionEvent(local->dev, 0, 0, 2, dx, dy);
-
-    if (priv->mid_emu_state == MBE_LEFT_CLICK)
-    {
-	xf86PostButtonEvent(local->dev, FALSE, 1, 1, 0, 0);
-	xf86PostButtonEvent(local->dev, FALSE, 1, 0, 0, 0);
-	priv->mid_emu_state = MBE_OFF;
-    } else if (priv->mid_emu_state == MBE_RIGHT_CLICK)
-    {
-	xf86PostButtonEvent(local->dev, FALSE, 3, 1, 0, 0);
-	xf86PostButtonEvent(local->dev, FALSE, 3, 0, 0, 0);
-	priv->mid_emu_state = MBE_OFF;
+    /* Two finger emulation */
+    if (hw->numFingers == 1 && hw->z >= para->emulate_twofinger_z &&
+        hw->fingerWidth >= para->emulate_twofinger_w) {
+	hw->numFingers = 2;
     }
+}
 
-    change = buttons ^ priv->lastButtons;
-    while (change) {
-	id = ffs(change); /* number of first set bit 1..32 is returned */
-	change &= ~(1 << (id - 1));
-	xf86PostButtonEvent(local->dev, FALSE, id, (buttons & (1 << (id - 1))), 0, 0);
-    }
+static void
+post_button_click(const LocalDevicePtr local, const int button)
+{
+    xf86PostButtonEvent(local->dev, FALSE, button, TRUE, 0, 0);
+    xf86PostButtonEvent(local->dev, FALSE, button, FALSE, 0, 0);
+}
 
-    /* Process scroll events only if coordinates are
-     * in the Synaptics Area
-     */
-    if (inside_active_area) {
-        while (scroll.up-- > 0) {
-		xf86PostButtonEvent(local->dev, FALSE, 4, !hw->up, 0, 0);
-		xf86PostButtonEvent(local->dev, FALSE, 4, hw->up, 0, 0);
-        }
-        while (scroll.down-- > 0) {
-		xf86PostButtonEvent(local->dev, FALSE, 5, !hw->down, 0, 0);
-		xf86PostButtonEvent(local->dev, FALSE, 5, hw->down, 0, 0);
-        }
-        while (scroll.left-- > 0) {
-		xf86PostButtonEvent(local->dev, FALSE, 6, TRUE, 0, 0);
-		xf86PostButtonEvent(local->dev, FALSE, 6, FALSE, 0, 0);
-        }
-        while (scroll.right-- > 0) {
-		xf86PostButtonEvent(local->dev, FALSE, 7, TRUE, 0, 0);
-		xf86PostButtonEvent(local->dev, FALSE, 7, FALSE, 0, 0);
-        }
-    }
 
-    if (double_click) {
-	int i;
-	for (i = 0; i < 2; i++) {
-	    xf86PostButtonEvent(local->dev, FALSE, 1, !hw->left, 0, 0);
-	    xf86PostButtonEvent(local->dev, FALSE, 1, hw->left, 0, 0);
-	}
-    }
+static void
+post_scroll_events(const LocalDevicePtr local, struct ScrollData scroll)
+{
+    while (scroll.up-- > 0)
+        post_button_click(local, 4);
+
+    while (scroll.down-- > 0)
+        post_button_click(local, 5);
+
+    while (scroll.left-- > 0)
+        post_button_click(local, 6);
+
+    while (scroll.right-- > 0)
+        post_button_click(local, 7);
+}
+
+static inline int
+repeat_scrollbuttons(const LocalDevicePtr local,
+                     const struct SynapticsHwState *hw,
+		     int buttons, int delay)
+{
+    SynapticsPrivate *priv = (SynapticsPrivate *) (local->private);
+    SynapticsParameters *para = &priv->synpara;
+    int repeat_delay, timeleft;
+    int rep_buttons = ((para->updown_button_repeat ? 0x18 : 0) |
+			(para->leftright_button_repeat ? 0x60 : 0));
 
     /* Handle auto repeat buttons */
     repeat_delay = clamp(para->scroll_button_repeat, SBR_MIN, SBR_MAX);
@@ -2305,9 +2314,157 @@ HandleState(LocalDevicePtr local, struct SynapticsHwState *hw)
 	}
     }
 
+    return delay;
+}
+
+/*
+ * React on changes in the hardware state. This function is called every time
+ * the hardware state changes. The return value is used to specify how many
+ * milliseconds to wait before calling the function again if no state change
+ * occurs.
+ */
+static int
+HandleState(LocalDevicePtr local, struct SynapticsHwState *hw)
+{
+    SynapticsPrivate *priv = (SynapticsPrivate *) (local->private);
+    SynapticsParameters *para = &priv->synpara;
+    int finger;
+    int dx, dy, buttons, id;
+    edge_type edge = NO_EDGE;
+    int change;
+    struct ScrollData scroll;
+    int double_click = FALSE;
+    int delay = 1000000000;
+    int timeleft;
+    Bool inside_active_area;
+
+    update_shm(local, hw);
+
+    /* If touchpad is switched off, we skip the whole thing and return delay */
+    if (para->touchpad_off == 1)
+	return delay;
+
+    inside_active_area = is_inside_active_area(priv, hw->x, hw->y);
+
+    /* now we know that these _coordinates_ aren't in the area.
+       invalid are: x, y, z, numFingers, fingerWidth
+       valid are: millis, left/right/middle/up/down/etc.
+    */
+    if (!inside_active_area)
+    {
+	hw->x = 0;
+	hw->y = 0;
+	hw->z = 0;
+	hw->numFingers = 0;
+	hw->fingerWidth = 0;
+
+	/* FIXME: if finger accidentally moves into the area and doesn't
+	 * really release, the finger should remain down. */
+	finger = FS_UNTOUCHED;
+	edge = NO_EDGE;
+
+	dx = dy = 0;
+    }
+
+    /* these two just update hw->left, right, etc. */
+    update_hw_button_state(local, hw, &delay);
+    if (priv->has_scrollbuttons)
+	double_click = adjust_state_from_scrollbuttons(local, hw);
+
+    /* no edge or finger detection outside of area */
+    if (inside_active_area) {
+	edge = edge_detection(priv, hw->x, hw->y);
+	finger = SynapticsDetectFinger(priv, hw);
+    }
+
+    /* tap and drag detection. Needs to be performed even if the finger is in
+     * the dead area to reset the state. */
+    timeleft = HandleTapProcessing(priv, hw, edge, finger, inside_active_area);
+    if (timeleft > 0)
+	delay = MIN(delay, timeleft);
+
+    if (inside_active_area)
+    {
+	/* Don't bother about scrolling in the dead area of the touchpad. */
+	timeleft = HandleScrolling(priv, hw, edge, finger, &scroll);
+	if (timeleft > 0)
+	    delay = MIN(delay, timeleft);
+
+	/*
+	 * Compensate for unequal x/y resolution. This needs to be done after
+	 * calculations that require unadjusted coordinates, for example edge
+	 * detection.
+	 */
+	ScaleCoordinates(priv, hw);
+    }
+
+    timeleft = ComputeDeltas(priv, hw, edge, &dx, &dy, inside_active_area);
+    delay = MIN(delay, timeleft);
+
+
+    buttons = ((hw->left     ? 0x01 : 0) |
+	       (hw->middle   ? 0x02 : 0) |
+	       (hw->right    ? 0x04 : 0) |
+	       (hw->up       ? 0x08 : 0) |
+	       (hw->down     ? 0x10 : 0) |
+	       (hw->multi[2] ? 0x20 : 0) |
+	       (hw->multi[3] ? 0x40 : 0));
+
+    if (priv->tap_button > 0) {
+	int tap_mask = 1 << (priv->tap_button - 1);
+	if (priv->tap_button_state == TBS_BUTTON_DOWN_UP) {
+	    if (tap_mask != (priv->lastButtons & tap_mask)) {
+		xf86PostButtonEvent(local->dev, FALSE, priv->tap_button, TRUE, 0, 0);
+		priv->lastButtons |= tap_mask;
+	    }
+	    priv->tap_button_state = TBS_BUTTON_UP;
+	}
+	if (priv->tap_button_state == TBS_BUTTON_DOWN)
+	    buttons |= tap_mask;
+    }
+
+    /* Post events */
+    if (dx || dy)
+	xf86PostMotionEvent(local->dev, 0, 0, 2, dx, dy);
+
+    if (priv->mid_emu_state == MBE_LEFT_CLICK)
+    {
+	post_button_click(local, 1);
+	priv->mid_emu_state = MBE_OFF;
+    } else if (priv->mid_emu_state == MBE_RIGHT_CLICK)
+    {
+	post_button_click(local, 3);
+	priv->mid_emu_state = MBE_OFF;
+    }
+
+    change = buttons ^ priv->lastButtons;
+    while (change) {
+	id = ffs(change); /* number of first set bit 1..32 is returned */
+	change &= ~(1 << (id - 1));
+	xf86PostButtonEvent(local->dev, FALSE, id, (buttons & (1 << (id - 1))), 0, 0);
+    }
+
+    /* Process scroll events only if coordinates are
+     * in the Synaptics Area
+     */
+    if (inside_active_area)
+	post_scroll_events(local, scroll);
+
+    if (double_click) {
+	post_button_click(local, 1);
+	post_button_click(local, 1);
+    }
+
+    if (priv->has_scrollbuttons)
+	delay = repeat_scrollbuttons(local, hw, buttons, delay);
+
     /* Save old values of some state variables */
     priv->finger_state = finger;
     priv->lastButtons = buttons;
+
+    /* generate a history of the absolute positions */
+    if (inside_active_area)
+	store_history(priv, hw->x, hw->y, hw->millis);
 
     return delay;
 }
@@ -2315,7 +2472,7 @@ HandleState(LocalDevicePtr local, struct SynapticsHwState *hw)
 static int
 ControlProc(LocalDevicePtr local, xDeviceCtl * control)
 {
-    DBG(3, ErrorF("Control Proc called\n"));
+    DBG(3, "Control Proc called\n");
     return Success;
 }
 
@@ -2323,14 +2480,14 @@ ControlProc(LocalDevicePtr local, xDeviceCtl * control)
 static void
 CloseProc(LocalDevicePtr local)
 {
-    DBG(3, ErrorF("Close Proc called\n"));
+    DBG(3, "Close Proc called\n");
 }
 
 static int
 SwitchMode(ClientPtr client, DeviceIntPtr dev, int mode)
 {
-    ErrorF("SwitchMode called\n");
-    return Success;
+    DBG(3, "SwitchMode called\n");
+    return (mode == Relative) ? Success : XI_BadMode;
 }
 
 static Bool

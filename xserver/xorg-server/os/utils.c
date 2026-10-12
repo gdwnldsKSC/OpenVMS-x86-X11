@@ -120,9 +120,7 @@ __stdcall unsigned long GetTickCount(void);
 
 #include "xkbsrv.h"
 
-#ifdef RENDER
 #include "picture.h"
-#endif
 
 Bool noTestExtensions;
 #ifdef COMPOSITE
@@ -148,15 +146,10 @@ Bool noScreenSaverExtension = FALSE;
 #ifdef MITSHM
 Bool noMITShmExtension = FALSE;
 #endif
-#ifdef MULTIBUFFER
-Bool noMultibufferExtension = FALSE;
-#endif
 #ifdef RANDR
 Bool noRRExtension = FALSE;
 #endif
-#ifdef RENDER
 Bool noRenderExtension = FALSE;
-#endif
 #ifdef XCSECURITY
 Bool noSecurityExtension = FALSE;
 #endif
@@ -211,8 +204,6 @@ int auditTrailLevel = 1;
 #if defined(SVR4) || defined(__linux__) || defined(CSRG_BASED)
 #define HAS_SAVED_IDS_AND_SETEUID
 #endif
-
-static char *dev_tty_from_init = NULL;	/* since we need to parse it anyway */
 
 OsSigHandlerPtr
 OsSignal(int sig, OsSigHandlerPtr handler)
@@ -472,7 +463,7 @@ AdjustWaitForDelay (pointer waitTime, unsigned long newdelay)
 void UseMsg(void)
 {
     ErrorF("use: X [:<display>] [option]\n");
-    ErrorF("-a #                   mouse acceleration (pixels)\n");
+    ErrorF("-a #                   default pointer acceleration (factor)\n");
     ErrorF("-ac                    disable access control restrictions\n");
     ErrorF("-audit int             set audit trail level\n");	
     ErrorF("-auth file             select authorization file\n");	
@@ -504,9 +495,7 @@ void UseMsg(void)
 #ifdef RLIMIT_STACK
     ErrorF("-ls int                limit stack space to N Kb\n");
 #endif
-#ifdef SERVER_LOCK
     ErrorF("-nolock                disable the locking mechanism\n");
-#endif
 #ifndef NOLOGOHACK
     ErrorF("-logo                  enable logo in screen saver\n");
     ErrorF("nologo                 disable logo in screen saver\n");
@@ -519,12 +508,10 @@ void UseMsg(void)
     ErrorF("-nopn                  reject failure to listen on all ports\n");
     ErrorF("-r                     turns off auto-repeat\n");
     ErrorF("r                      turns on auto-repeat \n");
-#ifdef RENDER
     ErrorF("-render [default|mono|gray|color] set render color alloc policy\n");
-#endif
     ErrorF("-retro                 start with classic stipple and cursor\n");
     ErrorF("-s #                   screen-saver timeout (minutes)\n");
-    ErrorF("-t #                   mouse threshold (pixels)\n");
+    ErrorF("-t #                   default pointer threshold (pixels/t)\n");
     ErrorF("-terminate             terminate at server reset\n");
     ErrorF("-to #                  connection time out\n");
     ErrorF("-tst                   disable testing extensions\n");
@@ -559,12 +546,12 @@ void UseMsg(void)
 static int 
 VerifyDisplayName(const char *d)
 {
-    if ( d == (char *)0 ) return( 0 );  /*  null  */
-    if ( *d == '\0' ) return( 0 );  /*  empty  */
-    if ( *d == '-' ) return( 0 );  /*  could be confused for an option  */
-    if ( *d == '.' ) return( 0 );  /*  must not equal "." or ".."  */
-    if ( strchr(d, '/') != (char *)0 ) return( 0 );  /*  very important!!!  */
-    return( 1 );
+    if ( d == (char *)0 ) return 0;  /*  null  */
+    if ( *d == '\0' ) return 0;  /*  empty  */
+    if ( *d == '-' ) return 0;  /*  could be confused for an option  */
+    if ( *d == '.' ) return 0;  /*  must not equal "." or ".."  */
+    if ( strchr(d, '/') != (char *)0 ) return 0;  /*  very important!!!  */
+    return 1;
 }
 
 /*
@@ -758,7 +745,6 @@ ProcessCommandLine(int argc, char *argv[])
 		UseMsg();
 	}
 #endif
-#ifdef SERVER_LOCK
 	else if ( strcmp ( argv[i], "-nolock") == 0)
 	{
 #if !defined(WIN32) && !defined(__CYGWIN__)
@@ -768,7 +754,6 @@ ProcessCommandLine(int argc, char *argv[])
 #endif
 	    nolock = TRUE;
 	}
-#endif
 #ifndef NOLOGOHACK
 	else if ( strcmp( argv[i], "-logo") == 0)
 	{
@@ -892,8 +877,7 @@ ProcessCommandLine(int argc, char *argv[])
 	}
 	else if (strncmp (argv[i], "tty", 3) == 0)
 	{
-	    /* just in case any body is interested */
-	    dev_tty_from_init = argv[i];
+            /* init supplies us with this useless information */
 	}
 #ifdef XDMCP
 	else if ((skip = XdmcpOptions(argc, argv, i)) != i)
@@ -924,7 +908,6 @@ ProcessCommandLine(int argc, char *argv[])
 	    else
 		UseMsg();
 	}
-#ifdef RENDER
 	else if ( strcmp( argv[i], "-render" ) == 0)
 	{
 	    if (++i < argc)
@@ -939,7 +922,6 @@ ProcessCommandLine(int argc, char *argv[])
 	    else
 		UseMsg ();
 	}
-#endif
 	else if ( strcmp( argv[i], "+extension") == 0)
 	{
 	    if (++i < argc)
@@ -994,7 +976,7 @@ set_font_authorizations(char **authorizations, int *authlen, pointer client)
 
 	gethostname(hname, 1024);
 #if defined(IPv6) && defined(AF_INET6)
-	bzero(&hints, sizeof(hints));
+	memset(&hints, 0, sizeof(hints));
 	hints.ai_flags = AI_CANONNAME;
 	if (getaddrinfo(hname, NULL, &hints, &ai) == 0) {
 	    hnameptr = ai->ai_canonname;
@@ -1010,7 +992,7 @@ set_font_authorizations(char **authorizations, int *authlen, pointer client)
 #endif
 
 	len = strlen(hnameptr) + 1;
-	result = xalloc(len + sizeof(AUTHORIZATION_NAME) + 4);
+	result = malloc(len + sizeof(AUTHORIZATION_NAME) + 4);
 
 	p = result;
         *p++ = sizeof(AUTHORIZATION_NAME) >> 8;
@@ -1036,152 +1018,102 @@ set_font_authorizations(char **authorizations, int *authlen, pointer client)
 #endif /* TCPCONN */
 }
 
-#ifndef INTERNAL_MALLOC
-
 void *
 Xalloc(unsigned long amount)
 {
-    void *ptr;
+    /*
+     * Xalloc used to return NULL when large amount of memory is requested. In
+     * order to catch the buggy callers this warning has been added, slated to
+     * removal by anyone who touches this code (or just looks at it) in 2011.
+     *
+     * -- Mikhail Gusarov
+     */
+    if ((long)amount <= 0)
+	ErrorF("Warning: Xalloc: "
+	       "requesting unpleasantly large amount of memory: %lu bytes.\n",
+               amount);
 
-    if ((long)amount <= 0) {
-	return NULL;
-    }
-    /* aligned extra on long word boundary */
-    amount = (amount + (sizeof(long) - 1)) & ~(sizeof(long) - 1);
-    ptr = malloc(amount);
-    return ptr;
+    return malloc(amount);
 }
-
-/*****************
- * XNFalloc 
- * "no failure" realloc
- *****************/
 
 void *
 XNFalloc(unsigned long amount)
 {
-    void *ptr;
-
-    if ((long)amount <= 0)
-        return NULL;
-    /* aligned extra on long word boundary */
-    amount = (amount + (sizeof(long) - 1)) & ~(sizeof(long) - 1);
-    ptr = malloc(amount);
+    void *ptr = malloc(amount);
     if (!ptr)
         FatalError("Out of memory");
     return ptr;
 }
 
-/*****************
- * Xcalloc
- *****************/
-
 void *
 Xcalloc(unsigned long amount)
 {
-    void *ret;
-
-    ret = Xalloc (amount);
-    if (ret)
-	bzero (ret, (int) amount);
-    return ret;
+    return calloc(1, amount);
 }
-
-/*****************
- * XNFcalloc
- *****************/
 
 void *
 XNFcalloc(unsigned long amount)
 {
-    void *ret;
-
-    ret = Xalloc (amount);
-    if (ret)
-	bzero (ret, (int) amount);
-    else if ((long)amount > 0)
-        FatalError("Out of memory");
+    void *ret = calloc(1, amount);
+    if (!ret)
+        FatalError("XNFcalloc: Out of memory");
     return ret;
 }
 
-/*****************
- * Xrealloc
- *****************/
-
 void *
-Xrealloc(pointer ptr, unsigned long amount)
+Xrealloc(void *ptr, unsigned long amount)
 {
+    /*
+     * Xrealloc used to return NULL when large amount of memory is requested. In
+     * order to catch the buggy callers this warning has been added, slated to
+     * removal by anyone who touches this code (or just looks at it) in 2011.
+     *
+     * -- Mikhail Gusarov
+     */
     if ((long)amount <= 0)
-    {
-	if (ptr && !amount)
-	    free(ptr);
-	return NULL;
-    }
-    amount = (amount + (sizeof(long) - 1)) & ~(sizeof(long) - 1);
-    if (ptr)
-        ptr = realloc(ptr, amount);
-    else
-	ptr = malloc(amount);
+	ErrorF("Warning: Xrealloc: "
+	       "requesting unpleasantly large amount of memory: %lu bytes.\n",
+               amount);
 
-    return ptr;
+    return realloc(ptr, amount);
 }
-                    
-/*****************
- * XNFrealloc 
- * "no failure" realloc
- *****************/
 
 void *
-XNFrealloc(pointer ptr, unsigned long amount)
+XNFrealloc(void *ptr, unsigned long amount)
 {
-    if ((ptr = Xrealloc(ptr, amount)) == NULL)
-    {
-	if ((long)amount > 0)
-            FatalError( "Out of memory" );
-    }
-    return ptr;
+    void *ret = realloc(ptr, amount);
+    if (!ret)
+	FatalError("XNFrealloc: Out of memory");
+    return ret;
 }
-
-/*****************
- *  Xfree
- *    calls free 
- *****************/    
 
 void
-Xfree(pointer ptr)
+Xfree(void *ptr)
 {
-    if (ptr)
-	free(ptr); 
+    free(ptr);
 }
-#endif /* !INTERNAL_MALLOC */
 
 
 char *
 Xstrdup(const char *s)
 {
-    char *sd;
-
     if (s == NULL)
 	return NULL;
-
-    sd = Xalloc(strlen(s) + 1);
-    if (sd != NULL)
-	strcpy(sd, s);
-    return sd;
+    return strdup(s);
 }
-
 
 char *
 XNFstrdup(const char *s)
 {
-    char *sd;
+    char *ret;
 
     if (s == NULL)
 	return NULL;
 
-    sd = XNFalloc(strlen(s) + 1);
-    strcpy(sd, s);
-    return sd;
+    ret = strdup(s);
+    if (!ret)
+	FatalError("XNFstrdup: Out of memory");
+    return ret;
 }
 
 
@@ -1243,7 +1175,7 @@ SmartScheduleInit (void)
     if (SmartScheduleDisable)
 	return TRUE;
     
-    bzero ((char *) &act, sizeof(struct sigaction));
+    memset((char *) &act, 0, sizeof(struct sigaction));
 
     /* Set up the timer signal function */
     act.sa_handler = SmartScheduleTimer;
@@ -1314,6 +1246,20 @@ OsReleaseSignals (void)
 #endif
 }
 
+/*
+ * Pending signals may interfere with core dumping. Provide a
+ * mechanism to block signals when aborting.
+ */
+
+void
+OsAbort (void)
+{
+#ifndef __APPLE__
+    OsBlockSignals();
+#endif
+    abort();
+}
+
 #if !defined(WIN32) && !defined(__VMS)
 /*
  * "safer" versions of system(3), popen(3) and pclose(3) which give up
@@ -1335,7 +1281,7 @@ System(char *command)
     int status;
 
     if (!command)
-	return(1);
+	return 1;
 
 #ifdef SIGCHLD
     csig = signal(SIGCHLD, SIG_DFL);
@@ -1397,11 +1343,11 @@ Popen(char *command, char *type)
     if ((*type != 'r' && *type != 'w') || type[1])
 	return NULL;
 
-    if ((cur = xalloc(sizeof(struct pid))) == NULL)
+    if ((cur = malloc(sizeof(struct pid))) == NULL)
 	return NULL;
 
     if (pipe(pdes) < 0) {
-	xfree(cur);
+	free(cur);
 	return NULL;
     }
 
@@ -1416,7 +1362,7 @@ Popen(char *command, char *type)
     case -1: 	/* error */
 	close(pdes[0]);
 	close(pdes[1]);
-	xfree(cur);
+	free(cur);
 	if (OsSignal(SIGALRM, old_alarm) == SIG_ERR)
 	  perror("signal");
 	return NULL;
@@ -1483,11 +1429,11 @@ Fopen(char *file, char *type)
     if ((*type != 'r' && *type != 'w') || type[1])
 	return NULL;
 
-    if ((cur = xalloc(sizeof(struct pid))) == NULL)
+    if ((cur = malloc(sizeof(struct pid))) == NULL)
 	return NULL;
 
     if (pipe(pdes) < 0) {
-	xfree(cur);
+	free(cur);
 	return NULL;
     }
 
@@ -1495,7 +1441,7 @@ Fopen(char *file, char *type)
     case -1: 	/* error */
 	close(pdes[0]);
 	close(pdes[1]);
-	xfree(cur);
+	free(cur);
 	return NULL;
     case 0:	/* child */
 	if (setgid(getgid()) == -1)
@@ -1589,7 +1535,7 @@ Pclose(pointer iop)
 	pidlist = cur->next;
     else
 	last->next = cur->next;
-    xfree(cur);
+    free(cur);
 
     /* allow EINTR again */
     OsReleaseSignals ();
@@ -1870,52 +1816,42 @@ CheckUserAuthorization(void)
 #endif
 }
 
-#ifdef __SCO__
-#include <fcntl.h>
-
-static void
-lockit (int fd, short what)
+/*
+ * Tokenize a string into a NULL terminated array of strings. Always returns
+ * an allocated array unless an error occurs.
+ */
+char**
+xstrtokenize(const char *str, const char *separators)
 {
-  struct flock lck;
+    char **list, **nlist;
+    char *tok, *tmp;
+    unsigned num = 0, n;
 
-  lck.l_whence = 0;
-  lck.l_start = 0;
-  lck.l_len = 1;
-  lck.l_type = what;
+    if (!str)
+        return NULL;
+    list = calloc(1, sizeof(*list));
+    if (!list)
+        return NULL;
+    tmp = strdup(str);
+    if (!tmp)
+        goto error;
+    for (tok = strtok(tmp, separators); tok; tok = strtok(NULL, separators)) {
+        nlist = realloc(list, (num + 2) * sizeof(*list));
+        if (!nlist)
+            goto error;
+        list = nlist;
+        list[num] = strdup(tok);
+        if (!list[num])
+            goto error;
+        list[++num] = NULL;
+    }
+    free(tmp);
+    return list;
 
-  (void)fcntl (fd, F_SETLKW, &lck);
+error:
+    free(tmp);
+    for (n = 0; n < num; n++)
+        free(list[n]);
+    free(list);
+    return NULL;
 }
-
-/* SCO OpenServer 5 lacks pread/pwrite. Emulate them. */
-ssize_t
-pread (int fd, void *buf, size_t nbytes, off_t offset)
-{
-  off_t saved;
-  ssize_t ret;
-
-  lockit (fd, F_RDLCK);
-  saved = lseek (fd, 0, SEEK_CUR);
-  lseek (fd, offset, SEEK_SET);
-  ret = read (fd, buf, nbytes);
-  lseek (fd, saved, SEEK_SET);
-  lockit (fd, F_UNLCK);
-
-  return ret;
-}
-
-ssize_t
-pwrite (int fd, const void *buf, size_t nbytes, off_t offset)
-{
-  off_t saved;
-  ssize_t ret;
-
-  lockit (fd, F_WRLCK);
-  saved = lseek (fd, 0, SEEK_CUR);
-  lseek (fd, offset, SEEK_SET);
-  ret = write (fd, buf, nbytes);
-  lseek (fd, saved, SEEK_SET);
-  lockit (fd, F_UNLCK);
-
-  return ret;
-}
-#endif /* __SCO__ */

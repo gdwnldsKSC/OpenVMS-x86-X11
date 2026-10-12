@@ -1,7 +1,7 @@
-! Complete ordinary static Render library from the upstream Imakefile.
+! Complete ordinary static Render library from the upstream Makefile.am.
 ! Native P64 pointers and long32; loadable and optional extension hooks are excluded.
 RENDER_HEADERS = $(FB_HEADERS)
-RENDER_PRIVATE_HEADERS = $(FB_PRIVATE_HEADERS)
+RENDER_PRIVATE_HEADERS = $(FB_PRIVATE_HEADERS), [.XSERVER.XORG-SERVER.INCLUDE]XSHA1.H
 RENDER_BUILD_RULES = [.VMS-SUPPORT]CONFIG.MMS, [.VMS-SUPPORT]COMPILE.COM, -
     [.VMS-SUPPORT]HEADERS.MMS, -
     [.VMS-SUPPORT.PROGRAMS.XSERVER.MIEXT.DAMAGE]DESCRIP.MMS, -

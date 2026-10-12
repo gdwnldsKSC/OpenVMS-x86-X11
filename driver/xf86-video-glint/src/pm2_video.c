@@ -183,10 +183,8 @@ static AdaptorPrivPtr AdaptorPrivList = NULL;
 
 #define FreeCookies(pPPriv)		\
 do {					\
-    if ((pPPriv)->pCookies) {		\
-        xfree((pPPriv)->pCookies);	\
+	free((pPPriv)->pCookies);	\
 	(pPPriv)->pCookies = NULL;	\
-    }					\
 } while (0)
 
 #define PORTNUM(p) ((int)((p) - &pAPriv->Port[0]))
@@ -795,7 +793,7 @@ RemakePutCookies(PortPrivPtr pPPriv, RegionPtr pRegion)
 	nBox = REGION_NUM_RECTS(pRegion);
 
 	if (!pPPriv->pCookies || pPPriv->nCookies < nBox) {
-	    if (!(pCookie = (CookiePtr) xrealloc(pPPriv->pCookies, nBox * sizeof(CookieRec))))
+	    if (!(pCookie = (CookiePtr) realloc(pPPriv->pCookies, nBox * sizeof(CookieRec))))
     		return FALSE;
 
 	    pPPriv->pCookies = pCookie;
@@ -1071,7 +1069,7 @@ RemakeGetCookies(PortPrivPtr pPPriv, RegionPtr pRegion)
 	nBox = REGION_NUM_RECTS(pRegion);
 
 	if (!pPPriv->pCookies || pPPriv->nCookies < nBox) {
-	    if (!(pCookie = (CookiePtr) xrealloc(pPPriv->pCookies, nBox * sizeof(CookieRec))))
+	    if (!(pCookie = (CookiePtr) realloc(pPPriv->pCookies, nBox * sizeof(CookieRec))))
     		return FALSE;
 
 	    pPPriv->pCookies = pCookie;
@@ -2429,7 +2427,7 @@ xvipcHandshake(PortPrivPtr pPPriv, int op, Bool block)
 
 	    xvipc.a = -1;
 
-	    pLFBArea = xalloc(sizeof(LFBAreaRec));
+	    pLFBArea = malloc(sizeof(LFBAreaRec));
 
 	    if (pLFBArea) {
 		pLFBArea->pFBArea = pFBArea =
@@ -2442,7 +2440,7 @@ xvipcHandshake(PortPrivPtr pPPriv, int op, Bool block)
 			((pFBArea->box.y1 * pScrn->displayWidth) +
 			    pFBArea->box.x1) << BPPSHIFT(pGlint);
 		} else
-		    xfree(pLFBArea);
+		    free(pLFBArea);
 	    }
 
 	    /* Report results */
@@ -2450,7 +2448,7 @@ xvipcHandshake(PortPrivPtr pPPriv, int op, Bool block)
 	    if (ioctl(xvipc_fd, VIDIOC_PM2_XVIPC, (void *) &xvipc) != 0)
 		if (pFBArea) {
 		    xf86FreeOffscreenArea(pFBArea);
-		    xfree(pLFBArea);
+		    free(pLFBArea);
 		    pFBArea = NULL;
 		}
 
@@ -2484,7 +2482,7 @@ xvipcHandshake(PortPrivPtr pPPriv, int op, Bool block)
 	    if (ioctl(xvipc_fd, VIDIOC_PM2_XVIPC, (void *) &xvipc) == 0 && pLFBArea) {
 		xf86FreeOffscreenArea(pLFBArea->pFBArea);
 		*ppLFBArea = pLFBArea->Next;
-		xfree(pLFBArea);
+		free(pLFBArea);
 	    }
 
 	    goto event;
@@ -2658,14 +2656,14 @@ DeleteAdaptorPriv(AdaptorPrivPtr pAPriv)
 	}
     }
 
-    xfree(pAPriv);
+    free(pAPriv);
 }
 
 static AdaptorPrivPtr
 NewAdaptorPriv(ScrnInfoPtr pScrn, Bool VideoIO)
 {
     GLINTPtr pGlint = GLINTPTR(pScrn);
-    AdaptorPrivPtr pAPriv = (AdaptorPrivPtr) xcalloc(1, sizeof(AdaptorPrivRec));
+    AdaptorPrivPtr pAPriv = (AdaptorPrivPtr) calloc(1, sizeof(AdaptorPrivRec));
     int i;
 
     if (!pAPriv)
@@ -2754,7 +2752,7 @@ NewAdaptorPriv(ScrnInfoPtr pScrn, Bool VideoIO)
 	break;
 
     default:
-	xfree(pAPriv);
+	free(pAPriv);
 	return NULL;
     }
 

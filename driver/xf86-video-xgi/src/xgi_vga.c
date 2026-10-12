@@ -86,7 +86,11 @@ PDEBUG(ErrorF("XG40Init()\n"));
 
     (*pXGI->XGISave)(pScrn, pReg);
 
+#if !defined(__arm__) 
     outw(VGA_SEQ_INDEX, 0x8605);
+#else
+    moutl(XGISR, 0x8605);
+#endif
 
     pReg->xgiRegs3C4[6] &= ~GENMASK(4:2);
 
@@ -220,7 +224,7 @@ PDEBUG(ErrorF("XG40Init()\n"));
         pReg->xgiRegs3C4[0x2D] = 0x80;
   } /* end of set vclk */
 
-    if (clock > 150000) { /* enable two-pixel mode */
+    if ( (pXGI->Chipset == PCI_CHIP_XGIXG40) && (clock > 150000) ) { /* enable two-pixel mode */
         pReg->xgiRegs3C4[0x07] |= 0x80;
         pReg->xgiRegs3C4[0x32] |= 0x08;
     } else {

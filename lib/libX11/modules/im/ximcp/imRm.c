@@ -1,4 +1,3 @@
-/* $Xorg: imRm.c,v 1.4 2000/08/17 19:45:14 cpqbld Exp $ */
 /******************************************************************
 
 	  Copyright 1990, 1991, 1992,1993, 1994 by FUJITSU LIMITED
@@ -30,7 +29,6 @@ PERFORMANCE OF THIS SOFTWARE.
 			       makoto@sm.sony.co.jp
 
 ******************************************************************/
-/* $XFree86: xc/lib/X11/imRm.c,v 3.12 2003/04/13 19:22:21 dawes Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -596,7 +594,7 @@ _XimDefaultArea(
     if(XGetGeometry(im->core.display, (Drawable)ic->core.focus_window,
 		&root_return, &x_return, &y_return, &width_return,
 		&height_return, &border_width_return, &depth_return)
-		== (Status)NULL) {
+		== (Status)Success) {
 	return True;
     }
     area.x	= 0;
@@ -625,7 +623,7 @@ _XimDefaultColormap(
 	return True;
     }
     if(XGetWindowAttributes(im->core.display, ic->core.client_window,
-					&win_attr) == (Status)NULL) {
+					&win_attr) == (Status)Success) {
 	return True;
     }
 

@@ -72,6 +72,11 @@
 
 #include <glide.h>
 
+/* glide3x does not define this alias anymore, so let's do it ourselves. */
+#ifndef GR_ZDEPTHVALUE_FARTHEST
+#define GR_ZDEPTHVALUE_FARTHEST 0
+#endif
+
 #define TRUE 1
 #define FALSE 0
 
@@ -88,7 +93,11 @@ typedef u8                 bool;
 #define GLIDEPTR(p) ((GLIDEPtr)((p)->driverPrivate))
 
 
+#if defined(GLIDE3)
+typedef FxU32 (*pgrGet_t)(FxU32 pname, FxU32 plength, FxI32 *params);
+#else
 typedef FxBool (*pgrSstQueryBoards_t)(GrHwConfiguration*);
+#endif
 typedef void (*pgrGlideInit_t)(void);
 typedef void (*pgrSstSelect_t)(int which_sst);
 typedef FxBool (*pgrSstWinOpen_t)(FxU32, GrScreenResolution_t, GrScreenRefresh_t, 
@@ -125,7 +134,11 @@ typedef struct {
   OptionInfoPtr       Options;
 } GLIDERec, *GLIDEPtr;
 
+#if defined(GLIDE3)
+static pgrGet_t pgrGet;
+#else
 static pgrSstQueryBoards_t pgrSstQueryBoards;
+#endif
 static pgrGlideInit_t      pgrGlideInit;
 static pgrSstSelect_t      pgrSstSelect;
 static pgrSstWinOpen_t     pgrSstWinOpen;
@@ -162,6 +175,11 @@ static int LoadGlide(void);
 #define GLIDE_VERSION 4000
 #define GLIDE_NAME "GLIDE"
 #define GLIDE_DRIVER_NAME "glide"
+#ifdef GLIDE3
+#define GLIDE_MODULE_NAME "glide3x"
+#else
+#define GLIDE_MODULE_NAME "glide2x"
+#endif
 #define GLIDE_MAJOR_VERSION PACKAGE_VERSION_MAJOR
 #define GLIDE_MINOR_VERSION PACKAGE_VERSION_MINOR
 #define GLIDE_PATCHLEVEL PACKAGE_VERSION_PATCHLEVEL
@@ -202,26 +220,6 @@ static SymTabRec GLIDEChipsets[] = {
 };
 
 
-/*
- * List of symbols from other modules that this module references.  This
- * list is used to tell the loader that it is OK for symbols here to be
- * unresolved providing that it hasn't been told that they haven't been
- * told that they are essential via a call to xf86LoaderReqSymbols() or
- * xf86LoaderReqSymLists().  The purpose is this is to avoid warnings about
- * unresolved symbols that are not required.
- */
-
-static const char *fbSymbols[] = {
-  "fbScreenInit",
-  "fbPictureInit",
-  NULL
-};
-
-static const char *shadowSymbols[] = {
-  "ShadowFBInit",
-  NULL
-};
-
 #ifdef XFree86LOADER
 
 static MODULESETUPPROTO(glideSetup);
@@ -245,6 +243,7 @@ _X_EXPORT XF86ModuleData glideModuleData = { &glideVersRec, glideSetup, NULL };
 static pointer
 glideSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 {
+  const char module_name[] = GLIDE_MODULE_NAME;
   static Bool setupDone = FALSE;
   pointer ret;
   int errmaj2 = 0, errmin2 = 0;
@@ -256,23 +255,23 @@ glideSetup(pointer module, pointer opts, int *errmaj, int *errmin)
      * by calling LoadSubModule().
      */
 
-    ret = LoadSubModule(module, "glide2x", NULL, NULL, EXTERN_MODULE, NULL,
+    ret = LoadSubModule(module, module_name, NULL, NULL, EXTERN_MODULE, NULL,
 			&errmaj2, &errmin2);
     if (!ret)
     {
       xf86Msg(X_ERROR, "Glide driver:\n"
 "\n"
-"Could not load the shared library file for Glide: \"libglide2x.so\"! \n"
+"Could not load the shared library file for Glide: \"lib%s.so\"! \n"
 "\n"
 "You need to have Glide installed to run the glide driver for X.Org.\n"
-"Also, you need to tell X.Org where the libglide2x.so file is placed\n"
+"Also, you need to tell X.Org where the lib%s.so file is placed\n"
 "by making a soft link in the " MODULEDIR " directory that points\n"
-"to the libglide2x.so file. For example (if your libglide2x.so file is in\n"
+"to the lib%s.so file. For example (if your lib%s.so file is in\n"
 "/usr/lib):\n"
 "\n"
-"  # ln -s /usr/lib/libglide2x.so " MODULEDIR "\n"
+"  # ln -s /usr/lib/lib%s.so " MODULEDIR "\n"
 "\n"
-"\n");
+"\n", module_name, module_name, module_name, module_name, module_name);
       if (errmaj)
         *errmaj = LDR_NOSUBENT;
       if (errmin)
@@ -292,12 +291,6 @@ glideSetup(pointer module, pointer opts, int *errmaj, int *errmin)
     /* This module should be loaded only once */
     *errmaj = LDR_ONCEONLY;
     xf86AddDriver(&GLIDE, module, 0);
-
-    /*
-     * Tell the loader about symbols from other modules that this module
-     * might refer to.
-     */
-    LoaderRefSymLists(fbSymbols, shadowSymbols, NULL);
 
     /*
      * The return value must be non-NULL on success even though there
@@ -337,7 +330,7 @@ GLIDEFreeRec(ScrnInfoPtr pScrn)
 {
   if (pScrn->driverPrivate == NULL)
     return;
-  xfree(pScrn->driverPrivate);
+  free(pScrn->driverPrivate);
   pScrn->driverPrivate = NULL;
 }
 
@@ -355,13 +348,45 @@ GLIDEIdentify(int flags)
   xf86PrintChipsets(GLIDE_NAME, "driver for Glide devices (Voodoo cards)", GLIDEChipsets);
 }
 
+#if defined(GLIDE3)
+static int
+glide_get_num_boards(void)
+{
+  FxI32 num_sst;
+  int r;
+
+  r = pgrGet(GR_NUM_BOARDS, sizeof(num_sst), &num_sst);
+  if (!r)
+  {
+    xf86Msg(X_ERROR, "GLIDEProbe(): Error calling pgrGet(GR_NUM_BOARDS)!\n");
+    return -1;
+  }
+
+  return num_sst;
+}
+#else
+static int
+glide_get_num_boards(void)
+{
+  GrHwConfiguration hw;
+  int r;
+
+  r = pgrSstQueryBoards(&hw);
+  if (!r)
+  {
+    xf86Msg(X_ERROR, "GLIDEProbe(): Error calling pgrSstQueryBoards!\n");
+    return -1;
+  }
+
+  return hw.num_sst;
+}
+#endif
 
 /* Mandatory */
 static Bool
 GLIDEProbe(DriverPtr drv, int flags)
 {
-  GrHwConfiguration hw;
-  int i, sst, r;
+  int i, num_sst, sst;
   GDevPtr *devList;
   GDevPtr dev = NULL;
   int numdevList;
@@ -372,21 +397,17 @@ GLIDEProbe(DriverPtr drv, int flags)
   if ((numdevList = xf86MatchDevice(GLIDE_DRIVER_NAME, &devList)) <= 0)
     return FALSE;
 
-  r = pgrSstQueryBoards(&hw);
-  if (!r)
-  {
-    xf86Msg(X_ERROR, "GLIDEProbe(): Error calling pgrSstQueryBoards!\n");
+  num_sst = glide_get_num_boards();
+  if (num_sst < 0)
     goto cleanup;
-  }
-  
-  
-  /* hw.num_sst : number of Glide boards available */
-  if (hw.num_sst > 0 && (flags & PROBE_DETECT)) {
+
+  /* num_sst: number of Glide boards available */
+  if (num_sst > 0 && (flags & PROBE_DETECT)) {
     /* XXX Need to call xf886AddDeviceToConfigure() here */
     return TRUE;
   }
 
-  for (sst = 0; sst < hw.num_sst; sst++)
+  for (sst = 0; sst < num_sst; sst++)
   {
     for (i = 0; i < numdevList; i++)
     {
@@ -430,7 +451,7 @@ GLIDEProbe(DriverPtr drv, int flags)
   }
 
  cleanup:
-  xfree(devList);
+  free(devList);
   return foundScreen;
 }
 	
@@ -531,7 +552,8 @@ GLIDEPreInit(ScrnInfoPtr pScrn, int flags)
   xf86CollectOptions(pScrn, NULL);
 
   /* Process the options */
-  if (!(pGlide->Options = xalloc(sizeof(GLIDEOptions))))
+  pGlide->Options = malloc(sizeof(GLIDEOptions));
+  if (pGlide->Options == NULL)
     return FALSE;
   memcpy(pGlide->Options, GLIDEOptions, sizeof(GLIDEOptions));
   xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, pGlide->Options);
@@ -633,14 +655,11 @@ GLIDEPreInit(ScrnInfoPtr pScrn, int flags)
     return FALSE;
   }
 
-  xf86LoaderReqSymLists(fbSymbols, NULL);
-
   /* Load the shadow framebuffer */
   if (!xf86LoadSubModule(pScrn, "shadowfb")) {
     GLIDEFreeRec(pScrn);
     return FALSE;
   }
-  xf86LoaderReqSymLists(shadowSymbols, NULL);
 
   return TRUE;
 }
@@ -806,7 +825,7 @@ GLIDECloseScreen(int scrnIndex, ScreenPtr pScreen)
 
   if (pScrn->vtSema)
       GLIDERestore(pScrn, TRUE);
-  xfree(pGlide->ShadowPtr);
+  free(pGlide->ShadowPtr);
 
   pScrn->vtSema = FALSE;
 
@@ -828,7 +847,7 @@ GLIDEFreeScreen(int scrnIndex, int flags)
    * get called routinely at the end of a server generation.
    */
   if (pGlide && pGlide->ShadowPtr)
-    xfree(pGlide->ShadowPtr);
+    free(pGlide->ShadowPtr);
   GLIDEFreeRec(xf86Screens[scrnIndex]);
 }
 
@@ -987,14 +1006,18 @@ GLIDERestore(ScrnInfoPtr pScrn, Bool Closing)
   p##x = (p##x##_t)LoaderSymbol(#x); \
   if (!p##x) \
   { \
-    xf86Msg(X_ERROR, "Could not find " #x "() in libglide2x.so.\n"); \
+    xf86Msg(X_ERROR, "Could not find " #x "() in lib%s.so.\n", GLIDE_MODULE_NAME); \
     return FALSE; \
   }
 
 static int
 LoadGlide(void)
 {
+#ifdef GLIDE3
+  GLIDE_FIND_FUNC(grGet);
+#else
   GLIDE_FIND_FUNC(grSstQueryBoards);
+#endif
   GLIDE_FIND_FUNC(grGlideInit);
   GLIDE_FIND_FUNC(grSstSelect);
   GLIDE_FIND_FUNC(grSstWinOpen);

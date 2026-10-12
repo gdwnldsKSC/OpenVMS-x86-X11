@@ -1,4 +1,3 @@
-/* $Xorg: sync.h,v 1.4 2001/02/09 02:03:24 xorgcvs Exp $ */
 /*
 
 Copyright 1991, 1993, 1994, 1998  The Open Group
@@ -48,13 +47,16 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
-/* $XFree86: xc/include/extensions/sync.h,v 1.4 2001/12/20 19:40:59 tsi Exp $ */
 
 #ifndef _SYNC_H_
 #define _SYNC_H_
 
 #include <X11/Xfuncproto.h>
 #include <X11/extensions/syncconst.h>
+
+#ifdef _SYNC_SERVER
+#include <X11/extensions/syncproto.h>
+#else
 
 _XFUNCPROTOBEGIN
 /* get rid of macros so we can define corresponding functions */
@@ -334,5 +336,7 @@ extern Status XSyncGetPriority(
 );
 
 _XFUNCPROTOEND
+
+#endif /* _SYNC_SERVER */
 
 #endif /* _SYNC_H_ */

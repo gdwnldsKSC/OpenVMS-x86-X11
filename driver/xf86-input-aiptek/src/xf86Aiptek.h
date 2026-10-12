@@ -40,8 +40,11 @@
 #ifndef _AIPTEK_H_
 #define _AIPTEK_H_
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
-#ifdef LINUX_INPUT
+#ifdef HAVE_LINUX_INPUT_H
 #   include <asm/types.h>
 #   include <linux/input.h>
 #   ifndef EV_MSC
@@ -56,6 +59,7 @@
 #   endif
 #endif
 
+#include <xorg-server.h>
 #include <xorgVersion.h>
 
 #ifndef XFree86LOADER

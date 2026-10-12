@@ -20,43 +20,62 @@
 #
 # Process this file with autoconf to produce a configure script
 
-AC_PREREQ(2.57)
+# Initialize Autoconf
+AC_PREREQ([2.60])
 AC_INIT([xf86-video-vmware],
-        10.16.8,
+        [11.0.3],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
-        xf86-video-vmware)
-
+        [xf86-video-vmware])
 AC_CONFIG_SRCDIR([Makefile.am])
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR(.)
 
-AM_INIT_AUTOMAKE([dist-bzip2])
-
+# Initialize Automake
+AM_INIT_AUTOMAKE([foreign dist-bzip2])
 AM_MAINTAINER_MODE
 
-# Checks for programs.
+# Require X.Org macros 1.8 or later for MAN_SUBSTS set by XORG_MANPAGE_SECTIONS
+m4_ifndef([XORG_MACROS_VERSION],
+          [m4_fatal([must install xorg-macros 1.8 or later before running autoconf/autogen])])
+XORG_MACROS_VERSION(1.8)
+XORG_DEFAULT_OPTIONS
+
+# Initialize libtool
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
-AC_PROG_CC
+
+# Checks for programs.
+AM_PROG_CC_C_O
 
 AH_TOP([#include "xorg-server.h"])
 
+# Define a configure option for an alternate module directory
 AC_ARG_WITH(xorg-module-dir,
-            AC_HELP_STRING([--with-xorg-module-dir=DIR],
+            AS_HELP_STRING([--with-xorg-module-dir=DIR],
                            [Default xorg module directory [[default=$libdir/xorg/modules]]]),
             [moduledir="$withval"],
             [moduledir="$libdir/xorg/modules"])
 
-# Checks for extensions
+# Define a configure option to build the vmwarectrl client tool
+AC_ARG_ENABLE(vmwarectrl-client,
+              AS_HELP_STRING([--enable-vmwarectrl-client],
+                             [Enable vmwarectrl client (default: disabled)]),
+                             [VMWARECTRL=$enableval], [VMWARECTRL=no])
+AM_CONDITIONAL(BUILD_VMWARECTRL, [test "x$VMWARECTRL" = xyes])
+
+# Store the list of server defined optional extensions in REQUIRED_MODULES
 XORG_DRIVER_CHECK_EXT(RANDR, randrproto)
 XORG_DRIVER_CHECK_EXT(RENDER, renderproto)
 XORG_DRIVER_CHECK_EXT(DPMSExtension, xextproto)
 XORG_DRIVER_CHECK_EXT(XINERAMA, xineramaproto)
 XORG_DRIVER_CHECK_EXT(XV, videoproto)
 
-# Checks for pkg-config packages
+# Obtain compiler/linker options for the driver dependencies
 PKG_CHECK_MODULES(XORG, [xorg-server >= 1.0.1 xproto fontsproto $REQUIRED_MODULES])
-sdkdir=$(pkg-config --variable=sdkdir xorg-server)
+PKG_CHECK_MODULES(LIBDRM,
+		  [libdrm],
+		  [AC_DEFINE([HAVE_LIBDRM], 1, [Has libdrm])],
+		  [echo "Will not try support for 3D or kernel modesetting."])
 
 PKG_CHECK_EXISTS([xorg-server >= 1.1.0],
                  [AC_DEFINE([HAVE_XORG_SERVER_1_1_0], 1,
@@ -70,11 +89,19 @@ PKG_CHECK_EXISTS([xorg-server >= 1.2.0],
                  [AC_DEFINE([HAVE_XORG_SERVER_1_2_0], 1,
                  [Has version 1.2.0 or greater of the Xserver])])
 
+PKG_CHECK_EXISTS([xorg-server >= 1.4.99],
+                 [AC_DEFINE([HAVE_XORG_SERVER_1_5_0], 1,
+                 [Has version 1.5.0 or greater of the Xserver])])
+
+PKG_CHECK_EXISTS([xorg-server >= 1.7.0],
+                 [AC_DEFINE([HAVE_XORG_SERVER_1_7_0], 1,
+                 [Has version 1.7.0 or greater of the Xserver])])
+
+# Obtain compiler/linker options for the vmwarectrl client tool
+PKG_CHECK_MODULES(X11, x11 xext)
 
 # Checks for libraries.
 
-# Checks for header files.
-AC_HEADER_STDC
 save_CFLAGS="$CFLAGS"
 CFLAGS="$XORG_CFLAGS"
 AC_CHECK_DECL(XSERVER_LIBPCIACCESS,
@@ -88,17 +115,15 @@ fi
 
 AM_CONDITIONAL(XSERVER_LIBPCIACCESS, test "x$XSERVER_LIBPCIACCESS" = xyes)
 
-AC_SUBST([XORG_CFLAGS])
 AC_SUBST([moduledir])
 
 DRIVER_NAME=vmware
 AC_SUBST([DRIVER_NAME])
 
-XORG_MANPAGE_SECTIONS
-XORG_RELEASE_VERSION
-
-AC_OUTPUT([
-	Makefile
-	src/Makefile
-	man/Makefile
+AC_CONFIG_FILES([
+                Makefile
+                src/Makefile
+                vmwarectrl/Makefile
+                man/Makefile
 ])
+AC_OUTPUT

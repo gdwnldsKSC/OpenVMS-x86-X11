@@ -36,14 +36,17 @@
 #include "config.h"
 #endif
 
-#define NEED_REPLIES
-#define NEED_EVENTS
 #include "dixstruct.h"
 #include "extnsionst.h"
 #include <X11/X.h>
 #include <X11/extensions/panoramiXproto.h>
 
 #include "vmware.h"
+
+#ifndef HAVE_XORG_SERVER_1_5_0
+#include <xf86_ansic.h>
+#include <xf86_libc.h>
+#endif
 
 
 /*
@@ -631,7 +634,7 @@ VMwareXineramaResetProc(ExtensionEntry* extEntry)
    VMWAREPtr pVMWARE = VMWAREPTR(pScrn);
 
    if (pVMWARE->xineramaState) {
-      xfree(pVMWARE->xineramaState);
+      free(pVMWARE->xineramaState);
       pVMWARE->xineramaState = NULL;
       pVMWARE->xineramaNumOutputs = 0;
       pVMWARE->xinerama = FALSE;

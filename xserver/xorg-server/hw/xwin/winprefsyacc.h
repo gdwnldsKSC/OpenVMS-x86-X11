@@ -1,10 +1,9 @@
-
-/* A Bison parser, made by GNU Bison 2.4.1.  */
+/* A Bison parser, made by GNU Bison 2.4.3.  */
 
 /* Skeleton interface for Bison's Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
-   Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
+   2009, 2010 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -62,11 +61,12 @@
      ATEND = 278,
      EXEC = 279,
      ALWAYSONTOP = 280,
-     DEBUG = 281,
+     DEBUGOUTPUT = 281,
      RELOAD = 282,
      TRAYICON = 283,
-     SILENTEXIT = 284,
-     STRING = 285
+     FORCEEXIT = 284,
+     SILENTEXIT = 285,
+     STRING = 286
    };
 #endif
 /* Tokens.  */
@@ -93,11 +93,12 @@
 #define ATEND 278
 #define EXEC 279
 #define ALWAYSONTOP 280
-#define DEBUG 281
+#define DEBUGOUTPUT 281
 #define RELOAD 282
 #define TRAYICON 283
-#define SILENTEXIT 284
-#define STRING 285
+#define FORCEEXIT 284
+#define SILENTEXIT 285
+#define STRING 286
 
 
 
@@ -106,7 +107,7 @@
 typedef union YYSTYPE
 {
 
-/* Line 1676 of yacc.c  */
+/* Line 1685 of yacc.c  */
 #line 89 "winprefsyacc.y"
 
   char *sVal;
@@ -115,8 +116,8 @@ typedef union YYSTYPE
 
 
 
-/* Line 1676 of yacc.c  */
-#line 120 "winprefsyacc.h"
+/* Line 1685 of yacc.c  */
+#line 121 "winprefsyacc.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

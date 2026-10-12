@@ -3,7 +3,7 @@ XKB_SUBDIRS = xkb
 endif
 SUBDIRS = util xcms xlibi18n $(XKB_SUBDIRS)
 
-lib_LTLIBRARIES=libX11.la
+lib_LTLIBRARIES = libX11.la libX11-xcb.la
 
 BUILT_SOURCES=ks_tables.h
 CLEANFILES=ks_tables.h ks_tables_h
@@ -21,8 +21,8 @@ AM_CPPFLAGS= \
 AM_CFLAGS= \
 	$(X11_CFLAGS) \
 	$(BIGFONT_CFLAGS) \
-	$(XDMCP_CFLAGS) \
-	$(XMALLOC_ZERO_CFLAGS)
+	$(XMALLOC_ZERO_CFLAGS) \
+	$(CWARNFLAGS)
 
 #
 # =============================== I18N =============================
@@ -311,6 +311,8 @@ libX11_la_SOURCES = \
                   WMProps.c \
                   WrBitF.c \
                   Xatomtype.h \
+                  xcb_disp.c \
+                  xcb_io.c \
                   Xintatom.h \
                   Xintconn.h \
                   XlibAsync.c \
@@ -319,7 +321,8 @@ libX11_la_SOURCES = \
                   XomGeneric.h \
                   Xresinternal.h \
                   Xrm.c \
-                  XrmI.h
+                  XrmI.h \
+                  Xxcbint.h
 
 #
 # ========================= Extra stuff ============================
@@ -338,7 +341,7 @@ libX11_la_SOURCES+=UIThrStubs.c
 endif
 
 x11datadir = @X11_DATADIR@
-x11data_DATA = XKeysymDB XErrorDB
+x11data_DATA = XErrorDB
 
 EXTRA_DIST = \
 	$(x11data_DATA) \
@@ -346,21 +349,9 @@ EXTRA_DIST = \
 	udcInf.c \
 	UIThrStubs.c 
 
-if XCB
-libX11_la_SOURCES += \
-                  xcb_disp.c \
-                  xcb_io.c \
-                  Xxcbint.h
-
-lib_LTLIBRARIES += libX11-xcb.la
 libX11_xcb_la_SOURCES = x11_xcb.c Xxcbint.h
-libX11_xcb_la_LDFLAGS = -version-info 1:0:0 -no-undefined
+libX11_xcb_la_LDFLAGS = -version-number 1:0:0 -no-undefined
 libX11_xcb_la_LIBADD = libX11.la
-else
-libX11_la_SOURCES += \
-                  ConnDis.c \
-                  x11_trans.c
-endif
 
 #
 # Figure out which sub-libraries to link into Xlib
@@ -384,8 +375,7 @@ libX11_la_LIBADD = \
 	$(USE_I18N_LIBS) \
 	$(USE_XCMS_LIBS) \
 	$(USE_XKB_LIBS) \
-	$(X11_LIBS) \
-	$(XDMCP_LIBS)
+	$(X11_LIBS)
 
 preprocess: $(patsubst %.c,%.ii,$(libX11_la_SOURCES))
 .c.ii:
@@ -417,17 +407,17 @@ lintlib_src = $(libX11_la_SOURCES) xcms/*.c xkb/*.c
 CLEANFILES += $(lintlib_DATA)
 
 $(LINTLIB): $(libX11_la_SOURCES)
-	$(LINT) -y -oX11 -x $(ALL_LINT_FLAGS) $(lintlib_src)
+	$(AM_V_GEN)$(LINT) -y -oX11 -x $(ALL_LINT_FLAGS) $(lintlib_src)
 endif MAKE_LINT_LIB
 
 #
 # Building ks_tables.h requires the makekeys utility
 #
 
-KEYSYMDEF=@KEYSYMDEF@
+KEYSYMDEFS=@KEYSYMDEFS@
 
-ks_tables.h: $(KEYSYMDEF) $(top_builddir)/src/util/makekeys$(EXEEXT)
-	$(top_builddir)/src/util/makekeys < $(KEYSYMDEF) > ks_tables_h
+ks_tables.h: $(KEYSYMDEFS) $(top_builddir)/src/util/makekeys$(EXEEXT)
+	$(top_builddir)/src/util/makekeys $(KEYSYMDEFS) > ks_tables_h
 	mv ks_tables_h $@
 
 $(top_builddir)/src/util/makekeys$(EXEEXT): force

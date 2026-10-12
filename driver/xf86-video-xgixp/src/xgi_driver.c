@@ -51,8 +51,6 @@
 #include "vgaHW.h"
 #include "dixstruct.h"
 
-/* mi banking wrapper */
-#include "mibank.h"
 /* initialise a SW cursor */
 #include "mipointer.h"
 /* implementing backing store */

@@ -62,7 +62,7 @@ EventDeviceOnHook(LocalDevicePtr local, SynapticsParameters *para)
     BOOL *need_grab;
 
     if (!priv->proto_data)
-        priv->proto_data = xcalloc(1, sizeof(BOOL));
+        priv->proto_data = calloc(1, sizeof(BOOL));
 
     need_grab = (BOOL*)priv->proto_data;
 
@@ -180,7 +180,7 @@ event_query_axis_ranges(LocalDevicePtr local)
     SYSCALL(rc = ioctl(local->fd, EVIOCGABS(ABS_X), &abs));
     if (rc >= 0)
     {
-	xf86Msg(X_INFO, "%s: x-axis range %d - %d\n", local->name,
+	xf86Msg(X_PROBED, "%s: x-axis range %d - %d\n", local->name,
 		abs.minimum, abs.maximum);
 	priv->minx = abs.minimum;
 	priv->maxx = abs.maximum;
@@ -194,7 +194,7 @@ event_query_axis_ranges(LocalDevicePtr local)
     SYSCALL(rc = ioctl(local->fd, EVIOCGABS(ABS_Y), &abs));
     if (rc >= 0)
     {
-	xf86Msg(X_INFO, "%s: y-axis range %d - %d\n", local->name,
+	xf86Msg(X_PROBED, "%s: y-axis range %d - %d\n", local->name,
 		abs.minimum, abs.maximum);
 	priv->miny = abs.minimum;
 	priv->maxy = abs.maximum;
@@ -206,9 +206,13 @@ event_query_axis_ranges(LocalDevicePtr local)
 		strerror(errno));
 
     priv->has_pressure = FALSE;
+    priv->has_width = FALSE;
     SYSCALL(rc = ioctl(local->fd, EVIOCGBIT(EV_ABS, sizeof(absbits)), absbits));
     if (rc >= 0)
-	priv->has_pressure = TEST_BIT(ABS_PRESSURE, absbits);
+    {
+	priv->has_pressure = (TEST_BIT(ABS_PRESSURE, absbits) != 0);
+	priv->has_width = (TEST_BIT(ABS_TOOL_WIDTH, absbits) != 0);
+    }
     else
 	xf86Msg(X_ERROR, "%s: failed to query ABS bits (%s)\n", local->name,
 		strerror(errno));
@@ -218,7 +222,7 @@ event_query_axis_ranges(LocalDevicePtr local)
 	SYSCALL(rc = ioctl(local->fd, EVIOCGABS(ABS_PRESSURE), &abs));
 	if (rc >= 0)
 	{
-	    xf86Msg(X_INFO, "%s: pressure range %d - %d\n", local->name,
+	    xf86Msg(X_PROBED, "%s: pressure range %d - %d\n", local->name,
 		    abs.minimum, abs.maximum);
 	    priv->minp = abs.minimum;
 	    priv->maxp = abs.maximum;
@@ -228,13 +232,16 @@ event_query_axis_ranges(LocalDevicePtr local)
 		"%s: device does not report pressure, will use touch data.\n",
 		local->name);
 
-    SYSCALL(rc = ioctl(local->fd, EVIOCGABS(ABS_TOOL_WIDTH), &abs));
-    if (rc >= 0)
+    if (priv->has_width)
     {
-	xf86Msg(X_INFO, "%s: finger width range %d - %d\n", local->name,
-		abs.minimum, abs.maximum);
-	priv->minw = abs.minimum;
-	priv->maxw = abs.maximum;
+	SYSCALL(rc = ioctl(local->fd, EVIOCGABS(ABS_TOOL_WIDTH), &abs));
+	if (rc >= 0)
+	{
+	    xf86Msg(X_PROBED, "%s: finger width range %d - %d\n", local->name,
+		    abs.minimum, abs.maximum);
+	    priv->minw = abs.minimum;
+	    priv->maxw = abs.maximum;
+	}
     }
 
     SYSCALL(rc = ioctl(local->fd, EVIOCGBIT(EV_KEY, sizeof(keybits)), keybits));
@@ -251,7 +258,17 @@ event_query_axis_ranges(LocalDevicePtr local)
 	   strcat(buf, " double");
 	if ((priv->has_triple = (TEST_BIT(BTN_TOOL_TRIPLETAP, keybits) != 0)))
 	   strcat(buf, " triple");
-	xf86Msg(X_INFO, "%s: buttons:%s\n", local->name, buf);
+
+	if ((TEST_BIT(BTN_0, keybits) != 0) ||
+	    (TEST_BIT(BTN_1, keybits) != 0) ||
+	    (TEST_BIT(BTN_2, keybits) != 0) ||
+	    (TEST_BIT(BTN_3, keybits) != 0))
+	{
+	    priv->has_scrollbuttons = 1;
+	    strcat(buf, " scroll-buttons");
+	}
+
+	xf86Msg(X_PROBED, "%s: buttons:%s\n", local->name, buf);
     }
 }
 
@@ -270,19 +287,23 @@ EventQueryHardware(LocalDevicePtr local)
 }
 
 static Bool
-SynapticsReadEvent(struct CommData *comm, struct input_event *ev)
+SynapticsReadEvent(LocalDevicePtr local, struct input_event *ev)
 {
-    int i, c;
-    unsigned char *pBuf, u;
+    int rc = TRUE;
+    ssize_t len;
 
-    for (i = 0; i < sizeof(struct input_event); i++) {
-	if ((c = XisbRead(comm->buffer)) < 0)
-	    return FALSE;
-	u = (unsigned char)c;
-	pBuf = (unsigned char *)ev;
-	pBuf[i] = u;
+    len = read(local->fd, ev, sizeof(*ev));
+    if (len <= 0)
+    {
+        /* We use X_NONE here because it doesn't alloc */
+        if (errno != EAGAIN)
+            xf86MsgVerb(X_NONE, 0, "%s: Read error %s\n", local->name, strerror(errno));
+        rc = FALSE;
+    } else if (len % sizeof(*ev)) {
+        xf86MsgVerb(X_NONE, 0, "%s: Read error, invalid number of bytes.", local->name);
+        rc = FALSE;
     }
-    return TRUE;
+    return rc;
 }
 
 static Bool
@@ -296,7 +317,7 @@ EventReadHwState(LocalDevicePtr local,
     SynapticsPrivate *priv = (SynapticsPrivate *)local->private;
     SynapticsParameters *para = &priv->synpara;
 
-    while (SynapticsReadEvent(comm, &ev)) {
+    while (SynapticsReadEvent(local, &ev)) {
 	switch (ev.type) {
 	case EV_SYN:
 	    switch (ev.code) {
@@ -310,7 +331,6 @@ EventReadHwState(LocalDevicePtr local,
 		else
 		    hw->numFingers = 0;
 		*hwRet = *hw;
-		hw->guest_dx = hw->guest_dy = 0;
 		return TRUE;
 	    }
 	case EV_KEY:
@@ -364,12 +384,6 @@ EventReadHwState(LocalDevicePtr local,
 	    case BTN_TOOL_TRIPLETAP:
 		comm->threeFingers = v;
 		break;
-	    case BTN_A:
-		hw->guest_left = v;
-		break;
-	    case BTN_B:
-		hw->guest_right = v;
-		break;
 	    case BTN_TOUCH:
 		if (!priv->has_pressure)
 			hw->z = v ? para->finger_high + 1 : 0;
@@ -389,16 +403,6 @@ EventReadHwState(LocalDevicePtr local,
 		break;
 	    case ABS_TOOL_WIDTH:
 		hw->fingerWidth = ev.value;
-		break;
-	    }
-	    break;
-	case EV_REL:
-	    switch (ev.code) {
-	    case REL_X:
-		hw->guest_dx = ev.value;
-		break;
-	    case REL_Y:
-		hw->guest_dy = ev.value;
 		break;
 	    }
 	    break;
@@ -437,11 +441,11 @@ EventAutoDevProbe(LocalDevicePtr local)
 
     i = scandir(DEV_INPUT_EVENT, &namelist, EventDevOnly, alphasort);
     if (i < 0) {
-		ErrorF("Couldn't open %s\n", DEV_INPUT_EVENT);
+		xf86Msg(X_ERROR, "Couldn't open %s\n", DEV_INPUT_EVENT);
 		return FALSE;
     }
     else if (i == 0) {
-		ErrorF("%s The /dev/input/event* device nodes seem to be missing\n",
+		xf86Msg(X_ERROR, "%s The /dev/input/event* device nodes seem to be missing\n",
 				local->name);
 		free(namelist);
 		return FALSE;
@@ -471,7 +475,7 @@ EventAutoDevProbe(LocalDevicePtr local)
 	free(namelist);
 
 	if (!touchpad_found) {
-		ErrorF("%s no synaptics event device found\n", local->name);
+		xf86Msg(X_ERROR, "%s no synaptics event device found\n", local->name);
 		return FALSE;
 	}
     return TRUE;

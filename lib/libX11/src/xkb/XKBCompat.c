@@ -1,4 +1,3 @@
-/* $Xorg: XKBCompat.c,v 1.3 2000/08/17 19:45:00 cpqbld Exp $ */
 /************************************************************
 Copyright (c) 1993 by Silicon Graphics Computer Systems, Inc.
 
@@ -24,14 +23,11 @@ OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION  WITH
 THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ********************************************************/
-/* $XFree86$ */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 #include <stdio.h>
-#define NEED_REPLIES
-#define NEED_EVENTS
 #define	NEED_MAP_READERS
 #include "Xlibint.h"
 #include <X11/extensions/XKBproto.h>

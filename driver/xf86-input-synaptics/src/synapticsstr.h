@@ -24,6 +24,17 @@
 
 #include "synproto.h"
 
+#ifdef DBG
+#  undef DBG
+#endif
+
+#ifdef DEBUG
+#define DBG(verb, ...) \
+    xf86MsgVerb(X_INFO, verb, __VA_ARGS__)
+#else
+#define DBG(verb, msg, ...) /* */
+#endif
+
 /******************************************************************************
  *		Definitions
  *					structs, typedefs, #defines, enums
@@ -127,7 +138,6 @@ typedef struct _SynapticsParameters
 					     * 1 : Off
 					     * 2 : Only tapping and scrolling off
 					     */
-    Bool guestmouse_off;		    /* Switches the guest mouse off */
     Bool locked_drags;			    /* Enable locked drags */
     int locked_drag_time;		    /* timeout for locked drags */
     int tap_action[MAX_TAP];		    /* Button to report on tap events */
@@ -140,6 +150,7 @@ typedef struct _SynapticsParameters
     int palm_min_width;			    /* Palm detection width */
     int palm_min_z;			    /* Palm detection depth */
     double coasting_speed;		    /* Coasting threshold scrolling speed */
+    double coasting_friction;		    /* Number of scrolls per second per second to change coasting speed */
     int press_motion_min_z;		    /* finger pressure at which minimum pressure motion factor is applied */
     int press_motion_max_z;		    /* finger pressure at which maximum pressure motion factor is applied */
     double press_motion_min_factor;	    /* factor applied on speed when finger pressure is at minimum */
@@ -208,6 +219,7 @@ typedef struct _SynapticsPrivateRec
     int palm;				/* Set to true when palm detected, reset to false when
 					   palm/finger contact disappears */
     int prev_z;				/* previous z value, for palm detection */
+    int prevFingers;			/* previous numFingers, for transition detection */
     int avg_width;			/* weighted average of previous fingerWidth values */
     double horiz_coeff;                 /* normalization factor for x coordintes */
     double vert_coeff;                  /* normalization factor for y coordintes */
@@ -221,8 +233,13 @@ typedef struct _SynapticsPrivateRec
     Bool has_double;			/* double click detected for this device */
     Bool has_triple;			/* triple click detected for this device */
     Bool has_pressure;			/* device reports pressure */
+    Bool has_width;			/* device reports finger width */
+    Bool has_scrollbuttons;		/* device has physical scrollbuttons */
 
     enum TouchpadModel model;          /* The detected model */
 } SynapticsPrivate;
+
+
+extern void SynapticsDefaultDimensions(LocalDevicePtr local);
 
 #endif /* _SYNAPTICSSTR_H_ */

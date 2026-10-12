@@ -1,4 +1,3 @@
-/* $TOG:  $ */
 /******************************************************************
 
               Copyright 1993 by SunSoft, Inc.
@@ -24,7 +23,6 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
-/* $XFree86: xc/lib/X11/lcUTF8.c,v 1.15 2002/10/08 23:31:36 dawes Exp $ */
 
 /*
  * This file contains:
@@ -1824,7 +1822,7 @@ iconv_cstombs(XlcConv conv, XPointer *from, int *from_left,
 	      XPointer *to, int *to_left, XPointer *args, int num_args)
 {
     XlcCharSet charset;
-    const char *name;
+    char const *name;
     Utf8Conv convptr;
     int i;
     unsigned char const *src;

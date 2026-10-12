@@ -27,6 +27,8 @@
 #ifndef  _VBEXT_
 #define  _VBEXT_
 
+#include "xf86.h" /* Jong@08252009; for ScrnInfoPtr */
+
 /* Jong 10/04/2007; merge code */
 struct DWORDREGS {
     ULONG    Eax, Ebx, Ecx, Edx, Esi, Edi, Ebp;
@@ -53,6 +55,8 @@ extern void XGI_GetSenseStatus(PXGI_HW_DEVICE_INFO HwDeviceExtension,
     PVB_DEVICE_INFO pVBInfo);
 
 /* Jong 10/04/2007; merge code */
+extern   void     XGIInitMiscVBInfo(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo); /* Jong@08212009 */
+extern   void     XGISetDPMS(ScrnInfoPtr pScrn, PVB_DEVICE_INFO pVBInfo, PXGI_HW_DEVICE_INFO pXGIHWDE , ULONG VESA_POWER_STATE ) ; /* Jong@08212009 */
 extern   void     XGINew_SetModeScratch ( PXGI_HW_DEVICE_INFO HwDeviceExtension , PVB_DEVICE_INFO pVBInfo ) ;
 extern   void 	  ReadVBIOSTablData( UCHAR ChipType , PVB_DEVICE_INFO pVBInfo);
 extern   USHORT   XGINew_SenseLCD(PXGI_HW_DEVICE_INFO,PVB_DEVICE_INFO pVBInfo);

@@ -450,9 +450,7 @@ Permedia3AccelInit(ScreenPtr pScreen)
 						CPU_TRANSFER_PAD_DWORD;
 
     infoPtr->NumScanlineColorExpandBuffers = 1;
-    pGlint->ScratchBuffer                 = xalloc(((pScrn->virtualX+62)/32*4)
-					    + (pScrn->virtualX
-					    * pScrn->bitsPerPixel / 8));
+    pGlint->ScratchBuffer                 = malloc(((pScrn->virtualX + 62) / 32 * 4) + (pScrn->virtualX * pScrn->bitsPerPixel / 8));
     infoPtr->ScanlineColorExpandBuffers = 
 					pGlint->XAAScanlineColorExpandBuffers;
     pGlint->XAAScanlineColorExpandBuffers[0] = 

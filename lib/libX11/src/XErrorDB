@@ -1,5 +1,3 @@
-! $Xorg: XErrorDB,v 1.3 2000/08/17 19:44:59 cpqbld Exp $
-! $XdotOrg: lib/X11/src/XErrorDB,v 1.4 2005-10-21 18:44:24 ajax Exp $
 !
 ! Copyright 1993, 1995, 1998  The Open Group
 
@@ -25,7 +23,6 @@
 ! other dealings in this Software without prior written authorization
 ! from The Open Group.
 !
-! $XFree86: xc/lib/X11/XErrorDB,v 3.40 2002/12/21 17:51:42 dawes Exp $
 !
 ! these are used in XGetErrorMessage.
 XlibMessage.XError: X Error of failed request
@@ -1004,3 +1001,9 @@ XRequest.DRI2.3: DRI2CreateDrawable
 XRequest.DRI2.4: DRI2DestroyDrawable
 XRequest.DRI2.5: DRI2GetBuffers
 XRequest.DRI2.6: DRI2CopyRegion
+XRequest.DRI2.7: DRI2GetBuffersWithFormat	
+XRequest.DRI2.8: DRI2SwapBuffers		
+XRequest.DRI2.9: DRI2GetMSC			
+XRequest.DRI2.10: DRI2WaitMSC			
+XRequest.DRI2.11: DRI2WaitSBC			
+XRequest.DRI2.12: DRI2SwapInterval		

@@ -63,6 +63,11 @@ static BOOLEAN XGINew_Sense(USHORT tempbx, USHORT tempcx,
 static BOOLEAN XGINew_SenseHiTV(PXGI_HW_DEVICE_INFO HwDeviceExtension,
 				PVB_DEVICE_INFO pVBInfo);
 
+#ifdef DEBUG
+void XGIDumpSR(ScrnInfoPtr pScrn);
+void XGIDumpCR(ScrnInfoPtr pScrn);
+#endif
+
 /**************************************************************
 	Dynamic Sense
 *************************************************************/
@@ -441,4 +446,305 @@ BOOLEAN XGINew_SenseHiTV( PXGI_HW_DEVICE_INFO HwDeviceExtension , PVB_DEVICE_INF
       else
 	  return( 0 ) ;
     }
+}
+
+void XGIPowerSaving(PVB_DEVICE_INFO pVBInfo, UCHAR PowerSavingStatus)
+{
+	ErrorF("XGIPowerSaving()...Begin\n");
+
+	if(PowerSavingStatus & 0x01) /* turn off DAC1 */
+	{
+	   ErrorF("Turn off DAC1...\n");
+       /* XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3c4 , ??? , ??? ) ; */			/* ??? */
+       XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4 , 0x07 , ~0x20, 0x20 ) ;	/* SR07[5] : Enable DAC1 power saving mode */
+	}
+	else
+	{
+	   ErrorF("Turn on DAC1...\n");
+       /* XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3c4 , ??? , ??? ) ; */			
+       XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3c4 , 0x07 , ~0x20 ) ;			
+	}
+
+	if(PowerSavingStatus & 0x02) /* turn off DVO */
+	{
+	   ErrorF("Turn off DVO...\n");
+       XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3c4 , 0x09 , ~0x80 ) ;			/* SR09[7] : Disable FP panel output */
+       XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3d4 , 0xB4 , ~0x04 ) ;			/* CRB4[2] : FP power down */
+	}
+	else
+	{
+	   ErrorF("Turn on DVO...\n");
+       XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4 , 0x09 , ~0x80 , 0x80 ) ;	
+       XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3d4 , 0xB4 , ~0x04 , 0x04 ) ;	
+	}
+
+	if(PowerSavingStatus & 0x04) /* turn off DAC2 */
+	{
+	   ErrorF("Turn off DAC2...\n");
+       XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3c4 , 0x07 , ~0x08 ) ;			/* SR07[3] : Disable mirror DAC (DAC2) */
+       XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4 , 0x40 , ~0x20, 0x20 ) ;	/* SR40[5] : Enable DAC2 power saving mode */
+	}
+	else
+	{
+	   ErrorF("Turn on DAC2...\n");
+       XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4 , 0x07 , ~0x08 , 0x08 ) ;	
+       XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3c4 , 0x40 , ~0x20 ) ;			
+	}
+
+	ErrorF("XGIPowerSaving()...End\n");
+}
+
+extern UCHAR g_PowerSavingStatus;
+extern void ResetVariableFor2DRegister();
+
+/* --------------------------------------------------------------------- */
+/* Function : XGISetDPMS */
+/* Input : */
+/* Output : */
+/* Description : */
+/* --------------------------------------------------------------------- */
+VOID XGISetDPMS(ScrnInfoPtr pScrn, PVB_DEVICE_INFO pVBInfo, PXGI_HW_DEVICE_INFO pXGIHWDE , ULONG VESA_POWER_STATE )
+{
+    USHORT ModeNo, ModeIdIndex ;
+    UCHAR  temp ;
+    /* VB_DEVICE_INFO VBINF; */
+    /* PVB_DEVICE_INFO pVBInfo = pXGI->XGI_Pr */ /* &VBINF */;
+
+	ErrorF("XGISetDPMS(VESA_POWER_STATE = 0x%x)...\n", VESA_POWER_STATE);
+
+    InitTo330Pointer( pXGIHWDE->jChipType,  pVBInfo ) ;
+    ReadVBIOSTablData( pXGIHWDE->jChipType , pVBInfo) ;
+
+    XGIInitMiscVBInfo(pXGIHWDE, pVBInfo);
+
+	/* Jong@08212009; ignored at present */
+	/*
+    if ( pVBInfo->IF_DEF_CH7007 == 0 )
+    {
+        XGINew_SetModeScratch ( pXGIHWDE , pVBInfo ) ;
+    } */
+
+    XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x05 , 0x86 ) ;	/* 1.Openkey */
+    XGI_UnLockCRT2( pXGIHWDE , pVBInfo) ;
+    ModeNo = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3d4 , 0x34 ) ;
+    XGI_SearchModeID(pVBInfo->SModeIDTable, pVBInfo->EModeIDTable,  0x11, &ModeNo , &ModeIdIndex);
+    /* XGI_SearchModeID( ModeNo , &ModeIdIndex, pVBInfo ) ; */
+
+	/* Jong@08212009; ignored */
+	/*
+    if ( ( pXGIHWDE->ujVBChipID == VB_CHIP_301 ) || ( pXGIHWDE->ujVBChipID == VB_CHIP_302 ) || ( pVBInfo->IF_DEF_CH7007 == 1 ))
+    {
+        XGI_GetVBType( pVBInfo ) ;
+        XGI_GetVBInfo( ModeNo , ModeIdIndex , pXGIHWDE, pVBInfo ) ;
+        XGI_GetTVInfo( ModeNo , ModeIdIndex, pVBInfo ) ;
+        XGI_GetLCDInfo( ModeNo , ModeIdIndex, pVBInfo ) ;
+    } 
+
+    if ( VESA_POWER_STATE == 0x00000400 )
+      XGINew_SetReg1( pVBInfo->Part4Port , 0x31 , ( UCHAR )( XGINew_GetReg1( pVBInfo->Part4Port , 0x31 ) & 0xFE ) ) ;
+    else
+      XGINew_SetReg1( pVBInfo->Part4Port , 0x31 , ( UCHAR )( XGINew_GetReg1( pVBInfo->Part4Port , 0x31 ) | 0x01 ) ) ;
+	*/
+
+    temp = ( UCHAR )XGI_GetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x1f ) ;
+    temp &= 0x3f ;
+    switch ( VESA_POWER_STATE )
+    {
+        case 0x00000000 : /* on */
+			/* Jong@08212009; not support */
+			/*
+            if ( ( pXGIHWDE->ujVBChipID == VB_CHIP_301 ) || ( pXGIHWDE->ujVBChipID == VB_CHIP_302 ) )
+            {
+                XGINew_SetReg1( pVBInfo->P3c4 , 0x1f , ( UCHAR )( temp | 0x00 ) ) ;
+                XGI_EnableBridge( pXGIHWDE, pVBInfo ) ;
+            }
+            else */
+            {
+			   /* Handle LVDS */
+               if ( pVBInfo->IF_DEF_LVDS == 1 )
+			   {
+				   if ( pXGIHWDE->jChipType == XG21 )
+				   {
+					   XGI_XG21BLSignalVDD( 0x01 , 0x01, pVBInfo ) ; /* LVDS VDD on */
+					   XGI_XG21SetPanelDelay( 2,pVBInfo ) ;
+				   }
+
+				   if ( pXGIHWDE->jChipType == XG27 )
+				   {
+					   XGI_XG27BLSignalVDD( 0x01 , 0x01, pVBInfo ) ; /* LVDS VDD on */
+					   XGI_XG21SetPanelDelay( 2,pVBInfo ) ;
+				   }
+			   }
+
+               XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3c4 , 0x1F , ~0xC0 , 0x00 ) ;	/* VESA DPMS status on */
+               XGI_SetRegAND( (XGIIOADDRESS)pVBInfo->P3c4 , 0x01 , ~0x20 ) ;			/* enable memory retrieve for CRTC */
+               
+               if ( pXGIHWDE->jChipType == XG21 )
+               {
+                 temp = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3d4 , 0x38 ) ;
+                 if ( temp & 0xE0 )
+                 {
+                   XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4 , 0x09 , ~0x80 , 0x80 ) ;	/* DVO ON */
+                   XGI_SetXG21FPBits( pVBInfo );
+                   XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , ~0x20 ) ; 		/* Enable write GPIOF */
+                   /*XGINew_SetRegANDOR( pVBInfo->P3d4 , 0x48 , ~0x20 , 0x20 ) ;*/ 		/* LCD Display ON */
+                 }
+
+                 XGI_XG21BLSignalVDD( 0x20 , 0x20, pVBInfo ) ; /* LVDS signal on */
+                 XGI_DisplayOn( pXGIHWDE, pVBInfo );
+               } 
+
+               if ( pXGIHWDE->jChipType == XG27 )
+               {
+                 temp = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3d4 , 0x38 ) ;
+                 if ( temp & 0xE0 )
+                 {
+                   XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4 , 0x09 , ~0x80 , 0x80 ) ;	/* DVO ON */
+                   XGI_SetXG27FPBits( pVBInfo );
+                   XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , ~0x20 ) ; 			/* Enable write GPIOF */
+                   /*XGINew_SetRegANDOR( pVBInfo->P3d4 , 0x48 , ~0x20 , 0x20 ) ;*/ 			/* LCD Display ON */
+                 }
+                 XGI_XG27BLSignalVDD( 0x20 , 0x20, pVBInfo ) ; /* LVDS signal on */
+
+				 XGIPowerSaving(pVBInfo, g_PowerSavingStatus);
+
+				 XGI_DisplayOn( pXGIHWDE, pVBInfo );
+               } 
+            }
+
+			/* Jong@08252009; reset variables of register */
+			ResetVariableFor2DRegister();
+
+			/* Turn on 2D engine */
+            XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4 , 0x1E , ~0x40 , 0x40 ) ;	/* 2D ON */
+
+            break ;
+        case 0x00000100: /* standby */
+			PDEBUG(ErrorF("Standby...dump regs...0\n"));
+			PDEBUG(XGIDumpSR(pScrn));
+			PDEBUG(XGIDumpCR(pScrn));
+
+            if ( pXGIHWDE->jChipType >= XG21 )
+            {
+                XGI_DisplayOff( pXGIHWDE, pVBInfo );
+            }
+          
+			PDEBUG(ErrorF("Standby...dump regs...1\n"));
+			PDEBUG(XGIDumpSR(pScrn));
+			PDEBUG(XGIDumpCR(pScrn));
+
+            if ( pXGIHWDE->jChipType == XG21 )
+            {
+				XGIPowerSaving(pVBInfo, 0x03);	/* Turn off DAC1, DVO */
+            }
+
+            if ( pXGIHWDE->jChipType == XG27 )
+            {
+				XGIPowerSaving(pVBInfo, 0x07);	/* Turn off DAC1, DAC2, DVO */
+            }
+
+            XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x1f , ( UCHAR )( temp | 0x40 ) ) ;
+
+			/* Turn off 2D engine */
+            XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3c4 , 0x1E , ~0x40) ;	/* 2D OFF */
+
+			PDEBUG(ErrorF("Standby...dump regs...2\n"));
+			PDEBUG(XGIDumpSR(pScrn));
+			PDEBUG(XGIDumpCR(pScrn));
+            break ;
+        case 0x00000200: /* suspend */
+            if ( pXGIHWDE->jChipType == XG21 )
+            {
+                XGI_DisplayOff( pXGIHWDE, pVBInfo );
+                XGI_XG21BLSignalVDD( 0x20 , 0x00, pVBInfo ) ; /* LVDS signal off */
+				XGIPowerSaving(pVBInfo, 0x03);	/* Turn off DAC1, DVO */
+            }
+
+            if ( pXGIHWDE->jChipType == XG27 )
+            {
+                XGI_DisplayOff( pXGIHWDE, pVBInfo );
+                XGI_XG27BLSignalVDD( 0x20 , 0x00, pVBInfo ) ; /* LVDS signal off */
+				XGIPowerSaving(pVBInfo, 0x07);	/* Turn off DAC1, DAC2, DVO */
+            }
+
+            XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x1f , ( UCHAR )( temp | 0x80 ) ) ;
+
+			/* Turn off 2D engine */
+            XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3c4 , 0x1E , ~0x40) ;	/* 2D OFF */
+
+            break ;
+        case 0x00000400: /* off */
+			/* Jong@08212009; not support */
+			/*
+            if ( (pXGIHWDE->ujVBChipID == VB_CHIP_301 ) || ( pXGIHWDE->ujVBChipID == VB_CHIP_302 ) )
+            {
+                XGINew_SetReg1( pVBInfo->P3c4 , 0x1f , ( UCHAR )( temp | 0xc0 ) ) ;
+                XGI_DisableBridge( pXGIHWDE, pVBInfo ) ;
+            }
+            else */
+            {
+               if ( pXGIHWDE->jChipType == XG21 )
+               {
+                 XGI_DisplayOff( pXGIHWDE, pVBInfo );
+                 
+                 XGI_XG21BLSignalVDD( 0x20 , 0x00, pVBInfo ) ; /* LVDS signal off */
+
+                 temp = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3d4 , 0x38 ) ;
+
+                 if ( temp & 0xE0 )
+                 {
+                   XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3c4 , 0x09 , ~0x80 ) ;		/* DVO Off */
+                   XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , ~0x20 ) ; 		/* Enable write GPIOF */
+                   /*XGINew_SetRegAND( pVBInfo->P3d4 , 0x48 , ~0x20 ) ;*/ 		/* LCD Display OFF */
+                 }
+
+				 XGIPowerSaving(pVBInfo, 0x03);	/* Turn off DAC1, DVO */
+
+               }
+
+               if ( pXGIHWDE->jChipType == XG27 )
+               {
+                 XGI_DisplayOff( pXGIHWDE, pVBInfo );
+                 
+                 XGI_XG27BLSignalVDD( 0x20 , 0x00, pVBInfo ) ; /* LVDS signal off */
+
+                 temp = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3d4 , 0x38 ) ;
+
+                 if ( temp & 0xE0 )
+                 {
+                   XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3c4 , 0x09 , ~0x80 ) ;		/* DVO Off */
+                 }
+
+				 XGIPowerSaving(pVBInfo, 0x07);	/* Turn off DAC1, DAC2, DVO */
+               }
+
+               XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4 , 0x1F , ~0xC0 , 0xC0 ) ;
+               XGI_SetRegOR((XGIIOADDRESS) pVBInfo->P3c4 , 0x01 , 0x20 ) ;		/* CRT Off */
+               
+               if ( ( pXGIHWDE->jChipType == XG21 ) && ( pVBInfo->IF_DEF_LVDS == 1 ) )
+               {
+                 XGI_XG21SetPanelDelay( 4,pVBInfo ) ;
+                 XGI_XG21BLSignalVDD( 0x01 , 0x00, pVBInfo ) ; /* LVDS VDD off */
+                 XGI_XG21SetPanelDelay( 5,pVBInfo ) ;
+               }
+
+               if ( ( pXGIHWDE->jChipType == XG27 ) && ( pVBInfo->IF_DEF_LVDS == 1 ) )
+               {
+                 XGI_XG21SetPanelDelay( 4,pVBInfo ) ;
+                 XGI_XG27BLSignalVDD( 0x01 , 0x00, pVBInfo ) ; /* LVDS VDD off */
+                 XGI_XG21SetPanelDelay( 5,pVBInfo ) ;
+               }
+            }
+
+			/* Turn off 2D engine */
+            XGI_SetRegAND((XGIIOADDRESS) pVBInfo->P3c4 , 0x1E , ~0x40) ;	/* 2D OFF */
+
+            break ;
+
+        default:
+			ErrorF("XGISetDPMS()-invalid power status!\n");
+            break ;
+    }
+
+    XGI_LockCRT2( pXGIHWDE , pVBInfo ) ;
 }

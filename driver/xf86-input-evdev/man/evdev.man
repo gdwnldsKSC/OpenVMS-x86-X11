@@ -19,15 +19,24 @@ evdev \- Generic Linux input driver
 .B evdev 
 is an __xservername__ input driver for Linux\'s generic event devices.  It
 therefore supports all input devices that the kernel knows about, including
-most mice and keyboards.
+most mice, keyboards, tablets and touchscreens.
+.B evdev
+is the default driver on the major Linux distributions.
 .PP
 The 
 .B evdev
-driver can serve as both a pointer and a keyboard input device, and may be
-used as both the core keyboard and the core pointer.  Multiple input devices
-are supported by multiple instances of this driver, with one Load
-directive for evdev in the Module section of your __xconfigfile__ for each
-input device that will use this driver.
+driver can serve as both a pointer and a keyboard input device. Multiple
+input devices are supported by multiple instances of this driver, with one
+InputDevice section of your __xconfigfile__ for each input device that will
+use this driver.
+.PP
+It is recommended that
+.B evdev
+devices are configured through the
+.B InputClass
+directive (refer to __xconfigfile__(__filemansuffix__)) instead of manual
+per-device configuration. Devices configured in the
+__xconfigfile__(__filemansuffix__) are not hot-plug capable.
 .PP
 .SH SUPPORTED HARDWARE
 In general, any input device that the kernel has a driver for can be accessed
@@ -76,13 +85,14 @@ indicating that the next button pressed is to be
 .BI "Option \*qEmulate3Buttons\*q \*q" boolean \*q
 Enable/disable the emulation of the third (middle) mouse button for mice
 which only have two physical buttons.  The third button is emulated by
-pressing both buttons simultaneously.  Default: on, until a middle mouse
-button event is registered. Property: "Evdev Middle Button Emulation".
+pressing both buttons simultaneously.  Default: off. Property: "Evdev Middle
+Button Emulation".
 .TP 7
 .BI "Option \*qEmulate3Timeout\*q \*q" integer \*q
 Sets the timeout (in milliseconds) that the driver waits before deciding
 if two buttons where pressed "simultaneously" when 3 button emulation is
 enabled.  Default: 50. Property: "Evdev Middle Button Timeout".
+.TP 7
 .BI "Option \*qEmulateWheel\*q \*q" boolean \*q
 Enable/disable "wheel" emulation.  Wheel emulation means emulating button
 press/release events when the mouse is moved while a specific real button
@@ -151,10 +161,6 @@ axes regardless of the presence of other axes. This may trigger buggy
 behavior and events from this axis are always forwarded. Users are
 discouraged from setting this option.
 .TP 7
-.BI "Option \*qReopenAttempts\*q \*q" integer \*q
-Number of reopen attempts after a read error occurs on the device (e.g. after
-waking up from suspend). In between each attempt is a 100ms wait. Default: 10.
-.TP 7
 .BI "Option \*qCalibration\*q \*q" "min-x max-x min-y max-y" \*q
 Calibrates the X and Y axes for devices that need to scale to a different
 coordinate system than reported to the X server. This feature is required
@@ -162,6 +168,11 @@ for devices that need to scale to a different coordinate system than
 originally reported by the kernel (e.g. touchscreens). The scaling to the
 custom coordinate system is done in-driver and the X server is unaware of
 the transformation. Property: "Evdev Axis Calibration".
+.TP 7
+.B Option \*qMode\*q \*qRelative\*q\fP|\fP\*qAbsolute\*q
+Sets the mode of the device if device has absolute axes.
+The default value for touchpads is relative, for other absolute.
+This option has no effect on devices without absolute axes.
 .TP 7
 .BI "Option \*qSwapAxes\*q \*q" Bool \*q
 Swap x/y axes. Default: off. Property: "Evdev Axes Swap".
@@ -225,7 +236,6 @@ value.
 1 16-bit positive value.
 
 .SH AUTHORS
-Kristian Høgsberg.
+Kristian Høgsberg, Peter Hutterer
 .SH "SEE ALSO"
-__xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__),
-README.mouse.
+__xservername__(__appmansuffix__), __xconfigfile__(__filemansuffix__), Xserver(__appmansuffix__), X(__miscmansuffix__)

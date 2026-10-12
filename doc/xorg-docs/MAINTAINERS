@@ -120,8 +120,8 @@ W:	http://wiki.x.org
 S:	Maintained
 
 xinput
-P:	Philip Langdale
-M:	philipl@alumni.utexas.net
+P:	Peter Hutterer
+M:	peter.hutterer@who-t.net
 L:	xorg-devel@lists.x.org
 W:	http://wiki.x.org
 S:	Maintained
@@ -471,11 +471,26 @@ L:	xorg-devel@lists.x.org
 W:	http://wiki.x.org
 S:	Maintained
 
-Xwin (Cygwin/mingw port)
-P:	Alan Hourihane
-M:	alanh@freedesktop.org
-L:	xorg-devel@lists.x.org
+Cygwin
+P:	Jon TURNEY
+M:	jon.turney@dronecode.org.uk
+P:	Yaakov Selkowitz
+M:	yselkowitz@users.sourceforge.net
+L:	cygwin-xfree@cygwin.com
+W:	http://x.cygwin.com/
+S:	Maintained
+
+MinGW
+P:	Colin Harrison
+M:	colin.harrison@virgin.net
+W:	http://www.straightrunning.com/XmingNotes/
+S:	Maintained
+
+GNU/Hurd
+P:	Samuel Thibault
+M:	samuel.thibault@ens-lyon.org
 W:	http://wiki.x.org
+L:	bug-hurd@gnu.org
 S:	Maintained
 
 Drivers
@@ -488,11 +503,11 @@ W:	http://wiki.x.org
 S:	Maintained
 
 xf86-input-aiptek
-P:	Rene van Paassen
-M:	rene.vanpaassen@gmail.com
+P:	?
+M:	?
 L:	xorg-devel@lists.x.org
 W:	http://wiki.x.org
-S:	Maintained
+S:	Unmaintained
 
 xf86-input-calcomp
 P:	?
@@ -537,11 +552,11 @@ W:	http://wiki.x.org
 S:	Deactivated
 
 xf86-input-elographics
-P:	?
-M:	?
+P:	Marc Balmer
+M:	marc.balmer@arcapos.com
 L:	xorg-devel@lists.x.org
 W:	http://wiki.x.org
-S:	Unmaintained
+S:	Maintained
 
 xf86-input-evdev
 P:	Peter Hutterer
@@ -679,8 +694,8 @@ W:	http://wiki.x.org
 S:	Deactivated
 
 xf86-input-vmmouse
-P:	Philip Langdale
-M:	plangdale@vmware.com
+P:	Thomas Hellstrom
+M:	thellstrom@vmware.com
 L:	xorg-devel@lists.x.org
 W:	http://wiki.x.org
 S:	Maintained
@@ -714,10 +729,12 @@ W:	http://wiki.x.org
 S:	Maintained
 
 xf86-video-ati
-P:      Luc Verhaegen
-M:      libv@skynet.be
-L:      xorg-devel@lists.x.org
-W:      http://wiki.x.org
+P:	Alex Deucher
+P:      Ben Herrenschmidt
+P:      et al
+M:	?
+L:	xorg-devel@lists.x.org
+W:	http://wiki.x.org
 S:	Maintained
 
 xf86-video-chips
@@ -791,6 +808,13 @@ L:	xorg-devel@lists.x.org
 W:	http://wiki.x.org
 S:	Maintained
 
+xf86-video-mach64
+P:      Luc Verhaegen
+M:      libv@skynet.be
+L:      xorg-devel@lists.x.org
+W:      http://wiki.x.org
+S:	Maintained
+
 xf86-video-imstt
 P:	?
 M:	?
@@ -799,7 +823,7 @@ W:	http://wiki.x.org
 S:	Unmaintained
 
 xf86-video-mga
-P:	Ian Romanick, Tilman Sauerbeck
+P:	Ian Romanick
 M:	?
 L:	xorg-devel@lists.x.org
 W:	http://wiki.x.org
@@ -1008,8 +1032,8 @@ W:      http://unichrome.sf.net
 S:	Unmaintained
 
 xf86-video-vmware
-P:	Philip Langdale
-M:	plangdale@vmware.com
+P:	Thomas Hellstrom
+M:	thellstrom@vmware.com
 L:	xorg-devel@lists.x.org
 W:	http://wiki.x.org
 S:	Maintained

@@ -18,12 +18,10 @@
 #  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 #  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-INCLUDES = -I$(srcdir)
-
 noinst_LTLIBRARIES = lib@DRIVER_NAME@.la
 lib@DRIVER_NAME@_la_SOURCES = @DRIVER_NAME@_defs.h \
                               @DRIVER_NAME@_client.c @DRIVER_NAME@_client.h \
                               @DRIVER_NAME@_proto.c @DRIVER_NAME@_proto.h
 
-
+AM_CPPFLAGS = $(XORG_CFLAGS)
                                

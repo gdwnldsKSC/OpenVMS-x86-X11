@@ -61,8 +61,6 @@ typedef struct _SynapticsSHM
     int left, right, up, down;		    /* left/right/up/down buttons */
     Bool multi[8];
     Bool middle;
-    int guest_left, guest_mid, guest_right; /* guest device buttons */
-    int guest_dx, guest_dy; 		    /* guest device movement */
 } SynapticsSHM;
 
 /*
@@ -70,17 +68,5 @@ typedef struct _SynapticsSHM
  */
 #define SBR_MIN 10
 #define SBR_MAX 1000
-
-/*
- * The x/y limits are taken from the Synaptics TouchPad interfacing Guide,
- * section 2.3.2, which says that they should be valid regardless of the
- * actual size of the sensor.
- */
-#define XMIN_NOMINAL 1472
-#define XMAX_NOMINAL 5472
-#define YMIN_NOMINAL 1408
-#define YMAX_NOMINAL 4448
-
-#define XMAX_VALID 6143
 
 #endif /* _SYNAPTICS_H_ */

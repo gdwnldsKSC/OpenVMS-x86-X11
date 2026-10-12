@@ -489,6 +489,8 @@ XGISetModeNew(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo,
 
 	unsigned vga_info; /* Jong 11/28/2007 */
 
+	PDEBUG(ErrorF("XGISetModeNew()...begin\n"));
+
     /* Jong 10/03/2007 */
     if ( HwDeviceExtension->jChipType == XG27 )
     {
@@ -507,6 +509,8 @@ XGISetModeNew(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo,
 
     /* Jong 10/17/2007; merge code */
     InitTo330Pointer( HwDeviceExtension->jChipType, pVBInfo ) ;
+
+	PDEBUG(ErrorF("XGISetModeNew()...1\n"));
 
     if (ModeNo & 0x80) {
         ModeNo = ModeNo & 0x7F;
@@ -530,9 +534,10 @@ XGISetModeNew(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo,
 #endif
 #endif
 
-	/* Jong 11/28/2007; pVBInfo field is not matching VGAINFO argument */
-    /* if ( !XGI_SearchModeID(pVBInfo->SModeIDTable, pVBInfo->EModeIDTable,  pVBInfo , &ModeNo , &ModeIdIndex) ) */
-    if ( !XGI_SearchModeID(pVBInfo->SModeIDTable, pVBInfo->EModeIDTable,  0x11, &ModeNo , &ModeIdIndex) )
+	PDEBUG(ErrorF("XGISetModeNew()...2\n"));
+
+    if ( (!XGI_SearchModeID(pVBInfo->SModeIDTable, pVBInfo->EModeIDTable,  0x11, &ModeNo , &ModeIdIndex)) ||
+		 (HwDeviceExtension->SpecifyTiming) ) 
     {
         switch (HwDeviceExtension->BPP)
         {
@@ -591,6 +596,8 @@ XGISetModeNew(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo,
           } 
         }
     }
+
+	PDEBUG(ErrorF("XGISetModeNew()...3\n"));
 
     if (HwDeviceExtension->jChipType < XG20) { /* kuku 2004/06/25 */
         PDEBUG(ErrorF("XGI_GetVBInfo \n"));
@@ -658,6 +665,8 @@ XGISetModeNew(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo,
     }                           /* !XG20 */
     else 
     {
+		PDEBUG(ErrorF("XGISetModeNew()...4\n"));
+
         /* Jong 10/04/2007 */
         if ( pVBInfo->IF_DEF_LVDS == 1 )
         {
@@ -666,6 +675,8 @@ XGISetModeNew(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo,
               return FALSE;
             }
         }
+
+		PDEBUG(ErrorF("XGISetModeNew()...5\n"));
 
         if (ModeNo <= 0x13) {
             pVBInfo->ModeType =
@@ -683,9 +694,18 @@ XGISetModeNew(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo,
             pVBInfo->VBInfo = DisableCRT2Display;
         }
 
+		PDEBUG(ErrorF("XGISetModeNew()...6\n"));
+
         XGI_DisplayOff(HwDeviceExtension,pVBInfo);
+		PDEBUG(ErrorF("XGISetModeNew()...7\n"));
+
         XGI_SetCRT1Group(HwDeviceExtension, ModeNo, ModeIdIndex, pVBInfo);
+
+		PDEBUG(ErrorF("XGISetModeNew()...8\n"));
+
         XGI_DisplayOn(HwDeviceExtension, pVBInfo);
+
+		PDEBUG(ErrorF("XGISetModeNew()...9\n"));
     }
 
 /*
@@ -710,16 +730,118 @@ XGISetModeNew(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo,
     XGI_DisplayOn( HwDeviceExtension, pVBInfo) ;
 */
     ErrorF("Part2 0 = %x ",
-           XGI_GetReg((XGIIOADDRESS) pVBInfo->Part2Port, 0x0));
+           XGI_GetReg((XGIIOADDRESS) pVBInfo->Part2Port, 0x0)); 
     XGI_UpdateModeInfo(HwDeviceExtension, pVBInfo);
 
     /* Jong 10/04/2007 */
     if (HwDeviceExtension->jChipType < XG20)   /* kuku 2004/06/25 */
         XGI_LockCRT2(HwDeviceExtension, pVBInfo);
 
+	PDEBUG(ErrorF("XGISetModeNew()...End\n"));
+
     return (TRUE);
 }
 
+#if 1
+void XGI_SetCRTVCLK(PVB_DEVICE_INFO pVBInfo, double dwPixelClock)
+{
+struct factor
+{
+  int sr2b7;
+  int sr2c7;
+  int sr2c6;
+  int sr2c5;
+  int dividend ;
+  int divisor ;
+};
+
+struct factor kind[16]=
+{
+  {0,0,0,0,1,1},
+  {0,0,0,1,1,2},
+  {0,0,1,0,1,3},
+  {0,0,1,1,1,4},
+  {1,0,0,0,2,1},
+  {1,0,0,1,2,2},
+  {1,0,1,0,2,3},
+  {1,0,1,1,2,4},
+  {0,1,0,0,1,1},
+  {0,1,0,1,1,4},
+  {0,1,1,0,1,6},
+  {0,1,1,1,1,8},
+  {1,1,0,0,2,1},
+  {1,1,0,1,2,4},
+  {1,1,1,0,2,6},
+  {1,1,1,1,2,8}
+};
+  int ii,jj,kk,ll,sr2b,sr2c,Numerator,DeNumerator;
+  double factor1,tempclock,vclk,temp1,min,clock;
+  double min_tempclock=150.0;
+
+  /* Alan 12/14/2007; support LVDS */
+  USHORT XGINew_P3cc =  pVBInfo->P3cc;
+  UCHAR  b3CC;
+
+  vclk=(double)dwPixelClock;
+  min=99.0;
+  while (min_tempclock>0.0)
+  {
+      for(ii=2;ii<=31;ii++)  /* (DeNumerator1)It's value must >=2 */
+      {
+          for(jj=0;jj<=127;jj++) /* (Numerator1) */
+          {
+              for(kk=0;kk<=15;kk++)
+              {
+                  tempclock=14.318*kind[kk].dividend*(jj+1)/(ii+1);
+                  if ( (tempclock >= min_tempclock ) && ( tempclock <= 380) )
+                  {
+                      tempclock = tempclock / kind[kk].divisor ;
+                      temp1=fabs(vclk-tempclock);
+                      if(temp1<min)
+                      {
+                          clock=tempclock;
+                          DeNumerator=ii;
+                          Numerator=jj;
+                          min=temp1;
+                          factor1=(double) (kind[kk].dividend / kind[kk].divisor);
+                          ll=kk;
+                      }
+                  }
+              }
+          }
+      }
+      
+      if ((min/vclk)<0.01)
+      {
+          break;
+      }
+      else
+      {
+          min_tempclock -= 50.0;
+      }
+  }
+  
+  sr2b=128*kind[ll].sr2b7+Numerator;
+  sr2c=128*kind[ll].sr2c7+64*kind[ll].sr2c6+32*kind[ll].sr2c5+DeNumerator;
+
+  if(pVBInfo->IF_DEF_LVDS == 1)
+  {
+	  b3CC = (UCHAR)XGI_GetRegByte((XGIIOADDRESS) XGINew_P3cc) ;
+	  switch (b3CC & 0x0c )
+	  {
+		  case 0x0 : XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x31, 0xCF, 0x10);
+					 break;
+		  case 0x4 : XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x31, 0xCF, 0x20);
+					 break;
+		  default  : XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x31, 0xCF, 0x00);
+					 break;
+	  }
+  }
+
+  XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x2B , (unsigned char) sr2b) ;
+  XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x2C , (unsigned char) sr2c) ;
+}
+#else
 /* Jong 10/17/2007; merge code */
 void XGI_SetCRTVCLK(PVB_DEVICE_INFO pVBInfo, double dwPixelClock)
 {
@@ -789,6 +911,7 @@ struct factor kind[16]=
   XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3c4 , 0x2B , (unsigned char) sr2b) ;
   XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3c4 , 0x2C , (unsigned char) sr2c) ;
 }
+#endif
 
 /* Jong 10/17/2007; merge code */
 void XGI_SetCRTTiming(
@@ -810,7 +933,17 @@ void XGI_SetCRTTiming(
   VerticalFrontPorch = pXGIHWDE->Vertical_FP;
   VerticalSyncWidth = pXGIHWDE->Vertical_SYNC;
   VerticalBackPorch = pXGIHWDE->Vertical_BP;
-        
+  
+  PDEBUG(ErrorF("XGI_SetCRTTiming()...\n"));
+  PDEBUG(ErrorF("HorizontalActivePixel = %d...\n", HorizontalActivePixel));
+  PDEBUG(ErrorF("HorizontalFrontPorch = %d...\n", HorizontalFrontPorch));
+  PDEBUG(ErrorF("HorizontalSyncWidth = %d...\n", HorizontalSyncWidth));
+  PDEBUG(ErrorF("HorizontalBackPorch = %d...\n", HorizontalBackPorch));
+  PDEBUG(ErrorF("VerticalActivePixel = %d...\n", VerticalActivePixel));
+  PDEBUG(ErrorF("VerticalFrontPorch = %d...\n", VerticalFrontPorch));
+  PDEBUG(ErrorF("VerticalSyncWidth = %d...\n", VerticalSyncWidth));
+  PDEBUG(ErrorF("VerticalBackPorch = %d...\n", VerticalBackPorch));
+
   HT  = HorizontalActivePixel + HorizontalFrontPorch + HorizontalSyncWidth + HorizontalBackPorch;
   HDE = HorizontalActivePixel;
   HRS = HorizontalActivePixel + HorizontalFrontPorch;
@@ -843,7 +976,8 @@ void XGI_SetCRTTiming(
   VT = VT - 1;
 
 
-  temp = XGINew_GetReg1( pVBInfo->P3c4 , 0x06 ) ;
+  temp = XGI_GetReg( pVBInfo->P3c4 , 0x06 ) ;
+
   temp = ((temp & 0x1c ) >> 2) * 8;
   if (temp == 0)
     temp = 8;
@@ -883,6 +1017,7 @@ void XGI_SetCRTTiming(
       XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x3F, 0x00, (((VRS) & 0x0600)>>9) | (((VRE) & 0x003F)<<2 ));      /* VRS */
       
   }
+
   if ( pXGIHWDE->jChipType == XG27 )
   {
       XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x2e, 0x00, ((HRS-1) & 0xff));      /* HRS SR2E[7:0] */
@@ -892,6 +1027,7 @@ void XGI_SetCRTTiming(
       XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x3F, 0xFC, (((VRE) & 0x003F)<<2 ));     /* VRE SR3F[7:2] */
       
   }
+
   if (VerticalActivePixel > 1024) 
   {
     XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x0f, 0xf7, 0x08);
@@ -909,10 +1045,8 @@ void XGI_SetCRTTiming(
   XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x0c, 0xf8, (((HRE & 0x20) >> 3) | ((HT & 0xc0) >> 6)));
   XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x0e, 0xf0, ((temp1 & 0xff00) >> 8));
   XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x10, 0x00, temp);
-
-    
-
-  XGI_SetCRTVCLK (pVBInfo, pXGIHWDE->DCLK);
+   
+  XGI_SetCRTVCLK (pVBInfo, pXGIHWDE->DCLK/1000.0);
 
   if (pXGIHWDE->BPP==0x20)
   {
@@ -961,6 +1095,8 @@ XGI_SetCRT1Group(PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT ModeNo,
     USHORT XGINew_P3c2 = pVBInfo->P3c2;
 #endif
 
+	PDEBUG(ErrorF("XGI_SetCRT1Group()...begin\n"));
+
     /* XGINew_CRT1Mode = ModeNo ; // SaveModeID */
     XGI_SetSeqRegs(StandTableIndex, pVBInfo);
     XGI_SetMiscRegs(StandTableIndex, pVBInfo);
@@ -968,6 +1104,8 @@ XGI_SetCRT1Group(PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT ModeNo,
     XGI_SetATTRegs(ModeNo, StandTableIndex, ModeIdIndex, pVBInfo);
     XGI_SetGRCRegs(StandTableIndex, pVBInfo);
     XGI_ClearExt1Regs(ModeNo, pVBInfo);
+
+	PDEBUG(ErrorF("XGI_SetCRT1Group()...1\n"));
 
 	/* Jong 10/19/2007; merge code */
 	/* Jong 04/23/2008; All XG20,21,27 should do this */
@@ -984,6 +1122,8 @@ XGI_SetCRT1Group(PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT ModeNo,
     pVBInfo->SetFlag &= temp;
     pVBInfo->SelectCRT2Rate = 0;
 
+	PDEBUG(ErrorF("XGI_SetCRT1Group()...2\n"));
+
     if (pVBInfo->
         VBType & (VB_XGI301B | VB_XGI302B | VB_XGI301LV | VB_XGI302LV |
                   VB_XGI301C)) {
@@ -997,6 +1137,8 @@ XGI_SetCRT1Group(PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT ModeNo,
     /* RefreshRateTableIndex = XGI_GetRatePtrCRT2( ModeNo, ModeIdIndex, pVBInfo); */
     RefreshRateTableIndex = XGI_GetRatePtrCRT2(HwDeviceExtension, ModeNo, ModeIdIndex, pVBInfo);
 
+	PDEBUG(ErrorF("XGI_SetCRT1Group()...3\n"));
+
     if (RefreshRateTableIndex != 0xFFFF) {
         XGI_SetSync(RefreshRateTableIndex, pVBInfo);
         XGI_SetCRT1CRTC(ModeNo, ModeIdIndex, RefreshRateTableIndex, pVBInfo,
@@ -1008,6 +1150,8 @@ XGI_SetCRT1Group(PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT ModeNo,
         XGI_SetCRT1VCLK(ModeNo, ModeIdIndex, HwDeviceExtension,
                         RefreshRateTableIndex, pVBInfo);
     }
+
+	PDEBUG(ErrorF("XGI_SetCRT1Group()...4\n"));
 
     /* Jong 10/04/2007; merge code */
     /* if (HwDeviceExtension->jChipType == XG20) { */
@@ -1031,9 +1175,12 @@ XGI_SetCRT1Group(PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT ModeNo,
     /* Jong 10/04/2007; merge code */
     if ( HwDeviceExtension->jChipType >= XG21 )
     {
+	  PDEBUG(ErrorF("XGI_SetCRT1Group()...4-1\n"));
+
       temp = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x38 ) ;
       if ( temp & 0xA0 )
       {
+		PDEBUG(ErrorF("XGI_SetCRT1Group()...4-2\n"));
         
         /*XGINew_SetRegAND( pVBInfo->P3d4 , 0x4A , ~0x20 ) ;*/	/* Enable write GPIOF */
         /*XGINew_SetRegAND( pVBInfo->P3d4 , 0x48 , ~0x20 ) ;*/ 	/* P. DWN */
@@ -1043,6 +1190,8 @@ XGI_SetCRT1Group(PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT ModeNo,
         else
 			XGI_SetXG21CRTC( ModeNo, ModeIdIndex, RefreshRateTableIndex, pVBInfo );
           
+		PDEBUG(ErrorF("XGI_SetCRT1Group()...4-3\n"));
+
         XGI_UpdateXG21CRTC( ModeNo , pVBInfo , RefreshRateTableIndex) ;
 
         if ( HwDeviceExtension->jChipType == XG27 )
@@ -1050,6 +1199,8 @@ XGI_SetCRT1Group(PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT ModeNo,
         else
           XGI_SetXG21LCD( pVBInfo , RefreshRateTableIndex , ModeNo );
           
+		PDEBUG(ErrorF("XGI_SetCRT1Group()...4-4\n"));
+
         if ( pVBInfo->IF_DEF_LVDS == 1 )
         {
           if ( HwDeviceExtension->jChipType == XG27 )
@@ -1057,14 +1208,10 @@ XGI_SetCRT1Group(PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT ModeNo,
           else
             XGI_SetXG21LVDSPara(ModeNo,ModeIdIndex, pVBInfo );
         }
+
+		PDEBUG(ErrorF("XGI_SetCRT1Group()...4-5\n"));
         /*XGINew_SetRegOR( pVBInfo->P3d4 , 0x48 , 0x20 ) ;*/	/* P. ON */
       }
-    }
-
-    /* Jong 10/04/2007; merge code */
-    if ( HwDeviceExtension->SpecialMode )
-    {
-        XGI_SetCRTTiming( HwDeviceExtension, pVBInfo );
     }
 
     pVBInfo->SetFlag &= (~ProgrammingCRT2);
@@ -1072,14 +1219,24 @@ XGI_SetCRT1Group(PXGI_HW_DEVICE_INFO HwDeviceExtension, USHORT ModeNo,
     XGI_SetCRT1ModeRegs(HwDeviceExtension, ModeNo, ModeIdIndex,
                         RefreshRateTableIndex, pVBInfo);
 
+    if ( HwDeviceExtension->SpecialMode )
+    {
+        XGI_SetCRTTiming( HwDeviceExtension, pVBInfo );
+    }
+
+	PDEBUG(ErrorF("XGI_SetCRT1Group()...5\n"));
+
     if (HwDeviceExtension->jChipType == XG40) { /* Copy reg settings to 2nd chip */
         if (CheckDualChip(pVBInfo))
             SetDualChipRegs(HwDeviceExtension, pVBInfo);
     }
 
+	PDEBUG(ErrorF("XGI_SetCRT1Group()...6\n"));
+
     /* XGI_LoadCharacter(); //dif ifdef TVFont */
 
     XGI_LoadDAC(ModeNo, ModeIdIndex, pVBInfo);
+	PDEBUG(ErrorF("XGI_SetCRT1Group()...End\n"));
 }
 
 
@@ -2058,8 +2215,8 @@ void XGI_SetXG27CRTC(USHORT ModeNo, USHORT ModeIdIndex, USHORT RefreshRateTableI
 /* --------------------------------------------------------------------- */
 void XGI_SetXG21LCD(PVB_DEVICE_INFO pVBInfo,USHORT RefreshRateTableIndex,USHORT ModeNo)
 {
-  USHORT Data , Temp , b3CC ;
-  USHORT XGI_P3cc ;
+  ULONG Data , Temp , b3CC ;
+  ULONG XGI_P3cc ;
 
   if ( ModeNo > 0x13 )
     Data = pVBInfo->RefIndex[ RefreshRateTableIndex ].Ext_InfoFlag ;
@@ -2092,11 +2249,14 @@ void XGI_SetXG21LCD(PVB_DEVICE_INFO pVBInfo,USHORT RefreshRateTableIndex,USHORT 
 
   if ( ModeNo <= 0x13 )
   {
+/* Jong 07/31/2009; might use XGINew_P3cc instead */
+#if 1 
     b3CC = (UCHAR) XGI_GetRegByte( (XGIIOADDRESS) XGI_P3cc ) ;
     if ( b3CC & 0x40 )
       XGI_SetRegOR( (XGIIOADDRESS) pVBInfo->P3c4 , 0x30 , 0x20 ) ; /* Hsync polarity */
     if ( b3CC & 0x80 )
       XGI_SetRegOR( (XGIIOADDRESS) pVBInfo->P3c4 , 0x35 , 0x80 ) ; /* Vsync polarity */
+#endif
   }
   else
   {
@@ -2110,24 +2270,36 @@ void XGI_SetXG21LCD(PVB_DEVICE_INFO pVBInfo,USHORT RefreshRateTableIndex,USHORT 
 /* Jong 10/04/2007; merge code */
 void XGI_SetXG27LCD(PVB_DEVICE_INFO pVBInfo,USHORT RefreshRateTableIndex,USHORT ModeNo)
 {
-  USHORT Data , Temp , b3CC ;
-  USHORT XGI_P3cc ;
+  ULONG Data , Temp , b3CC ;
+  ULONG XGI_P3cc ;
+
+  PDEBUG(ErrorF("XGI_SetXG27LCD()...begin\n"));
 
   if ( ModeNo > 0x13 )
     Data = pVBInfo->RefIndex[ RefreshRateTableIndex ].Ext_InfoFlag ;
+
   XGI_P3cc = pVBInfo->P3cc ;
+
+  PDEBUG(ErrorF("XGI_SetXG27LCD()...1\n"));
 
   XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x2E , 0x00 ) ;
   XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x2F , 0x00 ) ;
   XGI_SetReg( pVBInfo->P3d4 , 0x46 , 0x00 ) ;
   XGI_SetReg( pVBInfo->P3d4 , 0x47 , 0x00 ) ;
 
+  PDEBUG(ErrorF("XGI_SetXG27LCD()...2\n"));
+
   Temp = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x37 ) ;
+
+  PDEBUG(ErrorF("XGI_SetXG27LCD()...3\n"));
+
   if ( ( Temp & 0x03 ) == 0 )  /* dual 12 */
   {
     XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x46 , 0x13 ) ;
     XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x47 , 0x13 ) ;
   }
+
+  PDEBUG(ErrorF("XGI_SetXG27LCD()...4\n"));
 
   if ( ((*pVBInfo->pDVOSetting)&0xC0) == 0xC0 )
   {
@@ -2137,20 +2309,33 @@ void XGI_SetXG27LCD(PVB_DEVICE_INFO pVBInfo,USHORT RefreshRateTableIndex,USHORT 
     XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x47 , *pVBInfo->pCR47 ) ;
   }
 
+  PDEBUG(ErrorF("XGI_SetXG27LCD()...5\n"));
+
   XGI_SetXG27FPBits(pVBInfo);
   
+  PDEBUG(ErrorF("XGI_SetXG27LCD()...6\n"));
+
   XGI_SetRegOR( (XGIIOADDRESS) pVBInfo->P3c4 , 0x1E , 0x01 ) ;   /* Negative blank polarity */
 
   XGI_SetRegAND( (XGIIOADDRESS) pVBInfo->P3c4 , 0x30 , ~0x20 ) ; /* Hsync polarity */
   XGI_SetRegAND( (XGIIOADDRESS) pVBInfo->P3c4 , 0x35 , ~0x80 ) ; /* Vsync polarity */
 
+  PDEBUG(ErrorF("XGI_SetXG27LCD()...7\n"));
+
   if ( ModeNo <= 0x13 )
   {
-    b3CC = (UCHAR) XGI_GetRegByte( (XGIIOADDRESS) XGI_P3cc ) ;
+	  PDEBUG(ErrorF("XGI_SetXG27LCD()...7-1-XGI_P3cc=%d\n", XGI_P3cc));
+
+/* Jong 07/31/2009; might use XGINew_P3cc instead */
+#if 1
+   b3CC = (UCHAR) XGI_GetRegByte( (XGIIOADDRESS) XGI_P3cc ) ;
     if ( b3CC & 0x40 )
       XGI_SetRegOR( (XGIIOADDRESS) pVBInfo->P3c4 , 0x30 , 0x20 ) ; /* Hsync polarity */
     if ( b3CC & 0x80 )
       XGI_SetRegOR( (XGIIOADDRESS) pVBInfo->P3c4 , 0x35 , 0x80 ) ; /* Vsync polarity */
+#endif
+
+	PDEBUG(ErrorF("XGI_SetXG27LCD()...7-2\n"));
   }
   else
   {
@@ -2159,6 +2344,8 @@ void XGI_SetXG27LCD(PVB_DEVICE_INFO pVBInfo,USHORT RefreshRateTableIndex,USHORT 
     if ( Data & 0x8000 )
       XGI_SetRegOR( (XGIIOADDRESS) pVBInfo->P3c4 , 0x35 , 0x80 ) ; /* Vsync polarity */
   }
+
+  PDEBUG(ErrorF("XGI_SetXG27LCD()...End\n"));
 }
 
 /* Jong 10/04/2007; merge code */
@@ -2172,7 +2359,12 @@ void XGI_UpdateXG21CRTC( USHORT ModeNo , PVB_DEVICE_INFO pVBInfo , USHORT Refres
 {
   int i , index = -1;
 
+  PDEBUG(ErrorF("XGI_UpdateXG21CRTC()...begin\n"));
+
   XGI_SetRegAND( (XGIIOADDRESS) pVBInfo->P3d4 , 0x11 , 0x7F ) ;		/* Unlock CR0~7 */
+
+  PDEBUG(ErrorF("XGI_UpdateXG21CRTC()...1\n"));
+
   if ( ModeNo <= 0x13 )
   {
     for( i = 0 ; i < 12 ; i++ )
@@ -2195,6 +2387,8 @@ void XGI_UpdateXG21CRTC( USHORT ModeNo , PVB_DEVICE_INFO pVBInfo , USHORT Refres
       index = 16 ;
   }
 
+  PDEBUG(ErrorF("XGI_UpdateXG21CRTC()...2\n"));
+
   if( index != -1 )
   {
     XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x02 , pVBInfo->UpdateCRT1[ index ].CR02 ) ;
@@ -2202,6 +2396,8 @@ void XGI_UpdateXG21CRTC( USHORT ModeNo , PVB_DEVICE_INFO pVBInfo , USHORT Refres
     XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x15 , pVBInfo->UpdateCRT1[ index ].CR15 ) ;
     XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x16 , pVBInfo->UpdateCRT1[ index ].CR16 ) ;
   }
+
+  PDEBUG(ErrorF("XGI_UpdateXG21CRTC()...End\n"));
 }
 
 /* --------------------------------------------------------------------- */
@@ -2515,8 +2711,14 @@ XGI_SetCRT1FIFO(USHORT ModeNo, PXGI_HW_DEVICE_INFO HwDeviceExtension,
     if (ModeNo > 0x13) {
         XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x08, 0x34);
         data = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x09);
-        data &= 0xF0;
-        XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x09, data);
+
+        /* Jong 02/06/2009; performance; add 10 for WinBench 99 */
+		/* Jong 02/13/2009; might cause threshold noise of display; not sure */
+        /* data &= 0xF0;
+        XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x09, data); */
+        data &= 0xC0 ;
+        XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4 , 0x09 , data | 0x30) ;
+
         data = XGI_GetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x3D);
         data |= 0x01;
         XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x3D, data);
@@ -4110,6 +4312,8 @@ XGI_DisplayOn(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo)
 void
 XGI_DisplayOff(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo)
 {
+	PDEBUG(ErrorF("XGI_DisplayOff()...begin\n"));
+
     /* Jong 10/04/2007; merge code */
     if ( HwDeviceExtension->jChipType == XG21 ) 
     {
@@ -4127,19 +4331,26 @@ XGI_DisplayOff(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo)
     /* Jong 10/04/2007; merge code */
     if ( HwDeviceExtension->jChipType == XG27 ) 
     {
-       if ((XGI_XG27GetPSCValue( pVBInfo )&0x2))
-       {
-         XGI_XG27BLSignalVDD( 0x02 , 0x00, pVBInfo ) ; /* LVDS backlight off */
-         XGI_XG21SetPanelDelay( 3,pVBInfo ) ;
-       }
-
+	   PDEBUG(ErrorF("XG27\n"));
        if ( pVBInfo->IF_DEF_LVDS == 0 ) 
        {
+		    PDEBUG(ErrorF("pVBInfo->IF_DEF_LVDS == 0 ...\n"));
             XGI_XG27BLSignalVDD( 0x20 , 0x00, pVBInfo ) ; /* DVO/DVI signal off */
+		    PDEBUG(ErrorF("After XGI_XG27BLSignalVDD() ...\n"));
+       }
+	   else if ((XGI_XG27GetPSCValue( pVBInfo )&0x2)) /* Jong@09232009; bug fixing */
+       {
+		 PDEBUG(ErrorF("XGI_XG27GetPSCValue( pVBInfo )&0x2 is true...\n"));
+         XGI_XG27BLSignalVDD( 0x02 , 0x00, pVBInfo ) ; /* LVDS backlight off */
+		 PDEBUG(ErrorF("After XGI_XG27BLSignalVDD()...\n"));
+         XGI_XG21SetPanelDelay( 3,pVBInfo ) ;
+		 PDEBUG(ErrorF("After XGI_XG21SetPanelDelay()...\n"));
        }
     }
 
+   PDEBUG(ErrorF("Before XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x01, 0xDF, 0x20) ...\n"));
    XGI_SetRegANDOR((XGIIOADDRESS) pVBInfo->P3c4, 0x01, 0xDF, 0x20);
+   PDEBUG(ErrorF("Return from XGI_DisplayOff() ...\n"));
 }
 
 
@@ -7572,16 +7783,28 @@ UCHAR XGI_XG27GetPSCValue(PVB_DEVICE_INFO pVBInfo)
 {
     UCHAR CR4A,CRB4,temp;
     
+	PDEBUG(ErrorF("XGI_XG27GetPSCValue()...begin\n"));
+
     CR4A = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A ) ;
+	PDEBUG(ErrorF("XGI_XG27GetPSCValue()...1\n"));
     XGI_SetRegAND( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , ~0x0C ) ; /* enable GPIO write */
+	PDEBUG(ErrorF("XGI_XG27GetPSCValue()...2\n"));
 
     temp = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x48 ) ;
+	PDEBUG(ErrorF("XGI_XG27GetPSCValue()...3\n"));
 
     temp &= 0x0C;
     temp >>= 2;
-    XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , CR4A ) ; 
+
+	XGI_SetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , CR4A ) ; 
+	PDEBUG(ErrorF("XGI_XG27GetPSCValue()...4\n"));
+
     CRB4 = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0xB4 ) ;
+	PDEBUG(ErrorF("XGI_XG27GetPSCValue()...5\n"));
+
     temp |= ((CRB4&0x04)<<3);
+	PDEBUG(ErrorF("XGI_XG27GetPSCValue()...return\n"));
+
     return temp;
 }
 
@@ -7627,6 +7850,8 @@ void XGI_XG27BLSignalVDD(USHORT tempbh,USHORT tempbl, PVB_DEVICE_INFO pVBInfo)
     UCHAR CR4A,temp;
     USHORT tempbh0,tempbl0;
 
+	PDEBUG(ErrorF("XGI_XG27BLSignalVDD()...begin\n"));
+
     tempbh0 = tempbh;
     tempbl0 = tempbl;
     tempbh0 &= 0x20;
@@ -7638,18 +7863,27 @@ void XGI_XG27BLSignalVDD(USHORT tempbh,USHORT tempbl, PVB_DEVICE_INFO pVBInfo)
     {
       temp = (tempbl>>4)&0x02;
       
-      XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0xB4 , ~0x02 , temp) ; /* CR B4[1] */
+	  PDEBUG(ErrorF("XGI_XG27BLSignalVDD()...1\n"));
+      XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0xB4 , ~0x02 , temp) ;		/* CR B4[1] */
     
     }
-    XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0xB4 , ~tempbh0 , tempbl0 ) ;
 
+	PDEBUG(ErrorF("XGI_XG27BLSignalVDD()...2\n"));
+    XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0xB4 , ~tempbh0 , tempbl0 ) ;	/* CR B4[0] if tempbh0 = 0x01 */
+
+	/* Enable related GPIO R/W */
+	PDEBUG(ErrorF("XGI_XG27BLSignalVDD()...3\n"));
     CR4A = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A ) ;
     tempbh &= 0x03;
     tempbl &= 0x03;
     tempbh <<= 2;
-    tempbl <<= 2;                                       /* GPIOC,GPIOD */
-    XGI_SetRegAND( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , ~tempbh ) ; /* enable GPIO write */
+    tempbl <<= 2;																	/* GPIOC,GPIOD */
+
+	PDEBUG(ErrorF("XGI_XG27BLSignalVDD()...4\n"));
+    XGI_SetRegAND( (XGIIOADDRESS) pVBInfo->P3d4 , 0x4A , ~tempbh ) ;				/* enable GPIO write */
+	PDEBUG(ErrorF("XGI_XG27BLSignalVDD()...5\n"));
     XGI_SetRegANDOR( (XGIIOADDRESS) pVBInfo->P3d4 , 0x48 , ~tempbh , tempbl ) ;
+	PDEBUG(ErrorF("XGI_XG27BLSignalVDD()...return\n"));
 }
 
 /* Jong 10/04/2007; merge code */
@@ -7658,11 +7892,16 @@ USHORT XGI_GetLVDSOEMTableIndex(PVB_DEVICE_INFO pVBInfo)
 {
     USHORT index ;
 
+	PDEBUG(ErrorF("XGI_GetLVDSOEMTableIndex()...begin\n"));
     index = XGI_GetReg( (XGIIOADDRESS) pVBInfo->P3d4 , 0x36 ) ;
+	PDEBUG(ErrorF("XGI_GetLVDSOEMTableIndex()...1\n"));
     if (index<sizeof(XGI21_LCDCapList)/sizeof(XGI21_LVDSCapStruct))
     {
+	  PDEBUG(ErrorF("XGI_GetLVDSOEMTableIndex()...2-return\n"));
       return index;
     }
+
+	PDEBUG(ErrorF("XGI_GetLVDSOEMTableIndex()...3-return\n"));
     return 0;
 }
 
@@ -7681,18 +7920,38 @@ void XGI_XG21SetPanelDelay(USHORT tempbl, PVB_DEVICE_INFO pVBInfo)
 {
     USHORT index ;
 
+	PDEBUG(ErrorF("XGI_XG21SetPanelDelay()...begin\n"));
+
     index = XGI_GetLVDSOEMTableIndex( pVBInfo );
+	PDEBUG(ErrorF("After XGI_GetLVDSOEMTableIndex()\n"));
+
     if ( tempbl == 1 )
+	{
+		PDEBUG(ErrorF("tempbl == 1\n"));
         XGINew_LCD_Wait_Time( pVBInfo->XG21_LVDSCapList[ index ].PSC_S1, pVBInfo ) ;
+		PDEBUG(ErrorF("After XGINew_LCD_Wait_Time()\n"));
+	}
 
     if ( tempbl == 2 )
+	{
+		PDEBUG(ErrorF("tempbl == 2\n"));
         XGINew_LCD_Wait_Time( pVBInfo->XG21_LVDSCapList[ index ].PSC_S2, pVBInfo ) ;
+		PDEBUG(ErrorF("After XGINew_LCD_Wait_Time()\n"));
+	}
 
     if ( tempbl == 3 )
+	{
+		PDEBUG(ErrorF("tempbl == 3\n"));
         XGINew_LCD_Wait_Time( pVBInfo->XG21_LVDSCapList[ index ].PSC_S3, pVBInfo ) ;
+		PDEBUG(ErrorF("After XGINew_LCD_Wait_Time()\n"));
+	}
 
     if ( tempbl == 4 )
+	{
+		PDEBUG(ErrorF("tempbl == 4\n"));
         XGINew_LCD_Wait_Time( pVBInfo->XG21_LVDSCapList[ index ].PSC_S4, pVBInfo ) ;
+		PDEBUG(ErrorF("After XGINew_LCD_Wait_Time()\n"));
+	}
 }
 
 /* Jong 10/04/2007; merge code */
@@ -9629,9 +9888,13 @@ XGINew_LCD_Wait_Time(UCHAR DelayTime, PVB_DEVICE_INFO pVBInfo)
 
     flag = 0;
 
+	PDEBUG(ErrorF("XGINew_LCD_Wait_Time()...begin\n"));
+
     for (i = 0; i < DelayTime; i++) {
         for (j = 0; j < 66; j++) {
-            temp = XGI_GetRegLong((XGIIOADDRESS) 0x61);
+
+			PDEBUG(ErrorF("i=%d, j=%d\n", i, j));
+			temp = XGI_GetRegLong((XGIIOADDRESS) 0x61);
             temp &= 0x10;
 
             if (temp == flag)
@@ -9640,6 +9903,8 @@ XGINew_LCD_Wait_Time(UCHAR DelayTime, PVB_DEVICE_INFO pVBInfo)
             flag = temp;
         }
     }
+
+	PDEBUG(ErrorF("XGINew_LCD_Wait_Time()...end\n"));
 }
 
 
@@ -9887,4 +10152,94 @@ XGI_GetVCLK2Ptr(USHORT ModeNo, USHORT ModeIdIndex,
   }
 
     return VCLKIndex;
+}
+
+/* Jong@08212009 */
+void XGIInitMiscVBInfo(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO pVBInfo)
+{
+	PDEBUG(ErrorF("XGIInitMiscVBInfo()...Begin\n"));
+    pVBInfo->ROMAddr = HwDeviceExtension->pjVirtualRomBase ;
+    pVBInfo->BaseAddr = ( ULONG )HwDeviceExtension->pjIOAddress ;
+
+    pVBInfo->P3c4 = pVBInfo->BaseAddr + 0x14 ;
+    pVBInfo->P3d4 = pVBInfo->BaseAddr + 0x24 ;
+    pVBInfo->P3c0 = pVBInfo->BaseAddr + 0x10 ;
+    pVBInfo->P3ce = pVBInfo->BaseAddr + 0x1e ;
+    pVBInfo->P3c2 = pVBInfo->BaseAddr + 0x12 ;
+    pVBInfo->P3cc = pVBInfo->BaseAddr + 0x1C ;
+    pVBInfo->P3ca = pVBInfo->BaseAddr + 0x1a ;
+    pVBInfo->P3c6 = pVBInfo->BaseAddr + 0x16 ;
+    pVBInfo->P3c7 = pVBInfo->BaseAddr + 0x17 ;
+    pVBInfo->P3c8 = pVBInfo->BaseAddr + 0x18 ;
+    pVBInfo->P3c9 = pVBInfo->BaseAddr + 0x19 ;
+    pVBInfo->P3da = pVBInfo->BaseAddr + 0x2A ;
+
+    pVBInfo->Part0Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_00 ;
+    pVBInfo->Part1Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_04 ;
+    pVBInfo->Part2Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_10 ;
+    pVBInfo->Part3Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_12 ;
+    pVBInfo->Part4Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_14 ;
+    pVBInfo->Part5Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_14 + 2 ; 
+
+    pVBInfo->IF_DEF_LVDS = 0 ;
+    pVBInfo->IF_DEF_CH7005 = 0 ;
+    pVBInfo->IF_DEF_LCDA = 1 ;
+    pVBInfo->IF_DEF_CH7017 = 0 ;
+    pVBInfo->IF_DEF_CH7007 = 0 ;                                /* [Billy] 2007/05/14 */
+    pVBInfo->IF_DEF_VideoCapture = 0 ;
+    pVBInfo->IF_DEF_ScaleLCD = 0 ;
+    pVBInfo->IF_DEF_OEMUtil = 0 ;
+    pVBInfo->IF_DEF_PWD = 0 ;
+
+
+    if ( HwDeviceExtension->jChipType >= XG20 )			/* kuku 2004/06/25 */
+    {
+    	pVBInfo->IF_DEF_YPbPr = 0 ;
+        pVBInfo->IF_DEF_HiVision = 0 ;
+        pVBInfo->IF_DEF_CRT2Monitor = 0 ;
+    }
+    else if ( HwDeviceExtension->jChipType >= XG40 )
+    {
+        pVBInfo->IF_DEF_YPbPr = 1 ;
+        pVBInfo->IF_DEF_HiVision = 1 ;
+        pVBInfo->IF_DEF_CRT2Monitor = 1 ;
+    }
+    else
+    {
+        pVBInfo->IF_DEF_YPbPr = 1 ;
+        pVBInfo->IF_DEF_HiVision = 1 ;
+        pVBInfo->IF_DEF_CRT2Monitor = 0 ;
+    }
+    
+    if ( HwDeviceExtension->jChipType == XG21 )  /* for x86 Linux, XG21 LVDS */
+    {
+        if ( ( XGI_GetReg((XGIIOADDRESS) pVBInfo->P3d4 , 0x38 ) & 0xE0 ) == 0xC0 )
+        {
+            pVBInfo->IF_DEF_LVDS = 1 ;
+        }
+
+        if ( (XGI_GetReg((XGIIOADDRESS) pVBInfo->P3d4, 0x38) >> 5 & 0x07) == 0x03 )  /*CH7007 CR38 D[7-5]=011b*/
+        {
+            pVBInfo->IF_DEF_CH7007 = 1 ;
+            /* HwDeviceExtension->bCH7007 = 1; */
+            XGI_SetReg((XGIIOADDRESS) pVBInfo->P3c4, 0x30, 0x09);         /* For if (pHWDE->bVGAEnabled)== 0 */
+/*            if( HwDeviceExtension->pDevice == NULL ) */
+
+            HwDeviceExtension->pDevice= HwDeviceExtension;
+
+        }
+    }
+
+    if ( HwDeviceExtension->jChipType == XG27 )
+    {
+        if ( ( XGI_GetReg((XGIIOADDRESS) pVBInfo->P3d4 , 0x38 ) & 0xE0 ) == 0xC0 )
+        {
+          if ( XGI_GetReg((XGIIOADDRESS) pVBInfo->P3d4 , 0x30 ) & 0x20 )
+          {
+            pVBInfo->IF_DEF_LVDS = 1 ;
+          }
+        }
+    }
+
+	PDEBUG(ErrorF("XGIInitMiscVBInfo()...End\n"));
 }

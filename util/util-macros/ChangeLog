@@ -1,3 +1,676 @@
+commit ce32345589050b17b23b18157f95f060f4c776a3
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Oct 29 20:43:53 2010 -0700
+
+    Version bump: 1.11.0
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit eb7ebbbbb2a6196322cf7e48f60a11f2f65f7534
+Author: Dan Nicholson <dbn.lists@gmail.com>
+Date:   Fri Oct 22 19:12:46 2010 -0700
+
+    docs: Take optional argument to control defaults
+    
+    The typical default of enabling documentation if the correct tool is
+    found is usually the right thing to do. However, some packages such as
+    Xlib have huge amounts of documentation that few people would need in
+    every output format. Allow packages to specify the default for each tool
+    by passing an argument to the macro.
+    
+    Signed-off-by: Dan Nicholson <dbn.lists@gmail.com>
+    Reviewed-by: Gaetan Nadon <memsize@videotron.ca>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 119f35b24d446a8f7b1da4a3eaa6d6e3ad982d69
+Author: Dan Nicholson <dbn.lists@gmail.com>
+Date:   Sat Oct 9 17:41:10 2010 -0700
+
+    docs: Use m4 to handle optional macro defaults
+    
+    Handling the optional documentation parameters with m4 allows the help
+    string to correctly represent the default.
+    
+    Signed-off-by: Dan Nicholson <dbn.lists@gmail.com>
+    Reviewed-by: Gaetan Nadon <memsize@videotron.ca>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit aeebb46766dada64de246fd9fe72e3c523c4e70e
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Sep 23 15:00:20 2010 -0400
+
+    Version bump: 1.10.1
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 1905f89998cb26410872150679501fde506a03c7
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Sep 3 22:47:02 2010 -0700
+
+    Sun's copyrights are now owned by Oracle
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 808d547902fad81901db94e6344838350d0eeb52
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Aug 14 15:43:38 2010 -0400
+
+    XORG_MANPAGE_SECTIONS: add substitution for apploaddir
+    
+    This represents the location of the app-defaults directory
+    Used in app/bitmap/man for example.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit fbe66aedcf2165e43388894d3b2ee2f38e889f93
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Jun 24 17:36:33 2010 -0400
+
+    Version bump: 1.10.0
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 4eed3443945a9d1443ec688efd835f46ed9adfc9
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Jun 25 14:52:25 2010 -0400
+
+    XORG_CHECK_SGML_DOCTOOLS: add interface for xorg stylesheet
+    
+    Add STYLESHEET_SRCDIR for directory location
+    and XSL_STLESHEET for the name of the xorg style sheet
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 01ef7c69d91259e5904f26b6b4630243d548232a
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Jun 24 18:12:45 2010 -0400
+
+    XORG_WITH_XMLTO: add HAVE_XMLTO_TEXT for text output format
+    
+    The xmlto program has dependencies when converting docbook XML
+    to text format. It requires either lynx, links or w3m
+    text web browsers.
+    
+    Users want to skip the text format to avoid having to install these.
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit fe878c0ce0b9093c13714ec6662b0c99a9a2d1d4
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Jun 18 21:54:27 2010 -0400
+
+    Version bump: 1.9.0
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit d4d18c07d7aa1005ad3d48dfdb19f245df2ebae0
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Jun 18 20:32:13 2010 -0400
+
+    XORG_WITH_GROFF: add HAVE_GROFF_HTML Automake conditional
+    
+    Groff uses grohtml to generate html output format. This program, in turn,
+    uses a number of pnm* commands from the netpbm package, psselect
+    from the psutils package and the ghostscript package.
+    
+    These are independently installed, so they could be missing.
+    A check is made to ensure those dependencies are installed.
+    If not, the makefile can use the conditional to supress the target.
+    
+    Reviewed-by: Dan Nicholson <dbn.lists@gmail.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit f0590edffe21ac6b7a11eab7caf6c8aad7c8bc07
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu May 27 09:27:54 2010 -0400
+
+    Version bump: 1.8.0
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit ce3ece9cbf2380ab0e0535f52f0c6c6507d779c8
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed May 26 21:09:31 2010 -0400
+
+    config: XORG_MANPAGE_SECTIONS: add AC_PROG_SED
+    
+    The sed command is required to create the man pages.
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 8cb69a59d54656d17ea7bcf479b0f27a17dc559e
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon May 17 10:36:48 2010 -0400
+
+    XORG_MANPAGE_SECTIONS: add MAN_SUBSTS automake variable
+    
+    It will replace the 155 copies in package makefiles
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2dd06a9bcfa6868260421ae803fa7d34a5d3a0c9
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon May 17 07:37:28 2010 -0400
+
+    XORG_RELEASE_VERSION: remove option --with-release-version #24816
+    
+    The short story:
+    - this option has never been used by OS builders as intended
+    - the implementation changes automake internals
+    - the implementation breaks a few makefiles (if used)
+    - one less option for the user to be confused with on all 240 xorg modules
+    
+    The long story:
+    https://bugs.freedesktop.org/show_bug.cgi?id=24816
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 99f9a3efe2ba46f9ba446b72a402f239e3357c12
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun May 16 16:46:17 2010 -0400
+
+    XORG_LINT_LIBRARY: rework to match XORG_WITH_LINT
+    
+    XORG_LINT_LIBRARY has implementations dependencies on XORG_WITH_LINT
+    The library name can no longer be set by overloading the semantic
+    of --enable-lint-library.
+    If this function is required it should be added using an AC_ARG_VAR.
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2cbe2acb5c70a76830f6ddc1bdc66c333507996f
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat May 15 14:16:36 2010 -0400
+
+    XORG_WITH_LINT: rework and extend platform coverage
+    
+    Guess the lint program name by platform.
+    Use ARG variable for user input values.
+    Provide default flags per platform.
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 4fd20af3ebf6bcfa4e991af6fd11d78494e4b95b
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri May 14 20:19:15 2010 -0400
+
+    XORG_DEFAULT_OPTIONS: add AC_PROG_INSTALL
+    
+    All modules install something.
+    This makes it clear it can removed from modules config.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 958c872c82c0612911e398304111ea5d98dbe973
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri May 14 17:55:13 2010 -0400
+
+    XORG_STRICT_OPTION: remove redundant expansion of AC_PROG_CC macro
+    
+    Calling AC_PROG_CC before AC_PROG_CC_C99 is not required.
+    C99 is not an add-on to CC although either one will cache results
+    than can be used by the other.
+    
+    This is effectively a no-op. Note that if a module configure.ac
+    file calls AC_PROG_CC after AC_PROG_CC_C99, the compiler will be reset
+    to ISO_C89 from ISO_C99.
+    Currently about half the xorg modules use C89 while the other half use C99.
+    
+    Reviewed-by: Rémi Cardona <remi@gentoo.org>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 795e808cb32d183f9d8040749899e325420e9798
+Author: Yaakov Selkowitz <yselkowitz@users.sourceforge.net>
+Date:   Tue Apr 13 03:57:58 2010 -0500
+
+    doctools: accept an optional minimal version
+    
+    Signed-off-by: Yaakov Selkowitz <yselkowitz@users.sourceforge.net>
+    Reviewed-by: Dan Nicholson <dbn.lists@gmail.com>
+
+commit 0913df6f5f24ea589b254d6f2a78483bf3a3c5d6
+Author: Yaakov Selkowitz <yselkowitz@users.sourceforge.net>
+Date:   Fri Apr 9 12:40:12 2010 -0500
+
+    linuxdoc: Use XORG_WITH_PS2PDF to check for ps2pdf
+    
+    Besides reusing existing code, this allows linuxdoc PDF output to be
+    enabled or disabled by configure.
+    
+    Signed-off-by: Yaakov Selkowitz <yselkowitz@users.sourceforge.net>
+    Reviewed-by: Dan Nicholson <dbn.lists@gmail.com>
+    Reviewed-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit e78c909f0e8ea3ee4a38fb7d93fe350bfae7990b
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Apr 27 15:00:37 2010 -0400
+
+    LinuxDoc: add -f option to filter out the ^H in text output
+    
+    Remove backspace-overstrikes from the intermediate
+    form generated by groff.
+    These appear as blocks in some text editors and as ^H in vi.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit def9ff6a564b6b3a81a862e0db1673b3cd77d5ea
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Apr 5 08:02:28 2010 -0400
+
+    Version bump: 1.7.0
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 5d7f8c2638a3b2c3bba8deb01e94703310b62cc4
+Author: Yaakov Selkowitz <yselkowitz@users.sourceforge.net>
+Date:   Thu Mar 25 18:10:00 2010 -0500
+
+    doc: add XORG_CHECK_SGML_DOCTOOLS to detect xorg-sgml-doctools
+    
+    Trying to find X11/defs.ent with AC_CHECK_FILE does not work when
+    cross-compiling, and the check assumed that xorg-sgml-doctools is
+    installed to the same prefix which need not always be the case.
+    
+    xorg-sgml-doctools 1.4 provides a pkg-config file which we can use
+    instead, fixing both those cases.  This macro is provided in util-macros
+    instead of with xorg-sgml-doctools, otherwise the latter would become a
+    hard dependency just to run autoreconf.
+    
+    Signed-off-by: Yaakov Selkowitz <yselkowitz@users.sourceforge.net>
+    Reviewed-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit c03e7dbca608f6fa3f1f53f5fc9f279eab62bdb4
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Mar 29 11:53:10 2010 -0400
+
+    config: remove the xorg-macros pc.in file from EXTRA_DIST
+    
+    Automake always includes it in the tarball.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit be6c44abf825a5814ca836165f62b66c30e7a966
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Mar 11 11:11:42 2010 -0500
+
+    Version bump: 1.6.1
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit b1660bfd095627778496bf403a741ff6ad44659a
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Mar 9 10:52:15 2010 -0500
+
+    doc: fix typo in AC_MSG_CHECKING for XORG_CHECK_LINUXDOC
+    
+    The message should start with a lowercase letter.
+    
+    Reviewed-by: Jeremy Huddleston <jeremyhu@apple.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Dan Nicholson <dbn.lists@gmail.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2c833326fdd83039999b5563eb9f621ff57e3bf5
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Mar 9 10:13:22 2010 -0500
+
+    doc: Specify minimum xmlto version to XORG_WITH_DOXYGEN
+    
+    Adds an optional parameter to XORG_WITH_DOXYGEN to enforce a minimum
+    version needed like the asciidoc version check.
+    
+    Reviewed-by: Dan Nicholson <dbn.lists@gmail.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit d7cedc8ce552581c9acbfbe373cbee16a689abef
+Author: Dan Nicholson <dbn.lists@gmail.com>
+Date:   Wed Mar 3 20:16:46 2010 -0800
+
+    doc: Specify minimum xmlto version to XORG_WITH_XMLTO
+    
+    Adds an optional parameter to XORG_WITH_XMLTO to enforce a minimum
+    version needed like the asciidoc version check.
+    
+    Signed-off-by: Dan Nicholson <dbn.lists@gmail.com>
+
+commit c87b5e9657e3fa1270f7283ab8b16aed1be7b5fd
+Author: Dan Nicholson <dbn.lists@gmail.com>
+Date:   Wed Mar 3 20:16:45 2010 -0800
+
+    doc: Specify minimum asciidoc version to XORG_WITH_ASCIIDOC
+    
+    Adds an optional parameter to XORG_WITH_ASCIIDOC to enforce a minimum
+    version needed.
+    
+    Tested-by: Gaetan Nadon <memsize@videotron.ca>
+    Tested-by: Fernando Carrijo <fcarrijo@yahoo.com.br>
+    Signed-off-by: Dan Nicholson <dbn.lists@gmail.com>
+
+commit a01b2ce6b196555660a64c43623acab1f6fea76a
+Author: Dan Nicholson <dbn.lists@gmail.com>
+Date:   Sat Feb 27 11:28:08 2010 -0800
+
+    silent: Set AM_DEFAULT_VERBOSITY for compatibility on older automake
+    
+    Custom silent rules will become recursive on older automake where
+    AM_SILENT_RULES is not included. Set AM_DEFAULT_VERBOSITY in this
+    fallback case for compatibility.
+    
+    Signed-off-by: Dan Nicholson <dbn.lists@gmail.com>
+    Reviewed-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit de24a6d42eafa1aaa089927e9b2c2c7ef8827550
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Feb 23 11:03:42 2010 -0500
+
+    AM_SILENT_RULES: move from XORG_CWARNFLAGS to XORG_DEFAULT_OPTIONS
+    
+    This m4 statement does not belong in the macro for compiler
+    warning flags. It is more appropriate to group it with the macro
+    providing default options for X.Org modules.
+    
+    Reviewed-by: Dan Nicholson <dbn.lists@gmail.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 0851a3455fddbbaef73fae088469a48f2f975783
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Jan 29 14:02:26 2010 -0500
+
+    Version bump: 1.6.0
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit a8f386498bb18c7f95f874a56e3526a1b0b3029c
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Feb 2 17:14:00 2010 -0500
+
+    doc: add XORG_ENABLE_DEVEL_DOCS and XORG_ENABLE_SPECS
+    
+    Identical to XORG_ENABLE_DOCS, this macros allows modules
+    to classify docs per type and selectively control their building.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 1df1e7fd649b4ff3e00a908d4ade54bc6b32892f
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Jan 31 08:56:50 2010 -0500
+
+    XORG_WITH_GROFF: add tests for -ms and -mm macro packages
+    
+    OS and distros often splits groff in a basic and full package, the former
+    having the groff program and the later having devices, fonts and macros
+    Checking for the groff executable is not enough.
+    
+    Use HAVE_GROFF if you do not use -ms or -mm
+    Use HAVE_GROFF_MS and/or HAVE_GROFF_MM otherwise
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 6fce3ec9157794d1a90ae28b2615c00ce84f95ed
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Jan 29 10:47:40 2010 -0500
+
+    Add XORG_ENABLE_DOCS to control the building of documentation
+    
+    This macro is intended for modules to control, in a single option,
+    the building of the documentaion. Using --enable-docs=no, all
+    documentation is skipped, regardless of the tool used to build it.
+    
+    It should be used in conjunction with other XORG_WITH_* macros
+    which handle cases where some specific tool is not available.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit df1fe112b8fca77ce10ecfe2b9e4a082b29b732d
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Jan 29 10:25:00 2010 -0500
+
+    Additional doc macros for GROFF, FOP and PS2PDF
+    
+    Identical to XMLTO, DOXYGEN and ASCIIDOC.
+    Allow platform builders to selectively turn off tools that
+    are not present or back level. Matching documentation target
+    will be shipped.
+    
+    For example, --without-fop will skip the pdf format while
+    allowing other formats to proceed.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 4411328d3200392e9b8d830a45d9ac679abb4ead
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Wed Feb 3 23:39:37 2010 -0800
+
+    Add -Wformat=2 to the default CWARNFLAGS
+    
+    This will include -Wformat-security to catch possible security problems in formatting in printf, scanf, etc.
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+    Reviewed-by: Matt Turner <mattst88@gmail.com>
+
+commit 46d22716aed8d7e8ee188c2f2d2b3ba600dc3dd3
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Jan 17 21:21:10 2010 -0500
+
+    Version bump: 1.5.0
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 7e89b1cecfdb8115fa159584762f4d0db7455305
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Jan 17 21:01:44 2010 -0500
+
+    Add XORG_WITH_ASCIIDOC and XORG_WITH_DOXYGEN
+    
+    Based on XORG_WITH_XMLTO
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 296c390247553b0070dd05260fe6f55f793a374c
+Author: Matthieu Herrb <matthieu.herrb@laas.fr>
+Date:   Tue Jan 5 23:04:25 2010 +0100
+
+    Add XORG_WITH_XMLTO to factorize xmlto tests.
+    
+    This also allow to configure with --without-xmlto to ignore
+    a 3rd party xmlto tool on systems that normally don't have it,
+    in order to have reproducable builds.
+    
+    Reviewed-by: Rémi Cardona <remi@gentoo.org>
+    Signed-off-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2e75ae9b22de0fa36adde6de7b7e5c1c1a825d69
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sat Jan 16 15:00:38 2010 +0000
+
+    Bump to 1.4.2
+
+commit 1c8cfa5cd1881f810ed62ff082e67777985c7599
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Jan 14 09:32:32 2010 -0800
+
+    Update Sun license notices to current X.Org standard form
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 43e41a5537ba892613f2a9f79cdf209fd7c915b3
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sat Jan 2 20:44:37 2010 +0000
+
+    INSTALL doesn't belong in docdir, use pkgdatadir instead
+    
+    docdir stays in xorg-macros.pc so we don't break the existing
+    $(INSTALL_CMD).
+    
+    Tested-by: Gaetan Nadon <memsize@videotron.ca>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 29f4c09cc252d834278e6e1ad77ad56dc0545d29
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Dec 15 14:25:17 2009 -0500
+
+    configure.ac: use single statement for file generation
+    
+    Reported-by: Peter Hutterer <peter.hutterer at who-t.net>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit c3c40da5392c2f1fe4b15c6e90dc8325b3c26561
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Dec 15 14:01:05 2009 -0500
+
+    macros.m4.in: use backticks rather than $() for cmd subs
+    
+    Reviewed-by: Dan Nicholson <dbn.lists at gmail.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 48e2b3d0ee8d637d83b88bf29c6d417f61aaa0e4
+Author: Colin Watson <cjwatson@canonical.com>
+Date:   Sat Oct 10 13:28:28 2009 +0100
+
+    Use conservative default for malloc(0) when cross-compiling #24460
+    
+    When cross-compiling, AC_RUN_IFELSE can't run test programs.
+    MALLOC_ZERO_RETURNS_NULL=yes is a conservative default in this case.
+    
+    Signed-off-by: Colin Watson <cjwatson@canonical.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2c83c9068167729652994cf3203ca27245745482
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Mon Dec 14 17:12:13 2009 -0500
+
+    util-macros 1.4.1
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 8e126170a4bf23ae73a08d254f6c6fb7e6b46748
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Mon Dec 14 17:05:48 2009 -0500
+
+    Don't mention libdir in the .pc file
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 862911eb71165c9409044986171b8ce2c1ec70b7
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Mon Dec 14 17:05:10 2009 -0500
+
+    Install the .pc file in $(datadir)
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 03b04a6b5d61aafbd2705f7d29e58e0c92553a4a
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Mon Dec 14 16:54:41 2009 -0500
+
+    macros 1.4.0
+
+commit 64e61146ecf6cde01a72d95f905f8d3790b78b58
+Author: Carl Worth <cworth@cworth.org>
+Date:   Mon Nov 30 20:00:31 2009 -0800
+
+    Install .pc file in $libdir where it belongs (not $datadir).
+    
+    The .pc file was previously being installed in ${prefix}/share/pkgconfig
+    but all other modules install their .pc files to ${prefix}/lib/pkgconfig
+
+commit 1e50b971bf7273f958e11cbcf3dc07a6fab04335
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Nov 21 17:28:32 2009 -0500
+
+    xorg-macros.pc.in: create a meta data file for util-macros
+    
+    This is motivated primarly by XORG_INSTALL who needs to locate
+    the docdir when invoked from any module that may not be installed
+    using same prefix (default or otherwise).
+    
+    There are other potential use for this file.
+
+commit ceecddadf923ceae76c12057103ec7a409718a34
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Oct 22 12:20:42 2009 -0400
+
+    Add an XORG_INSTALL macro to allow comps to copy the INSTALL file #24206
+    
+    The Makefile installs INSTALL in share/doc/util-macros
+        An INSTALL_CMD is provided in the new XORG_INSTALL macro
+        which is added to XORG_DEFAULT_OPTIONS.
+    
+        Components add INSTALL target to their Makefile similar to ChangeLog
+
+commit e6ceec1bc497ce9d311fd17e9a171e83148362ad
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Oct 12 11:07:14 2009 -0400
+
+    Add an XORG_INSTALL macro to allow comps to copy the INSTALL file #24206
+    
+    The Makefile installs INSTALL in share/doc/util-macros
+    An INSTALL_CMD is provided in the new XORG_INSTALL macro
+    which is added to XORG_DEFAULT_OPTIONS.
+    
+    Components add INSTALL target to their Makefile similar to ChangeLog
+
+commit 22d7360510553775650e6a4e134f165937db4abe
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Oct 10 15:38:19 2009 -0400
+
+    INSTALL file missing/incorrect #24206
+    
+    Add missing INSTALL file. Use standard GNU file on building tarball
+    For all X.Org components.
+
+commit bf44a8df3831ac465fd79937b059e54c4dc34486
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Oct 10 15:33:58 2009 -0400
+
+    .gitignore: use common defaults with custom section # 24239
+    
+    Using common defaults will reduce errors and maintenance.
+    Only the very small or inexistent custom section need periodic maintenance
+    when the structure of the component changes. Do not edit defaults.
+    For all X.Org components.
+
+commit 98c7586b04dea14d89df6e7ad1c733e6539cd095
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Nov 7 07:58:33 2009 -0500
+
+    Lower version from 2.63 to 2.60 Tinderbox failed
+
+commit b47a30d3c91fbd5b230a11b1a5ddbfb943bcd7b2
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Oct 12 10:57:13 2009 -0400
+
+    configuration: update, fix warnings, apply global maintenance #24450
+    
+    Update configure.ac using autotools utilities and wiki guidelines
+    
+    configure.ac: AM_MAINTAINER_MODE missing #24238
+    
+    This turns off maintainer mode build rules in tarballs.
+    For all X.Org components.
+
+commit f8695cf7b892028bf7c502e85f26f0a756edd316
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Oct 12 10:37:36 2009 -0400
+
+    ChangeLog: generated file not cleaned from the dist directory #24278
+    
+        CHANGELOG_CMD was written in the wrong directory.
+        Update cmd to generate in $(top_srcdir)
+    
+        Tested in regular build with git: dist, distcheck and distclean
+        Tested in VPATH build with git:  dist, distcheck and distclean
+        Tested above scenario from tarballs with git not available
+
 commit d6584a4a52a6fb0eaf979555097bb32621c13cb1
 Author: Alan Coopersmith <alan.coopersmith@sun.com>
 Date:   Wed Sep 9 13:31:38 2009 -0700

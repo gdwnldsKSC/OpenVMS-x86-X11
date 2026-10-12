@@ -2,13 +2,15 @@ DISTCHECK_CONFIGURE_FLAGS = --with-cursordir=\$${datadir}/icons
 
 SUBDIRS = handhelds redglass whiteglass
 
-EXTRA_DIST = genmakefile.sh ChangeLog
+MAINTAINERCLEANFILES = ChangeLog INSTALL
+EXTRA_DIST = genmakefile.sh
 
-AUTOMAKE_OPTIONS = foreign
+.PHONY: ChangeLog INSTALL
 
-dist-hook: ChangeLog
-
-.PHONY: ChangeLog
+INSTALL:
+	$(INSTALL_CMD)
 
 ChangeLog:
 	$(CHANGELOG_CMD)
+
+dist-hook: ChangeLog INSTALL

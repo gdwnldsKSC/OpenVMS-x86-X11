@@ -47,13 +47,11 @@
 #include "config.h"
 #endif
 
-/* Jong 09/27/2007; added for PACKAGE_VERSION_MAJOR,... */
-#define  PACKAGE_VERSION_MAJOR   1
+#define  PACKAGE_VERSION_MAJOR   6
 #define  PACKAGE_VERSION_MINOR   1
-#define  PACKAGE_VERSION_PATCHLEVEL   0
+#define  PACKAGE_VERSION_PATCHLEVEL   6803
 
 #include "fb.h"
-#include "mibank.h"
 #include "micmap.h"
 #include "xf86.h"
 #include "xf86Priv.h"
@@ -108,8 +106,11 @@
 #include <unistd.h>
 #endif
 
+/* Jong 01/22/2009; compiler error; type conflict */
+/*
 #include <fcntl.h>
 #include <sys/ioctl.h>
+*/
 
 #ifdef XSERVER_LIBPCIACCESS
 static Bool XGIPciProbe(DriverPtr drv, int entity_num,
@@ -128,6 +129,13 @@ static int XGIEntityIndex = -1;
 /* Jong 09/19/2007; support modeline */
 int g_CountOfUserDefinedModes=0;
 xf86MonPtr  g_pMonitorDVI=NULL; /* Jong 12/04/2007; used for filtering of CRT1 modes */
+
+/* Jong 07/27/2009; use run-time debug instead except for HW acceleration routines */
+/* Set Option "RunTimeDebug" to "true" in X configuration file */
+BOOL g_bRunTimeDebug=0;
+
+/* Jong@09072009 */
+unsigned char g_DVI_I_SignalType = 0x00;
 
 /*
  * This is intentionally screen-independent.  It indicates the binding
@@ -226,6 +234,17 @@ static const char *xaaSymbols[] = {
     "XAAInit",
     NULL
 };
+
+#ifdef XGI_USE_EXA
+static const char *exaSymbols[] = {
+    "exaGetVersion",
+    "exaDriverInit",
+    "exaDriverFini",
+    "exaOffscreenAlloc",
+    "exaOffscreenFree",
+    NULL
+};
+#endif
 
 static const char *vgahwSymbols[] = {
     "vgaHWFreeHWRec",
@@ -443,8 +462,8 @@ static const ModeTiming StdTiming[] = {
 
 static void XGIDumpPalette(ScrnInfoPtr pScrn);
 #ifdef DEBUG
-static void XGIDumpSR(ScrnInfoPtr pScrn);
-static void XGIDumpCR(ScrnInfoPtr pScrn);
+void XGIDumpSR(ScrnInfoPtr pScrn);
+void XGIDumpCR(ScrnInfoPtr pScrn);
 static void XGIDumpGR(ScrnInfoPtr pScrn);
 static void XGIDumpPart1(ScrnInfoPtr pScrn);
 static void XGIDumpPart2(ScrnInfoPtr pScrn);
@@ -474,7 +493,13 @@ xgiSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 
     if (!setupDone) {
         setupDone = TRUE;
+/* Jong@09022009 */
+#if (XORG_VERSION_CURRENT > XORG_VERSION_NUMERIC(6,9,0,0,0) )
         xf86AddDriver(&XGI, module, HaveDriverFuncs);
+#else
+        xf86AddDriver(&XGI, module, 0);
+#endif
+
         LoaderRefSymLists(vgahwSymbols, fbSymbols, xaaSymbols,
                           shadowSymbols, ramdacSymbols, ddcSymbols,
                           vbeSymbols, int10Symbols,
@@ -591,6 +616,15 @@ XGIFreeRec(ScrnInfoPtr pScrn)
     pScrn->driverPrivate = NULL;
 }
 
+/* 
+	SR1F Power management register
+	D7	Force CRT1 into DPMS suspend mode
+		0: disable
+		1: enable
+	D6	Force CRT1 into DPMS stand-by mode
+		0: disable
+		1: enable
+*/
 static void
 XGIDisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
                              int flags)
@@ -604,6 +638,18 @@ XGIDisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
     xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 3,
                    "XGIDisplayPowerManagementSet(%d)\n", PowerManagementMode);
 
+#if 1
+	PVB_DEVICE_INFO pVBInfo = pXGI->XGI_Pr;
+    PXGI_HW_DEVICE_INFO pHwDevInfo = &pXGI->xgi_HwDevExt;
+	ULONG  PowerState = 0xFFFFFFFF;
+
+	if((PowerManagementMode != 0) && (PowerManagementMode <= 3))
+		PowerState = 0x00000001 << (PowerManagementMode + 7);
+	else
+		PowerState = 0x0;
+
+	XGISetDPMS(pScrn, pVBInfo, pHwDevInfo, PowerState);
+#else
     if (IS_DUAL_HEAD(pXGI)) {
         if (IS_SECOND_HEAD(pXGI))
             docrt2 = FALSE;
@@ -618,6 +664,8 @@ XGIDisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
     switch (PowerManagementMode) {
 
     case DPMSModeOn:           /* HSync: On, VSync: On */
+		PDEBUG(ErrorF("!-DPMSMode-On...\n"));
+
         if (docrt1)
             pXGI->Blank = FALSE;
 
@@ -633,6 +681,8 @@ XGIDisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
         break;
 
     case DPMSModeSuspend:      /* HSync: On, VSync: Off */
+		PDEBUG(ErrorF("!-DPMSMode-Suspend...\n"));
+
         if (docrt1)
             pXGI->Blank = TRUE;
 
@@ -648,6 +698,8 @@ XGIDisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
         break;
 
     case DPMSModeStandby:      /* HSync: Off, VSync: On */
+		PDEBUG(ErrorF("!-DPMSMode-Standby...\n"));
+
         if (docrt1)
             pXGI->Blank = TRUE;
 
@@ -663,6 +715,8 @@ XGIDisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
         break;
 
     case DPMSModeOff:          /* HSync: Off, VSync: Off */
+		PDEBUG(ErrorF("!-DPMSMode-Off...\n"));
+
         if (docrt1)
             pXGI->Blank = TRUE;
 
@@ -703,7 +757,93 @@ XGIDisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
         usleep(10000);
         outXGIIDXREG(XGISR, 0x00, 0x03);        /* End Reset */
     }
+#endif
+}
 
+typedef struct 
+{
+	unsigned char   name[10];
+    unsigned int    DCLK;
+    unsigned int    HDisplay;
+    unsigned int    HSyncStart;
+    unsigned int    HSyncEnd;
+    unsigned int    HTotal;
+    unsigned int    VDisplay;
+    unsigned int    VSyncStart;
+    unsigned int    VSyncEnd;
+    unsigned int    VTotal;
+} XGITimingInfo;
+
+XGITimingInfo ExtraAvailableModeTiming[]=
+{
+  {"1440x900",
+   106470,
+   1440, 1520, 1672, 1904,
+   900, 901, 904, 932},
+  {"1680x1050",
+   146250,
+   1680, 1784, 1960, 2240,
+   1050, 1053, 1059, 1089},
+  {"0x0",
+   106470,
+   1440, 1520, 1672, 1904,
+   900, 901, 904, 932}
+};
+
+int	  ExtraAvailableModeTimingCount = 1;
+
+void XGIAddAvailableModes(DisplayModePtr availModes)
+{
+	DisplayModePtr p;
+	DisplayModePtr q;
+	DisplayModePtr last;
+	DisplayModePtr first;
+	int	i;
+
+	/* Scan to last node */
+	for (q = availModes; q != NULL; q = q->next){
+		last = q;
+	} 
+
+	/* first = availModes->next; */
+
+	/* Add all modes of ExtraAvailableModeTiming[] */
+	for(i=0; /* i < ExtraAvailableModeTimingCount */ xf86NameCmp(ExtraAvailableModeTiming[i].name, "0x0") != 0 ; i++)
+	{
+		p = xnfcalloc(1, sizeof(DisplayModeRec));
+
+		p->prev = last;
+		p->next = NULL;
+		last->next = p;
+
+		/*
+		first->next->prev = p;
+		p->prev = first;
+		p->next = first->next;
+		first->next = p;
+		*/
+
+		p->name = xnfalloc(strlen(ExtraAvailableModeTiming[i].name) + 1);
+		p->name = ExtraAvailableModeTiming[i].name;
+		p->status = MODE_OK;
+
+		p->type = M_T_CLOCK_CRTC_C /* M_T_BUILTIN */ 	/* M_T_USERDEF */ ;
+
+		p->Clock = ExtraAvailableModeTiming[i].DCLK;
+		p->HDisplay = ExtraAvailableModeTiming[i].HDisplay;
+		p->HSyncStart = ExtraAvailableModeTiming[i].HSyncStart;
+		p->HSyncEnd = ExtraAvailableModeTiming[i].HSyncEnd;
+		p->HTotal = ExtraAvailableModeTiming[i].HTotal;
+
+		p->VDisplay = ExtraAvailableModeTiming[i].VDisplay;
+		p->VSyncStart = ExtraAvailableModeTiming[i].VSyncStart;
+		p->VSyncEnd = ExtraAvailableModeTiming[i].VSyncEnd;
+		p->VTotal = ExtraAvailableModeTiming[i].VTotal;
+
+		p->Flags = 5;
+
+		last = p;
+	}
 }
 
 /* Mandatory */
@@ -901,6 +1041,8 @@ XGICopyModeNLink(ScrnInfoPtr pScrn, DisplayModePtr dest,
     XGIPtr pXGI = XGIPTR(pScrn);
     DisplayModePtr mode;
     int dx = 0, dy = 0;
+
+	ErrorF("XGICopyModeNLink()...Use Virtual Size-1\n");
 
     if (!((mode = xalloc(sizeof(DisplayModeRec)))))
         return dest;
@@ -1233,6 +1375,7 @@ XGIRecalcDefaultVirtualSize(ScrnInfoPtr pScrn)
     int max;
     static const char *str = "MergedFB: Virtual %s %d\n";
 
+	ErrorF("XGIRecalcDefaultVirtualSize()...Update Virtual Size-1\n");
     if (!(pScrn->display->virtualX)) {
         mode = bmode = pScrn->modes;
         max = 0;
@@ -1243,6 +1386,7 @@ XGIRecalcDefaultVirtualSize(ScrnInfoPtr pScrn)
         } while (mode != bmode);
         pScrn->virtualX = max;
         pScrn->displayWidth = max;
+		ErrorF("XGIRecalcDefaultVirtualSize()...Update Virtual Size-2-pScrn->virtualX=%d\n", pScrn->virtualX);
         xf86DrvMsg(pScrn->scrnIndex, X_PROBED, str, "width", max);
     }
     if (!(pScrn->display->virtualY)) {
@@ -1267,6 +1411,8 @@ XGIMergedFBSetDpi(ScrnInfoPtr pScrn1, ScrnInfoPtr pScrn2, XGIScrn2Rel srel)
     xf86MonPtr DDC2 = (xf86MonPtr) (pScrn2->monitor->DDC);
     int ddcWidthmm = 0, ddcHeightmm = 0;
     const char *dsstr = "MergedFB: Display dimensions: (%d, %d) mm\n";
+
+	ErrorF("XGIMergedFBSetDpi()...Use Virtual Size -1\n");
 
     /* This sets the DPI for MergedFB mode. The problem is that
      * this can never be exact, because the output devices may
@@ -1454,7 +1600,21 @@ XGIInternalDDC(ScrnInfoPtr pScrn, int crtno)
                    crtno_means_str[crtno]);
     }
 
-    if (xf86LoadSubModule(pScrn, "int10")) {
+/* Jong 08/03/2009; get EDID with I2C function instead of VBIOS call */
+#if 1 
+    ErrorF("get EDID with I2C function instead of VBIOS call...\n");
+
+	PXGI_HW_DEVICE_INFO pHwDevInfo = &pXGI->xgi_HwDevExt;
+    PUCHAR pjEDIDBuffer = buffer;
+    ULONG  ulBufferSize = 256;
+
+	pHwDevInfo->crtno = crtno;
+	int bEDID = bGetEDID(pHwDevInfo, crtno, pjEDIDBuffer, ulBufferSize);
+
+#else
+    ErrorF("get EDID with VBIOS call...\n");
+    if (xf86LoadSubModule(pScrn, "int10")) 
+	{
         xf86LoaderReqSymLists(int10Symbols, NULL);
         pInt = xf86InitInt10(pXGI->pEnt->index);
         if (pInt == NULL) {
@@ -1472,7 +1632,8 @@ XGIInternalDDC(ScrnInfoPtr pScrn, int crtno)
         }
     }
 
-    if (pInt) {
+    if (pInt) 
+	{
         pInt->ax = 0x4f15;      /* VESA DDC supporting */
         pInt->bx = 1;           /* get EDID */
         pInt->cx = crtno;       /* port 0 or 1 for CRT 1 or 2 */
@@ -1485,18 +1646,25 @@ XGIInternalDDC(ScrnInfoPtr pScrn, int crtno)
                 ("ax = %04X bx = %04X cx = %04X dx = %04X si = %04X di = %04X es = %04X\n",
                  pInt->ax, pInt->bx, pInt->cx, pInt->dx, pInt->si, pInt->di,
                  pInt->es));
+#endif
 
-        if ((pInt->ax & 0xff00) == 0) {
+#if 0
+        if ((pInt->ax & 0xff00) == 0) 
+		{
             int i;
-            xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                       "XGIInternalDDC(): VESA get DDC success for CRT %d.\n",
-                       crtno + 1);
 
             for (i = 0; i < 128; i++) {
                 buffer[i] = page[i];
             }
+#else /* Jong 08/03/2009; get EDID with I2C function instead of VBIOS call */
+		if(bEDID == 1)
+		{
+            int i;
+#endif
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                       "XGIInternalDDC(): VESA get DDC success for output channel %d.\n",
+                       crtno + 1);
 
-#ifdef DEBUG5
             for (i = 0; i < 128; i += 16) {
                 unsigned j;
                 ErrorF("EDID[%02X]", i);
@@ -1505,13 +1673,15 @@ XGIInternalDDC(ScrnInfoPtr pScrn, int crtno)
                 }
                 ErrorF("\n");
             }
-#endif /* DEBUG3 */
+
+			g_DVI_I_SignalType = (buffer[20] & 0x80) >> 7;
+			ErrorF("DVI-I : %s signal ...\n", (g_DVI_I_SignalType == 0x01) ? "DVI" : "CRT" );
 
             xf86LoaderReqSymLists(ddcSymbols, NULL);
 
-	    /* Jong 09/04/2007; Alan fixed abnormal EDID data */
-	    /* pMonitor = xf86InterpretEDID(pScrn->scrnIndex, buffer) ; */
-            if ( (buffer[0]==0) && (buffer[7]==0) )
+			/* Jong 09/04/2007; Alan fixed abnormal EDID data */
+			/* pMonitor = xf86InterpretEDID(pScrn->scrnIndex, buffer) ; */
+			if ( (buffer[0]==0) && (buffer[7]==0) )
             {
                 for (i=1;i<7;i++)
                 {
@@ -1533,13 +1703,17 @@ XGIInternalDDC(ScrnInfoPtr pScrn, int crtno)
         }
         else {
             xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-                       "XGIInternalDDC(): VESA get DDC fail for CRT %d.\n",
+                       "XGIInternalDDC(): VESA get DDC fail for output channel %d.\n",
                        crtno + 1);
         }
 
+/* Jong 08/03/2009; get EDID with I2C function instead of VBIOS call */
+#if 0
         xf86Int10FreePages(pInt, page, 1);
         xf86FreeInt10(pInt);
     }
+#endif
+
     return pMonitor;
 }
 
@@ -1967,6 +2141,15 @@ XGISyncDDCMonitorRange(MonPtr monitor, MonitorRangePtr range)
         return;
     }
 
+	monitor->nHsync++;
+	monitor->nVrefresh++;
+
+#if 1
+        monitor->hsync[monitor->nHsync-1].lo = range->loH;
+        monitor->hsync[monitor->nHsync-1].hi = range->hiH;
+        monitor->vrefresh[monitor->nVrefresh-1].lo = range->loV;
+        monitor->vrefresh[monitor->nVrefresh-1].hi = range->hiV;
+#else
     for (i = 0; i < monitor->nHsync; i++) {
         monitor->hsync[i].lo = range->loH;
         monitor->hsync[i].hi = range->hiH;
@@ -1976,7 +2159,12 @@ XGISyncDDCMonitorRange(MonPtr monitor, MonitorRangePtr range)
         monitor->vrefresh[i].lo = range->loV;
         monitor->vrefresh[i].hi = range->hiV;
     }
+#endif
 }
+
+/* Jong@08212009; defined in vb_ext.c */
+extern void XGIPowerSaving(PVB_DEVICE_INFO pVBInfo, UCHAR PowerSavingStatus);
+UCHAR g_PowerSavingStatus = 0x00;
 
 static void
 XGIDDCPreInit(ScrnInfoPtr pScrn)
@@ -1984,8 +2172,20 @@ XGIDDCPreInit(ScrnInfoPtr pScrn)
 
     XGIPtr pXGI = XGIPTR(pScrn);
     xf86MonPtr pMonitor = NULL;
+    xf86MonPtr pMonitorCRT1 = NULL;
     xf86MonPtr pMonitorDVI = NULL;
+    xf86MonPtr pMonitorCRT2 = NULL;
     Bool didddc2;
+
+	UCHAR  PowerSavingStatus = 0xFF; /* 0x00; */
+
+	if(pXGI->IgnoreDDC)
+	{
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+				   "Ignore DDC detection --> No EDID info...turn on all DAC and DVO\n");
+		XGIPowerSaving(pXGI->XGI_Pr, 0x00);
+		return;
+	}
 
     static const char *ddcsstr =
         "CRT%d DDC monitor info: ************************************\n";
@@ -2016,65 +2216,201 @@ XGIDDCPreInit(ScrnInfoPtr pScrn)
     /* Now (re-)load and initialize the DDC module */
     if (!didddc2) {
 
-        if (xf86LoadSubModule(pScrn, "ddc")) {
+        if (xf86LoadSubModule(pScrn, "ddc")) 
+		{
 
             xf86LoaderReqSymLists(ddcSymbols, NULL);
 
-            pMonitor = XGIInternalDDC(pScrn, 0);
-            if (pMonitor == NULL) {
-                xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                           "Could not retrieve DDC data\n");
-            }
+            if (pXGI->xgi_HwDevExt.jChipType == XG27) 
+			{
+				ErrorF("Getting CRT EDID (DAC1-CRT1)...\n");
+				pMonitorCRT1 = XGIInternalDDC(pScrn, 0);
 
-            if (pXGI->xgi_HwDevExt.jChipType == XG21) {
-                PDEBUG(ErrorF("Getting XG21 DVI EDID...\n"));
-                pMonitorDVI = XGIInternalDDC(pScrn, 1);
-                if (pMonitorDVI == NULL) {
-                    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                               "Could not retrieve DVI DDC data\n");
-                }
-				else /* Jong 12/04/2007; used for filtering of CRT1 modes */
-					g_pMonitorDVI=pMonitorDVI;
+				if (pMonitorCRT1 == NULL) 
+				{
+					xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+							   "Could not retrieve DDC data for CRT1\n");
+					/* PowerSavingStatus |= 0x01; */ /* device is not detected through DAC1 */
 
-                if ((pMonitor == NULL) && (pMonitorDVI != NULL)) {
-                    pMonitor = pMonitorDVI;
-                }
-            }
+					ErrorF("Getting DVI EDID (DVO)...\n");
+					pMonitorDVI = XGIInternalDDC(pScrn, 1);
 
+					if (pMonitorDVI == NULL) {
+						/* PowerSavingStatus |= 0x02; */ /* device is not detected through DVO */
+						xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+							   "Could not retrieve DDC data for DVI\n");
+					}
+					else
+					{
+						PowerSavingStatus &= ~0x02; /* device is detected through DVO */
+						xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+								   "Succeed to retrieve DDC data for DVI\n");
+					}
+				}
+				else
+				{
+					if(g_DVI_I_SignalType == 0x00) /* analog CRT */
+						PowerSavingStatus &= ~0x01; /* CRT device is detected */
+					else /* DVI digital */
+						PowerSavingStatus &= ~0x02; /* DVI device is detected */
+
+
+					xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+						"Succeed to retrieve DDC data for %s\n", (g_DVI_I_SignalType == 0x01) ? "DVI" : "CRT");
+				}
+
+				ErrorF("Getting CRT EDID (CRT2)...\n");
+				pMonitorCRT2 = XGIInternalDDC(pScrn, 2);
+
+				if (pMonitorCRT2 == NULL) {
+					/* PowerSavingStatus |= 0x04; */ /* device is not detected through DAC2 */
+					xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+							   "Could not retrieve DDC data for CRT2\n");
+				}
+				else /* Used for filtering of CRT1/DVI modes; g_pMonitorDVI is not a good naming; should be g_pMonitorFilter */
+				{
+					PowerSavingStatus &= ~0x04; /* device is detected through DAC2 */
+					g_pMonitorDVI=pMonitorCRT2;
+					xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+							   "Succeed to retrieve DDC data for CRT2\n");
+				}
+
+				if (pMonitorCRT1 != NULL)
+					pMonitor = pMonitorCRT1;
+				else if(pMonitorDVI != NULL)
+					pMonitor = pMonitorDVI;
+				else if(pMonitorCRT2 != NULL)
+					pMonitor = pMonitorCRT2;
+			}
+			else /* for XG20/21 */
+			{
+				ErrorF("Getting CRT EDID (CRT1)...\n");
+				pMonitor = XGIInternalDDC(pScrn, 0);
+
+				if (pMonitor == NULL) {
+					PowerSavingStatus |= 0x01; /* device is not detected through DAC1 */
+					xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+							   "Could not retrieve DDC data\n");
+				}
+
+				if (pXGI->xgi_HwDevExt.jChipType == XG21) /* CRT1 -DVI */
+				{
+					ErrorF("Getting XG21 DVI EDID (crt2)...\n");
+					pMonitorDVI = XGIInternalDDC(pScrn, 1);
+
+					if (pMonitorDVI == NULL) {
+						PowerSavingStatus |= 0x02; /* device is not detected through DVO */
+						xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+								   "Could not retrieve DVI DDC data\n");
+					}
+					else /* Jong 12/04/2007; used for filtering of CRT1 modes */
+					{
+						g_pMonitorDVI=pMonitorDVI;
+					}
+
+					if ((pMonitor == NULL) && (pMonitorDVI != NULL)) {
+						pMonitor = pMonitorDVI;
+					}
+				}			
+			}
         }
     }
 
+	ErrorF("PowerSavingStatus = 0x%x...\n", PowerSavingStatus);
+
+	if(PowerSavingStatus == 0xFF)
+		PowerSavingStatus = 0x00; 
+
+
+/*	if((pXGI->xgi_HwDevExt.jChipType == XG27) && (PowerSavingStatus == 0x07))
+		PowerSavingStatus = 0x00; 
+
+	if((pXGI->xgi_HwDevExt.jChipType == XG21) && (PowerSavingStatus == 0x03))
+		PowerSavingStatus = 0x00; 
+*/
+
+	XGIPowerSaving(pXGI->XGI_Pr, PowerSavingStatus);
+	g_PowerSavingStatus = PowerSavingStatus;
+
     /* initialize */
 
-    if (pMonitor) {
-        pXGI->CRT1Range.loH = 1000;
-        pXGI->CRT1Range.loV = 1000;
-        pXGI->CRT1Range.hiH = 0;
-        pXGI->CRT1Range.hiV = 0;
-        XGIGetMonitorRangeByDDC(&(pXGI->CRT1Range), pMonitor);
-    }
-    else {
-        pXGI->CRT1Range.loH = 0;
-        pXGI->CRT1Range.loV = 0;
-        pXGI->CRT1Range.hiH = 1000;
-        pXGI->CRT1Range.hiV = 1000;
-    }
+    if (pXGI->xgi_HwDevExt.jChipType == XG27) 
+	{
+		if (pMonitorCRT1) {
+			pXGI->CRT1Range.loH = 1000;
+			pXGI->CRT1Range.loV = 1000;
+			pXGI->CRT1Range.hiH = 0;
+			pXGI->CRT1Range.hiV = 0;
+			XGIGetMonitorRangeByDDC(&(pXGI->CRT1Range), pMonitorCRT1);
 
-    if (pMonitorDVI) {
-        pXGI->CRT2Range.loV = 1000;
-        pXGI->CRT2Range.loH = 1000;
-        pXGI->CRT2Range.hiH = 0;
-        pXGI->CRT2Range.hiV = 0;
-        XGIGetMonitorRangeByDDC(&(pXGI->CRT2Range), pMonitorDVI);
-    }
-    else {
-        pXGI->CRT2Range.loH = 0;
-        pXGI->CRT2Range.loV = 0;
-        pXGI->CRT2Range.hiH = 1000;
-        pXGI->CRT2Range.hiV = 1000;
-    }
+			if (pMonitorDVI) {
+				XGIGetMonitorRangeByDDC(&(pXGI->CRT1Range), pMonitorDVI);
+			}
+		}
+		else {
+			if (pMonitorDVI) {
+				pXGI->CRT1Range.loV = 1000;
+				pXGI->CRT1Range.loH = 1000;
+				pXGI->CRT1Range.hiH = 0;
+				pXGI->CRT1Range.hiV = 0;
+				XGIGetMonitorRangeByDDC(&(pXGI->CRT1Range), pMonitorDVI);
+			}
+			else {
+				pXGI->CRT1Range.loH = 0;
+				pXGI->CRT1Range.loV = 0;
+				pXGI->CRT1Range.hiH = 1000;
+				pXGI->CRT1Range.hiV = 1000;
+			}
+		}
 
-    if (pXGI->xgi_HwDevExt.jChipType == XG21) {
+		if (pMonitorCRT2) {
+			pXGI->CRT2Range.loV = 1000;
+			pXGI->CRT2Range.loH = 1000;
+			pXGI->CRT2Range.hiH = 0;
+			pXGI->CRT2Range.hiV = 0;
+			XGIGetMonitorRangeByDDC(&(pXGI->CRT2Range), pMonitorCRT2);
+		}
+		else {
+			pXGI->CRT2Range.loH = 0;
+			pXGI->CRT2Range.loV = 0;
+			pXGI->CRT2Range.hiH = 1000;
+			pXGI->CRT2Range.hiV = 1000;
+		}
+	}
+	else /* XG20/21 */
+	{
+		if (pMonitor) {
+			pXGI->CRT1Range.loH = 1000;
+			pXGI->CRT1Range.loV = 1000;
+			pXGI->CRT1Range.hiH = 0;
+			pXGI->CRT1Range.hiV = 0;
+			XGIGetMonitorRangeByDDC(&(pXGI->CRT1Range), pMonitor);
+		}
+		else {
+			pXGI->CRT1Range.loH = 0;
+			pXGI->CRT1Range.loV = 0;
+			pXGI->CRT1Range.hiH = 1000;
+			pXGI->CRT1Range.hiV = 1000;
+		}
+
+		if (pMonitorDVI) {
+			pXGI->CRT2Range.loV = 1000;
+			pXGI->CRT2Range.loH = 1000;
+			pXGI->CRT2Range.hiH = 0;
+			pXGI->CRT2Range.hiV = 0;
+			XGIGetMonitorRangeByDDC(&(pXGI->CRT2Range), pMonitorDVI);
+		}
+		else {
+			pXGI->CRT2Range.loH = 0;
+			pXGI->CRT2Range.loV = 0;
+			pXGI->CRT2Range.hiH = 1000;
+			pXGI->CRT2Range.hiV = 1000;
+		}
+	}
+
+	/* Jong@08132009 */
+    /* if (pXGI->xgi_HwDevExt.jChipType == XG21) { */
+    if ((pXGI->xgi_HwDevExt.jChipType == XG21) || (pXGI->xgi_HwDevExt.jChipType == XG27) ) {
         /* Mode range intersecting */
         if (pXGI->CRT1Range.loH < pXGI->CRT2Range.loH) {
             pXGI->CRT1Range.loH = pXGI->CRT2Range.loH;
@@ -2090,9 +2426,9 @@ XGIDDCPreInit(ScrnInfoPtr pScrn)
         }
     }
 
-    if (pMonitor) {
-        XGISyncDDCMonitorRange(pScrn->monitor, &pXGI->CRT1Range);
-    }
+	if (pMonitor) {
+		XGISyncDDCMonitorRange(pScrn->monitor, &pXGI->CRT1Range);
+	}
 
     if (pScrn->monitor) {
         pScrn->monitor->DDC = pMonitor;
@@ -2358,7 +2694,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
      */
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-               "XGI driver (%s)\n", XGI_RELEASE_DATE);
+               "XGI driver (%s)\n", "01/21/2009" /*XGI_RELEASE_DATE*/);
 
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                "Copyright (C) 2001-2004 Thomas Winischhofer <thomas@winischhofer.net> and others\n");
@@ -2417,15 +2753,32 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
                (pXGI->Primary ? "primary" : "secondary"));
 
     if (pXGI->Primary) {
+#if defined(__arm__) 
+        VGAHWPTR(pScrn)->MapPhys = pXGI->PciInfo->ioBase[2] + 0xf2000000; 	
+#endif
+
         VGAHWPTR(pScrn)->MapSize = 0x10000;     /* Standard 64k VGA window */
         if (!vgaHWMapMem(pScrn)) {
             XGIErrorLog(pScrn, "Could not map VGA memory\n");
             XGIFreeRec(pScrn);
             return FALSE;
+       } else { 
+#if defined(__arm__) 
+		  vgaHWSetMmioFuncs(VGAHWPTR(pScrn), VGAHWPTR(pScrn)->Base, 0); 	
+#endif
+
+		  xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 3, 
+				  "VGA memory map from 0x%x to 0x%x \n", 
+#ifdef XSERVER_LIBPCIACCESS
+				  pXGI->PciInfo->regions[2].base_addr, VGAHWPTR(pScrn)->Base);
+#else
+				  pXGI->PciInfo->ioBase[2], VGAHWPTR(pScrn)->Base);
+#endif
         }
     }
     vgaHWGetIOBase(VGAHWPTR(pScrn));
 
+	/* Jong@08262009; why not to modify ??? */
     /* We "patch" the PIOOffset inside vgaHW in order to force
      * the vgaHW module to use our relocated i/o ports.
      */
@@ -2590,7 +2943,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
     FbDevExist = FALSE;
    if((pXGI->Chipset != PCI_CHIP_XGIXG20)&&(pXGI->Chipset != PCI_CHIP_XGIXG21)&&( pXGI->Chipset != PCI_CHIP_XGIXG27 ))
    {
-        if ((fd = open("/dev/fb", O_RDONLY)) != -1) {
+        if ((fd = open("/dev/fb", 'r')) != -1) {
             PDEBUG(ErrorF("--- open /dev/fb....   \n"));
             ioctl(fd, FBIOGET_FSCREENINFO, &fix);
             if (fix.accel == FB_ACCEL_XGI_GLAMOUR) {
@@ -2680,6 +3033,10 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
     }
 
     /* Get our relocated IO registers */
+#if defined(__arm__) 
+	pXGI->RelIO = (XGIIOADDRESS)(((IOADDRESS)VGAHWPTR(pScrn)->Base & 0xFFFFFFFC) + pXGI->IODBase); 	
+
+#else
     pXGI->RelIO = (XGIIOADDRESS) (pXGI->IODBase |
 #ifdef XSERVER_LIBPCIACCESS
                                   (pXGI->PciInfo->regions[2].base_addr & 0xFFFC) 
@@ -2687,9 +3044,12 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
                                   (pXGI->PciInfo->ioBase[2] & 0xFFFC) 
 #endif
                                   );
+#endif
+
     pXGI->xgi_HwDevExt.pjIOAddress = (XGIIOADDRESS) (pXGI->RelIO + 0x30);
     xf86DrvMsg(pScrn->scrnIndex, from, "Relocated IO registers at 0x%lX\n",
                (unsigned long) pXGI->RelIO);
+	ErrorF("xgi_driver.c-pXGI->xgi_HwDevExt.pjIOAddress=0x%x...\n", pXGI->xgi_HwDevExt.pjIOAddress);
 
     if (!xf86SetDepthBpp(pScrn, 0, 0, 0, pix24flags)) {
         XGIErrorLog(pScrn, "xf86SetDepthBpp() error\n");
@@ -2840,7 +3200,8 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
      * The cmap layer needs this to be initialised.
      */
     {
-        Gamma zeros = { 0.0, 0.0, 0.0 };
+		Gamma zeros = { 0.0, 0.0, 0.0 };
+        /* Gamma zeros = { 0.5, 0.5, 0.5 }; */
 
         if (!xf86SetGamma(pScrn, zeros)) {
             XGIErrorLog(pScrn, "xf86SetGamma() error\n");
@@ -3330,6 +3691,7 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
      * mode into account.)
      */
 
+#if !defined(__arm__) 
 #if !defined(__powerpc__)
     /* Now load and initialize VBE module. */
     if (xf86LoadSubModule(pScrn, "vbe")) {
@@ -3346,8 +3708,40 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
                    "Could not load VBE module\n");
     }
 
-    XGIDDCPreInit(pScrn);
 #endif
+#endif
+
+
+    XGIDDCPreInit(pScrn);
+
+    /* Jong 07/29/2009; Proposal : use wide range for HorizSync and strict range for VertRefresh; And set 1024x768 in Modes of Screen section */
+	/* Jong 07/17/2009; fix issue of only one mode (800x600) */
+    /* if (no Horizsync or VertRefresh is spefified in Monitor section) and (no DDC detection) */
+    /* then apply followings as default Hsync and VRefresh (1024x768x60HZ) */
+    /* XGIDDCPreInit() should be called first to get EDID but need I2C programming instead of VBIOS call */
+	if(pScrn->monitor->DDC == NULL)
+	{
+		ErrorF("Non-DDC minitor or NO EDID information...\n");
+
+		if(pScrn->monitor->nHsync == 0)
+		{
+			pScrn->monitor->nHsync = 1;
+			pScrn->monitor->hsync[0].lo=30;
+			pScrn->monitor->hsync[0].hi=50;
+			ErrorF("No HorizSync information set in Monitor section and use default (%d, %d)...\n", 
+				pScrn->monitor->hsync[0].lo, pScrn->monitor->hsync[0].hi);
+		}
+
+		if(pScrn->monitor->nVrefresh == 0)
+		{
+			pScrn->monitor->nVrefresh = 1;
+			pScrn->monitor->vrefresh[0].lo=40;
+			pScrn->monitor->vrefresh[0].hi=60;
+			ErrorF("No VertRefresh information set in Monitor section and use default (%d, %d)...\n", 
+				pScrn->monitor->vrefresh[0].lo, pScrn->monitor->vrefresh[0].hi);
+		}
+	}
+
     /* From here, we mainly deal with clocks and modes */
 
     /* Set the min pixel clock */
@@ -3411,9 +3805,12 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 #endif
     XGIDumpMonPtr(pScrn->monitor);
 
-	/* Jong 12/05/2007; filter support modes of CRT1 by CRT2 DDC */
+
+	XGIAddAvailableModes(pScrn->monitor->Modes);
+
 	/* XGIFilterModeByDDC(pScrn->monitor->Modes, g_pMonitorDVI); */ /* Do it in XGIValidMode() */
 
+	ErrorF("Call xf86ValidateModes()...Use Virtual Size-1-Virtual Size=%d\n", pScrn->display->virtualX);
     i = xf86ValidateModes(pScrn, pScrn->monitor->Modes, pScrn->display->modes, clockRanges, NULL, 256, 2048,    /* min / max pitch */
                           pScrn->bitsPerPixel * 8, 128, 2048,   /* min / max height */
                           pScrn->display->virtualX,
@@ -3439,33 +3836,34 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
 	* pScrn->virtualY;
 
     if (memreq > pXGI->maxxfbmem) {
-	XGIErrorLog(pScrn,
-		    "Virtual screen too big for memory; %ldK needed, %ldK available\n",
-		    memreq / 1024, pXGI->maxxfbmem / 1024);
+		XGIErrorLog(pScrn,
+				"Virtual screen too big for memory; %ldK needed, %ldK available\n",
+				memreq / 1024, pXGI->maxxfbmem / 1024);
 
-	if (pXGIEnt)
-	    pXGIEnt->ErrorAfterFirst = TRUE;
+		if (pXGIEnt)
+			pXGIEnt->ErrorAfterFirst = TRUE;
 
-	if (pXGI->pInt)
-	    xf86FreeInt10(pXGI->pInt);
-	pXGI->pInt = NULL;
-	xgiRestoreExtRegisterLock(pXGI, srlockReg, crlockReg);
-	XGIFreeRec(pScrn);
-	return FALSE;
+		if (pXGI->pInt)
+			xf86FreeInt10(pXGI->pInt);
+		pXGI->pInt = NULL;
+		xgiRestoreExtRegisterLock(pXGI, srlockReg, crlockReg);
+		XGIFreeRec(pScrn);
+		return FALSE;
     }
-    else if (pXGI->loadDRI && !IS_DUAL_HEAD(pXGI)) {
-	pXGI->maxxfbmem = memreq;
-	pXGI->DRIheapstart = pXGI->DRIheapend = 0;
+    else if (pXGI->loadDRI && !IS_DUAL_HEAD(pXGI)) 
+	{
+		pXGI->maxxfbmem = memreq;
+		pXGI->DRIheapstart = pXGI->DRIheapend = 0;
 
-	if (pXGI->maxxfbmem == pXGI->availMem) {
-	    xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-		       "All video memory used for framebuffer.  DRI will be disabled.\n");
-	    pXGI->loadDRI = FALSE;
-	}
-	else {
-	    pXGI->DRIheapstart = pXGI->maxxfbmem;
-	    pXGI->DRIheapend = pXGI->availMem;
-	}
+		if (pXGI->maxxfbmem == pXGI->availMem) {
+			xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
+				   "All video memory used for framebuffer.  DRI will be disabled.\n");
+			pXGI->loadDRI = FALSE;
+		}
+		else {
+			pXGI->DRIheapstart = pXGI->maxxfbmem;
+			pXGI->DRIheapend = pXGI->availMem;
+		}
     }
 
 
@@ -3474,10 +3872,12 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
      *    which are unsuitable for dual head mode.
      * -) Find the highest used pixelclock on the master head.
      */
-    if (IS_DUAL_HEAD(pXGI) && !IS_SECOND_HEAD(pXGI)) {
+    if (IS_DUAL_HEAD(pXGI) && !IS_SECOND_HEAD(pXGI)) 
+	{
         pXGIEnt->maxUsedClock = 0;
 
-        if ((p = first = pScrn->modes)) {
+        if ((p = first = pScrn->modes)) 
+		{
             do {
                 n = p->next;
 
@@ -3530,7 +3930,8 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
     }
 #endif
 
-    /* Print the list of modes being used */
+    /* Print the list of modes being used ; call xf86Mode.c-xf86PrintModeline() to print */
+	ErrorF("Call xf86PrintModes(pScrn) to list all valid modes...\n");
     xf86PrintModes(pScrn);
 
 #ifdef XGIMERGED
@@ -3670,14 +4071,19 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
     }
     else
 #endif
-        xf86SetDpi(pScrn, 0, 0);
 
+
+	/* Jong 07/30/2009; might cause small font size */
+	xf86SetDpi(pScrn, 0, 0);
+
+#if 0
 	/*yilin@20080407 fix the font too small problem at low resolution*/
 	if((pScrn->xDpi < 65)||(pScrn->yDpi < 65)) 
 	{
 		  pScrn->xDpi = 75;
 		  pScrn->yDpi = 75;
 	}
+#endif
 
     /* Load fb module */
     switch (pScrn->bitsPerPixel) {
@@ -3714,22 +4120,40 @@ XGIPreInit(ScrnInfoPtr pScrn, int flags)
     xf86LoaderReqSymLists(fbSymbols, NULL);
 
     /* Load XAA if needed */
-    if (!pXGI->NoAccel) {
+    if (!pXGI->NoAccel) 
+	{
         xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Accel enabled\n");
-        if (!xf86LoadSubModule(pScrn, "xaa")) {
-            XGIErrorLog(pScrn, "Could not load xaa module\n");
 
-            if (pXGIEnt)
-                pXGIEnt->ErrorAfterFirst = TRUE;
+#ifdef XGI_USE_XAA
+		if(!(pXGI->useEXA))
+		{
+			if (!xf86LoadSubModule(pScrn, "xaa")) {
+				XGIErrorLog(pScrn, "Could not load xaa module\n");
 
-            if (pXGI->pInt)
-                xf86FreeInt10(pXGI->pInt);
-            xgiRestoreExtRegisterLock(pXGI, srlockReg, crlockReg);
-            XGIFreeRec(pScrn);
-            return FALSE;
-        }
-        xf86LoaderReqSymLists(xaaSymbols, NULL);
-    }
+				if (pXGIEnt)
+					pXGIEnt->ErrorAfterFirst = TRUE;
+
+				if (pXGI->pInt)
+					xf86FreeInt10(pXGI->pInt);
+				xgiRestoreExtRegisterLock(pXGI, srlockReg, crlockReg);
+				XGIFreeRec(pScrn);
+				return FALSE;
+			}
+			xf86LoaderReqSymLists(xaaSymbols, NULL);
+		}
+#endif
+
+#ifdef XGI_USE_EXA
+		if(pXGI->useEXA)
+		{
+		   if(!xf86LoadSubModule(pScrn, "exa")) {
+			  XGIErrorLog(pScrn, "Could not load exa module\n");
+			  return FALSE;
+		   }
+		   xf86LoaderReqSymLists(exaSymbols, NULL);
+		}
+#endif
+	}
 
     /* Load shadowfb if needed */
     if (pXGI->ShadowFB) {
@@ -4020,6 +4444,30 @@ XGIModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     unsigned char tmpval;
 #endif
 
+    PDEBUG(ErrorF("XGIModeInit\n"));
+    PDEBUG(ErrorF("mode->HDisplay = %d\n", mode->HDisplay));
+    PDEBUG(ErrorF("mode->VDisplay = %d\n", mode->VDisplay));
+
+	PDEBUG(ErrorF("Before update...\n"));
+    PDEBUG(ErrorF("pScrn->virtualX = %d\n", pScrn->virtualX));
+    PDEBUG(ErrorF("pScrn->virtualY = %d\n", pScrn->virtualY));
+    PDEBUG(ErrorF("pScrn->displayWidth = %d\n", pScrn->displayWidth));
+    PDEBUG(ErrorF("pScrn->frameX0 = %d\n", pScrn->frameX0));
+    PDEBUG(ErrorF("pScrn->frameY0 = %d\n", pScrn->frameY0));
+    PDEBUG(ErrorF("pScrn->frameX1 = %d\n", pScrn->frameX1));
+    PDEBUG(ErrorF("pScrn->frameY1 = %d\n", pScrn->frameY1));
+
+	/* pScrn->displayWidth=mode->HDisplay; */
+
+	if(pXGI->TargetRefreshRate)
+			mode->VRefresh = pXGI->TargetRefreshRate;
+
+	if((pScrn->monitor->DDC == NULL) && (pXGI->Non_DDC_DefaultMode))
+	{
+		mode->HDisplay = pXGI->Non_DDC_DefaultResolutionX;
+		mode->VDisplay = pXGI->Non_DDC_DefaultResolutionY;
+		mode->VRefresh = pXGI->Non_DDC_DefaultRefreshRate;
+	}
 
     /* PDEBUG(ErrorF("XGIModeInit(). \n")); */
     PDEBUG(ErrorF
@@ -4036,39 +4484,42 @@ XGIModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     XGIModifyModeInfo(mode);    /* Quick check of the mode parameters */
 
 
-    if (IS_DUAL_HEAD(pXGI)) {
+    if (IS_DUAL_HEAD(pXGI)) 
+	{
         XGIEntPtr pXGIEnt = ENTITY_PRIVATE(pXGI);
 
-	if (!(*pXGI->ModeInit) (pScrn, mode)) {
-	    XGIErrorLog(pScrn, "ModeInit() failed\n");
-	    return FALSE;
-	}
+		if (!(*pXGI->ModeInit) (pScrn, mode)) {
+			XGIErrorLog(pScrn, "ModeInit() failed\n");
+			return FALSE;
+		}
 
-	pScrn->vtSema = TRUE;
+		pScrn->vtSema = TRUE;
 
-	/* Head 2 (slave) is always CRT1 */
-	XGIPreSetMode(pScrn, mode, XGI_MODE_CRT1);
-	if (!XGIBIOSSetModeCRT1(pXGI->XGI_Pr, &pXGI->xgi_HwDevExt, pScrn, 
-				mode)) {
-	    XGIErrorLog(pScrn, "XGIBIOSSetModeCRT1() failed\n");
-	    return FALSE;
-	}
-	XGIPostSetMode(pScrn, &pXGI->ModeReg);
-	XGIAdjustFrame(pXGIEnt->pScrn_1->scrnIndex, pXGIEnt->pScrn_1->frameX0,
-		       pXGIEnt->pScrn_1->frameY0, 0);
+		/* Head 2 (slave) is always CRT1 */
+		XGIPreSetMode(pScrn, mode, XGI_MODE_CRT1);
+		if (!XGIBIOSSetModeCRT1(pXGI->XGI_Pr, &pXGI->xgi_HwDevExt, pScrn, 
+					mode)) 
+		{
+			XGIErrorLog(pScrn, "XGIBIOSSetModeCRT1() failed\n");
+			return FALSE;
+		}
+
+		XGIPostSetMode(pScrn, &pXGI->ModeReg);
+		XGIAdjustFrame(pXGIEnt->pScrn_1->scrnIndex, pXGIEnt->pScrn_1->frameX0,
+				   pXGIEnt->pScrn_1->frameY0, 0);
     }
     else
     {
-	/* For other chipsets, use the old method */
+		/* For other chipsets, use the old method */
 
-	/* Initialise the ModeReg values */
-	if (!vgaHWInit(pScrn, mode)) {
-	    XGIErrorLog(pScrn, "vgaHWInit() failed\n");
-	    return FALSE;
-	}
+		/* Initialise the ModeReg values */
+		if (!vgaHWInit(pScrn, mode)) {
+			XGIErrorLog(pScrn, "vgaHWInit() failed\n");
+			return FALSE;
+		}
 
-	/* Reset our PIOOffset as vgaHWInit might have reset it */
-    VGAHWPTR(pScrn)->PIOOffset = pXGI->IODBase - 0x380 +
+		/* Reset our PIOOffset as vgaHWInit might have reset it */
+		VGAHWPTR(pScrn)->PIOOffset = pXGI->IODBase - 0x380 +
 #ifdef XSERVER_LIBPCIACCESS
         (pXGI->PciInfo->regions[2].base_addr & 0xFFFC)
 #else
@@ -4076,35 +4527,35 @@ XGIModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 #endif
         ;
 
-	/* Prepare the register contents */
-	if (!(*pXGI->ModeInit) (pScrn, mode)) {
-	    XGIErrorLog(pScrn, "ModeInit() failed\n");
-	    return FALSE;
-	}
+		/* Prepare the register contents */
+		if (!(*pXGI->ModeInit) (pScrn, mode)) {
+			XGIErrorLog(pScrn, "ModeInit() failed\n");
+			return FALSE;
+		}
 
-	pScrn->vtSema = TRUE;
+		pScrn->vtSema = TRUE;
 
-	/* Program the registers */
-	vgaHWProtect(pScrn, TRUE);
-	vgaReg = &hwp->ModeReg;
-	xgiReg = &pXGI->ModeReg;
+		/* Program the registers */
+		vgaHWProtect(pScrn, TRUE);
+		vgaReg = &hwp->ModeReg;
+		xgiReg = &pXGI->ModeReg;
 
-	vgaReg->Attribute[0x10] = 0x01;
-	if (pScrn->bitsPerPixel > 8) {
-	    vgaReg->Graphics[0x05] = 0x00;
-	}
+		vgaReg->Attribute[0x10] = 0x01;
+		if (pScrn->bitsPerPixel > 8) {
+			vgaReg->Graphics[0x05] = 0x00;
+		}
 
-	vgaHWRestore(pScrn, vgaReg, VGA_SR_MODE);
+		vgaHWRestore(pScrn, vgaReg, VGA_SR_MODE);
 
-	(*pXGI->XGIRestore) (pScrn, xgiReg);
+		(*pXGI->XGIRestore) (pScrn, xgiReg);
 
 #ifdef TWDEBUG
-	xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-		   "REAL REGISTER CONTENTS AFTER SETMODE:\n");
-	(*pXGI->ModeInit) (pScrn, mode);
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+			   "REAL REGISTER CONTENTS AFTER SETMODE:\n");
+		(*pXGI->ModeInit) (pScrn, mode);
 #endif
 
-	vgaHWProtect(pScrn, FALSE);
+		vgaHWProtect(pScrn, FALSE);
     }
 
 
@@ -4141,6 +4592,8 @@ XGIModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     outXGIIDXREG(XGICR, 0x4D, tmpval);
 #endif
 
+	XGISetDPMS(pScrn, pXGI->XGI_Pr, &pXGI->xgi_HwDevExt , 0x00000000 ); 
+
     return TRUE;
 }
 
@@ -4160,9 +4613,11 @@ XGIRestore(ScrnInfoPtr pScrn)
     PDEBUG(ErrorF("XGIRestore():\n"));
 
     /* Wait for the accelerators */
-    if (pXGI->AccelInfoPtr) {
+#ifdef XGI_USE_XAA
+    if (!(pXGI->useEXA) && pXGI->AccelInfoPtr) {
         (*pXGI->AccelInfoPtr->Sync) (pScrn);
     }
+#endif
 
     vgaHWProtect(pScrn, TRUE);
 
@@ -4170,7 +4625,12 @@ XGIRestore(ScrnInfoPtr pScrn)
     xgiSaveUnlockExtRegisterLock(pXGI, NULL, NULL);
 #endif
 
+	/* Volari_DisableCmdQueue(pScrn) ; */
+
+	/* Volari_Restore() */
     (*pXGI->XGIRestore) (pScrn, xgiReg);
+
+	pXGI->xgi_HwDevExt.SpecifyTiming = FALSE;
 
 	/* Jong 11/14/2007; resolve no display of DVI after leaving VT */
 	/* But there's no int10 for PPC... */
@@ -4210,12 +4670,32 @@ XGIBlockHandler(int i, pointer blockData, pointer pTimeout, pointer pReadmask)
     }
 }
 
+/* Jong@08122009 */
+int  g_virtualX;
+int  g_virtualY;
+int  g_frameX0;
+int  g_frameY0;
+int  g_frameX1;
+int  g_frameY1;
+
+void xgiRestoreVirtual(ScrnInfoPtr pScrn)
+{
+	pScrn->virtualX = g_virtualX;
+	pScrn->virtualY = g_virtualY;
+	pScrn->frameX0 = g_frameX0;
+	pScrn->frameY0 = g_frameY0;
+	pScrn->frameX1 = g_frameX1;
+	pScrn->frameY1 = g_frameY1;
+}
+
 /* Mandatory
  * This gets called at the start of each server generation
  *
  * We use pScrn and not CurrentLayout here, because the
  * properties we use have not changed (displayWidth,
  * depth, bitsPerPixel)
+ *
+ * pScrn->displayWidth : memory pitch
  */
 static Bool
 XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
@@ -4233,23 +4713,61 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     ErrorF("XGIScreenInit\n");
     pScrn = xf86Screens[pScreen->myNum];
 
+    PDEBUG(ErrorF("pScrn->currentMode->HDisplay = %d\n", pScrn->currentMode->HDisplay));
+    PDEBUG(ErrorF("pScrn->currentMode->VDisplay = %d\n", pScrn->currentMode->VDisplay));
+
+	PDEBUG(ErrorF("Before update...\n"));
+    PDEBUG(ErrorF("pScrn->virtualX = %d\n", pScrn->virtualX));
+    PDEBUG(ErrorF("pScrn->virtualY = %d\n", pScrn->virtualY));
+    PDEBUG(ErrorF("pScrn->displayWidth = %d\n", pScrn->displayWidth));
+    PDEBUG(ErrorF("pScrn->frameX0 = %d\n", pScrn->frameX0));
+    PDEBUG(ErrorF("pScrn->frameY0 = %d\n", pScrn->frameY0));
+    PDEBUG(ErrorF("pScrn->frameX1 = %d\n", pScrn->frameX1));
+    PDEBUG(ErrorF("pScrn->frameY1 = %d\n", pScrn->frameY1));
+
+/* Jong 07/29/2009; fix bug of switch mode */
+#if 1
     /* Jong 08/30/2007; no virtual screen for all cases */
     /* Jong 08/22/2007; support modeline */
     /* if(g_CountOfUserDefinedModes > 0) */
     {
-    	pScrn->virtualX=pScrn->currentMode->HDisplay;
-	pScrn->virtualY=pScrn->currentMode->VDisplay;
-	pScrn->displayWidth=pScrn->currentMode->HDisplay;
-	pScrn->frameX0=0;
-	pScrn->frameY0=0;
-	pScrn->frameX1=pScrn->currentMode->HDisplay-1;
-	pScrn->frameY1=pScrn->currentMode->VDisplay-1;
+		/* Jong@08122009 */
+		g_virtualX = pScrn->virtualX;
+		g_virtualY = pScrn->virtualY;
+		g_frameX0 = pScrn->frameX0;
+		g_frameY0 = pScrn->frameY0;
+		g_frameX1 = pScrn->frameX1;
+		g_frameY1 = pScrn->frameY1;
+
+		/*
+		pScrn->virtualX=pScrn->currentMode->HDisplay;
+		pScrn->virtualY=pScrn->currentMode->VDisplay;
+		*/
+
+		//pScrn->displayWidth=pScrn->currentMode->HDisplay; 
+
+		/*
+		pScrn->frameX0=0;
+		pScrn->frameY0=0;
+		pScrn->frameX1=pScrn->currentMode->HDisplay-1;
+		pScrn->frameY1=pScrn->currentMode->VDisplay-1; */
     }
+#endif
+
+    PDEBUG(ErrorF("After update...\n"));
+    PDEBUG(ErrorF("pScrn->virtualX = %d\n", pScrn->virtualX));
+    PDEBUG(ErrorF("pScrn->virtualY = %d\n", pScrn->virtualY));
+    PDEBUG(ErrorF("pScrn->displayWidth = %d\n", pScrn->displayWidth));
+    PDEBUG(ErrorF("pScrn->frameX0 = %d\n", pScrn->frameX0));
+    PDEBUG(ErrorF("pScrn->frameY0 = %d\n", pScrn->frameY0));
+    PDEBUG(ErrorF("pScrn->frameX1 = %d\n", pScrn->frameX1));
+    PDEBUG(ErrorF("pScrn->frameY1 = %d\n", pScrn->frameY1));
 
     hwp = VGAHWPTR(pScrn);
 
     pXGI = XGIPTR(pScrn);
 
+#if !defined(__arm__) 
 #if !defined(__powerpc__)
     if (!IS_DUAL_HEAD(pXGI) || !IS_SECOND_HEAD(pXGI)) {
         if (xf86LoadSubModule(pScrn, "vbe")) {
@@ -4263,6 +4781,7 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         }
     }
 #endif /* if !defined(__powerpc__)  */
+#endif
 
     if (IS_DUAL_HEAD(pXGI)) {
         pXGIEnt = ENTITY_PRIVATE(pXGI);
@@ -4313,6 +4832,9 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return FALSE;
     }
 
+	/* Jong@08122009; still at virtual */
+	/* xgiRestoreVirtual(); */
+
     PDEBUG(ErrorF("--- XGIModeInit ---  \n"));
     PDEBUG(XGIDumpRegs(pScrn));
 
@@ -4324,7 +4846,10 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     XGISaveScreen(pScreen, SCREEN_SAVER_ON);
 
     /* Set the viewport */
-    XGIAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+    XGIAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0); 
+    /* XGIAdjustFrame(scrnIndex, 0, 0, 0); */
+
+	/* xgiRestoreVirtual(pScrn); */
 
     /*
      * The next step is to setup the screen's visuals, and initialise the
@@ -4360,9 +4885,14 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return FALSE;
     }
 
+	/*xgiRestoreVirtual(pScrn); */
+
+#if 0
+	ErrorF("Use Virtual Size - *1\n");
     width = pScrn->virtualX;
     height = pScrn->virtualY;
     displayWidth = pScrn->displayWidth;
+#endif
 
     if (pXGI->Rotate) {
         height = pScrn->virtualX;
@@ -4417,6 +4947,8 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     }
 #endif
 
+	/* xgiRestoreVirtual(pScrn); */
+
     /*
      * Call the framebuffer layer's ScreenInit function, and fill in other
      * pScreen fields.
@@ -4426,14 +4958,48 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     case 8:
     case 16:
     case 32:
-        ret = fbScreenInit(pScreen, FBStart, width,
+
+/* Jong 07/30/2009; fix bug of small font */
+#if 1
+		PDEBUG(ErrorF("Use Virtual Size - *1\n"));
+		width = /* pScrn->virtualX; */ pScrn->currentMode->HDisplay; 
+		height = /* pScrn->virtualY;*/ pScrn->currentMode->VDisplay; 
+
+		/* Jong@10022009 */
+		displayWidth = pScrn->displayWidth; /* important to set pitch correctly */
+#endif
+		PDEBUG(ErrorF("Call fbScreenInit()...\n"));
+		PDEBUG(ErrorF("width=%d, height=%d, pScrn->xDpi=%d, pScrn->yDpi=%d, displayWidth=%d, pScrn->bitsPerPixel=%d...\n", 
+					width, height, pScrn->xDpi, pScrn->yDpi,displayWidth, pScrn->bitsPerPixel));
+
+		/* in fbscreen.c */
+		/* (xsize, ysize) : virtual size (1600, 1200)
+		   (dpix, dpiy) : (75, 75)
+		   (542) pScreen->mmWidth = (xsize * 254 + dpix * 5) / (dpix * 10);
+		   (406) pScreen->mmHeight = (ysize * 254 + dpiy * 5) / (dpiy * 10); */
+
+        /* ret = fbScreenInit(pScreen, FBStart, width, */
+        ret = fbScreenInit(pScreen, FBStart , width,
                            height, pScrn->xDpi, pScrn->yDpi,
                            displayWidth, pScrn->bitsPerPixel);
+
+		/* Jong 07/30/2009; bug fixing for small font size */
+		pScreen->mmWidth = (pScrn->currentMode->HDisplay * 254 + pScrn->xDpi * 5) / (pScrn->xDpi * 10);
+		pScreen->mmHeight = (pScrn->currentMode->VDisplay * 254 + pScrn->yDpi * 5) / (pScrn->yDpi * 10);
+
+	    PDEBUG(ErrorF("pScrn->xDpi = %d\n", pScrn->xDpi));
+		PDEBUG(ErrorF("pScrn->yDpi = %d\n", pScrn->yDpi));
+	    PDEBUG(ErrorF("pScreen->mmWidth = %d\n", pScreen->mmWidth));
+		PDEBUG(ErrorF("pScreen->mmHeight = %d\n", pScreen->mmHeight));
+
         break;
     default:
         ret = FALSE;
         break;
     }
+
+	xgiRestoreVirtual(pScrn); 
+
     if (!ret) {
         XGIErrorLog(pScrn, "Unsupported bpp (%d) or fbScreenInit() failed\n",
                     pScrn->bitsPerPixel);
@@ -4456,8 +5022,12 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         }
     }
 
+	/* xgiRestoreVirtual(pScrn); */
+
     /* Initialize RENDER ext; must be after RGB ordering fixed */
     fbPictureInit(pScreen, 0, 0);
+
+	/* xgiRestoreVirtual(pScrn); */
 
     /* hardware cursor needs to wrap this layer    <-- TW: what does that mean? */
     if (!pXGI->ShadowFB)
@@ -4592,9 +5162,17 @@ XGIScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         pXGI->XGI_SD_Flags |= XGI_SD_ISDEPTH8;
         pXGI->XGI_SD_Flags &= ~XGI_SD_SUPPORTXVGAMMA1;
     }
+
     PDEBUG(ErrorF("XGIScreenInit() End.  \n"));
     PDEBUG(XGIDumpPalette(pScrn)); 
 	PDEBUG(XGIDumpRegs(pScrn));
+
+	/* xgiRestoreVirtual(); */
+    XGIAdjustFrame(scrnIndex, 0, 0, 0); 
+	pScrn->frameX0 = 0;
+	pScrn->frameY0 = 0; 
+	pScrn->frameX1 = pScrn->currentMode->HDisplay - 1 ;
+	pScrn->frameY1 = pScrn->currentMode->VDisplay - 1; 
 
     return TRUE;
 }
@@ -4606,23 +5184,128 @@ XGISwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     XGIPtr pXGI = XGIPTR(pScrn);
 
-    ErrorF("XGISwitchMode\n");
+	if(pXGI->TargetRefreshRate)
+			mode->VRefresh = pXGI->TargetRefreshRate;
+
+    PDEBUG(ErrorF("XGISwitchMode\n"));
+    PDEBUG(ErrorF("mode->HDisplay = %d\n", mode->HDisplay));
+    PDEBUG(ErrorF("mode->VDisplay = %d\n", mode->VDisplay));
+
+	PDEBUG(ErrorF("Before update...\n"));
+    PDEBUG(ErrorF("pScrn->virtualX = %d\n", pScrn->virtualX));
+    PDEBUG(ErrorF("pScrn->virtualY = %d\n", pScrn->virtualY));
+    PDEBUG(ErrorF("pScrn->displayWidth = %d\n", pScrn->displayWidth));
+    PDEBUG(ErrorF("pScrn->frameX0 = %d\n", pScrn->frameX0));
+    PDEBUG(ErrorF("pScrn->frameY0 = %d\n", pScrn->frameY0));
+    PDEBUG(ErrorF("pScrn->frameX1 = %d\n", pScrn->frameX1));
+    PDEBUG(ErrorF("pScrn->frameY1 = %d\n", pScrn->frameY1));
+
+    PDEBUG(ErrorF("pScrn->xDpi = %d\n", pScrn->xDpi));
+	PDEBUG(ErrorF("pScrn->yDpi = %d\n", pScrn->yDpi));
+	PDEBUG(ErrorF("pScreen->mmWidth = %d\n", pScrn->pScreen->mmWidth));
+    PDEBUG(ErrorF("pScreen->mmHeight = %d\n", pScrn->pScreen->mmHeight));
+
+	/* Jong@08122009 */
+	//pScrn->frameX0 = 0;
+	//pScrn->frameY0 = 0;
+	//pScrn->frameX1 = mode->HDisplay;
+	//pScrn->frameY1 = mode->VDisplay;
 
     if (!pXGI->NoAccel) {
-        if (pXGI->AccelInfoPtr) {
+#ifdef XGI_USE_XAA
+        if (!(pXGI->useEXA) && pXGI->AccelInfoPtr) {
             (*pXGI->AccelInfoPtr->Sync) (pScrn);
             PDEBUG(ErrorF("XGISwitchMode Accel Enabled. \n"));
         }
+#endif
     }
+
     PDEBUG(ErrorF
            ("XGISwitchMode (%d, %d) \n", mode->HDisplay, mode->VDisplay));
+
+#if 1
+    /* Jong 07/29/2009; Set the viewport; still not working */
+    XGIAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+#endif
 
     if (!(XGIModeInit(xf86Screens[scrnIndex], mode)))
         return FALSE;
 
+
+#if 0
+    int height, width, displayWidth;
+    unsigned char *FBStart;
+	int ret;
+
+    if (pXGI->ShadowFB) {
+        displayWidth = pXGI->ShadowPitch / (pScrn->bitsPerPixel >> 3);
+        FBStart = pXGI->ShadowPtr;
+    }
+    else {
+        pXGI->ShadowPtr = NULL;
+        FBStart = pXGI->FbBase;
+    }
+
+	width = pScrn->virtualX; /* 1024; */ /* pScrn->currentMode->HDisplay; */
+	height = pScrn->virtualY; /* 768; */ /* pScrn->currentMode->VDisplay; */
+	displayWidth = pScrn->displayWidth; /* important to set pitch correctly */
+
+	ErrorF("Call fbScreenInit()...\n");
+	ErrorF("width=%d, height=%d, pScrn->xDpi=%d, pScrn->yDpi=%d, displayWidth=%d, pScrn->bitsPerPixel=%d...\n", 
+				width, height, pScrn->xDpi, pScrn->yDpi,displayWidth, pScrn->bitsPerPixel);
+
+	/* in fbscreen.c */
+	/* (xsize, ysize) : virtual size (1600, 1200)
+	   (dpix, dpiy) : (75, 75)
+	   (542) pScreen->mmWidth = (xsize * 254 + dpix * 5) / (dpix * 10);
+	   (406) pScreen->mmHeight = (ysize * 254 + dpiy * 5) / (dpiy * 10); */
+
+    ret = fbScreenInit(pScrn->pScreen, FBStart, width,
+                       height, pScrn->xDpi, pScrn->yDpi,
+                       displayWidth, pScrn->bitsPerPixel);
+#endif
+
+	/* Jong 07/30/2009; bug fixing for small font size */
+	pScrn->pScreen->mmWidth = (pScrn->virtualX * 254 + pScrn->xDpi * 5) / (pScrn->xDpi * 10);
+	pScrn->pScreen->mmHeight = (pScrn->virtualY * 254 + pScrn->yDpi * 5) / (pScrn->yDpi * 10);
+
+#if 0
+    /* Jong 08/30/2007; no virtual screen for all cases */
+    /* Jong 08/22/2007; support modeline */
+    /* if(g_CountOfUserDefinedModes > 0) */
+    {
+	
+		pScrn->virtualX=mode->HDisplay;
+		pScrn->virtualY=mode->VDisplay; 
+
+		pScrn->displayWidth=mode->HDisplay;
+		pScrn->frameX0=0;
+		pScrn->frameY0=0;
+		pScrn->frameX1=mode->HDisplay-1;
+		pScrn->frameY1=mode->VDisplay-1;
+    }
+#endif
+
+	PDEBUG(ErrorF("After update...\n"));
+    PDEBUG(ErrorF("pScrn->virtualX = %d\n", pScrn->virtualX));
+    PDEBUG(ErrorF("pScrn->virtualY = %d\n", pScrn->virtualY));
+    PDEBUG(ErrorF("pScrn->displayWidth = %d\n", pScrn->displayWidth));
+    PDEBUG(ErrorF("pScrn->frameX0 = %d\n", pScrn->frameX0));
+    PDEBUG(ErrorF("pScrn->frameY0 = %d\n", pScrn->frameY0));
+    PDEBUG(ErrorF("pScrn->frameX1 = %d\n", pScrn->frameX1));
+    PDEBUG(ErrorF("pScrn->frameY1 = %d\n", pScrn->frameY1));
+
+    PDEBUG(ErrorF("pScrn->xDpi = %d\n", pScrn->xDpi));
+	PDEBUG(ErrorF("pScrn->yDpi = %d\n", pScrn->yDpi));
+	PDEBUG(ErrorF("pScreen->mmWidth = %d\n", pScrn->pScreen->mmWidth));
+    PDEBUG(ErrorF("pScreen->mmHeight = %d\n", pScrn->pScreen->mmHeight));
+
     /* Since RandR (indirectly) uses SwitchMode(), we need to
      * update our Xinerama info here, too, in case of resizing
      */
+
+	/* sleep(3); */ /* Jong 07/30/2009; wait to be ready for drawing */;
+
     return TRUE;
 }
 
@@ -5076,15 +5759,17 @@ XGICloseScreen(int scrnIndex, ScreenPtr pScreen)
         pXGI->pInt = NULL;
     }
 
+#ifdef XGI_USE_XAA
     if (pXGI->AccelLinearScratch) {
         xf86FreeOffscreenLinear(pXGI->AccelLinearScratch);
         pXGI->AccelLinearScratch = NULL;
     }
 
-    if (pXGI->AccelInfoPtr) {
+    if (!(pXGI->useEXA) && pXGI->AccelInfoPtr) {
         XAADestroyInfoRec(pXGI->AccelInfoPtr);
         pXGI->AccelInfoPtr = NULL;
     }
+#endif
 
     if (pXGI->CursorInfoPtr) {
         xf86DestroyCursorInfoRec(pXGI->CursorInfoPtr);
@@ -5132,6 +5817,40 @@ XGIFreeScreen(int scrnIndex, int flags)
 }
 
 
+/* Jong 07/02/2008; Validate user-defined mode */
+int XGIValidateUserDefMode(XGIPtr pXGI, DisplayModePtr mode)
+{
+   UShort i = (pXGI->CurrentLayout.bitsPerPixel+7)/8 - 1;
+
+
+#if 1
+	if((mode->HDisplay >= 1600) && (mode->VDisplay >= 1200) && (mode->VRefresh > 60))
+	{
+		ErrorF("Not support over (1600,1200) 60Hz ... Reduce to (1600,1200) 60Hz\n");
+		mode->type=48; /* not user-defined */
+		mode->VRefresh = 60.0;
+
+		mode->Clock=mode->SynthClock=162000; /* from XG20_Mode[] */ /* ((float)(mode->VTotal*mode->HTotal)+0.5) * (mode->VRefresh) / 1000.0; */
+		ErrorF("Update clock to %d...\n", mode->Clock);
+		return(-111) ;
+	}
+#endif
+
+#if 0
+	if(XGI_GetModeID(0, mode->HDisplay, mode->VDisplay, i, 0, 0) == 0)
+	{
+		/* Jong 11/10/2008; support custom mode without ModeID */
+		if( !((pXGI->HaveCustomModes) && (!(mode->type & M_T_DEFAULT))) )
+		{
+			ErrorF("Can't get Mode ID...\n");
+			return(MODE_NOMODE) ;
+	    }
+	}
+#endif
+
+	return(MODE_OK);
+}
+
 /* Checks if a mode is suitable for the selected chipset. */
 
 static int
@@ -5145,21 +5864,67 @@ XGIValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
     int i = 0;
     int VRefresh;
 
+	/* Jong 07/27/2009; support custom mode without ModeID */
+	pXGI->HaveCustomModes = TRUE;
+
     VRefresh =
         (int) ((float) (Clock * 1000) /
                (float) (mode->VTotal * mode->HTotal) + 0.5);
 
-    /* Jong 08/21/2007; support modeline */
-    /* We skip mode checking here and need improvement further */
-    if(mode->type == M_T_USERDEF)
-	return(MODE_OK); 
+	/* Jong@09252009 */
+	if(mode->VRefresh == 0)
+		mode->VRefresh = VRefresh;
 
-    PDEBUG5(ErrorF("XGIValidMode()."));
+    if((mode->type == M_T_USERDEF) || ((mode->type & M_T_CLOCK_CRTC_C) == M_T_CLOCK_CRTC_C))
+	{
+		VRefresh = mode->VRefresh;
+	    Clock = mode->Clock;
+	}
+
+    PDEBUG5(ErrorF("\nXGIValidMode()-->"));
     PDEBUG5(ErrorF
             ("CLK=%5.3fMhz %dx%d@%d ", (float) Clock / 1000, HDisplay,
              VDisplay, VRefresh));
     PDEBUG5(ErrorF("(VT,HT)=(%d,%d)\n", mode->VTotal, mode->HTotal));
+    PDEBUG5(ErrorF("flags = %d\n", flags));
+	if(flags == MODECHECK_FINAL)
+	    PDEBUG5(ErrorF("This is a final check...\n"));
 
+#if 1
+    if((mode->type == M_T_USERDEF) || ((mode->type & M_T_CLOCK_CRTC_C) == M_T_CLOCK_CRTC_C))
+	{
+		if(pScrn->monitor->DDC)
+		{
+			if(XGICheckModeByDDC(mode, pScrn->monitor->DDC) == FALSE)
+			{
+				ErrorF("It's a user-defined mode...rejected by EDID (pScrn->monitor->DDC)...return MODE_NOMODE\n");
+				return (MODE_NOMODE);
+			}
+		}
+
+		PDEBUG5(ErrorF("It's a user-defined mode...return MODE_OK (might need more checking here) \n"));
+		return(MODE_OK); 
+	} 
+#else
+	if((mode->type == M_T_USERDEF) || ((mode->type & M_T_CLOCK_CRTC_C) == M_T_CLOCK_CRTC_C))
+	{
+		iRet=XGIValidateUserDefMode(pXGI, mode);
+		if(iRet != -111)
+		{
+			if(iRet == MODE_OK)
+				ErrorF("User-defined mode---MODE_OK\n");
+			else
+				ErrorF("User-defined mode---MODE_NOMODE\n");
+			
+			return(iRet);
+		}
+	}
+#endif
+
+	if(mode->VRefresh == 0)
+		mode->VRefresh = VRefresh;
+
+#if 0
     if (pXGI->VBFlags & CRT2_LCD) {
         if ((HDisplay > 1600 && VDisplay > 1200)
             || (HDisplay < 640 && VDisplay < 480)) {
@@ -5182,6 +5947,7 @@ XGIValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
             return (MODE_NOMODE);
         }
     }
+#endif
 
     if ((pXGI->Chipset == PCI_CHIP_XGIXG20) ||(pXGI->Chipset == PCI_CHIP_XGIXG21) ||( pXGI->Chipset == PCI_CHIP_XGIXG27 )) {
         XgiMode = XG20_Mode;
@@ -5195,22 +5961,50 @@ XGIValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
            (XgiMode[i].VDisplay != VDisplay)) {
         if (XgiMode[i].Clock == 0) {
             PDEBUG5(ErrorF
-                    ("--- NO_Mode support for %dx%d@%dHz\n", HDisplay,
+                    ("--- Mode %dx%d@%dHz is not defined in support mode table of driver\n", HDisplay,
                      VDisplay, VRefresh));
+			PDEBUG5(ErrorF("Mode is invalid...return MODE_NOMODE\n"));
             return (MODE_NOMODE);
         }
         else
             i++;
     }
-    PDEBUG5(ErrorF("Mode OK\n"));
 
-	/* Jong 12/05/2007; filter mode of CRT1 with CRT2 DDC for XG21 */
-	if(g_pMonitorDVI)
+	if(pScrn->monitor->DDC)
 	{
-		if(XGICheckModeByDDC(mode, g_pMonitorDVI) == FALSE)
-            return (MODE_NOMODE);
+		if(XGICheckModeByDDC(mode, pScrn->monitor->DDC) == FALSE)
+			{
+				ErrorF("Rejected by EDID (pScrn->monitor->DDC)...return MODE_NOMODE\n");
+				return (MODE_NOMODE);
+			}
 	}
 
+	if (pXGI->Chipset == PCI_CHIP_XGIXG27)
+	{
+		if(((g_PowerSavingStatus & 0x03) < 0x03) && 
+		   ((g_PowerSavingStatus & 0x04) == 0x00) &&
+			g_pMonitorDVI) 
+		{
+			if(XGICheckModeByDDC(mode, g_pMonitorDVI) == FALSE)
+			{
+				PDEBUG5(ErrorF("Rejected by CRT2 EDID...return MODE_NOMODE\n"));
+				return (MODE_NOMODE);
+			}
+		}
+	}
+	else /* Jong 12/05/2007; filter mode of CRT1 with CRT2 DDC for XG21 */
+	{
+		if(g_pMonitorDVI)
+		{
+			if(XGICheckModeByDDC(mode, g_pMonitorDVI) == FALSE)
+			{
+				PDEBUG5(ErrorF("Rejected by DVI EDID...return MODE_NOMODE\n"));
+				return (MODE_NOMODE);
+			}
+		}
+	}
+
+    PDEBUG5(ErrorF("Mode is valid...return MODE_OK\n"));
     return (MODE_OK);
 }
 
@@ -5571,6 +6365,8 @@ XGIPreSetMode(ScrnInfoPtr pScrn, DisplayModePtr mode, int viewmode)
             outXGIIDXREG(XGISR, 0x00, 0x03);
         }
     }
+
+    andXGIIDXREG(XGISR, 0x1f, 0xfb); /* disable DAC pedestal to reduce brightness */
 }
 
 /* PostSetMode:
@@ -5989,7 +6785,8 @@ xgiSaveUnlockExtRegisterLock(XGIPtr pXGI, unsigned char *reg1,
 #ifdef TWDEBUG
             for (i = 0; i <= 0x3f; i++) {
                 inXGIIDXREG(XGISR, i, val1);
-                inXGIIDXREG(0x3c4, i, val2);
+                /* inXGIIDXREG(0x3c4, i, val2); */
+                inXGIIDXREG(XGISR, i, val2);
                 xf86DrvMsg(pXGI->pScrn->scrnIndex, X_INFO,
                            "SR%02d: RelIO=0x%02x 0x3c4=0x%02x (%d)\n",
                            i, val1, val2, mylockcalls);
@@ -6454,10 +7251,16 @@ XGIDumpPalette(ScrnInfoPtr pScrn)
         ("----------------------------------------------------------------------\n");
     for (i = 0; i < 0xFF; i += 0x04) {
         for (j = 0; j < 16; j++) {
-            outb(0x3c7, i + j);
+            /* outb(0x3c7, i + j); */
+            outb(XGISR+3, i + j);
+			
+			/*
             temp[0] = inb(0x3c9);
             temp[1] = inb(0x3c9);
-            temp[2] = inb(0x3c9);
+            temp[2] = inb(0x3c9); */
+            temp[0] = inb(XGISR+5);
+            temp[1] = inb(XGISR+5);
+            temp[2] = inb(XGISR+5);
 
             ErrorF("PA[%02X]: %02X %02X %02X", i + j,
                    temp[0], temp[1], temp[2]);
@@ -6467,3 +7270,4 @@ XGIDumpPalette(ScrnInfoPtr pScrn)
     ErrorF("\n");
 #endif
 }
+

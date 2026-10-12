@@ -39,7 +39,9 @@
 #endif
 
 #include <xorg-server.h>
-#include "psmcomm.h"
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <sys/mouse.h>
 #include <errno.h>
 #include <string.h>
 #include "synproto.h"
@@ -55,7 +57,6 @@ struct SynapticsHwInfo {
     unsigned int capabilities;		    /* Capabilities */
     unsigned int ext_cap;		    /* Extended Capabilities */
     unsigned int identity;		    /* Identification */
-    Bool hasGuest;			    /* Has a guest mouse */
 };
 
 /*
@@ -142,7 +143,7 @@ PSMQueryHardware(LocalDevicePtr local)
     priv = (SynapticsPrivate *)local->private;
 
     if(!priv->proto_data)
-        priv->proto_data = xcalloc(1, sizeof(struct SynapticsHwInfo));
+        priv->proto_data = calloc(1, sizeof(struct SynapticsHwInfo));
     synhw = (struct SynapticsHwInfo*)priv->proto_data;
 
     /* is the synaptics touchpad active? */
@@ -155,12 +156,6 @@ PSMQueryHardware(LocalDevicePtr local)
 	return FALSE;
 
     convert_hw_info(&psm_ident, synhw);
-
-    /* Check to see if the host mouse supports a guest */
-    synhw->hasGuest = FALSE;
-    if (psm_ident.capPassthrough) {
-        synhw->hasGuest = TRUE;
-    }
 
     ps2_print_ident(synhw);
 
@@ -186,5 +181,5 @@ struct SynapticsProtocolOperations psm_proto_operations = {
     PSMQueryHardware,
     PSMReadHwState,
     PSMAutoDevProbe,
-    NULL /* ReadDevDimensions */
+    SynapticsDefaultDimensions
 };

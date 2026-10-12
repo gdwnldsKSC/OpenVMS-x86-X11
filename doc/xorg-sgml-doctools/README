@@ -1,0 +1,30 @@
+This package provides a common set of SGML entities and XML/CSS style
+sheets used in building/formatting the documentation provided in other
+X.Org packages.   It's typically only needed by people building from
+source who want to produce formatted documentation from their builds,
+or those who have installed the HTML version of the documentation,
+which refers to the included common xorg.css stylesheet.
+
+All questions regarding this software should be directed at the
+Xorg mailing list:
+
+        http://lists.freedesktop.org/mailman/listinfo/xorg
+
+Please submit bug reports to the Xorg bugzilla:
+
+        https://bugs.freedesktop.org/enter_bug.cgi?product=xorg
+
+The master development code repository can be found at:
+
+        git://anongit.freedesktop.org/git/xorg/doc/xorg-sgml-doctools
+
+        http://cgit.freedesktop.org/xorg/doc/xorg-sgml-doctools
+
+For patch submission instructions, see:
+
+	http://www.x.org/wiki/Development/Documentation/SubmittingPatches
+
+For more information on the git code manager, see:
+
+        http://wiki.x.org/wiki/GitPage
+

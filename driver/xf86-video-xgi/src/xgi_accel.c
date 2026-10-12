@@ -49,10 +49,51 @@
 #include "xgi.h"
 #include "vb_def.h"
 
+/* Jong 01/13/2009; support EXA */
+#ifdef XGI_USE_XAA
 #include "xaarop.h"
 #include <xaa.h>
 #include <xaalocal.h>
+#endif
+
 #include <xf86fbman.h>
+
+#define DEV_HEIGHT	0xfff	/* "Device height of destination bitmap" */
+
+/* Jong 07/24/2008; performance tuning */
+long	g_srcbase=-1;
+long	g_dstbase=-1;
+int		g_src_x=-1;
+int		g_src_y=-1;
+int		g_dst_x=-1;
+int		g_dst_y=-1;
+int		g_width=-1;
+int		g_height=-1;
+
+int		g_Clipping_x1 = 0;
+int		g_Clipping_y1 = 0;
+int		g_Clipping_x2 = 4096;
+int		g_Clipping_y2 = 4096;
+
+int     g_LineColor=-1;
+int     g_SolidColor=-1;
+int     g_Rop=-1;
+int		g_MonoPatFgColor=-1;
+int		g_MonoPatBgColor=-1;
+int		g_MonoPat0=-1;
+int		g_MonoPat1=-1;
+
+/* Jong 01/19/2009; for EXA */
+int		g_DstRectX = -1; 
+int		g_DstRectY = -1; 
+int		g_SrcPitch = -1;
+long	g_SrcBase = -1;
+long	g_DstBase = -1;
+int		g_Fg = -1;
+
+/* struct timeval g_t0; */
+
+int	g_trans_color=0;
 
 /*************************************************************************/
 
@@ -75,6 +116,53 @@ static void Volari_SubsequentMonoPatternFill(ScrnInfoPtr pScrn,
                                 int patx, int paty,
                                 int x, int y, int w, int h);
 
+static void Volari_SetupForSolidLine(ScrnInfoPtr pScrn, int color, int rop,
+			unsigned int planemask);
+
+static void Volari_SubsequentSolidTwoPointLine(ScrnInfoPtr pScrn,
+			int x1, int y1, int x2, int y2, int flags);
+
+static void Volari_SubsequentSolidHorzVertLine(ScrnInfoPtr pScrn,
+			int x, int y, int len, int dir);
+
+static void Volari_SetupForDashedLine(ScrnInfoPtr pScrn,
+			int fg, int bg, int rop, unsigned int planemask,
+			int length, unsigned char *pattern);
+
+static void Volari_SubsequentDashedTwoPointLine(ScrnInfoPtr pScrn,
+			int x1, int y1, int x2, int y2,
+			int flags, int phase);
+
+static void Volari_SetClippingRectangle(ScrnInfoPtr pScrn, int x1, int y1, int x2, int y2);
+static void Volari_DisableClipping(ScrnInfoPtr pScrn);
+
+#ifdef XGI_USE_EXA		/* Jong 01/13/2009; support EXA */
+void XGIEXASync(ScreenPtr pScreen, int marker);
+void XGIScratchSave(ScreenPtr pScreen, ExaOffscreenArea *area);
+Bool XGIUploadToScreen(PixmapPtr pDst, int x, int y, int w, int h, char *src, int src_pitch);
+Bool XGIUploadToScratch(PixmapPtr pSrc, PixmapPtr pDst);
+Bool XGIDownloadFromScreen(PixmapPtr pSrc, int x, int y, int w, int h, char *dst, int dst_pitch);
+
+static Bool XGIPrepareSolid(PixmapPtr pPixmap, int alu, Pixel planemask, Pixel fg);
+static void XGISolid(PixmapPtr pPixmap, int x1, int y1, int x2, int y2);
+static void XGIDoneSolid(PixmapPtr pPixmap);
+static Bool XGIPrepareCopy(PixmapPtr pSrcPixmap, PixmapPtr pDstPixmap, int xdir, int ydir,
+					int alu, Pixel planemask);
+static void XGICopy(PixmapPtr pDstPixmap, int srcX, int srcY, int dstX, int dstY, int width, int height);
+static void XGIDoneCopy(PixmapPtr pDstPixmap);
+
+#define XGI_HAVE_COMPOSITE
+#ifdef XGI_HAVE_COMPOSITE
+static Bool XGICheckComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskPicture,
+				PicturePtr pDstPicture);
+static Bool XGIPrepareComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskPicture,
+				PicturePtr pDstPicture, PixmapPtr pSrc, PixmapPtr pMask, PixmapPtr pDst);
+static void XGIComposite(PixmapPtr pDst, int srcX, int srcY, int maskX, int maskY, int dstX, int dstY,
+				int width, int height);
+static void XGIDoneComposite(PixmapPtr pDst);
+#endif
+#endif /* EXA */
+
 void Volari_EnableAccelerator(ScrnInfoPtr pScrn) ;
 static void Volari_InitCmdQueue(ScrnInfoPtr pScrn) ;
 static void Volari_DisableDualPipe(ScrnInfoPtr pScrn) ;
@@ -85,9 +173,36 @@ extern Bool ForceToDisable2DEngine(ScrnInfoPtr pScrn);
 
 extern int FbDevExist;
 
+#define DEBUG_ACCEL_DYNAMICALLY
+
+#ifndef DEBUG_ACCEL_DYNAMICALLY
+#define DisableDrawingFunctionDynamically(bReturn) \
+	{ \
+	}
+#else
+#define DisableDrawingFunctionDynamically(bReturn) \
+	{ \
+		/* Jong - Good method for performance evaluation */ \
+		/*-----------------------------------------------*/ \
+		CARD8   CR37=0x00; /* Jong 09/11/2008; [7] for disable/enable NULL function dynamically */ \
+		/* Jong 09/12/2008; disable NULL function of HW acceleration dynamically by CR37[7] */ \
+		/* After test, this extra IO doesn't have significant loading */ \
+		CR37=XGI_GetReg(pXGI->XGI_Pr->P3d4, 0x37); \
+		\
+		if((CR37 & 0x80) != 0) \
+		{ \
+		   if(bReturn) \
+			return(bReturn); \
+		   else \
+			return; \
+		} \
+	}
+#endif
+
 #if X_BYTE_ORDER == X_BIG_ENDIAN
 static CARD32 BE_SWAP32 (CARD32 val)
 {
+	PDEBUG(ErrorF("X_BIG_ENDIAN...\n"));
     if (CurrentColorDepth == 8)
 	    return   ((((val) & 0x000000ff) << 24) | \
                   (((val) & 0x0000ff00) << 8) |  \
@@ -102,6 +217,7 @@ static CARD32 BE_SWAP32 (CARD32 val)
 #else 
 static CARD32 BE_SWAP32 (CARD32 val)
 {
+	PACCELDEBUG(ErrorF("X_LITTLE_ENDIAN...\n"));
 	return val;
 }
 #endif
@@ -189,11 +305,11 @@ void Volari_Idle(XGIPtr pXGI)
             last_cqrp = cqrp;
         }
 
-        sleep(1);
+        /* sleep(1); */
 #endif /* DEBUG */
 
-        if (pXGI->Chipset == PCI_CHIP_XGIXG20)
-            usleep(1);
+        /* if (pXGI->Chipset == PCI_CHIP_XGIXG20)
+            usleep(1); */
     } while (1);
 }
 
@@ -237,6 +353,43 @@ Volari_EnableAccelerator(ScrnInfoPtr pScrn)
     }
 }
 
+/* Jong@08252009; reset variables for register */
+void ResetVariableFor2DRegister()
+{
+	g_srcbase=-1;
+	g_dstbase=-1;
+	g_src_x=-1;
+	g_src_y=-1;
+	g_dst_x=-1;
+	g_dst_y=-1;
+	g_width=-1;
+	g_height=-1;
+
+	g_Clipping_x1 = 0;
+	g_Clipping_y1 = 0;
+	g_Clipping_x2 = 4096;
+	g_Clipping_y2 = 4096;
+
+	g_LineColor=-1;
+	g_SolidColor=-1;
+	g_Rop=-1;
+	g_MonoPatFgColor=-1;
+	g_MonoPatBgColor=-1;
+	g_MonoPat0=-1;
+	g_MonoPat1=-1;
+
+	/* Jong 01/19/2009; for EXA */
+	g_DstRectX = -1; 
+	g_DstRectY = -1; 
+	g_SrcPitch = -1;
+	g_SrcBase = -1;
+	g_DstBase = -1;
+	g_Fg = -1;
+
+	g_trans_color=0;
+	/*----------------------------------------------------*/
+}
+
 static void
 Volari_InitCmdQueue(ScrnInfoPtr pScrn)
 {
@@ -246,13 +399,15 @@ Volari_InitCmdQueue(ScrnInfoPtr pScrn)
     unsigned long ulSR26 ;
     unsigned long temp ;
  /*   unsigned long ulFlag = 0 ; */
-/*
+
+	ResetVariableFor2DRegister();
+
     PDEBUG(ErrorF("Volari_InitCmdQueue()\n"));
     PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85c0, XGIMMIOLONG(0x85c0))) ;
     PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85c4, XGIMMIOLONG(0x85c4))) ;
     PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85c8, XGIMMIOLONG(0x85c8))) ;
     PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85cc, XGIMMIOLONG(0x85cc))) ;
-*/
+
     inXGIIDXREG(XGICR, 0x55, ulCR55) ;
     andXGIIDXREG(XGICR, 0x55, 0x33) ;
     orXGIIDXREG(XGISR, 0x26, 1) ;    /* reset cmd queue */
@@ -366,20 +521,20 @@ Volari_InitCmdQueue(ScrnInfoPtr pScrn)
     temp = (unsigned long)pXGI->FbBase ;
     temp += pXGI->cmdQueueOffset ;
     pXGI->cmdQueueBase = (unsigned char *)temp ;
-/*
+
     PDEBUG(ErrorF( "pXGI->FbBase = 0x%lX\n", pXGI->FbBase )) ;
     PDEBUG(ErrorF( "pXGI->cmdQueueOffset = 0x%lX\n", pXGI->cmdQueueOffset )) ;
     PDEBUG(ErrorF( "pXGI->cmdQueueBase = 0x%lX\n", pXGI->cmdQueueBase )) ;
-*/
+
     outXGIIDXREG(XGISR, 0x26, ulSR26) ;
 
     ulXGITempRP=Volari_GetHwRP() ;
-/*
+
     PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85c0, XGIMMIOLONG(0x85c0))) ;
     PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85c4, XGIMMIOLONG(0x85c4))) ;
     PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85c8, XGIMMIOLONG(0x85c8))) ;
     PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85cc, XGIMMIOLONG(0x85cc))) ;
-*/
+
     /* XGI315 */
     pXGI->cmdQueue_shareWP_only2D = ulXGITempRP;
     /* pXGI->pCQ_shareWritePort = &(pXGI->cmdQueue_shareWP_only2D); */
@@ -399,7 +554,12 @@ Volari_InitCmdQueue(ScrnInfoPtr pScrn)
         Volari_Idle(pXGI);
 
     }
-    PDEBUG(ErrorF("Volari_InitCmdQueue() done.\n")) ;
+
+	PDEBUG(ErrorF("Volari_InitCmdQueue() done.\n")) ;
+    PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85c0, XGIMMIOLONG(0x85c0))) ;
+    PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85c4, XGIMMIOLONG(0x85c4))) ;
+    PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85c8, XGIMMIOLONG(0x85c8))) ;
+    PDEBUG(ErrorF( "pXGI->IOBase = 0x%08lX, [%04X] = 0x%08lX\n",(unsigned long)(pXGI->IOBase),0x85cc, XGIMMIOLONG(0x85cc))) ;
 }
 
 static void
@@ -457,7 +617,11 @@ Volari_DisableCmdQueue(ScrnInfoPtr pScrn)
 {
     XGIPtr pXGI = XGIPTR(pScrn) ;
 
-    andXGIIDXREG(XGISR, 0x26, 0x0F) ;
+	/* Jong@08112009; bug fixing */
+    /* andXGIIDXREG(XGISR, 0x26, 0x0F) ; */
+
+    orXGIIDXREG(XGISR, 0x26, 0x01) ;
+    andXGIIDXREG(XGISR, 0x26, 0x0C) ;
 }
 
 void
@@ -471,7 +635,10 @@ Volari_InitializeAccelerator(ScrnInfoPtr pScrn)
 Bool
 Volari_AccelInit(ScreenPtr pScreen)
 {
+#ifdef XGI_USE_XAA
     XAAInfoRecPtr     infoPtr;
+#endif
+
     ScrnInfoPtr       pScrn = xf86Screens[pScreen->myNum];
     XGIPtr            pXGI = XGIPTR(pScrn);
     int               reservedFbSize;
@@ -485,28 +652,33 @@ Volari_AccelInit(ScreenPtr pScreen)
 
     PDEBUG1(ErrorF("Volari_AccelInit()\n" )) ;
 
-    pXGI->AccelInfoPtr = infoPtr = XAACreateInfoRec();
-    if (!infoPtr)  return FALSE;
-
-    Volari_InitializeAccelerator(pScrn);
-
-    infoPtr->Flags = LINEAR_FRAMEBUFFER |
-                     OFFSCREEN_PIXMAPS |
-                     PIXMAP_CACHE;
-
-    /* sync */
-    infoPtr->Sync = Volari_Sync;
-
-    if ((pScrn->bitsPerPixel != 8) &&
-        (pScrn->bitsPerPixel != 16) &&
-        (pScrn->bitsPerPixel != 32))
-    {
-        return FALSE;
-    }
-
+#ifdef XGI_USE_XAA
 	/* Jong 01/07/2008; force to disable 2D based on SR3A[6] for XG21 */
-	if( !((pXGI->Chipset == PCI_CHIP_XGIXG21) && ForceToDisable2DEngine(pScrn)) ) 
+	if( !((pXGI->Chipset == PCI_CHIP_XGIXG21) && ForceToDisable2DEngine(pScrn)) && !(pXGI->useEXA) ) 
 	{
+		PDEBUG(ErrorF("--- XAA ---\n" )) ;
+		pXGI->AccelInfoPtr = infoPtr = XAACreateInfoRec();
+		if (!infoPtr)  return FALSE;
+
+		Volari_InitializeAccelerator(pScrn);
+
+		infoPtr->Flags = LINEAR_FRAMEBUFFER |
+						 OFFSCREEN_PIXMAPS |
+						 PIXMAP_CACHE;
+
+		/* sync */
+		infoPtr->Sync = Volari_Sync;
+
+		if ((pScrn->bitsPerPixel != 8) &&
+			(pScrn->bitsPerPixel != 16) &&
+			(pScrn->bitsPerPixel != 32))
+		{
+			return FALSE;
+		}
+
+
+		PDEBUG(ErrorF("--- Enable XAA ---\n" )) ;
+
 #ifdef XGIG2_SCR2SCRCOPY
     /* BitBlt */
     /* Jong 08/24/2007; cause an extra rectangle drawing at top-left corner while clicking "Computer" on Suse SP1 (Xorg6.9.0) */
@@ -514,6 +686,9 @@ Volari_AccelInit(ScreenPtr pScreen)
     {
        infoPtr->SetupForScreenToScreenCopy = Volari_SetupForScreenToScreenCopy;
        infoPtr->SubsequentScreenToScreenCopy = Volari_SubsequentScreenToScreenCopy;
+
+	   /* Jong@08112009; bug fixing */
+       /* infoPtr->ScreenToScreenCopyFlags = NO_PLANEMASK | NO_TRANSPARENCY | ONLY_LEFT_TO_RIGHT_BITBLT; */
        infoPtr->ScreenToScreenCopyFlags = NO_PLANEMASK | NO_TRANSPARENCY;
     }
 #endif
@@ -539,94 +714,250 @@ Volari_AccelInit(ScreenPtr pScreen)
                                  BIT_ORDER_IN_BYTE_MSBFIRST ;
 #endif /* XGIG2_8X8MONOPATFILL */
 	}
+#endif /* XAA */
 
-    /* init Frame Buffer Manager */
-    reservedFbSize = 0;
-    if (pXGI->TurboQueue)
-    {
-        reservedFbSize += pXGI->cmdQueueSize ;
-    }
+/* Jong 01/13/2009; support EXA */
+#ifdef XGI_USE_EXA	/* ----------------------- EXA ----------------------- */
+		PDEBUG(ErrorF("--- EXA ---\n" )) ;
+	   if(pXGI->useEXA) 
+	   {
+		  int obase = 0;
 
-    if (pXGI->HWCursor)
-    {
-        reservedFbSize += VOLARI_CURSOR_SHAPE_SIZE;
-    }
+		PDEBUG(ErrorF("--- Enable EXA ---\n" )) ;
 
-#ifdef XGIG2_COLOREXPSCANLN
-    reservedFbSize += (pXGI->ColorExpandBufferNumber * pXGI->PerColorExpandBufferSize);
+#ifdef XGIISXORGPOST70 /* for Xorg 7.0 and above */
+	      if(!(pXGI->EXADriverPtr = exaDriverAlloc()))
+#else
+	      if(!(pXGI->EXADriverPtr = xnfcalloc(sizeof(ExaDriverRec), 1)))
+#endif
+		  {
+			  ErrorF("Failt to allocate EXADriverPtr!\n");
+			  return FALSE;
+		  }
+
+	      /* data */
+#ifdef XGIISXORGPOST70
+		PDEBUG(ErrorF("--- Xorg7 and above - 1 ---\n" )) ;
+		  pXGI->EXADriverPtr->exa_major = 2;
+		  pXGI->EXADriverPtr->exa_minor = 0;
+
+		  pXGI->EXADriverPtr->memoryBase = pXGI->FbBase;
+	      pXGI->EXADriverPtr->memorySize = pXGI->maxxfbmem;
+#else
+	      pXGI->EXADriverPtr->card.memoryBase = pXGI->FbBase;
+	      pXGI->EXADriverPtr->card.memorySize = pXGI->maxxfbmem;
+#endif
+	    if(!obase) {
+	         obase = pScrn->displayWidth * pScrn->virtualY * (pScrn->bitsPerPixel >> 3);
+	    }
+
+#ifdef XGIISXORGPOST70
+		PDEBUG(ErrorF("--- Xorg7 and above - 2 ---\n" )) ;
+		pXGI->EXADriverPtr->offScreenBase = obase;
+		if(pXGI->EXADriverPtr->memorySize > pXGI->EXADriverPtr->offScreenBase) 
+		{
+			PDEBUG(ErrorF("--- Xorg7 and above - 3 ---\n" )) ;
+			pXGI->EXADriverPtr->flags = EXA_OFFSCREEN_PIXMAPS;
+#else
+			pXGI->EXADriverPtr->card.offScreenBase = obase;
+
+			if(pXGI->EXADriverPtr->card.memorySize > pXGI->EXADriverPtr->card.offScreenBase) 
+			{
+				pXGI->EXADriverPtr->card.flags = EXA_OFFSCREEN_PIXMAPS;
+#endif
+			} 
+			else 
+			{
+				pXGI->NoXvideo = TRUE;
+				xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+					"Not enough video RAM for offscreen memory manager. Xv disabled\n");
+			}
+
+#ifdef XGIISXORGPOST70
+			PDEBUG(ErrorF("--- Xorg7 and above - 4 ---\n" )) ;
+			pXGI->EXADriverPtr->pixmapOffsetAlign = 32; /* 16; */	/* src/dst: double quad word boundary */
+			pXGI->EXADriverPtr->pixmapPitchAlign = 4;	/* pitch:   double word boundary      */
+			pXGI->EXADriverPtr->maxX = 4095;
+			pXGI->EXADriverPtr->maxY = 4095;
+#else
+			pXGI->EXADriverPtr->card.pixmapOffsetAlign = 32; /* 16; */	/* src/dst: double quad word boundary */
+			pXGI->EXADriverPtr->card.pixmapPitchAlign = 4;	/* pitch:   double word boundary      */
+			pXGI->EXADriverPtr->card.maxX = 4095;
+			pXGI->EXADriverPtr->card.maxY = 4095;
 #endif
 
-    UsableFbSize = pXGI->FbMapSize - reservedFbSize;
-    AvailBufBase = pXGI->FbBase + UsableFbSize;
+#ifdef XGIISXORGPOST70
 
-    for (i = 0; i < pXGI->ColorExpandBufferNumber; i++) {
-	const int base = i * pXGI->PerColorExpandBufferSize;
+			PDEBUG(ErrorF("Use EXA for HW acceleration for Xorg7 and above...\n"));
 
-        pXGI->ColorExpandBufferAddr[i] = AvailBufBase + base;
-        pXGI->ColorExpandBufferScreenOffset[i] = UsableFbSize + base;
-    }
+			/* Sync */
+			pXGI->EXADriverPtr->WaitMarker = XGIEXASync;
 
-#ifdef XGIG2_IMAGEWRITE
-    reservedFbSize += pXGI->ImageWriteBufferSize;
-    UsableFbSize = pXGI->FbMapSize - reservedFbSize;
-    pXGI->ImageWriteBufferAddr = AvailBufBase = pXGI->FbBase + UsableFbSize;
-    infoPtr->ImageWriteRange = pXGI->ImageWriteBufferAddr;
-#endif /* XGIG2_IMAGEWRITE */
+			/* Solid fill */
+			pXGI->EXADriverPtr->PrepareSolid = XGIPrepareSolid;
+			pXGI->EXADriverPtr->Solid = XGISolid;
+			pXGI->EXADriverPtr->DoneSolid = XGIDoneSolid;
 
-    Avail.x1 = 0;
-    Avail.y1 = 0;
+			/* Copy */
+			pXGI->EXADriverPtr->PrepareCopy = XGIPrepareCopy;
+			pXGI->EXADriverPtr->Copy = XGICopy;
+			pXGI->EXADriverPtr->DoneCopy = XGIDoneCopy;
 
-/*
-    Avail.x2 = pScrn->displayWidth;
+			/* Upload, download to/from Screen */
+			pXGI->EXADriverPtr->UploadToScreen = XGIUploadToScreen;
+			pXGI->EXADriverPtr->DownloadFromScreen = XGIDownloadFromScreen;
 
-    ErrorF("FbDevExist=%s\n",FbDevExist?"TRUE":"FALSE");
- 
-    if( FbDevExist && (pXGI->Chipset != PCI_CHIP_XGIXG20 ) && (pXGI->Chipset != PCI_CHIP_XGIXG27 ) )
-    {
-        if( UsableFbSize >= 8*1024*1024 )
-        {
-            UsableFbSize = 8*1024*1024 ;
-        }
-        else
-        {
-            UsableFbSize = 4*1024*1024 ;
-        }
-    }
+#ifdef XGI_HAVE_COMPOSITE
+			 pXGI->EXADriverPtr->CheckComposite = XGICheckComposite;
+			 pXGI->EXADriverPtr->PrepareComposite = XGIPrepareComposite;
+			 pXGI->EXADriverPtr->Composite = XGIComposite;
+			 pXGI->EXADriverPtr->DoneComposite = XGIDoneComposite;
+#endif
+#else
+			PDEBUG(ErrorF("Use EXA for HW acceleration for Xorg6.9...\n"));
 
-    PDEBUG1(ErrorF( "UsabelFbSize = %08lx\n", UsableFbSize )) ;
-    Avail.y2 = UsableFbSize / pXGI->scrnOffset ;
+			/* Sync */
+			pXGI->EXADriverPtr->accel.WaitMarker = XGIEXASync;
 
-    if ((unsigned long)Avail.y2 > 8192)
-    {
-        Avail.y2 = 8192 ;
-    }
-*/
+			/* Solid fill */
+			pXGI->EXADriverPtr->accel.PrepareSolid = XGIPrepareSolid;
+			pXGI->EXADriverPtr->accel.Solid = XGISolid;
+			pXGI->EXADriverPtr->accel.DoneSolid = XGIDoneSolid;
 
-    UsableFbSize = pXGI->CursorOffset ;
-    Avail.x1 = 0 ;
-    Avail.y1 = 0 ;
-    Avail.x2 = pScrn->displayWidth;
-    Avail.y2 = UsableFbSize / pXGI->scrnOffset ;
+			/* Copy */
+			pXGI->EXADriverPtr->accel.PrepareCopy = XGIPrepareCopy;
+			pXGI->EXADriverPtr->accel.Copy = XGICopy;
+			pXGI->EXADriverPtr->accel.DoneCopy = XGIDoneCopy;
+
+			/* Upload, download to/from Screen */
+			pXGI->EXADriverPtr->accel.UploadToScreen = XGIUploadToScreen;
+			pXGI->EXADriverPtr->accel.DownloadFromScreen = XGIDownloadFromScreen;
+
+#ifdef XGI_HAVE_COMPOSITE
+			 pXGI->EXADriverPtr->accel.CheckComposite = XGICheckComposite;
+			 pXGI->EXADriverPtr->accel.PrepareComposite = XGIPrepareComposite;
+			 pXGI->EXADriverPtr->accel.Composite = XGIComposite;
+			 pXGI->EXADriverPtr->accel.DoneComposite = XGIDoneComposite;
+#endif
+#endif /* POST70 */
+	   }
+#endif /* EXA */
+
+#ifdef XGI_USE_XAA
+   	if(!(pXGI->useEXA)) {
+		/* init Frame Buffer Manager */
+		reservedFbSize = 0;
+		if (pXGI->TurboQueue)
+		{
+			reservedFbSize += pXGI->cmdQueueSize ;
+		}
+
+		if (pXGI->HWCursor)
+		{
+			reservedFbSize += VOLARI_CURSOR_SHAPE_SIZE;
+		}
+
+	#ifdef XGIG2_COLOREXPSCANLN
+		reservedFbSize += (pXGI->ColorExpandBufferNumber * pXGI->PerColorExpandBufferSize);
+	#endif
+
+		UsableFbSize = pXGI->FbMapSize - reservedFbSize;
+		AvailBufBase = pXGI->FbBase + UsableFbSize;
+
+		for (i = 0; i < pXGI->ColorExpandBufferNumber; i++) {
+		const int base = i * pXGI->PerColorExpandBufferSize;
+
+			pXGI->ColorExpandBufferAddr[i] = AvailBufBase + base;
+			pXGI->ColorExpandBufferScreenOffset[i] = UsableFbSize + base;
+		}
+
+	#ifdef XGIG2_IMAGEWRITE
+		reservedFbSize += pXGI->ImageWriteBufferSize;
+		UsableFbSize = pXGI->FbMapSize - reservedFbSize;
+		pXGI->ImageWriteBufferAddr = AvailBufBase = pXGI->FbBase + UsableFbSize;
+		infoPtr->ImageWriteRange = pXGI->ImageWriteBufferAddr;
+	#endif /* XGIG2_IMAGEWRITE */
+
+		Avail.x1 = 0;
+		Avail.y1 = 0;
+
+	/*
+		Avail.x2 = pScrn->displayWidth;
+
+		ErrorF("FbDevExist=%s\n",FbDevExist?"TRUE":"FALSE");
+	 
+		if( FbDevExist && (pXGI->Chipset != PCI_CHIP_XGIXG20 ) && (pXGI->Chipset != PCI_CHIP_XGIXG27 ) )
+		{
+			if( UsableFbSize >= 8*1024*1024 )
+			{
+				UsableFbSize = 8*1024*1024 ;
+			}
+			else
+			{
+				UsableFbSize = 4*1024*1024 ;
+			}
+		}
+
+		PDEBUG1(ErrorF( "UsabelFbSize = %08lx\n", UsableFbSize )) ;
+		Avail.y2 = UsableFbSize / pXGI->scrnOffset ;
+
+		if ((unsigned long)Avail.y2 > 8192)
+		{
+			Avail.y2 = 8192 ;
+		}
+	*/
+
+		UsableFbSize = pXGI->CursorOffset ;
+		Avail.x1 = 0 ;
+		Avail.y1 = 0 ;
+		Avail.x2 = pScrn->displayWidth;
+		Avail.y2 = UsableFbSize / pXGI->scrnOffset ;
 
 
-    if ((unsigned long)Avail.y2 > 8192)
-    {
-        Avail.y2 = 8192 ;
-    }
+		if ((unsigned long)Avail.y2 > 8192)
+		{
+			Avail.y2 = 8192 ;
+		}
 
 
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-               "Usable FBSize = %08lx\n", UsableFbSize ) ;
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+				   "Usable FBSize = %08lx\n", UsableFbSize ) ;
 
 
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-               "Frame Buffer From (%d,%d) To (%d,%d)\n",
-               Avail.x1, Avail.y1, Avail.x2, Avail.y2);
+		xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+				   "Frame Buffer From (%d,%d) To (%d,%d)\n",
+				   Avail.x1, Avail.y1, Avail.x2, Avail.y2);
 
-    xf86InitFBManager(pScreen, &Avail);
+		xf86InitFBManager(pScreen, &Avail);
 
-    return(XAAInit(pScreen, infoPtr));
+		return(XAAInit(pScreen, infoPtr));
+	}
+#endif /* XAA */
 
+#ifdef XGI_USE_EXA
+	if(pXGI->useEXA) 
+	{
+	   /* if(!pSiS->NoAccel) { */
+		if(!exaDriverInit(pScreen, pXGI->EXADriverPtr)) {
+			 return FALSE;
+	    } 
+
+	    /* Reserve locked offscreen scratch area of 128K for glyph data */
+	    pXGI->exa_scratch = exaOffscreenAlloc(pScreen, 128 * 1024, 16, TRUE,
+						XGIScratchSave, pXGI);
+	    if(pXGI->exa_scratch) 
+		{
+			 pXGI->exa_scratch_next = pXGI->exa_scratch->offset;
+
+#ifdef XGIISXORGPOST70
+			 pXGI->EXADriverPtr->UploadToScratch = XGIUploadToScratch;
+#else
+			 pXGI->EXADriverPtr->accel.UploadToScratch = XGIUploadToScratch;
+#endif	    
+		}
+            return TRUE;
+	}
+#endif /* EXA */
 }
 
 void
@@ -679,6 +1010,8 @@ static int xgiG2_PatALUConv[] =
     0xFF,       /* dest = 0xFF;         1,      GXset,          0xF */
 };
 
+/* ---------------------------- XAA -------------------------- */
+#ifdef XGI_USE_XAA  
 static void
 Volari_SetupForScreenToScreenCopy(
     ScrnInfoPtr pScrn,
@@ -686,10 +1019,9 @@ Volari_SetupForScreenToScreenCopy(
     unsigned int planemask, int trans_color)
 {
     XGIPtr  pXGI = XGIPTR(pScrn);
-#ifdef SHOW_XAAINFO
+//#ifdef SHOW_XAAINFO
     XAAInfoRecPtr   pXAA = XAAPTR(pScrn);
-/*
-    ErrorF("XAAInfoPtr->UsingPixmapCache = %s\n"
+    PDEBUG1(ErrorF("XAAInfoPtr->UsingPixmapCache = %s\n"
            "XAAInfoPtr->CanDoMono8x8 = %s\n"
            "XAAInfoPtr->CanDoColor8x8 = %s\n"
            "XAAInfoPtr->CachePixelGranularity = %d\n"
@@ -725,9 +1057,8 @@ Volari_SetupForScreenToScreenCopy(
            pXAA->CacheColorExpandDensity,
            pXAA->maxOffPixWidth,
            pXAA->maxOffPixHeight,
-           pXAA->NeedToSync ? "True" : "False");
-*/
-#endif
+           pXAA->NeedToSync ? "True" : "False"));
+//#endif
 
     PDEBUG1(ErrorF("Setup ScreenCopy(%d, %d, 0x%x, 0x%x, 0x%x)\n",
         xdir, ydir, rop, planemask, trans_color));
@@ -749,13 +1080,41 @@ Volari_SubsequentScreenToScreenCopy(
 {
     XGIPtr  pXGI = XGIPTR(pScrn);
     long srcbase, dstbase;
-/*
+	int    mymin, mymax;
+
     PDEBUG1(ErrorF("Subsequent ScreenCopy(%d,%d, %d,%d, %d,%d)\n",
                     src_x, src_y,
                     dst_x, dst_y,
                     width, height));
-*/
+
     srcbase=dstbase=0;
+	mymin = min(src_y, dst_y);
+	mymax = max(src_y, dst_y);
+
+#if 1 /* Jong@08112009; bug fixing */
+	if((mymax - mymin) < height) {
+		PDEBUG1(ErrorF("(mymax - mymin) < height...\n"));
+	   if((src_y >= 2048) || (dst_y >= 2048)) {
+		  PDEBUG1(ErrorF("(src_y >= 2048) || (dst_y >= 2048)...\n"));
+	      srcbase = pXGI->scrnOffset * mymin;
+	      dstbase = pXGI->scrnOffset * mymin;
+	      src_y -= mymin;
+	      dst_y -= mymin;
+	   }
+	} else {
+		PDEBUG1(ErrorF("(mymax - mymin) >= height...\n"));
+	   if(src_y >= 2048) {
+			PDEBUG1(ErrorF("src_y >= 2048...\n"));
+	      srcbase = pXGI->scrnOffset * src_y;
+	      src_y = 0;
+	   }
+	   if((dst_y >= pScrn->virtualY) || (dst_y >= 2048)) {
+			PDEBUG1(ErrorF("(dst_y >= pScrn->virtualY) || (dst_y >= 2048...\n"));
+	      dstbase = pXGI->scrnOffset * dst_y;
+	      dst_y = 0;
+	   }
+	}
+#else
     if (src_y >= 2048)
     {
         srcbase=pXGI->scrnOffset*src_y;
@@ -766,11 +1125,12 @@ Volari_SubsequentScreenToScreenCopy(
         dstbase=pXGI->scrnOffset*dst_y;
         dst_y=0;
     }
-    /*
+#endif
+
     PDEBUG1(ErrorF("SrcBase = %08lX DstBase = %08lX\n",srcbase,dstbase)) ;
     PDEBUG1(ErrorF("SrcX = %08lX SrcY = %08lX\n",src_x,src_y)) ;
     PDEBUG1(ErrorF("DstX = %08lX DstY = %08lX\n",dst_x,dst_y)) ;
-*/
+
     GuardBand(0x30 * Alignment);
     Volari_SetupSRCBase(srcbase);
     Volari_SetupDSTBase(dstbase);
@@ -778,6 +1138,9 @@ Volari_SubsequentScreenToScreenCopy(
     Volari_SetupDSTXY(dst_x,dst_y) ;
     Volari_SetupRect(width, height) ;
     Volari_DoCMD ;
+
+	/* Jong@08112009 */
+	PDEBUG(XGIDumpCMDQueue(pScrn)); 
 }
 
 static void
@@ -874,6 +1237,554 @@ Volari_SubsequentMonoPatternFill(ScrnInfoPtr pScrn,
     Volari_DoCMD ;
     /*Volari_Idle(pXGI)*/;
 }
-
+#endif /* XAA */
 /************************************************************************/
 
+/* Jong 01/13/2009; support EXA */
+#ifdef XGI_USE_EXA  /* ---------------------------- EXA -------------------------- */
+void XGIEXASync(ScreenPtr pScreen, int marker)
+{
+	XGIPtr pXGI = XGIPTR(xf86Screens[pScreen->myNum]);
+
+	PACCELDEBUG(ErrorF("XGIEXASync()...\n"));
+
+	Volari_Idle;
+}
+
+static Bool
+XGIPrepareSolid(PixmapPtr pPixmap, int alu, Pixel planemask, Pixel fg)
+{
+	ScrnInfoPtr pScrn = xf86Screens[pPixmap->drawable.pScreen->myNum];
+	XGIPtr pXGI = XGIPTR(pScrn);
+	CARD16 pitch;
+
+	PACCELDEBUG(ErrorF("XGIPrepareSolid...\n"));
+	/* DisableDrawingFunctionDynamically(TRUE); */
+
+	/* Planemask not supported */
+	if((planemask & ((1 << pPixmap->drawable.depth) - 1)) !=
+				(1 << pPixmap->drawable.depth) - 1) {
+	   return FALSE;
+	}
+
+	if((pPixmap->drawable.bitsPerPixel != 8) &&
+	   (pPixmap->drawable.bitsPerPixel != 16) &&
+	   (pPixmap->drawable.bitsPerPixel != 32))
+	   return FALSE;
+
+	/* Check that the pitch matches the hardware's requirements. Should
+	 * never be a problem due to pixmapPitchAlign and fbScreenInit.
+	 */
+	if(((pitch = exaGetPixmapPitch(pPixmap)) & 3))
+	   return FALSE;
+
+	PACCELDEBUG(ErrorF("pitch=%d...\n", pitch));
+
+    Volari_ResetCmd ; 
+
+	Volari_SetupPATFG((int)fg)
+
+	Volari_SetupDSTColorDepth((pPixmap->drawable.bitsPerPixel >> 4) << 16);
+	Volari_SetupDSTRect(pitch, DEV_HEIGHT) 
+
+	Volari_SetupROP(xgiG2_PatALUConv[alu])
+	Volari_SetupCMDFlag(PATFG | BITBLT)
+
+	pXGI->fillDstBase = (CARD32)exaGetPixmapOffset(pPixmap); /* FBOFFSET is not used for Z-series */
+	PACCELDEBUG(ErrorF("pXGI->fillDstBase=0x%x...\n", pXGI->fillDstBase));
+
+	return TRUE;
+}
+
+static void
+XGISolid(PixmapPtr pPixmap, int x1, int y1, int x2, int y2)
+{
+	ScrnInfoPtr pScrn = xf86Screens[pPixmap->drawable.pScreen->myNum];
+	XGIPtr pXGI = XGIPTR(pScrn);
+	CARD32  Command;
+
+	PACCELDEBUG(ErrorF("XGISolid...\n"));
+	PACCELDEBUG(ErrorF("pXGI->CommandReg = 0x%x...\n", pXGI->CommandReg));
+	/* DisableDrawingFunctionDynamically(FALSE); */
+
+	Volari_SetupDSTXY(x1, y1)
+    Volari_SetupRect(x2-x1, y2-y1) ;
+	Volari_SetupDSTBase(pXGI->fillDstBase);
+	Volari_DoCMD
+}
+
+static void
+XGIDoneSolid(PixmapPtr pPixmap)
+{
+	PACCELDEBUG(ErrorF("XGIDoneSolid()...\n"));
+}
+
+static Bool
+XGIPrepareCopy(PixmapPtr pSrcPixmap, PixmapPtr pDstPixmap, int xdir, int ydir,
+					int alu, Pixel planemask)
+{
+	ScrnInfoPtr pScrn = xf86Screens[pDstPixmap->drawable.pScreen->myNum];
+	XGIPtr pXGI = XGIPTR(pScrn);
+	CARD32 srcbase, dstbase;
+	CARD16 srcpitch, dstpitch;
+
+	PACCELDEBUG(ErrorF("XGIPrepareCopy()...\n"));
+	PACCELDEBUG(ErrorF("pSrcPixmap->devPrivate.ptr=0x%x, pDstPixmap->devPrivate.ptr=0x%x...\n", 
+						pSrcPixmap->devPrivate.ptr, pDstPixmap->devPrivate.ptr));
+	/* DisableDrawingFunctionDynamically(TRUE); */
+
+	/* Planemask not supported */
+	if((planemask & ((1 << pSrcPixmap->drawable.depth) - 1)) !=
+				(1 << pSrcPixmap->drawable.depth) - 1) {
+	   return FALSE;
+	}
+
+	if((pDstPixmap->drawable.bitsPerPixel != 8) &&
+	   (pDstPixmap->drawable.bitsPerPixel != 16) &&
+	   (pDstPixmap->drawable.bitsPerPixel != 32))
+	   return FALSE;
+
+	/* Jong 07/15/2009; bug fixing for moving window on console; might need stretch bitblt to set bitblt direction */
+	if((xdir != 0) || (ydir != 0)) return FALSE;
+
+	/* Check that the pitch matches the hardware's requirements. Should
+	 * never be a problem due to pixmapPitchAlign and fbScreenInit.
+	 */
+	if((srcpitch = exaGetPixmapPitch(pSrcPixmap)) & 3)
+	   return FALSE;
+	if((dstpitch = exaGetPixmapPitch(pDstPixmap)) & 3)
+	   return FALSE;
+
+	srcbase = (CARD32)exaGetPixmapOffset(pSrcPixmap); /* FBOFFSET is not used for Z-series */;
+
+	dstbase = (CARD32)exaGetPixmapOffset(pDstPixmap); /* FBOFFSET is not used for Z-series */
+
+	/* TODO: Will there eventually be overlapping blits?
+	 * If so, good night. Then we must calculate new base addresses
+	 * which are identical for source and dest, otherwise
+	 * the chips direction-logic will fail. Certainly funny
+	 * to re-calculate x and y then...
+	 */
+
+    Volari_ResetCmd ;
+
+	Volari_SetupDSTColorDepth((pDstPixmap->drawable.bitsPerPixel >> 4) << 16);
+	Volari_SetupSRCPitch(srcpitch)
+	Volari_SetupDSTRect(dstpitch, DEV_HEIGHT)
+
+    Volari_SetupROP(xgiG2_ALUConv[alu]) 
+
+	Volari_SetupSRCBase(srcbase)
+	Volari_SetupDSTBase(dstbase)
+
+	return TRUE;
+}
+
+static void
+XGICopy(PixmapPtr pDstPixmap, int srcX, int srcY, int dstX, int dstY, int width, int height)
+{
+	ScrnInfoPtr pScrn = xf86Screens[pDstPixmap->drawable.pScreen->myNum];
+	XGIPtr pXGI = XGIPTR(pScrn);
+	CARD32  Command;
+
+	PACCELDEBUG(ErrorF("XGICopy()...\n"));
+	PACCELDEBUG(ErrorF("srcX=%d, srcY=%d, dstX=%d, dstY=%d...\n", srcX, srcY, dstX, dstY));
+	PACCELDEBUG(ErrorF("pDstPixmap->devPrivate.ptr=0x%x...\n", pDstPixmap->devPrivate.ptr));
+	/* DisableDrawingFunctionDynamically(FALSE); */
+
+	Volari_SetupSRCXY(srcX, srcY)
+	Volari_SetupDSTXY(dstX, dstY)
+
+	Volari_SetupRect(width, height)
+	Volari_DoCMD
+}
+
+static void
+XGIDoneCopy(PixmapPtr pDstPixmap)
+{
+	PACCELDEBUG(ErrorF("XGIDoneCopy()...\n"));
+}
+
+#ifdef XGI_HAVE_COMPOSITE
+static Bool
+XGICheckComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskPicture,
+				PicturePtr pDstPicture)
+{
+	ScrnInfoPtr pScrn = xf86Screens[pDstPicture->pDrawable->pScreen->myNum];
+	XGIPtr pXGI = XGIPTR(pScrn);
+
+	PACCELDEBUG(ErrorF("XGICheckComposite()...\n"));
+	/* DisableDrawingFunctionDynamically(TRUE); */
+
+	xf86DrvMsg(0, 0, "CC: %d Src %x (fi %d ca %d) Msk %x (%d %d) Dst %x (%d %d)\n",
+		op, pSrcPicture->format, pSrcPicture->filter, pSrcPicture->componentAlpha,
+		pMaskPicture ? pMaskPicture->format : 0x2011, pMaskPicture ? pMaskPicture->filter : -1,
+			pMaskPicture ? pMaskPicture->componentAlpha : -1,
+		pDstPicture->format, pDstPicture->filter, pDstPicture->componentAlpha);
+
+	if(pSrcPicture->transform || (pMaskPicture && pMaskPicture->transform) || pDstPicture->transform) {
+		xf86DrvMsg(0, 0, "CC: src tr %p msk %p dst %p  !!!!!!!!!!!!!!!\n",
+			pSrcPicture->transform,
+			pMaskPicture ? pMaskPicture->transform : 0,
+			pDstPicture->transform);
+        }
+
+	return FALSE;
+}
+
+static Bool
+XGIPrepareComposite(int op, PicturePtr pSrcPicture, PicturePtr pMaskPicture,
+				PicturePtr pDstPicture, PixmapPtr pSrc, PixmapPtr pMask, PixmapPtr pDst)
+{
+	ScrnInfoPtr pScrn = xf86Screens[pDst->drawable.pScreen->myNum];
+	XGIPtr pXGI = XGIPTR(pScrn);
+
+	PACCELDEBUG(ErrorF("XGIPrepareComposite()...\n"));
+	/* DisableDrawingFunctionDynamically(TRUE); */
+
+    Volari_ResetCmd ;
+
+	return FALSE;
+}
+
+static void
+XGIComposite(PixmapPtr pDst, int srcX, int srcY, int maskX, int maskY, int dstX, int dstY,
+				int width, int height)
+{
+	ScrnInfoPtr pScrn = xf86Screens[pDst->drawable.pScreen->myNum];
+	XGIPtr pXGI = XGIPTR(pScrn);
+
+	PACCELDEBUG(ErrorF("XGIComposite()...\n"));
+	/* DisableDrawingFunctionDynamically(FALSE); */
+}
+
+static void
+XGIDoneComposite(PixmapPtr pDst)
+{
+}
+#endif
+
+/************************************************************************/
+/*                   libc memcpy() wrapper - generic                    */
+/************************************************************************/
+static void XGI_libc_memcpy(UChar *dst, const UChar *src, int size)
+{
+	PACCELDEBUG(ErrorF("XGI_libc_memcpy()...\n"));
+    memcpy(dst, src, size);
+}
+
+extern void XGI_sse_memcpy(UChar *to, const UChar *from, int size);
+extern void XGI_builtin_memcpy_arm(UChar *to, const UChar *from, int size);
+
+void XGIMemCopyToVideoRam(XGIPtr pXGI, unsigned char *to, unsigned char *from, int size)
+{
+	int align = (ULONG)to & 31;
+	int align_size = 0;
+
+ 	if(align)
+	{
+	  align_size = size > align ? align : size;
+	  
+	  PDEBUG(ErrorF("XGI_libc_memcpy()...align_size=%d bytes\n", align_size));
+	  XGI_libc_memcpy(to, from, align_size);
+
+	  size -= align_size;
+	}
+
+	if( size > 0)
+	{
+#if defined(__arm__) 
+	  PDEBUG(ErrorF("XGI_builtin_memcpy_arm()...\n"));
+
+	  XGI_builtin_memcpy_arm(to+align, from+align, size/4);
+
+	  if(((ULONG)size & 3) )
+	  {
+	    PDEBUG(ErrorF("XGI_libc_memcpy...%d\n", (ULONG)size & 3));
+	    XGI_libc_memcpy(to+align+(size/4)*4, from+align+(size/4)*4, (ULONG)size & 3);
+	  }
+#else
+	  PDEBUG(ErrorF("XGI_libc_memcpy()...\n"));
+	  XGI_libc_memcpy(to+align, from+align, size);
+#endif
+	}
+}
+
+void XGIMemCopyFromVideoRam(XGIPtr pXGI, unsigned char *to, unsigned char *from, int size)
+{
+	int align = (ULONG)to & 31;
+	int align_size = 0;
+
+ 	if(align)
+	{
+	  align_size = size > align ? align : size;
+	  
+	  PDEBUG(ErrorF("XGI_libc_memcpy()...align_size=%d bytes\n", align_size));
+	  XGI_libc_memcpy(to, from, align_size);
+
+	  size -= align_size;
+	}
+
+	if( size > 0)
+	{
+#if defined(__arm__) 
+	  PDEBUG(ErrorF("XGI_builtin_memcpy_arm()...\n"));
+	  XGI_builtin_memcpy_arm(to+align, from+align, size/4);
+
+	  if(((ULONG)size & 3) )
+	  {
+	    PDEBUG(ErrorF("XGI_libc_memcpy...%d\n", (ULONG)size & 3));
+	    XGI_libc_memcpy(to+align+(size/4)*4, from+align+(size/4)*4, (ULONG)size & 3);
+	  }
+#else
+	  PDEBUG(ErrorF("XGI_libc_memcpy()...\n"));
+	  XGI_libc_memcpy(to+align, from+align, size);
+#endif
+	}
+}
+
+Bool
+XGIUploadToScreen(PixmapPtr pDst, int x, int y, int w, int h, char *src, int src_pitch)
+{
+	ScrnInfoPtr pScrn = xf86Screens[pDst->drawable.pScreen->myNum];
+	XGIPtr pXGI = XGIPTR(pScrn);
+	unsigned char *dst = pDst->devPrivate.ptr;
+	int dst_pitch = exaGetPixmapPitch(pDst);
+
+	int width = w;
+	int height = h;
+
+	unsigned char * to;
+	unsigned char * from;
+	int size;
+
+	PACCELDEBUG(ErrorF("XGIUploadToScreen(dst=0x%x, x=%d, y=%d, w=%d, h=%d, src=0x%x, src_pitch=%d)...\n",
+		dst, x, y, w, h, src, src_pitch));
+	/* DisableDrawingFunctionDynamically(TRUE); */
+
+	Volari_Sync(pScrn);
+	DisableDrawingFunctionDynamically(TRUE); 
+
+	if(pDst->drawable.bitsPerPixel < 8)
+	   return FALSE;
+
+	dst += (x * pDst->drawable.bitsPerPixel / 8) + (y * dst_pitch);
+
+	size = src_pitch < dst_pitch ? src_pitch : dst_pitch;
+
+	int BytePerPixel = pDst->drawable.bitsPerPixel / 8;
+
+	/* DisableDrawingFunctionDynamically(TRUE); */
+
+	/* Jong Lin; It would be wrong if (x,y) != (0,0) */	
+	if((dst_pitch == src_pitch) && (dst_pitch/BytePerPixel == w) && (x == 0) && (y == 0))
+	{
+		   XGIMemCopyToVideoRam(pXGI, dst, (unsigned char *)src,
+				w*(pDst->drawable.bitsPerPixel/8)*h); 
+	}
+	else
+	{
+		while(h--) {
+		   XGIMemCopyToVideoRam(pXGI, dst, (unsigned char *)src,
+					(w * pDst->drawable.bitsPerPixel / 8)); 
+
+		   src += src_pitch;
+		   dst += dst_pitch;
+		}
+	}
+
+	return TRUE;
+}
+
+Bool
+XGIUploadToScratch(PixmapPtr pSrc, PixmapPtr pDst)
+{
+	ScrnInfoPtr pScrn = xf86Screens[pSrc->drawable.pScreen->myNum];
+	XGIPtr pXGI = XGIPTR(pScrn);
+	unsigned char *src, *dst;
+	int src_pitch = exaGetPixmapPitch(pSrc);
+	int dst_pitch, size, w, h, bytes;
+
+	DisableDrawingFunctionDynamically(TRUE); 
+
+	w = pSrc->drawable.width;
+
+#ifdef XGIISXORGPOST70
+	dst_pitch = ((w * (pSrc->drawable.bitsPerPixel >> 3)) +
+		     pXGI->EXADriverPtr->pixmapPitchAlign - 1) &
+		    ~(pXGI->EXADriverPtr->pixmapPitchAlign - 1);
+#else
+	dst_pitch = ((w * (pSrc->drawable.bitsPerPixel >> 3)) +
+		     pXGI->EXADriverPtr->card.pixmapPitchAlign - 1) &
+		    ~(pXGI->EXADriverPtr->card.pixmapPitchAlign - 1);
+#endif
+
+	size = dst_pitch * pSrc->drawable.height;
+
+	if(size > pXGI->exa_scratch->size)
+	   return FALSE;
+
+
+#ifdef XGIISXORGPOST70
+	pXGI->exa_scratch_next = (pXGI->exa_scratch_next +
+				  pXGI->EXADriverPtr->pixmapOffsetAlign - 1) &
+				  ~(pXGI->EXADriverPtr->pixmapOffsetAlign - 1);
+#else
+	pXGI->exa_scratch_next = (pXGI->exa_scratch_next +
+				  pXGI->EXADriverPtr->card.pixmapOffsetAlign - 1) &
+				  ~(pXGI->EXADriverPtr->card.pixmapOffsetAlign - 1);
+#endif
+
+	if(pXGI->exa_scratch_next + size >
+	   pXGI->exa_scratch->offset + pXGI->exa_scratch->size) {
+#ifdef XGIISXORGPOST70
+	   (pXGI->EXADriverPtr->WaitMarker)(pSrc->drawable.pScreen, 0);
+#else
+	   (pXGI->EXADriverPtr->accel.WaitMarker)(pSrc->drawable.pScreen, 0);
+#endif
+	   pXGI->exa_scratch_next = pXGI->exa_scratch->offset;
+	}
+
+	memcpy(pDst, pSrc, sizeof(*pDst));
+	pDst->devKind = dst_pitch;
+#ifdef XGIISXORGPOST70
+	pDst->devPrivate.ptr = pXGI->EXADriverPtr->memoryBase + pXGI->exa_scratch_next;
+#else
+	pDst->devPrivate.ptr = pXGI->EXADriverPtr->card.memoryBase + pXGI->exa_scratch_next;
+#endif
+
+	pXGI->exa_scratch_next += size;
+
+	src = pSrc->devPrivate.ptr;
+	src_pitch = exaGetPixmapPitch(pSrc);
+	dst = pDst->devPrivate.ptr;
+
+	bytes = (src_pitch < dst_pitch) ? src_pitch : dst_pitch;
+
+	h = pSrc->drawable.height;
+
+	Volari_Sync(pScrn);
+
+	while(h--) {
+	   XGIMemCopyToVideoRam(pXGI, dst, src, size); 
+	   src += src_pitch;
+	   dst += dst_pitch;
+	}
+
+	return TRUE;
+}
+
+Bool
+XGIDownloadFromScreen(PixmapPtr pSrc, int x, int y, int w, int h, char *dst, int dst_pitch)
+{
+	ScrnInfoPtr pScrn = xf86Screens[pSrc->drawable.pScreen->myNum];
+	XGIPtr pXGI = XGIPTR(pScrn);
+	unsigned char *src = pSrc->devPrivate.ptr;
+	int src_pitch = exaGetPixmapPitch(pSrc);
+	int size = src_pitch < dst_pitch ? src_pitch : dst_pitch;
+
+	/* Jong 02/13/2009; quit X while opening console terminal */
+	/* return(FALSE); */
+	/* DisableDrawingFunctionDynamically(TRUE); */
+
+	Volari_Sync(pScrn);
+	DisableDrawingFunctionDynamically(TRUE); 
+
+	if(pSrc->drawable.bitsPerPixel < 8)
+	   return FALSE;
+
+	src += (x * pSrc->drawable.bitsPerPixel / 8) + (y * src_pitch);
+
+	int BytePerPixel = pSrc->drawable.bitsPerPixel / 8;
+
+	/* DisableDrawingFunctionDynamically(TRUE); */
+
+	if((src_pitch == dst_pitch) && (dst_pitch/BytePerPixel == w) && (x == 0) && (y == 0))
+	{
+		PDEBUG(ErrorF("src_pitch == dst_pitch...\n"));
+	   	XGIMemCopyFromVideoRam(pXGI, (unsigned char *)dst, src, 
+					(w * pSrc->drawable.bitsPerPixel / 8)*h); 
+	}
+	else 
+	{
+		while(h--) {
+	   		XGIMemCopyFromVideoRam(pXGI, (unsigned char *)dst, src,
+						(w * pSrc->drawable.bitsPerPixel / 8)); 
+		   src += src_pitch;
+		   dst += dst_pitch;
+		}
+	}
+
+	return TRUE;
+}
+
+void XGIScratchSave(ScreenPtr pScreen, ExaOffscreenArea *area)
+{
+	XGIPtr pXGI = XGIPTR(xf86Screens[pScreen->myNum]);
+	pXGI->exa_scratch = NULL;
+}
+#endif /* EXA */
+
+/* Jong@08112009 */
+void XGIDumpCMDQueue(ScrnInfoPtr pScrn)
+{
+    XGIPtr pXGI = XGIPTR(pScrn);
+
+    int i ;
+    unsigned long SwWP ;
+
+    ErrorF("----------------------------------------------------------------------\n") ;
+    ErrorF("CMD Queue\n") ;
+    ErrorF("----------------------------------------------------------------------\n") ;
+
+	SwWP = Volari_GetSwWP() ;
+    ErrorF("SwWP=0x%x\n", SwWP) ;
+    ErrorF("pXGI->cmdQueueBase=0x%x\n", pXGI->cmdQueueBase) ;
+	for( i = 0 ; i < SwWP ; i+=0x04 )
+	{
+		ErrorF("[%04X]: %08lX\n",i, *(CARD32 *)(pXGI->cmdQueueBase+i));
+	}
+}
+
+/* Jong@09182009; test for line missing */
+static void Volari_SetupForSolidLine(ScrnInfoPtr pScrn, int color, int rop,
+			unsigned int planemask)
+{
+	PDEBUG(ErrorF("Null -  Volari_SetupForSolidLine()...\n"));
+}
+
+static void Volari_SubsequentSolidTwoPointLine(ScrnInfoPtr pScrn,
+			int x1, int y1, int x2, int y2, int flags)
+{
+	PDEBUG(ErrorF("Null -  Volari_SubsequentSolidTwoPointLine()...\n"));
+}
+
+static void Volari_SubsequentSolidHorzVertLine(ScrnInfoPtr pScrn,
+			int x, int y, int len, int dir)
+{
+	PDEBUG(ErrorF("Null -  Volari_SubsequentSolidHorzVertLine()...\n"));
+}
+
+static void Volari_SetupForDashedLine(ScrnInfoPtr pScrn,
+			int fg, int bg, int rop, unsigned int planemask,
+			int length, unsigned char *pattern)
+{
+	PDEBUG(ErrorF("Null -  Volari_SetupForDashedLine()...\n"));
+}
+
+static void Volari_SubsequentDashedTwoPointLine(ScrnInfoPtr pScrn,
+			int x1, int y1, int x2, int y2,
+			int flags, int phase)
+{
+	PDEBUG(ErrorF("Null -  Volari_SubsequentDashedTwoPointLine()...\n"));
+}
+
+static void Volari_SetClippingRectangle(ScrnInfoPtr pScrn, int x1, int y1, int x2, int y2)
+{
+	PDEBUG(ErrorF("Null -  Volari_SetClippingRectangle()...\n"));
+}
+
+static void Volari_DisableClipping(ScrnInfoPtr pScrn)
+{
+	PDEBUG(ErrorF("Null -  Volari_DisableClipping()...\n"));
+}

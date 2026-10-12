@@ -44,6 +44,17 @@
 #include <xf86.h>
 
 #define MAX_UNSYNC_PACKETS 10				/* i.e. 10 to 60 bytes */
+/*
+ * The x/y limits are taken from the Synaptics TouchPad interfacing Guide,
+ * section 2.3.2, which says that they should be valid regardless of the
+ * actual size of the sensor.
+ */
+#define XMIN_NOMINAL 1472
+#define XMAX_NOMINAL 5472
+#define YMIN_NOMINAL 1408
+#define YMAX_NOMINAL 4448
+
+#define XMAX_VALID 6143
 
 /* synaptics queries */
 #define SYN_QUE_IDENTIFY		0x00
@@ -65,16 +76,10 @@
 #define PS2_RES_RESOLUTION(r)	(((r) >> 8) & 0x03)
 #define PS2_RES_SAMPLE_RATE(r)	((r) & 0xff)
 
-/* #define DEBUG */
-
 #ifdef DEBUG
 #define PS2DBG(x) (x)
 #else
 #define PS2DBG(x)
-#endif
-
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 1
-#define DBG(a,b)
 #endif
 
 struct SynapticsHwInfo {
@@ -82,7 +87,6 @@ struct SynapticsHwInfo {
     unsigned int capabilities;		    /* Capabilities */
     unsigned int ext_cap;		    /* Extended Capabilities */
     unsigned int identity;		    /* Identification */
-    Bool hasGuest;			    /* Has a guest mouse */
 };
 
 /*****************************************************************************
@@ -169,61 +173,6 @@ ps2_send_cmd(int fd, byte c)
 }
 
 /*****************************************************************************
- *	Synaptics passthrough functions
- ****************************************************************************/
-
-static Bool
-ps2_getbyte_passthrough(int fd, byte *response)
-{
-    byte ack;
-    int timeout_count;
-#define MAX_RETRY_COUNT 30
-
-    /* Getting a response back through the passthrough could take some time.
-     * Spin a little for the first byte */
-    for (timeout_count = 0;
-	 !ps2_getbyte(fd, &ack) && (timeout_count <= MAX_RETRY_COUNT);
-	 timeout_count++)
-	;
-    /* Do some sanity checking */
-    if ((ack & 0xfc) != 0x84) {
-	PS2DBG(ErrorF("ps2_getbyte_passthrough: expected 0x84 and got: %02x\n",
-		      ack & 0xfc));
-	return FALSE;
-    }
-
-    ps2_getbyte(fd, response);
-    ps2_getbyte(fd, &ack);
-    ps2_getbyte(fd, &ack);
-    if ((ack & 0xcc) != 0xc4) {
-	PS2DBG(ErrorF("ps2_getbyte_passthrough: expected 0xc4 and got: %02x\n",
-		      ack & 0xcc));
-	return FALSE;
-    }
-    ps2_getbyte(fd, &ack);
-    ps2_getbyte(fd, &ack);
-
-    return TRUE;
-}
-
-static Bool
-ps2_putbyte_passthrough(int fd, byte c)
-{
-    byte ack;
-
-    ps2_special_cmd(fd, c);
-    ps2_putbyte(fd, 0xF3);
-    ps2_putbyte(fd, 0x28);
-
-    ps2_getbyte_passthrough(fd, &ack);
-    if (ack != PS2_ACK) {
-	PS2DBG(ErrorF("ps2_putbyte_passthrough: wrong acknowledge 0x%02x\n", ack));
-	return FALSE;
-    }
-    return TRUE;
-}
-
-/*****************************************************************************
  *	Synaptics communications functions
  ****************************************************************************/
 
@@ -265,30 +214,6 @@ ps2_synaptics_reset(int fd)
     }
     PS2DBG(ErrorF("...failed\n"));
     return FALSE;
-}
-
-static Bool
-ps2_synaptics_reset_passthrough(int fd)
-{
-    byte ack;
-
-    /* send reset */
-    ps2_putbyte_passthrough(fd, 0xff);
-    ps2_getbyte_passthrough(fd, &ack);
-    if (ack != 0xaa) {
-	PS2DBG(ErrorF("ps2_synaptics_reset_passthrough: ack was %02x not 0xaa\n", ack));
-	return FALSE;
-    }
-    ps2_getbyte_passthrough(fd, &ack);
-    if (ack != 0x00) {
-	PS2DBG(ErrorF("ps2_synaptics_reset_passthrough: ack was %02x not 0x00\n", ack));
-	return FALSE;
-    }
-
-    /* set defaults, turn on streaming, and enable the mouse */
-    return (ps2_putbyte_passthrough(fd, 0xf6) &&
-	    ps2_putbyte_passthrough(fd, 0xea) &&
-	    ps2_putbyte_passthrough(fd, 0xf4));
 }
 
 /*
@@ -411,7 +336,7 @@ ps2_query_is_synaptics(int fd, struct SynapticsHwInfo* synhw)
     if (ps2_synaptics_identify(fd, synhw)) {
 	return TRUE;
     } else {
-	ErrorF("Query no Synaptics: %06X\n", synhw->identity);
+	xf86Msg(X_ERROR, "Query no Synaptics: %06X\n", synhw->identity);
 	return FALSE;
     }
 }
@@ -466,7 +391,7 @@ PS2QueryHardware(LocalDevicePtr local)
     struct SynapticsHwInfo *synhw;
 
     if (!priv->proto_data)
-        priv->proto_data = xcalloc(1, sizeof(struct SynapticsHwInfo));
+        priv->proto_data = calloc(1, sizeof(struct SynapticsHwInfo));
     synhw = (struct SynapticsHwInfo*)priv->proto_data;
 
     /* is the synaptics touchpad active? */
@@ -495,22 +420,6 @@ PS2QueryHardware(LocalDevicePtr local)
     if (!ps2_synaptics_set_mode(local->fd, mode))
 	return FALSE;
 
-    /* Check to see if the host mouse supports a guest */
-    synhw->hasGuest = FALSE;
-    if (SYN_CAP_PASSTHROUGH(synhw)) {
-        synhw->hasGuest = TRUE;
-
-	/* Enable the guest mouse.  Set it to relative mode, three byte
-	 * packets */
-
-	/* Disable the host to talk to the guest */
-	ps2_synaptics_disable_device(local->fd);
-	/* Reset it, set defaults, streaming and enable it */
-	if (!ps2_synaptics_reset_passthrough(local->fd)) {
-	    synhw->hasGuest = FALSE;
-	}
-    }
-
     ps2_synaptics_enable_device(local->fd);
 
     ps2_print_ident(synhw);
@@ -528,22 +437,22 @@ ps2_packet_ok(struct SynapticsHwInfo *synhw, struct CommData *comm)
     int newabs = SYN_MODEL_NEWABS(synhw);
 
     if (newabs ? ((buf[0] & 0xC0) != 0x80) : ((buf[0] & 0xC0) != 0xC0)) {
-	DBG(4, ErrorF("Synaptics driver lost sync at 1st byte\n"));
+	DBG(4, "Synaptics driver lost sync at 1st byte\n");
 	return FALSE;
     }
 
     if (!newabs && ((buf[1] & 0x60) != 0x00)) {
-	DBG(4, ErrorF("Synaptics driver lost sync at 2nd byte\n"));
+	DBG(4, "Synaptics driver lost sync at 2nd byte\n");
 	return FALSE;
     }
 
     if ((newabs ? ((buf[3] & 0xC0) != 0xC0) : ((buf[3] & 0xC0) != 0x80))) {
-	DBG(4, ErrorF("Synaptics driver lost sync at 4th byte\n"));
+	DBG(4, "Synaptics driver lost sync at 4th byte\n");
 	return FALSE;
     }
 
     if (!newabs && ((buf[4] & 0x60) != 0x00)) {
-	DBG(4, ErrorF("Synaptics driver lost sync at 5th byte\n"));
+	DBG(4, "Synaptics driver lost sync at 5th byte\n");
 	return FALSE;
     }
 
@@ -565,16 +474,16 @@ ps2_synaptics_get_packet(LocalDevicePtr local, struct SynapticsHwInfo *synhw,
 	/* test if there is a reset sequence received */
 	if ((c == 0x00) && (comm->lastByte == 0xAA)) {
 	    if (xf86WaitForInput(local->fd, 50000) == 0) {
-		DBG(7, ErrorF("Reset received\n"));
+		DBG(7, "Reset received\n");
 		proto_ops->QueryHardware(local);
 	    } else
-		DBG(3, ErrorF("faked reset received\n"));
+		DBG(3, "faked reset received\n");
 	}
 	comm->lastByte = u;
 
 	/* to avoid endless loops */
 	if (count++ > 30) {
-	    ErrorF("Synaptics driver lost sync... got gigantic packet!\n");
+	    xf86Msg(X_ERROR, "Synaptics driver lost sync... got gigantic packet!\n");
 	    return FALSE;
 	}
 
@@ -591,7 +500,7 @@ ps2_synaptics_get_packet(LocalDevicePtr local, struct SynapticsHwInfo *synhw,
 		comm->outOfSync++;
 		if (comm->outOfSync > MAX_UNSYNC_PACKETS) {
 		    comm->outOfSync = 0;
-		    DBG(3, ErrorF("Synaptics synchronization lost too long -> reset touchpad.\n"));
+		    DBG(3, "Synaptics synchronization lost too long -> reset touchpad.\n");
 		    proto_ops->QueryHardware(local); /* including a reset */
 		    continue;
 		}
@@ -601,7 +510,7 @@ ps2_synaptics_get_packet(LocalDevicePtr local, struct SynapticsHwInfo *synhw,
 	if (comm->protoBufTail >= 6) { /* Full packet received */
 	    if (comm->outOfSync > 0) {
 		comm->outOfSync = 0;
-		DBG(4, ErrorF("Synaptics driver resynced.\n"));
+		DBG(4, "Synaptics driver resynced.\n");
 	    }
 	    comm->protoBufTail = 0;
 	    return TRUE;
@@ -638,25 +547,6 @@ PS2ReadHwState(LocalDevicePtr local,
     if (!ps2_synaptics_get_packet(local, synhw, proto_ops, comm))
 	return FALSE;
 
-    /* Handle guest packets */
-    hw->guest_dx = hw->guest_dy = 0;
-    if (newabs && synhw->hasGuest) {
-	w = (((buf[0] & 0x30) >> 2) |
-	     ((buf[0] & 0x04) >> 1) |
-	     ((buf[3] & 0x04) >> 2));
-	if (w == 3) {	       /* If w is 3, this is a guest packet */
-	    if (buf[4] != 0)
-		hw->guest_dx =   buf[4] - ((buf[1] & 0x10) ? 256 : 0);
-	    if (buf[5] != 0)
-		hw->guest_dy = -(buf[5] - ((buf[1] & 0x20) ? 256 : 0));
-	    hw->guest_left  = (buf[1] & 0x01) ? TRUE : FALSE;
-	    hw->guest_mid   = (buf[1] & 0x04) ? TRUE : FALSE;
-	    hw->guest_right = (buf[1] & 0x02) ? TRUE : FALSE;
-	    *hwRet = *hw;
-	    return TRUE;
-	}
-    }
-
     /* Handle normal packets */
     hw->x = hw->y = hw->z = hw->numFingers = hw->fingerWidth = 0;
     hw->left = hw->right = hw->up = hw->down = hw->middle = FALSE;
@@ -664,7 +554,7 @@ PS2ReadHwState(LocalDevicePtr local,
 	hw->multi[i] = FALSE;
 
     if (newabs) {			    /* newer protos...*/
-	DBG(7, ErrorF("using new protocols\n"));
+	DBG(7, "using new protocols\n");
 	hw->x = (((buf[3] & 0x10) << 8) |
 		 ((buf[1] & 0x0f) << 8) |
 		 buf[4]);
@@ -714,7 +604,7 @@ PS2ReadHwState(LocalDevicePtr local,
 	    }
 	}
     } else {			    /* old proto...*/
-	DBG(7, ErrorF("using old protocol\n"));
+	DBG(7, "using old protocol\n");
 	hw->x = (((buf[1] & 0x1F) << 8) |
 		 buf[2]);
 	hw->y = (((buf[4] & 0x1F) << 8) |
@@ -782,5 +672,5 @@ struct SynapticsProtocolOperations psaux_proto_operations = {
     PS2QueryHardware,
     PS2ReadHwState,
     PS2AutoDevProbe,
-    NULL /* ReadDevDimensions */
+    SynapticsDefaultDimensions
 };

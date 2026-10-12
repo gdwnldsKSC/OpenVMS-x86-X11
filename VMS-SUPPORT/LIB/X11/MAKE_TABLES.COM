@@ -1,4 +1,4 @@
-$! Run upstream makekeys with native standard-input/output redirection.
+$! Run upstream makekeys with the same five protocol headers as configure.ac.
 $ SET NOON
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
@@ -12,9 +12,11 @@ $ generator = F$SEARCH(P3)
 $ IF (input .EQS. "") .OR. (generator .EQS. "") THEN GOTO done
 $ temporary = F$PARSE(target,,,"DEVICE") + F$PARSE(target,,,"DIRECTORY") + -
     "KS_TABLES.TMP"
-$ DEFINE/USER_MODE SYS$INPUT 'input'
+$ keys = F$PARSE(input,,,"DEVICE") + F$PARSE(input,,,"DIRECTORY")
+$ makekeys = "$" + generator
 $ DEFINE/USER_MODE SYS$OUTPUT 'temporary'
-$ RUN 'generator'
+$ makekeys "''input'" "''keys'XF86KEYSYM.H" "''keys'SUNKEYSYM.H" -
+    "''keys'DECKEYSYM.H" "''keys'HPKEYSYM.H"
 $ result = $STATUS
 $ IF .NOT. result THEN GOTO done
 $ produced = F$SEARCH(temporary)

@@ -59,12 +59,12 @@
 
 #define xgiG1CRT1_SetCursorPositionX(x,preset)\
 	{\
-		XGIMMIOLONG(0x850C) = BE_SWAP32((x) | ((preset)>>16));\
+		XGIMMIOLONG(0x850C) = BE_SWAP32((x) | ((preset)<<16));\
 	}
 
 #define xgiG1CRT1_SetCursorPositionY(y,preset)\
 	{\
-		XGIMMIOLONG(0x8510) =BE_SWAP32((y) | ((preset)>>16));\
+		XGIMMIOLONG(0x8510) =BE_SWAP32((y) | ((preset)<<16));\
 	}
 
 /* Jill, read MMIO need swap, 2006/6/22*/

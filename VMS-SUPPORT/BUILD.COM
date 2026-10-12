@@ -19,7 +19,7 @@ $ targets = targets + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ targets = targets + "XSS|XVMC|XXF86VM|"
 $ targets = targets + "DMX|"
 $ targets = targets + "XMUU|XPM|"
-$ targets = targets + "X11|XAUTH|XDPYINFO|XWININFO|"
+$ targets = targets + "XCB|XCB_SHAPE|X11|XAUTH|XDPYINFO|XWININFO|"
 $ targets = targets + "XSET|XMODMAP|XEV|BISON|XKBCOMP|SETXKBMAP|XKB_DATA|XVFB|XSERVER_CORE|XSERVER|"
 $ targets = targets + "XT|XMU|MKFONTDIR|FONTS|FONTS_BDF|FONTS_MISC|FONTS_75DPI|FONTS_100DPI|FONTS_CYRILLIC|"
 $ targets = targets + "FONTS_ENCODINGS|FONTS_SCALED|FONTS_TYPE1|FONTS_TTF|FONTS_OTF|"
@@ -57,6 +57,8 @@ $ directory = profile + ".INCLUDE.FREETYPE2.FREETYPE.INTERNAL]"
 $ IF F$SEARCH(profile + ".INCLUDE.FREETYPE2.FREETYPE]INTERNAL.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.FREETYPE2.FREETYPE.INTERNAL.SERVICES]"
 $ IF F$SEARCH(profile + ".INCLUDE.FREETYPE2.FREETYPE.INTERNAL]SERVICES.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".INCLUDE.XCB]"
+$ IF F$SEARCH(profile + ".INCLUDE]XCB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.X11]"
 $ pixman_directory = profile + ".INCLUDE.PIXMAN]"
 $ IF F$SEARCH(profile + ".INCLUDE]PIXMAN.DIR") .EQS. "" THEN CREATE/DIRECTORY 'pixman_directory'
@@ -78,6 +80,8 @@ $ IF F$SEARCH(profile + ".INCLUDE.X11]XMU.DIR") .EQS. "" THEN CREATE/DIRECTORY '
 $ directory = profile + ".LIB]"
 $ pixman_directory = profile + ".LIB.PIXMAN]"
 $ IF F$SEARCH(profile + "]LIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XCB]"
+$ IF F$SEARCH(profile + ".LIB]XCB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ IF F$SEARCH(profile + ".LIB]PIXMAN.DIR") .EQS. "" THEN CREATE/DIRECTORY 'pixman_directory'
 $ directory = profile + ".LIB.X11]"
 $ IF F$SEARCH(profile + ".LIB]X11.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'

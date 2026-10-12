@@ -2962,14 +2962,21 @@ void XGINew_InitVBIOSData(PXGI_HW_DEVICE_INFO HwDeviceExtension, PVB_DEVICE_INFO
 	/* ULONG ROMAddr = (ULONG)HwDeviceExtension->pjVirtualRomBase; */
     pVBInfo->ROMAddr = HwDeviceExtension->pjVirtualRomBase ;
     pVBInfo->FBAddr = HwDeviceExtension->pjVideoMemoryAddress ;
-    pVBInfo->BaseAddr = ( USHORT )HwDeviceExtension->pjIOAddress ;
+
+    /* pVBInfo->BaseAddr = ( USHORT )HwDeviceExtension->pjIOAddress ; */
+    pVBInfo->BaseAddr = ( ULONG )HwDeviceExtension->pjIOAddress ;
+
     pVBInfo->RelIO = HwDeviceExtension->pjIOAddress - 0x30;
     pVBInfo->ISXPDOS = 0 ;
 
     pVBInfo->P3c4 = pVBInfo->BaseAddr + 0x14 ;
     pVBInfo->P3d4 = pVBInfo->BaseAddr + 0x24 ;
     pVBInfo->P3c0 = pVBInfo->BaseAddr + 0x10 ;
-    pVBInfo->P3ce = pVBInfo->BaseAddr + 0x1e ;
+
+    pVBInfo->P3cc = pVBInfo->BaseAddr + 0x1c ; /* Jong 07/31/2009 */
+	PDEBUG(ErrorF("XGINew_InitVBIOSData()-pVBInfo->P3cc = %d\n", pVBInfo->P3cc));
+
+	pVBInfo->P3ce = pVBInfo->BaseAddr + 0x1e ;
     pVBInfo->P3c2 = pVBInfo->BaseAddr + 0x12 ;
     pVBInfo->P3ca = pVBInfo->BaseAddr + 0x1a ;
     pVBInfo->P3c6 = pVBInfo->BaseAddr + 0x16 ;
@@ -3037,6 +3044,15 @@ void ReadVBIOSTablData( UCHAR ChipType , PVB_DEVICE_INFO pVBInfo)
     ULONG   i ;
     UCHAR   j , k ;
     ULONG   ii , jj ;
+
+	/* Jong@08212009; no valid address of VBIOS ROM */
+	if(pVideoMemory == NULL)
+	{
+		ErrorF("XGI - No valid address of VBIOS ROM!\n");
+		return;
+	}
+	else
+		ErrorF("XGI - Read data from VBIOS ROM...\n");
 
     i = pVideoMemory[ 0x1CF ] | ( pVideoMemory[ 0x1D0 ] << 8 ) ;		/* UniROM */
     if ( i != 0 )
@@ -3368,6 +3384,7 @@ void ReadVBIOSTablData( UCHAR ChipType , PVB_DEVICE_INFO pVBInfo)
         }
     }
 
+	ErrorF("XGI - Read data from VBIOS ROM...End\n");
 }
 
 /* --------------------------------------------------------------------- */
@@ -3451,6 +3468,10 @@ void XGINew_SetDRAMModeRegister_XG27( PXGI_HW_DEVICE_INFO HwDeviceExtension )
     pVBInfo->P3c7 = pVBInfo->BaseAddr + 0x17 ;
     pVBInfo->P3c8 = pVBInfo->BaseAddr + 0x18 ;
     pVBInfo->P3c9 = pVBInfo->BaseAddr + 0x19 ;
+
+    pVBInfo->P3cc = pVBInfo->BaseAddr + 0x1c ; /* Jong 07/31/2009 */
+	PDEBUG(ErrorF("XGINew_SetDRAMModeRegister_XG27()-pVBInfo->P3cc = %d\n", pVBInfo->P3cc));
+
     pVBInfo->P3da = pVBInfo->BaseAddr + 0x2A ;
     pVBInfo->Part0Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_00 ;
     pVBInfo->Part1Port = pVBInfo->BaseAddr + XGI_CRT2_PORT_04 ;

@@ -20,99 +20,73 @@
 #
 # Process this file with autoconf to produce a configure script
 
-AC_PREREQ(2.57)
+# Initialize Autoconf
+AC_PREREQ([2.60])
 AC_INIT([xf86-video-intel],
-        2.9.1,
+        [2.13.0],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
-        xf86-video-intel)
-
+        [xf86-video-intel])
 AC_CONFIG_SRCDIR([Makefile.am])
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR(.)
 
-AM_INIT_AUTOMAKE([dist-bzip2])
-
+# Initialize Automake
+AM_INIT_AUTOMAKE([foreign dist-bzip2])
 AM_MAINTAINER_MODE
 
-AC_CONFIG_FILES([
-	shave
-	shave-libtool
-])
+# Require X.Org macros 1.8 or later for MAN_SUBSTS set by XORG_MANPAGE_SECTIONS
+m4_ifndef([XORG_MACROS_VERSION],
+          [m4_fatal([must install xorg-macros 1.8 or later before running autoconf/autogen])])
+XORG_MACROS_VERSION(1.8)
+XORG_DEFAULT_OPTIONS
 
-# Checks for programs.
+# Initialize libtool
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
-DOLT
-AC_PROG_CC
-AM_PROG_CC_C_O
 
 PKG_CHECK_MODULES(GEN4ASM, [intel-gen4asm >= 1.0], [gen4asm=yes], [gen4asm=no])
 AM_CONDITIONAL(HAVE_GEN4ASM, test x$gen4asm = xyes)
 
-AC_CHECK_HEADERS(sys/mman.h)
-AC_CHECK_FUNCS(mprotect)
-
 AH_TOP([#include "xorg-server.h"])
 
+# Define a configure option for an alternate module directory
 AC_ARG_WITH(xorg-module-dir,
-            AC_HELP_STRING([--with-xorg-module-dir=DIR],
+            AS_HELP_STRING([--with-xorg-module-dir=DIR],
                            [Default xorg module directory [[default=$libdir/xorg/modules]]]),
             [moduledir="$withval"],
             [moduledir="$libdir/xorg/modules"])
 
-AC_ARG_ENABLE(dri, AC_HELP_STRING([--disable-dri],
+AC_ARG_ENABLE(dri, AS_HELP_STRING([--disable-dri],
                                   [Disable DRI support [[default=auto]]]),
               [DRI="$enableval"],
               [DRI=auto])
 
-AC_ARG_ENABLE(video-debug, AC_HELP_STRING([--enable-video-debug],
-                                  [Enable video debugging support [[default=no]]]),
-              [VIDEO_DEBUG="$enableval"],
-              [VIDEO_DEBUG=no])
-
-AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],
-				    [Compile with debug support [[default=yes]]]))
-if test "x$enableval" == "xyes" ; then
-	DEBUGFLAGS="-g"
-else
-	DEBUGFLAGS=""
-fi
-
-AC_ARG_ENABLE(xvmc, AC_HELP_STRING([--disable-xvmc],
+AC_ARG_ENABLE(xvmc, AS_HELP_STRING([--disable-xvmc],
                                   [Disable XvMC support [[default=yes]]]),
               [XVMC="$enableval"],
               [XVMC=yes])
 
-AC_ARG_ENABLE(kms-only, AC_HELP_STRING([--enable-kms-only],
+AC_ARG_ENABLE(kms-only, AS_HELP_STRING([--enable-kms-only],
                                   [Assume KMS support [[default=no]]]),
               [KMS_ONLY="$enableval"],
               [KMS_ONLY=no])
 
-# Checks for extensions
-XORG_DRIVER_CHECK_EXT(XINERAMA, xineramaproto)
+# Store the list of server defined optional extensions in REQUIRED_MODULES
 XORG_DRIVER_CHECK_EXT(RANDR, randrproto)
 XORG_DRIVER_CHECK_EXT(RENDER, renderproto)
 XORG_DRIVER_CHECK_EXT(XF86DRI, xextproto x11)
 XORG_DRIVER_CHECK_EXT(DPMSExtension, xextproto)
 
-# Checks for pkg-config packages
+# Obtain compiler/linker options for the driver dependencies
 PKG_CHECK_MODULES(XORG, [xorg-server >= 1.6 xproto fontsproto $REQUIRED_MODULES])
-PKG_CHECK_MODULES(XEXT, [xextproto >= 7.0.99.1],
-                  HAVE_XEXTPROTO_71="yes"; AC_DEFINE(HAVE_XEXTPROTO_71, 1, [xextproto 7.1 available]),
-                  HAVE_XEXTPROTO_71="no")
-AM_CONDITIONAL(HAVE_XEXTPROTO_71, [ test "$HAVE_XEXTPROTO_71" = "yes" ])
+PKG_CHECK_MODULES(DRM, [libdrm >= 2.4.22])
+PKG_CHECK_MODULES(PCIACCESS, [pciaccess >= 0.10])
 
-sdkdir=$(pkg-config --variable=sdkdir xorg-server)
-drm_cflags=$(pkg-config --cflags libdrm)
-
-# Checks for libraries.
-
-# Checks for header files.
-AC_HEADER_STDC
+sdkdir=`$PKG_CONFIG --variable=sdkdir xorg-server`
 
 save_CFLAGS="$CFLAGS"
-CFLAGS="$XORG_CFLAGS $DRI_CFLAGS $drm_cflags"
-CPPFLAGS="$XORG_CFLAGS $DRI_CFLAGS $drm_cflags"
+CFLAGS="$XORG_CFLAGS $DRI_CFLAGS $DRM_CFLAGS"
+CPPFLAGS="$XORG_CFLAGS $DRI_CFLAGS $DRM_CFLAGS"
 AC_MSG_CHECKING([whether to include DRI support])
 if test x$DRI != xno; then
         AC_CHECK_FILE([${sdkdir}/dri.h],
@@ -135,40 +109,23 @@ fi
 AC_MSG_RESULT([$DRI])
 CFLAGS="$save_CFLAGS $DEBUGFLAGS"
 
-PKG_CHECK_MODULES([PCIACCESS], [pciaccess >= 0.10])
-
-dnl Use lots of warning flags with GCC
-
-WARN_CFLAGS=""
-
-if test "x$GCC" = "xyes"; then
-	WARN_CFLAGS="-Wall -Wpointer-arith -Wstrict-prototypes \
-	-Wmissing-prototypes -Wmissing-declarations \
-	-Wnested-externs -fno-strict-aliasing"
-fi
-
-PKG_CHECK_MODULES(DRM, [libdrm >= 2.4.11])
 AM_CONDITIONAL(DRI, test x$DRI = xyes)
 if test "$DRI" = yes; then
-        PKG_CHECK_MODULES(DRI, [xf86driproto glproto])
+        PKG_CHECK_MODULES(DRI, [xf86driproto])
         AC_DEFINE(XF86DRI,1,[Enable DRI driver support])
         AC_DEFINE(XF86DRI_DEVEL,1,[Enable developmental DRI driver support])
 fi
 
-AM_CONDITIONAL(VIDEO_DEBUG, test x$VIDEO_DEBUG = xyes)
-if test "$VIDEO_DEBUG" = yes; then
-	AC_DEFINE(VIDEO_DEBUG,1,[Enable debug support])
-fi
-
 if test "$XVMC" = yes; then
-	PKG_CHECK_MODULES(XVMCLIB, [xvmc xext xfixes dri2proto], [XVMC=yes], [XVMC=no])
+	PKG_CHECK_MODULES(XVMCLIB,
+			  [xvmc xext xfixes dri2proto x11-xcb xcb-dri2 xcb-aux],
+			  [XVMC=yes], [XVMC=no])
 fi
 AC_MSG_CHECKING([whether to include XvMC support])
 AC_MSG_RESULT([$XVMC])
 AM_CONDITIONAL(XVMC, test x$XVMC = xyes)
 if test "$XVMC" = yes; then
 	AC_DEFINE(ENABLE_XVMC,1,[Enable XvMC support])
-    	AC_SUBST([XVMCLIB_CFLAGS])
 fi
 
 AM_CONDITIONAL(KMS_ONLY, test x$KMS_ONLY = xyes)
@@ -176,38 +133,22 @@ if test "$KMS_ONLY" = yes; then
 	AC_DEFINE(KMS_ONLY,1,[Assume KMS support])
 fi
 
-AC_SUBST([DRI_CFLAGS])
-AC_SUBST([XORG_CFLAGS])
-AC_SUBST([WARN_CFLAGS])
-AC_SUBST([moduledir])
-
 DRIVER_NAME=intel
 AC_SUBST([DRIVER_NAME])
+AC_SUBST([moduledir])
 
-m4_ifndef([XORG_MACROS_VERSION], [AC_FATAL([must install xorg-macros 1.1.3 or later before running autoconf/autogen])])
-XORG_MACROS_VERSION(1.1.3)
-XORG_MANPAGE_SECTIONS
-XORG_RELEASE_VERSION
-
-XORG_CHECK_LINUXDOC
-
-SHAVE_INIT([.], [enable])
-
-AC_OUTPUT([
-	Makefile
-	uxa/Makefile
-	src/Makefile
-	src/xvmc/Makefile
-	src/xvmc/shader/Makefile
-	src/xvmc/shader/mc/Makefile
-	src/xvmc/shader/vld/Makefile
-	src/bios_reader/Makefile
-	src/ch7017/Makefile
-	src/ch7xxx/Makefile
-	src/ivch/Makefile
-	src/reg_dumper/Makefile
-	src/sil164/Makefile
-	src/tfp410/Makefile
-	man/Makefile
-	src/render_program/Makefile
+AC_CONFIG_FILES([
+                Makefile
+                uxa/Makefile
+                src/Makefile
+                src/xvmc/Makefile
+                src/xvmc/shader/Makefile
+                src/xvmc/shader/mc/Makefile
+                src/xvmc/shader/vld/Makefile
+                src/legacy/Makefile
+                src/legacy/i810/Makefile
+                src/legacy/i810/xvmc/Makefile
+                man/Makefile
+                src/render_program/Makefile
 ])
+AC_OUTPUT

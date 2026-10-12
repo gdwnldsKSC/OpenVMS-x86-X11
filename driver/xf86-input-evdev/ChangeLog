@@ -1,3 +1,837 @@
+commit 990540fa1905b11403d5c25345c428c5bc9ed126
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Aug 23 10:34:36 2010 +1000
+
+    evdev 2.5.0
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit b8945e61eb97265fdccace8411b8b33d3d56be13
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Aug 23 10:27:35 2010 +1000
+
+    man: don't reference README.mouse
+    
+    No real reason to refer to the mouse driver's readme.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 97dc45b769c9a4dfa61782d7ce491df8ebaed3dc
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Aug 19 12:50:25 2010 +1000
+
+    evdev 2.4.99.901
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit ec6cb31cc47eed3ccba4c906ca6c54b99136e9eb
+Author: Bartosz Brachaczek <b.brachaczek@gmail.com>
+Date:   Tue Aug 10 22:31:37 2010 +0200
+
+    evdev: Initialize valuators array. (#24737)
+    
+    The array needs to be filled with zeros, otherwise we may end up sending
+    it with random values if non-zero values aren't in one row (which is the
+    case for A4Tech X-750F which sends REL_MISC events without a reason).
+    
+    X.Org Bug 24737 <http://bugs.freedesktop.org/show_bug.cgi?id=24737>
+    
+    Signed-off-by: Bartosz Brachaczek <b.brachaczek@gmail.com>
+    Tested-by: Bartek Iwaniec <hash87@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit ed47c7f33e315f163a6aebeb3e1c8947004576fd
+Author: Bartosz Brachaczek <b.brachaczek@gmail.com>
+Date:   Tue Aug 10 22:31:00 2010 +0200
+
+    evdev: Revert "Set all valuators for relative motion events (#24737)"
+    
+    It isn't necessary to post zero-deltas to X Server. In order not to post
+    uninitialized "v" array we should rather simply initialize it.
+    
+    This reverts commit c1f16a4f59a584ab4546c2f16e20b06703042057.
+    
+    Signed-off-by: Bartosz Brachaczek <b.brachaczek@gmail.com>
+    Tested-by: Bartek Iwaniec <hash87@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 899218e18120918138f6d7420465763422d5b3b7
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Aug 9 13:01:11 2010 +1000
+
+    Don't count BTN_TOUCH as tool. (#29428)
+    
+    Devices that don't have a tool but BTN_TOUCH simply have the tool always on.
+    Devices that have a tool other than BTN_TOUCH set this tool before BTN_TOUCH
+    is emitted anyway.
+    
+    X.Org Bug 29428 <http://bugs.freedesktop.org/show_bug.cgi?id=29428>
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 421585fda6ce67c209d43952109dda056ee40941
+Author: Alex Warg <alexander.warg@os.inf.tu-dresden.de>
+Date:   Wed Jun 30 10:33:46 2010 +1000
+
+    Fix out-of-bounds access if more than MAX_VALUATORS are present. (#28809)
+    
+    The functions EvdevAddRelClass and EvdevAddAbsClass do out of bounds
+    accesses to vals and old_vals arrays in the EvdevRec structure if there are
+    more than MAX_VALUATORS axes reported by the kernel.
+    
+    X.Org Bug 28809 <http://bugs.freedesktop.org/show_bug.cgi?id=28809>
+    
+    Signed-off-by: Alex Warg <alexander.warg@os.inf.tu-dresden.de>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 8697811f56160146981f2364d6e154b2c57f388e
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jun 22 14:40:13 2010 +1000
+
+    man: some minor fixes to man page.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit b06bffdc979eb7d1ebf10680bc9b11baf9bd34a0
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri Jun 11 10:01:08 2010 +1000
+
+    Add myself to Authors in man page.
+    
+    git blames me for about half the driver now, I guess that's enough
+    justification ;)
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 9410e452d26aeb81fb6068ab83ffdcd5aca32f67
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu May 27 21:56:47 2010 -0400
+
+    config: use AC_PROG_INSTALL now supplied by XORG_DEFAULT_OPTIONS
+    
+    It depends on util-macros 1.8
+    The existing statement can now be removed from the configuration file.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 516e538da4c866dde12d747095fa1779fd4275c0
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu May 27 20:51:47 2010 -0400
+
+    config: upgrade to util-macros 1.8 for additional man page support
+    
+    Use MAN_SUBST now supplied in XORG_MANPAGE_SECTIONS
+    The value of MAN_SUBST is the same for all X.Org packages.
+    
+    Use AC_PROG_SED now supplied by XORG_DEFAULT_OPTIONS
+    The existing statement can now be removed from the configuration file.
+    
+    Use Automake $() for variables in Makefile.am
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 1f38e1bc1174a66980d4a7e8e0a36aef938625df
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Jun 12 09:59:06 2010 -0400
+
+    COPYING: update and refactor the Copyright notices
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 456579ba30edbda8182cc8a7f6347e591d191bd0
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jun 1 10:20:25 2010 +1000
+
+    Bump to 2.4.99
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 21a2ac818e75ef918d320ce1e88b6263e68e598d
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri May 28 09:47:17 2010 +1000
+
+    Disable middle mouse button emulation by default.
+    
+    The AUTO feature was the default, MB emulation was on until a middle mouse
+    button was pressed. MB emulation however results in a delay of the first
+    press, causing minor annoyances to the users and being generally confusing
+    when the behaviour before a button press is different to after a button
+    pres.
+    
+    Disable the feature by default instead. There's not a lot of two-button mice
+    around anymore though and the inability to detect two-button mice makes for
+    non-deterministic detection of when the emulation should be on.
+    
+    Middle button emulation can be enabled with a configuration snippet:
+    
+    Section "InputClass"
+            Identifier "middle button emulation"
+            MatchIsPointer "on"
+            Option "Emulate3Buttons" "on"
+    EndSection
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Acked-by: Daniel Stone <daniel@fooishbar.org>
+
+commit 4c216242404d749b9ae8ec181146689f89119cb4
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu May 20 12:40:13 2010 +1000
+
+    Remove libc wrappers for malloc, calloc and free.
+    
+    Evdev is Linux-only, and we've had the above calls for quite a while now.
+    Plus, now that the server has removed them they generate _a lot_ of warnings
+    otherwise.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Jamey Sharp <jamey@minilop.net>
+
+commit 6e244b109861d6f602066cac8b766a55a5016c63
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu May 20 12:38:19 2010 +1000
+
+    Move mode declaration, it's not const either.
+    
+    What we're getting back from xf86SetStrOption is a strdup'd string, not
+    const, especially given that we free it a few lines down.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit e7c301563a4b1718d2fc0066c1b3125404e3060f
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu May 20 14:24:05 2010 +1000
+
+    Move opening the device into a separate function.
+    
+    Re-use from EvdevOn and PreInit.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit ffc2c9961f5fb099b85a97550a30a854420ee773
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu May 20 11:54:56 2010 +1000
+
+    Move checks for calibration, inversion and axis swap to EvdevProbe.
+    
+    Keyboard devices don't need these checks.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 7c01cff1faede468efddf2c66c9ca85022585244
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed May 19 15:37:01 2010 +1000
+
+    Move EVIOCGRAB into a static func.
+    
+    This is in preparation of some major rework, there are no functional
+    changes.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit e6e20c1b3e5977830a2b78046c0a8c49e38746fd
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed May 19 15:09:29 2010 +1000
+
+    Move error handling in PreInit down to the end.
+    
+    Just have one exit path instead of different ones. Guards are in place to
+    avoid freeing/deleting something that shouldn't be.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Jamey Sharp <jamey@minilop.net>
+
+commit b27d03b248e36ec7a674113baa494b82e3ad728b
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed May 19 14:55:32 2010 +1000
+
+    Comment odd EVIOCGRAB behaviour and reshuffle conditions a bit.
+    
+    The reason for this rather weird approach is to ungrab immediately after
+    getting a successful grab. Evdev shouldn't be hogging the device if nothing
+    is done with it.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Jamey Sharp <jamey@minilop.net>
+
+commit ba78428ed50685fd89ef4f35143a9b3f2b1ac0f6
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed May 19 14:52:29 2010 +1000
+
+    Remove support for kernel 2.4.
+    
+    It's been 6 years since 2.6, I doubt evdev would even work on 2.4 right now.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Jamey Sharp <jamey@minilop.net>
+    Reviewed-by: Dan Nicholson <dbn.lists@gmail.com>
+
+commit 041a1f246a10951ca5c0fc34b0c88c4762c076bf
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon May 10 21:42:35 2010 -0400
+
+    config: AC_PROG_SED is required explicitly.
+    
+    It sets the SED env variable with an appropriate sed program path
+    It still works on some platform when not explicity called.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 44b80d177f57a5d697402e0bbb1c3bf77d5f39e6
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu May 6 11:10:45 2010 +1000
+
+    Update a stale comment about the use of pEvdev->tool.
+    
+    Including some typo fixes in the same comment.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 7bbbce9a834f2549168b63d1c5993440ef325f87
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Apr 29 10:06:24 2010 +1000
+
+    Read the device resolution from the kernel.
+    
+    For earlier kernels, use the previous hardcoded resolution in place.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Julien Cristau <jcristau@debian.org>
+
+commit 35b6085bf8feb9e6d3d3020db868a6e285dec38a
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed Apr 28 10:41:06 2010 +1000
+
+    config: remove AH_TOP autoheader statement.
+    
+    Include it in evdev.h instead.
+    xorg-server.h is required to define the right datatype sizes on 64 bit,
+    hence ensure that evdev.h is the first included in each file.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 539d67505cdb36018bd0e5ef01bd78939eafaadb
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 22 10:50:55 2010 +1000
+
+    Revert "config: remove AH_TOP autoheader statement"
+    
+    The changed location of xorg-server.h had some side-effects.
+    See Bug 27768 <https://bugs.freedesktop.org/show_bug.cgi?id=27768>
+    
+    This reverts commit 9dbace89bee55a001e794ccf3ff36e3afeda4715.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit a77dea1caa5aa632adad10028ed86544b4bb65e1
+Merge: 993e011 5fb1e84
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Apr 20 16:31:09 2010 +1000
+
+    Merge branch 'master' of git://gitorious.org/omcfadde/xf86-input-evdev
+
+commit 5fb1e841eb26f6223504e46dacfc40c2e510f72d
+Author: Oliver McFadden <oliver.mcfadden@nokia.com>
+Date:   Tue Apr 20 06:59:58 2010 +0300
+
+    evdev: EvdevProbe: check ioctl() return value and warn on failure.
+    
+    Called function "ioctl" whose return value should be checked (checked 10
+    out of 11 times)
+    
+    Signed-off-by: Oliver McFadden <oliver.mcfadden@nokia.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit a4f2d12cd8fbd19d13a184c45817d7539cb7e3be
+Author: Oliver McFadden <oliver.mcfadden@nokia.com>
+Date:   Tue Apr 20 05:48:33 2010 +0300
+
+    evdev: ioctl() may return a negative value therefor use a signed integer.
+    
+    Signed-off-by: Oliver McFadden <oliver.mcfadden@nokia.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 6b5c0401e2b8fe1637f937739e822a33206ef1ac
+Author: Oliver McFadden <oliver.mcfadden@nokia.com>
+Date:   Tue Apr 20 05:37:39 2010 +0300
+
+    evdev: leaked_storage: free memory allocated from the xf86Option code.
+    
+    Signed-off-by: Oliver McFadden <oliver.mcfadden@nokia.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 993e011b91d318dcb8df76799e5102a20060a169
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Apr 17 18:42:29 2010 -0400
+
+    man: Use Autoconf provided $(AM_V_GEN)$(SED)
+    
+    Enables silent rule and use platform appropriate version of sed.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2d5e922a6daacf5d6e7f93ff072842a278ceed42
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Apr 17 18:23:48 2010 -0400
+
+    include: EXTRA_DIST is not required for header files.
+    
+    The sdk_HEADERS is sufficient as the "sdk" prefix
+    matches the "dir" suffix in the "sdkdir" variable.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 41a38ec88608a829dc175cece79f3100671c9e84
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Apr 17 18:18:55 2010 -0400
+
+    config: require macros 1.4, fix warnings, m4 quotings and layout
+    
+    Fix some m4 quoting
+    Fix some autoconf warnings
+    remove AC_PROG_CC as it overrides AC_PROG_C_C99 from XORG_DEFAULT_OPTIONS
+    Regroup statements per section
+    Add comments
+    Upgrade X.Org macros to 1.4 for INSTALL file copying
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit b31c00efeaa0e3c75c0ab35458aaa322719a823f
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Apr 17 15:11:43 2010 -0400
+
+    config: optional extension check for inputproto not required
+    
+    The check should be in PKG_CHECK_MODULES permanently.
+    
+    The XORG_DRIVER_CHECK_EXT will add inputproto to PKG_CHECK_MODULES
+    only if the extension is available. By definition, this extension
+    is always available and the evdev driver cannot function without it.
+    
+    This is evidenced by the absence of XINPUT conditional code.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit b48dcfa3f22575840a377380fbe98e5e05e400c9
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 15 13:27:14 2010 -0400
+
+    config: replace deprecated INCLUDES with AM_CPPFLAGS
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 44baa36b9904f2afdfd00769a2d15a5eb630059e
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 15 13:22:31 2010 -0400
+
+    config: refactor and comment the sdkdir distcheck workaround
+    
+    Seperate legitimate sdkdir usage from distcheck workaround.
+    Comment this non obvious workaround.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 7fa5982d477351f7e4b825234bfa248363d3d183
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 15 13:13:45 2010 -0400
+
+    config: remove unrequired AC_HEADER_STDC
+    
+    Autoconf says:
+    "This macro is obsolescent, as current systems have conforming
+    header files. New programs need not use this macro".
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit fe8d0fa11a1ffaf219cc66ac3c509fdc844025bd
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 15 13:12:49 2010 -0400
+
+    replace deprecated AM_CONFIG_HEADER with AC_CONFIG_HEADERS
+    
+    Regroup AC statements at the top.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 09b918db86febb8a25c0e497f1629cd245c71975
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 15 13:10:58 2010 -0400
+
+    config: update AC_PREREQ statement to 2.60
+    
+    Unrelated to the previous patches, the new value simply reflects
+    the reality that the minimum level for autoconf to configure
+    all x.org modules is 2.60 dated June 2006.
+    
+    ftp://ftp.gnu.org/gnu/autoconf/autoconf-2.60.tar.gz
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 9dbace89bee55a001e794ccf3ff36e3afeda4715
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 15 13:09:05 2010 -0400
+
+    config: remove AH_TOP autoheader statement
+    
+    The generated config.h does not need to include xorg-server.h
+    for the content it provides.
+    Add #include <xorg-server.h> in .[hc] files as needed.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit aaf65e7bfacd9501c4475a579d92c3bc60409893
+Author: Paulo Ricardo Zanoni <pzanoni@mandriva.com>
+Date:   Wed Apr 14 17:12:27 2010 -0300
+
+    Don't set pEvdev->rel for mouse wheel events
+    
+    This way we won't get empty MotionNotify events when the mouse wheel is
+    used.
+    
+    Signed-off-by: Paulo Ricardo Zanoni <pzanoni@mandriva.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 8eede7ea8d3e3bc3a3b0d48c89df3c5f40041ef7
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Apr 8 16:49:01 2010 +1000
+
+    Use X_PROBED instead of X_INFO for probed values.
+    
+    No functional changes, only the log output differs now.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Fernando Carrijo <fcarrijo@yahoo.com.br>
+
+commit 1936632cb0b777e54cef9dd58df9060155d0643e
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Apr 6 10:31:16 2010 +1000
+
+    evdev 2.4.0
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 0dc931e1acee6ea3afd032be887f85ce1121f325
+Author: Simon Thum <simon.thum@gmx.de>
+Date:   Tue Mar 16 16:00:21 2010 +0100
+
+    move feedback initialization up
+    
+    This allows the backend to propery initialize the feedback from options,
+    as it works with most other drivers. This is the hacky equivalent of
+    fixing the initialization of pointer acceleration, which would require
+    changes to most drivers however.
+    
+    Signed-off-by: Simon Thum <simon.thum@gmx.de>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit d525b48a2ffeeb63fd248e21324e33156ed61ed0
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Mar 15 11:08:05 2010 +1000
+
+    When labeling a device as touchpad, only check for LMR buttons.
+    
+    Touchpads that have physical buttons have either LMR or BTN_TOOL_FINGER.
+    Other buttons in the range evdev recognises shouldn't be taken into account
+    here - they skew the detection towards touchpads and away from touchscreens.
+    
+    Fedora Bug 571639
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Simon Thum <simon.thum@gmx.de>
+
+commit 801778c3106fc7e409369b4500253a38be6a5795
+Author: Oliver McFadden <oliver.mcfadden@nokia.com>
+Date:   Thu Feb 25 07:11:21 2010 +0200
+
+    emuMB: default to disabled mouse button emulation for touchscreens.
+    
+    Because touchscreens only use one button (see EvdevProcessKeyEvent())
+    EvdevMBEmuFilterEvent() never calls EvdevMBEmuEnable(..., FALSE) to
+    disable emulation. This results in touchscreen devices incurring a delay
+    of Emulate3Timeout (typically 50 ms.)
+    
+    Default to MBEMU_DISABLED for touchscreen devices (unless overwritten by
+    Xorg.conf.)
+    
+    Signed-off-by: Oliver McFadden <oliver.mcfadden@nokia.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 99505011d124bef00acffb6ab07f6b765f5870b7
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Feb 18 19:01:51 2010 +1000
+
+    man: fix man page formatting for option EmulateWheel.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit fd036680c210266ba535b0204cac38e503371398
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Feb 11 10:08:07 2010 -0500
+
+    config: move CWARNFLAGS from configure.ac to Makefile.am
+    
+    Compiler warning flags should be explicitly set in the makefile
+    rather than being merged with other packages compiler flags.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit e81cd935cfff18d3c387eed3e8083977c19c92f0
+Author: Andrej Gelenberg <andrej.gelenberg@udo.edu>
+Date:   Tue Jan 12 11:22:16 2010 +0100
+
+    Implement XSetDeviceMode request handler
+    
+    Implement XSetDeviceMode request handler for evdev.
+    Devices with absolute axes can be switched in relative
+    mode or absolute mode. Devices with relative axes
+    can be switched only in relative mode. Other devices
+    return BadMatch, cause they have no valuators and
+    don't report motion events.
+    
+    New option "Mode" force devices with absolute axes
+    to work in relative or absolute mode.
+    
+    Need xinputproto.
+    
+    Signed-off-by: Andrej Gelenberg <andrej.gelenberg@udo.edu>
+
+commit 0b5844ce677a99110730ac885fc990c4b8f4bfa9
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Fri Jan 15 15:10:55 2010 -0800
+
+    Update Sun license notices to current X.Org standard form
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit d6beb16be26df65cd65eaeb146fde0d355521535
+Author: Dima Kogan <dkogan@cds.caltech.edu>
+Date:   Sat Dec 5 02:05:19 2009 -0800
+
+    allow wheel emulation to work with absolute-position devices
+    
+    Signed-off-by: Dima Kogan <dkogan@cds.caltech.edu>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 2f5a0fb6988809a91c4e6821aaed46ba27c9855c
+Author: Dima Kogan <dkogan@cds.caltech.edu>
+Date:   Sat Dec 5 02:08:32 2009 -0800
+
+    removed unnecessary static declarations
+    
+    Signed-off-by: Dima Kogan <dkogan@cds.caltech.edu>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 1b0df04abe329433658c95debdafdf1714173814
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Dec 1 15:44:39 2009 +1000
+
+    Fix up BTN_TOUCH handling for non-button tablets.
+    
+    BTN_TOOL_* is treated as tool, just like before. BTN_TOUCH on the other hand
+    may need to be treated as a button left press. This again requires a button
+    class.
+    
+    Tested on an HP Touchsmart and a Wacom tablet.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 2ca24a16f08095f35d5610f16e202c525b3075e9
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Dec 1 14:16:10 2009 +1000
+
+    Only init the calibration property for absolute devices.
+    
+    Relative devices can't be calibrated anyway so why bother.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 7b285a802b8ccddd1edcf40ab345c4a96bcdf43c
+Author: David Woodhouse <dwmw2@infradead.org>
+Date:   Tue Dec 1 00:14:54 2009 +0000
+
+    Report initial calibration parameters.
+    
+    Where an initial calibration is provided through the Calibration option
+    to the driver, it wasn't being exposed in the 'Evdev Axis Calibration'
+    property. Remedy that...
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Acked-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit f187badb71554a73bf9ca30ce75c9d166e688f03
+Author: David Woodhouse <dwmw2@infradead.org>
+Date:   Tue Dec 1 00:12:36 2009 +0000
+
+    Swap axes before applying touch screen calibration.
+    
+    When the SwapAxes option is set, the X and Y axes in calibration should
+    be labelled as the user perceives them -- not as the kernel sends them.
+    
+    Currently, we apply the X-axis calibration to the X-axis of the input,
+    and then do the axis swapping so we've actually applied the X-axis
+    calibration to what the user sees as the Y-axis.
+    
+    This patch changes the order of the operations, so that the axes are
+    swapped before the calibration is applied.
+    
+    Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+    Acked-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 0e9d75ba68d648f38ea5850f910867c9fc908d07
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri Nov 27 14:29:52 2009 +1000
+
+    Fix a comment, EV_CNT is available since 2.6.24
+    
+    Introduced in the kernel as 2.6.23-6147-g7b19ada.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 3a6d27b83dbc69e42f289d7249bfa92328b69676
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Nov 23 09:25:05 2009 -0500
+
+    Makefile.am: add ChangeLog and INSTALL on MAINTAINERCLEANFILES
+    
+    Now that the INSTALL file is generated.
+    Allows running make maintainer-clean.
+
+commit 886e303af1434d5af8db6938e873baf399261105
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Oct 28 14:41:40 2009 -0400
+
+    INSTALL, NEWS, README or AUTHORS files are missing/incorrect #24206
+    
+    Automake 'foreign' option is specified in configure.ac.
+    Remove from Makefile.am
+
+commit 3d23ef4888a75b42a95e117db0811e98693f8d09
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Oct 28 14:09:09 2009 -0400
+
+    INSTALL, NEWS, README or AUTHORS files are missing/incorrect #24206
+    
+    Add missing INSTALL file. Use standard GNU file on building tarball
+    README may have been updated
+    Remove AUTHORS file as it is empty and no content available yet.
+    Remove NEWS file as it is empty and no content available yet.
+
+commit c0473e4921f3c3beec59abefb63180cba4d168df
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Oct 26 12:54:20 2009 -0400
+
+    Several driver modules do not have a ChangeLog target in Makefile.am #23814
+    
+    The git generated ChangeLog replaces the hand written one.
+    Update configure.ac to xorg-macros level 1.3.
+    Use XORG_DEFAULT_OPTIONS which replaces four XORG_* macros
+    Update Makefile.am to add ChangeLog target if missing
+    Remove ChangeLog from EXTRA_DIST or *CLEAN variables
+    This is a pre-req for the INSTALL_CMD
+
+commit afc9e917656508fc3277b7d39e5ab436cf0542f4
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Oct 22 12:34:16 2009 -0400
+
+    .gitignore: use common defaults with custom section # 24239
+    
+    Using common defaults will reduce errors and maintenance.
+    Only the very small or inexistent custom section need periodic maintenance
+    when the structure of the component changes. Do not edit defaults.
+
+commit c1f16a4f59a584ab4546c2f16e20b06703042057
+Author: Bartosz Brachaczek <b.brachaczek@gmail.com>
+Date:   Fri Nov 13 00:18:00 2009 +1000
+
+    Set all valuators for relative motion events (#24737)
+    
+    We should process all the deltas reported by a relative motion device,
+    otherwise some devices such as A4Tech X-750F or similar may trigger a
+    situation when the `v` array contains random values (it isn't
+    initialized anywhere) and later we process them and in effect the mouse
+    cursor "jumps" on the screen.
+    I'm not sure why, but we also must be sure that the `first` and `last`
+    variables reflect the axis map, otherwise the mouse cursor "jumps" on
+    the screen when clicking mouse buttons in some rare cases reported by
+    Bartek Iwaniec on Bugzilla. That's why a simple initialization of the
+    `v` array with zeros isn't sufficient.
+    
+    X.Org Bug 24737 <http://bugs.freedesktop.org/show_bug.cgi?id=24737>
+    
+    Signed-off-by: Bartosz Brachaczek <b.brachaczek@gmail.com>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit a0f7f34dc5effc5822c618bfbf3a0872669c30ad
+Author: Dmitry Torokhov <dmitry.torokhov@gmail.com>
+Date:   Mon Nov 2 23:11:55 2009 -0800
+
+    Relax checks when reopening devices
+    
+    When checking whether we are dealing with the same device as before
+    when we try to reopen it evdev should not require exact match of
+    entire keymap. Users should be allowed to adjust keymaps to better
+    match their hardware even after X starts. However we don't expect
+    changes in [BTN_MISC, KEY_OK) range since these codes are reserved for
+    mice, joysticks, tablets and so forth, so we will limit the check to
+    this range.
+    
+    The same goes for absinfo - limits can change and it should not result
+    in device being disabled.
+    
+    Also check the length of the data returned by ioctl and don't try to
+    compare more than we were given.
+    
+    [peter: moved the key comparison below the led+abs comparison]
+    
+    Signed-off-by: Dmitry Torokhov <dtor@mail.ru>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 11669d82790fd7c94c44c0d487d3fa5e203528e9
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Nov 2 13:57:18 2009 +1000
+
+    Fix drag-lock property handler for multiple draglock buttons.
+    
+    Parsing of the values was wrong. Given an input of 1 2 3 4, button 1 sets
+    the lock for button 2 and button 3 sets the lock for button 4.
+    
+    This also means we need to return BadMatch if the property isn't a multiple
+    of 2.
+    
+    Red Hat Bug 524428 <https://bugzilla.redhat.com/show_bug.cgi?id=524428>
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 9cbffda91009001ab6aab84efd2ffb4e35561958
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Oct 22 15:13:02 2009 +1000
+
+    Forward keycodes > 255
+    
+    The server doesn't handle them yet but eventually it should learn.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 59056e656c6475816ab45b2798bd4d4466482f6a
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Oct 13 14:51:49 2009 +1000
+
+    Remove the reopen timer logic.
+    
+    This logic was needed in older kernels that sometimes gave error messages
+    after coming back from resume (2.6.27 release kernels). I haven't seen any
+    log files that needed this reopen timer in a long time, suggesting that need
+    for it is gone.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
 commit aa6399fdb9ec970e205b1efb336338ac870d2bcf
 Author: Peter Hutterer <peter.hutterer@who-t.net>
 Date:   Mon Oct 19 11:40:24 2009 +1000

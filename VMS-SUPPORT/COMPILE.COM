@@ -22,7 +22,7 @@ $ profiles = profiles + "XSS|XVMC|XXF86VM|"
 $ profiles = profiles + "DMX|"
 $ profiles = profiles + "XMUU|XPM|"
 $ profiles = profiles + "FONT_BUILTINS|FONT_FREETYPE|"
-$ profiles = profiles + "X11|X11_MAKEKEYS|"
+$ profiles = profiles + "X11|X11_MAKEKEYS|XCB|"
 $ profiles = profiles + "XAUTH|XDPYINFO|XWININFO|"
 $ profiles = profiles + "XSET|XMODMAP|XEV|XKBCOMP|SETXKBMAP|"
 $ profiles = profiles + "XT|XMU|"
@@ -37,7 +37,8 @@ $ IF (P6 .NES. "") .OR. -
      (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
 $ rtl_headers = F$SEARCH("SYS$LIBRARY:DECC$RTLDEF.TLB")
 $ IF rtl_headers .EQS. "" THEN GOTO done
-$ IF P4 .EQS. "OS" THEN GOSUB os_native_headers
+$ IF (P4 .EQS. "OS") .OR. (P4 .EQS. "XCB") .OR. -
+     (P4 .EQS. "X11") .OR. (P4 .EQS. "XWININFO") THEN GOSUB os_native_headers
 $ IF rtl_headers .EQS. "" THEN GOTO done
 $ IF (P4 .EQS. "GTF") .OR. (P4 .EQS. "RTL") THEN GOTO rtl_headers
 $ IF P4 .EQS. "ZLIB" THEN GOTO zlib_headers
@@ -47,6 +48,12 @@ $ inherited_x11 = F$TRNLNM("X11")
 $ inherited_table = F$TRNLNM("X11",,,,,"TABLE_NAME")
 $ IF F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]"
+$ IF (P4 .EQS. "XCB") .OR. (P4 .EQS. "X11") .OR. (P4 .EQS. "XWININFO") THEN -
+    include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE.XCB]," + -
+    include_directory + ",""./VMS-SUPPORT/_BUILD/P64/INCLUDE"""
+$ IF P4 .EQS. "XCB" THEN include_directory = -
+    "[.VMS-SUPPORT.LIB.XCB],[.VMS-SUPPORT._BUILD.P64.LIB.XCB]," + -
+    "[.XCB.LIBXCB.SRC],[.VMS-SUPPORT._BUILD.P64.INCLUDE.XCB]," + include_directory
 $ IF P4 .EQS. "XF86CONFIG" THEN include_directory = include_directory + -
     ",[.XSERVER.XORG-SERVER.HW.XFREE86.PARSER]"
 $ IF (P4 .EQS. "X11") .OR. (P4 .EQS. "X11_MAKEKEYS") THEN -
@@ -164,7 +171,7 @@ $ IF P4 .EQS. "XKBCOMP" THEN include_directory = -
     "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XKBCOMP],[.APP.XKBCOMP]," + include_directory
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.UTIL.MAKEDEPEND]"
-$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|ROOTLESS|"
+$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|ROOTLESS|XF86CONFIG|"
 $ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|COMMON|BUS|MISC|XORGXKB|"
 $ server_profiles = server_profiles + "XORGFB|"
 $ server_profiles = server_profiles + "LOADER|"

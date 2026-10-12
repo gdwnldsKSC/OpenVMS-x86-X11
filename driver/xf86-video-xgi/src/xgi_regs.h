@@ -29,6 +29,32 @@
 #ifndef _XGI_REGS_H_
 #define _XGI_REGS_H_
 
+/* Jong 02/11/2009; replace inb/outb */
+#if defined(__arm__) 
+#ifndef minb
+#define minb(p) MMIO_IN8(0, (p)) 		
+#endif
+#ifndef moutb
+#define moutb(p,v) MMIO_OUT8(0, (p),(v))
+#endif
+#ifndef minw
+#define minw(p) MMIO_IN16(0, (p))
+#endif
+#ifndef moutw
+#define moutw(p,v) MMIO_OUT16(0, (p))
+#endif
+#ifndef minl
+#define minl(p) MMIO_IN32(0, (p))
+#endif
+#ifndef moutl
+#define moutl(p,v) MMIO_OUT32(0, (p), (v))
+#endif
+
+/* Jong 02/11/2009; replace inb/outb */
+#define inb(p)			minb(p)
+#define outb(p, v)		moutb(p, v)
+#endif
+
 #include "vgaHW.h"
 
 #define inXGIREG(base)      inb(base)
@@ -79,7 +105,7 @@
 #define GENMASK(mask)            BITMASK(1?mask,0?mask)
 
 #define GETBITS(var,mask)        (((var) & GENMASK(mask)) >> (0?mask))
-#define SETBITS(val,mask)        ((val) << (0?mask))
+/* #define SETBITS(val,mask)        ((val) << (0?mask)) */ /* Jong@08032009 */
 #define SETBIT(n)                (1<<(n))
 
 #define GETBITSTR(val,from,to)    ((GETBITS(val,from)) << (0?to))

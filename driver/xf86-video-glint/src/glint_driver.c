@@ -442,7 +442,7 @@ GLINTFreeRec(ScrnInfoPtr pScrn)
     TRACE_ENTER("GLINTFreeRec");
     if (pScrn->driverPrivate == NULL)
 	return;
-    xfree(pScrn->driverPrivate);
+    free(pScrn->driverPrivate);
     pScrn->driverPrivate = NULL;
     TRACE_EXIT("GLINTFreeRec");
 }
@@ -556,7 +556,7 @@ GLINTProbe(DriverPtr drv, int flags)
 	    }
 	}
 	
-    	xfree(devSections);
+    	free(devSections);
 	
     } else  if (checkusedPci) 
 #endif
@@ -575,7 +575,7 @@ GLINTProbe(DriverPtr drv, int flags)
 				numDevSections, drv, &usedChips);
 	}
 
-	xfree(devSections);
+	free(devSections);
 	if (numUsed <= 0)
 	    return FALSE;
 	foundScreen = TRUE;
@@ -642,7 +642,7 @@ GLINTProbe(DriverPtr drv, int flags)
 				   PCI_DEV_BUS(*checkusedPci),
 				   PCI_DEV_DEV(*checkusedPci),
 				   PCI_DEV_FUNC(*checkusedPci));	
-    		    	    xfree(usedChips);					
+    		    	    free(usedChips);					
 		    	    return FALSE;					
 		        }	
 	                } 	
@@ -695,7 +695,7 @@ GLINTProbe(DriverPtr drv, int flags)
 	}
     }
 
-    xfree(usedChips);
+    free(usedChips);
 
     TRACE_EXIT("GLINTProbe");
     return foundScreen;
@@ -1030,7 +1030,7 @@ GLINTPreInit(ScrnInfoPtr pScrn, int flags)
     xf86CollectOptions(pScrn, NULL);
 
     /* Process the options */
-    if (!(pGlint->Options = xalloc(sizeof(GLINTOptions))))
+    if (!(pGlint->Options = malloc(sizeof(GLINTOptions))))
 	return FALSE;
     memcpy(pGlint->Options, GLINTOptions, sizeof(GLINTOptions));
     xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, pGlint->Options);
@@ -2819,7 +2819,7 @@ GLINTScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     if(pGlint->ShadowFB) {
  	pGlint->ShadowPitch = BitmapBytePad(pScrn->bitsPerPixel * pScrn->virtualX);
-        pGlint->ShadowPtr = xalloc(pGlint->ShadowPitch * pScrn->virtualY);
+        pGlint->ShadowPtr = malloc(pGlint->ShadowPitch * pScrn->virtualY);
 	displayWidth = pGlint->ShadowPitch / (pScrn->bitsPerPixel >> 3);
         FBStart = pGlint->ShadowPtr;
     } else {
@@ -3375,12 +3375,9 @@ GLINTCloseScreen(int scrnIndex, ScreenPtr pScreen)
 	XAADestroyInfoRec(pGlint->AccelInfoRec);
     if(pGlint->CursorInfoRec)
 	xf86DestroyCursorInfoRec(pGlint->CursorInfoRec);
-    if (pGlint->ShadowPtr)
-	xfree(pGlint->ShadowPtr);
-    if (pGlint->DGAModes)
-	xfree(pGlint->DGAModes);
-    if (pGlint->ScratchBuffer)
-	xfree(pGlint->ScratchBuffer);
+    free(pGlint->ShadowPtr);
+    free(pGlint->DGAModes);
+    free(pGlint->ScratchBuffer);
     pScrn->vtSema = FALSE;
     
     if (xf86IsPc98())

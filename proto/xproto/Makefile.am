@@ -1,3 +1,5 @@
+SUBDIRS=specs
+
 xprotodir = $(includedir)/X11
 xproto_HEADERS = \
 	ap_keysym.h \
@@ -32,14 +34,16 @@ nodist_xproto_HEADERS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xproto.pc
 
-EXTRA_DIST = xproto.pc.in ChangeLog
 
-CLEANFILES=ChangeLog
+MAINTAINERCLEANFILES = ChangeLog INSTALL
 
-.PHONY: ChangeLog
+.PHONY: ChangeLog INSTALL
+
+INSTALL:
+	$(INSTALL_CMD)
 
 ChangeLog:
 	$(CHANGELOG_CMD)
 
-dist-hook: ChangeLog
+dist-hook: ChangeLog INSTALL
 

@@ -40,7 +40,6 @@
 .\" of this documentation for any purpose.
 .\" It is provided ``as is'' without express or implied warranty.
 .\" 
-.\" $XFree86: xc/doc/man/X11/XRaiseWin.man,v 1.2 2001/01/27 18:20:03 dawes Exp $
 .\"
 .ds xT X Toolkit Intrinsics \- C Language Interface
 .ds xW Athena X Widgets \- C Language X Toolkit Interface
@@ -306,7 +305,7 @@ The stacking order of the first window in the windows array is unaffected,
 but the other windows in the array are stacked underneath the first window,
 in the order of the array.
 The stacking order of the other windows is not affected.
-For each window in the window array that is not a child of the specified window,
+For each window in the window array that is not a sibling of the first window,
 a
 .ZN BadMatch
 error results.

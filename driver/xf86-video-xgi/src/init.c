@@ -160,6 +160,9 @@ XGI_GetModeID(ULONG VBFlags, int HDisplay, int VDisplay,
           break;
      case 1400:
           break;
+     case 1440: 
+          /* if(VDisplay == 900) ModeIndex = ModeIndex_1440x900[Depth]; */
+          break;
      case 1600:
           if(VDisplay == 1200) ModeIndex = ModeIndex_1600x1200[Depth];
           break;
@@ -904,11 +907,6 @@ XGIBIOSSetMode(VB_DEVICE_INFO *XGI_Pr, PXGI_HW_DEVICE_INFO HwInfo,
     BOOLEAN SetModeRet = FALSE ;
     UShort  HDisplay = pXGI->scrnOffset >> 3 ;
 
-    ModeNo = XGI_CalcModeIndex(pScrn, mode, pXGI->VBFlags);
-    if(!ModeNo) return FALSE;
-
-    xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 3, "Setting standard mode 0x%x\n", ModeNo);
-
 #if XGI_USING_BIOS_SETMODE
     PDEBUG(ErrorF("XGI_USING_BIOS_SETMODE \n"));
     if ((pXGI->pVbe != NULL) && (pXGI->pVbe->pInt10 != NULL)) {
@@ -935,8 +933,10 @@ XGIBIOSSetMode(VB_DEVICE_INFO *XGI_Pr, PXGI_HW_DEVICE_INFO HwInfo,
 		HwInfo->Vertical_ACTIVE = mode->VDisplay;
 		HwInfo->Interlace=FALSE; 
 
-		if(mode->type == M_T_USERDEF) /* custom mode */
+		if( (mode->type == M_T_USERDEF) || ((mode->type & M_T_CLOCK_CRTC_C) == M_T_CLOCK_CRTC_C) ) /* custom mode */
 		{
+			xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 3, "Setting a customer mode %dx%d\n", mode->HDisplay, mode->VDisplay);
+
 			HwInfo->SpecifyTiming = TRUE;
 			HwInfo->Horizontal_FP = mode->HSyncStart - mode->HDisplay; /* HSyncStart - HDisplay */
 			HwInfo->Horizontal_BP = mode->HTotal - mode->HSyncEnd; /* HTotal - HSyncEnd */
@@ -949,6 +949,11 @@ XGIBIOSSetMode(VB_DEVICE_INFO *XGI_Pr, PXGI_HW_DEVICE_INFO HwInfo,
 		else
 		{
 			HwInfo->SpecifyTiming = FALSE;
+
+			ModeNo = XGI_CalcModeIndex(pScrn, mode, pXGI->VBFlags);
+			if(!ModeNo) return FALSE;
+
+			xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 3, "Setting a standard mode 0x%x\n", ModeNo);
 		}
 		/* ------------------------------------------------------------------ */
 
@@ -958,13 +963,18 @@ XGIBIOSSetMode(VB_DEVICE_INFO *XGI_Pr, PXGI_HW_DEVICE_INFO HwInfo,
     
     
     /* SetPitch: Adapt to virtual size & position */
-    if (ModeNo > 0x13) {
+    if ((ModeNo > 0x13) || (mode->type == M_T_USERDEF) || ((mode->type & M_T_CLOCK_CRTC_C) == M_T_CLOCK_CRTC_C)) {
         XGI_SetReg(XGI_Pr->Part1Port, 0x2f, 1);  //yilin for crt2pitch it shoude modify if not colone mode
         XGI_SetReg(XGI_Pr->Part1Port, 0x07, (HDisplay & 0xFF));
         XGI_SetRegANDOR(XGI_Pr->Part1Port, 0x09, 0xF0, (HDisplay>>8)); 
 
+		/* Jong10052009; Set pitch with HDisplay = pXGI->scrnOffset >> 3 */
+	    PDEBUG(ErrorF("scrnOffset is %d...\n", pXGI->scrnOffset));
         XGI_SetReg(XGI_Pr->P3d4,0x13,(HDisplay & 0xFF));
         XGI_SetRegANDOR(XGI_Pr->P3c4,0x0E,0xF0,(HDisplay>>8));
+		/*
+        XGI_SetReg(XGI_Pr->P3d4,0x13,(HDisplay & 0xFF));
+        XGI_SetRegANDOR(XGI_Pr->P3c4,0x0E,0xF0,(HDisplay>>8)); */
     }
 
     return SetModeRet;

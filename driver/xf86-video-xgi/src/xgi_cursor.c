@@ -86,7 +86,9 @@ Volari_ShowCursor(ScrnInfoPtr pScrn)
     }
 
     XGIG1_SetCursorPosition(pScrn, currX, currY) ;
-    XGI_WaitEndRetrace(pXGI->RelIO);
+
+	/* Jong 02/05/2009; improve performance of WinBench 99 */
+	/* XGI_WaitEndRetrace(pXGI->RelIO); */
 }
 
 static void
@@ -99,8 +101,11 @@ Volari_HideCursor(ScrnInfoPtr pScrn)
     if (pXGI->VBFlags & CRT2_ENABLE)  {
         xgiG1CRT2_DisableHWCursor() ;
     }
+
     XGIG1_SetCursorPosition(pScrn, currX, currY) ;
-    XGI_WaitEndRetrace(pXGI->RelIO);
+
+	/* Jong 02/05/2009; improve performance of WinBench 99 */
+    /* XGI_WaitEndRetrace(pXGI->RelIO); */
 }
 
 static void

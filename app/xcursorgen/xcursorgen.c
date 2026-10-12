@@ -196,7 +196,7 @@ load_image (struct flist *list, char *prefix)
       return NULL;
     }
 
-  if (setjmp (png->jmpbuf))
+  if (setjmp (png_jmpbuf(png)))
     {
       png_destroy_read_struct (&png, &info, NULL);
       return NULL;

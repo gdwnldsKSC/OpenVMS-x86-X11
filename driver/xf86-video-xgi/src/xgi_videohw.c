@@ -34,7 +34,9 @@
 #include "config.h"
 #endif
 
+#define XGI_VIDEO_HW /* avoid compile error in xgi.h; weird!  */
 #include "xgi.h"
+
 #include "xgi_videohw.h"
 #include "xgi_video.h"
 #include "fourcc.h"

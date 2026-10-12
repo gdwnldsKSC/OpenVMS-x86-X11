@@ -22,7 +22,7 @@
 
 AC_PREREQ(2.57)
 AC_INIT([xf86-input-joystick],
-        1.4.99.2,
+        1.5.0,
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         xf86-input-joystick)
 
@@ -31,8 +31,6 @@ AC_CONFIG_AUX_DIR(.)
 AM_INIT_AUTOMAKE([dist-bzip2])
 
 AM_MAINTAINER_MODE
-
-AC_CONFIG_FILES([shave shave-libtool])
 
 # Require xorg-macros: XORG_CWARNFLAGS, XORG_CHANGELOG
 m4_ifndef([XORG_MACROS_VERSION], [AC_FATAL([must install xorg-macros 1.2 or later before running autoconf/autogen])])
@@ -122,8 +120,6 @@ AC_SUBST([DRIVER_NAME])
 XORG_MANPAGE_SECTIONS
 XORG_RELEASE_VERSION
 XORG_CHANGELOG
-
-SHAVE_INIT([.], [enable])
 
 AC_OUTPUT([Makefile
            src/Makefile

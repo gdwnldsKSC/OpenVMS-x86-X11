@@ -102,15 +102,15 @@ GLINTInitVisualConfigs(ScreenPtr pScreen)
       pGlintConfigs = (GLINTConfigPrivPtr)xnfcalloc( sizeof(GLINTConfigPrivRec),
 						 numConfigs );
       if ( !pGlintConfigs ) {
-	 xfree( pConfigs );
+	 free(pConfigs);
 	 return FALSE;
       }
 
       pGlintConfigPtrs = (GLINTConfigPrivPtr*)xnfcalloc( sizeof(GLINTConfigPrivPtr),
 						     numConfigs );
       if ( !pGlintConfigPtrs ) {
-	 xfree( pConfigs );
-	 xfree( pGlintConfigs );
+	 free(pConfigs);
+	 free(pGlintConfigs);
 	 return FALSE;
       }
 
@@ -198,15 +198,15 @@ GLINTInitVisualConfigs(ScreenPtr pScreen)
       pGlintConfigs = (GLINTConfigPrivPtr)xnfcalloc( sizeof(GLINTConfigPrivRec),
 						 numConfigs );
       if ( !pGlintConfigs ) {
-	 xfree( pConfigs );
+	 free(pConfigs);
 	 return FALSE;
       }
 
       pGlintConfigPtrs = (GLINTConfigPrivPtr*)xnfcalloc( sizeof(GLINTConfigPrivPtr),
 						     numConfigs );
       if ( !pGlintConfigPtrs ) {
-	 xfree( pConfigs );
-	 xfree( pGlintConfigs );
+	 free(pConfigs);
+	 free(pGlintConfigs);
 	 return FALSE;
       }
 
@@ -490,7 +490,7 @@ GLINTDRIScreenInit(ScreenPtr pScreen)
 	pDRIInfo->busIdString = DRICreatePCIBusID(pGlint->PciInfo);
     } else {
 #ifndef XSERVER_LIBPCIACCESS
-	pDRIInfo->busIdString = xalloc(64); /* Freed in DRIDestroyInfoRec */
+	pDRIInfo->busIdString = malloc(64); /* Freed in DRIDestroyInfoRec */
 	sprintf(pDRIInfo->busIdString, "PCI:%d:%d:%d",
 		((pciConfigPtr)pGlint->PciInfo->thisCard)->busnum,
 		((pciConfigPtr)pGlint->PciInfo->thisCard)->devnum,
@@ -528,7 +528,7 @@ GLINTDRIScreenInit(ScreenPtr pScreen)
     pDRIInfo->SAREASize = SAREA_MAX;
 #endif
 
-    if (!(pGlintDRI = (GLINTDRIPtr)xcalloc(sizeof(GLINTDRIRec),1))) {
+    if (!(pGlintDRI = (GLINTDRIPtr)calloc(sizeof(GLINTDRIRec),1))) {
 	DRIDestroyInfoRec(pGlint->pDRIInfo);
 	return FALSE;
     }
@@ -561,7 +561,7 @@ GLINTDRIScreenInit(ScreenPtr pScreen)
 
     if (!DRIScreenInit(pScreen, pDRIInfo, &(pGlint->drmSubFD))) {
 	DRIDestroyInfoRec(pGlint->pDRIInfo);
-	xfree(pGlintDRI);
+	free(pGlintDRI);
 	return FALSE;
     }
 
@@ -817,14 +817,12 @@ GLINTDRICloseScreen(ScreenPtr pScreen)
     DRICloseScreen(pScreen);
 	    
     if (pGlint->pDRIInfo) {
-	if (pGlint->pDRIInfo->devPrivate) {
-	    xfree(pGlint->pDRIInfo->devPrivate);
-	}
+	free(pGlint->pDRIInfo->devPrivate);
 	DRIDestroyInfoRec(pGlint->pDRIInfo);
     }
 
-    if (pGlint->pVisualConfigs) xfree(pGlint->pVisualConfigs);
-    if (pGlint->pVisualConfigsPriv) xfree(pGlint->pVisualConfigsPriv);
+    free(pGlint->pVisualConfigs);
+    free(pGlint->pVisualConfigsPriv);
 }
 
 Bool

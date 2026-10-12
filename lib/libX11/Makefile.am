@@ -5,23 +5,22 @@ ORDER=modules src
 endif
 SUBDIRS=include $(ORDER) nls man specs
 
+ACLOCAL_AMFLAGS = -I m4
+
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = x11.pc
-if XCB
-pkgconfig_DATA += x11-xcb.pc
-endif
+pkgconfig_DATA = x11.pc x11-xcb.pc
 
-EXTRA_DIST=x11.pc.in x11-xcb.pc.in ChangeLog
+MAINTAINERCLEANFILES = ChangeLog INSTALL
 
-MAINTAINERCLEANFILES=ChangeLog
-DISTCLEANFILES = doltcompile doltlibtool
+.PHONY: ChangeLog INSTALL
 
-.PHONY: ChangeLog
+INSTALL:
+	$(INSTALL_CMD)
 
 ChangeLog:
 	$(CHANGELOG_CMD)
 
-dist-hook: ChangeLog
+dist-hook: ChangeLog INSTALL
 
 if LINT
 # Check source code with tools like lint & sparse

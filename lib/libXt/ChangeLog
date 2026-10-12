@@ -1,3 +1,347 @@
+commit 0d29ca61b94cd34b04c5eedae443620a616d01c3
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Oct 28 12:03:25 2010 -0700
+
+    libXt 1.0.9
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 87d019acc715c5ab4a5b2431ec882a0f84946c20
+Author: Jesse Adkins <jesserayadkins@gmail.com>
+Date:   Tue Sep 28 13:30:03 2010 -0700
+
+    Purge cvs tags.
+    
+    Signed-off-by: Jesse Adkins <jesserayadkins@gmail.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit aa70c813f6eac2cad2944a98a1a444ea69dc024f
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Oct 5 09:07:30 2010 -0400
+
+    makestrs: Use MAN_SUBST now supplied in XORG_MANPAGE_SECTIONS
+    
+    The value of MAN_SUBST is the same for all X.Org packages.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 9d80fae6bc2cff26f320ff5b7b2ca7333ab3d677
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Oct 5 09:04:19 2010 -0400
+
+    makestrs: Use $(SED) from AC_PROG_SED supplied by XORG_DEFAULT_OPTIONS
+    
+    Use the appropriate platform version of sed
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 71a7e999a4d99aa54ea7268b928d87e27cea6279
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Oct 5 09:02:41 2010 -0400
+
+    makestrs: remove unsed $(appman_DATA)
+    
+    Man page is not installed, this variable is not defined.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 0c968d108d8575db0149922b8375533fc54d0b7a
+Author: walter harms <wharms@bfs.de>
+Date:   Fri Oct 1 15:13:43 2010 +0200
+
+    Honor that GetClassActions() may return NULL.
+    
+    Signed-off-by: Walter <wharms@bfs.de>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 6e4dbf06d4d049666cf81207d9f853a0a40c71b7
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Sep 23 18:27:46 2010 -0700
+
+    Sun's copyrights belong to Oracle now
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 94680a56a32ada91f07db34e02a526dca5ecbbf4
+Author: Ryan Hajdaj <rhajdaj@gotnothin.com>
+Date:   Thu Sep 23 18:13:28 2010 -0700
+
+    Bug 1478: Selection.c damages user error handler function
+    
+    https://bugs.freedesktop.org/show_bug.cgi?id=1478
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d53a3deb52100596bef9fb7b6c6e7ba15ed18bda
+Author: walter harms <wharms@bfs.de>
+Date:   Wed Sep 22 19:25:20 2010 +0200
+
+    fix dereference in TMprint.c
+    
+    the current codes checks for
+     eventWidget == NULL after accessing
+    eventWidget->core.tm.proc_table
+    
+    now it checks for eventWidget before access eventWidget->core.tm.proc_table.
+    
+    Signed-off-by: walter harms <wharms@bfs.de>
+    Reviewed-by: Jeremy Huddleston <jeremyhu@apple.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 47e73791d4a88e59a797e9dde1ab2d5f58ff774c
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Aug 17 10:17:57 2010 -0400
+
+    man: whitespace management
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 8c307c168c724368be2b9e784365b40d4b001aa3
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Aug 17 09:21:36 2010 -0400
+
+    man: store shadow man pages in git rather than generating them
+    
+    Simplify the build process and the makefile.
+    
+    Local fix in CVS for bug 5628 is not required
+    as the problem has been fixed in
+    util-macros d9062e4077ebfd0985baf8418f3d0f111b9ddbba
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 198ac897c7136425a20011a6c99f80cb925d622b
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Aug 6 12:32:10 2010 -0400
+
+    man: using the C preprocessor is not required for man pages.
+    
+    There were no special symbols needing cpp.
+    Everything can be handled by the default MAN_SUBSTS in util-macros.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 74cb722a974010fa3c82dc57a036f97768b3695b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Jun 8 20:26:29 2010 -0700
+
+    Move Xt specs from xorg-docs module
+    
+    For now, just checked in and included in dist tarballs, not processed
+    into a usable format - same as it was in xorg-docs
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 56621d3ec521dd30fabb1a77ad1c396baa740569
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue May 18 18:21:32 2010 -0700
+
+    Move sm from Requires to Requires.private in xt.pc
+    
+    As explained in https://bugs.freedesktop.org/show_bug.cgi?id=26943
+    since libXt callers need the SM headers but don't necessarily need to
+    link directly to libSM, it should be in Requires.private, not Requires.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Adam Jackson <ajax@redhat.com>
+
+commit f3d2ac478918b99c51e0b4bff97935f2255ab537
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Apr 16 16:08:39 2010 -0700
+
+    Bug 26943: wrong dependencies in xt.pc.in
+    
+    https://bugs.freedesktop.org/show_bug.cgi?id=26943
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 723d78fe8e159dee1281f3e4f8dc03825aa334b6
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Apr 1 20:30:43 2010 -0400
+
+    config: update and relocate AX_DEFINE_DIR macro
+    
+    Remove deprecated acinclude.m4 macro container file
+    Use separate macro files as per autoconf recommendation
+    Use the latest macro from GNU
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 99a1c1f2cfa595500704d54e223f1c9e0ff9a10e
+Author: Yaakov Selkowitz <yselkowitz@users.sourceforge.net>
+Date:   Fri Apr 2 01:43:22 2010 -0500
+
+    Use automake silent rules for BUILT_SOURCES generation
+    
+    Signed-off-by: Yaakov Selkowitz <yselkowitz@users.sourceforge.net>
+    Acked-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit cf3198fdc302bb017e6cc8014abc3bdbfeb9f6b1
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Mar 29 16:50:34 2010 -0400
+
+    config: update AC_PREREQ statement to 2.60
+    
+    Unrelated to the previous patches, the new value simply reflects
+    the reality that the minimum level for autoconf to configure
+    all x.org modules is 2.60 dated June 2006.
+    
+    ftp://ftp.gnu.org/gnu/autoconf/autoconf-2.60.tar.gz
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 5a876831762c5d22101bd2fa71203647858f66b2
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Mar 29 14:53:49 2010 -0400
+
+    config: remove the pkgconfig pc.in file from EXTRA_DIST
+    
+    Automake always includes it in the tarball.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit cba12c108da0c3eb868a5cb08f641b6d036e0d05
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Mar 27 16:30:02 2010 -0400
+
+    config: remove execute permission on configureation file
+    
+    Introduced in commit 6baea764567c3327f1d85ba91375adaea6dab46d
+    "Link with winsock for WIN32 platforms"
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit e3bce11a8ea7e0175a6f08367bace9b0eb2b898a
+Author: Rémi Cardona <remi@gentoo.org>
+Date:   Mon Mar 15 22:59:04 2010 +0100
+
+    libXt 1.0.8
+    
+    Signed-off-by: Rémi Cardona <remi@gentoo.org>
+
+commit a1a8df535fa5ab3748404bdeb07e61beb604b14e
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Thu Jan 14 20:07:46 2010 -0800
+
+    Update Sun license notices to current X.Org standard form
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 6393306d1a2eb8239f108a773f342495e1cfd85c
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Jan 14 15:57:31 2010 -0500
+
+    COPYING: add missing copyright notices
+    
+    Refer to: ActionHook.c
+    Copyright 1987, 1988 by Digital Equipment Corporation
+    Copyright 1993 by Sun Microsystems, Inc. Mountain View, CA.
+    Copyright 1987, 1988, 1998  The Open Group
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit b798093fc6cbcf35c095f3401586d2741adcd2cd
+Author: Jeremy Huddleston <jeremyhu@freedesktop.org>
+Date:   Fri Dec 11 17:04:23 2009 -0800
+
+    darwin: xnu doesn't support poll on ttys on the master side.
+    
+    <rdar://problem/7360546>
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@freedesktop.org>
+
+commit e0ac2ea8b211bdca848679ee59362384f0f97e36
+Author: Alan Coopersmith <alan.coopersmith@sun.com>
+Date:   Mon Dec 7 22:28:53 2009 -0800
+
+    Fix make distcheck (./util/makestrs.1 left after distclean)
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit 345633dc9c79b32a1b391dfb4dfedf87ae9e291b
+Author: Rémi Cardona <remi@gentoo.org>
+Date:   Mon Nov 9 12:26:17 2009 +0100
+
+    Don't install makestrs on the system
+    
+    It has no known outside-libXt users. Let's not install it and its man page.
+    
+    Signed-off-by: Rémi Cardona <remi@gentoo.org>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@sun.com>
+
+commit ed31677bb9b1dd9498715a922763968917b87e49
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Nov 27 20:56:04 2009 -0500
+
+    Makefile.am: add ChangeLog and INSTALL on MAINTAINERCLEANFILES
+    
+    Now that the INSTALL file is generated.
+    Allows running make maintainer-clean.
+
+commit 2d95ad4beed294a0a30fdb1d8e7798fa62455a41
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Oct 28 14:09:10 2009 -0400
+
+    INSTALL, NEWS, README or AUTHORS files are missing/incorrect #24206
+    
+    Add missing INSTALL file. Use standard GNU file on building tarball
+    README may have been updated
+    Remove AUTHORS file as it is empty and no content available yet.
+    Remove NEWS file as it is empty and no content available yet.
+
+commit 7cc872e9934f62bf56976d5592ce621e30b1f95a
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Oct 27 15:07:26 2009 -0400
+
+    Deploy the new XORG_DEFAULT_OPTIONS #24242
+    
+    This macro aggregate a number of existing macros that sets commmon
+    X.Org components configuration options. It shields the configuration file from
+    future changes.
+
+commit 7ba57d7789362c2c2e646cc3b896802e6cbcb039
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Oct 26 22:08:43 2009 -0400
+
+    Makefile.am: ChangeLog not required: EXTRA_DIST or *CLEANFILES #24432
+    
+    ChangeLog filename is known to Automake and requires no further
+    coding in the makefile.
+
+commit b4309cadb1de581d191fce924dac8fc7e55e5fb8
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Oct 22 12:34:19 2009 -0400
+
+    .gitignore: use common defaults with custom section # 24239
+    
+    Using common defaults will reduce errors and maintenance.
+    Only the very small or inexistent custom section need periodic maintenance
+    when the structure of the component changes. Do not edit defaults.
+
+commit 80ff1f362eefabe4be62784b001500b49943f1a5
+Author: Jeremy Huddleston <jeremyhu@freedesktop.org>
+Date:   Wed Oct 21 12:47:26 2009 -0700
+
+    This is not a GNU project, so declare it foreign.
+    
+    On Wed, 2009-10-21 at 13:36 +1000, Peter Hutterer wrote:
+    > On Tue, Oct 20, 2009 at 08:23:55PM -0700, Jeremy Huddleston wrote:
+    > > I noticed an INSTALL file in xlsclients and libXvMC today, and it
+    > > was quite annoying to work around since 'autoreconf -fvi' replaces
+    > > it and git wants to commit it.  Should these files even be in git?
+    > > Can I nuke them for the betterment of humanity and since they get
+    > > created by autoreconf anyways?
+    >
+    > See https://bugs.freedesktop.org/show_bug.cgi?id=24206
+    
+    As an interim measure, replace AM_INIT_AUTOMAKE([dist-bzip2]) with
+    AM_INIT_AUTOMAKE([foreign dist-bzip2]). This will prevent the generation
+    of the INSTALL file. It is also part of the 24206 solution.
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@freedesktop.org>
+
 commit 5d63df924d7f66d2207c8db67e5d6cce8c7b245b
 Author: Alan Coopersmith <alan.coopersmith@sun.com>
 Date:   Thu Oct 8 21:50:35 2009 -0700
@@ -288,7 +632,7 @@ Date:   Tue Jan 2 17:49:17 2007 -0800
     <https://bugs.freedesktop.org/show_bug.cgi?id=9514>
 
 commit 75f83503ba1db628137ffc9d1d9e4f2a7a2fd97a
-Merge: 2f201b1... 153264a...
+Merge: 2f201b1 153264a
 Author: Jeremy C. Reed <reed@glacier.reedmedia.net>
 Date:   Sat Dec 9 09:31:02 2006 -0600
 

@@ -1,4 +1,3 @@
-/* $Xorg: Xlibint.h,v 1.5 2001/02/09 02:03:38 xorgcvs Exp $ */
 
 /*
 
@@ -27,10 +26,9 @@ other dealings in this Software without prior written authorization
 from The Open Group.
 
 */
-/* $XFree86: xc/lib/X11/Xlibint.h,v 3.27 2003/05/27 22:26:26 tsi Exp $ */
 
-#ifndef _XLIBINT_H_
-#define _XLIBINT_H_ 1
+#ifndef _X11_XLIBINT_H_
+#define _X11_XLIBINT_H_ 1
 
 /*
  *	Xlibint.h - Header definition and support file for the internal
@@ -222,12 +220,6 @@ typedef struct _XSQEvent
 } _XQEvent;
 #endif
 
-#ifdef XTHREADS			/* for xReply */
-#define NEED_REPLIES
-#endif
-
-#define NEED_EVENTS
-#define NEED_REPLIES
 #include <X11/Xproto.h>
 #ifdef __sgi
 #define _SGI_MP_SOURCE  /* turn this on to get MP safe errno */
@@ -634,7 +626,7 @@ extern void _XFlushGCCache(Display *dpy, GC gc);
     if (dpy->bufptr + (n) > dpy->bufmax) \
         _XFlush (dpy); \
     ptr = (type) dpy->bufptr; \
-    (void)ptr; \
+    memset(ptr, '\0', n); \
     dpy->bufptr += (n);
 
 #ifdef WORD64
@@ -1393,6 +1385,13 @@ extern Bool _XCopyEventCookie(
         XGenericEventCookie *in,
         XGenericEventCookie *out);
 
+/* lcFile.c */
+
+extern void xlocaledir(
+    char *buf,
+    int buf_len
+);
+
 _XFUNCPROTOEND
 
-#endif /* _XLIBINT_H_ */
+#endif /* _X11_XLIBINT_H_ */

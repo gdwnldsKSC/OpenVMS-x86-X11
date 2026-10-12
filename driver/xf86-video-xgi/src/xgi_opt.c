@@ -47,6 +47,7 @@
 typedef enum {
     OPTION_SW_CURSOR,
     OPTION_HW_CURSOR,
+    OPTION_ACCELMETHOD,
     OPTION_NOACCEL,
     OPTION_TURBOQUEUE,
     OPTION_RENDER,
@@ -97,6 +98,11 @@ typedef enum {
     OPTION_ENABLEXGICTRL,
     OPTION_STOREDBRI,
     OPTION_STOREDPBRI,
+    OPTION_RUNTIME_DEBUG,  /* Jong 07/27/2009 */
+	OPTION_TARGET_RATE,    /* Jong@09032009 */
+	OPTION_IGNORE_DDC,     /* Jong@09032009 */
+	OPTION_NONDDC_DEFAULT_MODE, /* Jong@09042009 */
+	OPTION_GAMMA_RGB,			/* Jong@09092009 */
 #ifdef XGI_CP
     XGI_CP_OPT_OPTIONS
 #endif
@@ -106,12 +112,13 @@ typedef enum {
 static const OptionInfoRec XGIOptions[] = {
     { OPTION_SW_CURSOR,         	"SWcursor",               OPTV_BOOLEAN,   {0}, FALSE },
     { OPTION_HW_CURSOR,         	"HWcursor",               OPTV_BOOLEAN,   {0}, FALSE },
+    { OPTION_ACCELMETHOD,			"AccelMethod",			OPTV_STRING,	{0}, FALSE },
     { OPTION_NOACCEL,           	"NoAccel",                OPTV_BOOLEAN,   {0}, FALSE },
     { OPTION_TURBOQUEUE,        	"TurboQueue",             OPTV_BOOLEAN,   {0}, FALSE },
     { OPTION_RENDER,        		"RenderAcceleration",     OPTV_BOOLEAN,   {0}, FALSE },
     { OPTION_FORCE_CRT1TYPE,    	"ForceCRT1Type",          OPTV_STRING,    {0}, FALSE },
     { OPTION_FORCE_CRT2TYPE,    	"ForceCRT2Type",          OPTV_STRING,    {0}, FALSE },
-    { OPTION_YPBPRAR,  		  	"YPbPrAspectRatio",       OPTV_STRING,    {0}, FALSE },
+    { OPTION_YPBPRAR,  		  		"YPbPrAspectRatio",       OPTV_STRING,    {0}, FALSE },
     { OPTION_SHADOW_FB,         	"ShadowFB",               OPTV_BOOLEAN,   {0}, FALSE },
     { OPTION_DRI,         		"DRI",               	  OPTV_BOOLEAN,   {0}, FALSE },
     { OPTION_AGP_SIZE,			"AGPSize",      	  OPTV_INTEGER,   {0}, FALSE },
@@ -152,6 +159,11 @@ static const OptionInfoRec XGIOptions[] = {
     { OPTION_CRT2POS2,   		"TwinViewOrientation",	  OPTV_STRING,	  {0}, FALSE },   /* alias */
     { OPTION_METAMODES,   		"MetaModes",  		  OPTV_STRING,	  {0}, FALSE },
     { OPTION_MERGEDDPI,			"MergedDPI", 		  OPTV_STRING,	  {0}, FALSE },
+    { OPTION_RUNTIME_DEBUG,		"RunTimeDebug",      	  OPTV_BOOLEAN,   {0}, -1 }, /* Jong 07/27/2009 */
+    { OPTION_TARGET_RATE,		"TargetRate",      	  OPTV_INTEGER,   {0}, -1 }, /* Jong@09032009 */
+    { OPTION_IGNORE_DDC,		"IgnoreDDC",      	  OPTV_BOOLEAN,   {0}, -1 }, /* Jong@09032009 */
+    { OPTION_NONDDC_DEFAULT_MODE,		"NonDDCDefaultMode",      	  OPTV_STRING,   {0}, FALSE }, /* Jong@09042009 */
+    { OPTION_GAMMA_RGB,			"GammaRGB",      	  OPTV_STRING,   {0}, FALSE }, /* Jong@09092009 */
 #ifdef XGIXINERAMA
     { OPTION_NOXGIXINERAMA,		"NoMergedXinerama",	  OPTV_BOOLEAN,	  {0}, FALSE },
     { OPTION_NOXGIXINERAMA2,		"NoTwinviewXineramaInfo", OPTV_BOOLEAN,   {0}, FALSE },   /* alias */
@@ -163,6 +175,10 @@ static const OptionInfoRec XGIOptions[] = {
 #endif
     { -1,                       	NULL,                     OPTV_NONE,      {0}, FALSE }
 };
+
+unsigned int g_GammaRed;
+unsigned int g_GammaGreen;
+unsigned int g_GammaBlue;
 
 void
 xgiOptions(ScrnInfoPtr pScrn)
@@ -201,7 +217,13 @@ xgiOptions(ScrnInfoPtr pScrn)
     pXGI->HWCursor = TRUE;
     pXGI->Rotate = FALSE;
     pXGI->ShadowFB = FALSE;
-    pXGI->loadDRI = TRUE;
+
+	/* Jong 01/22/2009; only XG40 has 3-d feature */
+	if(pXGI->Chipset == PCI_CHIP_XGIXG40)
+		pXGI->loadDRI = TRUE;
+	else
+		pXGI->loadDRI = FALSE;
+
     pXGI->agpWantedPages = AGP_PAGES;
     pXGI->NoXvideo = FALSE;
     pXGI->maxxfbmem = 0;
@@ -251,6 +273,99 @@ xgiOptions(ScrnInfoPtr pScrn)
 
     /* Collect the options */
 
+	int	TargetRefreshRate = 0;
+    if(xf86GetOptValInteger(pXGI->Options /* pScrn->monitor->options */, OPTION_TARGET_RATE, &TargetRefreshRate)) 
+	{
+		xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Monitor (Option) : Set target refresh rate at %d for all modes...\n", TargetRefreshRate);
+	}
+
+    pXGI->TargetRefreshRate = TargetRefreshRate;
+
+	pXGI->IgnoreDDC = FALSE;
+    if(xf86GetOptValBool(pXGI->Options, OPTION_IGNORE_DDC, &pXGI->IgnoreDDC))
+	{
+		if(pXGI->IgnoreDDC == TRUE)
+			xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Monitor (Option) : IgnoreDDC \n");
+	} 
+#if 0 /* can support 1280x768 but not being applied */
+	else
+	{
+		pXGI->IgnoreDDC = TRUE;
+		xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "Monitor (Option) : set IgnoreDDC as default\n");
+	}
+#endif
+
+	pXGI->Non_DDC_DefaultMode = FALSE;
+	pXGI->Non_DDC_DefaultResolutionX = 1024;
+	pXGI->Non_DDC_DefaultResolutionY = 768;
+	pXGI->Non_DDC_DefaultRefreshRate = 60;
+
+	char	ModeStringFormat[32] = 	"%[^x]x%[^@]@%[^\n]" /* "%[^x]+%[^@]+%[^H^z]" */;
+    char*   Non_DDCDefaultMode = "";
+    char   Non_DDCDefaultResolutionX[8] = "";
+    char   Non_DDCDefaultResolutionY[8] = "";
+    char   Non_DDCDefaultRefreshRate[8] = "";
+
+	/* strcpy(ModeStringFormat, "%[^+]x%[^+]@%[^\n]"); */
+
+	if((Non_DDCDefaultMode = (char *)xf86GetOptValString(pXGI->Options, OPTION_NONDDC_DEFAULT_MODE))) 
+	{
+		sscanf(Non_DDCDefaultMode, ModeStringFormat, 
+				Non_DDCDefaultResolutionX , 
+				Non_DDCDefaultResolutionY , 
+				Non_DDCDefaultRefreshRate  );
+
+		if( (xf86NameCmp(Non_DDCDefaultResolutionX,"") == NULL) || (xf86NameCmp(Non_DDCDefaultResolutionY,"") == NULL) ) 
+		{
+			strcpy(Non_DDCDefaultResolutionX, "1024");
+			strcpy(Non_DDCDefaultResolutionY, "768");
+		}
+
+		if( (xf86NameCmp(Non_DDCDefaultRefreshRate,"") == NULL) || (xf86NameCmp(Non_DDCDefaultRefreshRate,"auto") == NULL) ) 
+				strcpy(Non_DDCDefaultRefreshRate, "60");
+
+		ErrorF("Non-DDC default mode is (%s x %s @ %s Hz)...\n", 
+					Non_DDCDefaultResolutionX ,
+					Non_DDCDefaultResolutionY ,
+					Non_DDCDefaultRefreshRate );
+
+		pXGI->Non_DDC_DefaultMode = TRUE;
+
+		pXGI->Non_DDC_DefaultResolutionX = atoi(Non_DDCDefaultResolutionX);
+		pXGI->Non_DDC_DefaultResolutionY = atoi(Non_DDCDefaultResolutionY);
+		pXGI->Non_DDC_DefaultRefreshRate = atoi(Non_DDCDefaultRefreshRate);
+
+		ErrorF("Non-DDC default mode is (%d x %d @ %d Hz)...\n", 
+					pXGI->Non_DDC_DefaultResolutionX ,
+					pXGI->Non_DDC_DefaultResolutionY ,
+					pXGI->Non_DDC_DefaultRefreshRate );
+	}
+
+	/* Jong@09092009; gamma value */
+	g_GammaRed = g_GammaGreen = g_GammaBlue = 1000;
+
+	char	GammaStringFormat[32] = "%[^,],%[^,],%[^\n]";
+    char*   GammaRGB = "";
+    char   GammaRed[8] = "";
+    char   GammaGreen[8] = "";
+    char   GammaBlue[8] = "";
+
+	if((GammaRGB = (char *)xf86GetOptValString(pXGI->Options, OPTION_GAMMA_RGB))) 
+	{
+		ErrorF("GammaRGB is (%s) from xorg.conf\n", GammaRGB);
+		sscanf(GammaRGB, GammaStringFormat, 
+				GammaRed , 
+				GammaGreen , 
+				GammaBlue  );
+		ErrorF("GammaRGB is (%s, %s, %s) after parsing\n", GammaRed, GammaGreen, GammaBlue);
+		
+		g_GammaRed = atoi(GammaRed);
+		g_GammaGreen = atoi(GammaGreen);
+		g_GammaBlue = atoi(GammaBlue);
+
+		ErrorF("GammaRGB is (%d, %d, %d) after atoi()\n", g_GammaRed, g_GammaGreen, g_GammaBlue);
+	}
+
     /* MaxXFBMem
      * This options limits the amount of video memory X uses for screen
      * and off-screen buffers. This option should be used if using DRI
@@ -276,9 +391,28 @@ xgiOptions(ScrnInfoPtr pScrn)
 	xf86DrvMsg(pScrn->scrnIndex, X_CONFIG, "2D Acceleration disabled\n");
     }
 
+	/* Jong@10022009; for xvinfo */
 	if ((pXGI->Chipset== PCI_CHIP_XGIXG20)||(pXGI->Chipset== PCI_CHIP_XGIXG21)||(pXGI->Chipset== PCI_CHIP_XGIXG27))
-		pXGI->NoXvideo = TRUE;
+		pXGI->NoXvideo = TRUE; 
 		
+	pXGI->useEXA = FALSE; /* default : XAA */
+    if(!pXGI->NoAccel) 
+	{
+		from = X_DEFAULT;
+		if((strptr = (char *)xf86GetOptValString(pXGI->Options, OPTION_ACCELMETHOD))) {
+			if(!xf86NameCmp(strptr,"XAA")) {
+				from = X_CONFIG;
+				pXGI->useEXA = FALSE;
+			} else if(!xf86NameCmp(strptr,"EXA")) {
+				from = X_CONFIG;
+				pXGI->useEXA = TRUE;
+			}
+		}
+
+		xf86DrvMsg(pScrn->scrnIndex, from, "Using %s acceleration architecture\n",
+			pXGI->useEXA ? "EXA" : "XAA");
+    }
+
     /* SWCursor
      * HWCursor
      * Chooses whether to use the hardware or software cursor
@@ -434,6 +568,10 @@ xgiOptions(ScrnInfoPtr pScrn)
 	      );
        }
     }
+
+	/* Jong 07/27/2009; get option of run-time debug */
+    if(!xf86GetOptValBool(pXGI->Options, OPTION_RUNTIME_DEBUG, &g_bRunTimeDebug))
+		g_bRunTimeDebug=0;
 
 #ifdef XF86DRI
     /* DRI */

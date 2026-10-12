@@ -306,13 +306,22 @@ Volari_Save(ScrnInfoPtr pScrn, XGIRegPtr xgiReg)
     vgaHWGetIOBase(VGAHWPTR(pScrn));
     vgaIOBase = VGAHWPTR(pScrn)->IOBase;
 
+#if !defined(__arm__) 
     outw(VGA_SEQ_INDEX, 0x8605);
+#else
+    moutl(XGISR, 0x8605);
+#endif
 
     for (i = 0x06; i <= 0x3F; i++) {
-        outb(VGA_SEQ_INDEX, i);
-        xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 4,
+        /* outb(VGA_SEQ_INDEX, i); */
+        outb(XGISR, i);
+
+        /* xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 4,
                     "XR%02X Contents - %02X \n", i, inb(VGA_SEQ_DATA));
-        xgiReg->xgiRegs3C4[i] = inb(VGA_SEQ_DATA);
+        xgiReg->xgiRegs3C4[i] = inb(VGA_SEQ_DATA); */
+        xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 4,
+                    "XR%02X Contents - %02X \n", i, inb(XGISR+1));
+        xgiReg->xgiRegs3C4[i] = inb(XGISR+1);
     }
 
     for (i=0x19; i<0x5C; i++)  {
@@ -326,6 +335,7 @@ Volari_Save(ScrnInfoPtr pScrn, XGIRegPtr xgiReg)
     for (i=0x19; i<0x5C; i++)  {
         inXGIIDXREG(XGICR, i, xgiReg->xgiRegs3D4[i]);
     }
+
 // yilin save the VB register
     outXGIIDXREG(XGIPART1, 0x2f, 0x01);
     
@@ -345,7 +355,6 @@ Volari_Save(ScrnInfoPtr pScrn, XGIRegPtr xgiReg)
     {
         inXGIIDXREG(XGIPART4, i, xgiReg->VBPart4[i]);
     }
-
 
     PDEBUG(xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 3,
            "Volari_Save(ScrnInfoPtr pScrn, XGIRegPtr xgiReg) Done\n"));
@@ -368,8 +377,10 @@ Volari_Restore(ScrnInfoPtr pScrn, XGIRegPtr xgiReg)
 
     outXGIIDXREG(XGISR, 0x05, 0x86);
 
+
 #if 1
-/* Volari_DisableAccelerator(pScrn) ; */
+	/* Jong@08112009; recover this line */
+	/* Volari_DisableAccelerator(pScrn) ; */
 #else
     inXGIIDXREG(XGISR, 0x1E, temp);
 
@@ -398,19 +409,31 @@ Volari_Restore(ScrnInfoPtr pScrn, XGIRegPtr xgiReg)
     for (i = 0x06; i <= 0x3F; i++) {
  /* if( !(i==0x16 || i==0x18 || i==0x19 || i==0x28 || i==0x29 || i==0x2E || i==0x2F) ) { */
         if( !(i==0x16 ) ) {
-            outb(VGA_SEQ_INDEX,i);
-            xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO,4,
+           /* outb(VGA_SEQ_INDEX,i); */
+           outb(XGISR,i);
+
+            /* xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO,4,
                     "XR%X Contents - %02X ", i, inb(VGA_SEQ_DATA));
 
             outb(VGA_SEQ_DATA,xgiReg->xgiRegs3C4[i]);
 
             xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO,4,
                         "Restore to - %02X Read after - %02X\n",
-                        xgiReg->xgiRegs3C4[i], inb(VGA_SEQ_DATA));
+                        xgiReg->xgiRegs3C4[i], inb(VGA_SEQ_DATA)); */
+
+            xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO,4,
+                    "XR%X Contents - %02X ", i, inb(XGISR+1));
+
+            outb(XGISR+1,xgiReg->xgiRegs3C4[i]);
+
+            xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO,4,
+                        "Restore to - %02X Read after - %02X\n",
+                        xgiReg->xgiRegs3C4[i], inb(XGISR+1));
         }
     }
 
 
+#if 0
 	// yilin restore the VB register
     outXGIIDXREG(XGIPART1, 0x2f, 0x01);
     for (i=0; i<0x50; i++)  
@@ -429,13 +452,18 @@ Volari_Restore(ScrnInfoPtr pScrn, XGIRegPtr xgiReg)
     {
         outXGIIDXREG(XGIPART4, i, xgiReg->VBPart4[i]);
     }
-
+#endif
 
     outb(pXGI->RelIO+0x42, xgiReg->xgiRegs3C2);
 
     /* MemClock needs this to take effect */
 
-    outw(VGA_SEQ_INDEX, 0x0100);        /* Synchronous Reset */
+#if !defined(__arm__) 
+    outw(VGA_SEQ_INDEX, 0x0100); /* Synchronous Reset */
+#else
+    moutl(XGISR, 0x0100);        /* Synchronous Reset */
+#endif
+
 	PDEBUG(XGIDumpRegs(pScrn)) ; //yilin
     xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, 4,
                 "Volari_Restore(ScrnInfoPtr pScrn, XGIRegPtr xgiReg) Done\n");
@@ -508,25 +536,68 @@ static int XG20_MemBandWidth(ScrnInfoPtr pScrn)
     inXGIIDXREG(XGISR, 0x39, SR39);
     inXGIIDXREG(XGICR, 0x97, CR97);
 
-    if (CR97 & 0x10)
-    {
-   		if (CR97 & 0x01)
+	/* Jong@09082009; modify for XG27 */
+    if(pXGI->Chipset == PCI_CHIP_XGIXG27)
+	{
+		if (CR97 & 0xC1)
+   			total *= 2;
+	}
+	else /* XG20/21 */
+	{
+		if (CR97 & 0x10)
 		{
-    		total *= 2;
+   			if (CR97 & 0x01)
+			{
+    			total *= 2;
+			}
 		}
-    }
-    else
-    {
-        if (SR39 & 0x2)
- 		{
-  			total *= 2;
+		else
+		{
+			if (SR39 & 0x2)
+ 			{
+  				total *= 2;
+			}
 		}
-    }
+	}
     /*-------------------------------------------------------*/
 
     PDEBUG5(ErrorF("Total Adapter Bandwidth is %fM\n", total/1000));
 
     return (int)(total / magic);
+}
+
+extern unsigned int g_GammaRed;
+extern unsigned int g_GammaGreen;
+extern unsigned int g_GammaBlue;
+
+void XGIAdjustGamma(ScrnInfoPtr pScrn, unsigned int gammaRed, unsigned int gammaGreen, unsigned int gammaBlue)
+{
+    XGIPtr  pXGI = XGIPTR(pScrn);
+    int num = 255, i;
+	double red = 1.0 / (double)((double)gammaRed / 1000);
+    double green = 1.0 / (double)((double)gammaGreen / 1000);
+    double blue = 1.0 / (double)((double)gammaBlue / 1000);
+	CARD8  GammaRampRed[256], GammaRampGreen[256], GammaRampBlue[256];
+
+    for(i = 0; i <= num; i++) {
+        GammaRampRed[i] =
+	    (red == 1.0) ? i : (CARD8)(pow((double)i / (double)num, red) * (double)num + 0.5);
+
+		GammaRampGreen[i] =
+	    (green == 1.0) ? i : (CARD8)(pow((double)i / (double)num, green) * (double)num + 0.5);
+
+		GammaRampBlue[i] =
+	    (blue == 1.0) ? i : (CARD8)(pow((double)i / (double)num, blue) * (double)num + 0.5);
+    }
+
+	/* set gamma ramp to HW */
+    for(i = 0; i <= 255; i++) {
+       MMIO_OUT32(pXGI->IOBase, 0x8570,
+       		(i << 24)					|
+			(GammaRampBlue[i] << 16)	|
+			(GammaRampGreen[i] << 8)	|
+			GammaRampRed[i]);
+    }
 }
 
 void
@@ -624,6 +695,9 @@ PDEBUG(ErrorF("\ndogamma1 SR7=%x ", SR7));
     if (!IS_DUAL_HEAD(pXGI) || !IS_SECOND_HEAD(pXGI)) {
 
     }
+
+	if(pXGI->CurrentLayout.depth != 8)
+		XGIAdjustGamma(pScrn, g_GammaRed, g_GammaGreen, g_GammaBlue);
 }
 
 void
@@ -649,11 +723,13 @@ XG40Mclk(XGIPtr pXGI)
     unsigned char Num, Denum;
 
     /* Numerator */
-    inXGIIDXREG(0x3c4, 0x28, Num);
+    /* inXGIIDXREG(0x3c4, 0x28, Num); */
+    inXGIIDXREG(XGISR, 0x28, Num);
     mclk = 14318 * ((Num & 0x7f) + 1);
 
     /* Denumerator */
-    inXGIIDXREG(0x3c4, 0x29, Denum);
+    /* inXGIIDXREG(0x3c4, 0x29, Denum); */
+    inXGIIDXREG(XGISR, 0x29, Denum);
     mclk = mclk / ((Denum & 0x1f) + 1);
 
     /* Divider */

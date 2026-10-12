@@ -1,9 +1,11 @@
 lib_LTLIBRARIES=libXext.la
 
-AM_CFLAGS=\
+AM_CPPFLAGS=\
           -I$(top_srcdir)/include \
           -I$(top_srcdir)/include/X11/extensions\
           $(XEXT_CFLAGS) $(MALLOC_ZERO_CFLAGS)
+
+AM_CFLAGS=$(CWARNFLAGS)
 
 libXext_la_LDFLAGS = -version-number $(XEXT_SOREV) -no-undefined
 
@@ -30,9 +32,6 @@ libXext_la_SOURCES = \
 libXextincludedir = $(includedir)/X11/extensions
 libXextinclude_HEADERS = $(top_srcdir)/include/X11/extensions/dpms.h \
 			 $(top_srcdir)/include/X11/extensions/extutil.h \
-			 $(top_srcdir)/include/X11/extensions/lbxbuf.h \
-			 $(top_srcdir)/include/X11/extensions/lbxbufstr.h \
-			 $(top_srcdir)/include/X11/extensions/lbximage.h \
 			 $(top_srcdir)/include/X11/extensions/MITMisc.h \
 			 $(top_srcdir)/include/X11/extensions/multibuf.h \
 			 $(top_srcdir)/include/X11/extensions/security.h \

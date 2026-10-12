@@ -41,7 +41,7 @@ XAAPolyFillRect(
     if((nrectFill <= 0) || !pGC->planemask)
         return;
 
-    if(!REGION_NUM_RECTS(pGC->pCompositeClip))
+    if(!RegionNumRects(pGC->pCompositeClip))
 	return;
 
     switch(pGC->fillStyle) {
@@ -945,8 +945,8 @@ XAAClipAndRenderRects(
     pboxClippedBase = (BoxPtr)infoRec->PreAllocMem;
     pboxClipped = pboxClippedBase;
 
-    if (REGION_NUM_RECTS(pGC->pCompositeClip) == 1) {
-	pextent = REGION_RECTS(pGC->pCompositeClip);
+    if (RegionNumRects(pGC->pCompositeClip) == 1) {
+	pextent = RegionRects(pGC->pCompositeClip);
     	while (nrectFill--) {
 	    pboxClipped->x1 = max(pextent->x1, prect->x);
 	    pboxClipped->y1 = max(pextent->y1, prect->y);
@@ -968,7 +968,7 @@ XAAClipAndRenderRects(
 	    }
     	}
     } else {
-	pextent = REGION_EXTENTS(pGC->pScreen, pGC->pCompositeClip);
+	pextent = RegionExtents(pGC->pCompositeClip);
     	while (nrectFill--) {
 	    int n;
 	    BoxRec box, *pbox;
@@ -987,8 +987,8 @@ XAAClipAndRenderRects(
 	    if ((box.x1 >= box.x2) || (box.y1 >= box.y2))
 	    	continue;
     
-	    n = REGION_NUM_RECTS (pGC->pCompositeClip);
-	    pbox = REGION_RECTS(pGC->pCompositeClip);
+	    n = RegionNumRects (pGC->pCompositeClip);
+	    pbox = RegionRects(pGC->pCompositeClip);
     
 	    /* clip the rectangle to each box in the clip region
 	       this is logically equivalent to calling Intersect()
@@ -1031,8 +1031,8 @@ XAAGetRectClipBoxes(
     xRectangle	*prect = prectInit;
     RegionPtr   prgnClip = pGC->pCompositeClip;
 
-    if (REGION_NUM_RECTS(prgnClip) == 1) {
-	pextent = REGION_RECTS(prgnClip);
+    if (RegionNumRects(prgnClip) == 1) {
+	pextent = RegionRects(prgnClip);
     	while (nrectFill--) {
 	    pboxClipped->x1 = max(pextent->x1, prect->x);
 	    pboxClipped->y1 = max(pextent->y1, prect->y);
@@ -1050,7 +1050,7 @@ XAAGetRectClipBoxes(
 	    }
     	}
     } else {
-	pextent = REGION_EXTENTS(pGC->pScreen, prgnClip);
+	pextent = RegionExtents(prgnClip);
     	while (nrectFill--) {
 	    int n;
 	    BoxRec box, *pbox;
@@ -1069,8 +1069,8 @@ XAAGetRectClipBoxes(
 	    if ((box.x1 >= box.x2) || (box.y1 >= box.y2))
 	    	continue;
     
-	    n = REGION_NUM_RECTS (prgnClip);
-	    pbox = REGION_RECTS(prgnClip);
+	    n = RegionNumRects (prgnClip);
+	    pbox = RegionRects(prgnClip);
     
 	    /* clip the rectangle to each box in the clip region
 	       this is logically equivalent to calling Intersect()
@@ -1091,6 +1091,6 @@ XAAGetRectClipBoxes(
     	}
     }
 
-    return(pboxClipped - pboxClippedBase);  
+    return pboxClipped - pboxClippedBase;
 }
 

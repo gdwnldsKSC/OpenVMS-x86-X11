@@ -3,31 +3,39 @@
 
 AC_PREREQ(2.60)
 AC_INIT([libX11],
-        1.3.2,
+        [1.4.0],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         libX11)
 AC_CONFIG_SRCDIR([Makefile.am])
-AM_INIT_AUTOMAKE([dist-bzip2 foreign])
+AC_CONFIG_MACRO_DIR([m4])
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
 
+AM_INIT_AUTOMAKE([foreign dist-bzip2])
 AM_MAINTAINER_MODE
-
 AM_CONFIG_HEADER([src/config.h])
 AC_CONFIG_HEADER([include/X11/XlibConf.h])
-
-# Require xorg-macros: XORG_DEFAULT_OPTIONS, XORG_CHANGELOG, XORG_WITH_LINT
-m4_ifndef([XORG_MACROS_VERSION], [AC_FATAL([must install xorg-macros 1.3 or later before running autoconf/autogen])])
-XORG_MACROS_VERSION(1.3)
 
 # Set common system defines for POSIX extensions, such as _GNU_SOURCE
 # Must be called before any macros that run the compiler (like AC_PROG_LIBTOOL)
 # to avoid autoconf errors.
 AC_USE_SYSTEM_EXTENSIONS
 
+# Require xorg-macros minimum of 1.11 for disabling fop by default
+m4_ifndef([XORG_MACROS_VERSION],
+          [m4_fatal([must install xorg-macros 1.11 or later before running autoconf/autogen])])
+XORG_MACROS_VERSION(1.11)
+XORG_DEFAULT_OPTIONS
+XORG_ENABLE_SPECS
+XORG_WITH_XMLTO(0.0.20)
+XORG_WITH_FOP([no])
+XORG_CHECK_SGML_DOCTOOLS(1.5)
+XORG_PROG_RAWCPP
+
 # Checks for programs.
 AC_PROG_LIBTOOL
-DOLT
 AC_PROG_CC
-XORG_DEFAULT_OPTIONS
+PKG_PROG_PKG_CONFIG
 
 if test x"$CC_FOR_BUILD" = x; then
 	if test x"$cross_compiling" = xyes; then
@@ -38,9 +46,28 @@ if test x"$CC_FOR_BUILD" = x; then
 fi
 AC_SUBST([CC_FOR_BUILD])
 
-XORG_PROG_RAWCPP
+if test x"$CPPFLAGS_FOR_BUILD" = x; then
+	if test ! x"$cross_compiling" = xyes; then
+		CPPFLAGS_FOR_BUILD=${CPPFLAGS}
+	fi
+fi
+AC_SUBST(CPPFLAGS_FOR_BUILD)
 
-# Find perl for "make check" tests in nls/localerules.in
+if test x"$CFLAGS_FOR_BUILD" = x; then
+	if test ! x"$cross_compiling" = xyes; then
+		CFLAGS_FOR_BUILD=${CFLAGS}
+	fi
+fi
+AC_SUBST(CFLAGS_FOR_BUILD)
+
+if test x"$LDFLAGS_FOR_BUILD" = x; then
+	if test ! x"$cross_compiling" = xyes; then
+		LDFLAGS_FOR_BUILD=${LDFLAGS}
+	fi
+fi
+AC_SUBST(LDFLAGS_FOR_BUILD)
+
+# Find perl for "make check" tests in nls/Makefile.am
 AC_ARG_WITH(perl,
 	AC_HELP_STRING([--with-perl=<path>],
 			[path to perl interpreter for build-time tests]),
@@ -49,43 +76,15 @@ AC_ARG_WITH(perl,
 	AC_CHECK_PROGS([PERL], [perl], [no]))
 AM_CONDITIONAL(HAVE_PERL, test x$PERL != xno)
 
-# Build with XCB support?
-AC_ARG_WITH(xcb,
-	AC_HELP_STRING([--with-xcb], [use XCB for low-level protocol implementation]),
-	[ac_cv_use_xcb=$withval], [ac_cv_use_xcb=yes])
-AC_CACHE_CHECK([whether to use XCB], [ac_cv_use_xcb], [ac_cv_use_xcb=yes])
-AM_CONDITIONAL(XCB, test x$ac_cv_use_xcb != xno)
-
 # Checks for pkg-config packages
-PKG_CHECK_MODULES(XPROTO, [xproto >= 7.0.13])
-AC_SUBST(XPROTO_CFLAGS)
 
-case "$ac_cv_use_xcb" in
-no)
-	X11_REQUIRES="xau xcmiscproto bigreqsproto"
-	X11_EXTRA_DEPS="xau"
-	PKG_CHECK_MODULES(XDMCP, xdmcp,
-		AC_CHECK_LIB(Xdmcp, XdmcpWrap,
-			[
-			AC_CHECK_LIB(Xdmcp, XdmcpWrap, [xdmauth="yes"], [xdmauth="no"], [$XDMCP_LIBS])
-			X11_EXTRA_DEPS="$X11_EXTRA_DEPS xdmcp"
-			],
-			[
-			XDMCP_CFLAGS=
-			XDMCP_LIBS=
-			], [$XDMCP_LIBS]),
-		[AC_MSG_RESULT(no)])
-	AC_DEFINE(USE_XCB, 0, [Use XCB for low-level protocol implementation])
-	;;
-*)
-	X11_REQUIRES="xcb >= 1.1.92"
-	X11_EXTRA_DEPS="xcb >= 1.1.92"
-	xdmauth="no" # XCB handles all auth
-	AC_DEFINE(USE_XCB, 1, [Use XCB for low-level protocol implementation])
-	;;
-esac
+# Always required
+X11_REQUIRES='xproto >= 7.0.13 xextproto xtrans xcb >= 1.1.92'
+X11_EXTRA_DEPS="xcb >= 1.1.92"
+
+PKG_PROG_PKG_CONFIG()
+
 AC_SUBST(X11_EXTRA_DEPS)
-PKG_CHECK_MODULES(X11, xextproto xtrans $X11_REQUIRES)
 
 dnl Issue an error if xtrans.m4 was not found and XTRANS_CONNECTION_FLAGS macro
 dnl was not expanded, since libX11 with no transport types is rather useless.
@@ -104,18 +103,64 @@ XTRANS_SECURE_RPC_FLAGS
 
 # Preferred order to try transports for local connections
 AC_MSG_CHECKING([what order to try transports in for local connections])
+DEFAULT_LOCAL_TRANS=""
 case $host_os in
 	solaris*)
 		# On Solaris 2.6 through 9, named pipes (LOCAL_TRANS) were
 		# faster than Unix domain sockets, but on Solaris 10 & later,
 		# Unix domain sockets are faster now.
-		DEFAULT_LOCAL_TRANS="UNIX_TRANS,LOCAL_TRANS,TCP_TRANS"
+		if test "$UNIXCONN" = "yes" ; then
+			if test ! "x$DEFAULT_LOCAL_TRANS" = "x" ; then
+				DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS},"
+			fi
+			DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS}UNIX_TRANS"
+		fi
+		if test "$LOCALCONN" = "yes" ; then
+			if test ! "x$DEFAULT_LOCAL_TRANS" = "x" ; then
+				DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS},"
+			fi
+			DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS}LOCAL_TRANS"
+		fi
+		if test "$TCPCONN" = "yes" ; then
+			if test ! "x$DEFAULT_LOCAL_TRANS" = "x" ; then
+				DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS},"
+			fi
+			DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS}TCP_TRANS"
+		fi
+		;;
+	linux*)
+		# LOCAL_TRANS is used for abstract sockets.
+		if test "$UNIXCONN" = "yes" ; then
+			if test ! "x$DEFAULT_LOCAL_TRANS" = "x" ; then
+				DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS},"
+			fi
+			DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS}LOCAL_TRANS,UNIX_TRANS"
+		fi
+		if test "$TCPCONN" = "yes" ; then
+			if test ! "x$DEFAULT_LOCAL_TRANS" = "x" ; then
+				DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS},"
+			fi
+			DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS}TCP_TRANS"
+		fi
 		;;
 	*)
-		if test "$LOCALCONN" = "yes"; then
-			DEFAULT_LOCAL_TRANS="LOCAL_TRANS,UNIX_TRANS,TCP_TRANS"
-		else
-			DEFAULT_LOCAL_TRANS="UNIX_TRANS,TCP_TRANS"
+		if test "$LOCALCONN" = "yes" ; then
+			if test ! "x$DEFAULT_LOCAL_TRANS" = "x" ; then
+				DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS},"
+			fi
+			DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS}LOCAL_TRANS"
+		fi
+		if test "$UNIXCONN" = "yes" ; then
+			if test ! "x$DEFAULT_LOCAL_TRANS" = "x" ; then
+				DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS},"
+			fi
+			DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS}UNIX_TRANS"
+		fi
+		if test "$TCPCONN" = "yes" ; then
+			if test ! "x$DEFAULT_LOCAL_TRANS" = "x" ; then
+				DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS},"
+			fi
+			DEFAULT_LOCAL_TRANS="${DEFAULT_LOCAL_TRANS}TCP_TRANS"
 		fi
 		;;
 esac
@@ -201,8 +246,8 @@ dnl AC_PATH_XTRA
 
 # arch specific things
 WCHAR32="1"
-case $target_alias in
-  *os2*) os2="true" ; WCHAR32="0" ;;
+case $host_os in
+  os2*) os2="true" ; WCHAR32="0" ;;
   *) ;;
 esac
 AC_SUBST(WCHAR32)
@@ -212,7 +257,7 @@ AM_CONDITIONAL(OS2, test x$os2 = xtrue)
 AC_ARG_WITH(launchd, AS_HELP_STRING([--with-launchd], [Build with support for Apple's launchd (default: auto)]), [LAUNCHD=$withval], [LAUNCHD=auto])
 if test "x$LAUNCHD" = xauto; then
 	unset LAUNCHD
-	AC_CHECK_PROG(LAUNCHD, [launchd], [yes], [no])
+	AC_CHECK_PROG(LAUNCHD, [launchd], [yes], [no], [$PATH$PATH_SEPARATOR/sbin])
 fi
 
 if test "x$LAUNCHD" = xyes ; then
@@ -261,33 +306,24 @@ if test x$xthreads = xyes ; then
 fi
 AC_SUBST(XTHREADLIB)
 AC_SUBST(XTHREAD_CFLAGS)
-X11_CFLAGS="$X11_CFLAGS $XTHREAD_CFLAGS"
-
-case x$xdmauth in
-xyes)
-	XDMCP_CFLAGS="$XDMCP_CFLAGS -DHASXDMAUTH"
-	;;
-xno)
-	XDMCP_LIBS=""
-	;;
-esac
-AC_SUBST(XDMCP_CFLAGS)
-AC_SUBST(XDMCP_LIBS)
 
 AC_CHECK_FUNC(poll, [AC_DEFINE(USE_POLL, 1, [poll() function is available])], )
 
 #
 # Find keysymdef.h
 #
-AC_MSG_CHECKING([keysymdef.h])
-dir=`pkg-config --variable=includedir xproto`
-KEYSYMDEF="$dir/X11/keysymdef.h"
-if test -f "$KEYSYMDEF"; then
-        AC_MSG_RESULT([$KEYSYMDEF])
-else
-	AC_MSG_ERROR([Cannot find keysymdef.h])
-fi
-AC_SUBST(KEYSYMDEF)
+AC_MSG_CHECKING([keysym definitions])
+KEYSYMDEFDIR=`$PKG_CONFIG --variable=includedir xproto`/X11
+FILES="keysymdef.h XF86keysym.h Sunkeysym.h DECkeysym.h HPkeysym.h"
+for i in $FILES; do
+    if test -f "$KEYSYMDEFDIR/$i"; then
+            KEYSYMDEFS="$KEYSYMDEFS $KEYSYMDEFDIR/$i"
+    elif test "x$i" = "xkeysymdef.h"; then
+	    AC_MSG_ERROR([Cannot find keysymdef.h])
+    fi
+done
+AC_MSG_RESULT([$KEYSYMDEFS])
+AC_SUBST(KEYSYMDEFS)
 
 AM_CONDITIONAL(UDC, test xfalse = xtrue)
 
@@ -339,24 +375,11 @@ AC_ARG_ENABLE(xkb,
                 [Disable XKB support *EXPERIMENTAL*]),
               [XKB=$enableval],[XKB=yes])
 
-AC_ARG_ENABLE(man-pages,
-	      AC_HELP_STRING([--enable-man-pages=section],
-			     [Choose manual section for installing man pages]),
-		[LIBMAN=$enableval],[LIBMAN=yes])
-
-if test "x$LIBMAN" != "xyes"; then
-	LIB_MAN_SUFFIX=$LIBMAN
-fi
-
-AM_CONDITIONAL(MANPAGES, [ test x$LIBMAN '!=' xno ])
-
 AM_CONDITIONAL(XKB, [ test x$XKB = xyes ])
 if test x"$XKB" = "xyes"; then
    XKBPROTO_REQUIRES="kbproto"
-   PKG_CHECK_MODULES(XKBPROTO, kbproto inputproto)
+   X11_REQUIRES="${X11_REQUIRES} kbproto inputproto"
    AC_DEFINE(XKB,1,[Use XKB])
-   X11_CFLAGS="$X11_CFLAGS $XKBPROTO_CFLAGS"
-   X11_LIBS="$X11_LIBS $XKBPROTO_LIBS"
 else
    XKBPROTO_REQUIRES=""
 fi
@@ -376,26 +399,17 @@ fi
 dnl Allow checking code with lint, sparse, etc.
 XORG_WITH_LINT
 XORG_LINT_LIBRARY([X11])
-LINT_FLAGS="${LINT_FLAGS} ${X11_CFLAGS} ${XPROTO_CFLAGS}"
-
-if test "x$GCC" = "xyes"; then
-	GCC_WARNINGS="-Wall -Wpointer-arith -Wstrict-prototypes \
-	-Wmissing-prototypes -Wmissing-declarations \
-	-Wnested-externs -fno-strict-aliasing"
-	X11_CFLAGS="$GCC_WARNINGS $X11_CFLAGS"
-fi
 
 X11_DATADIR="${datadir}/X11"
-AC_DEFINE_DIR(X11_DATADIR, X11_DATADIR, [Location of libX11 data])
+AX_DEFINE_DIR(X11_DATADIR, X11_DATADIR, [Location of libX11 data])
 AC_SUBST(X11_DATADIR)
 
 X11_LIBDIR="${libdir}/X11"
-AC_DEFINE_DIR(X11_LIBDIR, X11_LIBDIR, [Location of libX11 library data])
+AX_DEFINE_DIR(X11_LIBDIR, X11_LIBDIR, [Location of libX11 library data])
 AC_SUBST(X11_LIBDIR)
 
-X11_CFLAGS="$CWARNFLAGS $X11_CFLAGS $XPROTO_CFLAGS"
-AC_SUBST(X11_CFLAGS)
-AC_SUBST(X11_LIBS)
+PKG_CHECK_MODULES(X11, [$X11_REQUIRES])
+X11_CFLAGS="$X11_CFLAGS $XTHREAD_CFLAGS"
 
 #
 # Yes, it would be nice to put the locale data in
@@ -406,66 +420,27 @@ AC_SUBST(X11_LIBS)
 #
 
 X11_LOCALEDATADIR="${X11_DATADIR}/locale"
-AC_DEFINE_DIR(XLOCALEDATADIR, X11_LOCALEDATADIR, [Location of libX11 locale data])
+AX_DEFINE_DIR(XLOCALEDATADIR, X11_LOCALEDATADIR, [Location of libX11 locale data])
 AC_SUBST(X11_LOCALEDATADIR)
 
 AC_ARG_WITH(locale-lib-dir,	AS_HELP_STRING([--with-locale-lib-dir=DIR],
  [Directory where locale libraries files are installed (default: $libdir/X11/locale)]),
 				[ X11_LOCALELIBDIR="$withval" ],
 				[ X11_LOCALELIBDIR="${X11_LIBDIR}/locale" ])
-AC_DEFINE_DIR(XLOCALELIBDIR, X11_LOCALELIBDIR, [Location of libX11 locale libraries])
+AX_DEFINE_DIR(XLOCALELIBDIR, X11_LOCALELIBDIR, [Location of libX11 locale libraries])
 AC_SUBST(X11_LOCALELIBDIR)
 
 X11_LOCALEDIR="${X11_LOCALEDATADIR}"
-AC_DEFINE_DIR(XLOCALEDIR, X11_LOCALEDIR, [Location of libX11 locale data])
+AX_DEFINE_DIR(XLOCALEDIR, X11_LOCALEDIR, [Location of libX11 locale data])
 AC_SUBST(X11_LOCALEDIR)
 
 XKEYSYMDB="${X11_DATADIR}/XKeysymDB"
-AC_DEFINE_DIR(XKEYSYMDB, XKEYSYMDB, [Location of keysym database])
+AX_DEFINE_DIR(XKEYSYMDB, XKEYSYMDB, [Location of keysym database])
 
 XERRORDB="${X11_DATADIR}/XErrorDB"
-AC_DEFINE_DIR(XERRORDB, XERRORDB, [Location of error message database])
+AX_DEFINE_DIR(XERRORDB, XERRORDB, [Location of error message database])
 
 XORG_CHECK_MALLOC_ZERO
-
-# Specification documents are currently provided in troff format
-AC_ARG_VAR([GROFF], [Path to a groff executable that supports -ms])
-AC_PATH_PROGS([GROFF], [groff], [none], [$PATH:/usr/gnu/bin])
-
-AC_ARG_VAR([PS2PDF], [Path to a ps2pdf executable])
-AC_PATH_PROGS([PS2PDF], [ps2pdf], [none], [$PATH:/usr/gnu/bin])
-
-if test "x${GROFF}" != xnone ; then
-    AC_MSG_CHECKING([whether ${GROFF} -ms works])
-    if ${GROFF} -ms -I. /dev/null >/dev/null 2>&1 ; then
-        groff_ms_works=yes
-    else
-        groff_ms_works=no
-        GROFF=none
-    fi
-    AC_MSG_RESULT([${groff_ms_works}])
-fi
-
-AC_MSG_CHECKING([whether to build specifications])
-AC_ARG_ENABLE(specs, AC_HELP_STRING([--enable-specs],
-                                   [Enable building of specification docs]),
-              [build_specs="${enableval}"], [build_specs="auto"])
-
-if test "x${build_specs}" = xauto; then
-    if test "x${GROFF}" = xnone ; then
-        build_specs=no
-    else
-        build_specs=yes
-    fi
-fi
-AC_MSG_RESULT([${build_specs}])
-if test "x${build_specs}" = xyes && test "x${GROFF}" = xnone ; then
-    AC_MSG_ERROR([can't build documentation without groff])
-fi
-
-AM_CONDITIONAL(BUILD_SPECS, [test x$build_specs = xyes])
-AM_CONDITIONAL(HAVE_PS2PDF, [test x$PS2PDF != xnone])
-
 
 AC_OUTPUT([Makefile
            include/Makefile
@@ -487,83 +462,20 @@ AC_OUTPUT([Makefile
 	   modules/om/generic/Makefile
 	   src/xkb/Makefile
 	   nls/Makefile
-	   nls/am_ET.UTF-8/Makefile
-	   nls/armscii-8/Makefile
-	   nls/C/Makefile
-	   nls/el_GR.UTF-8/Makefile
-	   nls/en_US.UTF-8/Makefile
-	   nls/fi_FI.UTF-8/Makefile
-	   nls/georgian-academy/Makefile
-	   nls/georgian-ps/Makefile
-	   nls/ibm-cp1133/Makefile
-	   nls/iscii-dev/Makefile
-	   nls/isiri-3342/Makefile
-	   nls/iso8859-1/Makefile
-	   nls/iso8859-10/Makefile
-	   nls/iso8859-11/Makefile
-	   nls/iso8859-13/Makefile
-	   nls/iso8859-14/Makefile
-	   nls/iso8859-15/Makefile
-	   nls/iso8859-2/Makefile
-	   nls/iso8859-3/Makefile
-	   nls/iso8859-4/Makefile
-	   nls/iso8859-5/Makefile
-	   nls/iso8859-6/Makefile
-	   nls/iso8859-7/Makefile
-	   nls/iso8859-8/Makefile
-	   nls/iso8859-9/Makefile
-	   nls/iso8859-9e/Makefile
-	   nls/ja/Makefile
-	   nls/ja.JIS/Makefile
-	   nls/ja_JP.UTF-8/Makefile
-	   nls/ja.S90/Makefile
-	   nls/ja.SJIS/Makefile
-	   nls/ja.U90/Makefile
-	   nls/ko/Makefile
-	   nls/koi8-c/Makefile
-	   nls/koi8-r/Makefile
-	   nls/koi8-u/Makefile
-	   nls/ko_KR.UTF-8/Makefile
-	   nls/microsoft-cp1251/Makefile
-	   nls/microsoft-cp1255/Makefile
-	   nls/microsoft-cp1256/Makefile
-	   nls/mulelao-1/Makefile
-	   nls/nokhchi-1/Makefile
-	   nls/pt_BR.UTF-8/Makefile
-	   nls/ru_RU.UTF-8/Makefile
-	   nls/tatar-cyr/Makefile
-	   nls/th_TH/Makefile
-	   nls/th_TH.UTF-8/Makefile
-	   nls/tscii-0/Makefile
-	   nls/vi_VN.tcvn/Makefile
-	   nls/vi_VN.viscii/Makefile
-	   nls/zh_CN/Makefile
-	   nls/zh_CN.gb18030/Makefile
-	   nls/zh_CN.gbk/Makefile
-	   nls/zh_CN.UTF-8/Makefile
-	   nls/zh_HK.big5/Makefile
-	   nls/zh_HK.big5hkscs/Makefile
-	   nls/zh_HK.UTF-8/Makefile
-	   nls/zh_TW/Makefile
-	   nls/zh_TW.big5/Makefile
-	   nls/zh_TW.UTF-8/Makefile
 	   specs/Makefile
 	   specs/i18n/Makefile
+	   specs/i18n/framework/Makefile
+	   specs/i18n/localedb/Makefile
+	   specs/i18n/trans/Makefile
 	   specs/libX11/Makefile
 	   specs/XIM/Makefile
 	   x11.pc
 	   x11-xcb.pc])
 
-man_pages_suffix=$LIBMAN_SUFFIX
-if test -z "$man_pages_suffix"; then
-    man_pages_suffix=none
-fi
-
 echo ""
 echo "X11 will be built with the following settings:"
 echo " Loadable i18n module support:            "$XLIB_LOADABLE_I18N
 echo " Loadable xcursor library support:        "$XLIB_LOADABLE_XCURSOR
-echo " Use XCB:                                 "$ac_cv_use_xcb
 echo " Threading support:                       "$xthreads
 echo " Use Threads safe API:                    "$mtsafeapi
 echo " Threads stubs in libX11:                 "$thrstubs
@@ -572,6 +484,6 @@ echo " Internationalization support:            "$XLOCALE
 echo " XF86BigFont support:                     "$XF86BIGFONT
 echo " XKB support:                             "$XKB
 echo " XLOCALEDIR environment variable support: "$ENABLE_XLOCALEDIR
-echo " Manual pages suffix:                     "$man_pages_suffix
 echo " Compose table cache enabled:             "$COMPOSECACHE
+echo " Functional specs building enabled:       "$build_specs
 echo ""

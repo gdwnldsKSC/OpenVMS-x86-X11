@@ -1,4 +1,3 @@
-/* $Xorg: ClDisplay.c,v 1.4 2001/02/09 02:03:31 xorgcvs Exp $ */
 
 /*
 
@@ -27,16 +26,11 @@ other dealings in this Software without prior written authorization
 from The Open Group.
 
 */
-/* $XFree86: xc/lib/X11/ClDisplay.c,v 1.4 2001/12/14 19:53:58 dawes Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-#if USE_XCB
 #include "Xxcbint.h"
-#else /* !USE_XCB */
-#include <X11/Xtrans/Xtrans.h>
-#endif /* USE_XCB */
 #include "Xlib.h"
 #include "Xlibint.h"
 #include "Xintconn.h"
@@ -74,11 +68,7 @@ XCloseDisplay (
 	    if (dpy->request != dpy->last_request_read)
 		XSync(dpy, 1);
 	}
-#if USE_XCB
 	xcb_disconnect(dpy->xcb->connection);
-#else /* !USE_XCB */
-	_XDisconnectDisplay(dpy->trans_conn);
-#endif /* USE_XCB */
 	_XFreeDisplayStructure (dpy);
 	return 0;
 }

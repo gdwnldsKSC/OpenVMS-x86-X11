@@ -43,9 +43,7 @@
 
 #include "scrnintstr.h"
 
-#ifdef RENDER
 #include "picturestr.h"
-#endif
 
 
 // Debug output, or not.
@@ -57,10 +55,17 @@
 
 
 // Global variables
-extern DevPrivateKey rootlessGCPrivateKey;
-extern DevPrivateKey rootlessScreenPrivateKey;
-extern DevPrivateKey rootlessWindowPrivateKey;
-extern DevPrivateKey rootlessWindowOldPixmapPrivateKey;
+extern DevPrivateKeyRec rootlessGCPrivateKeyRec;
+#define rootlessGCPrivateKey (&rootlessGCPrivateKeyRec)
+
+extern DevPrivateKeyRec rootlessScreenPrivateKeyRec;
+#define rootlessScreenPrivateKey (&rootlessScreenPrivateKeyRec)
+
+extern DevPrivateKeyRec rootlessWindowPrivateKeyRec;
+#define rootlessWindowPrivateKey (&rootlessWindowPrivateKeyRec)
+
+extern DevPrivateKeyRec rootlessWindowOldPixmapPrivateKeyRec;
+#define rootlessWindowOldPixmapPrivateKey (&rootlessWindowOldPixmapPrivateKeyRec)
 
 
 // RootlessGCRec: private per-gc data
@@ -101,10 +106,8 @@ typedef struct _RootlessScreenRec {
 
     SetShapeProcPtr SetShape;
 
-#ifdef RENDER
     CompositeProcPtr Composite;
     GlyphsProcPtr Glyphs;
-#endif
 
     InstallColormapProcPtr InstallColormap;
     UninstallColormapProcPtr UninstallColormap;
@@ -218,7 +221,7 @@ extern RegionRec rootlessHugeRoot;
 
 // Returns TRUE if this window is a root window
 #define IsRoot(pWin) \
-    ((pWin) == WindowTable[(pWin)->drawable.pScreen->myNum])
+    ((pWin) == (pWin)->drawable.pScreen->root)
 
 
 /*

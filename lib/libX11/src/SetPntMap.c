@@ -1,4 +1,3 @@
-/* $Xorg: SetPntMap.c,v 1.4 2001/02/09 02:03:36 xorgcvs Exp $ */
 /*
 
 Copyright 1986, 1998  The Open Group
@@ -24,9 +23,6 @@ used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from The Open Group.
 
 */
-/* $XFree86: xc/lib/X11/SetPntMap.c,v 1.4 2001/12/14 19:54:06 dawes Exp $ */
-
-#define NEED_REPLIES
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -71,7 +67,6 @@ XChangeKeyboardMapping (
     req->firstKeyCode = first_keycode;
     req->keyCodes = nkeycodes;
     req->keySymsPerKeyCode = keysyms_per_keycode;
-    req->firstKeyCode = first_keycode;
     req->length += nkeycodes * keysyms_per_keycode;
     nbytes = keysyms_per_keycode * nkeycodes * 4;
     Data32 (dpy, (long *)keysyms, nbytes);

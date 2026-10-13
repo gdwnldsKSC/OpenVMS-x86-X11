@@ -60,10 +60,11 @@ typedef struct module_desc {
     struct module_desc *sib;
     struct module_desc *parent;
     char *name;
-    int handle;
+    char *path;
+    void *handle;
     ModuleSetupProc SetupProc;
     ModuleTearDownProc TearDownProc;
-    void *TearDownData;		/* returned from SetupProc */
+    void *TearDownData;         /* returned from SetupProc */
     const XF86ModuleVersionInfo *VersionInfo;
 } ModuleDesc, *ModuleDescPtr;
 
@@ -72,25 +73,26 @@ typedef struct module_desc {
 void LoaderInit(void);
 
 ModuleDescPtr LoadDriver(const char *, const char *, int, pointer, int *,
-			 int *);
+                         int *);
 ModuleDescPtr LoadModule(const char *, const char *, const char **,
-			 const char **, pointer, const XF86ModReqInfo *,
-			 int *, int *);
+                         const char **, pointer, const XF86ModReqInfo *,
+                         int *, int *);
 ModuleDescPtr DuplicateModule(ModuleDescPtr mod, ModuleDescPtr parent);
 void UnloadDriver(ModuleDescPtr);
 void LoaderSetPath(const char *path);
 void LoaderSortExtensions(void);
 
 #ifdef XORG_STATIC_MODULES
-/* Platform-owned discovery for statically linked modules.  Returned strings
- * are allocated with the server allocator and released by the loader. */
+void *LoaderStaticOpen(const char *, int *, int *);
+void *LoaderStaticSymbol(const char *);
+void LoaderStaticClose(void *);
 char *LoaderStaticFindModule(const char *, const char *, const char **,
                             const char **);
 char **LoaderStaticListDirs(const char **, const char **);
 void LoaderStaticSetOptions(unsigned long);
 #endif
 
-int LoaderUnload(int);
+void LoaderUnload(const char *, void *);
 unsigned long LoaderGetModuleVersion(ModuleDescPtr mod);
 
 void LoaderResetOptions(void);
@@ -99,4 +101,4 @@ void LoaderSetOptions(unsigned long);
 /* Options for LoaderSetOptions */
 #define LDR_OPT_ABI_MISMATCH_NONFATAL		0x0001
 
-#endif /* _LOADERPROCS_H */
+#endif                          /* _LOADERPROCS_H */

@@ -1,3 +1,392 @@
+commit f2eff337176551f643e35c54c1e1ca0a78df69c6
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Mar 22 22:02:56 2012 -0700
+
+    xkbcomp 1.2.4
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit b4fafc4fa7edc4c04c3c0affae0d7f79a63e8d2f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Dec 28 20:57:55 2011 -0800
+
+    Delete redundant redeclarations of extern Atoms in symbols.c
+    
+    Fixes gcc warnings of:
+    
+    symbols.c:43: warning: redundant redeclaration of 'tok_ONE_LEVEL'
+    tokens.h:99: warning: previous declaration of 'tok_ONE_LEVEL' was here
+    symbols.c:44: warning: redundant redeclaration of 'tok_TWO_LEVEL'
+    tokens.h:100: warning: previous declaration of 'tok_TWO_LEVEL' was here
+    symbols.c:45: warning: redundant redeclaration of 'tok_KEYPAD'
+    tokens.h:102: warning: previous declaration of 'tok_KEYPAD' was here
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3835cae3cb1ad1073cbb2711f938beb878b4986c
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Dec 28 20:53:45 2011 -0800
+
+    Make sure to leave room for trailing nil byte in yyGetNumber
+    
+    ...though really, by the time you've added 1023 digits to the number
+    you want to parse, you've got much bigger problems than an off-by-one
+    error in your buffer count.
+    
+    Fixes parfait warnings:
+       Buffer overflow (CWE 120): In array dereference of (*buf)[nInBuf] with index 'nInBuf'
+          Array size is 1024 bytes, nInBuf >= 1 and nInBuf <= 1024
+            at line 625 of xkbscan.c in function 'yyGetNumber'.
+       Buffer overflow (CWE 120): In array dereference of (*buf)[nInBuf] with index 'nInBuf'
+          Array size is 1024 bytes, nInBuf <= 1025
+            at line 632 of xkbscan.c in function 'yyGetNumber'.
+    
+    [ This bug was found by the Parfait 0.4.2 bug checking tool.
+      For more information see http://labs.oracle.com/projects/parfait/ ]
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 1447071942dbbbfc37b08417c74c8a1d302c1626
+Author: Andreas Wettstein <wettstein509@solnet.ch>
+Date:   Fri Dec 2 20:10:06 2011 +0000
+
+    include resets group compatibility modifiers #43091
+    
+    This change makes sure that include does not overwrite previous
+    compatibility modifier settings when the included files does not
+    explicitly specify them.
+    
+    Signed-off-by: Andreas Wettstein <wettstein509@solnet.ch>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+
+commit 5fd14db5b2cc0c2c43f7a1ddefd6f9991eb1dcc2
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Fri Nov 11 11:18:43 2011 -0800
+
+    Silence -Wparentheses-equality
+    
+    warning: equality comparison with extraneous parentheses [-Wparentheses-equality]
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 6099655a4bbe1fd3e26b8afd2b91888ad2766086
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Fri Nov 11 11:17:38 2011 -0800
+
+    Silence -Wshadow warnings
+    
+    warning: declaration shadows a local variable [-Wshadow]
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit b7e88debd937be147d3581b9c8720c0bfe354052
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Fri Nov 11 11:13:42 2011 -0800
+
+    Correct our zeroing out of the row in InitRowInfo
+    
+    geometry.c:369:20: warning: argument to 'sizeof' in '__builtin___memset_chk' call is the same
+          pointer type 'RowInfo *' (aka 'struct _RowInfo *') as the destination; expected 'RowInfo'
+          (aka 'struct _RowInfo') or an explicit length [-Wsizeof-pointer-memaccess]
+            bzero(row, sizeof(RowInfo *));
+            ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 33b5c9413463613d341d15184b34a4f4c4e70e56
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Fri Nov 11 11:12:22 2011 -0800
+
+    Fix -Wformat warnings
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit b9f6482d5fc413222334c2370ef8b9693f4b50fd
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Fri Nov 11 11:07:30 2011 -0800
+
+    Add missing _X_NORETURN to uFatalError
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 8ea06128c70b07c265a217222f2a245aad4bfce4
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Fri Nov 11 11:06:02 2011 -0800
+
+    Include strings.h for strcasecmp and string.h for strdup
+    
+    Our minimum requirement for X11 is currently Unix98.  Unix98 provides
+    strcasecmp in <strings.h>.  This commit fixes implicit declarations
+    of this function on systems that closely adhere to the standard.
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 89c8317ad84386f69d31f38dcddbc7ff0abffb31
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jul 5 08:23:37 2011 +1000
+
+    Add .pc file for version export
+    
+    Exports xkbcomp version and the xkb base directory.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    Reviewed-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit cdb8677f370b34a3a523a32ae0023c7e8c0c965c
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed Jun 22 10:41:33 2011 +1000
+
+    Print version number on -version.
+    
+    This commit isn't playing the WARN/M/M1 macro game. Version numbers to to
+    stdout, full stop.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit cef4ba4b8fdc9a5439f71437c08cf690a750bd6b
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Tue Jun 21 16:04:45 2011 +0100
+
+    Bump to 1.2.3
+    
+    Signed-off-by: Daniel Stone <daniel@fooishbar.org>
+
+commit 3caab5aa37decb7b5dc1642a0452efc3e1f5100e
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Tue Jun 21 15:55:59 2011 +0100
+
+    Interp: Allow explicit Any/NoSymbol mappings
+    
+    Brown paper bag in full effect.
+    
+    The previous fix, while crushing the previous problem where an unknown
+    keysym for an interp def would lead to every key matching it, also
+    ignored explicit Any+AnyOfOrNone(All) mappings.
+    
+    Such as the one xkeyboard-config relied on for Control to actually
+    update the modifier state.
+    
+    Fix this by allowing mappings explicitly declared as Any/NoSymbol, while
+    ignoring only those with failed keysym lookups.  Unfortunately, due to
+    the structure of the parser, it's a deeply inelegant fix.
+    
+    Verified with a quick check of all layouts (albeit using default
+    variants only) in xkeyboard-config that this results in no changes to
+    the output at all, compared to xkbcomp 1.1.1.
+    
+    Signed-off-by: Daniel Stone <daniel@fooishbar.org>
+
+commit b34af8b0aec3a1dfc58f9732996274cbf2646a53
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Tue Jun 21 15:55:28 2011 +0100
+
+    Constify LookupKeysym input argument
+    
+    Signed-off-by: Daniel Stone <daniel@fooishbar.org>
+
+commit e68a8ef1067f98056237d8067052e2a0d9896133
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Tue Jun 21 14:06:05 2011 +0100
+
+    Bump to 1.2.2
+    
+    Emergency bugfix for the syminterp declarations.  They've been broken
+    since the beginning of time, but I guess we just haven't added new
+    interpreted symbols since around then.
+    
+    Signed-off-by: Daniel Stone <daniel@fooishbar.org>
+
+commit 2a473b906943ffd807ad81960c47530ee7ae9a60
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Tue Jun 21 14:03:53 2011 +0100
+
+    Interp: Ignore NoSymbol definitions
+    
+    A NoSymbol syminterp leads to a Any+AnyOfOrAll(None) definition, which
+    is never what anyone would actually ever want in a sym interp.  The
+    failure mode here was:
+        interpret XF86SomeKeysymYouDontHaveYet {
+            action=Something()
+        }
+    leading to:
+        interpret Any+AnyOfOrAll(None) {
+            action=Something()
+        }
+    leading to every single non-action key triggering your shiny new action
+    that was only supposed to come from a new keysym.
+    
+    At least you could VT switch or zap, I guess.
+    
+    Later, more invasive, revisions will bring a more useful error message.
+    
+    Signed-off-by: Daniel Stone <daniel@fooishbar.org>
+
+commit a2816345e58c88f5806a5c6df310c7d9c62264f0
+Author: Daniel Stone <daniel@fooishbar.org>
+Date:   Tue Jun 21 14:03:12 2011 +0100
+
+    Interp: Don't make modifier lookup failure fatal
+    
+    If we can't look up a modifier in a SymInterp declaration, don't make
+    that fatal enough to kill the entire file, just ignore it and move on.
+    
+    Signed-off-by: Daniel Stone <daniel@fooishbar.org>
+
+commit c7a42b364f0ca06d9859945fa11664d0e0ea2742
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Mar 8 08:16:35 2011 -0500
+
+    config: move pre-processor flags to AM_CPPFLAGS
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 7899a1f4745c8d111dab4dd3abc2b59b40ecdcbc
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Mar 8 08:02:54 2011 -0500
+
+    config: let Automake handle Yacc dist and cleaning
+    
+    BUILT_SOURCES and MAINTAINERCLEANFILES are already handled by Automake.
+    
+    Automake generates all the rules to handle building,
+    distribution and cleaning.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 137418c63d01d5db0dcaed257d7a26865efa53ae
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Jun 7 23:47:32 2011 -0700
+
+    Replace repeated checks for gcc with _X_ATTRIBUTE_PRINTF from xproto
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Mark Kettenis <kettenis@openbsd.org>
+
+commit a2877e92bd9f9c1532b5cd12cc484ff3cdbc6a0a
+Author: Alistair Leslie-Hughes <leslie_alistair@hotmail.com>
+Date:   Fri Apr 1 20:26:30 2011 +1100
+
+    xkbcomp: Stop possible overflow in yyGetnumber. #31647
+    
+    Fixes: https://bugs.freedesktop.org/show_bug.cgi?id=31647
+    
+    Signed-off-by: Alistair Leslie-Hughes <leslie_alistair@hotmail.com>
+    Reviewed-by: Dan Nicholson <dbn.lists@gmail.com>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 0b8527a3836cde77269461e22844857bf33e0aea
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sun Feb 13 13:03:05 2011 +0100
+
+    Inline the oiText macro in the only place it's used
+    
+    Gets rid of a compiler warning:
+    geometry.c: In function 'HandleOverlayDef':
+    geometry.c:2578: warning: the address of 'ol' will always evaluate as 'true'
+    
+    X.Org bug#34219 <https://bugs.freedesktop.org/show_bug.cgi?id=34219>
+    
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    Reviewed-by: Dirk Wallenstein <halsmit@t-online.de>
+
+commit c8375bcb7eb9f86ca1534cdf1143e91372d0499e
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri Feb 11 09:06:04 2011 +1000
+
+    xkbcomp 1.2.1
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit ab5371cefe2b7438b74338f71ff890e0e868b3df
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jan 19 10:06:56 2011 -0500
+
+    config: move man pages into their own directory
+    
+    Use services provided by XORG_MANPAGE_SECTIONS.
+    Use standard Makefile for man pages.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 9ce8e2f42ab7695b5165ff0a3d892df96a3c3f01
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Jan 13 11:15:47 2011 -0500
+
+    man: remove trailing spaces and tabs
+    
+    Using s/[ \t]*$//
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 5ecf21cc130d7a45cb5e82e9c2c3025edee5d74f
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jan 12 16:28:02 2011 -0500
+
+    config: replace deprecated AM_CONFIG_HEADER with AC_CONFIG_HEADERS
+    
+    This silences an Autoconf warning
+
+commit e27e8c2a15ddcf51b2ea58f8eced7f035aa1301e
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jan 12 15:29:50 2011 -0500
+
+    config: replace deprecated AC_HELP_STRING with AS_HELP_STRING
+    
+    This silences an Automake warning.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit f524cfae6951442c9a9da65ef317b9c04199500f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Jan 4 00:05:18 2011 -0800
+
+    Remove out-of-date copies of README.config & README.enhancing
+    
+    The up-to-date master copies of those documents are found in the
+    xorg-docs module, and posted on the X.Org website.
+    
+    Also, x-docs.org no longer carries X11 docs, so point to X.Org's
+    website instead in the README.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+
+commit cc55d8f5ab021861308b071aab9c03016be15187
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Oct 31 20:35:24 2010 -0400
+
+    config: replace AC_CHECK_FILE with test -f as it fails to cross-compile
+    
+    Testing for the presence of xkbparse.c is legitimate as this is a build
+    file, but the Autoconf macro assumes it is testing on the host system
+    and fails.
+    
+    Tested-by: Abdoulaye Walsimou Gaye <awg@embtoolkit.org>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 1d59f5b0387b18028017cfab4e55b703417dd735
+Author: Dirk Wallenstein <halsmit@t-online.de>
+Date:   Fri Oct 29 13:08:25 2010 +0200
+
+    man: Improve description of device selection option
+    
+    The device selection option takes effect when loading keymaps, too.
+    
+    Signed-off-by: Dirk Wallenstein <halsmit@t-online.de>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 281c7744f682c1ba4f44c0ee22f9bf7188c14fe6
+Author: Dirk Wallenstein <halsmit@t-online.de>
+Date:   Fri Oct 29 11:35:10 2010 +0200
+
+    Allow uploading a keymap to a single device
+    
+    Signed-off-by: Dirk Wallenstein <halsmit@t-online.de>
+    Reviewed-by: Julien Cristau <jcristau@debian.org>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
 commit 851a5f6e0c1b2a98d4714d95e40198ab5dc61607
 Author: Alan Coopersmith <alan.coopersmith@oracle.com>
 Date:   Sat Oct 30 09:59:52 2010 -0700

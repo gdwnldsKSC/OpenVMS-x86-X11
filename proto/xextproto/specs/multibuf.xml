@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
-                   "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+                   "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
+[
+<!ENTITY % defs SYSTEM "defs.ent"> %defs;
+]>
 
 
 <!-- lifted from troff+ms+XMan by doclifter -->
-<book id="buffer">
+<book id="multibuf">
 
 <bookinfo>
    <title>Extending X for Double-Buffering, Multi-Buffering, and Stereo</title>
-   <releaseinfo>X Version 11, Release 6.4</releaseinfo>
-
    <authorgroup>
       <othercredit>
          <firstname>Jeffrey</firstname><surname>Friedberg</surname>
@@ -22,10 +23,8 @@
       </othercredit>
    </authorgroup>
    <copyright><year>1989</year><holder>Digital Equipment Corporation</holder></copyright>
-   <copyright><year>1989</year><holder>X Consortium</holder></copyright>
-   <copyright><year>1994</year><holder>X Consortium</holder></copyright>
+   <releaseinfo>X Version 11, Release &fullrelvers;</releaseinfo>
    <releaseinfo>Version 3.3</releaseinfo>
-   <affiliation><orgname>X Consortium</orgname></affiliation>
 
 <legalnotice>
 <para>
@@ -38,6 +37,10 @@ this document.  This documentation is provided "as is"
 without express or implied warranty.  This document
 is subject to change.
 </para>
+</legalnotice>
+
+<legalnotice>
+<para role="multiLicensing">Copyright © 1989, 1994 X Consortium</para>
 <para>
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the ``Software''), to deal
@@ -51,7 +54,7 @@ The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
 </para>
 <para>
-THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+THE SOFTWARE IS PROVIDED &ldquo;AS IS&rdquo;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
 X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
@@ -63,23 +66,21 @@ Except as contained in this notice, the name of the X Consortium shall not be
 used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from the X Consortium.
 </para>
-<para>
-<emphasis remap='I'>X Window System</emphasis> is a trademark of X Consortium, Inc.
-</para>
+<para>X Window System is a trademark of The OpenGroup.</para>
 
 </legalnotice>
 </bookinfo>
 
-<chapter>
-<title>TITLE</title>
+<preface><title>Warning</title>
 <warning><para>
 The <emphasis remap='I'>Multi-Buffering</emphasis> extension described here
 was a draft standard of the X Consortium prior to Release 6.1.  It has been
 superseded by the Double Buffer
 Extension (DBE).  DBE is an X Consortium Standard as of Release 6.1.
 </para></warning>
+</preface>
 
-<sect1 id="introduction">
+<chapter id='Introduction'>
 <title>Introduction</title>
 
 <para>
@@ -120,9 +121,9 @@ The authors of this proposal have tried to unify the above documents
 to yield a proposal that incorporates support for double-buffering,
 multi-buffering, and stereo in a way that is acceptable to all concerned.
 </para>
-</sect1>
+</chapter>
 
-<sect1 id="goals">
+<chapter id='Goals'>
 <title>Goals</title>
 
 <para>
@@ -176,9 +177,9 @@ existing hardware features.
   </listitem>
 </itemizedlist>
 
-</sect1>
+</chapter>
 
-<sect1 id="image_buffers">
+<chapter id='Image_Buffers'>
 <title>Image Buffers</title>
 
 <para>
@@ -316,9 +317,9 @@ the screen contents are not altered and the contents of any
 undisplayed image buffers are undefined.  If backing store was
 maintained for an image buffer, then no exposure events are generated.
 </para>
-</sect1>
+</chapter>
 
-<sect1 id="new_requests">
+<chapter id='New_Requests'>
 <title>New Requests</title>
 
 <para>
@@ -671,9 +672,9 @@ display are de-allocated.  If the window is not multi-buffered,
 the request is ignored.
 </para>
 
-</sect1>
+</chapter>
 
-<sect1 id="attributes">
+<chapter id='Attributes'>
 <title>Attributes</title>
 
 <para>
@@ -860,9 +861,9 @@ increment for incompatible changes, and the minor version would
 increment for small upward compatible changes.  Barring changes, the
 major version will be 1, and the minor version will be 1.
 </para>
-</sect1>
+</chapter>
 
-<sect1 id="events">
+<chapter id='Events'>
 <title>Events</title>
 
 <para>
@@ -958,9 +959,9 @@ becomes <emphasis remap='I'>updated</emphasis>
 <function>DisplayImageBuffers</function>
 request), an <function>UpdateNotify</function> event is generated.
 </para>
-</sect1>
+</chapter>
 
-<sect1 id="errors">
+<chapter id='Errors'>
 <title>Errors</title>
 
 <para>
@@ -968,14 +969,14 @@ The following error type has been added to support
 this extension:
 </para>
 
-<sect2 id="buffer_2">
+<sect1 id='Buffer_2'>
 <title>Buffer</title>
 <para>
 A value for a BUFFER argument does not name a defined BUFFER.
 </para>
-</sect2>
+</sect1>
 
-<sect2 id="double_buffering_normal_windows">
+<sect1 id='Double_Buffering_Normal_Windows'>
 <title>Double-Buffering Normal Windows</title>
 
 <para>
@@ -1023,9 +1024,9 @@ while animating
 DestroyImageBuffers( W )
 </literallayout>
 
-</sect2>
+</sect1>
 
-<sect2 id="multi_buffering_normal_windows">
+<sect1 id='Multi_Buffering_Normal_Windows'>
 <title>Multi-Buffering Normal Windows</title>
 
 <para>
@@ -1070,9 +1071,9 @@ while animating
 }
 </literallayout>
 
-</sect2>
+</sect1>
 
-<sect2 id="stereo_windows">
+<sect1 id='Stereo_Windows'>
 <title>Stereo Windows</title>
 <para>
 <emphasis remap='I'>How</emphasis> stereo windows are supported on a server
@@ -1175,9 +1176,9 @@ right eyes for normal windows should be the same
 (ie: have no stereo offset).
 </para>
 
-</sect2>
+</sect1>
 
-<sect2 id="single_buffered_stereo_windows">
+<sect1 id='Single_Buffered_Stereo_Windows'>
 <title>Single-Buffered Stereo Windows</title>
 
 <para>
@@ -1195,9 +1196,9 @@ MapWindow( W )
 
 &lt;draw picture using L,R&gt;
 </literallayout>
-</sect2>
+</sect1>
 
-<sect2 id="double_buffering_stereo_windows">
+<sect1 id='Double_Buffering_Stereo_Windows'>
 <title>Double-Buffering Stereo Windows</title>
 
 <para>
@@ -1267,9 +1268,9 @@ while animating
 }
 </literallayout>
 
-</sect2>
+</sect1>
 
-<sect2 id="multi_buffering_stereo_windows">
+<sect1 id='Multi_Buffering_Stereo_Windows'>
 <title>Multi-Buffering Stereo Windows</title>
 
 <para>
@@ -1310,9 +1311,9 @@ while animating
           DisplayImageBuffers( [L(i)], 100, 0 )
 }
 </literallayout>
-</sect2>
+</sect1>
 
-<sect2 id="protocol_encoding">
+<sect1 id='Protocol_Encoding'>
 <title>Protocol Encoding</title>
 
 <para>
@@ -1356,10 +1357,10 @@ Specifies the code that will be returned when
 The following sections describe the protocol
 encoding for this extension.
 </para>
-</sect2>
 </sect1>
+</chapter>
 
-<sect1 id="type">
+<chapter id='TYPES'>
 <title>TYPES</title>
 
 <literallayout class="monospaced">
@@ -1379,9 +1380,9 @@ SETofBUFFER_EVENT
         #x04000000   UpdateNotify
 </literallayout>
 
-</sect1>
+</chapter>
 
-<sect1 id="events_2">
+<chapter id='EVENTS_2'>
 <title>EVENTS</title>
 
 <literallayout class="monospaced">
@@ -1406,8 +1407,8 @@ SETofBUFFER_EVENT
 24                      unused
 </literallayout>
 
-</sect1>
-<sect1 id="errors_2">
+</chapter>
+<chapter id='ERRORS_2'>
 <title>ERRORS</title>
 
 <literallayout class="monospaced">
@@ -1421,9 +1422,9 @@ SETofBUFFER_EVENT
 21                           unused
 </literallayout>
 
-</sect1>
+</chapter>
 
-<sect1 id="requests">
+<chapter id='Requests'>
 <title>REQUESTS</title>
 
 <literallayout class="monospaced">
@@ -1623,6 +1624,5 @@ VALUEs
 
 </literallayout>
 
-</sect1>
 </chapter>
 </book>

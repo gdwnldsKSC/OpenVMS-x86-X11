@@ -31,48 +31,36 @@
 #ifdef HAVE_XWIN_CONFIG_H
 #include <xwin-config.h>
 #endif
-#ifdef XVENDORNAME
-#define VENDOR_STRING XVENDORNAME
-#define VENDOR_CONTACT BUILDERADDR
-#endif
 
 #include <../xfree86/common/xorgVersion.h>
 #include "win.h"
 
-/* References to external symbols */
-extern char *		g_pszCommandLine;
-extern const char *	g_pszLogFile;
-extern Bool		g_fSilentFatalError;
-extern Bool		g_fLogInited;
-
-
 #ifdef DDXOSVERRORF
 /* Prototype */
 void
-OsVendorVErrorF (const char *pszFormat, va_list va_args);
+ OsVendorVErrorF(const char *pszFormat, va_list va_args);
 
 void
-OsVendorVErrorF (const char *pszFormat, va_list va_args)
+OsVendorVErrorF(const char *pszFormat, va_list va_args)
 {
 #if defined(XWIN_CLIPBOARD) || defined (XWIN_MULTIWINDOW)
-  /* make sure the clipboard and multiwindow threads do not interfere the
-   * main thread */
-  static pthread_mutex_t	s_pmPrinting = PTHREAD_MUTEX_INITIALIZER;
+    /* make sure the clipboard and multiwindow threads do not interfere the
+     * main thread */
+    static pthread_mutex_t s_pmPrinting = PTHREAD_MUTEX_INITIALIZER;
 
-  /* Lock the printing mutex */
-  pthread_mutex_lock (&s_pmPrinting);
+    /* Lock the printing mutex */
+    pthread_mutex_lock(&s_pmPrinting);
 #endif
 
-  /* Print the error message to a log file, could be stderr */
-  LogVWrite (0, pszFormat, va_args);
+    /* Print the error message to a log file, could be stderr */
+    LogVWrite(0, pszFormat, va_args);
 
 #if defined(XWIN_CLIPBOARD) || defined (XWIN_MULTIWINDOW)
-  /* Unlock the printing mutex */
-  pthread_mutex_unlock (&s_pmPrinting);
+    /* Unlock the printing mutex */
+    pthread_mutex_unlock(&s_pmPrinting);
 #endif
 }
 #endif
-
 
 /*
  * os/util.c/FatalError () calls our vendor ErrorF, so the message
@@ -82,24 +70,22 @@ OsVendorVErrorF (const char *pszFormat, va_list va_args)
  * Attempt to do last-ditch, safe, important cleanup here.
  */
 void
-OsVendorFatalError (void)
+OsVendorFatalError(void)
 {
-  /* Don't give duplicate warning if UseMsg was called */
-  if (g_fSilentFatalError)
-    return;
+    /* Don't give duplicate warning if UseMsg was called */
+    if (g_fSilentFatalError)
+        return;
 
-  if (!g_fLogInited) {
-    g_fLogInited = TRUE;
-    g_pszLogFile = LogInit (g_pszLogFile, NULL);
-  }
-  LogClose ();
+    if (!g_fLogInited) {
+        g_fLogInited = TRUE;
+        g_pszLogFile = LogInit(g_pszLogFile, NULL);
+    }
+    LogClose(EXIT_ERR_ABORT);
 
-  winMessageBoxF (
-          "A fatal error has occurred and " PROJECT_NAME " will now exit.\n" \
-		  "Please open %s for more information.\n",
-		  MB_ICONERROR, (g_pszLogFile?g_pszLogFile:"the logfile"));
+    winMessageBoxF("A fatal error has occurred and " PROJECT_NAME
+                   " will now exit.\n" "Please open %s for more information.\n",
+                   MB_ICONERROR, (g_pszLogFile ? g_pszLogFile : "the logfile"));
 }
-
 
 /*
  * winMessageBoxF - Print a formatted error message in a useful
@@ -107,17 +93,20 @@ OsVendorFatalError (void)
  */
 
 void
-winMessageBoxF (const char *pszError, UINT uType, ...)
+winMessageBoxF(const char *pszError, UINT uType, ...)
 {
-  char *	pszErrorF = NULL;
-  char *	pszMsgBox = NULL;
-  va_list	args;
+    char *pszErrorF = NULL;
+    char *pszMsgBox = NULL;
+    va_list args;
+    int size;
 
-  va_start(args, uType);
-  pszErrorF = Xvprintf(pszError, args);
-  va_end(args);
-  if (!pszErrorF)
-    goto winMessageBoxF_Cleanup;
+    va_start(args, uType);
+    size = vasprintf(&pszErrorF, pszError, args);
+    va_end(args);
+    if (size == -1) {
+        pszErrorF = NULL;
+        goto winMessageBoxF_Cleanup;
+    }
 
 #define MESSAGEBOXF \
 	"%s\n" \
@@ -128,23 +117,22 @@ winMessageBoxF (const char *pszError, UINT uType, ...)
 	"XWin was started with the following command-line:\n\n" \
 	"%s\n"
 
-  pszMsgBox = Xprintf (MESSAGEBOXF,
-	   pszErrorF, VENDOR_STRING,
-		       XORG_VERSION_MAJOR, XORG_VERSION_MINOR, XORG_VERSION_PATCH, XORG_VERSION_SNAP, XORG_VERSION_CURRENT,
-		       VENDOR_CONTACT,
-		       BUILDERSTRING,
-	   g_pszCommandLine);
-  if (!pszMsgBox)
-    goto winMessageBoxF_Cleanup;
+    size = asprintf(&pszMsgBox, MESSAGEBOXF,
+                    pszErrorF, XVENDORNAME,
+                    XORG_VERSION_MAJOR, XORG_VERSION_MINOR, XORG_VERSION_PATCH,
+                    XORG_VERSION_SNAP, XORG_VERSION_CURRENT,
+                    BUILDERADDR, BUILDERSTRING, g_pszCommandLine);
 
-  /* Display the message box string */
-  MessageBox (NULL,
-	      pszMsgBox,
-	      PROJECT_NAME,
-	      MB_OK | uType);
+    if (size == -1) {
+        pszMsgBox = NULL;
+        goto winMessageBoxF_Cleanup;
+    }
+
+    /* Display the message box string */
+    MessageBox(NULL, pszMsgBox, PROJECT_NAME, MB_OK | uType);
 
  winMessageBoxF_Cleanup:
-  free(pszErrorF);
-  free(pszMsgBox);
+    free(pszErrorF);
+    free(pszMsgBox);
 #undef MESSAGEBOXF
 }

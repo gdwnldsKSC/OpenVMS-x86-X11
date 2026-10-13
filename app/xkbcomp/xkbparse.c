@@ -2224,12 +2224,12 @@ yyreduce:
 
   case 60:
 #line 377 "xkbparse.y"
-    { (yyval.interp)= InterpCreate(XStringToKeysym((yyvsp[(1) - (3)].str)), (yyvsp[(3) - (3)].expr)); }
+    { (yyval.interp)= InterpCreate((yyvsp[(1) - (3)].str), (yyvsp[(3) - (3)].expr)); }
     break;
 
   case 61:
 #line 379 "xkbparse.y"
-    { (yyval.interp)= InterpCreate(XStringToKeysym((yyvsp[(1) - (1)].str)), NULL); }
+    { (yyval.interp)= InterpCreate((yyvsp[(1) - (1)].str), NULL); }
     break;
 
   case 62:

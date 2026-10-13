@@ -58,9 +58,9 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 #include "compiler.h"
-#include "xf86PciInfo.h"
 #include "xf86Pci.h"
 #include "xf86fbman.h"
+#include "xf86drm.h"
 #include "regionstr.h"
 #include "randrstr.h"
 #include "windowstr.h"
@@ -149,13 +149,6 @@ static XF86AttributeRec Attributes[NUM_ATTRIBUTES] = {
 	{XvSettable | XvGettable, -1, 1, "XV_PIPE"}
 };
 
-#define NUM_TEXTURED_ATTRIBUTES 3
-static XF86AttributeRec TexturedAttributes[NUM_TEXTURED_ATTRIBUTES] = {
-	{XvSettable | XvGettable, -128, 127, "XV_BRIGHTNESS"},
-	{XvSettable | XvGettable, 0, 255, "XV_CONTRAST"},
-	{XvSettable | XvGettable, -1, 1, "XV_SYNC_TO_VBLANK"},
-};
-
 #define GAMMA_ATTRIBUTES 6
 static XF86AttributeRec GammaAttributes[GAMMA_ATTRIBUTES] = {
 	{XvSettable | XvGettable, 0, 0xffffff, "XV_GAMMA0"},
@@ -217,14 +210,13 @@ static Bool intel_has_overlay(intel_screen_private *intel)
 	gp.value = &has_overlay;
 	ret = drmCommandWriteRead(intel->drmSubFD, DRM_I915_GETPARAM, &gp, sizeof(gp));
 
-	return !! has_overlay;
+	return ret == 0 && !! has_overlay;
 }
 
-static void intel_overlay_update_attrs(intel_screen_private *intel)
+static Bool intel_overlay_update_attrs(intel_screen_private *intel)
 {
 	intel_adaptor_private *adaptor_priv = intel_get_adaptor_private(intel);
 	struct drm_intel_overlay_attrs attrs;
-	int ret;
 
 	attrs.flags = I915_OVERLAY_UPDATE_ATTRS;
 	attrs.brightness = adaptor_priv->brightness;
@@ -238,8 +230,8 @@ static void intel_overlay_update_attrs(intel_screen_private *intel)
 	attrs.gamma4 = adaptor_priv->gamma4;
 	attrs.gamma5 = adaptor_priv->gamma5;
 
-	ret = drmCommandWriteRead(intel->drmSubFD, DRM_I915_OVERLAY_ATTRS,
-				  &attrs, sizeof(attrs));
+	return drmCommandWriteRead(intel->drmSubFD, DRM_I915_OVERLAY_ATTRS,
+				   &attrs, sizeof(attrs)) == 0;
 }
 
 static void intel_overlay_off(intel_screen_private *intel)
@@ -251,6 +243,7 @@ static void intel_overlay_off(intel_screen_private *intel)
 
 	ret = drmCommandWrite(intel->drmSubFD, DRM_I915_OVERLAY_PUT_IMAGE,
 			      &request, sizeof(request));
+	(void) ret;
 }
 
 static Bool
@@ -363,7 +356,7 @@ void I830InitVideo(ScreenPtr screen)
 	 * supported hardware.
 	 */
 	if (scrn->bitsPerPixel >= 16 &&
-	    (IS_I9XX(intel) || IS_I965G(intel)) &&
+	    INTEL_INFO(intel)->gen >= 30 &&
 	    !intel->use_shadow) {
 		texturedAdaptor = I830SetupImageVideoTextured(screen);
 		if (texturedAdaptor != NULL) {
@@ -447,7 +440,7 @@ static XF86VideoAdaptorPtr I830SetupImageVideoOverlay(ScreenPtr screen)
 
 	adapt->pPortPrivates[0].ptr = (pointer) (adaptor_priv);
 	adapt->nAttributes = NUM_ATTRIBUTES;
-	if (IS_I9XX(intel))
+	if (INTEL_INFO(intel)->gen >= 30)
 		adapt->nAttributes += GAMMA_ATTRIBUTES;	/* has gamma */
 	adapt->pAttributes =
 	    xnfalloc(sizeof(XF86AttributeRec) * adapt->nAttributes);
@@ -456,7 +449,7 @@ static XF86VideoAdaptorPtr I830SetupImageVideoOverlay(ScreenPtr screen)
 	memcpy((char *)att, (char *)Attributes,
 	       sizeof(XF86AttributeRec) * NUM_ATTRIBUTES);
 	att += NUM_ATTRIBUTES;
-	if (IS_I9XX(intel)) {
+	if (INTEL_INFO(intel)->gen >= 30) {
 		memcpy((char *)att, (char *)GammaAttributes,
 		       sizeof(XF86AttributeRec) * GAMMA_ATTRIBUTES);
 		att += GAMMA_ATTRIBUTES;
@@ -507,7 +500,7 @@ static XF86VideoAdaptorPtr I830SetupImageVideoOverlay(ScreenPtr screen)
 	/* Allow the pipe to be switched from pipe A to B when in clone mode */
 	xvPipe = MAKE_ATOM("XV_PIPE");
 
-	if (IS_I9XX(intel)) {
+	if (INTEL_INFO(intel)->gen >= 30) {
 		xvGamma0 = MAKE_ATOM("XV_GAMMA0");
 		xvGamma1 = MAKE_ATOM("XV_GAMMA1");
 		xvGamma2 = MAKE_ATOM("XV_GAMMA2");
@@ -526,26 +519,19 @@ static XF86VideoAdaptorPtr I830SetupImageVideoTextured(ScreenPtr screen)
 	ScrnInfoPtr scrn = xf86Screens[screen->myNum];
 	intel_screen_private *intel = intel_get_screen_private(scrn);
 	XF86VideoAdaptorPtr adapt;
-	XF86AttributePtr attrs;
 	intel_adaptor_private *adaptor_privs;
 	DevUnion *devUnions;
 	int nports = 16, i;
-	int nAttributes;
 
 	OVERLAY_DEBUG("I830SetupImageVideoOverlay\n");
-
-	nAttributes = NUM_TEXTURED_ATTRIBUTES;
 
 	adapt = calloc(1, sizeof(XF86VideoAdaptorRec));
 	adaptor_privs = calloc(nports, sizeof(intel_adaptor_private));
 	devUnions = calloc(nports, sizeof(DevUnion));
-	attrs = calloc(nAttributes, sizeof(XF86AttributeRec));
-	if (adapt == NULL || adaptor_privs == NULL || devUnions == NULL ||
-	    attrs == NULL) {
+	if (adapt == NULL || adaptor_privs == NULL || devUnions == NULL) {
 		free(adapt);
 		free(adaptor_privs);
 		free(devUnions);
-		free(attrs);
 		return NULL;
 	}
 
@@ -559,10 +545,8 @@ static XF86VideoAdaptorPtr I830SetupImageVideoTextured(ScreenPtr screen)
 	adapt->pFormats = Formats;
 	adapt->nPorts = nports;
 	adapt->pPortPrivates = devUnions;
-	adapt->nAttributes = nAttributes;
-	adapt->pAttributes = attrs;
-	memcpy(attrs, TexturedAttributes,
-	       nAttributes * sizeof(XF86AttributeRec));
+	adapt->nAttributes = 0;
+	adapt->pAttributes = NULL;
 	if (IS_I915G(intel) || IS_I915GM(intel))
 		adapt->nImages = NUM_IMAGES - XVMC_IMAGE;
 	else
@@ -702,17 +686,17 @@ I830SetPortAttributeOverlay(ScrnInfoPtr scrn,
 			adaptor_priv->desired_crtc = NULL;
 		else
 			adaptor_priv->desired_crtc = xf86_config->crtc[value];
-	} else if (attribute == xvGamma0 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma0 && (INTEL_INFO(intel)->gen >= 30)) {
 		adaptor_priv->gamma0 = value;
-	} else if (attribute == xvGamma1 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma1 && (INTEL_INFO(intel)->gen >= 30)) {
 		adaptor_priv->gamma1 = value;
-	} else if (attribute == xvGamma2 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma2 && (INTEL_INFO(intel)->gen >= 30)) {
 		adaptor_priv->gamma2 = value;
-	} else if (attribute == xvGamma3 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma3 && (INTEL_INFO(intel)->gen >= 30)) {
 		adaptor_priv->gamma3 = value;
-	} else if (attribute == xvGamma4 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma4 && (INTEL_INFO(intel)->gen >= 30)) {
 		adaptor_priv->gamma4 = value;
-	} else if (attribute == xvGamma5 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma5 && (INTEL_INFO(intel)->gen >= 30)) {
 		adaptor_priv->gamma5 = value;
 	} else if (attribute == xvColorKey) {
 		adaptor_priv->colorKey = value;
@@ -725,11 +709,12 @@ I830SetPortAttributeOverlay(ScrnInfoPtr scrn,
 	     attribute == xvGamma2 ||
 	     attribute == xvGamma3 ||
 	     attribute == xvGamma4 ||
-	     attribute == xvGamma5) && (IS_I9XX(intel))) {
+	     attribute == xvGamma5) && (INTEL_INFO(intel)->gen >= 30)) {
 		OVERLAY_DEBUG("GAMMA\n");
 	}
 
-	intel_overlay_update_attrs(intel);
+	if (!intel_overlay_update_attrs(intel))
+		return BadValue;
 
 	if (attribute == xvColorKey)
 		REGION_EMPTY(scrn->pScreen, &adaptor_priv->clip);
@@ -759,17 +744,17 @@ I830GetPortAttribute(ScrnInfoPtr scrn,
 		if (c == xf86_config->num_crtc)
 			c = -1;
 		*value = c;
-	} else if (attribute == xvGamma0 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma0 && (INTEL_INFO(intel)->gen >= 30)) {
 		*value = adaptor_priv->gamma0;
-	} else if (attribute == xvGamma1 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma1 && (INTEL_INFO(intel)->gen >= 30)) {
 		*value = adaptor_priv->gamma1;
-	} else if (attribute == xvGamma2 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma2 && (INTEL_INFO(intel)->gen >= 30)) {
 		*value = adaptor_priv->gamma2;
-	} else if (attribute == xvGamma3 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma3 && (INTEL_INFO(intel)->gen >= 30)) {
 		*value = adaptor_priv->gamma3;
-	} else if (attribute == xvGamma4 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma4 && (INTEL_INFO(intel)->gen >= 30)) {
 		*value = adaptor_priv->gamma4;
-	} else if (attribute == xvGamma5 && (IS_I9XX(intel))) {
+	} else if (attribute == xvGamma5 && (INTEL_INFO(intel)->gen >= 30)) {
 		*value = adaptor_priv->gamma5;
 	} else if (attribute == xvColorKey) {
 		*value = adaptor_priv->colorKey;
@@ -996,7 +981,7 @@ I830CopyPlanarData(intel_adaptor_private *adaptor_priv,
 	/* Copy V data for YV12, or U data for I420 */
 	src2 = buf +		/* start of YUV data */
 	    (srcH * srcPitch) +	/* move over Luma plane */
-	    ((top * srcPitch) >> 2) +	/* move down from by top lines */
+	    ((top >> 1) * srcPitch2) +	/* move down from by top lines */
 	    (left >> 1);	/* move left by left pixels */
 
 #if 0
@@ -1015,7 +1000,7 @@ I830CopyPlanarData(intel_adaptor_private *adaptor_priv,
 	src3 = buf +		/* start of YUV data */
 	    (srcH * srcPitch) +	/* move over Luma plane */
 	    ((srcH >> 1) * srcPitch2) +	/* move over Chroma plane */
-	    ((top * srcPitch) >> 2) +	/* move down from by top lines */
+	    ((top >> 1) * srcPitch2) +	/* move down from by top lines */
 	    (left >> 1);	/* move left by left pixels */
 #if 0
 	ErrorF("src3 is %p, offset is %ld\n", src3,
@@ -1300,7 +1285,7 @@ intel_wait_for_scanline(ScrnInfoPtr scrn, PixmapPtr pixmap,
 	int y1, y2;
 
 	pipe = -1;
-	if (pixmap_is_scanout(pixmap))
+	if (scrn->vtSema && pixmap_is_scanout(pixmap))
 		pipe = intel_crtc_to_pipe(crtc);
 	if (pipe < 0)
 		return;
@@ -1333,22 +1318,22 @@ intel_wait_for_scanline(ScrnInfoPtr scrn, PixmapPtr pixmap,
 	 * of extra time for the blitter to start up and
 	 * do its job for a full height blit
 	 */
-	if (full_height && !IS_I965G(intel))
+	if (full_height && INTEL_INFO(intel)->gen < 40)
 		y2 -= 2;
 
 	if (pipe == 0) {
 		pipe = MI_LOAD_SCAN_LINES_DISPLAY_PIPEA;
 		event = MI_WAIT_FOR_PIPEA_SCAN_LINE_WINDOW;
-		if (full_height && IS_I965G(intel))
+		if (full_height && INTEL_INFO(intel)->gen >= 40)
 			event = MI_WAIT_FOR_PIPEA_SVBLANK;
 	} else {
 		pipe = MI_LOAD_SCAN_LINES_DISPLAY_PIPEB;
 		event = MI_WAIT_FOR_PIPEB_SCAN_LINE_WINDOW;
-		if (full_height && IS_I965G(intel))
+		if (full_height && INTEL_INFO(intel)->gen >= 40)
 			event = MI_WAIT_FOR_PIPEB_SVBLANK;
 	}
 
-	if (scrn->currentMode->Flags & V_INTERLACE) {
+	if (crtc->mode.Flags & V_INTERLACE) {
 		/* DSL count field lines */
 		y1 /= 2;
 		y2 /= 2;
@@ -1358,9 +1343,9 @@ intel_wait_for_scanline(ScrnInfoPtr scrn, PixmapPtr pixmap,
 	/* The documentation says that the LOAD_SCAN_LINES command
 	 * always comes in pairs. Don't ask me why. */
 	OUT_BATCH(MI_LOAD_SCAN_LINES_INCL | pipe);
-	OUT_BATCH((y1 << 16) | y2);
+	OUT_BATCH((y1 << 16) | (y2-1));
 	OUT_BATCH(MI_LOAD_SCAN_LINES_INCL | pipe);
-	OUT_BATCH((y1 << 16) | y2);
+	OUT_BATCH((y1 << 16) | (y2-1));
 	OUT_BATCH(MI_WAIT_FOR_EVENT | event);
 	ADVANCE_BATCH();
 }
@@ -1401,7 +1386,7 @@ intel_setup_dst_params(ScrnInfoPtr scrn, intel_adaptor_private *adaptor_priv, sh
 	if (adaptor_priv->textured) {
 		pitchAlign = 4;
 	} else {
-		if (IS_I965G(intel))
+		if (INTEL_INFO(intel)->gen >= 40)
 			/* Actually the alignment is 64 bytes, too. But the
 			 * stride must be at least 512 bytes. Take the easy fix
 			 * and align on 512 bytes unconditionally. */
@@ -1417,7 +1402,7 @@ intel_setup_dst_params(ScrnInfoPtr scrn, intel_adaptor_private *adaptor_priv, sh
 
 #if INTEL_XVMC
 	/* for i915 xvmc, hw requires 1kb aligned surfaces */
-	if ((id == FOURCC_XVMC) && IS_I915(intel))
+	if ((id == FOURCC_XVMC) && IS_GEN3(intel))
 		pitchAlign = 1024;
 #endif
 
@@ -1530,6 +1515,9 @@ I830PutImageTextured(ScrnInfoPtr scrn,
 	xf86CrtcPtr crtc;
 	int top, left, npixels, nlines;
 
+	if (!intel_pixmap_is_offscreen(pixmap))
+		return BadAlloc;
+
 #if 0
 	ErrorF("I830PutImage: src: (%d,%d)(%d,%d), dst: (%d,%d)(%d,%d)\n"
 	       "width %d, height %d\n", src_x, src_y, src_w, src_h, drw_x,
@@ -1578,11 +1566,16 @@ I830PutImageTextured(ScrnInfoPtr scrn,
 			return BadAlloc;
 	}
 
-	if (crtc && adaptor_priv->SyncToVblank != 0) {
+	if (crtc && adaptor_priv->SyncToVblank != 0 && INTEL_INFO(intel)->gen < 60) {
 		intel_wait_for_scanline(scrn, pixmap, crtc, clipBoxes);
 	}
 
-	if (IS_I965G(intel)) {
+	if (INTEL_INFO(intel)->gen >= 60) {
+		Gen6DisplayVideoTextured(scrn, adaptor_priv, id, clipBoxes,
+					 width, height, dstPitch, dstPitch2,
+					 src_w, src_h,
+					 drw_w, drw_h, pixmap);
+	} else if (INTEL_INFO(intel)->gen >= 40) {
 		I965DisplayVideoTextured(scrn, adaptor_priv, id, clipBoxes,
 					 width, height, dstPitch, dstPitch2,
 					 src_w, src_h,
@@ -1594,6 +1587,7 @@ I830PutImageTextured(ScrnInfoPtr scrn,
 					 pixmap);
 	}
 
+	intel_get_screen_private(scrn)->needs_flush = TRUE;
 	DamageDamageRegion(drawable, clipBoxes);
 
 	return Success;

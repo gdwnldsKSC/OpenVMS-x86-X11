@@ -15,7 +15,7 @@ $ inherited_loader_table = ""
 $ first_include = "/NOFIRST_INCLUDE"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ profiles = "||ZLIB|FONTENC|EXPAT|FONT_UTIL|FNTSTUBS|FONT_BITMAP|FONT_FONTFILE|FONT_FC|FS|ICE|SM|ICEAUTH|MAKEDEPEND|GTF|RTL|"
-$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|"
+$ profiles = profiles + "DAMAGE|MI|FB|RENDER|DIX|SHADOW|SYNC|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|"
 $ profiles = profiles + "XKBFILE|ROOTLESS|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ profiles = profiles + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ profiles = profiles + "XSS|XVMC|XXF86VM|"
@@ -37,8 +37,9 @@ $ IF (P6 .NES. "") .OR. -
      (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
 $ rtl_headers = F$SEARCH("SYS$LIBRARY:DECC$RTLDEF.TLB")
 $ IF rtl_headers .EQS. "" THEN GOTO done
-$ IF (P4 .EQS. "OS") .OR. (P4 .EQS. "XCB") .OR. -
-     (P4 .EQS. "X11") .OR. (P4 .EQS. "XWININFO") THEN GOSUB os_native_headers
+$ IF (P4 .EQS. "OS") .OR. (P4 .EQS. "XCB") .OR. (P4 .EQS. "PIXMAN") .OR. -
+     (P4 .EQS. "X11") .OR. (P4 .EQS. "XWININFO") .OR. -
+     (P4 .EQS. "XDPYINFO") THEN GOSUB os_native_headers
 $ IF rtl_headers .EQS. "" THEN GOTO done
 $ IF (P4 .EQS. "GTF") .OR. (P4 .EQS. "RTL") THEN GOTO rtl_headers
 $ IF P4 .EQS. "ZLIB" THEN GOTO zlib_headers
@@ -48,16 +49,19 @@ $ inherited_x11 = F$TRNLNM("X11")
 $ inherited_table = F$TRNLNM("X11",,,,,"TABLE_NAME")
 $ IF F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]"
-$ IF (P4 .EQS. "XCB") .OR. (P4 .EQS. "X11") .OR. (P4 .EQS. "XWININFO") THEN -
+$ IF (P4 .EQS. "XCB") .OR. (P4 .EQS. "X11") .OR. (P4 .EQS. "XWININFO") .OR. -
+     (P4 .EQS. "XDPYINFO") THEN -
     include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE.XCB]," + -
     include_directory + ",""./VMS-SUPPORT/_BUILD/P64/INCLUDE"""
 $ IF P4 .EQS. "XCB" THEN include_directory = -
     "[.VMS-SUPPORT.LIB.XCB],[.VMS-SUPPORT._BUILD.P64.LIB.XCB]," + -
     "[.XCB.LIBXCB.SRC],[.VMS-SUPPORT._BUILD.P64.INCLUDE.XCB]," + include_directory
 $ IF P4 .EQS. "XF86CONFIG" THEN include_directory = include_directory + -
-    ",[.XSERVER.XORG-SERVER.HW.XFREE86.PARSER]"
+    ",[.XSERVER.XORG-SERVER.HW.XFREE86.PARSER],[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]"
 $ IF (P4 .EQS. "X11") .OR. (P4 .EQS. "X11_MAKEKEYS") THEN -
     include_directory = include_directory + ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]"
+$ IF P4 .EQS. "X11_MAKEKEYS" THEN include_directory = include_directory + -
+    ",""./lib/libX11/src/util"""
 $ IF P4 .EQS. "X11" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS],[.LIB.LIBX11.SRC]," + -
     "[.VMS-SUPPORT._BUILD.P64.LIB.X11],[.LIB.LIBXAU],[.LIB.XTRANS]," + -
@@ -171,7 +175,7 @@ $ IF P4 .EQS. "XKBCOMP" THEN include_directory = -
     "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XKBCOMP],[.APP.XKBCOMP]," + include_directory
 $ IF P4 .EQS. "MAKEDEPEND" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11],[.UTIL.MAKEDEPEND]"
-$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|ROOTLESS|XF86CONFIG|"
+$ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|SYNC|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|ROOTLESS|XF86CONFIG|"
 $ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|COMMON|BUS|MISC|XORGXKB|"
 $ server_profiles = server_profiles + "XORGFB|"
 $ server_profiles = server_profiles + "LOADER|"
@@ -187,7 +191,7 @@ $ IF F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles) -
     "[.XSERVER.XORG-SERVER.DAMAGEEXT]," + -
     "[.XSERVER.XORG-SERVER.INCLUDE],[.XSERVER.XORG-SERVER.XEXT]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
-    "[.XSERVER.XORG-SERVER.MIEXT.DAMAGE]," + -
+    "[.XSERVER.XORG-SERVER.MIEXT.DAMAGE],[.XSERVER.XORG-SERVER.MIEXT.SYNC]," + -
     "[.XSERVER.XORG-SERVER.MI],[.XSERVER.XORG-SERVER.RENDER]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.PIXMAN],[.XSERVER.XORG-SERVER.XI]"
 $ IF P4 .EQS. "MI" THEN include_directory = include_directory + -
@@ -302,7 +306,7 @@ $ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN include_directory = -
     "[.DRIVER.XF86-VIDEO-VMWARE.SRC]," + include_directory + -
     ",[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]," + -
-    "[.XSERVER.XORG-SERVER.XFIXES]," + -
+    "[.XSERVER.XORG-SERVER.XFIXES],[.XSERVER.XORG-SERVER.RANDR]," + -
     "[.XSERVER.XORG-SERVER.INCLUDE],[.XSERVER.XORG-SERVER.XEXT]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.EXTENSIONS]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]," + -
@@ -314,6 +318,8 @@ $ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN include_directory = -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.XAA]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.DDC]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.I2C]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.MODES]," + -
+    "[.XSERVER.XORG-SERVER.HW.XFREE86.PARSER]," + -
     "[.XSERVER.XORG-SERVER.MI]," + -
     "[.XSERVER.XORG-SERVER.FB],[.XSERVER.XORG-SERVER.RENDER],[.XSERVER.XORG-SERVER.XEXT]," + -
     "[.VMS-SUPPORT._BUILD.P64.INCLUDE.PIXMAN]"

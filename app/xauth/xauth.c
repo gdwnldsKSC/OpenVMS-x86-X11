@@ -1,10 +1,8 @@
 /*
- * $Xorg: xauth.c,v 1.4 2001/02/09 02:05:38 xorgcvs Exp $
- * $XdotOrg: $
  *
  * xauth - manipulate authorization file
  *
- * 
+ *
 Copyright 1989,1998  The Open Group
 
 Permission to use, copy, modify, distribute, and sell this software and its
@@ -29,7 +27,6 @@ in this Software without prior written authorization from The Open Group.
  * *
  * Author:  Jim Fulton, MIT X Consortium
  */
-/* $XFree86: xc/programs/xauth/xauth.c,v 1.5tsi Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -41,7 +38,7 @@ in this Software without prior written authorization from The Open Group.
 /*
  * global data
  */
-char *ProgramName;			/* argv[0], set at top of main() */
+const char *ProgramName;		/* argv[0], set at top of main() */
 int verbose = -1;			/* print certain messages */
 Bool ignore_locks = False;		/* for error recovery */
 Bool break_locks = False;		/* for error recovery */
@@ -51,18 +48,18 @@ Bool no_name_lookups = False;		/* show addresses instead of names */
  * local data
  */
 
-static char *authfilename = NULL;	/* filename of cookie file */
-static char *defcmds[] = { "source", "-", NULL };  /* default command */
+static const char *authfilename = NULL;	/* filename of cookie file */
+static const char *defcmds[] = { "source", "-", NULL };  /* default command */
 static int ndefcmds = 2;
-static char *defsource = "(stdin)";
+static const char *defsource = "(stdin)";
 
 /*
  * utility routines
  */
-static void 
+static void
 usage(void)
 {
-    static char *prefixmsg[] = {
+    static const char *prefixmsg[] = {
 "",
 "where options include:",
 "    -f authfilename                name of authority file to use",
@@ -74,12 +71,12 @@ usage(void)
 "and commands have the following syntax:",
 "",
 NULL };
-    static char *suffixmsg[] = {
+    static const char *suffixmsg[] = {
 "A dash may be used with the \"merge\" and \"source\" to read from the",
 "standard input.  Commands beginning with \"n\" use numeric format.",
 "",
 NULL };
-    char **msg;
+    const char **msg;
 
     fprintf (stderr, "usage:  %s [-options ...] [command arg ...]\n",
 	     ProgramName);
@@ -99,21 +96,21 @@ NULL };
  * The main routine - parses command line and calls action procedures
  */
 int
-main(int argc, char *argv[])
+main(int argc, const char *argv[])
 {
     int i;
-    char *sourcename = defsource;
-    char **arglist = defcmds;
+    const char *sourcename = defsource;
+    const char **arglist = defcmds;
     int nargs = ndefcmds;
     int status;
 
     ProgramName = argv[0];
 
     for (i = 1; i < argc; i++) {
-	char *arg = argv[i];
+	const char *arg = argv[i];
 
 	if (arg[0] == '-') {
-	    char *flag;
+	    const char *flag;
 
 	    for (flag = (arg + 1); *flag; flag++) {
 		switch (*flag) {

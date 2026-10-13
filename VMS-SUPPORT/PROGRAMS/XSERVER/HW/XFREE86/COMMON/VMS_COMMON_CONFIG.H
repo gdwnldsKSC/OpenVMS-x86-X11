@@ -66,10 +66,7 @@
 #define __XKBDEFRULES__ "xorg"
 #endif
 #ifndef XORG_RELEASE
-#define XORG_RELEASE "Release 7.6"
-#endif
-#ifndef ARCH_PCI_INIT
-#define ARCH_PCI_INIT vmsPciInit
+#define XORG_RELEASE "Release 7.7"
 #endif
 #ifndef USE_SIGIO_BY_DEFAULT
 #define USE_SIGIO_BY_DEFAULT 0

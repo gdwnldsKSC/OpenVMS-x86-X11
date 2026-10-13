@@ -94,7 +94,7 @@ FontFileReadDirectory (char *directory, FontDirectoryPtr *pdir)
     file = fopen(dir_file, "rt");
 #endif
     if (file) {
-#ifndef WIN32        
+#ifndef WIN32
 	if (fstat (fileno(file), &statb) == -1)
 #else
 	if (stat (dir_file, &statb) == -1)
@@ -139,7 +139,7 @@ FontFileReadDirectory (char *directory, FontDirectoryPtr *pdir)
 	    FontFileAddFontFile (dir, font_name, file_name);
 	}
 	fclose(file);
-	
+
     } else if (errno != ENOENT) {
 	return BadFontPath;
     }
@@ -192,7 +192,7 @@ FontFileDirectoryChanged(FontDirectoryPtr dir)
 	return TRUE;
     return FALSE;
 }
-    
+
 /*
  * Make each of the file names an automatic alias for each of the files.
  */
@@ -216,7 +216,7 @@ AddFileNameAliases(FontDirectoryPtr dir)
 	renderer = FontFileMatchRenderer (fileName);
 	if (!renderer)
 	    continue;
-	
+
 	len = strlen (fileName) - renderer->fileSuffixLen;
 	if (len >= sizeof(copy))
 	    continue;

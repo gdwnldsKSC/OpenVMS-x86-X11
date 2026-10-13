@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #CONFOPT="--disable-xquartz --disable-glx --disable-dri --disable-launchd --enable-kdrive --disable-xsdl --enable-xnest --enable-xvfb"
+#CONFOPT="--enable-xorg --disable-xquartz --disable-kdrive --disable-xnest --disable-xvfb"
 
 CONFOPT="--enable-standalone-xpbproxy"
 #CONFOPT="--disable-shave --without-dtrace"
@@ -11,12 +12,12 @@ CONFOPT="${CONFOPT} --with-dtrace"
 MAKE="gnumake"
 MAKE_OPTS="-j10"
 
-#SCAN_BUILD="scan-build -v -V -o clang.d"
- 
 . ~/src/strip.sh
 
+PATH=$PATH:/opt/local/bin
+
 #PREFIX=/usr/X11
-#ARCHFLAGS="-arch i386 -arch ppc"
+#ARCHFLAGS="-arch i386 -arch x86_64"
 
 PREFIX=/opt/X11
 CONFOPT="$CONFOPT --with-apple-application-name=XQuartz --with-launchd-id-prefix=org.macosforge.xquartz"
@@ -24,12 +25,33 @@ ARCHFLAGS="-arch i386 -arch x86_64"
 
 ACLOCAL="aclocal -I ${PREFIX}/share/aclocal -I /usr/local/share/aclocal"
 
-CFLAGS="-Wall -pipe -DNO_ALLOCA"
-CFLAGS="$CFLAGS -O0 -ggdb3"
-CFLAGS="$CFLAGS $ARCHFLAGS"
+CPPFLAGS="-DNO_ALLOCA -DNO_COMPILER_H -DFAKEIT -DFAIL_HARD"
 
+CFLAGS="$CFLAGS -O0 -g3 -pipe"
+CFLAGS="$CFLAGS $ARCHFLAGS"
+CFLAGS="$CFLAGS -Wall -Wextra -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers"
+
+CFLAGS="${CFLAGS} -fdiagnostics-show-category=name"
+
+# Stage 1:
+#    CFLAGS="${CFLAGS} -Werror=clobbered"
+#    CFLAGS="${CFLAGS} -Wlogical-op"
+#    CFLAGS="${CFLAGS} -Wparentheses"
+#    CFLAGS="${CFLAGS} -Wcast-align"
+#    CFLAGS="${CFLAGS} -Wunsafe-loop-optimizations"
+
+OBJCFLAGS="$CFLAGS"
 LDFLAGS="$CFLAGS"
 
+#CC="llvm-gcc"
+#CXX="llvm-g++"
+CC="/opt/local/bin/clang-mp-3.0"
+CXX="/opt/local/bin/clang++-mp-3.0"
+
+OBJC="$CC"
+
+#SCAN_BUILD="scan-build -v -V -o clang.d --use-cc=${CC} --use-c++=${CXX}"
+ 
 #CPPFLAGS="$CPPFLAGS -F/Applications/Utilities/XQuartz.app/Contents/Frameworks"
 #LDFLAGS="$LDFLAGS -F/Applications/Utilities/XQuartz.app/Contents/Frameworks"
 #CPPFLAGS="$CPPFLAGS -F/Applications/Utilities/X11.app/Contents/Frameworks"
@@ -46,9 +68,11 @@ if false ; then
 	export FOP_OPTS="-Xmx2048m -Djava.awt.headless=true"
 	export GROFF=/opt/local/bin/groff
 	export PS2PDF=/opt/local/bin/ps2pdf
+else
+	CONFOPT="${CONFOPT} --disable-docs --disable-devel-docs --disable-builddocs"
 fi
 
-export ACLOCAL CPPFLAGS CFLAGS LDFLAGS
+export ACLOCAL CPPFLAGS CFLAGS OBJCFLAGS LDFLAGS CC OBJC
 
 PKG_CONFIG_PATH=${PREFIX}/share/pkgconfig:${PREFIX}/lib/pkgconfig:$PKG_CONFIG_PATH
 PATH=${PREFIX}/bin:$PATH
@@ -59,10 +83,12 @@ die() {
 }
 
 docomp() {
-	autoreconf -fvi || die
-	${SCAN_BUILD} ./configure --prefix=${PREFIX} ${CONFOPT} --disable-dependency-tracking --enable-maintainer-mode --enable-xcsecurity --enable-record --disable-xevie "${@}" || die "Could not configure xserver"
-	${MAKE} clean || die "Unable to make clean"
-	${SCAN_BUILD} ${MAKE} ${MAKE_OPTS} || die "Could not make xserver"
+	#autoreconf -fvi || die
+	#${SCAN_BUILD} ./configure --prefix=${PREFIX} ${CONFOPT} --disable-dependency-tracking --enable-maintainer-mode --enable-xcsecurity --enable-record --disable-xevie "${@}" || die "Could not configure xserver"
+	#${MAKE} clean || die "Unable to make clean"
+	#${SCAN_BUILD} ${MAKE} ${MAKE_OPTS} || die "Could not make xserver"
+	#${MAKE} distcheck ${MAKE_OPTS} DESTDIR=/tmp/distcheck || die "distcheck failed"
+	../modular/release.sh .
 }
 
 doinst() {

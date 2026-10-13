@@ -25,7 +25,7 @@
 /**
  * \file common_bridge.c
  * Support routines used to process PCI header information for bridges.
- * 
+ *
  * \author Ian Romanick <idr@us.ibm.com>
  */
 
@@ -75,7 +75,7 @@ read_bridge_info( struct pci_device_private * priv )
 
 	info = malloc(sizeof(*info));
 	if (info != NULL) {
-	    pci_device_cfg_read( (struct pci_device *) priv, buf + 0x18, 0x18, 
+	    pci_device_cfg_read( (struct pci_device *) priv, buf + 0x18, 0x18,
 				 0x40 - 0x18, & bytes );
 
 	    info->primary_bus = buf[0x18];
@@ -239,7 +239,7 @@ pci_device_get_pcmcia_bridge_info( struct pci_device * dev )
 
 /**
  * Determine the primary, secondary, and subordinate buses for a bridge
- * 
+ *
  * Determines the IDs of the primary, secondary, and subordinate buses for
  * a specified bridge.  Not all bridges directly store this information
  * (e.g., PCI-to-ISA bridges).  For those bridges, no error is returned, but
@@ -252,7 +252,7 @@ pci_device_get_pcmcia_bridge_info( struct pci_device * dev )
  * \return
  * On success, zero is returned.  If \c dev is not a bridge, \c ENODEV is
  * returned.
- * 
+ *
  * \bug
  * Host bridges are handled the same way as PCI-to-ISA bridges.  This is
  * almost certainly not correct.
@@ -265,12 +265,8 @@ pci_device_get_bridge_buses(struct pci_device * dev, int *primary_bus,
 
     /* If the device isn't a bridge, return an error.
      */
-    
-    if (((dev->device_class >> 16) & 0x0ff) != 0x06) {
-	return ENODEV;
-    }
 
-    if (!priv->bridge.pci) {
+    if (((dev->device_class >> 16) & 0x0ff) != 0x06) {
 	return ENODEV;
     }
 
@@ -294,7 +290,7 @@ pci_device_get_bridge_buses(struct pci_device * dev, int *primary_bus,
     case 0x04:
     if (priv->bridge.pci == NULL)
         read_bridge_info(priv);
-    if (priv->header_type == 0x01) {
+    if ((priv->header_type & 0x7f) == 0x01) {
 	*primary_bus = priv->bridge.pci->primary_bus;
 	*secondary_bus = priv->bridge.pci->secondary_bus;
 	*subordinate_bus = priv->bridge.pci->subordinate_bus;
@@ -308,7 +304,7 @@ pci_device_get_bridge_buses(struct pci_device * dev, int *primary_bus,
     case 0x07:
     if (priv->bridge.pcmcia == NULL)
         read_bridge_info(priv);
-    if (priv->header_type == 0x02) {
+    if ((priv->header_type & 0x7f) == 0x02) {
 	*primary_bus = priv->bridge.pcmcia->primary_bus;
 	*secondary_bus = priv->bridge.pcmcia->card_bus;
 	*subordinate_bus = priv->bridge.pcmcia->subordinate_bus;

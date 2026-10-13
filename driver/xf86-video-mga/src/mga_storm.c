@@ -24,7 +24,7 @@
 #include "miline.h"
 #include "servermd.h"
 
-#ifdef XF86DRI
+#ifdef MGADRI
 #include "GL/glxtokens.h"
 #endif
 
@@ -32,7 +32,7 @@
 #include "mga_reg.h"
 #include "mga_macros.h"
 
-#ifdef XF86DRI
+#ifdef MGADRI
 #include "mga_dri.h"
 #endif
 
@@ -583,7 +583,7 @@ Bool mgaAccelInit( ScreenPtr pScreen )
     BoxRec AvailFBArea;
     int i;
 
-    pMga->ScratchBuffer = xalloc(((pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel) + 127) >> 3);
+    pMga->ScratchBuffer = malloc(((pScrn->displayWidth * pMga->CurrentLayout.bitsPerPixel) + 127) >> 3);
     if(!pMga->ScratchBuffer) return FALSE;
 
     pMga->AccelInfoRec = infoPtr = XAACreateInfoRec();
@@ -797,7 +797,7 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 	break;
     }
 
-#ifdef XF86DRI
+#ifdef MGADRI
     if ( pMga->directRenderingEnabled ) {
        MGADRIServerPrivatePtr pMGADRIServer = pMga->DRIServerInfo;
        BoxRec MemBox;
@@ -899,7 +899,7 @@ Bool mgaAccelInit( ScreenPtr pScreen )
 		   pMGADRIServer->textureOffset );
     }
     else
-#endif /* defined(XF86DRI) */
+#endif /* defined(MGADRI) */
     {
        AvailFBArea.x1 = 0;
        AvailFBArea.x2 = pScrn->displayWidth;
@@ -1131,6 +1131,7 @@ void MGAStormEngineInit( ScrnInfoPtr pScrn )
     case PCI_CHIP_MGAG200_WINBOND_PCI:
     case PCI_CHIP_MGAG200_EV_PCI:
     case PCI_CHIP_MGAG200_EH_PCI:
+    case PCI_CHIP_MGAG200_ER_PCI:	
 	pMga->SrcOrg = 0;
 	OUTREG(MGAREG_SRCORG, pMga->realSrcOrg);
 	OUTREG(MGAREG_DSTORG, pMga->DstOrg);

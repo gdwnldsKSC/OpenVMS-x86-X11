@@ -92,34 +92,6 @@ typedef u8                 bool;
 
 #define GLIDEPTR(p) ((GLIDEPtr)((p)->driverPrivate))
 
-
-#if defined(GLIDE3)
-typedef FxU32 (*pgrGet_t)(FxU32 pname, FxU32 plength, FxI32 *params);
-#else
-typedef FxBool (*pgrSstQueryBoards_t)(GrHwConfiguration*);
-#endif
-typedef void (*pgrGlideInit_t)(void);
-typedef void (*pgrSstSelect_t)(int which_sst);
-typedef FxBool (*pgrSstWinOpen_t)(FxU32, GrScreenResolution_t, GrScreenRefresh_t, 
-                                  GrColorFormat_t, GrOriginLocation_t, int, int);
-typedef void (*pgrRenderBuffer_t)(GrBuffer_t);
-typedef void (*pgrClipWindow_t)(FxU32, FxU32, FxU32, FxU32);
-typedef void (*pgrBufferClear_t)(GrColor_t, GrAlpha_t, FxU16);
-typedef FxBool (*pgrLfbLock_t)(GrLock_t, GrBuffer_t, GrLfbWriteMode_t, GrOriginLocation_t, 
-                               FxBool, GrLfbInfo_t*);
-typedef FxBool (*pgrLfbUnlock_t)(GrLock_t, GrBuffer_t);
-typedef void (*pgrGlideShutdown_t)(void);
-
-
-#if defined(GLIDE3) && defined(GLIDE3_ALPHA)
-typedef FxBool (*pgrLfbWriteRegion_t)(GrBuffer_t, FxU32, FxU32, GrLfbSrcFmt_t, 
-                                     FxU32, FxU32, FxBool, FxI32, void*);
-#else
-typedef FxBool (*pgrLfbWriteRegion_t)(GrBuffer_t, FxU32, FxU32, GrLfbSrcFmt_t, 
-                                     FxU32, FxU32, FxI32, void*);
-#endif
-
-
 typedef struct {
   u8*                 ShadowPtr;
   u32                 ShadowPitch;
@@ -133,22 +105,6 @@ typedef struct {
   EntityInfoPtr       pEnt;
   OptionInfoPtr       Options;
 } GLIDERec, *GLIDEPtr;
-
-#if defined(GLIDE3)
-static pgrGet_t pgrGet;
-#else
-static pgrSstQueryBoards_t pgrSstQueryBoards;
-#endif
-static pgrGlideInit_t      pgrGlideInit;
-static pgrSstSelect_t      pgrSstSelect;
-static pgrSstWinOpen_t     pgrSstWinOpen;
-static pgrRenderBuffer_t   pgrRenderBuffer;
-static pgrClipWindow_t     pgrClipWindow;
-static pgrBufferClear_t    pgrBufferClear;
-static pgrLfbLock_t        pgrLfbLock;
-static pgrLfbUnlock_t      pgrLfbUnlock;
-static pgrGlideShutdown_t  pgrGlideShutdown;
-static pgrLfbWriteRegion_t pgrLfbWriteRegion;
 
 static const OptionInfoRec * GLIDEAvailableOptions(int chipid, int busid);
 static void	GLIDEIdentify(int flags);
@@ -170,16 +126,9 @@ static void	GLIDEDisplayPowerManagementSet(ScrnInfoPtr pScrn,
                                                int flags);
 
 
-static int LoadGlide(void);
-
 #define GLIDE_VERSION 4000
 #define GLIDE_NAME "GLIDE"
 #define GLIDE_DRIVER_NAME "glide"
-#ifdef GLIDE3
-#define GLIDE_MODULE_NAME "glide3x"
-#else
-#define GLIDE_MODULE_NAME "glide2x"
-#endif
 #define GLIDE_MAJOR_VERSION PACKAGE_VERSION_MAJOR
 #define GLIDE_MINOR_VERSION PACKAGE_VERSION_MINOR
 #define GLIDE_PATCHLEVEL PACKAGE_VERSION_PATCHLEVEL
@@ -243,50 +192,11 @@ _X_EXPORT XF86ModuleData glideModuleData = { &glideVersRec, glideSetup, NULL };
 static pointer
 glideSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 {
-  const char module_name[] = GLIDE_MODULE_NAME;
   static Bool setupDone = FALSE;
-  pointer ret;
   int errmaj2 = 0, errmin2 = 0;
     
   if (!setupDone) 
   {
-    /*
-     * Modules that this driver always requires may be loaded here
-     * by calling LoadSubModule().
-     */
-
-    ret = LoadSubModule(module, module_name, NULL, NULL, EXTERN_MODULE, NULL,
-			&errmaj2, &errmin2);
-    if (!ret)
-    {
-      xf86Msg(X_ERROR, "Glide driver:\n"
-"\n"
-"Could not load the shared library file for Glide: \"lib%s.so\"! \n"
-"\n"
-"You need to have Glide installed to run the glide driver for X.Org.\n"
-"Also, you need to tell X.Org where the lib%s.so file is placed\n"
-"by making a soft link in the " MODULEDIR " directory that points\n"
-"to the lib%s.so file. For example (if your lib%s.so file is in\n"
-"/usr/lib):\n"
-"\n"
-"  # ln -s /usr/lib/lib%s.so " MODULEDIR "\n"
-"\n"
-"\n", module_name, module_name, module_name, module_name, module_name);
-      if (errmaj)
-        *errmaj = LDR_NOSUBENT;
-      if (errmin)
-        *errmin = errmaj2;
-      return NULL;
-    }
-
-    if (!LoadGlide()) {
-      if (errmaj)
-        *errmaj = LDR_MODSPECIFIC;
-      if (errmin)
-        *errmin = 0;
-      return NULL;
-    }
-
     setupDone = TRUE;
     /* This module should be loaded only once */
     *errmaj = LDR_ONCEONLY;
@@ -355,10 +265,10 @@ glide_get_num_boards(void)
   FxI32 num_sst;
   int r;
 
-  r = pgrGet(GR_NUM_BOARDS, sizeof(num_sst), &num_sst);
+  r = grGet(GR_NUM_BOARDS, sizeof(num_sst), &num_sst);
   if (!r)
   {
-    xf86Msg(X_ERROR, "GLIDEProbe(): Error calling pgrGet(GR_NUM_BOARDS)!\n");
+    xf86Msg(X_ERROR, "GLIDEProbe(): Error calling grGet(GR_NUM_BOARDS)!\n");
     return -1;
   }
 
@@ -371,10 +281,10 @@ glide_get_num_boards(void)
   GrHwConfiguration hw;
   int r;
 
-  r = pgrSstQueryBoards(&hw);
+  r = grSstQueryBoards(&hw);
   if (!r)
   {
-    xf86Msg(X_ERROR, "GLIDEProbe(): Error calling pgrSstQueryBoards!\n");
+    xf86Msg(X_ERROR, "GLIDEProbe(): Error calling grSstQueryBoards!\n");
     return -1;
   }
 
@@ -422,6 +332,8 @@ GLIDEProbe(DriverPtr drv, int flags)
 
         /* Allocate a ScrnInfoRec and claim the slot */
         if ((pScrn = xf86AllocateScreen(drv, 0))) {
+	    GLIDEPtr pGlide;
+
 	    xf86AddEntityToScreen(pScrn, entityIndex);
 	    
 	    /* I'm not going to "claim" the glide device since no other driver than this can drive it */
@@ -438,7 +350,14 @@ GLIDEProbe(DriverPtr drv, int flags)
 	    pScrn->EnterVT	 = GLIDEEnterVT;
 	    pScrn->LeaveVT	 = GLIDELeaveVT;
 	    pScrn->FreeScreen    = GLIDEFreeScreen;
-	    pScrn->driverPrivate = (void*)sst;
+
+	    /* Allocate the GLIDERec driverPrivate */
+	    if (!GLIDEGetRec(pScrn))
+		break;
+
+	    pGlide = GLIDEPTR(pScrn);
+	    pGlide->SST_Index = sst;
+
 	    /*
 	     * XXX This is a hack because don't have the PCI info.  Set it as
 	     * an ISA entity with no resources.
@@ -466,16 +385,12 @@ GLIDEPreInit(ScrnInfoPtr pScrn, int flags)
   MessageType from;
   int i;
   ClockRangePtr clockRanges;
-  int sst;
 
   if (flags & PROBE_DETECT) return FALSE;
 
   /* Check the number of entities, and fail if it isn't one. */
   if (pScrn->numEntities != 1)
     return FALSE;
-
-  sst = (int)(pScrn->driverPrivate);
-  pScrn->driverPrivate = NULL;
 
   /* Set pScrn->monitor */
   pScrn->monitor = pScrn->confScreen->monitor;
@@ -538,11 +453,6 @@ GLIDEPreInit(ScrnInfoPtr pScrn, int flags)
   /* We use a programmable clock */
   pScrn->progClock = TRUE;
 
-  /* Allocate the GLIDERec driverPrivate */
-  if (!GLIDEGetRec(pScrn)) {
-    return FALSE;
-  }
-
   pGlide = GLIDEPTR(pScrn);
 
   /* Get the entity */
@@ -566,8 +476,6 @@ GLIDEPreInit(ScrnInfoPtr pScrn, int flags)
   xf86DrvMsg(pScrn->scrnIndex, from, 
              "Voodoo card will be %s when exiting server.\n", 
              pGlide->OnAtExit ? "ON" : "OFF");
-
-  pGlide->SST_Index = sst;
 
   /*
    * If the user has specified the amount of memory in the XF86Config
@@ -868,7 +776,7 @@ GLIDESaveScreen(ScreenPtr pScreen, int mode)
   if (unblank)
     GLIDERefreshAll(pScrn);
   else
-    pgrBufferClear(0, 0, GR_ZDEPTHVALUE_FARTHEST);
+    grBufferClear(0, 0, GR_ZDEPTHVALUE_FARTHEST);
 
   return TRUE;
 }
@@ -954,15 +862,15 @@ GLIDEModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 
 
   /* Initialize the video card */
-  pgrGlideInit();
-  pgrSstSelect(pGlide->SST_Index);
+  grGlideInit();
+  grSstSelect(pGlide->SST_Index);
 
-  r = pgrSstWinOpen(0,
-                    pGlide->grResolution,
-                    pGlide->grRefreshRate,
-                    GR_COLORFORMAT_ARGB,
-                    GR_ORIGIN_UPPER_LEFT,
-                    2, 0);
+  r = grSstWinOpen(0,
+                   pGlide->grResolution,
+                   pGlide->grRefreshRate,
+                   GR_COLORFORMAT_ARGB,
+                   GR_ORIGIN_UPPER_LEFT,
+                   2, 0);
   if (!r)
   {
     xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "grSstWinOpen returned %d. "
@@ -970,9 +878,9 @@ GLIDEModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
     return FALSE;
   }
 
-  pgrRenderBuffer(GR_BUFFER_FRONTBUFFER);
-  pgrClipWindow(0, 0, 1024, 768);
-  pgrBufferClear(0, 0, GR_ZDEPTHVALUE_FARTHEST);
+  grRenderBuffer(GR_BUFFER_FRONTBUFFER);
+  grClipWindow(0, 0, 1024, 768);
+  grBufferClear(0, 0, GR_ZDEPTHVALUE_FARTHEST);
 
   if (!r)
   {
@@ -996,39 +904,9 @@ GLIDERestore(ScrnInfoPtr pScrn, Bool Closing)
     return;
   pGlide->GlideInitiated = FALSE;
   pGlide->Blanked = TRUE;
-  pgrBufferClear(0, 0, GR_ZDEPTHVALUE_FARTHEST);
+  grBufferClear(0, 0, GR_ZDEPTHVALUE_FARTHEST);
   if (!Closing || !(pGlide->OnAtExit))
-    pgrGlideShutdown();
-}
-
-
-#define GLIDE_FIND_FUNC(x) \
-  p##x = (p##x##_t)LoaderSymbol(#x); \
-  if (!p##x) \
-  { \
-    xf86Msg(X_ERROR, "Could not find " #x "() in lib%s.so.\n", GLIDE_MODULE_NAME); \
-    return FALSE; \
-  }
-
-static int
-LoadGlide(void)
-{
-#ifdef GLIDE3
-  GLIDE_FIND_FUNC(grGet);
-#else
-  GLIDE_FIND_FUNC(grSstQueryBoards);
-#endif
-  GLIDE_FIND_FUNC(grGlideInit);
-  GLIDE_FIND_FUNC(grSstSelect);
-  GLIDE_FIND_FUNC(grSstWinOpen);
-  GLIDE_FIND_FUNC(grRenderBuffer);
-  GLIDE_FIND_FUNC(grClipWindow);
-  GLIDE_FIND_FUNC(grBufferClear);
-  GLIDE_FIND_FUNC(grLfbLock);
-  GLIDE_FIND_FUNC(grLfbUnlock);
-  GLIDE_FIND_FUNC(grGlideShutdown);
-  GLIDE_FIND_FUNC(grLfbWriteRegion);
-  return TRUE;
+    grGlideShutdown();
 }
 
 static void
@@ -1052,13 +930,13 @@ GLIDERefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
       src = pGlide->ShadowPtr + (pbox->y1 * pGlide->ShadowPitch) + 
             (x1 * Bpp);
 #if defined(GLIDE3) && defined(GLIDE3_ALPHA)
-      pgrLfbWriteRegion(GR_BUFFER_FRONTBUFFER, x1, pbox->y1, 
-                        GR_LFB_SRC_FMT_565, x2-x1, pbox->y2-pbox->y1, FALSE,
-                        pGlide->ShadowPitch, src);
+      grLfbWriteRegion(GR_BUFFER_FRONTBUFFER, x1, pbox->y1,
+                       GR_LFB_SRC_FMT_565, x2-x1, pbox->y2-pbox->y1, FALSE,
+                       pGlide->ShadowPitch, src);
 #else
-      pgrLfbWriteRegion(GR_BUFFER_FRONTBUFFER, x1, pbox->y1, 
-                        GR_LFB_SRC_FMT_565, x2-x1, pbox->y2-pbox->y1, 
-                        pGlide->ShadowPitch, src);
+      grLfbWriteRegion(GR_BUFFER_FRONTBUFFER, x1, pbox->y1,
+                       GR_LFB_SRC_FMT_565, x2-x1, pbox->y2-pbox->y1,
+                       pGlide->ShadowPitch, src);
 #endif
       pbox++;
     }
@@ -1071,13 +949,13 @@ GLIDERefreshArea(ScrnInfoPtr pScrn, int num, BoxPtr pbox)
       src = pGlide->ShadowPtr + (pbox->y1 * pGlide->ShadowPitch) + 
             (pbox->x1 * Bpp);
 #if defined(GLIDE3) && defined(GLIDE3_ALPHA)
-      pgrLfbWriteRegion(GR_BUFFER_FRONTBUFFER, x1, pbox->y1, 
-                        GR_LFB_SRC_FMT_888, x2-x1, pbox->y2-pbox->y1, FALSE,
-                        pGlide->ShadowPitch, src);
+      grLfbWriteRegion(GR_BUFFER_FRONTBUFFER, x1, pbox->y1,
+                       GR_LFB_SRC_FMT_888, x2-x1, pbox->y2-pbox->y1, FALSE,
+                       pGlide->ShadowPitch, src);
 #else
-      pgrLfbWriteRegion(GR_BUFFER_FRONTBUFFER, x1, pbox->y1, 
-                        GR_LFB_SRC_FMT_888, x2-x1, pbox->y2-pbox->y1, 
-                        pGlide->ShadowPitch, src);
+      grLfbWriteRegion(GR_BUFFER_FRONTBUFFER, x1, pbox->y1,
+                       GR_LFB_SRC_FMT_888, x2-x1, pbox->y2-pbox->y1,
+                       pGlide->ShadowPitch, src);
 #endif
       pbox++;
     }
@@ -1116,7 +994,7 @@ GLIDEDisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
   case DPMSModeStandby:
   case DPMSModeSuspend:
     pGlide->Blanked = TRUE;
-    pgrBufferClear(0, 0, GR_ZDEPTHVALUE_FARTHEST);
+    grBufferClear(0, 0, GR_ZDEPTHVALUE_FARTHEST);
     break;
   case DPMSModeOff:
     GLIDERestore(pScrn, FALSE);

@@ -32,7 +32,6 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86Priv.h"
 
 #include "xf86PciInfo.h"
 #include "xf86Pci.h"
@@ -92,24 +91,24 @@ static Bool MGAInitVisualConfigs( ScreenPtr pScreen )
    case 16:
       numConfigs = 8;
 
-      pConfigs = (__GLXvisualConfig*)xcalloc( sizeof(__GLXvisualConfig),
+      pConfigs = (__GLXvisualConfig*)calloc( sizeof(__GLXvisualConfig),
 						numConfigs );
       if ( !pConfigs ) {
 	 return FALSE;
       }
 
-      pMGAConfigs = (MGAConfigPrivPtr)xcalloc( sizeof(MGAConfigPrivRec),
+      pMGAConfigs = (MGAConfigPrivPtr)calloc( sizeof(MGAConfigPrivRec),
 						 numConfigs );
       if ( !pMGAConfigs ) {
-	 xfree( pConfigs );
+	 free(pConfigs);
 	 return FALSE;
       }
 
-      pMGAConfigPtrs = (MGAConfigPrivPtr*)xcalloc( sizeof(MGAConfigPrivPtr),
+      pMGAConfigPtrs = (MGAConfigPrivPtr*)calloc( sizeof(MGAConfigPrivPtr),
 						     numConfigs );
       if ( !pMGAConfigPtrs ) {
-	 xfree( pConfigs );
-	 xfree( pMGAConfigs );
+	 free(pConfigs);
+	 free(pMGAConfigs);
 	 return FALSE;
       }
 
@@ -183,24 +182,24 @@ static Bool MGAInitVisualConfigs( ScreenPtr pScreen )
    case 32:
       numConfigs = 8;
 
-      pConfigs = (__GLXvisualConfig*)xcalloc( sizeof(__GLXvisualConfig),
+      pConfigs = (__GLXvisualConfig*)calloc( sizeof(__GLXvisualConfig),
 						numConfigs );
       if ( !pConfigs ) {
 	 return FALSE;
       }
 
-      pMGAConfigs = (MGAConfigPrivPtr)xcalloc( sizeof(MGAConfigPrivRec),
+      pMGAConfigs = (MGAConfigPrivPtr)calloc( sizeof(MGAConfigPrivRec),
 						 numConfigs );
       if ( !pMGAConfigs ) {
-	 xfree( pConfigs );
+	 free(pConfigs);
 	 return FALSE;
       }
 
-      pMGAConfigPtrs = (MGAConfigPrivPtr*)xcalloc( sizeof(MGAConfigPrivPtr),
+      pMGAConfigPtrs = (MGAConfigPrivPtr*)calloc( sizeof(MGAConfigPrivPtr),
 						     numConfigs );
       if ( !pMGAConfigPtrs ) {
-	 xfree( pConfigs );
-	 xfree( pMGAConfigs );
+	 free(pConfigs);
+	 free(pMGAConfigs);
 	 return FALSE;
       }
 
@@ -974,11 +973,11 @@ static void MGADRIMoveBuffersXAA(WindowPtr pParent, DDXPointRec ptOldOrg,
 
         if (nbox>1) {
 	    /* Keep ordering in each band, reverse order of bands */
-	    pboxNew1 = (BoxPtr)xalloc(sizeof(BoxRec)*nbox);
+	    pboxNew1 = (BoxPtr)malloc(sizeof(BoxRec)*nbox);
 	    if (!pboxNew1) return;
-	    pptNew1 = (DDXPointPtr)xalloc(sizeof(DDXPointRec)*nbox);
+	    pptNew1 = (DDXPointPtr)malloc(sizeof(DDXPointRec)*nbox);
 	    if (!pptNew1) {
-	        xfree(pboxNew1);
+	        free(pboxNew1);
 	        return;
 	    }
 	    pboxBase = pboxNext = pbox+nbox-1;
@@ -1009,14 +1008,14 @@ static void MGADRIMoveBuffersXAA(WindowPtr pParent, DDXPointRec ptOldOrg,
 
         if (nbox > 1) {
 	    /*reverse orderof rects in each band */
-	    pboxNew2 = (BoxPtr)xalloc(sizeof(BoxRec)*nbox);
-	    pptNew2 = (DDXPointPtr)xalloc(sizeof(DDXPointRec)*nbox);
+	    pboxNew2 = (BoxPtr)malloc(sizeof(BoxRec)*nbox);
+	    pptNew2 = (DDXPointPtr)malloc(sizeof(DDXPointRec)*nbox);
 	    if (!pboxNew2 || !pptNew2) {
-	        if (pptNew2) xfree(pptNew2);
-	        if (pboxNew2) xfree(pboxNew2);
+	        free(pptNew2);
+	        free(pboxNew2);
 	        if (pboxNew1) {
-		    xfree(pptNew1);
-		    xfree(pboxNew1);
+		    free(pptNew1);
+		    free(pboxNew1);
 		}
 	       return;
 	    }
@@ -1067,12 +1066,12 @@ static void MGADRIMoveBuffersXAA(WindowPtr pParent, DDXPointRec ptOldOrg,
     MGASelectBuffer(pScrn, MGA_FRONT);
 
     if (pboxNew2) {
-        xfree(pptNew2);
-        xfree(pboxNew2);
+        free(pptNew2);
+        free(pboxNew2);
     }
     if (pboxNew1) {
-        xfree(pptNew1);
-        xfree(pboxNew1);
+        free(pptNew1);
+        free(pboxNew1);
     }
 
     pMga->AccelInfoRec->NeedToSync = TRUE;
@@ -1151,7 +1150,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    if (xf86LoaderCheckSymbol("DRICreatePCIBusID")) {
       pDRIInfo->busIdString = DRICreatePCIBusID(pMga->PciInfo);
    } else {
-      pDRIInfo->busIdString = xalloc(64);
+      pDRIInfo->busIdString = malloc(64);
       sprintf( pDRIInfo->busIdString, "PCI:%d:%d:%d",
 #ifdef XSERVER_LIBPCIACCESS
 	       ((pMga->PciInfo->domain << 8) | pMga->PciInfo->bus),
@@ -1199,7 +1198,7 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
 
    pDRIInfo->SAREASize = SAREA_MAX;
 
-   pMGADRI = (MGADRIPtr)xcalloc( sizeof(MGADRIRec), 1 );
+   pMGADRI = (MGADRIPtr)calloc( sizeof(MGADRIRec), 1 );
    if ( !pMGADRI ) {
       DRIDestroyInfoRec( pMga->pDRIInfo );
       pMga->pDRIInfo = 0;
@@ -1209,9 +1208,9 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    }
 
    pMGADRIServer = (MGADRIServerPrivatePtr)
-      xcalloc( sizeof(MGADRIServerPrivateRec), 1 );
+      calloc( sizeof(MGADRIServerPrivateRec), 1 );
    if ( !pMGADRIServer ) {
-      xfree( pMGADRI );
+      free( pMGADRI );
       DRIDestroyInfoRec( pMga->pDRIInfo );
       pMga->pDRIInfo = 0;
       xf86DrvMsg( pScrn->scrnIndex, X_ERROR,
@@ -1250,9 +1249,9 @@ Bool MGADRIScreenInit( ScreenPtr pScreen )
    pDRIInfo->bufferRequests = DRI_ALL_WINDOWS;
 
    if ( !DRIScreenInit( pScreen, pDRIInfo, &pMga->drmFD ) ) {
-      xfree( pMGADRIServer );
+      free( pMGADRIServer );
       pMga->DRIServerInfo = 0;
-      xfree( pDRIInfo->devPrivate );
+      free( pDRIInfo->devPrivate );
       pDRIInfo->devPrivate = 0;
       DRIDestroyInfoRec( pMga->pDRIInfo );
       pMga->pDRIInfo = 0;
@@ -1495,21 +1494,13 @@ void MGADRICloseScreen( ScreenPtr pScreen )
    DRICloseScreen( pScreen );
 
    if ( pMga->pDRIInfo ) {
-      if ( pMga->pDRIInfo->devPrivate ) {
-	 xfree( pMga->pDRIInfo->devPrivate );
-	 pMga->pDRIInfo->devPrivate = 0;
-      }
+      free(pMga->pDRIInfo->devPrivate);
+      pMga->pDRIInfo->devPrivate = 0;
       DRIDestroyInfoRec( pMga->pDRIInfo );
       pMga->pDRIInfo = 0;
    }
-   if ( pMga->DRIServerInfo ) {
-      xfree( pMga->DRIServerInfo );
-      pMga->DRIServerInfo = 0;
-   }
-   if ( pMga->pVisualConfigs ) {
-      xfree( pMga->pVisualConfigs );
-   }
-   if ( pMga->pVisualConfigsPriv ) {
-      xfree( pMga->pVisualConfigsPriv );
-   }
+   free(pMga->DRIServerInfo);
+   pMga->DRIServerInfo = 0;
+   free(pMga->pVisualConfigs);
+   free(pMga->pVisualConfigsPriv);
 }

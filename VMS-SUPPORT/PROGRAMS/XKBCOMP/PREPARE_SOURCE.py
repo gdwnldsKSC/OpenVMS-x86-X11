@@ -9,7 +9,10 @@ import re
 import zipfile
 
 
-PROVIDER = "extras/xkeyboard-config"
+PROVIDER = "data/xkeyboard-config"
+GENERATED = {"rules/" + name for name in
+             ("base", "evdev", "base.lst", "evdev.lst", "base.xml", "evdev.xml",
+              "base.extras.xml", "evdev.extras.xml")}
 
 
 def input_mappings(root):
@@ -53,7 +56,7 @@ def input_mappings(root):
     top = base / "Makefile.am"
     top_text = top.read_text(encoding="ascii").replace("\\\n", " ")
     subdirs = words(assignments(top_text, "SUBDIRS", top), top)
-    components = ("compat", "geometry", "keycodes", "keymap", "semantics", "symbols", "types")
+    components = ("compat", "geometry", "keycodes", "symbols", "types")
     if any(component not in subdirs for component in components) or "rules" not in subdirs:
         raise ValueError("Missing upstream XKB installation section")
     for component in components:
@@ -62,7 +65,7 @@ def input_mappings(root):
     rules = base / "rules" / "Makefile.am"
     rules_text = rules.read_text(encoding="ascii").replace("\\\n", " ")
     variables = {}
-    for name in ("rules_files", "lst_files", "all_rules_files", "rules_DATA"):
+    for name in ("rules_files", "lst_files", "dist_files", "rules_DATA"):
         value = assignments(rules_text, name, rules)
         def expand(match):
             if match[1] not in variables:
@@ -71,11 +74,16 @@ def input_mappings(root):
         variables[name] = re.sub(r"\$\(([A-Za-z0-9_]+)\)", expand, value)
     for leaf in words(variables["rules_DATA"], rules):
         mappings.append(("rules/" + leaf, "rules/" + leaf))
+    for leaf in words(assignments(rules_text, "xml_in_files", rules), rules):
+        if not leaf.endswith(".xml.in"):
+            raise ValueError("Unsupported XML input: " + leaf)
+        mappings.append(("rules/" + leaf[:-3], "rules/" + leaf[:-3]))
 
     # Upstream --with-xkb-rules-symlink=xorg installs these aliases. Native
-    # staging uses byte-identical copies; the XML-only consumer is not built.
+    # staging uses byte-identical copies.
     for source, suffix, variable in (("base", "", "extra_rules_file"),
-                                     ("base.lst", ".lst", "extra_lst_file")):
+                                     ("base.lst", ".lst", "extra_lst_file"),
+                                     ("base.xml", ".xml", "extra_dir_file")):
         pattern = (r"ln\s+-sf\s+" + re.escape(source) +
                    r"\s+\$\(DESTDIR\)\$\(rulesdir\)/\$\$" + variable + r"\s*;")
         if not re.search(pattern, rules_text):
@@ -89,6 +97,8 @@ def input_mappings(root):
     if len(destinations) != len(set(destinations)):
         raise ValueError("Case-insensitive XKB data collision")
     for source, _ in mappings:
+        if source in GENERATED:
+            continue
         filename = base / source
         if not filename.resolve(strict=True).is_relative_to(base.resolve()):
             raise ValueError("Source escapes XKB tree: " + source)
@@ -96,18 +106,21 @@ def input_mappings(root):
 
 
 def listing(mappings):
-    return "! Upstream xkeyboard-config distributed-data installation and xorg aliases: source|destination\n" + "".join(
+    return "! Upstream xkeyboard-config installed data and xorg aliases: source|destination\n" + "".join(
         source + "|" + destination + "\n" for source, destination in mappings)
 
 
 def package(root):
     mappings, makefiles = input_mappings(root)
-    controls = ["DATA.MMS", "DATA.LIST", "STAGE_DATA.COM", "PREPARE_SOURCE.py"]
+    controls = ["DATA.MMS", "DATA.LIST", "STAGE_DATA.COM", "GENERATE_RULES.PL", "PREPARE_SOURCE.py"]
     support = "VMS-SUPPORT/PROGRAMS/XKBCOMP/"
     if (root / support / "DATA.LIST").read_text(encoding="ascii") != listing(mappings):
         raise ValueError("DATA.LIST does not match the upstream Makefile.am files")
-    files = sorted(set(makefiles + [PROVIDER + "/" + source for source, _ in mappings]
-                       + [support + name for name in controls]))
+    rule_inputs = [path.relative_to(root).as_posix()
+                   for path in (root / PROVIDER / "rules").rglob("*") if path.is_file()]
+    files = sorted(set(makefiles + [PROVIDER + "/" + source for source, _ in mappings
+                                   if source not in GENERATED]
+                       + rule_inputs + [support + name for name in controls]))
     payload = io.BytesIO()
     manifest = []
     with zipfile.ZipFile(payload, "w", compression=zipfile.ZIP_DEFLATED) as archive:

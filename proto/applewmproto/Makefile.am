@@ -6,14 +6,14 @@ applewm_HEADERS = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = applewmproto.pc
 
-EXTRA_DIST = applewmproto.pc.in
 
-EXTRA_DIST += ChangeLog
-MAINTAINERCLEANFILES = ChangeLog
+MAINTAINERCLEANFILES = ChangeLog INSTALL
 
-.PHONY: ChangeLog
+.PHONY: ChangeLog INSTALL
 
 ChangeLog:
 	$(CHANGELOG_CMD)
+INSTALL:
+	$(INSTALL_CMD)
 
-dist-hook: ChangeLog
+dist-hook: ChangeLog INSTALL

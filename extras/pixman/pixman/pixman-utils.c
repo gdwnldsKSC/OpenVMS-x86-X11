@@ -30,221 +30,132 @@
 
 #include "pixman-private.h"
 
-/*
- * Computing composite region
- */
-#define BOUND(v)        (int16_t) ((v) < INT16_MIN ? INT16_MIN : (v) > INT16_MAX ? INT16_MAX : (v))
+#define N_CACHED_FAST_PATHS 8
 
-static inline pixman_bool_t
-clip_general_image (pixman_region32_t * region,
-                    pixman_region32_t * clip,
-                    int                 dx,
-                    int                 dy)
+typedef struct
 {
-    if (pixman_region32_n_rects (region) == 1 &&
-        pixman_region32_n_rects (clip) == 1)
+    struct
     {
-	pixman_box32_t *  rbox = pixman_region32_rectangles (region, NULL);
-	pixman_box32_t *  cbox = pixman_region32_rectangles (clip, NULL);
-	int v;
+	pixman_implementation_t *	imp;
+	pixman_fast_path_t		fast_path;
+    } cache [N_CACHED_FAST_PATHS];
+} cache_t;
 
-	if (rbox->x1 < (v = cbox->x1 + dx))
-	    rbox->x1 = BOUND (v);
-	if (rbox->x2 > (v = cbox->x2 + dx))
-	    rbox->x2 = BOUND (v);
-	if (rbox->y1 < (v = cbox->y1 + dy))
-	    rbox->y1 = BOUND (v);
-	if (rbox->y2 > (v = cbox->y2 + dy))
-	    rbox->y2 = BOUND (v);
-	if (rbox->x1 >= rbox->x2 ||
-	    rbox->y1 >= rbox->y2)
-	{
-	    pixman_region32_init (region);
-	}
-    }
-    else if (!pixman_region32_not_empty (clip))
-    {
-	return FALSE;
-    }
-    else
-    {
-	if (dx || dy)
-	    pixman_region32_translate (region, -dx, -dy);
-	if (!pixman_region32_intersect (region, region, clip))
-	    return FALSE;
-	if (dx || dy)
-	    pixman_region32_translate (region, dx, dy);
-    }
-    return pixman_region32_not_empty (region);
-}
+PIXMAN_DEFINE_THREAD_LOCAL (cache_t, fast_path_cache);
 
-static inline pixman_bool_t
-clip_source_image (pixman_region32_t * region,
-                   pixman_image_t *    image,
-                   int                 dx,
-                   int                 dy)
+pixman_bool_t
+_pixman_lookup_composite_function (pixman_implementation_t     *toplevel,
+				   pixman_op_t			op,
+				   pixman_format_code_t		src_format,
+				   uint32_t			src_flags,
+				   pixman_format_code_t		mask_format,
+				   uint32_t			mask_flags,
+				   pixman_format_code_t		dest_format,
+				   uint32_t			dest_flags,
+				   pixman_implementation_t    **out_imp,
+				   pixman_composite_func_t     *out_func)
 {
-    /* Source clips are ignored, unless they are explicitly turned on
-     * and the clip in question was set by an X client. (Because if
-     * the clip was not set by a client, then it is a hierarchy
-     * clip and those should always be ignored for sources).
-     */
-    if (!image->common.clip_sources || !image->common.client_clip)
-	return TRUE;
+    pixman_implementation_t *imp;
+    cache_t *cache;
+    int i;
 
-    return clip_general_image (region,
-                               &image->common.clip_region,
-                               dx, dy);
-}
+    /* Check cache for fast paths */
+    cache = PIXMAN_GET_THREAD_LOCAL (fast_path_cache);
 
-/*
- * returns FALSE if the final region is empty.  Indistinguishable from
- * an allocation failure, but rendering ignores those anyways.
- */
-static pixman_bool_t
-pixman_compute_composite_region32 (pixman_region32_t * region,
-                                   pixman_image_t *    src_image,
-                                   pixman_image_t *    mask_image,
-                                   pixman_image_t *    dst_image,
-                                   int16_t             src_x,
-                                   int16_t             src_y,
-                                   int16_t             mask_x,
-                                   int16_t             mask_y,
-                                   int16_t             dest_x,
-                                   int16_t             dest_y,
-                                   uint16_t            width,
-                                   uint16_t            height)
-{
-    int v;
-
-    region->extents.x1 = dest_x;
-    v = dest_x + width;
-    region->extents.x2 = BOUND (v);
-    region->extents.y1 = dest_y;
-    v = dest_y + height;
-    region->extents.y2 = BOUND (v);
-
-    region->extents.x1 = MAX (region->extents.x1, 0);
-    region->extents.y1 = MAX (region->extents.y1, 0);
-    region->extents.x2 = MIN (region->extents.x2, dst_image->bits.width);
-    region->extents.y2 = MIN (region->extents.y2, dst_image->bits.height);
-
-    region->data = 0;
-
-    /* Check for empty operation */
-    if (region->extents.x1 >= region->extents.x2 ||
-        region->extents.y1 >= region->extents.y2)
+    for (i = 0; i < N_CACHED_FAST_PATHS; ++i)
     {
-	pixman_region32_init (region);
-	return FALSE;
-    }
+	const pixman_fast_path_t *info = &(cache->cache[i].fast_path);
 
-    if (dst_image->common.have_clip_region)
-    {
-	if (!clip_general_image (region, &dst_image->common.clip_region, 0, 0))
+	/* Note that we check for equality here, not whether
+	 * the cached fast path matches. This is to prevent
+	 * us from selecting an overly general fast path
+	 * when a more specific one would work.
+	 */
+	if (info->op == op			&&
+	    info->src_format == src_format	&&
+	    info->mask_format == mask_format	&&
+	    info->dest_format == dest_format	&&
+	    info->src_flags == src_flags	&&
+	    info->mask_flags == mask_flags	&&
+	    info->dest_flags == dest_flags	&&
+	    info->func)
 	{
-	    pixman_region32_fini (region);
-	    return FALSE;
+	    *out_imp = cache->cache[i].imp;
+	    *out_func = cache->cache[i].fast_path.func;
+
+	    goto update_cache;
 	}
     }
 
-    if (dst_image->common.alpha_map && dst_image->common.alpha_map->common.have_clip_region)
+    for (imp = toplevel; imp != NULL; imp = imp->delegate)
     {
-	if (!clip_general_image (region, &dst_image->common.alpha_map->common.clip_region,
-	                         -dst_image->common.alpha_origin_x,
-	                         -dst_image->common.alpha_origin_y))
-	{
-	    pixman_region32_fini (region);
-	    return FALSE;
-	}
-    }
+	const pixman_fast_path_t *info = imp->fast_paths;
 
-    /* clip against src */
-    if (src_image->common.have_clip_region)
-    {
-	if (!clip_source_image (region, src_image, dest_x - src_x, dest_y - src_y))
+	while (info->op != PIXMAN_OP_NONE)
 	{
-	    pixman_region32_fini (region);
-	    return FALSE;
-	}
-    }
-    if (src_image->common.alpha_map && src_image->common.alpha_map->common.have_clip_region)
-    {
-	if (!clip_source_image (region, (pixman_image_t *)src_image->common.alpha_map,
-	                        dest_x - (src_x - src_image->common.alpha_origin_x),
-	                        dest_y - (src_y - src_image->common.alpha_origin_y)))
-	{
-	    pixman_region32_fini (region);
-	    return FALSE;
-	}
-    }
-    /* clip against mask */
-    if (mask_image && mask_image->common.have_clip_region)
-    {
-	if (!clip_source_image (region, mask_image, dest_x - mask_x, dest_y - mask_y))
-	{
-	    pixman_region32_fini (region);
-	    return FALSE;
-	}
-	if (mask_image->common.alpha_map && mask_image->common.alpha_map->common.have_clip_region)
-	{
-	    if (!clip_source_image (region, (pixman_image_t *)mask_image->common.alpha_map,
-	                            dest_x - (mask_x - mask_image->common.alpha_origin_x),
-	                            dest_y - (mask_y - mask_image->common.alpha_origin_y)))
+	    if ((info->op == op || info->op == PIXMAN_OP_any)		&&
+		/* Formats */
+		((info->src_format == src_format) ||
+		 (info->src_format == PIXMAN_any))			&&
+		((info->mask_format == mask_format) ||
+		 (info->mask_format == PIXMAN_any))			&&
+		((info->dest_format == dest_format) ||
+		 (info->dest_format == PIXMAN_any))			&&
+		/* Flags */
+		(info->src_flags & src_flags) == info->src_flags	&&
+		(info->mask_flags & mask_flags) == info->mask_flags	&&
+		(info->dest_flags & dest_flags) == info->dest_flags)
 	    {
-		pixman_region32_fini (region);
-		return FALSE;
+		*out_imp = imp;
+		*out_func = info->func;
+
+		/* Set i to the last spot in the cache so that the
+		 * move-to-front code below will work
+		 */
+		i = N_CACHED_FAST_PATHS - 1;
+
+		goto update_cache;
 	    }
+
+	    ++info;
 	}
+    }
+    return FALSE;
+
+update_cache:
+    if (i)
+    {
+	while (i--)
+	    cache->cache[i + 1] = cache->cache[i];
+
+	cache->cache[0].imp = *out_imp;
+	cache->cache[0].fast_path.op = op;
+	cache->cache[0].fast_path.src_format = src_format;
+	cache->cache[0].fast_path.src_flags = src_flags;
+	cache->cache[0].fast_path.mask_format = mask_format;
+	cache->cache[0].fast_path.mask_flags = mask_flags;
+	cache->cache[0].fast_path.dest_format = dest_format;
+	cache->cache[0].fast_path.dest_flags = dest_flags;
+	cache->cache[0].fast_path.func = *out_func;
     }
 
     return TRUE;
 }
 
-PIXMAN_EXPORT pixman_bool_t
-pixman_compute_composite_region (pixman_region16_t * region,
-                                 pixman_image_t *    src_image,
-                                 pixman_image_t *    mask_image,
-                                 pixman_image_t *    dst_image,
-                                 int16_t             src_x,
-                                 int16_t             src_y,
-                                 int16_t             mask_x,
-                                 int16_t             mask_y,
-                                 int16_t             dest_x,
-                                 int16_t             dest_y,
-                                 uint16_t            width,
-                                 uint16_t            height)
+pixman_bool_t
+_pixman_multiply_overflows_size (size_t a, size_t b)
 {
-    pixman_region32_t r32;
-    pixman_bool_t retval;
-
-    pixman_region32_init (&r32);
-
-    retval = pixman_compute_composite_region32 (
-	&r32, src_image, mask_image, dst_image,
-	src_x, src_y, mask_x, mask_y, dest_x, dest_y,
-	width, height);
-
-    if (retval)
-    {
-	if (!pixman_region16_copy_from_region32 (region, &r32))
-	    retval = FALSE;
-    }
-
-    pixman_region32_fini (&r32);
-    return retval;
+    return a >= SIZE_MAX / b;
 }
 
 pixman_bool_t
-pixman_multiply_overflows_int (unsigned int a,
-                               unsigned int b)
+_pixman_multiply_overflows_int (unsigned int a, unsigned int b)
 {
     return a >= INT32_MAX / b;
 }
 
 pixman_bool_t
-pixman_addition_overflows_int (unsigned int a,
-                               unsigned int b)
+_pixman_addition_overflows_int (unsigned int a, unsigned int b)
 {
     return a > INT32_MAX - b;
 }
@@ -270,31 +181,6 @@ pixman_malloc_abc (unsigned int a,
 	return NULL;
     else
 	return malloc (a * b * c);
-}
-
-/*
- * Helper routine to expand a color component from 0 < n <= 8 bits to 16
- * bits by replication.
- */
-static inline uint64_t
-expand16 (const uint8_t val, int nbits)
-{
-    /* Start out with the high bit of val in the high bit of result. */
-    uint16_t result = (uint16_t)val << (16 - nbits);
-
-    if (nbits == 0)
-	return 0;
-
-    /* Copy the bits in result, doubling the number of bits each time, until
-     * we fill all 16 bits.
-     */
-    while (nbits < 16)
-    {
-	result |= result >> nbits;
-	nbits *= 2;
-    }
-
-    return result;
 }
 
 /*
@@ -338,10 +224,11 @@ pixman_expand (uint64_t *           dst,
 	              r = (pixel >> r_shift) & r_mask,
 	              g = (pixel >> g_shift) & g_mask,
 	              b = (pixel >> b_shift) & b_mask;
-	const uint64_t a16 = a_size ? expand16 (a, a_size) : 0xffff,
-	               r16 = expand16 (r, r_size),
-	               g16 = expand16 (g, g_size),
-	               b16 = expand16 (b, b_size);
+	const uint64_t
+	    a16 = a_size ? unorm_to_unorm (a, a_size, 16) : 0xffff,
+	    r16 = unorm_to_unorm (r, r_size, 16),
+	    g16 = unorm_to_unorm (g, g_size, 16),
+	    b16 = unorm_to_unorm (b, b_size, 16);
 
 	dst[i] = a16 << 48 | r16 << 32 | g16 << 16 | b16;
     }
@@ -372,399 +259,10 @@ pixman_contract (uint32_t *      dst,
     }
 }
 
-static void
-walk_region_internal (pixman_implementation_t *imp,
-                      pixman_op_t              op,
-                      pixman_image_t *         src_image,
-                      pixman_image_t *         mask_image,
-                      pixman_image_t *         dst_image,
-                      int16_t                  src_x,
-                      int16_t                  src_y,
-                      int16_t                  mask_x,
-                      int16_t                  mask_y,
-                      int16_t                  dest_x,
-                      int16_t                  dest_y,
-                      uint16_t                 width,
-                      uint16_t                 height,
-                      pixman_bool_t            src_repeat,
-                      pixman_bool_t            mask_repeat,
-                      pixman_region32_t *      region,
-                      pixman_composite_func_t  composite_rect)
+uint32_t *
+_pixman_iter_get_scanline_noop (pixman_iter_t *iter, const uint32_t *mask)
 {
-    int n;
-    const pixman_box32_t *pbox;
-    int w, h, w_this, h_this;
-    int x_msk, y_msk, x_src, y_src, x_dst, y_dst;
-
-    pbox = pixman_region32_rectangles (region, &n);
-    while (n--)
-    {
-	h = pbox->y2 - pbox->y1;
-	y_src = pbox->y1 - dest_y + src_y;
-	y_msk = pbox->y1 - dest_y + mask_y;
-	y_dst = pbox->y1;
-
-	while (h)
-	{
-	    h_this = h;
-	    w = pbox->x2 - pbox->x1;
-	    x_src = pbox->x1 - dest_x + src_x;
-	    x_msk = pbox->x1 - dest_x + mask_x;
-	    x_dst = pbox->x1;
-
-	    if (mask_repeat)
-	    {
-		y_msk = MOD (y_msk, mask_image->bits.height);
-		if (h_this > mask_image->bits.height - y_msk)
-		    h_this = mask_image->bits.height - y_msk;
-	    }
-
-	    if (src_repeat)
-	    {
-		y_src = MOD (y_src, src_image->bits.height);
-		if (h_this > src_image->bits.height - y_src)
-		    h_this = src_image->bits.height - y_src;
-	    }
-
-	    while (w)
-	    {
-		w_this = w;
-
-		if (mask_repeat)
-		{
-		    x_msk = MOD (x_msk, mask_image->bits.width);
-		    if (w_this > mask_image->bits.width - x_msk)
-			w_this = mask_image->bits.width - x_msk;
-		}
-
-		if (src_repeat)
-		{
-		    x_src = MOD (x_src, src_image->bits.width);
-		    if (w_this > src_image->bits.width - x_src)
-			w_this = src_image->bits.width - x_src;
-		}
-
-		(*composite_rect) (imp, op,
-				   src_image, mask_image, dst_image,
-				   x_src, y_src, x_msk, y_msk, x_dst, y_dst,
-				   w_this, h_this);
-		w -= w_this;
-
-		x_src += w_this;
-		x_msk += w_this;
-		x_dst += w_this;
-	    }
-
-	    h -= h_this;
-	    y_src += h_this;
-	    y_msk += h_this;
-	    y_dst += h_this;
-	}
-
-	pbox++;
-    }
-}
-
-void
-_pixman_walk_composite_region (pixman_implementation_t *imp,
-                               pixman_op_t              op,
-                               pixman_image_t *         src_image,
-                               pixman_image_t *         mask_image,
-                               pixman_image_t *         dst_image,
-                               int16_t                  src_x,
-                               int16_t                  src_y,
-                               int16_t                  mask_x,
-                               int16_t                  mask_y,
-                               int16_t                  dest_x,
-                               int16_t                  dest_y,
-                               uint16_t                 width,
-                               uint16_t                 height,
-                               pixman_composite_func_t  composite_rect)
-{
-    pixman_region32_t region;
-
-    pixman_region32_init (&region);
-
-    if (pixman_compute_composite_region32 (
-            &region, src_image, mask_image, dst_image,
-            src_x, src_y, mask_x, mask_y, dest_x, dest_y,
-            width, height))
-    {
-	walk_region_internal (imp, op,
-	                      src_image, mask_image, dst_image,
-	                      src_x, src_y, mask_x, mask_y, dest_x, dest_y,
-	                      width, height, FALSE, FALSE,
-	                      &region,
-	                      composite_rect);
-
-	pixman_region32_fini (&region);
-    }
-}
-
-static pixman_bool_t
-mask_is_solid (pixman_image_t *mask)
-{
-    if (mask->type == SOLID)
-	return TRUE;
-
-    if (mask->type == BITS &&
-        mask->common.repeat == PIXMAN_REPEAT_NORMAL &&
-        mask->bits.width == 1 &&
-        mask->bits.height == 1)
-    {
-	return TRUE;
-    }
-
-    return FALSE;
-}
-
-static const pixman_fast_path_t *
-get_fast_path (const pixman_fast_path_t *fast_paths,
-               pixman_op_t               op,
-               pixman_image_t *          src_image,
-               pixman_image_t *          mask_image,
-               pixman_image_t *          dst_image,
-               pixman_bool_t             is_pixbuf)
-{
-    const pixman_fast_path_t *info;
-
-    for (info = fast_paths; info->op != PIXMAN_OP_NONE; info++)
-    {
-	pixman_bool_t valid_src = FALSE;
-	pixman_bool_t valid_mask = FALSE;
-
-	if (info->op != op)
-	    continue;
-
-	if ((info->src_format == PIXMAN_solid &&
-	     _pixman_image_is_solid (src_image)) ||
-	    (src_image->type == BITS &&
-	     info->src_format == src_image->bits.format))
-	{
-	    valid_src = TRUE;
-	}
-
-	if (!valid_src)
-	    continue;
-
-	if ((info->mask_format == PIXMAN_null && !mask_image) ||
-	    (mask_image && mask_image->type == BITS &&
-	     info->mask_format == mask_image->bits.format))
-	{
-	    valid_mask = TRUE;
-
-	    if (info->flags & NEED_SOLID_MASK)
-	    {
-		if (!mask_image || !mask_is_solid (mask_image))
-		    valid_mask = FALSE;
-	    }
-
-	    if (info->flags & NEED_COMPONENT_ALPHA)
-	    {
-		if (!mask_image || !mask_image->common.component_alpha)
-		    valid_mask = FALSE;
-	    }
-	}
-
-	if (!valid_mask)
-	    continue;
-
-	if (info->dest_format != dst_image->bits.format)
-	    continue;
-
-	if ((info->flags & NEED_PIXBUF) && !is_pixbuf)
-	    continue;
-
-	return info;
-    }
-
-    return NULL;
-}
-
-static force_inline pixman_bool_t
-image_covers (pixman_image_t *image,
-              pixman_box32_t *extents,
-              int             x,
-              int             y)
-{
-    if (image->common.type == BITS &&
-	image->common.repeat == PIXMAN_REPEAT_NONE)
-    {
-	if (x > extents->x1 || y > extents->y1 ||
-	    x + image->bits.width < extents->x2 ||
-	    y + image->bits.height < extents->y2)
-	{
-	    return FALSE;
-	}
-    }
-
-    return TRUE;
-}
-
-static force_inline pixman_bool_t
-sources_cover (pixman_image_t *src,
-	       pixman_image_t *mask,
-	       pixman_box32_t *extents,
-	       int             src_x,
-	       int             src_y,
-	       int             mask_x,
-	       int             mask_y,
-	       int             dest_x,
-	       int             dest_y)
-{
-    if (!image_covers (src, extents, dest_x - src_x, dest_y - src_y))
-	return FALSE;
-
-    if (!mask)
-	return TRUE;
-    
-    if (!image_covers (mask, extents, dest_x - mask_x, dest_y - mask_y))
-	return FALSE;
-
-    return TRUE;
-}
-
-pixman_bool_t
-_pixman_run_fast_path (const pixman_fast_path_t *paths,
-                       pixman_implementation_t * imp,
-                       pixman_op_t               op,
-                       pixman_image_t *          src,
-                       pixman_image_t *          mask,
-                       pixman_image_t *          dest,
-                       int32_t                   src_x,
-                       int32_t                   src_y,
-                       int32_t                   mask_x,
-                       int32_t                   mask_y,
-                       int32_t                   dest_x,
-                       int32_t                   dest_y,
-                       int32_t                   width,
-                       int32_t                   height)
-{
-    pixman_composite_func_t func = NULL;
-    pixman_bool_t src_repeat =
-	src->common.repeat == PIXMAN_REPEAT_NORMAL;
-    pixman_bool_t mask_repeat =
-	mask && mask->common.repeat == PIXMAN_REPEAT_NORMAL;
-    pixman_bool_t result;
-    pixman_bool_t has_fast_path;
-
-    has_fast_path = !dest->common.alpha_map &&
-		    !dest->bits.read_func &&
-		    !dest->bits.write_func;
-
-    if (has_fast_path)
-    {
-	has_fast_path = (src->type == BITS || _pixman_image_is_solid (src)) &&
-	                !src->common.transform &&
-	                !src->common.alpha_map &&
-			src->common.filter != PIXMAN_FILTER_CONVOLUTION &&
-			src->common.repeat != PIXMAN_REPEAT_PAD &&
-			src->common.repeat != PIXMAN_REPEAT_REFLECT;
-	if (has_fast_path && src->type == BITS)
-	{
-	    has_fast_path = !src->bits.read_func &&
-	                    !src->bits.write_func &&
-		            !PIXMAN_FORMAT_IS_WIDE (src->bits.format);
-	}
-    }
-
-    if (mask && has_fast_path)
-    {
-	has_fast_path =
-	    mask->type == BITS &&
-	    !mask->common.transform &&
-	    !mask->common.alpha_map &&
-	    !mask->bits.read_func &&
-	    !mask->bits.write_func &&
-	    mask->common.filter != PIXMAN_FILTER_CONVOLUTION &&
-	    mask->common.repeat != PIXMAN_REPEAT_PAD &&
-	    mask->common.repeat != PIXMAN_REPEAT_REFLECT &&
-	    !PIXMAN_FORMAT_IS_WIDE (mask->bits.format);
-    }
-
-    if (has_fast_path)
-    {
-	const pixman_fast_path_t *info;
-	pixman_bool_t pixbuf;
-
-	pixbuf =
-	    src && src->type == BITS            &&
-	    mask && mask->type == BITS          &&
-	    src->bits.bits == mask->bits.bits   &&
-	    src_x == mask_x                     &&
-	    src_y == mask_y                     &&
-	    !mask->common.component_alpha       &&
-	    !mask_repeat;
-
-	info = get_fast_path (paths, op, src, mask, dest, pixbuf);
-
-	if (info)
-	{
-	    func = info->func;
-
-	    if (info->src_format == PIXMAN_solid)
-		src_repeat = FALSE;
-
-	    if (info->mask_format == PIXMAN_solid ||
-		info->flags & NEED_SOLID_MASK)
-	    {
-		mask_repeat = FALSE;
-	    }
-
-	    if ((src_repeat                     &&
-	         src->bits.width == 1           &&
-	         src->bits.height == 1) ||
-	        (mask_repeat                    &&
-	         mask->bits.width == 1          &&
-	         mask->bits.height == 1))
-	    {
-		/* If src or mask are repeating 1x1 images and src_repeat or
-		 * mask_repeat are still TRUE, it means the fast path we
-		 * selected does not actually handle repeating images.
-		 *
-		 * So rather than call the "fast path" with a zillion
-		 * 1x1 requests, we just fall back to the general code (which
-		 * does do something sensible with 1x1 repeating images).
-		 */
-		func = NULL;
-	    }
-	}
-    }
-
-    result = FALSE;
-
-    if (func)
-    {
-	pixman_region32_t region;
-	pixman_region32_init (&region);
-
-	if (pixman_compute_composite_region32 (
-	        &region, src, mask, dest,
-	        src_x, src_y, mask_x, mask_y, dest_x, dest_y, width, height))
-	{
-	    pixman_box32_t *extents = pixman_region32_extents (&region);
-
-	    if (sources_cover (
-		    src, mask, extents,
-		    src_x, src_y, mask_x, mask_y, dest_x, dest_y))
-	    {
-		walk_region_internal (imp, op,
-		                      src, mask, dest,
-		                      src_x, src_y, mask_x, mask_y,
-		                      dest_x, dest_y,
-		                      width, height,
-		                      src_repeat, mask_repeat,
-		                      &region,
-		                      func);
-
-		result = TRUE;
-	    }
-
-	    pixman_region32_fini (&region);
-	}
-    }
-
-    return result;
+    return iter->buffer;
 }
 
 #define N_TMP_BOXES (16)
@@ -835,3 +333,24 @@ pixman_region32_copy_from_region16 (pixman_region32_t *dst,
 
     return retval;
 }
+
+#ifdef DEBUG
+
+void
+_pixman_log_error (const char *function, const char *message)
+{
+    static int n_messages = 0;
+
+    if (n_messages < 10)
+    {
+	fprintf (stderr,
+		 "*** BUG ***\n"
+		 "In %s: %s\n"
+		 "Set a breakpoint on '_pixman_log_error' to debug\n\n",
+                 function, message);
+
+	n_messages++;
+    }
+}
+
+#endif

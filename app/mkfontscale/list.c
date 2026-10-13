@@ -26,14 +26,8 @@
 #include <string.h>
 #include "list.h"
 
-#ifdef NEED_SNPRINTF
-#undef SCOPE
-#define SCOPE static
-#include "snprintf.c"
-#endif
-
 int
-listMember(char *elt, ListPtr list)
+listMember(const char *elt, ListPtr list)
 {
     while(list != NULL) {
         if(strcmp(elt, list->value) == 0)
@@ -65,7 +59,7 @@ listAdjoin(char *car, ListPtr cdr)
 }
 
 char *
-dsprintf(char *f, ...)
+dsprintf(const char *f, ...)
 {
     va_list args;
     char *string;
@@ -90,10 +84,10 @@ dsprintf(char *f, ...)
 	}
     }
 }
-    
+
 
 ListPtr
-listConsF(ListPtr cdr, char *f, ...)
+listConsF(ListPtr cdr, const char *f, ...)
 {
     va_list args;
     char *string;
@@ -120,7 +114,7 @@ listConsF(ListPtr cdr, char *f, ...)
 }
 
 ListPtr
-listAdjoinF(ListPtr cdr, char *f, ...)
+listAdjoinF(ListPtr cdr, const char *f, ...)
 {
     va_list args;
     char *string;
@@ -157,7 +151,7 @@ listLength(ListPtr list)
     return n;
 }
 
-ListPtr 
+ListPtr
 appendList(ListPtr first, ListPtr second)
 {
     ListPtr current;
@@ -194,8 +188,10 @@ makeList(char **a, int n, ListPtr old, int begin)
     current = first;
     for(i = 1; i < n; i++) {
         next = malloc(sizeof(ListRec));
-        if(!next)
+        if(!next) {
+            destroyList(first);
             return NULL;
+        }
         next->value = a[i];
         next->next = NULL;
 
@@ -221,6 +217,40 @@ reverseList(ListPtr old)
         new = current;
     }
     return new;
+}
+
+/* qsort helper for sorting list entries */
+static int
+compareListEntries(const void *a, const void *b)
+{
+    const ListPtr lista = *(const ListPtr *) a;
+    const ListPtr listb = *(const ListPtr *) b;
+
+    return strcmp(lista->value, listb->value);
+}
+
+ListPtr
+sortList(ListPtr old)
+{
+    int i;
+    int l = listLength(old);
+    ListPtr n;
+    ListPtr *sorted = malloc(l * sizeof(ListPtr));
+
+    if (sorted == NULL)
+        return old;
+
+    for (n = old, i = 0; n != NULL; n = n->next) {
+        sorted[i++] = n;
+    }
+    qsort(sorted, i, sizeof(ListPtr), compareListEntries);
+    n = sorted[0];
+    for (i = 0; i < (l - 1); i++) {
+        sorted[i]->next = sorted[i+1];
+    }
+    sorted[i]->next = NULL;
+    free(sorted);
+    return n;
 }
 
 void

@@ -34,6 +34,9 @@
    */
 #undef LT_OBJDIR
 
+/* XI2.2 available */
+#undef MULTITOUCH
+
 /* Name of package */
 #undef PACKAGE
 

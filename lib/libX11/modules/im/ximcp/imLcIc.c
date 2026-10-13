@@ -143,10 +143,9 @@ _XimLocalCreateIC(
     unsigned int	 num;
     int			 len;
 
-    if((ic = (Xic)Xmalloc(sizeof(XicRec))) == (Xic)NULL) {
+    if((ic = Xcalloc(1, sizeof(XicRec))) == (Xic)NULL) {
 	return ((XIC)NULL);
     }
-    bzero((char *)ic, sizeof(XicRec));
 
     ic->methods = &Local_ic_methods;
     ic->core.im = im;
@@ -180,7 +179,7 @@ _XimLocalCreateIC(
 			values, XIM_CREATEIC, True)) {
 	goto Set_Error;
     }
-    ic_values.filter_events = KeyPressMask;
+    ic_values.filter_events = KeyPressMask | KeyReleaseMask;
     _XimSetCurrentICValues(ic, &ic_values);
     if(_XimSetICDefaults(ic, (XPointer)&ic_values,
 				XIM_SETICDEFAULTS, res, num) == False) {

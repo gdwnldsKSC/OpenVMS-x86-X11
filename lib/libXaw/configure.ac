@@ -1,36 +1,38 @@
-dnl Process this file with autoconf to create configure.
 
+# Initialize Autoconf
 AC_PREREQ([2.60])
+AC_INIT([libXaw], [1.0.11],
+        [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], [libXaw])
+AC_CONFIG_SRCDIR([Makefile.am])
+AC_CONFIG_HEADERS([config.h])
 
-AC_INIT([libXaw],
-	[1.0.8],
-	[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
-	libXaw)
-
+# Initialize Automake
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
 AM_MAINTAINER_MODE
-AM_CONFIG_HEADER(config.h)
 
-# Require xorg-macros minimum of 1.10 for HAVE_STYLESHEETS in XORG_CHECK_SGML_DOCTOOLS
-m4_ifndef([XORG_MACROS_VERSION],
-	  [m4_fatal([must install xorg-macros 1.10 or later before running autoconf/autogen])])
-XORG_MACROS_VERSION(1.10)
-
-# Check for progs
-AC_PROG_CC
+# Initialize libtool
 AC_PROG_LIBTOOL
-AC_PROG_AWK
+
+# Require xorg-macros minimum of 1.12 for DocBook external references
+m4_ifndef([XORG_MACROS_VERSION],
+          [m4_fatal([must install xorg-macros 1.12 or later before running autoconf/autogen])])
+XORG_MACROS_VERSION(1.12)
+XORG_DEFAULT_OPTIONS
+XORG_ENABLE_SPECS
+XORG_WITH_XMLTO(0.0.22)
+XORG_WITH_FOP
+XORG_WITH_XSLTPROC
+XORG_CHECK_SGML_DOCTOOLS(1.8)
+
+# Some compilers do not support per target -c and -o flags
 AM_PROG_CC_C_O
+
+# Checks for programs.
+AC_PROG_AWK
 
 # Need to call this explicitly since the first call to PKG_CHECK_MODULES
 # is in an if statement, and later calls would break if it's skipped.
 PKG_PROG_PKG_CONFIG
-
-XORG_DEFAULT_OPTIONS
-XORG_ENABLE_SPECS
-XORG_WITH_XMLTO(0.0.20)
-XORG_WITH_FOP
-XORG_CHECK_SGML_DOCTOOLS(1.5)
 
 #
 # fix libtool to set SONAME to libXaw.so.$major
@@ -67,27 +69,23 @@ AM_CONDITIONAL(PLATFORM_DARWIN, test "x$platform_darwin" = "xyes")
 
 # Whether to build Xaw6
 
-AC_ARG_ENABLE(xaw6, AC_HELP_STRING([--disable-xaw6],
+AC_ARG_ENABLE(xaw6, AS_HELP_STRING([--disable-xaw6],
 				[Disable building of libXaw.so.6]),
 			[build_v6=$enableval], [build_v6=yes])
 
 if test "x$build_v6" = xyes; then
    PKG_CHECK_MODULES(XAW6, xproto x11 xext xextproto xt xmu)
-   AC_SUBST(XAW6_CFLAGS)
-   AC_SUBST(XAW6_LIBS)
 fi
 
 
 # Whether to build Xaw7
 
-AC_ARG_ENABLE(xaw7, AC_HELP_STRING([--disable-xaw7],
+AC_ARG_ENABLE(xaw7, AS_HELP_STRING([--disable-xaw7],
 				[Disable building of libXaw.so.7]),
 			[build_v7=$enableval], [build_v7=yes])
 
 if test "x$build_v7" = xyes; then
    PKG_CHECK_MODULES(XAW7, xproto x11 xext xextproto xt xmu xpm)
-   AC_SUBST(XAW7_CFLAGS)
-   AC_SUBST(XAW7_LIBS)
 fi
 
 
@@ -95,30 +93,23 @@ AM_CONDITIONAL(BUILD_XAW6, [test x$build_v6 = xyes])
 AM_CONDITIONAL(BUILD_XAW7, [test x$build_v7 = xyes])
 
 # Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADER(wctype.h,
-       	AC_DEFINE([HAS_WCTYPE_H],1,
-			[Define to 1 if you have the <wctype.h> header file.]))
-AC_CHECK_HEADER(wchar.h,
-       	AC_DEFINE([HAS_WCHAR_H],1,
-			[Define to 1 if you have the <wchar.h> header file.]))
-AC_CHECK_HEADER(widec.h, [],
-       	AC_DEFINE([NO_WIDEC_H],1,
-			[Define to 1 if you DO NOT have the <widec.h> header file.]))
+AC_CHECK_HEADERS([wctype.h wchar.h widec.h])
 
 # Checks for functions
-AC_CHECK_FUNCS([iswalnum])
+AC_CHECK_FUNCS([iswalnum getpagesize])
 
-AC_OUTPUT([Makefile
-	  include/Makefile
-	  man/Makefile
-	  specs/Makefile
-	  src/Makefile])
+AC_CONFIG_FILES([Makefile
+		include/Makefile
+		man/Makefile
+		specs/Makefile
+		src/Makefile])
 
 if test "x$build_v6" = xyes; then
-   AC_OUTPUT(xaw6.pc)
+   AC_CONFIG_FILES(xaw6.pc)
 fi
 
 if test "x$build_v7" = xyes; then
-   AC_OUTPUT(xaw7.pc)
+   AC_CONFIG_FILES(xaw7.pc)
 fi
+
+AC_OUTPUT

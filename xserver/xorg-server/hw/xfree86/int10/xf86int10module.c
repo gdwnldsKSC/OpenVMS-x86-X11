@@ -13,7 +13,7 @@
 #include "xf86int10.h"
 
 #ifndef MOD_NAME
-# define MOD_NAME int10
+#define MOD_NAME int10
 #endif
 
 #define stringify(x) #x
@@ -22,43 +22,11 @@
 #define combine(a,b) concat(a,b)
 #define NAME(x) combine(MOD_NAME,x)
 
-static MODULESETUPPROTO(NAME(Setup));
-
-static XF86ModuleVersionInfo NAME(VersRec) =
-{
-    STRING(NAME( )),
-    MODULEVENDORSTRING,
-    MODINFOSTRING1,
-    MODINFOSTRING2,
-    XORG_VERSION_CURRENT,
-    1, 0, 0,
-    ABI_CLASS_VIDEODRV,		/* needs the video driver ABI */
-    ABI_VIDEODRV_VERSION,
-    MOD_CLASS_NONE,
-    {0,0,0,0}
+static XF86ModuleVersionInfo NAME(VersRec) = {
+    STRING(NAME()), MODULEVENDORSTRING, MODINFOSTRING1, MODINFOSTRING2, XORG_VERSION_CURRENT, 1, 0, 0, ABI_CLASS_VIDEODRV,      /* needs the video driver ABI */
+        ABI_VIDEODRV_VERSION, MOD_CLASS_NONE, {
+    0, 0, 0, 0}
 };
 
 _X_EXPORT XF86ModuleData NAME(ModuleData) = {
-    &NAME(VersRec),
-    NAME(Setup),
-    NULL
-};
-
-static pointer
-NAME(Setup)(pointer module, pointer opts, int *errmaj, int *errmin)
-{
-    static Bool setupDone = FALSE;
-    
-    if (!setupDone) {
-	setupDone = TRUE;
-	/*
-	 * Tell the loader about symbols from other modules that this module
-	 * might refer to.
-	 */
-    } 
-    /*
-     * The return value must be non-NULL on success even though there
-     * is no TearDownProc.
-     */
-    return (pointer)1;
-}
+&NAME(VersRec), NULL, NULL};

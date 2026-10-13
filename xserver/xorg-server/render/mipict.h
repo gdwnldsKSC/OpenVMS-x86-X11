@@ -27,16 +27,16 @@
 
 #include "picturestr.h"
 
-#define MI_MAX_INDEXED	256 /* XXX depth must be <= 8 */
+#define MI_MAX_INDEXED	256     /* XXX depth must be <= 8 */
 
 #if MI_MAX_INDEXED <= 256
 typedef CARD8 miIndexType;
 #endif
 
 typedef struct _miIndexed {
-    Bool	color;
-    CARD32	rgba[MI_MAX_INDEXED];
-    miIndexType	ent[32768];
+    Bool color;
+    CARD32 rgba[MI_MAX_INDEXED];
+    miIndexType ent[32768];
 } miIndexedRec, *miIndexedPtr;
 
 #define miCvtR8G8B8to15(s) ((((s) >> 3) & 0x001f) | \
@@ -48,168 +48,113 @@ typedef struct _miIndexed {
 #define miIndexToEntY24(mif,rgb24) ((mif)->ent[CvtR8G8B8toY15(rgb24)])
 
 extern _X_EXPORT int
-miCreatePicture (PicturePtr pPicture);
+ miCreatePicture(PicturePtr pPicture);
 
 extern _X_EXPORT void
-miDestroyPicture (PicturePtr pPicture);
+ miDestroyPicture(PicturePtr pPicture);
 
 extern _X_EXPORT void
-miDestroyPictureClip (PicturePtr pPicture);
+ miDestroyPictureClip(PicturePtr pPicture);
 
 extern _X_EXPORT int
-miChangePictureClip (PicturePtr    pPicture,
-		     int	   type,
-		     pointer	   value,
-		     int	   n);
+ miChangePictureClip(PicturePtr pPicture, int type, pointer value, int n);
 
 extern _X_EXPORT void
-miChangePicture (PicturePtr pPicture,
-		 Mask       mask);
+ miChangePicture(PicturePtr pPicture, Mask mask);
 
 extern _X_EXPORT void
-miValidatePicture (PicturePtr pPicture,
-		   Mask       mask);
+ miValidatePicture(PicturePtr pPicture, Mask mask);
 
 extern _X_EXPORT int
-miChangePictureTransform (PicturePtr	pPicture,
-			  PictTransform *transform);
+ miChangePictureTransform(PicturePtr pPicture, PictTransform * transform);
 
 extern _X_EXPORT int
-miChangePictureFilter (PicturePtr pPicture,
-		       int	  filter,
-		       xFixed     *params,
-		       int	  nparams);
+
+miChangePictureFilter(PicturePtr pPicture,
+                      int filter, xFixed * params, int nparams);
 
 extern _X_EXPORT void
-miCompositeSourceValidate (PicturePtr	pPicture,
-			   INT16	x,
-			   INT16	y,
-			   CARD16	width,
-			   CARD16	height);
-extern _X_EXPORT Bool
-miComputeCompositeRegion (RegionPtr	pRegion,
-			  PicturePtr	pSrc,
-			  PicturePtr	pMask,
-			  PicturePtr	pDst,
-			  INT16		xSrc,
-			  INT16		ySrc,
-			  INT16		xMask,
-			  INT16		yMask,
-			  INT16		xDst,
-			  INT16		yDst,
-			  CARD16	width,
-			  CARD16	height);
+ miCompositeSourceValidate(PicturePtr pPicture);
 
 extern _X_EXPORT Bool
-miPictureInit (ScreenPtr pScreen, PictFormatPtr formats, int nformats);
+
+miComputeCompositeRegion(RegionPtr pRegion,
+                         PicturePtr pSrc,
+                         PicturePtr pMask,
+                         PicturePtr pDst,
+                         INT16 xSrc,
+                         INT16 ySrc,
+                         INT16 xMask,
+                         INT16 yMask,
+                         INT16 xDst, INT16 yDst, CARD16 width, CARD16 height);
 
 extern _X_EXPORT Bool
-miRealizeGlyph (ScreenPtr pScreen,
-		GlyphPtr  glyph);
-
-extern _X_EXPORT void
-miUnrealizeGlyph (ScreenPtr pScreen,
-		  GlyphPtr  glyph);
-
-extern _X_EXPORT void
-miGlyphs (CARD8		op,
-	  PicturePtr	pSrc,
-	  PicturePtr	pDst,
-	  PictFormatPtr	maskFormat,
-	  INT16		xSrc,
-	  INT16		ySrc,
-	  int		nlist,
-	  GlyphListPtr	list,
-	  GlyphPtr	*glyphs);
-
-extern _X_EXPORT void
-miRenderColorToPixel (PictFormatPtr pPict,
-		      xRenderColor  *color,
-		      CARD32	    *pixel);
-
-extern _X_EXPORT void
-miRenderPixelToColor (PictFormatPtr pPict,
-		      CARD32	    pixel,
-		      xRenderColor  *color);
+ miPictureInit(ScreenPtr pScreen, PictFormatPtr formats, int nformats);
 
 extern _X_EXPORT Bool
-miIsSolidAlpha (PicturePtr pSrc);
+ miRealizeGlyph(ScreenPtr pScreen, GlyphPtr glyph);
 
 extern _X_EXPORT void
-miCompositeRects (CARD8		op,
-		  PicturePtr	pDst,
-		  xRenderColor  *color,
-		  int		nRect,
-		  xRectangle    *rects);
+ miUnrealizeGlyph(ScreenPtr pScreen, GlyphPtr glyph);
 
 extern _X_EXPORT void
-miTrapezoidBounds (int ntrap, xTrapezoid *traps, BoxPtr box);
+
+miGlyphs(CARD8 op,
+         PicturePtr pSrc,
+         PicturePtr pDst,
+         PictFormatPtr maskFormat,
+         INT16 xSrc,
+         INT16 ySrc, int nlist, GlyphListPtr list, GlyphPtr * glyphs);
 
 extern _X_EXPORT void
-miTrapezoids (CARD8	    op,
-	      PicturePtr    pSrc,
-	      PicturePtr    pDst,
-	      PictFormatPtr maskFormat,
-	      INT16	    xSrc,
-	      INT16	    ySrc,
-	      int	    ntrap,
-	      xTrapezoid    *traps);
+ miRenderColorToPixel(PictFormatPtr pPict, xRenderColor * color, CARD32 *pixel);
 
 extern _X_EXPORT void
-miPointFixedBounds (int npoint, xPointFixed *points, BoxPtr bounds);
-    
-extern _X_EXPORT void
-miTriangleBounds (int ntri, xTriangle *tris, BoxPtr bounds);
-
-extern _X_EXPORT void
-miTriangles (CARD8	    op,
-	     PicturePtr	    pSrc,
-	     PicturePtr	    pDst,
-	     PictFormatPtr  maskFormat,
-	     INT16	    xSrc,
-	     INT16	    ySrc,
-	     int	    ntri,
-	     xTriangle	    *tris);
-
-extern _X_EXPORT void
-miTriStrip (CARD8	    op,
-	    PicturePtr	    pSrc,
-	    PicturePtr	    pDst,
-	    PictFormatPtr   maskFormat,
-	    INT16	    xSrc,
-	    INT16	    ySrc,
-	    int		    npoint,
-	    xPointFixed	    *points);
-
-extern _X_EXPORT void
-miTriFan (CARD8		op,
-	  PicturePtr	pSrc,
-	  PicturePtr	pDst,
-	  PictFormatPtr maskFormat,
-	  INT16		xSrc,
-	  INT16		ySrc,
-	  int		npoint,
-	  xPointFixed	*points);
-
-extern _X_EXPORT PicturePtr
-miCreateAlphaPicture (ScreenPtr	    pScreen, 
-		      PicturePtr    pDst,
-		      PictFormatPtr pPictFormat,
-		      CARD16	    width,
-		      CARD16	    height);
+ miRenderPixelToColor(PictFormatPtr pPict, CARD32 pixel, xRenderColor * color);
 
 extern _X_EXPORT Bool
-miInitIndexed (ScreenPtr	pScreen,
-	       PictFormatPtr	pFormat);
+ miIsSolidAlpha(PicturePtr pSrc);
 
 extern _X_EXPORT void
-miCloseIndexed (ScreenPtr	pScreen,
-		PictFormatPtr	pFormat);
+
+miCompositeRects(CARD8 op,
+                 PicturePtr pDst,
+                 xRenderColor * color, int nRect, xRectangle *rects);
 
 extern _X_EXPORT void
-miUpdateIndexed (ScreenPtr	pScreen,
-		 PictFormatPtr	pFormat,
-		 int		ndef,
-		 xColorItem	*pdef);
 
-#endif /* _MIPICT_H_ */
+miTriStrip(CARD8 op,
+           PicturePtr pSrc,
+           PicturePtr pDst,
+           PictFormatPtr maskFormat,
+           INT16 xSrc, INT16 ySrc, int npoints, xPointFixed * points);
+
+extern _X_EXPORT void
+
+miTriFan(CARD8 op,
+         PicturePtr pSrc,
+         PicturePtr pDst,
+         PictFormatPtr maskFormat,
+         INT16 xSrc, INT16 ySrc, int npoints, xPointFixed * points);
+
+extern _X_EXPORT void
+ miTrapezoidBounds(int ntrap, xTrapezoid * traps, BoxPtr box);
+
+extern _X_EXPORT void
+ miPointFixedBounds(int npoint, xPointFixed * points, BoxPtr bounds);
+
+extern _X_EXPORT void
+ miTriangleBounds(int ntri, xTriangle * tris, BoxPtr bounds);
+
+extern _X_EXPORT Bool
+ miInitIndexed(ScreenPtr pScreen, PictFormatPtr pFormat);
+
+extern _X_EXPORT void
+ miCloseIndexed(ScreenPtr pScreen, PictFormatPtr pFormat);
+
+extern _X_EXPORT void
+
+miUpdateIndexed(ScreenPtr pScreen,
+                PictFormatPtr pFormat, int ndef, xColorItem * pdef);
+
+#endif                          /* _MIPICT_H_ */

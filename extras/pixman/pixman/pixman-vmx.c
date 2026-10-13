@@ -1607,11 +1607,15 @@ vmx_combine_add_ca (pixman_implementation_t *imp,
     }
 }
 
-pixman_implementation_t *
-_pixman_implementation_create_vmx (void)
+static const pixman_fast_path_t vmx_fast_paths[] =
 {
-    pixman_implementation_t *fast = _pixman_implementation_create_fast_path ();
-    pixman_implementation_t *imp = _pixman_implementation_create (fast);
+    {   PIXMAN_OP_NONE	},
+};
+
+pixman_implementation_t *
+_pixman_implementation_create_vmx (pixman_implementation_t *fallback)
+{
+    pixman_implementation_t *imp = _pixman_implementation_create (fallback, vmx_fast_paths);
 
     /* Set up function pointers */
 

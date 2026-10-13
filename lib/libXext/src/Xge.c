@@ -76,7 +76,7 @@ static Bool _xgeCheckExtension(Display* dpy, XExtDisplayInfo* info);
 
 /* main extension information data */
 static XExtensionInfo *xge_info;
-static char xge_extension_name[] = GE_NAME;
+static const char xge_extension_name[] = GE_NAME;
 static XExtensionHooks xge_extension_hooks = {
     NULL,	        /* create_gc */
     NULL,	        /* copy_gc */
@@ -292,7 +292,7 @@ _xgeEventToWire(Display* dpy, XEvent* re, xEvent* event)
  * Extensions need to register callbacks for their events.
  */
 Bool
-xgeExtRegister(Display* dpy, int offset, XExtensionHooks* callbacks)
+_X_HIDDEN xgeExtRegister(Display* dpy, int offset, XExtensionHooks* callbacks)
 {
     XGEExtNode* newExt;
     XGEData* xge_data;

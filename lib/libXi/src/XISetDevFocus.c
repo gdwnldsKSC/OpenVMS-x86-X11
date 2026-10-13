@@ -22,6 +22,10 @@
  *
  */
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdint.h>
 #include <X11/Xlibint.h>
 #include <X11/extensions/XI2proto.h>
@@ -37,7 +41,7 @@ XISetFocus(Display *dpy, int deviceid, Window focus, Time time)
     XExtDisplayInfo *extinfo = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, Dont_Check, extinfo) == -1)
+    if (_XiCheckExtInit(dpy, XInput_2_0, extinfo) == -1)
 	return (NoSuchExtension);
 
     GetReq(XISetFocus, req);

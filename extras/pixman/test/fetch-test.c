@@ -1,13 +1,17 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "pixman.h"
-#include <config.h>
 
 #define SIZE 1024
 
-pixman_indexed_t mono_pallete = {
-    .rgba = { 0x00000000, 0x00ffffff },
+static pixman_indexed_t mono_palette =
+{
+    0, { 0x00000000, 0x00ffffff },
 };
 
 
@@ -20,71 +24,90 @@ typedef struct {
     pixman_indexed_t *indexed;
 } testcase_t;
 
-testcase_t testcases[] = {
+static testcase_t testcases[] =
+{
     {
-	.format = PIXMAN_a8r8g8b8,
-	.width = 2, .height = 2,
-	.stride = 8,
-	.src = { 0x00112233, 0x44556677, 
-	         0x8899aabb, 0xccddeeff },
-	.dst = { 0x00112233, 0x44556677, 
-	         0x8899aabb, 0xccddeeff },
-	.indexed = NULL,
+	PIXMAN_a8r8g8b8,
+	2, 2,
+	8,
+	{ 0x00112233, 0x44556677,
+	  0x8899aabb, 0xccddeeff },
+	{ 0x00112233, 0x44556677,
+	  0x8899aabb, 0xccddeeff },
+	NULL,
     },
     {
-	.format = PIXMAN_g1,
-	.width = 8, .height = 2,
-	.stride = 4,
+	PIXMAN_r8g8b8a8,
+	2, 2,
+	8,
+	{ 0x11223300, 0x55667744,
+	  0x99aabb88, 0xddeeffcc },
+	{ 0x00112233, 0x44556677,
+	  0x8899aabb, 0xccddeeff },
+	NULL,
+    },
+    {
+	PIXMAN_g1,
+	8, 2,
+	4,
 #ifdef WORDS_BIGENDIAN
-	.src = { 0xaa000000,
-		 0x55000000 },
+	{
+	    0xaa000000,
+	    0x55000000
+	},
 #else
-	.src = { 0x00000055, 
-	         0x000000aa },
+	{
+	    0x00000055,
+	    0x000000aa
+	},
 #endif
-	.dst = { 0x00ffffff, 0x00000000, 0x00ffffff, 0x00000000, 0x00ffffff, 0x00000000, 0x00ffffff, 0x00000000,
-	         0x00000000, 0x00ffffff, 0x00000000, 0x00ffffff, 0x00000000, 0x00ffffff, 0x00000000, 0x00ffffff },
-	.indexed = &mono_pallete,
+	{
+	    0x00ffffff, 0x00000000, 0x00ffffff, 0x00000000, 0x00ffffff, 0x00000000, 0x00ffffff, 0x00000000,
+	    0x00000000, 0x00ffffff, 0x00000000, 0x00ffffff, 0x00000000, 0x00ffffff, 0x00000000, 0x00ffffff
+	},
+	&mono_palette,
     },
 #if 0
     {
-	.format = PIXMAN_g8,
-	.width = 4, .height = 2,
-	.stride = 4,
-	.src = { 0x01234567, 
-	         0x89abcdef },
-	.dst = { 0x00010101, 0x00232323, 0x00454545, 0x00676767, 
-	         0x00898989, 0x00ababab, 0x00cdcdcd, 0x00efefef, },
+	PIXMAN_g8,
+	4, 2,
+	4,
+	{ 0x01234567,
+	  0x89abcdef },
+	{ 0x00010101, 0x00232323, 0x00454545, 0x00676767,
+	  0x00898989, 0x00ababab, 0x00cdcdcd, 0x00efefef, },
     },
 #endif
     /* FIXME: make this work on big endian */
     {
-	.format = PIXMAN_yv12,
-	.width = 8, .height = 2,
-	.stride = 8,
+	PIXMAN_yv12,
+	8, 2,
+	8,
 #ifdef WORDS_BIGENDIAN
-	.src = { 0x00ff00ff, 0x00ff00ff, 
-	         0xff00ff00, 0xff00ff00, 
-	         0x80ff8000, 
-		 0x800080ff
+	{
+	    0x00ff00ff, 0x00ff00ff,
+	    0xff00ff00, 0xff00ff00,
+	    0x80ff8000,
+	    0x800080ff
 	},
 #else
-	.src = { 0xff00ff00, 0xff00ff00, 
-	         0x00ff00ff, 0x00ff00ff, 
-	         0x0080ff80, 
-		 0xff800080
-	 },
+	{
+	    0xff00ff00, 0xff00ff00,
+	    0x00ff00ff, 0x00ff00ff,
+	    0x0080ff80,
+	    0xff800080
+	},
 #endif
-	.dst = { 
-		0xff000000, 0xffffffff, 0xffb80000, 0xffffe113,
-		0xff000000, 0xffffffff, 0xff0023ee, 0xff4affff,
-		0xffffffff, 0xff000000, 0xffffe113, 0xffb80000,
-		0xffffffff, 0xff000000, 0xff4affff, 0xff0023ee,
+	{
+	    0xff000000, 0xffffffff, 0xffb80000, 0xffffe113,
+	    0xff000000, 0xffffffff, 0xff0023ee, 0xff4affff,
+	    0xffffffff, 0xff000000, 0xffffe113, 0xffb80000,
+	    0xffffffff, 0xff000000, 0xff4affff, 0xff0023ee,
 	},
     },
 };
 
-const int ntestcases = sizeof(testcases)/sizeof(testcases[0]);
+int n_test_cases = sizeof(testcases)/sizeof(testcases[0]);
 
 
 static uint32_t
@@ -100,6 +123,7 @@ reader (const void *src, int size)
 	return *(uint32_t *)src;
     default:
 	assert(0);
+	return 0; /* silence MSVC */
     }
 }
 
@@ -133,26 +157,29 @@ main (int argc, char **argv)
     int i, j, x, y;
     int ret = 0;
 
-    for (i = 0; i < ntestcases; ++i) {
-	for (j = 0; j < 2; ++j) {
+    for (i = 0; i < n_test_cases; ++i)
+    {
+	for (j = 0; j < 2; ++j)
+	{
 	    src_img = pixman_image_create_bits (testcases[i].format,
-						testcases[i].width, 
+						testcases[i].width,
 						testcases[i].height,
 						testcases[i].src,
 						testcases[i].stride);
 	    pixman_image_set_indexed(src_img, testcases[i].indexed);
 
 	    dst_img = pixman_image_create_bits (PIXMAN_a8r8g8b8,
-						testcases[i].width, 
+						testcases[i].width,
 						testcases[i].height,
 						dst,
 						testcases[i].width*4);
 
-	    if (j) {
+	    if (j)
+	    {
 		pixman_image_set_accessors (src_img, reader, writer);
 		pixman_image_set_accessors (dst_img, reader, writer);
 	    }
-	    
+
 	    pixman_image_composite (PIXMAN_OP_SRC, src_img, NULL, dst_img,
 				    0, 0, 0, 0, 0, 0, testcases[i].width, testcases[i].height);
 
@@ -160,18 +187,23 @@ main (int argc, char **argv)
 	    pixman_image_unref (dst_img);
 
 	    for (y = 0; y < testcases[i].height; ++y)
-		for (x = 0; x < testcases[i].width; ++x) {
-		    int offset = y*testcases[i].width + x;
-		    if (dst[offset] != testcases[i].dst[offset]) {
+	    {
+		for (x = 0; x < testcases[i].width; ++x)
+		{
+		    int offset = y * testcases[i].width + x;
+
+		    if (dst[offset] != testcases[i].dst[offset])
+		    {
 			printf ("test %i%c: pixel mismatch at (x=%d,y=%d): %08x expected, %08x obtained\n",
 			        i + 1, 'a' + j,
-			        x, y, 
+			        x, y,
 			        testcases[i].dst[offset], dst[offset]);
 			ret = 1;
 		    }
 		}
+	    }
 	}
     }
-    
+
     return ret;
 }

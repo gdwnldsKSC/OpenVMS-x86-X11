@@ -9,9 +9,7 @@
 
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86Priv.h"
 
-#include "xf86PciInfo.h"
 #include "xf86Pci.h"
 
 #include "windowstr.h"
@@ -938,10 +936,6 @@ I810DRICloseScreen(ScreenPtr pScreen)
       DRIDestroyInfoRec(pI810->pDRIInfo);
       pI810->pDRIInfo = NULL;
    }
-   if (pI810->pVisualConfigs)
-      free(pI810->pVisualConfigs);
-   if (pI810->pVisualConfigsPriv)
-      free(pI810->pVisualConfigsPriv);
 }
 
 static Bool

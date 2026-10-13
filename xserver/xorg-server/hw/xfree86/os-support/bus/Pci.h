@@ -95,7 +95,6 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
-
 /*
  * This file has the private Pci definitions.  The public ones are imported
  * from xf86Pci.h.  Drivers should not use this file.
@@ -108,7 +107,6 @@
 #define _PCI_H 1
 
 #include "xf86Pci.h"
-#include "xf86PciInfo.h"
 
 /*
  * Global Definitions
@@ -120,7 +118,7 @@
 #endif
 
 #ifndef PCI_DOM_MASK
-# define PCI_DOM_MASK 0x0ffu
+#define PCI_DOM_MASK 0x0ffu
 #endif
 #define PCI_DOMBUS_MASK (((PCI_DOM_MASK) << 8) | 0x0ffu)
 
@@ -133,29 +131,18 @@
 
 #define PCI_MAKE_BUS(d,b)    ((((d) & (PCI_DOM_MASK)) << 8) | ((b) & 0xffu))
 
-#define PCI_DOM_FROM_TAG(tag)  (((tag) >> 24) & (PCI_DOM_MASK))
-#define PCI_BUS_FROM_TAG(tag)  (((tag) >> 16) & (PCI_DOMBUS_MASK))
-#define PCI_DEV_FROM_TAG(tag)  (((tag) & 0x0000f800u) >> 11)
-#define PCI_FUNC_FROM_TAG(tag) (((tag) & 0x00000700u) >> 8)
-
 #define PCI_DOM_FROM_BUS(bus)  (((bus) >> 8) & (PCI_DOM_MASK))
 #define PCI_BUS_NO_DOMAIN(bus) ((bus) & 0xffu)
 #define PCI_TAG_NO_DOMAIN(tag) ((tag) & 0x00ffff00u)
 
-#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || \
-	defined(__OpenBSD__) || defined(__NetBSD__) || \
-	defined(__DragonFly__) || defined(__sun) || defined(__GNU__)
-#define ARCH_PCI_INIT bsdPciInit
-#endif
-
 #if defined(linux)
-#define ARCH_PCI_INIT linuxPciInit
-#endif /* defined(linux) */
-
-#ifndef ARCH_PCI_INIT
+#define osPciInit(x) do {} while (0)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || \
+	defined(__OpenBSD__) || defined(__NetBSD__) || \
+	defined(__DragonFly__) || defined(__sun) || defined(__GNU__) || defined(__VMS)
+extern void osPciInit(void);
+#else
 #error No PCI support available for this architecture/OS combination
 #endif
 
-extern void ARCH_PCI_INIT(void);
-
-#endif /* _PCI_H */
+#endif                          /* _PCI_H */

@@ -89,7 +89,6 @@
 #undef BITS4
 #endif
 
-#ifdef FB_24BIT
 #define BRESSOLID   fbBresSolid24
 #define BRESDASH    fbBresDash24
 #define DOTS        fbDots24
@@ -140,14 +139,13 @@
 #undef BITSMUL
 #undef BITSUNIT
 #undef BITS
-    
+
 #undef BRESSOLID
 #undef BRESDASH
 #undef DOTS
 #undef ARC
 #undef POLYLINE
 #undef POLYSEGMENT
-#endif /* FB_24BIT */
 
 #define BRESSOLID   fbBresSolid32
 #define BRESDASH    fbBresDash32

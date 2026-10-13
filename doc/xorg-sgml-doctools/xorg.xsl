@@ -74,5 +74,4 @@ DEALINGS IN THE SOFTWARE.
   <xsl:param name="body.font.family">DejaVu Serif</xsl:param>
   <xsl:param name="symbol.font.family">serif,Symbol,AR PL UMing CN,AR PL ShanHeiSun Uni,GNU Unifont</xsl:param>
 
-
 </xsl:stylesheet>

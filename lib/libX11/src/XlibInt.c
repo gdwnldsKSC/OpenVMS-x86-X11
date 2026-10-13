@@ -662,6 +662,7 @@ XAddConnectionWatch(
 	    UnlockDisplay(dpy);
 	    return 0;
 	}
+	info_list->watch_data = wd_array;
 	wd_array[dpy->watcher_count] = NULL;	/* for cleanliness */
     }
 
@@ -777,10 +778,10 @@ _XFreeEventCookies(Display *dpy)
     head = (struct stored_event**)&dpy->cookiejar;
 
     DL_FOREACH_SAFE(*head, e, tmp) {
-        XFree(e->ev.data);
-        XFree(e);
         if (dpy->cookiejar == e)
             dpy->cookiejar = NULL;
+        XFree(e->ev.data);
+        XFree(e);
     }
 }
 
@@ -883,7 +884,9 @@ void _XEnq(
 
 	type = event->u.u.type & 0177;
 	extension = ((xGenericEvent*)event)->extension;
-	/* If an extension has registerd a generic_event_vec handler, then
+
+	qelt->event.type = type;
+	/* If an extension has registered a generic_event_vec handler, then
 	 * it can handle event cookies. Otherwise, proceed with the normal
 	 * event handlers.
 	 *
@@ -1436,9 +1439,10 @@ static int _XPrintDefaultError(
 	     ext && (ext->codes.major_opcode != event->request_code);
 	     ext = ext->next)
 	  ;
-	if (ext)
-	    strcpy(buffer, ext->name);
-	else
+	if (ext) {
+	    strncpy(buffer, ext->name, BUFSIZ);
+	    buffer[BUFSIZ - 1] = '\0';
+        } else
 	    buffer[0] = '\0';
     }
     (void) fprintf(fp, " (%s)\n", buffer);
@@ -1570,7 +1574,19 @@ int _XError (
 	!(*dpy->error_vec[rep->errorCode])(dpy, &event.xerror, rep))
 	return 0;
     if (_XErrorFunction != NULL) {
-	return (*_XErrorFunction)(dpy, (XErrorEvent *)&event); /* upcall */
+	int rtn_val;
+#ifdef XTHREADS
+	if (dpy->lock)
+	    (*dpy->lock->user_lock_display)(dpy);
+	UnlockDisplay(dpy);
+#endif
+	rtn_val = (*_XErrorFunction)(dpy, (XErrorEvent *)&event); /* upcall */
+#ifdef XTHREADS
+	LockDisplay(dpy);
+	if (dpy->lock)
+	    (*dpy->lock->user_unlock_display)(dpy);
+#endif
+	return rtn_val;
     } else {
 	return _XDefaultError(dpy, (XErrorEvent *)&event);
     }
@@ -1939,6 +1955,37 @@ Screen *_XScreenOfWindow(Display *dpy, Window w)
     return NULL;
 }
 
+
+/*
+ * WARNING: This implementation's pre-conditions and post-conditions
+ * must remain compatible with the old macro-based implementations of
+ * GetReq, GetReqExtra, GetResReq, and GetEmptyReq. The portions of the
+ * Display structure affected by those macros are part of libX11's
+ * ABI.
+ */
+void *_XGetRequest(Display *dpy, CARD8 type, size_t len)
+{
+    xReq *req;
+
+    WORD64ALIGN
+
+    if (dpy->bufptr + len > dpy->bufmax)
+	_XFlush(dpy);
+
+    if (len % 4)
+	fprintf(stderr,
+		"Xlib: request %d length %zd not a multiple of 4.\n",
+		type, len);
+
+    dpy->last_req = dpy->bufptr;
+
+    req = (xReq*)dpy->bufptr;
+    req->reqType = type;
+    req->length = len / 4;
+    dpy->bufptr += len;
+    dpy->request++;
+    return req;
+}
 
 #if defined(WIN32)
 

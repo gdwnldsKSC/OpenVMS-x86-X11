@@ -9,8 +9,10 @@ AM_CFLAGS += $(UDEV_CFLAGS)
 libconfig_la_SOURCES += udev.c
 libconfig_la_LIBADD = $(UDEV_LIBS)
 
+if XORG
 xorgconfddir = $(datadir)/X11/$(XF86CONFIGDIR)
 xorgconfd_DATA = 10-evdev.conf
+endif
 
 else
 
@@ -31,6 +33,12 @@ AM_CFLAGS += $(HAL_CFLAGS)
 libconfig_la_SOURCES += hal.c
 libconfig_la_LIBADD += $(HAL_LIBS)
 endif
+
+else
+
+if CONFIG_WSCONS
+libconfig_la_SOURCES += wscons.c
+endif # CONFIG_WSCONS
 
 endif # CONFIG_NEED_DBUS
 

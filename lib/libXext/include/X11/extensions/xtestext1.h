@@ -41,8 +41,8 @@ documentation, and that the name of Hewlett-Packard not be used in
 advertising or publicity pertaining to distribution of the
 software without specific, written prior permission.
 
-Hewlett-Packard makes no representations about the 
-suitability of this software for any purpose.  It is provided 
+Hewlett-Packard makes no representations about the
+suitability of this software for any purpose.  It is provided
 "as is" without express or implied warranty.
 
 This software is not subject to any license of the American
@@ -80,5 +80,19 @@ typedef struct {
 	Display *display;
 	Window  window;
 } XTestFakeAckEvent;
+
+_XFUNCPROTOBEGIN
+
+int XTestFakeInput(register Display *dpy, char *action_list_addr, int action_list_size, int ack_flag);
+int XTestGetInput(register Display *dpy, int action_handling);
+int XTestQueryInputSize(register Display *dpy, unsigned long *size_return);
+int XTestPressKey(Display *display, int device_id, unsigned long delay, unsigned int keycode, unsigned int key_action);
+int XTestPressButton(Display * display, int device_id, unsigned long delay, unsigned int button_number, unsigned int button_action);
+int XTestMovePointer(Display *display, int device_id, unsigned long delay[], int x[], int y[], unsigned int count);
+int XTestFlush(Display *display);
+int XTestStopInput(register Display *dpy);
+int XTestReset(register Display *dpy);
+
+_XFUNCPROTOEND
 
 #endif /* _XTESTEXT1_H */

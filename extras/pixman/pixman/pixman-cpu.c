@@ -30,6 +30,10 @@
 #include <windows.h>
 #endif
 
+#if defined(__APPLE__)
+#include "TargetConditionals.h"
+#endif
+
 #include "pixman-private.h"
 
 #ifdef USE_VMX
@@ -54,6 +58,29 @@ pixman_have_vmx (void)
 	    sysctlbyname ("hw.optional.altivec", &have_vmx, &length, NULL, 0);
 
 	if (error)
+	    have_vmx = FALSE;
+
+	initialized = TRUE;
+    }
+    return have_vmx;
+}
+
+#elif defined (__OpenBSD__)
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <machine/cpu.h>
+
+static pixman_bool_t
+pixman_have_vmx (void)
+{
+    if (!initialized)
+    {
+	int mib[2] = { CTL_MACHDEP, CPU_ALTIVEC };
+	size_t length = sizeof(have_vmx);
+	int error =
+	    sysctl (mib, 2, &have_vmx, &length, NULL, 0);
+
+	if (error != 0)
 	    have_vmx = FALSE;
 
 	initialized = TRUE;
@@ -123,7 +150,7 @@ pixman_have_vmx (void)
     return have_vmx;
 }
 
-#else /* !__APPLE__ && !__linux__ */
+#else /* !__APPLE__ && !__OpenBSD__ && !__linux__ */
 #include <signal.h>
 #include <setjmp.h>
 
@@ -164,7 +191,7 @@ pixman_have_vmx (void)
 #endif /* __APPLE__ */
 #endif /* USE_VMX */
 
-#if defined(USE_ARM_SIMD) || defined(USE_ARM_NEON)
+#if defined(USE_ARM_SIMD) || defined(USE_ARM_NEON) || defined(USE_ARM_IWMMXT)
 
 #if defined(_MSC_VER)
 
@@ -221,7 +248,85 @@ pixman_have_arm_neon (void)
 
 #endif /* USE_ARM_NEON */
 
-#else /* linux ELF */
+#elif (defined (__APPLE__) && defined(TARGET_OS_IPHONE)) /* iOS (iPhone/iPad/iPod touch) */
+
+/* Detection of ARM NEON on iOS is fairly simple because iOS binaries
+ * contain separate executable images for each processor architecture.
+ * So all we have to do is detect the armv7 architecture build. The
+ * operating system automatically runs the armv7 binary for armv7 devices
+ * and the armv6 binary for armv6 devices.
+ */
+
+pixman_bool_t
+pixman_have_arm_simd (void)
+{
+#if defined(USE_ARM_SIMD)
+    return TRUE;
+#else
+    return FALSE;
+#endif
+}
+
+pixman_bool_t
+pixman_have_arm_neon (void)
+{
+#if defined(USE_ARM_NEON) && defined(__ARM_NEON__)
+    /* This is an armv7 cpu build */
+    return TRUE;
+#else
+    /* This is an armv6 cpu build */
+    return FALSE;
+#endif
+}
+
+pixman_bool_t
+pixman_have_arm_iwmmxt (void)
+{
+#if defined(USE_ARM_IWMMXT)
+    return FALSE;
+#else
+    return FALSE;
+#endif
+}
+
+#elif defined (__linux__) || defined(__ANDROID__) || defined(ANDROID) /* linux ELF or ANDROID */
+
+static pixman_bool_t arm_has_v7 = FALSE;
+static pixman_bool_t arm_has_v6 = FALSE;
+static pixman_bool_t arm_has_vfp = FALSE;
+static pixman_bool_t arm_has_neon = FALSE;
+static pixman_bool_t arm_has_iwmmxt = FALSE;
+static pixman_bool_t arm_tests_initialized = FALSE;
+
+#if defined(__ANDROID__) || defined(ANDROID) /* Android device support */
+
+#include <cpu-features.h>
+
+static void
+pixman_arm_read_auxv_or_cpu_features ()
+{
+    AndroidCpuFamily cpu_family;
+    uint64_t cpu_features;
+
+    cpu_family = android_getCpuFamily();
+    cpu_features = android_getCpuFeatures();
+
+    if (cpu_family == ANDROID_CPU_FAMILY_ARM)
+    {
+	if (cpu_features & ANDROID_CPU_ARM_FEATURE_ARMv7)
+	    arm_has_v7 = TRUE;
+	
+	if (cpu_features & ANDROID_CPU_ARM_FEATURE_VFPv3)
+	    arm_has_vfp = TRUE;
+	
+	if (cpu_features & ANDROID_CPU_ARM_FEATURE_NEON)
+	    arm_has_neon = TRUE;
+    }
+
+    arm_tests_initialized = TRUE;
+}
+
+#elif defined (__linux__) /* linux ELF */
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -232,15 +337,8 @@ pixman_have_arm_neon (void)
 #include <string.h>
 #include <elf.h>
 
-static pixman_bool_t arm_has_v7 = FALSE;
-static pixman_bool_t arm_has_v6 = FALSE;
-static pixman_bool_t arm_has_vfp = FALSE;
-static pixman_bool_t arm_has_neon = FALSE;
-static pixman_bool_t arm_has_iwmmxt = FALSE;
-static pixman_bool_t arm_tests_initialized = FALSE;
-
 static void
-pixman_arm_read_auxv ()
+pixman_arm_read_auxv_or_cpu_features ()
 {
     int fd;
     Elf32_auxv_t aux;
@@ -253,8 +351,6 @@ pixman_arm_read_auxv ()
 	    if (aux.a_type == AT_HWCAP)
 	    {
 		uint32_t hwcap = aux.a_un.a_val;
-		if (getenv ("ARM_FORCE_HWCAP"))
-		    hwcap = strtoul (getenv ("ARM_FORCE_HWCAP"), NULL, 0);
 		/* hardcode these values to avoid depending on specific
 		 * versions of the hwcap header, e.g. HWCAP_NEON
 		 */
@@ -266,8 +362,6 @@ pixman_arm_read_auxv ()
 	    else if (aux.a_type == AT_PLATFORM)
 	    {
 		const char *plat = (const char*) aux.a_un.a_val;
-		if (getenv ("ARM_FORCE_PLATFORM"))
-		    plat = getenv ("ARM_FORCE_PLATFORM");
 		if (strncmp (plat, "v7l", 3) == 0)
 		{
 		    arm_has_v7 = TRUE;
@@ -280,23 +374,19 @@ pixman_arm_read_auxv ()
 	    }
 	}
 	close (fd);
-
-	/* if we don't have 2.6.29, we have to do this hack; set
-	 * the env var to trust HWCAP.
-	 */
-	if (!getenv ("ARM_TRUST_HWCAP") && arm_has_v7)
-	    arm_has_neon = TRUE;
     }
 
     arm_tests_initialized = TRUE;
 }
+
+#endif /* Linux elf */
 
 #if defined(USE_ARM_SIMD)
 pixman_bool_t
 pixman_have_arm_simd (void)
 {
     if (!arm_tests_initialized)
-	pixman_arm_read_auxv ();
+	pixman_arm_read_auxv_or_cpu_features ();
 
     return arm_has_v6;
 }
@@ -308,18 +398,36 @@ pixman_bool_t
 pixman_have_arm_neon (void)
 {
     if (!arm_tests_initialized)
-	pixman_arm_read_auxv ();
+	pixman_arm_read_auxv_or_cpu_features ();
 
     return arm_has_neon;
 }
 
 #endif /* USE_ARM_NEON */
 
-#endif /* linux */
+#if defined(USE_ARM_IWMMXT)
+pixman_bool_t
+pixman_have_arm_iwmmxt (void)
+{
+    if (!arm_tests_initialized)
+	pixman_arm_read_auxv_or_cpu_features ();
 
-#endif /* USE_ARM_SIMD || USE_ARM_NEON */
+    return arm_has_iwmmxt;
+}
 
-#ifdef USE_MMX
+#endif /* USE_ARM_IWMMXT */
+
+#else /* !_MSC_VER && !Linux elf && !Android */
+
+#define pixman_have_arm_simd() FALSE
+#define pixman_have_arm_neon() FALSE
+#define pixman_have_arm_iwmmxt() FALSE
+
+#endif
+
+#endif /* USE_ARM_SIMD || USE_ARM_NEON || USE_ARM_IWMMXT */
+
+#if defined(USE_X86_MMX) || defined(USE_SSE2)
 /* The CPU detection code needs to be in a file not compiled with
  * "-mmmx -msse", as gcc would generate CMOV instructions otherwise
  * that would lead to SIGILL instructions on old CPUs that don't have
@@ -546,7 +654,7 @@ pixman_have_sse2 (void)
 #endif
 
 #else /* __amd64__ */
-#ifdef USE_MMX
+#ifdef USE_X86_MMX
 #define pixman_have_mmx() TRUE
 #endif
 #ifdef USE_SSE2
@@ -558,28 +666,43 @@ pixman_have_sse2 (void)
 pixman_implementation_t *
 _pixman_choose_implementation (void)
 {
+    pixman_implementation_t *imp;
+
+    imp = _pixman_implementation_create_general();
+    imp = _pixman_implementation_create_fast_path (imp);
+    
+#ifdef USE_X86_MMX
+    if (pixman_have_mmx ())
+	imp = _pixman_implementation_create_mmx (imp);
+#endif
+
 #ifdef USE_SSE2
     if (pixman_have_sse2 ())
-	return _pixman_implementation_create_sse2 ();
+	imp = _pixman_implementation_create_sse2 (imp);
 #endif
-#ifdef USE_MMX
-    if (pixman_have_mmx ())
-	return _pixman_implementation_create_mmx ();
+
+#ifdef USE_ARM_SIMD
+    if (pixman_have_arm_simd ())
+	imp = _pixman_implementation_create_arm_simd (imp);
+#endif
+
+#ifdef USE_ARM_IWMMXT
+    if (pixman_have_arm_iwmmxt ())
+	imp = _pixman_implementation_create_mmx (imp);
 #endif
 
 #ifdef USE_ARM_NEON
     if (pixman_have_arm_neon ())
-	return _pixman_implementation_create_arm_neon ();
-#endif
-#ifdef USE_ARM_SIMD
-    if (pixman_have_arm_simd ())
-	return _pixman_implementation_create_arm_simd ();
-#endif
-#ifdef USE_VMX
-    if (pixman_have_vmx ())
-	return _pixman_implementation_create_vmx ();
+	imp = _pixman_implementation_create_arm_neon (imp);
 #endif
 
-    return _pixman_implementation_create_fast_path ();
+#ifdef USE_VMX
+    if (pixman_have_vmx ())
+	imp = _pixman_implementation_create_vmx (imp);
+#endif
+
+    imp = _pixman_implementation_create_noop (imp);
+    
+    return imp;
 }
 

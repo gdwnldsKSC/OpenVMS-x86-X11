@@ -13,13 +13,13 @@ $ step = "arguments"
 $ target = F$EDIT(P1,"UPCASE,TRIM")
 $ IF target .EQS. "" THEN target = "ALL"
 $ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|XFONT|FNTSTUBS|FS|ICE|SM|ICEAUTH|MAKESTRS|MAKEDEPEND|GTF|FREETYPE2|MKFONTSCALE|"
-$ targets = targets + "UCS2ANY|DAMAGE|MI|FB|RENDER|DIX|SHADOW|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|"
+$ targets = targets + "UCS2ANY|DAMAGE|MI|FB|RENDER|DIX|SHADOW|SYNC|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|"
 $ targets = targets + "XKBFILE|ROOTLESS|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ targets = targets + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ targets = targets + "XSS|XVMC|XXF86VM|"
 $ targets = targets + "DMX|"
 $ targets = targets + "XMUU|XPM|"
-$ targets = targets + "XCB|XCB_SHAPE|X11|XAUTH|XDPYINFO|XWININFO|"
+$ targets = targets + "XCB|XCB_SHAPE|X11|X11_XCB|XAUTH|XDPYINFO|XWININFO|"
 $ targets = targets + "XSET|XMODMAP|XEV|BISON|XKBCOMP|SETXKBMAP|XKB_DATA|XVFB|XSERVER_CORE|XSERVER|"
 $ targets = targets + "XT|XMU|MKFONTDIR|FONTS|FONTS_BDF|FONTS_MISC|FONTS_75DPI|FONTS_100DPI|FONTS_CYRILLIC|"
 $ targets = targets + "FONTS_ENCODINGS|FONTS_SCALED|FONTS_TYPE1|FONTS_TTF|FONTS_OTF|"
@@ -85,6 +85,8 @@ $ IF F$SEARCH(profile + ".LIB]XCB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'director
 $ IF F$SEARCH(profile + ".LIB]PIXMAN.DIR") .EQS. "" THEN CREATE/DIRECTORY 'pixman_directory'
 $ directory = profile + ".LIB.X11]"
 $ IF F$SEARCH(profile + ".LIB]X11.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.X11_XCB]"
+$ IF F$SEARCH(profile + ".LIB]X11_XCB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XAU]"
 $ IF F$SEARCH(profile + ".LIB]XAU.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XDMCP]"
@@ -198,6 +200,8 @@ $ directory = profile + ".PROGRAMS.XSERVER.MIEXT.DAMAGE]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.MIEXT]DAMAGE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.MIEXT.SHADOW]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.MIEXT]SHADOW.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XSERVER.MIEXT.SYNC]"
+$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.MIEXT]SYNC.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.RANDR]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER]RANDR.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.DBE]"
@@ -245,7 +249,7 @@ $ IF F$SEARCH(profile + ".PROGRAMS]SETXKBMAP.DIR") .EQS. "" THEN CREATE/DIRECTOR
 $ server_base = profile + ".PROGRAMS.XSERVER.HW.VFB.SERVER"
 $ directory = server_base + "]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.VFB]SERVER.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
-$ server_directories = "DIX|OS|HW|HW.VFB|MI|MIEXT|MIEXT.DAMAGE|FB|RENDER|XKB|XI|XEXT|RANDR|XFIXES|DAMAGEEXT"
+$ server_directories = "DIX|OS|HW|HW.VFB|MI|MIEXT|MIEXT.DAMAGE|FB|RENDER|XKB|XI|XEXT|RANDR|XFIXES|DAMAGEEXT|SYNC"
 $ server_index = 0
 $server_directory_loop:
 $ server_directory = F$ELEMENT(server_index,"|",server_directories)

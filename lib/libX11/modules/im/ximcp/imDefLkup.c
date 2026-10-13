@@ -213,12 +213,8 @@ _XimRespSyncReply(
     Xic		 ic,
     BITMASK16	 mode)
 {
-    if (mode & XimSYNCHRONUS) /* SYNC Request */ {
-	if (IS_FOCUSED(ic))
-	    MARK_NEED_SYNC_REPLY(ic);
-	else
-	    _XimProcSyncReply((Xim)ic->core.im, ic);
-    }
+    if (mode & XimSYNCHRONUS) /* SYNC Request */
+	MARK_NEED_SYNC_REPLY(ic->core.im);
 
     return True;
 }
@@ -356,7 +352,7 @@ _XimProcEvent(
     ev->xany.serial |= serial << 16;
     ev->xany.send_event = False;
     ev->xany.display = d;
-    MARK_FABLICATED(ic);
+    MARK_FABRICATED(ic->core.im);
     return;
 }
 
@@ -691,8 +687,10 @@ _XimCommitRecv(
 	    return False;
 
 	if (!(_XimProcCommit(ic, (BYTE *)&buf_s[5],
-			 		(int)buf_s[4], &string, &string_len)))
+					(int)buf_s[4], &string, &string_len))) {
+	    Xfree(keysym);
 	    return False;
+	}
     }
 
     if (!(_XimRegCommitInfo(ic, string, string_len, keysym, keysym_len))) {
@@ -706,7 +704,7 @@ _XimCommitRecv(
 
     (void)_XimRespSyncReply(ic, flag);
 
-    MARK_FABLICATED(ic);
+    MARK_FABRICATED(im);
 
     ev.type = KeyPress;
     ev.send_event = False;

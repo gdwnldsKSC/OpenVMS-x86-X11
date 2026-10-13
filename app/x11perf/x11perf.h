@@ -183,8 +183,11 @@ extern void DoGetImage ( XParms xp, Parms p, int reps );
 extern void DoPutImage ( XParms xp, Parms p, int reps );
 #ifdef MITSHM
 extern int InitShmPutImage ( XParms xp, Parms p, int reps );
+extern int InitShmGetImage ( XParms xp, Parms p, int reps );
 extern void DoShmPutImage ( XParms xp, Parms p, int reps );
+extern void DoShmGetImage ( XParms xp, Parms p, int reps );
 extern void EndShmPutImage ( XParms xp, Parms p );
+extern void EndShmGetImage ( XParms xp, Parms p );
 #endif
 extern void MidCopyPix ( XParms xp, Parms p );
 extern void EndCopyWin ( XParms xp, Parms p );
@@ -291,7 +294,7 @@ extern void EndAAText ( XParms xp, Parms p );
 extern int InitTrapezoids ( XParms xp, Parms p, int reps );
 extern void DoTrapezoids ( XParms xp, Parms p, int reps );
 extern void EndTrapezoids ( XParms xp, Parms p );
-#ifdef XRENDER
+#if defined(XRENDER) && defined(XFT)
 extern int InitFixedTraps ( XParms xp, Parms p, int reps );
 extern void DoFixedTraps ( XParms xp, Parms p, int reps );
 extern void EndFixedTraps ( XParms xp, Parms p );

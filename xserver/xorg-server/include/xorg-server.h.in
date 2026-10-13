@@ -37,6 +37,27 @@
 /* Support SHM */
 #undef HAS_SHM
 
+/* Define to 1 if you have the `ffs' function. */
+#undef HAVE_FFS
+
+/* Define to 1 if you have the `strcasecmp' function. */
+#undef HAVE_STRCASECMP
+
+/* Define to 1 if you have the `strcasestr' function. */
+#undef HAVE_STRCASESTR
+
+/* Define to 1 if you have the `strlcat' function. */
+#undef HAVE_STRLCAT
+
+/* Define to 1 if you have the `strlcpy' function. */
+#undef HAVE_STRLCPY
+
+/* Define to 1 if you have the `strncasecmp' function. */
+#undef HAVE_STRNCASECMP
+
+/* Define to 1 if you have the `strndup' function. */
+#undef HAVE_STRNDUP
+
 /* Support IPv6 for TCP connections */
 #undef IPv6
 
@@ -157,9 +178,6 @@
 /* Name of X server */
 #undef __XSERVERNAME__
 
-/* Define to 1 if unsigned long is 64 bits. */
-#undef _XSERVER64
-
 /* Building vgahw module */
 #undef WITH_VGAHW
 
@@ -186,5 +204,9 @@
 
 /* X Access Control Extension */
 #undef XACE
+
+#ifdef _LP64
+#define _XSERVER64 1
+#endif
 
 #endif /* _XORG_SERVER_H_ */

@@ -1,10 +1,8 @@
 /*
- * $Xorg: parsedpy.c,v 1.4 2001/02/09 02:05:38 xorgcvs Exp $
- * $XdotOrg: $
  *
  * parse_displayname - utility routine for splitting up display name strings
  *
- * 
+ *
 Copyright 1989, 1998  The Open Group
 
 Permission to use, copy, modify, distribute, and sell this software and its
@@ -29,8 +27,6 @@ in this Software without prior written authorization from The Open Group.
  * *
  * Author:  Jim Fulton, MIT X Consortium
  */
-
-/* $XFree86: xc/programs/xauth/parsedpy.c,v 3.7 2003/07/09 15:27:37 tsi Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -59,7 +55,7 @@ in this Software without prior written authorization from The Open Group.
  */
 
 char *
-copystring (char *src, int len)
+copystring (const char *src, int len)
 {
     char *cp;
 
@@ -87,7 +83,7 @@ copyhostname (void)
 {
     char buf[256];
 
-    return (get_local_hostname (buf, sizeof buf) ? 
+    return (get_local_hostname (buf, sizeof buf) ?
 	    copystring (buf, strlen (buf)) : NULL);
 }
 #endif
@@ -95,8 +91,8 @@ copyhostname (void)
 /*
  * parse_displayname - display a display string up into its component parts
  */
-Bool 
-parse_displayname (char *displayname, 
+Bool
+parse_displayname (const char *displayname,
 		   int *familyp,	/* return */
 		   char **hostp,	/* return */
 		   int *dpynump,	/* return */
@@ -184,7 +180,7 @@ parse_displayname (char *displayname,
 	    free (host);
 	    return False;
 	}
-	
+
 	dpynum = atoi (ptr);		/* it will handle num. as well */
 	ptr = cp;
     }
@@ -236,4 +232,4 @@ parse_displayname (char *displayname,
     return True;
 }
 
-	    
+

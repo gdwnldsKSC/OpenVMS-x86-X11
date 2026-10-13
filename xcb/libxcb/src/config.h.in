@@ -12,8 +12,14 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* getaddrinfo() function is available */
+#undef HAVE_GETADDRINFO
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `is_system_labeled' function. */
+#undef HAVE_IS_SYSTEM_LABELED
 
 /* launchd support available */
 #undef HAVE_LAUNCHD
@@ -41,6 +47,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <tsol/label.h> header file. */
+#undef HAVE_TSOL_LABEL_H
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

@@ -54,11 +54,6 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@DRI_TRUE@am__append_1 = \
-@DRI_TRUE@         glint_dri.c \
-@DRI_TRUE@         glint_dri.h \
-@DRI_TRUE@         glint_dripriv.h
-
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -93,19 +88,11 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(glint_drv_ladir)"
 LTLIBRARIES = $(glint_drv_la_LTLIBRARIES)
 glint_drv_la_LIBADD =
-am__glint_drv_la_SOURCES_DIST = glint_common.h glint_dga.c \
-	glint_driver.c glint.h glintpcirename.h glint_regs.h \
-	glint_shadow.c IBMramdac.c pm2_accel.c pm2_dac.c pm2ramdac.c \
-	pm2v_dac.c pm2_video.c pm2vramdac.c pm3_accel.c pm3_dac.c \
-	pm3_regs.h pm3_video.c pm_accel.c pm_dac.c sx_accel.c \
-	TIramdac.c tx_accel.c tx_dac.c glint_dri.c glint_dri.h \
-	glint_dripriv.h
-@DRI_TRUE@am__objects_1 = glint_dri.lo
 am_glint_drv_la_OBJECTS = glint_dga.lo glint_driver.lo glint_shadow.lo \
 	IBMramdac.lo pm2_accel.lo pm2_dac.lo pm2ramdac.lo pm2v_dac.lo \
 	pm2_video.lo pm2vramdac.lo pm3_accel.lo pm3_dac.lo \
 	pm3_video.lo pm_accel.lo pm_dac.lo sx_accel.lo TIramdac.lo \
-	tx_accel.lo tx_dac.lo $(am__objects_1)
+	tx_accel.lo tx_dac.lo
 glint_drv_la_OBJECTS = $(am_glint_drv_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -140,7 +127,7 @@ AM_V_GEN = $(am__v_GEN_$(V))
 am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(glint_drv_la_SOURCES)
-DIST_SOURCES = $(am__glint_drv_la_SOURCES_DIST)
+DIST_SOURCES = $(glint_drv_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -156,6 +143,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BASE_CFLAGS = @BASE_CFLAGS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -166,11 +154,10 @@ CWARNFLAGS = @CWARNFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
 DRIVER_MAN_DIR = @DRIVER_MAN_DIR@
 DRIVER_MAN_SUFFIX = @DRIVER_MAN_SUFFIX@
 DRIVER_NAME = @DRIVER_NAME@
-DRI_CFLAGS = @DRI_CFLAGS@
-DRI_LIBS = @DRI_LIBS@
 DSYMUTIL = @DSYMUTIL@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
@@ -200,6 +187,7 @@ LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
+MANIFEST_TOOL = @MANIFEST_TOOL@
 MAN_SUBSTS = @MAN_SUBSTS@
 MISC_MAN_DIR = @MISC_MAN_DIR@
 MISC_MAN_SUFFIX = @MISC_MAN_SUFFIX@
@@ -227,6 +215,7 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+STRICT_CFLAGS = @STRICT_CFLAGS@
 STRIP = @STRIP@
 VERSION = @VERSION@
 XEXT_CFLAGS = @XEXT_CFLAGS@
@@ -238,6 +227,7 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
+ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 am__include = @am__include@
@@ -270,7 +260,6 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
-lt_ECHO = @lt_ECHO@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 moduledir = @moduledir@
@@ -293,16 +282,35 @@ top_srcdir = @top_srcdir@
 # -avoid-version prevents gratuitous .0.0.0 version numbers on the end
 # _ladir passes a dummy rpath to libtool so the thing will actually link
 # TODO: -nostdlib/-Bstatic/-lgcc platform magic, not installing the .a, etc.
-AM_CFLAGS = @XORG_CFLAGS@ @DRI_CFLAGS@ -DPPC_MMIO_IS_BE -DSPARC_MMIO_IS_BE
+AM_CFLAGS = @XORG_CFLAGS@ -DPPC_MMIO_IS_BE -DSPARC_MMIO_IS_BE
 glint_drv_la_LTLIBRARIES = glint_drv.la
 glint_drv_la_LDFLAGS = -module -avoid-version
 glint_drv_ladir = @moduledir@/drivers
-glint_drv_la_SOURCES = glint_common.h glint_dga.c glint_driver.c \
-	glint.h glintpcirename.h glint_regs.h glint_shadow.c \
-	IBMramdac.c pm2_accel.c pm2_dac.c pm2ramdac.c pm2v_dac.c \
-	pm2_video.c pm2vramdac.c pm3_accel.c pm3_dac.c pm3_regs.h \
-	pm3_video.c pm_accel.c pm_dac.c sx_accel.c TIramdac.c \
-	tx_accel.c tx_dac.c $(am__append_1)
+glint_drv_la_SOURCES = \
+         glint_dga.c \
+         glint_driver.c \
+         glint.h \
+	 glintpcirename.h \
+         glint_regs.h \
+         glint_shadow.c \
+         IBMramdac.c \
+         pm2_accel.c \
+         pm2_dac.c \
+         pm2ramdac.c \
+         pm2v_dac.c \
+         pm2_video.c \
+         pm2vramdac.c \
+         pm3_accel.c \
+         pm3_dac.c \
+         pm3_regs.h \
+         pm3_video.c \
+         pm_accel.c \
+         pm_dac.c \
+         sx_accel.c \
+         TIramdac.c \
+         tx_accel.c \
+         tx_dac.c
+
 all: all-am
 
 .SUFFIXES:
@@ -380,7 +388,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IBMramdac.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TIramdac.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glint_dga.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glint_dri.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glint_driver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glint_shadow.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pm2_accel.Plo@am__quote@

@@ -52,8 +52,6 @@
 #define OSNAME "openbsd"
 #elif defined(__GNU__)
 #define OSNAME "hurd"
-#elif defined(__SCO__)
-#define OSNAME "sco"
 #elif defined(SVR4) && defined(sun)
 #define OSNAME "solaris"
 #elif defined(SVR5)
@@ -70,7 +68,7 @@ void
 LoaderGetOS(const char **name, int *major, int *minor, int *teeny)
 {
     if (name)
-	*name = OSNAME;
+        *name = OSNAME;
 
     /* reporting runtime versions isn't supported yet */
 }

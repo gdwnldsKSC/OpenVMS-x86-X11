@@ -1,3 +1,329 @@
+Release 2.19.0 (2012-04-29)
+===========================
+More stability fixes for UXA and support for another variant of IvyBridge.
+Given the severity of the stability fixes, I strongly recommend everybody
+to upgrade to 2.19.0.
+
+* Prevent waiting on scanlines whilst not in control of the VT and therefore
+  whilst referencing foreign CRTC configurations.
+
+* Pixmap (and bo leak) during fallback glyph composition
+
+* Remove broken acceleration for rendering glyphs directly upon the
+  destination pixmap, exposed by cairo-1.12.0 (and coincidentally fix
+  another Pixmap leak upon fallback handling).
+
+* Add support for Ivy Bridge GT2 Server chipset [PCI id 0x016a]
+
+* Remove broken damage flushing with CompositeRectangles
+  https://bugs.freedesktop.org/show_bug.cgi?id=32547
+
+* Fix crash upon server start with multiple monitors
+  https://bugs.freedesktop.org/show_bug.cgi?id=47395
+
+* Fix composition issues resulting from overly aggressive Pixmap reuse
+  https://bugs.freedesktop.org/show_bug.cgi?id=47345
+
+Release 2.18.0 (2012-02-24)
+===========================
+Time passes, a few more bugs have crept out of the woodwork that are a
+compelling reason to update.
+
+Bugs fixed in this release (compared to 2.17.0)
+-----------------------------------------------
+
+* Limit maximum object size so that all of the source, mask and
+  destination can be mapped into the aperture simultaneously by basing the
+  limit on the mappable aperture size rather than the size of the total
+  GATT.
+
+* Incorrect clipping of polygons
+  https://bugs.freedesktop.org/show_bug.cgi?id=43649
+  Regression from 2.15.901
+
+* Limit number of VMA cached to avoid hitting the per-process VMA limit
+  There still is a residual bug in that we seem to have so many objects
+  floating around in the first place and that still leads to exhaustion
+  of system limits.
+  https://bugs.freedesktop.org/show_bug.cgi?id=43075
+  https://bugs.freedesktop.org/show_bug.cgi?id=40066
+
+* Latency in processing user-input during continuous rendering
+
+Release 2.17.0 (2011-11-16)
+==============================
+A few months have passed, and we have accumulated a surprising number of
+bug fixes. Oops! We would strongly encourage everyone to upgrade.
+
+Bugs fixed in this snapshot (compared to 2.16.902)
+--------------------------------------------------
+
+* Video clobbering composite batch state
+  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=635953
+
+Snapshot 2.16.902 (2011-11-13)
+==============================
+This is the second release candidate in preparation for the upcoming
+2.17.0 release. We will appreciate any feedback we can get from
+testing of this snapshot, and thanks to everyone who tested and reported
+upon issues in the last snapshot.
+
+A very old bug demonstrating that nobody has ever used alpha maps, and a
+couple of more recent mistakes were found.
+
+Bugs fixed in this snapshot (compared to 2.16.901)
+--------------------------------------------------
+
+ * Incorrect reuse of surface bindings within a batch for multiple formats
+   https://bugs.freedesktop.org/show_bug.cgi?id=40926
+
+ * Nothing was rendered for text with procedural sources
+   https://bugs.freedesktop.org/show_bug.cgi?id=31819
+
+ * Handle fallbacks involving alpha maps
+
+Snapshot 2.16.901 (2011-10-30)
+==============================
+This is the first release candidate in preparation for the upcoming
+2.17.0 release. We will appreciate any feedback we can get from
+testing of this snapshot.
+
+The basis of this release are to push out a couple of critical stability
+fixes for SandyBridge and IvyBridge. There is very little else to see
+here. Those 200+ other commits do not exist...
+
+Bugs fixed in this snapshot (compared to 2.16.0)
+--------------------------------------------------
+
+ * Workaround blitter hang on SandyBridge and IvyBridge
+   https://bugzilla.kernel.org/show_bug.cgi?id=27892
+   https://bugs.freedesktop.org/show_bug.cgi
+
+ * Workaround pipe control issues on SandyBridge
+
+ * Use correct maximum PS thread count on IvyBridge
+
+ * Protect against failed pixmap allocation for XV
+   https://bugs.freedesktop.org/show_bug.cgi?id=40439
+
+Release 2.16.0 (2011-08-09)
+==============================
+A new quarter, a new release! The key feature of this release, looking past
+the bug fixes, is the enabling of IvyBridge acceleration. We have also fixed
+many bugs and graphical glitches and would encourage everyone to upgrade.
+
+Bugs fixed in this snapshot (compared to 2.15.901)
+--------------------------------------------------
+
+* Build fix for xserver-1.7.7
+
+Snapshot 2.15.901 (2011-07-30)
+==============================
+This is the first release candidate in preparation for the upcoming
+2.16.0 release. We will appreciate any feedback we can get from
+testing of this snapshot.
+
+The highlight of this snapshot is the full enabling of IvyBridge with
+acceleration for Render and Xv, along with handling of the shared render
+buffer allocations required for Mesa. Also of note is that deep-color
+support is enabled (for all chipsets), which allows you to drive your
+30-bit monitor at its native colour depth.
+
+Bugs fixed in this snapshot (compared to 2.15.0)
+--------------------------------------------------
+
+* Misuse of the Resource database causing crashes after DRI clients close
+  https://bugs.freedesktop.org/show_bug.cgi?id=37700
+
+* Crash on large strings
+  https://bugs.freedesktop.org/show_bug.cgi?id=36860
+
+* Incorrect rendering for some core drawing operations
+  http://bugs.freedesktop.org/show_bug.cgi?id=28768
+  http://bugs.freedesktop.org/show_bug.cgi?id=28798
+  http://bugs.freedesktop.org/show_bug.cgi?id=28908
+  http://bugs.freedesktop.org/show_bug.cgi?id=29401
+
+* Crash in Xv due to insufficient checks on batch space
+  https://bugs.freedesktop.org/show_bug.cgi?id=36319
+
+Release 2.15.0 (2011-04-14)
+==============================
+We are pleased to announce this major release of the xf86-video-intel
+driver, roughly on schedule at 3 months since 2.14.0. With the many bug
+fixes in this release, we encourage everyone to upgrade to 2.15.
+
+The priority for this quarter has been simply to be unexciting and stabilise
+the driver further, seeking to capitalise upon the improvements elsewhere
+in the stack.
+
+Bugs fixed in this snapshot (compared to 2.14.903)
+--------------------------------------------------
+
+* Turn off relaxed fencing by default for older chipsets
+  This was continuing to destabilize those system, so for the release
+  we disabled the feature. If you wish to help us debug this, you can
+  re-enable the optimisation with Option "RelaxedFencing" "True".
+  Bugzilla: https://bugs.freedesktop.org/show_bug.cgi?id=36147
+
+* Build fix for xserver-1.7.7
+
+* KDE glitches on SNB
+  [Technically fixed in the previous snapshot, but I'm really pleased
+   that this got fixed in time for the release!]
+  https://bugs.freedesktop.org/show_bug.cgi?id=35808
+
+
+Snapshot 2.14.903 (2011-04-11)
+==============================
+This is the third release candidate in preparation for the upcoming
+2.15.0 release. We will appreciate any feedback we can get from
+testing of this snapshot.
+
+There was a bit of churn since 2.14.902 as a potential fix for a
+performance regression was tried but had to reverted when it was found to
+cause glitches running Compiz on SandyBridge. Otherwise, there were just a
+couple of fixes for building against old xservers and running on an
+obscure chipset.
+
+Bugs fixed in this snapshot (compared to 2.14.902)
+--------------------------------------------------
+
+* Prevent issuing an invalid scanline wait command
+  https://bugs.freedesktop.org/show_bug.cgi?id=35576
+
+* The 946GZ in not a 945, but a 965.
+  https://bugs.freedesktop.org/show_bug.cgi?id=35854
+
+* Fix tile sizes for gen2 (finally).
+
+* Allow building of recent dri2 changes against old xservers.
+
+
+Snapshot 2.14.902 (2011-03-29)
+==============================
+This is the second release candidate in preparation for the upcoming
+2.15.0 release. We will appreciate any feedback we can get from
+testing of this snapshot.
+
+As befits testing of release candidates, no major regression was found and
+a couple more bugs have been fixed.
+
+Bugs fixed in this snapshot (compared to 2.14.901)
+--------------------------------------------------
+
+* Clients disappearing with pending swaps
+
+* Incorrect clipping of Xv output on i915 across extended desktops
+  https://bugs.freedesktop.org/show_bug.cgi?id=35346
+
+* Introduction of a LinearFramebuffer option. (Defaults to tiled for
+  performance and power saving.)
+
+
+Snapshot 2.14.901 (2011-03-02)
+==============================
+This is the first release candidate in preparation for the upcoming
+2.15.0 release. We will appreciate any feedback we can get from
+testing of this snapshot.
+
+Still no further along my grandiose plans to improve Render performance,
+aside from the performance tuning lower in the stack, instead we have had
+a steady stream of bug fixes.
+
+Bugs fixed in this snapshot (compared to 2.14.0)
+------------------------------------------------
+
+* Green pixels within partially off-screen video playback
+  https://bugs.freedesktop.org/show_bug.cgi?id=24767
+
+* Defer creation of the glyph cache to generation startup
+  https://bugs.freedesktop.org/show_bug.cgi?id=33412
+
+* Incorrect maximum addresses for video decoder state
+  https://bugs.freedesktop.org/show_bug.cgi?id=34017
+
+* Failure to handle oversized temporary surfaces
+  https://bugs.freedesktop.org/show_bug.cgi?id=34399
+
+* Relaxed tiling corruption on gen2
+
+* Crash when destroying a foreign DRI drawable
+  https://bugs.freedesktop.org/show_bug.cgi?id=34787
+
+
+Release 2.14.0 (2011-01-07)
+===========================
+We are pleased to announce this major release of the xf86-video-intel
+driver, on schedule at 3 months since 2.13.0. With the many bug fixes
+in this release, we encourage everyone to upgrade to 2.14.
+
+The most notable feature of this release is the inclusion of acceleration
+support, both RENDER and XVIDEO, for Sandy Bridge; note that this requires
+a 2.6.37 kernel. In improving the acceleration code paths to support Sandy
+Bridge, we were also able to improve the performance of the general i965+
+RENDER acceleration. For example on i3, glyph (aa10 and rgb10) performance
+is about 3x faster, as is performing small copies between windows, with the
+improvement becoming negligible once you hit around 100 pixels square.
+
+
+Snapshot 2.13.903 (2010-01-04)
+==============================
+This is the second release candidate in preparation for the upcoming
+2.14.0 release, and if no showstoppers turn up in wider testing will
+become the next release. Besides the usual bug fixes, we've included
+patches by Mario Kleiner to improve vblank handing which both improve the
+timing accuracy and remove a few potential races -- provided you also
+have the corresponding fixes in the kernel.
+
+Bug fixes
+---------
+
+ * Crash on hot-unpluging with an active fullscreen GL application, e.g. a
+   compositing WM or video player
+   https://bugs.freedesktop.org/show_bug.cgi?id=32770
+
+ * Freeze upon maximising client-side software renderers, e.g. flash.
+   https://bugs.freedesktop.org/show_bug.cgi?id=31367
+
+ * Fix confusion over G35 generation
+   https://bugs.freedesktop.org/show_bug.cgi?id=32478
+
+
+Snapshot 2.13.902 (2010-12-10)
+==============================
+This is the first release candidate in preparation for the upcoming
+2.14.0 release. Sandybridge support should be now be ready for use,
+and we will appreciate any feedback we can get from this snapshot.
+Improving the code base for Sandybridge should also have had knock
+on effects for earlier chips as well, in particular Ironlake and to
+a lesser extent i965.
+
+New requirements compared to 2.13
+---------------------------------
+ * Librdrm >= 2.4.23
+
+Bug fixes
+---------
+
+ * Crash after failing to allocate memory
+   https://bugs.freedesktop.org/show_bug.cgi?id=31487
+
+ * EFAULT during pwrite
+   https://bugs.freedesktop.org/show_bug.cgi?id=29752
+
+ * Mark outputs as on and restore backlight after mode-set
+
+ * A hang with i965+ with newer kernels.
+
+
+Snapshot 2.13.901 (2010-11-05)
+==============================
+This is an intermediate snapshot of ongoing driver development. The
+primary purpose of this snapshot is to capture some recent
+improvements, (particularly in Sandybridge support), for further
+testing.
+
 Release 2.13.0 (2010-09-30)
 ===========================
 We are pleased to announce this major release of the xf86-video-intel

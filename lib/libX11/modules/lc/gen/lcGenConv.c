@@ -1784,9 +1784,6 @@ mbtocs(
         return( 0 );
     }
 
-    if (*from_left > *to_left)
-        *from_left = *to_left;
-
     while (*from_left && *to_left) {
 
 	ch = *inbufptr++;
@@ -1872,7 +1869,7 @@ output:
 	return -1;
     }
 
-    /* nomal end */
+    /* normal end */
     *from = (XPointer) inbufptr;
     *to = (XPointer) outbufptr;
 
@@ -2171,7 +2168,7 @@ end:
         return -1;
     }
 
-    /* nomal end */
+    /* normal end */
     *from = (XPointer) inbufptr;
     *to = (XPointer) outbufptr;
 
@@ -2225,7 +2222,7 @@ end:
 	return -1;
     }
 
-    /* nomal end */
+    /* normal end */
     *from = (XPointer) src;
     *from_left = src_left;
 
@@ -2650,7 +2647,7 @@ create_conv(
     XlcConv conv;
     State state;
 
-    conv = (XlcConv) Xmalloc(sizeof(XlcConvRec));
+    conv = (XlcConv) Xcalloc(1, sizeof(XlcConvRec));
     if (conv == NULL)
 	return (XlcConv) NULL;
 
@@ -2660,10 +2657,9 @@ create_conv(
     *conv->methods = *methods;
     conv->methods->reset = init_state;
 
-    conv->state = (XPointer) Xmalloc(sizeof(StateRec));
+    conv->state = Xcalloc(1, sizeof(StateRec));
     if (conv->state == NULL)
 	goto err;
-    bzero((char *) conv->state, sizeof(StateRec));
 
     state = (State) conv->state;
     state->lcd = lcd;

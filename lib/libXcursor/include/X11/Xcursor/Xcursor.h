@@ -1,3 +1,4 @@
+/* include/X11/Xcursor/Xcursor.h.  Generated from Xcursor.h.in by configure.  */
 /*
  * Copyright © 2002 Keith Packard
  *
@@ -69,14 +70,13 @@ typedef XcursorUInt	XcursorPixel;
 #define XCURSOR_MAGIC	0x72756358  /* "Xcur" LSBFirst */
 
 /*
- * Current Xcursor version number.  This same number
- * must appear in the Xcursor configure.ac file. Yes,
- * it'a a pain to synchronize version numbers like this.
+ * Current Xcursor version number.  Will be substituted by configure
+ * from the version in the libXcursor configure.ac file.
  */
 
-#define XCURSOR_LIB_MAJOR	1
-#define XCURSOR_LIB_MINOR	1
-#define XCURSOR_LIB_REVISION	9
+#define XCURSOR_LIB_MAJOR 1
+#define XCURSOR_LIB_MINOR 1
+#define XCURSOR_LIB_REVISION 13
 #define XCURSOR_LIB_VERSION	((XCURSOR_LIB_MAJOR * 10000) + \
 				 (XCURSOR_LIB_MINOR * 100) + \
 				 (XCURSOR_LIB_REVISION))
@@ -239,7 +239,7 @@ void
 XcursorImageDestroy (XcursorImage *image);
 
 /*
- * Manage Images objects 
+ * Manage Images objects
  */
 XcursorImages *
 XcursorImagesCreate (int size);
@@ -304,7 +304,7 @@ XcursorXcFileLoad (XcursorFile	    *file,
 		   XcursorImages    **imagesp);
 
 XcursorBool
-XcursorXcFileSave (XcursorFile		    *file, 
+XcursorXcFileSave (XcursorFile		    *file,
 		   const XcursorComments    *comments,
 		   const XcursorImages	    *images);
 
@@ -321,15 +321,15 @@ XcursorImages *
 XcursorFileLoadAllImages (FILE *file);
 
 XcursorBool
-XcursorFileLoad (FILE		    *file, 
-		 XcursorComments    **commentsp, 
+XcursorFileLoad (FILE		    *file,
+		 XcursorComments    **commentsp,
 		 XcursorImages	    **imagesp);
 
 XcursorBool
 XcursorFileSaveImages (FILE *file, const XcursorImages *images);
 
 XcursorBool
-XcursorFileSave (FILE *			file, 
+XcursorFileSave (FILE *			file,
 		 const XcursorComments	*comments,
 		 const XcursorImages	*images);
 
@@ -354,7 +354,7 @@ XcursorBool
 XcursorFilenameSaveImages (const char *filename, const XcursorImages *images);
 
 XcursorBool
-XcursorFilenameSave (const char		    *file, 
+XcursorFilenameSave (const char		    *file,
 		     const XcursorComments  *comments,
 		     const XcursorImages    *images);
 
@@ -376,7 +376,7 @@ XcursorLibraryPath (void);
 
 int
 XcursorLibraryShape (const char *library);
-    
+
 /*
  * Image/Cursor APIs
  */
@@ -465,7 +465,7 @@ XcursorTryShapeBitmapCursor (Display		*dpy,
 #define XCURSOR_BITMAP_HASH_SIZE    16
 
 void
-XcursorImageHash (XImage	*image, 
+XcursorImageHash (XImage	*image,
 		  unsigned char	hash[XCURSOR_BITMAP_HASH_SIZE]);
 
 /*

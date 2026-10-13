@@ -24,15 +24,14 @@ SUBDIRS = src man
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = applewm.pc
 
-EXTRA_DIST = applewm.pc.in
+MAINTAINERCLEANFILES = ChangeLog INSTALL
 
+.PHONY: ChangeLog INSTALL
 
-EXTRA_DIST += ChangeLog
-MAINTAINERCLEANFILES = ChangeLog
-
-.PHONY: ChangeLog
+INSTALL:
+	$(INSTALL_CMD)
 
 ChangeLog:
 	$(CHANGELOG_CMD)
 
-dist-hook: ChangeLog
+dist-hook: ChangeLog INSTALL

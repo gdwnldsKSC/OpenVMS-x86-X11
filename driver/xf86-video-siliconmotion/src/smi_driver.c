@@ -281,9 +281,9 @@ SMI_FreeRec(ScrnInfoPtr pScrn)
     ENTER();
 
     if (pSmi) {
-	xfree(pSmi->save);
-	xfree(pSmi->mode);
-	xfree(pScrn->driverPrivate);
+	free(pSmi->save);
+	free(pSmi->mode);
+	free(pScrn->driverPrivate);
 	pScrn->driverPrivate = NULL;
     }
 
@@ -338,7 +338,7 @@ SMI_Probe(DriverPtr drv, int flags)
 				    numDevSections, drv, &usedChips);
 
     /* Free it since we don't need that list after this */
-    xfree(devSections);
+    free(devSections);
     if (numUsed <= 0)
 	LEAVE(FALSE);
 
@@ -364,14 +364,14 @@ SMI_Probe(DriverPtr drv, int flags)
 		if ((pEnt = xf86GetEntityInfo(usedChips[i]))) {
 			pScrn->EnterVT   = SMI_EnterVT;
 			pScrn->LeaveVT   = SMI_LeaveVT;
-		    xfree(pEnt);
+		    free(pEnt);
 		}
 		pScrn->FreeScreen    = SMI_FreeScreen;
 		foundScreen	     = TRUE;
 	    }
 	}
     }
-    xfree(usedChips);
+    free(usedChips);
 
     LEAVE(foundScreen);
 }
@@ -421,7 +421,7 @@ SMI_PreInit(ScrnInfoPtr pScrn, int flags)
     }
 
     if (pEnt->location.type != BUS_PCI) {
-	xfree(pEnt);
+	free(pEnt);
 	SMI_FreeRec(pScrn);
 	LEAVE(FALSE);
     }
@@ -442,7 +442,12 @@ SMI_PreInit(ScrnInfoPtr pScrn, int flags)
 	    LEAVE(FALSE);
 
 	hwp = VGAHWPTR(pScrn);
+	vgaHWSetStdFuncs(hwp);
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 12
 	pSmi->PIOBase = hwp->PIOOffset;
+#else
+	pSmi->PIOBase = 0;
+#endif
 
 	xf86ErrorFVerb(VERBLEV, "\tSMI_PreInit vgaCRIndex=%x, vgaIOBase=%x, "
 		       "MMIOBase=%p\n", hwp->IOBase + VGA_CRTC_INDEX_OFFSET,
@@ -519,7 +524,7 @@ SMI_PreInit(ScrnInfoPtr pScrn, int flags)
     }
 
     /* Process the options */
-    if (!(pSmi->Options = xalloc(sizeof(SMIOptions))))
+    if (!(pSmi->Options = malloc(sizeof(SMIOptions))))
 	LEAVE(FALSE);
 
     memcpy(pSmi->Options, SMIOptions, sizeof(SMIOptions));
@@ -662,7 +667,7 @@ SMI_PreInit(ScrnInfoPtr pScrn, int flags)
     }
     else
         pSmi->ChipRev = PCI_DEV_REVISION(pSmi->PciInfo);
-    xfree(pEnt);
+    free(pEnt);
 
     /*
      * This shouldn't happen because such problems should be caught in
@@ -875,8 +880,8 @@ SMI_PreInit(ScrnInfoPtr pScrn, int flags)
     if (!pSmi->NoAccel) {
 	if (!pSmi->useEXA) {
 	    if (!xf86LoadSubModule(pScrn, "xaa")) {
-		SMI_FreeRec(pScrn);
-		LEAVE(FALSE);
+		xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "No acceleration\n");
+		pSmi->NoAccel = 1;
 	    }
 	} else {
 	    XF86ModReqInfo req;
@@ -927,7 +932,9 @@ SMI_EnterVT(int scrnIndex, int flags)
     /* FBBase may have changed after remapping the memory */
     pScrn->pScreen->ModifyPixmapHeader(pScrn->pScreen->GetScreenPixmap(pScrn->pScreen),
 				       -1,-1,-1,-1,-1, pSmi->FBBase + pSmi->FBOffset);
+#if (XORG_VERSION_CURRENT < XORG_VERSION_NUMERIC(1, 9, 99, 1, 0))
     pScrn->pixmapPrivate.ptr=pSmi->FBBase + pSmi->FBOffset;
+#endif
 
     if(pSmi->useEXA)
        pSmi->EXADriverPtr->memoryBase=pSmi->FBBase;
@@ -1493,7 +1500,7 @@ SMI_MapMem(ScrnInfoPtr pScrn)
 
     xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, VERBLEV,
 		   "Physical frame buffer at 0x%08lX offset: 0x%08lX\n",
-		   pScrn->memPhysBase, pSmi->fbMapOffset);
+		   pScrn->memPhysBase, (unsigned long)pSmi->fbMapOffset);
     xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, VERBLEV,
 		   "Logical frame buffer at %p - %p\n", pSmi->FBBase,
 		   pSmi->FBBase + pSmi->videoRAMBytes - 1);
@@ -1856,7 +1863,7 @@ SMI_CloseScreen(int scrnIndex, ScreenPtr pScreen)
 	pSmi->pInt10 = NULL;
     }
     if (pSmi->ptrAdaptor != NULL) {
-	xfree(pSmi->ptrAdaptor);
+	free(pSmi->ptrAdaptor);
     }
     if (pSmi->BlockHandler != NULL) {
 	pScreen->BlockHandler = pSmi->BlockHandler;

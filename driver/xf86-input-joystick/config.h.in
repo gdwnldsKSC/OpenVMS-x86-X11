@@ -1,7 +1,5 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-#include "xorg-server.h"
-
 /* Compile BSD usbhid backend */
 #undef BSD_BACKEND
 
@@ -69,9 +67,6 @@
    */
 #undef LT_OBJDIR
 
-/* Disable some debugging code */
-#undef NDEBUG
-
 /* Name of package */
 #undef PACKAGE
 
@@ -86,6 +81,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

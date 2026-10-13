@@ -3,5 +3,6 @@
 
 #define HAVE_STRDUP 1
 #define HAVE_STRCASECMP 1
+#define PACKAGE_VERSION "1.2.4"
 
 #endif

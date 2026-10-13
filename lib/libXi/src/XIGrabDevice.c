@@ -22,6 +22,10 @@
  *
  */
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdint.h>
 #include <X11/Xlibint.h>
 #include <X11/extensions/XI2proto.h>
@@ -43,7 +47,7 @@ XIGrabDevice(Display* dpy, int deviceid, Window grab_window, Time time,
     XExtDisplayInfo *extinfo = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, Dont_Check, extinfo) == -1)
+    if (_XiCheckExtInit(dpy, XInput_2_0, extinfo) == -1)
 	return (NoSuchExtension);
 
     GetReq(XIGrabDevice, req);
@@ -59,10 +63,10 @@ XIGrabDevice(Display* dpy, int deviceid, Window grab_window, Time time,
     req->cursor = cursor;
 
 
-    /* masks.mask_len is in bytes, but we need 4-byte units on the wire,
+    /* mask->mask_len is in bytes, but we need 4-byte units on the wire,
      * and they need to be padded with 0 */
-    len = req->mask_len * 4;
-    buff = calloc(1, len);
+    len = req->mask_len;
+    buff = calloc(1, len * 4);
     memcpy(buff, mask->mask, mask->mask_len);
 
     SetReqLen(req, len, len);
@@ -86,7 +90,7 @@ XIUngrabDevice(Display* dpy, int deviceid, Time time)
     XExtDisplayInfo *info = XInput_find_display(dpy);
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, Dont_Check, info) == -1)
+    if (_XiCheckExtInit(dpy, XInput_2_0, info) == -1)
 	return (NoSuchExtension);
 
     GetReq(XIUngrabDevice, req);

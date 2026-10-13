@@ -102,36 +102,6 @@ static SymTabRec NewportChipsets[] = {
     {-1, NULL }
 };
 
-/* List of Symbols from other modules that this module references */
-
-static const char *fbSymbols[] = {
-	"fbPictureInit",
-	"fbScreenInit",
-	NULL
-};	
-
-static const char *ramdacSymbols[] = {
-    "xf86CreateCursorInfoRec",
-    "xf86InitCursor",
-    NULL
-};
-
-static const char *shadowSymbols[] = {
-	"ShadowFBInit",
-	NULL
-};
-
-static const char *xaaSymbols[] = {
-    "XAACreateInfoRec",
-    "XAADestroyInfoRec",
-    "XAAGetFallbackOps",
-    "XAAInit",
-    NULL
-};
-
-
-#ifdef XFree86LOADER
-
 static MODULESETUPPROTO(newportSetup);
 
 static XF86ModuleVersionInfo newportVersRec =
@@ -172,14 +142,6 @@ newportSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 		xf86AddDriver(&NEWPORT, module, 0);
 
 		/*
-		 * Tell the loader about symbols from other modules that this module
-		 * might refer to.
-		 *
-		 */
-		LoaderRefSymLists( fbSymbols, ramdacSymbols, shadowSymbols, xaaSymbols, NULL);
-
-
-		/*
 		 * The return value must be non-NULL on success even though
 		 * there is no TearDownProc.
 		 */
@@ -189,8 +151,6 @@ newportSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 	return NULL;
        }
 }
-
-#endif /* XFree86LOADER */
 
 typedef enum {
 	OPTION_BITPLANES,
@@ -227,9 +187,7 @@ NewportGetRec(ScrnInfoPtr pScrn)
 static Bool
 NewportFreeRec(ScrnInfoPtr pScrn)
 {
-	if (pScrn->driverPrivate == NULL)
-		return TRUE;
-	xfree(pScrn->driverPrivate);
+	free(pScrn->driverPrivate);
 	pScrn->driverPrivate = NULL;
 	return TRUE;
 }
@@ -295,7 +253,7 @@ NewportProbe(DriverPtr drv, int flags)
 			}
 		}
 	}
-	xfree(devSections);
+	free(devSections);
 	return foundScreen;
 }
 
@@ -394,7 +352,7 @@ NewportPreInit(ScrnInfoPtr pScrn, int flags)
 
 	/* Fill in pScrn->options) */
 	xf86CollectOptions(pScrn, NULL);
-	if (!(pNewport->Options = xalloc(sizeof(NewportOptions))))
+	if (!(pNewport->Options = malloc(sizeof(NewportOptions))))
 		return FALSE;
 	memcpy(pNewport->Options, NewportOptions, sizeof(NewportOptions));
 	xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, pNewport->Options);
@@ -486,7 +444,6 @@ NewportPreInit(ScrnInfoPtr pScrn, int flags)
 		NewportFreeRec(pScrn);
 		return FALSE;
 	}
-	xf86LoaderReqSymLists( fbSymbols, NULL);
 
 	/* Load ramdac modules */
     	if (pNewport->hwCursor) {
@@ -494,7 +451,6 @@ NewportPreInit(ScrnInfoPtr pScrn, int flags)
 			NewportFreeRec(pScrn);
             		return FALSE;
         	}
-        	xf86LoaderReqSymLists(ramdacSymbols, NULL);
     	}
 
 	/* Load ShadowFB module */
@@ -502,7 +458,6 @@ NewportPreInit(ScrnInfoPtr pScrn, int flags)
 		NewportFreeRec(pScrn);
 		return FALSE;
 	}
-	xf86LoaderReqSymLists(shadowSymbols, NULL);
 
 	return TRUE;
 }
@@ -596,8 +551,6 @@ NewportScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
 	if (!pNewport->NoAccel) {
 	    if (!xf86LoadSubModule(pScrn, "xaa"))
 		pNewport->NoAccel = TRUE;
-	    else
-		xf86LoaderReqSymLists(xaaSymbols, NULL);
 	}
 #if 0    
 	if (pScrn->bitsPerPixel < 24)
@@ -699,8 +652,7 @@ NewportCloseScreen(int scrnIndex, ScreenPtr pScreen)
 #endif	
 
 	NewportRestore(pScrn, TRUE);
-	if (pNewport->ShadowPtr)
-		xfree(pNewport->ShadowPtr);
+	free(pNewport->ShadowPtr);
 
 	/* unmap the Newport's registers from memory */
 	NewportUnmapRegs(pScrn);

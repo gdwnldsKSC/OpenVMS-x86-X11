@@ -30,13 +30,13 @@ and Olivetti Research Limited, Cambridge, England.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Digital or Olivetti
 not be used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
+software without specific, written prior permission.
 
 DIGITAL AND OLIVETTI DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
 SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
@@ -215,11 +215,11 @@ typedef struct {
 } XSyncAlarmNotifyEvent;
 
 /*
- *  Errors 
+ *  Errors
  */
 
 typedef struct {
-    int type;			
+    int type;
     Display *display;		/* Display the event was read from */
     XSyncAlarm alarm;		/* resource id */
     unsigned long serial;	/* serial number of failed request */
@@ -229,7 +229,7 @@ typedef struct {
 } XSyncAlarmError;
 
 typedef struct {
-    int type;			
+    int type;
     Display *display;		/* Display the event was read from */
     XSyncCounter counter;	/* resource id */
     unsigned long serial;	/* serial number of failed request */
@@ -238,7 +238,7 @@ typedef struct {
     unsigned char minor_code;	/* Minor op-code of failed request */
 } XSyncCounterError;
 
-/* 
+/*
  *  Prototypes
  */
 
@@ -333,6 +333,39 @@ extern Status XSyncGetPriority(
     Display* /*dpy*/,
     XID /*client_resource_id*/,
     int* /*return_priority*/
+);
+
+extern XSyncFence XSyncCreateFence(
+    Display* /*dpy*/,
+    Drawable /*d*/,
+    Bool /*initially_triggered*/
+);
+
+extern Bool XSyncTriggerFence(
+    Display* /*dpy*/,
+    XSyncFence /*fence*/
+);
+
+extern Bool XSyncResetFence(
+    Display* /*dpy*/,
+    XSyncFence /*fence*/
+);
+
+extern Bool XSyncDestroyFence(
+    Display* /*dpy*/,
+    XSyncFence /*fence*/
+);
+
+extern Bool XSyncQueryFence(
+    Display* /*dpy*/,
+    XSyncFence /*fence*/,
+    Bool* /*triggered*/
+);
+
+extern Bool XSyncAwaitFence(
+    Display* /*dpy*/,
+    const XSyncFence* /*fence_list*/,
+    int /*n_fences*/
 );
 
 _XFUNCPROTOEND

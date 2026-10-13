@@ -40,7 +40,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <stdint.h>
 #include "compiler.h"
-#include "xf86PciInfo.h"
 #include "xf86Pci.h"
 #include "i810_reg.h"
 #include "xaa.h"
@@ -52,12 +51,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "xorg-server.h"
 #include <pciaccess.h>
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
 #include "xf86drm.h"
 #include "sarea.h"
 #define _XF86DRI_SERVER_
 #include "dri.h"
-#include "GL/glxint.h"
 #include "i810_dri.h"
 #endif
 
@@ -74,14 +72,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /* Globals */
 
 typedef struct _I810Rec *I810Ptr;
-
-typedef void (*I810WriteIndexedByteFunc)(I810Ptr pI810, IOADDRESS addr,
-					 uint8_t index, uint8_t value);
-typedef uint8_t(*I810ReadIndexedByteFunc)(I810Ptr pI810, IOADDRESS addr,
-					  uint8_t index);
-typedef void (*I810WriteByteFunc)(I810Ptr pI810, IOADDRESS addr,
-				  uint8_t value);
-typedef uint8_t(*I810ReadByteFunc)(I810Ptr pI810, IOADDRESS addr);
 
 extern void I810SetTiledMemory(ScrnInfoPtr pScrn, int nr, unsigned start,
 			       unsigned pitch, unsigned size);
@@ -179,7 +169,6 @@ typedef struct _I810Rec {
    int Chipset;
    unsigned long LinearAddr;
    unsigned long MMIOAddr;
-   IOADDRESS ioBase;
    EntityInfoPtr pEnt;
    struct pci_device *PciInfo;
 
@@ -217,21 +206,14 @@ typedef struct _I810Rec {
    CloseScreenProcPtr CloseScreen;
    ScreenBlockHandlerProcPtr BlockHandler;
 
-   I810WriteIndexedByteFunc writeControl;
-   I810ReadIndexedByteFunc readControl;
-   I810WriteByteFunc writeStandard;
-   I810ReadByteFunc readStandard;
-
    Bool directRenderingDisabled;        /* DRI disabled in PreInit */
    Bool directRenderingEnabled;		/* false if XF86DRI not defined. */
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    int LockHeld;
    DRIInfoPtr pDRIInfo;
    int drmSubFD;
    int numVisualConfigs;
-   __GLXvisualConfig *pVisualConfigs;
-   I810ConfigPrivPtr pVisualConfigsPriv;
    unsigned long dcacheHandle;
    unsigned long backHandle;
    unsigned long zHandle;
@@ -266,7 +248,7 @@ typedef struct _I810Rec {
 #define I810_SELECT_BACK	1
 #define I810_SELECT_DEPTH	2
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
 extern Bool I810DRIScreenInit(ScreenPtr pScreen);
 extern void I810DRICloseScreen(ScreenPtr pScreen);
 extern Bool I810DRIFinishScreenInit(ScreenPtr pScreen);

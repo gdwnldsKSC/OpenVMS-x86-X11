@@ -1,5 +1,5 @@
 #  Copyright © 2005 Adam Jackson.
-#  Copyright © 2007-2010 Guillem Jover.
+#  Copyright © 2007-2011 Guillem Jover.
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -23,7 +23,7 @@
 
 AC_PREREQ([2.60])
 AC_INIT([xf86-video-glide],
-        [1.1.0],
+        [1.2.0],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         [xf86-video-glide])
 
@@ -69,6 +69,11 @@ PKG_CHECK_MODULES(XEXT, [xextproto >= 7.0.99.1],
 AM_CONDITIONAL(HAVE_XEXTPROTO_71, [ test "$HAVE_XEXTPROTO_71" = "yes" ])
 
 # Checks for libraries.
+AC_CHECK_LIB([glide3x], [grGet], [GLIDE_LDFLAGS="-lglide3x"], [
+  AC_CHECK_LIB([glide2x], [grSstQueryBoards], [GLIDE_LDFLAGS="-lglide2x"], [
+    AC_MSG_ERROR([missing glide shared library])], [])], [])
+
+AC_SUBST([GLIDE_LDFLAGS])
 
 # Checks for header files.
 CPPFLAGS="$CPPFLAGS -I$glideincludedir"
@@ -76,7 +81,10 @@ AC_HEADER_STDC
 AC_CHECK_HEADER([glide.h], [],
                 [AC_MSG_ERROR([<glide.h> is required])])
 
-AC_CHECK_DECL([grGet], [AC_DEFINE(GLIDE3, 1, [glide3x available])], [],
+AC_CHECK_DECL([grGet],
+              [AC_DEFINE(GLIDE3, 1, [glide3x available])
+               AC_DEFINE(GLIDE3_ALPHA, 1, [glide3x alpha available])],
+              [],
               [#include <glide.h>])
 
 GLIDE_CFLAGS="-I$glideincludedir"

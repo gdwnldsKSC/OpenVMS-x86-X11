@@ -179,7 +179,6 @@ typedef struct _OverlayInfo
     unsigned short nKeys;
     OverlayKeyInfo *keys;
 } OverlayInfo;
-#define	oiText(d,o)	((o)?XkbAtomText((d),(o)->name,XkbMessage):"default")
 
 
 #define	_GS_Default	(1<<0)
@@ -367,7 +366,7 @@ InitRowInfo(RowInfo * row, SectionInfo * section, GeometryInfo * info)
     }
     else
     {
-        bzero(row, sizeof(RowInfo *));
+        bzero(row, sizeof(*row));
         row->defs.defined = _GR_Default;
         row->defs.fileID = info->fileID;
         row->defs.merge = info->merge;
@@ -2575,7 +2574,8 @@ HandleOverlayDef(OverlayDef * def,
         {
             WSGO("Couldn't allocate OverlayKeyInfo\n");
             ACTION2("Overlay %s for section %s will be incomplete\n",
-                    oiText(info->dpy, &ol), scText(info->dpy, si));
+                    XkbAtomText(info->dpy, ol.name, XkbMessage),
+                    scText(info->dpy, si));
             return False;
         }
         strncpy(key->over, keyDef->over, XkbKeyNameLength);
@@ -3611,11 +3611,11 @@ CopySectionDef(XkbGeometryPtr geom, SectionInfo * si, GeometryInfo * info)
                 key->shape_ndx = 0;
             else
             {
-                ShapeInfo *si;
-                si = FindShape(info, ki->shape, "key", keyText(ki));
-                if (!si)
+                ShapeInfo *sinfo;
+                sinfo = FindShape(info, ki->shape, "key", keyText(ki));
+                if (!sinfo)
                     return False;
-                key->shape_ndx = si->index;
+                key->shape_ndx = sinfo->index;
             }
             if (ki->color != None)
                 color =

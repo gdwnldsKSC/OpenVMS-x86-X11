@@ -145,6 +145,7 @@
 #endif
 #define	DEBUG_VAR parseDebug
 #include "xkbevd.h"
+#include <stdlib.h>
 
 
 /* Enabling traces.  */
@@ -167,7 +168,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 75 "cfgparse.y"
+#line 76 "cfgparse.y"
 {
 	char *		str;
 	int		ival;
@@ -175,7 +176,7 @@ typedef union YYSTYPE
 	ActDefPtr	act;
 }
 /* Line 187 of yacc.c.  */
-#line 179 "cfgparse.c"
+#line 180 "cfgparse.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -188,7 +189,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 192 "cfgparse.c"
+#line 193 "cfgparse.c"
 
 #ifdef short
 # undef short
@@ -476,9 +477,9 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    86,    86,    90,   102,   105,   113,   116,   133,   150,
-     151,   152,   155,   167,   168,   169,   170,   171,   172,   173,
-     176,   177,   180,   181,   184,   187,   188,   191
+       0,    87,    87,    91,   103,   106,   114,   117,   134,   151,
+     152,   153,   156,   168,   169,   170,   171,   172,   173,   174,
+     177,   178,   181,   182,   185,   188,   189,   192
 };
 #endif
 
@@ -1403,12 +1404,12 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 87 "cfgparse.y"
+#line 88 "cfgparse.y"
     { InterpretConfigs((yyvsp[(1) - (1)].entry)); }
     break;
 
   case 3:
-#line 91 "cfgparse.y"
+#line 92 "cfgparse.y"
     {
 			    CfgEntryPtr tmp;
 			    if ((yyvsp[(1) - (2)].entry)!=NULL) {
@@ -1423,31 +1424,31 @@ yyreduce:
     break;
 
   case 4:
-#line 102 "cfgparse.y"
+#line 103 "cfgparse.y"
     { (yyval.entry)= (yyvsp[(1) - (1)].entry); }
     break;
 
   case 5:
-#line 106 "cfgparse.y"
+#line 107 "cfgparse.y"
     {
 			    if (((yyvsp[(1) - (2)].entry))&&((yyvsp[(2) - (2)].act)))
 				(yyvsp[(1) - (2)].entry)->action= *((yyvsp[(2) - (2)].act));
 			    if ((yyvsp[(2) - (2)].act))
-				uFree((yyvsp[(2) - (2)].act));
+				free((yyvsp[(2) - (2)].act));
 			    (yyval.entry)= (yyvsp[(1) - (2)].entry);
 			}
     break;
 
   case 6:
-#line 113 "cfgparse.y"
+#line 114 "cfgparse.y"
     { (yyval.entry)= (yyvsp[(1) - (1)].entry); }
     break;
 
   case 7:
-#line 117 "cfgparse.y"
+#line 118 "cfgparse.y"
     {
 			    CfgEntryPtr cfg;
-			    cfg= uTypedCalloc(1,CfgEntryRec);
+			    cfg= calloc(1,sizeof(CfgEntryRec));
 			    if (cfg) {
 				cfg->entry_type= VariableDef;
 				cfg->event_type= 0;
@@ -1462,10 +1463,10 @@ yyreduce:
     break;
 
   case 8:
-#line 134 "cfgparse.y"
+#line 135 "cfgparse.y"
     {
 			    CfgEntryPtr cfg;
-			    cfg= uTypedCalloc(1,CfgEntryRec);
+			    cfg= calloc(1,sizeof(CfgEntryRec));
 			    if (cfg) {
 				cfg->entry_type= EventDef;
 				cfg->event_type= (yyvsp[(1) - (4)].ival);
@@ -1480,25 +1481,25 @@ yyreduce:
     break;
 
   case 9:
-#line 150 "cfgparse.y"
+#line 151 "cfgparse.y"
     { (yyval.ival)= XkbBellNotify; }
     break;
 
   case 10:
-#line 151 "cfgparse.y"
+#line 152 "cfgparse.y"
     { (yyval.ival)= XkbAccessXNotify; }
     break;
 
   case 11:
-#line 152 "cfgparse.y"
+#line 153 "cfgparse.y"
     { (yyval.ival)= XkbActionMessage; }
     break;
 
   case 12:
-#line 156 "cfgparse.y"
+#line 157 "cfgparse.y"
     {
 			    ActDefPtr act;
-			    act= uTypedCalloc(1,ActDefRec);
+			    act= calloc(1,sizeof(ActDefRec));
 			    if (act) {
 				act->type= (yyvsp[(1) - (2)].ival);
 				act->text= (yyvsp[(2) - (2)].str);
@@ -1508,83 +1509,83 @@ yyreduce:
     break;
 
   case 13:
-#line 167 "cfgparse.y"
-    { (yyval.ival) = NoAction; }
-    break;
-
-  case 14:
 #line 168 "cfgparse.y"
     { (yyval.ival) = NoAction; }
     break;
 
-  case 15:
+  case 14:
 #line 169 "cfgparse.y"
+    { (yyval.ival) = NoAction; }
+    break;
+
+  case 15:
+#line 170 "cfgparse.y"
     { (yyval.ival) = EchoAction; }
     break;
 
   case 16:
-#line 170 "cfgparse.y"
+#line 171 "cfgparse.y"
     { (yyval.ival) = PrintEvAction; }
     break;
 
   case 17:
-#line 171 "cfgparse.y"
+#line 172 "cfgparse.y"
     { (yyval.ival) = ShellAction; }
     break;
 
   case 18:
-#line 172 "cfgparse.y"
+#line 173 "cfgparse.y"
     { (yyval.ival) = SoundAction; }
     break;
 
   case 19:
-#line 173 "cfgparse.y"
+#line 174 "cfgparse.y"
     { (yyval.ival) = UnknownAction; }
     break;
 
   case 20:
-#line 176 "cfgparse.y"
+#line 177 "cfgparse.y"
     { (yyval.str)= (yyvsp[(1) - (1)].str); }
     break;
 
   case 21:
-#line 177 "cfgparse.y"
+#line 178 "cfgparse.y"
     { (yyval.str)= NULL; }
     break;
 
   case 22:
-#line 180 "cfgparse.y"
-    { (yyval.str)= (yyvsp[(1) - (1)].str); }
-    break;
-
-  case 23:
 #line 181 "cfgparse.y"
     { (yyval.str)= (yyvsp[(1) - (1)].str); }
     break;
 
+  case 23:
+#line 182 "cfgparse.y"
+    { (yyval.str)= (yyvsp[(1) - (1)].str); }
+    break;
+
   case 24:
-#line 184 "cfgparse.y"
+#line 185 "cfgparse.y"
     { (yyval.str)= scanStr; scanStr= NULL; }
     break;
 
   case 25:
-#line 187 "cfgparse.y"
+#line 188 "cfgparse.y"
     { (yyval.str)= (yyvsp[(1) - (1)].str); }
     break;
 
   case 26:
-#line 188 "cfgparse.y"
+#line 189 "cfgparse.y"
     { (yyval.str)= NULL; }
     break;
 
   case 27:
-#line 191 "cfgparse.y"
+#line 192 "cfgparse.y"
     { (yyval.str)= scanStr; scanStr= NULL; }
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 1588 "cfgparse.c"
+#line 1589 "cfgparse.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1798,7 +1799,7 @@ yyreturn:
 }
 
 
-#line 193 "cfgparse.y"
+#line 194 "cfgparse.y"
 
 int
 yyerror(char *s)

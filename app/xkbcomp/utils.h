@@ -115,12 +115,7 @@ extern Boolean uSetErrorFile(char *     /* name */
 
 extern void
 uInformation(const char * /* s */ , ...
-    )
-#if defined(__GNUC__) && \
-    ((__GNUC__ > 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 6)))
-    __attribute__ ((format(printf, 1, 2)))
-#endif
-    ;
+    ) _X_ATTRIBUTE_PRINTF(1, 2);
 
 #define ACTION6			uAction
 #define ACTION5			uAction
@@ -131,12 +126,7 @@ uInformation(const char * /* s */ , ...
 #define ACTION			uAction
 
      extern void uAction(const char * /* s  */ , ...
-    )
-#if defined(__GNUC__) && \
-    ((__GNUC__ > 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 6)))
-    __attribute__ ((format(printf, 1, 2)))
-#endif
-    ;
+    ) _X_ATTRIBUTE_PRINTF(1, 2);
 
 #define WARN6			uWarning
 #define WARN5			uWarning
@@ -147,12 +137,7 @@ uInformation(const char * /* s */ , ...
 #define WARN			uWarning
 
      extern void uWarning(const char * /* s  */ , ...
-    )
-#if defined(__GNUC__) && \
-    ((__GNUC__ > 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 6)))
-    __attribute__ ((format(printf, 1, 2)))
-#endif
-    ;
+    ) _X_ATTRIBUTE_PRINTF(1, 2);
 
 #define ERROR6			uError
 #define ERROR5			uError
@@ -163,12 +148,7 @@ uInformation(const char * /* s */ , ...
 #define ERROR			uError
 
      extern void uError(const char * /* s  */ , ...
-    )
-#if defined(__GNUC__) && \
-    ((__GNUC__ > 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 6)))
-    __attribute__ ((format(printf, 1, 2)))
-#endif
-    ;
+    ) _X_ATTRIBUTE_PRINTF(1, 2);
 
 #define FATAL6			uFatalError
 #define FATAL5			uFatalError
@@ -179,12 +159,7 @@ uInformation(const char * /* s */ , ...
 #define FATAL			uFatalError
 
      extern void uFatalError(const char * /* s  */ , ...
-    )
-#if defined(__GNUC__) && \
-    ((__GNUC__ > 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 6)))
-    __attribute__ ((format(printf, 1, 2)))
-#endif
-    ;
+    ) _X_ATTRIBUTE_PRINTF(1, 2) _X_NORETURN;
 
 /* WSGO stands for "Weird Stuff Going On" */
 #define WSGO6			uInternalError
@@ -196,12 +171,7 @@ uInformation(const char * /* s */ , ...
 #define WSGO			uInternalError
 
      extern void uInternalError(const char * /* s  */ , ...
-    )
-#if defined(__GNUC__) && \
-    ((__GNUC__ > 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 6)))
-    __attribute__ ((format(printf, 1, 2)))
-#endif
-    ;
+    ) _X_ATTRIBUTE_PRINTF(1, 2);
 
      extern void uSetPreErrorMessage(char *     /* msg */
     );
@@ -226,6 +196,7 @@ uInformation(const char * /* s */ , ...
                                  (s1)!=(s2):strcmp(s1,s2))
 #define	uStrCaseEqual(s1,s2)	(uStrCaseCmp(s1,s2)==0)
 #ifdef HAVE_STRCASECMP
+#include <strings.h>
 #define	uStrCaseCmp(s1,s2)	(strcasecmp(s1,s2))
 #define	uStrCasePrefix(p,s)	(strncasecmp(p,s,strlen(p))==0)
 #else
@@ -237,6 +208,7 @@ uInformation(const char * /* s */ , ...
     );
 #endif
 #ifdef HAVE_STRDUP
+#include <string.h>
 #define	uStringDup(s1)		((s1) ? strdup(s1) : NULL)
 #else
      extern char *uStringDup(const char *       /* s1 */
@@ -262,21 +234,11 @@ extern
      unsigned int DEBUG_VAR;
 
      extern void uDebug(char * /* s  */ , ...
-    )
-#if defined(__GNUC__) && \
-    ((__GNUC__ > 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 6)))
-    __attribute__ ((format(printf, 1, 2)))
-#endif
-    ;
+    ) _X_ATTRIBUTE_PRINTF(1, 2);
 
      extern void uDebugNOI(     /* no indent */
                               char * /* s  */ , ...
-    )
-#if defined(__GNUC__) && \
-    ((__GNUC__ > 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 6)))
-    __attribute__ ((format(printf, 1, 2)))
-#endif
-    ;
+    ) _X_ATTRIBUTE_PRINTF(1, 2);
 
      extern Boolean uSetDebugFile(char *name);
 
@@ -316,12 +278,7 @@ extern
      extern Boolean uSetEntryFile(char *name);
      extern void uEntry(int /* l */ ,
                         char * /* s  */ , ...
-    )
-#if defined(__GNUC__) && \
-    ((__GNUC__ > 2) || ((__GNUC__ == 2) && (__GNUC_MINOR__ >= 6)))
-    __attribute__ ((format(printf, 2, 3)))
-#endif
-    ;
+    ) _X_ATTRIBUTE_PRINTF(2, 3);
 
      extern void uExit(int l, char *rtVal);
 #ifdef ENTRY_TRACKING_ON

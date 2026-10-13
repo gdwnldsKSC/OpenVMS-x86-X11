@@ -606,22 +606,25 @@ yyGetIdent(int first)
 static int
 yyGetNumber(int ch)
 {
+    const int nMaxBuffSize = 1024;
     int isFloat = 0;
-    char buf[1024];
+    char buf[nMaxBuffSize];
     int nInBuf = 0;
 
     buf[0] = ch;
     nInBuf = 1;
     while (((ch = scanchar()) != EOF)
-           && (isxdigit(ch) || ((nInBuf == 1) && (ch == 'x'))))
+           && (isxdigit(ch) || ((nInBuf == 1) && (ch == 'x')))
+           && nInBuf < (nMaxBuffSize - 1))
     {
         buf[nInBuf++] = ch;
     }
-    if (ch == '.')
+    if ((ch == '.') && (nInBuf < (nMaxBuffSize - 1)))
     {
         isFloat = 1;
         buf[nInBuf++] = ch;
-        while (((ch = scanchar()) != EOF) && (isxdigit(ch)))
+        while (((ch = scanchar()) != EOF) && (isxdigit(ch))
+               && nInBuf < (nMaxBuffSize - 1))
         {
             buf[nInBuf++] = ch;
         }

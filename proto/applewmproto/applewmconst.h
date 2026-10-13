@@ -73,35 +73,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define AppleWMNumWindowLevels		5
 
 /* Possible value for frame_rect argument to XAppleWMFrameGetRect() */
-#define AppleWMFrameRectTitleBar	1
-#define AppleWMFrameRectTracking	2
-#define AppleWMFrameRectGrowBox		3
+/* Use xp_frame_rect_enum from <Xplugin.h> */
 
 /* Window frame classes */
-#define AppleWMFrameClassDocument	1 << 0
-#define AppleWMFrameClassDialog		1 << 1
-#define AppleWMFrameClassModalDialog	1 << 2
-#define AppleWMFrameClassSystemModalDialog 1 << 3
-#define AppleWMFrameClassUtility	1 << 4
-#define AppleWMFrameClassToolbar	1 << 5
-#define AppleWMFrameClassMenu		1 << 6
-#define AppleWMFrameClassSplash		1 << 7
-#define AppleWMFrameClassBorderless	1 << 8
+/* Use xp_frame_class_enum from <Xplugin.h> */
 
 /* Window frame attributes */
-#define AppleWMFrameActive		0x0001
-#define AppleWMFrameUrgent		0x0002
-#define AppleWMFrameTitle		0x0004
-#define AppleWMFramePrelight		0x0008
-#define AppleWMFrameShaded		0x0010
-#define AppleWMFrameCloseBox		0x0100
-#define AppleWMFrameCollapseBox		0x0200
-#define AppleWMFrameZoomBox		0x0400
-#define AppleWMFrameAnyBox		0x0700
-#define AppleWMFrameCloseBoxClicked	0x0800
-#define AppleWMFrameCollapseBoxClicked	0x1000
-#define AppleWMFrameZoomBoxClicked	0x2000
-#define AppleWMFrameAnyBoxClicked	0x3800
-#define AppleWMFrameGrowBox		0x4000
+/* Use xp_frame_attr_enum from <Xplugin.h> */
 
 #endif /* _APPLEWMCONST_H_ */

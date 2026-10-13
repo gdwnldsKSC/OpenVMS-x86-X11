@@ -40,8 +40,13 @@
 
 #include "intel.h"
 #include "intel_bufmgr.h"
+#include "xf86drm.h"
 #include "xf86drmMode.h"
 #include "X11/Xatom.h"
+#include "X11/extensions/dpmsconst.h"
+#include "xf86DDC.h"
+
+#include "intel_glamor.h"
 
 struct intel_mode {
 	int fd;
@@ -50,18 +55,27 @@ struct intel_mode {
 	int cpp;
 
 	drmEventContext event_context;
-	void *event_data;
+	DRI2FrameEventPtr flip_info;
 	int old_fb_id;
 	int flip_count;
+	unsigned int fe_frame;
+	unsigned int fe_tv_sec;
+	unsigned int fe_tv_usec;
 
 	struct list outputs;
 	struct list crtcs;
+};
+
+struct intel_pageflip {
+	struct intel_mode *mode;
+	Bool dispatch_me;
 };
 
 struct intel_crtc {
 	struct intel_mode *mode;
 	drmModeModeInfo kmode;
 	drmModeCrtcPtr mode_crtc;
+	int pipe;
 	dri_bo *cursor;
 	dri_bo *rotate_bo;
 	uint32_t rotate_pitch;
@@ -101,13 +115,15 @@ struct intel_output {
 static void
 intel_output_dpms(xf86OutputPtr output, int mode);
 
+static void
+intel_output_dpms_backlight(xf86OutputPtr output, int oldmode, int mode);
+
 #define BACKLIGHT_CLASS "/sys/class/backlight"
 
 /*
  * List of available kernel interfaces in priority order
  */
 static const char *backlight_interfaces[] = {
-	"intel", /* prefer our own native backlight driver */
 	"asus-laptop",
 	"eeepc",
 	"thinkpad_screen",
@@ -117,6 +133,7 @@ static const char *backlight_interfaces[] = {
 	"samsung",
 	"acpi_video1", /* finally fallback to the generic acpi drivers */
 	"acpi_video0",
+	"intel_backlight",
 	NULL,
 };
 /*
@@ -359,7 +376,6 @@ intel_crtc_apply(xf86CrtcPtr crtc)
 			       crtc->gamma_blue, crtc->gamma_size);
 #endif
 
-
 	x = crtc->x;
 	y = crtc->y;
 	fb_id = mode->fb_id;
@@ -375,10 +391,24 @@ intel_crtc_apply(xf86CrtcPtr crtc)
 		xf86DrvMsg(crtc->scrn->scrnIndex, X_ERROR,
 			   "failed to set mode: %s\n", strerror(-ret));
 		ret = FALSE;
-	} else
+	} else {
 		ret = TRUE;
 
-	intel_set_gem_max_sizes(scrn);
+		/* Force DPMS to On for all outputs, which the kernel will have done
+		 * with the mode set. Also, restore the backlight level
+		 */
+		for (i = 0; i < xf86_config->num_output; i++) {
+		    xf86OutputPtr output = xf86_config->output[i];
+		    struct intel_output *intel_output;
+
+		    if (output->crtc != crtc)
+			continue;
+
+		    intel_output = output->driver_private;
+		    intel_output_dpms_backlight(output, intel_output->dpms_mode, DPMSModeOn);
+		    intel_output->dpms_mode = DPMSModeOn;
+		}
+	}
 
 	if (scrn->pScreen)
 		xf86_reload_cursors(scrn->pScreen);
@@ -423,6 +453,9 @@ intel_crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
 	crtc->x = x;
 	crtc->y = y;
 	crtc->rotation = rotation;
+
+	intel_glamor_flush(intel);
+	intel_batch_submit(crtc->scrn);
 
 	mode_to_kmode(crtc->scrn, &intel_crtc->kmode, mode);
 	ret = intel_crtc_apply(crtc);
@@ -650,6 +683,9 @@ intel_crtc_init(ScrnInfoPtr scrn, struct intel_mode *mode, int num)
 	intel_crtc->mode = mode;
 	crtc->driver_private = intel_crtc;
 
+	intel_crtc->pipe = drm_intel_get_pipe_from_crtc_id(intel->bufmgr,
+							   crtc_id(intel_crtc));
+
 	intel_crtc->cursor = drm_intel_bo_alloc(intel->bufmgr, "ARGB cursor",
 						HWCURSOR_SIZE_ARGB,
 						GTT_PAGE_SIZE);
@@ -662,7 +698,7 @@ static Bool
 is_panel(int type)
 {
 	return (type == DRM_MODE_CONNECTOR_LVDS ||
-	       	type == DRM_MODE_CONNECTOR_eDP);
+		type == DRM_MODE_CONNECTOR_eDP);
 }
 
 static xf86OutputStatus
@@ -909,13 +945,19 @@ intel_output_dpms(xf86OutputPtr output, int dpms)
 			continue;
 
 		if (!strcmp(props->name, "DPMS")) {
+			/* Make sure to reverse the order between on and off. */
+			if (dpms == DPMSModeOff)
+				intel_output_dpms_backlight(output,
+							    intel_output->dpms_mode,
+							    dpms);
 			drmModeConnectorSetProperty(mode->fd,
 						    intel_output->output_id,
 						    props->prop_id,
 						    dpms);
-			intel_output_dpms_backlight(output,
-						      intel_output->dpms_mode,
-						      dpms);
+			if (dpms != DPMSModeOff)
+				intel_output_dpms_backlight(output,
+							    intel_output->dpms_mode,
+							    dpms);
 			intel_output->dpms_mode = dpms;
 			drmModeFreeProperty(props);
 			return;
@@ -948,6 +990,33 @@ intel_property_ignore(drmModePropertyPtr prop)
 		return TRUE;
 
 	return FALSE;
+}
+
+static void
+intel_output_create_ranged_atom(xf86OutputPtr output, Atom *atom,
+				const char *name, INT32 min, INT32 max,
+				uint64_t value, Bool immutable)
+{
+	int err;
+	INT32 atom_range[2];
+
+	atom_range[0] = min;
+	atom_range[1] = max;
+
+	*atom = MakeAtom(name, strlen(name), TRUE);
+
+	err = RRConfigureOutputProperty(output->randr_output, *atom, FALSE,
+					TRUE, immutable, 2, atom_range);
+	if (err != 0)
+		xf86DrvMsg(output->scrn->scrnIndex, X_ERROR,
+			   "RRConfigureOutputProperty error, %d\n", err);
+
+	err = RRChangeOutputProperty(output->randr_output, *atom, XA_INTEGER,
+				     32, PropModeReplace, 1, &value, FALSE,
+				     TRUE);
+	if (err != 0)
+		xf86DrvMsg(output->scrn->scrnIndex, X_ERROR,
+			   "RRChangeOutputProperty error, %d\n", err);
 }
 
 #define BACKLIGHT_NAME             "Backlight"
@@ -989,30 +1058,18 @@ intel_output_create_resources(xf86OutputPtr output)
 		drmModePropertyPtr drmmode_prop = p->mode_prop;
 
 		if (drmmode_prop->flags & DRM_MODE_PROP_RANGE) {
-			INT32 range[2];
-
 			p->num_atoms = 1;
 			p->atoms = calloc(p->num_atoms, sizeof(Atom));
 			if (!p->atoms)
 				continue;
 
-			p->atoms[0] = MakeAtom(drmmode_prop->name, strlen(drmmode_prop->name), TRUE);
-			range[0] = drmmode_prop->values[0];
-			range[1] = drmmode_prop->values[1];
-			err = RRConfigureOutputProperty(output->randr_output, p->atoms[0],
-							FALSE, TRUE,
-							drmmode_prop->flags & DRM_MODE_PROP_IMMUTABLE ? TRUE : FALSE,
-							2, range);
-			if (err != 0) {
-				xf86DrvMsg(output->scrn->scrnIndex, X_ERROR,
-					   "RRConfigureOutputProperty error, %d\n", err);
-			}
-			err = RRChangeOutputProperty(output->randr_output, p->atoms[0],
-						     XA_INTEGER, 32, PropModeReplace, 1, &p->value, FALSE, TRUE);
-			if (err != 0) {
-				xf86DrvMsg(output->scrn->scrnIndex, X_ERROR,
-					   "RRChangeOutputProperty error, %d\n", err);
-			}
+			intel_output_create_ranged_atom(output, &p->atoms[0],
+							drmmode_prop->name,
+							drmmode_prop->values[0],
+							drmmode_prop->values[1],
+							p->value,
+							drmmode_prop->flags & DRM_MODE_PROP_IMMUTABLE ? TRUE : FALSE);
+
 		} else if (drmmode_prop->flags & DRM_MODE_PROP_ENUM) {
 			p->num_atoms = drmmode_prop->count_enums + 1;
 			p->atoms = calloc(p->num_atoms, sizeof(Atom));
@@ -1048,50 +1105,21 @@ intel_output_create_resources(xf86OutputPtr output)
 	}
 
 	if (intel_output->backlight_iface) {
-		INT32 data, backlight_range[2];
-
 		/* Set up the backlight property, which takes effect
 		 * immediately and accepts values only within the
 		 * backlight_range.
 		 */
-		backlight_atom = MakeAtom(BACKLIGHT_NAME, sizeof(BACKLIGHT_NAME) - 1, TRUE);
-		backlight_deprecated_atom = MakeAtom(BACKLIGHT_DEPRECATED_NAME,
-						     sizeof(BACKLIGHT_DEPRECATED_NAME) - 1, TRUE);
-
-		backlight_range[0] = 0;
-		backlight_range[1] = intel_output->backlight_max;
-		err = RRConfigureOutputProperty(output->randr_output,
-					       	backlight_atom,
-						FALSE, TRUE, FALSE,
-					       	2, backlight_range);
-		if (err != 0) {
-			xf86DrvMsg(output->scrn->scrnIndex, X_ERROR,
-				   "RRConfigureOutputProperty error, %d\n", err);
-		}
-		err = RRConfigureOutputProperty(output->randr_output,
-					       	backlight_deprecated_atom,
-						FALSE, TRUE, FALSE,
-					       	2, backlight_range);
-		if (err != 0) {
-			xf86DrvMsg(output->scrn->scrnIndex, X_ERROR,
-				   "RRConfigureOutputProperty error, %d\n", err);
-		}
-		/* Set the current value of the backlight property */
-		data = intel_output->backlight_active_level;
-		err = RRChangeOutputProperty(output->randr_output, backlight_atom,
-					     XA_INTEGER, 32, PropModeReplace, 1, &data,
-					     FALSE, TRUE);
-		if (err != 0) {
-			xf86DrvMsg(output->scrn->scrnIndex, X_ERROR,
-				   "RRChangeOutputProperty error, %d\n", err);
-		}
-		err = RRChangeOutputProperty(output->randr_output, backlight_deprecated_atom,
-					     XA_INTEGER, 32, PropModeReplace, 1, &data,
-					     FALSE, TRUE);
-		if (err != 0) {
-			xf86DrvMsg(output->scrn->scrnIndex, X_ERROR,
-				   "RRChangeOutputProperty error, %d\n", err);
-		}
+		intel_output_create_ranged_atom(output, &backlight_atom,
+					BACKLIGHT_NAME, 0,
+					intel_output->backlight_max,
+					intel_output->backlight_active_level,
+					FALSE);
+		intel_output_create_ranged_atom(output,
+					&backlight_deprecated_atom,
+					BACKLIGHT_DEPRECATED_NAME, 0,
+					intel_output->backlight_max,
+					intel_output->backlight_active_level,
+					FALSE);
 	}
 }
 
@@ -1161,7 +1189,11 @@ intel_output_set_property(xf86OutputPtr output, Atom property,
 		}
 	}
 
-	return FALSE;
+	/* We didn't recognise this property, just report success in order
+	 * to allow the set to continue, otherwise we break setting of
+	 * common properties like EDID.
+	 */
+	return TRUE;
 }
 
 static Bool
@@ -1323,15 +1355,30 @@ intel_xf86crtc_resize(ScrnInfoPtr scrn, int width, int height)
 	int	    i, old_width, old_height, old_pitch;
 	unsigned long pitch;
 	uint32_t tiling;
+	ScreenPtr screen;
 
 	if (scrn->virtualX == width && scrn->virtualY == height)
 		return TRUE;
+
+	intel_glamor_flush(intel);
+	intel_batch_submit(scrn);
 
 	old_width = scrn->virtualX;
 	old_height = scrn->virtualY;
 	old_pitch = scrn->displayWidth;
 	old_fb_id = mode->fb_id;
 	old_front = intel->front_buffer;
+
+	if (intel->back_pixmap) {
+		screen = intel->back_pixmap->drawable.pScreen;
+		screen->DestroyPixmap(intel->back_pixmap);
+		intel->back_pixmap = NULL;
+	}
+
+	if (intel->back_buffer) {
+		drm_intel_bo_unreference(intel->back_buffer);
+		intel->back_buffer = NULL;
+	}
 
 	intel->front_buffer = intel_allocate_framebuffer(scrn,
 							 width, height,
@@ -1390,13 +1437,14 @@ fail:
 Bool
 intel_do_pageflip(intel_screen_private *intel,
 		  dri_bo *new_front,
-		  void *data)
+		  DRI2FrameEventPtr flip_info, int ref_crtc_hw_id)
 {
 	ScrnInfoPtr scrn = intel->scrn;
 	xf86CrtcConfigPtr config = XF86_CRTC_CONFIG_PTR(scrn);
 	struct intel_crtc *crtc = config->crtc[0]->driver_private;
 	struct intel_mode *mode = crtc->mode;
 	unsigned int pitch = scrn->displayWidth * intel->cpp;
+	struct intel_pageflip *flip;
 	int i, old_fb_id;
 
 	/*
@@ -1408,6 +1456,9 @@ intel_do_pageflip(intel_screen_private *intel,
 			 new_front->handle, &mode->fb_id))
 		goto error_out;
 
+	intel_glamor_flush(intel);
+	intel_batch_submit(scrn);
+
 	/*
 	 * Queue flips on all enabled CRTCs
 	 * Note that if/when we get per-CRTC buffers, we'll have to update this.
@@ -1417,18 +1468,39 @@ intel_do_pageflip(intel_screen_private *intel,
 	 * Also, flips queued on disabled or incorrectly configured displays
 	 * may never complete; this is a configuration error.
 	 */
+	mode->fe_frame = 0;
+	mode->fe_tv_sec = 0;
+	mode->fe_tv_usec = 0;
+
 	for (i = 0; i < config->num_crtc; i++) {
 		if (!config->crtc[i]->enabled)
 			continue;
 
-		mode->event_data = data;
+		mode->flip_info = flip_info;
 		mode->flip_count++;
+
+		crtc = config->crtc[i]->driver_private;
+
+		flip = calloc(1, sizeof(struct intel_pageflip));
+		if (flip == NULL) {
+			xf86DrvMsg(scrn->scrnIndex, X_WARNING,
+				   "flip queue: carrier alloc failed.\n");
+			goto error_undo;
+		}
+
+		/* Only the reference crtc will finally deliver its page flip
+		 * completion event. All other crtc's events will be discarded.
+		 */
+		flip->dispatch_me = (intel_crtc_to_pipe(crtc->crtc) == ref_crtc_hw_id);
+		flip->mode = mode;
+
 		if (drmModePageFlip(mode->fd,
-				    crtc_id(config->crtc[i]->driver_private),
+				    crtc_id(crtc),
 				    mode->fb_id,
-				    DRM_MODE_PAGE_FLIP_EVENT, mode)) {
+				    DRM_MODE_PAGE_FLIP_EVENT, flip)) {
 			xf86DrvMsg(scrn->scrnIndex, X_WARNING,
 				   "flip queue failed: %s\n", strerror(errno));
+			free(flip);
 			goto error_undo;
 		}
 	}
@@ -1452,28 +1524,41 @@ static const xf86CrtcConfigFuncsRec intel_xf86crtc_config_funcs = {
 
 static void
 intel_vblank_handler(int fd, unsigned int frame, unsigned int tv_sec,
-		       unsigned int tv_usec, void *event_data)
+		       unsigned int tv_usec, void *event)
 {
-	I830DRI2FrameEventHandler(frame, tv_sec, tv_usec, event_data);
+	I830DRI2FrameEventHandler(frame, tv_sec, tv_usec, event);
 }
 
 static void
 intel_page_flip_handler(int fd, unsigned int frame, unsigned int tv_sec,
 			  unsigned int tv_usec, void *event_data)
 {
-	struct intel_mode *mode = event_data;
+	struct intel_pageflip *flip = event_data;
+	struct intel_mode *mode = flip->mode;
 
+	/* Is this the event whose info shall be delivered to higher level? */
+	if (flip->dispatch_me) {
+		/* Yes: Cache msc, ust for later delivery. */
+		mode->fe_frame = frame;
+		mode->fe_tv_sec = tv_sec;
+		mode->fe_tv_usec = tv_usec;
+	}
+	free(flip);
 
+	/* Last crtc completed flip? */
 	mode->flip_count--;
 	if (mode->flip_count > 0)
 		return;
 
+	/* Release framebuffer */
 	drmModeRmFB(mode->fd, mode->old_fb_id);
 
-	if (mode->event_data == NULL)
+	if (mode->flip_info == NULL)
 		return;
 
-	I830DRI2FlipEventHandler(frame, tv_sec, tv_usec, mode->event_data);
+	/* Deliver cached msc, ust from reference crtc to flip event handler */
+	I830DRI2FlipEventHandler(mode->fe_frame, mode->fe_tv_sec,
+				 mode->fe_tv_usec, mode->flip_info);
 }
 
 static void
@@ -1534,7 +1619,7 @@ Bool intel_mode_pre_init(ScrnInfoPtr scrn, int fd, int cpp)
 	gp.value = &has_flipping;
 	(void)drmCommandWriteRead(intel->drmSubFD, DRM_I915_GETPARAM, &gp,
 				  sizeof(gp));
-	if (has_flipping) {
+	if (has_flipping && intel->swapbuffers_wait) {
 		xf86DrvMsg(scrn->scrnIndex, X_INFO,
 			   "Kernel page flipping support detected, enabling\n");
 		intel->use_pageflipping = TRUE;
@@ -1602,16 +1687,15 @@ intel_mode_fini(intel_screen_private *intel)
 	intel->modes = NULL;
 }
 
-int
-intel_get_pipe_from_crtc_id(drm_intel_bufmgr *bufmgr, xf86CrtcPtr crtc)
-{
-	return drm_intel_get_pipe_from_crtc_id(bufmgr,
-					      	crtc_id(crtc->driver_private));
-}
-
 /* for the mode overlay */
 int
 intel_crtc_id(xf86CrtcPtr crtc)
 {
 	return crtc_id(crtc->driver_private);
+}
+
+int intel_crtc_to_pipe(xf86CrtcPtr crtc)
+{
+	struct intel_crtc *intel_crtc = crtc->driver_private;
+	return intel_crtc->pipe;
 }

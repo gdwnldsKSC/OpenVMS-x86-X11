@@ -49,6 +49,9 @@
 #define SYNAPTICS_PROP_TAP_DURATIONS "Synaptics Tap Durations"
 
 /* 8 bit (BOOL) */
+#define SYNAPTICS_PROP_CLICKPAD "Synaptics ClickPad"
+
+/* 8 bit (BOOL) */
 #define SYNAPTICS_PROP_TAP_FAST "Synaptics Tap FastTap"
 
 /* 32 bit */
@@ -133,7 +136,7 @@
 /* FLOAT, 2 values, speed, friction */
 #define SYNAPTICS_PROP_COASTING_SPEED "Synaptics Coasting Speed"
 
-/* 32 bit, 2 values, min, max */
+/* CARD32, 2 values, min, max */
 #define SYNAPTICS_PROP_PRESSURE_MOTION "Synaptics Pressure Motion"
 
 /* FLOAT, 2 values, min, max */
@@ -145,8 +148,8 @@
 /* 8 bit (BOOL), 1 value, tap-and-drag */
 #define SYNAPTICS_PROP_GESTURES "Synaptics Gestures"
 
-/* 8 bit (BOOL), 5 values (read-only), has_left, has_middle, has_right,
- * has_double, has_triple */
+/* 8 bit (BOOL), 7 values (read-only), has_left, has_middle, has_right,
+ * has_double, has_triple, has_pressure, has_width */
 #define SYNAPTICS_PROP_CAPABILITIES "Synaptics Capabilities"
 
 /* 32 bit unsigned, 2 values, vertical, horizontal in units/millimeter */
@@ -155,4 +158,10 @@
 /* 32 bit, 4 values, left, right, top, bottom */
 #define SYNAPTICS_PROP_AREA "Synaptics Area"
 
-#endif /* _SYNAPTICS_PROPERTIES_H_ */
+/* 32 bit, 4 values, left, right, top, buttom */
+#define SYNAPTICS_PROP_SOFTBUTTON_AREAS "Synaptics Soft Button Areas"
+
+/* 32 Bit Integer, 2 values, horizontal hysteresis, vertical hysteresis */
+#define SYNAPTICS_PROP_NOISE_CANCELLATION "Synaptics Noise Cancellation"
+
+#endif                          /* _SYNAPTICS_PROPERTIES_H_ */

@@ -33,6 +33,7 @@
 #include "xf86_OSproc.h"
 #include "xf86xv.h"
 #include "fourcc.h"
+#include "gcstruct.h"
 
 #include "intel.h"
 #include "intel_video.h"
@@ -69,7 +70,8 @@ I915DisplayVideoTextured(ScrnInfoPtr scrn,
 		ScreenPtr screen = pixmap->drawable.pScreen;
 
 		target = screen->CreatePixmap(screen,
-					      drw_w, drw_h,
+					      dstRegion->extents.x2 - dxo,
+					      dstRegion->extents.y2 - dyo,
 					      pixmap->drawable.depth,
 					      CREATE_PIXMAP_USAGE_SCRATCH);
 

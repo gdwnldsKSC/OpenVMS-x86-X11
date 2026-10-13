@@ -71,7 +71,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "i810.h"
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
 #include "dri.h"
 #endif
 
@@ -132,7 +132,7 @@ int I810_DEBUG = (0
       );
 #endif
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
 static int i810_pitches[] = {
    512,
    1024,
@@ -234,7 +234,6 @@ I810DoDDC(ScrnInfoPtr pScrn, int index)
 static Bool
 I810PreInit(ScrnInfoPtr pScrn, int flags)
 {
-   vgaHWPtr hwp;
    I810Ptr pI810;
    ClockRangePtr clockRanges;
    int i;
@@ -270,8 +269,6 @@ I810PreInit(ScrnInfoPtr pScrn, int flags)
    /* Allocate a vgaHWRec */
    if (!vgaHWGetHWRec(pScrn))
       return FALSE;
-   hwp = VGAHWPTR(pScrn);
-   pI810->ioBase = hwp->PIOOffset;
 
    pI810->PciInfo = xf86GetPciInfoForEntity(pI810->pEnt->index);
 
@@ -355,7 +352,7 @@ I810PreInit(ScrnInfoPtr pScrn, int flags)
       }
    }
    
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    pI810->directRenderingDisabled =
      !xf86ReturnOptValBool(pI810->Options, OPTION_DRI, TRUE);
 
@@ -377,9 +374,6 @@ I810PreInit(ScrnInfoPtr pScrn, int flags)
     * because it is controlled by options [no]vbe and [no]ddc
     */
    I810DoDDC(pScrn, pI810->pEnt->index);
-
-   /* We have to use PIO to probe, because we haven't mapped yet */
-   I810SetPIOAccess(pI810);
 
    intel_detect_chipset(pScrn, pI810->PciInfo, &chipset);
 
@@ -557,7 +551,7 @@ I810PreInit(ScrnInfoPtr pScrn, int flags)
 
    i = xf86ValidateModes(pScrn, pScrn->monitor->Modes,
 			 pScrn->display->modes, clockRanges,
-#ifndef XF86DRI
+#ifndef HAVE_DRI1
 			 0, 320, 1600, 64 * pScrn->bitsPerPixel,
 #else
 			 i810_pitches, 0, 0, 64 * pScrn->bitsPerPixel,
@@ -613,7 +607,7 @@ I810PreInit(ScrnInfoPtr pScrn, int flags)
    pI810->allowPageFlip=FALSE;
    enable = xf86ReturnOptValBool(pI810->Options, OPTION_PAGEFLIP, FALSE);   
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    if (!pI810->directRenderingDisabled) {
      pI810->allowPageFlip = enable;
      if (pI810->allowPageFlip == TRUE)
@@ -651,15 +645,13 @@ I810PreInit(ScrnInfoPtr pScrn, int flags)
       pI810->numSurfaces = 0;
    }
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    /* Load the dri module if requested. */
    if (xf86ReturnOptValBool(pI810->Options, OPTION_DRI, FALSE)) {
       xf86LoadSubModule(pScrn, "dri");
    }
 #endif
 
-   /*  We won't be using the VGA access after the probe */
-   I810SetMMIOAccess(pI810);
    return TRUE;
 }
 
@@ -796,7 +788,7 @@ DoSave(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, I810RegPtr i810Reg,
     * into the fields of the vgaI810Rec structure goes here.
     */
    i810Reg->IOControl = hwp->readCrtc(hwp, IO_CTNL);
-   i810Reg->AddressMapping = pI810->readControl(pI810, GRX, ADDRESS_MAPPING);
+   i810Reg->AddressMapping = hwp->readGr(hwp, ADDRESS_MAPPING);
    i810Reg->BitBLTControl = INREG8(BITBLT_CNTL);
    i810Reg->VideoClk2_M = INREG16(VCLK2_VCO_M);
    i810Reg->VideoClk2_N = INREG16(VCLK2_VCO_N);
@@ -991,10 +983,10 @@ DoRestore(ScrnInfoPtr pScrn, vgaRegPtr vgaReg, I810RegPtr i810Reg,
    temp |= i810Reg->InterlaceControl;
    hwp->writeCrtc(hwp, INTERLACE_CNTL, temp);
 
-   temp = pI810->readControl(pI810, GRX, ADDRESS_MAPPING);
+   temp = hwp->readGr(hwp, ADDRESS_MAPPING);
    temp &= 0xE0;			/* Save reserved bits 7:5 */
    temp |= i810Reg->AddressMapping;
-   pI810->writeControl(pI810, GRX, ADDRESS_MAPPING, temp);
+   hwp->writeGr(hwp, ADDRESS_MAPPING, temp);
 
    /* Setting the OVRACT Register for video overlay */
    {
@@ -1359,7 +1351,7 @@ I810ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
    if (!I810SetMode(pScrn, mode))
       return FALSE;
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    if (pI810->directRenderingEnabled) {
       DRILock(screenInfo.screens[pScrn->scrnIndex], 0);
       pI810->LockHeld = 1;
@@ -1368,7 +1360,7 @@ I810ModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 
    DoRestore(pScrn, &hwp->ModeReg, &pI810->ModeReg, FALSE);
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    if (pI810->directRenderingEnabled) {
       DRIUnlock(screenInfo.screens[pScrn->scrnIndex]);
       pI810->LockHeld = 0;
@@ -1618,7 +1610,7 @@ I810ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     * memory.  Wonder if this is going to be a problem...
     */
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    /*
     * Setup DRI after visuals have been established, but before fbScreenInit
     * is called.   fbScreenInit will eventually call into the drivers
@@ -1684,7 +1676,7 @@ I810ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
    xf86SetBlackWhitePixels(pScreen);
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    if (pI810->LpRing->mem.Start == 0 && pI810->directRenderingEnabled) {
       pI810->directRenderingEnabled = FALSE;
       I810DRICloseScreen(pScreen);
@@ -1761,7 +1753,7 @@ I810ScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
    I810InitVideo(pScreen);
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    if (pI810->directRenderingEnabled) {
       /* Now that mi, fb, drm and others have done their thing,
        * complete the DRI setup.
@@ -1811,7 +1803,7 @@ I810SwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
  * If lockups on mode switch are still seen revisit this code. (EE)
  */
 
-# ifdef XF86DRI
+# ifdef HAVE_DRI1
    if (pI810->directRenderingEnabled) {
       if (I810_DEBUG & DEBUG_VERBOSE_DRI)
 	 ErrorF("calling dri lock\n");
@@ -1826,7 +1818,7 @@ I810SwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
    }
    I810Restore(pScrn);
 
-# ifdef XF86DRI
+# ifdef HAVE_DRI1
    if (pI810->directRenderingEnabled) {
        if (!I810DRILeave(pScrn))
 	   return FALSE;
@@ -1900,7 +1892,7 @@ I810EnterVT(int scrnIndex, int flags)
 {
    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    I810Ptr pI810 = I810PTR(pScrn);
 #endif
 
@@ -1910,7 +1902,7 @@ I810EnterVT(int scrnIndex, int flags)
    if (!I810BindGARTMemory(pScrn)) {
       return FALSE;
    }
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    if (!I810DRIEnter(pScrn)) {
       return FALSE;
    }
@@ -1938,7 +1930,7 @@ I810LeaveVT(int scrnIndex, int flags)
    if (I810_DEBUG & DEBUG_VERBOSE_DRI)
       ErrorF("\n\n\nLeave VT\n");
 
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    if (pI810->directRenderingEnabled) {
       if (I810_DEBUG & DEBUG_VERBOSE_DRI)
 	 ErrorF("calling dri lock\n");
@@ -1956,7 +1948,7 @@ I810LeaveVT(int scrnIndex, int flags)
 
    if (!I810UnbindGARTMemory(pScrn))
       return;
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    if (!I810DRILeave(pScrn))
       return;
 #endif
@@ -1981,7 +1973,7 @@ I810CloseScreen(int scrnIndex, ScreenPtr pScreen)
       I810Restore(pScrn);
       vgaHWLock(hwp);
    }
-#ifdef XF86DRI
+#ifdef HAVE_DRI1
    if (pI810->directRenderingEnabled) {
       I810DRICloseScreen(pScreen);
       pI810->directRenderingEnabled = FALSE;
@@ -2067,6 +2059,7 @@ I810DisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
    I810Ptr pI810;
    unsigned char SEQ01 = 0;
    int DPMSSyncSelect = 0;
+   vgaHWPtr hwp;
 
    pI810 = I810PTR(pScrn);
    switch (PowerManagementMode) {
@@ -2092,9 +2085,11 @@ I810DisplayPowerManagementSet(ScrnInfoPtr pScrn, int PowerManagementMode,
       break;
    }
 
+   hwp = VGAHWPTR(pScrn);
+
    /* Turn the screen on/off */
-   SEQ01 |= pI810->readControl(pI810, SRX, 0x01) & ~0x20;
-   pI810->writeControl(pI810, SRX, 0x01, SEQ01);
+   SEQ01 |= hwp->readSeq(hwp, 0x01) & ~0x20;
+   hwp->writeSeq(hwp, 0x01, SEQ01);
 
    /* Set the DPMS mode */
    OUTREG8(DPMS_SYNC_SELECT, DPMSSyncSelect);

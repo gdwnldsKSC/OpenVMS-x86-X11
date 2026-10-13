@@ -23,7 +23,7 @@
 # Initialize Autoconf
 AC_PREREQ([2.60])
 AC_INIT([xf86-video-mga],
-        [1.4.13],
+        [1.5.0],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         [xf86-video-mga])
 AC_CONFIG_SRCDIR([Makefile.am])
@@ -100,8 +100,8 @@ AC_MSG_RESULT([$DRI])
 AM_CONDITIONAL(DRI, test "x$DRI" = xyes)
 if test "x$DRI" = xyes; then
         PKG_CHECK_MODULES(DRI, [libdrm >= 2.0 xf86driproto])
-        AC_DEFINE(XF86DRI,1,[Enable DRI driver support])
-        AC_DEFINE(XF86DRI_DEVEL,1,[Enable developmental DRI driver support])
+        AC_DEFINE(MGADRI,1,[Enable DRI driver support])
+        AC_DEFINE(MGADRI_DEVEL,1,[Enable developmental DRI driver support])
 fi
 
 save_CFLAGS="$CFLAGS"

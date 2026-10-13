@@ -51,43 +51,25 @@
 #include "dmxinputinit.h"
 #include "exevents.h"
 
-/** Close the input device.  This is not required by the XINPUT model
- * that DMX uses. */
-void CloseInputDevice (DeviceIntPtr d, ClientPtr client)
-{
-}
-
-/** This is not required by the XINPUT model that DMX uses. */
-void AddOtherInputDevices(void)
-{
-}
-
-/** Open an input device.  This is not required by the XINPUT model that
- * DMX uses. */
-void OpenInputDevice (DeviceIntPtr dev, ClientPtr client, int *status)
-{
-}
-
 /** Set device mode to \a mode.  This is not implemented. */
-int SetDeviceMode(ClientPtr client, DeviceIntPtr dev, int mode)
+int
+SetDeviceMode(ClientPtr client, DeviceIntPtr dev, int mode)
 {
     return BadMatch;
 }
 
 /** Set device valuators.  This is not implemented. */
-int SetDeviceValuators (ClientPtr client,
-                        DeviceIntPtr dev,
-                        int *valuators,
-                        int first_valuator,
-                        int num_valuators)
+int
+SetDeviceValuators(ClientPtr client,
+                   DeviceIntPtr dev,
+                   int *valuators, int first_valuator, int num_valuators)
 {
     return BadMatch;
 }
 
 /** Change device control.  This is not implemented. */
-int ChangeDeviceControl(ClientPtr client,
-                        DeviceIntPtr dev,
-                        xDeviceCtl *control)
+int
+ChangeDeviceControl(ClientPtr client, DeviceIntPtr dev, xDeviceCtl * control)
 {
     return BadMatch;
 }

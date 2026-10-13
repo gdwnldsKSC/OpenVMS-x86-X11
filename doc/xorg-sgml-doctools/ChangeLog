@@ -1,3 +1,339 @@
+commit db5ba2206922fd238da096f93053891e706abc92
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Jun 4 21:43:27 2012 -0700
+
+    xorg-sgml-doctools 1.11 (X11R7.7)
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 8f413801f0f5ef4b79a6e9df8f7898dece8e932d
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Jun 4 21:41:44 2012 -0700
+
+    Set defs.ent values for X11R7.7 final release
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 5ce0f55f275142063d0b3cd7d2de90610beb576f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Apr 14 10:20:49 2012 -0700
+
+    1.10.99.901 (1.11 RC1) snapshot for X11R7.7 RC1 docs
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3fb2214b33409a78632ec72b1e4459d0a38a8ef7
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Mar 31 19:33:34 2012 -0700
+
+    Set defs.ent values for X11R7.7 RC1
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 0929d29671be0a4a6d321826e6f89dcace413e00
+Author: Matt Dew <marcoz@osource.org>
+Date:   Sat Dec 31 14:37:07 2011 -0700
+
+    ToC on separate page in pdfs.
+    
+    In the PDFs and postscript files docs,  the Table of Contents should be on its own page if the
+    doctype='article'. This matches the behavior with doctype='book' documents.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit c247d759c70d6c2287478703633a718f1bab7326
+Author: Matt Dew <marcoz@osource.org>
+Date:   Sat Dec 31 14:11:47 2011 -0700
+
+    ToC on separate page in pdfs.
+
+commit 14c51709c440954bebc9a43c19275e5777af105b
+Author: Gaetan Nadon <nadon@memsize.(none)>
+Date:   Fri Dec 30 20:49:29 2011 -0500
+
+    Add libXt entry in masterdb.xml
+    
+    This enables olink documents cross-referencing.
+    
+    Signed-off-by: Gaetan Nadon <nadon@memsize.(none)>
+
+commit f79f3f5c7eb592211a7646d57e011594b60515cc
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Sep 18 11:11:30 2011 -0400
+
+    CSS style: support styling for multi licensed docs
+    
+    For documentation having multiple licenses, the copyright and legalnotice
+    elements sequence cannot instantiated multiple times.
+    The copyright notice and license text are therefore coded inside a legalnotice
+    element. The role attribute on the paragraph is used to allow styling of the
+    copyright notice text which should not be italicized.
+    Also restore the font size to the default "medium" size.
+    
+    Markup example:
+    <para role="multiLicensing">Copyright © 1994 X Consortium</para>
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2ce8b9381538e48b57e5ab7e11dad412fd9b8429
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Sep 7 09:46:51 2011 -0400
+
+    Version bump: 1.10
+    
+    The masterdbs for olink have changed.
+    Currently only bigreqproto has olinks to libX11.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit fc347e2cd78c2a95b85a961eb110206b6f126b08
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Sep 8 13:42:47 2011 -0400
+
+    Embed CSS styles inside the HTML HEAD element
+    
+    Rather than referring to the external xorg.css stylesheet, embed the content
+    of the file in the html output produced. This is accomplished by adding
+    an xsl:template to the customization layer. The content of xorg.css must not
+    be encoded due to the '<' character.
+    
+    This makes the whole html docs tree much more relocatable.
+    In addition, it eliminates xorg.css as a runtime file which makes
+    xorg-sgml-doctools a build time only package.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 9d312bd9b62b8dc1b13ba427aafee99440df6a4b
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Sep 6 21:01:46 2011 -0400
+
+    CSS: authors and affiliation spacing
+    
+    The objective is to have more spacing between each author so their affiliation
+    is visually grouped with its author. The previous method was not reliable as
+    it was making an assumption about the preceeding element.
+    
+    The new method of reducing the bottom margin for the author should be more
+    reliable.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 93f58fd482c58f669e37df1e415cfde06324b548
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Sep 5 15:35:55 2011 -0400
+
+    masterdb: add olink support for chunked html
+    
+    For olinks to chunked html, the masterdb cannot contain the baseuri
+    attribute. The xsl parameter olink.base.uri needs to be used in makefiles
+    for non chunked html while the chunked html does not use it.
+    
+    The txt and ps documents cannot be an end point of olinks, so no target
+    dbs will be generated for those formats, hence no masterdb needed either.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2d3a9c663c99958de27827668fd63608b25433de
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Aug 19 20:43:22 2011 -0400
+
+    Version bump: 1.9
+    
+    Mainly for the new xorg-chunk.xsl
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit cddda1bc9758c612dbfb6188e75e0c06135bd735
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jul 27 10:33:00 2011 -0400
+
+    Review documents cascading style sheet
+    
+    There is no drastic changes in style, it will go unnoticed
+    for the most part. Many inconsistencies in titles and headings
+    were fixed in both books and articles.
+    
+    The large libX11 specs was used a reference. The border above
+    each and every section was removed, keeping only level 2 headings.
+    It alleviates the sense of "being lost". An additional step might be
+    the section numbering.
+    
+    The body background and foreground colors are no longer set, which
+    will not interfere with the user own styling. This should fix #37535.
+    
+    The figure-float was removed as it was specific for one figure and
+    did not yield nice results. There is virtually no room for
+    improvements with what docbook has to offer.
+    
+    All xorg docs were reviewed to ensure nothing got badly broken.
+    A few changes in the doc source was made in libX11 and similar
+    changes need to be done in the remaining xorg docs. They only affect
+    minor spacing issues.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit c31f1709205a62a3c91a9012c2ac7e3b3d98884a
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jul 27 18:16:27 2011 -0400
+
+    Add support for generating chunked xhtml for DocBooks
+    
+    Some large documents will benefit from this feature.
+    A different docbook xsl file must be imported.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit c1beb2dbf5e0cf27fe1c7d5b7d8ee97b5a9a990b
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Jul 17 11:37:39 2011 -0400
+
+    Update masterdb for libX11/i18n/compose/libX11-keys.xml
+    
+    This document can be referred to using olink.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 9a6e8c5ec72cf4ed41935cb1311ea48b8de9d6f8
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Jun 11 18:02:16 2011 -0400
+
+    Version bump: 1.8
+    
+    For olinks to be resolved, updated protos, libs and xserver are required.
+    These will require XORG_CHECK_SGML_DOCTOOLS(1.8)
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 1c4537d44ca85d9f6c0c102983a1732d734858ee
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Jun 5 14:01:20 2011 -0400
+
+    Masterdb: read the target dbs from the usual doc directory
+    
+    This is a coordinated change with the packages building DocBook/XML.
+    The target dbs are now installed alongside the generated documents.
+    Currently they are installed in $prefix/sgml/X11/dbs alongside masterdb which
+    has the potential of installing outside the package prefix and cause
+    distcheck to fail when user does not have write permission in this package.
+    
+    The master db xi:include statement is changed. It uses a fully qualified
+    path but could also have used a relative path although it is difficult to
+    ensure it would work reliably. The generated html/pdf link are still relative.
+    
+    The README elaborates on requirements which previously existed but were not
+    introduced by this patch.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit f9a896a91c43c8c61b8b452cc81f7bc9f77b91c2
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Jun 6 13:18:35 2011 -0400
+
+    Masterdb: remove the libXi porting document target db
+    
+    There is no such document.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 682cf3a145dbfea040ccae6e333627f6f48b49f8
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Apr 9 11:24:57 2011 -0400
+
+    masterdb: match libX11 installation directory structure change
+    
+    i18n/framework
+    i18n/localedb
+    i18n/trans
+    libX11
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit db2672910d75780b0c3bd9d1b85707f61c74f6f1
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Mar 23 17:45:07 2011 -0400
+
+    Version bump: 1.7
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 93238ddbeabef3b131cae48d3f35e9f541ec545b
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Mar 2 09:06:04 2011 -0500
+
+    DocBook/XML: add support for docbook external references
+    
+    Documents external references
+    -----------------------------
+    A new feature with version 1.7 is references to documents in other
+    packages. For example a protocol specifications may refer to another
+    one or to a library implementing it.
+    
+    This feature works with PDF, HTML, PS (and epub?) generated documents
+    and will generate links to the other versions of the same type, i.e. html
+    docs will link to other html docs,  and pdf docs will link to other pdf
+    docs.
+    
+    New: generating target databases
+    --------------------------------
+    All documents will generate a target db, analogous to a symbol table
+    which will be consulted by other documents to find linking information.
+    This is accomplished with xsltproc.
+    
+    New: consulting target databases
+    --------------------------------
+    While documents are being converted from xml to html/pdf/ps,
+    they will consult the target dbs of each document they which to refer to.
+    This is accomplished with xmlto.
+    
+    New: master database
+    --------------------
+    A hand written database has been created which provides an association
+    between the target dbs and the document themselves. It also reflects
+    the hierarchical structure of the documents relative to the installation dir.
+    
+    New: xorg-xhtml.xsl and xorg-fo.xsl
+    -----------------------------------
+    A number of motivations are behind the new (and split) versions of xorg.xsl.
+    This module must remain backward compatible to build previous versions
+    of documentation. It was originally designed a while ago for sgml.
+    Given that all documents makefile had to change, it seemed a good opportunity
+    to break from the past. Among the differences:
+    
+    The location of xorg.css is no longer set in the stylesheet.
+    The chunked html is no longer supported.
+    The html and fo parameters are kept separate.
+    Additional parameters for external references.
+    Now allows different values for html/fo xsl for the same parameter
+    should that be required.
+    The xorg-xhtml.xsl imports html/docbook.xsl
+    The xorg-fo.xsl imports fo/docbook.xsl
+    
+    Co-authored-by: Matt Dew <marcoz@osource.org>
+    
+    Acked-by: Dan Nicholson <dbn.lists@gmail.com>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 3d6307d418c694b103e8589c1911c053928ae033
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Feb 1 09:23:33 2011 -0500
+
+    config: comment, minor upgrade, quote and layout configure.ac
+    
+    Group statements per section as per Autoconf standard layout
+    Quote statements where appropriate.
+    Autoconf recommends not using dnl instead of # for comments
+    
+    Use AC_CONFIG_FILES to replace the deprecated AC_OUTPUT with parameters.
+    Add AC_CONFIG_SRCDIR([Makefile.am]) where missing
+    Update minimum version of util-macros to at least 1.8.
+    
+    No functional configuration changes
+    
+    This helps automated maintenance and release activities.
+    Details can be found in http://wiki.x.org/wiki/NewModuleGuidelines
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
 commit 70a4707cd1114e6caa99f2b7787bc949f34cae3a
 Author: Alan Coopersmith <alan.coopersmith@oracle.com>
 Date:   Sat Dec 18 20:52:53 2010 -0800

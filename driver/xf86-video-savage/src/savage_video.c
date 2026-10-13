@@ -247,10 +247,12 @@ typedef struct {
    void         *video_planarmem;		/* opaque memory management information structure */
    CARD32       video_planarbuf; 		/* offset in video memory of planar YV12 buffer */
    
+#ifdef SAVAGEDRI
    Bool         tried_agp;			/* TRUE if AGP allocation has been tried */
    CARD32	agpBase;			/* Physical address of aperture base */
    CARD32	agpBufferOffset;		/* Offset of buffer in AGP memory, or 0 if unavailable */
    drmAddress   agpBufferMap;			/* Mapping of AGP buffer in process memory, or NULL */
+#endif
 
 } SavagePortPrivRec, *SavagePortPrivPtr;
 
@@ -382,7 +384,7 @@ void SavageInitVideo(ScreenPtr pScreen)
             adaptors = &newAdaptor;
         } else {
             newAdaptors =  /* need to free this someplace */
-        	xalloc((num_adaptors + 1) * sizeof(XF86VideoAdaptorPtr*));
+        	malloc((num_adaptors + 1) * sizeof(XF86VideoAdaptorPtr*));
             if(newAdaptors) {
         	memcpy(newAdaptors, adaptors, num_adaptors * 
         				sizeof(XF86VideoAdaptorPtr));
@@ -397,7 +399,7 @@ void SavageInitVideo(ScreenPtr pScreen)
         xf86XVScreenInit(pScreen, adaptors, num_adaptors);
 
     if(newAdaptors)
-	xfree(newAdaptors);
+	free(newAdaptors);
 
     if( newAdaptor )
     {
@@ -882,7 +884,7 @@ SavageSetupImageVideo(ScreenPtr pScreen)
 
     xf86ErrorFVerb(XVTRACE,"SavageSetupImageVideo\n");
 
-    if(!(adapt = xcalloc(1, sizeof(XF86VideoAdaptorRec) +
+    if(!(adapt = calloc(1, sizeof(XF86VideoAdaptorRec) +
 			    sizeof(SavagePortPrivRec) +
 			    sizeof(DevUnion))))
 	return NULL;
@@ -1036,7 +1038,6 @@ SavageStopVideo(ScrnInfoPtr pScrn, pointer data, Bool shutdown)
 {
     SavagePortPrivPtr pPriv = (SavagePortPrivPtr)data;
     SavagePtr psav = SAVPTR(pScrn);
-    ScreenPtr pScreen = screenInfo.screens[pScrn->scrnIndex];
 
     xf86ErrorFVerb(XVTRACE,"SavageStopVideo\n");
 
@@ -1046,6 +1047,7 @@ SavageStopVideo(ScrnInfoPtr pScrn, pointer data, Bool shutdown)
       /*SavageClipVWindow(pScrn);*/
  	SavageStreamsOff( pScrn );
 
+#ifdef SAVAGEDRI
 	if (pPriv->agpBufferMap != NULL) {
 	    SAVAGEDRIServerPrivatePtr pSAVAGEDRIServer = psav->DRIServerInfo;
 
@@ -1057,6 +1059,8 @@ SavageStopVideo(ScrnInfoPtr pScrn, pointer data, Bool shutdown)
 	    pPriv->agpBufferMap = NULL;
 	    pPriv->agpBufferOffset = 0;
 	}
+	pPriv->tried_agp = FALSE;
+#endif
 
         if (pPriv->video_memory != NULL) {
 	    SavageFreeMemory(pScrn, pPriv->video_memory);
@@ -1067,7 +1071,6 @@ SavageStopVideo(ScrnInfoPtr pScrn, pointer data, Bool shutdown)
 	    pPriv->video_planarmem = NULL;
         }
 	pPriv->videoStatus = 0;
-	pPriv->tried_agp = FALSE;
     } else {
 	if(pPriv->videoStatus & CLIENT_VIDEO_ON) {
 	    pPriv->videoStatus |= OFF_TIMER;
@@ -1210,7 +1213,6 @@ SavageCopyPlanarDataBCI(
     unsigned long offsetV = offsetY +  srcPitch * h;
     unsigned long offsetU = offsetV +  srcPitch2 * (h>>1);
     unsigned long dstOffset  = (unsigned long)dst - (unsigned long)psav->FBBase;
-    int i;
     unsigned char memType;
     
     BCI_GET_PTR;
@@ -1501,14 +1503,17 @@ SavageDisplayVideoOld(
       }
 
     if (S3_MOBILE_TWISTER_SERIES(psav->Chipset)
-        && psav->FPExpansion) {
-        drw_w = (((float)(drw_w * psav->XExp1)/(float)psav->XExp2)+1);
-        drw_h = (float)(drw_h * psav->YExp1)/(float)psav->YExp2+1;
-        dstBox->x1 = (float)(dstBox->x1 * psav->XExp1)/(float)psav->XExp2;
-        dstBox->y1 = (float)(dstBox->y1 * psav->YExp1)/(float)psav->YExp2;
-
-        dstBox->x1 += psav->displayXoffset;
-        dstBox->y1 += psav->displayYoffset;
+	&& psav->FPExpansion) {
+	drw_w = (drw_w * psav->XExp1) / psav->XExp2 + 1;
+	drw_h = (drw_h * psav->YExp1) / psav->YExp2 + 1;
+	dstBox->x1 = (dstBox->x1 * psav->XExp1) / psav->XExp2;
+	dstBox->y1 = (dstBox->y1 * psav->YExp1) / psav->YExp2;
+	dstBox->x2 = (dstBox->x2 * psav->XExp1) / psav->XExp2;
+	dstBox->y2 = (dstBox->y2 * psav->YExp1) / psav->YExp2;
+	dstBox->x1 += psav->displayXoffset;
+	dstBox->y1 += psav->displayYoffset;
+	dstBox->x2 += psav->displayXoffset;
+	dstBox->y2 += psav->displayYoffset;
     }
 
     /*
@@ -1662,12 +1667,16 @@ SavageDisplayVideoNew(
 	    !psav->CrtOnly &&
 	    !psav->TvOn) 
     {
-	drw_w = (drw_w * psav->XExp1)/psav->XExp2 + 1;
-	drw_h = (drw_h * psav->YExp1)/psav->YExp2 + 1;
-	dstBox->x1 = (dstBox->x1 * psav->XExp1)/psav->XExp2;
-	dstBox->y1 = (dstBox->y1 * psav->YExp1)/psav->YExp2;
+	drw_w = (drw_w * psav->XExp1) / psav->XExp2 + 1;
+	drw_h = (drw_h * psav->YExp1) / psav->YExp2 + 1;
+	dstBox->x1 = (dstBox->x1 * psav->XExp1) / psav->XExp2;
+	dstBox->y1 = (dstBox->y1 * psav->YExp1) / psav->YExp2;
+	dstBox->x2 = (dstBox->x2 * psav->XExp1) / psav->XExp2;
+	dstBox->y2 = (dstBox->y2 * psav->YExp1) / psav->YExp2;
 	dstBox->x1 += psav->displayXoffset;
 	dstBox->y1 += psav->displayYoffset;
+	dstBox->x2 += psav->displayXoffset;
+	dstBox->y2 += psav->displayYoffset;
     }
 
 	if (psav->IsSecondary) {
@@ -1969,8 +1978,8 @@ SavagePutImage(
 
     /* Check whether AGP buffers can be allocated. If not, fall back to ordinary
        upload to framebuffer (slower) */
+#ifdef SAVAGEDRI
     if (!pPriv->tried_agp && !psav->IsPCI && psav->drmFD > 0 && psav->DRIServerInfo != NULL) {
-        int ret;
 	SAVAGEDRIServerPrivatePtr pSAVAGEDRIServer = psav->DRIServerInfo;
         
 	pPriv->tried_agp = TRUE;
@@ -1998,13 +2007,14 @@ SavagePutImage(
 	    /* This situation is expected if AGPforXv is disabled, otherwise report. */
 	    if (pSAVAGEDRIServer->agpXVideo.size > 0) {
 		xf86DrvMsg( pScreen->myNum, X_ERROR,
-		    "[agp] XVideo: not enough space in buffer (got %ld bytes, required %ld bytes).\n", 
-	    	    pSAVAGEDRIServer->agpXVideo.size, max(new_size, planarFrameSize));
+		    "[agp] XVideo: not enough space in buffer (got %ld bytes, required %d bytes).\n", 
+	    	    (long int)pSAVAGEDRIServer->agpXVideo.size, max(new_size, planarFrameSize));
 	    }
 	    pPriv->agpBufferMap = NULL;
 	    pPriv->agpBufferOffset = 0;
 	}
     }
+#endif /* SAVAGEDRI */
 
 
     /* Buffer for final packed frame */
@@ -2050,6 +2060,7 @@ SavagePutImage(
 	offsetV += tmp;
 	nlines = ((((y2 + 0xffff) >> 16) + 1) & ~1) - top;
         if (S3_SAVAGE4_SERIES(psav->Chipset) && psav->BCIforXv && (npixels & 0xF) == 0 && pPriv->video_planarbuf != 0) {
+#ifdef SAVAGEDRI
             if (pPriv->agpBufferMap != NULL) {
 		/* Using copy to AGP memory */
 		SavageCopyPlanarDataBCI(
@@ -2061,7 +2072,9 @@ SavagePutImage(
 		    pPriv->agpBufferMap,
 		    pPriv->agpBase + pPriv->agpBufferOffset,
 		    srcPitch, srcPitch2, dstPitch, nlines, npixels, TRUE);
-            } else {            
+            } else
+#endif /* SAVAGEDRI */
+            {
 		/* Using ordinary copy to framebuffer */
 		SavageCopyPlanarDataBCI(
 		    pScrn,
@@ -2199,18 +2212,18 @@ SavageAllocateSurface(
     surface->width = w;
     surface->height = h;
 
-    if(!(surface->pitches = xalloc(sizeof(int)))) {
+    if(!(surface->pitches = malloc(sizeof(int)))) {
 	SavageFreeMemory(pScrn, surface_memory);
 	return BadAlloc;
     }
-    if(!(surface->offsets = xalloc(sizeof(int)))) {
-	xfree(surface->pitches);
+    if(!(surface->offsets = malloc(sizeof(int)))) {
+	free(surface->pitches);
 	SavageFreeMemory(pScrn, surface_memory);
 	return BadAlloc;
     }
-    if(!(pPriv = xalloc(sizeof(OffscreenPrivRec)))) {
-	xfree(surface->pitches);
-	xfree(surface->offsets);
+    if(!(pPriv = malloc(sizeof(OffscreenPrivRec)))) {
+	free(surface->pitches);
+	free(surface->offsets);
 	SavageFreeMemory(pScrn, surface_memory);
 	return BadAlloc;
     }
@@ -2255,9 +2268,9 @@ SavageFreeSurface(
     if(pPriv->isOn)
 	SavageStopSurface(surface);
     SavageFreeMemory(pScrn, pPriv->surface_memory);
-    xfree(surface->pitches);
-    xfree(surface->offsets);
-    xfree(surface->devPrivate.ptr);
+    free(surface->pitches);
+    free(surface->offsets);
+    free(surface->devPrivate.ptr);
 
     return Success;
 }
@@ -2326,7 +2339,7 @@ SavageDisplaySurface(
 	     surface->width, surface->height, surface->pitches[0],
 	     x1, y1, x2, y2, &dstBox, src_w, src_h, drw_w, drw_h);
 
-    xf86XVFillKeyHelper(pScrn->pScreen, portPriv->colorKey, clipBoxes);
+    xf86XVFillKeyHelper(pScreen, portPriv->colorKey, clipBoxes);
 
     pPriv->isOn = TRUE;
 #if 0
@@ -2350,7 +2363,7 @@ SavageInitOffscreenImages(ScreenPtr pScreen)
 
     /* need to free this someplace */
     if (!psav->offscreenImages) {
-	if(!(offscreenImages = xalloc(sizeof(XF86OffscreenImageRec))))
+	if(!(offscreenImages = malloc(sizeof(XF86OffscreenImageRec))))
 	    return;
 	psav->offscreenImages = offscreenImages;
     } else {

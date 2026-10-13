@@ -1,3 +1,75 @@
+commit 1edaf53856983391b05d3a488acc0b6cc257a401
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Mar 22 21:54:00 2012 -0700
+
+    xcursorgen 1.0.5
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 5610c2cca68228c1ce8fa5006021e7859e632cf5
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Feb 14 19:53:55 2012 -0800
+
+    Fix -image argument parsing to not shadow "i" variable
+    
+    Also avoids starting at the wrong argument if -image is not the first
+    flag passed to xcompmgr (though that's not really supported in the
+    current syntax).
+    
+    Fixes gcc warning:
+    xcursorgen.c: In function `main':
+    xcursorgen.c:394: warning: declaration of 'i' shadows a previous local
+    xcursorgen.c:377: warning: shadowed declaration is here
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 471a4ef735fae193305b29484975e0201fc00a4f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Sep 28 20:40:40 2011 -0700
+
+    Add const attributes to fix gcc -Wwrite-strings warnings
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit dc2354cdd2e7ad247dd2a3e456c90a40095b98ee
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Sep 28 20:36:25 2011 -0700
+
+    Remove old XFree86 CVS id
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 4acc916ea1aa2a651f600f135ebd743add4e486b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Sep 28 20:36:04 2011 -0700
+
+    Strip trailing whitespace
+    
+    Performed with: find * -type f | xargs perl -i -p -e 's{[ \t]+$}{}'
+    git diff -w & git diff -b show no diffs from this change
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 512e7a8e82c42add636fbf13d13df854290a35f7
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jan 19 10:06:56 2011 -0500
+
+    config: move man pages into their own directory
+    
+    Use services provided by XORG_MANPAGE_SECTIONS.
+    Use standard Makefile for man pages.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 667b2259b41152f4146b28677d464b7d47ef6bac
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jan 12 16:28:02 2011 -0500
+
+    config: replace deprecated AM_CONFIG_HEADER with AC_CONFIG_HEADERS
+    
+    This silences an Autoconf warning
+
 commit bd5c027d923351ea8ef541a6d5092ba9e8661f6c
 Author: Alan Coopersmith <alan.coopersmith@oracle.com>
 Date:   Thu Sep 23 19:41:07 2010 -0700

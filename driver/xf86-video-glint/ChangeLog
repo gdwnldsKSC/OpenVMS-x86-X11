@@ -1,3 +1,188 @@
+commit c4796200c2d322a59ccf2eeb2df3be874507fd48
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Wed Feb 15 23:12:23 2012 -0500
+
+    xf86-video-glint 1.2.7
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit 288243a9301c38baae63ec66ba344f0a8245b2ee
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Wed Jan 25 13:07:23 2012 -0500
+
+    Remove uses of xf86PciInfo.h
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit 754a81fc5f91be4d35853953c1a803a421b0379d
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Mon Dec 19 16:27:31 2011 -0500
+
+    Fall back to shadowfb if XAA is unavailable
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit c539e59ba332fba669e025f8d0d680d2a2b1c9ff
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Sat Oct 29 17:12:58 2011 -0700
+
+    Disable PC98 code on newer servers.
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 0aaa00ac0d0304737e0a3fd79695537c6e3a07d4
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Tue Sep 6 15:19:36 2011 -0400
+
+    xf86-video-glint 1.2.6
+
+commit ca7c202da8d291eba9c68c149eb9530be1d66880
+Author: Mark Kettenis <mark.kettenis@xs4all.nl>
+Date:   Tue Mar 1 07:32:26 2011 +0000
+
+    Fix uploading YV12 data to texture buffer on BE machines
+    
+    On BE machines various hardware byteswapping options are used for the
+    framebuffer aperture.  Which option gets used depends on the depth of the
+    framebuffer.  Uploading YV12 data to the texture buffer is done through the
+    same aperture, but is always done in 32-bit wide units.  Therefore the code
+    that does the uploading needs to take into account the byteswapping done by
+    the hardware.  For 32bpp modes we can use the same code as on LE machines,
+    but 16bpp and 8bpp modes need their own versions.
+    
+    Signed-off-by: Mark Kettenis <kettenis@openbsd.org>
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit 97c9bdf9a396c5627c865d03cd0de91a7267a277
+Author: Jesse Adkins <jesserayadkins@gmail.com>
+Date:   Sat Dec 11 12:38:54 2010 +0000
+
+    Make pm2's xv driver collect options like all other drivers.
+    
+    The current method of argument collection is to collect options from different
+    ports of a VideoAdaptor record. Specifically, the ports had to be named
+    'Input' for input options, and 'Output' for output options.
+    
+    This resulted in three groups of options, requiring people to know what
+    VideoAdaptor does, both of which were not documented in the man page. If you
+    forgot to create a VideoAdaptor port, then the xv driver would just not work.
+    
+    This patch makes the xv driver collect options from the screen, like every
+    single other driver. Input and Output prefixes are used for options where the
+    input and output ports have the same args (FramesPerSec, for example).
+    Documentation added for the change.
+    
+    This is a step toward getting rid of VideoAdaptor, since only glint uses it
+    (and is probably the only one to have used it).
+    
+    v2: Complain about Xv driver failing to load only if the user wanted Xv.
+    Don't use pGlint->Options, since glint is still initializing.
+    
+    Signed-off-by: Jesse Adkins <jesserayadkins@gmail.com>
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit d722b45848b899c5f4b7794871ef99207b8e7961
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Sat Dec 4 13:14:31 2010 -0500
+
+    unifdef XFree86LOADER
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit 1b193cba02b6ca3e27bb72facaffcdd5fe57ba09
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Sat Dec 4 13:11:00 2010 -0500
+
+    Add &component=Driver/glint to Bugzilla link
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit c34858ad8a7e6929ef5a432ff141d0ebb28c6874
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Sat Dec 4 12:58:54 2010 -0500
+
+    Don't check for fontsproto.
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit d343834fac2f413ab0f89841eb71f155682f2ac2
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Sat Dec 4 12:58:23 2010 -0500
+
+    Add back mistakenly removed check for videoproto
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit f5609d296b46304495293bb6b3f48f806f3e16bf
+Author: Jesse Adkins <jesserayadkins@gmail.com>
+Date:   Tue Sep 28 13:29:51 2010 -0700
+
+    Purge cvs tags.
+    
+    Signed-off-by: Jesse Adkins <jesserayadkins@gmail.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 0f943ec35255af41c8042a300cf73ecca35c9c55
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Thu Sep 23 00:18:29 2010 -0400
+
+    Include xf86dgaproto.h, not xf86dgastr.h
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit b4acf1fb50f1560d177e8e7912ef27ddca80d209
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Thu Sep 23 00:05:09 2010 -0400
+
+    Delete CFB
+    
+    ajax killed cfb in April 2008 (0dab6fa3582b70ccd0f01459902415c28dbc81ff).
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit 7669aeb2a170c246089043bb4d203c25cbfe5e95
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Thu Sep 23 00:01:16 2010 -0400
+
+    Delete DRI/DRM
+    
+    The DRM kernel component has been gone since at least 2.6.13, and Mesa dropped
+    the gamma driver in February 2010 (79aeafd3ca3680c28f6d47a21a501334844f4475).
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit ff602c76781e27f191f4836b4f7eff5df5f7e54c
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Wed Sep 22 23:50:04 2010 -0400
+
+    Don't check for unneeded proto headers.
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit 705ffc1776df2240f337dd896223b371c12bc19f
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Wed Sep 15 23:23:56 2010 -0400
+
+    Fix timing errors, as per documentation
+    
+    pm2_dac.c:
+    -	VsEnd and VsStart should have 1 subtracted, say the docs. This also
+    	matches with the PM3 and PM4 docs, and is what the pm2fb Linux
+    	kernel driver does.
+    -	Move VsTotal subtract-1 to instantiation, since it doesn't need to
+    	be shifted before the subtraction, unlike horizontal timings
+    	(HTotal, for instance).
+    -	Remove subtract-1 from HsStart, as the docs don't say this is
+    	correct. This also matches with the PM3 and PM4 docs, and is what
+    	the pm2fb Linux kernel driver does.
+    
+    pm3_dac.c:
+    -	Subtract 1 from HTotal after the Shiftbpp, as the docs say. This
+    	error has existed since xf86-video-glint was imported into git and
+    	has been propagated to the pm3fb Linux kernel driver.
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
 commit 7050a255115b2c5a70083d2d4ad775548ef701f7
 Author: Matt Turner <mattst88@gmail.com>
 Date:   Sat Sep 11 16:22:23 2010 -0400

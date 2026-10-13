@@ -111,7 +111,11 @@ int R600_solid_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 				 FORMAT_COMP_ALL(SQ_FORMAT_COMP_SIGNED),
 				 SRF_MODE_ALL(SRF_MODE_ZERO_CLAMP_MINUS_ONE));
     shader[i++] = VTX_DWORD2(OFFSET(0),
-			     ENDIAN_SWAP(ENDIAN_NONE),
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+			     ENDIAN_SWAP(SQ_ENDIAN_8IN32),
+#else
+			     ENDIAN_SWAP(SQ_ENDIAN_NONE),
+#endif
 			     CONST_BUF_NO_STRIDE(0),
 			     MEGA_FETCH(1));
     shader[i++] = VTX_DWORD_PAD;
@@ -157,11 +161,11 @@ int R600_solid_ps(RADEONChipFamily ChipSet, uint32_t* shader)
 					       BARRIER(1));
 
     /* 2 */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(256),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 0),
 			     SRC0_REL(ABSOLUTE),
 			     SRC0_ELEM(ELEM_X),
 			     SRC0_NEG(0),
-			     SRC1_SEL(0),
+			     SRC1_SEL(ALU_SRC_GPR_BASE + 0),
 			     SRC1_REL(ABSOLUTE),
 			     SRC1_ELEM(ELEM_X),
 			     SRC1_NEG(0),
@@ -183,11 +187,11 @@ int R600_solid_ps(RADEONChipFamily ChipSet, uint32_t* shader)
 				 DST_ELEM(ELEM_X),
 				 CLAMP(1));
     /* 3 */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(256),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 0),
 			     SRC0_REL(ABSOLUTE),
 			     SRC0_ELEM(ELEM_Y),
 			     SRC0_NEG(0),
-			     SRC1_SEL(0),
+			     SRC1_SEL(ALU_SRC_GPR_BASE + 0),
 			     SRC1_REL(ABSOLUTE),
 			     SRC1_ELEM(ELEM_Y),
 			     SRC1_NEG(0),
@@ -209,11 +213,11 @@ int R600_solid_ps(RADEONChipFamily ChipSet, uint32_t* shader)
 				 DST_ELEM(ELEM_Y),
 				 CLAMP(1));
     /* 4 */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(256),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 0),
 			     SRC0_REL(ABSOLUTE),
 			     SRC0_ELEM(ELEM_Z),
 			     SRC0_NEG(0),
-			     SRC1_SEL(0),
+			     SRC1_SEL(ALU_SRC_GPR_BASE + 0),
 			     SRC1_REL(ABSOLUTE),
 			     SRC1_ELEM(ELEM_Z),
 			     SRC1_NEG(0),
@@ -235,11 +239,11 @@ int R600_solid_ps(RADEONChipFamily ChipSet, uint32_t* shader)
 				 DST_ELEM(ELEM_Z),
 				 CLAMP(1));
     /* 5 */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(256),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 0),
 			     SRC0_REL(ABSOLUTE),
 			     SRC0_ELEM(ELEM_W),
 			     SRC0_NEG(0),
-			     SRC1_SEL(0),
+			     SRC1_SEL(ALU_SRC_GPR_BASE + 0),
 			     SRC1_REL(ABSOLUTE),
 			     SRC1_ELEM(ELEM_W),
 			     SRC1_NEG(0),
@@ -341,7 +345,11 @@ int R600_copy_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 				 FORMAT_COMP_ALL(SQ_FORMAT_COMP_SIGNED),
 				 SRF_MODE_ALL(SRF_MODE_ZERO_CLAMP_MINUS_ONE));
     shader[i++] = VTX_DWORD2(OFFSET(0),
-			     ENDIAN_SWAP(ENDIAN_NONE),
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+			     ENDIAN_SWAP(SQ_ENDIAN_8IN32),
+#else
+			     ENDIAN_SWAP(SQ_ENDIAN_NONE),
+#endif
 			     CONST_BUF_NO_STRIDE(0),
 			     MEGA_FETCH(1));
     shader[i++] = VTX_DWORD_PAD;
@@ -366,7 +374,11 @@ int R600_copy_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 				 FORMAT_COMP_ALL(SQ_FORMAT_COMP_SIGNED),
 				 SRF_MODE_ALL(SRF_MODE_ZERO_CLAMP_MINUS_ONE));
     shader[i++] = VTX_DWORD2(OFFSET(8),
-			     ENDIAN_SWAP(ENDIAN_NONE),
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+                             ENDIAN_SWAP(SQ_ENDIAN_8IN32),
+#else
+                             ENDIAN_SWAP(SQ_ENDIAN_NONE),
+#endif
 			     CONST_BUF_NO_STRIDE(0),
 			     MEGA_FETCH(0));
     shader[i++] = VTX_DWORD_PAD;
@@ -522,11 +534,11 @@ int R600_xv_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 
 
     /* 4 texX / w */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(0),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_X),
                              SRC0_NEG(0),
-                             SRC1_SEL(256),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_X),
                              SRC1_NEG(0),
@@ -549,11 +561,11 @@ int R600_xv_vs(RADEONChipFamily ChipSet, uint32_t* shader)
                                  CLAMP(0));
 
     /* 5 texY / h */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(0),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_Y),
                              SRC0_NEG(0),
-                             SRC1_SEL(256),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_Y),
                              SRC1_NEG(0),
@@ -596,7 +608,11 @@ int R600_xv_vs(RADEONChipFamily ChipSet, uint32_t* shader)
                                  FORMAT_COMP_ALL(SQ_FORMAT_COMP_SIGNED),
                                  SRF_MODE_ALL(SRF_MODE_ZERO_CLAMP_MINUS_ONE));
     shader[i++] = VTX_DWORD2(OFFSET(0),
-                             ENDIAN_SWAP(ENDIAN_NONE),
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+                             ENDIAN_SWAP(SQ_ENDIAN_8IN32),
+#else
+                             ENDIAN_SWAP(SQ_ENDIAN_NONE),
+#endif
                              CONST_BUF_NO_STRIDE(0),
                              MEGA_FETCH(1));
     shader[i++] = VTX_DWORD_PAD;
@@ -621,7 +637,11 @@ int R600_xv_vs(RADEONChipFamily ChipSet, uint32_t* shader)
                                  FORMAT_COMP_ALL(SQ_FORMAT_COMP_SIGNED),
                                  SRF_MODE_ALL(SRF_MODE_ZERO_CLAMP_MINUS_ONE));
     shader[i++] = VTX_DWORD2(OFFSET(8),
-                             ENDIAN_SWAP(ENDIAN_NONE),
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+                             ENDIAN_SWAP(SQ_ENDIAN_8IN32),
+#else
+                             ENDIAN_SWAP(SQ_ENDIAN_NONE),
+#endif
                              CONST_BUF_NO_STRIDE(0),
                              MEGA_FETCH(0));
     shader[i++] = VTX_DWORD_PAD;
@@ -690,18 +710,18 @@ int R600_xv_ps(RADEONChipFamily ChipSet, uint32_t* shader)
                                                BARRIER(1));
     /* 4,5,6,7 */
     /* r2.x = MAD(c0.w, r1.x, c0.x) */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(256),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 0),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_W),
                              SRC0_NEG(0),
-                             SRC1_SEL(1),
+                             SRC1_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_X),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
                              LAST(0));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(256),
+    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(ALU_SRC_CFILE_BASE + 0),
                                  SRC2_REL(ABSOLUTE),
                                  SRC2_ELEM(ELEM_X),
                                  SRC2_NEG(0),
@@ -712,18 +732,18 @@ int R600_xv_ps(RADEONChipFamily ChipSet, uint32_t* shader)
                                  DST_ELEM(ELEM_X),
                                  CLAMP(0));
     /* r2.y = MAD(c0.w, r1.x, c0.y) */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(256),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 0),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_W),
                              SRC0_NEG(0),
-                             SRC1_SEL(1),
+                             SRC1_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_X),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
                              LAST(0));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(256),
+    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(ALU_SRC_CFILE_BASE + 0),
                                  SRC2_REL(ABSOLUTE),
                                  SRC2_ELEM(ELEM_Y),
                                  SRC2_NEG(0),
@@ -734,18 +754,18 @@ int R600_xv_ps(RADEONChipFamily ChipSet, uint32_t* shader)
                                  DST_ELEM(ELEM_Y),
                                  CLAMP(0));
     /* r2.z = MAD(c0.w, r1.x, c0.z) */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(256),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 0),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_W),
                              SRC0_NEG(0),
-                             SRC1_SEL(1),
+                             SRC1_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_X),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
                              LAST(0));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(256),
+    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(ALU_SRC_CFILE_BASE + 0),
                                  SRC2_REL(ABSOLUTE),
                                  SRC2_ELEM(ELEM_Z),
                                  SRC2_NEG(0),
@@ -780,11 +800,11 @@ int R600_xv_ps(RADEONChipFamily ChipSet, uint32_t* shader)
 
     /* 8,9,10,11 */
     /* r2.x = MAD(c1.x, r1.y, pv.x) */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(257),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 1),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_X),
                              SRC0_NEG(0),
-                             SRC1_SEL(1),
+                             SRC1_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_Y),
                              SRC1_NEG(0),
@@ -802,11 +822,11 @@ int R600_xv_ps(RADEONChipFamily ChipSet, uint32_t* shader)
                                  DST_ELEM(ELEM_X),
                                  CLAMP(0));
     /* r2.y = MAD(c1.y, r1.y, pv.y) */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(257),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 1),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_Y),
                              SRC0_NEG(0),
-                             SRC1_SEL(1),
+                             SRC1_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_Y),
                              SRC1_NEG(0),
@@ -824,11 +844,11 @@ int R600_xv_ps(RADEONChipFamily ChipSet, uint32_t* shader)
                                  DST_ELEM(ELEM_Y),
                                  CLAMP(0));
     /* r2.z = MAD(c1.z, r1.y, pv.z) */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(257),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 1),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_Z),
                              SRC0_NEG(0),
-                             SRC1_SEL(1),
+                             SRC1_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_Y),
                              SRC1_NEG(0),
@@ -869,11 +889,11 @@ int R600_xv_ps(RADEONChipFamily ChipSet, uint32_t* shader)
                                  CLAMP(0));
     /* 12,13,14,15 */
     /* r2.x = MAD(c2.x, r1.z, pv.x) */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(258),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 2),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_X),
                              SRC0_NEG(0),
-                             SRC1_SEL(1),
+                             SRC1_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_Z),
                              SRC1_NEG(0),
@@ -891,11 +911,11 @@ int R600_xv_ps(RADEONChipFamily ChipSet, uint32_t* shader)
                                  DST_ELEM(ELEM_X),
                                  CLAMP(1));
     /* r2.y = MAD(c2.y, r1.z, pv.y) */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(258),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 2),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_Y),
                              SRC0_NEG(0),
-                             SRC1_SEL(1),
+                             SRC1_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_Z),
                              SRC1_NEG(0),
@@ -913,11 +933,11 @@ int R600_xv_ps(RADEONChipFamily ChipSet, uint32_t* shader)
                                  DST_ELEM(ELEM_Y),
                                  CLAMP(1));
     /* r2.z = MAD(c2.z, r1.z, pv.z) */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(258),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_CFILE_BASE + 2),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_Z),
                              SRC0_NEG(0),
-                             SRC1_SEL(1),
+                             SRC1_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_Z),
                              SRC1_NEG(0),
@@ -1191,7 +1211,7 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
                             WHOLE_QUAD_MODE(0),
                             BARRIER(1));
     /* 3 - mask sub */
-    shader[i++] = CF_DWORD0(ADDR(32));
+    shader[i++] = CF_DWORD0(ADDR(44));
     shader[i++] = CF_DWORD1(POP_COUNT(0),
 			    CF_CONST(0),
 			    COND(SQ_CF_COND_ACTIVE),
@@ -1211,7 +1231,7 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
     shader[i++] = CF_ALU_DWORD1(KCACHE_MODE1(SQ_CF_KCACHE_NOP),
 				KCACHE_ADDR0(0),
 				KCACHE_ADDR1(0),
-				I_COUNT(12),
+				I_COUNT(20),
 				USES_WATERFALL(0),
 				CF_INST(SQ_CF_INST_ALU),
 				WHOLE_QUAD_MODE(0),
@@ -1284,7 +1304,7 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 			    WHOLE_QUAD_MODE(0),
 			    BARRIER(1));
     /* 9 - non-mask sub */
-    shader[i++] = CF_DWORD0(ADDR(38));
+    shader[i++] = CF_DWORD0(ADDR(50));
     shader[i++] = CF_DWORD1(POP_COUNT(0),
 			    CF_CONST(0),
 			    COND(SQ_CF_COND_ACTIVE),
@@ -1297,14 +1317,14 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 			    BARRIER(1));
 
     /* 10 - ALU */
-    shader[i++] = CF_ALU_DWORD0(ADDR(26),
+    shader[i++] = CF_ALU_DWORD0(ADDR(34),
 				KCACHE_BANK0(0),
 				KCACHE_BANK1(0),
 				KCACHE_MODE0(SQ_CF_KCACHE_NOP));
     shader[i++] = CF_ALU_DWORD1(KCACHE_MODE1(SQ_CF_KCACHE_NOP),
 				KCACHE_ADDR0(0),
 				KCACHE_ADDR1(0),
-				I_COUNT(6),
+				I_COUNT(10),
 				USES_WATERFALL(0),
 				CF_INST(SQ_CF_INST_ALU),
 				WHOLE_QUAD_MODE(0),
@@ -1360,390 +1380,444 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 			    BARRIER(1));
 
 
-    /* 14 srcX MAD - mask */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(256),
-                             SRC0_REL(ABSOLUTE),
-                             SRC0_ELEM(ELEM_Y),
-                             SRC0_NEG(0),
-                             SRC1_SEL(1),
-                             SRC1_REL(ABSOLUTE),
-                             SRC1_ELEM(ELEM_Y),
-                             SRC1_NEG(0),
-                             INDEX_MODE(SQ_INDEX_LOOP),
-                             PRED_SEL(SQ_PRED_SEL_OFF),
-                             LAST(1));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(256),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_Z),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
-                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(1),
-                                 DST_REL(ABSOLUTE),
-                                 DST_ELEM(ELEM_Z),
-                                 CLAMP(0));
-    /* 15 srcY MAD */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(257),
-                             SRC0_REL(ABSOLUTE),
-                             SRC0_ELEM(ELEM_Y),
-                             SRC0_NEG(0),
-                             SRC1_SEL(1),
-                             SRC1_REL(ABSOLUTE),
-                             SRC1_ELEM(ELEM_Y),
-                             SRC1_NEG(0),
-                             INDEX_MODE(SQ_INDEX_LOOP),
-                             PRED_SEL(SQ_PRED_SEL_OFF),
-                             LAST(1));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(257),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_Z),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
-                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(1),
-                                 DST_REL(ABSOLUTE),
-                                 DST_ELEM(ELEM_W),
-                                 CLAMP(0));
-
-    /* 16 srcX MAD */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(256),
+    /* 14 srcX.x DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_X),
                              SRC0_NEG(0),
-                             SRC1_SEL(1),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_X),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
                              LAST(0));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(1),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_Z),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(1),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
                                  BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(1),
+                                 DST_GPR(3),
                                  DST_REL(ABSOLUTE),
                                  DST_ELEM(ELEM_X),
                                  CLAMP(0));
-    /* 17 srcY MAD */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(257),
+
+    /* 15 srcX.y DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC0_REL(ABSOLUTE),
-                             SRC0_ELEM(ELEM_X),
+                             SRC0_ELEM(ELEM_Y),
                              SRC0_NEG(0),
-                             SRC1_SEL(1),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
                              SRC1_REL(ABSOLUTE),
-                             SRC1_ELEM(ELEM_X),
+                             SRC1_ELEM(ELEM_Y),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
-                             LAST(1));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(1),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_W),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
                                  BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(1),
+                                 DST_GPR(3),
                                  DST_REL(ABSOLUTE),
                                  DST_ELEM(ELEM_Y),
                                  CLAMP(0));
 
-    /* 18 maskX MAD */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(258),
+    /* 16 srcX.z DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC0_REL(ABSOLUTE),
-                             SRC0_ELEM(ELEM_Y),
+                             SRC0_ELEM(ELEM_Z),
                              SRC0_NEG(0),
-                             SRC1_SEL(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
                              SRC1_REL(ABSOLUTE),
-                             SRC1_ELEM(ELEM_Y),
+                             SRC1_ELEM(ELEM_Z),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
-                             LAST(1));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(258),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_Z),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
                                  BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(0),
+                                 DST_GPR(3),
                                  DST_REL(ABSOLUTE),
                                  DST_ELEM(ELEM_Z),
                                  CLAMP(0));
 
-    /* 19 maskY MAD */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(259),
+    /* 17 srcX.w DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC0_REL(ABSOLUTE),
-                             SRC0_ELEM(ELEM_Y),
+                             SRC0_ELEM(ELEM_W),
                              SRC0_NEG(0),
-                             SRC1_SEL(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
                              SRC1_REL(ABSOLUTE),
-                             SRC1_ELEM(ELEM_Y),
+                             SRC1_ELEM(ELEM_W),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
                              LAST(1));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(259),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_Z),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
                                  BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(0),
+                                 DST_GPR(3),
                                  DST_REL(ABSOLUTE),
                                  DST_ELEM(ELEM_W),
                                  CLAMP(0));
 
-    /* 20 srcX MAD */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(258),
+    /* 18 srcY.x DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_X),
                              SRC0_NEG(0),
-                             SRC1_SEL(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 1),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_X),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
                              LAST(0));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(0),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_Z),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
-                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(0),
-                                 DST_REL(ABSOLUTE),
-                                 DST_ELEM(ELEM_X),
-                                 CLAMP(0));
-    /* 21 srcY MAD */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(259),
-                             SRC0_REL(ABSOLUTE),
-                             SRC0_ELEM(ELEM_X),
-                             SRC0_NEG(0),
-                             SRC1_SEL(0),
-                             SRC1_REL(ABSOLUTE),
-                             SRC1_ELEM(ELEM_X),
-                             SRC1_NEG(0),
-                             INDEX_MODE(SQ_INDEX_LOOP),
-                             PRED_SEL(SQ_PRED_SEL_OFF),
-                             LAST(1));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(0),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_W),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
-                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(0),
-                                 DST_REL(ABSOLUTE),
-                                 DST_ELEM(ELEM_Y),
-                                 CLAMP(0));
-
-    /* 22 srcX / w */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(1),
-                             SRC0_REL(ABSOLUTE),
-                             SRC0_ELEM(ELEM_X),
-                             SRC0_NEG(0),
-                             SRC1_SEL(256),
-                             SRC1_REL(ABSOLUTE),
-                             SRC1_ELEM(ELEM_W),
-                             SRC1_NEG(0),
-                             INDEX_MODE(SQ_INDEX_AR_X),
-                             PRED_SEL(SQ_PRED_SEL_OFF),
-                             LAST(1));
     shader[i++] = ALU_DWORD1_OP2(ChipSet,
                                  SRC0_ABS(0),
                                  SRC1_ABS(0),
                                  UPDATE_EXECUTE_MASK(0),
                                  UPDATE_PRED(0),
-                                 WRITE_MASK(1),
+                                 WRITE_MASK(0),
                                  FOG_MERGE(0),
                                  OMOD(SQ_ALU_OMOD_OFF),
-                                 ALU_INST(SQ_OP2_INST_MUL),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
                                  BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(1),
+                                 DST_GPR(3),
                                  DST_REL(ABSOLUTE),
                                  DST_ELEM(ELEM_X),
                                  CLAMP(0));
 
-    /* 23 srcY / h */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(1),
+    /* 19 srcY.y DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_Y),
                              SRC0_NEG(0),
-                             SRC1_SEL(257),
-                             SRC1_REL(ABSOLUTE),
-                             SRC1_ELEM(ELEM_W),
-                             SRC1_NEG(0),
-                             INDEX_MODE(SQ_INDEX_AR_X),
-                             PRED_SEL(SQ_PRED_SEL_OFF),
-                             LAST(1));
-    shader[i++] = ALU_DWORD1_OP2(ChipSet,
-                                 SRC0_ABS(0),
-                                 SRC1_ABS(0),
-                                 UPDATE_EXECUTE_MASK(0),
-                                 UPDATE_PRED(0),
-                                 WRITE_MASK(1),
-                                 FOG_MERGE(0),
-                                 OMOD(SQ_ALU_OMOD_OFF),
-                                 ALU_INST(SQ_OP2_INST_MUL),
-                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(1),
-                                 DST_REL(ABSOLUTE),
-                                 DST_ELEM(ELEM_Y),
-                                 CLAMP(0));
-
-    /* 24 maskX / w */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(0),
-                             SRC0_REL(ABSOLUTE),
-                             SRC0_ELEM(ELEM_X),
-                             SRC0_NEG(0),
-                             SRC1_SEL(258),
-                             SRC1_REL(ABSOLUTE),
-                             SRC1_ELEM(ELEM_W),
-                             SRC1_NEG(0),
-                             INDEX_MODE(SQ_INDEX_AR_X),
-                             PRED_SEL(SQ_PRED_SEL_OFF),
-                             LAST(1));
-    shader[i++] = ALU_DWORD1_OP2(ChipSet,
-                                 SRC0_ABS(0),
-                                 SRC1_ABS(0),
-                                 UPDATE_EXECUTE_MASK(0),
-                                 UPDATE_PRED(0),
-                                 WRITE_MASK(1),
-                                 FOG_MERGE(0),
-                                 OMOD(SQ_ALU_OMOD_OFF),
-                                 ALU_INST(SQ_OP2_INST_MUL),
-                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(0),
-                                 DST_REL(ABSOLUTE),
-                                 DST_ELEM(ELEM_X),
-                                 CLAMP(0));
-
-    /* 25 maskY / h */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(0),
-                             SRC0_REL(ABSOLUTE),
-                             SRC0_ELEM(ELEM_Y),
-                             SRC0_NEG(0),
-                             SRC1_SEL(259),
-                             SRC1_REL(ABSOLUTE),
-                             SRC1_ELEM(ELEM_W),
-                             SRC1_NEG(0),
-                             INDEX_MODE(SQ_INDEX_AR_X),
-                             PRED_SEL(SQ_PRED_SEL_OFF),
-                             LAST(1));
-    shader[i++] = ALU_DWORD1_OP2(ChipSet,
-                                 SRC0_ABS(0),
-                                 SRC1_ABS(0),
-                                 UPDATE_EXECUTE_MASK(0),
-                                 UPDATE_PRED(0),
-                                 WRITE_MASK(1),
-                                 FOG_MERGE(0),
-                                 OMOD(SQ_ALU_OMOD_OFF),
-                                 ALU_INST(SQ_OP2_INST_MUL),
-                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(0),
-                                 DST_REL(ABSOLUTE),
-                                 DST_ELEM(ELEM_Y),
-                                 CLAMP(0));
-
-    /* 26 srcX MAD - non-mask */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(256),
-                             SRC0_REL(ABSOLUTE),
-                             SRC0_ELEM(ELEM_Y),
-                             SRC0_NEG(0),
-                             SRC1_SEL(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 1),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_Y),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
-                             LAST(1));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(256),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_Z),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(1),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
                                  BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(0),
+                                 DST_GPR(3),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_Y),
+                                 CLAMP(0));
+
+    /* 20 srcY.z DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_Z),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 1),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_Z),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(3),
                                  DST_REL(ABSOLUTE),
                                  DST_ELEM(ELEM_Z),
                                  CLAMP(0));
-    /* 27 srcY MAD */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(257),
+
+    /* 21 srcY.w DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
                              SRC0_REL(ABSOLUTE),
-                             SRC0_ELEM(ELEM_Y),
+                             SRC0_ELEM(ELEM_W),
                              SRC0_NEG(0),
-                             SRC1_SEL(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 1),
                              SRC1_REL(ABSOLUTE),
-                             SRC1_ELEM(ELEM_Y),
+                             SRC1_ELEM(ELEM_W),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
                              LAST(1));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(257),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_Z),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
                                  BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(0),
+                                 DST_GPR(3),
                                  DST_REL(ABSOLUTE),
                                  DST_ELEM(ELEM_W),
                                  CLAMP(0));
 
-    /* 28 srcX MAD */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(256),
+    /* 22 maskX.x DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_X),
                              SRC0_NEG(0),
-                             SRC1_SEL(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 2),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_X),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
                              LAST(0));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(0),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_Z),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(1),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
                                  BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(0),
+                                 DST_GPR(4),
                                  DST_REL(ABSOLUTE),
                                  DST_ELEM(ELEM_X),
                                  CLAMP(0));
-    /* 29 srcY MAD */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(257),
+
+    /* 23 maskX.y DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_Y),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 2),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_Y),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(4),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_Y),
+                                 CLAMP(0));
+
+    /* 24 maskX.z DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_Z),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 2),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_Z),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(4),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_Z),
+                                 CLAMP(0));
+
+    /* 25 maskX.w DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_W),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 2),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_W),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(1));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(4),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_W),
+                                 CLAMP(0));
+
+    /* 26 maskY.x DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_X),
                              SRC0_NEG(0),
-                             SRC1_SEL(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 3),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_X),
                              SRC1_NEG(0),
                              INDEX_MODE(SQ_INDEX_LOOP),
                              PRED_SEL(SQ_PRED_SEL_OFF),
-                             LAST(1));
-    shader[i++] = ALU_DWORD1_OP3(SRC2_SEL(0),
-                                 SRC2_REL(ABSOLUTE),
-                                 SRC2_ELEM(ELEM_W),
-                                 SRC2_NEG(0),
-                                 ALU_INST(SQ_OP3_INST_MULADD),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
                                  BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(0),
+                                 DST_GPR(4),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_X),
+                                 CLAMP(0));
+
+    /* 27 maskY.y DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_Y),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 3),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_Y),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(1),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(4),
                                  DST_REL(ABSOLUTE),
                                  DST_ELEM(ELEM_Y),
                                  CLAMP(0));
+
+    /* 28 maskY.z DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_Z),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 3),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_Z),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(4),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_Z),
+                                 CLAMP(0));
+
+    /* 29 maskY.w DOT4 - mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_W),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 3),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_W),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(1));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(4),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_W),
+                                 CLAMP(0));
+
     /* 30 srcX / w */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(0),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 3),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_X),
                              SRC0_NEG(0),
-                             SRC1_SEL(256),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_W),
                              SRC1_NEG(0),
@@ -1760,17 +1834,71 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
                                  OMOD(SQ_ALU_OMOD_OFF),
                                  ALU_INST(SQ_OP2_INST_MUL),
                                  BANK_SWIZZLE(SQ_ALU_VEC_012),
-                                 DST_GPR(0),
+                                 DST_GPR(1),
                                  DST_REL(ABSOLUTE),
                                  DST_ELEM(ELEM_X),
                                  CLAMP(0));
 
     /* 31 srcY / h */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(0),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 3),
                              SRC0_REL(ABSOLUTE),
                              SRC0_ELEM(ELEM_Y),
                              SRC0_NEG(0),
-                             SRC1_SEL(257),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 1),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_W),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_AR_X),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(1));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(1),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_MUL),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(1),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_Y),
+                                 CLAMP(0));
+
+    /* 32 maskX / w */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 4),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_X),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 2),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_W),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_AR_X),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(1));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(1),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_MUL),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(0),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_X),
+                                 CLAMP(0));
+
+    /* 33 maskY / h */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 4),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_Y),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 3),
                              SRC1_REL(ABSOLUTE),
                              SRC1_ELEM(ELEM_W),
                              SRC1_NEG(0),
@@ -1792,7 +1920,277 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
                                  DST_ELEM(ELEM_Y),
                                  CLAMP(0));
 
-    /* 32/33 - dst - mask */
+    /* 34 srcX.x DOT4 - non-mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_X),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_X),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(1),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(2),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_X),
+                                 CLAMP(0));
+
+    /* 35 srcX.y DOT4 - non-mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_Y),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_Y),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(2),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_Y),
+                                 CLAMP(0));
+
+    /* 36 srcX.z DOT4 - non-mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_Z),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_Z),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(2),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_Z),
+                                 CLAMP(0));
+
+    /* 37 srcX.w DOT4 - non-mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_W),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_W),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(1));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(2),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_W),
+                                 CLAMP(0));
+
+    /* 38 srcY.x DOT4 - non-mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_X),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 1),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_X),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(2),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_X),
+                                 CLAMP(0));
+
+    /* 39 srcY.y DOT4 - non-mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_Y),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 1),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_Y),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(1),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(2),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_Y),
+                                 CLAMP(0));
+
+    /* 40 srcY.z DOT4 - non-mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_Z),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 1),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_Z),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(0));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(2),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_Z),
+                                 CLAMP(0));
+
+    /* 41 srcY.w DOT4 - non-mask */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 0),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_W),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 1),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_W),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_LOOP),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(1));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(0),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_DOT4),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(2),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_W),
+                                 CLAMP(0));
+
+    /* 42 srcX / w */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 2),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_X),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 0),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_W),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_AR_X),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(1));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(1),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_MUL),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(0),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_X),
+                                 CLAMP(0));
+
+    /* 43 srcY / h */
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 2),
+                             SRC0_REL(ABSOLUTE),
+                             SRC0_ELEM(ELEM_Y),
+                             SRC0_NEG(0),
+                             SRC1_SEL(ALU_SRC_CFILE_BASE + 1),
+                             SRC1_REL(ABSOLUTE),
+                             SRC1_ELEM(ELEM_W),
+                             SRC1_NEG(0),
+                             INDEX_MODE(SQ_INDEX_AR_X),
+                             PRED_SEL(SQ_PRED_SEL_OFF),
+                             LAST(1));
+    shader[i++] = ALU_DWORD1_OP2(ChipSet,
+                                 SRC0_ABS(0),
+                                 SRC1_ABS(0),
+                                 UPDATE_EXECUTE_MASK(0),
+                                 UPDATE_PRED(0),
+                                 WRITE_MASK(1),
+                                 FOG_MERGE(0),
+                                 OMOD(SQ_ALU_OMOD_OFF),
+                                 ALU_INST(SQ_OP2_INST_MUL),
+                                 BANK_SWIZZLE(SQ_ALU_VEC_012),
+                                 DST_GPR(0),
+                                 DST_REL(ABSOLUTE),
+                                 DST_ELEM(ELEM_Y),
+                                 CLAMP(0));
+
+    /* 44/45 - dst - mask */
     shader[i++] = VTX_DWORD0(VTX_INST(SQ_VTX_INST_FETCH),
 			     FETCH_TYPE(SQ_VTX_FETCH_VERTEX_DATA),
 			     FETCH_WHOLE_QUAD(0),
@@ -1813,11 +2211,15 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 				 FORMAT_COMP_ALL(SQ_FORMAT_COMP_SIGNED),
 				 SRF_MODE_ALL(SRF_MODE_ZERO_CLAMP_MINUS_ONE));
     shader[i++] = VTX_DWORD2(OFFSET(0),
-			     ENDIAN_SWAP(ENDIAN_NONE),
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+                             ENDIAN_SWAP(SQ_ENDIAN_8IN32),
+#else
+                             ENDIAN_SWAP(SQ_ENDIAN_NONE),
+#endif
 			     CONST_BUF_NO_STRIDE(0),
 			     MEGA_FETCH(1));
     shader[i++] = VTX_DWORD_PAD;
-    /* 34/35 - src */
+    /* 46/47 - src */
     shader[i++] = VTX_DWORD0(VTX_INST(SQ_VTX_INST_FETCH),
 			     FETCH_TYPE(SQ_VTX_FETCH_VERTEX_DATA),
 			     FETCH_WHOLE_QUAD(0),
@@ -1838,11 +2240,15 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 				 FORMAT_COMP_ALL(SQ_FORMAT_COMP_SIGNED),
 				 SRF_MODE_ALL(SRF_MODE_ZERO_CLAMP_MINUS_ONE));
     shader[i++] = VTX_DWORD2(OFFSET(8),
-			     ENDIAN_SWAP(ENDIAN_NONE),
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+                             ENDIAN_SWAP(SQ_ENDIAN_8IN32),
+#else
+                             ENDIAN_SWAP(SQ_ENDIAN_NONE),
+#endif
 			     CONST_BUF_NO_STRIDE(0),
 			     MEGA_FETCH(0));
     shader[i++] = VTX_DWORD_PAD;
-    /* 36/37 - mask */
+    /* 48/49 - mask */
     shader[i++] = VTX_DWORD0(VTX_INST(SQ_VTX_INST_FETCH),
 			     FETCH_TYPE(SQ_VTX_FETCH_VERTEX_DATA),
 			     FETCH_WHOLE_QUAD(0),
@@ -1863,12 +2269,16 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 				 FORMAT_COMP_ALL(SQ_FORMAT_COMP_SIGNED),
 				 SRF_MODE_ALL(SRF_MODE_ZERO_CLAMP_MINUS_ONE));
     shader[i++] = VTX_DWORD2(OFFSET(16),
-			     ENDIAN_SWAP(ENDIAN_NONE),
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+                             ENDIAN_SWAP(SQ_ENDIAN_8IN32),
+#else
+                             ENDIAN_SWAP(SQ_ENDIAN_NONE),
+#endif
 			     CONST_BUF_NO_STRIDE(0),
 			     MEGA_FETCH(0));
     shader[i++] = VTX_DWORD_PAD;
 
-    /* 38/39 - dst - non-mask */
+    /* 50/51 - dst - non-mask */
     shader[i++] = VTX_DWORD0(VTX_INST(SQ_VTX_INST_FETCH),
 			     FETCH_TYPE(SQ_VTX_FETCH_VERTEX_DATA),
 			     FETCH_WHOLE_QUAD(0),
@@ -1889,11 +2299,15 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 				 FORMAT_COMP_ALL(SQ_FORMAT_COMP_SIGNED),
 				 SRF_MODE_ALL(SRF_MODE_ZERO_CLAMP_MINUS_ONE));
     shader[i++] = VTX_DWORD2(OFFSET(0),
-			     ENDIAN_SWAP(ENDIAN_NONE),
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+                             ENDIAN_SWAP(SQ_ENDIAN_8IN32),
+#else
+                             ENDIAN_SWAP(SQ_ENDIAN_NONE),
+#endif
 			     CONST_BUF_NO_STRIDE(0),
 			     MEGA_FETCH(1));
     shader[i++] = VTX_DWORD_PAD;
-    /* 40/41 - src */
+    /* 52/53 - src */
     shader[i++] = VTX_DWORD0(VTX_INST(SQ_VTX_INST_FETCH),
 			     FETCH_TYPE(SQ_VTX_FETCH_VERTEX_DATA),
 			     FETCH_WHOLE_QUAD(0),
@@ -1914,7 +2328,11 @@ int R600_comp_vs(RADEONChipFamily ChipSet, uint32_t* shader)
 				 FORMAT_COMP_ALL(SQ_FORMAT_COMP_SIGNED),
 				 SRF_MODE_ALL(SRF_MODE_ZERO_CLAMP_MINUS_ONE));
     shader[i++] = VTX_DWORD2(OFFSET(8),
-			     ENDIAN_SWAP(ENDIAN_NONE),
+#if X_BYTE_ORDER == X_BIG_ENDIAN
+                             ENDIAN_SWAP(SQ_ENDIAN_8IN32),
+#else
+                             ENDIAN_SWAP(SQ_ENDIAN_NONE),
+#endif
 			     CONST_BUF_NO_STRIDE(0),
 			     MEGA_FETCH(0));
     shader[i++] = VTX_DWORD_PAD;
@@ -2067,11 +2485,11 @@ int R600_comp_ps(RADEONChipFamily ChipSet, uint32_t* shader)
 
     /* 10 - alu 0 */
     /* MUL gpr[2].x gpr[1].x gpr[0].x */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(1),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
 			     SRC0_REL(ABSOLUTE),
 			     SRC0_ELEM(ELEM_X),
 			     SRC0_NEG(0),
-			     SRC1_SEL(0),
+			     SRC1_SEL(ALU_SRC_GPR_BASE + 0),
 			     SRC1_REL(ABSOLUTE),
 			     SRC1_ELEM(ELEM_X),
 			     SRC1_NEG(0),
@@ -2094,11 +2512,11 @@ int R600_comp_ps(RADEONChipFamily ChipSet, uint32_t* shader)
 				 CLAMP(1));
     /* 11 - alu 1 */
     /* MUL gpr[2].y gpr[1].y gpr[0].y */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(1),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
 			     SRC0_REL(ABSOLUTE),
 			     SRC0_ELEM(ELEM_Y),
 			     SRC0_NEG(0),
-			     SRC1_SEL(0),
+			     SRC1_SEL(ALU_SRC_GPR_BASE + 0),
 			     SRC1_REL(ABSOLUTE),
 			     SRC1_ELEM(ELEM_Y),
 			     SRC1_NEG(0),
@@ -2121,11 +2539,11 @@ int R600_comp_ps(RADEONChipFamily ChipSet, uint32_t* shader)
 				 CLAMP(1));
     /* 12 - alu 2 */
     /* MUL gpr[2].z gpr[1].z gpr[0].z */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(1),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
 			     SRC0_REL(ABSOLUTE),
 			     SRC0_ELEM(ELEM_Z),
 			     SRC0_NEG(0),
-			     SRC1_SEL(0),
+			     SRC1_SEL(ALU_SRC_GPR_BASE + 0),
 			     SRC1_REL(ABSOLUTE),
 			     SRC1_ELEM(ELEM_Z),
 			     SRC1_NEG(0),
@@ -2148,11 +2566,11 @@ int R600_comp_ps(RADEONChipFamily ChipSet, uint32_t* shader)
 				 CLAMP(1));
     /* 13 - alu 3 */
     /* MUL gpr[2].w gpr[1].w gpr[0].w */
-    shader[i++] = ALU_DWORD0(SRC0_SEL(1),
+    shader[i++] = ALU_DWORD0(SRC0_SEL(ALU_SRC_GPR_BASE + 1),
 			     SRC0_REL(ABSOLUTE),
 			     SRC0_ELEM(ELEM_W),
 			     SRC0_NEG(0),
-			     SRC1_SEL(0),
+			     SRC1_SEL(ALU_SRC_GPR_BASE + 0),
 			     SRC1_REL(ABSOLUTE),
 			     SRC1_ELEM(ELEM_W),
 			     SRC1_NEG(0),

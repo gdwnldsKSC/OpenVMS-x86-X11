@@ -120,6 +120,8 @@ static void
 radeon_bios_output_crtc(xf86OutputPtr output);
 static void
 radeon_bios_output_lock(xf86OutputPtr output, Bool lock);
+extern void
+atombios_pick_dig_encoder(xf86OutputPtr output);
 
 void RADEONPrintPortMap(ScrnInfoPtr pScrn)
 {
@@ -731,6 +733,8 @@ radeon_mode_prepare(xf86OutputPtr output)
     }
 
     radeon_bios_output_lock(output, TRUE);
+    if (IS_AVIVO_VARIANT)
+	atombios_pick_dig_encoder(output);
     radeon_dpms(output, DPMSModeOff);
     radeon_crtc_dpms(output->crtc, DPMSModeOff);
 
@@ -1618,10 +1622,25 @@ radeon_set_mode_for_property(xf86OutputPtr output)
 	xf86CrtcPtr crtc = output->crtc;
 
 	if (crtc->enabled) {
+#ifdef RANDR_14_INTERFACE
+	    xf86CrtcSetRec crtc_set_rec;
+
+	    crtc_set_rec.flags = (XF86CrtcSetMode |
+				  XF86CrtcSetOutput |
+				  XF86CrtcSetOrigin |
+				  XF86CrtcSetRotation);
+	    crtc_set_rec.mode = &crtc->desiredMode;
+	    crtc_set_rec.rotation = crtc->desiredRotation;
+	    crtc_set_rec.transform = NULL;
+	    crtc_set_rec.x = crtc->desiredX;
+	    crtc_set_rec.y = crtc->desiredY;
+	    if (!xf86CrtcSet(crtc, &crtc_set_rec)) {
+#else
 	    if (!xf86CrtcSetMode(crtc, &crtc->desiredMode, crtc->desiredRotation,
 				 crtc->desiredX, crtc->desiredY)) {
+#endif
 		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-			   "Failed to set mode after propery change!\n");
+			   "Failed to set mode after property change!\n");
 		return FALSE;
 	    }
 	}
@@ -1875,7 +1894,8 @@ RADEONI2CDoLock(xf86OutputPtr output, I2CBusPtr b, int lock_state)
 	}
 
 	/* set the pad in ddc mode */
-	if (IS_DCE3_VARIANT) {
+	if (IS_DCE3_VARIANT &&
+	    pRADEONI2CBus->hw_capable) {
 	    temp = INREG(pRADEONI2CBus->mask_clk_reg);
 	    temp &= ~(1 << 16);
 	    OUTREG(pRADEONI2CBus->mask_clk_reg, temp);
@@ -2982,9 +3002,9 @@ Bool RADEONSetupConnectors(ScrnInfoPtr pScrn)
 		info->BiosConnector[i].devices |= ATOM_DEVICE_CRT2_SUPPORT;
 		if (!radeon_add_encoder(pScrn,
 					radeon_get_encoder_id_from_supported_device(pScrn,
-										    ATOM_DEVICE_CRT1_SUPPORT,
+										    ATOM_DEVICE_CRT2_SUPPORT,
 										    2),
-					ATOM_DEVICE_CRT1_SUPPORT))
+					ATOM_DEVICE_CRT2_SUPPORT))
 		    return FALSE;
 		info->BiosConnector[i].load_detection = FALSE;
 		break;

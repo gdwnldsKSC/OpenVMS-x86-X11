@@ -26,29 +26,42 @@ SUBDIRS = xvmc render_program legacy
 # _ladir passes a dummy rpath to libtool so the thing will actually link
 # TODO: -nostdlib/-Bstatic/-lgcc platform magic, not installing the .a, etc.
 
-AM_CFLAGS = @CWARNFLAGS@ @XORG_CFLAGS@ @DRM_CFLAGS@ @DRI_CFLAGS@ \
-	@PCIACCESS_CFLAGS@ -I$(top_srcdir)/uxa -I$(top_srcdir)/src/render_program
+AM_CFLAGS = @CWARNFLAGS@ @XORG_CFLAGS@ @DRM_CFLAGS@ @PCIACCESS_CFLAGS@
 
 intel_drv_la_LTLIBRARIES = intel_drv.la
 intel_drv_la_LDFLAGS = -module -avoid-version
 intel_drv_ladir = @moduledir@/drivers
-intel_drv_la_LIBADD = -lm @DRM_LIBS@ -ldrm_intel ../uxa/libuxa.la legacy/liblegacy.la
-intel_drv_la_LIBADD += @PCIACCESS_LIBS@
+intel_drv_la_LIBADD = legacy/liblegacy.la @PCIACCESS_LIBS@
+
+if SNA
+SUBDIRS += sna
+intel_drv_la_LIBADD += sna/libsna.la
+endif
 
 NULL:=#
 
 intel_drv_la_SOURCES = \
+	intel_list.h \
+	intel_module.c \
+	$(NULL)
+
+if UXA
+AM_CFLAGS += @UDEV_CFLAGS@ @DRM_CFLAGS@ @DRMINTEL_CFLAGS@
+AM_CFLAGS += -I$(top_srcdir)/uxa -I$(top_srcdir)/src/render_program
+intel_drv_la_LIBADD += @UDEV_LIBS@ @DRMINTEL_LIBS@ @DRM_LIBS@ ../uxa/libuxa.la
+intel_drv_la_SOURCES += \
          brw_defines.h \
          brw_structs.h \
          common.h \
          intel.h \
-	 intel_module.c \
          intel_batchbuffer.c \
          intel_batchbuffer.h \
 	 intel_display.c \
          intel_driver.c \
          intel_driver.h \
+	 intel_glamor.h \
          intel_memory.c \
+	 intel_shadow.c \
 	 intel_uxa.c \
          intel_video.c \
          intel_video.h \
@@ -61,11 +74,20 @@ intel_drv_la_SOURCES = \
 	 i915_render.c \
 	 i915_video.c \
 	 i965_reg.h \
+	 i965_3d.c \
 	 i965_video.c \
 	 i965_render.c \
 	 $(NULL)
 
-if DRI
+if GLAMOR
+AM_CFLAGS += @LIBGLAMOR_CFLAGS@
+intel_drv_la_LIBADD += @LIBGLAMOR_LIBS@
+intel_drv_la_SOURCES += \
+	 intel_glamor.c \
+	 $(NULL)
+endif
+
+if DRI2
 intel_drv_la_SOURCES += \
 	intel_dri.c \
 	$(NULL)
@@ -79,4 +101,5 @@ intel_drv_la_SOURCES += \
 	intel_hwmc.h \
 	intel_hwmc.c \
 	$(NULL)
+endif
 endif

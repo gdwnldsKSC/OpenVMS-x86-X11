@@ -29,6 +29,9 @@ in this Software without prior written authorization from The Open Group.
  * XIChangeHierarchy - change the device hierarchy, i.e. which slave
  * device is attached to which master, etc.
  */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <stdint.h>
 #include <X11/extensions/XI2proto.h>
@@ -49,8 +52,11 @@ XIChangeHierarchy(Display* dpy,
     int dlen = 0, i;
 
     LockDisplay(dpy);
-    if (_XiCheckExtInit(dpy, Dont_Check, info) == -1)
+    if (_XiCheckExtInit(dpy, XInput_2_0, info) == -1)
 	return (NoSuchExtension);
+
+    if (num_changes <= 0)
+        return Success;
 
     GetReq(XIChangeHierarchy, req);
     req->reqType = info->codes->major_opcode;

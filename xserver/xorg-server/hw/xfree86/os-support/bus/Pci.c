@@ -124,34 +124,17 @@
 #include <xorg-config.h>
 #endif
 
-#include <errno.h>
-#include <signal.h>
-#include "compiler.h"
-#include "xf86.h"
-#include "xf86Priv.h"
-#define XF86_OS_PRIVS
-#include "xf86_OSproc.h"
 #include "Pci.h"
-
-#include <pciaccess.h>
-
-/* Global data */
-
-PCITAG
-pciTag(int busnum, int devnum, int funcnum)
-{
-	return(PCI_MAKE_TAG(busnum,devnum,funcnum));
-}
 
 Bool
 xf86scanpci(void)
 {
-    Bool  success = FALSE;
+    Bool success = FALSE;
 
     success = (pci_system_init() == 0);
 
     /* choose correct platform/OS specific PCI init routine */
-	ARCH_PCI_INIT();
+    osPciInit();
 
     return success;
 }

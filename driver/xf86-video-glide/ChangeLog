@@ -1,3 +1,60 @@
+commit 517e9252f3200f3e96bbfcfe84812b532c1b2933
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Fri Dec 30 06:21:19 2011 +0100
+
+    Bump to 1.2.0
+    
+    Signed-off-by: Guillem Jover <guillem@hadrons.org>
+
+commit 7fdaec9032cc069c8dabc719ada40c03aacda2de
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Fri Dec 30 06:20:30 2011 +0100
+
+    Update copyright years
+    
+    Signed-off-by: Guillem Jover <guillem@hadrons.org>
+
+commit e42689244fd5e1b23e641de46c4dc6d38a243a3b
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Fri Dec 30 05:59:46 2011 +0100
+
+    Pass SST number through GLIDERec instead of casting it to driverPrivate
+    
+    Allocate GLIDERec in GLIDEProbe() instead of in GLIDEPreInit() to pass
+    the SST number through the SST_Index member instead of casting it to
+    the driverPrivate pointer back and forth.
+    
+    Signed-off-by: Guillem Jover <guillem@hadrons.org>
+
+commit 518b189f31ee7b85d28541bf32bbcf10b5337289
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Tue Jul 19 15:32:56 2011 +0200
+
+    Stop using the deprecated LoaderSymbol() function
+    
+    Instead of using dlsym() to replace LoaderSymbol() and keep loading
+    libglide at run-time, just switch to dyamically linking it.
+    
+    This in effect makes the module stop using LoaderSymbol() function,
+    and as a bonus makes it start using proper linker dependencies.
+    
+    Reported-by: Daniel Stone <daniel@fooishbar.org>
+    Signed-off-by: Guillem Jover <guillem@hadrons.org>
+
+commit 8ffb28cda58be37d52ed8f7c3b9967574f0a4233
+Author: Guillem Jover <guillem@hadrons.org>
+Date:   Tue Jul 19 17:56:32 2011 +0200
+
+    build: Define GLIDE3_ALPHA when using glide3
+
+commit 76a838e31d3b702b0489792e9cc13018fa331749
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Nov 21 11:38:44 2010 -0800
+
+    Sun's copyrights belong to Oracle now
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
 commit d8045b0815167b2204c0a00a49ae84d1b673d8d3
 Author: Guillem Jover <guillem@hadrons.org>
 Date:   Sat Nov 6 22:51:55 2010 +0100

@@ -36,7 +36,6 @@
 #include "xf86Priv.h"
 #include "xf86Xinput.h"
 #include "xf86_OSproc.h"
-#include "xf86OSmouse.h"
 #include "mouse.h"
 #include "mousePriv.h"
 
@@ -62,7 +61,7 @@ typedef struct {
 
 /* symbol table entry */
 typedef struct {
-    char *name;
+    const char *name;
     MouseProtocolID val;
 } symtab_t;
 

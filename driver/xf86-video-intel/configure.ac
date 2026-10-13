@@ -23,7 +23,7 @@
 # Initialize Autoconf
 AC_PREREQ([2.60])
 AC_INIT([xf86-video-intel],
-        [2.13.0],
+        [2.19.0],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         [xf86-video-intel])
 AC_CONFIG_SRCDIR([Makefile.am])
@@ -36,16 +36,62 @@ AM_MAINTAINER_MODE
 
 # Require X.Org macros 1.8 or later for MAN_SUBSTS set by XORG_MANPAGE_SECTIONS
 m4_ifndef([XORG_MACROS_VERSION],
-          [m4_fatal([must install xorg-macros 1.8 or later before running autoconf/autogen])])
+          [m4_fatal([must install xorg-macros 1.8 or later before running autoconf/autogen.
+  Hint: either install from source, git://anongit.freedesktop.org/xorg/util/macros or,
+  depending on you distribution, try package 'xutils-dev' or 'xorg-x11-util-macros'])])
+
 XORG_MACROS_VERSION(1.8)
 XORG_DEFAULT_OPTIONS
+
+# Require X.Org server macros (i.e. XORG_DRIVER_CHECK_EXT) to check for required modules 
+m4_ifndef([XORG_DRIVER_CHECK_EXT],
+          [m4_fatal([must install xorg-server macros before running autoconf/autogen.
+  Hint: either install from source, git://anongit.freedesktop.org/xorg/xserver or,
+  depending on your distribution, try package 'xserver-xorg-dev' or 'xorg-x11-server-devel'])])
 
 # Initialize libtool
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
+AC_SYS_LARGEFILE
 
-PKG_CHECK_MODULES(GEN4ASM, [intel-gen4asm >= 1.0], [gen4asm=yes], [gen4asm=no])
+# Are we in a git checkout?
+dot_git=no
+if test -e .git; then
+	AC_DEFINE(HAVE_DOT_GIT, 1, [Are we in a git checkout?])
+	dot_git=yes
+fi
+AM_CONDITIONAL(HAVE_DOT_GIT, test x$dot_git = xyes)
+
+# If so, we include the git description in our logs for sanity checking.
+#
+# However, for people not running their own drivers this is just noise.
+# So we copy the xserver's builderstring idiom to allow for this to be
+# overridden and perhaps replaced with something more useful.
+AC_ARG_WITH(builderstring,
+	    AS_HELP_STRING([--with-builderstring=BUILDERSTRING],
+			   [Additional builder string (default: use git describe)]),
+	    [BUILDERSTRING="$withval"],
+	    [BUILDERSTRING="x-magic-git-describe"])
+
+if test "x$BUILDERSTRING" = xx-magic-git-describe -a x$dot_git = xyes; then
+	AC_DEFINE(USE_GIT_DESCRIBE, 1, [Use automagic builder description])
+else
+  if test "x$BUILDERSTRING" != x -a "x$BUILDERSTRING" != xno -a "x$BUILDERSTRING" != xx-magic-git-describe; then
+	  AC_DEFINE_UNQUOTED(BUILDER_DESCRIPTION, ["$BUILDERSTRING"], [Builder description])
+  fi
+fi
+
+
+PKG_CHECK_MODULES(GEN4ASM, [intel-gen4asm >= 1.2], [gen4asm=yes], [gen4asm=no])
 AM_CONDITIONAL(HAVE_GEN4ASM, test x$gen4asm = xyes)
+
+PKG_CHECK_MODULES(UDEV, [libudev], [udev=yes], [udev=no])
+if test x"$udev" = xyes; then
+	AC_DEFINE(HAVE_UDEV,1,[Enable udev-based monitor hotplug detection])
+fi
+
+PKG_CHECK_MODULES(X11, [x11 xrender xext pixman-1], [x11=yes], [x11=no])
+AM_CONDITIONAL(HAVE_X11, test x$x11 = xyes)
 
 AH_TOP([#include "xorg-server.h"])
 
@@ -57,9 +103,7 @@ AC_ARG_WITH(xorg-module-dir,
             [moduledir="$libdir/xorg/modules"])
 
 AC_ARG_ENABLE(dri, AS_HELP_STRING([--disable-dri],
-                                  [Disable DRI support [[default=auto]]]),
-              [DRI="$enableval"],
-              [DRI=auto])
+                                  [Disable DRI support [[default=auto]]]))
 
 AC_ARG_ENABLE(xvmc, AS_HELP_STRING([--disable-xvmc],
                                   [Disable XvMC support [[default=yes]]]),
@@ -71,6 +115,66 @@ AC_ARG_ENABLE(kms-only, AS_HELP_STRING([--enable-kms-only],
               [KMS_ONLY="$enableval"],
               [KMS_ONLY=no])
 
+AC_MSG_CHECKING([whether to include SNA support])
+AC_ARG_ENABLE(sna,
+	      AS_HELP_STRING([--enable-sna],
+			     [Enable SandyBridge's New Acceleration (SNA) [default=no]]),
+	      [SNA="$enableval"],
+	      [SNA=no])
+AM_CONDITIONAL(SNA, test x$SNA != xno)
+required_xorg_xserver_version=1.6
+required_pixman_version=0.24
+if test "x$SNA" != "xno"; then
+	required_xorg_xserver_version=1.10
+	AC_DEFINE(USE_SNA, 1, [Enable SNA support])
+	AC_CHECK_HEADERS([sys/sysinfo.h])
+fi
+AC_MSG_RESULT([$SNA])
+
+AC_MSG_CHECKING([whether to include UXA support])
+AC_ARG_ENABLE(uxa,
+	      AS_HELP_STRING([--enable-uxa],
+			     [Enable Unified Acceleration Architecture (UXA) [default=yes]]),
+	      [UXA="$enableval"],
+	      [UXA=yes])
+AC_MSG_RESULT([$UXA])
+AM_CONDITIONAL(UXA, test x$UXA != xno)
+if test "x$UXA" != "xno"; then
+	AC_DEFINE(USE_UXA, 1, [Enable UXA support])
+	PKG_CHECK_MODULES(DRMINTEL, [libdrm_intel >= 2.4.29])
+fi
+
+AC_MSG_CHECKING([whether to include GLAMOR support])
+AC_ARG_ENABLE(glamor,
+	      AS_HELP_STRING([--enable-glamor],
+			     [Enable glamor, a new GL-based acceleration [default=no]]),
+	      [GLAMOR="$enableval"],
+	      [GLAMOR=no])
+AC_MSG_RESULT([$GLAMOR])
+AM_CONDITIONAL(GLAMOR, test x$GLAMOR != xno)
+if test "x$GLAMOR" != "xno"; then
+	PKG_CHECK_MODULES(LIBGLAMOR, [glamor >= 0.3.1])
+	PKG_CHECK_MODULES(LIBGLAMOR_EGL, [glamor-egl])
+	AC_DEFINE(USE_GLAMOR, 1, [Enable glamor acceleration])
+fi
+
+AC_ARG_ENABLE(vmap,
+	      AS_HELP_STRING([--enable-vmap],
+			     [Enable use of vmap [default=no]]),
+	      [VMAP="$enableval"],
+	      [VMAP=no])
+AM_CONDITIONAL(USE_VMAP, test x$VMAP = xyes)
+if test "x$VMAP" = xyes; then
+	AC_DEFINE(USE_VMAP,1,[Assume VMAP support])
+fi
+
+
+AC_ARG_ENABLE(debug,
+	      AS_HELP_STRING([--enable-debug],
+			     [Enables internal debugging [default=no]]),
+              [DEBUG="$enableval"],
+              [DEBUG=no])
+
 # Store the list of server defined optional extensions in REQUIRED_MODULES
 XORG_DRIVER_CHECK_EXT(RANDR, randrproto)
 XORG_DRIVER_CHECK_EXT(RENDER, renderproto)
@@ -78,42 +182,54 @@ XORG_DRIVER_CHECK_EXT(XF86DRI, xextproto x11)
 XORG_DRIVER_CHECK_EXT(DPMSExtension, xextproto)
 
 # Obtain compiler/linker options for the driver dependencies
-PKG_CHECK_MODULES(XORG, [xorg-server >= 1.6 xproto fontsproto $REQUIRED_MODULES])
-PKG_CHECK_MODULES(DRM, [libdrm >= 2.4.22])
+PKG_CHECK_MODULES(XORG, [xorg-server >= $required_xorg_xserver_version xproto fontsproto pixman-1 >= $required_pixman_version $REQUIRED_MODULES])
+PKG_CHECK_MODULES(DRM, [libdrm >= 2.4.24]) # libdrm_intel is checked separately
+PKG_CHECK_MODULES(DRI, [xf86driproto], , DRI=no)
+PKG_CHECK_MODULES(DRI2, [dri2proto >= 2.6],, DRI2=no)
 PKG_CHECK_MODULES(PCIACCESS, [pciaccess >= 0.10])
 
 sdkdir=`$PKG_CONFIG --variable=sdkdir xorg-server`
 
-save_CFLAGS="$CFLAGS"
-CFLAGS="$XORG_CFLAGS $DRI_CFLAGS $DRM_CFLAGS"
-CPPFLAGS="$XORG_CFLAGS $DRI_CFLAGS $DRM_CFLAGS"
-AC_MSG_CHECKING([whether to include DRI support])
-if test x$DRI != xno; then
-        AC_CHECK_FILE([${sdkdir}/dri.h],
-                      [have_dri_h="yes"], [have_dri_h="no"])
-        AC_CHECK_FILE([${sdkdir}/sarea.h],
-                      [have_sarea_h="yes"], [have_sarea_h="no"])
-        AC_CHECK_FILE([${sdkdir}/dristruct.h],
-                      [have_dristruct_h="yes"], [have_dristruct_h="no"])
+if test "x$enable_dri" != "xno"; then
+        save_CFLAGS="$CFLAGS"
+        save_CPPFLAGS="$CPPFLAGS"
+        CFLAGS="$CFLAGS $XORG_CFLAGS $DRI_CFLAGS $DRM_CFLAGS"
+        CPPFLAGS="$CPPFLAGS $XORG_CFLAGS $DRI_CFLAGS $DRM_CFLAGS"
+        AC_CHECK_HEADERS([dri.h sarea.h dristruct.h],, [DRI=no],
+                [/* for dri.h */
+                 #include <xf86str.h>
+                 /* for dristruct.h */
+                 #include <xorg-server.h>
+                 #ifdef HAVE_DRI_H
+                 # include <dri.h>
+                 #endif
+                 #ifdef HAVE_SAREA_H
+                 # include <sarea.h>
+                 #endif
+                ])
+        CFLAGS="$save_CFLAGS $DEBUGFLAGS"
+        CPPFLAGS="$save_CPPFLAGS"
+else
+        DRI=no
 fi
+
 AC_MSG_CHECKING([whether to include DRI support])
-if test x$DRI = xauto; then
-        if test "$have_dri_h" = yes -a \
-                "$have_sarea_h" = yes -a \
-                "$have_dristruct_h" = yes; then
-                DRI="yes"
-        else
-                DRI="no"
+AC_MSG_RESULT([${DRI-yes}])
+
+AM_CONDITIONAL(DRI, test x$DRI != xno)
+if test "x$DRI" != "xno"; then
+        AC_DEFINE(HAVE_DRI1,1,[Enable DRI driver support])
+else
+        DRI_CFLAGS=""
+        DRI_LIBS=""
+
+        if test "x$enable_dri" = "xyes"; then
+                AC_MSG_ERROR([DRI requested but prerequisites not found])
         fi
 fi
-AC_MSG_RESULT([$DRI])
-CFLAGS="$save_CFLAGS $DEBUGFLAGS"
-
-AM_CONDITIONAL(DRI, test x$DRI = xyes)
-if test "$DRI" = yes; then
-        PKG_CHECK_MODULES(DRI, [xf86driproto])
-        AC_DEFINE(XF86DRI,1,[Enable DRI driver support])
-        AC_DEFINE(XF86DRI_DEVEL,1,[Enable developmental DRI driver support])
+AM_CONDITIONAL(DRI2, test x$DRI2 != xno)
+if test "x$DRI2" != "xno"; then
+        AC_DEFINE(USE_DRI2,1,[Enable DRI2 driver support])
 fi
 
 if test "$XVMC" = yes; then
@@ -124,14 +240,32 @@ fi
 AC_MSG_CHECKING([whether to include XvMC support])
 AC_MSG_RESULT([$XVMC])
 AM_CONDITIONAL(XVMC, test x$XVMC = xyes)
-if test "$XVMC" = yes; then
+if test "x$XVMC" = xyes; then
 	AC_DEFINE(ENABLE_XVMC,1,[Enable XvMC support])
 fi
 
 AM_CONDITIONAL(KMS_ONLY, test x$KMS_ONLY = xyes)
-if test "$KMS_ONLY" = yes; then
+if test "x$KMS_ONLY" = xyes; then
 	AC_DEFINE(KMS_ONLY,1,[Assume KMS support])
 fi
+
+AM_CONDITIONAL(DEBUG, test x$DEBUG != xno)
+if test "x$DEBUG" = xno; then
+	AC_DEFINE(NDEBUG,1,[Disable internal debugging])
+fi
+if test "x$DEBUG" != xno; then
+	AC_DEFINE(HAS_EXTRA_DEBUG,1,[Enable additional debugging])
+	PKG_CHECK_MODULES(VALGRIND, [valgrind], have_valgrind=yes, have_valgrind=no)
+	if test x$have_valgrind = xyes; then
+		AC_DEFINE([HAVE_VALGRIND], 1, [Use valgrind intrinsics to suppress false warnings])
+	fi
+fi
+if test "x$DEBUG" = xfull; then
+	AC_DEFINE(HAS_DEBUG_FULL,1,[Enable all debugging])
+        CFLAGS="$CFLAGS -O0 -ggdb3"
+fi
+
+AC_CHECK_HEADERS([sys/timerfd.h])
 
 DRIVER_NAME=intel
 AC_SUBST([DRIVER_NAME])
@@ -148,7 +282,9 @@ AC_CONFIG_FILES([
                 src/legacy/Makefile
                 src/legacy/i810/Makefile
                 src/legacy/i810/xvmc/Makefile
+                src/sna/Makefile
                 man/Makefile
                 src/render_program/Makefile
+		test/Makefile
 ])
 AC_OUTPUT

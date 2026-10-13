@@ -28,6 +28,10 @@
  *	Oliver McFadden (oliver.mcfadden@nokia.com)
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifndef EVDEV_H
 #define EVDEV_H
 
@@ -38,6 +42,10 @@
 #include <xf86Xinput.h>
 #include <xf86_OSproc.h>
 #include <xkbstr.h>
+
+#ifdef MULTITOUCH
+#include <mtdev.h>
+#endif
 
 #ifndef EV_CNT /* linux 2.6.23 kernels and earlier lack _CNT defines */
 #define EV_CNT (EV_MAX+1)
@@ -53,6 +61,10 @@
 #endif
 #ifndef LED_CNT
 #define LED_CNT (LED_MAX+1)
+#endif
+
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 14
+#define HAVE_SMOOTH_SCROLLING 1
 #endif
 
 #define EVDEV_MAXBUTTONS 32
@@ -72,30 +84,37 @@
 #define EVDEV_UNIGNORE_RELATIVE (1 << 10) /* explicitly unignore rel axes */
 #define EVDEV_RELATIVE_MODE	(1 << 11) /* Force relative events for devices with absolute axes */
 
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 3
-#define HAVE_PROPERTIES 1
-#endif
-
 #ifndef MAX_VALUATORS
 #define MAX_VALUATORS 36
 #endif
 
-
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 5
-typedef struct {
-    char *rules;
-    char *model;
-    char *layout;
-    char *variant;
-    char *options;
-} XkbRMLVOSet;
+#ifndef XI_PROP_DEVICE_NODE
+#define XI_PROP_DEVICE_NODE "Device Node"
 #endif
-
 
 #define LONG_BITS (sizeof(long) * 8)
 
 /* Number of longs needed to hold the given number of bits */
 #define NLONGS(x) (((x) + LONG_BITS - 1) / LONG_BITS)
+
+/* Function key mode */
+enum fkeymode {
+    FKEYMODE_UNKNOWN = 0,
+    FKEYMODE_FKEYS,       /* function keys send function keys */
+    FKEYMODE_MMKEYS,      /* function keys send multimedia keys */
+};
+
+enum SlotState {
+    SLOTSTATE_OPEN = 8,
+    SLOTSTATE_CLOSE,
+    SLOTSTATE_UPDATE,
+    SLOTSTATE_EMPTY,
+};
+
+enum ButtonAction {
+    BUTTON_RELEASE = 0,
+    BUTTON_PRESS = 1
+};
 
 /* axis specific data for wheel emulation */
 typedef struct {
@@ -109,34 +128,55 @@ typedef struct {
     enum {
         EV_QUEUE_KEY,	/* xf86PostKeyboardEvent() */
         EV_QUEUE_BTN,	/* xf86PostButtonEvent() */
+        EV_QUEUE_PROXIMITY, /* xf86PostProximityEvent() */
+#ifdef MULTITOUCH
+        EV_QUEUE_TOUCH,	/*xf86PostTouchEvent() */
+#endif
     } type;
-    int key;		/* May be either a key code or button number. */
-    int val;		/* State of the key/button; pressed or released. */
+    union {
+        int key;	/* May be either a key code or button number. */
+#ifdef MULTITOUCH
+        unsigned int touch; /* Touch ID */
+#endif
+    } detail;
+    int val;	/* State of the key/button/touch; pressed or released. */
+#ifdef MULTITOUCH
+    ValuatorMask *touchMask;
+#endif
 } EventQueueRec, *EventQueuePtr;
 
 typedef struct {
-    const char *device;
+    unsigned short id_vendor;
+    unsigned short id_product;
+
+    char *device;
     int grabDevice;         /* grab the event device? */
 
     int num_vals;           /* number of valuators */
     int axis_map[max(ABS_CNT, REL_CNT)]; /* Map evdev <axis> to index */
-    int vals[MAX_VALUATORS];
-    int old_vals[MAX_VALUATORS]; /* Translate absolute inputs to relative */
+    ValuatorMask *vals;     /* new values coming in */
+    ValuatorMask *old_vals; /* old values for calculating relative motion */
+    ValuatorMask *prox;     /* last values set while not in proximity */
+    ValuatorMask *mt_mask;
+    ValuatorMask **last_mt_vals;
+    int cur_slot;
+    enum SlotState slot_state;
+#ifdef MULTITOUCH
+    struct mtdev *mtdev;
+#endif
 
     int flags;
-    int tool;
+    int in_proximity;           /* device in proximity */
+    int use_proximity;          /* using the proximity bit? */
     int num_buttons;            /* number of buttons */
     BOOL swap_axes;
     BOOL invert_x;
     BOOL invert_y;
 
     int delta[REL_CNT];
-    unsigned int abs, rel;
+    unsigned int abs_queued, rel_queued, prox_queued;
 
     /* XKB stuff has to be per-device rather than per-driver */
-#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 5
-    XkbComponentNamesRec    xkbnames;
-#endif
     XkbRMLVOSet rmlvo;
 
     /* Middle mouse button emulation */
@@ -148,6 +188,19 @@ typedef struct {
         Time                expires;     /* time of expiry */
         Time                timeout;
     } emulateMB;
+    /* Third mouse button emulation */
+    struct emulate3B {
+        BOOL                enabled;
+        BOOL                state;       /* current state */
+        Time                timeout;     /* timeout until third button press */
+        int                 buttonstate; /* phys. button state */
+        int                 button;      /* phys button to emit */
+        int                 threshold;   /* move threshold in dev coords */
+        OsTimerPtr          timer;
+        int                 delta[2];    /* delta x/y, accumulating */
+        int                 startpos[2]; /* starting pos for abs devices */
+        int                 flags;       /* remember if we had rel or abs movement */
+    } emulate3B;
     struct {
 	int                 meta;           /* meta key to lock any button */
 	BOOL                meta_state;     /* meta_button state */
@@ -193,16 +246,23 @@ typedef struct {
     /* Event queue used to defer keyboard/button events until EV_SYN time. */
     int                     num_queue;
     EventQueueRec           queue[EVDEV_MAXQUEUE];
+
+    enum fkeymode           fkeymode;
 } EvdevRec, *EvdevPtr;
 
 /* Event posting functions */
 void EvdevQueueKbdEvent(InputInfoPtr pInfo, struct input_event *ev, int value);
 void EvdevQueueButtonEvent(InputInfoPtr pInfo, int button, int value);
-void EvdevPostButtonEvent(InputInfoPtr pInfo, int button, int value);
+void EvdevQueueProximityEvent(InputInfoPtr pInfo, int value);
+#ifdef MULTITOUCH
+void EvdevQueueTouchEvent(InputInfoPtr pInfo, unsigned int touch,
+                          ValuatorMask *mask, uint16_t type);
+#endif
+void EvdevPostButtonEvent(InputInfoPtr pInfo, int button, enum ButtonAction act);
 void EvdevQueueButtonClicks(InputInfoPtr pInfo, int button, int count);
-void EvdevPostRelativeMotionEvents(InputInfoPtr pInfo, int *num_v, int *first_v,
+void EvdevPostRelativeMotionEvents(InputInfoPtr pInfo, int num_v, int first_v,
 				   int v[MAX_VALUATORS]);
-void EvdevPostAbsoluteMotionEvents(InputInfoPtr pInfo, int *num_v, int *first_v,
+void EvdevPostAbsoluteMotionEvents(InputInfoPtr pInfo, int num_v, int first_v,
 				   int v[MAX_VALUATORS]);
 unsigned int EvdevUtilButtonEventToButtonNumber(EvdevPtr pEvdev, int code);
 
@@ -215,6 +275,15 @@ void EvdevMBEmuPreInit(InputInfoPtr);
 void EvdevMBEmuOn(InputInfoPtr);
 void EvdevMBEmuFinalize(InputInfoPtr);
 
+/* Third button emulation */
+CARD32 Evdev3BEmuTimer(OsTimerPtr timer, CARD32 time, pointer arg);
+BOOL Evdev3BEmuFilterEvent(InputInfoPtr, int, BOOL);
+void Evdev3BEmuPreInit(InputInfoPtr pInfo);
+void Evdev3BEmuOn(InputInfoPtr);
+void Evdev3BEmuFinalize(InputInfoPtr);
+void Evdev3BEmuProcessRelMotion(InputInfoPtr pInfo, int dx, int dy);
+void Evdev3BEmuProcessAbsMotion(InputInfoPtr pInfo, ValuatorMask *vals);
+
 /* Mouse Wheel emulation */
 void EvdevWheelEmuPreInit(InputInfoPtr pInfo);
 BOOL EvdevWheelEmuFilterButton(InputInfoPtr pInfo, unsigned int button, int value);
@@ -224,9 +293,9 @@ BOOL EvdevWheelEmuFilterMotion(InputInfoPtr pInfo, struct input_event *pEv);
 void EvdevDragLockPreInit(InputInfoPtr pInfo);
 BOOL EvdevDragLockFilterEvent(InputInfoPtr pInfo, unsigned int button, int value);
 
-#ifdef HAVE_PROPERTIES
 void EvdevMBEmuInitProperty(DeviceIntPtr);
+void Evdev3BEmuInitProperty(DeviceIntPtr);
 void EvdevWheelEmuInitProperty(DeviceIntPtr);
 void EvdevDragLockInitProperty(DeviceIntPtr);
-#endif
+void EvdevAppleInitProperty(DeviceIntPtr);
 #endif

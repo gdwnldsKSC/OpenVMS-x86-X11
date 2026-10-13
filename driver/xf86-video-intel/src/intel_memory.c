@@ -94,14 +94,14 @@ unsigned long intel_get_fence_size(intel_screen_private *intel, unsigned long si
 	unsigned long i;
 	unsigned long start;
 
-	if (IS_I965G(intel)) {
+	if (INTEL_INFO(intel)->gen >= 40 || intel->has_relaxed_fencing) {
 		/* The 965 can have fences at any page boundary. */
 		return ALIGN(size, GTT_PAGE_SIZE);
 	} else {
 		/* Align the size to a power of two greater than the smallest fence
 		 * size.
 		 */
-		if (IS_I9XX(intel))
+		if (IS_GEN3(intel))
 			start = MB(1);
 		else
 			start = KB(512);
@@ -126,8 +126,8 @@ intel_get_fence_pitch(intel_screen_private *intel, unsigned long pitch,
 	if (tiling_mode == I915_TILING_NONE)
 		return pitch;
 
-	/* 965 is flexible */
-	if (IS_I965G(intel))
+	/* 965+ is flexible */
+	if (INTEL_INFO(intel)->gen >= 40)
 		return ALIGN(pitch, tile_width);
 
 	/* Pre-965 needs power of two tile width */
@@ -144,17 +144,16 @@ intel_check_display_stride(ScrnInfoPtr scrn, int stride, Bool tiling)
 
 	/* 8xx spec has always 8K limit, but tests show larger limit in
 	   non-tiling mode, which makes large monitor work. */
-	if (IS_I8XX(intel) && tiling)
-		limit = KB(8);
-
-	if (IS_I915(intel) && tiling)
-		limit = KB(8);
-
-	if (IS_I965G(intel) && tiling)
-		limit = KB(16);
-
-	if (IS_IGDNG(intel) && tiling)
-		limit = KB(32);
+	if (tiling) {
+		if (IS_GEN2(intel))
+			limit = KB(8);
+		else if (IS_GEN3(intel))
+			limit = KB(8);
+		else if (IS_GEN4(intel))
+			limit = KB(16);
+		else
+			limit = KB(32);
+	}
 
 	if (stride <= limit)
 		return TRUE;
@@ -168,6 +167,39 @@ intel_check_display_stride(ScrnInfoPtr scrn, int stride, Bool tiling)
 static inline int intel_pad_drawable_width(int width)
 {
 	return ALIGN(width, 64);
+}
+
+
+static size_t
+agp_aperture_size(struct pci_device *dev, int gen)
+{
+	return dev->regions[gen < 30 ? 0 : 2].size;
+}
+
+static void intel_set_gem_max_sizes(ScrnInfoPtr scrn)
+{
+	intel_screen_private *intel = intel_get_screen_private(scrn);
+	size_t agp_size = agp_aperture_size(intel->PciInfo,
+					    INTEL_INFO(intel)->gen);
+
+	/* The chances of being able to mmap an object larger than
+	 * agp_size/2 are slim. Moreover, we may be forced to fallback
+	 * using a gtt mapping as both the source and a mask, as well
+	 * as a destination and all need to fit into the aperture.
+	 */
+	intel->max_gtt_map_size = agp_size / 4;
+
+	/* Let objects be tiled up to the size where only 4 would fit in
+	 * the aperture, presuming best case alignment. Also if we
+	 * cannot mmap it using the GTT we will be stuck. */
+	intel->max_tiling_size = intel->max_gtt_map_size;
+
+	/* Large BOs will tend to hit SW fallbacks frequently, and also will
+	 * tend to fail to successfully map when doing SW fallbacks because we
+	 * overcommit address space for BO access, or worse cause aperture
+	 * thrashing.
+	 */
+	intel->max_bo_size = intel->max_gtt_map_size;
 }
 
 /**
@@ -186,7 +218,7 @@ drm_intel_bo *intel_allocate_framebuffer(ScrnInfoPtr scrn,
 	uint32_t tiling_mode;
 	unsigned long pitch;
 
-	if (intel->tiling)
+	if (intel->tiling & INTEL_TILING_FB)
 		tiling_mode = I915_TILING_X;
 	else
 		tiling_mode = I915_TILING_NONE;
@@ -232,8 +264,8 @@ retry:
 		return NULL;
 	}
 
-	if (intel->tiling && tiling_mode != I915_TILING_X) {
-		xf86DrvMsg(scrn->scrnIndex, X_ERROR,
+	if ((intel->tiling & INTEL_TILING_FB) && tiling_mode != I915_TILING_X) {
+		xf86DrvMsg(scrn->scrnIndex, X_WARNING,
 			   "Failed to set tiling on frontbuffer.\n");
 	}
 
@@ -249,57 +281,4 @@ retry:
 	*out_tiling = tiling_mode;
 
 	return front_buffer;
-}
-
-static void intel_set_max_bo_size(intel_screen_private *intel,
-				 const struct drm_i915_gem_get_aperture *aperture)
-{
-	if (aperture->aper_available_size)
-		/* Large BOs will tend to hit SW fallbacks frequently, and also will
-		 * tend to fail to successfully map when doing SW fallbacks because we
-		 * overcommit address space for BO access, or worse cause aperture
-		 * thrashing.
-		 */
-		intel->max_bo_size = aperture->aper_available_size / 2;
-	else
-		intel->max_bo_size = 64 * 1024 * 1024;
-}
-
-static void intel_set_max_gtt_map_size(intel_screen_private *intel,
-				      const struct drm_i915_gem_get_aperture *aperture)
-{
-	if (aperture->aper_available_size)
-		/* Let objects up get bound up to the size where only 2 would fit in
-		 * the aperture, but then leave slop to account for alignment like
-		 * libdrm does.
-		 */
-		intel->max_gtt_map_size =
-			aperture->aper_available_size * 3 / 4 / 2;
-	else
-		intel->max_gtt_map_size = 16 * 1024 * 1024;
-}
-
-static void intel_set_max_tiling_size(intel_screen_private *intel,
-				     const struct drm_i915_gem_get_aperture *aperture)
-{
-	if (aperture->aper_available_size)
-		/* Let objects be tiled up to the size where only 4 would fit in
-		 * the aperture, presuming worst case alignment.
-		 */
-		intel->max_tiling_size = aperture->aper_available_size / 4;
-	else
-		intel->max_tiling_size = 4 * 1024 * 1024;
-}
-
-void intel_set_gem_max_sizes(ScrnInfoPtr scrn)
-{
-	intel_screen_private *intel = intel_get_screen_private(scrn);
-	struct drm_i915_gem_get_aperture aperture;
-
-	aperture.aper_available_size = 0;
-	ioctl(intel->drmSubFD, DRM_IOCTL_I915_GEM_GET_APERTURE, &aperture);
-
-	intel_set_max_bo_size(intel, &aperture);
-	intel_set_max_gtt_map_size(intel, &aperture);
-	intel_set_max_tiling_size(intel, &aperture);
 }

@@ -59,25 +59,18 @@
 #include "xf86Priv.h"
 #include "xf86Config.h"
 #include "xf86Xinput.h"
-#include "XIstubs.h"
 #include "xf86Optrec.h"
-#include "xf86Parser.h"
 #include "mipointer.h"
-#include "xf86InPriv.h"
-#include "compiler.h"
 #include "extinit.h"
 #include "loaderProcs.h"
 
-#ifdef DPMSExtension
-#include <X11/extensions/dpmsconst.h>
-#include "dpmsproc.h"
-#endif
-
-#include "exevents.h"	/* AddInputDevice */
+#include "exevents.h"           /* AddInputDevice */
 #include "exglobals.h"
 #include "eventstr.h"
+#include "inpututils.h"
+#include "optionstr.h"
 
-#include <string.h>     /* InputClassMatches */
+#include <string.h>             /* InputClassMatches */
 #ifdef HAVE_FNMATCH_H
 #include <fnmatch.h>
 #endif
@@ -85,18 +78,12 @@
 #include <sys/utsname.h>
 #endif
 
-#include "extnsionst.h"
-
-#include "windowstr.h"	/* screenIsSaved */
-
 #include <stdarg.h>
-#include <stdint.h>          /* for int64_t */
-
-#include <X11/Xpoll.h>
+#include <stdint.h>             /* for int64_t */
 
 #include "mi.h"
 
-#include <ptrveloc.h>          /* dix pointer acceleration */
+#include <ptrveloc.h>           /* dix pointer acceleration */
 #include <xserver-properties.h>
 
 #ifdef XFreeXDGA
@@ -105,15 +92,22 @@
 
 #include "xkbsrv.h"
 
-#include "os.h"
+/* Valuator verification macro */
+#define XI_VERIFY_VALUATORS(num_valuators)					\
+	if (num_valuators > MAX_VALUATORS) {					\
+		xf86Msg(X_ERROR, "%s: num_valuator %d is greater than"		\
+			" MAX_VALUATORS\n", __func__, num_valuators);	\
+		return;								\
+	}
 
-EventListPtr xf86Events = NULL;
+static int
+ xf86InputDevicePostInit(DeviceIntPtr dev);
 
 /**
  * Eval config and modify DeviceVelocityRec accordingly
  */
 static void
-ProcessVelocityConfiguration(DeviceIntPtr pDev, char* devname, pointer list,
+ProcessVelocityConfiguration(DeviceIntPtr pDev, char *devname, pointer list,
                              DeviceVelocityPtr s)
 {
     int tempi;
@@ -121,7 +115,7 @@ ProcessVelocityConfiguration(DeviceIntPtr pDev, char* devname, pointer list,
     Atom float_prop = XIGetKnownProperty(XATOM_FLOAT);
     Atom prop;
 
-    if(!s)
+    if (!s)
         return;
 
     /* common settings (available via device properties) */
@@ -145,14 +139,15 @@ ProcessVelocityConfiguration(DeviceIntPtr pDev, char* devname, pointer list,
 
     /* select profile by number */
     tempi = xf86SetIntOption(list, "AccelerationProfile",
-            s->statistics.profile_number);
+                             s->statistics.profile_number);
 
     prop = XIGetKnownProperty(ACCEL_PROP_PROFILE_NUMBER);
     if (XIChangeDeviceProperty(pDev, prop, XA_INTEGER, 32,
                                PropModeReplace, 1, &tempi, FALSE) == Success) {
         xf86Msg(X_CONFIG, "%s: (accel) acceleration profile %i\n", devname,
                 tempi);
-    } else {
+    }
+    else {
         xf86Msg(X_CONFIG, "%s: (accel) acceleration profile %i is unknown\n",
                 devname, tempi);
     }
@@ -164,7 +159,8 @@ ProcessVelocityConfiguration(DeviceIntPtr pDev, char* devname, pointer list,
         tempf = 1000.0 / tempf;
         XIChangeDeviceProperty(pDev, prop, float_prop, 32,
                                PropModeReplace, 1, &tempf, FALSE);
-    } else {
+    }
+    else {
         tempf = xf86SetRealOption(list, "VelocityScale", s->corr_mul);
         XIChangeDeviceProperty(pDev, prop, float_prop, 32,
                                PropModeReplace, 1, &tempf, FALSE);
@@ -172,7 +168,7 @@ ProcessVelocityConfiguration(DeviceIntPtr pDev, char* devname, pointer list,
 
     tempi = xf86SetIntOption(list, "VelocityTrackerCount", -1);
     if (tempi > 1)
-	InitTrackers(s, tempi);
+        InitTrackers(s, tempi);
 
     s->initial_range = xf86SetIntOption(list, "VelocityInitialRange",
                                         s->initial_range);
@@ -181,9 +177,9 @@ ProcessVelocityConfiguration(DeviceIntPtr pDev, char* devname, pointer list,
 
     tempf = xf86SetRealOption(list, "VelocityRelDiff", -1);
     if (tempf >= 0) {
-	xf86Msg(X_CONFIG, "%s: (accel) max rel. velocity difference: %.1f%%\n",
-	        devname, tempf*100.0);
-	s->max_rel_diff = tempf;
+        xf86Msg(X_CONFIG, "%s: (accel) max rel. velocity difference: %.1f%%\n",
+                devname, tempf * 100.0);
+        s->max_rel_diff = tempf;
     }
 
     /*  Configure softening. If const deceleration is used, this is expected
@@ -200,25 +196,26 @@ ProcessVelocityConfiguration(DeviceIntPtr pDev, char* devname, pointer list,
 }
 
 static void
-ApplyAccelerationSettings(DeviceIntPtr dev){
+ApplyAccelerationSettings(DeviceIntPtr dev)
+{
     int scheme, i;
     DeviceVelocityPtr pVel;
-    LocalDevicePtr local = (LocalDevicePtr)dev->public.devicePrivate;
-    char* schemeStr;
+    InputInfoPtr pInfo = (InputInfoPtr) dev->public.devicePrivate;
+    char *schemeStr;
 
     if (dev->valuator && dev->ptrfeed) {
-	schemeStr = xf86SetStrOption(local->options, "AccelerationScheme", "");
+        schemeStr = xf86SetStrOption(pInfo->options, "AccelerationScheme", "");
 
-	scheme = dev->valuator->accelScheme.number;
+        scheme = dev->valuator->accelScheme.number;
 
-	if (!xf86NameCmp(schemeStr, "predictable"))
-	    scheme = PtrAccelPredictable;
+        if (!xf86NameCmp(schemeStr, "predictable"))
+            scheme = PtrAccelPredictable;
 
-	if (!xf86NameCmp(schemeStr, "lightweight"))
-	    scheme = PtrAccelLightweight;
+        if (!xf86NameCmp(schemeStr, "lightweight"))
+            scheme = PtrAccelLightweight;
 
-	if (!xf86NameCmp(schemeStr, "none"))
-	    scheme = PtrAccelNoOp;
+        if (!xf86NameCmp(schemeStr, "none"))
+            scheme = PtrAccelNoOp;
 
         /* reinit scheme if needed */
         if (dev->valuator->accelScheme.number != scheme) {
@@ -227,61 +224,82 @@ ApplyAccelerationSettings(DeviceIntPtr dev){
             }
 
             if (InitPointerAccelerationScheme(dev, scheme)) {
-		xf86Msg(X_CONFIG, "%s: (accel) selected scheme %s/%i\n",
-		        local->name, schemeStr, scheme);
-	    } else {
-        	xf86Msg(X_CONFIG, "%s: (accel) could not init scheme %s\n",
-        	        local->name, schemeStr);
-        	scheme = dev->valuator->accelScheme.number;
+                xf86Msg(X_CONFIG, "%s: (accel) selected scheme %s/%i\n",
+                        pInfo->name, schemeStr, scheme);
             }
-        } else {
+            else {
+                xf86Msg(X_CONFIG, "%s: (accel) could not init scheme %s\n",
+                        pInfo->name, schemeStr);
+                scheme = dev->valuator->accelScheme.number;
+            }
+        }
+        else {
             xf86Msg(X_CONFIG, "%s: (accel) keeping acceleration scheme %i\n",
-                    local->name, scheme);
+                    pInfo->name, scheme);
         }
 
         free(schemeStr);
 
         /* process special configuration */
         switch (scheme) {
-            case PtrAccelPredictable:
-                pVel = GetDevicePredictableAccelData(dev);
-                ProcessVelocityConfiguration (dev, local->name, local->options,
-                                              pVel);
-                break;
+        case PtrAccelPredictable:
+            pVel = GetDevicePredictableAccelData(dev);
+            ProcessVelocityConfiguration(dev, pInfo->name, pInfo->options,
+                                         pVel);
+            break;
         }
 
-        i = xf86SetIntOption(local->options, "AccelerationNumerator",
+        i = xf86SetIntOption(pInfo->options, "AccelerationNumerator",
                              dev->ptrfeed->ctrl.num);
         if (i >= 0)
             dev->ptrfeed->ctrl.num = i;
 
-        i = xf86SetIntOption(local->options, "AccelerationDenominator",
+        i = xf86SetIntOption(pInfo->options, "AccelerationDenominator",
                              dev->ptrfeed->ctrl.den);
         if (i > 0)
             dev->ptrfeed->ctrl.den = i;
 
-        i = xf86SetIntOption(local->options, "AccelerationThreshold",
+        i = xf86SetIntOption(pInfo->options, "AccelerationThreshold",
                              dev->ptrfeed->ctrl.threshold);
         if (i >= 0)
             dev->ptrfeed->ctrl.threshold = i;
 
         xf86Msg(X_CONFIG, "%s: (accel) acceleration factor: %.3f\n",
-                            local->name, ((float)dev->ptrfeed->ctrl.num)/
-                                         ((float)dev->ptrfeed->ctrl.den));
+                pInfo->name, ((float) dev->ptrfeed->ctrl.num) /
+                ((float) dev->ptrfeed->ctrl.den));
         xf86Msg(X_CONFIG, "%s: (accel) acceleration threshold: %i\n",
-                local->name, dev->ptrfeed->ctrl.threshold);
+                pInfo->name, dev->ptrfeed->ctrl.threshold);
     }
 }
 
-static Bool
-xf86SendDragEvents(DeviceIntPtr	device)
+static void
+ApplyTransformationMatrix(DeviceIntPtr dev)
 {
-    LocalDevicePtr local = (LocalDevicePtr) device->public.devicePrivate;
-    
-    if (device->button && device->button->buttonsDown > 0)
-        return local->flags & XI86_SEND_DRAG_EVENTS;
-    else
-        return TRUE;
+    InputInfoPtr pInfo = (InputInfoPtr) dev->public.devicePrivate;
+    char *str;
+    int rc;
+    float matrix[9] = { 0 };
+
+    if (!dev->valuator)
+        return;
+
+    str = xf86SetStrOption(pInfo->options, "TransformationMatrix", NULL);
+    if (!str)
+        return;
+
+    rc = sscanf(str, "%f %f %f %f %f %f %f %f %f", &matrix[0], &matrix[1],
+                &matrix[2], &matrix[3], &matrix[4], &matrix[5], &matrix[6],
+                &matrix[7], &matrix[8]);
+    if (rc != 9) {
+        xf86Msg(X_ERROR,
+                "%s: invalid format for transformation matrix. Ignoring configuration.\n",
+                pInfo->name);
+        return;
+    }
+
+    XIChangeDeviceProperty(dev, XIGetKnownProperty(XI_PROP_TRANSFORM),
+                           XIGetKnownProperty(XATOM_FLOAT), 32,
+                           PropModeReplace, 9, matrix, FALSE);
 }
 
 /***********************************************************************
@@ -293,27 +311,19 @@ xf86SendDragEvents(DeviceIntPtr	device)
  ***********************************************************************
  */
 void
-xf86ProcessCommonOptions(LocalDevicePtr local,
-                         pointer	list)
+xf86ProcessCommonOptions(InputInfoPtr pInfo, XF86OptionPtr list)
 {
-    if (!xf86SetBoolOption(list, "AlwaysCore", 1) ||
+    if (xf86SetBoolOption(list, "Floating", 0) ||
+        !xf86SetBoolOption(list, "AlwaysCore", 1) ||
         !xf86SetBoolOption(list, "SendCoreEvents", 1) ||
         !xf86SetBoolOption(list, "CorePointer", 1) ||
         !xf86SetBoolOption(list, "CoreKeyboard", 1)) {
-        xf86Msg(X_CONFIG, "%s: doesn't report core events\n", local->name);
-    } else {
-        local->flags |= XI86_ALWAYS_CORE;
-        xf86Msg(X_CONFIG, "%s: always reports core events\n", local->name);
+        xf86Msg(X_CONFIG, "%s: doesn't report core events\n", pInfo->name);
     }
-
-    if (xf86SetBoolOption(list, "SendDragEvents", 1)) {
-        local->flags |= XI86_SEND_DRAG_EVENTS;
-    } else {
-        xf86Msg(X_CONFIG, "%s: doesn't report drag events\n", local->name);
+    else {
+        pInfo->flags |= XI86_ALWAYS_CORE;
+        xf86Msg(X_CONFIG, "%s: always reports core events\n", pInfo->name);
     }
-
-    /* Backwards compatibility. */
-    local->history_size = GetMotionHistorySize();
 }
 
 /***********************************************************************
@@ -325,86 +335,37 @@ xf86ProcessCommonOptions(LocalDevicePtr local,
  * Returns TRUE on success, or FALSE otherwise.
  ***********************************************************************
  */
-int
-xf86ActivateDevice(LocalDevicePtr local)
+static DeviceIntPtr
+xf86ActivateDevice(InputInfoPtr pInfo)
 {
-    DeviceIntPtr	dev;
+    DeviceIntPtr dev;
+    Atom atom;
 
-    if (local->flags & XI86_CONFIGURED) {
-        dev = AddInputDevice(serverClient, local->device_control, TRUE);
+    dev = AddInputDevice(serverClient, pInfo->device_control, TRUE);
 
-        if (dev == NULL)
-        {
-            xf86Msg(X_ERROR, "Too many input devices. Ignoring %s\n",
-                    local->name);
-            local->dev = NULL;
-            return FALSE;
-        }
-
-        local->atom = MakeAtom(local->type_name,
-                               strlen(local->type_name),
-                               TRUE);
-        AssignTypeAndName(dev, local->atom, local->name);
-        dev->public.devicePrivate = (pointer) local;
-        local->dev = dev;      
-        
-        dev->coreEvents = local->flags & XI86_ALWAYS_CORE; 
-        dev->type = SLAVE;
-        dev->spriteInfo->spriteOwner = FALSE;
-
-        dev->deviceGrab.ActivateGrab = ActivateKeyboardGrab;
-        dev->deviceGrab.DeactivateGrab = DeactivateKeyboardGrab;
-
-        RegisterOtherDevice(dev);
-        XkbSetExtension(dev, ProcessKeyboardEvent);
-
-        if (serverGeneration == 1) 
-            xf86Msg(X_INFO, "XINPUT: Adding extended input device \"%s\" (type: %s)\n",
-                    local->name, local->type_name);
+    if (dev == NULL) {
+        xf86Msg(X_ERROR, "Too many input devices. Ignoring %s\n", pInfo->name);
+        pInfo->dev = NULL;
+        return NULL;
     }
 
-    return TRUE;
-}
+    atom = MakeAtom(pInfo->type_name, strlen(pInfo->type_name), TRUE);
+    AssignTypeAndName(dev, atom, pInfo->name);
+    dev->public.devicePrivate = pInfo;
+    pInfo->dev = dev;
 
+    dev->coreEvents = pInfo->flags & XI86_ALWAYS_CORE;
+    dev->type = SLAVE;
+    dev->spriteInfo->spriteOwner = FALSE;
 
-/***********************************************************************
- *
- * Caller:	ProcXOpenDevice
- *
- * This is the implementation-dependent routine to open an input device.
- * Some implementations open all input devices when the server is first
- * initialized, and never close them.  Other implementations open only
- * the X pointer and keyboard devices during server initialization,
- * and only open other input devices when some client makes an
- * XOpenDevice request.  This entry point is for the latter type of 
- * implementation.
- *
- * If the physical device is not already open, do it here.  In this case,
- * you need to keep track of the fact that one or more clients has the
- * device open, and physically close it when the last client that has
- * it open does an XCloseDevice.
- *
- * The default implementation is to do nothing (assume all input devices
- * are opened during X server initialization and kept open).
- *
- ***********************************************************************
- */
+    dev->config_info = xf86SetStrOption(pInfo->options, "config_info", NULL);
 
-void
-OpenInputDevice(DeviceIntPtr	dev,
-                ClientPtr	client,
-                int		*status)
-{
-    if (!dev->inited)
-        ActivateDevice(dev, TRUE);
+    if (serverGeneration == 1)
+        xf86Msg(X_INFO,
+                "XINPUT: Adding extended input device \"%s\" (type: %s, id %d)\n",
+                pInfo->name, pInfo->type_name, dev->id);
 
-    *status = Success;
-}
-
-void
-CloseInputDevice(DeviceIntPtr dev,
-                 ClientPtr client)
-{
+    return dev;
 }
 
 /****************************************************************************
@@ -421,17 +382,16 @@ CloseInputDevice(DeviceIntPtr dev,
  */
 
 int
-SetDeviceMode (ClientPtr client, DeviceIntPtr dev, int mode)
+SetDeviceMode(ClientPtr client, DeviceIntPtr dev, int mode)
 {
-  LocalDevicePtr        local = (LocalDevicePtr)dev->public.devicePrivate;
+    InputInfoPtr pInfo = (InputInfoPtr) dev->public.devicePrivate;
 
-  if (local->switch_mode) {
-    return (*local->switch_mode)(client, dev, mode);
-  }
-  else
-    return BadMatch;
+    if (pInfo->switch_mode) {
+        return (*pInfo->switch_mode) (client, dev, mode);
+    }
+    else
+        return BadMatch;
 }
-
 
 /***********************************************************************
  *
@@ -447,18 +407,17 @@ SetDeviceMode (ClientPtr client, DeviceIntPtr dev, int mode)
  */
 
 int
-SetDeviceValuators (ClientPtr client, DeviceIntPtr dev, int *valuators,
-                    int first_valuator, int num_valuators)
+SetDeviceValuators(ClientPtr client, DeviceIntPtr dev, int *valuators,
+                   int first_valuator, int num_valuators)
 {
-    LocalDevicePtr local = (LocalDevicePtr) dev->public.devicePrivate;
+    InputInfoPtr pInfo = (InputInfoPtr) dev->public.devicePrivate;
 
-    if (local->set_device_valuators)
-	return (*local->set_device_valuators)(local, valuators, first_valuator,
-					      num_valuators);
+    if (pInfo->set_device_valuators)
+        return (*pInfo->set_device_valuators) (pInfo, valuators, first_valuator,
+                                               num_valuators);
 
     return BadMatch;
 }
-
 
 /***********************************************************************
  *
@@ -470,31 +429,26 @@ SetDeviceValuators (ClientPtr client, DeviceIntPtr dev, int *valuators,
  */
 
 int
-ChangeDeviceControl (ClientPtr client, DeviceIntPtr dev, xDeviceCtl *control)
+ChangeDeviceControl(ClientPtr client, DeviceIntPtr dev, xDeviceCtl * control)
 {
-  LocalDevicePtr        local = (LocalDevicePtr)dev->public.devicePrivate;
+    InputInfoPtr pInfo = (InputInfoPtr) dev->public.devicePrivate;
 
-  if (!local->control_proc) {
-      switch (control->control) {
-      case DEVICE_CORE:
-          return BadMatch;
-      case DEVICE_RESOLUTION:
-      case DEVICE_ABS_CALIB:
-      case DEVICE_ABS_AREA:
-      case DEVICE_ENABLE:
-        return Success;
-      default:
-        return BadMatch;
-      }
-  }
-  else {
-      return (*local->control_proc)(local, control);
-  }
-}
-
-void
-AddOtherInputDevices(void)
-{
+    if (!pInfo->control_proc) {
+        switch (control->control) {
+        case DEVICE_CORE:
+        case DEVICE_ABS_CALIB:
+        case DEVICE_ABS_AREA:
+            return BadMatch;
+        case DEVICE_RESOLUTION:
+        case DEVICE_ENABLE:
+            return Success;
+        default:
+            return BadMatch;
+        }
+    }
+    else {
+        return (*pInfo->control_proc) (pInfo, control);
+    }
 }
 
 /*
@@ -510,10 +464,9 @@ HostOS(void)
 
     if (*host_os == '\0') {
         if (uname(&name) >= 0)
-            strcpy(host_os, name.sysname);
+            strlcpy(host_os, name.sysname, sizeof(host_os));
         else {
-            strncpy(host_os, "unknown", sizeof(host_os));
-            host_os[sizeof(host_os)-1] = '\0';
+            strlcpy(host_os, "unknown", sizeof(host_os));
         }
     }
     return host_os;
@@ -549,17 +502,32 @@ match_path_pattern(const char *attr, const char *pattern)
 #endif
 
 /*
+ * If no Layout section is found, xf86ServerLayout.id becomes "(implicit)"
+ * It is convenient that "" in patterns means "no explicit layout"
+ */
+static int
+match_string_implicit(const char *attr, const char *pattern)
+{
+    if (strlen(pattern)) {
+        return strcmp(attr, pattern);
+    }
+    else {
+        return strcmp(attr, "(implicit)");
+    }
+}
+
+/*
  * Match an attribute against a list of NULL terminated arrays of patterns.
  * If a pattern in each list entry is matched, return TRUE.
  */
 static Bool
-MatchAttrToken(const char *attr, struct list *patterns,
-               int (*compare)(const char *attr, const char *pattern))
+MatchAttrToken(const char *attr, struct xorg_list *patterns,
+               int (*compare) (const char *attr, const char *pattern))
 {
     const xf86MatchGroup *group;
 
     /* If there are no patterns, accept the match */
-    if (list_is_empty(patterns))
+    if (xorg_list_is_empty(patterns))
         return TRUE;
 
     /* If there are patterns but no attribute, reject the match */
@@ -570,12 +538,12 @@ MatchAttrToken(const char *attr, struct list *patterns,
      * Otherwise, iterate the list of patterns ensuring each entry has a
      * match. Each list entry is a separate Match line of the same type.
      */
-    list_for_each_entry(group, patterns, entry) {
-        char * const *cur;
+    xorg_list_for_each_entry(group, patterns, entry) {
+        char *const *cur;
         Bool match = FALSE;
 
         for (cur = group->values; *cur; cur++)
-            if ((*compare)(attr, *cur) == 0) {
+            if ((*compare) (attr, *cur) == 0) {
                 match = TRUE;
                 break;
             }
@@ -592,11 +560,12 @@ MatchAttrToken(const char *attr, struct list *patterns,
  * statements must match.
  */
 static Bool
-InputClassMatches(const XF86ConfInputClassPtr iclass, const IDevPtr idev,
-                  const InputAttributes *attrs)
+InputClassMatches(const XF86ConfInputClassPtr iclass, const InputInfoPtr idev,
+                  const InputAttributes * attrs)
 {
     /* MatchProduct substring */
-    if (!MatchAttrToken(attrs->product, &iclass->match_product, match_substring))
+    if (!MatchAttrToken
+        (attrs->product, &iclass->match_product, match_substring))
         return FALSE;
 
     /* MatchVendor substring */
@@ -604,7 +573,8 @@ InputClassMatches(const XF86ConfInputClassPtr iclass, const IDevPtr idev,
         return FALSE;
 
     /* MatchDevicePath pattern */
-    if (!MatchAttrToken(attrs->device, &iclass->match_device, match_path_pattern))
+    if (!MatchAttrToken
+        (attrs->device, &iclass->match_device, match_path_pattern))
         return FALSE;
 
     /* MatchOS case-insensitive string */
@@ -627,8 +597,8 @@ InputClassMatches(const XF86ConfInputClassPtr iclass, const IDevPtr idev,
      * MatchTag string
      * See if any of the device's tags match any of the MatchTag tokens.
      */
-    if (!list_is_empty(&iclass->match_tag)) {
-        char * const *tag;
+    if (!xorg_list_is_empty(&iclass->match_tag)) {
+        char *const *tag;
         Bool match;
 
         if (!attrs->tags)
@@ -643,24 +613,31 @@ InputClassMatches(const XF86ConfInputClassPtr iclass, const IDevPtr idev,
             return FALSE;
     }
 
+    /* MatchLayout string */
+    if (!xorg_list_is_empty(&iclass->match_layout)) {
+        if (!MatchAttrToken(xf86ConfigLayout.id,
+                            &iclass->match_layout, match_string_implicit))
+            return FALSE;
+    }
+
     /* MatchIs* booleans */
     if (iclass->is_keyboard.set &&
-        iclass->is_keyboard.val != !!(attrs->flags & ATTR_KEYBOARD))
+        iclass->is_keyboard.val != ! !(attrs->flags & ATTR_KEYBOARD))
         return FALSE;
     if (iclass->is_pointer.set &&
-        iclass->is_pointer.val != !!(attrs->flags & ATTR_POINTER))
+        iclass->is_pointer.val != ! !(attrs->flags & ATTR_POINTER))
         return FALSE;
     if (iclass->is_joystick.set &&
-        iclass->is_joystick.val != !!(attrs->flags & ATTR_JOYSTICK))
+        iclass->is_joystick.val != ! !(attrs->flags & ATTR_JOYSTICK))
         return FALSE;
     if (iclass->is_tablet.set &&
-        iclass->is_tablet.val != !!(attrs->flags & ATTR_TABLET))
+        iclass->is_tablet.val != ! !(attrs->flags & ATTR_TABLET))
         return FALSE;
     if (iclass->is_touchpad.set &&
-        iclass->is_touchpad.val != !!(attrs->flags & ATTR_TOUCHPAD))
+        iclass->is_touchpad.val != ! !(attrs->flags & ATTR_TOUCHPAD))
         return FALSE;
     if (iclass->is_touchscreen.set &&
-        iclass->is_touchscreen.val != !!(attrs->flags & ATTR_TOUCHSCREEN))
+        iclass->is_touchscreen.val != ! !(attrs->flags & ATTR_TOUCHSCREEN))
         return FALSE;
 
     return TRUE;
@@ -672,7 +649,7 @@ InputClassMatches(const XF86ConfInputClassPtr iclass, const IDevPtr idev,
  * well as any previous InputClass sections.
  */
 static int
-MergeInputClasses(const IDevPtr idev, const InputAttributes *attrs)
+MergeInputClasses(const InputInfoPtr idev, const InputAttributes * attrs)
 {
     XF86ConfInputClassPtr cl;
     XF86OptionPtr classopts;
@@ -691,15 +668,13 @@ MergeInputClasses(const IDevPtr idev, const InputAttributes *attrs)
                         "InputClass configuration");
                 return BadAlloc;
             }
-            classopts = xf86ReplaceStrOption(classopts, "driver",
-                                             idev->driver);
+            classopts = xf86ReplaceStrOption(classopts, "driver", idev->driver);
         }
 
         /* Apply options to device with InputClass settings preferred. */
         xf86Msg(X_CONFIG, "%s: Applying InputClass \"%s\"\n",
-                idev->identifier, cl->identifier);
-        idev->commonOptions = xf86optionListMerge(idev->commonOptions,
-                                                  classopts);
+                idev->name, cl->identifier);
+        idev->options = xf86optionListMerge(idev->options, classopts);
     }
 
     return Success;
@@ -710,7 +685,7 @@ MergeInputClasses(const IDevPtr idev, const InputAttributes *attrs)
  * value of the last matching class and holler when returning TRUE.
  */
 static Bool
-IgnoreInputClass(const IDevPtr idev, const InputAttributes *attrs)
+IgnoreInputClass(const InputInfoPtr idev, const InputAttributes * attrs)
 {
     XF86ConfInputClassPtr cl;
     Bool ignore = FALSE;
@@ -727,8 +702,96 @@ IgnoreInputClass(const IDevPtr idev, const InputAttributes *attrs)
 
     if (ignore)
         xf86Msg(X_CONFIG, "%s: Ignoring device from InputClass \"%s\"\n",
-                idev->identifier, ignore_class);
+                idev->name, ignore_class);
     return ignore;
+}
+
+InputInfoPtr
+xf86AllocateInput(void)
+{
+    InputInfoPtr pInfo;
+
+    pInfo = calloc(sizeof(*pInfo), 1);
+    if (!pInfo)
+        return NULL;
+
+    pInfo->fd = -1;
+    pInfo->type_name = "UNKNOWN";
+
+    return pInfo;
+}
+
+/* Append InputInfoRec to the tail of xf86InputDevs. */
+static void
+xf86AddInput(InputDriverPtr drv, InputInfoPtr pInfo)
+{
+    InputInfoPtr *prev = NULL;
+
+    pInfo->drv = drv;
+    pInfo->module = DuplicateModule(drv->module, NULL);
+
+    for (prev = &xf86InputDevs; *prev; prev = &(*prev)->next);
+
+    *prev = pInfo;
+    pInfo->next = NULL;
+
+    xf86CollectInputOptions(pInfo, (const char **) drv->default_options);
+    xf86OptionListReport(pInfo->options);
+    xf86ProcessCommonOptions(pInfo, pInfo->options);
+}
+
+/*
+ * Remove an entry from xf86InputDevs and free all the device's information.
+ */
+void
+xf86DeleteInput(InputInfoPtr pInp, int flags)
+{
+    /* First check if the inputdev is valid. */
+    if (pInp == NULL)
+        return;
+
+    if (pInp->module)
+        UnloadModule(pInp->module);
+
+    /* This should *really* be handled in drv->UnInit(dev) call instead, but
+     * if the driver forgets about it make sure we free it or at least crash
+     * with flying colors */
+    free(pInp->private);
+
+    FreeInputAttributes(pInp->attrs);
+
+    /* Remove the entry from the list. */
+    if (pInp == xf86InputDevs)
+        xf86InputDevs = pInp->next;
+    else {
+        InputInfoPtr p = xf86InputDevs;
+
+        while (p && p->next != pInp)
+            p = p->next;
+        if (p)
+            p->next = pInp->next;
+        /* Else the entry wasn't in the xf86InputDevs list (ignore this). */
+    }
+
+    free(pInp->driver);
+    free(pInp->name);
+    xf86optionListFree(pInp->options);
+    free(pInp);
+}
+
+/*
+ * Apply backend-specific initialization. Invoked after ActivateDevice(),
+ * i.e. after the driver successfully completed DEVICE_INIT and the device
+ * is advertised.
+ * @param dev the device
+ * @return Success or an error code
+ */
+static int
+xf86InputDevicePostInit(DeviceIntPtr dev)
+{
+    ApplyAccelerationSettings(dev);
+    ApplyTransformationMatrix(dev);
+    return Success;
 }
 
 /**
@@ -749,24 +812,26 @@ IgnoreInputClass(const IDevPtr idev, const InputAttributes *attrs)
  * @return Success or an error code
  */
 _X_INTERNAL int
-xf86NewInputDevice(IDevPtr idev, DeviceIntPtr *pdev, BOOL enable)
+xf86NewInputDevice(InputInfoPtr pInfo, DeviceIntPtr *pdev, BOOL enable)
 {
     InputDriverPtr drv = NULL;
-    InputInfoPtr pInfo = NULL;
     DeviceIntPtr dev = NULL;
     int rval;
 
     /* Memory leak for every attached device if we don't
      * test if the module is already loaded first */
-    drv = xf86LookupInputDriver(idev->driver);
+    drv = xf86LookupInputDriver(pInfo->driver);
     if (!drv)
-        if (xf86LoadOneModule(idev->driver, NULL))
-            drv = xf86LookupInputDriver(idev->driver);
+        if (xf86LoadOneModule(pInfo->driver, NULL))
+            drv = xf86LookupInputDriver(pInfo->driver);
     if (!drv) {
-        xf86Msg(X_ERROR, "No input driver matching `%s'\n", idev->driver);
+        xf86Msg(X_ERROR, "No input driver matching `%s'\n", pInfo->driver);
         rval = BadName;
         goto unwind;
     }
+
+    xf86Msg(X_INFO, "Using input driver '%s' for '%s'\n", drv->driverName,
+            pInfo->name);
 
     if (!drv->PreInit) {
         xf86Msg(X_ERROR,
@@ -776,55 +841,56 @@ xf86NewInputDevice(IDevPtr idev, DeviceIntPtr *pdev, BOOL enable)
         goto unwind;
     }
 
-    pInfo = drv->PreInit(drv, idev, 0);
+    xf86AddInput(drv, pInfo);
 
-    if (!pInfo) {
-        xf86Msg(X_ERROR, "PreInit returned NULL for \"%s\"\n", idev->identifier);
-        rval = BadMatch;
-        goto unwind;
-    }
-    else if (!(pInfo->flags & XI86_CONFIGURED)) {
-        xf86Msg(X_ERROR, "PreInit failed for input device \"%s\"\n",
-                idev->identifier);
-        rval = BadMatch;
+    rval = drv->PreInit(drv, pInfo, 0);
+
+    if (rval != Success) {
+        xf86Msg(X_ERROR, "PreInit returned %d for \"%s\"\n", rval, pInfo->name);
         goto unwind;
     }
 
-    if (!xf86ActivateDevice(pInfo))
-    {
+    if (!(dev = xf86ActivateDevice(pInfo))) {
         rval = BadAlloc;
         goto unwind;
     }
 
-    dev = pInfo->dev;
     rval = ActivateDevice(dev, TRUE);
-    if (rval != Success)
-    {
-        xf86Msg(X_ERROR, "Couldn't init device \"%s\"\n", idev->identifier);
+    if (rval != Success) {
+        xf86Msg(X_ERROR, "Couldn't init device \"%s\"\n", pInfo->name);
+        RemoveDevice(dev, TRUE);
+        goto unwind;
+    }
+
+    rval = xf86InputDevicePostInit(dev);
+    if (rval != Success) {
+        xf86Msg(X_ERROR, "Couldn't post-init device \"%s\"\n", pInfo->name);
         RemoveDevice(dev, TRUE);
         goto unwind;
     }
 
     /* Enable it if it's properly initialised and we're currently in the VT */
-    if (enable && dev->inited && dev->startup && xf86Screens[0]->vtSema)
-    {
+    if (enable && dev->inited && dev->startup && xf86Screens[0]->vtSema) {
+        OsBlockSignals();
         EnableDevice(dev, TRUE);
-        if (!dev->enabled)
-        {
-            xf86Msg(X_ERROR, "Couldn't init device \"%s\"\n", idev->identifier);
+        if (!dev->enabled) {
+            OsReleaseSignals();
+            xf86Msg(X_ERROR, "Couldn't init device \"%s\"\n", pInfo->name);
+            RemoveDevice(dev, TRUE);
             rval = BadMatch;
             goto unwind;
         }
         /* send enter/leave event, update sprite window */
         CheckMotion(NULL, dev);
+        OsReleaseSignals();
     }
 
     *pdev = dev;
     return Success;
 
-unwind:
-    if(pInfo) {
-        if(drv->UnInit)
+ unwind:
+    if (pInfo) {
+        if (drv && drv->UnInit)
             drv->UnInit(drv, pInfo, 0);
         else
             xf86DeleteInput(pInfo, 0);
@@ -833,47 +899,50 @@ unwind:
 }
 
 int
-NewInputDeviceRequest (InputOption *options, InputAttributes *attrs,
-                       DeviceIntPtr *pdev)
+NewInputDeviceRequest(InputOption *options, InputAttributes * attrs,
+                      DeviceIntPtr *pdev)
 {
-    IDevRec *idev = NULL;
+    InputInfoPtr pInfo = NULL;
     InputOption *option = NULL;
     int rval = Success;
     int is_auto = 0;
 
-    idev = calloc(sizeof(*idev), 1);
-    if (!idev)
+    pInfo = xf86AllocateInput();
+    if (!pInfo)
         return BadAlloc;
 
-    for (option = options; option; option = option->next) {
-        if (strcasecmp(option->key, "driver") == 0) {
-            if (idev->driver) {
+    nt_list_for_each_entry(option, options, list.next) {
+        const char *key = input_option_get_key(option);
+        const char *value = input_option_get_value(option);
+
+        if (strcasecmp(key, "driver") == 0) {
+            if (pInfo->driver) {
                 rval = BadRequest;
                 goto unwind;
             }
-            idev->driver = xstrdup(option->value);
-            if (!idev->driver) {
+            pInfo->driver = xstrdup(value);
+            if (!pInfo->driver) {
                 rval = BadAlloc;
                 goto unwind;
             }
         }
 
-        if (strcasecmp(option->key, "name") == 0 ||
-            strcasecmp(option->key, "identifier") == 0) {
-            if (idev->identifier) {
+        if (strcasecmp(key, "name") == 0 || strcasecmp(key, "identifier") == 0) {
+            if (pInfo->name) {
                 rval = BadRequest;
                 goto unwind;
             }
-            idev->identifier = xstrdup(option->value);
-            if (!idev->identifier) {
+            pInfo->name = xstrdup(value);
+            if (!pInfo->name) {
                 rval = BadAlloc;
                 goto unwind;
             }
         }
 
-        if (strcmp(option->key, "_source") == 0 &&
-            (strcmp(option->value, "server/hal") == 0 ||
-             strcmp(option->value, "server/udev") == 0)) {
+        if (strcmp(key, "_source") == 0 &&
+            (strcmp(value, "server/hal") == 0 ||
+             strcmp(value, "server/udev") == 0 ||
+             strcmp(value, "server/wscons") == 0)) {
             is_auto = 1;
             if (!xf86Info.autoAddDevices) {
                 rval = BadMatch;
@@ -882,92 +951,72 @@ NewInputDeviceRequest (InputOption *options, InputAttributes *attrs,
         }
     }
 
-    for (option = options; option; option = option->next) {
-        /* Steal option key/value strings from the provided list.
-         * We need those strings, the InputOption list doesn't. */
-        idev->commonOptions = xf86addNewOption(idev->commonOptions,
-                                               option->key, option->value);
-        option->key = NULL;
-        option->value = NULL;
+    nt_list_for_each_entry(option, options, list.next) {
+        /* Copy option key/value strings from the provided list */
+        pInfo->options = xf86AddNewOption(pInfo->options,
+                                          input_option_get_key(option),
+                                          input_option_get_value(option));
     }
 
     /* Apply InputClass settings */
     if (attrs) {
-        if (IgnoreInputClass(idev, attrs)) {
+        if (IgnoreInputClass(pInfo, attrs)) {
             rval = BadIDChoice;
             goto unwind;
         }
 
-        rval = MergeInputClasses(idev, attrs);
+        rval = MergeInputClasses(pInfo, attrs);
         if (rval != Success)
             goto unwind;
 
-        idev->attrs = DuplicateInputAttributes(attrs);
+        pInfo->attrs = DuplicateInputAttributes(attrs);
     }
 
-    if (!idev->driver || !idev->identifier) {
-        xf86Msg(X_INFO, "No input driver/identifier specified (ignoring)\n");
+    if (!pInfo->name) {
+        xf86Msg(X_INFO, "No identifier specified, ignoring this device.\n");
         rval = BadRequest;
         goto unwind;
     }
 
-    if (!idev->identifier) {
-        xf86Msg(X_ERROR, "No device identifier specified (ignoring)\n");
-        return BadMatch;
+    if (!pInfo->driver) {
+        xf86Msg(X_INFO, "No input driver specified, ignoring this device.\n");
+        xf86Msg(X_INFO,
+                "This device may have been added with another device file.\n");
+        rval = BadRequest;
+        goto unwind;
     }
 
-    rval = xf86NewInputDevice(idev, pdev,
-                (!is_auto || (is_auto && xf86Info.autoEnableDevices)));
-    if (rval == Success)
-        return Success;
+    rval = xf86NewInputDevice(pInfo, pdev,
+                              (!is_auto ||
+                               (is_auto && xf86Info.autoEnableDevices)));
 
-unwind:
+    return rval;
+
+ unwind:
     if (is_auto && !xf86Info.autoAddDevices)
         xf86Msg(X_INFO, "AutoAddDevices is off - not adding device.\n");
-    free(idev->driver);
-    free(idev->identifier);
-    xf86optionListFree(idev->commonOptions);
-    free(idev);
+    xf86DeleteInput(pInfo, 0);
     return rval;
 }
 
 void
 DeleteInputDeviceRequest(DeviceIntPtr pDev)
 {
-    LocalDevicePtr pInfo = (LocalDevicePtr) pDev->public.devicePrivate;
+    InputInfoPtr pInfo = (InputInfoPtr) pDev->public.devicePrivate;
     InputDriverPtr drv = NULL;
-    IDevRec *idev = NULL;
-    IDevPtr *it;
     Bool isMaster = IsMaster(pDev);
 
-    if (pInfo) /* need to get these before RemoveDevice */
-    {
+    if (pInfo)                  /* need to get these before RemoveDevice */
         drv = pInfo->drv;
-        idev = pInfo->conf_idev;
-    }
 
     OsBlockSignals();
     RemoveDevice(pDev, TRUE);
 
-    if (!isMaster && pInfo != NULL)
-    {
-        if(drv->UnInit)
+    if (!isMaster && pInfo != NULL) {
+        if (drv->UnInit)
             drv->UnInit(drv, pInfo, 0);
         else
             xf86DeleteInput(pInfo, 0);
-
-        /* devices added through HAL aren't in the config layout */
-        it = xf86ConfigLayout.inputs;
-        while(*it && *it != idev)
-            it++;
-
-        if (!(*it)) /* end of list, not in the layout */
-        {
-            free(idev->driver);
-            free(idev->identifier);
-            xf86optionListFree(idev->commonOptions);
-            free(idev);
-        }
     }
     OsReleaseSignals();
 }
@@ -977,65 +1026,67 @@ DeleteInputDeviceRequest(DeviceIntPtr pDev)
  */
 
 void
-xf86PostMotionEvent(DeviceIntPtr	device,
-                    int			is_absolute,
-                    int			first_valuator,
-                    int			num_valuators,
-                    ...)
+xf86PostMotionEvent(DeviceIntPtr device,
+                    int is_absolute, int first_valuator, int num_valuators, ...)
 {
     va_list var;
     int i = 0;
-    static int valuators[MAX_VALUATORS];
+    ValuatorMask mask;
 
     XI_VERIFY_VALUATORS(num_valuators);
 
+    valuator_mask_zero(&mask);
     va_start(var, num_valuators);
     for (i = 0; i < num_valuators; i++)
-        valuators[i] = va_arg(var, int);
+        valuator_mask_set(&mask, first_valuator + i, va_arg(var, int));
+
     va_end(var);
 
-    xf86PostMotionEventP(device, is_absolute, first_valuator, num_valuators, valuators);
+    xf86PostMotionEventM(device, is_absolute, &mask);
 }
 
 void
-xf86PostMotionEventP(DeviceIntPtr	device,
-                    int			is_absolute,
-                    int			first_valuator,
-                    int			num_valuators,
-                    int			*valuators)
+xf86PostMotionEventP(DeviceIntPtr device,
+                     int is_absolute,
+                     int first_valuator,
+                     int num_valuators, const int *valuators)
 {
-    int i = 0, nevents = 0;
-    Bool drag = xf86SendDragEvents(device);
-    DeviceEvent *event;
-    int flags = 0;
-
-#if XFreeXDGA
-    int index;
-    int dx = 0, dy = 0;
-#endif
+    ValuatorMask mask;
 
     XI_VERIFY_VALUATORS(num_valuators);
 
-    if (is_absolute)
-        flags = POINTER_ABSOLUTE;
-    else
-        flags = POINTER_RELATIVE | POINTER_ACCELERATE;
+    valuator_mask_set_range(&mask, first_valuator, num_valuators, valuators);
+    xf86PostMotionEventM(device, is_absolute, &mask);
+}
+
+void
+xf86PostMotionEventM(DeviceIntPtr device,
+                     int is_absolute, const ValuatorMask *mask)
+{
+    int flags = 0;
+
+    if (valuator_mask_num_valuators(mask) > 0) {
+        if (is_absolute)
+            flags = POINTER_ABSOLUTE;
+        else
+            flags = POINTER_RELATIVE | POINTER_ACCELERATE;
+    }
 
 #if XFreeXDGA
     /* The evdev driver may not always send all axes across. */
-    if (num_valuators >= 1 && first_valuator <= 1) {
+    if (valuator_mask_isset(mask, 0) || valuator_mask_isset(mask, 1))
         if (miPointerGetScreen(device)) {
-            index = miPointerGetScreen(device)->myNum;
-            if (first_valuator == 0)
-            {
-                dx = valuators[0];
+            int index = miPointerGetScreen(device)->myNum;
+            int dx = 0, dy = 0;
+
+            if (valuator_mask_isset(mask, 0)) {
+                dx = valuator_mask_get(mask, 0);
                 if (is_absolute)
                     dx -= device->last.valuators[0];
             }
 
-            if (first_valuator == 1 || num_valuators >= 2)
-            {
-                dy = valuators[1 - first_valuator];
+            if (valuator_mask_isset(mask, 1)) {
+                dy = valuator_mask_get(mask, 1);
                 if (is_absolute)
                     dy -= device->last.valuators[1];
             }
@@ -1043,194 +1094,190 @@ xf86PostMotionEventP(DeviceIntPtr	device,
             if (DGAStealMotionEvent(device, index, dx, dy))
                 return;
         }
-    }
 #endif
 
-    nevents = GetPointerEvents(xf86Events, device, MotionNotify, 0,
-                               flags, first_valuator, num_valuators,
-                               valuators);
-
-    for (i = 0; i < nevents; i++) {
-        event = (DeviceEvent*)((xf86Events + i)->event);
-        /* Don't post core motion events for devices not registered to send
-         * drag events. */
-        if (event->header == ET_Internal &&
-            (event->type != ET_Motion || drag)) {
-            mieqEnqueue(device, (InternalEvent*)((xf86Events + i)->event));
-        }
-    }
+    QueuePointerEvents(device, MotionNotify, 0, flags, mask);
 }
 
 void
-xf86PostProximityEvent(DeviceIntPtr	device,
-                       int		is_in,
-                       int		first_valuator,
-                       int		num_valuators,
-                       ...)
+xf86PostProximityEvent(DeviceIntPtr device,
+                       int is_in, int first_valuator, int num_valuators, ...)
 {
     va_list var;
     int i;
-    int valuators[MAX_VALUATORS];
+    ValuatorMask mask;
 
     XI_VERIFY_VALUATORS(num_valuators);
 
+    valuator_mask_zero(&mask);
     va_start(var, num_valuators);
     for (i = 0; i < num_valuators; i++)
-        valuators[i] = va_arg(var, int);
+        valuator_mask_set(&mask, first_valuator + i, va_arg(var, int));
+
     va_end(var);
 
-    xf86PostProximityEventP(device, is_in, first_valuator, num_valuators,
-			    valuators);
-
+    xf86PostProximityEventM(device, is_in, &mask);
 }
 
 void
-xf86PostProximityEventP(DeviceIntPtr	device,
-                        int		is_in,
-                        int		first_valuator,
-                        int		num_valuators,
-                        int		*valuators)
+xf86PostProximityEventP(DeviceIntPtr device,
+                        int is_in,
+                        int first_valuator,
+                        int num_valuators, const int *valuators)
 {
-    int i, nevents;
+    ValuatorMask mask;
 
     XI_VERIFY_VALUATORS(num_valuators);
 
-    nevents = GetProximityEvents(xf86Events, device,
-                                 is_in ? ProximityIn : ProximityOut, 
-                                 first_valuator, num_valuators, valuators);
-    for (i = 0; i < nevents; i++)
-        mieqEnqueue(device, (InternalEvent*)((xf86Events + i)->event));
-
+    valuator_mask_set_range(&mask, first_valuator, num_valuators, valuators);
+    xf86PostProximityEventM(device, is_in, &mask);
 }
 
 void
-xf86PostButtonEvent(DeviceIntPtr	device,
-                    int			is_absolute,
-                    int			button,
-                    int			is_down,
-                    int			first_valuator,
-                    int			num_valuators,
-                    ...)
+xf86PostProximityEventM(DeviceIntPtr device,
+                        int is_in, const ValuatorMask *mask)
+{
+    QueueProximityEvents(device, is_in ? ProximityIn : ProximityOut, mask);
+}
+
+void
+xf86PostButtonEvent(DeviceIntPtr device,
+                    int is_absolute,
+                    int button,
+                    int is_down, int first_valuator, int num_valuators, ...)
 {
     va_list var;
-    int valuators[MAX_VALUATORS];
+    ValuatorMask mask;
     int i = 0;
 
     XI_VERIFY_VALUATORS(num_valuators);
 
+    valuator_mask_zero(&mask);
+
     va_start(var, num_valuators);
     for (i = 0; i < num_valuators; i++)
-        valuators[i] = va_arg(var, int);
+        valuator_mask_set(&mask, first_valuator + i, va_arg(var, int));
+
     va_end(var);
 
-    xf86PostButtonEventP(device, is_absolute, button, is_down, first_valuator,
-			 num_valuators, valuators);
-
+    xf86PostButtonEventM(device, is_absolute, button, is_down, &mask);
 }
 
 void
-xf86PostButtonEventP(DeviceIntPtr	device,
-                     int		is_absolute,
-                     int		button,
-                     int		is_down,
-                     int		first_valuator,
-                     int		num_valuators,
-                     int		*valuators)
+xf86PostButtonEventP(DeviceIntPtr device,
+                     int is_absolute,
+                     int button,
+                     int is_down,
+                     int first_valuator,
+                     int num_valuators, const int *valuators)
 {
-    int i = 0, nevents = 0;
-    int flags = 0;
-
-#if XFreeXDGA
-    int index;
-#endif
+    ValuatorMask mask;
 
     XI_VERIFY_VALUATORS(num_valuators);
 
-    if (is_absolute)
-        flags = POINTER_ABSOLUTE;
-    else
-        flags = POINTER_RELATIVE | POINTER_ACCELERATE;
+    valuator_mask_set_range(&mask, first_valuator, num_valuators, valuators);
+    xf86PostButtonEventM(device, is_absolute, button, is_down, &mask);
+}
+
+void
+xf86PostButtonEventM(DeviceIntPtr device,
+                     int is_absolute,
+                     int button, int is_down, const ValuatorMask *mask)
+{
+    int flags = 0;
+
+    if (valuator_mask_num_valuators(mask) > 0) {
+        if (is_absolute)
+            flags = POINTER_ABSOLUTE;
+        else
+            flags = POINTER_RELATIVE | POINTER_ACCELERATE;
+    }
 
 #if XFreeXDGA
     if (miPointerGetScreen(device)) {
-        index = miPointerGetScreen(device)->myNum;
+        int index = miPointerGetScreen(device)->myNum;
+
         if (DGAStealButtonEvent(device, index, button, is_down))
             return;
     }
 #endif
 
-    nevents = GetPointerEvents(xf86Events, device,
-                               is_down ? ButtonPress : ButtonRelease, button,
-                               flags, first_valuator, num_valuators, valuators);
-
-    for (i = 0; i < nevents; i++)
-        mieqEnqueue(device, (InternalEvent*)((xf86Events + i)->event));
-
+    QueuePointerEvents(device,
+                       is_down ? ButtonPress : ButtonRelease, button,
+                       flags, mask);
 }
 
 void
-xf86PostKeyEvent(DeviceIntPtr	device,
-                 unsigned int	key_code,
-                 int		is_down,
-                 int		is_absolute,
-                 int		first_valuator,
-                 int		num_valuators,
-                 ...)
+xf86PostKeyEvent(DeviceIntPtr device,
+                 unsigned int key_code,
+                 int is_down,
+                 int is_absolute, int first_valuator, int num_valuators, ...)
 {
     va_list var;
     int i = 0;
-    static int valuators[MAX_VALUATORS];
+    ValuatorMask mask;
 
     XI_VERIFY_VALUATORS(num_valuators);
+
+    valuator_mask_zero(&mask);
 
     va_start(var, num_valuators);
     for (i = 0; i < num_valuators; i++)
-      valuators[i] = va_arg(var, int);
+        valuator_mask_set(&mask, first_valuator + i, va_arg(var, int));
+
     va_end(var);
 
-    xf86PostKeyEventP(device, key_code, is_down, is_absolute, first_valuator,
-		      num_valuators, valuators);
-
+    xf86PostKeyEventM(device, key_code, is_down, is_absolute, &mask);
 }
 
 void
-xf86PostKeyEventP(DeviceIntPtr	device,
-                  unsigned int	key_code,
-                  int		is_down,
-                  int		is_absolute,
-                  int		first_valuator,
-                  int		num_valuators,
-                  int		*valuators)
+xf86PostKeyEventP(DeviceIntPtr device,
+                  unsigned int key_code,
+                  int is_down,
+                  int is_absolute,
+                  int first_valuator, int num_valuators, const int *valuators)
 {
-    int i = 0, nevents = 0;
+    ValuatorMask mask;
 
     XI_VERIFY_VALUATORS(num_valuators);
 
-    if (is_absolute) {
-        nevents = GetKeyboardValuatorEvents(xf86Events, device,
-                                            is_down ? KeyPress : KeyRelease,
-                                            key_code, first_valuator,
-                                            num_valuators, valuators);
-    }
-    else {
-        nevents = GetKeyboardEvents(xf86Events, device,
-                                    is_down ? KeyPress : KeyRelease,
-                                    key_code);
-    }
-
-    for (i = 0; i < nevents; i++)
-        mieqEnqueue(device, (InternalEvent*)((xf86Events + i)->event));
+    valuator_mask_set_range(&mask, first_valuator, num_valuators, valuators);
+    xf86PostKeyEventM(device, key_code, is_down, is_absolute, &mask);
 }
 
 void
-xf86PostKeyboardEvent(DeviceIntPtr      device,
-                      unsigned int      key_code,
-                      int               is_down)
+xf86PostKeyEventM(DeviceIntPtr device,
+                  unsigned int key_code,
+                  int is_down, int is_absolute, const ValuatorMask *mask)
 {
-    xf86PostKeyEventP(device, key_code, is_down, 0, 0, 0, NULL);
+#if XFreeXDGA
+    DeviceIntPtr pointer;
+
+    /* Some pointers send key events, paired device is wrong then. */
+    pointer = GetMaster(device, POINTER_OR_FLOAT);
+
+    if (miPointerGetScreen(pointer)) {
+        int index = miPointerGetScreen(pointer)->myNum;
+
+        if (DGAStealKeyEvent(device, index, key_code, is_down))
+            return;
+    }
+#endif
+
+    QueueKeyboardEvents(device,
+                        is_down ? KeyPress : KeyRelease, key_code, mask);
 }
 
-LocalDevicePtr
+void
+xf86PostKeyboardEvent(DeviceIntPtr device, unsigned int key_code, int is_down)
+{
+    ValuatorMask mask;
+
+    valuator_mask_zero(&mask);
+    xf86PostKeyEventM(device, key_code, is_down, 0, &mask);
+}
+
+InputInfoPtr
 xf86FirstLocalDevice(void)
 {
     return xf86InputDevs;
@@ -1238,94 +1285,71 @@ xf86FirstLocalDevice(void)
 
 /* 
  * Cx     - raw data from touch screen
- * Sxhigh - scaled highest dimension
+ * to_max - scaled highest dimension
  *          (remember, this is of rows - 1 because of 0 origin)
- * Sxlow  - scaled lowest dimension
- * Rxhigh - highest raw value from touch screen calibration
- * Rxlow  - lowest raw value from touch screen calibration
+ * to_min  - scaled lowest dimension
+ * from_max - highest raw value from touch screen calibration
+ * from_min  - lowest raw value from touch screen calibration
  *
  * This function is the same for X or Y coordinates.
  * You may have to reverse the high and low values to compensate for
  * different orgins on the touch screen vs X.
+ *
+ * e.g. to scale from device coordinates into screen coordinates, call
+ * xf86ScaleAxis(x, 0, screen_width, dev_min, dev_max);
  */
 
 int
-xf86ScaleAxis(int	Cx,
-              int	Sxhigh,
-              int	Sxlow,
-              int	Rxhigh,
-              int	Rxlow )
+xf86ScaleAxis(int Cx, int to_max, int to_min, int from_max, int from_min)
 {
     int X;
-    int64_t dSx = Sxhigh - Sxlow;
-    int64_t dRx = Rxhigh - Rxlow;
+    int64_t to_width = to_max - to_min;
+    int64_t from_width = from_max - from_min;
 
-    if (dRx) {
-	X = (int)(((dSx * (Cx - Rxlow)) / dRx) + Sxlow);
+    if (from_width) {
+        X = (int) (((to_width * (Cx - from_min)) / from_width) + to_min);
     }
     else {
-	X = 0;
-	ErrorF ("Divide by Zero in xf86ScaleAxis\n");
+        X = 0;
+        ErrorF("Divide by Zero in xf86ScaleAxis\n");
     }
-    
-    if (X > Sxhigh)
-	X = Sxhigh;
-    if (X < Sxlow)
-	X = Sxlow;
-    
+
+    if (X > to_max)
+        X = to_max;
+    if (X < to_min)
+        X = to_min;
+
     return X;
 }
 
-/*
- * This function checks the given screen against the current screen and
- * makes changes if appropriate. It should be called from an XInput driver's
- * ReadInput function before any events are posted, if the device is screen
- * specific like a touch screen.
- */
-void
-xf86XInputSetScreen(LocalDevicePtr	local,
-		    int			screen_number,
-		    int			x,
-		    int			y)
-{
-    if (miPointerGetScreen(local->dev) !=
-          screenInfo.screens[screen_number]) {
-	miPointerSetScreen(local->dev, screen_number, x, y);
-    }
-}
-
-
-void
-xf86InitValuatorAxisStruct(DeviceIntPtr dev, int axnum, Atom label, int minval, int maxval,
-			   int resolution, int min_res, int max_res)
+Bool
+xf86InitValuatorAxisStruct(DeviceIntPtr dev, int axnum, Atom label, int minval,
+                           int maxval, int resolution, int min_res, int max_res,
+                           int mode)
 {
     if (!dev || !dev->valuator)
-        return;
+        return FALSE;
 
-    InitValuatorAxisStruct(dev, axnum, label, minval, maxval, resolution, min_res,
-			   max_res);
+    return InitValuatorAxisStruct(dev, axnum, label, minval, maxval, resolution,
+                                  min_res, max_res, mode);
 }
 
 /*
- * Set the valuator values to be in synch with dix/event.c
+ * Set the valuator values to be in sync with dix/event.c
  * DefineInitialRootWindow().
  */
 void
 xf86InitValuatorDefaults(DeviceIntPtr dev, int axnum)
 {
     if (axnum == 0) {
-	dev->valuator->axisVal[0] = screenInfo.screens[0]->width / 2;
+        dev->valuator->axisVal[0] = screenInfo.screens[0]->width / 2;
         dev->last.valuators[0] = dev->valuator->axisVal[0];
     }
     else if (axnum == 1) {
-	dev->valuator->axisVal[1] = screenInfo.screens[0]->height / 2;
+        dev->valuator->axisVal[1] = screenInfo.screens[0]->height / 2;
         dev->last.valuators[1] = dev->valuator->axisVal[1];
     }
-
-    if(axnum == 0)  /* to prevent double invocation */
-	ApplyAccelerationSettings(dev);
 }
-
 
 /**
  * Deactivate a device. Call this function from the driver if you receive a
@@ -1339,11 +1363,10 @@ xf86InitValuatorDefaults(DeviceIntPtr dev, int axnum)
 void
 xf86DisableDevice(DeviceIntPtr dev, Bool panic)
 {
-    if(!panic)
-    {
+    if (!panic) {
         DisableDevice(dev, TRUE);
-    } else
-    {
+    }
+    else {
         SendDevicePresenceEvent(dev->id, DeviceUnrecoverable);
         DeleteInputDeviceRequest(dev);
     }
@@ -1358,6 +1381,30 @@ void
 xf86EnableDevice(DeviceIntPtr dev)
 {
     EnableDevice(dev, TRUE);
+}
+
+/**
+ * Post a touch event with optional valuators.  If this is the first touch in
+ * the sequence, at least x & y valuators must be provided. The driver is
+ * responsible for maintaining the correct event sequence (TouchBegin, TouchUpdate,
+ * TouchEnd). Submitting an update or end event for a unregistered touchid will
+ * result in errors.
+ * Touch IDs may be reused by the driver but only after a TouchEnd has been
+ * submitted for that touch ID.
+ *
+ * @param dev The device to post the event for
+ * @param touchid The touchid of the current touch event. Must be an
+ * existing ID for TouchUpdate or TouchEnd events
+ * @param type One of XI_TouchBegin, XI_TouchUpdate, XI_TouchEnd
+ * @param flags Flags for this event
+ * @param The valuator mask with all valuators set for this event.
+ */
+void
+xf86PostTouchEvent(DeviceIntPtr dev, uint32_t touchid, uint16_t type,
+                   uint32_t flags, const ValuatorMask *mask)
+{
+
+    QueueTouchEvents(dev, type, touchid, flags, mask);
 }
 
 /* end of xf86Xinput.c */

@@ -45,88 +45,87 @@ is" without express or implied warranty.
 
 Bool xnestDoFullGeneration = True;
 
-EventList *xnestEvents = NULL;
-
 void
-InitOutput(ScreenInfo *screenInfo, int argc, char *argv[])
+InitOutput(ScreenInfo * screenInfo, int argc, char *argv[])
 {
-  int i, j;
+    int i, j;
 
-  xnestOpenDisplay(argc, argv);
-  
-  screenInfo->imageByteOrder = ImageByteOrder(xnestDisplay);
-  screenInfo->bitmapScanlineUnit = BitmapUnit(xnestDisplay);
-  screenInfo->bitmapScanlinePad = BitmapPad(xnestDisplay);
-  screenInfo->bitmapBitOrder = BitmapBitOrder(xnestDisplay);
-  
-  screenInfo->numPixmapFormats = 0;
-  for (i = 0; i < xnestNumPixmapFormats; i++) 
-    for (j = 0; j < xnestNumDepths; j++)
-      if ((xnestPixmapFormats[i].depth == 1) ||
-          (xnestPixmapFormats[i].depth == xnestDepths[j])) {
-	screenInfo->formats[screenInfo->numPixmapFormats].depth = 
-	  xnestPixmapFormats[i].depth;
-	screenInfo->formats[screenInfo->numPixmapFormats].bitsPerPixel = 
-	  xnestPixmapFormats[i].bits_per_pixel;
-	screenInfo->formats[screenInfo->numPixmapFormats].scanlinePad = 
-	  xnestPixmapFormats[i].scanline_pad;
-	screenInfo->numPixmapFormats++;
-	break;
-      }
-  
-  xnestFontPrivateIndex = AllocateFontPrivateIndex();
-  
-  if (!xnestNumScreens) xnestNumScreens = 1;
+    xnestOpenDisplay(argc, argv);
 
-  for (i = 0; i < xnestNumScreens; i++)
-    AddScreen(xnestOpenScreen, argc, argv);
+    screenInfo->imageByteOrder = ImageByteOrder(xnestDisplay);
+    screenInfo->bitmapScanlineUnit = BitmapUnit(xnestDisplay);
+    screenInfo->bitmapScanlinePad = BitmapPad(xnestDisplay);
+    screenInfo->bitmapBitOrder = BitmapBitOrder(xnestDisplay);
 
-  xnestNumScreens = screenInfo->numScreens;
+    screenInfo->numPixmapFormats = 0;
+    for (i = 0; i < xnestNumPixmapFormats; i++)
+        for (j = 0; j < xnestNumDepths; j++)
+            if ((xnestPixmapFormats[i].depth == 1) ||
+                (xnestPixmapFormats[i].depth == xnestDepths[j])) {
+                screenInfo->formats[screenInfo->numPixmapFormats].depth =
+                    xnestPixmapFormats[i].depth;
+                screenInfo->formats[screenInfo->numPixmapFormats].bitsPerPixel =
+                    xnestPixmapFormats[i].bits_per_pixel;
+                screenInfo->formats[screenInfo->numPixmapFormats].scanlinePad =
+                    xnestPixmapFormats[i].scanline_pad;
+                screenInfo->numPixmapFormats++;
+                break;
+            }
 
-  xnestDoFullGeneration = xnestFullGeneration;
+    xnestFontPrivateIndex = AllocateFontPrivateIndex();
+
+    if (!xnestNumScreens)
+        xnestNumScreens = 1;
+
+    for (i = 0; i < xnestNumScreens; i++)
+        AddScreen(xnestOpenScreen, argc, argv);
+
+    xnestNumScreens = screenInfo->numScreens;
+
+    xnestDoFullGeneration = xnestFullGeneration;
 }
 
 void
 InitInput(int argc, char *argv[])
 {
-  int rc;
-  rc = AllocDevicePair(serverClient, "Xnest",
-                       &xnestPointerDevice,
-                       &xnestKeyboardDevice,
-                       xnestPointerProc,
-                       xnestKeyboardProc,
-                       FALSE);
+    int rc;
 
-  if (rc != Success)
-      FatalError("Failed to init Xnest default devices.\n");
+    rc = AllocDevicePair(serverClient, "Xnest",
+                         &xnestPointerDevice,
+                         &xnestKeyboardDevice,
+                         xnestPointerProc, xnestKeyboardProc, FALSE);
 
-  GetEventList(&xnestEvents);
+    if (rc != Success)
+        FatalError("Failed to init Xnest default devices.\n");
 
-  mieqInit();
+    mieqInit();
 
-  AddEnabledDevice(XConnectionNumber(xnestDisplay));
+    AddEnabledDevice(XConnectionNumber(xnestDisplay));
 
-  RegisterBlockAndWakeupHandlers(xnestBlockHandler, xnestWakeupHandler, NULL);
+    RegisterBlockAndWakeupHandlers(xnestBlockHandler, xnestWakeupHandler, NULL);
 }
 
 void
 CloseInput(void)
 {
+    mieqFini();
 }
 
 /*
  * DDX - specific abort routine.  Called by AbortServer().
  */
-void AbortDDX(void)
+void
+AbortDDX(enum ExitCode error)
 {
-  xnestDoFullGeneration = True;
-  xnestCloseDisplay();
+    xnestDoFullGeneration = True;
+    xnestCloseDisplay();
 }
 
 /* Called by GiveUp(). */
-void ddxGiveUp(void)
+void
+ddxGiveUp(enum ExitCode error)
 {
-  AbortDDX();
+    AbortDDX(error);
 }
 
 #ifdef __APPLE__
@@ -136,18 +135,21 @@ DarwinHandleGUI(int argc, char *argv[])
 }
 #endif
 
-void OsVendorInit(void)
+void
+OsVendorInit(void)
 {
     return;
 }
 
-void OsVendorFatalError(void)
+void
+OsVendorFatalError(void)
 {
     return;
 }
 
 #if defined(DDXBEFORERESET)
-void ddxBeforeReset(void)
+void
+ddxBeforeReset(void)
 {
     return;
 }

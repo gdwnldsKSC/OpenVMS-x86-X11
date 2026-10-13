@@ -29,8 +29,8 @@
 #endif
 
 extern FontPtr find_old_font ( FSID id );
-extern int set_font_authorizations ( char **authorizations, 
-				     int *authlen, 
+extern int set_font_authorizations ( char **authorizations,
+				     int *authlen,
 				     ClientPtr client );
 
 extern unsigned long GetTimeInMillis (void);

@@ -4,17 +4,17 @@
 <!-- since we don't do micro (7.x.y) releases of the katamari, *relvers
 	are now the same as *fullrelvers -->
 <!ENTITY majorvers 	 "7">
-<!ENTITY reldate 	 "December 2010">
-<!ENTITY relvers 	 "7.6">
-<!ENTITY fullrelvers 	 "7.6">
-<!ENTITY prevrelvers 	 "7.5">
-<!ENTITY prevfullrelvers "7.5">
-<!ENTITY nextrelvers 	 "7.7">
-<!ENTITY nextfullrelvers "7.7">
-<!ENTITY nextfullreldate "2011">
+<!ENTITY reldate 	 "June 2012">
+<!ENTITY relvers 	 "7.7">
+<!ENTITY fullrelvers 	 "7.7">
+<!ENTITY prevrelvers 	 "7.6">
+<!ENTITY prevfullrelvers "7.6">
+<!ENTITY nextrelvers 	 "7.8">
+<!ENTITY nextfullrelvers "7.8">
+<!ENTITY nextfullreldate "2013">
 
-<!ENTITY whichfullrel 	 "seventh">
-<!ENTITY rcnum 		 "0">
+<!ENTITY whichfullrel 	 "eighth">
+<!ENTITY rcnum 		 "1">
 
 <!-- These should be set according to which snapshot/release this is -->
 <!ENTITY % firstsnap 'IGNORE'>

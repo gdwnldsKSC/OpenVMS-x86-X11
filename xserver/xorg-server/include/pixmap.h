@@ -22,7 +22,6 @@ Except as contained in this notice, the name of The Open Group shall not be
 used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from The Open Group.
 
-
 Copyright 1987 by Digital Equipment Corporation, Maynard, Massachusetts.
 
                         All Rights Reserved
@@ -55,16 +54,14 @@ SOFTWARE.
 #define DRAWABLE_WINDOW 0
 #define DRAWABLE_PIXMAP 1
 #define UNDRAWABLE_WINDOW 2
-#define DRAWABLE_BUFFER 3
 
 /* corresponding type masks for dixLookupDrawable() */
 #define M_DRAWABLE_WINDOW	(1<<0)
 #define M_DRAWABLE_PIXMAP	(1<<1)
 #define M_UNDRAWABLE_WINDOW	(1<<2)
-#define M_DRAWABLE_BUFFER	(1<<3)
 #define M_ANY			(-1)
 #define M_WINDOW	(M_DRAWABLE_WINDOW|M_UNDRAWABLE_WINDOW)
-#define M_DRAWABLE	(M_DRAWABLE_WINDOW|M_DRAWABLE_PIXMAP|M_DRAWABLE_BUFFER)
+#define M_DRAWABLE	(M_DRAWABLE_WINDOW|M_DRAWABLE_PIXMAP)
 #define M_UNDRAWABLE	(M_UNDRAWABLE_WINDOW)
 
 /* flags to PaintWindow() */
@@ -73,12 +70,12 @@ SOFTWARE.
 
 #define NullPixmap ((PixmapPtr)0)
 
-typedef struct _Drawable *DrawablePtr;	
+typedef struct _Drawable *DrawablePtr;
 typedef struct _Pixmap *PixmapPtr;
 
 typedef union _PixUnion {
-    PixmapPtr		pixmap;
-    unsigned long	pixel;
+    PixmapPtr pixmap;
+    unsigned long pixel;
 } PixUnion;
 
 #define SamePixUnion(a,b,isPixel)\
@@ -88,34 +85,28 @@ typedef union _PixUnion {
     ((as) == (bs) && (SamePixUnion (a, b, as)))
 
 #define OnScreenDrawable(type) \
-	((type == DRAWABLE_WINDOW) || (type == DRAWABLE_BUFFER))
+	(type == DRAWABLE_WINDOW)
 
 #define WindowDrawable(type) \
 	((type == DRAWABLE_WINDOW) || (type == UNDRAWABLE_WINDOW))
 
-extern _X_EXPORT PixmapPtr GetScratchPixmapHeader(
-    ScreenPtr /*pScreen*/,
-    int /*width*/,
-    int /*height*/,
-    int /*depth*/,
-    int /*bitsPerPixel*/,
-    int /*devKind*/,
-    pointer /*pPixData*/);
+extern _X_EXPORT PixmapPtr GetScratchPixmapHeader(ScreenPtr /*pScreen */ ,
+                                                  int /*width */ ,
+                                                  int /*height */ ,
+                                                  int /*depth */ ,
+                                                  int /*bitsPerPixel */ ,
+                                                  int /*devKind */ ,
+                                                  pointer /*pPixData */ );
 
-extern _X_EXPORT void FreeScratchPixmapHeader(
-    PixmapPtr /*pPixmap*/);
+extern _X_EXPORT void FreeScratchPixmapHeader(PixmapPtr /*pPixmap */ );
 
-extern _X_EXPORT Bool CreateScratchPixmapsForScreen(
-    int /*scrnum*/);
+extern _X_EXPORT Bool CreateScratchPixmapsForScreen(int /*scrnum */ );
 
-extern _X_EXPORT void FreeScratchPixmapsForScreen(
-    int /*scrnum*/);
+extern _X_EXPORT void FreeScratchPixmapsForScreen(int /*scrnum */ );
 
-extern _X_EXPORT PixmapPtr AllocatePixmap(
-    ScreenPtr /*pScreen*/,
-    int /*pixDataSize*/);
+extern _X_EXPORT PixmapPtr AllocatePixmap(ScreenPtr /*pScreen */ ,
+                                          int /*pixDataSize */ );
 
-extern _X_EXPORT void FreePixmap(
-    PixmapPtr /*pPixmap*/);
+extern _X_EXPORT void FreePixmap(PixmapPtr /*pPixmap */ );
 
-#endif /* PIXMAP_H */
+#endif                          /* PIXMAP_H */

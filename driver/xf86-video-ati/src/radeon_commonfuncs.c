@@ -810,6 +810,8 @@ static void FUNC_NAME(RADEONInit3DEngine)(ScrnInfoPtr pScrn)
 	    OUT_ACCEL_REG(RADEON_SE_CNTL_STATUS, RADEON_TCL_BYPASS);
 	OUT_ACCEL_REG(RADEON_SE_COORD_FMT,
 		      RADEON_VTX_XY_PRE_MULT_1_OVER_W0 |
+		      RADEON_VTX_ST0_PRE_MULT_1_OVER_W0 |
+		      RADEON_VTX_ST1_PRE_MULT_1_OVER_W0 |
 		      RADEON_TEX1_W_ROUTING_USE_W0);
 	FINISH_ACCEL();
 
@@ -837,9 +839,6 @@ void FUNC_NAME(RADEONWaitForVLine)(ScrnInfoPtr pScrn, PixmapPtr pPix,
     if (!crtc)
 	return;
 
-    if (stop < start)
-	return;
-
     if (!crtc->enabled)
 	return;
 
@@ -859,11 +858,17 @@ void FUNC_NAME(RADEONWaitForVLine)(ScrnInfoPtr pScrn, PixmapPtr pPix,
 	    return;
     }
 
-    start = max(start, 0);
-    stop = min(stop, crtc->mode.VDisplay);
+    start = max(start, crtc->y);
+    stop = min(stop, crtc->y + crtc->mode.VDisplay);
 
-    if (start > crtc->mode.VDisplay)
+    if (start >= stop)
 	return;
+
+    if (!IS_AVIVO_VARIANT) {
+	/* on pre-r5xx vline starts at CRTC scanout */
+	start -= crtc->y;
+	stop -= crtc->y;
+    }
 
 #if defined(ACCEL_CP) && defined(XF86DRM_MODE)
     if (info->cs) {

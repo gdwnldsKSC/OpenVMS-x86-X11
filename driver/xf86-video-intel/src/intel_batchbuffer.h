@@ -36,9 +36,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 void intel_batch_init(ScrnInfoPtr scrn);
 void intel_batch_teardown(ScrnInfoPtr scrn);
 void intel_batch_emit_flush(ScrnInfoPtr scrn);
-void intel_batch_do_flush(ScrnInfoPtr scrn);
-void intel_batch_submit(ScrnInfoPtr scrn, int flush);
-void intel_batch_wait_last(ScrnInfoPtr scrn);
+void intel_batch_submit(ScrnInfoPtr scrn);
 
 static inline int intel_batch_space(intel_screen_private *intel)
 {
@@ -51,19 +49,26 @@ static inline int intel_vertex_space(intel_screen_private *intel)
 }
 
 static inline void
-intel_batch_require_space(ScrnInfoPtr scrn, intel_screen_private *intel, unsigned int sz)
+intel_batch_require_space(ScrnInfoPtr scrn, intel_screen_private *intel, int sz)
 {
 	assert(sz < intel->batch_bo->size - 8);
 	if (intel_batch_space(intel) < sz)
-		intel_batch_submit(scrn, FALSE);
+		intel_batch_submit(scrn);
 }
 
-static inline void intel_batch_start_atomic(ScrnInfoPtr scrn, unsigned int sz)
+static inline void intel_batch_start_atomic(ScrnInfoPtr scrn, int sz)
 {
 	intel_screen_private *intel = intel_get_screen_private(scrn);
 
 	assert(!intel->in_batch_atomic);
+
+	if (intel->current_batch != RENDER_BATCH) {
+		if (intel->current_batch && intel->context_switch)
+			intel->context_switch(intel, RENDER_BATCH);
+	}
+
 	intel_batch_require_space(scrn, intel, sz * 4);
+	intel->current_batch = RENDER_BATCH;
 
 	intel->in_batch_atomic = TRUE;
 	intel->batch_atomic_limit = intel->batch_used + sz;
@@ -126,11 +131,11 @@ intel_batch_mark_pixmap_domains(intel_screen_private *intel,
 
 	if (list_is_empty(&priv->batch))
 		list_add(&priv->batch, &intel->batch_pixmaps);
-	if (write_domain && list_is_empty(&priv->flush))
-		list_add(&priv->flush, &intel->flush_pixmaps);
 
-	priv->batch_write |= write_domain != 0;
+	priv->dirty |= write_domain != 0;
 	priv->busy = 1;
+
+	intel->needs_flush |= write_domain != 0;
 }
 
 static inline void
@@ -173,16 +178,24 @@ union intfloat {
 	OUT_BATCH(tmp.ui);			\
 } while(0)
 
-#define BEGIN_BATCH(n)							\
+#define __BEGIN_BATCH(n,batch_idx)					\
 do {									\
 	if (intel->batch_emitting != 0)					\
 		FatalError("%s: BEGIN_BATCH called without closing "	\
 			   "ADVANCE_BATCH\n", __FUNCTION__);		\
 	assert(!intel->in_batch_atomic);				\
+	if (intel->current_batch != batch_idx) {			\
+		if (intel->current_batch && intel->context_switch)	\
+			intel->context_switch(intel, batch_idx);	\
+	}								\
 	intel_batch_require_space(scrn, intel, (n) * 4);		\
+	intel->current_batch = batch_idx;				\
 	intel->batch_emitting = (n);					\
 	intel->batch_emit_start = intel->batch_used;			\
 } while (0)
+
+#define BEGIN_BATCH(n)	__BEGIN_BATCH(n,RENDER_BATCH)
+#define BEGIN_BATCH_BLT(n)	__BEGIN_BATCH(n,BLT_BATCH)
 
 #define ADVANCE_BATCH() do {						\
 	if (intel->batch_emitting == 0)					\

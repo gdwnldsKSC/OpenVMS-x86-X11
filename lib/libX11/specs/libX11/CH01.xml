@@ -26,8 +26,9 @@ programming language. Other higher-level abstractions (for example,
 those provided by the toolkits for X) are built on top of the Xlib
 library. For further information about these higher-level libraries,
 see the appropriate toolkit documentation.
-The <citetitle>X Window System Protocol</citetitle> provides the
-deﬁnitive word on the behavior of X.
+The <olink targetdoc='x11protocol' targetptr='x11protocol'
+><citetitle>X Window System Protocol</citetitle></olink> provides the
+definitive word on the behavior of X.
 Although additional information appears here, the protocol document is
 the ruling document.
   </para>
@@ -151,7 +152,7 @@ which will be called when the error is reported.
 <indexterm><primary>XSync</primary></indexterm>
 If a client does not want a request to execute asynchronously,
 it can follow the request with a call to
-<function>XSync</function>,
+<xref linkend='XSync' xrefstyle='select: title'/>,
 which blocks until all previously buffered
 asynchronous events have been sent and acted on.
 As an important side effect,
@@ -206,12 +207,12 @@ programs must be prepared to handle (or ignore) events of all types.
 Input events (for example, a key pressed or the pointer moved)
 arrive asynchronously from the server and are queued until they are
 requested by an explicit call (for example,
-<function>XNextEvent</function>
+<xref linkend='XNextEvent' xrefstyle='select: title'/>
 or
-<function>XWindowEvent</function>).
+<xref linkend='XWindowEvent' xrefstyle='select: title'/>).
 In addition, some library
 functions (for example,
-<function>XRaiseWindow</function>)
+<xref linkend='XRaiseWindow' xrefstyle='select: title'/>)
 generate
 <symbol>Expose</symbol>
 and
@@ -220,7 +221,7 @@ events.
 These events also arrive asynchronously, but the client may
 <indexterm><primary>XSync</primary></indexterm>
 wish to explicitly wait for them by calling
-<function>XSync</function>
+<xref linkend='XSync' xrefstyle='select: title'/>
 after calling a function that can cause the server to generate events.
     </para>
   </sect1>
@@ -255,7 +256,7 @@ Because Xlib usually does not transmit requests to the server immediately
 actually occur.
 For debugging purposes, however,
 Xlib provides a mechanism for forcing synchronous behavior
-(see section 11.8.1). <!-- xref -->
+(see <link linkend="Enabling_or_Disabling_Synchronization">section 11.8.1</link>).
 When synchronization is enabled,
 errors are reported as they are generated.
     </para>
@@ -316,8 +317,8 @@ reference this file directly.
       <indexterm><primary>Headers</primary><secondary>&lt;X11/Xcms.h&gt;</secondary></indexterm>
       <para>
 This file contains symbols for much of the color management facilities
-described in chapter 6.  All functions, types, and symbols with the
-prefix "Xcms", <!-- xref -->
+described in <link linkend='Color_Management_Functions'>chapter 6</link>.
+All functions, types, and symbols with the prefix "Xcms",
 plus the Color Conversion Contexts macros, are declared in this file.
 <filename class="headerfile">&lt;X11/Xlib.h&gt;</filename>
 must be included before including this file.
@@ -333,7 +334,9 @@ must be included before including this file.
       <para>
 This file declares various functions, types, and symbols used for
 inter-client communication and application utility functions,
-which are described in chapters 14 and 16. <!-- xref -->
+which are described in chapters
+<link linkend='Inter_Client_Communication_Functions'>14</link> and
+<link linkend='Application_Utility_Functions'>16</link>.
 <filename class="headerfile">&lt;X11/Xlib.h&gt;</filename> must be included before including this file.
       </para>
     </listitem>
@@ -346,7 +349,8 @@ which are described in chapters 14 and 16. <!-- xref -->
       <indexterm><primary>Headers</primary><secondary>&lt;X11/Xresource.h&gt;</secondary></indexterm>
       <para>
 This file declares all functions, types, and symbols for the
-resource manager facilities, which are described in chapter 15.
+resource manager facilities, which are described in
+<link linkend='Resource_Manager_Functions'>chapter 15</link>.
 <filename class="headerfile">&lt;X11/Xlib.h&gt;</filename> <!-- xref -->
 must be included before including this file.
       </para>
@@ -680,8 +684,8 @@ rather than presume control of the entire screen.
 What you do inside of your top-level window, however,
 is up to your application.
 For further information,
-see chapter 14 <!-- xref -->
-and the <citetitle>Inter-Client Communication Conventions Manual</citetitle>.
+see <link linkend='Inter_Client_Communication_Functions'>chapter 14</link>
+and the <olink targetdoc='icccm' targetptr='icccm'><citetitle>Inter-Client Communication Conventions Manual</citetitle></olink>.
     </para>
   </listitem>
 </itemizedlist>
@@ -812,7 +816,7 @@ Where applicable,
 the last paragraph of the explanation lists the possible
 Xlib error codes that the function can generate.
 For a complete discussion of the Xlib error codes,
-see section 11.8.2. <!-- xref -->
+see <link linkend="Using_the_Default_Error_Handlers">section 11.8.2</link>.
 	  </para>
 	</listitem>
 	<listitem>

@@ -1,3 +1,86 @@
+commit 18c8547d4afdeb87120e2af7c0563f76c27dcdfe
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Mar 23 18:40:42 2012 -0700
+
+    xf86-video-ast 0.93.10
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d07efd4f80754d82540ebdaa7c2a062e68f229b9
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Mon Dec 19 17:45:12 2011 -0500
+
+    Fix for new vgaHW ABI
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit d5f706dc5a2b6665e2b57a547781f2b9364d4d83
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Mon Dec 19 16:15:49 2011 -0500
+
+    Make failure to XAA non-fatal
+    
+    No shadowfb support in this driver yet.
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 706f4931bfa8ade57b3fca119fd788fc9163dd43
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Thu Nov 17 15:51:42 2011 -0500
+
+    Check ABI major not encoded ABI
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 4a7eda24050b42072c77d527257609e743e8dc78
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed Nov 16 15:09:40 2011 -0500
+
+    Adapt to domain changes in videoabi 12
+    
+    This is a blind change, I don't have this hardware handy to test with.
+    It probably wants the same new API that tdfx wants.
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 59d994f46218b5909725ce690cd3fef089a88ba5
+Author: root <root@localhost.localdomain>
+Date:   Fri Jul 15 14:08:13 2011 +0800
+
+    fixed bug #39235
+
+commit 666abcb51ac69161a548055ee41274f2131551ca
+Author: Y.C. Chen <yc_chen@aspeedtech.com>
+Date:   Wed Jul 13 16:20:31 2011 +0800
+
+    xf86-video-ast-0.93.09
+
+commit acec72c6a52879752b080a4f0e644e70c6a2aded
+Author: Y.C. Chen <yc_chen@aspeedtech.com>
+Date:   Thu Nov 11 11:54:26 2010 +0800
+
+    xf86-video-ast-v.0.92.02
+
+commit 143f004a40ed0f95d9cbc30d38b829af00541f6c
+Author: Y.C. Chen <yc_chen@aspeedtech.com>
+Date:   Wed Nov 10 15:01:36 2010 +0800
+
+    xf86-video-ast-0.92.02
+
+commit b4466dad5d60c4a79b775c6e6de989563f7eac45
+Author: Y.C. Chen <yc_chen@aspeedtech.com>
+Date:   Wed Nov 10 14:08:55 2010 +0800
+
+    xf86-video-ast-0.92.02
+
+commit e387e54fd65b7db984975bf7a97cf30b5f1b9b9e
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Aug 10 10:44:18 2010 -0400
+
+    xf86-video-ast 0.91.10
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
 commit 6196d848a0b12d7e8f7aae0374d53072c69546a6
 Author: Gaetan Nadon <memsize@videotron.ca>
 Date:   Wed Jul 21 16:49:04 2010 -0400

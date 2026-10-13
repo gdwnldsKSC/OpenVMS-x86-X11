@@ -1,3 +1,115 @@
+commit 2eeb7a70f8e8a3f860e177958c4e444e79f5bd68
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Wed Apr 6 15:55:14 2011 -0700
+
+    configure.ac: Version bump to 1.4.2
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit e6dcda815740711b66641545e911a96ac58f805f
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Thu Mar 31 00:19:13 2011 -0700
+
+    Don't provide AppleWMFrame* values in the applewm protocol.  Those are
+    determined by libXplugin and are passed straight through.  The AppleWM
+    protocol just serves to transport those values between the WM and libXplugin.
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 6137d004f732353d386d03b86ea38b0a55b5999b
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Mar 28 19:25:52 2010 -0400
+
+    config: update AC_PREREQ statement to 2.60
+    
+    Unrelated to the previous patches, the new value simply reflects
+    the reality that the minimum level for autoconf to configure
+    all x.org modules is 2.60 dated June 2006.
+    
+    ftp://ftp.gnu.org/gnu/autoconf/autoconf-2.60.tar.gz
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 98593c3b23c60284a45409d1bbfca19e4241d38f
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Mar 28 19:00:30 2010 -0400
+
+    config: remove the pkgconfig pc.in file from EXTRA_DIST
+    
+    Automake always includes it in the tarball.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 5ffe2fc24f01f2f8b5ad32013a1ff81e3fc363d8
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Nov 22 19:24:47 2009 -0500
+
+    Makefile.am: add ChangeLog and INSTALL on MAINTAINERCLEANFILES
+    
+    Now that the INSTALL file is generated.
+    Allows running make maintainer-clean.
+
+commit 0ddf96a062a701414d6080abbd4484970097742d
+Author: Jeremy Huddleston <jeremyhu@freedesktop.org>
+Date:   Tue Nov 17 10:49:59 2009 -0800
+
+    Updated COPYING
+
+commit 8fecb08b6db9efc6563b5c430ae849547dfa361d
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Mon Nov 16 11:10:10 2009 -0500
+
+    README: file created or updated #24206
+    
+    Contains a set of URLs to freedesktop.org.
+
+commit e5867061370acfe6ff7fdfdbc5ae05d850c8b7da
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Nov 14 16:39:09 2009 -0500
+
+    Makefile.am: ChangeLog is not required in EXTRA_DIST or MAINTAINERCLEANFILES
+    
+    ChangeLog is a file known to automake and requires no further coding
+
+commit 6d5e7fd9862160a8ecf2c78aac70ec83bc137703
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Nov 14 16:37:41 2009 -0500
+
+    configure.ac: AM_MAINTAINER_MODE missing #24238
+    
+    This turns off maintainer mode build rules in tarballs.
+    Works in conjunction with autogen.sh --enable-maintainer-mode
+
+commit b79aac3e8dfb81774f2bdca1a22759a678a93742
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Nov 14 16:36:38 2009 -0500
+
+    Makefile.am: INSTALL file is missing or incorrect #24206
+    
+    The standard GNU file on building/installing  tarball is copied
+    using the XORG_INSTALL macro contained in XORG_DEFAULT_OPTIONS
+    Add INSTALL target
+
+commit 4e47c876c11b1d9b6d43acf0c42f74d022c852c8
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Nov 14 16:29:26 2009 -0500
+
+    configure.ac: deploy the new XORG_DEFAULT_OPTIONS #24242
+    
+    This macro aggregate a number of existing macros that sets commmon
+    X.Org components configuration options. It shields the configuration file from
+    future changes.
+
+commit e52179b9fa9bb61e1bf6393d786095cde81d67b9
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sat Nov 14 16:26:20 2009 -0500
+
+    .gitignore: use common defaults with custom section # 24239
+    
+    Using common defaults will reduce errors and maintenance.
+    Only the very small or inexistent custom section need periodic maintenance
+    when the structure of the component changes. Do not edit defaults.
+
 commit a6696560ef67bf4d2b47a9dbab635de5a272279a
 Author: Peter Hutterer <peter.hutterer@who-t.net>
 Date:   Thu Aug 27 15:24:52 2009 +1000

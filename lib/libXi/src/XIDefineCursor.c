@@ -29,6 +29,10 @@ in this Software without prior written authorization from The Open Group.
  * XIDefineCursor - Change the cursor of an extension input device.
  *
  */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdint.h>
 #include <X11/extensions/XI2proto.h>
 #include <X11/Xlibint.h>
@@ -44,7 +48,7 @@ int XIDefineCursor(Display *dpy, int deviceid, Window w, Cursor cursor)
     XExtDisplayInfo *info = XInput_find_display(dpy);
     LockDisplay(dpy);
 
-    if (_XiCheckExtInit(dpy, Dont_Check, info) == -1)
+    if (_XiCheckExtInit(dpy, XInput_2_0, info) == -1)
 	return (NoSuchExtension);
 
     GetReq(XIChangeCursor, req);

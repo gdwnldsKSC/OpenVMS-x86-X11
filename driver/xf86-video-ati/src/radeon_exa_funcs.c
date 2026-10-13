@@ -27,7 +27,7 @@
  *    Eric Anholt <anholt@FreeBSD.org>
  *    Zack Rusin <zrusin@trolltech.com>
  *    Benjamin Herrenschmidt <benh@kernel.crashing.org>
- *    Michel Dänzer <michel@tungstengraphics.com>
+ *    Michel Dänzer <michel@daenzer.net>
  *
  */
 
@@ -132,19 +132,27 @@ static void FUNC_NAME(Emit2DState)(ScrnInfoPtr pScrn, int op)
 }
 
 static void
-FUNC_NAME(RADEONDone2D)(PixmapPtr pPix)
+FUNC_NAME(RADEONFlush2D)(PixmapPtr pPix)
 {
     RINFO_FROM_SCREEN(pPix->drawable.pScreen);
     ACCEL_PREAMBLE();
 
     TRACE;
 
-    info->state_2d.op = 0;
     BEGIN_ACCEL(2);
     OUT_ACCEL_REG(RADEON_DSTCACHE_CTLSTAT, RADEON_RB2D_DC_FLUSH_ALL);
     OUT_ACCEL_REG(RADEON_WAIT_UNTIL,
                   RADEON_WAIT_2D_IDLECLEAN | RADEON_WAIT_DMA_GUI_IDLE);
     FINISH_ACCEL();
+}
+
+static void
+FUNC_NAME(RADEONDone2D)(PixmapPtr pPix)
+{
+    RINFO_FROM_SCREEN(pPix->drawable.pScreen);
+    info->state_2d.op = 0;
+
+    FUNC_NAME(RADEONFlush2D)(pPix);
 }
 
 static Bool
@@ -220,7 +228,7 @@ FUNC_NAME(RADEONSolid)(PixmapPtr pPix, int x1, int y1, int x2, int y2)
 
 #if defined(ACCEL_CP) && defined(XF86DRM_MODE)
     if (info->cs && CS_FULL(info->cs)) {
-	FUNC_NAME(RADEONDone2D)(info->accel_state->dst_pix);
+	FUNC_NAME(RADEONFlush2D)(info->accel_state->dst_pix);
 	radeon_cs_flush_indirect(pScrn);
     }
 #endif
@@ -332,7 +340,7 @@ FUNC_NAME(RADEONCopy)(PixmapPtr pDst,
 
 #if defined(ACCEL_CP) && defined(XF86DRM_MODE)
     if (info->cs && CS_FULL(info->cs)) {
-	FUNC_NAME(RADEONDone2D)(info->accel_state->dst_pix);
+	FUNC_NAME(RADEONFlush2D)(info->accel_state->dst_pix);
 	radeon_cs_flush_indirect(pScrn);
     }
 #endif
@@ -496,10 +504,12 @@ RADEONUploadToScreenCS(PixmapPtr pDst, int x, int y, int w, int h,
     /* If we know the BO won't be busy, don't bother with a scratch */
     copy_dst = driver_priv->bo;
     copy_pitch = pDst->devKind;
-    if (!radeon_bo_is_referenced_by_cs(driver_priv->bo, info->cs)) {
-	flush = FALSE;
-	if (!radeon_bo_is_busy(driver_priv->bo, &dst_domain))
-	    goto copy;
+    if (!(driver_priv->tiling_flags & (RADEON_TILING_MACRO | RADEON_TILING_MICRO))) {
+	if (!radeon_bo_is_referenced_by_cs(driver_priv->bo, info->cs)) {
+	    flush = FALSE;
+	    if (!radeon_bo_is_busy(driver_priv->bo, &dst_domain))
+		goto copy;
+	}
     }
 
     size = scratch_pitch * h;
@@ -595,22 +605,22 @@ RADEONDownloadFromScreenCS(PixmapPtr pSrc, int x, int y, int w,
     /* If we know the BO won't end up in VRAM anyway, don't bother with a scratch */
     copy_src = driver_priv->bo;
     copy_pitch = pSrc->devKind;
-    if (radeon_bo_is_referenced_by_cs(driver_priv->bo, info->cs)) {
-	src_domain = radeon_bo_get_src_domain(driver_priv->bo);
-	if ((src_domain & (RADEON_GEM_DOMAIN_GTT | RADEON_GEM_DOMAIN_VRAM)) ==
-	    (RADEON_GEM_DOMAIN_GTT | RADEON_GEM_DOMAIN_VRAM))
-	    src_domain = 0;
-	else /* A write may be scheduled */
-	    flush = TRUE;
+    if (!(driver_priv->tiling_flags & (RADEON_TILING_MACRO | RADEON_TILING_MICRO))) {
+	if (radeon_bo_is_referenced_by_cs(driver_priv->bo, info->cs)) {
+	    src_domain = radeon_bo_get_src_domain(driver_priv->bo);
+	    if ((src_domain & (RADEON_GEM_DOMAIN_GTT | RADEON_GEM_DOMAIN_VRAM)) ==
+		(RADEON_GEM_DOMAIN_GTT | RADEON_GEM_DOMAIN_VRAM))
+		src_domain = 0;
+	    else /* A write may be scheduled */
+		flush = TRUE;
+	}
+
+	if (!src_domain)
+	    radeon_bo_is_busy(driver_priv->bo, &src_domain);
+
+	if (src_domain & ~(uint32_t)RADEON_GEM_DOMAIN_VRAM)
+	    goto copy;
     }
-
-    if (!src_domain)
-	radeon_bo_is_busy(driver_priv->bo, &src_domain);
-
-    if (src_domain & ~(uint32_t)RADEON_GEM_DOMAIN_VRAM) {
-	goto copy;
-    }
-
     size = scratch_pitch * h;
     scratch = radeon_bo_open(info->bufmgr, 0, size, 0, RADEON_GEM_DOMAIN_GTT, 0);
     if (scratch == NULL) {

@@ -36,7 +36,6 @@
 
 #include "radeon.h"
 #include "radeon_reg.h"
-#include "r600_reg.h"
 #include "radeon_macros.h"
 #include "radeon_probe.h"
 #include "radeon_video.h"
@@ -46,6 +45,11 @@
 
 extern void
 R600DisplayTexturedVideo(ScrnInfoPtr pScrn, RADEONPortPrivPtr pPriv);
+
+#ifdef XF86DRM_MODE
+extern void
+EVERGREENDisplayTexturedVideo(ScrnInfoPtr pScrn, RADEONPortPrivPtr pPriv);
+#endif
 
 extern Bool
 R600CopyToVRAM(ScrnInfoPtr pScrn,
@@ -61,6 +65,9 @@ R600CopyToVRAM(ScrnInfoPtr pScrn,
 
 #define IMAGE_MAX_WIDTH_R600	8192
 #define IMAGE_MAX_HEIGHT_R600	8192
+
+#define IMAGE_MAX_WIDTH_EG	16384
+#define IMAGE_MAX_HEIGHT_EG	16384
 
 static Bool
 RADEONTilingEnabled(ScrnInfoPtr pScrn, PixmapPtr pPix)
@@ -243,8 +250,12 @@ RADEONPutImageTextured(ScrnInfoPtr pScrn,
     int top, nlines, size;
     BoxRec dstBox;
     int dst_width = width, dst_height = height;
-    int hw_align;
-
+    int aligned_height;
+#ifdef XF86DRM_MODE
+    int h_align = drmmode_get_height_align(pScrn, 0);
+#else
+    int h_align = 1;
+#endif
     /* make the compiler happy */
     s2offset = s3offset = srcPitch2 = 0;
 
@@ -280,10 +291,22 @@ RADEONPutImageTextured(ScrnInfoPtr pScrn,
 	    pPriv->bicubic_enabled = FALSE;
     }
 
-    if (info->ChipFamily >= CHIP_FAMILY_R600)
-	hw_align = 256;
-    else
-	hw_align = 64;
+#ifdef XF86DRM_MODE
+    if (info->cs) {
+	if (info->ChipFamily >= CHIP_FAMILY_R600)
+	    pPriv->hw_align = drmmode_get_base_align(pScrn, 2, 0);
+	else
+	    pPriv->hw_align = 64;
+    } else
+#endif
+    {
+	if (info->ChipFamily >= CHIP_FAMILY_R600)
+	    pPriv->hw_align = 256;
+	else
+	    pPriv->hw_align = 64;
+    }
+
+    aligned_height = RADEON_ALIGN(dst_height, h_align);
 
     switch(id) {
     case FOURCC_YV12:
@@ -291,34 +314,33 @@ RADEONPutImageTextured(ScrnInfoPtr pScrn,
 	srcPitch = RADEON_ALIGN(width, 4);
 	srcPitch2 = RADEON_ALIGN(width >> 1, 4);
         if (pPriv->bicubic_state != BICUBIC_OFF) {
-	    dstPitch = RADEON_ALIGN(dst_width << 1, hw_align);
+	    dstPitch = RADEON_ALIGN(dst_width << 1, pPriv->hw_align);
 	    dstPitch2 = 0;
 	} else {
-	    dstPitch = RADEON_ALIGN(dst_width, hw_align);
-	    dstPitch2 = RADEON_ALIGN(dstPitch >> 1, hw_align);
+	    dstPitch = RADEON_ALIGN(dst_width, pPriv->hw_align);
+	    dstPitch2 = RADEON_ALIGN(dstPitch >> 1, pPriv->hw_align);
 	}
 	break;
     case FOURCC_UYVY:
     case FOURCC_YUY2:
     default:
-	dstPitch = RADEON_ALIGN(dst_width << 1, hw_align);
+	dstPitch = RADEON_ALIGN(dst_width << 1, pPriv->hw_align);
 	srcPitch = (width << 1);
 	srcPitch2 = 0;
 	break;
     }
 
-    size = dstPitch * dst_height + 2 * dstPitch2 * ((dst_height + 1) >> 1);
-    size = RADEON_ALIGN(size, hw_align);
+    size = dstPitch * aligned_height + 2 * dstPitch2 * RADEON_ALIGN(((aligned_height + 1) >> 1), h_align);
+    size = RADEON_ALIGN(size, pPriv->hw_align);
 
-    if (pPriv->video_memory != NULL && size != pPriv->size) {
-	radeon_legacy_free_memory(pScrn, pPriv->video_memory);
-	pPriv->video_memory = NULL;
+    if (size != pPriv->size) {
+	RADEONFreeVideoMemory(pScrn, pPriv);
     }
 
     if (pPriv->video_memory == NULL) {
 	pPriv->video_offset = radeon_legacy_allocate_memory(pScrn,
 							    &pPriv->video_memory,
-							    size, hw_align,
+							    size, pPriv->hw_align,
 							    RADEON_GEM_DOMAIN_GTT);
 	if (pPriv->video_offset == 0)
 	    return BadAlloc;
@@ -326,7 +348,7 @@ RADEONPutImageTextured(ScrnInfoPtr pScrn,
 	if (info->cs) {
 	    pPriv->src_bo[0] = pPriv->video_memory;
 	    radeon_legacy_allocate_memory(pScrn, (void*)&pPriv->src_bo[1], size,
-					  hw_align,
+					  pPriv->hw_align,
 					  RADEON_GEM_DOMAIN_GTT);
 	}
     }
@@ -364,7 +386,7 @@ RADEONPutImageTextured(ScrnInfoPtr pScrn,
 
     /* copy data */
     top = (y1 >> 16) & ~1;
-    nlines = RADEON_ALIGN((y2 + 0xffff) >> 16, 2) - top;
+    nlines = ((y2 + 0xffff) >> 16) - top;
 
     pPriv->src_offset = pPriv->video_offset;
     if (info->cs) {
@@ -386,10 +408,10 @@ RADEONPutImageTextured(ScrnInfoPtr pScrn,
     }
     pPriv->src_pitch = dstPitch;
 
-    pPriv->planeu_offset = dstPitch * dst_height;
-    pPriv->planeu_offset = RADEON_ALIGN(pPriv->planeu_offset, hw_align);
-    pPriv->planev_offset = pPriv->planeu_offset + dstPitch2 * ((dst_height + 1) >> 1);
-    pPriv->planev_offset = RADEON_ALIGN(pPriv->planev_offset, hw_align);
+    pPriv->planeu_offset = dstPitch * aligned_height;
+    pPriv->planeu_offset = RADEON_ALIGN(pPriv->planeu_offset, pPriv->hw_align);
+    pPriv->planev_offset = pPriv->planeu_offset + dstPitch2 * RADEON_ALIGN(((aligned_height + 1) >> 1), h_align);
+    pPriv->planev_offset = RADEON_ALIGN(pPriv->planev_offset, pPriv->hw_align);
 
     pPriv->size = size;
     pPriv->pDraw = pDraw;
@@ -473,7 +495,12 @@ RADEONPutImageTextured(ScrnInfoPtr pScrn,
 #endif
 #ifdef XF86DRI
     if (info->directRenderingEnabled) {
-	if (IS_R600_3D)
+#ifdef XF86DRM_MODE
+	if (IS_EVERGREEN_3D)
+	    EVERGREENDisplayTexturedVideo(pScrn, pPriv);
+	else
+#endif
+	  if (IS_R600_3D)
 	    R600DisplayTexturedVideo(pScrn, pPriv);
 	else if (IS_R500_3D)
 	    R500DisplayTexturedVideoCP(pScrn, pPriv);
@@ -526,6 +553,16 @@ static XF86VideoEncodingRec DummyEncodingR600[1] =
 	0,
 	"XV_IMAGE",
 	IMAGE_MAX_WIDTH_R600, IMAGE_MAX_HEIGHT_R600,
+	{1, 1}
+    }
+};
+
+static XF86VideoEncodingRec DummyEncodingEG[1] =
+{
+    {
+	0,
+	"XV_IMAGE",
+	IMAGE_MAX_WIDTH_EG, IMAGE_MAX_HEIGHT_EG,
 	{1, 1}
     }
 };
@@ -602,6 +639,18 @@ static XF86AttributeRec Attributes_r600[NUM_ATTRIBUTES_R600+1] =
     {XvSettable | XvGettable, -1000, 1000, "XV_HUE"},
     {XvSettable | XvGettable, 0, 1, "XV_COLORSPACE"},
     {XvSettable | XvGettable, -1, 1, "XV_CRTC"},
+    {0, 0, 0, NULL}
+};
+
+static XF86AttributeRec Attributes_eg[NUM_ATTRIBUTES_R600+1] =
+{
+    {XvSettable | XvGettable, 0, 1, "XV_VSYNC"},
+    {XvSettable | XvGettable, -1000, 1000, "XV_BRIGHTNESS"},
+    {XvSettable | XvGettable, -1000, 1000, "XV_CONTRAST"},
+    {XvSettable | XvGettable, -1000, 1000, "XV_SATURATION"},
+    {XvSettable | XvGettable, -1000, 1000, "XV_HUE"},
+    {XvSettable | XvGettable, 0, 1, "XV_COLORSPACE"},
+    {XvSettable | XvGettable, -1, 5, "XV_CRTC"},
     {0, 0, 0, NULL}
 };
 
@@ -788,7 +837,9 @@ RADEONSetupImageTexturedVideo(ScreenPtr pScreen)
     adapt->flags = 0;
     adapt->name = "Radeon Textured Video";
     adapt->nEncodings = 1;
-    if (IS_R600_3D)
+    if (IS_EVERGREEN_3D)
+	adapt->pEncodings = DummyEncodingEG;
+    else if (IS_R600_3D)
 	adapt->pEncodings = DummyEncodingR600;
     else if (IS_R500_3D)
 	adapt->pEncodings = DummyEncodingR500;
@@ -802,7 +853,11 @@ RADEONSetupImageTexturedVideo(ScreenPtr pScreen)
     pPortPriv =
 	(RADEONPortPrivPtr)(&adapt->pPortPrivates[num_texture_ports]);
 
-    if (IS_R600_3D) {
+    if (IS_EVERGREEN_3D) {
+	adapt->pAttributes = Attributes_eg;
+	adapt->nAttributes = NUM_ATTRIBUTES_R600;
+    }
+    else if (IS_R600_3D) {
 	adapt->pAttributes = Attributes_r600;
 	adapt->nAttributes = NUM_ATTRIBUTES_R600;
     }

@@ -1,4 +1,7 @@
-#define _LARGEFILE64_SOURCE
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -31,7 +34,7 @@ GeodeReadMSR(unsigned long addr, unsigned long *lo, unsigned long *hi)
     if (fd == -1)
 	return -1;
 
-    ret = lseek64(fd, (off64_t) addr, SEEK_SET);
+    ret = lseek(fd, (off_t) addr, SEEK_SET);
 
     if (ret == -1)
 	return -1;
@@ -56,7 +59,7 @@ GeodeWriteMSR(unsigned long addr, unsigned long lo, unsigned long hi)
     if (fd == -1)
 	return -1;
 
-    if (lseek64(fd, (off64_t) addr, SEEK_SET) == -1)
+    if (lseek(fd, (off_t) addr, SEEK_SET) == -1)
 	return -1;
 
     data[0] = lo;

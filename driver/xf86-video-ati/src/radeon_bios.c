@@ -34,13 +34,12 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 
-#include "xf86PciInfo.h"
+#include "atipciids.h"
 #include "radeon.h"
 #include "radeon_reg.h"
 #include "radeon_macros.h"
 #include "radeon_probe.h"
 #include "radeon_atombios.h"
-#include "vbe.h"
 
 typedef enum
 {

@@ -227,7 +227,7 @@ VmsProcessCommand(const char *command, char *output)
 }
 
 int
-System(char *command)
+System(const char *command)
 {
     char native[VMS_COMMAND_LIMIT];
     const char *translated;
@@ -242,7 +242,7 @@ System(char *command)
 }
 
 pointer
-Popen(char *command, char *type)
+Popen(const char *command, const char *type)
 {
     char native[VMS_COMMAND_LIMIT];
     const char *translated;
@@ -259,7 +259,7 @@ Popen(char *command, char *type)
 }
 
 pointer
-Fopen(char *file, char *type)
+Fopen(const char *file, const char *type)
 {
     if (!file || !type) {
         errno = EINVAL;

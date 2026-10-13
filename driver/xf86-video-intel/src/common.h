@@ -51,20 +51,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PFX __FILE__,__LINE__,__FUNCTION__
 #define FUNCTION_NAME __FUNCTION__
 
-#ifdef I830DEBUG
-#define MARKER() ErrorF("\n### %s:%d: >>> %s <<< ###\n\n", \
-			 __FILE__, __LINE__,__FUNCTION__)
-#define DPRINTF I830DPRINTF
-#else /* #ifdef I830DEBUG */
-#define MARKER()
-#define DPRINTF I830DPRINTF_stub
-static inline void
-I830DPRINTF_stub(const char *filename, int line, const char *function,
-		 const char *fmt, ...)
-{
-}
-#endif /* #ifdef I830DEBUG */
-
 #define KB(x) ((x) * 1024)
 #define MB(x) ((x) * KB(1024))
 
@@ -82,9 +68,6 @@ extern void intel_init_scrn(ScrnInfoPtr scrn);
 /* Symbol lists shared by the i810 and i830 parts. */
 extern int I830EntityIndex;
 
-extern void I830DPRINTF_stub(const char *filename, int line,
-			     const char *function, const char *fmt, ...);
-
 #ifdef _I830_H_
 #define PrintErrorState i830_dump_error_state
 #define WaitRingFunc I830WaitLpRing
@@ -97,8 +80,8 @@ extern void I830DPRINTF_stub(const char *filename, int line,
 
 static inline void memset_volatile(volatile void *b, int c, size_t len)
 {
-    int i;
-    
+    size_t i;
+
     for (i = 0; i < len; i++)
 	((volatile char *)b)[i] = c;
 }
@@ -106,10 +89,10 @@ static inline void memset_volatile(volatile void *b, int c, size_t len)
 static inline void memcpy_volatile(volatile void *dst, const void *src,
 				   size_t len)
 {
-    int i;
-    
+    size_t i;
+
     for (i = 0; i < len; i++)
-	((volatile char *)dst)[i] = ((volatile char *)src)[i];
+	((volatile char *)dst)[i] = ((const volatile char *)src)[i];
 }
 
 /* Memory mapped register access macros */
@@ -182,9 +165,10 @@ intel_host_bridge (void);
  * Compare to CREATE_PIXMAP_USAGE_* in the server.
  */
 enum {
-	INTEL_CREATE_PIXMAP_TILING_X = 0x10000000,
-	INTEL_CREATE_PIXMAP_TILING_Y,
-	INTEL_CREATE_PIXMAP_TILING_NONE,
+	INTEL_CREATE_PIXMAP_TILING_X	= 0x10000000,
+	INTEL_CREATE_PIXMAP_TILING_Y	= 0x20000000,
+	INTEL_CREATE_PIXMAP_TILING_NONE	= 0x40000000,
+	INTEL_CREATE_PIXMAP_DRI2	= 0x80000000,
 };
 
 #endif /* _INTEL_COMMON_H_ */

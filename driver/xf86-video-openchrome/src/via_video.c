@@ -117,6 +117,10 @@ static int viaSetPortAttribute(ScrnInfoPtr, Atom, INT32, pointer);
 static int viaPutImage(ScrnInfoPtr, short, short, short, short, short, short,
     short, short, int, unsigned char *, short, short, Bool,
     RegionPtr, pointer, DrawablePtr);
+static void UVBlit(unsigned char *dest,
+    const unsigned char *uBuffer,
+    const unsigned char *vBuffer,
+    unsigned width, unsigned srcPitch, unsigned dstPitch, unsigned lines);
 static void nv12Blit(unsigned char *nv12Chroma,
     const unsigned char *uBuffer,
     const unsigned char *vBuffer,
@@ -158,11 +162,12 @@ static XF86AttributeRec AttributesG[NUM_ATTRIBUTES_G] = {
     {XvSettable | XvGettable, 0, 1, "XV_AUTOPAINT_COLORKEY"}
 };
 
-#define NUM_IMAGES_G 6
+#define NUM_IMAGES_G 7
 
 static XF86ImageRec ImagesG[NUM_IMAGES_G] = {
     XVIMAGE_YUY2,
     XVIMAGE_YV12,
+    XVIMAGE_I420,
     {
         /*
          * Below, a dummy picture type that is used in XvPutImage only to do
@@ -278,11 +283,12 @@ DecideOverlaySupport(ScrnInfoPtr pScrn)
     if (pVia->ChipId != PCI_CHIP_VT3205 &&
         pVia->ChipId != PCI_CHIP_VT3204 &&
         pVia->ChipId != PCI_CHIP_VT3259 &&
-        pVia->ChipId != PCI_CHIP_VT3314 && 
-        pVia->ChipId != PCI_CHIP_VT3327 && 
-        pVia->ChipId != PCI_CHIP_VT3336 && 
-        pVia->ChipId != PCI_CHIP_VT3409 && 
-        pVia->ChipId != PCI_CHIP_VT3364 && 
+        pVia->ChipId != PCI_CHIP_VT3314 &&
+        pVia->ChipId != PCI_CHIP_VT3327 &&
+        pVia->ChipId != PCI_CHIP_VT3336 &&
+        pVia->ChipId != PCI_CHIP_VT3409 &&
+        pVia->ChipId != PCI_CHIP_VT3410 &&
+        pVia->ChipId != PCI_CHIP_VT3364 &&
         pVia->ChipId != PCI_CHIP_VT3324 &&
 	pVia->ChipId != PCI_CHIP_VT3353) {
         CARD32 bandwidth = (mode->HDisplay >> 4) * (mode->VDisplay >> 5) *
@@ -352,6 +358,14 @@ DecideOverlaySupport(ScrnInfoPtr pScrn)
                 break;
             case VIA_MEM_DDR667:
                 mClock = 333;
+                memEfficiency = (float)SINGLE_3205_133;
+                break;
+            case VIA_MEM_DDR800:
+                mClock = 400;
+                memEfficiency = (float)SINGLE_3205_133;
+                break;
+            case VIA_MEM_DDR1066:
+                mClock = 533;
                 memEfficiency = (float)SINGLE_3205_133;
                 break;
             default:
@@ -426,7 +440,7 @@ DecideOverlaySupport(ScrnInfoPtr pScrn)
             DBG_DD(ErrorF(" via_video.c : totalBandwidth= %f : \n",
                 totalBandWidth));
             if (needBandWidth < totalBandWidth)
-            return TRUE;
+                return TRUE;
         }
         return FALSE;
     }
@@ -466,8 +480,8 @@ viaResetVideo(ScrnInfoPtr pScrn)
 
     viaVidEng->video1_ctl = 0;
     viaVidEng->video3_ctl = 0;
-    viaVidEng->compose = 0x80000000;
-    viaVidEng->compose = 0x40000000;
+    viaVidEng->compose = V1_COMMAND_FIRE;
+    viaVidEng->compose = V3_COMMAND_FIRE;
     viaVidEng->color_key = 0x821;
     viaVidEng->snd_color_key = 0x821;
 
@@ -479,16 +493,16 @@ viaSaveVideo(ScrnInfoPtr pScrn)
     VIAPtr pVia = VIAPTR(pScrn);
     vmmtr viaVidEng = (vmmtr) pVia->VidMapBase;
     
+    DBG_DD(ErrorF(" via_video.c : viaSaveVideo : \n"));
     /* Save video registers */
-    /* TODO: Identify which registers should be saved and restored */
     memcpy(pVia->VideoRegs, (void*)viaVidEng, sizeof(video_via_regs));
 
     pVia->dwV1 = ((vmmtr) viaVidEng)->video1_ctl;
     pVia->dwV3 = ((vmmtr) viaVidEng)->video3_ctl;
     viaVidEng->video1_ctl = 0;
     viaVidEng->video3_ctl = 0;
-    viaVidEng->compose = 0x80000000;
-    viaVidEng->compose = 0x40000000;
+    viaVidEng->compose = V1_COMMAND_FIRE;
+    viaVidEng->compose = V3_COMMAND_FIRE;
 }
 
 void
@@ -496,16 +510,83 @@ viaRestoreVideo(ScrnInfoPtr pScrn)
 {
     VIAPtr pVia = VIAPTR(pScrn);
     vmmtr viaVidEng = (vmmtr) pVia->VidMapBase;
+    video_via_regs  *localVidEng = pVia->VideoRegs;
+
     
+    DBG_DD(ErrorF(" via_video.c : viaRestoreVideo : \n"));
     /* Restore video registers */
-    /* TODO: Identify which registers should be saved and restored */
-    memcpy((void*)viaVidEng, pVia->VideoRegs, sizeof(video_via_regs));
+    /* flush restored video engines' setting to VidMapBase */
+    
+    viaVidEng->alphawin_hvstart = localVidEng->alphawin_hvstart;
+    viaVidEng->alphawin_size   = localVidEng->alphawin_size;
+    viaVidEng->alphawin_ctl    = localVidEng->alphawin_ctl;
+    viaVidEng->alphafb_stride  = localVidEng->alphafb_stride;
+    viaVidEng->color_key       = localVidEng->color_key;
+    viaVidEng->alphafb_addr    = localVidEng->alphafb_addr;
+    viaVidEng->chroma_low      = localVidEng->chroma_low;
+    viaVidEng->chroma_up       = localVidEng->chroma_up;
+    viaVidEng->interruptflag   = localVidEng->interruptflag;
 
-    viaVidEng->video1_ctl = pVia->dwV1;
+    if (pVia->ChipId != PCI_CHIP_VT3314)
+    {
+        /*VT3314 only has V3*/
+        viaVidEng->video1_ctl      = localVidEng->video1_ctl;
+        viaVidEng->video1_fetch    = localVidEng->video1_fetch;
+        viaVidEng->video1y_addr1   = localVidEng->video1y_addr1;
+        viaVidEng->video1_stride   = localVidEng->video1_stride;
+        viaVidEng->video1_hvstart  = localVidEng->video1_hvstart;
+        viaVidEng->video1_size     = localVidEng->video1_size;
+        viaVidEng->video1y_addr2   = localVidEng->video1y_addr2;
+        viaVidEng->video1_zoom     = localVidEng->video1_zoom;
+        viaVidEng->video1_mictl    = localVidEng->video1_mictl;
+        viaVidEng->video1y_addr0   = localVidEng->video1y_addr0;
+        viaVidEng->video1_fifo     = localVidEng->video1_fifo;
+        viaVidEng->video1y_addr3   = localVidEng->video1y_addr3;
+        viaVidEng->v1_source_w_h   = localVidEng->v1_source_w_h;
+        viaVidEng->video1_CSC1     = localVidEng->video1_CSC1;
+        viaVidEng->video1_CSC2     = localVidEng->video1_CSC2;
+
+        /* Fix cursor garbage after suspend for VX855 and VX900 (#405) */
+        /* 0x2E4 T Signature Data Result 1 */
+        viaVidEng->video1u_addr1         = localVidEng->video1u_addr1; 
+        /* 0x2E8 HI for Primary Display FIFO Control Signal */
+        viaVidEng->video1u_addr2         = localVidEng->video1u_addr2;
+        /* 0x2EC HI for Primary Display FIFO Transparent color */
+        viaVidEng->video1u_addr3         = localVidEng->video1u_addr3;
+        /* 0x2F0 HI for Primary Display Control Signal */
+        viaVidEng->video1v_addr0         = localVidEng->video1v_addr0;
+        /* 0x2F4 HI for Primary Display Frame Buffer Starting Address */
+        viaVidEng->video1v_addr1         = localVidEng->video1v_addr1;
+        /* 0x2F8 HI for Primary Display Horizontal and Vertical Start */
+        viaVidEng->video1v_addr2         = localVidEng->video1v_addr2;
+        /* 0x2FC HI for Primary Display Center Offset */
+        viaVidEng->video1v_addr3         = localVidEng->video1v_addr3;
+    }
+    viaVidEng->snd_color_key   = localVidEng->snd_color_key;
+    viaVidEng->v3alpha_prefifo = localVidEng->v3alpha_prefifo;
+    viaVidEng->v3alpha_fifo    = localVidEng->v3alpha_fifo;
+    viaVidEng->video3_CSC2     = localVidEng->video3_CSC2;
+    viaVidEng->video3_CSC2     = localVidEng->video3_CSC2;
+    viaVidEng->v3_source_width = localVidEng->v3_source_width;
+    viaVidEng->video3_ctl      = localVidEng->video3_ctl;
+    viaVidEng->video3_addr0    = localVidEng->video3_addr0;
+    viaVidEng->video3_addr1    = localVidEng->video3_addr1;
+    viaVidEng->video3_stride   = localVidEng->video3_stride;
+    viaVidEng->video3_hvstart  = localVidEng->video3_hvstart;
+    viaVidEng->video3_size     = localVidEng->video3_size;
+    viaVidEng->v3alpha_fetch   = localVidEng->v3alpha_fetch;
+    viaVidEng->video3_zoom     = localVidEng->video3_zoom;
+    viaVidEng->video3_mictl    = localVidEng->video3_mictl;
+    viaVidEng->video3_CSC1     = localVidEng->video3_CSC1;
+    viaVidEng->video3_CSC2     = localVidEng->video3_CSC2;    
+    viaVidEng->compose         = localVidEng->compose;
+    
     viaVidEng->video3_ctl = pVia->dwV3;
-    viaVidEng->compose = 0x80000000;
-    viaVidEng->compose = 0x40000000;
-
+    if (pVia->ChipId != PCI_CHIP_VT3314) {
+        viaVidEng->video1_ctl = pVia->dwV1;
+        viaVidEng->compose = V1_COMMAND_FIRE;
+    }
+    viaVidEng->compose = V3_COMMAND_FIRE;
 }
 
 void
@@ -524,8 +605,8 @@ viaExitVideo(ScrnInfoPtr pScrn)
 
     viaVidEng->video1_ctl = 0;
     viaVidEng->video3_ctl = 0;
-    viaVidEng->compose = 0x80000000;
-    viaVidEng->compose = 0x40000000;
+    viaVidEng->compose = V1_COMMAND_FIRE;
+    viaVidEng->compose = V3_COMMAND_FIRE;
 
     /*
      * Free all adaptor info allocated in viaInitVideo.
@@ -542,15 +623,15 @@ viaExitVideo(ScrnInfoPtr pScrn)
                             (viaPortPrivPtr) curAdapt->pPortPrivates->ptr + j,
                             TRUE);
                     }
-                    xfree(curAdapt->pPortPrivates->ptr);
+                    free(curAdapt->pPortPrivates->ptr);
                 }
-                xfree(curAdapt->pPortPrivates);
+                free(curAdapt->pPortPrivates);
             }
-            xfree(curAdapt);
+            free(curAdapt);
         }
     }
     if (allAdaptors)
-        xfree(allAdaptors);
+        free(allAdaptors);
 }
 
 void
@@ -561,7 +642,7 @@ viaInitVideo(ScreenPtr pScreen)
     XF86VideoAdaptorPtr *adaptors, *newAdaptors;
     int num_adaptors, num_new;
 
-    DBG_DD(ErrorF(" via_video.c : viaInitVideo : \n"));
+    DBG_DD(ErrorF(" via_video.c : viaInitVideo, Screen[%d]\n", pScrn->scrnIndex));
 
     allAdaptors = NULL;
     newAdaptors = NULL;
@@ -580,6 +661,7 @@ viaInitVideo(ScreenPtr pScreen)
         (pVia->Chipset == VIA_CX700) ||
         (pVia->Chipset == VIA_VX800) ||
         (pVia->Chipset == VIA_VX855) ||
+        (pVia->Chipset == VIA_VX900) ||
         (pVia->Chipset == VIA_P4M890));
     if ((pVia->drmVerMajor < 2) ||
         ((pVia->drmVerMajor == 2) && (pVia->drmVerMinor < 9)))
@@ -598,8 +680,8 @@ viaInitVideo(ScreenPtr pScreen)
         (pVia->Chipset == VIA_K8M800) || (pVia->Chipset == VIA_PM800) ||
         (pVia->Chipset == VIA_VM800) || (pVia->Chipset == VIA_K8M890) ||
         (pVia->Chipset == VIA_P4M900) || (pVia->Chipset == VIA_CX700) ||
-        (pVia->Chipset == VIA_P4M890) || (pVia->Chipset == VIA_VX800) || 
-        (pVia->Chipset == VIA_VX855)) {
+        (pVia->Chipset == VIA_P4M890) || (pVia->Chipset == VIA_VX800) ||
+        (pVia->Chipset == VIA_VX855) || (pVia->Chipset == VIA_VX900)) {
         num_new = viaSetupAdaptors(pScreen, &newAdaptors);
         num_adaptors = xf86XVListGenericAdaptors(pScrn, &adaptors);
     } else {
@@ -611,7 +693,7 @@ viaInitVideo(ScreenPtr pScreen)
 
     DBG_DD(ErrorF(" via_video.c : num_adaptors : %d\n", num_adaptors));
     if (newAdaptors) {
-        allAdaptors = xalloc((num_adaptors + num_new) *
+        allAdaptors = malloc((num_adaptors + num_new) *
                 sizeof(XF86VideoAdaptorPtr *));
         if (allAdaptors) {
             if (num_adaptors)
@@ -636,194 +718,6 @@ viaInitVideo(ScreenPtr pScreen)
     }
 }
 
-static Bool
-RegionsEqual(RegionPtr A, RegionPtr B)
-{
-    int *dataA, *dataB;
-    int num;
-
-    num = REGION_NUM_RECTS(A);
-    if (num != REGION_NUM_RECTS(B))
-        return FALSE;
-
-    if ((A->extents.x1 != B->extents.x1) ||
-        (A->extents.x2 != B->extents.x2) ||
-        (A->extents.y1 != B->extents.y1) || (A->extents.y2 != B->extents.y2))
-    return FALSE;
-
-    dataA = (int *)REGION_RECTS(A);
-    dataB = (int *)REGION_RECTS(B);
-
-    while (num--) {
-        if ((dataA[0] != dataB[0]) || (dataA[1] != dataB[1]))
-            return FALSE;
-        dataA += 2;
-        dataB += 2;
-    }
-
-    return TRUE;
-}
-
-static void
-viaVideoFillPixmap(ScrnInfoPtr pScrn,
-        char *base,
-        unsigned long pitch,
-        int depth,
-        int x, int y, int w, int h,
-        unsigned long color)
-{
-    int i;
-
-    ErrorF("pitch %lu, depth %d, x %d, y %d, w %d, h %d, color 0x%08lx\n",
-            pitch, depth, x, y, w, h, color);
-
-    depth = (depth + 7) >> 3;
-
-    base += y*pitch + x*depth;
-
-    switch(depth) {
-        case 4:
-        while(h--) {
-            register CARD32 *p = (CARD32 *)base;
-            for (i=0; i<w; ++i) {
-                *p++ = color;
-            }
-            base += pitch;
-        }
-        break;
-        case 2: {
-            register CARD16 col = color & 0x0000FFFF;
-            while(h--) {
-                register CARD16 *p = (CARD16 *)base;
-                for (i=0; i<w; ++i) {
-                    *p++ = col;
-                }
-                base += pitch;
-            }
-            break;
-        }
-        case 1: {
-            register CARD8 col = color & 0xFF;
-            while(h--) {
-                register CARD8 *p = (CARD8 *)base;
-                for (i=0; i<w; ++i) {
-                    *p++ = col;
-                }
-                base += pitch;
-            }
-            break;
-        }
-        default:
-        break;
-    }
-}
-    
-
-
-static int
-viaPaintColorkey(ScrnInfoPtr pScrn, viaPortPrivPtr pPriv, RegionPtr clipBoxes,
-    DrawablePtr pDraw)
-{
-
-    if (pDraw->type == DRAWABLE_WINDOW) {
-
-        VIAPtr pVia = VIAPTR(pScrn);
-        PixmapPtr pPix = (pScrn->pScreen->GetWindowPixmap)((WindowPtr) pDraw);
-        unsigned long pitch = pPix->devKind;
-        long offset = (long) pPix->devPrivate.ptr - (long) pVia->FBBase;
-        int x,y;
-        BoxPtr pBox;
-        int nBox;
-
-        REGION_TRANSLATE(pScrn->pScreen, clipBoxes, - pPix->screen_x,
-            - pPix->screen_y);
-
-        nBox = REGION_NUM_RECTS(clipBoxes);
-        pBox = REGION_RECTS(clipBoxes);
-
-        while(nBox--) {
-            if (pVia->NoAccel || offset < 0 ||
-                offset > pScrn->videoRam*1024) {
-                viaVideoFillPixmap(pScrn, pPix->devPrivate.ptr, pitch,
-                    pDraw->bitsPerPixel, pBox->x1, pBox->y1,
-                    pBox->x2 - pBox->x1, pBox->y2 - pBox->y1,
-                    pPriv->colorKey);
-            } else {
-                viaAccelFillPixmap(pScrn, offset, pitch,
-                    pDraw->bitsPerPixel, pBox->x1, pBox->y1,
-                    pBox->x2 - pBox->x1, pBox->y2 - pBox->y1,
-                    pPriv->colorKey);
-            }
-            pBox++;
-        }
-
-        DamageDamageRegion(pPix, clipBoxes);
-    }
-
-    return 0;
-}
-
-
-/*
- * This one gets called, for example, on panning.
- */
-
-static int
-viaReputImage(ScrnInfoPtr pScrn,
-        short drw_x, short drw_y, RegionPtr clipBoxes, pointer data,
-        DrawablePtr pDraw)
-{
-
-    DDUPDATEOVERLAY UpdateOverlay_Video;
-    LPDDUPDATEOVERLAY lpUpdateOverlay = &UpdateOverlay_Video;
-    viaPortPrivPtr pPriv = (viaPortPrivPtr) data;
-    VIAPtr pVia = VIAPTR(pScrn);
-
-    if (!RegionsEqual(&pPriv->clip, clipBoxes)) {
-        REGION_COPY(pScrn->pScreen, &pPriv->clip, clipBoxes);
-        if (pPriv->autoPaint) {
-            if (pDraw->type == DRAWABLE_WINDOW) {
-                viaPaintColorkey(pScrn, pPriv, clipBoxes, pDraw);
-            } else {
-                xf86XVFillKeyHelper(pScrn->pScreen, pPriv->colorKey,
-                    clipBoxes);
-            }
-        }
-    }
-
-    if (drw_x == pPriv->old_drw_x &&
-        drw_y == pPriv->old_drw_y &&
-        pVia->swov.oldPanningX == pVia->swov.panning_x &&
-        pVia->swov.oldPanningY == pVia->swov.panning_y) {
-        viaXvError(pScrn, pPriv, xve_none);
-        return Success;
-    }
-
-    lpUpdateOverlay->SrcLeft = pPriv->old_src_x;
-    lpUpdateOverlay->SrcTop = pPriv->old_src_y;
-    lpUpdateOverlay->SrcRight = pPriv->old_src_x + pPriv->old_src_w;
-    lpUpdateOverlay->SrcBottom = pPriv->old_src_y + pPriv->old_src_h;
-
-    lpUpdateOverlay->DstLeft = drw_x;
-    lpUpdateOverlay->DstTop = drw_y;
-    lpUpdateOverlay->DstRight = drw_x + pPriv->old_drw_w;
-    lpUpdateOverlay->DstBottom = drw_y + pPriv->old_drw_h;
-    pPriv->old_drw_x = drw_x;
-    pPriv->old_drw_y = drw_y;
-
-    lpUpdateOverlay->dwFlags = DDOVER_KEYDEST;
-
-    if (pScrn->bitsPerPixel == 8)
-        lpUpdateOverlay->dwColorSpaceLowValue = pPriv->colorKey & 0xff;
-    else
-        lpUpdateOverlay->dwColorSpaceLowValue = pPriv->colorKey;
-
-    VIAVidUpdateOverlay(pScrn, lpUpdateOverlay);
-
-    viaXvError(pScrn, pPriv, xve_none);
-    return Success;
-}
-
 static unsigned
 viaSetupAdaptors(ScreenPtr pScreen, XF86VideoAdaptorPtr ** adaptors)
 {
@@ -832,7 +726,7 @@ viaSetupAdaptors(ScreenPtr pScreen, XF86VideoAdaptorPtr ** adaptors)
     DevUnion *pdevUnion;
     int i, j, usedPorts, numPorts;
 
-    DBG_DD(ErrorF(" via_video.c : viaSetupImageVideo: \n"));
+    DBG_DD(ErrorF(" via_video.c : viaSetupAdaptors (viaSetupImageVideo): \n"));
 
     xvBrightness = MAKE_ATOM("XV_BRIGHTNESS");
     xvContrast = MAKE_ATOM("XV_CONTRAST");
@@ -884,7 +778,7 @@ viaSetupAdaptors(ScreenPtr pScreen, XF86VideoAdaptorPtr ** adaptors)
         viaAdaptPtr[i]->GetPortAttribute = viaGetPortAttribute;
         viaAdaptPtr[i]->SetPortAttribute = viaSetPortAttribute;
         viaAdaptPtr[i]->PutImage = viaPutImage;
-        viaAdaptPtr[i]->ReputImage = viaReputImage;
+        viaAdaptPtr[i]->ReputImage = NULL;
         viaAdaptPtr[i]->QueryImageAttributes = viaQueryImageAttributes;
         for (j = 0; j < numPorts; ++j) {
             viaPortPriv[j].dmaBounceBuffer = NULL;
@@ -931,7 +825,7 @@ viaStopVideo(ScrnInfoPtr pScrn, pointer data, Bool exit)
     if (exit) {
         ViaSwovSurfaceDestroy(pScrn, pPriv);
         if (pPriv->dmaBounceBuffer)
-            xfree(pPriv->dmaBounceBuffer);
+            free(pPriv->dmaBounceBuffer);
         pPriv->dmaBounceBuffer = 0;
         pPriv->dmaBounceStride = 0;
         pPriv->dmaBounceLines = 0;
@@ -1042,6 +936,8 @@ viaGetPortAttribute(ScrnInfoPtr pScrn,
         }
 
     } else {
+        DBG_DD(ErrorF(" via_video.c : viaGetPortAttribute : is not supported the attribute\n"));
+        
         /*return BadMatch */;
     }
     return Success;
@@ -1070,6 +966,7 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
         unsigned long DisplayBufferIndex)
 {
     unsigned long proReg = 0;
+    unsigned count = 50000;
 
     if (pVia->ChipId == PCI_CHIP_VT3259
         && !(pVia->swov.gdwVideoFlagSW & VIDEO_1_INUSE))
@@ -1081,7 +978,8 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
         case FOURCC_RV15:
         case FOURCC_RV16:
         case FOURCC_RV32:
-            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP));
+            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP)
+                    && --count);
             VIDOutD(HQV_SRC_STARTADDR_Y + proReg,
                 pVia->swov.SWDevice.dwSWPhysicalAddr[DisplayBufferIndex]);
             VIDOutD(HQV_CONTROL + proReg,
@@ -1089,8 +987,10 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
                 proReg) & ~HQV_FLIP_ODD) | HQV_SW_FLIP | HQV_FLIP_STATUS);
             break;
         case FOURCC_YV12:
+        case FOURCC_I420:
         default:
-            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP));
+            while ((VIDInD(HQV_CONTROL + proReg) & HQV_SW_FLIP)
+                    && --count);
             VIDOutD(HQV_SRC_STARTADDR_Y + proReg,
                 pVia->swov.SWDevice.dwSWPhysicalAddr[DisplayBufferIndex]);
             if (pVia->VideoEngine == VIDEO_ENGINE_CME) {
@@ -1114,16 +1014,49 @@ Flip(VIAPtr pVia, viaPortPrivPtr pPriv, int fourcc,
  */
 
 static void
-nv12cp(unsigned char *dst,
-    const unsigned char *src, int dstPitch, int w, int h, int yuv422)
+planar420cp(unsigned char *dst,
+    const unsigned char *src, int dstPitch, int w, int h, int i420)
 {
     /* 
      * Blit luma component as a fake YUY2 assembler blit. 
      */
+	unsigned long srcUOffset, srcVOffset;
+    if (i420) {
+	    srcVOffset  = w * h + (w >> 1) * (h >> 1);
+	    srcUOffset = w * h;
+    } else {
+	    srcUOffset  = w * h + (w >> 1) * (h >> 1);
+	    srcVOffset = w * h;
+	}
+
+    (*viaFastVidCpy) (dst, src, dstPitch, w >> 1, h, 1);
+    UVBlit(dst + dstPitch * h, src + srcUOffset,
+           src + srcVOffset, w >> 1, w >> 1, dstPitch, h >> 1);
+}
+
+/*
+ * Slow and dirty. NV12 blit.
+ */
+
+static void
+nv12cp(unsigned char *dst,
+    const unsigned char *src, int dstPitch, int w, int h, int i420)
+{
+    /* 
+     * Blit luma component as a fake YUY2 assembler blit. 
+     */
+	unsigned long srcUOffset, srcVOffset;
+    if (i420) {
+	    srcVOffset  = w * h + (w >> 1) * (h >> 1);
+	    srcUOffset = w * h;
+    } else {
+	    srcUOffset  = w * h + (w >> 1) * (h >> 1);
+	    srcVOffset = w * h;
+	}
 
     (*viaFastVidCpy) (dst, src, dstPitch, w >> 1, h, TRUE);
-    nv12Blit(dst + dstPitch * h, src + w * h + (w >> 1) * (h >> 1),
-            src + w * h, w >> 1, w >> 1, dstPitch, h >> 1);
+    nv12Blit(dst + dstPitch * h, src + srcUOffset,
+            src + srcVOffset, w >> 1, w >>1, dstPitch, h >> 1);
 }
 
 #ifdef XF86DRI
@@ -1148,7 +1081,7 @@ viaDmaBlitImage(VIAPtr pVia,
 
     bounceBuffer = ((unsigned long)src & 15);
     nv12Conversion = (pVia->VideoEngine == VIDEO_ENGINE_CME && 
-        id == FOURCC_YV12);
+        (id == FOURCC_YV12 || id == FOURCC_I420));
 
     switch (id) {
         case FOURCC_YUY2:
@@ -1163,6 +1096,7 @@ viaDmaBlitImage(VIAPtr pVia,
             break;
 
         case FOURCC_YV12:
+        case FOURCC_I420:
         default:
             bounceStride = ALIGN_TO(width, 16);
             bounceLines = height;
@@ -1174,11 +1108,11 @@ viaDmaBlitImage(VIAPtr pVia,
             pPort->dmaBounceStride != bounceStride ||
             pPort->dmaBounceLines != bounceLines) {
             if (pPort->dmaBounceBuffer) {
-                xfree(pPort->dmaBounceBuffer);
+                free(pPort->dmaBounceBuffer);
                 pPort->dmaBounceBuffer = 0;
             }
             size = bounceStride * bounceLines + 16;
-            if (FOURCC_YV12 == id)
+            if (id == FOURCC_YV12 || id == FOURCC_I420)
                 size += ALIGN_TO(bounceStride >> 1, 16) * bounceLines;
             pPort->dmaBounceBuffer = (unsigned char *)malloc(size);
             pPort->dmaBounceLines = bounceLines;
@@ -1218,7 +1152,7 @@ viaDmaBlitImage(VIAPtr pVia,
 
     lumaSync = blit.sync;
 
-    if (id == FOURCC_YV12) {
+    if (id == FOURCC_YV12 || id == FOURCC_I420) {
         unsigned tmp = ALIGN_TO(width >> 1, 16);
 
         if (nv12Conversion) {
@@ -1296,7 +1230,7 @@ viaPutImage(ScrnInfoPtr pScrn,
     unsigned long retCode;
 
 # ifdef XV_DEBUG
-    ErrorF(" via_video.c : viaPutImage : called\n");
+    ErrorF(" via_video.c : viaPutImage : called,  Screen[%d]\n", pScrn->scrnIndex);
     ErrorF(" via_video.c : FourCC=0x%x width=%d height=%d sync=%d\n", id,
             width, height, sync);
     ErrorF
@@ -1350,6 +1284,17 @@ viaPutImage(ScrnInfoPtr pScrn,
 #endif
                 } else {
                     switch (id) {
+                        case FOURCC_I420:
+                            if (pVia->VideoEngine == VIDEO_ENGINE_CME) {
+                                nv12cp(pVia->swov.SWDevice.
+                                    lpSWOverlaySurface[pVia->dwFrameNum & 1],
+                                    buf, dstPitch, width, height, 1);
+                            } else {
+                                (*viaFastVidCpy)(pVia->swov.SWDevice.
+                                    lpSWOverlaySurface[pVia->dwFrameNum & 1],
+                                    buf, dstPitch, width, height, 0);
+                            }
+                            break;
                         case FOURCC_YV12:
                             if (pVia->VideoEngine == VIDEO_ENGINE_CME) {
                                 nv12cp(pVia->swov.SWDevice.
@@ -1405,12 +1350,11 @@ viaPutImage(ScrnInfoPtr pScrn,
 
             lpUpdateOverlay->dwFlags = DDOVER_KEYDEST;
 
-            if (pScrn->bitsPerPixel == 8)
-            lpUpdateOverlay->dwColorSpaceLowValue =
-            pPriv->colorKey & 0xff;
-            else
-            lpUpdateOverlay->dwColorSpaceLowValue = pPriv->colorKey;
-
+            if (pScrn->bitsPerPixel == 8) {
+                lpUpdateOverlay->dwColorSpaceLowValue = pPriv->colorKey & 0xff;
+            } else {
+                lpUpdateOverlay->dwColorSpaceLowValue = pPriv->colorKey;
+            }
             /* If use extend FIFO mode */
             if (pScrn->currentMode->HDisplay > 1024) {
                 dwUseExtendedFIFO = 1;
@@ -1436,7 +1380,8 @@ viaPutImage(ScrnInfoPtr pScrn,
                     && (pPriv->old_src_w == src_w) && (pPriv->old_src_h == src_h)
                     && (pVia->old_dwUseExtendedFIFO == dwUseExtendedFIFO)
                     && (pVia->VideoStatus & VIDEO_SWOV_ON) &&
-                    RegionsEqual(&pPriv->clip, clipBoxes)) {
+                    REGION_EQUAL(pScrn->pScreen, &pPriv->clip, clipBoxes)) {
+                DBG_DD(ErrorF(" via_video.c : don't do UpdateOverlay! \n"));
                 viaXvError(pScrn, pPriv, xve_none);
                 return Success;
             }
@@ -1454,16 +1399,18 @@ viaPutImage(ScrnInfoPtr pScrn,
             pVia->VideoStatus |= VIDEO_SWOV_ON;
 
             /*  BitBlt: Draw the colorkey rectangle */
-            if (!RegionsEqual(&pPriv->clip, clipBoxes)) {
+            if (!REGION_EQUAL(pScrn->pScreen, &pPriv->clip, clipBoxes)) {
                 REGION_COPY(pScrn->pScreen, &pPriv->clip, clipBoxes);
                 if (pPriv->autoPaint) {
                     if (pDraw->type == DRAWABLE_WINDOW) {
-                        viaPaintColorkey(pScrn, pPriv, clipBoxes, pDraw);
+                        xf86XVFillKeyHelperDrawable(pDraw, pPriv->colorKey, clipBoxes);
+                        DamageDamageRegion(pDraw, clipBoxes);
                     } else {
-                        xf86XVFillKeyHelper(pScrn->pScreen, pPriv->colorKey,
-                            clipBoxes);
+                        xf86XVFillKeyHelper(pScrn->pScreen, pPriv->colorKey, clipBoxes);
                     }
                 }
+            } else {
+                DBG_DD(ErrorF(" via_video.c : // No need to draw Colorkey!! \n"));
             }
             /*
              *  Update video overlay
@@ -1498,6 +1445,7 @@ viaQueryImageAttributes(ScrnInfoPtr pScrn,
 
     DBG_DD(ErrorF(" via_video.c : viaQueryImageAttributes : FourCC=0x%x, ",
             id));
+    DBG_DD(ErrorF(" via_video.c : Screen[%d],  w=%d, h=%d\n", pScrn->scrnIndex, *w, *h));
 
     if ((!w) || (!h))
         return 0;
@@ -1512,6 +1460,7 @@ viaQueryImageAttributes(ScrnInfoPtr pScrn,
         offsets[0] = 0;
 
     switch (id) {
+        case FOURCC_I420:
         case FOURCC_YV12: /*Planar format : YV12 -4:2:0 */
             *h = (*h + 1) & ~1;
             size = *w;
@@ -1596,6 +1545,35 @@ VIAVidAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
     pVia->swov.panning_x = x;
     pVia->swov.panning_y = y;
 }
+
+/*
+ * Blit the U and V Fields. Used to Flip the U V for I420.
+ */
+
+static void
+UVBlit(unsigned char *dst,
+        const unsigned char *uBuffer,
+        const unsigned char *vBuffer,
+        unsigned width, unsigned srcPitch, unsigned dstPitch, unsigned lines)
+{
+    int i, j;
+
+    dstPitch >>= 1;
+
+    for(j = 0; j < lines; j++)
+    {
+        for(i = 0; i < width; i++)
+        {
+            dst[i] = (uBuffer[i] << 8) | (vBuffer[i] << 16);
+        }
+
+        dst += dstPitch;
+        uBuffer += srcPitch;
+        vBuffer += srcPitch;
+    }
+
+}
+
 
 /*
  * Blit the chroma field from one buffer to another while at the same time converting from

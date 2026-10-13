@@ -968,8 +968,6 @@ _XimProtoSetFocus(
     (void)_XimWrite(im, len, (XPointer)buf);
     _XimFlush(im);
 
-    MARK_FOCUSED(ic);
-
     _XimRegisterFilter(ic);
     return;
 }
@@ -1014,8 +1012,6 @@ _XimProtoUnsetFocus(
     _XimSetHeader((XPointer)buf, XIM_UNSET_IC_FOCUS, 0, &len);
     (void)_XimWrite(im, len, (XPointer)buf);
     _XimFlush(im);
-
-    UNMARK_FOCUSED(ic);
 
     _XimUnregisterFilter(ic);
     return;
@@ -1425,10 +1421,9 @@ _XimProtoCreateIC(
     if (!(_XimGetInputStyle(arg, &input_style)))
 	return (XIC)NULL;
 
-    if ((ic = (Xic)Xmalloc(sizeof(XicRec))) == (Xic)NULL)
+    if ((ic = Xcalloc(1, sizeof(XicRec))) == (Xic)NULL)
 	return (XIC)NULL;
 
-    bzero((char *)ic, sizeof(XicRec));
     ic->methods = &ic_methods;
     ic->core.im = (XIM)im;
     ic->core.input_style = input_style;
@@ -1436,7 +1431,7 @@ _XimProtoCreateIC(
     num = im->core.ic_num_resources;
     len = sizeof(XIMResource) * num;
     if (!(res = (XIMResourceList)Xmalloc(len)))
-	return (XIC)NULL;
+	goto ErrorOnCreatingIC;
     (void)memcpy((char *)res, (char *)im->core.ic_resources, len);
     ic->private.proto.ic_resources     = res;
     ic->private.proto.ic_num_resources = num;
@@ -1464,7 +1459,7 @@ _XimProtoCreateIC(
     num = im->private.proto.ic_num_inner_resources;
     len = sizeof(XIMResource) * num;
     if (!(res = (XIMResourceList)Xmalloc(len)))
-	 return (XIC)NULL;
+	goto ErrorOnCreatingIC;
     (void)memcpy((char *)res,
 			 (char *)im->private.proto.ic_inner_resources, len);
     ic->private.proto.ic_inner_resources     = res;

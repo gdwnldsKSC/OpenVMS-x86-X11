@@ -39,6 +39,7 @@
 
 #include "dixstruct.h"
 #include "extnsionst.h"
+#include "randrstr.h"
 #include <X11/X.h>
 #include <X11/extensions/panoramiXproto.h>
 
@@ -81,10 +82,10 @@ VMwareCtrlQueryVersion(ClientPtr client)
    rep.majorVersion = VMWARE_CTRL_MAJOR_VERSION;
    rep.minorVersion = VMWARE_CTRL_MINOR_VERSION;
    if (client->swapped) {
-      swaps(&rep.sequenceNumber, n);
-      swapl(&rep.length, n);
-      swapl(&rep.majorVersion, n);
-      swapl(&rep.minorVersion, n);
+      _swaps(&rep.sequenceNumber, n);
+      _swapl(&rep.length, n);
+      _swapl(&rep.majorVersion, n);
+      _swapl(&rep.minorVersion, n);
    }
    WriteToClient(client, sizeof(xVMwareCtrlQueryVersionReply), (char *)&rep);
 
@@ -224,11 +225,11 @@ VMwareCtrlSetRes(ClientPtr client)
    rep.x = stuff->x;
    rep.y = stuff->y;
    if (client->swapped) {
-      swaps(&rep.sequenceNumber, n);
-      swapl(&rep.length, n);
-      swapl(&rep.screen, n);
-      swapl(&rep.x, n);
-      swapl(&rep.y, n);
+      _swaps(&rep.sequenceNumber, n);
+      _swapl(&rep.length, n);
+      _swapl(&rep.screen, n);
+      _swapl(&rep.x, n);
+      _swapl(&rep.y, n);
    }
    WriteToClient(client, sizeof(xVMwareCtrlSetResReply), (char *)&rep);
 
@@ -300,36 +301,20 @@ VMwareCtrlDoSetTopology(ScrnInfoPtr pScrn,
          if (maxX == pVMWARE->ModeReg.svga_reg_width &&
              maxY == pVMWARE->ModeReg.svga_reg_height) {
 
-            /*
-             * XXX:
-             *
-             * There are problems with trying to set a Xinerama state
-             * without a mode switch. The biggest one is that
-             * applications typically won't notice a topology change
-             * that occurs without a mode switch. If you run "xdpyinfo
-             * -ext XINERAMA" after one such topology change, it will
-             * report the new data, but apps (like the GNOME Panel)
-             * will not notice until the next mode change.
-             *
-             * I don't think there's any good solution to this... as
-             * far as I know, even on a non-virtualized machine
-             * there's no way for an app to find out if the Xinerama
-             * opology changes without a resolution change also
-             * occurring. There might be some cheats we can take, like
-             * swithcing to a new mode with the same resolution and a
-             * different (fake) refresh rate, or temporarily switching
-             * to an intermediate mode. Ick.
-             *
-             * The other annoyance here is that when we reprogram the
-             * SVGA device's monitor topology registers, it may
-             * rearrange those monitors on the host's screen, but they
-             * will still have the old contents. This might be
-             * correct, but it isn't guaranteed to match what's on X's
-             * framebuffer at the moment. So we'll send a
-             * full-framebuffer update rect afterwards.
-             */
+	    /*
+	     * The annoyance here is that when we reprogram the
+	     * SVGA device's monitor topology registers, it may
+	     * rearrange those monitors on the host's screen, but they
+	     * will still have the old contents. This might be
+	     * correct, but it isn't guaranteed to match what's on X's
+	     * framebuffer at the moment. So we'll send a
+	     * full-framebuffer update rect afterwards.
+	     */
 
             vmwareNextXineramaState(pVMWARE);
+#ifdef HAVE_XORG_SERVER_1_2_0
+            RRSendConfigNotify(pScrn->pScreen);
+#endif
             vmwareSendSVGACmdUpdateFullScreen(pVMWARE);
 
             return TRUE;
@@ -394,9 +379,9 @@ VMwareCtrlSetTopology(ClientPtr client)
    rep.sequenceNumber = client->sequence;
    rep.screen = stuff->screen;
    if (client->swapped) {
-      swaps(&rep.sequenceNumber, n);
-      swapl(&rep.length, n);
-      swapl(&rep.screen, n);
+      _swaps(&rep.sequenceNumber, n);
+      _swapl(&rep.length, n);
+      _swapl(&rep.screen, n);
    }
    WriteToClient(client, sizeof(xVMwareCtrlSetTopologyReply), (char *)&rep);
 
@@ -463,7 +448,7 @@ SVMwareCtrlQueryVersion(ClientPtr client)
    REQUEST(xVMwareCtrlQueryVersionReq);
    REQUEST_SIZE_MATCH(xVMwareCtrlQueryVersionReq);
 
-   swaps(&stuff->length, n);
+   _swaps(&stuff->length, n);
 
    return VMwareCtrlQueryVersion(client);
 }
@@ -494,10 +479,10 @@ SVMwareCtrlSetRes(ClientPtr client)
    REQUEST(xVMwareCtrlSetResReq);
    REQUEST_SIZE_MATCH(xVMwareCtrlSetResReq);
 
-   swaps(&stuff->length, n);
-   swapl(&stuff->screen, n);
-   swapl(&stuff->x, n);
-   swapl(&stuff->y, n);
+   _swaps(&stuff->length, n);
+   _swapl(&stuff->screen, n);
+   _swapl(&stuff->x, n);
+   _swapl(&stuff->y, n);
 
    return VMwareCtrlSetRes(client);
 }
@@ -528,9 +513,9 @@ SVMwareCtrlSetTopology(ClientPtr client)
    REQUEST(xVMwareCtrlSetTopologyReq);
    REQUEST_SIZE_MATCH(xVMwareCtrlSetTopologyReq);
 
-   swaps(&stuff->length, n);
-   swapl(&stuff->screen, n);
-   swapl(&stuff->number, n);
+   _swaps(&stuff->length, n);
+   _swapl(&stuff->screen, n);
+   _swapl(&stuff->number, n);
    /* Each extent is a struct of shorts. */
    SwapRestS(stuff);
 

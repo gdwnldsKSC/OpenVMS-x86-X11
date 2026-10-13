@@ -19,6 +19,16 @@
 #  PERFORMANCE OF THIS SOFTWARE.
 #
 
-man3_MANS = \
-         AppleWM.3
-EXTRA_DIST = $(man3_MANS)
+libman_PRE = AppleWM.man
+libmandir = $(LIB_MAN_DIR)
+libman_DATA = $(libman_PRE:man=$(LIB_MAN_SUFFIX))
+
+EXTRA_DIST = $(libman_PRE)
+CLEANFILES = $(libman_DATA)
+SUFFIXES = .$(LIB_MAN_SUFFIX) .man
+APPLE_MAN_SUBSTS = -e 's|__xservername__|XQuartz|g' $(MAN_SUBSTS)
+
+# String replacements in MAN_SUBSTS now come from xorg-macros.m4 via configure
+.man.$(LIB_MAN_SUFFIX):
+	$(AM_V_GEN)$(SED) $(APPLE_MAN_SUBSTS) < $< > $@
+

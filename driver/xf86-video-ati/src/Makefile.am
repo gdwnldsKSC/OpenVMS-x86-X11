@@ -53,7 +53,8 @@ RADEON_KMS_SRCS=radeon_dri2.c radeon_kms.c drmmode_display.c radeon_vbo.c
 endif
 
 if USE_EXA
-RADEON_EXA_SOURCES = radeon_exa.c r600_exa.c r6xx_accel.c r600_textured_videofuncs.c r600_shader.c radeon_exa_shared.c
+RADEON_EXA_SOURCES = radeon_exa.c r600_exa.c r6xx_accel.c r600_textured_videofuncs.c r600_shader.c radeon_exa_shared.c \
+	evergreen_exa.c evergreen_accel.c evergreen_shader.c evergreen_textured_videofuncs.c cayman_accel.c cayman_shader.c
 endif
 
 AM_CFLAGS = \
@@ -92,7 +93,7 @@ radeon_drv_la_SOURCES = \
 	radeon_driver.c radeon_video.c radeon_bios.c radeon_mm_i2c.c \
 	radeon_vip.c radeon_misc.c radeon_probe.c \
 	legacy_crtc.c legacy_output.c \
-	radeon_textured_video.c radeon_pm.c \
+	radeon_textured_video.c radeon_xvmc.c radeon_pm.c \
 	radeon_crtc.c radeon_output.c radeon_modes.c radeon_tv.c \
 	$(RADEON_ATOMBIOS_SOURCES) radeon_atombios.c radeon_atomwrapper.c \
 	$(RADEON_DRI_SRCS) $(RADEON_EXA_SOURCES) atombios_output.c atombios_crtc.c \
@@ -129,6 +130,13 @@ EXTRA_DIST = \
 	r600_reg_r7xx.h \
 	r600_shader.h \
 	r600_state.h \
+	evergreen_reg.h \
+	evergreen_reg_auto.h \
+	evergreen_shader.h \
+	evergreen_state.h \
+	cayman_reg.h \
+	cayman_reg_auto.h \
+	cayman_shader.h \
 	ati.h \
 	ativersion.h \
 	bicubic_table.h \

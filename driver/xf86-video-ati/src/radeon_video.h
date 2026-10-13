@@ -15,6 +15,8 @@
 
 #include "bicubic_table.h"
 
+#include <xf86xvmc.h>
+
 #define ClipValue(v,min,max) ((v) < (min) ? (min) : (v) > (max) ? (max) : (v))
 
 /* Xvideo port struct */
@@ -120,6 +122,7 @@ typedef struct {
     int vsync;
     Bool is_planar;
     int vtx_count;
+    int hw_align;
 
     struct radeon_bo *src_bo[2];
 } RADEONPortPrivRec, *RADEONPortPrivPtr;
@@ -150,6 +153,7 @@ void RADEONVIP_reset(ScrnInfoPtr pScrn, RADEONPortPrivPtr pPriv);
 
 int  RADEONSetPortAttribute(ScrnInfoPtr, Atom, INT32, pointer);
 int  RADEONGetPortAttribute(ScrnInfoPtr, Atom ,INT32 *, pointer);
+void RADEONFreeVideoMemory(ScrnInfoPtr pScrn, RADEONPortPrivPtr pPriv);
 void RADEONStopVideo(ScrnInfoPtr, pointer, Bool);
 void RADEONQueryBestSize(ScrnInfoPtr, Bool, short, short, short, short,
 			 unsigned int *, unsigned int *, pointer);
@@ -158,6 +162,9 @@ int  RADEONQueryImageAttributes(ScrnInfoPtr, int, unsigned short *,
 
 XF86VideoAdaptorPtr
 RADEONSetupImageTexturedVideo(ScreenPtr pScreen);
+
+XF86MCAdaptorPtr
+RADEONCreateAdaptorXvMC(ScreenPtr pScreen, char *xv_adaptor_name);
 
 void
 RADEONCopyData(ScrnInfoPtr pScrn,

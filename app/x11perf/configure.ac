@@ -20,11 +20,16 @@ dnl  PERFORMANCE OF THIS SOFTWARE.
 dnl
 dnl Process this file with autoconf to create configure.
 
+# Initialize Autoconf
 AC_PREREQ([2.60])
 AC_INIT([x11perf],
-	[1.5.2],
+	[1.5.4],
 	[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
 	[x11perf])
+AC_CONFIG_SRCDIR([Makefile.am])
+AC_CONFIG_HEADERS([config.h])
+
+# Initialize Automake
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
 AM_MAINTAINER_MODE
 
@@ -32,22 +37,21 @@ AM_MAINTAINER_MODE
 m4_ifndef([XORG_MACROS_VERSION],
 	  [m4_fatal([must install xorg-macros 1.8 or later before running autoconf/autogen])])
 XORG_MACROS_VERSION(1.8)
-
-AM_CONFIG_HEADER(config.h)
-
 XORG_DEFAULT_OPTIONS
 
 AC_TYPE_SIGNAL
 
+# Define the installation directory for the x11 performance compare scripts
+AC_SUBST([x11perfcompdir], [$libdir/X11/x11perfcomp])
+
+# Checks for programs run by the scripts we install
+AC_PATH_PROG(MKTEMP, mktemp)
+
 # Checks for pkg-config packages
 PKG_CHECK_MODULES(X11PERF, x11 xmuu)
-AC_SUBST(X11PERF_CFLAGS)
-AC_SUBST(X11PERF_LIBS)
 
 # Check for Xrender library
 PKG_CHECK_MODULES(XRENDER, xrender, [xrender_found=yes], [xrender_found=no])
-AC_SUBST(XRENDER_CFLAGS)
-AC_SUBST(XRENDER_LIBS)
 case "$xrender_found" in
 yes)
 	AC_DEFINE(XRENDER,1,[Xrender library available])
@@ -56,8 +60,6 @@ esac
 
 # Check for Xft library
 PKG_CHECK_MODULES(XFT, xft, [xft_found=yes], [xft_found=no])
-AC_SUBST(XFT_CFLAGS)
-AC_SUBST(XFT_LIBS)
 case "$xft_found" in
 yes)
 	AC_DEFINE(XFT,1,[Xft library available])
@@ -66,8 +68,6 @@ esac
 
 # Check for MIT-SHM extension
 PKG_CHECK_MODULES(XEXT, xext, [xext_found=yes], [xext_found=no])
-AC_SUBST(XEXT_CFLAGS)
-AC_SUBST(XEXT_LIBS)
 case "$xext_found" in
 yes)
 	save_LIBS="$LIBS"
@@ -78,4 +78,7 @@ yes)
 	;;
 esac
 
-AC_OUTPUT([Makefile])
+AC_CONFIG_FILES([
+	Makefile
+	man/Makefile])
+AC_OUTPUT

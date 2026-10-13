@@ -51,7 +51,7 @@ XcursorCursorsDestroy (XcursorCursors *cursors)
     --cursors->ref;
     if (cursors->ref > 0)
 	return;
-    
+
     for (n = 0; n < cursors->ncursor; n++)
 	XFreeCursor (cursors->dpy, cursors->cursors[n]);
     free (cursors);
@@ -201,6 +201,9 @@ _XcursorAverageColor (XcursorPixel *pixels, int npixels)
     XcursorPixel    red, green, blue;
     int		    n = npixels;
 
+    if (n < 1)
+	return 0;
+
     blue = green = red = 0;
     while (n--)
     {
@@ -209,9 +212,7 @@ _XcursorAverageColor (XcursorPixel *pixels, int npixels)
 	green += (p >> 8) & 0xff;
 	blue += (p >> 0) & 0xff;
     }
-    if (!n)
-	return 0;
-    return (0xff << 24) | ((red/npixels) << 16) | ((green/npixels) << 8) | (blue/npixels);
+    return (0xffU << 24) | ((red/npixels) << 16) | ((green/npixels) << 8) | (blue/npixels);
 }
 
 typedef struct XcursorCoreCursor {
@@ -237,17 +238,17 @@ _XcursorHeckbertMedianCut (const XcursorImage *image, XcursorCoreCursor *core)
     XcursorPixel    leftColor, centerColor, rightColor;
     int		    (*compare) (const void *, const void *);
     int		    x, y;
-    
+
     /*
      * Temp space for converted image and converted colors
      */
     temp = malloc (npixels * sizeof (XcursorPixel) * 2);
     if (!temp)
 	return False;
-    
+
     pixels = temp;
     colors = pixels + npixels;
-    
+
     /*
      * Convert to 2-value alpha and build
      * array of opaque color values and an
@@ -276,7 +277,7 @@ _XcursorHeckbertMedianCut (const XcursorImage *image, XcursorCoreCursor *core)
 	    if (green > max_green) max_green = green;
 	    if (blue < min_blue) min_blue = blue;
 	    if (blue > max_blue) max_blue = blue;
-	    p = ((0xff << 24) | (red << 16) | 
+	    p = ((0xffU << 24) | (red << 16) |
 		 (green << 8) | (blue << 0));
 	    *pc++ = p;
 	}
@@ -285,7 +286,7 @@ _XcursorHeckbertMedianCut (const XcursorImage *image, XcursorCoreCursor *core)
 	*pn++ = p;
     }
     ncolors = pc - colors;
-    
+
     /*
      * Compute longest dimension and sort
      */
@@ -467,16 +468,16 @@ _XcursorFloydSteinberg (const XcursorImage *image, XcursorCoreCursor *core)
 	    iErrorRight = (iError * 7) >> 4;
 	    iErrorBelowLeft = (iError * 3) >> 4;
 	    iErrorBelow = (iError * 5) >> 4;
-	    iErrorBelowRight = (iError - iErrorRight - 
+	    iErrorBelowRight = (iError - iErrorRight -
 				iErrorBelowLeft - iErrorBelow);
 	    aErrorRight = (aError * 7) >> 4;
 	    aErrorBelowLeft = (aError * 3) >> 4;
 	    aErrorBelow = (aError * 5) >> 4;
-	    aErrorBelowRight = (aError - aErrorRight - 
+	    aErrorBelowRight = (aError - aErrorRight -
 				aErrorBelowLeft - aErrorBelow);
 	    if (x < image->width - 1)
 	    {
-		iP[right] += iErrorRight; 
+		iP[right] += iErrorRight;
 		aP[right] += aErrorRight;
 	    }
 	    if (y < image->height - 1)
@@ -499,9 +500,9 @@ _XcursorFloydSteinberg (const XcursorImage *image, XcursorCoreCursor *core)
 	}
     free (iPicture);
     core->on_color.red =
-    core->on_color.green = 
+    core->on_color.green =
     core->on_color.blue = (min_inten | min_inten << 8);
-    core->off_color.red = 
+    core->off_color.red =
     core->off_color.green =
     core->off_color.blue = (max_inten | max_inten << 8);
     return True;
@@ -536,9 +537,9 @@ _XcursorThreshold (const XcursorImage *image, XcursorCoreCursor *core)
 	    }
 	}
     core->on_color.red =
-    core->on_color.green = 
+    core->on_color.green =
     core->on_color.blue = 0;
-    core->off_color.red = 
+    core->off_color.red =
     core->off_color.green =
     core->off_color.blue = 0xffff;
     return True;
@@ -548,7 +549,7 @@ Cursor
 XcursorImageLoadCursor (Display *dpy, const XcursorImage *image)
 {
     Cursor  cursor;
-    
+
 #if RENDER_MAJOR > 0 || RENDER_MINOR >= 5
     if (XcursorSupportsARGB (dpy))
     {
@@ -580,13 +581,13 @@ XcursorImageLoadCursor (Display *dpy, const XcursorImage *image)
 	pixmap = XCreatePixmap (dpy, RootWindow (dpy, screen),
 				image->width, image->height, 32);
 	gc = XCreateGC (dpy, pixmap, 0, NULL);
-	XPutImage (dpy, pixmap, gc, &ximage, 
+	XPutImage (dpy, pixmap, gc, &ximage,
 		   0, 0, 0, 0, image->width, image->height);
 	XFreeGC (dpy, gc);
 	format = XRenderFindStandardFormat (dpy, PictStandardARGB32);
 	picture = XRenderCreatePicture (dpy, pixmap, format, 0, NULL);
 	XFreePixmap (dpy, pixmap);
-	cursor = XRenderCreateCursor (dpy, picture, 
+	cursor = XRenderCreateCursor (dpy, picture,
 				      image->xhot, image->yhot);
 	XRenderFreePicture (dpy, picture);
     }
@@ -600,15 +601,18 @@ XcursorImageLoadCursor (Display *dpy, const XcursorImage *image)
 	GC		    gc;
 	XGCValues	    gcv;
 
+	if (!info)
+	    return 0;
+
 	core.src_image = XCreateImage (dpy, NULL, 1, ZPixmap,
 				       0, NULL, image->width, image->height,
 				       32, 0);
-	core.src_image->data = Xmalloc (image->height * 
+	core.src_image->data = Xmalloc (image->height *
 					core.src_image->bytes_per_line);
 	core.msk_image = XCreateImage (dpy, NULL, 1, ZPixmap,
 				       0, NULL, image->width, image->height,
 				       32, 0);
-	core.msk_image->data = Xmalloc (image->height * 
+	core.msk_image->data = Xmalloc (image->height *
 					core.msk_image->bytes_per_line);
 
 	switch (info->dither) {
@@ -641,16 +645,16 @@ XcursorImageLoadCursor (Display *dpy, const XcursorImage *image)
 				    image->width, image->height, 1);
 	gcv.foreground = 1;
 	gcv.background = 0;
-	gc = XCreateGC (dpy, src_pixmap, 
+	gc = XCreateGC (dpy, src_pixmap,
 			GCForeground|GCBackground,
 			&gcv);
 	XPutImage (dpy, src_pixmap, gc, core.src_image,
 		   0, 0, 0, 0, image->width, image->height);
-	
+
 	XPutImage (dpy, msk_pixmap, gc, core.msk_image,
 		   0, 0, 0, 0, image->width, image->height);
 	XFreeGC (dpy, gc);
-	
+
 #ifdef DEBUG_IMAGE
 	_XcursorDumpColor (&core.on_color, "on_color");
 	_XcursorDumpColor (&core.off_color, "off_color");
@@ -701,7 +705,7 @@ XcursorImagesLoadCursor (Display *dpy, const XcursorImages *images)
 	XcursorCursors	*cursors = XcursorImagesLoadCursors (dpy, images);
 	XAnimCursor	*anim;
 	int		n;
-	
+
 	if (!cursors)
 	    return 0;
 	anim = malloc (cursors->ncursor * sizeof (XAnimCursor));
@@ -733,7 +737,7 @@ XcursorFilenameLoadCursor (Display *dpy, const char *file)
     int		    size = XcursorGetDefaultSize (dpy);
     XcursorImages   *images = XcursorFilenameLoadImages (file, size);
     Cursor	    cursor;
-    
+
     if (!images)
 	return None;
     cursor = XcursorImagesLoadCursor (dpy, images);
@@ -747,7 +751,7 @@ XcursorFilenameLoadCursors (Display *dpy, const char *file)
     int		    size = XcursorGetDefaultSize (dpy);
     XcursorImages   *images = XcursorFilenameLoadImages (file, size);
     XcursorCursors  *cursors;
-    
+
     if (!images)
 	return NULL;
     cursors = XcursorImagesLoadCursors (dpy, images);
@@ -767,7 +771,7 @@ _XcursorCreateGlyphCursor(Display	    *dpy,
 			  unsigned int	    mask_char,
 			  XColor _Xconst    *foreground,
 			  XColor _Xconst    *background)
-{       
+{
     Cursor cid;
     register xCreateGlyphCursorReq *req;
 
@@ -799,21 +803,21 @@ _XcursorCreateFontCursor (Display *dpy, unsigned int shape)
     static XColor _Xconst foreground = { 0,    0,     0,     0  };  /* black */
     static XColor _Xconst background = { 0, 65535, 65535, 65535 };  /* white */
 
-    /* 
+    /*
      * the cursor font contains the shape glyph followed by the mask
      * glyph; so character position 0 contains a shape, 1 the mask for 0,
      * 2 a shape, etc.  <X11/cursorfont.h> contains hash define names
      * for all of these.
      */
 
-    if (dpy->cursor_font == None) 
+    if (dpy->cursor_font == None)
     {
 	dpy->cursor_font = XLoadFont (dpy, CURSORFONT);
 	if (dpy->cursor_font == None)
 	    return None;
     }
 
-    return _XcursorCreateGlyphCursor (dpy, dpy->cursor_font, dpy->cursor_font, 
+    return _XcursorCreateGlyphCursor (dpy, dpy->cursor_font, dpy->cursor_font,
 				      shape, shape + 1, &foreground, &background);
 }
 

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
-                   "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+                   "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd"
+[
+<!ENTITY % defs SYSTEM "defs.ent"> %defs;
+]>
 
 
 <!-- lifted from troff+ms+XMan by doclifter -->
@@ -9,24 +12,21 @@
 <bookinfo>
    <title>X Nonrectangular Window Shape Extension Protocol</title>
    <subtitle>X.Org Standard</subtitle>
-   <releaseinfo>Version 1.1</releaseinfo>
    <authorgroup>
       <author>
          <firstname>Keith</firstname><surname>Packard</surname>
-<affiliation><orgname>MIT X Consortium Intel Corporation</orgname></affiliation>
+         <affiliation><orgname>MIT X Consortium</orgname></affiliation>
+         <affiliation><orgname>Intel Corporation</orgname></affiliation>
       </author>
       <othercredit>
          <firstname>Hideki</firstname><surname>Hiura</surname>
          <affiliation><orgname>SunSoft, Inc.</orgname></affiliation>
       </othercredit>
    </authorgroup>
-   <corpname>X Consortium Standard</corpname>
-   <copyright><year>1989</year><holder>The Open Group</holder></copyright>
-   <copyright><year>2004</year><holder>The Open Group</holder></copyright>
+   <releaseinfo>X Version 11, Release &fullrelvers;</releaseinfo>
+   <releaseinfo>Version 1.1</releaseinfo>
+   <copyright><year>1989</year><year>2004</year><holder>The Open Group</holder></copyright>
    <copyright><year>2006</year><holder>Keith Packard</holder></copyright>
-   <affiliation><orgname>X Consortium</orgname></affiliation>
-   <productnumber>X Version 11, Release 7</productnumber>
-
 <legalnotice>
 
 <para>
@@ -42,7 +42,7 @@ The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
 </para>
 <para>
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+THE SOFTWARE IS PROVIDED &ldquo;AS IS&rdquo;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
@@ -60,8 +60,7 @@ copyright holders.
 </legalnotice>
 </bookinfo>
 
-<chapter><title>TITLE</title>
-<sect1 id="Overview">
+<chapter id="Overview">
 <title>Overview</title>
 <para>
 <!-- .LP -->
@@ -94,9 +93,9 @@ the window's geometry in the core protocol.  An expected convention would be
 that client programs expand their shape to fill the area offered by the
 window manager.
 </para>
-</sect1>
+</chapter>
 
-<sect1 id="Description">
+<chapter id="Description">
 <title>Description</title>
 <para>
 Each window (even with no shapes specified) is defined by three regions:  the
@@ -264,9 +263,9 @@ the server is permitted to ignore requested changes to the bounding region
 of a root window.  If the server accepts bounding region changes, the contents
 of the screen outside the bounding region are implementation dependent.
 </para>
-</sect1>
+</chapter>
 
-<sect1 id="Types">
+<chapter id="Types">
 <title>Types</title>
 <para>
 <!-- .LP -->
@@ -307,9 +306,9 @@ produce the new destination region.
 indicates that the destination region is subtracted from the source region to
 produce the new destination region.
 </para>
-</sect1>
+</chapter>
 
-<sect1 id="Requests">
+<chapter id="Requests">
 <title>Requests</title>
 <para>
 <function>ShapeQueryVersion</function>
@@ -337,25 +336,26 @@ extension is usable by the client.  This document defines major version one
 </para>
 
 <informaltable frame="none">
-  <tgroup cols='1' align='left'>
-  <colspec colname='c1' colsep="0" colwidth="1*"/>
+  <?dbfo keep-together="always" ?>
+  <tgroup cols='1' align='left' colsep='0' rowsep='0'>
+  <colspec colname='c1' colwidth="1.0*"/>
   <tbody>
-    <row rowsep="0">
+    <row>
       <entry><emphasis remap='I'>dest</emphasis>: WINDOW</entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry><emphasis remap='I'>destKind</emphasis>: SHAPE_KIND</entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry><emphasis remap='I'>op</emphasis>: SHAPE_OP</entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry><emphasis remap='I'>xOff, yOff</emphasis>: INT16</entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry><emphasis remap='I'>rectangles</emphasis>: LISTofRECTANGLES</entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry><emphasis remap='I'>ordering</emphasis>:
 { <function>UnSorted</function>,
 <function>YSorted</function>,
@@ -363,7 +363,7 @@ extension is usable by the client.  This document defines major version one
 <function>YXBanded</function> }
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 Errors:
 <function>Window</function>,
@@ -428,10 +428,11 @@ extents.
 </para>
 
 <informaltable frame="none">
-  <tgroup cols='1' align='left'>
-  <colspec colname='c1' colsep="0" colwidth="1*"/>
+  <?dbfo keep-together="always" ?>
+  <tgroup cols='1' align='left' colsep='0' rowsep='0'>
+  <colspec colname='c1' colwidth="1.0*"/>
   <tbody>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>dest</emphasis>: WINDOW
 <emphasis remap='I'>destKind</emphasis>: SHAPE_KIND
@@ -441,7 +442,7 @@ extents.
 <function>None</function>
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 Errors:
 <function>Window</function>,
@@ -483,40 +484,41 @@ error results.
 </para>
 
 <informaltable frame="none">
-  <tgroup cols='1' align='left'>
-  <colspec colname='c1' colsep="0" colwidth="1*"/>
+  <?dbfo keep-together="always" ?>
+  <tgroup cols='1' align='left' colsep='0' rowsep='0'>
+  <colspec colname='c1' colwidth="1.0*"/>
   <tbody>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>dest</emphasis>: WINDOW
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>destKind</emphasis>: SHAPE_KIND
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>op</emphasis>: SHAPE_OP
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>xOff, yOff</emphasis>: INT16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>source</emphasis>: WINDOW
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>sourceKind</emphasis>: SHAPE_KIND
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 Errors:
 <function>Window</function>,
@@ -544,25 +546,26 @@ error results.
 </para>
 
 <informaltable frame="none">
-  <tgroup cols='1' align='left'>
-  <colspec colname='c1' colsep="0" colwidth="1*"/>
+  <?dbfo keep-together="always" ?>
+  <tgroup cols='1' align='left' colsep='0' rowsep='0'>
+  <colspec colname='c1' colwidth="1.0*"/>
   <tbody>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>dest</emphasis>: WINDOW
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>destKind</emphasis>: SHAPE_KIND
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>xOff, yOff</emphasis>: INT16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 Errors:
 <function>Window</function>,
@@ -584,10 +587,11 @@ current position by the amounts xOff and yOff.
 </para>
 
 <informaltable frame="none">
-  <tgroup cols='1' align='left'>
-  <colspec colname='c1' colsep="0" colwidth="1*"/>
+  <?dbfo keep-together="always" ?>
+  <tgroup cols='1' align='left' colsep='0' rowsep='0'>
+  <colspec colname='c1' colwidth="1.0*"/>
   <tbody>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>dest</emphasis>: WINDOW
       </entry>
@@ -601,60 +605,61 @@ current position by the amounts xOff and yOff.
 </para>
 
 <informaltable frame="none">
-  <tgroup cols='1' align='left'>
-  <colspec colname='c1' colsep="0" colwidth="1*"/>
+  <?dbfo keep-together="always" ?>
+  <tgroup cols='1' align='left' colsep='0' rowsep='0'>
+  <colspec colname='c1' colwidth="1.0*"/>
   <tbody>
-    <row rowsep="0">
+    <row>
       <entry>
 boundingShaped: BOOL
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 clipShaped: BOOL
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 xBoundingShape: INT16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 yBoundingShape: INT16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 widthBoundingShape: CARD16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 heightBoundingShape: CARD16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 xClipShape: INT16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 yClipShape: INT16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 widthClipShape: CARD16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 heightClipShape: CARD16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 Errors:
 <function>Window</function>
@@ -679,20 +684,21 @@ corresponding default region are reported.
 </para>
 
 <informaltable frame="none">
-  <tgroup cols='1' align='left'>
-  <colspec colname='c1' colsep="0" colwidth="1*"/>
+  <?dbfo keep-together="always" ?>
+  <tgroup cols='1' align='left' colsep='0' rowsep='0'>
+  <colspec colname='c1' colwidth="1.0*"/>
   <tbody>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>window</emphasis>: WINDOW
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>enable</emphasis>: BOOL
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 Errors:
 <function>Window</function>,
@@ -720,21 +726,22 @@ causes the server to stop sending such events.
 </para>
 
 <informaltable frame="none">
-  <tgroup cols='1' align='left'>
-  <colspec colname='c1' colsep="0" colwidth="1*"/>
+  <?dbfo keep-together="always" ?>
+  <tgroup cols='1' align='left' colsep='0' rowsep='0'>
+  <colspec colname='c1' colwidth="1.0*"/>
   <tbody>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>window</emphasis>: WINDOW
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 =&gt;
 enable: BOOL
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 Errors:
 <function>Window</function>
@@ -756,26 +763,27 @@ events for the window are generated for this client.
 </para>
 
 <informaltable frame="none">
-  <tgroup cols='1' align='left'>
-  <colspec colname='c1' colsep="0" colwidth="1*"/>
+  <?dbfo keep-together="always" ?>
+  <tgroup cols='1' align='left' colsep='0' rowsep='0'>
+  <colspec colname='c1' colwidth="1.0*"/>
   <tbody>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>window</emphasis>: WINDOW
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>kind</emphasis>: SHAPE_KIND
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
    =&gt;
 rectangles: LISTofRECTANGLE
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 ordering:
 { <function>UnSorted</function>,
@@ -784,7 +792,7 @@ ordering:
 <function>YXBanded</function> }
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 Errors:
 <function>Window,</function>
@@ -802,45 +810,46 @@ values is the same as in the
 <function>ShapeRectangles</function>
 request.
 </para>
-</sect1>
+</chapter>
 
-<sect1 id="Events">
+<chapter id="Events">
 <title>Events</title>
 <para>
 <function>ShapeNotify</function>
 </para>
 
 <informaltable frame="none">
-  <tgroup cols='1' align='left'>
-  <colspec colname='c1' colsep="0" colwidth="1*"/>
+  <?dbfo keep-together="always" ?>
+  <tgroup cols='1' align='left' colsep='0' rowsep='0'>
+  <colspec colname='c1' colwidth="1.0*"/>
   <tbody>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>window</emphasis>: WINDOW
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>kind</emphasis>: SHAPE_KIND
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>shaped</emphasis>: BOOL
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>x, y</emphasis>: INT16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>width</emphasis>,
 <emphasis remap='I'>height</emphasis>: CARD16
       </entry>
     </row>
-    <row rowsep="0">
+    <row>
       <entry>
 <emphasis remap='I'>time</emphasis>: TIMESTAMP
       </entry>
@@ -870,9 +879,9 @@ current shape.  When shaped is
 these will indicate the extents of the default region.  The timestamp
 indicates the server time when the shape was changed.
 </para>
-</sect1>
+</chapter>
 
-<sect1 id="Encoding">
+<chapter id="Encoding">
 <title>Encoding</title>
 <para>
 Please refer to the X11 Protocol Encoding document as this document uses
@@ -883,7 +892,7 @@ conventions established there.
 The name of this extension is "SHAPE".
 </para>
 
-<sect2 id="New_Types">
+<sect1 id="New_Types">
 <title>New Types</title>
 
 <literallayout class="monospaced">
@@ -901,9 +910,9 @@ SHAPE_OP
      3     Subtract
      4     Invert
 </literallayout>
-</sect2>
+</sect1>
 
-<sect2 id="Requests_2">
+<sect1 id="Requests_2">
 <title>Requests</title>
 <literallayout class="monospaced">
 <function>ShapeQueryVersion</function>
@@ -1055,9 +1064,9 @@ SHAPE_OP
      20                       unused
      8n    LISTofRECTANGLE    rectangles
 </literallayout>
-</sect2>
+</sect1>
 
-<sect2 id="Events_2">
+<sect1 id="Events_2">
 <title>Events</title>
 <literallayout class="monospaced">
 <function>ShapeNotify</function>
@@ -1073,7 +1082,6 @@ SHAPE_OP
      1     BOOL                shaped
      11                        unused
 </literallayout>
-</sect2>
 </sect1>
 </chapter>
 

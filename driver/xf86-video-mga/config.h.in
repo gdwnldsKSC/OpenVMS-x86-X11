@@ -39,6 +39,12 @@
    */
 #undef LT_OBJDIR
 
+/* Enable DRI driver support */
+#undef MGADRI
+
+/* Enable developmental DRI driver support */
+#undef MGADRI_DEVEL
+
 /* Name of package */
 #undef PACKAGE
 
@@ -53,6 +59,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
@@ -77,9 +86,3 @@
 
 /* Version number of package */
 #undef VERSION
-
-/* Enable DRI driver support */
-#undef XF86DRI
-
-/* Enable developmental DRI driver support */
-#undef XF86DRI_DEVEL

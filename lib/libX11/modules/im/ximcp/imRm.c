@@ -360,10 +360,9 @@ _XimDefaultStyles(
 
     n = XIMNumber(supported_local_styles) - 1;
     len = sizeof(XIMStyles) + sizeof(XIMStyle) * n;
-    if(!(tmp = (XPointer)Xmalloc(len))) {
+    if(!(tmp = Xcalloc(1, len))) {
 	return False;
     }
-    bzero(tmp, len);
 
     styles = (XIMStyles *)tmp;
     if (n > 0) {
@@ -396,10 +395,9 @@ _XimDefaultIMValues(
 
     n = XIMNumber(supported_local_im_values_list);
     len = sizeof(XIMValuesList) + sizeof(char **) * n;
-    if(!(tmp = (XPointer)Xmalloc(len))) {
+    if(!(tmp = Xcalloc(1, len))) {
 	return False;
     }
-    bzero(tmp, len);
 
     values_list = (XIMValuesList *)tmp;
     if (n > 0) {
@@ -433,10 +431,9 @@ _XimDefaultICValues(
 
     n = XIMNumber(supported_local_ic_values_list);
     len = sizeof(XIMValuesList) + sizeof(char **) * n;
-    if(!(tmp = (XPointer)Xmalloc(len))) {
+    if(!(tmp = Xcalloc(1, len))) {
 	return False;
     }
-    bzero(tmp, len);
 
     values_list = (XIMValuesList *)tmp;
     if (n > 0) {
@@ -796,19 +793,15 @@ _XimEncodeString(
     XPointer	 	  top,
     XPointer	 	  val)
 {
-    int			  len;
     char		 *string;
     char		**out;
 
     if(val == (XPointer)NULL) {
 	return False;
     }
-    len = strlen((char *)val);
-    if(!(string = (char *)Xmalloc(len + 1))) {
+    if (!(string = strdup((char *)val))) {
 	return False;
     }
-    (void)strcpy(string, (char *)val);
-    string[len] = '\0';
 
     out = (char **)((char *)top + info->offset);
     if(*out) {
@@ -1085,10 +1078,9 @@ _XimDecodeStyles(
     num = styles->count_styles;
 
     len = sizeof(XIMStyles) + sizeof(XIMStyle) * num;
-    if(!(tmp = (XPointer)Xmalloc(len))) {
+    if(!(tmp = Xcalloc(1, len))) {
 	return False;
     }
-    bzero(tmp, len);
 
     out = (XIMStyles *)tmp;
     if(num >0) {
@@ -1124,10 +1116,9 @@ _XimDecodeValues(
     num = values_list->count_values;
 
     len = sizeof(XIMValuesList) + sizeof(char **) * num;
-    if(!(tmp = (char *)Xmalloc(len))) {
+    if(!(tmp = Xcalloc(1, len))) {
 	return False;
     }
-    bzero(tmp, len);
 
     out = (XIMValuesList *)tmp;
     if(num) {
@@ -1168,21 +1159,18 @@ _XimDecodeString(
     XPointer	 	 top,
     XPointer	 	 val)
 {
-    int			 len = 0;
     char		*in;
     char		*string;
 
     in = *((char **)((char *)top + info->offset));
-    if(in != (char *)NULL) {
-	len = strlen(in);
+    if (in != NULL) {
+	string = strdup(in);
+    } else {
+	string = Xcalloc(1, 1); /* strdup("") */
     }
-    if(!(string = (char *)Xmalloc(len + 1))) {
+    if (string == NULL) {
 	return False;
     }
-    if(in != (char *)NULL) {
-	(void)strcpy(string, in);
-    }
-    string[len] = '\0';
     *((char **)val) = string;
     return True;
 }
@@ -2143,10 +2131,9 @@ _XimSetResourceList(
     XIMResourceList	  res;
 
     len = sizeof(XIMResource) * num_resource;
-    if(!(res = (XIMResourceList)Xmalloc(len))) {
+    if(!(res = Xcalloc(1, len))) {
 	return False;
     }
-    bzero((char *)res, len);
 
     for(i = 0; i < num_resource; i++, id++) {
 	res[i]    = resource[i];
@@ -2263,17 +2250,17 @@ _XimSetIMValueData(
 
     for(p = values; p->name != NULL; p++) {
 	if(!(res = _XimGetResourceListRec(res_list, list_num, p->name))) {
-	    return p->value;
+	    return p->name;
 	}
 	check = _XimCheckIMMode(res, XIM_SETIMVALUES);
 	if(check == XIM_CHECK_INVALID) {
 	    continue;
 	} else if (check == XIM_CHECK_ERROR) {
-	    return p->value;
+	    return p->name;
 	}
 
 	if(!_XimEncodeLocalIMAttr(res, top, p->value)) {
-	    return p->value;
+	    return p->name;
 	}
     }
     return NULL;
@@ -2293,17 +2280,17 @@ _XimGetIMValueData(
 
     for(p = values; p->name != NULL; p++) {
 	if(!(res = _XimGetResourceListRec(res_list, list_num, p->name))) {
-	    return p->value;
+	    return p->name;
 	}
 	check = _XimCheckIMMode(res, XIM_GETIMVALUES);
 	if(check == XIM_CHECK_INVALID) {
 	    continue;
 	} else if (check == XIM_CHECK_ERROR) {
-	    return p->value;
+	    return p->name;
 	}
 
 	if(!_XimDecodeLocalIMAttr(res, top, p->value)) {
-	    return p->value;
+	    return p->name;
 	}
     }
     return NULL;
@@ -2821,6 +2808,8 @@ _XimEncodeLocalPreeditValue(
 				ic->core.focus_window, &colormap_ret,
 				&count, (Atom)p->value)))
 	    return False;
+
+	Xfree(colormap_ret);
     }
     return True;
 }
@@ -2841,6 +2830,8 @@ _XimEncodeLocalStatusValue(
 				ic->core.focus_window, &colormap_ret,
 				&count, (Atom)p->value)))
 	    return False;
+
+	Xfree(colormap_ret);
     }
     return True;
 }
@@ -2894,13 +2885,13 @@ _XimSetICValueData(
 
 	    if(mode & XIM_PREEDIT_ATTR) {
 		if (!_XimEncodeLocalPreeditValue(ic, res, (XPointer)p))
-	    	    return False;
+		    return p->name;
     	    } else if(mode & XIM_STATUS_ATTR) {
 		if (!_XimEncodeLocalStatusValue(ic, res, (XPointer)p))
-	    	    return False;
+		    return p->name;
     	    } else {
 		if (!_XimEncodeLocalTopValue(ic, res, (XPointer)p, flag))
-	    	    return False;
+		    return p->name;
     	    }
 	    if(_XimEncodeLocalICAttr(ic, res, top, p, mode) == False) {
 		return p->name;

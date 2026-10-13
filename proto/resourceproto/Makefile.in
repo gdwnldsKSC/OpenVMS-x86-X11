@@ -36,10 +36,11 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 subdir = .
-DIST_COMMON = README $(am__configure_deps) $(resource_HEADERS) \
-	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/resourceproto.pc.in $(top_srcdir)/configure COPYING \
-	ChangeLog INSTALL config.guess config.sub install-sh missing
+DIST_COMMON = README $(am__configure_deps) $(dist_doc_DATA) \
+	$(resource_HEADERS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in $(srcdir)/resourceproto.pc.in \
+	$(top_srcdir)/configure COPYING ChangeLog INSTALL config.guess \
+	config.sub install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -78,9 +79,9 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__installdirs = "$(DESTDIR)$(pkgconfigdir)" \
+am__installdirs = "$(DESTDIR)$(docdir)" "$(DESTDIR)$(pkgconfigdir)" \
 	"$(DESTDIR)$(resourcedir)"
-DATA = $(pkgconfig_DATA)
+DATA = $(dist_doc_DATA) $(pkgconfig_DATA)
 HEADERS = $(resource_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -157,6 +158,7 @@ PKG_CONFIG = @PKG_CONFIG@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+STRICT_CFLAGS = @STRICT_CFLAGS@
 STRIP = @STRIP@
 VERSION = @VERSION@
 XORG_MAN_PAGE = @XORG_MAN_PAGE@
@@ -216,6 +218,7 @@ resource_HEADERS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = resourceproto.pc
+dist_doc_DATA = resproto.txt
 MAINTAINERCLEANFILES = ChangeLog INSTALL
 all: all-am
 
@@ -256,6 +259,26 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 $(am__aclocal_m4_deps):
 resourceproto.pc: $(top_builddir)/config.status $(srcdir)/resourceproto.pc.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
+install-dist_docDATA: $(dist_doc_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(docdir)" || $(MKDIR_P) "$(DESTDIR)$(docdir)"
+	@list='$(dist_doc_DATA)'; test -n "$(docdir)" || list=; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(docdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(docdir)" || exit $$?; \
+	done
+
+uninstall-dist_docDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_doc_DATA)'; test -n "$(docdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	test -n "$$files" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(docdir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(docdir)" && rm -f $$files
 install-pkgconfigDATA: $(pkgconfig_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(pkgconfigdir)" || $(MKDIR_P) "$(DESTDIR)$(pkgconfigdir)"
@@ -503,7 +526,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(DATA) $(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(resourcedir)"; do \
+	for dir in "$(DESTDIR)$(docdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(resourcedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -553,7 +576,8 @@ info: info-am
 
 info-am:
 
-install-data-am: install-pkgconfigDATA install-resourceHEADERS
+install-data-am: install-dist_docDATA install-pkgconfigDATA \
+	install-resourceHEADERS
 
 install-dvi: install-dvi-am
 
@@ -599,7 +623,8 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-pkgconfigDATA uninstall-resourceHEADERS
+uninstall-am: uninstall-dist_docDATA uninstall-pkgconfigDATA \
+	uninstall-resourceHEADERS
 
 .MAKE: install-am install-strip
 
@@ -609,15 +634,16 @@ uninstall-am: uninstall-pkgconfigDATA uninstall-resourceHEADERS
 	distcheck distclean distclean-generic distclean-tags \
 	distcleancheck distdir distuninstallcheck dvi dvi-am html \
 	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-pkgconfigDATA install-ps install-ps-am \
-	install-resourceHEADERS install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	install-data-am install-dist_docDATA install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-pkgconfigDATA install-ps \
+	install-ps-am install-resourceHEADERS install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-pkgconfigDATA uninstall-resourceHEADERS
+	uninstall-dist_docDATA uninstall-pkgconfigDATA \
+	uninstall-resourceHEADERS
 
 
 .PHONY: ChangeLog INSTALL

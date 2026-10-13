@@ -1,3 +1,211 @@
+commit 2a9eaf3305d1577ad763d56dddd46e10f8d0676b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Mar 7 18:54:15 2012 -0800
+
+    libXcursor 1.1.13
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 8229cf75b34c2991eaf973f05326be9bfa16ef0c
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Nov 24 13:10:15 2011 -0800
+
+    XcursorImageLoadCursor: return failure if _XcursorGetDisplayInfo fails
+    
+    Error: Null pointer dereference (CWE 476)
+       Read from null pointer 'info'
+            at line 615 of src/cursor.c in function 'XcursorImageLoadCursor'.
+              Function '_XcursorGetDisplayInfo' may return constant 'NULL' at line 134, called at line 597.
+              Null pointer introduced at line 134 of src/display.c in function '_XcursorGetDisplayInfo'.
+    
+    [ This bug was found by the Parfait 0.3.7 bug checking tool.
+      For more information see http://labs.oracle.com/projects/parfait/ ]
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 2b8d373bddf427bcd95e2595cb64740ebd1d0d30
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Nov 24 12:59:56 2011 -0800
+
+    XcursorFileSaveImages: plug memory leak on invalid input
+    
+    Error: Memory leak (CWE 401)
+       Memory leak of pointer 'comments' allocated with XcursorCommentsCreate(0)
+            at line 982 of src/file.c in function 'XcursorFileSaveImages'.
+              'comments' allocated at line 978 with XcursorCommentsCreate(0).
+              comments leaks when comments != 0 at line 981.
+    
+    [ This bug was found by the Parfait 0.3.7 bug checking tool.
+      For more information see http://labs.oracle.com/projects/parfait/ ]
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit bcfb8e8ce56cf47bc6a61bd8c896bafba9e2a9c2
+Author: Jon TURNEY <jon.turney@dronecode.org.uk>
+Date:   Thu Sep 22 14:43:38 2011 +0100
+
+    Add generated Xcursor.h to .gitignore
+    
+    Signed-off-by: Jon TURNEY <jon.turney@dronecode.org.uk>
+    Reviewed-by:  Gaetan Nadon <memsize@videotron.ca>
+    Tested-by: Gaetan Nadon <memsize@videotron.ca>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 862b9ce4aa819bf87b6e24db9d7d5867cbaa577c
+Author: Jon TURNEY <jon.turney@dronecode.org.uk>
+Date:   Wed Sep 21 20:50:46 2011 +0100
+
+    Fix install of generated Xcursor.h when builddir != srcdir
+    
+    Signed-off-by: Jon TURNEY <jon.turney@dronecode.org.uk>
+    Reviewed-by:  Gaetan Nadon <memsize@videotron.ca>
+    Tested-by: Gaetan Nadon <memsize@videotron.ca>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 334dc4f4df69d780f312f23b860df11bee5e9009
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Sep 16 21:41:41 2011 -0700
+
+    Set Xcursor.h version numbers from configure.ac
+    
+    Based on similar commit dac73a519816 to libXft
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit e086eb1bf49f2a8c270eaebd5beb595c1dc2973e
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Sep 16 21:26:17 2011 -0700
+
+    Strip trailing whitespace
+    
+    Performed with: find * -type f | xargs perl -i -p -e 's{\s+$}{\n}'
+    git diff -w & git diff -b show no diffs from this change
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d79ddc01e4b247ae95af3581b93aef2b93e76888
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Jun 29 21:41:09 2011 -0700
+
+    libXcursor 1.1.12
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 4ce23fcd978ed389ea30315c0e02629a31bda265
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun May 22 12:55:31 2011 -0700
+
+    Mark bitmasks as unsigned ints
+    
+    Clears Sun compiler warnings from shifting 8 bits by 24 bits:
+    "cursor.c", line 215: warning: integer overflow detected: op "<<"
+    "cursor.c", line 280: warning: integer overflow detected: op "<<"
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 047993c76a677ca12a2b575990b99e3ddbc0dd58
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Sat May 7 10:16:18 2011 -0700
+
+    Correct error handling in _XcursorAverageColor
+    
+    Previously it would either div-zero or get stuck in a loop until int overflow
+    if called with a bad value.
+    
+    cursor.c:214:32: warning: Division by zero
+        return (0xff << 24) | ((red/npixels) << 16) | ((green/npixels) << 8) | (blue/npixels);
+    
+    Found-by: clang static analyzer
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit bee68e54e5c3a4b9f46c81366a720531e3e07a82
+Author: Chris Wilson <chris@chris-wilson.co.uk>
+Date:   Fri Apr 1 12:16:23 2011 +0100
+
+    Free the FontInfo structure after loading the cursor from it.
+    
+    References: https://bugs.freedesktop.org/show_bug.cgi?id=2731
+    Signed-off-by: Chris Wilson <chris@chris-wilson.co.uk>
+
+commit f49e7e1608f2dac140f60bcae21d5c37f79fc41b
+Author: Chris Wilson <chris@chris-wilson.co.uk>
+Date:   Fri Apr 1 12:15:46 2011 +0100
+
+    Free the partial header after failing to open the cursor.
+    
+    Signed-off-by: Chris Wilson <chris@chris-wilson.co.uk>
+
+commit 073eb2c56f4794275eee40a825dbfe1232bb2690
+Author: Chris Wilson <chris@chris-wilson.co.uk>
+Date:   Fri Apr 1 12:14:51 2011 +0100
+
+    Free list on shutdown.
+    
+    We freed the parent structure without freeing the list contained within,
+    making valgrind unhappy.
+    
+    Signed-off-by: Chris Wilson <chris@chris-wilson.co.uk>
+
+commit de50317ec4e0e8da7de84e85d1f7a6d2e184d58b
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Feb 2 17:08:19 2011 -0500
+
+    config: perform XCURSORPATH formatting in man/Makefile.am
+    
+    We can skip the extra step of using XCURSORPATH_LIST in configure.ac.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit a929c3621b9da8e56ce1223afd3e487fc488fa47
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Feb 2 11:43:41 2011 -0500
+
+    config: comment, minor upgrade, quote and layout configure.ac
+    
+    Group statements per section as per Autoconf standard layout
+    Quote statements where appropriate.
+    Autoconf recommends not using dnl instead of # for comments
+    
+    Use AC_CONFIG_FILES to replace the deprecated AC_OUTPUT with parameters.
+    
+    This helps automated maintenance and release activities.
+    Details can be found in http://wiki.x.org/wiki/NewModuleGuidelines
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 96c5877fd7ebc59569f140d9e2cb30fdb8371ef1
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Jan 28 19:41:37 2011 -0500
+
+    config: replace deprecated AM_CONFIG_HEADER with AC_CONFIG_HEADERS
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 4f7a749fcb7a8e93d40a7621fa1c159e003b2f5c
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Jan 28 16:07:07 2011 -0500
+
+    config: replace deprecated AC_HELP_STRING with AS_HELP_STRING
+    
+    This silences an Automake warning.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit c38adc6bf116146fa1e291b9f4deed45497e5c2e
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Thu Jan 27 18:50:14 2011 -0500
+
+    config: remove AC_PROG_CC as it overrides AC_PROG_C_C99
+    
+    XORG_STRICT_OPTION from XORG_DEFAULT_OPTIONS calls
+    AC_PROG_C_C99. This sets gcc with -std=gnu99.
+    If AC_PROG_CC macro is called afterwards, it resets CC to gcc.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
 commit 731e84d79e83b59d022d0f453b245696b4d2750f
 Author: Alan Coopersmith <alan.coopersmith@oracle.com>
 Date:   Wed Oct 27 22:48:19 2010 -0700

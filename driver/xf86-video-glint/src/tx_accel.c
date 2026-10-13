@@ -28,7 +28,6 @@
  * 
  * GLINT 500TX / MX accelerated options.
  */
-/* $XFree86: xc/programs/Xserver/hw/xfree86/drivers/glint/tx_accel.c,v 1.27 2001/05/29 11:23:38 alanh Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -37,7 +36,6 @@
 #include "xf86.h"
 #include "xf86_OSproc.h"
 
-#include "xf86PciInfo.h"
 #include "xf86Pci.h"
 
 #include "fb.h"
@@ -294,7 +292,6 @@ static void TXLoadCoord(
 ){
     GLINTPtr pGlint = GLINTPTR(pScrn);
     
-#ifndef XF86DRI_DEVEL
     if (w != pGlint->startxsub) {
     	GLINT_WRITE_REG(w<<16, StartXSub);
 	pGlint->startxsub = w;
@@ -319,20 +316,6 @@ static void TXLoadCoord(
     	GLINT_WRITE_REG(d<<16,dY);
 	pGlint->dy = d;
     }
-#else
-    	GLINT_WRITE_REG(w<<16, StartXSub);
-    	GLINT_WRITE_REG(x<<16,StartXDom);
-    	GLINT_WRITE_REG(y<<16,StartY);
-    	GLINT_WRITE_REG(h,GLINTCount);
-    	GLINT_WRITE_REG(a<<16,dXDom);
-    	GLINT_WRITE_REG(d<<16,dY);
-	pGlint->startxsub = w;
-	pGlint->startxdom = x;
-	pGlint->starty = y;
-	pGlint->count = h;
-	pGlint->dxdom = a;
-	pGlint->dy = d;
-#endif
 }
 
 static void

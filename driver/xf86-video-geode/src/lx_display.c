@@ -354,10 +354,11 @@ lx_crtc_gamma_set(xf86CrtcPtr crtc, CARD16 * red, CARD16 * green,
      */
 
     for (i = 0; i < 256; i++) {
+        unsigned int val;
         (*red) &= 0xff00;
         (*green) &= 0xff00;
         (*blue) &= 0xff00;
-        unsigned int val = (*(red++) << 8) | *(green++) | (*(blue++) >> 8);
+        val = (*(red++) << 8) | *(green++) | (*(blue++) >> 8);
 
 	df_set_video_palette_entry(i, val);
     }
@@ -389,7 +390,13 @@ lx_create_bo_pixmap(ScreenPtr pScreen,
 {
     PixmapPtr pixmap;
 
+
+#if XORG_VERSION_CURRENT >= XORG_VERSION_NUMERIC(1,5,0,0,0)
     pixmap = (*pScreen->CreatePixmap)(pScreen, 0, 0, depth, 0);
+#else
+    pixmap = (*pScreen->CreatePixmap)(pScreen, 0, 0, depth);
+#endif
+
     if (!pixmap)
 	return NULL;
     if (!(*pScreen->ModifyPixmapHeader)(pixmap, width, height,
@@ -571,7 +578,7 @@ LXSetupCrtc(ScrnInfoPtr pScrni)
 	return;
     }
 
-    lxpriv = xnfcalloc(sizeof(LXCrtcPrivateRec), 1);
+    lxpriv = xnfcalloc(1, sizeof(LXCrtcPrivateRec));
 
     if (!lxpriv) {
 	xf86CrtcDestroy(crtc);

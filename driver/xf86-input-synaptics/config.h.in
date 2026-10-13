@@ -3,6 +3,9 @@
 /* Optional backend eventcomm enabled */
 #undef BUILD_EVENTCOMM
 
+/* Optional backend ps2comm and alpscomm enabled */
+#undef BUILD_PS2COMM
+
 /* Optional backend psmcomm enabled */
 #undef BUILD_PSMCOMM
 
@@ -20,6 +23,9 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* XI2.2 available */
+#undef HAVE_MULTITOUCH
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

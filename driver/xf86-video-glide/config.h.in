@@ -5,6 +5,9 @@
 /* glide3x available */
 #undef GLIDE3
 
+/* glide3x alpha available */
+#undef GLIDE3_ALPHA
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 

@@ -26,12 +26,15 @@ $ SET DEFAULT 'support_directory'
 $ SET DEFAULT [-]
 $ SET DEFAULT [-]
 $ SET DEFAULT [-]
-$ IF F$SEARCH("[.EXTRAS.XKEYBOARD-CONFIG]MAKEFILE.AM") .EQS. "" THEN GOTO usage
+$ IF F$SEARCH("[.DATA.XKEYBOARD-CONFIG]MAKEFILE.AM") .EQS. "" THEN GOTO usage
 $ destination = F$PARSE(P1,,,"DEVICE","SYNTAX_ONLY") + F$PARSE(P1,,,"DIRECTORY","SYNTAX_ONLY")
 $ IF F$PARSE(destination,,,"DIRECTORY","SYNTAX_ONLY") .EQS. "[000000]" THEN GOTO usage
 $ IF destination .EQS. F$ENVIRONMENT("DEFAULT") THEN GOTO usage
 $ compiler = F$SEARCH(P2)
 $ IF compiler .EQS. "" THEN GOTO missing
+$ CREATE/DIRECTORY [.VMS-SUPPORT._BUILD.P64.PROGRAMS.XKBCOMP.RULES]
+$ PERL [.VMS-SUPPORT.PROGRAMS.XKBCOMP]GENERATE_RULES.PL -
+    "data/xkeyboard-config/rules" "VMS-SUPPORT/_BUILD/P64/PROGRAMS/XKBCOMP/RULES"
 $ CREATE/DIRECTORY 'destination'
 $ previous_directory = ""
 $ OPEN/READ listing [.VMS-SUPPORT.PROGRAMS.XKBCOMP]DATA.LIST
@@ -43,8 +46,12 @@ $ IF F$EXTRACT(0,1,line) .EQS. "!" THEN GOTO next
 $ relative = F$ELEMENT(0,"|",line)
 $ GOSUB native_relative
 $ IF result .NE. 1 THEN GOTO done
-$ source = "[.EXTRAS.XKEYBOARD-CONFIG" + relative_directory + "]" + relative_name
+$ source = "[.DATA.XKEYBOARD-CONFIG" + relative_directory + "]" + relative_name
+$ IF relative_directory .EQS. ".rules" THEN -
+    source = "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XKBCOMP.RULES]" + relative_name
 $ source = F$SEARCH(source)
+$ IF source .EQS. "" THEN -
+    source = F$SEARCH("[.DATA.XKEYBOARD-CONFIG" + relative_directory + "]" + relative_name)
 $ IF source .EQS. "" THEN GOTO missing
 $ relative = F$ELEMENT(1,"|",line)
 $ GOSUB native_relative

@@ -29,6 +29,7 @@ $ profiles = profiles + "XT|XMU|"
 $ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|COMMON|BUS|MISC|XORGXKB|"
 $ profiles = profiles + "XORGFB|"
 $ profiles = profiles + "LOADER|"
+$ profiles = profiles + "XF86MODES|DDC|I2C|"
 $ profiles = profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ profiles = profiles + "PIXMAN|CONFIG|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
@@ -179,6 +180,7 @@ $ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|SYNC|RANDR|DBE|RECORD|XFIXE
 $ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|COMMON|BUS|MISC|XORGXKB|"
 $ server_profiles = server_profiles + "XORGFB|"
 $ server_profiles = server_profiles + "LOADER|"
+$ server_profiles = server_profiles + "XF86MODES|DDC|I2C|"
 $ server_profiles = server_profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ server_profiles = server_profiles + "CONFIG|"
 $! Native case folding makes server headers collide with client Xfixes/XKB files.
@@ -227,6 +229,7 @@ $ IF P4 .EQS. "XAA" THEN include_directory = include_directory + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.XAA]"
 $ common_profiles = "|COMMON|BUS|MISC|XORGXKB|"
 $ common_profiles = common_profiles + "LOADER|"
+$ common_profiles = common_profiles + "XF86MODES|DDC|I2C|"
 $ common_profiles = common_profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ xf86common_profile = F$LOCATE("|" + P4 + "|",common_profiles) .LT. F$LENGTH(common_profiles)
 $ IF xf86common_profile THEN include_directory = include_directory + -
@@ -241,7 +244,7 @@ $ IF xf86common_profile THEN include_directory = include_directory + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.VBE],[.XSERVER.XORG-SERVER.HW.XFREE86.INT10]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.VGAHW],[.XSERVER.XORG-SERVER.HW.XFREE86.DIXMODS.EXTMOD]," + -
     "[.XSERVER.XORG-SERVER.XEXT],[.XSERVER.XORG-SERVER.RANDR],[.XSERVER.XORG-SERVER.XKB]," + -
-    "[.XSERVER.XORG-SERVER.XI],[.XSERVER.XORG-SERVER.OS]"
+    "[.XSERVER.XORG-SERVER.XI],[.XSERVER.XORG-SERVER.OS],[.XSERVER.XORG-SERVER.FB]"
 $ IF xf86common_profile THEN GOSUB xf86common_native
 $ IF xf86common_profile .AND. -
     (first_include .EQS. "/NOFIRST_INCLUDE") THEN GOTO done

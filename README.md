@@ -93,7 +93,10 @@ VGAHW. Produces `VGAHW.OLB` — both unchanged upstream XFree86 VGA hardware sup
 RAMDAC. Produces `RAMDAC.OLB` — all eight unchanged upstream XFree86 RAMDAC/cursor objects, including IBM, BT, TI, and the upstream bit-order wrapper; optional ARGB cursors excluded. The consuming server supplies XFree86 and cursor services.  
 XAA. Produces `XAA.OLB` — all 52 static XFree86 acceleration objects, including bit-order, fixed-base, triple-bit and polysegment variants; Render enabled, with minimal P64 address-alignment fixes. Loadable hooks, Xinerama and architecture assembly excluded.  
 XF86CONFIG. Produces `XF86CONFIG.OLB` — all 17 upstream XFree86 configuration-parser C sources, including InputClass, plus the upstream formatting helpers, with native directory scanning and VMS-only external-name aliases in headers. Reads, validates and writes configuration data; the consuming program supplies diagnostics. Uses current-process file permissions without Unix saved-ID switching; upstream Vendor-subsection Identifier and built-in scanner-reset defects remain.  
-COMMON. Produces `COMMON.OLB` - all 26 modules of the selected upstream XFree86 common profile, including server initialization, default-mode generation, and VGA-arbiter support; native P64 pointers, XKB, X Input, DGA, RandR, and Render, excluding XVideo, SPARC bus, and debug sources. Linking requires matching core feature flags and native OS services.  
+COMMON. Produces `COMMON.OLB` - all 28 modules of the selected upstream XFree86 common profile, including server initialization, default-mode generation, VGA-arbiter support, and both XVideo sources; native P64 pointers, XKB, X Input, DGA, RandR, and Render, excluding SPARC bus and debug sources. Linking requires matching core feature flags and native OS services.  
+XF86MODES. Produces `XF86MODES.OLB` — all ten unchanged upstream mode-setting modules, including DGA, with 64-bit pointers; the consuming server supplies XFree86, RandR, framebuffer and OS services.  
+DDC. Produces `DDC.OLB` — all four unchanged upstream display-identification modules with 64-bit pointers; native bus access remains a consumer input.  
+I2C. Produces `I2C.OLB` — the unchanged upstream core I2C bus module with 64-bit pointers; optional multimedia-device libraries are separate.  
 LOADER. Produces `LOADER.OLB` - the four ordinary loader objects, with platform-owned static discovery/loading; dynamic image loading and Unix symbol-export tables are excluded.  
 BUS. Produces `BUS.OLB` — the unchanged generic XFree86 PCI bus module with 64-bit pointers; the consuming platform supplies PCI access, resource sizes and address translation. Native hardware backends and generic domain/mapping assumptions are not selected.  
 MISC. Produces `MISC.OLB` - the unchanged upstream portable `SlowBcopy.c` module; OS services remain consumer inputs.  
@@ -196,6 +199,9 @@ $ @[.VMS-SUPPORT]BUILD RAMDAC
 $ @[.VMS-SUPPORT]BUILD XAA  
 $ @[.VMS-SUPPORT]BUILD XF86CONFIG  
 $ @[.VMS-SUPPORT]BUILD COMMON  
+$ @[.VMS-SUPPORT]BUILD XF86MODES  
+$ @[.VMS-SUPPORT]BUILD DDC  
+$ @[.VMS-SUPPORT]BUILD I2C  
 $ @[.VMS-SUPPORT]BUILD LOADER  
 $ @[.VMS-SUPPORT]BUILD BUS  
 $ @[.VMS-SUPPORT]BUILD MISC  

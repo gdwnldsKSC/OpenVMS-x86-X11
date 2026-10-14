@@ -6,7 +6,7 @@ As parts become buildable, they will be updated and documented here.
   
 ## Buildable parts  
 
-The listed targets build natively on OpenVMS x86-64 E9.2-4 with the R7.7 sources. X11 uses 64-bit pointers; the standalone GAWK build tool uses 32-bit pointers.
+The listed targets build natively on OpenVMS x86-64 E9.2-4 with the R7.7 sources. X11 uses 64-bit pointers; the standalone GAWK build tool uses 32-bit pointers. The X11 compiler profile preserves external-name case. When changing this profile, use a clean build tree and rebuild all linked objects and libraries together.
   
 XAU. Produces `XAU.OLB` - all eight standard Xau modules; optional Kerberos support excluded.  
 XDMCP. Produces `XDMCP.OLB` - all eight standard Xdmcp modules; optional `HASXDMAUTH` wrapping excluded.  
@@ -92,7 +92,7 @@ SHADOWFB. Produces `SHADOWFB.OLB` — both unchanged upstream XFree86 shadowfb o
 VGAHW. Produces `VGAHW.OLB` — both unchanged upstream XFree86 VGA hardware support objects with 64-bit pointers, including module metadata. The consuming server supplies port I/O and XFree86 services. Does not access hardware during the build.  
 RAMDAC. Produces `RAMDAC.OLB` — all eight unchanged upstream XFree86 RAMDAC/cursor objects, including IBM, BT, TI, and the upstream bit-order wrapper; optional ARGB cursors excluded. The consuming server supplies XFree86 and cursor services.  
 XAA. Produces `XAA.OLB` — all 52 static XFree86 acceleration objects, including bit-order, fixed-base, triple-bit and polysegment variants; Render enabled, with minimal P64 address-alignment fixes. Loadable hooks, Xinerama and architecture assembly excluded.  
-XF86CONFIG. Produces `XF86CONFIG.OLB` — all 17 upstream XFree86 configuration-parser C sources, including InputClass, plus the upstream formatting helpers, with native directory scanning and VMS-only external-name aliases in headers. Reads, validates and writes configuration data; the consuming program supplies diagnostics. Uses current-process file permissions without Unix saved-ID switching; upstream Vendor-subsection Identifier and built-in scanner-reset defects remain.  
+XF86CONFIG. Produces `XF86CONFIG.OLB` — all 17 upstream XFree86 configuration-parser C sources, including InputClass, plus the upstream formatting helpers, with native directory scanning and unchanged upstream parser headers. Reads, validates and writes configuration data; the consuming program supplies diagnostics. Uses current-process file permissions without Unix saved-ID switching; upstream Vendor-subsection Identifier and built-in scanner-reset defects remain.  
 COMMON. Produces `COMMON.OLB` - all 28 modules of the selected upstream XFree86 common profile, including server initialization, default-mode generation, VGA-arbiter support, and both XVideo sources; native P64 pointers, XKB, X Input, DGA, RandR, and Render, excluding SPARC bus and debug sources. Linking requires matching core feature flags and native OS services.  
 XF86MODES. Produces `XF86MODES.OLB` — all ten unchanged upstream mode-setting modules, including DGA, with 64-bit pointers; the consuming server supplies XFree86, RandR, framebuffer and OS services.  
 DDC. Produces `DDC.OLB` — all four unchanged upstream display-identification modules with 64-bit pointers; native bus access remains a consumer input.  

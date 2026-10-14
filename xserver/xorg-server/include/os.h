@@ -337,14 +337,6 @@ OsAbort(void)
     _X_NORETURN;
 
 #if !defined(WIN32)
-#ifdef __VMS
-/* Keep server wrappers distinct from the case-folded C RTL entry points. */
-#define System XserverSystem
-#define Popen XserverPopen
-#define Pclose XserverPclose
-#define Fopen XserverFopen
-#define Fclose XserverFclose
-#endif
 extern _X_EXPORT int
 System(const char *);
 extern _X_EXPORT pointer

@@ -63,11 +63,6 @@
 #ifndef _xf86Parser_h_
 #define _xf86Parser_h_
 
-#ifdef __VMS
-/* Distinguish the parser APIs from common's case-only wrapper names. */
-#define xf86pathIsSafe xf86ParserPathIsSafe
-#endif
-
 #include <X11/Xdefs.h>
 #include "xf86Optrec.h"
 #include "list.h"

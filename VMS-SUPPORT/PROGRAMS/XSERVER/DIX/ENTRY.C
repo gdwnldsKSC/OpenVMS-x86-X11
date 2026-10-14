@@ -8,7 +8,7 @@ typedef char *VmsDixNativeString;
 typedef VmsDixNativeString *VmsDixNativeEnvironment;
 #pragma pointer_size restore
 
-extern int VmsDixMain(int argc, char **argv, char **envp);
+extern int VMSDIXMAIN(int argc, char **argv, char **envp);
 extern void CheckUserParameters(int argc, char **argv, char **envp);
 
 static VmsDixNativeEnvironment native_environment;
@@ -22,7 +22,7 @@ static void environment_error(void)
 }
 
 /* Upstream removes unsafe entries by compacting envp in place. */
-void VmsDixCheckUserParameters(int argc, char **argv, char **envp)
+void VMSDIXCHECKUSERPARAMETERS(int argc, char **argv, char **envp)
 {
     size_t source = 0;
     size_t destination = 0;
@@ -66,7 +66,7 @@ int main(int argc, char **argv, char **envp)
         server_environment[i] = envp[i];
     server_environment[environment_count] = NULL;
 
-    status = VmsDixMain(argc, argv, server_environment);
+    status = VMSDIXMAIN(argc, argv, server_environment);
 
     free(server_environment);
     server_environment = NULL;

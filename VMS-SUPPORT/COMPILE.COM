@@ -32,6 +32,7 @@ $ profiles = profiles + "LOADER|"
 $ profiles = profiles + "XF86MODES|DDC|I2C|STUB|PCIACCESS|"
 $ profiles = profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ profiles = profiles + "PIXMAN|CONFIG|"
+$ profiles = profiles + "REGEX|REGEX_MKH|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -44,6 +45,8 @@ $ IF (P4 .EQS. "OS") .OR. (P4 .EQS. "XCB") .OR. (P4 .EQS. "PIXMAN") .OR. -
 $ IF rtl_headers .EQS. "" THEN GOTO done
 $ IF (P4 .EQS. "GTF") .OR. (P4 .EQS. "RTL") THEN GOTO rtl_headers
 $ IF P4 .EQS. "ZLIB" THEN GOTO zlib_headers
+$ IF P4 .EQS. "REGEX" THEN GOTO regex_headers
+$ IF P4 .EQS. "REGEX_MKH" THEN GOTO rtl_headers
 $ IF P4 .EQS. "FONTENC" THEN GOTO fontenc_headers
 $ IF P4 .EQS. "PIXMAN" THEN GOTO pixman_headers
 $ IF P4 .EQS. "PCIACCESS" THEN GOTO pciaccess_headers
@@ -377,6 +380,10 @@ $zlib_headers:
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]ZLIB.H") .EQS. "" THEN GOTO done
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]ZCONF.H") .EQS. "" THEN GOTO done
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE],[.EXTRAS.ZLIB]"
+$ GOTO compile
+$regex_headers:
+$ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]REGEX.H") .EQS. "" THEN GOTO done
+$ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE],[.VMS-SUPPORT._BUILD.P64.LIB.REGEX],[.EXTRAS.REGEX]"
 $ GOTO compile
 $fontenc_headers:
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.X11.FONTS]FONTENC.H") .EQS. "" THEN GOTO done

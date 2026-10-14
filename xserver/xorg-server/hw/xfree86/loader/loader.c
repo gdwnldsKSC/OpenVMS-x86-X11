@@ -67,7 +67,6 @@
 #include "xf86Priv.h"
 #include "compiler.h"
 
-#ifndef XORG_STATIC_MODULES
 #ifdef HAVE_DLFCN_H
 
 #include <dlfcn.h>
@@ -94,16 +93,13 @@
 #else
 #error i have no dynamic linker and i must scream
 #endif
-#endif
 
 extern void *xorg_symbols[];
 
 void
 LoaderInit(void)
 {
-#ifndef XORG_STATIC_MODULES
     xf86MsgVerb(X_INFO, 2, "Loader magic: %p\n", (void *) xorg_symbols);
-#endif
     xf86MsgVerb(X_INFO, 2, "Module ABI versions:\n");
     xf86ErrorFVerb(2, "\t%s: %d.%d\n", ABI_CLASS_ANSIC,
                    GET_ABI_MAJOR(LoaderVersionInfo.ansicVersion),
@@ -125,9 +121,7 @@ LoaderInit(void)
 void *
 LoaderOpen(const char *module, int *errmaj, int *errmin)
 {
-#ifndef XORG_STATIC_MODULES
     void *ret;
-#endif
 
 #if defined(DEBUG)
     ErrorF("LoaderOpen(%s)\n", module);
@@ -135,9 +129,6 @@ LoaderOpen(const char *module, int *errmaj, int *errmin)
 
     xf86Msg(X_INFO, "Loading %s\n", module);
 
-#ifdef XORG_STATIC_MODULES
-    return LoaderStaticOpen(module, errmaj, errmin);
-#else
     if (!(ret = dlopen(module, DLOPEN_LAZY | DLOPEN_GLOBAL))) {
         xf86Msg(X_ERROR, "Failed to load %s: %s\n", module, dlerror());
         if (errmaj)
@@ -148,15 +139,11 @@ LoaderOpen(const char *module, int *errmaj, int *errmin)
     }
 
     return ret;
-#endif
 }
 
 void *
 LoaderSymbol(const char *name)
 {
-#ifdef XORG_STATIC_MODULES
-    return LoaderStaticSymbol(name);
-#else
     static void *global_scope = NULL;
     void *p;
 
@@ -171,7 +158,6 @@ LoaderSymbol(const char *name)
         return dlsym(global_scope, name);
 
     return NULL;
-#endif
 }
 
 void
@@ -179,11 +165,7 @@ LoaderUnload(const char *name, void *handle)
 {
     xf86Msg(X_INFO, "Unloading %s\n", name);
     if (handle)
-#ifdef XORG_STATIC_MODULES
-        LoaderStaticClose(handle);
-#else
         dlclose(handle);
-#endif
 }
 
 unsigned long LoaderOptions = 0;
@@ -192,9 +174,6 @@ void
 LoaderSetOptions(unsigned long opts)
 {
     LoaderOptions |= opts;
-#ifdef XORG_STATIC_MODULES
-    LoaderStaticSetOptions(opts);
-#endif
 }
 
 Bool

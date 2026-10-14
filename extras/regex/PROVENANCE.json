@@ -1,0 +1,91 @@
+{
+  "component": "Henry Spencer POSIX regex",
+  "upstream_version": "alpha3.7 (1997-11-21)",
+  "source_url": "https://xorg.freedesktop.org/releases/X11R6.9.0/src-single/X11R6.9.0-src.tar.gz",
+  "archive_sha256": "e28db3311b32a07584576da0a1ebbbfef1e02b201cb6d018f35d2274d2a816c2",
+  "archive_member_prefix": "xc/extras/regex/",
+  "acquired_at_utc": "2026-10-09T00:47:29.778890+00:00",
+  "acquisition": "Independent HTTPS download from X.Org; standalone prerequisite imported byte-for-byte, not a legacy X server source fallback.",
+  "upstream_files": [
+    {
+      "path": "cclass.h",
+      "sha256": "1731381dc924a7062db5fafef7363bf7c7e63a1ece0942bd4c13935f7e5c6cf6"
+    },
+    {
+      "path": "cname.h",
+      "sha256": "c45ceb98da1f65a7a93e10e9a0705753a3be3169ae5156cecbff7a399a98bf92"
+    },
+    {
+      "path": "COPYRIGHT",
+      "sha256": "66994e75c03e014b084b4f4fdca49f37882bb3da8b0736b237c074c33d4b212a"
+    },
+    {
+      "path": "debug.c",
+      "sha256": "e22748cad79bb7d4e6e21b6a9f0bf4298bf9f0b657fb2a55070ddff06dda049e"
+    },
+    {
+      "path": "engine.c",
+      "sha256": "268cd452535422198efdfd08abafd3473af84f60f5299ba8eff4426c9ac2ae38"
+    },
+    {
+      "path": "main.c",
+      "sha256": "99e3d5b9119df6bcb87439cda22237d59c73ef7300e07e74d1cf4982b7827fe8"
+    },
+    {
+      "path": "Makefile",
+      "sha256": "7810d86349cade5bf92977b6400619bdf307a0eca579251ca175489367ad51a8"
+    },
+    {
+      "path": "mkh",
+      "sha256": "025dfd7bdbbf3756354c1bc7b647da43b77b65064517f158a75ebdcbe5f83213"
+    },
+    {
+      "path": "README",
+      "sha256": "4573093c737c8bbfcb6bfd8c893634dc6f278ed7d1363b7d00ee15634ac2527b"
+    },
+    {
+      "path": "regcomp.c",
+      "sha256": "7857b3972cf3857ece53d6c845d54f087e5df2aa3405211a9f49186599ece639"
+    },
+    {
+      "path": "regerror.c",
+      "sha256": "3369f5304b45e090f2f5af365a6ba3930e7b72f2e65c2e2e3186f79ec51f7ac2"
+    },
+    {
+      "path": "regex.3",
+      "sha256": "7458d80376240c78cf92ea063d3df12af9114dd55de38c95d58d3f7413b76562"
+    },
+    {
+      "path": "regex.7",
+      "sha256": "c87c471fb6c02914c26e351f482e7c04e3cd7b198560dc1344b9502386e1196d"
+    },
+    {
+      "path": "regex2.h",
+      "sha256": "7d9f6c7219c8e133dbb7228bb25ea95e37d2871cdbd46d19f378e3f5cbab2ab0"
+    },
+    {
+      "path": "regexec.c",
+      "sha256": "06d9e11a35d817f9194f695c8029428f8a89ce6be46b9b24a1d337f85f563f92"
+    },
+    {
+      "path": "regfree.c",
+      "sha256": "ef833a4c3b438f7f717b42813980c583654a41bc437a3eb86f5aea09895251ab"
+    },
+    {
+      "path": "split.c",
+      "sha256": "1f64fcf9abc855f686adb3b68d24f91b10829eb96136e59d3f75458178620185"
+    },
+    {
+      "path": "tests",
+      "sha256": "d03d4a61dd7bcd3637c70547f51d32f5713ad378fcc4578819bb332625e8f1bb"
+    },
+    {
+      "path": "utils.h",
+      "sha256": "9ebdc686d522e47e5093c390b46a271dc2b1ca51415d6d589741b69f33d178f7"
+    },
+    {
+      "path": "WHATSNEW",
+      "sha256": "dfc9f9d99c97b82ffc6ee0405724ccbf927570e5b2eecae76d4bcd3f0d566741"
+    }
+  ]
+}

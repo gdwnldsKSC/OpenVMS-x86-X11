@@ -82,16 +82,6 @@ void UnloadDriver(ModuleDescPtr);
 void LoaderSetPath(const char *path);
 void LoaderSortExtensions(void);
 
-#ifdef XORG_STATIC_MODULES
-void *LoaderStaticOpen(const char *, int *, int *);
-void *LoaderStaticSymbol(const char *);
-void LoaderStaticClose(void *);
-char *LoaderStaticFindModule(const char *, const char *, const char **,
-                            const char **);
-char **LoaderStaticListDirs(const char **, const char **);
-void LoaderStaticSetOptions(unsigned long);
-#endif
-
 void LoaderUnload(const char *, void *);
 unsigned long LoaderGetModuleVersion(ModuleDescPtr mod);
 

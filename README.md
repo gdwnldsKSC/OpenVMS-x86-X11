@@ -13,6 +13,7 @@ XDMCP. Produces `XDMCP.OLB` - all eight standard Xdmcp modules; optional `HASXDM
 XCB. Produces `XCB.OLB` - the core TCP client transport and generated core, BIG-REQUESTS, and XC-MISC protocols, using native pthreads and `XAU.OLB`.  
 XCB_SHAPE. Produces `XCB_SHAPE.OLB` - the generated Shape protocol client library used by xwininfo.  
 ZLIB. Produces `Z.OLB` - all 12 modules of the bundled zlib 1.2.3.  
+REGEX. Produces `REGEX.OLB` - all four unchanged standalone POSIX regex modules, with native public/private header generation; P64 case-preserving build and module-discovery matching validated.  
 FONTENC. Produces `FONTENC.OLB` - `fontenc.c` and `encparse.c`, using `Z.OLB`; upstream reverse-map cleanup and parser-growth defects remain.  
 EXPAT. Produces `EXPAT.OLB` - `xmlparse.c`, `xmltok.c`, and `xmlrole.c` from bundled Expat 1.95.8.  
 XFONT. Produces `XFONT.OLB` - 47 objects across bitmap, fontfile, fc, util, builtins, and FreeType; gzip and TCP font-server transport included, with minimal VMS text-read adaptations. Builds `Z.OLB`, `FONTENC.OLB`, and `FREETYPE.OLB` dependencies; optional fontencc excluded. Builtin fonts require server-side activation.  
@@ -97,7 +98,7 @@ COMMON. Produces `COMMON.OLB` - all 28 modules of the selected upstream XFree86 
 XF86MODES. Produces `XF86MODES.OLB` — all ten unchanged upstream mode-setting modules, including DGA, with 64-bit pointers; the consuming server supplies XFree86, RandR, framebuffer and OS services.  
 DDC. Produces `DDC.OLB` — all four unchanged upstream display-identification modules with 64-bit pointers; native bus access remains a consumer input.  
 I2C. Produces `I2C.OLB` — the unchanged upstream core I2C bus module with 64-bit pointers; optional multimedia-device libraries are separate.  
-LOADER. Produces `LOADER.OLB` - the four ordinary loader objects, with platform-owned static discovery/loading; dynamic image loading and Unix symbol-export tables are excluded.  
+LOADER. Produces `LOADER.OLB` - the four upstream loader objects, with filesystem module discovery, dynamic-loading entry points and minimal OpenVMS OS-name selection; native P64 case-preserving compilation validated. The consuming server supplies image activation, global symbol lookup and exported symbols.  
 PCIACCESS. Produces `PCIACCESS.OLB` — all nine portable libpciaccess common modules with 64-bit pointers, including the VGA-arbitration stub; minimal VMS dispatch/endian adaptations. Linking requires a platform PCI backend.  
 BUS. Produces `BUS.OLB` — the unchanged generic XFree86 PCI bus module with 64-bit pointers; the consuming platform supplies PCI access, resource sizes and address translation. Native hardware backends and generic domain/mapping assumptions are not selected.  
 MISC. Produces `MISC.OLB` - the unchanged upstream portable `SlowBcopy.c` module; OS services remain consumer inputs.  
@@ -121,6 +122,7 @@ $ @[.VMS-SUPPORT]BUILD XDMCP
 $ @[.VMS-SUPPORT]BUILD XCB  
 $ @[.VMS-SUPPORT]BUILD XCB_SHAPE  
 $ @[.VMS-SUPPORT]BUILD ZLIB  
+$ @[.VMS-SUPPORT]BUILD REGEX  
 $ @[.VMS-SUPPORT]BUILD FONTENC  
 $ @[.VMS-SUPPORT]BUILD EXPAT  
 $ @[.VMS-SUPPORT]BUILD XFONT  

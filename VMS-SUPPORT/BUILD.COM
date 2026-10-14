@@ -28,6 +28,7 @@ $ targets = targets + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|CO
 $ targets = targets + "LOADER|XORGFB|XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ targets = targets + "XF86MODES|DDC|I2C|STUB|PCIACCESS|"
 $ targets = targets + "PIXMAN|CONFIG|FBCMAP|GAWK|"
+$ targets = targets + "REGEX|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -96,6 +97,8 @@ $ directory = profile + ".LIB.XDMCP]"
 $ IF F$SEARCH(profile + ".LIB]XDMCP.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.ZLIB]"
 $ IF F$SEARCH(profile + ".LIB]ZLIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.REGEX]"
+$ IF F$SEARCH(profile + ".LIB]REGEX.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.FONTENC]"
 $ IF F$SEARCH(profile + ".LIB]FONTENC.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.EXPAT]"

@@ -67,6 +67,14 @@
 # define HTOLE_32(x)   (x)
 #endif /* Solaris */
 
+#elif defined(__VMS)
+
+/* OpenVMS PCI hosts use little-endian byte order. */
+#define HTOLE_16(x) (x)
+#define HTOLE_32(x) (x)
+#define LETOH_16(x) (x)
+#define LETOH_32(x) (x)
+
 #else
 
 #include <sys/endian.h>

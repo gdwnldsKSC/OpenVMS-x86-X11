@@ -26,7 +26,7 @@ $ targets = targets + "FONTS_ENCODINGS|FONTS_SCALED|FONTS_TYPE1|FONTS_TTF|FONTS_
 $ targets = targets + "NLS|NLS_XLC_LOCALE|NLS_COMPOSE|X11_DATA|RUNTIME|"
 $ targets = targets + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|COMMON|BUS|MISC|XORGXKB|"
 $ targets = targets + "LOADER|XORGFB|XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
-$ targets = targets + "XF86MODES|DDC|I2C|"
+$ targets = targets + "XF86MODES|DDC|I2C|STUB|PCIACCESS|"
 $ targets = targets + "PIXMAN|CONFIG|FBCMAP|GAWK|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
@@ -83,6 +83,8 @@ $ pixman_directory = profile + ".LIB.PIXMAN]"
 $ IF F$SEARCH(profile + "]LIB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.XCB]"
 $ IF F$SEARCH(profile + ".LIB]XCB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.PCIACCESS]"
+$ IF F$SEARCH(profile + ".LIB]PCIACCESS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ IF F$SEARCH(profile + ".LIB]PIXMAN.DIR") .EQS. "" THEN CREATE/DIRECTORY 'pixman_directory'
 $ directory = profile + ".LIB.X11]"
 $ IF F$SEARCH(profile + ".LIB]X11.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
@@ -328,6 +330,9 @@ $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86.OS-SUPPORT]BUS.DIR") .EQS.
     THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.OS-SUPPORT.MISC]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86.OS-SUPPORT]MISC.DIR") .EQS. "" -
+    THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.OS-SUPPORT.STUB]"
+$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86.OS-SUPPORT]STUB.DIR") .EQS. "" -
     THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.DIXMODS]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86]DIXMODS.DIR") .EQS. "" -

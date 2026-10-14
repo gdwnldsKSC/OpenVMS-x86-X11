@@ -29,7 +29,7 @@ $ profiles = profiles + "XT|XMU|"
 $ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|COMMON|BUS|MISC|XORGXKB|"
 $ profiles = profiles + "XORGFB|"
 $ profiles = profiles + "LOADER|"
-$ profiles = profiles + "XF86MODES|DDC|I2C|"
+$ profiles = profiles + "XF86MODES|DDC|I2C|STUB|PCIACCESS|"
 $ profiles = profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ profiles = profiles + "PIXMAN|CONFIG|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
@@ -46,6 +46,7 @@ $ IF (P4 .EQS. "GTF") .OR. (P4 .EQS. "RTL") THEN GOTO rtl_headers
 $ IF P4 .EQS. "ZLIB" THEN GOTO zlib_headers
 $ IF P4 .EQS. "FONTENC" THEN GOTO fontenc_headers
 $ IF P4 .EQS. "PIXMAN" THEN GOTO pixman_headers
+$ IF P4 .EQS. "PCIACCESS" THEN GOTO pciaccess_headers
 $ inherited_x11 = F$TRNLNM("X11")
 $ inherited_table = F$TRNLNM("X11",,,,,"TABLE_NAME")
 $ IF F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
@@ -180,7 +181,7 @@ $ server_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|SYNC|RANDR|DBE|RECORD|XFIXE
 $ server_profiles = server_profiles + "SHADOWFB|VGAHW|RAMDAC|XAA|COMMON|BUS|MISC|XORGXKB|"
 $ server_profiles = server_profiles + "XORGFB|"
 $ server_profiles = server_profiles + "LOADER|"
-$ server_profiles = server_profiles + "XF86MODES|DDC|I2C|"
+$ server_profiles = server_profiles + "XF86MODES|DDC|I2C|STUB|"
 $ server_profiles = server_profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ server_profiles = server_profiles + "CONFIG|"
 $! Native case folding makes server headers collide with client Xfixes/XKB files.
@@ -229,7 +230,7 @@ $ IF P4 .EQS. "XAA" THEN include_directory = include_directory + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.XAA]"
 $ common_profiles = "|COMMON|BUS|MISC|XORGXKB|"
 $ common_profiles = common_profiles + "LOADER|"
-$ common_profiles = common_profiles + "XF86MODES|DDC|I2C|"
+$ common_profiles = common_profiles + "XF86MODES|DDC|I2C|STUB|"
 $ common_profiles = common_profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ xf86common_profile = F$LOCATE("|" + P4 + "|",common_profiles) .LT. F$LENGTH(common_profiles)
 $ IF xf86common_profile THEN include_directory = include_directory + -
@@ -364,6 +365,13 @@ $ GOTO compile
 $pixman_headers:
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.PIXMAN]PIXMAN.H") .EQS. "" THEN GOTO done
 $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE.PIXMAN],[.EXTRAS.PIXMAN.PIXMAN]"
+$ GOTO compile
+$pciaccess_headers:
+$ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]PCIACCESS.H") .EQS. "" THEN GOTO done
+$ include_directory = "[.VMS-SUPPORT.LIB.PCIACCESS],[.VMS-SUPPORT._BUILD.P64.INCLUDE],[.LIB.LIBPCIACCESS.SRC]"
+$ pciaccess_config = F$SEARCH("[.VMS-SUPPORT.LIB.PCIACCESS]CONFIG.H")
+$ IF pciaccess_config .EQS. "" THEN GOTO done
+$ first_include = "/FIRST_INCLUDE=" + pciaccess_config
 $ GOTO compile
 $zlib_headers:
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]ZLIB.H") .EQS. "" THEN GOTO done

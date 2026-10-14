@@ -98,8 +98,10 @@ XF86MODES. Produces `XF86MODES.OLB` — all ten unchanged upstream mode-setting 
 DDC. Produces `DDC.OLB` — all four unchanged upstream display-identification modules with 64-bit pointers; native bus access remains a consumer input.  
 I2C. Produces `I2C.OLB` — the unchanged upstream core I2C bus module with 64-bit pointers; optional multimedia-device libraries are separate.  
 LOADER. Produces `LOADER.OLB` - the four ordinary loader objects, with platform-owned static discovery/loading; dynamic image loading and Unix symbol-export tables are excluded.  
+PCIACCESS. Produces `PCIACCESS.OLB` — all nine portable libpciaccess common modules with 64-bit pointers, including the VGA-arbitration stub; minimal VMS dispatch/endian adaptations. Linking requires a platform PCI backend.  
 BUS. Produces `BUS.OLB` — the unchanged generic XFree86 PCI bus module with 64-bit pointers; the consuming platform supplies PCI access, resource sizes and address translation. Native hardware backends and generic domain/mapping assumptions are not selected.  
 MISC. Produces `MISC.OLB` - the unchanged upstream portable `SlowBcopy.c` module; OS services remain consumer inputs.  
+STUB. Produces `STUB.OLB` — four unchanged upstream XFree86 OS-support objects: `vidmem`, `VTsw_noop`, `stub_bell`, and `stub_bios`, with 64-bit pointers. Portable subset only; native hardware and OS services remain consumer inputs.  
 XORGXKB. Produces `XORGXKB.OLB` — all three unchanged XFree86 keyboard-action modules with 64-bit pointers; the consuming server supplies action dispatch. Replaces, rather than accompanies, the generic XKB DDX stubs at link time.  
 XORGFB. Produces `FB.OLB` — the 31-object Xorg framebuffer variant with module metadata and the MI colormap provider, retaining the P64 alignment adaptations. Generic `FB` and `XSERVER_CORE` builds remain separate.  
 XF86_INPUT_KEYBOARD. Produces `KBD_DRV.OLB` — the unchanged upstream keyboard driver and AT scan-code helper with 64-bit pointers and module metadata; the consuming server supplies native keyboard services and key mapping.  
@@ -203,8 +205,10 @@ $ @[.VMS-SUPPORT]BUILD XF86MODES
 $ @[.VMS-SUPPORT]BUILD DDC  
 $ @[.VMS-SUPPORT]BUILD I2C  
 $ @[.VMS-SUPPORT]BUILD LOADER  
+$ @[.VMS-SUPPORT]BUILD PCIACCESS  
 $ @[.VMS-SUPPORT]BUILD BUS  
 $ @[.VMS-SUPPORT]BUILD MISC  
+$ @[.VMS-SUPPORT]BUILD STUB  
 $ @[.VMS-SUPPORT]BUILD XORGXKB  
 $ @[.VMS-SUPPORT]BUILD XORGFB  
 $ @[.VMS-SUPPORT]BUILD XF86_INPUT_KEYBOARD  

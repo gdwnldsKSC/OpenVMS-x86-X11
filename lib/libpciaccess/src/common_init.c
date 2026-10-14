@@ -64,6 +64,8 @@ pci_system_init( void )
     err = pci_system_solx_devfs_create();
 #elif defined(__GNU__)
     err = pci_system_x86_create();
+#elif defined(__VMS)
+    err = pci_system_vms_create();
 #endif
 
     return err;

@@ -13,6 +13,9 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <sys/param.h>
 #include <sys/ioctl.h>
@@ -79,6 +82,29 @@ pci_write(int domain, int bus, int dev, int func, uint32_t reg, uint32_t val)
 	io.pi_data = val;
 
 	return ioctl(pcifd[domain], PCIOCWRITE, &io);
+}
+
+static int
+pci_readmask(int domain, int bus, int dev, int func, uint32_t reg,
+    uint32_t *val)
+{
+	struct pci_io io;
+	int err;
+
+	bzero(&io, sizeof(io));
+	io.pi_sel.pc_bus = bus;
+	io.pi_sel.pc_dev = dev;
+	io.pi_sel.pc_func = func;
+	io.pi_reg = reg;
+	io.pi_width = 4;
+
+	err = ioctl(pcifd[domain], PCIOCREADMASK, &io);
+	if (err)
+		return (err);
+
+	*val = io.pi_data;
+
+	return 0;
 }
 
 /**
@@ -328,11 +354,9 @@ pci_device_openbsd_probe(struct pci_device *device)
 			return err;
 
 		/* Probe the size of the region. */
-		err = pci_write(domain, bus, dev, func, bar, ~0);
+		err = pci_readmask(domain, bus, dev, func, bar, &size);
 		if (err)
 			return err;
-		pci_read(domain, bus, dev, func, bar, &size);
-		pci_write(domain, bus, dev, func, bar, reg);
 
 		if (PCI_MAPREG_TYPE(reg) == PCI_MAPREG_TYPE_IO) {
 			region->is_IO = 1;
@@ -360,11 +384,9 @@ pci_device_openbsd_probe(struct pci_device *device)
 					return err;
 				reg64 |= (uint64_t)reg << 32;
 
-				err = pci_write(domain, bus, dev, func, bar, ~0);
+				err = pci_readmask(domain, bus, dev, func, bar, &size);
 				if (err)
 					return err;
-				pci_read(domain, bus, dev, func, bar, &size);
-				pci_write(domain, bus, dev, func, bar, reg64 >> 32);
 				size64 |= (uint64_t)size << 32;
 
 				region->base_addr = PCI_MAPREG_MEM64_ADDR(reg64);
@@ -412,6 +434,7 @@ pci_device_openbsd_open_legacy_io(struct pci_io_handle *ret,
 
 	ret->base = base;
 	ret->size = size;
+	ret->is_legacy = 1;
 	return ret;
 #elif defined(__amd64__)
 	struct amd64_iopl_args ia;
@@ -422,6 +445,7 @@ pci_device_openbsd_open_legacy_io(struct pci_io_handle *ret,
 
 	ret->base = base;
 	ret->size = size;
+	ret->is_legacy = 1;
 	return ret;
 #elif defined(PCI_MAGIC_IO_RANGE)
 	ret->memory = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED,
@@ -431,6 +455,7 @@ pci_device_openbsd_open_legacy_io(struct pci_io_handle *ret,
 
 	ret->base = base;
 	ret->size = size;
+	ret->is_legacy = 1;
 	return ret;
 #else
 	return NULL;
@@ -631,6 +656,10 @@ pci_system_openbsd_create(void)
 						continue;
 
 					device->base.domain = domain;
+					if (domain > 0xffff)
+					    device->base.domain_16 = 0xffff;
+					else
+					    device->base.domain_16 = domain & 0xffff;
 					device->base.bus = bus;
 					device->base.dev = dev;
 					device->base.func = func;

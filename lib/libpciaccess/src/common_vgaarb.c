@@ -25,6 +25,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -33,7 +37,6 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "config.h"
 #include "pciaccess.h"
 #include "pciaccess_private.h"
 
@@ -44,6 +47,7 @@ parse_string_to_decodes_rsrc(char *input, int *vga_count, struct pci_slot_match 
 {
     char *tok;
     char *input_sp = NULL, *count_sp, *pci_sp;
+    unsigned long ul;
     char tmp[32];
 
     tok = strtok_r(input,",",&input_sp);
@@ -60,9 +64,11 @@ parse_string_to_decodes_rsrc(char *input, int *vga_count, struct pci_slot_match 
     if (!tok)
         goto fail;
 
-    *vga_count = strtoul(tok, NULL, 10);
-    if (*vga_count == LONG_MAX)
+    errno = 0;
+    ul = strtoul(tok, NULL, 10);
+    if ((ul >= INT_MAX) || (errno != 0))
         goto fail;
+    *vga_count = (int) ul;
 
 #ifdef DEBUG
     fprintf(stderr,"vga count is %d\n", *vga_count);
@@ -123,7 +129,7 @@ int
 pci_device_vgaarb_init(void)
 {
     struct pci_slot_match match;
-    char buf[BUFSIZE];
+    char buf[BUFSIZE + 1]; /* reading BUFSIZE characters, + 1 for NULL */
     int ret, rsrc;
 
     if (!pci_sys)
@@ -136,6 +142,8 @@ pci_device_vgaarb_init(void)
     ret = read(pci_sys->vgaarb_fd, buf, BUFSIZE);
     if (ret <= 0)
         return -1;
+
+    buf[ret] = 0; /* ret will never be greater than BUFSIZE */
 
     memset(&match, 0xff, sizeof(match));
     /* need to find the device to go back to and what it was decoding */
@@ -223,7 +231,7 @@ int
 pci_device_vgaarb_set_target(struct pci_device *dev)
 {
     int len;
-    char buf[BUFSIZE];
+    char buf[BUFSIZE + 1]; /* reading BUFSIZE characters, + 1 for NULL */
     int ret;
 
     if (!dev)
@@ -233,6 +241,8 @@ pci_device_vgaarb_set_target(struct pci_device *dev)
 
     len = snprintf(buf, BUFSIZE, "target PCI:%04x:%02x:%02x.%x",
                    dev->domain, dev->bus, dev->dev, dev->func);
+    if (len < 0 || len >= BUFSIZE)
+        return -1;
 
     ret = vgaarb_write(pci_sys->vgaarb_fd, buf, len);
     if (ret)
@@ -241,6 +251,8 @@ pci_device_vgaarb_set_target(struct pci_device *dev)
     ret = read(pci_sys->vgaarb_fd, buf, BUFSIZE);
     if (ret <= 0)
         return -1;
+
+    buf[ret] = 0; /* ret will never be greater than BUFSIZE */
 
     dev->vgaarb_rsrc = parse_string_to_decodes_rsrc(buf, &pci_sys->vga_count, NULL);
     pci_sys->vga_target = dev;
@@ -251,7 +263,7 @@ int
 pci_device_vgaarb_decodes(int new_vgaarb_rsrc)
 {
     int len;
-    char buf[BUFSIZE];
+    char buf[BUFSIZE + 1]; /* reading BUFSIZE characters, + 1 for NULL */
     int ret;
     struct pci_device *dev = pci_sys->vga_target;
 
@@ -261,6 +273,9 @@ pci_device_vgaarb_decodes(int new_vgaarb_rsrc)
         return 0;
 
     len = snprintf(buf, BUFSIZE, "decodes %s", rsrc_to_str(new_vgaarb_rsrc));
+    if (len < 0 || len >= BUFSIZE)
+        return -1;
+
     ret = vgaarb_write(pci_sys->vgaarb_fd, buf, len);
     if (ret == 0)
         dev->vgaarb_rsrc = new_vgaarb_rsrc;
@@ -268,6 +283,8 @@ pci_device_vgaarb_decodes(int new_vgaarb_rsrc)
     ret = read(pci_sys->vgaarb_fd, buf, BUFSIZE);
     if (ret <= 0)
         return -1;
+
+    buf[ret] = 0; /* ret will never be greater than BUFSIZE */
 
     parse_string_to_decodes_rsrc(buf, &pci_sys->vga_count, NULL);
 
@@ -288,6 +305,8 @@ pci_device_vgaarb_lock(void)
         return 0;
 
     len = snprintf(buf, BUFSIZE, "lock %s", rsrc_to_str(dev->vgaarb_rsrc));
+    if (len < 0 || len >= BUFSIZE)
+        return -1;
 
     return vgaarb_write(pci_sys->vgaarb_fd, buf, len);
 }
@@ -306,6 +325,8 @@ pci_device_vgaarb_trylock(void)
         return 0;
 
     len = snprintf(buf, BUFSIZE, "trylock %s", rsrc_to_str(dev->vgaarb_rsrc));
+    if (len < 0 || len >= BUFSIZE)
+        return -1;
 
     return vgaarb_write(pci_sys->vgaarb_fd, buf, len);
 }
@@ -324,6 +345,8 @@ pci_device_vgaarb_unlock(void)
         return 0;
 
     len = snprintf(buf, BUFSIZE, "unlock %s", rsrc_to_str(dev->vgaarb_rsrc));
+    if (len < 0 || len >= BUFSIZE)
+        return -1;
 
     return vgaarb_write(pci_sys->vgaarb_fd, buf, len);
 }

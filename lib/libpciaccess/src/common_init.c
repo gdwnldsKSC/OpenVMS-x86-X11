@@ -28,6 +28,9 @@
  *
  * \author Ian Romanick <idr@us.ibm.com>
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdlib.h>
 #include <errno.h>
@@ -36,6 +39,7 @@
 #include "pciaccess_private.h"
 
 _pci_hidden struct pci_system * pci_sys;
+static int pci_sys_refcnt = 0;
 
 /**
  * Initialize the PCI subsystem for access.
@@ -52,7 +56,12 @@ pci_system_init( void )
 {
     int err = ENOSYS;
 
-#ifdef linux
+    if ( pci_sys_refcnt > 0 ) {
+          pci_sys_refcnt++;
+          return 0;
+    }
+
+#ifdef __linux__
     err = pci_system_linux_sysfs_create();
 #elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__DragonFly__)
     err = pci_system_freebsd_create();
@@ -63,10 +72,18 @@ pci_system_init( void )
 #elif defined(__sun)
     err = pci_system_solx_devfs_create();
 #elif defined(__GNU__)
+    err = pci_system_hurd_create();
+#elif defined(__CYGWIN__)
     err = pci_system_x86_create();
 #elif defined(__VMS)
     err = pci_system_vms_create();
+#else
+# error "Unsupported OS"
 #endif
+
+    if ( pci_sys != NULL ) {
+	pci_sys_refcnt = 1;
+    }
 
     return err;
 }
@@ -74,7 +91,7 @@ pci_system_init( void )
 void
 pci_system_init_dev_mem(int fd)
 {
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__)
     pci_system_openbsd_init_dev_mem(fd);
 #endif
 }
@@ -92,6 +109,11 @@ pci_system_cleanup( void )
 
 
     if ( pci_sys == NULL ) {
+	return;
+    }
+
+    if ( pci_sys_refcnt > 1 ) {
+	pci_sys_refcnt--;
 	return;
     }
 
@@ -119,11 +141,11 @@ pci_system_cleanup( void )
 	pci_sys->num_devices = 0;
     }
 
-
     if ( pci_sys->methods->destroy != NULL ) {
 	(*pci_sys->methods->destroy)();
     }
 
     free( pci_sys );
     pci_sys = NULL;
+    pci_sys_refcnt = 0;
 }

@@ -28,7 +28,10 @@
  * with a particular device or vendor.
  */
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -79,10 +82,11 @@ pci_id_file_open(void)
 {
     pci_id_file result;
 
-#ifndef __sun
     result = fopen(PCIIDS_PATH "/pci.ids", "re");
     if (result)
         return result;
+#ifdef __FreeBSD__
+    return fopen("/usr/share/misc/pci_vendors", "re");
 #endif
 
     return fopen(PCIIDS_PATH "/pci.ids", "r");
@@ -151,6 +155,10 @@ insert( uint16_t vendor )
 
     if ( tree == NULL ) {
 	tree = calloc( 1, sizeof( struct pci_id_node ) );
+
+	if ( tree == NULL )
+	    return NULL;
+
 	tree->bits = 4;
     }
 
@@ -172,6 +180,9 @@ insert( uint16_t vendor )
 		struct pci_id_node * child =
 		    calloc( 1, sizeof( struct pci_id_node ) );
 
+		if ( tree == NULL )
+		    return NULL;
+
 		child->bits = 4;
 
 		n->children[ idx ] = child;
@@ -179,6 +190,9 @@ insert( uint16_t vendor )
 	    else {
 		struct pci_id_leaf * leaf =
 		    calloc( 1, sizeof( struct pci_id_leaf ) );
+
+		if ( tree == NULL )
+		    return NULL;
 
 		leaf->vendor = vendor;
 

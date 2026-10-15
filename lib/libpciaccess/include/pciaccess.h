@@ -59,10 +59,10 @@
 
 #include <inttypes.h>
 
-#if __GNUC__ >= 3
-#define __deprecated __attribute__((deprecated))
+#if (__GNUC__ >= 3) || (__SUNPRO_C >= 0x5130)
+#define PCIACCESS_DEPRECATED __attribute__((deprecated))
 #else
-#define __deprecated
+#define PCIACCESS_DEPRECATED
 #endif
 
 typedef uint64_t pciaddr_t;
@@ -80,12 +80,14 @@ int pci_device_has_kernel_driver(struct pci_device *dev);
 
 int pci_device_is_boot_vga(struct pci_device *dev);
 
+int pci_device_is_boot_display(struct pci_device *dev);
+
 int pci_device_read_rom(struct pci_device *dev, void *buffer);
 
-int  __deprecated pci_device_map_region(struct pci_device *dev,
+int PCIACCESS_DEPRECATED pci_device_map_region(struct pci_device *dev,
     unsigned region, int write_enable);
 
-int __deprecated pci_device_unmap_region(struct pci_device *dev,
+int PCIACCESS_DEPRECATED pci_device_unmap_region(struct pci_device *dev,
     unsigned region);
 
 int pci_device_map_range(struct pci_device *dev, pciaddr_t base,
@@ -94,10 +96,10 @@ int pci_device_map_range(struct pci_device *dev, pciaddr_t base,
 int pci_device_unmap_range(struct pci_device *dev, void *memory,
     pciaddr_t size);
 
-int __deprecated pci_device_map_memory_range(struct pci_device *dev,
+int PCIACCESS_DEPRECATED pci_device_map_memory_range(struct pci_device *dev,
     pciaddr_t base, pciaddr_t size, int write_enable, void **addr);
 
-int __deprecated pci_device_unmap_memory_range(struct pci_device *dev,
+int PCIACCESS_DEPRECATED pci_device_unmap_memory_range(struct pci_device *dev,
     void *memory, pciaddr_t size);
 
 int pci_device_probe(struct pci_device *dev);
@@ -143,6 +145,7 @@ const char *pci_device_get_vendor_name(const struct pci_device *dev);
 const char *pci_device_get_subvendor_name(const struct pci_device *dev);
 
 void pci_device_enable(struct pci_device *dev);
+void pci_device_disable(struct pci_device *dev);
 
 int pci_device_cfg_read    (struct pci_device *dev, void *data,
     pciaddr_t offset, pciaddr_t size, pciaddr_t *bytes_read);
@@ -178,7 +181,7 @@ int pci_device_cfg_write_bits(struct pci_device *dev, uint32_t mask,
 /*@}*/
 
 
-#define PCI_MATCH_ANY  (~0)
+#define PCI_MATCH_ANY  (~0U)
 
 /**
  * Compare two PCI ID values (either vendor or device).  This is used
@@ -311,6 +314,10 @@ struct pci_mem_region {
  * PCI device.
  *
  * Contains all of the information about a particular PCI device.
+ *
+ * This structure - like everything else in libpciaccess - is allocated
+ * by the library itself. Do not embed this structure in other structs,
+ * or otherwise allocate them yourself.
  */
 struct pci_device {
     /**
@@ -319,9 +326,12 @@ struct pci_device {
      * Complete bus identification, including domain, of the device.  On
      * platforms that do not support PCI domains (e.g., 32-bit x86 hardware),
      * the domain will always be zero.
+     *
+     * The domain_16 field is provided for binary compatibility with older
+     * libpciaccess.
      */
     /*@{*/
-    uint16_t    domain;
+    uint16_t    domain_16;
     uint8_t     bus;
     uint8_t     dev;
     uint8_t     func;
@@ -376,7 +386,7 @@ struct pci_device {
     /**
      * Storage for user data.  Users of the library can store arbitrary
      * data in this pointer.  The library will not use it for any purpose.
-     * It is the user's responsability to free this memory before destroying
+     * It is the user's responsibility to free this memory before destroying
      * the \c pci_device structure.
      */
     intptr_t user_data;
@@ -385,6 +395,12 @@ struct pci_device {
       * Used by the VGA arbiter. Type of resource decoded by the device and
       * the file descriptor (/dev/vga_arbiter). */
     int vgaarb_rsrc;
+
+
+    /**
+     * PCI domain value (full 32 bits)
+     */
+    uint32_t    domain;
 };
 
 
@@ -500,7 +516,7 @@ struct pci_pcmcia_bridge_info {
 int  pci_device_vgaarb_init         (void);
 void pci_device_vgaarb_fini         (void);
 int  pci_device_vgaarb_set_target   (struct pci_device *dev);
-/* use the targetted device */
+/* use the targeted device */
 int  pci_device_vgaarb_decodes      (int new_vga_rsrc);
 int  pci_device_vgaarb_lock         (void);
 int  pci_device_vgaarb_trylock      (void);

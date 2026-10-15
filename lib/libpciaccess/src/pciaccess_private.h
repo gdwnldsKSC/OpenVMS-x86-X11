@@ -29,6 +29,9 @@
  * \author Ian Romanick <idr@us.ibm.com>
  */
 
+#ifndef PCIACCESS_PRIVATE_H
+#define PCIACCESS_PRIVATE_H
+
 #if defined(__GNUC__) && (__GNUC__ >= 4)
 # define _pci_hidden      __attribute__((visibility("hidden")))
 #elif defined(__SUNPRO_C) && (__SUNPRO_C >= 0x550)
@@ -42,7 +45,7 @@
  * know of any OS we support where this isn't available in a sufficiently
  * new version, so warn unconditionally.
  */
-#include <sys/fcntl.h>
+#include <fcntl.h>
 
 #ifndef O_CLOEXEC
 #warning O_CLOEXEC not available, please upgrade.
@@ -73,7 +76,9 @@ struct pci_system_methods {
 
     int (*fill_capabilities)( struct pci_device * dev );
     void (*enable)( struct pci_device *dev );
+    void (*disable)( struct pci_device *dev );
     int (*boot_vga)( struct pci_device *dev );
+    int (*boot_display)( struct pci_device *dev );
     int (*has_kernel_driver)( struct pci_device *dev );
     struct pci_io_handle *(*open_device_io)( struct pci_io_handle *handle,
 					     struct pci_device *dev, int bar,
@@ -109,6 +114,7 @@ struct pci_io_handle {
     pciaddr_t size;
     void *memory;
     int fd;
+    int is_legacy;
 };
 
 struct pci_device_private {
@@ -146,6 +152,12 @@ struct pci_device_private {
     struct pci_device_mapping *mappings;
     unsigned num_mappings;
     /*@}*/
+#ifdef __sun
+    int is_primary;
+#endif
+#ifdef __GNU__
+    unsigned long device_port;
+#endif
 };
 
 
@@ -185,8 +197,11 @@ extern int pci_system_netbsd_create( void );
 extern int pci_system_openbsd_create( void );
 extern void pci_system_openbsd_init_dev_mem( int );
 extern int pci_system_solx_devfs_create( void );
+extern int pci_system_hurd_create( void );
 extern int pci_system_x86_create( void );
 #ifdef __VMS
 extern int pci_system_vms_create( void );
 #endif
 extern void pci_io_cleanup( void );
+
+#endif /* PCIACCESS_PRIVATE_H */

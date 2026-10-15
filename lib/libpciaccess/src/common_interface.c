@@ -28,6 +28,9 @@
  *
  * \author Ian Romanick <idr@us.ibm.com>
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +39,7 @@
 #include "pciaccess.h"
 #include "pciaccess_private.h"
 
-#if defined(__linux__) || defined(__GLIBC__)
+#if defined(__linux__) || defined(__GLIBC__) || defined(__CYGWIN__)
 #include <byteswap.h>
 
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -74,6 +77,24 @@
 #define HTOLE_32(x) (x)
 #define LETOH_16(x) (x)
 #define LETOH_32(x) (x)
+
+#elif defined(__APPLE__)
+#include <libkern/OSByteOrder.h>
+
+#define htobe16(x) OSSwapHostToBigInt16(x)
+#define htole16(x) OSSwapHostToLittleInt16(x)
+#define be16toh(x) OSSwapBigToHostInt16(x)
+#define le16toh(x) OSSwapLittleToHostInt16(x)
+
+#define htobe32(x) OSSwapHostToBigInt32(x)
+#define htole32(x) OSSwapHostToLittleInt32(x)
+#define be32toh(x) OSSwapBigToHostInt32(x)
+#define le32toh(x) OSSwapLittleToHostInt32(x)
+
+#define htobe64(x) OSSwapHostToBigInt64(x)
+#define htole64(x) OSSwapHostToLittleInt64(x)
+#define be64toh(x) OSSwapBigToHostInt64(x)
+#define le64toh(x) OSSwapLittleToHostInt64(x)
 
 #else
 
@@ -129,6 +150,21 @@ pci_device_is_boot_vga( struct pci_device * dev )
 	if (!pci_sys->methods->boot_vga)
 		return 0;
 	return pci_sys->methods->boot_vga( dev );
+}
+
+/**
+ * Probe a PCI (Display) device to determine if its the boot display device
+ *
+ * \param dev    Device whose display status to query
+ * \return
+ * Zero if not the boot display, 1 if the boot display.
+ */
+int
+pci_device_is_boot_display( struct pci_device * dev )
+{
+	if (!pci_sys->methods->boot_display)
+		return 0;
+	return pci_sys->methods->boot_display( dev );
 }
 
 /**
@@ -276,7 +312,7 @@ pci_device_map_range(struct pci_device *dev, pciaddr_t base,
 
 
     for (region = 0; region < 6; region++) {
-        const struct pci_mem_region const* r = &dev->regions[region];
+        const struct pci_mem_region * const r = &dev->regions[region];
 
         if (r->size != 0) {
             if ((r->base_addr <= base) && ((r->base_addr + r->size) > base)) {
@@ -661,6 +697,16 @@ pci_device_enable(struct pci_device *dev)
 
     if (pci_sys->methods->enable)
 	pci_sys->methods->enable(dev);
+}
+
+void
+pci_device_disable(struct pci_device *dev)
+{
+	if (dev == NULL)
+		return;
+
+	if (pci_sys->methods->disable)
+		pci_sys->methods->disable(dev);
 }
 
 /**

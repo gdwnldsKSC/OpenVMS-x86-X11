@@ -34,6 +34,10 @@
 
 #define _GNU_SOURCE
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -41,11 +45,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <sys/mman.h>
 #include <dirent.h>
 #include <errno.h>
 
-#if defined(__i386__) || defined(__x86_64__) || defined(__arm__)
+#if defined(__i386__) || defined(__x86_64__)
 #include <sys/io.h>
 #else
 #define inb(x) -1
@@ -56,8 +61,6 @@
 #define outl(x,y) do {} while (0)
 #define iopl(x) -1
 #endif
-
-#include "config.h"
 
 #ifdef HAVE_MTRR
 #include <asm/mtrr.h>
@@ -120,7 +123,7 @@ pci_system_linux_sysfs_create( void )
  * \param d  Directory entry being processed by \c scandir.
  *
  * \return
- * Zero if the entry name matches either "." or "..", non-zero otherwise.
+ * Zero if the entry name matches either "." or ".."
  *
  * \sa scandir, populate_entries
  */
@@ -129,6 +132,56 @@ scan_sys_pci_filter( const struct dirent * d )
 {
     return !((strcmp( d->d_name, "." ) == 0)
 	     || (strcmp( d->d_name, ".." ) == 0));
+}
+
+
+static int
+parse_separate_sysfs_files(struct pci_device * dev)
+{
+    static const char *attrs[] = {
+      "vendor",
+      "device",
+      "class",
+      "revision",
+      "subsystem_vendor",
+      "subsystem_device",
+    };
+    char name[256];
+    char resource[512];
+    uint64_t data[6];
+    int fd;
+    int i;
+
+    for (i = 0; i < 6; i++) {
+	snprintf(name, 255, "%s/%04x:%02x:%02x.%1u/%s",
+		 SYS_BUS_PCI,
+		 dev->domain,
+		 dev->bus,
+		 dev->dev,
+		 dev->func,
+		 attrs[i]);
+
+	fd = open(name, O_RDONLY | O_CLOEXEC);
+	if (fd == -1) {
+	    return errno;
+	}
+
+	read(fd, resource, 512);
+	resource[511] = '\0';
+
+	close(fd);
+
+	data[i] = strtoull(resource, NULL, 16);
+    }
+
+    dev->vendor_id = data[0] & 0xffff;
+    dev->device_id = data[1] & 0xffff;
+    dev->device_class = data[2] & 0xffffff;
+    dev->revision = data[3] & 0xff;
+    dev->subvendor_id = data[4] & 0xffff;
+    dev->subdevice_id = data[5] & 0xffff;
+
+    return 0;
 }
 
 
@@ -155,14 +208,27 @@ populate_entries( struct pci_system * p )
 			(struct pci_device_private *) &p->devices[i];
 
 
-		sscanf(devices[i]->d_name, "%04x:%02x:%02x.%1u",
+		sscanf(devices[i]->d_name, "%x:%02x:%02x.%1u",
 		       & dom, & bus, & dev, & func);
 
 		device->base.domain = dom;
+		/*
+		 * Applications compiled with older versions  do not expect
+		 * 32-bit domain numbers. To keep them working, we keep a 16-bit
+		 * version of the domain number at the previous location.
+		 */
+		if (dom > 0xffff)
+		     device->base.domain_16 = 0xffff;
+		else
+		     device->base.domain_16 = dom;
 		device->base.bus = bus;
 		device->base.dev = dev;
 		device->base.func = func;
 
+
+		err = parse_separate_sysfs_files(& device->base);
+		if (!err)
+		    continue;
 
 		err = pci_device_linux_sysfs_read(& device->base, config, 0,
 						  48, & bytes);
@@ -198,6 +264,7 @@ populate_entries( struct pci_system * p )
     if (err) {
 	free(p->devices);
 	p->devices = NULL;
+	p->num_devices = 0;
     }
 
     return err;
@@ -269,9 +336,9 @@ pci_device_linux_sysfs_probe( struct pci_device * dev )
 		    dev->regions[i].size = (high_addr
 					    - dev->regions[i].base_addr) + 1;
 
-		    dev->regions[i].is_IO = (flags & 0x01);
-		    dev->regions[i].is_64 = (flags & 0x04);
-		    dev->regions[i].is_prefetchable = (flags & 0x08);
+		    dev->regions[i].is_IO = (flags & 0x01) != 0;
+		    dev->regions[i].is_64 = (flags & 0x04) != 0;
+		    dev->regions[i].is_prefetchable = (flags & 0x08) != 0;
 		}
 	    }
 
@@ -395,7 +462,7 @@ pci_device_linux_sysfs_read( struct pci_device * dev, void * data,
 
 
     while ( temp_size > 0 ) {
-	const ssize_t bytes = pread64( fd, data_bytes, temp_size, offset );
+	const ssize_t bytes = pread( fd, data_bytes, temp_size, offset );
 
 	/* If zero bytes were read, then we assume it's the end of the
 	 * config file.
@@ -455,7 +522,7 @@ pci_device_linux_sysfs_write( struct pci_device * dev, const void * data,
 
 
     while ( temp_size > 0 ) {
-	const ssize_t bytes = pwrite64( fd, data_bytes, temp_size, offset );
+	const ssize_t bytes = pwrite( fd, data_bytes, temp_size, offset );
 
 	/* If zero bytes were written, then we assume it's the end of the
 	 * config file.
@@ -589,8 +656,8 @@ pci_device_linux_sysfs_map_range(struct pci_device *dev,
 	    /* FIXME: Should we report an error in this case?
 	     */
 	    fprintf(stderr, "error setting MTRR "
-		    "(base = 0x%08lx, size = 0x%08x, type = %u) %s (%d)\n",
-		    sentry.base, sentry.size, sentry.type,
+		    "(base = 0x%016" PRIx64 ", size = 0x%08x, type = %u) %s (%d)\n",
+		    (pciaddr_t)sentry.base, sentry.size, sentry.type,
 		    strerror(errno), errno);
 /*            err = errno;*/
 	}
@@ -664,8 +731,8 @@ pci_device_linux_sysfs_unmap_range(struct pci_device *dev,
 	    /* FIXME: Should we report an error in this case?
 	     */
 	    fprintf(stderr, "error setting MTRR "
-		    "(base = 0x%08lx, size = 0x%08x, type = %u) %s (%d)\n",
-		    sentry.base, sentry.size, sentry.type,
+		    "(base = 0x%016" PRIx64 ", size = 0x%08x, type = %u) %s (%d)\n",
+		    (pciaddr_t)sentry.base, sentry.size, sentry.type,
 		    strerror(errno), errno);
 /*            err = errno;*/
 	}
@@ -675,7 +742,7 @@ pci_device_linux_sysfs_unmap_range(struct pci_device *dev,
     return err;
 }
 
-static void pci_device_linux_sysfs_enable(struct pci_device *dev)
+static void pci_device_linux_sysfs_set_enable(struct pci_device *dev, int enable)
 {
     char name[256];
     int fd;
@@ -691,23 +758,34 @@ static void pci_device_linux_sysfs_enable(struct pci_device *dev)
     if (fd == -1)
        return;
 
-    write( fd, "1", 1 );
+    write( fd, enable ? "1" : "0" , 1 );
     close(fd);
 }
 
-static int pci_device_linux_sysfs_boot_vga(struct pci_device *dev)
+static void pci_device_linux_sysfs_enable(struct pci_device *dev)
+{
+	return pci_device_linux_sysfs_set_enable(dev, 1);
+}
+
+static void pci_device_linux_sysfs_disable(struct pci_device *dev)
+{
+	return pci_device_linux_sysfs_set_enable(dev, 0);
+}
+
+static int pci_device_linux_sysfs_file(struct pci_device *dev, const char *fname)
 {
     char name[256];
     char reply[3];
     int fd, bytes_read;
     int ret = 0;
 
-    snprintf( name, 255, "%s/%04x:%02x:%02x.%1u/boot_vga",
+    snprintf( name, 255, "%s/%04x:%02x:%02x.%1u/%s",
 	      SYS_BUS_PCI,
 	      dev->domain,
 	      dev->bus,
 	      dev->dev,
-	      dev->func );
+	      dev->func,
+	      fname );
 
     fd = open( name, O_RDONLY | O_CLOEXEC);
     if (fd == -1)
@@ -721,6 +799,23 @@ static int pci_device_linux_sysfs_boot_vga(struct pci_device *dev)
 out:
     close(fd);
     return ret;
+}
+
+static int pci_device_linux_sysfs_boot_vga(struct pci_device *dev)
+{
+	return pci_device_linux_sysfs_file(dev, "boot_vga");
+}
+
+static int pci_device_linux_sysfs_boot_display(struct pci_device *dev)
+{
+	char card[256];
+
+	for (int i = 0; i < 3; i++) {
+		snprintf(card, 255, "drm/card%d/boot_display", i);
+		if (pci_device_linux_sysfs_file(dev, card))
+			return 1;
+	}
+	return 0;
 }
 
 static int pci_device_linux_sysfs_has_kernel_driver(struct pci_device *dev)
@@ -759,6 +854,7 @@ pci_device_linux_sysfs_open_device_io(struct pci_io_handle *ret,
 
     ret->base = base;
     ret->size = size;
+    ret->is_legacy = 0;
 
     return ret;
 }
@@ -796,6 +892,7 @@ pci_device_linux_sysfs_open_legacy_io(struct pci_io_handle *ret,
 
     ret->base = base;
     ret->size = size;
+    ret->is_legacy = 1;
 
     return ret;
 }
@@ -813,10 +910,14 @@ pci_device_linux_sysfs_read32(struct pci_io_handle *handle, uint32_t port)
 {
     uint32_t ret;
 
-    if (handle->fd > -1)
-	pread(handle->fd, &ret, 4, port + handle->base);
-    else
+    if (handle->fd > -1) {
+	if (handle->is_legacy)
+	    pread(handle->fd, &ret, 4, port + handle->base);
+	else
+	    pread(handle->fd, &ret, 4, port);
+    } else {
 	ret = inl(port + handle->base);
+    }
 	
     return ret;
 }
@@ -826,10 +927,14 @@ pci_device_linux_sysfs_read16(struct pci_io_handle *handle, uint32_t port)
 {
     uint16_t ret;
 
-    if (handle->fd > -1)
-	pread(handle->fd, &ret, 2, port + handle->base);
-    else
+    if (handle->fd > -1) {
+	if (handle->is_legacy)
+	    pread(handle->fd, &ret, 2, port + handle->base);
+	else
+	    pread(handle->fd, &ret, 2, port);
+    } else {
 	ret = inw(port + handle->base);
+    }
 
     return ret;
 }
@@ -839,10 +944,14 @@ pci_device_linux_sysfs_read8(struct pci_io_handle *handle, uint32_t port)
 {
     uint8_t ret;
 
-    if (handle->fd > -1)
-	pread(handle->fd, &ret, 1, port + handle->base);
-    else
+    if (handle->fd > -1) {
+	if (handle->is_legacy)
+	    pread(handle->fd, &ret, 1, port + handle->base);
+	else
+	    pread(handle->fd, &ret, 1, port);
+    } else {
 	ret = inb(port + handle->base);
+    }
 
     return ret;
 }
@@ -851,30 +960,42 @@ static void
 pci_device_linux_sysfs_write32(struct pci_io_handle *handle, uint32_t port,
 			       uint32_t data)
 {
-    if (handle->fd > -1)
-	pwrite(handle->fd, &data, 4, port + handle->base);
-    else
+    if (handle->fd > -1) {
+	if (handle->is_legacy)
+	    pwrite(handle->fd, &data, 4, port + handle->base);
+	else
+	    pwrite(handle->fd, &data, 4, port);
+    } else {
 	outl(data, port + handle->base);
+    }
 }
 
 static void
 pci_device_linux_sysfs_write16(struct pci_io_handle *handle, uint32_t port,
 			       uint16_t data)
 {
-    if (handle->fd > -1)
-	pwrite(handle->fd, &data, 2, port + handle->base);
-    else
+    if (handle->fd > -1) {
+	if (handle->is_legacy)
+	    pwrite(handle->fd, &data, 2, port + handle->base);
+	else
+	    pwrite(handle->fd, &data, 2, port);
+    } else {
 	outw(data, port + handle->base);
+    }
 }
 
 static void
 pci_device_linux_sysfs_write8(struct pci_io_handle *handle, uint32_t port,
 			      uint8_t data)
 {
-    if (handle->fd > -1)
-	pwrite(handle->fd, &data, 1, port + handle->base);
-    else
+    if (handle->fd > -1) {
+	if (handle->is_legacy)
+	    pwrite(handle->fd, &data, 1, port + handle->base);
+	else
+	    pwrite(handle->fd, &data, 1, port);
+    } else {
 	outb(data, port + handle->base);
+    }
 }
 
 static int
@@ -888,7 +1009,7 @@ pci_device_linux_sysfs_map_legacy(struct pci_device *dev, pciaddr_t base,
     int ret=0;
 
     if (map_flags & PCI_DEV_MAP_FLAG_WRITABLE) {
-	flags = O_RDWR; /* O_RDWR != O_WRONLY | O_RDONLY */;
+	flags = O_RDWR; /* O_RDWR != O_WRONLY | O_RDONLY */
 	prot |= PROT_WRITE;
     }
 
@@ -949,7 +1070,9 @@ static const struct pci_system_methods linux_sysfs_methods = {
 
     .fill_capabilities = pci_fill_capabilities_generic,
     .enable = pci_device_linux_sysfs_enable,
+    .disable = pci_device_linux_sysfs_disable,
     .boot_vga = pci_device_linux_sysfs_boot_vga,
+    .boot_display = pci_device_linux_sysfs_boot_display,
     .has_kernel_driver = pci_device_linux_sysfs_has_kernel_driver,
 
     .open_device_io = pci_device_linux_sysfs_open_device_io,

@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "pixman.h"
+#include "utils.h"
 
 typedef struct
 {
@@ -85,6 +85,10 @@ test_composite (const composite_info_t *info)
 			    0, 0,
 			    info->dest_x, info->dest_y,
 			    info->width, info->height);
+    free (src->bits.bits);
+    free (dest->bits.bits);
+    pixman_image_unref (src);
+    pixman_image_unref (dest);
 }
 
 
@@ -94,7 +98,7 @@ main (int argc, char **argv)
 {
     int i;
 
-    for (i = 0; i < sizeof (info) / sizeof (info[0]); ++i)
+    for (i = 0; i < ARRAY_LENGTH (info); ++i)
 	test_composite (&info[i]);
     
     return 0;

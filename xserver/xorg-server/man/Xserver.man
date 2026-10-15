@@ -1,5 +1,5 @@
-.\" $Xorg: Xserver.man,v 1.4 2001/02/09 02:04:07 xorgcvs Exp $
-.\" $XdotOrg: xserver/xorg/doc/Xserver.man.pre,v 1.4 2005/12/23 20:11:12 alanc Exp $
+'\" t
+.\"
 .\" Copyright 1984 - 1991, 1993, 1994, 1998  The Open Group
 .\"
 .\" Permission to use, copy, modify, distribute, and sell this software and its
@@ -26,7 +26,7 @@
 .\" $XFree86: xc/programs/Xserver/Xserver.man,v 3.31 2004/01/10 22:27:46 dawes Exp $
 .\" shorthand for double quote that works everywhere.
 .ds q \N'34'
-.TH XSERVER 1 __xorgversion__
+.TH XSERVER 1 @xorgversion@
 .SH NAME
 Xserver \- X Window System display server
 .SH SYNOPSIS
@@ -54,7 +54,8 @@ The X server may also be started directly by the user, though this
 method is usually reserved for testing and is not recommended for
 normal operation.  On some platforms, the user must have special
 permission to start the X server, often because access to certain
-devices (e.g. \fI/dev/mouse\fP) is restricted.
+devices (e.g. \fI/dev/mouse\fP) is restricted.  Where applicable, the
+X server notifies systemd when it is ready to process requests.
 .PP
 When the X server starts up, it typically takes over the display.  If
 you are running on a workstation whose console is the display, you may
@@ -73,7 +74,7 @@ should override values specified via other mechanisms.
 The X server runs as the given \fIdisplaynumber\fP, which by default is 0.
 If multiple X servers are to run simultaneously on a host, each must have
 a unique display number.  See the DISPLAY
-NAMES section of the \fIX\fP(__miscmansuffix__) manual page to learn how to
+NAMES section of the \fIX\fP(@miscmansuffix@) manual page to learn how to
 specify which display number clients should try to use.
 .TP 8
 .B \-a \fInumber\fP
@@ -98,7 +99,7 @@ Audit lines are sent as standard error output.
 .B \-auth \fIauthorization-file\fP
 specifies a file which contains a collection of authorization records used
 to authenticate access.  See also the \fIxdm\fP(1) and
-\fIXsecurity\fP(__miscmansuffix__) manual pages.
+\fIXsecurity\fP(@miscmansuffix@) manual pages.
 .TP 8
 .BI \-background\ none
 Asks the driver not to clear the background on startup, if the driver supports that.
@@ -113,6 +114,13 @@ pattern.   This is the default unless -retro or -wr is specified.
 .B \-bs
 disables backing store support on all screens.
 .TP 8
+.B \+byteswappedclients
+Allow connections from clients with an endianess different to that of the server.
+This is the default unless \fB\-byteswappedclients\fP is specified.
+.TP 8
+.B \-byteswappedclients
+Prohibit connections from clients with an endianess different to that of the server.
+.TP 8
 .B \-c
 turns off key-click.
 .TP 8
@@ -126,6 +134,13 @@ Not obeyed by all servers.
 .TP 8
 .B \-core
 causes the server to generate a core dump on fatal errors.
+.TP 8
+.B \-displayfd \fIfd\fP
+specifies a file descriptor in the launching process.  Rather than specify
+a display number, the X server will attempt to listen on successively higher
+display numbers, and upon finding a free one, will write the display number back
+on this file descriptor as a newline-terminated string.  The \-pn option is
+ignored when using \-displayfd.
 .TP 8
 .B \-deferglyphs \fIwhichfonts\fP
 specifies the types of fonts for which the server should attempt to use
@@ -156,11 +171,8 @@ a list of accepted extension names is printed.
 .B \-f \fIvolume\fP
 sets beep (bell) volume (allowable range: 0-100).
 .TP 8
-.B \-fc \fIcursorFont\fP
-sets default cursor font.
-.TP 8
-.B \-fn \fIfont\fP
-sets the default font.
+.B \-fakescreenfps \fFps\fP
+sets fake presenter screen default fps (allowable range: 1-600).
 .TP 8
 .B \-fp \fIfontPath\fP
 sets the search path for fonts.  This path is a comma separated list
@@ -173,6 +185,16 @@ prints a usage message.
 .TP 8
 .B \-I
 causes all remaining command line arguments to be ignored.
+.TP 8
+.B \-iglx
+Prohibit creating indirect GLX contexts.  Indirect GLX is of limited use,
+since it lacks support for many modern OpenGL features and extensions;
+it's slower than direct contexts; and it opens a large attack surface for
+protocol parsing errors.
+This is the default unless +iglx is specified.
+.TP 8
+.B +iglx
+Allow creating indirect GLX contexts.
 .TP 8
 .B \-maxbigreqsize \fIsize\fP
 sets the maximum big request to
@@ -187,6 +209,22 @@ disables a transport type.  For example, TCP/IP connections can be disabled
 with
 .BR "\-nolisten tcp" .
 This option may be issued multiple times to disable listening to different
+transport types.
+Supported transport types are platform dependent, but commonly include:
+.TS
+l l.
+tcp     TCP over IPv4 or IPv6
+inet    TCP over IPv4 only
+inet6   TCP over IPv6 only
+unix    UNIX Domain Sockets
+local   Platform preferred local connection method
+.TE
+.TP 8
+.B \-listen \fItrans-type\fP
+enables a transport type.  For example, TCP/IP connections can be enabled
+with
+.BR "\-listen tcp" .
+This option may be issued multiple times to enable listening to different
 transport types.
 .TP 8
 .B \-noreset
@@ -214,11 +252,10 @@ turns off auto-repeat.
 turns on auto-repeat.
 .TP 8
 .B -retro
-starts the stipple with the classic stipple and cursor visible.  The default
+starts the server with the classic stipple and cursor visible.  The default
 is to start with a black root window, and to suppress display of the cursor
-until the first time an application calls XDefineCursor().  For the Xorg
-server, this also sets the default for the DontZap option to FALSE.  For
-kdrive servers, this implies -zap.
+until the first time an application calls XDefineCursor(). For kdrive
+servers, this implies -zap.
 .TP 8
 .B \-s \fIminutes\fP
 sets screen-saver timeout time in minutes.
@@ -236,14 +273,14 @@ connected to the system.
 sets pointer acceleration threshold in pixels (i.e. after how many pixels
 pointer acceleration should take effect).
 .TP 8
-.B \-terminate
+.B \-terminate \fI[delay]\fP
 causes the server to terminate at server reset, instead of continuing to run.
 This overrides a previous
 .B \-noreset
 command line option.
-.TP 8
-.B \-to \fIseconds\fP
-sets default connection timeout in seconds.
+If a delay in seconds is specified, the server waits for at least
+the delay. At the end of this grace period if no client is
+connected, the server terminates immediately.
 .TP 8
 .B \-tst
 disables all testing extensions (e.g., XTEST, XTrap, XTestExtension1, RECORD).
@@ -256,17 +293,6 @@ sets video-off screen-saver preference.
 .TP 8
 .B \-v
 sets video-on screen-saver preference.
-.TP 8
-.B \-wm
-forces the default backing-store of all windows to be WhenMapped.  This
-is a backdoor way of getting backing-store to apply to all windows.
-Although all mapped windows will have backing store, the backing store
-attribute value reported by the server for a window will be the last
-value established by a client.  If it has never been set by a client,
-the server will report the default value, NotUseful.  This behavior is
-required by the X protocol, which allows the server to exceed the
-client's backing store expectations but does not provide a way to tell
-the client that it is doing so.
 .TP 8
 .B \-wr
 sets the default root window to solid white instead of the standard root weave
@@ -296,6 +322,11 @@ of \-1 leaves the limit unchanged.
 sets the stack space limit of the server to the specified number of kilobytes.
 A value of zero makes the stack size as large as possible.  The default value
 of \-1 leaves the stack space limit unchanged.
+.TP 8
+.B \-maxclients
+.BR 64 | 128 | 256 | 512
+Set the maximum number of clients allowed to connect to the X server.
+Acceptable values are 64, 128, 256 or 512.
 .TP 8
 .B \-render
 .BR default | mono | gray | color
@@ -368,7 +399,7 @@ ends.
 .B \-class \fIdisplay-class\fP
 XDMCP has an additional display qualifier used in resource lookup for
 display-specific options.  This option sets that value, by default it
-is "MIT-Unspecified" (not a very useful value).
+is "MIT-unspecified" (not a very useful value).
 .TP 8
 .B \-cookie \fIxdm-auth-bits\fP
 When testing XDM-AUTHENTICATION-1, a private key is shared between the
@@ -383,7 +414,7 @@ X servers that support the XKEYBOARD (a.k.a. \*qXKB\*q) extension accept the
 following options.  All layout files specified on the command line must be
 located in the XKB base directory or a subdirectory, and specified as the
 relative path from the XKB base directory.  The default XKB base directory is
-.IR __projectroot__/lib/X11/xkb .
+.IR @projectroot@/lib/X11/xkb .
 .TP 8
 .BR [+-]accessx " [ \fItimeout\fP [ \fItimeout_mask\fP [ \fIfeedback\fP [ \fIoptions_mask\fP ] ] ] ]"
 enables(+) or disables(-) AccessX key sequences.
@@ -405,15 +436,15 @@ elapse between autorepeat-generated keystrokes).
 loads keyboard description in \fIfilename\fP on server startup.
 .SH "NETWORK CONNECTIONS"
 The X server supports client connections via a platform-dependent subset of
-the following transport types: TCP\/IP, Unix Domain sockets, DECnet,
+the following transport types: TCP/IP, Unix Domain sockets,
 and several varieties of SVR4 local connections.  See the DISPLAY
-NAMES section of the \fIX\fP(__miscmansuffix__) manual page to learn how to
+NAMES section of the \fIX\fP(@miscmansuffix@) manual page to learn how to
 specify which transport type clients should try to use.
 .SH GRANTING ACCESS
 The X server implements a platform-dependent subset of the following
 authorization protocols: MIT-MAGIC-COOKIE-1, XDM-AUTHORIZATION-1,
-XDM-AUTHORIZATION-2, SUN-DES-1, and MIT-KERBEROS-5.  See the
-\fIXsecurity\fP(__miscmansuffix__) manual page for information on the
+SUN-DES-1, Host Access, and Server Interpreted. See the
+\fIXsecurity\fP(@miscmansuffix@) manual page for information on the
 operation of these protocols.
 .PP
 Authorization data required by the above protocols is passed to the
@@ -434,8 +465,8 @@ If no other authorization mechanism is being used,
 this list initially consists of the host on which the server is running as
 well as any machines listed in the file \fI/etc/X\fBn\fI.hosts\fR, where
 \fBn\fP is the display number of the server.  Each line of the file should
-contain either an Internet hostname (e.g. expo.lcs.mit.edu) or a DECnet
-hostname in double colon format (e.g. hydra::) or a complete name in the format
+contain either an Internet hostname (e.g. expo.lcs.mit.edu)
+or a complete name in the format
 \fIfamily\fP:\fIname\fP as described in the \fIxhost\fP(1) manual page.
 There should be no leading or trailing spaces on any lines.  For example:
 .sp
@@ -443,7 +474,6 @@ There should be no leading or trailing spaces on any lines.  For example:
 .nf
 joesworkstation
 corporate.company.com
-star::
 inet:bigcpu
 local:
 .fi
@@ -451,15 +481,6 @@ local:
 .PP
 Users can add or remove hosts from this list and enable or disable access
 control using the \fIxhost\fP command from the same machine as the server.
-.PP
-If the X FireWall Proxy (\fIxfwp\fP) is being used without a sitepolicy,
-host-based authorization must be turned on for clients to be able to
-connect to the X server via the \fIxfwp\fP.  If \fIxfwp\fP is run without
-a configuration file and thus no sitepolicy is defined, if \fIxfwp\fP
-is using an X server where xhost + has been run to turn off host-based
-authorization checks, when a client tries to connect to this X server
-via \fIxfwp\fP, the X server will deny the connection.  See \fIxfwp\fP(1)
-for more information about this proxy.
 .PP
 The X protocol intrinsically does not have any notion of window operation
 permissions or place any restrictions on what a client can do; if a program can
@@ -501,7 +522,7 @@ the X server uses when trying to open a font is controlled
 by the \fIfont path\fP.
 .LP
 The default font path is
-__default_font_path__ .
+@default_font_path@ .
 .LP
 A special kind of directory can be specified using the \fBcatalogue\fP:
 prefix. Directories specified this way can contain symlinks pointing to the
@@ -547,22 +568,22 @@ the following font path:
 .I /etc/X\fBn\fP.hosts
 Initial access control list for display number \fBn\fP
 .TP 30
-.IR __datadir__/fonts/X11/misc , __datadir__/fonts/X11/75dpi , __datadir__/fonts/X11/100dpi
+.IR @datadir@/fonts/X11/misc , @datadir@/fonts/X11/75dpi , @datadir@/fonts/X11/100dpi
 Bitmap font directories
 .TP 30
-.IR __datadir__/fonts/X11/TTF , __datadir__/fonts/X11/Type1
+.IR @datadir@/fonts/X11/TTF , @datadir@/fonts/X11/Type1
 Outline font directories
 .TP 30
 .I /tmp/.X11-unix/X\fBn\fP
 Unix domain socket for display number \fBn\fP
 .TP 30
 .I /usr/adm/X\fBn\fPmsgs
-Error log file for display number \fBn\fP if run from \fIinit\fP(__adminmansuffix__)
+Error log file for display number \fBn\fP if run from \fIinit\fP(@adminmansuffix@)
 .TP 30
-.I __projectroot__/lib/X11/xdm/xdm-errors
+.I @projectroot@/lib/X11/xdm/xdm-errors
 Default error log file if the server is run from \fIxdm\fP(1)
 .SH "SEE ALSO"
-General information: \fIX\fP(__miscmansuffix__)
+General information: \fIX\fP(@miscmansuffix@)
 .PP
 Protocols:
 .I "X Window System Protocol,"
@@ -573,10 +594,10 @@ Fonts: \fIbdftopcf\fP(1), \fImkfontdir\fP(1), \fImkfontscale\fP(1),
 \fIxfs\fP(1), \fIxlsfonts\fP(1), \fIxfontsel\fP(1), \fIxfd\fP(1),
 .I "X Logical Font Description Conventions"
 .PP
-Keyboards: \fIxkeyboard-config\fP(__miscmansuffix__)
+Keyboards: \fIxkeyboard-config\fP(@miscmansuffix@)
 .PP
-Security: \fIXsecurity\fP(__miscmansuffix__), \fIxauth\fP(1), \fIXau\fP(1),
-\fIxdm\fP(1), \fIxhost\fP(1), \fIxfwp\fP(1),
+Security: \fIXsecurity\fP(@miscmansuffix@), \fIxauth\fP(1), \fIXau\fP(1),
+\fIxdm\fP(1), \fIxhost\fP(1)
 .I "Security Extension Specification"
 .PP
 Starting the server: \fIstartx\fP(1), \fIxdm\fP(1), \fIxinit\fP(1)
@@ -585,7 +606,7 @@ Controlling the server once started: \fIxset\fP(1), \fIxsetroot\fP(1),
 \fIxhost\fP(1), \fIxinput\fP(1), \fIxrandr\fP(1)
 .PP
 Server-specific man pages:
-\fIXorg\fP(1), \fIXdmx\fP(1), \fIXephyr\fP(1), \fIXnest\fP(1),
+\fIXorg\fP(1), \fIXwayland\fP(1), \fIXephyr\fP(1), \fIXnest\fP(1),
 \fIXvfb\fP(1), \fIXquartz\fP(1), \fIXWin\fP(1).
 .PP
 Server internal documentation:

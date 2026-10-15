@@ -41,7 +41,7 @@ XVisualInfo *xnestVisuals;
 int xnestNumVisuals;
 int xnestDefaultVisualIndex;
 Colormap *xnestDefaultColormaps;
-static int xnestNumDefaultColormaps;
+static unsigned int xnestNumDefaultColormaps;
 int *xnestDepths;
 int xnestNumDepths;
 XPixmapFormatValues *xnestPixmapFormats;
@@ -121,8 +121,8 @@ xnestOpenDisplay(int argc, char *argv[])
     }
 
     xnestNumDefaultColormaps = xnestNumVisuals;
-    xnestDefaultColormaps = (Colormap *) malloc(xnestNumDefaultColormaps *
-                                                sizeof(Colormap));
+    xnestDefaultColormaps = xallocarray(xnestNumDefaultColormaps,
+                                        sizeof(Colormap));
     for (i = 0; i < xnestNumDefaultColormaps; i++)
         xnestDefaultColormaps[i] = XCreateColormap(xnestDisplay,
                                                    DefaultRootWindow

@@ -1,3 +1,1144 @@
+commit bc318fcda9417f3c215291296e33c19e9bdfeafc
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Aug 12 16:27:50 2025 -0700
+
+    xf86-input-mouse 2.0.0
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit a0aa387ba7a1694fa0a2f86832f3a2d6e7f465a1
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jun 1 13:07:06 2025 -0700
+
+    man page: Replace __xservername__ & __xconfigfile__ with Xorg & xorg.conf
+    
+    These were originally to allow distros to build using XFree86 & XF86config
+    names, but we haven't supported that in nearly two decades now.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/24>
+
+commit 196220ed3f7cb0bcc49f6d03142ad3d764dcdf8a
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jun 1 10:25:18 2025 -0700
+
+    man page: fix warnings from `mandoc -T lint` and `groff -rCHECKSTYLE=10`
+    
+    mandoc: mousedrv.4:3:13: WARNING: cannot parse date, using it verbatim: TH xf86-input-mouse 1.9.5
+    an.tmac:mousedrv.4:51: style: blank line in input
+    an.tmac:mousedrv.4:187: style: .BR expects at least 2 arguments, got 1
+    an.tmac:mousedrv.4:190: style: .BR expects at least 2 arguments, got 1
+    an.tmac:mousedrv.4:215: style: .BI expects at least 2 arguments, got 1
+    an.tmac:mousedrv.4:217: style: .BI expects at least 2 arguments, got 1
+    an.tmac:mousedrv.4:258: style: .BR expects at least 2 arguments, got 1
+    an.tmac:mousedrv.4:344: style: blank line in input
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/24>
+
+commit 3a296dfeb928592d9c8907c1cbf16fc8a0fb71ce
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Apr 21 16:46:51 2025 -0700
+
+    mouse.c: remove useless cast for return from calloc
+    
+    It wasn't even casting to the right type of pointer.
+    
+    Clears warning from gcc 14.2.0:
+    
+    mouse.c: In function ‘MousePreInit’:
+    mouse.c:971:19: warning: useless cast to type ‘void *’ [-Wuseless-cast]
+      971 |     if (!(mPriv = (pointer) calloc(1, sizeof(mousePrivRec))))
+          |                   ^
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/23>
+
+commit 72ed70772ce207caf8be19b4a43d212e54dc54b3
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Apr 21 16:25:40 2025 -0700
+
+    mouse.c: remove breaks after return statements [-Wunreachable-code-break]
+    
+    Clears warnings from clang 19.1.7 of the form:
+    
+    mouse.c:717:9: warning: 'break' will never be executed
+     [-Wunreachable-code-break]
+      717 |         break;
+          |         ^~~~~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/23>
+
+commit b6d147fb5302558bcabbaaa2f54a9ed1b5800b7b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Apr 21 16:19:30 2025 -0700
+
+    Make switch fallthrough markers compatible with clang and C23
+    
+    Uses _X_FALLTHROUGH from xproto 7.0.34 if available,
+    local fallback if xproto is older than that.
+    
+    Clears warnings from clang 19.1.7 of the form:
+    
+    mouse.c:1219:17: warning: unannotated fall-through between switch labels
+     [-Wimplicit-fallthrough]
+     1219 |                 default:
+          |                 ^
+    mouse.c:1219:17: note: insert '[[fallthrough]];' to silence this warning
+     1219 |                 default:
+          |                 ^
+          |                 [[fallthrough]];
+    mouse.c:1219:17: note: insert 'break;' to avoid fall-through
+     1219 |                 default:
+          |                 ^
+          |                 break;
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/23>
+
+commit 2c481bb0205a319931131e1271f415ef6c974b6f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Apr 21 14:44:50 2025 -0700
+
+    mouse.c: wrap multi-statement macros in do { ... } while (0)
+    
+    Clears warnings from clang 19.1.7:
+    
+    mouse.c:2877:31: warning: empty expression statement has no effect;
+     remove unnecessary ';' to silence this warning [-Wextra-semi-stmt]
+     2877 |             do_ps2Reset(pInfo);
+          |                               ^
+    
+    mouse.c:3441:29: warning: empty expression statement has no effect;
+     remove unnecessary ';' to silence this warning [-Wextra-semi-stmt]
+     3441 |             RESET_VALIDATION;
+          |                             ^
+    [repeated for each call]
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/23>
+
+commit 903ef3f54548112ec844aa30631dfe464aa8d028
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Apr 21 14:40:21 2025 -0700
+
+    mouse.c: Remove stray semicolons after closing brackets
+    
+    Clears warnings from clang 19.1.7:
+    
+    mouse.c:364:14: warning: empty expression statement has no effect;
+     remove unnecessary ';' to silence this warning [-Wextra-semi-stmt]
+      364 |             };
+          |              ^
+    mouse.c:595:13: warning: empty expression statement has no effect;
+     remove unnecessary ';' to silence this warning [-Wextra-semi-stmt]
+      595 |            };
+          |             ^
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/23>
+
+commit f15c5702f87bb10aa5d5aceff250dfa9d2e1b634
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Apr 21 14:30:36 2025 -0700
+
+    mouse.c: handle -Wanalyzer-null-dereference in createProtoList
+    
+    Should never happen, but the compiler would need to understand the flow
+    of our state machine to realize that, and this protects us if that ever
+    changes.
+    
+    Clears warning from gcc 14.2.0:
+    mouse.c: In function ‘createProtoList’:
+    mouse.c:3226:30: warning: dereference of NULL ‘protoList’ [CWE-476]
+     [-Wanalyzer-null-dereference]
+     3226 |         for (i = 0; protoList[i] != PROT_UNKNOWN; i++) {
+          |                     ~~~~~~~~~^~~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/23>
+
+commit f3e246a7fba56bdafbce43542761825725477be5
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Apr 22 09:40:11 2025 -0700
+
+    Improve man page formatting
+    
+    More closely follow common style as described on
+    https://man7.org/linux/man-pages/man7/man-pages.7.html
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/22>
+
+commit e2f9739bb559e81d0f0cec7b594d58a745d2bf2f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Apr 22 09:23:26 2025 -0700
+
+    man page: Remove USB & Xqueue from protocol list
+    
+    I can't find any record of these being supported protocol names in the
+    git history since this was split out from the core X server.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/22>
+
+commit 0a52110f76a75bdb6781d2b910c3d2f6d01b5505
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Apr 21 13:32:14 2025 -0700
+
+    README: drop more unsupported OS'es
+    
+    This driver hasn't had support for BSD/OS, Interactive Unix, LynxOS,
+    SCO, SVR4 (other than Solaris/illumos), nor PANIX since the conversion
+    to autoconf/automake for X11R7.0 in 2005.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/22>
+
+commit d719d0588c580ac0ffb8546e864c05c521b1ab9d
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Tue Mar 4 13:12:27 2025 +0100
+
+    drop Linux support
+    
+    Since the standard API on Linux is evdev (and we've got evdev and
+    libinput drivers for that), there's probably no need for using this
+    driver on Linux anymore. So, we can drop Linux support here.
+    
+    Making the build fail on Linux, similar to xf86-input-keyboard.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/19>
+
+commit 1121f601f790bbe8140b1d042a9919e94571c9d7
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Mon Mar 3 15:36:29 2025 +0100
+
+    lnx_mouse: don't hard-crash the whole Xserver on strdup() fail
+    
+    No need to hard-crash the Xserver if simple strdup() fails, but handle
+    the situation gracefully instead.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/18>
+
+commit 8f38817e8a13fa6ee37b50338506be2864479211
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Tue Mar 4 13:49:16 2025 +0100
+
+    Use strdup() instead of xstrdup()
+    
+    No risk of passing NULL here, so using standard strdup() is safe.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/20>
+
+commit 91ea3050da55ea51e4ab27eebf8dd750c8962193
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Apr 1 16:41:03 2025 -0700
+
+    gitlab CI: fix missing runner tag on FreeBSD jobs after gitlab migration
+    
+    All jobs utilizing kvm (eg. FreeBSD) need the "kvm" runner tag set.
+    It used to work w/o it, since all runners did have kvm, but in the
+    new CI there are non-kvm runners, so we really need to set the tag.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/21>
+
+commit 9cc5531bf1713ebdd06a88b7e05ea4bedea3d61c
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jul 14 13:14:16 2024 -0700
+
+    Move sizeof to second argument in calloc calls
+    
+    Clears -Wcalloc-transposed-args warnings from gcc 14.1, such as:
+    
+    mouse.c: In function ‘MousePreInit’:
+    mouse.c:900:32: warning: ‘calloc’ sizes specified with ‘sizeof’ in the
+     earlier argument and not in the later argument [-Wcalloc-transposed-args]
+      900 |     if (!(pMse = calloc(sizeof(MouseDevRec), 1)))
+          |                                ^~~~~~~~~~~
+    mouse.c:900:32: note: earlier argument should specify number of elements,
+     later size of each element
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/17>
+
+commit f538ef64614d1e4cc86c96f42b298876152b1645
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Tue May 28 20:25:21 2024 +0200
+
+    gitlab CI: FTBS: fix pkg-config path
+    
+    The pkg-config path isn't correct, so it finds an older version of xorgproto
+    that's already present in the base image, instead of the newer one we've
+    just built ourselves.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/15>
+
+commit 538c0724f70f1e90ff0c92eaca7ae3ec931737c9
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Tue May 28 20:03:32 2024 +0200
+
+    gitlab CI: FTBS: fix missing libepoll-shim
+    
+    Recent Xserver needs libepoll-shim on FreeBSD.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/15>
+
+commit 09b60284f02d280b699eaf3b18dba02b1d07d9eb
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Fri May 10 11:33:36 2024 +0200
+
+    use XNFrealloc() instead of xnfrealloc
+    
+    xnfrealloc is just an alias for XNFrealloc() that doesn't seem to serve
+    any practical purpose, so it can go away once all drivers stopped using it.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/14>
+
+commit 4ef48818c88cd64ad538a5b5c27a86dcf3c7e2d5
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Fri May 10 10:59:47 2024 +0200
+
+    use XNFstrdup() instead of xnfstrdup
+    
+    xnfstrdup is just an alias for XNFstrdup() that doesn't seem to serve
+    any practical purpose, so it can go away once all drivers stopped using it.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/14>
+
+commit 832818c4a5e8a9ae13839ec4eab66cb70146e514
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Wed May 8 11:38:16 2024 +0200
+
+    use XNFalloc() instead of xnfalloc
+    
+    xnfalloc is just an alias for XNFalloc() that doesn't seem to serve
+    any practical purpose, so it can go away once all drivers stopped using it.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/14>
+
+commit d2c6c6380eceb3a23ac4a57f2d0da3b8cc4fca61
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun May 12 13:55:24 2024 -0700
+
+    Raise required xserver version from 1.7 to 1.10 (ABI_XINPUT_VERSION 12.2)
+    
+    Xserver 1.10.0 was released in Feb. 2011
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/11>
+
+commit a2293e851ae93a004c0d1c6f8fbfc6b138869928
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun May 12 16:42:51 2024 -0700
+
+    bsd_mouse: include sys/stat.h directly instead of relying on xf86_OSlib.h
+    
+    xf86_OSlib.h used to include sys/stat.h but that was recently removed by
+    xorg/xserver@5057c716eb5960f6971be620ce03a808d0f191ac so we need to do
+    it here now.
+    
+    Fixes compiler errors:
+    bsd_mouse.c: In function 'FindDevice':
+    bsd_mouse.c:282:17: error: storage size of 'devMouseStat' isn't known
+      282 |     struct stat devMouseStat;
+          |                 ^~~~~~~~~~~~
+    bsd_mouse.c:283:17: error: storage size of 'sb' isn't known
+      283 |     struct stat sb;
+          |                 ^~
+    bsd_mouse.c:298:21: error: implicit declaration of function 'fstat' [-Werror=implicit-function-declaration]
+      298 |                 if (fstat(fd, &devMouseStat) == 0)
+          |                     ^~~~~
+    bsd_mouse.c:298:21: warning: nested extern declaration of 'fstat' [-Wnested-externs]
+    bsd_mouse.c:283:17: warning: unused variable 'sb' [-Wunused-variable]
+      283 |     struct stat sb;
+          |                 ^~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/12>
+
+commit fbde5bf53c8bf2c3f7b1b99aa483e50dc6a97e99
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri May 3 12:19:09 2024 -0700
+
+    gitlab CI: install xorgproto from git before building the Xserver
+    
+    Xserver git is now failing to build due to:
+    Dependency presentproto found: NO found 1.3 but need: '>= 1.4'
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-mouse/-/merge_requests/12>
+
+commit 627e12a35c1cb9812088b220cf5397eca9843de8
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Tue Mar 19 11:51:58 2024 +0100
+
+    Fix missing #include <errno.h>
+    
+    Two source files currently relying on xorg headers including errno.h for them.
+    Even though it practically works, it's not a very robust programming style
+    to rely on indirect includes. It's better when everybody includes what he need
+    on its own.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+
+commit 93396fdfb2afec4a04c9bdb8b512620d4083f1df
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Dec 2 14:53:50 2023 -0800
+
+    configure: Use LT_INIT from libtool 2 instead of deprecated AC_PROG_LIBTOOL
+    
+    AC_PROG_LIBTOOL was replaced by LT_INIT in libtool 2 in 2008,
+    so it's time to rely on it.
+    
+    Clears autoconf warnings:
+    
+    configure.ac:39: warning: The macro 'AC_PROG_LIBTOOL' is obsolete.
+    configure.ac:39: You should run autoupdate.
+    aclocal.m4:3465: AC_PROG_LIBTOOL is expanded from...
+    configure.ac:39: the top level
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 0cc6b723df6a98cf1dd76481e81cb47ebf07464b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Dec 2 11:14:00 2023 -0800
+
+    gitlab CI: update to latest ci-templates & FreeBSD 14.0
+    
+    Needed to avoid "Failed to unpack image" errors in the container-prep
+    job since FreeBSD 13.0 images are no longer available for download
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit f59e8cb5b47fa989d3c9a0ca104d7261a94324db
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu May 4 17:17:54 2023 -0700
+
+    xf86-input-mouse 1.9.5
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit cad360554cdab324fc828cb5ffa47f610ca796c4
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Feb 25 09:07:15 2023 -0800
+
+    Remove "All rights reserved" from Oracle copyright notices
+    
+    Oracle no longer includes this term in our copyright & license notices.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 52073e2edc29059a5142d4460c5edc8739981e03
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Nov 9 17:01:47 2022 -0800
+
+    sun_mouse: remove entry from vuidMouseList in DEVICE_CLOSE
+    
+    Originally written by fei.feng@oracle.com to fix Oracle Bug 17429216:
+    "global vuidMouseList should not keep info for removed mouse device"
+    
+    "During the testing for bug#17251473, I often see the mouse hang in X.
+     By debugging, I get that there seems something wrong in mouse_drv.so -
+     when a mouse is disconnected, the global vuidMouseList does not cleanup
+     the mouse's recorded info. So if a newly inserted mouse allocates a
+     input info pInfo which happens to have the same memory address as
+     previous pInfo, the driver would go wrong."
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit cd5b383c3f6c5b7ffa19f8e6ebb7d6551898a98b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Nov 9 16:27:42 2022 -0800
+
+    sun_mouse: Add RelToAbs option to convert relative events to absolute
+    
+    Enabled automatically for the Sun ILOM device, to avoid acceleration
+    that causes the Remote KVMS mouse cursor to become unaligned with the
+    X mouse cursor.
+    
+    Code originally written by david.m.marx@oracle.com in 2013 to fix
+    Oracle bug 15798251 - SUNBT7177072 "actual mouse pointer is off from
+    the cursor on remote window"
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 5f63ab04338fd811c610ae7617757ede52471316
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Nov 2 14:45:25 2022 -0700
+
+    sun_mouse: include more required system headers
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit b99e91aafb66790d3158c068c321e40c19c0571d
+Author: Thomas Klausner <wiz@gatalith.at>
+Date:   Wed Nov 2 09:11:33 2022 +0100
+
+    Rearrange includes to fix build on OmniOS. Include unistd.h for ioctl(2).
+    
+    Signed-off-by: Thomas Klausner <wiz@gatalith.at>
+
+commit ecd043f1de248cc03d240f1ae5850ce4f9f159a4
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Nov 1 19:30:06 2022 -0700
+
+    xf86-input-mouse 1.9.4
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 426c8e099fe19d3b495821ed6e7beb67a29a4115
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Nov 1 19:37:49 2022 -0700
+
+    sun_mouse.c: #include "config.h"
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 29456a2ad33897b0834aa097390cdfe5e92d1364
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Oct 16 12:19:47 2022 -0700
+
+    configure: check for timingsafe_memcmp
+    
+    Not needed by mouse driver, but quiets warnings from xorg server headers:
+    
+    In file included from /usr/include/xorg/misc.h:117:0,
+                     from /usr/include/xorg/xf86str.h:37,
+                     from /usr/include/xorg/xf86.h:44,
+                     from mouse.c:57:
+    /usr/include/xorg/os.h:595:1: warning: redundant redeclaration of ‘timingsafe_memcmp’ [-Wredundant-decls]
+     timingsafe_memcmp(const void *b1, const void *b2, size_t len);
+     ^~~~~~~~~~~~~~~~~
+    In file included from mouse.c:52:0:
+    /usr/include/string.h:235:12: note: previous declaration of ‘timingsafe_memcmp’ was here
+     extern int timingsafe_memcmp(const void *s1, const void *s2, size_t n);
+                ^~~~~~~~~~~~~~~~~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit cbb97f4249ac6768e4a68423825ef0394104f5d8
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Oct 16 12:14:57 2022 -0700
+
+    autoGood: quiet -Wimplicit-fallthrough warning
+    
+    mouse.c: In function ‘autoGood’:
+    mouse.c:3724:12: warning: this statement may fall through [-Wimplicit-fallthrough=]
+             if (mPriv->goodCount < PROBE_UNCERTAINTY/2)
+                ^
+    mouse.c:3726:5: note: here
+         default:
+         ^~~~~~~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit b888251a032dfff5f7219334d2e8f256251fa98e
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Oct 16 12:07:37 2022 -0700
+
+    InputDriverRec: Fix -Wmissing-field-initializers warning
+    
+    mouse.c:185:1: warning: missing initializer for field ‘default_options’ of ‘InputDriverRec {aka struct _InputDriverRec}’ [-Wmissing-field-initializers]
+     };
+     ^
+    In file included from mouse.c:63:0:
+    /usr/include/xorg/xf86Xinput.h:83:18: note: ‘default_options’ declared here
+         const char **default_options;
+                      ^~~~~~~~~~~~~~~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 03fb2ae36be7314416b1c57b391039fb948468eb
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Oct 16 12:02:51 2022 -0700
+
+    SetupMouse: fix -Wsign-compare warning
+    
+    mouse.c: In function ‘SetupMouse’:
+    mouse.c:2620:27: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+                 for (i = 0; i < sizeof(pMse->protoPara); i++)
+                               ^
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit a8ff2170cb89145056d6f30a96219393316f1a96
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Oct 16 11:58:47 2022 -0700
+
+    checkForErraticMovements: Fix -Wempty-body warnings
+    
+    mouse.c: In function ‘checkForErraticMovements’:
+    mouse.c:3759:52: warning: suggest braces around empty body in an ‘else’ statement [-Wempty-body]
+                     AP_DBG(("accDx=%i\n",mPriv->accDx));
+                                                        ^
+    mouse.c:3772:52: warning: suggest braces around empty body in an ‘else’ statement [-Wempty-body]
+                     AP_DBG(("accDy=%i\n",mPriv->accDy));
+                                                        ^
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 72323bf07cc74fb03e63898b14136ae30a770580
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Oct 16 11:53:20 2022 -0700
+
+    sun_mouse: Fix -Wnull-dereference warning
+    
+    sun_mouse.c: In function ‘vuidReadInput’:
+    sun_mouse.c:291:10: warning: potential null pointer dereference [-Wnull-dereference]
+         pBuf = pVuidMse->buffer;
+         ~~~~~^~~~~~~~~~~~~~~~~~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit f62f35747ec65e7f8819fab2c928db1b1b4c56eb
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Oct 16 11:47:18 2022 -0700
+
+    sun_mouse: Fix -Wsign-compare warnings
+    
+    sun_mouse.c: In function ‘vuidReadInput’:
+    sun_mouse.c:299:22: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+             } else if (n == -1) {
+                          ^~
+    sun_mouse.c: In function ‘vuidMouseProc’:
+    sun_mouse.c:507:33: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+             if (vuidMouseGeneration != serverGeneration) {
+                                     ^~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 2d963a9f619420834274cedf407b754caecbccb3
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Jul 28 17:30:21 2022 -0700
+
+    gitlab CI: stop requiring Signed-off-by in commits
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3bb98d758bfcab4c03d5f3f906a1bab0810e51e2
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Jan 17 16:07:04 2022 -0800
+
+    gitlab CI: add a basic build test
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 84bca281c4875c7446688fc8ffe76da4c24c7724
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jan 16 12:36:16 2022 -0800
+
+    Fix spelling/wording issues
+    
+    Found by using:
+        codespell --builtin clear,rare,usage,informal,code,names
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 9255be3c68207929266e920be8461b7669ae4efd
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jan 16 12:30:22 2022 -0800
+
+    Build xz tarballs instead of bzip2
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 03092c520b0365570df6e30360dacee0f5924ca0
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Nov 25 12:48:28 2018 -0800
+
+    Update configure.ac bug URL for gitlab migration
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit cfde5e9f348db6e6b2639dd7e592520dff028452
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Mon Jun 18 21:35:56 2018 -0700
+
+    xf86-input-mouse 1.9.3
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit e6aa78128e8e4489e7845a3ada552427a43663b9
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Jun 7 14:17:23 2016 -0400
+
+    bsd: Don't try to use SIGIO for input ABI >= 23
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 3c8f243b750a92d5837a449d344ff884dbd02b57
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Thu Feb 16 09:21:21 2017 -0500
+
+    Adapt to removal of xf86GetOS
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 9d0d12cd432a7d27d526f8742332dee094834aa1
+Author: Mihail Konev <k.mvc@ya.ru>
+Date:   Thu Jan 26 14:00:21 2017 +1000
+
+    autogen: add default patch prefix
+    
+    Signed-off-by: Mihail Konev <k.mvc@ya.ru>
+
+commit 2ad101d5059b7200433afc36aea2c30d1839ea02
+Author: Emil Velikov <emil.l.velikov@gmail.com>
+Date:   Mon Mar 9 12:00:52 2015 +0000
+
+    autogen.sh: use quoted string variables
+    
+    Place quotes around the $srcdir, $ORIGDIR and $0 variables to prevent
+    fall-outs, when they contain space.
+    
+    Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 8976960cac1a0c885a07e75c86261361256a3887
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jan 24 10:32:07 2017 +1000
+
+    autogen.sh: use exec instead of waiting for configure to finish
+    
+    Syncs the invocation of configure with the one from the server.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Emil Velikov <emil.velikov@collabora.com>
+
+commit 9d6c38eae40a435b4057a33d55759810ea7b91c1
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Nov 17 14:35:47 2016 +1000
+
+    mouse 1.9.2
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 2dda9b90b9c632d2f27a7b2f46bc4e4af1e9d82d
+Author: Keith Packard <keithp@keithp.com>
+Date:   Mon May 30 22:45:13 2016 -0700
+
+    Support ABI_XINPUT_VERSION 24 (remove LastSelectMask from block/wakeup)
+    
+    The block and wakeup handler API is changing so that the FD_SET type
+    isn't visible outside the OS layer anymore. The mouse driver didn't
+    need that argument anyways, so the change is just to adjust the APIs
+    to avoid compiler warnings.
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 80952e5a5fcb4158249451f2339de618c4e63b82
+Author: Keith Packard <keithp@keithp.com>
+Date:   Mon May 30 22:45:12 2016 -0700
+
+    Support ABI_XINPUT_VERSION 23 (use input_lock/input_unlock)
+    
+    This makes using input_lock/input_unlock conditional on the ABI
+    version so that we don't get compiler warnings when compiling with the
+    newer server bits.
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit c22d3073dc1b82fe6c466e5ea71b6da755bb9a8e
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 27 00:06:06 2015 +0200
+
+    Add some standard defines to pkg-config file.
+    
+    Not strictly needed in the xorg build, but helps the NetBSD reachover
+    build, and follows implicit conventions about pkg-config files more
+    closely.
+    
+    See also http://gnats.netbsd.org/48991
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 85ee769d769e87b1e4a21b8c48944238c8ebe5f7
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Feb 28 09:38:38 2015 -0800
+
+    README: Drop ancient, no longer supported versions of Solaris
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 9d404d41b6edbee9b96ee8bad705f7e5fdd3e7c1
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Feb 28 09:36:29 2015 -0800
+
+    README: Add "or xf86-input-libinput" to -evdev note for Linux
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 6886084b192e681739fc55892f30681efb4f79f0
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Aug 11 23:36:23 2014 -0700
+
+    xf86-input-mouse 1.9.1
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 252b15a2aeab5d7c843271caf4852df03d7a25eb
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Jul 11 19:47:20 2014 -0700
+
+    Update some outdated language in a comment on obsolete hardware
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit e83991474e9964917ea6ece5ad21d1bf56481dfa
+Author: Michael Thayer <michael.thayer@oracle.com>
+Date:   Thu Apr 24 10:32:17 2014 +0200
+
+    Make absolute input reporting in Solaris aware of resolution changes
+    
+    Currently on Solaris absolute input reporting only takes resolution changes
+    into account when the video driver is using the pre-RandR 1.2 APIs, and
+    there it uses the physical resolution, not the virtual.  This patch fixes
+    those two things.
+    
+    Signed-off-by: Michael Thayer <michael.thayer@oracle.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 7a1fb986cc5ace474b6f040179bd130d4ba6f78f
+Author: Michael Thayer <michael.thayer@oracle.com>
+Date:   Mon Mar 31 11:21:12 2014 +0200
+
+    Do not drop the result of protocol detection
+    
+    In MousePickProtocol() with protocol PROT_AUTO we probe for the protocol to
+    use but drop the result in most cases.  This was causing DEVICE_INIT and
+    DEVICE_ON to fail to be called with the VUID protocol.  Git history suggests
+    that this code was originally meant to cover both PS/2 auto-detection and OS-
+    specific detection, but that only the first case was implemented at the time.
+    Now that only the second is needed dropping the result to keep the protocol
+    as PROT_AUTO is presumably no longer useful and seems to actively breaking
+    things.
+    
+    Signed-off-by: Michael Thayer <michael.thayer@oracle.com>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 4e79eb64e50bf19d984a27af1dedaa78c1e77072
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Aug 19 19:30:37 2013 +0200
+
+    Add support for absolute positioning (tablets).
+    
+    From Pierre Pronchery <khorben@NetBSD.org>
+    and review comments by Daniel Stone <daniel@fooishbar.org>.
+    
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+
+commit b77a728904d5492163728762d4f363554edefba5
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Aug 19 11:14:33 2013 +0200
+
+    For wsmouse, keep 3-button emulation status.
+    
+    With a multiplexed device like wsmouse it does not make sense to
+    kill emulate3buttons on the first button-3-pressed event. The
+    button-3 pressed may belong to a mouse long gone and leave the
+    internal (two button only) mousepad useless.
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    From Martin Husemann <martin@NetBSD.org>
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+
+commit ae1a3d6072fea65a8a594f2614f47c43dd8dd267
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Aug 19 11:14:32 2013 +0200
+
+    Make wsmouse (re-)init the version.
+    
+    This makes sure that the xserver and the mouse speak the same
+    protocol version.
+    
+    Acked-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    From Matthew R. Green <mrg@NetBSD.org>
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+
+commit e2cb94b0f3f555f4b1744d63caa587c804f942a2
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Aug 19 11:14:30 2013 +0200
+
+    Enable MSE_MISC on NetBSD as well.
+    
+    Otherwise we can't find WSMouse.
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    From Matthew R. Green <mrg@NetBSD.org>
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+
+commit ea504b225f7cbedced9466bbf09ebfa43f39dcfb
+Author: Patrik Jakobsson <patrik.r.jakobsson@gmail.com>
+Date:   Sun Jan 5 18:57:28 2014 +0100
+
+    Add AC_SYSTEM_EXTENSIONS to expose asprintf with GNU libc
+    
+    As required by the following commit:
+    commit 8c75f6e1c117f3d05f0bc7bed34f0e7e933f3b9a
+    Use asprintf (or Xprintf on old servers) instead of strdup+sprintf
+    
+    Signed-off-by: Patrik Jakobsson <patrik.r.jakobsson@gmail.com>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 8c75f6e1c117f3d05f0bc7bed34f0e7e933f3b9a
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Oct 19 21:49:57 2013 -0700
+
+    Use asprintf (or Xprintf on old servers) instead of strdup+sprintf
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit d5de178fe9c20351ff400ff616ffbfe05471cdcc
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Oct 19 18:40:10 2013 -0700
+
+    Wrap some overly long lines
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 35cae8f4352002c8dce85dbc86cebb50e915a478
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed Mar 27 10:59:05 2013 +1000
+
+    mouse 1.9.0
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 585f4030d77accf2a4ba115729ca08da82217863
+Author: Colin Walters <walters@verbum.org>
+Date:   Wed Jan 4 17:37:06 2012 -0500
+
+    autogen.sh: Implement GNOME Build API
+    
+    http://people.gnome.org/~walters/docs/build-api.txt
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 8e74b1db7b32a2a2bb668a8edc6757cc5b77157a
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed Jan 16 13:11:11 2013 -0500
+
+    configure: Drop AM_MAINTAINER_MODE
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 3b199a175da8485c216ccccb68df4cf539899619
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed Aug 15 14:38:28 2012 +1000
+
+    Use signal-safe logging if available
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Chase Douglas <chase.douglas@ubuntu.com>
+
+commit cb1f60930bdc8121e5d7b9210f9491d1116d6aef
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed Aug 15 14:43:14 2012 +1000
+
+    Fix compilation error with EXTMOUSEDEBUG on
+    
+    pInfo->atom was removed in xorg-server-1.9.0-26-g9802cca
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 29dbd85c4617a062d2003e0673806b92f8397492
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jul 31 09:39:38 2012 +1000
+
+    xf86-input-mouse 1.8.1
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 5a5f41659d4e43330407fa8895710c865d2b5328
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Jul 30 15:56:18 2012 -0700
+
+    Fix compiler warning in sun_mouse.c (Solaris-only)
+    
+    sun_mouse.c: In function 'vuidRemoveMouse':
+    sun_mouse.c:150:42: warning: declaration of 'time' shadows a global declaration
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 5748979008acafd1a8b28f47e292ed6a9706474c
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jul 31 08:28:27 2012 +1000
+
+    Rename xf86-mouse.pc to xorg-mouse.pc
+    
+    Other input drivers already shipping pkgconfig files use this naming scheme
+    and since the 1.8 release didn't install the file anyway, renaming is still
+    acceptable at this point.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit a5630a5668793e3bdc6190b5e2ee22d7c28dda0c
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Jul 30 09:06:49 2012 +1000
+
+    Install xf86-mouse.pc file
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Jeremy Huddleston <jeremyhu@apple.com>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 7c1e63ef00777553cca66781b8db0272bd405db0
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Jul 30 15:53:22 2012 +1000
+
+    Fix compiler warnings
+    
+    pnp.c: In function 'probePs2ProtocolPnP':
+    pnp.c:711:31: warning: declaration of 'seq' shadows a previous local
+    [-Wshadow]
+    pnp.c:705:23: warning: shadowed declaration is here [-Wshadow]
+    
+    mouse.c: In function 'MouseCommonOptions':
+    mouse.c:330:13: warning: declaration of 'i' shadows a previous local
+    [-Wshadow]
+    mouse.c:279:9: warning: shadowed declaration is here [-Wshadow]
+    
+    mouse.c: In function 'autoProbeMouse':
+    mouse.c:3602:29: warning: declaration of 'proto' shadows a global
+    declaration [-Wshadow]
+    mouse.c:2482:22: warning: shadowed declaration is here [-Wshadow]
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Jeremy Huddleston Sequoia <jeremyhu@apple.com>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3c0c022672324286b0e936977ca267c6b04dc0f2
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Jul 26 23:10:47 2012 -0700
+
+    xf86-input-mouse 1.8.0
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 66792aff9562a3cd69576739e4dae116edb31efd
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Jul 25 22:12:02 2012 -0700
+
+    Fix vuidMouseAdjustFrame to build with Xorg 1.13 ABI
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit a2494e6fe3168b03f2ebc7d584db0256657c891f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Jul 23 22:11:57 2012 -0700
+
+    Raise bar for xorg-server to 1.7 for XINPUT ABI 7
+    
+    Not all of the button label settings were wrapped in ABI #ifdefs,
+    so just drop all #ifdefs for GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 7
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Jeremy Huddleston Sequoia <jeremyhu@apple.com>
+
+commit 88e90dde7a5ffff67da9e091e59c09f2a0828582
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Apr 30 20:36:40 2012 -0700
+
+    Expand tabs to spaces
+    
+    Existing code had a mix of places tab & space characters were used.
+    Make them all spaces for consistency, since that's the new style
+    chosen for xorg-server.
+    
+    "git diff -w" shows no changes - this is pure whitespace adjustment.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 580e739de0b15df9b7982213d2e2d9b84413b157
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Apr 30 20:33:27 2012 -0700
+
+    Strip trailing whitespace
+    
+    cleanup done via: perl -p -i -e 's/[\t ]*$//'
+    "git diff -w" shows no changes - this is pure whitespace adjustment.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 1816cd91981c0f9673cf56dc4f5b0021e9cbbc65
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Apr 27 17:36:01 2012 -0700
+
+    Add settable properties for middle mouse button emulation
+    
+    Based on evdev's similar properties, including using the name "middle"
+    button, to avoid confusion with evdev's 3rd button emulation for
+    emulating the right button on a single button mouse.
+    
+    Allows manual enable & disable at runtime.
+    
+    Exports new xf86-mouse.pc & xf86-mouse-properties.h for property name
+    definitions.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Alexandr Shadchin <alexandr.shadchin@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 84090b15ea6346d0764a0e0be3f0bd65a7e0fe7c
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Apr 27 15:57:28 2012 -0700
+
+    Set button & axis labels
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Alexandr Shadchin <alexandr.shadchin@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 4b6738c8409fe73596863b37a8fcad8ae352d121
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Apr 27 15:44:00 2012 -0700
+
+    Set XI_PROP_DEVICE_NODE property to string from "Device" option
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Alexandr Shadchin <alexandr.shadchin@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 5583a77bbadd2e89cbc69a66f27deee1a5da982c
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Apr 27 14:31:20 2012 -0700
+
+    sun_mouse.c: Remove redundant option checks
+    
+    Previously they checked pInfo->options, then fell back to
+    pInfo->conf_idev->commonOptions - but then 7bf22a368c752fe76dc
+    replaced the latter with the former, resulting in some redunancy.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Alexandr Shadchin <alexandr.shadchin@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
 commit 80d724d13a8de585722967f7d18a65b4b555badd
 Author: Alan Coopersmith <alan.coopersmith@oracle.com>
 Date:   Thu Mar 15 23:34:21 2012 -0700

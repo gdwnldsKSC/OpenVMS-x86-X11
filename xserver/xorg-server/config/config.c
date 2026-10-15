@@ -27,10 +27,21 @@
 #include <dix-config.h>
 #endif
 
+#include <unistd.h>
 #include "os.h"
 #include "inputstr.h"
 #include "hotplug.h"
 #include "config-backends.h"
+#include "systemd-logind.h"
+
+void
+config_pre_init(void)
+{
+#ifdef CONFIG_UDEV
+    if (!config_udev_pre_init())
+        ErrorF("[config] failed to pre-init udev\n");
+#endif
+}
 
 void
 config_init(void)
@@ -38,20 +49,9 @@ config_init(void)
 #ifdef CONFIG_UDEV
     if (!config_udev_init())
         ErrorF("[config] failed to initialise udev\n");
-#elif defined(CONFIG_NEED_DBUS)
-    if (config_dbus_core_init()) {
-#ifdef CONFIG_DBUS_API
-        if (!config_dbus_init())
-            ErrorF("[config] failed to initialise D-Bus API\n");
-#endif
-#ifdef CONFIG_HAL
-        if (!config_hal_init())
-            ErrorF("[config] failed to initialise HAL\n");
-#endif
-    }
-    else {
-        ErrorF("[config] failed to initialise D-Bus core\n");
-    }
+#elif defined(CONFIG_HAL)
+    if (!config_hal_init())
+        ErrorF("[config] failed to initialise HAL\n");
 #elif defined(CONFIG_WSCONS)
     if (!config_wscons_init())
         ErrorF("[config] failed to initialise wscons\n");
@@ -63,16 +63,18 @@ config_fini(void)
 {
 #if defined(CONFIG_UDEV)
     config_udev_fini();
-#elif defined(CONFIG_NEED_DBUS)
-#ifdef CONFIG_HAL
+#elif defined(CONFIG_HAL)
     config_hal_fini();
-#endif
-#ifdef CONFIG_DBUS_API
-    config_dbus_fini();
-#endif
-    config_dbus_core_fini();
 #elif defined(CONFIG_WSCONS)
     config_wscons_fini();
+#endif
+}
+
+void
+config_odev_probe(config_odev_probe_proc_ptr probe_callback)
+{
+#if defined(CONFIG_UDEV_KMS)
+    config_udev_odev_probe(probe_callback);
 #endif
 }
 
@@ -84,10 +86,10 @@ remove_device(const char *backend, DeviceIntPtr dev)
 
     /* Call PIE here so we don't try to dereference a device that's
      * already been removed. */
-    OsBlockSignals();
+    input_lock();
     ProcessInputEvents();
     DeleteInputDeviceRequest(dev);
-    OsReleaseSignals();
+    input_unlock();
 }
 
 void
@@ -105,6 +107,8 @@ remove_devices(const char *backend, const char *config_info)
         if (dev->config_info && strcmp(dev->config_info, config_info) == 0)
             remove_device(backend, dev);
     }
+
+    RemoveInputDeviceTraces(config_info);
 }
 
 BOOL
@@ -123,4 +127,25 @@ device_is_duplicate(const char *config_info)
     }
 
     return FALSE;
+}
+
+struct OdevAttributes *
+config_odev_allocate_attributes(void)
+{
+    struct OdevAttributes *attribs =
+        xnfcalloc(1, sizeof (struct OdevAttributes));
+    attribs->fd = -1;
+    return attribs;
+}
+
+void
+config_odev_free_attributes(struct OdevAttributes *attribs)
+{
+    if (attribs->fd != -1)
+        systemd_logind_release_fd(attribs->major, attribs->minor, attribs->fd);
+    free(attribs->path);
+    free(attribs->syspath);
+    free(attribs->busid);
+    free(attribs->driver);
+    free(attribs);
 }

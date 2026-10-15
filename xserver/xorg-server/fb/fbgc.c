@@ -64,14 +64,13 @@ const GCOps fbGCOps = {
 Bool
 fbCreateGC(GCPtr pGC)
 {
-    pGC->ops = (GCOps *) & fbGCOps;
-    pGC->funcs = (GCFuncs *) & fbGCFuncs;
+    pGC->ops = (GCOps *) &fbGCOps;
+    pGC->funcs = (GCFuncs *) &fbGCFuncs;
 
     /* fb wants to translate before scan conversion */
     pGC->miTranslate = 1;
     pGC->fExpose = 1;
 
-    fbGetGCPrivate(pGC)->bpp = BitsPerPixel(pGC->depth);
     return TRUE;
 }
 
@@ -110,80 +109,6 @@ fbPadPixmap(PixmapPtr pPixmap)
     fbFinishAccess(&pPixmap->drawable);
 }
 
-/*
- * Verify that 'bits' repeats every 'len' bits
- */
-static Bool
-fbBitsRepeat(FbBits bits, int len, int width)
-{
-    FbBits mask = FbBitsMask(0, len);
-    FbBits orig = bits & mask;
-    int i;
-
-    if (width > FB_UNIT)
-        width = FB_UNIT;
-    for (i = 0; i < width / len; i++) {
-        if ((bits & mask) != orig)
-            return FALSE;
-        bits = FbScrLeft(bits, len);
-    }
-    return TRUE;
-}
-
-/*
- * Check whether an entire bitmap line is a repetition of
- * the first 'len' bits
- */
-static Bool
-fbLineRepeat(FbBits * bits, int len, int width)
-{
-    FbBits first = bits[0];
-
-    if (!fbBitsRepeat(first, len, width))
-        return FALSE;
-    width = (width + FB_UNIT - 1) >> FB_SHIFT;
-    bits++;
-    while (--width)
-        if (READ(bits) != first)
-            return FALSE;
-    return TRUE;
-}
-
-/*
- * The even stipple code wants the first FB_UNIT/bpp bits on
- * each scanline to represent the entire stipple
- */
-static Bool
-fbCanEvenStipple(PixmapPtr pStipple, int bpp)
-{
-    int len = FB_UNIT / bpp;
-    FbBits *bits;
-    int stride;
-    int stip_bpp;
-    _X_UNUSED int stipXoff, stipYoff;
-    int h;
-
-    /* can't even stipple 24bpp drawables */
-    if ((bpp & (bpp - 1)) != 0)
-        return FALSE;
-    /* make sure the stipple width is a multiple of the even stipple width */
-    if (pStipple->drawable.width % len != 0)
-        return FALSE;
-    fbGetDrawable(&pStipple->drawable, bits, stride, stip_bpp, stipXoff,
-                  stipYoff);
-    h = pStipple->drawable.height;
-    /* check to see that the stipple repeats horizontally */
-    while (h--) {
-        if (!fbLineRepeat(bits, len, pStipple->drawable.width)) {
-            fbFinishAccess(&pStipple->drawable);
-            return FALSE;
-        }
-        bits += stride;
-    }
-    fbFinishAccess(&pStipple->drawable);
-    return TRUE;
-}
-
 void
 fbValidateGC(GCPtr pGC, unsigned long changes, DrawablePtr pDrawable)
 {
@@ -193,7 +118,7 @@ fbValidateGC(GCPtr pGC, unsigned long changes, DrawablePtr pDrawable)
     /*
      * if the client clip is different or moved OR the subwindowMode has
      * changed OR the window's clip has changed since the last validation
-     * we need to recompute the composite clip 
+     * we need to recompute the composite clip
      */
 
     if ((changes &
@@ -203,35 +128,6 @@ fbValidateGC(GCPtr pGC, unsigned long changes, DrawablePtr pDrawable)
         miComputeCompositeClip(pGC, pDrawable);
     }
 
-    if (pPriv->bpp != pDrawable->bitsPerPixel) {
-        changes |= GCStipple | GCForeground | GCBackground | GCPlaneMask;
-        pPriv->bpp = pDrawable->bitsPerPixel;
-    }
-    if ((changes & GCTile) && fbGetRotatedPixmap(pGC)) {
-        (*pGC->pScreen->DestroyPixmap) (fbGetRotatedPixmap(pGC));
-        fbGetRotatedPixmap(pGC) = 0;
-    }
-
-    if (pGC->fillStyle == FillTiled) {
-        PixmapPtr pOldTile, pNewTile;
-
-        pOldTile = pGC->tile.pixmap;
-        if (pOldTile->drawable.bitsPerPixel != pDrawable->bitsPerPixel) {
-            pNewTile = fbGetRotatedPixmap(pGC);
-            if (!pNewTile ||
-                pNewTile->drawable.bitsPerPixel != pDrawable->bitsPerPixel) {
-                if (pNewTile)
-                    (*pGC->pScreen->DestroyPixmap) (pNewTile);
-                pNewTile =
-                    fb24_32ReformatTile(pOldTile, pDrawable->bitsPerPixel);
-            }
-            if (pNewTile) {
-                fbGetRotatedPixmap(pGC) = pOldTile;
-                pGC->tile.pixmap = pNewTile;
-                changes |= GCTile;
-            }
-        }
-    }
     if (changes & GCTile) {
         if (!pGC->tileIsPixel &&
             FbEvenTile(pGC->tile.pixmap->drawable.width *
@@ -239,16 +135,7 @@ fbValidateGC(GCPtr pGC, unsigned long changes, DrawablePtr pDrawable)
             fbPadPixmap(pGC->tile.pixmap);
     }
     if (changes & GCStipple) {
-        pPriv->evenStipple = FALSE;
-
         if (pGC->stipple) {
-
-            /* can we do an even stipple ?? */
-            if (FbEvenStip(pGC->stipple->drawable.width,
-                           pDrawable->bitsPerPixel) &&
-                (fbCanEvenStipple(pGC->stipple, pDrawable->bitsPerPixel)))
-                pPriv->evenStipple = TRUE;
-
             if (pGC->stipple->drawable.width * pDrawable->bitsPerPixel <
                 FB_UNIT)
                 fbPadPixmap(pGC->stipple);
@@ -267,7 +154,24 @@ fbValidateGC(GCPtr pGC, unsigned long changes, DrawablePtr pDrawable)
         pPriv->fg = pGC->fgPixel & mask;
         pPriv->bg = pGC->bgPixel & mask;
 
+        /*
+         * Widening the planemask to cover the padding bits lets the blit and
+         * fill paths take their "all ones" shortcuts, but it also makes them
+         * write those bits. A rootless server keeps the alpha channel of its
+         * on screen windows opaque by clearing the alpha bits from the
+         * planemask (see miext/rootless/rootlessGC.c), and it can only do so
+         * from its own ValidateGC. mi revalidates the GC in the middle of a
+         * drawing operation for dashed lines, dashed arcs and opaque text,
+         * and by then the rootless funcs have been unwrapped by the damage
+         * layer, so that reassertion never happens. Leave the padding bits
+         * alone when they aren't part of the depth.
+         */
+#ifdef ROOTLESS_SAFEALPHA
+        if (pDrawable->depth == pDrawable->bitsPerPixel &&
+            (pGC->planemask & depthMask) == depthMask)
+#else
         if ((pGC->planemask & depthMask) == depthMask)
+#endif
             pPriv->pm = mask;
         else
             pPriv->pm = pGC->planemask & mask;

@@ -21,7 +21,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <pixman-config.h>
 #endif
 
 #include <stdlib.h>
@@ -145,11 +145,8 @@ _pixman_image_fini (pixman_image_t *image)
 
 	pixman_region32_fini (&common->clip_region);
 
-	if (common->transform)
-	    free (common->transform);
-
-	if (common->filter_params)
-	    free (common->filter_params);
+	free (common->transform);
+	free (common->filter_params);
 
 	if (common->alpha_map)
 	    pixman_image_unref ((pixman_image_t *)common->alpha_map);
@@ -302,13 +299,12 @@ compute_image_info (pixman_image_t *image)
 	             image->common.transform->matrix[1][1] == 0)
 	    {
 		pixman_fixed_t m01 = image->common.transform->matrix[0][1];
-		if (m01 == -image->common.transform->matrix[1][0])
-		{
-			if (m01 == -pixman_fixed_1)
-			    flags |= FAST_PATH_ROTATE_90_TRANSFORM;
-			else if (m01 == pixman_fixed_1)
-			    flags |= FAST_PATH_ROTATE_270_TRANSFORM;
-		}
+		pixman_fixed_t m10 = image->common.transform->matrix[1][0];
+
+		if (m01 == -pixman_fixed_1 && m10 == pixman_fixed_1)
+		    flags |= FAST_PATH_ROTATE_90_TRANSFORM;
+		else if (m01 == pixman_fixed_1 && m10 == -pixman_fixed_1)
+		    flags |= FAST_PATH_ROTATE_270_TRANSFORM;
 	    }
 	}
 
@@ -339,42 +335,56 @@ compute_image_info (pixman_image_t *image)
 	{
 	    flags |= FAST_PATH_NEAREST_FILTER;
 	}
-	else if (
-	    /* affine and integer translation components in matrix ... */
-	    ((flags & FAST_PATH_AFFINE_TRANSFORM) &&
-	     !pixman_fixed_frac (image->common.transform->matrix[0][2] |
-				 image->common.transform->matrix[1][2])) &&
-	    (
-		/* ... combined with a simple rotation */
-		(flags & (FAST_PATH_ROTATE_90_TRANSFORM |
-			  FAST_PATH_ROTATE_180_TRANSFORM |
-			  FAST_PATH_ROTATE_270_TRANSFORM)) ||
-		/* ... or combined with a simple non-rotated translation */
-		(image->common.transform->matrix[0][0] == pixman_fixed_1 &&
-		 image->common.transform->matrix[1][1] == pixman_fixed_1 &&
-		 image->common.transform->matrix[0][1] == 0 &&
-		 image->common.transform->matrix[1][0] == 0)
-		)
-	    )
+	else if (flags & FAST_PATH_AFFINE_TRANSFORM)
 	{
-	    /* FIXME: there are some affine-test failures, showing that
-	     * handling of BILINEAR and NEAREST filter is not quite
-	     * equivalent when getting close to 32K for the translation
-	     * components of the matrix. That's likely some bug, but for
-	     * now just skip BILINEAR->NEAREST optimization in this case.
+	    /* Suppose the transform is
+	     *
+	     *    [ t00, t01, t02 ]
+	     *    [ t10, t11, t12 ]
+	     *    [   0,   0,   1 ]
+	     *
+	     * and the destination coordinates are (n + 0.5, m + 0.5). Then
+	     * the transformed x coordinate is:
+	     *
+	     *     tx = t00 * (n + 0.5) + t01 * (m + 0.5) + t02
+	     *        = t00 * n + t01 * m + t02 + (t00 + t01) * 0.5
+	     *
+	     * which implies that if t00, t01 and t02 are all integers
+	     * and (t00 + t01) is odd, then tx will be an integer plus 0.5,
+	     * which means a BILINEAR filter will reduce to NEAREST. The same
+	     * applies in the y direction
 	     */
-	    pixman_fixed_t magic_limit = pixman_int_to_fixed (30000);
-	    if (image->common.transform->matrix[0][2] <= magic_limit  &&
-	        image->common.transform->matrix[1][2] <= magic_limit  &&
-	        image->common.transform->matrix[0][2] >= -magic_limit &&
-	        image->common.transform->matrix[1][2] >= -magic_limit)
+	    pixman_fixed_t (*t)[3] = image->common.transform->matrix;
+
+	    if ((pixman_fixed_frac (
+		     t[0][0] | t[0][1] | t[0][2] |
+		     t[1][0] | t[1][1] | t[1][2]) == 0)			&&
+		(pixman_fixed_to_int (
+		    (t[0][0] + t[0][1]) & (t[1][0] + t[1][1])) % 2) == 1)
 	    {
-		flags |= FAST_PATH_NEAREST_FILTER;
+		/* FIXME: there are some affine-test failures, showing that
+		 * handling of BILINEAR and NEAREST filter is not quite
+		 * equivalent when getting close to 32K for the translation
+		 * components of the matrix. That's likely some bug, but for
+		 * now just skip BILINEAR->NEAREST optimization in this case.
+		 */
+		pixman_fixed_t magic_limit = pixman_int_to_fixed (30000);
+		if (image->common.transform->matrix[0][2] <= magic_limit  &&
+		    image->common.transform->matrix[1][2] <= magic_limit  &&
+		    image->common.transform->matrix[0][2] >= -magic_limit &&
+		    image->common.transform->matrix[1][2] >= -magic_limit)
+		{
+		    flags |= FAST_PATH_NEAREST_FILTER;
+		}
 	    }
 	}
 	break;
 
     case PIXMAN_FILTER_CONVOLUTION:
+	break;
+
+    case PIXMAN_FILTER_SEPARABLE_CONVOLUTION:
+	flags |= FAST_PATH_SEPARABLE_CONVOLUTION_FILTER;
 	break;
 
     default:
@@ -502,8 +512,10 @@ compute_image_info (pixman_image_t *image)
 	break;
     }
 
-    /* Alpha map */
-    if (!image->common.alpha_map)
+    /* Alpha maps are only supported for BITS images, so it's always
+     * safe to ignore their presense for non-BITS images
+     */
+    if (!image->common.alpha_map || image->type != BITS)
     {
 	flags |= FAST_PATH_NO_ALPHA_MAP;
     }
@@ -519,8 +531,9 @@ compute_image_info (pixman_image_t *image)
      * if all channels are opaque, so we simply turn it off
      * unconditionally for those images.
      */
-    if (image->common.alpha_map					||
-	image->common.filter == PIXMAN_FILTER_CONVOLUTION	||
+    if (image->common.alpha_map						||
+	image->common.filter == PIXMAN_FILTER_CONVOLUTION		||
+        image->common.filter == PIXMAN_FILTER_SEPARABLE_CONVOLUTION     ||
 	image->common.component_alpha)
     {
 	flags &= ~(FAST_PATH_IS_OPAQUE | FAST_PATH_SAMPLES_OPAQUE);
@@ -554,7 +567,7 @@ _pixman_image_validate (pixman_image_t *image)
 
 PIXMAN_EXPORT pixman_bool_t
 pixman_image_set_clip_region32 (pixman_image_t *   image,
-                                pixman_region32_t *region)
+                                const pixman_region32_t *region)
 {
     image_common_t *common = (image_common_t *)image;
     pixman_bool_t result;
@@ -578,7 +591,7 @@ pixman_image_set_clip_region32 (pixman_image_t *   image,
 
 PIXMAN_EXPORT pixman_bool_t
 pixman_image_set_clip_region (pixman_image_t *   image,
-                              pixman_region16_t *region)
+                              const pixman_region16_t *region)
 {
     image_common_t *common = (image_common_t *)image;
     pixman_bool_t result;
@@ -586,6 +599,30 @@ pixman_image_set_clip_region (pixman_image_t *   image,
     if (region)
     {
 	if ((result = pixman_region32_copy_from_region16 (&common->clip_region, region)))
+	    image->common.have_clip_region = TRUE;
+    }
+    else
+    {
+	_pixman_image_reset_clip_region (image);
+
+	result = TRUE;
+    }
+
+    image_property_changed (image);
+
+    return result;
+}
+
+PIXMAN_EXPORT pixman_bool_t
+pixman_image_set_clip_region64f (pixman_image_t *   image,
+                                 const pixman_region64f_t *region)
+{
+    image_common_t *common = (image_common_t *)image;
+    pixman_bool_t result;
+
+    if (region)
+    {
+	if ((result = pixman_region32_copy_from_region64f (&common->clip_region, region)))
 	    image->common.have_clip_region = TRUE;
     }
     else
@@ -671,6 +708,41 @@ pixman_image_set_repeat (pixman_image_t *image,
     image_property_changed (image);
 }
 
+PIXMAN_EXPORT void
+pixman_image_set_dither (pixman_image_t *image,
+			 pixman_dither_t dither)
+{
+    if (image->type == BITS)
+    {
+	if (image->bits.dither == dither)
+	    return;
+
+	image->bits.dither = dither;
+
+	image_property_changed (image);
+    }
+}
+
+PIXMAN_EXPORT void
+pixman_image_set_dither_offset (pixman_image_t *image,
+				int             offset_x,
+				int             offset_y)
+{
+    if (image->type == BITS)
+    {
+	if (image->bits.dither_offset_x == offset_x &&
+	    image->bits.dither_offset_y == offset_y)
+	{
+	    return;
+	}
+
+	image->bits.dither_offset_x = offset_x;
+	image->bits.dither_offset_y = offset_y;
+
+	image_property_changed (image);
+    }
+}
+
 PIXMAN_EXPORT pixman_bool_t
 pixman_image_set_filter (pixman_image_t *      image,
                          pixman_filter_t       filter,
@@ -683,6 +755,19 @@ pixman_image_set_filter (pixman_image_t *      image,
     if (params == common->filter_params && filter == common->filter)
 	return TRUE;
 
+    if (filter == PIXMAN_FILTER_SEPARABLE_CONVOLUTION)
+    {
+	int width = pixman_fixed_to_int (params[0]);
+	int height = pixman_fixed_to_int (params[1]);
+	int x_phase_bits = pixman_fixed_to_int (params[2]);
+	int y_phase_bits = pixman_fixed_to_int (params[3]);
+	int n_x_phases = (1 << x_phase_bits);
+	int n_y_phases = (1 << y_phase_bits);
+
+	return_val_if_fail (
+	    n_params == 4 + n_x_phases * width + n_y_phases * height, FALSE);
+    }
+    
     new_params = NULL;
     if (params)
     {
@@ -816,6 +901,10 @@ pixman_image_set_accessors (pixman_image_t *           image,
 
     if (image->type == BITS)
     {
+	/* Accessors only work for <= 32 bpp. */
+	if (PIXMAN_FORMAT_BPP(image->bits.format) > 32)
+	    return_if_fail (!read_func && !write_func);
+
 	image->bits.read_func = read_func;
 	image->bits.write_func = write_func;
 
@@ -874,7 +963,7 @@ pixman_image_get_format (pixman_image_t *image)
     if (image->type == BITS)
 	return image->bits.format;
 
-    return 0;
+    return PIXMAN_null;
 }
 
 uint32_t
@@ -883,16 +972,41 @@ _pixman_image_get_solid (pixman_implementation_t *imp,
                          pixman_format_code_t     format)
 {
     uint32_t result;
-    pixman_iter_t iter;
 
-    _pixman_implementation_src_iter_init (
-	imp, &iter, image, 0, 0, 1, 1,
-	(uint8_t *)&result, ITER_NARROW);
+    if (image->type == SOLID)
+    {
+	result = image->solid.color_32;
+    }
+    else if (image->type == BITS)
+    {
+	if (image->bits.format == PIXMAN_a8r8g8b8)
+	    result = image->bits.bits[0];
+	else if (image->bits.format == PIXMAN_x8r8g8b8)
+	    result = image->bits.bits[0] | 0xff000000;
+	else if (image->bits.format == PIXMAN_a8)
+	    result = (uint32_t)(*(uint8_t *)image->bits.bits) << 24;
+	else
+	    goto otherwise;
+    }
+    else
+    {
+	pixman_iter_t iter;
 
-    result = *iter.get_scanline (&iter, NULL);
+    otherwise:
+	_pixman_implementation_iter_init (
+	    imp, &iter, image, 0, 0, 1, 1,
+	    (uint8_t *)&result,
+	    ITER_NARROW | ITER_SRC, image->common.flags);
+	
+	result = *iter.get_scanline (&iter, NULL);
+
+	if (iter.fini)
+	    iter.fini (&iter);
+    }
 
     /* If necessary, convert RGB <--> BGR. */
-    if (PIXMAN_FORMAT_TYPE (format) != PIXMAN_TYPE_ARGB)
+    if (PIXMAN_FORMAT_TYPE (format) != PIXMAN_TYPE_ARGB
+	&& PIXMAN_FORMAT_TYPE (format) != PIXMAN_TYPE_ARGB_SRGB)
     {
 	result = (((result & 0xff000000) >>  0) |
 	          ((result & 0x00ff0000) >> 16) |

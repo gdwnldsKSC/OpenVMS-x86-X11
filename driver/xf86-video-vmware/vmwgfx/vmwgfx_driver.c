@@ -29,8 +29,12 @@
  * Author: Thomas Hellstrom <thellstrom@vmware.com>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <unistd.h>
+#include <fcntl.h>
 #include "xorg-server.h"
 #include "xf86.h"
 #include "xf86_OSproc.h"
@@ -54,12 +58,18 @@
 
 #include <pciaccess.h>
 
+#ifdef XSERVER_PLATFORM_BUS
+#include "xf86platformBus.h"
+#endif
+
 #include "vmwgfx_driver.h"
 
 #include <saa.h>
 #include "vmwgfx_saa.h"
 #include "../src/vmware_bootstrap.h"
 #include "../src/vmware_common.h"
+#include "vmwgfx_hosted.h"
+#include "common_compat.h"
 
 /*
  * We can't incude svga_types.h due to conflicting types for Bool.
@@ -79,7 +89,7 @@ typedef uint8_t uint8;
 
 #define XA_VERSION_MINOR_REQUIRED 0
 #define XA_VERSION_MAJOR_REQUIRED 1
-#define XA_VERSION_MAJOR_COMPAT 1
+#define XA_VERSION_MAJOR_COMPAT 2
 
 #define DRM_VERSION_MAJOR_REQUIRED 2
 #define DRM_VERSION_MINOR_REQUIRED 3
@@ -107,14 +117,13 @@ typedef uint8_t uint8;
  */
 
 static Bool drv_pre_init(ScrnInfoPtr pScrn, int flags);
-static Bool drv_screen_init(int scrnIndex, ScreenPtr pScreen, int argc,
-			    char **argv);
-static Bool drv_switch_mode(int scrnIndex, DisplayModePtr mode, int flags);
-static void drv_adjust_frame(int scrnIndex, int x, int y, int flags);
-static Bool drv_enter_vt(int scrnIndex, int flags);
-static void drv_leave_vt(int scrnIndex, int flags);
-static void drv_free_screen(int scrnIndex, int flags);
-static ModeStatus drv_valid_mode(int scrnIndex, DisplayModePtr mode, Bool verbose,
+static Bool drv_screen_init(SCREEN_INIT_ARGS_DECL);
+static Bool drv_switch_mode(SWITCH_MODE_ARGS_DECL);
+static void drv_adjust_frame(ADJUST_FRAME_ARGS_DECL);
+static Bool drv_enter_vt(VT_FUNC_ARGS_DECL);
+static void drv_leave_vt(VT_FUNC_ARGS_DECL);
+static void drv_free_screen(FREE_SCREEN_ARGS_DECL);
+static ModeStatus drv_valid_mode(SCRN_ARG_TYPE arg, DisplayModePtr mode, Bool verbose,
 			         int flags);
 
 extern void xorg_tracker_set_functions(ScrnInfoPtr scrn);
@@ -129,11 +138,17 @@ vmwgfx_hookup(ScrnInfoPtr pScrn)
     pScrn->ValidMode = drv_valid_mode;
 }
 
+void
+vmwgfx_modify_flags(uint32_t *flags)
+{
+    *flags &= ~(HW_IO);
+    vmwgfx_hosted_modify_flags(flags);
+}
 /*
  * Internal function definitions
  */
 
-static Bool drv_close_screen(int scrnIndex, ScreenPtr pScreen);
+static Bool drv_close_screen(CLOSE_SCREEN_ARGS_DECL);
 
 /*
  * Internal functions
@@ -165,7 +180,7 @@ drv_free_rec(ScrnInfoPtr pScrn)
 }
 
 static void
-drv_probe_ddc(ScrnInfoPtr pScrn, int index)
+drv_probe_ddc(ScrnInfoPtr pScrn, int _index)
 {
     ConfiguredMonitor = NULL;
 }
@@ -237,6 +252,15 @@ static const xf86CrtcConfigFuncsRec crtc_config_funcs = {
     .resize = drv_crtc_resize
 };
 
+static Bool vmwgfx_use_server_fd(modesettingPtr ms)
+{
+#ifdef XF86_PDEV_SERVER_FD
+    return ms->platform_dev && (ms->platform_dev->flags & XF86_PDEV_SERVER_FD);
+#else
+    return FALSE;
+#endif
+}
+
 static Bool
 drv_init_drm(ScrnInfoPtr pScrn)
 {
@@ -244,18 +268,28 @@ drv_init_drm(ScrnInfoPtr pScrn)
 
     /* deal with server regeneration */
     if (ms->fd < 0) {
-	char *BusID;
 
-	BusID = malloc(64);
-	sprintf(BusID, "PCI:%d:%d:%d",
-		((ms->PciInfo->domain << 8) | ms->PciInfo->bus),
-		ms->PciInfo->dev, ms->PciInfo->func
-	    );
+	ms->fd = vmwgfx_hosted_drm_fd(ms->hdriver, ms->hosted, ms->PciInfo);
 
+#ifdef ODEV_ATTRIB_FD
+	if (ms->fd < 0 && vmwgfx_use_server_fd(ms))
+	    ms->fd = xf86_get_platform_device_int_attrib(ms->platform_dev,
+	                                                 ODEV_ATTRIB_FD, -1);
+#endif
 
-	ms->fd = drmOpen("vmwgfx", BusID);
-	ms->isMaster = TRUE;
-	free(BusID);
+	if (ms->fd < 0) {
+
+	    char bus_id[64];
+
+	    snprintf(bus_id, sizeof(bus_id), "PCI:%d:%d:%d",
+		     ((ms->PciInfo->domain << 8) | ms->PciInfo->bus),
+		     ms->PciInfo->dev, ms->PciInfo->func
+		);
+
+	    ms->fd = drmOpen("vmwgfx", bus_id);
+	    ms->isMaster = TRUE;
+
+	}
 
 	if (ms->fd >= 0) {
 	    drmVersionPtr ver = drmGetVersion(ms->fd);
@@ -334,14 +368,103 @@ vmwgfx_set_topology(ScrnInfoPtr pScrn, const char *topology, const char *info)
     return FALSE;
 }
 
+
+static Bool
+vmwgfx_pre_init_mode(ScrnInfoPtr pScrn, int flags)
+{
+    modesettingPtr ms = modesettingPTR(pScrn);
+    Bool ret = TRUE;
+
+    ms->from_dp = (xf86GetOptValBool(ms->Options, OPTION_DIRECT_PRESENTS,
+				     &ms->direct_presents)) ?
+	X_CONFIG : X_DEFAULT;
+
+    ms->from_hwp = (xf86GetOptValBool(ms->Options, OPTION_HW_PRESENTS,
+				      &ms->only_hw_presents)) ?
+	X_CONFIG : X_DEFAULT;
+
+    /* Allocate an xf86CrtcConfig */
+    xf86CrtcConfigInit(pScrn, &crtc_config_funcs);
+
+    /* get max width and height */
+    {
+	drmModeResPtr res;
+	int max_width, max_height;
+
+	res = drmModeGetResources(ms->fd);
+	max_width = res->max_width;
+	max_height = res->max_height;
+
+	xf86CrtcSetSizeRange(pScrn, res->min_width,
+			     res->min_height, max_width, max_height);
+	xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+		   "Min width %d, Max Width %d.\n",
+		   res->min_width, max_width);
+	xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
+		   "Min height %d, Max Height %d.\n",
+		   res->min_height, max_height);
+	drmModeFreeResources(res);
+    }
+
+    ms->SWCursor = FALSE;
+    if (!xf86ReturnOptValBool(ms->Options, OPTION_HW_CURSOR, TRUE)) {
+	ms->SWCursor = TRUE;
+    }
+
+    if (xf86IsOptionSet(ms->Options, OPTION_GUI_LAYOUT)) {
+	CONST_ABI_18_0 char *topology =
+	    xf86GetOptValString(ms->Options, OPTION_GUI_LAYOUT);
+
+	ret = FALSE;
+	if (topology) {
+	    ret = vmwgfx_set_topology(pScrn, topology, "gui");
+	    free((void *)topology);
+	}
+
+    } else if (xf86IsOptionSet(ms->Options, OPTION_STATIC_XINERAMA)) {
+	CONST_ABI_18_0 char *topology =
+	    xf86GetOptValString(ms->Options, OPTION_STATIC_XINERAMA);
+
+	ret = FALSE;
+	if (topology) {
+	    ret = vmwgfx_set_topology(pScrn, topology, "static Xinerama");
+	    free((void *)topology);
+	}
+    }
+
+    if (!ret)
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Falied parsing or setting "
+		   "gui topology from config file.\n");
+
+    xorg_crtc_init(pScrn);
+    xorg_output_init(pScrn);
+
+    if (!xf86InitialConfiguration(pScrn, TRUE)) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "No valid modes.\n");
+	goto out_modes;
+    }
+
+    if (pScrn->modes == NULL) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "No available modes.\n");
+	goto out_modes;
+    }
+
+    pScrn->currentMode = pScrn->modes;
+
+    return TRUE;
+
+  out_modes:
+    return FALSE;
+}
+
 static Bool
 drv_pre_init(ScrnInfoPtr pScrn, int flags)
 {
     modesettingPtr ms;
     rgb defaultWeight = { 0, 0, 0 };
+    Gamma zeros = { 0.0, 0.0, 0.0 };
     EntityInfoPtr pEnt;
     uint64_t cap;
-    Bool ret = TRUE;
 
     if (pScrn->numEntities != 1)
 	return FALSE;
@@ -366,18 +489,45 @@ drv_pre_init(ScrnInfoPtr pScrn, int flags)
 
     pScrn->displayWidth = 640;	       /* default it */
 
-    if (ms->pEnt->location.type != BUS_PCI) {
+    ms->PciInfo = xf86GetPciInfoForEntity(ms->pEnt->index);
+    if (!ms->PciInfo) {
 	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
 		   "Incorrect bus for device.\n");
 	goto out_err_bus;
     }
 
-    ms->PciInfo = xf86GetPciInfoForEntity(ms->pEnt->index);
+#ifdef XSERVER_PLATFORM_BUS
+    if (pEnt->location.type == BUS_PLATFORM)
+        ms->platform_dev = pEnt->location.id.plat;
+#endif
+
     xf86SetPrimInitDone(pScrn->entityList[0]);
+
+    ms->hdriver = vmwgfx_hosted_detect();
+    ms->hosted = vmwgfx_hosted_create(ms->hdriver, pScrn);
+    if (ms->hdriver && !ms->hosted) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "Failed to set up compositor hosted environment.\n");
+	goto out_err_bus;
+    }
+
+    pScrn->monitor = pScrn->confScreen->monitor;
+    pScrn->progClock = TRUE;
+    pScrn->rgbBits = 8;
+
+    if (!xf86SetDepthBpp
+	(pScrn, 0, 0, 0,
+	 PreferConvert24to32 | SupportConvert24to32 | Support32bppFb)) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to set depth and bpp.\n");
+	goto out_err_bus;
+    }
+
+    if (!vmwgfx_hosted_pre_init(ms->hdriver, ms->hosted, flags))
+	goto out_err_bus;
 
     ms->fd = -1;
     if (!drv_init_drm(pScrn))
-	goto out_err_bus;
+	goto out_no_drm;
 
     if (ms->drm_major != DRM_VERSION_MAJOR_REQUIRED ||
 	ms->drm_minor < DRM_VERSION_MINOR_REQUIRED) {
@@ -396,30 +546,15 @@ drv_pre_init(ScrnInfoPtr pScrn, int flags)
 		   ms->drm_major, ms->drm_minor, ms->drm_patch);
     }
 
+    ms->has_screen_targets = ms->drm_major > 2 ||
+	(ms->drm_major == 2 && ms->drm_minor >= 7);
+    ms->has_screen_targets = (ms->has_screen_targets &&
+			      !vmwgfx_get_param(ms->fd,
+						DRM_VMW_PARAM_SCREEN_TARGET,
+						&cap) &&
+			      cap != 0);
+
     ms->check_fb_size = (vmwgfx_max_fb_size(ms->fd, &ms->max_fb_size) == 0);
-
-    pScrn->monitor = pScrn->confScreen->monitor;
-    pScrn->progClock = TRUE;
-    pScrn->rgbBits = 8;
-
-    if (!xf86SetDepthBpp
-	(pScrn, 0, 0, 0,
-	 PreferConvert24to32 | SupportConvert24to32 | Support32bppFb)) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to set depth and bpp.\n");
-	goto out_depth;
-    }
-
-    if (vmwgfx_get_param(ms->fd, DRM_VMW_PARAM_HW_CAPS, &cap) != 0) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to detect device "
-		   "screen object capability.\n");
-	goto out_depth;
-    }
-
-    if ((cap & SVGA_CAP_SCREEN_OBJECT_2) == 0) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Device is not screen object "
-		   "capable.\n");
-	goto out_depth;
-    }
 
     switch (pScrn->depth) {
     case 15:
@@ -461,97 +596,22 @@ drv_pre_init(ScrnInfoPtr pScrn, int flags)
 	X_CONFIG : X_PROBED;
 
     ms->direct_presents = FALSE;
-    ms->from_dp = xf86GetOptValBool(ms->Options, OPTION_DIRECT_PRESENTS,
-				    &ms->direct_presents) ?
-	X_CONFIG : X_DEFAULT;
-
     ms->only_hw_presents = FALSE;
-    ms->from_hwp = xf86GetOptValBool(ms->Options, OPTION_HW_PRESENTS,
-				     &ms->only_hw_presents) ?
-	X_CONFIG : X_DEFAULT;
-
-    /* Allocate an xf86CrtcConfig */
-    xf86CrtcConfigInit(pScrn, &crtc_config_funcs);
-
-    /* get max width and height */
-    {
-	drmModeResPtr res;
-	int max_width, max_height;
-
-	res = drmModeGetResources(ms->fd);
-	max_width = res->max_width;
-	max_height = res->max_height;
-
-	xf86CrtcSetSizeRange(pScrn, res->min_width,
-			     res->min_height, max_width, max_height);
-	xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-		   "Min width %d, Max Width %d.\n",
-		   res->min_width, max_width);
-	xf86DrvMsg(pScrn->scrnIndex, X_PROBED,
-		   "Min height %d, Max Height %d.\n",
-		   res->min_height, max_height);
-	drmModeFreeResources(res);
-    }
-
-
-    if (!xf86ReturnOptValBool(ms->Options, OPTION_HW_CURSOR, TRUE)) {
-	ms->SWCursor = TRUE;
-    }
-
-    if (xf86IsOptionSet(ms->Options, OPTION_GUI_LAYOUT)) {
-	char *topology =
-	    xf86GetOptValString(ms->Options, OPTION_GUI_LAYOUT);
-
-	ret = FALSE;
-	if (topology) {
-	    ret = vmwgfx_set_topology(pScrn, topology, "gui");
-	    free(topology);
-	}
-
-    } else if (xf86IsOptionSet(ms->Options, OPTION_STATIC_XINERAMA)) {
-	char *topology =
-	    xf86GetOptValString(ms->Options, OPTION_STATIC_XINERAMA);
-
-	ret = FALSE;
-	if (topology) {
-	    ret = vmwgfx_set_topology(pScrn, topology, "static Xinerama");
-	    free(topology);
-	}
-    }
-
-    if (!ret)
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Falied parsing or setting "
-		   "gui topology from config file.\n");
-
-    xorg_crtc_init(pScrn);
-    xorg_output_init(pScrn);
-
-    if (!xf86InitialConfiguration(pScrn, TRUE)) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "No valid modes.\n");
-	goto out_modes;
-    }
-
-    /*
-     * If the driver can do gamma correction, it should call xf86SetGamma() here.
-     */
-    {
-	Gamma zeros = { 0.0, 0.0, 0.0 };
-
-	if (!xf86SetGamma(pScrn, zeros)) {
-	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to set gamma.\n");
+    ms->SWCursor = TRUE;
+    if (!vmwgfx_is_hosted(ms->hdriver)) {
+	if (!vmwgfx_pre_init_mode(pScrn, flags))
 	    goto out_modes;
-	}
+    } else {
+	ms->from_dp = X_CONFIG;
+	ms->from_hwp = X_CONFIG;
     }
 
-    if (pScrn->modes == NULL) {
-	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "No available modes.\n");
+    xf86SetDpi(pScrn, 0, 0);
+
+    if (!xf86SetGamma(pScrn, zeros)) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to set gamma.\n");
 	goto out_modes;
     }
-
-    pScrn->currentMode = pScrn->modes;
-
-    /* Set display resolution */
-    xf86SetDpi(pScrn, 0, 0);
 
     /* Load the required sub modules */
     if (!xf86LoadSubModule(pScrn, "fb")) {
@@ -564,13 +624,23 @@ drv_pre_init(ScrnInfoPtr pScrn, int flags)
 	goto out_modes;
     }
 
+#ifdef DRI3
+    if (!xf86LoadSubModule(pScrn, "dri3")) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to load dri3 module.\n");
+	goto out_modes;
+    }
+#endif
+
     return TRUE;
 
   out_modes:
     free(ms->Options);
   out_depth:
   out_drm_version:
-    close(ms->fd);
+    if (!vmwgfx_is_hosted(ms->hdriver) && !vmwgfx_use_server_fd(ms))
+	close(ms->fd);
+  out_no_drm:
+    vmwgfx_hosted_destroy(ms->hdriver, ms->hosted);
   out_err_bus:
     drv_free_rec(pScrn);
     return FALSE;
@@ -580,26 +650,46 @@ drv_pre_init(ScrnInfoPtr pScrn, int flags)
 static Bool
 vmwgfx_scanout_update(int drm_fd, int fb_id, RegionPtr dirty)
 {
-    unsigned num_cliprects = REGION_NUM_RECTS(dirty);
-    drmModeClip *clip = alloca(num_cliprects * sizeof(drmModeClip));
-    BoxPtr rect = REGION_RECTS(dirty);
+    BoxPtr clips = REGION_RECTS(dirty);
+    unsigned int num_clips = REGION_NUM_RECTS(dirty);
+    unsigned int alloc_clips = min(num_clips, DRM_MODE_FB_DIRTY_MAX_CLIPS);
+    drmModeClip *rects, *r;
     int i, ret;
 
-    if (!num_cliprects)
+    if (num_clips == 0)
 	return TRUE;
 
-    for (i = 0; i < num_cliprects; i++, rect++) {
-	clip[i].x1 = rect->x1;
-	clip[i].y1 = rect->y1;
-	clip[i].x2 = rect->x2;
-	clip[i].y2 = rect->y2;
+    rects = malloc(alloc_clips * sizeof(*rects));
+    if (!rects) {
+	LogMessage(X_ERROR, "Failed to alloc cliprects for scanout update.\n");
+	return FALSE;
     }
 
-    ret = drmModeDirtyFB(drm_fd, fb_id, clip, num_cliprects);
-    if (ret)
-	LogMessage(X_ERROR, "%s: failed to send dirty (%i, %s)\n",
-		   __func__, ret, strerror(-ret));
-    return (ret == 0);
+    while (num_clips > 0) {
+	unsigned int cur_clips = min(num_clips, DRM_MODE_FB_DIRTY_MAX_CLIPS);
+
+	memset(rects, 0, alloc_clips * sizeof(*rects));
+
+	for (i = 0, r = rects; i < cur_clips; ++i, ++r, ++clips) {
+	    r->x1 = clips->x1;
+	    r->y1 = clips->y1;
+	    r->x2 = clips->x2;
+	    r->y2 = clips->y2;
+	}
+
+	ret = drmModeDirtyFB(drm_fd, fb_id, rects, cur_clips);
+	if (ret) {
+	    LogMessage(X_ERROR, "%s: failed to send dirty (%i, %s)\n",
+		       __func__, ret, strerror(-ret));
+	    return FALSE;
+	}
+
+	num_clips -= cur_clips;
+    }
+
+    free(rects);
+
+    return TRUE;
 }
 
 static Bool
@@ -618,7 +708,7 @@ vmwgfx_scanout_present(ScreenPtr pScreen, int drm_fd,
 	return FALSE;
     }
 
-    if (xa_surface_handle(vpix->hw, &handle, &dummy) != 0) {
+    if (_xa_surface_handle(vpix->hw, &handle, &dummy) != 0) {
 	LogMessage(X_ERROR, "Could not get present surface handle.\n");
 	return FALSE;
     }
@@ -633,7 +723,7 @@ vmwgfx_scanout_present(ScreenPtr pScreen, int drm_fd,
 
 void xorg_flush(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     modesettingPtr ms = modesettingPTR(pScrn);
     xf86CrtcConfigPtr config = XF86_CRTC_CONFIG_PTR(pScrn);
     PixmapPtr pixmap = NULL;
@@ -658,7 +748,6 @@ void xorg_flush(ScreenPtr pScreen)
 	if (crtc->enabled) {
 	    pixmap = crtc_get_scanout(crtc);
 	    if (pixmap) {
-		unsigned int j;
 
 		/*
 		 * Remove duplicates.
@@ -683,7 +772,7 @@ void xorg_flush(ScreenPtr pScreen)
 
 	if (vpix->fb_id != -1) {
 	    if (vpix->pending_update) {
-		if (ms->only_hw_presents &&
+		if (vpix->scanout_hw &&
 		    REGION_NOTEMPTY(pscreen, vpix->pending_update)) {
 		    (void) vmwgfx_hw_accel_validate(pixmap, 0, XA_FLAG_SCANOUT,
 						    0, NULL);
@@ -695,7 +784,7 @@ void xorg_flush(ScreenPtr pScreen)
 		REGION_EMPTY(pScreen, vpix->pending_update);
 	    }
 	    if (vpix->pending_present) {
-		if (ms->only_hw_presents)
+		if (vpix->scanout_hw)
 		    (void) vmwgfx_scanout_update(ms->fd, vpix->fb_id,
 						 vpix->pending_present);
 		else
@@ -708,24 +797,25 @@ void xorg_flush(ScreenPtr pScreen)
     free(pixmaps);
 }
 
-static void drv_block_handler(int i, pointer blockData, pointer pTimeout,
-                              pointer pReadmask)
+static void drv_block_handler(BLOCKHANDLER_ARGS_DECL)
 {
-    ScreenPtr pScreen = screenInfo.screens[i];
-    modesettingPtr ms = modesettingPTR(xf86Screens[pScreen->myNum]);
+    SCREEN_PTR(arg);
+    modesettingPtr ms = modesettingPTR(xf86ScreenToScrn(pScreen));
 
     vmwgfx_swap(ms, pScreen, BlockHandler);
-    pScreen->BlockHandler(i, blockData, pTimeout, pReadmask);
+    pScreen->BlockHandler(BLOCKHANDLER_ARGS);
     vmwgfx_swap(ms, pScreen, BlockHandler);
 
-    vmwgfx_flush_dri2(pScreen);
-    xorg_flush(pScreen);
+    if (vmwgfx_is_hosted(ms->hdriver))
+	vmwgfx_hosted_post_damage(ms->hdriver, ms->hosted);
+    else
+	xorg_flush(pScreen);
 }
 
 static Bool
 drv_create_screen_resources(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     modesettingPtr ms = modesettingPTR(pScrn);
     Bool ret;
 
@@ -735,9 +825,10 @@ drv_create_screen_resources(ScreenPtr pScreen)
     if (!ret)
 	return ret;
 
-    drv_adjust_frame(pScrn->scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+    drv_adjust_frame(ADJUST_FRAME_ARGS(pScrn, pScrn->frameX0, pScrn->frameY0));
+    vmwgfx_uevent_init(pScrn, ms);
 
-    return drv_enter_vt(pScreen->myNum, 1);
+    return drv_enter_vt(VT_FUNC_ARGS);
 }
 
 static Bool
@@ -745,7 +836,8 @@ drv_set_master(ScrnInfoPtr pScrn)
 {
     modesettingPtr ms = modesettingPTR(pScrn);
 
-    if (!ms->isMaster && drmSetMaster(ms->fd) != 0) {
+    if (!vmwgfx_is_hosted(ms->hdriver) && !vmwgfx_use_server_fd(ms) &&
+            !ms->isMaster && drmSetMaster(ms->fd) != 0) {
 	if (errno == EINVAL) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
 		       "drmSetMaster failed: 2.6.29 or newer kernel required for "
@@ -773,7 +865,7 @@ drv_set_master(ScrnInfoPtr pScrn)
 static Bool
 vmwgfx_use_hw_cursor_argb(ScreenPtr screen, CursorPtr cursor)
 {
-    ScrnInfoPtr pScrn = xf86Screens[screen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(screen);
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
     xf86CursorInfoPtr cursor_info = xf86_config->cursor_info;
     modesettingPtr ms = modesettingPTR(pScrn);
@@ -804,7 +896,7 @@ vmwgfx_use_hw_cursor_argb(ScreenPtr screen, CursorPtr cursor)
 static Bool
 vmwgfx_use_hw_cursor(ScreenPtr screen, CursorPtr cursor)
 {
-    ScrnInfoPtr pScrn = xf86Screens[screen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(screen);
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
     xf86CursorInfoPtr cursor_info = xf86_config->cursor_info;
     modesettingPtr ms = modesettingPTR(pScrn);
@@ -847,42 +939,42 @@ static void drv_load_palette(ScrnInfoPtr pScrn, int numColors,
 {
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(pScrn);
     modesettingPtr ms = modesettingPTR(pScrn);
-    int index, j, i;
+    int _index, j, i;
     int c;
 
     switch(pScrn->depth) {
     case 15:
 	for (i = 0; i < numColors; i++) {
-	    index = indices[i];
+	    _index = indices[i];
 	    for (j = 0; j < 8; j++) {
-		ms->lut_r[index * 8 + j] = colors[index].red << 8;
-		ms->lut_g[index * 8 + j] = colors[index].green << 8;
-		ms->lut_b[index * 8 + j] = colors[index].blue << 8;
+		ms->lut_r[_index * 8 + j] = colors[_index].red << 8;
+		ms->lut_g[_index * 8 + j] = colors[_index].green << 8;
+		ms->lut_b[_index * 8 + j] = colors[_index].blue << 8;
 	    }
 	}
 	break;
     case 16:
 	for (i = 0; i < numColors; i++) {
-	    index = indices[i];
+	    _index = indices[i];
 
-	    if (index < 32) {
+	    if (_index < 32) {
 		for (j = 0; j < 8; j++) {
-		    ms->lut_r[index * 8 + j] = colors[index].red << 8;
-		    ms->lut_b[index * 8 + j] = colors[index].blue << 8;
+		    ms->lut_r[_index * 8 + j] = colors[_index].red << 8;
+		    ms->lut_b[_index * 8 + j] = colors[_index].blue << 8;
 		}
 	    }
 
 	    for (j = 0; j < 4; j++) {
-		ms->lut_g[index * 4 + j] = colors[index].green << 8;
+		ms->lut_g[_index * 4 + j] = colors[_index].green << 8;
 	    }
 	}
 	break;
     default:
 	for (i = 0; i < numColors; i++) {
-	    index = indices[i];
-	    ms->lut_r[index] = colors[index].red << 8;
-	    ms->lut_g[index] = colors[index].green << 8;
-	    ms->lut_b[index] = colors[index].blue << 8;
+	    _index = indices[i];
+	    ms->lut_r[_index] = colors[_index].red << 8;
+	    ms->lut_g[_index] = colors[_index].green << 8;
+	    ms->lut_b[_index] = colors[_index].blue << 8;
 	}
 	break;
     }
@@ -902,9 +994,9 @@ static void drv_load_palette(ScrnInfoPtr pScrn, int numColors,
 
 
 static Bool
-drv_screen_init(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
+drv_screen_init(SCREEN_INIT_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     modesettingPtr ms = modesettingPTR(pScrn);
     VisualPtr visual;
 
@@ -958,10 +1050,33 @@ drv_screen_init(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     xf86SetBlackWhitePixels(pScreen);
 
+    ms->autoLayout = TRUE;
     vmw_ctrl_ext_init(pScrn);
 
     if (ms->accelerate_render) {
+	/*
+	 * Some versions of the Gallium loader close our drm file
+	 * descriptor if xa_tracker_create() fails (typically 2D VMs.)
+	 * While this is mostly fixed everywhere we implement a
+	 * workaround to avoid tracking down the same bug again and again
+	 * on those setups where this is not fixed in mesa.
+	 */
+
+	int tmp_fd = dup(ms->fd);
+	long flags = fcntl(ms->fd, F_GETFD);
+
 	ms->xat = xa_tracker_create(ms->fd);
+	if (fcntl(ms->fd, F_GETFD) == -1) {
+	    if (tmp_fd == -1 || flags == -1 || fcntl(tmp_fd, F_SETFD, flags)) {
+		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+			   "XA closed our DRM file descriptor. Giving up.\n");
+		return FALSE;
+	    }
+	    ms->fd = tmp_fd;
+	} else {
+	    close(tmp_fd);
+	}
+	    
 	if (!ms->xat) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
 		       "Failed to initialize Gallium3D Xa. "
@@ -990,6 +1105,16 @@ drv_screen_init(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 		ms->xat = NULL;
 		ms->from_render = X_PROBED;
 	    }
+#ifdef DRI3
+	    if (major == VMW_XA_VERSION_MAJOR_DRI3 &&
+		minor >= VMW_XA_VERSION_MINOR_DRI3) {
+		ms->xa_dri3 = TRUE;
+	    } else {
+		ms->xa_dri3 = FALSE;
+		LogMessage(X_WARNING,
+			   "Gallium3D XA version insufficient for dri3.\n");
+	    }
+#endif
 	}
 	if (ms->xat == NULL && ms->rendercheck) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
@@ -999,20 +1124,38 @@ drv_screen_init(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	}
     }
 
+    if (vmwgfx_is_hosted(ms->hdriver) && !ms->xat) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "Can't run hosted without XA. Giving up.\n");
+	return FALSE;
+    }
+
     if (!vmwgfx_saa_init(pScreen, ms->fd, ms->xat, &xorg_flush,
 			 ms->direct_presents,
 			 ms->only_hw_presents,
-			 ms->rendercheck)) {
+			 ms->rendercheck,
+			 ms->has_screen_targets)) {
 	FatalError("Failed to initialize SAA.\n");
     }
 
     ms->dri2_available = FALSE;
+#ifdef DRI3
+    ms->dri3_available = FALSE;
+#endif
     if (ms->enable_dri) {
 	if (ms->xat) {
 	    ms->dri2_available = xorg_dri2_init(pScreen);
 	    if (!ms->dri2_available)
 		xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-			   "Failed to initialize direct rendering.\n");
+			   "Failed to initialize direct rendering DRI2.\n");
+#ifdef DRI3
+	    if (ms->xa_dri3) {
+	        ms->dri3_available = vmwgfx_dri3_init(pScreen);
+		if (!ms->dri3_available)
+		    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+			       "Failed to initialize direct rendering DRI3.\n");
+	    }
+#endif /* DRI3 */
 	} else {
 	    xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
 		       "Skipped initialization of direct rendering due "
@@ -1028,20 +1171,36 @@ drv_screen_init(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 	       "Rendercheck mode is %s.\n",
 	       (ms->rendercheck) ? "enabled" : "disabled");
 
-    xf86DrvMsg(pScrn->scrnIndex, ms->from_dri, "Direct rendering (3D) is %s.\n",
+    xf86DrvMsg(pScrn->scrnIndex, ms->from_dri,
+	       "Direct rendering (DRI2 3D) is %s.\n",
 	       (ms->dri2_available) ? "enabled" : "disabled");
+#ifdef DRI3
+    xf86DrvMsg(pScrn->scrnIndex, ms->from_dri,
+	       "Direct rendering (DRI3 3D) is %s.\n",
+	       (ms->dri3_available) ? "enabled" : "disabled");
+#endif
     if (ms->xat != NULL) {
 	xf86DrvMsg(pScrn->scrnIndex, ms->from_dp, "Direct presents are %s.\n",
 		   (ms->direct_presents) ? "enabled" : "disabled");
-	xf86DrvMsg(pScrn->scrnIndex, ms->from_hwp, "Hardware only presents "
-		   "are %s.\n",
-		   (ms->only_hw_presents) ? "enabled" : "disabled");
+	if (ms->only_hw_presents)
+	    xf86DrvMsg(pScrn->scrnIndex, ms->from_hwp, "Hardware only presents "
+		       "are enabled.\n");
+	else
+	    xf86DrvMsg(pScrn->scrnIndex, ms->from_hwp, "Hardware only presents "
+		       "are %s.\n",
+		       (ms->has_screen_targets) ? "automatic per scanout" :
+		       "disabled");
     }
 
-    miInitializeBackingStore(pScreen);
     xf86SetBackingStore(pScreen);
     xf86SetSilkenMouse(pScreen);
     miDCInitialize(pScreen, xf86GetPointerScreenFuncs());
+
+    if (!vmwgfx_hosted_screen_init(ms->hdriver, ms->hosted, pScreen)) {
+	xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+		   "Failed hosted Screen init. Giving up.\n");
+	return FALSE;
+    }
 
     /* Need to extend HWcursor support to handle mask interleave */
     if (!ms->SWCursor) {
@@ -1088,12 +1247,20 @@ drv_screen_init(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 }
 
 static void
-drv_adjust_frame(int scrnIndex, int x, int y, int flags)
+drv_adjust_frame(ADJUST_FRAME_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-    xf86CrtcConfigPtr config = XF86_CRTC_CONFIG_PTR(pScrn);
-    xf86OutputPtr output = config->output[config->compat_output];
-    xf86CrtcPtr crtc = output->crtc;
+    SCRN_INFO_PTR(arg);
+    modesettingPtr ms = modesettingPTR(pScrn);
+    xf86CrtcConfigPtr config;
+    xf86OutputPtr output;
+    xf86CrtcPtr crtc;
+
+    if (vmwgfx_is_hosted(ms->hdriver))
+	return;
+
+    config = XF86_CRTC_CONFIG_PTR(pScrn);
+    output = config->output[config->compat_output];
+    crtc = output->crtc;
 
     if (crtc && crtc->enabled) {
       //	crtc->funcs->set_mode_major(crtc, pScrn->currentMode,
@@ -1104,24 +1271,32 @@ drv_adjust_frame(int scrnIndex, int x, int y, int flags)
 }
 
 static void
-drv_free_screen(int scrnIndex, int flags)
+drv_free_screen(FREE_SCREEN_ARGS_DECL)
 {
-    drv_free_rec(xf86Screens[scrnIndex]);
+    SCRN_INFO_PTR(arg);
+    modesettingPtr ms = modesettingPTR(pScrn);
+
+    vmwgfx_hosted_destroy(ms->hdriver, ms->hosted);
+    drv_free_rec(pScrn);
 }
 
 static void
-drv_leave_vt(int scrnIndex, int flags)
+drv_leave_vt(VT_FUNC_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    SCRN_INFO_PTR(arg);
     modesettingPtr ms = modesettingPTR(pScrn);
 
-    vmwgfx_cursor_bypass(ms->fd, 0, 0);
-    vmwgfx_disable_scanout(pScrn);
+    if (!vmwgfx_is_hosted(ms->hdriver)) {
+	vmwgfx_cursor_bypass(ms->fd, 0, 0);
+	vmwgfx_disable_scanout(pScrn);
+    }
 
-    if (drmDropMaster(ms->fd))
+    vmwgfx_saa_drop_master(pScrn->pScreen);
+
+    if (!vmwgfx_is_hosted(ms->hdriver) && !vmwgfx_use_server_fd(ms) &&
+            drmDropMaster(ms->fd))
 	xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
 		   "drmDropMaster failed: %s\n", strerror(errno));
-
     ms->isMaster = FALSE;
     pScrn->vtSema = FALSE;
 }
@@ -1130,32 +1305,36 @@ drv_leave_vt(int scrnIndex, int flags)
  * This gets called when gaining control of the VT, and from ScreenInit().
  */
 static Bool
-drv_enter_vt(int scrnIndex, int flags)
+drv_enter_vt(VT_FUNC_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    SCRN_INFO_PTR(arg);
+    modesettingPtr ms = modesettingPTR(pScrn);
 
     if (!drv_set_master(pScrn))
 	return FALSE;
 
-    if (!xf86SetDesiredModes(pScrn))
+    vmwgfx_saa_set_master(pScrn->pScreen);
+
+    if (!vmwgfx_is_hosted(ms->hdriver) && !xf86SetDesiredModes(pScrn))
 	return FALSE;
 
     return TRUE;
 }
 
 static Bool
-drv_switch_mode(int scrnIndex, DisplayModePtr mode, int flags)
+drv_switch_mode(SWITCH_MODE_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    SCRN_INFO_PTR(arg);
 
     return xf86SetSingleMode(pScrn, mode, RR_Rotate_0);
 }
 
 static Bool
-drv_close_screen(int scrnIndex, ScreenPtr pScreen)
+drv_close_screen(CLOSE_SCREEN_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     modesettingPtr ms = modesettingPTR(pScrn);
+    Bool ret;
 
     if (ms->cursor) {
        FreeCursor(ms->cursor, None);
@@ -1166,7 +1345,10 @@ drv_close_screen(int scrnIndex, ScreenPtr pScreen)
 	xorg_dri2_close(pScreen);
 
     if (pScrn->vtSema)
-	pScrn->LeaveVT(scrnIndex, 0);
+        pScrn->LeaveVT(VT_FUNC_ARGS);
+
+    vmwgfx_uevent_fini(pScrn, ms);
+    vmw_xv_close(pScreen);
 
     pScrn->vtSema = FALSE;
 
@@ -1174,17 +1356,20 @@ drv_close_screen(int scrnIndex, ScreenPtr pScreen)
     vmwgfx_unwrap(ms, pScrn, LeaveVT);
     vmwgfx_unwrap(ms, pScrn, AdjustFrame);
     vmwgfx_unwrap(ms, pScreen, CloseScreen);
+    vmwgfx_hosted_screen_close(ms->hdriver, ms->hosted);
     vmwgfx_unwrap(ms, pScreen, BlockHandler);
     vmwgfx_unwrap(ms, pScreen, CreateScreenResources);
 
+    ret = (*pScreen->CloseScreen) (CLOSE_SCREEN_ARGS);
+    
     if (ms->xat)
 	xa_tracker_destroy(ms->xat);
 
-    return (*pScreen->CloseScreen) (scrnIndex, pScreen);
+    return ret;
 }
 
 static ModeStatus
-drv_valid_mode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
+drv_valid_mode(SCRN_ARG_TYPE arg, DisplayModePtr mode, Bool verbose, int flags)
 {
     return MODE_OK;
 }

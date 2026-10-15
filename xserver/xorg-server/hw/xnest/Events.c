@@ -64,15 +64,15 @@ SetTimeSinceLastInputEvent(void)
 }
 
 static Bool
-xnestExposurePredicate(Display * display, XEvent * event, char *args)
+xnestExposurePredicate(Display * dpy, XEvent * event, char *args)
 {
     return event->type == Expose || event->type == ProcessedExpose;
 }
 
 static Bool
-xnestNotExposurePredicate(Display * display, XEvent * event, char *args)
+xnestNotExposurePredicate(Display * dpy, XEvent * event, char *args)
 {
-    return !xnestExposurePredicate(display, event, args);
+    return !xnestExposurePredicate(dpy, event, args);
 }
 
 void
@@ -94,7 +94,7 @@ xnestCollectExposures(void)
 
             RegionInit(&Rgn, &Box, 1);
 
-            miSendExposures(pWin, &Rgn, Box.x2, Box.y2);
+            miSendExposures(pWin, &Rgn, Box.x1, Box.y1);
         }
     }
 }
@@ -103,7 +103,7 @@ void
 xnestQueueKeyEvent(int type, unsigned int keycode)
 {
     lastEventTime = GetTimeInMillis();
-    QueueKeyboardEvents(xnestKeyboardDevice, type, keycode, NULL);
+    QueueKeyboardEvents(xnestKeyboardDevice, type, keycode);
 }
 
 void

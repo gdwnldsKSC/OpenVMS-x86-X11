@@ -145,7 +145,8 @@ following changes:
         purpose is to identify particular cards in a multi-headed
         configuration.  The format of the argument is intentionally
         vague, and may be architecture dependent.  For a PCI bus, it
-        is something like "bus:slot:func".
+        is something like "bus@domain:slot:func". The "@domain" part
+        can be left out for domain 0.
 	      </para></listitem></varlistentry>
 	</variablelist>
       </para>
@@ -330,8 +331,8 @@ that.  This is a significant difference compared with the old design.
 
     <para>
 The entry points for drawing operations are already taken care of by
-the framebuffer code (including, XAA).  Extensions and enhancements to
-framebuffer code are outside the scope of this document.
+the framebuffer code.  Extensions and enhancements to framebuffer code
+are outside the scope of this document.
     </para>
 
     <para>
@@ -510,7 +511,7 @@ mechanism for this.
 
 	<para>
     If a device is capable of disabling this decoding the resource is
-    called sharable.  For PCI devices a generic method is provided to
+    called shareable.  For PCI devices a generic method is provided to
     control resource decoding.  Other devices will have to provide a
     device specific function to control decoding.
 	</para>
@@ -662,11 +663,6 @@ Here is what <function>InitOutput()</function> does:
 
       <para>
     This is done at the start of the first server generation only.
-      </para>
-
-      <para>
-    The core server contains a list of mandatory modules.  These are loaded
-    first.  Currently the only module on this list is the bitmap font module.
       </para>
 
       <para>
@@ -824,13 +820,11 @@ Here is what <function>InitOutput()</function> does:
       like probing for other details such as the amount of memory
       installed, etc.  It is recommended that the
       <function>xf86MatchPciInstances()</function> helper function be used
-      for identifying matching PCI devices, and similarly the
-      <function>xf86MatchIsaInstances()</function> for ISA (non-PCI) devices
+      for identifying matching PCI devices
       (see the <link linkend="rac">RAC</link> section).  These helpers also
       checks and claims the appropriate entity.  When not using the
       helper, that should be done with <function>xf86CheckPciSlot()</function>
-      and <function>xf86ClaimPciSlot()</function> for PCI devices and
-      <function>xf86ClaimIsaSlot()</function> for ISA devices (see the
+      and <function>xf86ClaimPciSlot()</function> for PCI devices (see the
       <link linkend="rac">RAC</link> section).
 	</para>
 
@@ -839,14 +833,8 @@ Here is what <function>InitOutput()</function> does:
       stage.  If a resource conflict is found between exclusive resources
       the driver will fail immediately.  This is usually best done with
       the <function>xf86ConfigPciEntity()</function> helper function
-      for PCI and <function>xf86ConfigIsaEntity()</function> for ISA
-      (see the <link linkend="rac">RAC</link> section).  It is possible to
-      register some entity specific functions with those helpers.  When
-      not using the helpers, the <function>xf86AddEntityToScreen()</function>
-      <function>xf86ClaimFixedResources()</function> and
-      <function>xf86SetEntityFuncs()</function> should be used instead (see
-      the <link linkend="rac">RAC</link> section).
-	</para>
+      for PCI.
+        </para>
 
 	<para>
       If a chipset is specified in an active device section which the
@@ -865,8 +853,7 @@ Here is what <function>InitOutput()</function> does:
       Allocate a <structname>ScrnInfoRec</structname> for each active instance of the
       hardware found, and fill in the basic information, including the
       other driver entry points.   This is best done with the
-      <function>xf86ConfigIsaEntity()</function> helper function for ISA
-      instances or <function>xf86ConfigPciEntity()</function> for PCI instances.
+      <function>xf86ConfigPciEntity()</function> for PCI instances.
       These functions allocate a <structname>ScrnInfoRec</structname> for active
       entities. Optionally <function>xf86AllocateScreen()</function>
       function may also be used to allocate the <structname>ScrnInfoRec</structname>.
@@ -1078,7 +1065,7 @@ Here is what <function>InitOutput()</function> does:
       against the expected number (most drivers expect only one).  The
       entity information for each of them should be retrieved (with
       <function>xf86GetEntityInfo()</function>) and checked for the correct
-      bus type and that none of the sharable resources registered during
+      bus type and that none of the shareable resources registered during
       the Probe phase was rejected.
 	    </para>
 
@@ -1118,16 +1105,6 @@ Here is what <function>InitOutput()</function> does:
       Helper functions for some of these things are provided at the
       XFree86 common level, and the driver can choose to make use of
       them.
-	    </para>
-
-	    <para>
-      All additional resources that the screen needs must be registered
-      here.  This should be done with
-      <function>xf86RegisterResources()</function>.  If some of the fixed
-      resources registered in the Probe phase are not needed or not
-      decoded by the hardware when in the OPERATING server state, their
-      status should be updated with
-      <function>xf86SetOperatingState()</function>.
 	    </para>
 
 	    <para>
@@ -1195,8 +1172,6 @@ Here is what <function>InitOutput()</function> does:
           rgbBits               (8bpp only)
           gamma
           defaultVisual
-          maxHValue
-          maxVValue
           virtualX
           virtualY
           displayWidth
@@ -1215,9 +1190,7 @@ Here is what <function>InitOutput()</function> does:
           numClocks             (if not programmable)
           clock[]               (if not programmable)
           videoRam
-          biosBase
           memBase
-          memClk
           driverPrivate
           chipID
           chipRev
@@ -1311,7 +1284,7 @@ Here is what <function>InitOutput()</function> does:
 
       <blockquote><para>
 	  <programlisting>
-    Bool ChipScreenInit(int index, ScreenPtr pScreen,
+    Bool ChipScreenInit(ScreenPtr pScreen,
                         int argc, char **argv);
 	  </programlisting>
 	  <blockquote><para>
@@ -1400,7 +1373,7 @@ Here is what <function>InitOutput()</function> does:
 
 	<orderedlist>
 	  <listitem><para>
-	The sharable resources registered by each entity are compared.
+	The shareable resources registered by each entity are compared.
 	If a resource is registered by more than one entity the entity
 	will be marked to indicate that it needs to share this resources
 	type (IO or MEM).
@@ -1447,7 +1420,7 @@ Here is what <function>InitOutput()</function> does:
 
       <blockquote><para>
 	  <programlisting>
-    Bool ChipSwitchMode(int index, DisplayModePtr mode, int flags);
+    Bool ChipSwitchMode(int index, DisplayModePtr mode);
 	  </programlisting>
 	  <blockquote><para>
       Initialises the new mode for the screen identified by
@@ -1469,7 +1442,7 @@ Here is what <function>InitOutput()</function> does:
 
       <blockquote><para>
 	  <programlisting>
-    void ChipAdjustFrame(int index, int x, int y, int flags);
+    void ChipAdjustFrame(int index, int x, int y);
 	  </programlisting>
 	  <blockquote><para>
       Changes the viewport for the screen identified by
@@ -1577,7 +1550,7 @@ Here is what <function>InitOutput()</function> does:
 
       <blockquote><para>
 	  <programlisting>
-    Bool ChipEnterVT(int index, int flags);
+    Bool ChipEnterVT(ScrnInfoPtr pScrn);
 	  </programlisting>
 	  <blockquote><para>
       This function should initialise the current video mode and
@@ -1594,7 +1567,7 @@ Here is what <function>InitOutput()</function> does:
 
       <blockquote><para>
 	  <programlisting>
-    void ChipLeaveVT(int index, int flags);
+    void ChipLeaveVT(ScrnInfoPtr pScrn);
 	  </programlisting>
 	  <blockquote><para>
       This function should restore the saved video state.  If
@@ -1696,7 +1669,7 @@ but their presence is optional.
 
       <blockquote><para>
 	  <programlisting>
-    ModeStatus ChipValidMode(int index, DisplayModePtr mode,
+    ModeStatus ChipValidMode(ScrnInfoPtr pScrn, DisplayModePtr mode,
                              Bool verbose, int flags);
 	  </programlisting>
 	  <blockquote><para>
@@ -1744,7 +1717,7 @@ MODECHECK_FINAL are intended for checks that may involve more than one mode.
 
       <blockquote><para>
 	  <programlisting>
-    void ChipFreeScreen(int scrnindex, int flags);
+    void ChipFreeScreen(ScrnInfoPtr pScrn);
 	  </programlisting>
 	  <blockquote><para>
       Free any driver-allocated data that may have been allocated up to
@@ -1860,7 +1833,6 @@ Some of them are:
     xf86Depth                 -depth from the command line
     xf86Weight                -weight from the command line
     xf86Gamma                 -{r,g,b,}gamma from the command line
-    xf86FlipPixels            -flippixels from the command line
     xf86ProbeOnly             -probeonly from the command line
     defaultColorVisualClass   -cc from the command line
 	</literallayout>
@@ -1921,26 +1893,6 @@ functions:
 
 	</para></blockquote>
 
-      <blockquote><para>
-	  <programlisting>
-    Bool xf86GetFlipPixels();
-	  </programlisting>
-	  <blockquote><para>
-      Returns <constant>TRUE</constant> if <option>-flippixels</option> is
-      present on the command line, and <constant>FALSE</constant> otherwise.
-	    </para></blockquote>
-
-	</para></blockquote>
-
-      <blockquote><para>
-	  <programlisting>
-    const char *xf86GetServerName();
-	  </programlisting>
-	  <blockquote><para>
-      Returns the name of the X server from the command line.
-	    </para></blockquote>
-
-	</para></blockquote>
     </sect2>
 
     <sect2>
@@ -2008,10 +1960,9 @@ also include the video card's saved state.
       </para>
 
       <para>
-Per-screen data for other modules that the driver uses (for example,
-the XAA module) that is reset for each server generation is hooked into
-the <structname>ScrnInfoRec</structname> through it's <structfield>privates</structfield>
-field.
+Per-screen data for other modules that the driver uses that is reset for each
+server generation is hooked into the <structname>ScrnInfoRec</structname>
+through its <structfield>privates</structfield> field.
       </para>
 
       <para>
@@ -2060,18 +2011,6 @@ functions is as follows:
 
       <blockquote><para>
 	  <programlisting>
-    Bool xf86ServerIsInitialising();
-	  </programlisting>
-	  <blockquote><para>
-      Returns <constant>TRUE</constant> if the server is at the beginning of
-      a generation and is in the process of initialising, and
-      <constant>FALSE</constant> otherwise.
-	    </para></blockquote>
-
-	</para></blockquote>
-
-      <blockquote><para>
-	  <programlisting>
     Bool xf86ServerIsOnlyProbing();
 	  </programlisting>
 	  <blockquote><para>
@@ -2081,16 +2020,6 @@ functions is as follows:
 
 	</para></blockquote>
 
-      <blockquote><para>
-	  <programlisting>
-    Bool xf86CaughtSignal();
-	  </programlisting>
-	  <blockquote><para>
-      Returns <constant>TRUE</constant> if the server has caught a signal,
-      and <constant>FALSE</constant> otherwise.
-	    </para></blockquote>
-
-	</para></blockquote>
     </sect2>
 
     <sect2>
@@ -2264,7 +2193,7 @@ giving up the VT.
 
       <para>
 In <function>PreInit()</function> phase each driver should check if any
-sharable resources it has registered during <function>Probe()</function> has
+shareable resources it has registered during <function>Probe()</function> has
 been denied and take appropriate action which could simply be to fail.
 If it needs to access resources it has disabled during
 <function>EntitySetup()</function> it can do so provided it has registered
@@ -2297,7 +2226,7 @@ rules:
 
 	<orderedlist>
 	  <listitem><para>
-   The sharable resources registered by each entity are compared.  If
+   The shareable resources registered by each entity are compared.  If
    a resource is registered by more than one entity the entity will be
    marked to need to share this resources type (<constant>IO</constant> or
    <constant>MEM</constant>).
@@ -2534,53 +2463,6 @@ xorg.conf file to the devices:
 
 	    </blockquote></para></blockquote>
 
-	<blockquote><para>
-	    <programlisting>
-    int xf86MatchIsaInstances(const char *driverName,
-                              SymTabPtr chipsets, IsaChipsets *ISAchipsets,
-                              DriverPtr drvp, FindIsaDevProc FindIsaDevice,
-                              GDevPtr *devList, int numDevs,
-                              int **foundEntities);
-	    </programlisting>
-	    <blockquote><para>
-      This function finds matches between ISA cards that a driver supports
-      and config file device sections.  It is intended for use in the
-      <function>ChipProbe()</function> function of drivers for ISA cards.
-      <parameter>devList</parameter> and <parameter>numDevs</parameter> are
-      typically those found from calling <function>xf86MatchDevice()</function>,
-      and represent the active config file device sections relevant to
-      the driver.  <parameter>ISAchipsets</parameter> is a table that provides
-      a mapping between the driver's internal chipset tokens and the
-      resource classes.  <parameter>FindIsaDevice</parameter> is a
-      driver-provided function that probes the hardware and returns the
-      chipset token corresponding to what was detected, and
-      <constant>-1</constant> if nothing was detected.
-	      </para>
-
-	      <para>
-      If the config file device section contains a chipset entry, then
-      it is checked against the <parameter>chipsets</parameter> list.  When
-      no chipset entry is present, the <parameter>FindIsaDevice</parameter>
-      function is called instead.
-	      </para>
-
-	      <para>
-      Entity index numbers for confirmed matches are returned as an
-      array via <parameter>foundEntities</parameter>.  The chipset token and
-      device section for each match are found in the
-      <structname>EntityInfoRec</structname> referenced by the indices.
-	      </para>
-
-	      <para>
-      The function return value is the number of confirmed matches.  A
-      return value of <constant>-1</constant> indicates an internal error.
-      The returned <parameter>foundEntities</parameter> array should be freed
-      by the driver with <function>xfree()</function> when it is no longer
-      needed in cases where the return value is greater than zero.
-	      </para>
-
-	    </blockquote></para></blockquote>
-
 	<para>
 These two helper functions make use of several core functions that are
 available at the driver level:
@@ -2615,18 +2497,6 @@ available at the driver level:
       <parameter>device</parameter>, <parameter>func</parameter> values.  If they
       match <constant>TRUE</constant> is returned, and <constant>FALSE</constant>
       if they don't.
-	      </para>
-
-	    </blockquote></para></blockquote>
-
-	<blockquote><para>
-	    <programlisting>
-    Bool xf86ParseIsaBusString(const char *busID);
-	    </programlisting>
-	    <blockquote><para>
-      Compares a <parameter>BusID</parameter> string with the ISA bus ID string
-      ("ISA" or "ISA:").  If they match <constant>TRUE</constant> is returned,
-      and <constant>FALSE</constant> if they don't.
 	      </para>
 
 	    </blockquote></para></blockquote>
@@ -2670,30 +2540,6 @@ available at the driver level:
 
 	    </blockquote></para></blockquote>
 
-	<blockquote><para>
-	    <programlisting>
-    int xf86ClaimIsaSlot(DriverPtr drvp, int chipset,
-                         GDevPtr dev, Bool active);
-	    </programlisting>
-	    <blockquote><para>
-      This allocates an entity record entity and initialise the data
-      structures.  The return value is the index of the newly allocated
-      entity record.
-	      </para>
-
-	    </blockquote></para></blockquote>
-
-	<blockquote><para>
-	    <programlisting>
-    Bool xf86IsPrimaryIsa(void);
-	    </programlisting>
-	    <blockquote><para>
-      This function returns <constant>TRUE</constant> if the primary card is
-      an ISA (non-PCI) device, and <constant>FALSE</constant> otherwise.
-	      </para>
-
-	    </blockquote></para></blockquote>
-
 	<para>
 Two helper functions are provided to aid configuring entities:
 	</para>
@@ -2703,41 +2549,17 @@ Two helper functions are provided to aid configuring entities:
     ScrnInfoPtr xf86ConfigPciEntity(ScrnInfoPtr pScrn,
                                     int scrnFlag, int entityIndex,
                                     PciChipsets *p_chip,
-                                    resList res, EntityProc init,
+                                    void *res, EntityProc init,
                                     EntityProc enter, EntityProc leave,
                                     pointer private);
 
-    ScrnInfoPtr xf86ConfigIsaEntity(ScrnInfoPtr pScrn,
-                                    int scrnFlag, int entityIndex,
-                                    IsaChipsets *i_chip,
-                                    resList res, EntityProc init,
-                                    EntityProc enter, EntityProc leave,
-                                    pointer private);
 	    </programlisting>
 	    <blockquote><para>
-      These functions are used to register the non-relocatable resources
-      for an entity, and the optional entity-specific <parameter>Init</parameter>, <parameter>Enter</parameter> and
-      <parameter>Leave</parameter> functions.  Usually the list of fixed resources is obtained
-      from the Isa/PciChipsets lists.  However an additional list of
-      resources may be passed.  Generally this is not required.
+      This functions is used to register the entity. The <parameter>res</parameter>, <parameter>init</parameter>, <parameter>enter</parameter>, and <parameter>leave</parameter> arguments are unused, and should be <constant>NULL</constant>.
       For active entities a <structname>ScrnInfoRec</structname> is allocated
       if the <parameter>pScrn</parameter> argument is <constant>NULL</constant>.
 The
-      return value is <constant>TRUE</constant> when successful.  The init, enter, leave
-      functions are defined as follows:
-
-		<blockquote><para>
-		    <programlisting>
-        typedef void (*EntityProc)(int entityIndex,
-                                   pointer private);
-		    </programlisting>
-		  </para></blockquote>
-
-      They are passed the entity index and a pointer to a private scratch
-      area.  This can be set up during <function>Probe()</function> and
-      its address can be passed to
-      <function>xf86ConfigIsaEntity()</function> and
-      <function>xf86ConfigPciEntity()</function> as the last argument.
+      return value is <constant>TRUE</constant> when successful.
 	      </para>
 
 	    </blockquote></para></blockquote>
@@ -2745,33 +2567,6 @@ The
 	<para>
 These two helper functions make use of several core functions that are
 available at the driver level:
-
-	  <blockquote><para>
-	      <programlisting>
-    void xf86ClaimFixedResources(resList list, int entityIndex);
-	      </programlisting>
-	      <blockquote><para>
-      This function registers the non-relocatable resources which cannot
-      be disabled and which therefore would cause the server to fail
-      immediately if they were found to conflict.  It also records
-      non-relocatable but sharable resources for processing after the
-      <function>Probe()</function> phase.
-		</para>
-
-	      </blockquote></para></blockquote>
-
-	  <blockquote><para>
-	      <programlisting>
-    Bool xf86SetEntityFuncs(int entityIndex, EntityProc init,
-                            EntityProc enter, EntityProc leave, pointer);
-	      </programlisting>
-	      <blockquote><para>
-      This function registers with an entity the <parameter>init</parameter>,
-      <parameter>enter</parameter>, <parameter>leave</parameter> functions along
-      with the pointer to their private area.
-		</para>
-
-	    </blockquote></para></blockquote>
 
 	  <blockquote><para>
 	      <programlisting>
@@ -2829,12 +2624,12 @@ Several functions are provided to simplify resource registration:
 
 	  <blockquote><para>
 	      <programlisting>
-    Bool xf86IsScreenPrimary(int scrnIndex);
+    Bool xf86IsScreenPrimary(ScrnInfoPtr pScrn);
 	      </programlisting>
 	      <blockquote><para>
       This function returns <constant>TRUE</constant> if the primary entity
       is registered with the screen referenced by
-      <parameter>scrnIndex</parameter>.
+      <parameter>pScrn</parameter>.
 		</para>
 
 	      </blockquote></para></blockquote>
@@ -2851,52 +2646,6 @@ Several functions are provided to simplify resource registration:
 
 	      </blockquote></para></blockquote>
 	</para>
-
-	<para>
-The primary function for registration of resources is:
-	  <blockquote><para>
-	      <programlisting>
-    resPtr xf86RegisterResources(int entityIndex, resList list,
-                                 int access);
-	      </programlisting>
-	      <blockquote><para>
-      This function tries to register the resources in
-      <parameter>list</parameter>.  If list is <constant>NULL</constant> it tries
-      to determine the resources automatically.  This only works for
-      entities that provide a generic way to read out the resource ranges
-      they decode.  So far this is only the case for PCI devices.  By
-      default the PCI resources are registered as shared
-      (<constant>ResShared</constant>) if the driver wants to set a different
-      access type it can do so by specifying the access flags in the
-      third argument.  A value of <constant>0</constant> means to use the
-      default settings.  If for any reason the resource broker is not
-      able to register some of the requested resources the function will
-      return a pointer to a list of the failed ones.  In this case the
-      driver may be able to move the resource to different locations.
-      In case of PCI bus entities this is done by passing the list of
-      failed resources to <function>xf86ReallocatePciResources()</function>.
-      When the registration succeeds, the return value is
-      <constant>NULL</constant>.
-		</para>
-
-	      </blockquote></para></blockquote>
-	  </para>
-
-	<blockquote><para>
-	    <programlisting>
-    resPtr xf86ReallocatePciResources(int entityIndex, resPtr pRes);
-	    </programlisting>
-	    <blockquote><para>
-      This function takes a list of PCI resources that need to be
-      reallocated and returns <constant>NULL</constant> when all relocations are
-      successful.
-      <function>xf86RegisterResources()</function> should be called again to
-      register the relocated resources with the broker.
-      If the reallocation fails, a list of the resources that could not be
-      relocated is returned.
-	      </para>
-
-	    </blockquote></para></blockquote>
 
 <para>
 Two functions are provided to obtain a resource range of a given type:
@@ -2940,34 +2689,6 @@ Two functions are provided to obtain a resource range of a given type:
 	</para>
 
 	<para>
-Some PCI devices are broken in the sense that they return invalid size
-information for a certain resource.  In this case the driver can supply
-the correct size and make sure that the resource range allocated for
-the card is large enough to hold the address range decoded by the card.
-The function <function>xf86FixPciResource()</function> can be used to do this:
-	  <blockquote><para>
-	      <programlisting>
-    Bool xf86FixPciResource(int entityIndex, unsigned int prt,
-                            CARD32 alignment, long type);
-	      </programlisting>
-	      <blockquote><para>
-      This function fixes a PCI resource allocation.  The
-      <parameter>prt</parameter> parameter contains the number of the PCI base
-      register that needs to be fixed (<constant>0-5</constant>, and
-      <constant>6</constant> for the BIOS base register).  The size is
-      specified by the alignment.  Since PCI resources need to span an
-      integral range of size <literal remap="tt">2&circ;n</literal>, the alignm      ent also
-      specifies the number of addresses that will be decoded.  If the
-      driver specifies a type mask it can override the default type for
-      PCI resources which is <constant>ResShared</constant>.  The resource
-      broker needs to know that to find a matching resource range.  This
-      function should be called before calling
-      <function>xf86RegisterResources()</function>.  The return value is
-      <constant>TRUE</constant> when the function succeeds.
-		</para>
-
-	      </blockquote></para></blockquote>
-
 	  <blockquote><para>
 	      <programlisting>
     Bool xf86CheckPciMemBase(pciVideoPtr pPci, memType base);
@@ -2984,93 +2705,6 @@ The function <function>xf86FixPciResource()</function> can be used to do this:
 	</para>
 
 	<para>
-The driver may replace the generic access control functions for an entity.
-This is done with the <function>xf86SetAccessFuncs()</function>:
-	  <blockquote><para>
-	      <programlisting>
-    void xf86SetAccessFuncs(EntityInfoPtr pEnt,
-                            xf86SetAccessFuncPtr funcs,
-                            xf86SetAccessFuncPtr oldFuncs);
-	      </programlisting>
-     with:
-	      <programlisting>
-      typedef struct {
-          xf86AccessPtr mem;
-          xf86AccessPtr io;
-          xf86AccessPtr io_mem;
-      } xf86SetAccessFuncRec, *xf86SetAccessFuncPtr;
-	      </programlisting>
-	      <blockquote><para>
-      The driver can pass three functions: one for I/O access, one for
-      memory access and one for combined memory and I/O access.  If the
-      memory access and combined access functions are identical the
-      common level assumes that the memory access cannot be controlled
-      independently of I/O access, if the I/O access function and the
-      combined access functions are the same it is assumed that I/O can
-      not be controlled independently.  If memory and I/O have to be
-      controlled together all three values should be the same.  If a
-      non <constant>NULL</constant> value is passed as third argument it is
-      interpreted as an address where to store the old access record.
-      If the third argument is <constant>NULL</constant> it will be assumed
-      that the generic access should be enabled before replacing the
-      access functions.  Otherwise it will be disabled.  The driver may
-      enable them itself using the returned values.  It should do this
-      from its replacement access functions as the generic access may
-      be disabled by the common level on certain occasions.  If replacement
-      functions are specified they must control all resources of the
-      specific type registered for the entity.
-		</para>
-
-	      </blockquote></para></blockquote>
-	</para>
-
-	<para>
-To find out if a specific resource range conflicts with another
-resource the <function>xf86ChkConflict()</function> function may be used:
-	  <blockquote><para>
-	      <programlisting>
-    memType xf86ChkConflict(resRange *rgp, int entityIndex);
-	      </programlisting>
-	      <blockquote><para>
-      This function checks if the resource range <parameter>rgp</parameter> of
-      for the specified entity conflicts with with another resource.
-      If a conflict is found, the address of the start of the conflict
-      is returned.  The return value is zero when there is no conflict.
-		</para>
-
-	      </blockquote></para></blockquote>
-	</para>
-
-	<para>
-The OPERATING state properties of previously registered fixed resources
-can be set with the <function>xf86SetOperatingState()</function> function:
-	  <blockquote><para>
-	      <programlisting>
-    resPtr xf86SetOperatingState(resList list, int entityIndex,
-                                 int mask);
-	      </programlisting>
-	      <blockquote><para>
-      This function is used to set the status of a resource during
-      OPERATING state.  <parameter>list</parameter> holds a list to which
-      <parameter>mask</parameter> is to be applied.  The parameter
-      <parameter>mask</parameter> may have the value <constant>ResUnusedOpr</constant>
-      and <constant>ResDisableOpr</constant>.  The first one should be used
-      if a resource isn't used by the driver during OPERATING state
-      although it is decoded by the device, while the latter one indicates
-      that the resource is not decoded during OPERATING state.  Note
-      that the resource ranges have to match those specified during
-      registration.  If a range has been specified starting at
-      <literal remap="tt">A</literal> and ending at <literal remap="tt">B</literal> and suppose
-      <literal remap="tt">C</literal> us a value satisfying
-      <literal remap="tt">A&nbsp;&lt;&nbsp;C&nbsp;&lt;&nbsp;B</literal> one may not
-      specify the resource range <literal remap="tt">(A,B)</literal> by splitting it
-      into two ranges <literal remap="tt">(A,C)</literal> and <literal remap="tt">(C,B)</literal>.
-		</para>
-
-	      </blockquote></para></blockquote>
-	</para>
-
-	<para>
 The following two functions are provided for special cases:
 	  <blockquote><para>
 	      <programlisting>
@@ -3081,17 +2715,6 @@ The following two functions are provided for special cases:
       only makes sense if a screen has more than one entity assigned or
       the screen is to be deleted.  No test is made if the screen has
       any entities left.
-		</para>
-
-	      </blockquote></para></blockquote>
-
-	  <blockquote><para>
-	      <programlisting>
-    void xf86DeallocateResourcesForEntity(int entityIndex, long type);
-	      </programlisting>
-	      <blockquote><para>
-      This function deallocates all resources of a given type registered
-      for a certain entity from the resource broker list.
 		</para>
 
 	      </blockquote></para></blockquote>
@@ -3567,13 +3190,6 @@ The following include files are typically required by video drivers:
 	  </para>
 
 	  <para>
-  All drivers implementing backing store need this:
-	    <literallayout><filename>
-    "mibstore.h"
-	      </filename></literallayout>
-	  </para>
-
-	  <para>
   All drivers using the mi colourmap code need this:
 	    <literallayout><filename>
     "micmap.h"
@@ -3616,14 +3232,6 @@ The following include files are typically required by video drivers:
     "cfb16.h"
     "cfb24.h"
     "cfb32.h"
-	      </filename></literallayout>
-	  </para>
-
-	  <para>
-  If a driver uses XAA, it needs these:
-	    <literallayout><filename>
-    "xaa.h"
-    "xaalocal.h"
 	      </filename></literallayout>
 	  </para>
 
@@ -3845,31 +3453,6 @@ manager is allowed to manage.  This is typically a box with a width of
 can be fit within the total video memory, however, the driver can reserve
 areas at the extremities by passing a smaller area to the manager.
     </para>
-
-    <para>
-<function>xf86InitFBManager()</function> must be called before XAA is
-initialized since XAA uses the manager for it's pixmap cache.
-    </para>
-
-    <para>
-An alternative function is provided to allow the driver to initialize
-the framebuffer manager with a Region rather than a box.
-
-    <programlisting>
-    Bool xf86InitFBManagerRegion(ScreenPtr pScreen,
-                                 RegionPtr FullRegion);
-    </programlisting>
-
-<function>xf86InitFBManagerRegion()</function>, unlike
-<function>xf86InitFBManager()</function>, does not remove the area used for
-the visible screen so that area should not be included in the region
-passed to the function.  <function>xf86InitFBManagerRegion()</function> is
-useful when non-contiguous areas are available to be managed, and is
-required when multiple framebuffers are stored in video memory (as in
-the case where an overlay of a different depth is stored as a second
-framebuffer in offscreen memory).
-    </para>
-
   </sect1>
 
   <sect1 id="cmap">
@@ -4589,31 +4172,6 @@ as follows:
 
 	      <variablelist>
 		<varlistentry>
-		  <term><constant>VIDEO_NO_CLIPPING</constant></term>
-		  <listitem><para>
-	   This indicates that the video adaptor does not support
-	   clipping.  The driver will never receive <quote>Put</quote> requests
-	   where less than the entire area determined by
-	   <parameter>drw_x</parameter>, <parameter>drw_y</parameter>,
-	   <parameter>drw_w</parameter> and <parameter>drw_h</parameter> is visible.
-	   This flag does not apply to <quote>Get</quote> requests.  Hardware
-	   that is incapable of clipping <quote>Gets</quote> may punt or get
-	   the extents of the clipping region passed to it.
-		    </para></listitem>
-
-		</varlistentry>
-
-		<varlistentry>
-		  <term><constant>VIDEO_INVERT_CLIPLIST</constant></term>
-		  <listitem><para>
-	   This indicates that the video driver requires the clip
-	   list to contain the regions which are obscured rather
-	   than the regions which are are visible.
-		    </para></listitem>
-
-		</varlistentry>
-
-		<varlistentry>
 		  <term><constant>VIDEO_OVERLAID_STILLS</constant></term>
 		  <listitem><para>
 	   Implementing PutStill for hardware that does video as an
@@ -4770,18 +4328,13 @@ as follows:
 	    </para>
 
 	    <para>
-	If the <constant>VIDEO_NO_CLIPPING</constant>
-	flag is set, the <literal remap="tt">clipBoxes</literal> may be ignored by
-	the driver.  <literal remap="tt">ClipBoxes</literal> is an <literal remap="tt">X-Y</literal>
+	<literal remap="tt">ClipBoxes</literal> is an <literal remap="tt">X-Y</literal>
 	banded region identical to those used throughout the server.
 	The clipBoxes represent the visible portions of the area determined
 	by <literal remap="tt">drw_x</literal>, <literal remap="tt">drw_y</literal>,
 	<literal remap="tt">drw_w</literal> and <literal remap="tt">drw_h</literal> in the Get/Put
 	function.  The boxes are in screen coordinates, are guaranteed
 	not to overlap and an empty region will never be passed.
-	If the driver has specified <constant>VIDEO_INVERT_CLIPLIST</constant>,
-	<literal remap="tt">clipBoxes</literal> will indicate the areas of the primitive
-	which are obscured rather than the areas visible.
 
 	    </para></listitem></varlistentry>
       </variablelist>
@@ -5151,7 +4704,7 @@ typedef struct {
 		  <varlistentry>
 		    <term><structfield>depth</structfield></term>
 		    <listitem><para>
-	The significant bits per pixel in RGB formats (analgous to the
+	The significant bits per pixel in RGB formats (analogous to the
 	depth of a pixmap format).
 		      </para></listitem></varlistentry>
 
@@ -5298,10 +4851,8 @@ XFree86 common layer.
 
       <blockquote><para>
 	  <programlisting>
-    pointer LoadModule(const char *module, const char *path,
-                       const char **subdirlist, const char **patternlist,
-                       pointer options, const XF86ModReqInfo * modreq,
-                       int *errmaj, int *errmin);
+    pointer LoadModule(const char *module, pointer options,
+                       const XF86ModReqInfo * modreq, int *errmaj);
 	  </programlisting>
 	  <blockquote><para>
     The <function>LoadModule()</function> function loads the module called
@@ -5314,48 +4865,6 @@ XFree86 common layer.
     This might change.  The other parameters are:
 
 	      <variablelist>
-		<varlistentry>
-		  <term><parameter>path</parameter></term>
-		  <listitem><para>
-		  An optional comma-separated list of module search paths.
-		  When <constant>NULL</constant>, the default search path is used.
-		    </para></listitem></varlistentry>
-
-
-		<varlistentry>
-		  <term><parameter>subdirlist</parameter></term>
-		  <listitem><para>
-		  An optional <constant>NULL</constant> terminated list of
-		  subdirectories to search.  When <constant>NULL</constant>,
-		  the default built-in list is used (refer to
-		  <varname>stdSubdirs</varname> in <filename>loadmod.c</filename>).
-		  The default list is also substituted for entries in
-		  <parameter>subdirlist</parameter> with the value
-		  <constant>DEFAULT_LIST</constant>.  This makes is possible
-		  to augment the default list instead of replacing it.
-		  Subdir elements must be relative, and must not contain
-		  <literal remap="tt">".."</literal>.  If any violate this requirement,
-		  the load fails.
-		    </para></listitem></varlistentry>
-
-
-		<varlistentry>
-		  <term><parameter>patternlist</parameter></term>
-		  <listitem><para>
-		  An optional <constant>NULL</constant> terminated list of
-		  POSIX regular expressions used to connect module
-		  filenames with canonical module names.  Each regex
-		  should contain exactly one subexpression that corresponds
-		  to the canonical module name.  When <constant>NULL</constant>,
-		  the default built-in list is used (refer to
-		  <varname>stdPatterns</varname> in
-		  <filename>loadmod.c</filename>).  The default list is also
-		  substituted for entries in <parameter>patternlist</parameter>
-		  with the value <constant>DEFAULT_LIST</constant>.  This
-		  makes it possible to augment the default list instead
-		  of replacing it.
-		    </para></listitem></varlistentry>
-
 
 		<varlistentry>
 		  <term><parameter>options</parameter></term>
@@ -5368,15 +4877,6 @@ XFree86 common layer.
 		  way by modules loaded directly by the XFree86 common
 		  layer.  However, it may be used for application-specific
 		  parameter passing in other situations.
-		    </para>
-
-		    <para>
-		  When loading <quote>external</quote> modules (modules that don't
-		  have the standard entry point, for example a
-		  special shared library) the options parameter can be
-		  set to <constant>EXTERN_MODULE</constant> to tell the
-		  loader not to reject the module when it doesn't find
-		  the standard entry point.
 		    </para></listitem></varlistentry>
 
 
@@ -5396,12 +4896,12 @@ XFree86 common layer.
 		  as follows:
 		      <programlisting>
 typedef struct {
-	CARD8        majorversion;  /* MAJOR_UNSPEC */
-	CARD8        minorversion;  /* MINOR_UNSPEC */
-	CARD16       patchlevel;    /* PATCH_UNSPEC */
-	const char * abiclass;      /* ABI_CLASS_NONE */
-	CARD32       abiversion;    /* ABI_VERS_UNSPEC */
-	const char * moduleclass;   /* MOD_CLASS_NONE */
+	CARD8        majorversion;
+	CARD8        minorversion;
+	CARD16       patchlevel;
+	const char * abiclass;
+	CARD32       abiversion;
+	const char * moduleclass;
 } XF86ModReqInfo;
 			</programlisting>
 
@@ -5426,8 +4926,8 @@ typedef struct {
 				   The module's minor version must be
 				   no less than this value.  This
 				   comparison is only made if
-				   <structfield>majorversion</structfield> is
-				   specified and matches.
+				   <structfield>majorversion</structfield>
+                                   matches.
 			    </para></listitem></varlistentry>
 
 			<varlistentry>
@@ -5436,8 +4936,8 @@ typedef struct {
 				   The module's patchlevel must be no
 				   less than this value.  This comparison
 				   is only made if
-				   <structfield>minorversion</structfield> is
-				   specified and matches.
+				   <structfield>minorversion</structfield>
+				   matches.
 			    </para></listitem></varlistentry>
 
 			<varlistentry>
@@ -5472,13 +4972,6 @@ typedef struct {
 		  part or the error code.  When provided,
 		  <parameter>*errmaj</parameter> is filled in when
 		  <function>LoadModule()</function> fails.
-		    </para></listitem></varlistentry>
-
-		<varlistentry>
-		  <term><parameter>errmin</parameter></term>
-		  <listitem><para>
-		  Like <parameter>errmaj</parameter>, but for the minor part
-		  of the error code.
 		    </para></listitem></varlistentry>
 
 	      </variablelist>
@@ -5645,10 +5138,6 @@ The fields are used as follows:
 		    <term><constant>ABI_CLASS_EXTENSION</constant></term>
 		    <listitem><para>requires the extension module ABI
 		      </para></listitem></varlistentry>
-		  <varlistentry>
-		    <term><constant>ABI_CLASS_FONT</constant></term>
-		    <listitem><para>requires the font module ABI
-		      </para></listitem></varlistentry>
 		</variablelist>
 
 	      </para></listitem></varlistentry>
@@ -5668,7 +5157,6 @@ The fields are used as follows:
                    ABI_VIDEODRV_VERSION
                    ABI_XINPUT_VERSION
                    ABI_EXTENSION_VERSION
-                   ABI_FONT_VERSION
 		  </constant></literallayout>
 
 	      </para></listitem></varlistentry>
@@ -5688,7 +5176,6 @@ The fields are used as follows:
                    MOD_CLASS_NONE
                    MOD_CLASS_VIDEODRV
                    MOD_CLASS_XINPUT
-                   MOD_CLASS_FONT
                    MOD_CLASS_EXTENSION
 		  </constant></literallayout>
 
@@ -5798,11 +5285,7 @@ the server, and may also be used from within modules.
     described above, except that the module loaded is registered as a
     child of the calling module.  The <parameter>parent</parameter> parameter
     is the calling module's handle.  Modules loaded with this function
-    are automatically unloaded when the parent module is unloaded.  The
-    other difference is that the path parameter may not be specified.
-    The module search path used for modules loaded with this function
-    is the default search path as initialised with
-    <function>LoaderSetPath()</function>.
+    are automatically unloaded when the parent module is unloaded.
 	    </para>
 
 	  </blockquote></para></blockquote>
@@ -5975,10 +5458,10 @@ These may be moved out of the loader at some point.
 
       <blockquote><para>
 	  <programlisting>
-    void LoadExtension(ExtensionModule *ext);
+    void LoadExtensionList(const ExtensionModule ext[], int size, Bool builtin);
 	  </programlisting>
 	  <blockquote><para>
-    This registers the entry points for the extension identified by
+    This registers the entry points for the extension array identified by
     <parameter>ext</parameter>.  The <structname>ExtensionModule</structname> struct is
     defined as:
 
@@ -5987,28 +5470,7 @@ typedef struct {
     InitExtension       initFunc;
     char *              name;
     Bool                *disablePtr;
-    InitExtension       setupFunc;
 } ExtensionModule;
-	      </programlisting>
-	    </para>
-
-	  </blockquote></para></blockquote>
-
-      <blockquote><para>
-	  <programlisting>
-    void LoadFont(FontModule *font);
-	  </programlisting>
-	  <blockquote><para>
-    This registers the entry points for the font rasteriser module
-    identified by <parameter>font</parameter>.  The <structname>FontModule</structname>
-    struct is defined as:
-
-	      <programlisting>
- typedef struct {
-    InitFont    initFunc;
-    char *      name;
-    pointer     module;
-} FontModule;
 	      </programlisting>
 	    </para>
 
@@ -6542,19 +6004,6 @@ strongly encouraged to improve the consistency of driver behaviour.
 
       <blockquote><para>
 	  <programlisting>
-    void xf86SetBlackWhitePixels(ScrnInfoPtr pScrn);
-	  </programlisting>
-	  <blockquote><para>
-      This functions sets the <structfield>blackPixel</structfield> and
-      <structfield>whitePixel</structfield> fields of the <structname>ScrnInfoRec</structname>
-      according to whether or not the <option>-flipPixels</option> command
-      line options is present.
-	    </para>
-
-	  </blockquote></para></blockquote>
-
-      <blockquote><para>
-	  <programlisting>
     const char *xf86GetVisualName(int visual);
 	  </programlisting>
 	  <blockquote><para>
@@ -6775,16 +6224,6 @@ be catered for the by the helpers.
 		      total video memory size (in bytes)
 		    </para></listitem></varlistentry>
 		<varlistentry>
-		  <term><structfield>maxHValue</structfield></term>
-		  <listitem><para>
-		      Maximum horizontal timing value allowed
-		    </para></listitem></varlistentry>
-		<varlistentry>
-		  <term><structfield>maxVValue</structfield></term>
-		  <listitem><para>
-		      Maximum vertical timing value allowed
-		    </para></listitem></varlistentry>
-		<varlistentry>
 		  <term><structfield>xInc</structfield></term>
 		  <listitem><para>
 		      Horizontal timing increment in pixels (defaults to 8)
@@ -6829,12 +6268,6 @@ be catered for the by the helpers.
 		  <term><structfield>displayWidth</structfield></term>
 		  <listitem><para>
 		The resulting line pitch.
-		    </para></listitem></varlistentry>
-
-		<varlistentry>
-		  <term><structfield>virtualFrom</structfield></term>
-		  <listitem><para>
-		Where the virtual size was determined from.
 		    </para></listitem></varlistentry>
 
 	      </variablelist>
@@ -7063,86 +6496,11 @@ use of some of these secondary mode helper functions.
 
       <blockquote><para>
 	  <programlisting>
-    int xf86GetNearestClock(ScrnInfoPtr scrp, int freq, Bool allowDiv2,
-                            int *divider);
-	  </programlisting>
-	  <blockquote><para>
-      This function returns the index of the closest clock to the
-      frequency <parameter>freq</parameter> given (in kHz).  It assumes that
-      the number of clocks is greater than zero.  It requires that the
-      <structfield>numClocks</structfield> and <structfield>clock</structfield> fields of the
-      <structname>ScrnInfoRec</structname> are initialised.  The
-      <structfield>allowDiv2</structfield> field determines if the clocks can be
-      halved.  The <parameter>*divider</parameter> return value indicates
-      whether clock division is used when determining the clock returned.
-	    </para>
-
-	    <para>
-      This function is only for non-programmable clocks.
-	    </para>
-
-	  </blockquote></para></blockquote>
-
-      <blockquote><para>
-	  <programlisting>
     const char *xf86ModeStatusToString(ModeStatus status);
 	  </programlisting>
 	  <blockquote><para>
       This function converts the <parameter>status</parameter> value to a
       descriptive printable string.
-	    </para>
-
-	  </blockquote></para></blockquote>
-
-      <blockquote><para>
-	  <programlisting>
-    ModeStatus xf86LookupMode(ScrnInfoPtr scrp, DisplayModePtr modep,
-                     ClockRangePtr clockRanges, LookupModeFlags strategy);
-	  </programlisting>
-	  <blockquote><para>
-      This function takes a pointer to a mode with the name filled in,
-      and looks for a mode in the <structfield>modePool</structfield> list which
-      matches.  The parameters of the matching mode are filled in to
-      <parameter>*modep</parameter>.  The <parameter>clockRanges</parameter> and
-      <parameter>strategy</parameter> parameters are as for the
-      <function>xf86ValidateModes()</function> function above.
-	    </para>
-
-	    <para>
-      This function requires the <structfield>modePool</structfield>,
-      <structfield>clock[]</structfield>, <structfield>numClocks</structfield> and
-      <structfield>progClock</structfield> fields of the <structname>ScrnInfoRec</structname>
-      to be initialised before being called.
-	    </para>
-
-	    <para>
-      The return value is <constant>MODE_OK</constant> if a mode was found.
-      Otherwise it indicates why a matching mode could not be found.
-	    </para>
-
-	  </blockquote></para></blockquote>
-
-      <blockquote><para>
-	  <programlisting>
-    ModeStatus xf86InitialCheckModeForDriver(ScrnInfoPtr scrp,
-                                DisplayModePtr mode, ClockRangePtr clockRanges,
-                                LookupModeFlags strategy, int maxPitch,
-                                int virtualX, int virtualY);
-	  </programlisting>
-	  <blockquote><para>
-      This function checks the passed mode against some basic driver
-      constraints.  Apart from the ones passed explicitly, the
-      <structfield>maxHValue</structfield> and <structfield>maxVValue</structfield> fields of
-      the <structname>ScrnInfoRec</structname> are also used.  If the
-      <structfield>ValidMode</structfield> field of the <structname>ScrnInfoRec</structname>
-      is set, that function is also called to check the mode.  Next, the
-      mode is checked against the monitor's constraints.
-	    </para>
-
-	    <para>
-      If the mode is consistent with all constraints, the return value
-      is <constant>MODE_OK</constant>.  Otherwise the return value indicates
-      which constraint wasn't met.
 	    </para>
 
 	  </blockquote></para></blockquote>
@@ -8161,13 +7519,6 @@ visible symbols.
       </para>
 
       <para>
-  All drivers implementing backing store need this:
-	<literallayout><filename>
-    "mibstore.h"
-	  </filename></literallayout>
-      </para>
-
-      <para>
   All drivers using the mi colourmap code need this:
 	<literallayout><filename>
     "micmap.h"
@@ -8600,37 +7951,6 @@ ZZZProbe(DriverPtr drv, int flags)
         xfree(usedChips);
     }
 
-#ifdef HAS_ISA_DEVS
-    /*
-     * If the driver supports ISA hardware, the following block
-     * can be included too.
-     */
-    numUsed = xf86MatchIsaInstances(ZZZ_NAME, ZZZChipsets,
-                             ZZZIsaChipsets, drv, ZZZFindIsaDevice,
-                             devSections, numDevSections, &amp;usedChips);
-    for (i = 0; i &lt; numUsed; i++) {
-        ScrnInfoPtr pScrn = NULL;
-	if ((pScrn = xf86ConfigIsaEntity(pScrn, flags, usedChips[i],
-					 ZZZIsaChipsets, NULL, NULL, NULL,
-					 NULL, NULL))) {
-            pScrn-&gt;driverVersion = VERSION;
-            pScrn-&gt;driverName    = ZZZ_DRIVER_NAME;
-            pScrn-&gt;name          = ZZZ_NAME;
-            pScrn-&gt;Probe         = ZZZProbe;
-            pScrn-&gt;PreInit       = ZZZPreInit;
-            pScrn-&gt;ScreenInit    = ZZZScreenInit;
-            pScrn-&gt;SwitchMode    = ZZZSwitchMode;
-            pScrn-&gt;AdjustFrame   = ZZZAdjustFrame;
-            pScrn-&gt;EnterVT       = ZZZEnterVT;
-            pScrn-&gt;LeaveVT       = ZZZLeaveVT;
-            pScrn-&gt;FreeScreen    = ZZZFreeScreen;
-            pScrn-&gt;ValidMode     = ZZZValidMode;
-            foundScreen = TRUE;
-        }
-    }
-    xfree(usedChips);
-#endif /* HAS_ISA_DEVS */
-
     xfree(devSections);
     return foundScreen;
 	</programlisting>
@@ -8935,12 +8255,6 @@ ZZZPreInit(ScrnInfoPtr pScrn, int flags)
         ZZZFreeRec(pScrn);
         return FALSE;
 
-    /* Load XAA if needed */
-    if (!pZzz-&gt;noAccel || pZzz-&gt;hwCursor)
-        if (!xf86LoadSubModule(pScrn, "xaa")) {
-            ZZZFreeRec(pScrn);
-            return FALSE;
-        }
 
     /* Done */
     return TRUE;
@@ -9058,10 +8372,10 @@ ZZZModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode)
 
 	<programlisting>
 static Bool
-ZZZScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
+ZZZScreenInit(ScreenPtr pScreen, int argc, char **argv)
 {
     /* Get the ScrnInfoRec */
-    pScrn = xf86Screens[pScreen-&gt;myNum];
+    pScrn = xf86ScreenToScrn(pScreen);
 
     /*
      * If using the vgahw module, its data structures and related
@@ -9076,7 +8390,7 @@ ZZZScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     /* Set the viewport if supported */
 
-    ZZZAdjustFrame(scrnIndex, pScrn-&gt;frameX0, pScrn-&gt;frameY0, 0);
+    ZZZAdjustFrame(pScrn, pScrn-&gt;frameX0, pScrn-&gt;frameY0);
 
     /*
      * Setup the screen's visuals, and initialise the framebuffer
@@ -9178,19 +8492,12 @@ ZZZScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return FALSE;
 
     /*
-     * If backing store is to be supported (as is usually the case),
-     * initialise it.
-     */
-    miInitializeBackingStore(pScreen);
-
-    /*
      * Set initial black &amp; white colourmap indices.
      */
     xf86SetBlackWhitePixels(pScreen);
 
     /*
-     * Install colourmap functions.  If using the vgahw module,
-     * vgaHandleColormaps would usually be called here.
+     * Install colourmap functions.
      */
 
     ...
@@ -9245,9 +8552,9 @@ ZZZScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
 	<programlisting>
 static Bool
-ZZZSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
+ZZZSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr mode)
 {
-    return ZZZModeInit(xf86Screens[scrnIndex], mode);
+    return ZZZModeInit(pScrn, mode);
 }
 	</programlisting>
       </sect3>
@@ -9262,7 +8569,7 @@ ZZZSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 
 	<programlisting>
 static void
-ZZZAdjustFrame(int scrnIndex, int x, int y, int flags)
+ZZZAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
 {
     /* Adjust the viewport */
 }
@@ -9283,16 +8590,14 @@ ZZZAdjustFrame(int scrnIndex, int x, int y, int flags)
 
 	<programlisting>
 static Bool
-ZZZEnterVT(int scrnIndex, int flags)
+ZZZEnterVT(ScrnInfoPtr pScrn)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     return ZZZModeInit(pScrn, pScrn-&gt;currentMode);
 }
 
 static void
-ZZZLeaveVT(int scrnIndex, int flags)
+ZZZLeaveVT(ScrnInfoPtr pScrn)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     ZZZRestore(pScrn);
 }
 	</programlisting>
@@ -9313,16 +8618,16 @@ ZZZLeaveVT(int scrnIndex, int flags)
 
 	<programlisting>
 static Bool
-ZZZCloseScreen(int scrnIndex, ScreenPtr pScreen)
+ZZZCloseScreen(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     if (pScrn-&gt;vtSema) {
         ZZZRestore(pScrn);
         ZZZUnmapMem(pScrn);
     }
     pScrn-&gt;vtSema = FALSE;
     pScreen-&gt;CloseScreen = ZZZPTR(pScrn)-&gt;CloseScreen;
-    return (*pScreen-&gt;CloseScreen)(scrnIndex, pScreen);
+    return (*pScreen-&gt;CloseScreen)(pScreen);
 }
 	</programlisting>
       </sect3>
@@ -9367,13 +8672,13 @@ ZZZSaveScreen(ScreenPtr pScreen, int mode)
 
 	<programlisting>
 static void
-ZZZFreeScreen(int scrnIndex, int flags)
+ZZZFreeScreen(ScrnInfoPtr pScrn)
 {
     /*
      * If the vgahw module is used vgaHWFreeHWRec() would be called
      * here.
      */
-    ZZZFreeRec(xf86Screens[scrnIndex]);
+    ZZZFreeRec(pScrn);
 }
 
 	</programlisting>

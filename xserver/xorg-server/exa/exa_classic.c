@@ -147,7 +147,7 @@ exaCreatePixmap_classic(ScreenPtr pScreen, int w, int h, int depth,
 Bool
 exaModifyPixmapHeader_classic(PixmapPtr pPixmap, int width, int height,
                               int depth, int bitsPerPixel, int devKind,
-                              pointer pPixData)
+                              void *pPixData)
 {
     ScreenPtr pScreen;
     ExaScreenPrivPtr pExaScr;
@@ -192,7 +192,6 @@ exaModifyPixmapHeader_classic(PixmapPtr pPixmap, int width, int height,
          * gpu memory, so there's no need to track damage.
          */
         if (pExaPixmap->pDamage) {
-            DamageUnregister(&pPixmap->drawable, pExaPixmap->pDamage);
             DamageDestroy(pExaPixmap->pDamage);
             pExaPixmap->pDamage = NULL;
         }

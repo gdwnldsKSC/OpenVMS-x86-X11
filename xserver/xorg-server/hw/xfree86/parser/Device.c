@@ -1,17 +1,17 @@
-/* 
- * 
+/*
+ *
  * Copyright (c) 1997  Metro Link Incorporated
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
+ * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -19,11 +19,11 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  * Except as contained in this notice, the name of the Metro Link shall not be
  * used in advertising or otherwise to promote the sale, use or other dealings
  * in this Software without prior written authorization from Metro Link.
- * 
+ *
  */
 /*
  * Copyright (c) 1997-2003 by The XFree86 Project, Inc.
@@ -52,8 +52,6 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
-/* View/edit this file with tab stops set to 4 */
-
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
 #endif
@@ -62,10 +60,8 @@
 #include "xf86tokens.h"
 #include "Configint.h"
 
-extern LexRec val;
 
-static
-xf86ConfigSymTabRec DeviceTab[] = {
+static const xf86ConfigSymTabRec DeviceTab[] = {
     {ENDSECTION, "endsection"},
     {IDENTIFIER, "identifier"},
     {VENDOR, "vendorname"},
@@ -74,6 +70,7 @@ xf86ConfigSymTabRec DeviceTab[] = {
     {RAMDAC, "ramdac"},
     {DACSPEED, "dacspeed"},
     {CLOCKS, "clocks"},
+    {MATCHSEAT, "matchseat"},
     {OPTION, "option"},
     {VIDEORAM, "videoram"},
     {BIOSBASE, "biosbase"},
@@ -85,7 +82,6 @@ xf86ConfigSymTabRec DeviceTab[] = {
     {CARD, "card"},
     {DRIVER, "driver"},
     {BUSID, "busid"},
-    {TEXTCLOCKFRQ, "textclockfreq"},
     {IRQ, "irq"},
     {SCREEN, "screen"},
     {-1, ""},
@@ -109,45 +105,47 @@ xf86parseDeviceSection(void)
     while ((token = xf86getToken(DeviceTab)) != ENDSECTION) {
         switch (token) {
         case COMMENT:
-            ptr->dev_comment = xf86addComment(ptr->dev_comment, val.str);
+            ptr->dev_comment = xf86addComment(ptr->dev_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
             break;
         case IDENTIFIER:
             if (xf86getSubToken(&(ptr->dev_comment)) != STRING)
                 Error(QUOTE_MSG, "Identifier");
             if (has_ident == TRUE)
                 Error(MULTIPLE_MSG, "Identifier");
-            ptr->dev_identifier = val.str;
+            ptr->dev_identifier = xf86_lex_val.str;
             has_ident = TRUE;
             break;
         case VENDOR:
             if (xf86getSubToken(&(ptr->dev_comment)) != STRING)
                 Error(QUOTE_MSG, "Vendor");
-            ptr->dev_vendor = val.str;
+            ptr->dev_vendor = xf86_lex_val.str;
             break;
         case BOARD:
             if (xf86getSubToken(&(ptr->dev_comment)) != STRING)
                 Error(QUOTE_MSG, "Board");
-            ptr->dev_board = val.str;
+            ptr->dev_board = xf86_lex_val.str;
             break;
         case CHIPSET:
             if (xf86getSubToken(&(ptr->dev_comment)) != STRING)
                 Error(QUOTE_MSG, "Chipset");
-            ptr->dev_chipset = val.str;
+            ptr->dev_chipset = xf86_lex_val.str;
             break;
         case CARD:
             if (xf86getSubToken(&(ptr->dev_comment)) != STRING)
                 Error(QUOTE_MSG, "Card");
-            ptr->dev_card = val.str;
+            ptr->dev_card = xf86_lex_val.str;
             break;
         case DRIVER:
             if (xf86getSubToken(&(ptr->dev_comment)) != STRING)
                 Error(QUOTE_MSG, "Driver");
-            ptr->dev_driver = val.str;
+            ptr->dev_driver = xf86_lex_val.str;
             break;
         case RAMDAC:
             if (xf86getSubToken(&(ptr->dev_comment)) != STRING)
                 Error(QUOTE_MSG, "Ramdac");
-            ptr->dev_ramdac = val.str;
+            ptr->dev_ramdac = xf86_lex_val.str;
             break;
         case DACSPEED:
             for (i = 0; i < CONF_MAXDACSPEEDS; i++)
@@ -156,11 +154,11 @@ xf86parseDeviceSection(void)
                 Error(DACSPEED_MSG, CONF_MAXDACSPEEDS);
             }
             else {
-                ptr->dev_dacSpeeds[0] = (int) (val.realnum * 1000.0 + 0.5);
+                ptr->dev_dacSpeeds[0] = (int) (xf86_lex_val.realnum * 1000.0 + 0.5);
                 for (i = 1; i < CONF_MAXDACSPEEDS; i++) {
                     if (xf86getSubToken(&(ptr->dev_comment)) == NUMBER)
                         ptr->dev_dacSpeeds[i] = (int)
-                            (val.realnum * 1000.0 + 0.5);
+                            (xf86_lex_val.realnum * 1000.0 + 0.5);
                     else {
                         xf86unGetToken(token);
                         break;
@@ -171,53 +169,53 @@ xf86parseDeviceSection(void)
         case VIDEORAM:
             if (xf86getSubToken(&(ptr->dev_comment)) != NUMBER)
                 Error(NUMBER_MSG, "VideoRam");
-            ptr->dev_videoram = val.num;
+            ptr->dev_videoram = xf86_lex_val.num;
             break;
         case BIOSBASE:
             if (xf86getSubToken(&(ptr->dev_comment)) != NUMBER)
                 Error(NUMBER_MSG, "BIOSBase");
-            ptr->dev_bios_base = val.num;
+            /* ignored */
             break;
         case MEMBASE:
             if (xf86getSubToken(&(ptr->dev_comment)) != NUMBER)
                 Error(NUMBER_MSG, "MemBase");
-            ptr->dev_mem_base = val.num;
+            ptr->dev_mem_base = xf86_lex_val.num;
             break;
         case IOBASE:
             if (xf86getSubToken(&(ptr->dev_comment)) != NUMBER)
                 Error(NUMBER_MSG, "IOBase");
-            ptr->dev_io_base = val.num;
+            ptr->dev_io_base = xf86_lex_val.num;
             break;
         case CLOCKCHIP:
             if (xf86getSubToken(&(ptr->dev_comment)) != STRING)
                 Error(QUOTE_MSG, "ClockChip");
-            ptr->dev_clockchip = val.str;
+            ptr->dev_clockchip = xf86_lex_val.str;
             break;
         case CHIPID:
             if (xf86getSubToken(&(ptr->dev_comment)) != NUMBER)
                 Error(NUMBER_MSG, "ChipID");
-            ptr->dev_chipid = val.num;
+            ptr->dev_chipid = xf86_lex_val.num;
             break;
         case CHIPREV:
             if (xf86getSubToken(&(ptr->dev_comment)) != NUMBER)
                 Error(NUMBER_MSG, "ChipRev");
-            ptr->dev_chiprev = val.num;
+            ptr->dev_chiprev = xf86_lex_val.num;
             break;
 
         case CLOCKS:
             token = xf86getSubToken(&(ptr->dev_comment));
             for (i = ptr->dev_clocks;
                  token == NUMBER && i < CONF_MAXCLOCKS; i++) {
-                ptr->dev_clock[i] = (int) (val.realnum * 1000.0 + 0.5);
+                ptr->dev_clock[i] = (int) (xf86_lex_val.realnum * 1000.0 + 0.5);
                 token = xf86getSubToken(&(ptr->dev_comment));
             }
             ptr->dev_clocks = i;
             xf86unGetToken(token);
             break;
-        case TEXTCLOCKFRQ:
-            if ((token = xf86getSubToken(&(ptr->dev_comment))) != NUMBER)
-                Error(NUMBER_MSG, "TextClockFreq");
-            ptr->dev_textclockfreq = (int) (val.realnum * 1000.0 + 0.5);
+        case MATCHSEAT:
+            if (xf86getSubToken(&(ptr->dev_comment)) != STRING)
+                Error(QUOTE_MSG, "MatchSeat");
+            ptr->match_seat = xf86_lex_val.str;
             break;
         case OPTION:
             ptr->dev_option_lst = xf86parseOption(ptr->dev_option_lst);
@@ -225,17 +223,17 @@ xf86parseDeviceSection(void)
         case BUSID:
             if (xf86getSubToken(&(ptr->dev_comment)) != STRING)
                 Error(QUOTE_MSG, "BusID");
-            ptr->dev_busid = val.str;
+            ptr->dev_busid = xf86_lex_val.str;
             break;
         case IRQ:
             if (xf86getSubToken(&(ptr->dev_comment)) != NUMBER)
                 Error(QUOTE_MSG, "IRQ");
-            ptr->dev_irq = val.num;
+            ptr->dev_irq = xf86_lex_val.num;
             break;
         case SCREEN:
             if (xf86getSubToken(&(ptr->dev_comment)) != NUMBER)
                 Error(NUMBER_MSG, "Screen");
-            ptr->dev_screen = val.num;
+            ptr->dev_screen = xf86_lex_val.num;
             break;
         case EOF_TOKEN:
             Error(UNEXPECTED_EOF_MSG);
@@ -289,8 +287,6 @@ xf86printDeviceSection(FILE * cf, XF86ConfDevicePtr ptr)
         }
         if (ptr->dev_videoram)
             fprintf(cf, "\tVideoRam    %d\n", ptr->dev_videoram);
-        if (ptr->dev_bios_base)
-            fprintf(cf, "\tBiosBase    0x%lx\n", ptr->dev_bios_base);
         if (ptr->dev_mem_base)
             fprintf(cf, "\tMemBase     0x%lx\n", ptr->dev_mem_base);
         if (ptr->dev_io_base)
@@ -308,10 +304,6 @@ xf86printDeviceSection(FILE * cf, XF86ConfDevicePtr ptr)
             for (i = 0; i < ptr->dev_clocks; i++)
                 fprintf(cf, "%.1f ", (double) ptr->dev_clock[i] / 1000.0);
             fprintf(cf, "\n");
-        }
-        if (ptr->dev_textclockfreq) {
-            fprintf(cf, "\tTextClockFreq %.1f\n",
-                    (double) ptr->dev_textclockfreq / 1000.0);
         }
         if (ptr->dev_busid)
             fprintf(cf, "\tBusID       \"%s\"\n", ptr->dev_busid);

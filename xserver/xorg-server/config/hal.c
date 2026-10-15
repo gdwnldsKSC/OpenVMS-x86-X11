@@ -33,6 +33,7 @@
 #include <string.h>
 #include <sys/select.h>
 
+#include "dbus-core.h"
 #include "input.h"
 #include "inputstr.h"
 #include "hotplug.h"
@@ -169,13 +170,15 @@ device_added(LibHalContext * hal_ctx, const char *udi)
     free(hal_tags);
 
     if (libhal_device_query_capability(hal_ctx, udi, "input.keys", NULL))
-        attrs.flags |= ATTR_KEYBOARD;
+        attrs.flags |= ATTR_KEY | ATTR_KEYBOARD;
     if (libhal_device_query_capability(hal_ctx, udi, "input.mouse", NULL))
         attrs.flags |= ATTR_POINTER;
     if (libhal_device_query_capability(hal_ctx, udi, "input.joystick", NULL))
         attrs.flags |= ATTR_JOYSTICK;
     if (libhal_device_query_capability(hal_ctx, udi, "input.tablet", NULL))
         attrs.flags |= ATTR_TABLET;
+    if (libhal_device_query_capability(hal_ctx, udi, "input.tablet_pad", NULL))
+        attrs.flags |= ATTR_TABLET_PAD;
     if (libhal_device_query_capability(hal_ctx, udi, "input.touchpad", NULL))
         attrs.flags |= ATTR_TOUCHPAD;
     if (libhal_device_query_capability(hal_ctx, udi, "input.touchscreen", NULL))
@@ -184,8 +187,7 @@ device_added(LibHalContext * hal_ctx, const char *udi)
     parent = get_prop_string(hal_ctx, udi, "info.parent");
     if (parent) {
         int usb_vendor, usb_product;
-
-        attrs.pnp_id = get_prop_string(hal_ctx, parent, "pnp.id");
+        char *old_parent;
 
         /* construct USB ID in lowercase - "0000:ffff" */
         usb_vendor = libhal_device_get_property_int(hal_ctx, parent,
@@ -203,7 +205,18 @@ device_added(LibHalContext * hal_ctx, const char *udi)
                 == -1)
                 attrs.usb_id = NULL;
 
-        free(parent);
+        attrs.pnp_id = get_prop_string(hal_ctx, parent, "pnp.id");
+        old_parent = parent;
+
+        while (!attrs.pnp_id &&
+               (parent = get_prop_string(hal_ctx, parent, "info.parent"))) {
+            attrs.pnp_id = get_prop_string(hal_ctx, parent, "pnp.id");
+
+            free(old_parent);
+            old_parent = parent;
+        }
+
+        free(old_parent);
     }
 
     input_options = input_option_new(NULL, "_source", "server/hal");
@@ -631,7 +644,7 @@ connect_hook(DBusConnection * connection, void *data)
 
 static struct config_hal_info hal_info;
 
-static struct config_dbus_core_hook hook = {
+static struct dbus_core_hook hook = {
     .connect = connect_hook,
     .disconnect = disconnect_hook,
     .data = &hal_info,
@@ -644,7 +657,7 @@ config_hal_init(void)
     hal_info.system_bus = NULL;
     hal_info.hal_ctx = NULL;
 
-    if (!config_dbus_core_add_hook(&hook)) {
+    if (!dbus_core_add_hook(&hook)) {
         LogMessage(X_ERROR, "config/hal: failed to add D-Bus hook\n");
         return 0;
     }
@@ -658,5 +671,5 @@ config_hal_init(void)
 void
 config_hal_fini(void)
 {
-    config_dbus_core_remove_hook(&hook);
+    dbus_core_remove_hook(&hook);
 }

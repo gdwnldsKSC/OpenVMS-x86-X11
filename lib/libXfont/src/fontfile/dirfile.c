@@ -34,6 +34,10 @@ in this Software without prior written authorization from The Open Group.
  * Read fonts.dir and fonts.alias files
  */
 
+#ifdef __VMS
+#define _USE_STD_STAT 1
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -41,7 +45,43 @@ in this Software without prior written authorization from The Open Group.
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <errno.h>
+#include <limits.h>
+
+#ifdef __VMS
+/* Verify the regular file's identity before reading when O_NOFOLLOW is absent. */
+static int
+OpenDirectoryFile(const char *name)
+{
+    struct stat before, opened, after;
+    int fd, error, flags = O_RDONLY;
+
+    if (lstat(name, &before) < 0)
+        return -1;
+    if (!S_ISREG(before.st_mode)) {
+        errno = EACCES;
+        return -1;
+    }
+#ifdef O_NONBLOCK
+    flags |= O_NONBLOCK;
+#endif
+    fd = open(name, flags);
+    if (fd < 0)
+        return -1;
+    if (fstat(fd, &opened) < 0 || lstat(name, &after) < 0)
+        error = errno;
+    else if (!S_ISREG(opened.st_mode) || !S_ISREG(after.st_mode) ||
+             before.st_dev != opened.st_dev || before.st_ino != opened.st_ino ||
+             after.st_dev != opened.st_dev || after.st_ino != opened.st_ino)
+        error = EACCES;
+    else
+        return fd;
+    close(fd);
+    errno = error;
+    return -1;
+}
+#endif
 
 static Bool AddFileNameAliases ( FontDirectoryPtr dir );
 static int ReadFontAlias ( char *directory, Bool isFile,
@@ -49,16 +89,19 @@ static int ReadFontAlias ( char *directory, Bool isFile,
 static int lexAlias ( FILE *file, char **lexToken );
 static int lexc ( FILE *file );
 
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+
 int
-FontFileReadDirectory (char *directory, FontDirectoryPtr *pdir)
+FontFileReadDirectory (const char *directory, FontDirectoryPtr *pdir)
 {
     char        file_name[MAXFONTFILENAMELEN];
     char        font_name[MAXFONTNAMELEN];
     char        dir_file[MAXFONTFILENAMELEN];
     char	dir_path[MAXFONTFILENAMELEN];
     char	*ptr;
-    FILE       *file;
-    int         count,
+    FILE       *file = 0;
+    int         file_fd,
+                count,
                 num_fonts,
                 status;
     struct stat	statb;
@@ -88,8 +131,24 @@ FontFileReadDirectory (char *directory, FontDirectoryPtr *pdir)
     if (dir_file[strlen(dir_file) - 1] != '/')
 	strcat(dir_file, "/");
     strcat(dir_file, FontDirFile);
+#ifndef WIN32
 #ifdef __VMS
-    file = fopen(dir_file, "r");
+    file_fd = OpenDirectoryFile(dir_file);
+#else
+    file_fd = open(dir_file, O_RDONLY | O_NOFOLLOW);
+#endif
+    if (file_fd >= 0) {
+#ifdef __VMS
+	file = fdopen(file_fd, "r");
+        if (!file) {
+            int error = errno;
+            close(file_fd);
+            errno = error;
+        }
+#else
+	file = fdopen(file_fd, "rt");
+#endif
+    }
 #else
     file = fopen(dir_file, "rt");
 #endif
@@ -262,7 +321,8 @@ ReadFontAlias(char *directory, Bool isFile, FontDirectoryPtr *pdir)
     char		alias[MAXFONTNAMELEN];
     char		font_name[MAXFONTNAMELEN];
     char		alias_file[MAXFONTFILENAMELEN];
-    FILE		*file;
+    int			file_fd;
+    FILE		*file = 0;
     FontDirectoryPtr	dir;
     int			token;
     char		*lexToken;
@@ -280,11 +340,29 @@ ReadFontAlias(char *directory, Bool isFile, FontDirectoryPtr *pdir)
 	    strcat(alias_file, "/");
 	strcat(alias_file, FontAliasFile);
     }
+
+#ifndef WIN32
 #ifdef __VMS
-    file = fopen(alias_file, "r");
+    file_fd = OpenDirectoryFile(alias_file);
+#else
+    file_fd = open(alias_file, O_RDONLY | O_NOFOLLOW);
+#endif
+    if (file_fd >= 0) {
+#ifdef __VMS
+	file = fdopen(file_fd, "r");
+        if (!file) {
+            int error = errno;
+            close(file_fd);
+            errno = error;
+        }
+#else
+	file = fdopen(file_fd, "rt");
+#endif
+    }
 #else
     file = fopen(alias_file, "rt");
 #endif
+
     if (!file)
 	return ((errno == ENOENT) ? Successful : BadFontPath);
     if (!dir)
@@ -382,6 +460,9 @@ lexAlias(FILE *file, char **lexToken)
 	    int         nsize;
 	    char       *nbuf;
 
+	    if (tokenSize >= (INT_MAX >> 2))
+		/* Stop before we overflow */
+		return EALLOC;
 	    nsize = tokenSize ? (tokenSize << 1) : 64;
 	    nbuf = realloc(tokenBuf, nsize);
 	    if (!nbuf)

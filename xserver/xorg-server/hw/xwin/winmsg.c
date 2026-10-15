@@ -38,15 +38,7 @@
 #endif
 #include <stdarg.h>
 
-void winVMsg(int, MessageType, int verb, const char *, va_list);
-
-void
-winVMsg(int scrnIndex, MessageType type, int verb, const char *format,
-        va_list ap)
-{
-    LogVMessageVerb(type, verb, format, ap);
-}
-
+#ifdef XWIN_XF86CONFIG
 void
 winDrvMsg(int scrnIndex, MessageType type, const char *format, ...)
 {
@@ -54,16 +46,6 @@ winDrvMsg(int scrnIndex, MessageType type, const char *format, ...)
 
     va_start(ap, format);
     LogVMessageVerb(type, 0, format, ap);
-    va_end(ap);
-}
-
-void
-winMsg(MessageType type, const char *format, ...)
-{
-    va_list ap;
-
-    va_start(ap, format);
-    LogVMessageVerb(type, 1, format, ap);
     va_end(ap);
 }
 
@@ -77,16 +59,7 @@ winDrvMsgVerb(int scrnIndex, MessageType type, int verb, const char *format,
     LogVMessageVerb(type, verb, format, ap);
     va_end(ap);
 }
-
-void
-winMsgVerb(MessageType type, int verb, const char *format, ...)
-{
-    va_list ap;
-
-    va_start(ap, format);
-    LogVMessageVerb(type, verb, format, ap);
-    va_end(ap);
-}
+#endif
 
 void
 winErrorFVerb(int verb, const char *format, ...)
@@ -135,7 +108,7 @@ winW32ErrorEx(int verb, const char *msg, DWORD errorcode)
                        NULL,
                        errorcode,
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                       (LPTSTR) & buffer, 0, NULL)) {
+                       (LPTSTR) &buffer, 0, NULL)) {
         winErrorFVerb(verb, "Unknown error in FormatMessage!\n");
     }
     else {
@@ -156,8 +129,8 @@ winDebugWin32Message(const char *function, HWND hwnd, UINT message,
             getenv("WIN_DEBUG_WM_USER")) {
             winDebug("%s - Message WM_USER + %d\n", function,
                      message - WM_USER);
-            winDebug("\thwnd 0x%x wParam 0x%x lParam 0x%x\n", hwnd, wParam,
-                     lParam);
+            winDebug("\thwnd 0x%p wParam 0x%x lParam 0x%x\n", hwnd, (int)wParam,
+                     (int)lParam);
         }
     }
     else if (message < MESSAGE_NAMES_LEN && MESSAGE_NAMES[message]) {
@@ -168,8 +141,8 @@ winDebugWin32Message(const char *function, HWND hwnd, UINT message,
         buffer[63] = 0;
         if (force || getenv("WIN_DEBUG_MESSAGES") || getenv(buffer)) {
             winDebug("%s - Message %s\n", function, MESSAGE_NAMES[message]);
-            winDebug("\thwnd 0x%x wParam 0x%x lParam 0x%x\n", hwnd, wParam,
-                     lParam);
+            winDebug("\thwnd 0x%p wParam 0x%x lParam 0x%x\n", hwnd, (int)wParam,
+                     (int)lParam);
         }
     }
 }

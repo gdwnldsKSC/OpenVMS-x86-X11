@@ -33,10 +33,6 @@
 #include "unpack.h"
 #include "indirect_size_get.h"
 #include "indirect_dispatch.h"
-#include "glapitable.h"
-#include "glapi.h"
-#include "glthread.h"
-#include "dispatch.h"
 #include "glxbyteorder.h"
 
 static int DoSwapInterval(__GLXclientState * cl, GLbyte * pc, int do_swap);
@@ -49,6 +45,8 @@ DoSwapInterval(__GLXclientState * cl, GLbyte * pc, int do_swap)
     const GLXContextTag tag = req->contextTag;
     __GLXcontext *cx;
     GLint interval;
+
+    REQUEST_FIXED_SIZE(xGLXVendorPrivateReq, 4);
 
     cx = __glXLookupContextByTag(cl, tag);
 

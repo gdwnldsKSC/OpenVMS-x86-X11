@@ -39,7 +39,7 @@
 * to the 256 byte-"opcodes" found on the 8086.  The table which
 * dispatches this is found in the files optab.[ch].
 *
-* Each opcode proc has a comment preceeding it which gives it's table
+* Each opcode proc has a comment preceding it which gives its table
 * address.  Several opcodes are missing (undefined) in the table.
 *
 * Each proc includes information for decoding (DECODE_PRINTF and
@@ -5530,7 +5530,7 @@ x86emuOp_opc80_byte_RM_IMM(u8 X86EMU_UNUSED(op1))
     if (DEBUG_DECODE()) {
         /* XXX DECODE_PRINTF may be changed to something more
            general, so that it is important to leave the strings
-           in the same format, even though the result is that the 
+           in the same format, even though the result is that the
            above test is done twice. */
 
         switch (rh) {
@@ -5658,7 +5658,7 @@ x86emuOp_opc81_word_RM_IMM(u8 X86EMU_UNUSED(op1))
     if (DEBUG_DECODE()) {
         /* XXX DECODE_PRINTF may be changed to something more
            general, so that it is important to leave the strings
-           in the same format, even though the result is that the 
+           in the same format, even though the result is that the
            above test is done twice. */
 
         switch (rh) {
@@ -5690,7 +5690,7 @@ x86emuOp_opc81_word_RM_IMM(u8 X86EMU_UNUSED(op1))
     }
 #endif
     /*
-     * Know operation, decode the mod byte to find the addressing 
+     * Know operation, decode the mod byte to find the addressing
      * mode.
      */
     switch (mod) {
@@ -5853,7 +5853,7 @@ x86emuOp_opc82_byte_RM_IMM(u8 X86EMU_UNUSED(op1))
     if (DEBUG_DECODE()) {
         /* XXX DECODE_PRINTF may be changed to something more
            general, so that it is important to leave the strings
-           in the same format, even though the result is that the 
+           in the same format, even though the result is that the
            above test is done twice. */
         switch (rh) {
         case 0:
@@ -5977,7 +5977,7 @@ x86emuOp_opc83_word_RM_IMM(u8 X86EMU_UNUSED(op1))
     if (DEBUG_DECODE()) {
         /* XXX DECODE_PRINTF may be changed to something more
            general, so that it is important to leave the strings
-           in the same format, even though the result is that the 
+           in the same format, even though the result is that the
            above test is done twice. */
         switch (rh) {
         case 0:
@@ -7472,7 +7472,7 @@ x86emuOp_call_far_IMM(u8 X86EMU_UNUSED(op1))
     CALL_TRACE(M.x86.saved_cs, M.x86.saved_ip, farseg, faroff, "FAR ");
 
     /* XXX
-     * 
+     *
      * Hooked interrupt vectors calling into our "BIOS" will cause
      * problems unless all intersegment stuff is checked for BIOS
      * access.  Check needed here.  For moment, let it alone.
@@ -7590,8 +7590,8 @@ x86emuOp_lahf(u8 X86EMU_UNUSED(op1))
     DECODE_PRINTF("LAHF\n");
     TRACE_AND_STEP();
     M.x86.R_AH = (u8) (M.x86.R_FLG & 0xff);
-    /*undocumented TC++ behavior??? Nope.  It's documented, but
-       you have too look real hard to notice it. */
+    /* Undocumented TC++ behavior??? Nope.  It's documented, but
+       you have to look real hard to notice it. */
     M.x86.R_AH |= 0x2;
     DECODE_CLEAR_SEGOVR();
     END_OF_INSTR();
@@ -7711,7 +7711,7 @@ x86emuOp_movs_byte(u8 X86EMU_UNUSED(op1))
     TRACE_AND_STEP();
     count = 1;
     if (M.x86.mode & (SYSMODE_PREFIX_REPE | SYSMODE_PREFIX_REPNE)) {
-        /* dont care whether REPE or REPNE */
+        /* don't care whether REPE or REPNE */
         /* move them until CX is ZERO. */
         count = M.x86.R_CX;
         M.x86.R_CX = 0;
@@ -7756,7 +7756,7 @@ x86emuOp_movs_word(u8 X86EMU_UNUSED(op1))
     TRACE_AND_STEP();
     count = 1;
     if (M.x86.mode & (SYSMODE_PREFIX_REPE | SYSMODE_PREFIX_REPNE)) {
-        /* dont care whether REPE or REPNE */
+        /* don't care whether REPE or REPNE */
         /* move them until CX is ZERO. */
         count = M.x86.R_CX;
         M.x86.R_CX = 0;
@@ -7991,7 +7991,7 @@ x86emuOp_stos_byte(u8 X86EMU_UNUSED(op1))
         inc = 1;
     TRACE_AND_STEP();
     if (M.x86.mode & (SYSMODE_PREFIX_REPE | SYSMODE_PREFIX_REPNE)) {
-        /* dont care whether REPE or REPNE */
+        /* don't care whether REPE or REPNE */
         /* move them until CX is ZERO. */
         while (M.x86.R_CX != 0) {
             store_data_byte_abs(M.x86.R_ES, M.x86.R_DI, M.x86.R_AL);
@@ -8036,7 +8036,7 @@ x86emuOp_stos_word(u8 X86EMU_UNUSED(op1))
     TRACE_AND_STEP();
     count = 1;
     if (M.x86.mode & (SYSMODE_PREFIX_REPE | SYSMODE_PREFIX_REPNE)) {
-        /* dont care whether REPE or REPNE */
+        /* don't care whether REPE or REPNE */
         /* move them until CX is ZERO. */
         count = M.x86.R_CX;
         M.x86.R_CX = 0;
@@ -8072,7 +8072,7 @@ x86emuOp_lods_byte(u8 X86EMU_UNUSED(op1))
     else
         inc = 1;
     if (M.x86.mode & (SYSMODE_PREFIX_REPE | SYSMODE_PREFIX_REPNE)) {
-        /* dont care whether REPE or REPNE */
+        /* don't care whether REPE or REPNE */
         /* move them until CX is ZERO. */
         while (M.x86.R_CX != 0) {
             M.x86.R_AL = fetch_data_byte(M.x86.R_SI);
@@ -8117,7 +8117,7 @@ x86emuOp_lods_word(u8 X86EMU_UNUSED(op1))
     TRACE_AND_STEP();
     count = 1;
     if (M.x86.mode & (SYSMODE_PREFIX_REPE | SYSMODE_PREFIX_REPNE)) {
-        /* dont care whether REPE or REPNE */
+        /* don't care whether REPE or REPNE */
         /* move them until CX is ZERO. */
         count = M.x86.R_CX;
         M.x86.R_CX = 0;
@@ -8688,7 +8688,7 @@ x86emuOp_opcC0_byte_RM_MEM(u8 X86EMU_UNUSED(op1))
     if (DEBUG_DECODE()) {
         /* XXX DECODE_PRINTF may be changed to something more
            general, so that it is important to leave the strings
-           in the same format, even though the result is that the 
+           in the same format, even though the result is that the
            above test is done twice. */
 
         switch (rh) {
@@ -8797,7 +8797,7 @@ x86emuOp_opcC1_word_RM_MEM(u8 X86EMU_UNUSED(op1))
     if (DEBUG_DECODE()) {
         /* XXX DECODE_PRINTF may be changed to something more
            general, so that it is important to leave the strings
-           in the same format, even though the result is that the 
+           in the same format, even though the result is that the
            above test is done twice. */
 
         switch (rh) {
@@ -8949,7 +8949,11 @@ x86emuOp_ret_near_IMM(u8 X86EMU_UNUSED(op1))
     DECODE_PRINTF2("%x\n", imm);
     RETURN_TRACE("RET", M.x86.saved_cs, M.x86.saved_ip);
     TRACE_AND_STEP();
-    M.x86.R_IP = pop_word();
+    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+        M.x86.R_EIP = pop_long();
+    } else {
+        M.x86.R_IP = pop_word();
+    }
     M.x86.R_SP += imm;
     DECODE_CLEAR_SEGOVR();
     END_OF_INSTR();
@@ -8966,7 +8970,11 @@ x86emuOp_ret_near(u8 X86EMU_UNUSED(op1))
     DECODE_PRINTF("RET\n");
     RETURN_TRACE("RET", M.x86.saved_cs, M.x86.saved_ip);
     TRACE_AND_STEP();
-    M.x86.R_IP = pop_word();
+    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+        M.x86.R_EIP = pop_long();
+    } else {
+        M.x86.R_IP = pop_word();
+    }
     DECODE_CLEAR_SEGOVR();
     END_OF_INSTR();
 }
@@ -9259,8 +9267,13 @@ x86emuOp_enter(u8 X86EMU_UNUSED(op1))
     frame_pointer = M.x86.R_SP;
     if (nesting > 0) {
         for (i = 1; i < nesting; i++) {
-            M.x86.R_BP -= 2;
-            push_word(fetch_data_word_abs(M.x86.R_SS, M.x86.R_BP));
+            if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+                M.x86.R_BP -= 4;
+                push_long(fetch_data_long_abs(M.x86.R_SS, M.x86.R_BP));
+            } else {
+                M.x86.R_BP -= 2;
+                push_word(fetch_data_word_abs(M.x86.R_SS, M.x86.R_BP));
+            }
         }
         push_word(frame_pointer);
     }
@@ -9281,7 +9294,11 @@ x86emuOp_leave(u8 X86EMU_UNUSED(op1))
     DECODE_PRINTF("LEAVE\n");
     TRACE_AND_STEP();
     M.x86.R_SP = M.x86.R_BP;
-    M.x86.R_BP = pop_word();
+    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+        M.x86.R_EBP = pop_long();
+    } else {
+        M.x86.R_BP = pop_word();
+    }
     DECODE_CLEAR_SEGOVR();
     END_OF_INSTR();
 }
@@ -9301,8 +9318,13 @@ x86emuOp_ret_far_IMM(u8 X86EMU_UNUSED(op1))
     DECODE_PRINTF2("%x\n", imm);
     RETURN_TRACE("RETF", M.x86.saved_cs, M.x86.saved_ip);
     TRACE_AND_STEP();
-    M.x86.R_IP = pop_word();
-    M.x86.R_CS = pop_word();
+    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+        M.x86.R_EIP = pop_long();
+        M.x86.R_CS = pop_long() & 0xffff;
+    } else {
+        M.x86.R_IP = pop_word();
+        M.x86.R_CS = pop_word();
+    }
     M.x86.R_SP += imm;
     DECODE_CLEAR_SEGOVR();
     END_OF_INSTR();
@@ -9319,8 +9341,13 @@ x86emuOp_ret_far(u8 X86EMU_UNUSED(op1))
     DECODE_PRINTF("RETF\n");
     RETURN_TRACE("RETF", M.x86.saved_cs, M.x86.saved_ip);
     TRACE_AND_STEP();
-    M.x86.R_IP = pop_word();
-    M.x86.R_CS = pop_word();
+    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+        M.x86.R_EIP = pop_long();
+        M.x86.R_CS = pop_long() & 0xffff;
+    } else {
+        M.x86.R_IP = pop_word();
+        M.x86.R_CS = pop_word();
+    }
     DECODE_CLEAR_SEGOVR();
     END_OF_INSTR();
 }
@@ -9421,9 +9448,15 @@ x86emuOp_iret(u8 X86EMU_UNUSED(op1))
 
     TRACE_AND_STEP();
 
-    M.x86.R_IP = pop_word();
-    M.x86.R_CS = pop_word();
-    M.x86.R_FLG = pop_word();
+    if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+        M.x86.R_EIP = pop_long();
+        M.x86.R_CS = pop_long() & 0xffff;
+        M.x86.R_EFLG = (pop_long() & 0x257FD5) | (M.x86.R_EFLG & 0x1A0000);
+    } else {
+        M.x86.R_IP = pop_word();
+        M.x86.R_CS = pop_word();
+        M.x86.R_FLG = pop_word();
+    }
     DECODE_CLEAR_SEGOVR();
     END_OF_INSTR();
 }
@@ -9700,7 +9733,7 @@ x86emuOp_opcD2_byte_RM_CL(u8 X86EMU_UNUSED(op1))
     if (DEBUG_DECODE()) {
         /* XXX DECODE_PRINTF may be changed to something more
            general, so that it is important to leave the strings
-           in the same format, even though the result is that the 
+           in the same format, even though the result is that the
            above test is done twice. */
         switch (rh) {
         case 0:
@@ -9795,7 +9828,7 @@ x86emuOp_opcD3_word_RM_CL(u8 X86EMU_UNUSED(op1))
     if (DEBUG_DECODE()) {
         /* XXX DECODE_PRINTF may be changed to something more
            general, so that it is important to leave the strings
-           in the same format, even though the result is that the 
+           in the same format, even though the result is that the
            above test is done twice. */
         switch (rh) {
         case 0:
@@ -10189,8 +10222,8 @@ Handles opcode 0xe8
 static void
 x86emuOp_call_near_IMM(u8 X86EMU_UNUSED(op1))
 {
-    s16 ip16;
-    s32 ip32;
+    s16 ip16 = 0;
+    s32 ip32 = 0;
 
     START_OF_INSTR();
     DECODE_PRINTF("CALL\t");
@@ -11538,7 +11571,7 @@ x86emuOp_opcFE_byte_RM(u8 X86EMU_UNUSED(op1))
     if (DEBUG_DECODE()) {
         /* XXX DECODE_PRINTF may be changed to something more
            general, so that it is important to leave the strings
-           in the same format, even though the result is that the 
+           in the same format, even though the result is that the
            above test is done twice. */
 
         switch (rh) {
@@ -11705,54 +11738,71 @@ x86emuOp_opcFF_word_RM(u8 X86EMU_UNUSED(op1))
         switch (rh) {
         case 0:                /* inc word ptr ... */
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 destval;
+                u32 destval32;
 
-                destval = fetch_data_long(destoffset);
+                destval32 = fetch_data_long(destoffset);
                 TRACE_AND_STEP();
-                destval = inc_long(destval);
-                store_data_long(destoffset, destval);
+                destval32 = inc_long(destval32);
+                store_data_long(destoffset, destval32);
             }
             else {
-                u16 destval;
+                u16 destval16;
 
-                destval = fetch_data_word(destoffset);
+                destval16 = fetch_data_word(destoffset);
                 TRACE_AND_STEP();
-                destval = inc_word(destval);
-                store_data_word(destoffset, destval);
+                destval16 = inc_word(destval16);
+                store_data_word(destoffset, destval16);
             }
             break;
         case 1:                /* dec word ptr ... */
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 destval;
+                u32 destval32;
 
-                destval = fetch_data_long(destoffset);
+                destval32 = fetch_data_long(destoffset);
                 TRACE_AND_STEP();
-                destval = dec_long(destval);
-                store_data_long(destoffset, destval);
+                destval32 = dec_long(destval32);
+                store_data_long(destoffset, destval32);
             }
             else {
-                u16 destval;
+                u16 destval16;
 
-                destval = fetch_data_word(destoffset);
+                destval16 = fetch_data_word(destoffset);
                 TRACE_AND_STEP();
-                destval = dec_word(destval);
-                store_data_word(destoffset, destval);
+                destval16 = dec_word(destval16);
+                store_data_word(destoffset, destval16);
             }
             break;
         case 2:                /* call word ptr ... */
-            destval = fetch_data_word(destoffset);
-            TRACE_AND_STEP();
-            push_word(M.x86.R_IP);
-            M.x86.R_IP = destval;
+            if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+                destval = fetch_data_long(destoffset);
+                TRACE_AND_STEP();
+                push_long(M.x86.R_EIP);
+                M.x86.R_EIP = destval;
+            } else {
+                destval = fetch_data_word(destoffset);
+                TRACE_AND_STEP();
+                push_word(M.x86.R_IP);
+                M.x86.R_IP = destval;
+            }
             break;
         case 3:                /* call far ptr ... */
-            destval = fetch_data_word(destoffset);
-            destval2 = fetch_data_word(destoffset + 2);
-            TRACE_AND_STEP();
-            push_word(M.x86.R_CS);
-            M.x86.R_CS = destval2;
-            push_word(M.x86.R_IP);
-            M.x86.R_IP = destval;
+            if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+                destval = fetch_data_long(destoffset);
+                destval2 = fetch_data_word(destoffset + 4);
+                TRACE_AND_STEP();
+                push_long(M.x86.R_CS);
+                M.x86.R_CS = destval2;
+                push_long(M.x86.R_EIP);
+                M.x86.R_EIP = destval;
+            } else {
+                destval = fetch_data_word(destoffset);
+                destval2 = fetch_data_word(destoffset + 2);
+                TRACE_AND_STEP();
+                push_word(M.x86.R_CS);
+                M.x86.R_CS = destval2;
+                push_word(M.x86.R_IP);
+                M.x86.R_IP = destval;
+            }
             break;
         case 4:                /* jmp word ptr ... */
             destval = fetch_data_word(destoffset);
@@ -11768,18 +11818,18 @@ x86emuOp_opcFF_word_RM(u8 X86EMU_UNUSED(op1))
             break;
         case 6:                /*  push word ptr ... */
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 destval;
+                u32 destval32;
 
-                destval = fetch_data_long(destoffset);
+                destval32 = fetch_data_long(destoffset);
                 TRACE_AND_STEP();
-                push_long(destval);
+                push_long(destval32);
             }
             else {
-                u16 destval;
+                u16 destval16;
 
-                destval = fetch_data_word(destoffset);
+                destval16 = fetch_data_word(destoffset);
                 TRACE_AND_STEP();
-                push_word(destval);
+                push_word(destval16);
             }
             break;
         }
@@ -11790,54 +11840,71 @@ x86emuOp_opcFF_word_RM(u8 X86EMU_UNUSED(op1))
         switch (rh) {
         case 0:
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 destval;
+                u32 destval32;
 
-                destval = fetch_data_long(destoffset);
+                destval32 = fetch_data_long(destoffset);
                 TRACE_AND_STEP();
-                destval = inc_long(destval);
-                store_data_long(destoffset, destval);
+                destval32 = inc_long(destval32);
+                store_data_long(destoffset, destval32);
             }
             else {
-                u16 destval;
+                u16 destval16;
 
-                destval = fetch_data_word(destoffset);
+                destval16 = fetch_data_word(destoffset);
                 TRACE_AND_STEP();
-                destval = inc_word(destval);
-                store_data_word(destoffset, destval);
+                destval16 = inc_word(destval16);
+                store_data_word(destoffset, destval16);
             }
             break;
         case 1:
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 destval;
+                u32 destval32;
 
-                destval = fetch_data_long(destoffset);
+                destval32 = fetch_data_long(destoffset);
                 TRACE_AND_STEP();
-                destval = dec_long(destval);
-                store_data_long(destoffset, destval);
+                destval32 = dec_long(destval32);
+                store_data_long(destoffset, destval32);
             }
             else {
-                u16 destval;
+                u16 destval16;
 
-                destval = fetch_data_word(destoffset);
+                destval16 = fetch_data_word(destoffset);
                 TRACE_AND_STEP();
-                destval = dec_word(destval);
-                store_data_word(destoffset, destval);
+                destval16 = dec_word(destval16);
+                store_data_word(destoffset, destval16);
             }
             break;
         case 2:                /* call word ptr ... */
-            destval = fetch_data_word(destoffset);
-            TRACE_AND_STEP();
-            push_word(M.x86.R_IP);
-            M.x86.R_IP = destval;
+            if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+                destval = fetch_data_long(destoffset);
+                TRACE_AND_STEP();
+                push_long(M.x86.R_EIP);
+                M.x86.R_EIP = destval;
+            } else {
+                destval = fetch_data_word(destoffset);
+                TRACE_AND_STEP();
+                push_word(M.x86.R_IP);
+                M.x86.R_IP = destval;
+            }
             break;
         case 3:                /* call far ptr ... */
-            destval = fetch_data_word(destoffset);
-            destval2 = fetch_data_word(destoffset + 2);
-            TRACE_AND_STEP();
-            push_word(M.x86.R_CS);
-            M.x86.R_CS = destval2;
-            push_word(M.x86.R_IP);
-            M.x86.R_IP = destval;
+            if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+                destval = fetch_data_long(destoffset);
+                destval2 = fetch_data_word(destoffset + 4);
+                TRACE_AND_STEP();
+                push_long(M.x86.R_CS);
+                M.x86.R_CS = destval2;
+                push_long(M.x86.R_EIP);
+                M.x86.R_EIP = destval;
+            } else {
+                destval = fetch_data_word(destoffset);
+                destval2 = fetch_data_word(destoffset + 2);
+                TRACE_AND_STEP();
+                push_word(M.x86.R_CS);
+                M.x86.R_CS = destval2;
+                push_word(M.x86.R_IP);
+                M.x86.R_IP = destval;
+            }
             break;
         case 4:                /* jmp word ptr ... */
             destval = fetch_data_word(destoffset);
@@ -11853,18 +11920,18 @@ x86emuOp_opcFF_word_RM(u8 X86EMU_UNUSED(op1))
             break;
         case 6:                /*  push word ptr ... */
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 destval;
+                u32 destval32;
 
-                destval = fetch_data_long(destoffset);
+                destval32 = fetch_data_long(destoffset);
                 TRACE_AND_STEP();
-                push_long(destval);
+                push_long(destval32);
             }
             else {
-                u16 destval;
+                u16 destval16;
 
-                destval = fetch_data_word(destoffset);
+                destval16 = fetch_data_word(destoffset);
                 TRACE_AND_STEP();
-                push_word(destval);
+                push_word(destval16);
             }
             break;
         }
@@ -11875,54 +11942,71 @@ x86emuOp_opcFF_word_RM(u8 X86EMU_UNUSED(op1))
         switch (rh) {
         case 0:
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 destval;
+                u32 destval32;
 
-                destval = fetch_data_long(destoffset);
+                destval32 = fetch_data_long(destoffset);
                 TRACE_AND_STEP();
-                destval = inc_long(destval);
-                store_data_long(destoffset, destval);
+                destval32 = inc_long(destval32);
+                store_data_long(destoffset, destval32);
             }
             else {
-                u16 destval;
+                u16 destval16;
 
-                destval = fetch_data_word(destoffset);
+                destval16 = fetch_data_word(destoffset);
                 TRACE_AND_STEP();
-                destval = inc_word(destval);
-                store_data_word(destoffset, destval);
+                destval16 = inc_word(destval16);
+                store_data_word(destoffset, destval16);
             }
             break;
         case 1:
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 destval;
+                u32 destval32;
 
-                destval = fetch_data_long(destoffset);
+                destval32 = fetch_data_long(destoffset);
                 TRACE_AND_STEP();
-                destval = dec_long(destval);
-                store_data_long(destoffset, destval);
+                destval32 = dec_long(destval32);
+                store_data_long(destoffset, destval32);
             }
             else {
-                u16 destval;
+                u16 destval16;
 
-                destval = fetch_data_word(destoffset);
+                destval16 = fetch_data_word(destoffset);
                 TRACE_AND_STEP();
-                destval = dec_word(destval);
-                store_data_word(destoffset, destval);
+                destval16 = dec_word(destval16);
+                store_data_word(destoffset, destval16);
             }
             break;
         case 2:                /* call word ptr ... */
-            destval = fetch_data_word(destoffset);
-            TRACE_AND_STEP();
-            push_word(M.x86.R_IP);
-            M.x86.R_IP = destval;
+            if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+                destval = fetch_data_long(destoffset);
+                TRACE_AND_STEP();
+                push_long(M.x86.R_EIP);
+                M.x86.R_EIP = destval;
+            } else {
+                destval = fetch_data_word(destoffset);
+                TRACE_AND_STEP();
+                push_word(M.x86.R_IP);
+                M.x86.R_IP = destval;
+            }
             break;
         case 3:                /* call far ptr ... */
-            destval = fetch_data_word(destoffset);
-            destval2 = fetch_data_word(destoffset + 2);
-            TRACE_AND_STEP();
-            push_word(M.x86.R_CS);
-            M.x86.R_CS = destval2;
-            push_word(M.x86.R_IP);
-            M.x86.R_IP = destval;
+            if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+                destval = fetch_data_long(destoffset);
+                destval2 = fetch_data_word(destoffset + 4);
+                TRACE_AND_STEP();
+                push_long(M.x86.R_CS);
+                M.x86.R_CS = destval2;
+                push_long(M.x86.R_EIP);
+                M.x86.R_EIP = destval;
+            } else {
+                destval = fetch_data_word(destoffset);
+                destval2 = fetch_data_word(destoffset + 2);
+                TRACE_AND_STEP();
+                push_word(M.x86.R_CS);
+                M.x86.R_CS = destval2;
+                push_word(M.x86.R_IP);
+                M.x86.R_IP = destval;
+            }
             break;
         case 4:                /* jmp word ptr ... */
             destval = fetch_data_word(destoffset);
@@ -11938,18 +12022,18 @@ x86emuOp_opcFF_word_RM(u8 X86EMU_UNUSED(op1))
             break;
         case 6:                /*  push word ptr ... */
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 destval;
+                u32 destval32;
 
-                destval = fetch_data_long(destoffset);
+                destval32 = fetch_data_long(destoffset);
                 TRACE_AND_STEP();
-                push_long(destval);
+                push_long(destval32);
             }
             else {
-                u16 destval;
+                u16 destval16;
 
-                destval = fetch_data_word(destoffset);
+                destval16 = fetch_data_word(destoffset);
                 TRACE_AND_STEP();
-                push_word(destval);
+                push_word(destval16);
             }
             break;
         }
@@ -11958,46 +12042,54 @@ x86emuOp_opcFF_word_RM(u8 X86EMU_UNUSED(op1))
         switch (rh) {
         case 0:
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 *destreg;
+                u32 *destreg32;
 
-                destreg = DECODE_RM_LONG_REGISTER(rl);
+                destreg32 = DECODE_RM_LONG_REGISTER(rl);
                 DECODE_PRINTF("\n");
                 TRACE_AND_STEP();
-                *destreg = inc_long(*destreg);
+                *destreg32 = inc_long(*destreg32);
             }
             else {
-                u16 *destreg;
+                u16 *destreg16;
 
-                destreg = DECODE_RM_WORD_REGISTER(rl);
+                destreg16 = DECODE_RM_WORD_REGISTER(rl);
                 DECODE_PRINTF("\n");
                 TRACE_AND_STEP();
-                *destreg = inc_word(*destreg);
+                *destreg16 = inc_word(*destreg16);
             }
             break;
         case 1:
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 *destreg;
+                u32 *destreg32;
 
-                destreg = DECODE_RM_LONG_REGISTER(rl);
+                destreg32 = DECODE_RM_LONG_REGISTER(rl);
                 DECODE_PRINTF("\n");
                 TRACE_AND_STEP();
-                *destreg = dec_long(*destreg);
+                *destreg32 = dec_long(*destreg32);
             }
             else {
-                u16 *destreg;
+                u16 *destreg16;
 
-                destreg = DECODE_RM_WORD_REGISTER(rl);
+                destreg16 = DECODE_RM_WORD_REGISTER(rl);
                 DECODE_PRINTF("\n");
                 TRACE_AND_STEP();
-                *destreg = dec_word(*destreg);
+                *destreg16 = dec_word(*destreg16);
             }
             break;
         case 2:                /* call word ptr ... */
-            destreg = DECODE_RM_WORD_REGISTER(rl);
-            DECODE_PRINTF("\n");
-            TRACE_AND_STEP();
-            push_word(M.x86.R_IP);
-            M.x86.R_IP = *destreg;
+            if (M.x86.mode & SYSMODE_PREFIX_DATA) {
+                destreg = (u16 *)DECODE_RM_LONG_REGISTER(rl);
+                DECODE_PRINTF("\n");
+                TRACE_AND_STEP();
+                push_long(M.x86.R_EIP);
+                M.x86.R_EIP = *destreg;
+            } else {
+                destreg = DECODE_RM_WORD_REGISTER(rl);
+                DECODE_PRINTF("\n");
+                TRACE_AND_STEP();
+                push_word(M.x86.R_IP);
+                M.x86.R_IP = *destreg;
+            }
             break;
         case 3:                /* jmp far ptr ... */
             DECODE_PRINTF("OPERATION UNDEFINED 0XFF \n");
@@ -12018,20 +12110,20 @@ x86emuOp_opcFF_word_RM(u8 X86EMU_UNUSED(op1))
             break;
         case 6:
             if (M.x86.mode & SYSMODE_PREFIX_DATA) {
-                u32 *destreg;
+                u32 *destreg32;
 
-                destreg = DECODE_RM_LONG_REGISTER(rl);
+                destreg32 = DECODE_RM_LONG_REGISTER(rl);
                 DECODE_PRINTF("\n");
                 TRACE_AND_STEP();
-                push_long(*destreg);
+                push_long(*destreg32);
             }
             else {
-                u16 *destreg;
+                u16 *destreg16;
 
-                destreg = DECODE_RM_WORD_REGISTER(rl);
+                destreg16 = DECODE_RM_WORD_REGISTER(rl);
                 DECODE_PRINTF("\n");
                 TRACE_AND_STEP();
-                push_word(*destreg);
+                push_word(*destreg16);
             }
             break;
         }

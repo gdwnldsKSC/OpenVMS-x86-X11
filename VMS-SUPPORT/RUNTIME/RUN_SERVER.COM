@@ -88,11 +88,11 @@ $ server = "$" + image
 $! The default compiled XKB_BIN_DIRECTORY is relative to this runtime root.
 $ SET DEFAULT 'root'
 $ IF no_listen .NES. "" THEN GOTO restricted
-$ server "''screen'" "-auth" "''authority'" "-fp" "''font_path'" "-xkbdir" "''xkb_path'"
+$ server "''screen'" "-listen" "tcp" "-auth" "''authority'" "-fp" "''font_path'" "-xkbdir" "''xkb_path'"
 $ result = $STATUS
 $ GOTO done
 $restricted:
-$ server "''screen'" "-auth" "''authority'" "-fp" "''font_path'" "-xkbdir" "''xkb_path'" "-nolisten" "''no_listen'"
+$ server "''screen'" "-listen" "tcp" "-auth" "''authority'" "-fp" "''font_path'" "-xkbdir" "''xkb_path'" "-nolisten" "''no_listen'"
 $ result = $STATUS
 $ GOTO done
 $missing:

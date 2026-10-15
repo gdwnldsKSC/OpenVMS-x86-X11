@@ -106,10 +106,13 @@ exaCreatePixmap_mixed(ScreenPtr pScreen, int w, int h, int depth,
                                                pPixmap->drawable.pScreen,
                                                pPixmap);
 
-            DamageRegister(&pPixmap->drawable, pExaPixmap->pDamage);
-            /* This ensures that pending damage reflects the current operation. */
-            /* This is used by exa to optimize migration. */
-            DamageSetReportAfterOp(pExaPixmap->pDamage, TRUE);
+            if (pExaPixmap->pDamage) {
+                DamageRegister(&pPixmap->drawable, pExaPixmap->pDamage);
+                /* This ensures that pending damage reflects the current
+                 * operation. This is used by exa to optimize migration.
+                 */
+                DamageSetReportAfterOp(pExaPixmap->pDamage, TRUE);
+            }
         }
     }
 
@@ -122,7 +125,7 @@ exaCreatePixmap_mixed(ScreenPtr pScreen, int w, int h, int depth,
 
 Bool
 exaModifyPixmapHeader_mixed(PixmapPtr pPixmap, int width, int height, int depth,
-                            int bitsPerPixel, int devKind, pointer pPixData)
+                            int bitsPerPixel, int devKind, void *pPixData)
 {
     ScreenPtr pScreen;
     ExaScreenPrivPtr pExaScr;
@@ -139,7 +142,6 @@ exaModifyPixmapHeader_mixed(PixmapPtr pPixmap, int width, int height, int depth,
     if (pPixData) {
         if (pExaPixmap->driverPriv) {
             if (pExaPixmap->pDamage) {
-                DamageUnregister(&pPixmap->drawable, pExaPixmap->pDamage);
                 DamageDestroy(pExaPixmap->pDamage);
                 pExaPixmap->pDamage = NULL;
             }
@@ -189,7 +191,6 @@ exaModifyPixmapHeader_mixed(PixmapPtr pPixmap, int width, int height, int depth,
             if (pExaPixmap->sys_ptr) {
                 free(pExaPixmap->sys_ptr);
                 pExaPixmap->sys_ptr = NULL;
-                DamageUnregister(&pPixmap->drawable, pExaPixmap->pDamage);
                 DamageDestroy(pExaPixmap->pDamage);
                 pExaPixmap->pDamage = NULL;
                 RegionEmpty(&pExaPixmap->validSys);
@@ -281,7 +282,7 @@ exaPixmapHasGpuCopy_mixed(PixmapPtr pPixmap)
 
     ExaScreenPriv(pScreen);
     ExaPixmapPriv(pPixmap);
-    pointer saved_ptr;
+    void *saved_ptr;
     Bool ret;
 
     if (!pExaPixmap->driverPriv)
@@ -294,3 +295,36 @@ exaPixmapHasGpuCopy_mixed(PixmapPtr pPixmap)
 
     return ret;
 }
+
+Bool
+exaSharePixmapBacking_mixed(PixmapPtr pPixmap, ScreenPtr secondary, void **handle_p)
+{
+    ScreenPtr pScreen = pPixmap->drawable.pScreen;
+    ExaScreenPriv(pScreen);
+    Bool ret = FALSE;
+
+    exaMoveInPixmap(pPixmap);
+    /* get the driver to give us a handle */
+    if (pExaScr->info->SharePixmapBacking)
+        ret = pExaScr->info->SharePixmapBacking(pPixmap, secondary, handle_p);
+
+    return ret;
+}
+
+Bool
+exaSetSharedPixmapBacking_mixed(PixmapPtr pPixmap, void *handle)
+{
+    ScreenPtr pScreen = pPixmap->drawable.pScreen;
+    ExaScreenPriv(pScreen);
+    Bool ret = FALSE;
+
+    if (pExaScr->info->SetSharedPixmapBacking)
+        ret = pExaScr->info->SetSharedPixmapBacking(pPixmap, handle);
+
+    if (ret == TRUE)
+        exaMoveInPixmap(pPixmap);
+
+    return ret;
+}
+
+

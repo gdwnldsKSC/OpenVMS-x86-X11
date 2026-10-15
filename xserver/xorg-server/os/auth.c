@@ -42,8 +42,13 @@ from The Open Group.
 #include   "dixstruct.h"
 #include   <sys/types.h>
 #include   <sys/stat.h>
+#include   <errno.h>
 #ifdef WIN32
 #include    <X11/Xw32defs.h>
+#endif
+#include   <stdlib.h>       /* for arc4random_buf() */
+#ifdef __VMS
+#include <openssl/rand.h>
 #endif
 
 struct protocol {
@@ -52,7 +57,6 @@ struct protocol {
     AuthAddCFunc Add;           /* new authorization data */
     AuthCheckFunc Check;        /* verify client authorization data */
     AuthRstCFunc Reset;         /* delete all authorization data entries */
-    AuthToIDFunc ToID;          /* convert cookie to ID */
     AuthFromIDFunc FromID;      /* convert ID to cookie */
     AuthRemCFunc Remove;        /* remove a specific cookie */
 #ifdef XCSECURITY
@@ -63,7 +67,7 @@ struct protocol {
 static struct protocol protocols[] = {
     {(unsigned short) 18, "MIT-MAGIC-COOKIE-1",
      MitAddCookie, MitCheckCookie, MitResetCookie,
-     MitToID, MitFromID, MitRemoveCookie,
+     MitFromID, MitRemoveCookie,
 #ifdef XCSECURITY
      MitGenerateCookie
 #endif
@@ -71,7 +75,7 @@ static struct protocol protocols[] = {
 #ifdef HASXDMAUTH
     {(unsigned short) 19, "XDM-AUTHORIZATION-1",
      XdmAddCookie, XdmCheckCookie, XdmResetCookie,
-     XdmToID, XdmFromID, XdmRemoveCookie,
+     XdmFromID, XdmRemoveCookie,
 #ifdef XCSECURITY
      NULL
 #endif
@@ -80,7 +84,7 @@ static struct protocol protocols[] = {
 #ifdef SECURE_RPC
     {(unsigned short) 9, "SUN-DES-1",
      SecureRPCAdd, SecureRPCCheck, SecureRPCReset,
-     SecureRPCToID, SecureRPCFromID, SecureRPCRemove,
+     SecureRPCFromID, SecureRPCRemove,
 #ifdef XCSECURITY
      NULL
 #endif
@@ -88,20 +92,19 @@ static struct protocol protocols[] = {
 #endif
 };
 
-#define NUM_AUTHORIZATION  (sizeof (protocols) /\
-			     sizeof (struct protocol))
+#define NUM_AUTHORIZATION  ARRAY_SIZE(protocols)
 
 /*
  * Initialize all classes of authorization by reading the
  * specified authorization file
  */
 
-static char *authorization_file = (char *) NULL;
+static const char *authorization_file = NULL;
 
 static Bool ShouldLoadAuth = TRUE;
 
 void
-InitAuthorization(char *file_name)
+InitAuthorization(const char *file_name)
 {
     authorization_file = file_name;
 }
@@ -118,9 +121,15 @@ LoadAuthorization(void)
     if (!authorization_file)
         return 0;
 
+    errno = 0;
     f = Fopen(authorization_file, "r");
-    if (!f)
+    if (!f) {
+        LogMessageVerb(X_ERROR, 0,
+                       "Failed to open authorization file \"%s\": %s\n",
+                       authorization_file,
+                       errno != 0 ? strerror(errno) : "Unknown error");
         return -1;
+    }
 
     while ((auth = XauReadAuth(f)) != 0) {
         for (i = 0; i < NUM_AUTHORIZATION; i++) {
@@ -181,11 +190,11 @@ CheckAuthorization(unsigned int name_length,
 
         /*
          * If the authorization file has at least one entry for this server,
-         * disable local host access. (loadauth > 0)
+         * disable local access. (loadauth > 0)
          *
          * If there are zero entries (either initially or when the
          * authorization file is later reloaded), or if a valid
-         * authorization file was never loaded, enable local host access.
+         * authorization file was never loaded, enable local access.
          * (loadauth == 0 || !loaded)
          *
          * If the authorization file was loaded initially (with valid
@@ -194,11 +203,11 @@ CheckAuthorization(unsigned int name_length,
          */
 
         if (loadauth > 0) {
-            DisableLocalHost(); /* got at least one */
+            DisableLocalAccess(); /* got at least one */
             loaded = TRUE;
         }
         else if (loadauth == 0 || !loaded)
-            EnableLocalHost();
+            EnableLocalAccess();
     }
     if (name_length) {
         for (i = 0; i < NUM_AUTHORIZATION; i++) {
@@ -207,11 +216,11 @@ CheckAuthorization(unsigned int name_length,
                 return (*protocols[i].Check) (data_length, data, client,
                                               reason);
             }
-            *reason = "Protocol not supported by server\n";
+            *reason = "Authorization protocol not supported by server\n";
         }
     }
     else
-        *reason = "No protocol specified\n";
+        *reason = "Authorization required, but no authorization protocol specified\n";
     return (XID) ~0L;
 }
 
@@ -300,14 +309,21 @@ GenerateAuthorization(unsigned name_length,
     return -1;
 }
 
+#endif                          /* XCSECURITY */
+
 void
 GenerateRandomData(int len, char *buf)
 {
+#ifdef __VMS
+    if (len < 0 || RAND_bytes((unsigned char *) buf, len) != 1)
+        FatalError("Cannot obtain cryptographic random data\n");
+#elif defined(HAVE_ARC4RANDOM_BUF)
+    arc4random_buf(buf, len);
+#else
     int fd;
 
     fd = open("/dev/urandom", O_RDONLY);
     read(fd, buf, len);
     close(fd);
+#endif
 }
-
-#endif                          /* XCSECURITY */

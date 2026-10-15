@@ -38,6 +38,16 @@
 ****************************************************************************/
 
 #include <stdlib.h>
+
+#if defined(__sun) && defined(CS) /* avoid conflicts with Solaris sys/regset.h */
+# undef CS
+# undef DS
+# undef SS
+# undef ES
+# undef FS
+# undef GS
+#endif
+
 #include "x86emu/x86emui.h"
 
 /*----------------------------- Implementation ----------------------------*/
@@ -259,7 +269,7 @@ cpu-state-varible M.x86.mode. There are several potential states:
 	gs segment override
 	ss segment override
 
-	ds/ss select (in absense of override)
+	ds/ss select (in absence of override)
 
 Each of the above 7 items are handled with a bit in the mode field.
 ****************************************************************************/

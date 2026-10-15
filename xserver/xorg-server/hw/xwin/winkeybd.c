@@ -41,6 +41,9 @@
 
 #include "xkbsrv.h"
 
+/* C does not have a logical XOR operator, so we use a macro instead */
+#define LOGICAL_XOR(a,b) ((!(a) && (b)) || ((a) && !(b)))
+
 static Bool g_winKeyState[NUM_KEYCODES];
 
 /*
@@ -48,12 +51,12 @@ static Bool g_winKeyState[NUM_KEYCODES];
  */
 
 static void
- winKeybdBell(int iPercent, DeviceIntPtr pDeviceInt, pointer pCtrl, int iClass);
+ winKeybdBell(int iPercent, DeviceIntPtr pDeviceInt, void *pCtrl, int iClass);
 
 static void
  winKeybdCtrl(DeviceIntPtr pDevice, KeybdCtrl * pCtrl);
 
-/* 
+/*
  * Translate a Windows WM_[SYS]KEY(UP/DOWN) message
  * into an ASCII scan code.
  *
@@ -62,15 +65,16 @@ static void
  * like AltGr on European keyboards.
  */
 
-void
-winTranslateKey(WPARAM wParam, LPARAM lParam, int *piScanCode)
+int
+winTranslateKey(WPARAM wParam, LPARAM lParam)
 {
     int iKeyFixup = g_iKeyMap[wParam * WIN_KEYMAP_COLS + 1];
     int iKeyFixupEx = g_iKeyMap[wParam * WIN_KEYMAP_COLS + 2];
     int iParam = HIWORD(lParam);
     int iParamScanCode = LOBYTE(iParam);
+    int iScanCode;
 
-    winDebug("winTranslateKey: wParam %08x lParam %08x\n", wParam, lParam);
+    winDebug("winTranslateKey: wParam %08x lParam %08x\n", (int)wParam, (int)lParam);
 
 /* WM_ key messages faked by Vista speech recognition (WSR) don't have a
  * scan code.
@@ -93,28 +97,30 @@ winTranslateKey(WPARAM wParam, LPARAM lParam, int *piScanCode)
 
     /* Branch on special extended, special non-extended, or normal key */
     if ((iParam & KF_EXTENDED) && iKeyFixupEx)
-        *piScanCode = iKeyFixupEx;
+        iScanCode = iKeyFixupEx;
     else if (iKeyFixup)
-        *piScanCode = iKeyFixup;
+        iScanCode = iKeyFixup;
     else if (wParam == 0 && iParamScanCode == 0x70)
-        *piScanCode = KEY_HKTG;
+        iScanCode = KEY_HKTG;
     else
         switch (iParamScanCode) {
         case 0x70:
-            *piScanCode = KEY_HKTG;
+            iScanCode = KEY_HKTG;
             break;
         case 0x73:
-            *piScanCode = KEY_BSlash2;
+            iScanCode = KEY_BSlash2;
             break;
         default:
-            *piScanCode = iParamScanCode;
+            iScanCode = iParamScanCode;
             break;
         }
+
+    return iScanCode;
 }
 
 /* Ring the keyboard bell (system speaker on PCs) */
 static void
-winKeybdBell(int iPercent, DeviceIntPtr pDeviceInt, pointer pCtrl, int iClass)
+winKeybdBell(int iPercent, DeviceIntPtr pDeviceInt, void *pCtrl, int iClass)
 {
     /*
      * We can't use Beep () here because it uses the PC speaker
@@ -122,7 +128,7 @@ winKeybdBell(int iPercent, DeviceIntPtr pDeviceInt, pointer pCtrl, int iClass)
      * sound on systems with a sound card or it will beep the PC speaker
      * on systems that do not have a sound card.
      */
-    MessageBeep(MB_OK);
+    if (iPercent > 0) MessageBeep(MB_OK);
 }
 
 /* Change some keyboard configuration parameters */
@@ -131,7 +137,7 @@ winKeybdCtrl(DeviceIntPtr pDevice, KeybdCtrl * pCtrl)
 {
 }
 
-/* 
+/*
  * See Porting Layer Definition - p. 18
  * winKeybdProc is known as a DeviceProc.
  */
@@ -240,7 +246,7 @@ winRestoreModeKeyStates(void)
     unsigned short internalKeyStates;
 
     /* X server is being initialized */
-    if (!inputInfo.keyboard)
+    if (!inputInfo.keyboard || !inputInfo.keyboard->key)
         return;
 
     /* Only process events if the rootwindow is mapped. The keyboard events
@@ -259,39 +265,76 @@ winRestoreModeKeyStates(void)
         XkbStateFieldFromRec(&inputInfo.keyboard->key->xkbInfo->state);
     winDebug("winRestoreModeKeyStates: state %d\n", internalKeyStates);
 
-    /* 
-     * NOTE: The C XOR operator, ^, will not work here because it is
-     * a bitwise operator, not a logical operator.  C does not
-     * have a logical XOR operator, so we use a macro instead.
-     */
+    /* Check if modifier keys are pressed, and if so, fake a press */
+    {
 
-    /* Has the key state changed? */
+        BOOL lctrl = (GetAsyncKeyState(VK_LCONTROL) < 0);
+        BOOL rctrl = (GetAsyncKeyState(VK_RCONTROL) < 0);
+        BOOL lshift = (GetAsyncKeyState(VK_LSHIFT) < 0);
+        BOOL rshift = (GetAsyncKeyState(VK_RSHIFT) < 0);
+        BOOL alt = (GetAsyncKeyState(VK_LMENU) < 0);
+        BOOL altgr = (GetAsyncKeyState(VK_RMENU) < 0);
+
+        /*
+           If AltGr and CtrlL appear to be pressed, assume the
+           CtrL is a fake one
+         */
+        if (lctrl && altgr)
+            lctrl = FALSE;
+
+        if (lctrl)
+            winSendKeyEvent(KEY_LCtrl, TRUE);
+
+        if (rctrl)
+            winSendKeyEvent(KEY_RCtrl, TRUE);
+
+        if (lshift)
+            winSendKeyEvent(KEY_ShiftL, TRUE);
+
+        if (rshift)
+            winSendKeyEvent(KEY_ShiftL, TRUE);
+
+        if (alt)
+            winSendKeyEvent(KEY_Alt, TRUE);
+
+        if (altgr)
+            winSendKeyEvent(KEY_AltLang, TRUE);
+    }
+
+    /*
+       Check if latching modifier key states have changed, and if so,
+       fake a press and a release to toggle the modifier to the correct
+       state
+    */
     dwKeyState = GetKeyState(VK_NUMLOCK) & 0x0001;
-    if (WIN_XOR(internalKeyStates & NumLockMask, dwKeyState)) {
+    if (LOGICAL_XOR(internalKeyStates & NumLockMask, dwKeyState)) {
         winSendKeyEvent(KEY_NumLock, TRUE);
         winSendKeyEvent(KEY_NumLock, FALSE);
     }
 
-    /* Has the key state changed? */
     dwKeyState = GetKeyState(VK_CAPITAL) & 0x0001;
-    if (WIN_XOR(internalKeyStates & LockMask, dwKeyState)) {
+    if (LOGICAL_XOR(internalKeyStates & LockMask, dwKeyState)) {
         winSendKeyEvent(KEY_CapsLock, TRUE);
         winSendKeyEvent(KEY_CapsLock, FALSE);
     }
 
-    /* Has the key state changed? */
     dwKeyState = GetKeyState(VK_SCROLL) & 0x0001;
-    if (WIN_XOR(internalKeyStates & ScrollLockMask, dwKeyState)) {
+    if (LOGICAL_XOR(internalKeyStates & ScrollLockMask, dwKeyState)) {
         winSendKeyEvent(KEY_ScrollLock, TRUE);
         winSendKeyEvent(KEY_ScrollLock, FALSE);
     }
 
-    /* Has the key state changed? */
     dwKeyState = GetKeyState(VK_KANA) & 0x0001;
-    if (WIN_XOR(internalKeyStates & KanaMask, dwKeyState)) {
+    if (LOGICAL_XOR(internalKeyStates & KanaMask, dwKeyState)) {
         winSendKeyEvent(KEY_HKTG, TRUE);
         winSendKeyEvent(KEY_HKTG, FALSE);
     }
+
+    /*
+       For strict correctness, we should also press any non-modifier keys
+       which are already down when we gain focus, but nobody has complained
+       yet :-)
+     */
 }
 
 /*
@@ -307,7 +350,6 @@ winIsFakeCtrl_L(UINT message, WPARAM wParam, LPARAM lParam)
     Bool fReturn;
 
     static Bool lastWasControlL = FALSE;
-    static UINT lastMessage;
     static LONG lastTime;
 
     /*
@@ -331,7 +373,6 @@ winIsFakeCtrl_L(UINT message, WPARAM wParam, LPARAM lParam)
 
         if (!fReturn) {
             lastWasControlL = TRUE;
-            lastMessage = message;
             lastTime = lTime;
         }
         else {
@@ -461,9 +502,9 @@ winSendKeyEvent(DWORD dwKey, Bool fDown)
     g_winKeyState[dwKey] = fDown;
 
     QueueKeyboardEvents(g_pwinKeyboard, fDown ? KeyPress : KeyRelease,
-                        dwKey + MIN_KEYCODE, NULL);
+                        dwKey + MIN_KEYCODE);
 
-    winDebug("winSendKeyEvent: dwKey: %d, fDown: %d\n", dwKey, fDown);
+    winDebug("winSendKeyEvent: dwKey: %u, fDown: %u\n", (unsigned int)dwKey, fDown);
 }
 
 BOOL
@@ -488,8 +529,8 @@ winCheckKeyPressed(WPARAM wParam, LPARAM lParam)
     return FALSE;
 }
 
-/* Only on shift release message is sent even if both are pressed.
- * Fix this here 
+/* Only one shift release message is sent even if both are pressed.
+ * Fix this here
  */
 void
 winFixShiftKeys(int iScanCode)

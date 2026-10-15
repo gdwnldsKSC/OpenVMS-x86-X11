@@ -1,16 +1,16 @@
-/* 
+/*
  * Copyright (c) 1997  Metro Link Incorporated
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
+ * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -18,11 +18,11 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  * Except as contained in this notice, the name of the Metro Link shall not be
  * used in advertising or otherwise to promote the sale, use or other dealings
  * in this Software without prior written authorization from Metro Link.
- * 
+ *
  */
 /*
  * Copyright (c) 1997-2003 by The XFree86 Project, Inc.
@@ -51,8 +51,6 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
-/* View/edit this file with tab stops set to 4 */
-
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
 #endif
@@ -71,13 +69,7 @@
 #include <errno.h>
 #endif
 
-#if defined(_POSIX_SOURCE)
 #include <limits.h>
-#else
-#define _POSIX_SOURCE
-#include <limits.h>
-#undef _POSIX_SOURCE
-#endif                          /* _POSIX_SOURCE */
 
 #if !defined(MAXHOSTNAMELEN)
 #define MAXHOSTNAMELEN 32
@@ -91,8 +83,6 @@
 
 #define CONFIG_BUF_LEN     1024
 #define CONFIG_MAX_FILES   64
-
-static int StringToToken(const char *, xf86ConfigSymTabRec *);
 
 static struct {
     FILE *file;
@@ -108,7 +98,7 @@ static int numFiles = 0;        /* number of config files */
 static int curFileIndex = 0;    /* index of current config file */
 static int pushToken = LOCK_TOKEN;
 static int eol_seen = 0;        /* private state to handle comments */
-LexRec val;
+LexRec xf86_lex_val;
 
 /*
  * xf86getNextLine --
@@ -246,17 +236,29 @@ xf86getNextLine(void)
     return ret;
 }
 
-/* 
+static int
+StringToToken(const char *str, const xf86ConfigSymTabRec * tab)
+{
+    int i;
+
+    for (i = 0; tab[i].token != -1; i++) {
+        if (!xf86nameCompare(tab[i].name, str))
+            return tab[i].token;
+    }
+    return ERROR_TOKEN;
+}
+
+/*
  * xf86getToken --
  *      Read next Token from the config file. Handle the global variable
  *      pushToken.
  */
 int
-xf86getToken(xf86ConfigSymTabRec * tab)
+xf86getToken(const xf86ConfigSymTabRec * tab)
 {
     int c, i;
 
-    /* 
+    /*
      * First check whether pushToken has a different value than LOCK_TOKEN.
      * In this case rBuf[] contains a valid STRING/TOKEN/NUMBER. But in the
      * oth * case the next token must be read from the input.
@@ -271,9 +273,9 @@ xf86getToken(xf86ConfigSymTabRec * tab)
 
         c = configBuf[configPos];
 
-        /* 
+        /*
          * Get start of next Token. EOF is handled,
-         * whitespaces are skipped. 
+         * whitespaces are skipped.
          */
 
  again:
@@ -334,10 +336,10 @@ xf86getToken(xf86ConfigSymTabRec * tab)
             }
             while ((c != '\n') && (c != '\r') && (c != '\0'));
             configRBuf[i] = '\0';
-            /* XXX no private copy.
+            /* XXX private copy.
              * Use xf86addComment when setting a comment.
              */
-            val.str = configRBuf;
+            xf86_lex_val.str = strdup(configRBuf);
             return COMMENT;
         }
 
@@ -349,7 +351,7 @@ xf86getToken(xf86ConfigSymTabRec * tab)
             return DASH;
         }
 
-        /* 
+        /*
          * Numbers are returned immediately ...
          */
         if (isdigit(c)) {
@@ -359,15 +361,15 @@ xf86getToken(xf86ConfigSymTabRec * tab)
                 if ((configBuf[configPos] == 'x') ||
                     (configBuf[configPos] == 'X')) {
                     base = 16;
-                    val.numType = PARSE_HEX;
+                    xf86_lex_val.numType = PARSE_HEX;
                 }
                 else {
                     base = 8;
-                    val.numType = PARSE_OCTAL;
+                    xf86_lex_val.numType = PARSE_OCTAL;
                 }
             else {
                 base = 10;
-                val.numType = PARSE_DECIMAL;
+                xf86_lex_val.numType = PARSE_DECIMAL;
             }
 
             configRBuf[0] = c;
@@ -379,12 +381,12 @@ xf86getToken(xf86ConfigSymTabRec * tab)
                 configRBuf[i++] = c;
             configPos--;        /* GJA -- one too far */
             configRBuf[i] = '\0';
-            val.num = strtoul(configRBuf, NULL, 0);
-            val.realnum = atof(configRBuf);
+            xf86_lex_val.num = strtoul(configRBuf, NULL, 0);
+            xf86_lex_val.realnum = atof(configRBuf);
             return NUMBER;
         }
 
-        /* 
+        /*
          * All Strings START with a \" ...
          */
         else if (c == '\"') {
@@ -394,12 +396,12 @@ xf86getToken(xf86ConfigSymTabRec * tab)
             }
             while ((c != '\"') && (c != '\n') && (c != '\r') && (c != '\0'));
             configRBuf[i] = '\0';
-            val.str = malloc(strlen(configRBuf) + 1);
-            strcpy(val.str, configRBuf);        /* private copy ! */
+            xf86_lex_val.str = malloc(strlen(configRBuf) + 1);
+            strcpy(xf86_lex_val.str, configRBuf);        /* private copy ! */
             return STRING;
         }
 
-        /* 
+        /*
          * ... and now we MUST have a valid token.  The search is
          * handled later along with the pushed tokens.
          */
@@ -419,7 +421,7 @@ xf86getToken(xf86ConfigSymTabRec * tab)
     }
     else {
 
-        /* 
+        /*
          * Here we deal with pushed tokens. Reinitialize pushToken again. If
          * the pushed token was NUMBER || STRING return them again ...
          */
@@ -433,17 +435,11 @@ xf86getToken(xf86ConfigSymTabRec * tab)
             return temp;
     }
 
-    /* 
+    /*
      * Joop, at last we have to lookup the token ...
      */
-    if (tab) {
-        i = 0;
-        while (tab[i].token != -1)
-            if (xf86nameCompare(configRBuf, tab[i].name) == 0)
-                return tab[i].token;
-            else
-                i++;
-    }
+    if (tab)
+        return StringToToken(configRBuf, tab);
 
     return ERROR_TOKEN;         /* Error catcher */
 }
@@ -456,8 +452,11 @@ xf86getSubToken(char **comment)
     for (;;) {
         token = xf86getToken(NULL);
         if (token == COMMENT) {
-            if (comment)
-                *comment = xf86addComment(*comment, val.str);
+            if (comment) {
+                *comment = xf86addComment(*comment, xf86_lex_val.str);
+                free(xf86_lex_val.str);
+                xf86_lex_val.str = NULL;
+            }
         }
         else
             return token;
@@ -465,15 +464,18 @@ xf86getSubToken(char **comment)
  /*NOTREACHED*/}
 
 int
-xf86getSubTokenWithTab(char **comment, xf86ConfigSymTabRec * tab)
+xf86getSubTokenWithTab(char **comment, const xf86ConfigSymTabRec * tab)
 {
     int token;
 
     for (;;) {
         token = xf86getToken(tab);
         if (token == COMMENT) {
-            if (comment)
-                *comment = xf86addComment(*comment, val.str);
+            if (comment) {
+                *comment = xf86addComment(*comment, xf86_lex_val.str);
+                free(xf86_lex_val.str);
+                xf86_lex_val.str = NULL;
+            }
         }
         else
             return token;
@@ -543,27 +545,8 @@ xf86pathIsSafe(const char *path)
  *    %%    %
  */
 
-#ifndef XCONFIGFILE
-#define XCONFIGFILE	"xorg.conf"
-#endif
-#ifndef XCONFIGDIR
-#define XCONFIGDIR	"xorg.conf.d"
-#endif
-#ifndef XCONFIGSUFFIX
 #define XCONFIGSUFFIX	".conf"
-#endif
-#ifndef PROJECTROOT
-#define PROJECTROOT	"/usr/X11R6"
-#endif
-#ifndef SYSCONFDIR
-#define SYSCONFDIR	PROJECTROOT "/etc"
-#endif
-#ifndef DATADIR
-#define DATADIR		PROJECTROOT "/share"
-#endif
-#ifndef XCONFENV
 #define XCONFENV	"XORGCONFIG"
-#endif
 
 #define BAIL_OUT		do {									\
 							free(result);				\
@@ -603,6 +586,8 @@ DoSubstitution(const char *template, const char *cmdline, const char *projroot,
         *envUsed = 0;
 
     result = malloc(PATH_MAX + 1);
+    if (result == NULL)
+        return NULL;
     l = 0;
     for (i = 0; template[i]; i++) {
         if (template[i] != '%') {
@@ -890,7 +875,7 @@ static char *
 OpenConfigDir(const char *path, const char *cmdline, const char *projroot,
               const char *confname)
 {
-    char *dirpath, *pathcopy;
+    char *dirpath = NULL, *pathcopy;
     const char *template;
     Bool found = FALSE;
     int cmdlineUsed = 0;
@@ -1005,7 +990,7 @@ xf86openConfigFile(const char *path, const char *cmdline, const char *projroot)
  * information.  If a command-line name is specified, then this function
  * fails if it is not found.
  *
- * The return value is a pointer to the actual name of the direcoty that was
+ * The return value is a pointer to the actual name of the directory that was
  * opened.  When no directory is found, the return value is NULL. The caller
  * should free() the returned value.
  *
@@ -1092,29 +1077,17 @@ xf86setSection(const char *section)
     configSection = strdup(section);
 }
 
-/* 
+/*
  * xf86getToken --
  *  Lookup a string if it is actually a token in disguise.
  */
 int
-xf86getStringToken(xf86ConfigSymTabRec * tab)
+xf86getStringToken(const xf86ConfigSymTabRec * tab)
 {
-    return StringToToken(val.str, tab);
+    return StringToToken(xf86_lex_val.str, tab);
 }
 
-static int
-StringToToken(const char *str, xf86ConfigSymTabRec * tab)
-{
-    int i;
-
-    for (i = 0; tab[i].token != -1; i++) {
-        if (!xf86nameCompare(tab[i].name, str))
-            return tab[i].token;
-    }
-    return ERROR_TOKEN;
-}
-
-/* 
+/*
  * Compare two names.  The characters '_', ' ', and '\t' are ignored
  * in the comparison.
  */
@@ -1128,6 +1101,8 @@ xf86nameCompare(const char *s1, const char *s2)
             return 0;
         else
             return 1;
+    } else if (!s2 || *s2 == 0) {
+        return -1;
     }
 
     while (*s1 == '_' || *s1 == ' ' || *s1 == '\t')
@@ -1152,9 +1127,10 @@ xf86nameCompare(const char *s1, const char *s2)
 }
 
 char *
-xf86addComment(char *cur, char *add)
+xf86addComment(char *cur, const char *add)
 {
     char *str;
+    const char *cstr;
     int len, curlen, iscomment, hasnewline = 0, insnewline, endnewline;
 
     if (add == NULL || add[0] == '\0')
@@ -1169,14 +1145,14 @@ xf86addComment(char *cur, char *add)
     else
         curlen = 0;
 
-    str = add;
+    cstr = add;
     iscomment = 0;
-    while (*str) {
-        if (*str != ' ' && *str != '\t')
+    while (*cstr) {
+        if (*cstr != ' ' && *cstr != '\t')
             break;
-        ++str;
+        ++cstr;
     }
-    iscomment = (*str == '#');
+    iscomment = (*cstr == '#');
 
     len = strlen(add);
     endnewline = add[len - 1] == '\n';

@@ -41,7 +41,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "extnsionst.h"
 #include "xacestr.h"
 #include "client.h"
-#include "../os/osdep.h"
 #define _XSELINUX_NEED_FLASK_MAP
 #include "xselinuxint.h"
 
@@ -74,10 +73,10 @@ static Atom atom_client_ctx;
 static security_id_t unlabeled_sid;
 
 /* forward declarations */
-static void SELinuxScreen(CallbackListPtr *, pointer, pointer);
+static void SELinuxScreen(CallbackListPtr *, void *, void *);
 
 /* "true" pointer value for use as callback data */
-static pointer truep = (pointer) 1;
+static void *truep = (void *) 1;
 
 /*
  * Performs an SELinux permission check.
@@ -115,7 +114,7 @@ SELinuxLabelClient(ClientPtr client)
     int fd = XaceGetConnectionNumber(client);
     SELinuxSubjectRec *subj;
     SELinuxObjectRec *obj;
-    security_context_t ctx;
+    char *ctx;
 
     subj = dixLookupPrivate(&client->devPrivates, subjectKey);
     obj = dixLookupPrivate(&client->devPrivates, objectKey);
@@ -170,8 +169,8 @@ SELinuxLabelInitial(void)
     XaceScreenAccessRec srec;
     SELinuxSubjectRec *subj;
     SELinuxObjectRec *obj;
-    security_context_t ctx;
-    pointer unused;
+    char *ctx;
+    void *unused;
 
     /* Do the serverClient */
     subj = dixLookupPrivate(&serverClient->devPrivates, subjectKey);
@@ -295,6 +294,9 @@ SELinuxAudit(void *auditdata,
 }
 
 static int
+SELinuxLog(int type, const char *fmt, ...) _X_ATTRIBUTE_PRINTF(2, 3);
+
+static int
 SELinuxLog(int type, const char *fmt, ...)
 {
     va_list ap;
@@ -316,6 +318,7 @@ SELinuxLog(int type, const char *fmt, ...)
     va_start(ap, fmt);
     vsnprintf(buf, MAX_AUDIT_MESSAGE_LENGTH, fmt, ap);
     rc = audit_log_user_avc_message(audit_fd, aut, buf, NULL, NULL, NULL, 0);
+    (void) rc;
     va_end(ap);
     LogMessageVerb(X_WARNING, 0, "%s", buf);
     return 0;
@@ -326,7 +329,7 @@ SELinuxLog(int type, const char *fmt, ...)
  */
 
 static void
-SELinuxDevice(CallbackListPtr *pcbl, pointer unused, pointer calldata)
+SELinuxDevice(CallbackListPtr *pcbl, void *unused, void *calldata)
 {
     XaceDeviceAccessRec *rec = calldata;
     SELinuxSubjectRec *subj;
@@ -363,7 +366,7 @@ SELinuxDevice(CallbackListPtr *pcbl, pointer unused, pointer calldata)
 }
 
 static void
-SELinuxSend(CallbackListPtr *pcbl, pointer unused, pointer calldata)
+SELinuxSend(CallbackListPtr *pcbl, void *unused, void *calldata)
 {
     XaceSendAccessRec *rec = calldata;
     SELinuxSubjectRec *subj;
@@ -405,7 +408,7 @@ SELinuxSend(CallbackListPtr *pcbl, pointer unused, pointer calldata)
 }
 
 static void
-SELinuxReceive(CallbackListPtr *pcbl, pointer unused, pointer calldata)
+SELinuxReceive(CallbackListPtr *pcbl, void *unused, void *calldata)
 {
     XaceReceiveAccessRec *rec = calldata;
     SELinuxSubjectRec *subj;
@@ -443,7 +446,7 @@ SELinuxReceive(CallbackListPtr *pcbl, pointer unused, pointer calldata)
 }
 
 static void
-SELinuxExtension(CallbackListPtr *pcbl, pointer unused, pointer calldata)
+SELinuxExtension(CallbackListPtr *pcbl, void *unused, void *calldata)
 {
     XaceExtAccessRec *rec = calldata;
     SELinuxSubjectRec *subj, *serv;
@@ -476,7 +479,7 @@ SELinuxExtension(CallbackListPtr *pcbl, pointer unused, pointer calldata)
     }
 
     /* Perform the security check */
-    auditdata.extension = rec->ext->name;
+    auditdata.extension = (char *) rec->ext->name;
     rc = SELinuxDoCheck(subj, obj, SECCLASS_X_EXTENSION, rec->access_mode,
                         &auditdata);
     if (rc != Success)
@@ -484,7 +487,7 @@ SELinuxExtension(CallbackListPtr *pcbl, pointer unused, pointer calldata)
 }
 
 static void
-SELinuxSelection(CallbackListPtr *pcbl, pointer unused, pointer calldata)
+SELinuxSelection(CallbackListPtr *pcbl, void *unused, void *calldata)
 {
     XaceSelectionAccessRec *rec = calldata;
     SELinuxSubjectRec *subj;
@@ -544,7 +547,7 @@ SELinuxSelection(CallbackListPtr *pcbl, pointer unused, pointer calldata)
 }
 
 static void
-SELinuxProperty(CallbackListPtr *pcbl, pointer unused, pointer calldata)
+SELinuxProperty(CallbackListPtr *pcbl, void *unused, void *calldata)
 {
     XacePropertyAccessRec *rec = calldata;
     SELinuxSubjectRec *subj;
@@ -608,7 +611,7 @@ SELinuxProperty(CallbackListPtr *pcbl, pointer unused, pointer calldata)
 }
 
 static void
-SELinuxResource(CallbackListPtr *pcbl, pointer unused, pointer calldata)
+SELinuxResource(CallbackListPtr *pcbl, void *unused, void *calldata)
 {
     XaceResourceAccessRec *rec = calldata;
     SELinuxSubjectRec *subj;
@@ -667,7 +670,7 @@ SELinuxResource(CallbackListPtr *pcbl, pointer unused, pointer calldata)
 }
 
 static void
-SELinuxScreen(CallbackListPtr *pcbl, pointer is_saver, pointer calldata)
+SELinuxScreen(CallbackListPtr *pcbl, void *is_saver, void *calldata)
 {
     XaceScreenAccessRec *rec = calldata;
     SELinuxSubjectRec *subj;
@@ -699,7 +702,7 @@ SELinuxScreen(CallbackListPtr *pcbl, pointer is_saver, pointer calldata)
 }
 
 static void
-SELinuxClient(CallbackListPtr *pcbl, pointer unused, pointer calldata)
+SELinuxClient(CallbackListPtr *pcbl, void *unused, void *calldata)
 {
     XaceClientAccessRec *rec = calldata;
     SELinuxSubjectRec *subj;
@@ -717,7 +720,7 @@ SELinuxClient(CallbackListPtr *pcbl, pointer unused, pointer calldata)
 }
 
 static void
-SELinuxServer(CallbackListPtr *pcbl, pointer unused, pointer calldata)
+SELinuxServer(CallbackListPtr *pcbl, void *unused, void *calldata)
 {
     XaceServerAccessRec *rec = calldata;
     SELinuxSubjectRec *subj;
@@ -739,7 +742,7 @@ SELinuxServer(CallbackListPtr *pcbl, pointer unused, pointer calldata)
  */
 
 static void
-SELinuxClientState(CallbackListPtr *pcbl, pointer unused, pointer calldata)
+SELinuxClientState(CallbackListPtr *pcbl, void *unused, void *calldata)
 {
     NewClientInfoRec *pci = calldata;
 
@@ -754,7 +757,7 @@ SELinuxClientState(CallbackListPtr *pcbl, pointer unused, pointer calldata)
 }
 
 static void
-SELinuxResourceState(CallbackListPtr *pcbl, pointer unused, pointer calldata)
+SELinuxResourceState(CallbackListPtr *pcbl, void *unused, void *calldata)
 {
     ResourceStateInfoRec *rec = calldata;
     SELinuxSubjectRec *subj;
@@ -770,7 +773,7 @@ SELinuxResourceState(CallbackListPtr *pcbl, pointer unused, pointer calldata)
     subj = dixLookupPrivate(&wClient(pWin)->devPrivates, subjectKey);
 
     if (subj->sid) {
-        security_context_t ctx;
+        char *ctx;
         int rc = avc_sid_to_context_raw(subj->sid, &ctx);
 
         if (rc < 0)
@@ -788,7 +791,7 @@ SELinuxResourceState(CallbackListPtr *pcbl, pointer unused, pointer calldata)
     obj = dixLookupPrivate(&pWin->devPrivates, objectKey);
 
     if (obj->sid) {
-        security_context_t ctx;
+        char *ctx;
         int rc = avc_sid_to_context_raw(obj->sid, &ctx);
 
         if (rc < 0)
@@ -807,15 +810,9 @@ SELinuxResourceState(CallbackListPtr *pcbl, pointer unused, pointer calldata)
 static int netlink_fd;
 
 static void
-SELinuxBlockHandler(void *data, struct timeval **tv, void *read_mask)
+SELinuxNetlinkNotify(int fd, int ready, void *data)
 {
-}
-
-static void
-SELinuxWakeupHandler(void *data, int err, void *read_mask)
-{
-    if (FD_ISSET(netlink_fd, (fd_set *) read_mask))
-        avc_netlink_check_nb();
+    avc_netlink_check_nb();
 }
 
 void
@@ -841,9 +838,7 @@ SELinuxFlaskReset(void)
     /* Tear down SELinux stuff */
     audit_close(audit_fd);
     avc_netlink_release_fd();
-    RemoveBlockAndWakeupHandlers(SELinuxBlockHandler, SELinuxWakeupHandler,
-                                 NULL);
-    RemoveGeneralSocket(netlink_fd);
+    RemoveNotifyFd(netlink_fd);
 
     avc_destroy();
 }
@@ -852,7 +847,7 @@ void
 SELinuxFlaskInit(void)
 {
     struct selinux_opt avc_option = { AVC_OPT_SETENFORCE, (char *) 0 };
-    security_context_t ctx;
+    char *ctx;
     int ret = TRUE;
 
     switch (selinuxEnforcingState) {
@@ -915,9 +910,7 @@ SELinuxFlaskInit(void)
         FatalError("SELinux: Failed to create atom\n");
 
     netlink_fd = avc_netlink_acquire_fd();
-    AddGeneralSocket(netlink_fd);
-    RegisterBlockAndWakeupHandlers(SELinuxBlockHandler, SELinuxWakeupHandler,
-                                   NULL);
+    SetNotifyFd(netlink_fd, SELinuxNetlinkNotify, X_NOTIFY_READ, NULL);
 
     /* Register callbacks */
     ret &= AddCallback(&ClientStateCallback, SELinuxClientState, NULL);

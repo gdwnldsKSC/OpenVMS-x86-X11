@@ -38,13 +38,8 @@
 #include <dix-config.h>
 #endif
 
-#ifdef XFree86LOADER
-#include "xf86.h"
-#include "xf86_ansic.h"
-#else
 #include <sys/time.h>
 #include <unistd.h>
-#endif
 
 #include <X11/X.h>
 #include <X11/Xproto.h>
@@ -55,6 +50,7 @@
 #include "misc.h"
 #include "dixstruct.h"
 #include "extnsionst.h"
+#include "extinit.h"
 #include "colormapst.h"
 #include "cursorstr.h"
 #include "scrnintstr.h"
@@ -68,11 +64,10 @@
 #include "mi.h"
 #include "mipointer.h"
 #include "rootless.h"
+#include "rootlessCommon.h"
 #include "x-hash.h"
 #include "x-hook.h"
 #include "driWrap.h"
-
-#include <AvailabilityMacros.h>
 
 static DevPrivateKeyRec DRIScreenPrivKeyRec;
 #define DRIScreenPrivKey       (&DRIScreenPrivKeyRec)
@@ -141,15 +136,6 @@ DRIFinishScreenInit(ScreenPtr pScreen)
     DRIScreenPrivPtr pDRIPriv = DRI_SCREEN_PRIV(pScreen);
 
     /* Wrap DRI support */
-    pDRIPriv->wrap.ValidateTree = pScreen->ValidateTree;
-    pScreen->ValidateTree = DRIValidateTree;
-
-    pDRIPriv->wrap.PostValidateTree = pScreen->PostValidateTree;
-    pScreen->PostValidateTree = DRIPostValidateTree;
-
-    pDRIPriv->wrap.WindowExposures = pScreen->WindowExposures;
-    pScreen->WindowExposures = DRIWindowExposures;
-
     pDRIPriv->wrap.CopyWindow = pScreen->CopyWindow;
     pScreen->CopyWindow = DRICopyWindow;
 
@@ -228,12 +214,10 @@ DRIUpdateSurface(DRIDrawablePrivPtr pDRIDrawablePriv, DrawablePtr pDraw)
     if (pDRIDrawablePriv->sid == 0)
         return;
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1030
     wc.depth = (pDraw->bitsPerPixel == 32 ? XP_DEPTH_ARGB8888
                 : pDraw->bitsPerPixel == 16 ? XP_DEPTH_RGB555 : XP_DEPTH_NIL);
     if (wc.depth != XP_DEPTH_NIL)
         flags |= XP_DEPTH;
-#endif
 
     if (pDraw->type == DRAWABLE_WINDOW) {
         WindowPtr pWin = (WindowPtr)pDraw;
@@ -296,6 +280,10 @@ CreateSurfaceForWindow(ScreenPtr pScreen, WindowPtr pWin,
         wid = x_cvt_vptr_to_uint(RootlessFrameForWindow(pWin, TRUE));
 
         if (wid == 0) {
+            ErrorF("%s: RootlessFrameForWindow returned 0 for window 0x%x "
+                   "(realized=%d, mapped=%d, viewable=%d)\n", __func__,
+                   (unsigned int)pWin->drawable.id, pWin->realized,
+                   pWin->mapped, pWin->viewable);
             free(pDRIDrawablePriv);
             return NULL;
         }
@@ -304,6 +292,8 @@ CreateSurfaceForWindow(ScreenPtr pScreen, WindowPtr pWin,
         err = xp_create_surface(wid, &pDRIDrawablePriv->sid);
 
         if (err != Success) {
+            ErrorF("%s: xp_create_surface(wid 0x%x) failed: %d\n", __func__,
+                   (unsigned int)wid, err);
             free(pDRIDrawablePriv);
             return NULL;
         }
@@ -313,7 +303,15 @@ CreateSurfaceForWindow(ScreenPtr pScreen, WindowPtr pWin,
         wc.sibling = 0;
         err = xp_configure_surface(pDRIDrawablePriv->sid, XP_STACKING, &wc);
 
+        DebugF("%s: window 0x%x wid 0x%x sid 0x%x "
+               "(realized=%d mapped=%d viewable=%d): xp_configure_surface -> %d\n",
+               __func__, (unsigned int)pWin->drawable.id, (unsigned int)wid,
+               (unsigned int)pDRIDrawablePriv->sid, pWin->realized, pWin->mapped,
+               pWin->viewable, err);
+
         if (err != Success) {
+            ErrorF("%s: xp_configure_surface(sid 0x%x) failed: %d\n", __func__,
+                   (unsigned int)pDRIDrawablePriv->sid, err);
             xp_destroy_surface(pDRIDrawablePriv->sid);
             free(pDRIDrawablePriv);
             return NULL;
@@ -384,22 +382,23 @@ DRICreateSurface(ScreenPtr pScreen, Drawable id,
     DRIDrawablePrivPtr pDRIDrawablePriv;
 
     if (pDrawable->type == DRAWABLE_WINDOW) {
+        /* <rdar://problem/12338921>
+         * http://bugs.winehq.org/show_bug.cgi?id=31751
+         */
+        RootlessStopDrawing((WindowPtr)pDrawable, FALSE);
+
         pDRIDrawablePriv = CreateSurfaceForWindow(pScreen,
                                                   (WindowPtr)pDrawable, &wid);
 
         if (NULL == pDRIDrawablePriv)
             return FALSE;  /*error*/
-    }
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1030
-    else if (pDrawable->type == DRAWABLE_PIXMAP) {
+    } else if (pDrawable->type == DRAWABLE_PIXMAP) {
         pDRIDrawablePriv = CreateSurfaceForPixmap(pScreen,
                                                   (PixmapPtr)pDrawable);
 
         if (NULL == pDRIDrawablePriv)
             return FALSE;  /*error*/
-    }
-#endif
-    else {
+    } else {
         /* We handle GLXPbuffers in a different way (via CGL). */
         return FALSE;
     }
@@ -453,7 +452,7 @@ DRICreateSurface(ScreenPtr pScreen, Drawable id,
                                 pDRIDrawablePriv->sid), pDRIDrawablePriv);
 
         /* track this in case this window is destroyed */
-        AddResource(id, DRIDrawablePrivResType, (pointer)pDrawable);
+        AddResource(id, DRIDrawablePrivResType, (void *)pDrawable);
 
         /* Initialize shape */
         DRIUpdateSurface(pDRIDrawablePriv, pDrawable);
@@ -527,7 +526,7 @@ DRIDestroySurface(ScreenPtr pScreen, Drawable id, DrawablePtr pDrawable,
  * drops to <= 0, or the window/pixmap is destroyed.
  */
 Bool
-DRIDrawablePrivDelete(pointer pResource, XID id)
+DRIDrawablePrivDelete(void *pResource, XID id)
 {
     DrawablePtr pDrawable = (DrawablePtr)pResource;
     DRIScreenPrivPtr pDRIPriv = DRI_SCREEN_PRIV(pDrawable->pScreen);
@@ -581,24 +580,6 @@ DRIDrawablePrivDelete(pointer pResource, XID id)
 }
 
 void
-DRIWindowExposures(WindowPtr pWin, RegionPtr prgn, RegionPtr bsreg)
-{
-    ScreenPtr pScreen = pWin->drawable.pScreen;
-    DRIScreenPrivPtr pDRIPriv = DRI_SCREEN_PRIV(pScreen);
-    DRIDrawablePrivPtr pDRIDrawablePriv = DRI_DRAWABLE_PRIV_FROM_WINDOW(pWin);
-
-    if (pDRIDrawablePriv) {
-        /* FIXME: something? */
-    }
-
-    pScreen->WindowExposures = pDRIPriv->wrap.WindowExposures;
-
-    (*pScreen->WindowExposures)(pWin, prgn, bsreg);
-
-    pScreen->WindowExposures = DRIWindowExposures;
-}
-
-void
 DRICopyWindow(WindowPtr pWin, DDXPointRec ptOldOrg, RegionPtr prgnSrc)
 {
     ScreenPtr pScreen = pWin->drawable.pScreen;
@@ -620,51 +601,6 @@ DRICopyWindow(WindowPtr pWin, DDXPointRec ptOldOrg, RegionPtr prgnSrc)
 
     /* rewrap */
     pScreen->CopyWindow = DRICopyWindow;
-}
-
-int
-DRIValidateTree(WindowPtr pParent, WindowPtr pChild, VTKind kind)
-{
-    ScreenPtr pScreen = pParent->drawable.pScreen;
-    DRIScreenPrivPtr pDRIPriv = DRI_SCREEN_PRIV(pScreen);
-    int returnValue;
-
-    /* unwrap */
-    pScreen->ValidateTree = pDRIPriv->wrap.ValidateTree;
-
-    /* call lower layers */
-    returnValue = (*pScreen->ValidateTree)(pParent, pChild, kind);
-
-    /* rewrap */
-    pScreen->ValidateTree = DRIValidateTree;
-
-    return returnValue;
-}
-
-void
-DRIPostValidateTree(WindowPtr pParent, WindowPtr pChild, VTKind kind)
-{
-    ScreenPtr pScreen;
-    DRIScreenPrivPtr pDRIPriv;
-
-    if (pParent) {
-        pScreen = pParent->drawable.pScreen;
-    }
-    else {
-        pScreen = pChild->drawable.pScreen;
-    }
-    pDRIPriv = DRI_SCREEN_PRIV(pScreen);
-
-    if (pDRIPriv->wrap.PostValidateTree) {
-        /* unwrap */
-        pScreen->PostValidateTree = pDRIPriv->wrap.PostValidateTree;
-
-        /* call lower layers */
-        (*pScreen->PostValidateTree)(pParent, pChild, kind);
-
-        /* rewrap */
-        pScreen->PostValidateTree = DRIPostValidateTree;
-    }
 }
 
 void
@@ -827,7 +763,7 @@ DRICreatePixmap(ScreenPtr pScreen, Drawable id,
 
     dixSetPrivate(&pPix->devPrivates, DRIPixmapBufferPrivKey, shared);
 
-    AddResource(id, DRIDrawablePrivResType, (pointer)pDrawable);
+    AddResource(id, DRIDrawablePrivResType, (void *)pDrawable);
 
     return TRUE;
 }
@@ -882,7 +818,7 @@ DRIFreePixmapImp(DrawablePtr pDrawable)
     shm_unlink(shared->shmPath);
     free(shared);
 
-    dixSetPrivate(&pPix->devPrivates, DRIPixmapBufferPrivKey, (pointer)NULL);
+    dixSetPrivate(&pPix->devPrivates, DRIPixmapBufferPrivKey, (void *)NULL);
 
     return TRUE;
 }

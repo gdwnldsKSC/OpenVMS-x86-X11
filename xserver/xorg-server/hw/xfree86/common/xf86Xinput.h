@@ -1,6 +1,6 @@
 /*
  * Copyright 1995-1999 by Frederic Lepied, France. <Lepied@XFree86.org>
- *                                                                            
+ *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is  hereby granted without fee, provided that
  * the  above copyright   notice appear  in   all  copies and  that both  that
@@ -9,8 +9,8 @@
  * advertising or publicity pertaining to distribution of the software without
  * specific,  written      prior  permission.     Frederic  Lepied   makes  no
  * representations about the suitability of this software for any purpose.  It
- * is provided "as is" without express or implied warranty.                   
- *                                                                            
+ * is provided "as is" without express or implied warranty.
+ *
  * FREDERIC  LEPIED DISCLAIMS ALL   WARRANTIES WITH REGARD  TO  THIS SOFTWARE,
  * INCLUDING ALL IMPLIED   WARRANTIES OF MERCHANTABILITY  AND   FITNESS, IN NO
  * EVENT  SHALL FREDERIC  LEPIED BE   LIABLE   FOR ANY  SPECIAL, INDIRECT   OR
@@ -51,6 +51,7 @@
 #ifndef _xf86Xinput_h
 #define _xf86Xinput_h
 
+#include "xf86.h"
 #include "xf86str.h"
 #include "inputstr.h"
 #include <X11/extensions/XI.h>
@@ -61,23 +62,31 @@
 #define XI86_ALWAYS_CORE	0x04    /* device always controls the pointer */
 /* the device sends Xinput and core pointer events */
 #define XI86_SEND_CORE_EVENTS	XI86_ALWAYS_CORE
+/* 0x08 is reserved for legacy XI86_SEND_DRAG_EVENTS, do not use for now */
+/* server-internal only */
+#define XI86_DEVICE_DISABLED    0x10    /* device was disabled before vt switch */
+#define XI86_SERVER_FD		0x20	/* fd is managed by xserver */
+
+/* Input device driver capabilities */
+#define XI86_DRV_CAP_SERVER_FD	0x01
 
 /* This holds the input driver entry and module information. */
 typedef struct _InputDriverRec {
     int driverVersion;
-    char *driverName;
+    const char *driverName;
     void (*Identify) (int flags);
     int (*PreInit) (struct _InputDriverRec * drv,
                     struct _InputInfoRec * pInfo, int flags);
     void (*UnInit) (struct _InputDriverRec * drv,
                     struct _InputInfoRec * pInfo, int flags);
-    pointer module;
-    char **default_options;
+    void *module;
+    const char **default_options;
+    int capabilities;
 } InputDriverRec, *InputDriverPtr;
 
 /* This is to input devices what the ScrnInfoRec is to screens. */
 
-typedef struct _InputInfoRec {
+struct _InputInfoRec {
     struct _InputInfoRec *next;
     char *name;
     char *driver;
@@ -93,14 +102,16 @@ typedef struct _InputInfoRec {
       int *valuators, int first_valuator, int num_valuators);
 
     int fd;
+    int major;
+    int minor;
     DeviceIntPtr dev;
-    pointer private;
-    char *type_name;
+    void *private;
+    const char *type_name;
     InputDriverPtr drv;
-    pointer module;
+    void *module;
     XF86OptionPtr options;
     InputAttributes *attrs;
-} *InputInfoPtr;
+};
 
 /* xf86Globals.c */
 extern InputInfoPtr xf86InputDevs;
@@ -137,23 +148,30 @@ extern _X_EXPORT void xf86PostButtonEventM(DeviceIntPtr device, int is_absolute,
                                            int button, int is_down,
                                            const ValuatorMask *mask);
 extern _X_EXPORT void xf86PostKeyEvent(DeviceIntPtr device,
-                                       unsigned int key_code, int is_down,
-                                       int is_absolute, int first_valuator,
-                                       int num_valuators, ...);
+                                       unsigned int key_code, int is_down);
 extern _X_EXPORT void xf86PostKeyEventM(DeviceIntPtr device,
-                                        unsigned int key_code, int is_down,
-                                        int is_absolute,
-                                        const ValuatorMask *mask);
+                                        unsigned int key_code, int is_down);
 extern _X_EXPORT void xf86PostKeyEventP(DeviceIntPtr device,
-                                        unsigned int key_code, int is_down,
-                                        int is_absolute, int first_valuator,
-                                        int num_valuators,
-                                        const int *valuators);
+                                        unsigned int key_code, int is_down);
 extern _X_EXPORT void xf86PostKeyboardEvent(DeviceIntPtr device,
                                             unsigned int key_code, int is_down);
 extern _X_EXPORT void xf86PostTouchEvent(DeviceIntPtr dev, uint32_t touchid,
                                          uint16_t type, uint32_t flags,
                                          const ValuatorMask *mask);
+extern _X_EXPORT void xf86PostGesturePinchEvent(DeviceIntPtr dev, uint16_t type,
+                                                uint16_t num_touches,
+                                                uint32_t flags,
+                                                double delta_x, double delta_y,
+                                                double delta_unaccel_x,
+                                                double delta_unaccel_y,
+                                                double scale, double delta_angle);
+extern _X_EXPORT void xf86PostGestureSwipeEvent(DeviceIntPtr dev, uint16_t type,
+                                                uint16_t num_touches,
+                                                uint32_t flags,
+                                                double delta_x, double delta_y,
+                                                double delta_unaccel_x,
+                                                double delta_unaccel_y);
+
 extern _X_EXPORT InputInfoPtr xf86FirstLocalDevice(void);
 extern _X_EXPORT int xf86ScaleAxis(int Cx, int to_max, int to_min, int from_max,
                                    int from_min);
@@ -169,13 +187,14 @@ extern _X_EXPORT void xf86AddEnabledDevice(InputInfoPtr pInfo);
 extern _X_EXPORT void xf86RemoveEnabledDevice(InputInfoPtr pInfo);
 extern _X_EXPORT void xf86DisableDevice(DeviceIntPtr dev, Bool panic);
 extern _X_EXPORT void xf86EnableDevice(DeviceIntPtr dev);
+extern _X_EXPORT void xf86InputEnableVTProbe(void);
 
 /* not exported */
 int xf86NewInputDevice(InputInfoPtr pInfo, DeviceIntPtr *pdev, BOOL is_auto);
 InputInfoPtr xf86AllocateInput(void);
 
 /* xf86Helper.c */
-extern _X_EXPORT void xf86AddInputDriver(InputDriverPtr driver, pointer module,
+extern _X_EXPORT void xf86AddInputDriver(InputDriverPtr driver, void *module,
                                          int flags);
 extern _X_EXPORT void xf86DeleteInputDriver(int drvIndex);
 extern _X_EXPORT InputDriverPtr xf86LookupInputDriver(const char *name);
@@ -193,6 +212,11 @@ extern _X_EXPORT void
 xf86VIDrvMsgVerb(InputInfoPtr dev,
                  MessageType type, int verb, const char *format, va_list args)
 _X_ATTRIBUTE_PRINTF(4, 0);
+
+extern _X_EXPORT void xf86AddInputEventDrainCallback(CallbackProcPtr callback,
+                                                     void *param);
+extern _X_EXPORT void xf86RemoveInputEventDrainCallback(CallbackProcPtr callback,
+                                                        void *param);
 
 /* xf86Option.c */
 extern _X_EXPORT void

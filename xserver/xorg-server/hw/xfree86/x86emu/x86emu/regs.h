@@ -39,6 +39,8 @@
 #ifndef __X86EMU_REGS_H
 #define __X86EMU_REGS_H
 
+#include <X11/Xfuncproto.h>
+
 /*---------------------- Macros and type definitions ----------------------*/
 
 #ifdef PACK
@@ -56,7 +58,7 @@
  * EAX & 0xff  === AL
  * EAX & 0xffff == AX
  *
- * etc.  The result is that alot of the calculations can then be
+ * etc.  The result is that a lot of the calculations can then be
  * done using the native instruction set fully.
  */
 
@@ -107,10 +109,19 @@ struct i386_special_regs {
     u32 FLAGS;
 };
 
-/*  
+/*
  * Segment registers here represent the 16 bit quantities
  * CS, DS, ES, SS.
  */
+
+#if defined(__sun) && defined(CS) /* avoid conflicts with Solaris sys/regset.h */
+# undef CS
+# undef DS
+# undef SS
+# undef ES
+# undef FS
+# undef GS
+#endif
 
 struct i386_segment_regs {
     u16 CS, DS, SS, ES, FS, GS;
@@ -137,14 +148,6 @@ struct i386_segment_regs {
 #define R_EBX  gen.B.I32_reg.e_reg
 #define R_ECX  gen.C.I32_reg.e_reg
 #define R_EDX  gen.D.I32_reg.e_reg
-
-/* special registers */
-#define R_SP  spc.SP.I16_reg.x_reg
-#define R_BP  spc.BP.I16_reg.x_reg
-#define R_SI  spc.SI.I16_reg.x_reg
-#define R_DI  spc.DI.I16_reg.x_reg
-#define R_IP  spc.IP.I16_reg.x_reg
-#define R_FLG spc.FLAGS
 
 /* special registers */
 #define R_SP  spc.SP.I16_reg.x_reg
@@ -185,8 +188,8 @@ struct i386_segment_regs {
 #define F_ALWAYS_ON  (0x0002)   /* flag bits always on */
 
 /*
- * Define a mask for only those flag bits we will ever pass back 
- * (via PUSHF) 
+ * Define a mask for only those flag bits we will ever pass back
+ * (via PUSHF)
  */
 #define F_MSK (FB_CF|FB_PF|FB_AF|FB_ZF|FB_SF|FB_TF|FB_IF|FB_DF|FB_OF)
 
@@ -268,8 +271,8 @@ typedef struct {
      *  Delayed flag set        3 bits  (zero, signed, parity)
      *  reserved                6 bits
      *  interrupt #             8 bits  instruction raised interrupt
-     *  BIOS video segregs      4 bits  
-     *  Interrupt Pending       1 bits  
+     *  BIOS video segregs      4 bits
+     *  Interrupt Pending       1 bits
      *  Extern interrupt        1 bits
      *  Halted                  1 bits
      */
@@ -328,7 +331,8 @@ extern "C" {                    /* Use "C" linkage when in C++ mode */
 
 /* Function to log information at runtime */
 
-    void printk(const char *fmt, ...);
+    void printk(const char *fmt, ...)
+        _X_ATTRIBUTE_PRINTF(1, 2);
 
 #ifdef  __cplusplus
 }                               /* End of "C" linkage for C++           */

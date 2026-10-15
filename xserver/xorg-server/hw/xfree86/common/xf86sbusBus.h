@@ -52,16 +52,16 @@ typedef struct sbus_device {
     int fd;
     int width, height;
     sbusPromNode node;
-    char *descr;
-    char *device;
+    const char *descr;
+    const char *device;
 } sbusDevice, *sbusDevicePtr;
 
 struct sbus_devtable {
     int devId;
     int fbType;
-    char *promName;
-    char *driverName;
-    char *descr;
+    const char *promName;
+    const char *driverName;
+    const char *descr;
 };
 
 extern _X_EXPORT void xf86SbusProbe(void);
@@ -76,10 +76,10 @@ extern _X_EXPORT sbusDevicePtr xf86GetSbusInfoForEntity(int entityIndex);
 extern _X_EXPORT int xf86GetEntityForSbusInfo(sbusDevicePtr psdp);
 extern _X_EXPORT void xf86SbusUseBuiltinMode(ScrnInfoPtr pScrn,
                                              sbusDevicePtr psdp);
-extern _X_EXPORT pointer xf86MapSbusMem(sbusDevicePtr psdp,
+extern _X_EXPORT void *xf86MapSbusMem(sbusDevicePtr psdp,
                                         unsigned long offset,
                                         unsigned long size);
-extern _X_EXPORT void xf86UnmapSbusMem(sbusDevicePtr psdp, pointer addr,
+extern _X_EXPORT void xf86UnmapSbusMem(sbusDevicePtr psdp, void *addr,
                                        unsigned long size);
 extern _X_EXPORT void xf86SbusHideOsHwCursor(sbusDevicePtr psdp);
 extern _X_EXPORT void xf86SbusSetOsHwCursorCmap(sbusDevicePtr psdp, int bg,
@@ -102,7 +102,7 @@ extern _X_EXPORT int sparcPromGetBool(sbusPromNodePtr pnode, const char *prop);
 extern _X_EXPORT void sparcPromAssignNodes(void);
 extern _X_EXPORT char *sparcPromNode2Pathname(sbusPromNodePtr pnode);
 extern _X_EXPORT int sparcPromPathname2Node(const char *pathName);
-extern _X_EXPORT char *sparcDriverName(void);
+extern _X_EXPORT const char *sparcDriverName(void);
 
 extern Bool xf86SbusConfigure(void *busData, sbusDevicePtr sBus);
 extern void xf86SbusConfigureNewDev(void *busData, sbusDevicePtr sBus,

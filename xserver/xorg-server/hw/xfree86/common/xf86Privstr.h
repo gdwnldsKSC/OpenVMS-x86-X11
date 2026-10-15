@@ -37,12 +37,6 @@
 #include "xf86str.h"
 
 typedef enum {
-    LogNone,
-    LogFlush,
-    LogSync
-} Log;
-
-typedef enum {
     XF86_GlxVisualsMinimal,
     XF86_GlxVisualsTypical,
     XF86_GlxVisualsAll,
@@ -61,7 +55,7 @@ typedef struct {
     /* event handler part */
     int lastEventTime;
     Bool vtRequestsPending;
-#ifdef sun
+#ifdef __sun
     int vtPendingNum;
 #endif
     Bool dontVTSwitch;
@@ -69,8 +63,6 @@ typedef struct {
     Bool ShareVTs;
     Bool dontZap;
     Bool dontZoom;
-    Bool notrapSignals;         /* don't exit cleanly - die at fault */
-    Bool caughtSignal;
 
     /* graphics part */
     ScreenPtr currentScreen;
@@ -86,21 +78,12 @@ typedef struct {
     Bool miscModInDevEnabled;   /* Allow input devices to be
                                  * changed */
     Bool miscModInDevAllowNonLocal;
-    Bool useSIGIO;              /* Use SIGIO for handling
-                                   input device events */
-    Pix24Flags pixmap24;
-    MessageType pix24From;
     Bool pmFlag;
-    Log log;
-    Bool disableRandR;
-    MessageType randRFrom;
-    Bool aiglx;
-    MessageType aiglxFrom;
+    MessageType iglxFrom;
     XF86_GlxVisuals glxVisuals;
     MessageType glxVisualsFrom;
 
     Bool useDefaultFontPath;
-    MessageType useDefaultFontPathFrom;
     Bool ignoreABI;
 
     Bool forceInputDevices;     /* force xorg.conf or built-in input devices */
@@ -110,36 +93,11 @@ typedef struct {
 
     Bool dri2;
     MessageType dri2From;
+
+    Bool autoAddGPU;
+    const char *debug;
+    Bool autoBindGPU;
 } xf86InfoRec, *xf86InfoPtr;
-
-#ifdef DPMSExtension
-/* Private info for DPMS */
-typedef struct {
-    CloseScreenProcPtr CloseScreen;
-    Bool Enabled;
-    int Flags;
-} DPMSRec, *DPMSPtr;
-#endif
-
-#ifdef XF86VIDMODE
-/* Private info for Video Mode Extentsion */
-typedef struct {
-    DisplayModePtr First;
-    DisplayModePtr Next;
-    int Flags;
-    CloseScreenProcPtr CloseScreen;
-} VidModeRec, *VidModePtr;
-#endif
-
-/* Information for root window properties. */
-typedef struct _RootWinProp {
-    struct _RootWinProp *next;
-    char *name;
-    Atom type;
-    short format;
-    long size;
-    pointer data;
-} RootWinProp, *RootWinPropPtr;
 
 /* ISC's cc can't handle ~ of UL constants, so explicitly type cast them. */
 #define XLED1   ((unsigned long) 0x00000001)
@@ -160,5 +118,9 @@ typedef struct _RootWinProp {
 #define PCVT		  16
 #define WSCONS		  32
 #endif
+
+/* Root window property to tell clients whether our VT is currently active.
+ * Name chosen to match the "XFree86_VT" property. */
+#define HAS_VT_ATOM_NAME "XFree86_has_VT"
 
 #endif                          /* _XF86PRIVSTR_H */

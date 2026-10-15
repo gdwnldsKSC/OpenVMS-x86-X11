@@ -28,6 +28,9 @@
  * Author: Jakob Bornecrantz <wallbraker@gmail.com>
  * Author: Thomas Hellstrom <thellstrom@vmware.com>
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <unistd.h>
 #include <string.h>
@@ -98,7 +101,7 @@ crtc_dpms(xf86CrtcPtr crtc, int mode)
 
 /*
  * Disable outputs and crtcs and drop the scanout reference from
- * scanout pixmaps. This will essentialy free all kms fb allocations.
+ * scanout pixmaps. This will essentially free all kms fb allocations.
  */
 
 void
@@ -118,6 +121,26 @@ vmwgfx_disable_scanout(ScrnInfoPtr pScrn)
 	crtc->enabled = save_enabled;
     }
     xf86RotateFreeShadow(pScrn);
+}
+
+static Bool
+vmwgfx_scanout_equals_pixmap(DisplayModePtr mode, PixmapPtr pixmap,
+			     int x, int y)
+{
+    return x == 0 && y == 0;
+/*
+ * Mode test is disabled for now, since the X server has a tendency to first
+ * change the pixmap dimensions, then change the mode, keeping the pixmap.
+ * This would lead to a lot of false non-equals, or flickering if we were to
+ * kill the drm fb in between.
+ * However, currently we prefer false equals as long as x == 0 and y == 0.
+ * The false equals will then typically correspond to the primary screen in a
+ * multimon setup. Let's live with that for now.
+ */
+#if 0
+	&& mode->HDisplay == pixmap->drawable.width &&
+	mode->VDisplay == pixmap->drawable.height;
+#endif
 }
 
 static Bool
@@ -149,6 +172,7 @@ crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
 
     connector_id = xorg_output_get_id(output);
 
+    memset(&drm_mode, 0, sizeof(drm_mode));
     drm_mode.clock = mode->Clock;
     drm_mode.hdisplay = mode->HDisplay;
     drm_mode.hsync_start = mode->HSyncStart;
@@ -191,8 +215,10 @@ crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
 	    vmwgfx_scanout_unref(&crtcp->entry);
 
 	crtcp->entry.pixmap = pixmap;
-	crtcp->scanout_id = vmwgfx_scanout_ref(&crtcp->entry);
+	crtcp->scanout_id = vmwgfx_scanout_ref
+	    (&crtcp->entry, vmwgfx_scanout_equals_pixmap(mode, pixmap, x, y));
 	if (crtcp->scanout_id == -1) {
+	    crtcp->entry.pixmap = NULL;
 	    LogMessage(X_ERROR, "Failed to convert pixmap to scanout.\n");
 	    return FALSE;
 	}
@@ -210,6 +236,17 @@ crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
 	crtc->funcs->gamma_set(crtc, crtc->gamma_red, crtc->gamma_green,
 			       crtc->gamma_blue, crtc->gamma_size);
     crtc->active = TRUE;
+#endif
+
+    /*
+     * Strictly, this needs to be done only once per configuration change,
+     * not once per crtc, but there's no better place to put this. Since
+     * Intel wrote the crtc code, let's do what the xf86-video-intel driver
+     * does.
+     */
+#if (GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 23)
+    if (pScreen)
+	xf86_reload_cursors(pScreen);
 #endif
 
     return TRUE;
@@ -250,8 +287,12 @@ crtc_shadow_create(xf86CrtcPtr crtc, void *data, int width, int height)
 static void
 crtc_shadow_destroy(xf86CrtcPtr crtc, PixmapPtr rotate_pixmap, void *data)
 {
-    ScreenPtr pScreen = rotate_pixmap->drawable.pScreen;
+    ScreenPtr pScreen;
 
+    if (rotate_pixmap == NULL)
+        return;
+
+    pScreen = rotate_pixmap->drawable.pScreen;
     pScreen->DestroyPixmap(rotate_pixmap);
 }
 
@@ -271,6 +312,10 @@ crtc_set_cursor_position(xf86CrtcPtr crtc, int x, int y)
 {
     modesettingPtr ms = modesettingPTR(crtc->scrn);
     struct crtc_private *crtcp = crtc->driver_private;
+
+    /* Seems like newer X servers try to move cursors without images */
+    if (!crtcp->cursor_bo)
+	return;
 
     drmModeMoveCursor(ms->fd, crtcp->drm_crtc->crtc_id, x, y);
 }
@@ -292,8 +337,11 @@ crtc_load_cursor_argb_kms(xf86CrtcPtr crtc, CARD32 * image)
     if (!crtcp->cursor_bo) {
 	size_t size = 64*64*4;
         crtcp->cursor_bo = vmwgfx_dmabuf_alloc(ms->fd, size);
-	if (!crtcp->cursor_bo)
+	if (!crtcp->cursor_bo) {
+	    xf86DrvMsg(crtc->scrn->scrnIndex, X_ERROR,
+		       "Failed to create a dmabuf for cursor.\n");
 	    return;
+	}
 	crtcp->cursor_handle = crtcp->cursor_bo->handle;
     }
 
@@ -301,6 +349,9 @@ crtc_load_cursor_argb_kms(xf86CrtcPtr crtc, CARD32 * image)
     if (ptr) {
 	memcpy(ptr, image, 64*64*4);
 	vmwgfx_dmabuf_unmap(crtcp->cursor_bo);
+    } else {
+	xf86DrvMsg(crtc->scrn->scrnIndex, X_ERROR,
+		   "Failed to map cursor dmabuf.\n");
     }
 
     if (crtc->cursor_shown)

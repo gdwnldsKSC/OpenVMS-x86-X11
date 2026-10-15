@@ -35,13 +35,13 @@
 #include <xorg-config.h>
 #endif
 
+#include "os.h"
 #include "xf86Parser.h"
 #include "xf86tokens.h"
 #include "Configint.h"
 
-extern LexRec val;
 
-static xf86ConfigSymTabRec ExtensionsTab[] = {
+static const xf86ConfigSymTabRec ExtensionsTab[] = {
     {ENDSECTION, "endsection"},
     {OPTION, "option"},
     {-1, ""},
@@ -66,7 +66,9 @@ xf86parseExtensionsSection(void)
             break;
         case COMMENT:
             ptr->extensions_comment =
-                xf86addComment(ptr->extensions_comment, val.str);
+                xf86addComment(ptr->extensions_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
             break;
         default:
             Error(INVALID_KEYWORD_MSG, xf86tokenString());

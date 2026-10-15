@@ -21,6 +21,9 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
+/* Test relies on assert() */
+#undef NDEBUG
+
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -37,40 +40,22 @@
 #include "scrnintstr.h"
 #include "xiquerypointer.h"
 #include "exevents.h"
+#include "exglobals.h"
 
 #include "protocol-common.h"
 
+extern ClientRec client_window;
 static ClientRec client_request;
 static void reply_XIQueryPointer_data(ClientPtr client, int len,
-                                      char *data, void *userdata);
+                                      char *data, void *closure);
 
 static struct {
     DeviceIntPtr dev;
     WindowPtr win;
 } test_data;
 
-/* dixLookupWindow requires a lot of setup not necessary for this test.
- * Simple wrapper that returns either one of the fake root window or the
- * fake client window. If the requested ID is neither of those wanted,
- * return whatever the real dixLookupWindow does.
- */
-int
-__wrap_dixLookupWindow(WindowPtr *win, XID id, ClientPtr client, Mask access)
-{
-    if (id == root.drawable.id) {
-        *win = &root;
-        return Success;
-    }
-    else if (id == window.drawable.id) {
-        *win = &window;
-        return Success;
-    }
-
-    return __real_dixLookupWindow(win, id, client, access);
-}
-
 static void
-reply_XIQueryPointer(ClientPtr client, int len, char *data, void *userdata)
+reply_XIQueryPointer(ClientPtr client, int len, char *data, void *closure)
 {
     xXIQueryPointerReply *rep = (xXIQueryPointerReply *) data;
     SpritePtr sprite;
@@ -121,7 +106,7 @@ reply_XIQueryPointer(ClientPtr client, int len, char *data, void *userdata)
 }
 
 static void
-reply_XIQueryPointer_data(ClientPtr client, int len, char *data, void *userdata)
+reply_XIQueryPointer_data(ClientPtr client, int len, char *data, void *closure)
 {
     reply_handler = reply_XIQueryPointer;
 }
@@ -139,6 +124,7 @@ request_XIQueryPointer(ClientPtr client, xXIQueryPointerReq * req, int error)
 
     client_request.swapped = TRUE;
     swaps(&req->deviceid);
+    swapl(&req->win);
     swaps(&req->length);
     rc = SProcXIQueryPointer(&client_request);
     assert(rc == error);
@@ -200,10 +186,14 @@ test_XIQueryPointer(void)
     test_data.dev = devices.mouse;
     request.deviceid = devices.mouse->id;
     request_XIQueryPointer(&client_request, &request, Success);
+
+    /* test REQUEST_SIZE_MATCH */
+    client_request.req_len -= 4;
+    request_XIQueryPointer(&client_request, &request, BadLength);
 }
 
 int
-main(int argc, char **argv)
+protocol_xiquerypointer_test(void)
 {
     init_simple();
 

@@ -1,8 +1,8 @@
 /*
- * Xephyr - A kdrive X server thats runs in a host X window.
+ * Xephyr - A kdrive X server that runs in a host X window.
  *          Authored by Matthew Allum <mallum@o-hand.com>
- * 
- * Copyright © 2004 Nokia 
+ *
+ * Copyright © 2004 Nokia
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -27,8 +27,8 @@
 #define _EPHYR_H_
 #include <stdio.h>
 #include <unistd.h>
-#include <signal.h>
 #include <libgen.h>
+#include <xcb/xcb_image.h>
 
 #include "os.h"                 /* for OsSignal() */
 #include "kdrive.h"
@@ -61,10 +61,37 @@ typedef struct _ephyrFakexaPriv {
 } EphyrFakexaPriv;
 
 typedef struct _ephyrScrPriv {
+    /* ephyr server info */
     Rotation randr;
     Bool shadow;
     DamagePtr pDamage;
     EphyrFakexaPriv *fakexa;
+
+    /* Host X window info */
+    xcb_window_t win;
+    xcb_window_t win_pre_existing;    /* Set via -parent option like xnest */
+    xcb_window_t peer_win;            /* Used for GL; should be at most one */
+    xcb_image_t *ximg;
+    Bool win_explicit_position;
+    int win_x, win_y;
+    int win_width, win_height;
+    int server_depth;
+    const char *output;         /* Set via -output option */
+    unsigned char *fb_data;     /* only used when host bpp != server bpp */
+    xcb_shm_segment_info_t shminfo;
+    size_t shmsize;
+
+    KdScreenInfo *screen;
+    int mynum;                  /* Screen number */
+    unsigned long cmap[256];
+
+    ScreenBlockHandlerProcPtr   BlockHandler;
+
+    /**
+     * Per-screen Xlib-using state for glamor (private to
+     * ephyr_glamor_glx.c)
+     */
+    struct ephyr_glamor *glamor;
 } EphyrScrPriv;
 
 extern KdCardFuncs ephyrFuncs;
@@ -80,10 +107,7 @@ Bool
  ephyrCardInit(KdCardInfo * card);
 
 Bool
- ephyrScreenInit(KdScreenInfo * screen);
-
-Bool
- ephyrScreenInitialize(KdScreenInfo * screen, EphyrScrPriv * scrpriv);
+ephyrScreenInitialize(KdScreenInfo *screen);
 
 Bool
  ephyrInitScreen(ScreenPtr pScreen);
@@ -111,6 +135,9 @@ void
 
 void
  ephyrScreenFini(KdScreenInfo * screen);
+
+void
+ephyrCloseScreen(ScreenPtr pScreen);
 
 void
  ephyrCardFini(KdCardInfo * card);
@@ -143,9 +170,6 @@ Bool
 Bool
  ephyrCreateColormap(ColormapPtr pmap);
 
-void
- ephyrPoll(void);
-
 #ifdef RANDR
 Bool
  ephyrRandRGetInfo(ScreenPtr pScreen, Rotation * rotations);
@@ -169,11 +193,7 @@ extern KdPointerDriver EphyrMouseDriver;
 
 extern KdKeyboardDriver EphyrKeyboardDriver;
 
-extern KdOsFuncs EphyrOsFuncs;
-
 extern Bool ephyrCursorInit(ScreenPtr pScreen);
-
-extern void ephyrCursorEnable(ScreenPtr pScreen);
 
 extern int ephyrBufferHeight(KdScreenInfo * screen);
 
@@ -191,8 +211,26 @@ void
 void
  ephyrDrawFini(ScreenPtr pScreen);
 
+/* hostx.c glamor support */
+Bool ephyr_glamor_init(ScreenPtr pScreen);
+Bool ephyr_glamor_create_screen_resources(ScreenPtr pScreen);
+void ephyr_glamor_enable(ScreenPtr pScreen);
+void ephyr_glamor_disable(ScreenPtr pScreen);
+void ephyr_glamor_fini(ScreenPtr pScreen);
+void ephyr_glamor_host_paint_rect(ScreenPtr pScreen);
+
 /*ephyvideo.c*/
 
 Bool ephyrInitVideo(ScreenPtr pScreen);
+
+/* ephyr_glamor_xv.c */
+#ifdef GLAMOR
+void ephyr_glamor_xv_init(ScreenPtr screen);
+#else /* !GLAMOR */
+static inline void
+ephyr_glamor_xv_init(ScreenPtr screen)
+{
+}
+#endif /* !GLAMOR */
 
 #endif

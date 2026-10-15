@@ -1,16 +1,16 @@
-/* 
+/*
  * Copyright (c) 1997  Metro Link Incorporated
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
+ * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -18,11 +18,11 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  * Except as contained in this notice, the name of the Metro Link shall not be
  * used in advertising or otherwise to promote the sale, use or other dealings
  * in this Software without prior written authorization from Metro Link.
- * 
+ *
  */
 /*
  * Copyright (c) 1997-2003 by The XFree86 Project, Inc.
@@ -51,20 +51,18 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
-/* View/edit this file with tab stops set to 4 */
-
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
 #endif
 
 #include <X11/Xos.h>
+#include "os.h"
 #include "xf86Parser.h"
 #include "xf86tokens.h"
 #include "Configint.h"
 
-extern LexRec val;
 
-static xf86ConfigSymTabRec FilesTab[] = {
+static const xf86ConfigSymTabRec FilesTab[] = {
     {ENDSECTION, "endsection"},
     {FONTPATH, "fontpath"},
     {MODULEPATH, "modulepath"},
@@ -91,16 +89,17 @@ xf86parseFilesSection(void)
         while ((token = xf86getToken(FilesTab)) != ENDSECTION) {
         switch (token) {
         case COMMENT:
-            ptr->file_comment = xf86addComment(ptr->file_comment, val.str);
+            ptr->file_comment = xf86addComment(ptr->file_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
             break;
         case FONTPATH:
             if (xf86getSubToken(&(ptr->file_comment)) != STRING)
                 Error(QUOTE_MSG, "FontPath");
             j = FALSE;
-            str = val.str;
+            str = xf86_lex_val.str;
             if (ptr->file_fontpath == NULL) {
-                ptr->file_fontpath = malloc(1);
-                ptr->file_fontpath[0] = '\0';
+                ptr->file_fontpath = calloc(1, 1);
                 i = strlen(str) + 1;
             }
             else {
@@ -110,21 +109,20 @@ xf86parseFilesSection(void)
                     j = TRUE;
                 }
             }
-            ptr->file_fontpath = realloc(ptr->file_fontpath, i);
+            ptr->file_fontpath = XNFrealloc(ptr->file_fontpath, i);
             if (j)
                 strcat(ptr->file_fontpath, ",");
 
             strcat(ptr->file_fontpath, str);
-            free(val.str);
+            free(xf86_lex_val.str);
             break;
         case MODULEPATH:
             if (xf86getSubToken(&(ptr->file_comment)) != STRING)
                 Error(QUOTE_MSG, "ModulePath");
             l = FALSE;
-            str = val.str;
+            str = xf86_lex_val.str;
             if (ptr->file_modulepath == NULL) {
-                ptr->file_modulepath = malloc(1);
-                ptr->file_modulepath[0] = '\0';
+                ptr->file_modulepath = calloc(1, 1);
                 k = strlen(str) + 1;
             }
             else {
@@ -135,22 +133,22 @@ xf86parseFilesSection(void)
                     l = TRUE;
                 }
             }
-            ptr->file_modulepath = realloc(ptr->file_modulepath, k);
+            ptr->file_modulepath = XNFrealloc(ptr->file_modulepath, k);
             if (l)
                 strcat(ptr->file_modulepath, ",");
 
             strcat(ptr->file_modulepath, str);
-            free(val.str);
+            free(xf86_lex_val.str);
             break;
         case LOGFILEPATH:
             if (xf86getSubToken(&(ptr->file_comment)) != STRING)
                 Error(QUOTE_MSG, "LogFile");
-            ptr->file_logfile = val.str;
+            ptr->file_logfile = xf86_lex_val.str;
             break;
         case XKBDIR:
             if (xf86getSubToken(&(ptr->file_xkbdir)) != STRING)
                 Error(QUOTE_MSG, "XkbDir");
-            ptr->file_xkbdir = val.str;
+            ptr->file_xkbdir = xf86_lex_val.str;
             break;
         case EOF_TOKEN:
             Error(UNEXPECTED_EOF_MSG);

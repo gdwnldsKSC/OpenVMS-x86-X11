@@ -26,7 +26,7 @@ typedef struct {
     miPointerSpriteFuncPtr spriteFuncs;
     Bool PalettedCursor;
     ColormapPtr pInstalledMap;
-    Bool (*SwitchMode) (int, DisplayModePtr, int);
+    Bool (*SwitchMode) (ScrnInfoPtr, DisplayModePtr);
     xf86EnableDisableFBAccessProc *EnableDisableFBAccess;
     CursorPtr SavedCursor;
 
@@ -34,17 +34,16 @@ typedef struct {
     int ForceHWCursorCount;
     Bool HWCursorForced;
 
-    pointer transparentData;
+    void *transparentData;
 } xf86CursorScreenRec, *xf86CursorScreenPtr;
 
-void xf86SetCursor(ScreenPtr pScreen, CursorPtr pCurs, int x, int y);
+Bool xf86SetCursor(ScreenPtr pScreen, CursorPtr pCurs, int x, int y);
 void xf86SetTransparentCursor(ScreenPtr pScreen);
 void xf86MoveCursor(ScreenPtr pScreen, int x, int y);
 void xf86RecolorCursor(ScreenPtr pScreen, CursorPtr pCurs, Bool displayed);
 Bool xf86InitHardwareCursor(ScreenPtr pScreen, xf86CursorInfoPtr infoPtr);
 
-CARD32 xf86ReverseBitOrder(CARD32 data);
-
+Bool xf86CheckHWCursor(ScreenPtr pScreen, CursorPtr cursor, xf86CursorInfoPtr infoPtr);
 extern _X_EXPORT DevPrivateKeyRec xf86CursorScreenKeyRec;
 
 #define xf86CursorScreenKey (&xf86CursorScreenKeyRec)

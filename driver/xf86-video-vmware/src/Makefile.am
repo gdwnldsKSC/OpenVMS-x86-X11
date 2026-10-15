@@ -37,6 +37,7 @@ endif
 vmware_drv_la_SOURCES = \
 	bits2pixels.c \
 	bits2pixels.h \
+	compat-api.h \
 	guest_os.h \
 	includeCheck.h \
 	svga_escape.h \
@@ -59,4 +60,5 @@ vmware_drv_la_SOURCES = \
 	vmware_bootstrap.h \
 	vmware_bootstrap.c \
 	vmware_common.c \
-	vmware_common.h
+	vmware_common.h \
+	common_compat.h

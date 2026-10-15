@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright (c) 1994, 1995  Hewlett-Packard Company
  *
  * Permission is hereby granted, free of charge, to any person obtaining
@@ -9,10 +9,10 @@
  * distribute, sublicense, and/or sell copies of the Software, and to
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included
  * in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -20,12 +20,12 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- * 
+ *
  * Except as contained in this notice, the name of the Hewlett-Packard
  * Company shall not be used in advertising or otherwise to promote the
  * sale, use or other dealings in this Software without prior written
  * authorization from the Hewlett-Packard Company.
- * 
+ *
  *     Header file for DIX-related DBE
  *
  *****************************************************************************/
@@ -83,8 +83,6 @@ typedef struct {
 /* Marker for free elements in the buffer ID array. */
 #define DBE_FREE_ID_ELEMENT	0
 
-extern _X_EXPORT void DbeExtensionInit(void);
-
 /* TYPEDEFS */
 
 /* Record used to pass swap information between DIX and DDX swapping
@@ -141,9 +139,23 @@ typedef struct _DbeWindowPrivRec {
      * possibly resulting in a page swap and loss of performance.  Initially we
      * will use this array to store buffer IDs.  For situations where we have
      * more IDs than can fit in this static array, we will allocate a larger
-     * array to use, possibly suffering a performance loss. 
+     * array to use, possibly suffering a performance loss.
      */
     XID initIDs[DBE_INIT_MAX_IDS];
+
+    /* Pointer to a drawable that contains the contents of the back buffer.
+     */
+    PixmapPtr pBackBuffer;
+
+    /* Pointer to a drawable that contains the contents of the front buffer.
+     * This pointer is only used for the XdbeUntouched swap action.  For that
+     * swap action, we need to copy the front buffer (window) contents into
+     * this drawable, copy the contents of current back buffer drawable (the
+     * back buffer) into the window, swap the front and back drawable pointers,
+     * and then swap the drawable/resource associations in the resource
+     * database.
+     */
+    PixmapPtr pFrontBuffer;
 
     /* Device-specific private information.
      */
@@ -159,7 +171,7 @@ typedef struct _DbeWindowPrivRec {
 
 typedef struct _DbeScreenPrivRec {
     /* Wrapped functions
-     * It is the responsibilty of the DDX layer to wrap PositionWindow().
+     * It is the responsibility of the DDX layer to wrap PositionWindow().
      * DbeExtensionInit wraps DestroyWindow().
      */
     PositionWindowProcPtr PositionWindow;
@@ -182,16 +194,9 @@ typedef struct _DbeScreenPrivRec {
                         int * /*pNumWindows */ ,
                         DbeSwapInfoPtr  /*swapInfo */
         );
-    void (*BeginIdiom) (ClientPtr       /*client */
-        );
-    void (*EndIdiom) (ClientPtr /*client */
-        );
     void (*WinPrivDelete) (DbeWindowPrivPtr /*pDbeWindowPriv */ ,
                            XID  /*bufId */
         );
-    void (*ResetProc) (ScreenPtr        /*pScreen */
-        );
-
 } DbeScreenPrivRec, *DbeScreenPrivPtr;
 
 #endif                          /* DBE_STRUCT_H */

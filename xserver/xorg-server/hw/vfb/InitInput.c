@@ -36,19 +36,12 @@ from The Open Group.
 #include "scrnintstr.h"
 #include "inputstr.h"
 #include <X11/Xos.h>
-#include "mibstore.h"
 #include "mipointer.h"
 #include "xkbsrv.h"
 #include <X11/keysym.h>
 #include "xserver-properties.h"
 #include "exevents.h"
 #include "extinit.h"
-
-Bool
-LegalModifier(unsigned int key, DeviceIntPtr pDev)
-{
-    return TRUE;
-}
 
 void
 ProcessInputEvents(void)

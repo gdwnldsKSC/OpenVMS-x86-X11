@@ -30,10 +30,10 @@
 #include "exevents.h"
 #include <assert.h>
 
+#include "tests.h"
+
 #ifndef PROTOCOL_COMMON_H
 #define PROTOCOL_COMMON_H
-
-extern int BadDevice;
 
 /* Check default values in a reply */
 #define reply_check_defaults(rep, len, type) \
@@ -83,7 +83,7 @@ struct devices {
 
     int num_devices;
     int num_master_devices;
-} devices;
+};
 
 /**
  * The set of default devices available in all tests if necessary.
@@ -93,13 +93,13 @@ extern struct devices devices;
 /**
  * test-specific userdata, passed into the reply handler.
  */
-extern void *userdata;
+extern void *global_userdata;
 
 /**
  * The reply handler called from WriteToClient. Set this handler if you need
  * to check the reply values.
  */
-void (*reply_handler) (ClientPtr client, int len, char *data, void *userdata);
+extern void (*reply_handler) (ClientPtr client, int len, char *data, void *userdata);
 
 /**
  * The default screen used for the windows. Initialized by init_simple().
@@ -144,13 +144,13 @@ void init_simple(void);
 
 /* Declarations for various overrides in the test files. */
 void __wrap_WriteToClient(ClientPtr client, int len, void *data);
-int __wrap_XISetEventMask(DeviceIntPtr dev, WindowPtr win, int len,
-                          unsigned char *mask);
+int __wrap_XISetEventMask(DeviceIntPtr dev, WindowPtr win, ClientPtr client,
+                          int len, unsigned char *mask);
 int __wrap_dixLookupWindow(WindowPtr *win, XID id, ClientPtr client,
                            Mask access);
 int __real_dixLookupWindow(WindowPtr *win, XID id, ClientPtr client,
                            Mask access);
-Bool __wrap_AddResource(XID id, RESTYPE type, pointer value);
+Bool __wrap_AddResource(XID id, RESTYPE type, void *value);
 int __wrap_dixLookupClient(ClientPtr *c, XID id, ClientPtr client, Mask access);
 int __real_dixLookupClient(ClientPtr *c, XID id, ClientPtr client, Mask access);
 

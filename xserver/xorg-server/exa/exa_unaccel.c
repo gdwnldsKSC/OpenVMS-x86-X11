@@ -107,7 +107,7 @@ ExaCheckPutImage(DrawablePtr pDrawable, GCPtr pGC, int depth,
     EXA_FALLBACK(("to %p (%c)\n", pDrawable, exaDrawableLocation(pDrawable)));
     if (!pExaScr->prepare_access_reg || !pExaPixmap->pDamage ||
         exaGCReadsDestination(pDrawable, pGC->planemask, pGC->fillStyle,
-                              pGC->alu, pGC->clientClipType))
+                              pGC->alu, pGC->clientClip != NULL))
         exaPrepareAccess(pDrawable, EXA_PREPARE_DEST);
     else
         pExaScr->prepare_access_reg(pPixmap, EXA_PREPARE_DEST,
@@ -143,7 +143,7 @@ ExaCheckCopyNtoN(DrawablePtr pSrc, DrawablePtr pDst, GCPtr pGC,
 
     if (pExaScr->prepare_access_reg &&
         !exaGCReadsDestination(pDst, pGC->planemask, pGC->fillStyle,
-                               pGC->alu, pGC->clientClipType) &&
+                               pGC->alu, pGC->clientClip != NULL) &&
         RegionInitBoxes(&reg, pbox, nbox)) {
         PixmapPtr pPixmap = exaGetDrawablePixmap(pDst);
 
@@ -179,10 +179,9 @@ ExaFallbackPrepareReg(DrawablePtr pDrawable,
     ExaScreenPriv(pScreen);
 
     if (pExaScr->prepare_access_reg &&
-        !(checkReads && exaGCReadsDestination(pDrawable,
-                                              pGC->planemask,
-                                              pGC->fillStyle,
-                                              pGC->alu, pGC->clientClipType))) {
+        !(checkReads && exaGCReadsDestination(pDrawable, pGC->planemask,
+                                              pGC->fillStyle, pGC->alu,
+                                              pGC->clientClip != NULL))) {
         BoxRec box;
         RegionRec reg;
         int xoff, yoff;
@@ -319,7 +318,7 @@ ExaCheckPolyFillRect(DrawablePtr pDrawable, GCPtr pGC,
 void
 ExaCheckImageGlyphBlt(DrawablePtr pDrawable, GCPtr pGC,
                       int x, int y, unsigned int nglyph,
-                      CharInfoPtr * ppci, pointer pglyphBase)
+                      CharInfoPtr * ppci, void *pglyphBase)
 {
     EXA_PRE_FALLBACK_GC(pGC);
     EXA_FALLBACK(("to %p (%c)\n", pDrawable, exaDrawableLocation(pDrawable)));
@@ -334,7 +333,7 @@ ExaCheckImageGlyphBlt(DrawablePtr pDrawable, GCPtr pGC,
 void
 ExaCheckPolyGlyphBlt(DrawablePtr pDrawable, GCPtr pGC,
                      int x, int y, unsigned int nglyph,
-                     CharInfoPtr * ppci, pointer pglyphBase)
+                     CharInfoPtr * ppci, void *pglyphBase)
 {
     EXA_PRE_FALLBACK_GC(pGC);
     EXA_FALLBACK(("to %p (%c), style %d alu %d\n", pDrawable,
@@ -442,6 +441,13 @@ ExaSrcValidate(DrawablePtr pDrawable,
     RegionPtr dst;
     int xoff, yoff;
 
+    if (pExaScr->srcPix == pPix)
+        dst = &pExaScr->srcReg;
+    else if (pExaScr->maskPix == pPix)
+        dst = &pExaScr->maskReg;
+    else
+        return;
+
     exaGetDrawableDeltas(pDrawable, pPix, &xoff, &yoff);
 
     box.x1 = x + xoff;
@@ -449,17 +455,13 @@ ExaSrcValidate(DrawablePtr pDrawable,
     box.x2 = box.x1 + width;
     box.y2 = box.y1 + height;
 
-    dst = (pExaScr->srcPix == pPix) ? &pExaScr->srcReg : &pExaScr->maskReg;
-
     RegionInit(&reg, &box, 1);
     RegionUnion(dst, dst, &reg);
     RegionUninit(&reg);
 
-    if (pExaScr->SavedSourceValidate) {
-        swap(pExaScr, pScreen, SourceValidate);
-        pScreen->SourceValidate(pDrawable, x, y, width, height, subWindowMode);
-        swap(pExaScr, pScreen, SourceValidate);
-    }
+    swap(pExaScr, pScreen, SourceValidate);
+    pScreen->SourceValidate(pDrawable, x, y, width, height, subWindowMode);
+    swap(pExaScr, pScreen, SourceValidate);
 }
 
 static Bool
@@ -495,16 +497,19 @@ ExaPrepareCompositeReg(ScreenPtr pScreen,
         if (pSrc != pDst)
             RegionTranslate(pSrc->pCompositeClip,
                             -pSrc->pDrawable->x, -pSrc->pDrawable->y);
-    }
+    } else
+        pExaScr->srcPix = NULL;
 
     if (pMask && pMask->pDrawable) {
         pMaskPix = exaGetDrawablePixmap(pMask->pDrawable);
         RegionNull(&pExaScr->maskReg);
         maskReg = &pExaScr->maskReg;
+        pExaScr->maskPix = pMaskPix;
         if (pMask != pDst && pMask != pSrc)
             RegionTranslate(pMask->pCompositeClip,
                             -pMask->pDrawable->x, -pMask->pDrawable->y);
-    }
+    } else
+        pExaScr->maskPix = NULL;
 
     RegionTranslate(pDst->pCompositeClip,
                     -pDst->pDrawable->x, -pDst->pDrawable->y);
@@ -677,7 +682,7 @@ ExaCheckAddTraps(PicturePtr pPicture,
 
     EXA_PRE_FALLBACK(pScreen);
 
-    EXA_FALLBACK(("to pict %p (%c)\n",
+    EXA_FALLBACK(("to pict %p (%c)\n", pPicture,
                   exaDrawableLocation(pPicture->pDrawable)));
     exaPrepareAccess(pPicture->pDrawable, EXA_PREPARE_DEST);
     swap(pExaScr, ps, AddTraps);

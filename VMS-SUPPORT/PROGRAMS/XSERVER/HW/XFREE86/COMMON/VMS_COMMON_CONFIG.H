@@ -8,6 +8,8 @@
 #ifndef XFree86Server
 #define XFree86Server 1
 #endif
+#include <dix-config.h>
+#include <xkb-config.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -51,7 +53,16 @@
 #define DEFAULT_LIBRARY_PATH "./lib"
 #endif
 #ifndef DEFAULT_LOGPREFIX
-#define DEFAULT_LOGPREFIX "./Xorg."
+#define DEFAULT_LOGPREFIX "Xorg."
+#endif
+#define XCONFIGFILE XF86CONFIGFILE
+#define XCONFIGDIR "xorg.conf.d"
+#define DEFAULT_LOGDIR "."
+#define DEFAULT_XDG_DATA_HOME ".local/share"
+#define DEFAULT_XDG_DATA_HOME_LOGDIR "xorg"
+#define FALLBACK_INPUT_DRIVER ""
+#ifndef DATADIR
+#define DATADIR "./share"
 #endif
 #ifndef PROJECTROOT
 #define PROJECTROOT "."
@@ -66,7 +77,7 @@
 #define __XKBDEFRULES__ "xorg"
 #endif
 #ifndef XORG_RELEASE
-#define XORG_RELEASE "Release 7.7"
+#define XORG_RELEASE "21.1.25"
 #endif
 #ifndef USE_SIGIO_BY_DEFAULT
 #define USE_SIGIO_BY_DEFAULT 0

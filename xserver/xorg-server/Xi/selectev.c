@@ -65,8 +65,6 @@ SOFTWARE.
 #include "grabdev.h"
 #include "selectev.h"
 
-extern Mask ExtExclusiveMasks[];
-
 static int
 HandleDevicePresenceMask(ClientPtr client, WindowPtr win,
                          XEventClass * cls, CARD16 *count)
@@ -119,7 +117,7 @@ HandleDevicePresenceMask(ClientPtr client, WindowPtr win,
  *
  */
 
-int
+int _X_COLD
 SProcXSelectExtensionEvent(ClientPtr client)
 {
     REQUEST(xSelectExtensionEventReq);
@@ -175,7 +173,7 @@ ProcXSelectExtensionEvent(ClientPtr client)
             }
             if ((ret =
                  SelectForWindow((DeviceIntPtr) tmp[i].dev, pWin, client,
-                                 tmp[i].mask, ExtExclusiveMasks[i])) != Success)
+                                 tmp[i].mask, DeviceButtonGrabMask)) != Success)
                 return ret;
         }
 

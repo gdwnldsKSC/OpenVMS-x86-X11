@@ -52,6 +52,7 @@ from The Open Group.
 
 #include <X11/Xfuncproto.h>
 #include <X11/Xos.h>
+#include <X11/Xmd.h>
 
 #ifndef WIN32
 #include <sys/socket.h>
@@ -110,21 +111,6 @@ static const char *__xtransname = "_IceTrans";
 #endif
 #endif /* ICE_t */
 
-#ifdef TEST_t
-#define TRANS(func) _TESTTrans##func
-#ifdef XTRANSDEBUG
-static const char *__xtransname = "_TESTTrans";
-#endif
-#endif /* TEST_t */
-
-#ifdef LBXPROXY_t
-#define TRANS(func) _LBXPROXYTrans##func
-#define X11_t		/* The server defines this - so should the LBX proxy */
-#ifdef XTRANSDEBUG
-static const char *__xtransname = "_LBXPROXYTrans";
-#endif
-#endif /* LBXPROXY_t */
-
 #if !defined(TRANS)
 #define TRANS(func) _XTrans##func
 #ifdef XTRANSDEBUG
@@ -145,7 +131,13 @@ static const char *__xtransname = "_XTrans";
  * This structure needs to be independent of the socket/TLI interface used.
  */
 
-#if defined(IPv6) && defined(AF_INET6)
+/* Temporary workaround for consumers whose configure scripts were
+   generated with pre-1.6 versions of xtrans.m4 */
+#if defined(IPv6) && !defined(HAVE_STRUCT_SOCKADDR_STORAGE)
+#define HAVE_STRUCT_SOCKADDR_STORAGE
+#endif
+
+#ifdef HAVE_STRUCT_SOCKADDR_STORAGE
 typedef struct sockaddr_storage Xtransaddr;
 #else
 #define XTRANS_MAX_ADDR_LEN	128	/* large enough to hold sun_path */
@@ -162,7 +154,7 @@ typedef long BytesReadable_t;
 #endif
 
 
-#if defined(WIN32) || defined(USG)
+#if defined(WIN32)
 
 /*
  *      TRANS(Readv) and TRANS(Writev) use struct iovec, normally found
@@ -236,7 +228,7 @@ void TRANS(FreeConnInfo) (
 #ifdef TRANS_CLIENT
 
 XtransConnInfo TRANS(OpenCOTSClient)(
-    char *		/* address */
+    const char *	/* address */
 );
 
 #endif /* TRANS_CLIENT */
@@ -244,23 +236,7 @@ XtransConnInfo TRANS(OpenCOTSClient)(
 #ifdef TRANS_SERVER
 
 XtransConnInfo TRANS(OpenCOTSServer)(
-    char *		/* address */
-);
-
-#endif /* TRANS_SERVER */
-
-#ifdef TRANS_CLIENT
-
-XtransConnInfo TRANS(OpenCLTSClient)(
-    char *		/* address */
-);
-
-#endif /* TRANS_CLIENT */
-
-#ifdef TRANS_SERVER
-
-XtransConnInfo TRANS(OpenCLTSServer)(
-    char *		/* address */
+    const char *	/* address */
 );
 
 #endif /* TRANS_SERVER */
@@ -270,13 +246,7 @@ XtransConnInfo TRANS(OpenCLTSServer)(
 XtransConnInfo TRANS(ReopenCOTSServer)(
     int,		/* trans_id */
     int,		/* fd */
-    char *		/* port */
-);
-
-XtransConnInfo TRANS(ReopenCLTSServer)(
-    int,		/* trans_id */
-    int,		/* fd */
-    char *		/* port */
+    const char *	/* port */
 );
 
 int TRANS(GetReopenInfo)(
@@ -299,11 +269,23 @@ int TRANS(SetOption)(
 
 int TRANS(CreateListener)(
     XtransConnInfo,	/* ciptr */
-    char *,		/* port */
+    const char *,	/* port */
     unsigned int	/* flags */
 );
 
+int TRANS(Received) (
+    const char*         /* protocol*/
+);
+
 int TRANS(NoListen) (
+    const char*         /* protocol*/
+);
+
+int TRANS(Listen) (
+    const char*         /* protocol*/
+);
+
+int TRANS(IsListening) (
     const char*         /* protocol*/
 );
 
@@ -322,7 +304,7 @@ XtransConnInfo TRANS(Accept)(
 
 int TRANS(Connect)(
     XtransConnInfo,	/* ciptr */
-    char *		/* address */
+    const char *	/* address */
 );
 
 #endif /* TRANS_CLIENT */
@@ -340,7 +322,7 @@ int TRANS(Read)(
 
 int TRANS(Write)(
     XtransConnInfo,	/* ciptr */
-    char *,		/* buf */
+    const char *,	/* buf */
     int			/* size */
 );
 
@@ -355,6 +337,10 @@ int TRANS(Writev)(
     struct iovec *,	/* buf */
     int			/* size */
 );
+
+int TRANS(SendFd) (XtransConnInfo ciptr, int fd, int do_close);
+
+int TRANS(RecvFd) (XtransConnInfo ciptr);
 
 int TRANS(Disconnect)(
     XtransConnInfo	/* ciptr */
@@ -372,13 +358,6 @@ int TRANS(IsLocal)(
     XtransConnInfo	/* ciptr */
 );
 
-int TRANS(GetMyAddr)(
-    XtransConnInfo,	/* ciptr */
-    int *,		/* familyp */
-    int *,		/* addrlenp */
-    Xtransaddr **	/* addrp */
-);
-
 int TRANS(GetPeerAddr)(
     XtransConnInfo,	/* ciptr */
     int *,		/* familyp */
@@ -393,14 +372,7 @@ int TRANS(GetConnectionNumber)(
 #ifdef TRANS_SERVER
 
 int TRANS(MakeAllCOTSServerListeners)(
-    char *,		/* port */
-    int *,		/* partial */
-    int *,		/* count_ret */
-    XtransConnInfo **	/* ciptrs_ret */
-);
-
-int TRANS(MakeAllCLTSServerListeners)(
-    char *,		/* port */
+    const char *,	/* port */
     int *,		/* partial */
     int *,		/* count_ret */
     XtransConnInfo **	/* ciptrs_ret */

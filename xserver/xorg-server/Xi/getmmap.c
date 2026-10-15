@@ -68,7 +68,7 @@ SOFTWARE.
  *
  */
 
-int
+int _X_COLD
 SProcXGetDeviceModifierMapping(ClientPtr client)
 {
     REQUEST(xGetDeviceModifierMappingReq);
@@ -101,15 +101,17 @@ ProcXGetDeviceModifierMapping(ClientPtr client)
     if (ret != Success)
         return ret;
 
-    rep.repType = X_Reply;
-    rep.RepType = X_GetDeviceModifierMapping;
-    rep.numKeyPerModifier = max_keys_per_mod;
-    rep.sequenceNumber = client->sequence;
+    rep = (xGetDeviceModifierMappingReply) {
+        .repType = X_Reply,
+        .RepType = X_GetDeviceModifierMapping,
+        .sequenceNumber = client->sequence,
+        .numKeyPerModifier = max_keys_per_mod,
     /* length counts 4 byte quantities - there are 8 modifiers 1 byte big */
-    rep.length = max_keys_per_mod << 1;
+        .length = max_keys_per_mod << 1
+    };
 
     WriteReplyToClient(client, sizeof(xGetDeviceModifierMappingReply), &rep);
-    WriteToClient(client, max_keys_per_mod * 8, (char *) modkeymap);
+    WriteToClient(client, max_keys_per_mod * 8, modkeymap);
 
     free(modkeymap);
 
@@ -123,11 +125,11 @@ ProcXGetDeviceModifierMapping(ClientPtr client)
  *
  */
 
-void
+void _X_COLD
 SRepXGetDeviceModifierMapping(ClientPtr client, int size,
                               xGetDeviceModifierMappingReply * rep)
 {
     swaps(&rep->sequenceNumber);
     swapl(&rep->length);
-    WriteToClient(client, size, (char *) rep);
+    WriteToClient(client, size, rep);
 }

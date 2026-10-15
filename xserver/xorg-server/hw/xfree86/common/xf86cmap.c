@@ -29,7 +29,7 @@
 #include <xorg-config.h>
 #endif
 
-#if defined(_XOPEN_SOURCE) || defined(sun) && defined(__SVR4)
+#if defined(_XOPEN_SOURCE) || defined(__sun) && defined(__SVR4)
 #include <math.h>
 #else
 #define _XOPEN_SOURCE           /* to get prototype for pow on some systems */
@@ -49,6 +49,7 @@
 #include "xf86_OSproc.h"
 #include "xf86str.h"
 #include "micmap.h"
+#include "xf86RandR12.h"
 #include "xf86Crtc.h"
 
 #ifdef XFreeXDGA
@@ -66,7 +67,7 @@
 #define LOAD_PALETTE(pmap) \
     ((pmap == GetInstalledmiColormap(pmap->pScreen)) && \
      ((pScreenPriv->flags & CMAP_LOAD_EVEN_IF_OFFSCREEN) || \
-      xf86Screens[pmap->pScreen->myNum]->vtSema || pScreenPriv->isDGAmode))
+      xf86ScreenToScrn(pmap->pScreen)->vtSema || pScreenPriv->isDGAmode))
 
 typedef struct _CMapLink {
     ColormapPtr cmap;
@@ -74,15 +75,14 @@ typedef struct _CMapLink {
 } CMapLink, *CMapLinkPtr;
 
 typedef struct {
-    ScrnInfoPtr pScrn;
     CloseScreenProcPtr CloseScreen;
     CreateColormapProcPtr CreateColormap;
     DestroyColormapProcPtr DestroyColormap;
     InstallColormapProcPtr InstallColormap;
     StoreColorsProcPtr StoreColors;
-    Bool (*EnterVT) (int, int);
-    Bool (*SwitchMode) (int, DisplayModePtr, int);
-    int (*SetDGAMode) (int, int, DGADevicePtr);
+    Bool (*EnterVT) (ScrnInfoPtr);
+    Bool (*SwitchMode) (ScrnInfoPtr, DisplayModePtr);
+    int (*SetDGAMode) (ScrnInfoPtr, int, DGADevicePtr);
     xf86ChangeGammaProc *ChangeGamma;
     int maxColors;
     int sigRGBbits;
@@ -111,19 +111,19 @@ static DevPrivateKeyRec CMapColormapKeyRec;
 
 static void CMapInstallColormap(ColormapPtr);
 static void CMapStoreColors(ColormapPtr, int, xColorItem *);
-static Bool CMapCloseScreen(int, ScreenPtr);
+static Bool CMapCloseScreen(ScreenPtr);
 static Bool CMapCreateColormap(ColormapPtr);
 static void CMapDestroyColormap(ColormapPtr);
 
-static Bool CMapEnterVT(int, int);
-static Bool CMapSwitchMode(int, DisplayModePtr, int);
+static Bool CMapEnterVT(ScrnInfoPtr);
+static Bool CMapSwitchMode(ScrnInfoPtr, DisplayModePtr);
 
 #ifdef XFreeXDGA
-static int CMapSetDGAMode(int, int, DGADevicePtr);
+static int CMapSetDGAMode(ScrnInfoPtr, int, DGADevicePtr);
 #endif
-static int CMapChangeGamma(int, Gamma);
+static int CMapChangeGamma(ScrnInfoPtr, Gamma);
 
-static void ComputeGamma(CMapScreenPtr);
+static void ComputeGamma(ScrnInfoPtr, CMapScreenPtr);
 static Bool CMapAllocateColormapPrivate(ColormapPtr);
 static void CMapRefreshColors(ColormapPtr, int, int *);
 static void CMapSetOverscan(ColormapPtr, int, int *);
@@ -133,9 +133,6 @@ static void CMapUnwrapScreen(ScreenPtr pScreen);
 Bool
 xf86ColormapAllocatePrivates(ScrnInfoPtr pScrn)
 {
-    /* If we support a better colormap system, then pretend we succeeded. */
-    if (xf86_crtc_supports_gamma(pScrn))
-        return TRUE;
     if (!dixRegisterPrivateKey(&CMapScreenKeyRec, PRIVATE_SCREEN, 0))
         return FALSE;
 
@@ -151,26 +148,23 @@ xf86HandleColormaps(ScreenPtr pScreen,
                     xf86LoadPaletteProc * loadPalette,
                     xf86SetOverscanProc * setOverscan, unsigned int flags)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     ColormapPtr pDefMap = NULL;
     CMapScreenPtr pScreenPriv;
     LOCO *gamma;
     int *indices;
     int elements;
 
-    /* If we support a better colormap system, then pretend we succeeded. */
-    if (xf86_crtc_supports_gamma(pScrn))
-        return TRUE;
-
-    if (!maxColors || !sigRGBbits || !loadPalette)
+    if (!maxColors || !sigRGBbits ||
+        (!loadPalette && !xf86_crtc_supports_gamma(pScrn)))
         return FALSE;
 
     elements = 1 << sigRGBbits;
 
-    if (!(gamma = malloc(elements * sizeof(LOCO))))
+    if (!(gamma = xallocarray(elements, sizeof(LOCO))))
         return FALSE;
 
-    if (!(indices = malloc(maxColors * sizeof(int)))) {
+    if (!(indices = xallocarray(maxColors, sizeof(int)))) {
         free(gamma);
         return FALSE;
     }
@@ -194,7 +188,6 @@ xf86HandleColormaps(ScreenPtr pScreen,
     pScreen->InstallColormap = CMapInstallColormap;
     pScreen->StoreColors = CMapStoreColors;
 
-    pScreenPriv->pScrn = pScrn;
     pScrn->LoadPalette = loadPalette;
     pScrn->SetOverscan = setOverscan;
     pScreenPriv->maxColors = maxColors;
@@ -221,15 +214,24 @@ xf86HandleColormaps(ScreenPtr pScreen,
 #endif
     pScrn->ChangeGamma = CMapChangeGamma;
 
-    ComputeGamma(pScreenPriv);
+    ComputeGamma(pScrn, pScreenPriv);
 
     /* get the default map */
-    dixLookupResourceByType((pointer *) &pDefMap, pScreen->defColormap,
+    dixLookupResourceByType((void **) &pDefMap, pScreen->defColormap,
                             RT_COLORMAP, serverClient, DixInstallAccess);
 
     if (!CMapAllocateColormapPrivate(pDefMap)) {
         CMapUnwrapScreen(pScreen);
         return FALSE;
+    }
+
+    if (xf86_crtc_supports_gamma(pScrn)) {
+        pScrn->LoadPalette = xf86RandR12LoadPalette;
+
+        if (!xf86RandR12InitGamma(pScrn, elements)) {
+            CMapUnwrapScreen(pScreen);
+            return FALSE;
+        }
     }
 
     /* Force the initial map to be loaded */
@@ -241,11 +243,11 @@ xf86HandleColormaps(ScreenPtr pScreen,
 /**** Screen functions ****/
 
 static Bool
-CMapCloseScreen(int i, ScreenPtr pScreen)
+CMapCloseScreen(ScreenPtr pScreen)
 {
     CMapUnwrapScreen(pScreen);
 
-    return (*pScreen->CloseScreen) (i, pScreen);
+    return (*pScreen->CloseScreen) (pScreen);
 }
 
 static Bool
@@ -272,7 +274,7 @@ CMapAllocateColormapPrivate(ColormapPtr pmap)
     else
         numColors = 1 << pmap->pVisual->nplanes;
 
-    if (!(colors = malloc(numColors * sizeof(LOCO))))
+    if (!(colors = xallocarray(numColors, sizeof(LOCO))))
         return FALSE;
 
     if (!(pColPriv = malloc(sizeof(CMapColormapRec)))) {
@@ -445,7 +447,7 @@ CMapInstallColormap(ColormapPtr pmap)
     (*pScreen->InstallColormap) (pmap);
     pScreen->InstallColormap = CMapInstallColormap;
 
-    /* Important. We let the lower layers, namely DGA, 
+    /* Important. We let the lower layers, namely DGA,
        overwrite the choice of Colormap to install */
     if (GetInstalledmiColormap(pmap->pScreen))
         pmap = GetInstalledmiColormap(pmap->pScreen);
@@ -462,16 +464,15 @@ CMapInstallColormap(ColormapPtr pmap)
 /**** ScrnInfoRec functions ****/
 
 static Bool
-CMapEnterVT(int index, int flags)
+CMapEnterVT(ScrnInfoPtr pScrn)
 {
-    ScrnInfoPtr pScrn = xf86Screens[index];
-    ScreenPtr pScreen = screenInfo.screens[index];
+    ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
     Bool ret;
     CMapScreenPtr pScreenPriv =
         (CMapScreenPtr) dixLookupPrivate(&pScreen->devPrivates, CMapScreenKey);
 
     pScrn->EnterVT = pScreenPriv->EnterVT;
-    ret = (*pScreenPriv->EnterVT) (index, flags);
+    ret = (*pScreenPriv->EnterVT) (pScrn);
     pScreenPriv->EnterVT = pScrn->EnterVT;
     pScrn->EnterVT = CMapEnterVT;
     if (ret) {
@@ -483,13 +484,13 @@ CMapEnterVT(int index, int flags)
 }
 
 static Bool
-CMapSwitchMode(int index, DisplayModePtr mode, int flags)
+CMapSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr mode)
 {
-    ScreenPtr pScreen = screenInfo.screens[index];
+    ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
     CMapScreenPtr pScreenPriv =
         (CMapScreenPtr) dixLookupPrivate(&pScreen->devPrivates, CMapScreenKey);
 
-    if ((*pScreenPriv->SwitchMode) (index, mode, flags)) {
+    if ((*pScreenPriv->SwitchMode) (pScrn, mode)) {
         if (GetInstalledmiColormap(pScreen))
             CMapReinstallMap(GetInstalledmiColormap(pScreen));
         return TRUE;
@@ -499,19 +500,19 @@ CMapSwitchMode(int index, DisplayModePtr mode, int flags)
 
 #ifdef XFreeXDGA
 static int
-CMapSetDGAMode(int index, int num, DGADevicePtr dev)
+CMapSetDGAMode(ScrnInfoPtr pScrn, int num, DGADevicePtr dev)
 {
-    ScreenPtr pScreen = screenInfo.screens[index];
+    ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
     CMapScreenPtr pScreenPriv =
         (CMapScreenPtr) dixLookupPrivate(&pScreen->devPrivates, CMapScreenKey);
     int ret;
 
-    ret = (*pScreenPriv->SetDGAMode) (index, num, dev);
+    ret = (*pScreenPriv->SetDGAMode) (pScrn, num, dev);
 
-    pScreenPriv->isDGAmode = DGAActive(index);
+    pScreenPriv->isDGAmode = DGAActive(pScrn->scrnIndex);
 
     if (!pScreenPriv->isDGAmode && GetInstalledmiColormap(pScreen)
-        && xf86Screens[pScreen->myNum]->vtSema)
+        && xf86ScreenToScrn(pScreen)->vtSema)
         CMapReinstallMap(GetInstalledmiColormap(pScreen));
 
     return ret;
@@ -528,7 +529,7 @@ CMapReinstallMap(ColormapPtr pmap)
                                          CMapScreenKey);
     CMapColormapPtr cmapPriv =
         (CMapColormapPtr) dixLookupPrivate(&pmap->devPrivates, CMapColormapKey);
-    ScrnInfoPtr pScrn = xf86Screens[pmap->pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pmap->pScreen);
     int i = cmapPriv->numColors;
     int *indices = pScreenPriv->PreAllocIndices;
 
@@ -560,7 +561,7 @@ CMapRefreshColors(ColormapPtr pmap, int defs, int *indices)
     CMapColormapPtr pColPriv =
         (CMapColormapPtr) dixLookupPrivate(&pmap->devPrivates, CMapColormapKey);
     VisualPtr pVisual = pmap->pVisual;
-    ScrnInfoPtr pScrn = xf86Screens[pmap->pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pmap->pScreen);
     int numColors, i;
     LOCO *gamma, *colors;
     EntryPtr entry;
@@ -609,7 +610,7 @@ CMapRefreshColors(ColormapPtr pmap, int defs, int *indices)
     case GrayScale:
         for (i = 0; i < defs; i++) {
             index = indices[i];
-            entry = (EntryPtr) & pmap->red[index];
+            entry = (EntryPtr) &pmap->red[index];
 
             if (entry->fShared) {
                 colors[index].red =
@@ -661,8 +662,7 @@ CMapRefreshColors(ColormapPtr pmap, int defs, int *indices)
     }
 
     if (LOAD_PALETTE(pmap))
-        (*pScrn->LoadPalette) (pScreenPriv->pScrn, defs, indices,
-                               colors, pmap->pVisual);
+        (*pScrn->LoadPalette) (pScrn, defs, indices, colors, pmap->pVisual);
 
     if (pScrn->SetOverscan)
         CMapSetOverscan(pmap, defs, indices);
@@ -692,7 +692,7 @@ CMapSetOverscan(ColormapPtr pmap, int defs, int *indices)
                                          CMapScreenKey);
     CMapColormapPtr pColPriv =
         (CMapColormapPtr) dixLookupPrivate(&pmap->devPrivates, CMapColormapKey);
-    ScrnInfoPtr pScrn = xf86Screens[pmap->pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pmap->pScreen);
     VisualPtr pVisual = pmap->pVisual;
     int i;
     LOCO *colors;
@@ -823,7 +823,7 @@ CMapSetOverscan(ColormapPtr pmap, int defs, int *indices)
 #ifdef DEBUGOVERSCAN
             ErrorF("SetOverscan() called from CmapSetOverscan\n");
 #endif
-            pScrn->SetOverscan(pScreenPriv->pScrn, overscan);
+            pScrn->SetOverscan(pScrn, overscan);
         }
     }
 }
@@ -833,7 +833,7 @@ CMapUnwrapScreen(ScreenPtr pScreen)
 {
     CMapScreenPtr pScreenPriv =
         (CMapScreenPtr) dixLookupPrivate(&pScreen->devPrivates, CMapScreenKey);
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
 
     pScreen->CloseScreen = pScreenPriv->CloseScreen;
     pScreen->CreateColormap = pScreenPriv->CreateColormap;
@@ -852,7 +852,7 @@ CMapUnwrapScreen(ScreenPtr pScreen)
 }
 
 static void
-ComputeGamma(CMapScreenPtr priv)
+ComputeGamma(ScrnInfoPtr pScrn, CMapScreenPtr priv)
 {
     int elements = priv->gammaElements - 1;
     double RedGamma, GreenGamma, BlueGamma;
@@ -860,28 +860,25 @@ ComputeGamma(CMapScreenPtr priv)
 
 #ifndef DONT_CHECK_GAMMA
     /* This check is to catch drivers that are not initialising pScrn->gamma */
-    if (priv->pScrn->gamma.red < GAMMA_MIN ||
-        priv->pScrn->gamma.red > GAMMA_MAX ||
-        priv->pScrn->gamma.green < GAMMA_MIN ||
-        priv->pScrn->gamma.green > GAMMA_MAX ||
-        priv->pScrn->gamma.blue < GAMMA_MIN ||
-        priv->pScrn->gamma.blue > GAMMA_MAX) {
+    if (pScrn->gamma.red < GAMMA_MIN || pScrn->gamma.red > GAMMA_MAX ||
+        pScrn->gamma.green < GAMMA_MIN || pScrn->gamma.green > GAMMA_MAX ||
+        pScrn->gamma.blue < GAMMA_MIN || pScrn->gamma.blue > GAMMA_MAX) {
 
-        xf86DrvMsgVerb(priv->pScrn->scrnIndex, X_WARNING, 0,
+        xf86DrvMsgVerb(pScrn->scrnIndex, X_WARNING, 0,
                        "The %s driver didn't call xf86SetGamma() to initialise\n"
-                       "\tthe gamma values.\n", priv->pScrn->driverName);
-        xf86DrvMsgVerb(priv->pScrn->scrnIndex, X_WARNING, 0,
+                       "\tthe gamma values.\n", pScrn->driverName);
+        xf86DrvMsgVerb(pScrn->scrnIndex, X_WARNING, 0,
                        "PLEASE FIX THE `%s' DRIVER!\n",
-                       priv->pScrn->driverName);
-        priv->pScrn->gamma.red = 1.0;
-        priv->pScrn->gamma.green = 1.0;
-        priv->pScrn->gamma.blue = 1.0;
+                       pScrn->driverName);
+        pScrn->gamma.red = 1.0;
+        pScrn->gamma.green = 1.0;
+        pScrn->gamma.blue = 1.0;
     }
 #endif
 
-    RedGamma = 1.0 / (double) priv->pScrn->gamma.red;
-    GreenGamma = 1.0 / (double) priv->pScrn->gamma.green;
-    BlueGamma = 1.0 / (double) priv->pScrn->gamma.blue;
+    RedGamma = 1.0 / (double) pScrn->gamma.red;
+    GreenGamma = 1.0 / (double) pScrn->gamma.green;
+    BlueGamma = 1.0 / (double) pScrn->gamma.blue;
 
     for (i = 0; i <= elements; i++) {
         if (RedGamma == 1.0)
@@ -908,11 +905,10 @@ ComputeGamma(CMapScreenPtr priv)
 }
 
 int
-CMapChangeGamma(int index, Gamma gamma)
+CMapChangeGamma(ScrnInfoPtr pScrn, Gamma gamma)
 {
     int ret = Success;
-    ScrnInfoPtr pScrn = xf86Screens[index];
-    ScreenPtr pScreen = pScrn->pScreen;
+    ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
     CMapColormapPtr pColPriv;
     CMapScreenPtr pScreenPriv;
     CMapLinkPtr pLink;
@@ -935,7 +931,7 @@ CMapChangeGamma(int index, Gamma gamma)
     pScrn->gamma.green = gamma.green;
     pScrn->gamma.blue = gamma.blue;
 
-    ComputeGamma(pScreenPriv);
+    ComputeGamma(pScrn, pScreenPriv);
 
     /* mark all colormaps on this screen */
     pLink = pScreenPriv->maps;
@@ -966,7 +962,7 @@ CMapChangeGamma(int index, Gamma gamma)
             }
 
             if (pLink) {
-                /* need to trick CMapRefreshColors() into thinking 
+                /* need to trick CMapRefreshColors() into thinking
                    this is the currently installed map */
                 SetInstalledmiColormap(pScreen, pLink->cmap);
                 CMapReinstallMap(pLink->cmap);
@@ -979,7 +975,7 @@ CMapChangeGamma(int index, Gamma gamma)
 
     pScrn->ChangeGamma = pScreenPriv->ChangeGamma;
     if (pScrn->ChangeGamma)
-        ret = pScrn->ChangeGamma(index, gamma);
+        ret = pScrn->ChangeGamma(pScrn, gamma);
     pScrn->ChangeGamma = CMapChangeGamma;
 
     return ret;
@@ -1008,23 +1004,10 @@ xf86ChangeGammaRamp(ScreenPtr pScreen,
                     unsigned short *red,
                     unsigned short *green, unsigned short *blue)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     CMapColormapPtr pColPriv;
     CMapScreenPtr pScreenPriv;
     CMapLinkPtr pLink;
-
-    if (xf86_crtc_supports_gamma(pScrn)) {
-        RRCrtcPtr crtc = xf86CompatRRCrtc(pScrn);
-
-        if (crtc) {
-            if (crtc->gammaSize != size)
-                return BadValue;
-
-            RRCrtcGammaSet(crtc, red, green, blue);
-
-            return Success;
-        }
-    }
 
     if (!CMapScreenKeyRegistered)
         return BadImplementation;
@@ -1085,15 +1068,7 @@ xf86ChangeGammaRamp(ScreenPtr pScreen,
 int
 xf86GetGammaRampSize(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     CMapScreenPtr pScreenPriv;
-
-    if (xf86_crtc_supports_gamma(pScrn)) {
-        RRCrtcPtr crtc = xf86CompatRRCrtc(pScrn);
-
-        if (crtc)
-            return crtc->gammaSize;
-    }
 
     if (!CMapScreenKeyRegistered)
         return 0;
@@ -1112,28 +1087,9 @@ xf86GetGammaRamp(ScreenPtr pScreen,
                  unsigned short *red,
                  unsigned short *green, unsigned short *blue)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     CMapScreenPtr pScreenPriv;
     LOCO *entry;
     int shift, sigbits;
-
-    if (xf86_crtc_supports_gamma(pScrn)) {
-        RRCrtcPtr crtc = xf86CompatRRCrtc(pScrn);
-
-        if (crtc) {
-            if (crtc->gammaSize < size)
-                return BadValue;
-
-            if (!RRCrtcGammaGet(crtc))
-                return BadImplementation;
-
-            memcpy(red, crtc->gammaRed, size * sizeof(*red));
-            memcpy(green, crtc->gammaGreen, size * sizeof(*green));
-            memcpy(blue, crtc->gammaBlue, size * sizeof(*blue));
-
-            return Success;
-        }
-    }
 
     if (!CMapScreenKeyRegistered)
         return BadImplementation;
@@ -1172,10 +1128,10 @@ xf86GetGammaRamp(ScreenPtr pScreen,
 int
 xf86ChangeGamma(ScreenPtr pScreen, Gamma gamma)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
 
     if (pScrn->ChangeGamma)
-        return (*pScrn->ChangeGamma) (pScreen->myNum, gamma);
+        return (*pScrn->ChangeGamma) (pScrn, gamma);
 
     return BadImplementation;
 }

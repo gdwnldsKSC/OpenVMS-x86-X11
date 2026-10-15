@@ -52,6 +52,8 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
+#include <dispatch/dispatch.h>
+
 #include "rootlessWindow.h"
 #include "xprEvent.h"
 
@@ -72,7 +74,10 @@ QuartzModeEventHandler(int screenNum, XQuartzEvent *e, DeviceIntPtr dev)
 
     case kXquartzBringAllToFront:
         DEBUG_LOG("kXquartzBringAllToFront\n");
-        RootlessOrderAllWindows(e->data[0]);
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            xp_window_bring_all_to_front();
+        });
+
         return TRUE;
 
     default:

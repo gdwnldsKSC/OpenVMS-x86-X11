@@ -36,55 +36,67 @@
 #include "win.h"
 
 #ifdef DDXOSVERRORF
-/* Prototype */
-void
- OsVendorVErrorF(const char *pszFormat, va_list va_args);
-
 void
 OsVendorVErrorF(const char *pszFormat, va_list va_args)
 {
-#if defined(XWIN_CLIPBOARD) || defined (XWIN_MULTIWINDOW)
     /* make sure the clipboard and multiwindow threads do not interfere the
      * main thread */
     static pthread_mutex_t s_pmPrinting = PTHREAD_MUTEX_INITIALIZER;
 
     /* Lock the printing mutex */
     pthread_mutex_lock(&s_pmPrinting);
-#endif
 
     /* Print the error message to a log file, could be stderr */
     LogVWrite(0, pszFormat, va_args);
 
-#if defined(XWIN_CLIPBOARD) || defined (XWIN_MULTIWINDOW)
     /* Unlock the printing mutex */
     pthread_mutex_unlock(&s_pmPrinting);
-#endif
 }
 #endif
 
 /*
- * os/util.c/FatalError () calls our vendor ErrorF, so the message
- * from a FatalError will be logged.  Thus, the message for the
- * fatal error is not passed to this function.
+ * os/log.c:FatalError () calls our vendor ErrorF, so the message
+ * from a FatalError will be logged.
  *
  * Attempt to do last-ditch, safe, important cleanup here.
  */
 void
-OsVendorFatalError(void)
+OsVendorFatalError(const char *f, va_list args)
 {
+    char errormsg[1024] = "";
+
     /* Don't give duplicate warning if UseMsg was called */
     if (g_fSilentFatalError)
         return;
 
     if (!g_fLogInited) {
         g_fLogInited = TRUE;
-        g_pszLogFile = LogInit(g_pszLogFile, NULL);
+        g_pszLogFile = LogInit(g_pszLogFile, ".old");
     }
     LogClose(EXIT_ERR_ABORT);
 
-    winMessageBoxF("A fatal error has occurred and " PROJECT_NAME
-                   " will now exit.\n" "Please open %s for more information.\n",
-                   MB_ICONERROR, (g_pszLogFile ? g_pszLogFile : "the logfile"));
+    /* Format the error message */
+    vsnprintf(errormsg, sizeof(errormsg), f, args);
+
+    /*
+       Sometimes the error message needs a bit of cosmetic cleaning
+       up for use in a dialog box...
+     */
+    {
+        char *s;
+
+        while ((s = strstr(errormsg, "\n\t")) != NULL) {
+            s[0] = ' ';
+            s[1] = '\n';
+        }
+    }
+
+    winMessageBoxF("A fatal error has occurred and " PROJECT_NAME " will now exit.\n\n"
+                   "%s\n\n"
+                   "Please open %s for more information.\n",
+                   MB_ICONERROR,
+                   errormsg,
+                   (g_pszLogFile ? g_pszLogFile : "the logfile"));
 }
 
 /*
@@ -111,7 +123,7 @@ winMessageBoxF(const char *pszError, UINT uType, ...)
 #define MESSAGEBOXF \
 	"%s\n" \
 	"Vendor: %s\n" \
-	"Release: %d.%d.%d.%d (%d)\n" \
+	"Release: %d.%d.%d.%d\n" \
 	"Contact: %s\n" \
 	"%s\n\n" \
 	"XWin was started with the following command-line:\n\n" \
@@ -120,7 +132,7 @@ winMessageBoxF(const char *pszError, UINT uType, ...)
     size = asprintf(&pszMsgBox, MESSAGEBOXF,
                     pszErrorF, XVENDORNAME,
                     XORG_VERSION_MAJOR, XORG_VERSION_MINOR, XORG_VERSION_PATCH,
-                    XORG_VERSION_SNAP, XORG_VERSION_CURRENT,
+                    XORG_VERSION_SNAP,
                     BUILDERADDR, BUILDERSTRING, g_pszCommandLine);
 
     if (size == -1) {

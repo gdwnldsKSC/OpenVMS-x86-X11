@@ -474,7 +474,7 @@ FreeTypeOpenInstance(FTInstancePtr *instance_return, FTFacePtr face,
     if( FT_IS_SFNT( face->face ) ) {
 #if 1
         FT_F26Dot6  tt_char_width, tt_char_height, tt_dim_x, tt_dim_y;
-        FT_UInt     nn;
+        FT_Int     nn;
 
         instance->strike_index=0xFFFFU;
 
@@ -622,7 +622,7 @@ FreeTypeInstanceFindGlyph(unsigned idx_in, int flags, FTInstancePtr instance,
     offset = idx - segment * FONTSEGMENTSIZE;
 
     if((*available)[segment] == NULL) {
-        (*available)[segment] = calloc(FONTSEGMENTSIZE, sizeof(int *));
+        (*available)[segment] = calloc(FONTSEGMENTSIZE, sizeof(int));
         if((*available)[segment] == NULL)
             return AllocError;
     }
@@ -1069,6 +1069,8 @@ FT_Do_SBit_Metrics( FT_Face ft_face, FT_Size ft_size, FT_ULong strike_index,
 #endif
 }
 
+#pragma GCC diagnostic ignored "-Wbad-function-cast"
+
 int
 FreeTypeRasteriseGlyph(unsigned idx, int flags, CharInfoPtr tgp,
 		       FTInstancePtr instance, int hasMetrics)
@@ -1452,7 +1454,7 @@ FreeTypeRasteriseGlyph(unsigned idx, int flags, CharInfoPtr tgp,
 	}
 	for( i = MAX(0, dy) ; i<ht ; i++ ){
 	    int prev_jj,jj;
-	    if( bitmap->rows <= i-dy ) break;
+	    if( bitmap->rows <= (unsigned) (i-dy) ) break;
 	    current_buffer=(unsigned char *)(bitmap->buffer+bitmap->pitch*(i-dy));
 	    current_raster=(unsigned char *)(raster+i*bpr);
 	    j       = MAX(0,div_dx);
@@ -1865,7 +1867,7 @@ FreeTypeAddProperties(FTFontPtr font, FontScalablePtr vals, FontInfoPtr info,
     i++;
 
     info->props[i].name  = MakeAtom("RASTERIZER_NAME", 15, TRUE);
-    info->props[i].value = MakeAtom("FreeType", 10, TRUE);
+    info->props[i].value = MakeAtom("FreeType", 8, TRUE);
     info->isStringProp[i] = 1;
     i++;
 
@@ -2050,7 +2052,7 @@ restrict_code_range_by_str(int count,unsigned short *refFirstCol,
 {
     int nRanges = 0;
     int result = 0;
-    fsRange *ranges = NULL;
+    fsRange *ranges = NULL, *oldRanges;
     char const *p, *q;
 
     p = q = str;
@@ -2059,7 +2061,7 @@ restrict_code_range_by_str(int count,unsigned short *refFirstCol,
         long val;
 
         /* skip comma and/or space */
-        while (',' == *p || isspace(*p))
+        while (',' == *p || isspace((unsigned char)*p))
             p++;
 
         /* begin point */
@@ -2077,7 +2079,7 @@ restrict_code_range_by_str(int count,unsigned short *refFirstCol,
         }
 
         /* skip space */
-        while (isspace(*p))
+        while (isspace((unsigned char)*p))
             p++;
 
         if (',' != *p && '\0' != *p) {
@@ -2090,7 +2092,7 @@ restrict_code_range_by_str(int count,unsigned short *refFirstCol,
                 break;
 
             /* skip space */
-            while (isspace(*p))
+            while (isspace((unsigned char)*p))
                 p++;
 
             val = strtol(p, (char **)&q, 0);
@@ -2119,10 +2121,13 @@ restrict_code_range_by_str(int count,unsigned short *refFirstCol,
         fflush(stderr);
 #endif
         nRanges++;
+        oldRanges = ranges;
         ranges = realloc(ranges, nRanges*sizeof(*ranges));
-        if (NULL == ranges)
+        if (NULL == ranges) {
+            free(oldRanges);
             break;
-        {
+        }
+        else {
             fsRange *r = ranges+nRanges-1;
 
             r->min_char_low = minpoint & 0xff;
@@ -2204,7 +2209,7 @@ FreeTypeSetUpTTCap( char *fileName, FontScalablePtr vals,
 		strcpy(*dynStrRealFileName+dirLen, p2+1);
 		capHead = p1;
 	    } else {
-		*dynStrRealFileName = xstrdup(fileName);
+		*dynStrRealFileName = strdup(fileName);
 		if( *dynStrRealFileName == NULL ) {
 		    result = AllocError;
 		    goto quit;
@@ -2289,13 +2294,11 @@ FreeTypeSetUpTTCap( char *fileName, FontScalablePtr vals,
 	    }
 	}
 	else{
-	    *dynStrFTFileName = malloc(strlen(*dynStrRealFileName)+1);
+	    *dynStrFTFileName = strdup(*dynStrRealFileName);
 	    if( *dynStrFTFileName == NULL ){
 		result = AllocError;
 		goto quit;
 	    }
-	    **dynStrFTFileName = '\0';
-	    strcat(*dynStrFTFileName,*dynStrRealFileName);
 	}
     }
     /*
@@ -2549,7 +2552,7 @@ FreeTypeSetUpTTCap( char *fileName, FontScalablePtr vals,
     if (SPropRecValList_search_record(&listPropRecVal,
 				      &contRecValue,
 				      "CodeRange")) {
-	*dynStrTTCapCodeRange = xstrdup(SPropContainer_value_str(contRecValue));
+	*dynStrTTCapCodeRange = strdup(SPropContainer_value_str(contRecValue));
 	if( *dynStrTTCapCodeRange == NULL ) {
 	    result = AllocError;
 	    goto quit;
@@ -2982,13 +2985,13 @@ ft_compute_bounds(FTFontPtr font, FontInfoPtr pinfo, FontScalablePtr vals )
           c = row<<8|col;
           flags=0;
           if ( !force_c_outside ) {
-              if ( c <= instance->ttcap.forceConstantSpacingEnd
-		   && instance->ttcap.forceConstantSpacingBegin <= c )
+	      if ( (signed) c <= instance->ttcap.forceConstantSpacingEnd
+		   && instance->ttcap.forceConstantSpacingBegin <= (signed) c )
                   flags|=FT_FORCE_CONSTANT_SPACING;
           }
           else {        /* for GB18030 proportional */
-              if ( c <= instance->ttcap.forceConstantSpacingEnd
-		   || instance->ttcap.forceConstantSpacingBegin <= c )
+              if ( (signed) c <= instance->ttcap.forceConstantSpacingEnd
+		   || instance->ttcap.forceConstantSpacingBegin <= (signed) c )
                   flags|=FT_FORCE_CONSTANT_SPACING;
           }
 #if 0

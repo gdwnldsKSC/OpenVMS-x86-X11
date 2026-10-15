@@ -21,6 +21,9 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
+/* Test relies on assert() */
+#undef NDEBUG
+
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -44,8 +47,8 @@
 #include "extinit.h"            /* for XInputExtensionInit */
 #include "scrnintstr.h"
 #include "xiqueryversion.h"
-
 #include "protocol-common.h"
+#include "exglobals.h"
 
 extern XExtensionVersion XIVersion;
 
@@ -54,13 +57,17 @@ struct test_data {
     int minor_client;
     int major_server;
     int minor_server;
+    int major_expected;
+    int minor_expected;
 };
 
+extern ClientRec client_window;
+
 static void
-reply_XIQueryVersion(ClientPtr client, int len, char *data, void *userdata)
+reply_XIQueryVersion(ClientPtr client, int len, char *data, void *closure)
 {
     xXIQueryVersionReply *rep = (xXIQueryVersionReply *) data;
-    struct test_data *versions = (struct test_data *) userdata;
+    struct test_data *versions = (struct test_data *) closure;
     unsigned int sver, cver, ver;
 
     if (client->swapped) {
@@ -82,6 +89,19 @@ reply_XIQueryVersion(ClientPtr client, int len, char *data, void *userdata)
     assert((sver > cver) ? ver == cver : ver == sver);
 }
 
+static void
+reply_XIQueryVersion_multiple(ClientPtr client, int len, char *data, void *closure)
+{
+    xXIQueryVersionReply *rep = (xXIQueryVersionReply *) data;
+    struct test_data *versions = (struct test_data *) closure;
+
+    reply_check_defaults(rep, len, XIQueryVersion);
+    assert(rep->length == 0);
+
+    assert(versions->major_expected == rep->major_version);
+    assert(versions->minor_expected == rep->minor_version);
+}
+
 /**
  * Run a single test with server version smaj.smin and client
  * version cmaj.cmin. Verify that return code is equal to 'error'.
@@ -98,7 +118,7 @@ request_XIQueryVersion(int smaj, int smin, int cmaj, int cmin, int error)
 
     request_init(&request, XIQueryVersion);
     client = init_client(request.length, &request);
-    userdata = (void *) &versions;
+    global_userdata = (void *) &versions;
 
     /* Change the server to support smaj.smin */
     XIVersion.major_version = smaj;
@@ -115,6 +135,7 @@ request_XIQueryVersion(int smaj, int smin, int cmaj, int cmin, int error)
     rc = ProcXIQueryVersion(&client);
     assert(rc == error);
 
+    client = init_client(request.length, &request);
     client.swapped = TRUE;
 
     swaps(&request.length);
@@ -172,12 +193,110 @@ test_XIQueryVersion(void)
     reply_handler = NULL;
 }
 
+
+static void
+test_XIQueryVersion_multiple(void)
+{
+    xXIQueryVersionReq request;
+    ClientRec client;
+    XIClientPtr pXIClient;
+    struct test_data versions;
+    int rc;
+
+    request_init(&request, XIQueryVersion);
+    client = init_client(request.length, &request);
+
+    /* Change the server to support 2.2 */
+    XIVersion.major_version = 2;
+    XIVersion.minor_version = 2;
+
+    reply_handler = reply_XIQueryVersion_multiple;
+    global_userdata = (void *) &versions;
+
+    /* run 1 */
+
+    /* client is lower than server, nonexpected */
+    versions.major_expected = request.major_version = 2;
+    versions.minor_expected = request.minor_version = 1;
+    rc = ProcXIQueryVersion(&client);
+    assert(rc == Success);
+
+    /* client is higher than server, no change */
+    request.major_version = 2;
+    request.minor_version = 3;
+    rc = ProcXIQueryVersion(&client);
+    assert(rc == Success);
+
+    /* client tries to set higher version, stays same */
+    request.major_version = 2;
+    request.minor_version = 2;
+    rc = ProcXIQueryVersion(&client);
+    assert(rc == Success);
+
+    /* client tries to set lower version, no change */
+    request.major_version = 2;
+    request.minor_version = 0;
+    rc = ProcXIQueryVersion(&client);
+    assert(rc == BadValue);
+
+    /* run 2 */
+    client = init_client(request.length, &request);
+    XIVersion.major_version = 2;
+    XIVersion.minor_version = 3;
+
+    versions.major_expected = request.major_version = 2;
+    versions.minor_expected = request.minor_version = 2;
+    rc = ProcXIQueryVersion(&client);
+    assert(rc == Success);
+
+    /* client bumps version from 2.2 to 2.3 */
+    request.major_version = 2;
+    versions.minor_expected = request.minor_version = 3;
+    rc = ProcXIQueryVersion(&client);
+    assert(rc == Success);
+
+    /* real version is changed, too! */
+    pXIClient = dixLookupPrivate(&client.devPrivates, XIClientPrivateKey);
+    assert(pXIClient->minor_version == 3);
+
+    /* client tries to set lower version, no change */
+    request.major_version = 2;
+    request.minor_version = 1;
+    rc = ProcXIQueryVersion(&client);
+    assert(rc == BadValue);
+
+    /* run 3 */
+    client = init_client(request.length, &request);
+    XIVersion.major_version = 2;
+    XIVersion.minor_version = 3;
+
+    versions.major_expected = request.major_version = 2;
+    versions.minor_expected = request.minor_version = 3;
+    rc = ProcXIQueryVersion(&client);
+    assert(rc == Success);
+
+    request.major_version = 2;
+    versions.minor_expected = request.minor_version = 2;
+    rc = ProcXIQueryVersion(&client);
+    assert(rc == Success);
+
+    /* but real client version must not be lowered */
+    pXIClient = dixLookupPrivate(&client.devPrivates, XIClientPrivateKey);
+    assert(pXIClient->minor_version == 3);
+
+    request.major_version = 2;
+    request.minor_version = 1;
+    rc = ProcXIQueryVersion(&client);
+    assert(rc == BadValue);
+}
+
 int
-main(int argc, char **argv)
+protocol_xiqueryversion_test(void)
 {
     init_simple();
 
     test_XIQueryVersion();
+    test_XIQueryVersion_multiple();
 
     return 0;
 }

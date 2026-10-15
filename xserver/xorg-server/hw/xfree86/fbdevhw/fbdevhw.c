@@ -1,4 +1,4 @@
-/* all driver need this */
+/* all drivers need this */
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
 #endif
@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "xf86.h"
+#include "xf86Modes.h"
 #include "xf86_OSproc.h"
 
 /* pci stuff */
@@ -75,20 +76,24 @@ typedef struct {
     /* buildin video mode */
     DisplayModeRec buildin;
 
+    /* disable non-fatal unsupported ioctls */
+    CARD32 unsupported_ioctls;
 } fbdevHWRec, *fbdevHWPtr;
+
+enum {
+    FBIOBLANK_UNSUPPORTED = 0,
+};
 
 Bool
 fbdevHWGetRec(ScrnInfoPtr pScrn)
 {
-    fbdevHWPtr fPtr;
-
     if (fbdevHWPrivateIndex < 0)
         fbdevHWPrivateIndex = xf86AllocateScrnInfoPrivateIndex();
 
     if (FBDEVHWPTR(pScrn) != NULL)
         return TRUE;
 
-    fPtr = FBDEVHWPTRLVAL(pScrn) = xnfcalloc(sizeof(fbdevHWRec), 1);
+    FBDEVHWPTRLVAL(pScrn) = xnfcalloc(sizeof(fbdevHWRec), 1);
     return TRUE;
 }
 
@@ -113,11 +118,11 @@ fbdevHWGetFD(ScrnInfoPtr pScrn)
 }
 
 /* -------------------------------------------------------------------- */
-/* some helpers for printing debug informations                         */
+/* some helpers for printing debug information                          */
 
-#if DEBUG
+#ifdef DEBUG
 static void
-print_fbdev_mode(char *txt, struct fb_var_screeninfo *var)
+print_fbdev_mode(const char *txt, struct fb_var_screeninfo *var)
 {
     ErrorF("fbdev %s mode:\t%d   %d %d %d %d   %d %d %d %d   %d %d:%d:%d\n",
            txt, var->pixclock,
@@ -128,7 +133,7 @@ print_fbdev_mode(char *txt, struct fb_var_screeninfo *var)
 }
 
 static void
-print_xfree_mode(char *txt, DisplayModePtr mode)
+print_xfree_mode(const char *txt, DisplayModePtr mode)
 {
     ErrorF("xfree %s mode:\t%d   %d %d %d %d   %d %d %d %d\n",
            txt, mode->Clock,
@@ -252,7 +257,7 @@ fbdev2xfree_timing(struct fb_var_screeninfo *var, DisplayModePtr mode)
 /* open correct framebuffer device                                      */
 
 /**
- * Try to find the framebuffer device for a given PCI device 
+ * Try to find the framebuffer device for a given PCI device
  */
 static int
 fbdev_open_pci(struct pci_device *pPci, char **namep)
@@ -300,7 +305,7 @@ fbdev_open_pci(struct pci_device *pPci, char **namep)
 }
 
 static int
-fbdev_open(int scrnIndex, char *dev, char **namep)
+fbdev_open(int scrnIndex, const char *dev, char **namep)
 {
     struct fb_fix_screeninfo fix;
     int fd;
@@ -322,6 +327,22 @@ fbdev_open(int scrnIndex, char *dev, char **namep)
     if (fd == -1) {
         xf86DrvMsg(scrnIndex, X_ERROR, "open %s: %s\n", dev, strerror(errno));
         return -1;
+    }
+
+    /* only touch non-PCI devices on this path */
+    {
+        char buf[PATH_MAX] = {0};
+        char *sysfs_path = NULL;
+        char *node = strrchr(dev, '/') + 1;
+
+        if (asprintf(&sysfs_path, "/sys/class/graphics/%s/device/subsystem", node) < 0 ||
+            readlink(sysfs_path, buf, sizeof(buf) - 1) < 0 ||
+            strstr(buf, "bus/pci")) {
+            free(sysfs_path);
+            close(fd);
+            return -1;
+        }
+        free(sysfs_path);
     }
 
     if (namep) {
@@ -461,7 +482,7 @@ fbdevHWSetMode(ScrnInfoPtr pScrn, DisplayModePtr mode, Bool check)
     xfree2fbdev_fblayout(pScrn, &req_var);
     xfree2fbdev_timing(mode, &req_var);
 
-#if DEBUG
+#ifdef DEBUG
     print_xfree_mode("init", mode);
     print_fbdev_mode("init", &req_var);
 #endif
@@ -481,7 +502,7 @@ fbdevHWSetMode(ScrnInfoPtr pScrn, DisplayModePtr mode, Bool check)
         if (!check)
             xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                        "FBIOPUT_VSCREENINFO succeeded but modified " "mode\n");
-#if DEBUG
+#ifdef DEBUG
         print_fbdev_mode("returned", &set_var);
 #endif
         return FALSE;
@@ -496,7 +517,7 @@ fbdevHWSetMode(ScrnInfoPtr pScrn, DisplayModePtr mode, Bool check)
 void
 fbdevHWSetVideoModes(ScrnInfoPtr pScrn)
 {
-    char **modename;
+    const char **modename;
     DisplayModePtr mode, this, last = pScrn->modes;
 
     if (NULL == pScrn->display->modes)
@@ -775,10 +796,8 @@ fbdevHWLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
 /* these can be hooked directly into ScrnInfoRec                        */
 
 ModeStatus
-fbdevHWValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
+fbdevHWValidMode(ScrnInfoPtr pScrn, DisplayModePtr mode, Bool verbose, int flags)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-
     if (!fbdevHWSetMode(pScrn, mode, TRUE))
         return MODE_BAD;
 
@@ -786,10 +805,8 @@ fbdevHWValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
 }
 
 Bool
-fbdevHWSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
+fbdevHWSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr mode)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-
     if (!fbdevHWSetMode(pScrn, mode, FALSE))
         return FALSE;
 
@@ -797,9 +814,8 @@ fbdevHWSwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 }
 
 void
-fbdevHWAdjustFrame(int scrnIndex, int x, int y, int flags)
+fbdevHWAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     fbdevHWPtr fPtr = FBDEVHWPTR(pScrn);
 
     if (x < 0 || x + fPtr->var.xres > fPtr->var.xres_virtual ||
@@ -809,26 +825,22 @@ fbdevHWAdjustFrame(int scrnIndex, int x, int y, int flags)
     fPtr->var.xoffset = x;
     fPtr->var.yoffset = y;
     if (-1 == ioctl(fPtr->fd, FBIOPAN_DISPLAY, (void *) &fPtr->var))
-        xf86DrvMsgVerb(scrnIndex, X_WARNING, 5,
+        xf86DrvMsgVerb(pScrn->scrnIndex, X_WARNING, 5,
                        "FBIOPAN_DISPLAY: %s\n", strerror(errno));
 }
 
 Bool
-fbdevHWEnterVT(int scrnIndex, int flags)
+fbdevHWEnterVT(ScrnInfoPtr pScrn)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-
     if (!fbdevHWModeInit(pScrn, pScrn->currentMode))
         return FALSE;
-    fbdevHWAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+    fbdevHWAdjustFrame(pScrn, pScrn->frameX0, pScrn->frameY0);
     return TRUE;
 }
 
 void
-fbdevHWLeaveVT(int scrnIndex, int flags)
+fbdevHWLeaveVT(ScrnInfoPtr pScrn)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-
     fbdevHWRestore(pScrn);
 }
 
@@ -839,6 +851,9 @@ fbdevHWDPMSSet(ScrnInfoPtr pScrn, int mode, int flags)
     unsigned long fbmode;
 
     if (!pScrn->vtSema)
+        return;
+
+    if (fPtr->unsupported_ioctls & (1 << FBIOBLANK_UNSUPPORTED))
         return;
 
     switch (mode) {
@@ -858,26 +873,56 @@ fbdevHWDPMSSet(ScrnInfoPtr pScrn, int mode, int flags)
         return;
     }
 
-    if (-1 == ioctl(fPtr->fd, FBIOBLANK, (void *) fbmode))
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                   "FBIOBLANK: %s\n", strerror(errno));
+RETRY:
+    if (-1 == ioctl(fPtr->fd, FBIOBLANK, (void *) fbmode)) {
+        switch (errno) {
+        case EAGAIN:
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                       "FBIOBLANK: %s\n", strerror(errno));
+	    break;
+        case EINTR:
+        case ERESTART:
+            goto RETRY;
+        default:
+            fPtr->unsupported_ioctls |= (1 << FBIOBLANK_UNSUPPORTED);
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                       "FBIOBLANK: %s (Screen blanking not supported "
+                       "by kernel - disabling)\n", strerror(errno));
+        }
+    }
 }
 
 Bool
 fbdevHWSaveScreen(ScreenPtr pScreen, int mode)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     fbdevHWPtr fPtr = FBDEVHWPTR(pScrn);
     unsigned long unblank;
 
     if (!pScrn->vtSema)
         return TRUE;
 
+    if (fPtr->unsupported_ioctls & (1 << FBIOBLANK_UNSUPPORTED))
+        return FALSE;
+
     unblank = xf86IsUnblank(mode);
 
+RETRY:
     if (-1 == ioctl(fPtr->fd, FBIOBLANK, (void *) (1 - unblank))) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-                   "FBIOBLANK: %s\n", strerror(errno));
+        switch (errno) {
+        case EAGAIN:
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                       "FBIOBLANK: %s\n", strerror(errno));
+            break;
+        case EINTR:
+        case ERESTART:
+            goto RETRY;
+        default:
+            fPtr->unsupported_ioctls |= (1 << FBIOBLANK_UNSUPPORTED);
+            xf86DrvMsg(pScrn->scrnIndex, X_INFO,
+                       "FBIOBLANK: %s (Screen blanking not supported "
+                       "by kernel - disabling)\n", strerror(errno));
+        }
         return FALSE;
     }
 

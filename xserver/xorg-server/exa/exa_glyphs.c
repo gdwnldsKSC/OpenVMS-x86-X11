@@ -16,7 +16,7 @@
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL Red Hat
  * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN 
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -33,7 +33,7 @@
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL SuSE
  * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN 
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * Author: Owen Taylor <otaylor@fishsoup.net>
@@ -127,7 +127,7 @@ exaUnrealizeGlyphCaches(ScreenPtr pScreen, unsigned int format)
             continue;
 
         if (cache->picture) {
-            FreePicture((pointer) cache->picture, (XID) 0);
+            FreePicture((void *) cache->picture, (XID) 0);
             cache->picture = NULL;
         }
 
@@ -211,8 +211,8 @@ exaRealizeGlyphCaches(ScreenPtr pScreen, unsigned int format)
 
         cache->picture = pPicture;
         cache->picture->refcnt++;
-        cache->hashEntries = malloc(sizeof(int) * cache->hashSize);
-        cache->glyphs = malloc(sizeof(ExaCachedGlyphRec) * cache->size);
+        cache->hashEntries = xallocarray(cache->hashSize, sizeof(int));
+        cache->glyphs = xallocarray(cache->size, sizeof(ExaCachedGlyphRec));
         cache->glyphCount = 0;
 
         if (!cache->hashEntries || !cache->glyphs)
@@ -225,7 +225,7 @@ exaRealizeGlyphCaches(ScreenPtr pScreen, unsigned int format)
     }
 
     /* Each cache references the picture individually */
-    FreePicture((pointer) pPicture, (XID) 0);
+    FreePicture((void *) pPicture, (XID) 0);
     return TRUE;
 
  bail:
@@ -318,8 +318,8 @@ exaGlyphCacheHashRemove(ExaGlyphCachePtr cache, int pos)
              * are:
              *
              * |   XXXXXXXXXX             |
-             *     i         j            
-             *                            
+             *     i         j
+             *
              * |XXX                   XXXX|
              *     j                  i
              *
@@ -365,7 +365,7 @@ exaGlyphCacheUploadGlyph(ScreenPtr pScreen,
                          ExaGlyphCachePtr cache, int x, int y, GlyphPtr pGlyph)
 {
     ExaScreenPriv(pScreen);
-    PicturePtr pGlyphPicture = GlyphPicture(pGlyph)[pScreen->myNum];
+    PicturePtr pGlyphPicture = GetGlyphPicture(pGlyph, pScreen);
     PixmapPtr pGlyphPixmap = (PixmapPtr) pGlyphPicture->pDrawable;
 
     ExaPixmapPriv(pGlyphPixmap);
@@ -544,7 +544,7 @@ exaBufferGlyph(ScreenPtr pScreen,
                INT16 ySrc, INT16 xMask, INT16 yMask, INT16 xDst, INT16 yDst)
 {
     ExaScreenPriv(pScreen);
-    unsigned int format = (GlyphPicture(pGlyph)[pScreen->myNum])->format;
+    unsigned int format = (GetGlyphPicture(pGlyph, pScreen))->format;
     int width = pGlyph->info.width;
     int height = pGlyph->info.height;
     ExaCompositeRectPtr rect;
@@ -586,7 +586,7 @@ exaBufferGlyph(ScreenPtr pScreen,
 
     /* Couldn't find the glyph in the cache, use the glyph picture directly */
 
-    mask = GlyphPicture(pGlyph)[pScreen->myNum];
+    mask = GetGlyphPicture(pGlyph, pScreen);
     if (buffer->mask && buffer->mask != mask)
         return ExaGlyphNeedFlush;
 
@@ -618,9 +618,9 @@ exaGlyphsToMask(PicturePtr pMask, ExaGlyphBufferPtr buffer)
 }
 
 static void
-exaGlyphsToDst(PicturePtr pSrc, PicturePtr pDst, ExaGlyphBufferPtr buffer)
+exaGlyphsToDst(CARD8 op, PicturePtr pSrc, PicturePtr pDst, ExaGlyphBufferPtr buffer)
 {
-    exaCompositeRects(PictOpOver, pSrc, buffer->mask, pDst, buffer->count,
+    exaCompositeRects(op, pSrc, buffer->mask, pDst, buffer->count,
                       buffer->rects);
 
     buffer->count = 0;
@@ -737,7 +737,7 @@ exaGlyphs(CARD8 op,
 
             /* The driver can't seem to composite to a8, let's try argb (but
              * without component-alpha) */
-            FreePicture((pointer) pMask, (XID) 0);
+            FreePicture((void *) pMask, (XID) 0);
 
             argbFormat = PictureMatchFormat(pScreen, 32, PICT_a8r8g8b8);
 
@@ -801,7 +801,7 @@ exaGlyphs(CARD8 op,
                                        0, 0, x - glyph->info.x,
                                        y - glyph->info.y)
                         == ExaGlyphNeedFlush) {
-                        exaGlyphsToDst(pSrc, pDst, &buffer);
+                        exaGlyphsToDst(op, pSrc, pDst, &buffer);
                         exaBufferGlyph(pScreen, &buffer, glyph, pSrc, pDst,
                                        xSrc + (x - glyph->info.x) - first_xOff,
                                        ySrc + (y - glyph->info.y) - first_yOff,
@@ -821,7 +821,7 @@ exaGlyphs(CARD8 op,
         if (maskFormat)
             exaGlyphsToMask(pMask, &buffer);
         else
-            exaGlyphsToDst(pSrc, pDst, &buffer);
+            exaGlyphsToDst(op, pSrc, pDst, &buffer);
     }
 
     if (maskFormat) {
@@ -833,7 +833,7 @@ exaGlyphs(CARD8 op,
                          pDst,
                          xSrc + x - first_xOff,
                          ySrc + y - first_yOff, 0, 0, x, y, width, height);
-        FreePicture((pointer) pMask, (XID) 0);
+        FreePicture((void *) pMask, (XID) 0);
         (*pScreen->DestroyPixmap) (pMaskPixmap);
     }
 }

@@ -23,7 +23,7 @@
 # Initialize Autoconf
 AC_PREREQ([2.60])
 AC_INIT([xf86-video-vmware],
-        [12.0.2],
+        [13.4.0],
         [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg],
         [xf86-video-vmware])
 AC_CONFIG_SRCDIR([Makefile.am])
@@ -32,8 +32,7 @@ AC_CONFIG_AUX_DIR(.)
 AC_SYS_LARGEFILE
 
 # Initialize Automake
-AM_INIT_AUTOMAKE([foreign dist-bzip2])
-AM_MAINTAINER_MODE
+AM_INIT_AUTOMAKE([foreign dist-xz])
 
 # Require X.Org macros 1.8 or later for MAN_SUBSTS set by XORG_MANPAGE_SECTIONS
 m4_ifndef([XORG_MACROS_VERSION],
@@ -118,7 +117,31 @@ if test x$BUILD_VMWGFX = xyes; then
 	PKG_CHECK_MODULES([LIBDRM], [libdrm],[],[BUILD_VMWGFX=no])
 fi
 if test x$BUILD_VMWGFX = xyes; then
-	PKG_CHECK_MODULES([XATRACKER], [xatracker >= 0.4.0],[],[BUILD_VMWGFX=no])
+#
+# Early versions of mesa 10 forgot to bump the XA major version number in
+# the xa_tracker.h header
+#
+	PKG_CHECK_MODULES([XATRACKER], [xatracker >= 0.4.0],
+			  [PKG_CHECK_EXISTS([xatracker = 2.0.0],
+	                  [AC_DEFINE([HAVE_XA_2], 1,
+               		  [Has version 2 of XA])])],
+			  [BUILD_VMWGFX=no])
+#
+# Check for prime.
+#
+	PKG_CHECK_EXISTS([libdrm >= 2.4.38],
+			 [AC_DEFINE([HAVE_LIBDRM_2_4_38], 1,
+			 [Has version 2.4.38 or greater of libdrm])])
+#
+# Check for drmGetDeviceNameFromFd2. On linux we need
+# 2.4.96 for compatibility with the standalone vmwgfx driver
+#
+	PKG_CHECK_EXISTS([libdrm >= 2.4.74],
+			 [AC_DEFINE([HAVE_LIBDRM_2_4_74], 1,
+			 [Has version 2.4.74 or greater of libdrm])])
+	PKG_CHECK_EXISTS([libdrm >= 2.4.96],
+			 [AC_DEFINE([HAVE_LIBDRM_2_4_96], 1,
+			 [Has version 2.4.96 or greater of libdrm])])
 fi
 
 DRIVER_NAME=vmware
@@ -128,6 +151,18 @@ AC_MSG_CHECKING([whether to build Kernel Mode Setting and 3D])
 if test x$BUILD_VMWGFX = xyes; then
 	AC_MSG_RESULT([yes])
         AC_DEFINE([BUILD_VMWGFX], 1, [Building the vmwgfx driver path])
+	libudev_check=yes
+	AC_ARG_WITH([libudev],
+		[AS_HELP_STRING([--without-libudev],
+			[Use to build without libudev on linux])],
+			[if test x$withval = xno; then libudev_check=no; fi]
+			[])
+	if test $libudev_check != no; then
+		PKG_CHECK_MODULES(LIBUDEV, [libudev],
+					   [AC_DEFINE([HAVE_LIBUDEV], 1,
+					   [Has libudev installed])],
+					   []);
+        fi
 else
 	AC_MSG_RESULT([no])
 fi

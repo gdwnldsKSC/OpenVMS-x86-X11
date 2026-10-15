@@ -78,6 +78,7 @@ typedef struct {
     pointer		private;
     int			consType;
     int			wsKbdType;
+    char		wsKbdDev[256];
 
 } KbdDevRec, *KbdDevPtr;
 
@@ -92,4 +93,4 @@ typedef struct {
     KbdProtocolId	id;
 } KbdProtocolRec;
 
-Bool xf86OSKbdPreInit(InputInfoPtr pInfo);
+_X_EXPORT Bool xf86OSKbdPreInit(InputInfoPtr pInfo);

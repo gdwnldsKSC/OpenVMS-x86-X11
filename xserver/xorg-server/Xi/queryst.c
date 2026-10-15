@@ -53,7 +53,7 @@ from The Open Group.
  *
  */
 
-int
+int _X_COLD
 SProcXQueryDeviceState(ClientPtr client)
 {
     REQUEST(xQueryDeviceStateReq);
@@ -86,11 +86,6 @@ ProcXQueryDeviceState(ClientPtr client)
 
     REQUEST(xQueryDeviceStateReq);
     REQUEST_SIZE_MATCH(xQueryDeviceStateReq);
-
-    rep.repType = X_Reply;
-    rep.RepType = X_QueryDeviceState;
-    rep.length = 0;
-    rep.sequenceNumber = client->sequence;
 
     rc = dixLookupDevice(&dev, stuff->deviceid, client, DixReadAccess);
     if (rc != Success && rc != BadAccess)
@@ -163,8 +158,13 @@ ProcXQueryDeviceState(ClientPtr client)
         }
     }
 
-    rep.num_classes = num_classes;
-    rep.length = bytes_to_int32(total_length);
+    rep = (xQueryDeviceStateReply) {
+        .repType = X_Reply,
+        .RepType = X_QueryDeviceState,
+        .sequenceNumber = client->sequence,
+        .length = bytes_to_int32(total_length),
+        .num_classes = num_classes
+    };
     WriteReplyToClient(client, sizeof(xQueryDeviceStateReply), &rep);
     if (total_length > 0)
         WriteToClient(client, total_length, savbuf);
@@ -179,10 +179,10 @@ ProcXQueryDeviceState(ClientPtr client)
  *
  */
 
-void
+void _X_COLD
 SRepXQueryDeviceState(ClientPtr client, int size, xQueryDeviceStateReply * rep)
 {
     swaps(&rep->sequenceNumber);
     swapl(&rep->length);
-    WriteToClient(client, size, (char *) rep);
+    WriteToClient(client, size, rep);
 }

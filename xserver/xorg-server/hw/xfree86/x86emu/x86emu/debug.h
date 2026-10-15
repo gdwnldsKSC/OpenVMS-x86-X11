@@ -102,13 +102,13 @@
 #ifdef DEBUG
 
 #define DECODE_PRINTF(x)     	if (DEBUG_DECODE()) \
-									x86emu_decode_printf(x)
+									x86emu_decode_printf("%s",x)
 #define DECODE_PRINTF2(x,y)  	if (DEBUG_DECODE()) \
-									x86emu_decode_printf2(x,y)
+									x86emu_decode_printf(x,y)
 
 /*
- * The following allow us to look at the bytes of an instruction.  The
- * first INCR_INSTRN_LEN, is called everytime bytes are consumed in
+ * The following allows us to look at the bytes of an instruction.  The
+ * first INCR_INSTRN_LEN, is called every time bytes are consumed in
  * the decoding process.  The SAVE_IP_CS is called initially when the
  * major opcode of the instruction is accessed.
  */
@@ -189,8 +189,7 @@ extern "C" {                    /* Use "C" linkage when in C++ mode */
 #endif
 
     extern void x86emu_inc_decoded_inst_len(int x);
-    extern void x86emu_decode_printf(const char *x);
-    extern void x86emu_decode_printf2(const char *x, int y);
+    extern void x86emu_decode_printf(const char *x, ...) _X_ATTRIBUTE_PRINTF(1,2);
     extern void x86emu_just_disassemble(void);
     extern void x86emu_single_step(void);
     extern void x86emu_end_instr(void);

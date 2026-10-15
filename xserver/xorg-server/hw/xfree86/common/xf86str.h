@@ -41,6 +41,7 @@
 #include "colormapst.h"
 #include "xf86Module.h"
 #include "xf86Opt.h"
+#include "displaymode.h"
 
 /**
  * Integer type that is of the size of the addressable memory (machine size).
@@ -84,48 +85,6 @@ typedef enum {
     MODECHECK_FINAL = 1
 } ModeCheckFlags;
 
-/* These are possible return values for xf86CheckMode() and ValidMode() */
-typedef enum {
-    MODE_OK = 0,                /* Mode OK */
-    MODE_HSYNC,                 /* hsync out of range */
-    MODE_VSYNC,                 /* vsync out of range */
-    MODE_H_ILLEGAL,             /* mode has illegal horizontal timings */
-    MODE_V_ILLEGAL,             /* mode has illegal horizontal timings */
-    MODE_BAD_WIDTH,             /* requires an unsupported linepitch */
-    MODE_NOMODE,                /* no mode with a maching name */
-    MODE_NO_INTERLACE,          /* interlaced mode not supported */
-    MODE_NO_DBLESCAN,           /* doublescan mode not supported */
-    MODE_NO_VSCAN,              /* multiscan mode not supported */
-    MODE_MEM,                   /* insufficient video memory */
-    MODE_VIRTUAL_X,             /* mode width too large for specified virtual size */
-    MODE_VIRTUAL_Y,             /* mode height too large for specified virtual size */
-    MODE_MEM_VIRT,              /* insufficient video memory given virtual size */
-    MODE_NOCLOCK,               /* no fixed clock available */
-    MODE_CLOCK_HIGH,            /* clock required is too high */
-    MODE_CLOCK_LOW,             /* clock required is too low */
-    MODE_CLOCK_RANGE,           /* clock/mode isn't in a ClockRange */
-    MODE_BAD_HVALUE,            /* horizontal timing was out of range */
-    MODE_BAD_VVALUE,            /* vertical timing was out of range */
-    MODE_BAD_VSCAN,             /* VScan value out of range */
-    MODE_HSYNC_NARROW,          /* horizontal sync too narrow */
-    MODE_HSYNC_WIDE,            /* horizontal sync too wide */
-    MODE_HBLANK_NARROW,         /* horizontal blanking too narrow */
-    MODE_HBLANK_WIDE,           /* horizontal blanking too wide */
-    MODE_VSYNC_NARROW,          /* vertical sync too narrow */
-    MODE_VSYNC_WIDE,            /* vertical sync too wide */
-    MODE_VBLANK_NARROW,         /* vertical blanking too narrow */
-    MODE_VBLANK_WIDE,           /* vertical blanking too wide */
-    MODE_PANEL,                 /* exceeds panel dimensions */
-    MODE_INTERLACE_WIDTH,       /* width too large for interlaced mode */
-    MODE_ONE_WIDTH,             /* only one width is supported */
-    MODE_ONE_HEIGHT,            /* only one height is supported */
-    MODE_ONE_SIZE,              /* only one resolution is supported */
-    MODE_NO_REDUCED,            /* monitor doesn't accept reduced blanking */
-    MODE_BANDWIDTH,             /* mode requires too much memory bandwidth */
-    MODE_BAD = -2,              /* unspecified reason */
-    MODE_ERROR = -1             /* error condition */
-} ModeStatus;
-
 /*
  * The mode sets are, from best to worst: USERDEF, DRIVER, and DEFAULT/BUILTIN.
  * Preferred will bubble a mode to the top within a set.
@@ -140,54 +99,6 @@ typedef enum {
 #define M_T_USERDEF 0x20        /* One of the modes from the config file */
 #define M_T_DRIVER  0x40        /* Supplied by the driver (EDID, etc) */
 #define M_T_USERPREF 0x80       /* mode preferred by the user config */
-
-/* Video mode */
-typedef struct _DisplayModeRec {
-    struct _DisplayModeRec *prev;
-    struct _DisplayModeRec *next;
-    char *name;                 /* identifier for the mode */
-    ModeStatus status;
-    int type;
-
-    /* These are the values that the user sees/provides */
-    int Clock;                  /* pixel clock freq (kHz) */
-    int HDisplay;               /* horizontal timing */
-    int HSyncStart;
-    int HSyncEnd;
-    int HTotal;
-    int HSkew;
-    int VDisplay;               /* vertical timing */
-    int VSyncStart;
-    int VSyncEnd;
-    int VTotal;
-    int VScan;
-    int Flags;
-
-    /* These are the values the hardware uses */
-    int ClockIndex;
-    int SynthClock;             /* Actual clock freq to
-                                 * be programmed  (kHz) */
-    int CrtcHDisplay;
-    int CrtcHBlankStart;
-    int CrtcHSyncStart;
-    int CrtcHSyncEnd;
-    int CrtcHBlankEnd;
-    int CrtcHTotal;
-    int CrtcHSkew;
-    int CrtcVDisplay;
-    int CrtcVBlankStart;
-    int CrtcVSyncStart;
-    int CrtcVSyncEnd;
-    int CrtcVBlankEnd;
-    int CrtcVTotal;
-    Bool CrtcHAdjusted;
-    Bool CrtcVAdjusted;
-    int PrivSize;
-    INT32 *Private;
-    int PrivFlags;
-
-    float HSync, VRefresh;
-} DisplayModeRec, *DisplayModePtr;
 
 /* The monitor description */
 
@@ -212,9 +123,9 @@ typedef struct {
 #define GAMMA_ZERO	(GAMMA_MIN / 100.0)
 
 typedef struct {
-    char *id;
-    char *vendor;
-    char *model;
+    const char *id;
+    const char *vendor;
+    const char *model;
     int nHsync;
     range hsync[MAX_HSYNC];
     int nVrefresh;
@@ -224,8 +135,8 @@ typedef struct {
     Gamma gamma;                /* Gamma of the monitor */
     int widthmm;
     int heightmm;
-    pointer options;
-    pointer DDC;
+    void *options;
+    void *DDC;
     Bool reducedblanking;       /* Allow CVT reduced blanking modes? */
     int maxPixClock;            /* in kHz, like mode->Clock */
 } MonRec, *MonPtr;
@@ -256,10 +167,11 @@ typedef enum {
     RR_GET_INFO,
     RR_SET_CONFIG,
     RR_GET_MODE_MM,
-    GET_REQUIRED_HW_INTERFACES = 10
+    GET_REQUIRED_HW_INTERFACES = 10,
+    SUPPORTS_SERVER_FDS = 11,
 } xorgDriverFuncOp;
 
-typedef Bool xorgDriverFuncProc(ScrnInfoPtr, xorgDriverFuncOp, pointer);
+typedef Bool xorgDriverFuncProc(ScrnInfoPtr, xorgDriverFuncOp, void *);
 
 /* RR_GET_INFO, RR_SET_CONFIG */
 typedef struct {
@@ -297,35 +209,33 @@ typedef CARD32 xorgHWFlags;
  */
 struct _DriverRec;
 
-typedef struct {
-    int driverVersion;
-    char *driverName;
-    void (*Identify) (int flags);
-    Bool (*Probe) (struct _DriverRec * drv, int flags);
-    const OptionInfoRec *(*AvailableOptions) (int chipid, int bustype);
-    pointer module;
-    int refCount;
-} DriverRec1;
-
 struct _SymTabRec;
 struct _PciChipsets;
 
 struct pci_device;
+struct xf86_platform_device;
 
 typedef struct _DriverRec {
     int driverVersion;
-    char *driverName;
+    const char *driverName;
     void (*Identify) (int flags);
     Bool (*Probe) (struct _DriverRec * drv, int flags);
     const OptionInfoRec *(*AvailableOptions) (int chipid, int bustype);
-    pointer module;
+    void *module;
     int refCount;
     xorgDriverFuncProc *driverFunc;
 
     const struct pci_id_match *supported_devices;
     Bool (*PciProbe) (struct _DriverRec * drv, int entity_num,
                       struct pci_device * dev, intptr_t match_data);
+    Bool (*platformProbe) (struct _DriverRec * drv, int entity_num, int flags,
+                           struct xf86_platform_device * dev, intptr_t match_data);
 } DriverRec, *DriverPtr;
+
+/*
+ * platform probe flags
+ */
+#define PLATFORM_PROBE_GPU_SCREEN 1
 
 /*
  *  AddDriver flags
@@ -339,10 +249,12 @@ typedef struct _DriverRec {
  */
 
 /* Tolerate prior #include <linux/input.h> */
-#if defined(linux) && defined(_INPUT_H)
+#if defined(__linux__)
 #undef BUS_NONE
 #undef BUS_PCI
 #undef BUS_SBUS
+#undef BUS_PLATFORM
+#undef BUS_USB
 #undef BUS_last
 #endif
 
@@ -350,6 +262,8 @@ typedef enum {
     BUS_NONE,
     BUS_PCI,
     BUS_SBUS,
+    BUS_PLATFORM,
+    BUS_USB,
     BUS_last                    /* Keep last */
 } BusType;
 
@@ -362,10 +276,10 @@ typedef struct _bus {
     union {
         struct pci_device *pci;
         SbusBusId sbus;
+        struct xf86_platform_device *plat;
     } id;
 } BusRec, *BusPtr;
 
-#define MAXCLOCKS   128
 typedef enum {
     DAC_BPP8 = 0,
     DAC_BPP16,
@@ -375,29 +289,27 @@ typedef enum {
 } DacSpeedIndex;
 
 typedef struct {
-    char *identifier;
-    char *vendor;
-    char *board;
-    char *chipset;
-    char *ramdac;
-    char *driver;
+    const char *identifier;
+    const char *vendor;
+    const char *board;
+    const char *chipset;
+    const char *ramdac;
+    const char *driver;
     struct _confscreenrec *myScreenSection;
     Bool claimed;
     int dacSpeeds[MAXDACSPEEDS];
     int numclocks;
     int clock[MAXCLOCKS];
-    char *clockchip;
-    char *busID;
+    const char *clockchip;
+    const char *busID;
     Bool active;
     Bool inUse;
     int videoRam;
-    int textClockFreq;
-    unsigned long BiosBase;     /* Base address of video BIOS */
     unsigned long MemBase;      /* Frame buffer base address */
     unsigned long IOBase;
     int chipID;
     int chipRev;
-    pointer options;
+    void *options;
     int irq;
     int screen;                 /* For multi-CRTC cards */
 } GDevRec, *GDevPtr;
@@ -413,24 +325,25 @@ typedef struct {
     rgb blackColour;
     rgb whiteColour;
     int defaultVisual;
-    char **modes;
-    pointer options;
+    const char **modes;
+    void *options;
 } DispRec, *DispPtr;
 
 typedef struct _confxvportrec {
-    char *identifier;
-    pointer options;
+    const char *identifier;
+    void *options;
 } confXvPortRec, *confXvPortPtr;
 
 typedef struct _confxvadaptrec {
-    char *identifier;
+    const char *identifier;
     int numports;
     confXvPortPtr ports;
-    pointer options;
+    void *options;
 } confXvAdaptorRec, *confXvAdaptorPtr;
 
+#define MAX_GPUDEVICES 4
 typedef struct _confscreenrec {
-    char *id;
+    const char *id;
     int screennum;
     int defaultdepth;
     int defaultbpp;
@@ -438,10 +351,13 @@ typedef struct _confscreenrec {
     MonPtr monitor;
     GDevPtr device;
     int numdisplays;
-    DispPtr displays;
+    DispPtr *displays;
     int numxvadaptors;
     confXvAdaptorPtr xvadaptors;
-    pointer options;
+    void *options;
+
+    int num_gpu_devices;
+    GDevPtr gpu_devices[MAX_GPUDEVICES];
 } confScreenRec, *confScreenPtr;
 
 typedef enum {
@@ -456,29 +372,29 @@ typedef enum {
 
 typedef struct _screenlayoutrec {
     confScreenPtr screen;
-    char *topname;
+    const char *topname;
     confScreenPtr top;
-    char *bottomname;
+    const char *bottomname;
     confScreenPtr bottom;
-    char *leftname;
+    const char *leftname;
     confScreenPtr left;
-    char *rightname;
+    const char *rightname;
     confScreenPtr right;
     PositionType where;
     int x;
     int y;
-    char *refname;
+    const char *refname;
     confScreenPtr refscreen;
 } screenLayoutRec, *screenLayoutPtr;
 
 typedef struct _InputInfoRec InputInfoRec;
 
 typedef struct _serverlayoutrec {
-    char *id;
+    const char *id;
     screenLayoutPtr screens;
     GDevPtr inactives;
     InputInfoRec **inputs;      /* NULL terminated */
-    pointer options;
+    void *options;
 } serverLayoutRec, *serverLayoutPtr;
 
 typedef struct _confdribufferrec {
@@ -496,19 +412,14 @@ typedef struct _confdrirec {
     confDRIBufferRec *bufs;
 } confDRIRec, *confDRIPtr;
 
-/* These values should be adjusted when new fields are added to ScrnInfoRec */
-#define NUM_RESERVED_INTS		16
-#define NUM_RESERVED_POINTERS		14
-#define NUM_RESERVED_FUNCS		10
+#define NUM_RESERVED_INTS		4
+#define NUM_RESERVED_POINTERS		4
+#define NUM_RESERVED_FUNCS		4
 
-typedef pointer (*funcPointer) (void);
+/* let clients know they can use this */
+#define XF86_SCRN_HAS_PREFER_CLONE 1
 
-/* flags for depth 24 pixmap options */
-typedef enum {
-    Pix24DontCare = 0,
-    Pix24Use24,
-    Pix24Use32
-} Pix24Flags;
+typedef void *(*funcPointer) (void);
 
 /* Power management events: so far we only support APM */
 
@@ -557,7 +468,7 @@ typedef struct _PciChipsets {
      * In drivers that don't have a specific vendor (e.g., vga) contains the
      * device ID for either the generic VGA or generic 8514 devices.  This
      * turns out to be the same as the subclass and programming interface
-     * value (e.g., the full 24-bit class for the VGA device is 0x030000 (or 
+     * value (e.g., the full 24-bit class for the VGA device is 0x030000 (or
      * 0x000101) and for 8514 is 0x030001).
      */
     int PCIid;
@@ -570,7 +481,7 @@ typedef struct _PciChipsets {
 } PciChipsets;
 
 /* Entity properties */
-typedef void (*EntityProc) (int entityIndex, pointer private);
+typedef void (*EntityProc) (int entityIndex, void *private);
 
 typedef struct _entityInfo {
     int index;
@@ -630,18 +541,18 @@ typedef struct {
 
 typedef Bool xf86ProbeProc(DriverPtr, int);
 typedef Bool xf86PreInitProc(ScrnInfoPtr, int);
-typedef Bool xf86ScreenInitProc(int, ScreenPtr, int, char **);
-typedef Bool xf86SwitchModeProc(int, DisplayModePtr, int);
-typedef void xf86AdjustFrameProc(int, int, int, int);
-typedef Bool xf86EnterVTProc(int, int);
-typedef void xf86LeaveVTProc(int, int);
-typedef void xf86FreeScreenProc(int, int);
-typedef ModeStatus xf86ValidModeProc(int, DisplayModePtr, Bool, int);
-typedef void xf86EnableDisableFBAccessProc(int, Bool);
-typedef int xf86SetDGAModeProc(int, int, DGADevicePtr);
-typedef int xf86ChangeGammaProc(int, Gamma);
-typedef void xf86PointerMovedProc(int, int, int);
-typedef Bool xf86PMEventProc(int, pmEvent, Bool);
+typedef Bool xf86ScreenInitProc(ScreenPtr, int, char **);
+typedef Bool xf86SwitchModeProc(ScrnInfoPtr, DisplayModePtr);
+typedef void xf86AdjustFrameProc(ScrnInfoPtr, int, int);
+typedef Bool xf86EnterVTProc(ScrnInfoPtr);
+typedef void xf86LeaveVTProc(ScrnInfoPtr);
+typedef void xf86FreeScreenProc(ScrnInfoPtr);
+typedef ModeStatus xf86ValidModeProc(ScrnInfoPtr, DisplayModePtr, Bool, int);
+typedef void xf86EnableDisableFBAccessProc(ScrnInfoPtr, Bool);
+typedef int xf86SetDGAModeProc(ScrnInfoPtr, int, DGADevicePtr);
+typedef int xf86ChangeGammaProc(ScrnInfoPtr, Gamma);
+typedef void xf86PointerMovedProc(ScrnInfoPtr, int, int);
+typedef Bool xf86PMEventProc(ScrnInfoPtr, pmEvent, Bool);
 typedef void xf86DPMSSetProc(ScrnInfoPtr, int, int);
 typedef void xf86LoadPaletteProc(ScrnInfoPtr, int, int *, LOCO *, VisualPtr);
 typedef void xf86SetOverscanProc(ScrnInfoPtr, int);
@@ -651,16 +562,12 @@ typedef void xf86ModeSetProc(ScrnInfoPtr);
  * ScrnInfoRec
  *
  * There is one of these for each screen, and it holds all the screen-specific
- * information.
- *
- * Note: the size and layout must be kept the same across versions.  New
- * fields are to be added in place of the "reserved*" fields.  No fields
- * are to be dependent on compile-time defines.
+ * information.  Note: No fields are to be dependent on compile-time defines.
  */
 
 typedef struct _ScrnInfoRec {
     int driverVersion;
-    char *driverName;           /* canonical name used in */
+    const char *driverName;     /* canonical name used in */
     /* the config file */
     ScreenPtr pScreen;          /* Pointer to the ScreenRec */
     int scrnIndex;              /* Number of this screen */
@@ -680,7 +587,6 @@ typedef struct _ScrnInfoRec {
     PixmapFormatRec fbFormat;
 
     int bitsPerPixel;           /* fb bpp */
-    Pix24Flags pixmap24;        /* pixmap pref for depth 24 */
     int depth;                  /* depth of default visual */
     MessageType depthFrom;      /* set from config? */
     MessageType bitsPerPixelFrom;       /* set from config? */
@@ -690,12 +596,9 @@ typedef struct _ScrnInfoRec {
     int rgbBits;                /* Number of bits in r/g/b */
     Gamma gamma;                /* Gamma of the monitor */
     int defaultVisual;          /* default visual class */
-    int maxHValue;              /* max horizontal timing */
-    int maxVValue;              /* max vertical timing value */
     int virtualX;               /* Virtual width */
     int virtualY;               /* Virtual height */
     int xInc;                   /* Horizontal timing increment */
-    MessageType virtualFrom;    /* set from config? */
     int displayWidth;           /* memory pitch */
     int frameX0;                /* viewport position */
     int frameY0;
@@ -719,56 +622,46 @@ typedef struct _ScrnInfoRec {
     int heightmm;
     int xDpi;                   /* width DPI */
     int yDpi;                   /* height DPI */
-    char *name;                 /* Name to prefix messages */
-    pointer driverPrivate;      /* Driver private area */
+    const char *name;           /* Name to prefix messages */
+    void *driverPrivate;        /* Driver private area */
     DevUnion *privates;         /* Other privates can hook in
                                  * here */
     DriverPtr drv;              /* xf86DriverList[] entry */
-    pointer module;             /* Pointer to module head */
+    void *module;               /* Pointer to module head */
     int colorKey;
     int overlayFlags;
 
     /* Some of these may be moved out of here into the driver private area */
 
-    char *chipset;              /* chipset name */
-    char *ramdac;               /* ramdac name */
-    char *clockchip;            /* clock name */
+    const char *chipset;        /* chipset name */
+    const char *ramdac;         /* ramdac name */
+    const char *clockchip;      /* clock name */
     Bool progClock;             /* clock is programmable */
     int numClocks;              /* number of clocks */
     int clock[MAXCLOCKS];       /* list of clock frequencies */
     int videoRam;               /* amount of video ram (kb) */
-    unsigned long biosBase;     /* Base address of video BIOS */
     unsigned long memPhysBase;  /* Physical address of FB */
     unsigned long fbOffset;     /* Offset of FB in the above */
-    int memClk;                 /* memory clock */
-    int textClockFreq;          /* clock of text mode */
-    Bool flipPixels;            /* swap default black/white */
-    pointer options;
-
-    int chipID;
-    int chipRev;
+    void *options;
 
     /* Allow screens to be enabled/disabled individually */
     Bool vtSema;
 
-    /* hw cursor moves at SIGIO time */
+    /* hw cursor moves from input thread */
     Bool silkenMouse;
 
     /* Storage for clockRanges and adjustFlags for use with the VidMode ext */
     ClockRangePtr clockRanges;
     int adjustFlags;
 
-    /*
-     * These can be used when the minor ABI version is incremented.
-     * The NUM_* parameters must be reduced appropriately to keep the
-     * structure size and alignment unchanged.
-     */
-    int reservedInt[NUM_RESERVED_INTS];
+    /* initial rightof support disable */
+    int                 preferClone;
+
+    Bool is_gpu;
+    uint32_t capabilities;
 
     int *entityInstanceList;
     struct pci_device *vgaDev;
-
-    pointer reservedPtr[NUM_RESERVED_POINTERS];
 
     /*
      * Driver entry points.
@@ -795,13 +688,9 @@ typedef struct _ScrnInfoRec {
     xorgDriverFuncProc *DriverFunc;
     xf86ModeSetProc *ModeSet;
 
-    /*
-     * This can be used when the minor ABI version is incremented.
-     * The NUM_* parameter must be reduced appropriately to keep the
-     * structure size and alignment unchanged.
-     */
+    int reservedInt[NUM_RESERVED_INTS];
+    void *reservedPtr[NUM_RESERVED_POINTERS];
     funcPointer reservedFuncs[NUM_RESERVED_FUNCS];
-
 } ScrnInfoRec;
 
 typedef struct {
@@ -851,7 +740,7 @@ typedef enum {
 typedef void (*DPMSSetProcPtr) (ScrnInfoPtr, int, int);
 
 /* Input handler proc */
-typedef void (*InputHandlerProc) (int fd, pointer data);
+typedef void (*InputHandlerProc) (int fd, void *data);
 
 /* These are used by xf86GetClocks */
 #define CLK_REG_SAVE		-1

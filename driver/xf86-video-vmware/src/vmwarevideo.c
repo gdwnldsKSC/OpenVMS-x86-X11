@@ -39,10 +39,12 @@
 #endif
 
 #include "vmware.h"
+#include "vmware_common.h"
 #include "xf86xv.h"
 #include "fourcc.h"
 #include "svga_escape.h"
 #include "svga_overlay.h"
+#include "common_compat.h"
 
 #include <X11/extensions/Xv.h>
 
@@ -51,11 +53,17 @@
 #include <xf86_libc.h>
 #endif
 
+static CONST_ABI_16_0 char xv_adapt_name[] = "VMWare Overlay Video Engine";
+static CONST_ABI_16_0 char xv_image_name[] = "XV_IMAGE";
 
 #define HAVE_FILLKEYHELPERDRAWABLE \
     ((GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 2) ||  \
      ((GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) == 1) && \
       (GET_ABI_MINOR(ABI_VIDEODRV_VERSION) >= 2)))
+
+#if HAVE_FILLKEYHELPERDRAWABLE
+#include <damage.h>
+#endif
 
 #define MAKE_ATOM(a) MakeAtom(a, sizeof(a) - 1, TRUE)
 
@@ -89,7 +97,7 @@ static XF86VideoEncodingRec vmwareVideoEncodings[] =
 {
     {
        0,
-       "XV_IMAGE",
+       xv_image_name,
        VMWARE_VID_MAX_WIDTH, VMWARE_VID_MAX_HEIGHT,
        {1, 1}
     }
@@ -110,6 +118,9 @@ static XF86ImageRec vmwareVideoImages[] =
     XVIMAGE_UYVY
 };
 
+static CONST_ABI_16_TO_19 char xv_colorkey_name[] = "XV_COLORKEY";
+static CONST_ABI_16_TO_19 char xv_autopaint_name[] = "XV_AUTOPAINT_COLORKEY";
+
 #define VMWARE_VID_NUM_ATTRIBUTES 2
 static XF86AttributeRec vmwareVideoAttributes[] =
 {
@@ -117,13 +128,13 @@ static XF86AttributeRec vmwareVideoAttributes[] =
         XvGettable | XvSettable,
         0x000000,
         0xffffff,
-        "XV_COLORKEY"
+        xv_colorkey_name,
     },
     {
         XvGettable | XvSettable,
         0,
         1,
-        "XV_AUTOPAINT_COLORKEY"
+        xv_autopaint_name,
     }
 };
 
@@ -439,7 +450,7 @@ vmwareVideoEnabled(VMWAREPtr pVMWARE)
 Bool
 vmwareVideoInit(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = infoFromScreen(pScreen);
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     XF86VideoAdaptorPtr *overlayAdaptors, *newAdaptors = NULL;
     XF86VideoAdaptorPtr newAdaptor = NULL;
     int numAdaptors;
@@ -508,7 +519,7 @@ vmwareVideoInit(ScreenPtr pScreen)
 void
 vmwareVideoEnd(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = infoFromScreen(pScreen);
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     VMWAREPtr pVMWARE = VMWAREPTR(pScrn);
     VMWAREVideoPtr pVid;
     int i;
@@ -574,7 +585,7 @@ vmwareVideoSetup(ScrnInfoPtr pScrn)
 
     adaptor->type = XvInputMask | XvImageMask | XvWindowMask;
     adaptor->flags = VIDEO_OVERLAID_IMAGES | VIDEO_CLIP_TO_VIEWPORT;
-    adaptor->name = "VMware Video Engine";
+    adaptor->name = xv_adapt_name;
     adaptor->nEncodings = VMWARE_VID_NUM_ENCODINGS;
     adaptor->pEncodings = vmwareVideoEncodings;
     adaptor->nFormats = VMWARE_VID_NUM_FORMATS;
@@ -690,7 +701,12 @@ vmwareVideoInitStream(ScrnInfoPtr pScrn, VMWAREVideoPtr pVid,
 	int nBoxes = REGION_NUM_RECTS(&pVid->clipBoxes);
 
 #if HAVE_FILLKEYHELPERDRAWABLE
-	xf86XVFillKeyHelperDrawable(draw, pVid->colorKey, clipBoxes);
+	if (draw->type == DRAWABLE_WINDOW) {
+	    xf86XVFillKeyHelperDrawable(draw, pVid->colorKey, clipBoxes);
+	    DamageDamageRegion(draw, clipBoxes);
+	} else {
+	    xf86XVFillKeyHelper(pScrn->pScreen, pVid->colorKey, clipBoxes);
+        }
 #else
         xf86XVFillKeyHelper(pScrn->pScreen, pVid->colorKey, clipBoxes);
 #endif
@@ -796,7 +812,8 @@ vmwareVideoPlay(ScrnInfoPtr pScrn, VMWAREVideoPtr pVid,
     struct PACKED _body {
         uint32 escape;
         uint32 streamId;
-        struct _item items[SVGA_VIDEO_NUM_REGS];
+        /* Old hosts can not handle more then these regs */
+        struct _item items[SVGA_VIDEO_DATA_GMRID];
     };
 
     struct PACKED _cmdSetRegs {
@@ -841,7 +858,7 @@ vmwareVideoPlay(ScrnInfoPtr pScrn, VMWAREVideoPtr pVid,
     cmdSetRegs.body.streamId = pVid->streamId;
 
     items = cmdSetRegs.body.items;
-    for (i = SVGA_VIDEO_ENABLED; i < SVGA_VIDEO_NUM_REGS; i++) {
+    for (i = SVGA_VIDEO_ENABLED; i < SVGA_VIDEO_DATA_GMRID; i++) {
         items[i].regId = i;
     }
 

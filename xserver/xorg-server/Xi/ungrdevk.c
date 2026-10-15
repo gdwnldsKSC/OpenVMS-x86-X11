@@ -75,7 +75,7 @@ SOFTWARE.
  *
  */
 
-int
+int _X_COLD
 SProcXUngrabDeviceKey(ClientPtr client)
 {
     REQUEST(xUngrabDeviceKeyReq);
@@ -134,7 +134,7 @@ ProcXUngrabDeviceKey(ClientPtr client)
         (stuff->modifiers & ~AllModifiersMask))
         return BadValue;
 
-    temporaryGrab = AllocGrab();
+    temporaryGrab = AllocGrab(NULL);
     if (!temporaryGrab)
         return BadAlloc;
 

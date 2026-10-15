@@ -40,10 +40,12 @@
 #include "exglobals.h"          /* BadDevice */
 #include "xisetdevfocus.h"
 
-int
+int _X_COLD
 SProcXISetFocus(ClientPtr client)
 {
     REQUEST(xXISetFocusReq);
+    REQUEST_AT_LEAST_SIZE(xXISetFocusReq);
+
     swaps(&stuff->length);
     swaps(&stuff->deviceid);
     swapl(&stuff->focus);
@@ -52,10 +54,12 @@ SProcXISetFocus(ClientPtr client)
     return ProcXISetFocus(client);
 }
 
-int
+int _X_COLD
 SProcXIGetFocus(ClientPtr client)
 {
     REQUEST(xXIGetFocusReq);
+    REQUEST_AT_LEAST_SIZE(xXIGetFocusReq);
+
     swaps(&stuff->length);
     swaps(&stuff->deviceid);
 
@@ -97,10 +101,12 @@ ProcXIGetFocus(ClientPtr client)
     if (!dev->focus)
         return BadDevice;
 
-    rep.repType = X_Reply;
-    rep.RepType = X_XIGetFocus;
-    rep.length = 0;
-    rep.sequenceNumber = client->sequence;
+    rep = (xXIGetFocusReply) {
+        .repType = X_Reply,
+        .RepType = X_XIGetFocus,
+        .sequenceNumber = client->sequence,
+        .length = 0
+    };
 
     if (dev->focus->win == NoneWin)
         rep.focus = None;
@@ -121,5 +127,5 @@ SRepXIGetFocus(ClientPtr client, int len, xXIGetFocusReply * rep)
     swaps(&rep->sequenceNumber);
     swapl(&rep->length);
     swapl(&rep->focus);
-    WriteToClient(client, len, (char *) rep);
+    WriteToClient(client, len, rep);
 }

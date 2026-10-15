@@ -1,16 +1,16 @@
-/* 
+/*
  * Copyright (c) 1997  Metro Link Incorporated
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
+ * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -18,11 +18,11 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  * Except as contained in this notice, the name of the Metro Link shall not be
  * used in advertising or otherwise to promote the sale, use or other dealings
  * in this Software without prior written authorization from Metro Link.
- * 
+ *
  */
 /*
  * Copyright (c) 1997-2003 by The XFree86 Project, Inc.
@@ -51,8 +51,6 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
-/* View/edit this file with tab stops set to 4 */
-
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
 #endif
@@ -64,11 +62,9 @@
 #include "Xprintf.h"
 #include "optionstr.h"
 
-extern LexRec val;
 
-static xf86ConfigSymTabRec ServerFlagsTab[] = {
+static const xf86ConfigSymTabRec ServerFlagsTab[] = {
     {ENDSECTION, "endsection"},
-    {NOTRAPSIGNALS, "notrapsignals"},
     {DONTZAP, "dontzap"},
     {DONTZOOM, "dontzoom"},
     {DISABLEVIDMODE, "disablevidmodeextension"},
@@ -101,20 +97,23 @@ xf86parseFlagsSection(void)
 
         switch (token) {
         case COMMENT:
-            ptr->flg_comment = xf86addComment(ptr->flg_comment, val.str);
+            ptr->flg_comment = xf86addComment(ptr->flg_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
             break;
-            /* 
+            /*
              * these old keywords are turned into standard generic options.
              * we fall through here on purpose
              */
         case DEFAULTLAYOUT:
             strvalue = TRUE;
+            /* fallthrough */
         case BLANKTIME:
         case STANDBYTIME:
         case SUSPENDTIME:
         case OFFTIME:
             hasvalue = TRUE;
-        case NOTRAPSIGNALS:
+            /* fallthrough */
         case DONTZAP:
         case DONTZOOM:
         case DISABLEVIDMODE:
@@ -137,12 +136,12 @@ xf86parseFlagsSection(void)
                         if (strvalue) {
                             if (tokentype != STRING)
                                 Error(QUOTE_MSG, tmp);
-                            valstr = val.str;
+                            valstr = xf86_lex_val.str;
                         }
                         else {
                             if (tokentype != NUMBER)
                                 Error(NUMBER_MSG, tmp);
-                            if (asprintf(&valstr, "%d", val.num) == -1)
+                            if (asprintf(&valstr, "%d", xf86_lex_val.num) == -1)
                                 valstr = NULL;
                         }
                     }
@@ -191,7 +190,7 @@ xf86printServerFlagsSection(FILE * f, XF86ConfFlagsPtr flags)
 }
 
 static XF86OptionPtr
-addNewOption2(XF86OptionPtr head, char *name, char *val, int used)
+addNewOption2(XF86OptionPtr head, char *name, char *_val, int used)
 {
     XF86OptionPtr new, old = NULL;
 
@@ -204,7 +203,7 @@ addNewOption2(XF86OptionPtr head, char *name, char *val, int used)
     else
         new = calloc(1, sizeof(*new));
     new->opt_name = name;
-    new->opt_val = val;
+    new->opt_val = _val;
     new->opt_used = used;
 
     if (old)
@@ -213,9 +212,9 @@ addNewOption2(XF86OptionPtr head, char *name, char *val, int used)
 }
 
 XF86OptionPtr
-xf86addNewOption(XF86OptionPtr head, char *name, char *val)
+xf86addNewOption(XF86OptionPtr head, char *name, char *_val)
 {
-    return addNewOption2(head, name, val, 0);
+    return addNewOption2(head, name, _val, 0);
 }
 
 void
@@ -232,11 +231,11 @@ XF86OptionPtr
 xf86optionListDup(XF86OptionPtr opt)
 {
     XF86OptionPtr newopt = NULL;
-    char *val;
+    char *_val;
 
     while (opt) {
-        val = opt->opt_val ? strdup(opt->opt_val) : NULL;
-        newopt = xf86addNewOption(newopt, strdup(opt->opt_name), val);
+        _val = opt->opt_val ? strdup(opt->opt_val) : NULL;
+        newopt = xf86addNewOption(newopt, strdup(opt->opt_name), _val);
         newopt->opt_used = opt->opt_used;
         if (opt->opt_comment)
             newopt->opt_comment = strdup(opt->opt_comment);
@@ -437,22 +436,28 @@ xf86parseOption(XF86OptionPtr head)
         return head;
     }
 
-    name = val.str;
+    name = xf86_lex_val.str;
     if ((token = xf86getSubToken(&comment)) == STRING) {
-        option = xf86newOption(name, val.str);
+        option = xf86newOption(name, xf86_lex_val.str);
         option->opt_comment = comment;
-        if ((token = xf86getToken(NULL)) == COMMENT)
-            option->opt_comment = xf86addComment(option->opt_comment, val.str);
-        else
+        if ((token = xf86getToken(NULL)) == COMMENT) {
+            option->opt_comment = xf86addComment(option->opt_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
+        } else {
             xf86unGetToken(token);
+        }
     }
     else {
         option = xf86newOption(name, NULL);
         option->opt_comment = comment;
-        if (token == COMMENT)
-            option->opt_comment = xf86addComment(option->opt_comment, val.str);
-        else
+        if (token == COMMENT) {
+            option->opt_comment = xf86addComment(option->opt_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
+        } else {
             xf86unGetToken(token);
+        }
     }
 
     old = NULL;

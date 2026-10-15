@@ -35,6 +35,12 @@
 typedef struct _damage {
     DamagePtr pNext;
     DamagePtr pNextWin;
+    /*
+     * Head of the pNext list this damage is currently linked on, or NULL if it is not linked on any list.  Recorded at
+     * insertion time so that removal always unlinks from the list the damage actually went onto; see
+     * damageInsertDamage().
+     */
+    DamagePtr *pListHead;
     RegionRec damage;
 
     DamageReportLevel damageLevel;
@@ -44,15 +50,11 @@ typedef struct _damage {
     DrawablePtr pDrawable;
 
     DamageReportFunc damageReport;
-    DamageReportFunc damageReportPostRendering;
     DamageDestroyFunc damageDestroy;
-    DamageMarkerFunc damageMarker;
 
     Bool reportAfter;
     RegionRec pendingDamage;    /* will be flushed post submission at the latest */
-    RegionRec backupDamage;     /* for use with damageMarker */
     ScreenPtr pScreen;
-    PrivateRec *devPrivates;
 } DamageRec;
 
 typedef struct _damageScrPriv {
@@ -79,8 +81,8 @@ typedef struct _damageScrPriv {
 } DamageScrPrivRec, *DamageScrPrivPtr;
 
 typedef struct _damageGCPriv {
-    GCOps *ops;
-    GCFuncs *funcs;
+    const GCOps *ops;
+    const GCFuncs *funcs;
 } DamageGCPrivRec, *DamageGCPrivPtr;
 
 /* XXX should move these into damage.c, damageScrPrivateIndex is static */

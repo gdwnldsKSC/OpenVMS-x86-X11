@@ -1,5 +1,5 @@
-/* xf86DDC.c 
- * 
+/* xf86DDC.c
+ *
  * Copyright 1998,1999 by Egbert Eich <Egbert.Eich@Physik.TU-Darmstadt.DE>
  */
 
@@ -91,15 +91,16 @@ resort(unsigned char *s_block)
     unsigned char *d_new, *d_ptr, *d_end, *s_ptr, *s_end;
     unsigned char tmp;
 
+    s_ptr = find_header(s_block);
+    if (!s_ptr)
+        return NULL;
     s_end = s_block + EDID1_LEN;
+
     d_new = malloc(EDID1_LEN);
     if (!d_new)
         return NULL;
     d_end = d_new + EDID1_LEN;
 
-    s_ptr = find_header(s_block);
-    if (!s_ptr)
-        return NULL;
     for (d_ptr = d_new; d_ptr < d_end; d_ptr++) {
         tmp = *(s_ptr++);
         *d_ptr = tmp;
@@ -148,7 +149,7 @@ GetEDID_DDC1(unsigned int *s_ptr)
         return NULL;
     s_end = s_ptr + NUM;
     s_pos = s_ptr + s_start;
-    d_block = malloc(EDID1_LEN);
+    d_block = calloc(1, EDID1_LEN);
     if (!d_block)
         return NULL;
     d_pos = d_block;
@@ -211,10 +212,10 @@ TestDDC1(ScrnInfoPtr pScrn, unsigned int (*read_DDC) (ScrnInfoPtr))
     return count;
 }
 
-/* 
+/*
  * read EDID record , pass it to callback function to interpret.
  * callback function will store it for further use by calling
- * function; it will also decide if we need to reread it 
+ * function; it will also decide if we need to reread it
  */
 static unsigned char *
 EDIDRead_DDC1(ScrnInfoPtr pScrn, DDC1SetSpeedProc DDCSpeed,
@@ -258,10 +259,9 @@ EDIDRead_DDC1(ScrnInfoPtr pScrn, DDC1SetSpeedProc DDCSpeed,
  * @return NULL if no monitor attached or failure to interpret the EDID.
  */
 xf86MonPtr
-xf86DoEDID_DDC1(int scrnIndex, DDC1SetSpeedProc DDC1SetSpeed,
+xf86DoEDID_DDC1(ScrnInfoPtr pScrn, DDC1SetSpeedProc DDC1SetSpeed,
                 unsigned int (*DDC1Read) (ScrnInfoPtr))
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     unsigned char *EDID_block = NULL;
     xf86MonPtr tmp = NULL;
 
@@ -285,7 +285,7 @@ xf86DoEDID_DDC1(int scrnIndex, DDC1SetSpeedProc DDC1SetSpeed,
     OsReleaseSignals();
 
     if (EDID_block) {
-        tmp = xf86InterpretEDID(scrnIndex, EDID_block);
+        tmp = xf86InterpretEDID(pScrn->scrnIndex, EDID_block);
     }
 #ifdef DEBUG
     else
@@ -299,7 +299,7 @@ xf86DoEDID_DDC1(int scrnIndex, DDC1SetSpeedProc DDC1SetSpeed,
 /* DDC2 */
 
 static I2CDevPtr
-DDC2MakeDevice(I2CBusPtr pBus, int address, char *name)
+DDC2MakeDevice(I2CBusPtr pBus, int address, const char *name)
 {
     I2CDevPtr dev = NULL;
 
@@ -323,12 +323,12 @@ DDC2MakeDevice(I2CBusPtr pBus, int address, char *name)
 }
 
 static I2CDevPtr
-DDC2Init(int scrnIndex, I2CBusPtr pBus)
+DDC2Init(I2CBusPtr pBus)
 {
     I2CDevPtr dev = NULL;
 
     /*
-     * Slow down the bus so that older monitors don't 
+     * Slow down the bus so that older monitors don't
      * miss things.
      */
     pBus->RiseFallTime = 20;
@@ -403,9 +403,8 @@ DDC2Read(I2CDevPtr dev, int block, unsigned char *R_Buffer)
  * @return NULL if no monitor attached or failure to interpret the EDID.
  */
 xf86MonPtr
-xf86DoEEDID(int scrnIndex, I2CBusPtr pBus, Bool complete)
+xf86DoEEDID(ScrnInfoPtr pScrn, I2CBusPtr pBus, Bool complete)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     unsigned char *EDID_block = NULL;
     xf86MonPtr tmp = NULL;
     I2CDevPtr dev = NULL;
@@ -427,7 +426,7 @@ xf86DoEEDID(int scrnIndex, I2CBusPtr pBus, Bool complete)
     if (noddc || noddc2)
         return NULL;
 
-    if (!(dev = DDC2Init(scrnIndex, pBus)))
+    if (!(dev = DDC2Init(pBus)))
         return NULL;
 
     EDID_block = calloc(1, EDID1_LEN);
@@ -438,13 +437,13 @@ xf86DoEEDID(int scrnIndex, I2CBusPtr pBus, Bool complete)
         int i, n = EDID_block[0x7e];
 
         if (complete && n) {
-            EDID_block = realloc(EDID_block, EDID1_LEN * (1 + n));
+            EDID_block = reallocarray(EDID_block, 1 + n, EDID1_LEN);
 
             for (i = 0; i < n; i++)
                 DDC2Read(dev, i + 1, EDID_block + (EDID1_LEN * (1 + i)));
         }
 
-        tmp = xf86InterpretEEDID(scrnIndex, EDID_block);
+        tmp = xf86InterpretEEDID(pScrn->scrnIndex, EDID_block);
     }
 
     if (tmp && complete)
@@ -465,66 +464,7 @@ xf86DoEEDID(int scrnIndex, I2CBusPtr pBus, Bool complete)
  * @return NULL if no monitor attached or failure to interpret the EDID.
  */
 xf86MonPtr
-xf86DoEDID_DDC2(int scrnIndex, I2CBusPtr pBus)
+xf86DoEDID_DDC2(ScrnInfoPtr pScrn, I2CBusPtr pBus)
 {
-    return xf86DoEEDID(scrnIndex, pBus, FALSE);
-}
-
-/* XXX write me */
-static void *
-DDC2ReadDisplayID(void)
-{
-    return FALSE;
-}
-
-/**
- * Attempts to probe the monitor for DisplayID information, if NoDDC and
- * NoDDC2 are unset.  DisplayID blocks are interpreted and the results
- * returned in an xf86MonPtr.
- *
- * This function does not affect the list of modes used by drivers -- it is up
- * to the driver to decide policy on what to do with DisplayID information.
- *
- * @return pointer to a new xf86MonPtr containing the DisplayID information.
- * @return NULL if no monitor attached or failure to interpret the DisplayID.
- */
-xf86MonPtr
-xf86DoDisplayID(int scrnIndex, I2CBusPtr pBus)
-{
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-    unsigned char *did = NULL;
-    xf86MonPtr tmp = NULL;
-    I2CDevPtr dev = NULL;
-
-    /* Default DDC and DDC2 to enabled. */
-    Bool noddc = FALSE, noddc2 = FALSE;
-    OptionInfoPtr options;
-
-    options = malloc(sizeof(DDCOptions));
-    if (!options)
-        return NULL;
-    memcpy(options, DDCOptions, sizeof(DDCOptions));
-    xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, options);
-
-    xf86GetOptValBool(options, DDCOPT_NODDC, &noddc);
-    xf86GetOptValBool(options, DDCOPT_NODDC2, &noddc2);
-    free(options);
-
-    if (noddc || noddc2)
-        return NULL;
-
-    if (!(dev = DDC2Init(scrnIndex, pBus)))
-        return NULL;
-
-    if ((did = DDC2ReadDisplayID())) {
-        tmp = calloc(1, sizeof(*tmp));
-        if (!tmp)
-            return NULL;
-
-        tmp->scrnIndex = scrnIndex;
-        tmp->flags |= MONITOR_DISPLAYID;
-        tmp->rawData = did;
-    }
-
-    return tmp;
+    return xf86DoEEDID(pScrn, pBus, FALSE);
 }

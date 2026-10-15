@@ -37,20 +37,19 @@
 #include "glxext.h"
 #include "indirect_dispatch.h"
 #include "unpack.h"
-#include "glapitable.h"
-#include "glapi.h"
-#include "glthread.h"
-#include "dispatch.h"
 
 int
 __glXDispSwap_FeedbackBuffer(__GLXclientState * cl, GLbyte * pc)
 {
+    ClientPtr client = cl->client;
     GLsizei size;
     GLenum type;
 
     __GLX_DECLARE_SWAP_VARIABLES;
     __GLXcontext *cx;
     int error;
+
+    REQUEST_FIXED_SIZE(xGLXSingleReq, 8);
 
     __GLX_SWAP_INT(&((xGLXSingleReq *) pc)->contextTag);
     cx = __glXForceCurrent(cl, __GLX_GET_SINGLE_CONTEXT_TAG(pc), &error);
@@ -63,29 +62,34 @@ __glXDispSwap_FeedbackBuffer(__GLXclientState * cl, GLbyte * pc)
     __GLX_SWAP_INT(pc + 4);
     size = *(GLsizei *) (pc + 0);
     type = *(GLenum *) (pc + 4);
+    if (size < 0) {
+        cl->client->errorValue = size;
+        return BadValue;
+    }
     if (cx->feedbackBufSize < size) {
-        cx->feedbackBuf = (GLfloat *) realloc(cx->feedbackBuf,
-                                              (size_t) size
-                                              * __GLX_SIZE_FLOAT32);
+        cx->feedbackBuf = reallocarray(cx->feedbackBuf,
+                                       (size_t) size, __GLX_SIZE_FLOAT32);
         if (!cx->feedbackBuf) {
             cl->client->errorValue = size;
             return BadAlloc;
         }
         cx->feedbackBufSize = size;
     }
-    CALL_FeedbackBuffer(GET_DISPATCH(), (size, type, cx->feedbackBuf));
-    cx->hasUnflushedCommands = GL_TRUE;
+    glFeedbackBuffer(size, type, cx->feedbackBuf);
     return Success;
 }
 
 int
 __glXDispSwap_SelectBuffer(__GLXclientState * cl, GLbyte * pc)
 {
+    ClientPtr client = cl->client;
     __GLXcontext *cx;
     GLsizei size;
 
     __GLX_DECLARE_SWAP_VARIABLES;
     int error;
+
+    REQUEST_FIXED_SIZE(xGLXSingleReq, 4);
 
     __GLX_SWAP_INT(&((xGLXSingleReq *) pc)->contextTag);
     cx = __glXForceCurrent(cl, __GLX_GET_SINGLE_CONTEXT_TAG(pc), &error);
@@ -96,24 +100,27 @@ __glXDispSwap_SelectBuffer(__GLXclientState * cl, GLbyte * pc)
     pc += __GLX_SINGLE_HDR_SIZE;
     __GLX_SWAP_INT(pc + 0);
     size = *(GLsizei *) (pc + 0);
+    if (size < 0) {
+        cl->client->errorValue = size;
+        return BadValue;
+    }
     if (cx->selectBufSize < size) {
-        cx->selectBuf = (GLuint *) realloc(cx->selectBuf,
-                                           (size_t) size * __GLX_SIZE_CARD32);
+        cx->selectBuf = reallocarray(cx->selectBuf,
+                                     (size_t) size, __GLX_SIZE_CARD32);
         if (!cx->selectBuf) {
             cl->client->errorValue = size;
             return BadAlloc;
         }
         cx->selectBufSize = size;
     }
-    CALL_SelectBuffer(GET_DISPATCH(), (size, cx->selectBuf));
-    cx->hasUnflushedCommands = GL_TRUE;
+    glSelectBuffer(size, cx->selectBuf);
     return Success;
 }
 
 int
 __glXDispSwap_RenderMode(__GLXclientState * cl, GLbyte * pc)
 {
-    ClientPtr client;
+    ClientPtr client = cl->client;
     __GLXcontext *cx;
     xGLXRenderModeReply reply;
     GLint nitems = 0, retBytes = 0, retval, newModeCheck;
@@ -124,6 +131,8 @@ __glXDispSwap_RenderMode(__GLXclientState * cl, GLbyte * pc)
     __GLX_DECLARE_SWAP_ARRAY_VARIABLES;
     int error;
 
+    REQUEST_FIXED_SIZE(xGLXSingleReq, 4);
+
     __GLX_SWAP_INT(&((xGLXSingleReq *) pc)->contextTag);
     cx = __glXForceCurrent(cl, __GLX_GET_SINGLE_CONTEXT_TAG(pc), &error);
     if (!cx) {
@@ -133,10 +142,10 @@ __glXDispSwap_RenderMode(__GLXclientState * cl, GLbyte * pc)
     pc += __GLX_SINGLE_HDR_SIZE;
     __GLX_SWAP_INT(pc);
     newMode = *(GLenum *) pc;
-    retval = CALL_RenderMode(GET_DISPATCH(), (newMode));
+    retval = glRenderMode(newMode);
 
     /* Check that render mode worked */
-    CALL_GetIntegerv(GET_DISPATCH(), (GL_RENDER_MODE, &newModeCheck));
+    glGetIntegerv(GL_RENDER_MODE, &newModeCheck);
     if (newModeCheck != newMode) {
         /* Render mode change failed.  Bail */
         newMode = newModeCheck;
@@ -204,21 +213,22 @@ __glXDispSwap_RenderMode(__GLXclientState * cl, GLbyte * pc)
      ** selection array, as per the API for glRenderMode itself.
      */
  noChangeAllowed:;
-    client = cl->client;
-    reply.length = nitems;
-    reply.type = X_Reply;
-    reply.sequenceNumber = client->sequence;
-    reply.retval = retval;
-    reply.size = nitems;
-    reply.newMode = newMode;
+    reply = (xGLXRenderModeReply) {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .length = nitems,
+        .retval = retval,
+        .size = nitems,
+        .newMode = newMode
+    };
     __GLX_SWAP_SHORT(&reply.sequenceNumber);
     __GLX_SWAP_INT(&reply.length);
     __GLX_SWAP_INT(&reply.retval);
     __GLX_SWAP_INT(&reply.size);
     __GLX_SWAP_INT(&reply.newMode);
-    WriteToClient(client, sz_xGLXRenderModeReply, (char *) &reply);
+    WriteToClient(client, sz_xGLXRenderModeReply, &reply);
     if (retBytes) {
-        WriteToClient(client, retBytes, (char *) retBuffer);
+        WriteToClient(client, retBytes, retBuffer);
     }
     return Success;
 }
@@ -226,10 +236,13 @@ __glXDispSwap_RenderMode(__GLXclientState * cl, GLbyte * pc)
 int
 __glXDispSwap_Flush(__GLXclientState * cl, GLbyte * pc)
 {
+    ClientPtr client = cl->client;
     __GLXcontext *cx;
     int error;
 
     __GLX_DECLARE_SWAP_VARIABLES;
+
+    REQUEST_SIZE_MATCH(xGLXSingleReq);
 
     __GLX_SWAP_INT(&((xGLXSingleReq *) pc)->contextTag);
     cx = __glXForceCurrent(cl, __GLX_GET_SINGLE_CONTEXT_TAG(pc), &error);
@@ -237,19 +250,21 @@ __glXDispSwap_Flush(__GLXclientState * cl, GLbyte * pc)
         return error;
     }
 
-    CALL_Flush(GET_DISPATCH(), ());
-    cx->hasUnflushedCommands = GL_FALSE;
+    glFlush();
     return Success;
 }
 
 int
 __glXDispSwap_Finish(__GLXclientState * cl, GLbyte * pc)
 {
+    ClientPtr client = cl->client;
     __GLXcontext *cx;
-    ClientPtr client;
     int error;
+    xGLXSingleReply reply = { 0, };
 
     __GLX_DECLARE_SWAP_VARIABLES;
+
+    REQUEST_SIZE_MATCH(xGLXSingleReq);
 
     __GLX_SWAP_INT(&((xGLXSingleReq *) pc)->contextTag);
     cx = __glXForceCurrent(cl, __GLX_GET_SINGLE_CONTEXT_TAG(pc), &error);
@@ -258,11 +273,9 @@ __glXDispSwap_Finish(__GLXclientState * cl, GLbyte * pc)
     }
 
     /* Do a local glFinish */
-    CALL_Finish(GET_DISPATCH(), ());
-    cx->hasUnflushedCommands = GL_FALSE;
+    glFinish();
 
     /* Send empty reply packet to indicate finish is finished */
-    client = cl->client;
     __GLX_BEGIN_REPLY(0);
     __GLX_PUT_RETVAL(0);
     __GLX_SWAP_REPLY_HEADER();

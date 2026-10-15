@@ -21,7 +21,7 @@ void
 HWND
 winGetWindowInfo(WindowPtr pWin)
 {
-    winTrace("%s: pWin %p XID 0x%x\n", __FUNCTION__, pWin, pWin->drawable.id);
+    winTrace("%s: pWin %p XID 0x%x\n", __FUNCTION__, pWin, (unsigned int)pWin->drawable.id);
 
     /* a real window was requested */
     if (pWin != NULL) {
@@ -39,7 +39,6 @@ winGetWindowInfo(WindowPtr pWin)
         hwnd = pWinScreen->hwndScreen;
 
         pScreenInfo = pWinScreen->pScreenInfo;
-#ifdef XWIN_MULTIWINDOW
         /* check for multiwindow mode */
         if (pScreenInfo->fMultiWindow) {
             winWindowPriv(pWin);
@@ -51,7 +50,7 @@ winGetWindowInfo(WindowPtr pWin)
 
             if (pWinPriv->hWnd == NULL) {
                 winCreateWindowsWindow(pWin);
-                ErrorF("winGetWindowInfo: forcing window to exist...\n");
+                winDebug("winGetWindowInfo: forcing window to exist\n");
             }
 
             if (pWinPriv->hWnd != NULL) {
@@ -64,25 +63,6 @@ winGetWindowInfo(WindowPtr pWin)
 
             return hwnd;
         }
-#endif
-#ifdef XWIN_MULTIWINDOWEXTWM
-        /* check for multiwindow external wm mode */
-        if (pScreenInfo->fMWExtWM) {
-            win32RootlessWindowPtr pRLWinPriv
-                = (win32RootlessWindowPtr) RootlessFrameForWindow(pWin, FALSE);
-
-            if (pRLWinPriv == NULL) {
-                ErrorF("winGetWindowInfo: window has no privates\n");
-                return hwnd;
-            }
-
-            if (pRLWinPriv->hWnd != NULL) {
-                /* copy window handle */
-                hwnd = pRLWinPriv->hWnd;
-            }
-            return hwnd;
-        }
-#endif
     }
     else {
         ScreenPtr pScreen = g_ScreenInfo[0].pScreen;
@@ -107,15 +87,15 @@ winCheckScreenAiglxIsSupported(ScreenPtr pScreen)
     winPrivScreenPtr pWinScreen = winGetScreenPriv(pScreen);
     winScreenInfoPtr pScreenInfo = pWinScreen->pScreenInfo;
 
-#ifdef XWIN_MULTIWINDOW
     if (pScreenInfo->fMultiWindow)
         return TRUE;
-#endif
-
-#ifdef XWIN_MULTIWINDOWEXTWM
-    if (pScreenInfo->fMWExtWM)
-        return TRUE;
-#endif
 
     return FALSE;
+}
+
+void
+winSetScreenAiglxIsActive(ScreenPtr pScreen)
+{
+    winPrivScreenPtr pWinScreen = winGetScreenPriv(pScreen);
+    pWinScreen->fNativeGlActive = TRUE;
 }

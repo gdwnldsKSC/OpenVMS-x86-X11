@@ -108,12 +108,17 @@ ATScancode(InputInfoPtr pInfo, int *scanCode)
             case KEY_F6:          *scanCode = KEY_F16;       break;
             case KEY_F7:          *scanCode = KEY_F17;       break;
             case KEY_KP_Plus:     *scanCode = KEY_KP_DEC;    break;
+            /* Remap codes 0x09 and 0x11 to avoid overlap with the
+               Henkan and Muhenkan keys on Japanese pc106 or pc103
+               keyboards */
+            case 0x01:            *scanCode = KEY_R_0xF4;    break;
+            case 0x03:            *scanCode = KEY_R_0xF5;    break;
             case 0x2A:
             case 0x36:
 	         return TRUE;
             default:
-                 xf86MsgVerb(X_INFO, 4, "Unreported Prefix0 scancode: 0x%02x\n",
-		             *scanCode);
+                 LogMessageVerbSigSafe(X_INFO, 4, "Unreported Prefix0 scancode: 0x%x\n",
+                                       *scanCode);
                  *scanCode += 0x78;
           }
        break;

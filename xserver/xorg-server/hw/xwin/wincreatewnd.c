@@ -34,10 +34,6 @@
 #include "win.h"
 #include "shellapi.h"
 
-#ifndef ABS_AUTOHIDE
-#define ABS_AUTOHIDE 1
-#endif
-
 /*
  * Local function prototypes
  */
@@ -46,7 +42,7 @@ static Bool
  winGetWorkArea(RECT * prcWorkArea, winScreenInfo * pScreenInfo);
 
 static Bool
- winAdjustForAutoHide(RECT * prcWorkArea);
+ winAdjustForAutoHide(RECT * prcWorkArea, winScreenInfo * pScreenInfo);
 
 /*
  * Create a full screen window
@@ -76,18 +72,12 @@ winCreateBoundingWindowFullScreen(ScreenPtr pScreen)
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.hInstance = g_hInstance;
-    wc.hIcon =
-        (HICON) LoadImage(g_hInstance, MAKEINTRESOURCE(IDI_XWIN), IMAGE_ICON,
-                          GetSystemMetrics(SM_CXICON),
-                          GetSystemMetrics(SM_CYICON), 0);
+    wc.hIcon = pScreenInfo->hIcon;
     wc.hCursor = 0;
     wc.hbrBackground = 0;
     wc.lpszMenuName = NULL;
     wc.lpszClassName = WINDOW_CLASS;
-    wc.hIconSm =
-        (HICON) LoadImage(g_hInstance, MAKEINTRESOURCE(IDI_XWIN), IMAGE_ICON,
-                          GetSystemMetrics(SM_CXSMICON),
-                          GetSystemMetrics(SM_CYSMICON), LR_DEFAULTSIZE);
+    wc.hIconSm = pScreenInfo->hIconSm;
     RegisterClassEx(&wc);
 
     /* Set display and screen-specific tooltip text */
@@ -114,20 +104,8 @@ winCreateBoundingWindowFullScreen(ScreenPtr pScreen)
                              GetModuleHandle(NULL),     /* Instance handle */
                              pScreenPriv);      /* ScreenPrivates */
 
-    /* Branch on the server engine */
-    switch (pScreenInfo->dwEngine) {
-#ifdef XWIN_NATIVEGDI
-    case WIN_SERVER_SHADOW_GDI:
-        /* Show the window */
-        ShowWindow(*phwnd, SW_SHOWMAXIMIZED);
-        break;
-#endif
-
-    default:
-        /* Hide the window */
-        ShowWindow(*phwnd, SW_SHOWNORMAL);
-        break;
-    }
+    /* Hide the window */
+    ShowWindow(*phwnd, SW_SHOWNORMAL);
 
     /* Send first paint message */
     UpdateWindow(*phwnd);
@@ -168,16 +146,11 @@ winCreateBoundingWindowWindowed(ScreenPtr pScreen)
 
     /* Decorated or undecorated window */
     if (pScreenInfo->fDecoration
-#ifdef XWIN_MULTIWINDOWEXTWM
-        && !pScreenInfo->fMWExtWM
-#endif
         && !pScreenInfo->fRootless
-#ifdef XWIN_MULTIWINDOW
         && !pScreenInfo->fMultiWindow
-#endif
         ) {
-        /* Try to handle startup via run.exe. run.exe instructs Windows to 
-         * hide all created windows. Detect this case and make sure the 
+        /* Try to handle startup via run.exe. run.exe instructs Windows to
+         * hide all created windows. Detect this case and make sure the
          * window is shown nevertheless */
         STARTUPINFO startupInfo;
 
@@ -187,7 +160,7 @@ winCreateBoundingWindowWindowed(ScreenPtr pScreen)
             fForceShowWindow = TRUE;
         }
         dwWindowStyle |= WS_CAPTION;
-        if (pScreenInfo->iResizeMode != notAllowed)
+        if (pScreenInfo->iResizeMode != resizeNotAllowed)
             dwWindowStyle |= WS_THICKFRAME | WS_MAXIMIZEBOX;
     }
     else
@@ -200,25 +173,19 @@ winCreateBoundingWindowWindowed(ScreenPtr pScreen)
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.hInstance = g_hInstance;
-    wc.hIcon =
-        (HICON) LoadImage(g_hInstance, MAKEINTRESOURCE(IDI_XWIN), IMAGE_ICON,
-                          GetSystemMetrics(SM_CXICON),
-                          GetSystemMetrics(SM_CYICON), 0);
+    wc.hIcon = pScreenInfo->hIcon;
     wc.hCursor = 0;
     wc.hbrBackground = (HBRUSH) GetStockObject(WHITE_BRUSH);
     wc.lpszMenuName = NULL;
     wc.lpszClassName = WINDOW_CLASS;
-    wc.hIconSm =
-        (HICON) LoadImage(g_hInstance, MAKEINTRESOURCE(IDI_XWIN), IMAGE_ICON,
-                          GetSystemMetrics(SM_CXSMICON),
-                          GetSystemMetrics(SM_CYSMICON), LR_DEFAULTSIZE);
+    wc.hIconSm = pScreenInfo->hIconSm;
     RegisterClassEx(&wc);
 
     /* Get size of work area */
     winGetWorkArea(&rcWorkArea, pScreenInfo);
 
     /* Adjust for auto-hide taskbars */
-    winAdjustForAutoHide(&rcWorkArea);
+    winAdjustForAutoHide(&rcWorkArea, pScreenInfo);
 
     /* Did the user specify a position? */
     if (pScreenInfo->fUserGavePosition) {
@@ -232,22 +199,17 @@ winCreateBoundingWindowWindowed(ScreenPtr pScreen)
 
     /* Clean up the scrollbars flag, if necessary */
     if ((!pScreenInfo->fDecoration
-#ifdef XWIN_MULTIWINDOWEXTWM
-         || pScreenInfo->fMWExtWM
-#endif
          || pScreenInfo->fRootless
-#ifdef XWIN_MULTIWINDOW
          || pScreenInfo->fMultiWindow
-#endif
         )
         && (pScreenInfo->iResizeMode == resizeWithScrollbars)) {
         /* We cannot have scrollbars if we do not have a window border */
-        pScreenInfo->iResizeMode = notAllowed;
+        pScreenInfo->iResizeMode = resizeNotAllowed;
     }
 
     /* Did the user specify a height and width? */
     if (pScreenInfo->fUserGaveHeightAndWidth) {
-        /* User gave a desired height and width, try to accomodate */
+        /* User gave a desired height and width, try to accommodate */
 #if CYGDEBUG
         winDebug("winCreateBoundingWindowWindowed - User gave height "
                  "and width\n");
@@ -255,13 +217,8 @@ winCreateBoundingWindowWindowed(ScreenPtr pScreen)
 
         /* Adjust the window width and height for borders and title bar */
         if (pScreenInfo->fDecoration
-#ifdef XWIN_MULTIWINDOWEXTWM
-            && !pScreenInfo->fMWExtWM
-#endif
             && !pScreenInfo->fRootless
-#ifdef XWIN_MULTIWINDOW
             && !pScreenInfo->fMultiWindow
-#endif
             ) {
 #if CYGDEBUG
             winDebug
@@ -269,7 +226,7 @@ winCreateBoundingWindowWindowed(ScreenPtr pScreen)
 #endif
 
             /* Are we resizable */
-            if (pScreenInfo->iResizeMode != notAllowed) {
+            if (pScreenInfo->iResizeMode != resizeNotAllowed) {
 #if CYGDEBUG
                 winDebug
                     ("winCreateBoundingWindowWindowed - Window is resizable\n");
@@ -306,12 +263,7 @@ winCreateBoundingWindowWindowed(ScreenPtr pScreen)
 
     /* Make sure window is no bigger than work area */
     if (TRUE
-#ifdef XWIN_MULTIWINDOWEXTWM
-        && !pScreenInfo->fMWExtWM
-#endif
-#ifdef XWIN_MULTIWINDOW
         && !pScreenInfo->fMultiWindow
-#endif
         ) {
         /* Trim window width to fit work area */
         if (iWidth > (rcWorkArea.right - rcWorkArea.left))
@@ -373,10 +325,11 @@ winCreateBoundingWindowWindowed(ScreenPtr pScreen)
     }
 
     winDebug("winCreateBoundingWindowWindowed - WindowClient "
-             "w %ld h %ld r %ld l %ld b %ld t %ld\n",
-             rcClient.right - rcClient.left,
-             rcClient.bottom - rcClient.top,
-             rcClient.right, rcClient.left, rcClient.bottom, rcClient.top);
+             "w %d  h %d r %d l %d b %d t %d\n",
+             (int)(rcClient.right - rcClient.left),
+             (int)(rcClient.bottom - rcClient.top),
+             (int)rcClient.right, (int)rcClient.left,
+             (int)rcClient.bottom, (int)rcClient.top);
 
     /* We adjust the visual size if the user did not specify it */
     if (!
@@ -442,16 +395,9 @@ winCreateBoundingWindowWindowed(ScreenPtr pScreen)
 
     /* Show the window */
     if (FALSE
-#ifdef XWIN_MULTIWINDOWEXTWM
-        || pScreenInfo->fMWExtWM
-#endif
-#ifdef XWIN_MULTIWINDOW
         || pScreenInfo->fMultiWindow
-#endif
         ) {
-#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
         pScreenPriv->fRootWindowShown = FALSE;
-#endif
         ShowWindow(*phwnd, SW_HIDE);
     }
     else
@@ -463,13 +409,8 @@ winCreateBoundingWindowWindowed(ScreenPtr pScreen)
 
     /* Attempt to bring our window to the top of the display */
     if (TRUE
-#ifdef XWIN_MULTIWINDOWEXTWM
-        && !pScreenInfo->fMWExtWM
-#endif
         && !pScreenInfo->fRootless
-#ifdef XWIN_MULTIWINDOW
         && !pScreenInfo->fMultiWindow
-#endif
         ) {
         if (!BringWindowToTop(*phwnd)) {
             ErrorF("winCreateBoundingWindowWindowed - BringWindowToTop () "
@@ -477,12 +418,6 @@ winCreateBoundingWindowWindowed(ScreenPtr pScreen)
             return FALSE;
         }
     }
-
-#ifdef XWIN_NATIVEGDI
-    /* Paint window background blue */
-    if (pScreenInfo->dwEngine == WIN_SERVER_NATIVE_GDI)
-        winPaintBackground(*phwnd, RGB(0x00, 0x00, 0xFF));
-#endif
 
     winDebug("winCreateBoundingWindowWindowed -  Returning\n");
 
@@ -501,14 +436,32 @@ winGetWorkArea(RECT * prcWorkArea, winScreenInfo * pScreenInfo)
     int iLeft, iTop;
     int iPrimaryNonWorkAreaWidth, iPrimaryNonWorkAreaHeight;
 
+    /* Use GetMonitorInfo to get work area for monitor */
+    if (!pScreenInfo->fMultipleMonitors) {
+        MONITORINFO mi;
+
+        mi.cbSize = sizeof(MONITORINFO);
+        if (GetMonitorInfo(pScreenInfo->hMonitor, &mi)) {
+            *prcWorkArea = mi.rcWork;
+
+            winDebug("winGetWorkArea - Monitor %d WorkArea: %d %d %d %d\n",
+                     pScreenInfo->iMonitor,
+                     (int) prcWorkArea->top, (int) prcWorkArea->left,
+                     (int) prcWorkArea->bottom, (int) prcWorkArea->right);
+        }
+        else {
+            ErrorF("winGetWorkArea - GetMonitorInfo() failed for monitor %d\n",
+                   pScreenInfo->iMonitor);
+        }
+
+        /* Bail out here if we aren't using multiple monitors */
+        return TRUE;
+    }
+
     /* SPI_GETWORKAREA only gets the work area of the primary screen. */
     SystemParametersInfo(SPI_GETWORKAREA, 0, prcWorkArea, 0);
 
-    /* Bail out here if we aren't using multiple monitors */
-    if (!pScreenInfo->fMultipleMonitors)
-        return TRUE;
-
-    winDebug("winGetWorkArea - Original WorkArea: %d %d %d %d\n",
+    winDebug("winGetWorkArea - Primary Monitor WorkArea: %d %d %d %d\n",
              (int) prcWorkArea->top, (int) prcWorkArea->left,
              (int) prcWorkArea->bottom, (int) prcWorkArea->right);
 
@@ -556,16 +509,39 @@ winGetWorkArea(RECT * prcWorkArea, winScreenInfo * pScreenInfo)
     return TRUE;
 }
 
+static Bool
+winTaskbarOnScreenEdge(unsigned int uEdge, winScreenInfo * pScreenInfo)
+{
+    APPBARDATA abd;
+    HWND hwndAutoHide;
+
+    ZeroMemory(&abd, sizeof(abd));
+    abd.cbSize = sizeof(abd);
+    abd.uEdge = uEdge;
+
+    hwndAutoHide = (HWND) SHAppBarMessage(ABM_GETAUTOHIDEBAR, &abd);
+    if (hwndAutoHide != NULL) {
+        /*
+           Found an autohide taskbar on that edge, but is it on the
+           same monitor as the screen window?
+         */
+        if (pScreenInfo->fMultipleMonitors ||
+            (MonitorFromWindow(hwndAutoHide, MONITOR_DEFAULTTONULL) ==
+             pScreenInfo->hMonitor))
+            return TRUE;
+    }
+    return FALSE;
+}
+
 /*
  * Adjust the client area so that any auto-hide toolbars
  * will work correctly.
  */
 
 static Bool
-winAdjustForAutoHide(RECT * prcWorkArea)
+winAdjustForAutoHide(RECT * prcWorkArea, winScreenInfo * pScreenInfo)
 {
     APPBARDATA abd;
-    HWND hwndAutoHide;
 
     winDebug("winAdjustForAutoHide - Original WorkArea: %d %d %d %d\n",
              (int) prcWorkArea->top, (int) prcWorkArea->left,
@@ -577,34 +553,31 @@ winAdjustForAutoHide(RECT * prcWorkArea)
     if (SHAppBarMessage(ABM_GETSTATE, &abd) & ABS_AUTOHIDE)
         winDebug("winAdjustForAutoHide - Taskbar is auto hide\n");
 
+    /*
+       Despite the forgoing, we are checking for any AppBar
+       hiding along a monitor edge, not just the Windows TaskBar.
+     */
+
     /* Look for a TOP auto-hide taskbar */
-    abd.uEdge = ABE_TOP;
-    hwndAutoHide = (HWND) SHAppBarMessage(ABM_GETAUTOHIDEBAR, &abd);
-    if (hwndAutoHide != NULL) {
+    if (winTaskbarOnScreenEdge(ABE_TOP, pScreenInfo)) {
         winDebug("winAdjustForAutoHide - Found TOP auto-hide taskbar\n");
         prcWorkArea->top += 1;
     }
 
     /* Look for a LEFT auto-hide taskbar */
-    abd.uEdge = ABE_LEFT;
-    hwndAutoHide = (HWND) SHAppBarMessage(ABM_GETAUTOHIDEBAR, &abd);
-    if (hwndAutoHide != NULL) {
+    if (winTaskbarOnScreenEdge(ABE_LEFT, pScreenInfo)) {
         winDebug("winAdjustForAutoHide - Found LEFT auto-hide taskbar\n");
         prcWorkArea->left += 1;
     }
 
     /* Look for a BOTTOM auto-hide taskbar */
-    abd.uEdge = ABE_BOTTOM;
-    hwndAutoHide = (HWND) SHAppBarMessage(ABM_GETAUTOHIDEBAR, &abd);
-    if (hwndAutoHide != NULL) {
+    if (winTaskbarOnScreenEdge(ABE_BOTTOM, pScreenInfo)) {
         winDebug("winAdjustForAutoHide - Found BOTTOM auto-hide taskbar\n");
         prcWorkArea->bottom -= 1;
     }
 
     /* Look for a RIGHT auto-hide taskbar */
-    abd.uEdge = ABE_RIGHT;
-    hwndAutoHide = (HWND) SHAppBarMessage(ABM_GETAUTOHIDEBAR, &abd);
-    if (hwndAutoHide != NULL) {
+    if (winTaskbarOnScreenEdge(ABE_RIGHT, pScreenInfo)) {
         winDebug("winAdjustForAutoHide - Found RIGHT auto-hide taskbar\n");
         prcWorkArea->right -= 1;
     }
@@ -612,15 +585,6 @@ winAdjustForAutoHide(RECT * prcWorkArea)
     winDebug("winAdjustForAutoHide - Adjusted WorkArea: %d %d %d %d\n",
              (int) prcWorkArea->top, (int) prcWorkArea->left,
              (int) prcWorkArea->bottom, (int) prcWorkArea->right);
-
-#if 0
-    /* Obtain the task bar window dimensions */
-    abd.hWnd = hwndAutoHide;
-    hwndAutoHide = (HWND) SHAppBarMessage(ABM_GETTASKBARPOS, &abd);
-    winDebug("hwndAutoHide %08x abd.hWnd %08x %d %d %d %d\n",
-             hwndAutoHide, abd.hWnd,
-             abd.rc.top, abd.rc.left, abd.rc.bottom, abd.rc.right);
-#endif
 
     return TRUE;
 }

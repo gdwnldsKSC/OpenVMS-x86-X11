@@ -2,13 +2,14 @@ noinst_LTLIBRARIES = libXquartz.la
 AM_CFLAGS = $(DIX_CFLAGS)
 AM_OBJCFLAGS = $(DIX_CFLAGS)
 AM_CPPFLAGS = \
-	-DBUILD_DATE=\"$(BUILD_DATE)\" \
+	-DXQUARTZ_DATA_DIR=\"$(datadir)/X11/XQuartz\" \
 	-DXSERVER_VERSION=\"$(VERSION)\" \
-	-DINXQUARTZ \
+	-DBUNDLE_ID_PREFIX=\"$(BUNDLE_ID_PREFIX)\" \
 	-DUSE_NEW_CLUT \
 	-DXFree86Server \
 	-I$(top_srcdir)/miext/rootless \
-	-DX11LIBDIR=\"$(libdir)\"
+	-I$(top_builddir)/pseudoramiX \
+	-I$(top_builddir)
 
 if GLX
 GL_DIR = GL
@@ -19,8 +20,9 @@ SUBDIRS = bundle . $(GL_DIR) xpr pbproxy mach-startup man
 DIST_SUBDIRS = bundle . GL xpr pbproxy mach-startup man
 
 libXquartz_la_SOURCES = \
-	$(top_srcdir)/fb/fbcmap_mi.c \
 	$(top_srcdir)/mi/miinitext.c \
+	$(top_srcdir)/mi/miinitext.h \
+	NSUserDefaults+XQuartzDefaults.m \
 	X11Application.m \
 	X11Controller.m \
 	applewm.c \
@@ -28,27 +30,25 @@ libXquartz_la_SOURCES = \
 	darwinEvents.c \
 	darwinXinput.c \
 	keysym2ucs.c \
-	pseudoramiX.c \
 	quartz.c \
-	quartzCocoa.m \
 	quartzKeyboard.c \
 	quartzStartup.c \
-	quartzRandR.c \
-	console_redirect.c
+	quartzRandR.c
+
+libXquartz_la_LIBADD = $(top_builddir)/pseudoramiX/libPseudoramiX.la
 
 EXTRA_DIST = \
+	NSUserDefaults+XQuartzDefaults.h \
 	X11Application.h \
 	X11Controller.h \
 	applewmExt.h \
 	darwin.h \
 	darwinfb.h \
 	darwinEvents.h \
+	defaults.plist \
 	keysym2ucs.h \
-	pseudoramiX.h \
 	quartz.h \
-	quartzCommon.h \
 	quartzKeyboard.h \
 	quartzRandR.h \
 	sanitizedCarbon.h \
-	sanitizedCocoa.h \
-	console_redirect.h
+	sanitizedCocoa.h

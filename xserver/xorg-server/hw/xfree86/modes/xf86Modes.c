@@ -27,12 +27,9 @@
 
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
-#else
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 #endif
 
+#include <libxcvt/libxcvt.h>
 #include "xf86Modes.h"
 #include "xf86Priv.h"
 
@@ -129,11 +126,13 @@ void
 xf86SetModeDefaultName(DisplayModePtr mode)
 {
     Bool interlaced = ! !(mode->Flags & V_INTERLACE);
+    char *tmp;
 
-    free(mode->name);
+    free((void *) mode->name);
 
-    XNFasprintf(&mode->name, "%dx%d%s", mode->HDisplay, mode->VDisplay,
+    XNFasprintf(&tmp, "%dx%d%s", mode->HDisplay, mode->VDisplay,
                 interlaced ? "i" : "");
+    mode->name = tmp;
 }
 
 /*
@@ -188,6 +187,21 @@ xf86SetModeCrtc(DisplayModePtr p, int adjustFlags)
 
     p->CrtcHAdjusted = FALSE;
     p->CrtcVAdjusted = FALSE;
+}
+
+/**
+ * Fills in a copy of mode, removing all stale pointer references.
+ * xf86ModesEqual will return true when comparing with original mode.
+ */
+void
+xf86SaveModeContents(DisplayModePtr intern, const DisplayModeRec *mode)
+{
+    *intern = *mode;
+    intern->prev = intern->next = NULL;
+    intern->name = NULL;
+    intern->PrivSize = 0;
+    intern->PrivFlags = 0;
+    intern->Private = NULL;
 }
 
 /**
@@ -778,4 +792,38 @@ xf86PruneDuplicateModes(DisplayModePtr modes)
     }
 
     return modes;
+}
+
+/*
+ * Generate a CVT standard mode from HDisplay, VDisplay and VRefresh.
+ */
+DisplayModePtr
+xf86CVTMode(int HDisplay, int VDisplay, float VRefresh, Bool Reduced,
+            Bool Interlaced)
+{
+    struct libxcvt_mode_info *libxcvt_mode_info;
+    DisplayModeRec *Mode = xnfcalloc(1, sizeof(DisplayModeRec));
+    char *tmp;
+
+    libxcvt_mode_info =
+        libxcvt_gen_mode_info(HDisplay, VDisplay, VRefresh, Reduced, Interlaced);
+
+    XNFasprintf(&tmp, "%dx%d", HDisplay, VDisplay);
+    Mode->name = tmp;
+    
+    Mode->VDisplay   = libxcvt_mode_info->vdisplay;
+    Mode->HDisplay   = libxcvt_mode_info->hdisplay;
+    Mode->Clock      = libxcvt_mode_info->dot_clock;
+    Mode->HSyncStart = libxcvt_mode_info->hsync_start;
+    Mode->HSyncEnd   = libxcvt_mode_info->hsync_end;
+    Mode->HTotal     = libxcvt_mode_info->htotal;
+    Mode->VSyncStart = libxcvt_mode_info->vsync_start;
+    Mode->VSyncEnd   = libxcvt_mode_info->vsync_end;
+    Mode->VTotal     = libxcvt_mode_info->vtotal;
+    Mode->VRefresh   = libxcvt_mode_info->vrefresh;
+    Mode->Flags      = libxcvt_mode_info->mode_flags;
+
+    free(libxcvt_mode_info);
+
+    return Mode;
 }

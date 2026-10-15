@@ -43,7 +43,7 @@
 void
 shadowUpdatePacked(ScreenPtr pScreen, shadowBufPtr pBuf)
 {
-    RegionPtr damage = shadowDamage(pBuf);
+    RegionPtr damage = DamageRegion(pBuf->pDamage);
     PixmapPtr pShadow = pBuf->pPixmap;
     int nbox = RegionNumRects(damage);
     BoxPtr pbox = RegionRects(damage);
@@ -98,7 +98,6 @@ shadowUpdatePacked(ScreenPtr pScreen, shadowBufPtr pBuf)
                     i = width;
                 width -= i;
                 scr += i;
-#define PickBit(a,i)	(((a) >> (i)) & 1)
                 memcpy(win, sha, i * sizeof(FbBits));
                 sha += i;
             }
@@ -107,10 +106,4 @@ shadowUpdatePacked(ScreenPtr pScreen, shadowBufPtr pBuf)
         }
         pbox++;
     }
-}
-
-shadowUpdateProc
-shadowUpdatePackedWeak(void)
-{
-    return shadowUpdatePacked;
 }

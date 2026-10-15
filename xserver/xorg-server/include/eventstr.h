@@ -25,6 +25,7 @@
 #ifndef EVENTSTR_H
 #define EVENTSTR_H
 
+#include "inputstr.h"
 #include <events.h>
 /**
  * @file events.h
@@ -72,7 +73,23 @@ enum EventType {
     ET_RawTouchUpdate,
     ET_RawTouchEnd,
     ET_XQuartz,
+    ET_BarrierHit,
+    ET_BarrierLeave,
+    ET_GesturePinchBegin,
+    ET_GesturePinchUpdate,
+    ET_GesturePinchEnd,
+    ET_GestureSwipeBegin,
+    ET_GestureSwipeUpdate,
+    ET_GestureSwipeEnd,
     ET_Internal = 0xFF          /* First byte */
+};
+
+/**
+ * How a DeviceEvent was provoked
+ */
+enum DeviceEventSource {
+  EVENT_SOURCE_NORMAL = 0, /**< Default: from a user action (e.g. key press) */
+  EVENT_SOURCE_FOCUS, /**< Keys or buttons previously down on focus-in */
 };
 
 /**
@@ -121,6 +138,8 @@ struct _DeviceEvent {
     int corestate;    /**< Core key/button state BEFORE the event */
     int key_repeat;   /**< Internally-generated key repeat event */
     uint32_t flags;   /**< Flags to be copied into the generated event */
+    uint32_t resource; /**< Touch event resource, only for TOUCH_REPLAYING */
+    enum DeviceEventSource source_type; /**< How this event was provoked */
 };
 
 /**
@@ -130,7 +149,7 @@ struct _DeviceEvent {
  */
 struct _TouchOwnershipEvent {
     unsigned char header; /**< Always ET_Internal */
-    enum EventType type;  /**< One of EventType */
+    enum EventType type;  /**< ET_TouchOwnership */
     int length;           /**< Length in bytes */
     Time time;            /**< Time in ms */
     int deviceid;         /**< Device to post this event for */
@@ -173,6 +192,7 @@ struct _DeviceChangedEvent {
     struct {
         uint32_t min;           /**< Minimum value */
         uint32_t max;           /**< Maximum value */
+        double value;           /**< Current value */
         /* FIXME: frac parts of min/max */
         uint32_t resolution;    /**< Resolution counts/m */
         uint8_t mode;           /**< Relative or Absolute */
@@ -186,7 +206,7 @@ struct _DeviceChangedEvent {
     } keys;
 };
 
-#if XFreeXDGA
+#ifdef XFreeXDGA
 /**
  * DGAEvent, used by DGA to intercept and emulate input events.
  */
@@ -227,6 +247,57 @@ struct _RawDeviceEvent {
     uint32_t flags;       /**< Flags to be copied into the generated event */
 };
 
+struct _BarrierEvent {
+    unsigned char header; /**<  Always ET_Internal */
+    enum EventType type;  /**<  ET_BarrierHit, ET_BarrierLeave */
+    int length;           /**<  Length in bytes */
+    Time time;            /**<  Time in ms */
+    int deviceid;         /**< Device to post this event for */
+    int sourceid;         /**< The physical source device */
+    int barrierid;
+    Window window;
+    Window root;
+    double dx;
+    double dy;
+    double root_x;
+    double root_y;
+    int16_t dt;
+    int32_t event_id;
+    uint32_t flags;
+};
+
+struct _GestureEvent {
+    unsigned char header; /**< Always ET_Internal */
+    enum EventType type;  /**< One of ET_Gesture{Pinch,Swipe}{Begin,Update,End} */
+    int length;           /**< Length in bytes */
+    Time time;            /**< Time in ms */
+    int deviceid;         /**< Device to post this event for */
+    int sourceid;         /**< The physical source device */
+    uint32_t num_touches; /**< The number of touches in this gesture */
+    double root_x;        /**< Pos relative to root window */
+    double root_y;        /**< Pos relative to root window */
+    double delta_x;
+    double delta_y;
+    double delta_unaccel_x;
+    double delta_unaccel_y;
+    double scale;         /**< Only on ET_GesturePinch{Begin,Update} */
+    double delta_angle;   /**< Only on ET_GesturePinch{Begin,Update} */
+    struct {
+        uint32_t base;    /**< XKB base modifiers */
+        uint32_t latched; /**< XKB latched modifiers */
+        uint32_t locked;  /**< XKB locked modifiers */
+        uint32_t effective;/**< XKB effective modifiers */
+    } mods;
+    struct {
+        uint8_t base;    /**< XKB base group */
+        uint8_t latched; /**< XKB latched group */
+        uint8_t locked;  /**< XKB locked group */
+        uint8_t effective;/**< XKB effective group */
+    } group;
+    Window root;      /**< Root window of the event */
+    uint32_t flags;   /**< Flags to be copied into the generated event */
+};
+
 #ifdef XQUARTZ
 #define XQUARTZ_EVENT_MAXARGS 5
 struct _XQuartzEvent {
@@ -253,13 +324,18 @@ union _InternalEvent {
     DeviceEvent device_event;
     DeviceChangedEvent changed_event;
     TouchOwnershipEvent touch_ownership_event;
-#if XFreeXDGA
+    BarrierEvent barrier_event;
+#ifdef XFreeXDGA
     DGAEvent dga_event;
 #endif
     RawDeviceEvent raw_event;
 #ifdef XQUARTZ
     XQuartzEvent xquartz_event;
 #endif
+    GestureEvent gesture_event;
 };
+
+extern void
+LeaveWindow(DeviceIntPtr dev);
 
 #endif

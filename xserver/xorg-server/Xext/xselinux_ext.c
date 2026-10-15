@@ -26,7 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "windowstr.h"
 #include "propertyst.h"
 #include "extnsionst.h"
-#include "modinit.h"
+#include "extinit.h"
 #include "xselinuxint.h"
 
 #define CTX_DEV offsetof(SELinuxSubjectRec, dev_create_sid)
@@ -37,8 +37,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define USE_SEL offsetof(SELinuxSubjectRec, sel_use_sid)
 
 typedef struct {
-    security_context_t octx;
-    security_context_t dctx;
+    char *octx;
+    char *dctx;
     CARD32 octx_len;
     CARD32 dctx_len;
     CARD32 id;
@@ -48,10 +48,10 @@ typedef struct {
  * Extension Dispatch
  */
 
-static security_context_t
+static char *
 SELinuxCopyContext(char *ptr, unsigned len)
 {
-    security_context_t copy = malloc(len + 1);
+    char *copy = malloc(len + 1);
 
     if (!copy)
         return NULL;
@@ -63,20 +63,20 @@ SELinuxCopyContext(char *ptr, unsigned len)
 static int
 ProcSELinuxQueryVersion(ClientPtr client)
 {
-    SELinuxQueryVersionReply rep;
-
-    rep.type = X_Reply;
-    rep.length = 0;
-    rep.sequenceNumber = client->sequence;
-    rep.server_major = SELINUX_MAJOR_VERSION;
-    rep.server_minor = SELINUX_MINOR_VERSION;
+    SELinuxQueryVersionReply rep = {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .length = 0,
+        .server_major = SELINUX_MAJOR_VERSION,
+        .server_minor = SELINUX_MINOR_VERSION
+    };
     if (client->swapped) {
         swaps(&rep.sequenceNumber);
         swapl(&rep.length);
         swaps(&rep.server_major);
         swaps(&rep.server_minor);
     }
-    WriteToClient(client, sizeof(rep), (char *) &rep);
+    WriteToClient(client, sizeof(rep), &rep);
     return Success;
 }
 
@@ -84,7 +84,7 @@ static int
 SELinuxSendContextReply(ClientPtr client, security_id_t sid)
 {
     SELinuxGetContextReply rep;
-    security_context_t ctx = NULL;
+    char *ctx = NULL;
     int len = 0;
 
     if (sid) {
@@ -93,10 +93,12 @@ SELinuxSendContextReply(ClientPtr client, security_id_t sid)
         len = strlen(ctx) + 1;
     }
 
-    rep.type = X_Reply;
-    rep.length = bytes_to_int32(len);
-    rep.sequenceNumber = client->sequence;
-    rep.context_len = len;
+    rep = (SELinuxGetContextReply) {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .length = bytes_to_int32(len),
+        .context_len = len
+    };
 
     if (client->swapped) {
         swapl(&rep.length);
@@ -104,7 +106,7 @@ SELinuxSendContextReply(ClientPtr client, security_id_t sid)
         swapl(&rep.context_len);
     }
 
-    WriteToClient(client, sizeof(SELinuxGetContextReply), (char *) &rep);
+    WriteToClient(client, sizeof(SELinuxGetContextReply), &rep);
     WriteToClient(client, len, ctx);
     freecon(ctx);
     return Success;
@@ -115,7 +117,7 @@ ProcSELinuxSetCreateContext(ClientPtr client, unsigned offset)
 {
     PrivateRec **privPtr = &client->devPrivates;
     security_id_t *pSid;
-    security_context_t ctx = NULL;
+    char *ctx = NULL;
     char *ptr;
     int rc;
 
@@ -163,7 +165,7 @@ ProcSELinuxGetCreateContext(ClientPtr client, unsigned offset)
 static int
 ProcSELinuxSetDeviceContext(ClientPtr client)
 {
-    security_context_t ctx;
+    char *ctx;
     security_id_t sid;
     DeviceIntPtr dev;
     SELinuxSubjectRec *subj;
@@ -243,7 +245,7 @@ ProcSELinuxGetDrawableContext(ClientPtr client)
 }
 
 static int
-ProcSELinuxGetPropertyContext(ClientPtr client, pointer privKey)
+ProcSELinuxGetPropertyContext(ClientPtr client, void *privKey)
 {
     WindowPtr pWin;
     PropertyPtr pProp;
@@ -267,7 +269,7 @@ ProcSELinuxGetPropertyContext(ClientPtr client, pointer privKey)
 }
 
 static int
-ProcSELinuxGetSelectionContext(ClientPtr client, pointer privKey)
+ProcSELinuxGetSelectionContext(ClientPtr client, void *privKey)
 {
     Selection *pSel;
     SELinuxObjectRec *obj;
@@ -372,10 +374,12 @@ SELinuxSendItemsToClient(ClientPtr client, SELinuxListItemRec * items,
     }
 
     /* Send reply to client */
-    rep.type = X_Reply;
-    rep.length = size;
-    rep.sequenceNumber = client->sequence;
-    rep.count = count;
+    rep = (SELinuxListItemsReply) {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .length = size,
+        .count = count
+    };
 
     if (client->swapped) {
         swapl(&rep.length);
@@ -383,8 +387,8 @@ SELinuxSendItemsToClient(ClientPtr client, SELinuxListItemRec * items,
         swapl(&rep.count);
     }
 
-    WriteToClient(client, sizeof(SELinuxListItemsReply), (char *) &rep);
-    WriteToClient(client, size * 4, (char *) buf);
+    WriteToClient(client, sizeof(SELinuxListItemsReply), &rep);
+    WriteToClient(client, size * 4, buf);
 
     /* Free stuff and return */
     rc = Success;
@@ -448,8 +452,10 @@ ProcSELinuxListSelections(ClientPtr client)
     count = 0;
     for (pSel = CurrentSelections; pSel; pSel = pSel->next)
         count++;
+    if (count == 0)
+        return SELinuxSendItemsToClient(client, NULL, 0, 0);
     items = calloc(count, sizeof(SELinuxListItemRec));
-    if (count && !items)
+    if (!items)
         return BadAlloc;
 
     /* Fill in the items and calculate size */
@@ -524,13 +530,13 @@ ProcSELinuxDispatch(ClientPtr client)
     }
 }
 
-static int
+static int _X_COLD
 SProcSELinuxQueryVersion(ClientPtr client)
 {
     return ProcSELinuxQueryVersion(client);
 }
 
-static int
+static int _X_COLD
 SProcSELinuxSetCreateContext(ClientPtr client, unsigned offset)
 {
     REQUEST(SELinuxSetCreateContextReq);
@@ -540,7 +546,7 @@ SProcSELinuxSetCreateContext(ClientPtr client, unsigned offset)
     return ProcSELinuxSetCreateContext(client, offset);
 }
 
-static int
+static int _X_COLD
 SProcSELinuxSetDeviceContext(ClientPtr client)
 {
     REQUEST(SELinuxSetContextReq);
@@ -551,7 +557,7 @@ SProcSELinuxSetDeviceContext(ClientPtr client)
     return ProcSELinuxSetDeviceContext(client);
 }
 
-static int
+static int _X_COLD
 SProcSELinuxGetDeviceContext(ClientPtr client)
 {
     REQUEST(SELinuxGetContextReq);
@@ -561,7 +567,7 @@ SProcSELinuxGetDeviceContext(ClientPtr client)
     return ProcSELinuxGetDeviceContext(client);
 }
 
-static int
+static int _X_COLD
 SProcSELinuxGetDrawableContext(ClientPtr client)
 {
     REQUEST(SELinuxGetContextReq);
@@ -571,8 +577,8 @@ SProcSELinuxGetDrawableContext(ClientPtr client)
     return ProcSELinuxGetDrawableContext(client);
 }
 
-static int
-SProcSELinuxGetPropertyContext(ClientPtr client, pointer privKey)
+static int _X_COLD
+SProcSELinuxGetPropertyContext(ClientPtr client, void *privKey)
 {
     REQUEST(SELinuxGetPropertyContextReq);
 
@@ -582,8 +588,8 @@ SProcSELinuxGetPropertyContext(ClientPtr client, pointer privKey)
     return ProcSELinuxGetPropertyContext(client, privKey);
 }
 
-static int
-SProcSELinuxGetSelectionContext(ClientPtr client, pointer privKey)
+static int _X_COLD
+SProcSELinuxGetSelectionContext(ClientPtr client, void *privKey)
 {
     REQUEST(SELinuxGetContextReq);
 
@@ -592,7 +598,7 @@ SProcSELinuxGetSelectionContext(ClientPtr client, pointer privKey)
     return ProcSELinuxGetSelectionContext(client, privKey);
 }
 
-static int
+static int _X_COLD
 SProcSELinuxListProperties(ClientPtr client)
 {
     REQUEST(SELinuxGetContextReq);
@@ -602,7 +608,7 @@ SProcSELinuxListProperties(ClientPtr client)
     return ProcSELinuxListProperties(client);
 }
 
-static int
+static int _X_COLD
 SProcSELinuxGetClientContext(ClientPtr client)
 {
     REQUEST(SELinuxGetContextReq);
@@ -612,7 +618,7 @@ SProcSELinuxGetClientContext(ClientPtr client)
     return ProcSELinuxGetClientContext(client);
 }
 
-static int
+static int _X_COLD
 SProcSELinuxDispatch(ClientPtr client)
 {
     REQUEST(xReq);
@@ -683,10 +689,8 @@ SELinuxResetProc(ExtensionEntry * extEntry)
 }
 
 void
-SELinuxExtensionInit(INITARGS)
+SELinuxExtensionInit(void)
 {
-    ExtensionEntry *extEntry;
-
     /* Check SELinux mode on system, configuration file, and boolean */
     if (!is_selinux_enabled()) {
         LogMessage(X_INFO, "SELinux: Disabled on system\n");
@@ -706,10 +710,7 @@ SELinuxExtensionInit(INITARGS)
     SELinuxFlaskInit();
 
     /* Add extension to server */
-    extEntry = AddExtension(SELINUX_EXTENSION_NAME,
-                            SELinuxNumberEvents, SELinuxNumberErrors,
-                            ProcSELinuxDispatch, SProcSELinuxDispatch,
-                            SELinuxResetProc, StandardMinorOpcode);
-
-    AddExtensionAlias("Flask", extEntry);
+    AddExtension(SELINUX_EXTENSION_NAME, SELinuxNumberEvents,
+                 SELinuxNumberErrors, ProcSELinuxDispatch,
+                 SProcSELinuxDispatch, SELinuxResetProc, StandardMinorOpcode);
 }

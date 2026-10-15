@@ -77,8 +77,15 @@ xf86CallDriverProbe(DriverPtr drv, Bool detect_only)
 {
     Bool foundScreen = FALSE;
 
+#ifdef XSERVER_PLATFORM_BUS
+    /* xf86platformBus.c does not support Xorg -configure */
+    if (!xf86DoConfigure && drv->platformProbe != NULL) {
+        foundScreen = xf86platformProbeDev(drv);
+    }
+#endif
+
 #ifdef XSERVER_LIBPCIACCESS
-    if (drv->PciProbe != NULL) {
+    if (!foundScreen && (drv->PciProbe != NULL)) {
         if (xf86DoConfigure && xf86DoConfigurePass1) {
             assert(detect_only);
             foundScreen = xf86PciAddMatchingDev(drv);
@@ -99,6 +106,37 @@ xf86CallDriverProbe(DriverPtr drv, Bool detect_only)
     return foundScreen;
 }
 
+static screenLayoutPtr
+xf86BusConfigMatch(ScrnInfoPtr scrnInfo, Bool is_gpu) {
+    screenLayoutPtr layout;
+    int i, j;
+
+    for (layout = xf86ConfigLayout.screens; layout->screen != NULL;
+         layout++) {
+        for (i = 0; i < scrnInfo->numEntities; i++) {
+            GDevPtr dev =
+                xf86GetDevFromEntity(scrnInfo->entityList[i],
+                                     scrnInfo->entityInstanceList[i]);
+
+            if (is_gpu) {
+                for (j = 0; j < layout->screen->num_gpu_devices; j++) {
+                    if (dev == layout->screen->gpu_devices[j]) {
+                        /* A match has been found */
+                        return layout;
+                    }
+                }
+            } else {
+                if (dev == layout->screen->device) {
+                    /* A match has been found */
+                    return layout;
+                }
+            }
+        }
+    }
+
+    return NULL;
+}
+
 /**
  * @return TRUE if all buses are configured and set up correctly and FALSE
  * otherwise.
@@ -107,30 +145,39 @@ Bool
 xf86BusConfig(void)
 {
     screenLayoutPtr layout;
-    int i, j;
-
-    /* Enable full I/O access */
-    if (xorgHWAccess)
-        xorgHWAccess = xf86EnableIO();
+    int i;
 
     /*
-     * Now call each of the Probe functions.  Each successful probe will
-     * result in an extra entry added to the xf86Screens[] list for each
-     * instance of the hardware found.
+     * 3 step probe to (hopefully) ensure that we always find at least 1
+     * (non GPU) screen:
+     *
+     * 1. Call each drivers probe function normally,
+     *    Each successful probe will result in an extra entry added to the
+     *    xf86Screens[] list for each instance of the hardware found.
      */
     for (i = 0; i < xf86NumDrivers; i++) {
-        xorgHWFlags flags;
-
-        if (!xorgHWAccess) {
-            if (!xf86DriverList[i]->driverFunc
-                || !xf86DriverList[i]->driverFunc(NULL,
-                                                  GET_REQUIRED_HW_INTERFACES,
-                                                  &flags)
-                || NEED_IO_ENABLED(flags))
-                continue;
-        }
-
         xf86CallDriverProbe(xf86DriverList[i], FALSE);
+    }
+
+    /*
+     * 2. If no Screens were found, call each drivers probe function with
+     *    ignorePrimary = TRUE, to ensure that we do actually get a
+     *    Screen if there is at least one supported video card.
+     */
+    if (xf86NumScreens == 0) {
+        xf86ProbeIgnorePrimary = TRUE;
+        for (i = 0; i < xf86NumDrivers && xf86NumScreens == 0; i++) {
+            xf86CallDriverProbe(xf86DriverList[i], FALSE);
+        }
+        xf86ProbeIgnorePrimary = FALSE;
+    }
+
+    /*
+     * 3. Call xf86platformAddGPUDevices() to add any additional video cards as
+     *    GPUScreens (GPUScreens are only supported by platformBus drivers).
+     */
+    for (i = 0; i < xf86NumDrivers; i++) {
+        xf86platformAddGPUDevices(xf86DriverList[i]);
     }
 
     /* If nothing was detected, return now */
@@ -154,33 +201,23 @@ xf86BusConfig(void)
      *
      */
     for (i = 0; i < xf86NumScreens; i++) {
-        for (layout = xf86ConfigLayout.screens; layout->screen != NULL;
-             layout++) {
-            Bool found = FALSE;
-
-            for (j = 0; j < xf86Screens[i]->numEntities; j++) {
-
-                GDevPtr dev =
-                    xf86GetDevFromEntity(xf86Screens[i]->entityList[j],
-                                         xf86Screens[i]->entityInstanceList[j]);
-
-                if (dev == layout->screen->device) {
-                    /* A match has been found */
-                    xf86Screens[i]->confScreen = layout->screen;
-                    found = TRUE;
-                    break;
-                }
-            }
-            if (found)
-                break;
-        }
-        if (layout->screen == NULL) {
+        layout = xf86BusConfigMatch(xf86Screens[i], FALSE);
+        if (layout && layout->screen)
+            xf86Screens[i]->confScreen = layout->screen;
+        else {
             /* No match found */
             xf86Msg(X_ERROR,
                     "Screen %d deleted because of no matching config section.\n",
                     i);
-            xf86DeleteScreen(i--, 0);
+            xf86DeleteScreen(xf86Screens[i--]);
         }
+    }
+
+    /* bind GPU conf screen to the configured protocol screen, or 0 if not configured */
+    for (i = 0; i < xf86NumGPUScreens; i++) {
+        layout = xf86BusConfigMatch(xf86GPUScreens[i], TRUE);
+        int scrnum = (layout && layout->screen) ? layout->screen->screennum : 0;
+        xf86GPUScreens[i]->confScreen = xf86Screens[scrnum]->confScreen;
     }
 
     /* If no screens left, return now.  */
@@ -202,11 +239,19 @@ xf86BusConfig(void)
 void
 xf86BusProbe(void)
 {
+#ifdef XSERVER_PLATFORM_BUS
+    xf86platformProbe();
+    if (ServerIsNotSeat0() && xf86_num_platform_devices > 0)
+        return;
+#endif
 #ifdef XSERVER_LIBPCIACCESS
     xf86PciProbe();
 #endif
 #if (defined(__sparc__) || defined(__sparc)) && !defined(__OpenBSD__)
     xf86SbusProbe();
+#endif
+#ifdef XSERVER_PLATFORM_BUS
+    xf86platformPrimary();
 #endif
 }
 
@@ -238,6 +283,10 @@ StringToBusType(const char *busID, const char **retID)
         ret = BUS_PCI;
     if (!xf86NameCmp(p, "sbus"))
         ret = BUS_SBUS;
+    if (!xf86NameCmp(p, "platform"))
+        ret = BUS_PLATFORM;
+    if (!xf86NameCmp(p, "usb"))
+        ret = BUS_USB;
     if (ret != BUS_NONE)
         if (retID)
             *retID = busID + strlen(p) + 1;
@@ -249,11 +298,11 @@ int
 xf86AllocateEntity(void)
 {
     xf86NumEntities++;
-    xf86Entities = xnfrealloc(xf86Entities,
-                              sizeof(EntityPtr) * xf86NumEntities);
+    xf86Entities = xnfreallocarray(xf86Entities,
+                                   xf86NumEntities, sizeof(EntityPtr));
     xf86Entities[xf86NumEntities - 1] = xnfcalloc(1, sizeof(EntityRec));
     xf86Entities[xf86NumEntities - 1]->entityPrivates =
-        xnfcalloc(sizeof(DevUnion) * xf86EntityPrivateCount, 1);
+        xnfcalloc(xf86EntityPrivateCount, sizeof(DevUnion));
     return xf86NumEntities - 1;
 }
 
@@ -261,6 +310,12 @@ Bool
 xf86IsEntityPrimary(int entityIndex)
 {
     EntityPtr pEnt = xf86Entities[entityIndex];
+
+#ifdef XSERVER_LIBPCIACCESS
+    if (primaryBus.type == BUS_PLATFORM && pEnt->bus.type == BUS_PCI)
+        if (primaryBus.id.plat->pdev)
+            return MATCH_PCI_DEVICES(pEnt->bus.id.pci, primaryBus.id.plat->pdev);
+#endif
 
     if (primaryBus.type != pEnt->bus.type)
         return FALSE;
@@ -270,22 +325,11 @@ xf86IsEntityPrimary(int entityIndex)
         return pEnt->bus.id.pci == primaryBus.id.pci;
     case BUS_SBUS:
         return pEnt->bus.id.sbus.fbNum == primaryBus.id.sbus.fbNum;
+    case BUS_PLATFORM:
+        return pEnt->bus.id.plat == primaryBus.id.plat;
     default:
         return FALSE;
     }
-}
-
-Bool
-xf86SetEntityFuncs(int entityIndex, EntityProc init, EntityProc enter,
-                   EntityProc leave, pointer private)
-{
-    if (entityIndex >= xf86NumEntities)
-        return FALSE;
-    xf86Entities[entityIndex]->entityInit = init;
-    xf86Entities[entityIndex]->entityEnter = enter;
-    xf86Entities[entityIndex]->entityLeave = leave;
-    xf86Entities[entityIndex]->private = private;
-    return TRUE;
 }
 
 Bool
@@ -312,12 +356,13 @@ xf86AddEntityToScreen(ScrnInfoPtr pScrn, int entityIndex)
     }
 
     pScrn->numEntities++;
-    pScrn->entityList = xnfrealloc(pScrn->entityList,
-                                   pScrn->numEntities * sizeof(int));
+    pScrn->entityList = xnfreallocarray(pScrn->entityList,
+                                        pScrn->numEntities, sizeof(int));
     pScrn->entityList[pScrn->numEntities - 1] = entityIndex;
     xf86Entities[entityIndex]->inUse = TRUE;
-    pScrn->entityInstanceList = xnfrealloc(pScrn->entityInstanceList,
-                                           pScrn->numEntities * sizeof(int));
+    pScrn->entityInstanceList = xnfreallocarray(pScrn->entityInstanceList,
+                                                pScrn->numEntities,
+                                                sizeof(int));
     pScrn->entityInstanceList[pScrn->numEntities - 1] = 0;
 }
 
@@ -377,13 +422,12 @@ xf86RemoveEntityFromScreen(ScrnInfoPtr pScrn, int entityIndex)
 }
 
 /*
- * xf86ClearEntitiesForScreen() - called when a screen is deleted
- * to mark it's entities unused. Called by xf86DeleteScreen().
+ * xf86ClearEntityListForScreen() - called when a screen is deleted
+ * to mark its entities unused. Called by xf86DeleteScreen().
  */
 void
-xf86ClearEntityListForScreen(int scrnIndex)
+xf86ClearEntityListForScreen(ScrnInfoPtr pScrn)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     int i, entityIndex;
 
     if (pScrn->entityList == NULL || pScrn->numEntities == 0)
@@ -414,12 +458,32 @@ xf86AddDevToEntity(int entityIndex, GDevPtr dev)
 
     pEnt = xf86Entities[entityIndex];
     pEnt->numInstances++;
-    pEnt->devices = xnfrealloc(pEnt->devices,
-                               pEnt->numInstances * sizeof(GDevPtr));
+    pEnt->devices = xnfreallocarray(pEnt->devices,
+                                    pEnt->numInstances, sizeof(GDevPtr));
     pEnt->devices[pEnt->numInstances - 1] = dev;
     dev->claimed = TRUE;
 }
 
+
+void
+xf86RemoveDevFromEntity(int entityIndex, GDevPtr dev)
+{
+    EntityPtr pEnt;
+    int i, j;
+    if (entityIndex >= xf86NumEntities)
+        return;
+
+    pEnt = xf86Entities[entityIndex];
+    for (i = 0; i < pEnt->numInstances; i++) {
+        if (pEnt->devices[i] == dev) {
+            for (j = i; j < pEnt->numInstances - 1; j++)
+                pEnt->devices[j] = pEnt->devices[j + 1];
+            break;
+        }
+    }
+    pEnt->numInstances--;
+    dev->claimed = FALSE;
+}
 /*
  * xf86GetEntityInfo() -- This function hands information from the
  * EntityRec struct to the drivers. The EntityRec structure itself
@@ -481,32 +545,8 @@ xf86GetDevFromEntity(int entityIndex, int instance)
 
     for (i = 0; i < xf86Entities[entityIndex]->numInstances; i++)
         if (xf86Entities[entityIndex]->devices[i]->screen == instance)
-            break;
-    return xf86Entities[entityIndex]->devices[i];
-}
-
-/*
- * xf86AccessEnter() -- gets called to save the text mode VGA IO 
- * resources when reentering the server after a VT switch.
- */
-void
-xf86AccessEnter(void)
-{
-    int i;
-
-    for (i = 0; i < xf86NumEntities; i++)
-        if (xf86Entities[i]->entityEnter)
-            xf86Entities[i]->entityEnter(i, xf86Entities[i]->private);
-}
-
-void
-xf86AccessLeave(void)
-{
-    int i;
-
-    for (i = 0; i < xf86NumEntities; i++)
-        if (xf86Entities[i]->entityLeave)
-            xf86Entities[i]->entityLeave(i, xf86Entities[i]->private);
+            return xf86Entities[entityIndex]->devices[i];
+    return NULL;
 }
 
 /*
@@ -516,11 +556,12 @@ xf86AccessLeave(void)
 void
 xf86PostProbe(void)
 {
-    int i;
-
     if (fbSlotClaimed && (
 #if (defined(__sparc__) || defined(__sparc)) && !defined(__OpenBSD__)
                              sbusSlotClaimed ||
+#endif
+#ifdef XSERVER_PLATFORM_BUS
+                             platformSlotClaimed ||
 #endif
 #ifdef XSERVER_LIBPCIACCESS
                              pciSlotClaimed
@@ -530,29 +571,6 @@ xf86PostProbe(void)
         ))
         FatalError("Cannot run in framebuffer mode. Please specify busIDs "
                    "       for all framebuffer devices\n");
-
-    for (i = 0; i < xf86NumEntities; i++)
-        if (xf86Entities[i]->entityInit)
-            xf86Entities[i]->entityInit(i, xf86Entities[i]->private);
-}
-
-int
-xf86GetLastScrnFlag(int entityIndex)
-{
-    if (entityIndex < xf86NumEntities) {
-        return xf86Entities[entityIndex]->lastScrnFlag;
-    }
-    else {
-        return -1;
-    }
-}
-
-void
-xf86SetLastScrnFlag(int entityIndex, int scrnIndex)
-{
-    if (entityIndex < xf86NumEntities) {
-        xf86Entities[entityIndex]->lastScrnFlag = scrnIndex;
-    }
 }
 
 Bool
@@ -634,8 +652,8 @@ xf86AllocateEntityPrivateIndex(void)
     idx = xf86EntityPrivateCount++;
     for (i = 0; i < xf86NumEntities; i++) {
         pEnt = xf86Entities[i];
-        nprivs = xnfrealloc(pEnt->entityPrivates,
-                            xf86EntityPrivateCount * sizeof(DevUnion));
+        nprivs = xnfreallocarray(pEnt->entityPrivates,
+                                 xf86EntityPrivateCount, sizeof(DevUnion));
         /* Zero the new private */
         memset(&nprivs[idx], 0, sizeof(DevUnion));
         pEnt->entityPrivates = nprivs;

@@ -1,3 +1,31 @@
+/* SPDX-License-Identifier: MIT
+ *
+ * Copyright © 2007 Carl Worth
+ * Copyright © 2009 Jeremy Huddleston, Julien Cristau, and Matthieu Herrb
+ * Copyright © 2009-2010 Mikhail Gusarov
+ * Copyright © 2012 Yaakov Selkowitz and Keith Packard
+ * Copyright (c) 2025, Oracle and/or its affiliates.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice (including the next
+ * paragraph) shall be included in all copies or substantial portions of the
+ * Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -8,7 +36,16 @@
 #if defined(HAVE_SHA1_IN_LIBMD)  /* Use libmd for SHA1 */ \
 	|| defined(HAVE_SHA1_IN_LIBC)   /* Use libc for SHA1 */
 
+#if defined(__DragonFly__) || defined(__FreeBSD__)
+#include <sha.h>
+#define	SHA1End		SHA1_End
+#define	SHA1File	SHA1_File
+#define	SHA1Final	SHA1_Final
+#define	SHA1Init	SHA1_Init
+#define	SHA1Update	SHA1_Update
+#else
 #include <sha1.h>
+#endif
 
 void *
 x_sha1_init(void)
@@ -71,6 +108,83 @@ x_sha1_final(void *ctx, unsigned char result[20])
 
     CC_SHA1_Final(result, sha1_ctx);
     free(sha1_ctx);
+    return 1;
+}
+
+#elif defined(HAVE_SHA1_IN_CRYPTOAPI)        /* Use CryptoAPI for SHA1 */
+
+#define WIN32_LEAN_AND_MEAN
+#include <X11/Xwindows.h>
+#include <wincrypt.h>
+
+static HCRYPTPROV hProv;
+
+void *
+x_sha1_init(void)
+{
+    HCRYPTHASH *ctx = malloc(sizeof(*ctx));
+
+    if (!ctx)
+        return NULL;
+    CryptAcquireContext(&hProv, NULL, MS_DEF_PROV, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
+    CryptCreateHash(hProv, CALG_SHA1, 0, 0, ctx);
+    return ctx;
+}
+
+int
+x_sha1_update(void *ctx, void *data, int size)
+{
+    HCRYPTHASH *hHash = ctx;
+
+    CryptHashData(*hHash, data, size, 0);
+    return 1;
+}
+
+int
+x_sha1_final(void *ctx, unsigned char result[20])
+{
+    HCRYPTHASH *hHash = ctx;
+    DWORD len = 20;
+
+    CryptGetHashParam(*hHash, HP_HASHVAL, result, &len, 0);
+    CryptDestroyHash(*hHash);
+    CryptReleaseContext(hProv, 0);
+    free(ctx);
+    return 1;
+}
+
+#elif defined(HAVE_SHA1_IN_LIBNETTLE)   /* Use libnettle for SHA1 */
+
+#include <nettle/sha1.h>
+#include <nettle/version.h>
+
+void *
+x_sha1_init(void)
+{
+    struct sha1_ctx *ctx = malloc(sizeof(*ctx));
+
+    if (!ctx)
+        return NULL;
+    sha1_init(ctx);
+    return ctx;
+}
+
+int
+x_sha1_update(void *ctx, void *data, int size)
+{
+    sha1_update(ctx, size, data);
+    return 1;
+}
+
+int
+x_sha1_final(void *ctx, unsigned char result[20])
+{
+#if NETTLE_VERSION_MAJOR < 4
+    sha1_digest(ctx, 20, result);
+#else
+    sha1_digest(ctx, result);
+#endif
+    free(ctx);
     return 1;
 }
 
@@ -150,13 +264,43 @@ x_sha1_final(void *ctx, unsigned char result[20])
 
 #else                           /* Use OpenSSL's libcrypto */
 
+#include <openssl/opensslv.h>
+#if OPENSSL_VERSION_MAJOR >= 3
+#define USE_EVP
+#endif
+
+#ifdef USE_EVP
+#include <openssl/evp.h>
+#else
 #include <stddef.h>             /* buggy openssl/sha.h wants size_t */
 #include <openssl/sha.h>
+#endif
+
+#ifdef USE_EVP
+static EVP_MD *sha1 = NULL;
+#endif
 
 void *
 x_sha1_init(void)
 {
     int ret;
+#ifdef USE_EVP
+    EVP_MD_CTX *ctx;
+
+    if (sha1 == NULL) {
+        sha1 = EVP_MD_fetch(NULL, "SHA1", NULL);
+        if (sha1 == NULL)
+            return NULL;
+    }
+    ctx = EVP_MD_CTX_new();
+    if (ctx == NULL)
+        return NULL;
+    ret = EVP_DigestInit_ex2(ctx, sha1, NULL);
+    if (!ret) {
+        EVP_MD_CTX_free(ctx);
+        return NULL;
+    }
+#else
     SHA_CTX *ctx = malloc(sizeof(*ctx));
 
     if (!ctx)
@@ -166,6 +310,7 @@ x_sha1_init(void)
         free(ctx);
         return NULL;
     }
+#endif
     return ctx;
 }
 
@@ -173,11 +318,19 @@ int
 x_sha1_update(void *ctx, void *data, int size)
 {
     int ret;
+#ifdef USE_EVP
+    EVP_MD_CTX *sha_ctx = ctx;
+
+    ret = EVP_DigestUpdate(sha_ctx, data, size);
+    if (!ret)
+        EVP_MD_CTX_free(sha_ctx);
+#else
     SHA_CTX *sha_ctx = ctx;
 
     ret = SHA1_Update(sha_ctx, data, size);
     if (!ret)
         free(sha_ctx);
+#endif
     return ret;
 }
 
@@ -185,10 +338,18 @@ int
 x_sha1_final(void *ctx, unsigned char result[20])
 {
     int ret;
+#ifdef USE_EVP
+    EVP_MD_CTX *sha_ctx = ctx;
+    unsigned int result_len = 20; /* size of result buffer */
+
+    ret = EVP_DigestFinal_ex(sha_ctx, result, &result_len);
+    EVP_MD_CTX_free(sha_ctx);
+#else
     SHA_CTX *sha_ctx = ctx;
 
     ret = SHA1_Final(result, sha_ctx);
     free(sha_ctx);
+#endif
     return ret;
 }
 

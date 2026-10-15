@@ -62,7 +62,7 @@ xnestCreateColormap(ColormapPtr pCmap)
 
     switch (pVisual->class) {
     case StaticGray:           /* read only */
-        colors = (XColor *) malloc(ncolors * sizeof(XColor));
+        colors = xallocarray(ncolors, sizeof(XColor));
         for (i = 0; i < ncolors; i++)
             colors[i].pixel = i;
         XQueryColors(xnestDisplay, xnestColormap(pCmap), colors, ncolors);
@@ -75,7 +75,7 @@ xnestCreateColormap(ColormapPtr pCmap)
         break;
 
     case StaticColor:          /* read only */
-        colors = (XColor *) malloc(ncolors * sizeof(XColor));
+        colors = xallocarray(ncolors, sizeof(XColor));
         for (i = 0; i < ncolors; i++)
             colors[i].pixel = i;
         XQueryColors(xnestDisplay, xnestColormap(pCmap), colors, ncolors);
@@ -88,7 +88,7 @@ xnestCreateColormap(ColormapPtr pCmap)
         break;
 
     case TrueColor:            /* read only */
-        colors = (XColor *) malloc(ncolors * sizeof(XColor));
+        colors = xallocarray(ncolors, sizeof(XColor));
         red = green = blue = 0L;
         redInc = lowbit(pVisual->redMask);
         greenInc = lowbit(pVisual->greenMask);
@@ -137,7 +137,7 @@ xnestDestroyColormap(ColormapPtr pCmap)
   (xnestWindow(pWin) != None && wColormap(pWin) == icws->cmapIDs[i])
 
 static int
-xnestCountInstalledColormapWindows(WindowPtr pWin, pointer ptr)
+xnestCountInstalledColormapWindows(WindowPtr pWin, void *ptr)
 {
     xnestInstalledColormapWindows *icws = (xnestInstalledColormapWindows *) ptr;
     int i;
@@ -152,7 +152,7 @@ xnestCountInstalledColormapWindows(WindowPtr pWin, pointer ptr)
 }
 
 static int
-xnestGetInstalledColormapWindows(WindowPtr pWin, pointer ptr)
+xnestGetInstalledColormapWindows(WindowPtr pWin, void *ptr)
 {
     xnestInstalledColormapWindows *icws = (xnestInstalledColormapWindows *) ptr;
     int i;
@@ -194,16 +194,14 @@ xnestSetInstalledColormapWindows(ScreenPtr pScreen)
     xnestInstalledColormapWindows icws;
     int numWindows;
 
-    icws.cmapIDs = (Colormap *) malloc(pScreen->maxInstalledCmaps *
-                                       sizeof(Colormap));
+    icws.cmapIDs = xallocarray(pScreen->maxInstalledCmaps, sizeof(Colormap));
     icws.numCmapIDs = xnestListInstalledColormaps(pScreen, icws.cmapIDs);
     icws.numWindows = 0;
-    WalkTree(pScreen, xnestCountInstalledColormapWindows, (pointer) &icws);
+    WalkTree(pScreen, xnestCountInstalledColormapWindows, (void *) &icws);
     if (icws.numWindows) {
-        icws.windows =
-            (Window *) malloc((icws.numWindows + 1) * sizeof(Window));
+        icws.windows = xallocarray(icws.numWindows + 1, sizeof(Window));
         icws.index = 0;
-        WalkTree(pScreen, xnestGetInstalledColormapWindows, (pointer) &icws);
+        WalkTree(pScreen, xnestGetInstalledColormapWindows, (void *) &icws);
         icws.windows[icws.numWindows] = xnestDefaultWindows[pScreen->myNum];
         numWindows = icws.numWindows + 1;
     }
@@ -220,8 +218,7 @@ xnestSetInstalledColormapWindows(ScreenPtr pScreen)
 #ifdef _XSERVER64
         {
             int i;
-            Window64 *windows =
-                (Window64 *) malloc(numWindows * sizeof(Window64));
+            Window64 *windows = xallocarray(numWindows, sizeof(Window64));
 
             for (i = 0; i < numWindows; ++i)
                 windows[i] = icws.windows[i];
@@ -239,7 +236,7 @@ xnestSetInstalledColormapWindows(ScreenPtr pScreen)
         xnestNumOldInstalledColormapWindows = icws.numWindows;
 
 #ifdef DUMB_WINDOW_MANAGERS
-        /* 
+        /*
            This code is for dumb window managers.
            This will only work with default local visual colormaps.
          */
@@ -252,11 +249,11 @@ xnestSetInstalledColormapWindows(ScreenPtr pScreen)
             visual = xnestVisualFromID(pScreen, wVisual(pWin));
 
             if (visual == xnestDefaultVisual(pScreen))
-                dixLookupResourceByType((pointer *) &pCmap, wColormap(pWin),
+                dixLookupResourceByType((void **) &pCmap, wColormap(pWin),
                                         RT_COLORMAP, serverClient,
                                         DixUseAccess);
             else
-                dixLookupResourceByType((pointer *) &pCmap,
+                dixLookupResourceByType((void **) &pCmap,
                                         pScreen->defColormap, RT_COLORMAP,
                                         serverClient, DixUseAccess);
 
@@ -309,7 +306,7 @@ xnestDirectInstallColormaps(ScreenPtr pScreen)
     for (i = 0; i < n; i++) {
         ColormapPtr pCmap;
 
-        dixLookupResourceByType((pointer *) &pCmap, pCmapIDs[i], RT_COLORMAP,
+        dixLookupResourceByType((void **) &pCmap, pCmapIDs[i], RT_COLORMAP,
                                 serverClient, DixInstallAccess);
         if (pCmap)
             XInstallColormap(xnestDisplay, xnestColormap(pCmap));
@@ -330,7 +327,7 @@ xnestDirectUninstallColormaps(ScreenPtr pScreen)
     for (i = 0; i < n; i++) {
         ColormapPtr pCmap;
 
-        dixLookupResourceByType((pointer *) &pCmap, pCmapIDs[i], RT_COLORMAP,
+        dixLookupResourceByType((void **) &pCmap, pCmapIDs[i], RT_COLORMAP,
                                 serverClient, DixUninstallAccess);
         if (pCmap)
             XUninstallColormap(xnestDisplay, xnestColormap(pCmap));
@@ -347,10 +344,10 @@ xnestInstallColormap(ColormapPtr pCmap)
 
         /* Uninstall pInstalledMap. Notify all interested parties. */
         if (pOldCmap != (ColormapPtr) None)
-            WalkTree(pCmap->pScreen, TellLostMap, (pointer) &pOldCmap->mid);
+            WalkTree(pCmap->pScreen, TellLostMap, (void *) &pOldCmap->mid);
 
         SetInstalledColormap(pCmap->pScreen, pCmap);
-        WalkTree(pCmap->pScreen, TellGainedMap, (pointer) &pCmap->mid);
+        WalkTree(pCmap->pScreen, TellGainedMap, (void *) &pCmap->mid);
 
         xnestSetInstalledColormapWindows(pCmap->pScreen);
         xnestDirectInstallColormaps(pCmap->pScreen);
@@ -364,7 +361,7 @@ xnestUninstallColormap(ColormapPtr pCmap)
 
     if (pCmap == pCurCmap) {
         if (pCmap->mid != pCmap->pScreen->defColormap) {
-            dixLookupResourceByType((pointer *) &pCurCmap,
+            dixLookupResourceByType((void **) &pCurCmap,
                                     pCmap->pScreen->defColormap,
                                     RT_COLORMAP,
                                     serverClient, DixInstallAccess);
@@ -393,7 +390,7 @@ xnestStoreColors(ColormapPtr pCmap, int nColors, xColorItem * pColors)
 #ifdef _XSERVER64
     {
         int i;
-        XColor *pColors64 = (XColor *) malloc(nColors * sizeof(XColor));
+        XColor *pColors64 = xallocarray(nColors, sizeof(XColor));
 
         for (i = 0; i < nColors; ++i) {
             pColors64[i].pixel = pColors[i].pixel;

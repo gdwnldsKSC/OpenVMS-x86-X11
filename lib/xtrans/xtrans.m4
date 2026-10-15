@@ -1,5 +1,5 @@
 dnl
-dnl Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+dnl Copyright (c) 2005, 2025, Oracle and/or its affiliates.
 dnl
 dnl Permission is hereby granted, free of charge, to any person obtaining a
 dnl copy of this software and associated documentation files (the "Software"),
@@ -29,14 +29,16 @@ AC_DEFUN([XTRANS_TCP_FLAGS],[
  AC_SEARCH_LIBS(socket, [socket])
  AC_SEARCH_LIBS(gethostbyname, [nsl])
  if test "$ac_cv_search_socket$ac_cv_search_gethostbyname" = "nono"; then
-   AC_HAVE_LIBRARY([ws2_32])
+   AC_CHECK_LIB([ws2_32],[main])
  fi
 
  # Needs to come after above checks for libsocket & libnsl for SVR4 systems
+ AC_CHECK_FUNCS([getaddrinfo inet_ntop])
+
  AC_ARG_ENABLE(ipv6,
-	AC_HELP_STRING([--enable-ipv6],[Enable IPv6 support]),
+	AS_HELP_STRING([--enable-ipv6],[Enable IPv6 support]),
 	[IPV6CONN=$enableval],
-	[AC_CHECK_FUNC(getaddrinfo,[IPV6CONN=yes],[IPV6CONN=no])])
+	[IPV6CONN=$ac_cv_func_getaddrinfo])
  AC_MSG_CHECKING([if IPv6 support should be built])
  if test "$IPV6CONN" = "yes"; then
 	AC_DEFINE(IPv6,1,[Support IPv6 for TCP connections])
@@ -53,9 +55,46 @@ AC_DEFUN([XTRANS_TCP_FLAGS],[
  ])
 
  # POSIX.1g changed the type of pointer passed to getsockname/getpeername/etc.
- AC_CHECK_TYPES([socklen_t], [], [], [
+ # and added a type defined to be large enough to hold any sockaddr format.
+ AC_CHECK_TYPES([socklen_t, struct sockaddr_storage], [], [], [
 AC_INCLUDES_DEFAULT
-#include <sys/socket.h>])
+#include <sys/socket.h>
+ ])
+
+ # XPG4v2/UNIX95 added msg_control - check to see if we need to define
+ # _XOPEN_SOURCE to get it (such as on Solaris)
+ AC_CHECK_MEMBER([struct msghdr.msg_control], [], [],
+                 [
+AC_INCLUDES_DEFAULT
+#include <sys/socket.h>
+                 ])
+ # First try for Solaris in C99 compliant mode, which requires XPG6/UNIX03
+ if test "x$ac_cv_member_struct_msghdr_msg_control" = xno; then
+     unset ac_cv_member_struct_msghdr_msg_control
+     AC_MSG_NOTICE([trying again with _XOPEN_SOURCE=600])
+     AC_CHECK_MEMBER([struct msghdr.msg_control],
+                     [AC_DEFINE([_XOPEN_SOURCE], [600],
+                       [Defined if needed to expose struct msghdr.msg_control])
+                     ], [], [
+#define _XOPEN_SOURCE 600
+AC_INCLUDES_DEFAULT
+#include <sys/socket.h>
+                     ])
+ fi
+ # If that didn't work, fall back to XPG5/UNIX98 with C89
+ if test "x$ac_cv_member_struct_msghdr_msg_control" = xno; then
+     unset ac_cv_member_struct_msghdr_msg_control
+     AC_MSG_NOTICE([trying again with _XOPEN_SOURCE=500])
+     AC_CHECK_MEMBER([struct msghdr.msg_control],
+                     [AC_DEFINE([_XOPEN_SOURCE], [500],
+                       [Defined if needed to expose struct msghdr.msg_control])
+                     ], [], [
+#define _XOPEN_SOURCE 500
+AC_INCLUDES_DEFAULT
+#include <sys/socket.h>
+                     ])
+ fi
+
 
 ]) # XTRANS_TCP_FLAGS
 
@@ -65,13 +104,12 @@ AC_INCLUDES_DEFAULT
 # that use Xtrans functions
 AC_DEFUN([XTRANS_CONNECTION_FLAGS],[
  AC_REQUIRE([AC_CANONICAL_HOST])
- AC_REQUIRE([AC_TYPE_SIGNAL])
  [case $host_os in
 	mingw*)	unixdef="no"   ;;
 	*)	unixdef="yes"  ;;
  esac]
  AC_ARG_ENABLE(unix-transport,
-	AC_HELP_STRING([--enable-unix-transport],[Enable UNIX domain socket transport]),
+	AS_HELP_STRING([--enable-unix-transport],[Enable UNIX domain socket transport]),
 	[UNIXCONN=$enableval], [UNIXCONN=$unixdef])
  AC_MSG_CHECKING([if Xtrans should support UNIX socket connections])
  if test "$UNIXCONN" = "yes"; then
@@ -79,7 +117,7 @@ AC_DEFUN([XTRANS_CONNECTION_FLAGS],[
  fi
  AC_MSG_RESULT($UNIXCONN)
  AC_ARG_ENABLE(tcp-transport,
-	AC_HELP_STRING([--enable-tcp-transport],[Enable TCP socket transport]),
+	AS_HELP_STRING([--enable-tcp-transport],[Enable TCP socket transport]),
 	[TCPCONN=$enableval], [TCPCONN=yes])
  AC_MSG_CHECKING([if Xtrans should support TCP socket connections])
  AC_MSG_RESULT($TCPCONN)
@@ -88,17 +126,20 @@ AC_DEFUN([XTRANS_CONNECTION_FLAGS],[
 	XTRANS_TCP_FLAGS
  fi
  [case $host_os in
-	solaris*|sco*|sysv4*)	localdef="yes" ;;
+	solaris*)		localdef="yes" ;;
 	*)			localdef="no"  ;;
  esac]
  AC_ARG_ENABLE(local-transport,
-	AC_HELP_STRING([--enable-local-transport],[Enable os-specific local transport]),
+	AS_HELP_STRING([--enable-local-transport],[Enable os-specific local transport]),
 	[LOCALCONN=$enableval], [LOCALCONN=$localdef])
  AC_MSG_CHECKING([if Xtrans should support os-specific local connections])
  AC_MSG_RESULT($LOCALCONN)
  if test "$LOCALCONN" = "yes"; then
 	AC_DEFINE(LOCALCONN,1,[Support os-specific local connections])
  fi
+
+ # Other functions Xtrans may need
+ AC_CHECK_FUNCS([strcasecmp strlcpy])
 
 ]) # XTRANS_CONNECTION_FLAGS
 
@@ -110,7 +151,7 @@ AC_DEFUN([XTRANS_CONNECTION_FLAGS],[
 AC_DEFUN([XTRANS_SECURE_RPC_FLAGS],
 [AC_REQUIRE([XTRANS_TCP_FLAGS])
  AC_ARG_ENABLE(secure-rpc,
-	AC_HELP_STRING([--enable-secure-rpc],[Enable Secure RPC]),
+	AS_HELP_STRING([--enable-secure-rpc],[Enable Secure RPC]),
         [SECURE_RPC=$enableval], [SECURE_RPC="try"])
 
  if test "x$SECURE_RPC" = "xyes" -o "x$SECURE_RPC" = "xtry" ; then

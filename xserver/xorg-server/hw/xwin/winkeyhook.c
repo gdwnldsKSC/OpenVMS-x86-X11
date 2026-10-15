@@ -61,7 +61,6 @@ winKeyboardMessageHookLL(int iCode, WPARAM wParam, LPARAM lParam)
     PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT) lParam;
     HWND hwnd = GetActiveWindow();
 
-#ifdef XWIN_MULTIWINDOW
     WindowPtr pWin = NULL;
     winPrivWinPtr pWinPriv = NULL;
     winPrivScreenPtr pScreenPriv = NULL;
@@ -79,12 +78,11 @@ winKeyboardMessageHookLL(int iCode, WPARAM wParam, LPARAM lParam)
         if (pScreenInfo->fMultiWindow)
             fPassAltTab = FALSE;
     }
-#endif
 
     /* Pass keystrokes on to our main message loop */
     if (iCode == HC_ACTION) {
         winDebug("winKeyboardMessageHook: vkCode: %08x scanCode: %08x\n",
-                 p->vkCode, p->scanCode);
+                 (unsigned int)p->vkCode, (unsigned int)p->scanCode);
 
         switch (wParam) {
         case WM_KEYDOWN:
@@ -133,24 +131,6 @@ winKeyboardMessageHookLL(int iCode, WPARAM wParam, LPARAM lParam)
 Bool
 winInstallKeyboardHookLL(void)
 {
-    OSVERSIONINFO osvi = { 0 };
-
-    /* Get operating system version information */
-    osvi.dwOSVersionInfoSize = sizeof(osvi);
-    GetVersionEx(&osvi);
-
-    /* Branch on platform ID */
-    switch (osvi.dwPlatformId) {
-    case VER_PLATFORM_WIN32_NT:
-        /* Low-level is supported on NT 4.0 SP3+ only */
-        /* TODO: Return FALSE on NT 4.0 with no SP, SP1, or SP2 */
-        break;
-
-    case VER_PLATFORM_WIN32_WINDOWS:
-        /* Low-level hook is not supported on non-NT */
-        return FALSE;
-    }
-
     /* Install the hook only once */
     if (!g_hhookKeyboardLL)
         g_hhookKeyboardLL = SetWindowsHookEx(WH_KEYBOARD_LL,

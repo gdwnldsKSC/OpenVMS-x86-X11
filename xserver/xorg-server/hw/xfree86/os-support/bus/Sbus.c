@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#ifdef sun
+#ifdef __sun
 #include <sys/utsname.h>
 #endif
 #include "xf86.h"
@@ -157,7 +157,7 @@ promSetNode(sbusPromNodePtr pnode)
 static void
 promIsP1275(void)
 {
-#ifdef linux
+#ifdef __linux__
     FILE *f;
     char buffer[1024];
 
@@ -173,7 +173,7 @@ promIsP1275(void)
             break;
         }
     fclose(f);
-#elif defined(sun)
+#elif defined(__sun)
     struct utsname buffer;
 
     if ((uname(&buffer) >= 0) && !strcmp(buffer.machine, "sun4u"))
@@ -245,7 +245,7 @@ sparcPromGetBool(sbusPromNodePtr pnode, const char *prop)
     return promGetBool(prop);
 }
 
-static char *
+static const char *
 promWalkGetDriverName(int node, int oldnode)
 {
     int nextnode;
@@ -275,7 +275,7 @@ promWalkGetDriverName(int node, int oldnode)
 
     nextnode = promGetChild(node);
     if (nextnode) {
-        char *name;
+        const char *name;
 
         name = promWalkGetDriverName(nextnode, node);
         if (name)
@@ -288,10 +288,10 @@ promWalkGetDriverName(int node, int oldnode)
     return NULL;
 }
 
-char *
+const char *
 sparcDriverName(void)
 {
-    char *name;
+    const char *name;
 
     if (sparcPromInit() < 0)
         return NULL;
@@ -401,18 +401,18 @@ sparcPromAssignNodes(void)
         int fbNum, devId;
         static struct {
             int devId;
-            char *prefix;
+            const char *prefix;
         } procFbPrefixes[] = {
-            {
-            SBUS_DEVICE_BW2, "BWtwo"}, {
-            SBUS_DEVICE_CG14, "CGfourteen"}, {
-            SBUS_DEVICE_CG6, "CGsix"}, {
-            SBUS_DEVICE_CG3, "CGthree"}, {
-            SBUS_DEVICE_FFB, "Creator"}, {
-            SBUS_DEVICE_FFB, "Elite 3D"}, {
-            SBUS_DEVICE_LEO, "Leo"}, {
-            SBUS_DEVICE_TCX, "TCX"}, {
-        0, NULL},};
+            {SBUS_DEVICE_BW2, "BWtwo"},
+            {SBUS_DEVICE_CG14, "CGfourteen"},
+            {SBUS_DEVICE_CG6, "CGsix"},
+            {SBUS_DEVICE_CG3, "CGthree"},
+            {SBUS_DEVICE_FFB, "Creator"},
+            {SBUS_DEVICE_FFB, "Elite 3D"},
+            {SBUS_DEVICE_LEO, "Leo"},
+            {SBUS_DEVICE_TCX, "TCX"},
+            {0, NULL},
+        };
 
         while (fscanf(f, "%d %63s\n", &fbNum, buffer) == 2) {
             for (i = 0; procFbPrefixes[i].devId; i++)
@@ -440,7 +440,7 @@ sparcPromAssignNodes(void)
     for (i = 0, j = 0; i < 32; i++)
         if (devicePtrs[i] && devicePtrs[i]->fbNum == -1)
             j++;
-    xf86SbusInfo = xnfrealloc(xf86SbusInfo, sizeof(psdp) * (n + j + 1));
+    xf86SbusInfo = xnfreallocarray(xf86SbusInfo, n + j + 1, sizeof(psdp));
     for (i = 0, psdpp = xf86SbusInfo; i < 32; i++)
         if (devicePtrs[i]) {
             if (devicePtrs[i]->fbNum == -1) {
@@ -617,8 +617,10 @@ sparcPromPathname2Node(const char *pathName)
         return 0;
     strcpy(name, pathName);
     name[i + 1] = 0;
-    if (name[0] != '/')
+    if (name[0] != '/') {
+        free(name);
         return 0;
+    }
     p = strchr(name + 1, '/');
     if (p)
         *p = 0;
@@ -629,18 +631,20 @@ sparcPromPathname2Node(const char *pathName)
         *regstr++ = 0;
     else
         regstr = p;
-    if (name + 1 == regstr)
+    if (name + 1 == regstr) {
+        free(name);
         return 0;
+    }
     promGetSibling(0);
     i = promWalkPathname2Node(name + 1, regstr, promRootNode, 0);
     free(name);
     return i;
 }
 
-pointer
+void *
 xf86MapSbusMem(sbusDevicePtr psdp, unsigned long offset, unsigned long size)
 {
-    pointer ret;
+    void *ret;
     unsigned long pagemask = getpagesize() - 1;
     unsigned long off = offset & ~pagemask;
     unsigned long len = ((offset + size + pagemask) & ~pagemask) - off;
@@ -653,26 +657,26 @@ xf86MapSbusMem(sbusDevicePtr psdp, unsigned long offset, unsigned long size)
     else if (psdp->fd < 0)
         return NULL;
 
-    ret = (pointer) mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE,
+    ret = (void *) mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE,
                          psdp->fd, off);
-    if (ret == (pointer) -1) {
-        ret = (pointer) mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED,
+    if (ret == (void *) -1) {
+        ret = (void *) mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED,
                              psdp->fd, off);
     }
-    if (ret == (pointer) -1)
+    if (ret == (void *) -1)
         return NULL;
 
     return (char *) ret + (offset - off);
 }
 
 void
-xf86UnmapSbusMem(sbusDevicePtr psdp, pointer addr, unsigned long size)
+xf86UnmapSbusMem(sbusDevicePtr psdp, void *addr, unsigned long size)
 {
     unsigned long mask = getpagesize() - 1;
     unsigned long base = (unsigned long) addr & ~mask;
     unsigned long len = (((unsigned long) addr + size + mask) & ~mask) - base;
 
-    munmap((pointer) base, len);
+    munmap((void *) base, len);
 }
 
 /* Tell OS that we are driving the HW cursor ourselves. */

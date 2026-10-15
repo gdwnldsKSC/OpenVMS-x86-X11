@@ -55,8 +55,8 @@ RROldModeAdd(RROutputPtr output, RRScreenSizePtr size, int refresh)
         }
 
     if (output->numModes)
-        modes = realloc(output->modes,
-                        (output->numModes + 1) * sizeof(RRModePtr));
+        modes = reallocarray(output->modes,
+                             output->numModes + 1, sizeof(RRModePtr));
     else
         modes = malloc(sizeof(RRModePtr));
     if (!modes) {
@@ -82,6 +82,7 @@ RRScanOldConfig(ScreenPtr pScreen, Rotation rotations)
     int i;
     CARD16 minWidth = MAXSHORT, minHeight = MAXSHORT;
     CARD16 maxWidth = 0, maxHeight = 0;
+    CARD16 width, height;
 
     /*
      * First time through, create a crtc and output and hook
@@ -141,11 +142,11 @@ RRScanOldConfig(ScreenPtr pScreen, Rotation rotations)
 
     /* find size bounds */
     for (i = 0; i < output->numModes + output->numUserModes; i++) {
-        RRModePtr mode = (i < output->numModes ?
+        mode = (i < output->numModes ?
                           output->modes[i] :
                           output->userModes[i - output->numModes]);
-        CARD16 width = mode->mode.width;
-        CARD16 height = mode->mode.height;
+        width = mode->mode.width;
+        height = mode->mode.height;
 
         if (width < minWidth)
             minWidth = width;
@@ -224,7 +225,7 @@ RRScreenSetSizeRange(ScreenPtr pScreen,
     pScrPriv->minHeight = minHeight;
     pScrPriv->maxWidth = maxWidth;
     pScrPriv->maxHeight = maxHeight;
-    pScrPriv->changed = TRUE;
+    RRSetChanged(pScreen);
     pScrPriv->configChanged = TRUE;
 }
 
@@ -265,8 +266,8 @@ RRRegisterSize(ScreenPtr pScreen,
     for (i = 0; i < pScrPriv->nSizes; i++)
         if (RRScreenSizeMatches(&tmp, &pScrPriv->pSizes[i]))
             return &pScrPriv->pSizes[i];
-    pNew = realloc(pScrPriv->pSizes,
-                   (pScrPriv->nSizes + 1) * sizeof(RRScreenSize));
+    pNew = reallocarray(pScrPriv->pSizes,
+                        pScrPriv->nSizes + 1, sizeof(RRScreenSize));
     if (!pNew)
         return 0;
     pNew[pScrPriv->nSizes++] = tmp;
@@ -288,7 +289,7 @@ RRRegisterRate(ScreenPtr pScreen, RRScreenSizePtr pSize, int rate)
         if (pSize->pRates[i].rate == rate)
             return TRUE;
 
-    pNew = realloc(pSize->pRates, (pSize->nRates + 1) * sizeof(RRScreenRate));
+    pNew = reallocarray(pSize->pRates, pSize->nRates + 1, sizeof(RRScreenRate));
     if (!pNew)
         return FALSE;
     pRate = &pNew[pSize->nRates++];

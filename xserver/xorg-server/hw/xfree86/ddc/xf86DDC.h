@@ -1,9 +1,9 @@
 
 /* xf86DDC.h
  *
- * This file contains all information to interpret a standard EDIC block 
- * transmitted by a display device via DDC (Display Data Channel). So far 
- * there is no information to deal with optional EDID blocks.  
+ * This file contains all information to interpret a standard EDIC block
+ * transmitted by a display device via DDC (Display Data Channel). So far
+ * there is no information to deal with optional EDID blocks.
  * DDC is a Trademark of VESA (Video Electronics Standard Association).
  *
  * Copyright 1998 by Egbert Eich <Egbert.Eich@Physik.TU-Darmstadt.DE>
@@ -24,15 +24,15 @@ typedef enum {
 
 typedef void (*DDC1SetSpeedProc) (ScrnInfoPtr, xf86ddcSpeed);
 
-extern _X_EXPORT xf86MonPtr xf86DoEDID_DDC1(int scrnIndex,
+extern _X_EXPORT xf86MonPtr xf86DoEDID_DDC1(ScrnInfoPtr pScrn,
                                             DDC1SetSpeedProc DDC1SetSpeed,
                                             unsigned
                                             int (*DDC1Read) (ScrnInfoPtr)
     );
 
-extern _X_EXPORT xf86MonPtr xf86DoEDID_DDC2(int scrnIndex, I2CBusPtr pBus);
+extern _X_EXPORT xf86MonPtr xf86DoEDID_DDC2(ScrnInfoPtr pScrn, I2CBusPtr pBus);
 
-extern _X_EXPORT xf86MonPtr xf86DoEEDID(int scrnIndex, I2CBusPtr pBus, Bool);
+extern _X_EXPORT xf86MonPtr xf86DoEEDID(ScrnInfoPtr pScrn, I2CBusPtr pBus, Bool);
 
 extern _X_EXPORT xf86MonPtr xf86PrintEDID(xf86MonPtr monPtr);
 
@@ -45,15 +45,11 @@ extern _X_EXPORT void
 
 extern _X_EXPORT Bool xf86SetDDCproperties(ScrnInfoPtr pScreen, xf86MonPtr DDC);
 
-extern _X_EXPORT DisplayModePtr xf86DDCGetModes(int scrnIndex, xf86MonPtr DDC);
-
 extern _X_EXPORT Bool
  xf86MonitorIsHDMI(xf86MonPtr mon);
 
-extern _X_EXPORT xf86MonPtr xf86DoDisplayID(int scrnIndex, I2CBusPtr pBus);
-
-extern _X_EXPORT void
- xf86DisplayIDMonitorSet(int scrnIndex, MonPtr mon, xf86MonPtr DDC);
+extern _X_EXPORT Bool
+gtf_supported(xf86MonPtr mon);
 
 extern _X_EXPORT DisplayModePtr
 FindDMTMode(int hsize, int vsize, int refresh, Bool rb);
@@ -99,5 +95,7 @@ void xf86DetTimingApplyQuirks(struct detailed_monitor_section *det_mon,
 typedef void (*handle_video_fn) (struct cea_video_block *, void *);
 
 void xf86ForEachVideoBlock(xf86MonPtr, handle_video_fn, void *);
+
+struct cea_data_block *xf86MonitorFindHDMIBlock(xf86MonPtr mon);
 
 #endif

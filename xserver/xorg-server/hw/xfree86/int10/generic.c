@@ -20,12 +20,48 @@
 
 #define ALLOC_ENTRIES(x) ((V_RAM / x) - 1)
 
-static CARD8 read_b(xf86Int10InfoPtr pInt, int addr);
-static CARD16 read_w(xf86Int10InfoPtr pInt, int addr);
-static CARD32 read_l(xf86Int10InfoPtr pInt, int addr);
-static void write_b(xf86Int10InfoPtr pInt, int addr, CARD8 val);
-static void write_w(xf86Int10InfoPtr pInt, int addr, CARD16 val);
-static void write_l(xf86Int10InfoPtr pInt, int addr, CARD32 val);
+#include <string.h>             /* needed for memmove */
+
+static __inline__ uint32_t
+ldl_u(uint32_t * p)
+{
+    uint32_t ret;
+
+    memmove(&ret, p, sizeof(*p));
+    return ret;
+}
+
+static __inline__ uint16_t
+ldw_u(uint16_t * p)
+{
+    uint16_t ret;
+
+    memmove(&ret, p, sizeof(*p));
+    return ret;
+}
+
+static __inline__ void
+stl_u(uint32_t val, uint32_t * p)
+{
+    uint32_t tmp = val;
+
+    memmove(p, &tmp, sizeof(*p));
+}
+
+static __inline__ void
+stw_u(uint16_t val, uint16_t * p)
+{
+    uint16_t tmp = val;
+
+    memmove(p, &tmp, sizeof(*p));
+}
+
+static uint8_t read_b(xf86Int10InfoPtr pInt, int addr);
+static uint16_t read_w(xf86Int10InfoPtr pInt, int addr);
+static uint32_t read_l(xf86Int10InfoPtr pInt, int addr);
+static void write_b(xf86Int10InfoPtr pInt, int addr, uint8_t val);
+static void write_w(xf86Int10InfoPtr pInt, int addr, uint16_t val);
+static void write_l(xf86Int10InfoPtr pInt, int addr, uint32_t val);
 
 /*
  * the emulator cannot pass a pointer to the current xf86Int10InfoRec
@@ -63,6 +99,20 @@ static void UnmapVRam(xf86Int10InfoPtr pInt);
 
 static void *sysMem = NULL;
 
+static Bool
+readIntVec(struct pci_device *dev, unsigned char *buf, int len)
+{
+    void *map;
+
+    if (pci_device_map_legacy(dev, 0, len, 0, &map))
+        return FALSE;
+
+    memcpy(buf, map, len);
+    pci_device_unmap_legacy(dev, map, len);
+
+    return TRUE;
+}
+
 xf86Int10InfoPtr
 xf86ExtendedInitInt10(int entityIndex, int Flags)
 {
@@ -70,12 +120,12 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
     void *base = 0;
     void *vbiosMem = 0;
     void *options = NULL;
-    int screen;
     legacyVGARec vga;
+    ScrnInfoPtr pScrn;
 
-    screen = (xf86FindScreenForEntity(entityIndex))->scrnIndex;
+    pScrn = xf86FindScreenForEntity(entityIndex);
 
-    options = xf86HandleInt10Options(xf86Screens[screen], entityIndex);
+    options = xf86HandleInt10Options(pScrn, entityIndex);
 
     if (int10skip(options)) {
         free(options);
@@ -87,9 +137,9 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
     if (!xf86Int10ExecSetup(pInt))
         goto error0;
     pInt->mem = &genericMem;
-    pInt->private = (pointer) xnfcalloc(1, sizeof(genericInt10Priv));
-    INTPriv(pInt)->alloc = (pointer) xnfcalloc(1, ALLOC_ENTRIES(getpagesize()));
-    pInt->scrnIndex = screen;
+    pInt->private = (void *) xnfcalloc(1, sizeof(genericInt10Priv));
+    INTPriv(pInt)->alloc = (void *) xnfcalloc(1, ALLOC_ENTRIES(getpagesize()));
+    pInt->pScrn = pScrn;
     base = INTPriv(pInt)->base = xnfalloc(SYS_BIOS);
 
     /* FIXME: Shouldn't this be a failure case?  Leaving dev as NULL seems like
@@ -108,8 +158,8 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
                               PCI_DEV_MAP_FLAG_WRITABLE, &sysMem);
     INTPriv(pInt)->sysMem = sysMem;
 
-    if (xf86ReadBIOS(0, 0, base, LOW_PAGE_SIZE) < 0) {
-        xf86DrvMsg(screen, X_ERROR, "Cannot read int vect\n");
+    if (!readIntVec(pInt->dev, base, LOW_PAGE_SIZE)) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Cannot read int vect\n");
         goto error1;
     }
 
@@ -148,7 +198,7 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
             vbiosMem = (unsigned char *) base + bios_location;
             err = pci_device_read_rom(rom_device, vbiosMem);
             if (err) {
-                xf86DrvMsg(screen, X_ERROR, "Cannot read V_BIOS (3) %s\n",
+                xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Cannot read V_BIOS (3) %s\n",
                            strerror(err));
                 goto error1;
             }
@@ -173,13 +223,14 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
     setup_int_vect(pInt);
     set_return_trap(pInt);
 
-    /* Retrieve the entire legacy video BIOS segment.  This can be upto
+    /* Retrieve the entire legacy video BIOS segment.  This can be up to
      * 128KiB.
      */
     vbiosMem = (char *) base + V_BIOS;
     memset(vbiosMem, 0, 2 * V_BIOS_SIZE);
-    if (pci_device_read_rom(pInt->dev, vbiosMem) < V_BIOS_SIZE) {
-        xf86DrvMsg(screen, X_WARNING,
+    if (pci_device_read_rom(pInt->dev, vbiosMem) != 0
+        || pInt->dev->rom_size < V_BIOS_SIZE) {
+        xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
                    "Unable to retrieve all of segment 0x0C0000.\n");
     }
 
@@ -194,10 +245,10 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
         vbiosMem = (unsigned char *) base + bios_location;
 
         if (xf86IsEntityPrimary(entityIndex)) {
-            if (int10_check_bios(screen, bios_location >> 4, vbiosMem))
+            if (int10_check_bios(pScrn->scrnIndex, bios_location >> 4, vbiosMem))
                 done = TRUE;
             else
-                xf86DrvMsg(screen, X_INFO,
+                xf86DrvMsg(pScrn->scrnIndex, X_INFO,
                            "No legacy BIOS found -- trying PCI\n");
         }
         if (!done) {
@@ -207,7 +258,7 @@ xf86ExtendedInitInt10(int entityIndex, int Flags)
 
             err = pci_device_read_rom(rom_device, vbiosMem);
             if (err) {
-                xf86DrvMsg(screen, X_ERROR, "Cannot read V_BIOS (5) %s\n",
+                xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Cannot read V_BIOS (5) %s\n",
                            strerror(err));
                 goto error1;
             }
@@ -249,7 +300,6 @@ MapVRam(xf86Int10InfoPtr pInt)
 static void
 UnmapVRam(xf86Int10InfoPtr pInt)
 {
-    int screen = pInt->scrnIndex;
     int pagesize = getpagesize();
     int size = ((VRAM_SIZE + pagesize - 1) / pagesize) * pagesize;
 
@@ -339,39 +389,39 @@ xf86Int10FreePages(xf86Int10InfoPtr pInt, void *pbase, int num)
 
 #define VRAM(addr) ((addr >= V_RAM) && (addr < (V_RAM + VRAM_SIZE)))
 #define V_ADDR_RB(addr) \
-	(VRAM(addr)) ? MMIO_IN8((CARD8*)VRAM_BASE,VRAM_ADDR(addr)) \
-	   : *(CARD8*) V_ADDR(addr)
+	((VRAM(addr)) ? MMIO_IN8((uint8_t*)VRAM_BASE,VRAM_ADDR(addr)) \
+	   : *(uint8_t*) V_ADDR(addr))
 #define V_ADDR_RW(addr) \
-	(VRAM(addr)) ? MMIO_IN16((CARD16*)VRAM_BASE,VRAM_ADDR(addr)) \
-	   : ldw_u((pointer)V_ADDR(addr))
+	((VRAM(addr)) ? MMIO_IN16((uint16_t*)VRAM_BASE,VRAM_ADDR(addr)) \
+	   : ldw_u((void *)V_ADDR(addr)))
 #define V_ADDR_RL(addr) \
-	(VRAM(addr)) ? MMIO_IN32((CARD32*)VRAM_BASE,VRAM_ADDR(addr)) \
-	   : ldl_u((pointer)V_ADDR(addr))
+	((VRAM(addr)) ? MMIO_IN32((uint32_t*)VRAM_BASE,VRAM_ADDR(addr)) \
+	   : ldl_u((void *)V_ADDR(addr)))
 
 #define V_ADDR_WB(addr,val) \
 	if(VRAM(addr)) \
-	    MMIO_OUT8((CARD8*)VRAM_BASE,VRAM_ADDR(addr),val); \
+	    MMIO_OUT8((uint8_t*)VRAM_BASE,VRAM_ADDR(addr),val); \
 	else \
-	    *(CARD8*) V_ADDR(addr) = val;
+	    *(uint8_t*) V_ADDR(addr) = val;
 #define V_ADDR_WW(addr,val) \
 	if(VRAM(addr)) \
-	    MMIO_OUT16((CARD16*)VRAM_BASE,VRAM_ADDR(addr),val); \
+	    MMIO_OUT16((uint16_t*)VRAM_BASE,VRAM_ADDR(addr),val); \
 	else \
-	    stw_u((val),(pointer)(V_ADDR(addr)));
+	    stw_u((val),(void *)(V_ADDR(addr)));
 
 #define V_ADDR_WL(addr,val) \
 	if (VRAM(addr)) \
-	    MMIO_OUT32((CARD32*)VRAM_BASE,VRAM_ADDR(addr),val); \
+	    MMIO_OUT32((uint32_t*)VRAM_BASE,VRAM_ADDR(addr),val); \
 	else \
-	    stl_u(val,(pointer)(V_ADDR(addr)));
+	    stl_u(val,(void *)(V_ADDR(addr)));
 
-static CARD8
+static uint8_t
 read_b(xf86Int10InfoPtr pInt, int addr)
 {
     return V_ADDR_RB(addr);
 }
 
-static CARD16
+static uint16_t
 read_w(xf86Int10InfoPtr pInt, int addr)
 {
 #if X_BYTE_ORDER == X_LITTLE_ENDIAN
@@ -381,7 +431,7 @@ read_w(xf86Int10InfoPtr pInt, int addr)
     return V_ADDR_RB(addr) | (V_ADDR_RB(addr + 1) << 8);
 }
 
-static CARD32
+static uint32_t
 read_l(xf86Int10InfoPtr pInt, int addr)
 {
 #if X_BYTE_ORDER == X_LITTLE_ENDIAN
@@ -394,7 +444,7 @@ read_l(xf86Int10InfoPtr pInt, int addr)
 }
 
 static void
-write_b(xf86Int10InfoPtr pInt, int addr, CARD8 val)
+write_b(xf86Int10InfoPtr pInt, int addr, uint8_t val)
 {
     V_ADDR_WB(addr, val);
 }
@@ -412,7 +462,7 @@ write_w(xf86Int10InfoPtr pInt, int addr, CARD16 val)
 }
 
 static void
-write_l(xf86Int10InfoPtr pInt, int addr, CARD32 val)
+write_l(xf86Int10InfoPtr pInt, int addr, uint32_t val)
 {
 #if X_BYTE_ORDER == X_LITTLE_ENDIAN
     if (OFF(addr + 3) > 2) {
@@ -425,8 +475,8 @@ write_l(xf86Int10InfoPtr pInt, int addr, CARD32 val)
     V_ADDR_WB(addr + 3, val >> 24);
 }
 
-pointer
-xf86int10Addr(xf86Int10InfoPtr pInt, CARD32 addr)
+void *
+xf86int10Addr(xf86Int10InfoPtr pInt, uint32_t addr)
 {
     return V_ADDR(addr);
 }

@@ -35,13 +35,15 @@
 #include <dix-config.h>
 #endif
 
-#include "quartzCommon.h"
 #include "quartzRandR.h"
 #include "inputstr.h"
 #include "quartz.h"
 #include "darwin.h"
 #include "darwinEvents.h"
 #include "pseudoramiX.h"
+#include "extension.h"
+#include "nonsdk_extinit.h"
+#include "glx_extinit.h"
 #define _APPLEWM_SERVER_
 #include "applewmExt.h"
 
@@ -69,19 +71,30 @@
 #include <rootlessCommon.h>
 #include <Xplugin.h>
 
+// These are vended by the Objective-C runtime, but they are unfortunately
+// not available as API in the macOS SDK.  We are following suit with swift
+// and clang in declaring them inline here.  They canot be removed or changed
+// in the OS without major bincompat ramifications.
+//
+// These were added in macOS 10.7.
+void * _Nonnull objc_autoreleasePoolPush(void);
+void objc_autoreleasePoolPop(void * _Nonnull context);
+
 DevPrivateKeyRec quartzScreenKeyRec;
 int aquaMenuBarHeight = 0;
 QuartzModeProcsPtr quartzProcs = NULL;
 const char             *quartzOpenGLBundle = NULL;
 
-Bool XQuartzFullscreenDisableHotkeys = TRUE;
-Bool XQuartzOptionSendsAlt = FALSE;
-Bool XQuartzEnableKeyEquivalents = TRUE;
+/* These are initialized by X11Application with default values set in NSUserDefaults+XQuartzDefaults */
+Bool XQuartzFullscreenDisableHotkeys;
+Bool XQuartzOptionSendsAlt;
+Bool XQuartzEnableKeyEquivalents;
+Bool XQuartzFullscreenMenu;
+Bool XQuartzRootlessDefault;
+
 Bool XQuartzFullscreenVisible = FALSE;
-Bool XQuartzRootlessDefault = TRUE;
 Bool XQuartzIsRootless = TRUE;
 Bool XQuartzServerVisible = FALSE;
-Bool XQuartzFullscreenMenu = FALSE;
 
 int32_t XQuartzShieldingWindowLevel = 0;
 
@@ -101,11 +114,14 @@ Bool
 QuartzAddScreen(int index,
                 ScreenPtr pScreen)
 {
+    // The clang static analyzer thinks we leak displayInfo here
+#ifndef __clang_analyzer__
     // allocate space for private per screen Quartz specific storage
     QuartzScreenPtr displayInfo = calloc(sizeof(QuartzScreenRec), 1);
 
     // QUARTZ_PRIV(pScreen) = displayInfo;
     dixSetPrivate(&pScreen->devPrivates, quartzScreenKey, displayInfo);
+#endif /* __clang_analyzer__ */
 
     // do Quartz mode specific initialization
     return quartzProcs->AddScreen(index, pScreen);
@@ -138,6 +154,30 @@ QuartzSetupScreen(int index,
 }
 
 /*
+ * QuartzBlockHandler
+ *  Clean out any autoreleased objects.
+ */
+static void
+QuartzBlockHandler(void *blockData, void *pTimeout)
+{
+    static void *poolToken = NULL;
+
+    if (poolToken) {
+        objc_autoreleasePoolPop(poolToken);
+    }
+    poolToken = objc_autoreleasePoolPush();
+}
+
+/*
+ * QuartzWakeupHandler
+ */
+static void
+QuartzWakeupHandler(void *blockData, int result)
+{
+    /* nothing here */
+}
+
+/*
  * QuartzInitOutput
  *  Quartz display initialization.
  */
@@ -147,6 +187,7 @@ QuartzInitOutput(int argc,
 {
     /* For XQuartz, we want to just use the default signal handler to work better with CrashTracer */
     signal(SIGSEGV, SIG_DFL);
+    signal(SIGABRT, SIG_DFL);
     signal(SIGILL, SIG_DFL);
 #ifdef SIGEMT
     signal(SIGEMT, SIG_DFL);
@@ -267,8 +308,8 @@ QuartzUpdateScreens(void)
 
     quartzProcs->UpdateScreen(pScreen);
 
-    /* miPaintWindow needs to be called after RootlessUpdateScreenPixmap (from xprUpdateScreen) */
-    miPaintWindow(pRoot, &pRoot->borderClip, PW_BACKGROUND);
+    /* PaintWindow needs to be called after RootlessUpdateScreenPixmap (from xprUpdateScreen) */
+    pScreen->PaintWindow(pRoot, &pRoot->borderClip, PW_BACKGROUND);
 
     /* Tell RandR about the new size, so new connections get the correct info */
     RRScreenSizeNotify(pScreen);
@@ -452,7 +493,7 @@ QuartzHide(void)
  *  Enable or disable rendering to the X screen.
  */
 void
-QuartzSetRootClip(BOOL enable)
+QuartzSetRootClip(int mode)
 {
     int i;
 
@@ -461,7 +502,7 @@ QuartzSetRootClip(BOOL enable)
 
     for (i = 0; i < screenInfo.numScreens; i++) {
         if (screenInfo.screens[i]) {
-            SetRootClip(screenInfo.screens[i], enable);
+            SetRootClip(screenInfo.screens[i], mode);
         }
     }
 }

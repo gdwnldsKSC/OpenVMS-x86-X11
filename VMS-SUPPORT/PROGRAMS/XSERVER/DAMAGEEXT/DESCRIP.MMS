@@ -1,10 +1,9 @@
-! Complete ordinary static Damage extension library from the upstream Imakefile.
+! Complete ordinary static Damage extension library from the upstream Makefile.am.
 ! Keep the Unix damage basename in its directory, separate from miext/damage.
 DAMAGEEXT_HEADERS = $(XFIXES_HEADERS), -
     $(OUT).INCLUDE.X11.EXTENSIONS]DAMAGEPROTO.H, -
     $(OUT).INCLUDE.X11.EXTENSIONS]DAMAGEWIRE.H
 DAMAGEEXT_PRIVATE_HEADERS = $(XFIXES_PRIVATE_HEADERS), -
-    [.XSERVER.XORG-SERVER.DAMAGEEXT]DAMAGEEXT.H, -
     [.XSERVER.XORG-SERVER.DAMAGEEXT]DAMAGEEXTINT.H
 DAMAGEEXT_BUILD_RULES = [.VMS-SUPPORT]CONFIG.MMS, [.VMS-SUPPORT]COMPILE.COM, -
     [.VMS-SUPPORT]HEADERS.MMS, -

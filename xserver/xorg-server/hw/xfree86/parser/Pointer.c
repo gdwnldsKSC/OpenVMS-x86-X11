@@ -1,17 +1,17 @@
-/* 
- * 
+/*
+ *
  * Copyright (c) 1997  Metro Link Incorporated
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
+ * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -19,11 +19,11 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  * Except as contained in this notice, the name of the Metro Link shall not be
  * used in advertising or otherwise to promote the sale, use or other dealings
  * in this Software without prior written authorization from Metro Link.
- * 
+ *
  */
 /*
  * Copyright (c) 1997-2003 by The XFree86 Project, Inc.
@@ -52,8 +52,6 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
-/* View/edit this file with tab stops set to 4 */
-
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
 #endif
@@ -63,9 +61,8 @@
 #include "Configint.h"
 #include "Xprintf.h"
 
-extern LexRec val;
 
-static xf86ConfigSymTabRec PointerTab[] = {
+static const xf86ConfigSymTabRec PointerTab[] = {
     {PROTOCOL, "protocol"},
     {EMULATE3, "emulate3buttons"},
     {EM3TIMEOUT, "emulate3timeout"},
@@ -86,7 +83,7 @@ static xf86ConfigSymTabRec PointerTab[] = {
     {-1, ""},
 };
 
-static xf86ConfigSymTabRec ZMapTab[] = {
+static const xf86ConfigSymTabRec ZMapTab[] = {
     {XAXIS, "x"},
     {YAXIS, "y"},
     {-1, ""},
@@ -106,19 +103,21 @@ xf86parsePointerSection(void)
         while ((token = xf86getToken(PointerTab)) != ENDSECTION) {
         switch (token) {
         case COMMENT:
-            ptr->inp_comment = xf86addComment(ptr->inp_comment, val.str);
+            ptr->inp_comment = xf86addComment(ptr->inp_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
             break;
         case PROTOCOL:
             if (xf86getSubToken(&(ptr->inp_comment)) != STRING)
                 Error(QUOTE_MSG, "Protocol");
             ptr->inp_option_lst = xf86addNewOption(ptr->inp_option_lst,
-                                                   strdup("Protocol"), val.str);
+                                                   strdup("Protocol"), xf86_lex_val.str);
             break;
         case PDEVICE:
             if (xf86getSubToken(&(ptr->inp_comment)) != STRING)
                 Error(QUOTE_MSG, "Device");
             ptr->inp_option_lst = xf86addNewOption(ptr->inp_option_lst,
-                                                   strdup("Device"), val.str);
+                                                   strdup("Device"), xf86_lex_val.str);
             break;
         case EMULATE3:
             ptr->inp_option_lst = xf86addNewOption(ptr->inp_option_lst,
@@ -126,9 +125,9 @@ xf86parsePointerSection(void)
                                                    NULL);
             break;
         case EM3TIMEOUT:
-            if (xf86getSubToken(&(ptr->inp_comment)) != NUMBER || val.num < 0)
+            if (xf86getSubToken(&(ptr->inp_comment)) != NUMBER || xf86_lex_val.num < 0)
                 Error(POSITIVE_INT_MSG, "Emulate3Timeout");
-            s = xf86uLongToString(val.num);
+            s = xf86uLongToString(xf86_lex_val.num);
             ptr->inp_option_lst = xf86addNewOption(ptr->inp_option_lst,
                                                    strdup("Emulate3Timeout"),
                                                    s);
@@ -138,30 +137,30 @@ xf86parsePointerSection(void)
                                                    strdup("ChordMiddle"), NULL);
             break;
         case PBUTTONS:
-            if (xf86getSubToken(&(ptr->inp_comment)) != NUMBER || val.num < 0)
+            if (xf86getSubToken(&(ptr->inp_comment)) != NUMBER || xf86_lex_val.num < 0)
                 Error(POSITIVE_INT_MSG, "Buttons");
-            s = xf86uLongToString(val.num);
+            s = xf86uLongToString(xf86_lex_val.num);
             ptr->inp_option_lst = xf86addNewOption(ptr->inp_option_lst,
                                                    strdup("Buttons"), s);
             break;
         case BAUDRATE:
-            if (xf86getSubToken(&(ptr->inp_comment)) != NUMBER || val.num < 0)
+            if (xf86getSubToken(&(ptr->inp_comment)) != NUMBER || xf86_lex_val.num < 0)
                 Error(POSITIVE_INT_MSG, "BaudRate");
-            s = xf86uLongToString(val.num);
+            s = xf86uLongToString(xf86_lex_val.num);
             ptr->inp_option_lst = xf86addNewOption(ptr->inp_option_lst,
                                                    strdup("BaudRate"), s);
             break;
         case SAMPLERATE:
-            if (xf86getSubToken(&(ptr->inp_comment)) != NUMBER || val.num < 0)
+            if (xf86getSubToken(&(ptr->inp_comment)) != NUMBER || xf86_lex_val.num < 0)
                 Error(POSITIVE_INT_MSG, "SampleRate");
-            s = xf86uLongToString(val.num);
+            s = xf86uLongToString(xf86_lex_val.num);
             ptr->inp_option_lst = xf86addNewOption(ptr->inp_option_lst,
                                                    strdup("SampleRate"), s);
             break;
         case PRESOLUTION:
-            if (xf86getSubToken(&(ptr->inp_comment)) != NUMBER || val.num < 0)
+            if (xf86getSubToken(&(ptr->inp_comment)) != NUMBER || xf86_lex_val.num < 0)
                 Error(POSITIVE_INT_MSG, "Resolution");
-            s = xf86uLongToString(val.num);
+            s = xf86uLongToString(xf86_lex_val.num);
             ptr->inp_option_lst = xf86addNewOption(ptr->inp_option_lst,
                                                    strdup("Resolution"), s);
             break;
@@ -176,14 +175,14 @@ xf86parsePointerSection(void)
         case ZAXISMAPPING:
             switch (xf86getToken(ZMapTab)) {
             case NUMBER:
-                if (val.num < 0)
+                if (xf86_lex_val.num < 0)
                     Error(ZAXISMAPPING_MSG);
-                val1 = val.num;
+                val1 = xf86_lex_val.num;
                 if (xf86getSubToken(&(ptr->inp_comment)) != NUMBER ||
-                    val.num < 0) {
+                    xf86_lex_val.num < 0) {
                     Error(ZAXISMAPPING_MSG);
                 }
-                if (asprintf(&s, "%lu %u", val1, val.num) == -1)
+                if (asprintf(&s, "%lu %u", val1, xf86_lex_val.num) == -1)
                     s = NULL;
                 break;
             case XAXIS:

@@ -28,7 +28,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <pixman-config.h>
 #endif
 #include <stdlib.h>
 #include <math.h>
@@ -66,15 +66,18 @@ fdot (double x1,
     return x1 * x2 + y1 * y2 + z1 * z2;
 }
 
-static uint32_t
-radial_compute_color (double                    a,
-		      double                    b,
-		      double                    c,
-		      double                    inva,
-		      double                    dr,
-		      double                    mindr,
-		      pixman_gradient_walker_t *walker,
-		      pixman_repeat_t           repeat)
+static void
+radial_write_color (double                         a,
+		    double                         b,
+		    double                         c,
+		    double                         inva,
+		    double                         dr,
+		    double                         mindr,
+		    pixman_gradient_walker_t      *walker,
+		    pixman_repeat_t                repeat,
+		    int                            Bpp,
+		    pixman_gradient_walker_write_t write_pixel,
+		    uint32_t                      *buffer)
 {
     /*
      * In this function error propagation can lead to bad results:
@@ -99,21 +102,31 @@ radial_compute_color (double                    a,
 	double t;
 
 	if (b == 0)
-	    return 0;
+	{
+	    memset (buffer, 0, Bpp);
+	    return;
+	}
 
 	t = pixman_fixed_1 / 2 * c / b;
 	if (repeat == PIXMAN_REPEAT_NONE)
 	{
 	    if (0 <= t && t <= pixman_fixed_1)
-		return _pixman_gradient_walker_pixel (walker, t);
+	    {
+		write_pixel (walker, t, buffer);
+		return;
+	    }
 	}
 	else
 	{
-	    if (t * dr > mindr)
-		return _pixman_gradient_walker_pixel (walker, t);
+	    if (t * dr >= mindr)
+	    {
+		write_pixel (walker, t, buffer);
+		return;
+	    }
 	}
 
-	return 0;
+	memset (buffer, 0, Bpp);
+	return;
     }
 
     discr = fdot (b, a, 0, b, -c, 0);
@@ -139,24 +152,40 @@ radial_compute_color (double                    a,
 	if (repeat == PIXMAN_REPEAT_NONE)
 	{
 	    if (0 <= t0 && t0 <= pixman_fixed_1)
-		return _pixman_gradient_walker_pixel (walker, t0);
+	    {
+		write_pixel (walker, t0, buffer);
+		return;
+	    }
 	    else if (0 <= t1 && t1 <= pixman_fixed_1)
-		return _pixman_gradient_walker_pixel (walker, t1);
+	    {
+		write_pixel (walker, t1, buffer);
+		return;
+           }
 	}
 	else
 	{
-	    if (t0 * dr > mindr)
-		return _pixman_gradient_walker_pixel (walker, t0);
-	    else if (t1 * dr > mindr)
-		return _pixman_gradient_walker_pixel (walker, t1);
+	    if (t0 * dr >= mindr)
+	    {
+		write_pixel (walker, t0, buffer);
+		return;
+	    }
+	    else if (t1 * dr >= mindr)
+	    {
+		write_pixel (walker, t1, buffer);
+		return;
+	    }
 	}
     }
 
-    return 0;
+    memset (buffer, 0, Bpp);
+    return;
 }
 
 static uint32_t *
-radial_get_scanline_narrow (pixman_iter_t *iter, const uint32_t *mask)
+radial_get_scanline (pixman_iter_t                 *iter,
+		     const uint32_t                *mask,
+		     int                            Bpp,
+		     pixman_gradient_walker_write_t write_pixel)
 {
     /*
      * Implementation of radial gradients following the PDF specification.
@@ -247,7 +276,7 @@ radial_get_scanline_narrow (pixman_iter_t *iter, const uint32_t *mask)
 
     gradient_t *gradient = (gradient_t *)image;
     radial_gradient_t *radial = (radial_gradient_t *)image;
-    uint32_t *end = buffer + width;
+    uint32_t *end = buffer + width * (Bpp / 4);
     pixman_gradient_walker_t walker;
     pixman_vector_t v, unit;
 
@@ -330,18 +359,21 @@ radial_get_scanline_narrow (pixman_iter_t *iter, const uint32_t *mask)
 	{
 	    if (!mask || *mask++)
 	    {
-		*buffer = radial_compute_color (radial->a, b, c,
-						radial->inva,
-						radial->delta.radius,
-						radial->mindr,
-						&walker,
-						image->common.repeat);
+		radial_write_color (radial->a, b, c,
+				    radial->inva,
+				    radial->delta.radius,
+				    radial->mindr,
+				    &walker,
+				    image->common.repeat,
+				    Bpp,
+				    write_pixel,
+				    buffer);
 	    }
 
 	    b += db;
 	    c += dc;
 	    dc += ddc;
-	    ++buffer;
+	    buffer += (Bpp / 4);
 	}
     }
     else
@@ -375,20 +407,23 @@ radial_get_scanline_narrow (pixman_iter_t *iter, const uint32_t *mask)
 			      pdx, pdy, radial->c1.radius);
 		    /*  / pixman_fixed_1 / pixman_fixed_1 */
 
-		    *buffer = radial_compute_color (radial->a, b, c,
-						    radial->inva,
-						    radial->delta.radius,
-						    radial->mindr,
-						    &walker,
-						    image->common.repeat);
+		    radial_write_color (radial->a, b, c,
+					radial->inva,
+					radial->delta.radius,
+					radial->mindr,
+					&walker,
+					image->common.repeat,
+					Bpp,
+					write_pixel,
+					buffer);
 		}
 		else
 		{
-		    *buffer = 0;
+		    memset (buffer, 0, Bpp);
 		}
 	    }
 
-	    ++buffer;
+	    buffer += (Bpp / 4);
 
 	    v.vector[0] += unit.vector[0];
 	    v.vector[1] += unit.vector[1];
@@ -401,31 +436,35 @@ radial_get_scanline_narrow (pixman_iter_t *iter, const uint32_t *mask)
 }
 
 static uint32_t *
+radial_get_scanline_narrow (pixman_iter_t *iter, const uint32_t *mask)
+{
+    return radial_get_scanline (iter, mask, 4,
+				_pixman_gradient_walker_write_narrow);
+}
+
+static uint32_t *
 radial_get_scanline_wide (pixman_iter_t *iter, const uint32_t *mask)
 {
-    uint32_t *buffer = radial_get_scanline_narrow (iter, NULL);
-
-    pixman_expand ((uint64_t *)buffer, buffer, PIXMAN_a8r8g8b8, iter->width);
-
-    return buffer;
+    return radial_get_scanline (iter, NULL, 16,
+				_pixman_gradient_walker_write_wide);
 }
 
 void
 _pixman_radial_gradient_iter_init (pixman_image_t *image, pixman_iter_t *iter)
 {
-    if (iter->flags & ITER_NARROW)
+    if (iter->iter_flags & ITER_NARROW)
 	iter->get_scanline = radial_get_scanline_narrow;
     else
 	iter->get_scanline = radial_get_scanline_wide;
 }
 
 PIXMAN_EXPORT pixman_image_t *
-pixman_image_create_radial_gradient (pixman_point_fixed_t *        inner,
-                                     pixman_point_fixed_t *        outer,
-                                     pixman_fixed_t                inner_radius,
-                                     pixman_fixed_t                outer_radius,
-                                     const pixman_gradient_stop_t *stops,
-                                     int                           n_stops)
+pixman_image_create_radial_gradient (const pixman_point_fixed_t *  inner,
+				     const pixman_point_fixed_t *  outer,
+				     pixman_fixed_t                inner_radius,
+				     pixman_fixed_t                outer_radius,
+				     const pixman_gradient_stop_t *stops,
+				     int                           n_stops)
 {
     pixman_image_t *image;
     radial_gradient_t *radial;

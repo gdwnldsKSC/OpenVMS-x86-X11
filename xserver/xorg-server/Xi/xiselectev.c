@@ -37,6 +37,59 @@
 #include "xiselectev.h"
 
 /**
+ * Ruleset:
+ * - if A has XIAllDevices, B may select on device X
+ * - If A has XIAllDevices, B may select on XIAllMasterDevices
+ * - If A has XIAllMasterDevices, B may select on device X
+ * - If A has XIAllMasterDevices, B may select on XIAllDevices
+ * - if A has device X, B may select on XIAllDevices/XIAllMasterDevices
+ */
+static int
+check_for_touch_selection_conflicts(ClientPtr B, WindowPtr win, int deviceid,
+                                    int evtype)
+{
+    OtherInputMasks *inputMasks = wOtherInputMasks(win);
+    InputClients *A = NULL;
+
+    if (inputMasks)
+        A = inputMasks->inputClients;
+    for (; A; A = A->next) {
+        DeviceIntPtr tmp;
+
+        if (CLIENT_ID(A->resource) == B->index)
+            continue;
+
+        if (deviceid == XIAllDevices)
+            tmp = inputInfo.all_devices;
+        else if (deviceid == XIAllMasterDevices)
+            tmp = inputInfo.all_master_devices;
+        else
+            dixLookupDevice(&tmp, deviceid, serverClient, DixReadAccess);
+        if (!tmp)
+            return BadImplementation;       /* this shouldn't happen */
+
+        /* A has XIAllDevices */
+        if (xi2mask_isset_for_device(A->xi2mask, inputInfo.all_devices, evtype)) {
+            if (deviceid == XIAllDevices)
+                return BadAccess;
+        }
+
+        /* A has XIAllMasterDevices */
+        if (xi2mask_isset_for_device(A->xi2mask, inputInfo.all_master_devices, evtype)) {
+            if (deviceid == XIAllMasterDevices)
+                return BadAccess;
+        }
+
+        /* A has this device */
+        if (xi2mask_isset_for_device(A->xi2mask, tmp, evtype))
+            return BadAccess;
+    }
+
+    return Success;
+}
+
+
+/**
  * Check the given mask (in len bytes) for invalid mask bits.
  * Invalid mask bits are any bits above XI2LastEvent.
  *
@@ -59,10 +112,11 @@ XICheckInvalidMaskBits(ClientPtr client, unsigned char *mask, int len)
     return Success;
 }
 
-int
+int _X_COLD
 SProcXISelectEvents(ClientPtr client)
 {
     int i;
+    int len;
     xXIEventMask *evmask;
 
     REQUEST(xXISelectEventsReq);
@@ -71,10 +125,17 @@ SProcXISelectEvents(ClientPtr client)
     swapl(&stuff->win);
     swaps(&stuff->num_masks);
 
+    len = stuff->length - bytes_to_int32(sizeof(xXISelectEventsReq));
     evmask = (xXIEventMask *) &stuff[1];
     for (i = 0; i < stuff->num_masks; i++) {
+        if (len < bytes_to_int32(sizeof(xXIEventMask)))
+            return BadLength;
+        len -= bytes_to_int32(sizeof(xXIEventMask));
         swaps(&evmask->deviceid);
         swaps(&evmask->mask_len);
+        if (len < evmask->mask_len)
+            return BadLength;
+        len -= evmask->mask_len;
         evmask =
             (xXIEventMask *) (((char *) &evmask[1]) + evmask->mask_len * 4);
     }
@@ -165,29 +226,65 @@ ProcXISelectEvents(ClientPtr client)
                 return BadValue;
             }
 
-            /* Only one client per window may select for touch events on the
-             * same devices, including master devices.
+            /* All three pinch gesture events must be selected at once */
+            if ((BitIsOn(bits, XI_GesturePinchBegin) ||
+                 BitIsOn(bits, XI_GesturePinchUpdate) ||
+                 BitIsOn(bits, XI_GesturePinchEnd)) &&
+                (!BitIsOn(bits, XI_GesturePinchBegin) ||
+                 !BitIsOn(bits, XI_GesturePinchUpdate) ||
+                 !BitIsOn(bits, XI_GesturePinchEnd))) {
+                client->errorValue = XI_GesturePinchBegin;
+                return BadValue;
+            }
+
+            /* All three swipe gesture events must be selected at once. Note
+               that the XI_GestureSwipeEnd is at index 32 which is on the next
+               4-byte mask element */
+            if (evmask->mask_len == 1 &&
+                (BitIsOn(bits, XI_GestureSwipeBegin) ||
+                 BitIsOn(bits, XI_GestureSwipeUpdate)))
+            {
+                client->errorValue = XI_GestureSwipeBegin;
+                return BadValue;
+            }
+
+            if (evmask->mask_len >= 2 &&
+                (BitIsOn(bits, XI_GestureSwipeBegin) ||
+                 BitIsOn(bits, XI_GestureSwipeUpdate) ||
+                 BitIsOn(bits, XI_GestureSwipeEnd)) &&
+                (!BitIsOn(bits, XI_GestureSwipeBegin) ||
+                 !BitIsOn(bits, XI_GestureSwipeUpdate) ||
+                 !BitIsOn(bits, XI_GestureSwipeEnd))) {
+                client->errorValue = XI_GestureSwipeBegin;
+                return BadValue;
+            }
+
+            /* Only one client per window may select for touch or gesture events
+             * on the same devices, including master devices.
              * XXX: This breaks if a device goes from floating to attached. */
             if (BitIsOn(bits, XI_TouchBegin)) {
-                OtherInputMasks *inputMasks = wOtherInputMasks(win);
-                InputClients *iclient = NULL;
-
-                if (inputMasks)
-                    iclient = inputMasks->inputClients;
-                for (; iclient; iclient = iclient->next) {
-                    DeviceIntPtr dummy;
-
-                    if (CLIENT_ID(iclient->resource) == client->index)
-                        continue;
-
-                    dixLookupDevice(&dummy, evmask->deviceid, serverClient,
-                                    DixReadAccess);
-                    if (!dummy)
-                        return BadImplementation;       /* this shouldn't happen */
-
-                    if (xi2mask_isset(iclient->xi2mask, dummy, XI_TouchBegin))
-                        return BadAccess;
-                }
+                rc = check_for_touch_selection_conflicts(client,
+                                                         win,
+                                                         evmask->deviceid,
+                                                         XI_TouchBegin);
+                if (rc != Success)
+                    return rc;
+            }
+            if (BitIsOn(bits, XI_GesturePinchBegin)) {
+                rc = check_for_touch_selection_conflicts(client,
+                                                         win,
+                                                         evmask->deviceid,
+                                                         XI_GesturePinchBegin);
+                if (rc != Success)
+                    return rc;
+            }
+            if (BitIsOn(bits, XI_GestureSwipeBegin)) {
+                rc = check_for_touch_selection_conflicts(client,
+                                                         win,
+                                                         evmask->deviceid,
+                                                         XI_GestureSwipeBegin);
+                if (rc != Success)
+                    return rc;
             }
         }
 
@@ -230,7 +327,7 @@ ProcXISelectEvents(ClientPtr client)
     return Success;
 }
 
-int
+int _X_COLD
 SProcXIGetSelectedEvents(ClientPtr client)
 {
     REQUEST(xXIGetSelectedEventsReq);
@@ -252,6 +349,7 @@ ProcXIGetSelectedEvents(ClientPtr client)
     InputClientsPtr others = NULL;
     xXIEventMask *evmask = NULL;
     DeviceIntPtr dev;
+    uint32_t length;
 
     REQUEST(xXIGetSelectedEventsReq);
     REQUEST_SIZE_MATCH(xXIGetSelectedEventsReq);
@@ -260,11 +358,13 @@ ProcXIGetSelectedEvents(ClientPtr client)
     if (rc != Success)
         return rc;
 
-    reply.repType = X_Reply;
-    reply.RepType = X_XIGetSelectedEvents;
-    reply.length = 0;
-    reply.sequenceNumber = client->sequence;
-    reply.num_masks = 0;
+    reply = (xXIGetSelectedEventsReply) {
+        .repType = X_Reply,
+        .RepType = X_XIGetSelectedEvents,
+        .sequenceNumber = client->sequence,
+        .length = 0,
+        .num_masks = 0
+    };
 
     masks = wOtherInputMasks(win);
     if (masks) {
@@ -319,10 +419,12 @@ ProcXIGetSelectedEvents(ClientPtr client)
         }
     }
 
+    /* save the value before SRepXIGetSelectedEvents swaps it */
+    length = reply.length;
     WriteReplyToClient(client, sizeof(xXIGetSelectedEventsReply), &reply);
 
     if (reply.num_masks)
-        WriteToClient(client, reply.length * 4, buffer);
+        WriteToClient(client, length * 4, buffer);
 
     free(buffer);
     return Success;
@@ -335,5 +437,5 @@ SRepXIGetSelectedEvents(ClientPtr client,
     swaps(&rep->sequenceNumber);
     swapl(&rep->length);
     swaps(&rep->num_masks);
-    WriteToClient(client, len, (char *) rep);
+    WriteToClient(client, len, rep);
 }

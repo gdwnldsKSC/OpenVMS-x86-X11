@@ -35,9 +35,6 @@ from The Open Group.
 #include "winmsg.h"
 #include "winconfig.h"
 #include "winprefs.h"
-#ifdef XWIN_CLIPBOARD
-#include "X11/Xlocale.h"
-#endif
 #ifdef DPMSExtension
 #include "dpmsproc.h"
 #endif
@@ -48,41 +45,35 @@ from The Open Group.
 #include "xkbsrv.h"
 #endif
 #ifdef RELOCATE_PROJECTROOT
+#pragma push_macro("Status")
+#undef Status
+#define Status wStatus
 #include <shlobj.h>
+#pragma pop_macro("Status")
 typedef WINAPI HRESULT(*SHGETFOLDERPATHPROC) (HWND hwndOwner,
                                               int nFolder,
                                               HANDLE hToken,
                                               DWORD dwFlags, LPTSTR pszPath);
 #endif
 
+#include "winmonitors.h"
+#include "nonsdk_extinit.h"
+#include "pseudoramiX/pseudoramiX.h"
+
+#include "glx_extinit.h"
+#ifdef XWIN_GLX_WINDOWS
+#include "glx/glwindows.h"
+#include "dri/windowsdri.h"
+#endif
+#include "winauth.h"
+
 /*
  * References to external symbols
  */
-#ifdef XWIN_CLIPBOARD
-extern Bool g_fUnicodeClipboard;
-extern Bool g_fClipboardLaunched;
-extern Bool g_fClipboardStarted;
-extern pthread_t g_ptClipboardProc;
-extern HWND g_hwndClipboard;
-extern Bool g_fClipboard;
-#endif
 
 /*
  * Function prototypes
  */
-
-#ifdef XWIN_CLIPBOARD
-static void
- winClipboardShutdown(void);
-#endif
-
-#if defined(DDXOSVERRORF)
-void
- OsVendorVErrorF(const char *pszFormat, va_list va_args);
-#endif
-
-static Bool
- winCheckDisplayNumber(void);
 
 void
  winLogCommandLine(int argc, char *argv[]);
@@ -120,35 +111,22 @@ static PixmapFormatRec g_PixmapFormats[] = {
     {32, 32, BITMAP_SCANLINE_PAD}
 };
 
-const int NUMFORMATS = sizeof(g_PixmapFormats) / sizeof(g_PixmapFormats[0]);
+static Bool noDriExtension;
 
-#ifdef XWIN_CLIPBOARD
-static void
-winClipboardShutdown(void)
-{
-    /* Close down clipboard resources */
-    if (g_fClipboard && g_fClipboardLaunched && g_fClipboardStarted) {
-        /* Synchronously destroy the clipboard window */
-        if (g_hwndClipboard != NULL) {
-            SendMessage(g_hwndClipboard, WM_DESTROY, 0, 0);
-            /* NOTE: g_hwndClipboard is set to NULL in winclipboardthread.c */
-        }
-        else
-            return;
-
-        /* Wait for the clipboard thread to exit */
-        pthread_join(g_ptClipboardProc, NULL);
-
-        g_fClipboardLaunched = FALSE;
-        g_fClipboardStarted = FALSE;
-
-        winDebug("winClipboardShutdown - Clipboard thread has exited.\n");
-    }
-}
+static const ExtensionModule xwinExtensions[] = {
+#ifdef GLXEXT
+#ifdef XWIN_WINDOWS_DRI
+  { WindowsDRIExtensionInit, "Windows-DRI", &noDriExtension },
 #endif
+#endif
+};
 
-void
-ddxPushProviders(void)
+/*
+ * XwinExtensionInit
+ * Initialises Xwin-specific extensions.
+ */
+static
+void XwinExtensionInit(void)
 {
 #ifdef XWIN_GLX_WINDOWS
     if (g_fNativeGl) {
@@ -156,12 +134,14 @@ ddxPushProviders(void)
         glxWinPushNativeProvider();
     }
 #endif
+
+    LoadExtensionList(xwinExtensions, ARRAY_SIZE(xwinExtensions), TRUE);
 }
 
 #if defined(DDXBEFORERESET)
 /*
  * Called right before KillAllClients when the server is going to reset,
- * allows us to shutdown our seperate threads cleanly.
+ * allows us to shutdown our separate threads cleanly.
  */
 
 void
@@ -169,11 +149,37 @@ ddxBeforeReset(void)
 {
     winDebug("ddxBeforeReset - Hello\n");
 
-#ifdef XWIN_CLIPBOARD
     winClipboardShutdown();
-#endif
 }
 #endif
+
+#if INPUTTHREAD
+/** This function is called in Xserver/os/inputthread.c when starting
+    the input thread. */
+void
+ddxInputThreadInit(void)
+{
+}
+#endif
+
+int
+main(int argc, char *argv[], char *envp[])
+{
+    int iReturn;
+
+    /* Create & acquire the termination mutex */
+    iReturn = pthread_mutex_init(&g_pmTerminating, NULL);
+    if (iReturn != 0) {
+        ErrorF("ddxMain - pthread_mutex_init () failed: %d\n", iReturn);
+    }
+
+    iReturn = pthread_mutex_lock(&g_pmTerminating);
+    if (iReturn != 0) {
+        ErrorF("ddxMain - pthread_mutex_lock () failed: %d\n", iReturn);
+    }
+
+    return dix_main(argc, argv, envp);
+}
 
 /* See Porting Layer Definition - p. 57 */
 void
@@ -192,10 +198,11 @@ ddxGiveUp(enum ExitCode error)
             winDeleteNotifyIcon(winGetScreenPriv(g_ScreenInfo[i].pScreen));
     }
 
-#ifdef XWIN_MULTIWINDOW
+    /* Unload libraries for taskbar grouping */
+    winPropertyStoreDestroy();
+
     /* Notify the worker threads we're exiting */
     winDeinitMultiWindowWM();
-#endif
 
 #ifdef HAS_DEVWINDOWS
     /* Close our handle to our message queue */
@@ -209,7 +216,7 @@ ddxGiveUp(enum ExitCode error)
 #endif
 
     if (!g_fLogInited) {
-        g_pszLogFile = LogInit(g_pszLogFile, NULL);
+        g_pszLogFile = LogInit(g_pszLogFile, ".old");
         g_fLogInited = TRUE;
     }
     LogClose(error);
@@ -229,16 +236,19 @@ ddxGiveUp(enum ExitCode error)
 
     /* Tell Windows that we want to end the app */
     PostQuitMessage(0);
-}
 
-/* See Porting Layer Definition - p. 57 */
-void
-AbortDDX(enum ExitCode error)
-{
-#if CYGDEBUG
-    winDebug("AbortDDX\n");
-#endif
-    ddxGiveUp(error);
+    {
+        int iReturn = pthread_mutex_unlock(&g_pmTerminating);
+
+        winDebug("ddxGiveUp - Releasing termination mutex\n");
+
+        if (iReturn != 0) {
+            ErrorF("winMsgWindowProc - pthread_mutex_unlock () failed: %d\n",
+                   iReturn);
+        }
+    }
+
+    winDebug("ddxGiveUp - End\n");
 }
 
 #ifdef __CYGWIN__
@@ -283,11 +293,11 @@ winCheckMount(void)
     }
 
     while ((ent = getmntent(mnt)) != NULL) {
-        BOOL system = (winCheckMntOpt(ent, "user") != NULL);
+        BOOL sys = (winCheckMntOpt(ent, "user") != NULL);
         BOOL root = (strcmp(ent->mnt_dir, "/") == 0);
         BOOL tmp = (strcmp(ent->mnt_dir, "/tmp") == 0);
 
-        if (system) {
+        if (sys) {
             if (root)
                 curlevel = sys_root;
             else if (tmp)
@@ -616,12 +626,13 @@ OsVendorInit(void)
 
     if (!g_fLogInited) {
         /* keep this order. If LogInit fails it calls Abort which then calls
-         * ddxGiveUp where LogInit is called again and creates an infinite 
-         * recursion. If we set g_fLogInited to TRUE before the init we 
-         * avoid the second call 
+         * ddxGiveUp where LogInit is called again and creates an infinite
+         * recursion. If we set g_fLogInited to TRUE before the init we
+         * avoid the second call
          */
         g_fLogInited = TRUE;
-        g_pszLogFile = LogInit(g_pszLogFile, NULL);
+        g_pszLogFile = LogInit(g_pszLogFile, ".old");
+
     }
     LogSetParameter(XLOG_FLUSH, 1);
     LogSetParameter(XLOG_VERBOSITY, g_iLogVerbose);
@@ -675,6 +686,20 @@ OsVendorInit(void)
             }
         }
     }
+
+    /* Work out what the default resize setting should be, and apply it if it
+     was not explicitly specified */
+    {
+        int j;
+        for (j = 0; j < g_iNumScreens; j++) {
+            if (g_ScreenInfo[j].iResizeMode == resizeDefault) {
+                if (g_ScreenInfo[j].fFullScreen)
+                    g_ScreenInfo[j].iResizeMode = resizeNotAllowed;
+                else
+                    g_ScreenInfo[j].iResizeMode = resizeWithRandr;
+                }
+        }
+    }
 }
 
 static void
@@ -685,15 +710,20 @@ winUseMsg(void)
     ErrorF(EXECUTABLE_NAME " Device Dependent Usage:\n");
     ErrorF("\n");
 
-#ifdef XWIN_CLIPBOARD
     ErrorF("-[no]clipboard\n"
            "\tEnable [disable] the clipboard integration. Default is enabled.\n");
-#endif
 
     ErrorF("-clipupdates num_boxes\n"
            "\tUse a clipping region to constrain shadow update blits to\n"
            "\tthe updated region when num_boxes, or more, are in the\n"
            "\tupdated region.\n");
+
+    ErrorF("-[no]compositealpha\n"
+           "\tX windows with per-pixel alpha are composited into the Windows desktop.\n");
+    ErrorF("-[no]compositewm\n"
+           "\tUse the Composite extension to keep a bitmap image of each top-level\n"
+           "\tX window, so window contents which are occluded show correctly in\n"
+           "\ttask bar and task switcher previews.\n");
 
 #ifdef XWIN_XF86CONFIG
     ErrorF("-config\n" "\tSpecify a configuration file.\n");
@@ -721,23 +751,17 @@ winUseMsg(void)
     ErrorF("-engine engine_type_id\n"
            "\tOverride the server's automatically selected engine type:\n"
            "\t\t1 - Shadow GDI\n"
-           "\t\t2 - Shadow DirectDraw\n"
            "\t\t4 - Shadow DirectDraw4 Non-Locking\n"
-#ifdef XWIN_PRIMARYFB
-           "\t\t8 - Primary DirectDraw - obsolete\n"
-#endif
-#ifdef XWIN_NATIVEGDI
-           "\t\t16 - Native GDI - experimental\n"
-#endif
         );
 
     ErrorF("-fullscreen\n" "\tRun the server in fullscreen mode.\n");
 
-    ErrorF("-ignoreinput\n" "\tIgnore keyboard and mouse input.\n");
+    ErrorF("-[no]hostintitle\n"
+           "\tIn multiwindow mode, add remote host names to window titles.\n");
 
-#ifdef XWIN_MULTIWINDOWEXTWM
-    ErrorF("-internalwm\n" "\tRun the internal window manager.\n");
-#endif
+    ErrorF("-icon icon_specifier\n" "\tSet screen window icon in windowed mode.\n");
+
+    ErrorF("-ignoreinput\n" "\tIgnore keyboard and mouse input.\n");
 
 #ifdef XWIN_XF86CONFIG
     ErrorF("-keyboard\n"
@@ -768,32 +792,24 @@ winUseMsg(void)
            "\tUse the entire virtual screen if multiple\n"
            "\tmonitors are present.\n");
 
-#ifdef XWIN_MULTIWINDOW
     ErrorF("-multiwindow\n" "\tRun the server in multi-window mode.\n");
-#endif
-
-#ifdef XWIN_MULTIWINDOWEXTWM
-    ErrorF("-mwextwm\n"
-           "\tRun the server in multi-window external window manager mode.\n");
-#endif
 
     ErrorF("-nodecoration\n"
            "\tDo not draw a window border, title bar, etc.  Windowed\n"
            "\tmode only.\n");
 
-#ifdef XWIN_CLIPBOARD
-    ErrorF("-nounicodeclipboard\n"
-           "\tDo not use Unicode clipboard even if on a NT-based platform.\n");
-#endif
+    ErrorF("-[no]primary\n"
+           "\tWhen clipboard integration is enabled, map the X11 PRIMARY selection\n"
+           "\tto the Windows clipboard. Default is enabled.\n");
 
     ErrorF("-refresh rate_in_Hz\n"
            "\tSpecify an optional refresh rate to use in fullscreen mode\n"
            "\twith a DirectDraw engine.\n");
 
-    ErrorF("-resize=none|scrollbars|randr"
+    ErrorF("-resize=none|scrollbars|randr\n"
            "\tIn windowed mode, [don't] allow resizing of the window. 'scrollbars'\n"
            "\tmode gives the window scrollbars as needed, 'randr' mode uses the RANR\n"
-           "\textension to resize the X screen.\n");
+           "\textension to resize the X screen.  'randr' is the default.\n");
 
     ErrorF("-rootless\n" "\tRun the server in rootless mode.\n");
 
@@ -806,11 +822,6 @@ winUseMsg(void)
            "\t -screen 0 800x600+100+100@2 ; 2nd monitor offset 100,100 size 800x600\n"
            "\t -screen 0 1024x768@3        ; 3rd monitor size 1024x768\n"
            "\t -screen 0 @1 ; on 1st monitor using its full resolution (the default)\n");
-
-    ErrorF("-silent-dup-error\n"
-           "\tIf another instance of " EXECUTABLE_NAME
-           " with the same display number is running\n"
-           "\texit silently and don't display any error message.\n");
 
     ErrorF("-swcursor\n"
            "\tDisable the usage of the Windows cursor and use the X11 software\n"
@@ -826,7 +837,7 @@ winUseMsg(void)
 
 #ifdef XWIN_GLX_WINDOWS
     ErrorF("-[no]wgl\n"
-           "\tEnable the GLX extension to use the native Windows WGL interface for accelerated OpenGL\n");
+           "\tEnable the GLX extension to use the native Windows WGL interface for hardware-accelerated OpenGL\n");
 #endif
 
     ErrorF("-[no]winkill\n" "\tAlt+F4 exits the X Server.\n");
@@ -860,7 +871,7 @@ ddxUseMsg(void)
 
     /* Log file will not be opened for UseMsg unless we open it now */
     if (!g_fLogInited) {
-        g_pszLogFile = LogInit(g_pszLogFile, NULL);
+        g_pszLogFile = LogInit(g_pszLogFile, ".old");
         g_fLogInited = TRUE;
     }
     LogClose(EXIT_NO_ERROR);
@@ -876,14 +887,17 @@ ddxUseMsg(void)
 /* See Porting Layer Definition - p. 20 */
 /*
  * Do any global initialization, then initialize each screen.
- * 
+ *
  * NOTE: We use ddxProcessArgument, so we don't need to touch argc and argv
  */
 
 void
-InitOutput(ScreenInfo * screenInfo, int argc, char *argv[])
+InitOutput(ScreenInfo * pScreenInfo, int argc, char *argv[])
 {
     int i;
+
+    if (serverGeneration == 1)
+        XwinExtensionInit();
 
     /* Log the command line */
     winLogCommandLine(argc, argv);
@@ -896,14 +910,6 @@ InitOutput(ScreenInfo * screenInfo, int argc, char *argv[])
     if (serverGeneration == 1 && !winValidateArgs()) {
         FatalError("InitOutput - Invalid command-line arguments found.  "
                    "Exiting.\n");
-    }
-
-    /* Check for duplicate invocation on same display number. */
-    if (serverGeneration == 1 && !winCheckDisplayNumber()) {
-        if (g_fSilentDupError)
-            g_fSilentFatalError = TRUE;
-        FatalError("InitOutput - Duplicate invocation on display "
-                   "number: %s.  Exiting.\n", display);
     }
 
 #ifdef XWIN_XF86CONFIG
@@ -921,15 +927,15 @@ InitOutput(ScreenInfo * screenInfo, int argc, char *argv[])
     LoadPreferences();
 
     /* Setup global screen info parameters */
-    screenInfo->imageByteOrder = IMAGE_BYTE_ORDER;
-    screenInfo->bitmapScanlinePad = BITMAP_SCANLINE_PAD;
-    screenInfo->bitmapScanlineUnit = BITMAP_SCANLINE_UNIT;
-    screenInfo->bitmapBitOrder = BITMAP_BIT_ORDER;
-    screenInfo->numPixmapFormats = NUMFORMATS;
+    pScreenInfo->imageByteOrder = IMAGE_BYTE_ORDER;
+    pScreenInfo->bitmapScanlinePad = BITMAP_SCANLINE_PAD;
+    pScreenInfo->bitmapScanlineUnit = BITMAP_SCANLINE_UNIT;
+    pScreenInfo->bitmapBitOrder = BITMAP_BIT_ORDER;
+    pScreenInfo->numPixmapFormats = ARRAY_SIZE(g_PixmapFormats);
 
     /* Describe how we want common pixmap formats padded */
-    for (i = 0; i < NUMFORMATS; i++) {
-        screenInfo->formats[i] = g_PixmapFormats[i];
+    for (i = 0; i < ARRAY_SIZE(g_PixmapFormats); i++) {
+        pScreenInfo->formats[i] = g_PixmapFormats[i];
     }
 
     /* Load pointers to DirectDraw functions */
@@ -937,9 +943,15 @@ InitOutput(ScreenInfo * screenInfo, int argc, char *argv[])
 
     /* Detect supported engines */
     winDetectSupportedEngines();
+    /* Load libraries for taskbar grouping */
+    winPropertyStoreInit();
 
     /* Store the instance handle */
     g_hInstance = GetModuleHandle(NULL);
+
+    /* Create the messaging window */
+    if (serverGeneration == 1)
+        winCreateMsgWindowThread();
 
     /* Initialize each screen */
     for (i = 0; i < g_iNumScreens; ++i) {
@@ -949,90 +961,66 @@ InitOutput(ScreenInfo * screenInfo, int argc, char *argv[])
         }
     }
 
-#if defined(XWIN_CLIPBOARD) || defined(XWIN_MULTIWINDOW)
+  /*
+     Unless full xinerama has been explicitly enabled, register all native screens with pseudoramiX
+  */
+  if (!noPanoramiXExtension)
+      noPseudoramiXExtension = TRUE;
+
+  if ((g_ScreenInfo[0].fMultipleMonitors) && !noPseudoramiXExtension)
+    {
+      int pass;
+
+      PseudoramiXExtensionInit();
+
+      /* Add primary monitor on pass 0, other monitors on pass 1, to ensure
+       the primary monitor is first in XINERAMA list */
+      for (pass = 0; pass < 2; pass++)
+        {
+          int iMonitor;
+
+          for (iMonitor = 1; ; iMonitor++)
+            {
+              struct GetMonitorInfoData data;
+              if (QueryMonitor(iMonitor, &data))
+                {
+                  MONITORINFO mi;
+                  mi.cbSize = sizeof(MONITORINFO);
+
+                  if (GetMonitorInfo(data.monitorHandle, &mi))
+                    {
+                      /* pass == 1 XOR primary monitor flags is set */
+                      if ((!(pass == 1)) != (!(mi.dwFlags & MONITORINFOF_PRIMARY)))
+                        {
+                          /*
+                            Note the screen origin in a normalized coordinate space where (0,0) is at the top left
+                            of the native virtual desktop area
+                          */
+                          data.monitorOffsetX = data.monitorOffsetX - GetSystemMetrics(SM_XVIRTUALSCREEN);
+                          data.monitorOffsetY = data.monitorOffsetY - GetSystemMetrics(SM_YVIRTUALSCREEN);
+
+                          winDebug ("InitOutput - screen %d added at virtual desktop coordinate (%d,%d) (pseudoramiX) \n",
+                                    iMonitor-1, data.monitorOffsetX, data.monitorOffsetY);
+
+                          PseudoramiXAddScreen(data.monitorOffsetX, data.monitorOffsetY,
+                                               data.monitorWidth, data.monitorHeight);
+                        }
+                    }
+                }
+              else
+                break;
+            }
+        }
+    }
+
+    xorgGlxCreateVendor();
 
     /* Generate a cookie used by internal clients for authorization */
     if (g_fXdmcpEnabled || g_fAuthEnabled)
         winGenerateAuthorization();
 
-    /* Perform some one time initialization */
-    if (1 == serverGeneration) {
-        /*
-         * setlocale applies to all threads in the current process.
-         * Apply locale specified in LANG environment variable.
-         */
-        setlocale(LC_ALL, "");
-    }
-#endif
 
 #if CYGDEBUG || YES
     winDebug("InitOutput - Returning.\n");
 #endif
-}
-
-/*
- * winCheckDisplayNumber - Check if another instance of Cygwin/X is
- * already running on the same display number.  If no one exists,
- * make a mutex to prevent new instances from running on the same display.
- *
- * return FALSE if the display number is already used.
- */
-
-static Bool
-winCheckDisplayNumber(void)
-{
-    int nDisp;
-    HANDLE mutex;
-    char name[MAX_PATH];
-    char *pszPrefix = '\0';
-    OSVERSIONINFO osvi = { 0 };
-
-    /* Check display range */
-    nDisp = atoi(display);
-    if (nDisp < 0 || nDisp > 65535) {
-        ErrorF("winCheckDisplayNumber - Bad display number: %d\n", nDisp);
-        return FALSE;
-    }
-
-    /* Set first character of mutex name to null */
-    name[0] = '\0';
-
-    /* Get operating system version information */
-    osvi.dwOSVersionInfoSize = sizeof(osvi);
-    GetVersionEx(&osvi);
-
-    /* Want a mutex shared among all terminals on NT > 4.0 */
-    if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT && osvi.dwMajorVersion >= 5) {
-        pszPrefix = "Global\\";
-    }
-
-    /* Setup Cygwin/X specific part of name */
-    snprintf(name, sizeof(name), "%sCYGWINX_DISPLAY:%d", pszPrefix, nDisp);
-
-    /* Windows automatically releases the mutex when this process exits */
-    mutex = CreateMutex(NULL, FALSE, name);
-    if (!mutex) {
-        LPVOID lpMsgBuf;
-
-        /* Display a fancy error message */
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                      FORMAT_MESSAGE_FROM_SYSTEM |
-                      FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL,
-                      GetLastError(),
-                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                      (LPTSTR) & lpMsgBuf, 0, NULL);
-        ErrorF("winCheckDisplayNumber - CreateMutex failed: %s\n",
-               (LPSTR) lpMsgBuf);
-        LocalFree(lpMsgBuf);
-
-        return FALSE;
-    }
-    if (GetLastError() == ERROR_ALREADY_EXISTS) {
-        ErrorF("winCheckDisplayNumber - "
-               PROJECT_NAME " is already running on display %d\n", nDisp);
-        return FALSE;
-    }
-
-    return TRUE;
 }

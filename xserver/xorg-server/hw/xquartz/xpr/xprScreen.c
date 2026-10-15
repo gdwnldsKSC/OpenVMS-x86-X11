@@ -33,7 +33,6 @@
 #include <dix-config.h>
 #endif
 
-#include "quartzCommon.h"
 #include "inputstr.h"
 #include "quartz.h"
 #include "quartzRandR.h"
@@ -53,6 +52,8 @@
 #ifdef DAMAGE
 #include "damage.h"
 #endif
+
+#include "nonsdk_extinit.h"
 
 /* 10.4's deferred update makes X slower.. have to live with the tearing
  * for now.. */
@@ -164,9 +165,20 @@ displayScreenBounds(CGDirectDisplayID id)
               (int)frame.size.width, (int)frame.size.height,
               (int)frame.origin.x, (int)frame.origin.y);
 
-    /* Remove menubar to help standard X11 window managers. */
+    Boolean spacePerDisplay = false;
+    Boolean ok;
+    (void)CFPreferencesAppSynchronize(CFSTR("com.apple.spaces"));
+    spacePerDisplay = ! CFPreferencesGetAppBooleanValue(CFSTR("spans-displays"),
+                                                        CFSTR("com.apple.spaces"),
+                                                        &ok);
+    if (!ok)
+        spacePerDisplay = true;
+
+    /* Remove menubar to help standard X11 window managers.
+     * On Mavericks and later, the menu bar is on all displays when spans-displays is false or unset.
+     */
     if (XQuartzIsRootless &&
-        frame.origin.x == 0 && frame.origin.y == 0) {
+        (spacePerDisplay || (frame.origin.x == 0 && frame.origin.y == 0))) {
         frame.origin.y += aquaMenuBarHeight;
         frame.size.height -= aquaMenuBarHeight;
     }
@@ -269,10 +281,12 @@ xprDisplayInit(void)
     /* With PseudoramiX, the X server only sees one screen; only PseudoramiX
        itself knows about all of the screens. */
 
-    if (noPseudoramiXExtension)
+    if (noPseudoramiXExtension) {
         darwinScreensFound = displayCount;
-    else
+    } else {
+        PseudoramiXExtensionInit();
         darwinScreensFound = 1;
+    }
 
     if (xp_init(XP_BACKGROUND_EVENTS | XP_NO_DEFERRED_UPDATES) != Success)
         FatalError("Could not initialize the Xplugin library.");
@@ -308,10 +322,6 @@ xprAddScreen(int index, ScreenPtr pScreen)
     DEBUG_LOG("index=%d depth=%d\n", index, depth);
 
     if (depth == -1) {
-#if MAC_OS_X_VERSION_MIN_REQUIRED < 1060
-        depth = CGDisplaySamplesPerPixel(kCGDirectMainDisplay) *
-                CGDisplayBitsPerSample(kCGDirectMainDisplay);
-#else
         CGDisplayModeRef modeRef;
         CFStringRef encStrRef;
 
@@ -341,12 +351,9 @@ xprAddScreen(int index, ScreenPtr pScreen)
         }
 
         CFRelease(encStrRef);
-#endif
     }
 
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
 have_depth:
-#endif
     switch (depth) {
     case 8:     // pseudo-working
         dfb->visuals = PseudoColorMask;
@@ -359,6 +366,10 @@ have_depth:
         dfb->blueMask = 0;
         break;
 
+#if 0
+    // Removed because Mountain Lion removed support for
+    // 15bit backing stores.  We can possibly re-add
+    // this once libXplugin is updated to work around it.
     case 15:
         dfb->visuals = TrueColorMask;     //LARGE_VISUALS;
         dfb->preferredCVC = TrueColor;
@@ -369,6 +380,7 @@ have_depth:
         dfb->greenMask = GM_ARGB(0, 5, 5, 5);
         dfb->blueMask = BM_ARGB(0, 5, 5, 5);
         break;
+#endif
 
     //        case 24:
     default:
@@ -442,7 +454,7 @@ xprSetupScreen(int index, ScreenPtr pScreen)
 
 /*
  * xprUpdateScreen
- *  Update screen after configuation change.
+ *  Update screen after configuration change.
  */
 static void
 xprUpdateScreen(ScreenPtr pScreen)

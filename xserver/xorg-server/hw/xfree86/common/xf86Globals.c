@@ -51,6 +51,9 @@ DevPrivateKeyRec xf86CreateRootWindowKeyRec;
 DevPrivateKeyRec xf86ScreenKeyRec;
 
 ScrnInfoPtr *xf86Screens = NULL;        /* List of ScrnInfos */
+ScrnInfoPtr *xf86GPUScreens = NULL;        /* List of ScrnInfos */
+
+int xf86DRMMasterFd = -1;  /* Command line argument for DRM master file descriptor */
 
 const unsigned char byte_reversed[256] = {
     0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
@@ -97,7 +100,7 @@ xf86InfoRec xf86Info = {
     .vtno = -1,
     .lastEventTime = -1,
     .vtRequestsPending = FALSE,
-#ifdef sun
+#ifdef __sun
     .vtPendingNum = -1,
 #endif
     .dontVTSwitch = FALSE,
@@ -105,8 +108,6 @@ xf86InfoRec xf86Info = {
     .ShareVTs = FALSE,
     .dontZap = FALSE,
     .dontZoom = FALSE,
-    .notrapSignals = FALSE,
-    .caughtSignal = FALSE,
     .currentScreen = NULL,
 #ifdef CSRG_BASED
     .consType = -1,
@@ -116,28 +117,29 @@ xf86InfoRec xf86Info = {
     .vidModeAllowNonLocal = FALSE,
     .miscModInDevEnabled = TRUE,
     .miscModInDevAllowNonLocal = FALSE,
-    .pixmap24 = Pix24DontCare,
-    .pix24From = X_DEFAULT,
     .pmFlag = TRUE,
-    .log = LogNone,
-    .disableRandR = FALSE,
-    .randRFrom = X_DEFAULT,
 #if defined(CONFIG_HAL) || defined(CONFIG_UDEV) || defined(CONFIG_WSCONS)
     .forceInputDevices = FALSE,
     .autoAddDevices = TRUE,
-    .autoEnableDevices = TRUE
+    .autoEnableDevices = TRUE,
 #else
     .forceInputDevices = TRUE,
     .autoAddDevices = FALSE,
-    .autoEnableDevices = FALSE
+    .autoEnableDevices = FALSE,
 #endif
+#if defined(CONFIG_UDEV_KMS)
+    .autoAddGPU = TRUE,
+#else
+    .autoAddGPU = FALSE,
+#endif
+    .autoBindGPU = TRUE,
 };
 
 const char *xf86ConfigFile = NULL;
 const char *xf86ConfigDir = NULL;
 const char *xf86ModulePath = DEFAULT_MODULE_PATH;
 MessageType xf86ModPathFrom = X_DEFAULT;
-const char *xf86LogFile = DEFAULT_LOGPREFIX;
+const char *xf86LogFile = DEFAULT_LOGDIR "/" DEFAULT_LOGPREFIX;
 MessageType xf86LogFileFrom = X_DEFAULT;
 Bool xf86LogFileWasOpened = FALSE;
 serverLayoutRec xf86ConfigLayout = { NULL, };
@@ -147,12 +149,14 @@ XF86ConfigPtr xf86configptr = NULL;
 Bool xf86Resetting = FALSE;
 Bool xf86Initialising = FALSE;
 Bool xf86DoConfigure = FALSE;
+Bool xf86ProbeIgnorePrimary = FALSE;
 Bool xf86DoShowOptions = FALSE;
 DriverPtr *xf86DriverList = NULL;
 int xf86NumDrivers = 0;
 InputDriverPtr *xf86InputDriverList = NULL;
 int xf86NumInputDrivers = 0;
 int xf86NumScreens = 0;
+int xf86NumGPUScreens = 0;
 
 const char *xf86VisualNames[] = {
     "StaticGray",
@@ -164,7 +168,6 @@ const char *xf86VisualNames[] = {
 };
 
 /* Parameters set only from the command line */
-const char *xf86ServerName = "no-name";
 Bool xf86fpFlag = FALSE;
 Bool xf86sFlag = FALSE;
 Bool xf86bsEnableFlag = FALSE;
@@ -182,18 +185,16 @@ char *xf86KeyboardName = NULL;
 int xf86Verbose = DEFAULT_VERBOSE;
 int xf86LogVerbose = DEFAULT_LOG_VERBOSE;
 int xf86FbBpp = -1;
-Pix24Flags xf86Pix24 = Pix24DontCare;
 int xf86Depth = -1;
 rgb xf86Weight = { 0, 0, 0 };
 
-Bool xf86FlipPixels = FALSE;
 Gamma xf86Gamma = { 0.0, 0.0, 0.0 };
 
 Bool xf86AllowMouseOpenFail = FALSE;
+Bool xf86AutoBindGPUDisabled = FALSE;
 
 #ifdef XF86VIDMODE
 Bool xf86VidModeDisabled = FALSE;
 Bool xf86VidModeAllowNonLocal = FALSE;
 #endif
-RootWinPropPtr *xf86RegisteredPropertiesTable = NULL;
 Bool xorgHWAccess = FALSE;

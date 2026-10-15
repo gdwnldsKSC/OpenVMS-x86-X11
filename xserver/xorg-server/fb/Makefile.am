@@ -14,14 +14,13 @@ libwfb_la_LIBADD = $(PIXMAN_LIBS)
 
 libfb_la_SOURCES = 	\
 	fb.h		\
-	fb24_32.c	\
-	fb24_32.h	\
 	fballpriv.c	\
 	fbarc.c		\
 	fbbits.c	\
 	fbbits.h	\
 	fbblt.c		\
 	fbbltone.c	\
+	fbcmap_mi.c     \
 	fbcopy.c	\
 	fbfill.c	\
 	fbfillrect.c	\
@@ -43,12 +42,8 @@ libfb_la_SOURCES = 	\
 	fbseg.c		\
 	fbsetsp.c	\
 	fbsolid.c	\
-	fbstipple.c	\
-	fbtile.c	\
 	fbtrap.c	\
 	fbutil.c	\
 	fbwindow.c
 
 libwfb_la_SOURCES = $(libfb_la_SOURCES)
-
-EXTRA_DIST = fbcmap_mi.c

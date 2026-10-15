@@ -53,15 +53,15 @@
  *
  */
 
-int
+int _X_COLD
 SProcXIChangeCursor(ClientPtr client)
 {
     REQUEST(xXIChangeCursorReq);
+    REQUEST_SIZE_MATCH(xXIChangeCursorReq);
     swaps(&stuff->length);
     swapl(&stuff->win);
     swapl(&stuff->cursor);
     swaps(&stuff->deviceid);
-    REQUEST_SIZE_MATCH(xXIChangeCursorReq);
     return (ProcXIChangeCursor(client));
 }
 
@@ -89,6 +89,9 @@ ProcXIChangeCursor(ClientPtr client)
             return rc;
     }
 
+    if (pWin == NullWindow)
+        return BadWindow;
+
     if (stuff->cursor == None) {
         if (pWin == pWin->drawable.pScreen->root)
             pCursor = rootCursor;
@@ -96,7 +99,7 @@ ProcXIChangeCursor(ClientPtr client)
             pCursor = (CursorPtr) None;
     }
     else {
-        rc = dixLookupResourceByType((pointer *) &pCursor, stuff->cursor,
+        rc = dixLookupResourceByType((void **) &pCursor, stuff->cursor,
                                      RT_CURSOR, client, DixUseAccess);
         if (rc != Success)
             return rc;

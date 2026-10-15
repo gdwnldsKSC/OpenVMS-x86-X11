@@ -49,8 +49,6 @@ SOFTWARE.
  *  Dispatch routines and initialization routines for the X input extension.
  *
  */
-#define ARRAY_SIZE(_a)        (sizeof((_a)) / sizeof((_a)[0]))
-
 #define	 NUMTYPES 15
 
 #ifdef HAVE_DIX_CONFIG_H
@@ -124,19 +122,15 @@ SOFTWARE.
 #include "xiqueryversion.h"
 #include "xisetclientpointer.h"
 #include "xiwarppointer.h"
+#include "xibarriers.h"
 
 /* Masks for XI events have to be aligned with core event (partially anyway).
  * If DeviceButtonMotionMask is != ButtonMotionMask, event delivery
  * breaks down. The device needs the dev->button->motionMask. If DBMM is
  * the same as BMM, we can ensure that both core and device events can be
  * delivered, without the need for extra structures in the DeviceIntRec. */
-const Mask DeviceKeyPressMask = KeyPressMask;
-const Mask DeviceKeyReleaseMask = KeyReleaseMask;
-const Mask DeviceButtonPressMask = ButtonPressMask;
-const Mask DeviceButtonReleaseMask = ButtonReleaseMask;
 const Mask DeviceProximityMask = (1L << 4);
 const Mask DeviceStateNotifyMask = (1L << 5);
-const Mask DevicePointerMotionMask = PointerMotionMask;
 const Mask DevicePointerMotionHintMask = PointerMotionHintMask;
 const Mask DeviceButton1MotionMask = Button1MotionMask;
 const Mask DeviceButton2MotionMask = Button2MotionMask;
@@ -150,37 +144,34 @@ const Mask ChangeDeviceNotifyMask = (1L << 16);
 const Mask DeviceButtonGrabMask = (1L << 17);
 const Mask DeviceOwnerGrabButtonMask = (1L << 17);
 const Mask DevicePresenceNotifyMask = (1L << 18);
-const Mask DeviceEnterWindowMask = (1L << 18);
-const Mask DeviceLeaveWindowMask = (1L << 19);
-const Mask DevicePropertyNotifyMask = (1L << 20);
-const Mask XIAllMasks = (1L << 21) - 1;
+const Mask DevicePropertyNotifyMask = (1L << 19);
+const Mask XIAllMasks = (1L << 20) - 1;
 
 int ExtEventIndex;
-Mask ExtExclusiveMasks[EMASKSIZE];
 
 static struct dev_type {
     Atom type;
     const char *name;
 } dev_type[] = {
-    {
-    0, XI_KEYBOARD}, {
-    0, XI_MOUSE}, {
-    0, XI_TABLET}, {
-    0, XI_TOUCHSCREEN}, {
-    0, XI_TOUCHPAD}, {
-    0, XI_BARCODE}, {
-    0, XI_BUTTONBOX}, {
-    0, XI_KNOB_BOX}, {
-    0, XI_ONE_KNOB}, {
-    0, XI_NINE_KNOB}, {
-    0, XI_TRACKBALL}, {
-    0, XI_QUADRATURE}, {
-    0, XI_ID_MODULE}, {
-    0, XI_SPACEBALL}, {
-    0, XI_DATAGLOVE}, {
-    0, XI_EYETRACKER}, {
-    0, XI_CURSORKEYS}, {
-0, XI_FOOTMOUSE}};
+    {0, XI_KEYBOARD},
+    {0, XI_MOUSE},
+    {0, XI_TABLET},
+    {0, XI_TOUCHSCREEN},
+    {0, XI_TOUCHPAD},
+    {0, XI_BARCODE},
+    {0, XI_BUTTONBOX},
+    {0, XI_KNOB_BOX},
+    {0, XI_ONE_KNOB},
+    {0, XI_NINE_KNOB},
+    {0, XI_TRACKBALL},
+    {0, XI_QUADRATURE},
+    {0, XI_ID_MODULE},
+    {0, XI_SPACEBALL},
+    {0, XI_DATAGLOVE},
+    {0, XI_EYETRACKER},
+    {0, XI_CURSORKEYS},
+    {0, XI_FOOTMOUSE}
+};
 
 CARD8 event_base[numInputClasses];
 XExtEventInfo EventInfo[32];
@@ -255,7 +246,8 @@ static int (*ProcIVector[]) (ClientPtr) = {
         ProcXIChangeProperty,   /* 57 */
         ProcXIDeleteProperty,   /* 58 */
         ProcXIGetProperty,      /* 59 */
-        ProcXIGetSelectedEvents /* 60 */
+        ProcXIGetSelectedEvents, /* 60 */
+        ProcXIBarrierReleasePointer /* 61 */
 };
 
 /* For swapped clients */
@@ -320,7 +312,8 @@ static int (*SProcIVector[]) (ClientPtr) = {
         SProcXIChangeProperty,  /* 57 */
         SProcXIDeleteProperty,  /* 58 */
         SProcXIGetProperty,     /* 59 */
-        SProcXIGetSelectedEvents        /* 60 */
+        SProcXIGetSelectedEvents,       /* 60 */
+        SProcXIBarrierReleasePointer /* 61 */
 };
 
 /*****************************************************************
@@ -365,8 +358,6 @@ RESTYPE RT_INPUTCLIENT;
 
 extern XExtensionVersion XIVersion;
 
-Mask PropagateMask[MAXDEVICES];
-
 /*****************************************************************
  *
  * Versioning support
@@ -380,18 +371,6 @@ DevPrivateKeyRec XIClientPrivateKeyRec;
  * Declarations of local routines.
  *
  */
-
-static void
-XIClientCallback(CallbackListPtr *list, pointer closure, pointer data)
-{
-    NewClientInfoRec *clientinfo = (NewClientInfoRec *) data;
-    ClientPtr pClient = clientinfo->client;
-    XIClientPtr pXIClient;
-
-    pXIClient = dixLookupPrivate(&pClient->devPrivates, XIClientPrivateKey);
-    pXIClient->major_version = 0;
-    pXIClient->minor_version = 0;
-}
 
 /*************************************************************************
  *
@@ -407,6 +386,7 @@ ProcIDispatch(ClientPtr client)
     if (stuff->data >= ARRAY_SIZE(ProcIVector) || !ProcIVector[stuff->data])
         return BadRequest;
 
+    UpdateCurrentTimeIf();
     return (*ProcIVector[stuff->data]) (client);
 }
 
@@ -419,13 +399,14 @@ ProcIDispatch(ClientPtr client)
  *
  */
 
-static int
+static int _X_COLD
 SProcIDispatch(ClientPtr client)
 {
     REQUEST(xReq);
     if (stuff->data >= ARRAY_SIZE(SProcIVector) || !SProcIVector[stuff->data])
         return BadRequest;
 
+    UpdateCurrentTimeIf();
     return (*SProcIVector[stuff->data]) (client);
 }
 
@@ -436,10 +417,11 @@ SProcIDispatch(ClientPtr client)
  *
  */
 
-static void
+static void _X_COLD
 SReplyIDispatch(ClientPtr client, int len, xGrabDeviceReply * rep)
-                                        /* All we look at is the type field */
-{                               /* This is common to all replies    */
+{
+    /* All we look at is the type field */
+    /* This is common to all replies    */
     if (rep->RepType == X_GetExtensionVersion)
         SRepXGetExtensionVersion(client, len,
                                  (xGetExtensionVersionReply *) rep);
@@ -530,7 +512,7 @@ static void
 SEventDeviceValuator(deviceValuator * from, deviceValuator * to)
 {
     int i;
-    INT32 *ip B32;
+    INT32 *ip;
 
     *to = *from;
     swaps(&to->sequenceNumber);
@@ -554,7 +536,7 @@ static void
 SDeviceStateNotifyEvent(deviceStateNotify * from, deviceStateNotify * to)
 {
     int i;
-    INT32 *ip B32;
+    INT32 *ip;
 
     *to = *from;
     swaps(&to->sequenceNumber);
@@ -649,7 +631,7 @@ SDeviceChangedEvent(xXIDeviceChangedEvent * from, xXIDeviceChangedEvent * to)
     *to = *from;
     memcpy(&to[1], &from[1], from->length * 4);
 
-    any = (xXIAnyInfo *) & to[1];
+    any = (xXIAnyInfo *) &to[1];
     for (i = 0; i < to->num_classes; i++) {
         int length = any->length;
 
@@ -657,7 +639,7 @@ SDeviceChangedEvent(xXIDeviceChangedEvent * from, xXIDeviceChangedEvent * to)
         case KeyClass:
         {
             xXIKeyInfo *ki = (xXIKeyInfo *) any;
-            uint32_t *key = (uint32_t *) & ki[1];
+            uint32_t *key = (uint32_t *) &ki[1];
 
             for (j = 0; j < ki->num_keycodes; j++, key++)
                 swapl(key);
@@ -684,8 +666,21 @@ SDeviceChangedEvent(xXIDeviceChangedEvent * from, xXIDeviceChangedEvent * to)
             swapl(&ai->min.frac);
             swapl(&ai->max.integral);
             swapl(&ai->max.frac);
+            swapl(&ai->value.integral);
+            swapl(&ai->value.frac);
             swapl(&ai->resolution);
             swaps(&ai->number);
+        }
+            break;
+        case XIScrollClass:
+        {
+            xXIScrollInfo *si = (xXIScrollInfo *) any;
+
+            swaps(&si->number);
+            swaps(&si->scroll_type);
+            swapl(&si->flags);
+            swapl(&si->increment.integral);
+            swapl(&si->increment.frac);
         }
             break;
         }
@@ -768,7 +763,7 @@ SDeviceHierarchyEvent(xXIHierarchyEvent * from, xXIHierarchyEvent * to)
     swapl(&to->flags);
     swaps(&to->num_info);
 
-    info = (xXIHierarchyInfo *) & to[1];
+    info = (xXIHierarchyInfo *) &to[1];
     for (i = 0; i < from->num_info; i++) {
         swaps(&info->deviceid);
         swaps(&info->attachment);
@@ -842,8 +837,102 @@ STouchOwnershipEvent(xXITouchOwnershipEvent * from, xXITouchOwnershipEvent * to)
     swapl(&to->child);
 }
 
+static void
+SBarrierEvent(xXIBarrierEvent * from,
+              xXIBarrierEvent * to) {
+
+    *to = *from;
+
+    swaps(&to->sequenceNumber);
+    swapl(&to->length);
+    swaps(&to->evtype);
+    swapl(&to->time);
+    swaps(&to->deviceid);
+    swaps(&to->sourceid);
+    swapl(&to->event);
+    swapl(&to->root);
+    swapl(&to->root_x);
+    swapl(&to->root_y);
+
+    swapl(&to->dx.integral);
+    swapl(&to->dx.frac);
+    swapl(&to->dy.integral);
+    swapl(&to->dy.frac);
+    swapl(&to->dtime);
+    swapl(&to->barrier);
+    swapl(&to->eventid);
+}
+
+static void
+SGesturePinchEvent(xXIGesturePinchEvent* from,
+                   xXIGesturePinchEvent* to)
+{
+    *to = *from;
+
+    swaps(&to->sequenceNumber);
+    swapl(&to->length);
+    swaps(&to->evtype);
+    swaps(&to->deviceid);
+    swapl(&to->time);
+    swapl(&to->detail);
+    swapl(&to->root);
+    swapl(&to->event);
+    swapl(&to->child);
+    swapl(&to->root_x);
+    swapl(&to->root_y);
+    swapl(&to->event_x);
+    swapl(&to->event_y);
+
+    swapl(&to->delta_x);
+    swapl(&to->delta_y);
+    swapl(&to->delta_unaccel_x);
+    swapl(&to->delta_unaccel_y);
+    swapl(&to->scale);
+    swapl(&to->delta_angle);
+    swaps(&to->sourceid);
+
+    swapl(&to->mods.base_mods);
+    swapl(&to->mods.latched_mods);
+    swapl(&to->mods.locked_mods);
+    swapl(&to->mods.effective_mods);
+    swapl(&to->flags);
+}
+
+static void
+SGestureSwipeEvent(xXIGestureSwipeEvent* from,
+                   xXIGestureSwipeEvent* to)
+{
+    *to = *from;
+
+    swaps(&to->sequenceNumber);
+    swapl(&to->length);
+    swaps(&to->evtype);
+    swaps(&to->deviceid);
+    swapl(&to->time);
+    swapl(&to->detail);
+    swapl(&to->root);
+    swapl(&to->event);
+    swapl(&to->child);
+    swapl(&to->root_x);
+    swapl(&to->root_y);
+    swapl(&to->event_x);
+    swapl(&to->event_y);
+
+    swapl(&to->delta_x);
+    swapl(&to->delta_y);
+    swapl(&to->delta_unaccel_x);
+    swapl(&to->delta_unaccel_y);
+    swaps(&to->sourceid);
+
+    swapl(&to->mods.base_mods);
+    swapl(&to->mods.latched_mods);
+    swapl(&to->mods.locked_mods);
+    swapl(&to->mods.effective_mods);
+    swapl(&to->flags);
+}
+
 /** Event swapping function for XI2 events. */
-void
+void _X_COLD
 XI2EventSwap(xGenericEvent *from, xGenericEvent *to)
 {
     switch (from->evtype) {
@@ -888,26 +977,27 @@ XI2EventSwap(xGenericEvent *from, xGenericEvent *to)
     case XI_RawTouchEnd:
         SRawEvent((xXIRawEvent *) from, (xXIRawEvent *) to);
         break;
+    case XI_BarrierHit:
+    case XI_BarrierLeave:
+        SBarrierEvent((xXIBarrierEvent *) from,
+                      (xXIBarrierEvent *) to);
+        break;
+    case XI_GesturePinchBegin:
+    case XI_GesturePinchUpdate:
+    case XI_GesturePinchEnd:
+        SGesturePinchEvent((xXIGesturePinchEvent*) from,
+                           (xXIGesturePinchEvent*) to);
+        break;
+    case XI_GestureSwipeBegin:
+    case XI_GestureSwipeUpdate:
+    case XI_GestureSwipeEnd:
+        SGestureSwipeEvent((xXIGestureSwipeEvent*) from,
+                           (xXIGestureSwipeEvent*) to);
+        break;
     default:
         ErrorF("[Xi] Unknown event type to swap. This is a bug.\n");
         break;
     }
-}
-
-/**************************************************************************
- *
- * Allow the specified event to have its propagation suppressed.
- * The default is to not allow suppression of propagation.
- *
- */
-
-static void
-AllowPropagateSuppress(Mask mask)
-{
-    int i;
-
-    for (i = 0; i < MAXDEVICES; i++)
-        PropagateMask[i] |= mask;
 }
 
 /**************************************************************************
@@ -928,23 +1018,6 @@ SetEventInfo(Mask mask, int constant)
 {
     EventInfo[ExtEventIndex].mask = mask;
     EventInfo[ExtEventIndex++].type = constant;
-}
-
-/**************************************************************************
- *
- * Allow the specified event to be restricted to being selected by one
- * client at a time.
- * The default is to allow more than one client to select the event.
- *
- */
-
-static void
-SetExclusiveAccess(Mask mask)
-{
-    int i;
-
-    for (i = 0; i < MAXDEVICES; i++)
-        ExtExclusiveMasks[i] |= mask;
 }
 
 /**************************************************************************
@@ -1008,20 +1081,16 @@ FixExtensionEvents(ExtensionEntry * extEntry)
     DeviceBusy += extEntry->errorBase;
     BadClass += extEntry->errorBase;
 
-    SetMaskForExtEvent(DeviceKeyPressMask, DeviceKeyPress);
-    AllowPropagateSuppress(DeviceKeyPressMask);
+    SetMaskForExtEvent(KeyPressMask, DeviceKeyPress);
     SetCriticalEvent(DeviceKeyPress);
 
-    SetMaskForExtEvent(DeviceKeyReleaseMask, DeviceKeyRelease);
-    AllowPropagateSuppress(DeviceKeyReleaseMask);
+    SetMaskForExtEvent(KeyReleaseMask, DeviceKeyRelease);
     SetCriticalEvent(DeviceKeyRelease);
 
-    SetMaskForExtEvent(DeviceButtonPressMask, DeviceButtonPress);
-    AllowPropagateSuppress(DeviceButtonPressMask);
+    SetMaskForExtEvent(ButtonPressMask, DeviceButtonPress);
     SetCriticalEvent(DeviceButtonPress);
 
-    SetMaskForExtEvent(DeviceButtonReleaseMask, DeviceButtonRelease);
-    AllowPropagateSuppress(DeviceButtonReleaseMask);
+    SetMaskForExtEvent(ButtonReleaseMask, DeviceButtonRelease);
     SetCriticalEvent(DeviceButtonRelease);
 
     SetMaskForExtEvent(DeviceProximityMask, ProximityIn);
@@ -1029,8 +1098,7 @@ FixExtensionEvents(ExtensionEntry * extEntry)
 
     SetMaskForExtEvent(DeviceStateNotifyMask, DeviceStateNotify);
 
-    SetMaskForExtEvent(DevicePointerMotionMask, DeviceMotionNotify);
-    AllowPropagateSuppress(DevicePointerMotionMask);
+    SetMaskForExtEvent(PointerMotionMask, DeviceMotionNotify);
     SetCriticalEvent(DeviceMotionNotify);
 
     SetEventInfo(DevicePointerMotionHintMask, _devicePointerMotionHint);
@@ -1048,8 +1116,6 @@ FixExtensionEvents(ExtensionEntry * extEntry)
     SetMaskForExtEvent(ChangeDeviceNotifyMask, ChangeDeviceNotify);
 
     SetEventInfo(DeviceButtonGrabMask, _deviceButtonGrab);
-    SetExclusiveAccess(DeviceButtonGrabMask);
-
     SetEventInfo(DeviceOwnerGrabButtonMask, _deviceOwnerGrabButton);
     SetEventInfo(DevicePresenceNotifyMask, _devicePresence);
     SetMaskForExtEvent(DevicePropertyNotifyMask, DevicePropertyNotify);
@@ -1137,6 +1203,11 @@ IResetProc(ExtensionEntry * unused)
     EventSwapVector[DevicePresenceNotify] = NotImplemented;
     EventSwapVector[DevicePropertyNotify] = NotImplemented;
     RestoreExtensionEvents();
+
+    free(xi_all_devices.name);
+    free(xi_all_master_devices.name);
+
+    XIBarrierReset();
 }
 
 /***********************************************************************
@@ -1176,7 +1247,7 @@ MakeDeviceTypeAtoms(void)
  */
 #define DO_SWAP(func,type) func ((type *)from, (type *)to)
 
-static void
+static void _X_COLD
 SEventIDispatch(xEvent *from, xEvent *to)
 {
     int type = from->u.u.type & 0177;
@@ -1260,8 +1331,8 @@ XInputExtensionInit(void)
         (&XIClientPrivateKeyRec, PRIVATE_CLIENT, sizeof(XIClientRec)))
         FatalError("Cannot request private for XI.\n");
 
-    if (!AddCallback(&ClientStateCallback, XIClientCallback, 0))
-        FatalError("Failed to add callback to XI.\n");
+    if (!XIBarrierInit())
+        FatalError("Could not initialize barriers.\n");
 
     extEntry = AddExtension(INAME, IEVENTS, IERRORS, ProcIDispatch,
                             SProcIDispatch, IResetProc, StandardMinorOpcode);
@@ -1298,9 +1369,9 @@ XInputExtensionInit(void)
         memset(&xi_all_devices, 0, sizeof(xi_all_devices));
         memset(&xi_all_master_devices, 0, sizeof(xi_all_master_devices));
         xi_all_devices.id = XIAllDevices;
-        xi_all_devices.name = "XIAllDevices";
+        xi_all_devices.name = strdup("XIAllDevices");
         xi_all_master_devices.id = XIAllMasterDevices;
-        xi_all_master_devices.name = "XIAllMasterDevices";
+        xi_all_master_devices.name = strdup("XIAllMasterDevices");
 
         inputInfo.all_devices = &xi_all_devices;
         inputInfo.all_master_devices = &xi_all_master_devices;

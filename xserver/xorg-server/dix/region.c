@@ -21,20 +21,20 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Except as contained in this notice, the name of The Open Group shall not be
 used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from The Open Group.
- 
 
-Copyright 1987, 1988, 1989 by 
-Digital Equipment Corporation, Maynard, Massachusetts. 
+
+Copyright 1987, 1988, 1989 by
+Digital Equipment Corporation, Maynard, Massachusetts.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the name of Digital not be
 used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
+software without specific, written prior permission.
 
 DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
 ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
@@ -118,9 +118,9 @@ Equipment Corporation.
  * there is no separate list of band start pointers.
  *
  * The y-x band representation does not minimize rectangles.  In particular,
- * if a rectangle vertically crosses a band (the rectangle has scanlines in 
+ * if a rectangle vertically crosses a band (the rectangle has scanlines in
  * the y1 to y2 area spanned by the band), then the rectangle may be broken
- * down into two or more smaller rectangles stacked one atop the other. 
+ * down into two or more smaller rectangles stacked one atop the other.
  *
  *  -----------				    -----------
  *  |         |				    |         |		    band 0
@@ -169,7 +169,6 @@ Equipment Corporation.
         ((r1)->y1 <= (r2)->y1) && \
         ((r1)->y2 >= (r2)->y2) )
 
-#define xallocData(n) malloc(RegionSizeof(n))
 #define xfreeData(reg) if ((reg)->data && (reg)->data->size) free((reg)->data)
 
 #define RECTALLOC_BAIL(pReg,n,bail) \
@@ -205,8 +204,9 @@ if (!(pReg)->data || (((pReg)->data->numRects + (n)) > (pReg)->data->size)) \
 #define DOWNSIZE(reg,numRects)						 \
 if (((numRects) < ((reg)->data->size >> 1)) && ((reg)->data->size > 50)) \
 {									 \
-    RegDataPtr NewData;							 \
-    NewData = (RegDataPtr)realloc((reg)->data, RegionSizeof(numRects));	 \
+    size_t NewSize = RegionSizeof(numRects);				 \
+    RegDataPtr NewData =						 \
+        (NewSize > 0) ? realloc((reg)->data, NewSize) : NULL ;		 \
     if (NewData)							 \
     {									 \
 	NewData->size = (numRects);					 \
@@ -253,6 +253,21 @@ RegionDestroy(RegionPtr pReg)
     pixman_region_fini(pReg);
     if (pReg != &RegionBrokenRegion)
         free(pReg);
+}
+
+RegionPtr
+RegionDuplicate(RegionPtr pOld)
+{
+    RegionPtr   pNew;
+
+    pNew = RegionCreate(&pOld->extents, 0);
+    if (!pNew)
+        return NULL;
+    if (!RegionCopy(pNew, pOld)) {
+        RegionDestroy(pNew);
+        return NULL;
+    }
+    return pNew;
 }
 
 void
@@ -330,17 +345,20 @@ Bool
 RegionRectAlloc(RegionPtr pRgn, int n)
 {
     RegDataPtr data;
+    size_t rgnSize;
 
     if (!pRgn->data) {
         n++;
-        pRgn->data = xallocData(n);
+        rgnSize = RegionSizeof(n);
+        pRgn->data = (rgnSize > 0) ? malloc(rgnSize) : NULL;
         if (!pRgn->data)
             return RegionBreak(pRgn);
         pRgn->data->numRects = 1;
         *RegionBoxptr(pRgn) = pRgn->extents;
     }
     else if (!pRgn->data->size) {
-        pRgn->data = xallocData(n);
+        rgnSize = RegionSizeof(n);
+        pRgn->data = (rgnSize > 0) ? malloc(rgnSize) : NULL;
         if (!pRgn->data)
             return RegionBreak(pRgn);
         pRgn->data->numRects = 0;
@@ -352,7 +370,8 @@ RegionRectAlloc(RegionPtr pRgn, int n)
                 n = 250;
         }
         n += pRgn->data->numRects;
-        data = (RegDataPtr) realloc(pRgn->data, RegionSizeof(n));
+        rgnSize = RegionSizeof(n);
+        data = (rgnSize > 0) ? realloc(pRgn->data, rgnSize) : NULL;
         if (!data)
             return RegionBreak(pRgn);
         pRgn->data = data;
@@ -882,7 +901,8 @@ RegionUnionO(RegionPtr pReg,
     int x2;
 
     assert(y1 < y2);
-    assert(r1 != r1End && r2 != r2End);
+    assert(r1 != r1End);
+    assert(r2 != r2End);
 
     pNextRect = RegionTop(pReg);
 
@@ -929,7 +949,7 @@ RegionUnionO(RegionPtr pReg,
 /*-
  *-----------------------------------------------------------------------
  * RegionAppend --
- * 
+ *
  *      "Append" the rgn rectangles onto the end of dstrgn, maintaining
  *      knowledge of YX-banding when it's easy.  Otherwise, dstrgn just
  *      becomes a non-y-x-banded random collection of rectangles, and not
@@ -1084,7 +1104,7 @@ QuickSortRects(BoxRec rects[], int numRects)
 /*-
  *-----------------------------------------------------------------------
  * RegionValidate --
- * 
+ *
  *      Take a ``region'' which is a non-y-x-banded random collection of
  *      rectangles, and compute a nice region which is the union of all the
  *      rectangles.
@@ -1094,7 +1114,7 @@ QuickSortRects(BoxRec rects[], int numRects)
  *
  * Side Effects:
  *      The passed-in ``region'' may be modified.
- *	pOverlap set to TRUE if any retangles overlapped, else FALSE;
+ *	pOverlap set to TRUE if any rectangles overlapped, else FALSE;
  *
  * Strategy:
  *      Step 1. Sort the rectangles into ascending order with primary key y1
@@ -1103,7 +1123,7 @@ QuickSortRects(BoxRec rects[], int numRects)
  *      Step 2. Split the rectangles into the minimum number of proper y-x
  *		banded regions.  This may require horizontally merging
  *		rectangles, and vertically coalescing bands.  With any luck,
- *		this step in an identity tranformation (ala the Box widget),
+ *		this step in an identity transformation (ala the Box widget),
  *		or a coalescing into 1 box (ala Menus).
  *
  *	Step 3. Merge the separate regions down to a single region by calling
@@ -1228,7 +1248,7 @@ RegionValidate(RegionPtr badreg, Bool *pOverlap)
         if (sizeRI == numRI) {
             /* Oops, allocate space for new region information */
             sizeRI <<= 1;
-            rit = (RegionInfo *) realloc(ri, sizeRI * sizeof(RegionInfo));
+            rit = (RegionInfo *) reallocarray(ri, sizeRI, sizeof(RegionInfo));
             if (!rit)
                 goto bail;
             ri = rit;
@@ -1289,6 +1309,11 @@ RegionValidate(RegionPtr badreg, Bool *pOverlap)
     for (i = 0; i < numRI; i++)
         xfreeData(&ri[i].reg);
     free(ri);
+    /* ri[0].reg.data aliased badreg->data before RegionRectAlloc() could have
+     * reallocated it above, so badreg->data may now be a stale pointer to
+     * memory already freed by xfreeData() or by the realloc() itself.
+     */
+    badreg->data = NULL;
     return RegionBreak(badreg);
 }
 
@@ -1297,6 +1322,7 @@ RegionFromRects(int nrects, xRectangle *prect, int ctype)
 {
 
     RegionPtr pRgn;
+    size_t rgnSize;
     RegDataPtr pData;
     BoxPtr pBox;
     int i;
@@ -1323,7 +1349,8 @@ RegionFromRects(int nrects, xRectangle *prect, int ctype)
         }
         return pRgn;
     }
-    pData = xallocData(nrects);
+    rgnSize = RegionSizeof(nrects);
+    pData = (rgnSize > 0) ? malloc(rgnSize) : NULL;
     if (!pData) {
         RegionBreak(pRgn);
         return pRgn;

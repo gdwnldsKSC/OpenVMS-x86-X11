@@ -39,9 +39,9 @@ typedef struct {
 
 typedef union {
     unsigned long num;
-    char *str;
+    const char *str;
     double realnum;
-    Bool bool;
+    Bool boolean;
     OptFrequency freq;
 } ValueUnion;
 
@@ -85,7 +85,7 @@ extern _X_EXPORT int xf86CheckIntOption(XF86OptionPtr optlist, const char *name,
 extern _X_EXPORT double xf86CheckRealOption(XF86OptionPtr optlist,
                                             const char *name, double deflt);
 extern _X_EXPORT char *xf86CheckStrOption(XF86OptionPtr optlist,
-                                          const char *name, char *deflt);
+                                          const char *name, const char *deflt);
 extern _X_EXPORT int xf86CheckBoolOption(XF86OptionPtr list, const char *name,
                                          int deflt);
 extern _X_EXPORT double xf86CheckPercentOption(XF86OptionPtr list,
@@ -123,7 +123,7 @@ extern _X_EXPORT OptionInfoPtr xf86TokenToOptinfo(const OptionInfoRec * table,
 extern _X_EXPORT const char *xf86TokenToOptName(const OptionInfoRec * table,
                                                 int token);
 extern _X_EXPORT Bool xf86IsOptionSet(const OptionInfoRec * table, int token);
-extern _X_EXPORT char *xf86GetOptValString(const OptionInfoRec * table,
+extern _X_EXPORT const char *xf86GetOptValString(const OptionInfoRec * table,
                                            int token);
 extern _X_EXPORT Bool xf86GetOptValInteger(const OptionInfoRec * table,
                                            int token, int *value);

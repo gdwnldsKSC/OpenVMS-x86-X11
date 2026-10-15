@@ -34,9 +34,8 @@
 #include <dix-config.h>
 #endif
 
-#include "quartzCommon.h"
-
 #import "X11Application.h"
+#import "NSUserDefaults+XQuartzDefaults.h"
 
 #include "darwin.h"
 #include "quartz.h"
@@ -48,7 +47,6 @@
 
 #include <mach/mach.h>
 #include <unistd.h>
-#include <AvailabilityMacros.h>
 
 #include <pthread.h>
 
@@ -58,26 +56,34 @@
 extern int
 xpbproxy_run(void);
 
-#define DEFAULTS_FILE X11LIBDIR "/X11/xserver/Xquartz.plist"
-
 #ifndef XSERVER_VERSION
 #define XSERVER_VERSION "?"
 #endif
 
-#ifdef HAVE_LIBDISPATCH
 #include <dispatch/dispatch.h>
 
 static dispatch_queue_t eventTranslationQueue;
+
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
+
+#ifndef CF_RETURNS_RETAINED
+#if __has_feature(attribute_cf_returns_retained)
+#define CF_RETURNS_RETAINED __attribute__((cf_returns_retained))
+#else
+#define CF_RETURNS_RETAINED
+#endif
+#endif
+
+#ifndef APPKIT_APPFLAGS_HACK
+#define APPKIT_APPFLAGS_HACK 1
 #endif
 
 extern Bool noTestExtensions;
 extern Bool noRenderExtension;
 
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
 static TISInputSourceRef last_key_layout;
-#else
-static KeyboardLayoutRef last_key_layout;
-#endif
 
 /* This preference is only tested on Lion or later as it's not relevant to
  * earlier OS versions.
@@ -94,13 +100,64 @@ static BOOL bgMouseLocationUpdated = FALSE;
 
 X11Application *X11App;
 
-CFStringRef app_prefs_domain_cfstr = NULL;
-
 #define ALL_KEY_MASKS (NSShiftKeyMask | NSControlKeyMask | \
                        NSAlternateKeyMask | NSCommandKeyMask)
 
+#if APPKIT_APPFLAGS_HACK && __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
+// This was removed from the SDK in 10.15
+@interface NSApplication () {
+@protected
+    /* All instance variables are private */
+    short               _running;
+    struct __appFlags {
+        unsigned int        _hidden:1;
+        unsigned int        _appleEventActivationInProgress:1;
+        unsigned int        _active:1;
+        unsigned int        _hasBeenRun:1;
+        unsigned int        _doingUnhide:1;
+        unsigned int        _delegateReturnsValidRequestor:1;
+        unsigned int        _deactPending:1;
+        unsigned int        _invalidState:1;
+        unsigned int        _invalidEvent:1;
+        unsigned int        _postedWindowsNeedUpdateNote:1;
+        unsigned int        _wantsToActivate:1;
+        unsigned int        _doingHide:1;
+        unsigned int        _dontSendShouldTerminate:1;
+        unsigned int        _ignoresFullScreen:1;
+        unsigned int        _finishedLaunching:1;
+        unsigned int        _hasEventDelegate:1;
+        unsigned int        _appTerminating:1;
+        unsigned int        _didNSOpenOrPrint:1;
+        unsigned int        _inDealloc:1;
+        unsigned int        _pendingDidFinish:1;
+        unsigned int        _hasKeyFocus:1;
+        unsigned int        _panelsNonactivating:1;
+        unsigned int        _hiddenOnLaunch:1;
+        unsigned int        _openStatus:2;
+        unsigned int        _batchOrdering:1;
+        unsigned int        _waitingForTerminationReply:1;
+        unsigned int        _unused:1;
+        unsigned int        _enumeratingMemoryPressureHandlers:1;
+        unsigned int        _didTryRestoringPersistentState:1;
+        unsigned int        _windowDragging:1;
+        unsigned int        _mightBeSwitching:1;
+    }                   _appFlags;
+    id                  _mainMenu;
+}
+@end
+#endif
+
+@interface NSApplication (Internal)
+- (void)_setKeyWindow:(id)window;
+- (void)_setMainWindow:(id)window;
+@end
+
 @interface X11Application (Private)
 - (void) sendX11NSEvent:(NSEvent *)e;
+@end
+
+@interface X11Application ()
+@property (nonatomic, readwrite, assign) OSX_BOOL x_active;
 @end
 
 @implementation X11Application
@@ -112,72 +169,14 @@ struct message_struct {
     NSObject *arg;
 };
 
-static mach_port_t _port;
-
 /* Quartz mode initialization routine. This is often dynamically loaded
    but is statically linked into this X server. */
 Bool
 QuartzModeBundleInit(void);
 
-static void
-init_ports(void)
-{
-    kern_return_t r;
-    NSPort *p;
-
-    if (_port != MACH_PORT_NULL) return;
-
-    r = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE, &_port);
-    if (r != KERN_SUCCESS) return;
-
-    p = [NSMachPort portWithMachPort:_port];
-    [p setDelegate:NSApp];
-    [p scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:
-     NSDefaultRunLoopMode];
-}
-
-static void
-message_kit_thread(SEL selector, NSObject *arg)
-{
-    message msg;
-    kern_return_t r;
-
-    msg.hdr.msgh_bits = MACH_MSGH_BITS(MACH_MSG_TYPE_MAKE_SEND, 0);
-    msg.hdr.msgh_size = sizeof(msg);
-    msg.hdr.msgh_remote_port = _port;
-    msg.hdr.msgh_local_port = MACH_PORT_NULL;
-    msg.hdr.msgh_reserved = 0;
-    msg.hdr.msgh_id = 0;
-
-    msg.selector = selector;
-    msg.arg = [arg retain];
-
-    r = mach_msg(&msg.hdr, MACH_SEND_MSG, msg.hdr.msgh_size,
-                 0, MACH_PORT_NULL, 0, MACH_PORT_NULL);
-    if (r != KERN_SUCCESS)
-        ErrorF("%s: mach_msg failed: %x\n", __FUNCTION__, r);
-}
-
-- (void) handleMachMessage:(void *)_msg
-{
-    message *msg = _msg;
-
-    [self performSelector:msg->selector withObject:msg->arg];
-    [msg->arg release];
-}
-
-- (void) set_controller:obj
-{
-    if (_controller == nil) _controller = [obj retain];
-}
-
 - (void) dealloc
 {
-    if (_controller != nil) [_controller release];
-
-    if (_port != MACH_PORT_NULL)
-        mach_port_deallocate(mach_task_self(), _port);
-
+    self.controller = nil;
     [super dealloc];
 }
 
@@ -207,10 +206,12 @@ message_kit_thread(SEL selector, NSObject *arg)
 
 - (void) activateX:(OSX_BOOL)state
 {
-    if (_x_active == state)
+    OSX_BOOL const x_active = self.x_active;
+
+    if (x_active == state)
         return;
 
-    DEBUG_LOG("state=%d, _x_active=%d, \n", state, _x_active);
+    DEBUG_LOG("state=%d, x_active=%d, \n", state, x_active);
     if (state) {
         if (bgMouseLocationUpdated) {
             DarwinSendPointerEvents(darwinPointer, MotionNotify, 0,
@@ -234,7 +235,7 @@ message_kit_thread(SEL selector, NSObject *arg)
         DarwinSendDDXEvent(kXquartzDeactivate, 0);
     }
 
-    _x_active = state;
+    self.x_active = state;
 }
 
 - (void) became_key:(NSWindow *)win
@@ -244,7 +245,16 @@ message_kit_thread(SEL selector, NSObject *arg)
 
 - (void) sendEvent:(NSEvent *)e
 {
+    /* Don't try sending to X if we haven't initialized.  This can happen if AppKit takes over
+     * (eg: uncaught exception) early in launch.
+     */
+    if (!eventTranslationQueue) {
+        [super sendEvent:e];
+        return;
+    }
+
     OSX_BOOL for_appkit, for_x;
+    OSX_BOOL const x_active = self.x_active;
 
     /* By default pass down the responder chain and to X. */
     for_appkit = YES;
@@ -257,19 +267,40 @@ message_kit_thread(SEL selector, NSObject *arg)
     case NSLeftMouseUp:
     case NSRightMouseUp:
     case NSOtherMouseUp:
+    case NSScrollWheel:
+
         if ([e window] != nil) {
             /* Pointer event has an (AppKit) window. Probably something for the kit. */
             for_x = NO;
-            if (_x_active) [self activateX:NO];
+            if (x_active) [self activateX:NO];
         }
         else if ([self modalWindow] == nil) {
-            /* Must be an X window. Tell appkit it doesn't have focus. */
+            /* Must be an X window. Tell appkit windows to resign main/key */
             for_appkit = NO;
 
-            if ([self isActive]) {
-                [self deactivate];
-                if (!_x_active && quartzProcs->IsX11Window([e windowNumber]))
-                    [self activateX:YES];
+            if (!x_active && quartzProcs->IsX11Window([e windowNumber])) {
+                if ([self respondsToSelector:@selector(_setKeyWindow:)] && [self respondsToSelector:@selector(_setMainWindow:)]) {
+                    NSWindow *keyWindow = [self keyWindow];
+                    if (keyWindow) {
+                        [self _setKeyWindow:nil];
+                        [keyWindow resignKeyWindow];
+                    }
+
+                    NSWindow *mainWindow = [self mainWindow];
+                    if (mainWindow) {
+                        [self _setMainWindow:nil];
+                        [mainWindow resignMainWindow];
+                   }
+                 } else {
+                    /* This has a side effect of causing background apps to steal focus from XQuartz.
+                     * Unfortunately, there is no public and stable API to do what we want, but this
+                     * is a decent fallback in the off chance that the above selectors get dropped
+                     * in the future.
+                     */
+                    [self deactivate];
+                }
+
+                [self activateX:YES];
             }
         }
 
@@ -321,14 +352,11 @@ message_kit_thread(SEL selector, NSObject *arg)
                     swallow_keycode = [e keyCode];
                     do_swallow = YES;
                     for_x = NO;
-#if XPLUGIN_VERSION >= 1
-                }
-                else if (XQuartzEnableKeyEquivalents &&
+                } else if (XQuartzEnableKeyEquivalents &&
                          xp_is_symbolic_hotkey_event([e eventRef])) {
                     swallow_keycode = [e keyCode];
                     do_swallow = YES;
                     for_x = NO;
-#endif
                 }
                 else if (XQuartzEnableKeyEquivalents &&
                          [[self mainMenu] performKeyEquivalent:e]) {
@@ -353,6 +381,15 @@ message_kit_thread(SEL selector, NSObject *arg)
                 else {
                     /* No kit window is focused, so send it to X. */
                     for_appkit = NO;
+
+                    /* Reset our swallow state if we're seeing the same keyCode again.
+                     * This can happen if we become !_x_active when the keyCode we
+                     * intended to swallow is delivered.  See:
+                     * https://bugs.freedesktop.org/show_bug.cgi?id=92648
+                     */
+                    if ([e keyCode] == swallow_keycode) {
+                        do_swallow = NO;
+                    }
                 }
             }
             else {       /* KeyUp */
@@ -382,37 +419,22 @@ message_kit_thread(SEL selector, NSObject *arg)
         case NSApplicationActivatedEventType:
             for_x = NO;
             if ([e window] == nil && x_was_active) {
-                BOOL order_all_windows = YES, workspaces, ok;
+                BOOL order_all_windows = YES;
                 for_appkit = NO;
 
+#if APPKIT_APPFLAGS_HACK
                 /* FIXME: This is a hack to avoid passing the event to AppKit which
                  *        would result in it raising one of its windows.
                  */
                 _appFlags._active = YES;
+#endif
 
                 [self set_front_process:nil];
 
                 /* Get the Spaces preference for SwitchOnActivate */
-                (void)CFPreferencesAppSynchronize(CFSTR("com.apple.dock"));
-                workspaces =
-                    CFPreferencesGetAppBooleanValue(CFSTR("workspaces"),
-                                                    CFSTR(
-                                                        "com.apple.dock"),
-                                                    &ok);
-                if (!ok)
-                    workspaces = NO;
-
+                BOOL const workspaces = [NSUserDefaults.dockDefaults boolForKey:@"workspaces"];
                 if (workspaces) {
-                    (void)CFPreferencesAppSynchronize(CFSTR(
-                                                          ".GlobalPreferences"));
-                    order_all_windows =
-                        CFPreferencesGetAppBooleanValue(CFSTR(
-                                                            "AppleSpacesSwitchOnActivate"),
-                                                        CFSTR(
-                                                            ".GlobalPreferences"),
-                                                        &ok);
-                    if (!ok)
-                        order_all_windows = YES;
+                    order_all_windows = [NSUserDefaults.globalDefaults boolForKey:@"AppleSpacesSwitchOnActivate"];
                 }
 
                 /* TODO: In the workspaces && !AppleSpacesSwitchOnActivate case, the windows are ordered
@@ -423,8 +445,7 @@ message_kit_thread(SEL selector, NSObject *arg)
                  *       be restoring one of them.
                  */
                 if ([e data2] & 0x10) {         // 0x10 (bfCPSOrderAllWindowsForward) is set when we use cmd-tab or the dock icon
-                    DarwinSendDDXEvent(kXquartzBringAllToFront, 1,
-                                       order_all_windows);
+                    DarwinSendDDXEvent(kXquartzBringAllToFront, 1, order_all_windows);
                 }
             }
             break;
@@ -447,50 +468,83 @@ message_kit_thread(SEL selector, NSObject *arg)
         break;          /* for gcc */
     }
 
-    if (for_appkit) [super sendEvent:e];
+    if (for_appkit) {
+        [super sendEvent:e];
+    }
 
     if (for_x) {
-#ifdef HAVE_LIBDISPATCH
         dispatch_async(eventTranslationQueue, ^{
-                           [self sendX11NSEvent:e];
-                       });
-#else
-        [self sendX11NSEvent:e];
-#endif
+            [self sendX11NSEvent:e];
+        });
     }
-}
-
-- (void) set_window_menu:(NSArray *)list
-{
-    [_controller set_window_menu:list];
-}
-
-- (void) set_window_menu_check:(NSNumber *)n
-{
-    [_controller set_window_menu_check:n];
 }
 
 - (void) set_apps_menu:(NSArray *)list
 {
-    [_controller set_apps_menu:list];
+    [self.controller set_apps_menu:list];
 }
+
+#if XPLUGIN_VERSION >= 7
+/* Return the native (CoreGraphics) window id of this process's frontmost
+ * on-screen X11 window, or XP_NULL_NATIVE_WINDOW_ID if there is none. The window
+ * list is ordered front-to-back, so the first of our X11 windows is the
+ * frontmost one.
+ */
+static xp_native_window_id
+x11_front_window_id(void)
+{
+    xp_native_window_id ret = XP_NULL_NATIVE_WINDOW_ID;
+    CFArrayRef windows = CGWindowListCopyWindowInfo(
+        kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements,
+        kCGNullWindowID);
+
+    if (windows == NULL)
+        return ret;
+
+    for (CFIndex i = 0, count = CFArrayGetCount(windows); i < count; i++) {
+        CFDictionaryRef info = CFArrayGetValueAtIndex(windows, i);
+        CFNumberRef numRef = CFDictionaryGetValue(info, kCGWindowNumber);
+        int num = 0;
+
+        if (numRef != NULL && CFNumberGetValue(numRef, kCFNumberIntType, &num)
+            && quartzProcs->IsX11Window(num)) {
+            ret = (xp_native_window_id)num;
+            break;
+        }
+    }
+
+    CFRelease(windows);
+    return ret;
+}
+#endif
 
 - (void) set_front_process:unused
 {
-    [NSApp activateIgnoringOtherApps:YES];
+    OSX_BOOL activated = NO;
+
+#if XPLUGIN_VERSION >= 7
+    /* -[NSApplication activateIgnoringOtherApps:] is no longer honored under the
+     * macOS cooperative activation model (it defers and ultimately drops the
+     * request), so use the libXplugin API instead where available.
+     */
+#if XPLUGIN_VERSION_MIN_REQUIRED < 7
+    /* xp_window_activate() is weakly linked here; only call it if the loaded
+     * Xplugin actually provides it.
+     */
+    if (xp_api_version() >= 7)
+#endif
+    {
+        xp_native_window_id const wid = x11_front_window_id();
+        if (wid != XP_NULL_NATIVE_WINDOW_ID)
+            activated = (xp_window_activate(wid) == XP_Success);
+    }
+#endif
+
+    if (!activated)
+        [NSApp activateIgnoringOtherApps:YES];
 
     if ([self modalWindow] == nil)
         [self activateX:YES];
-}
-
-- (void) set_can_quit:(NSNumber *)state
-{
-    [_controller set_can_quit:[state boolValue]];
-}
-
-- (void) server_ready:unused
-{
-    [_controller server_ready];
 }
 
 - (void) show_hide_menubar:(NSNumber *)state
@@ -505,406 +559,53 @@ message_kit_thread(SEL selector, NSObject *arg)
 
 - (void) launch_client:(NSString *)cmd
 {
-    (void)[_controller application:self openFile:cmd];
+    (void)[self.controller application:self openFile:cmd];
 }
 
-/* user preferences */
-
-/* Note that these functions only work for arrays whose elements
-   can be toll-free-bridged between NS and CF worlds. */
-
-static const void *
-cfretain(CFAllocatorRef a, const void *b)
-{
-    return CFRetain(b);
-}
-
-static void
-cfrelease(CFAllocatorRef a, const void *b)
-{
-    CFRelease(b);
-}
-
-static CFMutableArrayRef
-nsarray_to_cfarray(NSArray *in)
-{
-    CFMutableArrayRef out;
-    CFArrayCallBacks cb;
-    NSObject *ns;
-    const CFTypeRef *cf;
-    int i, count;
-
-    memset(&cb, 0, sizeof(cb));
-    cb.version = 0;
-    cb.retain = cfretain;
-    cb.release = cfrelease;
-
-    count = [in count];
-    out = CFArrayCreateMutable(NULL, count, &cb);
-
-    for (i = 0; i < count; i++) {
-        ns = [in objectAtIndex:i];
-
-        if ([ns isKindOfClass:[NSArray class]])
-            cf = (CFTypeRef)nsarray_to_cfarray((NSArray *)ns);
-        else
-            cf = CFRetain((CFTypeRef)ns);
-
-        CFArrayAppendValue(out, cf);
-        CFRelease(cf);
-    }
-
-    return out;
-}
-
-static NSMutableArray *
-cfarray_to_nsarray(CFArrayRef in)
-{
-    NSMutableArray *out;
-    const CFTypeRef *cf;
-    NSObject *ns;
-    int i, count;
-
-    count = CFArrayGetCount(in);
-    out = [[NSMutableArray alloc] initWithCapacity:count];
-
-    for (i = 0; i < count; i++) {
-        cf = CFArrayGetValueAtIndex(in, i);
-
-        if (CFGetTypeID(cf) == CFArrayGetTypeID())
-            ns = cfarray_to_nsarray((CFArrayRef)cf);
-        else
-            ns = [(id) cf retain];
-
-        [out addObject:ns];
-        [ns release];
-    }
-
-    return out;
-}
-
-- (CFPropertyListRef) prefs_get_copy:(NSString *)key
-{
-    CFPropertyListRef value;
-
-    value = CFPreferencesCopyAppValue((CFStringRef)key,
-                                      app_prefs_domain_cfstr);
-
-    if (value == NULL) {
-        static CFDictionaryRef defaults;
-
-        if (defaults == NULL) {
-            CFStringRef error = NULL;
-            CFDataRef data;
-            CFURLRef url;
-            SInt32 error_code;
-
-            url = (CFURLCreateFromFileSystemRepresentation
-                       (NULL, (unsigned char *)DEFAULTS_FILE,
-                       strlen(DEFAULTS_FILE), false));
-            if (CFURLCreateDataAndPropertiesFromResource(NULL, url, &data,
-                                                         NULL, NULL,
-                                                         &error_code)) {
-                defaults = (CFPropertyListCreateFromXMLData
-                                (NULL, data,
-                                kCFPropertyListMutableContainersAndLeaves,
-                                &error));
-                if (error != NULL) CFRelease(error);
-                CFRelease(data);
-            }
-            CFRelease(url);
-
-            if (defaults != NULL) {
-                NSMutableArray *apps, *elt;
-                int count, i;
-                NSString *name, *nname;
-
-                /* Localize the names in the default apps menu. */
-
-                apps =
-                    [(NSDictionary *) defaults objectForKey:@PREFS_APPSMENU];
-                if (apps != nil) {
-                    count = [apps count];
-                    for (i = 0; i < count; i++) {
-                        elt = [apps objectAtIndex:i];
-                        if (elt != nil &&
-                            [elt isKindOfClass:[NSArray class]]) {
-                            name = [elt objectAtIndex:0];
-                            if (name != nil) {
-                                nname = NSLocalizedString(name, nil);
-                                if (nname != nil && nname != name)
-                                    [elt replaceObjectAtIndex:0 withObject:
-                                     nname];
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (defaults != NULL) value = CFDictionaryGetValue(defaults, key);
-        if (value != NULL) CFRetain(value);
-    }
-
-    return value;
-}
-
-- (int) prefs_get_integer:(NSString *)key default:(int)def
-{
-    CFPropertyListRef value;
-    int ret;
-
-    value = [self prefs_get_copy:key];
-
-    if (value != NULL && CFGetTypeID(value) == CFNumberGetTypeID())
-        CFNumberGetValue(value, kCFNumberIntType, &ret);
-    else if (value != NULL && CFGetTypeID(value) == CFStringGetTypeID())
-        ret = CFStringGetIntValue(value);
-    else
-        ret = def;
-
-    if (value != NULL) CFRelease(value);
-
-    return ret;
-}
-
-- (const char *) prefs_get_string:(NSString *)key default:(const char *)def
-{
-    CFPropertyListRef value;
-    const char *ret = NULL;
-
-    value = [self prefs_get_copy:key];
-
-    if (value != NULL && CFGetTypeID(value) == CFStringGetTypeID()) {
-        NSString *s = (NSString *)value;
-
-        ret = [s UTF8String];
-    }
-
-    if (value != NULL) CFRelease(value);
-
-    return ret != NULL ? ret : def;
-}
-
-- (NSURL *) prefs_copy_url:(NSString *)key default:(NSURL *)def
-{
-    CFPropertyListRef value;
-    NSURL *ret = NULL;
-
-    value = [self prefs_get_copy:key];
-
-    if (value != NULL && CFGetTypeID(value) == CFStringGetTypeID()) {
-        NSString *s = (NSString *)value;
-
-        ret = [NSURL URLWithString:s];
-        [ret retain];
-    }
-
-    if (value != NULL) CFRelease(value);
-
-    return ret != NULL ? ret : def;
-}
-
-- (float) prefs_get_float:(NSString *)key default:(float)def
-{
-    CFPropertyListRef value;
-    float ret = def;
-
-    value = [self prefs_get_copy:key];
-
-    if (value != NULL
-        && CFGetTypeID(value) == CFNumberGetTypeID()
-        && CFNumberIsFloatType(value))
-        CFNumberGetValue(value, kCFNumberFloatType, &ret);
-    else if (value != NULL && CFGetTypeID(value) == CFStringGetTypeID())
-        ret = CFStringGetDoubleValue(value);
-
-    if (value != NULL) CFRelease(value);
-
-    return ret;
-}
-
-- (int) prefs_get_boolean:(NSString *)key default:(int)def
-{
-    CFPropertyListRef value;
-    int ret = def;
-
-    value = [self prefs_get_copy:key];
-
-    if (value != NULL) {
-        if (CFGetTypeID(value) == CFNumberGetTypeID())
-            CFNumberGetValue(value, kCFNumberIntType, &ret);
-        else if (CFGetTypeID(value) == CFBooleanGetTypeID())
-            ret = CFBooleanGetValue(value);
-        else if (CFGetTypeID(value) == CFStringGetTypeID()) {
-            const char *tem = [(NSString *) value UTF8String];
-            if (strcasecmp(tem, "true") == 0 || strcasecmp(tem, "yes") == 0)
-                ret = YES;
-            else
-                ret = NO;
-        }
-
-        CFRelease(value);
-    }
-    return ret;
-}
-
-- (NSArray *) prefs_get_array:(NSString *)key
-{
-    NSArray *ret = nil;
-    CFPropertyListRef value;
-
-    value = [self prefs_get_copy:key];
-
-    if (value != NULL) {
-        if (CFGetTypeID(value) == CFArrayGetTypeID())
-            ret = [cfarray_to_nsarray (value)autorelease];
-
-        CFRelease(value);
-    }
-
-    return ret;
-}
-
-- (void) prefs_set_integer:(NSString *)key value:(int)value
-{
-    CFNumberRef x;
-
-    x = CFNumberCreate(NULL, kCFNumberIntType, &value);
-
-    CFPreferencesSetValue((CFStringRef)key, (CFTypeRef)x,
-                          app_prefs_domain_cfstr,
-                          kCFPreferencesCurrentUser,
-                          kCFPreferencesAnyHost);
-
-    CFRelease(x);
-}
-
-- (void) prefs_set_float:(NSString *)key value:(float)value
-{
-    CFNumberRef x;
-
-    x = CFNumberCreate(NULL, kCFNumberFloatType, &value);
-
-    CFPreferencesSetValue((CFStringRef)key, (CFTypeRef)x,
-                          app_prefs_domain_cfstr,
-                          kCFPreferencesCurrentUser,
-                          kCFPreferencesAnyHost);
-
-    CFRelease(x);
-}
-
-- (void) prefs_set_boolean:(NSString *)key value:(int)value
-{
-    CFPreferencesSetValue(
-        (CFStringRef)key,
-        (CFTypeRef)(value ? kCFBooleanTrue
-                    : kCFBooleanFalse),
-        app_prefs_domain_cfstr,
-        kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-
-}
-
-- (void) prefs_set_array:(NSString *)key value:(NSArray *)value
-{
-    CFArrayRef cfarray;
-
-    cfarray = nsarray_to_cfarray(value);
-    CFPreferencesSetValue((CFStringRef)key,
-                          (CFTypeRef)cfarray,
-                          app_prefs_domain_cfstr,
-                          kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-    CFRelease(cfarray);
-}
-
-- (void) prefs_set_string:(NSString *)key value:(NSString *)value
-{
-    CFPreferencesSetValue((CFStringRef)key, (CFTypeRef)value,
-                          app_prefs_domain_cfstr, kCFPreferencesCurrentUser,
-                          kCFPreferencesAnyHost);
-}
-
-- (void) prefs_synchronize
-{
-    CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication);
-}
 
 - (void) read_defaults
 {
-    NSString *nsstr;
-    const char *tem;
+    NSUserDefaults * const defaults = NSUserDefaults.xquartzDefaults;
 
-    XQuartzRootlessDefault = [self prefs_get_boolean:@PREFS_ROOTLESS
-                              default               :XQuartzRootlessDefault];
-    XQuartzFullscreenMenu = [self prefs_get_boolean:@PREFS_FULLSCREEN_MENU
-                             default               :XQuartzFullscreenMenu];
-    XQuartzFullscreenDisableHotkeys =
-        ![self prefs_get_boolean:@PREFS_FULLSCREEN_HOTKEYS
-          default               :!
-          XQuartzFullscreenDisableHotkeys];
-    darwinFakeButtons = [self prefs_get_boolean:@PREFS_FAKEBUTTONS
-                         default               :darwinFakeButtons];
-    XQuartzOptionSendsAlt = [self prefs_get_boolean:@PREFS_OPTION_SENDS_ALT
-                             default               :XQuartzOptionSendsAlt];
+    XQuartzRootlessDefault = [defaults boolForKey:XQuartzPrefKeyRootless];
+    XQuartzFullscreenMenu = [defaults boolForKey:XQuartzPrefKeyFullscreenMenu];
+    XQuartzFullscreenDisableHotkeys = ![defaults boolForKey:XQuartzPrefKeyFullscreenHotkeys];
+
+    darwinFakeButtons = [defaults boolForKey:XQuartzPrefKeyFakeButtons];
+    XQuartzOptionSendsAlt = [defaults boolForKey:XQuartzPrefKeyOptionSendsAlt];
 
     if (darwinFakeButtons) {
-        const char *fake2, *fake3;
+        NSString * const fake2 = [defaults stringForKey:XQuartzPrefKeyFakeButton2];
+        if (fake2) {
+            darwinFakeMouse2Mask = DarwinParseModifierList(fake2.UTF8String, TRUE);
+        }
 
-        fake2 = [self prefs_get_string:@PREFS_FAKE_BUTTON2 default:NULL];
-        fake3 = [self prefs_get_string:@PREFS_FAKE_BUTTON3 default:NULL];
-
-        if (fake2 != NULL) darwinFakeMouse2Mask = DarwinParseModifierList(
-                fake2, TRUE);
-        if (fake3 != NULL) darwinFakeMouse3Mask = DarwinParseModifierList(
-                fake3, TRUE);
-    }
-
-    tem = [self prefs_get_string:@PREFS_APPKIT_MODIFIERS default:NULL];
-    if (tem != NULL) darwinAppKitModMask = DarwinParseModifierList(tem, TRUE);
-
-    tem = [self prefs_get_string:@PREFS_WINDOW_ITEM_MODIFIERS default:NULL];
-    if (tem != NULL) {
-        windowItemModMask = DarwinParseModifierList(tem, FALSE);
-    }
-    else {
-        nsstr = NSLocalizedString(@"window item modifiers",
-                                  @"window item modifiers");
-        if (nsstr != NULL) {
-            tem = [nsstr UTF8String];
-            if ((tem != NULL) && strcmp(tem, "window item modifiers")) {
-                windowItemModMask = DarwinParseModifierList(tem, FALSE);
-            }
+        NSString * const fake3 = [defaults stringForKey:XQuartzPrefKeyFakeButton3];
+        if (fake3) {
+            darwinFakeMouse3Mask = DarwinParseModifierList(fake3.UTF8String, TRUE);
         }
     }
 
-    XQuartzEnableKeyEquivalents = [self prefs_get_boolean:@PREFS_KEYEQUIVS
-                                   default               :
-                                   XQuartzEnableKeyEquivalents];
-
-    darwinSyncKeymap = [self prefs_get_boolean:@PREFS_SYNC_KEYMAP
-                        default               :darwinSyncKeymap];
-
-    darwinDesiredDepth = [self prefs_get_integer:@PREFS_DEPTH
-                          default               :darwinDesiredDepth];
-
-    noTestExtensions = ![self prefs_get_boolean:@PREFS_TEST_EXTENSIONS
-                         default               :FALSE];
-
-    noRenderExtension = ![self prefs_get_boolean:@PREFS_RENDER_EXTENSION
-                          default               :TRUE];
-
-    XQuartzScrollInDeviceDirection =
-        [self prefs_get_boolean:@PREFS_SCROLL_IN_DEV_DIRECTION
-         default               :
-         XQuartzScrollInDeviceDirection];
-
-#if XQUARTZ_SPARKLE
-    NSURL *url = [self prefs_copy_url:@PREFS_UPDATE_FEED default:nil];
-    if (url) {
-        [[SUUpdater sharedUpdater] setFeedURL:url];
-        [url release];
+    NSString * const appKitModifiers = [defaults stringForKey:XQuartzPrefKeyAppKitModifiers];
+    if (appKitModifiers) {
+        darwinAppKitModMask = DarwinParseModifierList(appKitModifiers.UTF8String, TRUE);
     }
-#endif
+
+    NSString * const windowItemModifiers = [defaults stringForKey:XQuartzPrefKeyWindowItemModifiers];
+    if (windowItemModifiers) {
+        windowItemModMask = DarwinParseModifierList(windowItemModifiers.UTF8String, FALSE);
+    }
+
+    XQuartzEnableKeyEquivalents = [defaults boolForKey:XQuartzPrefKeyKeyEquivs];
+
+    darwinSyncKeymap = [defaults boolForKey:XQuartzPrefKeySyncKeymap];
+
+    darwinDesiredDepth = [defaults integerForKey:XQuartzPrefKeyDepth];
+
+    noTestExtensions = ![defaults boolForKey:XQuartzPrefKeyTESTExtension];
+    noRenderExtension = ![defaults boolForKey:XQuartzPrefKeyRENDERExtension];
+
+    XQuartzScrollInDeviceDirection = [defaults boolForKey:XQuartzPrefKeyScrollInDeviceDirection];
 }
 
 /* This will end up at the end of the responder chain. */
@@ -914,123 +615,83 @@ cfarray_to_nsarray(CFArrayRef in)
                        AppleWMCopyToPasteboard);
 }
 
-- (X11Controller *) controller
-{
-    return _controller;
-}
-
-- (OSX_BOOL) x_active
-{
-    return _x_active;
-}
-
 @end
-
-static NSArray *
-array_with_strings_and_numbers(int nitems, const char **items,
-                               const char *numbers)
-{
-    NSMutableArray *array, *subarray;
-    NSString *string, *number;
-    int i;
-
-    /* (Can't autorelease on the X server thread) */
-
-    array = [[NSMutableArray alloc] initWithCapacity:nitems];
-
-    for (i = 0; i < nitems; i++) {
-        subarray = [[NSMutableArray alloc] initWithCapacity:2];
-
-        string = [[NSString alloc] initWithUTF8String:items[i]];
-        [subarray addObject:string];
-        [string release];
-
-        if (numbers[i] != 0) {
-            number = [[NSString alloc] initWithFormat:@"%d", numbers[i]];
-            [subarray addObject:number];
-            [number release];
-        }
-        else
-            [subarray addObject:@""];
-
-        [array addObject:subarray];
-        [subarray release];
-    }
-
-    return array;
-}
 
 void
 X11ApplicationSetWindowMenu(int nitems, const char **items,
                             const char *shortcuts)
 {
-    NSArray *array;
-    array = array_with_strings_and_numbers(nitems, items, shortcuts);
+    @autoreleasepool {
+        NSMutableArray <NSArray <NSString *> *> * const allMenuItems = [NSMutableArray array];
 
-    /* Send the array of strings over to the appkit thread */
+        for (int i = 0; i < nitems; i++) {
+            NSMutableArray <NSString *> * const menuItem = [NSMutableArray array];
+            [menuItem addObject:@(items[i])];
 
-    message_kit_thread(@selector (set_window_menu:), array);
-    [array release];
+            if (shortcuts[i] == 0) {
+                [menuItem addObject:@""];
+            } else {
+                [menuItem addObject:[NSString stringWithFormat:@"%d", shortcuts[i]]];
+            }
+
+            [allMenuItems addObject:menuItem];
+        }
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [X11App.controller set_window_menu:allMenuItems];
+        });
+    }
 }
 
 void
 X11ApplicationSetWindowMenuCheck(int idx)
 {
-    NSNumber *n;
-
-    n = [[NSNumber alloc] initWithInt:idx];
-
-    message_kit_thread(@selector (set_window_menu_check:), n);
-
-    [n release];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [X11App.controller set_window_menu_check:@(idx)];
+    });
 }
 
 void
 X11ApplicationSetFrontProcess(void)
 {
-    message_kit_thread(@selector (set_front_process:), nil);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [X11App set_front_process:nil];
+    });
 }
 
 void
 X11ApplicationSetCanQuit(int state)
 {
-    NSNumber *n;
-
-    n = [[NSNumber alloc] initWithBool:state];
-
-    message_kit_thread(@selector (set_can_quit:), n);
-
-    [n release];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        X11App.controller.can_quit = !!state;
+    });
 }
 
 void
 X11ApplicationServerReady(void)
 {
-    message_kit_thread(@selector (server_ready:), nil);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [X11App.controller server_ready];
+    });
 }
 
 void
 X11ApplicationShowHideMenubar(int state)
 {
-    NSNumber *n;
-
-    n = [[NSNumber alloc] initWithBool:state];
-
-    message_kit_thread(@selector (show_hide_menubar:), n);
-
-    [n release];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [X11App show_hide_menubar:@(state)];
+    });
 }
 
 void
 X11ApplicationLaunchClient(const char *cmd)
 {
-    NSString *string;
-
-    string = [[NSString alloc] initWithUTF8String:cmd];
-
-    message_kit_thread(@selector (launch_client:), string);
-
-    [string release];
+    @autoreleasepool {
+        NSString *string = @(cmd);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [X11App launch_client:string];
+        });
+    }
 }
 
 /* This is a special function in that it is run from the *SERVER* thread and
@@ -1041,8 +702,9 @@ Bool
 X11ApplicationCanEnterRandR(void)
 {
     NSString *title, *msg;
+    NSUserDefaults * const defaults = NSUserDefaults.xquartzDefaults;
 
-    if ([X11App prefs_get_boolean:@PREFS_NO_RANDR_ALERT default:NO] ||
+    if ([defaults boolForKey:XQuartzPrefKeyNoRANDRAlert] ||
         XQuartzShieldingWindowLevel != 0)
         return TRUE;
 
@@ -1055,15 +717,17 @@ X11ApplicationCanEnterRandR(void)
     if (!XQuartzIsRootless)
         QuartzShowFullscreen(FALSE);
 
-    switch (NSRunAlertPanel(title, msg,
-                            NSLocalizedString(@"Allow",
-                                              @""),
-                            NSLocalizedString(@"Cancel",
-                                              @""),
-                            NSLocalizedString(@"Always Allow", @""))) {
+    NSInteger __block alert_result;
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        alert_result = NSRunAlertPanel(title, @"%@",
+                                       NSLocalizedString(@"Allow", @""),
+                                       NSLocalizedString(@"Cancel", @""),
+                                       NSLocalizedString(@"Always Allow", @""), msg);
+    });
+
+    switch (alert_result) {
     case NSAlertOtherReturn:
-        [X11App prefs_set_boolean:@PREFS_NO_RANDR_ALERT value:YES];
-        [X11App prefs_synchronize];
+        [defaults setBool:YES forKey:XQuartzPrefKeyNoRANDRAlert];
 
     case NSAlertDefaultReturn:
         return YES;
@@ -1078,8 +742,9 @@ check_xinitrc(void)
 {
     char *tem, buf[1024];
     NSString *msg;
+    NSUserDefaults * const defaults = NSUserDefaults.xquartzDefaults;
 
-    if ([X11App prefs_get_boolean:@PREFS_DONE_XINIT_CHECK default:NO])
+    if ([defaults boolForKey:XQuartzPrefKeyDoneXinitCheck])
         return;
 
     tem = getenv("HOME");
@@ -1099,9 +764,8 @@ check_xinitrc(void)
             @"Startup xinitrc dialog");
 
     if (NSAlertDefaultReturn ==
-        NSRunAlertPanel(nil, msg, NSLocalizedString(@"Yes", @""),
-                        NSLocalizedString(@"No",
-                                          @""), nil)) {
+        NSRunAlertPanel(nil, @"%@", NSLocalizedString(@"Yes", @""),
+                        NSLocalizedString(@"No", @""), nil, msg)) {
         char buf2[1024];
         int i = -1;
 
@@ -1114,8 +778,7 @@ check_xinitrc(void)
     }
 
 done:
-    [X11App prefs_set_boolean:@PREFS_DONE_XINIT_CHECK value:YES];
-    [X11App prefs_synchronize];
+    [defaults setBool:YES forKey:XQuartzPrefKeyDoneXinitCheck];
 }
 
 static inline pthread_t
@@ -1145,83 +808,64 @@ xpbproxy_x_thread(void *args)
 void
 X11ApplicationMain(int argc, char **argv, char **envp)
 {
-    NSAutoreleasePool *pool;
-
 #ifdef DEBUG
     while (access("/tmp/x11-block", F_OK) == 0) sleep(1);
 #endif
 
-    pool = [[NSAutoreleasePool alloc] init];
-    X11App = (X11Application *)[X11Application sharedApplication];
-    init_ports();
+    @autoreleasepool {
+        X11App = (X11Application *)[X11Application sharedApplication];
+        [X11App read_defaults];
 
-    app_prefs_domain_cfstr =
-        (CFStringRef)[[NSBundle mainBundle] bundleIdentifier];
+        [NSBundle loadNibNamed:@"main" owner:NSApp];
+        [NSNotificationCenter.defaultCenter addObserver:NSApp
+                                               selector:@selector (became_key:)
+                                                   name:NSWindowDidBecomeKeyNotification
+                                                 object:nil];
 
-    if (app_prefs_domain_cfstr == NULL) {
-        ErrorF(
-            "X11ApplicationMain: Unable to determine bundle identifier.  Your installation of XQuartz may be broken.\n");
-        app_prefs_domain_cfstr = CFSTR(BUNDLE_ID_PREFIX ".X11");
-    }
+        /*
+         * The xpr Quartz mode is statically linked into this server.
+         * Initialize all the Quartz functions.
+         */
+        QuartzModeBundleInit();
 
-    [NSApp read_defaults];
-    [NSBundle loadNibNamed:@"main" owner:NSApp];
-    [[NSNotificationCenter defaultCenter] addObserver:NSApp
-                                             selector:@selector (became_key:)
-                                                 name:
-     NSWindowDidBecomeKeyNotification object:nil];
+        /* Calculate the height of the menubar so we can avoid it. */
+        aquaMenuBarHeight = NSApp.mainMenu.menuBarHeight;
+        if (!aquaMenuBarHeight) {
+            NSScreen* primaryScreen = NSScreen.screens[0];
+            aquaMenuBarHeight = NSHeight(primaryScreen.frame) - NSMaxY(primaryScreen.visibleFrame);
+        }
 
-    /*
-     * The xpr Quartz mode is statically linked into this server.
-     * Initialize all the Quartz functions.
-     */
-    QuartzModeBundleInit();
+        eventTranslationQueue = dispatch_queue_create(BUNDLE_ID_PREFIX ".X11.NSEventsToX11EventsQueue", NULL);
+        assert(eventTranslationQueue != NULL);
 
-    /* Calculate the height of the menubar so we can avoid it. */
-    aquaMenuBarHeight = NSHeight([[NSScreen mainScreen] frame]) -
-                        NSMaxY([[NSScreen mainScreen] visibleFrame]);
+        /* Set the key layout seed before we start the server */
+        last_key_layout = TISCopyCurrentKeyboardLayoutInputSource();
 
-#ifdef HAVE_LIBDISPATCH
-    eventTranslationQueue = dispatch_queue_create(
-        BUNDLE_ID_PREFIX ".X11.NSEventsToX11EventsQueue", NULL);
-    assert(eventTranslationQueue != NULL);
-#endif
+        if (!last_key_layout) {
+            ErrorF("X11ApplicationMain: Unable to determine TISCopyCurrentKeyboardLayoutInputSource() at startup.\n");
+        }
 
-    /* Set the key layout seed before we start the server */
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
-    last_key_layout = TISCopyCurrentKeyboardLayoutInputSource();
+        if (!QuartsResyncKeymap(FALSE)) {
+            ErrorF("X11ApplicationMain: Could not build a valid keymap.\n");
+        }
 
-    if (!last_key_layout)
-        ErrorF(
-            "X11ApplicationMain: Unable to determine TISCopyCurrentKeyboardLayoutInputSource() at startup.\n");
-#else
-    KLGetCurrentKeyboardLayout(&last_key_layout);
-    if (!last_key_layout)
-        ErrorF(
-            "X11ApplicationMain: Unable to determine KLGetCurrentKeyboardLayout() at startup.\n");
-#endif
+        /* Tell the server thread that it can proceed */
+        QuartzInitServer(argc, argv, envp);
 
-    if (!QuartsResyncKeymap(FALSE)) {
-        ErrorF("X11ApplicationMain: Could not build a valid keymap.\n");
-    }
+        /* This must be done after QuartzInitServer because it can result in
+         * an mieqEnqueue() - <rdar://problem/6300249>
+         */
+        check_xinitrc();
 
-    /* Tell the server thread that it can proceed */
-    QuartzInitServer(argc, argv, envp);
-
-    /* This must be done after QuartzInitServer because it can result in
-     * an mieqEnqueue() - <rdar://problem/6300249>
-     */
-    check_xinitrc();
-
-    create_thread(xpbproxy_x_thread, NULL);
+        create_thread(xpbproxy_x_thread, NULL);
 
 #if XQUARTZ_SPARKLE
-    [[X11App controller] setup_sparkle];
-    [[SUUpdater sharedUpdater] resetUpdateCycle];
-    //    [[SUUpdater sharedUpdater] checkForUpdates:X11App];
+        [[X11App controller] setup_sparkle];
+        [[SUUpdater sharedUpdater] resetUpdateCycle];
+        //    [[SUUpdater sharedUpdater] checkForUpdates:X11App];
 #endif
+    }
 
-    [pool release];
     [NSApp run];
     /* not reached */
 }
@@ -1281,6 +925,9 @@ untrusted_str(NSEvent *e)
 }
 #endif
 
+extern void
+wait_for_mieq_init(void);
+
 - (void) sendX11NSEvent:(NSEvent *)e
 {
     NSPoint location = NSZeroPoint;
@@ -1293,18 +940,14 @@ untrusted_str(NSEvent *e)
     int modifierFlags;
     BOOL isMouseOrTabletEvent, isTabletEvent;
 
-#ifdef HAVE_LIBDISPATCH
-    static dispatch_once_t once_pred;
-    dispatch_once(&once_pred, ^{
-                      tilt = NSZeroPoint;
-                      darwinTabletCurrent = darwinTabletStylus;
-                  });
-#else
     if (!darwinTabletCurrent) {
+        /* Ensure that the event system is initialized */
+        wait_for_mieq_init();
+        assert(darwinTabletStylus);
+
         tilt = NSZeroPoint;
         darwinTabletCurrent = darwinTabletStylus;
     }
-#endif
 
     isMouseOrTabletEvent = [e type] == NSLeftMouseDown ||
                            [e type] == NSOtherMouseDown ||
@@ -1426,7 +1069,16 @@ untrusted_str(NSEvent *e)
         goto handle_mouse;
 
     case NSOtherMouseDown:
-        ev_button = 2;
+        // Get the AppKit button number, and convert it from 0-based to 1-based
+        ev_button = [e buttonNumber] + 1;
+
+        /* Translate middle mouse button (3 in AppKit) to button 2 in X11,
+         * and translate additional mouse buttons (4 and higher in AppKit)
+         * to buttons 8 and higher in X11, to match default behavior of X11
+         * on other platforms
+         */
+        ev_button = (ev_button == 3) ? 2 : (ev_button + 4);
+
         ev_type = ButtonPress;
         goto handle_mouse;
 
@@ -1441,7 +1093,9 @@ untrusted_str(NSEvent *e)
         goto handle_mouse;
 
     case NSOtherMouseUp:
-        ev_button = 2;
+        // See above comments for NSOtherMouseDown
+        ev_button = [e buttonNumber] + 1;
+        ev_button = (ev_button == 3) ? 2 : (ev_button + 4);
         ev_type = ButtonRelease;
         goto handle_mouse;
 
@@ -1456,7 +1110,9 @@ untrusted_str(NSEvent *e)
         goto handle_mouse;
 
     case NSOtherMouseDragged:
-        ev_button = 2;
+        // See above comments for NSOtherMouseDown
+        ev_button = [e buttonNumber] + 1;
+        ev_button = (ev_button == 3) ? 2 : (ev_button + 4);
         ev_type = MotionNotify;
         goto handle_mouse;
 
@@ -1523,8 +1179,6 @@ handle_mouse:
         }
 
         if (!XQuartzServerVisible && noTestExtensions) {
-#if defined(XPLUGIN_VERSION) && XPLUGIN_VERSION > 0
-            /* Older libXplugin (Tiger/"Stock" Leopard) aren't thread safe, so we can't call xp_find_window from the Appkit thread */
             xp_window_id wid = 0;
             xp_error err;
 
@@ -1537,7 +1191,6 @@ handle_mouse:
             err = xp_find_window(location.x, location.y, 0, &wid);
 
             if (err != XP_Success || (err == XP_Success && wid == 0))
-#endif
             {
                 bgMouseLocation = location;
                 bgMouseLocationUpdated = TRUE;
@@ -1615,26 +1268,11 @@ handle_mouse:
         }
 #endif
         
-#if !defined(XPLUGIN_VERSION) || XPLUGIN_VERSION == 0
-        /* If we're in the background, we need to send a MotionNotify event
-         * first, since we aren't getting them on background mouse motion
-         */
-        if (!XQuartzServerVisible && noTestExtensions) {
-            bgMouseLocationUpdated = FALSE;
-            DarwinSendPointerEvents(darwinPointer, MotionNotify, 0,
-                                    location.x, location.y,
-                                    0.0, 0.0);
-        }
-#endif
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
-        // TODO: Change 1117 to NSAppKitVersionNumber10_7 when it is defined
-        if (NSAppKitVersionNumber >= 1117 &&
-            XQuartzScrollInDeviceDirection &&
+        if (XQuartzScrollInDeviceDirection &&
             [e isDirectionInvertedFromDevice]) {
             deltaX *= -1;
             deltaY *= -1;
         }
-#endif
         /* This hack is in place to better deal with "clicky" scroll wheels:
          * http://xquartz.macosforge.org/trac/ticket/562
          */
@@ -1740,9 +1378,17 @@ handle_mouse:
     }
 
         if (darwinSyncKeymap) {
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
-            TISInputSourceRef key_layout = 
-                TISCopyCurrentKeyboardLayoutInputSource();
+            __block TISInputSourceRef key_layout;
+            dispatch_block_t copyCurrentKeyboardLayoutInputSource = ^{
+                key_layout = TISCopyCurrentKeyboardLayoutInputSource();
+            };
+            /* This is an ugly ant-pattern, but it is more expedient to address the problem right now. */
+            if (pthread_main_np()) {
+                copyCurrentKeyboardLayoutInputSource();
+            } else {
+                dispatch_sync(dispatch_get_main_queue(), copyCurrentKeyboardLayoutInputSource);
+            }
+
             TISInputSourceRef clear;
             if (CFEqual(key_layout, last_key_layout)) {
                 CFRelease(key_layout);
@@ -1752,12 +1398,7 @@ handle_mouse:
                 clear = last_key_layout;
                 last_key_layout = key_layout;
                 CFRelease(clear);
-#else
-            KeyboardLayoutRef key_layout;
-            KLGetCurrentKeyboardLayout(&key_layout);
-            if (key_layout != last_key_layout) {
-                last_key_layout = key_layout;
-#endif
+
                 /* Update keyInfo */
                 if (!QuartsResyncKeymap(TRUE)) {
                     ErrorF(

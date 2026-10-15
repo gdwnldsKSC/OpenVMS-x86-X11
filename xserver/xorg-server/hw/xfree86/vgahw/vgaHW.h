@@ -83,7 +83,7 @@ typedef struct {
     unsigned char *CRTC;        /* Crtc Controller */
     unsigned char *Sequencer;   /* Video Sequencer */
     unsigned char *Graphics;    /* Video Graphics */
-    unsigned char *Attribute;   /* Video Atribute */
+    unsigned char *Attribute;   /* Video Attribute */
     unsigned char DAC[768];     /* Internal Colorlookuptable */
     unsigned char numCRTC;      /* number of CRTC registers, def=VGA_NUM_CRTC */
     unsigned char numSequencer; /* number of seq registers, def=VGA_NUM_SEQ */
@@ -107,18 +107,18 @@ typedef void (*vgaHWMiscProcPtr) (vgaHWPtr hwp);
  * via the first 17 attribute registers and not the main 8-bit palette.
  */
 typedef struct _vgaHWRec {
-    pointer Base;               /* Address of "VGA" memory */
+    void *Base;               /* Address of "VGA" memory */
     int MapSize;                /* Size of "VGA" memory */
     unsigned long MapPhys;      /* phys location of VGA mem */
     int IOBase;                 /* I/O Base address */
     CARD8 *MMIOBase;            /* Pointer to MMIO start */
     int MMIOOffset;             /* base + offset + vgareg
                                    = mmioreg */
-    pointer FontInfo1;          /* save area for fonts in
+    void *FontInfo1;          /* save area for fonts in
                                    plane 2 */
-    pointer FontInfo2;          /* save area for fonts in       
+    void *FontInfo2;          /* save area for fonts in
                                    plane 3 */
-    pointer TextInfo;           /* save area for text */
+    void *TextInfo;           /* save area for text */
     vgaRegRec SavedReg;         /* saved registers */
     vgaRegRec ModeReg;          /* register settings for
                                    current mode */
@@ -148,7 +148,7 @@ typedef struct _vgaHWRec {
     vgaHWWriteProcPtr writeDacReadAddr;
     vgaHWWriteProcPtr writeDacData;
     vgaHWReadProcPtr readDacData;
-    pointer ddc;
+    void *ddc;
     struct pci_io_handle *io;
     vgaHWReadProcPtr readEnable;
     vgaHWWriteProcPtr writeEnable;

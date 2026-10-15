@@ -1,10 +1,8 @@
 SUBDIRS = man
 
 bin_PROGRAMS = Xnest
-noinst_LIBRARIES = libfbcmap.a
 
 AM_CFLAGS = -DHAVE_XNEST_CONFIG_H \
-            -DNO_HW_ONLY_EXTS \
             $(DIX_CFLAGS) \
             $(XNESTMODULES_CFLAGS)
 
@@ -43,16 +41,12 @@ SRCS =	Args.c \
 	XNPixmap.h \
 	XNWindow.h \
 	xnest-config.h \
-	$(top_srcdir)/Xext/dpmsstubs.c \
-	$(top_srcdir)/Xi/stubs.c \
-	$(top_srcdir)/mi/miinitext.c
-
-libfbcmap_a_SOURCES = $(top_srcdir)/fb/fbcmap_mi.c
-libfbcmap_a_CFLAGS = $(AM_CFLAGS)
+	$(top_srcdir)/mi/miinitext.c \
+	$(top_srcdir)/mi/miinitext.h
 
 XNEST_LIBS = \
         @XNEST_LIBS@ \
-	libfbcmap.a
+	$(top_builddir)/Xi/libXistubs.la
 
 Xnest_SOURCES = $(SRCS)
 
@@ -62,11 +56,6 @@ Xnest_LDFLAGS = $(LD_EXPORT_SYMBOLS_FLAG)
 
 EXTRA_DIST = icon \
              screensaver
-
-# -UDPMSExtension for miinitext? can't put into 
-# OS_DEFINES???
-# EXT_DEFINES???
-# ICONFIGFILES -- SpecialCObjectRule
 
 relink:
 	$(AM_V_at)rm -f Xnest$(EXEEXT) && $(MAKE) Xnest$(EXEEXT)

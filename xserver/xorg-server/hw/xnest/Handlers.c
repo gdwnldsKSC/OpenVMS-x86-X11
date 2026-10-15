@@ -32,14 +32,14 @@ is" without express or implied warranty.
 #include "Handlers.h"
 
 void
-xnestBlockHandler(pointer blockData, OSTimePtr pTimeout, pointer pReadMask)
+xnestBlockHandler(void *blockData, void *timeout)
 {
     xnestCollectExposures();
     XFlush(xnestDisplay);
 }
 
 void
-xnestWakeupHandler(pointer blockData, int result, pointer pReadMask)
+xnestWakeupHandler(void *blockData, int result)
 {
     xnestCollectEvents();
 }

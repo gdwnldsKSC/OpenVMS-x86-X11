@@ -21,6 +21,9 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
+/* Test relies on assert() */
+#undef NDEBUG
+
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -37,37 +40,20 @@
 #include "scrnintstr.h"
 #include "xiwarppointer.h"
 #include "exevents.h"
+#include "exglobals.h"
 
 #include "protocol-common.h"
 
 static int expected_x = SPRITE_X;
 static int expected_y = SPRITE_Y;
 
-/* dixLookupWindow requires a lot of setup not necessary for this test.
- * Simple wrapper that returns either one of the fake root window or the
- * fake client window. If the requested ID is neither of those wanted,
- * return whatever the real dixLookupWindow does.
- */
-int
-__wrap_dixLookupWindow(WindowPtr *win, XID id, ClientPtr client, Mask access)
-{
-    if (id == root.drawable.id) {
-        *win = &root;
-        return Success;
-    }
-    else if (id == window.drawable.id) {
-        *win = &window;
-        return Success;
-    }
-
-    return __real_dixLookupWindow(win, id, client, access);
-}
+extern ClientRec client_window;
 
 /**
  * This function overrides the one in the screen rec.
  */
 static Bool
-ScreenSetCursorPosition(DeviceIntPtr dev, ScreenPtr screen,
+ScreenSetCursorPosition(DeviceIntPtr dev, ScreenPtr scr,
                         int x, int y, Bool generateEvent)
 {
     assert(x == expected_x);
@@ -197,10 +183,13 @@ test_XIWarpPointer(void)
     request_XIWarpPointer(&client_request, &request, Success);
 
     /* FIXME: src_x/y checks */
+
+    client_request.req_len -= 2; /* invalid length */
+    request_XIWarpPointer(&client_request, &request, BadLength);
 }
 
 int
-main(int argc, char **argv)
+protocol_xiwarppointer_test(void)
 {
     init_simple();
     screen.SetCursorPosition = ScreenSetCursorPosition;

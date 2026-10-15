@@ -21,6 +21,9 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
+/* Test relies on assert() */
+#undef NDEBUG
+
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -30,6 +33,8 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+
+#include "tests-common.h"
 
 struct parent {
     int a;
@@ -137,7 +142,7 @@ static void
 test_xorg_list_del(void)
 {
     struct parent parent = { 0 };
-    struct child child[3];
+    struct child child[2];
     struct child *c;
 
     xorg_list_init(&parent.children);
@@ -178,8 +183,8 @@ test_xorg_list_del(void)
     xorg_list_add(&child[0].node, &parent.children);
     xorg_list_del(&parent.children);
     assert(xorg_list_is_empty(&parent.children));
+    assert(!xorg_list_is_empty(&child[0].node));
     assert(!xorg_list_is_empty(&child[1].node));
-    assert(!xorg_list_is_empty(&child[2].node));
 }
 
 static void
@@ -249,15 +254,15 @@ test_nt_list_append(void)
 
     /* Test using nt_list_next */
     for (item = foo, i = 1; i <= 10; i++, item = nt_list_next(item, next)) {
-        assert(item->a = i);
-        assert(item->b = i * 2);
+        assert(item->a == i);
+        assert(item->b == i * 2);
     }
 
     /* Test using nt_list_for_each_entry */
     i = 1;
     nt_list_for_each_entry(item, foo, next) {
-        assert(item->a = i);
-        assert(item->b = i * 2);
+        assert(item->a == i);
+        assert(item->b == i * 2);
         i++;
     }
     assert(i == 11);
@@ -270,11 +275,11 @@ test_nt_list_insert(void)
     struct foo *foo = calloc(10, sizeof(struct foo));
     struct foo *item;
 
-    foo->a = 10;
-    foo->b = 20;
+    foo->a = 1;
+    foo->b = 2;
     nt_list_init(foo, next);
 
-    for (item = &foo[1], i = 9; i > 0; i--, item++) {
+    for (item = &foo[1], i = 10; i > 1; i--, item++) {
         item->a = i;
         item->b = i * 2;
         nt_list_init(item, next);
@@ -282,16 +287,16 @@ test_nt_list_insert(void)
     }
 
     /* Test using nt_list_next */
-    for (item = foo, i = 10; i > 0; i--, item = nt_list_next(item, next)) {
-        assert(item->a = i);
-        assert(item->b = i * 2);
+    for (item = foo, i = 1; i <= 10; i++, item = nt_list_next(item, next)) {
+        assert(item->a == i);
+        assert(item->b == i * 2);
     }
 
     /* Test using nt_list_for_each_entry */
     i = 1;
     nt_list_for_each_entry(item, foo, next) {
-        assert(item->a = i);
-        assert(item->b = i * 2);
+        assert(item->a == i);
+        assert(item->b == i * 2);
         i++;
     }
     assert(i == 11);
@@ -369,7 +374,7 @@ test_nt_list_delete(void)
 }
 
 int
-main(int argc, char **argv)
+list_test(void)
 {
     test_xorg_list_init();
     test_xorg_list_add();

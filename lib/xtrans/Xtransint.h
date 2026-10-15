@@ -98,7 +98,7 @@ from The Open Group.
  * to avoid a race condition. JKJ (6/5/97)
  */
 
-# if defined(_POSIX_SOURCE) || defined(USG) || defined(SVR4) || defined(__SVR4) || defined(__SCO__)
+# if defined(_POSIX_SOURCE) || defined(SVR4) || defined(__SVR4)
 #  ifndef NEED_UTSNAME
 #   define NEED_UTSNAME
 #  endif
@@ -123,6 +123,16 @@ from The Open Group.
 #define X_TCP_PORT	6000
 #endif
 
+#if XTRANS_SEND_FDS
+
+struct _XtransConnFd {
+    struct _XtransConnFd   *next;
+    int                    fd;
+    int                    do_close;
+};
+
+#endif
+
 struct _XtransConnInfo {
     struct _Xtransport     *transptr;
     int		index;
@@ -135,13 +145,12 @@ struct _XtransConnInfo {
     int		addrlen;
     char	*peeraddr;
     int		peeraddrlen;
+    struct _XtransConnFd        *recv_fds;
+    struct _XtransConnFd        *send_fds;
 };
 
 #define XTRANS_OPEN_COTS_CLIENT       1
 #define XTRANS_OPEN_COTS_SERVER       2
-#define XTRANS_OPEN_CLTS_CLIENT       3
-#define XTRANS_OPEN_CLTS_SERVER       4
-
 
 typedef struct _Xtransport {
     const char	*TransName;
@@ -151,9 +160,9 @@ typedef struct _Xtransport {
 
     XtransConnInfo (*OpenCOTSClient)(
 	struct _Xtransport *,	/* transport */
-	char *,			/* protocol */
-	char *,			/* host */
-	char *			/* port */
+	const char *,		/* protocol */
+	const char *,		/* host */
+	const char *		/* port */
     );
 
 #endif /* TRANS_CLIENT */
@@ -162,48 +171,19 @@ typedef struct _Xtransport {
     const char **	nolisten;
     XtransConnInfo (*OpenCOTSServer)(
 	struct _Xtransport *,	/* transport */
-	char *,			/* protocol */
-	char *,			/* host */
-	char *			/* port */
+	const char *,		/* protocol */
+	const char *,		/* host */
+	const char *		/* port */
     );
 
 #endif /* TRANS_SERVER */
-
-#ifdef TRANS_CLIENT
-
-    XtransConnInfo (*OpenCLTSClient)(
-	struct _Xtransport *,	/* transport */
-	char *,			/* protocol */
-	char *,			/* host */
-	char *			/* port */
-    );
-
-#endif /* TRANS_CLIENT */
-
-#ifdef TRANS_SERVER
-
-    XtransConnInfo (*OpenCLTSServer)(
-	struct _Xtransport *,	/* transport */
-	char *,			/* protocol */
-	char *,			/* host */
-	char *			/* port */
-    );
-
-#endif /* TRANS_SERVER */
-
 
 #ifdef TRANS_REOPEN
 
     XtransConnInfo (*ReopenCOTSServer)(
 	struct _Xtransport *,	/* transport */
         int,			/* fd */
-        char *			/* port */
-    );
-
-    XtransConnInfo (*ReopenCLTSServer)(
-	struct _Xtransport *,	/* transport */
-        int,			/* fd */
-        char *			/* port */
+        const char *		/* port */
     );
 
 #endif /* TRANS_REOPEN */
@@ -221,7 +201,7 @@ typedef struct _Xtransport {
 
     int	(*CreateListener)(
 	XtransConnInfo,		/* connection */
-	char *,			/* port */
+	const char *,		/* port */
 	unsigned int		/* flags */
     );
 
@@ -240,8 +220,8 @@ typedef struct _Xtransport {
 
     int	(*Connect)(
 	XtransConnInfo,		/* connection */
-	char *,			/* host */
-	char *			/* port */
+	const char *,		/* host */
+	const char *		/* port */
     );
 
 #endif /* TRANS_CLIENT */
@@ -259,7 +239,7 @@ typedef struct _Xtransport {
 
     int	(*Write)(
 	XtransConnInfo,		/* connection */
-	char *,			/* buf */
+	const char *,		/* buf */
 	int			/* size */
     );
 
@@ -274,6 +254,18 @@ typedef struct _Xtransport {
 	struct iovec *,		/* buf */
 	int			/* size */
     );
+
+#if XTRANS_SEND_FDS
+    int (*SendFd)(
+	XtransConnInfo,		/* connection */
+        int,                    /* fd */
+        int                     /* do_close */
+    );
+
+    int (*RecvFd)(
+	XtransConnInfo		/* connection */
+    );
+#endif
 
     int	(*Disconnect)(
 	XtransConnInfo		/* connection */
@@ -305,8 +297,11 @@ typedef struct _Xtransport_table {
 #define TRANS_DISABLED	(1<<2)	/* Don't open this one */
 #define TRANS_NOLISTEN  (1<<3)  /* Don't listen on this one */
 #define TRANS_NOUNLINK	(1<<4)	/* Don't unlink transport endpoints */
-#define TRANS_ABSTRACT	(1<<5)	/* Use abstract sockets if available */
+#define TRANS_ABSTRACT	(1<<5)	/* This previously meant that abstract sockets should be used available.  For security
+                                 * reasons, this is now a no-op on the client side, but it is still supported for servers.
+                                 */
 #define TRANS_NOXAUTH	(1<<6)	/* Don't verify authentication (because it's secure some other way at the OS layer) */
+#define TRANS_RECEIVED	(1<<7)  /* The fd for this has already been opened by someone else. */
 
 /* Flags to preserve when setting others */
 #define TRANS_KEEPFLAGS	(TRANS_NOUNLINK|TRANS_ABSTRACT)
@@ -325,7 +320,7 @@ typedef struct _Xtransport_table {
  * systems, so they may be emulated.
  */
 
-#if defined(SYSV) && defined(__i386__) && !defined(__SCO__) && !defined(sun) || defined(WIN32)
+#ifdef WIN32
 
 #define READV(ciptr, iov, iovcnt)	TRANS(ReadV)(ciptr, iov, iovcnt)
 
@@ -339,10 +334,10 @@ static	int TRANS(ReadV)(
 
 #define READV(ciptr, iov, iovcnt)	readv(ciptr->fd, iov, iovcnt)
 
-#endif /* CRAY || (SYSV && __i386__) || WIN32 || __sxg__ || */
+#endif /* WIN32 */
 
 
-#if (defined(SYSV) && defined(__i386__) && !defined(__SCO__) && !defined(sun)) || defined(WIN32) || defined(__VMS)
+#if defined(WIN32) || defined(__VMS)
 
 #define WRITEV(ciptr, iov, iovcnt)	TRANS(WriteV)(ciptr, iov, iovcnt)
 
@@ -356,12 +351,7 @@ static int TRANS(WriteV)(
 
 #define WRITEV(ciptr, iov, iovcnt)	writev(ciptr->fd, iov, iovcnt)
 
-#endif /* CRAY || WIN32 || __sxg__ */
-
-
-static int is_numeric (
-    const char *	/* str */
-);
+#endif /* WIN32 */
 
 #ifdef TRANS_SERVER
 static int trans_mkdir (
@@ -382,10 +372,11 @@ static int trans_mkdir (
 #include <stdarg.h>
 
 /*
- * The X server provides ErrorF() & VErrorF(), for other software that uses
- * xtrans, we provide our own simple versions.
+ * The X server and the font server both provide ErrorF() & VErrorF(). For
+ * other software that uses xtrans, we provide our own simple
+ * versions.
  */
-# if defined(XSERV_t) && defined(TRANS_SERVER)
+# if (defined(XSERV_t) || defined(TRANS_HAS_ERRORF)) && defined(TRANS_SERVER)
 #  include "os.h"
 # else
 static inline void _X_ATTRIBUTE_PRINTF(1, 0)

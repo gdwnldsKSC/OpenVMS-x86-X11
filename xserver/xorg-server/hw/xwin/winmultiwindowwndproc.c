@@ -35,14 +35,20 @@
 #ifdef HAVE_XWIN_CONFIG_H
 #include <xwin-config.h>
 #endif
+
 #include "win.h"
 #include "dixevents.h"
 #include "winmultiwindowclass.h"
 #include "winprefs.h"
 #include "winmsg.h"
 #include "inputstr.h"
+#include <dwmapi.h>
 
-extern void winUpdateWindowPosition(HWND hWnd, Bool reshape, HWND * zstyle);
+#ifndef WM_DWMCOMPOSITIONCHANGED
+#define WM_DWMCOMPOSITIONCHANGED 0x031e
+#endif
+
+extern void winUpdateWindowPosition(HWND hWnd, HWND * zstyle);
 
 /*
  * Local globals
@@ -140,7 +146,7 @@ ConstrainSize(WinXSizeHints hints, int *widthp, int *heightp)
      *
      * minAspectX * dheight > minAspectY * dwidth
      * maxAspectX * dheight < maxAspectY * dwidth
-     * 
+     *
      */
 
     if (hints.flags & PAspect) {
@@ -271,7 +277,7 @@ winRaiseWindow(WindowPtr pWin)
         BOOL oldstate = winInRaiseWindow;
         XID vlist[1] = { 0 };
         winInRaiseWindow = TRUE;
-        /* Call configure window directly to make sure it gets processed 
+        /* Call configure window directly to make sure it gets processed
          * in time
          */
         ConfigureWindow(pWin, CWStackMode, vlist, serverClient);
@@ -294,6 +300,113 @@ winStartMousePolling(winPrivScreenPtr s_pScreenPriv)
                                             MOUSE_POLLING_INTERVAL, NULL);
 }
 
+/* Undocumented */
+typedef struct _ACCENTPOLICY
+{
+    ULONG AccentState;
+    ULONG AccentFlags;
+    ULONG GradientColor;
+    ULONG AnimationId;
+} ACCENTPOLICY;
+
+#define ACCENT_ENABLE_BLURBEHIND 3
+
+typedef struct _WINCOMPATTR
+{
+    DWORD attribute;
+    PVOID pData;
+    ULONG dataSize;
+} WINCOMPATTR;
+
+#define WCA_ACCENT_POLICY 19
+
+typedef WINBOOL WINAPI (*PFNSETWINDOWCOMPOSITIONATTRIBUTE)(HWND, WINCOMPATTR *);
+
+static void
+CheckForAlpha(HWND hWnd, WindowPtr pWin, winScreenInfo *pScreenInfo)
+{
+    /* Check (once) which API we should use */
+    static Bool doOnce = TRUE;
+    static PFNSETWINDOWCOMPOSITIONATTRIBUTE pSetWindowCompositionAttribute = NULL;
+    static Bool useDwmEnableBlurBehindWindow = FALSE;
+
+    if (doOnce)
+        {
+            OSVERSIONINFOEX osvi = {0};
+            osvi.dwOSVersionInfoSize = sizeof(osvi);
+            GetVersionEx((LPOSVERSIONINFO)&osvi);
+
+            /* SetWindowCompositionAttribute() exists on Windows 7 and later,
+               but doesn't work for this purpose, so first check for Windows 10
+               or later */
+            if (osvi.dwMajorVersion >= 10)
+                {
+                    HMODULE hUser32 = GetModuleHandle("user32");
+
+                    if (hUser32)
+                        pSetWindowCompositionAttribute = (PFNSETWINDOWCOMPOSITIONATTRIBUTE) GetProcAddress(hUser32, "SetWindowCompositionAttribute");
+                    winDebug("SetWindowCompositionAttribute %s\n", pSetWindowCompositionAttribute ? "found" : "not found");
+                }
+            /* On Windows 7 and Windows Vista, use DwmEnableBlurBehindWindow() */
+            else if ((osvi.dwMajorVersion == 6) && (osvi.dwMinorVersion <= 1))
+                {
+                    useDwmEnableBlurBehindWindow = TRUE;
+                }
+            /* On Windows 8 and Windows 8.1, using the alpha channel on those
+               seems near impossible, so we don't do anything. */
+
+            doOnce = FALSE;
+        }
+
+    /* alpha-channel use is wanted */
+    if (!g_fCompositeAlpha || !pScreenInfo->fCompositeWM)
+        return;
+
+    /* Image has alpha ... */
+    if (pWin->drawable.depth != 32)
+        return;
+
+    /* ... and we can do something useful with it? */
+    if (pSetWindowCompositionAttribute)
+        {
+            WINBOOL rc;
+            /* Use the (undocumented) SetWindowCompositionAttribute, if
+               available, to turn on alpha channel use on Windows 10. */
+            ACCENTPOLICY policy = { ACCENT_ENABLE_BLURBEHIND, 0, 0, 0 } ;
+            WINCOMPATTR data = { WCA_ACCENT_POLICY,  &policy, sizeof(ACCENTPOLICY) };
+
+            /* This turns on DWM looking at the alpha-channel of this window */
+            winDebug("enabling alpha for XID %08x hWnd %p, using SetWindowCompositionAttribute()\n", (unsigned int)pWin->drawable.id, hWnd);
+            rc = pSetWindowCompositionAttribute(hWnd, &data);
+            if (!rc)
+                ErrorF("SetWindowCompositionAttribute failed: %d\n", (int)GetLastError());
+        }
+    else if (useDwmEnableBlurBehindWindow)
+        {
+            HRESULT rc;
+            WINBOOL enabled;
+
+            rc = DwmIsCompositionEnabled(&enabled);
+            if ((rc == S_OK) && enabled)
+                {
+                    /* Use DwmEnableBlurBehindWindow, to turn on alpha channel
+                       use on Windows Vista and Windows 7 */
+                    DWM_BLURBEHIND bbh;
+                    bbh.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION | DWM_BB_TRANSITIONONMAXIMIZED;
+                    bbh.fEnable = TRUE;
+                    bbh.hRgnBlur = NULL;
+                    bbh.fTransitionOnMaximized = TRUE; /* What does this do ??? */
+
+                    /* This terribly-named function actually controls if DWM
+                       looks at the alpha channel of this window */
+                    winDebug("enabling alpha for XID %08x hWnd %p, using DwmEnableBlurBehindWindow()\n", (unsigned int)pWin->drawable.id, hWnd);
+                    rc = DwmEnableBlurBehindWindow(hWnd, &bbh);
+                    if (rc != S_OK)
+                        ErrorF("DwmEnableBlurBehindWindow failed: %x, %d\n", (int)rc, (int)GetLastError());
+                }
+        }
+}
+
 /*
  * winTopLevelWindowProc - Window procedure for all top-level Windows windows.
  */
@@ -302,7 +415,6 @@ LRESULT CALLBACK
 winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     POINT ptMouse;
-    HDC hdcUpdate;
     PAINTSTRUCT ps;
     WindowPtr pWin = NULL;
     winPrivWinPtr pWinPriv = NULL;
@@ -316,11 +428,26 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     static Bool s_fTracking = FALSE;
     Bool needRestack = FALSE;
     LRESULT ret;
+    static Bool hasEnteredSizeMove = FALSE;
 
 #if CYGDEBUG
     winDebugWin32Message("winTopLevelWindowProc", hwnd, message, wParam,
                          lParam);
 #endif
+
+    /*
+       If this is WM_CREATE, set up the Windows window properties which point to
+       X window information, before we populate local convenience variables...
+     */
+    if (message == WM_CREATE) {
+        SetProp(hwnd,
+                WIN_WINDOW_PROP,
+                (HANDLE) ((LPCREATESTRUCT) lParam)->lpCreateParams);
+        SetProp(hwnd,
+                WIN_WID_PROP,
+                (HANDLE) (INT_PTR)winGetWindowID(((LPCREATESTRUCT) lParam)->
+                                                 lpCreateParams));
+    }
 
     /* Check if the Windows window property for our X window pointer is valid */
     if ((pWin = GetProp(hwnd, WIN_WINDOW_PROP)) != NULL) {
@@ -343,7 +470,7 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         /* */
         wmMsg.msg = 0;
         wmMsg.hwndWindow = hwnd;
-        wmMsg.iWindow = (Window) GetProp(hwnd, WIN_WID_PROP);
+        wmMsg.iWindow = (Window) (INT_PTR) GetProp(hwnd, WIN_WID_PROP);
 
         wmMsg.iX = pDraw->x;
         wmMsg.iY = pDraw->y;
@@ -382,18 +509,6 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     /* Branch on message type */
     switch (message) {
     case WM_CREATE:
-
-        /* */
-        SetProp(hwnd,
-                WIN_WINDOW_PROP,
-                (HANDLE) ((LPCREATESTRUCT) lParam)->lpCreateParams);
-
-        /* */
-        SetProp(hwnd,
-                WIN_WID_PROP,
-                (HANDLE) winGetWindowID(((LPCREATESTRUCT) lParam)->
-                                        lpCreateParams));
-
         /*
          * Make X windows' Z orders sync with Windows windows because
          * there can be AlwaysOnTop windows overlapped on the window
@@ -414,20 +529,22 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR) XMING_SIGNATURE);
 
+        CheckForAlpha(hwnd, pWin, s_pScreenInfo);
+
         return 0;
 
     case WM_INIT_SYS_MENU:
         /*
          * Add whatever the setup file wants to for this window
          */
-        SetupSysMenu((unsigned long) hwnd);
+        SetupSysMenu(hwnd);
         return 0;
 
     case WM_SYSCOMMAND:
         /*
          * Any window menu items go through here
          */
-        if (HandleCustomWM_COMMAND((unsigned long) hwnd, LOWORD(wParam))) {
+        if (HandleCustomWM_COMMAND(hwnd, LOWORD(wParam), s_pScreenPriv)) {
             /* Don't pass customized menus to DefWindowProc */
             return 0;
         }
@@ -443,7 +560,7 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_INITMENU:
         /* Checks/Unchecks any menu items before they are displayed */
-        HandleCustomWM_INITMENU((unsigned long) hwnd, wParam);
+        HandleCustomWM_INITMENU(hwnd, (HMENU)wParam);
         break;
 
     case WM_ERASEBKGND:
@@ -456,17 +573,8 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_PAINT:
         /* Only paint if our window handle is valid */
-        if (hwndScreen == NULL)
+        if (hwnd == NULL)
             break;
-
-        /* BeginPaint gives us an hdc that clips to the invalidated region */
-        hdcUpdate = BeginPaint(hwnd, &ps);
-        /* Avoid the BitBlt's if the PAINTSTRUCT is bogus */
-        if (ps.rcPaint.right == 0 && ps.rcPaint.bottom == 0 &&
-            ps.rcPaint.left == 0 && ps.rcPaint.top == 0) {
-            EndPaint(hwnd, &ps);
-            return 0;
-        }
 
 #ifdef XWIN_GLX_WINDOWS
         if (pWinPriv->fWglUsed) {
@@ -477,36 +585,16 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                XXX: For now, just leave it alone, but ideally we want to send an expose event to
                the window so it really redraws the affected region...
              */
+            BeginPaint(hwnd, &ps);
             ValidateRect(hwnd, &(ps.rcPaint));
+            EndPaint(hwnd, &ps);
         }
         else
 #endif
-            /* Try to copy from the shadow buffer */
-        if (!BitBlt(hdcUpdate,
-                        ps.rcPaint.left, ps.rcPaint.top,
-                        ps.rcPaint.right - ps.rcPaint.left,
-                        ps.rcPaint.bottom - ps.rcPaint.top,
-                        s_pScreenPriv->hdcShadow,
-                        ps.rcPaint.left + pWin->drawable.x,
-                        ps.rcPaint.top + pWin->drawable.y, SRCCOPY)) {
-            LPVOID lpMsgBuf;
+            /* Call the engine dependent repainter */
+            if (*s_pScreenPriv->pwinBltExposedWindowRegion)
+                (*s_pScreenPriv->pwinBltExposedWindowRegion) (s_pScreen, pWin);
 
-            /* Display a fancy error message */
-            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                          FORMAT_MESSAGE_FROM_SYSTEM |
-                          FORMAT_MESSAGE_IGNORE_INSERTS,
-                          NULL,
-                          GetLastError(),
-                          MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                          (LPTSTR) & lpMsgBuf, 0, NULL);
-
-            ErrorF("winTopLevelWindowProc - BitBlt failed: %s\n",
-                   (LPSTR) lpMsgBuf);
-            LocalFree(lpMsgBuf);
-        }
-
-        /* EndPaint frees the DC */
-        EndPaint(hwnd, &ps);
         return 0;
 
     case WM_MOUSEMOVE:
@@ -661,7 +749,7 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (s_pScreenPriv == NULL || s_pScreenInfo->fIgnoreInput)
             break;
         SetCapture(hwnd);
-        return winMouseButtonsHandle(s_pScreen, ButtonPress, HIWORD(wParam) + 5,
+        return winMouseButtonsHandle(s_pScreen, ButtonPress, HIWORD(wParam) + 7,
                                      wParam);
 
     case WM_XBUTTONUP:
@@ -670,9 +758,21 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         ReleaseCapture();
         winStartMousePolling(s_pScreenPriv);
         return winMouseButtonsHandle(s_pScreen, ButtonRelease,
-                                     HIWORD(wParam) + 5, wParam);
+                                     HIWORD(wParam) + 7, wParam);
 
     case WM_MOUSEWHEEL:
+        if (SendMessage
+            (hwnd, WM_NCHITTEST, 0,
+             MAKELONG(GET_X_LPARAM(lParam),
+                      GET_Y_LPARAM(lParam))) == HTCLIENT) {
+            /* Pass the message to the root window */
+            SendMessage(hwndScreen, message, wParam, lParam);
+            return 0;
+        }
+        else
+            break;
+
+    case WM_MOUSEHWHEEL:
         if (SendMessage
             (hwnd, WM_NCHITTEST, 0,
              MAKELONG(GET_X_LPARAM(lParam),
@@ -757,20 +857,20 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             ErrorF("\nCYGWINDOWING Dump:\n"
                    "\tdrawable: (%hd, %hd) - %hdx%hd\n", pDraw->x,
                    pDraw->y, pDraw->width, pDraw->height);
-            ErrorF("\twindPlace: (%ld, %ld) - %ldx%ld\n", pRect->left,
-                   pRect->top, pRect->right - pRect->left,
-                   pRect->bottom - pRect->top);
+            ErrorF("\twindPlace: (%d, %d) - %dx%d\n", (int)pRect->left,
+                   (int)pRect->top, (int)(pRect->right - pRect->left),
+                   (int)(pRect->bottom - pRect->top));
             if (GetClientRect(hwnd, &rc)) {
                 pRect = &rc;
-                ErrorF("\tClientRect: (%ld, %ld) - %ldx%ld\n", pRect->left,
-                       pRect->top, pRect->right - pRect->left,
-                       pRect->bottom - pRect->top);
+                ErrorF("\tClientRect: (%d, %d) - %dx%d\n", (int)pRect->left,
+                       (int)pRect->top, (int)(pRect->right - pRect->left),
+                       (int)(pRect->bottom - pRect->top));
             }
             if (GetWindowRect(hwnd, &rc)) {
                 pRect = &rc;
-                ErrorF("\tWindowRect: (%ld, %ld) - %ldx%ld\n", pRect->left,
-                       pRect->top, pRect->right - pRect->left,
-                       pRect->bottom - pRect->top);
+                ErrorF("\tWindowRect: (%d, %d) - %dx%d\n", (int)pRect->left,
+                       (int)pRect->top, (int)(pRect->right - pRect->left),
+                       (int)(pRect->bottom - pRect->top));
             }
             ErrorF("\n");
         }
@@ -813,7 +913,7 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         /* Prevent the mouse wheel from stalling when another window is minimized */
         if (HIWORD(wParam) == 0 && LOWORD(wParam) == WA_ACTIVE &&
-            (HWND) lParam != NULL && (HWND) lParam != (HWND) GetParent(hwnd))
+            (HWND) lParam != NULL && (HWND) lParam != GetParent(hwnd))
             SetFocus(hwnd);
         return 0;
 
@@ -825,6 +925,8 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_CLOSE:
+        /* Remove AppUserModelID property */
+        winSetAppUserModelID(hwnd, NULL);
         /* Branch on if the window was killed in X already */
         if (pWinPriv->fXKilled) {
             /* Window was killed, go ahead and destroy the window */
@@ -858,7 +960,9 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_MOVE:
         /* Adjust the X Window to the moved Windows window */
-        winAdjustXWindow(pWin, hwnd);
+        if (!hasEnteredSizeMove)
+            winAdjustXWindow(pWin, hwnd);
+        /* else: Wait for WM_EXITSIZEMOVE */
         return 0;
 
     case WM_SHOWWINDOW:
@@ -868,45 +972,40 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         /* */
         if (!pWin->overrideRedirect) {
+            HWND zstyle = HWND_NOTOPMOST;
+
             /* Flag that this window needs to be made active when clicked */
             SetProp(hwnd, WIN_NEEDMANAGE_PROP, (HANDLE) 1);
 
-            if (!(GetWindowLongPtr(hwnd, GWL_EXSTYLE) & WS_EX_APPWINDOW)) {
-                HWND zstyle = HWND_NOTOPMOST;
+            /* Set the transient style flags */
+            if (GetParent(hwnd))
+                SetWindowLongPtr(hwnd, GWL_STYLE,
+                                 WS_POPUP | WS_OVERLAPPED | WS_SYSMENU |
+                                 WS_CLIPCHILDREN | WS_CLIPSIBLINGS);
+            /* Set the window standard style flags */
+            else
+                SetWindowLongPtr(hwnd, GWL_STYLE,
+                                 (WS_POPUP | WS_OVERLAPPEDWINDOW |
+                                  WS_CLIPCHILDREN | WS_CLIPSIBLINGS)
+                                 & ~WS_CAPTION & ~WS_SIZEBOX);
 
-                /* Set the window extended style flags */
-                SetWindowLongPtr(hwnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
+            winUpdateWindowPosition(hwnd, &zstyle);
 
-                /* Set the transient style flags */
-                if (GetParent(hwnd))
-                    SetWindowLongPtr(hwnd, GWL_STYLE,
-                                     WS_POPUP | WS_OVERLAPPED | WS_SYSMENU |
-                                     WS_CLIPCHILDREN | WS_CLIPSIBLINGS);
-                /* Set the window standard style flags */
-                else
-                    SetWindowLongPtr(hwnd, GWL_STYLE,
-                                     (WS_POPUP | WS_OVERLAPPEDWINDOW |
-                                      WS_CLIPCHILDREN | WS_CLIPSIBLINGS)
-                                     & ~WS_CAPTION & ~WS_SIZEBOX);
+            {
+                WinXWMHints hints;
 
-                winUpdateWindowPosition(hwnd, FALSE, &zstyle);
-
-                {
-                    WinXWMHints hints;
-
-                    if (winMultiWindowGetWMHints(pWin, &hints)) {
-                        /*
-                           Give the window focus, unless it has an InputHint
-                           which is FALSE (this is used by e.g. glean to
-                           avoid every test window grabbing the focus)
-                         */
-                        if (!((hints.flags & InputHint) && (!hints.input))) {
-                            SetForegroundWindow(hwnd);
-                        }
+                if (winMultiWindowGetWMHints(pWin, &hints)) {
+                    /*
+                       Give the window focus, unless it has an InputHint
+                       which is FALSE (this is used by e.g. glean to
+                       avoid every test window grabbing the focus)
+                     */
+                    if (!((hints.flags & InputHint) && (!hints.input))) {
+                        SetForegroundWindow(hwnd);
                     }
                 }
             }
-            wmMsg.msg = WM_WM_MAP3;
+            wmMsg.msg = WM_WM_MAP_MANAGED;
         }
         else {                  /* It is an overridden window so make it top of Z stack */
 
@@ -926,7 +1025,7 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
                 }
             }
-            wmMsg.msg = WM_WM_MAP2;
+            wmMsg.msg = WM_WM_MAP_UNMANAGED;
         }
 
         /* Tell our Window Manager thread to map the window */
@@ -996,6 +1095,16 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
          */
         break;
 
+    case WM_ENTERSIZEMOVE:
+        hasEnteredSizeMove = TRUE;
+        return 0;
+
+    case WM_EXITSIZEMOVE:
+        /* Adjust the X Window to the moved Windows window */
+        hasEnteredSizeMove = FALSE;
+        winAdjustXWindow(pWin, hwnd);
+        return 0;
+
     case WM_SIZE:
         /* see dix/window.c */
 #if CYGWINDOWING_DEBUG
@@ -1015,13 +1124,15 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         default:
             strcpy(buf, "UNKNOWN_FLAG");
         }
-        ErrorF("winTopLevelWindowProc - WM_SIZE to %dx%d (%s) - %d ms\n",
-               (int) LOWORD(lParam), (int) HIWORD(lParam), buf,
-               (int) (GetTickCount()));
+        ErrorF("winTopLevelWindowProc - WM_SIZE to %dx%d (%s)\n",
+               (int) LOWORD(lParam), (int) HIWORD(lParam), buf);
     }
 #endif
-        /* Adjust the X Window to the moved Windows window */
-        winAdjustXWindow(pWin, hwnd);
+        if (!hasEnteredSizeMove) {
+            /* Adjust the X Window to the moved Windows window */
+            winAdjustXWindow(pWin, hwnd);
+        }
+        /* else: wait for WM_EXITSIZEMOVE */
         return 0;               /* end of WM_SIZE handler */
 
     case WM_STYLECHANGING:
@@ -1040,7 +1151,7 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         dwStyle = GetWindowLongPtr(hwnd, GWL_STYLE);
 
         winDebug("winTopLevelWindowProc - WM_STYLECHANGING from %08x %08x\n",
-                 dwStyle, dwExStyle);
+                 (unsigned int)dwStyle, (unsigned int)dwExStyle);
 
         if (wParam == GWL_EXSTYLE)
             dwExStyle = newStyle;
@@ -1049,7 +1160,7 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             dwStyle = newStyle;
 
         winDebug("winTopLevelWindowProc - WM_STYLECHANGING to %08x %08x\n",
-                 dwStyle, dwExStyle);
+                 (unsigned int)dwStyle, (unsigned int)dwExStyle);
 
         /* Get client rect in screen coordinates */
         wi.cbSize = sizeof(WINDOWINFO);
@@ -1057,9 +1168,9 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         winDebug
             ("winTopLevelWindowProc - WM_STYLECHANGING client area {%d, %d, %d, %d}, {%d x %d}\n",
-             wi.rcClient.left, wi.rcClient.top, wi.rcClient.right,
-             wi.rcClient.bottom, wi.rcClient.right - wi.rcClient.left,
-             wi.rcClient.bottom - wi.rcClient.top);
+             (int)wi.rcClient.left, (int)wi.rcClient.top, (int)wi.rcClient.right,
+             (int)wi.rcClient.bottom, (int)(wi.rcClient.right - wi.rcClient.left),
+             (int)(wi.rcClient.bottom - wi.rcClient.top));
 
         newWinRect = wi.rcClient;
         if (!AdjustWindowRectEx(&newWinRect, dwStyle, FALSE, dwExStyle))
@@ -1068,9 +1179,9 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         winDebug
             ("winTopLevelWindowProc - WM_STYLECHANGING window area should be {%d, %d, %d, %d}, {%d x %d}\n",
-             newWinRect.left, newWinRect.top, newWinRect.right,
-             newWinRect.bottom, newWinRect.right - newWinRect.left,
-             newWinRect.bottom - newWinRect.top);
+             (int)newWinRect.left, (int)newWinRect.top, (int)newWinRect.right,
+             (int)newWinRect.bottom, (int)(newWinRect.right - newWinRect.left),
+             (int)(newWinRect.bottom - newWinRect.top));
 
         /*
            Style change hasn't happened yet, so we can't adjust the window size yet, as the winAdjustXWindow()
@@ -1118,6 +1229,12 @@ winTopLevelWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
 
+
+    case WM_DWMCOMPOSITIONCHANGED:
+        /* This message is only sent on Vista/W7 */
+        CheckForAlpha(hwnd, pWin, s_pScreenInfo);
+
+        return 0;
     default:
         break;
     }

@@ -22,6 +22,7 @@
  */
 
 #include "randrstr.h"
+#include <X11/Xatom.h>
 
 RESTYPE RROutputType;
 
@@ -31,15 +32,27 @@ RESTYPE RROutputType;
 void
 RROutputChanged(RROutputPtr output, Bool configChanged)
 {
+    /* set changed bits on the primary screen only */
     ScreenPtr pScreen = output->pScreen;
+    rrScrPrivPtr primarysp;
 
     output->changed = TRUE;
-    if (pScreen) {
-        rrScrPriv(pScreen);
-        pScrPriv->changed = TRUE;
-        if (configChanged)
-            pScrPriv->configChanged = TRUE;
+    if (!pScreen)
+        return;
+
+    if (pScreen->isGPU) {
+        ScreenPtr primary = pScreen->current_primary;
+        if (!primary)
+            return;
+        primarysp = rrGetScrPriv(primary);
     }
+    else {
+        primarysp = rrGetScrPriv(pScreen);
+    }
+
+    RRSetChanged(pScreen);
+    if (configChanged)
+        primarysp->configChanged = TRUE;
 }
 
 /*
@@ -53,19 +66,17 @@ RROutputCreate(ScreenPtr pScreen,
     RROutputPtr output;
     RROutputPtr *outputs;
     rrScrPrivPtr pScrPriv;
+    Atom nonDesktopAtom;
 
     if (!RRInit())
         return NULL;
 
     pScrPriv = rrGetScrPriv(pScreen);
 
-    if (pScrPriv->numOutputs)
-        outputs = realloc(pScrPriv->outputs,
-                          (pScrPriv->numOutputs + 1) * sizeof(RROutputPtr));
-    else
-        outputs = malloc(sizeof(RROutputPtr));
+    outputs = reallocarray(pScrPriv->outputs,
+                           pScrPriv->numOutputs + 1, sizeof(RROutputPtr));
     if (!outputs)
-        return FALSE;
+        return NULL;
 
     pScrPriv->outputs = outputs;
 
@@ -95,12 +106,23 @@ RROutputCreate(ScreenPtr pScreen,
     output->properties = NULL;
     output->pendingProperties = FALSE;
     output->changed = FALSE;
+    output->nonDesktop = FALSE;
     output->devPrivate = devPrivate;
 
-    if (!AddResource(output->id, RROutputType, (pointer) output))
+    if (!AddResource(output->id, RROutputType, (void *) output))
         return NULL;
 
     pScrPriv->outputs[pScrPriv->numOutputs++] = output;
+
+    nonDesktopAtom = MakeAtom(RR_PROPERTY_NON_DESKTOP, strlen(RR_PROPERTY_NON_DESKTOP), TRUE);
+    if (nonDesktopAtom != BAD_RESOURCE) {
+        static const INT32 values[2] = { 0, 1 };
+        (void) RRConfigureOutputProperty(output, nonDesktopAtom, FALSE, FALSE, FALSE,
+                                            2, values);
+    }
+    RROutputSetNonDesktop(output, FALSE);
+    RRResourcesChanged(pScreen);
+
     return output;
 }
 
@@ -121,7 +143,7 @@ RROutputSetClones(RROutputPtr output, RROutputPtr * clones, int numClones)
             return TRUE;
     }
     if (numClones) {
-        newClones = malloc(numClones * sizeof(RROutputPtr));
+        newClones = xallocarray(numClones, sizeof(RROutputPtr));
         if (!newClones)
             return FALSE;
     }
@@ -154,7 +176,7 @@ RROutputSetModes(RROutputPtr output,
     }
 
     if (numModes) {
-        newModes = malloc(numModes * sizeof(RRModePtr));
+        newModes = xallocarray(numModes, sizeof(RRModePtr));
         if (!newModes)
             return FALSE;
     }
@@ -197,8 +219,8 @@ RROutputAddUserMode(RROutputPtr output, RRModePtr mode)
             return BadMatch;
 
     if (output->userModes)
-        newModes = realloc(output->userModes,
-                           (output->numUserModes + 1) * sizeof(RRModePtr));
+        newModes = reallocarray(output->userModes,
+                                output->numUserModes + 1, sizeof(RRModePtr));
     else
         newModes = malloc(sizeof(RRModePtr));
     if (!newModes)
@@ -253,7 +275,7 @@ RROutputSetCrtcs(RROutputPtr output, RRCrtcPtr * crtcs, int numCrtcs)
             return TRUE;
     }
     if (numCrtcs) {
-        newCrtcs = malloc(numCrtcs * sizeof(RRCrtcPtr));
+        newCrtcs = xallocarray(numCrtcs, sizeof(RRCrtcPtr));
         if (!newCrtcs)
             return FALSE;
     }
@@ -299,34 +321,42 @@ RROutputSetPhysicalSize(RROutputPtr output, int mmWidth, int mmHeight)
     return TRUE;
 }
 
+Bool
+RROutputSetNonDesktop(RROutputPtr output, Bool nonDesktop)
+{
+    const char *nonDesktopStr = RR_PROPERTY_NON_DESKTOP;
+    Atom nonDesktopProp = MakeAtom(nonDesktopStr, strlen(nonDesktopStr), TRUE);
+    uint32_t value = nonDesktop ? 1 : 0;
+
+    if (nonDesktopProp == None || nonDesktopProp == BAD_RESOURCE)
+        return FALSE;
+
+    return RRChangeOutputProperty(output, nonDesktopProp, XA_INTEGER, 32,
+                                  PropModeReplace, 1, &value, TRUE, FALSE) == Success;
+}
+
 void
 RRDeliverOutputEvent(ClientPtr client, WindowPtr pWin, RROutputPtr output)
 {
     ScreenPtr pScreen = pWin->drawable.pScreen;
 
     rrScrPriv(pScreen);
-    xRROutputChangeNotifyEvent oe;
     RRCrtcPtr crtc = output->crtc;
-    RRModePtr mode = crtc ? crtc->mode : 0;
+    RRModePtr mode = crtc ? crtc->mode : NULL;
 
-    oe.type = RRNotify + RREventBase;
-    oe.subCode = RRNotify_OutputChange;
-    oe.timestamp = pScrPriv->lastSetTime.milliseconds;
-    oe.configTimestamp = pScrPriv->lastConfigTime.milliseconds;
-    oe.window = pWin->drawable.id;
-    oe.output = output->id;
-    if (crtc) {
-        oe.crtc = crtc->id;
-        oe.mode = mode ? mode->mode.id : None;
-        oe.rotation = crtc->rotation;
-    }
-    else {
-        oe.crtc = None;
-        oe.mode = None;
-        oe.rotation = RR_Rotate_0;
-    }
-    oe.connection = output->connection;
-    oe.subpixelOrder = output->subpixelOrder;
+    xRROutputChangeNotifyEvent oe = {
+        .type = RRNotify + RREventBase,
+        .subCode = RRNotify_OutputChange,
+        .timestamp = pScrPriv->lastSetTime.milliseconds,
+        .configTimestamp = pScrPriv->lastConfigTime.milliseconds,
+        .window = pWin->drawable.id,
+        .output = output->id,
+        .crtc = crtc ? crtc->id : None,
+        .mode = mode ? mode->mode.id : None,
+        .rotation = crtc ? crtc->rotation : RR_Rotate_0,
+        .connection = output->nonDesktop ? RR_Disconnected : output->connection,
+        .subpixelOrder = output->subpixelOrder
+    };
     WriteEventsToClient(client, 1, (xEvent *) &oe);
 }
 
@@ -340,18 +370,40 @@ RROutputDestroy(RROutputPtr output)
 }
 
 static int
-RROutputDestroyResource(pointer value, XID pid)
+RROutputDestroyResource(void *value, XID pid)
 {
     RROutputPtr output = (RROutputPtr) value;
     ScreenPtr pScreen = output->pScreen;
+    ScreenPtr primary;
+    rrScrPrivPtr primarysp;
     int m;
 
     if (pScreen) {
         rrScrPriv(pScreen);
         int i;
+        RRLeasePtr lease, next;
+
+        xorg_list_for_each_entry_safe(lease, next, &pScrPriv->leases, list) {
+            int o;
+            for (o = 0; o < lease->numOutputs; o++) {
+                if (lease->outputs[o] == output) {
+                    RRTerminateLease(lease);
+                    break;
+                }
+            }
+        }
 
         if (pScrPriv->primaryOutput == output)
             pScrPriv->primaryOutput = NULL;
+
+        if (pScreen->isGPU) {
+            primary = pScreen->current_primary;
+            if (primary) {
+                primarysp = rrGetScrPriv(primary);
+                if (primarysp->primaryOutput == output)
+                    primarysp->primaryOutput = NULL;
+            }
+        }
 
         for (i = 0; i < pScrPriv->numOutputs; i++) {
             if (pScrPriv->outputs[i] == output) {
@@ -361,6 +413,8 @@ RROutputDestroyResource(pointer value, XID pid)
                 break;
             }
         }
+
+        RRResourcesChanged(pScreen);
     }
     if (output->modes) {
         for (m = 0; m < output->numModes; m++)
@@ -418,63 +472,99 @@ ProcRRGetOutputInfo(ClientPtr client)
     RROutput *clones;
     char *name;
     int i;
+    Bool leased;
 
     REQUEST_SIZE_MATCH(xRRGetOutputInfoReq);
     VERIFY_RR_OUTPUT(stuff->output, output, DixReadAccess);
 
+    leased = RROutputIsLeased(output);
+
     pScreen = output->pScreen;
     pScrPriv = rrGetScrPriv(pScreen);
 
-    rep.type = X_Reply;
-    rep.sequenceNumber = client->sequence;
-    rep.length = bytes_to_int32(OutputInfoExtra);
-    rep.timestamp = pScrPriv->lastSetTime.milliseconds;
-    rep.crtc = output->crtc ? output->crtc->id : None;
-    rep.mmWidth = output->mmWidth;
-    rep.mmHeight = output->mmHeight;
-    rep.connection = output->connection;
-    rep.subpixelOrder = output->subpixelOrder;
-    rep.nCrtcs = output->numCrtcs;
-    rep.nModes = output->numModes + output->numUserModes;
-    rep.nPreferred = output->numPreferred;
-    rep.nClones = output->numClones;
-    rep.nameLength = output->nameLength;
-
-    extraLen = ((output->numCrtcs +
-                 output->numModes + output->numUserModes +
-                 output->numClones + bytes_to_int32(rep.nameLength)) << 2);
-
-    if (extraLen) {
-        rep.length += bytes_to_int32(extraLen);
-        extra = malloc(extraLen);
-        if (!extra)
-            return BadAlloc;
-    }
-    else
-        extra = NULL;
-
-    crtcs = (RRCrtc *) extra;
-    modes = (RRMode *) (crtcs + output->numCrtcs);
-    clones = (RROutput *) (modes + output->numModes + output->numUserModes);
-    name = (char *) (clones + output->numClones);
-
-    for (i = 0; i < output->numCrtcs; i++) {
-        crtcs[i] = output->crtcs[i]->id;
-        if (client->swapped)
-            swapl(&crtcs[i]);
-    }
-    for (i = 0; i < output->numModes + output->numUserModes; i++) {
-        if (i < output->numModes)
-            modes[i] = output->modes[i]->mode.id;
+    if (leased) {
+        rep = (xRRGetOutputInfoReply) {
+            .type = X_Reply,
+            .status = RRSetConfigSuccess,
+            .sequenceNumber = client->sequence,
+            .length = bytes_to_int32(OutputInfoExtra),
+            .timestamp = pScrPriv->lastSetTime.milliseconds,
+            .crtc = None,
+            .mmWidth = 0,
+            .mmHeight = 0,
+            .connection = RR_Disconnected,
+            .subpixelOrder = SubPixelUnknown,
+            .nCrtcs = 0,
+            .nModes = 0,
+            .nPreferred = 0,
+            .nClones = 0,
+            .nameLength = output->nameLength
+        };
+        extraLen = bytes_to_int32(rep.nameLength) << 2;
+        if (extraLen) {
+            rep.length += bytes_to_int32(extraLen);
+            extra = calloc(1, extraLen);
+            if (!extra)
+                return BadAlloc;
+        }
         else
-            modes[i] = output->userModes[i - output->numModes]->mode.id;
-        if (client->swapped)
-            swapl(&modes[i]);
-    }
-    for (i = 0; i < output->numClones; i++) {
-        clones[i] = output->clones[i]->id;
-        if (client->swapped)
-            swapl(&clones[i]);
+            extra = NULL;
+
+        name = (char *) extra;
+    } else {
+        rep = (xRRGetOutputInfoReply) {
+            .type = X_Reply,
+            .status = RRSetConfigSuccess,
+            .sequenceNumber = client->sequence,
+            .length = bytes_to_int32(OutputInfoExtra),
+            .timestamp = pScrPriv->lastSetTime.milliseconds,
+            .crtc = output->crtc ? output->crtc->id : None,
+            .mmWidth = output->mmWidth,
+            .mmHeight = output->mmHeight,
+            .connection = output->nonDesktop ? RR_Disconnected : output->connection,
+            .subpixelOrder = output->subpixelOrder,
+            .nCrtcs = output->numCrtcs,
+            .nModes = output->numModes + output->numUserModes,
+            .nPreferred = output->numPreferred,
+            .nClones = output->numClones,
+            .nameLength = output->nameLength
+        };
+        extraLen = ((output->numCrtcs +
+                     output->numModes + output->numUserModes +
+                     output->numClones + bytes_to_int32(rep.nameLength)) << 2);
+
+        if (extraLen) {
+            rep.length += bytes_to_int32(extraLen);
+            extra = calloc(1, extraLen);
+            if (!extra)
+                return BadAlloc;
+        }
+        else
+            extra = NULL;
+
+        crtcs = (RRCrtc *) extra;
+        modes = (RRMode *) (crtcs + output->numCrtcs);
+        clones = (RROutput *) (modes + output->numModes + output->numUserModes);
+        name = (char *) (clones + output->numClones);
+
+        for (i = 0; i < output->numCrtcs; i++) {
+            crtcs[i] = output->crtcs[i]->id;
+            if (client->swapped)
+                swapl(&crtcs[i]);
+        }
+        for (i = 0; i < output->numModes + output->numUserModes; i++) {
+            if (i < output->numModes)
+                modes[i] = output->modes[i]->mode.id;
+            else
+                modes[i] = output->userModes[i - output->numModes]->mode.id;
+            if (client->swapped)
+                swapl(&modes[i]);
+        }
+        for (i = 0; i < output->numClones; i++) {
+            clones[i] = output->clones[i]->id;
+            if (client->swapped)
+                swapl(&clones[i]);
+        }
     }
     memcpy(name, output->name, output->nameLength);
     if (client->swapped) {
@@ -486,12 +576,13 @@ ProcRRGetOutputInfo(ClientPtr client)
         swapl(&rep.mmHeight);
         swaps(&rep.nCrtcs);
         swaps(&rep.nModes);
+        swaps(&rep.nPreferred);
         swaps(&rep.nClones);
         swaps(&rep.nameLength);
     }
-    WriteToClient(client, sizeof(xRRGetOutputInfoReply), (char *) &rep);
+    WriteToClient(client, sizeof(xRRGetOutputInfoReply), &rep);
     if (extraLen) {
-        WriteToClient(client, extraLen, (char *) extra);
+        WriteToClient(client, extraLen, extra);
         free(extra);
     }
 
@@ -528,25 +619,43 @@ ProcRRSetOutputPrimary(ClientPtr client)
     RROutputPtr output = NULL;
     WindowPtr pWin;
     rrScrPrivPtr pScrPriv;
-    int rc;
+    int ret;
+    ScreenPtr secondary;
 
     REQUEST_SIZE_MATCH(xRRSetOutputPrimaryReq);
 
-    rc = dixLookupWindow(&pWin, stuff->window, client, DixGetAttrAccess);
-    if (rc != Success)
-        return rc;
+    ret = dixLookupWindow(&pWin, stuff->window, client, DixGetAttrAccess);
+    if (ret != Success)
+        return ret;
 
     if (stuff->output) {
         VERIFY_RR_OUTPUT(stuff->output, output, DixReadAccess);
 
-        if (output->pScreen != pWin->drawable.pScreen) {
+        if (RROutputIsLeased(output))
+            return BadAccess;
+
+        if (!output->pScreen->isGPU && output->pScreen != pWin->drawable.pScreen) {
+            client->errorValue = stuff->window;
+            return BadMatch;
+        }
+        if (output->pScreen->isGPU && output->pScreen->current_primary != pWin->drawable.pScreen) {
             client->errorValue = stuff->window;
             return BadMatch;
         }
     }
 
     pScrPriv = rrGetScrPriv(pWin->drawable.pScreen);
-    RRSetPrimaryOutput(pWin->drawable.pScreen, pScrPriv, output);
+    if (pScrPriv)
+    {
+        RRSetPrimaryOutput(pWin->drawable.pScreen, pScrPriv, output);
+
+        xorg_list_for_each_entry(secondary,
+                                 &pWin->drawable.pScreen->secondary_list,
+                                 secondary_head) {
+            if (secondary->is_output_secondary)
+                RRSetPrimaryOutput(secondary, rrGetScrPriv(secondary), output);
+        }
+    }
 
     return Success;
 }
@@ -571,10 +680,11 @@ ProcRRGetOutputPrimary(ClientPtr client)
     if (pScrPriv)
         primary = pScrPriv->primaryOutput;
 
-    memset(&rep, 0, sizeof(rep));
-    rep.type = X_Reply;
-    rep.sequenceNumber = client->sequence;
-    rep.output = primary ? primary->id : None;
+    rep = (xRRGetOutputPrimaryReply) {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .output = primary ? primary->id : None
+    };
 
     if (client->swapped) {
         swaps(&rep.sequenceNumber);

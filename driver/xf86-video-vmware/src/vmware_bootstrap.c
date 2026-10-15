@@ -34,6 +34,7 @@
 #include "xf86Pci.h"		/* pci */
 #include "vm_device_version.h"
 #include "vmware_bootstrap.h"
+#include <stdint.h>
 
 #if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
 #include "xf86Resources.h"
@@ -47,6 +48,10 @@
 #ifndef HAVE_XORG_SERVER_1_5_0
 #include <xf86_ansic.h>
 #include <xf86_libc.h>
+#endif
+
+#ifdef XSERVER_PLATFORM_BUS
+#include "xf86platformBus.h"
 #endif
 
 #ifdef HaveDriverFuncs
@@ -75,16 +80,23 @@
 #define VMW_INNERSTRINGIFY(s) #s
 #define VMW_STRING(str) VMW_INNERSTRINGIFY(str)
 
-#define VMWARE_NAME "vmware"
 #define VMWARE_DRIVER_NAME "vmware"
+#define VMWARE_NAME "vmware"
+
+static char vmware_driver_name[] = VMWARE_DRIVER_NAME;
+
 #define VMWARE_DRIVER_VERSION \
    (PACKAGE_VERSION_MAJOR * 65536 + PACKAGE_VERSION_MINOR * 256 + PACKAGE_VERSION_PATCHLEVEL)
 #define VMWARE_DRIVER_VERSION_STRING \
     VMW_STRING(PACKAGE_VERSION_MAJOR) "." VMW_STRING(PACKAGE_VERSION_MINOR) \
     "." VMW_STRING(PACKAGE_VERSION_PATCHLEVEL)
 
+#if !XSERVER_LIBPCIACCESS
 static const char VMWAREBuildStr[] = "VMware Guest X Server "
     VMWARE_DRIVER_VERSION_STRING " - build=$Name$\n";
+#else
+static char vmware_name[] = VMWARE_NAME;
+#endif
 
 /*
  * Standard four digit version string expected by VMware Tools installer.
@@ -199,6 +211,12 @@ OptionInfoPtr VMWARECopyOptions(void)
     return options;
 }
 
+/*
+ * Also in vmwgfx_hosted.h, which we don't include.
+ */
+void *
+vmwgfx_hosted_detect(void);
+
 static Bool
 VMwarePreinitStub(ScrnInfoPtr pScrn, int flags)
 {
@@ -220,6 +238,11 @@ VMwarePreinitStub(ScrnInfoPtr pScrn, int flags)
     if ((*pScrn->PreInit)(pScrn, flags))
 	return TRUE;
 
+    /*
+     * Can't run legacy hosted
+     */
+    if (vmwgfx_hosted_detect())
+	return FALSE;
 #else
     xf86DrvMsg(pScrn->scrnIndex, X_INFO,
 	       "Driver was compiled without KMS- and 3D support.\n");
@@ -235,15 +258,14 @@ VMwarePreinitStub(ScrnInfoPtr pScrn, int flags)
     vmwlegacy_hookup(pScrn);
 
     pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
-    if (pEnt->location.type != BUS_PCI)
-        return FALSE;
-
     pciInfo = xf86GetPciInfoForEntity(pEnt->index);
     if (pciInfo == NULL)
         return FALSE;
 
-    pScrn->chipset = (char*)xf86TokenToString(VMWAREChipsets,
-					      DEVICE_ID(pciInfo));
+    pScrn->chipset = xstrdup(xf86TokenToString(VMWAREChipsets,
+					       DEVICE_ID(pciInfo)));
+    if (pScrn->chipset == NULL)
+	return FALSE;
 
     return (*pScrn->PreInit)(pScrn, flags);
 };
@@ -256,18 +278,16 @@ VMwarePciProbe (DriverPtr           drv,
                 intptr_t            match_data)
 {
     ScrnInfoPtr     scrn = NULL;
-    EntityInfoPtr   entity;
 
     scrn = xf86ConfigPciEntity(scrn, 0, entity_num, VMWAREPciChipsets,
                                NULL, NULL, NULL, NULL, NULL);
     if (scrn != NULL) {
         scrn->driverVersion = VMWARE_DRIVER_VERSION;
-        scrn->driverName = VMWARE_DRIVER_NAME;
-        scrn->name = VMWARE_NAME;
+        scrn->driverName = vmware_driver_name;
+        scrn->name = vmware_name;
         scrn->Probe = NULL;
     }
 
-    entity = xf86GetEntityInfo(entity_num);
     switch (DEVICE_ID(device)) {
     case PCI_DEVICE_ID_VMWARE_SVGA2:
     case PCI_DEVICE_ID_VMWARE_SVGA:
@@ -374,7 +394,7 @@ VMWAREProbe(DriverPtr drv, int flags)
                                             VMWAREPciChipsets, NULL, NULL, NULL,
                                             NULL, NULL);
                 if (pScrn) {
-                    VmwareLog(("And even configuration suceeded\n"));
+                    VmwareLog(("And even configuration succeeded\n"));
                     pScrn->driverVersion = VMWARE_DRIVER_VERSION;
                     pScrn->driverName = VMWARE_DRIVER_NAME;
                     pScrn->name = VMWARE_NAME;
@@ -397,6 +417,45 @@ VMWAREProbe(DriverPtr drv, int flags)
 }
 #endif
 
+#ifdef XSERVER_PLATFORM_BUS
+static Bool
+VMwarePlatformProbe(DriverPtr drv, int entity, int flags,
+                    struct xf86_platform_device *dev, intptr_t match_data)
+{
+    ScrnInfoPtr pScrn;
+    int scrnFlag = 0;
+
+    if (!dev->pdev)
+        return FALSE;
+
+    if (flags & PLATFORM_PROBE_GPU_SCREEN)
+        scrnFlag = XF86_ALLOCATE_GPU_SCREEN;
+
+    pScrn = xf86AllocateScreen(drv, scrnFlag);
+    if (!pScrn)
+        return FALSE;
+
+    if (xf86IsEntitySharable(entity))
+        xf86SetEntityShared(entity);
+
+    xf86AddEntityToScreen(pScrn, entity);
+
+    pScrn->driverVersion = VMWARE_DRIVER_VERSION;
+    pScrn->driverName = VMWARE_DRIVER_NAME;
+    pScrn->name = VMWARE_NAME;
+    pScrn->Probe = NULL;
+#ifdef BUILD_VMWGFX
+    vmwgfx_hookup(pScrn);
+#else
+    vmwlegacy_hookup(pScrn);
+#endif
+    pScrn->driverPrivate = pScrn->PreInit;
+    pScrn->PreInit = VMwarePreinitStub;
+
+    return TRUE;
+}
+#endif
+
 static void
 VMWAREIdentify(int flags)
 {
@@ -415,15 +474,19 @@ VMWareDriverFunc(ScrnInfoPtr pScrn,
                  xorgDriverFuncOp op,
                  pointer data)
 {
-   CARD32 *flag;
+   uint32_t *flag;
    xorgRRModeMM *modemm;
 
    switch (op) {
    case GET_REQUIRED_HW_INTERFACES:
-      flag = (CARD32 *)data;
+      flag = (uint32_t *)data;
 
       if (flag) {
+#ifdef BUILD_VMWGFX
+	  vmwgfx_modify_flags(flag);
+#else
          *flag = HW_IO | HW_MMIO;
+#endif
       }
       return TRUE;
    case RR_GET_MODE_MM:
@@ -442,6 +505,10 @@ VMWareDriverFunc(ScrnInfoPtr pScrn,
 			      pScrn->yDpi / 2) / pScrn->yDpi;
       }
       return TRUE;
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 18
+   case SUPPORTS_SERVER_FDS:
+      return TRUE;
+#endif
    default:
       return FALSE;
    }
@@ -451,7 +518,7 @@ VMWareDriverFunc(ScrnInfoPtr pScrn,
 
 _X_EXPORT DriverRec vmware = {
     VMWARE_DRIVER_VERSION,
-    VMWARE_DRIVER_NAME,
+    vmware_driver_name,
     VMWAREIdentify,
 #if XSERVER_LIBPCIACCESS
     NULL,
@@ -464,9 +531,21 @@ _X_EXPORT DriverRec vmware = {
 #if VMWARE_DRIVER_FUNC
     VMWareDriverFunc,
 #endif
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 4
 #if XSERVER_LIBPCIACCESS
     VMwareDeviceMatch,
     VMwarePciProbe,
+#else
+    NULL,
+    NULL,
+#endif
+#endif
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 13
+#ifdef XSERVER_PLATFORM_BUS
+    VMwarePlatformProbe,
+#else
+    NULL,
+#endif
 #endif
 };
 

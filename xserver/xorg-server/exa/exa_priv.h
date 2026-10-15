@@ -41,7 +41,6 @@
 #include "pixmapstr.h"
 #include "windowstr.h"
 #include "servermd.h"
-#include "mibstore.h"
 #include "colormapst.h"
 #include "gcstruct.h"
 #include "input.h"
@@ -120,7 +119,7 @@ typedef struct {
     /* Hash table mapping from glyph sha1 to position in the glyph; we use
      * open addressing with a hash table size determined based on size and large
      * enough so that we always have a good amount of free space, so we can
-     * use linear probing. (Linear probing is preferrable to double hashing
+     * use linear probing. (Linear probing is preferable to double hashing
      * here because it allows us to easily remove entries.)
      */
     int *hashEntries;
@@ -131,7 +130,7 @@ typedef struct {
 
     PicturePtr picture;         /* Where the glyphs of the cache are stored */
     int yOffset;                /* y location within the picture where the cache starts */
-    int columns;                /* Number of columns the glyphs are layed out in */
+    int columns;                /* Number of columns the glyphs are laid out in */
     int evictionPosition;       /* Next random position to evict a glyph */
 } ExaGlyphCacheRec, *ExaGlyphCachePtr;
 
@@ -147,7 +146,7 @@ typedef struct _ExaMigrationRec {
     RegionPtr pReg;
 } ExaMigrationRec, *ExaMigrationPtr;
 
-typedef void (*EnableDisableFBAccessProcPtr) (int, Bool);
+typedef void (*EnableDisableFBAccessProcPtr) (ScreenPtr, Bool);
 typedef struct {
     ExaDriverPtr info;
     ScreenBlockHandlerProcPtr SavedBlockHandler;
@@ -163,6 +162,8 @@ typedef struct {
     BitmapToRegionProcPtr SavedBitmapToRegion;
     CreateScreenResourcesProcPtr SavedCreateScreenResources;
     ModifyPixmapHeaderProcPtr SavedModifyPixmapHeader;
+    SharePixmapBackingProcPtr SavedSharePixmapBacking;
+    SetSharedPixmapBackingProcPtr SavedSetSharedPixmapBacking;
     SourceValidateProcPtr SavedSourceValidate;
     CompositeProcPtr SavedComposite;
     TrianglesProcPtr SavedTriangles;
@@ -207,35 +208,20 @@ typedef struct {
     RegionRec srcReg;
     RegionRec maskReg;
     PixmapPtr srcPix;
+    PixmapPtr maskPix;
 
+    DevPrivateKeyRec pixmapPrivateKeyRec;
+    DevPrivateKeyRec gcPrivateKeyRec;
 } ExaScreenPrivRec, *ExaScreenPrivPtr;
-
-/*
- * This is the only completely portable way to
- * compute this info.
- */
-#ifndef BitsPerPixel
-#define BitsPerPixel(d) (\
-    PixmapWidthPaddingInfo[d].notPower2 ? \
-    (PixmapWidthPaddingInfo[d].bytesPerPixel * 8) : \
-    ((1 << PixmapWidthPaddingInfo[d].padBytesLog2) * 8 / \
-    (PixmapWidthPaddingInfo[d].padRoundUp+1)))
-#endif
 
 extern DevPrivateKeyRec exaScreenPrivateKeyRec;
 
 #define exaScreenPrivateKey (&exaScreenPrivateKeyRec)
-extern DevPrivateKeyRec exaPixmapPrivateKeyRec;
-
-#define exaPixmapPrivateKey (&exaPixmapPrivateKeyRec)
-extern DevPrivateKeyRec exaGCPrivateKeyRec;
-
-#define exaGCPrivateKey (&exaGCPrivateKeyRec)
 
 #define ExaGetScreenPriv(s) ((ExaScreenPrivPtr)dixGetPrivate(&(s)->devPrivates, exaScreenPrivateKey))
 #define ExaScreenPriv(s)	ExaScreenPrivPtr    pExaScr = ExaGetScreenPriv(s)
 
-#define ExaGetGCPriv(gc) ((ExaGCPrivPtr)dixGetPrivateAddr(&(gc)->devPrivates, exaGCPrivateKey))
+#define ExaGetGCPriv(gc) ((ExaGCPrivPtr)dixGetPrivateAddr(&(gc)->devPrivates, &ExaGetScreenPriv(gc->pScreen)->gcPrivateKeyRec))
 #define ExaGCPriv(gc) ExaGCPrivPtr pExaGC = ExaGetGCPriv(gc)
 
 /*
@@ -250,11 +236,19 @@ extern DevPrivateKeyRec exaGCPrivateKeyRec;
     real->mem = priv->Saved##mem; \
 }
 
+#ifdef HAVE_TYPEOF
 #define swap(priv, real, mem) {\
-    void *tmp = priv->Saved##mem; \
+    typeof(real->mem) tmp = priv->Saved##mem; \
     priv->Saved##mem = real->mem; \
     real->mem = tmp; \
 }
+#else
+#define swap(priv, real, mem) {\
+    const void *tmp = priv->Saved##mem; \
+    priv->Saved##mem = real->mem; \
+    real->mem = tmp; \
+}
+#endif
 
 #define EXA_PRE_FALLBACK(_screen_) \
     ExaScreenPriv(_screen_); \
@@ -286,7 +280,7 @@ extern DevPrivateKeyRec exaGCPrivateKeyRec;
 #define EXA_PIXMAP_SCORE_PINNED	    1000
 #define EXA_PIXMAP_SCORE_INIT	    1001
 
-#define ExaGetPixmapPriv(p) ((ExaPixmapPrivPtr)dixGetPrivateAddr(&(p)->devPrivates, exaPixmapPrivateKey))
+#define ExaGetPixmapPriv(p) ((ExaPixmapPrivPtr)dixGetPrivateAddr(&(p)->devPrivates, &ExaGetScreenPriv((p)->drawable.pScreen)->pixmapPrivateKeyRec))
 #define ExaPixmapPriv(p)	ExaPixmapPrivPtr pExaPixmap = ExaGetPixmapPriv(p)
 
 #define EXA_RANGE_PITCH (1 << 0)
@@ -335,8 +329,8 @@ typedef struct {
 
 typedef struct {
     /* GC values from the layer below. */
-    GCOps *Savedops;
-    GCFuncs *Savedfuncs;
+    const GCOps *Savedops;
+    const GCFuncs *Savedfuncs;
 } ExaGCPrivRec, *ExaGCPrivPtr;
 
 typedef struct {
@@ -424,13 +418,13 @@ void
 
 ExaCheckImageGlyphBlt(DrawablePtr pDrawable, GCPtr pGC,
                       int x, int y, unsigned int nglyph,
-                      CharInfoPtr * ppci, pointer pglyphBase);
+                      CharInfoPtr * ppci, void *pglyphBase);
 
 void
 
 ExaCheckPolyGlyphBlt(DrawablePtr pDrawable, GCPtr pGC,
                      int x, int y, unsigned int nglyph,
-                     CharInfoPtr * ppci, pointer pglyphBase);
+                     CharInfoPtr * ppci, void *pglyphBase);
 
 void
 
@@ -461,12 +455,11 @@ ExaCheckAddTraps(PicturePtr pPicture,
 static _X_INLINE Bool
 exaGCReadsDestination(DrawablePtr pDrawable, unsigned long planemask,
                       unsigned int fillStyle, unsigned char alu,
-                      unsigned int clientClipType)
+                      Bool clientClip)
 {
     return ((alu != GXcopy && alu != GXclear && alu != GXset &&
              alu != GXcopyInverted) || fillStyle == FillStippled ||
-            clientClipType != CT_NONE ||
-            !EXA_PM_IS_SOLID(pDrawable, planemask));
+            clientClip != FALSE || !EXA_PM_IS_SOLID(pDrawable, planemask));
 }
 
 void
@@ -476,7 +469,7 @@ Bool
 
 exaFillRegionTiled(DrawablePtr pDrawable, RegionPtr pRegion, PixmapPtr pTile,
                    DDXPointPtr pPatOrg, CARD32 planemask, CARD32 alu,
-                   unsigned int clientClipType);
+                   Bool clientClip);
 
 void
 
@@ -603,7 +596,7 @@ Bool
 
 exaModifyPixmapHeader_classic(PixmapPtr pPixmap, int width, int height,
                               int depth, int bitsPerPixel, int devKind,
-                              pointer pPixData);
+                              void *pPixData);
 
 Bool
  exaDestroyPixmap_classic(PixmapPtr pPixmap);
@@ -621,7 +614,7 @@ Bool
 
 exaModifyPixmapHeader_driver(PixmapPtr pPixmap, int width, int height,
                              int depth, int bitsPerPixel, int devKind,
-                             pointer pPixData);
+                             void *pPixData);
 
 Bool
  exaDestroyPixmap_driver(PixmapPtr pPixmap);
@@ -638,7 +631,7 @@ exaCreatePixmap_mixed(ScreenPtr pScreen, int w, int h, int depth,
 Bool
 
 exaModifyPixmapHeader_mixed(PixmapPtr pPixmap, int width, int height, int depth,
-                            int bitsPerPixel, int devKind, pointer pPixData);
+                            int bitsPerPixel, int devKind, void *pPixData);
 
 Bool
  exaDestroyPixmap_mixed(PixmapPtr pPixmap);
@@ -661,6 +654,11 @@ void
 
 void
  exaPrepareAccessReg_mixed(PixmapPtr pPixmap, int index, RegionPtr pReg);
+
+Bool
+exaSetSharedPixmapBacking_mixed(PixmapPtr pPixmap, void *handle);
+Bool
+exaSharePixmapBacking_mixed(PixmapPtr pPixmap, ScreenPtr secondary, void **handle_p);
 
 /* exa_render.c */
 Bool

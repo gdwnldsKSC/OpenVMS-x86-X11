@@ -19,6 +19,12 @@
 #endif
 
 #if defined (__GNUC__)
+#  define unlikely(expr) __builtin_expect ((expr), 0)
+#else
+#  define unlikely(expr)  (expr)
+#endif
+
+#if defined (__GNUC__)
 #  define MAYBE_UNUSED  __attribute__((unused))
 #else
 #  define MAYBE_UNUSED
@@ -56,6 +62,10 @@
 # define INT64_MAX              (9223372036854775807)
 #endif
 
+#ifndef SIZE_MAX
+# define SIZE_MAX               ((size_t)-1)
+#endif
+
 
 #ifndef M_PI
 # define M_PI			3.14159265358979323846
@@ -85,22 +95,28 @@
 /* Sun Studio 8 visibility */
 #elif defined(__SUNPRO_C) && (__SUNPRO_C >= 0x550)
 #   define PIXMAN_EXPORT __global
+#elif defined (_MSC_VER) || defined(__MINGW32__)
+#   define PIXMAN_EXPORT PIXMAN_API
 #else
 #   define PIXMAN_EXPORT
 #endif
+
+/* member offsets */
+#define CONTAINER_OF(type, member, data)				\
+    ((type *)(((uint8_t *)data) - offsetof (type, member)))
 
 /* TLS */
 #if defined(PIXMAN_NO_TLS)
 
 #   define PIXMAN_DEFINE_THREAD_LOCAL(type, name)			\
-    static type name
+    static type name;
 #   define PIXMAN_GET_THREAD_LOCAL(name)				\
     (&name)
 
-#elif defined(TOOLCHAIN_SUPPORTS__THREAD)
+#elif defined(TLS)
 
 #   define PIXMAN_DEFINE_THREAD_LOCAL(type, name)			\
-    static __thread type name
+    static TLS type name;
 #   define PIXMAN_GET_THREAD_LOCAL(name)				\
     (&name)
 
@@ -160,11 +176,11 @@
 #elif defined(_MSC_VER)
 
 #   define PIXMAN_DEFINE_THREAD_LOCAL(type, name)			\
-    static __declspec(thread) type name
+    static __declspec(thread) type name;
 #   define PIXMAN_GET_THREAD_LOCAL(name)				\
     (&name)
 
-#elif defined(HAVE_PTHREAD_SETSPECIFIC)
+#elif defined(HAVE_PTHREADS)
 
 #include <pthread.h>
 

@@ -39,7 +39,7 @@
 #include "fb.h"
 
 #define EXA_VERSION_MAJOR   2
-#define EXA_VERSION_MINOR   5
+#define EXA_VERSION_MINOR   6
 #define EXA_VERSION_RELEASE 0
 
 typedef struct _ExaOffscreenArea ExaOffscreenArea;
@@ -58,7 +58,7 @@ struct _ExaOffscreenArea {
     int offset;                 /* aligned offset */
     int size;                   /* total allocation size */
     unsigned last_use;
-    pointer privData;
+    void *privData;
 
     ExaOffscreenSaveProc save;
 
@@ -140,7 +140,7 @@ typedef struct _ExaDriver {
     /**
      * The flags field is bitfield of boolean values controlling EXA's behavior.
      *
-     * The flags in clude EXA_OFFSCREEN_PIXMAPS, EXA_OFFSCREEN_ALIGN_POT, and
+     * The flags include EXA_OFFSCREEN_PIXMAPS, EXA_OFFSCREEN_ALIGN_POT, and
      * EXA_TWO_BITBLT_DIRECTIONS.
      */
     int flags;
@@ -233,7 +233,7 @@ typedef struct _ExaDriver {
      * @{
      */
     /**
-     * PrepareCopy() sets up the driver for doing a copy within video 
+     * PrepareCopy() sets up the driver for doing a copy within video
      * memory.
      *
      * @param pSrcPixmap source pixmap
@@ -471,7 +471,7 @@ typedef struct _ExaDriver {
      * UploadToScreen() can aid in pixmap migration, but is most important for
      * the performance of exaGlyphs() (antialiased font drawing) by allowing
      * pipelining of data uploads, avoiding a sync of the card after each glyph.
-     * 
+     *
      * @return TRUE if the driver successfully uploaded the data.  FALSE
      * indicates that EXA should fall back to doing the upload in software.
      *
@@ -512,7 +512,7 @@ typedef struct _ExaDriver {
      * migration, which is the read from framebuffer when evicting pixmaps from
      * framebuffer memory.  Thus, it is highly recommended, even though
      * implementations are typically complicated.
-     * 
+     *
      * @return TRUE if the driver successfully downloaded the data.  FALSE
      * indicates that EXA should fall back to doing the download in software.
      *
@@ -685,7 +685,7 @@ typedef struct _ExaDriver {
      */
     Bool (*ModifyPixmapHeader) (PixmapPtr pPixmap, int width, int height,
                                 int depth, int bitsPerPixel, int devKind,
-                                pointer pPixData);
+                                void *pPixData);
 
     /* hooks for drivers with tiling support:
      * driver MUST fill out new_fb_pitch with valid pitch of pixmap
@@ -694,13 +694,17 @@ typedef struct _ExaDriver {
                             int depth, int usage_hint, int bitsPerPixel,
                             int *new_fb_pitch);
     /** @} */
+    Bool (*SharePixmapBacking)(PixmapPtr pPixmap, ScreenPtr secondary, void **handle_p);
+
+    Bool (*SetSharedPixmapBacking)(PixmapPtr pPixmap, void *handle);
+
 } ExaDriverRec, *ExaDriverPtr;
 
 /** @name EXA driver flags
  * @{
  */
 /**
- * EXA_OFFSCREEN_PIXMAPS indicates to EXA that the driver can support 
+ * EXA_OFFSCREEN_PIXMAPS indicates to EXA that the driver can support
  * offscreen pixmaps.
  */
 #define EXA_OFFSCREEN_PIXMAPS		(1 << 0)
@@ -780,7 +784,7 @@ extern _X_EXPORT ExaOffscreenArea *exaOffscreenAlloc(ScreenPtr pScreen,
                                                      int size, int align,
                                                      Bool locked,
                                                      ExaOffscreenSaveProc save,
-                                                     pointer privData);
+                                                     void *privData);
 
 extern _X_EXPORT ExaOffscreenArea *exaOffscreenFree(ScreenPtr pScreen,
                                                     ExaOffscreenArea * area);
@@ -789,7 +793,7 @@ extern _X_EXPORT void
  ExaOffscreenMarkUsed(PixmapPtr pPixmap);
 
 extern _X_EXPORT void
- exaEnableDisableFBAccess(int index, Bool enable);
+ exaEnableDisableFBAccess(ScreenPtr pScreen, Bool enable);
 
 extern _X_EXPORT Bool
  exaDrawableIsOffscreen(DrawablePtr pDrawable);

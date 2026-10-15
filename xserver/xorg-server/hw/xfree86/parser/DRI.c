@@ -11,11 +11,11 @@
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice (including the next
  * paragraph) shall be included in all copies or substantial portions of the
  * Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -23,21 +23,21 @@
  * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- * 
- * 
+ *
+ *
  */
 
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
 #endif
 
+#include "os.h"
 #include "xf86Parser.h"
 #include "xf86tokens.h"
 #include "Configint.h"
 
-extern LexRec val;
 
-static xf86ConfigSymTabRec DRITab[] = {
+static const xf86ConfigSymTabRec DRITab[] = {
     {ENDSECTION, "endsection"},
     {GROUP, "group"},
     {MODE, "mode"},
@@ -59,24 +59,26 @@ xf86parseDRISection(void)
         switch (token) {
         case GROUP:
             if ((token = xf86getSubToken(&(ptr->dri_comment))) == STRING)
-                ptr->dri_group_name = val.str;
+                ptr->dri_group_name = xf86_lex_val.str;
             else if (token == NUMBER)
-                ptr->dri_group = val.num;
+                ptr->dri_group = xf86_lex_val.num;
             else
                 Error(GROUP_MSG);
             break;
         case MODE:
             if (xf86getSubToken(&(ptr->dri_comment)) != NUMBER)
                 Error(NUMBER_MSG, "Mode");
-            if (val.numType != PARSE_OCTAL)
-                Error(MUST_BE_OCTAL_MSG, val.num);
-            ptr->dri_mode = val.num;
+            if (xf86_lex_val.numType != PARSE_OCTAL)
+                Error(MUST_BE_OCTAL_MSG, xf86_lex_val.num);
+            ptr->dri_mode = xf86_lex_val.num;
             break;
         case EOF_TOKEN:
             Error(UNEXPECTED_EOF_MSG);
             break;
         case COMMENT:
-            ptr->dri_comment = xf86addComment(ptr->dri_comment, val.str);
+            ptr->dri_comment = xf86addComment(ptr->dri_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
             break;
         default:
             Error(INVALID_KEYWORD_MSG, xf86tokenString());

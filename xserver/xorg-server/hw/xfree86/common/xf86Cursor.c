@@ -37,8 +37,6 @@
 #include "scrnintstr.h"
 #include "globals.h"
 
-#include "compiler.h"
-
 #include "xf86.h"
 #include "xf86Priv.h"
 #include "xf86_OSproc.h"
@@ -66,20 +64,15 @@ static Bool xf86CursorOffScreen(ScreenPtr *pScreen, int *x, int *y);
 static void xf86CrossScreen(ScreenPtr pScreen, Bool entering);
 static void xf86WarpCursor(DeviceIntPtr pDev, ScreenPtr pScreen, int x, int y);
 
-static void xf86PointerMoved(int scrnIndex, int x, int y);
+static void xf86PointerMoved(ScrnInfoPtr pScrn, int x, int y);
 
 static miPointerScreenFuncRec xf86PointerScreenFuncs = {
     xf86CursorOffScreen,
     xf86CrossScreen,
     xf86WarpCursor,
-    /* let miPointerInitialize take care of these */
-    NULL,
-    NULL
 };
 
 static xf86ScreenLayoutRec xf86ScreenLayout[MAXSCREENS];
-
-static Bool HardEdges;
 
 /*
  * xf86InitViewport --
@@ -133,20 +126,19 @@ xf86InitViewport(ScrnInfoPtr pScr)
 void
 xf86SetViewport(ScreenPtr pScreen, int x, int y)
 {
-    ScrnInfoPtr pScr = XF86SCRNINFO(pScreen);
+    ScrnInfoPtr pScr = xf86ScreenToScrn(pScreen);
 
-    (*pScr->PointerMoved) (pScreen->myNum, x, y);
+    (*pScr->PointerMoved) (pScr, x, y);
 }
 
 static void
-xf86PointerMoved(int scrnIndex, int x, int y)
+xf86PointerMoved(ScrnInfoPtr pScr, int x, int y)
 {
     Bool frameChanged = FALSE;
-    ScrnInfoPtr pScr = xf86Screens[scrnIndex];
 
     /*
-     * check wether (x,y) belongs to the visual part of the screen
-     * if not, change the base of the displayed frame accoring
+     * check whether (x,y) belongs to the visual part of the screen
+     * if not, change the base of the displayed frame occurring
      */
     if (pScr->frameX0 > x) {
         pScr->frameX0 = x;
@@ -173,7 +165,7 @@ xf86PointerMoved(int scrnIndex, int x, int y)
     }
 
     if (frameChanged && pScr->AdjustFrame != NULL)
-        pScr->AdjustFrame(pScr->scrnIndex, pScr->frameX0, pScr->frameY0, 0);
+        pScr->AdjustFrame(pScr, pScr->frameX0, pScr->frameY0);
 }
 
 /*
@@ -184,7 +176,8 @@ xf86PointerMoved(int scrnIndex, int x, int y)
 void
 xf86LockZoom(ScreenPtr pScreen, Bool lock)
 {
-    XF86SCRNINFO(pScreen)->zoomLocked = lock;
+    ScrnInfoPtr pScr = xf86ScreenToScrn(pScreen);
+    pScr->zoomLocked = lock;
 }
 
 /*
@@ -196,10 +189,10 @@ xf86LockZoom(ScreenPtr pScreen, Bool lock)
 Bool
 xf86SwitchMode(ScreenPtr pScreen, DisplayModePtr mode)
 {
-    ScrnInfoPtr pScr = XF86SCRNINFO(pScreen);
+    ScrnInfoPtr pScr = xf86ScreenToScrn(pScreen);
     ScreenPtr pCursorScreen;
     Bool Switched;
-    int px, py, was_blocked;
+    int px, py;
     DeviceIntPtr dev, it;
 
     if (!pScr->vtSema || !mode || !pScr->SwitchMode)
@@ -228,8 +221,8 @@ xf86SwitchMode(ScreenPtr pScreen, DisplayModePtr mode)
     if (pScreen == pCursorScreen)
         miPointerGetPosition(dev, &px, &py);
 
-    was_blocked = xf86BlockSIGIO();
-    Switched = (*pScr->SwitchMode) (pScr->scrnIndex, mode, 0);
+    input_lock();
+    Switched = (*pScr->SwitchMode) (pScr, mode);
     if (Switched) {
         pScr->currentMode = mode;
 
@@ -267,10 +260,10 @@ xf86SwitchMode(ScreenPtr pScreen, DisplayModePtr mode)
             pScr->frameY1 = pScr->virtualY - 1;
         }
     }
-    xf86UnblockSIGIO(was_blocked);
+    input_unlock();
 
     if (pScr->AdjustFrame)
-        (*pScr->AdjustFrame) (pScr->scrnIndex, pScr->frameX0, pScr->frameY0, 0);
+        (*pScr->AdjustFrame) (pScr, pScr->frameX0, pScr->frameY0);
 
     /* The original code centered the frame around the cursor if possible.
      * Since this is hard to achieve with multiple cursors, we do the following:
@@ -316,7 +309,7 @@ xf86SwitchMode(ScreenPtr pScreen, DisplayModePtr mode)
 void
 xf86ZoomViewport(ScreenPtr pScreen, int zoom)
 {
-    ScrnInfoPtr pScr = XF86SCRNINFO(pScreen);
+    ScrnInfoPtr pScr = xf86ScreenToScrn(pScreen);
     DisplayModePtr mode;
 
     if (pScr->zoomLocked || !(mode = pScr->currentMode))
@@ -434,16 +427,6 @@ xf86CursorOffScreen(ScreenPtr *pScreen, int *x, int *y)
         }
     }
 
-#if 0
-    /* This presents problems for overlapping screens when
-       HardEdges is used.  Have to think about the logic more */
-    if ((*x < 0) || (*x >= (*pScreen)->width) ||
-        (*y < 0) || (*y >= (*pScreen)->height)) {
-        /* We may have crossed more than one screen */
-        xf86CursorOffScreen(pScreen, x, y);
-    }
-#endif
-
     return TRUE;
 }
 
@@ -469,13 +452,11 @@ xf86CrossScreen(ScreenPtr pScreen, Bool entering)
 static void
 xf86WarpCursor(DeviceIntPtr pDev, ScreenPtr pScreen, int x, int y)
 {
-    int sigstate;
-
-    sigstate = xf86BlockSIGIO();
+    input_lock();
     miPointerWarpCursor(pDev, pScreen, x, y);
 
     xf86Info.currentScreen = pScreen;
-    xf86UnblockSIGIO(sigstate);
+    input_unlock();
 }
 
 void *
@@ -588,9 +569,6 @@ xf86InitOrigins(void)
     int i, j, ref, minX, minY, min, max;
     xf86ScreenLayoutPtr pLayout;
     Bool OldStyleConfig = FALSE;
-
-    /* need to have this set up with a config file option */
-    HardEdges = FALSE;
 
     memset(xf86ScreenLayout, 0, MAXSCREENS * sizeof(xf86ScreenLayoutRec));
 
@@ -843,7 +821,7 @@ xf86InitOrigins(void)
         }
     }
 
-    if (!HardEdges && !OldStyleConfig) {
+    if (!OldStyleConfig) {
         for (i = 0; i < xf86NumScreens; i++) {
             pLayout = &xf86ScreenLayout[i];
             pScreen = xf86Screens[i]->pScreen;

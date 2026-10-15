@@ -2,7 +2,7 @@ noinst_LTLIBRARIES = libstub.la
 
 AM_CFLAGS = $(XORG_CFLAGS) $(DIX_CFLAGS)
 
-INCLUDES = $(XORG_INCS)
+AM_CPPFLAGS = $(XORG_INCS)
 
 libstub_la_SOURCES = \
 	$(srcdir)/../shared/VTsw_noop.c \
@@ -14,6 +14,5 @@ libstub_la_SOURCES = \
 	$(srcdir)/../shared/posix_tty.c \
 	$(srcdir)/../shared/sigio.c \
 	stub_bell.c \
-	stub_bios.c \
 	stub_init.c \
 	stub_video.c

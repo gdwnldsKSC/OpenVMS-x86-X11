@@ -72,7 +72,7 @@ extern int ExtEventIndex;
  *
  */
 
-int
+int _X_COLD
 SProcXGrabDevice(ClientPtr client)
 {
     REQUEST(xGrabDeviceReq);
@@ -113,10 +113,12 @@ ProcXGrabDevice(ClientPtr client)
         bytes_to_int32(sizeof(xGrabDeviceReq)) + stuff->event_count)
         return BadLength;
 
-    rep.repType = X_Reply;
-    rep.RepType = X_GrabDevice;
-    rep.sequenceNumber = client->sequence;
-    rep.length = 0;
+    rep = (xGrabDeviceReply) {
+        .repType = X_Reply,
+        .RepType = X_GrabDevice,
+        .sequenceNumber = client->sequence,
+        .length = 0,
+    };
 
     rc = dixLookupDevice(&dev, stuff->deviceid, client, DixGrabAccess);
     if (rc != Success)
@@ -151,7 +153,7 @@ ProcXGrabDevice(ClientPtr client)
  * set when XI starts up) and binary OR's the device's mask to whatever the
  * event mask for the given event type was.
  * If an error occurs, it is sent to the client. Errors are generated if
- *  - if the device given in the event classs is invalid
+ *  - if the device given in the event class is invalid
  *  - if the device in the class list is not the device given as parameter (no
  *  error if parameter is NULL)
  *
@@ -173,10 +175,7 @@ CreateMaskFromList(ClientPtr client, XEventClass * list, int count,
     int device;
     DeviceIntPtr tdev;
 
-    for (i = 0; i < EMASKSIZE; i++) {
-        mask[i].mask = 0;
-        mask[i].dev = NULL;
-    }
+    memset(mask, 0, EMASKSIZE * sizeof(struct tmask));
 
     for (i = 0; i < count; i++, list++) {
         device = *list >> 8;
@@ -192,7 +191,7 @@ CreateMaskFromList(ClientPtr client, XEventClass * list, int count,
         for (j = 0; j < ExtEventIndex; j++)
             if (EventInfo[j].type == (*list & 0xff)) {
                 mask[device].mask |= EventInfo[j].mask;
-                mask[device].dev = (Pointer) tdev;
+                mask[device].dev = (void *) tdev;
                 break;
             }
     }
@@ -206,10 +205,10 @@ CreateMaskFromList(ClientPtr client, XEventClass * list, int count,
  *
  */
 
-void
+void _X_COLD
 SRepXGrabDevice(ClientPtr client, int size, xGrabDeviceReply * rep)
 {
     swaps(&rep->sequenceNumber);
     swapl(&rep->length);
-    WriteToClient(client, size, (char *) rep);
+    WriteToClient(client, size, rep);
 }

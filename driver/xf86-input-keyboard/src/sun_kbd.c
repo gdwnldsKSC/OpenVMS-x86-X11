@@ -23,7 +23,7 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 /*
- * Copyright (c) 2004-2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004-2009, Oracle and/or its affiliates.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -59,6 +59,7 @@
 #include <sys/stropts.h>
 #include <sys/vuid_event.h>
 #include <sys/kbd.h>
+#include <sys/kbio.h>
 #include <sys/note.h>	/* needed before including older versions of hid.h */
 #include <sys/usb/clients/hid/hid.h>
 
@@ -70,8 +71,9 @@ static void
 sunKbdSetLeds(InputInfoPtr pInfo, int leds)
 {
     int i;
+    uchar_t setleds = (uchar_t) (leds & 0xFF);
 
-    SYSCALL(i = ioctl(pInfo->fd, KIOCSLED, &leds));
+    SYSCALL(i = ioctl(pInfo->fd, KIOCSLED, &setleds));
     if (i < 0) {
 	xf86Msg(X_ERROR, "%s: Failed to set keyboard LED's: %s\n",
                 pInfo->name, strerror(errno));
@@ -82,14 +84,15 @@ sunKbdSetLeds(InputInfoPtr pInfo, int leds)
 static int
 sunKbdGetLeds(InputInfoPtr pInfo)
 {
-    int i, leds = 0;
+    int i;
+    uchar_t leds = 0;
 
     SYSCALL(i = ioctl(pInfo->fd, KIOCGLED, &leds));
     if (i < 0) {
         xf86Msg(X_ERROR, "%s: Failed to get keyboard LED's: %s\n",
                 pInfo->name, strerror(errno));
     }
-    return leds;
+    return (int) leds;
 }
 
 
@@ -457,20 +460,22 @@ ReadInput(InputInfoPtr pInfo)
 		case EINTR:  /* Interrupted, try again */
 		    break;
 		case ENODEV: /* May happen when USB kbd is unplugged */
-		    /* We use X_NONE here because it doesn't alloc since we
-		       may be called from SIGIO handler */
-		    xf86MsgVerb(X_NONE, 0,
-				"%s: Device no longer present - removing.\n",
-				pInfo->name);
+		    /* We use X_NONE here because it didn't alloc since we
+		       may be called from SIGIO handler. No longer true for
+		       sigsafe logging, but matters for older servers  */
+		    LogMessageVerbSigSafe(X_NONE, 0,
+					  "%s: Device no longer present - removing.\n",
+					  pInfo->name);
 		    xf86RemoveEnabledDevice(pInfo);
 		    priv->remove_timer = TimerSet(priv->remove_timer, 0, 1,
 						  RemoveKeyboard, pInfo);
 		    return;
 		default:     /* All other errors */
-		    /* We use X_NONE here because it doesn't alloc since we
-		       may be called from SIGIO handler */
-		    xf86MsgVerb(X_NONE, 0, "%s: Read error: %s\n", pInfo->name,
-				strerror(errno));
+		    /* We use X_NONE here because it didn't alloc since we
+		       may be called from SIGIO handler. No longer true for
+		       sigsafe logging, but matters for older servers  */
+		    LogMessageVerbSigSafe(X_NONE, 0, "%s: Read error: %s\n", pInfo->name,
+					  strerror(errno));
 		    return;
 	    }
 	} else { /* nBytes == 0, so nothing more to read */
@@ -495,6 +500,8 @@ OpenKeyboard(InputInfoPtr pInfo)
 		    kbdPath);
 	pInfo->read_input = ReadInput;
 	ret = TRUE;
+	/* in case it wasn't set and we fell back to default */
+	xf86ReplaceStrOption(pInfo->options, "Device", kbdPath);
     }
 
     free(kbdPath);
@@ -518,7 +525,7 @@ xf86OSKbdPreInit(InputInfoPtr pInfo)
 
     pKbd->OpenKeyboard = OpenKeyboard;
 
-    pKbd->private = calloc(sizeof(sunKbdPrivRec), 1);
+    pKbd->private = calloc(1, sizeof(sunKbdPrivRec));
     if (pKbd->private == NULL) {
        xf86Msg(X_ERROR,"can't allocate keyboard OS private data\n");
        return FALSE;

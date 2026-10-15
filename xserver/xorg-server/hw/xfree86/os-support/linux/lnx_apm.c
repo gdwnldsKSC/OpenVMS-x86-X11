@@ -36,36 +36,31 @@ extern PMClose lnxACPIOpen(void);
 
 static PMClose lnxAPMOpen(void);
 static void lnxCloseAPM(void);
-static pointer APMihPtr = NULL;
+static void *APMihPtr = NULL;
 
 static struct {
     apm_event_t apmLinux;
     pmEvent xf86;
 } LinuxToXF86[] = {
-    {
-    APM_SYS_STANDBY, XF86_APM_SYS_STANDBY}, {
-    APM_SYS_SUSPEND, XF86_APM_SYS_SUSPEND}, {
-    APM_NORMAL_RESUME, XF86_APM_NORMAL_RESUME}, {
-    APM_CRITICAL_RESUME, XF86_APM_CRITICAL_RESUME}, {
-    APM_LOW_BATTERY, XF86_APM_LOW_BATTERY}, {
-    APM_POWER_STATUS_CHANGE, XF86_APM_POWER_STATUS_CHANGE}, {
-    APM_UPDATE_TIME, XF86_APM_UPDATE_TIME}, {
-    APM_CRITICAL_SUSPEND, XF86_APM_CRITICAL_SUSPEND}, {
-    APM_USER_STANDBY, XF86_APM_USER_STANDBY}, {
-    APM_USER_SUSPEND, XF86_APM_USER_SUSPEND}, {
-    APM_STANDBY_RESUME, XF86_APM_STANDBY_RESUME},
+    {APM_SYS_STANDBY, XF86_APM_SYS_STANDBY},
+    {APM_SYS_SUSPEND, XF86_APM_SYS_SUSPEND},
+    {APM_NORMAL_RESUME, XF86_APM_NORMAL_RESUME},
+    {APM_CRITICAL_RESUME, XF86_APM_CRITICAL_RESUME},
+    {APM_LOW_BATTERY, XF86_APM_LOW_BATTERY},
+    {APM_POWER_STATUS_CHANGE, XF86_APM_POWER_STATUS_CHANGE},
+    {APM_UPDATE_TIME, XF86_APM_UPDATE_TIME},
+    {APM_CRITICAL_SUSPEND, XF86_APM_CRITICAL_SUSPEND},
+    {APM_USER_STANDBY, XF86_APM_USER_STANDBY},
+    {APM_USER_SUSPEND, XF86_APM_USER_SUSPEND},
+    {APM_STANDBY_RESUME, XF86_APM_STANDBY_RESUME},
 #if defined(APM_CAPABILITY_CHANGED)
-    {
-    APM_CAPABILITY_CHANGED, XF86_CAPABILITY_CHANGED},
+    {APM_CAPABILITY_CHANGED, XF86_CAPABILITY_CHANGED},
 #endif
 #if 0
-    {
-    APM_STANDBY_FAILED, XF86_APM_STANDBY_FAILED}, {
-    APM_SUSPEND_FAILED, XF86_APM_SUSPEND_FAILED}
+    {APM_STANDBY_FAILED, XF86_APM_STANDBY_FAILED},
+    {APM_SUSPEND_FAILED, XF86_APM_SUSPEND_FAILED}
 #endif
 };
-
-#define numApmEvents (sizeof(LinuxToXF86) / sizeof(LinuxToXF86[0]))
 
 /*
  * APM is still under construction.
@@ -87,12 +82,12 @@ lnxPMGetEventFromOs(int fd, pmEvent * events, int num)
     if (n > num)
         n = num;
     for (i = 0; i < n; i++) {
-        for (j = 0; j < numApmEvents; j++)
+        for (j = 0; j < ARRAY_SIZE(LinuxToXF86); j++)
             if (LinuxToXF86[j].apmLinux == linuxEvents[i]) {
                 events[i] = LinuxToXF86[j].xf86;
                 break;
             }
-        if (j == numApmEvents)
+        if (j == ARRAY_SIZE(LinuxToXF86))
             events[i] = XF86_APM_UNKNOWN;
     }
     return n;
@@ -143,13 +138,14 @@ xf86OSPMOpen(void)
 #ifdef HAVE_ACPI
     /* Favour ACPI over APM, but only when enabled */
 
-    if (!xf86acpiDisableFlag)
+    if (!xf86acpiDisableFlag) {
         ret = lnxACPIOpen();
-
-    if (!ret)
+        if (ret)
+            return ret;
+    }
 #endif
 #ifdef HAVE_APM
-        ret = lnxAPMOpen();
+    ret = lnxAPMOpen();
 #endif
 
     return ret;

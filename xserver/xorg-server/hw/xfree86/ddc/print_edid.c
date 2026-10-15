@@ -21,7 +21,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  *
- * print_edid.c: print out all information retrieved from display device  
+ * print_edid.c: print out all information retrieved from display device
  */
 
 #ifdef HAVE_XORG_CONFIG_H
@@ -143,7 +143,7 @@ print_dpms_features(int scrnIndex, struct disp_features *c,
     if (!c->input_type) {       /* analog */
         switch (c->display_type) {
         case DISP_MONO:
-            xf86ErrorF("; Monochorome/GrayScale Display\n");
+            xf86ErrorF("; Monochrome/GrayScale Display\n");
             break;
         case DISP_RGB:
             xf86ErrorF("; RGB/Color Display\n");
@@ -507,7 +507,7 @@ handle_detailed_print(struct detailed_monitor_section *det_mon, void *data)
     }
     if (det_mon->type >= DS_VENDOR && det_mon->type <= DS_VENDOR_MAX) {
         xf86DrvMsg(scrnIndex, X_INFO,
-                   "Unknown vendor-specific block %hx\n",
+                   "Unknown vendor-specific block %x\n",
                    det_mon->type - DS_VENDOR);
     }
 

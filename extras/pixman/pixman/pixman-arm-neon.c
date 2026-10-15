@@ -27,7 +27,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <pixman-config.h>
 #endif
 
 #include <string.h>
@@ -183,17 +183,18 @@ pixman_composite_src_n_8888_asm_neon (int32_t   w,
                                       uint32_t  src);
 
 static pixman_bool_t
-pixman_fill_neon (uint32_t *bits,
-                  int       stride,
-                  int       bpp,
-                  int       x,
-                  int       y,
-                  int       width,
-                  int       height,
-                  uint32_t  _xor)
+arm_neon_fill (pixman_implementation_t *imp,
+               uint32_t *               bits,
+               int                      stride,
+               int                      bpp,
+               int                      x,
+               int                      y,
+               int                      width,
+               int                      height,
+	       uint32_t                 _xor)
 {
     /* stride is always multiple of 32bit units in pixman */
-    uint32_t byte_stride = stride * sizeof(uint32_t);
+    int32_t byte_stride = stride * sizeof(uint32_t);
 
     switch (bpp)
     {
@@ -227,18 +228,19 @@ pixman_fill_neon (uint32_t *bits,
 }
 
 static pixman_bool_t
-pixman_blt_neon (uint32_t *src_bits,
-                 uint32_t *dst_bits,
-                 int       src_stride,
-                 int       dst_stride,
-                 int       src_bpp,
-                 int       dst_bpp,
-                 int       src_x,
-                 int       src_y,
-                 int       dest_x,
-                 int       dest_y,
-                 int       width,
-                 int       height)
+arm_neon_blt (pixman_implementation_t *imp,
+              uint32_t *               src_bits,
+              uint32_t *               dst_bits,
+              int                      src_stride,
+              int                      dst_stride,
+              int                      src_bpp,
+              int                      dst_bpp,
+              int                      src_x,
+              int                      src_y,
+              int                      dest_x,
+              int                      dest_y,
+              int                      width,
+              int                      height)
 {
     if (src_bpp != dst_bpp)
 	return FALSE;
@@ -329,6 +331,7 @@ static const pixman_fast_path_t arm_neon_fast_paths[] =
     PIXMAN_STD_FAST_PATH (OVER, a8b8g8r8, a8,       b5g6r5,   neon_composite_over_8888_8_0565),
     PIXMAN_STD_FAST_PATH (OVER, r5g6b5,   a8,       r5g6b5,   neon_composite_over_0565_8_0565),
     PIXMAN_STD_FAST_PATH (OVER, b5g6r5,   a8,       b5g6r5,   neon_composite_over_0565_8_0565),
+    PIXMAN_STD_FAST_PATH (OVER, a8r8g8b8, a8r8g8b8, x8r8g8b8, neon_composite_over_8888_8888_8888),
     PIXMAN_STD_FAST_PATH (OVER, a8r8g8b8, a8r8g8b8, a8r8g8b8, neon_composite_over_8888_8888_8888),
     PIXMAN_STD_FAST_PATH (OVER, a8r8g8b8, null,     r5g6b5,   neon_composite_over_8888_0565),
     PIXMAN_STD_FAST_PATH (OVER, a8b8g8r8, null,     b5g6r5,   neon_composite_over_8888_0565),
@@ -339,17 +342,33 @@ static const pixman_fast_path_t arm_neon_fast_paths[] =
     PIXMAN_STD_FAST_PATH (OVER, x8r8g8b8, null,     a8r8g8b8, neon_composite_src_x888_8888),
     PIXMAN_STD_FAST_PATH (OVER, x8b8g8r8, null,     a8b8g8r8, neon_composite_src_x888_8888),
     PIXMAN_STD_FAST_PATH (ADD,  solid,    a8,       a8,       neon_composite_add_n_8_8),
+    PIXMAN_STD_FAST_PATH (ADD,  solid,    a8,       x8r8g8b8, neon_composite_add_n_8_8888),
     PIXMAN_STD_FAST_PATH (ADD,  solid,    a8,       a8r8g8b8, neon_composite_add_n_8_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  solid,    a8,       x8b8g8r8, neon_composite_add_n_8_8888),
     PIXMAN_STD_FAST_PATH (ADD,  solid,    a8,       a8b8g8r8, neon_composite_add_n_8_8888),
     PIXMAN_STD_FAST_PATH (ADD,  a8,       a8,       a8,       neon_composite_add_8_8_8),
     PIXMAN_STD_FAST_PATH (ADD,  r5g6b5,   a8,       r5g6b5,   neon_composite_add_0565_8_0565),
     PIXMAN_STD_FAST_PATH (ADD,  b5g6r5,   a8,       b5g6r5,   neon_composite_add_0565_8_0565),
+    PIXMAN_STD_FAST_PATH (ADD,  x8r8g8b8, a8,       x8r8g8b8, neon_composite_add_8888_8_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  a8r8g8b8, a8,       x8r8g8b8, neon_composite_add_8888_8_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  x8b8g8r8, a8,       x8b8g8r8, neon_composite_add_8888_8_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  a8b8g8r8, a8,       x8b8g8r8, neon_composite_add_8888_8_8888),
     PIXMAN_STD_FAST_PATH (ADD,  a8r8g8b8, a8,       a8r8g8b8, neon_composite_add_8888_8_8888),
     PIXMAN_STD_FAST_PATH (ADD,  a8b8g8r8, a8,       a8b8g8r8, neon_composite_add_8888_8_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  x8r8g8b8, a8r8g8b8, x8r8g8b8, neon_composite_add_8888_8888_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  a8r8g8b8, a8r8g8b8, x8r8g8b8, neon_composite_add_8888_8888_8888),
     PIXMAN_STD_FAST_PATH (ADD,  a8r8g8b8, a8r8g8b8, a8r8g8b8, neon_composite_add_8888_8888_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  x8r8g8b8, solid,    x8r8g8b8, neon_composite_add_8888_n_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  a8r8g8b8, solid,    x8r8g8b8, neon_composite_add_8888_n_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  x8b8g8r8, solid,    x8b8g8r8, neon_composite_add_8888_n_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  a8b8g8r8, solid,    x8b8g8r8, neon_composite_add_8888_n_8888),
     PIXMAN_STD_FAST_PATH (ADD,  a8r8g8b8, solid,    a8r8g8b8, neon_composite_add_8888_n_8888),
     PIXMAN_STD_FAST_PATH (ADD,  a8b8g8r8, solid,    a8b8g8r8, neon_composite_add_8888_n_8888),
     PIXMAN_STD_FAST_PATH (ADD,  a8,       null,     a8,       neon_composite_add_8_8),
+    PIXMAN_STD_FAST_PATH (ADD,  x8r8g8b8, null,     x8r8g8b8, neon_composite_add_8888_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  a8r8g8b8, null,     x8r8g8b8, neon_composite_add_8888_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  x8b8g8r8, null,     x8b8g8r8, neon_composite_add_8888_8888),
+    PIXMAN_STD_FAST_PATH (ADD,  a8b8g8r8, null,     x8b8g8r8, neon_composite_add_8888_8888),
     PIXMAN_STD_FAST_PATH (ADD,  a8r8g8b8, null,     a8r8g8b8, neon_composite_add_8888_8888),
     PIXMAN_STD_FAST_PATH (ADD,  a8b8g8r8, null,     a8b8g8r8, neon_composite_add_8888_8888),
     PIXMAN_STD_FAST_PATH (IN,   solid,    null,     a8,       neon_composite_in_n_8),
@@ -357,24 +376,26 @@ static const pixman_fast_path_t arm_neon_fast_paths[] =
     PIXMAN_STD_FAST_PATH (OVER_REVERSE, solid, null, a8b8g8r8, neon_composite_over_reverse_n_8888),
     PIXMAN_STD_FAST_PATH (OUT_REVERSE,  a8,    null, r5g6b5,   neon_composite_out_reverse_8_0565),
     PIXMAN_STD_FAST_PATH (OUT_REVERSE,  a8,    null, b5g6r5,   neon_composite_out_reverse_8_0565),
+    PIXMAN_STD_FAST_PATH (OUT_REVERSE,  a8,    null, x8r8g8b8, neon_composite_out_reverse_8_8888),
     PIXMAN_STD_FAST_PATH (OUT_REVERSE,  a8,    null, a8r8g8b8, neon_composite_out_reverse_8_8888),
+    PIXMAN_STD_FAST_PATH (OUT_REVERSE,  a8,    null, x8b8g8r8, neon_composite_out_reverse_8_8888),
     PIXMAN_STD_FAST_PATH (OUT_REVERSE,  a8,    null, a8b8g8r8, neon_composite_out_reverse_8_8888),
 
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (OVER, a8r8g8b8, a8r8g8b8, neon_8888_8888),
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (OVER, a8b8g8r8, a8b8g8r8, neon_8888_8888),
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (OVER, a8r8g8b8, x8r8g8b8, neon_8888_8888),
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (OVER, a8b8g8r8, x8b8g8r8, neon_8888_8888),
+    SIMPLE_NEAREST_FAST_PATH (OVER, a8r8g8b8, a8r8g8b8, neon_8888_8888),
+    SIMPLE_NEAREST_FAST_PATH (OVER, a8b8g8r8, a8b8g8r8, neon_8888_8888),
+    SIMPLE_NEAREST_FAST_PATH (OVER, a8r8g8b8, x8r8g8b8, neon_8888_8888),
+    SIMPLE_NEAREST_FAST_PATH (OVER, a8b8g8r8, x8b8g8r8, neon_8888_8888),
 
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (OVER, a8r8g8b8, r5g6b5, neon_8888_0565),
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (OVER, a8b8g8r8, b5g6r5, neon_8888_0565),
+    SIMPLE_NEAREST_FAST_PATH (OVER, a8r8g8b8, r5g6b5, neon_8888_0565),
+    SIMPLE_NEAREST_FAST_PATH (OVER, a8b8g8r8, b5g6r5, neon_8888_0565),
 
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (SRC, a8r8g8b8, r5g6b5, neon_8888_0565),
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (SRC, x8r8g8b8, r5g6b5, neon_8888_0565),
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (SRC, a8b8g8r8, b5g6r5, neon_8888_0565),
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (SRC, x8b8g8r8, b5g6r5, neon_8888_0565),
+    SIMPLE_NEAREST_FAST_PATH (SRC, a8r8g8b8, r5g6b5, neon_8888_0565),
+    SIMPLE_NEAREST_FAST_PATH (SRC, x8r8g8b8, r5g6b5, neon_8888_0565),
+    SIMPLE_NEAREST_FAST_PATH (SRC, a8b8g8r8, b5g6r5, neon_8888_0565),
+    SIMPLE_NEAREST_FAST_PATH (SRC, x8b8g8r8, b5g6r5, neon_8888_0565),
 
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (SRC, b5g6r5, x8b8g8r8, neon_0565_8888),
-    PIXMAN_ARM_SIMPLE_NEAREST_FAST_PATH (SRC, r5g6b5, x8r8g8b8, neon_0565_8888),
+    SIMPLE_NEAREST_FAST_PATH (SRC, b5g6r5, x8b8g8r8, neon_0565_8888),
+    SIMPLE_NEAREST_FAST_PATH (SRC, r5g6b5, x8r8g8b8, neon_0565_8888),
     /* Note: NONE repeat is not supported yet */
     SIMPLE_NEAREST_FAST_PATH_COVER (SRC, r5g6b5, a8r8g8b8, neon_0565_8888),
     SIMPLE_NEAREST_FAST_PATH_COVER (SRC, b5g6r5, a8b8g8r8, neon_0565_8888),
@@ -402,6 +423,7 @@ static const pixman_fast_path_t arm_neon_fast_paths[] =
 
     SIMPLE_BILINEAR_FAST_PATH (ADD, a8r8g8b8, a8r8g8b8, neon_8888_8888),
     SIMPLE_BILINEAR_FAST_PATH (ADD, a8r8g8b8, x8r8g8b8, neon_8888_8888),
+    SIMPLE_BILINEAR_FAST_PATH (ADD, x8r8g8b8, x8r8g8b8, neon_8888_8888),
 
     SIMPLE_BILINEAR_A8_MASK_FAST_PATH (SRC, a8r8g8b8, a8r8g8b8, neon_8888_8_8888),
     SIMPLE_BILINEAR_A8_MASK_FAST_PATH (SRC, a8r8g8b8, x8r8g8b8, neon_8888_8_8888),
@@ -418,56 +440,10 @@ static const pixman_fast_path_t arm_neon_fast_paths[] =
 
     SIMPLE_BILINEAR_A8_MASK_FAST_PATH (ADD, a8r8g8b8, a8r8g8b8, neon_8888_8_8888),
     SIMPLE_BILINEAR_A8_MASK_FAST_PATH (ADD, a8r8g8b8, x8r8g8b8, neon_8888_8_8888),
+    SIMPLE_BILINEAR_A8_MASK_FAST_PATH (ADD, x8r8g8b8, x8r8g8b8, neon_8888_8_8888),
 
     { PIXMAN_OP_NONE },
 };
-
-static pixman_bool_t
-arm_neon_blt (pixman_implementation_t *imp,
-              uint32_t *               src_bits,
-              uint32_t *               dst_bits,
-              int                      src_stride,
-              int                      dst_stride,
-              int                      src_bpp,
-              int                      dst_bpp,
-              int                      src_x,
-              int                      src_y,
-              int                      dest_x,
-              int                      dest_y,
-              int                      width,
-              int                      height)
-{
-    if (!pixman_blt_neon (
-            src_bits, dst_bits, src_stride, dst_stride, src_bpp, dst_bpp,
-            src_x, src_y, dest_x, dest_y, width, height))
-
-    {
-	return _pixman_implementation_blt (
-	    imp->delegate,
-	    src_bits, dst_bits, src_stride, dst_stride, src_bpp, dst_bpp,
-	    src_x, src_y, dest_x, dest_y, width, height);
-    }
-
-    return TRUE;
-}
-
-static pixman_bool_t
-arm_neon_fill (pixman_implementation_t *imp,
-               uint32_t *               bits,
-               int                      stride,
-               int                      bpp,
-               int                      x,
-               int                      y,
-               int                      width,
-               int                      height,
-               uint32_t xor)
-{
-    if (pixman_fill_neon (bits, stride, bpp, x, y, width, height, xor))
-	return TRUE;
-
-    return _pixman_implementation_fill (
-	imp->delegate, bits, stride, bpp, x, y, width, height, xor);
-}
 
 #define BIND_COMBINE_U(name)                                             \
 void                                                                     \

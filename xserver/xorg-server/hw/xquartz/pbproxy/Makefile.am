@@ -1,7 +1,6 @@
-AM_CPPFLAGS=-F/System/Library/Frameworks/ApplicationServices.framework/Frameworks \
-	-DBUNDLE_ID_PREFIX=\"$(BUNDLE_ID_PREFIX)\"
+AM_CPPFLAGS=-I.. -DXQUARTZ_DATA_DIR=\"$(datadir)/X11/XQuartz\"
 
-AM_CFLAGS=$(XPBPROXY_CFLAGS) 
+AM_CFLAGS=$(XPBPROXY_CFLAGS)
 AM_OBJCFLAGS=$(XPBPROXY_CFLAGS)
 
 noinst_LTLIBRARIES = libxpbproxy.la
@@ -16,7 +15,7 @@ libxpbproxy_la_LDFLAGS=$(XPBPROXY_LIBS)
 if STANDALONE_XPBPROXY
 
 bin_PROGRAMS = xpbproxy
-xpbproxy_SOURCES = app-main.m
+xpbproxy_SOURCES = app-main.m ../NSUserDefaults+XQuartzDefaults.m
 xpbproxy_LDADD = libxpbproxy.la
 xpbproxy_LDFLAGS = -Wl,-framework,Cocoa
 

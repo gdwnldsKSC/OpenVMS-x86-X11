@@ -1,4 +1,4 @@
-! Complete ordinary static RECORD library from the upstream Imakefile.
+! Complete ordinary static RECORD library from the upstream Makefile.am.
 ! Keep the server build's NDEBUG profile; standalone TESTING is excluded.
 RECORD_HEADERS = $(RENDER_HEADERS), -
     $(OUT).INCLUDE.X11.EXTENSIONS]RECORDCONST.H, -

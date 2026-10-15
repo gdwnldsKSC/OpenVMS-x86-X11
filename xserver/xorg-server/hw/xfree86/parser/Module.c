@@ -1,17 +1,17 @@
-/* 
- * 
+/*
+ *
  * Copyright (c) 1997  Metro Link Incorporated
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
+ * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -19,11 +19,11 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  * Except as contained in this notice, the name of the Metro Link shall not be
  * used in advertising or otherwise to promote the sale, use or other dealings
  * in this Software without prior written authorization from Metro Link.
- * 
+ *
  */
 /*
  * Copyright (c) 1997-2003 by The XFree86 Project, Inc.
@@ -52,8 +52,6 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
-/* View/edit this file with tab stops set to 4 */
-
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
 #endif
@@ -62,15 +60,14 @@
 #include "xf86tokens.h"
 #include "Configint.h"
 
-extern LexRec val;
 
-static xf86ConfigSymTabRec SubModuleTab[] = {
+static const xf86ConfigSymTabRec SubModuleTab[] = {
     {ENDSUBSECTION, "endsubsection"},
     {OPTION, "option"},
     {-1, ""},
 };
 
-static xf86ConfigSymTabRec ModuleTab[] = {
+static const xf86ConfigSymTabRec ModuleTab[] = {
     {ENDSECTION, "endsection"},
     {LOAD, "load"},
     {DISABLE, "disable"},
@@ -97,7 +94,9 @@ xf86parseModuleSubSection(XF86LoadPtr head, char *name)
     while ((token = xf86getToken(SubModuleTab)) != ENDSUBSECTION) {
         switch (token) {
         case COMMENT:
-            ptr->load_comment = xf86addComment(ptr->load_comment, val.str);
+            ptr->load_comment = xf86addComment(ptr->load_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
             break;
         case OPTION:
             ptr->load_opt = xf86parseOption(ptr->load_opt);
@@ -128,34 +127,36 @@ xf86parseModuleSection(void)
         while ((token = xf86getToken(ModuleTab)) != ENDSECTION) {
         switch (token) {
         case COMMENT:
-            ptr->mod_comment = xf86addComment(ptr->mod_comment, val.str);
+            ptr->mod_comment = xf86addComment(ptr->mod_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
             break;
         case LOAD:
             if (xf86getSubToken(&(ptr->mod_comment)) != STRING)
                 Error(QUOTE_MSG, "Load");
             ptr->mod_load_lst =
-                xf86addNewLoadDirective(ptr->mod_load_lst, val.str,
+                xf86addNewLoadDirective(ptr->mod_load_lst, xf86_lex_val.str,
                                         XF86_LOAD_MODULE, NULL);
             break;
         case DISABLE:
             if (xf86getSubToken(&(ptr->mod_comment)) != STRING)
                 Error(QUOTE_MSG, "Disable");
             ptr->mod_disable_lst =
-                xf86addNewLoadDirective(ptr->mod_disable_lst, val.str,
+                xf86addNewLoadDirective(ptr->mod_disable_lst, xf86_lex_val.str,
                                         XF86_DISABLE_MODULE, NULL);
             break;
         case LOAD_DRIVER:
             if (xf86getSubToken(&(ptr->mod_comment)) != STRING)
                 Error(QUOTE_MSG, "LoadDriver");
             ptr->mod_load_lst =
-                xf86addNewLoadDirective(ptr->mod_load_lst, val.str,
+                xf86addNewLoadDirective(ptr->mod_load_lst, xf86_lex_val.str,
                                         XF86_LOAD_DRIVER, NULL);
             break;
         case SUBSECTION:
             if (xf86getSubToken(&(ptr->mod_comment)) != STRING)
                 Error(QUOTE_MSG, "SubSection");
             ptr->mod_load_lst =
-                xf86parseModuleSubSection(ptr->mod_load_lst, val.str);
+                xf86parseModuleSubSection(ptr->mod_load_lst, xf86_lex_val.str);
             break;
         case EOF_TOKEN:
             Error(UNEXPECTED_EOF_MSG);
@@ -220,7 +221,7 @@ xf86printModuleSection(FILE * cf, XF86ConfModulePtr ptr)
 }
 
 XF86LoadPtr
-xf86addNewLoadDirective(XF86LoadPtr head, char *name, int type,
+xf86addNewLoadDirective(XF86LoadPtr head, const char *name, int type,
                         XF86OptionPtr opts)
 {
     XF86LoadPtr new;
@@ -233,10 +234,13 @@ xf86addNewLoadDirective(XF86LoadPtr head, char *name, int type,
     new->ignore = 0;
     new->list.next = NULL;
 
-    if ((token = xf86getToken(NULL)) == COMMENT)
-        new->load_comment = xf86addComment(new->load_comment, val.str);
-    else
+    if ((token = xf86getToken(NULL)) == COMMENT) {
+        new->load_comment = xf86addComment(new->load_comment, xf86_lex_val.str);
+        free(xf86_lex_val.str);
+        xf86_lex_val.str = NULL;
+    } else {
         xf86unGetToken(token);
+    }
 
     return ((XF86LoadPtr) xf86addListItem((glp) head, (glp) new));
 }

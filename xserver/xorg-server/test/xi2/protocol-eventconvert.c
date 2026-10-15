@@ -20,6 +20,9 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
+/* Test relies on assert() */
+#undef NDEBUG
+
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -32,6 +35,8 @@
 #include "exevents.h"
 #include "inpututils.h"
 #include <X11/extensions/XI2proto.h>
+
+#include "protocol-common.h"
 
 static void
 test_values_XIRawEvent(RawDeviceEvent *in, xXIRawEvent * out, BOOL swap)
@@ -338,8 +343,8 @@ test_values_XIDeviceEvent(DeviceEvent *in, xXIDeviceEvent * out, BOOL swap)
     assert(out->event_x == 0);  /* set in FixUpEventFromWindow */
     assert(out->event_y == 0);  /* set in FixUpEventFromWindow */
 
-    assert(out->root_x == FP1616(in->root_x, in->root_x_frac));
-    assert(out->root_y == FP1616(in->root_y, in->root_y_frac));
+    assert(out->root_x == double_to_fp1616(in->root_x + in->root_x_frac));
+    assert(out->root_y == double_to_fp1616(in->root_y + in->root_y_frac));
 
     buttons = 0;
     for (i = 0; i < bits_to_bytes(sizeof(in->buttons)); i++) {
@@ -364,8 +369,10 @@ test_values_XIDeviceEvent(DeviceEvent *in, xXIDeviceEvent * out, BOOL swap)
     values = (FP3232 *) (ptr + out->valuators_len * 4);
     for (i = 0; i < sizeof(in->valuators.mask) * 8 ||
          i < (out->valuators_len * 4) * 8; i++) {
-        if (i >= MAX_VALUATORS)
-            assert(!XIMaskIsSet(in->valuators.mask, i) && !XIMaskIsSet(ptr, i));
+        if (i >= MAX_VALUATORS) {
+            assert(!XIMaskIsSet(in->valuators.mask, i));
+            assert(!XIMaskIsSet(ptr, i));
+        }
         else if (i > sizeof(in->valuators.mask) * 8)
             assert(!XIMaskIsSet(ptr, i));
         else if (i > out->valuators_len * 4 * 8)
@@ -694,7 +701,7 @@ test_values_XIDeviceChangedEvent(DeviceChangedEvent *in,
             assert(k->num_keycodes == in->keys.max_keycode -
                    in->keys.min_keycode + 1);
 
-            kc = (uint32_t *) & k[1];
+            kc = (uint32_t *) &k[1];
             for (j = 0; j < k->num_keycodes; j++) {
                 if (swap) {
                     swapl(&kc[j]);
@@ -707,20 +714,41 @@ test_values_XIDeviceChangedEvent(DeviceChangedEvent *in,
         case XIValuatorClass:
         {
             xXIValuatorInfo *v = (xXIValuatorInfo *) any;
+            FP3232 expected;
+
+            if (swap) {
+                swaps(&v->number);
+                swapl(&v->value.integral);
+                swapl(&v->value.frac);
+            }
 
             assert(v->length == bytes_to_int32(sizeof(xXIValuatorInfo)));
+            assert(v->number < in->num_valuators);
 
+            expected = double_to_fp3232(in->valuators[v->number].value);
+            assert(v->value.integral == expected.integral);
+            assert(v->value.frac == expected.frac);
         }
             break;
         case XIScrollClass:
         {
             xXIScrollInfo *s = (xXIScrollInfo *) any;
+            FP3232 expected;
+            uint32_t expected_flags = 0;
+
+            if (swap) {
+                swaps(&s->number);
+                swaps(&s->scroll_type);
+                swapl(&s->flags);
+                swapl(&s->increment.integral);
+                swapl(&s->increment.frac);
+            }
 
             assert(s->length == bytes_to_int32(sizeof(xXIScrollInfo)));
 
             assert(s->sourceid == in->sourceid);
             assert(s->number < in->num_valuators);
-            switch (s->type) {
+            switch (s->scroll_type) {
             case XIScrollTypeVertical:
                 assert(in->valuators[s->number].scroll.type ==
                        SCROLL_TYPE_VERTICAL);
@@ -729,11 +757,22 @@ test_values_XIDeviceChangedEvent(DeviceChangedEvent *in,
                 assert(in->valuators[s->number].scroll.type ==
                        SCROLL_TYPE_HORIZONTAL);
                 break;
+            default:
+                assert(0);
             }
-            if (s->flags & XIScrollFlagPreferred)
-                assert(in->valuators[s->number].scroll.
-                       flags & SCROLL_FLAG_PREFERRED);
+
+            if (in->valuators[s->number].scroll.flags & SCROLL_FLAG_DONT_EMULATE)
+                expected_flags |= XIScrollFlagNoEmulation;
+            if (in->valuators[s->number].scroll.flags & SCROLL_FLAG_PREFERRED)
+                expected_flags |= XIScrollFlagPreferred;
+            assert(s->flags == expected_flags);
+
+            expected = double_to_fp3232(
+                in->valuators[s->number].scroll.increment);
+            assert(s->increment.integral == expected.integral);
+            assert(s->increment.frac == expected.frac);
         }
+            break;
         default:
             printf("Invalid class type.\n\n");
             assert(1);
@@ -892,6 +931,23 @@ test_convert_XIDeviceChangedEvent(void)
         in.valuators[i].mode = Absolute;
         test_XIDeviceChangedEvent(&in);
     }
+
+    memset(in.valuators, 0, sizeof(in.valuators));
+    in.num_valuators = 2;
+
+    in.valuators[0].mode = Relative;
+    in.valuators[0].value = 240.5;
+    in.valuators[0].scroll.type = SCROLL_TYPE_VERTICAL;
+    in.valuators[0].scroll.increment = 2.5;
+    in.valuators[0].scroll.flags = SCROLL_FLAG_PREFERRED;
+
+    in.valuators[1].mode = Relative;
+    in.valuators[1].value = -350.25;
+    in.valuators[1].scroll.type = SCROLL_TYPE_HORIZONTAL;
+    in.valuators[1].scroll.increment = 3.25;
+    in.valuators[1].scroll.flags = SCROLL_FLAG_DONT_EMULATE;
+
+    test_XIDeviceChangedEvent(&in);
 }
 
 static void
@@ -984,14 +1040,230 @@ test_convert_XITouchOwnershipEvent(void)
     }
 }
 
+static void
+test_XIBarrierEvent(BarrierEvent *in)
+{
+    xXIBarrierEvent *out, *swapped;
+    int count;
+    int rc;
+    int eventlen;
+    FP3232 value;
+
+    rc = EventToXI((InternalEvent*)in, (xEvent**)&out, &count);
+    assert(rc == BadMatch);
+
+    rc = EventToCore((InternalEvent*)in, (xEvent**)&out, &count);
+    assert(rc == BadMatch);
+
+    rc = EventToXI2((InternalEvent*)in, (xEvent**)&out);
+
+    assert(out->type == GenericEvent);
+    assert(out->extension == 0); /* IReqCode defaults to 0 */
+    assert(out->evtype == GetXI2Type(in->type));
+    assert(out->time == in->time);
+    assert(out->deviceid == in->deviceid);
+    assert(out->sourceid == in->sourceid);
+    assert(out->barrier == in->barrierid);
+    assert(out->flags == in->flags);
+    assert(out->event == in->window);
+    assert(out->root == in->root);
+    assert(out->dtime == in->dt);
+    assert(out->eventid == in->event_id);
+    assert(out->root_x == double_to_fp1616(in->root_x));
+    assert(out->root_y == double_to_fp1616(in->root_y));
+
+    value = double_to_fp3232(in->dx);
+    assert(out->dx.integral == value.integral);
+    assert(out->dx.frac == value.frac);
+    value = double_to_fp3232(in->dy);
+    assert(out->dy.integral == value.integral);
+    assert(out->dy.frac == value.frac);
+
+    eventlen = sizeof(xEvent) + out->length * 4;
+    swapped = calloc(1, eventlen);
+    XI2EventSwap((xGenericEvent *) out, (xGenericEvent *) swapped);
+
+    swaps(&swapped->sequenceNumber);
+    swapl(&swapped->length);
+    swaps(&swapped->evtype);
+    swaps(&swapped->deviceid);
+    swapl(&swapped->time);
+    swapl(&swapped->eventid);
+    swapl(&swapped->root);
+    swapl(&swapped->event);
+    swapl(&swapped->barrier);
+    swapl(&swapped->dtime);
+    swaps(&swapped->sourceid);
+    swapl(&swapped->root_x);
+    swapl(&swapped->root_y);
+    swapl(&swapped->dx.integral);
+    swapl(&swapped->dx.frac);
+    swapl(&swapped->dy.integral);
+    swapl(&swapped->dy.frac);
+
+    assert(memcmp(swapped, out, eventlen) == 0);
+
+    free(swapped);
+    free(out);
+}
+
+static void
+test_convert_XIBarrierEvent(void)
+{
+    BarrierEvent in;
+
+    memset(&in, 0, sizeof(in));
+    in.header = ET_Internal;
+    in.type = ET_BarrierHit;
+    in.length = sizeof(in);
+    in.time = 0;
+    in.deviceid = 1;
+    in.sourceid = 2;
+
+    test_XIBarrierEvent(&in);
+
+    in.deviceid = 1;
+    while(in.deviceid & 0xFFFF) {
+        test_XIBarrierEvent(&in);
+        in.deviceid <<= 1;
+    }
+    in.deviceid = 0;
+
+    in.sourceid = 1;
+    while(in.sourceid & 0xFFFF) {
+        test_XIBarrierEvent(&in);
+        in.sourceid <<= 1;
+    }
+    in.sourceid = 0;
+
+    in.flags = 1;
+    while(in.flags) {
+        test_XIBarrierEvent(&in);
+        in.flags <<= 1;
+    }
+
+    in.barrierid = 1;
+    while(in.barrierid) {
+        test_XIBarrierEvent(&in);
+        in.barrierid <<= 1;
+    }
+
+    in.dt = 1;
+    while(in.dt) {
+        test_XIBarrierEvent(&in);
+        in.dt <<= 1;
+    }
+
+    in.event_id = 1;
+    while(in.event_id) {
+        test_XIBarrierEvent(&in);
+        in.event_id <<= 1;
+    }
+
+    in.window = 1;
+    while(in.window) {
+        test_XIBarrierEvent(&in);
+        in.window <<= 1;
+    }
+
+    in.root = 1;
+    while(in.root) {
+        test_XIBarrierEvent(&in);
+        in.root <<= 1;
+    }
+
+    /* pseudo-random 16 bit numbers */
+    in.root_x = 1;
+    test_XIBarrierEvent(&in);
+    in.root_x = 1.3;
+    test_XIBarrierEvent(&in);
+    in.root_x = 264.908;
+    test_XIBarrierEvent(&in);
+    in.root_x = 35638.292;
+    test_XIBarrierEvent(&in);
+
+    in.root_x = -1;
+    test_XIBarrierEvent(&in);
+    in.root_x = -1.3;
+    test_XIBarrierEvent(&in);
+    in.root_x = -264.908;
+    test_XIBarrierEvent(&in);
+    in.root_x = -35638.292;
+    test_XIBarrierEvent(&in);
+
+    in.root_y = 1;
+    test_XIBarrierEvent(&in);
+    in.root_y = 1.3;
+    test_XIBarrierEvent(&in);
+    in.root_y = 264.908;
+    test_XIBarrierEvent(&in);
+    in.root_y = 35638.292;
+    test_XIBarrierEvent(&in);
+
+    in.root_y = -1;
+    test_XIBarrierEvent(&in);
+    in.root_y = -1.3;
+    test_XIBarrierEvent(&in);
+    in.root_y = -264.908;
+    test_XIBarrierEvent(&in);
+    in.root_y = -35638.292;
+    test_XIBarrierEvent(&in);
+
+    /* equally pseudo-random 32 bit numbers */
+    in.dx = 1;
+    test_XIBarrierEvent(&in);
+    in.dx = 1.3;
+    test_XIBarrierEvent(&in);
+    in.dx = 264.908;
+    test_XIBarrierEvent(&in);
+    in.dx = 35638.292;
+    test_XIBarrierEvent(&in);
+    in.dx = 2947813871.2342;
+    test_XIBarrierEvent(&in);
+
+    in.dx = -1;
+    test_XIBarrierEvent(&in);
+    in.dx = -1.3;
+    test_XIBarrierEvent(&in);
+    in.dx = -264.908;
+    test_XIBarrierEvent(&in);
+    in.dx = -35638.292;
+    test_XIBarrierEvent(&in);
+    in.dx = -2947813871.2342;
+    test_XIBarrierEvent(&in);
+
+    in.dy = 1;
+    test_XIBarrierEvent(&in);
+    in.dy = 1.3;
+    test_XIBarrierEvent(&in);
+    in.dy = 264.908;
+    test_XIBarrierEvent(&in);
+    in.dy = 35638.292;
+    test_XIBarrierEvent(&in);
+    in.dy = 2947813871.2342;
+    test_XIBarrierEvent(&in);
+
+    in.dy = -1;
+    test_XIBarrierEvent(&in);
+    in.dy = -1.3;
+    test_XIBarrierEvent(&in);
+    in.dy = -264.908;
+    test_XIBarrierEvent(&in);
+    in.dy = -35638.292;
+    test_XIBarrierEvent(&in);
+    in.dy = -2947813871.2342;
+    test_XIBarrierEvent(&in);
+}
+
 int
-main(int argc, char **argv)
+protocol_eventconvert_test(void)
 {
     test_convert_XIRawEvent();
     test_convert_XIFocusEvent();
     test_convert_XIDeviceEvent();
     test_convert_XIDeviceChangedEvent();
     test_convert_XITouchOwnershipEvent();
+    test_convert_XIBarrierEvent();
 
     return 0;
 }

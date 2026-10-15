@@ -50,6 +50,7 @@
 #include "panoramiXsrv.h"
 #endif
 
+#include "inpututils.h"
 #include "xiquerypointer.h"
 
 /***********************************************************************
@@ -58,10 +59,12 @@
  *
  */
 
-int
+int _X_COLD
 SProcXIQueryPointer(ClientPtr client)
 {
     REQUEST(xXIQueryPointerReq);
+    REQUEST_SIZE_MATCH(xXIQueryPointerReq);
+
     swaps(&stuff->length);
     swaps(&stuff->deviceid);
     swapl(&stuff->win);
@@ -107,8 +110,8 @@ ProcXIQueryPointer(ClientPtr client)
 
     rc = dixLookupWindow(&pWin, stuff->win, client, DixGetAttrAccess);
     if (rc != Success) {
-        SendErrorToClient(client, IReqCode, X_XIQueryPointer, stuff->win, rc);
-        return Success;
+        client->errorValue = stuff->win;
+        return rc;
     }
 
     if (pDev->valuator->motionHintWindow)
@@ -121,15 +124,16 @@ ProcXIQueryPointer(ClientPtr client)
 
     pSprite = pDev->spriteInfo->sprite;
 
-    memset(&rep, 0, sizeof(rep));
-    rep.repType = X_Reply;
-    rep.RepType = X_XIQueryPointer;
-    rep.length = 6;
-    rep.sequenceNumber = client->sequence;
-    rep.root = (GetCurrentRootWindow(pDev))->drawable.id;
-    rep.root_x = FP1616(pSprite->hot.x, 0);
-    rep.root_y = FP1616(pSprite->hot.y, 0);
-    rep.child = None;
+    rep = (xXIQueryPointerReply) {
+        .repType = X_Reply,
+        .RepType = X_XIQueryPointer,
+        .sequenceNumber = client->sequence,
+        .length = 6,
+        .root = (GetCurrentRootWindow(pDev))->drawable.id,
+        .root_x = double_to_fp1616(pSprite->hot.x),
+        .root_y = double_to_fp1616(pSprite->hot.y),
+        .child = None
+    };
 
     if (kbd) {
         state = &kbd->key->xkbInfo->state;
@@ -145,13 +149,12 @@ ProcXIQueryPointer(ClientPtr client)
     if (pDev->button) {
         int i;
 
-        rep.buttons_len =
-            bytes_to_int32(bits_to_bytes(pDev->button->numButtons));
+        rep.buttons_len = bytes_to_int32(bits_to_bytes(256)); /* button map up to 255 */
         rep.length += rep.buttons_len;
-        buttons_size = rep.buttons_len * 4;
-        buttons = calloc(1, buttons_size);
+        buttons = calloc(rep.buttons_len, 4);
         if (!buttons)
             return BadAlloc;
+        buttons_size = rep.buttons_len * 4;
 
         for (i = 1; i < pDev->button->numButtons; i++)
             if (BitIsOn(pDev->button->down, i))
@@ -165,8 +168,8 @@ ProcXIQueryPointer(ClientPtr client)
 
     if (pSprite->hot.pScreen == pWin->drawable.pScreen) {
         rep.same_screen = xTrue;
-        rep.win_x = FP1616(pSprite->hot.x - pWin->drawable.x, 0);
-        rep.win_y = FP1616(pSprite->hot.y - pWin->drawable.y, 0);
+        rep.win_x = double_to_fp1616(pSprite->hot.x - pWin->drawable.x);
+        rep.win_y = double_to_fp1616(pSprite->hot.y - pWin->drawable.y);
         for (t = pSprite->win; t; t = t->parent)
             if (t->parent == pWin) {
                 rep.child = t->drawable.id;
@@ -181,11 +184,11 @@ ProcXIQueryPointer(ClientPtr client)
 
 #ifdef PANORAMIX
     if (!noPanoramiXExtension) {
-        rep.root_x += FP1616(screenInfo.screens[0]->x, 0);
-        rep.root_y += FP1616(screenInfo.screens[0]->y, 0);
+        rep.root_x += double_to_fp1616(screenInfo.screens[0]->x);
+        rep.root_y += double_to_fp1616(screenInfo.screens[0]->y);
         if (stuff->win == rep.root) {
-            rep.win_x += FP1616(screenInfo.screens[0]->x, 0);
-            rep.win_y += FP1616(screenInfo.screens[0]->y, 0);
+            rep.win_x += double_to_fp1616(screenInfo.screens[0]->x);
+            rep.win_y += double_to_fp1616(screenInfo.screens[0]->y);
         }
     }
 #endif
@@ -219,5 +222,5 @@ SRepXIQueryPointer(ClientPtr client, int size, xXIQueryPointerReply * rep)
     swapl(&rep->win_y);
     swaps(&rep->buttons_len);
 
-    WriteToClient(client, size, (char *) rep);
+    WriteToClient(client, size, rep);
 }

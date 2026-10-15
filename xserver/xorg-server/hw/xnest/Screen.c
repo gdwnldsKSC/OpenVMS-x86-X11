@@ -21,7 +21,6 @@ is" without express or implied warranty.
 #include "scrnintstr.h"
 #include "dix.h"
 #include "mi.h"
-#include "mibstore.h"
 #include "micmap.h"
 #include "colormapst.h"
 #include "resource.h"
@@ -129,7 +128,7 @@ static miPointerSpriteFuncRec xnestPointerSpriteFuncs = {
 };
 
 Bool
-xnestOpenScreen(int index, ScreenPtr pScreen, int argc, char *argv[])
+xnestOpenScreen(ScreenPtr pScreen, int argc, char *argv[])
 {
     VisualPtr visuals;
     DepthPtr depths;
@@ -159,7 +158,7 @@ xnestOpenScreen(int index, ScreenPtr pScreen, int argc, char *argv[])
     if (!dixRegisterPrivateKey(&xnestCursorScreenKeyRec, PRIVATE_SCREEN, 0))
         return FALSE;
 
-    visuals = (VisualPtr) malloc(xnestNumVisuals * sizeof(VisualRec));
+    visuals = xallocarray(xnestNumVisuals, sizeof(VisualRec));
     numVisuals = 0;
 
     depths = (DepthPtr) malloc(MAXDEPTH * sizeof(DepthRec));
@@ -225,7 +224,7 @@ xnestOpenScreen(int index, ScreenPtr pScreen, int argc, char *argv[])
 
         numVisuals++;
     }
-    visuals = (VisualPtr) realloc(visuals, numVisuals * sizeof(VisualRec));
+    visuals = reallocarray(visuals, numVisuals, sizeof(VisualRec));
 
     defaultVisual = visuals[xnestDefaultVisualIndex].vid;
     rootDepth = visuals[xnestDefaultVisualIndex].nplanes;
@@ -249,7 +248,7 @@ xnestOpenScreen(int index, ScreenPtr pScreen, int argc, char *argv[])
     pScreen->whitePixel = xnestWhitePixel;
     pScreen->blackPixel = xnestBlackPixel;
     /* GCperDepth */
-    /* PixmapPerDepth */
+    /* defaultStipple */
     pScreen->devPrivate = NULL;
     /* WindowPrivateLen */
     /* WindowPrivateSizes */
@@ -264,7 +263,6 @@ xnestOpenScreen(int index, ScreenPtr pScreen, int argc, char *argv[])
     pScreen->SaveScreen = xnestSaveScreen;
     pScreen->GetImage = xnestGetImage;
     pScreen->GetSpans = xnestGetSpans;
-    pScreen->SourceValidate = NULL;
 
     /* Window Procedures */
 
@@ -283,6 +281,7 @@ xnestOpenScreen(int index, ScreenPtr pScreen, int argc, char *argv[])
 
     pScreen->CreatePixmap = xnestCreatePixmap;
     pScreen->DestroyPixmap = xnestDestroyPixmap;
+    pScreen->ModifyPixmapHeader = xnestModifyPixmapHeader;
 
     /* Font procedures */
 
@@ -309,8 +308,6 @@ xnestOpenScreen(int index, ScreenPtr pScreen, int argc, char *argv[])
 
     pScreen->BlockHandler = (ScreenBlockHandlerProcPtr) NoopDDA;
     pScreen->WakeupHandler = (ScreenWakeupHandlerProcPtr) NoopDDA;
-    pScreen->blockData = NULL;
-    pScreen->wakeupData = NULL;
 
     miDCInitialize(pScreen, &xnestPointerCursorFuncs);  /* init SW rendering */
     PointPriv = dixLookupPrivate(&pScreen->devPrivates, miPointerScreenKey);
@@ -409,7 +406,7 @@ xnestOpenScreen(int index, ScreenPtr pScreen, int argc, char *argv[])
 }
 
 Bool
-xnestCloseScreen(int index, ScreenPtr pScreen)
+xnestCloseScreen(ScreenPtr pScreen)
 {
     int i;
 

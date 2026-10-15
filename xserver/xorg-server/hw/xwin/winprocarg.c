@@ -31,20 +31,18 @@ from The Open Group.
 #include <xwin-config.h>
 #endif
 
+#ifdef HAVE_SYS_UTSNAME_H
+#include <sys/utsname.h>
+#endif
+
 #include <../xfree86/common/xorgVersion.h>
 #include "win.h"
 #include "winconfig.h"
 #include "winmsg.h"
 #include "winmonitors.h"
+#include "winprefs.h"
 
-/*
- * References to external symbols
- */
-
-#ifdef XWIN_CLIPBOARD
-extern Bool g_fUnicodeClipboard;
-extern Bool g_fClipboard;
-#endif
+#include "winclipboard/winclipboard.h"
 
 /*
  * Function prototypes
@@ -55,10 +53,6 @@ void
 
 void
  winLogVersionInfo(void);
-
-#ifdef DDXOSVERRORF
-void OsVendorVErrorF(const char *pszFormat, va_list va_args);
-#endif
 
 /*
  * Process arguments on the command line
@@ -101,20 +95,22 @@ winInitializeScreenDefaults(void)
             int dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
 
             winErrorFVerb(2,
-                          "winInitializeDefaultScreens - native DPI x %d y %d\n",
+                          "winInitializeScreenDefaults - native DPI x %d y %d\n",
                           dpiX, dpiY);
+
             monitorResolution = dpiY;
             ReleaseDC(NULL, hdc);
         }
         else {
             winErrorFVerb(1,
-                          "winInitializeDefaultScreens - Failed to retrieve native DPI, falling back to default of %d DPI\n",
+                          "winInitializeScreenDefaults - Failed to retrieve native DPI, falling back to default of %d DPI\n",
                           WIN_DEFAULT_DPI);
             monitorResolution = WIN_DEFAULT_DPI;
         }
     }
 
     defaultScreenInfo.iMonitor = 1;
+    defaultScreenInfo.hMonitor = MonitorFromWindow(NULL, MONITOR_DEFAULTTOPRIMARY);
     defaultScreenInfo.dwWidth = dwWidth;
     defaultScreenInfo.dwHeight = dwHeight;
     defaultScreenInfo.dwUserWidth = dwWidth;
@@ -131,26 +127,26 @@ winInitializeScreenDefaults(void)
     defaultScreenInfo.pfb = NULL;
     defaultScreenInfo.fFullScreen = FALSE;
     defaultScreenInfo.fDecoration = TRUE;
-#ifdef XWIN_MULTIWINDOWEXTWM
-    defaultScreenInfo.fMWExtWM = FALSE;
-    defaultScreenInfo.fInternalWM = FALSE;
-#endif
     defaultScreenInfo.fRootless = FALSE;
-#ifdef XWIN_MULTIWINDOW
     defaultScreenInfo.fMultiWindow = FALSE;
-#endif
-#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
+    defaultScreenInfo.fCompositeWM = TRUE;
     defaultScreenInfo.fMultiMonitorOverride = FALSE;
-#endif
     defaultScreenInfo.fMultipleMonitors = FALSE;
     defaultScreenInfo.fLessPointer = FALSE;
-    defaultScreenInfo.iResizeMode = notAllowed;
+    defaultScreenInfo.iResizeMode = resizeDefault;
     defaultScreenInfo.fNoTrayIcon = FALSE;
     defaultScreenInfo.iE3BTimeout = WIN_E3B_DEFAULT;
     defaultScreenInfo.fUseWinKillKey = WIN_DEFAULT_WIN_KILL;
     defaultScreenInfo.fUseUnixKillKey = WIN_DEFAULT_UNIX_KILL;
     defaultScreenInfo.fIgnoreInput = FALSE;
     defaultScreenInfo.fExplicitScreen = FALSE;
+    defaultScreenInfo.hIcon = (HICON)
+        LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_XWIN), IMAGE_ICON,
+                  GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), 0);
+    defaultScreenInfo.hIconSm = (HICON)
+        LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_XWIN), IMAGE_ICON,
+                  GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
+                  LR_DEFAULTSIZE);
 
     /* Note that the default screen has been initialized */
     fInitializedScreenDefaults = TRUE;
@@ -159,7 +155,7 @@ winInitializeScreenDefaults(void)
 static void
 winInitializeScreen(int i)
 {
-    winErrorFVerb(2, "winInitializeScreen - %d\n", i);
+    winErrorFVerb(3, "winInitializeScreen - %d\n", i);
 
     /* Initialize default screen values, if needed */
     winInitializeScreenDefaults();
@@ -176,7 +172,7 @@ winInitializeScreens(int maxscreens)
 {
     int i;
 
-    winErrorFVerb(2, "winInitializeScreens - %i\n", maxscreens);
+    winErrorFVerb(3, "winInitializeScreens - %i\n", maxscreens);
 
     if (maxscreens > g_iNumScreens) {
         /* Reallocate the memory for DDX-specific screen info */
@@ -250,7 +246,7 @@ ddxProcessArgument(int argc, char *argv[], int i)
              * OsVendorInit () gets called, otherwise we will overwrite
              * settings changed by parameters such as -fullscreen, etc.
              */
-            winErrorFVerb(2, "ddxProcessArgument - Initializing default "
+            winErrorFVerb(3, "ddxProcessArgument - Initializing default "
                           "screens\n");
             winInitializeScreenDefaults();
         }
@@ -321,11 +317,7 @@ ddxProcessArgument(int argc, char *argv[], int i)
         if (i + 2 < argc && 1 == sscanf(argv[i + 2], "@%d", (int *) &iMonitor)) {
             struct GetMonitorInfoData data;
 
-            if (!QueryMonitor(iMonitor, &data)) {
-                ErrorF
-                    ("ddxProcessArgument - screen - Querying monitors failed\n");
-            }
-            else if (data.bMonitorSpecifiedExists == TRUE) {
+            if (QueryMonitor(iMonitor, &data)) {
                 winErrorFVerb(2,
                               "ddxProcessArgument - screen - Found Valid ``@Monitor'' = %d arg\n",
                               iMonitor);
@@ -333,6 +325,7 @@ ddxProcessArgument(int argc, char *argv[], int i)
                 g_ScreenInfo[nScreenNum].fUserGaveHeightAndWidth = FALSE;
                 g_ScreenInfo[nScreenNum].fUserGavePosition = TRUE;
                 g_ScreenInfo[nScreenNum].iMonitor = iMonitor;
+                g_ScreenInfo[nScreenNum].hMonitor = data.monitorHandle;
                 g_ScreenInfo[nScreenNum].dwWidth = data.monitorWidth;
                 g_ScreenInfo[nScreenNum].dwHeight = data.monitorHeight;
                 g_ScreenInfo[nScreenNum].dwUserWidth = data.monitorWidth;
@@ -345,8 +338,7 @@ ddxProcessArgument(int argc, char *argv[], int i)
                 ErrorF
                     ("ddxProcessArgument - screen - Invalid monitor number %d\n",
                      iMonitor);
-                UseMsg();
-                exit(0);
+                exit(1);
                 return 0;
             }
         }
@@ -377,12 +369,9 @@ ddxProcessArgument(int argc, char *argv[], int i)
                                 (int *) &iMonitor)) {
                     struct GetMonitorInfoData data;
 
-                    if (!QueryMonitor(iMonitor, &data)) {
-                        ErrorF
-                            ("ddxProcessArgument - screen - Querying monitors failed\n");
-                    }
-                    else if (data.bMonitorSpecifiedExists == TRUE) {
+                    if (QueryMonitor(iMonitor, &data)) {
                         g_ScreenInfo[nScreenNum].iMonitor = iMonitor;
+                        g_ScreenInfo[nScreenNum].hMonitor = data.monitorHandle;
                         g_ScreenInfo[nScreenNum].dwInitialX +=
                             data.monitorOffsetX;
                         g_ScreenInfo[nScreenNum].dwInitialY +=
@@ -393,11 +382,9 @@ ddxProcessArgument(int argc, char *argv[], int i)
                         ErrorF
                             ("ddxProcessArgument - screen - Invalid monitor number %d\n",
                              iMonitor);
-                        UseMsg();
-                        exit(0);
+                        exit(1);
                         return 0;
                     }
-
                 }
             }
 
@@ -405,16 +392,13 @@ ddxProcessArgument(int argc, char *argv[], int i)
             else if (1 == sscanf(argv[i + 2], "%*dx%*d@%d", (int *) &iMonitor)) {
                 struct GetMonitorInfoData data;
 
-                if (!QueryMonitor(iMonitor, &data)) {
-                    ErrorF
-                        ("ddxProcessArgument - screen - Querying monitors failed\n");
-                }
-                else if (data.bMonitorSpecifiedExists == TRUE) {
+                if (QueryMonitor(iMonitor, &data)) {
                     winErrorFVerb(2,
                                   "ddxProcessArgument - screen - Found Valid ``@Monitor'' = %d arg\n",
                                   iMonitor);
                     g_ScreenInfo[nScreenNum].fUserGavePosition = TRUE;
                     g_ScreenInfo[nScreenNum].iMonitor = iMonitor;
+                    g_ScreenInfo[nScreenNum].hMonitor = data.monitorHandle;
                     g_ScreenInfo[nScreenNum].dwInitialX = data.monitorOffsetX;
                     g_ScreenInfo[nScreenNum].dwInitialY = data.monitorOffsetY;
                 }
@@ -423,11 +407,9 @@ ddxProcessArgument(int argc, char *argv[], int i)
                     ErrorF
                         ("ddxProcessArgument - screen - Invalid monitor number %d\n",
                          iMonitor);
-                    UseMsg();
-                    exit(0);
+                    exit(1);
                     return 0;
                 }
-
             }
         }
         else if (i + 3 < argc && 1 == sscanf(argv[i + 2], "%d", (int *) &iWidth)
@@ -460,7 +442,7 @@ ddxProcessArgument(int argc, char *argv[], int i)
             g_ScreenInfo[nScreenNum].fUserGaveHeightAndWidth = FALSE;
         }
 
-        /* Flag that this screen was explicity specified by the user */
+        /* Flag that this screen was explicitly specified by the user */
         g_ScreenInfo[nScreenNum].fExplicitScreen = TRUE;
 
         /*
@@ -527,10 +509,8 @@ ddxProcessArgument(int argc, char *argv[], int i)
      * Look for the '-fullscreen' argument
      */
     if (IS_OPTION("-fullscreen")) {
-#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
         if (!screenInfoPtr->fMultiMonitorOverride)
             screenInfoPtr->fMultipleMonitors = FALSE;
-#endif
         screenInfoPtr->fFullScreen = TRUE;
 
         /* Indicate that we have processed this argument */
@@ -551,80 +531,82 @@ ddxProcessArgument(int argc, char *argv[], int i)
      * Look for the '-nodecoration' argument
      */
     if (IS_OPTION("-nodecoration")) {
-#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
         if (!screenInfoPtr->fMultiMonitorOverride)
             screenInfoPtr->fMultipleMonitors = FALSE;
-#endif
         screenInfoPtr->fDecoration = FALSE;
 
         /* Indicate that we have processed this argument */
         return 1;
     }
 
-#ifdef XWIN_MULTIWINDOWEXTWM
-    /*
-     * Look for the '-mwextwm' argument
-     */
-    if (IS_OPTION("-mwextwm")) {
-        if (!screenInfoPtr->fMultiMonitorOverride)
-            screenInfoPtr->fMultipleMonitors = TRUE;
-        screenInfoPtr->fMWExtWM = TRUE;
-
-        /* Indicate that we have processed this argument */
-        return 1;
-    }
-    /*
-     * Look for the '-internalwm' argument
-     */
-    if (IS_OPTION("-internalwm")) {
-        if (!screenInfoPtr->fMultiMonitorOverride)
-            screenInfoPtr->fMultipleMonitors = TRUE;
-        screenInfoPtr->fMWExtWM = TRUE;
-        screenInfoPtr->fInternalWM = TRUE;
-
-        /* Indicate that we have processed this argument */
-        return 1;
-    }
-#endif
-
     /*
      * Look for the '-rootless' argument
      */
     if (IS_OPTION("-rootless")) {
-#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
         if (!screenInfoPtr->fMultiMonitorOverride)
             screenInfoPtr->fMultipleMonitors = FALSE;
-#endif
         screenInfoPtr->fRootless = TRUE;
 
         /* Indicate that we have processed this argument */
         return 1;
     }
 
-#ifdef XWIN_MULTIWINDOW
     /*
      * Look for the '-multiwindow' argument
      */
     if (IS_OPTION("-multiwindow")) {
-#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
         if (!screenInfoPtr->fMultiMonitorOverride)
             screenInfoPtr->fMultipleMonitors = TRUE;
-#endif
         screenInfoPtr->fMultiWindow = TRUE;
 
         /* Indicate that we have processed this argument */
         return 1;
     }
-#endif
+
+    /*
+     * Look for the '-compositewm' argument
+     */
+    if (IS_OPTION("-compositewm")) {
+        screenInfoPtr->fCompositeWM = TRUE;
+
+        /* Indicate that we have processed this argument */
+        return 1;
+    }
+    /*
+     * Look for the '-nocompositewm' argument
+     */
+    if (IS_OPTION("-nocompositewm")) {
+        screenInfoPtr->fCompositeWM = FALSE;
+
+        /* Indicate that we have processed this argument */
+        return 1;
+    }
+
+    /*
+     * Look for the '-compositealpha' argument
+     */
+    if (IS_OPTION("-compositealpha")) {
+        g_fCompositeAlpha = TRUE;
+
+        /* Indicate that we have processed this argument */
+        return 1;
+    }
+    /*
+     * Look for the '-nocompositealpha' argument
+     */
+    if (IS_OPTION("-nocompositealpha")) {
+        g_fCompositeAlpha  = FALSE;
+
+        /* Indicate that we have processed this argument */
+        return 1;
+    }
 
     /*
      * Look for the '-multiplemonitors' argument
      */
     if (IS_OPTION("-multiplemonitors")
         || IS_OPTION("-multimonitors")) {
-#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
         screenInfoPtr->fMultiMonitorOverride = TRUE;
-#endif
         screenInfoPtr->fMultipleMonitors = TRUE;
 
         /* Indicate that we have processed this argument */
@@ -636,9 +618,7 @@ ddxProcessArgument(int argc, char *argv[], int i)
      */
     if (IS_OPTION("-nomultiplemonitors")
         || IS_OPTION("-nomultimonitors")) {
-#if defined(XWIN_MULTIWINDOW) || defined(XWIN_MULTIWINDOWEXTWM)
         screenInfoPtr->fMultiMonitorOverride = TRUE;
-#endif
         screenInfoPtr->fMultipleMonitors = FALSE;
 
         /* Indicate that we have processed this argument */
@@ -666,7 +646,7 @@ ddxProcessArgument(int argc, char *argv[], int i)
         if (IS_OPTION("-resize"))
             mode = resizeWithRandr;
         else if (IS_OPTION("-noresize"))
-            mode = notAllowed;
+            mode = resizeNotAllowed;
         else if (strncmp(argv[i], "-resize=", strlen("-resize=")) == 0) {
             char *option = argv[i] + strlen("-resize=");
 
@@ -675,7 +655,7 @@ ddxProcessArgument(int argc, char *argv[], int i)
             else if (strcmp(option, "scrollbars") == 0)
                 mode = resizeWithScrollbars;
             else if (strcmp(option, "none") == 0)
-                mode = notAllowed;
+                mode = resizeNotAllowed;
             else {
                 ErrorF("ddxProcessArgument - resize - Invalid resize mode %s\n",
                        option);
@@ -694,7 +674,6 @@ ddxProcessArgument(int argc, char *argv[], int i)
         return 1;
     }
 
-#ifdef XWIN_CLIPBOARD
     /*
      * Look for the '-clipboard' argument
      */
@@ -715,7 +694,26 @@ ddxProcessArgument(int argc, char *argv[], int i)
         /* Indicate that we have processed this argument */
         return 1;
     }
-#endif
+
+    /*
+     * Look for the '-primary' argument
+     */
+    if (IS_OPTION("-primary")) {
+        fPrimarySelection = TRUE;
+
+        /* Indicate that we have processed this argument */
+        return 1;
+    }
+
+    /*
+     * Look for the '-noprimary' argument
+     */
+    if (IS_OPTION("-noprimary")) {
+        fPrimarySelection = FALSE;
+
+        /* Indicate that we have processed this argument */
+        return 1;
+    }
 
     /*
      * Look for the '-ignoreinput' argument
@@ -1006,17 +1004,6 @@ ddxProcessArgument(int argc, char *argv[], int i)
         return 2;
     }
 
-#ifdef XWIN_CLIPBOARD
-    /*
-     * Look for the '-nounicodeclipboard' argument
-     */
-    if (IS_OPTION("-nounicodeclipboard")) {
-        g_fUnicodeClipboard = FALSE;
-        /* Indicate that we have processed the argument */
-        return 1;
-    }
-#endif
-
     if (IS_OPTION("-xkbrules")) {
         CHECK_ARGS(1);
         g_cmdline.xkbRules = argv[++i];
@@ -1058,11 +1045,6 @@ ddxProcessArgument(int argc, char *argv[], int i)
         return 1;
     }
 
-    if (IS_OPTION("-silent-dup-error")) {
-        g_fSilentDupError = TRUE;
-        return 1;
-    }
-
     if (IS_OPTION("-wgl")) {
         g_fNativeGl = TRUE;
         return 1;
@@ -1071,6 +1053,39 @@ ddxProcessArgument(int argc, char *argv[], int i)
     if (IS_OPTION("-nowgl")) {
         g_fNativeGl = FALSE;
         return 1;
+    }
+
+    if (IS_OPTION("-hostintitle")) {
+        g_fHostInTitle = TRUE;
+        return 1;
+    }
+
+    if (IS_OPTION("-nohostintitle")) {
+        g_fHostInTitle = FALSE;
+        return 1;
+    }
+
+    if (IS_OPTION("-icon")) {
+        char *iconspec;
+        CHECK_ARGS(1);
+        iconspec = argv[++i];
+        screenInfoPtr->hIcon = LoadImageComma(iconspec, NULL,
+                                              GetSystemMetrics(SM_CXICON),
+                                              GetSystemMetrics(SM_CYICON),
+                                              0);
+        screenInfoPtr->hIconSm = LoadImageComma(iconspec, NULL,
+                                                GetSystemMetrics(SM_CXSMICON),
+                                                GetSystemMetrics(SM_CYSMICON),
+                                                LR_DEFAULTSIZE);
+        if ((screenInfoPtr->hIcon == NULL) ||
+            (screenInfoPtr->hIconSm == NULL)) {
+            ErrorF("ddxProcessArgument - icon - Invalid icon specification %s\n",
+                   iconspec);
+            exit(1);
+        }
+
+        /* Indicate that we have processed the argument */
+        return 2;
     }
 
     return 0;
@@ -1158,9 +1173,21 @@ winLogVersionInfo(void)
 
     ErrorF("Welcome to the XWin X Server\n");
     ErrorF("Vendor: %s\n", XVENDORNAME);
-    ErrorF("Release: %d.%d.%d.%d (%d)\n", XORG_VERSION_MAJOR,
-           XORG_VERSION_MINOR, XORG_VERSION_PATCH, XORG_VERSION_SNAP,
-           XORG_VERSION_CURRENT);
-    ErrorF("%s\n\n", BUILDERSTRING);
+    ErrorF("Release: %d.%d.%d.%d\n", XORG_VERSION_MAJOR,
+           XORG_VERSION_MINOR, XORG_VERSION_PATCH, XORG_VERSION_SNAP);
+#ifdef HAVE_SYS_UTSNAME_H
+    {
+        struct utsname name;
+
+        if (uname(&name) >= 0) {
+            ErrorF("OS: %s %s %s %s %s\n", name.sysname, name.nodename,
+                   name.release, name.version, name.machine);
+        }
+    }
+#endif
+    winOS();
+    if (strlen(BUILDERSTRING))
+        ErrorF("%s\n", BUILDERSTRING);
     ErrorF("Contact: %s\n", BUILDERADDR);
+    ErrorF("\n");
 }

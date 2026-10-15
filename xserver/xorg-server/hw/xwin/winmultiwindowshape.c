@@ -47,7 +47,7 @@ winSetShapeMultiWindow(WindowPtr pWin, int kind)
     winScreenPriv(pScreen);
 
 #if CYGMULTIWINDOW_DEBUG
-    ErrorF("winSetShapeMultiWindow - pWin: %08x kind: %i\n", pWin, kind);
+    ErrorF("winSetShapeMultiWindow - pWin: %p kind: %i\n", pWin, kind);
 #endif
 
     WIN_UNWRAP(SetShape);
@@ -137,7 +137,7 @@ winReshapeMultiWindow(WindowPtr pWin)
 
         /* Translate client rectangle coords to screen coords */
         /* NOTE: Only transforms top and left members */
-        ClientToScreen(pWinPriv->hWnd, (LPPOINT) & rcClient);
+        ClientToScreen(pWinPriv->hWnd, (LPPOINT) &rcClient);
 
         /* Get window rectangle */
         if (!GetWindowRect(pWinPriv->hWnd, &rcWindow)) {

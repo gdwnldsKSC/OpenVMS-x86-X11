@@ -56,12 +56,11 @@
 #include "windowstr.h"
 #include "xace.h"
 #include "list.h"
+#include "xibarriers.h"
 
 static RESTYPE CursorClientType;
 static RESTYPE CursorHideCountType;
 static RESTYPE CursorWindowType;
-RESTYPE PointerBarrierType;
-static CursorPtr CursorCurrent[MAXDEVICES];
 
 static DevPrivateKeyRec CursorScreenPrivateKeyRec;
 
@@ -72,7 +71,7 @@ static void deleteCursorHideCountsForScreen(ScreenPtr pScreen);
 #define VERIFY_CURSOR(pCursor, cursor, client, access)			\
     do {								\
 	int err;							\
-	err = dixLookupResourceByType((pointer *) &pCursor, cursor,	\
+	err = dixLookupResourceByType((void **) &pCursor, cursor,	\
 				      RT_CURSOR, client, access);	\
 	if (err != Success) {						\
 	    client->errorValue = cursor;				\
@@ -112,14 +111,6 @@ typedef struct _CursorHideCountRec {
     XID resource;
 } CursorHideCountRec;
 
-typedef struct PointerBarrierClient *PointerBarrierClientPtr;
-
-struct PointerBarrierClient {
-    ScreenPtr screen;
-    struct PointerBarrier barrier;
-    struct xorg_list entry;
-};
-
 /*
  * Wrap DisplayCursor to catch cursor change events
  */
@@ -127,9 +118,7 @@ struct PointerBarrierClient {
 typedef struct _CursorScreen {
     DisplayCursorProcPtr DisplayCursor;
     CloseScreenProcPtr CloseScreen;
-    ConstrainCursorHarderProcPtr ConstrainCursorHarder;
     CursorHideCountPtr pCursorHideCounts;
-    struct xorg_list barriers;
 } CursorScreenRec, *CursorScreenPtr;
 
 #define GetCursorScreen(s) ((CursorScreenPtr)dixLookupPrivate(&(s)->devPrivates, CursorScreenPrivateKey))
@@ -139,25 +128,38 @@ typedef struct _CursorScreen {
 #define Unwrap(as,s,elt,backup)	(((backup) = (s)->elt), (s)->elt = (as)->elt)
 
 /* The cursor doesn't show up until the first XDefineCursor() */
-static Bool CursorVisible = FALSE;
-
+Bool CursorVisible = FALSE;
 Bool EnableCursor = TRUE;
+
+static CursorPtr
+CursorForDevice(DeviceIntPtr pDev)
+{
+    if (pDev && pDev->spriteInfo && pDev->spriteInfo->sprite) {
+        if (pDev->spriteInfo->anim.pCursor)
+            return pDev->spriteInfo->anim.pCursor;
+        return pDev->spriteInfo->sprite->current;
+    }
+
+    return NULL;
+}
+
+static CursorPtr
+CursorForClient(ClientPtr client)
+{
+    return CursorForDevice(PickPointer(client));
+}
 
 static Bool
 CursorDisplayCursor(DeviceIntPtr pDev, ScreenPtr pScreen, CursorPtr pCursor)
 {
     CursorScreenPtr cs = GetCursorScreen(pScreen);
+    CursorPtr pOldCursor = CursorForDevice(pDev);
     Bool ret;
     DisplayCursorProcPtr backupProc;
 
     Unwrap(cs, pScreen, DisplayCursor, backupProc);
 
-    /*
-     * Have to check ConnectionInfo to distinguish client requests from
-     * initial root window setup.  Not a great way to do it, I admit.
-     */
-    if (ConnectionInfo)
-        CursorVisible = EnableCursor;
+    CursorVisible = CursorVisible && EnableCursor;
 
     if (cs->pCursorHideCounts != NULL || !CursorVisible) {
         ret = (*pScreen->DisplayCursor) (pDev, pScreen, NullCursor);
@@ -166,20 +168,20 @@ CursorDisplayCursor(DeviceIntPtr pDev, ScreenPtr pScreen, CursorPtr pCursor)
         ret = (*pScreen->DisplayCursor) (pDev, pScreen, pCursor);
     }
 
-    if (pCursor != CursorCurrent[pDev->id]) {
+    if (pCursor != pOldCursor) {
         CursorEventPtr e;
 
-        CursorCurrent[pDev->id] = pCursor;
+        UpdateCurrentTimeIf();
         for (e = cursorEvents; e; e = e->next) {
             if ((e->eventMask & XFixesDisplayCursorNotifyMask)) {
-                xXFixesCursorNotifyEvent ev;
-
-                ev.type = XFixesEventBase + XFixesCursorNotify;
-                ev.subtype = XFixesDisplayCursorNotify;
-                ev.window = e->pWindow->drawable.id;
-                ev.cursorSerial = pCursor ? pCursor->serialNumber : 0;
-                ev.timestamp = currentTime.milliseconds;
-                ev.name = pCursor ? pCursor->name : None;
+                xXFixesCursorNotifyEvent ev = {
+                    .type = XFixesEventBase + XFixesCursorNotify,
+                    .subtype = XFixesDisplayCursorNotify,
+                    .window = e->pWindow->drawable.id,
+                    .cursorSerial = pCursor ? pCursor->serialNumber : 0,
+                    .timestamp = currentTime.milliseconds,
+                    .name = pCursor ? pCursor->name : None
+                };
                 WriteEventsToClient(e->pClient, 1, (xEvent *) &ev);
             }
         }
@@ -190,19 +192,17 @@ CursorDisplayCursor(DeviceIntPtr pDev, ScreenPtr pScreen, CursorPtr pCursor)
 }
 
 static Bool
-CursorCloseScreen(int index, ScreenPtr pScreen)
+CursorCloseScreen(ScreenPtr pScreen)
 {
     CursorScreenPtr cs = GetCursorScreen(pScreen);
     Bool ret;
     _X_UNUSED CloseScreenProcPtr close_proc;
     _X_UNUSED DisplayCursorProcPtr display_proc;
-    ConstrainCursorHarderProcPtr constrain_proc;
 
     Unwrap(cs, pScreen, CloseScreen, close_proc);
     Unwrap(cs, pScreen, DisplayCursor, display_proc);
-    Unwrap(cs, pScreen, ConstrainCursorHarder, constrain_proc);
     deleteCursorHideCountsForScreen(pScreen);
-    ret = (*pScreen->CloseScreen) (index, pScreen);
+    ret = (*pScreen->CloseScreen) (pScreen);
     free(cs);
     return ret;
 }
@@ -213,7 +213,7 @@ static int
 XFixesSelectCursorInput(ClientPtr pClient, WindowPtr pWindow, CARD32 eventMask)
 {
     CursorEventPtr *prev, e;
-    pointer val;
+    void *val;
     int rc;
 
     for (prev = &cursorEvents; (e = *prev); prev = &e->next) {
@@ -246,12 +246,12 @@ XFixesSelectCursorInput(ClientPtr pClient, WindowPtr pWindow, CARD32 eventMask)
                                      DixGetAttrAccess);
         if (rc != Success)
             if (!AddResource(pWindow->drawable.id, CursorWindowType,
-                             (pointer) pWindow)) {
+                             (void *) pWindow)) {
                 free(e);
                 return BadAlloc;
             }
 
-        if (!AddResource(e->clientResource, CursorClientType, (pointer) e))
+        if (!AddResource(e->clientResource, CursorClientType, (void *) e))
             return BadAlloc;
 
         *prev = e;
@@ -294,10 +294,11 @@ GetBit(unsigned char *line, int x)
     return 0;
 }
 
-int
+int _X_COLD
 SProcXFixesSelectCursorInput(ClientPtr client)
 {
     REQUEST(xXFixesSelectCursorInputReq);
+    REQUEST_SIZE_MATCH(xXFixesSelectCursorInputReq);
 
     swaps(&stuff->length);
     swapl(&stuff->window);
@@ -305,7 +306,7 @@ SProcXFixesSelectCursorInput(ClientPtr client)
     return (*ProcXFixesVector[stuff->xfixesReqType]) (client);
 }
 
-void
+void _X_COLD
 SXFixesCursorNotifyEvent(xXFixesCursorNotifyEvent * from,
                          xXFixesCursorNotifyEvent * to)
 {
@@ -324,11 +325,9 @@ CopyCursorToImage(CursorPtr pCursor, CARD32 *image)
     int height = pCursor->bits->height;
     int npixels = width * height;
 
-#ifdef ARGB_CURSOR
     if (pCursor->bits->argb)
         memcpy(image, pCursor->bits->argb, npixels * sizeof(CARD32));
     else
-#endif
     {
         unsigned char *srcLine = pCursor->bits->source;
         unsigned char *mskLine = pCursor->bits->mask;
@@ -369,7 +368,7 @@ ProcXFixesGetCursorImage(ClientPtr client)
     int npixels, width, height, rc, x, y;
 
     REQUEST_SIZE_MATCH(xXFixesGetCursorImageReq);
-    pCursor = CursorCurrent[PickPointer(client)->id];
+    pCursor = CursorForClient(client);
     if (!pCursor)
         return BadCursor;
     rc = XaceHook(XACE_RESOURCE_ACCESS, client, pCursor->id, RT_CURSOR,
@@ -380,7 +379,8 @@ ProcXFixesGetCursorImage(ClientPtr client)
     width = pCursor->bits->width;
     height = pCursor->bits->height;
     npixels = width * height;
-    rep = malloc(sizeof(xXFixesGetCursorImageReply) + npixels * sizeof(CARD32));
+    rep = calloc(sizeof(xXFixesGetCursorImageReply) + npixels * sizeof(CARD32),
+                 1);
     if (!rep)
         return BadAlloc;
 
@@ -409,13 +409,13 @@ ProcXFixesGetCursorImage(ClientPtr client)
         swapl(&rep->cursorSerial);
         SwapLongs(image, npixels);
     }
-    WriteToClient(client, sizeof(xXFixesGetCursorImageReply) +
-                  (npixels << 2), (char *) rep);
+    WriteToClient(client,
+                  sizeof(xXFixesGetCursorImageReply) + (npixels << 2), rep);
     free(rep);
     return Success;
 }
 
-int
+int _X_COLD
 SProcXFixesGetCursorImage(ClientPtr client)
 {
     REQUEST(xXFixesGetCursorImageReq);
@@ -432,7 +432,7 @@ ProcXFixesSetCursorName(ClientPtr client)
     REQUEST(xXFixesSetCursorNameReq);
     Atom atom;
 
-    REQUEST_AT_LEAST_SIZE(xXFixesSetCursorNameReq);
+    REQUEST_FIXED_SIZE(xXFixesSetCursorNameReq, stuff->nbytes);
     VERIFY_CURSOR(pCursor, stuff->cursor, client, DixSetAttrAccess);
     tchar = (char *) &stuff[1];
     atom = MakeAtom(tchar, stuff->nbytes, TRUE);
@@ -443,7 +443,7 @@ ProcXFixesSetCursorName(ClientPtr client)
     return Success;
 }
 
-int
+int _X_COLD
 SProcXFixesSetCursorName(ClientPtr client)
 {
     REQUEST(xXFixesSetCursorNameReq);
@@ -473,11 +473,13 @@ ProcXFixesGetCursorName(ClientPtr client)
         str = "";
     len = strlen(str);
 
-    reply.type = X_Reply;
-    reply.length = bytes_to_int32(len);
-    reply.sequenceNumber = client->sequence;
-    reply.atom = pCursor->name;
-    reply.nbytes = len;
+    reply = (xXFixesGetCursorNameReply) {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .length = bytes_to_int32(len),
+        .atom = pCursor->name,
+        .nbytes = len
+    };
     if (client->swapped) {
         swaps(&reply.sequenceNumber);
         swapl(&reply.length);
@@ -490,7 +492,7 @@ ProcXFixesGetCursorName(ClientPtr client)
     return Success;
 }
 
-int
+int _X_COLD
 SProcXFixesGetCursorName(ClientPtr client)
 {
     REQUEST(xXFixesGetCursorNameReq);
@@ -515,7 +517,7 @@ ProcXFixesGetCursorImageAndName(ClientPtr client)
     int rc, x, y;
 
     REQUEST_SIZE_MATCH(xXFixesGetCursorImageAndNameReq);
-    pCursor = CursorCurrent[PickPointer(client)->id];
+    pCursor = CursorForClient(client);
     if (!pCursor)
         return BadCursor;
     rc = XaceHook(XACE_RESOURCE_ACCESS, client, pCursor->id, RT_CURSOR,
@@ -529,8 +531,8 @@ ProcXFixesGetCursorImageAndName(ClientPtr client)
     name = pCursor->name ? NameForAtom(pCursor->name) : "";
     nbytes = strlen(name);
     nbytesRound = pad_to_int32(nbytes);
-    rep = malloc(sizeof(xXFixesGetCursorImageAndNameReply) +
-                 npixels * sizeof(CARD32) + nbytesRound);
+    rep = calloc(sizeof(xXFixesGetCursorImageAndNameReply) +
+                 npixels * sizeof(CARD32) + nbytesRound, 1);
     if (!rep)
         return BadAlloc;
 
@@ -565,12 +567,12 @@ ProcXFixesGetCursorImageAndName(ClientPtr client)
         SwapLongs(image, npixels);
     }
     WriteToClient(client, sizeof(xXFixesGetCursorImageAndNameReply) +
-                  (npixels << 2) + nbytesRound, (char *) rep);
+                  (npixels << 2) + nbytesRound, rep);
     free(rep);
     return Success;
 }
 
-int
+int _X_COLD
 SProcXFixesGetCursorImageAndName(ClientPtr client)
 {
     REQUEST(xXFixesGetCursorImageAndNameReq);
@@ -583,23 +585,21 @@ SProcXFixesGetCursorImageAndName(ClientPtr client)
  * whether it should be replaced with a reference to pCursor.
  */
 
-typedef Bool (*TestCursorFunc) (CursorPtr pOld, pointer closure);
+typedef Bool (*TestCursorFunc) (CursorPtr pOld, void *closure);
 
 typedef struct {
     RESTYPE type;
     TestCursorFunc testCursor;
     CursorPtr pNew;
-    pointer closure;
+    void *closure;
 } ReplaceCursorLookupRec, *ReplaceCursorLookupPtr;
 
 static const RESTYPE CursorRestypes[] = {
     RT_WINDOW, RT_PASSIVEGRAB, RT_CURSOR
 };
 
-#define NUM_CURSOR_RESTYPES (sizeof (CursorRestypes) / sizeof (CursorRestypes[0]))
-
 static Bool
-ReplaceCursorLookup(pointer value, XID id, pointer closure)
+ReplaceCursorLookup(void *value, XID id, void *closure)
 {
     ReplaceCursorLookupPtr rcl = (ReplaceCursorLookupPtr) closure;
     WindowPtr pWin;
@@ -628,12 +628,12 @@ ReplaceCursorLookup(pointer value, XID id, pointer closure)
     }
     if (pCursor && pCursor != rcl->pNew) {
         if ((*rcl->testCursor) (pCursor, rcl->closure)) {
-            rcl->pNew->refcnt++;
+            CursorPtr curs = RefCursor(rcl->pNew);
             /* either redirect reference or update resource database */
             if (pCursorRef)
-                *pCursorRef = rcl->pNew;
+                *pCursorRef = curs;
             else
-                ChangeResourceValue(id, RT_CURSOR, rcl->pNew);
+                ChangeResourceValue(id, RT_CURSOR, curs);
             FreeCursor(pCursor, cursor);
         }
     }
@@ -641,13 +641,13 @@ ReplaceCursorLookup(pointer value, XID id, pointer closure)
 }
 
 static void
-ReplaceCursor(CursorPtr pCursor, TestCursorFunc testCursor, pointer closure)
+ReplaceCursor(CursorPtr pCursor, TestCursorFunc testCursor, void *closure)
 {
     int clientIndex;
     int resIndex;
     ReplaceCursorLookupRec rcl;
 
-    /* 
+    /*
      * Cursors exist only in the resource database, windows and grabs.
      * All of these are always pointed at by the resource database.  Walk
      * the whole thing looking for cursors
@@ -660,22 +660,22 @@ ReplaceCursor(CursorPtr pCursor, TestCursorFunc testCursor, pointer closure)
     for (clientIndex = 0; clientIndex < currentMaxClients; clientIndex++) {
         if (!clients[clientIndex])
             continue;
-        for (resIndex = 0; resIndex < NUM_CURSOR_RESTYPES; resIndex++) {
+        for (resIndex = 0; resIndex < ARRAY_SIZE(CursorRestypes); resIndex++) {
             rcl.type = CursorRestypes[resIndex];
             /*
              * This function walks the entire client resource database
              */
             LookupClientResourceComplex(clients[clientIndex],
                                         rcl.type,
-                                        ReplaceCursorLookup, (pointer) &rcl);
+                                        ReplaceCursorLookup, (void *) &rcl);
         }
     }
-    /* this "knows" that WindowHasNewCursor doesn't depend on it's argument */
+    /* this "knows" that WindowHasNewCursor doesn't depend on its argument */
     WindowHasNewCursor(screenInfo.screens[0]->root);
 }
 
 static Bool
-TestForCursor(CursorPtr pCursor, pointer closure)
+TestForCursor(CursorPtr pCursor, void *closure)
 {
     return (pCursor == (CursorPtr) closure);
 }
@@ -693,11 +693,11 @@ ProcXFixesChangeCursor(ClientPtr client)
     VERIFY_CURSOR(pDestination, stuff->destination, client,
                   DixWriteAccess | DixSetAttrAccess);
 
-    ReplaceCursor(pSource, TestForCursor, (pointer) pDestination);
+    ReplaceCursor(pSource, TestForCursor, (void *) pDestination);
     return Success;
 }
 
-int
+int _X_COLD
 SProcXFixesChangeCursor(ClientPtr client)
 {
     REQUEST(xXFixesChangeCursorReq);
@@ -710,7 +710,7 @@ SProcXFixesChangeCursor(ClientPtr client)
 }
 
 static Bool
-TestForCursorName(CursorPtr pCursor, pointer closure)
+TestForCursorName(CursorPtr pCursor, void *closure)
 {
     Atom *pName = closure;
 
@@ -736,7 +736,7 @@ ProcXFixesChangeCursorByName(ClientPtr client)
     return Success;
 }
 
-int
+int _X_COLD
 SProcXFixesChangeCursorByName(ClientPtr client)
 {
     REQUEST(xXFixesChangeCursorByNameReq);
@@ -750,7 +750,7 @@ SProcXFixesChangeCursorByName(ClientPtr client)
 
 /*
  * Routines for manipulating the per-screen hide counts list.
- * This list indicates which clients have requested cursor hiding 
+ * This list indicates which clients have requested cursor hiding
  * for that screen.
  */
 
@@ -787,19 +787,17 @@ createCursorHideCount(ClientPtr pClient, ScreenPtr pScreen)
     pChc->pNext = cs->pCursorHideCounts;
     cs->pCursorHideCounts = pChc;
 
-    /* 
+    /*
      * Create a resource for this element so it can be deleted
      * when the client goes away.
      */
-    if (!AddResource(pChc->resource, CursorHideCountType, (pointer) pChc)) {
-        free(pChc);
+    if (!AddResource(pChc->resource, CursorHideCountType, (void *) pChc))
         return BadAlloc;
-    }
 
     return Success;
 }
 
-/* 
+/*
  * Delete the given hide-counts list element from its screen list.
  */
 static void
@@ -827,7 +825,7 @@ deleteCursorHideCount(CursorHideCountPtr pChcToDel, ScreenPtr pScreen)
     }
 }
 
-/* 
+/*
  * Delete all the hide-counts list elements for this screen.
  */
 static void
@@ -856,16 +854,16 @@ ProcXFixesHideCursor(ClientPtr client)
 
     REQUEST_SIZE_MATCH(xXFixesHideCursorReq);
 
-    ret = dixLookupResourceByType((pointer *) &pWin, stuff->window, RT_WINDOW,
+    ret = dixLookupResourceByType((void **) &pWin, stuff->window, RT_WINDOW,
                                   client, DixGetAttrAccess);
     if (ret != Success) {
         client->errorValue = stuff->window;
         return ret;
     }
 
-    /* 
-     * Has client hidden the cursor before on this screen? 
-     * If so, just increment the count. 
+    /*
+     * Has client hidden the cursor before on this screen?
+     * If so, just increment the count.
      */
 
     pChc = findCursorHideCount(client, pWin->drawable.pScreen);
@@ -874,8 +872,8 @@ ProcXFixesHideCursor(ClientPtr client)
         return Success;
     }
 
-    /* 
-     * This is the first time this client has hid the cursor 
+    /*
+     * This is the first time this client has hid the cursor
      * for this screen.
      */
     ret = XaceHook(XACE_SCREEN_ACCESS, client, pWin->drawable.pScreen,
@@ -891,14 +889,14 @@ ProcXFixesHideCursor(ClientPtr client)
         for (dev = inputInfo.devices; dev; dev = dev->next) {
             if (IsMaster(dev) && IsPointerDevice(dev))
                 CursorDisplayCursor(dev, pWin->drawable.pScreen,
-                                    CursorCurrent[dev->id]);
+                                    CursorForDevice(dev));
         }
     }
 
     return ret;
 }
 
-int
+int _X_COLD
 SProcXFixesHideCursor(ClientPtr client)
 {
     REQUEST(xXFixesHideCursorReq);
@@ -920,14 +918,14 @@ ProcXFixesShowCursor(ClientPtr client)
 
     REQUEST_SIZE_MATCH(xXFixesShowCursorReq);
 
-    rc = dixLookupResourceByType((pointer *) &pWin, stuff->window, RT_WINDOW,
+    rc = dixLookupResourceByType((void **) &pWin, stuff->window, RT_WINDOW,
                                  client, DixGetAttrAccess);
     if (rc != Success) {
         client->errorValue = stuff->window;
         return rc;
     }
 
-    /* 
+    /*
      * Has client hidden the cursor on this screen?
      * If not, generate an error.
      */
@@ -949,7 +947,7 @@ ProcXFixesShowCursor(ClientPtr client)
     return Success;
 }
 
-int
+int _X_COLD
 SProcXFixesShowCursor(ClientPtr client)
 {
     REQUEST(xXFixesShowCursorReq);
@@ -961,7 +959,7 @@ SProcXFixesShowCursor(ClientPtr client)
 }
 
 static int
-CursorFreeClient(pointer data, XID id)
+CursorFreeClient(void *data, XID id)
 {
     CursorEventPtr old = (CursorEventPtr) data;
     CursorEventPtr *prev, e;
@@ -977,7 +975,7 @@ CursorFreeClient(pointer data, XID id)
 }
 
 static int
-CursorFreeHideCount(pointer data, XID id)
+CursorFreeHideCount(void *data, XID id)
 {
     CursorHideCountPtr pChc = (CursorHideCountPtr) data;
     ScreenPtr pScreen = pChc->pScreen;
@@ -986,14 +984,14 @@ CursorFreeHideCount(pointer data, XID id)
     deleteCursorHideCount(pChc, pChc->pScreen);
     for (dev = inputInfo.devices; dev; dev = dev->next) {
         if (IsMaster(dev) && IsPointerDevice(dev))
-            CursorDisplayCursor(dev, pScreen, CursorCurrent[dev->id]);
+            CursorDisplayCursor(dev, pScreen, CursorForDevice(dev));
     }
 
     return 1;
 }
 
 static int
-CursorFreeWindow(pointer data, XID id)
+CursorFreeWindow(void *data, XID id)
 {
     WindowPtr pWindow = (WindowPtr) data;
     CursorEventPtr e, next;
@@ -1007,317 +1005,32 @@ CursorFreeWindow(pointer data, XID id)
     return 1;
 }
 
-static BOOL
-barrier_is_horizontal(const struct PointerBarrier *barrier)
-{
-    return barrier->y1 == barrier->y2;
-}
-
-static BOOL
-barrier_is_vertical(const struct PointerBarrier *barrier)
-{
-    return barrier->x1 == barrier->x2;
-}
-
-/**
- * @return The set of barrier movement directions the movement vector
- * x1/y1 → x2/y2 represents.
- */
-int
-barrier_get_direction(int x1, int y1, int x2, int y2)
-{
-    int direction = 0;
-
-    /* which way are we trying to go */
-    if (x2 > x1)
-        direction |= BarrierPositiveX;
-    if (x2 < x1)
-        direction |= BarrierNegativeX;
-    if (y2 > y1)
-        direction |= BarrierPositiveY;
-    if (y2 < y1)
-        direction |= BarrierNegativeY;
-
-    return direction;
-}
-
-/**
- * Test if the barrier may block movement in the direction defined by
- * x1/y1 → x2/y2. This function only tests whether the directions could be
- * blocked, it does not test if the barrier actually blocks the movement.
- *
- * @return TRUE if the barrier blocks the direction of movement or FALSE
- * otherwise.
- */
-BOOL
-barrier_is_blocking_direction(const struct PointerBarrier * barrier,
-                              int direction)
-{
-    /* Barriers define which way is ok, not which way is blocking */
-    return (barrier->directions & direction) != direction;
-}
-
-/**
- * Test if the movement vector x1/y1 → x2/y2 is intersecting with the
- * barrier. A movement vector with the startpoint or endpoint adjacent to
- * the barrier itself counts as intersecting.
- *
- * @param x1 X start coordinate of movement vector
- * @param y1 Y start coordinate of movement vector
- * @param x2 X end coordinate of movement vector
- * @param y2 Y end coordinate of movement vector
- * @param[out] distance The distance between the start point and the
- * intersection with the barrier (if applicable).
- * @return TRUE if the barrier intersects with the given vector
- */
-BOOL
-barrier_is_blocking(const struct PointerBarrier * barrier,
-                    int x1, int y1, int x2, int y2, double *distance)
-{
-    BOOL rc = FALSE;
-    float ua, ub, ud;
-    int dir = barrier_get_direction(x1, y1, x2, y2);
-
-    /* Algorithm below doesn't handle edge cases well, hence the extra
-     * checks. */
-    if (barrier_is_vertical(barrier)) {
-        /* handle immediate barrier adjacency, moving away */
-        if (dir & BarrierPositiveX && x1 == barrier->x1)
-            return FALSE;
-        if (dir & BarrierNegativeX && x1 == (barrier->x1 - 1))
-            return FALSE;
-        /* startpoint adjacent to barrier, moving towards -> block */
-        if (x1 == barrier->x1 && y1 >= barrier->y1 && y1 <= barrier->y2) {
-            *distance = 0;
-            return TRUE;
-        }
-    }
-    else {
-        /* handle immediate barrier adjacency, moving away */
-        if (dir & BarrierPositiveY && y1 == barrier->y1)
-            return FALSE;
-        if (dir & BarrierNegativeY && y1 == (barrier->y1 - 1))
-            return FALSE;
-        /* startpoint adjacent to barrier, moving towards -> block */
-        if (y1 == barrier->y1 && x1 >= barrier->x1 && x1 <= barrier->x2) {
-            *distance = 0;
-            return TRUE;
-        }
-    }
-
-    /* not an edge case, compute distance */
-    ua = 0;
-    ud = (barrier->y2 - barrier->y1) * (x2 - x1) - (barrier->x2 -
-                                                    barrier->x1) * (y2 - y1);
-    if (ud != 0) {
-        ua = ((barrier->x2 - barrier->x1) * (y1 - barrier->y1) -
-              (barrier->y2 - barrier->y1) * (x1 - barrier->x1)) / ud;
-        ub = ((x2 - x1) * (y1 - barrier->y1) -
-              (y2 - y1) * (x1 - barrier->x1)) / ud;
-        if (ua < 0 || ua > 1 || ub < 0 || ub > 1)
-            ua = 0;
-    }
-
-    if (ua > 0 && ua <= 1) {
-        double ix = barrier->x1 + ua * (barrier->x2 - barrier->x1);
-        double iy = barrier->y1 + ua * (barrier->y2 - barrier->y1);
-
-        *distance = sqrt(pow(x1 - ix, 2) + pow(y1 - iy, 2));
-        rc = TRUE;
-    }
-
-    return rc;
-}
-
-/**
- * Find the nearest barrier that is blocking movement from x1/y1 to x2/y2.
- *
- * @param dir Only barriers blocking movement in direction dir are checked
- * @param x1 X start coordinate of movement vector
- * @param y1 Y start coordinate of movement vector
- * @param x2 X end coordinate of movement vector
- * @param y2 Y end coordinate of movement vector
- * @return The barrier nearest to the movement origin that blocks this movement.
- */
-static struct PointerBarrier *
-barrier_find_nearest(CursorScreenPtr cs, int dir,
-                     int x1, int y1, int x2, int y2)
-{
-    struct PointerBarrierClient *c;
-    struct PointerBarrier *nearest = NULL;
-    double min_distance = INT_MAX;      /* can't get higher than that in X anyway */
-
-    xorg_list_for_each_entry(c, &cs->barriers, entry) {
-        struct PointerBarrier *b = &c->barrier;
-        double distance;
-
-        if (!barrier_is_blocking_direction(b, dir))
-            continue;
-
-        if (barrier_is_blocking(b, x1, y1, x2, y2, &distance)) {
-            if (min_distance > distance) {
-                min_distance = distance;
-                nearest = b;
-            }
-        }
-    }
-
-    return nearest;
-}
-
-/**
- * Clamp to the given barrier given the movement direction specified in dir.
- *
- * @param barrier The barrier to clamp to
- * @param dir The movement direction
- * @param[out] x The clamped x coordinate.
- * @param[out] y The clamped x coordinate.
- */
-void
-barrier_clamp_to_barrier(struct PointerBarrier *barrier, int dir, int *x,
-                         int *y)
-{
-    if (barrier_is_vertical(barrier)) {
-        if ((dir & BarrierNegativeX) & ~barrier->directions)
-            *x = barrier->x1;
-        if ((dir & BarrierPositiveX) & ~barrier->directions)
-            *x = barrier->x1 - 1;
-    }
-    if (barrier_is_horizontal(barrier)) {
-        if ((dir & BarrierNegativeY) & ~barrier->directions)
-            *y = barrier->y1;
-        if ((dir & BarrierPositiveY) & ~barrier->directions)
-            *y = barrier->y1 - 1;
-    }
-}
-
-static void
-CursorConstrainCursorHarder(DeviceIntPtr dev, ScreenPtr screen, int mode,
-                            int *x, int *y)
-{
-    CursorScreenPtr cs = GetCursorScreen(screen);
-
-    if (!xorg_list_is_empty(&cs->barriers) && !IsFloating(dev) &&
-        mode == Relative) {
-        int ox, oy;
-        int dir;
-        struct PointerBarrier *nearest = NULL;
-
-        /* where are we coming from */
-        miPointerGetPosition(dev, &ox, &oy);
-
-        /* How this works:
-         * Given the origin and the movement vector, get the nearest barrier
-         * to the origin that is blocking the movement.
-         * Clamp to that barrier.
-         * Then, check from the clamped intersection to the original
-         * destination, again finding the nearest barrier and clamping.
-         */
-        dir = barrier_get_direction(ox, oy, *x, *y);
-
-        nearest = barrier_find_nearest(cs, dir, ox, oy, *x, *y);
-        if (nearest) {
-            barrier_clamp_to_barrier(nearest, dir, x, y);
-
-            if (barrier_is_vertical(nearest)) {
-                dir &= ~(BarrierNegativeX | BarrierPositiveX);
-                ox = *x;
-            }
-            else if (barrier_is_horizontal(nearest)) {
-                dir &= ~(BarrierNegativeY | BarrierPositiveY);
-                oy = *y;
-            }
-
-            nearest = barrier_find_nearest(cs, dir, ox, oy, *x, *y);
-            if (nearest) {
-                barrier_clamp_to_barrier(nearest, dir, x, y);
-            }
-        }
-    }
-
-    if (cs->ConstrainCursorHarder) {
-        screen->ConstrainCursorHarder = cs->ConstrainCursorHarder;
-        screen->ConstrainCursorHarder(dev, screen, mode, x, y);
-        screen->ConstrainCursorHarder = CursorConstrainCursorHarder;
-    }
-}
-
-static struct PointerBarrierClient *
-CreatePointerBarrierClient(ScreenPtr screen, ClientPtr client,
-                           xXFixesCreatePointerBarrierReq * stuff)
-{
-    CursorScreenPtr cs = GetCursorScreen(screen);
-    struct PointerBarrierClient *ret = malloc(sizeof(*ret));
-
-    if (ret) {
-        ret->screen = screen;
-        ret->barrier.x1 = min(stuff->x1, stuff->x2);
-        ret->barrier.x2 = max(stuff->x1, stuff->x2);
-        ret->barrier.y1 = min(stuff->y1, stuff->y2);
-        ret->barrier.y2 = max(stuff->y1, stuff->y2);
-        ret->barrier.directions = stuff->directions & 0x0f;
-        if (barrier_is_horizontal(&ret->barrier))
-            ret->barrier.directions &= ~(BarrierPositiveX | BarrierNegativeX);
-        if (barrier_is_vertical(&ret->barrier))
-            ret->barrier.directions &= ~(BarrierPositiveY | BarrierNegativeY);
-        xorg_list_add(&ret->entry, &cs->barriers);
-    }
-
-    return ret;
-}
-
 int
 ProcXFixesCreatePointerBarrier(ClientPtr client)
 {
-    int err;
-    WindowPtr pWin;
-    struct PointerBarrierClient *barrier;
-    struct PointerBarrier b;
-
     REQUEST(xXFixesCreatePointerBarrierReq);
 
-    REQUEST_SIZE_MATCH(xXFixesCreatePointerBarrierReq);
+    REQUEST_FIXED_SIZE(xXFixesCreatePointerBarrierReq,
+                       pad_to_int32(stuff->num_devices * sizeof(CARD16)));
     LEGAL_NEW_RESOURCE(stuff->barrier, client);
 
-    err = dixLookupWindow(&pWin, stuff->window, client, DixReadAccess);
-    if (err != Success) {
-        client->errorValue = stuff->window;
-        return err;
-    }
-
-    /* This sure does need fixing. */
-    if (stuff->num_devices)
-        return BadImplementation;
-
-    b.x1 = stuff->x1;
-    b.x2 = stuff->x2;
-    b.y1 = stuff->y1;
-    b.y2 = stuff->y2;
-
-    if (!barrier_is_horizontal(&b) && !barrier_is_vertical(&b))
-        return BadValue;
-
-    /* no 0-sized barriers */
-    if (barrier_is_horizontal(&b) && barrier_is_vertical(&b))
-        return BadValue;
-
-    if (!(barrier = CreatePointerBarrierClient(pWin->drawable.pScreen,
-                                               client, stuff)))
-        return BadAlloc;
-
-    if (!AddResource(stuff->barrier, PointerBarrierType, &barrier->barrier))
-        return BadAlloc;
-
-    return Success;
+    return XICreatePointerBarrier(client, stuff);
 }
 
-int
+int _X_COLD
 SProcXFixesCreatePointerBarrier(ClientPtr client)
 {
     REQUEST(xXFixesCreatePointerBarrierReq);
+    int i;
+    CARD16 *in_devices = (CARD16 *) &stuff[1];
+
+    REQUEST_AT_LEAST_SIZE(xXFixesCreatePointerBarrierReq);
 
     swaps(&stuff->length);
-    REQUEST_SIZE_MATCH(xXFixesCreatePointerBarrierReq);
+    swaps(&stuff->num_devices);
+    REQUEST_FIXED_SIZE(xXFixesCreatePointerBarrierReq,
+                       pad_to_int32(stuff->num_devices * sizeof(CARD16)));
+
     swapl(&stuff->barrier);
     swapl(&stuff->window);
     swaps(&stuff->x1);
@@ -1325,55 +1038,24 @@ SProcXFixesCreatePointerBarrier(ClientPtr client)
     swaps(&stuff->x2);
     swaps(&stuff->y2);
     swapl(&stuff->directions);
-    return ProcXFixesVector[stuff->xfixesReqType] (client);
-}
-
-static int
-CursorFreeBarrier(void *data, XID id)
-{
-    struct PointerBarrierClient *b = NULL, *barrier;
-    ScreenPtr screen;
-    CursorScreenPtr cs;
-
-    barrier = container_of(data, struct PointerBarrierClient, barrier);
-
-    screen = barrier->screen;
-    cs = GetCursorScreen(screen);
-
-    /* find and unlink from the screen private */
-    xorg_list_for_each_entry(b, &cs->barriers, entry) {
-        if (b == barrier) {
-            xorg_list_del(&b->entry);
-            break;
-        }
+    for (i = 0; i < stuff->num_devices; i++) {
+        swaps(in_devices + i);
     }
 
-    free(barrier);
-    return Success;
+    return ProcXFixesVector[stuff->xfixesReqType] (client);
 }
 
 int
 ProcXFixesDestroyPointerBarrier(ClientPtr client)
 {
-    int err;
-    void *barrier;
-
     REQUEST(xXFixesDestroyPointerBarrierReq);
 
     REQUEST_SIZE_MATCH(xXFixesDestroyPointerBarrierReq);
 
-    err = dixLookupResourceByType((void **) &barrier, stuff->barrier,
-                                  PointerBarrierType, client, DixDestroyAccess);
-    if (err != Success) {
-        client->errorValue = stuff->barrier;
-        return err;
-    }
-
-    FreeResource(stuff->barrier, RT_NONE);
-    return Success;
+    return XIDestroyPointerBarrier(client, stuff);
 }
 
-int
+int _X_COLD
 SProcXFixesDestroyPointerBarrier(ClientPtr client)
 {
     REQUEST(xXFixesDestroyPointerBarrierReq);
@@ -1391,6 +1073,8 @@ XFixesCursorInit(void)
 
     if (party_like_its_1989)
         CursorVisible = EnableCursor;
+    else
+        CursorVisible = FALSE;
 
     if (!dixRegisterPrivateKey(&CursorScreenPrivateKeyRec, PRIVATE_SCREEN, 0))
         return FALSE;
@@ -1402,10 +1086,8 @@ XFixesCursorInit(void)
         cs = (CursorScreenPtr) calloc(1, sizeof(CursorScreenRec));
         if (!cs)
             return FALSE;
-        xorg_list_init(&cs->barriers);
         Wrap(cs, pScreen, CloseScreen, CursorCloseScreen);
         Wrap(cs, pScreen, DisplayCursor, CursorDisplayCursor);
-        Wrap(cs, pScreen, ConstrainCursorHarder, CursorConstrainCursorHarder);
         cs->pCursorHideCounts = NULL;
         SetCursorScreen(pScreen, cs);
     }
@@ -1415,9 +1097,6 @@ XFixesCursorInit(void)
                                                 "XFixesCursorHideCount");
     CursorWindowType = CreateNewResourceType(CursorFreeWindow,
                                              "XFixesCursorWindow");
-    PointerBarrierType = CreateNewResourceType(CursorFreeBarrier,
-                                               "XFixesPointerBarrier");
 
-    return CursorClientType && CursorHideCountType && CursorWindowType &&
-        PointerBarrierType;
+    return CursorClientType && CursorHideCountType && CursorWindowType;
 }

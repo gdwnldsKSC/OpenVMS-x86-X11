@@ -35,8 +35,6 @@
 #include <dix-config.h>
 #endif
 
-#include <AvailabilityMacros.h>
-
 #include <dlfcn.h>
 
 #include <OpenGL/OpenGL.h>
@@ -48,12 +46,11 @@
 #include <glxserver.h>
 #include <glxutil.h>
 
-#include <glapi.h>
-
 #include "x-hash.h"
 
 #include "visualConfigs.h"
 #include "dri.h"
+#include "extension_string.h"
 
 #include "darwin.h"
 #define GLAQUA_DEBUG_MSG(msg, args ...) ASL_LOG(ASL_LEVEL_DEBUG, "GLXAqua", \
@@ -113,8 +110,6 @@ typedef struct __GLXAquaDrawable __GLXAquaDrawable;
  */
 struct __GLXAquaScreen {
     __GLXscreen base;
-    int index;
-    int num_vis;
 };
 
 struct __GLXAquaContext {
@@ -135,11 +130,19 @@ struct __GLXAquaDrawable {
 static __GLXcontext *
 __glXAquaScreenCreateContext(__GLXscreen *screen,
                              __GLXconfig *conf,
-                             __GLXcontext *baseShareContext)
+                             __GLXcontext *baseShareContext,
+                             unsigned num_attribs,
+                             const uint32_t *attribs,
+                             int *error)
 {
     __GLXAquaContext *context;
     __GLXAquaContext *shareContext = (__GLXAquaContext *)baseShareContext;
     CGLError gl_err;
+
+    /* Unused (for now?) */
+    (void)num_attribs;
+    (void)attribs;
+    (void)error;
 
     GLAQUA_DEBUG_MSG("glXAquaScreenCreateContext\n");
 
@@ -151,7 +154,7 @@ __glXAquaScreenCreateContext(__GLXscreen *screen,
     memset(context, 0, sizeof *context);
 
     context->base.pGlxScreen = screen;
-
+    context->base.config = conf;
     context->base.destroy = __glXAquaContextDestroy;
     context->base.makeCurrent = __glXAquaContextMakeCurrent;
     context->base.loseCurrent = __glXAquaContextLoseCurrent;
@@ -296,15 +299,21 @@ attach(__GLXAquaContext *context, __GLXAquaDrawable *draw)
         //if (!quartzProcs->CreateSurface(pDraw->pScreen, pDraw->id, pDraw,
         if (!DRICreateSurface(pDraw->pScreen, pDraw->id, pDraw,
                               0, &draw->sid, NULL,
-                              surface_notify, draw))
+                              surface_notify, draw)) {
+            ErrorF("%s: DRICreateSurface failed for drawable 0x%x\n",
+                   __func__, (unsigned int)pDraw->id);
             return TRUE;
+        }
         draw->pDraw = pDraw;
     }
 
     if (!context->isAttached || context->sid != draw->sid) {
         x_list *lst;
+        xp_error xp_err = xp_attach_gl_context(context->ctx, draw->sid);
 
-        if (xp_attach_gl_context(context->ctx, draw->sid) != Success) {
+        if (xp_err != Success) {
+            ErrorF("%s: xp_attach_gl_context(ctx %p, sid 0x%x) failed: %d\n",
+                   __func__, context->ctx, (unsigned int)draw->sid, xp_err);
             //quartzProcs->DestroySurface(pDraw->pScreen, pDraw->id, pDraw,
             DRIDestroySurface(pDraw->pScreen, pDraw->id, pDraw,
                               surface_notify, draw);
@@ -375,6 +384,13 @@ __glXAquaContextMakeCurrent(__GLXcontext *baseContext)
     __GLXAquaDrawable *drawPriv = (__GLXAquaDrawable *)context->base.drawPriv;
 
     GLAQUA_DEBUG_MSG("glAquaMakeCurrent (ctx 0x%p)\n", baseContext);
+
+    if (context->base.drawPriv != context->base.readPriv) {
+        ErrorF("%s: separate read/draw drawables are unsupported "
+               "(draw %p, read %p)\n", __func__,
+               context->base.drawPriv, context->base.readPriv);
+        return 0;
+    }
 
     if (attach(context, drawPriv))
         return /*error*/ 0;
@@ -531,17 +547,29 @@ __glXAquaScreenProbe(ScreenPtr pScreen)
     screen->base.fbconfigs = __glXAquaCreateVisualConfigs(
         &screen->base.numFBConfigs, pScreen->myNum);
 
+    __glXInitExtensionEnableBits(screen->base.glx_enable_bits);
+
+    /* Advertise GLX_ARB_create_context so clients can call
+     * glXCreateContextAttribsARB.  XQuartz uses AppleDRI + client-side CGL
+     * (direct rendering), which means the server-side createContext hook
+     * (__glXAquaScreenCreateContext) only fires for indirect requests --
+     * those are still capped at GL 1.4 by createcontext.c:validate_GL_version.
+     * The direct path routes to __glXdirectContextCreate in the core dispatch
+     * and the requested profile/version is honored on the client side.
+     *
+     * GLX_ARB_create_context_robustness is advertised for compatibility with
+     * clients that always ask for it, but CGL has no GPU-reset notification
+     * mechanism: GLX_CONTEXT_ROBUST_ACCESS_BIT_ARB /
+     * GLX_LOSE_CONTEXT_ON_RESET_ARB are silently accepted and never signal
+     * a reset.
+     *
+     * This is needed for OpenGL core profile support.
+     */
+    __glXEnableExtension(screen->base.glx_enable_bits, "GLX_ARB_create_context");
+    __glXEnableExtension(screen->base.glx_enable_bits, "GLX_ARB_create_context_profile");
+    __glXEnableExtension(screen->base.glx_enable_bits, "GLX_ARB_create_context_robustness");
+
     __glXScreenInit(&screen->base, pScreen);
-
-    screen->base.GLXmajor = 1;
-    screen->base.GLXminor = 4;
-    screen->base.GLXextensions = strdup("GLX_SGIX_fbconfig "
-                                        "GLX_SGIS_multisample "
-                                        "GLX_ARB_multisample "
-                                        "GLX_EXT_visual_info "
-                                        "GLX_EXT_import_context ");
-
-    /*We may be able to add more GLXextensions at a later time. */
 
     return &screen->base;
 }
@@ -635,15 +663,20 @@ __glFloorLog2(GLuint val)
     "/System/Library/Frameworks/OpenGL.framework/OpenGL"
 #endif
 
+static void *opengl_framework_handle;
+
+static glx_func_ptr
+get_proc_address(const char *sym)
+{
+    return (glx_func_ptr) dlsym(opengl_framework_handle, sym);
+}
+
 static void
 setup_dispatch_table(void)
 {
-    static struct _glapi_table *disp = NULL;
-    static void *handle;
     const char *opengl_framework_path;
 
-    if (disp) {
-        _glapi_set_dispatch(disp);
+    if (opengl_framework_handle) {
         return;
     }
 
@@ -653,16 +686,13 @@ setup_dispatch_table(void)
     }
 
     (void)dlerror();             /*drain dlerror */
-    handle = dlopen(opengl_framework_path, RTLD_LOCAL);
+    opengl_framework_handle = dlopen(opengl_framework_path, RTLD_LOCAL);
 
-    if (!handle) {
+    if (!opengl_framework_handle) {
         ErrorF("unable to dlopen %s : %s, using RTLD_DEFAULT\n",
                opengl_framework_path, dlerror());
-        handle = RTLD_DEFAULT;
+        opengl_framework_handle = RTLD_DEFAULT;
     }
 
-    disp = _glapi_create_table_from_handle(handle, "gl");
-    assert(disp);
-
-    _glapi_set_dispatch(disp);
+    __glXsetGetProcAddress(get_proc_address);
 }

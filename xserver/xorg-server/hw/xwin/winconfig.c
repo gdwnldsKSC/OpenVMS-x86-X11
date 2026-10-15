@@ -106,7 +106,7 @@ winInfoRec g_winInfo = {
 #ifdef XWIN_XF86CONFIG
 serverLayoutRec g_winConfigLayout;
 
-static Bool ParseOptionValue(int scrnIndex, pointer options, OptionInfoPtr p);
+static Bool ParseOptionValue(int scrnIndex, void *options, OptionInfoPtr p);
 static Bool configLayout(serverLayoutPtr, XF86ConfLayoutPtr, char *);
 static Bool configImpliedLayout(serverLayoutPtr, XF86ConfScreenPtr);
 static Bool GetBoolValue(OptionInfoPtr p, const char *s);
@@ -188,7 +188,7 @@ winReadConfigfile()
         /* Check if layout is given in the config file */
         if (g_xf86configptr->conf_flags != NULL) {
             char *dfltlayout = NULL;
-            pointer optlist = g_xf86configptr->conf_flags->flg_option_lst;
+            void *optlist = g_xf86configptr->conf_flags->flg_option_lst;
 
             if (optlist && winFindOption(optlist, "defaultserverlayout"))
                 dfltlayout =
@@ -224,7 +224,8 @@ winConfigKeyboard(DeviceIntPtr pDevice)
 {
     char layoutName[KL_NAMELENGTH];
     unsigned char layoutFriendlyName[256];
-    static unsigned int layoutNum = 0;
+    unsigned int layoutNum = 0;
+    unsigned int deviceIdentifier = 0;
     int keyboardType;
 
 #ifdef XWIN_XF86CONFIG
@@ -239,7 +240,7 @@ winConfigKeyboard(DeviceIntPtr pDevice)
     XkbGetRulesDflts(&g_winInfo.xkb);
 
     /*
-     * Query the windows autorepeat settings and change the xserver defaults.   
+     * Query the windows autorepeat settings and change the xserver defaults.
      */
     {
         int kbd_delay;
@@ -263,8 +264,9 @@ winConfigKeyboard(DeviceIntPtr pDevice)
                 break;
             }
             g_winInfo.keyboard.rate = (kbd_speed > 0) ? kbd_speed : 1;
-            winMsgVerb(X_PROBED, 1, "Setting autorepeat to delay=%d, rate=%d\n",
-                       g_winInfo.keyboard.delay, g_winInfo.keyboard.rate);
+            winMsg(X_PROBED, "Setting autorepeat to delay=%ld, rate=%ld\n",
+                   g_winInfo.keyboard.delay, g_winInfo.keyboard.rate);
+
         }
     }
 
@@ -272,15 +274,10 @@ winConfigKeyboard(DeviceIntPtr pDevice)
     if (keyboardType > 0 && GetKeyboardLayoutName(layoutName)) {
         WinKBLayoutPtr pLayout;
         Bool bfound = FALSE;
+        int pass;
 
-        if (!layoutNum)
-            layoutNum = strtoul(layoutName, (char **) NULL, 16);
+        layoutNum = strtoul(layoutName, (char **) NULL, 16);
         if ((layoutNum & 0xffff) == 0x411) {
-            /* The japanese layouts know a lot of different IMEs which all have
-               different layout numbers set. Map them to a single entry. 
-               Same might apply for chinese, korean and other symbol languages
-               too */
-            layoutNum = (layoutNum & 0xffff);
             if (keyboardType == 7) {
                 /* Japanese layouts have problems with key event messages
                    such as the lack of WM_KEYUP for Caps Lock key.
@@ -318,31 +315,47 @@ winConfigKeyboard(DeviceIntPtr pDevice)
                "Windows keyboard layout: \"%s\" (%08x) \"%s\", type %d\n",
                layoutName, layoutNum, layoutFriendlyName, keyboardType);
 
-        for (pLayout = winKBLayouts; pLayout->winlayout != -1; pLayout++) {
-            if (pLayout->winlayout != layoutNum)
-                continue;
-            if (pLayout->winkbtype > 0 && pLayout->winkbtype != keyboardType)
-                continue;
+        deviceIdentifier = layoutNum >> 16;
+        for (pass = 0; pass < 2; pass++) {
+            /* If we didn't find an exact match for the input locale identifier,
+               try to find an match on the language identifier part only  */
+            if (pass == 1)
+                layoutNum = (layoutNum & 0xffff);
 
-            bfound = TRUE;
-            winMsg(X_PROBED,
-                   "Found matching XKB configuration \"%s\"\n",
-                   pLayout->layoutname);
+            for (pLayout = winKBLayouts; pLayout->winlayout != -1; pLayout++) {
+                if (pLayout->winlayout != layoutNum)
+                    continue;
+                if (pLayout->winkbtype > 0 && pLayout->winkbtype != keyboardType)
+                    continue;
 
-            winMsg(X_PROBED,
-                   "Model = \"%s\" Layout = \"%s\""
-                   " Variant = \"%s\" Options = \"%s\"\n",
-                   pLayout->xkbmodel ? pLayout->xkbmodel : "none",
-                   pLayout->xkblayout ? pLayout->xkblayout : "none",
-                   pLayout->xkbvariant ? pLayout->xkbvariant : "none",
-                   pLayout->xkboptions ? pLayout->xkboptions : "none");
+                bfound = TRUE;
+                winMsg(X_PROBED,
+                       "Found matching XKB configuration \"%s\"\n",
+                       pLayout->layoutname);
 
-            g_winInfo.xkb.model = pLayout->xkbmodel;
-            g_winInfo.xkb.layout = pLayout->xkblayout;
-            g_winInfo.xkb.variant = pLayout->xkbvariant;
-            g_winInfo.xkb.options = pLayout->xkboptions;
+                winMsg(X_PROBED,
+                       "Model = \"%s\" Layout = \"%s\""
+                       " Variant = \"%s\" Options = \"%s\"\n",
+                       pLayout->xkbmodel ? pLayout->xkbmodel : "none",
+                       pLayout->xkblayout ? pLayout->xkblayout : "none",
+                       pLayout->xkbvariant ? pLayout->xkbvariant : "none",
+                       pLayout->xkboptions ? pLayout->xkboptions : "none");
 
-            break;
+                g_winInfo.xkb.model = pLayout->xkbmodel;
+                g_winInfo.xkb.layout = pLayout->xkblayout;
+                g_winInfo.xkb.variant = pLayout->xkbvariant;
+                g_winInfo.xkb.options = pLayout->xkboptions;
+
+                if (deviceIdentifier == 0xa000) {
+                    winMsg(X_PROBED, "Windows keyboard layout device identifier indicates Macintosh, setting Model = \"macintosh\"");
+                    g_winInfo.xkb.model = "macintosh";
+                }
+
+                break;
+            }
+
+            if (bfound)
+                break;
         }
 
         if (!bfound) {
@@ -358,7 +371,7 @@ winConfigKeyboard(DeviceIntPtr pDevice)
         kbdfrom = X_CMDLINE;
 
     /*
-     * Until the layout code is finished, I search for the keyboard 
+     * Until the layout code is finished, I search for the keyboard
      * device and configure the server with it.
      */
 
@@ -588,7 +601,7 @@ winConfigScreens(void)
 
 #ifdef XWIN_XF86CONFIG
 char *
-winSetStrOption(pointer optlist, const char *name, char *deflt)
+winSetStrOption(void *optlist, const char *name, char *deflt)
 {
     OptionInfoRec o;
 
@@ -603,19 +616,19 @@ winSetStrOption(pointer optlist, const char *name, char *deflt)
 }
 
 int
-winSetBoolOption(pointer optlist, const char *name, int deflt)
+winSetBoolOption(void *optlist, const char *name, int deflt)
 {
     OptionInfoRec o;
 
     o.name = name;
     o.type = OPTV_BOOLEAN;
     if (ParseOptionValue(-1, optlist, &o))
-        deflt = o.value.bool;
+        deflt = o.value.boolean;
     return deflt;
 }
 
 int
-winSetIntOption(pointer optlist, const char *name, int deflt)
+winSetIntOption(void *optlist, const char *name, int deflt)
 {
     OptionInfoRec o;
 
@@ -627,7 +640,7 @@ winSetIntOption(pointer optlist, const char *name, int deflt)
 }
 
 double
-winSetRealOption(pointer optlist, const char *name, double deflt)
+winSetRealOption(void *optlist, const char *name, double deflt)
 {
     OptionInfoRec o;
 
@@ -639,7 +652,7 @@ winSetRealOption(pointer optlist, const char *name, double deflt)
 }
 
 double
-winSetPercentOption(pointer optlist, const char *name, double deflt)
+winSetPercentOption(void *optlist, const char *name, double deflt)
 {
     OptionInfoRec o;
 
@@ -653,7 +666,7 @@ winSetPercentOption(pointer optlist, const char *name, double deflt)
 
 /*
  * Compare two strings for equality. This is caseinsensitive  and
- * The characters '_', ' ' (space) and '\t' (tab) are treated as 
+ * The characters '_', ' ' (space) and '\t' (tab) are treated as
  * not existing.
  */
 
@@ -696,7 +709,7 @@ winNameCompare(const char *s1, const char *s2)
 
 #ifdef XWIN_XF86CONFIG
 /*
- * Find the named option in the list. 
+ * Find the named option in the list.
  * @return the pointer to the option record, or NULL if not found.
  */
 
@@ -734,7 +747,7 @@ winFindOptionValue(XF86OptionPtr list, const char *name)
  */
 
 static Bool
-ParseOptionValue(int scrnIndex, pointer options, OptionInfoPtr p)
+ParseOptionValue(int scrnIndex, void *options, OptionInfoPtr p)
 {
     char *s, *end;
 
@@ -762,7 +775,7 @@ ParseOptionValue(int scrnIndex, pointer options, OptionInfoPtr p)
         case OPTV_STRING:
             if (*s == '\0') {
                 winDrvMsg(scrnIndex, X_WARNING,
-                          "Option \"%s\" requires an string value\n", p->name);
+                          "Option \"%s\" requires a string value\n", p->name);
                 p->found = FALSE;
             }
             else {
@@ -905,7 +918,7 @@ ParseOptionValue(int scrnIndex, pointer options, OptionInfoPtr p)
         }
         if ((s = winFindOptionValue(options, newn)) != NULL) {
             if (GetBoolValue(&opt, s)) {
-                p->value.bool = !opt.value.bool;
+                p->value.boolean = !opt.value.boolean;
                 p->found = TRUE;
             }
             else {
@@ -955,25 +968,25 @@ static Bool
 GetBoolValue(OptionInfoPtr p, const char *s)
 {
     if (*s == 0) {
-        p->value.bool = TRUE;
+        p->value.boolean = TRUE;
     }
     else {
         if (winNameCompare(s, "1") == 0)
-            p->value.bool = TRUE;
+            p->value.boolean = TRUE;
         else if (winNameCompare(s, "on") == 0)
-            p->value.bool = TRUE;
+            p->value.boolean = TRUE;
         else if (winNameCompare(s, "true") == 0)
-            p->value.bool = TRUE;
+            p->value.boolean = TRUE;
         else if (winNameCompare(s, "yes") == 0)
-            p->value.bool = TRUE;
+            p->value.boolean = TRUE;
         else if (winNameCompare(s, "0") == 0)
-            p->value.bool = FALSE;
+            p->value.boolean = FALSE;
         else if (winNameCompare(s, "off") == 0)
-            p->value.bool = FALSE;
+            p->value.boolean = FALSE;
         else if (winNameCompare(s, "false") == 0)
-            p->value.bool = FALSE;
+            p->value.boolean = FALSE;
         else if (winNameCompare(s, "no") == 0)
-            p->value.bool = FALSE;
+            p->value.boolean = FALSE;
     }
     return TRUE;
 }

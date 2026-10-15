@@ -53,8 +53,10 @@ struct nameint {
     int val;
     char *name;
 } kbdenc[] = {
-    KB_OVRENC, KB_ENCTAB, {
-0}};
+    KB_OVRENC,
+    KB_ENCTAB,
+    {0}
+};
 
 struct nameint kbdvar[] = {
     {KB_NODEAD | KB_SG, "de_nodeadkeys"},
@@ -161,7 +163,7 @@ wscons_add_keyboard(void)
         }
 
  kbd_config_done:
-    attrs.flags |= ATTR_KEYBOARD;
+    attrs.flags |= ATTR_KEY | ATTR_KEYBOARD;
     rc = NewInputDeviceRequest(input_options, &attrs, &dev);
     if (rc != Success)
         goto unwind;

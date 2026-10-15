@@ -18,16 +18,16 @@
 #  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 #  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-AM_CFLAGS = $(XORG_CFLAGS) $(CWARNFLAGS)
+AM_CFLAGS = $(XORG_CFLAGS) $(CWARNFLAGS) $(OS_FLAGS)
 
 kbd_drv_la_LTLIBRARIES = kbd_drv.la
 kbd_drv_la_LDFLAGS = -avoid-version -module
 kbd_drv_la_SOURCES = kbd.c xf86OSKbd.h xf86Keymap.h atKeynames.h
+kbd_drv_la_LIBADD = $(XORG_LIBS)
 kbd_drv_ladir = @inputdir@
 
 BSD_SRCS = bsd_KbdMap.c bsd_kbd.c bsd_kbd.h at_scancode.c
 HURD_SRCS = hurd_kbd.c at_scancode.c
-LINUX_SRCS = lnx_KbdMap.c lnx_kbd.c lnx_kbd.h at_scancode.c
 SOLARIS_SRCS = sun_kbd.c sun_kbd.h sun_kbdMap.c
 
 if BSD
@@ -38,12 +38,8 @@ if SOLARIS
 kbd_drv_la_SOURCES += $(SOLARIS_SRCS)
 endif
 
-if LINUX
-kbd_drv_la_SOURCES += $(LINUX_SRCS)
-endif
-
 if HURD
 kbd_drv_la_SOURCES += $(HURD_SRCS)
 endif
 
-EXTRA_DIST = $(BSD_SRCS) $(HURD_SRCS) $(LINUX_SRCS) $(SOLARIS_SRCS)
+EXTRA_DIST = $(BSD_SRCS) $(HURD_SRCS) $(SOLARIS_SRCS)

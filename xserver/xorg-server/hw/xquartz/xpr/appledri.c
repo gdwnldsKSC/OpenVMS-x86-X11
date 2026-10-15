@@ -105,7 +105,7 @@ ProcAppleDRIQueryVersion(register ClientPtr client)
         swaps(&rep.minorVersion);
         swapl(&rep.patchVersion);
     }
-    WriteToClient(client, sizeof(xAppleDRIQueryVersionReply), (char *)&rep);
+    WriteToClient(client, sizeof(xAppleDRIQueryVersionReply), &rep);
     return Success;
 }
 
@@ -123,13 +123,17 @@ ProcAppleDRIQueryDirectRenderingCapable(register ClientPtr client)
     rep.length = 0;
     rep.sequenceNumber = client->sequence;
 
+    if (stuff->screen >= screenInfo.numScreens) {
+        return BadValue;
+    }
+
     if (!DRIQueryDirectRenderingCapable(screenInfo.screens[stuff->screen],
                                         &isCapable)) {
         return BadValue;
     }
     rep.isCapable = isCapable;
 
-    if (!LocalClient(client))
+    if (!client->local)
         rep.isCapable = 0;
 
     if (client->swapped) {
@@ -139,7 +143,7 @@ ProcAppleDRIQueryDirectRenderingCapable(register ClientPtr client)
 
     WriteToClient(client,
                   sizeof(xAppleDRIQueryDirectRenderingCapableReply),
-                  (char *)&rep);
+                  &rep);
     return Success;
 }
 
@@ -168,7 +172,7 @@ ProcAppleDRIAuthConnection(register ClientPtr client)
         swapl(&rep.authenticated); /* Yes, this is a CARD32 ... sigh */
     }
 
-    WriteToClient(client, sizeof(xAppleDRIAuthConnectionReply), (char *)&rep);
+    WriteToClient(client, sizeof(xAppleDRIAuthConnectionReply), &rep);
     return Success;
 }
 
@@ -232,7 +236,7 @@ ProcAppleDRICreateSurface(ClientPtr client)
         swapl(&rep.uid);
     }
 
-    WriteToClient(client, sizeof(xAppleDRICreateSurfaceReply), (char *)&rep);
+    WriteToClient(client, sizeof(xAppleDRICreateSurfaceReply), &rep);
     return Success;
 }
 
@@ -268,6 +272,7 @@ ProcAppleDRICreatePixmap(ClientPtr client)
     xAppleDRICreatePixmapReply rep;
     int width, height, pitch, bpp;
     void *ptr;
+    CARD32 stringLength;
 
     REQUEST_SIZE_MATCH(xAppleDRICreatePixmapReq);
 
@@ -303,6 +308,7 @@ ProcAppleDRICreatePixmap(ClientPtr client)
     if (sizeof(rep) != sz_xAppleDRICreatePixmapReply)
         ErrorF("error sizeof(rep) is %zu\n", sizeof(rep));
 
+    stringLength = rep.stringLength;  /* save unswapped value */
     if (client->swapped) {
         swaps(&rep.sequenceNumber);
         swapl(&rep.length);
@@ -315,7 +321,7 @@ ProcAppleDRICreatePixmap(ClientPtr client)
     }
 
     WriteToClient(client, sizeof(rep), &rep);
-    WriteToClient(client, rep.stringLength, path);
+    WriteToClient(client, stringLength, path);
 
     return Success;
 }
@@ -354,7 +360,7 @@ ProcAppleDRIDispatch(register ClientPtr client)
         return ProcAppleDRIQueryDirectRenderingCapable(client);
     }
 
-    if (!LocalClient(client))
+    if (!client->local)
         return DRIErrorBase + AppleDRIClientNotLocal;
 
     switch (stuff->data) {
@@ -402,6 +408,7 @@ SProcAppleDRIQueryDirectRenderingCapable(register ClientPtr client)
 {
     REQUEST(xAppleDRIQueryDirectRenderingCapableReq);
     swaps(&stuff->length);
+    REQUEST_SIZE_MATCH(xAppleDRIQueryDirectRenderingCapableReq);
     swapl(&stuff->screen);
     return ProcAppleDRIQueryDirectRenderingCapable(client);
 }
@@ -411,6 +418,7 @@ SProcAppleDRIAuthConnection(register ClientPtr client)
 {
     REQUEST(xAppleDRIAuthConnectionReq);
     swaps(&stuff->length);
+    REQUEST_SIZE_MATCH(xAppleDRIAuthConnectionReq);
     swapl(&stuff->screen);
     swapl(&stuff->magic);
     return ProcAppleDRIAuthConnection(client);
@@ -421,6 +429,7 @@ SProcAppleDRICreateSurface(register ClientPtr client)
 {
     REQUEST(xAppleDRICreateSurfaceReq);
     swaps(&stuff->length);
+    REQUEST_SIZE_MATCH(xAppleDRICreateSurfaceReq);
     swapl(&stuff->screen);
     swapl(&stuff->drawable);
     swapl(&stuff->client_id);
@@ -432,6 +441,7 @@ SProcAppleDRIDestroySurface(register ClientPtr client)
 {
     REQUEST(xAppleDRIDestroySurfaceReq);
     swaps(&stuff->length);
+    REQUEST_SIZE_MATCH(xAppleDRIDestroySurfaceReq);
     swapl(&stuff->screen);
     swapl(&stuff->drawable);
     return ProcAppleDRIDestroySurface(client);
@@ -442,6 +452,7 @@ SProcAppleDRICreatePixmap(register ClientPtr client)
 {
     REQUEST(xAppleDRICreatePixmapReq);
     swaps(&stuff->length);
+    REQUEST_SIZE_MATCH(xAppleDRICreatePixmapReq);
     swapl(&stuff->screen);
     swapl(&stuff->drawable);
     return ProcAppleDRICreatePixmap(client);
@@ -452,6 +463,7 @@ SProcAppleDRIDestroyPixmap(register ClientPtr client)
 {
     REQUEST(xAppleDRIDestroyPixmapReq);
     swaps(&stuff->length);
+    REQUEST_SIZE_MATCH(xAppleDRIDestroyPixmapReq);
     swapl(&stuff->drawable);
     return ProcAppleDRIDestroyPixmap(client);
 }
@@ -469,7 +481,7 @@ SProcAppleDRIDispatch(register ClientPtr client)
         return SProcAppleDRIQueryDirectRenderingCapable(client);
     }
 
-    if (!LocalClient(client))
+    if (!client->local)
         return DRIErrorBase + AppleDRIClientNotLocal;
 
     switch (stuff->data) {

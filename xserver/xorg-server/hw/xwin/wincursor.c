@@ -95,18 +95,16 @@ winPointerWarpCursor(DeviceIntPtr pDev, ScreenPtr pScreen, int x, int y)
      */
     if ((pScreenPriv->hwndScreen == GetForegroundWindow())
         || pScreenPriv->pScreenInfo->fRootless
-#ifdef XWIN_MULTIWINDOW
         || pScreenPriv->pScreenInfo->fMultiWindow
-#endif
         ) {
         /* Get the client area coordinates */
         GetClientRect(pScreenPriv->hwndScreen, &rcClient);
 
         /* Translate the client area coords to screen coords */
         MapWindowPoints(pScreenPriv->hwndScreen,
-                        HWND_DESKTOP, (LPPOINT) & rcClient, 2);
+                        HWND_DESKTOP, (LPPOINT) &rcClient, 2);
 
-        /* 
+        /*
          * Update the Windows cursor position so that we don't
          * immediately warp back to the current position.
          */
@@ -158,25 +156,24 @@ winLoadCursor(ScreenPtr pScreen, CursorPtr pCursor, int screen)
     HBITMAP hAnd, hXor;
     ICONINFO ii;
     unsigned char *pCur;
-    int x, y;
     unsigned char bit;
     HDC hDC;
     BITMAPV4HEADER bi;
     BITMAPINFO *pbmi;
-    unsigned long *lpBits;
+    uint32_t *lpBits;
 
     WIN_DEBUG_MSG("winLoadCursor: Win32: %dx%d X11: %dx%d hotspot: %d,%d\n",
                   pScreenPriv->cursor.sm_cx, pScreenPriv->cursor.sm_cy,
                   pCursor->bits->width, pCursor->bits->height,
                   pCursor->bits->xhot, pCursor->bits->yhot);
 
-    /* We can use only White and Black, so calc brightness of color 
+    /* We can use only White and Black, so calc brightness of color
      * Also check if the cursor is inverted */
     dForeY = BRIGHTNESS(pCursor->fore);
     dBackY = BRIGHTNESS(pCursor->back);
     fReverse = dForeY < dBackY;
 
-    /* Check wether the X11 cursor is bigger than the win32 cursor */
+    /* Check whether the X11 cursor is bigger than the win32 cursor */
     if (pScreenPriv->cursor.sm_cx < pCursor->bits->width ||
         pScreenPriv->cursor.sm_cy < pCursor->bits->height) {
         winErrorFVerb(3,
@@ -185,8 +182,8 @@ winLoadCursor(ScreenPtr pScreen, CursorPtr pCursor, int screen)
                       pCursor->bits->width, pCursor->bits->height);
     }
 
-    /* Get the number of bytes required to store the whole cursor image 
-     * This is roughly (sm_cx * sm_cy) / 8 
+    /* Get the number of bytes required to store the whole cursor image
+     * This is roughly (sm_cx * sm_cy) / 8
      * round up to 8 pixel boundary so we can convert whole bytes */
     nBytes =
         bits_to_bytes(pScreenPriv->cursor.sm_cx) * pScreenPriv->cursor.sm_cy;
@@ -200,7 +197,7 @@ winLoadCursor(ScreenPtr pScreen, CursorPtr pCursor, int screen)
     memset(pAnd, 0xFF, nBytes);
     pXor = calloc(1, nBytes);
 
-    /* Convert the X11 bitmap to a win32 bitmap 
+    /* Convert the X11 bitmap to a win32 bitmap
      * The first is for an empty mask */
     if (pCursor->bits->emptyMask) {
         int x, y, xmax = bits_to_bytes(nCX);
@@ -256,15 +253,13 @@ winLoadCursor(ScreenPtr pScreen, CursorPtr pCursor, int screen)
         bi.bV4BlueMask = 0x000000FF;
         bi.bV4AlphaMask = 0xFF000000;
 
-        lpBits =
-            (unsigned long *) calloc(pScreenPriv->cursor.sm_cx *
-                                     pScreenPriv->cursor.sm_cy,
-                                     sizeof(unsigned long));
+        lpBits = calloc(pScreenPriv->cursor.sm_cx * pScreenPriv->cursor.sm_cy,
+                        sizeof(uint32_t));
 
         if (lpBits) {
+            int y;
             for (y = 0; y < nCY; y++) {
-                unsigned long *src, *dst;
-
+                void *src, *dst;
                 src = &(pCursor->bits->argb[y * pCursor->bits->width]);
                 dst = &(lpBits[y * pScreenPriv->cursor.sm_cx]);
                 memcpy(dst, src, 4 * nCX);
@@ -273,9 +268,12 @@ winLoadCursor(ScreenPtr pScreen, CursorPtr pCursor, int screen)
     }                           /* End if-truecolor-icon */
 
     if (!lpBits) {
+        RGBQUAD *pbmiColors;
         /* Bicolor, use a palettized DIB */
         WIN_DEBUG_MSG("winLoadCursor: Trying two color cursor\n");
-        pbmi = (BITMAPINFO *) & bi;
+        pbmi = (BITMAPINFO *) &bi;
+        pbmiColors = &(pbmi->bmiColors[0]);
+
         memset(pbmi, 0, sizeof(BITMAPINFOHEADER));
         pbmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
         pbmi->bmiHeader.biWidth = pScreenPriv->cursor.sm_cx;
@@ -286,25 +284,25 @@ winLoadCursor(ScreenPtr pScreen, CursorPtr pCursor, int screen)
         pbmi->bmiHeader.biSizeImage = 0;
         pbmi->bmiHeader.biClrUsed = 3;
         pbmi->bmiHeader.biClrImportant = 3;
-        pbmi->bmiColors[0].rgbRed = 0;  /* Empty */
-        pbmi->bmiColors[0].rgbGreen = 0;
-        pbmi->bmiColors[0].rgbBlue = 0;
-        pbmi->bmiColors[0].rgbReserved = 0;
-        pbmi->bmiColors[1].rgbRed = pCursor->backRed >> 8;      /* Background */
-        pbmi->bmiColors[1].rgbGreen = pCursor->backGreen >> 8;
-        pbmi->bmiColors[1].rgbBlue = pCursor->backBlue >> 8;
-        pbmi->bmiColors[1].rgbReserved = 0;
-        pbmi->bmiColors[2].rgbRed = pCursor->foreRed >> 8;      /* Foreground */
-        pbmi->bmiColors[2].rgbGreen = pCursor->foreGreen >> 8;
-        pbmi->bmiColors[2].rgbBlue = pCursor->foreBlue >> 8;
-        pbmi->bmiColors[2].rgbReserved = 0;
 
-        lpBits =
-            (unsigned long *) calloc(pScreenPriv->cursor.sm_cx *
-                                     pScreenPriv->cursor.sm_cy, sizeof(char));
+        pbmiColors[0].rgbRed = 0;  /* Empty */
+        pbmiColors[0].rgbGreen = 0;
+        pbmiColors[0].rgbBlue = 0;
+        pbmiColors[0].rgbReserved = 0;
+        pbmiColors[1].rgbRed = pCursor->backRed >> 8;      /* Background */
+        pbmiColors[1].rgbGreen = pCursor->backGreen >> 8;
+        pbmiColors[1].rgbBlue = pCursor->backBlue >> 8;
+        pbmiColors[1].rgbReserved = 0;
+        pbmiColors[2].rgbRed = pCursor->foreRed >> 8;      /* Foreground */
+        pbmiColors[2].rgbGreen = pCursor->foreGreen >> 8;
+        pbmiColors[2].rgbBlue = pCursor->foreBlue >> 8;
+        pbmiColors[2].rgbReserved = 0;
+
+        lpBits = calloc(pScreenPriv->cursor.sm_cx * pScreenPriv->cursor.sm_cy, 1);
 
         pCur = (unsigned char *) lpBits;
         if (lpBits) {
+	    int x, y;
             for (y = 0; y < pScreenPriv->cursor.sm_cy; y++) {
                 for (x = 0; x < pScreenPriv->cursor.sm_cx; x++) {
                     if (x >= nCX || y >= nCY)   /* Outside of X11 icon bounds */
@@ -357,7 +355,7 @@ winLoadCursor(ScreenPtr pScreen, CursorPtr pCursor, int screen)
                 CreateCompatibleBitmap(hDC, pScreenPriv->cursor.sm_cx,
                                        pScreenPriv->cursor.sm_cy);
             SetDIBits(hDC, hXor, 0, pScreenPriv->cursor.sm_cy, lpBits,
-                      (BITMAPINFO *) & bi, DIB_RGB_COLORS);
+                      (BITMAPINFO *) &bi, DIB_RGB_COLORS);
             ReleaseDC(NULL, hDC);
         }
         free(lpBits);

@@ -28,7 +28,7 @@ $ support = F$PARSE(procedure,,,"DEVICE") + F$PARSE(procedure,,,"DIRECTORY")
 $ SET DEFAULT 'support'
 $ SET DEFAULT [-]
 $ SET DEFAULT [-]
-$ IF F$SEARCH("[.PROTO.XPROTO]XFUNCPROTO^.H.IN") .EQS. "" THEN GOTO usage
+$ IF F$SEARCH("[.PROTO.XORGPROTO.INCLUDE.X11]XFUNCPROTO.H") .EQS. "" THEN GOTO usage
 $ root = F$PARSE(P1,,,"DEVICE","SYNTAX_ONLY") + F$PARSE(P1,,,"DIRECTORY","SYNTAX_ONLY")
 $ root_directory = F$PARSE(root,,,"DIRECTORY","SYNTAX_ONLY")
 $ IF root_directory .EQS. "[000000]" THEN GOTO usage

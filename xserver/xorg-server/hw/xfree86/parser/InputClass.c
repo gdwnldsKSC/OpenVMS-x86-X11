@@ -23,8 +23,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/* View/edit this file with tab stops set to 4 */
-
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
 #endif
@@ -35,10 +33,8 @@
 #include "xf86tokens.h"
 #include "Configint.h"
 
-extern LexRec val;
 
-static
-xf86ConfigSymTabRec InputClassTab[] = {
+static const xf86ConfigSymTabRec InputClassTab[] = {
     {ENDSECTION, "endsection"},
     {IDENTIFIER, "identifier"},
     {OPTION, "option"},
@@ -56,22 +52,114 @@ xf86ConfigSymTabRec InputClassTab[] = {
     {MATCH_IS_POINTER, "matchispointer"},
     {MATCH_IS_JOYSTICK, "matchisjoystick"},
     {MATCH_IS_TABLET, "matchistablet"},
+    {MATCH_IS_TABLET_PAD, "matchistabletpad"},
     {MATCH_IS_TOUCHPAD, "matchistouchpad"},
     {MATCH_IS_TOUCHSCREEN, "matchistouchscreen"},
+    {NOMATCH_PRODUCT, "nomatchproduct"},
+    {NOMATCH_VENDOR, "nomatchvendor"},
+    {NOMATCH_DEVICE_PATH, "nomatchdevicepath"},
+    {NOMATCH_OS, "nomatchos"},
+    {NOMATCH_PNPID, "nomatchpnpid"},
+    {NOMATCH_USBID, "nomatchusbid"},
+    {NOMATCH_DRIVER, "nomatchdriver"},
+    {NOMATCH_TAG, "nomatchtag"},
+    {NOMATCH_LAYOUT, "nomatchlayout"},
     {-1, ""},
 };
+
+static void
+xf86freeInputClassList(XF86ConfInputClassPtr ptr)
+{
+    XF86ConfInputClassPtr prev;
+
+    while (ptr) {
+        xf86MatchGroup *group, *next;
+        char **list;
+
+        TestFree(ptr->identifier);
+        TestFree(ptr->driver);
+
+        xorg_list_for_each_entry_safe(group, next, &ptr->match_product, entry) {
+            xorg_list_del(&group->entry);
+            for (list = group->values; *list; list++)
+                free(*list);
+            free(group);
+        }
+        xorg_list_for_each_entry_safe(group, next, &ptr->match_vendor, entry) {
+            xorg_list_del(&group->entry);
+            for (list = group->values; *list; list++)
+                free(*list);
+            free(group);
+        }
+        xorg_list_for_each_entry_safe(group, next, &ptr->match_device, entry) {
+            xorg_list_del(&group->entry);
+            for (list = group->values; *list; list++)
+                free(*list);
+            free(group);
+        }
+        xorg_list_for_each_entry_safe(group, next, &ptr->match_os, entry) {
+            xorg_list_del(&group->entry);
+            for (list = group->values; *list; list++)
+                free(*list);
+            free(group);
+        }
+        xorg_list_for_each_entry_safe(group, next, &ptr->match_pnpid, entry) {
+            xorg_list_del(&group->entry);
+            for (list = group->values; *list; list++)
+                free(*list);
+            free(group);
+        }
+        xorg_list_for_each_entry_safe(group, next, &ptr->match_usbid, entry) {
+            xorg_list_del(&group->entry);
+            for (list = group->values; *list; list++)
+                free(*list);
+            free(group);
+        }
+        xorg_list_for_each_entry_safe(group, next, &ptr->match_driver, entry) {
+            xorg_list_del(&group->entry);
+            for (list = group->values; *list; list++)
+                free(*list);
+            free(group);
+        }
+        xorg_list_for_each_entry_safe(group, next, &ptr->match_tag, entry) {
+            xorg_list_del(&group->entry);
+            for (list = group->values; *list; list++)
+                free(*list);
+            free(group);
+        }
+        xorg_list_for_each_entry_safe(group, next, &ptr->match_layout, entry) {
+            xorg_list_del(&group->entry);
+            for (list = group->values; *list; list++)
+                free(*list);
+            free(group);
+        }
+
+        TestFree(ptr->comment);
+        xf86optionListFree(ptr->option_lst);
+
+        prev = ptr;
+        ptr = ptr->list.next;
+        free(prev);
+    }
+}
 
 #define CLEANUP xf86freeInputClassList
 
 #define TOKEN_SEP "|"
 
+enum MatchType {
+    MATCH_NORMAL,
+    MATCH_NEGATED,
+};
+
 static void
-add_group_entry(struct xorg_list *head, char **values)
+add_group_entry(struct xorg_list *head, char **values, enum MatchType type)
 {
     xf86MatchGroup *group;
 
     group = malloc(sizeof(*group));
     if (group) {
+        group->is_negated = (type == MATCH_NEGATED);
         group->values = values;
         xorg_list_add(&group->entry, head);
     }
@@ -82,11 +170,12 @@ xf86parseInputClassSection(void)
 {
     int has_ident = FALSE;
     int token;
+    enum MatchType matchtype;
 
     parsePrologue(XF86ConfInputClassPtr, XF86ConfInputClassRec)
 
-        /* Initialize MatchGroup lists */
-        xorg_list_init(&ptr->match_product);
+    /* Initialize MatchGroup lists */
+    xorg_list_init(&ptr->match_product);
     xorg_list_init(&ptr->match_vendor);
     xorg_list_init(&ptr->match_device);
     xorg_list_init(&ptr->match_os);
@@ -97,98 +186,140 @@ xf86parseInputClassSection(void)
     xorg_list_init(&ptr->match_layout);
 
     while ((token = xf86getToken(InputClassTab)) != ENDSECTION) {
+        matchtype = MATCH_NORMAL;
+
         switch (token) {
         case COMMENT:
-            ptr->comment = xf86addComment(ptr->comment, val.str);
+            ptr->comment = xf86addComment(ptr->comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
             break;
         case IDENTIFIER:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "Identifier");
             if (has_ident == TRUE)
                 Error(MULTIPLE_MSG, "Identifier");
-            ptr->identifier = val.str;
+            ptr->identifier = xf86_lex_val.str;
             has_ident = TRUE;
             break;
         case DRIVER:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "Driver");
-            if (strcmp(val.str, "keyboard") == 0) {
+            if (strcmp(xf86_lex_val.str, "keyboard") == 0) {
                 ptr->driver = strdup("kbd");
-                free(val.str);
+                free(xf86_lex_val.str);
             }
             else
-                ptr->driver = val.str;
+                ptr->driver = xf86_lex_val.str;
             break;
         case OPTION:
             ptr->option_lst = xf86parseOption(ptr->option_lst);
             break;
+        case NOMATCH_PRODUCT:
+            matchtype = MATCH_NEGATED;
+            /* fallthrough */
         case MATCH_PRODUCT:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchProduct");
             add_group_entry(&ptr->match_product,
-                            xstrtokenize(val.str, TOKEN_SEP));
-            free(val.str);
+                            xstrtokenize(xf86_lex_val.str, TOKEN_SEP),
+                            matchtype);
+            free(xf86_lex_val.str);
             break;
+        case NOMATCH_VENDOR:
+            matchtype = MATCH_NEGATED;
+            /* fallthrough */
         case MATCH_VENDOR:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchVendor");
             add_group_entry(&ptr->match_vendor,
-                            xstrtokenize(val.str, TOKEN_SEP));
-            free(val.str);
+                            xstrtokenize(xf86_lex_val.str, TOKEN_SEP),
+                            matchtype);
+            free(xf86_lex_val.str);
             break;
+        case NOMATCH_DEVICE_PATH:
+            matchtype = MATCH_NEGATED;
+            /* fallthrough */
         case MATCH_DEVICE_PATH:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchDevicePath");
             add_group_entry(&ptr->match_device,
-                            xstrtokenize(val.str, TOKEN_SEP));
-            free(val.str);
+                            xstrtokenize(xf86_lex_val.str, TOKEN_SEP),
+                            matchtype);
+            free(xf86_lex_val.str);
             break;
+        case NOMATCH_OS:
+            matchtype = MATCH_NEGATED;
+            /* fallthrough */
         case MATCH_OS:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchOS");
-            add_group_entry(&ptr->match_os, xstrtokenize(val.str, TOKEN_SEP));
-            free(val.str);
+            add_group_entry(&ptr->match_os, xstrtokenize(xf86_lex_val.str,
+                                                         TOKEN_SEP),
+                            matchtype);
+            free(xf86_lex_val.str);
             break;
+        case NOMATCH_PNPID:
+            matchtype = MATCH_NEGATED;
+            /* fallthrough */
         case MATCH_PNPID:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchPnPID");
             add_group_entry(&ptr->match_pnpid,
-                            xstrtokenize(val.str, TOKEN_SEP));
-            free(val.str);
+                            xstrtokenize(xf86_lex_val.str, TOKEN_SEP),
+                            matchtype);
+            free(xf86_lex_val.str);
             break;
+        case NOMATCH_USBID:
+            matchtype = MATCH_NEGATED;
+            /* fallthrough */
         case MATCH_USBID:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchUSBID");
             add_group_entry(&ptr->match_usbid,
-                            xstrtokenize(val.str, TOKEN_SEP));
-            free(val.str);
+                            xstrtokenize(xf86_lex_val.str, TOKEN_SEP),
+                            matchtype);
+            free(xf86_lex_val.str);
             break;
+        case NOMATCH_DRIVER:
+            matchtype = MATCH_NEGATED;
+            /* fallthrough */
         case MATCH_DRIVER:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchDriver");
             add_group_entry(&ptr->match_driver,
-                            xstrtokenize(val.str, TOKEN_SEP));
-            free(val.str);
+                            xstrtokenize(xf86_lex_val.str, TOKEN_SEP),
+                            matchtype);
+            free(xf86_lex_val.str);
             break;
+        case NOMATCH_TAG:
+            matchtype = MATCH_NEGATED;
+            /* fallthrough */
         case MATCH_TAG:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchTag");
-            add_group_entry(&ptr->match_tag, xstrtokenize(val.str, TOKEN_SEP));
-            free(val.str);
+            add_group_entry(&ptr->match_tag, xstrtokenize(xf86_lex_val.str,
+                                                          TOKEN_SEP),
+                            matchtype);
+            free(xf86_lex_val.str);
             break;
+        case NOMATCH_LAYOUT:
+            matchtype = MATCH_NEGATED;
+            /* fallthrough */
         case MATCH_LAYOUT:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchLayout");
             add_group_entry(&ptr->match_layout,
-                            xstrtokenize(val.str, TOKEN_SEP));
-            free(val.str);
+                            xstrtokenize(xf86_lex_val.str, TOKEN_SEP),
+                            matchtype);
+            free(xf86_lex_val.str);
             break;
         case MATCH_IS_KEYBOARD:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchIsKeyboard");
             ptr->is_keyboard.set = xf86getBoolValue(&ptr->is_keyboard.val,
-                                                    val.str);
-            free(val.str);
+                                                    xf86_lex_val.str);
+            free(xf86_lex_val.str);
             if (!ptr->is_keyboard.set)
                 Error(BOOL_MSG, "MatchIsKeyboard");
             break;
@@ -196,8 +327,8 @@ xf86parseInputClassSection(void)
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchIsPointer");
             ptr->is_pointer.set = xf86getBoolValue(&ptr->is_pointer.val,
-                                                   val.str);
-            free(val.str);
+                                                   xf86_lex_val.str);
+            free(xf86_lex_val.str);
             if (!ptr->is_pointer.set)
                 Error(BOOL_MSG, "MatchIsPointer");
             break;
@@ -205,25 +336,33 @@ xf86parseInputClassSection(void)
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchIsJoystick");
             ptr->is_joystick.set = xf86getBoolValue(&ptr->is_joystick.val,
-                                                    val.str);
-            free(val.str);
+                                                    xf86_lex_val.str);
+            free(xf86_lex_val.str);
             if (!ptr->is_joystick.set)
                 Error(BOOL_MSG, "MatchIsJoystick");
             break;
         case MATCH_IS_TABLET:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchIsTablet");
-            ptr->is_tablet.set = xf86getBoolValue(&ptr->is_tablet.val, val.str);
-            free(val.str);
+            ptr->is_tablet.set = xf86getBoolValue(&ptr->is_tablet.val, xf86_lex_val.str);
+            free(xf86_lex_val.str);
             if (!ptr->is_tablet.set)
                 Error(BOOL_MSG, "MatchIsTablet");
+            break;
+        case MATCH_IS_TABLET_PAD:
+            if (xf86getSubToken(&(ptr->comment)) != STRING)
+                Error(QUOTE_MSG, "MatchIsTabletPad");
+            ptr->is_tablet_pad.set = xf86getBoolValue(&ptr->is_tablet_pad.val, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            if (!ptr->is_tablet_pad.set)
+                Error(BOOL_MSG, "MatchIsTabletPad");
             break;
         case MATCH_IS_TOUCHPAD:
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchIsTouchpad");
             ptr->is_touchpad.set = xf86getBoolValue(&ptr->is_touchpad.val,
-                                                    val.str);
-            free(val.str);
+                                                    xf86_lex_val.str);
+            free(xf86_lex_val.str);
             if (!ptr->is_touchpad.set)
                 Error(BOOL_MSG, "MatchIsTouchpad");
             break;
@@ -231,8 +370,8 @@ xf86parseInputClassSection(void)
             if (xf86getSubToken(&(ptr->comment)) != STRING)
                 Error(QUOTE_MSG, "MatchIsTouchscreen");
             ptr->is_touchscreen.set = xf86getBoolValue(&ptr->is_touchscreen.val,
-                                                       val.str);
-            free(val.str);
+                                                       xf86_lex_val.str);
+            free(xf86_lex_val.str);
             if (!ptr->is_touchscreen.set)
                 Error(BOOL_MSG, "MatchIsTouchscreen");
             break;
@@ -346,6 +485,9 @@ xf86printInputClassSection(FILE * cf, XF86ConfInputClassPtr ptr)
         if (ptr->is_tablet.set)
             fprintf(cf, "\tIsTablet        \"%s\"\n",
                     ptr->is_tablet.val ? "yes" : "no");
+        if (ptr->is_tablet_pad.set)
+            fprintf(cf, "\tIsTabletPad     \"%s\"\n",
+                    ptr->is_tablet_pad.val ? "yes" : "no");
         if (ptr->is_touchpad.set)
             fprintf(cf, "\tIsTouchpad      \"%s\"\n",
                     ptr->is_touchpad.val ? "yes" : "no");
@@ -355,81 +497,5 @@ xf86printInputClassSection(FILE * cf, XF86ConfInputClassPtr ptr)
         xf86printOptionList(cf, ptr->option_lst, 1);
         fprintf(cf, "EndSection\n\n");
         ptr = ptr->list.next;
-    }
-}
-
-void
-xf86freeInputClassList(XF86ConfInputClassPtr ptr)
-{
-    XF86ConfInputClassPtr prev;
-
-    while (ptr) {
-        xf86MatchGroup *group, *next;
-        char **list;
-
-        TestFree(ptr->identifier);
-        TestFree(ptr->driver);
-
-        xorg_list_for_each_entry_safe(group, next, &ptr->match_product, entry) {
-            xorg_list_del(&group->entry);
-            for (list = group->values; *list; list++)
-                free(*list);
-            free(group);
-        }
-        xorg_list_for_each_entry_safe(group, next, &ptr->match_vendor, entry) {
-            xorg_list_del(&group->entry);
-            for (list = group->values; *list; list++)
-                free(*list);
-            free(group);
-        }
-        xorg_list_for_each_entry_safe(group, next, &ptr->match_device, entry) {
-            xorg_list_del(&group->entry);
-            for (list = group->values; *list; list++)
-                free(*list);
-            free(group);
-        }
-        xorg_list_for_each_entry_safe(group, next, &ptr->match_os, entry) {
-            xorg_list_del(&group->entry);
-            for (list = group->values; *list; list++)
-                free(*list);
-            free(group);
-        }
-        xorg_list_for_each_entry_safe(group, next, &ptr->match_pnpid, entry) {
-            xorg_list_del(&group->entry);
-            for (list = group->values; *list; list++)
-                free(*list);
-            free(group);
-        }
-        xorg_list_for_each_entry_safe(group, next, &ptr->match_usbid, entry) {
-            xorg_list_del(&group->entry);
-            for (list = group->values; *list; list++)
-                free(*list);
-            free(group);
-        }
-        xorg_list_for_each_entry_safe(group, next, &ptr->match_driver, entry) {
-            xorg_list_del(&group->entry);
-            for (list = group->values; *list; list++)
-                free(*list);
-            free(group);
-        }
-        xorg_list_for_each_entry_safe(group, next, &ptr->match_tag, entry) {
-            xorg_list_del(&group->entry);
-            for (list = group->values; *list; list++)
-                free(*list);
-            free(group);
-        }
-        xorg_list_for_each_entry_safe(group, next, &ptr->match_layout, entry) {
-            xorg_list_del(&group->entry);
-            for (list = group->values; *list; list++)
-                free(*list);
-            free(group);
-        }
-
-        TestFree(ptr->comment);
-        xf86optionListFree(ptr->option_lst);
-
-        prev = ptr;
-        ptr = ptr->list.next;
-        free(prev);
     }
 }

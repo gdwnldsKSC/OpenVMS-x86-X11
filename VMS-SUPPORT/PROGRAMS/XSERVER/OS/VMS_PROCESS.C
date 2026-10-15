@@ -241,7 +241,7 @@ System(const char *command)
     return system(translated);
 }
 
-pointer
+void *
 Popen(const char *command, const char *type)
 {
     char native[VMS_COMMAND_LIMIT];
@@ -258,7 +258,7 @@ Popen(const char *command, const char *type)
     return popen(translated, type);
 }
 
-pointer
+void *
 Fopen(const char *file, const char *type)
 {
     if (!file || !type) {
@@ -271,13 +271,13 @@ Fopen(const char *file, const char *type)
 }
 
 int
-Pclose(pointer stream)
+Pclose(void *stream)
 {
     return pclose((FILE *)stream);
 }
 
 int
-Fclose(pointer stream)
+Fclose(void *stream)
 {
     return fclose((FILE *)stream);
 }

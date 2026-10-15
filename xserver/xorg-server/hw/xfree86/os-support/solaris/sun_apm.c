@@ -90,39 +90,35 @@ typedef struct apm_event_info {
 #define APM_DEVICE "/dev/srn"
 #define APM_DEVICE1 "/dev/apm"
 
-static pointer APMihPtr = NULL;
+static void *APMihPtr = NULL;
 static void sunCloseAPM(void);
 
 static struct {
     u_int apmBsd;
     pmEvent xf86;
 } sunToXF86Array[] = {
-    {
-    APM_STANDBY_REQ, XF86_APM_SYS_STANDBY}, {
-    APM_SUSPEND_REQ, XF86_APM_SYS_SUSPEND}, {
-    APM_NORMAL_RESUME, XF86_APM_NORMAL_RESUME}, {
-    APM_CRIT_RESUME, XF86_APM_CRITICAL_RESUME}, {
-    APM_BATTERY_LOW, XF86_APM_LOW_BATTERY}, {
-    APM_POWER_CHANGE, XF86_APM_POWER_STATUS_CHANGE}, {
-    APM_UPDATE_TIME, XF86_APM_UPDATE_TIME}, {
-    APM_CRIT_SUSPEND_REQ, XF86_APM_CRITICAL_SUSPEND}, {
-    APM_USER_STANDBY_REQ, XF86_APM_USER_STANDBY}, {
-    APM_USER_SUSPEND_REQ, XF86_APM_USER_SUSPEND}, {
-    APM_SYS_STANDBY_RESUME, XF86_APM_STANDBY_RESUME},
+    {APM_STANDBY_REQ, XF86_APM_SYS_STANDBY},
+    {APM_SUSPEND_REQ, XF86_APM_SYS_SUSPEND},
+    {APM_NORMAL_RESUME, XF86_APM_NORMAL_RESUME},
+    {APM_CRIT_RESUME, XF86_APM_CRITICAL_RESUME},
+    {APM_BATTERY_LOW, XF86_APM_LOW_BATTERY},
+    {APM_POWER_CHANGE, XF86_APM_POWER_STATUS_CHANGE},
+    {APM_UPDATE_TIME, XF86_APM_UPDATE_TIME},
+    {APM_CRIT_SUSPEND_REQ, XF86_APM_CRITICAL_SUSPEND},
+    {APM_USER_STANDBY_REQ, XF86_APM_USER_STANDBY},
+    {APM_USER_SUSPEND_REQ, XF86_APM_USER_SUSPEND},
+    {APM_SYS_STANDBY_RESUME, XF86_APM_STANDBY_RESUME},
 #ifdef APM_CAPABILITY_CHANGE
-    {
-    APM_CAPABILITY_CHANGE, XF86_APM_CAPABILITY_CHANGED},
+    {APM_CAPABILITY_CHANGE, XF86_APM_CAPABILITY_CHANGED},
 #endif
 };
-
-#define numApmEvents (sizeof(sunToXF86Array) / sizeof(sunToXF86Array[0]))
 
 static pmEvent
 sunToXF86(int type)
 {
     int i;
 
-    for (i = 0; i < numApmEvents; i++) {
+    for (i = 0; i < ARRAY_SIZE(sunToXF86Array); i++) {
         if (type == sunToXF86Array[i].apmBsd) {
             return sunToXF86Array[i].xf86;
         }
@@ -131,7 +127,7 @@ sunToXF86(int type)
 }
 
 /*
- * APM events can be requested direclty from /dev/apm 
+ * APM events can be requested directly from /dev/apm
  */
 static int
 sunPMGetEventFromOS(int fd, pmEvent * events, int num)

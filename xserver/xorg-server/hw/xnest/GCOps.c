@@ -94,15 +94,28 @@ xnestPutImage(DrawablePtr pDrawable, GCPtr pGC, int depth, int x, int y,
     }
 }
 
+static int
+xnestIgnoreErrorHandler (Display     *dpy,
+                         XErrorEvent *event)
+{
+    return False; /* return value is ignored */
+}
+
 void
 xnestGetImage(DrawablePtr pDrawable, int x, int y, int w, int h,
               unsigned int format, unsigned long planeMask, char *pImage)
 {
     XImage *ximage;
     int length;
+    int (*old_handler)(Display*, XErrorEvent*);
+
+    /* we may get BadMatch error when xnest window is minimized */
+    XSync(xnestDisplay, False);
+    old_handler = XSetErrorHandler (xnestIgnoreErrorHandler);
 
     ximage = XGetImage(xnestDisplay, xnestDrawable(pDrawable),
                        x, y, w, h, planeMask, format);
+    XSetErrorHandler(old_handler);
 
     if (ximage) {
         length = ximage->bytes_per_line * ximage->height;
@@ -114,7 +127,7 @@ xnestGetImage(DrawablePtr pDrawable, int x, int y, int w, int h,
 }
 
 static Bool
-xnestBitBlitPredicate(Display * display, XEvent * event, char *args)
+xnestBitBlitPredicate(Display * dpy, XEvent * event, char *args)
 {
     return event->type == GraphicsExpose || event->type == NoExpose;
 }
@@ -295,7 +308,7 @@ xnestImageText16(DrawablePtr pDrawable, GCPtr pGC, int x, int y, int count,
 void
 xnestImageGlyphBlt(DrawablePtr pDrawable, GCPtr pGC, int x, int y,
                    unsigned int nGlyphs, CharInfoPtr * pCharInfo,
-                   pointer pGlyphBase)
+                   void *pGlyphBase)
 {
     ErrorF("xnest warning: function xnestImageGlyphBlt not implemented\n");
 }
@@ -303,7 +316,7 @@ xnestImageGlyphBlt(DrawablePtr pDrawable, GCPtr pGC, int x, int y,
 void
 xnestPolyGlyphBlt(DrawablePtr pDrawable, GCPtr pGC, int x, int y,
                   unsigned int nGlyphs, CharInfoPtr * pCharInfo,
-                  pointer pGlyphBase)
+                  void *pGlyphBase)
 {
     ErrorF("xnest warning: function xnestPolyGlyphBlt not implemented\n");
 }

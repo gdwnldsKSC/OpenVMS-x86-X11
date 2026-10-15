@@ -1,8 +1,815 @@
-commit 26a7180bd6b173ac8bc9eb61715fd120d59c7db1
+commit 15cbd2daff2883bd60c3b14aaebced2849189a50
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Nov 13 16:36:11 2024 -0800
+
+    xf86-input-keyboard 2.1.0
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 6c2a8e59f086319260d43ede962de71844541233
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jul 14 11:33:37 2024 -0700
+
+    Move sizeof to second argument in calloc calls
+    
+    Clears -Wcalloc-transposed-args warnings from gcc 14.1, such as:
+    
+    kbd.c: In function ‘KbdPreInit’:
+    kbd.c:160:32: warning: ‘calloc’ sizes specified with ‘sizeof’ in the
+     earlier argument and not in the later argument [-Wcalloc-transposed-args]
+      160 |     if (!(pKbd = calloc(sizeof(KbdDevRec), 1))) {
+          |                                ^~~~~~~~~
+    kbd.c:160:32: note: earlier argument should specify number of elements,
+     later size of each element
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-keyboard/-/merge_requests/14>
+
+commit 8f6fd12607b2b8b5a11b8fb0fc8570434cc106c5
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Thu May 23 20:00:42 2024 +0200
+
+    drop compat for XINPUT < 18
+    
+    Relying on xserver >= 1.18, which has XINPUT 22.1.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-keyboard/-/merge_requests/11>
+
+commit 3507c28114d215196846e62f8da50e8d147ec5e1
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Tue May 14 11:03:42 2024 +0200
+
+    bump minimal xorg version to 1.18
+    
+    1.18 was released a decade ago, so it seems reasonable stop supporting
+    older ones.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-keyboard/-/merge_requests/11>
+
+commit 5f76f920d5dfbf4e0a0860db3183828a59e0ccef
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Fri May 24 13:03:17 2024 +0200
+
+    gitlab CI: fix FreeBSD build
+    
+    On FreeBSD need to make sure, all pkg-config pathes are searched in the
+    correct order.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-keyboard/-/merge_requests/11>
+
+commit d6d6a3c8b1109abda4639e05a5886a0c528a5ea3
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Fri May 24 12:50:15 2024 +0200
+
+    gitlab CI: install libepoll-shim
+    
+    Since MR #1559, the Xserver needs libepoll-shim on FreeBSD.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-keyboard/-/merge_requests/11>
+
+commit e93624c28144830656ce0a652196b24db832cb2d
+Author: nia <nia@NetBSD.org>
+Date:   Fri May 3 13:13:43 2024 +0200
+
+    bsd: Add some missing special keys from Japanese keyboards
+    
+    From Yasushi Oshima.
+    
+    Signed-off-by: Nia Alarie <nia@NetBSD.org>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-keyboard/-/merge_requests/9>
+
+commit f92191b93698de37303e0d2e97523b8e6c1e5684
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri May 3 12:19:09 2024 -0700
+
+    gitlab CI: install xorgproto from git before building the Xserver
+    
+    Xserver git is now failing to build due to:
+    Dependency presentproto found: NO found 1.3 but need: '>= 1.4'
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-input-keyboard/-/merge_requests/10>
+
+commit 40ef7d9e24987eb6708d822d0ea070db8c2b40b9
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Mar 18 17:42:42 2024 -0700
+
+    sun_kbd.c: #include <sys/kbio.h> directly
+    
+    It's needed for the definitions of the KIO* ioctls used in this file,
+    but is currently being indirectly included via xf86_OSlib.h.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit f3510885b26683f98fe8b1fb285a748f1ba7fb5a
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Dec 2 11:07:35 2023 -0800
+
+    configure.ac: updates to quiet obsolete macro warnings
+    
+    Clears autoconf warnings:
+    configure.ac:38: warning: The macro 'AC_PROG_LIBTOOL' is obsolete.
+    configure.ac:38: You should run autoupdate.
+    aclocal.m4:3465: AC_PROG_LIBTOOL is expanded from...
+    configure.ac:38: the top level
+    configure.ac:51: warning: The macro 'AC_HELP_STRING' is obsolete.
+    configure.ac:51: You should run autoupdate.
+    ./lib/autoconf/general.m4:204: AC_HELP_STRING is expanded from...
+    configure.ac:51: the top level
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit ced00875062dce0d18d09c101991c580511f21f6
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Dec 2 11:14:00 2023 -0800
+
+    gitlab CI: update to latest ci-templates & FreeBSD 14.0
+    
+    Needed to avoid "Failed to unpack image" errors in the container-prep
+    job since FreeBSD 13.0 images are no longer available for download
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 7812c11c90e2d3800a56a4834cdf5c616633653b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Feb 25 09:06:53 2023 -0800
+
+    Remove "All rights reserved" from Oracle copyright notices
+    
+    Oracle no longer includes this term in our copyright & license notices.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit fd257556040c2918074e3219b56dbe320d921f1b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Jul 28 17:30:21 2022 -0700
+
+    gitlab CI: stop requiring Signed-off-by in commits
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit c0c98ec2072a78cee53e52b3ec3b03527b276403
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jul 10 16:19:50 2022 -0700
+
+    xf86-input-keyboard 2.0.0
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit baef4f0057047c09c207123c95768112772ca07f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jan 16 11:35:33 2022 -0800
+
+    gitlab CI: add a basic build test
+    
+    Uses FreeBSD 13.0 for build environment
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 8104e36c6121375e2a7233a6c1a39de892839558
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jan 16 11:28:20 2022 -0800
+
+    Fix spelling/wording issues
+    
+    Found by using:
+        codespell --builtin clear,rare,usage,informal,code,names
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 61c24f539463d9bebc4044bba776652306b7c0db
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jan 16 11:25:48 2022 -0800
+
+    Build xz tarballs instead of bzip2
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 7b0803b608a24cbcecaddd89ca1d6ab7a86decfc
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed Oct 30 14:25:34 2019 +1000
+
+    Remove two more linux mentions
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 7e366936d7b7d6c3b4d9c1554908ad20eef74a27
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Oct 29 16:17:27 2019 -0400
+
+    linux: Remove
+    
+    You almost certainly want to be using libinput or evdev on Linux
+    systems, and the Linux code is arguably under the GPL, which is a fine
+    license in general but not for X.org. Delete the Linux support so people
+    stop using it.
+
+commit 44fc9bb658b435222c32611c79f7002d544d15e8
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Nov 25 12:46:53 2018 -0800
+
+    Update configure.ac bug URL for gitlab migration
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d2c19a8b1236a0a67969fcc9a3066809ac929656
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Nov 18 11:36:01 2018 -0800
+
+    Update README for gitlab migration
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 940f44149d1037cfc14bbb3628044a2bd002c33e
+Author: Mihail Konev <k.mvc@ya.ru>
+Date:   Thu Jan 26 14:00:21 2017 +1000
+
+    autogen: add default patch prefix
+    
+    Signed-off-by: Mihail Konev <k.mvc@ya.ru>
+
+commit ac04d59b3757390cce31295d1029bf65ae3102c2
+Author: Emil Velikov <emil.l.velikov@gmail.com>
+Date:   Mon Mar 9 12:00:52 2015 +0000
+
+    autogen.sh: use quoted string variables
+    
+    Place quotes around the $srcdir, $ORIGDIR and $0 variables to prevent
+    fall-outs, when they contain space.
+    
+    Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 6c80cbbd1d4981b4b3d40491c1a2e4b4742f185a
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jan 24 10:32:07 2017 +1000
+
+    autogen.sh: use exec instead of waiting for configure to finish
+    
+    Syncs the invocation of configure with the one from the server.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Emil Velikov <emil.velikov@collabora.com>
+
+commit 0c7f51291f91eee61fcaf05080001a5e9b22fb53
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Nov 17 14:21:48 2016 +1000
+
+    keyboard 1.9.0
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 157e0631b12d0aae4a5f38b81bee615a7eaf553f
+Author: Keith Packard <keithp@keithp.com>
+Date:   Mon May 30 01:27:49 2016 -0700
+
+    Use xf86AddEnabledDevice with threaded input
+    
+    We didn't use SIGIO input for keyboard processing, but we can use
+    threaded input.
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 9ab899863a61b800d58e078e936c0d8d88bc0893
+Author: Alexandr Shadchin <alexandr.shadchin@gmail.com>
+Date:   Tue Nov 24 12:46:44 2015 +0500
+
+    Remove support for X input ABI < 12
+    
+    Signed-off-by: Alexandr Shadchin <alexandr.shadchin@gmail.com>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 0317028c2bd0bfd06efd3c1f192ff9a494757187
+Author: Alexandr Shadchin <alexandr.shadchin@gmail.com>
+Date:   Tue Nov 24 12:46:43 2015 +0500
+
+    Reorder load module stuff
+    
+    Signed-off-by: Alexandr Shadchin <alexandr.shadchin@gmail.com>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 8096183e9cb79944e322dcc0cd1f9e50c97ad2c8
+Author: Alexandr Shadchin <alexandr.shadchin@gmail.com>
+Date:   Tue Nov 24 12:46:42 2015 +0500
+
+    Remove empty function xf86KbdUnplug
+    
+    Signed-off-by: Alexandr Shadchin <alexandr.shadchin@gmail.com>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit ccf63a61f39e1f107a67c33d6a7ad24ea4c76b7e
+Author: Yasushi Oshima <oshima-ya@yagoto-urayama.jp>
+Date:   Mon Jul 20 10:49:49 2015 +0200
+
+    Add defines for Japanese 106-key USB keyboards.
+    
+    Via http://gnats.netbsd.org/48347
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Acked-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 13d320076e5de2d6c3cbc170fc7e31c526ed8499
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Apr 7 09:24:38 2015 +1000
+
+    keyboard 1.8.1
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 65739ef047233567e6053fc57464a42ffe69e989
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed Mar 25 13:37:09 2015 +1000
+
+    linux: bring our process group to the foreground (#89653)
+    
+    Required to make the driver receive keyboard events from the console.
+    
+    X.Org Bug  <http://bugs.freedesktop.org/show_bug.cgi?id=89653>
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Hans de Goede <hdegoede@redhat.com>
+    Tested-by: Ingo Brückl <ib@wupperonline.de>
+
+commit 85fe6b8f56e75338fde1d3a88b1749fd105eb93b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Mar 22 14:26:00 2015 -0700
+
+    Mark xf86OSKbdPreInit as _X_EXPORT in header to match definitions
+    
+    Fixes Solaris Studio 12.4 compiler error:
+    "sun_kbd.c", line 512: redeclaration must have the same or more restrictive linker scoping: xf86OSKbdPreInit
+    cc: acomp failed for sun_kbd.c
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d0c9619675d26284f03ef428ff76cc09bdd4ace3
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Apr 29 16:23:32 2014 +1000
+
+    Init LEDs to zero before querying the value
+    
+    This way if the ioctl fails we don't set any unintended LEDs, but really this
+    patch is more to silence valgrind:
+    
+    ==7129== Conditional jump or move depends on uninitialised value(s)
+    ==7129==    at 0x8DF99A1: GetKbdLeds (lnx_kbd.c:79)
+    ==7129==    by 0x8DF8853: InitKBD (kbd.c:291)
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 5a327955c9287a317e5792e96601375fa5aabced
+Author: Egbert Eich <eich@suse.de>
+Date:   Fri Jan 3 11:48:11 2014 +0100
+
+    Detangle inet keys and jp Henkan/ Muhenkan keys
+    
+    When support for inet keys was added to the keyboard driver
+    back in the early 2000 none of the developers thought of
+    Japanese 106 key keybards which have two extra keys generating
+    the scan codes 0x79 and 0x7d.
+    So for keys prefixed with the scan code 0x60 which were not
+    remapped to anything else the line:
+     *scanCode += 0x78;
+    was added.
+    Thus keys generating the scan codes 0xe0 0x01 and 0xe0 0x03
+    will overlap with the Henkan and Muhenkan keys on Japanese
+    keyboards.
+    A workaround was introduced to xkeyboard-config which makes
+    sure the keycodes 0x79 and 0x7d provide the Henkan and Muhenkan
+    keysyms. As a consequence users might loose some multimedia keys
+    on Japanese keyboards.
+    A different solution would be to either remap keycodes 0x79
+    and 0x7d or keycodes 0xe0 0x01 and 0xe0 0x03 into the range of
+    unused (X-)keycodes above 0xfb.
+    There are downsides with either solution: the legacy keyboard
+    driver and the xkb files would have to be fixed in sync. Otherwise
+    Japanese users would loose their Henkan and Muhenkan keys (in
+    the first case) or some multimedia keys would get lost.
+    The present patch does the latter which seems to be cleaner codewise.
+    
+    Signed-off-by: Egbert Eich <eich@suse.de>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit ddeb7940b956682451392717b135be4454b5756e
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri Nov 1 09:45:21 2013 +1000
+
+    keyboard 1.8.0
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 014101d157fb7eb54c79fecc424b53ca95f582bc
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Sun Oct 27 13:53:34 2013 +0100
+
+    Whitespace fixes.
+    
+    Replace <SPACE><TAB> with <TAB>.
+    Remove whitespace at end-of-line.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Matthieu Herrb <matthieu@herrb.eu>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit b8f4e7065566512a123c4957ab432cad3e7c688e
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Tue Jul 30 15:07:31 2013 +0200
+
+    Check open() return value.
+    
+    Suggested by Walter Harms <wharms@bfs.de>.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit dc9486a22f4b7fec2860928c555636bfc9f58741
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:49 2013 +0200
+
+    Factor out common code.
+    
+    Suggested by Walter Harms <wharms@bfs.de>.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2d6661d5c7aff662ad76ddb225664260f0a07a1e
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:48 2013 +0200
+
+    Do not assume type in WS_*_MAP_SIZE macros.
+    
+    Suggested by Walter Harms <wharms@bfs.de>.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 6042ab2647197d9aa09578ed1befe03931737f1c
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:47 2013 +0200
+
+    Add some NetBSD feature detection code.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 4f1a3cff9dfbfb33fcc6ff0a4ffd1db106301b97
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:46 2013 +0200
+
+    Move WSCONS case inside switch statement.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 390c4621dd4e2f6070508796385e2d23e5418b89
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:45 2013 +0200
+
+    Improve auto-detection.
+    
+    If WSKBDIO_GTYPE succeeds and returns type=0, it is a mux with no
+    keyboard attached. In this case, assume USB.
+    
+    >From Jared McNeill <jmcneill@NetBSD.org>
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 8ac42401a6db161e0983df17ac1787f164faf2f3
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:44 2013 +0200
+
+    Fix wskbd handling when VT switching.
+    
+    When using /dev/wskbd* we need to close the device when VT switching
+    out of X, and open it again when switching back.
+    
+    >From Michael Lorenz <macallan@NetBSD.org>
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit d61dcfd5c297f405a4c200131e88e5dfc95bfa95
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:43 2013 +0200
+
+    Make OpenKeyboard() warn instead of error out.
+    
+    This way we can still setup keyboard map manually by xmodmap(1)
+    etc. on less well supported ports.
+    
+    >From Izumi Tsutsui <tsutsui@NetBSD.org>
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit e511907a5f7047a9c14b378084525137510511f5
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:42 2013 +0200
+
+    Add WSKBD_TYPE_LK201.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit e5ecacb20ad3685d6f422c5ed21632fb8b1f7fa0
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:41 2013 +0200
+
+    Add default device for Protocol "wskbd".
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Mark Kettenis <kettenis@openbsd.org>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 8879a7682ef94471e907bb660d2b96cc95ed7b81
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:40 2013 +0200
+
+    Recognize WSKBD_TYPE_MAPLE for dreamcast.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit f105a796ae29eaaae7c25447734013537fad2a87
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:39 2013 +0200
+
+    Fix a shadowing warning, and add const.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit c783746c4f72249645e43c6d96d08cb6c74812d0
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:38 2013 +0200
+
+    Set the version for the keyboard.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 83faa4123ae5d182f936faab77925d45da181f5f
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:37 2013 +0200
+
+    Add a basic map for an LK201 keyboard.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit e7ba236dbaf8df9364bf61ef5c3d67d377fbd2ec
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:36 2013 +0200
+
+    Fix scan code 50 key on non-US-USB keyboards.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 60d947b34830b850d53de1ee756502c471796fa9
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:35 2013 +0200
+
+    Add a couple mappings for keys found on Sun keyboards.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 0baa215b57d104bf22bc9a179bae3ff413bf055c
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:34 2013 +0200
+
+    Use existing wscons USB keymap for WSKBD_TYPE_MAPLE on dreamcast.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 9c6acb2a2a4806d14ce84dcd1fb81268359dbe35
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:33 2013 +0200
+
+    Add translation table for AT/PS2 pseudo XT scancodes.
+    
+    Add another translation table to make the modular kbd driver cope with NetBSD's
+    AT/PS2 pseudo XT scancodes. Tested on shark and sgimips with an IBM Model M -
+    this should be tested with more keyboards, there might still be errors in the
+    table.
+    
+    >From Michael Lorenz <macallan@NetBSD.org>
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit e7a1f964782817acc4807beddc6e6ef1c8d94c96
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:32 2013 +0200
+
+    More ADB fixes.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 42b22d5dc3892309d276df131d35951a79311843
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:31 2013 +0200
+
+    Fixes for the ADB map.
+    
+    - map the backspace key to KEY_BackSpace
+    - swap LAlt and LMeta to match the keyboard (Alt=Alt/Option, Meta=Command)
+    - add a keysym for . on the number pad
+    ... so killing the Xserver with Ctrl-Alt-BackSpace works now and the default
+    map matches an US keyboard without any xmodmap stunts.
+    
+    >From Michael Lorenz <macallan@NetBSD.org>
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit b8e12ae87352922eaea305f66ca232ea2a3b2d61
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:30 2013 +0200
+
+    Added keysyms for extra keys on Sun Type 6 USB keyboard.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit ad527f5c25984fa023f1be9fcb8e953aa7459e8a
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:29 2013 +0200
+
+    Added keysym for Power keys.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit a0eec5ddd0f3b1a23f5fcbaf85cd34680a1944fc
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:28 2013 +0200
+
+    Map the Sun keyboard "help" key.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 2d5bc7db251facdb2bb478eaad1dfd820cf28d13
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Mon Jul 29 23:23:27 2013 +0200
+
+    Added some missing keysyms to the ADB keymap.
+    
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit ec3ccb22d4e7348ac537100fcb1b7ddc07df57b8
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed Mar 27 11:13:18 2013 +1000
+
+    keyboard 1.7.0
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit ad2a1dd1aa19999eb777f330242d46254b29b9cb
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri Aug 17 14:07:12 2012 +1000
+
+    Use sigsafe logging for keyboard debug messages
+    
+    This changes the log format to simple hex display, the server's signal-safe
+    printf implementation doesn't handle %2.2x.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 4a954bc6a8fbc4aa50dfcabec011274252713204
+Author: Colin Walters <walters@verbum.org>
+Date:   Wed Jan 4 17:37:06 2012 -0500
+
+    autogen.sh: Implement GNOME Build API
+    
+    http://people.gnome.org/~walters/docs/build-api.txt
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 9522f28a8f90680942e42902678c963c6981b0d1
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed Jan 16 13:11:11 2013 -0500
+
+    configure: Drop AM_MAINTAINER_MODE
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 6e51df6dd4255cbe311ec98e21a1cc94975271a1
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Jul 23 22:04:45 2012 -0700
+
+    xf86-input-keyboard 1.6.2
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 8d3edb688115d3100d7ac6fa9ed407494e435c43
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu May 24 21:36:17 2012 -0700
+
+    Link with $(XORG_LIBS) to support no-undefined linking
+    
+    Will be empty on most platforms, set to the -z parent=Xorg flag on
+    Solaris if building with the support for enforcing no undefined symbols.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit dd6f110c4568dc0922bae47530906b01396e2d41
+Author: François Tigeot <ftigeot@wolfpond.org>
+Date:   Sat May 5 13:12:10 2012 +0200
+
+    Recognize DragonFly as a BSD system.
+    
+    This patch has actually been present for more than 4 years in the
+    pkgsrc tree.
+    
+    Originally-from: Jörg Sonnenberger
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit da5ccb256acf6cbb817d68499e0d9f533f750628
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Apr 30 19:34:44 2012 -0700
+
+    Solaris: ensure "Device" option is set, even if HAL didn't set it for us
+    
+    Handles fallback to default /dev/kbd when AutoAddDevices is False and
+    Device option is not manually set in xorg.conf, so that xinput device
+    node property can be correctly set to it.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit e63cb5ecc5ab7239c9c285920244cc89e5853920
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Apr 27 17:51:22 2012 -0700
+
+    Set XI_PROP_DEVICE_NODE property to string from "Device" option
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Alexandr Shadchin <alexandr.shadchin@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit ed35abe0da1a9134ee126df88608b33892ae4313
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Jan 18 18:13:08 2012 -0800
+
+    Solaris: Use uchar_t, not int, for led masks in KIOCSLED/KIOCGLED ioctls
+    
+    Avoids checking/setting the wrong bits on big endian machines like SPARC.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit a6a0dee4178600a5a9403f69c22bd4eb483fbd34
 Author: Peter Hutterer <peter.hutterer@who-t.net>
 Date:   Wed Jan 4 10:45:09 2012 +1000
 
-    xf86-input-keyboard 1.6.1
+    keyboard 1.6.1
     
     Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
 

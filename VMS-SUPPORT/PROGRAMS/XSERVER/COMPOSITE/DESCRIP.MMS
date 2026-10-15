@@ -1,4 +1,4 @@
-! Complete ordinary static Composite library from the upstream Imakefile.
+! Complete ordinary static Composite library from the upstream Makefile.am.
 ! Native P64 pointers and long32; matching server feature layouts are required.
 COMPOSITE_HEADERS = $(XFIXES_HEADERS), -
     $(OUT).INCLUDE.X11.EXTENSIONS]COMPOSITE.H, -
@@ -7,7 +7,6 @@ COMPOSITE_HEADERS = $(XFIXES_HEADERS), -
     $(OUT).INCLUDE.X11.EXTENSIONS]DAMAGEWIRE.H
 COMPOSITE_PRIVATE_HEADERS = $(XFIXES_PRIVATE_HEADERS), -
     [.XSERVER.XORG-SERVER.COMPOSITE]COMPINT.H, -
-    [.XSERVER.XORG-SERVER.DAMAGEEXT]DAMAGEEXT.H, -
     [.XSERVER.XORG-SERVER.DAMAGEEXT]DAMAGEEXTINT.H
 COMPOSITE_BUILD_RULES = [.VMS-SUPPORT]CONFIG.MMS, [.VMS-SUPPORT]COMPILE.COM, -
     [.VMS-SUPPORT]HEADERS.MMS, -

@@ -26,13 +26,13 @@ Copyright 1987 by Digital Equipment Corporation, Maynard, Massachusetts.
 
                         All Rights Reserved
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the name of Digital not be
 used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
+software without specific, written prior permission.
 
 DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
 ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
@@ -55,7 +55,6 @@ SOFTWARE.
 #include "scrnintstr.h"
 #include "input.h"
 #include "dixfont.h"
-#include "site.h"
 #include "dixstruct.h"
 #include "os.h"
 
@@ -93,28 +92,17 @@ CARD32 ScreenSaverInterval;
 int ScreenSaverBlanking;
 int ScreenSaverAllowExposures;
 
-#ifdef DPMSExtension
-CARD16 DPMSPowerLevel = 0;
-Bool DPMSDisabledSwitch = FALSE;
-Bool DPMSCapableFlag = FALSE;
-CARD32 DPMSStandbyTime;
-CARD32 DPMSSuspendTime;
-CARD32 DPMSOffTime;
-Bool DPMSEnabled;
-#endif
-
-CARD32 defaultScreenSaverTime = DEFAULT_SCREEN_SAVER_TIME;
-CARD32 defaultScreenSaverInterval = DEFAULT_SCREEN_SAVER_INTERVAL;
-int defaultScreenSaverBlanking = DEFAULT_SCREEN_SAVER_BLANKING;
-int defaultScreenSaverAllowExposures = DEFAULT_SCREEN_SAVER_EXPOSURES;
+/* default time of 10 minutes */
+CARD32 defaultScreenSaverTime = (10 * (60 * 1000));
+CARD32 defaultScreenSaverInterval = (10 * (60 * 1000));
+int defaultScreenSaverBlanking = PreferBlanking;
+int defaultScreenSaverAllowExposures = AllowExposures;
 
 #ifdef SCREENSAVER
 Bool screenSaverSuspended = FALSE;
 #endif
 
-char *defaultFontPath = COMPILEDDEFAULTFONTPATH;
-char *defaultTextFont = COMPILEDDEFAULTFONT;
-char *defaultCursorFont = COMPILEDCURSORFONT;
+const char *defaultFontPath = COMPILEDDEFAULTFONTPATH;
 FontPtr defaultFont;            /* not declared in dix.h to avoid including font.h in
                                    every compilation of dix code */
 CursorPtr rootCursor;
@@ -122,12 +110,11 @@ Bool party_like_its_1989 = FALSE;
 Bool whiteRoot = FALSE;
 
 TimeStamp currentTime;
-TimeStamp lastDeviceEventTime;
 
 int defaultColorVisualClass = -1;
 int monitorResolution = 0;
 
-char *display;
+const char *display;
+int displayfd = -1;
+Bool explicit_display = FALSE;
 char *ConnectionInfo;
-
-CARD32 TimeOutValue = DEFAULT_TIMEOUT * MILLI_PER_SECOND;

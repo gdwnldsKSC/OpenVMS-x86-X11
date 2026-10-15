@@ -3,9 +3,9 @@
 
 /* Native little-endian portable profile; optional SIMD and timers disabled. */
 #define PACKAGE "pixman"
-#define PACKAGE_VERSION "0.24.4"
+#define PACKAGE_VERSION "0.46.4"
 #define VERSION PACKAGE_VERSION
 #define SIZEOF_LONG 4
-#define HAVE_PTHREAD_SETSPECIFIC 1
+#define HAVE_PTHREADS 1
 
 #endif

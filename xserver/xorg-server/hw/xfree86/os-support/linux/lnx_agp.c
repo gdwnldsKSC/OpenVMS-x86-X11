@@ -17,7 +17,7 @@
 #include "xf86_OSlib.h"
 #include "xf86OSpriv.h"
 
-#if defined(linux)
+#if defined(__linux__)
 #include <asm/ioctl.h>
 #include <linux/agpgart.h>
 #elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
@@ -91,9 +91,9 @@ GARTInit(int screenNum)
     }
     xf86ReleaseGART(-1);
 
-#if defined(linux)
-    /* Per Dave Jones, every effort will be made to keep the 
-     * agpgart interface backwards compatible, so allow all 
+#if defined(__linux__)
+    /* Per Dave Jones, every effort will be made to keep the
+     * agpgart interface backwards compatible, so allow all
      * future versions.
      */
     if (
@@ -143,6 +143,7 @@ xf86GetAGPInfo(int screenNum)
         xf86DrvMsg(screenNum, X_ERROR,
                    "xf86GetAGPInfo: AGPIOC_INFO failed (%s)\n",
                    strerror(errno));
+        free(info);
         return NULL;
     }
 
@@ -196,7 +197,7 @@ xf86ReleaseGART(int screenNum)
          * to give up access to the GART, but not to remove any
          * allocations.
          */
-#if !defined(linux)
+#if !defined(__linux__)
         if (screenNum == -1)
 #endif
         {

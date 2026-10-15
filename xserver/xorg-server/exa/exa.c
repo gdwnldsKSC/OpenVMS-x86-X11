@@ -38,8 +38,6 @@
 #include "exa.h"
 
 DevPrivateKeyRec exaScreenPrivateKeyRec;
-DevPrivateKeyRec exaPixmapPrivateKeyRec;
-DevPrivateKeyRec exaGCPrivateKeyRec;
 
 #ifdef MITSHM
 static ShmFuncs exaShmFuncs = { NULL, NULL };
@@ -477,10 +475,7 @@ static void
  exaCopyGC(GCPtr pGCSrc, unsigned long mask, GCPtr pGCDst);
 
 static void
- exaChangeClip(GCPtr pGC, int type, pointer pvalue, int nrects);
-
-static void
- exaCopyClip(GCPtr pGCDst, GCPtr pGCSrc);
+ exaChangeClip(GCPtr pGC, int type, void *pvalue, int nrects);
 
 static void
  exaCopyClip(GCPtr pGCDst, GCPtr pGCSrc);
@@ -502,7 +497,7 @@ static void
 exaValidateGC(GCPtr pGC, unsigned long changes, DrawablePtr pDrawable)
 {
     /* fbValidateGC will do direct access to pixmaps if the tiling has changed.
-     * Do a few smart things so fbValidateGC can do it's work.
+     * Do a few smart things so fbValidateGC can do its work.
      */
 
     ScreenPtr pScreen = pDrawable->pScreen;
@@ -510,29 +505,14 @@ exaValidateGC(GCPtr pGC, unsigned long changes, DrawablePtr pDrawable)
     ExaScreenPriv(pScreen);
     ExaGCPriv(pGC);
     PixmapPtr pTile = NULL;
-    Bool finish_current_tile = FALSE;
 
-    /* Either of these conditions is enough to trigger access to a tile pixmap. */
-    /* With pGC->tileIsPixel == 1, you run the risk of dereferencing an invalid tile pixmap pointer. */
+    /* Either of these conditions is enough to trigger access to a tile pixmap.
+     * With pGC->tileIsPixel == 1, you run the risk of dereferencing an invalid
+     * tile pixmap pointer.
+     */
     if (pGC->fillStyle == FillTiled ||
         ((changes & GCTile) && !pGC->tileIsPixel)) {
         pTile = pGC->tile.pixmap;
-
-        /* Sometimes tile pixmaps are swapped, you need access to:
-         * - The current tile if it depth matches.
-         * - Or the rotated tile if that one matches depth and !(changes & GCTile).
-         * - Or the current tile pixmap and a newly created one.
-         */
-        if (pTile && pTile->drawable.depth != pDrawable->depth &&
-            !(changes & GCTile)) {
-            PixmapPtr pRotatedTile = fbGetRotatedPixmap(pGC);
-
-            if (pRotatedTile &&
-                pRotatedTile->drawable.depth == pDrawable->depth)
-                pTile = pRotatedTile;
-            else
-                finish_current_tile = TRUE;     /* CreatePixmap will be called. */
-        }
     }
 
     if (pGC->stipple)
@@ -549,8 +529,6 @@ exaValidateGC(GCPtr pGC, unsigned long changes, DrawablePtr pDrawable)
 
     if (pTile)
         exaFinishAccess(&pTile->drawable, EXA_PREPARE_SRC);
-    if (finish_current_tile && pGC->tile.pixmap)
-        exaFinishAccess(&pGC->tile.pixmap->drawable, EXA_PREPARE_AUX_DEST);
     if (pGC->stipple)
         exaFinishAccess(&pGC->stipple->drawable, EXA_PREPARE_MASK);
 }
@@ -584,7 +562,7 @@ exaCopyGC(GCPtr pGCSrc, unsigned long mask, GCPtr pGCDst)
 }
 
 static void
-exaChangeClip(GCPtr pGC, int type, pointer pvalue, int nrects)
+exaChangeClip(GCPtr pGC, int type, void *pvalue, int nrects)
 {
     ExaGCPriv(pGC);
     swap(pExaGC, pGC, funcs);
@@ -625,8 +603,8 @@ exaCreateGC(GCPtr pGC)
 
     swap(pExaScr, pScreen, CreateGC);
     if ((ret = (*pScreen->CreateGC) (pGC))) {
-        wrap(pExaGC, pGC, funcs, (GCFuncs *) & exaGCFuncs);
-        wrap(pExaGC, pGC, ops, (GCOps *) & exaOps);
+        wrap(pExaGC, pGC, funcs, &exaGCFuncs);
+        wrap(pExaGC, pGC, ops, &exaOps);
     }
     swap(pExaScr, pScreen, CreateGC);
 
@@ -707,11 +685,8 @@ exaCreateScreenResources(ScreenPtr pScreen)
 }
 
 static void
-ExaBlockHandler(int screenNum, pointer blockData, pointer pTimeout,
-                pointer pReadmask)
+ExaBlockHandler(ScreenPtr pScreen, void *pTimeout)
 {
-    ScreenPtr pScreen = screenInfo.screens[screenNum];
-
     ExaScreenPriv(pScreen);
 
     /* Move any deferred results from a software fallback to the driver pixmap */
@@ -719,14 +694,14 @@ ExaBlockHandler(int screenNum, pointer blockData, pointer pTimeout,
         exaMoveInPixmap_mixed(pExaScr->deferred_mixed_pixmap);
 
     unwrap(pExaScr, pScreen, BlockHandler);
-    (*pScreen->BlockHandler) (screenNum, blockData, pTimeout, pReadmask);
+    (*pScreen->BlockHandler) (pScreen, pTimeout);
     wrap(pExaScr, pScreen, BlockHandler, ExaBlockHandler);
 
     /* The rest only applies to classic EXA */
     if (pExaScr->info->flags & EXA_HANDLES_PIXMAPS)
         return;
 
-    /* Try and keep the offscreen memory area tidy every now and then (at most 
+    /* Try and keep the offscreen memory area tidy every now and then (at most
      * once per second) when the server has been idle for at least 100ms.
      */
     if (pExaScr->numOffscreenAvailable > 1) {
@@ -739,15 +714,12 @@ ExaBlockHandler(int screenNum, pointer blockData, pointer pTimeout,
 }
 
 static void
-ExaWakeupHandler(int screenNum, pointer wakeupData, unsigned long result,
-                 pointer pReadmask)
+ExaWakeupHandler(ScreenPtr pScreen, int result)
 {
-    ScreenPtr pScreen = screenInfo.screens[screenNum];
-
     ExaScreenPriv(pScreen);
 
     unwrap(pExaScr, pScreen, WakeupHandler);
-    (*pScreen->WakeupHandler) (screenNum, wakeupData, result, pReadmask);
+    (*pScreen->WakeupHandler) (pScreen, result);
     wrap(pExaScr, pScreen, WakeupHandler, ExaWakeupHandler);
 
     if (result == 0 && pExaScr->numOffscreenAvailable > 1) {
@@ -765,7 +737,7 @@ ExaWakeupHandler(int screenNum, pointer wakeupData, unsigned long result,
  * screen private, before calling down to the next CloseSccreen.
  */
 static Bool
-exaCloseScreen(int i, ScreenPtr pScreen)
+exaCloseScreen(ScreenPtr pScreen)
 {
     ExaScreenPriv(pScreen);
     PictureScreenPtr ps = GetPictureScreenIfSet(pScreen);
@@ -791,6 +763,10 @@ exaCloseScreen(int i, ScreenPtr pScreen)
     unwrap(pExaScr, pScreen, ChangeWindowAttributes);
     unwrap(pExaScr, pScreen, BitmapToRegion);
     unwrap(pExaScr, pScreen, CreateScreenResources);
+    if (pExaScr->SavedSharePixmapBacking)
+        unwrap(pExaScr, pScreen, SharePixmapBacking);
+    if (pExaScr->SavedSetSharedPixmapBacking)
+        unwrap(pExaScr, pScreen, SetSharedPixmapBacking);
     unwrap(pExaScr, ps, Composite);
     if (pExaScr->SavedGlyphs)
         unwrap(pExaScr, ps, Glyphs);
@@ -800,7 +776,7 @@ exaCloseScreen(int i, ScreenPtr pScreen)
 
     free(pExaScr);
 
-    return (*pScreen->CloseScreen) (i, pScreen);
+    return (*pScreen->CloseScreen) (pScreen);
 }
 
 /**
@@ -922,8 +898,8 @@ exaDriverInit(ScreenPtr pScreen, ExaDriverPtr pScreenInfo)
 
     exaDDXDriverInit(pScreen);
 
-    if (!dixRegisterPrivateKey
-        (&exaGCPrivateKeyRec, PRIVATE_GC, sizeof(ExaGCPrivRec))) {
+    if (!dixRegisterScreenSpecificPrivateKey
+        (pScreen, &pExaScr->gcPrivateKeyRec, PRIVATE_GC, sizeof(ExaGCPrivRec))) {
         LogMessage(X_WARNING, "EXA(%d): Failed to allocate GC private\n",
                    pScreen->myNum);
         return FALSE;
@@ -971,8 +947,8 @@ exaDriverInit(ScreenPtr pScreen, ExaDriverPtr pScreenInfo)
      * Hookup offscreen pixmaps
      */
     if (pExaScr->info->flags & EXA_OFFSCREEN_PIXMAPS) {
-        if (!dixRegisterPrivateKey
-            (&exaPixmapPrivateKeyRec, PRIVATE_PIXMAP,
+        if (!dixRegisterScreenSpecificPrivateKey
+            (pScreen, &pExaScr->pixmapPrivateKeyRec, PRIVATE_PIXMAP,
              sizeof(ExaPixmapPrivRec))) {
             LogMessage(X_WARNING,
                        "EXA(%d): Failed to allocate pixmap private\n",
@@ -985,6 +961,9 @@ exaDriverInit(ScreenPtr pScreen, ExaDriverPtr pScreenInfo)
                 wrap(pExaScr, pScreen, DestroyPixmap, exaDestroyPixmap_mixed);
                 wrap(pExaScr, pScreen, ModifyPixmapHeader,
                      exaModifyPixmapHeader_mixed);
+                wrap(pExaScr, pScreen, SharePixmapBacking, exaSharePixmapBacking_mixed);
+                wrap(pExaScr, pScreen, SetSharedPixmapBacking, exaSetSharedPixmapBacking_mixed);
+
                 pExaScr->do_migration = exaDoMigration_mixed;
                 pExaScr->pixmap_has_gpu_copy = exaPixmapHasGpuCopy_mixed;
                 pExaScr->do_move_in_pixmap = exaMoveInPixmap_mixed;

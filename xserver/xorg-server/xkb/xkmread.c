@@ -6,19 +6,19 @@
  fee is hereby granted, provided that the above copyright
  notice appear in all copies and that both that copyright
  notice and this permission notice appear in supporting
- documentation, and that the name of Silicon Graphics not be 
- used in advertising or publicity pertaining to distribution 
+ documentation, and that the name of Silicon Graphics not be
+ used in advertising or publicity pertaining to distribution
  of the software without specific prior written permission.
- Silicon Graphics makes no representation about the suitability 
+ Silicon Graphics makes no representation about the suitability
  of this software for any purpose. It is provided "as is"
  without any express or implied warranty.
- 
- SILICON GRAPHICS DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS 
- SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY 
+
+ SILICON GRAPHICS DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS
+ SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
  AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL SILICON
- GRAPHICS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL 
- DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, 
- DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE 
+ GRAPHICS BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL
+ DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
  OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION  WITH
  THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
@@ -64,7 +64,7 @@ XkmInsureSize(void *oldPtr, int oldCount, int *newCountRtrn, int elemSize)
         oldPtr = calloc(newCount, elemSize);
     }
     else if (oldCount < newCount) {
-        oldPtr = realloc(oldPtr, newCount * elemSize);
+        oldPtr = reallocarray(oldPtr, newCount, elemSize);
         if (oldPtr != NULL) {
             char *tmp = (char *) oldPtr;
 
@@ -532,7 +532,7 @@ ReadXkmCompatMap(FILE * file, XkbDescPtr xkb, XkbChangesPtr changes)
             act->devval.v1_value = wire.actionData[3];
             act->devval.v2_what = wire.actionData[4];
             act->devval.v2_ndx = wire.actionData[5];
-            act->devval.v2_what = wire.actionData[6];
+            act->devval.v2_value = wire.actionData[6];
             break;
 
         case XkbSA_XFree86Private:
@@ -763,17 +763,23 @@ ReadXkmSymbols(FILE * file, XkbDescPtr xkb)
     for (i = minKC; i <= (int) maxKC; i++) {
         Atom typeName[XkbNumKbdGroups];
         XkbKeyTypePtr type[XkbNumKbdGroups];
+        int nGroups;
 
         if ((tmp = fread(&wireMap, SIZEOF(xkmKeySymMapDesc), 1, file)) < 1) {
             _XkbLibError(_XkbErrBadLength, "ReadXkmSymbols", 0);
             return -1;
         }
         nRead += tmp * SIZEOF(xkmKeySymMapDesc);
+        /* group_info carries the out-of-range action and number alongside the
+         * count, and the count itself is four bits wide while everything it
+         * indexes here holds only XkbNumKbdGroups entries.
+         */
+        nGroups = XkbNumGroups(wireMap.num_groups);
+        if (nGroups > XkbNumKbdGroups)
+            nGroups = XkbNumKbdGroups;
         memset((char *) typeName, 0, XkbNumKbdGroups * sizeof(Atom));
         memset((char *) type, 0, XkbNumKbdGroups * sizeof(XkbKeyTypePtr));
         if (wireMap.flags & XkmKeyHasTypes) {
-            register int g;
-
             for (g = 0; g < XkbNumKbdGroups; g++) {
                 if ((wireMap.flags & (1 << g)) &&
                     ((tmp = XkmGetCountedString(file, buf, 100)) > 0)) {
@@ -798,12 +804,15 @@ ReadXkmSymbols(FILE * file, XkbDescPtr xkb)
             xkb->server->explicit[i] |= XkbExplicitAutoRepeatMask;
         }
         xkb->map->modmap[i] = wireMap.modifier_map;
-        if (XkbNumGroups(wireMap.num_groups) > 0) {
+        if (nGroups > 0) {
             KeySym *sym;
             int nSyms;
 
-            if (XkbNumGroups(wireMap.num_groups) > xkb->ctrls->num_groups)
-                xkb->ctrls->num_groups = wireMap.num_groups;
+            if (nGroups > xkb->ctrls->num_groups)
+                xkb->ctrls->num_groups = nGroups;
+            /* The file still holds symbols for every group it claimed, so read
+             * and store them all even when we clamped the count above.
+             */
             nSyms = XkbNumGroups(wireMap.num_groups) * wireMap.width;
             sym = XkbResizeKeySyms(xkb, i, nSyms);
             if (!sym)
@@ -822,7 +831,7 @@ ReadXkmSymbols(FILE * file, XkbDescPtr xkb)
                 xkb->server->explicit[i] |= XkbExplicitInterpretMask;
             }
         }
-        for (g = 0; g < XkbNumGroups(wireMap.num_groups); g++) {
+        for (g = 0; g < nGroups; g++) {
             if (((xkb->server->explicit[i] & (1 << g)) == 0) ||
                 (type[g] == NULL)) {
                 KeySym *tmpSyms;
@@ -833,7 +842,8 @@ ReadXkmSymbols(FILE * file, XkbDescPtr xkb)
             xkb->map->key_sym_map[i].kt_index[g] =
                 type[g] - (&xkb->map->types[0]);
         }
-        xkb->map->key_sym_map[i].group_info = wireMap.num_groups;
+        xkb->map->key_sym_map[i].group_info =
+            XkbSetNumGroups(wireMap.num_groups, nGroups);
         xkb->map->key_sym_map[i].width = wireMap.width;
         if (wireMap.flags & XkmKeyHasBehavior) {
             xkmBehaviorDesc b;
@@ -845,6 +855,12 @@ ReadXkmSymbols(FILE * file, XkbDescPtr xkb)
             xkb->server->explicit[i] |= XkbExplicitBehaviorMask;
         }
     }
+    /* A symbols section in which no key defines a group leaves the count at
+     * the zero it was allocated with, which would put group 0 itself out of
+     * range for the rest of the server.
+     */
+    if (xkb->ctrls->num_groups == 0)
+        xkb->ctrls->num_groups = 1;
     if (totalVModMaps > 0) {
         xkmVModMapDesc v;
 
@@ -1206,7 +1222,8 @@ XkmReadTOC(FILE * file, xkmFileInfo * file_info, int max_toc,
         }
         return 0;
     }
-    fread(file_info, SIZEOF(xkmFileInfo), 1, file);
+    if (fread(file_info, SIZEOF(xkmFileInfo), 1, file) != 1)
+        return 0;
     size_toc = file_info->num_toc;
     if (size_toc > max_toc) {
         DebugF("Warning! Too many TOC entries; last %d ignored\n",
@@ -1214,7 +1231,8 @@ XkmReadTOC(FILE * file, xkmFileInfo * file_info, int max_toc,
         size_toc = max_toc;
     }
     for (i = 0; i < size_toc; i++) {
-        fread(&toc[i], SIZEOF(xkmSectionInfo), 1, file);
+        if (fread(&toc[i], SIZEOF(xkmSectionInfo), 1, file) != 1)
+            return 0;
     }
     return 1;
 }

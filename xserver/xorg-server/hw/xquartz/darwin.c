@@ -38,11 +38,9 @@
 #include "servermd.h"
 #include "inputstr.h"
 #include "scrnintstr.h"
-#include "mibstore.h"           // mi backing store implementation
 #include "mipointer.h"          // mi software cursor
 #include "micmap.h"             // mi colormap code
 #include "fb.h"                 // fb framebuffer code
-#include "site.h"
 #include "globals.h"
 #include "dix.h"
 #include "xkbsrv.h"
@@ -51,7 +49,7 @@
 #include <X11/extensions/XIproto.h>
 #include "exevents.h"
 #include "extinit.h"
-
+#include "glx_extinit.h"
 #include "xserver-properties.h"
 
 #include <sys/types.h>
@@ -77,6 +75,8 @@
 #include "darwinEvents.h"
 #include "quartzKeyboard.h"
 #include "quartz.h"
+
+#include "X11Application.h"
 
 aslclient aslc;
 
@@ -161,28 +161,12 @@ static PixmapFormatRec formats[] = {
     { 24, 32, BITMAP_SCANLINE_PAD    },
     { 32, 32, BITMAP_SCANLINE_PAD    }
 };
-const int NUMFORMATS = sizeof(formats) / sizeof(formats[0]);
 
 void
 DarwinPrintBanner(void)
 {
     ErrorF("Xquartz starting:\n");
     ErrorF("X.Org X Server %s\n", XSERVER_VERSION);
-    ErrorF("Build Date: %s\n", BUILD_DATE);
-}
-
-/*
- * DarwinSaveScreen
- *  X screensaver support. Not implemented.
- */
-static Bool
-DarwinSaveScreen(ScreenPtr pScreen, int on)
-{
-    // FIXME
-    if (on == SCREEN_SAVER_FORCER) {}
-    else if (on == SCREEN_SAVER_ON) {}
-    else {}
-    return TRUE;
 }
 
 /*
@@ -191,7 +175,7 @@ DarwinSaveScreen(ScreenPtr pScreen, int on)
  *  Initialize the screen and communicate information about it back to dix.
  */
 static Bool
-DarwinScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
+DarwinScreenInit(ScreenPtr pScreen, int argc, char **argv)
 {
     int dpi;
     static int foundIndex = 0;
@@ -202,7 +186,7 @@ DarwinScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
         return FALSE;
 
     // reset index of found screens for each server generation
-    if (index == 0) {
+    if (pScreen->myNum == 0) {
         foundIndex = 0;
 
         // reset the visual list
@@ -229,13 +213,15 @@ DarwinScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
     }
 
     // TODO: Make PseudoColor visuals not suck in TrueColor mode
-    //    if(dfb->depth > 8)
-    //        miSetVisualTypesAndMasks(8, PseudoColorMask, 8, PseudoColor, 0, 0, 0);
-    if (dfb->depth > 15)
-        miSetVisualTypesAndMasks(15, TrueColorMask, 5, TrueColor,
-                                 RM_ARGB(0, 5, 5, 5), GM_ARGB(0, 5, 5,
-                                                              5),
-                                 BM_ARGB(0, 5, 5, 5));
+    // if(dfb->depth > 8)
+    //    miSetVisualTypesAndMasks(8, PseudoColorMask, 8, PseudoColor, 0, 0, 0);
+    //
+    // TODO: Re-add support for 15bit
+    // if (dfb->depth > 15)
+    //    miSetVisualTypesAndMasks(15, TrueColorMask, 5, TrueColor,
+    //                             RM_ARGB(0, 5, 5, 5), GM_ARGB(0, 5, 5,
+    //                                                          5),
+    //                             BM_ARGB(0, 5, 5, 5));
     if (dfb->depth > 24)
         miSetVisualTypesAndMasks(24, TrueColorMask, 8, TrueColor,
                                  RM_ARGB(0, 8, 8, 8), GM_ARGB(0, 8, 8,
@@ -269,11 +255,8 @@ DarwinScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
     ShmRegisterFbFuncs(pScreen);
 #endif
 
-    // this must be initialized (why doesn't X have a default?)
-    pScreen->SaveScreen = DarwinSaveScreen;
-
     // finish mode dependent screen setup including cursor support
-    if (!QuartzSetupScreen(index, pScreen)) {
+    if (!QuartzSetupScreen(pScreen->myNum, pScreen)) {
         return FALSE;
     }
 
@@ -299,6 +282,11 @@ DarwinScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
 
    =============================================================================
  */
+
+static void
+DarwinInputHandlerNotify(int fd __unused, int ready __unused, void *data __unused)
+{
+}
 
 /*
  * DarwinMouseProc: Handle the initialization, etc. of a mouse
@@ -340,16 +328,16 @@ DarwinMouseProc(DeviceIntPtr pPointer, int what)
         InitValuatorAxisStruct(pPointer, 1, axes_labels[1],
                                NO_AXIS_LIMITS, NO_AXIS_LIMITS,
                                0, 0, 0, Absolute);
-        InitValuatorAxisStruct(pPointer, 2, axes_labels[2], 
+        InitValuatorAxisStruct(pPointer, 2, axes_labels[2],
                                NO_AXIS_LIMITS, NO_AXIS_LIMITS,
                                1, 0, 1, Relative);
-        InitValuatorAxisStruct(pPointer, 3, axes_labels[3], 
+        InitValuatorAxisStruct(pPointer, 3, axes_labels[3],
                                NO_AXIS_LIMITS, NO_AXIS_LIMITS,
                                1, 0, 1, Relative);
-        InitValuatorAxisStruct(pPointer, 4, axes_labels[4], 
+        InitValuatorAxisStruct(pPointer, 4, axes_labels[4],
                                NO_AXIS_LIMITS, NO_AXIS_LIMITS,
                                1, 0, 1, Relative);
-        InitValuatorAxisStruct(pPointer, 5, axes_labels[5], 
+        InitValuatorAxisStruct(pPointer, 5, axes_labels[5],
                                NO_AXIS_LIMITS, NO_AXIS_LIMITS,
                                1, 0, 1, Relative);
 
@@ -359,13 +347,13 @@ DarwinMouseProc(DeviceIntPtr pPointer, int what)
 
     case DEVICE_ON:
         pPointer->public.on = TRUE;
-        AddEnabledDevice(darwinEventReadFD);
+        SetNotifyFd(darwinEventReadFD, DarwinInputHandlerNotify, X_NOTIFY_READ, NULL);
         return Success;
 
     case DEVICE_CLOSE:
     case DEVICE_OFF:
         pPointer->public.on = FALSE;
-        RemoveEnabledDevice(darwinEventReadFD);
+        RemoveNotifyFd(darwinEventReadFD);
         return Success;
     }
 
@@ -428,13 +416,13 @@ DarwinTabletProc(DeviceIntPtr pPointer, int what)
 
     case DEVICE_ON:
         pPointer->public.on = TRUE;
-        AddEnabledDevice(darwinEventReadFD);
+        SetNotifyFd(darwinEventReadFD, DarwinInputHandlerNotify, X_NOTIFY_READ, NULL);
         return Success;
 
     case DEVICE_CLOSE:
     case DEVICE_OFF:
         pPointer->public.on = FALSE;
-        RemoveEnabledDevice(darwinEventReadFD);
+        RemoveNotifyFd(darwinEventReadFD);
         return Success;
     }
     return Success;
@@ -456,12 +444,12 @@ DarwinKeybdProc(DeviceIntPtr pDev, int onoff)
 
     case DEVICE_ON:
         pDev->public.on = TRUE;
-        AddEnabledDevice(darwinEventReadFD);
+        SetNotifyFd(darwinEventReadFD, DarwinInputHandlerNotify, X_NOTIFY_READ, NULL);
         break;
 
     case DEVICE_OFF:
         pDev->public.on = FALSE;
-        RemoveEnabledDevice(darwinEventReadFD);
+        RemoveNotifyFd(darwinEventReadFD);
         break;
 
     case DEVICE_CLOSE:
@@ -651,8 +639,8 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
     pScreenInfo->bitmapBitOrder = BITMAP_BIT_ORDER;
 
     // List how we want common pixmap formats to be padded
-    pScreenInfo->numPixmapFormats = NUMFORMATS;
-    for (i = 0; i < NUMFORMATS; i++)
+    pScreenInfo->numPixmapFormats = ARRAY_SIZE(formats);
+    for (i = 0; i < ARRAY_SIZE(formats); i++)
         pScreenInfo->formats[i] = formats[i];
 
     // Discover screens and do mode specific initialization
@@ -663,6 +651,8 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
         AddScreen(DarwinScreenInit, argc, argv);
     }
 
+    xorgGlxCreateVendor();
+
     DarwinAdjustScreenOrigins(pScreenInfo);
 }
 
@@ -670,9 +660,8 @@ InitOutput(ScreenInfo *pScreenInfo, int argc, char **argv)
  * OsVendorFatalError
  */
 void
-OsVendorFatalError(void)
+OsVendorFatalError(const char *f, va_list args)
 {
-    ErrorF("   OsVendorFatalError\n");
 }
 
 /*
@@ -701,22 +690,6 @@ OsVendorInit(void)
         free(lf);
 
         DarwinPrintBanner();
-#ifdef ENABLE_DEBUG_LOG
-        {
-            char *home_dir = NULL, *log_file_path = NULL;
-            home_dir = getenv("HOME");
-            if (home_dir) asprintf(&log_file_path, "%s/%s", home_dir,
-                                   DEBUG_LOG_NAME);
-            if (log_file_path) {
-                if (!access(log_file_path, F_OK)) {
-                    debug_log_fp = fopen(log_file_path, "a");
-                    if (debug_log_fp) ErrorF("Debug logging enabled to %s\n",
-                                             log_file_path);
-                }
-                free(log_file_path);
-            }
-        }
-#endif
     }
 }
 
@@ -758,7 +731,7 @@ ddxProcessArgument(int argc, char *argv[], int i)
 
     if (!strcmp(argv[i], "-fakemouse2")) {
         if (i == argc - 1) {
-            FatalError("-fakemouse2 must be followed by a modifer list\n");
+            FatalError("-fakemouse2 must be followed by a modifier list\n");
         }
         if (!strcasecmp(argv[i + 1], "none") || !strcmp(argv[i + 1], ""))
             darwinFakeMouse2Mask = 0;
@@ -771,7 +744,7 @@ ddxProcessArgument(int argc, char *argv[], int i)
 
     if (!strcmp(argv[i], "-fakemouse3")) {
         if (i == argc - 1) {
-            FatalError("-fakemouse3 must be followed by a modifer list\n");
+            FatalError("-fakemouse3 must be followed by a modifier list\n");
         }
         if (!strcasecmp(argv[i + 1], "none") || !strcmp(argv[i + 1], ""))
             darwinFakeMouse3Mask = 0;
@@ -852,16 +825,11 @@ ddxGiveUp(enum ExitCode error)
     LogClose(error);
 }
 
-/*
- * AbortDDX --
- *      DDX - specific abort routine.  Called by AbortServer(). The attempt is
- *      made to restore all original setting of the displays. Also all devices
- *      are closed.
- */
-_X_NORETURN
+#if INPUTTHREAD
+/** This function is called in Xserver/os/inputthread.c when starting
+    the input thread. */
 void
-AbortDDX(enum ExitCode error)
+ddxInputThreadInit(void)
 {
-    ErrorF("   AbortDDX\n");
-    OsAbort();
 }
+#endif

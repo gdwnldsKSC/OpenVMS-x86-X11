@@ -1,10 +1,10 @@
-INCLUDES = 					\
+AM_CPPFLAGS = 					\
 	@KDRIVE_INCS@				\
 	@KDRIVE_CFLAGS@
 
 AM_CFLAGS =	-DHAVE_DIX_CONFIG_H
 
-noinst_LTLIBRARIES = libkdrive.la libkdrivestubs.la
+noinst_LTLIBRARIES = libkdrive.la
 
 if XV
 KDRIVE_XV_SOURCES =	\
@@ -13,16 +13,20 @@ KDRIVE_XV_SOURCES =	\
 endif
 
 libkdrive_la_SOURCES =	\
-	fourcc.h	\
 	kcmap.c		\
 	kdrive.c	\
 	kdrive.h	\
 	kinfo.c		\
 	kinput.c	\
-	kmode.c		\
 	kshadow.c	\
 	$(KDRIVE_XV_SOURCES) \
-        $(top_srcdir)/mi/miinitext.c
+	$(top_srcdir)/mi/miinitext.c	\
+	$(top_srcdir)/mi/miinitext.h
 
-libkdrivestubs_la_SOURCES = \
-        $(top_srcdir)/fb/fbcmap_mi.c
+if CONFIG_UDEV
+libkdrive_la_LIBADD = $(top_builddir)/config/libconfig.la
+else
+if CONFIG_HAL
+libkdrive_la_LIBADD = $(top_builddir)/config/libconfig.la
+endif
+endif

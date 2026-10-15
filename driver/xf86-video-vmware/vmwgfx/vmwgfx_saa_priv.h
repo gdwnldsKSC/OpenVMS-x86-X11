@@ -54,8 +54,12 @@ struct vmwgfx_saa {
     Bool use_present_opt;
     Bool only_hw_presents;
     Bool rendercheck;
+    Bool is_master;
+    Bool known_prime_format;
+    Bool has_screen_targets;
     void (*present_flush) (ScreenPtr pScreen);
     struct _WsbmListHead sync_x_list;
+    struct _WsbmListHead pixmaps;
     struct vmwgfx_composite *vcomp;
 };
 
@@ -73,7 +77,8 @@ vmwgfx_hw_kill(struct vmwgfx_saa *vsaa,
 	       struct saa_pixmap *spix);
 Bool
 vmwgfx_create_hw(struct vmwgfx_saa *vsaa,
-		 PixmapPtr pixmap);
+		 PixmapPtr pixmap,
+		 Bool shared);
 
 
 /*
@@ -84,7 +89,8 @@ enum xa_formats
 vmwgfx_xa_format(enum _PictFormatShort format);
 Bool
 vmwgfx_hw_validate(PixmapPtr pixmap, RegionPtr region);
-
+Bool
+vmwgfx_hw_dri2_stage(PixmapPtr pixmap, unsigned int depth);
 Bool
 vmwgfx_hw_accel_stage(PixmapPtr pixmap, unsigned int depth,
 		      uint32_t add_flags, uint32_t remove_flags);
@@ -96,6 +102,17 @@ vmwgfx_hw_composite_dst_stage(PixmapPtr pixmap,
 			      enum _PictFormatShort pict_format);
 Bool
 vmwgfx_hw_commit(PixmapPtr pixmap);
+
+Bool
+vmwgfx_xa_surface_redefine(struct vmwgfx_saa_pixmap *vpix,
+			   struct xa_surface *srf,
+			   int width,
+			   int height,
+			   int depth,
+			   enum xa_surface_type stype,
+			   enum xa_formats rgb_format,
+			   unsigned int new_flags,
+			   int copy_contents);
 
 /*
  * vmwgfx_xa_composite.c

@@ -71,11 +71,12 @@
 #include "damageextint.h"
 #include "xfixes.h"
 #include <X11/extensions/compositeproto.h>
+#include "compositeext.h"
 #include <assert.h>
 
 /*
  *  enable this for debugging
- 
+
     #define COMPOSITE_DEBUG
  */
 
@@ -118,6 +119,11 @@ typedef struct _CompOverlayClientRec {
     XID resource;
 } CompOverlayClientRec;
 
+typedef struct _CompImplicitRedirectException {
+    XID parentVisual;
+    XID winVisual;
+} CompImplicitRedirectException;
+
 typedef struct _CompScreen {
     PositionWindowProcPtr PositionWindow;
     CopyWindowProcPtr CopyWindow;
@@ -150,16 +156,18 @@ typedef struct _CompScreen {
      */
     ChangeWindowAttributesProcPtr ChangeWindowAttributes;
 
-    ScreenBlockHandlerProcPtr BlockHandler;
+    Bool pendingScreenUpdate;
+
     CloseScreenProcPtr CloseScreen;
     int numAlternateVisuals;
     VisualID *alternateVisuals;
+    int numImplicitRedirectExceptions;
+    CompImplicitRedirectException *implicitRedirectExceptions;
 
     WindowPtr pOverlayWin;
     Window overlayWid;
     CompOverlayClientPtr pOverlayClients;
 
-    GetImageProcPtr GetImage;
     SourceValidateProcPtr SourceValidate;
 } CompScreenRec, *CompScreenPtr;
 
@@ -182,7 +190,6 @@ extern DevPrivateKeyRec CompSubwindowsPrivateKeyRec;
 #define GetCompSubwindows(w) ((CompSubwindowsPtr) \
     dixLookupPrivate(&(w)->devPrivates, CompSubwindowsPrivateKey))
 
-extern RESTYPE CompositeClientWindowType;
 extern RESTYPE CompositeClientSubwindowsType;
 extern RESTYPE CompositeClientOverlayType;
 
@@ -228,12 +235,7 @@ Bool
 compReallocPixmap(WindowPtr pWin, int x, int y,
                   unsigned int w, unsigned int h, int bw);
 
-/*
- * compext.c
- */
-
-void
- CompositeExtensionInit(void);
+void compMarkAncestors(WindowPtr pWin);
 
 /*
  * compinit.c
@@ -272,10 +274,8 @@ void
 #define compCheckTree(s)
 #endif
 
-PictFormatPtr compWindowFormat(WindowPtr pWin);
-
 void
- compSetPixmap(WindowPtr pWin, PixmapPtr pPixmap);
+ compSetPixmap(WindowPtr pWin, PixmapPtr pPixmap, int bw);
 
 Bool
  compCheckRedirect(WindowPtr pWin);
@@ -328,7 +328,7 @@ WindowPtr
  CompositeRealChildHead(WindowPtr pWin);
 
 int
- DeleteWindowNoInputDevices(pointer value, XID wid);
+ DeleteWindowNoInputDevices(void *value, XID wid);
 
 int
 

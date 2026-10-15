@@ -86,6 +86,7 @@
 
 #include <X11/X.h>
 #include "xf86Modes.h"
+#include "xf86Crtc.h"
 #include "os.h"
 #include "servermd.h"
 #include "globals.h"
@@ -112,11 +113,10 @@ printModeRejectMessage(int index, DisplayModePtr p, int status)
 }
 
 /*
- * xf86GetNearestClock --
- *	Find closest clock to given frequency (in kHz).  This assumes the
- *	number of clocks is greater than zero.
+ * Find closest clock to given frequency (in kHz).  This assumes the
+ * number of clocks is greater than zero.
  */
-int
+static int
 xf86GetNearestClock(ScrnInfoPtr scrp, int freq, Bool allowDiv2,
                     int DivFactor, int MulFactor, int *divider)
 {
@@ -451,7 +451,7 @@ xf86HandleBuiltinMode(ScrnInfoPtr scrp,
  * reason.
  */
 
-ModeStatus
+static ModeStatus
 xf86LookupMode(ScrnInfoPtr scrp, DisplayModePtr modep,
                ClockRangePtr clockRanges, LookupModeFlags strategy)
 {
@@ -478,7 +478,7 @@ xf86LookupMode(ScrnInfoPtr scrp, DisplayModePtr modep,
         M_T_DRIVER,
         0
     };
-    const int ntypes = sizeof(types) / sizeof(int);
+    const int ntypes = ARRAY_SIZE(types);
 
     strategy &= ~(LOOKUP_CLKDIV2 | LOOKUP_OPTIONAL_TOLERANCES);
 
@@ -506,6 +506,8 @@ xf86LookupMode(ScrnInfoPtr scrp, DisplayModePtr modep,
 
             /* scan through the modes in the sort order above */
             if ((p->type & type) != type)
+                continue;
+            if (p->name == NULL)
                 continue;
 
             if (strcmp(p->name, modep->name) == 0) {
@@ -841,11 +843,9 @@ xf86CheckModeSize(ScrnInfoPtr scrp, int w, int x, int y)
  *    monitor      pointer to structure for monitor section
  *    fbFormat     pixel format for the framebuffer
  *    videoRam     video memory size (in kB)
- *    maxHValue    maximum horizontal timing value
- *    maxVValue    maximum vertical timing value
  */
 
-ModeStatus
+static ModeStatus
 xf86InitialCheckModeForDriver(ScrnInfoPtr scrp, DisplayModePtr mode,
                               ClockRangePtr clockRanges,
                               LookupModeFlags strategy,
@@ -888,12 +888,6 @@ xf86InitialCheckModeForDriver(ScrnInfoPtr scrp, DisplayModePtr mode,
 
     if (virtualY > 0 && mode->VDisplay > virtualY)
         return MODE_VIRTUAL_Y;
-
-    if (scrp->maxHValue > 0 && mode->HTotal > scrp->maxHValue)
-        return MODE_BAD_HVALUE;
-
-    if (scrp->maxVValue > 0 && mode->VTotal > scrp->maxVValue)
-        return MODE_BAD_VVALUE;
 
     /*
      * The use of the DisplayModeRec's Crtc* and SynthClock elements below is
@@ -950,7 +944,7 @@ xf86InitialCheckModeForDriver(ScrnInfoPtr scrp, DisplayModePtr mode,
                 mode->SynthClock /= 2;
         }
 
-        status = (*scrp->ValidMode) (scrp->scrnIndex, mode, FALSE,
+        status = (*scrp->ValidMode) (scrp, mode, FALSE,
                                      MODECHECK_INITIAL);
         if (status != MODE_OK)
             return status;
@@ -986,8 +980,6 @@ xf86InitialCheckModeForDriver(ScrnInfoPtr scrp, DisplayModePtr mode,
  *    flags        not (currently) used
  *
  * In addition, the following fields from the ScrnInfoRec are used:
- *    maxHValue    maximum horizontal timing value
- *    maxVValue    maximum vertical timing value
  *    virtualX     virtual width
  *    virtualY     virtual height
  *    clockRanges  allowable clock ranges
@@ -1021,12 +1013,6 @@ xf86CheckModeForDriver(ScrnInfoPtr scrp, DisplayModePtr mode, int flags)
 
     if (mode->VDisplay > scrp->virtualY)
         return MODE_VIRTUAL_Y;
-
-    if (scrp->maxHValue > 0 && mode->HTotal > scrp->maxHValue)
-        return MODE_BAD_HVALUE;
-
-    if (scrp->maxVValue > 0 && mode->VTotal > scrp->maxVValue)
-        return MODE_BAD_VVALUE;
 
     for (cp = scrp->clockRanges; cp != NULL; cp = cp->next) {
         /* DivFactor and MulFactor must be > 0 */
@@ -1202,7 +1188,7 @@ LCM(unsigned int x, unsigned int y)
 
 /*
  * Given various screen attributes, determine the minimum scanline width such
- * that each scanline is server and DDX padded and any pixels with imbedded
+ * that each scanline is server and DDX padded and any pixels with embedded
  * bank boundaries are off-screen.  This function returns -1 if such a width
  * cannot exist.
  */
@@ -1239,7 +1225,7 @@ scanLineWidth(unsigned int xsize,       /* pixels */
 
     /*
      * Scanlines will be server-pad aligned at this point.  They will also be
-     * a multiple of nWidthUnit bits long.  Ensure that pixels with imbedded
+     * a multiple of nWidthUnit bits long.  Ensure that pixels with embedded
      * bank boundaries are off-screen.
      *
      * It seems reasonable to limit total frame buffer size to 1/16 of the
@@ -1334,8 +1320,6 @@ scanLineWidth(unsigned int xsize,       /* pixels */
  *    monitor      pointer to structure for monitor section
  *    fbFormat     format of the framebuffer
  *    videoRam     video memory size
- *    maxHValue    maximum horizontal timing value
- *    maxVValue    maximum vertical timing value
  *    xInc         horizontal timing increment (defaults to 8 pixels)
  *
  * The function fills in the following ScrnInfoRec fields:
@@ -1354,7 +1338,7 @@ scanLineWidth(unsigned int xsize,       /* pixels */
 
 int
 xf86ValidateModes(ScrnInfoPtr scrp, DisplayModePtr availModes,
-                  char **modeNames, ClockRangePtr clockRanges,
+                  const char **modeNames, ClockRangePtr clockRanges,
                   int *linePitches, int minPitch, int maxPitch, int pitchInc,
                   int minHeight, int maxHeight, int virtualX, int virtualY,
                   int apertureSize, LookupModeFlags strategy)
@@ -1370,7 +1354,6 @@ xf86ValidateModes(ScrnInfoPtr scrp, DisplayModePtr availModes,
     int saveType;
     PixmapFormatRec *BankFormat;
     ClockRangePtr cp;
-    ClockRangePtr storeClockRanges;
     int numTimings = 0;
     range hsync[MAX_HSYNC];
     range vrefresh[MAX_VREFRESH];
@@ -1492,16 +1475,14 @@ xf86ValidateModes(ScrnInfoPtr scrp, DisplayModePtr availModes,
     /*
      * Store the clockRanges for later use by the VidMode extension.
      */
-    storeClockRanges = scrp->clockRanges;
-    while (storeClockRanges != NULL) {
-        storeClockRanges = storeClockRanges->next;
-    }
-    for (cp = clockRanges; cp != NULL; cp = cp->next,
-         storeClockRanges = storeClockRanges->next) {
-        storeClockRanges = xnfalloc(sizeof(ClockRange));
+    nt_list_for_each_entry(cp, clockRanges, next) {
+        ClockRangePtr newCR = xnfalloc(sizeof(ClockRange));
+        memcpy(newCR, cp, sizeof(ClockRange));
+        newCR->next = NULL;
         if (scrp->clockRanges == NULL)
-            scrp->clockRanges = storeClockRanges;
-        memcpy(storeClockRanges, cp, sizeof(ClockRange));
+            scrp->clockRanges = newCR;
+        else
+            nt_list_append(newCR, scrp->clockRanges, ClockRange, next);
     }
 
     /* Determine which pixmap format to pass to scanLineWidth() */
@@ -1530,8 +1511,6 @@ xf86ValidateModes(ScrnInfoPtr scrp, DisplayModePtr availModes,
         }
     }
 
-    /* Initial check of virtual size against other constraints */
-    scrp->virtualFrom = X_PROBED;
     /*
      * Initialise virtX and virtY if the values are fixed.
      */
@@ -1583,7 +1562,6 @@ xf86ValidateModes(ScrnInfoPtr scrp, DisplayModePtr availModes,
 
         virtX = virtualX;
         virtY = virtualY;
-        scrp->virtualFrom = X_CONFIG;
     }
     else if (!modeNames || !*modeNames) {
         /* No virtual size given in the config, try to infer */
@@ -1668,12 +1646,8 @@ xf86ValidateModes(ScrnInfoPtr scrp, DisplayModePtr availModes,
     }
 
     /* Lookup each mode */
-#ifdef RANDR
-    if (!xf86Info.disableRandR
 #ifdef PANORAMIX
-        && noPanoramiXExtension
-#endif
-        )
+    if (noPanoramiXExtension)
         validateAllDefaultModes = TRUE;
 #endif
 
@@ -1840,7 +1814,7 @@ xf86ValidateModes(ScrnInfoPtr scrp, DisplayModePtr availModes,
             scrp->virtualX = newVirtX;
             scrp->virtualY = newVirtY;
             scrp->displayWidth = newLinePitch;
-            p->status = (scrp->ValidMode) (scrp->scrnIndex, p, FALSE,
+            p->status = (scrp->ValidMode) (scrp, p, FALSE,
                                            MODECHECK_FINAL);
 
             if (p->status != MODE_OK) {
@@ -1878,11 +1852,11 @@ xf86ValidateModes(ScrnInfoPtr scrp, DisplayModePtr availModes,
                 M_T_DRIVER,
                 0
             };
-            const int ntypes = sizeof(types) / sizeof(int);
+            const int ntypes = ARRAY_SIZE(types);
             int n;
 
-            /* 
-             * We did not find the estimated virtual size. So now we want to 
+            /*
+             * We did not find the estimated virtual size. So now we want to
              * find the largest mode available, but we want to search in the
              * modes in the order of "types" listed above.
              */
@@ -2001,7 +1975,7 @@ xf86DeleteMode(DisplayModePtr * modeList, DisplayModePtr mode)
             mode->next->prev = mode->prev;
     }
 
-    free(mode->name);
+    free((void *) mode->name);
     free(mode);
 }
 
@@ -2036,8 +2010,8 @@ xf86PruneDriverModes(ScrnInfoPtr scrp)
         /*
          * A modePool mode's prev field is used to hold a pointer to the
          * member of the scrp->modes list for which a match was considered.
-         * Clear that pointer first, otherwise xf86DeleteMode might get 
-         * confused 
+         * Clear that pointer first, otherwise xf86DeleteMode might get
+         * confused
          */
         scrp->modePool->prev = NULL;
         xf86DeleteMode(&scrp->modePool, scrp->modePool);
@@ -2089,9 +2063,8 @@ xf86PrintModes(ScrnInfoPtr scrp)
     if (scrp == NULL)
         return;
 
-    xf86DrvMsg(scrp->scrnIndex, scrp->virtualFrom, "Virtual size is %dx%d "
-               "(pitch %d)\n", scrp->virtualX, scrp->virtualY,
-               scrp->displayWidth);
+    xf86DrvMsg(scrp->scrnIndex, X_INFO, "Virtual size is %dx%d (pitch %d)\n",
+               scrp->virtualX, scrp->virtualY, scrp->displayWidth);
 
     p = scrp->modes;
     if (p == NULL)

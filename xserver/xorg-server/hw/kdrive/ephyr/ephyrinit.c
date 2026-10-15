@@ -1,8 +1,8 @@
 /*
- * Xephyr - A kdrive X server thats runs in a host X window.
+ * Xephyr - A kdrive X server that runs in a host X window.
  *          Authored by Matthew Allum <mallum@o-hand.com>
- * 
- * Copyright © 2004 Nokia 
+ *
+ * Copyright © 2004 Nokia
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -23,29 +23,33 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <kdrive-config.h>
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
 #endif
 #include "ephyr.h"
 #include "ephyrlog.h"
+#include "glx_extinit.h"
 
 extern Window EphyrPreExistingHostWin;
 extern Bool EphyrWantGrayScale;
+extern Bool EphyrWantResize;
+extern Bool EphyrWantNoHostGrab;
 extern Bool kdHasPointer;
 extern Bool kdHasKbd;
+extern Bool ephyr_glamor, ephyr_glamor_gles2, ephyr_glamor_skip_present;
 
-#ifdef GLXEXT
-extern Bool ephyrNoDRI;
-extern Bool noGlxVisualInit;
-#endif
 extern Bool ephyrNoXV;
 
-#ifdef KDRIVE_EVDEV
-extern KdPointerDriver LinuxEvdevMouseDriver;
-extern KdKeyboardDriver LinuxEvdevKeyboardDriver;
-#endif
+void processScreenOrOutputArg(const char *screen_size, const char *output, char *parent_id);
+void processOutputArg(const char *output, char *parent_id);
+void processScreenArg(const char *screen_size, char *parent_id);
 
-void processScreenArg(char *screen_size, char *parent_id);
+int
+main(int argc, char *argv[], char *envp[])
+{
+    hostx_use_resname(basename(argv[0]), 0);
+    return dix_main(argc, argv, envp);
+}
 
 void
 InitCard(char *name)
@@ -67,13 +71,7 @@ InitInput(int argc, char **argv)
     KdPointerInfo *pi;
 
     KdAddKeyboardDriver(&EphyrKeyboardDriver);
-#ifdef KDRIVE_EVDEV
-    KdAddKeyboardDriver(&LinuxEvdevKeyboardDriver);
-#endif
     KdAddPointerDriver(&EphyrMouseDriver);
-#ifdef KDRIVE_EVDEV
-    KdAddPointerDriver(&LinuxEvdevMouseDriver);
-#endif
 
     if (!kdHasKbd) {
         ki = KdNewKeyboard();
@@ -100,6 +98,15 @@ CloseInput(void)
     KdCloseInput();
 }
 
+#if INPUTTHREAD
+/** This function is called in Xserver/os/inputthread.c when starting
+    the input thread. */
+void
+ddxInputThreadInit(void)
+{
+}
+#endif
+
 #ifdef DDXBEFORERESET
 void
 ddxBeforeReset(void)
@@ -114,26 +121,29 @@ ddxUseMsg(void)
 
     ErrorF("\nXephyr Option Usage:\n");
     ErrorF("-parent <XID>        Use existing window as Xephyr root win\n");
-    ErrorF("-host-cursor         Re-use exisiting X host server cursor\n");
+    ErrorF("-sw-cursor           Render cursors in software in Xephyr\n");
     ErrorF("-fullscreen          Attempt to run Xephyr fullscreen\n");
+    ErrorF("-output <NAME>       Attempt to run Xephyr fullscreen (restricted to given output geometry)\n");
     ErrorF("-grayscale           Simulate 8bit grayscale\n");
+    ErrorF("-resizeable          Make Xephyr windows resizeable\n");
+#ifdef GLAMOR
+    ErrorF("-glamor              Enable 2D acceleration using glamor\n");
+    ErrorF("-glamor_gles2        Enable 2D acceleration using glamor (with GLES2 only)\n");
+    ErrorF("-glamor-skip-present Skip presenting the output when using glamor (for internal testing optimization)\n");
+#endif
     ErrorF
         ("-fakexa              Simulate acceleration using software rendering\n");
     ErrorF("-verbosity <level>   Set log verbosity level\n");
-#ifdef GLXEXT
-    ErrorF("-nodri               do not use DRI\n");
-#endif
     ErrorF("-noxv                do not use XV\n");
     ErrorF("-name [name]         define the name in the WM_CLASS property\n");
     ErrorF
         ("-title [title]       set the window title in the WM_NAME property\n");
+    ErrorF("-no-host-grab        Disable grabbing the keyboard and mouse.\n");
     ErrorF("\n");
-
-    exit(1);
 }
 
 void
-processScreenArg(char *screen_size, char *parent_id)
+processScreenOrOutputArg(const char *screen_size, const char *output, char *parent_id)
 {
     KdCardInfo *card;
 
@@ -143,19 +153,37 @@ processScreenArg(char *screen_size, char *parent_id)
     if (card) {
         KdScreenInfo *screen;
         unsigned long p_id = 0;
+        Bool use_geometry;
 
         screen = KdScreenInfoAdd(card);
         KdParseScreen(screen, screen_size);
+        screen->driver = calloc(1, sizeof(EphyrScrPriv));
+        if (!screen->driver)
+            FatalError("Couldn't alloc screen private\n");
 
         if (parent_id) {
             p_id = strtol(parent_id, NULL, 0);
         }
+
+        use_geometry = (strchr(screen_size, '+') != NULL);
         EPHYR_DBG("screen number:%d\n", screen->mynum);
-        hostx_add_screen(screen, p_id, screen->mynum);
+        hostx_add_screen(screen, p_id, screen->mynum, use_geometry, output);
     }
     else {
         ErrorF("No matching card found!\n");
     }
+}
+
+void
+processScreenArg(const char *screen_size, char *parent_id)
+{
+    processScreenOrOutputArg(screen_size, NULL, parent_id);
+}
+
+void
+processOutputArg(const char *output, char *parent_id)
+{
+    processScreenOrOutputArg("100x100+0+0", output, parent_id);
 }
 
 int
@@ -164,10 +192,6 @@ ddxProcessArgument(int argc, char **argv, int i)
     static char *parent = NULL;
 
     EPHYR_DBG("mark argv[%d]='%s'", i, argv[i]);
-
-    if (i == 1) {
-        hostx_use_resname(basename(argv[0]), 0);
-    }
 
     if (!strcmp(argv[i], "-parent")) {
         if (i + 1 < argc) {
@@ -199,8 +223,21 @@ ddxProcessArgument(int argc, char **argv, int i)
         UseMsg();
         exit(1);
     }
+    else if (!strcmp(argv[i], "-output")) {
+        if (i + 1 < argc) {
+            processOutputArg(argv[i + 1], NULL);
+            return 2;
+        }
+
+        UseMsg();
+        exit(1);
+    }
+    else if (!strcmp(argv[i], "-sw-cursor")) {
+        hostx_use_sw_cursor();
+        return 1;
+    }
     else if (!strcmp(argv[i], "-host-cursor")) {
-        hostx_use_host_cursor();
+        /* Compatibility with the old command line argument, now the default. */
         return 1;
     }
     else if (!strcmp(argv[i], "-fullscreen")) {
@@ -211,6 +248,33 @@ ddxProcessArgument(int argc, char **argv, int i)
         EphyrWantGrayScale = 1;
         return 1;
     }
+    else if (!strcmp(argv[i], "-resizeable")) {
+        EphyrWantResize = 1;
+        return 1;
+    }
+#ifdef GLAMOR
+    else if (!strcmp (argv[i], "-glamor")) {
+        ephyr_glamor = TRUE;
+        ephyrFuncs.initAccel = ephyr_glamor_init;
+        ephyrFuncs.enableAccel = ephyr_glamor_enable;
+        ephyrFuncs.disableAccel = ephyr_glamor_disable;
+        ephyrFuncs.finiAccel = ephyr_glamor_fini;
+        return 1;
+    }
+    else if (!strcmp (argv[i], "-glamor_gles2")) {
+        ephyr_glamor = TRUE;
+        ephyr_glamor_gles2 = TRUE;
+        ephyrFuncs.initAccel = ephyr_glamor_init;
+        ephyrFuncs.enableAccel = ephyr_glamor_enable;
+        ephyrFuncs.disableAccel = ephyr_glamor_disable;
+        ephyrFuncs.finiAccel = ephyr_glamor_fini;
+        return 1;
+    }
+    else if (!strcmp (argv[i], "-glamor-skip-present")) {
+        ephyr_glamor_skip_present = TRUE;
+        return 1;
+    }
+#endif
     else if (!strcmp(argv[i], "-fakexa")) {
         ephyrFuncs.initAccel = ephyrDrawInit;
         ephyrFuncs.enableAccel = ephyrDrawEnable;
@@ -231,14 +295,6 @@ ddxProcessArgument(int argc, char **argv, int i)
             exit(1);
         }
     }
-#ifdef GLXEXT
-    else if (!strcmp(argv[i], "-nodri")) {
-        noGlxVisualInit = FALSE;
-        ephyrNoDRI = TRUE;
-        EPHYR_LOG("no direct rendering enabled\n");
-        return 1;
-    }
-#endif
     else if (!strcmp(argv[i], "-noxv")) {
         ephyrNoXV = TRUE;
         EPHYR_LOG("no XVideo enabled\n");
@@ -283,6 +339,17 @@ ddxProcessArgument(int argc, char **argv, int i)
         return 2;
     }
     /* end Xnest compat */
+    else if (!strcmp(argv[i], "-no-host-grab")) {
+        EphyrWantNoHostGrab = 1;
+        return 1;
+    }
+    else if (!strcmp(argv[i], "-sharevts") ||
+             !strcmp(argv[i], "-novtswitch")) {
+        return 1;
+    }
+    else if (!strcmp(argv[i], "-layout")) {
+        return 2;
+    }
 
     return KdProcessArgument(argc, argv, i);
 }
@@ -292,96 +359,30 @@ OsVendorInit(void)
 {
     EPHYR_DBG("mark");
 
-    if (hostx_want_host_cursor()) {
+    if (SeatId)
+        hostx_use_sw_cursor();
+
+    if (hostx_want_host_cursor())
         ephyrFuncs.initCursor = &ephyrCursorInit;
-        ephyrFuncs.enableCursor = &ephyrCursorEnable;
+
+    if (serverGeneration == 1) {
+        if (!KdCardInfoLast()) {
+            processScreenArg("640x480", NULL);
+        }
+        hostx_init();
     }
-
-    KdOsInit(&EphyrOsFuncs);
-}
-
-/* 'Fake' cursor stuff, could be improved */
-
-static Bool
-ephyrRealizeCursor(DeviceIntPtr pDev, ScreenPtr pScreen, CursorPtr pCursor)
-{
-    return TRUE;
-}
-
-static Bool
-ephyrUnrealizeCursor(DeviceIntPtr pDev, ScreenPtr pScreen, CursorPtr pCursor)
-{
-    return TRUE;
-}
-
-static void
-ephyrSetCursor(DeviceIntPtr pDev, ScreenPtr pScreen, CursorPtr pCursor, int x,
-               int y)
-{
-    ;
-}
-
-static void
-ephyrMoveCursor(DeviceIntPtr pDev, ScreenPtr pScreen, int x, int y)
-{
-    ;
-}
-
-static Bool
-ephyrDeviceCursorInitialize(DeviceIntPtr pDev, ScreenPtr pScreen)
-{
-    return TRUE;
-}
-
-static void
-ephyrDeviceCursorCleanup(DeviceIntPtr pDev, ScreenPtr pScreen)
-{
-}
-
-miPointerSpriteFuncRec EphyrPointerSpriteFuncs = {
-    ephyrRealizeCursor,
-    ephyrUnrealizeCursor,
-    ephyrSetCursor,
-    ephyrMoveCursor,
-    ephyrDeviceCursorInitialize,
-    ephyrDeviceCursorCleanup
-};
-
-Bool
-ephyrCursorInit(ScreenPtr pScreen)
-{
-    miPointerInitialize(pScreen,
-                        &EphyrPointerSpriteFuncs,
-                        &ephyrPointerScreenFuncs, FALSE);
-
-    return TRUE;
-}
-
-void
-ephyrCursorEnable(ScreenPtr pScreen)
-{
-    ;
 }
 
 KdCardFuncs ephyrFuncs = {
     ephyrCardInit,              /* cardinit */
-    ephyrScreenInit,            /* scrinit */
+    ephyrScreenInitialize,      /* scrinit */
     ephyrInitScreen,            /* initScreen */
     ephyrFinishInitScreen,      /* finishInitScreen */
     ephyrCreateResources,       /* createRes */
-    ephyrPreserve,              /* preserve */
-    ephyrEnable,                /* enable */
-    ephyrDPMS,                  /* dpms */
-    ephyrDisable,               /* disable */
-    ephyrRestore,               /* restore */
     ephyrScreenFini,            /* scrfini */
     ephyrCardFini,              /* cardfini */
 
     0,                          /* initCursor */
-    0,                          /* enableCursor */
-    0,                          /* disableCursor */
-    0,                          /* finiCursor */
-    0,                          /* recolorCursor */
 
     0,                          /* initAccel */
     0,                          /* enableAccel */
@@ -390,4 +391,6 @@ KdCardFuncs ephyrFuncs = {
 
     ephyrGetColors,             /* getColors */
     ephyrPutColors,             /* putColors */
+
+    ephyrCloseScreen,           /* closeScreen */
 };

@@ -18,8 +18,8 @@
 #  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 #  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-AM_CFLAGS = $(CWARNFLAGS) 
-AM_CPPFLAGS = $(XORG_CFLAGS)
+AM_CFLAGS = $(CWARNFLAGS)
+AM_CPPFLAGS = -I$(top_srcdir)/include $(XORG_CFLAGS)
 
 # this is obnoxious:
 # -module lets us name the module exactly how we want
@@ -32,13 +32,14 @@ AM_CPPFLAGS = $(XORG_CFLAGS)
 
 # We have to list all the mouse drivers here, even if we don't build them, so
 # they get included in distcheck.
-OS_SRCS = bsd_mouse.c hurd_mouse.c lnx_mouse.c sun_mouse.c
+OS_SRCS = bsd_mouse.c hurd_mouse.c sun_mouse.c
 
 @DRIVER_NAME@_drv_la_SOURCES = \
 	mouse.c \
 	mouse.h \
 	pnp.c \
 	mousePriv.h \
+	compat-api.h \
 	@OS_MOUSE_NAME@_mouse.c
 
 EXTRA_DIST = $(OS_SRCS)

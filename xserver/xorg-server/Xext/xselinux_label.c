@@ -64,7 +64,7 @@ SELinuxArraySet(SELinuxArrayRec * rec, unsigned key, void *val)
 {
     if (key >= rec->size) {
         /* Need to increase size of array */
-        rec->array = realloc(rec->array, (key + 1) * sizeof(val));
+        rec->array = reallocarray(rec->array, key + 1, sizeof(val));
         if (!rec->array)
             return FALSE;
         memset(rec->array + rec->size, 0, (key - rec->size + 1) * sizeof(val));
@@ -97,7 +97,7 @@ static int
 SELinuxAtomToSIDLookup(Atom atom, SELinuxObjectRec * obj, int map, int polymap)
 {
     const char *name = NameForAtom(atom);
-    security_context_t ctx;
+    char *ctx;
     int rc = Success;
 
     obj->poly = 1;
@@ -138,8 +138,12 @@ SELinuxAtomToSID(Atom atom, int prop, SELinuxObjectRec ** obj_rtn)
     rec = SELinuxArrayGet(&arr_atoms, atom);
     if (!rec) {
         rec = calloc(1, sizeof(SELinuxAtomRec));
-        if (!rec || !SELinuxArraySet(&arr_atoms, atom, rec))
+        if (!rec)
             return BadAlloc;
+        if (!SELinuxArraySet(&arr_atoms, atom, rec)) {
+            free(rec);
+            return BadAlloc;
+        }
     }
 
     if (prop) {
@@ -255,7 +259,7 @@ SELinuxEventToSID(unsigned type, security_id_t sid_of_window,
 {
     const char *name = LookupEventName(type);
     security_id_t sid;
-    security_context_t ctx;
+    char *ctx;
 
     type &= 127;
 
@@ -291,7 +295,7 @@ SELinuxEventToSID(unsigned type, security_id_t sid_of_window,
 int
 SELinuxExtensionToSID(const char *name, security_id_t * sid_rtn)
 {
-    security_context_t ctx;
+    char *ctx;
 
     /* Look in the mappings of extension names to contexts */
     if (selabel_lookup_raw(label_hnd, &ctx, name, SELABEL_X_EXT) < 0) {
@@ -347,10 +351,10 @@ SELinuxTypeToClass(RESTYPE type)
     return (security_class_t) (unsigned long) tmp;
 }
 
-security_context_t
+char *
 SELinuxDefaultClientLabel(void)
 {
-    security_context_t ctx;
+    char *ctx;
 
     if (selabel_lookup_raw(label_hnd, &ctx, "remote", SELABEL_X_CLIENT) < 0)
         FatalError("SELinux: failed to look up remote-client context\n");

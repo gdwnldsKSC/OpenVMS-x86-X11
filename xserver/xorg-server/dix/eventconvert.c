@@ -57,7 +57,10 @@ static int eventToKeyButtonPointer(DeviceEvent *ev, xEvent **xi, int *count);
 static int eventToDeviceChanged(DeviceChangedEvent *ev, xEvent **dcce);
 static int eventToDeviceEvent(DeviceEvent *ev, xEvent **xi);
 static int eventToRawEvent(RawDeviceEvent *ev, xEvent **xi);
+static int eventToBarrierEvent(BarrierEvent *ev, xEvent **xi);
 static int eventToTouchOwnershipEvent(TouchOwnershipEvent *ev, xEvent **xi);
+static int eventToGestureSwipeEvent(GestureEvent *ev, xEvent **xi);
+static int eventToGesturePinchEvent(GestureEvent *ev, xEvent **xi);
 
 /* Do not use, read comments below */
 BOOL EventIsKeyRepeat(xEvent *event);
@@ -160,6 +163,14 @@ EventToCore(InternalEvent *event, xEvent **core_out, int *count_out)
     case ET_TouchUpdate:
     case ET_TouchEnd:
     case ET_TouchOwnership:
+    case ET_BarrierHit:
+    case ET_BarrierLeave:
+    case ET_GesturePinchBegin:
+    case ET_GesturePinchUpdate:
+    case ET_GesturePinchEnd:
+    case ET_GestureSwipeBegin:
+    case ET_GestureSwipeUpdate:
+    case ET_GestureSwipeEnd:
         ret = BadMatch;
         break;
     default:
@@ -216,6 +227,14 @@ EventToXI(InternalEvent *ev, xEvent **xi, int *count)
     case ET_TouchUpdate:
     case ET_TouchEnd:
     case ET_TouchOwnership:
+    case ET_BarrierHit:
+    case ET_BarrierLeave:
+    case ET_GesturePinchBegin:
+    case ET_GesturePinchUpdate:
+    case ET_GesturePinchEnd:
+    case ET_GestureSwipeBegin:
+    case ET_GestureSwipeUpdate:
+    case ET_GestureSwipeEnd:
         *count = 0;
         *xi = NULL;
         return BadMatch;
@@ -277,6 +296,17 @@ EventToXI2(InternalEvent *ev, xEvent **xi)
     case ET_RawTouchUpdate:
     case ET_RawTouchEnd:
         return eventToRawEvent(&ev->raw_event, xi);
+    case ET_BarrierHit:
+    case ET_BarrierLeave:
+        return eventToBarrierEvent(&ev->barrier_event, xi);
+    case ET_GesturePinchBegin:
+    case ET_GesturePinchUpdate:
+    case ET_GesturePinchEnd:
+        return eventToGesturePinchEvent(&ev->gesture_event, xi);
+    case ET_GestureSwipeBegin:
+    case ET_GestureSwipeUpdate:
+    case ET_GestureSwipeEnd:
+        return eventToGestureSwipeEvent(&ev->gesture_event, xi);
     default:
         break;
     }
@@ -451,7 +481,7 @@ appendKeyInfo(DeviceChangedEvent *dce, xXIKeyInfo * info)
     info->length = sizeof(xXIKeyInfo) / 4 + info->num_keycodes;
     info->sourceid = dce->sourceid;
 
-    kc = (uint32_t *) & info[1];
+    kc = (uint32_t *) &info[1];
     for (i = 0; i < info->num_keycodes; i++)
         *kc++ = i + dce->keys.min_keycode;
 
@@ -493,9 +523,7 @@ appendValuatorInfo(DeviceChangedEvent *dce, xXIValuatorInfo * info,
     info->min.frac = 0;
     info->max.integral = dce->valuators[axisnumber].max;
     info->max.frac = 0;
-    /* FIXME: value */
-    info->value.integral = 0;
-    info->value.frac = 0;
+    info->value = double_to_fp3232(dce->valuators[axisnumber].value);
     info->resolution = dce->valuators[axisnumber].resolution;
     info->number = axisnumber;
     info->mode = dce->valuators[axisnumber].mode;
@@ -649,14 +677,14 @@ eventToDeviceEvent(DeviceEvent *ev, xEvent **xi)
     btlen = bytes_to_int32(bits_to_bytes(MAX_BUTTONS));
     len += btlen * 4;           /* buttonmask len */
 
-    vallen =
-        count_bits(ev->valuators.mask,
-                   sizeof(ev->valuators.mask) / sizeof(ev->valuators.mask[0]));
+    vallen = count_bits(ev->valuators.mask, ARRAY_SIZE(ev->valuators.mask));
     len += vallen * 2 * sizeof(uint32_t);       /* axisvalues */
     vallen = bytes_to_int32(bits_to_bytes(MAX_VALUATORS));
     len += vallen * 4;          /* valuators mask */
 
     *xi = calloc(1, len);
+    if (*xi == NULL)
+        return BadAlloc;
     xde = (xXIDeviceEvent *) * xi;
     xde->type = GenericEvent;
     xde->extension = IReqCode;
@@ -673,20 +701,21 @@ eventToDeviceEvent(DeviceEvent *ev, xEvent **xi)
     xde->valuators_len = vallen;
     xde->deviceid = ev->deviceid;
     xde->sourceid = ev->sourceid;
-    xde->root_x = FP1616(ev->root_x, ev->root_x_frac);
-    xde->root_y = FP1616(ev->root_y, ev->root_y_frac);
+    xde->root_x = double_to_fp1616(ev->root_x + ev->root_x_frac);
+    xde->root_y = double_to_fp1616(ev->root_y + ev->root_y_frac);
 
-    if (ev->type == ET_TouchUpdate)
-        xde->flags |= (ev->flags & TOUCH_PENDING_END) ? XITouchPendingEnd : 0;
-    else
+    if (IsTouchEvent((InternalEvent *)ev)) {
+        if (ev->type == ET_TouchUpdate)
+            xde->flags |= (ev->flags & TOUCH_PENDING_END) ? XITouchPendingEnd : 0;
+
+        if (ev->flags & TOUCH_POINTER_EMULATED)
+            xde->flags |= XITouchEmulatingPointer;
+    } else {
         xde->flags = ev->flags;
 
-    if (IsTouchEvent((InternalEvent *) ev) &&
-        ev->flags & TOUCH_POINTER_EMULATED)
-        xde->flags |= XITouchEmulatingPointer;
-
-    if (ev->key_repeat)
-        xde->flags |= XIKeyRepeat;
+        if (ev->key_repeat)
+            xde->flags |= XIKeyRepeat;
+    }
 
     xde->mods.base_mods = ev->mods.base;
     xde->mods.latched_mods = ev->mods.latched;
@@ -706,7 +735,7 @@ eventToDeviceEvent(DeviceEvent *ev, xEvent **xi)
 
     ptr += xde->buttons_len * 4;
     axisval = (FP3232 *) (ptr + xde->valuators_len * 4);
-    for (i = 0; i < sizeof(ev->valuators.mask) * 8; i++) {
+    for (i = 0; i < MAX_VALUATORS; i++) {
         if (BitIsOn(ev->valuators.mask, i)) {
             SetBit(ptr, i);
             *axisval = double_to_fp3232(ev->valuators.data[i]);
@@ -724,6 +753,8 @@ eventToTouchOwnershipEvent(TouchOwnershipEvent *ev, xEvent **xi)
     xXITouchOwnershipEvent *xtoe;
 
     *xi = calloc(1, len);
+    if (*xi == NULL)
+        return BadAlloc;
     xtoe = (xXITouchOwnershipEvent *) * xi;
     xtoe->type = GenericEvent;
     xtoe->extension = IReqCode;
@@ -754,6 +785,8 @@ eventToRawEvent(RawDeviceEvent *ev, xEvent **xi)
     len += vallen * 4;          /* valuators mask */
 
     *xi = calloc(1, len);
+    if (*xi == NULL)
+        return BadAlloc;
     raw = (xXIRawEvent *) * xi;
     raw->type = GenericEvent;
     raw->extension = IReqCode;
@@ -769,7 +802,7 @@ eventToRawEvent(RawDeviceEvent *ev, xEvent **xi)
     ptr = (char *) &raw[1];
     axisval = (FP3232 *) (ptr + raw->valuators_len * 4);
     axisval_raw = axisval + nvals;
-    for (i = 0; i < sizeof(ev->valuators.mask) * 8; i++) {
+    for (i = 0; i < MAX_VALUATORS; i++) {
         if (BitIsOn(ev->valuators.mask, i)) {
             SetBit(ptr, i);
             *axisval = double_to_fp3232(ev->valuators.data[i]);
@@ -778,6 +811,123 @@ eventToRawEvent(RawDeviceEvent *ev, xEvent **xi)
             axisval_raw++;
         }
     }
+
+    return Success;
+}
+
+static int
+eventToBarrierEvent(BarrierEvent *ev, xEvent **xi)
+{
+    xXIBarrierEvent *barrier;
+    int len = sizeof(xXIBarrierEvent);
+
+    *xi = calloc(1, len);
+    if (*xi == NULL)
+        return BadAlloc;
+    barrier = (xXIBarrierEvent*) *xi;
+    barrier->type = GenericEvent;
+    barrier->extension = IReqCode;
+    barrier->evtype = GetXI2Type(ev->type);
+    barrier->length = bytes_to_int32(len - sizeof(xEvent));
+    barrier->deviceid = ev->deviceid;
+    barrier->sourceid = ev->sourceid;
+    barrier->time = ev->time;
+    barrier->event = ev->window;
+    barrier->root = ev->root;
+    barrier->dx = double_to_fp3232(ev->dx);
+    barrier->dy = double_to_fp3232(ev->dy);
+    barrier->dtime = ev->dt;
+    barrier->flags = ev->flags;
+    barrier->eventid = ev->event_id;
+    barrier->barrier = ev->barrierid;
+    barrier->root_x = double_to_fp1616(ev->root_x);
+    barrier->root_y = double_to_fp1616(ev->root_y);
+
+    return Success;
+}
+
+int
+eventToGesturePinchEvent(GestureEvent *ev, xEvent **xi)
+{
+    int len = sizeof(xXIGesturePinchEvent);
+    xXIGesturePinchEvent *xpe;
+
+    *xi = calloc(1, len);
+    if (*xi == NULL)
+        return BadAlloc;
+    xpe = (xXIGesturePinchEvent *) * xi;
+    xpe->type = GenericEvent;
+    xpe->extension = IReqCode;
+    xpe->evtype = GetXI2Type(ev->type);
+    xpe->time = ev->time;
+    xpe->length = bytes_to_int32(len - sizeof(xEvent));
+    xpe->detail = ev->num_touches;
+
+    xpe->root = ev->root;
+    xpe->deviceid = ev->deviceid;
+    xpe->sourceid = ev->sourceid;
+    xpe->root_x = double_to_fp1616(ev->root_x);
+    xpe->root_y = double_to_fp1616(ev->root_y);
+    xpe->flags |= (ev->flags & GESTURE_CANCELLED) ? XIGesturePinchEventCancelled : 0;
+
+    xpe->delta_x = double_to_fp1616(ev->delta_x);
+    xpe->delta_y = double_to_fp1616(ev->delta_y);
+    xpe->delta_unaccel_x = double_to_fp1616(ev->delta_unaccel_x);
+    xpe->delta_unaccel_y = double_to_fp1616(ev->delta_unaccel_y);
+    xpe->scale = double_to_fp1616(ev->scale);
+    xpe->delta_angle = double_to_fp1616(ev->delta_angle);
+
+    xpe->mods.base_mods = ev->mods.base;
+    xpe->mods.latched_mods = ev->mods.latched;
+    xpe->mods.locked_mods = ev->mods.locked;
+    xpe->mods.effective_mods = ev->mods.effective;
+
+    xpe->group.base_group = ev->group.base;
+    xpe->group.latched_group = ev->group.latched;
+    xpe->group.locked_group = ev->group.locked;
+    xpe->group.effective_group = ev->group.effective;
+
+    return Success;
+}
+
+int
+eventToGestureSwipeEvent(GestureEvent *ev, xEvent **xi)
+{
+    int len = sizeof(xXIGestureSwipeEvent);
+    xXIGestureSwipeEvent *xde;
+
+    *xi = calloc(1, len);
+    if (*xi == NULL)
+        return BadAlloc;
+    xde = (xXIGestureSwipeEvent *) * xi;
+    xde->type = GenericEvent;
+    xde->extension = IReqCode;
+    xde->evtype = GetXI2Type(ev->type);
+    xde->time = ev->time;
+    xde->length = bytes_to_int32(len - sizeof(xEvent));
+    xde->detail = ev->num_touches;
+
+    xde->root = ev->root;
+    xde->deviceid = ev->deviceid;
+    xde->sourceid = ev->sourceid;
+    xde->root_x = double_to_fp1616(ev->root_x);
+    xde->root_y = double_to_fp1616(ev->root_y);
+    xde->flags |= (ev->flags & GESTURE_CANCELLED) ? XIGestureSwipeEventCancelled : 0;
+
+    xde->delta_x = double_to_fp1616(ev->delta_x);
+    xde->delta_y = double_to_fp1616(ev->delta_y);
+    xde->delta_unaccel_x = double_to_fp1616(ev->delta_unaccel_x);
+    xde->delta_unaccel_y = double_to_fp1616(ev->delta_unaccel_y);
+
+    xde->mods.base_mods = ev->mods.base;
+    xde->mods.latched_mods = ev->mods.latched;
+    xde->mods.locked_mods = ev->mods.locked;
+    xde->mods.effective_mods = ev->mods.effective;
+
+    xde->group.base_group = ev->group.base;
+    xde->group.latched_group = ev->group.latched;
+    xde->group.locked_group = ev->group.locked;
+    xde->group.effective_group = ev->group.effective;
 
     return Success;
 }
@@ -929,8 +1079,74 @@ GetXI2Type(enum EventType type)
     case ET_TouchOwnership:
         xi2type = XI_TouchOwnership;
         break;
+    case ET_BarrierHit:
+        xi2type = XI_BarrierHit;
+        break;
+    case ET_BarrierLeave:
+        xi2type = XI_BarrierLeave;
+        break;
+    case ET_GesturePinchBegin:
+        xi2type = XI_GesturePinchBegin;
+        break;
+    case ET_GesturePinchUpdate:
+        xi2type = XI_GesturePinchUpdate;
+        break;
+    case ET_GesturePinchEnd:
+        xi2type = XI_GesturePinchEnd;
+        break;
+    case ET_GestureSwipeBegin:
+        xi2type = XI_GestureSwipeBegin;
+        break;
+    case ET_GestureSwipeUpdate:
+        xi2type = XI_GestureSwipeUpdate;
+        break;
+    case ET_GestureSwipeEnd:
+        xi2type = XI_GestureSwipeEnd;
+        break;
     default:
         break;
     }
     return xi2type;
+}
+
+/**
+ * Converts a gesture type to corresponding Gesture{Pinch,Swipe}Begin.
+ * Returns 0 if the input type is not a gesture.
+ */
+enum EventType
+GestureTypeToBegin(enum EventType type)
+{
+    switch (type) {
+    case ET_GesturePinchBegin:
+    case ET_GesturePinchUpdate:
+    case ET_GesturePinchEnd:
+        return ET_GesturePinchBegin;
+    case ET_GestureSwipeBegin:
+    case ET_GestureSwipeUpdate:
+    case ET_GestureSwipeEnd:
+        return ET_GestureSwipeBegin;
+    default:
+        return 0;
+    }
+}
+
+/**
+ * Converts a gesture type to corresponding Gesture{Pinch,Swipe}End.
+ * Returns 0 if the input type is not a gesture.
+ */
+enum EventType
+GestureTypeToEnd(enum EventType type)
+{
+    switch (type) {
+    case ET_GesturePinchBegin:
+    case ET_GesturePinchUpdate:
+    case ET_GesturePinchEnd:
+        return ET_GesturePinchEnd;
+    case ET_GestureSwipeBegin:
+    case ET_GestureSwipeUpdate:
+    case ET_GestureSwipeEnd:
+        return ET_GestureSwipeEnd;
+    default:
+        return 0;
+    }
 }

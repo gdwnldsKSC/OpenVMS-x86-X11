@@ -21,6 +21,9 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
+/* Test relies on assert() */
+#undef NDEBUG
+
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -29,6 +32,8 @@
 
 #include "xf86.h"
 #include "xf86Parser.h"
+
+#include "tests-common.h"
 
 static void
 xfree86_option_list_duplicate(void)
@@ -67,13 +72,15 @@ xfree86_option_list_duplicate(void)
 
     a = xf86FindOption(options, o_null);
     b = xf86FindOption(duplicate, o_null);
-    assert(a && b);
+    assert(a);
+    assert(b);
 }
 
 static void
 xfree86_add_comment(void)
 {
-    char *current = NULL, *comment;
+    char *current = NULL;
+    const char *comment;
     char compare[1024] = { 0 };
 
     comment = "# foo";
@@ -95,7 +102,7 @@ xfree86_add_comment(void)
 }
 
 int
-main(int argc, char **argv)
+xfree86_test(void)
 {
     xfree86_option_list_duplicate();
     xfree86_add_comment();

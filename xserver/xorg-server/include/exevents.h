@@ -162,13 +162,6 @@ extern void
  ProcessOtherEvent(InternalEvent * /* ev */ ,
                    DeviceIntPtr /* other */ );
 
-extern void
- DeviceFocusEvent(DeviceIntPtr /* dev */ ,
-                  int /* type */ ,
-                  int /* mode */ ,
-                  int /* detail */ ,
-                  WindowPtr /* pWin */ );
-
 extern int
  CheckGrabValues(ClientPtr /* client */ ,
                  GrabParameters * /* param */ );
@@ -199,11 +192,12 @@ extern int
             GrabMask * /* eventMask */ );
 
 extern int
- GrabTouch(ClientPtr /* client */ ,
-           DeviceIntPtr /* dev */ ,
-           DeviceIntPtr /* mod_dev */ ,
-           GrabParameters * /* param */ ,
-           GrabMask * /* eventMask */ );
+ GrabTouchOrGesture(ClientPtr /* client */ ,
+                    DeviceIntPtr /* dev */ ,
+                    DeviceIntPtr /* mod_dev */ ,
+                    int /* type */ ,
+                    GrabParameters * /* param */ ,
+                    GrabMask * /* eventMask */ );
 
 extern int
  SelectForWindow(DeviceIntPtr /* dev */ ,

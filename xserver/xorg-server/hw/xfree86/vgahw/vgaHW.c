@@ -591,12 +591,12 @@ vgaHWProtect(ScrnInfoPtr pScrn, Bool on)
         }
         else {
             /*
-             * Reenable sequencer, then turn on screen.
+             * Re-enable sequencer, then turn on screen.
              */
 
             tmp = hwp->readSeq(hwp, 0x01);
 
-            hwp->writeSeq(hwp, 0x01, tmp & ~0x20);      /* reenable display */
+            hwp->writeSeq(hwp, 0x01, tmp & ~0x20);      /* re-enable display */
             vgaHWSeqReset(hwp, FALSE);  /* clear synchronousreset */
 
             hwp->disablePalette(hwp);
@@ -651,7 +651,7 @@ vgaHWSaveScreen(ScreenPtr pScreen, int mode)
     Bool on;
 
     if (pScreen != NULL)
-        pScrn = xf86Screens[pScreen->myNum];
+        pScrn = xf86ScreenToScrn(pScreen);
 
     on = xf86IsUnblank(mode);
 
@@ -1109,7 +1109,7 @@ vgaHWSaveColormap(ScrnInfoPtr scrninfp, vgaRegPtr save)
         hwp->writeDacData(hwp, save->DAC[i]);
 
     if (readError) {
-        /*                       
+        /*
          * save the default lookup table
          */
         memmove(save->DAC, defaultDAC, 768);
@@ -1184,7 +1184,7 @@ vgaHWInit(ScrnInfoPtr scrninfp, DisplayModePtr mode)
     regp = &hwp->ModeReg;
 
     /*
-     * compute correct Hsync & Vsync polarity 
+     * compute correct Hsync & Vsync polarity
      */
     if ((mode->Flags & (V_PHSYNC | V_NHSYNC))
         && (mode->Flags & (V_PVSYNC | V_NVSYNC))) {
@@ -1314,10 +1314,8 @@ vgaHWInit(ScrnInfoPtr scrninfp, DisplayModePtr mode)
     if (depth == 1) {
         /* Initialise the Mono map according to which bit-plane gets used */
 
-        Bool flipPixels = xf86GetFlipPixels();
-
         for (i = 0; i < 16; i++)
-            if (((i & (1 << BIT_PLANE)) != 0) != flipPixels)
+            if ((i & (1 << BIT_PLANE)) != 0)
                 regp->Attribute[i] = WHITE_VALUE;
             else
                 regp->Attribute[i] = BLACK_VALUE;
@@ -1439,7 +1437,7 @@ vgaHWVBlankKGA(DisplayModePtr mode, vgaRegPtr regp, int nBits,
     CARD32 nExtBits = (nBits < 8) ? 0 : (nBits - 8);
     CARD32 ExtBitMask = ((1 << nExtBits) - 1) << 8;
 
-    /* If width is not known nBits should be 0. In this 
+    /* If width is not known nBits should be 0. In this
      * case BitMask is set to 0 so we can check for it. */
     CARD32 BitMask = (nBits < 7) ? 0 : ((1 << nExtBits) - 1);
     int VBlankStart = (mode->CrtcVBlankStart - 1) & 0xFF;
@@ -1873,7 +1871,7 @@ vgaHWSetOverscan(ScrnInfoPtr pScrn, int overscan)
 Bool
 vgaHWHandleColormaps(ScreenPtr pScreen)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
 
     if (pScrn->depth > 1 && pScrn->depth <= 8) {
         return xf86HandleColormaps(pScreen, 1 << pScrn->depth,
@@ -1885,7 +1883,7 @@ vgaHWHandleColormaps(ScreenPtr pScreen)
 }
 
 /* ----------------------- DDC support ------------------------*/
-/* 
+/*
  * Adjust v_active, v_blank, v_sync, v_sync_end, v_blank_end, v_total
  * to read out EDID at a faster rate. Allowed maximum is 25kHz with
  * 20 usec v_sync active. Set positive v_sync polarity, turn off lightpen
@@ -1948,7 +1946,7 @@ vgaHWddc1SetSpeed(ScrnInfoPtr pScrn, xf86ddcSpeed speed)
         hwp->writeCrtc(hwp, 0x09, (save->cr09 & 0xDF));
         save->cr07 = hwp->readCrtc(hwp, 0x07);
         hwp->writeCrtc(hwp, 0x07, (save->cr07 & 0x10));
-        /* vsync polarity negativ & ensure a 25MHz clock */
+        /* vsync polarity negative & ensure a 25MHz clock */
         save->msr = hwp->readMiscOut(hwp);
         hwp->writeMiscOut(hwp, ((save->msr & 0xF3) | 0x80));
         break;

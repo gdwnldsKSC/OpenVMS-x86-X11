@@ -7,7 +7,6 @@ Xtransinclude_HEADERS = \
 	Xtransint.h \
 	Xtranslcl.c \
 	Xtranssock.c \
-	Xtranstli.c \
 	Xtransutil.c \
 	transport.c
 
@@ -18,7 +17,7 @@ pkgconfigdir = $(datadir)/pkgconfig
 pkgconfig_DATA = xtrans.pc
 
 MAINTAINERCLEANFILES = ChangeLog INSTALL
-EXTRA_DIST = ${aclocal_DATA}
+EXTRA_DIST = ${aclocal_DATA} README.md
 
 .PHONY: ChangeLog INSTALL
 

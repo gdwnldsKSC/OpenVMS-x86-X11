@@ -21,3 +21,4 @@ extras/bison/** -text
 VMS-SUPPORT/**/*.COM text eol=lf
 VMS-SUPPORT/**/*.MMS text eol=lf
 VMS-SUPPORT/**/*.H text eol=lf
+VMS-SUPPORT/**/*.OPT text eol=lf

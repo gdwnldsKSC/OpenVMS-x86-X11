@@ -35,8 +35,8 @@ of the copyright holder.
 
 */
 
-#ifdef HAVE_CONFIG_H
-#include <kdrive-config.h>
+#ifdef HAVE_DIX_CONFIG_H
+#include <dix-config.h>
 #endif
 #include "kdrive.h"
 
@@ -56,178 +56,101 @@ of the copyright holder.
 #include "kxv.h"
 #include "fourcc.h"
 
-/* XvScreenRec fields */
-
-static Bool KdXVCloseScreen(int, ScreenPtr);
-static int KdXVQueryAdaptors(ScreenPtr, XvAdaptorPtr *, int *);
-
 /* XvAdaptorRec fields */
 
-static int KdXVAllocatePort(unsigned long, XvPortPtr, XvPortPtr *);
-static int KdXVFreePort(XvPortPtr);
-static int KdXVPutVideo(ClientPtr, DrawablePtr, XvPortPtr, GCPtr,
+static int KdXVPutVideo(DrawablePtr, XvPortPtr, GCPtr,
                         INT16, INT16, CARD16, CARD16,
                         INT16, INT16, CARD16, CARD16);
-static int KdXVPutStill(ClientPtr, DrawablePtr, XvPortPtr, GCPtr,
+static int KdXVPutStill(DrawablePtr, XvPortPtr, GCPtr,
                         INT16, INT16, CARD16, CARD16,
                         INT16, INT16, CARD16, CARD16);
-static int KdXVGetVideo(ClientPtr, DrawablePtr, XvPortPtr, GCPtr,
+static int KdXVGetVideo(DrawablePtr, XvPortPtr, GCPtr,
                         INT16, INT16, CARD16, CARD16,
                         INT16, INT16, CARD16, CARD16);
-static int KdXVGetStill(ClientPtr, DrawablePtr, XvPortPtr, GCPtr,
+static int KdXVGetStill(DrawablePtr, XvPortPtr, GCPtr,
                         INT16, INT16, CARD16, CARD16,
                         INT16, INT16, CARD16, CARD16);
-static int KdXVStopVideo(ClientPtr, XvPortPtr, DrawablePtr);
-static int KdXVSetPortAttribute(ClientPtr, XvPortPtr, Atom, INT32);
-static int KdXVGetPortAttribute(ClientPtr, XvPortPtr, Atom, INT32 *);
-static int KdXVQueryBestSize(ClientPtr, XvPortPtr, CARD8,
+static int KdXVStopVideo(XvPortPtr, DrawablePtr);
+static int KdXVSetPortAttribute(XvPortPtr, Atom, INT32);
+static int KdXVGetPortAttribute(XvPortPtr, Atom, INT32 *);
+static int KdXVQueryBestSize(XvPortPtr, CARD8,
                              CARD16, CARD16, CARD16, CARD16,
                              unsigned int *, unsigned int *);
-static int KdXVPutImage(ClientPtr, DrawablePtr, XvPortPtr, GCPtr,
+static int KdXVPutImage(DrawablePtr, XvPortPtr, GCPtr,
                         INT16, INT16, CARD16, CARD16,
                         INT16, INT16, CARD16, CARD16,
                         XvImagePtr, unsigned char *, Bool, CARD16, CARD16);
-static int KdXVQueryImageAttributes(ClientPtr, XvPortPtr, XvImagePtr,
+static int KdXVQueryImageAttributes(XvPortPtr, XvImagePtr,
                                     CARD16 *, CARD16 *, int *, int *);
 
 /* ScreenRec fields */
 
-static Bool KdXVCreateWindow(WindowPtr pWin);
 static Bool KdXVDestroyWindow(WindowPtr pWin);
-static void KdXVWindowExposures(WindowPtr pWin, RegionPtr r1, RegionPtr r2);
+static void KdXVWindowExposures(WindowPtr pWin, RegionPtr r1);
 static void KdXVClipNotify(WindowPtr pWin, int dx, int dy);
+static Bool KdXVCloseScreen(ScreenPtr);
 
 /* misc */
-static Bool KdXVInitAdaptors(ScreenPtr, KdVideoAdaptorPtr *, int);
+static Bool KdXVInitAdaptors(ScreenPtr, KdVideoAdaptorPtr, int);
 
 static DevPrivateKeyRec KdXVWindowKeyRec;
 
 #define KdXVWindowKey (&KdXVWindowKeyRec)
 static DevPrivateKey KdXvScreenKey;
+static DevPrivateKeyRec KdXVScreenPrivateKey;
 static unsigned long KdXVGeneration = 0;
 static unsigned long PortResource = 0;
-
-DevPrivateKey (*XvGetScreenKeyProc) (void) = XvGetScreenKey;
-unsigned long (*XvGetRTPortProc) (void) = XvGetRTPort;
-int (*XvScreenInitProc) (ScreenPtr) = XvScreenInit;
 
 #define GET_XV_SCREEN(pScreen) ((XvScreenPtr) \
     dixLookupPrivate(&(pScreen)->devPrivates, KdXvScreenKey))
 
 #define GET_KDXV_SCREEN(pScreen) \
-  	((KdXVScreenPtr)(GET_XV_SCREEN(pScreen)->devPriv.ptr))
+    ((KdXVScreenPtr)(dixGetPrivate(&pScreen->devPrivates, &KdXVScreenPrivateKey)))
 
 #define GET_KDXV_WINDOW(pWin) ((KdXVWindowPtr) \
     dixLookupPrivate(&(pWin)->devPrivates, KdXVWindowKey))
 
-static KdXVInitGenericAdaptorPtr *GenDrivers = NULL;
-static int NumGenDrivers = 0;
-
-int
-KdXVRegisterGenericAdaptorDriver(KdXVInitGenericAdaptorPtr InitFunc)
-{
-    KdXVInitGenericAdaptorPtr *newdrivers;
-
-/*   fprintf(stderr,"KdXVRegisterGenericAdaptorDriver\n"); */
-
-    newdrivers = realloc(GenDrivers, sizeof(KdXVInitGenericAdaptorPtr) *
-                         (1 + NumGenDrivers));
-    if (!newdrivers)
-        return 0;
-    GenDrivers = newdrivers;
-
-    GenDrivers[NumGenDrivers++] = InitFunc;
-
-    return 1;
-}
-
-int
-KdXVListGenericAdaptors(KdScreenInfo * screen, KdVideoAdaptorPtr ** adaptors)
-{
-    int i, j, n, num;
-    KdVideoAdaptorPtr *DrivAdap, *new;
-
-    num = 0;
-    *adaptors = NULL;
-    for (i = 0; i < NumGenDrivers; i++) {
-        n = GenDrivers[i] (screen, &DrivAdap);
-        if (0 == n)
-            continue;
-        new = realloc(*adaptors, sizeof(KdVideoAdaptorPtr) * (num + n));
-        if (NULL == new)
-            continue;
-        *adaptors = new;
-        for (j = 0; j < n; j++, num++)
-            (*adaptors)[num] = DrivAdap[j];
-    }
-    return num;
-}
-
-KdVideoAdaptorPtr
-KdXVAllocateVideoAdaptorRec(KdScreenInfo * screen)
-{
-    return calloc(1, sizeof(KdVideoAdaptorRec));
-}
-
-void
-KdXVFreeVideoAdaptorRec(KdVideoAdaptorPtr ptr)
-{
-    free(ptr);
-}
-
 Bool
-KdXVScreenInit(ScreenPtr pScreen, KdVideoAdaptorPtr * adaptors, int num)
+KdXVScreenInit(ScreenPtr pScreen, KdVideoAdaptorPtr adaptors, int num)
 {
     KdXVScreenPtr ScreenPriv;
-    XvScreenPtr pxvs;
 
 /*   fprintf(stderr,"KdXVScreenInit initializing %d adaptors\n",num); */
 
     if (KdXVGeneration != serverGeneration)
         KdXVGeneration = serverGeneration;
 
-    if (!XvGetScreenKeyProc || !XvGetRTPortProc || !XvScreenInitProc)
+    if (noXvExtension)
         return FALSE;
 
     if (!dixRegisterPrivateKey(&KdXVWindowKeyRec, PRIVATE_WINDOW, 0))
         return FALSE;
-
-    if (Success != (*XvScreenInitProc) (pScreen))
+    if (!dixRegisterPrivateKey(&KdXVScreenPrivateKey, PRIVATE_SCREEN, 0))
         return FALSE;
 
-    KdXvScreenKey = (*XvGetScreenKeyProc) ();
-    PortResource = (*XvGetRTPortProc) ();
+    if (Success != XvScreenInit(pScreen))
+        return FALSE;
 
-    pxvs = GET_XV_SCREEN(pScreen);
-
-    /* Anyone initializing the Xv layer must provide these two.
-       The Xv di layer calls them without even checking if they exist! */
-
-    pxvs->ddCloseScreen = KdXVCloseScreen;
-    pxvs->ddQueryAdaptors = KdXVQueryAdaptors;
-
-    /* The Xv di layer provides us with a private hook so that we don't
-       have to allocate our own screen private.  They also provide
-       a CloseScreen hook so that we don't have to wrap it.  I'm not
-       sure that I appreciate that.  */
+    KdXvScreenKey = XvGetScreenKey();
+    PortResource = XvGetRTPort();
 
     ScreenPriv = malloc(sizeof(KdXVScreenRec));
-    pxvs->devPriv.ptr = (pointer) ScreenPriv;
+    dixSetPrivate(&pScreen->devPrivates, &KdXVScreenPrivateKey, ScreenPriv);
 
     if (!ScreenPriv)
         return FALSE;
 
-    ScreenPriv->CreateWindow = pScreen->CreateWindow;
     ScreenPriv->DestroyWindow = pScreen->DestroyWindow;
     ScreenPriv->WindowExposures = pScreen->WindowExposures;
     ScreenPriv->ClipNotify = pScreen->ClipNotify;
+    ScreenPriv->CloseScreen = pScreen->CloseScreen;
 
 /*   fprintf(stderr,"XV: Wrapping screen funcs\n"); */
 
-    pScreen->CreateWindow = KdXVCreateWindow;
     pScreen->DestroyWindow = KdXVDestroyWindow;
     pScreen->WindowExposures = KdXVWindowExposures;
     pScreen->ClipNotify = KdXVClipNotify;
+    pScreen->CloseScreen = KdXVCloseScreen;
 
     if (!KdXVInitAdaptors(pScreen, adaptors, num))
         return FALSE;
@@ -239,19 +162,6 @@ static void
 KdXVFreeAdaptor(XvAdaptorPtr pAdaptor)
 {
     int i;
-
-    free(pAdaptor->name);
-
-    if (pAdaptor->pEncodings) {
-        XvEncodingPtr pEncode = pAdaptor->pEncodings;
-
-        for (i = 0; i < pAdaptor->nEncodings; i++, pEncode++) {
-            free(pEncode->name);
-        }
-        free(pAdaptor->pEncodings);
-    }
-
-    free(pAdaptor->pFormats);
 
     if (pAdaptor->pPorts) {
         XvPortPtr pPort = pAdaptor->pPorts;
@@ -267,26 +177,13 @@ KdXVFreeAdaptor(XvAdaptorPtr pAdaptor)
                 free(pPriv);
             }
         }
-        free(pAdaptor->pPorts);
     }
 
-    if (pAdaptor->nAttributes) {
-        XvAttributePtr pAttribute = pAdaptor->pAttributes;
-
-        for (i = 0; i < pAdaptor->nAttributes; i++, pAttribute++) {
-            free(pAttribute->name);
-        }
-
-        free(pAdaptor->pAttributes);
-    }
-
-    free(pAdaptor->pImages);
-
-    free(pAdaptor->devPriv.ptr);
+    XvFreeAdaptor(pAdaptor);
 }
 
 static Bool
-KdXVInitAdaptors(ScreenPtr pScreen, KdVideoAdaptorPtr * infoPtr, int number)
+KdXVInitAdaptors(ScreenPtr pScreen, KdVideoAdaptorPtr infoPtr, int number)
 {
     KdScreenPriv(pScreen);
     KdScreenInfo *screen = pScreenPriv->screen;
@@ -299,15 +196,11 @@ KdXVInitAdaptors(ScreenPtr pScreen, KdVideoAdaptorPtr * infoPtr, int number)
     XvPortRecPrivatePtr portPriv;
     XvPortPtr pPort, pp;
     int numPort;
-    KdAttributePtr attributePtr;
-    XvAttributePtr pAttribute, pat;
     KdVideoFormatPtr formatPtr;
     XvFormatPtr pFormat, pf;
     int numFormat, totFormat;
     KdVideoEncodingPtr encodingPtr;
     XvEncodingPtr pEncode, pe;
-    KdImagePtr imagePtr;
-    XvImagePtr pImage, pi;
     int numVisuals;
     VisualPtr pVisual;
     int i;
@@ -319,7 +212,7 @@ KdXVInitAdaptors(ScreenPtr pScreen, KdVideoAdaptorPtr * infoPtr, int number)
         return FALSE;
 
     for (pa = pAdaptor, na = 0, numAdaptor = 0; na < number; na++, adaptorPtr++) {
-        adaptorPtr = infoPtr[na];
+        adaptorPtr = &infoPtr[na];
 
         if (!adaptorPtr->StopVideo || !adaptorPtr->SetPortAttribute ||
             !adaptorPtr->GetPortAttribute || !adaptorPtr->QueryBestSize)
@@ -353,8 +246,6 @@ KdXVInitAdaptors(ScreenPtr pScreen, KdVideoAdaptorPtr * infoPtr, int number)
             continue;
 
         pa->pScreen = pScreen;
-        pa->ddAllocatePort = KdXVAllocatePort;
-        pa->ddFreePort = KdXVFreePort;
         pa->ddPutVideo = KdXVPutVideo;
         pa->ddPutStill = KdXVPutStill;
         pa->ddGetVideo = KdXVGetVideo;
@@ -385,49 +276,24 @@ KdXVInitAdaptors(ScreenPtr pScreen, KdVideoAdaptorPtr * infoPtr, int number)
         }
 
         if (adaptorPtr->nImages &&
-            (pImage = calloc(adaptorPtr->nImages, sizeof(XvImageRec)))) {
-
-            for (i = 0, pi = pImage, imagePtr = adaptorPtr->pImages;
-                 i < adaptorPtr->nImages; i++, pi++, imagePtr++) {
-                pi->id = imagePtr->id;
-                pi->type = imagePtr->type;
-                pi->byte_order = imagePtr->byte_order;
-                memcpy(pi->guid, imagePtr->guid, 16);
-                pi->bits_per_pixel = imagePtr->bits_per_pixel;
-                pi->format = imagePtr->format;
-                pi->num_planes = imagePtr->num_planes;
-                pi->depth = imagePtr->depth;
-                pi->red_mask = imagePtr->red_mask;
-                pi->green_mask = imagePtr->green_mask;
-                pi->blue_mask = imagePtr->blue_mask;
-                pi->y_sample_bits = imagePtr->y_sample_bits;
-                pi->u_sample_bits = imagePtr->u_sample_bits;
-                pi->v_sample_bits = imagePtr->v_sample_bits;
-                pi->horz_y_period = imagePtr->horz_y_period;
-                pi->horz_u_period = imagePtr->horz_u_period;
-                pi->horz_v_period = imagePtr->horz_v_period;
-                pi->vert_y_period = imagePtr->vert_y_period;
-                pi->vert_u_period = imagePtr->vert_u_period;
-                pi->vert_v_period = imagePtr->vert_v_period;
-                memcpy(pi->component_order, imagePtr->component_order, 32);
-                pi->scanline_order = imagePtr->scanline_order;
-            }
+            (pa->pImages = calloc(adaptorPtr->nImages, sizeof(XvImageRec)))) {
+            memcpy(pa->pImages, adaptorPtr->pImages,
+                   adaptorPtr->nImages * sizeof(XvImageRec));
             pa->nImages = adaptorPtr->nImages;
-            pa->pImages = pImage;
         }
 
         if (adaptorPtr->nAttributes &&
-            (pAttribute =
-             calloc(adaptorPtr->nAttributes, sizeof(XvAttributeRec)))) {
-            for (pat = pAttribute, attributePtr = adaptorPtr->pAttributes, i =
-                 0; i < adaptorPtr->nAttributes; pat++, i++, attributePtr++) {
-                pat->flags = attributePtr->flags;
-                pat->min_value = attributePtr->min_value;
-                pat->max_value = attributePtr->max_value;
-                pat->name = strdup(attributePtr->name);
+            (pa->pAttributes = calloc(adaptorPtr->nAttributes,
+                                      sizeof(XvAttributeRec)))) {
+            memcpy(pa->pAttributes, adaptorPtr->pAttributes,
+                   adaptorPtr->nAttributes * sizeof(XvAttributeRec));
+
+            for (i = 0; i < adaptorPtr->nAttributes; i++) {
+                pa->pAttributes[i].name =
+                    strdup(adaptorPtr->pAttributes[i].name);
             }
+
             pa->nAttributes = adaptorPtr->nAttributes;
-            pa->pAttributes = pAttribute;
         }
 
         totFormat = adaptorPtr->nFormats;
@@ -449,8 +315,8 @@ KdXVInitAdaptors(ScreenPtr pScreen, KdVideoAdaptorPtr * infoPtr, int number)
                         void *moreSpace;
 
                         totFormat *= 2;
-                        moreSpace = realloc(pFormat,
-                                            totFormat * sizeof(XvFormatRec));
+                        moreSpace = reallocarray(pFormat, totFormat,
+                                                 sizeof(XvFormatRec));
                         if (!moreSpace)
                             break;
                         pFormat = moreSpace;
@@ -491,7 +357,7 @@ KdXVInitAdaptors(ScreenPtr pScreen, KdVideoAdaptorPtr * infoPtr, int number)
         adaptorPriv->PutImage = adaptorPtr->PutImage;
         adaptorPriv->ReputImage = adaptorPtr->ReputImage;
 
-        pa->devPriv.ptr = (pointer) adaptorPriv;
+        pa->devPriv.ptr = (void *) adaptorPriv;
 
         if (!(pPort = calloc(adaptorPtr->nPorts, sizeof(XvPortRec)))) {
             KdXVFreeAdaptor(pa);
@@ -557,7 +423,7 @@ KdXVInitAdaptors(ScreenPtr pScreen, KdVideoAdaptorPtr * infoPtr, int number)
    client clip from the GC when the video is initialized.  We then
    use KdXVUpdateCompositeClip to calculate the new composite clip
    when we need it.  This is different from what DEC did.  They saved
-   the GC and used it's clip list when they needed to reclip the window,
+   the GC and used its clip list when they needed to reclip the window,
    even if the client clip was different from the one the video was
    initialized with.  If the original GC was destroyed, they had to stop
    the video.  I like the new method better (MArk).
@@ -614,7 +480,7 @@ static void
 KdXVCopyClip(XvPortRecPrivatePtr portPriv, GCPtr pGC)
 {
     /* copy the new clip if it exists */
-    if ((pGC->clientClipType == CT_REGION) && pGC->clientClip) {
+    if (pGC->clientClip) {
         if (!portPriv->clientClip)
             portPriv->clientClip = RegionCreate(NullBox, 1);
         /* Note: this is in window coordinates */
@@ -662,10 +528,6 @@ KdXVRegetVideo(XvPortRecPrivatePtr portPriv)
     if (!RegionNotEmpty(&ClipRegion)) {
         clippedAway = TRUE;
         goto CLIP_VIDEO_BAILOUT;
-    }
-
-    if (portPriv->AdaptorRec->flags & VIDEO_INVERT_CLIPLIST) {
-        RegionSubtract(&ClipRegion, &WinRegion, &ClipRegion);
     }
 
     ret = (*portPriv->AdaptorRec->GetVideo) (portPriv->screen, portPriv->pDraw,
@@ -744,22 +606,6 @@ KdXVReputVideo(XvPortRecPrivatePtr portPriv)
         goto CLIP_VIDEO_BAILOUT;
     }
 
-    /* bailout if we have to clip but the hardware doesn't support it */
-    if (portPriv->AdaptorRec->flags & VIDEO_NO_CLIPPING) {
-        BoxPtr clipBox = RegionRects(&ClipRegion);
-
-        if ((RegionNumRects(&ClipRegion) != 1) ||
-            (clipBox->x1 != WinBox.x1) || (clipBox->x2 != WinBox.x2) ||
-            (clipBox->y1 != WinBox.y1) || (clipBox->y2 != WinBox.y2)) {
-            clippedAway = TRUE;
-            goto CLIP_VIDEO_BAILOUT;
-        }
-    }
-
-    if (portPriv->AdaptorRec->flags & VIDEO_INVERT_CLIPLIST) {
-        RegionSubtract(&ClipRegion, &WinRegion, &ClipRegion);
-    }
-
     ret = (*portPriv->AdaptorRec->PutVideo) (portPriv->screen, portPriv->pDraw,
                                              portPriv->vid_x, portPriv->vid_y,
                                              WinBox.x1, WinBox.y1,
@@ -836,22 +682,6 @@ KdXVReputImage(XvPortRecPrivatePtr portPriv)
         goto CLIP_VIDEO_BAILOUT;
     }
 
-    /* bailout if we have to clip but the hardware doesn't support it */
-    if (portPriv->AdaptorRec->flags & VIDEO_NO_CLIPPING) {
-        BoxPtr clipBox = RegionRects(&ClipRegion);
-
-        if ((RegionNumRects(&ClipRegion) != 1) ||
-            (clipBox->x1 != WinBox.x1) || (clipBox->x2 != WinBox.x2) ||
-            (clipBox->y1 != WinBox.y1) || (clipBox->y2 != WinBox.y2)) {
-            clippedAway = TRUE;
-            goto CLIP_VIDEO_BAILOUT;
-        }
-    }
-
-    if (portPriv->AdaptorRec->flags & VIDEO_INVERT_CLIPLIST) {
-        RegionSubtract(&ClipRegion, &WinRegion, &ClipRegion);
-    }
-
     ret =
         (*portPriv->AdaptorRec->ReputImage) (portPriv->screen, portPriv->pDraw,
                                              WinBox.x1, WinBox.y1, &ClipRegion,
@@ -875,27 +705,6 @@ KdXVReputImage(XvPortRecPrivatePtr portPriv)
     RegionUninit(&ClipRegion);
 
     return ret;
-}
-
-static int
-KdXVReputAllVideo(WindowPtr pWin, pointer data)
-{
-    KdXVWindowPtr WinPriv;
-
-    if (pWin->drawable.type != DRAWABLE_WINDOW)
-        return WT_DONTWALKCHILDREN;
-
-    WinPriv = GET_KDXV_WINDOW(pWin);
-
-    while (WinPriv) {
-        if (WinPriv->PortRec->type == XvInputMask)
-            KdXVReputVideo(WinPriv->PortRec);
-        else
-            KdXVRegetVideo(WinPriv->PortRec);
-        WinPriv = WinPriv->next;
-    }
-
-    return WT_WALKCHILDREN;
 }
 
 static int
@@ -948,23 +757,6 @@ KdXVRemovePortFromWindow(WindowPtr pWin, XvPortRecPrivatePtr portPriv)
 /****  ScreenRec fields ****/
 
 static Bool
-KdXVCreateWindow(WindowPtr pWin)
-{
-    ScreenPtr pScreen = pWin->drawable.pScreen;
-    KdXVScreenPtr ScreenPriv = GET_KDXV_SCREEN(pScreen);
-    int ret;
-
-    pScreen->CreateWindow = ScreenPriv->CreateWindow;
-    ret = (*pScreen->CreateWindow) (pWin);
-    pScreen->CreateWindow = KdXVCreateWindow;
-
-    if (ret)
-        dixSetPrivate(&pWin->devPrivates, KdXVWindowKey, NULL);
-
-    return ret;
-}
-
-static Bool
 KdXVDestroyWindow(WindowPtr pWin)
 {
     ScreenPtr pScreen = pWin->drawable.pScreen;
@@ -997,7 +789,7 @@ KdXVDestroyWindow(WindowPtr pWin)
 }
 
 static void
-KdXVWindowExposures(WindowPtr pWin, RegionPtr reg1, RegionPtr reg2)
+KdXVWindowExposures(WindowPtr pWin, RegionPtr reg1)
 {
     ScreenPtr pScreen = pWin->drawable.pScreen;
     KdXVScreenPtr ScreenPriv = GET_KDXV_SCREEN(pScreen);
@@ -1009,7 +801,7 @@ KdXVWindowExposures(WindowPtr pWin, RegionPtr reg1, RegionPtr reg2)
     AreasExposed = (WinPriv && reg1 && RegionNotEmpty(reg1));
 
     pScreen->WindowExposures = ScreenPriv->WindowExposures;
-    (*pScreen->WindowExposures) (pWin, reg1, reg2);
+    (*pScreen->WindowExposures) (pWin, reg1);
     pScreen->WindowExposures = KdXVWindowExposures;
 
     /* filter out XClearWindow/Area */
@@ -1118,7 +910,7 @@ KdXVClipNotify(WindowPtr pWin, int dx, int dy)
 /**** Required XvScreenRec fields ****/
 
 static Bool
-KdXVCloseScreen(int i, ScreenPtr pScreen)
+KdXVCloseScreen(ScreenPtr pScreen)
 {
     XvScreenPtr pxvs = GET_XV_SCREEN(pScreen);
     KdXVScreenPtr ScreenPriv = GET_KDXV_SCREEN(pScreen);
@@ -1128,10 +920,10 @@ KdXVCloseScreen(int i, ScreenPtr pScreen)
     if (!ScreenPriv)
         return TRUE;
 
-    pScreen->CreateWindow = ScreenPriv->CreateWindow;
     pScreen->DestroyWindow = ScreenPriv->DestroyWindow;
     pScreen->WindowExposures = ScreenPriv->WindowExposures;
     pScreen->ClipNotify = ScreenPriv->ClipNotify;
+    pScreen->CloseScreen = ScreenPriv->CloseScreen;
 
 /*   fprintf(stderr,"XV: Unwrapping screen funcs\n"); */
 
@@ -1142,96 +934,13 @@ KdXVCloseScreen(int i, ScreenPtr pScreen)
     free(pxvs->pAdaptors);
     free(ScreenPriv);
 
-    return TRUE;
-}
-
-static int
-KdXVQueryAdaptors(ScreenPtr pScreen,
-                  XvAdaptorPtr * p_pAdaptors, int *p_nAdaptors)
-{
-    XvScreenPtr pxvs = GET_XV_SCREEN(pScreen);
-
-    *p_nAdaptors = pxvs->nAdaptors;
-    *p_pAdaptors = pxvs->pAdaptors;
-
-    return Success;
-}
-
-static Bool
-KdXVRunning(ScreenPtr pScreen)
-{
-    return (KdXVGeneration == serverGeneration && GET_XV_SCREEN(pScreen) != 0);
-}
-
-Bool
-KdXVEnable(ScreenPtr pScreen)
-{
-    if (!KdXVRunning(pScreen))
-        return TRUE;
-
-    WalkTree(pScreen, KdXVReputAllVideo, 0);
-
-    return TRUE;
-}
-
-void
-KdXVDisable(ScreenPtr pScreen)
-{
-    XvScreenPtr pxvs;
-    KdXVScreenPtr ScreenPriv;
-    XvAdaptorPtr pAdaptor;
-    XvPortPtr pPort;
-    XvPortRecPrivatePtr pPriv;
-    int i, j;
-
-    if (!KdXVRunning(pScreen))
-        return;
-
-    pxvs = GET_XV_SCREEN(pScreen);
-    ScreenPriv = GET_KDXV_SCREEN(pScreen);
-
-    for (i = 0; i < pxvs->nAdaptors; i++) {
-        pAdaptor = &pxvs->pAdaptors[i];
-        for (j = 0; j < pAdaptor->nPorts; j++) {
-            pPort = &pAdaptor->pPorts[j];
-            pPriv = (XvPortRecPrivatePtr) pPort->devPriv.ptr;
-            if (pPriv->isOn > XV_OFF) {
-
-                (*pPriv->AdaptorRec->StopVideo) (pPriv->screen,
-                                                 pPriv->DevPriv.ptr, TRUE);
-                pPriv->isOn = XV_OFF;
-
-                if (pPriv->pCompositeClip && pPriv->FreeCompositeClip)
-                    RegionDestroy(pPriv->pCompositeClip);
-
-                pPriv->pCompositeClip = NULL;
-
-                if (!pPriv->type && pPriv->pDraw) {     /* still */
-                    KdXVRemovePortFromWindow((WindowPtr) pPriv->pDraw, pPriv);
-                }
-            }
-        }
-    }
+    return pScreen->CloseScreen(pScreen);
 }
 
 /**** XvAdaptorRec fields ****/
 
 static int
-KdXVAllocatePort(unsigned long port, XvPortPtr pPort, XvPortPtr * ppPort)
-{
-    *ppPort = pPort;
-    return Success;
-}
-
-static int
-KdXVFreePort(XvPortPtr pPort)
-{
-    return Success;
-}
-
-static int
-KdXVPutVideo(ClientPtr client,
-             DrawablePtr pDraw,
+KdXVPutVideo(DrawablePtr pDraw,
              XvPortPtr pPort,
              GCPtr pGC,
              INT16 vid_x, INT16 vid_y,
@@ -1284,8 +993,7 @@ KdXVPutVideo(ClientPtr client,
 }
 
 static int
-KdXVPutStill(ClientPtr client,
-             DrawablePtr pDraw,
+KdXVPutStill(DrawablePtr pDraw,
              XvPortPtr pPort,
              GCPtr pGC,
              INT16 vid_x, INT16 vid_y,
@@ -1341,21 +1049,6 @@ KdXVPutStill(ClientPtr client,
         goto PUT_STILL_BAILOUT;
     }
 
-    if (portPriv->AdaptorRec->flags & VIDEO_NO_CLIPPING) {
-        BoxPtr clipBox = RegionRects(&ClipRegion);
-
-        if ((RegionNumRects(&ClipRegion) != 1) ||
-            (clipBox->x1 != WinBox.x1) || (clipBox->x2 != WinBox.x2) ||
-            (clipBox->y1 != WinBox.y1) || (clipBox->y2 != WinBox.y2)) {
-            clippedAway = TRUE;
-            goto PUT_STILL_BAILOUT;
-        }
-    }
-
-    if (portPriv->AdaptorRec->flags & VIDEO_INVERT_CLIPLIST) {
-        RegionSubtract(&ClipRegion, &WinRegion, &ClipRegion);
-    }
-
     ret = (*portPriv->AdaptorRec->PutStill) (portPriv->screen, pDraw,
                                              vid_x, vid_y, WinBox.x1, WinBox.y1,
                                              vid_w, vid_h, drw_w, drw_h,
@@ -1392,8 +1085,7 @@ KdXVPutStill(ClientPtr client,
 }
 
 static int
-KdXVGetVideo(ClientPtr client,
-             DrawablePtr pDraw,
+KdXVGetVideo(DrawablePtr pDraw,
              XvPortPtr pPort,
              GCPtr pGC,
              INT16 vid_x, INT16 vid_y,
@@ -1446,8 +1138,7 @@ KdXVGetVideo(ClientPtr client,
 }
 
 static int
-KdXVGetStill(ClientPtr client,
-             DrawablePtr pDraw,
+KdXVGetStill(DrawablePtr pDraw,
              XvPortPtr pPort,
              GCPtr pGC,
              INT16 vid_x, INT16 vid_y,
@@ -1488,10 +1179,6 @@ KdXVGetStill(ClientPtr client,
         goto GET_STILL_BAILOUT;
     }
 
-    if (portPriv->AdaptorRec->flags & VIDEO_INVERT_CLIPLIST) {
-        RegionSubtract(&ClipRegion, &WinRegion, &ClipRegion);
-    }
-
     ret = (*portPriv->AdaptorRec->GetStill) (portPriv->screen, pDraw,
                                              vid_x, vid_y, WinBox.x1, WinBox.y1,
                                              vid_w, vid_h, drw_w, drw_h,
@@ -1513,7 +1200,7 @@ KdXVGetStill(ClientPtr client,
 }
 
 static int
-KdXVStopVideo(ClientPtr client, XvPortPtr pPort, DrawablePtr pDraw)
+KdXVStopVideo(XvPortPtr pPort, DrawablePtr pDraw)
 {
     XvPortRecPrivatePtr portPriv = (XvPortRecPrivatePtr) (pPort->devPriv.ptr);
 
@@ -1539,8 +1226,7 @@ KdXVStopVideo(ClientPtr client, XvPortPtr pPort, DrawablePtr pDraw)
 }
 
 static int
-KdXVSetPortAttribute(ClientPtr client,
-                     XvPortPtr pPort, Atom attribute, INT32 value)
+KdXVSetPortAttribute(XvPortPtr pPort, Atom attribute, INT32 value)
 {
     XvPortRecPrivatePtr portPriv = (XvPortRecPrivatePtr) (pPort->devPriv.ptr);
 
@@ -1550,8 +1236,7 @@ KdXVSetPortAttribute(ClientPtr client,
 }
 
 static int
-KdXVGetPortAttribute(ClientPtr client,
-                     XvPortPtr pPort, Atom attribute, INT32 *p_value)
+KdXVGetPortAttribute(XvPortPtr pPort, Atom attribute, INT32 *p_value)
 {
     XvPortRecPrivatePtr portPriv = (XvPortRecPrivatePtr) (pPort->devPriv.ptr);
 
@@ -1562,8 +1247,7 @@ KdXVGetPortAttribute(ClientPtr client,
 }
 
 static int
-KdXVQueryBestSize(ClientPtr client,
-                  XvPortPtr pPort,
+KdXVQueryBestSize(XvPortPtr pPort,
                   CARD8 motion,
                   CARD16 vid_w, CARD16 vid_h,
                   CARD16 drw_w, CARD16 drw_h,
@@ -1580,8 +1264,7 @@ KdXVQueryBestSize(ClientPtr client,
 }
 
 static int
-KdXVPutImage(ClientPtr client,
-             DrawablePtr pDraw,
+KdXVPutImage(DrawablePtr pDraw,
              XvPortPtr pPort,
              GCPtr pGC,
              INT16 src_x, INT16 src_y,
@@ -1639,21 +1322,6 @@ KdXVPutImage(ClientPtr client,
         goto PUT_IMAGE_BAILOUT;
     }
 
-    if (portPriv->AdaptorRec->flags & VIDEO_NO_CLIPPING) {
-        BoxPtr clipBox = RegionRects(&ClipRegion);
-
-        if ((RegionNumRects(&ClipRegion) != 1) ||
-            (clipBox->x1 != WinBox.x1) || (clipBox->x2 != WinBox.x2) ||
-            (clipBox->y1 != WinBox.y1) || (clipBox->y2 != WinBox.y2)) {
-            clippedAway = TRUE;
-            goto PUT_IMAGE_BAILOUT;
-        }
-    }
-
-    if (portPriv->AdaptorRec->flags & VIDEO_INVERT_CLIPLIST) {
-        RegionSubtract(&ClipRegion, &WinRegion, &ClipRegion);
-    }
-
     ret = (*portPriv->AdaptorRec->PutImage) (portPriv->screen, pDraw,
                                              src_x, src_y, WinBox.x1, WinBox.y1,
                                              src_w, src_h, drw_w, drw_h,
@@ -1691,8 +1359,7 @@ KdXVPutImage(ClientPtr client,
 }
 
 static int
-KdXVQueryImageAttributes(ClientPtr client,
-                         XvPortPtr pPort,
+KdXVQueryImageAttributes(XvPortPtr pPort,
                          XvImagePtr format,
                          CARD16 *width,
                          CARD16 *height, int *pitches, int *offsets)
@@ -1703,189 +1370,4 @@ KdXVQueryImageAttributes(ClientPtr client,
                                                           format->id, width,
                                                           height, pitches,
                                                           offsets);
-}
-
-/****************  Common video manipulation functions *******************/
-
-void
-KdXVCopyPackedData(KdScreenInfo * screen, CARD8 *src, CARD8 *dst, int randr,
-                   int srcPitch, int dstPitch, int srcW, int srcH, int top,
-                   int left, int h, int w)
-{
-    int srcDown = srcPitch, srcRight = 2, srcNext;
-    int p;
-
-    switch (randr & RR_Rotate_All) {
-    case RR_Rotate_0:
-        srcDown = srcPitch;
-        srcRight = 2;
-        break;
-    case RR_Rotate_90:
-        src += (srcH - 1) * 2;
-        srcDown = -2;
-        srcRight = srcPitch;
-        break;
-    case RR_Rotate_180:
-        src += srcPitch * (srcH - 1) + (srcW - 1) * 2;
-        srcDown = -srcPitch;
-        srcRight = -2;
-        break;
-    case RR_Rotate_270:
-        src += srcPitch * (srcW - 1);
-        srcDown = 2;
-        srcRight = -srcPitch;
-        break;
-    }
-
-    src = src + top * srcDown + left * srcRight;
-
-    w >>= 1;
-    /* srcRight >>= 1; */
-    srcNext = srcRight >> 1;
-    while (h--) {
-        CARD16 *s = (CARD16 *) src;
-        CARD32 *d = (CARD32 *) dst;
-
-        p = w;
-        while (p--) {
-            *d++ = s[0] | (s[srcNext] << 16);
-            s += srcRight;
-        }
-        src += srcPitch;
-        dst += dstPitch;
-    }
-}
-
-void
-KdXVCopyPlanarData(KdScreenInfo * screen, CARD8 *src, CARD8 *dst, int randr,
-                   int srcPitch, int srcPitch2, int dstPitch, int srcW,
-                   int srcH, int height, int top, int left, int h, int w,
-                   int id)
-{
-    int i, j;
-    CARD8 *src1, *src2, *src3, *dst1;
-    int srcDown = srcPitch, srcDown2 = srcPitch2;
-    int srcRight = 2, srcRight2 = 1, srcNext = 1;
-
-    /* compute source data pointers */
-    src1 = src;
-    src2 = src1 + height * srcPitch;
-    src3 = src2 + (height >> 1) * srcPitch2;
-    switch (randr & RR_Rotate_All) {
-    case RR_Rotate_0:
-        srcDown = srcPitch;
-        srcDown2 = srcPitch2;
-        srcRight = 2;
-        srcRight2 = 1;
-        srcNext = 1;
-        break;
-    case RR_Rotate_90:
-        src1 = src1 + srcH - 1;
-        src2 = src2 + (srcH >> 1) - 1;
-        src3 = src3 + (srcH >> 1) - 1;
-        srcDown = -1;
-        srcDown2 = -1;
-        srcRight = srcPitch * 2;
-        srcRight2 = srcPitch2;
-        srcNext = srcPitch;
-        break;
-    case RR_Rotate_180:
-        src1 = src1 + srcPitch * (srcH - 1) + (srcW - 1);
-        src2 = src2 + srcPitch2 * ((srcH >> 1) - 1) + ((srcW >> 1) - 1);
-        src3 = src3 + srcPitch2 * ((srcH >> 1) - 1) + ((srcW >> 1) - 1);
-        srcDown = -srcPitch;
-        srcDown2 = -srcPitch2;
-        srcRight = -2;
-        srcRight2 = -1;
-        srcNext = -1;
-        break;
-    case RR_Rotate_270:
-        src1 = src1 + srcPitch * (srcW - 1);
-        src2 = src2 + srcPitch2 * ((srcW >> 1) - 1);
-        src3 = src3 + srcPitch2 * ((srcW >> 1) - 1);
-        srcDown = 1;
-        srcDown2 = 1;
-        srcRight = -srcPitch * 2;
-        srcRight2 = -srcPitch2;
-        srcNext = -srcPitch;
-        break;
-    }
-
-    /* adjust for origin */
-    src1 += top * srcDown + left * srcNext;
-    src2 += (top >> 1) * srcDown2 + (left >> 1) * srcRight2;
-    src3 += (top >> 1) * srcDown2 + (left >> 1) * srcRight2;
-
-    if (id == FOURCC_I420) {
-        CARD8 *srct = src2;
-
-        src2 = src3;
-        src3 = srct;
-    }
-
-    dst1 = dst;
-
-    w >>= 1;
-    for (j = 0; j < h; j++) {
-        CARD32 *dst = (CARD32 *) dst1;
-        CARD8 *s1l = src1;
-        CARD8 *s1r = src1 + srcNext;
-        CARD8 *s2 = src2;
-        CARD8 *s3 = src3;
-
-        for (i = 0; i < w; i++) {
-            *dst++ = *s1l | (*s1r << 16) | (*s3 << 8) | (*s2 << 24);
-            s1l += srcRight;
-            s1r += srcRight;
-            s2 += srcRight2;
-            s3 += srcRight2;
-        }
-        src1 += srcDown;
-        dst1 += dstPitch;
-        if (j & 1) {
-            src2 += srcDown2;
-            src3 += srcDown2;
-        }
-    }
-}
-
-void
-KXVPaintRegion(DrawablePtr pDraw, RegionPtr pRgn, Pixel fg)
-{
-    GCPtr pGC;
-    ChangeGCVal val[2];
-    xRectangle *rects, *r;
-    BoxPtr pBox = RegionRects(pRgn);
-    int nBox = RegionNumRects(pRgn);
-
-    rects = malloc(nBox * sizeof(xRectangle));
-    if (!rects)
-        goto bail0;
-    r = rects;
-    while (nBox--) {
-        r->x = pBox->x1 - pDraw->x;
-        r->y = pBox->y1 - pDraw->y;
-        r->width = pBox->x2 - pBox->x1;
-        r->height = pBox->y2 - pBox->y1;
-        r++;
-        pBox++;
-    }
-
-    pGC = GetScratchGC(pDraw->depth, pDraw->pScreen);
-    if (!pGC)
-        goto bail1;
-
-    val[0].val = fg;
-    val[1].val = IncludeInferiors;
-    ChangeGC(NullClient, pGC, GCForeground | GCSubwindowMode, val);
-
-    ValidateGC(pDraw, pGC);
-
-    (*pGC->ops->PolyFillRect) (pDraw, pGC, RegionNumRects(pRgn), rects);
-
-    FreeScratchGC(pGC);
- bail1:
-    free(rects);
- bail0:
-    ;
 }

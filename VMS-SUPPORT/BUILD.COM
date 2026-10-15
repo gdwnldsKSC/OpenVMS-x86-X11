@@ -13,7 +13,7 @@ $ step = "arguments"
 $ target = F$EDIT(P1,"UPCASE,TRIM")
 $ IF target .EQS. "" THEN target = "ALL"
 $ targets = "|ALL|HEADERS|XAU|XDMCP|ZLIB|FONTENC|EXPAT|XFONT|FNTSTUBS|FS|ICE|SM|ICEAUTH|MAKESTRS|MAKEDEPEND|GTF|FREETYPE2|MKFONTSCALE|"
-$ targets = targets + "UCS2ANY|DAMAGE|MI|FB|RENDER|DIX|SHADOW|SYNC|RANDR|DBE|RECORD|XFIXES|COMPOSITE|CW|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|"
+$ targets = targets + "UCS2ANY|DAMAGE|MI|FB|RENDER|DIX|SHADOW|SYNC|RANDR|DBE|RECORD|XFIXES|COMPOSITE|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|"
 $ targets = targets + "XKBFILE|ROOTLESS|XEXT|XRENDER|XRANDR|XINERAMA|XI|XTST|XV|XRES|"
 $ targets = targets + "XFIXESLIB|XDAMAGE|XCOMPOSITE|XCURSOR|"
 $ targets = targets + "XSS|XVMC|XXF86VM|"
@@ -24,11 +24,12 @@ $ targets = targets + "XSET|XMODMAP|XEV|BISON|XKBCOMP|SETXKBMAP|XKB_DATA|XVFB|XS
 $ targets = targets + "XT|XMU|MKFONTDIR|FONTS|FONTS_BDF|FONTS_MISC|FONTS_75DPI|FONTS_100DPI|FONTS_CYRILLIC|"
 $ targets = targets + "FONTS_ENCODINGS|FONTS_SCALED|FONTS_TYPE1|FONTS_TTF|FONTS_OTF|"
 $ targets = targets + "NLS|NLS_XLC_LOCALE|NLS_COMPOSE|X11_DATA|RUNTIME|"
-$ targets = targets + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XAA|XF86CONFIG|COMMON|BUS|MISC|XORGXKB|"
-$ targets = targets + "LOADER|XORGFB|XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
+$ targets = targets + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XF86CONFIG|COMMON|BUS|MISC|XORGXKB|"
+$ targets = targets + "LOADER|XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ targets = targets + "XF86MODES|DDC|I2C|STUB|PCIACCESS|"
-$ targets = targets + "PIXMAN|CONFIG|FBCMAP|GAWK|"
+$ targets = targets + "PIXMAN|CONFIG|GAWK|"
 $ targets = targets + "REGEX|"
+$ targets = targets + "XFONT2|XCVT|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -39,7 +40,7 @@ $ step = "locate source tree"
 $ support_directory = F$PARSE(procedure,,,"DEVICE") + F$PARSE(procedure,,,"DIRECTORY")
 $ SET DEFAULT 'support_directory'
 $ SET DEFAULT [-]
-$ IF F$SEARCH("[.PROTO.XPROTO]XFUNCPROTO^.H.IN") .EQS. "" THEN GOTO missing_source
+$ IF F$SEARCH("[.PROTO.XORGPROTO.INCLUDE.X11]XFUNCPROTO.H") .EQS. "" THEN GOTO missing_source
 $ step = "create output directories"
 $ IF F$SEARCH("[.VMS-SUPPORT]_BUILD.DIR") .EQS. "" THEN CREATE/DIRECTORY [.VMS-SUPPORT._BUILD]
 $ profile = "[.VMS-SUPPORT._BUILD.P64"
@@ -86,6 +87,12 @@ $ directory = profile + ".LIB.XCB]"
 $ IF F$SEARCH(profile + ".LIB]XCB.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".LIB.PCIACCESS]"
 $ IF F$SEARCH(profile + ".LIB]PCIACCESS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XFONT2]"
+$ IF F$SEARCH(profile + ".LIB]XFONT2.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LIB.XCVT]"
+$ IF F$SEARCH(profile + ".LIB]XCVT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".INCLUDE.LIBXCVT]"
+$ IF F$SEARCH(profile + ".INCLUDE]LIBXCVT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ IF F$SEARCH(profile + ".LIB]PIXMAN.DIR") .EQS. "" THEN CREATE/DIRECTORY 'pixman_directory'
 $ directory = profile + ".LIB.X11]"
 $ IF F$SEARCH(profile + ".LIB]X11.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
@@ -225,8 +232,6 @@ $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW]XFREE86.DIR") .EQS. "" THEN CREATE
 $ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.ETC]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86]ETC.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ WRITE SYS$OUTPUT "X11 component build: " + target + ", native x86-64, pointer64"
-$ directory = profile + ".PROGRAMS.XSERVER.MIEXT.CW]"
-$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.MIEXT]CW.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.DAMAGEEXT]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER]DAMAGEEXT.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.XEXT]"
@@ -303,9 +308,6 @@ $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86]VGAHW.DIR") .EQS. "" -
     THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.RAMDAC]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86]RAMDAC.DIR") .EQS. "" -
-    THEN CREATE/DIRECTORY 'directory'
-$ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.XAA]"
-$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86]XAA.DIR") .EQS. "" -
     THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.PARSER]"
 $ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86]PARSER.DIR") .EQS. "" -

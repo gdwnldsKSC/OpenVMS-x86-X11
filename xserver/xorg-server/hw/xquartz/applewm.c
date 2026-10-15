@@ -34,7 +34,7 @@
 #include <dix-config.h>
 #endif
 
-#include "quartzCommon.h"
+#include "quartz.h"
 
 #include "misc.h"
 #include "dixstruct.h"
@@ -83,9 +83,9 @@ static XID eventResource;
 static unsigned int eventMask = 0;
 
 static int
-WMFreeClient(pointer data, XID id);
+WMFreeClient(void *data, XID id);
 static int
-WMFreeEvents(pointer data, XID id);
+WMFreeEvents(void *data, XID id);
 static void
 SNotifyEvent(xAppleWMNotifyEvent *from, xAppleWMNotifyEvent *to);
 
@@ -157,7 +157,7 @@ ProcAppleWMQueryVersion(register ClientPtr client)
         swaps(&rep.sequenceNumber);
         swapl(&rep.length);
     }
-    WriteToClient(client, sizeof(xAppleWMQueryVersionReply), (char *)&rep);
+    WriteToClient(client, sizeof(xAppleWMQueryVersionReply),&rep);
     return Success;
 }
 
@@ -175,7 +175,7 @@ updateEventMask(WMEventPtr *pHead)
 
 /*ARGSUSED*/
 static int
-WMFreeClient(pointer data, XID id)
+WMFreeClient(void *data, XID id)
 {
     WMEventPtr pEvent;
     WMEventPtr   *pHead, pCur, pPrev;
@@ -183,7 +183,7 @@ WMFreeClient(pointer data, XID id)
 
     pEvent = (WMEventPtr)data;
     i = dixLookupResourceByType(
-        (pointer *)&pHead, eventResource, EventType, serverClient,
+        (void **)&pHead, eventResource, EventType, serverClient,
         DixReadAccess |
         DixWriteAccess | DixDestroyAccess);
     if (i == Success && pHead) {
@@ -198,13 +198,13 @@ WMFreeClient(pointer data, XID id)
         }
         updateEventMask(pHead);
     }
-    free((pointer)pEvent);
+    free((void *)pEvent);
     return 1;
 }
 
 /*ARGSUSED*/
 static int
-WMFreeEvents(pointer data, XID id)
+WMFreeEvents(void *data, XID id)
 {
     WMEventPtr   *pHead, pCur, pNext;
 
@@ -212,9 +212,9 @@ WMFreeEvents(pointer data, XID id)
     for (pCur = *pHead; pCur; pCur = pNext) {
         pNext = pCur->next;
         FreeResource(pCur->clientResource, ClientType);
-        free((pointer)pCur);
+        free((void *)pCur);
     }
-    free((pointer)pHead);
+    free((void *)pHead);
     eventMask = 0;
     return 1;
 }
@@ -229,7 +229,7 @@ ProcAppleWMSelectInput(register ClientPtr client)
 
     REQUEST_SIZE_MATCH(xAppleWMSelectInputReq);
     i =
-        dixLookupResourceByType((pointer *)&pHead, eventResource, EventType,
+        dixLookupResourceByType((void **)&pHead, eventResource, EventType,
                                 client,
                                 DixWriteAccess);
     if (stuff->mask != 0) {
@@ -257,7 +257,7 @@ ProcAppleWMSelectInput(register ClientPtr client)
          */
         clientResource = FakeClientID(client->index);
         pNewEvent->clientResource = clientResource;
-        if (!AddResource(clientResource, ClientType, (pointer)pNewEvent))
+        if (!AddResource(clientResource, ClientType, (void *)pNewEvent))
             return BadAlloc;
         /*
          * create a resource to contain a pointer to the list
@@ -268,7 +268,7 @@ ProcAppleWMSelectInput(register ClientPtr client)
         if (i != Success || !pHead) {
             pHead = (WMEventPtr *)malloc(sizeof(WMEventPtr));
             if (!pHead ||
-                !AddResource(eventResource, EventType, (pointer)pHead)) {
+                !AddResource(eventResource, EventType, (void *)pHead)) {
                 FreeResource(clientResource, RT_NONE);
                 return BadAlloc;
             }
@@ -317,7 +317,7 @@ AppleWMSendEvent(int type, unsigned int mask, int which, int arg)
     int i;
 
     i =
-        dixLookupResourceByType((pointer *)&pHead, eventResource, EventType,
+        dixLookupResourceByType((void **)&pHead, eventResource, EventType,
                                 serverClient,
                                 DixReadAccess);
     if (i != Success || !pHead)
@@ -378,6 +378,13 @@ ProcAppleWMSetWindowMenu(register ClientPtr client)
     items = malloc(sizeof(char *) * nitems);
     shortcuts = malloc(sizeof(char) * nitems);
 
+    if (!items || !shortcuts) {
+        free(items);
+        free(shortcuts);
+
+        return BadAlloc;
+    }
+
     max_len = (stuff->length << 2) - sizeof(xAppleWMSetWindowMenuReq);
     bytes = (char *)&stuff[1];
 
@@ -391,6 +398,15 @@ ProcAppleWMSetWindowMenu(register ClientPtr client)
                 break;
         }
     }
+
+    /* Check if we bailed out of the above loop due to a request that was too long */
+    if (j < nitems) {
+        free(items);
+        free(shortcuts);
+
+        return BadRequest;
+    }
+
     X11ApplicationSetWindowMenu(nitems, items, shortcuts);
     free(items);
     free(shortcuts);
@@ -533,7 +549,7 @@ ProcAppleWMFrameGetRect(register ClientPtr client)
     rep.w = rr.x2 - rr.x1;
     rep.h = rr.y2 - rr.y1;
 
-    WriteToClient(client, sizeof(xAppleWMFrameGetRectReply), (char *)&rep);
+    WriteToClient(client, sizeof(xAppleWMFrameGetRectReply),&rep);
     return Success;
 }
 
@@ -560,7 +576,7 @@ ProcAppleWMFrameHitTest(register ClientPtr client)
 
     rep.ret = ret;
 
-    WriteToClient(client, sizeof(xAppleWMFrameHitTestReply), (char *)&rep);
+    WriteToClient(client, sizeof(xAppleWMFrameHitTestReply),&rep);
     return Success;
 }
 
@@ -612,7 +628,7 @@ ProcAppleWMDispatch(register ClientPtr client)
         return ProcAppleWMQueryVersion(client);
     }
 
-    if (!LocalClient(client))
+    if (!client->local)
         return WMErrorBase + AppleWMClientNotLocal;
 
     switch (stuff->data) {
@@ -684,7 +700,7 @@ SProcAppleWMDispatch(register ClientPtr client)
     REQUEST(xReq);
 
     /* It is bound to be non-local when there is byte swapping */
-    if (!LocalClient(client))
+    if (!client->local)
         return WMErrorBase + AppleWMClientNotLocal;
 
     /* only local clients are allowed WM access */

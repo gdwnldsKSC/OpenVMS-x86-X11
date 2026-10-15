@@ -51,7 +51,7 @@ typedef struct {
 } XF86MCSurfaceInfoRec, *XF86MCSurfaceInfoPtr;
 
 /*
-   xf86XvMCCreateContextProc 
+   xf86XvMCCreateContextProc
 
    DIX will fill everything out in the context except the driver_priv.
    The port_priv holds the private data specified for the port when
@@ -71,7 +71,7 @@ typedef void (*xf86XvMCDestroyContextProcPtr) (ScrnInfoPtr pScrn,
                                                XvMCContextPtr context);
 
 /*
-   xf86XvMCCreateSurfaceProc 
+   xf86XvMCCreateSurfaceProc
 
    DIX will fill everything out in the surface except the driver_priv.
    The driver may store whatever it wants in driver_priv.  The driver
@@ -87,7 +87,7 @@ typedef void (*xf86XvMCDestroySurfaceProcPtr) (ScrnInfoPtr pScrn,
                                                XvMCSurfacePtr surface);
 
 /*
-   xf86XvMCCreateSubpictureProc 
+   xf86XvMCCreateSubpictureProc
 
    DIX will fill everything out in the subpicture except the driver_priv,
    num_palette_entries, entry_bytes and component_order.  The driver may
@@ -109,7 +109,7 @@ typedef void (*xf86XvMCDestroySubpictureProcPtr) (ScrnInfoPtr pScrn,
                                                   XvMCSubpicturePtr subpicture);
 
 typedef struct {
-    char *name;
+    const char *name;
     int num_surfaces;
     XF86MCSurfaceInfoPtr *surfaces;
     int num_subpictures;
@@ -122,8 +122,8 @@ typedef struct {
     xf86XvMCDestroySubpictureProcPtr DestroySubpicture;
 } XF86MCAdaptorRec, *XF86MCAdaptorPtr;
 
-/* 
-   xf86XvMCScreenInit 
+/*
+   xf86XvMCScreenInit
 
    Unlike Xv, the adaptor data is not copied from this structure.
    This structure's data is used so it must stick around for the
@@ -137,8 +137,5 @@ extern _X_EXPORT Bool xf86XvMCScreenInit(ScreenPtr pScreen,
 
 extern _X_EXPORT XF86MCAdaptorPtr xf86XvMCCreateAdaptorRec(void);
 extern _X_EXPORT void xf86XvMCDestroyAdaptorRec(XF86MCAdaptorPtr adaptor);
-
-typedef int (*XvMCScreenInitProcPtr) (ScreenPtr, int, XvMCAdaptorPtr);
-extern _X_EXPORT XvMCScreenInitProcPtr XvMCScreenInitProc;
 
 #endif                          /* _XF86XVMC_H */

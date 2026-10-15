@@ -1,3 +1,1402 @@
+commit cf05ba4a10c90da2c63805a5375e983b174e28b0
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Mar 8 16:07:43 2025 -0800
+
+    xtrans 1.6.0
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit c8c291390f4befb7d813d7fce6caeb6607561903
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Jan 20 09:54:21 2025 -0800
+
+    is_numeric: Add defined(X11_t) to checks
+    
+    Fixes builds of XTS which still builds X11 client side code (unlike
+    libX11 which relies on xcb instead of xtrans now for X11 connections).
+    
+    Fixes: 0f15306 ("is_numeric: Add TRANS_SERVER to required ifdefs")
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/28>
+
+commit 633ac2f03369eb93b70958c783722cfe3e93aacc
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 18 12:00:41 2025 -0800
+
+    Convert one more IPv6 ifdef to HAVE_GETADDRINFO
+    
+    If getaddrinfo returned multiple addresses, try another when first fails,
+    even if we're only using IPv4.
+    
+    Fixes: 0241531 ("if getaddrinfo() is available, use it, even if IPv6 support is disabled")
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/28>
+
+commit 2c4a122ca0512936d4306ef449f6b7b2566d6785
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 18 11:50:59 2025 -0800
+
+    if sockaddr_storage is available, use it, even if IPv6 support is disabled
+    
+    Support for using sockaddr_storage was originally added to support IPv6,
+    and only used if IPv6 support was enabled.  Two decades later, support
+    for sockaddr_storage is ubiquitous and can simplify our code paths,
+    so use the modern interface whenever we can now.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/28>
+
+commit deb755c0ad4575a7542e2abcba986a003fddb198
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 18 11:07:30 2025 -0800
+
+    if inet_ntop() is available, use it, even if IPv6 support is disabled
+    
+    Support for using inet_ntop() was originally added to support IPv6,
+    and only used if IPv6 support was enabled.  Two decades later, support
+    for inet_ntop() is ubiquitous and OS'es have marked inet_ntoa()
+    as deprecated, so use the modern interface whenever we can now.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/28>
+
+commit 02415310dd4997b4a7943814381c0b52d91eb8de
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 11 13:06:06 2025 -0800
+
+    if getaddrinfo() is available, use it, even if IPv6 support is disabled
+    
+    Support for using getaddrinfo() was originally added to support IPv6,
+    and only used if IPv6 support was enabled.  Two decades later, support
+    for getaddrinfo() is ubiquitous and OS'es have marked gethostbyname()
+    as deprecated, so use the modern interface whenever we can now.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/27>
+
+commit 7aa12b634fadf2c414080f1ba3d373430cf2d8f2
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 11 12:24:03 2025 -0800
+
+    Simplify ifdefs for IPv6 support
+    
+    Instead of checking for AF_INET6 at every ifdef, just check once per file
+    and report that IPv6 support is not available, instead of silently not
+    building support for it that configure said we were going to build.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/27>
+
+commit e58ae2d27f7baee28319faa02b77cdc344e2f0ca
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Nov 16 16:37:06 2024 -0800
+
+    SocketOpenCOTSServer: handle -Wconditional-uninitialized warning
+    
+    Clears warning from clang 13:
+    
+    .../include/X11/Xtrans/Xtranssock.c:670:14: warning: variable 'ciptr'
+     may be uninitialized when used here [-Wconditional-uninitialized]
+            setsockopt (ciptr->fd, SOL_SOCKET, SO_REUSEADDR,
+                        ^~~~~
+    .../include/X11/Xtrans/Xtranssock.c:624:25: note: initialize the
+     variable 'ciptr' to silence this warning
+        XtransConnInfo      ciptr;
+                                 ^
+                                  = NULL
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/26>
+
+commit 3fc4f55eb36c02fab3a5b04610d91c481d6a5aec
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Nov 16 15:08:20 2024 -0800
+
+    SocketOpenCOTSClientBase: handle -Wconditional-uninitialized warning
+    
+    Clears warning from clang 13:
+    
+    .../include/X11/Xtrans/Xtranssock.c:602:12: warning: variable 'ciptr'
+     may be uninitialized when used here [-Wconditional-uninitialized]
+        return ciptr;
+               ^~~~~
+    .../include/X11/Xtrans/Xtranssock.c:575:25: note: initialize the
+     variable 'ciptr' to silence this warning
+        XtransConnInfo      ciptr;
+                                 ^
+                                  = NULL
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/26>
+
+commit dc71da9eb353f2e41af96923f292c621aeddd37f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Nov 16 14:46:29 2024 -0800
+
+    Clear -Wmissing-variable-declarations from clang 13
+    
+    Silences 7 warnings of the form:
+    
+    .../include/X11/Xtrans/Xtranslcl.c:1347:12: warning: no previous extern
+     declaration for non-static variable '_FSTransLocalFuncs'
+     [-Wmissing-variable-declarations]
+    Xtransport      TRANS(LocalFuncs) = {
+                    ^
+    .../include/X11/Xtrans/Xtranslcl.c:1347:1: note: declare 'static' if the
+     variable is not intended to be used outside of this translation unit
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/26>
+
+commit 1dda77bb6ac9f473513a80e8ce5b32c4bde3448a
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Nov 16 14:23:25 2024 -0800
+
+    Quiet -Wformat-pedantic warnings from clang 13 for non-void-* args to %p
+    
+    Clears 23 warnings of the form:
+    .../include/X11/Xtrans/Xtrans.c:129:36: warning: format specifies type
+     'void *' but the argument has type 'XtransConnInfo'
+     (aka 'struct _XtransConnInfo *') [-Wformat-pedantic]
+        prmsg (3,"FreeConnInfo(%p)\n", ciptr);
+                               ~~      ^~~~~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/26>
+
+commit e69d45306f38367ce3a0a5fa126beeb4e6370585
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Nov 9 09:17:22 2024 -0800
+
+    accept const pointers for buf argument to TRANS(Write)
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/25>
+
+commit 0dc46e7ed5bdd876467f9dbb314ba6b8094e541b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Nov 9 09:04:34 2024 -0800
+
+    xtrans 1.5.2
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d312424a6f2d5bff18f150dfecfc632b334fb878
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Oct 22 14:44:46 2024 -0700
+
+    is_numeric: Add !defined(IPv6) to checks
+    
+    Fixes builds without IPv6 support, since old IPv4 code uses is_numeric()
+    
+    Closes: #6
+    Fixes: 0f15306 ("is_numeric: Add TRANS_SERVER to required ifdefs")
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/23>
+
+commit ae99ac32f61e0db92a45179579030a23fe1b5770
+Author: Peter Harris <pharris2@rocketsoftware.com>
+Date:   Tue Oct 15 09:51:33 2024 -0400
+
+    Fix build when HAVE_STRCASECMP is not defined
+    
+    Regression introduced in commit 4792e9e798de327572aba1575438b6936a55c7ef
+    "Clear numerous -Wsign-compare warnings from gcc 14.1".
+    
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/22>
+
+commit df6ae7c7e0b6241a05ad2814bced637b00b1a83f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Oct 12 13:39:19 2024 -0700
+
+    xtrans 1.5.1
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 0f153064bfa4bb69e86f3f2383f2f421f2360319
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 24 18:19:45 2024 -0700
+
+    is_numeric: Add TRANS_SERVER to required ifdefs
+    
+    Avoids -Wunused-function warnings when only building for TRANS_CLIENT
+    code, such as libFS.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/20>
+
+commit 957adac35fb77d5a72f676d697f32ce94ab7392f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 24 18:12:16 2024 -0700
+
+    SocketOpen: avoid leak of out-of-range fd
+    
+    Clears gcc 14.1 warning:
+    
+    /usr/include/X11/Xtrans/Xtranssock.c: In function ‘_FSTransSocketOpen’:
+    /usr/include/X11/Xtrans/Xtranssock.c:425:9: warning: leak of file descriptor
+     [CWE-775] [-Wanalyzer-fd-leak]
+      425 |         free (ciptr);
+          |         ^~~~~~~~~~~~
+    [...]
+                      |  415 |        || ciptr->fd >= sysconf(_SC_OPEN_MAX)
+                      |      |        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                      |      |        |       |
+                      |      |        |       (62) ...to here
+                      |      |        (63) following ‘true’ branch...
+    [...]
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/20>
+
+commit bea5a32105aebdc99f84f9ee4b70de7a116eb1d7
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 24 17:49:58 2024 -0700
+
+    GetPeerNetworkId: avoid calling strlen() on a NULL pointer
+    
+    Various failure states may leave addr set to NULL instead of a string.
+    
+    Clears warnings from gcc 14.1:
+    
+    /usr/include/X11/Xtrans/Xtransutil.c: In function ‘_IceTransGetPeerNetworkId’:
+    /usr/include/X11/Xtrans/Xtransutil.c:402:62: warning: use of NULL ‘addr’
+     where non-null expected [CWE-476] [-Wanalyzer-null-argument]
+      402 |     hostname = malloc (strlen (ciptr->transptr->TransName) + strlen (addr) + 2);
+          |                                                              ^~~~~~~~~~~~
+    <built-in>: note: argument 1 of ‘__builtin_strlen’ must be non-null
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/20>
+
+commit e5390ab716fb470ac4b5fd7a4133eabbfaac994e
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 24 17:44:41 2024 -0700
+
+    GetPeerNetworkId: Avoid writing to NULL pointer if malloc() fails
+    
+    Clears gcc 14.1 warning:
+    
+    /usr/include/X11/Xtrans/Xtransutil.c:403:5: warning: use of possibly-NULL
+     ‘hostname’ where non-null expected [CWE-690]
+     [-Wanalyzer-possible-null-argument]
+      403 |     strcpy (hostname, ciptr->transptr->TransName);
+          |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    <built-in>: note: argument 1 of ‘__builtin_strcpy’ must be non-null
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/20>
+
+commit 215e8db07d05d425714b05b8a439c73735f9d04f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 24 17:40:10 2024 -0700
+
+    GetMyNetworkId: Avoid writing to NULL pointer if malloc() fails
+    
+    Clears warnings from gcc 14.1:
+    
+    In file included from /usr/include/X11/Xtrans/transport.c:70:
+    /usr/include/X11/Xtrans/Xtransutil.c: In function ‘_IceTransGetMyNetworkId’:
+    /usr/include/X11/Xtrans/Xtransutil.c:253:9: warning: use of possibly-NULL
+     ‘networkId’ where non-null expected [CWE-690]
+     [-Wanalyzer-possible-null-argument]
+      253 |         sprintf (networkId, "%s/%s:%s", transName,
+          |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      254 |             hostnamebuf, saddr->sun_path);
+          |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    <built-in>: note: argument 1 of ‘__builtin_sprintf’ must be non-null
+    
+    /usr/include/X11/Xtrans/Xtransutil.c:283:9: warning: use of possibly-NULL
+     ‘networkId’ where non-null expected [CWE-690]
+     [-Wanalyzer-possible-null-argument]
+      283 |         sprintf (networkId, "%s/%s:%s", transName, hostnamebuf, portnumbuf);
+          |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    <built-in>: note: argument 1 of ‘__builtin_sprintf’ must be non-null
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/20>
+
+commit 376744aa60ff8df0ddbcf090f0177c15706df71e
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 24 17:33:13 2024 -0700
+
+    MakeAllCOTSServerListeners: Initialize temp_ciptrs
+    
+    I don't think this is strictly necessary, but it shouldn't hurt and
+    makes gcc 14.1 stop warning about:
+    
+    /usr/include/X11/Xtrans/Xtrans.c: In function
+     ‘_IceTransMakeAllCOTSServerListeners’:
+    /usr/include/X11/Xtrans/Xtrans.h:108:21: warning: use of uninitialized
+     value ‘temp_ciptrs[j]’ [CWE-457] [-Wanalyzer-use-of-uninitialized-value]
+      108 | #define TRANS(func) _IceTrans##func
+    /usr/include/X11/Xtrans/Xtrans.c:1203:21: note: in expansion of macro ‘TRANS’
+     1203 |                     TRANS(Close) (temp_ciptrs[j]);
+          |                     ^~~~~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/20>
+
+commit 742462a572e524ae82a8c18106c03820da322102
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 24 17:23:10 2024 -0700
+
+    ParseAddress: return failure when strdup() fails
+    
+    Clears warning from gcc 14.1:
+    In file included from /usr/include/X11/Xtrans/transport.c:69:
+    /usr/include/X11/Xtrans/Xtrans.c: In function ‘_IceTransParseAddress’:
+    /usr/include/X11/Xtrans/Xtrans.c:246:19: warning: use of possibly-NULL ‘mybuf’
+     where non-null expected [CWE-690] [-Wanalyzer-possible-null-argument]
+      246 |    if ( ((mybuf = strchr (mybuf,'/')) == NULL) &&
+          |                   ^~~~~~~~~~~~~~~~~~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/20>
+
+commit e9ead32308c588e5c12dbfb6a6452e0f2c88bafd
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 24 17:18:01 2024 -0700
+
+    SocketINETConnect: return failure when malloc() fails
+    
+    Clears warning from gcc 14.1:
+    In file included from /usr/include/X11/Xtrans/transport.c:67:
+    /usr/include/X11/Xtrans/Xtranssock.c: In function ‘_IceTransSocketINETConnect’:
+    /usr/include/X11/Xtrans/Xtranssock.c:1385:33: warning: dereference of
+     possibly-NULL ‘addrlist’ [CWE-690] [-Wanalyzer-possible-null-dereference]
+     1385 |             addrlist->firstaddr = NULL;
+          |                                 ^
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/20>
+
+commit 4792e9e798de327572aba1575438b6936a55c7ef
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 24 17:11:28 2024 -0700
+
+    Clear numerous -Wsign-compare warnings from gcc 14.1
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/20>
+
+commit 9ad6c6764f0517f91492c04ae03a59f53229ef69
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 24 16:52:05 2024 -0700
+
+    SocketCreateListener: Fix -Wuseless-cast warning in bind() call
+    
+    sockname is defined as struct sockaddr * in the arguments to
+    SocketCreateListener so we don't need to cast to that when calling bind()
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/20>
+
+commit 9ed4f5ec909cf262a2404012768858792f976e36
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 24 16:51:17 2024 -0700
+
+    LocalInitTransports: Fix -Wuseless-cast warning for getenv() call
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/20>
+
+commit edd3f51328df9c621277168c9dd77b1e80ccfd7c
+Author: Robert Royals <robert.royals@protonmail.com>
+Date:   Sun Jul 21 22:54:27 2024 +0100
+
+    Fix string length check
+    
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/19>
+
+commit 656d27ed32af4082e8062c1d7c42b65ea3a6b80f
+Author: Kim Woelders <kim@woelders.dk>
+Date:   Thu Mar 28 18:01:20 2024 +0100
+
+    TRANS(GetHostname): Fix "‘strncpy’ output truncated.." warning
+    
+    Occurs when compiling xserver master with gcc 13.2.1.
+    
+    In file included from /local/stuff/xorg/include/X11/Xtrans/transport.c:69:
+    In function ‘_XSERVTransGetHostname’,
+        inlined from ‘_XSERVTransConvertAddress’ at /local/stuff/xorg/include/X11/Xtrans/Xtransutil.c:188:12:
+    /local/stuff/xorg/include/X11/Xtrans/Xtrans.c:1352:5: warning: ‘strncpy’ output truncated before terminating nul copying as many bytes from a string as its length [-Wstringop-truncation]
+     1352 |     strncpy (buf, name.nodename, len);
+          |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    /local/stuff/xorg/include/X11/Xtrans/Xtrans.c:1350:11: note: length computed here
+     1350 |     len = strlen (name.nodename);
+          |           ^~~~~~~~~~~~~~~~~~~~~~
+    
+    Signed-off-by: Kim Woelders <kim@woelders.dk>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/16>
+
+commit 6171150fe9f8edad3f1cfb14cec59e6a42a9c15b
+Author: Kim Woelders <kim@woelders.dk>
+Date:   Thu Mar 28 17:29:26 2024 +0100
+
+    TRANS(ParseAddress): Fix "assignment discards ‘const’ qualifier" warnings
+    
+    Occurs when compiling xserver master with gcc 13.2.1.
+    
+    In file included from /local/stuff/xorg/include/X11/Xtrans/transport.c:69,
+                     from ../os/xstrans.c:17:
+    /local/stuff/xorg/include/X11/Xtrans/Xtrans.c: In function ‘_XSERVTransParseAddress’:
+    /local/stuff/xorg/include/X11/Xtrans/Xtrans.c:216:15: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+      216 |         _host = "";
+          |               ^
+    /local/stuff/xorg/include/X11/Xtrans/Xtrans.c:217:15: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+      217 |         _port = address;
+          |               ^
+    /local/stuff/xorg/include/X11/Xtrans/Xtrans.c:229:15: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+      229 |         _host = "";
+          |               ^
+    /local/stuff/xorg/include/X11/Xtrans/Xtrans.c:230:15: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+      230 |         _port = address + 5;
+          |               ^
+    
+    Signed-off-by: Kim Woelders <kim@woelders.dk>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/16>
+
+commit c219be946b1d8a641dcbc7a60904293f105e2866
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Wed Apr 3 12:11:48 2024 +0200
+
+    update .gitignore
+    
+    Add some yet missing auto-generated files.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+
+commit 806f04c6e4529358f160e53135baf105e4ecf3b8
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Oct 13 13:37:49 2023 -0700
+
+    gitlab CI: add libc-dev to required packages in build container
+    
+    Resolves configure failure:
+    configure:3823: checking whether the C compiler works
+    configure:3845: gcc    conftest.c  >&5
+    /usr/bin/ld: cannot find Scrt1.o: No such file or directory
+    /usr/bin/ld: cannot find crti.o: No such file or directory
+    collect2: error: ld returned 1 exit status
+    configure:3849: $? = 1
+    configure:3889: result: no
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3aa3c318ded5da802e181f0d29b94ab6a692e387
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Oct 13 13:32:15 2023 -0700
+
+    gitlab CI: collect config.log to help diagnose failures
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 6d5a4512b5ee4757a474df3f5e938784da963de1
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Oct 13 13:26:49 2023 -0700
+
+    gitlab CI: add xz-utils to container for "make distcheck"
+    
+    Also update to latest ci-templates
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3b3a3bd75d86aec78f6ef893b198c3efc378bc64
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Jun 2 17:29:41 2023 -0700
+
+    xtrans 1.5.0
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 232a11a947564762689e63c3a6603d3f956f696d
+Author: Demi Marie Obenour <demiobenour@gmail.com>
+Date:   Thu Dec 15 14:48:13 2022 -0500
+
+    DISPLAY starting with unix: or / is always a socket path
+    
+    Do not consider anything else in this case.
+    
+    Signed-off-by: Demi Marie Obenour <demiobenour@gmail.com>
+
+commit b898f415e7c31de5b4beb06b22a5498049852e53
+Author: Demi Marie Obenour <demiobenour@gmail.com>
+Date:   Thu Dec 15 14:43:37 2022 -0500
+
+    Allow full paths to sockets on non-macOS
+    
+    This adds explicit checks for addresses that start with / or unix: and
+    uses full paths in this case.
+    
+    Signed-off-by: Demi Marie Obenour <demiobenour@gmail.com>
+
+commit e24adec1203cd25423ab2835a5be4f6b828b72a5
+Author: Demi Marie Obenour <demiobenour@gmail.com>
+Date:   Thu Dec 17 03:28:45 2020 +0000
+
+    Remove client-side abstract socket support
+    
+    CVE-2020-25697 and the Flatpak documentation show that clients using
+    abstract sockets without mutual authentication is unsafe.
+    TRANS_ABSTRACT remains supported, but it is now a no-op on the client
+    side.  Abstract sockets are still supported for servers, as the X server
+    authenticates the client via other methods.
+    
+    Signed-off-by: Demi Marie Obenour <demiobenour@gmail.com>
+
+commit 9d77996f9f972da63c06099fd8c0f0529159b98f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Feb 25 09:33:29 2023 -0800
+
+    Remove "All rights reserved" from Oracle copyright notices
+    
+    Oracle no longer includes this term in our copyright & license notices.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 9ae32feef793082a302e65d31514a958604c761d
+Author: Olivier Fourdan <ofourdan@redhat.com>
+Date:   Tue Jun 25 14:59:59 2019 +0200
+
+    Allow partial connection to succeed
+    
+    Xwayland can optionally be socket-activated by the Wayland compositor,
+    in which case it would use only the sockets provided by the compositor.
+    
+    However, that prevents other transport protocols from working, because
+    when it's given a socket from the Wayland compositor, it would disable
+    all other connections and rely solely on the given socket.
+    
+    Change `MakeAllCOTSServerListeners` to allow for partial connections so
+    that if `partial` is set to a non-zero value by the caller, we do not
+    bail out in the address is already in use.
+    
+    That allows to continue trying with other protocols even if the local
+    connection fails (as this is already handled by the socket from the
+    Wayland compositor).
+    
+    Related: https://gitlab.freedesktop.org/xorg/xserver/issues/817
+    Signed-off-by: Olivier Fourdan <ofourdan@redhat.com>
+
+commit c761c6505d49e8381a3eae94f2e5e118cbdf6487
+Author: Keith Packard <keithp@keithp.com>
+Date:   Wed Jan 29 12:54:26 2014 -0800
+
+    Use font server ErrorF/VErrorF instead of private versions
+    
+    XTrans creates custom ErrorF/VErrorF functions when the including
+    project doesn't provide them, however the test for that is weak and xtrans
+    ends up using the private versions for the font server as well.
+    
+    This means that all xtrans error messages will not be included in the
+    font server log. It also causes redefinition warnings when building
+    the font server (which is how this problem was identified).
+    
+    However, the font server doesn't currently provide a VErrorF function,
+    so instead of just always relying on the font server to provide these
+    functions, this patch uses a new TRANS_HAS_ERRORF define to select
+    whether the project-provided or internal versions will be used. A
+    patch to the font server that adds VErrorF and defines
+    TRANS_HAS_ERRORF will be required to fix this bug.
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+
+commit 8c0f5228e75aa949963aa8d27dcfa2648db2e197
+Author: Keith Packard <keithp@keithp.com>
+Date:   Wed Jan 29 12:54:25 2014 -0800
+
+    move is_numeric to Xtranssock.c and only define for TCPCONN or TRANS_REOPEN
+    
+    Don't define this function unless it is actually going to be used.
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+
+commit 3309c75906a56de86607f59481304b3a2812162f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue May 10 09:18:15 2022 -0700
+
+    gitlab CI: add a basic build test
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit c069ede3c97f543d9bbe9ed67e56c74142921cc5
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue May 10 09:15:11 2022 -0700
+
+    Fix spelling/wording issues
+    
+    Found by using:
+        codespell --builtin clear,rare,usage,informal,code,names
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 16a015524f3820f969362c2d10a3664999a12c3b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue May 10 09:11:07 2022 -0700
+
+    Build xz tarballs instead of bzip2
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 7898badde44cf518da6879c2622b6db9cd709c7d
+Author: Ray Strode <rstrode@redhat.com>
+Date:   Fri May 6 14:23:59 2022 -0400
+
+    Automatically disable inet6 transport if ipv6 is disabled on machine
+    
+    If a machine is booted with ipv6.disable=1, trying to bind to an
+    AF_INET6 socket will fail with AFNOSUPPORT.
+    
+    The tcp transport automatically falls back to ipv4 in this case, but
+    the more specific inet6 transport just fails.
+    
+    This failure leads to MakeAllCOTSServerListeners returning a partial
+    success.
+    
+    Unfortunately, the X server can't really contiue with partial successes
+    from this function if -displayfd is in use, since that would, in other
+    cases, potentially lead to the -displayfd electing a display number that
+    is potentially partially in use by a rogue program.
+    
+    This commit addresses the issue by automatically disabling transports
+    when they fail with AFNOSUPPORT, leading them to get ignored, rather than
+    proceeding and ultimately returning from MakeAllCOTSServerListerns with
+    partial=TRUE.
+
+commit 3b5df889f58a99980a35a7b4a18eb4e7d2abeac4
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed Oct 9 14:05:47 2019 -0400
+
+    TEST_t is never defined
+    
+    This didn't even correspond to any of the testing protocol extensions!
+    Apparently there used to be some test programs in xtrans itself, and
+    they've not been a thing since 1994:
+    
+    https://cgit.freedesktop.org/~alanc/xc-historical/commit/?id=73bf4832c427855b2ce111d47dd1f181564b8d06
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d0d471579ca69365d4cd5a548ce6fc8b4662d467
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed Sep 25 11:09:52 2019 -0400
+
+    Remove non-Solaris SysV support
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 521682b8b72e3ad50c9ae66a9b35249100188eb2
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Sep 24 21:29:46 2019 -0400
+
+    Delete SCO support
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3f8b27a9dff68792fdc448782459a6d41cade9ff
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Sep 24 19:48:17 2019 -0400
+
+    unifdef USG and NCR
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit c4262efc9688e495261d8b23a12f956ab38e006f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Mar 16 14:25:35 2019 -0700
+
+    xtrans 1.4.0
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit faa42207a0653535ab80825b0acb50b417702ec4
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Dec 7 19:52:43 2018 -0800
+
+    Update configure.ac bug URL for gitlab migration
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit cd22de616c77328da3410b1eaab541c2d331ffdb
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Nov 19 23:12:07 2018 -0800
+
+    Update README for gitlab migration
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 06cfa80fb3d03ca03fd92f9687a77958338e012c
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Sep 30 17:04:51 2018 -0700
+
+    Use fchmod() instead of chmod() when creating named pipes
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 7bd504f7ab7799ab77ad50eb39f6afdbaf2f9e50
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 25 11:18:52 2018 -0700
+
+    Use strcasecmp if it's available, instead of lowercasing strings
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 941cfa50bc2d45f20943fd21bab98e2eceeeb259
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 25 10:45:04 2018 -0700
+
+    Set freeXLOCAL to NULL after freeing it to prevent double frees
+    
+    We shouldn't be calling the LocalEndTransports routine twice, but
+    just make sure if we do, we don't call free twice on the same pointer.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit a97e5fc6e4f294294d75500068892aea11952773
+Author: Rin Okuyama <rin@NetBSD.org>
+Date:   Tue Feb 21 06:18:37 2017 +0000
+
+    avoid -Wformat errors from clang
+    
+    https://bugs.freedesktop.org/show_bug.cgi?id=99882
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 28366676effaa512e43bfd2276a317389a992511
+Author: Emil Velikov <emil.l.velikov@gmail.com>
+Date:   Mon Mar 9 12:00:52 2015 +0000
+
+    autogen.sh: use quoted string variables
+    
+    Place quotes around the $srcdir, $ORIGDIR and $0 variables to prevent
+    fall-outs, when they contain space.
+    
+    Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 8554cf05262ab6ad6e8da5f11022e5dc2a452e38
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jan 24 10:32:07 2017 +1000
+
+    autogen.sh: use exec instead of waiting for configure to finish
+    
+    Syncs the invocation of configure with the one from the server.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Emil Velikov <emil.velikov@collabora.com>
+
+commit 560d7550e23e9b14056b4a9b2569c2f256015f8a
+Author: Jeremy Huddleston Sequoia <jeremyhu@apple.com>
+Date:   Sat Sep 10 22:09:51 2016 -0700
+
+    Update strlcpy macro check to also check HAVE_STRLCPY
+    
+    xorg-server moved from HAS_STRLCPY to HAVE_STRLCPY in 2011
+    
+    cf-xserver: d829a7c5cb42c979b58f3547136df5b05d906423
+    
+    Signed-off-by: Jeremy Huddleston Sequoia <jeremyhu@apple.com>
+
+commit 2e4c338eda8ec6996b7bacc1d0c7dfe7de925864
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Thu Sep 1 09:28:58 2016 -0400
+
+    Revert "Make FreeConnInfo static"
+    
+    <anholt> ajax: 75419e6b6d985ea8796f05d1acb5e154b065c9b9 of xtrans also
+             seems to have broken xtest.
+    
+    And indeed it does, xts5 knows a fair amount about xlib internals for
+    some reason. Whether that's cromulent or not, we want to be able to run
+    automatic tests from top-of-tree, so we can't leave this broken.
+    
+    This reverts commit 75419e6b6d985ea8796f05d1acb5e154b065c9b9.
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 3810e026323210df6ec6cf818f01832a63e9fbb9
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed May 18 12:58:31 2016 -0400
+
+    Remove GetMyAddr
+    
+    Again, pre-xcb libX11 was the only consumer.
+    
+    Reviewed-by: Keith Packard <keithp@keithp.com>
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 75419e6b6d985ea8796f05d1acb5e154b065c9b9
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed May 18 12:50:48 2016 -0400
+
+    Make FreeConnInfo static
+    
+    libX11 used to need this in the XOpenDisplay code, but hasn't since xcb
+    became mandatory.
+    
+    Reviewed-by: Keith Packard <keithp@keithp.com>
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 0794b1b712a90b40e2b019c9edc6f96874493c52
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed May 18 12:41:41 2016 -0400
+
+    unifdef LBXPROXY_t and TEST_t
+    
+    LBX is dead, and TEST_t is unused.
+    
+    Reviewed-by: Keith Packard <keithp@keithp.com>
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 473e77563b16fa7c42db9403c1382e9483e3666c
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed May 18 12:38:02 2016 -0400
+
+    Remove CLTS code
+    
+    Never been used, as far as I can tell.
+    
+    Reviewed-by: Keith Packard <keithp@keithp.com>
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit b167145a51153eccc16a3e43f7ed0faea7e6c762
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed May 18 15:19:50 2016 -0400
+
+    autogen: Add a default patch prefix
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit cc29fbc1fe86ae4dfe2f4eaae7352ea86aa4acac
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Nov 28 13:04:21 2015 -0800
+
+    Remove support for SysV on x86 platforms other than Solaris & SCO
+    
+    No other x86 SysV platforms have ever been supported in the modular
+    build systems, so we don't need to keep carrying around a bunch of
+    ifdef's for them.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Mark Kettenis <kettenis@openbsd.org>
+
+commit 3ba0b7a37b9053662ff42f0b4caa856856098475
+Author: Richard PALO <richard@NetBSD.org>
+Date:   Tue Nov 17 07:02:27 2015 +0100
+
+    Replace 'sun' with '__sun'
+    
+    Globally replace #ifdef and #if defined usage of 'sun' with '__sun' such
+    that strict ISO compiler modes such as -ansi or -std=c99 can be used.
+    
+    Signed-off-by: Richard PALO <richard@NetBSD.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 1d31b87e8045f3fc89b1914187a9a13861d35f2d
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Wed Jul 29 20:36:13 2015 +0200
+
+    Make sure LONG64 is defined in Xtrans.h
+    
+    Xtrans.h defines BytesReadable_t as int or long depending on whether
+    LONG64 is defined.  We need to make sure Xmd.h is included so our idea
+    of BytesReadable_t is consistent across compilation units.
+    
+    Debian bug#749120
+    
+    Reported-by: Michael Tautschnig <mt@debian.org>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 7cbad9fe2e61cd9d5caeaf361826a6f4bd320f03
+Author: Keith Packard <keithp@keithp.com>
+Date:   Sat Sep 20 10:02:05 2014 -0700
+
+    xtrans 1.3.5
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+
+commit fb7f198c88e97d22c8c89e76e9cd06b2b2720a96
+Author: Keith Packard <keithp@keithp.com>
+Date:   Fri Sep 12 11:27:39 2014 -0700
+
+    Add TRANS(Listen) function to re-enable specific listen sockets
+    
+    This will allow a server to disable listeners by default and then
+    let later configuration re-enable them. In particular, this lets the X
+    server disable inet and unix listen sockets by default while still
+    providing a '-listen' command line option to re-enable them later on.
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+    Reviewed-by: Hans de Goede <hdegoede@redhat.com>
+
+commit 17491de45c352c833442cccf17a9bd65909889db
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 23 12:28:14 2014 -0700
+
+    Add const qualifiers to TRANS(OpenC{L,O}TS{Server,Client}) args
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 305d20f2ee888d1c890f902da978176b8ec58a8d
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 23 12:10:48 2014 -0700
+
+    Add const qualifiers to TRANS(MakeAll*ServerListeners) port args
+    
+    Required also changing receive_listening_fds to specify port as const,
+    which we can do now that TRANS(ReopenCOTSServer) takes it as const.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit ba70d48951fb925fb3082d81afb08c330333aa51
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 23 11:33:57 2014 -0700
+
+    Add const qualifiers to TRANS(Connect) args
+    
+    Also required constifying UnixHostReallyLocal, since SocketUNIXConnect
+    passes the host arg through to it.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 63b65a20706def951dd25e531949b7bc556419eb
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 23 10:17:57 2014 -0700
+
+    Add const qualifiers to TRANS(CreateListener) port args
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit fd90a4e00321b22c96565cfa354b8b0efa376979
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 23 10:07:22 2014 -0700
+
+    Add const qualifiers to TRANS(Reopen...) port args
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit a56ec9d720a7964bada837790e9c1f6ceef97861
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 23 09:58:05 2014 -0700
+
+    Add const qualifiers to TRANS(Open...) address args
+    
+    Required also adding const to static TRANS(ParseAddress) function which
+    they pass the address arg to for parsing.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 30b3fd74a27c80993e81dfcb33e33520ae8684fb
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Aug 23 12:46:44 2014 -0700
+
+    Update docs to note that TransName is now const char *
+    
+    Missed when the code was updated in commit eb9a8904fbef61a57ff0.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit a57a7f62242e1ea972b81414741729bf3dbae0a4
+Author: Hans de Goede <hdegoede@redhat.com>
+Date:   Mon Mar 31 12:37:43 2014 +0200
+
+    xtrans 1.3.4
+    
+    Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+
+commit 1cd9cbe9b404e6c3e73dc0239d11547a5e2c02c4
+Author: Mark Kettenis <kettenis@openbsd.org>
+Date:   Sat Mar 29 23:51:49 2014 +0100
+
+    Increase UNIX socket buffer size
+    
+    Some systems provide a really small default buffer size for UNIX sockets.
+    Bump it up to 64k if necessary such that large transfers (such as
+    XGetImage() on a 8-megapixel image) don't take tens of seconds.
+    
+    Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+
+commit 68f60238c4224f954ff6556ae778c72e420175f0
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Wed Mar 26 13:21:49 2014 +0100
+
+    Add missing headers for free() and strlen().
+    
+    Reviewed-by: Mark Kettenis <kettenis@openbsd.org>
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+
+commit 34463baacb3cafc096e0e0859bc10d6868cb2299
+Author: Thomas Klausner <wiz@NetBSD.org>
+Date:   Wed Mar 26 13:21:23 2014 +0100
+
+    Cast ctype(3) function arguments to unsigned char.
+    
+    Fixes warnings on at least NetBSD.
+    
+    Reviewed-by: Mark Kettenis <kettenis@openbsd.org>
+    Signed-off-by: Thomas Klausner <wiz@NetBSD.org>
+
+commit f20a9bb2ea25408ce9f1166b3b6e48759960fe86
+Author: Hans de Goede <hdegoede@redhat.com>
+Date:   Mon Mar 3 08:42:45 2014 +0100
+
+    configure: Also add -D_DEFAULT_SOURCE to .pc cflags to shut up glibc warnings
+    
+    The latest glibc considers _BSD_SOURCE deprecated, leading to the following
+    warning being issued for pretty much every C-file in the xserver:
+    
+    In file included from /usr/include/stdint.h:25:0,
+                     from /usr/lib/gcc/x86_64-redhat-linux/4.8.2/include/stdint.h:9,
+                     from ../include/misc.h:81,
+                     from miexpose.c:82:
+    /usr/include/features.h:145:3: warning: #warning "_BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE" [-Wcpp]
+     # warning "_BSD_SOURCE and _SVID_SOURCE are deprecated, use _DEFAULT_SOURCE"
+       ^
+    
+    I've discussed this with the glibc developers and the prefered way of fixing
+    this is by also defining _DEFAULT_SOURCE which is the new way of stating
+    _BSD_SOURCE / _SVID_SOURCE .
+    
+    Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+    Reviewed-by: Mark Kettenis <kettenis@openbsd.org>
+    Tested-by: Kristian Høgsberg <krh@bitplanet.net>
+    Reviewed-by: Kristian Høgsberg <krh@bitplanet.net>
+
+commit 3f0de269abe59353acbd7a5587d68ce0da91db67
+Author: Hans de Goede <hdegoede@redhat.com>
+Date:   Thu Jan 23 11:47:25 2014 +0100
+
+    xtrans 1.3.3
+    
+    Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+
+commit 8f3bbed42c308f9c90293f23b7eaceff006aa232
+Author: Jon TURNEY <jon.turney@dronecode.org.uk>
+Date:   Wed Jul 10 16:29:12 2013 +0100
+
+    Add TransIsListening()
+    
+    libxtrans provides TransNoListen() to set the 'don't listen' flag for a
+    particular transport, but there is no interface to query the state of that flag
+    
+    This is a bit of a problem for the XWin server, as it wants to start some helper
+    clients (for clipboard integration and integrated window management), so needs
+    to know what transports the server is listening on to construct appropriate
+    display names for those clients.
+    
+    Add TransIsListening() to discover if TransNoListen() has been called for a
+    particular protocol or not
+    
+    HdG:
+    -Invert the final check so that TransIsListening returns True when
+     TRANS_NOLISTEN is not set, as one would expect of it.
+    -Make the protocol argument a const char * as similar functions do
+    -Fix "warning: too many arguments for format" warning
+    
+    Signed-off-by: Jon TURNEY <jon.turney@dronecode.org.uk>
+    Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+
+commit e1e6121a1638d43d9929589b4723da2b38cb6b44
+Author: Łukasz Stelmach <l.stelmach@samsung.com>
+Date:   Mon Nov 25 11:11:54 2013 +0100
+
+    Enable systemd socket activation
+    
+    Receive file descriptors of open sockets from systemd instead of
+    creating them.
+    
+    Signed-off-by: Łukasz Stelmach <l.stelmach@samsung.com>
+    Cc: Kyungmin Park <kyungmin.park@samsung.com>
+    Cc: MyungJoo Ham <myungjoo.ham@samsung.com>
+    Cc: Piort Bereza <p.bereza@samsung.com>
+    Cc: Karol Lewandowski <k.lewandowsk@samsung.com>
+    Cc: Lennart Poettering <lennart@poettering.net>
+    Cc: Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl>
+    Cc: Peter Hutterer <peter.hutterer@who-t.net>
+    Cc: walter harms <wharms@bfs.de>
+    Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+    Acked-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit b895d45e225dd3d1bf9d598774d3ae4f29fcbc25
+Author: Łukasz Stelmach <l.stelmach@samsung.com>
+Date:   Thu Nov 28 12:57:21 2013 +0100
+
+    Define TRANS_RECEIVED flag for transports
+    
+    The flag is to be used to mark transports related to sockets
+    received from systemd.
+    
+    Signed-off-by: Łukasz Stelmach <l.stelmach@samsung.com>
+    Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+    Acked-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 2c0a7840a28ae696e80e73157856d7a049fdf6c7
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Dec 15 19:49:59 2013 -0500
+
+    xtrans.m4: remove AC_TYPE_SIGNAL and Imake SIGNALRETURNSINT
+    
+    Assume signal handlers return void, as C89 requires
+    
+    Drops use of autoconf's obsolete AC_TYPE_SIGNAL and Imake's even more
+    obsolete SIGNALRETURNSINT.
+    
+    None of the modules including xtrans.m4 uses RETSIGTYPE from autoconf.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 87547e43189301e3dd42feb9d7ff32a75d0e727f
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Dec 15 16:11:00 2013 -0500
+
+    xtrans.m4: replace deprecated AC_HAVE_LIBRARY with AC_CHECK_LIB
+    
+    The #define HAVE_LIBWS2_32 is still done and the lib ws2_32 is
+    prepended to LIBS if found.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 88433eb1abe887000d34315c2f55aa42fcddfdee
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Sun Dec 15 15:36:48 2013 -0500
+
+    xtrans.m4: fix warning by replacing obsolete AC_HELP_STRING
+    
+    with AS_HELP_STRING
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 9487701904b71985549f60c9d8bc5df48682b55a
+Author: Mark Kettenis <kettenis@openbsd.org>
+Date:   Thu Nov 21 11:55:17 2013 +0100
+
+    Don't restrict FD passing to Linux & Solaris
+    
+    Signed-off-by: Mark Kettenis <kettenis@openbsd.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 8b2c8aabe27bcaa4de6432b53c4a1296010ea823
+Author: Mark Kettenis <kettenis@openbsd.org>
+Date:   Mon Nov 11 23:18:01 2013 +0100
+
+    Fix alignment issues in FD passing code
+    
+    A char array on the stack is not guaranteed to have more than byte
+    alignment.  This means that casting it to a 'struct cmsghdr' and
+    accessing its members may result in unaligned access.  This will
+    generate SIGBUS on strict alignment architectures like OpenBSD/sparc64.
+    The solution is to use a union to force proper alignment.
+    
+    Signed-off-by: Mark Kettenis <kettenis@openbsd.org>
+    Reviewed-by: Matthieu Herrb <matthieu@herrb.eu>
+
+commit 81662d2018a35a161a5e9707563ee7f503f8d3e0
+Author: Mark Kettenis <kettenis@openbsd.org>
+Date:   Mon Nov 11 23:16:15 2013 +0100
+
+    Remove unused static inlines
+    
+    Signed-off-by: Mark Kettenis <kettenis@openbsd.org>
+    Reviewed-by: Matthieu Herrb <matthieu@herrb.eu>
+
+commit 0153d1670e4a1883e1bb6dd971435d6268eac5ba
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Nov 7 20:16:53 2013 -0800
+
+    xtrans 1.3.2
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 426049c30162ed620cc16bb58edef6aac4e2ee5d
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Nov 7 19:17:44 2013 -0800
+
+    Allow XTRANS_SEND_FDS on Solaris as well
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 76b4f4430f9a857a1b54bfde9ef57a95b87789f5
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Nov 6 22:34:03 2013 -0800
+
+    Check if we need to define _XOPEN_SOURCE for struct msghdr.msg_control
+    
+    Required to expose the structure members in Solaris headers, since it
+    was an XPG4/UNIX95 addition to the Solaris ABI.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 32070a64ba99fb89ec039e26444b1e026d6a978e
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Nov 6 21:52:21 2013 -0800
+
+    Add stubs for send/recv fd functions in local transports
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 08bf85958fab64951a9ba9e27dcb6b8eb818cc7e
+Author: Keith Packard <keithp@keithp.com>
+Date:   Thu Nov 7 18:04:30 2013 -0800
+
+    Switch to CMSG_* macros for FD passing
+    
+    This should be portable to non-Linux systems
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 6b54b5cf8086f127aa87096e2bdd2263d1c81683
+Author: Keith Packard <keithp@keithp.com>
+Date:   Thu Nov 7 03:49:05 2013 -0800
+
+    Actually disable all of the FD passing code unless XTRANS_SEND_FDS is set
+    
+    Stick all of the functions relating to FD passing inside
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+
+commit f3709f3e0b883a0b4956313f89fa931e9264c346
+Author: Keith Packard <keithp@keithp.com>
+Date:   Wed Nov 6 23:16:11 2013 -0800
+
+    Update to version 1.3.1
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+
+commit 074614940c570524e1446f55fc12a64415057e1f
+Author: Mark Kettenis <kettenis@openbsd.org>
+Date:   Wed Nov 6 23:13:28 2013 -0800
+
+    Don't include file descriptor passing code by default
+    
+    Leave it up to the consumer to request this functionality by defining
+    XTRANS_SEND_FDS.
+    
+    Signed-off-by: Mark Kettenis <kettenis@openbsd.org>
+    Reviewed-by: Keith Packard <keithp@keithp.com>
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+    
+    v2 - make sure this is only defined on systems where the code actually
+    works (Linux for now)
+
+commit a7094c389ac9fd5ca265996f76eb55cb1133974b
+Author: Keith Packard <keithp@keithp.com>
+Date:   Sat Nov 2 19:23:41 2013 -0700
+
+    Add SEND_FDS version of Readv
+    
+    Now that we've found that libFS uses readv, we can test whether this
+    readv implementation works correctly.
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+
+commit 58151f63553faf81babd1371770b7a7f33cecac1
+Author: Keith Packard <keithp@keithp.com>
+Date:   Sat Nov 2 19:10:11 2013 -0700
+
+    Revert "Remove 'Readv' interface"
+    
+    This reverts commit 9e8d99c2e27f2c8acbbfb5b760649aa1bfad665e.
+    
+    libFS still uses this API...
+
+commit 1fb0fd555a16dd8fce4abc6d3fd22b315f46762a
+Author: Keith Packard <keithp@keithp.com>
+Date:   Thu Oct 31 17:21:53 2013 -0700
+
+    Update to version 1.3.0
+    
+    Adds FD passing interfaces and pulls in current patches past 1.2.7
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+
+commit adf920aa25c1709998c7c9276927061bd58e2dfc
+Author: Keith Packard <keithp@keithp.com>
+Date:   Tue Jan 8 16:47:05 2013 -0800
+
+    Add APIs to send file descriptors through the network
+    
+    Exposes new TRANS(SendFd)/TRANS(RecvFd) APIs.
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+
+commit 9e8d99c2e27f2c8acbbfb5b760649aa1bfad665e
+Author: Keith Packard <keithp@keithp.com>
+Date:   Fri Jan 18 16:47:30 2013 -0800
+
+    Remove 'Readv' interface
+    
+    No-one uses this, so there's no reason for it to be in the library
+    
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+
+commit f6a161f2a003f4da0a2e414b4faa0ee0de0c01f0
+Author: Łukasz Stelmach <l.stelmach@samsung.com>
+Date:   Tue Jul 9 16:24:43 2013 +0200
+
+    Add const qualifier to unix_nolisten
+    
+    Signed-off-by: Łukasz Stelmach <l.stelmach@samsung.com>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit bd53f4c8543faf910a7a151241ee07661b4d57ad
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jan 27 22:11:40 2013 -0800
+
+    Docs: Drop pre-C89 TRANS() from docs since it's no longer in the headers
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3c4e0455425d5afd546c4a3f2cc9f8c7e60f2fca
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jan 27 21:39:34 2013 -0800
+
+    Docs: convert function synopses to docbook funcsynopsis markup
+    
+    Also add some cross-reference links and various other markup improvements.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d9f3728ff74ceb956f6cf8dc24b38611f9a4868a
+Author: Colin Walters <walters@verbum.org>
+Date:   Wed Jan 4 17:37:06 2012 -0500
+
+    autogen.sh: Implement GNOME Build API
+    
+    http://people.gnome.org/~walters/docs/build-api.txt
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 575e1e901ca842ba8ff7417f48175fb6a8d70859
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Jan 15 14:28:48 2013 -0500
+
+    configure: Remove AM_MAINTAINER_MODE
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit ec3136232f7ce930f9ca812b6ab42a71b60af4af
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Dec 26 19:08:16 2012 -0800
+
+    Remove unused TLI ("STREAMSCONN") code from xtrans
+    
+    Has never been converted to build in modular builds, so has been unusable
+    since X11R7.0 release in 2005.  All known platforms with TLI/XTI support
+    that X11R7 & later releases run on also have (and mostly prefer) BSD
+    socket support for their networking API.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
 commit 8ce5ecd33b05becc054dbd07f87e385165b6c979
 Author: Alan Coopersmith <alan.coopersmith@oracle.com>
 Date:   Thu Mar 22 20:04:07 2012 -0700

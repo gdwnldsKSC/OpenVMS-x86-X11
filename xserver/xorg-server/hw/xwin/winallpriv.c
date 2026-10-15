@@ -48,8 +48,8 @@ winAllocatePrivates(ScreenPtr pScreen)
     winPrivScreenPtr pScreenPriv;
 
 #if CYGDEBUG
-    winDebug("winAllocateScreenPrivates - g_ulServerGeneration: %d "
-             "serverGeneration: %d\n", g_ulServerGeneration, serverGeneration);
+    winDebug("winAllocateScreenPrivates - g_ulServerGeneration: %lu "
+             "serverGeneration: %lu\n", g_ulServerGeneration, serverGeneration);
 #endif
 
     /* We need a new slot for our privates if the screen gen has changed */
@@ -58,7 +58,7 @@ winAllocatePrivates(ScreenPtr pScreen)
     }
 
     /* Allocate memory for the screen private structure */
-    pScreenPriv = (winPrivScreenPtr) malloc(sizeof(winPrivScreenRec));
+    pScreenPriv = malloc(sizeof(winPrivScreenRec));
     if (!pScreenPriv) {
         ErrorF("winAllocateScreenPrivates - malloc () failed\n");
         return FALSE;
@@ -67,7 +67,7 @@ winAllocatePrivates(ScreenPtr pScreen)
     /* Initialize the memory of the private structure */
     ZeroMemory(pScreenPriv, sizeof(winPrivScreenRec));
 
-    /* Intialize private structure members */
+    /* Initialize private structure members */
     pScreenPriv->fActive = TRUE;
 
     /* Register our screen private */
@@ -78,13 +78,6 @@ winAllocatePrivates(ScreenPtr pScreen)
 
     /* Save the screen private pointer */
     winSetScreenPriv(pScreen, pScreenPriv);
-
-    /* Reserve GC memory for our privates */
-    if (!dixRegisterPrivateKey
-        (g_iGCPrivateKey, PRIVATE_GC, sizeof(winPrivGCRec))) {
-        ErrorF("winAllocatePrivates - AllocateGCPrivate () failed\n");
-        return FALSE;
-    }
 
     /* Reserve Pixmap memory for our privates */
     if (!dixRegisterPrivateKey
@@ -110,7 +103,7 @@ winAllocatePrivates(ScreenPtr pScreen)
  */
 
 Bool
-winInitCmapPrivates(ColormapPtr pcmap, int index)
+winInitCmapPrivates(ColormapPtr pcmap, int i)
 {
 #if CYGDEBUG
     winDebug("winInitCmapPrivates\n");
@@ -150,7 +143,7 @@ winAllocateCmapPrivates(ColormapPtr pCmap)
     }
 
     /* Allocate memory for our private structure */
-    pCmapPriv = (winPrivCmapPtr) malloc(sizeof(winPrivCmapRec));
+    pCmapPriv = malloc(sizeof(winPrivCmapRec));
     if (!pCmapPriv) {
         ErrorF("winAllocateCmapPrivates - malloc () failed\n");
         return FALSE;

@@ -23,7 +23,6 @@ char rcsId_vmware[] =
 #include "xf86Pci.h"		/* pci */
 
 #include "mipointer.h"		/* sw cursor */
-#include "mibstore.h"		/* backing store */
 #include "micmap.h"		/* mi color map */
 #include "vgaHW.h"		/* VGA hardware */
 #include "fb.h"
@@ -37,6 +36,7 @@ char rcsId_vmware[] =
 #include "svga_modes.h"
 #include "vmware_bootstrap.h"
 #include "vmware_common.h"
+#include "common_compat.h"
 
 #ifndef HAVE_XORG_SERVER_1_5_0
 #include <xf86_ansic.h>
@@ -125,32 +125,50 @@ VMWAREFreeRec(ScrnInfoPtr pScrn)
 }
 
 CARD32
-vmwareReadReg(VMWAREPtr pVMWARE, int index)
+vmwareReadReg(VMWAREPtr pVMWARE, int rIndex)
 {
     /*
      * Block SIGIO for the duration, so we don't get interrupted after the
      * outl but before the inl by a mouse move (which write to our registers).
      */
-    int oldsigio, ret;
+    int ret;
+#if (GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 22)
+    int oldsigio;
+    
     oldsigio = xf86BlockSIGIO();
-    outl(pVMWARE->indexReg, index);
+#else
+    input_lock();
+#endif
+    outl(pVMWARE->indexReg, rIndex);
     ret = inl(pVMWARE->valueReg);
+#if (GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 22)
     xf86UnblockSIGIO(oldsigio);
+#else
+    input_unlock();
+#endif
     return ret;
 }
 
 void
-vmwareWriteReg(VMWAREPtr pVMWARE, int index, CARD32 value)
+vmwareWriteReg(VMWAREPtr pVMWARE, int wIndex, CARD32 value)
 {
     /*
      * Block SIGIO for the duration, so we don't get interrupted in between
      * the outls by a mouse move (which write to our registers).
      */
+#if (GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 22)
     int oldsigio;
     oldsigio = xf86BlockSIGIO();
-    outl(pVMWARE->indexReg, index);
+#else
+    input_lock();
+#endif
+    outl(pVMWARE->indexReg, wIndex);
     outl(pVMWARE->valueReg, value);
+#if (GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 22)
     xf86UnblockSIGIO(oldsigio);
+#else
+    input_unlock();
+#endif
 }
 
 void
@@ -311,9 +329,6 @@ VMWAREPreInit(ScrnInfoPtr pScrn, int flags)
     pVMWARE->pvtSema = &pScrn->vtSema;
 
     pVMWARE->pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
-    if (pVMWARE->pEnt->location.type != BUS_PCI) {
-        return FALSE;
-    }
     pVMWARE->PciInfo = xf86GetPciInfoForEntity(pVMWARE->pEnt->index);
     if (pVMWARE->PciInfo == NULL) {
         return FALSE;
@@ -379,7 +394,8 @@ VMWAREPreInit(ScrnInfoPtr pScrn, int flags)
 #ifdef ACCELERATE_OPS
     pVMWARE->vmwareCapability = vmwareReadReg(pVMWARE, SVGA_REG_CAPABILITIES);
 #else
-    pVMWARE->vmwareCapability = 0;
+    pVMWARE->vmwareCapability = vmwareReadReg(pVMWARE, SVGA_REG_CAPABILITIES) &
+	SVGA_CAP_PITCHLOCK;
 #endif
 
     pVMWARE->bitsPerPixel = vmwareReadReg(pVMWARE,
@@ -862,6 +878,8 @@ VMWAREModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode, Bool rebuildPixmap)
         return FALSE;
     pScrn->vtSema = TRUE;
 
+    if (pVMWARE->vmwareCapability & SVGA_CAP_PITCHLOCK)
+	vmwareWriteReg(pVMWARE, SVGA_REG_PITCHLOCK, 0);
     vmwareReg->svga_reg_enable = 1;
     vmwareReg->svga_reg_width = max(mode->HDisplay, pScrn->virtualX);
     vmwareReg->svga_reg_height = max(mode->VDisplay, pScrn->virtualY);
@@ -901,8 +919,8 @@ VMWAREModeInit(ScrnInfoPtr pScrn, DisplayModePtr mode, Bool rebuildPixmap)
                                                          pScrn->pScreen->rootDepth),
                                            (pointer)(pVMWARE->FbBase + pScrn->fbOffset));
 
-        (*pScrn->EnableDisableFBAccess)(pScrn->pScreen->myNum, FALSE);
-        (*pScrn->EnableDisableFBAccess)(pScrn->pScreen->myNum, TRUE);
+        (*pScrn->EnableDisableFBAccess)(XF86_SCRN_ARG(pScrn), FALSE);
+        (*pScrn->EnableDisableFBAccess)(XF86_SCRN_ARG(pScrn), TRUE);
     }
 
     vgaHWProtect(pScrn, FALSE);
@@ -1018,7 +1036,7 @@ vmwareNextXineramaState(VMWAREPtr pVMWARE)
 }
 
 static void
-VMWAREAdjustFrame(int scrnIndex, int x, int y, int flags)
+VMWAREAdjustFrame(ADJUST_FRAME_ARGS_DECL)
 {
     /* FIXME */
 }
@@ -1089,9 +1107,9 @@ VMWAREStopFIFO(ScrnInfoPtr pScrn)
 }
 
 static Bool
-VMWARECloseScreen(int scrnIndex, ScreenPtr pScreen)
+VMWARECloseScreen(CLOSE_SCREEN_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     VMWAREPtr pVMWARE = VMWAREPTR(pScrn);
     ScreenPtr save = &pVMWARE->ScrnFuncs;
 
@@ -1119,7 +1137,7 @@ VMWARECloseScreen(int scrnIndex, ScreenPtr pScreen)
     pScrn->DriverFunc = NULL;
 #endif
 
-    return (*pScreen->CloseScreen)(scrnIndex, pScreen);
+    return (*pScreen->CloseScreen)(CLOSE_SCREEN_ARGS);
 }
 
 static Bool
@@ -1223,12 +1241,14 @@ VMWAREAddDisplayMode(ScrnInfoPtr pScrn,
                      int height)
 {
    DisplayModeRec *mode;
+   char * modeName;
 
    mode = malloc(sizeof(DisplayModeRec));
    memset(mode, 0, sizeof *mode);
 
-   mode->name = malloc(strlen(name) + 1);
-   strcpy(mode->name, name);
+   modeName = malloc(strlen(name) + 1);
+   strcpy(modeName, name);
+   mode->name = modeName;
    mode->status = MODE_OK;
    mode->type = M_T_DEFAULT;
    mode->HDisplay = width;
@@ -1296,16 +1316,14 @@ vmwareIsRegionEqual(const RegionPtr reg1,
 }
 
 static Bool
-VMWAREScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
+VMWAREScreenInit(SCREEN_INIT_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn;
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     vgaHWPtr hwp;
     VMWAREPtr pVMWARE;
     OptionInfoPtr options;
     Bool useXinerama = TRUE;
 
-    /* Get the ScrnInfoRec */
-    pScrn = xf86Screens[pScreen->myNum];
     pVMWARE = VMWAREPTR(pScrn);
 
 
@@ -1327,7 +1345,7 @@ VMWAREScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
 
     if (useXinerama && xf86IsOptionSet(options, OPTION_GUI_LAYOUT)) {
-       char *topology = xf86GetOptValString(options, OPTION_GUI_LAYOUT);
+       CONST_ABI_18_0 char *topology = xf86GetOptValString(options, OPTION_GUI_LAYOUT);
        if (topology) {
           pVMWARE->xineramaState =
              VMWAREParseTopologyString(pScrn, topology,
@@ -1335,11 +1353,11 @@ VMWAREScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
          pVMWARE->xineramaStatic = pVMWARE->xineramaState != NULL;
 
-         free(topology);
+         free((void *)topology);
        }
     } else if (useXinerama &&
 	       xf86IsOptionSet(options, OPTION_STATIC_XINERAMA)) {
-       char *topology = xf86GetOptValString(options, OPTION_STATIC_XINERAMA);
+       CONST_ABI_18_0 char *topology = xf86GetOptValString(options, OPTION_STATIC_XINERAMA);
        if (topology) {
           pVMWARE->xineramaState =
              VMWAREParseTopologyString(pScrn, topology,
@@ -1348,7 +1366,7 @@ VMWAREScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
          pVMWARE->xineramaStatic = pVMWARE->xineramaState != NULL;
 
-         free(topology);
+         free((void *)topology);
        }
     }
 
@@ -1381,7 +1399,7 @@ VMWAREScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     VMWAREModeInit(pScrn, pScrn->currentMode, FALSE);
 
     /* Set the viewport if supported */
-    VMWAREAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+    VMWAREAdjustFrame(ADJUST_FRAME_ARGS(pScrn, pScrn->frameX0, pScrn->frameY0));
 
     /*
      * Setup the screen's visuals, and initialise the framebuffer
@@ -1485,7 +1503,6 @@ VMWAREScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
      * If backing store is to be supported (as is usually the case),
      * initialise it.
      */
-    miInitializeBackingStore(pScreen);
     xf86SetBackingStore(pScreen);
     xf86SetSilkenMouse(pScreen);
 
@@ -1520,7 +1537,7 @@ VMWAREScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     }
 
     /*
-     * We explictly add a set of default modes because the X server will
+     * We explicitly add a set of default modes because the X server will
      * not include modes larger than the initial one.
      */
    {
@@ -1582,10 +1599,9 @@ VMWAREScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 }
 
 static Bool
-VMWARESwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
-
+VMWARESwitchMode(SWITCH_MODE_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    SCRN_INFO_PTR(arg);
     ScreenPtr pScreen = pScrn->pScreen;
 
     pScreen->mmWidth = (pScreen->width * VMWARE_INCHTOMM +
@@ -1597,9 +1613,9 @@ VMWARESwitchMode(int scrnIndex, DisplayModePtr mode, int flags)
 }
 
 static Bool
-VMWAREEnterVT(int scrnIndex, int flags)
+VMWAREEnterVT(VT_FUNC_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    SCRN_INFO_PTR(arg);
     VMWAREPtr pVMWARE = VMWAREPTR(pScrn);
 
     /*
@@ -1616,9 +1632,9 @@ VMWAREEnterVT(int scrnIndex, int flags)
 }
 
 static void
-VMWARELeaveVT(int scrnIndex, int flags)
+VMWARELeaveVT(VT_FUNC_ARGS_DECL)
 {
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
+    SCRN_INFO_PTR(arg);
     VMWAREPtr pVMWARE = VMWAREPTR(pScrn);
 
     /*
@@ -1631,17 +1647,18 @@ VMWARELeaveVT(int scrnIndex, int flags)
 }
 
 static void
-VMWAREFreeScreen(int scrnIndex, int flags)
+VMWAREFreeScreen(FREE_SCREEN_ARGS_DECL)
 {
+    SCRN_INFO_PTR(arg);
     /*
      * If the vgahw module is used vgaHWFreeHWRec() would be called
      * here.
      */
-   VMWAREFreeRec(xf86Screens[scrnIndex]);
+   VMWAREFreeRec(pScrn);
 }
 
 static ModeStatus
-VMWAREValidMode(int scrnIndex, DisplayModePtr mode, Bool verbose, int flags)
+VMWAREValidMode(SCRN_ARG_TYPE arg, DisplayModePtr mode, Bool verbose, int flags)
 {
     return MODE_OK;
 }

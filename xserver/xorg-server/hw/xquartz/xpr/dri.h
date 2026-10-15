@@ -51,10 +51,7 @@ typedef void (*ClipNotifyPtr)(WindowPtr, int, int);
  * overridden by the driver in its [driver]DRIScreenInit function.
  */
 typedef struct {
-    WindowExposuresProcPtr WindowExposures;
     CopyWindowProcPtr CopyWindow;
-    ValidateTreeProcPtr ValidateTree;
-    PostValidateTreeProcPtr PostValidateTree;
     ClipNotifyProcPtr ClipNotify;
 } DRIWrappedFuncsRec, *DRIWrappedFuncsPtr;
 
@@ -99,7 +96,7 @@ DRIDestroySurface(ScreenPtr pScreen, Drawable id, DrawablePtr pDrawable,
                                  void *data), void *notify_data);
 
 extern Bool
-DRIDrawablePrivDelete(pointer pResource, XID id);
+DRIDrawablePrivDelete(void *pResource, XID id);
 
 extern DRIWrappedFuncsRec *
 DRIGetWrappedFuncs(ScreenPtr pScreen);
@@ -107,17 +104,8 @@ DRIGetWrappedFuncs(ScreenPtr pScreen);
 extern void
 DRICopyWindow(WindowPtr pWin, DDXPointRec ptOldOrg, RegionPtr prgnSrc);
 
-extern int
-DRIValidateTree(WindowPtr pParent, WindowPtr pChild, VTKind kind);
-
-extern void
-DRIPostValidateTree(WindowPtr pParent, WindowPtr pChild, VTKind kind);
-
 extern void
 DRIClipNotify(WindowPtr pWin, int dx, int dy);
-
-extern void
-DRIWindowExposures(WindowPtr pWin, RegionPtr prgn, RegionPtr bsreg);
 
 extern void
 DRISurfaceNotify(xp_surface_id id, int kind);

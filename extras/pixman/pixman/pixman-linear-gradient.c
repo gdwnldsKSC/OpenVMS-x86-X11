@@ -26,7 +26,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <pixman-config.h>
 #endif
 #include <stdlib.h>
 #include "pixman-private.h"
@@ -89,8 +89,11 @@ linear_gradient_is_horizontal (pixman_image_t *image,
 }
 
 static uint32_t *
-linear_get_scanline_narrow (pixman_iter_t  *iter,
-			    const uint32_t *mask)
+linear_get_scanline (pixman_iter_t                 *iter,
+		     const uint32_t                *mask,
+		     int                            Bpp,
+		     pixman_gradient_walker_write_t write_pixel,
+		     pixman_gradient_walker_fill_t  fill_pixel)
 {
     pixman_image_t *image  = iter->image;
     int             x      = iter->x;
@@ -103,7 +106,7 @@ linear_get_scanline_narrow (pixman_iter_t  *iter,
     pixman_fixed_48_16_t dx, dy;
     gradient_t *gradient = (gradient_t *)image;
     linear_gradient_t *linear = (linear_gradient_t *)image;
-    uint32_t *end = buffer + width;
+    uint32_t *end = buffer + width * (Bpp / 4);
     pixman_gradient_walker_t walker;
 
     _pixman_gradient_walker_init (&walker, gradient, image->common.repeat);
@@ -137,7 +140,7 @@ linear_get_scanline_narrow (pixman_iter_t  *iter,
     if (l == 0 || unit.vector[2] == 0)
     {
 	/* affine transformation only */
-        pixman_fixed_32_32_t t, next_inc;
+	pixman_fixed_32_32_t t, next_inc;
 	double inc;
 
 	if (l == 0 || v.vector[2] == 0)
@@ -152,7 +155,7 @@ linear_get_scanline_narrow (pixman_iter_t  *iter,
 	    invden = pixman_fixed_1 * (double) pixman_fixed_1 /
 		(l * (double) v.vector[2]);
 	    v2 = v.vector[2] * (1. / pixman_fixed_1);
-	    t = ((dx * v.vector[0] + dy * v.vector[1]) - 
+	    t = ((dx * v.vector[0] + dy * v.vector[1]) -
 		 (dx * linear->p1.x + dy * linear->p1.y) * v2) * invden;
 	    inc = (dx * unit.vector[0] + dy * unit.vector[1]) * invden;
 	}
@@ -160,11 +163,7 @@ linear_get_scanline_narrow (pixman_iter_t  *iter,
 
 	if (((pixman_fixed_32_32_t )(inc * width)) == 0)
 	{
-	    register uint32_t color;
-
-	    color = _pixman_gradient_walker_pixel (&walker, t);
-	    while (buffer < end)
-		*buffer++ = color;
+	    fill_pixel (&walker, t, buffer, end);
 	}
 	else
 	{
@@ -175,12 +174,11 @@ linear_get_scanline_narrow (pixman_iter_t  *iter,
 	    {
 		if (!mask || *mask++)
 		{
-		    *buffer = _pixman_gradient_walker_pixel (&walker,
-							     t + next_inc);
+		    write_pixel (&walker, t + next_inc, buffer);
 		}
 		i++;
 		next_inc = inc * i;
-		buffer++;
+		buffer += (Bpp / 4);
 	    }
 	}
     }
@@ -202,14 +200,14 @@ linear_get_scanline_narrow (pixman_iter_t  *iter,
 		    invden = pixman_fixed_1 * (double) pixman_fixed_1 /
 			(l * (double) v.vector[2]);
 		    v2 = v.vector[2] * (1. / pixman_fixed_1);
-		    t = ((dx * v.vector[0] + dy * v.vector[1]) - 
+		    t = ((dx * v.vector[0] + dy * v.vector[1]) -
 			 (dx * linear->p1.x + dy * linear->p1.y) * v2) * invden;
 		}
 
-		*buffer = _pixman_gradient_walker_pixel (&walker, t);
+		write_pixel (&walker, t, buffer);
 	    }
 
-	    ++buffer;
+	    buffer += (Bpp / 4);
 
 	    v.vector[0] += unit.vector[0];
 	    v.vector[1] += unit.vector[1];
@@ -223,13 +221,21 @@ linear_get_scanline_narrow (pixman_iter_t  *iter,
 }
 
 static uint32_t *
+linear_get_scanline_narrow (pixman_iter_t  *iter,
+			    const uint32_t *mask)
+{
+    return linear_get_scanline (iter, mask, 4,
+				_pixman_gradient_walker_write_narrow,
+				_pixman_gradient_walker_fill_narrow);
+}
+
+
+static uint32_t *
 linear_get_scanline_wide (pixman_iter_t *iter, const uint32_t *mask)
 {
-    uint32_t *buffer = linear_get_scanline_narrow (iter, NULL);
-
-    pixman_expand ((uint64_t *)buffer, buffer, PIXMAN_a8r8g8b8, iter->width);
-
-    return buffer;
+    return linear_get_scanline (iter, NULL, 16,
+				_pixman_gradient_walker_write_wide,
+				_pixman_gradient_walker_fill_wide);
 }
 
 void
@@ -238,7 +244,7 @@ _pixman_linear_gradient_iter_init (pixman_image_t *image, pixman_iter_t  *iter)
     if (linear_gradient_is_horizontal (
 	    iter->image, iter->x, iter->y, iter->width, iter->height))
     {
-	if (iter->flags & ITER_NARROW)
+	if (iter->iter_flags & ITER_NARROW)
 	    linear_get_scanline_narrow (iter, NULL);
 	else
 	    linear_get_scanline_wide (iter, NULL);
@@ -247,7 +253,7 @@ _pixman_linear_gradient_iter_init (pixman_image_t *image, pixman_iter_t  *iter)
     }
     else
     {
-	if (iter->flags & ITER_NARROW)
+	if (iter->iter_flags & ITER_NARROW)
 	    iter->get_scanline = linear_get_scanline_narrow;
 	else
 	    iter->get_scanline = linear_get_scanline_wide;
@@ -255,8 +261,8 @@ _pixman_linear_gradient_iter_init (pixman_image_t *image, pixman_iter_t  *iter)
 }
 
 PIXMAN_EXPORT pixman_image_t *
-pixman_image_create_linear_gradient (pixman_point_fixed_t *        p1,
-                                     pixman_point_fixed_t *        p2,
+pixman_image_create_linear_gradient (const pixman_point_fixed_t *  p1,
+                                     const pixman_point_fixed_t *  p2,
                                      const pixman_gradient_stop_t *stops,
                                      int                           n_stops)
 {

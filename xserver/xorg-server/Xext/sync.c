@@ -69,13 +69,14 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "syncsrv.h"
 #include "syncsdk.h"
 #include "protocol-versions.h"
+#include "inputstr.h"
 
 #include <stdio.h>
 #if !defined(WIN32)
 #include <sys/time.h>
 #endif
 
-#include "modinit.h"
+#include "extinit.h"
 
 /*
  * Local Global Variables
@@ -87,8 +88,7 @@ static RESTYPE RTAwait;
 static RESTYPE RTAlarm;
 static RESTYPE RTAlarmClient;
 static RESTYPE RTFence;
-static int SyncNumSystemCounters = 0;
-static SyncCounter **SysCounterList = NULL;
+static struct xorg_list SysCounterList;
 static int SyncNumInvalidCounterWarnings = 0;
 
 #define MAX_INVALID_COUNTER_WARNINGS	   5
@@ -114,6 +114,14 @@ static void SyncInitServerTime(void);
 
 static void SyncInitIdleTime(void);
 
+static inline void*
+SysCounterGetPrivate(SyncCounter *counter)
+{
+    BUG_WARN(!IsSystemCounter(counter));
+
+    return counter->pSysCounterInfo ? counter->pSysCounterInfo->private : NULL;
+}
+
 static Bool
 SyncCheckWarnIsCounter(const SyncObject * pSync, const char *warning)
 {
@@ -133,7 +141,7 @@ SyncCheckWarnIsCounter(const SyncObject * pSync, const char *warning)
  *  interested in the counter.  The two functions below are used to
  *  delete and add triggers on this list.
  */
-static void
+void
 SyncDeleteTriggerFromSyncObject(SyncTrigger * pTrigger)
 {
     SyncTriggerList *pCur;
@@ -176,7 +184,7 @@ SyncDeleteTriggerFromSyncObject(SyncTrigger * pTrigger)
     }
 }
 
-static int
+int
 SyncAddTriggerToSyncObject(SyncTrigger * pTrigger)
 {
     SyncTriggerList *pCur;
@@ -191,8 +199,8 @@ SyncAddTriggerToSyncObject(SyncTrigger * pTrigger)
             return Success;
     }
 
-    if (!(pCur = malloc(sizeof(SyncTriggerList))))
-        return BadAlloc;
+    /* Failure is not an option, it's succeed or burst! */
+    pCur = XNFalloc(sizeof(SyncTriggerList));
 
     pCur->pTrigger = pTrigger;
     pCur->next = pTrigger->pSync->pTriglist;
@@ -229,7 +237,37 @@ SyncAddTriggerToSyncObject(SyncTrigger * pTrigger)
  */
 
 static Bool
-SyncCheckTriggerPositiveComparison(SyncTrigger * pTrigger, CARD64 oldval)
+SyncCheckTriggerPositiveComparison(SyncTrigger * pTrigger, int64_t oldval)
+{
+    SyncCounter *pCounter;
+
+    /* Non-counter sync objects should never get here because they
+     * never trigger this comparison. */
+    if (!SyncCheckWarnIsCounter(pTrigger->pSync, WARN_INVALID_COUNTER_COMPARE))
+        return FALSE;
+
+    pCounter = (SyncCounter *) pTrigger->pSync;
+
+    return pCounter == NULL || pCounter->value >= pTrigger->test_value;
+}
+
+static Bool
+SyncCheckTriggerNegativeComparison(SyncTrigger * pTrigger, int64_t oldval)
+{
+    SyncCounter *pCounter;
+
+    /* Non-counter sync objects should never get here because they
+     * never trigger this comparison. */
+    if (!SyncCheckWarnIsCounter(pTrigger->pSync, WARN_INVALID_COUNTER_COMPARE))
+        return FALSE;
+
+    pCounter = (SyncCounter *) pTrigger->pSync;
+
+    return pCounter == NULL || pCounter->value <= pTrigger->test_value;
+}
+
+static Bool
+SyncCheckTriggerPositiveTransition(SyncTrigger * pTrigger, int64_t oldval)
 {
     SyncCounter *pCounter;
 
@@ -241,11 +279,12 @@ SyncCheckTriggerPositiveComparison(SyncTrigger * pTrigger, CARD64 oldval)
     pCounter = (SyncCounter *) pTrigger->pSync;
 
     return (pCounter == NULL ||
-            XSyncValueGreaterOrEqual(pCounter->value, pTrigger->test_value));
+            (oldval < pTrigger->test_value &&
+             pCounter->value >= pTrigger->test_value));
 }
 
 static Bool
-SyncCheckTriggerNegativeComparison(SyncTrigger * pTrigger, CARD64 oldval)
+SyncCheckTriggerNegativeTransition(SyncTrigger * pTrigger, int64_t oldval)
 {
     SyncCounter *pCounter;
 
@@ -257,45 +296,12 @@ SyncCheckTriggerNegativeComparison(SyncTrigger * pTrigger, CARD64 oldval)
     pCounter = (SyncCounter *) pTrigger->pSync;
 
     return (pCounter == NULL ||
-            XSyncValueLessOrEqual(pCounter->value, pTrigger->test_value));
+            (oldval > pTrigger->test_value &&
+             pCounter->value <= pTrigger->test_value));
 }
 
 static Bool
-SyncCheckTriggerPositiveTransition(SyncTrigger * pTrigger, CARD64 oldval)
-{
-    SyncCounter *pCounter;
-
-    /* Non-counter sync objects should never get here because they
-     * never trigger this comparison. */
-    if (!SyncCheckWarnIsCounter(pTrigger->pSync, WARN_INVALID_COUNTER_COMPARE))
-        return FALSE;
-
-    pCounter = (SyncCounter *) pTrigger->pSync;
-
-    return (pCounter == NULL ||
-            (XSyncValueLessThan(oldval, pTrigger->test_value) &&
-             XSyncValueGreaterOrEqual(pCounter->value, pTrigger->test_value)));
-}
-
-static Bool
-SyncCheckTriggerNegativeTransition(SyncTrigger * pTrigger, CARD64 oldval)
-{
-    SyncCounter *pCounter;
-
-    /* Non-counter sync objects should never get here because they
-     * never trigger this comparison. */
-    if (!SyncCheckWarnIsCounter(pTrigger->pSync, WARN_INVALID_COUNTER_COMPARE))
-        return FALSE;
-
-    pCounter = (SyncCounter *) pTrigger->pSync;
-
-    return (pCounter == NULL ||
-            (XSyncValueGreaterThan(oldval, pTrigger->test_value) &&
-             XSyncValueLessOrEqual(pCounter->value, pTrigger->test_value)));
-}
-
-static Bool
-SyncCheckTriggerFence(SyncTrigger * pTrigger, CARD64 unused)
+SyncCheckTriggerFence(SyncTrigger * pTrigger, int64_t unused)
 {
     SyncFence *pFence = (SyncFence *) pTrigger->pSync;
 
@@ -316,17 +322,12 @@ SyncInitTrigger(ClientPtr client, SyncTrigger * pTrigger, XID syncObject,
     if (changes & XSyncCACounter) {
         if (syncObject == None)
             pSync = NULL;
-        else if (Success != (rc = dixLookupResourceByType((pointer *) &pSync,
+        else if (Success != (rc = dixLookupResourceByType((void **) &pSync,
                                                           syncObject, resType,
                                                           client,
                                                           DixReadAccess))) {
             client->errorValue = syncObject;
             return rc;
-        }
-        if (pSync != pTrigger->pSync) { /* new counter for trigger */
-            SyncDeleteTriggerFromSyncObject(pTrigger);
-            pTrigger->pSync = pSync;
-            newSyncObject = TRUE;
         }
     }
 
@@ -336,7 +337,7 @@ SyncInitTrigger(ClientPtr client, SyncTrigger * pTrigger, XID syncObject,
         pCounter = (SyncCounter *) pSync;
 
         if (IsSystemCounter(pCounter)) {
-            (*pCounter->pSysCounterInfo->QueryValue) ((pointer) pCounter,
+            (*pCounter->pSysCounterInfo->QueryValue) ((void *) pCounter,
                                                       &pCounter->value);
         }
     }
@@ -346,6 +347,24 @@ SyncInitTrigger(ClientPtr client, SyncTrigger * pTrigger, XID syncObject,
             pTrigger->value_type != XSyncAbsolute) {
             client->errorValue = pTrigger->value_type;
             return BadValue;
+        }
+    }
+
+    if (changes & (XSyncCAValueType | XSyncCAValue)) {
+        if (pTrigger->value_type == XSyncAbsolute)
+            pTrigger->test_value = pTrigger->wait_value;
+        else {                  /* relative */
+            Bool overflow;
+
+            if (pCounter == NULL)
+                return BadMatch;
+
+            overflow = checked_int64_add(&pTrigger->test_value,
+                                         pCounter->value, pTrigger->wait_value);
+            if (overflow) {
+                client->errorValue = pTrigger->wait_value >> 32;
+                return BadValue;
+            }
         }
     }
 
@@ -377,22 +396,11 @@ SyncInitTrigger(ClientPtr client, SyncTrigger * pTrigger, XID syncObject,
         }
     }
 
-    if (changes & (XSyncCAValueType | XSyncCAValue)) {
-        if (pTrigger->value_type == XSyncAbsolute)
-            pTrigger->test_value = pTrigger->wait_value;
-        else {                  /* relative */
-
-            Bool overflow;
-
-            if (pCounter == NULL)
-                return BadMatch;
-
-            XSyncValueAdd(&pTrigger->test_value, pCounter->value,
-                          pTrigger->wait_value, &overflow);
-            if (overflow) {
-                client->errorValue = XSyncValueHigh32(pTrigger->wait_value);
-                return BadValue;
-            }
+    if (changes & XSyncCACounter) {
+        if (pSync != pTrigger->pSync) { /* new counter for trigger */
+            SyncDeleteTriggerFromSyncObject(pTrigger);
+            pTrigger->pSync = pSync;
+            newSyncObject = TRUE;
         }
     }
 
@@ -400,8 +408,7 @@ SyncInitTrigger(ClientPtr client, SyncTrigger * pTrigger, XID syncObject,
      *  a new counter on a trigger
      */
     if (newSyncObject) {
-        if ((rc = SyncAddTriggerToSyncObject(pTrigger)) != Success)
-            return rc;
+        SyncAddTriggerToSyncObject(pTrigger);
     }
     else if (pCounter && IsSystemCounter(pCounter)) {
         SyncComputeBracketValues(pCounter);
@@ -429,21 +436,24 @@ SyncSendAlarmNotifyEvents(SyncAlarm * pAlarm)
 
     UpdateCurrentTime();
 
-    ane.type = SyncEventBase + XSyncAlarmNotify;
-    ane.kind = XSyncAlarmNotify;
-    ane.alarm = pAlarm->alarm_id;
+    ane = (xSyncAlarmNotifyEvent) {
+        .type = SyncEventBase + XSyncAlarmNotify,
+        .kind = XSyncAlarmNotify,
+        .alarm = pAlarm->alarm_id,
+        .alarm_value_hi = pTrigger->test_value >> 32,
+        .alarm_value_lo = pTrigger->test_value,
+        .time = currentTime.milliseconds,
+        .state = pAlarm->state
+    };
+
     if (pTrigger->pSync && SYNC_COUNTER == pTrigger->pSync->type) {
-        ane.counter_value_hi = XSyncValueHigh32(pCounter->value);
-        ane.counter_value_lo = XSyncValueLow32(pCounter->value);
+        ane.counter_value_hi = pCounter->value >> 32;
+        ane.counter_value_lo = pCounter->value;
     }
-    else {                      /* XXX what else can we do if there's no counter? */
+    else {
+        /* XXX what else can we do if there's no counter? */
         ane.counter_value_hi = ane.counter_value_lo = 0;
     }
-
-    ane.alarm_value_hi = XSyncValueHigh32(pTrigger->test_value);
-    ane.alarm_value_lo = XSyncValueLow32(pTrigger->test_value);
-    ane.time = currentTime.milliseconds;
-    ane.state = pAlarm->state;
 
     /* send to owner */
     if (pAlarm->events)
@@ -466,7 +476,7 @@ SyncSendCounterNotifyEvents(ClientPtr client, SyncAwait ** ppAwait,
 
     if (client->clientGone)
         return;
-    pev = pEvents = malloc(num_events * sizeof(xSyncCounterNotifyEvent));
+    pev = pEvents = calloc(num_events, sizeof(xSyncCounterNotifyEvent));
     if (!pEvents)
         return;
     UpdateCurrentTime();
@@ -476,13 +486,13 @@ SyncSendCounterNotifyEvents(ClientPtr client, SyncAwait ** ppAwait,
         pev->type = SyncEventBase + XSyncCounterNotify;
         pev->kind = XSyncCounterNotify;
         pev->counter = pTrigger->pSync->id;
-        pev->wait_value_lo = XSyncValueLow32(pTrigger->test_value);
-        pev->wait_value_hi = XSyncValueHigh32(pTrigger->test_value);
+        pev->wait_value_lo = pTrigger->test_value;
+        pev->wait_value_hi = pTrigger->test_value >> 32;
         if (SYNC_COUNTER == pTrigger->pSync->type) {
             SyncCounter *pCounter = (SyncCounter *) pTrigger->pSync;
 
-            pev->counter_value_lo = XSyncValueLow32(pCounter->value);
-            pev->counter_value_hi = XSyncValueHigh32(pCounter->value);
+            pev->counter_value_lo = pCounter->value;
+            pev->counter_value_hi = pCounter->value >> 32;
         }
         else {
             pev->counter_value_lo = 0;
@@ -519,7 +529,7 @@ SyncAlarmTriggerFired(SyncTrigger * pTrigger)
 {
     SyncAlarm *pAlarm = (SyncAlarm *) pTrigger;
     SyncCounter *pCounter;
-    CARD64 new_test_value;
+    int64_t new_test_value;
 
     if (!SyncCheckWarnIsCounter(pTrigger->pSync, WARN_INVALID_COUNTER_ALARM))
         return;
@@ -535,7 +545,7 @@ SyncAlarmTriggerFired(SyncTrigger * pTrigger)
      *    no change is made to value (test-value) and the alarm
      *    state is changed to Inactive before the event is generated."
      */
-    if (pCounter == NULL || (XSyncValueIsZero(pAlarm->delta)
+    if (pCounter == NULL || (pAlarm->delta == 0
                              && (pAlarm->trigger.test_type ==
                                  XSyncPositiveComparison ||
                                  pAlarm->trigger.test_type ==
@@ -546,7 +556,7 @@ SyncAlarmTriggerFired(SyncTrigger * pTrigger)
 
     if (pAlarm->state == XSyncAlarmActive) {
         Bool overflow;
-        CARD64 oldvalue;
+        int64_t oldvalue;
         SyncTrigger *paTrigger = &pAlarm->trigger;
         SyncCounter *paCounter;
 
@@ -565,8 +575,8 @@ SyncAlarmTriggerFired(SyncTrigger * pTrigger)
         /* XXX really should do something smarter here */
 
         do {
-            XSyncValueAdd(&paTrigger->test_value, paTrigger->test_value,
-                          pAlarm->delta, &overflow);
+            overflow = checked_int64_add(&paTrigger->test_value,
+                                         paTrigger->test_value, pAlarm->delta);
         } while (!overflow &&
                  (*paTrigger->CheckTrigger) (paTrigger, paCounter->value));
 
@@ -609,7 +619,7 @@ SyncAwaitTriggerFired(SyncTrigger * pTrigger)
 
     pAwaitUnion = (SyncAwaitUnion *) pAwait->pHeader;
     numwaits = pAwaitUnion->header.num_waitconditions;
-    ppAwait = malloc(numwaits * sizeof(SyncAwait *));
+    ppAwait = xallocarray(numwaits, sizeof(SyncAwait *));
     if (!ppAwait)
         goto bail;
 
@@ -625,7 +635,7 @@ SyncAwaitTriggerFired(SyncTrigger * pTrigger)
      *  be stored in the events.
      */
     for (; numwaits; numwaits--, pAwait++) {
-        CARD64 diff;
+        int64_t diff;
         Bool overflow, diffgreater, diffequal;
 
         /* "A CounterNotify event with the destroyed flag set to TRUE is
@@ -644,16 +654,16 @@ SyncAwaitTriggerFired(SyncTrigger * pTrigger)
              *  calculated by subtracting the test value from the value of
              *  the counter."
              */
-            XSyncValueSubtract(&diff, pCounter->value,
-                               pAwait->trigger.test_value, &overflow);
+            overflow = checked_int64_subtract(&diff, pCounter->value,
+                                              pAwait->trigger.test_value);
 
             /* "If the difference lies outside the range for an INT64, an
              *  event is not generated."
              */
             if (overflow)
                 continue;
-            diffgreater = XSyncValueGreaterThan(diff, pAwait->event_threshold);
-            diffequal = XSyncValueEqual(diff, pAwait->event_threshold);
+            diffgreater = diff > pAwait->event_threshold;
+            diffequal = diff == pAwait->event_threshold;
 
             /* "If the test-type is PositiveTransition or
              *  PositiveComparison, a CounterNotify event is generated if
@@ -688,23 +698,51 @@ SyncAwaitTriggerFired(SyncTrigger * pTrigger)
     FreeResource(pAwaitUnion->header.delete_id, RT_NONE);
 }
 
+static int64_t
+SyncUpdateCounter(SyncCounter *pCounter, int64_t newval)
+{
+    int64_t oldval = pCounter->value;
+    pCounter->value = newval;
+    return oldval;
+}
+
 /*  This function should always be used to change a counter's value so that
  *  any triggers depending on the counter will be checked.
  */
 void
-SyncChangeCounter(SyncCounter * pCounter, CARD64 newval)
+SyncChangeCounter(SyncCounter * pCounter, int64_t newval)
 {
     SyncTriggerList *ptl, *pnext;
-    CARD64 oldval;
+    int64_t oldval;
 
-    oldval = pCounter->value;
-    pCounter->value = newval;
+    oldval = SyncUpdateCounter(pCounter, newval);
 
     /* run through triggers to see if any become true */
     for (ptl = pCounter->sync.pTriglist; ptl; ptl = pnext) {
         pnext = ptl->next;
-        if ((*ptl->pTrigger->CheckTrigger) (ptl->pTrigger, oldval))
+        if ((*ptl->pTrigger->CheckTrigger) (ptl->pTrigger, oldval)) {
             (*ptl->pTrigger->TriggerFired) (ptl->pTrigger);
+            /* TriggerFired may have called SyncDeleteTriggerFromSyncObject
+             * for sibling triggers in the same Await group, freeing their
+             * trigger list nodes - potentially including pnext. Verify
+             * pnext is still on the counter's trigger list; if not,
+             * restart from the list head.
+             *
+             * Unlike miSyncTriggerFence() we cannot use a do/while
+             * restart loop here: counter trigger lists may contain alarm
+             * triggers which are not removed after firing and would cause
+             * an infinite loop when delta is 0.
+             */
+            if (pnext) {
+                SyncTriggerList *tmp;
+                for (tmp = pCounter->sync.pTriglist; tmp; tmp = tmp->next) {
+                    if (tmp == pnext)
+                        break;
+                }
+                if (!tmp)
+                    pnext = pCounter->sync.pTriglist;
+            }
+        }
     }
 
     if (IsSystemCounter(pCounter)) {
@@ -782,8 +820,14 @@ SyncChangeAlarmAttributes(ClientPtr client, SyncAlarm * pAlarm, Mask mask,
     int status;
     XSyncCounter counter;
     Mask origmask = mask;
+    SyncTrigger trigger;
+    Bool select_events_changed = FALSE;
+    Bool select_events_value = FALSE;
+    int64_t delta;
 
-    counter = pAlarm->trigger.pSync ? pAlarm->trigger.pSync->id : None;
+    trigger = pAlarm->trigger;
+    delta = pAlarm->delta;
+    counter = trigger.pSync ? trigger.pSync->id : None;
 
     while (mask) {
         int index2 = lowbit(mask);
@@ -799,24 +843,24 @@ SyncChangeAlarmAttributes(ClientPtr client, SyncAlarm * pAlarm, Mask mask,
         case XSyncCAValueType:
             mask &= ~XSyncCAValueType;
             /* sanity check in SyncInitTrigger */
-            pAlarm->trigger.value_type = *values++;
+            trigger.value_type = *values++;
             break;
 
         case XSyncCAValue:
             mask &= ~XSyncCAValue;
-            XSyncIntsToValue(&pAlarm->trigger.wait_value, values[1], values[0]);
+            trigger.wait_value = ((int64_t)values[0] << 32) | values[1];
             values += 2;
             break;
 
         case XSyncCATestType:
             mask &= ~XSyncCATestType;
             /* sanity check in SyncInitTrigger */
-            pAlarm->trigger.test_type = *values++;
+            trigger.test_type = *values++;
             break;
 
         case XSyncCADelta:
             mask &= ~XSyncCADelta;
-            XSyncIntsToValue(&pAlarm->delta, values[1], values[0]);
+            delta = ((int64_t)values[0] << 32) | values[1];
             values += 2;
             break;
 
@@ -826,10 +870,8 @@ SyncChangeAlarmAttributes(ClientPtr client, SyncAlarm * pAlarm, Mask mask,
                 client->errorValue = *values;
                 return BadValue;
             }
-            status = SyncEventSelectForAlarm(pAlarm, client,
-                                             (Bool) (*values++));
-            if (status != Success)
-                return status;
+            select_events_value = (Bool) (*values++);
+            select_events_changed = TRUE;
             break;
 
         default:
@@ -838,28 +880,33 @@ SyncChangeAlarmAttributes(ClientPtr client, SyncAlarm * pAlarm, Mask mask,
         }
     }
 
+    if (select_events_changed) {
+        status = SyncEventSelectForAlarm(pAlarm, client, select_events_value);
+        if (status != Success)
+            return status;
+    }
+
     /* "If the test-type is PositiveComparison or PositiveTransition
      *  and delta is less than zero, or if the test-type is
      *  NegativeComparison or NegativeTransition and delta is
      *  greater than zero, a Match error is generated."
      */
     if (origmask & (XSyncCADelta | XSyncCATestType)) {
-        CARD64 zero;
-
-        XSyncIntToValue(&zero, 0);
-        if ((((pAlarm->trigger.test_type == XSyncPositiveComparison) ||
-              (pAlarm->trigger.test_type == XSyncPositiveTransition))
-             && XSyncValueLessThan(pAlarm->delta, zero))
+        if ((((trigger.test_type == XSyncPositiveComparison) ||
+              (trigger.test_type == XSyncPositiveTransition))
+             && delta < 0)
             ||
-            (((pAlarm->trigger.test_type == XSyncNegativeComparison) ||
-              (pAlarm->trigger.test_type == XSyncNegativeTransition))
-             && XSyncValueGreaterThan(pAlarm->delta, zero))
+            (((trigger.test_type == XSyncNegativeComparison) ||
+              (trigger.test_type == XSyncNegativeTransition))
+             && delta > 0)
             ) {
             return BadMatch;
         }
     }
 
     /* postpone this until now, when we're sure nothing else can go wrong */
+    pAlarm->delta = delta;
+    pAlarm->trigger = trigger;
     if ((status = SyncInitTrigger(client, &pAlarm->trigger, counter, RTCounter,
                                   origmask & XSyncCAAllTrigger)) != Success)
         return status;
@@ -869,24 +916,32 @@ SyncChangeAlarmAttributes(ClientPtr client, SyncAlarm * pAlarm, Mask mask,
     return Success;
 }
 
-static SyncObject *
+SyncObject *
 SyncCreate(ClientPtr client, XID id, unsigned char type)
 {
     SyncObject *pSync;
+    RESTYPE resType;
 
     switch (type) {
     case SYNC_COUNTER:
         pSync = malloc(sizeof(SyncCounter));
+        resType = RTCounter;
         break;
     case SYNC_FENCE:
         pSync = (SyncObject *) dixAllocateObjectWithPrivates(SyncFence,
                                                              PRIVATE_SYNC_FENCE);
+        resType = RTFence;
         break;
     default:
         return NULL;
     }
 
     if (!pSync)
+        return NULL;
+
+    pSync->initialized = FALSE;
+
+    if (!AddResource(id, resType, (void *) pSync))
         return NULL;
 
     pSync->client = client;
@@ -898,8 +953,41 @@ SyncCreate(ClientPtr client, XID id, unsigned char type)
     return pSync;
 }
 
+int
+SyncCreateFenceFromFD(ClientPtr client, DrawablePtr pDraw, XID id, int fd, BOOL initially_triggered)
+{
+#ifdef HAVE_XSHMFENCE
+    SyncFence  *pFence;
+    int         status;
+
+    pFence = (SyncFence *) SyncCreate(client, id, SYNC_FENCE);
+    if (!pFence)
+        return BadAlloc;
+
+    status = miSyncInitFenceFromFD(pDraw, pFence, fd, initially_triggered);
+    if (status != Success) {
+        FreeResource(pFence->sync.id, RT_NONE);
+        return status;
+    }
+
+    return Success;
+#else
+    return BadImplementation;
+#endif
+}
+
+int
+SyncFDFromFence(ClientPtr client, DrawablePtr pDraw, SyncFence *pFence)
+{
+#ifdef HAVE_XSHMFENCE
+    return miSyncFDFromFence(pDraw, pFence);
+#else
+    return BadImplementation;
+#endif
+}
+
 static SyncCounter *
-SyncCreateCounter(ClientPtr client, XSyncCounter id, CARD64 initialvalue)
+SyncCreateCounter(ClientPtr client, XSyncCounter id, int64_t initialvalue)
 {
     SyncCounter *pCounter;
 
@@ -909,8 +997,7 @@ SyncCreateCounter(ClientPtr client, XSyncCounter id, CARD64 initialvalue)
     pCounter->value = initialvalue;
     pCounter->pSysCounterInfo = NULL;
 
-    if (!AddResource(id, RTCounter, (pointer) pCounter))
-        return NULL;
+    pCounter->sync.initialized = TRUE;
 
     return pCounter;
 }
@@ -921,37 +1008,16 @@ static int FreeCounter(void *, XID);
  * ***** System Counter utilities
  */
 
-pointer
+SyncCounter*
 SyncCreateSystemCounter(const char *name,
-                        CARD64 initial,
-                        CARD64 resolution,
+                        int64_t initial,
+                        int64_t resolution,
                         SyncCounterType counterType,
-                        void (*QueryValue) (pointer /* pCounter */ ,
-                                            CARD64 * /* pValue_return */ ),
-                        void (*BracketValues) (pointer /* pCounter */ ,
-                                               CARD64 * /* pbracket_less */ ,
-                                               CARD64 * /* pbracket_greater */ )
+                        SyncSystemCounterQueryValue QueryValue,
+                        SyncSystemCounterBracketValues BracketValues
     )
 {
-    SyncCounter *pCounter;
-
-    SysCounterList = realloc(SysCounterList,
-                             (SyncNumSystemCounters +
-                              1) * sizeof(SyncCounter *));
-    if (!SysCounterList)
-        return NULL;
-
-    /* this function may be called before SYNC has been initialized, so we
-     * have to make sure RTCounter is created.
-     */
-    if (RTCounter == 0) {
-        RTCounter = CreateNewResourceType(FreeCounter, "SyncCounter");
-        if (RTCounter == 0) {
-            return NULL;
-        }
-    }
-
-    pCounter = SyncCreateCounter(NULL, FakeClientID(0), initial);
+    SyncCounter *pCounter = SyncCreateCounter(NULL, FakeClientID(0), initial);
 
     if (pCounter) {
         SysCounterInfo *psci;
@@ -959,23 +1025,25 @@ SyncCreateSystemCounter(const char *name,
         psci = malloc(sizeof(SysCounterInfo));
         if (!psci) {
             FreeResource(pCounter->sync.id, RT_NONE);
-            return pCounter;
+            return NULL;
         }
         pCounter->pSysCounterInfo = psci;
-        psci->name = name;
+        psci->pCounter = pCounter;
+        psci->name = strdup(name);
         psci->resolution = resolution;
         psci->counterType = counterType;
         psci->QueryValue = QueryValue;
         psci->BracketValues = BracketValues;
-        XSyncMaxValue(&psci->bracket_greater);
-        XSyncMinValue(&psci->bracket_less);
-        SysCounterList[SyncNumSystemCounters++] = pCounter;
+        psci->private = NULL;
+        psci->bracket_greater = LLONG_MAX;
+        psci->bracket_less = LLONG_MIN;
+        xorg_list_add(&psci->entry, &SysCounterList);
     }
     return pCounter;
 }
 
 void
-SyncDestroySystemCounter(pointer pSysCounter)
+SyncDestroySystemCounter(void *pSysCounter)
 {
     SyncCounter *pCounter = (SyncCounter *) pSysCounter;
 
@@ -988,8 +1056,8 @@ SyncComputeBracketValues(SyncCounter * pCounter)
     SyncTriggerList *pCur;
     SyncTrigger *pTrigger;
     SysCounterInfo *psci;
-    CARD64 *pnewgtval = NULL;
-    CARD64 *pnewltval = NULL;
+    int64_t *pnewgtval = NULL;
+    int64_t *pnewltval = NULL;
     SyncCounterType ct;
 
     if (!pCounter)
@@ -1000,75 +1068,79 @@ SyncComputeBracketValues(SyncCounter * pCounter)
     if (ct == XSyncCounterNeverChanges)
         return;
 
-    XSyncMaxValue(&psci->bracket_greater);
-    XSyncMinValue(&psci->bracket_less);
+    psci->bracket_greater = LLONG_MAX;
+    psci->bracket_less = LLONG_MIN;
 
     for (pCur = pCounter->sync.pTriglist; pCur; pCur = pCur->next) {
         pTrigger = pCur->pTrigger;
 
         if (pTrigger->test_type == XSyncPositiveComparison &&
             ct != XSyncCounterNeverIncreases) {
-            if (XSyncValueLessThan(pCounter->value, pTrigger->test_value) &&
-                XSyncValueLessThan(pTrigger->test_value,
-                                   psci->bracket_greater)) {
+            if (pCounter->value < pTrigger->test_value &&
+                pTrigger->test_value < psci->bracket_greater) {
                 psci->bracket_greater = pTrigger->test_value;
                 pnewgtval = &psci->bracket_greater;
+            }
+            else if (pCounter->value > pTrigger->test_value &&
+                     pTrigger->test_value > psci->bracket_less) {
+                    psci->bracket_less = pTrigger->test_value;
+                    pnewltval = &psci->bracket_less;
             }
         }
         else if (pTrigger->test_type == XSyncNegativeComparison &&
                  ct != XSyncCounterNeverDecreases) {
-            if (XSyncValueGreaterThan(pCounter->value, pTrigger->test_value) &&
-                XSyncValueGreaterThan(pTrigger->test_value,
-                                      psci->bracket_less)) {
+            if (pCounter->value > pTrigger->test_value &&
+                pTrigger->test_value > psci->bracket_less) {
                 psci->bracket_less = pTrigger->test_value;
                 pnewltval = &psci->bracket_less;
+            }
+            else if (pCounter->value < pTrigger->test_value &&
+                     pTrigger->test_value < psci->bracket_greater) {
+                    psci->bracket_greater = pTrigger->test_value;
+                    pnewgtval = &psci->bracket_greater;
             }
         }
         else if (pTrigger->test_type == XSyncNegativeTransition &&
                  ct != XSyncCounterNeverIncreases) {
-            if (XSyncValueGreaterThan(pCounter->value, pTrigger->test_value) &&
-                XSyncValueGreaterThan(pTrigger->test_value, psci->bracket_less))
-            {
-                psci->bracket_less = pTrigger->test_value;
-                pnewltval = &psci->bracket_less;
+            if (pCounter->value >= pTrigger->test_value &&
+                pTrigger->test_value > psci->bracket_less) {
+                    /*
+                     * If the value is exactly equal to our threshold, we want one
+                     * more event in the negative direction to ensure we pick up
+                     * when the value is less than this threshold.
+                     */
+                    psci->bracket_less = pTrigger->test_value;
+                    pnewltval = &psci->bracket_less;
             }
-            else if (XSyncValueEqual(pCounter->value, pTrigger->test_value) &&
-                     XSyncValueLessThan(pTrigger->test_value,
-                                        psci->bracket_greater)) {
-                /*
-                 * The value is exactly equal to our threshold.  We want one
-                 * more event in the positive direction to ensure we pick up
-                 * when the value *exceeds* this threshold.
-                 */
-                psci->bracket_greater = pTrigger->test_value;
-                pnewgtval = &psci->bracket_greater;
+            else if (pCounter->value < pTrigger->test_value &&
+                     pTrigger->test_value < psci->bracket_greater) {
+                    psci->bracket_greater = pTrigger->test_value;
+                    pnewgtval = &psci->bracket_greater;
             }
         }
         else if (pTrigger->test_type == XSyncPositiveTransition &&
                  ct != XSyncCounterNeverDecreases) {
-            if (XSyncValueLessThan(pCounter->value, pTrigger->test_value) &&
-                XSyncValueLessThan(pTrigger->test_value, psci->bracket_greater))
-            {
-                psci->bracket_greater = pTrigger->test_value;
-                pnewgtval = &psci->bracket_greater;
+            if (pCounter->value <= pTrigger->test_value &&
+                pTrigger->test_value < psci->bracket_greater) {
+                    /*
+                     * If the value is exactly equal to our threshold, we
+                     * want one more event in the positive direction to
+                     * ensure we pick up when the value *exceeds* this
+                     * threshold.
+                     */
+                    psci->bracket_greater = pTrigger->test_value;
+                    pnewgtval = &psci->bracket_greater;
             }
-            else if (XSyncValueEqual(pCounter->value, pTrigger->test_value) &&
-                     XSyncValueGreaterThan(pTrigger->test_value,
-                                           psci->bracket_less)) {
-                /*
-                 * The value is exactly equal to our threshold.  We want one
-                 * more event in the negative direction to ensure we pick up
-                 * when the value is less than this threshold.
-                 */
-                psci->bracket_less = pTrigger->test_value;
-                pnewltval = &psci->bracket_less;
+            else if (pCounter->value > pTrigger->test_value &&
+                     pTrigger->test_value > psci->bracket_less) {
+                    psci->bracket_less = pTrigger->test_value;
+                    pnewltval = &psci->bracket_less;
             }
         }
     }                           /* end for each trigger */
 
-    if (pnewgtval || pnewltval) {
-        (*psci->BracketValues) ((pointer) pCounter, pnewltval, pnewgtval);
-    }
+    (*psci->BracketValues) ((void *) pCounter, pnewltval, pnewgtval);
+
 }
 
 /*
@@ -1104,37 +1176,29 @@ static int
 FreeCounter(void *env, XID id)
 {
     SyncCounter *pCounter = (SyncCounter *) env;
-    SyncTriggerList *ptl, *pnext;
 
     pCounter->sync.beingDestroyed = TRUE;
-    /* tell all the counter's triggers that the counter has been destroyed */
-    for (ptl = pCounter->sync.pTriglist; ptl; ptl = pnext) {
-        (*ptl->pTrigger->CounterDestroyed) (ptl->pTrigger);
-        pnext = ptl->next;
-        free(ptl);              /* destroy the trigger list as we go */
-    }
-    if (IsSystemCounter(pCounter)) {
-        int i, found = 0;
 
-        free(pCounter->pSysCounterInfo);
+    if (pCounter->sync.initialized) {
+        SyncTriggerList *ptl, *pnext;
 
-        /* find the counter in the list of system counters and remove it */
-
-        if (SysCounterList) {
-            for (i = 0; i < SyncNumSystemCounters; i++) {
-                if (SysCounterList[i] == pCounter) {
-                    found = i;
-                    break;
-                }
-            }
-            if (found < (SyncNumSystemCounters - 1)) {
-                for (i = found; i < SyncNumSystemCounters - 1; i++) {
-                    SysCounterList[i] = SysCounterList[i + 1];
-                }
-            }
+        /* tell all the counter's triggers that counter has been destroyed */
+        nt_list_for_each_entry_safe(ptl, pnext, pCounter->sync.pTriglist, next) {
+            /* Remove it from the list first so CounterDestroyed
+             * callbacks have a valid list to iterate */
+            pCounter->sync.pTriglist = pnext;
+            if (ptl->pTrigger)
+                (*ptl->pTrigger->CounterDestroyed) (ptl->pTrigger);
+            free(ptl); /* destroy the trigger list as we go */
         }
-        SyncNumSystemCounters--;
+        if (IsSystemCounter(pCounter)) {
+            xorg_list_del(&pCounter->pSysCounterInfo->entry);
+            free(pCounter->pSysCounterInfo->name);
+            free(pCounter->pSysCounterInfo->private);
+            free(pCounter->pSysCounterInfo);
+        }
     }
+
     free(pCounter);
     return Success;
 }
@@ -1156,13 +1220,28 @@ FreeAwait(void *addr, XID id)
 
     for (numwaits = pAwaitUnion->header.num_waitconditions; numwaits;
          numwaits--, pAwait++) {
-        /* If the counter is being destroyed, FreeCounter will delete
-         * the trigger list itself, so don't do it here.
+        /* If the counter is being destroyed, FreeCounter/miSyncDestroyFence
+         * will delete the trigger list itself, so don't do it here.
+         * However, we must NULL out the pTrigger pointer in the trigger list
+         * node so the destroy loop knows not to dereference it - the backing
+         * SyncAwait memory is about to be freed below.
          */
         SyncObject *pSync = pAwait->trigger.pSync;
 
-        if (pSync && !pSync->beingDestroyed)
-            SyncDeleteTriggerFromSyncObject(&pAwait->trigger);
+        if (pSync) {
+            if (!pSync->beingDestroyed) {
+                SyncDeleteTriggerFromSyncObject(&pAwait->trigger);
+            } else {
+                SyncTriggerList *ptl;
+
+                nt_list_for_each_entry(ptl, pSync->pTriglist, next) {
+                    if (ptl->pTrigger == &pAwait->trigger) {
+                        ptl->pTrigger = NULL;
+                        break;
+                    }
+                }
+            }
+        }
     }
     free(pAwaitUnion);
     return Success;
@@ -1199,21 +1278,20 @@ FreeAlarmClient(void *value, XID id)
 static int
 ProcSyncInitialize(ClientPtr client)
 {
-    xSyncInitializeReply rep;
+    xSyncInitializeReply rep = {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .length = 0,
+        .majorVersion = SERVER_SYNC_MAJOR_VERSION,
+        .minorVersion = SERVER_SYNC_MINOR_VERSION,
+    };
 
     REQUEST_SIZE_MATCH(xSyncInitializeReq);
-
-    memset(&rep, 0, sizeof(xSyncInitializeReply));
-    rep.type = X_Reply;
-    rep.sequenceNumber = client->sequence;
-    rep.majorVersion = SERVER_SYNC_MAJOR_VERSION;
-    rep.minorVersion = SERVER_SYNC_MINOR_VERSION;
-    rep.length = 0;
 
     if (client->swapped) {
         swaps(&rep.sequenceNumber);
     }
-    WriteToClient(client, sizeof(rep), (char *) &rep);
+    WriteToClient(client, sizeof(rep), &rep);
     return Success;
 }
 
@@ -1223,21 +1301,21 @@ ProcSyncInitialize(ClientPtr client)
 static int
 ProcSyncListSystemCounters(ClientPtr client)
 {
-    xSyncListSystemCountersReply rep;
-    int i, len;
+    xSyncListSystemCountersReply rep = {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .nCounters = 0,
+    };
+    SysCounterInfo *psci;
+    int len = 0;
     xSyncSystemCounter *list = NULL, *walklist = NULL;
 
     REQUEST_SIZE_MATCH(xSyncListSystemCountersReq);
 
-    rep.type = X_Reply;
-    rep.sequenceNumber = client->sequence;
-    rep.nCounters = SyncNumSystemCounters;
-
-    for (i = len = 0; i < SyncNumSystemCounters; i++) {
-        const char *name = SysCounterList[i]->pSysCounterInfo->name;
-
+    xorg_list_for_each_entry(psci, &SysCounterList, entry) {
         /* pad to 4 byte boundary */
-        len += pad_to_int32(sz_xSyncSystemCounter + strlen(name));
+        len += pad_to_int32(sz_xSyncSystemCounter + strlen(psci->name));
+        ++rep.nCounters;
     }
 
     if (len) {
@@ -1254,14 +1332,13 @@ ProcSyncListSystemCounters(ClientPtr client)
         swapl(&rep.nCounters);
     }
 
-    for (i = 0; i < SyncNumSystemCounters; i++) {
+    xorg_list_for_each_entry(psci, &SysCounterList, entry) {
         int namelen;
         char *pname_in_reply;
-        SysCounterInfo *psci = SysCounterList[i]->pSysCounterInfo;
 
-        walklist->counter = SysCounterList[i]->sync.id;
-        walklist->resolution_hi = XSyncValueHigh32(psci->resolution);
-        walklist->resolution_lo = XSyncValueLow32(psci->resolution);
+        walklist->counter = psci->pCounter->sync.id;
+        walklist->resolution_hi = psci->resolution >> 32;
+        walklist->resolution_lo = psci->resolution;
         namelen = strlen(psci->name);
         walklist->name_length = namelen;
 
@@ -1279,9 +1356,9 @@ ProcSyncListSystemCounters(ClientPtr client)
                                                         namelen));
     }
 
-    WriteToClient(client, sizeof(rep), (char *) &rep);
+    WriteToClient(client, sizeof(rep), &rep);
     if (len) {
-        WriteToClient(client, len, (char *) list);
+        WriteToClient(client, len, list);
         free(list);
     }
 
@@ -1344,17 +1421,19 @@ ProcSyncGetPriority(ClientPtr client)
             return rc;
     }
 
-    rep.type = X_Reply;
-    rep.length = 0;
-    rep.sequenceNumber = client->sequence;
-    rep.priority = priorityclient->priority;
+    rep = (xSyncGetPriorityReply) {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .length = 0,
+        .priority = priorityclient->priority
+    };
 
     if (client->swapped) {
         swaps(&rep.sequenceNumber);
         swapl(&rep.priority);
     }
 
-    WriteToClient(client, sizeof(xSyncGetPriorityReply), (char *) &rep);
+    WriteToClient(client, sizeof(xSyncGetPriorityReply), &rep);
 
     return Success;
 }
@@ -1366,14 +1445,14 @@ static int
 ProcSyncCreateCounter(ClientPtr client)
 {
     REQUEST(xSyncCreateCounterReq);
-    CARD64 initial;
+    int64_t initial;
 
     REQUEST_SIZE_MATCH(xSyncCreateCounterReq);
 
     LEGAL_NEW_RESOURCE(stuff->cid, client);
 
-    XSyncIntsToValue(&initial, stuff->initial_value_lo,
-                     stuff->initial_value_hi);
+    initial = ((int64_t)stuff->initial_value_hi << 32) | stuff->initial_value_lo;
+
     if (!SyncCreateCounter(client, stuff->cid, initial))
         return BadAlloc;
 
@@ -1388,12 +1467,12 @@ ProcSyncSetCounter(ClientPtr client)
 {
     REQUEST(xSyncSetCounterReq);
     SyncCounter *pCounter;
-    CARD64 newvalue;
+    int64_t newvalue;
     int rc;
 
     REQUEST_SIZE_MATCH(xSyncSetCounterReq);
 
-    rc = dixLookupResourceByType((pointer *) &pCounter, stuff->cid, RTCounter,
+    rc = dixLookupResourceByType((void **) &pCounter, stuff->cid, RTCounter,
                                  client, DixWriteAccess);
     if (rc != Success)
         return rc;
@@ -1403,7 +1482,7 @@ ProcSyncSetCounter(ClientPtr client)
         return BadAccess;
     }
 
-    XSyncIntsToValue(&newvalue, stuff->value_lo, stuff->value_hi);
+    newvalue = ((int64_t)stuff->value_hi << 32) | stuff->value_lo;
     SyncChangeCounter(pCounter, newvalue);
     return Success;
 }
@@ -1416,13 +1495,13 @@ ProcSyncChangeCounter(ClientPtr client)
 {
     REQUEST(xSyncChangeCounterReq);
     SyncCounter *pCounter;
-    CARD64 newvalue;
+    int64_t newvalue;
     Bool overflow;
     int rc;
 
     REQUEST_SIZE_MATCH(xSyncChangeCounterReq);
 
-    rc = dixLookupResourceByType((pointer *) &pCounter, stuff->cid, RTCounter,
+    rc = dixLookupResourceByType((void **) &pCounter, stuff->cid, RTCounter,
                                  client, DixWriteAccess);
     if (rc != Success)
         return rc;
@@ -1432,8 +1511,8 @@ ProcSyncChangeCounter(ClientPtr client)
         return BadAccess;
     }
 
-    XSyncIntsToValue(&newvalue, stuff->value_lo, stuff->value_hi);
-    XSyncValueAdd(&newvalue, pCounter->value, newvalue, &overflow);
+    newvalue = (int64_t)stuff->value_hi << 32 | stuff->value_lo;
+    overflow = checked_int64_add(&newvalue, newvalue, pCounter->value);
     if (overflow) {
         /* XXX 64 bit value can't fit in 32 bits; do the best we can */
         client->errorValue = stuff->value_hi;
@@ -1455,7 +1534,7 @@ ProcSyncDestroyCounter(ClientPtr client)
 
     REQUEST_SIZE_MATCH(xSyncDestroyCounterReq);
 
-    rc = dixLookupResourceByType((pointer *) &pCounter, stuff->counter,
+    rc = dixLookupResourceByType((void **) &pCounter, stuff->counter,
                                  RTCounter, client, DixDestroyAccess);
     if (rc != Success)
         return rc;
@@ -1476,7 +1555,7 @@ SyncAwaitPrologue(ClientPtr client, int items)
     /*  all the memory for the entire await list is allocated
      *  here in one chunk
      */
-    pAwaitUnion = malloc((items + 1) * sizeof(SyncAwaitUnion));
+    pAwaitUnion = xallocarray(items + 1, sizeof(SyncAwaitUnion));
     if (!pAwaitUnion)
         return NULL;
 
@@ -1504,7 +1583,7 @@ SyncAwaitEpilogue(ClientPtr client, int items, SyncAwaitUnion * pAwaitUnion)
 
     pAwait = &(pAwaitUnion + 1)->await; /* skip over header */
     for (i = 0; i < items; i++, pAwait++) {
-        CARD64 value;
+        int64_t value;
 
         /*  don't have to worry about NULL counters because the request
          *  errors before we get here out if they occur
@@ -1514,7 +1593,7 @@ SyncAwaitEpilogue(ClientPtr client, int items, SyncAwaitUnion * pAwaitUnion)
             value = ((SyncCounter *) pAwait->trigger.pSync)->value;
             break;
         default:
-            XSyncIntToValue(&value, 0);
+            value = 0;
         }
 
         if ((*pAwait->trigger.CheckTrigger) (&pAwait->trigger, value)) {
@@ -1573,9 +1652,9 @@ ProcSyncAwait(ClientPtr client)
         /* sanity checks are in SyncInitTrigger */
         pAwait->trigger.pSync = NULL;
         pAwait->trigger.value_type = pProtocolWaitConds->value_type;
-        XSyncIntsToValue(&pAwait->trigger.wait_value,
-                         pProtocolWaitConds->wait_value_lo,
-                         pProtocolWaitConds->wait_value_hi);
+        pAwait->trigger.wait_value =
+            ((int64_t)pProtocolWaitConds->wait_value_hi << 32) |
+            pProtocolWaitConds->wait_value_lo;
         pAwait->trigger.test_type = pProtocolWaitConds->test_type;
 
         status = SyncInitTrigger(client, &pAwait->trigger,
@@ -1591,9 +1670,10 @@ ProcSyncAwait(ClientPtr client)
         /* this is not a mistake -- same function works for both cases */
         pAwait->trigger.TriggerFired = SyncAwaitTriggerFired;
         pAwait->trigger.CounterDestroyed = SyncAwaitTriggerFired;
-        XSyncIntsToValue(&pAwait->event_threshold,
-                         pProtocolWaitConds->event_threshold_lo,
-                         pProtocolWaitConds->event_threshold_hi);
+        pAwait->event_threshold =
+            ((int64_t) pProtocolWaitConds->event_threshold_hi << 32) |
+            pProtocolWaitConds->event_threshold_lo;
+
         pAwait->pHeader = &pAwaitUnion->header;
         pAwaitUnion->header.num_waitconditions++;
     }
@@ -1616,31 +1696,32 @@ ProcSyncQueryCounter(ClientPtr client)
 
     REQUEST_SIZE_MATCH(xSyncQueryCounterReq);
 
-    rc = dixLookupResourceByType((pointer *) &pCounter, stuff->counter,
+    rc = dixLookupResourceByType((void **) &pCounter, stuff->counter,
                                  RTCounter, client, DixReadAccess);
     if (rc != Success)
         return rc;
 
-    rep.type = X_Reply;
-    rep.length = 0;
-    rep.sequenceNumber = client->sequence;
-
     /* if system counter, ask it what the current value is */
-
     if (IsSystemCounter(pCounter)) {
-        (*pCounter->pSysCounterInfo->QueryValue) ((pointer) pCounter,
+        (*pCounter->pSysCounterInfo->QueryValue) ((void *) pCounter,
                                                   &pCounter->value);
     }
 
-    rep.value_hi = XSyncValueHigh32(pCounter->value);
-    rep.value_lo = XSyncValueLow32(pCounter->value);
+    rep = (xSyncQueryCounterReply) {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .length = 0,
+        .value_hi = pCounter->value >> 32,
+        .value_lo = pCounter->value
+    };
+
     if (client->swapped) {
         swaps(&rep.sequenceNumber);
         swapl(&rep.length);
         swapl(&rep.value_hi);
         swapl(&rep.value_lo);
     }
-    WriteToClient(client, sizeof(xSyncQueryCounterReply), (char *) &rep);
+    WriteToClient(client, sizeof(xSyncQueryCounterReply), &rep);
     return Success;
 }
 
@@ -1675,7 +1756,7 @@ ProcSyncCreateAlarm(ClientPtr client)
     pTrigger = &pAlarm->trigger;
     pTrigger->pSync = NULL;
     pTrigger->value_type = XSyncAbsolute;
-    XSyncIntToValue(&pTrigger->wait_value, 0L);
+    pTrigger->wait_value = 0;
     pTrigger->test_type = XSyncPositiveComparison;
     pTrigger->TriggerFired = SyncAlarmTriggerFired;
     pTrigger->CounterDestroyed = SyncAlarmCounterDestroyed;
@@ -1688,7 +1769,7 @@ ProcSyncCreateAlarm(ClientPtr client)
 
     pAlarm->client = client;
     pAlarm->alarm_id = stuff->id;
-    XSyncIntToValue(&pAlarm->delta, 1L);
+    pAlarm->delta = 1;
     pAlarm->events = TRUE;
     pAlarm->state = XSyncAlarmInactive;
     pAlarm->pEventClients = NULL;
@@ -1741,7 +1822,7 @@ ProcSyncChangeAlarm(ClientPtr client)
 
     REQUEST_AT_LEAST_SIZE(xSyncChangeAlarmReq);
 
-    status = dixLookupResourceByType((pointer *) &pAlarm, stuff->alarm, RTAlarm,
+    status = dixLookupResourceByType((void **) &pAlarm, stuff->alarm, RTAlarm,
                                      client, DixWriteAccess);
     if (status != Success)
         return status;
@@ -1782,37 +1863,38 @@ ProcSyncQueryAlarm(ClientPtr client)
 
     REQUEST_SIZE_MATCH(xSyncQueryAlarmReq);
 
-    rc = dixLookupResourceByType((pointer *) &pAlarm, stuff->alarm, RTAlarm,
+    rc = dixLookupResourceByType((void **) &pAlarm, stuff->alarm, RTAlarm,
                                  client, DixReadAccess);
     if (rc != Success)
         return rc;
 
-    rep.type = X_Reply;
-    rep.length =
-        bytes_to_int32(sizeof(xSyncQueryAlarmReply) - sizeof(xGenericReply));
-    rep.sequenceNumber = client->sequence;
-
     pTrigger = &pAlarm->trigger;
-    rep.counter = (pTrigger->pSync) ? pTrigger->pSync->id : None;
+    rep = (xSyncQueryAlarmReply) {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .length =
+          bytes_to_int32(sizeof(xSyncQueryAlarmReply) - sizeof(xGenericReply)),
+        .counter = (pTrigger->pSync) ? pTrigger->pSync->id : None,
 
-#if 0                           /* XXX unclear what to do, depends on whether relative value-types
-                                 * are "consumed" immediately and are considered absolute from then
-                                 * on.
-                                 */
-    rep.value_type = pTrigger->value_type;
-    rep.wait_value_hi = XSyncValueHigh32(pTrigger->wait_value);
-    rep.wait_value_lo = XSyncValueLow32(pTrigger->wait_value);
+#if 0  /* XXX unclear what to do, depends on whether relative value-types
+        * are "consumed" immediately and are considered absolute from then
+        * on.
+        */
+        .value_type = pTrigger->value_type,
+        .wait_value_hi = pTrigger->wait_value >> 32,
+        .wait_value_lo = pTrigger->wait_value,
 #else
-    rep.value_type = XSyncAbsolute;
-    rep.wait_value_hi = XSyncValueHigh32(pTrigger->test_value);
-    rep.wait_value_lo = XSyncValueLow32(pTrigger->test_value);
+        .value_type = XSyncAbsolute,
+        .wait_value_hi = pTrigger->test_value >> 32,
+        .wait_value_lo = pTrigger->test_value,
 #endif
 
-    rep.test_type = pTrigger->test_type;
-    rep.delta_hi = XSyncValueHigh32(pAlarm->delta);
-    rep.delta_lo = XSyncValueLow32(pAlarm->delta);
-    rep.events = pAlarm->events;
-    rep.state = pAlarm->state;
+        .test_type = pTrigger->test_type,
+        .delta_hi = pAlarm->delta >> 32,
+        .delta_lo = pAlarm->delta,
+        .events = pAlarm->events,
+        .state = pAlarm->state
+    };
 
     if (client->swapped) {
         swaps(&rep.sequenceNumber);
@@ -1825,7 +1907,7 @@ ProcSyncQueryAlarm(ClientPtr client)
         swapl(&rep.delta_lo);
     }
 
-    WriteToClient(client, sizeof(xSyncQueryAlarmReply), (char *) &rep);
+    WriteToClient(client, sizeof(xSyncQueryAlarmReply), &rep);
     return Success;
 }
 
@@ -1839,7 +1921,7 @@ ProcSyncDestroyAlarm(ClientPtr client)
 
     REQUEST_SIZE_MATCH(xSyncDestroyAlarmReq);
 
-    rc = dixLookupResourceByType((pointer *) &pAlarm, stuff->alarm, RTAlarm,
+    rc = dixLookupResourceByType((void **) &pAlarm, stuff->alarm, RTAlarm,
                                  client, DixDestroyAccess);
     if (rc != Success)
         return rc;
@@ -1869,10 +1951,7 @@ ProcSyncCreateFence(ClientPtr client)
 
     miSyncInitFence(pDraw->pScreen, pFence, stuff->initially_triggered);
 
-    if (!AddResource(stuff->fid, RTFence, (pointer) pFence))
-        return BadAlloc;
-
-    return client->noClientException;
+    return Success;
 }
 
 static int
@@ -1888,7 +1967,7 @@ FreeFence(void *obj, XID id)
 int
 SyncVerifyFence(SyncFence ** ppSyncFence, XID fid, ClientPtr client, Mask mode)
 {
-    int rc = dixLookupResourceByType((pointer *) ppSyncFence, fid, RTFence,
+    int rc = dixLookupResourceByType((void **) ppSyncFence, fid, RTFence,
                                      client, mode);
 
     if (rc != Success)
@@ -1906,14 +1985,14 @@ ProcSyncTriggerFence(ClientPtr client)
 
     REQUEST_SIZE_MATCH(xSyncTriggerFenceReq);
 
-    rc = dixLookupResourceByType((pointer *) &pFence, stuff->fid, RTFence,
+    rc = dixLookupResourceByType((void **) &pFence, stuff->fid, RTFence,
                                  client, DixWriteAccess);
     if (rc != Success)
         return rc;
 
     miSyncTriggerFence(pFence);
 
-    return client->noClientException;
+    return Success;
 }
 
 static int
@@ -1925,7 +2004,7 @@ ProcSyncResetFence(ClientPtr client)
 
     REQUEST_SIZE_MATCH(xSyncResetFenceReq);
 
-    rc = dixLookupResourceByType((pointer *) &pFence, stuff->fid, RTFence,
+    rc = dixLookupResourceByType((void **) &pFence, stuff->fid, RTFence,
                                  client, DixWriteAccess);
     if (rc != Success)
         return rc;
@@ -1935,7 +2014,7 @@ ProcSyncResetFence(ClientPtr client)
 
     pFence->funcs.Reset(pFence);
 
-    return client->noClientException;
+    return Success;
 }
 
 static int
@@ -1947,13 +2026,13 @@ ProcSyncDestroyFence(ClientPtr client)
 
     REQUEST_SIZE_MATCH(xSyncDestroyFenceReq);
 
-    rc = dixLookupResourceByType((pointer *) &pFence, stuff->fid, RTFence,
+    rc = dixLookupResourceByType((void **) &pFence, stuff->fid, RTFence,
                                  client, DixDestroyAccess);
     if (rc != Success)
         return rc;
 
     FreeResource(stuff->fid, RT_NONE);
-    return client->noClientException;
+    return Success;
 }
 
 static int
@@ -1966,24 +2045,26 @@ ProcSyncQueryFence(ClientPtr client)
 
     REQUEST_SIZE_MATCH(xSyncQueryFenceReq);
 
-    rc = dixLookupResourceByType((pointer *) &pFence, stuff->fid,
+    rc = dixLookupResourceByType((void **) &pFence, stuff->fid,
                                  RTFence, client, DixReadAccess);
     if (rc != Success)
         return rc;
 
-    rep.type = X_Reply;
-    rep.length = 0;
-    rep.sequenceNumber = client->sequence;
+    rep = (xSyncQueryFenceReply) {
+        .type = X_Reply,
+        .sequenceNumber = client->sequence,
+        .length = 0,
 
-    rep.triggered = pFence->funcs.CheckTriggered(pFence);
+        .triggered = pFence->funcs.CheckTriggered(pFence)
+    };
 
     if (client->swapped) {
         swaps(&rep.sequenceNumber);
         swapl(&rep.length);
     }
 
-    WriteToClient(client, sizeof(xSyncQueryFenceReply), (char *) &rep);
-    return client->noClientException;
+    WriteToClient(client, sizeof(xSyncQueryFenceReply), &rep);
+    return Success;
 }
 
 static int
@@ -2038,7 +2119,7 @@ ProcSyncAwaitFence(ClientPtr client)
          * satisfy SyncInitTrigger's validation logic
          */
         pAwait->trigger.value_type = XSyncAbsolute;
-        XSyncIntToValue(&pAwait->trigger.wait_value, 0);
+        pAwait->trigger.wait_value = 0;
         pAwait->trigger.test_type = 0;
 
         status = SyncInitTrigger(client, &pAwait->trigger,
@@ -2054,14 +2135,14 @@ ProcSyncAwaitFence(ClientPtr client)
         pAwait->trigger.TriggerFired = SyncAwaitTriggerFired;
         pAwait->trigger.CounterDestroyed = SyncAwaitTriggerFired;
         /* event_threshold is unused for fence syncs */
-        XSyncIntToValue(&pAwait->event_threshold, 0);
+        pAwait->event_threshold = 0;
         pAwait->pHeader = &pAwaitUnion->header;
         pAwaitUnion->header.num_waitconditions++;
     }
 
     SyncAwaitEpilogue(client, items, pAwaitUnion);
 
-    return client->noClientException;
+    return Success;
 }
 
 /*
@@ -2122,7 +2203,7 @@ ProcSyncDispatch(ClientPtr client)
  * Boring Swapping stuff ...
  */
 
-static int
+static int _X_COLD
 SProcSyncInitialize(ClientPtr client)
 {
     REQUEST(xSyncInitializeReq);
@@ -2132,7 +2213,7 @@ SProcSyncInitialize(ClientPtr client)
     return ProcSyncInitialize(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncListSystemCounters(ClientPtr client)
 {
     REQUEST(xSyncListSystemCountersReq);
@@ -2142,7 +2223,7 @@ SProcSyncListSystemCounters(ClientPtr client)
     return ProcSyncListSystemCounters(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncCreateCounter(ClientPtr client)
 {
     REQUEST(xSyncCreateCounterReq);
@@ -2155,7 +2236,7 @@ SProcSyncCreateCounter(ClientPtr client)
     return ProcSyncCreateCounter(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncSetCounter(ClientPtr client)
 {
     REQUEST(xSyncSetCounterReq);
@@ -2168,7 +2249,7 @@ SProcSyncSetCounter(ClientPtr client)
     return ProcSyncSetCounter(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncChangeCounter(ClientPtr client)
 {
     REQUEST(xSyncChangeCounterReq);
@@ -2181,7 +2262,7 @@ SProcSyncChangeCounter(ClientPtr client)
     return ProcSyncChangeCounter(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncQueryCounter(ClientPtr client)
 {
     REQUEST(xSyncQueryCounterReq);
@@ -2192,7 +2273,7 @@ SProcSyncQueryCounter(ClientPtr client)
     return ProcSyncQueryCounter(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncDestroyCounter(ClientPtr client)
 {
     REQUEST(xSyncDestroyCounterReq);
@@ -2203,7 +2284,7 @@ SProcSyncDestroyCounter(ClientPtr client)
     return ProcSyncDestroyCounter(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncAwait(ClientPtr client)
 {
     REQUEST(xSyncAwaitReq);
@@ -2214,7 +2295,7 @@ SProcSyncAwait(ClientPtr client)
     return ProcSyncAwait(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncCreateAlarm(ClientPtr client)
 {
     REQUEST(xSyncCreateAlarmReq);
@@ -2227,7 +2308,7 @@ SProcSyncCreateAlarm(ClientPtr client)
     return ProcSyncCreateAlarm(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncChangeAlarm(ClientPtr client)
 {
     REQUEST(xSyncChangeAlarmReq);
@@ -2239,7 +2320,7 @@ SProcSyncChangeAlarm(ClientPtr client)
     return ProcSyncChangeAlarm(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncQueryAlarm(ClientPtr client)
 {
     REQUEST(xSyncQueryAlarmReq);
@@ -2250,7 +2331,7 @@ SProcSyncQueryAlarm(ClientPtr client)
     return ProcSyncQueryAlarm(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncDestroyAlarm(ClientPtr client)
 {
     REQUEST(xSyncDestroyAlarmReq);
@@ -2261,7 +2342,7 @@ SProcSyncDestroyAlarm(ClientPtr client)
     return ProcSyncDestroyAlarm(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncSetPriority(ClientPtr client)
 {
     REQUEST(xSyncSetPriorityReq);
@@ -2273,7 +2354,7 @@ SProcSyncSetPriority(ClientPtr client)
     return ProcSyncSetPriority(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncGetPriority(ClientPtr client)
 {
     REQUEST(xSyncGetPriorityReq);
@@ -2284,18 +2365,19 @@ SProcSyncGetPriority(ClientPtr client)
     return ProcSyncGetPriority(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncCreateFence(ClientPtr client)
 {
     REQUEST(xSyncCreateFenceReq);
     swaps(&stuff->length);
     REQUEST_SIZE_MATCH(xSyncCreateFenceReq);
+    swapl(&stuff->d);
     swapl(&stuff->fid);
 
     return ProcSyncCreateFence(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncTriggerFence(ClientPtr client)
 {
     REQUEST(xSyncTriggerFenceReq);
@@ -2306,7 +2388,7 @@ SProcSyncTriggerFence(ClientPtr client)
     return ProcSyncTriggerFence(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncResetFence(ClientPtr client)
 {
     REQUEST(xSyncResetFenceReq);
@@ -2317,7 +2399,7 @@ SProcSyncResetFence(ClientPtr client)
     return ProcSyncResetFence(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncDestroyFence(ClientPtr client)
 {
     REQUEST(xSyncDestroyFenceReq);
@@ -2328,7 +2410,7 @@ SProcSyncDestroyFence(ClientPtr client)
     return ProcSyncDestroyFence(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncQueryFence(ClientPtr client)
 {
     REQUEST(xSyncQueryFenceReq);
@@ -2339,7 +2421,7 @@ SProcSyncQueryFence(ClientPtr client)
     return ProcSyncQueryFence(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncAwaitFence(ClientPtr client)
 {
     REQUEST(xSyncAwaitFenceReq);
@@ -2350,7 +2432,7 @@ SProcSyncAwaitFence(ClientPtr client)
     return ProcSyncAwaitFence(client);
 }
 
-static int
+static int _X_COLD
 SProcSyncDispatch(ClientPtr client)
 {
     REQUEST(xReq);
@@ -2405,7 +2487,7 @@ SProcSyncDispatch(ClientPtr client)
  * Event Swapping
  */
 
-static void
+static void _X_COLD
 SCounterNotifyEvent(xSyncCounterNotifyEvent * from,
                     xSyncCounterNotifyEvent * to)
 {
@@ -2422,7 +2504,7 @@ SCounterNotifyEvent(xSyncCounterNotifyEvent * from,
     to->destroyed = from->destroyed;
 }
 
-static void
+static void _X_COLD
 SAlarmNotifyEvent(xSyncAlarmNotifyEvent * from, xSyncAlarmNotifyEvent * to)
 {
     to->type = from->type;
@@ -2444,8 +2526,6 @@ SAlarmNotifyEvent(xSyncAlarmNotifyEvent * from, xSyncAlarmNotifyEvent * to)
 static void
 SyncResetProc(ExtensionEntry * extEntry)
 {
-    free(SysCounterList);
-    SysCounterList = NULL;
     RTCounter = 0;
 }
 
@@ -2461,9 +2541,8 @@ SyncExtensionInit(void)
     for (s = 0; s < screenInfo.numScreens; s++)
         miSyncSetup(screenInfo.screens[s]);
 
-    if (RTCounter == 0) {
-        RTCounter = CreateNewResourceType(FreeCounter, "SyncCounter");
-    }
+    RTCounter = CreateNewResourceType(FreeCounter, "SyncCounter");
+    xorg_list_init(&SysCounterList);
     RTAlarm = CreateNewResourceType(FreeAlarm, "SyncAlarm");
     RTAwait = CreateNewResourceType(FreeAwait, "SyncAwait");
     RTFence = CreateNewResourceType(FreeFence, "SyncFence");
@@ -2514,40 +2593,38 @@ SyncExtensionInit(void)
  * ***** SERVERTIME implementation - should go in its own file in OS directory?
  */
 
-static pointer ServertimeCounter;
-static XSyncValue Now;
-static XSyncValue *pnext_time;
+static void *ServertimeCounter;
+static int64_t Now;
+static int64_t *pnext_time;
 
-#define GetTime()\
-{\
-    unsigned long millis = GetTimeInMillis();\
-    unsigned long maxis = XSyncValueHigh32(Now);\
-    if (millis < XSyncValueLow32(Now)) maxis++;\
-    XSyncIntsToValue(&Now, millis, maxis);\
+static void GetTime(void)
+{
+    unsigned long millis = GetTimeInMillis();
+    unsigned long maxis = Now >> 32;
+
+    if (millis < (Now & 0xffffffff))
+        maxis++;
+
+    Now = ((int64_t)maxis << 32) | millis;
 }
 
 /*
 *** Server Block Handler
 *** code inspired by multibuffer extension (now deprecated)
  */
- /*ARGSUSED*/ static void
-ServertimeBlockHandler(void *env, struct timeval **wt, void *LastSelectMask)
+/*ARGSUSED*/ static void
+ServertimeBlockHandler(void *env, void *wt)
 {
-    XSyncValue delay;
     unsigned long timeout;
 
     if (pnext_time) {
         GetTime();
 
-        if (XSyncValueGreaterOrEqual(Now, *pnext_time)) {
+        if (Now >= *pnext_time) {
             timeout = 0;
         }
         else {
-            Bool overflow;
-
-            XSyncValueSubtract(&delay, *pnext_time, Now, &overflow);
-            (void) overflow;
-            timeout = XSyncValueLow32(delay);
+            timeout = *pnext_time - Now;
         }
         AdjustWaitForDelay(wt, timeout);        /* os/utils.c */
     }
@@ -2556,28 +2633,28 @@ ServertimeBlockHandler(void *env, struct timeval **wt, void *LastSelectMask)
 /*
 *** Wakeup Handler
  */
- /*ARGSUSED*/ static void
-ServertimeWakeupHandler(void *env, int rc, void *LastSelectMask)
+/*ARGSUSED*/ static void
+ServertimeWakeupHandler(void *env, int rc)
 {
     if (pnext_time) {
         GetTime();
 
-        if (XSyncValueGreaterOrEqual(Now, *pnext_time)) {
+        if (Now >= *pnext_time) {
             SyncChangeCounter(ServertimeCounter, Now);
         }
     }
 }
 
 static void
-ServertimeQueryValue(void *pCounter, CARD64 * pValue_return)
+ServertimeQueryValue(void *pCounter, int64_t *pValue_return)
 {
     GetTime();
     *pValue_return = Now;
 }
 
 static void
-ServertimeBracketValues(void *pCounter, CARD64 * pbracket_less,
-                        CARD64 * pbracket_greater)
+ServertimeBracketValues(void *pCounter, int64_t *pbracket_less,
+                        int64_t *pbracket_greater)
 {
     if (!pnext_time && pbracket_greater) {
         RegisterBlockAndWakeupHandlers(ServertimeBlockHandler,
@@ -2593,10 +2670,9 @@ ServertimeBracketValues(void *pCounter, CARD64 * pbracket_less,
 static void
 SyncInitServerTime(void)
 {
-    CARD64 resolution;
+    int64_t resolution = 4;
 
-    XSyncIntsToValue(&Now, GetTimeInMillis(), 0);
-    XSyncIntToValue(&resolution, 4);
+    Now = GetTimeInMillis();
     ServertimeCounter = SyncCreateSystemCounter("SERVERTIME", Now, resolution,
                                                 XSyncCounterNeverDecreases,
                                                 ServertimeQueryValue,
@@ -2608,33 +2684,60 @@ SyncInitServerTime(void)
  * IDLETIME implementation
  */
 
-static SyncCounter *IdleTimeCounter;
-static XSyncValue *pIdleTimeValueLess;
-static XSyncValue *pIdleTimeValueGreater;
+typedef struct {
+    int64_t *value_less;
+    int64_t *value_greater;
+    int deviceid;
+} IdleCounterPriv;
 
 static void
-IdleTimeQueryValue(pointer pCounter, CARD64 * pValue_return)
+IdleTimeQueryValue(void *pCounter, int64_t *pValue_return)
 {
-    CARD32 idle = GetTimeInMillis() - lastDeviceEventTime.milliseconds;
+    int deviceid;
+    CARD32 idle;
 
-    XSyncIntsToValue(pValue_return, idle, 0);
+    *pValue_return = 0;
+    if (pCounter) {
+        SyncCounter *counter = pCounter;
+        IdleCounterPriv *priv = SysCounterGetPrivate(counter);
+        BUG_RETURN(priv == NULL);
+        deviceid = priv->deviceid;
+    }
+    else
+        deviceid = XIAllDevices;
+    idle = GetTimeInMillis() - LastEventTime(deviceid).milliseconds;
+    *pValue_return = idle;
 }
 
 static void
-IdleTimeBlockHandler(pointer env, struct timeval **wt, pointer LastSelectMask)
+IdleTimeBlockHandler(void *pCounter, void *wt)
 {
-    XSyncValue idle, old_idle;
-    SyncTriggerList *list = IdleTimeCounter->sync.pTriglist;
+    SyncCounter *counter = pCounter;
+    IdleCounterPriv *priv = SysCounterGetPrivate(counter);
+    BUG_RETURN(priv == NULL);
+    int64_t *less = priv->value_less;
+    int64_t *greater = priv->value_greater;
+    int64_t idle, old_idle;
+    SyncTriggerList *list = counter->sync.pTriglist;
     SyncTrigger *trig;
 
-    if (!pIdleTimeValueLess && !pIdleTimeValueGreater)
+    if (!less && !greater)
         return;
 
-    old_idle = IdleTimeCounter->value;
-    IdleTimeQueryValue(NULL, &idle);
-    IdleTimeCounter->value = idle;      /* push, so CheckTrigger works */
+    old_idle = counter->value;
+    IdleTimeQueryValue(counter, &idle);
+    counter->value = idle;      /* push, so CheckTrigger works */
 
-    if (pIdleTimeValueLess && XSyncValueLessOrEqual(idle, *pIdleTimeValueLess)) {
+    /**
+     * There's an indefinite amount of time between ProcessInputEvents()
+     * where the idle time is reset and the time we actually get here. idle
+     * may be past the lower bracket if we dawdled with the events, so
+     * check for whether we did reset and bomb out of select immediately.
+     */
+    if (less && idle > *less &&
+        LastEventTimeWasReset(priv->deviceid)) {
+        AdjustWaitForDelay(wt, 0);
+    } else if (less && idle <= *less) {
         /*
          * We've been idle for less than the threshold value, and someone
          * wants to know about that, but now we need to know whether they
@@ -2643,105 +2746,168 @@ IdleTimeBlockHandler(pointer env, struct timeval **wt, pointer LastSelectMask)
          * immediately so we can reschedule.
          */
 
-        for (list = IdleTimeCounter->sync.pTriglist; list; list = list->next) {
+        for (list = counter->sync.pTriglist; list; list = list->next) {
             trig = list->pTrigger;
             if (trig->CheckTrigger(trig, old_idle)) {
                 AdjustWaitForDelay(wt, 0);
                 break;
             }
         }
-        /* 
+        /*
          * We've been called exactly on the idle time, but we have a
          * NegativeTransition trigger which requires a transition from an
          * idle time greater than this.  Schedule a wakeup for the next
          * millisecond so we won't miss a transition.
          */
-        if (XSyncValueEqual(idle, *pIdleTimeValueLess))
+        if (idle == *less)
             AdjustWaitForDelay(wt, 1);
     }
-    else if (pIdleTimeValueGreater) {
+    else if (greater) {
         /*
          * There's a threshold in the positive direction.  If we've been
          * idle less than it, schedule a wakeup for sometime in the future.
          * If we've been idle more than it, and someone wants to know about
          * that level-triggered, schedule an immediate wakeup.
          */
-        unsigned long timeout = -1;
 
-        if (XSyncValueLessThan(idle, *pIdleTimeValueGreater)) {
-            XSyncValue value;
-            Bool overflow;
-
-            XSyncValueSubtract(&value, *pIdleTimeValueGreater, idle, &overflow);
-            timeout = min(timeout, XSyncValueLow32(value));
+        if (idle < *greater) {
+            AdjustWaitForDelay(wt, *greater - idle);
         }
         else {
-            for (list = IdleTimeCounter->sync.pTriglist; list;
+            for (list = counter->sync.pTriglist; list;
                  list = list->next) {
                 trig = list->pTrigger;
                 if (trig->CheckTrigger(trig, old_idle)) {
-                    timeout = min(timeout, 0);
+                    AdjustWaitForDelay(wt, 0);
                     break;
                 }
             }
         }
-
-        AdjustWaitForDelay(wt, timeout);
     }
 
-    IdleTimeCounter->value = old_idle;  /* pop */
+    counter->value = old_idle;  /* pop */
 }
 
 static void
-IdleTimeWakeupHandler(pointer env, int rc, pointer LastSelectMask)
+IdleTimeCheckBrackets(SyncCounter *counter, int64_t idle,
+                      int64_t *less, int64_t *greater)
 {
-    XSyncValue idle;
+    if ((greater && idle >= *greater) ||
+        (less && idle <= *less)) {
+        SyncChangeCounter(counter, idle);
+    }
+    else
+        SyncUpdateCounter(counter, idle);
+}
 
-    if (!pIdleTimeValueLess && !pIdleTimeValueGreater)
+static void
+IdleTimeWakeupHandler(void *pCounter, int rc)
+{
+    SyncCounter *counter = pCounter;
+    IdleCounterPriv *priv = SysCounterGetPrivate(counter);
+    BUG_RETURN(priv == NULL);
+    int64_t *less = priv->value_less;
+    int64_t *greater = priv->value_greater;
+    int64_t idle;
+
+    if (!less && !greater)
         return;
 
-    IdleTimeQueryValue(NULL, &idle);
+    IdleTimeQueryValue(pCounter, &idle);
 
-    if ((pIdleTimeValueGreater &&
-         XSyncValueGreaterOrEqual(idle, *pIdleTimeValueGreater)) ||
-        (pIdleTimeValueLess &&
-         XSyncValueLessOrEqual(idle, *pIdleTimeValueLess))) {
-        SyncChangeCounter(IdleTimeCounter, idle);
+    /*
+      There is no guarantee for the WakeupHandler to be called within a specific
+      timeframe. Idletime may go to 0, but by the time we get here, it may be
+      non-zero and alarms for a pos. transition on 0 won't get triggered.
+      https://bugs.freedesktop.org/show_bug.cgi?id=70476
+      */
+    if (LastEventTimeWasReset(priv->deviceid)) {
+        LastEventTimeToggleResetFlag(priv->deviceid, FALSE);
+        if (idle != 0) {
+            IdleTimeCheckBrackets(counter, 0, less, greater);
+            less = priv->value_less;
+            greater = priv->value_greater;
+        }
     }
+
+    IdleTimeCheckBrackets(counter, idle, less, greater);
 }
 
 static void
-IdleTimeBracketValues(pointer pCounter, CARD64 * pbracket_less,
-                      CARD64 * pbracket_greater)
+IdleTimeBracketValues(void *pCounter, int64_t *pbracket_less,
+                      int64_t *pbracket_greater)
 {
-    Bool registered = (pIdleTimeValueLess || pIdleTimeValueGreater);
+    SyncCounter *counter = pCounter;
+    IdleCounterPriv *priv = SysCounterGetPrivate(counter);
+    BUG_RETURN(priv == NULL);
+    int64_t *less = priv->value_less;
+    int64_t *greater = priv->value_greater;
+    Bool registered = (less || greater);
 
     if (registered && !pbracket_less && !pbracket_greater) {
         RemoveBlockAndWakeupHandlers(IdleTimeBlockHandler,
-                                     IdleTimeWakeupHandler, NULL);
+                                     IdleTimeWakeupHandler, pCounter);
     }
     else if (!registered && (pbracket_less || pbracket_greater)) {
+        /* Reset flag must be zero so we don't force a idle timer reset on
+           the first wakeup */
+        LastEventTimeToggleResetAll(FALSE);
         RegisterBlockAndWakeupHandlers(IdleTimeBlockHandler,
-                                       IdleTimeWakeupHandler, NULL);
+                                       IdleTimeWakeupHandler, pCounter);
     }
 
-    pIdleTimeValueGreater = pbracket_greater;
-    pIdleTimeValueLess = pbracket_less;
+    priv->value_greater = pbracket_greater;
+    priv->value_less = pbracket_less;
+}
+
+static SyncCounter*
+init_system_idle_counter(const char *name, int deviceid)
+{
+    int64_t resolution = 4;
+    int64_t idle;
+    SyncCounter *idle_time_counter;
+
+    IdleTimeQueryValue(NULL, &idle);
+
+    idle_time_counter = SyncCreateSystemCounter(name, idle, resolution,
+                                                XSyncCounterUnrestricted,
+                                                IdleTimeQueryValue,
+                                                IdleTimeBracketValues);
+
+    if (idle_time_counter != NULL) {
+        IdleCounterPriv *priv = malloc(sizeof(IdleCounterPriv));
+
+        if (priv) {
+            priv->value_less = priv->value_greater = NULL;
+            priv->deviceid = deviceid;
+        }
+
+        idle_time_counter->pSysCounterInfo->private = priv;
+    }
+
+    return idle_time_counter;
 }
 
 static void
 SyncInitIdleTime(void)
 {
-    CARD64 resolution;
-    XSyncValue idle;
+    init_system_idle_counter("IDLETIME", XIAllDevices);
+}
 
-    IdleTimeQueryValue(NULL, &idle);
-    XSyncIntToValue(&resolution, 4);
+SyncCounter*
+SyncInitDeviceIdleTime(DeviceIntPtr dev)
+{
+    char timer_name[64];
+    sprintf(timer_name, "DEVICEIDLETIME %d", dev->id);
 
-    IdleTimeCounter = SyncCreateSystemCounter("IDLETIME", idle, resolution,
-                                              XSyncCounterUnrestricted,
-                                              IdleTimeQueryValue,
-                                              IdleTimeBracketValues);
+    return init_system_idle_counter(timer_name, dev->id);
+}
 
-    pIdleTimeValueLess = pIdleTimeValueGreater = NULL;
+void SyncRemoveDeviceIdleTime(SyncCounter *counter)
+{
+    /* FreeAllResources() frees all system counters before the devices are
+       shut down, check if there are any left before freeing the device's
+       counter */
+    if (counter && !xorg_list_is_empty(&SysCounterList))
+        xorg_list_del(&counter->pSysCounterInfo->entry);
 }

@@ -43,6 +43,9 @@
 #include "xace.h"
 #include "inpututils.h"
 
+#include "exglobals.h"
+#include "privates.h"
+
 #include "xiquerydevice.h"
 
 static Bool ShouldSkipDevice(ClientPtr client, int deviceid, DeviceIntPtr d);
@@ -50,10 +53,11 @@ static int
  ListDeviceInfo(ClientPtr client, DeviceIntPtr dev, xXIDeviceInfo * info);
 static int SizeDeviceInfo(DeviceIntPtr dev);
 static void SwapDeviceInfo(DeviceIntPtr dev, xXIDeviceInfo * info);
-int
+int _X_COLD
 SProcXIQueryDevice(ClientPtr client)
 {
     REQUEST(xXIQueryDeviceReq);
+    REQUEST_SIZE_MATCH(xXIQueryDeviceReq);
 
     swaps(&stuff->length);
     swaps(&stuff->deviceid);
@@ -107,12 +111,13 @@ ProcXIQueryDevice(ClientPtr client)
         return BadAlloc;
     }
 
-    memset(&rep, 0, sizeof(xXIQueryDeviceReply));
-    rep.repType = X_Reply;
-    rep.RepType = X_XIQueryDevice;
-    rep.sequenceNumber = client->sequence;
-    rep.length = len / 4;
-    rep.num_devices = 0;
+    rep = (xXIQueryDeviceReply) {
+        .repType = X_Reply,
+        .RepType = X_XIQueryDevice,
+        .sequenceNumber = client->sequence,
+        .length = len / 4,
+        .num_devices = 0
+    };
 
     ptr = info;
     if (dev) {
@@ -162,7 +167,7 @@ SRepXIQueryDevice(ClientPtr client, int size, xXIQueryDeviceReply * rep)
 
     /* Device info is already swapped, see ProcXIQueryDevice */
 
-    WriteToClient(client, size, (char *) rep);
+    WriteToClient(client, size, rep);
 }
 
 /**
@@ -232,7 +237,22 @@ SizeDeviceClasses(DeviceIntPtr dev)
     if (dev->touch)
         len += sizeof(xXITouchInfo);
 
+    if (dev->gesture)
+        len += sizeof(xXIGestureInfo);
+
     return len;
+}
+
+/**
+ * Get pointers to button information areas holding button mask and labels.
+ */
+static void
+ButtonInfoData(xXIButtonInfo *info, int *mask_words, unsigned char **mask,
+               Atom **atoms)
+{
+    *mask_words = bytes_to_int32(bits_to_bytes(info->num_buttons));
+    *mask = (unsigned char*) &info[1];
+    *atoms = (Atom*) ((*mask) + (*mask_words) * 4);
 }
 
 /**
@@ -243,21 +263,20 @@ int
 ListButtonInfo(DeviceIntPtr dev, xXIButtonInfo * info, Bool reportState)
 {
     unsigned char *bits;
+    Atom *labels;
     int mask_len;
     int i;
 
     if (!dev || !dev->button)
         return 0;
 
-    mask_len = bytes_to_int32(bits_to_bytes(dev->button->numButtons));
-
     info->type = ButtonClass;
     info->num_buttons = dev->button->numButtons;
+    ButtonInfoData(info, &mask_len, &bits, &labels);
     info->length = bytes_to_int32(sizeof(xXIButtonInfo)) +
         info->num_buttons + mask_len;
     info->sourceid = dev->button->sourceid;
 
-    bits = (unsigned char *) &info[1];
     memset(bits, 0, mask_len * 4);
 
     if (reportState)
@@ -265,8 +284,7 @@ ListButtonInfo(DeviceIntPtr dev, xXIButtonInfo * info, Bool reportState)
             if (BitIsOn(dev->button->down, i))
                 SetBit(bits, i);
 
-    bits += mask_len * 4;
-    memcpy(bits, dev->button->labels, dev->button->numButtons * sizeof(Atom));
+    memcpy(labels, dev->button->labels, dev->button->numButtons * sizeof(Atom));
 
     return info->length * 4;
 }
@@ -275,13 +293,17 @@ static void
 SwapButtonInfo(DeviceIntPtr dev, xXIButtonInfo * info)
 {
     Atom *btn;
+    int mask_len;
+    unsigned char *mask;
+
     int i;
+    ButtonInfoData(info, &mask_len, &mask, &btn);
 
     swaps(&info->type);
     swaps(&info->length);
     swaps(&info->sourceid);
 
-    for (i = 0, btn = (Atom *) &info[1]; i < info->num_buttons; i++, btn++)
+    for (i = 0 ; i < info->num_buttons; i++, btn++)
         swapl(btn);
 
     swaps(&info->num_buttons);
@@ -303,7 +325,7 @@ ListKeyInfo(DeviceIntPtr dev, xXIKeyInfo * info)
     info->length = sizeof(xXIKeyInfo) / 4 + info->num_keycodes;
     info->sourceid = dev->key->sourceid;
 
-    kc = (uint32_t *) & info[1];
+    kc = (uint32_t *) &info[1];
     for (i = xkb->min_key_code; i <= xkb->max_key_code; i++, kc++)
         *kc = i;
 
@@ -320,7 +342,7 @@ SwapKeyInfo(DeviceIntPtr dev, xXIKeyInfo * info)
     swaps(&info->length);
     swaps(&info->sourceid);
 
-    for (i = 0, key = (uint32_t *) & info[1]; i < info->num_keycodes;
+    for (i = 0, key = (uint32_t *) &info[1]; i < info->num_keycodes;
          i++, key++)
         swapl(key);
 
@@ -367,6 +389,9 @@ SwapValuatorInfo(DeviceIntPtr dev, xXIValuatorInfo * info)
     swapl(&info->min.frac);
     swapl(&info->max.integral);
     swapl(&info->max.frac);
+    swapl(&info->value.integral);
+    swapl(&info->value.frac);
+    swapl(&info->resolution);
     swaps(&info->number);
     swaps(&info->sourceid);
 }
@@ -416,6 +441,7 @@ SwapScrollInfo(DeviceIntPtr dev, xXIScrollInfo * info)
     swaps(&info->number);
     swaps(&info->sourceid);
     swaps(&info->scroll_type);
+    swapl(&info->flags);
     swapl(&info->increment.integral);
     swapl(&info->increment.frac);
 }
@@ -430,7 +456,7 @@ ListTouchInfo(DeviceIntPtr dev, xXITouchInfo * touch)
 {
     touch->type = XITouchClass;
     touch->length = sizeof(xXITouchInfo) >> 2;
-    touch->sourceid = touch->sourceid;
+    touch->sourceid = dev->touch->sourceid;
     touch->mode = dev->touch->mode;
     touch->num_touches = dev->touch->num_touches;
 
@@ -443,6 +469,46 @@ SwapTouchInfo(DeviceIntPtr dev, xXITouchInfo * touch)
     swaps(&touch->type);
     swaps(&touch->length);
     swaps(&touch->sourceid);
+}
+
+static Bool ShouldListGestureInfo(ClientPtr client)
+{
+    /* libxcb 14.1 and older are not forwards-compatible with new device classes as it does not
+     * properly ignore unknown device classes. Since breaking libxcb would break quite a lot of
+     * applications, we instead report Gesture device class only if the client advertised support
+     * for XI 2.4. Clients may still not work in cases when a client advertises XI 2.4 support
+     * and then a completely separate module within the client uses broken libxcb to call
+     * XIQueryDevice.
+     */
+    XIClientPtr pXIClient = dixLookupPrivate(&client->devPrivates, XIClientPrivateKey);
+    if (pXIClient->major_version) {
+        return version_compare(pXIClient->major_version, pXIClient->minor_version, 2, 4) >= 0;
+    }
+    return FALSE;
+}
+
+/**
+ * List gesture information
+ *
+ * @return The number of bytes written into info.
+ */
+static int
+ListGestureInfo(DeviceIntPtr dev, xXIGestureInfo * gesture)
+{
+    gesture->type = XIGestureClass;
+    gesture->length = sizeof(xXIGestureInfo) >> 2;
+    gesture->sourceid = dev->gesture->sourceid;
+    gesture->num_touches = dev->gesture->max_touches;
+
+    return gesture->length << 2;
+}
+
+static void
+SwapGestureInfo(DeviceIntPtr dev, xXIGestureInfo * gesture)
+{
+    swaps(&gesture->type);
+    swaps(&gesture->length);
+    swaps(&gesture->sourceid);
 }
 
 int
@@ -548,6 +614,13 @@ ListDeviceClasses(ClientPtr client, DeviceIntPtr dev,
         total_len += len;
     }
 
+    if (dev->gesture && ShouldListGestureInfo(client)) {
+        (*nclasses)++;
+        len = ListGestureInfo(dev, (xXIGestureInfo *) any);
+        any += len;
+        total_len += len;
+    }
+
     return total_len;
 }
 
@@ -579,7 +652,9 @@ SwapDeviceInfo(DeviceIntPtr dev, xXIDeviceInfo * info)
         case XITouchClass:
             SwapTouchInfo(dev, (xXITouchInfo *) any);
             break;
-
+        case XIGestureClass:
+            SwapGestureInfo(dev, (xXIGestureInfo *) any);
+            break;
         }
 
         any += len * 4;

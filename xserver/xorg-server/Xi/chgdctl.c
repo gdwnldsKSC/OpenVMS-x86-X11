@@ -71,14 +71,14 @@ SOFTWARE.
  *
  */
 
-int
+int _X_COLD
 SProcXChangeDeviceControl(ClientPtr client)
 {
     xDeviceCtl *ctl;
 
     REQUEST(xChangeDeviceControlReq);
     swaps(&stuff->length);
-    REQUEST_AT_LEAST_SIZE(xChangeDeviceControlReq);
+    REQUEST_AT_LEAST_EXTRA_SIZE(xChangeDeviceControlReq, sizeof(xDeviceCtl));
     swaps(&stuff->control);
     ctl = (xDeviceCtl *) &stuff[1];
     swaps(&ctl->control);
@@ -113,20 +113,28 @@ ProcXChangeDeviceControl(ClientPtr client)
     AxisInfoPtr a;
     CARD32 *resolution;
     xDeviceEnableCtl *e;
-    devicePresenceNotify dpn;
 
     REQUEST(xChangeDeviceControlReq);
-    REQUEST_AT_LEAST_SIZE(xChangeDeviceControlReq);
+    REQUEST_AT_LEAST_EXTRA_SIZE(xChangeDeviceControlReq, sizeof(xDeviceCtl));
 
     len = stuff->length - bytes_to_int32(sizeof(xChangeDeviceControlReq));
     ret = dixLookupDevice(&dev, stuff->deviceid, client, DixManageAccess);
     if (ret != Success)
         goto out;
 
-    rep.repType = X_Reply;
-    rep.RepType = X_ChangeDeviceControl;
-    rep.length = 0;
-    rep.sequenceNumber = client->sequence;
+    /* XTest devices are special, none of the below apply to them anyway */
+    if (IsXTestDevice(dev, NULL)) {
+        ret = BadMatch;
+        goto out;
+    }
+
+    rep = (xChangeDeviceControlReply) {
+        .repType = X_Reply,
+        .RepType = X_ChangeDeviceControl,
+        .sequenceNumber = client->sequence,
+        .length = 0,
+        .status = Success,
+    };
 
     switch (stuff->control) {
     case DEVICE_RESOLUTION:
@@ -184,8 +192,15 @@ ProcXChangeDeviceControl(ClientPtr client)
         break;
     case DEVICE_ENABLE:
         e = (xDeviceEnableCtl *) &stuff[1];
+        if ((len != bytes_to_int32(sizeof(xDeviceEnableCtl)))) {
+            ret = BadLength;
+            goto out;
+        }
 
-        status = ChangeDeviceControl(client, dev, (xDeviceCtl *) e);
+        if (IsXTestDevice(dev, NULL))
+            status = !Success;
+        else
+            status = ChangeDeviceControl(client, dev, (xDeviceCtl *) e);
 
         if (status == Success) {
             if (e->enable)
@@ -209,11 +224,13 @@ ProcXChangeDeviceControl(ClientPtr client)
 
  out:
     if (ret == Success) {
-        dpn.type = DevicePresenceNotify;
-        dpn.time = currentTime.milliseconds;
-        dpn.devchange = DeviceControlChanged;
-        dpn.deviceid = dev->id;
-        dpn.control = stuff->control;
+        devicePresenceNotify dpn = {
+            .type = DevicePresenceNotify,
+            .time = currentTime.milliseconds,
+            .devchange = DeviceControlChanged,
+            .deviceid = dev->id,
+            .control = stuff->control
+        };
         SendEventToAllWindows(dev, DevicePresenceNotifyMask,
                               (xEvent *) &dpn, 1);
 
@@ -230,11 +247,11 @@ ProcXChangeDeviceControl(ClientPtr client)
  *
  */
 
-void
+void _X_COLD
 SRepXChangeDeviceControl(ClientPtr client, int size,
                          xChangeDeviceControlReply * rep)
 {
     swaps(&rep->sequenceNumber);
     swapl(&rep->length);
-    WriteToClient(client, size, (char *) rep);
+    WriteToClient(client, size, rep);
 }

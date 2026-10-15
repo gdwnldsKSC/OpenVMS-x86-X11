@@ -23,10 +23,6 @@
 
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
-#else
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 #endif
 
 #include <stddef.h>
@@ -54,7 +50,7 @@
 static Rotation
 xf86_crtc_cursor_rotation(xf86CrtcPtr crtc)
 {
-    if (crtc->driverIsPerformingTransform)
+    if (crtc->driverIsPerformingTransform & XF86DriverTransformCursorImage)
         return RR_Rotate_0;
     return crtc->rotation;
 }
@@ -74,7 +70,7 @@ xf86_crtc_rotate_coord(Rotation rotation,
         break;
     case RR_Rotate_90:
         t = x_dst;
-        x_dst = height - y_dst - 1;
+        x_dst = width - y_dst - 1;
         y_dst = t;
         break;
     case RR_Rotate_180:
@@ -84,7 +80,7 @@ xf86_crtc_rotate_coord(Rotation rotation,
     case RR_Rotate_270:
         t = x_dst;
         x_dst = y_dst;
-        y_dst = width - t - 1;
+        y_dst = height - t - 1;
         break;
     }
     if (rotation & RR_Reflect_X)
@@ -209,9 +205,58 @@ set_bit(CARD8 *image, xf86CursorInfoPtr cursor_info, int x, int y, Bool mask)
 }
 
 /*
+ * Wrappers to deal with API compatibility with drivers that don't expose
+ * *_cursor_*_check
+ */
+static inline Bool
+xf86_driver_has_show_cursor(xf86CrtcPtr crtc)
+{
+    return crtc->funcs->show_cursor_check || crtc->funcs->show_cursor;
+}
+
+static inline Bool
+xf86_driver_has_load_cursor_image(xf86CrtcPtr crtc)
+{
+    return crtc->funcs->load_cursor_image_check || crtc->funcs->load_cursor_image;
+}
+
+static inline Bool
+xf86_driver_has_load_cursor_argb(xf86CrtcPtr crtc)
+{
+    return crtc->funcs->load_cursor_argb_check || crtc->funcs->load_cursor_argb;
+}
+
+static inline Bool
+xf86_driver_show_cursor(xf86CrtcPtr crtc)
+{
+    if (crtc->funcs->show_cursor_check)
+        return crtc->funcs->show_cursor_check(crtc);
+    crtc->funcs->show_cursor(crtc);
+    return TRUE;
+}
+
+static inline Bool
+xf86_driver_load_cursor_image(xf86CrtcPtr crtc, CARD8 *cursor_image)
+{
+    if (crtc->funcs->load_cursor_image_check)
+        return crtc->funcs->load_cursor_image_check(crtc, cursor_image);
+    crtc->funcs->load_cursor_image(crtc, cursor_image);
+    return TRUE;
+}
+
+static inline Bool
+xf86_driver_load_cursor_argb(xf86CrtcPtr crtc, CARD32 *cursor_argb)
+{
+    if (crtc->funcs->load_cursor_argb_check)
+        return crtc->funcs->load_cursor_argb_check(crtc, cursor_argb);
+    crtc->funcs->load_cursor_argb(crtc, cursor_argb);
+    return TRUE;
+}
+
+/*
  * Load a two color cursor into a driver that supports only ARGB cursors
  */
-static void
+static Bool
 xf86_crtc_convert_cursor_to_argb(xf86CrtcPtr crtc, unsigned char *src)
 {
     ScrnInfoPtr scrn = crtc->scrn;
@@ -224,9 +269,7 @@ xf86_crtc_convert_cursor_to_argb(xf86CrtcPtr crtc, unsigned char *src)
     CARD32 bits;
     const Rotation rotation = xf86_crtc_cursor_rotation(crtc);
 
-#ifdef ARGB_CURSOR
     crtc->cursor_argb = FALSE;
-#endif
 
     for (y = 0; y < cursor_info->MaxHeight; y++)
         for (x = 0; x < cursor_info->MaxWidth; x++) {
@@ -244,7 +287,7 @@ xf86_crtc_convert_cursor_to_argb(xf86CrtcPtr crtc, unsigned char *src)
                 bits = 0;
             cursor_image[y * cursor_info->MaxWidth + x] = bits;
         }
-    crtc->funcs->load_cursor_argb(crtc, cursor_image);
+    return xf86_driver_load_cursor_argb(crtc, cursor_image);
 }
 
 /*
@@ -255,7 +298,7 @@ xf86_set_cursor_colors(ScrnInfoPtr scrn, int bg, int fg)
 {
     ScreenPtr screen = scrn->pScreen;
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
-    CursorPtr cursor = xf86_config->cursor;
+    CursorPtr cursor = xf86CurrentCursor(screen);
     int c;
     CARD8 *bits = cursor ?
         dixLookupScreenPrivate(&cursor->devPrivates, CursorScreenKey, screen)
@@ -269,7 +312,7 @@ xf86_set_cursor_colors(ScrnInfoPtr scrn, int bg, int fg)
         xf86CrtcPtr crtc = xf86_config->crtc[c];
 
         if (crtc->enabled && !crtc->cursor_argb) {
-            if (crtc->funcs->load_cursor_image)
+            if (xf86_driver_has_load_cursor_image(crtc))
                 crtc->funcs->set_cursor_colors(crtc, bg, fg);
             else if (bits)
                 xf86_crtc_convert_cursor_to_argb(crtc, bits);
@@ -277,7 +320,7 @@ xf86_set_cursor_colors(ScrnInfoPtr scrn, int bg, int fg)
     }
 }
 
-static void
+void
 xf86_crtc_hide_cursor(xf86CrtcPtr crtc)
 {
     if (crtc->cursor_shown) {
@@ -301,16 +344,21 @@ xf86_hide_cursors(ScrnInfoPtr scrn)
     }
 }
 
-static void
+Bool
 xf86_crtc_show_cursor(xf86CrtcPtr crtc)
 {
-    if (!crtc->cursor_shown && crtc->cursor_in_range) {
-        crtc->funcs->show_cursor(crtc);
-        crtc->cursor_shown = TRUE;
+    if (!crtc->cursor_in_range) {
+        crtc->funcs->hide_cursor(crtc);
+        return TRUE;
     }
+
+    if (!crtc->cursor_shown)
+        crtc->cursor_shown = xf86_driver_show_cursor(crtc);
+
+    return crtc->cursor_shown;
 }
 
-void
+Bool
 xf86_show_cursors(ScrnInfoPtr scrn)
 {
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
@@ -320,13 +368,15 @@ xf86_show_cursors(ScrnInfoPtr scrn)
     for (c = 0; c < xf86_config->num_crtc; c++) {
         xf86CrtcPtr crtc = xf86_config->crtc[c];
 
-        if (crtc->enabled)
-            xf86_crtc_show_cursor(crtc);
+        if (crtc->enabled && !xf86_crtc_show_cursor(crtc))
+            return FALSE;
     }
+
+    return TRUE;
 }
 
-void
-xf86CrtcTransformCursorPos(xf86CrtcPtr crtc, int *x, int *y)
+static void
+xf86_crtc_transform_cursor_position(xf86CrtcPtr crtc, int *x, int *y)
 {
     ScrnInfoPtr scrn = crtc->scrn;
     ScreenPtr screen = scrn->pScreen;
@@ -335,16 +385,45 @@ xf86CrtcTransformCursorPos(xf86CrtcPtr crtc, int *x, int *y)
     xf86CursorScreenPtr ScreenPriv =
         (xf86CursorScreenPtr) dixLookupPrivate(&screen->devPrivates,
                                                xf86CursorScreenKey);
-    struct pict_f_vector v;
-    int dx, dy;
+    int dx, dy, t;
+    Bool swap_reflection = FALSE;
 
-    v.v[0] = (*x + ScreenPriv->HotX) + 0.5;
-    v.v[1] = (*y + ScreenPriv->HotY) + 0.5;
-    v.v[2] = 1;
-    pixman_f_transform_point(&crtc->f_framebuffer_to_crtc, &v);
-    /* cursor will have 0.5 added to it already so floor is sufficent */
-    *x = floor(v.v[0]);
-    *y = floor(v.v[1]);
+    *x = *x - crtc->x + ScreenPriv->HotX;
+    *y = *y - crtc->y + ScreenPriv->HotY;
+
+    switch (crtc->rotation & 0xf) {
+    case RR_Rotate_0:
+        break;
+    case RR_Rotate_90:
+        t = *x;
+        *x = *y;
+        *y = crtc->mode.VDisplay - t - 1;
+        swap_reflection = TRUE;
+        break;
+    case RR_Rotate_180:
+        *x = crtc->mode.HDisplay - *x - 1;
+        *y = crtc->mode.VDisplay - *y - 1;
+        break;
+    case RR_Rotate_270:
+        t = *x;
+        *x = crtc->mode.HDisplay - *y - 1;
+        *y = t;
+        swap_reflection = TRUE;
+        break;
+    }
+
+    if (swap_reflection) {
+        if (crtc->rotation & RR_Reflect_Y)
+            *x = crtc->mode.HDisplay - *x - 1;
+        if (crtc->rotation & RR_Reflect_X)
+            *y = crtc->mode.VDisplay - *y - 1;
+    } else {
+        if (crtc->rotation & RR_Reflect_X)
+            *x = crtc->mode.HDisplay - *x - 1;
+        if (crtc->rotation & RR_Reflect_Y)
+            *y = crtc->mode.VDisplay - *y - 1;
+    }
+
     /*
      * Transform position of cursor upper left corner
      */
@@ -362,37 +441,33 @@ xf86_crtc_set_cursor_position(xf86CrtcPtr crtc, int x, int y)
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
     xf86CursorInfoPtr cursor_info = xf86_config->cursor_info;
     DisplayModePtr mode = &crtc->mode;
-    Bool in_range;
+    int crtc_x = x, crtc_y = y;
 
     /*
      * Transform position of cursor on screen
      */
-    if (crtc->transform_in_use && !crtc->driverIsPerformingTransform)
-        xf86CrtcTransformCursorPos(crtc, &x, &y);
+    if (crtc->rotation != RR_Rotate_0)
+        xf86_crtc_transform_cursor_position(crtc, &crtc_x, &crtc_y);
     else {
-        x -= crtc->x;
-        y -= crtc->y;
+        crtc_x -= crtc->x;
+        crtc_y -= crtc->y;
     }
 
     /*
      * Disable the cursor when it is outside the viewport
      */
-    in_range = TRUE;
-    if (x >= mode->HDisplay || y >= mode->VDisplay ||
-        x <= -cursor_info->MaxWidth || y <= -cursor_info->MaxHeight) {
-        in_range = FALSE;
-        x = 0;
-        y = 0;
-    }
-
-    crtc->cursor_in_range = in_range;
-
-    if (in_range) {
-        crtc->funcs->set_cursor_position(crtc, x, y);
+    if (crtc_x >= mode->HDisplay || crtc_y >= mode->VDisplay ||
+        crtc_x <= -cursor_info->MaxWidth || crtc_y <= -cursor_info->MaxHeight) {
+        crtc->cursor_in_range = FALSE;
+        xf86_crtc_hide_cursor(crtc);
+    } else {
+        crtc->cursor_in_range = TRUE;
+        if (crtc->driverIsPerformingTransform & XF86DriverTransformCursorPosition)
+            crtc->funcs->set_cursor_position(crtc, x, y);
+        else
+            crtc->funcs->set_cursor_position(crtc, crtc_x, crtc_y);
         xf86_crtc_show_cursor(crtc);
     }
-    else
-        xf86_crtc_hide_cursor(crtc);
 }
 
 static void
@@ -415,7 +490,7 @@ xf86_set_cursor_position(ScrnInfoPtr scrn, int x, int y)
 /*
  * Load a two-color cursor into a crtc, performing rotation as needed
  */
-static void
+static Bool
 xf86_crtc_load_cursor_image(xf86CrtcPtr crtc, CARD8 *src)
 {
     ScrnInfoPtr scrn = crtc->scrn;
@@ -424,9 +499,7 @@ xf86_crtc_load_cursor_image(xf86CrtcPtr crtc, CARD8 *src)
     CARD8 *cursor_image;
     const Rotation rotation = xf86_crtc_cursor_rotation(crtc);
 
-#ifdef ARGB_CURSOR
     crtc->cursor_argb = FALSE;
-#endif
 
     if (rotation == RR_Rotate_0)
         cursor_image = src;
@@ -450,45 +523,57 @@ xf86_crtc_load_cursor_image(xf86CrtcPtr crtc, CARD8 *src)
                     set_bit(cursor_image, cursor_info, x, y, TRUE);
             }
     }
-    crtc->funcs->load_cursor_image(crtc, cursor_image);
+    return xf86_driver_load_cursor_image(crtc, cursor_image);
 }
 
 /*
  * Load a cursor image into all active CRTCs
  */
-static void
+static Bool
 xf86_load_cursor_image(ScrnInfoPtr scrn, unsigned char *src)
 {
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
     int c;
 
+    xf86_config->cursor = xf86CurrentCursor(scrn->pScreen);
     for (c = 0; c < xf86_config->num_crtc; c++) {
         xf86CrtcPtr crtc = xf86_config->crtc[c];
 
         if (crtc->enabled) {
-            if (crtc->funcs->load_cursor_image)
-                xf86_crtc_load_cursor_image(crtc, src);
-            else if (crtc->funcs->load_cursor_argb)
-                xf86_crtc_convert_cursor_to_argb(crtc, src);
+            if (xf86_driver_has_load_cursor_image(crtc)) {
+                if (!xf86_crtc_load_cursor_image(crtc, src))
+                    return FALSE;
+            } else if (xf86_driver_has_load_cursor_argb(crtc)) {
+                if (!xf86_crtc_convert_cursor_to_argb(crtc, src))
+                    return FALSE;
+            } else
+                return FALSE;
         }
     }
+    return TRUE;
 }
 
 static Bool
 xf86_use_hw_cursor(ScreenPtr screen, CursorPtr cursor)
 {
-    ScrnInfoPtr scrn = xf86Screens[screen->myNum];
+    ScrnInfoPtr scrn = xf86ScreenToScrn(screen);
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
     xf86CursorInfoPtr cursor_info = xf86_config->cursor_info;
-
-    ++cursor->refcnt;
-    if (xf86_config->cursor)
-        FreeCursor(xf86_config->cursor, None);
-    xf86_config->cursor = cursor;
+    int c;
 
     if (cursor->bits->width > cursor_info->MaxWidth ||
         cursor->bits->height > cursor_info->MaxHeight)
         return FALSE;
+
+    for (c = 0; c < xf86_config->num_crtc; c++) {
+        xf86CrtcPtr crtc = xf86_config->crtc[c];
+
+        if (!crtc->enabled)
+            continue;
+
+        if (crtc->transformPresent)
+            return FALSE;
+    }
 
     return TRUE;
 }
@@ -496,27 +581,21 @@ xf86_use_hw_cursor(ScreenPtr screen, CursorPtr cursor)
 static Bool
 xf86_use_hw_cursor_argb(ScreenPtr screen, CursorPtr cursor)
 {
-    ScrnInfoPtr scrn = xf86Screens[screen->myNum];
+    ScrnInfoPtr scrn = xf86ScreenToScrn(screen);
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
     xf86CursorInfoPtr cursor_info = xf86_config->cursor_info;
 
-    ++cursor->refcnt;
-    if (xf86_config->cursor)
-        FreeCursor(xf86_config->cursor, None);
-    xf86_config->cursor = cursor;
+    if (!xf86_use_hw_cursor(screen, cursor))
+        return FALSE;
 
     /* Make sure ARGB support is available */
     if ((cursor_info->Flags & HARDWARE_CURSOR_ARGB) == 0)
         return FALSE;
 
-    if (cursor->bits->width > cursor_info->MaxWidth ||
-        cursor->bits->height > cursor_info->MaxHeight)
-        return FALSE;
-
     return TRUE;
 }
 
-static void
+static Bool
 xf86_crtc_load_cursor_argb(xf86CrtcPtr crtc, CursorPtr cursor)
 {
     ScrnInfoPtr scrn = crtc->scrn;
@@ -544,27 +623,30 @@ xf86_crtc_load_cursor_argb(xf86CrtcPtr crtc, CursorPtr cursor)
             cursor_image[y * image_width + x] = bits;
         }
 
-    crtc->funcs->load_cursor_argb(crtc, cursor_image);
+    return xf86_driver_load_cursor_argb(crtc, cursor_image);
 }
 
-static void
+static Bool
 xf86_load_cursor_argb(ScrnInfoPtr scrn, CursorPtr cursor)
 {
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
     int c;
 
+    xf86_config->cursor = cursor;
     for (c = 0; c < xf86_config->num_crtc; c++) {
         xf86CrtcPtr crtc = xf86_config->crtc[c];
 
         if (crtc->enabled)
-            xf86_crtc_load_cursor_argb(crtc, cursor);
+            if (!xf86_crtc_load_cursor_argb(crtc, cursor))
+                return FALSE;
     }
+    return TRUE;
 }
 
 Bool
 xf86_cursors_init(ScreenPtr screen, int max_width, int max_height, int flags)
 {
-    ScrnInfoPtr scrn = xf86Screens[screen->myNum];
+    ScrnInfoPtr scrn = xf86ScreenToScrn(screen);
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
     xf86CursorInfoPtr cursor_info;
 
@@ -587,78 +669,18 @@ xf86_cursors_init(ScreenPtr screen, int max_width, int max_height, int flags)
 
     cursor_info->SetCursorColors = xf86_set_cursor_colors;
     cursor_info->SetCursorPosition = xf86_set_cursor_position;
-    cursor_info->LoadCursorImage = xf86_load_cursor_image;
+    cursor_info->LoadCursorImageCheck = xf86_load_cursor_image;
     cursor_info->HideCursor = xf86_hide_cursors;
-    cursor_info->ShowCursor = xf86_show_cursors;
+    cursor_info->ShowCursorCheck = xf86_show_cursors;
     cursor_info->UseHWCursor = xf86_use_hw_cursor;
-#ifdef ARGB_CURSOR
     if (flags & HARDWARE_CURSOR_ARGB) {
         cursor_info->UseHWCursorARGB = xf86_use_hw_cursor_argb;
-        cursor_info->LoadCursorARGB = xf86_load_cursor_argb;
+        cursor_info->LoadCursorARGBCheck = xf86_load_cursor_argb;
     }
-#endif
 
-    xf86_config->cursor = NULL;
     xf86_hide_cursors(scrn);
 
     return xf86InitCursor(screen, cursor_info);
-}
-
-/**
- * Called when anything on the screen is reconfigured.
- *
- * Reloads cursor images as needed, then adjusts cursor positions
- */
-
-void
-xf86_reload_cursors(ScreenPtr screen)
-{
-    ScrnInfoPtr scrn;
-    xf86CrtcConfigPtr xf86_config;
-    xf86CursorInfoPtr cursor_info;
-    CursorPtr cursor;
-    int x, y;
-    xf86CursorScreenPtr cursor_screen_priv;
-
-    /* initial mode setting will not have set a screen yet.
-       May be called before the devices are initialised.
-     */
-    if (!screen || !inputInfo.pointer)
-        return;
-    cursor_screen_priv = dixLookupPrivate(&screen->devPrivates,
-                                          xf86CursorScreenKey);
-    /* return if HW cursor is inactive, to avoid displaying two cursors */
-    if (!cursor_screen_priv || !cursor_screen_priv->isUp)
-        return;
-
-    scrn = xf86Screens[screen->myNum];
-    xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
-
-    /* make sure the cursor code has been initialized */
-    cursor_info = xf86_config->cursor_info;
-    if (!cursor_info)
-        return;
-
-    cursor = xf86_config->cursor;
-    GetSpritePosition(inputInfo.pointer, &x, &y);
-    if (!(cursor_info->Flags & HARDWARE_CURSOR_UPDATE_UNHIDDEN))
-        (*cursor_info->HideCursor) (scrn);
-
-    if (cursor) {
-        void *src =
-            dixLookupScreenPrivate(&cursor->devPrivates, CursorScreenKey,
-                                   screen);
-#ifdef ARGB_CURSOR
-        if (cursor->bits->argb && cursor_info->LoadCursorARGB)
-            (*cursor_info->LoadCursorARGB) (scrn, cursor);
-        else if (src)
-#endif
-            (*cursor_info->LoadCursorImage) (scrn, src);
-
-        x += scrn->frameX0 + cursor_screen_priv->HotX;
-        y += scrn->frameY0 + cursor_screen_priv->HotY;
-        (*cursor_info->SetCursorPosition) (scrn, x, y);
-    }
 }
 
 /**
@@ -667,7 +689,7 @@ xf86_reload_cursors(ScreenPtr screen)
 void
 xf86_cursors_fini(ScreenPtr screen)
 {
-    ScrnInfoPtr scrn = xf86Screens[screen->myNum];
+    ScrnInfoPtr scrn = xf86ScreenToScrn(screen);
     xf86CrtcConfigPtr xf86_config = XF86_CRTC_CONFIG_PTR(scrn);
 
     if (xf86_config->cursor_info) {
@@ -676,8 +698,5 @@ xf86_cursors_fini(ScreenPtr screen)
     }
     free(xf86_config->cursor_image);
     xf86_config->cursor_image = NULL;
-    if (xf86_config->cursor) {
-        FreeCursor(xf86_config->cursor, None);
-        xf86_config->cursor = NULL;
-    }
+    xf86_config->cursor = NULL;
 }

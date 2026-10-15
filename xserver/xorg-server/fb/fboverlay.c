@@ -16,7 +16,7 @@
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL SuSE
  * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN 
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  * Author:  Keith Packard, SuSE, Inc.
@@ -56,14 +56,10 @@ fbOverlayCreateWindow(WindowPtr pWin)
     if (pWin->drawable.class != InputOutput)
         return TRUE;
 
-    if (pWin->drawable.bitsPerPixel == 32)
-        pWin->drawable.bitsPerPixel =
-            fbGetScreenPrivate(pWin->drawable.pScreen)->win32bpp;
-
     for (i = 0; i < pScrPriv->nlayers; i++) {
         pPixmap = pScrPriv->layer[i].u.run.pixmap;
         if (pWin->drawable.depth == pPixmap->drawable.depth) {
-            dixSetPrivate(&pWin->devPrivates, fbGetWinPrivateKey(), pPixmap);
+            dixSetPrivate(&pWin->devPrivates, fbGetWinPrivateKey(pWin), pPixmap);
             /*
              * Make sure layer keys are written correctly by
              * having non-root layers set to full while the
@@ -81,7 +77,7 @@ fbOverlayCreateWindow(WindowPtr pWin)
 }
 
 Bool
-fbOverlayCloseScreen(int iScreen, ScreenPtr pScreen)
+fbOverlayCloseScreen(ScreenPtr pScreen)
 {
     FbOverlayScrPrivPtr pScrPriv = fbOverlayGetScrPriv(pScreen);
     int i;
@@ -103,8 +99,8 @@ fbOverlayWindowLayer(WindowPtr pWin)
     int i;
 
     for (i = 0; i < pScrPriv->nlayers; i++)
-        if (dixLookupPrivate(&pWin->devPrivates, fbGetWinPrivateKey()) ==
-            (pointer) pScrPriv->layer[i].u.run.pixmap)
+        if (dixLookupPrivate(&pWin->devPrivates, fbGetWinPrivateKey(pWin)) ==
+            (void *) pScrPriv->layer[i].u.run.pixmap)
             return i;
     return 0;
 }
@@ -115,7 +111,7 @@ fbOverlayCreateScreenResources(ScreenPtr pScreen)
     int i;
     FbOverlayScrPrivPtr pScrPriv = fbOverlayGetScrPriv(pScreen);
     PixmapPtr pPixmap;
-    pointer pbits;
+    void *pbits;
     int width;
     int depth;
     BoxRec box;
@@ -240,18 +236,17 @@ fbOverlayCopyWindow(WindowPtr pWin, DDXPointRec ptOldOrg, RegionPtr prgnSrc)
 }
 
 void
-fbOverlayWindowExposures(WindowPtr pWin,
-                         RegionPtr prgn, RegionPtr other_exposed)
+fbOverlayWindowExposures(WindowPtr pWin, RegionPtr prgn)
 {
     fbOverlayUpdateLayerRegion(pWin->drawable.pScreen,
                                fbOverlayWindowLayer(pWin), prgn);
-    miWindowExposures(pWin, prgn, other_exposed);
+    miWindowExposures(pWin, prgn);
 }
 
 Bool
 fbOverlaySetupScreen(ScreenPtr pScreen,
-                     pointer pbits1,
-                     pointer pbits2,
+                     void *pbits1,
+                     void *pbits2,
                      int xsize,
                      int ysize,
                      int dpix,
@@ -261,34 +256,10 @@ fbOverlaySetupScreen(ScreenPtr pScreen,
                          pbits1, xsize, ysize, dpix, dpiy, width1, bpp1);
 }
 
-static Bool
-fb24_32OverlayCreateScreenResources(ScreenPtr pScreen)
-{
-    FbOverlayScrPrivPtr pScrPriv = fbOverlayGetScrPriv(pScreen);
-    int pitch;
-    Bool retval;
-    int i;
-
-    if ((retval = fbOverlayCreateScreenResources(pScreen))) {
-        for (i = 0; i < pScrPriv->nlayers; i++) {
-            /* fix the screen pixmap */
-            PixmapPtr pPix = (PixmapPtr) pScrPriv->layer[i].u.run.pixmap;
-
-            if (pPix->drawable.bitsPerPixel == 32) {
-                pPix->drawable.bitsPerPixel = 24;
-                pitch = BitmapBytePad(pPix->drawable.width * 24);
-                pPix->devKind = pitch;
-            }
-        }
-    }
-
-    return retval;
-}
-
 Bool
 fbOverlayFinishScreenInit(ScreenPtr pScreen,
-                          pointer pbits1,
-                          pointer pbits2,
+                          void *pbits1,
+                          void *pbits2,
                           int xsize,
                           int ysize,
                           int dpix,
@@ -301,7 +272,6 @@ fbOverlayFinishScreenInit(ScreenPtr pScreen,
     DepthPtr depths;
     int nvisuals;
     int ndepths;
-    int bpp = 0, imagebpp = 32;
     VisualID defaultVisual;
     FbOverlayScrPrivPtr pScrPriv;
 
@@ -309,39 +279,12 @@ fbOverlayFinishScreenInit(ScreenPtr pScreen,
         (&fbOverlayScreenPrivateKeyRec, PRIVATE_SCREEN, 0))
         return FALSE;
 
+    if (bpp1 == 24 || bpp2 == 24)
+        return FALSE;
+
     pScrPriv = malloc(sizeof(FbOverlayScrPrivRec));
     if (!pScrPriv)
         return FALSE;
-
-    if (bpp1 == 32 || bpp2 == 32)
-        bpp = 32;
-    else if (bpp1 == 24 || bpp2 == 24)
-        bpp = 24;
-
-    if (bpp == 24) {
-        int f;
-
-        imagebpp = 32;
-        /*
-         * Check to see if we're advertising a 24bpp image format,
-         * in which case windows will use it in preference to a 32 bit
-         * format.
-         */
-        for (f = 0; f < screenInfo.numPixmapFormats; f++) {
-            if (screenInfo.formats[f].bitsPerPixel == 24) {
-                imagebpp = 24;
-                break;
-            }
-        }
-    }
-    if (imagebpp == 32) {
-        fbGetScreenPrivate(pScreen)->win32bpp = bpp;
-        fbGetScreenPrivate(pScreen)->pix32bpp = bpp;
-    }
-    else {
-        fbGetScreenPrivate(pScreen)->win32bpp = 32;
-        fbGetScreenPrivate(pScreen)->pix32bpp = 32;
-    }
 
     if (!fbInitVisuals(&visuals, &depths, &nvisuals, &ndepths, &depth1,
                        &defaultVisual, ((unsigned long) 1 << (bpp1 - 1)) |
@@ -380,10 +323,6 @@ fbOverlayFinishScreenInit(ScreenPtr pScreen,
     pScreen->CreateWindow = fbOverlayCreateWindow;
     pScreen->WindowExposures = fbOverlayWindowExposures;
     pScreen->CopyWindow = fbOverlayCopyWindow;
-    if (bpp == 24 && imagebpp == 32) {
-        pScreen->ModifyPixmapHeader = fb24_32ModifyPixmapHeader;
-        pScreen->CreateScreenResources = fb24_32OverlayCreateScreenResources;
-    }
 
     return TRUE;
 }

@@ -36,21 +36,26 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <errno.h>
-#include <drm.h>
-#include <xf86drm.h>
-#include <xf86drmMode.h>
 #include <xorg-server.h>
 #include <xf86.h>
 #include <xf86Crtc.h>
 #include <xf86xv.h>
 #include <xa_tracker.h>
 #include <xf86Module.h>
+#include <drm.h>
+#include <xf86drm.h>
+#include <xf86drmMode.h>
 
+#include "../src/compat-api.h"
 #ifdef DRI2
 #include <dri2.h>
 #if (!defined(DRI2INFOREC_VERSION) || (DRI2INFOREC_VERSION < 3))
 #undef DRI2
 #endif
+#endif
+
+#ifdef HAVE_LIBUDEV
+#include <libudev.h>
 #endif
 
 #if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 12
@@ -65,6 +70,12 @@
 #define debug_printf(...)
 
 #define VMWGFX_DRI_DEVICE_LEN 80
+
+#undef VMWGFX_LIBDRM_DEVICENAME
+#if defined(HAVE_LIBDRM_2_4_96) || \
+  (defined(HAVE_LIBDRM_2_4_74) && !defined(__linux__))
+#define VMWGFX_LIBDRM_DEVICENAME
+#endif
 
 typedef struct
 {
@@ -81,6 +92,10 @@ enum xorg_throttling_reason {
     THROTTLE_SWAP
 };
 
+struct vmwgfx_hosted;
+struct xf86_platform_device;
+struct vmwgfx_layout;
+
 typedef struct _modesettingRec
 {
     /* drm */
@@ -95,6 +110,7 @@ typedef struct _modesettingRec
     int Chipset;
     EntityInfoPtr pEnt;
     struct pci_device *PciInfo;
+    struct xf86_platform_device *platform_dev;
 
     /* Accel */
     Bool accelerate_render;
@@ -110,6 +126,7 @@ typedef struct _modesettingRec
     Bool only_hw_presents;
     MessageType from_hwp;
     Bool isMaster;
+    Bool has_screen_targets;
 
 
     /* Broken-out options. */
@@ -118,9 +135,9 @@ typedef struct _modesettingRec
     ScreenBlockHandlerProcPtr saved_BlockHandler;
     CreateScreenResourcesProcPtr saved_CreateScreenResources;
     CloseScreenProcPtr saved_CloseScreen;
-    Bool (*saved_EnterVT)(int, int);
-    void (*saved_LeaveVT)(int, int);
-    void (*saved_AdjustFrame)(int, int, int, int);
+    Bool (*saved_EnterVT)(VT_FUNC_ARGS_DECL);
+    void (*saved_LeaveVT)(VT_FUNC_ARGS_DECL);
+    void (*saved_AdjustFrame)(ADJUST_FRAME_ARGS_DECL);
     Bool (*saved_UseHWCursor)(ScreenPtr, CursorPtr);
     Bool (*saved_UseHWCursorARGB)(ScreenPtr, CursorPtr);
 
@@ -130,10 +147,31 @@ typedef struct _modesettingRec
     size_t max_fb_size;
 
     struct xa_tracker *xat;
+    const struct vmwgfx_hosted_driver *hdriver;
+    struct vmwgfx_hosted *hosted;
 #ifdef DRI2
     Bool dri2_available;
+#ifdef VMWGFX_LIBDRM_DEVICENAME
+    char *dri2_device_name;
+#else
     char dri2_device_name[VMWGFX_DRI_DEVICE_LEN];
 #endif
+#endif
+#ifdef HAVE_LIBUDEV
+    struct udev_monitor *uevent_monitor;
+    InputHandlerProc uevent_handler;
+    struct vmwgfx_layout *layout;
+#endif
+    Bool autoLayout;
+#ifdef DRI3
+    Bool xa_dri3;
+    Bool dri3_available;
+#endif
+
+    /* Video */
+    XF86VideoAdaptorPtr overlay;
+    XF86VideoAdaptorPtr textured;
+
 } modesettingRec, *modesettingPtr;
 
 #define modesettingPTR(p) ((modesettingPtr)((p)->driverPrivate))
@@ -176,7 +214,28 @@ xorg_output_get_id(xf86OutputPtr output);
 
 Bool
 vmwgfx_output_explicit_overlap(ScrnInfoPtr pScrn);
+void
+vmwgfx_uevent_init(ScrnInfoPtr scrn, modesettingPtr ms);
+void
+vmwgfx_uevent_fini(ScrnInfoPtr scrn, modesettingPtr ms);
+Bool
+vmwgfx_output_has_origin(xf86OutputPtr output);
+void
+vmwgfx_output_origin(xf86OutputPtr output, int *x, int *y);
+void
+vmwgfx_outputs_off(ScrnInfoPtr pScrn);
+void
+vmwgfx_outputs_on(ScrnInfoPtr pScrn);
 
+/***********************************************************************
+ * vmwgfx_layout.c
+ */
+struct vmwgfx_layout *
+vmwgfx_layout_from_kms(ScrnInfoPtr pScrn);
+void
+vmwgfx_layout_configuration(ScrnInfoPtr pScrn, struct vmwgfx_layout *layout);
+void
+vmwgfx_layout_handler(ScrnInfoPtr pScrn);
 
 /***********************************************************************
  * xorg_xv.c
@@ -187,9 +246,20 @@ xorg_xv_init(ScreenPtr pScreen);
 XF86VideoAdaptorPtr
 vmw_video_init_adaptor(ScrnInfoPtr pScrn);
 void
-vmw_video_free_adaptor(XF86VideoAdaptorPtr adaptor, Bool free_ports);
+vmw_video_free_adaptor(XF86VideoAdaptorPtr adaptor);
+void
+vmw_xv_close(ScreenPtr pScreen);
 
 void
 vmw_ctrl_ext_init(ScrnInfoPtr pScrn);
+
+/***********************************************************************
+ * vmwgfx_dri3.c
+ */
+#define VMW_XA_VERSION_MAJOR_DRI3 2
+#define VMW_XA_VERSION_MINOR_DRI3 4
+
+Bool
+vmwgfx_dri3_init(ScreenPtr screen);
 
 #endif /* _XORG_TRACKER_H_ */

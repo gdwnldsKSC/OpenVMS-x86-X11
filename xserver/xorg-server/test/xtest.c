@@ -21,6 +21,9 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
+/* Test relies on assert() */
+#undef NDEBUG
+
 #ifdef HAVE_DIX_CONFIG_H
 #include <dix-config.h>
 #endif
@@ -29,9 +32,14 @@
 #include "input.h"
 #include "inputstr.h"
 #include "scrnintstr.h"
+#include "windowstr.h"
 #include "exevents.h"
+#include "extinit.h"
 #include "xkbsrv.h"
 #include "xserver-properties.h"
+#include "syncsrv.h"
+
+#include "tests-common.h"
 
 /**
  */
@@ -47,12 +55,22 @@ device_cursor_init(DeviceIntPtr dev, ScreenPtr screen)
 }
 
 static void
+device_cursor_cleanup(DeviceIntPtr dev, ScreenPtr screen)
+{
+}
+
+static void
 xtest_init_devices(void)
 {
-    ScreenRec screen;
+    ScreenRec screen = {0};
+    ClientRec server_client = {0};
+    WindowRec root = {{0}};
+    WindowOptRec optional = {0};
 
     /* random stuff that needs initialization */
-    memset(&screen, 0, sizeof(screen));
+    root.drawable.id = 0xab;
+    root.optional = &optional;
+    screen.root = &root;
     screenInfo.numScreens = 1;
     screenInfo.screens[0] = &screen;
     screen.myNum = 0;
@@ -60,10 +78,14 @@ xtest_init_devices(void)
     screen.width = 640;
     screen.height = 480;
     screen.DeviceCursorInitialize = device_cursor_init;
+    screen.DeviceCursorCleanup = device_cursor_cleanup;
     dixResetPrivates();
+    serverClient = &server_client;
+    InitClient(serverClient, 0, (void *) NULL);
+    if (!InitClientResources(serverClient)) /* for root resources */
+        FatalError("couldn't init server resources");
     InitAtoms();
-
-    XkbInitPrivates();
+    SyncExtensionInit();
 
     /* this also inits the xtest devices */
     InitCoreDevices();
@@ -111,7 +133,7 @@ xtest_properties(void)
 }
 
 int
-main(int argc, char **argv)
+xtest_test(void)
 {
     xtest_init_devices();
     xtest_properties();

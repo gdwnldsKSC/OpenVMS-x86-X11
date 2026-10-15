@@ -35,9 +35,16 @@
  * Silicon Graphics, Inc.
  */
 
+#include "extension_string.h"
+#include "glxvndabi.h"
+
 typedef struct __GLXconfig __GLXconfig;
 struct __GLXconfig {
+    /* Management */
     __GLXconfig *next;
+#ifdef COMPOSITE
+    GLboolean duplicatedForComp;
+#endif
     GLuint doubleBufferMode;
     GLuint stereoMode;
 
@@ -54,11 +61,9 @@ struct __GLXconfig {
 
     GLint level;
 
-    GLint pixmapMode;
-
     /* GLX */
     GLint visualID;
-    GLint visualType;     /**< One of the GLX X visual types. (i.e., 
+    GLint visualType;     /**< One of the GLX X visual types. (i.e.,
 			   * \c GLX_TRUE_COLOR, etc.)
 			   */
 
@@ -78,7 +83,6 @@ struct __GLXconfig {
     /* SGIX_fbconfig / GLX 1.3 */
     GLint drawableType;
     GLint renderType;
-    GLint xRenderable;
     GLint fbconfigID;
 
     /* SGIX_pbuffer / GLX 1.3 */
@@ -94,14 +98,15 @@ struct __GLXconfig {
     /* OML_swap_method */
     GLint swapMethod;
 
-    GLint screen;
-
     /* EXT_texture_from_pixmap */
     GLint bindToTextureRgb;
     GLint bindToTextureRgba;
     GLint bindToMipmapTexture;
     GLint bindToTextureTargets;
     GLint yInverted;
+
+    /* ARB_framebuffer_sRGB */
+    GLint sRGBCapable;
 };
 
 GLint glxConvertToXVisualType(int visualType);
@@ -117,7 +122,10 @@ struct __GLXscreen {
 
     __GLXcontext *(*createContext) (__GLXscreen * screen,
                                     __GLXconfig * modes,
-                                    __GLXcontext * shareContext);
+                                    __GLXcontext * shareContext,
+                                    unsigned num_attribs,
+                                    const uint32_t *attribs,
+                                    int *error);
 
     __GLXdrawable *(*createDrawable) (ClientPtr client,
                                       __GLXscreen * context,
@@ -138,22 +146,11 @@ struct __GLXscreen {
     GLint numVisuals;
 
     char *GLextensions;
-
-    char *GLXvendor;
     char *GLXextensions;
+    char *glvnd;
+    unsigned char glx_enable_bits[__GLX_EXT_BYTES];
 
-    /**
-     * \name GLX version supported by this screen.
-     *
-     * Since the GLX version advertised by the server is for the whole server,
-     * the GLX protocol code uses the minimum version supported on all screens.
-     */
-    /*@{ */
-    unsigned GLXmajor;
-    unsigned GLXminor;
-    /*@} */
-
-    Bool (*CloseScreen) (int index, ScreenPtr pScreen);
+    Bool (*CloseScreen) (ScreenPtr pScreen);
 };
 
 void __glXScreenInit(__GLXscreen * screen, ScreenPtr pScreen);

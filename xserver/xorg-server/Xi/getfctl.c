@@ -68,7 +68,7 @@ SOFTWARE.
  *
  */
 
-int
+int _X_COLD
 SProcXGetFeedbackControl(ClientPtr client)
 {
     REQUEST(xGetFeedbackControlReq);
@@ -97,6 +97,7 @@ CopySwapKbdFeedback(ClientPtr client, KbdFeedbackPtr k, char **buf)
     k2->pitch = k->ctrl.bell_pitch;
     k2->duration = k->ctrl.bell_duration;
     k2->led_mask = k->ctrl.leds;
+    k2->led_values = k->ctrl.leds;
     k2->global_auto_repeat = k->ctrl.autoRepeat;
     for (i = 0; i < 32; i++)
         k2->auto_repeats[i] = k->ctrl.autoRepeats[i];
@@ -258,14 +259,14 @@ CopySwapBellFeedback(ClientPtr client, BellFeedbackPtr b, char **buf)
  *
  */
 
-void
+void _X_COLD
 SRepXGetFeedbackControl(ClientPtr client, int size,
                         xGetFeedbackControlReply * rep)
 {
     swaps(&rep->sequenceNumber);
     swapl(&rep->length);
     swaps(&rep->num_feedbacks);
-    WriteToClient(client, size, (char *) rep);
+    WriteToClient(client, size, rep);
 }
 
 /***********************************************************************
@@ -295,11 +296,13 @@ ProcXGetFeedbackControl(ClientPtr client)
     if (rc != Success)
         return rc;
 
-    rep.repType = X_Reply;
-    rep.RepType = X_GetFeedbackControl;
-    rep.length = 0;
-    rep.sequenceNumber = client->sequence;
-    rep.num_feedbacks = 0;
+    rep = (xGetFeedbackControlReply) {
+        .repType = X_Reply,
+        .RepType = X_GetFeedbackControl,
+        .sequenceNumber = client->sequence,
+        .length = 0,
+        .num_feedbacks = 0
+    };
 
     for (k = dev->kbdfeed; k; k = k->next) {
         rep.num_feedbacks++;

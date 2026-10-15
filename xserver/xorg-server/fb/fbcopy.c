@@ -28,33 +28,6 @@
 
 #include "fb.h"
 
-/* Compatibility wrapper, to be removed at next ABI change. */
-void
-fbCopyRegion(DrawablePtr pSrcDrawable,
-             DrawablePtr pDstDrawable,
-             GCPtr pGC,
-             RegionPtr pDstRegion,
-             int dx, int dy, fbCopyProc copyProc, Pixel bitPlane, void *closure)
-{
-    miCopyRegion(pSrcDrawable, pDstDrawable, pGC, pDstRegion, dx, dy, copyProc,
-                 bitPlane, closure);
-}
-
-/* Compatibility wrapper, to be removed at next ABI change. */
-RegionPtr
-fbDoCopy(DrawablePtr pSrcDrawable,
-         DrawablePtr pDstDrawable,
-         GCPtr pGC,
-         int xIn,
-         int yIn,
-         int widthSrc,
-         int heightSrc,
-         int xOut, int yOut, fbCopyProc copyProc, Pixel bitPlane, void *closure)
-{
-    return miDoCopy(pSrcDrawable, pDstDrawable, pGC, xIn, yIn, widthSrc,
-                    heightSrc, xOut, yOut, copyProc, bitPlane, closure);
-}
-
 void
 fbCopyNtoN(DrawablePtr pSrcDrawable,
            DrawablePtr pDstDrawable,
@@ -221,7 +194,7 @@ fbCopyNto1(DrawablePtr pSrcDrawable,
             height = pbox->y2 - pbox->y1;
 
             tmpStride = ((width + FB_STIP_MASK) >> FB_STIP_SHIFT);
-            tmp = malloc(tmpStride * height * sizeof(FbStip));
+            tmp = xallocarray(tmpStride * height, sizeof(FbStip));
             if (!tmp)
                 return;
 
@@ -268,14 +241,8 @@ fbCopyArea(DrawablePtr pSrcDrawable,
            GCPtr pGC,
            int xIn, int yIn, int widthSrc, int heightSrc, int xOut, int yOut)
 {
-    miCopyProc copy;
-
-    if (pSrcDrawable->bitsPerPixel != pDstDrawable->bitsPerPixel)
-        copy = fb24_32CopyMtoN;
-    else
-        copy = fbCopyNtoN;
     return miDoCopy(pSrcDrawable, pDstDrawable, pGC, xIn, yIn,
-                    widthSrc, heightSrc, xOut, yOut, copy, 0, 0);
+                    widthSrc, heightSrc, xOut, yOut, fbCopyNtoN, 0, 0);
 }
 
 RegionPtr
@@ -298,5 +265,5 @@ fbCopyPlane(DrawablePtr pSrcDrawable,
     else
         return miHandleExposures(pSrcDrawable, pDstDrawable, pGC,
                                  xIn, yIn,
-                                 widthSrc, heightSrc, xOut, yOut, bitplane);
+                                 widthSrc, heightSrc, xOut, yOut);
 }

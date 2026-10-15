@@ -1,17 +1,17 @@
-/* 
- * 
+/*
+ *
  * Copyright (c) 1997  Metro Link Incorporated
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
+ * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
@@ -19,11 +19,11 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
  * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  * Except as contained in this notice, the name of the Metro Link shall not be
  * used in advertising or otherwise to promote the sale, use or other dealings
  * in this Software without prior written authorization from Metro Link.
- * 
+ *
  */
 /*
  * Copyright (c) 1997-2003 by The XFree86 Project, Inc.
@@ -52,8 +52,6 @@
  * authorization from the copyright holder(s) and author(s).
  */
 
-/* View/edit this file with tab stops set to 4 */
-
 #ifdef HAVE_XORG_CONFIG_H
 #include <xorg-config.h>
 #endif
@@ -62,9 +60,8 @@
 #include "xf86tokens.h"
 #include "Configint.h"
 
-extern LexRec val;
 
-static xf86ConfigSymTabRec VideoPortTab[] = {
+static const xf86ConfigSymTabRec VideoPortTab[] = {
     {ENDSUBSECTION, "endsubsection"},
     {IDENTIFIER, "identifier"},
     {OPTION, "option"},
@@ -99,14 +96,16 @@ xf86parseVideoPortSubSection(void)
         while ((token = xf86getToken(VideoPortTab)) != ENDSUBSECTION) {
         switch (token) {
         case COMMENT:
-            ptr->vp_comment = xf86addComment(ptr->vp_comment, val.str);
+            ptr->vp_comment = xf86addComment(ptr->vp_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
             break;
         case IDENTIFIER:
             if (xf86getSubToken(&(ptr->vp_comment)) != STRING)
                 Error(QUOTE_MSG, "Identifier");
             if (has_ident == TRUE)
                 Error(MULTIPLE_MSG, "Identifier");
-            ptr->vp_identifier = val.str;
+            ptr->vp_identifier = xf86_lex_val.str;
             has_ident = TRUE;
             break;
         case OPTION:
@@ -131,7 +130,7 @@ xf86parseVideoPortSubSection(void)
 
 #undef CLEANUP
 
-static xf86ConfigSymTabRec VideoAdaptorTab[] = {
+static const xf86ConfigSymTabRec VideoAdaptorTab[] = {
     {ENDSECTION, "endsection"},
     {IDENTIFIER, "identifier"},
     {VENDOR, "vendorname"},
@@ -156,12 +155,14 @@ xf86parseVideoAdaptorSection(void)
         while ((token = xf86getToken(VideoAdaptorTab)) != ENDSECTION) {
         switch (token) {
         case COMMENT:
-            ptr->va_comment = xf86addComment(ptr->va_comment, val.str);
+            ptr->va_comment = xf86addComment(ptr->va_comment, xf86_lex_val.str);
+            free(xf86_lex_val.str);
+            xf86_lex_val.str = NULL;
             break;
         case IDENTIFIER:
             if (xf86getSubToken(&(ptr->va_comment)) != STRING)
                 Error(QUOTE_MSG, "Identifier");
-            ptr->va_identifier = val.str;
+            ptr->va_identifier = xf86_lex_val.str;
             if (has_ident == TRUE)
                 Error(MULTIPLE_MSG, "Identifier");
             has_ident = TRUE;
@@ -169,22 +170,22 @@ xf86parseVideoAdaptorSection(void)
         case VENDOR:
             if (xf86getSubToken(&(ptr->va_comment)) != STRING)
                 Error(QUOTE_MSG, "Vendor");
-            ptr->va_vendor = val.str;
+            ptr->va_vendor = xf86_lex_val.str;
             break;
         case BOARD:
             if (xf86getSubToken(&(ptr->va_comment)) != STRING)
                 Error(QUOTE_MSG, "Board");
-            ptr->va_board = val.str;
+            ptr->va_board = xf86_lex_val.str;
             break;
         case BUSID:
             if (xf86getSubToken(&(ptr->va_comment)) != STRING)
                 Error(QUOTE_MSG, "BusID");
-            ptr->va_busid = val.str;
+            ptr->va_busid = xf86_lex_val.str;
             break;
         case DRIVER:
             if (xf86getSubToken(&(ptr->va_comment)) != STRING)
                 Error(QUOTE_MSG, "Driver");
-            ptr->va_driver = val.str;
+            ptr->va_driver = xf86_lex_val.str;
             break;
         case OPTION:
             ptr->va_option_lst = xf86parseOption(ptr->va_option_lst);

@@ -34,11 +34,6 @@
 #include <xwin-config.h>
 #endif
 #include "win.h"
-#include "mivalidate.h"         // for union _Validate used by windowstr.h
-
-#ifndef RANDR_12_INTERFACE
-#error X server must have RandR 1.2 interface
-#endif
 
 /*
  * Answer queries about the RandR features supported.
@@ -52,14 +47,42 @@ winRandRGetInfo(ScreenPtr pScreen, Rotation * pRotations)
     /* Don't support rotations */
     *pRotations = RR_Rotate_0;
 
-    /*
-       The screen doesn't have to be limited to the actual
-       monitor size (we can have scrollbars :-), so what is
-       the upper limit?
-     */
-    RRScreenSetSizeRange(pScreen, 0, 0, 4096, 4096);
-
     return TRUE;
+}
+
+static void
+winRandRUpdateMode(ScreenPtr pScreen, RROutputPtr output)
+{
+    /* Delete previous mode */
+    if (output->modes[0])
+        {
+            RRModeDestroy(output->modes[0]);
+            RRModeDestroy(output->crtc->mode);
+        }
+
+    /* Register current mode */
+    {
+        xRRModeInfo modeInfo;
+        RRModePtr mode;
+        char name[100];
+
+        memset(&modeInfo, '\0', sizeof(modeInfo));
+        snprintf(name, sizeof(name), "%dx%d", pScreen->width, pScreen->height);
+
+        modeInfo.width = pScreen->width;
+        modeInfo.height = pScreen->height;
+        modeInfo.hTotal = pScreen->width;
+        modeInfo.vTotal = pScreen->height;
+        modeInfo.dotClock = 0;
+        modeInfo.nameLength = strlen(name);
+        mode = RRModeGet(&modeInfo, name);
+
+        output->modes[0] = mode;
+        output->numModes = 1;
+
+        mode = RRModeGet(&modeInfo, name);
+        output->crtc->mode = mode;
+    }
 }
 
 /*
@@ -70,12 +93,18 @@ winDoRandRScreenSetSize(ScreenPtr pScreen,
                         CARD16 width,
                         CARD16 height, CARD32 mmWidth, CARD32 mmHeight)
 {
+    rrScrPrivPtr pRRScrPriv;
     winScreenPriv(pScreen);
     winScreenInfo *pScreenInfo = pScreenPriv->pScreenInfo;
     WindowPtr pRoot = pScreen->root;
 
+    /* Ignore changes which do nothing */
+    if ((pScreen->width == width) && (pScreen->height == height) &&
+        (pScreen->mmWidth == mmWidth) && (pScreen->mmHeight == mmHeight))
+        return;
+
     // Prevent screen updates while we change things around
-    SetRootClip(pScreen, FALSE);
+    SetRootClip(pScreen, ROOT_CLIP_NONE);
 
     /* Update the screen size as requested */
     pScreenInfo->dwWidth = width;
@@ -101,10 +130,14 @@ winDoRandRScreenSetSize(ScreenPtr pScreen,
     // does this emit a ConfigureNotify??
 
     // Restore the ability to update screen, now with new dimensions
-    SetRootClip(pScreen, TRUE);
+    SetRootClip(pScreen, ROOT_CLIP_FULL);
 
     // and arrange for it to be repainted
-    miPaintWindow(pRoot, &pRoot->borderClip, PW_BACKGROUND);
+    pScreen->PaintWindow(pRoot, &pRoot->borderClip, PW_BACKGROUND);
+
+    // Set mode to current display size
+    pRRScrPriv = rrGetScrPriv(pScreen);
+    winRandRUpdateMode(pScreen, pRRScrPriv->primaryOutput);
 
     /* Indicate that a screen size change took place */
     RRScreenSizeNotify(pScreen);
@@ -140,13 +173,8 @@ winRandRScreenSetSize(ScreenPtr pScreen,
        resize the native display size
      */
     if (FALSE
-#ifdef XWIN_MULTIWINDOWEXTWM
-        || pScreenInfo->fMWExtWM
-#endif
         || pScreenInfo->fRootless
-#ifdef XWIN_MULTIWINDOW
         || pScreenInfo->fMultiWindow
-#endif
         ) {
         ErrorF
             ("winRandRScreenSetSize - resize not supported in rootless modes\n");
@@ -178,8 +206,9 @@ winRandRScreenSetSize(ScreenPtr pScreen,
          */
         AdjustWindowRectEx(&rcClient, dwStyle, FALSE, dwExStyle);
 
-        ErrorF("winRandRScreenSetSize new window area w: %ld h: %ld\n",
-               rcClient.right - rcClient.left, rcClient.bottom - rcClient.top);
+        ErrorF("winRandRScreenSetSize new window area w: %d h: %d\n",
+               (int)(rcClient.right - rcClient.left),
+               (int)(rcClient.bottom - rcClient.top));
 
         SetWindowPos(pScreenPriv->hwndScreen, NULL,
                      0, 0, rcClient.right - rcClient.left,
@@ -212,6 +241,64 @@ winRandRInit(ScreenPtr pScreen)
     pRRScrPriv->rrScreenSetSize = winRandRScreenSetSize;
     pRRScrPriv->rrCrtcSet = NULL;
     pRRScrPriv->rrCrtcSetGamma = NULL;
+
+    /* Create a CRTC and an output for the screen, and hook them together */
+    {
+        RRCrtcPtr crtc;
+        RROutputPtr output;
+
+        crtc = RRCrtcCreate(pScreen, NULL);
+        if (!crtc)
+            return FALSE;
+
+        crtc->rotations = RR_Rotate_0;
+
+        output = RROutputCreate(pScreen, "default", 7, NULL);
+        if (!output)
+            return FALSE;
+
+        RROutputSetCrtcs(output, &crtc, 1);
+        RROutputSetConnection(output, RR_Connected);
+        RROutputSetSubpixelOrder(output, PictureGetSubpixelOrder(pScreen));
+
+        output->crtc = crtc;
+
+        /* Set crtc outputs (should use RRCrtcNotify?) */
+        crtc->outputs = malloc(sizeof(RROutputPtr));
+        crtc->outputs[0] = output;
+        crtc->numOutputs = 1;
+
+        pRRScrPriv->primaryOutput = output;
+
+        /* Ensure we have space for exactly one mode */
+        output->modes = malloc(sizeof(RRModePtr));
+        output->modes[0] = NULL;
+
+        /* Set mode to current display size */
+        winRandRUpdateMode(pScreen, output);
+
+        /* Make up some physical dimensions */
+        output->mmWidth = (pScreen->width * 25.4)/monitorResolution;
+        output->mmHeight = (pScreen->height * 25.4)/monitorResolution;
+
+        /* Allocate and make up a (fixed, linear) gamma ramp */
+        {
+            int i;
+            RRCrtcGammaSetSize(crtc, 256);
+            for (i = 0; i < crtc->gammaSize; i++) {
+                crtc->gammaRed[i] = i << 8;
+                crtc->gammaBlue[i] = i << 8;
+                crtc->gammaGreen[i] = i << 8;
+            }
+        }
+    }
+
+    /*
+       The screen doesn't have to be limited to the actual
+       monitor size (we can have scrollbars :-), so set the
+       upper limit to the maximum coordinates X11 can use.
+     */
+    RRScreenSetSizeRange(pScreen, 0, 0, 32768, 32768);
 
     return TRUE;
 }

@@ -38,7 +38,7 @@
 #include "regionstr.h"
 #include "xf86fbman.h"
 
-/* 
+/*
 #define DEBUG
 */
 
@@ -74,7 +74,7 @@ xf86FBManagerRunning(ScreenPtr pScreen)
 Bool
 xf86RegisterFreeBoxCallback(ScreenPtr pScreen,
                             FreeBoxCallbackProcPtr FreeBoxCallback,
-                            pointer devPriv)
+                            void *devPriv)
 {
     FBManagerFuncsPtr funcs;
 
@@ -93,7 +93,7 @@ xf86AllocateOffscreenArea(ScreenPtr pScreen,
                           int w, int h,
                           int gran,
                           MoveAreaCallbackProcPtr moveCB,
-                          RemoveAreaCallbackProcPtr removeCB, pointer privData)
+                          RemoveAreaCallbackProcPtr removeCB, void *privData)
 {
     FBManagerFuncsPtr funcs;
 
@@ -113,7 +113,7 @@ xf86AllocateOffscreenLinear(ScreenPtr pScreen,
                             int gran,
                             MoveLinearCallbackProcPtr moveCB,
                             RemoveLinearCallbackProcPtr removeCB,
-                            pointer privData)
+                            void *privData)
 {
     FBManagerFuncsPtr funcs;
 
@@ -259,7 +259,7 @@ xf86PurgeUnlockedOffscreenAreas(ScreenPtr pScreen)
     return (*funcs->PurgeOffscreenAreas) (pScreen);
 }
 
-/************************************************************\ 
+/************************************************************\
 
    Below is a specific implementation of an offscreen manager.
 
@@ -309,7 +309,7 @@ SendCallFreeBoxCallbacks(FBManagerPtr offman)
 static Bool
 localRegisterFreeBoxCallback(ScreenPtr pScreen,
                              FreeBoxCallbackProcPtr FreeBoxCallback,
-                             pointer devPriv)
+                             void *devPriv)
 {
     FBManagerPtr offman;
     FreeBoxCallbackProcPtr *newCallbacks;
@@ -317,18 +317,21 @@ localRegisterFreeBoxCallback(ScreenPtr pScreen,
 
     offman = (FBManagerPtr) dixLookupPrivate(&pScreen->devPrivates,
                                              xf86FBScreenKey);
-    newCallbacks = realloc(offman->FreeBoxesUpdateCallback,
-                           sizeof(FreeBoxCallbackProcPtr) *
-                           (offman->NumCallbacks + 1));
-
-    newPrivates = realloc(offman->devPrivates,
-                          sizeof(DevUnion) * (offman->NumCallbacks + 1));
-
-    if (!newCallbacks || !newPrivates)
+    newCallbacks = reallocarray(offman->FreeBoxesUpdateCallback,
+                                offman->NumCallbacks + 1,
+                                sizeof(FreeBoxCallbackProcPtr));
+    if (!newCallbacks)
         return FALSE;
+    else
+        offman->FreeBoxesUpdateCallback = newCallbacks;
 
-    offman->FreeBoxesUpdateCallback = newCallbacks;
-    offman->devPrivates = newPrivates;
+    newPrivates = reallocarray(offman->devPrivates,
+                               offman->NumCallbacks + 1,
+                               sizeof(DevUnion));
+    if (!newPrivates)
+        return FALSE;
+    else
+        offman->devPrivates = newPrivates;
 
     offman->FreeBoxesUpdateCallback[offman->NumCallbacks] = FreeBoxCallback;
     offman->devPrivates[offman->NumCallbacks].ptr = devPriv;
@@ -344,7 +347,7 @@ AllocateArea(FBManagerPtr offman,
              int w, int h,
              int granularity,
              MoveAreaCallbackProcPtr moveCB,
-             RemoveAreaCallbackProcPtr removeCB, pointer privData)
+             RemoveAreaCallbackProcPtr removeCB, void *privData)
 {
     ScreenPtr pScreen = offman->pScreen;
     FBLinkPtr link = NULL;
@@ -379,7 +382,7 @@ AllocateArea(FBManagerPtr offman,
         break;
     }
 
-    /* try to boot a removeable one out if we are not expendable ourselves */
+    /* try to boot a removable one out if we are not expendable ourselves */
     if (!area && !removeCB) {
         link = offman->UsedAreas;
 
@@ -434,7 +437,7 @@ localAllocateOffscreenArea(ScreenPtr pScreen,
                            int w, int h,
                            int gran,
                            MoveAreaCallbackProcPtr moveCB,
-                           RemoveAreaCallbackProcPtr removeCB, pointer privData)
+                           RemoveAreaCallbackProcPtr removeCB, void *privData)
 {
     FBManagerPtr offman;
     FBAreaPtr area = NULL;
@@ -646,6 +649,7 @@ localQueryLargestOffscreenArea(ScreenPtr pScreen,
             pbox = RegionRects(newRegion);
             break;
         }
+        /* fallthrough */
     case 1:
         if (offman->NumUsedAreas) {
             FBLinkPtr pLink;
@@ -668,6 +672,7 @@ localQueryLargestOffscreenArea(ScreenPtr pScreen,
             pbox = RegionRects(newRegion);
             break;
         }
+        /* fallthrough */
     default:
         nbox = RegionNumRects(offman->FreeBoxes);
         pbox = RegionRects(offman->FreeBoxes);
@@ -822,7 +827,7 @@ DumpDebug(FBLinearLinkPtr pLink)
 }
 
 static FBLinearPtr
-AllocateLinear(FBManagerPtr offman, int size, int granularity, pointer privData)
+AllocateLinear(FBManagerPtr offman, int size, int granularity, void *privData)
 {
     ScreenPtr pScreen = offman->pScreen;
     FBLinearLinkPtr linear = NULL;
@@ -901,7 +906,7 @@ localAllocateOffscreenLinear(ScreenPtr pScreen,
                              int gran,
                              MoveLinearCallbackProcPtr moveCB,
                              RemoveLinearCallbackProcPtr removeCB,
-                             pointer privData)
+                             void *privData)
 {
     FBManagerPtr offman;
     FBLinearLinkPtr link;
@@ -1053,7 +1058,7 @@ localResizeOffscreenLinear(FBLinearPtr resize, int length)
             return FALSE;
     }
 
-    /* This could actually be alot smarter and try to move allocations
+    /* This could actually be a lot smarter and try to move allocations
        from XY to linear when available.  For now if it was XY, we keep
        it XY */
 
@@ -1120,11 +1125,8 @@ localQueryLargestOffscreenLinear(ScreenPtr pScreen,
 
         if (localQueryLargestOffscreenArea(pScreen, &w, &h, gran,
                                            FAVOR_WIDTH_THEN_AREA, priority)) {
-            FBManagerPtr offman;
             BoxPtr extents;
 
-            offman = (FBManagerPtr) dixLookupPrivate(&pScreen->devPrivates,
-                                                     xf86FBScreenKey);
             extents = RegionExtents(offman->InitialBoxes);
             if ((extents->x2 - extents->x1) == w)
                 *size = w * h;
@@ -1149,7 +1151,7 @@ static FBManagerFuncs xf86FBManFuncs = {
 };
 
 static Bool
-xf86FBCloseScreen(int i, ScreenPtr pScreen)
+xf86FBCloseScreen(ScreenPtr pScreen)
 {
     FBLinkPtr pLink, tmp;
     FBLinearLinkPtr pLinearLink, tmp2;
@@ -1180,13 +1182,13 @@ xf86FBCloseScreen(int i, ScreenPtr pScreen)
     free(offman);
     dixSetPrivate(&pScreen->devPrivates, xf86FBScreenKey, NULL);
 
-    return (*pScreen->CloseScreen) (i, pScreen);
+    return (*pScreen->CloseScreen) (pScreen);
 }
 
 Bool
 xf86InitFBManager(ScreenPtr pScreen, BoxPtr FullBox)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     RegionRec ScreenRegion;
     RegionRec FullRegion;
     BoxRec ScreenBox;
@@ -1223,7 +1225,7 @@ xf86InitFBManager(ScreenPtr pScreen, BoxPtr FullBox)
 Bool
 xf86InitFBManagerArea(ScreenPtr pScreen, int PixelArea, int Verbosity)
 {
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
+    ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     xRectangle Rect[3];
     RegionPtr pRegion, pScreenRegion;
     int nRect;
@@ -1382,7 +1384,7 @@ xf86InitFBManagerLinear(ScreenPtr pScreen, int offset, int size)
     return TRUE;
 }
 
-/* This is an implementation specific function and should 
+/* This is an implementation specific function and should
    disappear after the next release.  People should use the
    real linear functions instead */
 
@@ -1392,7 +1394,7 @@ xf86AllocateLinearOffscreenArea(ScreenPtr pScreen,
                                 int gran,
                                 MoveAreaCallbackProcPtr moveCB,
                                 RemoveAreaCallbackProcPtr removeCB,
-                                pointer privData)
+                                void *privData)
 {
     FBManagerFuncsPtr funcs;
     FBManagerPtr offman;

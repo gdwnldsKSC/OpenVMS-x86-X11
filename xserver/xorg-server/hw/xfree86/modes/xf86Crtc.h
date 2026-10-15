@@ -25,9 +25,6 @@
 
 #include <edid.h>
 #include "randrstr.h"
-#if XF86_MODES_RENAME
-#include "xf86Rename.h"
-#endif
 #include "xf86Modes.h"
 #include "xf86Cursor.h"
 #include "xf86i2c.h"
@@ -50,6 +47,7 @@
 
 typedef struct _xf86Crtc xf86CrtcRec, *xf86CrtcPtr;
 typedef struct _xf86Output xf86OutputRec, *xf86OutputPtr;
+typedef struct _xf86Lease xf86LeaseRec, *xf86LeasePtr;
 
 /* define a standard for connector types */
 typedef enum _xf86ConnectorType {
@@ -72,6 +70,25 @@ typedef enum _xf86OutputStatus {
     XF86OutputStatusDisconnected,
     XF86OutputStatusUnknown
 } xf86OutputStatus;
+
+typedef enum _xf86DriverTransforms {
+    XF86DriverTransformNone = 0,
+    XF86DriverTransformOutput = 1 << 0,
+    XF86DriverTransformCursorImage = 1 << 1,
+    XF86DriverTransformCursorPosition = 1 << 2,
+} xf86DriverTransforms;
+
+
+struct xf86CrtcTileInfo {
+    uint32_t group_id;
+    uint32_t flags;
+    uint32_t num_h_tile;
+    uint32_t num_v_tile;
+    uint32_t tile_h_loc;
+    uint32_t tile_v_loc;
+    uint32_t tile_h_size;
+    uint32_t tile_v_size;
+};
 
 typedef struct _xf86CrtcFuncs {
    /**
@@ -179,6 +196,8 @@ typedef struct _xf86CrtcFuncs {
      */
     void
      (*show_cursor) (xf86CrtcPtr crtc);
+    Bool
+     (*show_cursor_check) (xf86CrtcPtr crtc);
 
     /**
      * Hide cursor
@@ -191,12 +210,16 @@ typedef struct _xf86CrtcFuncs {
      */
     void
      (*load_cursor_image) (xf86CrtcPtr crtc, CARD8 *image);
+    Bool
+     (*load_cursor_image_check) (xf86CrtcPtr crtc, CARD8 *image);
 
     /**
      * Load ARGB image
      */
     void
      (*load_cursor_argb) (xf86CrtcPtr crtc, CARD32 *image);
+    Bool
+     (*load_cursor_argb_check) (xf86CrtcPtr crtc, CARD32 *image);
 
     /**
      * Clean up driver-specific bits of the crtc
@@ -218,9 +241,14 @@ typedef struct _xf86CrtcFuncs {
     void
      (*set_origin) (xf86CrtcPtr crtc, int x, int y);
 
+    /**
+     */
+    Bool
+    (*set_scanout_pixmap)(xf86CrtcPtr crtc, PixmapPtr pixmap);
+
 } xf86CrtcFuncsRec, *xf86CrtcFuncsPtr;
 
-#define XF86_CRTC_VERSION 4
+#define XF86_CRTC_VERSION 8
 
 struct _xf86Crtc {
     /**
@@ -236,7 +264,7 @@ struct _xf86Crtc {
     /**
      * Desired state of this CRTC
      *
-     * Set when this CRTC should be driving one or more outputs 
+     * Set when this CRTC should be driving one or more outputs
      */
     Bool enabled;
 
@@ -298,7 +326,7 @@ struct _xf86Crtc {
      */
     Bool cursor_argb;
     /**
-     * Track whether cursor is within CRTC range 
+     * Track whether cursor is within CRTC range
      */
     Bool cursor_in_range;
     /**
@@ -360,17 +388,30 @@ struct _xf86Crtc {
     Bool shadowClear;
 
     /**
-     * Indicates that the driver is handling the transform, so the shadow
-     * surface should be disabled.  The driver writes this field before calling
-     * xf86CrtcRotate to indicate that it is handling the transform (including
-     * rotation and reflection).
+     * Indicates that the driver is handling some or all transforms:
      *
-     * Setting this flag also causes the server to stop adjusting the cursor
-     * image and position.
+     * XF86DriverTransformOutput: The driver handles the output transform, so
+     * the shadow surface should be disabled.  The driver writes this field
+     * before calling xf86CrtcRotate to indicate that it is handling the
+     * transform (including rotation and reflection).
      *
-     * Added in ABI version 4
+     * XF86DriverTransformCursorImage: Setting this flag causes the server to
+     * pass the untransformed cursor image to the driver hook.
+     *
+     * XF86DriverTransformCursorPosition: Setting this flag causes the server
+     * to pass the untransformed cursor position to the driver hook.
+     *
+     * Added in ABI version 4, changed to xf86DriverTransforms in ABI version 7
      */
-    Bool driverIsPerformingTransform;
+    xf86DriverTransforms driverIsPerformingTransform;
+
+    /* Added in ABI version 5
+     */
+    PixmapPtr current_scanout;
+
+    /* Added in ABI version 6
+     */
+    PixmapPtr current_scanout_back;
 };
 
 typedef struct _xf86OutputFuncs {
@@ -490,7 +531,7 @@ typedef struct _xf86OutputFuncs {
      (*destroy) (xf86OutputPtr output);
 } xf86OutputFuncsRec, *xf86OutputFuncsPtr;
 
-#define XF86_OUTPUT_VERSION 2
+#define XF86_OUTPUT_VERSION 3
 
 struct _xf86Output {
     /**
@@ -587,6 +628,11 @@ struct _xf86Output {
     /** Whether to use the old per-screen Monitor config section */
     Bool use_screen_monitor;
 
+    /** For pre-init, whether the output should be excluded from the
+     * desktop when there are other viable outputs to use
+     */
+    Bool non_desktop;
+
 #ifdef RANDR_12_INTERFACE
     /**
      * RandR 1.2 output structure.
@@ -598,13 +644,86 @@ struct _xf86Output {
 #else
     void *randr_output;
 #endif
-    /** 
+    /**
      * Desired initial panning
      * Added in ABI version 2
      */
     BoxRec initialTotalArea;
     BoxRec initialTrackingArea;
     INT16 initialBorder[4];
+
+    struct xf86CrtcTileInfo tile_info;
+};
+
+typedef struct _xf86ProviderFuncs {
+    /**
+     * Called to allow the provider a chance to create properties after the
+     * RandR objects have been created.
+     */
+    void
+    (*create_resources) (ScrnInfoPtr scrn);
+
+    /**
+     * Callback when an provider's property has changed.
+     */
+    Bool
+    (*set_property) (ScrnInfoPtr scrn,
+                     Atom property, RRPropertyValuePtr value);
+
+    /**
+     * Callback to get an updated property value
+     */
+    Bool
+    (*get_property) (ScrnInfoPtr provider, Atom property);
+
+} xf86ProviderFuncsRec, *xf86ProviderFuncsPtr;
+
+#define XF86_LEASE_VERSION      1
+
+struct _xf86Lease {
+    /**
+     * ABI versioning
+     */
+    int version;
+
+    /**
+     * Associated ScrnInfo
+     */
+    ScrnInfoPtr scrn;
+
+    /**
+     * Driver private
+     */
+    void *driver_private;
+
+    /**
+     * RandR lease
+     */
+    RRLeasePtr randr_lease;
+
+    /*
+     * Contents of the lease
+     */
+
+    /**
+     * Number of leased CRTCs
+     */
+    int num_crtc;
+
+    /**
+     * Number of leased outputs
+     */
+    int num_output;
+
+    /**
+     * Array of pointers to leased CRTCs
+     */
+    RRCrtcPtr *crtcs;
+
+    /**
+     * Array of pointers to leased outputs
+     */
+    RROutputPtr *outputs;
 };
 
 typedef struct _xf86CrtcConfigFuncs {
@@ -622,7 +741,28 @@ typedef struct _xf86CrtcConfigFuncs {
      */
     Bool
      (*resize) (ScrnInfoPtr scrn, int width, int height);
+
+    /**
+     * Requests that the driver create a lease
+     */
+    int (*create_lease)(RRLeasePtr lease, int *fd);
+
+    /**
+     * Ask the driver to terminate a lease, freeing all
+     * driver resources
+     */
+    void (*terminate_lease)(RRLeasePtr lease);
 } xf86CrtcConfigFuncsRec, *xf86CrtcConfigFuncsPtr;
+
+/*
+ * The driver calls this when it detects that a lease
+ * has been terminated
+ */
+extern _X_EXPORT void
+xf86CrtcLeaseTerminated(RRLeasePtr lease);
+
+extern _X_EXPORT void
+xf86CrtcLeaseStarted(RRLeasePtr lease);
 
 typedef void (*xf86_crtc_notify_proc_ptr) (ScreenPtr pScreen);
 
@@ -681,6 +821,13 @@ typedef struct _xf86CrtcConfig {
     /* callback when crtc configuration changes */
     xf86_crtc_notify_proc_ptr xf86_crtc_notify;
 
+    char *name;
+    const xf86ProviderFuncsRec *provider_funcs;
+#ifdef RANDR_12_INTERFACE
+    RRProviderPtr randr_provider;
+#else
+    void *randr_provider;
+#endif
 } xf86CrtcConfigRec, *xf86CrtcConfigPtr;
 
 extern _X_EXPORT int xf86CrtcConfigPrivateIndex;
@@ -690,8 +837,13 @@ extern _X_EXPORT int xf86CrtcConfigPrivateIndex;
 static _X_INLINE xf86OutputPtr
 xf86CompatOutput(ScrnInfoPtr pScrn)
 {
-    xf86CrtcConfigPtr config = XF86_CRTC_CONFIG_PTR(pScrn);
+    xf86CrtcConfigPtr config;
 
+    if (xf86CrtcConfigPrivateIndex == -1)
+        return NULL;
+    config = XF86_CRTC_CONFIG_PTR(pScrn);
+    if ((config == NULL) || (config->compat_output < 0))
+        return NULL;
     return config->output[config->compat_output];
 }
 
@@ -815,6 +967,10 @@ extern _X_EXPORT void
 
 extern _X_EXPORT ScreenInitRetType xf86CrtcScreenInit(ScreenPtr pScreen);
 
+extern _X_EXPORT void
+xf86AssignNoOutputInitialSize(ScrnInfoPtr scrn, const OptionInfoRec *options,
+                              int *no_output_width, int *no_output_height);
+
 extern _X_EXPORT Bool
  xf86InitialConfiguration(ScrnInfoPtr pScrn, Bool canGrow);
 
@@ -839,6 +995,15 @@ xf86SetSingleMode(ScrnInfoPtr pScrn, DisplayModePtr desired, Rotation rotation);
  */
 extern _X_EXPORT void
  xf86OutputSetEDID(xf86OutputPtr output, xf86MonPtr edid_mon);
+
+/**
+ * Set the TILE information for the specified output
+ */
+extern _X_EXPORT void
+xf86OutputSetTile(xf86OutputPtr output, struct xf86CrtcTileInfo *tile_info);
+
+extern _X_EXPORT Bool
+xf86OutputParseKMSTile(const char *tile_data, int tile_length, struct xf86CrtcTileInfo *tile_info);
 
 /**
  * Return the list of modes supported by the EDID information
@@ -882,7 +1047,7 @@ extern _X_EXPORT void
  xf86CrtcSetScreenSubpixelOrder(ScreenPtr pScreen);
 
 /*
- * Get a standard string name for a connector type 
+ * Get a standard string name for a connector type
  */
 extern _X_EXPORT const char *xf86ConnectorGetName(xf86ConnectorType connector);
 
@@ -904,20 +1069,28 @@ extern _X_EXPORT Bool
  xf86_cursors_init(ScreenPtr screen, int max_width, int max_height, int flags);
 
 /**
- * Called when anything on the screen is reconfigured.
- *
- * Reloads cursor images as needed, then adjusts cursor positions.
- * 
- * Driver should call this from crtc commit function.
+ * Superseded by xf86CursorResetCursor, which is getting called
+ * automatically when necessary.
  */
-extern _X_EXPORT void
- xf86_reload_cursors(ScreenPtr screen);
+static _X_INLINE _X_DEPRECATED void xf86_reload_cursors(ScreenPtr screen) {}
 
 /**
  * Called from EnterVT to turn the cursors back on
  */
-extern _X_EXPORT void
+extern _X_EXPORT Bool
  xf86_show_cursors(ScrnInfoPtr scrn);
+
+/**
+ * Called by the driver to turn a single crtc's cursor off
+ */
+extern _X_EXPORT void
+xf86_crtc_hide_cursor(xf86CrtcPtr crtc);
+
+/**
+ * Called by the driver to turn a single crtc's cursor on
+ */
+extern _X_EXPORT Bool
+xf86_crtc_show_cursor(xf86CrtcPtr crtc);
 
 /**
  * Called by the driver to turn cursors off
@@ -930,14 +1103,6 @@ extern _X_EXPORT void
  */
 extern _X_EXPORT void
  xf86_cursors_fini(ScreenPtr screen);
-
-/**
- * Transform the cursor's coordinates based on the crtc transform.  Normally
- * this is done by the server, but if crtc->driverIsPerformingTransform is TRUE,
- * then the server does not transform the cursor position automatically.
- */
-extern _X_EXPORT void
- xf86CrtcTransformCursorPos(xf86CrtcPtr crtc, int *x, int *y);
 
 #ifdef XV
 /*
@@ -975,4 +1140,12 @@ extern _X_EXPORT void
 extern _X_EXPORT Bool
  xf86_crtc_supports_gamma(ScrnInfoPtr pScrn);
 
+extern _X_EXPORT void
+xf86ProviderSetup(ScrnInfoPtr scrn,
+                  const xf86ProviderFuncsRec * funcs, const char *name);
+
+extern _X_EXPORT void
+xf86DetachAllCrtc(ScrnInfoPtr scrn);
+
+Bool xf86OutputForceEnabled(xf86OutputPtr output);
 #endif                          /* _XF86CRTC_H_ */

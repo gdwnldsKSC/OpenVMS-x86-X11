@@ -50,7 +50,7 @@ from The Open Group.
 /*
  * These are some utility functions created for convenience or to provide
  * an interface that is similar to an existing interface. These are built
- * only using the Transport Independant API, and have no knowledge of
+ * only using the Transport Independent API, and have no knowledge of
  * the internal implementation.
  */
 
@@ -60,6 +60,16 @@ from The Open Group.
 #ifdef WIN32
 #include <X11/Xlibint.h>
 #include <X11/Xwinsock.h>
+#endif
+
+#if defined(IPv6) && !defined(AF_INET6)
+#error "Cannot build IPv6 support without AF_INET6"
+#endif
+
+/* Temporary workaround for consumers whose configure scripts were
+   generated with pre-1.6 versions of xtrans.m4 */
+#if defined(IPv6) && !defined(HAVE_INET_NTOP)
+#define HAVE_INET_NTOP
 #endif
 
 #ifdef X11_t
@@ -95,7 +105,7 @@ TRANS(ConvertAddress)(int *familyp, int *addrlenp, Xtransaddr **addrp)
 
     switch( *familyp )
     {
-#if defined(TCPCONN) || defined(STREAMSCONN)
+#if defined(TCPCONN)
     case AF_INET:
     {
 	/*
@@ -123,7 +133,7 @@ TRANS(ConvertAddress)(int *familyp, int *addrlenp, Xtransaddr **addrp)
 	break;
     }
 
-#if defined(IPv6) && defined(AF_INET6)
+#ifdef IPv6
     case AF_INET6:
     {
 	struct sockaddr_in6 saddr6;
@@ -158,7 +168,7 @@ TRANS(ConvertAddress)(int *familyp, int *addrlenp, Xtransaddr **addrp)
 	break;
     }
 #endif /* IPv6 */
-#endif /* defined(TCPCONN) || defined(STREAMSCONN) */
+#endif /* defined(TCPCONN) */
 
 
 #if defined(UNIXCONN) || defined(LOCALCONN)
@@ -169,13 +179,6 @@ TRANS(ConvertAddress)(int *familyp, int *addrlenp, Xtransaddr **addrp)
     }
 #endif /* defined(UNIXCONN) || defined(LOCALCONN) */
 
-#if (defined(__SCO__) || defined(__UNIXWARE__)) && defined(LOCALCONN)
-    case 0:
-    {
-	*familyp=FamilyLocal;
-	break;
-    }
-#endif
 
     default:
 	prmsg(1,"ConvertAddress: Unknown family type %d\n",
@@ -251,33 +254,34 @@ TRANS(GetMyNetworkId) (XtransConnInfo ciptr)
 
     switch (family)
     {
-#if defined(UNIXCONN) || defined(STREAMSCONN) || defined(LOCALCONN)
+#if defined(UNIXCONN) || defined(LOCALCONN)
     case AF_UNIX:
     {
 	struct sockaddr_un *saddr = (struct sockaddr_un *) addr;
 	networkId = malloc (3 + strlen (transName) +
 	    strlen (hostnamebuf) + strlen (saddr->sun_path));
-	sprintf (networkId, "%s/%s:%s", transName,
-	    hostnamebuf, saddr->sun_path);
+	if (networkId != NULL)
+	    sprintf (networkId, "%s/%s:%s", transName,
+		     hostnamebuf, saddr->sun_path);
 	break;
     }
-#endif /* defined(UNIXCONN) || defined(STREAMSCONN) || defined(LOCALCONN) */
+#endif /* defined(UNIXCONN) || defined(LOCALCONN) */
 
-#if defined(TCPCONN) || defined(STREAMSCONN)
+#if defined(TCPCONN)
     case AF_INET:
-#if defined(IPv6) && defined(AF_INET6)
+#ifdef IPv6
     case AF_INET6:
 #endif
     {
 	struct sockaddr_in *saddr = (struct sockaddr_in *) addr;
-#if defined(IPv6) && defined(AF_INET6)
+#ifdef IPv6
 	struct sockaddr_in6 *saddr6 = (struct sockaddr_in6 *) addr;
 #endif
 	int portnum;
 	char portnumbuf[10];
 
 
-#if defined(IPv6) && defined(AF_INET6)
+#ifdef IPv6
 	if (family == AF_INET6)
 	    portnum = ntohs (saddr6->sin6_port);
 	else
@@ -287,10 +291,11 @@ TRANS(GetMyNetworkId) (XtransConnInfo ciptr)
 	snprintf (portnumbuf, sizeof(portnumbuf), "%d", portnum);
 	networkId = malloc (3 + strlen (transName) +
 	    strlen (hostnamebuf) + strlen (portnumbuf));
-	sprintf (networkId, "%s/%s:%s", transName, hostnamebuf, portnumbuf);
+	if (networkId != NULL)
+	    sprintf (networkId, "%s/%s:%s", transName, hostnamebuf, portnumbuf);
 	break;
     }
-#endif /* defined(TCPCONN) || defined(STREAMSCONN) */
+#endif /* defined(TCPCONN) */
 
 
     default:
@@ -306,24 +311,12 @@ static jmp_buf env;
 #ifdef SIGALRM
 static volatile int nameserver_timedout = 0;
 
-static
-#ifdef RETSIGTYPE /* set by autoconf AC_TYPE_SIGNAL */
-RETSIGTYPE
-#else /* Imake */
-#ifdef SIGNALRETURNSINT
-int
-#else
-void
-#endif
-#endif
+static void
 nameserver_lost(int sig _X_UNUSED)
 {
   nameserver_timedout = 1;
   longjmp (env, -1);
   /* NOTREACHED */
-#ifdef SIGNALRETURNSINT
-  return -1;				/* for picky compilers */
-#endif
 }
 #endif /* SIGALARM */
 
@@ -341,23 +334,23 @@ TRANS(GetPeerNetworkId) (XtransConnInfo ciptr)
     switch (family)
     {
     case AF_UNSPEC:
-#if defined(UNIXCONN) || defined(STREAMSCONN) || defined(LOCALCONN)
+#if defined(UNIXCONN) || defined(LOCALCONN)
     case AF_UNIX:
     {
 	if (gethostname (addrbuf, sizeof (addrbuf)) == 0)
 	    addr = addrbuf;
 	break;
     }
-#endif /* defined(UNIXCONN) || defined(STREAMSCONN) || defined(LOCALCONN) */
+#endif /* defined(UNIXCONN) || defined(LOCALCONN) */
 
-#if defined(TCPCONN) || defined(STREAMSCONN)
+#if defined(TCPCONN)
     case AF_INET:
-#if defined(IPv6) && defined(AF_INET6)
+#ifdef IPv6
     case AF_INET6:
 #endif
     {
 	struct sockaddr_in *saddr = (struct sockaddr_in *) peer_addr;
-#if defined(IPv6) && defined(AF_INET6)
+#ifdef IPv6
 	struct sockaddr_in6 *saddr6 = (struct sockaddr_in6 *) peer_addr;
 #endif
 	char *address;
@@ -367,7 +360,7 @@ TRANS(GetPeerNetworkId) (XtransConnInfo ciptr)
 #endif
 	struct hostent * volatile hostp = NULL;
 
-#if defined(IPv6) && defined(AF_INET6)
+#ifdef IPv6
 	if (family == AF_INET6)
 	{
 	    address = (char *) &saddr6->sin6_addr;
@@ -402,7 +395,7 @@ TRANS(GetPeerNetworkId) (XtransConnInfo ciptr)
 	if (hostp != NULL)
 	  addr = hostp->h_name;
 	else
-#if defined(IPv6) && defined(AF_INET6)
+#ifdef HAVE_INET_NTOP
 	  addr = inet_ntop (family, address, addrbuf, sizeof (addrbuf));
 #else
 	  addr = inet_ntoa (saddr->sin_addr);
@@ -410,7 +403,7 @@ TRANS(GetPeerNetworkId) (XtransConnInfo ciptr)
 	break;
     }
 
-#endif /* defined(TCPCONN) || defined(STREAMSCONN) */
+#endif /* defined(TCPCONN) */
 
 
     default:
@@ -418,12 +411,15 @@ TRANS(GetPeerNetworkId) (XtransConnInfo ciptr)
     }
 
 
-    hostname = malloc (strlen (ciptr->transptr->TransName) + strlen (addr) + 2);
-    strcpy (hostname, ciptr->transptr->TransName);
-    strcat (hostname, "/");
-    if (addr)
-	strcat (hostname, addr);
-
+    hostname = malloc (strlen (ciptr->transptr->TransName) +
+                       (addr ? strlen (addr) : 0) + 2);
+    if (hostname)
+    {
+	strcpy (hostname, ciptr->transptr->TransName);
+	strcat (hostname, "/");
+	if (addr)
+	    strcat (hostname, addr);
+    }
     return (hostname);
 }
 
@@ -443,20 +439,6 @@ TRANS(WSAStartup) (void)
     return 0;
 }
 #endif
-
-#include <ctype.h>
-
-static int
-is_numeric (const char *str)
-{
-    int i;
-
-    for (i = 0; i < (int) strlen (str); i++)
-	if (!isdigit (str[i]))
-	    return (0);
-
-    return (1);
-}
 
 #ifdef TRANS_SERVER
 #include <sys/types.h>

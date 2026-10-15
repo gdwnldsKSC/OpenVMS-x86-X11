@@ -68,7 +68,7 @@ SOFTWARE.
  *
  */
 
-int
+int _X_COLD
 SProcXSetDeviceValuators(ClientPtr client)
 {
     REQUEST(xSetDeviceValuatorsReq);
@@ -92,11 +92,13 @@ ProcXSetDeviceValuators(ClientPtr client)
     REQUEST(xSetDeviceValuatorsReq);
     REQUEST_AT_LEAST_SIZE(xSetDeviceValuatorsReq);
 
-    rep.repType = X_Reply;
-    rep.RepType = X_SetDeviceValuators;
-    rep.length = 0;
-    rep.status = Success;
-    rep.sequenceNumber = client->sequence;
+    rep = (xSetDeviceValuatorsReply) {
+        .repType = X_Reply,
+        .RepType = X_SetDeviceValuators,
+        .sequenceNumber = client->sequence,
+        .length = 0,
+        .status = Success
+    };
 
     if (stuff->length != bytes_to_int32(sizeof(xSetDeviceValuatorsReq)) +
         stuff->num_valuators)
@@ -106,6 +108,9 @@ ProcXSetDeviceValuators(ClientPtr client)
     if (rc != Success)
         return rc;
     if (dev->valuator == NULL)
+        return BadMatch;
+
+    if (IsXTestDevice(dev, NULL))
         return BadMatch;
 
     if (stuff->first_valuator + stuff->num_valuators > dev->valuator->numAxes)
@@ -132,11 +137,11 @@ ProcXSetDeviceValuators(ClientPtr client)
  *
  */
 
-void
+void _X_COLD
 SRepXSetDeviceValuators(ClientPtr client, int size,
                         xSetDeviceValuatorsReply * rep)
 {
     swaps(&rep->sequenceNumber);
     swapl(&rep->length);
-    WriteToClient(client, size, (char *) rep);
+    WriteToClient(client, size, rep);
 }

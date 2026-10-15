@@ -68,7 +68,7 @@ CheckSbusDevice(const char *device, int fbNum)
     if (!sbusDeviceTable[i].devId)
         return;
     xf86SbusInfo =
-        xnfrealloc(xf86SbusInfo, sizeof(psdp) * (++xf86nSbusInfo + 1));
+        xnfreallocarray(xf86SbusInfo, ++xf86nSbusInfo + 1, sizeof(psdp));
     xf86SbusInfo[xf86nSbusInfo] = NULL;
     xf86SbusInfo[xf86nSbusInfo - 1] = psdp = xnfcalloc(sizeof(sbusDevice), 1);
     psdp->devId = sbusDeviceTable[i].devId;
@@ -244,7 +244,7 @@ xf86SbusProbe(void)
  * in the correct format for a SBUS bus id.
  */
 
-Bool
+static Bool
 xf86ParseSbusBusString(const char *busID, int *fbNum)
 {
     /*
@@ -316,7 +316,7 @@ xf86ParseSbusBusString(const char *busID, int *fbNum)
  * Compare a BUS ID string with a SBUS bus id.  Return TRUE if they match.
  */
 
-Bool
+static Bool
 xf86CompareSbusBusString(const char *busID, int fbNum)
 {
     int iFbNum;
@@ -333,7 +333,7 @@ xf86CompareSbusBusString(const char *busID, int fbNum)
  * Check if the slot requested is free.  If it is already in use, return FALSE.
  */
 
-Bool
+static Bool
 xf86CheckSbusSlot(int fbNum)
 {
     int i;
@@ -354,7 +354,7 @@ xf86CheckSbusSlot(int fbNum)
  * Otherwise, claim the slot for the screen requesting it.
  */
 
-int
+static int
 xf86ClaimSbusSlot(sbusDevicePtr psdp, DriverPtr drvp, GDevPtr dev, Bool active)
 {
     EntityPtr p = NULL;
@@ -406,8 +406,8 @@ xf86MatchSbusInstances(const char *driverName, int sbusDevId,
         if (psdp->fd == -2)
             continue;
         ++allocatedInstances;
-        instances = xnfrealloc(instances,
-                               allocatedInstances * sizeof(struct Inst));
+        instances = xnfreallocarray(instances,
+                                    allocatedInstances, sizeof(struct Inst));
         instances[allocatedInstances - 1].sbus = psdp;
         instances[allocatedInstances - 1].dev = NULL;
         instances[allocatedInstances - 1].claimed = FALSE;
@@ -532,7 +532,7 @@ xf86MatchSbusInstances(const char *driverName, int sbusDevId,
 
         /* Allocate an entry in the lists to be returned */
         numFound++;
-        retEntities = xnfrealloc(retEntities, numFound * sizeof(int));
+        retEntities = xnfreallocarray(retEntities, numFound, sizeof(int));
         retEntities[numFound - 1]
             = xf86ClaimSbusSlot(psdp, drvp, instances[i].dev,
                                 instances[i].dev->active ? TRUE : FALSE);
@@ -619,8 +619,9 @@ xf86SbusUseBuiltinMode(ScrnInfoPtr pScrn, sbusDevicePtr psdp)
     pScrn->virtualY = psdp->height;
 }
 
-static sbusPaletteKeyIndex;
-static DevPrivateKey sbusPaletteKey = &sbusPaletteKeyIndex;
+static DevPrivateKeyRec sbusPaletteKeyRec;
+#define sbusPaletteKey (&sbusPaletteKeyRec)
+
 typedef struct _sbusCmap {
     sbusDevicePtr psdp;
     CloseScreenProcPtr CloseScreen;
@@ -640,14 +641,16 @@ xf86SbusCmapLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
     int i, index;
     sbusCmapPtr cmap;
     struct fbcmap fbcmap;
-    unsigned char *data = malloc(numColors * 3);
+    unsigned char *data;
 
     cmap = SBUSCMAPPTR(pScrn->pScreen);
     if (!cmap)
         return;
     fbcmap.count = 0;
     fbcmap.index = indices[0];
-    fbcmap.red = data;
+    fbcmap.red = data = xallocarray(numColors, 3);
+    if (!data)
+        return;
     fbcmap.green = data + numColors;
     fbcmap.blue = fbcmap.green + numColors;
     for (i = 0; i < numColors; i++) {
@@ -666,7 +669,7 @@ xf86SbusCmapLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
 }
 
 static Bool
-xf86SbusCmapCloseScreen(int i, ScreenPtr pScreen)
+xf86SbusCmapCloseScreen(ScreenPtr pScreen)
 {
     sbusCmapPtr cmap;
     struct fbcmap fbcmap;
@@ -682,7 +685,7 @@ xf86SbusCmapCloseScreen(int i, ScreenPtr pScreen)
     }
     pScreen->CloseScreen = cmap->CloseScreen;
     free(cmap);
-    return (*pScreen->CloseScreen) (i, pScreen);
+    return (*pScreen->CloseScreen) (pScreen);
 }
 
 Bool
@@ -691,6 +694,9 @@ xf86SbusHandleColormaps(ScreenPtr pScreen, sbusDevicePtr psdp)
     sbusCmapPtr cmap;
     struct fbcmap fbcmap;
     unsigned char data[2];
+
+    if (!dixRegisterPrivateKey(sbusPaletteKey, PRIVATE_SCREEN, 0))
+        FatalError("Cannot register sbus private key");
 
     cmap = xnfcalloc(1, sizeof(sbusCmapRec));
     dixSetPrivate(&pScreen->devPrivates, sbusPaletteKey, cmap);
@@ -734,6 +740,7 @@ void
 xf86SbusConfigureNewDev(void *busData, sbusDevicePtr sBus, GDevRec * GDev)
 {
     char *promPath = NULL;
+    char *tmp;
 
     sBus = (sbusDevicePtr) busData;
     GDev->identifier = sBus->descr;
@@ -742,10 +749,11 @@ xf86SbusConfigureNewDev(void *busData, sbusDevicePtr sBus, GDevRec * GDev)
         sparcPromClose();
     }
     if (promPath) {
-        XNFasprintf(&GDev->busID, "SBUS:%s", promPath);
+        XNFasprintf(&tmp, "SBUS:%s", promPath);
         free(promPath);
     }
     else {
-        XNFasprintf(&GDev->busID, "SBUS:fb%d", sBus->fbNum);
+        XNFasprintf(&tmp, "SBUS:fb%d", sBus->fbNum);
     }
+    GDev->busID = tmp;
 }

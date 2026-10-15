@@ -42,6 +42,7 @@
 #include <sys/file.h>
 #include <assert.h>
 #include <mach.h>
+#include <hurd.h>
 
 int
 xf86ProcessArgument(int argc, char **argv, int i)
@@ -84,5 +85,11 @@ void
 xf86CloseConsole()
 {
     close(xf86Info.consoleFd);
+    return;
+}
+
+void
+xf86OSInputThreadInit(void)
+{
     return;
 }

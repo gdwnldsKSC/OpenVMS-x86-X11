@@ -1,5 +1,3 @@
-#if !defined(WINPREFS_H)
-#define WINPREFS_H
 /*
  * Copyright (C) 1994-2000 The XFree86 Project, Inc. All Rights Reserved.
  * Copyright (C) Colin Harrison 2005-2008
@@ -32,6 +30,9 @@
  *              Colin Harrison
  */
 
+#if !defined(WINPREFS_H)
+#define WINPREFS_H
+
 /* Need Bool */
 #include <X11/Xdefs.h>
 /* Need TRUE */
@@ -41,6 +42,8 @@
 #include <limits.h>
 /* Xwindows redefines PATH_MAX to at least 1024 */
 #include <X11/Xwindows.h>
+
+#include "winwindow.h"
 
 #ifndef NAME_MAX
 #define NAME_MAX PATH_MAX
@@ -150,21 +153,21 @@ void
  LoadPreferences(void);
 
 void
- SetupRootMenu(unsigned long hmenuRoot);
+ SetupRootMenu(HMENU root);
 
 void
- SetupSysMenu(unsigned long hwndIn);
+ SetupSysMenu(HWND hwnd);
 
 void
- HandleCustomWM_INITMENU(unsigned long hwndIn, unsigned long hmenuIn);
+ HandleCustomWM_INITMENU(HWND hwnd, HMENU hmenu);
 
 Bool
- HandleCustomWM_COMMAND(unsigned long hwndIn, int command);
+ HandleCustomWM_COMMAND(HWND hwnd, WORD command, winPrivScreenPtr pScreenPriv);
 
 int
- winIconIsOverride(unsigned hiconIn);
+ winIconIsOverride(HICON hicon);
 
-HICON winOverrideIcon(unsigned long longpWin);
+HICON winOverrideIcon(char *res_name, char *res_class, char *wmName);
 
 unsigned long
  winOverrideStyle(char *res_name, char *res_class, char *wmName);
@@ -172,4 +175,7 @@ unsigned long
 HICON winTaskbarIcon(void);
 
 HICON winOverrideDefaultIcon(int size);
+
+HICON LoadImageComma(char *fname, char *iconDirectory, int sx, int sy, int flags);
+
 #endif

@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (C) 1998 Itai Nahshon, Michael Schimek
  */
 
@@ -6,6 +6,7 @@
 #define _XF86I2C_H
 
 #include "regionstr.h"
+#include "xf86.h"
 
 typedef unsigned char I2CByte;
 typedef unsigned short I2CSlaveAddr;
@@ -18,6 +19,7 @@ typedef struct _I2CDevRec *I2CDevPtr;
 typedef struct _I2CBusRec {
     char *BusName;
     int scrnIndex;
+    ScrnInfoPtr pScrn;
 
     void (*I2CUDelay) (I2CBusPtr b, int usec);
 
@@ -64,7 +66,7 @@ extern _X_EXPORT int xf86I2CGetScreenBuses(int scrnIndex,
 /* I2C slave devices */
 
 typedef struct _I2CDevRec {
-    char *DevName;
+    const char *DevName;
 
     int BitTimeout;             /* usec */
     int ByteTimeout;            /* usec */

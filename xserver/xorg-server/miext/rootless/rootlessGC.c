@@ -55,7 +55,7 @@ static void RootlessValidateGC(GCPtr pGC, unsigned long changes,
 static void RootlessChangeGC(GCPtr pGC, unsigned long mask);
 static void RootlessCopyGC(GCPtr pGCSrc, unsigned long mask, GCPtr pGCDst);
 static void RootlessDestroyGC(GCPtr pGC);
-static void RootlessChangeClip(GCPtr pGC, int type, pointer pvalue, int nrects);
+static void RootlessChangeClip(GCPtr pGC, int type, void *pvalue, int nrects);
 static void RootlessDestroyClip(GCPtr pGC);
 static void RootlessCopyClip(GCPtr pgcDst, GCPtr pgcSrc);
 
@@ -113,10 +113,10 @@ static void RootlessImageText16(DrawablePtr dst, GCPtr pGC, int x, int y,
                                 int count, unsigned short *chars);
 static void RootlessImageGlyphBlt(DrawablePtr dst, GCPtr pGC, int x, int y,
                                   unsigned int nglyphInit,
-                                  CharInfoPtr * ppciInit, pointer unused);
+                                  CharInfoPtr * ppciInit, void *unused);
 static void RootlessPolyGlyphBlt(DrawablePtr dst, GCPtr pGC, int x, int y,
                                  unsigned int nglyph, CharInfoPtr * ppci,
-                                 pointer pglyphBase);
+                                 void *pglyphBase);
 static void RootlessPushPixels(GCPtr pGC, PixmapPtr pBitMap, DrawablePtr dst,
                                int dx, int dy, int xOrg, int yOrg);
 
@@ -297,7 +297,7 @@ RootlessCreateGC(GCPtr pGC)
  * All the others just unwrap and call.
  */
 
-// GCFUNC_UNRAP assumes funcs have been wrapped and 
+// GCFUNC_UNRAP assumes funcs have been wrapped and
 // does not assume ops have been wrapped
 #define GCFUNC_UNWRAP(pGC) \
     RootlessGCRec *gcrec = (RootlessGCRec *) \
@@ -368,7 +368,7 @@ RootlessDestroyGC(GCPtr pGC)
 }
 
 static void
-RootlessChangeClip(GCPtr pGC, int type, pointer pvalue, int nrects)
+RootlessChangeClip(GCPtr pGC, int type, void *pvalue, int nrects)
 {
     GCFUNC_UNWRAP(pGC);
     pGC->funcs->ChangeClip(pGC, type, pvalue, nrects);
@@ -403,7 +403,7 @@ RootlessCopyClip(GCPtr pgcDst, GCPtr pgcSrc)
 #define GCOP_UNWRAP(pGC) \
     RootlessGCRec *gcrec = (RootlessGCRec *) \
         dixLookupPrivate(&(pGC)->devPrivates, rootlessGCPrivateKey); \
-    GCFuncs *saveFuncs = pGC->funcs; \
+    const GCFuncs *saveFuncs = pGC->funcs; \
     (pGC)->funcs = gcrec->originalFuncs; \
     (pGC)->ops = gcrec->originalOps;
 
@@ -1243,10 +1243,7 @@ RootlessPolyText8(DrawablePtr dst, GCPtr pGC,
         box.x2 = dst->x + x + FONTMAXBOUNDS(pGC->font, rightSideBearing);
 
         if (count > 1) {
-            if (width > 0)
-                box.x2 += width;
-            else
-                box.x1 += width;
+            box.x2 += width;
         }
 
         box.y1 = dst->y + y - FONTMAXBOUNDS(pGC->font, ascent);
@@ -1334,10 +1331,7 @@ RootlessPolyText16(DrawablePtr dst, GCPtr pGC,
         box.x2 = dst->x + x + FONTMAXBOUNDS(pGC->font, rightSideBearing);
 
         if (count > 1) {
-            if (width > 0)
-                box.x2 += width;
-            else
-                box.x1 += width;
+            box.x2 += width;
         }
 
         box.y1 = dst->y + y - FONTMAXBOUNDS(pGC->font, ascent);
@@ -1356,7 +1350,7 @@ RootlessPolyText16(DrawablePtr dst, GCPtr pGC,
 static void
 RootlessImageGlyphBlt(DrawablePtr dst, GCPtr pGC,
                       int x, int y, unsigned int nglyphInit,
-                      CharInfoPtr * ppciInit, pointer unused)
+                      CharInfoPtr * ppciInit, void *unused)
 {
     GC_SAVE(pGC);
     GCOP_UNWRAP(pGC);
@@ -1419,7 +1413,7 @@ RootlessImageGlyphBlt(DrawablePtr dst, GCPtr pGC,
 static void
 RootlessPolyGlyphBlt(DrawablePtr dst, GCPtr pGC,
                      int x, int y, unsigned int nglyph,
-                     CharInfoPtr * ppci, pointer pglyphBase)
+                     CharInfoPtr * ppci, void *pglyphBase)
 {
     GCOP_UNWRAP(pGC);
     RL_DEBUG_MSG("polyglyph start ");

@@ -37,11 +37,7 @@
  * Local function prototypes
  */
 
-#ifdef XWIN_CLIPBOARD
 int winProcEstablishConnection(ClientPtr /* client */ );
-int winProcQueryTree(ClientPtr /* client */ );
-int winProcSetSelectionOwner(ClientPtr /* client */ );
-#endif
 
 /*
  * Local global declarations
@@ -49,21 +45,6 @@ int winProcSetSelectionOwner(ClientPtr /* client */ );
 
 DeviceIntPtr g_pwinPointer;
 DeviceIntPtr g_pwinKeyboard;
-
-/* Called from dix/devices.c */
-/*
- * All of our keys generate up and down transition notifications,
- * so all of our keys can be used as modifiers.
- * 
- * An example of a modifier is mapping the A key to the Control key.
- * A has to be a legal modifier.  I think.
- */
-
-Bool
-LegalModifier(unsigned int uiKey, DeviceIntPtr pDevice)
-{
-    return TRUE;
-}
 
 /* Called from dix/dispatch.c */
 /*
@@ -91,6 +72,18 @@ DDXRingBell(int volume, int pitch, int duration)
     return;
 }
 
+
+#ifdef HAS_DEVWINDOWS
+static void
+xwinDevWindowsHandlerNotify(int fd, int ready, void *data)
+{
+    /* This should process Windows messages, but instead all of that is delayed
+     * until the wakeup handler is called.
+     */
+    ;
+}
+#endif
+
 /* See Porting Layer Definition - p. 17 */
 void
 InitInput(int argc, char *argv[])
@@ -99,7 +92,6 @@ InitInput(int argc, char *argv[])
     winDebug("InitInput\n");
 #endif
 
-#ifdef XWIN_CLIPBOARD
     /*
      * Wrap some functions at every generation of the server.
      */
@@ -107,12 +99,12 @@ InitInput(int argc, char *argv[])
         winProcEstablishConnectionOrig = InitialVector[2];
         InitialVector[2] = winProcEstablishConnection;
     }
-#endif
 
-    g_pwinPointer = AddInputDevice(serverClient, winMouseProc, TRUE);
-    g_pwinKeyboard = AddInputDevice(serverClient, winKeybdProc, TRUE);
-    g_pwinPointer->name = strdup("Windows mouse");
-    g_pwinKeyboard->name = strdup("Windows keyboard");
+    if (AllocDevicePair(serverClient, "Windows",
+                        &g_pwinPointer, &g_pwinKeyboard,
+                        winMouseProc, winKeybdProc,
+                        FALSE) != Success)
+        FatalError("InitInput - Failed to allocate slave devices.\n");
 
     mieqInit();
 
@@ -130,7 +122,7 @@ InitInput(int argc, char *argv[])
         }
 
         /* Add the message queue as a device to wait for in WaitForSomething */
-        AddEnabledDevice(g_fdMessageQueue);
+        SetNotifyFd(g_fdMessageQueue, xwinDevWindowsHandlerNotify, X_NOTIFY_READ, NULL);
     }
 #endif
 

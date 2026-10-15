@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "utils.h"
 #include <sys/types.h>
 
@@ -10,6 +11,9 @@
 
 static const pixman_format_code_t image_formats[] =
 {
+    PIXMAN_rgba_float,
+    PIXMAN_rgb_float,
+    PIXMAN_a16b16g16r16,
     PIXMAN_a8r8g8b8,
     PIXMAN_x8r8g8b8,
     PIXMAN_r5g6b5,
@@ -24,6 +28,8 @@ static const pixman_format_code_t image_formats[] =
     PIXMAN_x14r6g6b6,
     PIXMAN_r8g8b8,
     PIXMAN_b8g8r8,
+    PIXMAN_a8r8g8b8_sRGB,
+    PIXMAN_r8g8b8_sRGB,
     PIXMAN_r5g6b5,
     PIXMAN_b5g6r5,
     PIXMAN_x2r10g10b10,
@@ -72,7 +78,7 @@ static pixman_filter_t filters[] =
 static int
 get_size (void)
 {
-    switch (lcg_rand_n (28))
+    switch (prng_rand_n (28))
     {
     case 0:
 	return 1;
@@ -82,10 +88,10 @@ get_size (void)
 
     default:
     case 2:
-	return lcg_rand_n (200);
+	return prng_rand_n (100);
 
     case 4:
-	return lcg_rand_n (2000) + 1000;
+	return prng_rand_n (2000) + 1000;
 
     case 5:
 	return 65535;
@@ -94,8 +100,16 @@ get_size (void)
 	return 65536;
 
     case 7:
-	return lcg_rand_N (64000) + 63000;
+	return prng_rand_n (64000) + 63000;
     }
+}
+
+static uint32_t
+real_reader (const void *src, int size);
+
+static void *xor_ptr(const void *ptr)
+{
+	return (void *)(((intptr_t)ptr) ^ (intptr_t)0x8000000080000000);
 }
 
 static void
@@ -112,6 +126,9 @@ destroy (pixman_image_t *image, void *data)
 	    if (image->bits.rowstride < 0)
 		bits -= (- image->bits.rowstride * (image->bits.height - 1));
 
+	    if (image->bits.read_func == real_reader)
+		bits = xor_ptr(bits);
+
 	    fence_free (bits);
 	}
     }
@@ -122,6 +139,7 @@ destroy (pixman_image_t *image, void *data)
 static uint32_t
 real_reader (const void *src, int size)
 {
+    src = xor_ptr(src);
     switch (size)
     {
     case 1:
@@ -139,6 +157,7 @@ real_reader (const void *src, int size)
 static void
 real_writer (void *src, uint32_t value, int size)
 {
+    src = xor_ptr(src);
     switch (size)
     {
     case 1:
@@ -162,10 +181,11 @@ real_writer (void *src, uint32_t value, int size)
 static uint32_t
 fake_reader (const void *src, int size)
 {
-    uint32_t r = lcg_rand_u32 ();
+    uint32_t r = prng_rand ();
 
     assert (size == 1 || size == 2 || size == 4);
-    return r & ((1 << (size * 8)) - 1);
+
+    return r >> (32 - (size * 8));
 }
 
 static void
@@ -179,13 +199,60 @@ log_rand (void)
 {
     uint32_t mask;
 
-    mask = (1 << lcg_rand_n (31)) - 1;
+    mask = (1 << prng_rand_n (10)) - 1;
 
-    return (lcg_rand () & mask) - (mask >> 1);
+    return (prng_rand () & mask) - (mask >> 1);
+}
+
+static int32_t
+rand_x (pixman_image_t *image)
+{
+    if (image->type == BITS)
+	return prng_rand_n (image->bits.width);
+    else
+	return log_rand ();
+}
+
+static int32_t
+rand_y (pixman_image_t *image)
+{
+    if (image->type == BITS)
+	return prng_rand_n (image->bits.height);
+    else
+	return log_rand ();
+}
+
+typedef enum
+{
+    DONT_CARE,
+    PREFER_ALPHA,
+    REQUIRE_ALPHA
+} alpha_preference_t;
+
+static pixman_format_code_t
+random_format (alpha_preference_t alpha)
+{
+    pixman_format_code_t format;
+    int n = prng_rand_n (ARRAY_LENGTH (image_formats));
+
+    if (alpha >= PREFER_ALPHA &&
+	(alpha == REQUIRE_ALPHA || prng_rand_n (4) != 0))
+    {
+        do
+        {
+            format = image_formats[n++ % ARRAY_LENGTH (image_formats)];
+        } while (PIXMAN_FORMAT_TYPE (format) != PIXMAN_TYPE_A);
+    }
+    else
+    {
+        format = image_formats[n];
+    }
+
+    return format;
 }
 
 static pixman_image_t *
-create_random_bits_image (void)
+create_random_bits_image (alpha_preference_t alpha_preference)
 {
     pixman_format_code_t format;
     pixman_indexed_t *indexed;
@@ -197,9 +264,20 @@ create_random_bits_image (void)
     pixman_filter_t filter;
     pixman_fixed_t *coefficients = NULL;
     int n_coefficients = 0;
+    int align_add, align_mask;
 
     /* format */
-    format = image_formats[lcg_rand_n (ARRAY_LENGTH (image_formats))];
+    format = random_format (alpha_preference);
+    switch (PIXMAN_FORMAT_BPP (format)) {
+    case 128:
+	align_mask = 15;
+	align_add = align_mask + prng_rand_n (65);
+	break;
+    default:
+	align_mask = 3;
+	align_add = align_mask + prng_rand_n (17);
+	break;
+    }
 
     indexed = NULL;
     if (PIXMAN_FORMAT_TYPE (format) == PIXMAN_TYPE_COLOR)
@@ -223,9 +301,9 @@ create_random_bits_image (void)
     width = get_size ();
     height = get_size ();
 
-    if ((uint64_t)width * height > 200000)
+    while ((uint64_t)width * height > 200000)
     {
-	if (lcg_rand_n(2) == 0)
+	if (prng_rand_n(2) == 0)
 	    height = 200000 / width;
 	else
 	    width = 200000 / height;
@@ -237,13 +315,16 @@ create_random_bits_image (void)
 	width = 1;
 
     /* bits */
-    switch (lcg_rand_n (7))
+    switch (prng_rand_n (7))
     {
     default:
     case 0:
-	stride = width * PIXMAN_FORMAT_BPP (format) + lcg_rand_n (17);
-	stride = (stride + 3) & (~3);
-	bits = (uint32_t *)make_random_bytes (height * stride);
+	stride = (width * PIXMAN_FORMAT_BPP (format) + 7) / 8;
+	stride = (stride + align_add) & (~align_mask);
+	if (format == PIXMAN_rgb_float || format == PIXMAN_rgba_float)
+	    bits = (uint32_t *)make_random_floats (height * stride);
+	else
+	    bits = (uint32_t *)make_random_bytes (height * stride);
 	break;
 
     case 1:
@@ -252,8 +333,8 @@ create_random_bits_image (void)
 	break;
 
     case 2: /* Zero-filled */
-	stride = width * PIXMAN_FORMAT_BPP (format) + lcg_rand_n (17);
-	stride = (stride + 3) & (~3);
+	stride = (width * PIXMAN_FORMAT_BPP (format) + 7) / 8;
+	stride = (stride + align_add) & (~align_mask);
 	bits = fence_malloc (height * stride);
 	if (!bits)
 	    return NULL;
@@ -261,8 +342,8 @@ create_random_bits_image (void)
 	break;
 
     case 3: /* Filled with 0xFF */
-	stride = width * PIXMAN_FORMAT_BPP (format) + lcg_rand_n (17);
-	stride = (stride + 3) & (~3);
+	stride = (width * PIXMAN_FORMAT_BPP (format) + 7) / 8;
+	stride = (stride + align_add) & (~align_mask);
 	bits = fence_malloc (height * stride);
 	if (!bits)
 	    return NULL;
@@ -270,27 +351,35 @@ create_random_bits_image (void)
 	break;
 
     case 4: /* bits is a bad pointer, has read/write functions */
-	stride = 232;
-	bits = (void *)0x01;
-	read_func = fake_reader;
-	write_func = fake_writer;
-	break;
+	if (PIXMAN_FORMAT_BPP (format) <= 32) {
+	    stride = 232;
+	    bits = (void *)0x01;
+	    read_func = fake_reader;
+	    write_func = fake_writer;
+	    break;
+	}
 
     case 5: /* bits is a real pointer, has read/write functions */
-	stride = width * PIXMAN_FORMAT_BPP (format) + lcg_rand_n (17);
-	stride = (stride + 3) & (~3);
+	stride = (width * PIXMAN_FORMAT_BPP (format) + 7) / 8;
+	stride = (stride + align_add) & (~align_mask);
 	bits = fence_malloc (height * stride);
 	if (!bits)
 	    return NULL;
 	memset (bits, 0xff, height * stride);
-	read_func = real_reader;
-	write_func = real_writer;
+	if (PIXMAN_FORMAT_BPP (format) <= 32) {
+	    bits = xor_ptr(bits);
+	    read_func = real_reader;
+	    write_func = real_writer;
+	}
 	break;
 
     case 6: /* bits is a real pointer, stride is negative */
-	stride = (width * PIXMAN_FORMAT_BPP (format) + lcg_rand_n (17));
-	stride = (stride + 3) & (~3);
-	bits = (uint32_t *)make_random_bytes (height * stride);
+	stride = (width * PIXMAN_FORMAT_BPP (format) + 7) / 8;
+	stride = (stride + align_add) & (~align_mask);
+	if (format == PIXMAN_rgb_float || format == PIXMAN_rgba_float)
+	    bits = (uint32_t *)make_random_floats (height * stride);
+	else
+	    bits = (uint32_t *)make_random_bytes (height * stride);
 	if (!bits)
 	    return NULL;
 	bits += ((height - 1) * stride) / 4;
@@ -299,11 +388,11 @@ create_random_bits_image (void)
     }
 
     /* Filter */
-    filter = filters[lcg_rand_n (ARRAY_LENGTH (filters))];
+    filter = filters[prng_rand_n (ARRAY_LENGTH (filters))];
     if (filter == PIXMAN_FILTER_CONVOLUTION)
     {
-	int width = lcg_rand_n (17);
-	int height = lcg_rand_n (19);
+	int width = prng_rand_n (3);
+	int height = prng_rand_n (4);
 
 	n_coefficients = width * height + 2;
 	coefficients = malloc (n_coefficients * sizeof (pixman_fixed_t));
@@ -313,7 +402,7 @@ create_random_bits_image (void)
 	    int i;
 
 	    for (i = 0; i < width * height; ++i)
-		coefficients[i + 2] = lcg_rand_u32();
+		coefficients[i + 2] = prng_rand();
 
 	    coefficients[0] = width << 16;
 	    coefficients[1] = height << 16;
@@ -333,6 +422,8 @@ create_random_bits_image (void)
     pixman_image_set_destroy_function (image, destroy, indexed);
     pixman_image_set_accessors (image, read_func, write_func);
     pixman_image_set_filter (image, filter, coefficients, n_coefficients);
+
+    free (coefficients);
 
     return image;
 }
@@ -359,23 +450,23 @@ set_general_properties (pixman_image_t *image, pixman_bool_t allow_alpha_map)
     /* Set properties that are generic to all images */
 
     /* Repeat */
-    repeat = repeats[lcg_rand_n (ARRAY_LENGTH (repeats))];
+    repeat = repeats[prng_rand_n (ARRAY_LENGTH (repeats))];
     pixman_image_set_repeat (image, repeat);
 
     /* Alpha map */
-    if (allow_alpha_map && lcg_rand_n (3) == 0)
+    if (allow_alpha_map && prng_rand_n (4) == 0)
     {
 	pixman_image_t *alpha_map;
 	int16_t x, y;
 
-	alpha_map = create_random_bits_image ();
+	alpha_map = create_random_bits_image (DONT_CARE);
 
 	if (alpha_map)
 	{
 	    set_general_properties (alpha_map, FALSE);
 
-	    x = lcg_rand_N (100000) - 65536;
-	    y = lcg_rand_N (100000) - 65536;
+	    x = rand_x (image) - image->bits.width / 2;
+	    y = rand_y (image) - image->bits.height / 2;
 
 	    pixman_image_set_alpha_map (image, alpha_map, x, y);
 
@@ -384,17 +475,17 @@ set_general_properties (pixman_image_t *image, pixman_bool_t allow_alpha_map)
     }
 
     /* Component alpha */
-    pixman_image_set_component_alpha (image, lcg_rand_n (3) == 0);
+    pixman_image_set_component_alpha (image, prng_rand_n (3) == 0);
 
     /* Clip region */
-    if (lcg_rand_n (8) != 0)
+    if (prng_rand_n (8) < 2)
     {
 	pixman_region32_t region;
 	int i, n_rects;
 
 	pixman_region32_init (&region);
 
-	switch (lcg_rand_n (10))
+	switch (prng_rand_n (12))
 	{
 	case 0:
 	    n_rects = 0;
@@ -410,9 +501,10 @@ set_general_properties (pixman_image_t *image, pixman_bool_t allow_alpha_map)
 
 	case 6: case 7:
 	    n_rects = 3;
+	    break;
 
 	default:
-	    n_rects = lcg_rand_n (100);
+	    n_rects = prng_rand_n (100);
 	    break;
 	}
 
@@ -430,19 +522,45 @@ set_general_properties (pixman_image_t *image, pixman_bool_t allow_alpha_map)
 		&region, &region, x, y, width, height);
 	}
 
+	if (image->type == BITS && prng_rand_n (8) != 0)
+	{
+	    uint32_t width, height;
+	    uint32_t x, y;
+	    int i;
+
+	    /* Also add a couple of clip rectangles inside the image
+	     * so that compositing will actually take place.
+	     */
+	    for (i = 0; i < 5; ++i)
+	    {
+		x = prng_rand_n (2 * image->bits.width) - image->bits.width;
+		y = prng_rand_n (2 * image->bits.height) - image->bits.height;
+		width = prng_rand_n (image->bits.width) - x + 10;
+		height = prng_rand_n (image->bits.height) - y + 10;
+
+		if (width + x < x)
+		    width = INT32_MAX - x;
+		if (height + y < y)
+		    height = INT32_MAX - y;
+
+		pixman_region32_union_rect (
+		    &region, &region, x, y, width, height);
+	    }
+	}
+
 	pixman_image_set_clip_region32 (image, &region);
 
 	pixman_region32_fini (&region);
     }
 
     /* Whether source clipping is enabled */
-    pixman_image_set_source_clipping (image, !!lcg_rand_n (2));
+    pixman_image_set_source_clipping (image, !!prng_rand_n (2));
 
     /* Client clip */
-    pixman_image_set_has_client_clip (image, !!lcg_rand_n (2));
+    pixman_image_set_has_client_clip (image, !!prng_rand_n (2));
 
     /* Transform */
-    if (lcg_rand_n (5) < 2)
+    if (prng_rand_n (5) < 2)
     {
 	pixman_transform_t xform;
 	int i, j, k;
@@ -456,39 +574,39 @@ set_general_properties (pixman_image_t *image, pixman_bool_t allow_alpha_map)
 
 	for (k = 0; k < 3; ++k)
 	{
-	    switch (lcg_rand_n (4))
+	    switch (prng_rand_n (4))
 	    {
 	    case 0:
 		/* rotation */
-		c = lcg_rand_N (2 * 65536) - 65536;
-		s = lcg_rand_N (2 * 65536) - 65536;
+		c = prng_rand_n (2 * 65536) - 65536;
+		s = prng_rand_n (2 * 65536) - 65536;
 		pixman_transform_rotate (&xform, NULL, c, s);
 		break;
 
 	    case 1:
 		/* translation */
-		tx = lcg_rand_u32();
-		ty = lcg_rand_u32();
+		tx = prng_rand();
+		ty = prng_rand();
 		pixman_transform_translate (&xform, NULL, tx, ty);
 		break;
 
 	    case 2:
 		/* scale */
-		sx = lcg_rand_u32();
-		sy = lcg_rand_u32();
+		sx = prng_rand();
+		sy = prng_rand();
 		pixman_transform_scale (&xform, NULL, sx, sy);
 		break;
 
 	    case 3:
-		if (lcg_rand_n (16) == 0)
+		if (prng_rand_n (16) == 0)
 		{
 		    /* random */
 		    for (i = 0; i < 3; ++i)
 			for (j = 0; j < 3; ++j)
-			    xform.matrix[i][j] = lcg_rand_u32();
+			    xform.matrix[i][j] = prng_rand();
 		    break;
 		}
-		else if (lcg_rand_n (16) == 0)
+		else if (prng_rand_n (16) == 0)
 		{
 		    /* zero */
 		    memset (&xform, 0, sizeof xform);
@@ -506,10 +624,10 @@ random_color (void)
 {
     pixman_color_t color =
     {
-	lcg_rand() & 0xffff,
-	lcg_rand() & 0xffff,
-	lcg_rand() & 0xffff,
-	lcg_rand() & 0xffff,
+	prng_rand() & 0xffff,
+	prng_rand() & 0xffff,
+	prng_rand() & 0xffff,
+	prng_rand() & 0xffff,
     };
 
     return color;
@@ -533,7 +651,7 @@ create_random_stops (int *n_stops)
     int i;
     pixman_gradient_stop_t *stops;
 
-    *n_stops = lcg_rand_n (50) + 1;
+    *n_stops = prng_rand_n (50) + 1;
 
     step = pixman_fixed_1 / *n_stops;
 
@@ -598,8 +716,8 @@ create_random_radial_image (void)
 
     inner_c = create_random_point();
     outer_c = create_random_point();
-    inner_r = lcg_rand();
-    outer_r = lcg_rand();
+    inner_r = prng_rand();
+    outer_r = prng_rand();
 
     stops = create_random_stops (&n_stops);
 
@@ -624,7 +742,7 @@ create_random_conical_image (void)
     pixman_image_t *result;
 
     c = create_random_point();
-    angle = lcg_rand();
+    angle = prng_rand();
 
     stops = create_random_stops (&n_stops);
 
@@ -643,11 +761,11 @@ create_random_image (void)
 {
     pixman_image_t *result;
 
-    switch (lcg_rand_n (5))
+    switch (prng_rand_n (5))
     {
     default:
     case 0:
-	result = create_random_bits_image ();
+	result = create_random_bits_image (DONT_CARE);
 	break;
 
     case 1:
@@ -671,6 +789,39 @@ create_random_image (void)
 	set_general_properties (result, TRUE);
 
     return result;
+}
+
+static void
+random_line (pixman_line_fixed_t *line, int width, int height)
+{
+    line->p1.x = prng_rand_n (width) << 16;
+    line->p1.y = prng_rand_n (height) << 16;
+    line->p2.x = prng_rand_n (width) << 16;
+    line->p2.y = prng_rand_n (height) << 16;
+}
+
+static pixman_trapezoid_t *
+create_random_trapezoids (int *n_traps, int height, int width)
+{
+    pixman_trapezoid_t *trapezoids;
+    int i;
+
+    *n_traps = prng_rand_n (16) + 1;
+
+    trapezoids = malloc (sizeof (pixman_trapezoid_t) * *n_traps);
+
+    for (i = 0; i < *n_traps; ++i)
+    {
+        pixman_trapezoid_t *t = &(trapezoids[i]);
+
+        t->top = prng_rand_n (height) << 16;
+        t->bottom = prng_rand_n (height) << 16;
+
+        random_line (&t->left, height, width);
+        random_line (&t->right, height, width);
+    }
+
+    return trapezoids;
 }
 
 static const pixman_op_t op_list[] =
@@ -744,27 +895,88 @@ run_test (uint32_t seed, pixman_bool_t verbose, uint32_t mod)
 	if (mod == 0 || (seed % mod) == 0)
 	    printf ("Seed 0x%08x\n", seed);
     }
-	    
-    lcg_srand (seed);
 
-    source = create_random_image ();
-    mask   = create_random_image ();
-    dest   = create_random_bits_image ();
+    source = mask = dest = NULL;
 
-    if (source && mask && dest)
+    prng_srand (seed);
+
+    if (prng_rand_n (8) == 0)
     {
+        int n_traps;
+        pixman_trapezoid_t *trapezoids;
+	int p = prng_rand_n (3);
+
+	if (p == 0)
+	    dest = create_random_bits_image (DONT_CARE);
+	else
+	    dest = create_random_bits_image (REQUIRE_ALPHA);
+
+	if (!dest)
+	    goto out;
+
 	set_general_properties (dest, TRUE);
 
-	op = op_list [lcg_rand_n (ARRAY_LENGTH (op_list))];
+	if (!(trapezoids = create_random_trapezoids (
+		  &n_traps, dest->bits.width, dest->bits.height)))
+	{
+	    goto out;
+	}
 
-	pixman_image_composite32 (op,
-				  source, mask, dest,
-				  log_rand(), log_rand(),
-				  log_rand(), log_rand(),
-				  log_rand(), log_rand(),
-				  absolute (log_rand()),
-				  absolute (log_rand()));
+	switch (p)
+	{
+	case 0:
+	    source = create_random_image ();
+
+	    if (source)
+	    {
+		op = op_list [prng_rand_n (ARRAY_LENGTH (op_list))];
+
+		pixman_composite_trapezoids (
+		    op, source, dest,
+		    random_format (REQUIRE_ALPHA),
+		    rand_x (source), rand_y (source),
+		    rand_x (dest), rand_y (dest),
+		    n_traps, trapezoids);
+	    }
+	    break;
+
+	case 1:
+	    pixman_rasterize_trapezoid (
+		dest, &trapezoids[prng_rand_n (n_traps)],
+		rand_x (dest), rand_y (dest));
+	    break;
+
+	case 2:
+	    pixman_add_trapezoids (
+		dest, rand_x (dest), rand_y (dest), n_traps, trapezoids);
+	    break;
+        }
+
+	free (trapezoids);
     }
+    else
+    {
+        dest = create_random_bits_image (DONT_CARE);
+        source = create_random_image ();
+        mask = create_random_image ();
+
+        if (source && mask && dest)
+        {
+            set_general_properties (dest, TRUE);
+
+            op = op_list [prng_rand_n (ARRAY_LENGTH (op_list))];
+
+            pixman_image_composite32 (op,
+                                      source, mask, dest,
+                                      rand_x (source), rand_y (source),
+                                      rand_x (mask), rand_y (mask),
+                                      0, 0,
+                                      dest->bits.width,
+                                      dest->bits.height);
+        }
+    }
+
+out:
     if (source)
 	pixman_image_unref (source);
     if (mask)
@@ -795,14 +1007,14 @@ main (int argc, char **argv)
 {
     int verbose = FALSE;
     uint32_t seed = 1;
-    uint32_t n_tests = 0xffffffff;
+    uint32_t n_tests = 8000;
     uint32_t mod = 0;
     pixman_bool_t use_threads = TRUE;
-    uint32_t i;
+    int32_t i;
 
     pixman_disable_out_of_bounds_workaround ();
 
-    enable_fp_exceptions();
+    enable_divbyzero_exceptions();
 
     if (getenv ("VERBOSE") != NULL)
 	verbose = TRUE;
@@ -845,9 +1057,6 @@ main (int argc, char **argv)
 	}
     }
 
-    if (n_tests == 0xffffffff)
-	n_tests = 8000;
-
     if (getenv ("PIXMAN_RANDOMIZE_TESTS"))
     {
 	seed = get_random_seed();
@@ -859,13 +1068,13 @@ main (int argc, char **argv)
 #ifdef USE_OPENMP
 #   pragma omp parallel for default(none) shared(verbose, n_tests, mod, seed)
 #endif
-	for (i = seed; i < seed + n_tests; ++i)
-	    run_test (i, verbose, mod);
+	for (i = 0; i < (int32_t)n_tests; ++i)
+	    run_test (seed + i, verbose, mod);
     }
     else
     {
-	for (i = seed; i < seed + n_tests; ++i)
-	    run_test (i, verbose, mod);
+	for (i = 0; i < (int32_t)n_tests; ++i)
+	    run_test (seed + i, verbose, mod);
     }
 
     return 0;

@@ -1,9 +1,23 @@
+#ifndef PIXMAN_PRIVATE_H
+#define PIXMAN_PRIVATE_H
+
+/*
+ * The defines which are shared between C and assembly code
+ */
+
+/* bilinear interpolation precision (must be < 8) */
+#define BILINEAR_INTERPOLATION_BITS 7
+#define BILINEAR_INTERPOLATION_RANGE (1 << BILINEAR_INTERPOLATION_BITS)
+
+/*
+ * C specific part
+ */
+
+#ifndef __ASSEMBLER__
+
 #ifndef PACKAGE
 #  error config.h must be included before pixman-private.h
 #endif
-
-#ifndef PIXMAN_PRIVATE_H
-#define PIXMAN_PRIVATE_H
 
 #define PIXMAN_DISABLE_DEPRECATED
 #define PIXMAN_USE_INTERNAL_API
@@ -13,6 +27,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h>
+#include <float.h>
 
 #include "pixman-compiler.h"
 
@@ -30,7 +46,17 @@ typedef struct radial_gradient radial_gradient_t;
 typedef struct bits_image bits_image_t;
 typedef struct circle circle_t;
 
-typedef void (*fetch_scanline_t) (pixman_image_t *image,
+typedef struct argb_t argb_t;
+
+struct argb_t
+{
+    float a;
+    float r;
+    float g;
+    float b;
+};
+
+typedef void (*fetch_scanline_t) (bits_image_t   *image,
 				  int             x,
 				  int             y,
 				  int             width,
@@ -41,9 +67,9 @@ typedef uint32_t (*fetch_pixel_32_t) (bits_image_t *image,
 				      int           x,
 				      int           y);
 
-typedef uint64_t (*fetch_pixel_64_t) (bits_image_t *image,
-				      int           x,
-				      int           y);
+typedef argb_t (*fetch_pixel_float_t) (bits_image_t *image,
+				       int           x,
+				       int           y);
 
 typedef void (*store_scanline_t) (bits_image_t *  image,
 				  int             x,
@@ -97,9 +123,9 @@ struct solid_fill
 {
     image_common_t common;
     pixman_color_t color;
-    
+
     uint32_t	   color_32;
-    uint64_t	   color_64;
+    argb_t	   color_float;
 };
 
 struct gradient
@@ -154,16 +180,17 @@ struct bits_image
     uint32_t *                 free_me;
     int                        rowstride;  /* in number of uint32_t's */
 
-    fetch_scanline_t           get_scanline_32;
-    fetch_scanline_t           get_scanline_64;
+    pixman_dither_t            dither;
+    uint32_t                   dither_offset_y;
+    uint32_t                   dither_offset_x;
 
     fetch_scanline_t           fetch_scanline_32;
     fetch_pixel_32_t	       fetch_pixel_32;
     store_scanline_t           store_scanline_32;
 
-    fetch_scanline_t           fetch_scanline_64;
-    fetch_pixel_64_t	       fetch_pixel_64;
-    store_scanline_t           store_scanline_64;
+    fetch_scanline_t	       fetch_scanline_float;
+    fetch_pixel_float_t	       fetch_pixel_float;
+    store_scanline_t           store_scanline_float;
 
     /* Used for indirect access to the bits */
     pixman_read_memory_func_t  read_func;
@@ -185,10 +212,12 @@ union pixman_image
 typedef struct pixman_iter_t pixman_iter_t;
 typedef uint32_t *(* pixman_iter_get_scanline_t) (pixman_iter_t *iter, const uint32_t *mask);
 typedef void      (* pixman_iter_write_back_t)   (pixman_iter_t *iter);
+typedef void	  (* pixman_iter_fini_t)	 (pixman_iter_t *iter);
 
 typedef enum
 {
-    ITER_NARROW =		(1 << 0),
+    ITER_NARROW =               (1 << 0),
+    ITER_WIDE =                 (1 << 1),
 
     /* "Localized alpha" is when the alpha channel is used only to compute
      * the alpha value of the destination. This means that the computation
@@ -205,9 +234,15 @@ typedef enum
      * we can treat it as if it were ARGB, which means in some cases we can
      * avoid copying it to a temporary buffer.
      */
-    ITER_LOCALIZED_ALPHA =	(1 << 1),
-    ITER_IGNORE_ALPHA =		(1 << 2),
-    ITER_IGNORE_RGB =		(1 << 3)
+    ITER_LOCALIZED_ALPHA =	(1 << 2),
+    ITER_IGNORE_ALPHA =		(1 << 3),
+    ITER_IGNORE_RGB =		(1 << 4),
+
+    /* These indicate whether the iterator is for a source
+     * or a destination image
+     */
+    ITER_SRC =			(1 << 5),
+    ITER_DEST =			(1 << 6)
 } iter_flags_t;
 
 struct pixman_iter_t
@@ -218,15 +253,31 @@ struct pixman_iter_t
     int				x, y;
     int				width;
     int				height;
-    iter_flags_t		flags;
+    iter_flags_t		iter_flags;
+    uint32_t			image_flags;
 
     /* These function pointers are initialized by the implementation */
     pixman_iter_get_scanline_t	get_scanline;
     pixman_iter_write_back_t	write_back;
+    pixman_iter_fini_t          fini;
 
     /* These fields are scratch data that implementations can use */
+    void *			data;
     uint8_t *			bits;
     int				stride;
+};
+
+typedef struct pixman_iter_info_t pixman_iter_info_t;
+typedef void (* pixman_iter_initializer_t) (pixman_iter_t *iter,
+                                            const pixman_iter_info_t *info);
+struct pixman_iter_info_t
+{
+    pixman_format_code_t	format;
+    uint32_t			image_flags;
+    iter_flags_t		iter_flags;
+    pixman_iter_initializer_t	initializer;
+    pixman_iter_get_scanline_t	get_scanline;
+    pixman_iter_write_back_t	write_back;
 };
 
 void
@@ -237,9 +288,6 @@ _pixman_bits_image_src_iter_init (pixman_image_t *image, pixman_iter_t *iter);
 
 void
 _pixman_bits_image_dest_iter_init (pixman_image_t *image, pixman_iter_t *iter);
-
-void
-_pixman_solid_fill_iter_init (pixman_image_t *image, pixman_iter_t  *iter);
 
 void
 _pixman_linear_gradient_iter_init (pixman_image_t *image, pixman_iter_t  *iter);
@@ -259,7 +307,8 @@ _pixman_bits_image_init (pixman_image_t *     image,
                          int                  width,
                          int                  height,
                          uint32_t *           bits,
-                         int                  rowstride);
+                         int                  rowstride,
+			 pixman_bool_t	      clear);
 pixman_bool_t
 _pixman_image_fini (pixman_image_t *image);
 
@@ -295,13 +344,12 @@ _pixman_image_validate (pixman_image_t *image);
  */
 typedef struct
 {
-    uint32_t                left_ag;
-    uint32_t                left_rb;
-    uint32_t                right_ag;
-    uint32_t                right_rb;
-    pixman_fixed_t	    left_x;
-    pixman_fixed_t          right_x;
-    pixman_fixed_t          stepper;
+    float		    a_s, a_b;
+    float		    r_s, r_b;
+    float		    g_s, g_b;
+    float		    b_s, b_b;
+    pixman_fixed_48_16_t    left_x;
+    pixman_fixed_48_16_t    right_x;
 
     pixman_gradient_stop_t *stops;
     int                     num_stops;
@@ -319,9 +367,38 @@ void
 _pixman_gradient_walker_reset (pixman_gradient_walker_t *walker,
                                pixman_fixed_48_16_t      pos);
 
-uint32_t
-_pixman_gradient_walker_pixel (pixman_gradient_walker_t *walker,
-                               pixman_fixed_48_16_t      x);
+typedef void (*pixman_gradient_walker_write_t) (
+    pixman_gradient_walker_t *walker,
+    pixman_fixed_48_16_t      x,
+    uint32_t                 *buffer);
+
+void
+_pixman_gradient_walker_write_narrow(pixman_gradient_walker_t *walker,
+				     pixman_fixed_48_16_t      x,
+				     uint32_t                 *buffer);
+
+void
+_pixman_gradient_walker_write_wide(pixman_gradient_walker_t *walker,
+				   pixman_fixed_48_16_t      x,
+				   uint32_t                 *buffer);
+
+typedef void (*pixman_gradient_walker_fill_t) (
+    pixman_gradient_walker_t *walker,
+    pixman_fixed_48_16_t      x,
+    uint32_t                 *buffer,
+    uint32_t                 *end);
+
+void
+_pixman_gradient_walker_fill_narrow(pixman_gradient_walker_t *walker,
+				    pixman_fixed_48_16_t      x,
+				    uint32_t                 *buffer,
+				    uint32_t                 *end);
+
+void
+_pixman_gradient_walker_fill_wide(pixman_gradient_walker_t *walker,
+				  pixman_fixed_48_16_t      x,
+				  uint32_t                 *buffer,
+				  uint32_t                 *end);
 
 /*
  * Edges
@@ -400,12 +477,12 @@ typedef void (*pixman_combine_32_func_t) (pixman_implementation_t *imp,
 					  const uint32_t *         mask,
 					  int                      width);
 
-typedef void (*pixman_combine_64_func_t) (pixman_implementation_t *imp,
-					  pixman_op_t              op,
-					  uint64_t *               dest,
-					  const uint64_t *         src,
-					  const uint64_t *         mask,
-					  int                      width);
+typedef void (*pixman_combine_float_func_t) (pixman_implementation_t *imp,
+					     pixman_op_t	      op,
+					     float *		      dest,
+					     const float *	      src,
+					     const float *	      mask,
+					     int		      n_pixels);
 
 typedef void (*pixman_composite_func_t) (pixman_implementation_t *imp,
 					 pixman_composite_info_t *info);
@@ -430,12 +507,10 @@ typedef pixman_bool_t (*pixman_fill_func_t) (pixman_implementation_t *imp,
 					     int                      y,
 					     int                      width,
 					     int                      height,
-					     uint32_t                 xor);
-typedef void (*pixman_iter_init_func_t) (pixman_implementation_t *imp,
-                                         pixman_iter_t           *iter);
+					     uint32_t                 filler);
 
 void _pixman_setup_combiner_functions_32 (pixman_implementation_t *imp);
-void _pixman_setup_combiner_functions_64 (pixman_implementation_t *imp);
+void _pixman_setup_combiner_functions_float (pixman_implementation_t *imp);
 
 typedef struct
 {
@@ -452,18 +527,17 @@ typedef struct
 struct pixman_implementation_t
 {
     pixman_implementation_t *	toplevel;
-    pixman_implementation_t *	delegate;
+    pixman_implementation_t *	fallback;
     const pixman_fast_path_t *	fast_paths;
+    const pixman_iter_info_t *  iter_info;
 
     pixman_blt_func_t		blt;
     pixman_fill_func_t		fill;
-    pixman_iter_init_func_t     src_iter_init;
-    pixman_iter_init_func_t     dest_iter_init;
 
     pixman_combine_32_func_t	combine_32[PIXMAN_N_OPERATORS];
     pixman_combine_32_func_t	combine_32_ca[PIXMAN_N_OPERATORS];
-    pixman_combine_64_func_t	combine_64[PIXMAN_N_OPERATORS];
-    pixman_combine_64_func_t	combine_64_ca[PIXMAN_N_OPERATORS];
+    pixman_combine_float_func_t	combine_float[PIXMAN_N_OPERATORS];
+    pixman_combine_float_func_t	combine_float_ca[PIXMAN_N_OPERATORS];
 };
 
 uint32_t
@@ -472,37 +546,26 @@ _pixman_image_get_solid (pixman_implementation_t *imp,
                          pixman_format_code_t     format);
 
 pixman_implementation_t *
-_pixman_implementation_create (pixman_implementation_t *delegate,
+_pixman_implementation_create (pixman_implementation_t *fallback,
 			       const pixman_fast_path_t *fast_paths);
 
 void
-_pixman_implementation_combine_32 (pixman_implementation_t *imp,
-                                   pixman_op_t              op,
-                                   uint32_t *               dest,
-                                   const uint32_t *         src,
-                                   const uint32_t *         mask,
-                                   int                      width);
-void
-_pixman_implementation_combine_64 (pixman_implementation_t *imp,
-                                   pixman_op_t              op,
-                                   uint64_t *               dest,
-                                   const uint64_t *         src,
-                                   const uint64_t *         mask,
-                                   int                      width);
-void
-_pixman_implementation_combine_32_ca (pixman_implementation_t *imp,
-                                      pixman_op_t              op,
-                                      uint32_t *               dest,
-                                      const uint32_t *         src,
-                                      const uint32_t *         mask,
-                                      int                      width);
-void
-_pixman_implementation_combine_64_ca (pixman_implementation_t *imp,
-                                      pixman_op_t              op,
-                                      uint64_t *               dest,
-                                      const uint64_t *         src,
-                                      const uint64_t *         mask,
-                                      int                      width);
+_pixman_implementation_lookup_composite (pixman_implementation_t  *toplevel,
+					 pixman_op_t               op,
+					 pixman_format_code_t      src_format,
+					 uint32_t                  src_flags,
+					 pixman_format_code_t      mask_format,
+					 uint32_t                  mask_flags,
+					 pixman_format_code_t      dest_format,
+					 uint32_t                  dest_flags,
+					 pixman_implementation_t **out_imp,
+					 pixman_composite_func_t  *out_func);
+
+pixman_combine_32_func_t
+_pixman_implementation_lookup_combiner (pixman_implementation_t *imp,
+					pixman_op_t		 op,
+					pixman_bool_t		 component_alpha,
+					pixman_bool_t		 wide);
 
 pixman_bool_t
 _pixman_implementation_blt (pixman_implementation_t *imp,
@@ -528,29 +591,19 @@ _pixman_implementation_fill (pixman_implementation_t *imp,
                              int                      y,
                              int                      width,
                              int                      height,
-                             uint32_t                 xor);
+                             uint32_t                 filler);
 
 void
-_pixman_implementation_src_iter_init (pixman_implementation_t       *imp,
-				      pixman_iter_t                 *iter,
-				      pixman_image_t                *image,
-				      int                            x,
-				      int                            y,
-				      int                            width,
-				      int                            height,
-				      uint8_t                       *buffer,
-				      iter_flags_t                   flags);
-
-void
-_pixman_implementation_dest_iter_init (pixman_implementation_t       *imp,
-				       pixman_iter_t                 *iter,
-				       pixman_image_t                *image,
-				       int                            x,
-				       int                            y,
-				       int                            width,
-				       int                            height,
-				       uint8_t                       *buffer,
-				       iter_flags_t                   flags);
+_pixman_implementation_iter_init (pixman_implementation_t       *imp,
+                                  pixman_iter_t                 *iter,
+                                  pixman_image_t                *image,
+                                  int                            x,
+                                  int                            y,
+                                  int                            width,
+                                  int                            height,
+                                  uint8_t                       *buffer,
+                                  iter_flags_t                   flags,
+                                  uint32_t                       image_flags);
 
 /* Specific implementations */
 pixman_implementation_t *
@@ -562,7 +615,7 @@ _pixman_implementation_create_fast_path (pixman_implementation_t *fallback);
 pixman_implementation_t *
 _pixman_implementation_create_noop (pixman_implementation_t *fallback);
 
-#if defined USE_X86_MMX || defined USE_ARM_IWMMXT
+#if defined USE_X86_MMX || defined USE_LOONGSON_MMI
 pixman_implementation_t *
 _pixman_implementation_create_mmx (pixman_implementation_t *fallback);
 #endif
@@ -570,6 +623,11 @@ _pixman_implementation_create_mmx (pixman_implementation_t *fallback);
 #ifdef USE_SSE2
 pixman_implementation_t *
 _pixman_implementation_create_sse2 (pixman_implementation_t *fallback);
+#endif
+
+#ifdef USE_SSSE3
+pixman_implementation_t *
+_pixman_implementation_create_ssse3 (pixman_implementation_t *fallback);
 #endif
 
 #ifdef USE_ARM_SIMD
@@ -582,21 +640,72 @@ pixman_implementation_t *
 _pixman_implementation_create_arm_neon (pixman_implementation_t *fallback);
 #endif
 
+#ifdef USE_ARM_A64_NEON
+pixman_implementation_t *
+_pixman_implementation_create_arm_neon (pixman_implementation_t *fallback);
+#endif
+
+#ifdef USE_MIPS_DSPR2
+pixman_implementation_t *
+_pixman_implementation_create_mips_dspr2 (pixman_implementation_t *fallback);
+#endif
+
 #ifdef USE_VMX
 pixman_implementation_t *
 _pixman_implementation_create_vmx (pixman_implementation_t *fallback);
 #endif
 
+#ifdef USE_RVV
+pixman_implementation_t *
+_pixman_implementation_create_rvv (pixman_implementation_t *fallback);
+#endif
+
+pixman_bool_t
+_pixman_implementation_disabled (const char *name);
+
+pixman_implementation_t *
+_pixman_x86_get_implementations (pixman_implementation_t *imp);
+
+pixman_implementation_t *
+_pixman_arm_get_implementations (pixman_implementation_t *imp);
+
+pixman_implementation_t *
+_pixman_ppc_get_implementations (pixman_implementation_t *imp);
+
+pixman_implementation_t *
+_pixman_mips_get_implementations (pixman_implementation_t *imp);
+
+pixman_implementation_t *
+_pixman_riscv_get_implementations (pixman_implementation_t *imp);
+
 pixman_implementation_t *
 _pixman_choose_implementation (void);
 
+pixman_bool_t
+_pixman_disabled (const char *name);
 
 
 /*
  * Utilities
  */
+pixman_bool_t
+_pixman_compute_composite_region32 (pixman_region32_t * region,
+				    pixman_image_t *    src_image,
+				    pixman_image_t *    mask_image,
+				    pixman_image_t *    dest_image,
+				    int32_t             src_x,
+				    int32_t             src_y,
+				    int32_t             mask_x,
+				    int32_t             mask_y,
+				    int32_t             dest_x,
+				    int32_t             dest_y,
+				    int32_t             width,
+				    int32_t             height);
 uint32_t *
 _pixman_iter_get_scanline_noop (pixman_iter_t *iter, const uint32_t *mask);
+
+void
+_pixman_iter_init_bits_stride (pixman_iter_t *iter, const pixman_iter_info_t *info);
 
 /* These "formats" all have depth 0, so they
  * will never clash with any real ones
@@ -636,6 +745,7 @@ _pixman_iter_get_scanline_noop (pixman_iter_t *iter, const uint32_t *mask);
 #define FAST_PATH_SAMPLES_COVER_CLIP_NEAREST	(1 << 23)
 #define FAST_PATH_SAMPLES_COVER_CLIP_BILINEAR	(1 << 24)
 #define FAST_PATH_BITS_IMAGE			(1 << 25)
+#define FAST_PATH_SEPARABLE_CONVOLUTION_FILTER  (1 << 26)
 
 #define FAST_PATH_PAD_REPEAT						\
     (FAST_PATH_NO_NONE_REPEAT		|				\
@@ -702,12 +812,51 @@ _pixman_iter_get_scanline_noop (pixman_iter_t *iter, const uint32_t *mask);
 	    dest, FAST_PATH_STD_DEST_FLAGS,				\
 	    func) }
 
+extern pixman_implementation_t *global_implementation;
+
+static force_inline pixman_implementation_t *
+get_implementation (void)
+{
+#ifndef TOOLCHAIN_SUPPORTS_ATTRIBUTE_CONSTRUCTOR
+    if (!global_implementation)
+	global_implementation = _pixman_choose_implementation ();
+#endif
+    return global_implementation;
+}
+
+/* This function is exported for the sake of the test suite and not part
+ * of the ABI.
+ */
+PIXMAN_EXPORT pixman_implementation_t *
+_pixman_internal_only_get_reference_implementation (void);
+
+/* This function is exported for the sake of the test suite and not part
+ * of the ABI.
+ */
+PIXMAN_EXPORT pixman_implementation_t *
+_pixman_internal_only_get_implementation (void);
+
+/* This function is exported for the sake of the test suite and not part
+ * of the ABI.
+ */
+PIXMAN_EXPORT pixman_fast_path_t *
+_pixman_implementation_get_reference_fast_path (void);
+
+/* This function is exported for the sake of the test suite and not part
+ * of the ABI.
+ */
+PIXMAN_EXPORT int
+_pixman_implementation_get_reference_fast_path_size ();
+
 /* Memory allocation helpers */
 void *
 pixman_malloc_ab (unsigned int n, unsigned int b);
 
 void *
 pixman_malloc_abc (unsigned int a, unsigned int b, unsigned int c);
+
+void *
+pixman_malloc_ab_plus_c (unsigned int a, unsigned int b, unsigned int c);
 
 pixman_bool_t
 _pixman_multiply_overflows_size (size_t a, size_t b);
@@ -720,37 +869,73 @@ _pixman_addition_overflows_int (unsigned int a, unsigned int b);
 
 /* Compositing utilities */
 void
-pixman_expand (uint64_t *           dst,
-               const uint32_t *     src,
-               pixman_format_code_t format,
-               int                  width);
+pixman_expand_to_float (argb_t               *dst,
+			const uint32_t       *src,
+			pixman_format_code_t  format,
+			int                   width);
 
 void
-pixman_contract (uint32_t *      dst,
-                 const uint64_t *src,
-                 int             width);
-
-pixman_bool_t
-_pixman_lookup_composite_function (pixman_implementation_t     *toplevel,
-				   pixman_op_t			op,
-				   pixman_format_code_t		src_format,
-				   uint32_t			src_flags,
-				   pixman_format_code_t		mask_format,
-				   uint32_t			mask_flags,
-				   pixman_format_code_t		dest_format,
-				   uint32_t			dest_flags,
-				   pixman_implementation_t    **out_imp,
-				   pixman_composite_func_t     *out_func);
+pixman_contract_from_float (uint32_t     *dst,
+			    const argb_t *src,
+			    int           width);
 
 /* Region Helpers */
 pixman_bool_t
 pixman_region32_copy_from_region16 (pixman_region32_t *dst,
-                                    pixman_region16_t *src);
+                                    const pixman_region16_t *src);
+
+pixman_bool_t
+pixman_region32_copy_from_region64f (pixman_region32_t *dst,
+                                     const pixman_region64f_t *src);
 
 pixman_bool_t
 pixman_region16_copy_from_region32 (pixman_region16_t *dst,
-                                    pixman_region32_t *src);
+                                    const pixman_region32_t *src);
 
+/* Doubly linked lists */
+typedef struct pixman_link_t pixman_link_t;
+struct pixman_link_t
+{
+    pixman_link_t *next;
+    pixman_link_t *prev;
+};
+
+typedef struct pixman_list_t pixman_list_t;
+struct pixman_list_t
+{
+    pixman_link_t *head;
+    pixman_link_t *tail;
+};
+
+static force_inline void
+pixman_list_init (pixman_list_t *list)
+{
+    list->head = (pixman_link_t *)list;
+    list->tail = (pixman_link_t *)list;
+}
+
+static force_inline void
+pixman_list_prepend (pixman_list_t *list, pixman_link_t *link)
+{
+    link->next = list->head;
+    link->prev = (pixman_link_t *)list;
+    list->head->prev = link;
+    list->head = link;
+}
+
+static force_inline void
+pixman_list_unlink (pixman_link_t *link)
+{
+    link->prev->next = link->next;
+    link->next->prev = link->prev;
+}
+
+static force_inline void
+pixman_list_move_to_front (pixman_list_t *list, pixman_link_t *link)
+{
+    pixman_list_unlink (link);
+    pixman_list_prepend (list, link);
+}
 
 /* Misc macros */
 
@@ -780,30 +965,62 @@ pixman_region16_copy_from_region32 (pixman_region16_t *dst,
 
 #define CLIP(v, low, high) ((v) < (low) ? (low) : ((v) > (high) ? (high) : (v)))
 
+#define FLOAT_IS_ZERO(f)     (-FLT_MIN < (f) && (f) < FLT_MIN)
+
 /* Conversion between 8888 and 0565 */
 
-#define CONVERT_8888_TO_0565(s)						\
-    ((((s) >> 3) & 0x001f) |						\
-     (((s) >> 5) & 0x07e0) |						\
-     (((s) >> 8) & 0xf800))
+static force_inline uint16_t
+convert_8888_to_0565 (uint32_t s)
+{
+    /* The following code can be compiled into just 4 instructions on ARM */
+    uint32_t a, b;
+    a = (s >> 3) & 0x1F001F;
+    b = s & 0xFC00;
+    a |= a >> 5;
+    a |= b >> 5;
+    return (uint16_t)a;
+}
 
-#define CONVERT_0565_TO_0888(s)						\
-    (((((s) << 3) & 0xf8) | (((s) >> 2) & 0x7)) |			\
-     ((((s) << 5) & 0xfc00) | (((s) >> 1) & 0x300)) |			\
-     ((((s) << 8) & 0xf80000) | (((s) << 3) & 0x70000)))
+static force_inline uint32_t
+convert_0565_to_0888 (uint16_t s)
+{
+    return (((((s) << 3) & 0xf8) | (((s) >> 2) & 0x7)) |
+            ((((s) << 5) & 0xfc00) | (((s) >> 1) & 0x300)) |
+            ((((s) << 8) & 0xf80000) | (((s) << 3) & 0x70000)));
+}
 
-#define CONVERT_0565_TO_8888(s) (CONVERT_0565_TO_0888(s) | 0xff000000)
+static force_inline uint32_t
+convert_0565_to_8888 (uint16_t s)
+{
+    return convert_0565_to_0888 (s) | 0xff000000;
+}
 
 /* Trivial versions that are useful in macros */
-#define CONVERT_8888_TO_8888(s) (s)
-#define CONVERT_x888_TO_8888(s) ((s) | 0xff000000)
-#define CONVERT_0565_TO_0565(s) (s)
+
+static force_inline uint32_t
+convert_8888_to_8888 (uint32_t s)
+{
+    return s;
+}
+
+static force_inline uint32_t
+convert_x888_to_8888 (uint32_t s)
+{
+    return s | 0xff000000;
+}
+
+static force_inline uint16_t
+convert_0565_to_0565 (uint16_t s)
+{
+    return s;
+}
 
 #define PIXMAN_FORMAT_IS_WIDE(f)					\
     (PIXMAN_FORMAT_A (f) > 8 ||						\
      PIXMAN_FORMAT_R (f) > 8 ||						\
      PIXMAN_FORMAT_G (f) > 8 ||						\
-     PIXMAN_FORMAT_B (f) > 8)
+     PIXMAN_FORMAT_B (f) > 8 ||						\
+     PIXMAN_FORMAT_TYPE (f) == PIXMAN_TYPE_ARGB_SRGB)
 
 #ifdef WORDS_BIGENDIAN
 #   define SCREEN_SHIFT_LEFT(x,n)	((x) << (n))
@@ -856,33 +1073,15 @@ unorm_to_unorm (uint32_t val, int from_bits, int to_bits)
     return result;
 }
 
+uint16_t pixman_float_to_unorm (float f, int n_bits);
+float pixman_unorm_to_float (uint16_t u, int n_bits);
+
 /*
  * Various debugging code
  */
 
-#undef DEBUG
-
 #define COMPILE_TIME_ASSERT(x)						\
     do { typedef int compile_time_assertion [(x)?1:-1]; } while (0)
-
-/* Turn on debugging depending on what type of release this is
- */
-#if (((PIXMAN_VERSION_MICRO % 2) == 0) && ((PIXMAN_VERSION_MINOR % 2) == 1))
-
-/* Debugging gets turned on for development releases because these
- * are the things that end up in bleeding edge distributions such
- * as Rawhide etc.
- *
- * For performance reasons we don't turn it on for stable releases or
- * random git checkouts. (Random git checkouts are often used for
- * performance work).
- */
-
-#    define DEBUG
-
-#endif
-
-#ifdef DEBUG
 
 void
 _pixman_log_error (const char *function, const char *message);
@@ -890,7 +1089,7 @@ _pixman_log_error (const char *function, const char *message);
 #define return_if_fail(expr)                                            \
     do                                                                  \
     {                                                                   \
-	if (!(expr))							\
+	if (unlikely (!(expr)))                                         \
 	{								\
 	    _pixman_log_error (FUNC, "The expression " # expr " was false"); \
 	    return;							\
@@ -901,7 +1100,7 @@ _pixman_log_error (const char *function, const char *message);
 #define return_val_if_fail(expr, retval)                                \
     do                                                                  \
     {                                                                   \
-	if (!(expr))                                                    \
+	if (unlikely (!(expr)))                                         \
 	{								\
 	    _pixman_log_error (FUNC, "The expression " # expr " was false"); \
 	    return (retval);						\
@@ -912,38 +1111,34 @@ _pixman_log_error (const char *function, const char *message);
 #define critical_if_fail(expr)						\
     do									\
     {									\
-	if (!(expr))							\
+	if (unlikely (!(expr)))                                         \
 	    _pixman_log_error (FUNC, "The expression " # expr " was false"); \
     }									\
     while (0)
 
+/*
+ * Matrix
+ */
 
-#else
+typedef struct { pixman_fixed_48_16_t v[3]; } pixman_vector_48_16_t;
 
-#define _pixman_log_error(f,m) do { } while (0)				\
+PIXMAN_EXPORT
+pixman_bool_t
+pixman_transform_point_31_16 (const pixman_transform_t    *t,
+                              const pixman_vector_48_16_t *v,
+                              pixman_vector_48_16_t       *result);
 
-#define return_if_fail(expr)						\
-    do                                                                  \
-    {                                                                   \
-	if (!(expr))							\
-	    return;							\
-    }                                                                   \
-    while (0)
+PIXMAN_EXPORT
+void
+pixman_transform_point_31_16_3d (const pixman_transform_t    *t,
+                                 const pixman_vector_48_16_t *v,
+                                 pixman_vector_48_16_t       *result);
 
-#define return_val_if_fail(expr, retval)                                \
-    do                                                                  \
-    {                                                                   \
-	if (!(expr))							\
-	    return (retval);						\
-    }                                                                   \
-    while (0)
-
-#define critical_if_fail(expr)						\
-    do									\
-    {									\
-    }									\
-    while (0)
-#endif
+PIXMAN_EXPORT
+void
+pixman_transform_point_31_16_affine (const pixman_transform_t    *t,
+                                     const pixman_vector_48_16_t *v,
+                                     pixman_vector_48_16_t       *result);
 
 /*
  * Timers
@@ -954,10 +1149,11 @@ _pixman_log_error (const char *function, const char *message);
 static inline uint64_t
 oil_profile_stamp_rdtsc (void)
 {
-    uint64_t ts;
+    uint32_t hi, lo;
 
-    __asm__ __volatile__ ("rdtsc\n" : "=A" (ts));
-    return ts;
+    __asm__ __volatile__ ("rdtsc\n" : "=a" (lo), "=d" (hi));
+
+    return lo | (((uint64_t)hi) << 32);
 }
 
 #define OIL_STAMP oil_profile_stamp_rdtsc
@@ -996,6 +1192,13 @@ void pixman_timer_register (pixman_timer_t *timer);
     timer ## tname.total += OIL_STAMP () - begin ## tname;		\
     }
 
+#else
+
+#define TIMER_BEGIN(tname)
+#define TIMER_END(tname)
+
 #endif /* PIXMAN_TIMERS */
+
+#endif /* __ASSEMBLER__ */
 
 #endif /* PIXMAN_PRIVATE_H */

@@ -22,7 +22,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <pixman-config.h>
 #endif
 #include <string.h>
 #include <stdlib.h>
@@ -37,12 +37,6 @@ noop_composite (pixman_implementation_t *imp,
     return;
 }
 
-static void
-dest_write_back_direct (pixman_iter_t *iter)
-{
-    iter->buffer += iter->image->bits.rowstride;
-}
-
 static uint32_t *
 noop_get_scanline (pixman_iter_t *iter, const uint32_t *mask)
 {
@@ -53,70 +47,101 @@ noop_get_scanline (pixman_iter_t *iter, const uint32_t *mask)
     return result;
 }
 
-static uint32_t *
-get_scanline_null (pixman_iter_t *iter, const uint32_t *mask)
-{
-    return NULL;
+static void
+noop_init_solid_narrow (pixman_iter_t *iter,
+			const pixman_iter_info_t *info)
+{ 
+    pixman_image_t *image = iter->image;
+    uint32_t *buffer = iter->buffer;
+    uint32_t *end = buffer + iter->width;
+    uint32_t color;
+
+    if (iter->image->type == SOLID)
+	color = image->solid.color_32;
+    else
+	color = image->bits.fetch_pixel_32 (&image->bits, 0, 0);
+
+    while (buffer < end)
+	*(buffer++) = color;
 }
 
 static void
-noop_src_iter_init (pixman_implementation_t *imp, pixman_iter_t *iter)
+noop_init_solid_wide (pixman_iter_t *iter,
+		      const pixman_iter_info_t *info)
 {
     pixman_image_t *image = iter->image;
+    argb_t *buffer = (argb_t *)iter->buffer;
+    argb_t *end = buffer + iter->width;
+    argb_t color;
 
-#define FLAGS						\
-    (FAST_PATH_STANDARD_FLAGS | FAST_PATH_ID_TRANSFORM)
-
-    if (!image)
-    {
-	iter->get_scanline = get_scanline_null;
-    }
-    else if ((iter->flags & (ITER_IGNORE_ALPHA | ITER_IGNORE_RGB)) ==
-	     (ITER_IGNORE_ALPHA | ITER_IGNORE_RGB))
-    {
-	iter->get_scanline = _pixman_iter_get_scanline_noop;
-    }
-    else if (image->common.extended_format_code == PIXMAN_a8r8g8b8	&&
-	     (iter->flags & ITER_NARROW)				&&
-	     (image->common.flags & FLAGS) == FLAGS			&&
-	     iter->x >= 0 && iter->y >= 0				&&
-	     iter->x + iter->width <= image->bits.width			&&
-	     iter->y + iter->height <= image->bits.height)
-    {
-	iter->buffer =
-	    image->bits.bits + iter->y * image->bits.rowstride + iter->x;
-
-	iter->get_scanline = noop_get_scanline;
-    }
+    if (iter->image->type == SOLID)
+	color = image->solid.color_float;
     else
-    {
-	(* imp->delegate->src_iter_init) (imp->delegate, iter);
-    }
+	color = image->bits.fetch_pixel_float (&image->bits, 0, 0);
+
+    while (buffer < end)
+	*(buffer++) = color;
 }
 
 static void
-noop_dest_iter_init (pixman_implementation_t *imp, pixman_iter_t *iter)
+noop_init_direct_buffer (pixman_iter_t *iter, const pixman_iter_info_t *info)
 {
     pixman_image_t *image = iter->image;
-    uint32_t image_flags = image->common.flags;
-    uint32_t iter_flags = iter->flags;
-    
-    if ((image_flags & FAST_PATH_STD_DEST_FLAGS) == FAST_PATH_STD_DEST_FLAGS	&&
-	(iter_flags & ITER_NARROW) == ITER_NARROW				&&
-	((image->common.extended_format_code == PIXMAN_a8r8g8b8)	||
-	 (image->common.extended_format_code == PIXMAN_x8r8g8b8 &&
-	  (iter_flags & (ITER_LOCALIZED_ALPHA)))))
-    {
-	iter->buffer = image->bits.bits + iter->y * image->bits.rowstride + iter->x;
 
-	iter->get_scanline = _pixman_iter_get_scanline_noop;
-	iter->write_back = dest_write_back_direct;
-    }
-    else
-    {
-	(* imp->delegate->dest_iter_init) (imp->delegate, iter);
-    }
+    iter->buffer =
+	image->bits.bits + iter->y * image->bits.rowstride + iter->x;
 }
+
+static void
+dest_write_back_direct (pixman_iter_t *iter)
+{
+    iter->buffer += iter->image->bits.rowstride;
+}
+
+static const pixman_iter_info_t noop_iters[] =
+{
+    /* Source iters */
+    { PIXMAN_any,
+      0, ITER_IGNORE_ALPHA | ITER_IGNORE_RGB | ITER_SRC,
+      NULL,
+      _pixman_iter_get_scanline_noop,
+      NULL
+    },
+    { PIXMAN_solid,
+      FAST_PATH_NO_ALPHA_MAP, ITER_NARROW | ITER_SRC,
+      noop_init_solid_narrow,
+      _pixman_iter_get_scanline_noop,
+      NULL,
+    },
+    { PIXMAN_solid,
+      FAST_PATH_NO_ALPHA_MAP, ITER_WIDE | ITER_SRC,
+      noop_init_solid_wide,
+      _pixman_iter_get_scanline_noop,
+      NULL
+    },
+    { PIXMAN_a8r8g8b8,
+      FAST_PATH_STANDARD_FLAGS | FAST_PATH_ID_TRANSFORM |
+          FAST_PATH_BITS_IMAGE | FAST_PATH_SAMPLES_COVER_CLIP_NEAREST,
+      ITER_NARROW | ITER_SRC,
+      noop_init_direct_buffer,
+      noop_get_scanline,
+      NULL
+    },
+    /* Dest iters */
+    { PIXMAN_a8r8g8b8,
+      FAST_PATH_STD_DEST_FLAGS, ITER_NARROW | ITER_DEST,
+      noop_init_direct_buffer,
+      _pixman_iter_get_scanline_noop,
+      dest_write_back_direct
+    },
+    { PIXMAN_x8r8g8b8,
+      FAST_PATH_STD_DEST_FLAGS, ITER_NARROW | ITER_DEST | ITER_LOCALIZED_ALPHA,
+      noop_init_direct_buffer,
+      _pixman_iter_get_scanline_noop,
+      dest_write_back_direct
+    },
+    { PIXMAN_null },
+};
 
 static const pixman_fast_path_t noop_fast_paths[] =
 {
@@ -129,9 +154,8 @@ _pixman_implementation_create_noop (pixman_implementation_t *fallback)
 {
     pixman_implementation_t *imp =
 	_pixman_implementation_create (fallback, noop_fast_paths);
-
-    imp->src_iter_init = noop_src_iter_init;
-    imp->dest_iter_init = noop_dest_iter_init;
+ 
+    imp->iter_info = noop_iters;
 
     return imp;
 }

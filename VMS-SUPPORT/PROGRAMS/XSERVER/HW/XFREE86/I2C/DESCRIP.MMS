@@ -1,4 +1,4 @@
-! Complete upstream libi2c; optional multimedia drivers are separate modules.
+! Complete upstream libi2c; native bus access is supplied by the consuming OS.
 XF86I2C_BUILD_RULES = $(XF86COMMON_BUILD_RULES), -
     [.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.I2C]DESCRIP.MMS
 XF86I2C_OBJECTS = $(OUT).PROGRAMS.XSERVER.HW.XFREE86.I2C]XF86I2C.OBJ

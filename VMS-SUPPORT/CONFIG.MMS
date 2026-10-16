@@ -20,7 +20,8 @@ XKB_DATA_DEST = $(OUT).LIB.X11.XKB]
 XKB_RULES = xorg
 XKB_MODEL = pc105
 XKB_LAYOUT = us
-XKM_OUTPUT_DIR = compiled/
+! Upstream requires an absolute output path, independent of xkbcomp's -R.
+XKM_OUTPUT_DIR = /SYS$SCRATCH/
 ! Optional comma-prefixed upstream keyboard policy, e.g. ,XKB_ALWAYS_USES_SOFT_REPEAT.
 XKB_DDX_DEFINES =
 ! Optional comma-prefixed DDX definitions, e.g. ,DDXBEFORERESET or ,DDXOSINIT.

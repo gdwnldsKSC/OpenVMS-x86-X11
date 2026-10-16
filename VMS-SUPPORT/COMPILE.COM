@@ -26,6 +26,7 @@ $ profiles = profiles + "XT|XMU|"
 $ profiles = profiles + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XF86CONFIG|COMMON|BUS|MISC|XORGXKB|"
 $ profiles = profiles + "LOADER|"
 $ profiles = profiles + "XF86MODES|DDC|I2C|STUB|PCIACCESS|"
+$ profiles = profiles + "PCIACCESS_NATIVE|"
 $ profiles = profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ profiles = profiles + "PIXMAN|CONFIG|"
 $ profiles = profiles + "REGEX|REGEX_MKH|"
@@ -49,6 +50,7 @@ $ IF P4 .EQS. "FONTENC" THEN GOTO fontenc_headers
 $ IF P4 .EQS. "PIXMAN" THEN GOTO pixman_headers
 $ IF P4 .EQS. "XCVT" THEN GOTO xcvt_headers
 $ IF P4 .EQS. "PCIACCESS" THEN GOTO pciaccess_headers
+$ IF P4 .EQS. "PCIACCESS_NATIVE" THEN GOTO pciaccess_headers
 $ inherited_x11 = F$TRNLNM("X11")
 $ inherited_table = F$TRNLNM("X11",,,,,"TABLE_NAME")
 $ IF F$TRNLNM("X11","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
@@ -373,6 +375,8 @@ $ include_directory = "[.VMS-SUPPORT._BUILD.P64.INCLUDE]," + -
     """./VMS-SUPPORT/_BUILD/P64/INCLUDE"""
 $ GOTO compile
 $pciaccess_headers:
+$ IF P4 .EQS. "PCIACCESS_NATIVE" THEN GOSUB pciaccess_native_headers
+$ IF rtl_headers .EQS. "" THEN GOTO done
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]PCIACCESS.H") .EQS. "" THEN GOTO done
 $ include_directory = "[.VMS-SUPPORT.LIB.PCIACCESS],[.VMS-SUPPORT._BUILD.P64.INCLUDE],[.LIB.LIBPCIACCESS.SRC]"
 $ pciaccess_config = F$SEARCH("[.VMS-SUPPORT.LIB.PCIACCESS]CONFIG.H")
@@ -430,6 +434,14 @@ $ IF starlet_headers .EQS. "" THEN rtl_headers = ""
 $ IF (starlet_headers .NES. "") .AND. -
     (F$LOCATE(starlet_headers,rtl_headers) .EQ. F$LENGTH(rtl_headers)) -
     THEN rtl_headers = rtl_headers + "/LIBRARY+" + starlet_headers
+$ RETURN
+$pciaccess_native_headers:
+$ GOSUB os_native_headers
+$ IF rtl_headers .EQS. "" THEN RETURN
+$ executive_headers = F$SEARCH("SYS$LIBRARY:SYS$LIB_C.TLB")
+$ IF executive_headers .EQS. "" THEN rtl_headers = ""
+$ IF executive_headers .EQS. "" THEN RETURN
+$ rtl_headers = rtl_headers + "/LIBRARY+" + executive_headers
 $ RETURN
 $mi_context:
 $! Match upstream relative includes in Xext and RAMDAC wrappers.

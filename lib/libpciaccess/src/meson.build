@@ -34,6 +34,8 @@ elif host == 'sunos'
   _pci_access_host_files += ['solx_devfs.c', 'common_vgaarb_stub.c']
 elif host == 'gnu'
   _pci_access_host_files += ['hurd_pci.c', 'x86_pci.c', 'common_vgaarb_stub.c']
+elif host == 'openvms'
+  _pci_access_host_files += ['openvms_pci.c', 'common_vgaarb_stub.c']
 endif
 
 inc_src = include_directories('.')

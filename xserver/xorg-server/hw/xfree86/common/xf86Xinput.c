@@ -855,6 +855,12 @@ xf86InputDevicePostInit(DeviceIntPtr dev)
 static void
 xf86stat(const char *path, int *maj, int *min)
 {
+#ifdef __VMS
+    /* OpenVMS device identifiers do not encode Unix major/minor numbers. */
+    (void) path;
+    (void) maj;
+    (void) min;
+#else
     struct stat st;
 
     if (stat(path, &st) == -1)
@@ -862,6 +868,7 @@ xf86stat(const char *path, int *maj, int *min)
 
     *maj = major(st.st_rdev);
     *min = minor(st.st_rdev);
+#endif
 }
 
 static inline InputDriverPtr

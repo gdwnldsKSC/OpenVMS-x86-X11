@@ -6,7 +6,7 @@ As parts become buildable, they will be updated and documented here.
   
 ## Buildable parts  
 
-The R7.7 build baseline and selected individual-component updates were validated natively on OpenVMS x86-64 E9.2-4. Xvfb 21.1.25 passed authenticated TCP, unauthenticated-client rejection, RandR, XI2, Sync fences, core drawing, font glyphs and Render checks with Pixman 0.46.4 and libXfont2 2.0.9. VMware 13.4.0, keyboard 2.1.0 and mouse 2.0.0 are library-build validated, not activated hardware drivers. Supporting builds include libxcvt 0.1.3, libXfont 1.5.4, xorgproto 2026.1 and xtrans 1.6.0. X11 uses 64-bit pointers; the standalone GAWK build tool uses 32-bit pointers. The X11 compiler profile preserves external-name case. When changing this profile, use a clean build tree and rebuild all linked objects and libraries together.
+The R7.7 build baseline and selected individual-component updates were validated natively on OpenVMS x86-64 E9.2-4. Xvfb 21.1.25 passed authenticated TCP, unauthenticated-client rejection, RandR, XI2, Sync fences, core drawing, font glyphs and Render checks with Pixman 0.46.4 and libXfont2 2.0.9. VMware 13.4.0 passed native loadable-module activation, video initialization and graceful teardown on the development VM; the checkerboard root window and normal brightness were visually confirmed. Keyboard 2.1.0 and mouse 2.0.0 remain library-build validated, not activated public hardware drivers. Supporting builds include libxcvt 0.1.3, libXfont 1.5.4, xorgproto 2026.1 and xtrans 1.6.0. X11 uses 64-bit pointers; the standalone GAWK build tool uses 32-bit pointers. The X11 compiler profile preserves external-name case. When changing this profile, use a clean build tree and rebuild all linked objects and libraries together.
   
 XAU. Produces `XAU.OLB` - all eight standard Xau modules; optional Kerberos support excluded.  
 XDMCP. Produces `XDMCP.OLB` - all eight standard Xdmcp modules; optional `HASXDMAUTH` wrapping excluded.  
@@ -88,6 +88,8 @@ XKB_DATA. Stages 271 files from the release's xkeyboard-config 2.6 data, includi
 XT. Produces `XT.OLB` — complete static Xt, with P64 host types and generated string tables.  
 XMU. Produces `XMU.OLB` — complete static Xmu.  
 XVFB - 21.1.25. Produces `XVFB.EXE` - headless Render/XKB/X Input/XI2 server with RandR, Shape, XFixes, Damage, XTest, Sync, XC-MISC, BIG-REQUESTS and Generic Events extensions, linked with VSI SSL3's P64 libcrypto.  
+XORG - 21.1.25. Builds the video-only native server as `XORG.EXE` and `XORG_SHR.EXE`, with `vmware_drv.so`, `libvgahw.so`, and `libshadowfb.so` loadable images. Uses the upstream module loader with native image support and a separate P64_XORG build profile; builds its XKB data/compiler dependencies automatically. No physical keyboard/mouse modules, installation, or boot changes. Native build, module activation, 1600x1200 video initialization, idle waiting and graceful teardown passed; the checkerboard root window and normal brightness were visually confirmed.  
+XORG_MODULES. Builds the same video-only image set together, keeping the module imports matched to the shared core.  
 XF86_VIDEO_VMWARE - 13.4.0. Produces `VMWARE_DRV.OLB` — all nine objects of the non-DRM profile from xf86-video-vmware, with 64-bit pointers and module metadata; native packing for Xv command structures. The consuming server supplies XFree86 and loader services. Does not link or activate the driver.  
 SHADOWFB - 21.1.25. Produces `SHADOWFB.OLB` — both unchanged upstream XFree86 shadowfb objects, including module metadata and Render before/after drawing callbacks used by VMware. Separate from `SHADOW`.  
 VGAHW - 21.1.25. Produces `VGAHW.OLB` — both unchanged upstream XFree86 VGA hardware support objects with 64-bit pointers, including module metadata. The consuming server supplies port I/O and XFree86 services. Does not access hardware during the build.  
@@ -98,10 +100,10 @@ XF86MODES - 21.1.25. Produces `XF86MODES.OLB` - all eight upstream mode-setting 
 DDC - 21.1.25. Produces `DDC.OLB` — all four unchanged upstream display-identification modules with 64-bit pointers; native bus access remains a consumer input.  
 I2C - 21.1.25. Produces `I2C.OLB` — the unchanged upstream core I2C bus module with 64-bit pointers; optional multimedia-device libraries are separate.  
 LOADER - 21.1.25. Produces `LOADER.OLB` - both upstream loader objects, with filesystem module discovery and dynamic-loading entry points. The consuming server supplies image activation, global symbol lookup and exported symbols.  
-PCIACCESS - 0.19. Produces `PCIACCESS.OLB` — nine portable common modules plus a native OpenVMS x86-64 read-only backend, with 64-bit pointers and the VGA-arbitration stub. Native E9.2-4 checks passed for enumeration, configuration reads and cleanup/reinitialization. The backend requires installed OS headers, `LINK/SYSEXE` and CMKRNL privilege; only PCI segment zero is supported. Resource probing, writes, ROM reads, mappings and port I/O remain unsupported, so it is not yet sufficient for VMware/Xorg graphics. Define the MMS macro `PCIACCESS_EXTERNAL_BACKEND` to retain a consumer-supplied provider. Meson host selection is included but its OpenVMS toolchain is unvalidated.\
+PCIACCESS - 0.19. Produces `PCIACCESS.OLB` — nine portable common modules plus the native OpenVMS x86-64 backend and port-I/O leaf, with 64-bit pointers and the VGA-arbitration stub. Enumeration/configuration reads remain read-only by default. Explicit selection and exclusive ownership of a VMware SVGA2 device enable bounded BAR probing, mappings, port I/O and restricted configuration writes; only PCI segment zero is supported and ROM execution is unavailable. Requires installed OS headers, `LINK/SYSEXE` and the corresponding native privileges. The video paths were exercised through Xorg initialization and graceful teardown on the development VMware SVGA2 VM. Define `PCIACCESS_EXTERNAL_BACKEND` for a consumer-supplied provider. OpenVMS uses the native MMS mixed CC/clang build; Meson deliberately rejects that unsupported toolchain combination.  
 BUS - 21.1.25. Produces `BUS.OLB` - both objects of the upstream generic XFree86 bus library; the consuming platform supplies PCI access, resource sizes and address translation.  
 MISC - 21.1.25. Produces `MISC.OLB` - the unchanged upstream portable `SlowBcopy.c` module; OS services remain consumer inputs.  
-STUB - 21.1.25. Produces `STUB.OLB` - three unchanged upstream XFree86 OS-support objects: `vidmem`, `VTsw_noop`, and `stub_bell`, with 64-bit pointers. Native hardware and OS services remain consumer inputs.  
+STUB - 21.1.25. Produces `STUB.OLB` - four unchanged upstream XFree86 OS-support objects: `vidmem`, `VTsw_noop`, `stub_bell`, and `pm_noop`, with 64-bit pointers. Native hardware and OS services remain consumer inputs.  
 XORGXKB - 21.1.25. Produces `XORGXKB.OLB` — all three unchanged XFree86 keyboard-action modules with 64-bit pointers; the consuming server supplies action dispatch. Replaces, rather than accompanies, the generic XKB DDX stubs at link time.  
 XF86_INPUT_KEYBOARD - 2.1.0. Produces `KBD_DRV.OLB` — the unchanged upstream keyboard driver and AT scan-code helper with 64-bit pointers and module metadata; the consuming server supplies native keyboard services and key mapping.  
 XF86_INPUT_MOUSE - 2.0.0. Produces `MOUSE_DRV.OLB` — both unchanged upstream mouse driver sources with 64-bit pointers and module metadata; `COMMON.OLB` supplies input buffering, and the consuming server supplies native mouse and serial services.  
@@ -194,6 +196,8 @@ $ @[.VMS-SUPPORT]BUILD RUNTIME
 $ @[.VMS-SUPPORT]BUILD XT  
 $ @[.VMS-SUPPORT]BUILD XMU  
 $ @[.VMS-SUPPORT]BUILD XVFB  
+$ @[.VMS-SUPPORT]BUILD XORG  
+$ @[.VMS-SUPPORT]BUILD XORG_MODULES  
 $ @[.VMS-SUPPORT]BUILD XF86_VIDEO_VMWARE  
 $ @[.VMS-SUPPORT]BUILD SHADOWFB  
 $ @[.VMS-SUPPORT]BUILD VGAHW  
@@ -220,3 +224,5 @@ Native x86-64 X11 libraries and servers with 64-bit pointers; the standalone GAW
 Build from the repository root with `@[.VMS-SUPPORT]BUILD`.  
 COMMON builds bundled GNU Gawk 5.4.1 automatically to run the upstream default-mode generator.  
 XKBCOMP builds bundled GNU Bison 1.35 automatically; no separate download or BISON command setup is required.  
+XORG also requires VSI clang for the small port-I/O leaf, compiled with the kernel-stack red zone disabled. The native MMS build generates its own image exports and links all selected video modules; no host-side generator is needed.  
+For a foreground display-only test, run `@[.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.OPENVMS]RUN_XORG domain:bus:device.function SERIAL_CONSOLE` from SSH or serial console. The PCI address is hexadecimal. This requires CMKRNL, PFNMAP and SYSLCK, serial OPA0, and exclusive use of the selected VMware SVGA2 display; stop any existing graphics server first. It shows the root window without X listeners or physical input.  

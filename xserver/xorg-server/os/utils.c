@@ -1758,6 +1758,7 @@ System(const char *cmdline)
 }
 #endif
 
+#ifndef __VMS
 Bool
 PrivsElevated(void)
 {
@@ -1820,6 +1821,7 @@ PrivsElevated(void)
     }
     return privsElevated;
 }
+#endif
 
 /*
  * CheckUserParameters: check for long command line arguments and long

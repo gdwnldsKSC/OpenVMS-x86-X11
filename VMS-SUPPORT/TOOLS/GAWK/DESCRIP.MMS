@@ -1,6 +1,6 @@
 ! GNU Gawk's supplied native OpenVMS build, with isolated generated files.
 GAWK_SOURCE = [.EXTRAS.GAWK]
-GAWK_OUT = [.VMS-SUPPORT._BUILD.P64.TOOLS.GAWK]
+GAWK_OUT = $(OUT).TOOLS.GAWK]
 GAWK_CCFLAGS = /NOPOINTER_SIZE
 
 GAWK : $(GAWK_OUT)GAWK.EXE

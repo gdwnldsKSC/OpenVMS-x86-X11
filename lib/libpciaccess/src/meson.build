@@ -35,7 +35,10 @@ elif host == 'sunos'
 elif host == 'gnu'
   _pci_access_host_files += ['hurd_pci.c', 'x86_pci.c', 'common_vgaarb_stub.c']
 elif host == 'openvms'
-  _pci_access_host_files += ['openvms_pci.c', 'common_vgaarb_stub.c']
+  error('OpenVMS PCI video support requires the native VMS-SUPPORT MMS build: ' +
+        'VSI CC with 64-bit pointers and case-preserving names for the SDK ' +
+        'backend, and VSI clang -mno-red-zone for openvms_pci_port.c. ' +
+        'The mixed-toolchain Meson build is not implemented.')
 endif
 
 inc_src = include_directories('.')

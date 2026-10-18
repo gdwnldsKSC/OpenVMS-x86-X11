@@ -3,7 +3,7 @@ $ SET NOON
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
 $ result = 2
-$ IF (P1 .NES. "") .OR. (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. -
+$ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. -
      (P5 .NES. "") .OR. (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
 $ IF F$TRNLNM("LNK$LIBRARY") .NES. "" THEN GOTO libraries
 $ index = 1
@@ -12,6 +12,7 @@ $ IF F$TRNLNM("LNK$LIBRARY_" + F$STRING(index)) .NES. "" THEN GOTO libraries
 $ index = index + 1
 $ IF index .LE. 999 THEN GOTO check_libraries
 $ base = "[.VMS-SUPPORT._BUILD.P64.LIB.REGEX]"
+$ IF P1 .NES. "" THEN base = P1
 $ LINK/NOTRACEBACK/FULL/MAP='base'MKH.MAP/EXE='base'MKH.EXE 'base'MKH.OBJ
 $ result = $STATUS
 $ GOTO done

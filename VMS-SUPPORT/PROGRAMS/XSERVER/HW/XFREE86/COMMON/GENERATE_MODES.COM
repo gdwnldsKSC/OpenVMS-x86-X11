@@ -3,13 +3,15 @@ $ SET NOON
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
 $ result = 2
-$ IF (P1 .NES. "") .OR. (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. -
+$ IF (P3 .NES. "") .OR. (P4 .NES. "") .OR. -
      (P5 .NES. "") .OR. (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
 $ awk_image = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.TOOLS.GAWK]GAWK.EXE")
+$ IF P1 .NES. "" THEN awk_image = F$SEARCH(P1)
 $ IF awk_image .EQS. "" THEN GOTO missing_awk
 $ AWK = "$" + awk_image
 $ source = "[.XSERVER.XORG-SERVER.HW.XFREE86.COMMON]"
 $ base = "[.VMS-SUPPORT._BUILD.P64.PROGRAMS.XSERVER.HW.XFREE86.COMMON]"
+$ IF P2 .NES. "" THEN base = P2
 $ generator = source + "MODELINE2C.AWK"
 $ vesa = source + "VESAMODES."
 $ extra = source + "EXTRAMODES."

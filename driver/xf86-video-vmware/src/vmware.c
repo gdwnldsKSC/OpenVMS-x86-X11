@@ -368,6 +368,7 @@ VMWAREPreInit(ScrnInfoPtr pScrn, int flags)
 #ifdef HAVE_XORG_SERVER_1_12_0
     vgaHWSetStdFuncs(VGAHWPTR(pScrn));
 #endif
+    vgaHWGetIOBase(VGAHWPTR(pScrn));
 
     /*
      * Save the current video state.  Do it here before VMXGetVMwareSvgaId

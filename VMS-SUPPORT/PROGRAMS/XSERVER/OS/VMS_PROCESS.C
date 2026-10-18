@@ -77,6 +77,13 @@ VmsProcessAllowed(void)
     return 1;
 }
 
+/* Native elevation is image-added privileges or rights, not a Unix saved UID. */
+Bool
+PrivsElevated(void)
+{
+    return !VmsProcessAllowed();
+}
+
 /* system() is non-reentrant; the translation callback has no context argument. */
 #define VMS_COMMAND_LIMIT 4096
 static char VmsImageName[VMS_COMMAND_LIMIT];

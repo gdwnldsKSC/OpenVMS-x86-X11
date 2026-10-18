@@ -4,6 +4,8 @@ $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
 $ result = 2
 $ scoped = 0
+$ build_profile = "P64"
+$ IF F$LOCATE("._BUILD.P64_XORG.",F$EDIT(P2,"UPCASE")) .LT. F$LENGTH(P2) THEN build_profile = "P64_XORG"
 $ IF (P1 .EQS. "") .OR. (P2 .EQS. "") .OR. (P3 .EQS. "") THEN GOTO done
 $ IF (P5 .NES. "") .OR. (P6 .NES. "") .OR. -
      (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO done
@@ -22,8 +24,8 @@ $ IF F$EDIT(F$PARSE(P1,,,"DIRECTORY"),"UPCASE") .NES. -
 $ IF F$EDIT(F$PARSE(P1,,,"TYPE"),"UPCASE") .NES. ".C" THEN GOTO done
 $ rtl_headers = F$SEARCH("SYS$LIBRARY:DECC$RTLDEF.TLB")
 $ IF rtl_headers .EQS. "" THEN GOTO done
-$ IF F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE]FT2BUILD.H") .EQS. "" THEN GOTO done
-$ header = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.INCLUDE.FREETYPE2.FREETYPE]FREETYPE.H")
+$ IF F$SEARCH("[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE]FT2BUILD.H") .EQS. "" THEN GOTO done
+$ header = F$SEARCH("[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.FREETYPE2.FREETYPE]FREETYPE.H")
 $ IF header .EQS. "" THEN GOTO done
 $ headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")
 $ inherited_freetype = F$TRNLNM("FREETYPE")
@@ -31,9 +33,9 @@ $ inherited_table = F$TRNLNM("FREETYPE",,,,,"TABLE_NAME")
 $ IF F$TRNLNM("FREETYPE","LNM$PROCESS",0,"USER",,"ACCESS_MODE") .EQS. "USER" THEN GOTO done
 $! Group headers/bodies precede exports, including gzip's modified zlib headers.
 $ include_directory = source_directory + "," + -
-    "[.VMS-SUPPORT._BUILD.P64.INCLUDE]," + -
-    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.FREETYPE2]," + -
-    "[.VMS-SUPPORT._BUILD.P64.INCLUDE.FREETYPE2.FREETYPE.CONFIG],[.EXTRAS.FREETYPE.SRC]"
+    "[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE]," + -
+    "[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.FREETYPE2]," + -
+    "[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.FREETYPE2.FREETYPE.CONFIG],[.EXTRAS.FREETYPE.SRC]"
 $ DEFINE/USER_MODE/TABLE=LNM$PROCESS FREETYPE 'headers'
 $ scoped = 1
 $ IF F$TRNLNM("FREETYPE","LNM$FILE_DEV") .NES. headers THEN GOTO done

@@ -29,7 +29,7 @@ $ targets = targets + "LOADER|XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ targets = targets + "XF86MODES|DDC|I2C|STUB|PCIACCESS|"
 $ targets = targets + "PIXMAN|CONFIG|GAWK|"
 $ targets = targets + "REGEX|"
-$ targets = targets + "XFONT2|XCVT|"
+$ targets = targets + "XFONT2|XCVT|XORG|XORG_MODULES|"
 $ IF (P2 .NES. "") .OR. (P3 .NES. "") .OR. (P4 .NES. "") .OR. (P5 .NES. "") .OR. -
      (P6 .NES. "") .OR. (P7 .NES. "") .OR. (P8 .NES. "") THEN GOTO usage
 $ IF F$LOCATE("|",target) .NE. F$LENGTH(target) THEN GOTO usage
@@ -41,11 +41,19 @@ $ support_directory = F$PARSE(procedure,,,"DEVICE") + F$PARSE(procedure,,,"DIREC
 $ SET DEFAULT 'support_directory'
 $ SET DEFAULT [-]
 $ IF F$SEARCH("[.PROTO.XORGPROTO.INCLUDE.X11]XFUNCPROTO.H") .EQS. "" THEN GOTO missing_source
+$ IF (target .NES. "XORG") .AND. (target .NES. "XORG_MODULES") THEN GOTO runtime_ready
+$ @[.VMS-SUPPORT]BUILD.COM XKBCOMP
+$ IF .NOT. $STATUS THEN GOTO failed
+$ @[.VMS-SUPPORT]BUILD.COM XKB_DATA
+$ IF .NOT. $STATUS THEN GOTO failed
+$runtime_ready:
 $ step = "create output directories"
 $ IF F$SEARCH("[.VMS-SUPPORT]_BUILD.DIR") .EQS. "" THEN CREATE/DIRECTORY [.VMS-SUPPORT._BUILD]
-$ profile = "[.VMS-SUPPORT._BUILD.P64"
+$ profile_name = "P64"
+$ IF (target .EQS. "XORG") .OR. (target .EQS. "XORG_MODULES") THEN profile_name = "P64_XORG"
+$ profile = "[.VMS-SUPPORT._BUILD." + profile_name
 $ directory = profile + "]"
-$ IF F$SEARCH("[.VMS-SUPPORT._BUILD]P64.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ IF F$SEARCH("[.VMS-SUPPORT._BUILD]" + profile_name + ".DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE]"
 $ IF F$SEARCH(profile + "]INCLUDE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".INCLUDE.FREETYPE2]"
@@ -350,6 +358,23 @@ $ directory = profile + ".DRIVER.XF86-INPUT-KEYBOARD]"
 $ IF F$SEARCH(profile + ".DRIVER]XF86-INPUT-KEYBOARD.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".DRIVER.XF86-INPUT-MOUSE]"
 $ IF F$SEARCH(profile + ".DRIVER]XF86-INPUT-MOUSE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ IF profile_name .EQS. "P64" THEN GOTO component_build
+$ directory = profile + ".PROGRAMS.XSERVER.HW.XFREE86.OS-SUPPORT.OPENVMS]"
+$ IF F$SEARCH(profile + ".PROGRAMS.XSERVER.HW.XFREE86.OS-SUPPORT]OPENVMS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".IMAGES]"
+$ IF F$SEARCH(profile + "]IMAGES.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".LINK]"
+$ IF F$SEARCH(profile + "]LINK.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".IMAGES.MODULES]"
+$ IF F$SEARCH(profile + ".IMAGES]MODULES.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".IMAGES.MODULES.DRIVERS]"
+$ IF F$SEARCH(profile + ".IMAGES.MODULES]DRIVERS.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".IMAGES.CONFIG_D]"
+$ IF F$SEARCH(profile + ".IMAGES]CONFIG_D.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS/MACRO=("OUT=[.VMS-SUPPORT._BUILD.P64_XORG","XKB_BIN_DIRECTORY=./VMS-SUPPORT/_BUILD/P64/LIB/X11/XKB") 'target'
+$ result = $STATUS
+$ GOTO done
+$component_build:
 $ MMS/DESCRIPTION=[.VMS-SUPPORT]DESCRIP.MMS 'target'
 $ result = $STATUS
 $ GOTO done

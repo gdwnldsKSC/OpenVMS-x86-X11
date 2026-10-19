@@ -1,6 +1,7 @@
-/* Original OpenVMS Xorg video-only platform support.
+/* Original OpenVMS Xorg platform support.
  * The operator must reserve the display and use serial OPA0. libpciaccess
  * owns the device lease and bounds every privileged hardware operation.
+ * Physical input is optional and requires its own exclusive i8042 assertion.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +11,7 @@
 #define XF86_OS_PRIVS
 #include "xf86_OSproc.h"
 #include "opaque.h"
+#include "openvms_input.h"
 
 static int console_open;
 static int cleanup_registered;
@@ -19,18 +21,27 @@ void
 xf86OpenConsole(void)
 {
     const char *exclusive = getenv("PCIACCESS_OPENVMS_EXCLUSIVE");
+    const char *input = getenv("XORG_OPENVMS_INPUT");
+    if (input && !strcmp(input, "DISABLED"))
+        input = NULL;
     if (!exclusive || strcmp(exclusive, "1"))
         FatalError("OpenVMS Xorg requires exclusive video ownership and serial OPA0\n");
+    if (input && strcmp(input, "I8042_SERIAL_CONSOLE"))
+        FatalError("OpenVMS Xorg requires explicit exclusive i8042 input ownership\n");
     if (console_open)
         return;
     console_open = 1;
     xf86Info.consoleFd = -1;
     xf86Info.vtno = -1;
+    if (input)
+        OpenVMSInputRegister();
 }
 
 void
 xf86CloseConsole(void)
 {
+    if (!OpenVMSInputStop())
+        ErrorF("OpenVMS input stop failed; console recovery may require reboot\n");
     OpenVMSClosePortIO();
     pci_system_cleanup();
     console_open = 0;

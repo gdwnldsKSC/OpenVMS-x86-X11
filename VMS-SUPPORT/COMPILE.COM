@@ -425,11 +425,23 @@ $ IF freetype_scoped .AND. -
     (F$TRNLNM("FREETYPE",,,,,"TABLE_NAME") .NES. inherited_freetype_table) THEN result = 2
 $ GOTO done
 $xorg_profile:
+$ IF F$LOCATE("OS-SUPPORT.OPENVMS",F$EDIT(P1,"UPCASE")) .LT. F$LENGTH(P1) THEN GOSUB os_native_headers
 $ xorg_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|SYNC|RANDR|DBE|RECORD|XFIXES|COMPOSITE|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|ROOTLESS|"
 $ xorg_profiles = xorg_profiles + "XF86CONFIG|SHADOWFB|VGAHW|RAMDAC|COMMON|BUS|MISC|XORGXKB|LOADER|XF86MODES|DDC|I2C|STUB|CONFIG|XF86_VIDEO_VMWARE|"
+$ xorg_profiles = xorg_profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ IF F$LOCATE("|" + P4 + "|",xorg_profiles) .EQ. F$LENGTH(xorg_profiles) THEN RETURN
 $ xorg_include = "[.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.OPENVMS]SERVER_PROFILE.H"
-$ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN xorg_include = "[.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.OPENVMS]DRIVER_PROFILE.H"
+$ xorg_external = (P4 .EQS. "XF86_VIDEO_VMWARE") .OR. -
+    (P4 .EQS. "XF86_INPUT_KEYBOARD") .OR. (P4 .EQS. "XF86_INPUT_MOUSE")
+$ xorg_input = (P4 .EQS. "COMMON") .AND. -
+    (F$EDIT(F$PARSE(P1,,,"NAME"),"UPCASE") .EQS. "OPENVMS_INPUT")
+$ IF xorg_input THEN include_directory = include_directory + -
+    ",[.DRIVER.XF86-INPUT-KEYBOARD.SRC],[.DRIVER.XF86-INPUT-MOUSE.SRC]," + -
+    "[.DRIVER.XF86-INPUT-MOUSE.INCLUDE]"
+$ IF xorg_external .OR. xorg_input THEN -
+    xorg_include = "[.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.OPENVMS]DRIVER_PROFILE.H"
+$ IF xorg_external .OR. xorg_input THEN -
+    first_include = "/FIRST_INCLUDE=[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE]XORG-SERVER.H"
 $ xorg_include = F$SEARCH(xorg_include)
 $ IF xorg_include .EQS. "" THEN rtl_headers = ""
 $ IF rtl_headers .EQS. "" THEN RETURN
@@ -437,7 +449,6 @@ $ IF (P4 .EQS. "LOADER") .AND. (F$EDIT(F$PARSE(P1,,,"NAME"),"UPCASE") .EQS. "LOA
     THEN xorg_include = xorg_include + "," + F$SEARCH("[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.OPENVMS]OPENVMS_LOADER.H")
 $ IF (P4 .EQS. "OS") .AND. (F$EDIT(F$PARSE(P1,,,"NAME"),"UPCASE") .EQS. "OSPOLL") -
     THEN xorg_include = xorg_include + "," + F$SEARCH("[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.OPENVMS]OPENVMS_POLL.H")
-$ IF F$LOCATE("OS-SUPPORT.OPENVMS",F$EDIT(P1,"UPCASE")) .LT. F$LENGTH(P1) THEN GOSUB os_native_headers
 $ include_directory = "[.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.OPENVMS]," + -
     "[.XSERVER.XORG-SERVER.HW.XFREE86.OS-SUPPORT.OPENVMS]," + include_directory
 $ IF first_include .EQS. "/NOFIRST_INCLUDE" THEN GOTO xorg_first_only

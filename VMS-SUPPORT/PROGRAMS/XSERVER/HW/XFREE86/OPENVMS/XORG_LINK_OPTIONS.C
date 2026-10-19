@@ -373,7 +373,7 @@ static void generate(const char *prefix)
         fprintf(script, "    /%s=%s -\n", images[role].executable ? "EXECUTABLE" : "SHAREABLE", images[role].path);
         fprintf(script, "    %s%s.OPT/OPTIONS\n$ IF .NOT. $STATUS THEN GOTO failed\n", prefix, id);
     }
-    fprintf(script, "$ WRITE SYS$OUTPUT \"Xorg and loadable display modules linked\"\n$ EXIT 1\n$failed:\n$ EXIT 2\n");
+    fprintf(script, "$ WRITE SYS$OUTPUT \"Xorg and loadable modules linked\"\n$ EXIT 1\n$failed:\n$ EXIT 2\n");
     close_output(script);
 }
 

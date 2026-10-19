@@ -1,13 +1,15 @@
-$! Foreground, display-only VMware test. Run from a serial console or SSH.
+$! Foreground VMware test. Run from a serial console or SSH.
 $! P1 is hexadecimal domain:bus:device.function; P2 must be SERIAL_CONSOLE.
-$! P3 is an optional display number, default 0. No input or X listeners.
+$! P3 is an optional display number, default 0. No X listeners.
+$! P4=I8042 opts into exclusive PS/2 keyboard/mouse input; default is video only.
 $ ON ERROR THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
 $ result = 2
 $ old_default = F$ENVIRONMENT("DEFAULT")
 $ default_changed = 0
 $ IF P1 .EQS. "" .OR. P2 .NES. "SERIAL_CONSOLE" THEN GOTO usage
-$ IF P4 .NES. "" .OR. P5 .NES. "" .OR. P6 .NES. "" THEN GOTO usage
+$ IF P4 .NES. "" .AND. P4 .NES. "I8042" THEN GOTO usage
+$ IF P5 .NES. "" .OR. P6 .NES. "" THEN GOTO usage
 $ IF P7 .NES. "" .OR. P8 .NES. "" THEN GOTO usage
 $ bdf = F$EDIT(P1,"UPCASE")
 $ characters = "0123456789ABCDEF:."
@@ -56,7 +58,17 @@ $ core = F$SEARCH(image_dir + "XORG_SHR.EXE")
 $ vgahw = F$SEARCH(module_dir + "libvgahw.so")
 $ shadowfb = F$SEARCH(module_dir + "libshadowfb.so")
 $ driver = F$SEARCH(module_dir - "]" + ".DRIVERS]vmware_drv.so")
-$ config = F$SEARCH(config_dir + "VIDEO.CONF")
+$ config_name = "VIDEO.CONF"
+$ input_mode = "DISABLED"
+$ keyboard = ""
+$ mouse = ""
+$ IF P4 .EQS. "I8042" THEN config_name = "INPUT.CONF"
+$ IF P4 .EQS. "I8042" THEN input_mode = "I8042_SERIAL_CONSOLE"
+$ IF P4 .EQS. "I8042" THEN keyboard = F$SEARCH(module_dir - "]" + ".INPUT]kbd_drv.so")
+$ IF P4 .EQS. "I8042" THEN mouse = F$SEARCH(module_dir - "]" + ".INPUT]mouse_drv.so")
+$ IF P4 .EQS. "I8042" .AND. keyboard .EQS. "" THEN GOTO missing_files
+$ IF P4 .EQS. "I8042" .AND. mouse .EQS. "" THEN GOTO missing_files
+$ config = F$SEARCH(config_dir + config_name)
 $ xkbcomp = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.LIB.X11.XKB]XKBCOMP.EXE")
 $ IF server .EQS. "" .OR. core .EQS. "" THEN GOTO missing_files
 $ IF vgahw .EQS. "" .OR. shadowfb .EQS. "" .OR. driver .EQS. "" THEN GOTO missing_files
@@ -77,16 +89,18 @@ $ DEFINE/USER_MODE/PROCESS XORG_CONFIG "''config_dir'"
 $ DEFINE/USER_MODE/PROCESS XORG_CONFIG_D "''config_d'"
 $ DEFINE/USER_MODE/PROCESS PCIACCESS_OPENVMS_DEVICE "''bdf'"
 $ DEFINE/USER_MODE/PROCESS PCIACCESS_OPENVMS_EXCLUSIVE "1"
+$ DEFINE/USER_MODE/PROCESS XORG_OPENVMS_INPUT "''input_mode'"
 $ MCR 'server' "''display'" "-displayonly" "-retro" "-noreset" -
-    "-modulepath" "/XORG_MODULES" "-config" "/XORG_CONFIG/VIDEO.CONF" -
+    "-modulepath" "/XORG_MODULES" "-config" "/XORG_CONFIG/''config_name'" -
     "-configdir" "/XORG_CONFIG_D" -
     "-xkbdir" "./VMS-SUPPORT/_BUILD/P64/LIB/X11/XKB" -
     "-logfile" "''logfile'" "-fp" "built-ins" "-s" "0"
 $ result = $STATUS
 $ GOTO done
 $usage:
-$ WRITE SYS$ERROR "Usage: @RUN_XORG domain:bus:device.function SERIAL_CONSOLE [display]"
+$ WRITE SYS$ERROR "Usage: @RUN_XORG domain:bus:device.function SERIAL_CONSOLE [display] [I8042]"
 $ WRITE SYS$ERROR "SERIAL_CONSOLE confirms serial OPA0 and exclusive ownership of the display."
+$ WRITE SYS$ERROR "I8042 additionally confirms exclusive ownership of the PS/2 keyboard and mouse."
 $ GOTO done
 $wrong_location:
 $ WRITE SYS$ERROR "RUN_XORG.COM must remain in VMS-SUPPORT/PROGRAMS/XSERVER/HW/XFREE86/OPENVMS."

@@ -6,7 +6,12 @@ As parts become buildable, they will be updated and documented here.
   
 ## Buildable parts  
 
-The R7.7 build baseline and selected individual-component updates were validated natively on OpenVMS x86-64 E9.2-4. Xvfb 21.1.25 passed authenticated TCP, unauthenticated-client rejection, RandR, XI2, Sync fences, core drawing, font glyphs and Render checks with Pixman 0.46.4 and libXfont2 2.0.9. VMware 13.4.0 passed native loadable-module activation, video initialization and graceful teardown on the development VM; the checkerboard root window and normal brightness were visually confirmed. Keyboard 2.1.0 and mouse 2.0.0 have loadable-module support with unchanged upstream drivers and original OpenVMS PS/2 acquisition support; native module activation and read-only keyboard-map checks pass, and fixed-speed pointer movement was confirmed with 1:1 pointer controls. Full physical keyboard/CDE validation remains incomplete. Supporting builds include libxcvt 0.1.3, libXfont 1.5.4, xorgproto 2026.1 and xtrans 1.6.0. X11 uses 64-bit pointers; the standalone GAWK build tool uses 32-bit pointers. The X11 compiler profile preserves external-name case. When changing this profile, use a clean build tree and rebuild all linked objects and libraries together.
+The R7.7 build baseline and selected individual-component updates were validated natively on OpenVMS x86-64 E9.2-4.  
+Xvfb 21.1.25 passed authenticated TCP, unauthenticated-client rejection, RandR, XI2, Sync fences, core drawing, font glyphs and Render checks with Pixman 0.46.4 and libXfont2 2.0.9.  
+VMware 13.4.0 passed native loadable-module activation, video initialization and graceful teardown on the development VM.  
+Keyboard 2.1.0 and mouse 2.0.0 have loadable-module support with unchanged upstream drivers and original OpenVMS PS/2 acquisition support.  
+Supporting builds include libxcvt 0.1.3, libXfont 1.5.4, xorgproto 2026.1 and xtrans 1.6.0. X11 uses 64-bit pointers; the standalone GAWK build tool uses 32-bit pointers.  
+The X11 compiler profile preserves external-name case. When changing this profile, use a clean build tree and rebuild all linked objects and libraries together.  
   
 XAU. Produces `XAU.OLB` - all eight standard Xau modules; optional Kerberos support excluded.  
 XDMCP. Produces `XDMCP.OLB` - all eight standard Xdmcp modules; optional `HASXDMAUTH` wrapping excluded.  

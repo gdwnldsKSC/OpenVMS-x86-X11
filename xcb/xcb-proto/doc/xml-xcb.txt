@@ -65,8 +65,8 @@ Top-Level Elements
 
   This element represents a data structure.  The name attribute gives the name
   of the structure.  The content represents the fields of the structure, and
-  consists of one or more of the field, pad, and list elements described in
-  the section "Structure Contents" below.
+  consists of one or more of the length, field, pad, and list elements described
+  in the section "Structure Contents" below.
 
 <union name="identifier">structure contents</union>
 
@@ -75,6 +75,12 @@ Top-Level Elements
   content represents the fields of the union, and consists of one or more of
   the field and pad elements described in the section "Structure Contents
   below".
+
+<eventstruct name="identifier">event-type-selector list</struct>
+
+  This element represents a data structure that is the wire-representation of
+  an event. The event can be any type that's selected by the
+  event-type-selector list.
 
 <xidtype name="identifier" />
 
@@ -128,7 +134,8 @@ Top-Level Elements
   requests of the same type may be combined into a single request without
   affecting the semantics of the requests.
 
-<event name="identifier" number="integer" [no-sequence-number="true"]>
+<event name="identifier" number="integer"
+       [[no-sequence-number="true"] | [xge="true"]]>
   structure contents
 </event>
 
@@ -141,6 +148,11 @@ Top-Level Elements
   If the optional no-sequence-number attribute is true, the event does not
   include a sequence number.  This is a special-case for the KeymapNotify
   event in the core protocol, and should not be used in any other event.
+
+  If the optional xge attribute is true, the event is an X Generic Event and
+  will be treated as such.
+
+  The no-sequence-number and xge attribute can not be combined.
 
 <error name="identifier" number="integer">
   structure contents
@@ -178,22 +190,55 @@ separated by a single colon.  For example, to refer to the PIXMAP type defined
 in glx rather than the one defined in xproto, use type="glx:PIXMAP" rather
 than type="PIXMAP".
 
-Note: Most of the below may optionally contain an enum, altenum, or mask
+Note: Most of the below may optionally contain an enum, altenum, mask or altmask
 attribute, which follows the above rules for "type". "enum" is an exhaustive
 enum; the value is restricted to one of the constants named in the enum.
 "altenum" may be one of the values contained in the enum, but it need not be.
-"mask" refers to an enum to be used as a bitmask.
+"mask" refers to an exhaustive enum to be used as a bitmask.
+"altmask" may be a mask from the referred enum, but it need not be.
 
-<pad bytes="integer" />
+<pad bytes="integer" serialize="bool" />
 
   This element declares some padding in a data structure.  The bytes
   attribute declares the number of bytes of padding.
+
+  If serialize="true", then the pad will be serialized/deserialized.
+  This is only needed for ABI compatibility with legacy.
+  Newly added pads should not be defined with serialize="true".
+
+  The serialize attribute may be omitted.
+  Default is serialize="false".
 
 <field type="identifier" name="identifier" />
 
   This element represents a field in a data structure.  The type attribute
   declares the data type of the field, and the name attribute gives the name
   of the field.
+
+<length>expression</length>
+  This element overrides the length of the data structure by specifying it
+  explicitly instead of it being defined by the layout of the structure.
+  This makes it possible to handle structures with conditional fields
+  (see the <switch> element) where the future revisions of protocols may
+  introduce new variants and old code must still properly ignore them.
+
+  The content is an expression giving the length of the data structure in terms
+  of other fields in the structure.  See the section "Expressions" for details
+  on the expression representation.
+
+  The expression must not depend on conditional fields.
+
+  Additionally, the length of the data structure must be at least such that it
+  includes the fields that the expression depends on. Smaller length is
+  considered a violation of the protocol.
+
+<fd name="identifier" />
+
+  This element represents a file descriptor field passed with the request.  The
+  name attribute gives the name of the field.
+
+  While ordinary fields are encoded as part of the request, file descriptor
+  fields are generally passed via an out-of-band mechanism.
 
 <list type="identifier" name="identifier">expression</list>
 
@@ -202,13 +247,6 @@ enum; the value is restricted to one of the constants named in the enum.
   gives the name of the field.  The content is an expression giving the length
   of the list in terms of other fields in the structure.  See the section
   "Expressions" for details on the expression representation.
-
-<localfield type="identifier" name="identifier" />
-
-  This element represents a parameter in a request that is not sent over the
-  wire.  The field can be referenced in the length expressions of lists or in
-  an exprfield.  The type attribute declares the data type of the field, and
-  the name attribute gives the name of the field.
 
 <exprfield type="identifier" name="identifier">expression</exprfield>
 
@@ -229,13 +267,40 @@ enum; the value is restricted to one of the constants named in the enum.
   <switch> instead for new protocol definitions.
 
 <switch name="identifier"> switch expression
-    <bitcase> bitcase expression, fields </bitcase> </switch>
+    <bitcase [name="identifier"]> bitcase expression(s), fields </bitcase>
+    <case [name="identifier"]> case expression(s), fields </case>
+</switch>
 
   This element represents conditional inclusion of fields. It can be viewed
-  as sequence of multiple ifs: if ( switch expression & bitcase expression )
-  is equal to bitcase expression, bitcase fields are included in structure.
-  It can be used only as the last field of structure. New protocol definitions
-  should prefer to use this instead of <valueparam>.
+  as sequence of multiple ifs:
+
+  <bitcase>:
+    if ( switch expression & bitcase expression ) is non-zero,
+    bitcase fields are included in structure.
+
+  <case>:
+    if ( switch expression == case expression ) is true,
+    then case fields are included in structure.
+
+  It can be used only as the last field of a structure.
+
+  When a bitcase or case includes multiple <enumref> clauses, the contents
+  of the bitcase or case are only present once regardless of the number of
+  bitcase or case expressions that match.
+
+  <enumref> inside <bitcase> can only refer to an enum's <bit> members.
+  <enumref> inside <case> can only refer to an enum's <value> members.
+
+  A switch may contain multiple <bitcase> or <case> elements.
+  Usually it will only contain <bitcase> elements
+  or only contain <case> elements.
+  That is, mixing of <case> and <bitcase> usually doesn't make any sense.
+
+  The same value may appear in multiple <case> or <bitcase> elements.
+
+  New protocol definitions should prefer to use this instead of <valueparam>
+  and instead of <union>.
+
 
 Expressions
 -----------
@@ -255,6 +320,23 @@ Expressions
   The fieldref element represents a reference to the value of another field in
   the structure containing this expression.  The identifier is the value of
   the "name" attribute on the referenced field.
+
+<paramref type="type">identifier</paramref>
+
+  A paramref is similar to a fieldref, but it refers to the value of
+  a field in the context which refers to the struct which contains the paramref.
+
+  So, it refers to a field outside of the structure where it is defined.
+  This has the following consequences:
+  * The generator cannot deduce its type.
+    So, it is mandatory to specify its type.
+  * The identifier-name must not be used as a field in the structure
+    which contaons the paramref.
+
+  For an example, see struct "DeviceTimeCoord" and request/reply
+  "GetDeviceMotionEvents" in xinput.xml, where paramref "num_axes"
+  in struct DeviceTimeCoord refers to field "num_axes" in
+  the DeviceTimeCoord reply.
 
 <value>integer</value>
 
@@ -280,7 +362,81 @@ Expressions
 
   This element represents a sumation of the elements of the referenced list.
 
+<sumof ref="identifier" >expression</sumof>
+
+  The expression is evaluated for each element of the referenced list,
+  in the context of this element.
+  This sumof element then represents a sumation of the results of these
+  evaluations.
+
+  expression will usually be a fieldref which references a field of
+  a list-element or an expression containing a fieldref,
+  such as popcount of a fieldref.
+
 <popcount>expression</popcount>
 
   This element represents the number of bits set in the expression.
 
+<listelement-ref/>
+
+  This element represents the current list-element when used inside
+  a list-iteration expression such as <sumof>.
+
+
+Event-Type-Selector List
+------------------------
+
+  The event-type-selector list selects a set of eventtypes.
+  It consists of any number of the following elements:
+
+  <allowed extension="identifier" xge="boolean"
+           opcode-min="integer" opcode-max="integer" />
+
+  The extension attribute selects events from the given extension.
+
+  If the xge attribute is true, the event is an X Generic Event and
+  will be treated as such.
+
+  opcode-min and opcode-max describe the minimum and maximum opcode
+  respectively. The opcode is the same number as the number-attribute
+  of an event definition. I.e. this is the offset from the event-base
+  to the actual number used on the wire.
+
+  In the current implementation, only xge="false" is supported.
+
+
+Documentation
+-------------
+
+  Documentation for each request, reply or event is stored in the appropriate
+  element using a <doc> element. The <doc> element can contain the following
+  elements:
+
+<brief>brief description</brief>
+
+  A short description of the request, reply or event. For example "makes a
+  window visible" for MapWindow. This will end up in the manpage NAME section
+  and in the doxygen @brief description.
+
+<description><![CDATA[longer description]]></description>
+
+  The full description. Use `` to highlight words, such as "Draws
+  `points_len`-1 lines between each pair of points…"
+
+<example><![CDATA[example code]]</description>
+
+  Example C code illustrating the usage of the particular request, reply or
+  event.
+
+<field name="name">field description</field>
+
+  The full description for the specified field. Depending on the context, this
+  is either a request parameter or a reply/event datastructure field.
+
+<error type="type">error description</field>
+
+  The full description for an error which can occur due to this request.
+
+<see type="request" name="name" />
+
+  A reference to another relevant program, function, request or event.

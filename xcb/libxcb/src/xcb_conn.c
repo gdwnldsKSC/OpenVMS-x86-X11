@@ -25,13 +25,17 @@
 
 /* Connection management: the core of XCB. */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <limits.h>
 
 #include "xcb.h"
 #include "xcbint.h"
@@ -43,7 +47,9 @@
 
 #ifdef _WIN32
 #include "xcb_windefs.h"
+#include <io.h>
 #else
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #endif /* _WIN32 */
@@ -59,20 +65,50 @@ typedef struct {
     uint16_t length;
 } xcb_setup_generic_t;
 
+static const xcb_setup_t xcb_error_setup = {
+    0,     /* status: failed (but we wouldn't have a xcb_setup_t in this case) */
+    0,     /* pad0 */
+    0, 0,  /* protocol version, should be 11.0, but isn't */
+    0,     /* length, invalid value */
+    0,     /* release_number */
+    0, 0,  /* resource_id_{base,mask} */
+    0,     /* motion_buffer_size */
+    0,     /* vendor_len */
+    0,     /* maximum_request_length */
+    0,     /* roots_len */
+    0,     /* pixmap_formats_len */
+    0,     /* image_byte_order */
+    0,     /* bitmap_format_bit_order */
+    0,     /* bitmap_format_scanline_unit */
+    0,     /* bitmap_format_scanline_pad */
+    0, 0,  /* {min,max}_keycode */
+    { 0, 0, 0, 0 } /* pad1 */
+};
+
+/* Keep this list in sync with is_static_error_conn()! */
 static const int xcb_con_error = XCB_CONN_ERROR;
 static const int xcb_con_closed_mem_er = XCB_CONN_CLOSED_MEM_INSUFFICIENT;
 static const int xcb_con_closed_parse_er = XCB_CONN_CLOSED_PARSE_ERR;
+static const int xcb_con_closed_screen_er = XCB_CONN_CLOSED_INVALID_SCREEN;
+
+static int is_static_error_conn(xcb_connection_t *c)
+{
+    return c == (xcb_connection_t *) &xcb_con_error ||
+           c == (xcb_connection_t *) &xcb_con_closed_mem_er ||
+           c == (xcb_connection_t *) &xcb_con_closed_parse_er ||
+           c == (xcb_connection_t *) &xcb_con_closed_screen_er;
+}
 
 static int set_fd_flags(const int fd)
 {
 /* Win32 doesn't have file descriptors and the fcntl function. This block sets the socket in non-blocking mode */
 
 #ifdef _WIN32
-   u_long iMode = 1; /* non-zero puts it in non-blocking mode, 0 in blocking mode */   
+   u_long iMode = 1; /* non-zero puts it in non-blocking mode, 0 in blocking mode */
    int ret = 0;
 
    ret = ioctlsocket(fd, FIONBIO, &iMode);
-   if(ret != 0) 
+   if(ret != 0)
        return 0;
    return 1;
 #else
@@ -134,6 +170,8 @@ static int write_setup(xcb_connection_t *c, xcb_auth_info_t *auth_info)
 
 static int read_setup(xcb_connection_t *c)
 {
+    const char newline = '\n';
+
     /* Read the server response */
     c->setup = malloc(sizeof(xcb_setup_generic_t));
     if(!c->setup)
@@ -159,6 +197,7 @@ static int read_setup(xcb_connection_t *c)
         {
             xcb_setup_failed_t *setup = (xcb_setup_failed_t *) c->setup;
             write(STDERR_FILENO, xcb_setup_failed_reason(setup), xcb_setup_failed_reason_length(setup));
+            write(STDERR_FILENO, &newline, 1);
             return 0;
         }
 
@@ -166,6 +205,7 @@ static int read_setup(xcb_connection_t *c)
         {
             xcb_setup_authenticate_t *setup = (xcb_setup_authenticate_t *) c->setup;
             write(STDERR_FILENO, xcb_setup_authenticate_reason(setup), xcb_setup_authenticate_reason_length(setup));
+            write(STDERR_FILENO, &newline, 1);
             return 0;
         }
     }
@@ -176,38 +216,87 @@ static int read_setup(xcb_connection_t *c)
 /* precondition: there must be something for us to write. */
 static int write_vec(xcb_connection_t *c, struct iovec **vector, int *count)
 {
+#ifndef _WIN32
     int n;
+#endif
+
     assert(!c->out.queue_len);
 
 #ifdef _WIN32
-    int i = 0;
-    int ret = 0,err = 0;
-    struct iovec *vec;
-    n = 0;
-
     /* Could use the WSASend win32 function for scatter/gather i/o but setting up the WSABUF struct from
        an iovec would require more work and I'm not sure of the benefit....works for now */
-    vec = *vector;
-    while(i < *count)
-    {         	 
-         ret = send(c->fd,vec->iov_base,vec->iov_len,0);	 
-         if(ret == SOCKET_ERROR)
-         {
-             err  = WSAGetLastError();
-             if(err == WSAEWOULDBLOCK)
-             {
-                 return 1;
-             }
-         }
-         n += ret;
-         *vec++;
-         i++;
+    while (*count)
+    {
+        struct iovec *vec = *vector;
+        if (vec->iov_len)
+        {
+            int ret = send(c->fd, vec->iov_base, vec->iov_len, 0);
+            if (ret == SOCKET_ERROR)
+            {
+                int err = WSAGetLastError();
+                if (err == WSAEWOULDBLOCK)
+                {
+                    return 1;
+                }
+            }
+            if (ret <= 0)
+            {
+                _xcb_conn_shutdown(c, XCB_CONN_ERROR);
+                return 0;
+            }
+            c->out.total_written += ret;
+            vec->iov_len -= ret;
+            vec->iov_base = (char *)vec->iov_base + ret;
+        }
+        if (vec->iov_len == 0) {
+            (*vector)++;
+            (*count)--;
+        }
     }
+
+    if (!*count)
+        *vector = 0;
+
 #else
-    n = writev(c->fd, *vector, *count);
-    if(n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
-        return 1;
-#endif /* _WIN32 */    
+    n = *count;
+    if (n > IOV_MAX)
+        n = IOV_MAX;
+
+#if HAVE_SENDMSG
+    if (c->out.out_fd.nfd) {
+        union {
+            struct cmsghdr cmsghdr;
+            char buf[CMSG_SPACE(XCB_MAX_PASS_FD * sizeof(int))];
+        } cmsgbuf;
+        struct msghdr msg = {
+            .msg_name = NULL,
+            .msg_namelen = 0,
+            .msg_iov = *vector,
+            .msg_iovlen = n,
+            .msg_control = cmsgbuf.buf,
+            .msg_controllen = CMSG_LEN(c->out.out_fd.nfd * sizeof (int)),
+        };
+        int i;
+        struct cmsghdr *hdr = CMSG_FIRSTHDR(&msg);
+
+        hdr->cmsg_len = msg.msg_controllen;
+        hdr->cmsg_level = SOL_SOCKET;
+        hdr->cmsg_type = SCM_RIGHTS;
+        memcpy(CMSG_DATA(hdr), c->out.out_fd.fd, c->out.out_fd.nfd * sizeof (int));
+
+        n = sendmsg(c->fd, &msg, 0);
+        if(n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+            return 1;
+        for (i = 0; i < c->out.out_fd.nfd; i++)
+            close(c->out.out_fd.fd[i]);
+        c->out.out_fd.nfd = 0;
+    } else
+#endif
+    {
+        n = writev(c->fd, *vector, n);
+        if(n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+            return 1;
+    }
 
     if(n <= 0)
     {
@@ -215,20 +304,26 @@ static int write_vec(xcb_connection_t *c, struct iovec **vector, int *count)
         return 0;
     }
 
+    c->out.total_written += n;
     for(; *count; --*count, ++*vector)
     {
         int cur = (*vector)->iov_len;
         if(cur > n)
             cur = n;
-        (*vector)->iov_len -= cur;
-        (*vector)->iov_base = (char *) (*vector)->iov_base + cur;
-        n -= cur;
+        if(cur) {
+            (*vector)->iov_len -= cur;
+            (*vector)->iov_base = (char *) (*vector)->iov_base + cur;
+            n -= cur;
+        }
         if((*vector)->iov_len)
             break;
     }
     if(!*count)
         *vector = 0;
     assert(n == 0);
+
+#endif /* _WIN32 */
+
     return 1;
 }
 
@@ -236,15 +331,15 @@ static int write_vec(xcb_connection_t *c, struct iovec **vector, int *count)
 
 const xcb_setup_t *xcb_get_setup(xcb_connection_t *c)
 {
-    if(c->has_error)
-        return 0;
+    if(is_static_error_conn(c))
+        return &xcb_error_setup;
     /* doesn't need locking because it's never written to. */
     return c->setup;
 }
 
 int xcb_get_file_descriptor(xcb_connection_t *c)
 {
-    if(c->has_error)
+    if(is_static_error_conn(c))
         return -1;
     /* doesn't need locking because it's never written to. */
     return c->fd;
@@ -272,7 +367,11 @@ xcb_connection_t *xcb_connect_to_fd(int fd, xcb_auth_info_t *auth_info)
 
     c = calloc(1, sizeof(xcb_connection_t));
     if(!c) {
+#ifdef _WIN32
+        closesocket(fd);
+#else
         close(fd);
+#endif
         return _xcb_conn_ret_error(XCB_CONN_CLOSED_MEM_INSUFFICIENT) ;
     }
 
@@ -298,14 +397,18 @@ xcb_connection_t *xcb_connect_to_fd(int fd, xcb_auth_info_t *auth_info)
 
 void xcb_disconnect(xcb_connection_t *c)
 {
-    if(c->has_error)
+    if(c == NULL || is_static_error_conn(c))
         return;
 
     free(c->setup);
 
     /* disallow further sends and receives */
     shutdown(c->fd, SHUT_RDWR);
+#ifdef _WIN32
+    closesocket(c->fd);
+#else
     close(c->fd);
+#endif
 
     pthread_mutex_destroy(&c->iolock);
     _xcb_in_destroy(&c->in);
@@ -331,6 +434,9 @@ void _xcb_conn_shutdown(xcb_connection_t *c, int err)
 /* Return connection error state.
  * To make thread-safe, I need a seperate static
  * variable for every possible error.
+ * has_error is the first field in xcb_connection_t, so just
+ * return a casted int here; checking has_error (and only
+ * has_error) will be safe.
  */
 xcb_connection_t *_xcb_conn_ret_error(int err)
 {
@@ -344,6 +450,10 @@ xcb_connection_t *_xcb_conn_ret_error(int err)
         case XCB_CONN_CLOSED_PARSE_ERR:
         {
             return (xcb_connection_t *) &xcb_con_closed_parse_er;
+        }
+        case XCB_CONN_CLOSED_INVALID_SCREEN:
+        {
+            return (xcb_connection_t *) &xcb_con_closed_screen_er;
         }
         case XCB_CONN_ERROR:
         default:
@@ -418,15 +528,25 @@ int _xcb_conn_wait(xcb_connection_t *c, pthread_cond_t *cond, struct iovec **vec
 
     if(ret)
     {
+        /* The code allows two threads to call select()/poll() at the same time.
+         * First thread just wants to read, a second thread wants to write, too.
+         * We have to make sure that we don't steal the reading thread's reply
+         * and let it get stuck in select()/poll().
+         * So a thread may read if either:
+         * - There is no other thread that wants to read (the above situation
+         *   did not occur).
+         * - It is the reading thread (above situation occurred).
+         */
+        int may_read = c->in.reading == 1 || !count;
 #if USE_POLL
-        if((fd.revents & POLLIN) == POLLIN)
+        if(may_read && (fd.revents & POLLIN) != 0)
 #else
-        if(FD_ISSET(c->fd, &rfds))
+        if(may_read && FD_ISSET(c->fd, &rfds))
 #endif
             ret = ret && _xcb_in_read(c);
 
 #if USE_POLL
-        if((fd.revents & POLLOUT) == POLLOUT)
+        if((fd.revents & POLLOUT) != 0)
 #else
         if(FD_ISSET(c->fd, &wfds))
 #endif
@@ -438,4 +558,31 @@ int _xcb_conn_wait(xcb_connection_t *c, pthread_cond_t *cond, struct iovec **vec
     --c->in.reading;
 
     return ret;
+}
+
+uint64_t xcb_total_read(xcb_connection_t *c)
+{
+    uint64_t n;
+
+    if (xcb_connection_has_error(c))
+        return 0;
+
+    pthread_mutex_lock(&c->iolock);
+    n = c->in.total_read;
+    pthread_mutex_unlock(&c->iolock);
+    return n;
+}
+
+uint64_t xcb_total_written(xcb_connection_t *c)
+{
+    uint64_t n;
+
+    if (xcb_connection_has_error(c))
+        return 0;
+
+    pthread_mutex_lock(&c->iolock);
+    n = c->out.total_written;
+    pthread_mutex_unlock(&c->iolock);
+
+    return n;
 }

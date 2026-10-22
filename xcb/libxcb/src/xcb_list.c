@@ -25,6 +25,10 @@
 
 /* A generic implementation of a list of void-pointers. */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 
 #include "xcb.h"
@@ -32,7 +36,7 @@
 
 typedef struct node {
     struct node *next;
-    unsigned int key;
+    uint64_t key;
     void *data;
 } node;
 
@@ -43,7 +47,7 @@ struct _xcb_map {
 
 /* Private interface */
 
-_xcb_map *_xcb_map_new()
+_xcb_map *_xcb_map_new(void)
 {
     _xcb_map *list;
     list = malloc(sizeof(_xcb_map));
@@ -69,7 +73,7 @@ void _xcb_map_delete(_xcb_map *list, xcb_list_free_func_t do_free)
     free(list);
 }
 
-int _xcb_map_put(_xcb_map *list, unsigned int key, void *data)
+int _xcb_map_put(_xcb_map *list, uint64_t key, void *data)
 {
     node *cur = malloc(sizeof(node));
     if(!cur)
@@ -82,7 +86,7 @@ int _xcb_map_put(_xcb_map *list, unsigned int key, void *data)
     return 1;
 }
 
-void *_xcb_map_remove(_xcb_map *list, unsigned int key)
+void *_xcb_map_remove(_xcb_map *list, uint64_t key)
 {
     node **cur;
     for(cur = &list->head; *cur; cur = &(*cur)->next)

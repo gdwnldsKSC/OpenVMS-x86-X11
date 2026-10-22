@@ -1,3 +1,123 @@
+Release 1.14 (2020-02-22)
+=========================
+* Add xcb_total_read() and xcb_total_written() API
+* Support check >= 0.13 API (for make check)
+* Bug fix to handle EINTR from recvmsg
+* Only require pthread-stubs on non-Linux platforms
+
+Release 1.13.1 (2018-09-27)
+===========================
+* Don't flag extra reply in xcb_take_socket
+
+Release 1.13 (2018-02-28)
+=========================
+* Add support for variable-sized lists of FDs
+* Poll for events when blocking waiting for special events
+* xinput: Enable XInput extension by default
+* ge: Add explicit support for GenericEvent extension
+* Fix documentation warnings from clang
+* Cosmetic cleanups
+
+Release 1.12 (2016-05-18)
+=========================
+* configure: Various fixes for dri3 and FD passing support
+* configure: Don't report all the warning CFLAGS
+* configure: Disable Xevie and Xprint by default
+* Add support for various new constructs in the XML schema
+* Make some functions also accept connections in an error state
+* Never return NULL from xcb_get_setup()
+* Use Requires.private in .pc files to avoid overlinking
+* Fix align-pads for switches which start at unaligned positions
+* Use anonymous structs for some nested structs
+* Also generate accessors for variable-sized events and requests
+* Improved python3 compatibility
+* Generate C99 initializers instead of comments
+* Various simplifications to the python code
+* Fix line breaks in xcb-requests manual page
+* Always close FDs in xcb_send_fd()
+* Fix thread-safety issues with FD passing
+* Add xcb_send_request_with_fds() and xcb_send_request_with_fds64()
+* Fix endless loop with too many outstanding FDs to send
+* Link with winsock library on MinGW
+* Disable some unfinished API for some server-side code by default
+* Use align-offsets computed by xcb-proto instead of low bits of pointers
+* Fix iterator interaction with align padding
+* Stop serializing padding by default
+* Increase unix socket send buffer to at least 64KiB
+
+Release 1.11.1 (2015-09-06)
+===========================
+* Expose 64-bit sequence numbers for XLib
+* Fix some hangs related to xcb_wait_for_special_event()
+
+Release 1.11 (2014-08-01)
+=========================
+* Force structures with 64-bit fields to be packed
+* Add support for <pad align="n">
+* Use X.org's build machinery from xorg-macros
+* Fix leak with xcb_disconnect() and connections in an error state
+* Make xcb_disconnect(NULL) safe
+* Use less #include statements in generated code
+* Automatically validate the Requires lines in our .pc.in files
+* Fix a race that resulted in a failed assertion
+* Improve launchd secure socket support
+* Improve API documentation
+* Remove trailing whitespaces
+* c_client.py: prefix all monkey-patched fields with c_
+* c_client.py: make the man page output deterministic
+* c_client.py: remove useless generated comments
+* xcb.h: add 'struct' before xcb_setup_t, xcb_query_extension_reply_t
+
+Release 1.10 (2013-12-22)
+=========================
+* Bump libxcb-xkb SONAME due to ABI break introduced in 1.9.2
+* Enable libxcb-xkb by default
+* Bump libxcb-sync SONAME
+* c_client.py: Fix _sizeof() functions
+* c_client.py: Do not create pointers in unions
+* c_client.py: Always initialize xcb_align_to
+* Re-introduce xcb_ge_event_t (deprecated, xcb_ge_generic_event_t should be
+  used instead)
+* Fix alignment issues in FD passing code
+* Fix poll() if POLLIN == ROLLRDNORM|POLLRDBAND
+* Use /usr/spool/sockets/X11/ on HP-UX for UNIX sockets
+* Make xsltproc optional
+
+Release 1.9.3 (2013-11-07)
+==========================
+* Check if we need to define _XOPEN_SOURCE for struct msghdr.msg_control
+* Add configure option to enable or disable fd passing with sendmsg
+* Switch to using the CMSG_* macros for FD passing
+* Initialize automake earlier (bugfix for #66413)
+
+Release 1.9.2 (2013-11-07)
+==========================
+* Add Present extension
+* Add DRI3 library
+* Add event queue splitting
+* Add support for receiving fds in replies
+* Add xcb_send_fd API
+* Remove xcb_ge_event_t from xcb.h
+* c_client.py: Inject full_sequence into GE events
+* c_client.py: Handle multiple expr. in a bitcase
+
+Release 1.9.1 (2013-05-30)
+==========================
+* Fix python code to work with python-3
+* Security fix for integer overflow in read_packet() [CVE-2013-2064]
+
+Release 1.9 (2012-10-05)
+========================
+* Always include "config.h" at the start of all C source files.
+* Add AC_USE_SYSTEM_EXTENSIONS to allow use of more system functionality
+* Return connection failure if display string specifies non-existent screen
+* c_client: Fix parallel-make issue creating 'man' directory
+* xcb_connect: launchd: Don't fall back on tcp if $DISPLAY is a path to a launchd socket
+* c_client.py: generate manpages
+* Allow xcb_send_request with >MAX_IOV iovecs
+* Add a .gitignore for src/man/
+* Fix a multi-thread deadlock
+
 Release 1.8.1 (2012-03-09)
 ==========================
 - Fix a busy loop on BSD and Mac OS

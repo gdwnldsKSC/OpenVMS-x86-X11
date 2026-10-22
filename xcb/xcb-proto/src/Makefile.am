@@ -4,10 +4,13 @@ xcbinclude_HEADERS = \
 	bigreq.xml \
 	composite.xml \
 	damage.xml \
+	dbe.xml \
 	dpms.xml \
 	dri2.xml \
+	dri3.xml \
 	ge.xml \
 	glx.xml \
+	present.xml \
 	randr.xml \
 	record.xml \
 	render.xml \

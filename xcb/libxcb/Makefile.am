@@ -1,4 +1,6 @@
-SUBDIRS=src tests doc
+ACLOCAL_AMFLAGS=-I m4
+
+SUBDIRS=src tests doc man
 
 pkgconfigdir = $(libdir)/pkgconfig
 
@@ -10,14 +12,23 @@ endif
 if BUILD_DAMAGE
 pkgconfig_DATA += xcb-damage.pc
 endif
+if BUILD_DBE
+pkgconfig_DATA += xcb-dbe.pc
+endif
 if BUILD_DPMS
 pkgconfig_DATA += xcb-dpms.pc
 endif
 if BUILD_DRI2
 pkgconfig_DATA += xcb-dri2.pc
 endif
+if BUILD_DRI3
+pkgconfig_DATA += xcb-dri3.pc
+endif
 if BUILD_GLX
 pkgconfig_DATA += xcb-glx.pc
+endif
+if BUILD_PRESENT
+pkgconfig_DATA += xcb-present.pc
 endif
 if BUILD_RANDR
 pkgconfig_DATA += xcb-randr.pc
@@ -76,10 +87,32 @@ endif
 if BUILD_XVMC
 pkgconfig_DATA += xcb-xvmc.pc
 endif
+if BUILD_GE
+pkgconfig_DATA += xcb-ge.pc
+endif
 
+
+AM_TESTS_ENVIRONMENT = \
+	AM_SRCDIR=${srcdir}
+
+TESTS=check-pc-requires
 
 EXTRA_DIST = \
 tools/README \
 tools/api_conv.pl \
 tools/constants \
-autogen.sh
+autogen.sh \
+README.md \
+$(TESTS)
+
+MAINTAINERCLEANFILES = ChangeLog INSTALL
+
+.PHONY: ChangeLog INSTALL
+
+INSTALL:
+	$(INSTALL_CMD)
+
+ChangeLog:
+	$(CHANGELOG_CMD)
+
+dist-hook: ChangeLog INSTALL

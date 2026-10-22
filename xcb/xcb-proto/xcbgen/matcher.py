@@ -7,7 +7,12 @@ we do not create a new type object, we just record the existing one under a new 
 '''
 
 from os.path import join
-from xml.etree.cElementTree import parse
+from sys import version_info
+
+if version_info[:2] >= (3, 3):
+    from xml.etree.ElementTree import parse
+else:
+    from xml.etree.cElementTree import parse
 
 from xcbgen.xtypes import *
 
@@ -18,10 +23,12 @@ def import_(node, module, namespace):
     '''
     # To avoid circular import error
     from xcbgen import state
+    module.import_level = module.import_level + 1
     new_file = join(namespace.dir, '%s.xml' % node.text)
     new_root = parse(new_file).getroot()
     new_namespace = state.Namespace(new_file)
     execute(module, new_namespace)
+    module.import_level = module.import_level - 1
     if not module.has_import(node.text):
         module.add_import(node.text, new_namespace)
 
@@ -53,6 +60,12 @@ def struct(node, module, namespace):
     id = node.get('name')
     name = namespace.prefix + (id,)
     type = Struct(name, node)
+    module.add_type(id, namespace.ns, name, type)
+
+def eventstruct(node, module, namespace):
+    id = node.get('name')
+    name = namespace.prefix + (id,)
+    type = EventStruct(name, node)
     module.add_type(id, namespace.ns, name, type)
 
 def union(node, module, namespace):
@@ -101,6 +114,7 @@ funcs = {'import' : import_,
          'xidunion' : xidunion,
          'enum' : enum,
          'struct' : struct,
+         'eventstruct' : eventstruct,
          'union' : union,
          'request' : request,
          'event' : event,

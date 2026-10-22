@@ -38,6 +38,16 @@
 #pragma GCC visibility push(hidden)
 #endif
 
+#ifndef __has_attribute
+# define __has_attribute(x) 0  /* Compatibility with older compilers. */
+#endif
+
+#if __has_attribute(fallthrough)
+# define XCB_ALLOW_FALLTHRU __attribute__ ((fallthrough));
+#else
+# define XCB_ALLOW_FALLTHRU /* FALLTHRU */
+#endif
+
 enum workarounds {
     WORKAROUND_NONE,
     WORKAROUND_GLX_GET_FB_CONFIGS_BUG,
@@ -53,7 +63,7 @@ enum lazy_reply_tag
 
 #define XCB_PAD(i) (-(i) & 3)
 
-#define XCB_SEQUENCE_COMPARE(a,op,b)	((int64_t) ((a) - (b)) op 0)
+#define XCB_SEQUENCE_COMPARE(a,op,b)    ((int64_t) ((a) - (b)) op 0)
 
 #ifndef offsetof
 #define offsetof(type,member) ((size_t) &((type *)0)->member)
@@ -73,11 +83,21 @@ typedef struct _xcb_map _xcb_map;
 
 _xcb_map *_xcb_map_new(void);
 void _xcb_map_delete(_xcb_map *q, xcb_list_free_func_t do_free);
-int _xcb_map_put(_xcb_map *q, unsigned int key, void *data);
-void *_xcb_map_remove(_xcb_map *q, unsigned int key);
+int _xcb_map_put(_xcb_map *q, uint64_t key, void *data);
+void *_xcb_map_remove(_xcb_map *q, uint64_t key);
 
 
 /* xcb_out.c */
+
+#if HAVE_SENDMSG
+#define XCB_MAX_PASS_FD 16
+
+typedef struct _xcb_fd {
+    int fd[XCB_MAX_PASS_FD];
+    int nfd;
+    int ifd;
+} _xcb_fd;
+#endif
 
 typedef struct _xcb_out {
     pthread_cond_t cond;
@@ -93,6 +113,8 @@ typedef struct _xcb_out {
 
     uint64_t request;
     uint64_t request_written;
+    uint64_t request_expected_written;
+    uint64_t total_written;
 
     pthread_mutex_t reqlenlock;
     enum lazy_reply_tag maximum_request_length_tag;
@@ -100,6 +122,9 @@ typedef struct _xcb_out {
         xcb_big_requests_enable_cookie_t cookie;
         uint32_t value;
     } maximum_request_length;
+#if HAVE_SENDMSG
+    _xcb_fd out_fd;
+#endif
 } _xcb_out;
 
 int _xcb_out_init(_xcb_out *out);
@@ -122,6 +147,7 @@ typedef struct _xcb_in {
     uint64_t request_expected;
     uint64_t request_read;
     uint64_t request_completed;
+    uint64_t total_read;
     struct reply_list *current_reply;
     struct reply_list **current_reply_tail;
 
@@ -129,9 +155,14 @@ typedef struct _xcb_in {
     struct event_list *events;
     struct event_list **events_tail;
     struct reader_list *readers;
+    struct special_list *special_waiters;
 
     struct pending_reply *pending_replies;
     struct pending_reply **pending_replies_tail;
+#if HAVE_SENDMSG
+    _xcb_fd in_fd;
+#endif
+    struct xcb_special_event *special_events;
 } _xcb_in;
 
 int _xcb_in_init(_xcb_in *in);
@@ -175,6 +206,7 @@ void _xcb_ext_destroy(xcb_connection_t *c);
 /* xcb_conn.c */
 
 struct xcb_connection_t {
+    /* This must be the first field; see _xcb_conn_ret_error(). */
     int has_error;
 
     /* constant data */

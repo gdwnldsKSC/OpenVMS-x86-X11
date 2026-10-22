@@ -51,6 +51,12 @@ extern "C" {
  * @file xcb.h
  */
 
+#ifdef __GNUC__
+#define XCB_PACKED __attribute__((__packed__))
+#else
+#define XCB_PACKED
+#endif
+
 /**
  * @defgroup XCB_Core_API XCB Core API
  * @brief Core API of the XCB library.
@@ -72,7 +78,7 @@ extern "C" {
 /** xcb connection errors because of socket, pipe and other stream errors. */
 #define XCB_CONN_ERROR 1
 
-/** xcb connection shutdown because of extension not sppported */
+/** xcb connection shutdown because of extension not supported */
 #define XCB_CONN_CLOSED_EXT_NOTSUPPORTED 2
 
 /** malloc(), calloc() and realloc() error upon failure, for eg ENOMEM */
@@ -83,6 +89,12 @@ extern "C" {
 
 /** Connection closed, error during parsing display string. */
 #define XCB_CONN_CLOSED_PARSE_ERR 5
+
+/** Connection closed because the server does not have a screen matching the display. */
+#define XCB_CONN_CLOSED_INVALID_SCREEN 6
+
+/** Connection closed because some FD passing operation failed */
+#define XCB_CONN_CLOSED_FDPASSING_FAILED 7
 
 #define XCB_TYPE_PAD(T,I) (-(I) & (sizeof(T) > 4 ? 3 : sizeof(T) - 1))
 
@@ -135,10 +147,25 @@ typedef struct {
 } xcb_generic_event_t;
 
 /**
+ * @brief Raw Generic event.
+ *
+ * A generic event structure as used on the wire, i.e., without the full_sequence field
+ */
+typedef struct {
+    uint8_t   response_type;  /**< Type of the response */
+    uint8_t  pad0;           /**< Padding */
+    uint16_t sequence;       /**< Sequence number */
+    uint32_t pad[7];         /**< Padding */
+} xcb_raw_generic_event_t;
+
+/**
  * @brief GE event
  *
  * An event as sent by the XGE extension. The length field specifies the
  * number of 4-byte blocks trailing the struct.
+ *
+ * @deprecated Since some fields in this struct have unfortunate names, it is
+ * recommended to use xcb_ge_generic_event_t instead.
  */
 typedef struct {
     uint8_t  response_type;  /**< Type of the response */
@@ -214,7 +241,7 @@ typedef struct xcb_auth_info_t {
 
 /**
  * @brief Forces any buffered output to be written to the server.
- * @param c: The connection to the X server.
+ * @param c The connection to the X server.
  * @return > @c 0 on success, <= @c 0 otherwise.
  *
  * Forces any buffered output to be written to the server. Blocks
@@ -224,7 +251,7 @@ int xcb_flush(xcb_connection_t *c);
 
 /**
  * @brief Returns the maximum request length that this server accepts.
- * @param c: The connection to the X server.
+ * @param c The connection to the X server.
  * @return The maximum request length field.
  *
  * In the absence of the BIG-REQUESTS extension, returns the
@@ -241,7 +268,7 @@ uint32_t xcb_get_maximum_request_length(xcb_connection_t *c);
 
 /**
  * @brief Prefetch the maximum request length without blocking.
- * @param c: The connection to the X server.
+ * @param c The connection to the X server.
  *
  * Without blocking, does as much work as possible toward computing
  * the maximum request length accepted by the X server.
@@ -263,7 +290,7 @@ void xcb_prefetch_maximum_request_length(xcb_connection_t *c);
 
 /**
  * @brief Returns the next event or error from the server.
- * @param c: The connection to the X server.
+ * @param c The connection to the X server.
  * @return The next event from the server.
  *
  * Returns the next event or error from the server, or returns null in
@@ -274,8 +301,7 @@ xcb_generic_event_t *xcb_wait_for_event(xcb_connection_t *c);
 
 /**
  * @brief Returns the next event or error from the server.
- * @param c: The connection to the X server.
- * error status of the operation.
+ * @param c The connection to the X server.
  * @return The next event from the server.
  *
  * Returns the next event or error from the server, if one is
@@ -288,7 +314,7 @@ xcb_generic_event_t *xcb_poll_for_event(xcb_connection_t *c);
 
 /**
  * @brief Returns the next event without reading from the connection.
- * @param c: The connection to the X server.
+ * @param c The connection to the X server.
  * @return The next already queued event from the server.
  *
  * This is a version of xcb_poll_for_event that only examines the
@@ -302,10 +328,42 @@ xcb_generic_event_t *xcb_poll_for_event(xcb_connection_t *c);
  */
 xcb_generic_event_t *xcb_poll_for_queued_event(xcb_connection_t *c);
 
+typedef struct xcb_special_event xcb_special_event_t;
+
+/**
+ * @brief Returns the next event from a special queue
+ */
+xcb_generic_event_t *xcb_poll_for_special_event(xcb_connection_t *c,
+                                                xcb_special_event_t *se);
+
+/**
+ * @brief Returns the next event from a special queue, blocking until one arrives
+ */
+xcb_generic_event_t *xcb_wait_for_special_event(xcb_connection_t *c,
+                                                xcb_special_event_t *se);
+/**
+ * @typedef typedef struct xcb_extension_t xcb_extension_t
+ */
+typedef struct xcb_extension_t xcb_extension_t;  /**< Opaque structure used as key for xcb_get_extension_data_t. */
+
+/**
+ * @brief Listen for a special event
+ */
+xcb_special_event_t *xcb_register_for_special_xge(xcb_connection_t *c,
+                                                  xcb_extension_t *ext,
+                                                  uint32_t eid,
+                                                  uint32_t *stamp);
+
+/**
+ * @brief Stop listening for a special event
+ */
+void xcb_unregister_for_special_event(xcb_connection_t *c,
+                                      xcb_special_event_t *se);
+
 /**
  * @brief Return the error for a request, or NULL if none can ever arrive.
- * @param c: The connection to the X server.
- * @param cookie: The request cookie.
+ * @param c The connection to the X server.
+ * @param cookie The request cookie.
  * @return The error for the request, or NULL if none can ever arrive.
  *
  * The xcb_void_cookie_t cookie supplied to this function must have resulted
@@ -322,8 +380,8 @@ xcb_generic_error_t *xcb_request_check(xcb_connection_t *c, xcb_void_cookie_t co
 
 /**
  * @brief Discards the reply for a request.
- * @param c: The connection to the X server.
- * @param sequence: The request sequence number from a cookie.
+ * @param c The connection to the X server.
+ * @param sequence The request sequence number from a cookie.
  *
  * Discards the reply for a request. Additionally, any error generated
  * by the request is also discarded (unless it was an _unchecked request
@@ -336,18 +394,33 @@ xcb_generic_error_t *xcb_request_check(xcb_connection_t *c, xcb_void_cookie_t co
  */
 void xcb_discard_reply(xcb_connection_t *c, unsigned int sequence);
 
+/**
+ * @brief Discards the reply for a request, given by a 64bit sequence number
+ * @param c The connection to the X server.
+ * @param sequence 64-bit sequence number as returned by xcb_send_request64().
+ *
+ * Discards the reply for a request. Additionally, any error generated
+ * by the request is also discarded (unless it was an _unchecked request
+ * and the error has already arrived).
+ *
+ * This function will not block even if the reply is not yet available.
+ *
+ * Note that the sequence really does have to come from xcb_send_request64();
+ * the cookie sequence number is defined as "unsigned" int and therefore
+ * not 64-bit on all platforms.
+ * This function is not designed to operate on socket-handoff replies.
+ *
+ * Unlike its xcb_discard_reply() counterpart, the given sequence number is not
+ * automatically "widened" to 64-bit.
+ */
+void xcb_discard_reply64(xcb_connection_t *c, uint64_t sequence);
 
 /* xcb_ext.c */
 
 /**
- * @typedef typedef struct xcb_extension_t xcb_extension_t
- */
-typedef struct xcb_extension_t xcb_extension_t;  /**< Opaque structure used as key for xcb_get_extension_data_t. */
-
-/**
  * @brief Caches reply information from QueryExtension requests.
- * @param c: The connection.
- * @param ext: The extension data.
+ * @param c The connection.
+ * @param ext The extension data.
  * @return A pointer to the xcb_query_extension_reply_t for the extension.
  *
  * This function is the primary interface to the "extension cache",
@@ -360,12 +433,12 @@ typedef struct xcb_extension_t xcb_extension_t;  /**< Opaque structure used as k
  * The result must not be freed. This storage is managed by the cache
  * itself.
  */
-const xcb_query_extension_reply_t *xcb_get_extension_data(xcb_connection_t *c, xcb_extension_t *ext);
+const struct xcb_query_extension_reply_t *xcb_get_extension_data(xcb_connection_t *c, xcb_extension_t *ext);
 
 /**
  * @brief Prefetch of extension data into the extension cache
- * @param c: The connection.
- * @param ext: The extension data.
+ * @param c The connection.
+ * @param ext The extension data.
  *
  * This function allows a "prefetch" of extension data into the
  * extension cache. Invoking the function may cause a call to
@@ -380,7 +453,7 @@ void xcb_prefetch_extension_data(xcb_connection_t *c, xcb_extension_t *ext);
 
 /**
  * @brief Access the data returned by the server.
- * @param c: The connection.
+ * @param c The connection.
  * @return A pointer to an xcb_setup_t structure.
  *
  * Accessor for the data returned by the server when the xcb_connection_t
@@ -396,11 +469,11 @@ void xcb_prefetch_extension_data(xcb_connection_t *c, xcb_extension_t *ext);
  *
  * The result must not be freed.
  */
-const xcb_setup_t *xcb_get_setup(xcb_connection_t *c);
+const struct xcb_setup_t *xcb_get_setup(xcb_connection_t *c);
 
 /**
  * @brief Access the file descriptor of the connection.
- * @param c: The connection.
+ * @param c The connection.
  * @return The file descriptor.
  *
  * Accessor for the file descriptor that was passed to the
@@ -410,26 +483,28 @@ int xcb_get_file_descriptor(xcb_connection_t *c);
 
 /**
  * @brief Test whether the connection has shut down due to a fatal error.
- * @param c: The connection.
+ * @param c The connection.
  * @return > 0 if the connection is in an error state; 0 otherwise.
  *
  * Some errors that occur in the context of an xcb_connection_t
  * are unrecoverable. When such an error occurs, the
  * connection is shut down and further operations on the
- * xcb_connection_t have no effect.
+ * xcb_connection_t have no effect, but memory will not be freed until
+ * xcb_disconnect() is called on the xcb_connection_t.
  *
  * @return XCB_CONN_ERROR, because of socket errors, pipe errors or other stream errors.
  * @return XCB_CONN_CLOSED_EXT_NOTSUPPORTED, when extension not supported.
  * @return XCB_CONN_CLOSED_MEM_INSUFFICIENT, when memory not available.
  * @return XCB_CONN_CLOSED_REQ_LEN_EXCEED, exceeding request length that server accepts.
  * @return XCB_CONN_CLOSED_PARSE_ERR, error during parsing display string.
+ * @return XCB_CONN_CLOSED_INVALID_SCREEN, because the server does not have a screen matching the display.
  */
 int xcb_connection_has_error(xcb_connection_t *c);
 
 /**
  * @brief Connects to the X server.
- * @param fd: The file descriptor.
- * @param auth_info: Authentication data.
+ * @param fd The file descriptor.
+ * @param auth_info Authentication data.
  * @return A newly allocated xcb_connection_t structure.
  *
  * Connects to an X server, given the open socket @p fd and the
@@ -437,15 +512,20 @@ int xcb_connection_has_error(xcb_connection_t *c);
  * bidirectionally connected to an X server. If the connection
  * should be unauthenticated, @p auth_info must be @c
  * NULL.
+ *
+ * Always returns a non-NULL pointer to a xcb_connection_t, even on failure.
+ * Callers need to use xcb_connection_has_error() to check for failure.
+ * When finished, use xcb_disconnect() to close the connection and free
+ * the structure.
  */
 xcb_connection_t *xcb_connect_to_fd(int fd, xcb_auth_info_t *auth_info);
 
 /**
  * @brief Closes the connection.
- * @param c: The connection.
+ * @param c The connection.
  *
  * Closes the file descriptor and frees all memory associated with the
- * connection @c c.
+ * connection @c c. If @p c is @c NULL, nothing is done.
  */
 void xcb_disconnect(xcb_connection_t *c);
 
@@ -454,10 +534,10 @@ void xcb_disconnect(xcb_connection_t *c);
 
 /**
  * @brief Parses a display string name in the form documented by X(7x).
- * @param name: The name of the display.
- * @param host: A pointer to a malloc'd copy of the hostname.
- * @param display: A pointer to the display number.
- * @param screen: A pointer to the screen number.
+ * @param name The name of the display.
+ * @param host A pointer to a malloc'd copy of the hostname.
+ * @param display A pointer to the display number.
+ * @param screen A pointer to the screen number.
  * @return 0 on failure, non 0 otherwise.
  *
  * Parses the display string name @p display_name in the form
@@ -473,8 +553,8 @@ int xcb_parse_display(const char *name, char **host, int *display, int *screen);
 
 /**
  * @brief Connects to the X server.
- * @param displayname: The name of the display.
- * @param screenp: A pointer to a preferred screen number.
+ * @param displayname The name of the display.
+ * @param screenp A pointer to a preferred screen number.
  * @return A newly allocated xcb_connection_t structure.
  *
  * Connects to the X server specified by @p displayname. If @p
@@ -482,20 +562,30 @@ int xcb_parse_display(const char *name, char **host, int *display, int *screen);
  * variable. If a particular screen on that server is preferred, the
  * int pointed to by @p screenp (if not @c NULL) will be set to that
  * screen; otherwise the screen will be set to 0.
+ *
+ * Always returns a non-NULL pointer to a xcb_connection_t, even on failure.
+ * Callers need to use xcb_connection_has_error() to check for failure.
+ * When finished, use xcb_disconnect() to close the connection and free
+ * the structure.
  */
 xcb_connection_t *xcb_connect(const char *displayname, int *screenp);
 
 /**
  * @brief Connects to the X server, using an authorization information.
- * @param display: The name of the display.
- * @param auth: The authorization information.
- * @param screen: A pointer to a preferred screen number.
+ * @param display The name of the display.
+ * @param auth The authorization information.
+ * @param screen A pointer to a preferred screen number.
  * @return A newly allocated xcb_connection_t structure.
  *
  * Connects to the X server specified by @p displayname, using the
  * authorization @p auth. If a particular screen on that server is
  * preferred, the int pointed to by @p screenp (if not @c NULL) will
  * be set to that screen; otherwise @p screenp will be set to 0.
+ *
+ * Always returns a non-NULL pointer to a xcb_connection_t, even on failure.
+ * Callers need to use xcb_connection_has_error() to check for failure.
+ * When finished, use xcb_disconnect() to close the connection and free
+ * the structure.
  */
 xcb_connection_t *xcb_connect_to_display_with_auth_info(const char *display, xcb_auth_info_t *auth, int *screen);
 
@@ -504,14 +594,43 @@ xcb_connection_t *xcb_connect_to_display_with_auth_info(const char *display, xcb
 
 /**
  * @brief Allocates an XID for a new object.
- * @param c: The connection.
- * @return A newly allocated XID.
+ * @param c The connection.
+ * @return A newly allocated XID, or -1 on failure.
  *
  * Allocates an XID for a new object. Typically used just prior to
  * various object creation functions, such as xcb_create_window.
  */
 uint32_t xcb_generate_id(xcb_connection_t *c);
 
+
+/**
+ * @brief Obtain number of bytes read from the connection.
+ * @param c The connection
+ * @return Number of bytes read from the server.
+ *
+ * Returns cumulative number of bytes received from the connection.
+ *
+ * This retrieves the total number of bytes read from this connection,
+ * to be used for diagnostic/monitoring/informative purposes.
+ */
+
+uint64_t
+xcb_total_read(xcb_connection_t *c);
+
+/**
+ *
+ * @brief Obtain number of bytes written to the connection.
+ * @param c The connection
+ * @return Number of bytes written to the server.
+ *
+ * Returns cumulative number of bytes sent to the connection.
+ *
+ * This retrieves the total number of bytes written to this connection,
+ * to be used for diagnostic/monitoring/informative purposes.
+ */
+
+uint64_t
+xcb_total_written(xcb_connection_t *c);
 
 /**
  * @}

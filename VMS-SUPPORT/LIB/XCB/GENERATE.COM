@@ -29,7 +29,8 @@ $ protocol_root = unix_root + "/xcb/xcb-proto"
 $ protocol = protocol_root + "/src/" + module + ".xml"
 $ SET DEFAULT [.VMS-SUPPORT._BUILD.P64.LIB.XCB]
 $ DEFINE/USER_MODE PYTHONCASEOK 1
-$ native_python "-B" 'generator' "-p" 'protocol_root' 'protocol'
+$ native_python "-B" 'generator' "-p" 'protocol_root' -
+    "-c" "libxcb 1.17.0" "-l" "X Version 11" "-s" "3" 'protocol'
 $ result = $STATUS
 $ IF .NOT. (result .AND. 1) THEN GOTO done
 $ IF F$SEARCH(module + ".C") .EQS. "" THEN result = 2

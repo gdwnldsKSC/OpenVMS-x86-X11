@@ -5,6 +5,7 @@
 #define NEED_EVENTS 1
 #include <limits.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include "X.h"
 #include "Xproto.h"
@@ -21,6 +22,7 @@
 #include "xf86Xinput.h"
 #include "xf86_OSproc.h"
 #include "xf86OSKbd.h"
+#include "atKeynames.h"
 #include "mouse.h"
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 5
 #error The VMS input boundary requires upstream XKB keyboard initialization.
@@ -85,6 +87,68 @@ int OpenVMSPointerByte(unsigned char value)
 {
     if (!ready() || phase != INPUT_ACTIVE || !OpenVMSSerialFeedByte(value)) return 0;
     OpenVMSSerialDrain();
+    ProcessInputEvents();
+    return 1;
+}
+
+/* USB HID 1.11 appendix B/C usages to the upstream kbd driver's AT key names.
+ * https://www.usb.org/sites/default/files/hid1_11.pdf
+ * These are key positions, not characters; XKB still owns layout and repeat.
+ * No emulated i8042 bytes or private keymap are needed for USB input. */
+int OpenVMSKeyboardHID(uint8_t usage, int pressed)
+{
+    static const unsigned char keys[] = {
+        KEY_A, KEY_B, KEY_C, KEY_D, KEY_E, KEY_F, KEY_G, KEY_H,
+        KEY_I, KEY_J, KEY_K, KEY_L, KEY_M, KEY_N, KEY_O, KEY_P,
+        KEY_Q, KEY_R, KEY_S, KEY_T, KEY_U, KEY_V, KEY_W, KEY_X,
+        KEY_Y, KEY_Z, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6,
+        KEY_7, KEY_8, KEY_9, KEY_0, KEY_Enter, KEY_Escape,
+        KEY_BackSpace, KEY_Tab, KEY_Space, KEY_Minus, KEY_Equal,
+        KEY_LBrace, KEY_RBrace, KEY_BSlash, KEY_BSlash, KEY_SemiColon,
+        KEY_Quote, KEY_Tilde, KEY_Comma, KEY_Period, KEY_Slash,
+        KEY_CapsLock, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6,
+        KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12,
+        KEY_Print, KEY_ScrollLock, KEY_Pause, KEY_Insert, KEY_Home,
+        KEY_PgUp, KEY_Delete, KEY_End, KEY_PgDown, KEY_Right, KEY_Left,
+        KEY_Down, KEY_Up, KEY_NumLock, KEY_KP_Divide, KEY_KP_Multiply,
+        KEY_KP_Minus, KEY_KP_Plus, KEY_KP_Enter, KEY_KP_1, KEY_KP_2,
+        KEY_KP_3, KEY_KP_4, KEY_KP_5, KEY_KP_6, KEY_KP_7, KEY_KP_8,
+        KEY_KP_9, KEY_KP_0, KEY_KP_Decimal, KEY_Less, KEY_Menu,
+        KEY_Power, KEY_KP_Equal
+    };
+    static const unsigned char modifiers[] = {
+        KEY_LCtrl, KEY_ShiftL, KEY_Alt, KEY_LMeta,
+        KEY_RCtrl, KEY_ShiftR, KEY_AltLang, KEY_RMeta
+    };
+    unsigned int code;
+    if (!ready() || phase != INPUT_ACTIVE) return 0;
+    if (usage >= 4 && (unsigned int)(usage - 4) < sizeof(keys))
+        code = keys[usage - 4];
+    else if (usage >= 0xe0 && usage <= 0xe7)
+        code = modifiers[usage - 0xe0];
+    else return 1; /* Unsupported consumer/vendor keys are not characters. */
+    ProcessInputEvents();
+    input_lock();
+    xf86PostKeyboardEvent(keyboard->dev, code + MIN_KEYCODE, pressed != 0);
+    input_unlock();
+    ProcessInputEvents();
+    return 1;
+}
+
+int OpenVMSPointerHID(uint8_t buttons, int8_t dx, int8_t dy)
+{
+    MouseDevPtr mouse;
+    unsigned int upstream_buttons;
+    if (!ready() || phase != INPUT_ACTIVE) return 0;
+    mouse = pointer_device->private;
+    if (!mouse || !mouse->PostEvent) return 0;
+    /* Upstream mouse's native order is left=4, middle=2, right=1. */
+    upstream_buttons = ((buttons & 1U) << 2) |
+                       ((buttons & 2U) >> 1) | ((buttons & 4U) >> 1);
+    ProcessInputEvents();
+    input_lock();
+    mouse->PostEvent(pointer_device, upstream_buttons, dx, dy, 0, 0);
+    input_unlock();
     ProcessInputEvents();
     return 1;
 }
@@ -223,6 +287,8 @@ int OpenVMSInputStart(void)
 {
     InputInfoPtr info;
     uint64_t now, started;
+    const char *mode = getenv("XORG_OPENVMS_INPUT");
+    int started_ok;
     /* InitInput finishes DEVICE_ON before queued work runs. The upstream
      * server owns notification registration for this real stream descriptor. */
     if (phase == INPUT_COLD && !pointer_device) {
@@ -246,8 +312,14 @@ int OpenVMSInputStart(void)
     screen_height = screenInfo.screens[0]->height;
     attached = 1;
     if (!ready() || !OpenVMSMonotonicClock(&started)) { phase = INPUT_FAILED; return 0; }
-    acquisition_attempted = 1;
-    if (OpenVMSI8042Start() != 1 || !OpenVMSInputBackendActive() ||
+    if (mode && !strcmp(mode, "USB_SERIAL_CONSOLE")) {
+        started_ok = OpenVMSUSBStart();
+        acquisition_attempted = OpenVMSInputBackendActive();
+    } else {
+        acquisition_attempted = 1;
+        started_ok = OpenVMSI8042Start();
+    }
+    if (started_ok != 1 || !OpenVMSInputBackendActive() ||
         !OpenVMSMonotonicClock(&now) || now < started) { phase = INPUT_FAILED; return 0; }
     previous_clock = last_poll = last_service = last_activity = now;
     if (!RegisterBlockAndWakeupHandlers(block, wakeup, NULL)) {
@@ -256,7 +328,9 @@ int OpenVMSInputStart(void)
     }
     handlers = 1;
     phase = INPUT_ACTIVE;
-    ErrorF("OPENVMS_INPUT_READY upstream kbd/mouse, native i8042 recovery\n");
+    ErrorF("OPENVMS_INPUT_READY upstream kbd/mouse, %s\n",
+           mode && !strcmp(mode, "USB_SERIAL_CONSOLE") ? "USB HID boot input" :
+           "native i8042 recovery");
     return 1;
 }
 

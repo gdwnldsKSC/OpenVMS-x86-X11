@@ -114,7 +114,9 @@ int xf86OpenSerial(XF86OptionPtr options)
     const char *device = xf86CheckStrOption(options, "Device", NULL);
     const char *protocol = xf86CheckStrOption(options, "Protocol", NULL);
     int pair[2], i, saved_errno, flags;
-    if (!device || !protocol || strcmp(device, "OPENVMS_I8042_POINTER") ||
+    if (!device || !protocol ||
+        (strcmp(device, "OPENVMS_INPUT_POINTER") &&
+         strcmp(device, "OPENVMS_I8042_POINTER")) ||
         strcmp(protocol, "GenericPS/2")) {
         errno = ENOTSUP;
         return -1;

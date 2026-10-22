@@ -13,6 +13,9 @@ int OpenVMSInputReady(void);
 int OpenVMSInputReleaseAll(void);
 int OpenVMSKeyboardByte(unsigned char value);
 int OpenVMSPointerByte(unsigned char value);
+int OpenVMSKeyboardHID(uint8_t usage, int pressed);
+int OpenVMSPointerHID(uint8_t buttons, int8_t dx, int8_t dy);
+int OpenVMSUSBStart(void);
 int OpenVMSI8042Start(void);
 int OpenVMSMonotonicClock(uint64_t *nanoseconds);
 

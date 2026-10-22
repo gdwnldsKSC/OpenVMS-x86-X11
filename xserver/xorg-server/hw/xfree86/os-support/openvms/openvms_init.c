@@ -26,8 +26,9 @@ xf86OpenConsole(void)
         input = NULL;
     if (!exclusive || strcmp(exclusive, "1"))
         FatalError("OpenVMS Xorg requires exclusive video ownership and serial OPA0\n");
-    if (input && strcmp(input, "I8042_SERIAL_CONSOLE"))
-        FatalError("OpenVMS Xorg requires explicit exclusive i8042 input ownership\n");
+    if (input && strcmp(input, "I8042_SERIAL_CONSOLE") &&
+        strcmp(input, "USB_SERIAL_CONSOLE"))
+        FatalError("OpenVMS Xorg requires explicit I8042 or USB input selection\n");
     if (console_open)
         return;
     console_open = 1;

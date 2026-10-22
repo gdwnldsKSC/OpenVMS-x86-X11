@@ -2,6 +2,7 @@ $! Foreground VMware test. Run from a serial console or SSH.
 $! P1 is hexadecimal domain:bus:device.function; P2 must be SERIAL_CONSOLE.
 $! P3 is an optional display number, default 0. No X listeners by default.
 $! P4=I8042 opts into exclusive PS/2 keyboard/mouse input; default is video only.
+$! P4=USB uses explicit XORG_OPENVMS_USB_KEYBOARD/_MOUSE UG device logicals.
 $! P5=AUTHENTICATED, P6=exact protected authority, P7=public runtime directory
 $! explicitly enable ordinary upstream TCP clients. No installation/startup changes.
 $ result = 2
@@ -12,7 +13,7 @@ $ authenticated = 0
 $ ON WARNING THEN GOTO failed
 $ ON CONTROL_Y THEN GOTO interrupted
 $ IF P1 .EQS. "" .OR. P2 .NES. "SERIAL_CONSOLE" THEN GOTO usage
-$ IF P4 .NES. "" .AND. P4 .NES. "I8042" THEN GOTO usage
+$ IF P4 .NES. "" .AND. P4 .NES. "I8042" .AND. P4 .NES. "USB" THEN GOTO usage
 $ IF P8 .NES. "" THEN GOTO usage
 $ IF P5 .EQS. "" THEN GOTO display_only_mode
 $ IF P5 .NES. "AUTHENTICATED" THEN GOTO usage
@@ -76,12 +77,16 @@ $ config_name = "VIDEO.CONF"
 $ input_mode = "DISABLED"
 $ keyboard = ""
 $ mouse = ""
-$ IF P4 .EQS. "I8042" THEN config_name = "INPUT.CONF"
+$ physical_input = P4 .EQS. "I8042" .OR. P4 .EQS. "USB"
+$ IF physical_input THEN config_name = "INPUT.CONF"
 $ IF P4 .EQS. "I8042" THEN input_mode = "I8042_SERIAL_CONSOLE"
-$ IF (P4 .EQS. "I8042") .OR. authenticated THEN keyboard = F$SEARCH(module_dir - "]" + ".INPUT]kbd_drv.so")
-$ IF (P4 .EQS. "I8042") .OR. authenticated THEN mouse = F$SEARCH(module_dir - "]" + ".INPUT]mouse_drv.so")
-$ IF ((P4 .EQS. "I8042") .OR. authenticated) .AND. (keyboard .EQS. "") THEN GOTO missing_files
-$ IF ((P4 .EQS. "I8042") .OR. authenticated) .AND. (mouse .EQS. "") THEN GOTO missing_files
+$ IF P4 .EQS. "USB" THEN input_mode = "USB_SERIAL_CONSOLE"
+$ IF P4 .EQS. "USB" .AND. F$TRNLNM("XORG_OPENVMS_USB_KEYBOARD") .EQS. "" .AND. -
+    F$TRNLNM("XORG_OPENVMS_USB_MOUSE") .EQS. "" THEN GOTO missing_usb
+$ IF physical_input .OR. authenticated THEN keyboard = F$SEARCH(module_dir - "]" + ".INPUT]kbd_drv.so")
+$ IF physical_input .OR. authenticated THEN mouse = F$SEARCH(module_dir - "]" + ".INPUT]mouse_drv.so")
+$ IF (physical_input .OR. authenticated) .AND. (keyboard .EQS. "") THEN GOTO missing_files
+$ IF (physical_input .OR. authenticated) .AND. (mouse .EQS. "") THEN GOTO missing_files
 $ config = F$SEARCH(config_dir + config_name)
 $ xkbcomp = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.LIB.X11.XKB]XKBCOMP.EXE")
 $ IF server .EQS. "" .OR. core .EQS. "" THEN GOTO missing_files
@@ -92,6 +97,7 @@ $ IF F$TRNLNM("SYS$SCRATCH") .EQS. "" THEN GOTO missing_scratch
 $! Refuse pending user-mode definitions before the metadata checker runs any
 $! native image. Supervisor-mode caller definitions are never replaced.
 $ logical_names = "DECC$EFS_CHARSET,DECC$EFS_CASE_PRESERVE,XORG_SHR,XORG_CORE,LIBVGAHW,LIBSHADOWFB,XORG_MODULES,XORG_CONFIG,XORG_CONFIG_D,PCIACCESS_OPENVMS_DEVICE,PCIACCESS_OPENVMS_EXCLUSIVE,XORG_OPENVMS_INPUT"
+$ IF P4 .EQS. "USB" THEN logical_names = logical_names + ",XORG_OPENVMS_USB_KEYBOARD,XORG_OPENVMS_USB_MOUSE"
 $ IF authenticated THEN logical_names = logical_names + ",XLOCALEDIR,XERRORDB,XCMSDB"
 $ index = 0
 $check_logicals:
@@ -222,10 +228,14 @@ $ MCR 'server' "''display'" "-listen" "tcp" "-auth" "''authority'" "-noreset" -
 $ result = $STATUS
 $ GOTO done
 $usage:
-$ WRITE SYS$ERROR "Usage: @RUN_XORG domain:bus:device.function SERIAL_CONSOLE [display] [I8042]"
+$ WRITE SYS$ERROR "Usage: @RUN_XORG domain:bus:device.function SERIAL_CONSOLE [display] [I8042|USB]"
 $ WRITE SYS$ERROR "Optional client mode: append AUTHENTICATED exact-authority-file;version native-runtime-directory"
 $ WRITE SYS$ERROR "SERIAL_CONSOLE confirms serial OPA0 and exclusive ownership of the display."
 $ WRITE SYS$ERROR "I8042 additionally confirms exclusive ownership of the PS/2 keyboard and mouse."
+$ WRITE SYS$ERROR "USB requires explicitly selected, exclusively available UG boot-HID devices."
+$ GOTO done
+$missing_usb:
+$ WRITE SYS$ERROR "Define XORG_OPENVMS_USB_KEYBOARD and/or XORG_OPENVMS_USB_MOUSE to an exact UGAunit: device."
 $ GOTO done
 $wrong_location:
 $ WRITE SYS$ERROR "RUN_XORG.COM must remain in VMS-SUPPORT/PROGRAMS/XSERVER/HW/XFREE86/OPENVMS."

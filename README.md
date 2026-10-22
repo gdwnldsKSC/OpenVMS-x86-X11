@@ -13,7 +13,7 @@ Keyboard 2.1.0 and mouse 2.0.0 have loadable-module support with unchanged upstr
 Supporting builds include libxcvt 0.1.3, libXfont 1.5.4, xorgproto 2026.1 and xtrans 1.6.0. X11 uses 64-bit pointers; the standalone GAWK build tool uses 32-bit pointers.  
 The X11 compiler profile preserves external-name case. When changing this profile, use a clean build tree and rebuild all linked objects and libraries together.  
   
-XAU. Produces `XAU.OLB` - all eight standard Xau modules; optional Kerberos support excluded.  
+XAU - 1.0.12. Produces `XAU.OLB` - all eight upstream Xau modules with native P64 pointers.  
 XDMCP. Produces `XDMCP.OLB` - all eight standard Xdmcp modules; optional `HASXDMAUTH` wrapping excluded.  
 XCB. Produces `XCB.OLB` - the core TCP client transport and generated core, BIG-REQUESTS, and XC-MISC protocols, using native pthreads and `XAU.OLB`.  
 XCB_SHAPE. Produces `XCB_SHAPE.OLB` - the generated Shape protocol client library used by xwininfo.  

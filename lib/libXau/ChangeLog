@@ -1,3 +1,562 @@
+commit a9c65683e68b3a4349afee5d7673b393fb924d2e
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Dec 13 17:23:57 2024 -0800
+
+    libXau 1.0.12
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 6b2e9a63d8306282a2b384762bea004c19f301a1
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Aug 26 10:22:33 2024 -0700
+
+    XauDisposeAuth: remove void casts from functions that return void
+    
+    We rely on having included headers with proper prototypes to know
+    that these functions are declared to return void instead of adding
+    casts to paper over missing prototypes.
+    
+    Clears warnings from gcc 14.1:
+    
+    AuDispose.c: In function ‘XauDisposeAuth’:
+    AuDispose.c:42:13: warning: useless cast to type ‘void’ [-Wuseless-cast]
+       42 |             (void) explicit_bzero (auth->data, auth->data_length);
+          |             ^
+    AuDispose.c:48:13: warning: useless cast to type ‘void’ [-Wuseless-cast]
+       48 |             (void) free (auth->data);
+          |             ^
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libxau/-/merge_requests/18>
+
+commit 89429bb36de409b204ef105e8b73126a639ccb03
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Feb 17 13:23:58 2024 -0800
+
+    unifdef hpux
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit c7b0ac2c894bbeebc337867388a8b338692550b8
+Author: Thierry LARONDE <tlaronde@kergis.com>
+Date:   Thu Feb 1 20:43:38 2024 +0100
+
+    Autest.c includes Xauth.h that depends on other headers.
+    
+    Xauth.h includes headers provided by xproto. So add for test
+    also the dependency.
+
+commit a5d1f88c3a74a099030ffbbb30ad3fd361fdd1af
+Author: Thierry LARONDE <tlaronde@kergis.com>
+Date:   Thu Feb 1 20:42:02 2024 +0100
+
+    Allow to use POSIX.2 compliant sed(1)
+    
+    POSIX.2 sed(1) doesn't allow file to be anywhere else than, if given,
+    last. Allow to use whatever compliant sed(1) is there, not only GNU
+    sed(1).
+
+commit 4866e00d737a1ece81c519ea867cfe16a0ae36b4
+Author: Thierry LARONDE <tlaronde@kergis.com>
+Date:   Thu Feb 1 20:40:25 2024 +0100
+
+    Also test for explicit_memset(3) support
+    
+    explicit_bzero(3) is not provided by every system, and some provide
+    explicit_memset(3) that is in the process of being standardized
+    (furthermore, POSIX deprecates bzero(3) since memset(3) can do
+    same or more).
+
+commit caa2d8e29adf43bb77fc00d718f7a0db4c2c35b1
+Author: Thierry LARONDE <tlaronde@kergis.com>
+Date:   Thu Feb 1 20:37:42 2024 +0100
+
+    Gcc < 11 doesn't allow opt. deallocator arg for __attribute((malloc))
+
+commit f4fc44202b554e68093828b556f8c7fd9644ddb0
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Sep 16 11:51:11 2023 -0700
+
+    gitlab CI: run meson build with both gcc & clang compilers
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 5acc34b51625676f8f297516e4f7915b18dd4cb2
+Author: Alex Richardson <arichardson@FreeBSD.org>
+Date:   Sun Sep 10 21:49:36 2023 -0700
+
+    Allow building with clang after aec9d7266777e0b9243ef0f112fe0e07256bd446
+    
+    Clang also supports the malloc attribute but unlike GCC does not accept
+    the deallocator argument. This has been reported as
+    https://github.com/llvm/llvm-project/issues/51607
+    
+    Signed-off-by: Alex Richardson <arichardson@FreeBSD.org>
+
+commit aec9d7266777e0b9243ef0f112fe0e07256bd446
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jul 30 10:30:52 2023 -0700
+
+    Xauth.h: add access & malloc attributes to function prototypes
+    
+    May aid in static analysis by gcc
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 68e74d37b99f56bbd1a5f2fb8cb4ad6116f27bd3
+Author: Dylan Baker <dylan@pnwbakers.com>
+Date:   Tue Jun 20 15:46:23 2023 -0700
+
+    add Meson build system
+    
+    This is, I think, equal to the autotools build-system in every practical
+    way. The man pages have hardcoded numbers. I think this is okay, as all
+    modern operating systems seem to use the same man page numbering now.
+    
+    I've also chosen to not generate a config.h file with Meson. This makes
+    using libXau as a subproject safer, since we don't have to worry about
+    conflicting config.h files, plus there are only a couple of declarations
+    that are actually used. This also saves some configure time in writing
+    out an additional file.
+
+commit df1bf4fe528a5a9eef420f78efb225e4696ac467
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Mar 25 12:44:39 2023 -0700
+
+    Set close-on-exec when opening files
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 41c43bdf85c91293af80b0b843947380b9b3378c
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Feb 25 09:21:23 2023 -0800
+
+    Remove "All rights reserved" from Oracle copyright notices
+    
+    Oracle no longer includes this term in our copyright & license notices.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit c52f54e9533046a52edf84bcc02abedc2dbcb1a7
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Feb 6 15:27:43 2023 -0800
+
+    Require LT_INIT from libtool 2 instead of deprecated AC_PROG_LIBTOOL
+    
+    AC_PROG_LIBTOOL was replaced by LT_INIT in libtool 2 in 2008,
+    so it's time to rely on it.
+    
+    configure.ac:35: warning: The macro `AC_LIBTOOL_WIN32_DLL' is obsolete.
+    configure.ac:35: You should run autoupdate.
+    aclocal.m4:11889: AC_LIBTOOL_WIN32_DLL is expanded from...
+    configure.ac:35: the top level
+    configure.ac:35: warning: AC_LIBTOOL_WIN32_DLL: Remove this warning and the call to _LT_SET_OPTION when you
+    configure.ac:35: put the 'win32-dll' option into LT_INIT's first parameter.
+    ./lib/autoconf/general.m4:2434: AC_DIAGNOSE is expanded from...
+    aclocal.m4:11889: AC_LIBTOOL_WIN32_DLL is expanded from...
+    configure.ac:35: the top level
+    configure.ac:36: warning: The macro `AC_PROG_LIBTOOL' is obsolete.
+    configure.ac:36: You should run autoupdate.
+    aclocal.m4:3465: AC_PROG_LIBTOOL is expanded from...
+    configure.ac:36: the top level
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 14fdf25db9f21c8f3ad37f0d32a5b8e726efdc0d
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Thu Dec 8 10:36:36 2022 -0500
+
+    libXau 1.0.11
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit 10f76cc702e0877743e21241b897ab93010367a2
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Tue Nov 29 12:02:21 2022 -0500
+
+    configure: Use AC_SYS_LARGEFILE to enable large file support
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit 4fbefa02d6c842401ff79065d364edd7087a12a6
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Aug 26 16:01:41 2022 -0700
+
+    libXau 1.0.10
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 83f33926d43f6ae4cf9734e3aedbef23fb0d6b74
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jul 17 10:06:05 2022 -0700
+
+    XauReadAuth: move failure handling code to a common code block
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3db78d0fa60e07a4ffda61a19849ad30623f70cf
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jul 9 11:00:50 2022 -0700
+
+    Remove unnnecessary casts from malloc() and free() calls
+    
+    These are not needed in C89 and later.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 7f43a321e59b998e731b36039b744138a2d5b776
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jul 9 10:54:58 2022 -0700
+
+    Autest.c: Fix -Wdiscarded-qualifiers warnings
+    
+    Autest.c: In function ‘main’:
+    Autest.c:38:21: warning: initialization discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+       38 |     char    *name = "XAU-TEST-1";
+          |                     ^~~~~~~~~~~~
+    Autest.c:39:21: warning: initialization discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+       39 |     char    *data = "Do not begin the test until instructed to do so.";
+          |                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Autest.c:57:23: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+       57 |     test_data.address = "";
+          |                       ^
+    Autest.c:59:22: warning: assignment discards ‘const’ qualifier from pointer target type [-Wdiscarded-qualifiers]
+       59 |     test_data.number = "";
+          |                      ^
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit b98078c15874c12dfd4e01594ef9277897ade1df
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jul 9 10:50:11 2022 -0700
+
+    Fix spelling/wording issues
+    
+    Found by using:
+        codespell --builtin clear,rare,usage,informal,names
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d824fa5517cf445dc1e204f05ee2098c254f2bdb
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jul 9 10:48:33 2022 -0700
+
+    Build xz tarballs instead of bzip2
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 8928883477ff32cbbb97ee0e871324812e3b5c96
+Author: Tobias Stoeckmann <tobias@stoeckmann.org>
+Date:   Sun Jul 3 11:52:44 2022 +0200
+
+    Use explicit_bzero if available
+    
+    Optimizing compilers may remove the bzero call because it is followed
+    by free. The function explicit_bzero avoids this optimization. Use it
+    if it is available.
+    
+    Signed-off-by: Tobias Stoeckmann <tobias@stoeckmann.org>
+
+commit 19b13bf20de5b15ab87fb4019ec910ef3216129f
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jul 9 10:20:45 2022 -0700
+
+    gitlab CI: add a basic build test
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d9443b2c57b512cfb250b35707378654d86c7dea
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Feb 10 14:42:30 2019 -0800
+
+    libXau 1.0.9
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 6f0b6fcf699592d9ed284356571a2f4681726ac5
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Dec 7 19:38:53 2018 -0800
+
+    Update configure.ac bug URL for gitlab migration
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 7ba7085b4f01f3cd72008712a5333ea3f0edfd88
+Author: walter harms <wharms@bfs.de>
+Date:   Sat Oct 28 19:14:22 2017 +0200
+
+    AuRead.c: remove redundant null check on calling free()
+    
+    this removes simply unneeded code from XauReadAuth
+    
+    Signed-off-by: Walter Harms <wharms@bfs.de>
+    Reviewed-by: Daniel Martin <consume.noise@gmail.com>
+    Reviewed-by: Emil Velikov <emil.velikov@collabora.com>
+
+commit cf6cc845ba12dbfa7d29a4eab810888838a9749b
+Author: walter harms <wharms@bfs.de>
+Date:   Sat Oct 28 19:14:26 2017 +0200
+
+    Au FileName.c: remove redundant null check on calling free()
+    
+    remove redundant null check on calling free()
+    Signed-off-by: Walter Harms <wharms@bfs.de>
+    Reviewed-by: Daniel Martin <consume.noise@gmail.com>
+    Reviewed-by: Emil Velikov <emil.velikov@collabora.com>
+
+commit fdbb21274a4e8af419b2581e05242f5058471f72
+Author: walter harms <wharms@bfs.de>
+Date:   Sat Oct 28 19:14:13 2017 +0200
+
+    AuDispose.c:remove redundant null check on calling free()
+    
+    redundant null check on auth->address calling free()
+    redundant null check on auth->number calling free()
+    redundant null check on auth->name calling free()
+    
+    Signed-off-by: Walter Harms <wharms@bfs.de>
+    Reviewed-by: Daniel Martin <consume.noise@gmail.com>
+    Reviewed-by: Emil Velikov <emil.velikov@collabora.com>
+
+commit 987fee49dc1750082cfe6e24833379233777a13b
+Author: Tobias Stoeckmann <tobias@stoeckmann.org>
+Date:   Thu Oct 19 22:18:18 2017 +0200
+
+    Avoid out of boundary read access
+    
+    If the environment variable HOME is empty, XauFileName triggers an
+    out of boundary read access (name[1]). If HOME consists of a single
+    character relative path, the output becomes unexpected, because
+    "HOME=a" leads to "a.Xauthority" instead of "a/.Xauthority". Granted,
+    a relative HOME path leads to trouble in general, the code should
+    properly return "a/.Xauthority" nonetheless.
+    
+    Signed-off-by: Tobias Stoeckmann <tobias@stoeckmann.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 42e152c6f2d1bd839e77c5e97f3a509d890c3237
+Author: Mihail Konev <k.mvc@ya.ru>
+Date:   Thu Jan 26 13:52:49 2017 +1000
+
+    autogen: add default patch prefix
+    
+    Signed-off-by: Mihail Konev <k.mvc@ya.ru>
+
+commit fca98447c95ae0284b4f1b0c381011f8ccaf1ff0
+Author: Emil Velikov <emil.l.velikov@gmail.com>
+Date:   Mon Mar 9 12:00:52 2015 +0000
+
+    autogen.sh: use quoted string variables
+    
+    Place quotes around the $srcdir, $ORIGDIR and $0 variables to prevent
+    fall-outs, when they contain space.
+    
+    Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 33f792eb48687793bbb92e62d7462828c7468b55
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jan 24 10:32:07 2017 +1000
+
+    autogen.sh: use exec instead of waiting for configure to finish
+    
+    Syncs the invocation of configure with the one from the server.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Emil Velikov <emil.velikov@collabora.com>
+
+commit 1e4635be11154dd8262f37b379511bd627defa2a
+Author: Jeremy Huddleston Sequoia <jeremyhu@apple.com>
+Date:   Thu Jan 2 01:07:41 2014 -0800
+
+    Silence a benign static analysis warning with an assert of allocation size
+    
+    AuFileName.c:72:8: warning: Call to 'malloc' has an allocation size of 0 bytes
+            buf = malloc (size);
+                  ^~~~~~~~~~~~~
+    
+    Signed-off-by: Jeremy Huddleston Sequoia <jeremyhu@apple.com>
+
+commit 304a11be4727c5a7feeb2501e8e001466f8ce84e
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Sep 29 09:23:45 2013 -0700
+
+    XauFileName: always go through buf allocation if buf is NULL
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 67beb3d0bc41c3416902c858f595b35306f76704
+Author: Fuminobu TAKEYAMA <ftake@geeko.jp>
+Date:   Sun Sep 29 09:21:05 2013 -0700
+
+    XauFileName: reset bsize when malloc failed
+    
+    https://bugs.freedesktop.org/show_bug.cgi?id=69929
+    
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 899790011304c4029e15abf410e49ce7cec17e0a
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri May 24 15:04:00 2013 -0700
+
+    libXau 1.0.8
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit f5a57d8a21a34d7084cce294e24c0422e02ef8ef
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Mar 30 11:42:09 2013 -0700
+
+    Use remove() instead of unlink() to delete lock files
+    
+    In normal cases, no difference.  If someone has accidentally created
+    a directory with those names, this can save you from needing to fsck
+    to clean it up on some filesystems (like UFS).
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 4352cf9707df08d51ef891be156d475743d0a060
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Mar 30 11:30:37 2013 -0700
+
+    Call memcmp() instead of defining our own equivalent
+    
+    Stops casting len parameters to int in callers so that this change
+    doesn't introduce warnings that we're taking unsigned values, casting
+    them to signed, then passing to a function that wants them unsigned.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 704beb71768cdaa2448da6edfa219b4a7bf862f1
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Mar 30 11:18:44 2013 -0700
+
+    Replace strcpy+strcat pairs with snprintf calls
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3038a87edce31ad2895431f7cfdc96a33fc70e02
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Mar 30 10:59:06 2013 -0700
+
+    Check for configure's HAVE_UNISTD_H instead of X_NOT_POSIX
+    
+    Drops fallback prototype of sleep() for non-POSIX, non-Windows systems
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 325f5282bc1d93b72b0b05037245cf130970fa38
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Mar 30 10:55:26 2013 -0700
+
+    Use configure check for pathconf instead of X_NOT_POSIX #define
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 1a8a1b2c68967b48c07b56142799b1020f017027
+Author: Colin Walters <walters@verbum.org>
+Date:   Wed Jan 4 17:37:06 2012 -0500
+
+    autogen.sh: Implement GNOME Build API
+    
+    http://people.gnome.org/~walters/docs/build-api.txt
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit b1ace13d5864080f2101f2910cad706f800984de
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Jan 15 14:28:48 2013 -0500
+
+    configure: Remove AM_MAINTAINER_MODE
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 8570d287396934f26224c76d48d7f17d87380e72
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 12 15:58:59 2013 -0800
+
+    Convert INCLUDES to AM_CPPFLAGS in preparation for automake-1.14 obsoletion
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 369d133ca19f938d123254dee5c88214512f82df
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Jan 4 19:38:51 2013 -0800
+
+    unifdef -U__UNIXOS2__
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit e04364efccbb3bb4cfc5f4cb491ffa1faaaacbdb
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Dec 16 15:50:52 2012 -0800
+
+    Tell clang to shut up about the padding in struct xauth
+    
+    We can't clean it up without breaking ABI, so disable the warnings for it:
+    
+    ./include/X11/Xauth.h:33:19: warning: padding struct 'struct xauth' with 4 bytes to align 'address' [-Wpadded]
+        char            *address;
+                         ^
+    ./include/X11/Xauth.h:35:19: warning: padding struct 'struct xauth' with 6 bytes to align 'number' [-Wpadded]
+        char            *number;
+                         ^
+    ./include/X11/Xauth.h:37:19: warning: padding struct 'struct xauth' with 6 bytes to align 'name' [-Wpadded]
+        char            *name;
+                         ^
+    ./include/X11/Xauth.h:39:18: warning: padding struct 'struct xauth' with 6 bytes to align 'data' [-Wpadded]
+        char            *data;
+                         ^
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 4d43b4554f8e35bf8122ae9d2f1bbc0e56fe6d37
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Dec 16 15:40:30 2012 -0800
+
+    Clean up some clang warnings about sign conversion
+    
+    fread & fwrite are defined as taking size_t arguments (an unsigned type),
+    so stop casting their arguments to a signed int just to confuse things.
+    
+    Fixes warnings:
+    
+    AuFileName.c:69:59: warning: implicit conversion loses integer precision: 'unsigned long' to 'int' [-Wshorten-64-to-32]
+        size = strlen (name) + strlen(&slashDotXauthority[1]) + 2;
+             ~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+    
+    AuRead.c:58:44: warning: implicit conversion changes signedness: 'int' to 'size_t' (aka 'unsigned long') [-Wsign-conversion]
+            if (fread (data, (int) sizeof (char), (int) len, file) != len) {
+                ~~~~~                             ^~~~~~~~~
+    
+    AuWrite.c:49:46: warning: implicit conversion changes signedness: 'int' to 'size_t' (aka 'unsigned long') [-Wsign-conversion]
+        if (fwrite (string, (int) sizeof (char), (int) count, file) != count)
+            ~~~~~~                               ^~~~~~~~~~~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit f2b24dd74614ce807cacf764c6eddd834feffc5a
+Author: Eric S. Raymond <esr@thyrsus.com>
+Date:   Thu Aug 23 11:12:39 2012 -0400
+
+    Remove a use of tab stops.
+
+commit 9daef33e32ba36c1f872691daeebbf98a73b4b25
+Author: Chase Douglas <chase.douglas@canonical.com>
+Date:   Fri Apr 20 14:16:07 2012 -0700
+
+    Free XauFileName() static buffer at exit
+    
+    XauFileName() may allocate and return a static buffer. The only
+    way to ensure it is freed is to deallocate it when the program exits.
+    
+    Signed-off-by: Chase Douglas <chase.douglas@canonical.com>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
 commit 0e3061495f5da8a323db02e612c4f09688b7ade0
 Author: Alan Coopersmith <alan.coopersmith@oracle.com>
 Date:   Tue Mar 6 22:16:57 2012 -0800

@@ -22,18 +22,18 @@
 
 # Initialize Autoconf
 AC_PREREQ([2.60])
-AC_INIT([libXau], [1.0.7],
-	[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], [libXau])
+AC_INIT([libXau], [1.0.12],
+	[https://gitlab.freedesktop.org/xorg/lib/libxau/-/issues], [libXau])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIRS([m4])
+AC_USE_SYSTEM_EXTENSIONS
 
 # Initialize Automake
-AM_INIT_AUTOMAKE([foreign dist-bzip2])
-AM_MAINTAINER_MODE
+AM_INIT_AUTOMAKE([foreign dist-xz])
 
 # Initialize libtool
-AC_LIBTOOL_WIN32_DLL
-AC_PROG_LIBTOOL
+LT_INIT([win32-dll])
 
 # Require X.Org macros 1.8 or later for MAN_SUBSTS set by XORG_MANPAGE_SECTIONS
 m4_ifndef([XORG_MACROS_VERSION],
@@ -44,8 +44,14 @@ XORG_DEFAULT_OPTIONS
 # Checks for programs.
 AC_PROG_LN_S
 
-# Obtain compiler/linker options for depedencies
+# Checks for library functions.
+AC_CHECK_FUNCS([explicit_bzero explicit_memset pathconf])
+
+# Obtain compiler/linker options for dependencies
 PKG_CHECK_MODULES(XAU, xproto)
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_SYS_LARGEFILE
 
 AC_ARG_ENABLE(xthreads,
               AS_HELP_STRING([--disable-xthreads],

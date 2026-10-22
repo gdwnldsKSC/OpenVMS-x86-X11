@@ -3,8 +3,7 @@ SUBDIRS=man
 lib_LTLIBRARIES = libXau.la
 
 AM_CFLAGS = $(XAU_CFLAGS) $(CWARNFLAGS)
-
-INCLUDES = -I${top_srcdir}/include
+AM_CPPFLAGS = -I${top_srcdir}/include
 
 libXau_la_LDFLAGS = -version-number 6:0:0 -no-undefined
 
@@ -62,3 +61,7 @@ ChangeLog:
 	$(CHANGELOG_CMD)
 
 dist-hook: ChangeLog INSTALL
+
+ACLOCAL_AMFLAGS = -I m4
+
+EXTRA_DIST = meson.build meson_options.txt

@@ -30,14 +30,13 @@ in this Software without prior written authorization from The Open Group.
 #include <X11/Xauth.h>
 #include <X11/Xos.h>
 
-static int
-binaryEqual (_Xconst char *a, _Xconst char *b, int len)
-{
-    while (len--)
-	if (*a++ != *b++)
-	    return 0;
-    return 1;
-}
+#ifdef O_CLOEXEC
+#define FOPEN_CLOEXEC "e"
+#else
+#define FOPEN_CLOEXEC ""
+#endif
+
+#define binaryEqual(a, b, len) (memcmp(a, b, len) == 0)
 
 Xauth *
 XauGetAuthByAddr (
@@ -71,7 +70,7 @@ _Xconst char*	name)
 	return NULL;
     if (access (auth_name, R_OK) != 0)		/* checks REAL id */
 	return NULL;
-    auth_file = fopen (auth_name, "rb");
+    auth_file = fopen (auth_name, "rb" FOPEN_CLOEXEC);
     if (!auth_file)
 	return NULL;
     for (;;) {
@@ -94,13 +93,13 @@ _Xconst char*	name)
 	if ((family == FamilyWild || entry->family == FamilyWild ||
 	     (entry->family == family &&
 	      address_length == entry->address_length &&
-	      binaryEqual (entry->address, address, (int)address_length))) &&
+	      binaryEqual (entry->address, address, address_length))) &&
 	    (number_length == 0 || entry->number_length == 0 ||
 	     (number_length == entry->number_length &&
-	      binaryEqual (entry->number, number, (int)number_length))) &&
+	      binaryEqual (entry->number, number, number_length))) &&
 	    (name_length == 0 || entry->name_length == 0 ||
 	     (entry->name_length == name_length &&
- 	      binaryEqual (entry->name, name, (int)name_length))))
+	      binaryEqual (entry->name, name, name_length))))
 	    break;
 	XauDisposeAuth (entry);
     }

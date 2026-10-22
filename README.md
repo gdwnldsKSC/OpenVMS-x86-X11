@@ -14,7 +14,7 @@ Supporting builds include libxcvt 0.1.3, libXfont 1.5.4, xorgproto 2026.1 and xt
 The X11 compiler profile preserves external-name case. When changing this profile, use a clean build tree and rebuild all linked objects and libraries together.  
   
 XAU - 1.0.12. Produces `XAU.OLB` - all eight upstream Xau modules with native P64 pointers.  
-XDMCP. Produces `XDMCP.OLB` - all eight standard Xdmcp modules; optional `HASXDMAUTH` wrapping excluded.  
+XDMCP - 1.1.5. Produces `XDMCP.OLB` - all eight upstream Xdmcp modules with native P64 pointers; optional `HASXDMAUTH` wrapping excluded.  
 XCB. Produces `XCB.OLB` - the core TCP client transport and generated core, BIG-REQUESTS, and XC-MISC protocols, using native pthreads and `XAU.OLB`.  
 XCB_SHAPE. Produces `XCB_SHAPE.OLB` - the generated Shape protocol client library used by xwininfo.  
 ZLIB. Produces `Z.OLB` - all 12 modules of the bundled zlib 1.2.3.  

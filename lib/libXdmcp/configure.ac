@@ -22,23 +22,27 @@
 
 # Initialize Autoconf
 AC_PREREQ([2.60])
-AC_INIT([libXdmcp], [1.1.1],
-        [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], [libXdmcp])
+AC_INIT([libXdmcp], [1.1.5],
+        [https://gitlab.freedesktop.org/xorg/lib/libxdmcp/-/issues], [libXdmcp])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIRS([m4])
+
+# Set common system defines for POSIX extensions, such as _GNU_SOURCE
+# Must be called before any macros that run the compiler (like LT_INIT)
+# to avoid autoconf errors.
+AC_USE_SYSTEM_EXTENSIONS
 
 # Initialize Automake
-AM_INIT_AUTOMAKE([foreign dist-bzip2])
-AM_MAINTAINER_MODE
+AM_INIT_AUTOMAKE([foreign dist-xz])
 
 # Initialize libtool
-AC_LIBTOOL_WIN32_DLL
-AC_PROG_LIBTOOL
+LT_INIT([win32-dll])
 
-# Require xorg-macros minimum of 1.12 for DocBook external references
+# Require xorg-macros minimum of 1.16 for unit testing with memory checks
 m4_ifndef([XORG_MACROS_VERSION],
-          [m4_fatal([must install xorg-macros 1.12 or later before running autoconf/autogen])])
-XORG_MACROS_VERSION(1.12)
+          [m4_fatal([must install xorg-macros 1.16 or later before running autoconf/autogen])])
+XORG_MACROS_VERSION(1.16)
 XORG_DEFAULT_OPTIONS
 XORG_ENABLE_DOCS
 XORG_WITH_XMLTO(0.0.22)
@@ -49,13 +53,35 @@ XORG_CHECK_SGML_DOCTOOLS(1.8)
 # Checks for programs.
 AC_PROG_LN_S
 
+# Checks for header files.
+AC_CHECK_HEADERS([sys/random.h])
+
 # Checks for libraries.
 AC_SEARCH_LIBS([recvfrom],[socket])
 
-# Checks for library functions.
-AC_CHECK_FUNCS([srand48 lrand48])
+case $host_os in
+     *mingw*)
+        AC_CHECK_LIB([ws2_32],[main])
+        ;;
+     *)
+        ;;
+esac
 
-# Obtain compiler/linker options for depedencies
+# Checks for non-standard functions and fallback to libbsd if we can
+# We only check for arc4random_buf, because if we have that, we don't
+# need/use getentropy.
+AC_LINK_IFELSE([AC_LANG_CALL([], [arc4random_buf])],
+               [TRY_LIBBSD="no"], [TRY_LIBBSD="yes"])
+AS_IF([test "x$TRY_LIBBSD" = "xyes"],
+      [PKG_CHECK_MODULES([LIBBSD], [libbsd-overlay], [
+	CFLAGS="$CFLAGS $LIBBSD_CFLAGS"
+	LIBS="$LIBS $LIBBSD_LIBS"
+], [:])])
+
+# Checks for library functions.
+AC_CHECK_FUNCS([srand48 lrand48 arc4random_buf getentropy])
+
+# Obtain compiler/linker options for dependencies
 PKG_CHECK_MODULES(XDMCP, xproto)
 
 if test -f ${srcdir}/Wraphelp.c; then
@@ -71,7 +97,11 @@ AM_CONDITIONAL(HASXDMAUTH,test x$HASXDMAUTH = xyes)
 XORG_WITH_LINT
 XORG_LINT_LIBRARY([Xdmcp])
 
+#  --enable-unit-tests
+XORG_ENABLE_UNIT_TESTS([yes])
+
 AC_CONFIG_FILES([Makefile
 		doc/Makefile
+		test/Makefile
 		xdmcp.pc])
 AC_OUTPUT

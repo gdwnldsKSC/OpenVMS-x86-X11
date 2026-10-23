@@ -1,4 +1,4 @@
-! Standalone Henry Spencer POSIX regex: upstream Makefile library and header generation.
+! Henry Spencer POSIX regex alpha3.8p1: upstream library and header generation.
 REGEX_HEADERS = $(OUT).INCLUDE]REGEX.H
 REGEX_IHEADERS = $(OUT).LIB.REGEX]REGCOMP.IH, $(OUT).LIB.REGEX]REGERROR.IH, -
                 $(OUT).LIB.REGEX]REGEXEC.IH, $(OUT).LIB.REGEX]REGFREE.IH, -

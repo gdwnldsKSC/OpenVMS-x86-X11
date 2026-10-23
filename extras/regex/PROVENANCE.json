@@ -1,11 +1,12 @@
 {
   "component": "Henry Spencer POSIX regex",
-  "upstream_version": "alpha3.7 (1997-11-21)",
-  "source_url": "https://xorg.freedesktop.org/releases/X11R6.9.0/src-single/X11R6.9.0-src.tar.gz",
-  "archive_sha256": "e28db3311b32a07584576da0a1ebbbfef1e02b201cb6d018f35d2274d2a816c2",
-  "archive_member_prefix": "xc/extras/regex/",
-  "acquired_at_utc": "2026-10-09T00:47:29.778890+00:00",
-  "acquisition": "Independent HTTPS download from X.Org; standalone prerequisite imported byte-for-byte, not a legacy X server source fallback.",
+  "upstream_version": "alpha3.8p1 (2015-02-25)",
+  "source_url": "https://github.com/garyhouston/regex/archive/refs/tags/alpha3.8p1.tar.gz",
+  "source_commit": "70bc2965604b6b8aaf260049e64c708dddf85334",
+  "archive_sha256": "ce54bd0a1425450cb5c48abaa755a6016001e30877d5136240bc1dfc30ae60f8",
+  "archive_member_prefix": "regex-alpha3.8p1/",
+  "acquired_utc_date": "2026-10-23",
+  "acquisition": "Independent HTTPS download from Gary Houston's source-preserving repository for Henry Spencer's BSD/POSIX regex library; complete release imported byte-for-byte.",
   "upstream_files": [
     {
       "path": "cclass.h",
@@ -41,11 +42,11 @@
     },
     {
       "path": "README",
-      "sha256": "4573093c737c8bbfcb6bfd8c893634dc6f278ed7d1363b7d00ee15634ac2527b"
+      "sha256": "c77d7ff51853c1338a52e27daae8d35ef68099247d0c8998cf45688d4eb29d51"
     },
     {
       "path": "regcomp.c",
-      "sha256": "7857b3972cf3857ece53d6c845d54f087e5df2aa3405211a9f49186599ece639"
+      "sha256": "fa0c758e7a3a8c6975235b3ff999d61e6ac1ba347bc7ed8321f891ff396f8168"
     },
     {
       "path": "regerror.c",
@@ -85,7 +86,19 @@
     },
     {
       "path": "WHATSNEW",
-      "sha256": "dfc9f9d99c97b82ffc6ee0405724ccbf927570e5b2eecae76d4bcd3f0d566741"
+      "sha256": "a8f3c51c1b9e53c7afbcc2fea39e3397b365365d3cdc049a8c08ddee4d113731"
+    },
+    {
+      "path": "fake/limits.h",
+      "sha256": "2bbf33903e1b5e8947369b8c2583d3f5c5c947988f0f9a772f7ae817e1d44aec"
+    },
+    {
+      "path": "fake/memmove.c",
+      "sha256": "e7086faba3690f8e9e3d22ac407ff01e936c918c3da959a876351af66e47ccc4"
+    },
+    {
+      "path": "fake/stdlib.h",
+      "sha256": "a0d65b0d90f199e08ea14c2ffaeadb7978a1052ad78a868deb5ed96a8e9dc164"
     }
   ]
 }

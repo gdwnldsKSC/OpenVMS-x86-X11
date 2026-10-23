@@ -17,7 +17,7 @@ XAU - 1.0.12. Produces `XAU.OLB` - all eight upstream Xau modules with native P6
 XDMCP - 1.1.5. Produces `XDMCP.OLB` - all eight upstream Xdmcp modules with native P64 pointers; optional `HASXDMAUTH` wrapping excluded.  
 XCB - 1.17.0. Produces `XCB.OLB` - the core TCP client transport and generated core, BIG-REQUESTS, and XC-MISC protocols from xcb-proto 1.17.0, using native pthreads and `XAU.OLB`. Concurrent requests sharing one connection still fail native VMS runtime testing, as with the previous version.  
 XCB_SHAPE - 1.17.0. Produces `XCB_SHAPE.OLB` - the generated Shape protocol client library used by xwininfo.  
-ZLIB. Produces `Z.OLB` - all 12 modules of the bundled zlib 1.2.3.  
+ZLIB - 1.3.2. Produces `Z.OLB` - all 15 upstream library modules with native P64 pointers and 64-bit file offsets.  
 REGEX. Produces `REGEX.OLB` - all four unchanged standalone POSIX regex modules, with native public/private header generation; P64 case-preserving build and module-discovery matching validated.  
 FONTENC. Produces `FONTENC.OLB` - `fontenc.c` and `encparse.c`, using `Z.OLB`; upstream reverse-map cleanup and parser-growth defects remain.  
 EXPAT. Produces `EXPAT.OLB` - `xmlparse.c`, `xmltok.c`, and `xmlrole.c` from bundled Expat 1.95.8.  

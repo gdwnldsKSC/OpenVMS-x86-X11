@@ -1,21 +1,32 @@
 
-Expat can be built on Windows in three ways: 
-  using MS Visual C++ (6.0 or .NET), Borland C++ Builder 5 or Cygwin.
+Expat can be built on Windows in two ways:
+  using MS Visual Studio .NET or Cygwin.
 
 * Cygwin:
   This follows the Unix build procedures.
 
-* C++ Builder 5:
-  Possible with make files in the BCB5 subdirectory.
-  Details can be found in the ReadMe file located there.
+* MS Visual Studio 2022:
+  Use CMake to generate a solution file for Visual Studio, then use msbuild
+  to compile.  For example:
 
-* MS Visual C++ 6:
-  Based on the workspace file expat.dsw. The related project
-  files (.dsp) are located in the lib subdirectory.
+  md build
+  cd build
+  cmake -G"Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+  msbuild /m expat.sln
 
-* MS Visual Studio .NET 2002, 2003:
-  The VC++ 6 workspace file (expat.dsw) and project files (.dsp)
-  can be opened and imported in VS.NET without problems.
+* All MS C/C++ compilers:
+  The output for all projects will be generated in the <CMAKE_BUILD_TYPE>\
+  and xmlwf\<CMAKE_BUILD_TYPE>\ directories.
+  
+* Creating MinGW dynamic libraries from MS VC++ DLLs:
+  
+  On the command line, execute these steps:
+  pexports libexpat.dll > expat.def
+  pexports libexpatw.dll > expatw.def
+  dlltool -d expat.def -l libexpat.a
+  dlltool -d expatw.def -l libexpatw.a
+  
+  The *.a files are mingw libraries.
 
 * Special note about MS VC++ and runtime libraries:
 
@@ -27,37 +38,23 @@ Expat can be built on Windows in three ways:
 
   Dynamic Linking:
 
-  By default the Expat Dlls are built to link statically
+  By default the Expat Dlls are built to link dynamically
   with the multi-threaded run-time library. 
   The libraries are named
   - libexpat(w).dll 
   - libexpat(w).lib (import library)
   The "w" indicates the UTF-16 version of the library.
 
-  One rarely uses other versions of the Dll, but they can
-  be built easily by specifying a different RTL linkage in
-  the IDE on the C/C++ tab under the category Code Generation.
+  Versions that are statically linking with the multi-threaded run-time library
+  can be built with -DEXPAT_MSVC_STATIC_CRT=ON.
 
-  Static Linking:
+  Static Linking:  (through -DEXPAT_SHARED_LIBS=OFF)
 
   The libraries should be named like this:
-  Single-theaded:     libexpat(w)ML.lib
   Multi-threaded:     libexpat(w)MT.lib
   Multi-threaded Dll: libexpat(w)MD.lib
   The suffixes conform to the compiler switch settings
-  /ML, /MT and /MD for MS VC++.
-
-  By default, the expat-static and expatw-static projects are set up
-  to link statically against the multithreaded run-time library,
-  so they will build libexpatMT.lib or libexpatwMT.lib files.
-
-  To build the other versions of the static library, 
-  go to Project - Settings:
-  - specify a different RTL linkage on the C/C++ tab
-    under the category Code Generation.
-  - then, on the Library tab, change the output file name
-    accordingly, as described above
+  /MT and /MD for MS VC++.
 
   An application linking to the static libraries must
   have the global macro XML_STATIC defined.
-   

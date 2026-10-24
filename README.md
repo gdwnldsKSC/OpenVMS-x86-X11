@@ -19,8 +19,8 @@ XCB - 1.17.0. Produces `XCB.OLB` - the core TCP client transport and generated c
 XCB_SHAPE - 1.17.0. Produces `XCB_SHAPE.OLB` - the generated Shape protocol client library used by xwininfo.  
 ZLIB - 1.3.2. Produces `Z.OLB` - all 15 upstream library modules with native P64 pointers and 64-bit file offsets.  
 REGEX - alpha3.8p1. Produces `REGEX.OLB` - all four unchanged standalone POSIX regex modules, with native public/private header generation; P64 case-preserving build and module-discovery matching validated.  
-FONTENC. Produces `FONTENC.OLB` - `fontenc.c` and `encparse.c`, using `Z.OLB`; upstream reverse-map cleanup and parser-growth defects remain.  
-EXPAT. Produces `EXPAT.OLB` - `xmlparse.c`, `xmltok.c`, and `xmlrole.c` from bundled Expat 1.95.8.  
+FONTENC - 1.1.9. Produces `FONTENC.OLB` - `fontenc.c`, `encparse.c`, and upstream `reallocarray.c`, using `Z.OLB`; P64 gzip and numeric parser-growth paths validated. Upstream reverse-map cleanup and PostScript name-map growth defects remain.  
+EXPAT - 2.9.0. Produces `EXPAT.OLB` - all four unchanged upstream parser modules plus native system-entropy support; P64 namespaces, DTDs, Unicode, and streaming validated. Only `XMLPARSE` disables optimization to avoid a VSI C amplification-accounting miscompile.  
 XFONT - 1.5.4. Produces `XFONT.OLB` - 47 objects across bitmap, fontfile, fc, util, builtins, and FreeType; gzip and TCP font-server transport included, with native text reads and regular-file/identity checks. Builds `Z.OLB`, `FONTENC.OLB`, and `FREETYPE.OLB` dependencies; optional fontencc excluded. Builtin fonts require server-side activation.  
 XFONT2 - 2.0.9. Produces `XFONT2.OLB` - all 51 objects of the current server font-library profile with bitmap, builtin, FreeType, gzip and TCP font-server support; native font/glyph, font-index and symlink-rejection checks passed. Retains `XFONT` separately for existing standalone tools.  
 FNTSTUBS - 1.5.4. Produces `FNTSTUBS.OLB` - all 16 unchanged libXfont stub modules, for standalone font tools.  

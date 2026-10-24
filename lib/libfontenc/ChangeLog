@@ -1,3 +1,447 @@
+commit 780d1f6f192a331de7b298a96e23ebc44d2a884b
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Feb 7 17:32:14 2026 -0800
+
+    libfontenc 1.1.9
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 32e92154b791cd3ebc8f2ba54b997f0916494686
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jan 11 11:20:41 2026 -0800
+
+    gitlab CI: drop the ci-fairy check-mr job
+    
+    The only thing this checked was the checkbox for allowing maintainers to
+    edit the MR. Changed permissions checks now fail this job but luckily
+    the setting it checked has been the default for years anyway so we can
+    drop it.
+    
+    https://gitlab.freedesktop.org/freedesktop/ci-templates/-/issues/81
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit dcdbcce903ee49200040c0da092b45253c20c6df
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Feb 16 11:11:09 2025 -0800
+
+    meson: Add option to build with meson
+    
+    Also updates the gitlab CI config to test both build types
+    and compare the generated output/installed files.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libfontenc/-/merge_requests/15>
+
+commit 77b46c4689dab624129b0d08404c50ef5d1a94bd
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Wed Feb 5 18:26:32 2025 -0800
+
+    configure: Use pkg-config to handle zlib dependency if possible
+    
+    Preserves fallback for systems like darwin without zlib.pc
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/lib/libfontenc/-/merge_requests/14>
+
+commit 92a85fda2acb4e14ec0b2f6d8fe3eaf2b687218c
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Mar 2 10:25:05 2024 -0800
+
+    libfontenc 1.1.8
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 2408433404732b146bf41a2451d23ffadad5a816
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Mar 28 11:55:59 2023 -0700
+
+    Set close-on-exec when opening files
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 0aa003e3d897d2d5bdaac1af404d3e23c76268ec
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Mar 4 10:44:45 2023 -0800
+
+    configure: Use LT_INIT from libtool 2 instead of deprecated AC_PROG_LIBTOOL
+    
+    AC_PROG_LIBTOOL was replaced by LT_INIT in libtool 2 in 2008,
+    so it's time to rely on it.
+    
+    Clears autoconf warnings:
+    
+    configure.ac:38: warning: The macro `AC_PROG_LIBTOOL' is obsolete.
+    configure.ac:38: You should run autoupdate.
+    aclocal.m4:3863: AC_PROG_LIBTOOL is expanded from...
+    configure.ac:38: the top level
+    
+    libtoolize: Consider adding 'AC_CONFIG_MACRO_DIRS([m4])' to configure.ac,
+    libtoolize: and rerunning libtoolize and aclocal.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3440aed9d2bd38f72e8e62ffac400cf613fcb908
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Feb 25 09:17:19 2023 -0800
+
+    Remove "All rights reserved" from Oracle copyright notices
+    
+    Oracle no longer includes this term in our copyright & license notices.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d7a986586469dd5d69869ee151c5fa7501c2767c
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Feb 6 13:13:21 2023 -0800
+
+    configure: raise minimum autoconf requirement to 2.70
+    
+    Needed for builds on NetBSD to work correctly, since it depends on
+    AC_USE_SYSTEM_EXTENSIONS defining _OPENBSD_SOURCE to expose the
+    prototype for reallocarray() in the system headers.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 68300c3452592a9e7bf60b4edb008785c4c891c4
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Thu Dec 8 10:37:07 2022 -0500
+
+    libfontenc 1.1.7
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit ec2ef12a0daf7bea60e9616ea8bc4bd61f3cf36f
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Tue Nov 29 12:05:32 2022 -0500
+
+    configure: Use AC_SYS_LARGEFILE to enable large file support
+    
+    Signed-off-by: Matt Turner <mattst88@gmail.com>
+
+commit c8f8ce35a5eafe8ca0d1ed3dfdd098fe0943b99c
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Aug 30 16:51:28 2022 -0700
+
+    libfontenc 1.1.6
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit f7f8c9af5773c3c73a635308054872b49c5bbe94
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Aug 30 08:21:01 2022 -0700
+
+    include config.h before system headers
+    
+    Makes sure any defines needed to expose functions like reallocarray()
+    are present on platforms that need them (_GNU_SOURCE, _OPENBSD_SOURCE,
+    __EXTENSIONS__, etc.)
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 26ae989526a2c931d15a4c4ae2e84ab627bc0009
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Aug 26 14:59:03 2022 -0700
+
+    libfontenc 1.1.5
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit be77631bbc5fee12c9028f9ffd577dc1066231b7
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jul 17 13:00:37 2022 -0700
+
+    configure: Use AC_USE_SYSTEM_EXTENSIONS to set GNU_SOURCE & other defines
+    
+    Ensures reallocarray is visible in system headers if available.
+    (See libxext#4.)
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 1aeb6a2d1673c1ae23763f55f09fb18d8e188fe0
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun May 8 11:24:31 2022 -0700
+
+    Convert code to use Xmallocarray() & Xreallocarray()
+    
+    Provides automatic integer overflow checking in allocation size calculations
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3ff95c472abe8eb8fe1ccda5cd40d99407f1f9a4
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun May 8 11:14:11 2022 -0700
+
+    Import reallocarray() from libX11 (originally from OpenBSD)
+    
+    Wrapper for realloc() that checks for overflow when multiplying
+    arguments together, so we don't have to add overflow checks to
+    every single call.  For documentation on usage, see:
+    http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man3/calloc.3
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit a6a3bd1365798783f3fa5552d4ab061d5636d15a
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun May 8 10:18:42 2022 -0700
+
+    gitlab CI: add a basic build test
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 256ff55667e70b4cdb91d0dc10636ec6c1b9d598
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun May 8 10:15:47 2022 -0700
+
+    Fix spelling/wording issues
+    
+    Found by using:
+        codespell --builtin clear,rare,usage,informal,code,names
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 91b7c7d02ddb2ddce39648270f5cb91fac7d978e
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun May 8 10:14:39 2022 -0700
+
+    Build xz tarballs instead of bzip2
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 2baea13978759d1a011fc6d739465893b554d30a
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue Feb 19 17:31:57 2019 -0800
+
+    libfontenc 1.1.4
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d7f661849c18c354f1692d9859e057aa3a7ddf93
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Fri Dec 7 19:29:22 2018 -0800
+
+    Update configure.ac bug URL for gitlab migration
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit b12b2d71f1547e832ac14b66a0d94d88b3675b25
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Nov 19 23:01:09 2018 -0800
+
+    Update README for gitlab migration
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit b28c2d111e9d02ea1a42ac27a1330b0ba1efb4a6
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Nov 11 13:58:34 2018 -0800
+
+    Fix iso8859-7 mappings for 0xA1, 0xA2, & 0xFF
+    
+    Fixes: https://gitlab.freedesktop.org/xorg/lib/libfontenc/issues/1
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 8d30ca25b54934e29206da64e80c044d05b14470
+Author: Mihail Konev <k.mvc@ya.ru>
+Date:   Thu Jan 26 13:52:49 2017 +1000
+
+    autogen: add default patch prefix
+    
+    Signed-off-by: Mihail Konev <k.mvc@ya.ru>
+
+commit cc7e0f5529ab5c25aa2adc31a629a5e43cf1f319
+Author: Emil Velikov <emil.l.velikov@gmail.com>
+Date:   Mon Mar 9 12:00:52 2015 +0000
+
+    autogen.sh: use quoted string variables
+    
+    Place quotes around the $srcdir, $ORIGDIR and $0 variables to prevent
+    fall-outs, when they contain space.
+    
+    Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 38aac013fcfd6e54a9fd9847ed798a5a20bd7139
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jan 24 10:32:07 2017 +1000
+
+    autogen.sh: use exec instead of waiting for configure to finish
+    
+    Syncs the invocation of configure with the one from the server.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Emil Velikov <emil.velikov@collabora.com>
+
+commit 8bbc9af3ef1160f16f176be07c917f9cccf229b2
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sun Jul 26 18:32:23 2015 +0200
+
+    make FontEncDirectory return a const string
+    
+    Its comment already said "This string is static and should not be
+    modified".
+    
+    encparse.c: In function 'FontEncDirectory':
+    encparse.c:844:17: warning: assignment discards 'const' qualifier from pointer target type
+                 dir = FONT_ENCODINGS_DIRECTORY;
+                     ^
+    
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 42f3a39c3085afd9ef904ae39102fd49bbc2e4a5
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Apr 30 21:39:51 2015 -0700
+
+    libfontenc 1.1.3
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit de1843aaf76015c9d99416f3122d169fe331b849
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 17 19:37:28 2015 -0800
+
+    Initialize aliases array in parseEncodingFile()
+    
+    The static analyzer insisted there were code paths that entries in this
+    array could be read without them being initialized.  While I couldn't
+    see any way that would happen, this makes sure it can't and makes the
+    analyzer quiet.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit c377d91157601df90936e49167ce28a548c9b740
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 17 19:18:41 2015 -0800
+
+    Reformat code to X.Org standard style
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 8eefb5a18de41b693c00767458ee51f034201ebf
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 17 18:46:49 2015 -0800
+
+    Replace strcpy+strcat calls with snprintf calls
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit a5221fc11307eb1230ae2643c6e423b0f7867fde
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 17 18:36:07 2015 -0800
+
+    Replace sprintf call with snprintf
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 0037a42107b952c9d903719615747e760e4e7247
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Dec 26 09:40:00 2013 -0800
+
+    Initialize both value1 & value2, not value1 twice
+    
+    Flagged by cppcheck 1.62:
+    [src/encparse.c:303] -> [src/encparse.c:303]: (performance, inconclusive)
+     Variable 'value1' is reassigned a value before the old one has been used
+     if variable is no semaphore variable.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 3acba630d8b57084f7e92c15732408711ed5137a
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Apr 25 20:52:11 2013 -0700
+
+    libfontenc 1.1.2
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 624508365ec3279bc74ce523d024533e062629e1
+Author: Nickolai Zeldovich <nickolai@csail.mit.edu>
+Date:   Sun Mar 3 23:57:34 2013 -0500
+
+    libfontenc: setCode(): fix realloc invocation
+    
+    This patch fixes two bugs in the realloc invocation in setCode(), which
+    most likely cause memory corruption when realloc is triggered:
+    
+    1. Pass *enc to realloc (which is the dynamically-allocated buffer),
+       instead of enc (which stores a pointer to the dynamically-allocated
+       buffer).
+    
+    2. Allocate enough memory for (*encsize) shorts, instead of (*encsize)
+       bytes; see the call to malloc just above the realloc call.
+    
+    Signed-off-by: Nickolai Zeldovich <nickolai@csail.mit.edu>
+    Reviewed-by: Aaron Plattner <aplattner@nvidia.com>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit f5d1208172e965fdd7fae8927bd3e29b3cc3a975
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 19 08:23:09 2013 -0800
+
+    Replace deprecated Automake INCLUDES variable with AM_CPPFLAGS
+    
+    Excerpt https://lists.gnu.org/archive/html/automake/2012-12/msg00038.html
+    
+      - Support for the long-deprecated INCLUDES variable will be removed
+        altogether in Automake 1.14.  The AM_CPPFLAGS variable should be
+        used instead.
+    
+    This variable was deprecated in Automake releases prior to 1.10, which is
+    the current minimum level required to build X.
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 0c3518df24192f18f15ce91c2868560a5973a3dc
+Author: Colin Walters <walters@verbum.org>
+Date:   Wed Jan 4 17:37:06 2012 -0500
+
+    autogen.sh: Implement GNOME Build API
+    
+    http://people.gnome.org/~walters/docs/build-api.txt
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit edd325236d39b6ad130c82d90b04dcc3b153d8b2
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Jan 15 14:28:48 2013 -0500
+
+    configure: Remove AM_MAINTAINER_MODE
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 7de846ed190b2564b0642de79918dd3804083b4e
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Tue Apr 24 16:01:35 2012 -0400
+
+    Fix ISO-8859-7 → ISO-10646 mapping.
+    
+    ISO-8859-7 code point 0xD2 is unassigned.
+    
+    ISO-10646 code point U+03A2, to which 0xD2 was mapping, also is unassigned.
+    
+    Reported by Norm Pierce.
+    
+    Signed-off-by: James Cloos <cloos@jhcloos.com>
+
+commit f7682533fa6de77d8bd6fa6480a0f5188e0e56d7
+Author: James Cloos <cloos@jhcloos.com>
+Date:   Tue Apr 24 15:55:59 2012 -0400
+
+    Fix ISO-8859-6 → ISO-10646 mapping.
+    
+    ISO-8859-6 code point 0xC0 is unassigned.
+    
+    ISO-10646 code point U+0620, to which 0xC0 was mapping, has since been
+    assigned an unrelated character.
+    
+    Reported by Norm Pierce.
+    
+    Signed-off-by: James Cloos <cloos@jhcloos.com>
+
 commit 6012075d945e527866ef31b8796e04d6581071db
 Author: Alan Coopersmith <alan.coopersmith@oracle.com>
 Date:   Fri Mar 2 17:51:30 2012 -0800

@@ -40,6 +40,7 @@ $ IF (P6 .NES. "") .OR. -
 $ rtl_headers = F$SEARCH("SYS$LIBRARY:DECC$RTLDEF.TLB")
 $ IF rtl_headers .EQS. "" THEN GOTO done
 $ IF (P4 .EQS. "OS") .OR. (P4 .EQS. "XCB") .OR. (P4 .EQS. "PIXMAN") .OR. -
+     (P4 .EQS. "EXPAT") .OR. -
      (P4 .EQS. "XFONT2") .OR. -
      (P4 .EQS. "X11") .OR. (P4 .EQS. "XWININFO") .OR. -
      (P4 .EQS. "XDPYINFO") THEN GOSUB os_native_headers
@@ -48,7 +49,6 @@ $ IF (P4 .EQS. "GTF") .OR. (P4 .EQS. "RTL") .OR. (P4 .EQS. "RTL_LOCAL") THEN GOT
 $ IF P4 .EQS. "ZLIB" THEN GOTO zlib_headers
 $ IF P4 .EQS. "REGEX" THEN GOTO regex_headers
 $ IF P4 .EQS. "REGEX_MKH" THEN GOTO rtl_headers
-$ IF P4 .EQS. "FONTENC" THEN GOTO fontenc_headers
 $ IF P4 .EQS. "PIXMAN" THEN GOTO pixman_headers
 $ IF P4 .EQS. "XCVT" THEN GOTO xcvt_headers
 $ IF P4 .EQS. "PCIACCESS" THEN GOTO pciaccess_headers
@@ -80,7 +80,9 @@ $ IF P4 .EQS. "X11" THEN include_directory = include_directory + -
 $ IF P4 .EQS. "XKB" THEN include_directory = -
     "[.XSERVER.XORG-SERVER.XKB]," + include_directory
 $ IF P4 .EQS. "EXPAT" THEN include_directory = include_directory + -
-    ",[.EXTRAS.EXPAT.LIB],[.EXTRAS.EXPAT.VMS]"
+    ",[.VMS-SUPPORT.LIB.EXPAT],[.EXTRAS.EXPAT.LIB]"
+$ IF P4 .EQS. "FONTENC" THEN include_directory = include_directory + -
+    ",[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.X11.FONTS],[.LIB.LIBFONTENC.SRC]"
 $ IF P4 .EQS. "FONT_UTIL" THEN include_directory = include_directory + -
     ",[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.X11.FONTS]," + -
     "[.LIB.LIBXFONT.INCLUDE.X11.FONTS],[.LIB.LIBXFONT.SRC.STUBS]"
@@ -393,12 +395,6 @@ $ GOTO compile
 $regex_headers:
 $ IF F$SEARCH("[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE]REGEX.H") .EQS. "" THEN GOTO done
 $ include_directory = "[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE],[.VMS-SUPPORT._BUILD.''build_profile'.LIB.REGEX],[.EXTRAS.REGEX]"
-$ GOTO compile
-$fontenc_headers:
-$ IF F$SEARCH("[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.X11.FONTS]FONTENC.H") .EQS. "" THEN GOTO done
-$ include_directory = "[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE]," + -
-    "[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.X11.FONTS],[.LIB.LIBFONTENC.SRC]," + -
-    """./VMS-SUPPORT/_BUILD/''build_profile'/INCLUDE"""
 $ GOTO compile
 $compile:
 $ IF build_profile .EQS. "P64_XORG" THEN GOSUB xorg_profile

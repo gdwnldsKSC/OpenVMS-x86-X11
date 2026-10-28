@@ -21,10 +21,12 @@ void
 xf86OpenConsole(void)
 {
     const char *exclusive = getenv("PCIACCESS_OPENVMS_EXCLUSIVE");
+    const char *framebuffer_exclusive = getenv("XORG_OPENVMS_FB_EXCLUSIVE");
     const char *input = getenv("XORG_OPENVMS_INPUT");
     if (input && !strcmp(input, "DISABLED"))
         input = NULL;
-    if (!exclusive || strcmp(exclusive, "1"))
+    if ((!exclusive || strcmp(exclusive, "1")) &&
+        (!framebuffer_exclusive || strcmp(framebuffer_exclusive, "1")))
         FatalError("OpenVMS Xorg requires exclusive video ownership and serial OPA0\n");
     if (input && strcmp(input, "I8042_SERIAL_CONSOLE") &&
         strcmp(input, "USB_SERIAL_CONSOLE"))

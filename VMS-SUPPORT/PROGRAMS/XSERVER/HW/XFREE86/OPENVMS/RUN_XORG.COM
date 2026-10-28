@@ -1,5 +1,6 @@
-$! Foreground VMware test. Run from a serial console or SSH.
-$! P1 is hexadecimal domain:bus:device.function; P2 must be SERIAL_CONSOLE.
+$! Foreground native Xorg test. Run from a serial console or SSH.
+$! P1 is hexadecimal domain:bus:device.function, or FRAMEBUFFER.
+$! P2 must be SERIAL_CONSOLE; no graphical console writer may share the display.
 $! P3 is an optional display number, default 0. No X listeners by default.
 $! P4=I8042 opts into exclusive PS/2 keyboard/mouse input; default is video only.
 $! P4=USB uses explicit XORG_OPENVMS_USB_KEYBOARD/_MOUSE UG device logicals.
@@ -24,6 +25,8 @@ $display_only_mode:
 $ IF P6 .NES. "" .OR. P7 .NES. "" THEN GOTO usage
 $mode_checked:
 $ bdf = F$EDIT(P1,"UPCASE")
+$ framebuffer = bdf .EQS. "FRAMEBUFFER"
+$ IF framebuffer THEN GOTO display_number
 $ characters = "0123456789ABCDEF:."
 $ index = 0
 $bdf_character:
@@ -73,12 +76,19 @@ $ IF authenticated .AND. authority_tool .EQS. "" THEN GOTO missing_authority_too
 $ vgahw = F$SEARCH(module_dir + "libvgahw.so")
 $ shadowfb = F$SEARCH(module_dir + "libshadowfb.so")
 $ driver = F$SEARCH(module_dir - "]" + ".DRIVERS]vmware_drv.so")
+$ fbdevhw = ""
+$ shadow = ""
+$ IF framebuffer THEN driver = F$SEARCH(module_dir - "]" + ".DRIVERS]fbdev_drv.so")
+$ IF framebuffer THEN fbdevhw = F$SEARCH(module_dir + "libfbdevhw.so")
+$ IF framebuffer THEN shadow = F$SEARCH(module_dir + "libshadow.so")
 $ config_name = "VIDEO.CONF"
 $ input_mode = "DISABLED"
 $ keyboard = ""
 $ mouse = ""
 $ physical_input = P4 .EQS. "I8042" .OR. P4 .EQS. "USB"
 $ IF physical_input THEN config_name = "INPUT.CONF"
+$ IF framebuffer THEN config_name = "FBDEV.CONF"
+$ IF framebuffer .AND. physical_input THEN config_name = "FBDEV_INPUT.CONF"
 $ IF P4 .EQS. "I8042" THEN input_mode = "I8042_SERIAL_CONSOLE"
 $ IF P4 .EQS. "USB" THEN input_mode = "USB_SERIAL_CONSOLE"
 $ IF P4 .EQS. "USB" .AND. F$TRNLNM("XORG_OPENVMS_USB_KEYBOARD") .EQS. "" .AND. -
@@ -91,12 +101,15 @@ $ config = F$SEARCH(config_dir + config_name)
 $ xkbcomp = F$SEARCH("[.VMS-SUPPORT._BUILD.P64.LIB.X11.XKB]XKBCOMP.EXE")
 $ IF server .EQS. "" .OR. core .EQS. "" THEN GOTO missing_files
 $ IF vgahw .EQS. "" .OR. shadowfb .EQS. "" .OR. driver .EQS. "" THEN GOTO missing_files
+$ IF framebuffer .AND. (fbdevhw .EQS. "" .OR. shadow .EQS. "") THEN GOTO missing_files
 $ IF config .EQS. "" .OR. xkbcomp .EQS. "" THEN GOTO missing_files
 $ IF F$SEARCH(image_dir + "CONFIG_D.DIR") .EQS. "" THEN GOTO missing_files
 $ IF F$TRNLNM("SYS$SCRATCH") .EQS. "" THEN GOTO missing_scratch
 $! Refuse pending user-mode definitions before the metadata checker runs any
 $! native image. Supervisor-mode caller definitions are never replaced.
 $ logical_names = "DECC$EFS_CHARSET,DECC$EFS_CASE_PRESERVE,XORG_SHR,XORG_CORE,LIBVGAHW,LIBSHADOWFB,XORG_MODULES,XORG_CONFIG,XORG_CONFIG_D,PCIACCESS_OPENVMS_DEVICE,PCIACCESS_OPENVMS_EXCLUSIVE,XORG_OPENVMS_INPUT"
+$ logical_names = logical_names + ",XORG_OPENVMS_FB_EXCLUSIVE"
+$ IF framebuffer THEN logical_names = logical_names + ",LIBFBDEVHW,LIBSHADOW"
 $ IF P4 .EQS. "USB" THEN logical_names = logical_names + ",XORG_OPENVMS_USB_KEYBOARD,XORG_OPENVMS_USB_MOUSE"
 $ IF authenticated THEN logical_names = logical_names + ",XLOCALEDIR,XERRORDB,XCMSDB"
 $ index = 0
@@ -206,8 +219,19 @@ $ DEFINE/USER_MODE/PROCESS LIBSHADOWFB "''shadowfb'"
 $ DEFINE/USER_MODE/PROCESS XORG_MODULES "''module_dir'"
 $ DEFINE/USER_MODE/PROCESS XORG_CONFIG "''config_dir'"
 $ DEFINE/USER_MODE/PROCESS XORG_CONFIG_D "''config_d'"
+$ IF framebuffer THEN GOTO framebuffer_logicals
 $ DEFINE/USER_MODE/PROCESS PCIACCESS_OPENVMS_DEVICE "''bdf'"
 $ DEFINE/USER_MODE/PROCESS PCIACCESS_OPENVMS_EXCLUSIVE "1"
+$ DEFINE/USER_MODE/PROCESS XORG_OPENVMS_FB_EXCLUSIVE "0"
+$ GOTO video_logicals_ready
+$framebuffer_logicals:
+$ DEFINE/USER_MODE/PROCESS LIBFBDEVHW "''fbdevhw'"
+$ DEFINE/USER_MODE/PROCESS LIBSHADOW "''shadow'"
+$! Shadow inherited VMware selection without modifying the caller's logicals.
+$ DEFINE/USER_MODE/PROCESS PCIACCESS_OPENVMS_DEVICE ""
+$ DEFINE/USER_MODE/PROCESS PCIACCESS_OPENVMS_EXCLUSIVE "0"
+$ DEFINE/USER_MODE/PROCESS XORG_OPENVMS_FB_EXCLUSIVE "1"
+$video_logicals_ready:
 $ DEFINE/USER_MODE/PROCESS XORG_OPENVMS_INPUT "''input_mode'"
 $ IF authenticated THEN GOTO authenticated_launch
 $ MCR 'server' "''display'" "-displayonly" "-retro" "-noreset" -
@@ -228,7 +252,8 @@ $ MCR 'server' "''display'" "-listen" "tcp" "-auth" "''authority'" "-noreset" -
 $ result = $STATUS
 $ GOTO done
 $usage:
-$ WRITE SYS$ERROR "Usage: @RUN_XORG domain:bus:device.function SERIAL_CONSOLE [display] [I8042|USB]"
+$ WRITE SYS$ERROR "Usage: @RUN_XORG pci-address-or-FRAMEBUFFER SERIAL_CONSOLE [display] [I8042|USB]"
+$ WRITE SYS$ERROR "FRAMEBUFFER requires verified StrideBytes and PixelFormat in FBDEV.CONF/FBDEV_INPUT.CONF."
 $ WRITE SYS$ERROR "Optional client mode: append AUTHENTICATED exact-authority-file;version native-runtime-directory"
 $ WRITE SYS$ERROR "SERIAL_CONSOLE confirms serial OPA0 and exclusive ownership of the display."
 $ WRITE SYS$ERROR "I8042 additionally confirms exclusive ownership of the PS/2 keyboard and mouse."

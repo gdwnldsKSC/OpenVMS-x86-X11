@@ -33,6 +33,7 @@ $ profiles = profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ profiles = profiles + "PIXMAN|CONFIG|"
 $ profiles = profiles + "REGEX|REGEX_MKH|"
 $ profiles = profiles + "XFONT2|XCVT|RTL_LOCAL|"
+$ profiles = profiles + "XF86_VIDEO_FBDEV|"
 $ IF F$LOCATE("|",P4) .NE. F$LENGTH(P4) THEN GOTO done
 $ IF F$LOCATE("|" + P4 + "|",profiles) .EQ. F$LENGTH(profiles) THEN GOTO done
 $ IF (P6 .NES. "") .OR. -
@@ -200,9 +201,9 @@ $ server_profiles = server_profiles + "XF86MODES|DDC|I2C|STUB|"
 $ server_profiles = server_profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ server_profiles = server_profiles + "CONFIG|"
 $ IF (F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles)) .OR. -
-     (P4 .EQS. "XF86_VIDEO_VMWARE") THEN P3 = P3 + "/UNDEFINE=__HIDE_FORBIDDEN_NAMES"
+     (P4 .EQS. "XF86_VIDEO_VMWARE") .OR. (P4 .EQS. "XF86_VIDEO_FBDEV") THEN P3 = P3 + "/UNDEFINE=__HIDE_FORBIDDEN_NAMES"
 $ IF (F$LOCATE("|" + P4 + "|",server_profiles) .LT. F$LENGTH(server_profiles)) .OR. -
-     (P4 .EQS. "XF86_VIDEO_VMWARE") THEN GOSUB os_native_headers
+     (P4 .EQS. "XF86_VIDEO_VMWARE") .OR. (P4 .EQS. "XF86_VIDEO_FBDEV") THEN GOSUB os_native_headers
 $ IF rtl_headers .EQS. "" THEN GOTO done
 $! Native case folding makes server headers collide with client Xfixes/XKB files.
 $! Keep server include directories ahead of exported client extension headers.
@@ -262,6 +263,8 @@ $ IF xf86common_profile THEN include_directory = include_directory + -
     "[.XSERVER.XORG-SERVER.XI],[.XSERVER.XORG-SERVER.OS],[.XSERVER.XORG-SERVER.FB]"
 $ IF P4 .EQS. "XF86MODES" THEN include_directory = include_directory + -
     ",""./VMS-SUPPORT/_BUILD/''build_profile'/INCLUDE"""
+$ IF P4 .EQS. "COMMON" THEN include_directory = include_directory + -
+    ",[.LIB.LIBPCIACCESS.SRC],[.XSERVER.XORG-SERVER.MIEXT.SHADOW]"
 $ internal_common = xf86common_profile .AND. (P4 .NES. "XF86_INPUT_KEYBOARD") .AND. -
     (P4 .NES. "XF86_INPUT_MOUSE")
 $ IF internal_common THEN GOSUB xf86common_native
@@ -317,11 +320,12 @@ $ IF P4 .EQS. "FONT_BITMAP" THEN -
     ",[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.X11.FONTS]," + -
     "[.LIB.LIBXFONT.INCLUDE.X11.FONTS],[.LIB.LIBXFONT.SRC.BITMAP]"
 $ header = F$SEARCH("[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.X11]XFUNCPROTO.H")
-$! Upstream VMware config.h includes the public server SDK before any source.
-$ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN -
+$! External video drivers use the public server SDK before any source.
+$ video_driver = (P4 .EQS. "XF86_VIDEO_VMWARE") .OR. (P4 .EQS. "XF86_VIDEO_FBDEV")
+$ IF video_driver THEN -
     first_include = "/FIRST_INCLUDE=[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE]XORG-SERVER.H"
-$ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN include_directory = -
-    "[.DRIVER.XF86-VIDEO-VMWARE.SRC]," + include_directory + -
+$ IF video_driver THEN include_directory = -
+    include_directory + -
     ",[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.X11]," + -
     "[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.X11.FONTS]," + -
     "[.XSERVER.XORG-SERVER.XFIXES],[.XSERVER.XORG-SERVER.RANDR]," + -
@@ -341,6 +345,13 @@ $ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN include_directory = -
     "[.XSERVER.XORG-SERVER.MI]," + -
     "[.XSERVER.XORG-SERVER.FB],[.XSERVER.XORG-SERVER.RENDER],[.XSERVER.XORG-SERVER.XEXT]," + -
     "[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE.PIXMAN]"
+$ IF P4 .EQS. "XF86_VIDEO_VMWARE" THEN include_directory = -
+    "[.DRIVER.XF86-VIDEO-VMWARE.SRC]," + include_directory
+$ IF P4 .EQS. "XF86_VIDEO_FBDEV" THEN -
+    first_include = "/FIRST_INCLUDE=[.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.OPENVMS]FBDEV_PROFILE.H"
+$ IF P4 .EQS. "XF86_VIDEO_FBDEV" THEN include_directory = -
+    "[.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.OPENVMS]," + include_directory + -
+    ",[.XSERVER.XORG-SERVER.HW.XFREE86.FBDEVHW],[.XSERVER.XORG-SERVER.MIEXT.SHADOW]"
 $ IF header .EQS. "" THEN GOTO done
 $ headers = F$PARSE(header,,,"DEVICE") + F$PARSE(header,,,"DIRECTORY")
 $ x11_first = headers
@@ -425,10 +436,12 @@ $ IF F$LOCATE("OS-SUPPORT.OPENVMS",F$EDIT(P1,"UPCASE")) .LT. F$LENGTH(P1) THEN G
 $ xorg_profiles = "|DAMAGE|MI|FB|RENDER|DIX|SHADOW|SYNC|RANDR|DBE|RECORD|XFIXES|COMPOSITE|DAMAGEEXT|EXT|XINPUT|OS|VFB|XKB|ROOTLESS|"
 $ xorg_profiles = xorg_profiles + "XF86CONFIG|SHADOWFB|VGAHW|RAMDAC|COMMON|BUS|MISC|XORGXKB|LOADER|XF86MODES|DDC|I2C|STUB|CONFIG|XF86_VIDEO_VMWARE|"
 $ xorg_profiles = xorg_profiles + "XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
+$ xorg_profiles = xorg_profiles + "XF86_VIDEO_FBDEV|"
 $ IF F$LOCATE("|" + P4 + "|",xorg_profiles) .EQ. F$LENGTH(xorg_profiles) THEN RETURN
 $ xorg_include = "[.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.OPENVMS]SERVER_PROFILE.H"
 $ xorg_external = (P4 .EQS. "XF86_VIDEO_VMWARE") .OR. -
-    (P4 .EQS. "XF86_INPUT_KEYBOARD") .OR. (P4 .EQS. "XF86_INPUT_MOUSE")
+    (P4 .EQS. "XF86_INPUT_KEYBOARD") .OR. (P4 .EQS. "XF86_INPUT_MOUSE") .OR. -
+    (P4 .EQS. "XF86_VIDEO_FBDEV")
 $ xorg_input = (P4 .EQS. "COMMON") .AND. -
     (F$EDIT(F$PARSE(P1,,,"NAME"),"UPCASE") .EQS. "OPENVMS_INPUT")
 $ IF xorg_input THEN include_directory = include_directory + -
@@ -436,6 +449,8 @@ $ IF xorg_input THEN include_directory = include_directory + -
     "[.DRIVER.XF86-INPUT-MOUSE.INCLUDE]"
 $ IF xorg_external .OR. xorg_input THEN -
     xorg_include = "[.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.OPENVMS]DRIVER_PROFILE.H"
+$ IF P4 .EQS. "XF86_VIDEO_FBDEV" THEN -
+    xorg_include = "[.VMS-SUPPORT.PROGRAMS.XSERVER.HW.XFREE86.OPENVMS]FBDEV_PROFILE.H"
 $ IF xorg_external .OR. xorg_input THEN -
     first_include = "/FIRST_INCLUDE=[.VMS-SUPPORT._BUILD.''build_profile'.INCLUDE]XORG-SERVER.H"
 $ xorg_include = F$SEARCH(xorg_include)

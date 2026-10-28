@@ -15,7 +15,8 @@
  */
 
 /*
- * Native OpenVMS x86-64 discovery and bounded VMware VGA resource access.
+ * Native OpenVMS x86-64 discovery, bounded VMware VGA resource access,
+ * and boot-framebuffer access through the same display lease and PFN mapper.
  *
  * References: OpenVMS AXP Device Support Developer's Guide AA-Q28SA-TE, 
  * sections 13.5-13.13; Device Support Reference, AA-Q28PA-TE,
@@ -54,6 +55,7 @@
 #include <busdef.h>
 #include <descrip.h>
 #include <gen64def.h>
+#include <hwrpbdef.h>
 #include <iocdef.h>
 #include <ioc_routines.h>
 #include <ipldef.h>
@@ -75,6 +77,7 @@
 #include "openvms_pci_private.h"
 #include "openvms_pci_resource.h"
 #include "openvms_pci_port.h"
+#include "openvms_bootfb.h"
 
 #if !defined(__VMS) || (!defined(__x86_64) && !defined(__x86_64__))
 #error This backend requires native OpenVMS x86-64.
@@ -96,6 +99,14 @@ typedef int *vms_int32;
 #pragma extern_model strict_refdef
 extern vms_adp32 IOC$GL_ADPLIST;
 extern vms_pcb32 CTL$GL_PCB;
+#pragma extern_model restore
+#pragma __required_pointer_size __restore
+
+#pragma __required_pointer_size __save
+#pragma __required_pointer_size __long
+#pragma extern_model save
+#pragma extern_model strict_refdef
+extern HWRPB *EXE$GPQ_HWRPB;
 #pragma extern_model restore
 #pragma __required_pointer_size __restore
 
@@ -131,9 +142,10 @@ struct vms_request {
     unsigned char *data;
     unsigned int operation;
     struct vms_bar_state *video;
+    struct openvms_bootfb bootfb;
 };
 
-enum { VMS_READ, VMS_PROBE, VMS_WRITE };
+enum { VMS_READ, VMS_PROBE, VMS_WRITE, VMS_BOOTFB };
 
 struct vms_mapping {
     struct vms_mapping *next;
@@ -254,6 +266,49 @@ vms_read_entry(vms_adp32 adapter, struct vms_request *request)
     return 0;
 }
 
+/* Read only the OS-owned restart block through installed definitions. This
+ * path needs no PCI access, I/O database lock, firmware call or IPL change.
+ * Pitch and pixel format are not established by these HWRPB fields.
+ */
+static int
+vms_kernel_bootfb(struct openvms_bootfb *info)
+{
+    const volatile HWRPB *restart = EXE$GPQ_HWRPB;
+    uintptr_t address = (uintptr_t)restart;
+    uint64_t extent, physical, length;
+    uint32_t width, height;
+
+    if (!restart) return ENODEV;
+    if ((address >> 47) != UINT64_C(0x1ffff) || (address & 15u))
+        return ENOTSUP;
+    extent = restart->hwrpb$iq_size;
+#define BOOTFB_FIELD_PRESENT(member) \
+    (extent >= offsetof(HWRPB, member) + sizeof(restart->member))
+    if (!BOOTFB_FIELD_PRESENT(hwrpb$iq_ident) ||
+        !BOOTFB_FIELD_PRESENT(hwrpb$iq_framebuffer_pa) ||
+        !BOOTFB_FIELD_PRESENT(hwrpb$iq_framebuffer_size) ||
+        !BOOTFB_FIELD_PRESENT(hwrpb$il_horiz_rez) ||
+        !BOOTFB_FIELD_PRESENT(hwrpb$il_vert_rez))
+        return ENOTSUP;
+#undef BOOTFB_FIELD_PRESENT
+    /* Eight-byte x86 restart-block signature: "X86_RPB\0". */
+    if (restart->hwrpb$iq_ident != UINT64_C(0x004250525f363858))
+        return ENOTSUP;
+    physical = restart->hwrpb$iq_framebuffer_pa;
+    length = restart->hwrpb$iq_framebuffer_size;
+    width = restart->hwrpb$il_horiz_rez;
+    height = restart->hwrpb$il_vert_rez;
+    if (!physical || !length || !width || !height) return ENODEV;
+    if (length - 1u > UINT64_MAX - physical) return EOVERFLOW;
+    info->physical_address = physical;
+    info->byte_length = length;
+    info->width = width;
+    info->height = height;
+    info->stride_bytes = 0;
+    info->pixel_format = 0;
+    return 0;
+}
+
 static int
 vms_kernel_request(struct vms_request *request)
 {
@@ -264,6 +319,11 @@ vms_kernel_request(struct vms_request *request)
 
     if (process == NULL || old_ipl > IPL$_ASTDEL) {
         request->error = EIO;
+        return SS$_NORMAL;
+    }
+    if (request->operation == VMS_BOOTFB) {
+        request->error = vms_kernel_bootfb(&request->bootfb);
+        request->completed = 1;
         return SS$_NORMAL;
     }
     (void)setipl(IPL$_ASTDEL);
@@ -352,6 +412,25 @@ vms_request(struct vms_request *request)
     arguments[1] = (uintptr_t)request;
     status = sys$cmkrnl_64(vms_kernel_request, arguments);
     return (status & 1) ? request->error : vms_status_error(status);
+}
+
+int
+openvms_bootfb_query(struct openvms_bootfb *info)
+{
+    struct vms_request request;
+    int error;
+
+    if (!info) return EINVAL;
+    memset(info, 0, sizeof(*info));
+    /* Initialization holds this image resident for all kernel requests. */
+    if (!pci_sys) return ENODEV;
+    memset(&request, 0, sizeof(request));
+    request.operation = VMS_BOOTFB;
+    request.error = EIO;
+    error = vms_request(&request);
+    if (!error && !request.completed) error = EIO;
+    if (!error) *info = request.bootfb;
+    return error;
 }
 
 struct vms_config_context {
@@ -449,13 +528,29 @@ vms_selected_request(struct pci_device *device, struct vms_request *request)
 }
 
 static int
+vms_display_lease(struct vms_system *system)
+{
+    static $DESCRIPTOR(lock_name, "XORG$VMWARE$DISPLAY");
+    unsigned int status;
+    if (system->lock.id) return 0;
+    status = sys$enqw(0, LCK$K_EXMODE, (struct _lksb *)&system->lock,
+                LCK$M_NOQUEUE | LCK$M_SYSTEM, &lock_name, 0, 0, 0, 0, 0, 0);
+    if (!(status & 1u) || !(system->lock.status & 1u) || !system->lock.id) {
+        if (system->lock.id && !(sys$deq(system->lock.id, 0, 0, 0) & 1u))
+            abort();
+        system->lock.id = 0;
+        return (status & 1u) ? EBUSY : vms_status_error(status);
+    }
+    return 0;
+}
+
+static int
 vms_probe(struct pci_device *device)
 {
     struct vms_system *system = (struct vms_system *)pci_sys;
     struct vms_request request;
     struct pci_device_private *private = (struct pci_device_private *)device;
-    static $DESCRIPTOR(lock_name, "XORG$VMWARE$DISPLAY");
-    unsigned int status, i;
+    unsigned int i;
     int error;
     if (!system || device != system->selected) return ENOTSUP;
     if (system->video.poisoned) return EIO;
@@ -465,14 +560,8 @@ vms_probe(struct pci_device *device)
     if (device->vendor_id != 0x15adu || device->device_id != 0x0405u ||
         (device->device_class & 0xffff00u) != 0x030000u ||
         (private->header_type & 0x7fu)) return ENOTSUP;
-    if (!system->lock.id) {
-        status = sys$enqw(0, LCK$K_EXMODE, (struct _lksb *)&system->lock,
-                    LCK$M_NOQUEUE | LCK$M_SYSTEM, &lock_name, 0, 0, 0, 0, 0, 0);
-        if (!(status & 1u) || !(system->lock.status & 1u) || !system->lock.id) {
-            system->lock.id = 0;
-            return (status & 1u) ? EBUSY : vms_status_error(status);
-        }
-    }
+    error = vms_display_lease(system);
+    if (error) return error;
     memset(&request, 0, sizeof(request));
     request.operation = VMS_PROBE;
     error = vms_selected_request(device, &request);
@@ -569,41 +658,19 @@ vms_write(struct pci_device *device, const void *data, pciaddr_t offset,
     return error;
 }
 
+/* Both callers establish their own authority and allowed physical interval.
+ * Keep one PFN mapper, mapping registry and deletion path for this backend.
+ */
 static int
-vms_map(struct pci_device *device, pciaddr_t base, pciaddr_t size,
-         unsigned int flags, void **address, int legacy)
+vms_map_physical(struct vms_system *system, uint64_t base, uint64_t size,
+                 unsigned int flags, void **address,
+                 uint64_t allowed_base, uint64_t allowed_size)
 {
-    struct vms_system *system = (struct vms_system *)pci_sys;
     struct vms_mapping *map, *scan;
-    uint64_t page_base, offset, length, allowed_base = 0, allowed_size = 0;
-    unsigned int i, count = 0, status, section_flags, page_size = 0;
+    uint64_t page_base, offset, length;
+    unsigned int count = 0, status, section_flags, page_size = 0;
     int item = SYI$_PAGE_SIZE;
-    if (!address) return EINVAL;
-    *address = NULL;
-    if (!vms_owned(device)) return EACCES;
-    if (!size || base > UINT32_MAX || size > UINT32_MAX ||
-        size > UINT64_C(0x100000000) - base) return EINVAL;
-    if (flags & ~(PCI_DEV_MAP_FLAG_WRITABLE | PCI_DEV_MAP_FLAG_WRITE_COMBINE))
-        return ENOTSUP;
-    if (legacy) {
-        if (!vms_range_contains(base, size, 0xa0000u, 0x20000u) ||
-            (flags & PCI_DEV_MAP_FLAG_WRITE_COMBINE)) return EACCES;
-        allowed_base = 0xa0000u;
-        allowed_size = 0x20000u;
-    } else {
-        for (i = 0; i < 6; i++) {
-            if (!(system->video.saved[i] & 1u) &&
-                vms_range_contains(base, size, system->video.base[i],
-                                     system->video.size[i])) {
-                if ((flags & PCI_DEV_MAP_FLAG_WRITE_COMBINE) &&
-                    !(system->video.saved[i] & 8u)) return EACCES;
-                allowed_base = system->video.base[i];
-                allowed_size = system->video.size[i];
-                break;
-            }
-        }
-        if (!allowed_size) return EACCES;
-    }
+    if (!size || size - 1u > UINT64_MAX - base) return EOVERFLOW;
     status = lib$getsyi(&item, &page_size);
     if (!(status & 1u)) return vms_status_error(status);
     /* OpenVMS x86 uses 4 KiB physical frames and 8 KiB logical pages.
@@ -611,9 +678,15 @@ vms_map(struct pci_device *device, pciaddr_t base, pciaddr_t size,
     if (page_size != 8192u) return ENOTSUP;
     offset = base & (page_size - 1u);
     page_base = base - offset;
+    if (size > UINT64_MAX - offset - (page_size - 1u)) return EOVERFLOW;
     length = (size + offset + page_size - 1u) & ~((uint64_t)page_size - 1u);
     if (!vms_range_contains(page_base, length, allowed_base, allowed_size))
         return EACCES;
+    if (length > SIZE_MAX || length / page_size > UINT32_MAX ||
+        page_base / 4096u > UINT32_MAX ||
+        length - 1u > UINT64_MAX - page_base ||
+        (page_base + length - 1u) / 4096u > UINT32_MAX)
+        return EOVERFLOW;
     for (scan = system->maps; scan; scan = scan->next) count++;
     if (count >= 16) return ENOMEM;
     map = calloc(1, sizeof(*map));
@@ -645,14 +718,12 @@ vms_map(struct pci_device *device, pciaddr_t base, pciaddr_t size,
 }
 
 static int
-vms_unmap(struct pci_device *device, void *address, pciaddr_t size)
+vms_unmap_physical(struct vms_system *system, void *address, uint64_t size)
 {
-    struct vms_system *system = (struct vms_system *)pci_sys;
     struct vms_mapping **link, *map;
     void *deleted = NULL;
     unsigned __int64 length = 0;
     unsigned int status;
-    if (!system || device != system->selected || !system->lock.id) return EACCES;
     for (link = &system->maps; *link; link = &(*link)->next)
         if ((*link)->address == address && (*link)->requested == size) break;
     if (!*link) return EINVAL;
@@ -664,6 +735,106 @@ vms_unmap(struct pci_device *device, void *address, pciaddr_t size)
     *link = map->next;
     free(map);
     return 0;
+}
+
+static int
+vms_map(struct pci_device *device, pciaddr_t base, pciaddr_t size,
+         unsigned int flags, void **address, int legacy)
+{
+    struct vms_system *system = (struct vms_system *)pci_sys;
+    uint64_t allowed_base = 0, allowed_size = 0;
+    unsigned int i;
+    if (!address) return EINVAL;
+    *address = NULL;
+    if (!vms_owned(device)) return EACCES;
+    if (!size || base > UINT32_MAX || size > UINT32_MAX ||
+        size > UINT64_C(0x100000000) - base) return EINVAL;
+    if (flags & ~(PCI_DEV_MAP_FLAG_WRITABLE | PCI_DEV_MAP_FLAG_WRITE_COMBINE))
+        return ENOTSUP;
+    if (legacy) {
+        if (!vms_range_contains(base, size, 0xa0000u, 0x20000u) ||
+            (flags & PCI_DEV_MAP_FLAG_WRITE_COMBINE)) return EACCES;
+        allowed_base = 0xa0000u;
+        allowed_size = 0x20000u;
+    } else {
+        for (i = 0; i < 6; i++) {
+            if (!(system->video.saved[i] & 1u) &&
+                vms_range_contains(base, size, system->video.base[i],
+                                     system->video.size[i])) {
+                if ((flags & PCI_DEV_MAP_FLAG_WRITE_COMBINE) &&
+                    !(system->video.saved[i] & 8u)) return EACCES;
+                allowed_base = system->video.base[i];
+                allowed_size = system->video.size[i];
+                break;
+            }
+        }
+        if (!allowed_size) return EACCES;
+    }
+    return vms_map_physical(system, base, size, flags, address,
+                             allowed_base, allowed_size);
+}
+
+static int
+vms_unmap(struct pci_device *device, void *address, pciaddr_t size)
+{
+    struct vms_system *system = (struct vms_system *)pci_sys;
+    if (!system || !device || device != system->selected || !system->lock.id)
+        return EACCES;
+    return vms_unmap_physical(system, address, size);
+}
+
+int
+openvms_bootfb_map(const struct openvms_bootfb *info, void **address)
+{
+    struct vms_system *system = (struct vms_system *)pci_sys;
+    struct openvms_bootfb current;
+    const char *exclusive = getenv("XORG_OPENVMS_FB_EXCLUSIVE");
+    uint64_t used, offset, allowed_base, allowed_size;
+    int error;
+
+    if (!address) return EINVAL;
+    *address = NULL;
+    if (!system || system->selected || !exclusive || strcmp(exclusive, "1"))
+        return EACCES;
+    if (!info || !info->physical_address || !info->byte_length ||
+        !info->width || !info->height || info->width > 32767u ||
+        info->height > 32767u || (info->stride_bytes & 3u) ||
+        (uint64_t)info->stride_bytes < (uint64_t)info->width * 4u ||
+        (info->pixel_format != OPENVMS_BOOTFB_XRGB8888 &&
+         info->pixel_format != OPENVMS_BOOTFB_XBGR8888))
+        return EINVAL;
+    if (info->byte_length - 1u > UINT64_MAX - info->physical_address)
+        return EOVERFLOW;
+    /* uint32_t pitch and height multiply without overflow in uint64_t. */
+    used = (uint64_t)info->stride_bytes * info->height;
+    if (used > info->byte_length) return EINVAL;
+    error = vms_display_lease(system);
+    if (error) return error;
+    error = openvms_bootfb_query(&current);
+    if (error) return error;
+    if (info->physical_address != current.physical_address ||
+        info->byte_length != current.byte_length ||
+        info->width != current.width || info->height != current.height)
+        return EAGAIN;
+    /* PFN mappings necessarily include boundary pages. Authorize only the
+     * pages containing the verified pitched image; return its pixel address.
+     * The caller must never access the surrounding page padding.
+     */
+    offset = current.physical_address & 8191u;
+    allowed_base = current.physical_address - offset;
+    if (used > UINT64_MAX - offset - 8191u) return EOVERFLOW;
+    allowed_size = (used + offset + 8191u) & ~UINT64_C(8191);
+    return vms_map_physical(system, current.physical_address, used,
+                             PCI_DEV_MAP_FLAG_WRITABLE, address,
+                             allowed_base, allowed_size);
+}
+
+int
+openvms_bootfb_unmap(void *address, uint64_t requested_bytes)
+{
+    struct vms_system *system = (struct vms_system *)pci_sys;
+    if (!system || system->selected || !system->lock.id) return EACCES;
+    return vms_unmap_physical(system, address, requested_bytes);
 }
 
 static int
@@ -850,6 +1021,12 @@ pci_system_vms_create(void)
 
     /* Selecting a device never happens implicitly, including on single-GPU
      * machines. Existing discovery clients need not opt into resource access. */
+    if (selection && !*selection && exclusive && !strcmp(exclusive, "0")) {
+        /* Explicitly shadow inherited device-selection logicals for clients
+         * that need enumeration only. No standard PCI access is enabled. */
+        selection = NULL;
+        exclusive = NULL;
+    }
     if (selection || exclusive) {
         if (!selection || !exclusive || strcmp(exclusive, "1") ||
             strchr(selection, '-') || strchr(selection, '+') ||

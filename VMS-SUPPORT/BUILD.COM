@@ -25,6 +25,7 @@ $ targets = targets + "XT|XMU|MKFONTDIR|FONTS|FONTS_BDF|FONTS_MISC|FONTS_75DPI|F
 $ targets = targets + "FONTS_ENCODINGS|FONTS_SCALED|FONTS_TYPE1|FONTS_TTF|FONTS_OTF|"
 $ targets = targets + "NLS|NLS_XLC_LOCALE|NLS_COMPOSE|X11_DATA|RUNTIME|"
 $ targets = targets + "XF86_VIDEO_VMWARE|SHADOWFB|VGAHW|RAMDAC|XF86CONFIG|COMMON|BUS|MISC|XORGXKB|"
+$ targets = targets + "XF86_VIDEO_FBDEV|"
 $ targets = targets + "LOADER|XF86_INPUT_KEYBOARD|XF86_INPUT_MOUSE|"
 $ targets = targets + "XF86MODES|DDC|I2C|STUB|PCIACCESS|"
 $ targets = targets + "PIXMAN|CONFIG|GAWK|"
@@ -354,6 +355,8 @@ $ directory = profile + ".DRIVER]"
 $ IF F$SEARCH(profile + "]DRIVER.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".DRIVER.XF86-VIDEO-VMWARE]"
 $ IF F$SEARCH(profile + ".DRIVER]XF86-VIDEO-VMWARE.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
+$ directory = profile + ".DRIVER.XF86-VIDEO-FBDEV]"
+$ IF F$SEARCH(profile + ".DRIVER]XF86-VIDEO-FBDEV.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".DRIVER.XF86-INPUT-KEYBOARD]"
 $ IF F$SEARCH(profile + ".DRIVER]XF86-INPUT-KEYBOARD.DIR") .EQS. "" THEN CREATE/DIRECTORY 'directory'
 $ directory = profile + ".DRIVER.XF86-INPUT-MOUSE]"

@@ -1,3 +1,528 @@
+commit 0ead4454406b9036d240aefedcd99cafa1221bae
+Author: Matt Turner <mattst88@gmail.com>
+Date:   Fri Nov 8 10:16:44 2024 -0500
+
+    xf86-video-fbdev 0.5.1
+    
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-video-fbdev/-/merge_requests/9>
+
+commit c8d9f3be7e95689d793bb2f45a5dddf409e46811
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Thu May 23 19:37:09 2024 +0200
+
+    drop compat with ancient xservers
+    
+    We're relying on >= 1.18 now, so no compat with older ones needed.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-video-fbdev/-/merge_requests/8>
+
+commit ae894fe1120db28011ade76a6c350cac5e9d94d1
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Tue May 14 11:16:34 2024 -0700
+
+    Raise minimum supported Xserver version to 1.18 (ABI_VIDEODRV_VERSION 20.0)
+    
+    Already effectively required by use of XNFcallocarray() introduced in
+    xorg/xserver@b96dc999 - xserver-1.18.0, released in Nov. 2015.
+    
+    Allows dropping remnants of code for ISA and pre-pciaccess X servers
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-video-fbdev/-/merge_requests/7>
+
+commit dc48c20ceb392694c7aad7876be926bc2b0b085a
+Author: Enrico Weigelt, metux IT consult <info@metux.net>
+Date:   Wed May 8 15:46:23 2024 +0200
+
+    use XNFcallocarray() instead of xnfcalloc macro
+    
+    xnfcalloc is just an alias for XNFcallocarray() that doesn't seem to serve
+    any practical purpose, so it can go away once all drivers stopped using it.
+    
+    Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+    Part-of: <https://gitlab.freedesktop.org/xorg/driver/xf86-video-fbdev/-/merge_requests/5>
+
+commit 7bccdf437363c99f37818a6ea04b4278275ef104
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jan 7 09:23:41 2024 -0800
+
+    Fix warning: unused variable ‘scrnIdx’ [-Wunused-variable]
+    
+    fbdev.c: In function ‘FBDevDGASetMode’:
+    fbdev.c:1145:9: warning: unused variable ‘scrnIdx’ [-Wunused-variable]
+     1145 |     int scrnIdx = pScrn->pScreen->myNum;
+          |         ^~~~~~~
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 112b6c11536b3dae1bbcb6e8187e8882ad9db4a5
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Mon Jan 15 10:08:23 2024 -0800
+
+    Fix warning: statement with no effect [-Wunused-value]
+    
+    fbdev.c: In function ‘FBDevProbe’:
+    fbdev.c:355:21: warning: statement with no effect [-Wunused-value]
+      355 |                     0;
+          |                     ^
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 89728ce1d6d1623121675a98a179d12aa67f07ac
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jan 7 09:19:53 2024 -0800
+
+    Add X.Org's standard C warning flags to AM_CFLAGS
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 554d6fda2144dcc879e09297518df5e9fee87855
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jan 7 09:17:53 2024 -0800
+
+    configure: Use LT_INIT from libtool 2 instead of deprecated AC_PROG_LIBTOOL
+    
+    AC_PROG_LIBTOOL was replaced by LT_INIT in libtool 2 in 2008,
+    so it's time to rely on it.
+    
+    Clears autoconf warnings:
+    
+    configure.ac:44: warning: The macro 'AC_PROG_LIBTOOL' is obsolete.
+    configure.ac:44: You should run autoupdate.
+    aclocal.m4:3515: AC_PROG_LIBTOOL is expanded from...
+    configure.ac:44: the top level
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 7f445dbd5a132fb58166af0c45c1056fd6a97586
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Oct 1 11:17:31 2023 -0700
+
+    gitlab CI: ensure libtool is installed in build container
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit a8aa1c97f976d66599f173e7c16eed68d9c6be96
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Thu Jul 28 17:30:21 2022 -0700
+
+    gitlab CI: stop requiring Signed-off-by in commits
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 6ef9644156b5b197053ca4b5d14f277ffec0fdbd
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 22 10:26:32 2022 -0800
+
+    gitlab CI: add a basic build test
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit cf1875209c2a3c4ae4e3f5326f8b704cf0b894d3
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 22 10:25:44 2022 -0800
+
+    Fix spelling/wording issues
+    
+    Found by using:
+        codespell --builtin clear,rare,usage,informal,code,names
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 2850cd86d17ee3aff675a88d1d09d9ea3703fbbd
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sat Jan 22 10:25:12 2022 -0800
+
+    Build xz tarballs instead of bzip2
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 4730f13b9261a00b87b3e98f070d100d8d72bef7
+Author: Tuomo Rinne <tuomo.rinne@pm.me>
+Date:   Mon Jan 14 22:33:42 2019 +0000
+
+    Fix build error when building with xserver built using meson
+
+commit 4865f92f7447f224521108bac608f847f236b336
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Nov 25 13:57:38 2018 -0800
+
+    Update configure.ac bug URL for gitlab migration
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit f676c9def1ff05d860e6e6516ebb38c012635e16
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Nov 18 12:35:19 2018 -0800
+
+    Update README for gitlab migration
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 82aa13d01340236ebb516ea45a9bd78e4fe52b79
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed May 30 12:17:13 2018 -0400
+
+    fbdev 0.5.0
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 67525c485f3b32ce0c9bff250d905852f75dfc1c
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed May 30 12:31:04 2018 -0400
+
+    Update for 1.20 ABI
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 9af7f81534aa03fe01d88786805b00729ac321e9
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Mar 4 17:34:06 2018 -0800
+
+    Use #ifdef instead of #if to avoid build error
+    
+    fbdev.c:491:21: error: #if with no expression
+     #if HAVE_SHADOW_3224
+                         ^
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Reviewed-by: Adam Jackson <ajax@redhat.com>
+
+commit e0bce0d017c5e1597aa8269551355e1ddeb3c8fb
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Thu Jan 5 14:36:51 2017 -0500
+
+    Use shadowUpdate32to24 at 24bpp
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 3cf99231199bd5bd9e681e85d9da1f9eb736e3e7
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Thu Jan 5 14:14:48 2017 -0500
+
+    Remove dead pix24bpp variable
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 8c03e3474edc826e16524898eaa1195070536ac8
+Author: Mihail Konev <k.mvc@ya.ru>
+Date:   Thu Jan 26 14:00:22 2017 +1000
+
+    autogen: add default patch prefix
+    
+    Signed-off-by: Mihail Konev <k.mvc@ya.ru>
+
+commit 39f668420f2615d1642f0b823930738936f90fcd
+Author: Emil Velikov <emil.l.velikov@gmail.com>
+Date:   Mon Mar 9 12:00:52 2015 +0000
+
+    autogen.sh: use quoted string variables
+    
+    Place quotes around the $srcdir, $ORIGDIR and $0 variables to prevent
+    fall-outs, when they contain space.
+    
+    Signed-off-by: Emil Velikov <emil.l.velikov@gmail.com>
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+
+commit 303f902c76cb951eeb753eec62f98ed97ac100a8
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Tue Jan 24 10:32:07 2017 +1000
+
+    autogen.sh: use exec instead of waiting for configure to finish
+    
+    Syncs the invocation of configure with the one from the server.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Emil Velikov <emil.velikov@collabora.com>
+
+commit f62731959955bc4e48721ab258cb5e3cd6761d65
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jun 1 21:03:14 2014 -0700
+
+    autogen.sh: Honor NOCONFIGURE=1
+    
+    See http://people.gnome.org/~walters/docs/build-api.txt
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 22f288b4e478e68877cb8e1cc0c470d11d73c0db
+Author: Alan Coopersmith <alan.coopersmith@oracle.com>
+Date:   Sun Jun 1 21:03:13 2014 -0700
+
+    configure: Drop AM_MAINTAINER_MODE
+    
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit 2c5eba85740e6a7ced8ada0ee45fdd74e4bca364
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed Jan 4 10:30:08 2017 -0500
+
+    Fix shadow fb allocation size (v2)
+    
+    ->bitsPerPixel is rather obviously eight times too large.
+    
+    v2: Use ->displayWidth - the pitch - not ->virtualX (Keith Packard)
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+    Reviewed-by: Alex Deucher <alexander.deucher@amd.com>
+
+commit 66e7909bfefd93c05aa37d0cadccc5348f0382be
+Author: Pascal Terjan <pterjan@google.com>
+Date:   Fri Jan 22 00:26:22 2016 +0000
+
+    Initialize pci_dev
+    
+    Else it is read before initialization if XSERVER_LIBPCIACCESS is not
+    defined or location.type is not BUS_PCI.
+    
+    Noticed when I got a segfault where it was 0x1 while doing some tests on
+    arm.
+    
+    Signed-off-by: Pascal Terjan <pterjan@google.com>
+    Reviewed-by: Emil Velikov <emil.l.velikov@gmail.com>
+
+commit ae0aeffae6657464f610da13e7b3349d0d97e81b
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Mon Aug 11 12:07:54 2014 -0400
+
+    Pass the pci device (if any) through to fbdevhw in probe and preinit
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 2673e727063fe28310836f1e6e9eda552930218a
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Wed May 21 09:49:56 2014 -0400
+
+    Use own thunk functions instead of fbdevHW*Weak
+    
+    I plan to remove the Weak functions from a future server.
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit dd1cf1028c3f0de77d075c4a169011518baab0f4
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Fri Mar 21 12:20:01 2014 -0400
+
+    Default to 32bpp if the console is 8bpp (and we weren't told otherwise)
+    
+    You can still override this on the command line or in the config file.
+    Without this we'll come up at 8bpp on matroxfb (and probably others),
+    which among other things breaks the default desktop since gnome-shell
+    wants GLX and GLX doesn't support pseudocolor anymore.
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 679ed9a4e6b54227df191c580e3ef641e075db19
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Mon Sep 23 20:02:47 2013 +0200
+
+    Bump to 0.4.4
+
+commit ac293412a01d87f87eb61f4adb9db7486a75d3fc
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Sep 25 08:54:37 2012 -0400
+
+    Remove mibstore.h
+    
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+
+commit 2edaad4ab2c75e6863caa529d27cd141f579914a
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Mon Jul 2 12:47:08 2012 +0100
+
+    fbdev: bump to 0.4.3
+    
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+
+commit 8a65ca2fdcc8657ed3b4a72051c6f85bcecc2c18
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Tue Jun 5 11:29:31 2012 +0100
+
+    fbdev: port to new server API.
+    
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+
+commit 91e8b295f87fba81369b19969900f0981e8ba9cd
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Tue Jun 5 11:21:08 2012 +0100
+
+    fbdev: convert to new screen conversion APIs.
+    
+    Generated using util/modular/x-driver-screen-scrn-conv.sh
+    
+    Signed-off-by: Dave Airlie <airlied@redhat.com>
+
+commit 6e29cf8c2927f81e1e5890a46bf03182079cc062
+Author: Dave Airlie <airlied@redhat.com>
+Date:   Tue Jun 5 11:20:49 2012 +0100
+
+    fbdev: add compat-api + makefile
+
+commit a87213930e399c0d5a8183f6cc7e98ed6d092638
+Author: Paulo Zanoni <pzanoni@mandriva.com>
+Date:   Thu Nov 4 17:02:01 2010 -0200
+
+    Add MOD_CLASS_VIDEODRV to FBDevVersRec
+    
+    fbdev seems to be the only video driver without MOD_CLASS_VIDEODRV
+    
+    Signed-off-by: Paulo Zanoni <pzanoni@mandriva.com>
+    Reviewed-by: Jesse Adkins <jesserayadkins@gmail.com>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+
+commit be003f2568366ff9fc2ff70d6a69df64a2a25cca
+Author: Cyril Brulebois <kibi@debian.org>
+Date:   Mon Nov 8 14:10:44 2010 +0100
+
+    Perform XV initialization only if the server supports it.
+    
+    Use XV from server's xorg-server.h to determine whether to perform XV
+    initialization.
+    
+    Signed-off-by: Cyril Brulebois <kibi@debian.org>
+    Reviewed-by: Julien Cristau <jcristau@debian.org>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+
+commit 20909cd806af488cf529c74417afbc8a12438f4a
+Author: Cyril Brulebois <kibi@debian.org>
+Date:   Mon Nov 8 13:23:35 2010 +0100
+
+    Avoid unused variables when XSERVER_LIBPCIACCESS is defined.
+    
+    Signed-off-by: Cyril Brulebois <kibi@debian.org>
+    Reviewed-by: Julien Cristau <jcristau@debian.org>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+
+commit 90524a26d3458e3d1cbb4e1ecbc4db71714b8929
+Author: Cyril Brulebois <kibi@debian.org>
+Date:   Mon Nov 8 13:35:29 2010 +0100
+
+    man: Stop mentioning server's -scanpci option.
+    
+    It got removed in server's 9727db88d57089be6483104de435626cdbad883a
+    (long time ago).
+    
+    Signed-off-by: Cyril Brulebois <kibi@debian.org>
+    Reviewed-by: Julien Cristau <jcristau@debian.org>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+
+commit 0d45d8f3ad20073595a675f80dd8a4bfe68babfd
+Author: Cyril Brulebois <kibi@debian.org>
+Date:   Sun Nov 7 15:36:46 2010 +0100
+
+    Convert x{re,c,}alloc and xfree.
+    
+    Signed-off-by: Cyril Brulebois <kibi@debian.org>
+    Reviewed-by: Julien Cristau <jcristau@debian.org>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+
+commit 049cdddd14789e00d7db59c44494f90396796992
+Author: Jesse Adkins <jesserayadkins@gmail.com>
+Date:   Tue Sep 28 13:29:51 2010 -0700
+
+    Purge cvs tags.
+    
+    Signed-off-by: Jesse Adkins <jesserayadkins@gmail.com>
+    Signed-off-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+
+commit d3a2fe1b761533909646cae9c35c07f237a9f5e3
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jul 21 16:49:04 2010 -0400
+
+    config: add comments for main statements
+
+commit f7e68d16dc80fc63ca7f7661378bd6074b8eefa6
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jul 21 16:07:00 2010 -0400
+
+    config: replace deprecated use of AC_OUTPUT with AC_CONFIG_FILES
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 0ddf357522eff86288e44d19effe380affbc88a4
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jul 21 14:37:41 2010 -0400
+
+    config: replace deprecated AC_HELP_STRING with AS_HELP_STRING
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 55e0de6cb19faa7d870971f035b41d687af27f0d
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jul 21 14:05:22 2010 -0400
+
+    config: replace deprecated AM_CONFIG_HEADER with AC_CONFIG_HEADERS
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit a05560b1d37f47a73e1545ef1ba4221d84db1e3c
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Wed Jul 21 09:27:42 2010 -0400
+
+    config: complete AC_INIT m4 quoting
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 8f7d8a7ba33ca16dea37c26268ceb0a93d407a16
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Jul 20 21:44:57 2010 -0400
+
+    config: remove unrequired AC_SUBST([XORG_CFLAGS])
+    
+    This macro is called by PKG_CHECK_MODULES
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 9b3ef42fdd29b46b1edc207052f1fa9c925a7276
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Jul 20 20:24:42 2010 -0400
+
+    config: remove unrequired AC_HEADER_STDC
+    
+    Autoconf says:
+    "This macro is obsolescent, as current systems have conforming
+    header files. New programs need not use this macro".
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit b768d66b87287ac46c2850f816219d75e6b1d21e
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Jul 20 19:41:30 2010 -0400
+
+    config: remove AC_PROG_CC as it overrides AC_PROG_C_C99
+    
+    XORG_STRICT_OPTION from XORG_DEFAULT_OPTIONS calls
+    AC_PROG_C_C99. This sets gcc with -std=gnu99.
+    If AC_PROG_CC macro is called afterwards, it resets CC to gcc.
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit fa588a1ddcc095166d8e305d6a1c79970d1e70ec
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Jul 20 18:45:19 2010 -0400
+
+    config: update AC_PREREQ statement to 2.60
+    
+    Unrelated to the previous patches, the new value simply reflects
+    the reality that the minimum level for autoconf to configure
+    all x.org modules is 2.60 dated June 2006.
+    
+    ftp://ftp.gnu.org/gnu/autoconf/autoconf-2.60.tar.gz
+    
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+
+commit 6977b3490a626247bdc979e8afc6e5a8b9e19896
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Tue Jul 20 16:15:29 2010 -0400
+
+    config: upgrade to util-macros 1.8 for additional man page support
+    
+    Use MAN_SUBST now supplied in XORG_MANPAGE_SECTIONS
+    The value of MAN_SUBST is the same for all X.Org packages.
+
 commit 7ec9d466e55e6366bf35639610b14a149f6e7b45
 Author: Julien Cristau <jcristau@debian.org>
 Date:   Sat Apr 3 18:05:21 2010 +0200

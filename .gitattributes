@@ -14,6 +14,9 @@ proto/** -text
 util/** -text
 xserver/** -text
 
+# Keep XCB text exports usable as native Stream_LF source files.
+xcb/** text=auto eol=lf
+
 # Preserve the independently acquired GNU Bison distribution byte-for-byte.
 extras/bison/** -text
 

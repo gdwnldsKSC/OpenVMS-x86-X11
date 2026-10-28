@@ -156,6 +156,7 @@ struct vms_mapping {
 };
 
 static int vms_video_request(vms_adp32, struct vms_request *);
+static int vms_unmap_physical(struct vms_system *, void *, uint64_t);
 
 static int
 vms_status_error(unsigned int status)
@@ -606,6 +607,15 @@ vms_destroy(void)
 {
     struct vms_system *system = (struct vms_system *)pci_sys;
 
+    /* Failed screen initialization can skip CloseScreen. Boot-framebuffer
+     * mappings have no PCI-device teardown, so release them here while the
+     * common display lease is still held. Preserve VMware's strict rundown.
+     */
+    if (!system->selected) {
+        while (system->maps)
+            if (vms_unmap_physical(system, system->maps->address,
+                                   system->maps->requested)) abort();
+    }
     if (system->maps) abort(); /* Never release ownership with live mappings. */
     if (system->lock.id) {
         unsigned int status = sys$deq(system->lock.id, 0, 0, 0);

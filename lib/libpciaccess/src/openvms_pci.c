@@ -1052,9 +1052,10 @@ pci_system_vms_create(void)
 
     /* Selecting a device never happens implicitly, including on single-GPU
      * machines. Existing discovery clients need not opt into resource access. */
-    if (selection && !*selection && exclusive && !strcmp(exclusive, "0")) {
-        /* Explicitly shadow inherited device-selection logicals for clients
-         * that need enumeration only. No standard PCI access is enabled. */
+    if (selection && !strcmp(selection, "NONE") &&
+        exclusive && !strcmp(exclusive, "0")) {
+        /* NONE/0 explicitly shadows inherited device-selection logicals
+         * for enumeration only; OpenVMS disallows an empty equivalence. */
         selection = NULL;
         exclusive = NULL;
     }

@@ -227,8 +227,8 @@ $ GOTO video_logicals_ready
 $framebuffer_logicals:
 $ DEFINE/USER_MODE/PROCESS LIBFBDEVHW "''fbdevhw'"
 $ DEFINE/USER_MODE/PROCESS LIBSHADOW "''shadow'"
-$! Shadow inherited VMware selection without modifying the caller's logicals.
-$ DEFINE/USER_MODE/PROCESS PCIACCESS_OPENVMS_DEVICE ""
+$! NONE/0 shadows inherited VMware selection with enumeration-only access.
+$ DEFINE/USER_MODE/PROCESS PCIACCESS_OPENVMS_DEVICE "NONE"
 $ DEFINE/USER_MODE/PROCESS PCIACCESS_OPENVMS_EXCLUSIVE "0"
 $ DEFINE/USER_MODE/PROCESS XORG_OPENVMS_FB_EXCLUSIVE "1"
 $video_logicals_ready:

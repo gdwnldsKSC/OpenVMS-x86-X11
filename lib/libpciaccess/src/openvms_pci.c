@@ -275,7 +275,7 @@ vms_kernel_bootfb(struct openvms_bootfb *info)
 {
     const volatile HWRPB *restart = EXE$GPQ_HWRPB;
     uintptr_t address = (uintptr_t)restart;
-    uint64_t extent, physical, length;
+    uint64_t extent, virtual_address, physical, length, offset, translated;
     uint32_t width, height;
 
     if (!restart) return ENODEV;
@@ -294,12 +294,33 @@ vms_kernel_bootfb(struct openvms_bootfb *info)
     /* Eight-byte x86 restart-block signature: "X86_RPB\0". */
     if (restart->hwrpb$iq_ident != UINT64_C(0x004250525f363858))
         return ENOTSUP;
-    physical = restart->hwrpb$iq_framebuffer_pa;
+    virtual_address = restart->hwrpb$iq_framebuffer_pa;
     length = restart->hwrpb$iq_framebuffer_size;
     width = restart->hwrpb$il_horiz_rez;
     height = restart->hwrpb$il_vert_rez;
-    if (!physical || !length || !width || !height) return ENODEV;
+    if (!virtual_address || !length || !width || !height) return ENODEV;
+    if (width > 32767u || height > 32767u || length > UINT32_MAX)
+        return ENOTSUP;
+    if ((virtual_address >> 47) != UINT64_C(0x1ffff)) return ENOTSUP;
+    if (length - 1u > UINT64_MAX - virtual_address) return EOVERFLOW;
+    /* SYSBOOT replaces framebuffer_pa with its resident S2 mapping's VA.
+     * IOC_STD$VA_TO_PA accepts legal resident system VAs and handles x86 PFN
+     * units. Do not mask address bits or derive physical addresses ourselves.
+     * Check the bounded allocation, including every physical-page boundary,
+     * before representing it as one contiguous physical interval.
+     */
+    physical = (uintptr_t)ioc_std$va_to_pa((VOID_PQ)(uintptr_t)virtual_address, 0);
+    if (!physical) return EIO;
     if (length - 1u > UINT64_MAX - physical) return EOVERFLOW;
+    for (offset = 4096u - (virtual_address & 4095u); offset < length;
+         offset += 4096u) {
+        translated = (uintptr_t)ioc_std$va_to_pa(
+            (VOID_PQ)(uintptr_t)(virtual_address + offset), 0);
+        if (translated != physical + offset) return ENOTSUP;
+    }
+    translated = (uintptr_t)ioc_std$va_to_pa(
+        (VOID_PQ)(uintptr_t)(virtual_address + length - 1u), 0);
+    if (translated != physical + length - 1u) return ENOTSUP;
     info->physical_address = physical;
     info->byte_length = length;
     info->width = width;
